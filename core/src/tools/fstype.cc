@@ -34,67 +34,63 @@
 
 static void usage()
 {
-   fprintf(stderr, _(
-"\n"
-"Usage: fstype [-v] path ...\n"
-"\n"
-"       Print the file system type a given file/directory is on.\n"
-"       The following options are supported:\n"
-"\n"
-"       -v     print both path and file system type.\n"
-"       -?     print this message.\n"
-"\n"));
+  fprintf(stderr,
+          _("\n"
+            "Usage: fstype [-v] path ...\n"
+            "\n"
+            "       Print the file system type a given file/directory is on.\n"
+            "       The following options are supported:\n"
+            "\n"
+            "       -v     print both path and file system type.\n"
+            "       -?     print this message.\n"
+            "\n"));
 
-   exit(1);
+  exit(1);
 }
 
 
-int
-main (int argc, char *const *argv)
+int main(int argc, char* const* argv)
 {
-   char fs[1000];
-   int verbose = 0;
-   int status = 0;
-   int ch, i;
+  char fs[1000];
+  int verbose = 0;
+  int status = 0;
+  int ch, i;
 
-   setlocale(LC_ALL, "");
-   bindtextdomain("bareos", LOCALEDIR);
-   textdomain("bareos");
+  setlocale(LC_ALL, "");
+  bindtextdomain("bareos", LOCALEDIR);
+  textdomain("bareos");
 
-   while ((ch = getopt(argc, argv, "v?")) != -1) {
-      switch (ch) {
-         case 'v':
-            verbose = 1;
-            break;
-         case '?':
-         default:
-            usage();
+  while ((ch = getopt(argc, argv, "v?")) != -1) {
+    switch (ch) {
+      case 'v':
+        verbose = 1;
+        break;
+      case '?':
+      default:
+        usage();
+    }
+  }
+  argc -= optind;
+  argv += optind;
 
-      }
-   }
-   argc -= optind;
-   argv += optind;
+  if (argc < 1) { usage(); }
 
-   if (argc < 1) {
-      usage();
-   }
+  OSDependentInit();
 
-   OSDependentInit();
-
-   for (i = 0; i < argc; --argc, ++argv) {
-      if (fstype(*argv, fs, sizeof(fs))) {
-         if (verbose) {
-            printf("%s: %s\n", *argv, fs);
-         } else {
-            puts(fs);
-         }
+  for (i = 0; i < argc; --argc, ++argv) {
+    if (fstype(*argv, fs, sizeof(fs))) {
+      if (verbose) {
+        printf("%s: %s\n", *argv, fs);
       } else {
-         fprintf(stderr, _("%s: unknown\n"), *argv);
-         status = 1;
+        puts(fs);
       }
-   }
+    } else {
+      fprintf(stderr, _("%s: unknown\n"), *argv);
+      status = 1;
+    }
+  }
 
-   FlushMntentCache();
+  FlushMntentCache();
 
-   exit(status);
+  exit(status);
 }

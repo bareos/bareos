@@ -24,11 +24,15 @@
 
 namespace directordaemon {
 
-slot_number_t GetElementAddressByBareosSlotNumber(smc_element_address_assignment*
-    smc_elem_aa, slot_type_t slot_type, slot_number_t slotnumber);
+slot_number_t GetElementAddressByBareosSlotNumber(
+    smc_element_address_assignment* smc_elem_aa,
+    slot_type_t slot_type,
+    slot_number_t slotnumber);
 
-slot_number_t GetBareosSlotNumberByElementAddress(smc_element_address_assignment*
-    smc_elem_aa, slot_type_t slot_type, slot_number_t element_addr);
+slot_number_t GetBareosSlotNumberByElementAddress(
+    smc_element_address_assignment* smc_elem_aa,
+    slot_type_t slot_type,
+    slot_number_t element_addr);
 
 } /* namespace directordaemon */
-#endif // BAREOS_SRC_DIRD_NDMP_SLOT2ELEMADDR_H_
+#endif  // BAREOS_SRC_DIRD_NDMP_SLOT2ELEMADDR_H_

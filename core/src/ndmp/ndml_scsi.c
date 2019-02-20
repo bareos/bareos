@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1998,1999,2000
- *	Traakan, Inc., Los Altos, CA
- *	All rights reserved.
+ *      Traakan, Inc., Los Altos, CA
+ *      All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -52,241 +52,217 @@
  */
 
 
-int
-ndmscsi_target_from_str (struct ndmscsi_target *targ, char *str)
+int ndmscsi_target_from_str(struct ndmscsi_target* targ, char* str)
 {
-	char *		p;
-	int		n1, n2, n3;
+  char* p;
+  int n1, n2, n3;
 
-	NDMOS_MACRO_ZEROFILL (targ);
+  NDMOS_MACRO_ZEROFILL(targ);
 
-	p = strchr (str, ',');
-	if (p) {
-		*p++ = 0;
-	}
+  p = strchr(str, ',');
+  if (p) { *p++ = 0; }
 
-	if (strlen (str) >= NDMOS_CONST_PATH_MAX) {
-		if (p) p[-1] = ',';
-		return -2;
-	}
+  if (strlen(str) >= NDMOS_CONST_PATH_MAX) {
+    if (p) p[-1] = ',';
+    return -2;
+  }
 
-	strcpy (targ->dev_name, str);
+  strcpy(targ->dev_name, str);
 
-	if (!p) {
-		targ->controller = -1;
-		targ->sid = -1;
-		targ->lun = -1;
+  if (!p) {
+    targ->controller = -1;
+    targ->sid = -1;
+    targ->lun = -1;
 
-		return 0;
-	}
+    return 0;
+  }
 
-	p[-1] = ',';
+  p[-1] = ',';
 
-	if (*p < '0' || '9' < *p) {
-		return -3;
-	}
-	n1 = strtol (p, &p, 0);
-	if (*p != 0 && *p != ',') {
-		return -4;
-	}
-	if (*p == 0) {
-		targ->controller = -1;
-		targ->sid = n1;
-		targ->lun = 0;
+  if (*p < '0' || '9' < *p) { return -3; }
+  n1 = strtol(p, &p, 0);
+  if (*p != 0 && *p != ',') { return -4; }
+  if (*p == 0) {
+    targ->controller = -1;
+    targ->sid = n1;
+    targ->lun = 0;
 
-		return 0;
-	}
+    return 0;
+  }
 
-	p++;
+  p++;
 
-	if (*p < '0' || '9' < *p) {
-		return -5;
-	}
-	n2 = strtol (p, &p, 0);
+  if (*p < '0' || '9' < *p) { return -5; }
+  n2 = strtol(p, &p, 0);
 
-	if (*p == 0) {
-		/* SID,LUN */
-		targ->controller = -1;
-		targ->sid = n1;
-		targ->lun = n2;
-	} else {
-		if (*p != ',') {
-			return -6;
-		}
-		p++;
+  if (*p == 0) {
+    /* SID,LUN */
+    targ->controller = -1;
+    targ->sid = n1;
+    targ->lun = n2;
+  } else {
+    if (*p != ',') { return -6; }
+    p++;
 
-		if (*p < '0' || '9' < *p) {
-			return -7;
-		}
-		n3 = strtol (p, &p, 0);
+    if (*p < '0' || '9' < *p) { return -7; }
+    n3 = strtol(p, &p, 0);
 
-		if (*p != 0) {
-			return -8;
-		}
+    if (*p != 0) { return -8; }
 
-		targ->controller = n1;
-		targ->sid = n2;
-		targ->lun = n3;
-	}
+    targ->controller = n1;
+    targ->sid = n2;
+    targ->lun = n3;
+  }
 
-	return 0;
+  return 0;
 }
 
 
-int
-ndmscsi_open (struct ndmconn *conn, char *dev_name)
+int ndmscsi_open(struct ndmconn* conn, char* dev_name)
 {
-	int		rc;
+  int rc;
 
-	NDMC_WITH(ndmp9_scsi_open, NDMP9VER)
-		request->device = dev_name;
-		rc = NDMC_CALL(conn);
-	NDMC_ENDWITH
+  NDMC_WITH(ndmp9_scsi_open, NDMP9VER)
+  request->device = dev_name;
+  rc = NDMC_CALL(conn);
+  NDMC_ENDWITH
 
-	return rc;
+  return rc;
 }
 
-int
-ndmscsi_close (struct ndmconn *conn)
+int ndmscsi_close(struct ndmconn* conn)
 {
-	int		rc;
+  int rc;
 
-	NDMC_WITH_VOID_REQUEST(ndmp9_scsi_close, NDMP9VER)
-		rc = NDMC_CALL(conn);
-	NDMC_ENDWITH
+  NDMC_WITH_VOID_REQUEST(ndmp9_scsi_close, NDMP9VER)
+  rc = NDMC_CALL(conn);
+  NDMC_ENDWITH
 
-	return rc;
+  return rc;
 }
 
-int
-ndmscsi_get_state (struct ndmconn *conn, struct ndmscsi_target *targ)
+int ndmscsi_get_state(struct ndmconn* conn, struct ndmscsi_target* targ)
 {
-	int		rc;
+  int rc;
 
-	NDMOS_MACRO_ZEROFILL (targ);
+  NDMOS_MACRO_ZEROFILL(targ);
 
-	NDMC_WITH_VOID_REQUEST(ndmp9_scsi_get_state, NDMP9VER)
-		rc = NDMC_CALL(conn);
-		targ->controller = reply->target_controller;
-		targ->sid = reply->target_id;
-		targ->lun = reply->target_lun;
-	NDMC_ENDWITH
+  NDMC_WITH_VOID_REQUEST(ndmp9_scsi_get_state, NDMP9VER)
+  rc = NDMC_CALL(conn);
+  targ->controller = reply->target_controller;
+  targ->sid = reply->target_id;
+  targ->lun = reply->target_lun;
+  NDMC_ENDWITH
 
-	return rc;
+  return rc;
 }
 
-int
-ndmscsi_set_target (struct ndmconn *conn, struct ndmscsi_target *targ)
+int ndmscsi_set_target(struct ndmconn* conn, struct ndmscsi_target* targ)
 {
-	int		rc;
+  int rc;
 
-	NDMC_WITH(ndmp9_scsi_set_target, NDMP9VER)
-		request->device = targ->dev_name;
-		request->target_controller = targ->controller;
-		request->target_id = targ->sid;
-		request->target_lun = targ->lun;
-		rc = NDMC_CALL(conn);
-	NDMC_ENDWITH
+  NDMC_WITH(ndmp9_scsi_set_target, NDMP9VER)
+  request->device = targ->dev_name;
+  request->target_controller = targ->controller;
+  request->target_id = targ->sid;
+  request->target_lun = targ->lun;
+  rc = NDMC_CALL(conn);
+  NDMC_ENDWITH
 
-	return rc;
+  return rc;
 }
 
-int
-ndmscsi_use (struct ndmconn *conn, struct ndmscsi_target *targ)
+int ndmscsi_use(struct ndmconn* conn, struct ndmscsi_target* targ)
 {
-	int		rc;
+  int rc;
 
-	rc = ndmscsi_open (conn, targ->dev_name);
-	if (rc) return rc;
+  rc = ndmscsi_open(conn, targ->dev_name);
+  if (rc) return rc;
 
-	if (targ->controller != -1 || targ->sid != -1 || targ->lun != -1) {
+  if (targ->controller != -1 || targ->sid != -1 || targ->lun != -1) {
 #ifndef NDMOS_OPTION_NO_NDMP4
-		if (conn->protocol_version == NDMP4VER) {
-			return -1;	/* can't set target */
-		}
+    if (conn->protocol_version == NDMP4VER) {
+      return -1; /* can't set target */
+    }
 #endif /* !NDMOS_OPTION_NO_NDMP4 */
 
-		rc = ndmscsi_set_target (conn, targ);
-		if (rc) {
-			ndmscsi_close (conn);	/* best effort */
-			return rc;
-		}
-	}
+    rc = ndmscsi_set_target(conn, targ);
+    if (rc) {
+      ndmscsi_close(conn); /* best effort */
+      return rc;
+    }
+  }
 
-	return 0;
+  return 0;
 }
 
-int
-ndmscsi_execute (struct ndmconn *conn,
-  struct ndmscsi_request *req,
-  struct ndmscsi_target *targ)
+int ndmscsi_execute(struct ndmconn* conn,
+                    struct ndmscsi_request* req,
+                    struct ndmscsi_target* targ)
 {
-	int		rc;
+  int rc;
 
-	if (targ) {
-		rc = ndmscsi_use (conn, targ);
-		if (rc) return rc;
-	}
+  if (targ) {
+    rc = ndmscsi_use(conn, targ);
+    if (rc) return rc;
+  }
 
-	NDMC_WITH(ndmp9_scsi_execute_cdb, NDMP9VER)
-		request->cdb.cdb_len = req->n_cmd;
-		request->cdb.cdb_val = (char*)req->cmd;
+  NDMC_WITH(ndmp9_scsi_execute_cdb, NDMP9VER)
+  request->cdb.cdb_len = req->n_cmd;
+  request->cdb.cdb_val = (char*)req->cmd;
 
-		switch (req->data_dir) {
-		case NDMSCSI_DD_NONE:
-			request->data_dir = NDMP9_SCSI_DATA_DIR_NONE;
-			break;
+  switch (req->data_dir) {
+    case NDMSCSI_DD_NONE:
+      request->data_dir = NDMP9_SCSI_DATA_DIR_NONE;
+      break;
 
-		case NDMSCSI_DD_IN:
-			request->data_dir = NDMP9_SCSI_DATA_DIR_IN;
-			request->datain_len = req->n_data_avail;
-			break;
+    case NDMSCSI_DD_IN:
+      request->data_dir = NDMP9_SCSI_DATA_DIR_IN;
+      request->datain_len = req->n_data_avail;
+      break;
 
-		case NDMSCSI_DD_OUT:
-			request->data_dir = NDMP9_SCSI_DATA_DIR_OUT;
-			request->dataout.dataout_len = req->n_data_avail;
-			request->dataout.dataout_val = (char*)req->data;
-			break;
-		}
-		request->timeout = 300000;	/* five minutes */
+    case NDMSCSI_DD_OUT:
+      request->data_dir = NDMP9_SCSI_DATA_DIR_OUT;
+      request->dataout.dataout_len = req->n_data_avail;
+      request->dataout.dataout_val = (char*)req->data;
+      break;
+  }
+  request->timeout = 300000; /* five minutes */
 
-		rc = NDMC_CALL (conn);
-		if (rc) {
-			req->completion_status = NDMSCSI_CS_FAIL;
-			return rc;
-		}
+  rc = NDMC_CALL(conn);
+  if (rc) {
+    req->completion_status = NDMSCSI_CS_FAIL;
+    return rc;
+  }
 
-		req->status_byte = reply->status;
-		req->n_data_done = 0;
-		req->n_sense_data = 0;
+  req->status_byte = reply->status;
+  req->n_data_done = 0;
+  req->n_sense_data = 0;
 
-		rc = reply->ext_sense.ext_sense_len;
-		if (rc > 0) {
-			if (rc > NDMSCSI_MAX_SENSE_DATA)
-				rc = NDMSCSI_MAX_SENSE_DATA;
+  rc = reply->ext_sense.ext_sense_len;
+  if (rc > 0) {
+    if (rc > NDMSCSI_MAX_SENSE_DATA) rc = NDMSCSI_MAX_SENSE_DATA;
 
-			req->n_sense_data = rc;
-			NDMOS_API_BCOPY (reply->ext_sense.ext_sense_val,
-					req->sense_data, rc);
-		}
+    req->n_sense_data = rc;
+    NDMOS_API_BCOPY(reply->ext_sense.ext_sense_val, req->sense_data, rc);
+  }
 
-		switch (req->data_dir) {
-		case NDMSCSI_DD_IN:
-			req->n_data_done = reply->datain.datain_len;
-			if (req->n_data_done > 0) {
-				NDMOS_API_BCOPY (reply->datain.datain_val,
-					req->data, req->n_data_done);
-			}
-			break;
+  switch (req->data_dir) {
+    case NDMSCSI_DD_IN:
+      req->n_data_done = reply->datain.datain_len;
+      if (req->n_data_done > 0) {
+        NDMOS_API_BCOPY(reply->datain.datain_val, req->data, req->n_data_done);
+      }
+      break;
 
-		case NDMSCSI_DD_OUT:
-			req->n_data_done = reply->dataout_len;
-			break;
-		}
-		req->completion_status = NDMSCSI_CS_GOOD;
+    case NDMSCSI_DD_OUT:
+      req->n_data_done = reply->dataout_len;
+      break;
+  }
+  req->completion_status = NDMSCSI_CS_GOOD;
 
-		NDMC_FREE_REPLY();
-	NDMC_ENDWITH
+  NDMC_FREE_REPLY();
+  NDMC_ENDWITH
 
-	return 0;
+  return 0;
 }

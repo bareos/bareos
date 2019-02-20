@@ -32,33 +32,33 @@
 
 namespace storagedaemon {
 
-class gfapi_device: public Device {
-private:
-   char *gfapi_configstring_;
-   char *gfapi_uri_;
-   char *transport_;
-   char *servername_;
-   char *volumename_;
-   char *basedir_;
-   int serverport_;
-   glfs_t *glfs_;
-   glfs_fd_t *gfd_;
-   POOLMEM *virtual_filename_;
+class gfapi_device : public Device {
+ private:
+  char* gfapi_configstring_;
+  char* gfapi_uri_;
+  char* transport_;
+  char* servername_;
+  char* volumename_;
+  char* basedir_;
+  int serverport_;
+  glfs_t* glfs_;
+  glfs_fd_t* gfd_;
+  POOLMEM* virtual_filename_;
 
-public:
-   gfapi_device();
-   ~gfapi_device();
+ public:
+  gfapi_device();
+  ~gfapi_device();
 
-   /*
-    * Interface from Device
-    */
-   int d_close(int);
-   int d_open(const char *pathname, int flags, int mode);
-   int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL);
-   boffset_t d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence);
-   ssize_t d_read(int fd, void *buffer, size_t count);
-   ssize_t d_write(int fd, const void *buffer, size_t count);
-   bool d_truncate(DeviceControlRecord *dcr);
+  /*
+   * Interface from Device
+   */
+  int d_close(int);
+  int d_open(const char* pathname, int flags, int mode);
+  int d_ioctl(int fd, ioctl_req_t request, char* mt = NULL);
+  boffset_t d_lseek(DeviceControlRecord* dcr, boffset_t offset, int whence);
+  ssize_t d_read(int fd, void* buffer, size_t count);
+  ssize_t d_write(int fd, const void* buffer, size_t count);
+  bool d_truncate(DeviceControlRecord* dcr);
 };
 } /* namespace storagedaemon */
 #endif /* BAREOS_STORED_BACKENDS_GFAPI_DEVICE_H_ */

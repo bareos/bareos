@@ -37,27 +37,25 @@
  *  Returns: 0 on success
  *           errno on failure
  */
-int RwlInit(brwlock_t *rwl, int priority)
+int RwlInit(brwlock_t* rwl, int priority)
 {
-   int status;
+  int status;
 
-   rwl->r_active = rwl->w_active = 0;
-   rwl->r_wait = rwl->w_wait = 0;
-   rwl->priority = priority;
-   if ((status = pthread_mutex_init(&rwl->mutex, NULL)) != 0) {
-      return status;
-   }
-   if ((status = pthread_cond_init(&rwl->read, NULL)) != 0) {
-      pthread_mutex_destroy(&rwl->mutex);
-      return status;
-   }
-   if ((status = pthread_cond_init(&rwl->write, NULL)) != 0) {
-      pthread_cond_destroy(&rwl->read);
-      pthread_mutex_destroy(&rwl->mutex);
-      return status;
-   }
-   rwl->valid = RWLOCK_VALID;
-   return 0;
+  rwl->r_active = rwl->w_active = 0;
+  rwl->r_wait = rwl->w_wait = 0;
+  rwl->priority = priority;
+  if ((status = pthread_mutex_init(&rwl->mutex, NULL)) != 0) { return status; }
+  if ((status = pthread_cond_init(&rwl->read, NULL)) != 0) {
+    pthread_mutex_destroy(&rwl->mutex);
+    return status;
+  }
+  if ((status = pthread_cond_init(&rwl->write, NULL)) != 0) {
+    pthread_cond_destroy(&rwl->read);
+    pthread_mutex_destroy(&rwl->mutex);
+    return status;
+  }
+  rwl->valid = RWLOCK_VALID;
+  return 0;
 }
 
 /*
@@ -66,145 +64,120 @@ int RwlInit(brwlock_t *rwl, int priority)
  * Returns: 0 on success
  *          errno on failure
  */
-int RwlDestroy(brwlock_t *rwl)
+int RwlDestroy(brwlock_t* rwl)
 {
-   int status, status1, status2;
+  int status, status1, status2;
 
-   if (rwl->valid != RWLOCK_VALID) {
-      return EINVAL;
-   }
-   if ((status = pthread_mutex_lock(&rwl->mutex)) != 0) {
-      return status;
-   }
+  if (rwl->valid != RWLOCK_VALID) { return EINVAL; }
+  if ((status = pthread_mutex_lock(&rwl->mutex)) != 0) { return status; }
 
-   /*
-    * If any threads are active, report EBUSY
-    */
-   if (rwl->r_active > 0 || rwl->w_active) {
-      pthread_mutex_unlock(&rwl->mutex);
-      return EBUSY;
-   }
+  /*
+   * If any threads are active, report EBUSY
+   */
+  if (rwl->r_active > 0 || rwl->w_active) {
+    pthread_mutex_unlock(&rwl->mutex);
+    return EBUSY;
+  }
 
-   /*
-    * If any threads are waiting, report EBUSY
-    */
-   if (rwl->r_wait > 0 || rwl->w_wait > 0) {
-      pthread_mutex_unlock(&rwl->mutex);
-      return EBUSY;
-   }
+  /*
+   * If any threads are waiting, report EBUSY
+   */
+  if (rwl->r_wait > 0 || rwl->w_wait > 0) {
+    pthread_mutex_unlock(&rwl->mutex);
+    return EBUSY;
+  }
 
-   rwl->valid = 0;
-   if ((status = pthread_mutex_unlock(&rwl->mutex)) != 0) {
-      return status;
-   }
-   status = pthread_mutex_destroy(&rwl->mutex);
-   status1 = pthread_cond_destroy(&rwl->read);
-   status2 = pthread_cond_destroy(&rwl->write);
-   return (status != 0 ? status : (status1 != 0 ? status1 : status2));
+  rwl->valid = 0;
+  if ((status = pthread_mutex_unlock(&rwl->mutex)) != 0) { return status; }
+  status = pthread_mutex_destroy(&rwl->mutex);
+  status1 = pthread_cond_destroy(&rwl->read);
+  status2 = pthread_cond_destroy(&rwl->write);
+  return (status != 0 ? status : (status1 != 0 ? status1 : status2));
 }
 
-bool RwlIsInit(brwlock_t *rwl)
-{
-   return (rwl->valid == RWLOCK_VALID);
-}
+bool RwlIsInit(brwlock_t* rwl) { return (rwl->valid == RWLOCK_VALID); }
 
 /*
  * Handle cleanup when the read lock condition variable
  * wait is released.
  */
-static void RwlReadRelease(void *arg)
+static void RwlReadRelease(void* arg)
 {
-   brwlock_t *rwl = (brwlock_t *)arg;
+  brwlock_t* rwl = (brwlock_t*)arg;
 
-   rwl->r_wait--;
-   pthread_mutex_unlock(&rwl->mutex);
+  rwl->r_wait--;
+  pthread_mutex_unlock(&rwl->mutex);
 }
 
 /*
  * Handle cleanup when the write lock condition variable wait
  * is released.
  */
-static void RwlWriteRelease(void *arg)
+static void RwlWriteRelease(void* arg)
 {
-   brwlock_t *rwl = (brwlock_t *)arg;
+  brwlock_t* rwl = (brwlock_t*)arg;
 
-   rwl->w_wait--;
-   pthread_mutex_unlock(&rwl->mutex);
+  rwl->w_wait--;
+  pthread_mutex_unlock(&rwl->mutex);
 }
 
 /*
  * Lock for read access, wait until locked (or error).
  */
-int RwlReadlock(brwlock_t *rwl)
+int RwlReadlock(brwlock_t* rwl)
 {
-   int status;
+  int status;
 
-   if (rwl->valid != RWLOCK_VALID) {
-      return EINVAL;
-   }
-   if ((status = pthread_mutex_lock(&rwl->mutex)) != 0) {
-      return status;
-   }
-   if (rwl->w_active) {
-      rwl->r_wait++;                  /* indicate that we are waiting */
-      pthread_cleanup_push(RwlReadRelease, (void *)rwl);
-      while (rwl->w_active) {
-         status = pthread_cond_wait(&rwl->read, &rwl->mutex);
-         if (status != 0) {
-            break;                    /* error, bail out */
-         }
-      }
-      pthread_cleanup_pop(0);
-      rwl->r_wait--;                  /* we are no longer waiting */
-   }
-   if (status == 0) {
-      rwl->r_active++;                /* we are running */
-   }
-   pthread_mutex_unlock(&rwl->mutex);
-   return status;
+  if (rwl->valid != RWLOCK_VALID) { return EINVAL; }
+  if ((status = pthread_mutex_lock(&rwl->mutex)) != 0) { return status; }
+  if (rwl->w_active) {
+    rwl->r_wait++; /* indicate that we are waiting */
+    pthread_cleanup_push(RwlReadRelease, (void*)rwl);
+    while (rwl->w_active) {
+      status = pthread_cond_wait(&rwl->read, &rwl->mutex);
+      if (status != 0) { break; /* error, bail out */ }
+    }
+    pthread_cleanup_pop(0);
+    rwl->r_wait--; /* we are no longer waiting */
+  }
+  if (status == 0) { rwl->r_active++; /* we are running */ }
+  pthread_mutex_unlock(&rwl->mutex);
+  return status;
 }
 
 /*
  * Attempt to lock for read access, don't wait
  */
-int RwlReadtrylock(brwlock_t *rwl)
+int RwlReadtrylock(brwlock_t* rwl)
 {
-   int status, status2;
+  int status, status2;
 
-   if (rwl->valid != RWLOCK_VALID) {
-      return EINVAL;
-   }
-   if ((status = pthread_mutex_lock(&rwl->mutex)) != 0) {
-      return status;
-   }
-   if (rwl->w_active) {
-      status = EBUSY;
-   } else {
-      rwl->r_active++;                /* we are running */
-   }
-   status2 = pthread_mutex_unlock(&rwl->mutex);
-   return (status == 0 ? status2 : status);
+  if (rwl->valid != RWLOCK_VALID) { return EINVAL; }
+  if ((status = pthread_mutex_lock(&rwl->mutex)) != 0) { return status; }
+  if (rwl->w_active) {
+    status = EBUSY;
+  } else {
+    rwl->r_active++; /* we are running */
+  }
+  status2 = pthread_mutex_unlock(&rwl->mutex);
+  return (status == 0 ? status2 : status);
 }
 
 /*
  * Unlock read lock
  */
-int RwlReadunlock(brwlock_t *rwl)
+int RwlReadunlock(brwlock_t* rwl)
 {
-   int status, status2;
+  int status, status2;
 
-   if (rwl->valid != RWLOCK_VALID) {
-      return EINVAL;
-   }
-   if ((status = pthread_mutex_lock(&rwl->mutex)) != 0) {
-      return status;
-   }
-   rwl->r_active--;
-   if (rwl->r_active == 0 && rwl->w_wait > 0) { /* if writers waiting */
-      status = pthread_cond_broadcast(&rwl->write);
-   }
-   status2 = pthread_mutex_unlock(&rwl->mutex);
-   return (status == 0 ? status2 : status);
+  if (rwl->valid != RWLOCK_VALID) { return EINVAL; }
+  if ((status = pthread_mutex_lock(&rwl->mutex)) != 0) { return status; }
+  rwl->r_active--;
+  if (rwl->r_active == 0 && rwl->w_wait > 0) { /* if writers waiting */
+    status = pthread_cond_broadcast(&rwl->write);
+  }
+  status2 = pthread_mutex_unlock(&rwl->mutex);
+  return (status == 0 ? status2 : status);
 }
 
 
@@ -212,101 +185,89 @@ int RwlReadunlock(brwlock_t *rwl)
  * Lock for write access, wait until locked (or error).
  *   Multiple nested write locking is permitted.
  */
-int RwlWritelock_p(brwlock_t *rwl, const char *file, int line)
+int RwlWritelock_p(brwlock_t* rwl, const char* file, int line)
 {
-   int status;
+  int status;
 
-   if (rwl->valid != RWLOCK_VALID) {
-      return EINVAL;
-   }
-   if ((status = pthread_mutex_lock(&rwl->mutex)) != 0) {
-      return status;
-   }
-   if (rwl->w_active && pthread_equal(rwl->writer_id, pthread_self())) {
-      rwl->w_active++;
-      pthread_mutex_unlock(&rwl->mutex);
-      return 0;
-   }
-   if (rwl->w_active || rwl->r_active > 0) {
-      rwl->w_wait++;                  /* indicate that we are waiting */
-      pthread_cleanup_push(RwlWriteRelease, (void *)rwl);
-      while (rwl->w_active || rwl->r_active > 0) {
-         if ((status = pthread_cond_wait(&rwl->write, &rwl->mutex)) != 0) {
-            break;                    /* error, bail out */
-         }
+  if (rwl->valid != RWLOCK_VALID) { return EINVAL; }
+  if ((status = pthread_mutex_lock(&rwl->mutex)) != 0) { return status; }
+  if (rwl->w_active && pthread_equal(rwl->writer_id, pthread_self())) {
+    rwl->w_active++;
+    pthread_mutex_unlock(&rwl->mutex);
+    return 0;
+  }
+  if (rwl->w_active || rwl->r_active > 0) {
+    rwl->w_wait++; /* indicate that we are waiting */
+    pthread_cleanup_push(RwlWriteRelease, (void*)rwl);
+    while (rwl->w_active || rwl->r_active > 0) {
+      if ((status = pthread_cond_wait(&rwl->write, &rwl->mutex)) != 0) {
+        break; /* error, bail out */
       }
-      pthread_cleanup_pop(0);
-      rwl->w_wait--;                  /* we are no longer waiting */
-   }
-   if (status == 0) {
-      rwl->w_active++;                /* we are running */
-      rwl->writer_id = pthread_self(); /* save writer thread's id */
-   }
-   pthread_mutex_unlock(&rwl->mutex);
-   return status;
+    }
+    pthread_cleanup_pop(0);
+    rwl->w_wait--; /* we are no longer waiting */
+  }
+  if (status == 0) {
+    rwl->w_active++;                 /* we are running */
+    rwl->writer_id = pthread_self(); /* save writer thread's id */
+  }
+  pthread_mutex_unlock(&rwl->mutex);
+  return status;
 }
 
 /*
  * Attempt to lock for write access, don't wait
  */
-int RwlWritetrylock(brwlock_t *rwl)
+int RwlWritetrylock(brwlock_t* rwl)
 {
-   int status, status2;
+  int status, status2;
 
-   if (rwl->valid != RWLOCK_VALID) {
-      return EINVAL;
-   }
-   if ((status = pthread_mutex_lock(&rwl->mutex)) != 0) {
-      return status;
-   }
-   if (rwl->w_active && pthread_equal(rwl->writer_id, pthread_self())) {
-      rwl->w_active++;
-      pthread_mutex_unlock(&rwl->mutex);
-      return 0;
-   }
-   if (rwl->w_active || rwl->r_active > 0) {
-      status = EBUSY;
-   } else {
-      rwl->w_active = 1;              /* we are running */
-      rwl->writer_id = pthread_self(); /* save writer thread's id */
-   }
-   status2 = pthread_mutex_unlock(&rwl->mutex);
-   return (status == 0 ? status2 : status);
+  if (rwl->valid != RWLOCK_VALID) { return EINVAL; }
+  if ((status = pthread_mutex_lock(&rwl->mutex)) != 0) { return status; }
+  if (rwl->w_active && pthread_equal(rwl->writer_id, pthread_self())) {
+    rwl->w_active++;
+    pthread_mutex_unlock(&rwl->mutex);
+    return 0;
+  }
+  if (rwl->w_active || rwl->r_active > 0) {
+    status = EBUSY;
+  } else {
+    rwl->w_active = 1;               /* we are running */
+    rwl->writer_id = pthread_self(); /* save writer thread's id */
+  }
+  status2 = pthread_mutex_unlock(&rwl->mutex);
+  return (status == 0 ? status2 : status);
 }
 
 /*
  * Unlock write lock
  *  Start any waiting writers in preference to waiting readers
  */
-int RwlWriteunlock(brwlock_t *rwl)
+int RwlWriteunlock(brwlock_t* rwl)
 {
-   int status, status2;
+  int status, status2;
 
-   if (rwl->valid != RWLOCK_VALID) {
-      return EINVAL;
-   }
-   if ((status = pthread_mutex_lock(&rwl->mutex)) != 0) {
-      return status;
-   }
-   if (rwl->w_active <= 0) {
-      pthread_mutex_unlock(&rwl->mutex);
-      Jmsg0(NULL, M_ABORT, 0, _("RwlWriteunlock called too many times.\n"));
-   }
-   rwl->w_active--;
-   if (!pthread_equal(pthread_self(), rwl->writer_id)) {
-      pthread_mutex_unlock(&rwl->mutex);
-      Jmsg0(NULL, M_ABORT, 0, _("RwlWriteunlock by non-owner.\n"));
-   }
-   if (rwl->w_active > 0) {
-      status = 0;                       /* writers still active */
-   } else {
-      /* No more writers, awaken someone */
-      if (rwl->r_wait > 0) {         /* if readers waiting */
-         status = pthread_cond_broadcast(&rwl->read);
-      } else if (rwl->w_wait > 0) {
-         status = pthread_cond_broadcast(&rwl->write);
-      }
-   }
-   status2 = pthread_mutex_unlock(&rwl->mutex);
-   return (status == 0 ? status2 : status);
+  if (rwl->valid != RWLOCK_VALID) { return EINVAL; }
+  if ((status = pthread_mutex_lock(&rwl->mutex)) != 0) { return status; }
+  if (rwl->w_active <= 0) {
+    pthread_mutex_unlock(&rwl->mutex);
+    Jmsg0(NULL, M_ABORT, 0, _("RwlWriteunlock called too many times.\n"));
+  }
+  rwl->w_active--;
+  if (!pthread_equal(pthread_self(), rwl->writer_id)) {
+    pthread_mutex_unlock(&rwl->mutex);
+    Jmsg0(NULL, M_ABORT, 0, _("RwlWriteunlock by non-owner.\n"));
+  }
+  if (rwl->w_active > 0) {
+    status = 0; /* writers still active */
+  } else {
+    /* No more writers, awaken someone */
+    if (rwl->r_wait > 0) { /* if readers waiting */
+      status = pthread_cond_broadcast(&rwl->read);
+    } else if (rwl->w_wait > 0) {
+      status = pthread_cond_broadcast(&rwl->write);
+    }
+  }
+  status2 = pthread_mutex_unlock(&rwl->mutex);
+  return (status == 0 ? status2 : status);
 }

@@ -23,7 +23,4 @@
 #include "include/bareos.h"
 #include "lib/output_formatter.h"
 
-TEST(output_formatter, constructor_destructor)
-{
-
-}
+TEST(output_formatter, constructor_destructor) {}

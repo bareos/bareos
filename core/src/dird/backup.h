@@ -24,18 +24,21 @@
 
 namespace directordaemon {
 
-int WaitForJobTermination(JobControlRecord *jcr, int timeout = 0);
-bool DoNativeBackupInit(JobControlRecord *jcr);
-bool DoNativeBackup(JobControlRecord *jcr);
-void NativeBackupCleanup(JobControlRecord *jcr, int TermCode);
-void UpdateBootstrapFile(JobControlRecord *jcr);
-bool SendAccurateCurrentFiles(JobControlRecord *jcr);
-void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_type,
-                             const char *TermMsg);
+int WaitForJobTermination(JobControlRecord* jcr, int timeout = 0);
+bool DoNativeBackupInit(JobControlRecord* jcr);
+bool DoNativeBackup(JobControlRecord* jcr);
+void NativeBackupCleanup(JobControlRecord* jcr, int TermCode);
+void UpdateBootstrapFile(JobControlRecord* jcr);
+bool SendAccurateCurrentFiles(JobControlRecord* jcr);
+void GenerateBackupSummary(JobControlRecord* jcr,
+                           ClientDbRecord* cr,
+                           int msg_type,
+                           const char* TermMsg);
 
-char* StorageAddressToContact(ClientResource *client, StorageResource *store);
-char* ClientAddressToContact(ClientResource *client, StorageResource *store);
-char* StorageAddressToContact(StorageResource *read_storage, StorageResource *write_storage);
+char* StorageAddressToContact(ClientResource* client, StorageResource* store);
+char* ClientAddressToContact(ClientResource* client, StorageResource* store);
+char* StorageAddressToContact(StorageResource* read_storage,
+                              StorageResource* write_storage);
 
 } /* namespace directordaemon */
-#endif // BAREOS_DIRD_BACKUP_H_
+#endif  // BAREOS_DIRD_BACKUP_H_

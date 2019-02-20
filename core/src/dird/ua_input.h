@@ -24,14 +24,15 @@
 
 namespace directordaemon {
 
-bool GetCmd(UaContext *ua, const char *prompt, bool subprompt = false);
-bool GetPint(UaContext *ua, const char *prompt);
-bool GetYesno(UaContext *ua, const char *prompt);
-bool IsYesno(char *val, bool *ret);
-bool GetConfirmation(UaContext *ua, const char *prompt = _("Confirm (yes/no): "));
-int GetEnabled(UaContext *ua, const char *val);
-void ParseUaArgs(UaContext *ua);
-bool IsCommentLegal(UaContext *ua, const char *name);
+bool GetCmd(UaContext* ua, const char* prompt, bool subprompt = false);
+bool GetPint(UaContext* ua, const char* prompt);
+bool GetYesno(UaContext* ua, const char* prompt);
+bool IsYesno(char* val, bool* ret);
+bool GetConfirmation(UaContext* ua,
+                     const char* prompt = _("Confirm (yes/no): "));
+int GetEnabled(UaContext* ua, const char* val);
+void ParseUaArgs(UaContext* ua);
+bool IsCommentLegal(UaContext* ua, const char* name);
 
 } /* namespace directordaemon */
-#endif // BAREOS_DIRD_UA_INPUT_H_
+#endif  // BAREOS_DIRD_UA_INPUT_H_

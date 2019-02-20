@@ -29,20 +29,20 @@
 #ifndef TRAY_MONITOR_H
 #define TRAY_MONITOR_H
 
-struct cl_opts
-{
-   char *configfile_;
-   bool test_config_only_;
-   bool export_config_;
-   bool export_config_schema_;
-   bool do_connection_test_only_;
-   cl_opts () {
-      configfile_ = nullptr;
-      test_config_only_ = false;
-      export_config_ = false;
-      export_config_schema_ = false;
-      do_connection_test_only_ = false;
-   }
+struct cl_opts {
+  char* configfile_;
+  bool test_config_only_;
+  bool export_config_;
+  bool export_config_schema_;
+  bool do_connection_test_only_;
+  cl_opts()
+  {
+    configfile_ = nullptr;
+    test_config_only_ = false;
+    export_config_ = false;
+    export_config_schema_ = false;
+    do_connection_test_only_ = false;
+  }
 };
 
 class MonitorItem;
@@ -51,4 +51,4 @@ class MonitorResource;
 void refresh_item();
 const MonitorResource* getMonitor();
 
-#endif  /* TRAY_MONITOR_H */
+#endif /* TRAY_MONITOR_H */

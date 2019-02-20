@@ -39,56 +39,55 @@ class MonitorTab;
 class MonitorItem;
 class SystemTrayIcon;
 
-class MainWindow : public QMainWindow
-{
-   Q_OBJECT
+class MainWindow : public QMainWindow {
+  Q_OBJECT
 
-public:
-   static MainWindow* instance();
-   static void destruct();
+ public:
+  static MainWindow* instance();
+  static void destruct();
 
-   void addTabs(QStringList tabRefs);
+  void addTabs(QStringList tabRefs);
 
-private:
-   explicit MainWindow(QWidget *parent = 0);
-   Q_DISABLE_COPY(MainWindow);
-   ~MainWindow();
+ private:
+  explicit MainWindow(QWidget* parent = 0);
+  Q_DISABLE_COPY(MainWindow);
+  ~MainWindow();
 
-   QPlainTextEdit* getTextEdit(const QString& tabRef);
-   static MainWindow* mainWindowSingleton;
-   static bool already_destroyed;
+  QPlainTextEdit* getTextEdit(const QString& tabRef);
+  static MainWindow* mainWindowSingleton;
+  static bool already_destroyed;
 
-   Ui::MainWindow *ui;
-   QMap<QString,MonitorTab*>* monitorTabMap;
-   SystemTrayIcon* systemTrayIcon;
+  Ui::MainWindow* ui;
+  QMap<QString, MonitorTab*>* monitorTabMap;
+  SystemTrayIcon* systemTrayIcon;
 
-   QStringList tabs;
-   int nTabs;
-   bool *bRefs;
+  QStringList tabs;
+  int nTabs;
+  bool* bRefs;
 
-public slots:
-   /* auto-connected slots to the UI                */
-   void on_pushButton_Close_clicked();
-   /* ********************************************* */
+ public slots:
+  /* auto-connected slots to the UI                */
+  void on_pushButton_Close_clicked();
+  /* ********************************************* */
 
-   /* auto-connected slots to the TrayMenu Actions */
-   void on_TrayMenu_About_triggered();
-   void on_TrayMenu_Quit_triggered();
-   void on_TrayMenu_Display_triggered();
-   /* ********************************************* */
+  /* auto-connected slots to the TrayMenu Actions */
+  void on_TrayMenu_About_triggered();
+  void on_TrayMenu_Quit_triggered();
+  void on_TrayMenu_Display_triggered();
+  /* ********************************************* */
 
-   /* auto-connected slots to the SystemTrayIcon    */
-   void on_SystemTrayIcon_activated(QSystemTrayIcon::ActivationReason);
-   /* ********************************************* */
+  /* auto-connected slots to the SystemTrayIcon    */
+  void on_SystemTrayIcon_activated(QSystemTrayIcon::ActivationReason);
+  /* ********************************************* */
 
-   void onShowStatusbarMessage(QString);
-   void onAppendText(QString, QString);
-   void onClearText(const QString& tabRef);
-   void onStatusChanged(const QString& tabRef, int state);
-   void onFdJobIsRunning(bool running);
+  void onShowStatusbarMessage(QString);
+  void onAppendText(QString, QString);
+  void onClearText(const QString& tabRef);
+  void onStatusChanged(const QString& tabRef, int state);
+  void onFdJobIsRunning(bool running);
 
-signals:
-   void refreshItems();
+ signals:
+  void refreshItems();
 };
 
-#endif // MAINWINDOW_H
+#endif  // MAINWINDOW_H

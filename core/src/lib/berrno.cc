@@ -36,67 +36,65 @@
 #include "lib/bsys.h"
 
 #ifndef HAVE_WIN32
-extern const char *get_signal_name(int sig);
+extern const char* get_signal_name(int sig);
 extern int num_execvp_errors;
 extern int execvp_errors[];
 #endif
 
-const char *BErrNo::bstrerror()
+const char* BErrNo::bstrerror()
 {
-   *buf_ = 0;
+  *buf_ = 0;
 #ifdef HAVE_WIN32
-   if (berrno_ & b_errno_win32) {
-      FormatWin32Message();
-      return (const char *)buf_;
-   }
+  if (berrno_ & b_errno_win32) {
+    FormatWin32Message();
+    return (const char*)buf_;
+  }
 #else
-   int status = 0;
+  int status = 0;
 
-   if (berrno_ & b_errno_exit) {
-      status = (berrno_ & ~b_errno_exit);      /* remove bit */
-      if (status == 0) {
-         return _("Child exited normally.");    /* this really shouldn't happen */
+  if (berrno_ & b_errno_exit) {
+    status = (berrno_ & ~b_errno_exit); /* remove bit */
+    if (status == 0) {
+      return _("Child exited normally."); /* this really shouldn't happen */
+    } else {
+      /* Maybe an execvp failure */
+      if (status >= 200) {
+        if (status < 200 + num_execvp_errors) {
+          berrno_ = execvp_errors[status - 200];
+        } else {
+          return _("Unknown error during program execvp");
+        }
       } else {
-         /* Maybe an execvp failure */
-         if (status >= 200) {
-            if (status < 200 + num_execvp_errors) {
-               berrno_ = execvp_errors[status - 200];
-            } else {
-               return _("Unknown error during program execvp");
-            }
-         } else {
-            Mmsg(buf_, _("Child exited with code %d"), status);
-            return buf_;
-         }
-         /* If we drop out here, berrno_ is set to an execvp errno */
+        Mmsg(buf_, _("Child exited with code %d"), status);
+        return buf_;
       }
-   }
-   if (berrno_ & b_errno_signal) {
-      status = (berrno_ & ~b_errno_signal);        /* remove bit */
-      Mmsg(buf_, _("Child died from signal %d: %s"), status, get_signal_name(status));
-      return buf_;
-   }
+      /* If we drop out here, berrno_ is set to an execvp errno */
+    }
+  }
+  if (berrno_ & b_errno_signal) {
+    status = (berrno_ & ~b_errno_signal); /* remove bit */
+    Mmsg(buf_, _("Child died from signal %d: %s"), status,
+         get_signal_name(status));
+    return buf_;
+  }
 #endif
-   /* Normal errno */
-   if (b_strerror(berrno_, buf_, 1024) < 0) {
-      return _("Invalid errno. No error message possible.");
-   }
-   return buf_;
+  /* Normal errno */
+  if (b_strerror(berrno_, buf_, 1024) < 0) {
+    return _("Invalid errno. No error message possible.");
+  }
+  return buf_;
 }
 
 void BErrNo::FormatWin32Message()
 {
 #ifdef HAVE_WIN32
-   LPVOID msg;
-   FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-       FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-       NULL,
-       GetLastError(),
-       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-       (LPTSTR)&msg,
-       0,
-       NULL);
-   PmStrcpy(buf_, (const char *)msg);
-   LocalFree(msg);
+  LPVOID msg;
+  FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+                     FORMAT_MESSAGE_IGNORE_INSERTS,
+                 NULL, GetLastError(),
+                 MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msg, 0,
+                 NULL);
+  PmStrcpy(buf_, (const char*)msg);
+  LocalFree(msg);
 #endif
 }

@@ -27,95 +27,74 @@
 
 BStringList::BStringList() : std::vector<std::string>() { return; }
 
-BStringList::BStringList(const std::string &string_to_split, char separator)
-  : std::vector<std::string>()
+BStringList::BStringList(const std::string& string_to_split, char separator)
+    : std::vector<std::string>()
 {
   std::stringstream ss(string_to_split);
   std::string token;
-  while (std::getline(ss, token, separator)) {
-    push_back(token);
-  }
+  while (std::getline(ss, token, separator)) { push_back(token); }
 }
 
-BStringList::BStringList(const BStringList &other)
-  : std::vector<std::string>()
+BStringList::BStringList(const BStringList& other) : std::vector<std::string>()
 {
   *this = other;
 }
 
-BStringList& BStringList::operator=(const BStringList &rhs)
+BStringList& BStringList::operator=(const BStringList& rhs)
 {
   std::vector<std::string>::const_iterator it = rhs.cbegin();
-  while (it != rhs.cend()) {
-    push_back(*it++);
-  }
+  while (it != rhs.cend()) { push_back(*it++); }
   return *this;
 }
 
-BStringList& BStringList::operator << (const std::string &rhs)
+BStringList& BStringList::operator<<(const std::string& rhs)
 {
   push_back(rhs);
   return *this;
 }
 
-BStringList& BStringList::operator << (const int &rhs)
+BStringList& BStringList::operator<<(const int& rhs)
 {
   push_back(std::to_string(rhs));
   return *this;
 }
 
-BStringList& BStringList::operator << (const std::vector<std::string> &rhs)
+BStringList& BStringList::operator<<(const std::vector<std::string>& rhs)
 {
   Append(rhs);
   return *this;
 }
 
-BStringList& BStringList::operator << (const char *rhs)
+BStringList& BStringList::operator<<(const char* rhs)
 {
   emplace_back(rhs);
   return *this;
 }
 
-void BStringList::Append(const std::vector<std::string> &vec)
+void BStringList::Append(const std::vector<std::string>& vec)
 {
-  for (auto str : vec) {
-    push_back(str);
-  }
+  for (auto str : vec) { push_back(str); }
 }
 
 void BStringList::Append(char character)
 {
-  push_back(std::string(1,character));
+  push_back(std::string(1, character));
 }
 
-void BStringList::Append(const char *str)
-{
-  emplace_back(str);
-}
+void BStringList::Append(const char* str) { emplace_back(str); }
 
 void BStringList::PopFront()
 {
-  if (size() >= 1) {
-    erase(begin());
-  }
+  if (size() >= 1) { erase(begin()); }
 }
 
-std::string BStringList::Join(char separator) const
-{
-  return Join(&separator);
-}
+std::string BStringList::Join(char separator) const { return Join(&separator); }
 
-std::string BStringList::Join() const
-{
-  return Join(nullptr);
-}
+std::string BStringList::Join() const { return Join(nullptr); }
 
-std::string BStringList::JoinReadable() const
-{
-  return Join(' ');
-}
+std::string BStringList::JoinReadable() const { return Join(' '); }
 
-std::string BStringList::Join(const char *separator) const
+std::string BStringList::Join(const char* separator) const
 {
   std::vector<std::string>::const_iterator it = cbegin();
   std::string output;
@@ -123,9 +102,7 @@ std::string BStringList::Join(const char *separator) const
   while (it != cend()) {
     output += *it++;
     if (separator) {
-      if (it != cend()) {
-        output += *separator;
-      }
+      if (it != cend()) { output += *separator; }
     }
   }
   return output;

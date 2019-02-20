@@ -25,4 +25,4 @@
 int WaitForReadableFd(int fd, int sec, bool ignore_interupts);
 int WaitForWritableFd(int fd, int sec, bool ignore_interupts);
 
-#endif // BAREOS_LIB_BPOLL_H_
+#endif  // BAREOS_LIB_BPOLL_H_

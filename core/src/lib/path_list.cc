@@ -29,93 +29,88 @@
 #define debuglevel 50
 
 typedef struct PrivateCurDir {
-   hlink link;
-   char fname[1];
+  hlink link;
+  char fname[1];
 } CurDir;
 
 /*
  * Initialize the path hash table
  */
-htable *path_list_init()
+htable* path_list_init()
 {
-   htable *path_list;
-   CurDir *elt = NULL;
+  htable* path_list;
+  CurDir* elt = NULL;
 
-   path_list = (htable *)malloc(sizeof(htable));
+  path_list = (htable*)malloc(sizeof(htable));
 
-   /*
-    * Hard to know in advance how many directories will be stored in this hash
-    */
-   path_list->init(elt, &elt->link, 10000);
+  /*
+   * Hard to know in advance how many directories will be stored in this hash
+   */
+  path_list->init(elt, &elt->link, 10000);
 
-   return path_list;
+  return path_list;
 }
 
 /*
- * Add a path to the hash when we create a directory with the replace=NEVER option
+ * Add a path to the hash when we create a directory with the replace=NEVER
+ * option
  */
-bool PathListAdd(htable *path_list, uint32_t len, const char *fname)
+bool PathListAdd(htable* path_list, uint32_t len, const char* fname)
 {
-   CurDir *item;
+  CurDir* item;
 
-   if (!path_list) {
-      return false;
-   }
+  if (!path_list) { return false; }
 
-   /*
-    * We store CurDir, fname in the same chunk
-    */
-   item = (CurDir *)path_list->hash_malloc(sizeof(CurDir) + len + 1);
+  /*
+   * We store CurDir, fname in the same chunk
+   */
+  item = (CurDir*)path_list->hash_malloc(sizeof(CurDir) + len + 1);
 
-   memset(item, 0, sizeof(CurDir));
-   memcpy(item->fname, fname, len + 1);
+  memset(item, 0, sizeof(CurDir));
+  memcpy(item->fname, fname, len + 1);
 
-   path_list->insert(item->fname, item);
+  path_list->insert(item->fname, item);
 
-   Dmsg1(debuglevel, "add fname=<%s>\n", fname);
+  Dmsg1(debuglevel, "add fname=<%s>\n", fname);
 
-   return true;
+  return true;
 }
 
-bool PathListLookup(htable *path_list, const char *fname)
+bool PathListLookup(htable* path_list, const char* fname)
 {
-   int len;
-   bool found = false;
-   POOLMEM *filename;
+  int len;
+  bool found = false;
+  POOLMEM* filename;
 
-   if (!path_list) {
-      return false;
-   }
+  if (!path_list) { return false; }
 
-   filename = GetPoolMemory(PM_FNAME);
-   PmStrcpy(filename, fname);
+  filename = GetPoolMemory(PM_FNAME);
+  PmStrcpy(filename, fname);
 
-   /*
-    * Strip trailing /
-    */
-   len = strlen(filename);
-   if (len == 0) {
-      FreePoolMemory(filename);
-      return false;
-   }
-   len--;
+  /*
+   * Strip trailing /
+   */
+  len = strlen(filename);
+  if (len == 0) {
+    FreePoolMemory(filename);
+    return false;
+  }
+  len--;
 
-   if (filename[len] == '/') {       /* strip any trailing slash */
-      filename[len] = 0;
-   }
+  if (filename[len] == '/') { /* strip any trailing slash */
+    filename[len] = 0;
+  }
 
-   CurDir *temp = (CurDir *)path_list->lookup(filename);
-   if (temp) {
-      found = true;
-   }
+  CurDir* temp = (CurDir*)path_list->lookup(filename);
+  if (temp) { found = true; }
 
-   Dmsg2(debuglevel, "lookup <%s> %s\n", filename, found ? "ok" : "not ok");
+  Dmsg2(debuglevel, "lookup <%s> %s\n", filename, found ? "ok" : "not ok");
 
-   return found;
+  return found;
 }
 
-void FreePathList(htable *path_list)
+void FreePathList(htable* path_list)
 {
-   path_list->destroy();
-   free(path_list);
+  path_list->destroy();
+  free(path_list);
 }

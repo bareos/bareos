@@ -27,15 +27,15 @@ struct ndmlog;
 
 namespace directordaemon {
 
-bool FillBackupEnvironment(JobControlRecord *jcr,
-                             IncludeExcludeItem *ie,
-                             char *filesystem,
-                             struct ndm_job_param *job);
-int NativeToNdmpLevel(JobControlRecord *jcr, char *filesystem);
-void RegisterCallbackHooks(struct ndmlog *ixlog);
-void UnregisterCallbackHooks(struct ndmlog *ixlog);
-void ProcessFhdb(struct ndmlog *ixlog);
-void NdmpBackupCleanup(JobControlRecord *jcr, int TermCode);
+bool FillBackupEnvironment(JobControlRecord* jcr,
+                           IncludeExcludeItem* ie,
+                           char* filesystem,
+                           struct ndm_job_param* job);
+int NativeToNdmpLevel(JobControlRecord* jcr, char* filesystem);
+void RegisterCallbackHooks(struct ndmlog* ixlog);
+void UnregisterCallbackHooks(struct ndmlog* ixlog);
+void ProcessFhdb(struct ndmlog* ixlog);
+void NdmpBackupCleanup(JobControlRecord* jcr, int TermCode);
 
 } /* namespace directordaemon */
-#endif // BAREOS_DIRD_NDMP_DMA_BACKUP_COMMON_H_
+#endif  // BAREOS_DIRD_NDMP_DMA_BACKUP_COMMON_H_

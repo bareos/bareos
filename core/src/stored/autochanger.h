@@ -29,14 +29,21 @@ class DeviceControlRecord;
 class Device;
 
 bool InitAutochangers();
-int AutoloadDevice(DeviceControlRecord *dcr, int writing, BareosSocket *dir);
-bool AutochangerCmd(DeviceControlRecord *dcr, BareosSocket *dir, const char *cmd);
-bool AutochangerTransferCmd(DeviceControlRecord *dcr, BareosSocket *dir,
-                              slot_number_t src_slot, slot_number_t dst_slot);
-bool UnloadAutochanger(DeviceControlRecord *dcr, slot_number_t loaded, bool lock_set = false);
-bool UnloadDev(DeviceControlRecord *dcr, Device *dev, bool lock_set = false);
-slot_number_t GetAutochangerLoadedSlot(DeviceControlRecord *dcr, bool lock_set = false);
+int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir);
+bool AutochangerCmd(DeviceControlRecord* dcr,
+                    BareosSocket* dir,
+                    const char* cmd);
+bool AutochangerTransferCmd(DeviceControlRecord* dcr,
+                            BareosSocket* dir,
+                            slot_number_t src_slot,
+                            slot_number_t dst_slot);
+bool UnloadAutochanger(DeviceControlRecord* dcr,
+                       slot_number_t loaded,
+                       bool lock_set = false);
+bool UnloadDev(DeviceControlRecord* dcr, Device* dev, bool lock_set = false);
+slot_number_t GetAutochangerLoadedSlot(DeviceControlRecord* dcr,
+                                       bool lock_set = false);
 
 } /* namespace storagedaemon  */
 
-#endif // BAREOS_STORED_AUTOCHANGER_H_
+#endif  // BAREOS_STORED_AUTOCHANGER_H_

@@ -26,15 +26,15 @@
  */
 #ifdef HAVE_MINGW
 extern char win_os[];
-#define HOST_OS  "Linux"
+#define HOST_OS "Linux"
 #define DISTNAME "Cross-compile"
 #ifndef BAREOS
 #define BAREOS "Bareos"
 #endif
 #ifdef _WIN64
-# define DISTVER "Win64"
+#define DISTVER "Win64"
 #else
-# define DISTVER "Win32"
+#define DISTVER "Win32"
 #endif
 
 #else
@@ -42,9 +42,9 @@ extern char win_os[];
 extern char WIN_VERSION_LONG[];
 extern char WIN_VERSION[];
 
-#define HOST_OS  WIN_VERSION_LONG
+#define HOST_OS WIN_VERSION_LONG
 #define DISTNAME "MVS"
-#define DISTVER  WIN_VERSION
+#define DISTVER WIN_VERSION
 
 #endif
 

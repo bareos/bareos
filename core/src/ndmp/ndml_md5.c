@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2000
- *	Traakan, Inc., Los Altos, CA
- *	All rights reserved.
+ *      Traakan, Inc., Los Altos, CA
+ *      All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -68,92 +68,86 @@
 #include "md5.h"
 
 
-int
-ndmmd5_generate_challenge (char challenge[NDMP_MD5_CHALLENGE_LENGTH])
+int ndmmd5_generate_challenge(char challenge[NDMP_MD5_CHALLENGE_LENGTH])
 {
-	int			i;
+  int i;
 
-	NDMOS_MACRO_SRAND();
+  NDMOS_MACRO_SRAND();
 
-	for (i = 0; i < NDMP_MD5_CHALLENGE_LENGTH; i++) {
-		challenge[i] = NDMOS_MACRO_RAND() >> (i&7);
-	}
+  for (i = 0; i < NDMP_MD5_CHALLENGE_LENGTH; i++) {
+    challenge[i] = NDMOS_MACRO_RAND() >> (i & 7);
+  }
 
-	return 0;
+  return 0;
 }
 
 
-int
-ndmmd5_ok_digest (char challenge[NDMP_MD5_CHALLENGE_LENGTH],
-  char *clear_text_password,
-  char digest[NDMP_MD5_DIGEST_LENGTH])
+int ndmmd5_ok_digest(char challenge[NDMP_MD5_CHALLENGE_LENGTH],
+                     char* clear_text_password,
+                     char digest[NDMP_MD5_DIGEST_LENGTH])
 {
-	char		my_digest[16];
-	int		i;
+  char my_digest[16];
+  int i;
 
-	ndmmd5_digest (challenge, clear_text_password, my_digest);
+  ndmmd5_digest(challenge, clear_text_password, my_digest);
 
-	for (i = 0; i < NDMP_MD5_DIGEST_LENGTH; i++)
-		if (digest[i] != my_digest[i])
-			return 0;	/* Invalid */
+  for (i = 0; i < NDMP_MD5_DIGEST_LENGTH; i++)
+    if (digest[i] != my_digest[i]) return 0; /* Invalid */
 
-	return 1;	/* OK */
+  return 1; /* OK */
 }
 
 
-int
-ndmmd5_digest (char challenge[NDMP_MD5_CHALLENGE_LENGTH],
-  char *clear_text_password,
-  char digest[NDMP_MD5_DIGEST_LENGTH])
+int ndmmd5_digest(char challenge[NDMP_MD5_CHALLENGE_LENGTH],
+                  char* clear_text_password,
+                  char digest[NDMP_MD5_DIGEST_LENGTH])
 {
-	int		pwlength = strlen (clear_text_password);
-	struct MD5Context	mdContext;
-	unsigned char	message[128];
+  int pwlength = strlen(clear_text_password);
+  struct MD5Context mdContext;
+  unsigned char message[128];
 
-	/*
-	 * The spec describes the construction of the 128 byte
-	 * "message" (probably MD5-speak). It is described as:
-	 *
-	 *	PASSWORD PADDING CHALLENGE PADDING PASSWORD
-	 *
-	 * Each PADDING is defined as zeros of length 64 minus pwlen.
-	 *
-	 * A pwlen of over 32 would result in not all fields
-	 * fitting. This begs a question of the order elements
-	 * are inserted into the message[]. You get a different
-	 * message[] if you insert the PASSWORD(s) before
-	 * the CHALLENGE than you get the other way around.
-	 *
-	 * A pwlen of over 64 would result in PADDING of negative
-	 * length, which could cause crash boom bang.
-	 *
-	 * The resolution of this vaguery implemented here is to
-	 * only use the first 32 bytes of the password. All
-	 * fields fit. Order dependencies are avoided.
-	 *
-	 * Final resolution is pending.
-	 */
-	if (pwlength > 32)
-		pwlength = 32;
+  /*
+   * The spec describes the construction of the 128 byte
+   * "message" (probably MD5-speak). It is described as:
+   *
+   *    PASSWORD PADDING CHALLENGE PADDING PASSWORD
+   *
+   * Each PADDING is defined as zeros of length 64 minus pwlen.
+   *
+   * A pwlen of over 32 would result in not all fields
+   * fitting. This begs a question of the order elements
+   * are inserted into the message[]. You get a different
+   * message[] if you insert the PASSWORD(s) before
+   * the CHALLENGE than you get the other way around.
+   *
+   * A pwlen of over 64 would result in PADDING of negative
+   * length, which could cause crash boom bang.
+   *
+   * The resolution of this vaguery implemented here is to
+   * only use the first 32 bytes of the password. All
+   * fields fit. Order dependencies are avoided.
+   *
+   * Final resolution is pending.
+   */
+  if (pwlength > 32) pwlength = 32;
 
-	/*
-	 * Compose the 128-byte buffer according to NDMP rules
-	 */
-	NDMOS_API_BZERO (message, sizeof message);
-	NDMOS_API_BCOPY (clear_text_password, &message[0], pwlength);
-	NDMOS_API_BCOPY (clear_text_password,
-				&message[128 - pwlength], pwlength);
-	NDMOS_API_BCOPY (challenge, &message[64 - pwlength], 64);
+  /*
+   * Compose the 128-byte buffer according to NDMP rules
+   */
+  NDMOS_API_BZERO(message, sizeof message);
+  NDMOS_API_BCOPY(clear_text_password, &message[0], pwlength);
+  NDMOS_API_BCOPY(clear_text_password, &message[128 - pwlength], pwlength);
+  NDMOS_API_BCOPY(challenge, &message[64 - pwlength], 64);
 
-	/*
-	 * Grind it up, ala MD5
-	 */
-	MD5Init(&mdContext);
-	MD5Update(&mdContext, message, 128);
-	MD5Final((unsigned char *)digest, &mdContext);
+  /*
+   * Grind it up, ala MD5
+   */
+  MD5Init(&mdContext);
+  MD5Update(&mdContext, message, 128);
+  MD5Final((unsigned char*)digest, &mdContext);
 
-	/*
-	 * ding! done
-	 */
-	return 0;
+  /*
+   * ding! done
+   */
+  return 0;
 }

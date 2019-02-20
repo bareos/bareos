@@ -22,7 +22,7 @@
 */
 
 class ConfigurationParser;
-ConfigurationParser *my_config = nullptr;
+ConfigurationParser* my_config = nullptr;
 
 namespace filedaemon {
 
@@ -31,9 +31,9 @@ bool backup_only_mode = false;
 bool restore_only_mode = false;
 
 struct ClientResource;
-ClientResource *me = nullptr;
+ClientResource* me = nullptr;
 
-void *start_heap = nullptr;
-char *configfile = nullptr;
+void* start_heap = nullptr;
+char* configfile = nullptr;
 
 } /* namespace filedaemon */

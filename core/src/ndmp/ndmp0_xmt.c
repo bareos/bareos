@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1998,1999,2000
- *	Traakan, Inc., Los Altos, CA
- *	All rights reserved.
+ *      Traakan, Inc., Los Altos, CA
+ *      All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -39,29 +39,26 @@
 #include "ndmprotocol.h"
 
 
+#define xdr_ndmp0_connect_close_request xdr_void
+#define xdr_ndmp0_connect_close_reply xdr_void
+
+#define xdr_ndmp0_notify_connected_reply 0
 
 
-
-#define xdr_ndmp0_connect_close_request		xdr_void
-#define xdr_ndmp0_connect_close_reply		xdr_void
-
-#define xdr_ndmp0_notify_connected_reply	0
-
-
-
-
-struct ndmp_xdr_message_table	ndmp0_xdr_message_table[] = {
-   { NDMP0_CONNECT_OPEN,
-     xdr_ndmp0_connect_open_request,
-     xdr_ndmp0_connect_open_reply,
-   },
-   { NDMP0_CONNECT_CLOSE,
-     xdr_ndmp0_connect_close_request,
-     xdr_ndmp0_connect_close_reply,
-   },
-   { NDMP0_NOTIFY_CONNECTED,
-     xdr_ndmp0_notify_connected_request,
-     xdr_ndmp0_notify_connected_reply,
-   },
-   {0}
-};
+struct ndmp_xdr_message_table ndmp0_xdr_message_table[] = {
+    {
+        NDMP0_CONNECT_OPEN,
+        xdr_ndmp0_connect_open_request,
+        xdr_ndmp0_connect_open_reply,
+    },
+    {
+        NDMP0_CONNECT_CLOSE,
+        xdr_ndmp0_connect_close_request,
+        xdr_ndmp0_connect_close_reply,
+    },
+    {
+        NDMP0_NOTIFY_CONNECTED,
+        xdr_ndmp0_notify_connected_request,
+        xdr_ndmp0_notify_connected_reply,
+    },
+    {0}};

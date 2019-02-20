@@ -24,10 +24,13 @@
 
 namespace directordaemon {
 
-bool DoMigration(JobControlRecord *jcr);
-bool DoMigrationInit(JobControlRecord *jcr);
-void MigrationCleanup(JobControlRecord *jcr, int TermCode);
-bool SetMigrationWstorage(JobControlRecord *jcr, PoolResource *pool, PoolResource *next_pool, const char *where);
+bool DoMigration(JobControlRecord* jcr);
+bool DoMigrationInit(JobControlRecord* jcr);
+void MigrationCleanup(JobControlRecord* jcr, int TermCode);
+bool SetMigrationWstorage(JobControlRecord* jcr,
+                          PoolResource* pool,
+                          PoolResource* next_pool,
+                          const char* where);
 
 } /* namespace directordaemon */
-#endif // BAREOS_DIRD_MIGRATION_H_
+#endif  // BAREOS_DIRD_MIGRATION_H_

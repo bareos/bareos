@@ -22,12 +22,12 @@
 #define BAREOS_LIB_CRYPTO_OPENSSL_H_
 
 #ifdef HAVE_OPENSSL
-void OpensslPostErrors(int type, const char *errstring);
-void OpensslPostErrors(JobControlRecord *jcr, int type, const char *errstring);
+void OpensslPostErrors(int type, const char* errstring);
+void OpensslPostErrors(JobControlRecord* jcr, int type, const char* errstring);
 int OpensslInitThreads(void);
 void OpensslCleanupThreads(void);
 int OpensslSeedPrng(void);
 int OpensslSavePrng(void);
 #endif /* HAVE_OPENSSL */
 
-#endif // BAREOS_LIB_CRYPTO_OPENSSL_H_
+#endif  // BAREOS_LIB_CRYPTO_OPENSSL_H_

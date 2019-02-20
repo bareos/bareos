@@ -33,12 +33,12 @@
 /**
  * Compression algorithm signature. 4 letters as a 32bits integer
  */
-#define COMPRESS_NONE  0x4e4f4e45  /* used for incompressible block */
-#define COMPRESS_GZIP  0x475a4950
+#define COMPRESS_NONE 0x4e4f4e45 /* used for incompressible block */
+#define COMPRESS_GZIP 0x475a4950
 #define COMPRESS_LZO1X 0x4c5a4f58
-#define COMPRESS_FZFZ  0x465A465A
-#define COMPRESS_FZ4L  0x465A344C
-#define COMPRESS_FZ4H  0x465A3448
+#define COMPRESS_FZFZ 0x465A465A
+#define COMPRESS_FZ4L 0x465A344C
+#define COMPRESS_FZ4H 0x465A3448
 
 /**
  * Compression header version
@@ -47,10 +47,10 @@
 
 /* Compressed data stream header */
 typedef struct {
-   uint32_t magic;      /* compression algo used in this compressed data stream */
-   uint16_t level;      /* compression level used */
-   uint16_t version;    /* for futur evolution */
-   uint32_t size;       /* compressed size of the original data */
+  uint32_t magic;   /* compression algo used in this compressed data stream */
+  uint16_t level;   /* compression level used */
+  uint16_t version; /* for futur evolution */
+  uint32_t size;    /* compressed size of the original data */
 } comp_stream_header;
 
 #endif /* BAREOS_INCLUDE_CH_H_ */

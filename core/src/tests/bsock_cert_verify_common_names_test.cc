@@ -25,21 +25,22 @@
 
 TEST(bsock, config_tls_cert_verify_common_names_list_test)
 {
-   alist *list = New(alist(3, owned_by_alist));
-   const char *cstrings[3] = { "123", "456", "789" };
-   list->append(bstrdup(cstrings[0]));
-   list->append(bstrdup(cstrings[1]));
-   list->append(bstrdup(cstrings[2]));
+  alist* list = New(alist(3, owned_by_alist));
+  const char* cstrings[3] = {"123", "456", "789"};
+  list->append(bstrdup(cstrings[0]));
+  list->append(bstrdup(cstrings[1]));
+  list->append(bstrdup(cstrings[2]));
 
-   TlsConfigCert tls_config_cert;
+  TlsConfigCert tls_config_cert;
 
-   /* list is destroyed by destructor of TlsConfigCert */
-   tls_config_cert.allowed_certificate_common_names_ = list;
+  /* list is destroyed by destructor of TlsConfigCert */
+  tls_config_cert.allowed_certificate_common_names_ = list;
 
-   std::vector<std::string> vec = tls_config_cert.AllowedCertificateCommonNames();
+  std::vector<std::string> vec =
+      tls_config_cert.AllowedCertificateCommonNames();
 
-   EXPECT_EQ(vec.size(), 3);
-   EXPECT_EQ(vec[0], std::string("123"));
-   EXPECT_EQ(vec[1], std::string("456"));
-   EXPECT_EQ(vec[2], std::string("789"));
+  EXPECT_EQ(vec.size(), 3);
+  EXPECT_EQ(vec[0], std::string("123"));
+  EXPECT_EQ(vec[1], std::string("456"));
+  EXPECT_EQ(vec[2], std::string("789"));
 }

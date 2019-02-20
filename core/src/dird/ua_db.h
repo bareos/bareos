@@ -24,14 +24,22 @@
 
 namespace directordaemon {
 
-bool OpenClientDb(UaContext *ua, bool use_private = false);
-bool OpenDb(UaContext *ua, bool use_private = false);
-void CloseDb(UaContext *ua);
-int CreatePool(JobControlRecord *jcr, BareosDb *db, PoolResource *pool, e_pool_op op);
-void SetPoolDbrDefaultsInMediaDbr(MediaDbRecord *mr, PoolDbRecord *pr);
-bool SetPooldbrReferences(JobControlRecord *jcr, BareosDb *db, PoolDbRecord *pr, PoolResource *pool);
-void SetPooldbrFromPoolres(PoolDbRecord *pr, PoolResource *pool, e_pool_op op);
-int UpdatePoolReferences(JobControlRecord *jcr, BareosDb *db, PoolResource *pool);
+bool OpenClientDb(UaContext* ua, bool use_private = false);
+bool OpenDb(UaContext* ua, bool use_private = false);
+void CloseDb(UaContext* ua);
+int CreatePool(JobControlRecord* jcr,
+               BareosDb* db,
+               PoolResource* pool,
+               e_pool_op op);
+void SetPoolDbrDefaultsInMediaDbr(MediaDbRecord* mr, PoolDbRecord* pr);
+bool SetPooldbrReferences(JobControlRecord* jcr,
+                          BareosDb* db,
+                          PoolDbRecord* pr,
+                          PoolResource* pool);
+void SetPooldbrFromPoolres(PoolDbRecord* pr, PoolResource* pool, e_pool_op op);
+int UpdatePoolReferences(JobControlRecord* jcr,
+                         BareosDb* db,
+                         PoolResource* pool);
 
 } /* namespace directordaemon */
-#endif // BAREOS_DIRD_UA_DB_H_
+#endif  // BAREOS_DIRD_UA_DB_H_

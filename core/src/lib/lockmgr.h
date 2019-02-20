@@ -22,13 +22,13 @@
 #ifndef BAREOS_LIB_LOCKMGR_H_
 #define BAREOS_LIB_LOCKMGR_H_ 1
 
-#define PRIO_SD_VOL_LIST      0            /* vol_list_lock */
-#define PRIO_SD_ACH_ACCESS    16           /* autochanger lock mutex */
+#define PRIO_SD_VOL_LIST 0    /* vol_list_lock */
+#define PRIO_SD_ACH_ACCESS 16 /* autochanger lock mutex */
 
 #include <mutex>
 
-void Lmgr_p(pthread_mutex_t *m);
-void Lmgr_v(pthread_mutex_t *m);
+void Lmgr_p(pthread_mutex_t* m);
+void Lmgr_v(pthread_mutex_t* m);
 
 #define P(x) Lmgr_p(&(x))
 #define V(x) Lmgr_v(&(x))

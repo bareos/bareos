@@ -21,6 +21,6 @@
 #ifndef BAREOS_FINDLIB_DRIVETYPE_H_
 #define BAREOS_FINDLIB_DRIVETYPE_H_
 
-bool Drivetype(const char *fname, char *fs, int fslen);
+bool Drivetype(const char* fname, char* fs, int fslen);
 
-#endif // BAREOS_FINDLIB_DRIVETYPE_H_
+#endif  // BAREOS_FINDLIB_DRIVETYPE_H_

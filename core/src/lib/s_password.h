@@ -26,18 +26,19 @@
 
 enum password_encoding
 {
-   p_encoding_undefined,
-   p_encoding_clear,
-   p_encoding_md5
+  p_encoding_undefined,
+  p_encoding_clear,
+  p_encoding_md5
 };
 
 struct s_password {
-   enum password_encoding encoding;
-   char *value;
-   s_password() {
-     encoding = p_encoding_undefined;
-     value = nullptr;
-   }
+  enum password_encoding encoding;
+  char* value;
+  s_password()
+  {
+    encoding = p_encoding_undefined;
+    value = nullptr;
+  }
 };
 
 #endif /* BAREOS_LIB_S_PASSWORD_H_ */

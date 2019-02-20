@@ -23,4 +23,4 @@
 
 void InitializeJson();
 
-#endif // BAREOS_LIB_JSON_H_
+#endif  // BAREOS_LIB_JSON_H_

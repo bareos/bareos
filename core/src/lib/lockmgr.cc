@@ -23,32 +23,36 @@
 #include "lib/edit.h"
 
 #undef ASSERT
-#define ASSERT(x) if (!(x)) { \
-   char *jcr = NULL; \
-   FPmsg3(000, _("ASSERT failed at %s:%i: %s\n"), __FILE__, __LINE__, #x); \
-   jcr[0] = 0; }
+#define ASSERT(x)                                                           \
+  if (!(x)) {                                                               \
+    char* jcr = NULL;                                                       \
+    FPmsg3(000, _("ASSERT failed at %s:%i: %s\n"), __FILE__, __LINE__, #x); \
+    jcr[0] = 0;                                                             \
+  }
 
-#define ASSERT_p(x,f,l) if (!(x)) {              \
-   char *jcr = NULL; \
-   FPmsg3(000, _("ASSERT failed at %s:%i: %s \n"), f, l, #x); \
-   jcr[0] = 0; }
+#define ASSERT_p(x, f, l)                                      \
+  if (!(x)) {                                                  \
+    char* jcr = NULL;                                          \
+    FPmsg3(000, _("ASSERT failed at %s:%i: %s \n"), f, l, #x); \
+    jcr[0] = 0;                                                \
+  }
 
-void Lmgr_p(pthread_mutex_t *m)
+void Lmgr_p(pthread_mutex_t* m)
 {
-   int errstat;
-   if ((errstat=pthread_mutex_lock(m))) {
-      BErrNo be;
-      e_msg(__FILE__, __LINE__, M_ABORT, 0, _("Mutex lock failure. ERR=%s\n"),
-            be.bstrerror(errstat));
-   }
+  int errstat;
+  if ((errstat = pthread_mutex_lock(m))) {
+    BErrNo be;
+    e_msg(__FILE__, __LINE__, M_ABORT, 0, _("Mutex lock failure. ERR=%s\n"),
+          be.bstrerror(errstat));
+  }
 }
 
-void Lmgr_v(pthread_mutex_t *m)
+void Lmgr_v(pthread_mutex_t* m)
 {
-   int errstat;
-   if ((errstat=pthread_mutex_unlock(m))) {
-      BErrNo be;
-      e_msg(__FILE__, __LINE__, M_ABORT, 0, _("Mutex unlock failure. ERR=%s\n"),
-            be.bstrerror(errstat));
-   }
+  int errstat;
+  if ((errstat = pthread_mutex_unlock(m))) {
+    BErrNo be;
+    e_msg(__FILE__, __LINE__, M_ABORT, 0, _("Mutex unlock failure. ERR=%s\n"),
+          be.bstrerror(errstat));
+  }
 }

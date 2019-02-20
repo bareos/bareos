@@ -36,36 +36,38 @@ namespace storagedaemon {
 
 TEST(sd, sd_plugins)
 {
-   char plugin_dir[1000];
-   JobControlRecord mjcr1, mjcr2;
-   JobControlRecord *jcr1 = &mjcr1;
-   JobControlRecord *jcr2 = &mjcr2;
+  char plugin_dir[1000];
+  JobControlRecord mjcr1, mjcr2;
+  JobControlRecord* jcr1 = &mjcr1;
+  JobControlRecord* jcr2 = &mjcr2;
 
-   InitMsg(NULL, NULL);
+  InitMsg(NULL, NULL);
 
-   OSDependentInit();
+  OSDependentInit();
 
-   getcwd(plugin_dir, sizeof(plugin_dir)-1);
-   LoadSdPlugins(plugin_dir, NULL);
+  getcwd(plugin_dir, sizeof(plugin_dir) - 1);
+  LoadSdPlugins(plugin_dir, NULL);
 
-   jcr1->JobId = 111;
-   NewPlugins(jcr1);
+  jcr1->JobId = 111;
+  NewPlugins(jcr1);
 
-   jcr2->JobId = 222;
-   NewPlugins(jcr2);
+  jcr2->JobId = 222;
+  NewPlugins(jcr2);
 
-   EXPECT_EQ(GeneratePluginEvent(jcr1, bsdEventJobStart, (void *)"Start Job 1"), bRC_OK);
-   EXPECT_EQ(GeneratePluginEvent(jcr1, bsdEventJobEnd), bRC_OK);
-   EXPECT_EQ(GeneratePluginEvent(jcr2, bsdEventJobStart, (void *)"Start Job 1"), bRC_OK);
-   FreePlugins(jcr1);
-   EXPECT_EQ(GeneratePluginEvent(jcr2, bsdEventJobEnd), bRC_OK);
-   FreePlugins(jcr2);
+  EXPECT_EQ(GeneratePluginEvent(jcr1, bsdEventJobStart, (void*)"Start Job 1"),
+            bRC_OK);
+  EXPECT_EQ(GeneratePluginEvent(jcr1, bsdEventJobEnd), bRC_OK);
+  EXPECT_EQ(GeneratePluginEvent(jcr2, bsdEventJobStart, (void*)"Start Job 1"),
+            bRC_OK);
+  FreePlugins(jcr1);
+  EXPECT_EQ(GeneratePluginEvent(jcr2, bsdEventJobEnd), bRC_OK);
+  FreePlugins(jcr2);
 
-   UnloadSdPlugins();
+  UnloadSdPlugins();
 
-   TermMsg();
-   CloseMemoryPool();
-   sm_dump(false);
+  TermMsg();
+  CloseMemoryPool();
+  sm_dump(false);
 }
 
 } /* namespace storagedaemon */

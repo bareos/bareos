@@ -24,10 +24,10 @@
 
 namespace directordaemon {
 
-void *HandleUserAgentClientRequest(BareosSocket *user);
-UaContext *new_ua_context(JobControlRecord *jcr);
-JobControlRecord *new_control_jcr(const char *base_name, int job_type);
-void FreeUaContext(UaContext *ua);
+void* HandleUserAgentClientRequest(BareosSocket* user);
+UaContext* new_ua_context(JobControlRecord* jcr);
+JobControlRecord* new_control_jcr(const char* base_name, int job_type);
+void FreeUaContext(UaContext* ua);
 
 } /* namespace directordaemon */
-#endif // BAREOS_DIRD_UA_SERVER_H_
+#endif  // BAREOS_DIRD_UA_SERVER_H_

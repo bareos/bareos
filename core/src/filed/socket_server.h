@@ -25,8 +25,8 @@
 
 namespace filedaemon {
 
-void StartSocketServer(dlist *addrs);
-void StopSocketServer(bool wait=false);
+void StartSocketServer(dlist* addrs);
+void StopSocketServer(bool wait = false);
 
 } /* namespace filedaemon */
 

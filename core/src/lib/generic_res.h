@@ -34,44 +34,33 @@
  * Various message destinations.
  */
 static s_mdestination msg_destinations[] = {
-   { MD_SYSLOG, "syslog", false },
-   { MD_MAIL, "mail", true },
-   { MD_FILE, "file", true },
-   { MD_APPEND, "append", true },
-   { MD_STDOUT, "stdout", false },
-   { MD_STDERR, "stderr", false },
-   { MD_DIRECTOR, "director", true },
-   { MD_OPERATOR, "operator", true },
-   { MD_CONSOLE, "console", false },
-   { MD_MAIL_ON_ERROR, "mailonerror", true },
-   { MD_MAIL_ON_SUCCESS, "mailonsuccess", true },
-   { MD_CATALOG, "catalog", false },
-   { 0, NULL }
-};
+    {MD_SYSLOG, "syslog", false},
+    {MD_MAIL, "mail", true},
+    {MD_FILE, "file", true},
+    {MD_APPEND, "append", true},
+    {MD_STDOUT, "stdout", false},
+    {MD_STDERR, "stderr", false},
+    {MD_DIRECTOR, "director", true},
+    {MD_OPERATOR, "operator", true},
+    {MD_CONSOLE, "console", false},
+    {MD_MAIL_ON_ERROR, "mailonerror", true},
+    {MD_MAIL_ON_SUCCESS, "mailonsuccess", true},
+    {MD_CATALOG, "catalog", false},
+    {0, NULL}};
 
 /*
  * Various message types
  */
 static struct s_mtypes msg_types[] = {
-   { "debug", M_DEBUG },
-   { "abort", M_ABORT },
-   { "fatal", M_FATAL },
-   { "error", M_ERROR },
-   { "warning", M_WARNING },
-   { "info", M_INFO },
-   { "saved", M_SAVED },
-   { "notsaved", M_NOTSAVED },
-   { "skipped", M_SKIPPED },
-   { "mount", M_MOUNT },
-   { "Terminate", M_TERM },
-   { "restored", M_RESTORED },
-   { "security", M_SECURITY },
-   { "alert", M_ALERT },
-   { "volmgmt", M_VOLMGMT },
-   { "audit", M_AUDIT },
-   { "all", M_MAX + 1 },
-   { NULL, 0 }
-};
+    {"debug", M_DEBUG},       {"abort", M_ABORT},
+    {"fatal", M_FATAL},       {"error", M_ERROR},
+    {"warning", M_WARNING},   {"info", M_INFO},
+    {"saved", M_SAVED},       {"notsaved", M_NOTSAVED},
+    {"skipped", M_SKIPPED},   {"mount", M_MOUNT},
+    {"Terminate", M_TERM},    {"restored", M_RESTORED},
+    {"security", M_SECURITY}, {"alert", M_ALERT},
+    {"volmgmt", M_VOLMGMT},   {"audit", M_AUDIT},
+    {"all", M_MAX + 1},       {NULL, 0}};
 #endif /* DIRECTOR_DAEMON */
 
 /*
@@ -79,11 +68,9 @@ static struct s_mtypes msg_types[] = {
  *
  * tape_label label_code = token
  */
-static s_kw tapelabels[] = {
-   { "bareos", B_BAREOS_LABEL },
-   { "ansi", B_ANSI_LABEL },
-   { "ibm", B_IBM_LABEL },
-   { NULL, 0 }
-};
+static s_kw tapelabels[] = {{"bareos", B_BAREOS_LABEL},
+                            {"ansi", B_ANSI_LABEL},
+                            {"ibm", B_IBM_LABEL},
+                            {NULL, 0}};
 
 #endif /* BAREOS_LIB_GENERIC_RES_H_ */

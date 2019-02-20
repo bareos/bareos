@@ -29,19 +29,19 @@
 
 enum TlsPolicy : uint32_t
 {
-  kBnetTlsNone     = 0,   /*!< No TLS configured */
-  kBnetTlsEnabled  = 1,   /*!< TLS with certificates is allowed but not required */
-  kBnetTlsRequired = 2,   /*!< TLS with certificates is required */
-  kBnetTlsAuto     = 4,   /*!< TLS mode will be negotiated by ssl handshake */
-  kBnetTlsDeny     = 0xFF,/*!< TLS connection not allowed */
-  kBnetTlsUnknown  = 0xFE /*!< TLS connection not allowed */
+  kBnetTlsNone = 0,    /*!< No TLS configured */
+  kBnetTlsEnabled = 1, /*!< TLS with certificates is allowed but not required */
+  kBnetTlsRequired = 2,  /*!< TLS with certificates is required */
+  kBnetTlsAuto = 4,      /*!< TLS mode will be negotiated by ssl handshake */
+  kBnetTlsDeny = 0xFF,   /*!< TLS connection not allowed */
+  kBnetTlsUnknown = 0xFE /*!< TLS connection not allowed */
 };
 
 class TlsResource : public BareosResource {
  public:
   s_password password_;     /* UA server password */
   TlsConfigCert tls_cert_;  /* TLS structure */
-  std::string *cipherlist_; /* TLS Cipher List */
+  std::string* cipherlist_; /* TLS Cipher List */
   bool authenticate_;       /* Authenticate only with TLS */
   bool tls_enable_;
   bool tls_require_;

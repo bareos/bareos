@@ -24,22 +24,22 @@
 
 std::vector<std::string> TlsConfigCert::AllowedCertificateCommonNames() const
 {
-   std::vector<std::string> list;
+  std::vector<std::string> list;
 
-   if (allowed_certificate_common_names_) {
-      const char *s = nullptr;
-      foreach_alist(s, allowed_certificate_common_names_) {
-         list.push_back(std::string(s));
-      }
-   }
+  if (allowed_certificate_common_names_) {
+    const char* s = nullptr;
+    foreach_alist (s, allowed_certificate_common_names_) {
+      list.push_back(std::string(s));
+    }
+  }
 
-   return list;
+  return list;
 }
 
 TlsConfigCert::~TlsConfigCert()
 {
-   if (allowed_certificate_common_names_) {
-      delete allowed_certificate_common_names_;
-      allowed_certificate_common_names_ = nullptr;
-   }
+  if (allowed_certificate_common_names_) {
+    delete allowed_certificate_common_names_;
+    allowed_certificate_common_names_ = nullptr;
+  }
 }

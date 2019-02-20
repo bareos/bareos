@@ -25,16 +25,16 @@
 #define LogErrorMessage(msg) LogLastErrorMsg((msg), __FILE__, __LINE__)
 
 extern int BareosAppMain();
-extern void LogLastErrorMsg(const char *msg, const char *fname, int lineno);
-extern int BareosMain(int argc, char *argv[]);
+extern void LogLastErrorMsg(const char* msg, const char* fname, int lineno);
+extern int BareosMain(int argc, char* argv[]);
 extern BOOL ReportStatus(DWORD state, DWORD exitcode, DWORD waithint);
-extern void d_msg(const char *, int, int, const char *, ...);
-extern char *bareos_status(char *buf, int buf_len);
+extern void d_msg(const char*, int, int, const char*, ...);
+extern char* bareos_status(char* buf, int buf_len);
 
 /* service.cpp */
 bool postToBareos(UINT message, WPARAM wParam, LPARAM lParam);
 bool isAService();
-int installService(const char *svc);
+int installService(const char* svc);
 int removeService();
 int stopRunningBareos();
 int bareosServiceMain();

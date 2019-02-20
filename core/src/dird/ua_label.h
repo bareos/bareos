@@ -24,11 +24,16 @@
 
 namespace directordaemon {
 
-bool IsVolumeNameLegal(UaContext *ua, const char *name);
-bool SendLabelRequest(UaContext *ua,
-                        StorageResource *store, MediaDbRecord *mr, MediaDbRecord *omr, PoolDbRecord *pr,
-                        bool media_record_exists, bool relabel,
-                        drive_number_t drive, slot_number_t slot);
+bool IsVolumeNameLegal(UaContext* ua, const char* name);
+bool SendLabelRequest(UaContext* ua,
+                      StorageResource* store,
+                      MediaDbRecord* mr,
+                      MediaDbRecord* omr,
+                      PoolDbRecord* pr,
+                      bool media_record_exists,
+                      bool relabel,
+                      drive_number_t drive,
+                      slot_number_t slot);
 
 } /* namespace directordaemon */
-#endif // BAREOS_DIRD_UA_LABEL_H_
+#endif  // BAREOS_DIRD_UA_LABEL_H_

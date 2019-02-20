@@ -74,16 +74,16 @@ const int sd_debuglevel = 300;
 #define NAMELEN(dirent) (strlen((dirent)->d_name))
 #endif
 #ifndef HAVE_READDIR_R
-int Readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
+int Readdir_r(DIR* dirp, struct dirent* entry, struct dirent** result);
 #endif
 
 #include "sd_plugins.h"
 
-extern ConfigurationParser *my_config;  /* Our Global config */
+extern ConfigurationParser* my_config; /* Our Global config */
 
 namespace storagedaemon {
 
-extern bool forge_on;      /* Proceed inspite of I/O errors */
+extern bool forge_on; /* Proceed inspite of I/O errors */
 uint32_t new_VolSessionId();
 
 } /* namespace storagedaemon */

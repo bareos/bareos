@@ -50,8 +50,8 @@ class BareosSocket;
 class Tls;
 class BStringList;
 class QualifiedResourceNameTypeConverter;
-btimer_t *StartBsockTimer(BareosSocket *bs, uint32_t wait);
-void StopBsockTimer(btimer_t *wid);
+btimer_t* StartBsockTimer(BareosSocket* bs, uint32_t wait);
+void StopBsockTimer(btimer_t* wid);
 
 class BareosSocket : public SmartAlloc {
   /*
@@ -59,19 +59,19 @@ class BareosSocket : public SmartAlloc {
    *  bat breaks on some systems such as RedHat.
    */
  public:
-  int fd_;                            /* Socket file descriptor */
-  uint64_t read_seqno;                /* Read sequence number */
-  POOLMEM *msg;                       /* Message pool buffer */
-  POOLMEM *errmsg;                    /* Edited error message */
-  int spool_fd_;                      /* Spooling file */
-  IPADDR *src_addr;                   /* IP address to source connections from */
-  uint32_t in_msg_no;                 /* Input message number */
-  uint32_t out_msg_no;                /* Output message number */
-  int32_t message_length;             /* Message length */
-  volatile time_t timer_start;        /* Time started read/write */
-  int b_errno;                        /* BareosSocket errno */
-  int blocking_;                      /* Blocking state (0 = nonblocking, 1 = blocking) */
-  volatile int errors;                /* Incremented for each error on socket */
+  int fd_;                     /* Socket file descriptor */
+  uint64_t read_seqno;         /* Read sequence number */
+  POOLMEM* msg;                /* Message pool buffer */
+  POOLMEM* errmsg;             /* Edited error message */
+  int spool_fd_;               /* Spooling file */
+  IPADDR* src_addr;            /* IP address to source connections from */
+  uint32_t in_msg_no;          /* Input message number */
+  uint32_t out_msg_no;         /* Output message number */
+  int32_t message_length;      /* Message length */
+  volatile time_t timer_start; /* Time started read/write */
+  int b_errno;                 /* BareosSocket errno */
+  int blocking_;       /* Blocking state (0 = nonblocking, 1 = blocking) */
+  volatile int errors; /* Incremented for each error on socket */
   volatile bool suppress_error_msgs_; /* Set to suppress error messages */
   int sleep_time_after_authentication_error;
 
@@ -79,17 +79,17 @@ class BareosSocket : public SmartAlloc {
   struct sockaddr_in peer_addr; /* Peer's IP address */
   void SetTlsEstablished() { tls_established_ = true; }
   bool TlsEstablished() const { return tls_established_; }
-  std::shared_ptr<Tls> tls_conn; /* Associated tls connection */
+  std::shared_ptr<Tls> tls_conn;      /* Associated tls connection */
   std::unique_ptr<Tls> tls_conn_init; /* during initialization */
   BareosVersionNumber connected_daemon_version_;
 
  protected:
-  JobControlRecord *jcr_; /* JobControlRecord or NULL for error msgs */
+  JobControlRecord* jcr_; /* JobControlRecord or NULL for error msgs */
   std::shared_ptr<std::mutex> mutex_;
-  char *who_;            /* Name of daemon to which we are talking */
-  char *host_;           /* Host name/IP */
+  char* who_;            /* Name of daemon to which we are talking */
+  char* host_;           /* Host name/IP */
   int port_;             /* Desired port */
-  btimer_t *tid_;        /* Timer id */
+  btimer_t* tid_;        /* Timer id */
   boffset_t data_end_;   /* Offset of last valid data written */
   int32_t FileIndex_;    /* Last valid attr spool FI */
   bool timed_out_;       /* Timed out in read/write */
@@ -103,122 +103,132 @@ class BareosSocket : public SmartAlloc {
   btime_t last_tick_;    /* Last tick used by bwlimit */
   bool tls_established_; /* is true when tls connection is established */
 
-  virtual void FinInit(JobControlRecord * jcr, int sockfd, const char *who, const char *host, int port,
-                       struct sockaddr *lclient_addr) = 0;
-  virtual bool open(JobControlRecord *jcr, const char *name, const char *host, char *service,
-                     int port, utime_t heart_beat, int *fatal) = 0;
+  virtual void FinInit(JobControlRecord* jcr,
+                       int sockfd,
+                       const char* who,
+                       const char* host,
+                       int port,
+                       struct sockaddr* lclient_addr) = 0;
+  virtual bool open(JobControlRecord* jcr,
+                    const char* name,
+                    const char* host,
+                    char* service,
+                    int port,
+                    utime_t heart_beat,
+                    int* fatal) = 0;
 
  private:
-  bool TwoWayAuthenticate(JobControlRecord *jcr,
-                          const char *what,
-                          const char *identity,
-                          s_password &password,
-                          TlsResource *tls_resource,
+  bool TwoWayAuthenticate(JobControlRecord* jcr,
+                          const char* what,
+                          const char* identity,
+                          s_password& password,
+                          TlsResource* tls_resource,
                           bool initiated_by_remote);
-  bool DoTlsHandshakeWithClient(TlsConfigCert *local_tls_cert,
-                                JobControlRecord *jcr);
-  bool DoTlsHandshakeWithServer(TlsConfigCert *local_tls_cert,
-                                const char *identity,
-                                const char *password,
-                                JobControlRecord *jcr);
-  void ParameterizeTlsCert(Tls* tls_conn, TlsResource *tls_resource);
+  bool DoTlsHandshakeWithClient(TlsConfigCert* local_tls_cert,
+                                JobControlRecord* jcr);
+  bool DoTlsHandshakeWithServer(TlsConfigCert* local_tls_cert,
+                                const char* identity,
+                                const char* password,
+                                JobControlRecord* jcr);
+  void ParameterizeTlsCert(Tls* tls_conn, TlsResource* tls_resource);
 
  public:
   BareosSocket();
-  BareosSocket(const BareosSocket &other);
+  BareosSocket(const BareosSocket& other);
   virtual ~BareosSocket();
 
   /* Methods -- in bsock.c */
   //  void free_bsock();
   void CloseTlsConnectionAndFreeMemory();
-  virtual BareosSocket *clone()                           = 0;
-  virtual bool connect(JobControlRecord *jcr,
+  virtual BareosSocket* clone() = 0;
+  virtual bool connect(JobControlRecord* jcr,
                        int retry_interval,
                        utime_t max_retry_time,
                        utime_t heart_beat,
-                       const char *name,
-                       const char *host,
-                       char *service,
+                       const char* name,
+                       const char* host,
+                       char* service,
                        int port,
-                       bool verbose)                      = 0;
-  virtual int32_t recv()                                  = 0;
-  virtual bool send()                                     = 0;
-  virtual int32_t read_nbytes(char *ptr, int32_t nbytes)  = 0;
-  virtual int32_t write_nbytes(char *ptr, int32_t nbytes) = 0;
-  virtual void close()                                    = 0; /* close connection and destroy packet */
-  virtual void destroy()                                  = 0; /* destroy socket packet */
-  virtual int GetPeer(char *buf, socklen_t buflen)        = 0;
-  virtual bool SetBufferSize(uint32_t size, int rw)       = 0;
-  virtual int SetNonblocking()                            = 0;
-  virtual int SetBlocking()                               = 0;
-  virtual void RestoreBlocking(int flags)                 = 0;
-  virtual bool ConnectionReceivedTerminateSignal()        = 0;
+                       bool verbose) = 0;
+  virtual int32_t recv() = 0;
+  virtual bool send() = 0;
+  virtual int32_t read_nbytes(char* ptr, int32_t nbytes) = 0;
+  virtual int32_t write_nbytes(char* ptr, int32_t nbytes) = 0;
+  virtual void close() = 0;   /* close connection and destroy packet */
+  virtual void destroy() = 0; /* destroy socket packet */
+  virtual int GetPeer(char* buf, socklen_t buflen) = 0;
+  virtual bool SetBufferSize(uint32_t size, int rw) = 0;
+  virtual int SetNonblocking() = 0;
+  virtual int SetBlocking() = 0;
+  virtual void RestoreBlocking(int flags) = 0;
+  virtual bool ConnectionReceivedTerminateSignal() = 0;
   /*
    * Returns: 1 if data available, 0 if timeout, -1 if error
    */
-  virtual int WaitData(int sec, int usec = 0)     = 0;
+  virtual int WaitData(int sec, int usec = 0) = 0;
   virtual int WaitDataIntr(int sec, int usec = 0) = 0;
-  bool fsend(const char *, ...);
-  bool send(const char *msg_in, uint32_t nbytes);
+  bool fsend(const char*, ...);
+  bool send(const char* msg_in, uint32_t nbytes);
   void SetKillable(bool killable);
   bool signal(int signal);
-  const char *bstrerror(); /* last error on socket */
+  const char* bstrerror(); /* last error on socket */
   bool despool(void UpdateAttrSpoolSize(ssize_t size), ssize_t tsize);
-  bool ConsoleAuthenticateWithDirector(JobControlRecord *jcr,
-                                       const char *name,
-                                       s_password &password,
-                                       TlsResource *tls_resource,
-                                       BStringList &response_args,
-                                       uint32_t &response_id);
-  bool ParameterizeAndInitTlsConnection(TlsResource *tls_resource,
-                                        const char *identity,
-                                        const char *password,
+  bool ConsoleAuthenticateWithDirector(JobControlRecord* jcr,
+                                       const char* name,
+                                       s_password& password,
+                                       TlsResource* tls_resource,
+                                       BStringList& response_args,
+                                       uint32_t& response_id);
+  bool ParameterizeAndInitTlsConnection(TlsResource* tls_resource,
+                                        const char* identity,
+                                        const char* password,
                                         bool initiated_by_remote);
-  bool ParameterizeAndInitTlsConnectionAsAServer(ConfigurationParser *config);
+  bool ParameterizeAndInitTlsConnectionAsAServer(ConfigurationParser* config);
   bool DoTlsHandshake(TlsPolicy remote_tls_policy,
-                      TlsResource *tls_resource,
+                      TlsResource* tls_resource,
                       bool initiated_by_remote,
-                      const char *identity,
-                      const char *password,
-                      JobControlRecord *jcr);
-  bool DoTlsHandshakeAsAServer(
-                      ConfigurationParser *config,
-                      JobControlRecord *jcr = nullptr);
+                      const char* identity,
+                      const char* password,
+                      JobControlRecord* jcr);
+  bool DoTlsHandshakeAsAServer(ConfigurationParser* config,
+                               JobControlRecord* jcr = nullptr);
   bool SetLocking();   /* in bsock.c */
   void ClearLocking(); /* in bsock.c */
-  void SetSourceAddress(dlist *src_addr_list);
+  void SetSourceAddress(dlist* src_addr_list);
   void ControlBwlimit(int bytes); /* in bsock.c */
-  bool EvaluateCleartextBareosHello(bool &cleartext,
-                                    std::string &client_name_out,
-                                    std::string &r_code_str_out,
-                                    BareosVersionNumber &version_out) const;
-  void OutputCipherMessageString(std::function<void(const char *)>);
-  void GetCipherMessageString(std::string &str) const;
-  bool ReceiveAndEvaluateResponseMessage(uint32_t &id_out, BStringList &args_out);
-  bool FormatAndSendResponseMessage(uint32_t id, const BStringList &list_of_agruments);
-  bool FormatAndSendResponseMessage(uint32_t id, const std::string &str);
+  bool EvaluateCleartextBareosHello(bool& cleartext,
+                                    std::string& client_name_out,
+                                    std::string& r_code_str_out,
+                                    BareosVersionNumber& version_out) const;
+  void OutputCipherMessageString(std::function<void(const char*)>);
+  void GetCipherMessageString(std::string& str) const;
+  bool ReceiveAndEvaluateResponseMessage(uint32_t& id_out,
+                                         BStringList& args_out);
+  bool FormatAndSendResponseMessage(uint32_t id,
+                                    const BStringList& list_of_agruments);
+  bool FormatAndSendResponseMessage(uint32_t id, const std::string& str);
 
-  bool AuthenticateOutboundConnection(JobControlRecord *jcr,
-                                      const char *what,
-                                      const char *identity,
-                                      s_password &password,
-                                      TlsResource *tls_resource);
+  bool AuthenticateOutboundConnection(JobControlRecord* jcr,
+                                      const char* what,
+                                      const char* identity,
+                                      s_password& password,
+                                      TlsResource* tls_resource);
 
-  bool AuthenticateInboundConnection(JobControlRecord *jcr,
-                                     const char *what,
-                                     const char *name,
-                                     s_password &password,
-                                     TlsResource *tls_resource);
+  bool AuthenticateInboundConnection(JobControlRecord* jcr,
+                                     const char* what,
+                                     const char* name,
+                                     s_password& password,
+                                     TlsResource* tls_resource);
 
-  void SetJcr(JobControlRecord *jcr) { jcr_ = jcr; }
-  void SetWho(char *who) { who_ = who; }
-  void SetHost(char *host) { host_ = host; }
+  void SetJcr(JobControlRecord* jcr) { jcr_ = jcr; }
+  void SetWho(char* who) { who_ = who; }
+  void SetHost(char* host) { host_ = host; }
   void SetPort(int port) { port_ = port; }
-  char *who() { return who_; }
-  char *host() { return host_; }
+  char* who() { return who_; }
+  char* host() { return host_; }
   int port() { return port_; }
-  JobControlRecord *jcr() { return jcr_; }
-  JobControlRecord *get_jcr() { return jcr_; }
+  JobControlRecord* jcr() { return jcr_; }
+  JobControlRecord* get_jcr() { return jcr_; }
   bool IsSpooling() { return spool_; }
   bool IsTerminated() { return terminated_; }
   bool IsTimedOut() { return timed_out_; }
@@ -232,7 +242,7 @@ class BareosSocket : public SmartAlloc {
   {
     if (spool_ && FileIndex > FileIndex_) {
       FileIndex_ = FileIndex - 1;
-      data_end_  = lseek(spool_fd_, 0, SEEK_CUR);
+      data_end_ = lseek(spool_fd_, 0, SEEK_CUR);
     }
   }
   boffset_t get_data_end() { return data_end_; }
@@ -261,34 +271,34 @@ class BareosSocket : public SmartAlloc {
  */
 enum
 {
-  BNET_EOD          = -1,  /* End of data stream, new data may follow */
-  BNET_EOD_POLL     = -2,  /* End of data and poll all in one */
-  BNET_STATUS       = -3,  /* Send full status */
-  BNET_TERMINATE    = -4,  /* Conversation terminated, doing close() */
-  BNET_POLL         = -5,  /* Poll request, I'm hanging on a read */
-  BNET_HEARTBEAT    = -6,  /* Heartbeat Response requested */
-  BNET_HB_RESPONSE  = -7,  /* Only response permited to HB */
+  BNET_EOD = -1,           /* End of data stream, new data may follow */
+  BNET_EOD_POLL = -2,      /* End of data and poll all in one */
+  BNET_STATUS = -3,        /* Send full status */
+  BNET_TERMINATE = -4,     /* Conversation terminated, doing close() */
+  BNET_POLL = -5,          /* Poll request, I'm hanging on a read */
+  BNET_HEARTBEAT = -6,     /* Heartbeat Response requested */
+  BNET_HB_RESPONSE = -7,   /* Only response permited to HB */
   BNET_xxxxxxPROMPT = -8,  /* No longer used -- Prompt for subcommand */
-  BNET_BTIME        = -9,  /* Send UTC btime */
-  BNET_BREAK        = -10, /* Stop current command -- ctl-c */
+  BNET_BTIME = -9,         /* Send UTC btime */
+  BNET_BREAK = -10,        /* Stop current command -- ctl-c */
   BNET_START_SELECT = -11, /* Start of a selection list */
-  BNET_END_SELECT   = -12, /* End of a select list */
-  BNET_INVALID_CMD  = -13, /* Invalid command sent */
-  BNET_CMD_FAILED   = -14, /* Command failed */
-  BNET_CMD_OK       = -15, /* Command succeeded */
-  BNET_CMD_BEGIN    = -16, /* Start command execution */
+  BNET_END_SELECT = -12,   /* End of a select list */
+  BNET_INVALID_CMD = -13,  /* Invalid command sent */
+  BNET_CMD_FAILED = -14,   /* Command failed */
+  BNET_CMD_OK = -15,       /* Command succeeded */
+  BNET_CMD_BEGIN = -16,    /* Start command execution */
   BNET_MSGS_PENDING = -17, /* Messages pending */
-  BNET_MAIN_PROMPT  = -18, /* Server ready and waiting */
+  BNET_MAIN_PROMPT = -18,  /* Server ready and waiting */
   BNET_SELECT_INPUT = -19, /* Return selection input */
-  BNET_WARNING_MSG  = -20, /* Warning message */
-  BNET_ERROR_MSG    = -21, /* Error message -- command failed */
-  BNET_INFO_MSG     = -22, /* Info message -- status line */
-  BNET_RUN_CMD      = -23, /* Run command follows */
-  BNET_YESNO        = -24, /* Request yes no response */
-  BNET_START_RTREE  = -25, /* Start restore tree mode */
-  BNET_END_RTREE    = -26, /* End restore tree mode */
-  BNET_SUB_PROMPT   = -27, /* Indicate we are at a subprompt */
-  BNET_TEXT_INPUT   = -28  /* Get text input from user */
+  BNET_WARNING_MSG = -20,  /* Warning message */
+  BNET_ERROR_MSG = -21,    /* Error message -- command failed */
+  BNET_INFO_MSG = -22,     /* Info message -- status line */
+  BNET_RUN_CMD = -23,      /* Run command follows */
+  BNET_YESNO = -24,        /* Request yes no response */
+  BNET_START_RTREE = -25,  /* Start restore tree mode */
+  BNET_END_RTREE = -26,    /* End restore tree mode */
+  BNET_SUB_PROMPT = -27,   /* Indicate we are at a subprompt */
+  BNET_TEXT_INPUT = -28    /* Get text input from user */
 };
 
 #define BNET_SETBUF_READ 1  /* Arg for BnetSetBufferSize */
@@ -301,9 +311,9 @@ enum
  */
 enum
 {
-  BNET_SIGNAL  = -1,
+  BNET_SIGNAL = -1,
   BNET_HARDEOF = -2,
-  BNET_ERROR   = -3
+  BNET_ERROR = -3
 };
 
 #endif /* BAREOS_LIB_BSOCK_H_ */

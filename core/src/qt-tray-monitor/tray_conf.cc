@@ -53,17 +53,17 @@ static const std::string default_config_filename("tray-monitor.conf");
  * types. Note, these should be unique for each
  * daemon though not a requirement.
  */
-static CommonResourceHeader *sres_head[R_LAST - R_FIRST + 1];
-static CommonResourceHeader **res_head = sres_head;
+static CommonResourceHeader* sres_head[R_LAST - R_FIRST + 1];
+static CommonResourceHeader** res_head = sres_head;
 
-static bool SaveResource(int type, ResourceItem *items, int pass);
-static void FreeResource(CommonResourceHeader *sres, int type);
+static bool SaveResource(int type, ResourceItem* items, int pass);
+static void FreeResource(CommonResourceHeader* sres, int type);
 static void DumpResource(int type,
-                  CommonResourceHeader *reshdr,
-                  void sendit(void *sock, const char *fmt, ...),
-                  void *sock,
-                  bool hide_sensitive_data,
-                  bool verbose);
+                         CommonResourceHeader* reshdr,
+                         void sendit(void* sock, const char* fmt, ...),
+                         void* sock,
+                         bool hide_sensitive_data,
+                         bool verbose);
 /*
  * We build the current resource here as we are
  * scanning the resource configuration definition,
@@ -182,35 +182,37 @@ static ResourceTable resources[] = {
  * Dump contents of resource
  */
 static void DumpResource(int type,
-                  CommonResourceHeader *reshdr,
-                  void sendit(void *sock, const char *fmt, ...),
-                  void *sock,
-                  bool hide_sensitive_data,
-                  bool verbose)
+                         CommonResourceHeader* reshdr,
+                         void sendit(void* sock, const char* fmt, ...),
+                         void* sock,
+                         bool hide_sensitive_data,
+                         bool verbose)
 {
   PoolMem buf;
-  UnionOfResources *res = reinterpret_cast<UnionOfResources *>(reshdr);
-  BareosResource *resclass;
+  UnionOfResources* res = reinterpret_cast<UnionOfResources*>(reshdr);
+  BareosResource* resclass;
   bool recurse = true;
 
   if (res == NULL) {
-    sendit(sock, _("Warning: no \"%s\" resource (%d) defined.\n"), my_config->res_to_str(type), type);
+    sendit(sock, _("Warning: no \"%s\" resource (%d) defined.\n"),
+           my_config->res_to_str(type), type);
     return;
   }
   if (type < 0) { /* no recursion */
-    type    = -type;
+    type = -type;
     recurse = false;
   }
   switch (type) {
     default:
-      resclass = (BareosResource *)reshdr;
+      resclass = (BareosResource*)reshdr;
       resclass->PrintConfig(buf, *my_config);
       break;
   }
   sendit(sock, "%s", buf.c_str());
 
   if (recurse && res->res_monitor.hdr.next) {
-    my_config->DumpResourceCb_(type, res->res_monitor.hdr.next, sendit, sock, hide_sensitive_data, verbose);
+    my_config->DumpResourceCb_(type, res->res_monitor.hdr.next, sendit, sock,
+                               hide_sensitive_data, verbose);
   }
 }
 
@@ -221,52 +223,40 @@ static void DumpResource(int type,
  * resource chain is traversed.  Mainly we worry about freeing
  * allocated strings (names).
  */
-static void FreeResource(CommonResourceHeader *sres, int type)
+static void FreeResource(CommonResourceHeader* sres, int type)
 {
-  CommonResourceHeader *nres; /* next resource if linked */
-  UnionOfResources *res = reinterpret_cast<UnionOfResources*>(sres);
+  CommonResourceHeader* nres; /* next resource if linked */
+  UnionOfResources* res = reinterpret_cast<UnionOfResources*>(sres);
 
   if (res == NULL) return;
 
   /*
    * Common stuff -- free the resource name and description
    */
-  nres = (CommonResourceHeader *)res->res_monitor.hdr.next;
-  if (res->res_monitor.hdr.name) {
-    free(res->res_monitor.hdr.name);
-  }
-  if (res->res_monitor.hdr.desc) {
-    free(res->res_monitor.hdr.desc);
-  }
+  nres = (CommonResourceHeader*)res->res_monitor.hdr.next;
+  if (res->res_monitor.hdr.name) { free(res->res_monitor.hdr.name); }
+  if (res->res_monitor.hdr.desc) { free(res->res_monitor.hdr.desc); }
 
   switch (type) {
     case R_MONITOR:
       break;
     case R_DIRECTOR:
-      if (res->res_dir.address) {
-        free(res->res_dir.address);
-      }
+      if (res->res_dir.address) { free(res->res_dir.address); }
       break;
     case R_CLIENT:
-      if (res->res_client.address) {
-        free(res->res_client.address);
-      }
+      if (res->res_client.address) { free(res->res_client.address); }
       if (res->res_client.password.value) {
         free(res->res_client.password.value);
       }
       break;
     case R_STORAGE:
-      if (res->res_store.address) {
-        free(res->res_store.address);
-      }
+      if (res->res_store.address) { free(res->res_store.address); }
       if (res->res_store.password.value) {
         free(res->res_store.password.value);
       }
       break;
     case R_CONSOLE_FONT:
-      if (res->con_font.fontface) {
-        free(res->con_font.fontface);
-      }
+      if (res->con_font.fontface) { free(res->con_font.fontface); }
       break;
     default:
       printf(_("Unknown resource type %d in FreeResource.\n"), type);
@@ -275,12 +265,8 @@ static void FreeResource(CommonResourceHeader *sres, int type)
   /*
    * Common stuff again -- free the resource, recurse to next one
    */
-  if (res) {
-    free(res);
-  }
-  if (nres) {
-    my_config->FreeResourceCb_(nres, type);
-  }
+  if (res) { free(res); }
+  if (nres) { my_config->FreeResourceCb_(nres, type); }
 }
 
 /*
@@ -289,9 +275,9 @@ static void FreeResource(CommonResourceHeader *sres, int type)
  * pointers because they may not have been defined until
  * later in pass 1.
  */
-static bool SaveResource(int type, ResourceItem *items, int pass)
+static bool SaveResource(int type, ResourceItem* items, int pass)
 {
-  UnionOfResources *res;
+  UnionOfResources* res;
   int rindex = type - R_FIRST;
   int i;
   int error = 0;
@@ -302,13 +288,15 @@ static bool SaveResource(int type, ResourceItem *items, int pass)
   for (i = 0; items[i].name; i++) {
     if (items[i].flags & CFG_ITEM_REQUIRED) {
       if (!BitIsSet(i, res_all.res_monitor.hdr.item_present)) {
-        Emsg2(M_ERROR_TERM, 0, _("%s item is required in %s resource, but not found.\n"), items[i].name,
-              resources[rindex].name);
+        Emsg2(M_ERROR_TERM, 0,
+              _("%s item is required in %s resource, but not found.\n"),
+              items[i].name, resources[rindex].name);
       }
     }
     /* If this triggers, take a look at lib/parse_conf.h */
     if (i >= MAX_RES_ITEMS) {
-      Emsg1(M_ERROR_TERM, 0, _("Too many items in %s resource\n"), resources[rindex].name);
+      Emsg1(M_ERROR_TERM, 0, _("Too many items in %s resource\n"),
+            resources[rindex].name);
     }
   }
 
@@ -330,7 +318,8 @@ static bool SaveResource(int type, ResourceItem *items, int pass)
       case R_CONSOLE_FONT:
         break;
       default:
-        Emsg1(M_ERROR, 0, _("Unknown resource type %d in SaveResource.\n"), type);
+        Emsg1(M_ERROR, 0, _("Unknown resource type %d in SaveResource.\n"),
+              type);
         error = 1;
         break;
     }
@@ -353,11 +342,12 @@ static bool SaveResource(int type, ResourceItem *items, int pass)
    * Common
    */
   if (!error) {
-    res = (UnionOfResources *)malloc(resources[rindex].size);
+    res = (UnionOfResources*)malloc(resources[rindex].size);
     memcpy(res, &res_all, resources[rindex].size);
     if (!res_head[rindex]) {
-      res_head[rindex] = (CommonResourceHeader *)res; /* store first entry */
-      Dmsg3(900, "Inserting first %s res: %s index=%d\n", my_config->res_to_str(type), res->res_monitor.name(), rindex);
+      res_head[rindex] = (CommonResourceHeader*)res; /* store first entry */
+      Dmsg3(900, "Inserting first %s res: %s index=%d\n",
+            my_config->res_to_str(type), res->res_monitor.name(), rindex);
     } else {
       CommonResourceHeader *next, *last;
       /*
@@ -366,35 +356,36 @@ static bool SaveResource(int type, ResourceItem *items, int pass)
       for (last = next = res_head[rindex]; next; next = next->next) {
         last = next;
         if (strcmp(next->name, res->res_monitor.name()) == 0) {
-          Emsg2(M_ERROR_TERM, 0, _("Attempt to define second %s resource named \"%s\" is not permitted.\n"),
+          Emsg2(M_ERROR_TERM, 0,
+                _("Attempt to define second %s resource named \"%s\" is not "
+                  "permitted.\n"),
                 resources[rindex].name, res->res_monitor.name());
         }
       }
-      last->next = (CommonResourceHeader *)res;
-      Dmsg4(900, "Inserting %s res: %s index=%d pass=%d\n", my_config->res_to_str(type), res->res_monitor.name(), rindex,
-            pass);
+      last->next = (CommonResourceHeader*)res;
+      Dmsg4(900, "Inserting %s res: %s index=%d pass=%d\n",
+            my_config->res_to_str(type), res->res_monitor.name(), rindex, pass);
     }
   }
   return (error == 0);
 }
 
-static void ConfigReadyCallback(ConfigurationParser &my_config)
+static void ConfigReadyCallback(ConfigurationParser& my_config)
 {
-  std::map<int, std::string> map{{R_MONITOR,  "R_MONITOR"},
-                                 {R_DIRECTOR, "R_DIRECTOR"},
-                                 {R_CLIENT,   "R_CLIENT"},
-                                 {R_STORAGE,  "R_STORAGE"},
-                                 {R_CONSOLE,  "R_CONSOLE"},
-                                 {R_CONSOLE_FONT, "R_CONSOLE_FONT"}};
+  std::map<int, std::string> map{
+      {R_MONITOR, "R_MONITOR"}, {R_DIRECTOR, "R_DIRECTOR"},
+      {R_CLIENT, "R_CLIENT"},   {R_STORAGE, "R_STORAGE"},
+      {R_CONSOLE, "R_CONSOLE"}, {R_CONSOLE_FONT, "R_CONSOLE_FONT"}};
   my_config.InitializeQualifiedResourceNameTypeConverter(map);
 }
 
-ConfigurationParser *InitTmonConfig(const char *configfile, int exit_code)
+ConfigurationParser* InitTmonConfig(const char* configfile, int exit_code)
 {
-  ConfigurationParser *config = new ConfigurationParser(configfile, nullptr, nullptr, nullptr, nullptr, nullptr, exit_code,
-                                 (void *)&res_all, res_all_size, R_FIRST, R_LAST, resources, res_head,
-                                 default_config_filename.c_str(), "tray-monitor.d", ConfigReadyCallback,
-                                 SaveResource, DumpResource, FreeResource);
+  ConfigurationParser* config = new ConfigurationParser(
+      configfile, nullptr, nullptr, nullptr, nullptr, nullptr, exit_code,
+      (void*)&res_all, res_all_size, R_FIRST, R_LAST, resources, res_head,
+      default_config_filename.c_str(), "tray-monitor.d", ConfigReadyCallback,
+      SaveResource, DumpResource, FreeResource);
   if (config) { config->r_own_ = R_MONITOR; }
   return config;
 }
@@ -403,13 +394,13 @@ ConfigurationParser *InitTmonConfig(const char *configfile, int exit_code)
  * Print configuration file schema in json format
  */
 #ifdef HAVE_JANSSON
-bool PrintConfigSchemaJson(PoolMem &buffer)
+bool PrintConfigSchemaJson(PoolMem& buffer)
 {
-  ResourceTable *resources = my_config->resources_;
+  ResourceTable* resources = my_config->resources_;
 
   InitializeJson();
 
-  json_t *json = json_object();
+  json_t* json = json_object();
   json_object_set_new(json, "format-version", json_integer(2));
   json_object_set_new(json, "component", json_string("bareos-tray-monitor"));
   json_object_set_new(json, "version", json_string(VERSION));
@@ -417,14 +408,15 @@ bool PrintConfigSchemaJson(PoolMem &buffer)
   /*
    * Resources
    */
-  json_t *resource = json_object();
+  json_t* resource = json_object();
   json_object_set(json, "resource", resource);
-  json_t *bareos_tray_monitor = json_object();
+  json_t* bareos_tray_monitor = json_object();
   json_object_set(resource, "bareos-tray-monitor", bareos_tray_monitor);
 
   for (int r = 0; resources[r].name; r++) {
     ResourceTable resource = my_config->resources_[r];
-    json_object_set(bareos_tray_monitor, resource.name, json_items(resource.items));
+    json_object_set(bareos_tray_monitor, resource.name,
+                    json_items(resource.items));
   }
 
   PmStrcat(buffer, json_dumps(json, JSON_INDENT(2)));
@@ -433,7 +425,7 @@ bool PrintConfigSchemaJson(PoolMem &buffer)
   return true;
 }
 #else
-bool PrintConfigSchemaJson(PoolMem &buffer)
+bool PrintConfigSchemaJson(PoolMem& buffer)
 {
   PmStrcat(buffer, "{ \"success\": false, \"message\": \"not available\" }");
   return false;

@@ -23,13 +23,16 @@
 
 namespace storagedaemon {
 
-DeviceControlRecord *AcquireDeviceForAppend(DeviceControlRecord *dcr);
-bool AcquireDeviceForRead(DeviceControlRecord *dcr);
-bool ReleaseDevice(DeviceControlRecord *dcr);
-bool CleanDevice(DeviceControlRecord *dcr);
-void SetupNewDcrDevice(JobControlRecord *jcr, DeviceControlRecord *dcr, Device *dev, BlockSizes *blocksizes);
-void FreeDeviceControlRecord(DeviceControlRecord *dcr);
+DeviceControlRecord* AcquireDeviceForAppend(DeviceControlRecord* dcr);
+bool AcquireDeviceForRead(DeviceControlRecord* dcr);
+bool ReleaseDevice(DeviceControlRecord* dcr);
+bool CleanDevice(DeviceControlRecord* dcr);
+void SetupNewDcrDevice(JobControlRecord* jcr,
+                       DeviceControlRecord* dcr,
+                       Device* dev,
+                       BlockSizes* blocksizes);
+void FreeDeviceControlRecord(DeviceControlRecord* dcr);
 
 } /* namespace storagedaemon */
 
-#endif // BAREOS_STORED_ACQUIRE_H_
+#endif  // BAREOS_STORED_ACQUIRE_H_

@@ -24,7 +24,7 @@
 
 namespace filedaemon {
 
-int MakeEstimate(JobControlRecord *jcr);
+int MakeEstimate(JobControlRecord* jcr);
 
 } /* namespace filedaemon */
 

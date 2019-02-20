@@ -26,7 +26,7 @@ namespace directordaemon {
 
 class UaContext;
 
-bool AuthenticateConsole(UaContext *ua);
+bool AuthenticateConsole(UaContext* ua);
 
 } /* namespace directordaemon */
 #endif /* BAREOS_DIRD_AUTHENTICATE_CONSOLE_H_ */

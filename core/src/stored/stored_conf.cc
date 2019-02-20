@@ -39,20 +39,20 @@ namespace storagedaemon {
 /**
  * First and last resource ids
  */
-static CommonResourceHeader *sres_head[R_LAST - R_FIRST + 1];
-static CommonResourceHeader **res_head = sres_head;
+static CommonResourceHeader* sres_head[R_LAST - R_FIRST + 1];
+static CommonResourceHeader** res_head = sres_head;
 
 /**
  * Forward referenced subroutines
  */
-static void FreeResource(CommonResourceHeader *sres, int type);
-static bool SaveResource(int type, ResourceItem *items, int pass);
+static void FreeResource(CommonResourceHeader* sres, int type);
+static bool SaveResource(int type, ResourceItem* items, int pass);
 static void DumpResource(int type,
-                  CommonResourceHeader *reshdr,
-                  void sendit(void *sock, const char *fmt, ...),
-                  void *sock,
-                  bool hide_sensitive_data,
-                  bool verbose);
+                         CommonResourceHeader* reshdr,
+                         void sendit(void* sock, const char* fmt, ...),
+                         void* sock,
+                         bool hide_sensitive_data,
+                         bool verbose);
 
 /**
  * We build the current resource here statically,
@@ -261,25 +261,29 @@ static ResourceTable resources[] = {
 /**
  * Authentication methods
  */
-static struct s_kw authmethods[] = {{"None", AT_NONE}, {"Clear", AT_CLEAR}, {"MD5", AT_MD5}, {NULL, 0}};
+static struct s_kw authmethods[] = {{"None", AT_NONE},
+                                    {"Clear", AT_CLEAR},
+                                    {"MD5", AT_MD5},
+                                    {NULL, 0}};
 
 /**
  * Device types
  *
  * device type, device code = token
  */
-static s_kw dev_types[] = {{"file", B_FILE_DEV},
-                           {"tape", B_TAPE_DEV},
-                           {"fifo", B_FIFO_DEV},
-                           {"vtl", B_VTL_DEV},
-                           {"gfapi", B_GFAPI_DEV},
-                           /* compatibility: object have been renamed to droplet */
-                           {"object", B_DROPLET_DEV},
-                           {"droplet", B_DROPLET_DEV},
-                           {"rados", B_RADOS_DEV},
-                           {"cephfs", B_CEPHFS_DEV},
-                           {"elasto", B_ELASTO_DEV},
-                           {NULL, 0}};
+static s_kw dev_types[] = {
+    {"file", B_FILE_DEV},
+    {"tape", B_TAPE_DEV},
+    {"fifo", B_FIFO_DEV},
+    {"vtl", B_VTL_DEV},
+    {"gfapi", B_GFAPI_DEV},
+    /* compatibility: object have been renamed to droplet */
+    {"object", B_DROPLET_DEV},
+    {"droplet", B_DROPLET_DEV},
+    {"rados", B_RADOS_DEV},
+    {"cephfs", B_CEPHFS_DEV},
+    {"elasto", B_ELASTO_DEV},
+    {NULL, 0}};
 
 /**
  * IO directions.
@@ -292,14 +296,15 @@ static s_kw io_directions[] = {{"in", IO_DIRECTION_IN},
 /**
  * Compression algorithms
  */
-static s_kw compression_algorithms[] = {{"gzip", COMPRESS_GZIP},   {"lzo", COMPRESS_LZO1X},
-                                        {"lzfast", COMPRESS_FZFZ}, {"lz4", COMPRESS_FZ4L},
-                                        {"lz4hc", COMPRESS_FZ4H},  {NULL, 0}};
+static s_kw compression_algorithms[] = {
+    {"gzip", COMPRESS_GZIP},   {"lzo", COMPRESS_LZO1X},
+    {"lzfast", COMPRESS_FZFZ}, {"lz4", COMPRESS_FZ4L},
+    {"lz4hc", COMPRESS_FZ4H},  {NULL, 0}};
 
 /**
  * Store authentication type (Mostly for NDMP like clear or MD5).
  */
-static void StoreAuthtype(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreAuthtype(LEX* lc, ResourceItem* item, int index, int pass)
 {
   int i;
 
@@ -309,12 +314,15 @@ static void StoreAuthtype(LEX *lc, ResourceItem *item, int index, int pass)
    */
   for (i = 0; authmethods[i].name; i++) {
     if (Bstrcasecmp(lc->str, authmethods[i].name)) {
-      *(uint32_t *)(item->value) = authmethods[i].token;
-      i                          = 0;
+      *(uint32_t*)(item->value) = authmethods[i].token;
+      i = 0;
       break;
     }
   }
-  if (i != 0) { scan_err1(lc, _("Expected a Authentication Type keyword, got: %s"), lc->str); }
+  if (i != 0) {
+    scan_err1(lc, _("Expected a Authentication Type keyword, got: %s"),
+              lc->str);
+  }
   ScanToEol(lc);
   SetBit(index, res_all.hdr.item_present);
   ClearBit(index, res_all.hdr.inherit_content);
@@ -323,7 +331,7 @@ static void StoreAuthtype(LEX *lc, ResourceItem *item, int index, int pass)
 /**
  * Store password either clear if for NDMP or MD5 hashed for native.
  */
-static void StoreAutopassword(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreAutopassword(LEX* lc, ResourceItem* item, int index, int pass)
 {
   switch (res_all.hdr.rcode) {
     case R_DIRECTOR:
@@ -334,7 +342,8 @@ static void StoreAutopassword(LEX *lc, ResourceItem *item, int index, int pass)
        */
       switch (item->code) {
         case 1:
-          my_config->StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
+          my_config->StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index,
+                                   pass);
           break;
         default:
           my_config->StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
@@ -352,7 +361,7 @@ static void StoreAutopassword(LEX *lc, ResourceItem *item, int index, int pass)
 /**
  * Store Device Type (File, FIFO, Tape)
  */
-static void StoreDevtype(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreDevtype(LEX* lc, ResourceItem* item, int index, int pass)
 {
   int i;
 
@@ -362,12 +371,14 @@ static void StoreDevtype(LEX *lc, ResourceItem *item, int index, int pass)
    */
   for (i = 0; dev_types[i].name; i++) {
     if (Bstrcasecmp(lc->str, dev_types[i].name)) {
-      *(uint32_t *)(item->value) = dev_types[i].token;
-      i                          = 0;
+      *(uint32_t*)(item->value) = dev_types[i].token;
+      i = 0;
       break;
     }
   }
-  if (i != 0) { scan_err1(lc, _("Expected a Device Type keyword, got: %s"), lc->str); }
+  if (i != 0) {
+    scan_err1(lc, _("Expected a Device Type keyword, got: %s"), lc->str);
+  }
   ScanToEol(lc);
   SetBit(index, res_all.hdr.item_present);
   ClearBit(index, res_all.hdr.inherit_content);
@@ -376,31 +387,35 @@ static void StoreDevtype(LEX *lc, ResourceItem *item, int index, int pass)
 /**
  * Store Maximum Block Size, and check it is not greater than MAX_BLOCK_LENGTH
  */
-static void StoreMaxblocksize(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreMaxblocksize(LEX* lc, ResourceItem* item, int index, int pass)
 {
   my_config->StoreResource(CFG_TYPE_SIZE32, lc, item, index, pass);
-  if (*(uint32_t *)(item->value) > MAX_BLOCK_LENGTH) {
-    scan_err2(lc, _("Maximum Block Size configured value %u is greater than allowed maximum: %u"),
-              *(uint32_t *)(item->value), MAX_BLOCK_LENGTH);
+  if (*(uint32_t*)(item->value) > MAX_BLOCK_LENGTH) {
+    scan_err2(lc,
+              _("Maximum Block Size configured value %u is greater than "
+                "allowed maximum: %u"),
+              *(uint32_t*)(item->value), MAX_BLOCK_LENGTH);
   }
 }
 
 /**
  * Store the IO direction on a certain device.
  */
-static void StoreIoDirection(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreIoDirection(LEX* lc, ResourceItem* item, int index, int pass)
 {
   int i;
 
   LexGetToken(lc, BCT_NAME);
   for (i = 0; io_directions[i].name; i++) {
     if (Bstrcasecmp(lc->str, io_directions[i].name)) {
-      *(uint16_t *)(item->value) = io_directions[i].token & 0xffff;
-      i                          = 0;
+      *(uint16_t*)(item->value) = io_directions[i].token & 0xffff;
+      i = 0;
       break;
     }
   }
-  if (i != 0) { scan_err1(lc, _("Expected a IO direction keyword, got: %s"), lc->str); }
+  if (i != 0) {
+    scan_err1(lc, _("Expected a IO direction keyword, got: %s"), lc->str);
+  }
   ScanToEol(lc);
   SetBit(index, res_all.hdr.item_present);
   ClearBit(index, res_all.hdr.inherit_content);
@@ -409,19 +424,25 @@ static void StoreIoDirection(LEX *lc, ResourceItem *item, int index, int pass)
 /**
  * Store the compression algorithm to use on a certain device.
  */
-static void StoreCompressionalgorithm(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreCompressionalgorithm(LEX* lc,
+                                      ResourceItem* item,
+                                      int index,
+                                      int pass)
 {
   int i;
 
   LexGetToken(lc, BCT_NAME);
   for (i = 0; compression_algorithms[i].name; i++) {
     if (Bstrcasecmp(lc->str, compression_algorithms[i].name)) {
-      *(uint32_t *)(item->value) = compression_algorithms[i].token & 0xffffffff;
-      i                          = 0;
+      *(uint32_t*)(item->value) = compression_algorithms[i].token & 0xffffffff;
+      i = 0;
       break;
     }
   }
-  if (i != 0) { scan_err1(lc, _("Expected a Compression algorithm keyword, got: %s"), lc->str); }
+  if (i != 0) {
+    scan_err1(lc, _("Expected a Compression algorithm keyword, got: %s"),
+              lc->str);
+  }
   ScanToEol(lc);
   SetBit(index, res_all.hdr.item_present);
   ClearBit(index, res_all.hdr.inherit_content);
@@ -431,7 +452,7 @@ static void StoreCompressionalgorithm(LEX *lc, ResourceItem *item, int index, in
  * callback function for init_resource
  * See ../lib/parse_conf.c, function InitResource, for more generic handling.
  */
-static void InitResourceCb(ResourceItem *item, int pass)
+static void InitResourceCb(ResourceItem* item, int pass)
 {
   switch (pass) {
     case 1:
@@ -439,7 +460,7 @@ static void InitResourceCb(ResourceItem *item, int pass)
         case CFG_TYPE_AUTHTYPE:
           for (int i = 0; authmethods[i].name; i++) {
             if (Bstrcasecmp(item->default_value, authmethods[i].name)) {
-              *(uint32_t *)(item->value) = authmethods[i].token;
+              *(uint32_t*)(item->value) = authmethods[i].token;
             }
           }
           break;
@@ -456,7 +477,7 @@ static void InitResourceCb(ResourceItem *item, int pass)
  * callback function for parse_config
  * See ../lib/parse_conf.c, function ParseConfig, for more generic handling.
  */
-static void ParseConfigCb(LEX *lc, ResourceItem *item, int index, int pass)
+static void ParseConfigCb(LEX* lc, ResourceItem* item, int index, int pass)
 {
   switch (item->type) {
     case CFG_TYPE_AUTOPASSWORD:
@@ -482,39 +503,42 @@ static void ParseConfigCb(LEX *lc, ResourceItem *item, int index, int pass)
   }
 }
 
-static void ConfigReadyCallback(ConfigurationParser &my_config)
+static void ConfigReadyCallback(ConfigurationParser& my_config)
 {
-  std::map<int, std::string> map{{R_DIRECTOR, "R_DIRECTOR"},
-                                 {R_JOB, "R_JOB"}, /* needed for client name conversion */
-                                 {R_NDMP, "R_NDMP"},
-                                 {R_STORAGE, "R_STORAGE"},
-                                 {R_MSGS, "R_MSGS"},
-                                 {R_DEVICE, "R_DEVICE"},
-                                 {R_AUTOCHANGER, "R_AUTOCHANGER"}};
+  std::map<int, std::string> map{
+      {R_DIRECTOR, "R_DIRECTOR"},
+      {R_JOB, "R_JOB"}, /* needed for client name conversion */
+      {R_NDMP, "R_NDMP"},
+      {R_STORAGE, "R_STORAGE"},
+      {R_MSGS, "R_MSGS"},
+      {R_DEVICE, "R_DEVICE"},
+      {R_AUTOCHANGER, "R_AUTOCHANGER"}};
   my_config.InitializeQualifiedResourceNameTypeConverter(map);
 }
 
-ConfigurationParser *InitSdConfig(const char *configfile, int exit_code)
+ConfigurationParser* InitSdConfig(const char* configfile, int exit_code)
 {
-  ConfigurationParser *config =
-      new ConfigurationParser(configfile, nullptr, nullptr, InitResourceCb, ParseConfigCb, nullptr, exit_code,
-                              (void *)&res_all, res_all_size, R_FIRST, R_LAST, resources, res_head,
-                              default_config_filename.c_str(), "bareos-sd.d", ConfigReadyCallback,
-                              SaveResource, DumpResource, FreeResource);
+  ConfigurationParser* config = new ConfigurationParser(
+      configfile, nullptr, nullptr, InitResourceCb, ParseConfigCb, nullptr,
+      exit_code, (void*)&res_all, res_all_size, R_FIRST, R_LAST, resources,
+      res_head, default_config_filename.c_str(), "bareos-sd.d",
+      ConfigReadyCallback, SaveResource, DumpResource, FreeResource);
   if (config) { config->r_own_ = R_STORAGE; }
   return config;
 }
 
-bool ParseSdConfig(const char *configfile, int exit_code)
+bool ParseSdConfig(const char* configfile, int exit_code)
 {
   bool retval;
 
   retval = my_config->ParseConfig();
 
   if (retval) {
-    me = (StorageResource *)my_config->GetNextRes(R_STORAGE, NULL);
+    me = (StorageResource*)my_config->GetNextRes(R_STORAGE, NULL);
     if (!me) {
-      Emsg1(exit_code, 0, _("No Storage resource defined in %s. Cannot continue.\n"), configfile);
+      Emsg1(exit_code, 0,
+            _("No Storage resource defined in %s. Cannot continue.\n"),
+            configfile);
       return retval;
     }
 
@@ -530,13 +554,13 @@ bool ParseSdConfig(const char *configfile, int exit_code)
  * Print configuration file schema in json format
  */
 #ifdef HAVE_JANSSON
-bool PrintConfigSchemaJson(PoolMem &buffer)
+bool PrintConfigSchemaJson(PoolMem& buffer)
 {
-  ResourceTable *resources = my_config->resources_;
+  ResourceTable* resources = my_config->resources_;
 
   InitializeJson();
 
-  json_t *json = json_object();
+  json_t* json = json_object();
   json_object_set_new(json, "format-version", json_integer(2));
   json_object_set_new(json, "component", json_string("bareos-sd"));
   json_object_set_new(json, "version", json_string(VERSION));
@@ -544,9 +568,9 @@ bool PrintConfigSchemaJson(PoolMem &buffer)
   /*
    * Resources
    */
-  json_t *resource = json_object();
+  json_t* resource = json_object();
   json_object_set(json, "resource", resource);
-  json_t *bareos_sd = json_object();
+  json_t* bareos_sd = json_object();
   json_object_set(resource, "bareos-sd", bareos_sd);
 
   for (int r = 0; resources[r].name; r++) {
@@ -560,7 +584,7 @@ bool PrintConfigSchemaJson(PoolMem &buffer)
   return true;
 }
 #else
-bool PrintConfigSchemaJson(PoolMem &buffer)
+bool PrintConfigSchemaJson(PoolMem& buffer)
 {
   PmStrcat(buffer, "{ \"success\": false, \"message\": \"not available\" }");
   return false;
@@ -568,43 +592,45 @@ bool PrintConfigSchemaJson(PoolMem &buffer)
 #endif
 
 static void DumpResource(int type,
-                  CommonResourceHeader *reshdr,
-                  void sendit(void *sock, const char *fmt, ...),
-                  void *sock,
-                  bool hide_sensitive_data,
-                  bool verbose)
+                         CommonResourceHeader* reshdr,
+                         void sendit(void* sock, const char* fmt, ...),
+                         void* sock,
+                         bool hide_sensitive_data,
+                         bool verbose)
 {
   PoolMem buf;
-  UnionOfResources *res = (UnionOfResources *)reshdr;
-  BareosResource *resclass;
+  UnionOfResources* res = (UnionOfResources*)reshdr;
+  BareosResource* resclass;
   int recurse = 1;
 
   if (res == NULL) {
-    sendit(sock, _("Warning: no \"%s\" resource (%d) defined.\n"), my_config->res_to_str(type), type);
+    sendit(sock, _("Warning: no \"%s\" resource (%d) defined.\n"),
+           my_config->res_to_str(type), type);
     return;
   }
 
   if (type < 0) { /* no recursion */
-    type    = -type;
+    type = -type;
     recurse = 0;
   }
 
   switch (type) {
     case R_MSGS: {
-      MessagesResource *resclass = (MessagesResource *)reshdr;
+      MessagesResource* resclass = (MessagesResource*)reshdr;
       resclass->PrintConfig(buf);
       break;
     }
     default:
-      resclass = (BareosResource *)reshdr;
+      resclass = (BareosResource*)reshdr;
       resclass->PrintConfig(buf, *my_config);
       break;
   }
   sendit(sock, "%s", buf.c_str());
 
   if (recurse && res->res_dir.hdr.next) {
-    my_config->DumpResourceCb_(type, (CommonResourceHeader *)res->res_dir.hdr.next, sendit, sock, hide_sensitive_data,
-                 verbose);
+    my_config->DumpResourceCb_(type,
+                               (CommonResourceHeader*)res->res_dir.hdr.next,
+                               sendit, sock, hide_sensitive_data, verbose);
   }
 }
 
@@ -613,9 +639,9 @@ static void DumpResource(int type,
  * the resource. If this is pass 2, we update any resource
  * or alist pointers.
  */
-static bool SaveResource(int type, ResourceItem *items, int pass)
+static bool SaveResource(int type, ResourceItem* items, int pass)
 {
-  UnionOfResources *res;
+  UnionOfResources* res;
   int rindex = type - R_FIRST;
   int i;
   int error = 0;
@@ -626,7 +652,8 @@ static bool SaveResource(int type, ResourceItem *items, int pass)
   for (i = 0; items[i].name; i++) {
     if (items[i].flags & CFG_ITEM_REQUIRED) {
       if (!BitIsSet(i, res_all.res_dir.hdr.item_present)) {
-        Emsg2(M_ERROR_TERM, 0, _("\"%s\" item is required in \"%s\" resource, but not found.\n"),
+        Emsg2(M_ERROR_TERM, 0,
+              _("\"%s\" item is required in \"%s\" resource, but not found.\n"),
               items[i].name, resources[rindex].name);
       }
     }
@@ -634,7 +661,8 @@ static bool SaveResource(int type, ResourceItem *items, int pass)
      * If this triggers, take a look at lib/parse_conf.h
      */
     if (i >= MAX_RES_ITEMS) {
-      Emsg1(M_ERROR_TERM, 0, _("Too many items in \"%s\" resource\n"), resources[rindex].name);
+      Emsg1(M_ERROR_TERM, 0, _("Too many items in \"%s\" resource\n"),
+            resources[rindex].name);
     }
   }
 
@@ -645,7 +673,7 @@ static bool SaveResource(int type, ResourceItem *items, int pass)
    * record.
    */
   if (pass == 2) {
-    DeviceResource *dev = nullptr;
+    DeviceResource* dev = nullptr;
     int errstat;
 
     switch (type) {
@@ -660,29 +688,34 @@ static bool SaveResource(int type, ResourceItem *items, int pass)
         /*
          * Resources containing a resource or an alist
          */
-        if ((res = (UnionOfResources *)my_config->GetResWithName(R_DIRECTOR, res_all.res_dir.name())) ==
-            NULL) {
-          Emsg1(M_ERROR_TERM, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
+        if ((res = (UnionOfResources*)my_config->GetResWithName(
+                 R_DIRECTOR, res_all.res_dir.name())) == NULL) {
+          Emsg1(M_ERROR_TERM, 0, _("Cannot find Director resource %s\n"),
+                res_all.res_dir.name());
         } else {
           res->res_dir.tls_cert_.allowed_certificate_common_names_ =
               res_all.res_dir.tls_cert_.allowed_certificate_common_names_;
         }
         break;
       case R_STORAGE:
-        if ((res = (UnionOfResources *)my_config->GetResWithName(R_STORAGE, res_all.res_store.name())) ==
-            NULL) {
-          Emsg1(M_ERROR_TERM, 0, _("Cannot find Storage resource %s\n"), res_all.res_store.name());
+        if ((res = (UnionOfResources*)my_config->GetResWithName(
+                 R_STORAGE, res_all.res_store.name())) == NULL) {
+          Emsg1(M_ERROR_TERM, 0, _("Cannot find Storage resource %s\n"),
+                res_all.res_store.name());
         } else {
-          res->res_store.plugin_names        = res_all.res_store.plugin_names;
-          res->res_store.messages            = res_all.res_store.messages;
-          res->res_store.backend_directories = res_all.res_store.backend_directories;
+          res->res_store.plugin_names = res_all.res_store.plugin_names;
+          res->res_store.messages = res_all.res_store.messages;
+          res->res_store.backend_directories =
+              res_all.res_store.backend_directories;
           res->res_store.tls_cert_.allowed_certificate_common_names_ =
               res_all.res_store.tls_cert_.allowed_certificate_common_names_;
         }
         break;
       case R_AUTOCHANGER:
-        if ((res = (UnionOfResources *)my_config->GetResWithName(type, res_all.res_changer.name())) == NULL) {
-          Emsg1(M_ERROR_TERM, 0, _("Cannot find AutoChanger resource %s\n"), res_all.res_changer.name());
+        if ((res = (UnionOfResources*)my_config->GetResWithName(
+                 type, res_all.res_changer.name())) == NULL) {
+          Emsg1(M_ERROR_TERM, 0, _("Cannot find AutoChanger resource %s\n"),
+                res_all.res_changer.name());
         } else {
           /*
            * We must explicitly copy the device alist pointer
@@ -690,15 +723,18 @@ static bool SaveResource(int type, ResourceItem *items, int pass)
           res->res_changer.device = res_all.res_changer.device;
 
           /*
-           * Now update each device in this resource to point back to the changer resource.
+           * Now update each device in this resource to point back to the
+           * changer resource.
            */
           foreach_alist (dev, res->res_changer.device) {
-            dev->changer_res = (AutochangerResource *)&res->res_changer;
+            dev->changer_res = (AutochangerResource*)&res->res_changer;
           }
 
-          if ((errstat = RwlInit(&res->res_changer.changer_lock, PRIO_SD_ACH_ACCESS)) != 0) {
+          if ((errstat = RwlInit(&res->res_changer.changer_lock,
+                                 PRIO_SD_ACH_ACCESS)) != 0) {
             BErrNo be;
-            Jmsg1(NULL, M_ERROR_TERM, 0, _("Unable to init lock: ERR=%s\n"), be.bstrerror(errstat));
+            Jmsg1(NULL, M_ERROR_TERM, 0, _("Unable to init lock: ERR=%s\n"),
+                  be.bstrerror(errstat));
           }
         }
         break;
@@ -725,10 +761,10 @@ static bool SaveResource(int type, ResourceItem *items, int pass)
    * Common
    */
   if (!error) {
-    res = (UnionOfResources *)malloc(resources[rindex].size);
+    res = (UnionOfResources*)malloc(resources[rindex].size);
     memcpy(res, &res_all, resources[rindex].size);
     if (!res_head[rindex]) {
-      res_head[rindex] = (CommonResourceHeader *)res; /* store first entry */
+      res_head[rindex] = (CommonResourceHeader*)res; /* store first entry */
     } else {
       CommonResourceHeader *next, *last;
       /*
@@ -738,12 +774,14 @@ static bool SaveResource(int type, ResourceItem *items, int pass)
         last = next;
         if (bstrcmp(next->name, res->res_dir.name())) {
           Emsg2(M_ERROR_TERM, 0,
-                _("Attempt to define second \"%s\" resource named \"%s\" is not permitted.\n"),
+                _("Attempt to define second \"%s\" resource named \"%s\" is "
+                  "not permitted.\n"),
                 resources[rindex].name, res->res_dir.name());
         }
       }
-      last->next = (CommonResourceHeader *)res;
-      Dmsg2(90, "Inserting %s res: %s\n", my_config->res_to_str(type), res->res_dir.name());
+      last->next = (CommonResourceHeader*)res;
+      Dmsg2(90, "Inserting %s res: %s\n", my_config->res_to_str(type),
+            res->res_dir.name());
     }
   }
   return (error == 0);
@@ -756,17 +794,17 @@ static bool SaveResource(int type, ResourceItem *items, int pass)
  * resource chain is traversed.  Mainly we worry about freeing
  * allocated strings (names).
  */
-static void FreeResource(CommonResourceHeader *sres, int type)
+static void FreeResource(CommonResourceHeader* sres, int type)
 {
-  CommonResourceHeader *nres;
-  UnionOfResources *res = (UnionOfResources *)sres;
+  CommonResourceHeader* nres;
+  UnionOfResources* res = (UnionOfResources*)sres;
 
   if (res == NULL) return;
 
   /*
    * Common stuff -- free the resource name
    */
-  nres = (CommonResourceHeader *)res->res_dir.hdr.next;
+  nres = (CommonResourceHeader*)res->res_dir.hdr.next;
   if (res->res_dir.hdr.name) { free(res->res_dir.hdr.name); }
   if (res->res_dir.hdr.desc) { free(res->res_dir.hdr.desc); }
 
@@ -774,62 +812,114 @@ static void FreeResource(CommonResourceHeader *sres, int type)
     case R_DIRECTOR:
       if (res->res_dir.password_.value) { free(res->res_dir.password_.value); }
       if (res->res_dir.address) { free(res->res_dir.address); }
-      if (res->res_dir.keyencrkey.value) { free(res->res_dir.keyencrkey.value); }
+      if (res->res_dir.keyencrkey.value) {
+        free(res->res_dir.keyencrkey.value);
+      }
       if (res->res_dir.tls_cert_.allowed_certificate_common_names_) {
         res->res_dir.tls_cert_.allowed_certificate_common_names_->destroy();
         free(res->res_dir.tls_cert_.allowed_certificate_common_names_);
       }
-      if (res->res_dir.tls_cert_.ca_certfile_) { delete res->res_dir.tls_cert_.ca_certfile_; }
-      if (res->res_dir.tls_cert_.ca_certdir_) { delete res->res_dir.tls_cert_.ca_certdir_; }
-      if (res->res_dir.tls_cert_.crlfile_) { delete res->res_dir.tls_cert_.crlfile_; }
-      if (res->res_dir.tls_cert_.certfile_) { delete res->res_dir.tls_cert_.certfile_; }
-      if (res->res_dir.tls_cert_.keyfile_) { delete res->res_dir.tls_cert_.keyfile_; }
+      if (res->res_dir.tls_cert_.ca_certfile_) {
+        delete res->res_dir.tls_cert_.ca_certfile_;
+      }
+      if (res->res_dir.tls_cert_.ca_certdir_) {
+        delete res->res_dir.tls_cert_.ca_certdir_;
+      }
+      if (res->res_dir.tls_cert_.crlfile_) {
+        delete res->res_dir.tls_cert_.crlfile_;
+      }
+      if (res->res_dir.tls_cert_.certfile_) {
+        delete res->res_dir.tls_cert_.certfile_;
+      }
+      if (res->res_dir.tls_cert_.keyfile_) {
+        delete res->res_dir.tls_cert_.keyfile_;
+      }
       if (res->res_dir.cipherlist_) { delete res->res_dir.cipherlist_; }
-      if (res->res_dir.tls_cert_.dhfile_) { delete res->res_dir.tls_cert_.dhfile_; }
-      if (res->res_dir.tls_cert_.pem_message_) { delete res->res_dir.tls_cert_.pem_message_; }
+      if (res->res_dir.tls_cert_.dhfile_) {
+        delete res->res_dir.tls_cert_.dhfile_;
+      }
+      if (res->res_dir.tls_cert_.pem_message_) {
+        delete res->res_dir.tls_cert_.pem_message_;
+      }
       break;
     case R_NDMP:
       if (res->res_ndmp.username) { free(res->res_ndmp.username); }
       if (res->res_ndmp.password.value) { free(res->res_ndmp.password.value); }
       break;
     case R_AUTOCHANGER:
-      if (res->res_changer.changer_name) { free(res->res_changer.changer_name); }
-      if (res->res_changer.changer_command) { free(res->res_changer.changer_command); }
+      if (res->res_changer.changer_name) {
+        free(res->res_changer.changer_name);
+      }
+      if (res->res_changer.changer_command) {
+        free(res->res_changer.changer_command);
+      }
       if (res->res_changer.device) { delete res->res_changer.device; }
       RwlDestroy(&res->res_changer.changer_lock);
       break;
     case R_STORAGE:
       if (res->res_store.SDaddrs) { FreeAddresses(res->res_store.SDaddrs); }
-      if (res->res_store.SDsrc_addr) { FreeAddresses(res->res_store.SDsrc_addr); }
+      if (res->res_store.SDsrc_addr) {
+        FreeAddresses(res->res_store.SDsrc_addr);
+      }
       if (res->res_store.NDMPaddrs) { FreeAddresses(res->res_store.NDMPaddrs); }
-      if (res->res_store.working_directory) { free(res->res_store.working_directory); }
+      if (res->res_store.working_directory) {
+        free(res->res_store.working_directory);
+      }
       if (res->res_store.pid_directory) { free(res->res_store.pid_directory); }
-      if (res->res_store.subsys_directory) { free(res->res_store.subsys_directory); }
-      if (res->res_store.plugin_directory) { free(res->res_store.plugin_directory); }
+      if (res->res_store.subsys_directory) {
+        free(res->res_store.subsys_directory);
+      }
+      if (res->res_store.plugin_directory) {
+        free(res->res_store.plugin_directory);
+      }
       if (res->res_store.plugin_names) { delete res->res_store.plugin_names; }
-      if (res->res_store.scripts_directory) { free(res->res_store.scripts_directory); }
-      if (res->res_store.backend_directories) { delete res->res_store.backend_directories; }
+      if (res->res_store.scripts_directory) {
+        free(res->res_store.scripts_directory);
+      }
+      if (res->res_store.backend_directories) {
+        delete res->res_store.backend_directories;
+      }
       if (res->res_store.verid) { free(res->res_store.verid); }
-      if (res->res_store.secure_erase_cmdline) { free(res->res_store.secure_erase_cmdline); }
-      if (res->res_store.log_timestamp_format) { free(res->res_store.log_timestamp_format); }
+      if (res->res_store.secure_erase_cmdline) {
+        free(res->res_store.secure_erase_cmdline);
+      }
+      if (res->res_store.log_timestamp_format) {
+        free(res->res_store.log_timestamp_format);
+      }
       if (res->res_store.tls_cert_.allowed_certificate_common_names_) {
         res->res_store.tls_cert_.allowed_certificate_common_names_->destroy();
         free(res->res_store.tls_cert_.allowed_certificate_common_names_);
       }
-      if (res->res_store.tls_cert_.ca_certfile_) { delete res->res_store.tls_cert_.ca_certfile_; }
-      if (res->res_store.tls_cert_.ca_certdir_) { delete res->res_store.tls_cert_.ca_certdir_; }
-      if (res->res_store.tls_cert_.crlfile_) { delete res->res_store.tls_cert_.crlfile_; }
-      if (res->res_store.tls_cert_.certfile_) { delete res->res_store.tls_cert_.certfile_; }
-      if (res->res_store.tls_cert_.keyfile_) { delete res->res_store.tls_cert_.keyfile_; }
+      if (res->res_store.tls_cert_.ca_certfile_) {
+        delete res->res_store.tls_cert_.ca_certfile_;
+      }
+      if (res->res_store.tls_cert_.ca_certdir_) {
+        delete res->res_store.tls_cert_.ca_certdir_;
+      }
+      if (res->res_store.tls_cert_.crlfile_) {
+        delete res->res_store.tls_cert_.crlfile_;
+      }
+      if (res->res_store.tls_cert_.certfile_) {
+        delete res->res_store.tls_cert_.certfile_;
+      }
+      if (res->res_store.tls_cert_.keyfile_) {
+        delete res->res_store.tls_cert_.keyfile_;
+      }
       if (res->res_store.cipherlist_) { delete res->res_store.cipherlist_; }
-      if (res->res_store.tls_cert_.dhfile_) { delete res->res_store.tls_cert_.dhfile_; }
-      if (res->res_store.tls_cert_.pem_message_) { delete res->res_store.tls_cert_.pem_message_; }
+      if (res->res_store.tls_cert_.dhfile_) {
+        delete res->res_store.tls_cert_.dhfile_;
+      }
+      if (res->res_store.tls_cert_.pem_message_) {
+        delete res->res_store.tls_cert_.pem_message_;
+      }
       break;
     case R_DEVICE:
       if (res->res_dev.media_type) { free(res->res_dev.media_type); }
       if (res->res_dev.device_name) { free(res->res_dev.device_name); }
       if (res->res_dev.device_options) { free(res->res_dev.device_options); }
-      if (res->res_dev.diag_device_name) { free(res->res_dev.diag_device_name); }
+      if (res->res_dev.diag_device_name) {
+        free(res->res_dev.diag_device_name);
+      }
       if (res->res_dev.changer_name) { free(res->res_dev.changer_name); }
       if (res->res_dev.changer_command) { free(res->res_dev.changer_command); }
       if (res->res_dev.alert_command) { free(res->res_dev.alert_command); }
@@ -837,14 +927,20 @@ static void FreeResource(CommonResourceHeader *sres, int type)
       if (res->res_dev.mount_point) { free(res->res_dev.mount_point); }
       if (res->res_dev.mount_command) { free(res->res_dev.mount_command); }
       if (res->res_dev.unmount_command) { free(res->res_dev.unmount_command); }
-      if (res->res_dev.write_part_command) { free(res->res_dev.write_part_command); }
-      if (res->res_dev.free_space_command) { free(res->res_dev.free_space_command); }
+      if (res->res_dev.write_part_command) {
+        free(res->res_dev.write_part_command);
+      }
+      if (res->res_dev.free_space_command) {
+        free(res->res_dev.free_space_command);
+      }
       break;
     case R_MSGS:
       if (res->res_msgs.mail_cmd) { free(res->res_msgs.mail_cmd); }
       if (res->res_msgs.operator_cmd) { free(res->res_msgs.operator_cmd); }
-      if (res->res_msgs.timestamp_format) { free(res->res_msgs.timestamp_format); }
-      FreeMsgsRes((MessagesResource *)res); /* free message resource */
+      if (res->res_msgs.timestamp_format) {
+        free(res->res_msgs.timestamp_format);
+      }
+      FreeMsgsRes((MessagesResource*)res); /* free message resource */
       res = NULL;
       break;
     default:

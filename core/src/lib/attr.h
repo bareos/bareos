@@ -32,33 +32,39 @@
 
 
 struct Attributes {
-   int32_t stream;                    /**< attribute stream id */
-   int32_t data_stream;               /**< id of data stream to follow */
-   int32_t type;                      /**< file type FT */
-   int32_t file_index;                /**< file index */
-   int32_t LinkFI;                    /**< file index to data if hard link */
-   int32_t delta_seq;                 /**< delta sequence numbr */
-   uid_t uid;                         /**< userid */
-   struct stat statp;                 /**< decoded stat packet */
-   POOLMEM *attrEx;                   /**< extended attributes if any */
-   POOLMEM *ofname;                   /**< output filename */
-   POOLMEM *olname;                   /**< output link name */
-   /*
-    * Note the following three variables point into the
-    *  current BareosSocket record, so they are invalid after
-    *  the next socket read!
-    */
-   char *attr;                        /**< attributes position */
-   char *fname;                       /**< filename */
-   char *lname;                       /**< link name if any */
-   JobControlRecord *jcr;                          /**< jcr pointer */
+  int32_t stream;      /**< attribute stream id */
+  int32_t data_stream; /**< id of data stream to follow */
+  int32_t type;        /**< file type FT */
+  int32_t file_index;  /**< file index */
+  int32_t LinkFI;      /**< file index to data if hard link */
+  int32_t delta_seq;   /**< delta sequence numbr */
+  uid_t uid;           /**< userid */
+  struct stat statp;   /**< decoded stat packet */
+  POOLMEM* attrEx;     /**< extended attributes if any */
+  POOLMEM* ofname;     /**< output filename */
+  POOLMEM* olname;     /**< output link name */
+  /*
+   * Note the following three variables point into the
+   *  current BareosSocket record, so they are invalid after
+   *  the next socket read!
+   */
+  char* attr;            /**< attributes position */
+  char* fname;           /**< filename */
+  char* lname;           /**< link name if any */
+  JobControlRecord* jcr; /**< jcr pointer */
 };
 
-Attributes *new_attr(JobControlRecord *jcr);
-void FreeAttr(Attributes *attr);
-int UnpackAttributesRecord(JobControlRecord *jcr, int32_t stream, char *rec, int32_t reclen, Attributes *attr);
-void BuildAttrOutputFnames(JobControlRecord *jcr, Attributes *attr);
-const char *attr_to_str(PoolMem &resultbuffer, JobControlRecord *jcr, Attributes *attr);
-void PrintLsOutput(JobControlRecord *jcr, Attributes *attr);
+Attributes* new_attr(JobControlRecord* jcr);
+void FreeAttr(Attributes* attr);
+int UnpackAttributesRecord(JobControlRecord* jcr,
+                           int32_t stream,
+                           char* rec,
+                           int32_t reclen,
+                           Attributes* attr);
+void BuildAttrOutputFnames(JobControlRecord* jcr, Attributes* attr);
+const char* attr_to_str(PoolMem& resultbuffer,
+                        JobControlRecord* jcr,
+                        Attributes* attr);
+void PrintLsOutput(JobControlRecord* jcr, Attributes* attr);
 
 #endif /* BAREOS_LIB_ATTR_H_ */

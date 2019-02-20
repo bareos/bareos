@@ -21,8 +21,12 @@
 #ifndef BAREOS_FINDLIB_ATTRIBS_H_
 #define BAREOS_FINDLIB_ATTRIBS_H_
 
-int encode_attribsEx(JobControlRecord *jcr, char *attribsEx, FindFilesPacket *ff_pkt);
-bool SetAttributes(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *ofd);
-int SelectDataStream(FindFilesPacket *ff_pkt, bool compatible);
+int encode_attribsEx(JobControlRecord* jcr,
+                     char* attribsEx,
+                     FindFilesPacket* ff_pkt);
+bool SetAttributes(JobControlRecord* jcr,
+                   Attributes* attr,
+                   BareosWinFilePacket* ofd);
+int SelectDataStream(FindFilesPacket* ff_pkt, bool compatible);
 
-#endif // BAREOS_FINDLIB_ATTRIBS_H_
+#endif  // BAREOS_FINDLIB_ATTRIBS_H_

@@ -30,47 +30,46 @@ class MonitorItem;
 class MonitorResource;
 class QTimer;
 
-class MonitorItemThread : public QThread
-{
-   Q_OBJECT
+class MonitorItemThread : public QThread {
+  Q_OBJECT
 
-public:
-   static MonitorItemThread* instance();
-   static void destruct();
+ public:
+  static MonitorItemThread* instance();
+  static void destruct();
 
-   Qt::HANDLE getThreadId();
-   QStringList createRes(const cl_opts& cl);
-   MonitorResource* getMonitor() const;
-   MonitorItem *getDirector() const;
-   bool doConnectionTest();
+  Qt::HANDLE getThreadId();
+  QStringList createRes(const cl_opts& cl);
+  MonitorResource* getMonitor() const;
+  MonitorItem* getDirector() const;
+  bool doConnectionTest();
 
-protected:
-   virtual void run() override;
-   void dotest();
+ protected:
+  virtual void run() override;
+  void dotest();
 
-private:
-   MonitorItemThread(QObject* parent = 0);
-   Q_DISABLE_COPY(MonitorItemThread);
-   virtual ~MonitorItemThread();
+ private:
+  MonitorItemThread(QObject* parent = 0);
+  Q_DISABLE_COPY(MonitorItemThread);
+  virtual ~MonitorItemThread();
 
-   static MonitorItemThread* monitorItemThreadSingleton;
-   static bool already_destroyed;
-   MonitorResource* monitor;
-   Qt::HANDLE threadId;
+  static MonitorItemThread* monitorItemThreadSingleton;
+  static bool already_destroyed;
+  MonitorResource* monitor;
+  Qt::HANDLE threadId;
 
-   QList<MonitorItem*> items;
-   QTimer* refreshTimer;
-   bool isRefreshing;
+  QList<MonitorItem*> items;
+  QTimer* refreshTimer;
+  bool isRefreshing;
 
-public slots:
-   /* auto-connected slots to the Refresh Timer     */
-   void on_RefreshTimer_timeout();
-   /* ********************************************* */
+ public slots:
+  /* auto-connected slots to the Refresh Timer     */
+  void on_RefreshTimer_timeout();
+  /* ********************************************* */
 
-   void onRefreshItems();
+  void onRefreshItems();
 
-signals:
-   void refreshItemsReady();
+ signals:
+  void refreshItemsReady();
 };
 
-#endif // MONITORITEMTHREAD_H_INCLUDED
+#endif  // MONITORITEMTHREAD_H_INCLUDED

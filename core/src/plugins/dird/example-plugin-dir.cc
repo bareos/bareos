@@ -29,48 +29,38 @@
 #include "include/bareos.h"
 #include "dir_plugins.h"
 
-#define PLUGIN_LICENSE      "Bareos AGPLv3"
-#define PLUGIN_AUTHOR       "Kern Sibbald"
-#define PLUGIN_DATE         "January 2008"
-#define PLUGIN_VERSION      "1"
-#define PLUGIN_DESCRIPTION  "Test Director Daemon Plugin"
+#define PLUGIN_LICENSE "Bareos AGPLv3"
+#define PLUGIN_AUTHOR "Kern Sibbald"
+#define PLUGIN_DATE "January 2008"
+#define PLUGIN_VERSION "1"
+#define PLUGIN_DESCRIPTION "Test Director Daemon Plugin"
 
 namespace directordaemon {
 
 /* Forward referenced functions */
-static bRC newPlugin(bpContext *ctx);
-static bRC freePlugin(bpContext *ctx);
-static bRC getPluginValue(bpContext *ctx, pDirVariable var, void *value);
-static bRC setPluginValue(bpContext *ctx, pDirVariable var, void *value);
-static bRC handlePluginEvent(bpContext *ctx, bDirEvent *event, void *value);
+static bRC newPlugin(bpContext* ctx);
+static bRC freePlugin(bpContext* ctx);
+static bRC getPluginValue(bpContext* ctx, pDirVariable var, void* value);
+static bRC setPluginValue(bpContext* ctx, pDirVariable var, void* value);
+static bRC handlePluginEvent(bpContext* ctx, bDirEvent* event, void* value);
 
 
 /* Pointers to Bareos functions */
-static bDirFuncs *bfuncs = NULL;
-static bDirInfo  *binfo = NULL;
+static bDirFuncs* bfuncs = NULL;
+static bDirInfo* binfo = NULL;
 
-static genpInfo pluginInfo = {
-   sizeof(pluginInfo),
-   DIR_PLUGIN_INTERFACE_VERSION,
-   DIR_PLUGIN_MAGIC,
-   PLUGIN_LICENSE,
-   PLUGIN_AUTHOR,
-   PLUGIN_DATE,
-   PLUGIN_VERSION,
-   PLUGIN_DESCRIPTION
-};
+static genpInfo pluginInfo = {sizeof(pluginInfo), DIR_PLUGIN_INTERFACE_VERSION,
+                              DIR_PLUGIN_MAGIC,   PLUGIN_LICENSE,
+                              PLUGIN_AUTHOR,      PLUGIN_DATE,
+                              PLUGIN_VERSION,     PLUGIN_DESCRIPTION};
 
 static pDirFuncs pluginFuncs = {
-   sizeof(pluginFuncs),
-   DIR_PLUGIN_INTERFACE_VERSION,
+    sizeof(pluginFuncs), DIR_PLUGIN_INTERFACE_VERSION,
 
-   /* Entry points into plugin */
-   newPlugin,                         /* new plugin instance */
-   freePlugin,                        /* free plugin instance */
-   getPluginValue,
-   setPluginValue,
-   handlePluginEvent
-};
+    /* Entry points into plugin */
+    newPlugin,  /* new plugin instance */
+    freePlugin, /* free plugin instance */
+    getPluginValue, setPluginValue, handlePluginEvent};
 
 #ifdef __cplusplus
 extern "C" {
@@ -83,19 +73,19 @@ extern "C" {
  *
  * External entry point called by Bareos to "load" the plugin
  */
-bRC loadPlugin(bDirInfo *lbinfo,
-                           bDirFuncs *lbfuncs,
-                           genpInfo **pinfo,
-                           pDirFuncs **pfuncs)
+bRC loadPlugin(bDirInfo* lbinfo,
+               bDirFuncs* lbfuncs,
+               genpInfo** pinfo,
+               pDirFuncs** pfuncs)
 {
-   bfuncs = lbfuncs;                  /* set Bareos funct pointers */
-   binfo  = lbinfo;
-   printf("plugin: Loaded: size=%d version=%d\n", bfuncs->size, bfuncs->version);
+  bfuncs = lbfuncs; /* set Bareos funct pointers */
+  binfo = lbinfo;
+  printf("plugin: Loaded: size=%d version=%d\n", bfuncs->size, bfuncs->version);
 
-   *pinfo  = &pluginInfo;             /* return pointer to our info */
-   *pfuncs = &pluginFuncs;            /* return pointer to our functions */
+  *pinfo = &pluginInfo;   /* return pointer to our info */
+  *pfuncs = &pluginFuncs; /* return pointer to our functions */
 
-   return bRC_OK;
+  return bRC_OK;
 }
 
 /**
@@ -103,84 +93,81 @@ bRC loadPlugin(bDirInfo *lbinfo,
  */
 bRC unloadPlugin()
 {
-   printf("plugin: Unloaded\n");
-   return bRC_OK;
+  printf("plugin: Unloaded\n");
+  return bRC_OK;
 }
 
 #ifdef __cplusplus
 }
 #endif
 
-static bRC newPlugin(bpContext *ctx)
+static bRC newPlugin(bpContext* ctx)
 {
-   int JobId = 0;
-   bfuncs->getBareosValue(ctx, bDirVarJobId, (void *)&JobId);
-   printf("plugin: newPlugin JobId=%d\n", JobId);
-   bfuncs->registerBareosEvents(ctx,
-                                2,
-                                bDirEventJobStart,
-                                bDirEventJobEnd);
-   return bRC_OK;
+  int JobId = 0;
+  bfuncs->getBareosValue(ctx, bDirVarJobId, (void*)&JobId);
+  printf("plugin: newPlugin JobId=%d\n", JobId);
+  bfuncs->registerBareosEvents(ctx, 2, bDirEventJobStart, bDirEventJobEnd);
+  return bRC_OK;
 }
 
-static bRC freePlugin(bpContext *ctx)
+static bRC freePlugin(bpContext* ctx)
 {
-   int JobId = 0;
-   bfuncs->getBareosValue(ctx, bDirVarJobId, (void *)&JobId);
-   printf("plugin: freePlugin JobId=%d\n", JobId);
-   return bRC_OK;
+  int JobId = 0;
+  bfuncs->getBareosValue(ctx, bDirVarJobId, (void*)&JobId);
+  printf("plugin: freePlugin JobId=%d\n", JobId);
+  return bRC_OK;
 }
 
-static bRC getPluginValue(bpContext *ctx, pDirVariable var, void *value)
+static bRC getPluginValue(bpContext* ctx, pDirVariable var, void* value)
 {
-   printf("plugin: getPluginValue var=%d\n", var);
-   return bRC_OK;
+  printf("plugin: getPluginValue var=%d\n", var);
+  return bRC_OK;
 }
 
-static bRC setPluginValue(bpContext *ctx, pDirVariable var, void *value)
+static bRC setPluginValue(bpContext* ctx, pDirVariable var, void* value)
 {
-   printf("plugin: setPluginValue var=%d\n", var);
-   return bRC_OK;
+  printf("plugin: setPluginValue var=%d\n", var);
+  return bRC_OK;
 }
 
-static bRC handlePluginEvent(bpContext *ctx, bDirEvent *event, void *value)
+static bRC handlePluginEvent(bpContext* ctx, bDirEvent* event, void* value)
 {
-   char *name;
-   int val;
-   switch (event->eventType) {
-   case bDirEventJobStart:
+  char* name;
+  int val;
+  switch (event->eventType) {
+    case bDirEventJobStart:
       printf("plugin: HandleEvent JobStart\n");
       break;
-   case bDirEventJobEnd:
+    case bDirEventJobEnd:
       printf("plugin: HandleEvent JobEnd\n");
-      bfuncs->getBareosValue(ctx, bDirVarJob, (void *)&name);
+      bfuncs->getBareosValue(ctx, bDirVarJob, (void*)&name);
       printf("plugin: bDirVarJob=%s\n", name);
-      bfuncs->getBareosValue(ctx, bDirVarJobId, (void *)&val);
+      bfuncs->getBareosValue(ctx, bDirVarJobId, (void*)&val);
       printf("plugin: bDirVarJobId=%d\n", val);
-      bfuncs->getBareosValue(ctx, bDirVarType, (void *)&val);
+      bfuncs->getBareosValue(ctx, bDirVarType, (void*)&val);
       printf("plugin: bDirVarType=%c\n", val);
-      bfuncs->getBareosValue(ctx, bDirVarLevel, (void *)&val);
+      bfuncs->getBareosValue(ctx, bDirVarLevel, (void*)&val);
       printf("plugin: bDirVarLevel=%c\n", val);
-      bfuncs->getBareosValue(ctx, bDirVarClient, (void *)&name);
+      bfuncs->getBareosValue(ctx, bDirVarClient, (void*)&name);
       printf("plugin: bDirVarClient=%s\n", name);
-      bfuncs->getBareosValue(ctx, bDirVarCatalog, (void *)&name);
+      bfuncs->getBareosValue(ctx, bDirVarCatalog, (void*)&name);
       printf("plugin: bDirVarCatalog=%s\n", name);
-      bfuncs->getBareosValue(ctx, bDirVarPool, (void *)&name);
+      bfuncs->getBareosValue(ctx, bDirVarPool, (void*)&name);
       printf("plugin: bDirVarPool=%s\n", name);
-      bfuncs->getBareosValue(ctx, bDirVarStorage, (void *)&name);
+      bfuncs->getBareosValue(ctx, bDirVarStorage, (void*)&name);
       printf("plugin: bDirVarStorage=%s\n", name);
-      bfuncs->getBareosValue(ctx, bDirVarJobErrors, (void *)&val);
+      bfuncs->getBareosValue(ctx, bDirVarJobErrors, (void*)&val);
       printf("plugin: bDirVarJobErrors=%d\n", val);
-      bfuncs->getBareosValue(ctx, bDirVarJobFiles, (void *)&val);
+      bfuncs->getBareosValue(ctx, bDirVarJobFiles, (void*)&val);
       printf("plugin: bDirVarJobFiles=%d\n", val);
-      bfuncs->getBareosValue(ctx, bDirVarNumVols, (void *)&val);
+      bfuncs->getBareosValue(ctx, bDirVarNumVols, (void*)&val);
       printf("plugin: bDirVarNumVols=%d\n", val);
       break;
-   }
-   bfuncs->getBareosValue(ctx, bDirVarJobName, (void *)&name);
-   printf("Job Name=%s\n", name);
-   bfuncs->JobMessage(ctx, __FILE__, __LINE__, M_INFO, 0, "JobMesssage message");
-   bfuncs->DebugMessage(ctx, __FILE__, __LINE__, 1, "DebugMesssage message");
-   return bRC_OK;
+  }
+  bfuncs->getBareosValue(ctx, bDirVarJobName, (void*)&name);
+  printf("Job Name=%s\n", name);
+  bfuncs->JobMessage(ctx, __FILE__, __LINE__, M_INFO, 0, "JobMesssage message");
+  bfuncs->DebugMessage(ctx, __FILE__, __LINE__, 1, "DebugMesssage message");
+  return bRC_OK;
 }
 } /* namespace directordaemon */

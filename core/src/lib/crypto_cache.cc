@@ -29,175 +29,168 @@
 #include "crypto_cache.h"
 
 static pthread_mutex_t crypto_cache_lock = PTHREAD_MUTEX_INITIALIZER;
-static dlist *cached_crypto_keys = NULL;
+static dlist* cached_crypto_keys = NULL;
 
-static s_crypto_cache_hdr crypto_cache_hdr = {
-   "BAREOS Crypto Cache\n",
-   1,
-   0
-};
+static s_crypto_cache_hdr crypto_cache_hdr = {"BAREOS Crypto Cache\n", 1, 0};
 
 /*
  * Read the content of the crypto cache from the filesystem.
  */
-void ReadCryptoCache(const char *cache_file)
+void ReadCryptoCache(const char* cache_file)
 {
-   int fd, cnt;
-   ssize_t status;
-   bool ok = false;
-   s_crypto_cache_hdr hdr;
-   int hdr_size = sizeof(hdr);
-   crypto_cache_entry_t *cce = NULL;
+  int fd, cnt;
+  ssize_t status;
+  bool ok = false;
+  s_crypto_cache_hdr hdr;
+  int hdr_size = sizeof(hdr);
+  crypto_cache_entry_t* cce = NULL;
 
-   if ((fd = open(cache_file, O_RDONLY|O_BINARY)) < 0) {
-      BErrNo be;
+  if ((fd = open(cache_file, O_RDONLY | O_BINARY)) < 0) {
+    BErrNo be;
 
-      Dmsg2(010, "Could not open crypto cache file. %s ERR=%s\n", cache_file, be.bstrerror());
-      goto bail_out;
-   }
+    Dmsg2(010, "Could not open crypto cache file. %s ERR=%s\n", cache_file,
+          be.bstrerror());
+    goto bail_out;
+  }
 
-   if ((status = read(fd, &hdr, hdr_size)) != hdr_size) {
-      BErrNo be;
+  if ((status = read(fd, &hdr, hdr_size)) != hdr_size) {
+    BErrNo be;
 
-      Dmsg4(010, "Could not read crypto cache file. fd=%d status=%d size=%d: ERR=%s\n",
-            fd, (int)status, hdr_size, be.bstrerror());
-      goto bail_out;
-   }
+    Dmsg4(010,
+          "Could not read crypto cache file. fd=%d status=%d size=%d: ERR=%s\n",
+          fd, (int)status, hdr_size, be.bstrerror());
+    goto bail_out;
+  }
 
-   if (hdr.version != crypto_cache_hdr.version) {
-      Dmsg2(010, "Crypto cache bad hdr version. Wanted %d got %d\n",
-            crypto_cache_hdr.version, hdr.version);
-      goto bail_out;
-   }
+  if (hdr.version != crypto_cache_hdr.version) {
+    Dmsg2(010, "Crypto cache bad hdr version. Wanted %d got %d\n",
+          crypto_cache_hdr.version, hdr.version);
+    goto bail_out;
+  }
 
-   hdr.id[20] = 0;
-   if (!bstrcmp(hdr.id, crypto_cache_hdr.id)) {
-      Dmsg0(000, "Crypto cache file header id invalid.\n");
-      goto bail_out;
-   }
+  hdr.id[20] = 0;
+  if (!bstrcmp(hdr.id, crypto_cache_hdr.id)) {
+    Dmsg0(000, "Crypto cache file header id invalid.\n");
+    goto bail_out;
+  }
 
-   if (!cached_crypto_keys) {
-      cached_crypto_keys = New(dlist(cce, &cce->link));
-   }
+  if (!cached_crypto_keys) { cached_crypto_keys = New(dlist(cce, &cce->link)); }
 
-   /*
-    * Read as many crypto cache entries as available.
-    */
-   cnt = 0;
-   cce = (crypto_cache_entry_t *)malloc(sizeof(crypto_cache_entry_t));
-   while (read(fd, cce, sizeof(crypto_cache_entry_t)) == sizeof(crypto_cache_entry_t)) {
-      cnt++;
-      cached_crypto_keys->append(cce);
-      cce = (crypto_cache_entry_t *)malloc(sizeof(crypto_cache_entry_t));
-   }
+  /*
+   * Read as many crypto cache entries as available.
+   */
+  cnt = 0;
+  cce = (crypto_cache_entry_t*)malloc(sizeof(crypto_cache_entry_t));
+  while (read(fd, cce, sizeof(crypto_cache_entry_t)) ==
+         sizeof(crypto_cache_entry_t)) {
+    cnt++;
+    cached_crypto_keys->append(cce);
+    cce = (crypto_cache_entry_t*)malloc(sizeof(crypto_cache_entry_t));
+  }
 
-   /*
-    * We always allocate a dangling crypto_cache_entry_t structure in
-    * the way that we malloc before the loop and in the loop. So drop
-    * the last unused entry.
-    */
-   free(cce);
+  /*
+   * We always allocate a dangling crypto_cache_entry_t structure in
+   * the way that we malloc before the loop and in the loop. So drop
+   * the last unused entry.
+   */
+  free(cce);
 
-   /*
-    * Check if we read the number of entries the header said are in the file.
-    */
-   if (cnt == hdr.nr_entries) {
-      ok = true;
-      Dmsg2(010, "Crypto cache read %d entries in file %s\n", cnt, cache_file);
-   } else {
-      Dmsg3(000, "Crypto cache read %d entries while %d entries should be in file %s\n",
-            cnt, hdr.nr_entries, cache_file);
-   }
+  /*
+   * Check if we read the number of entries the header said are in the file.
+   */
+  if (cnt == hdr.nr_entries) {
+    ok = true;
+    Dmsg2(010, "Crypto cache read %d entries in file %s\n", cnt, cache_file);
+  } else {
+    Dmsg3(
+        000,
+        "Crypto cache read %d entries while %d entries should be in file %s\n",
+        cnt, hdr.nr_entries, cache_file);
+  }
 
 bail_out:
-   if (fd >= 0) {
-      close(fd);
-   }
+  if (fd >= 0) { close(fd); }
 
-   if (!ok) {
-      SecureErase(NULL, cache_file);
-      if (cached_crypto_keys) {
-         cached_crypto_keys->destroy();
-         delete cached_crypto_keys;
-         cached_crypto_keys = NULL;
-      }
-   }
-
+  if (!ok) {
+    SecureErase(NULL, cache_file);
+    if (cached_crypto_keys) {
+      cached_crypto_keys->destroy();
+      delete cached_crypto_keys;
+      cached_crypto_keys = NULL;
+    }
+  }
 }
 
-void ReadCryptoCache(const char *dir, const char *progname, int port)
+void ReadCryptoCache(const char* dir, const char* progname, int port)
 {
-   POOLMEM *fname = GetPoolMemory(PM_FNAME);
+  POOLMEM* fname = GetPoolMemory(PM_FNAME);
 
-   Mmsg(fname, "%s/%s.%d.cryptoc", dir, progname, port);
-   ReadCryptoCache(fname);
-   FreePoolMemory(fname);
+  Mmsg(fname, "%s/%s.%d.cryptoc", dir, progname, port);
+  ReadCryptoCache(fname);
+  FreePoolMemory(fname);
 }
 
 /*
  * Write the content of the crypto cache to the filesystem.
  */
-void WriteCryptoCache(const char *cache_file)
+void WriteCryptoCache(const char* cache_file)
 {
-   int fd;
-   bool ok = false;
-   crypto_cache_entry_t *cce;
+  int fd;
+  bool ok = false;
+  crypto_cache_entry_t* cce;
 
-   if (!cached_crypto_keys) {
-      return;
-   }
+  if (!cached_crypto_keys) { return; }
 
-   /*
-    * Lock the cache.
-    */
-   P(crypto_cache_lock);
+  /*
+   * Lock the cache.
+   */
+  P(crypto_cache_lock);
 
-   SecureErase(NULL, cache_file);
-   if ((fd = open(cache_file, O_CREAT | O_WRONLY | O_BINARY, 0640)) < 0) {
+  SecureErase(NULL, cache_file);
+  if ((fd = open(cache_file, O_CREAT | O_WRONLY | O_BINARY, 0640)) < 0) {
+    BErrNo be;
+
+    Emsg2(M_ERROR, 0, _("Could not create crypto cache file. %s ERR=%s\n"),
+          cache_file, be.bstrerror());
+    goto bail_out;
+  }
+
+  crypto_cache_hdr.nr_entries = cached_crypto_keys->size();
+  if (write(fd, &crypto_cache_hdr, sizeof(crypto_cache_hdr)) !=
+      sizeof(crypto_cache_hdr)) {
+    BErrNo be;
+
+    Dmsg1(000, "Write hdr error: ERR=%s\n", be.bstrerror());
+    goto bail_out;
+  }
+
+  foreach_dlist (cce, cached_crypto_keys) {
+    if (write(fd, cce, sizeof(crypto_cache_entry_t)) !=
+        sizeof(crypto_cache_entry_t)) {
       BErrNo be;
 
-      Emsg2(M_ERROR, 0, _("Could not create crypto cache file. %s ERR=%s\n"), cache_file, be.bstrerror());
+      Dmsg1(000, "Write record error: ERR=%s\n", be.bstrerror());
       goto bail_out;
-   }
+    }
+  }
 
-   crypto_cache_hdr.nr_entries = cached_crypto_keys->size();
-   if (write(fd, &crypto_cache_hdr, sizeof(crypto_cache_hdr)) != sizeof(crypto_cache_hdr)) {
-      BErrNo be;
-
-      Dmsg1(000, "Write hdr error: ERR=%s\n", be.bstrerror());
-      goto bail_out;
-   }
-
-   foreach_dlist(cce, cached_crypto_keys) {
-      if (write(fd, cce, sizeof(crypto_cache_entry_t)) != sizeof(crypto_cache_entry_t)) {
-         BErrNo be;
-
-         Dmsg1(000, "Write record error: ERR=%s\n", be.bstrerror());
-         goto bail_out;
-      }
-   }
-
-   ok = true;
+  ok = true;
 
 bail_out:
-   if (fd >= 0) {
-      close(fd);
-   }
+  if (fd >= 0) { close(fd); }
 
-   if (!ok) {
-      SecureErase(NULL, cache_file);
-   }
+  if (!ok) { SecureErase(NULL, cache_file); }
 
-   V(crypto_cache_lock);
+  V(crypto_cache_lock);
 }
 
-void WriteCryptoCache(const char *dir, const char *progname, int port)
+void WriteCryptoCache(const char* dir, const char* progname, int port)
 {
-   POOLMEM *fname = GetPoolMemory(PM_FNAME);
+  POOLMEM* fname = GetPoolMemory(PM_FNAME);
 
-   Mmsg(fname, "%s/%s.%d.cryptoc", dir, progname, port);
-   WriteCryptoCache(fname);
-   FreePoolMemory(fname);
+  Mmsg(fname, "%s/%s.%d.cryptoc", dir, progname, port);
+  WriteCryptoCache(fname);
+  FreePoolMemory(fname);
 }
 
 /*
@@ -207,107 +200,106 @@ void WriteCryptoCache(const char *dir, const char *progname, int port)
  * Returns: true - cache was updated with new data.
  *          false - cache was not updated with new data.
  */
-bool UpdateCryptoCache(const char *VolumeName, const char *EncryptionKey)
+bool UpdateCryptoCache(const char* VolumeName, const char* EncryptionKey)
 {
-   time_t now;
-   bool found;
-   bool retval = false;
-   crypto_cache_entry_t *cce = NULL;
-   crypto_cache_entry_t *next_cce;
+  time_t now;
+  bool found;
+  bool retval = false;
+  crypto_cache_entry_t* cce = NULL;
+  crypto_cache_entry_t* next_cce;
 
-   /*
-    * Lock the cache.
-    */
-   P(crypto_cache_lock);
+  /*
+   * Lock the cache.
+   */
+  P(crypto_cache_lock);
 
-   /*
-    * See if there are any cached encryption keys.
-    */
-   if (!cached_crypto_keys) {
-      cached_crypto_keys = New(dlist(cce, &cce->link));
+  /*
+   * See if there are any cached encryption keys.
+   */
+  if (!cached_crypto_keys) {
+    cached_crypto_keys = New(dlist(cce, &cce->link));
 
-      cce = (crypto_cache_entry_t *)malloc(sizeof(crypto_cache_entry_t));
+    cce = (crypto_cache_entry_t*)malloc(sizeof(crypto_cache_entry_t));
+    bstrncpy(cce->VolumeName, VolumeName, sizeof(cce->VolumeName));
+    bstrncpy(cce->EncryptionKey, EncryptionKey, sizeof(cce->EncryptionKey));
+    cce->added = time(NULL);
+    cached_crypto_keys->append(cce);
+    retval = true;
+  } else {
+    found = false;
+    now = time(NULL);
+    cce = (crypto_cache_entry_t*)cached_crypto_keys->first();
+    while (cce) {
+      next_cce = (crypto_cache_entry_t*)cached_crypto_keys->next(cce);
+      if (bstrcmp(cce->VolumeName, VolumeName)) {
+        found = true;
+
+        /*
+         * If the key changed update the cached entry.
+         */
+        if (!bstrcmp(cce->EncryptionKey, EncryptionKey)) {
+          bstrncpy(cce->EncryptionKey, EncryptionKey,
+                   sizeof(cce->EncryptionKey));
+          retval = true;
+        }
+
+        cce->added = time(NULL);
+        cce = next_cce;
+        continue;
+      }
+
+      /*
+       * Validate the entry.
+       * Any entry older the CRYPTO_CACHE_MAX_AGE seconds is removed.
+       */
+      if ((cce->added + CRYPTO_CACHE_MAX_AGE) < now) {
+        cached_crypto_keys->remove(cce);
+        retval = true;
+      }
+      cce = next_cce;
+    }
+
+    /*
+     * New entry.
+     */
+    if (!found) {
+      cce = (crypto_cache_entry_t*)malloc(sizeof(crypto_cache_entry_t));
       bstrncpy(cce->VolumeName, VolumeName, sizeof(cce->VolumeName));
       bstrncpy(cce->EncryptionKey, EncryptionKey, sizeof(cce->EncryptionKey));
       cce->added = time(NULL);
       cached_crypto_keys->append(cce);
       retval = true;
-   } else {
-      found = false;
-      now = time(NULL);
-      cce = (crypto_cache_entry_t *)cached_crypto_keys->first();
-      while (cce) {
-         next_cce = (crypto_cache_entry_t *)cached_crypto_keys->next(cce);
-         if (bstrcmp(cce->VolumeName, VolumeName)) {
-            found = true;
+    }
+  }
 
-            /*
-             * If the key changed update the cached entry.
-             */
-            if (!bstrcmp(cce->EncryptionKey, EncryptionKey)) {
-               bstrncpy(cce->EncryptionKey, EncryptionKey, sizeof(cce->EncryptionKey));
-               retval = true;
-            }
-
-            cce->added = time(NULL);
-            cce = next_cce;
-            continue;
-         }
-
-         /*
-          * Validate the entry.
-          * Any entry older the CRYPTO_CACHE_MAX_AGE seconds is removed.
-          */
-         if ((cce->added + CRYPTO_CACHE_MAX_AGE) < now) {
-            cached_crypto_keys->remove(cce);
-            retval = true;
-         }
-         cce = next_cce;
-      }
-
-      /*
-       * New entry.
-       */
-      if (!found) {
-         cce = (crypto_cache_entry_t *)malloc(sizeof(crypto_cache_entry_t));
-         bstrncpy(cce->VolumeName, VolumeName, sizeof(cce->VolumeName));
-         bstrncpy(cce->EncryptionKey, EncryptionKey, sizeof(cce->EncryptionKey));
-         cce->added = time(NULL);
-         cached_crypto_keys->append(cce);
-         retval = true;
-      }
-   }
-
-   V(crypto_cache_lock);
-   return retval;
+  V(crypto_cache_lock);
+  return retval;
 }
 
 /*
  * Lookup a cache entry for the given VolumeName.
  * Returns: string dupped encryption key must be freed by caller.
  */
-char *lookup_crypto_cache_entry(const char *VolumeName)
+char* lookup_crypto_cache_entry(const char* VolumeName)
 {
-   crypto_cache_entry_t *cce;
+  crypto_cache_entry_t* cce;
 
-   if (!cached_crypto_keys) {
-      return NULL;
-   }
+  if (!cached_crypto_keys) { return NULL; }
 
-   /*
-    * Lock the cache.
-    */
-   P(crypto_cache_lock);
+  /*
+   * Lock the cache.
+   */
+  P(crypto_cache_lock);
 
-   foreach_dlist(cce, cached_crypto_keys) {
-      if (bstrcmp(cce->VolumeName, VolumeName)) {
-         V(crypto_cache_lock);
-         return bstrdup(cce->EncryptionKey);
-      }
-   }
+  foreach_dlist (cce, cached_crypto_keys) {
+    if (bstrcmp(cce->VolumeName, VolumeName)) {
+      V(crypto_cache_lock);
+      return bstrdup(cce->EncryptionKey);
+    }
+  }
 
-   V(crypto_cache_lock);
-   return NULL;
+  V(crypto_cache_lock);
+  return NULL;
 }
 
 /*
@@ -315,56 +307,48 @@ char *lookup_crypto_cache_entry(const char *VolumeName)
  */
 void DumpCryptoCache(int fd)
 {
-   int len;
-   PoolMem msg(PM_MESSAGE);
-   crypto_cache_entry_t *cce;
-   char dt1[MAX_TIME_LENGTH],
-        dt2[MAX_TIME_LENGTH];
-   unsigned int max_vol_length,
-                max_key_length;
+  int len;
+  PoolMem msg(PM_MESSAGE);
+  crypto_cache_entry_t* cce;
+  char dt1[MAX_TIME_LENGTH], dt2[MAX_TIME_LENGTH];
+  unsigned int max_vol_length, max_key_length;
 
-   if (!cached_crypto_keys) {
-      return;
-   }
+  if (!cached_crypto_keys) { return; }
 
-   /*
-    * Lock the cache.
-    */
-   P(crypto_cache_lock);
+  /*
+   * Lock the cache.
+   */
+  P(crypto_cache_lock);
 
-   /*
-    * See how long the biggest volumename and key are.
-    */
-   max_vol_length = strlen(_("Volumename"));
-   max_key_length = strlen(_("EncryptionKey"));
-   foreach_dlist(cce, cached_crypto_keys) {
-      if (strlen(cce->VolumeName) > max_vol_length) {
-         max_vol_length = strlen(cce->VolumeName);
-      }
+  /*
+   * See how long the biggest volumename and key are.
+   */
+  max_vol_length = strlen(_("Volumename"));
+  max_key_length = strlen(_("EncryptionKey"));
+  foreach_dlist (cce, cached_crypto_keys) {
+    if (strlen(cce->VolumeName) > max_vol_length) {
+      max_vol_length = strlen(cce->VolumeName);
+    }
 
-      if (strlen(cce->EncryptionKey) > max_key_length) {
-         max_key_length = strlen(cce->EncryptionKey);
-      }
-   }
+    if (strlen(cce->EncryptionKey) > max_key_length) {
+      max_key_length = strlen(cce->EncryptionKey);
+    }
+  }
 
-   len = Mmsg(msg, "%-*s %-*s %-20s %-20s\n",
-              max_vol_length, _("Volumename"),
-              max_key_length, _("EncryptionKey"),
-              _("Added"), _("Expires"));
-   write(fd, msg.c_str(), len);
+  len = Mmsg(msg, "%-*s %-*s %-20s %-20s\n", max_vol_length, _("Volumename"),
+             max_key_length, _("EncryptionKey"), _("Added"), _("Expires"));
+  write(fd, msg.c_str(), len);
 
-   foreach_dlist(cce, cached_crypto_keys) {
-      bstrutime(dt1, sizeof(dt1), cce->added);
-      bstrutime(dt2, sizeof(dt2), cce->added + CRYPTO_CACHE_MAX_AGE);
-      len = Mmsg(msg, "%-*s %-*s %-20s %-20s\n",
-                 max_vol_length, cce->VolumeName,
-                 max_key_length, cce->EncryptionKey,
-                 dt1, dt2);
+  foreach_dlist (cce, cached_crypto_keys) {
+    bstrutime(dt1, sizeof(dt1), cce->added);
+    bstrutime(dt2, sizeof(dt2), cce->added + CRYPTO_CACHE_MAX_AGE);
+    len = Mmsg(msg, "%-*s %-*s %-20s %-20s\n", max_vol_length, cce->VolumeName,
+               max_key_length, cce->EncryptionKey, dt1, dt2);
 
-      write(fd, msg.c_str(), len);
-   }
+    write(fd, msg.c_str(), len);
+  }
 
-   V(crypto_cache_lock);
+  V(crypto_cache_lock);
 }
 
 /*
@@ -372,25 +356,23 @@ void DumpCryptoCache(int fd)
  */
 void ResetCryptoCache(void)
 {
-   time_t now;
-   crypto_cache_entry_t *cce;
+  time_t now;
+  crypto_cache_entry_t* cce;
 
-   if (!cached_crypto_keys) {
-      return;
-   }
+  if (!cached_crypto_keys) { return; }
 
-   now = time(NULL);
+  now = time(NULL);
 
-   /*
-    * Lock the cache.
-    */
-   P(crypto_cache_lock);
+  /*
+   * Lock the cache.
+   */
+  P(crypto_cache_lock);
 
-   foreach_dlist(cce, cached_crypto_keys) {
-      cce->added = now;
-   }
+  foreach_dlist (cce, cached_crypto_keys) {
+    cce->added = now;
+  }
 
-   V(crypto_cache_lock);
+  V(crypto_cache_lock);
 }
 
 /*
@@ -398,18 +380,16 @@ void ResetCryptoCache(void)
  */
 void FlushCryptoCache(void)
 {
-   if (!cached_crypto_keys) {
-      return;
-   }
+  if (!cached_crypto_keys) { return; }
 
-   /*
-    * Lock the cache.
-    */
-   P(crypto_cache_lock);
+  /*
+   * Lock the cache.
+   */
+  P(crypto_cache_lock);
 
-   cached_crypto_keys->destroy();
-   delete cached_crypto_keys;
-   cached_crypto_keys = NULL;
+  cached_crypto_keys->destroy();
+  delete cached_crypto_keys;
+  cached_crypto_keys = NULL;
 
-   V(crypto_cache_lock);
+  V(crypto_cache_lock);
 }

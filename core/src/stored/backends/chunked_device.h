@@ -62,124 +62,127 @@ namespace storagedaemon {
 #define INFLIGHT_RETRIES 120
 #define INFLIGT_RETRY_TIME 5
 
-enum thread_wait_type {
-   WAIT_CANCEL_THREAD,     /* Perform a pthread_cancel() on exit. */
-   WAIT_JOIN_THREAD        /* Perform a pthread_join() on exit. */
+enum thread_wait_type
+{
+  WAIT_CANCEL_THREAD, /* Perform a pthread_cancel() on exit. */
+  WAIT_JOIN_THREAD    /* Perform a pthread_join() on exit. */
 };
 
 struct thread_handle {
-   thread_wait_type type;  /* See WAIT_*_THREAD thread_wait_type enum */
-   pthread_t thread_id;    /* Actual threadid */
+  thread_wait_type type; /* See WAIT_*_THREAD thread_wait_type enum */
+  pthread_t thread_id;   /* Actual threadid */
 };
 
 struct chunk_io_request {
-   const char *volname;    /* VolumeName */
-   uint16_t chunk;         /* Chunk number */
-   char *buffer;           /* Data */
-   uint32_t wbuflen;       /* Size of the actual valid data in the chunk (Write) */
-   uint32_t *rbuflen;      /* Size of the actual valid data in the chunk (Read) */
-   uint8_t tries;          /* Number of times the flush was tried to the backing store */
-   bool release;           /* Should we release the data to which the buffer points ? */
+  const char* volname; /* VolumeName */
+  uint16_t chunk;      /* Chunk number */
+  char* buffer;        /* Data */
+  uint32_t wbuflen;    /* Size of the actual valid data in the chunk (Write) */
+  uint32_t* rbuflen;   /* Size of the actual valid data in the chunk (Read) */
+  uint8_t tries; /* Number of times the flush was tried to the backing store */
+  bool release;  /* Should we release the data to which the buffer points ? */
 };
 
 struct chunk_descriptor {
-   ssize_t chunk_size;     /* Total size of the memory chunk */
-   char *buffer;           /* Data */
-   uint32_t buflen;        /* Size of the actual valid data in the chunk */
-   boffset_t start_offset; /* Start offset of the current chunk */
-   boffset_t end_offset;   /* End offset of the current chunk */
-   bool need_flushing;     /* Data is dirty and needs flushing to backing store */
-   bool chunk_setup;       /* Chunk is initialized and ready for use */
-   bool writing;           /* We are currently writing */
-   bool opened;            /* An open call was done */
+  ssize_t chunk_size;     /* Total size of the memory chunk */
+  char* buffer;           /* Data */
+  uint32_t buflen;        /* Size of the actual valid data in the chunk */
+  boffset_t start_offset; /* Start offset of the current chunk */
+  boffset_t end_offset;   /* End offset of the current chunk */
+  bool need_flushing; /* Data is dirty and needs flushing to backing store */
+  bool chunk_setup;   /* Chunk is initialized and ready for use */
+  bool writing;       /* We are currently writing */
+  bool opened;        /* An open call was done */
 };
 
 #include "ordered_cbuf.h"
 
-class chunked_device: public Device {
-private:
-   /*
-    * Private Members
-    */
-   bool io_threads_started_;
-   bool end_of_media_;
-   bool readonly_;
-   uint8_t inflight_chunks_;
-   char *current_volname_;
-   ordered_circbuf *cb_;
-   alist *thread_ids_;
-   chunk_descriptor *current_chunk_;
+class chunked_device : public Device {
+ private:
+  /*
+   * Private Members
+   */
+  bool io_threads_started_;
+  bool end_of_media_;
+  bool readonly_;
+  uint8_t inflight_chunks_;
+  char* current_volname_;
+  ordered_circbuf* cb_;
+  alist* thread_ids_;
+  chunk_descriptor* current_chunk_;
 
-   /*
-    * Private Methods
-    */
-   char *allocate_chunkbuffer();
-   void FreeChunkbuffer(char *buffer);
-   void FreeChunkIoRequest(chunk_io_request *request);
-   bool StartIoThreads();
-   void StopThreads();
-   bool EnqueueChunk(chunk_io_request *request);
-   bool FlushChunk(bool release_chunk, bool move_to_next_chunk);
-   bool ReadChunk();
-   bool is_written();
+  /*
+   * Private Methods
+   */
+  char* allocate_chunkbuffer();
+  void FreeChunkbuffer(char* buffer);
+  void FreeChunkIoRequest(chunk_io_request* request);
+  bool StartIoThreads();
+  void StopThreads();
+  bool EnqueueChunk(chunk_io_request* request);
+  bool FlushChunk(bool release_chunk, bool move_to_next_chunk);
+  bool ReadChunk();
+  bool is_written();
 
-protected:
-   /*
-    * Protected Members
-    */
-   uint8_t io_threads_;
-   uint8_t io_slots_;
-   uint8_t retries_;
-   uint64_t chunk_size_;
-   boffset_t offset_;
-   bool use_mmap_;
+ protected:
+  /*
+   * Protected Members
+   */
+  uint8_t io_threads_;
+  uint8_t io_slots_;
+  uint8_t retries_;
+  uint64_t chunk_size_;
+  boffset_t offset_;
+  bool use_mmap_;
 
-   /*
-    * Protected Methods
-    */
-   bool SetInflightChunk(chunk_io_request *request);
-   void ClearInflightChunk(chunk_io_request *request);
-   bool IsInflightChunk(chunk_io_request *request);
-   int NrInflightChunks();
-   int SetupChunk(const char *pathname, int flags, int mode);
-   ssize_t ReadChunked(int fd, void *buffer, size_t count);
-   ssize_t WriteChunked(int fd, const void *buffer, size_t count);
-   int CloseChunk();
-   bool TruncateChunkedVolume(DeviceControlRecord *dcr);
-   ssize_t ChunkedVolumeSize();
-   bool LoadChunk();
-   bool WaitUntilChunksWritten();
+  /*
+   * Protected Methods
+   */
+  bool SetInflightChunk(chunk_io_request* request);
+  void ClearInflightChunk(chunk_io_request* request);
+  bool IsInflightChunk(chunk_io_request* request);
+  int NrInflightChunks();
+  int SetupChunk(const char* pathname, int flags, int mode);
+  ssize_t ReadChunked(int fd, void* buffer, size_t count);
+  ssize_t WriteChunked(int fd, const void* buffer, size_t count);
+  int CloseChunk();
+  bool TruncateChunkedVolume(DeviceControlRecord* dcr);
+  ssize_t ChunkedVolumeSize();
+  bool LoadChunk();
+  bool WaitUntilChunksWritten();
 
-   /*
-    * Methods implemented by inheriting class.
-    */
-   virtual bool CheckRemote() = 0;
-   virtual bool remote_chunked_volume_exists() = 0;
-   virtual bool FlushRemoteChunk(chunk_io_request *request) = 0;
-   virtual bool ReadRemoteChunk(chunk_io_request *request) = 0;
-   virtual ssize_t chunked_remote_volume_size() = 0;
-   virtual bool TruncateRemoteChunkedVolume(DeviceControlRecord *dcr) = 0;
+  /*
+   * Methods implemented by inheriting class.
+   */
+  virtual bool CheckRemote() = 0;
+  virtual bool remote_chunked_volume_exists() = 0;
+  virtual bool FlushRemoteChunk(chunk_io_request* request) = 0;
+  virtual bool ReadRemoteChunk(chunk_io_request* request) = 0;
+  virtual ssize_t chunked_remote_volume_size() = 0;
+  virtual bool TruncateRemoteChunkedVolume(DeviceControlRecord* dcr) = 0;
 
-public:
-   /*
-    * Public Methods
-    */
-   chunked_device();
-   virtual ~chunked_device();
+ public:
+  /*
+   * Public Methods
+   */
+  chunked_device();
+  virtual ~chunked_device();
 
-   bool DequeueChunk();
-   bool DeviceStatus(bsdDevStatTrig *dst);
+  bool DequeueChunk();
+  bool DeviceStatus(bsdDevStatTrig* dst);
 
-   /*
-    * Interface from Device
-    */
-   virtual int d_close(int fd) = 0;
-   virtual int d_open(const char *pathname, int flags, int mode) = 0;
-   virtual int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL) = 0;
-   virtual boffset_t d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence) = 0;
-   virtual ssize_t d_read(int fd, void *buffer, size_t count) = 0;
-   virtual ssize_t d_write(int fd, const void *buffer, size_t count) = 0;
-   virtual bool d_truncate(DeviceControlRecord *dcr) = 0;
+  /*
+   * Interface from Device
+   */
+  virtual int d_close(int fd) = 0;
+  virtual int d_open(const char* pathname, int flags, int mode) = 0;
+  virtual int d_ioctl(int fd, ioctl_req_t request, char* mt = NULL) = 0;
+  virtual boffset_t d_lseek(DeviceControlRecord* dcr,
+                            boffset_t offset,
+                            int whence) = 0;
+  virtual ssize_t d_read(int fd, void* buffer, size_t count) = 0;
+  virtual ssize_t d_write(int fd, const void* buffer, size_t count) = 0;
+  virtual bool d_truncate(DeviceControlRecord* dcr) = 0;
 };
 
 } /* namespace storagedaemon */

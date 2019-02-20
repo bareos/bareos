@@ -21,25 +21,30 @@
 #ifndef LIB_CRAM_MD5_H_
 #define LIB_CRAM_MD5_H_
 
-class CramMd5Handshake
-{
-public:
-   CramMd5Handshake(BareosSocket *bs, const char *passwort, TlsPolicy local_tls_policy);
-   bool DoHandshake(bool initiated_by_remote);
-   TlsPolicy RemoteTlsPolicy() const { return remote_tls_policy_; }
+class CramMd5Handshake {
+ public:
+  CramMd5Handshake(BareosSocket* bs,
+                   const char* passwort,
+                   TlsPolicy local_tls_policy);
+  bool DoHandshake(bool initiated_by_remote);
+  TlsPolicy RemoteTlsPolicy() const { return remote_tls_policy_; }
 
-private:
-   static constexpr int debuglevel_ = 50;
-   bool compatible_ = true;
-   BareosSocket *bs_;
-   const char *password_;
-   TlsPolicy local_tls_policy_;
-   TlsPolicy remote_tls_policy_;
-   bool CramMd5Challenge();
-   bool CramMd5Response();
-   void InitRandom() const;
+ private:
+  static constexpr int debuglevel_ = 50;
+  bool compatible_ = true;
+  BareosSocket* bs_;
+  const char* password_;
+  TlsPolicy local_tls_policy_;
+  TlsPolicy remote_tls_policy_;
+  bool CramMd5Challenge();
+  bool CramMd5Response();
+  void InitRandom() const;
 };
 
-void hmac_md5(uint8_t *text, int text_len, uint8_t *key, int key_len, uint8_t *hmac);
+void hmac_md5(uint8_t* text,
+              int text_len,
+              uint8_t* key,
+              int key_len,
+              uint8_t* hmac);
 
-#endif // LIB_CRAM_MD5_H_
+#endif  // LIB_CRAM_MD5_H_

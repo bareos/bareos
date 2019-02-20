@@ -25,53 +25,44 @@
 
 #include "include/bareos.h"
 
-static FILE *output_file_ = stdout;
+static FILE* output_file_ = stdout;
 static bool teeout_enabled_ = false;
 
 /**
  * Send a line to the output file and or the terminal
  */
-void ConsoleOutputFormat(const char *fmt,...)
+void ConsoleOutputFormat(const char* fmt, ...)
 {
-   std::vector<char> buf(3000);
-   va_list arg_ptr;
+  std::vector<char> buf(3000);
+  va_list arg_ptr;
 
-   va_start(arg_ptr, fmt);
-   Bvsnprintf(buf.data(), 3000 -1, (char *)fmt, arg_ptr);
-   va_end(arg_ptr);
-   ConsoleOutput(buf.data());
+  va_start(arg_ptr, fmt);
+  Bvsnprintf(buf.data(), 3000 - 1, (char*)fmt, arg_ptr);
+  va_end(arg_ptr);
+  ConsoleOutput(buf.data());
 }
 
-void ConsoleOutput(const char *buf)
+void ConsoleOutput(const char* buf)
 {
-   fputs(buf, output_file_);
-   fflush(output_file_);
-   if (teeout_enabled_) {
-      fputs(buf, stdout);
-      fflush(stdout);
-   }
+  fputs(buf, output_file_);
+  fflush(output_file_);
+  if (teeout_enabled_) {
+    fputs(buf, stdout);
+    fflush(stdout);
+  }
 }
 
-void EnableTeeOut()
-{
-   teeout_enabled_ = true;
-}
+void EnableTeeOut() { teeout_enabled_ = true; }
 
-void DisableTeeOut()
-{
-   teeout_enabled_ = false;
-}
+void DisableTeeOut() { teeout_enabled_ = false; }
 
-void SetTeeFile(FILE *f)
-{
-   output_file_ = f;
-}
+void SetTeeFile(FILE* f) { output_file_ = f; }
 
 void CloseTeeFile()
 {
-   if (output_file_ != stdout) {
-      fclose(output_file_);
-      SetTeeFile(stdout);
-      DisableTeeOut();
-   }
+  if (output_file_ != stdout) {
+    fclose(output_file_);
+    SetTeeFile(stdout);
+    DisableTeeOut();
+  }
 }

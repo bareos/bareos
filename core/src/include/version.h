@@ -2,7 +2,7 @@
 #define VERSION "19.1.2"
 #endif
 
-#define BDATE   "01 February 2019"
+#define BDATE "01 February 2019"
 #define LSMDATE "01Feb19"
 
 #ifndef BAREOS_BINARY_INFO
@@ -10,23 +10,24 @@
 #endif
 
 #ifndef BAREOS_SERVICES_MESSAGE
-#define BAREOS_SERVICES_MESSAGE "self-compiled binaries are UNSUPPORTED by bareos.com.\nGet official binaries and vendor support on https://www.bareos.com"
+#define BAREOS_SERVICES_MESSAGE                                          \
+  "self-compiled binaries are UNSUPPORTED by bareos.com.\nGet official " \
+  "binaries and vendor support on https://www.bareos.com"
 #endif
 
 #ifndef BAREOS_JOBLOG_MESSAGE
-#define BAREOS_JOBLOG_MESSAGE "self-compiled: Get official binaries and vendor support on bareos.com"
+#define BAREOS_JOBLOG_MESSAGE \
+  "self-compiled: Get official binaries and vendor support on bareos.com"
 #endif
 
 
-
-
-#define PROG_COPYRIGHT "\n" \
-                       BAREOS_SERVICES_MESSAGE \
-                       "\n" \
-                       "Copyright (C) 2013-2019 Bareos GmbH & Co. KG\n" \
-                       "Copyright (C) %d-2012 Free Software Foundation Europe e.V.\n" \
-                       "Copyright (C) 2010-2017 Planets Communications B.V.\n"
-#define BYEAR "2019"       /* year for copyright messages in programs */
+#define PROG_COPYRIGHT                                           \
+  "\n" BAREOS_SERVICES_MESSAGE                                   \
+  "\n"                                                           \
+  "Copyright (C) 2013-2019 Bareos GmbH & Co. KG\n"               \
+  "Copyright (C) %d-2012 Free Software Foundation Europe e.V.\n" \
+  "Copyright (C) 2010-2017 Planets Communications B.V.\n"
+#define BYEAR "2019" /* year for copyright messages in programs */
 
 
 /*
@@ -85,7 +86,7 @@
  *  it is the maximum memory malloced before Bareos will
  *  abort.  Except for debug situations, this should be zero
  */
-#define SMALLOC_SANITY_CHECK 0  /* 500000000  0.5 GB max */
+#define SMALLOC_SANITY_CHECK 0 /* 500000000  0.5 GB max */
 
 
 /* Check if header of tape block is zero before writing */
@@ -104,14 +105,14 @@
 /* #define NO_ATTRIBUTES_TEST 1 */
 
 /*
-* If you turn on NO_TAPE_WRITE_TEST and rebuild, the SD
-*  will do all normal actions, but will not write to the
-*  Volume.  Note, this means a lot of functions such as
-*  labeling will not work, so you must use it only when
-*  Bareos is going to append to a Volume. This will eliminate
-*  the time it takes to write to the Volume (not the time
-*  it takes to do any positioning).
-*/
+ * If you turn on NO_TAPE_WRITE_TEST and rebuild, the SD
+ *  will do all normal actions, but will not write to the
+ *  Volume.  Note, this means a lot of functions such as
+ *  labeling will not work, so you must use it only when
+ *  Bareos is going to append to a Volume. This will eliminate
+ *  the time it takes to write to the Volume (not the time
+ *  it takes to do any positioning).
+ */
 /* #define NO_TAPE_WRITE_TEST 1 */
 
 /*

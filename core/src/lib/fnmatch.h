@@ -34,22 +34,22 @@
 #ifndef BAREOS_LIB_FNMATCH_H_
 #define BAREOS_LIB_FNMATCH_H_
 
-#undef  FNM_PATHNAME
-#undef  FNM_NOESCAPE
-#undef  FNM_PERIOD
+#undef FNM_PATHNAME
+#undef FNM_NOESCAPE
+#undef FNM_PERIOD
 
-#define FNM_NOMATCH     1       /* Match failed. */
-#define FNM_MATCH       0       /* Match succeeded */
+#define FNM_NOMATCH 1 /* Match failed. */
+#define FNM_MATCH 0   /* Match succeeded */
 
-#define FNM_PATHNAME    0x01    /* Slash must be matched by slash. */
-#define FNM_NOESCAPE    0x02    /* Disable backslash escaping. */
-#define FNM_PERIOD      0x04    /* Period must be matched by period. */
-#define FNM_LEADING_DIR 0x08    /* Ignore /<tail> after Imatch. */
-#define FNM_CASEFOLD    0x10    /* Case insensitive search. */
+#define FNM_PATHNAME 0x01    /* Slash must be matched by slash. */
+#define FNM_NOESCAPE 0x02    /* Disable backslash escaping. */
+#define FNM_PERIOD 0x04      /* Period must be matched by period. */
+#define FNM_LEADING_DIR 0x08 /* Ignore /<tail> after Imatch. */
+#define FNM_CASEFOLD 0x10    /* Case insensitive search. */
 
-#define FNM_IGNORECASE  FNM_CASEFOLD
-#define FNM_FILE_NAME   FNM_PATHNAME
+#define FNM_IGNORECASE FNM_CASEFOLD
+#define FNM_FILE_NAME FNM_PATHNAME
 
-extern "C" int fnmatch(const char *, const char *, int);
+extern "C" int fnmatch(const char*, const char*, int);
 
-#endif                          /* !BAREOS_LIB_FNMATCH_H_ */
+#endif /* !BAREOS_LIB_FNMATCH_H_ */

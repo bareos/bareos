@@ -27,46 +27,53 @@
 namespace filedaemon {
 
 struct b_save_ctx {
-   JobControlRecord *jcr;                    /* Current Job Control Record */
-   FindFilesPacket *ff_pkt;              /* File being processed */
-   DIGEST *digest;              /* Encryption Digest */
-   DIGEST *signing_digest;      /* Signing Digest */
-   int digest_stream;           /* Type of Signing Digest */
+  JobControlRecord* jcr;   /* Current Job Control Record */
+  FindFilesPacket* ff_pkt; /* File being processed */
+  DIGEST* digest;          /* Encryption Digest */
+  DIGEST* signing_digest;  /* Signing Digest */
+  int digest_stream;       /* Type of Signing Digest */
 };
 
 struct b_ctx {
-   JobControlRecord *jcr;                    /* Current Job Control Record */
-   FindFilesPacket *ff_pkt;              /* File being processed */
-   POOLMEM *msgsave;            /* Saved sd->msg */
-   char *rbuf;                  /* Read buffer */
-   char *wbuf;                  /* Write buffer */
-   int32_t rsize;               /* Read size */
-   uint64_t fileAddr;           /* File address */
+  JobControlRecord* jcr;   /* Current Job Control Record */
+  FindFilesPacket* ff_pkt; /* File being processed */
+  POOLMEM* msgsave;        /* Saved sd->msg */
+  char* rbuf;              /* Read buffer */
+  char* wbuf;              /* Write buffer */
+  int32_t rsize;           /* Read size */
+  uint64_t fileAddr;       /* File address */
 
-   /*
-    * Compression data.
-    */
-   const unsigned char *chead;  /* Compression header */
-   unsigned char *cbuf;         /* Compression buffer when using generic comp_stream_header */
-   uint32_t compress_len;       /* Actual length after compression */
-   uint32_t max_compress_len;   /* Maximum size that will fit into compression buffer */
-   comp_stream_header ch;       /* Compression Stream Header with info about compression used */
+  /*
+   * Compression data.
+   */
+  const unsigned char* chead; /* Compression header */
+  unsigned char*
+      cbuf; /* Compression buffer when using generic comp_stream_header */
+  uint32_t compress_len; /* Actual length after compression */
+  uint32_t
+      max_compress_len; /* Maximum size that will fit into compression buffer */
+  comp_stream_header
+      ch; /* Compression Stream Header with info about compression used */
 
-   /*
-    * Encryption data.
-    */
-   uint32_t cipher_input_len;   /* Actual length of the data to encrypt */
-   const uint8_t *cipher_input; /* Data to encrypt */
-   uint32_t encrypted_len;      /* Actual length after encryption */
-   DIGEST *digest;              /* Encryption Digest */
-   DIGEST *signing_digest;      /* Signing Digest */
-   CIPHER_CONTEXT *cipher_ctx;  /* Cipher context */
+  /*
+   * Encryption data.
+   */
+  uint32_t cipher_input_len;   /* Actual length of the data to encrypt */
+  const uint8_t* cipher_input; /* Data to encrypt */
+  uint32_t encrypted_len;      /* Actual length after encryption */
+  DIGEST* digest;              /* Encryption Digest */
+  DIGEST* signing_digest;      /* Signing Digest */
+  CIPHER_CONTEXT* cipher_ctx;  /* Cipher context */
 };
 
-bool BlastDataToStorageDaemon(JobControlRecord *jcr, char *addr, crypto_cipher_t cipher);
-bool EncodeAndSendAttributes(JobControlRecord *jcr, FindFilesPacket *ff_pkt, int &data_stream);
-void StripPath(FindFilesPacket *ff_pkt);
-void UnstripPath(FindFilesPacket *ff_pkt);
+bool BlastDataToStorageDaemon(JobControlRecord* jcr,
+                              char* addr,
+                              crypto_cipher_t cipher);
+bool EncodeAndSendAttributes(JobControlRecord* jcr,
+                             FindFilesPacket* ff_pkt,
+                             int& data_stream);
+void StripPath(FindFilesPacket* ff_pkt);
+void UnstripPath(FindFilesPacket* ff_pkt);
 
 } /* namespace filedaemon */
 #endif

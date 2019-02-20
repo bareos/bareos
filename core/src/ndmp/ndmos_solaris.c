@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1998,2001
- *	Traakan, Inc., Los Altos, CA
- *	All rights reserved.
+ *      Traakan, Inc., Los Altos, CA
+ *      All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,22 +31,20 @@
  * Ident:    $Id: $
  *
  * Description:
- *	This contains the O/S (Operating System) specific
- *	portions of NDMJOBLIB for the Solaris platform.
+ *      This contains the O/S (Operating System) specific
+ *      portions of NDMJOBLIB for the Solaris platform.
  *
- *	This file is #include'd by ndmos.c when
- *	selected by #ifdef's of NDMOS_ID.
+ *      This file is #include'd by ndmos.c when
+ *      selected by #ifdef's of NDMOS_ID.
  *
- *	There are four major portions:
- *	1) Misc support routines: password check, local info, etc
- *	2) Non-blocking I/O support routines
- *	3) Tape interfacs ndmos_tape_xxx()
- *	4) OS Specific NDMP request dispatcher which intercepts
- *	   requests implemented here, such as SCSI operations
- *	   and system configuration queries.
+ *      There are four major portions:
+ *      1) Misc support routines: password check, local info, etc
+ *      2) Non-blocking I/O support routines
+ *      3) Tape interfacs ndmos_tape_xxx()
+ *      4) OS Specific NDMP request dispatcher which intercepts
+ *         requests implemented here, such as SCSI operations
+ *         and system configuration queries.
  */
-
-
 
 
 /*
@@ -56,17 +54,16 @@
 #include <sys/utsname.h>
 
 
-
 /*
  * Select common code fragments from ndmos_common.c
  */
-#define NDMOS_COMMON_SYNC_CONFIG_INFO	/* from config file (ndmjob.conf) */
+#define NDMOS_COMMON_SYNC_CONFIG_INFO /* from config file (ndmjob.conf) */
 #define NDMOS_COMMON_OK_NAME_PASSWORD
 #define NDMOS_COMMON_MD5
 #define NDMOS_COMMON_NONBLOCKING_IO_SUPPORT
-#define NDMOS_COMMON_TAPE_INTERFACE	/* uses tape simulator */
-#define NDMOS_COMMON_SCSI_INTERFACE	/* stub-out */
-#define NDMOS_COMMON_DISPATCH_REQUEST	/* no-op */
+#define NDMOS_COMMON_TAPE_INTERFACE   /* uses tape simulator */
+#define NDMOS_COMMON_SCSI_INTERFACE   /* stub-out */
+#define NDMOS_COMMON_DISPATCH_REQUEST /* no-op */
 
 
 #include "ndmos_common.c"

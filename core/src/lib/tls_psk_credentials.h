@@ -26,46 +26,45 @@
 
 #include <string>
 
-class PskCredentials
-{
-public:
-   PskCredentials() {}
+class PskCredentials {
+ public:
+  PskCredentials() {}
 
-   PskCredentials(const std::string &identity, const std::string &psk)
-      : identity_(identity)
-      , psk_(psk) {
-      Dmsg1(1000, "Construct PskCredentials: id=%s\n", identity_.c_str());
-   }
+  PskCredentials(const std::string& identity, const std::string& psk)
+      : identity_(identity), psk_(psk)
+  {
+    Dmsg1(1000, "Construct PskCredentials: id=%s\n", identity_.c_str());
+  }
 
-   PskCredentials(const char *identity, const char *psk)
-      : identity_(std::string(identity))
-      , psk_(std::string(psk)) {
-      Dmsg1(1000, "Construct PskCredentials: id=%s\n", identity_.c_str());
-   }
+  PskCredentials(const char* identity, const char* psk)
+      : identity_(std::string(identity)), psk_(std::string(psk))
+  {
+    Dmsg1(1000, "Construct PskCredentials: id=%s\n", identity_.c_str());
+  }
 
-   PskCredentials &operator = (const PskCredentials &rhs) {
-      identity_ = rhs.identity_;
-      psk_ = rhs.psk_;
-      return *this;
-   }
+  PskCredentials& operator=(const PskCredentials& rhs)
+  {
+    identity_ = rhs.identity_;
+    psk_ = rhs.psk_;
+    return *this;
+  }
 
-   bool empty() const {
-      return identity_.empty() && psk_.empty();
-   }
+  bool empty() const { return identity_.empty() && psk_.empty(); }
 
-   void set_identity(const char *in) { identity_ = in; }
-   void set_psk(const char *in) { psk_ = in; }
+  void set_identity(const char* in) { identity_ = in; }
+  void set_psk(const char* in) { psk_ = in; }
 
-   const std::string &get_identity() const { return identity_; }
-   const std::string &get_psk() const { return psk_; }
+  const std::string& get_identity() const { return identity_; }
+  const std::string& get_psk() const { return psk_; }
 
-   ~PskCredentials() {
-      Dmsg1(1000, "Destruct PskCredentials: id=%s\n", identity_.c_str());
-   }
+  ~PskCredentials()
+  {
+    Dmsg1(1000, "Destruct PskCredentials: id=%s\n", identity_.c_str());
+  }
 
-private:
-   std::string identity_;
-   std::string psk_;
+ private:
+  std::string identity_;
+  std::string psk_;
 };
 
 #endif /* BAREOS_LIB_TLS_PSK_CREDENTIALS_H_ */

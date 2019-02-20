@@ -30,64 +30,73 @@
  */
 #define MYSQL_CHANGES_PER_BATCH_INSERT 32
 
-class BareosDbMysql: public BareosDbPrivateInterface {
-private:
-   /*
-    * Members.
-    */
-   MYSQL *db_handle_;
-   MYSQL instance_;
-   MYSQL_RES *result_;
-   static const char *query_definitions[];  /**< table of predefined sql queries */
+class BareosDbMysql : public BareosDbPrivateInterface {
+ private:
+  /*
+   * Members.
+   */
+  MYSQL* db_handle_;
+  MYSQL instance_;
+  MYSQL_RES* result_;
+  static const char*
+      query_definitions[]; /**< table of predefined sql queries */
 
-private:
-   /*
-    * Methods.
-    */
-   bool OpenDatabase(JobControlRecord *jcr) override;
-   void CloseDatabase(JobControlRecord *jcr) override;
-   bool ValidateConnection(void) override;
-   void ThreadCleanup(void) override;
-   void EscapeString(JobControlRecord *jcr, char *snew, char *old, int len) override;
-   char *EscapeObject(JobControlRecord *jcr, char *old, int len) override;
-   void UnescapeObject(JobControlRecord *jcr, char *from, int32_t expected_len,
-                        POOLMEM *&dest, int32_t *len) override;
-   void StartTransaction(JobControlRecord *jcr) override;
-   void EndTransaction(JobControlRecord *jcr) override;
-   bool SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *ResultHandler, void *ctx) override;
-   bool SqlQueryWithoutHandler(const char *query, int flags = 0) override;
-   void SqlFreeResult(void) override;
-   SQL_ROW SqlFetchRow(void) override;
-   const char *sql_strerror(void) override;
-   void SqlDataSeek(int row) override;
-   int SqlAffectedRows(void) override;
-   uint64_t SqlInsertAutokeyRecord(const char *query, const char *table_name) override;
-   SQL_FIELD *SqlFetchField(void) override;
-   bool SqlFieldIsNotNull(int field_type) override;
-   bool SqlFieldIsNumeric(int field_type) override;
-   bool SqlBatchStart(JobControlRecord *jcr) override;
-   bool SqlBatchEnd(JobControlRecord *jcr, const char *error) override;
-   bool SqlBatchInsert(JobControlRecord *jcr, AttributesDbRecord *ar) override;
+ private:
+  /*
+   * Methods.
+   */
+  bool OpenDatabase(JobControlRecord* jcr) override;
+  void CloseDatabase(JobControlRecord* jcr) override;
+  bool ValidateConnection(void) override;
+  void ThreadCleanup(void) override;
+  void EscapeString(JobControlRecord* jcr,
+                    char* snew,
+                    char* old,
+                    int len) override;
+  char* EscapeObject(JobControlRecord* jcr, char* old, int len) override;
+  void UnescapeObject(JobControlRecord* jcr,
+                      char* from,
+                      int32_t expected_len,
+                      POOLMEM*& dest,
+                      int32_t* len) override;
+  void StartTransaction(JobControlRecord* jcr) override;
+  void EndTransaction(JobControlRecord* jcr) override;
+  bool SqlQueryWithHandler(const char* query,
+                           DB_RESULT_HANDLER* ResultHandler,
+                           void* ctx) override;
+  bool SqlQueryWithoutHandler(const char* query, int flags = 0) override;
+  void SqlFreeResult(void) override;
+  SQL_ROW SqlFetchRow(void) override;
+  const char* sql_strerror(void) override;
+  void SqlDataSeek(int row) override;
+  int SqlAffectedRows(void) override;
+  uint64_t SqlInsertAutokeyRecord(const char* query,
+                                  const char* table_name) override;
+  SQL_FIELD* SqlFetchField(void) override;
+  bool SqlFieldIsNotNull(int field_type) override;
+  bool SqlFieldIsNumeric(int field_type) override;
+  bool SqlBatchStart(JobControlRecord* jcr) override;
+  bool SqlBatchEnd(JobControlRecord* jcr, const char* error) override;
+  bool SqlBatchInsert(JobControlRecord* jcr, AttributesDbRecord* ar) override;
 
-public:
-   /*
-    * Methods.
-    */
-   BareosDbMysql(JobControlRecord *jcr,
-              const char *db_driver,
-              const char *db_name,
-              const char *db_user,
-              const char *db_password,
-              const char *db_address,
-              int db_port,
-              const char *db_socket,
-              bool mult_db_connections,
-              bool disable_batch_insert,
-              bool try_reconnect,
-              bool exit_on_fatal,
-              bool need_private
-              );
-   ~BareosDbMysql();
+ public:
+  /*
+   * Methods.
+   */
+  BareosDbMysql(JobControlRecord* jcr,
+                const char* db_driver,
+                const char* db_name,
+                const char* db_user,
+                const char* db_password,
+                const char* db_address,
+                int db_port,
+                const char* db_socket,
+                bool mult_db_connections,
+                bool disable_batch_insert,
+                bool try_reconnect,
+                bool exit_on_fatal,
+                bool need_private);
+  ~BareosDbMysql();
 };
 
 #endif /* BAREOS_CATS_BDB_MYSQL_H_ */

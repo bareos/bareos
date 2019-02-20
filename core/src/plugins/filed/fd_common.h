@@ -5,8 +5,8 @@
    Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
-   version three of the GNU Affero General Public License as published by the Free
-   Software Foundation, which is listed in the file LICENSE.
+   version three of the GNU Affero General Public License as published by the
+   Free Software Foundation, which is listed in the file LICENSE.
 
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,15 +27,15 @@
 #ifndef BAREOS_PLUGINS_FILED_FD_COMMON_H_
 #define BAREOS_PLUGINS_FILED_FD_COMMON_H_
 
-#define JT_BACKUP                'B'  /* Backup Job */
-#define JT_RESTORE               'R'  /* Restore Job */
+#define JT_BACKUP 'B'  /* Backup Job */
+#define JT_RESTORE 'R' /* Restore Job */
 
-#define L_FULL                   'F'  /* Full backup */
-#define L_INCREMENTAL            'I'  /* since last backup */
-#define L_DIFFERENTIAL           'D'  /* since last full backup */
+#define L_FULL 'F'         /* Full backup */
+#define L_INCREMENTAL 'I'  /* since last backup */
+#define L_DIFFERENTIAL 'D' /* since last full backup */
 
-void *reallymalloc(const char *fname, int lineno, unsigned int nbytes);
-void Reallyfree(const char *file, int line, void *fp);
+void* reallymalloc(const char* fname, int lineno, unsigned int nbytes);
+void Reallyfree(const char* file, int line, void* fp);
 
 #ifdef __clang__
 #undef SMARTALLOC
@@ -54,54 +54,50 @@ void Reallyfree(const char *file, int line, void *fp);
 #undef free
 #endif
 
-#define malloc(s)    sm_malloc(__FILE__, __LINE__, (s))
-#define free(o)      sm_free(__FILE__, __LINE__, (o))
+#define malloc(s) sm_malloc(__FILE__, __LINE__, (s))
+#define free(o) sm_free(__FILE__, __LINE__, (o))
 
-void *sm_malloc(const char *fname, int lineno, unsigned int nbytes);
-void sm_free(const char *file, int line, void *fp);
+void* sm_malloc(const char* fname, int lineno, unsigned int nbytes);
+void sm_free(const char* file, int line, void* fp);
 
-void *operator new(size_t size, char const * file, int line)
+void* operator new(size_t size, char const* file, int line)
 {
-   void *pnew = sm_malloc(file,line, size);
-   memset((char *)pnew, 0, size);
-   return pnew;
+  void* pnew = sm_malloc(file, line, size);
+  memset((char*)pnew, 0, size);
+  return pnew;
 }
 
-void *operator new[](size_t size, char const * file, int line)
+void* operator new[](size_t size, char const* file, int line)
 {
-   void *pnew = sm_malloc(file, line, size);
-   memset((char *)pnew, 0, size);
-   return pnew;
+  void* pnew = sm_malloc(file, line, size);
+  memset((char*)pnew, 0, size);
+  return pnew;
 }
 
-void *operator new(size_t size)
+void* operator new(size_t size)
 {
-   void *pnew = sm_malloc(__FILE__, __LINE__, size);
-   memset((char *)pnew, 0, size);
-   return pnew;
+  void* pnew = sm_malloc(__FILE__, __LINE__, size);
+  memset((char*)pnew, 0, size);
+  return pnew;
 }
 
-void *operator new[](size_t size)
+void* operator new[](size_t size)
 {
-   void *pnew = sm_malloc(__FILE__, __LINE__, size);
-   memset((char *)pnew, 0, size);
-   return pnew;
+  void* pnew = sm_malloc(__FILE__, __LINE__, size);
+  memset((char*)pnew, 0, size);
+  return pnew;
 }
 
-#define new   new(__FILE__, __LINE__)
+#define new new (__FILE__, __LINE__)
 
-void operator delete(void *buf) noexcept
-{
-   sm_free( __FILE__, __LINE__, buf);
-}
+void operator delete(void* buf) noexcept { sm_free(__FILE__, __LINE__, buf); }
 
-void operator delete[] (void *buf) noexcept
-{
-  sm_free(__FILE__, __LINE__, buf);
-}
+void operator delete[](void* buf) noexcept { sm_free(__FILE__, __LINE__, buf); }
 #endif
 
-#define Dmsg(context, level,  ...) bfuncs->DebugMessage(context, __FILE__, __LINE__, level, __VA_ARGS__ )
-#define Jmsg(context, type,  ...) bfuncs->JobMessage(context, __FILE__, __LINE__, type, 0, __VA_ARGS__ )
+#define Dmsg(context, level, ...) \
+  bfuncs->DebugMessage(context, __FILE__, __LINE__, level, __VA_ARGS__)
+#define Jmsg(context, type, ...) \
+  bfuncs->JobMessage(context, __FILE__, __LINE__, type, 0, __VA_ARGS__)
 
 #endif

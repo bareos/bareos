@@ -30,25 +30,25 @@ utime_t BtimeToUtime(btime_t bt); /* bareos time to utime_t */
 int tm_wom(int mday, int wday);
 int TmWoy(time_t stime);
 
-void Blocaltime(const time_t *time, struct tm *tm);
-char *bstrutime(char *dt, int maxlen, utime_t tim);
-char *bstrftime(char *dt, int maxlen, utime_t tim, const char *fmt = NULL);
-char *bstrftimes(char *dt, int maxlen, utime_t tim);
-char *bstrftime_ny(char *dt, int maxlen, utime_t tim);
-char *bstrftime_nc(char *dt, int maxlen, utime_t tim);
-char *bstrftime_wd(char *dt, int maxlen, utime_t tim);
-utime_t StrToUtime(const char *str);
+void Blocaltime(const time_t* time, struct tm* tm);
+char* bstrutime(char* dt, int maxlen, utime_t tim);
+char* bstrftime(char* dt, int maxlen, utime_t tim, const char* fmt = NULL);
+char* bstrftimes(char* dt, int maxlen, utime_t tim);
+char* bstrftime_ny(char* dt, int maxlen, utime_t tim);
+char* bstrftime_nc(char* dt, int maxlen, utime_t tim);
+char* bstrftime_wd(char* dt, int maxlen, utime_t tim);
+utime_t StrToUtime(const char* str);
 
 
 /* =========================================================== */
 /*        old code deprecated below. Do not use.               */
 
-typedef float64_t fdate_t;             /* Date type */
-typedef float64_t ftime_t;             /* Time type */
+typedef float64_t fdate_t; /* Date type */
+typedef float64_t ftime_t; /* Time type */
 
 struct date_time {
-    fdate_t julian_day_number;         /* Julian day number */
-    ftime_t julian_day_fraction;       /* Julian day fraction */
+  fdate_t julian_day_number;   /* Julian day number */
+  ftime_t julian_day_fraction; /* Julian day fraction */
 };
 
 /*  In arguments and results of the following functions,
@@ -67,27 +67,42 @@ struct date_time {
 
 
 extern fdate_t DateEncode(uint32_t year, uint8_t month, uint8_t day);
-extern ftime_t TimeEncode(uint8_t hour, uint8_t minute, uint8_t second,
+extern ftime_t TimeEncode(uint8_t hour,
+                          uint8_t minute,
+                          uint8_t second,
                           float32_t second_fraction);
-extern void date_time_encode(struct date_time *dt,
-                             uint32_t year, uint8_t month, uint8_t day,
-                             uint8_t hour, uint8_t minute, uint8_t second,
+extern void date_time_encode(struct date_time* dt,
+                             uint32_t year,
+                             uint8_t month,
+                             uint8_t day,
+                             uint8_t hour,
+                             uint8_t minute,
+                             uint8_t second,
                              float32_t second_fraction);
 
-extern void DateDecode(fdate_t date, uint32_t *year, uint8_t *month,
-                        uint8_t *day);
-extern void TimeDecode(ftime_t time, uint8_t *hour, uint8_t *minute,
-                        uint8_t *second, float32_t *second_fraction);
-extern void date_time_decode(struct date_time *dt,
-                             uint32_t *year, uint8_t *month, uint8_t *day,
-                             uint8_t *hour, uint8_t *minute, uint8_t *second,
-                             float32_t *second_fraction);
+extern void DateDecode(fdate_t date,
+                       uint32_t* year,
+                       uint8_t* month,
+                       uint8_t* day);
+extern void TimeDecode(ftime_t time,
+                       uint8_t* hour,
+                       uint8_t* minute,
+                       uint8_t* second,
+                       float32_t* second_fraction);
+extern void date_time_decode(struct date_time* dt,
+                             uint32_t* year,
+                             uint8_t* month,
+                             uint8_t* day,
+                             uint8_t* hour,
+                             uint8_t* minute,
+                             uint8_t* second,
+                             float32_t* second_fraction);
 
-extern int DateTimeCompare(struct date_time *dt1, struct date_time *dt2);
+extern int DateTimeCompare(struct date_time* dt1, struct date_time* dt2);
 
-extern void TmEncode(struct date_time *dt, struct tm *tm);
-extern void TmDecode(struct date_time *dt, struct tm *tm);
-extern void get_current_time(struct date_time *dt);
+extern void TmEncode(struct date_time* dt, struct tm* tm);
+extern void TmDecode(struct date_time* dt, struct tm* tm);
+extern void get_current_time(struct date_time* dt);
 
 
 #endif /* BAREOS_LIB_BTIME_H_ */

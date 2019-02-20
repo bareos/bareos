@@ -24,7 +24,10 @@
 
 namespace directordaemon {
 
-void FindStorageResource(UaContext *ua, RestoreContext &rx, char *Storage, char *MediaType);
+void FindStorageResource(UaContext* ua,
+                         RestoreContext& rx,
+                         char* Storage,
+                         char* MediaType);
 
 } /* namespace directordaemon */
-#endif // BAREOS_DIRD_UA_RESTORE_H_
+#endif  // BAREOS_DIRD_UA_RESTORE_H_

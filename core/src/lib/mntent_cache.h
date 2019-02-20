@@ -32,33 +32,33 @@
  * Don't use the mountlist data when its older than this amount
  * of seconds but perform a rescan of the mountlist.
  */
-#define MNTENT_RESCAN_INTERVAL		1800
+#define MNTENT_RESCAN_INTERVAL 1800
 
 /*
  * Initial size of number of hash entries we expect in the cache.
  * If more are needed the hash table will grow as needed.
  */
-#define NR_MNTENT_CACHE_ENTRIES		256
+#define NR_MNTENT_CACHE_ENTRIES 256
 
 /*
  * Number of pages to allocate for the big_buffer used by htable.
  */
-#define NR_MNTENT_HTABLE_PAGES		32
+#define NR_MNTENT_HTABLE_PAGES 32
 
 struct mntent_cache_entry_t {
-   dlink link;
-   uint32_t dev;
-   char *special;
-   char *mountpoint;
-   char *fstype;
-   char *mntopts;
-   int reference_count;
-   bool validated;
-   bool destroyed;
+  dlink link;
+  uint32_t dev;
+  char* special;
+  char* mountpoint;
+  char* fstype;
+  char* mntopts;
+  int reference_count;
+  bool validated;
+  bool destroyed;
 };
 
-mntent_cache_entry_t *find_mntent_mapping(uint32_t dev);
-void ReleaseMntentMapping(mntent_cache_entry_t *mce);
+mntent_cache_entry_t* find_mntent_mapping(uint32_t dev);
+void ReleaseMntentMapping(mntent_cache_entry_t* mce);
 void FlushMntentCache(void);
 
 #endif /* BAREOS_LIB_MNTENT_CACHE_H_ */

@@ -23,26 +23,26 @@
 #define BAREOS_LIB_UNITTESTS_CREATE_RESOURCE_H_
 
 namespace directordaemon {
-   class StorageResource;
-   class DirectorResource;
-   class ConsoleResource;
-   directordaemon::StorageResource  *CreateAndInitializeNewStorageResource();
-   directordaemon::DirectorResource *CreateAndInitializeNewDirectorResource();
-   directordaemon::ConsoleResource  *CreateAndInitializeNewConsoleResource();
-}
+class StorageResource;
+class DirectorResource;
+class ConsoleResource;
+directordaemon::StorageResource* CreateAndInitializeNewStorageResource();
+directordaemon::DirectorResource* CreateAndInitializeNewDirectorResource();
+directordaemon::ConsoleResource* CreateAndInitializeNewConsoleResource();
+}  // namespace directordaemon
 
 namespace storagedaemon {
-   class StorageResource;
-   class DirectorResource;
-   storagedaemon::StorageResource *CreateAndInitializeNewStorageResource();
-   storagedaemon::DirectorResource *CreateAndInitializeNewDirectorResource();
+class StorageResource;
+class DirectorResource;
+storagedaemon::StorageResource* CreateAndInitializeNewStorageResource();
+storagedaemon::DirectorResource* CreateAndInitializeNewDirectorResource();
 } /* namespace storagedaemon */
 
 namespace console {
-   class DirectorResource;
-   class ConsoleResource;
-   console::DirectorResource *CreateAndInitializeNewDirectorResource();
-   console::ConsoleResource *CreateAndInitializeNewConsoleResource();
-}
+class DirectorResource;
+class ConsoleResource;
+console::DirectorResource* CreateAndInitializeNewDirectorResource();
+console::ConsoleResource* CreateAndInitializeNewConsoleResource();
+}  // namespace console
 
 #endif /* BAREOS_LIB_UNITTESTS_CREATE_RESOURCE_H_ */

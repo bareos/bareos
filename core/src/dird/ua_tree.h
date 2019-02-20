@@ -24,8 +24,8 @@
 
 namespace directordaemon {
 
-bool UserSelectFilesFromTree(TreeContext *tree);
-int InsertTreeHandler(void *ctx, int num_fields, char **row);
+bool UserSelectFilesFromTree(TreeContext* tree);
+int InsertTreeHandler(void* ctx, int num_fields, char** row);
 
 } /* namespace directordaemon */
-#endif // BAREOS_DIRD_UA_TREE_H_
+#endif  // BAREOS_DIRD_UA_TREE_H_

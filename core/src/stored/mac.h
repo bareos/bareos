@@ -26,7 +26,7 @@
 
 namespace storagedaemon {
 
-bool DoMacRun(JobControlRecord *jcr);
+bool DoMacRun(JobControlRecord* jcr);
 
 } /* namespace storagedaemon  */
 

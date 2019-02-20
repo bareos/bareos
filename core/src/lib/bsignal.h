@@ -24,4 +24,4 @@
 void InitSignals(void Terminate(int sig));
 void InitStackDump(void);
 
-#endif // BAREOS_LIB_BSIGNAL_H_
+#endif  // BAREOS_LIB_BSIGNAL_H_

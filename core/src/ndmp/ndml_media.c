@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1998,1999,2000
- *	Traakan, Inc., Los Altos, CA
- *	All rights reserved.
+ *      Traakan, Inc., Los Altos, CA
+ *      All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -61,199 +61,186 @@
  * slot in the robot.
  */
 
-int
-ndmmedia_from_str (struct ndmmedia *me, char *str)
+int ndmmedia_from_str(struct ndmmedia* me, char* str)
 {
-	char *		p;
-	char *		q;
-	int		c;
+  char* p;
+  char* q;
+  int c;
 
-	NDMOS_MACRO_ZEROFILL (me);
+  NDMOS_MACRO_ZEROFILL(me);
 
-	p = str;
-	q = me->label;
+  p = str;
+  q = me->label;
 
-	for (; *p; p++) {
-		c = *p;
-		if (c == '+' || c == '@' || c == '/')
-			break;
+  for (; *p; p++) {
+    c = *p;
+    if (c == '+' || c == '@' || c == '/') break;
 
-		if (q < &me->label[NDMMEDIA_LABEL_MAX])
-			*q++ = c;
-	}
-	*q = 0;
+    if (q < &me->label[NDMMEDIA_LABEL_MAX]) *q++ = c;
+  }
+  *q = 0;
 
-	if (q > me->label)
-		me->valid_label = 1;
+  if (q > me->label) me->valid_label = 1;
 
-	while (*p) {
-		c = *p;
-		switch (c) {
-		default:
-			return -1;		/* what is this? */
+  while (*p) {
+    c = *p;
+    switch (c) {
+      default:
+        return -1; /* what is this? */
 
-		case '@':
-			if (me->valid_slot)
-				return -2;
+      case '@':
+        if (me->valid_slot) return -2;
 
-			me->slot_addr = strtol (p+1, &p, 0);
-			me->valid_slot = 1;
-			break;
+        me->slot_addr = strtol(p + 1, &p, 0);
+        me->valid_slot = 1;
+        break;
 
-		case '+':
-			if (me->valid_filemark)
-				return -3;
+      case '+':
+        if (me->valid_filemark) return -3;
 
-			me->file_mark_offset = strtol (p+1, &p, 0);
-			me->valid_filemark = 1;
-			break;
+        me->file_mark_offset = strtol(p + 1, &p, 0);
+        me->valid_filemark = 1;
+        break;
 
-		case '/':
-			if (me->valid_n_bytes)
-				return -4;
+      case '/':
+        if (me->valid_n_bytes) return -4;
 
-			me->n_bytes = ndmmedia_strtoll (p+1, &p, 0);
-			me->valid_n_bytes = 1;
-			break;
-		}
-	}
+        me->n_bytes = ndmmedia_strtoll(p + 1, &p, 0);
+        me->valid_n_bytes = 1;
+        break;
+    }
+  }
 
-	return 0;
+  return 0;
 }
 
-int
-ndmmedia_to_str (struct ndmmedia *me, char *str)
+int ndmmedia_to_str(struct ndmmedia* me, char* str)
 {
-	char *		q = str;
+  char* q = str;
 
-	*q = 0;
+  *q = 0;
 
-	if (me->valid_label) {
-		strcpy (q, me->label);
-		while (*q) q++;
-	}
+  if (me->valid_label) {
+    strcpy(q, me->label);
+    while (*q) q++;
+  }
 
-	if (me->valid_filemark) {
-		sprintf (q, "+%d", me->file_mark_offset);
-		while (*q) q++;
-	}
+  if (me->valid_filemark) {
+    sprintf(q, "+%d", me->file_mark_offset);
+    while (*q) q++;
+  }
 
-	if (me->valid_n_bytes) {
-		if (me->n_bytes == 0)
-			sprintf (q, "/0");
-		else if (me->n_bytes % (1024*1024*1024) == 0)
-			sprintf (q, "/%lldG", me->n_bytes/(1024*1024*1024));
-		else if (me->n_bytes % (1024*1024) == 0)
-			sprintf (q, "/%lldM", me->n_bytes/(1024*1024));
-		else if (me->n_bytes % (1024) == 0)
-			sprintf (q, "/%lldK", me->n_bytes/(1024));
-		else
-			sprintf (q, "/%lld", me->n_bytes);
-		while (*q) q++;
-	}
+  if (me->valid_n_bytes) {
+    if (me->n_bytes == 0)
+      sprintf(q, "/0");
+    else if (me->n_bytes % (1024 * 1024 * 1024) == 0)
+      sprintf(q, "/%lldG", me->n_bytes / (1024 * 1024 * 1024));
+    else if (me->n_bytes % (1024 * 1024) == 0)
+      sprintf(q, "/%lldM", me->n_bytes / (1024 * 1024));
+    else if (me->n_bytes % (1024) == 0)
+      sprintf(q, "/%lldK", me->n_bytes / (1024));
+    else
+      sprintf(q, "/%lld", me->n_bytes);
+    while (*q) q++;
+  }
 
-	if (me->valid_slot) {
-		sprintf (q, "@%d", me->slot_addr);
-		while (*q) q++;
-	}
+  if (me->valid_slot) {
+    sprintf(q, "@%d", me->slot_addr);
+    while (*q) q++;
+  }
 
-	return 0;
+  return 0;
 }
 
 
-static char *flag_yes_or_no (int f) { return (f) ? "Y" : "N"; }
+static char* flag_yes_or_no(int f) { return (f) ? "Y" : "N"; }
 
-int
-ndmmedia_pp (struct ndmmedia *me, int lineno, char *buf)
+int ndmmedia_pp(struct ndmmedia* me, int lineno, char* buf)
 {
-    switch (lineno) {
+  switch (lineno) {
     case 0:
-	ndmmedia_to_str (me, buf);
-	break;
+      ndmmedia_to_str(me, buf);
+      break;
 
     case 1:
-	sprintf (buf, "valid label=%s filemark=%s n_bytes=%s slot=%s",
-		flag_yes_or_no (me->valid_label),
-		flag_yes_or_no (me->valid_filemark),
-		flag_yes_or_no (me->valid_n_bytes),
-		flag_yes_or_no (me->valid_slot));
-	break;
+      sprintf(
+          buf, "valid label=%s filemark=%s n_bytes=%s slot=%s",
+          flag_yes_or_no(me->valid_label), flag_yes_or_no(me->valid_filemark),
+          flag_yes_or_no(me->valid_n_bytes), flag_yes_or_no(me->valid_slot));
+      break;
 
     case 2:
-	sprintf (buf, "media used=%s written=%s eof=%s eom=%s io_error=%s",
-		flag_yes_or_no (me->media_used),
-		flag_yes_or_no (me->media_written),
-		flag_yes_or_no (me->media_eof),
-		flag_yes_or_no (me->media_eom),
-		flag_yes_or_no (me->media_io_error));
-	break;
+      sprintf(buf, "media used=%s written=%s eof=%s eom=%s io_error=%s",
+              flag_yes_or_no(me->media_used), flag_yes_or_no(me->media_written),
+              flag_yes_or_no(me->media_eof), flag_yes_or_no(me->media_eom),
+              flag_yes_or_no(me->media_io_error));
+      break;
 
     case 3:
-	sprintf (buf, "label read=%s written=%s io_error=%s mismatch=%s",
-		flag_yes_or_no (me->label_read),
-		flag_yes_or_no (me->label_written),
-		flag_yes_or_no (me->label_io_error),
-		flag_yes_or_no (me->label_mismatch));
-	break;
+      sprintf(buf, "label read=%s written=%s io_error=%s mismatch=%s",
+              flag_yes_or_no(me->label_read), flag_yes_or_no(me->label_written),
+              flag_yes_or_no(me->label_io_error),
+              flag_yes_or_no(me->label_mismatch));
+      break;
 
     case 4:
-	sprintf (buf, "fm_error=%s nb_determined=%s nb_aligned=%s",
-		flag_yes_or_no (me->fmark_error),
-		flag_yes_or_no (me->nb_determined),
-		flag_yes_or_no (me->nb_aligned));
-	break;
+      sprintf(buf, "fm_error=%s nb_determined=%s nb_aligned=%s",
+              flag_yes_or_no(me->fmark_error),
+              flag_yes_or_no(me->nb_determined),
+              flag_yes_or_no(me->nb_aligned));
+      break;
 
     case 5:
-	sprintf (buf, "slot empty=%s bad=%s missing=%s",
-		flag_yes_or_no (me->slot_empty),
-		flag_yes_or_no (me->slot_bad),
-		flag_yes_or_no (me->slot_missing));
-	break;
+      sprintf(buf, "slot empty=%s bad=%s missing=%s",
+              flag_yes_or_no(me->slot_empty), flag_yes_or_no(me->slot_bad),
+              flag_yes_or_no(me->slot_missing));
+      break;
 
     default:
-	strcpy (buf, "<<INVALID>>");
-	break;
-    }
+      strcpy(buf, "<<INVALID>>");
+      break;
+  }
 
-    return 6;
+  return 6;
 }
 
-int64_t
-ndmmedia_strtoll (char *str, char **tailp, int defbase)
+int64_t ndmmedia_strtoll(char* str, char** tailp, int defbase)
 {
-	int64_t			val = 0;
-	int			c;
+  int64_t val = 0;
+  int c;
 
-	for (;;) {
-		c = *str;
-		if (c < '0' || '9' < c)
-			break;
-		val *= 10;
-		val += c - '0';
-		str++;
-	}
+  for (;;) {
+    c = *str;
+    if (c < '0' || '9' < c) break;
+    val *= 10;
+    val += c - '0';
+    str++;
+  }
 
-	switch (c) {
-	default:
-		break;
+  switch (c) {
+    default:
+      break;
 
-	case 'k': case 'K':
-		val *= 1024LL;
-		str++;
-		break;
+    case 'k':
+    case 'K':
+      val *= 1024LL;
+      str++;
+      break;
 
-	case 'm': case 'M':
-		val *= 1024*1024LL;
-		str++;
-		break;
+    case 'm':
+    case 'M':
+      val *= 1024 * 1024LL;
+      str++;
+      break;
 
-	case 'g': case 'G':
-		val *= 1024*1024*1024LL;
-		str++;
-		break;
-	}
+    case 'g':
+    case 'G':
+      val *= 1024 * 1024 * 1024LL;
+      str++;
+      break;
+  }
 
-	if (tailp) *tailp = str;
+  if (tailp) *tailp = str;
 
-	return val;
+  return val;
 }

@@ -37,7 +37,7 @@
 
 static pthread_mutex_t timer_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t timer = PTHREAD_COND_INITIALIZER;
-static const char *secure_erase_cmdline = NULL;
+static const char* secure_erase_cmdline = NULL;
 
 /*
  * This routine is a somewhat safer unlink in that it
@@ -45,110 +45,108 @@ static const char *secure_erase_cmdline = NULL;
  * excepting it. It also requires the file to be in
  * the working directory.
  */
-int SaferUnlink(const char *pathname, const char *regx)
+int SaferUnlink(const char* pathname, const char* regx)
 {
-   int rc;
-   regex_t preg1;
-   char prbuf[500];
-   int rtn;
+  int rc;
+  regex_t preg1;
+  char prbuf[500];
+  int rtn;
 
-   /*
-    * Name must start with working directory
-    */
-   if (strncmp(pathname, working_directory, strlen(working_directory)) != 0) {
-      Pmsg1(000, "Safe_unlink excluded: %s\n", pathname);
-      return EROFS;
-   }
+  /*
+   * Name must start with working directory
+   */
+  if (strncmp(pathname, working_directory, strlen(working_directory)) != 0) {
+    Pmsg1(000, "Safe_unlink excluded: %s\n", pathname);
+    return EROFS;
+  }
 
-   /*
-    * Compile regex expression
-    */
-   rc = regcomp(&preg1, regx, REG_EXTENDED);
-   if (rc != 0) {
-      regerror(rc, &preg1, prbuf, sizeof(prbuf));
-      Pmsg2(000,  _("safe_unlink could not compile regex pattern \"%s\" ERR=%s\n"),
-           regx, prbuf);
-      return ENOENT;
-   }
+  /*
+   * Compile regex expression
+   */
+  rc = regcomp(&preg1, regx, REG_EXTENDED);
+  if (rc != 0) {
+    regerror(rc, &preg1, prbuf, sizeof(prbuf));
+    Pmsg2(000, _("safe_unlink could not compile regex pattern \"%s\" ERR=%s\n"),
+          regx, prbuf);
+    return ENOENT;
+  }
 
-   /*
-    * Unlink files that match regexes
-    */
-   if (regexec(&preg1, pathname, 0, NULL, 0) == 0) {
-      Dmsg1(100, "safe_unlink unlinking: %s\n", pathname);
-      rtn = SecureErase(NULL, pathname);
-   } else {
-      Pmsg2(000, "safe_unlink regex failed: regex=%s file=%s\n", regx, pathname);
-      rtn = EROFS;
-   }
-   regfree(&preg1);
+  /*
+   * Unlink files that match regexes
+   */
+  if (regexec(&preg1, pathname, 0, NULL, 0) == 0) {
+    Dmsg1(100, "safe_unlink unlinking: %s\n", pathname);
+    rtn = SecureErase(NULL, pathname);
+  } else {
+    Pmsg2(000, "safe_unlink regex failed: regex=%s file=%s\n", regx, pathname);
+    rtn = EROFS;
+  }
+  regfree(&preg1);
 
-   return rtn;
+  return rtn;
 }
 
 /*
  * This routine will use an external secure erase program to delete a file.
  */
-int SecureErase(JobControlRecord *jcr, const char *pathname)
+int SecureErase(JobControlRecord* jcr, const char* pathname)
 {
-   int retval = -1;
+  int retval = -1;
 
-   if (secure_erase_cmdline) {
-      int status;
-      Bpipe *bpipe;
-      PoolMem line(PM_NAME),
-               cmdline(PM_MESSAGE);
+  if (secure_erase_cmdline) {
+    int status;
+    Bpipe* bpipe;
+    PoolMem line(PM_NAME), cmdline(PM_MESSAGE);
 
-      Mmsg(cmdline,"%s \"%s\"", secure_erase_cmdline, pathname);
+    Mmsg(cmdline, "%s \"%s\"", secure_erase_cmdline, pathname);
+    if (jcr) {
+      Jmsg(jcr, M_INFO, 0, _("SecureErase: executing %s\n"), cmdline.c_str());
+    }
+
+    bpipe = OpenBpipe(cmdline.c_str(), 0, "r");
+    if (bpipe == NULL) {
+      BErrNo be;
+
       if (jcr) {
-         Jmsg(jcr, M_INFO, 0, _("SecureErase: executing %s\n"), cmdline.c_str());
+        Jmsg(jcr, M_FATAL, 0, _("SecureErase: %s could not execute. ERR=%s\n"),
+             secure_erase_cmdline, be.bstrerror());
       }
+      goto bail_out;
+    }
 
-      bpipe = OpenBpipe(cmdline.c_str(), 0, "r");
-      if (bpipe == NULL) {
-         BErrNo be;
+    while (fgets(line.c_str(), line.size(), bpipe->rfd)) {
+      StripTrailingJunk(line.c_str());
+      if (jcr) { Jmsg(jcr, M_INFO, 0, _("SecureErase: %s\n"), line.c_str()); }
+    }
 
-         if (jcr) {
-            Jmsg(jcr, M_FATAL, 0, _("SecureErase: %s could not execute. ERR=%s\n"),
-                 secure_erase_cmdline, be.bstrerror());
-         }
-         goto bail_out;
+    status = CloseBpipe(bpipe);
+    if (status != 0) {
+      BErrNo be;
+
+      if (jcr) {
+        Jmsg(jcr, M_FATAL, 0,
+             _("SecureErase: %s returned non-zero status=%d. ERR=%s\n"),
+             secure_erase_cmdline, be.code(status), be.bstrerror(status));
       }
+      goto bail_out;
+    }
 
-      while (fgets(line.c_str(), line.size(), bpipe->rfd)) {
-         StripTrailingJunk(line.c_str());
-         if (jcr) {
-            Jmsg(jcr, M_INFO, 0, _("SecureErase: %s\n"), line.c_str());
-         }
-      }
+    Dmsg0(100, "wpipe_command OK\n");
+    retval = 0;
+  } else {
+    retval = unlink(pathname);
+  }
 
-      status = CloseBpipe(bpipe);
-      if (status != 0) {
-         BErrNo be;
-
-         if (jcr) {
-            Jmsg(jcr, M_FATAL, 0, _("SecureErase: %s returned non-zero status=%d. ERR=%s\n"),
-                 secure_erase_cmdline, be.code(status), be.bstrerror(status));
-         }
-         goto bail_out;
-      }
-
-      Dmsg0(100, "wpipe_command OK\n");
-      retval = 0;
-   } else {
-      retval = unlink(pathname);
-   }
-
-   return retval;
+  return retval;
 
 bail_out:
-   errno = EROFS;
-   return retval;
+  errno = EROFS;
+  return retval;
 }
 
-void SetSecureEraseCmdline(const char *cmdline)
+void SetSecureEraseCmdline(const char* cmdline)
 {
-   secure_erase_cmdline = cmdline;
+  secure_erase_cmdline = cmdline;
 }
 
 /*
@@ -159,103 +157,99 @@ void SetSecureEraseCmdline(const char *cmdline)
  */
 int Bmicrosleep(int32_t sec, int32_t usec)
 {
-   struct timespec timeout;
-   struct timeval tv;
-   struct timezone tz;
-   int status;
+  struct timespec timeout;
+  struct timeval tv;
+  struct timezone tz;
+  int status;
 
-   timeout.tv_sec = sec;
-   timeout.tv_nsec = usec * 1000;
+  timeout.tv_sec = sec;
+  timeout.tv_nsec = usec * 1000;
 
 #ifdef HAVE_NANOSLEEP
-   status = nanosleep(&timeout, NULL);
-   if (!(status < 0 && errno == ENOSYS)) {
-      return status;
-   }
-   /*
-    * If we reach here it is because nanosleep is not supported by the OS
-    */
+  status = nanosleep(&timeout, NULL);
+  if (!(status < 0 && errno == ENOSYS)) { return status; }
+  /*
+   * If we reach here it is because nanosleep is not supported by the OS
+   */
 #endif
 
-   /*
-    * Do it the old way
-    */
-   gettimeofday(&tv, &tz);
-   timeout.tv_nsec += tv.tv_usec * 1000;
-   timeout.tv_sec += tv.tv_sec;
-   while (timeout.tv_nsec >= 1000000000) {
-      timeout.tv_nsec -= 1000000000;
-      timeout.tv_sec++;
-   }
+  /*
+   * Do it the old way
+   */
+  gettimeofday(&tv, &tz);
+  timeout.tv_nsec += tv.tv_usec * 1000;
+  timeout.tv_sec += tv.tv_sec;
+  while (timeout.tv_nsec >= 1000000000) {
+    timeout.tv_nsec -= 1000000000;
+    timeout.tv_sec++;
+  }
 
-   Dmsg2(200, "pthread_cond_timedwait sec=%lld usec=%d\n", sec, usec);
+  Dmsg2(200, "pthread_cond_timedwait sec=%lld usec=%d\n", sec, usec);
 
-   /*
-    * Note, this unlocks mutex during the sleep
-    */
-   P(timer_mutex);
-   status = pthread_cond_timedwait(&timer, &timer_mutex, &timeout);
-   V(timer_mutex);
+  /*
+   * Note, this unlocks mutex during the sleep
+   */
+  P(timer_mutex);
+  status = pthread_cond_timedwait(&timer, &timer_mutex, &timeout);
+  V(timer_mutex);
 
-   return status;
+  return status;
 }
 
 /*
  * Copy a string inline from one point in the same string
  * to another.
  */
-char *bstrinlinecpy(char *dest, const char *src)
+char* bstrinlinecpy(char* dest, const char* src)
 {
-   int len;
+  int len;
 
-   /*
-    * Sanity check. We can only inline copy if the src > dest
-    * otherwise the resulting copy will overwrite the end of
-    * the string.
-    */
-   if (src <= dest) {
-      return NULL;
-   }
+  /*
+   * Sanity check. We can only inline copy if the src > dest
+   * otherwise the resulting copy will overwrite the end of
+   * the string.
+   */
+  if (src <= dest) { return NULL; }
 
-   len = strlen(src);
+  len = strlen(src);
 #if HAVE_BCOPY
-   /*
-    * Cannot use strcpy or memcpy as those functions are not
-    * allowed on overlapping data and this is inline replacement
-    * for sure is. So we use bcopy which is allowed on overlapping
-    * data.
-    */
-   bcopy(src, dest, len + 1);
+  /*
+   * Cannot use strcpy or memcpy as those functions are not
+   * allowed on overlapping data and this is inline replacement
+   * for sure is. So we use bcopy which is allowed on overlapping
+   * data.
+   */
+  bcopy(src, dest, len + 1);
 #else
-   /*
-    * Cannot use strcpy or memcpy as those functions are not
-    * allowed on overlapping data and this is inline replacement
-    * for sure is. So we use memmove which is allowed on
-    * overlapping data.
-    */
-   memmove(dest, src, len + 1);
+  /*
+   * Cannot use strcpy or memcpy as those functions are not
+   * allowed on overlapping data and this is inline replacement
+   * for sure is. So we use memmove which is allowed on
+   * overlapping data.
+   */
+  memmove(dest, src, len + 1);
 #endif
-   return dest;
+  return dest;
 }
 
 /*
  * Guarantee that the string is properly terminated
  */
-char *bstrncpy(char *dest, const char *src, int maxlen)
+char* bstrncpy(char* dest, const char* src, int maxlen)
 {
-   strncpy(dest, src, maxlen - 1);
-   dest[maxlen - 1] = 0;
-   return dest;
+  strncpy(dest, src, maxlen - 1);
+  dest[maxlen - 1] = 0;
+  return dest;
 }
 
 /*
  * Guarantee that the string is properly terminated
  */
-char *bstrncpy(char *dest, PoolMem &src, int maxlen)
+char* bstrncpy(char* dest, PoolMem& src, int maxlen)
 {
-   strncpy(dest, src.c_str(), maxlen - 1);
-   dest[maxlen - 1] = 0;
-   return dest;
+  strncpy(dest, src.c_str(), maxlen - 1);
+  dest[maxlen - 1] = 0;
+  return dest;
 }
 
 /*
@@ -263,14 +257,12 @@ char *bstrncpy(char *dest, PoolMem &src, int maxlen)
  *  stored in dest, while on Unix systems, it is the maximum characters
  *  that may be copied from src.
  */
-char *bstrncat(char *dest, const char *src, int maxlen)
+char* bstrncat(char* dest, const char* src, int maxlen)
 {
-   int len = strlen(dest);
-   if (len < maxlen - 1) {
-      strncpy(dest + len, src, maxlen - len - 1);
-   }
-   dest[maxlen - 1] = 0;
-   return dest;
+  int len = strlen(dest);
+  if (len < maxlen - 1) { strncpy(dest + len, src, maxlen - len - 1); }
+  dest[maxlen - 1] = 0;
+  return dest;
 }
 
 /*
@@ -278,45 +270,45 @@ char *bstrncat(char *dest, const char *src, int maxlen)
  *  stored in dest, while on Unix systems, it is the maximum characters
  *  that may be copied from src.
  */
-char *bstrncat(char *dest, PoolMem &src, int maxlen)
+char* bstrncat(char* dest, PoolMem& src, int maxlen)
 {
-   int len = strlen(dest);
-   if (len < maxlen - 1) {
-      strncpy(dest + len, src.c_str(), maxlen - (len + 1));
-   }
-   dest[maxlen - 1] = 0;
-   return dest;
+  int len = strlen(dest);
+  if (len < maxlen - 1) {
+    strncpy(dest + len, src.c_str(), maxlen - (len + 1));
+  }
+  dest[maxlen - 1] = 0;
+  return dest;
 }
 
 /*
  * Allows one or both pointers to be NULL
  */
-bool bstrcmp(const char *s1, const char *s2)
+bool bstrcmp(const char* s1, const char* s2)
 {
-   if (s1 == s2) return true;
-   if (s1 == NULL || s2 == NULL) return false;
-   return strcmp(s1, s2) == 0;
+  if (s1 == s2) return true;
+  if (s1 == NULL || s2 == NULL) return false;
+  return strcmp(s1, s2) == 0;
 }
 
-bool bstrncmp(const char *s1, const char *s2, int n)
+bool bstrncmp(const char* s1, const char* s2, int n)
 {
-   if (s1 == s2) return true;
-   if (s1 == NULL || s2 == NULL) return false;
-   return strncmp(s1, s2, n) == 0;
+  if (s1 == s2) return true;
+  if (s1 == NULL || s2 == NULL) return false;
+  return strncmp(s1, s2, n) == 0;
 }
 
-bool Bstrcasecmp(const char *s1, const char *s2)
+bool Bstrcasecmp(const char* s1, const char* s2)
 {
-   if (s1 == s2) return true;
-   if (s1 == NULL || s2 == NULL) return false;
-   return strcasecmp(s1, s2) == 0;
+  if (s1 == s2) return true;
+  if (s1 == NULL || s2 == NULL) return false;
+  return strcasecmp(s1, s2) == 0;
 }
 
-bool bstrncasecmp(const char *s1, const char *s2, int n)
+bool bstrncasecmp(const char* s1, const char* s2, int n)
 {
-   if (s1 == s2) return true;
-   if (s1 == NULL || s2 == NULL) return false;
-   return strncasecmp(s1, s2, n) == 0;
+  if (s1 == s2) return true;
+  if (s1 == NULL || s2 == NULL) return false;
+  return strncasecmp(s1, s2, n) == 0;
 }
 
 /*
@@ -328,55 +320,54 @@ bool bstrncasecmp(const char *s1, const char *s2, int n)
  * U-00000800 - U-0000FFFF: 1110xxxx 10xxxxxx 10xxxxxx
  * U-00010000 - U-001FFFFF: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
  * U-00200000 - U-03FFFFFF: 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
- * U-04000000 - U-7FFFFFFF: 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
+ * U-04000000 - U-7FFFFFFF: 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
+ * 10xxxxxx
  */
-int cstrlen(const char *str)
+int cstrlen(const char* str)
 {
-   uint8_t *p = (uint8_t *)str;
-   int len = 0;
-   if (str == NULL) {
-      return 0;
-   }
-   while (*p) {
-      if ((*p & 0xC0) != 0xC0) {
-         p++;
-         len++;
-         continue;
-      }
-      if ((*p & 0xD0) == 0xC0) {
-         p += 2;
-         len++;
-         continue;
-      }
-      if ((*p & 0xF0) == 0xD0) {
-         p += 3;
-         len++;
-         continue;
-      }
-      if ((*p & 0xF8) == 0xF0) {
-         p += 4;
-         len++;
-         continue;
-      }
-      if ((*p & 0xFC) == 0xF8) {
-         p += 5;
-         len++;
-         continue;
-      }
-      if ((*p & 0xFE) == 0xFC) {
-         p += 6;
-         len++;
-         continue;
-      }
-      p++;                      /* Shouln't get here but must advance */
-   }
-   return len;
+  uint8_t* p = (uint8_t*)str;
+  int len = 0;
+  if (str == NULL) { return 0; }
+  while (*p) {
+    if ((*p & 0xC0) != 0xC0) {
+      p++;
+      len++;
+      continue;
+    }
+    if ((*p & 0xD0) == 0xC0) {
+      p += 2;
+      len++;
+      continue;
+    }
+    if ((*p & 0xF0) == 0xD0) {
+      p += 3;
+      len++;
+      continue;
+    }
+    if ((*p & 0xF8) == 0xF0) {
+      p += 4;
+      len++;
+      continue;
+    }
+    if ((*p & 0xFC) == 0xF8) {
+      p += 5;
+      len++;
+      continue;
+    }
+    if ((*p & 0xFE) == 0xFC) {
+      p += 6;
+      len++;
+      continue;
+    }
+    p++; /* Shouln't get here but must advance */
+  }
+  return len;
 }
 
 #ifndef bmalloc
-void *bmalloc(size_t size)
+void* bmalloc(size_t size)
 {
-  void *buf;
+  void* buf;
 
 #ifdef SMARTALLOC
   buf = sm_malloc(file, line, size);
@@ -384,16 +375,16 @@ void *bmalloc(size_t size)
   buf = malloc(size);
 #endif
   if (buf == NULL) {
-     BErrNo be;
-     Emsg1(M_ABORT, 0, _("Out of memory: ERR=%s\n"), be.bstrerror());
+    BErrNo be;
+    Emsg1(M_ABORT, 0, _("Out of memory: ERR=%s\n"), be.bstrerror());
   }
   return buf;
 }
 #endif
 
-void *b_malloc(const char *file, int line, size_t size)
+void* b_malloc(const char* file, int line, size_t size)
 {
-  void *buf;
+  void* buf;
 
 #ifdef SMARTALLOC
   buf = sm_malloc(file, line, size);
@@ -401,14 +392,14 @@ void *b_malloc(const char *file, int line, size_t size)
   buf = malloc(size);
 #endif
   if (buf == NULL) {
-     BErrNo be;
-     e_msg(file, line, M_ABORT, 0, _("Out of memory: ERR=%s\n"), be.bstrerror());
+    BErrNo be;
+    e_msg(file, line, M_ABORT, 0, _("Out of memory: ERR=%s\n"), be.bstrerror());
   }
   return buf;
 }
 
 
-void bfree(void *buf)
+void bfree(void* buf)
 {
 #ifdef SMARTALLOC
   sm_free(__FILE__, __LINE__, buf);
@@ -417,45 +408,43 @@ void bfree(void *buf)
 #endif
 }
 
-void *brealloc (void *buf, size_t size)
+void* brealloc(void* buf, size_t size)
 {
 #ifdef SMARTALOC
-   buf = sm_realloc(__FILE__, __LINE__, buf, size);
+  buf = sm_realloc(__FILE__, __LINE__, buf, size);
 #else
-   buf = realloc(buf, size);
+  buf = realloc(buf, size);
 #endif
-   if (buf == NULL) {
-      BErrNo be;
-      Emsg1(M_ABORT, 0, _("Out of memory: ERR=%s\n"), be.bstrerror());
-   }
-   return buf;
+  if (buf == NULL) {
+    BErrNo be;
+    Emsg1(M_ABORT, 0, _("Out of memory: ERR=%s\n"), be.bstrerror());
+  }
+  return buf;
 }
 
-void *bcalloc(size_t size1, size_t size2)
+void* bcalloc(size_t size1, size_t size2)
 {
-  void *buf;
+  void* buf;
 
-   buf = calloc(size1, size2);
-   if (buf == NULL) {
-      BErrNo be;
-      Emsg1(M_ABORT, 0, _("Out of memory: ERR=%s\n"), be.bstrerror());
-   }
-   return buf;
+  buf = calloc(size1, size2);
+  if (buf == NULL) {
+    BErrNo be;
+    Emsg1(M_ABORT, 0, _("Out of memory: ERR=%s\n"), be.bstrerror());
+  }
+  return buf;
 }
 
 #ifndef HAVE_LOCALTIME_R
-struct tm *localtime_r(const time_t *timep, struct tm *tm)
+struct tm* localtime_r(const time_t* timep, struct tm* tm)
 {
-    static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-    struct tm *ltm,
+  static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+  struct tm *ltm,
 
-    P(mutex);
-    ltm = localtime(timep);
-    if (ltm) {
-       memcpy(tm, ltm, sizeof(struct tm));
-    }
-    V(mutex);
-    return ltm ? tm : NULL;
+      P(mutex);
+  ltm = localtime(timep);
+  if (ltm) { memcpy(tm, ltm, sizeof(struct tm)); }
+  V(mutex);
+  return ltm ? tm : NULL;
 }
 #endif /* HAVE_LOCALTIME_R */
 
@@ -463,46 +452,45 @@ struct tm *localtime_r(const time_t *timep, struct tm *tm)
 #ifndef HAVE_WIN32
 #include <dirent.h>
 
-int Readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result)
+int Readdir_r(DIR* dirp, struct dirent* entry, struct dirent** result)
 {
-    static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-    struct dirent *ndir;
-    int status;
+  static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+  struct dirent* ndir;
+  int status;
 
-    P(mutex);
-    errno = 0;
-    ndir = readdir(dirp);
-    status = errno;
-    if (ndir) {
-       memcpy(entry, ndir, sizeof(struct dirent));
-       strcpy(entry->d_name, ndir->d_name);
-       *result = entry;
-    } else {
-       *result = NULL;
-    }
-    V(mutex);
-    return status;
-
+  P(mutex);
+  errno = 0;
+  ndir = readdir(dirp);
+  status = errno;
+  if (ndir) {
+    memcpy(entry, ndir, sizeof(struct dirent));
+    strcpy(entry->d_name, ndir->d_name);
+    *result = entry;
+  } else {
+    *result = NULL;
+  }
+  V(mutex);
+  return status;
 }
 #endif
 #endif /* HAVE_READDIR_R */
 
-int b_strerror(int errnum, char *buf, size_t bufsiz)
+int b_strerror(int errnum, char* buf, size_t bufsiz)
 {
-    static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-    int status = 0;
-    const char *msg;
+  static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+  int status = 0;
+  const char* msg;
 
-    P(mutex);
+  P(mutex);
 
-    msg = strerror(errnum);
-    if (!msg) {
-       msg = _("Bad errno");
-       status = -1;
-    }
-    bstrncpy(buf, msg, bufsiz);
-    V(mutex);
-    return status;
+  msg = strerror(errnum);
+  if (!msg) {
+    msg = _("Bad errno");
+    status = -1;
+  }
+  bstrncpy(buf, msg, bufsiz);
+  V(mutex);
+  return status;
 }
 
 #if !defined(HAVE_WIN32)
@@ -512,158 +500,149 @@ static bool del_pid_file_ok = false;
 /*
  * Create a standard "Unix" pid file.
  */
-void CreatePidFile(char *dir, const char *progname, int port)
+void CreatePidFile(char* dir, const char* progname, int port)
 {
 #if !defined(HAVE_WIN32)
-   int pidfd = -1;
-   int len;
-   int oldpid;
-   char  pidbuf[20];
-   POOLMEM *fname = GetPoolMemory(PM_FNAME);
-   struct stat statp;
+  int pidfd = -1;
+  int len;
+  int oldpid;
+  char pidbuf[20];
+  POOLMEM* fname = GetPoolMemory(PM_FNAME);
+  struct stat statp;
 
-   Mmsg(fname, "%s/%s.%d.pid", dir, progname, port);
-   if (stat(fname, &statp) == 0) {
-      /* File exists, see what we have */
-      *pidbuf = 0;
-      if ((pidfd = open(fname, O_RDONLY|O_BINARY, 0)) < 0 ||
-           read(pidfd, &pidbuf, sizeof(pidbuf)) < 0 ||
-           sscanf(pidbuf, "%d", &oldpid) != 1) {
-         BErrNo be;
-         Emsg2(M_ERROR_TERM, 0, _("Cannot open pid file. %s ERR=%s\n"), fname,
-               be.bstrerror());
-      } else {
-         /*
-          * Some OSes (IRIX) don't bother to clean out the old pid files after a crash, and
-          * since they use a deterministic algorithm for assigning PIDs, we can have
-          * pid conflicts with the old PID file after a reboot.
-          * The intent the following code is to check if the oldpid read from the pid
-          * file is the same as the currently executing process's pid,
-          * and if oldpid == getpid(), skip the attempt to
-          * kill(oldpid,0), since the attempt is guaranteed to succeed,
-          * but the success won't actually mean that there is an
-          * another BAREOS process already running.
-          * For more details see bug #797.
-          */
-          if ((oldpid != (int)getpid()) && (kill(oldpid, 0) != -1 || errno != ESRCH)) {
-            Emsg3(M_ERROR_TERM, 0, _("%s is already running. pid=%d\nCheck file %s\n"),
-                  progname, oldpid, fname);
-         }
-      }
-
-      if (pidfd >= 0) {
-         close(pidfd);
-      }
-
-      /*
-       * He is not alive, so take over file ownership
-       */
-      unlink(fname);                  /* remove stale pid file */
-   }
-
-   /*
-    * Create new pid file
-    */
-   if ((pidfd = open(fname, O_CREAT|O_TRUNC|O_WRONLY|O_BINARY, 0640)) >= 0) {
-      len = sprintf(pidbuf, "%d\n", (int)getpid());
-      write(pidfd, pidbuf, len);
-      close(pidfd);
-      del_pid_file_ok = true;         /* we created it so we can delete it */
-   } else {
+  Mmsg(fname, "%s/%s.%d.pid", dir, progname, port);
+  if (stat(fname, &statp) == 0) {
+    /* File exists, see what we have */
+    *pidbuf = 0;
+    if ((pidfd = open(fname, O_RDONLY | O_BINARY, 0)) < 0 ||
+        read(pidfd, &pidbuf, sizeof(pidbuf)) < 0 ||
+        sscanf(pidbuf, "%d", &oldpid) != 1) {
       BErrNo be;
-      Emsg2(M_ERROR_TERM, 0, _("Could not open pid file. %s ERR=%s\n"), fname,
+      Emsg2(M_ERROR_TERM, 0, _("Cannot open pid file. %s ERR=%s\n"), fname,
             be.bstrerror());
-   }
-   FreePoolMemory(fname);
+    } else {
+      /*
+       * Some OSes (IRIX) don't bother to clean out the old pid files after a
+       * crash, and since they use a deterministic algorithm for assigning PIDs,
+       * we can have pid conflicts with the old PID file after a reboot. The
+       * intent the following code is to check if the oldpid read from the pid
+       * file is the same as the currently executing process's pid,
+       * and if oldpid == getpid(), skip the attempt to
+       * kill(oldpid,0), since the attempt is guaranteed to succeed,
+       * but the success won't actually mean that there is an
+       * another BAREOS process already running.
+       * For more details see bug #797.
+       */
+      if ((oldpid != (int)getpid()) &&
+          (kill(oldpid, 0) != -1 || errno != ESRCH)) {
+        Emsg3(M_ERROR_TERM, 0,
+              _("%s is already running. pid=%d\nCheck file %s\n"), progname,
+              oldpid, fname);
+      }
+    }
+
+    if (pidfd >= 0) { close(pidfd); }
+
+    /*
+     * He is not alive, so take over file ownership
+     */
+    unlink(fname); /* remove stale pid file */
+  }
+
+  /*
+   * Create new pid file
+   */
+  if ((pidfd = open(fname, O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, 0640)) >=
+      0) {
+    len = sprintf(pidbuf, "%d\n", (int)getpid());
+    write(pidfd, pidbuf, len);
+    close(pidfd);
+    del_pid_file_ok = true; /* we created it so we can delete it */
+  } else {
+    BErrNo be;
+    Emsg2(M_ERROR_TERM, 0, _("Could not open pid file. %s ERR=%s\n"), fname,
+          be.bstrerror());
+  }
+  FreePoolMemory(fname);
 #endif
 }
 
 /*
  * Delete the pid file if we created it
  */
-int DeletePidFile(char *dir, const char *progname, int port)
+int DeletePidFile(char* dir, const char* progname, int port)
 {
 #if !defined(HAVE_WIN32)
-   POOLMEM *fname = GetPoolMemory(PM_FNAME);
+  POOLMEM* fname = GetPoolMemory(PM_FNAME);
 
-   if (!del_pid_file_ok) {
-      FreePoolMemory(fname);
-      return 0;
-   }
-   del_pid_file_ok = false;
-   Mmsg(fname, "%s/%s.%d.pid", dir, progname, port);
-   unlink(fname);
-   FreePoolMemory(fname);
+  if (!del_pid_file_ok) {
+    FreePoolMemory(fname);
+    return 0;
+  }
+  del_pid_file_ok = false;
+  Mmsg(fname, "%s/%s.%d.pid", dir, progname, port);
+  unlink(fname);
+  FreePoolMemory(fname);
 #endif
-   return 1;
+  return 1;
 }
 
 struct s_state_hdr {
-   char id[14];
-   int32_t version;
-   uint64_t last_jobs_addr;
-   uint64_t reserved[20];
+  char id[14];
+  int32_t version;
+  uint64_t last_jobs_addr;
+  uint64_t reserved[20];
 };
 
-static struct s_state_hdr state_hdr = {
-   "Bareos State\n",
-   4,
-   0
-};
+static struct s_state_hdr state_hdr = {"Bareos State\n", 4, 0};
 
 /*
  * Open and read the state file for the daemon
  */
-void ReadStateFile(char *dir, const char *progname, int port)
+void ReadStateFile(char* dir, const char* progname, int port)
 {
-   int sfd;
-   ssize_t status;
-   bool ok = false;
-   POOLMEM *fname = GetPoolMemory(PM_FNAME);
-   struct s_state_hdr hdr;
-   int hdr_size = sizeof(hdr);
+  int sfd;
+  ssize_t status;
+  bool ok = false;
+  POOLMEM* fname = GetPoolMemory(PM_FNAME);
+  struct s_state_hdr hdr;
+  int hdr_size = sizeof(hdr);
 
-   Mmsg(fname, "%s/%s.%d.state", dir, progname, port);
-   /*
-    * If file exists, see what we have
-    */
-   if ((sfd = open(fname, O_RDONLY|O_BINARY)) < 0) {
-      BErrNo be;
-      Dmsg3(010, "Could not open state file. sfd=%d size=%d: ERR=%s\n",
-            sfd, sizeof(hdr), be.bstrerror());
-      goto bail_out;
-   }
-   if ((status = read(sfd, &hdr, hdr_size)) != hdr_size) {
-      BErrNo be;
-      Dmsg4(010, "Could not read state file. sfd=%d status=%d size=%d: ERR=%s\n",
-            sfd, (int)status, hdr_size, be.bstrerror());
-      goto bail_out;
-   }
-   if (hdr.version != state_hdr.version) {
-      Dmsg2(010, "Bad hdr version. Wanted %d got %d\n",
-            state_hdr.version, hdr.version);
-      goto bail_out;
-   }
-   hdr.id[13] = 0;
-   if (!bstrcmp(hdr.id, state_hdr.id)) {
-      Dmsg0(000, "State file header id invalid.\n");
-      goto bail_out;
-   }
+  Mmsg(fname, "%s/%s.%d.state", dir, progname, port);
+  /*
+   * If file exists, see what we have
+   */
+  if ((sfd = open(fname, O_RDONLY | O_BINARY)) < 0) {
+    BErrNo be;
+    Dmsg3(010, "Could not open state file. sfd=%d size=%d: ERR=%s\n", sfd,
+          sizeof(hdr), be.bstrerror());
+    goto bail_out;
+  }
+  if ((status = read(sfd, &hdr, hdr_size)) != hdr_size) {
+    BErrNo be;
+    Dmsg4(010, "Could not read state file. sfd=%d status=%d size=%d: ERR=%s\n",
+          sfd, (int)status, hdr_size, be.bstrerror());
+    goto bail_out;
+  }
+  if (hdr.version != state_hdr.version) {
+    Dmsg2(010, "Bad hdr version. Wanted %d got %d\n", state_hdr.version,
+          hdr.version);
+    goto bail_out;
+  }
+  hdr.id[13] = 0;
+  if (!bstrcmp(hdr.id, state_hdr.id)) {
+    Dmsg0(000, "State file header id invalid.\n");
+    goto bail_out;
+  }
 
-   if (!ReadLastJobsList(sfd, hdr.last_jobs_addr)) {
-      goto bail_out;
-   }
-   ok = true;
+  if (!ReadLastJobsList(sfd, hdr.last_jobs_addr)) { goto bail_out; }
+  ok = true;
 bail_out:
-   if (sfd >= 0) {
-      close(sfd);
-   }
+  if (sfd >= 0) { close(sfd); }
 
-   if (!ok) {
-      SecureErase(NULL, fname);
-   }
+  if (!ok) { SecureErase(NULL, fname); }
 
-   FreePoolMemory(fname);
+  FreePoolMemory(fname);
 }
 
 /*
@@ -671,63 +650,59 @@ bail_out:
  */
 static pthread_mutex_t state_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-void WriteStateFile(char *dir, const char *progname, int port)
+void WriteStateFile(char* dir, const char* progname, int port)
 {
-   int sfd;
-   bool ok = false;
-   POOLMEM *fname = GetPoolMemory(PM_FNAME);
+  int sfd;
+  bool ok = false;
+  POOLMEM* fname = GetPoolMemory(PM_FNAME);
 
-   P(state_mutex);                    /* Only one job at a time can call here */
-   Mmsg(fname, "%s/%s.%d.state", dir, progname, port);
+  P(state_mutex); /* Only one job at a time can call here */
+  Mmsg(fname, "%s/%s.%d.state", dir, progname, port);
 
-   /*
-    * Create new state file
-    */
-   SecureErase(NULL, fname);
-   if ((sfd = open(fname, O_CREAT|O_WRONLY|O_BINARY, 0640)) < 0) {
-      BErrNo be;
-      Emsg2(M_ERROR, 0, _("Could not create state file. %s ERR=%s\n"), fname, be.bstrerror());
-      goto bail_out;
-   }
+  /*
+   * Create new state file
+   */
+  SecureErase(NULL, fname);
+  if ((sfd = open(fname, O_CREAT | O_WRONLY | O_BINARY, 0640)) < 0) {
+    BErrNo be;
+    Emsg2(M_ERROR, 0, _("Could not create state file. %s ERR=%s\n"), fname,
+          be.bstrerror());
+    goto bail_out;
+  }
 
-   if (write(sfd, &state_hdr, sizeof(state_hdr)) != sizeof(state_hdr)) {
-      BErrNo be;
-      Dmsg1(000, "Write hdr error: ERR=%s\n", be.bstrerror());
-      goto bail_out;
-   }
+  if (write(sfd, &state_hdr, sizeof(state_hdr)) != sizeof(state_hdr)) {
+    BErrNo be;
+    Dmsg1(000, "Write hdr error: ERR=%s\n", be.bstrerror());
+    goto bail_out;
+  }
 
-   state_hdr.last_jobs_addr = sizeof(state_hdr);
-   state_hdr.reserved[0] = WriteLastJobsList(sfd, state_hdr.last_jobs_addr);
-   if (lseek(sfd, 0, SEEK_SET) < 0) {
-      BErrNo be;
-      Dmsg1(000, "lseek error: ERR=%s\n", be.bstrerror());
-      goto bail_out;
-   }
+  state_hdr.last_jobs_addr = sizeof(state_hdr);
+  state_hdr.reserved[0] = WriteLastJobsList(sfd, state_hdr.last_jobs_addr);
+  if (lseek(sfd, 0, SEEK_SET) < 0) {
+    BErrNo be;
+    Dmsg1(000, "lseek error: ERR=%s\n", be.bstrerror());
+    goto bail_out;
+  }
 
-   if (write(sfd, &state_hdr, sizeof(state_hdr)) != sizeof(state_hdr)) {
-      BErrNo be;
-      Pmsg1(000, _("Write final hdr error: ERR=%s\n"), be.bstrerror());
-      goto bail_out;
-   }
-   ok = true;
+  if (write(sfd, &state_hdr, sizeof(state_hdr)) != sizeof(state_hdr)) {
+    BErrNo be;
+    Pmsg1(000, _("Write final hdr error: ERR=%s\n"), be.bstrerror());
+    goto bail_out;
+  }
+  ok = true;
 bail_out:
-   if (sfd >= 0) {
-      close(sfd);
-   }
+  if (sfd >= 0) { close(sfd); }
 
-   if (!ok) {
-      SecureErase(NULL, fname);
-   }
-   V(state_mutex);
-   FreePoolMemory(fname);
+  if (!ok) { SecureErase(NULL, fname); }
+  V(state_mutex);
+  FreePoolMemory(fname);
 }
 
 /* BSDI does not have this.  This is a *poor* simulation */
 #ifndef HAVE_STRTOLL
-long long int
-strtoll(const char *ptr, char **endptr, int base)
+long long int strtoll(const char* ptr, char** endptr, int base)
 {
-   return (long long int)strtod(ptr, endptr);
+  return (long long int)strtod(ptr, endptr);
 }
 #endif
 
@@ -736,38 +711,36 @@ strtoll(const char *ptr, char **endptr, int base)
  *   being interrupted by a signal (e.g. a SIGCHLD).
  */
 #undef fgetc
-char *bfgets(char *s, int size, FILE *fd)
+char* bfgets(char* s, int size, FILE* fd)
 {
-   char *p = s;
-   int ch;
-   *p = 0;
-   for (int i = 0; i < size - 1; i++) {
-      do {
-         errno = 0;
-         ch = fgetc(fd);
-      } while (ch == EOF && ferror(fd) && (errno == EINTR || errno == EAGAIN));
-      if (ch == EOF) {
-         if (i == 0) {
-            return NULL;
-         } else {
-            return s;
-         }
+  char* p = s;
+  int ch;
+  *p = 0;
+  for (int i = 0; i < size - 1; i++) {
+    do {
+      errno = 0;
+      ch = fgetc(fd);
+    } while (ch == EOF && ferror(fd) && (errno == EINTR || errno == EAGAIN));
+    if (ch == EOF) {
+      if (i == 0) {
+        return NULL;
+      } else {
+        return s;
       }
-      *p++ = ch;
-      *p = 0;
-      if (ch == '\r') { /* Support for Mac/Windows file format */
-         ch = fgetc(fd);
-         if (ch != '\n') { /* Mac (\r only) */
-            (void)ungetc(ch, fd); /* Push next character back to fd */
-         }
-         p[-1] = '\n';
-         break;
+    }
+    *p++ = ch;
+    *p = 0;
+    if (ch == '\r') { /* Support for Mac/Windows file format */
+      ch = fgetc(fd);
+      if (ch != '\n') {       /* Mac (\r only) */
+        (void)ungetc(ch, fd); /* Push next character back to fd */
       }
-      if (ch == '\n') {
-         break;
-      }
-   }
-   return s;
+      p[-1] = '\n';
+      break;
+    }
+    if (ch == '\n') { break; }
+  }
+  return s;
 }
 
 /*
@@ -776,49 +749,45 @@ char *bfgets(char *s, int size, FILE *fd)
  *   different calling sequence which implements input lines of
  *   up to a million characters.
  */
-char *bfgets(POOLMEM *&s, FILE *fd)
+char* bfgets(POOLMEM*& s, FILE* fd)
 {
-   int ch;
-   int soft_max;
-   int i = 0;
+  int ch;
+  int soft_max;
+  int i = 0;
 
-   s[0] = 0;
-   soft_max = SizeofPoolMemory(s) - 10;
-   for ( ;; ) {
-      do {
-         errno = 0;
-         ch = fgetc(fd);
-      } while (ch == EOF && ferror(fd) && (errno == EINTR || errno == EAGAIN));
-      if (ch == EOF) {
-         if (i == 0) {
-            return NULL;
-         } else {
-            return s;
-         }
+  s[0] = 0;
+  soft_max = SizeofPoolMemory(s) - 10;
+  for (;;) {
+    do {
+      errno = 0;
+      ch = fgetc(fd);
+    } while (ch == EOF && ferror(fd) && (errno == EINTR || errno == EAGAIN));
+    if (ch == EOF) {
+      if (i == 0) {
+        return NULL;
+      } else {
+        return s;
       }
-      if (i > soft_max) {
-         /* Insanity check */
-         if (soft_max > 1000000) {
-            return s;
-         }
-         s = CheckPoolMemorySize(s, soft_max+10000);
-         soft_max = SizeofPoolMemory(s) - 10;
+    }
+    if (i > soft_max) {
+      /* Insanity check */
+      if (soft_max > 1000000) { return s; }
+      s = CheckPoolMemorySize(s, soft_max + 10000);
+      soft_max = SizeofPoolMemory(s) - 10;
+    }
+    s[i++] = ch;
+    s[i] = 0;
+    if (ch == '\r') { /* Support for Mac/Windows file format */
+      ch = fgetc(fd);
+      if (ch != '\n') {       /* Mac (\r only) */
+        (void)ungetc(ch, fd); /* Push next character back to fd */
       }
-      s[i++] = ch;
-      s[i] = 0;
-      if (ch == '\r') { /* Support for Mac/Windows file format */
-         ch = fgetc(fd);
-         if (ch != '\n') { /* Mac (\r only) */
-            (void)ungetc(ch, fd); /* Push next character back to fd */
-         }
-         s[i - 1] = '\n';
-         break;
-      }
-      if (ch == '\n') {
-         break;
-      }
-   }
-   return s;
+      s[i - 1] = '\n';
+      break;
+    }
+    if (ch == '\n') { break; }
+  }
+  return s;
 }
 
 /*
@@ -828,318 +797,280 @@ char *bfgets(POOLMEM *&s, FILE *fd)
  *   without saving its name, and re-generate the name
  *   so that it can be deleted.
  */
-void MakeUniqueFilename(POOLMEM *&name, int Id, char *what)
+void MakeUniqueFilename(POOLMEM*& name, int Id, char* what)
 {
-   Mmsg(name, "%s/%s.%s.%d.tmp", working_directory, my_name, what, Id);
+  Mmsg(name, "%s/%s.%s.%d.tmp", working_directory, my_name, what, Id);
 }
 
-char *escape_filename(const char *file_path)
+char* escape_filename(const char* file_path)
 {
-   if (file_path == NULL || strpbrk(file_path, "\"\\") == NULL) {
-      return NULL;
-   }
+  if (file_path == NULL || strpbrk(file_path, "\"\\") == NULL) { return NULL; }
 
-   char *escaped_path = (char *)bmalloc(2 * (strlen(file_path) + 1));
-   char *cur_char = escaped_path;
+  char* escaped_path = (char*)bmalloc(2 * (strlen(file_path) + 1));
+  char* cur_char = escaped_path;
 
-   while (*file_path) {
-      if (*file_path == '\\' || *file_path == '"') {
-         *cur_char++ = '\\';
-      }
+  while (*file_path) {
+    if (*file_path == '\\' || *file_path == '"') { *cur_char++ = '\\'; }
 
-      *cur_char++ = *file_path++;
-   }
+    *cur_char++ = *file_path++;
+  }
 
-   *cur_char = '\0';
+  *cur_char = '\0';
 
-   return escaped_path;
+  return escaped_path;
 }
 
-bool PathExists(const char *path)
+bool PathExists(const char* path)
 {
-   struct stat statp;
+  struct stat statp;
 
-   if (!path || !strlen(path)) {
-      return false;
-   }
+  if (!path || !strlen(path)) { return false; }
 
-   return (stat(path, &statp) == 0);
+  return (stat(path, &statp) == 0);
 }
 
-bool PathExists(PoolMem &path)
+bool PathExists(PoolMem& path) { return PathExists(path.c_str()); }
+
+bool PathIsDirectory(const char* path)
 {
-   return PathExists(path.c_str());
+  struct stat statp;
+
+  if (!path || !strlen(path)) { return false; }
+
+  if (stat(path, &statp) == 0) {
+    return (S_ISDIR(statp.st_mode));
+  } else {
+    return false;
+  }
 }
 
-bool PathIsDirectory(const char *path)
+bool PathIsDirectory(PoolMem& path) { return PathIsDirectory(path.c_str()); }
+
+bool PathIsAbsolute(const char* path)
 {
-   struct stat statp;
+  if (!path || !strlen(path)) {
+    /*
+     * No path: not an absolute path
+     */
+    return false;
+  }
 
-   if (!path || !strlen(path)) {
-      return false;
-   }
-
-   if (stat(path, &statp) == 0) {
-      return (S_ISDIR(statp.st_mode));
-   } else {
-      return false;
-   }
-}
-
-bool PathIsDirectory(PoolMem &path)
-{
-   return PathIsDirectory(path.c_str());
-}
-
-bool PathIsAbsolute(const char *path)
-{
-   if (!path || !strlen(path)) {
-      /*
-       * No path: not an absolute path
-       */
-      return false;
-   }
-
-   /*
-    * Is path absolute?
-    */
-   if (IsPathSeparator(path[0])) {
-      return true;
-   }
+  /*
+   * Is path absolute?
+   */
+  if (IsPathSeparator(path[0])) { return true; }
 
 #ifdef HAVE_WIN32
-   /*
-    * Windows:
-    * Does path begin with drive? if yes, it is absolute
-    */
-   if (strlen(path) >= 3) {
-      if (isalpha(path[0]) && path[1] == ':' && IsPathSeparator(path[2])) {
-         return true;
-      }
-   }
+  /*
+   * Windows:
+   * Does path begin with drive? if yes, it is absolute
+   */
+  if (strlen(path) >= 3) {
+    if (isalpha(path[0]) && path[1] == ':' && IsPathSeparator(path[2])) {
+      return true;
+    }
+  }
 #endif
 
-   return false;
+  return false;
 }
 
-bool PathIsAbsolute(PoolMem &path)
+bool PathIsAbsolute(PoolMem& path) { return PathIsAbsolute(path.c_str()); }
+
+bool PathContainsDirectory(const char* path)
 {
-   return PathIsAbsolute(path.c_str());
+  int i;
+
+  if (!path) { return false; }
+
+  i = strlen(path) - 1;
+
+  while (i >= 0) {
+    if (IsPathSeparator(path[i])) { return true; }
+    i--;
+  }
+
+  return false;
 }
 
-bool PathContainsDirectory(const char *path)
+bool PathContainsDirectory(PoolMem& path)
 {
-   int i;
-
-   if (!path) {
-      return false;
-   }
-
-   i = strlen(path) - 1;
-
-   while (i >= 0) {
-      if (IsPathSeparator(path[i])) {
-         return true;
-      }
-      i--;
-   }
-
-   return false;
-}
-
-bool PathContainsDirectory(PoolMem &path)
-{
-   return PathContainsDirectory(path.c_str());
+  return PathContainsDirectory(path.c_str());
 }
 
 
 /*
  * Get directory from path.
  */
-bool PathGetDirectory(PoolMem &directory, PoolMem &path)
+bool PathGetDirectory(PoolMem& directory, PoolMem& path)
 {
-   char *dir = NULL;
-   int i = path.strlen();
+  char* dir = NULL;
+  int i = path.strlen();
 
-   directory.strcpy(path);
-   if (!PathIsDirectory(directory)) {
-      dir = directory.addr();
-      while ((!IsPathSeparator(dir[i])) && (i > 0)) {
-         dir[i] = 0;
-         i--;
-      }
-   }
+  directory.strcpy(path);
+  if (!PathIsDirectory(directory)) {
+    dir = directory.addr();
+    while ((!IsPathSeparator(dir[i])) && (i > 0)) {
+      dir[i] = 0;
+      i--;
+    }
+  }
 
-   if (PathIsDirectory(directory)) {
-      /*
-       * Make sure, path ends with path separator
-       */
-      PathAppend(directory, "");
-      return true;
-   }
+  if (PathIsDirectory(directory)) {
+    /*
+     * Make sure, path ends with path separator
+     */
+    PathAppend(directory, "");
+    return true;
+  }
 
-   return false;
+  return false;
 }
 
-bool PathAppend(char *path, const char *extra, unsigned int max_path)
+bool PathAppend(char* path, const char* extra, unsigned int max_path)
 {
-   unsigned int path_len;
-   unsigned int required_length;
+  unsigned int path_len;
+  unsigned int required_length;
 
-   if (!path || !extra) {
-      return true;
-   }
+  if (!path || !extra) { return true; }
 
-   path_len = strlen(path);
-   required_length = path_len + 1 + strlen(extra);
-   if (required_length > max_path) {
-      return false;
-   }
+  path_len = strlen(path);
+  required_length = path_len + 1 + strlen(extra);
+  if (required_length > max_path) { return false; }
 
-   /*
-    * Add path separator after original path if missing.
-    */
-   if (!IsPathSeparator(path[path_len - 1])) {
-      path[path_len] = PathSeparator;
-      path_len++;
-   }
+  /*
+   * Add path separator after original path if missing.
+   */
+  if (!IsPathSeparator(path[path_len - 1])) {
+    path[path_len] = PathSeparator;
+    path_len++;
+  }
 
-   memcpy(path + path_len, extra, strlen(extra) + 1);
+  memcpy(path + path_len, extra, strlen(extra) + 1);
 
-   return true;
+  return true;
 }
 
-bool PathAppend(PoolMem &path, const char *extra)
+bool PathAppend(PoolMem& path, const char* extra)
 {
-   unsigned int required_length;
+  unsigned int required_length;
 
-   if (!extra) {
-      return true;
-   }
+  if (!extra) { return true; }
 
-   required_length = path.strlen() + 1 + strlen(extra);
-   if (!path.check_size(required_length)) {
-      return false;
-   }
+  required_length = path.strlen() + 1 + strlen(extra);
+  if (!path.check_size(required_length)) { return false; }
 
-   return PathAppend(path.c_str(), extra, required_length);
+  return PathAppend(path.c_str(), extra, required_length);
 }
 
 /*
  * Append to paths together.
  */
-bool PathAppend(PoolMem &path, PoolMem &extra)
+bool PathAppend(PoolMem& path, PoolMem& extra)
 {
-   return PathAppend(path, extra.c_str());
+  return PathAppend(path, extra.c_str());
 }
 
 /*
  * based on
  * src/findlib/mkpath.c:bool makedir(...)
  */
-static bool PathMkdir(char *path, mode_t mode)
+static bool PathMkdir(char* path, mode_t mode)
 {
-   if (PathExists(path)) {
-      Dmsg1(500, "skipped, path %s already exists.\n", path);
-      return PathIsDirectory(path);
-   }
+  if (PathExists(path)) {
+    Dmsg1(500, "skipped, path %s already exists.\n", path);
+    return PathIsDirectory(path);
+  }
 
-   if (mkdir(path, mode) != 0) {
-      BErrNo be;
-      Emsg2(M_ERROR, 0, "Falied to create directory %s: ERR=%s\n",
-              path, be.bstrerror());
-      return false;
-   }
+  if (mkdir(path, mode) != 0) {
+    BErrNo be;
+    Emsg2(M_ERROR, 0, "Falied to create directory %s: ERR=%s\n", path,
+          be.bstrerror());
+    return false;
+  }
 
-   return true;
+  return true;
 }
 
 /*
  * based on
- * src/findlib/mkpath.c:bool makepath(Attributes *attr, const char *apath, mode_t mode, mode_t parent_mode, ...
+ * src/findlib/mkpath.c:bool makepath(Attributes *attr, const char *apath,
+ * mode_t mode, mode_t parent_mode, ...
  */
-bool PathCreate(const char *apath, mode_t mode)
+bool PathCreate(const char* apath, mode_t mode)
 {
-   char *p;
-   int len;
-   bool ok = false;
-   struct stat statp;
-   char *path = NULL;
+  char* p;
+  int len;
+  bool ok = false;
+  struct stat statp;
+  char* path = NULL;
 
-   if (stat(apath, &statp) == 0) {     /* Does dir exist? */
-      if (!S_ISDIR(statp.st_mode)) {
-         Emsg1(M_ERROR, 0, "%s exists but is not a directory.\n", path);
-         return false;
-      }
-      return true;
-   }
+  if (stat(apath, &statp) == 0) { /* Does dir exist? */
+    if (!S_ISDIR(statp.st_mode)) {
+      Emsg1(M_ERROR, 0, "%s exists but is not a directory.\n", path);
+      return false;
+    }
+    return true;
+  }
 
-   len = strlen(apath);
-   path = (char *)alloca(len + 1);
-   bstrncpy(path, apath, len + 1);
-   StripTrailingSlashes(path);
+  len = strlen(apath);
+  path = (char*)alloca(len + 1);
+  bstrncpy(path, apath, len + 1);
+  StripTrailingSlashes(path);
 
 #if defined(HAVE_WIN32)
-   /*
-    * Validate drive letter
-    */
-   if (path[1] == ':') {
-      char drive[4] = "X:\\";
+  /*
+   * Validate drive letter
+   */
+  if (path[1] == ':') {
+    char drive[4] = "X:\\";
 
-      drive[0] = path[0];
+    drive[0] = path[0];
 
-      UINT drive_type = GetDriveType(drive);
+    UINT drive_type = GetDriveType(drive);
 
-      if (drive_type == DRIVE_UNKNOWN || drive_type == DRIVE_NO_ROOT_DIR) {
-         Emsg1(M_ERROR, 0, "%c: is not a valid drive.\n", path[0]);
-         goto bail_out;
-      }
+    if (drive_type == DRIVE_UNKNOWN || drive_type == DRIVE_NO_ROOT_DIR) {
+      Emsg1(M_ERROR, 0, "%c: is not a valid drive.\n", path[0]);
+      goto bail_out;
+    }
 
-      if (path[2] == '\0') {          /* attempt to create a drive */
-         ok = true;
-         goto bail_out;               /* OK, it is already there */
-      }
+    if (path[2] == '\0') { /* attempt to create a drive */
+      ok = true;
+      goto bail_out; /* OK, it is already there */
+    }
 
-      p = &path[3];
-   } else {
-      p = path;
-   }
+    p = &path[3];
+  } else {
+    p = path;
+  }
 #else
-   p = path;
+  p = path;
 #endif
 
-   /*
-    * Skip leading slash(es)
-    */
-   while (IsPathSeparator(*p)) {
-      p++;
-   }
-   while ((p = first_path_separator(p))) {
-      char save_p;
-      save_p = *p;
-      *p = 0;
-      if (!PathMkdir(path, mode)) {
-         goto bail_out;
-      }
-      *p = save_p;
-      while (IsPathSeparator(*p)) {
-         p++;
-      }
-   }
+  /*
+   * Skip leading slash(es)
+   */
+  while (IsPathSeparator(*p)) { p++; }
+  while ((p = first_path_separator(p))) {
+    char save_p;
+    save_p = *p;
+    *p = 0;
+    if (!PathMkdir(path, mode)) { goto bail_out; }
+    *p = save_p;
+    while (IsPathSeparator(*p)) { p++; }
+  }
 
-   if (!PathMkdir(path, mode)) {
-      goto bail_out;
-   }
+  if (!PathMkdir(path, mode)) { goto bail_out; }
 
-   ok = true;
+  ok = true;
 
 bail_out:
-   return ok;
+  return ok;
 }
 
-bool PathCreate(PoolMem &path, mode_t mode)
+bool PathCreate(PoolMem& path, mode_t mode)
 {
-   return PathCreate(path.c_str(), mode);
+  return PathCreate(path.c_str(), mode);
 }
 
 /*
@@ -1161,28 +1092,24 @@ bool PathCreate(PoolMem &path, mode_t mode)
 #endif
 #include <sys/machelf.h>
 
-static int Addrtosymstr(void *pc, char *buffer, int size)
+static int Addrtosymstr(void* pc, char* buffer, int size)
 {
-   Dl_info info;
-   Sym *sym;
+  Dl_info info;
+  Sym* sym;
 
-   if (dladdr1(pc, &info, (void **)&sym, RTLD_DL_SYMENT) == 0) {
-      return (Bsnprintf(buffer, size, "[0x%p]", pc));
-   }
+  if (dladdr1(pc, &info, (void**)&sym, RTLD_DL_SYMENT) == 0) {
+    return (Bsnprintf(buffer, size, "[0x%p]", pc));
+  }
 
-   if ((info.dli_fname != NULL && info.dli_sname != NULL) &&
+  if ((info.dli_fname != NULL && info.dli_sname != NULL) &&
       ((uintptr_t)pc - (uintptr_t)info.dli_saddr < sym->st_size)) {
-      return (Bsnprintf(buffer, size, "%s'%s+0x%x [0x%p]",
-                        info.dli_fname,
-                        info.dli_sname,
-                        (unsigned long)pc - (unsigned long)info.dli_saddr,
-                        pc));
-   } else {
-      return (Bsnprintf(buffer, size, "%s'0x%p [0x%p]",
-                        info.dli_fname,
-                        (unsigned long)pc - (unsigned long)info.dli_fbase,
-                        pc));
-   }
+    return (Bsnprintf(buffer, size, "%s'%s+0x%x [0x%p]", info.dli_fname,
+                      info.dli_sname,
+                      (unsigned long)pc - (unsigned long)info.dli_saddr, pc));
+  } else {
+    return (Bsnprintf(buffer, size, "%s'0x%p [0x%p]", info.dli_fname,
+                      (unsigned long)pc - (unsigned long)info.dli_fbase, pc));
+  }
 }
 #endif /* HAVE_ADDRTOSYMSTR */
 
@@ -1192,34 +1119,34 @@ static int Addrtosymstr(void *pc, char *buffer, int size)
  * Solaris versions don't have this.
  */
 #ifndef HAVE_BACKTRACE_SYMBOLS
-static char **backtrace_symbols(void *const *array, int size)
+static char** backtrace_symbols(void* const* array, int size)
 {
-   int bufferlen, len;
-   char **ret_buffer;
-   char **ret = NULL;
-   char linebuffer[512];
-   int i;
+  int bufferlen, len;
+  char** ret_buffer;
+  char** ret = NULL;
+  char linebuffer[512];
+  int i;
 
-   bufferlen = size * sizeof(char *);
-   ret_buffer = (char **)actuallymalloc(bufferlen);
-   if (ret_buffer) {
-      for (i = 0; i < size; i++) {
-         (void) Addrtosymstr(array[i], linebuffer, sizeof(linebuffer));
-         ret_buffer[i] = (char *)actuallymalloc(len = strlen(linebuffer) + 1);
-         strcpy(ret_buffer[i], linebuffer);
-         bufferlen += len;
+  bufferlen = size * sizeof(char*);
+  ret_buffer = (char**)actuallymalloc(bufferlen);
+  if (ret_buffer) {
+    for (i = 0; i < size; i++) {
+      (void)Addrtosymstr(array[i], linebuffer, sizeof(linebuffer));
+      ret_buffer[i] = (char*)actuallymalloc(len = strlen(linebuffer) + 1);
+      strcpy(ret_buffer[i], linebuffer);
+      bufferlen += len;
+    }
+    ret = (char**)actuallymalloc(bufferlen);
+    if (ret) {
+      for (len = i = 0; i < size; i++) {
+        ret[i] = (char*)ret + size * sizeof(char*) + len;
+        (void)strcpy(ret[i], ret_buffer[i]);
+        len += strlen(ret_buffer[i]) + 1;
       }
-      ret = (char **)actuallymalloc(bufferlen);
-      if (ret) {
-         for (len = i = 0; i < size; i++) {
-            ret[i] = (char *)ret + size * sizeof(char *) + len;
-            (void) strcpy(ret[i], ret_buffer[i]);
-            len += strlen(ret_buffer[i]) + 1;
-         }
-      }
-   }
+    }
+  }
 
-   return (ret);
+  return (ret);
 }
 
 /*
@@ -1240,38 +1167,36 @@ static char **backtrace_symbols(void *const *array, int size)
 #endif
 
 typedef struct backtrace {
-   void **bt_buffer;
-   int bt_maxcount;
-   int bt_actcount;
+  void** bt_buffer;
+  int bt_maxcount;
+  int bt_actcount;
 } backtrace_t;
 
-static int callback(uintptr_t pc, int signo, void *arg)
+static int callback(uintptr_t pc, int signo, void* arg)
 {
-   backtrace_t *bt = (backtrace_t *)arg;
+  backtrace_t* bt = (backtrace_t*)arg;
 
-   if (bt->bt_actcount >= bt->bt_maxcount)
-      return (-1);
+  if (bt->bt_actcount >= bt->bt_maxcount) return (-1);
 
-   bt->bt_buffer[bt->bt_actcount++] = (void *)pc;
+  bt->bt_buffer[bt->bt_actcount++] = (void*)pc;
 
-   return (0);
+  return (0);
 }
 
-static int backtrace(void **buffer, int count)
+static int backtrace(void** buffer, int count)
 {
-   backtrace_t bt;
-   ucontext_t u;
+  backtrace_t bt;
+  ucontext_t u;
 
-   bt.bt_buffer = buffer;
-   bt.bt_maxcount = count;
-   bt.bt_actcount = 0;
+  bt.bt_buffer = buffer;
+  bt.bt_maxcount = count;
+  bt.bt_actcount = 0;
 
-   if (getcontext(&u) < 0)
-      return (0);
+  if (getcontext(&u) < 0) return (0);
 
-   (void) walkcontext(&u, callback, &bt);
+  (void)walkcontext(&u, callback, &bt);
 
-   return (bt.bt_actcount);
+  return (bt.bt_actcount);
 }
 
 /*
@@ -1285,8 +1210,7 @@ static int backtrace(void **buffer, int count)
 /*
  * Support strack_trace support on platforms that use GCC as compiler.
  */
-#if defined(HAVE_BACKTRACE) && \
-    defined(HAVE_BACKTRACE_SYMBOLS) && \
+#if defined(HAVE_BACKTRACE) && defined(HAVE_BACKTRACE_SYMBOLS) && \
     defined(HAVE_GCC)
 
 #ifdef HAVE_CXXABI_H
@@ -1299,69 +1223,66 @@ static int backtrace(void **buffer, int count)
 
 void stack_trace()
 {
-   int status;
-   size_t stack_depth, sz, i;
-   const size_t max_depth = 100;
-   void *stack_addrs[max_depth];
-   char **stack_strings, *begin, *end, *j, *function, *ret;
+  int status;
+  size_t stack_depth, sz, i;
+  const size_t max_depth = 100;
+  void* stack_addrs[max_depth];
+  char **stack_strings, *begin, *end, *j, *function, *ret;
 
-   stack_depth = backtrace(stack_addrs, max_depth);
-   stack_strings = backtrace_symbols(stack_addrs, stack_depth);
+  stack_depth = backtrace(stack_addrs, max_depth);
+  stack_strings = backtrace_symbols(stack_addrs, stack_depth);
 
-   for (i = 3; i < stack_depth; i++) {
-      sz = 200; /* Just a guess, template names will go much wider */
-      function = (char *)actuallymalloc(sz);
-      begin = end = 0;
+  for (i = 3; i < stack_depth; i++) {
+    sz = 200; /* Just a guess, template names will go much wider */
+    function = (char*)actuallymalloc(sz);
+    begin = end = 0;
+    /*
+     * Find the parentheses and address offset surrounding the mangled name
+     */
+    for (j = stack_strings[i]; *j; ++j) {
+      if (*j == '(') {
+        begin = j;
+      } else if (*j == '+') {
+        end = j;
+      }
+    }
+    if (begin && end) {
+      *begin++ = '\0';
+      *end = '\0';
       /*
-       * Find the parentheses and address offset surrounding the mangled name
+       * Found our mangled name, now in [begin, end]
        */
-      for (j = stack_strings[i]; *j; ++j) {
-         if (*j == '(') {
-            begin = j;
-         } else if (*j == '+') {
-            end = j;
-         }
-      }
-      if (begin && end) {
-         *begin++ = '\0';
-         *end = '\0';
-         /*
-          * Found our mangled name, now in [begin, end]
-          */
-         ret = abi::__cxa_demangle(begin, function, &sz, &status);
-         if (ret) {
-            /*
-             * Return value may be a realloc() of the input
-             */
-            function = ret;
-         } else {
-            /*
-             * Demangling failed, just pretend it's a C function with no args
-             */
-            strncpy(function, begin, sz - 3);
-            strcat(function, "()");
-            function[sz - 1] = '\0';
-         }
-         Pmsg2(000, "    %s:%s\n", stack_strings[i], function);
-
+      ret = abi::__cxa_demangle(begin, function, &sz, &status);
+      if (ret) {
+        /*
+         * Return value may be a realloc() of the input
+         */
+        function = ret;
       } else {
-         /* didn't find the mangled name, just print the whole line */
-         Pmsg1(000, "    %s\n", stack_strings[i]);
+        /*
+         * Demangling failed, just pretend it's a C function with no args
+         */
+        strncpy(function, begin, sz - 3);
+        strcat(function, "()");
+        function[sz - 1] = '\0';
       }
-      Actuallyfree(function);
-   }
-   Actuallyfree(stack_strings); /* malloc()ed by backtrace_symbols */
+      Pmsg2(000, "    %s:%s\n", stack_strings[i], function);
+
+    } else {
+      /* didn't find the mangled name, just print the whole line */
+      Pmsg1(000, "    %s\n", stack_strings[i]);
+    }
+    Actuallyfree(function);
+  }
+  Actuallyfree(stack_strings); /* malloc()ed by backtrace_symbols */
 }
 
 /*
  * Support strack_trace support on Solaris when using the SUNPRO_CC compiler.
  */
-#elif defined(HAVE_SUN_OS) && \
-     !defined(HAVE_NON_WORKING_WALKCONTEXT) && \
-      defined(HAVE_UCONTEXT_H) && \
-      defined(HAVE_DEMANGLE_H) && \
-      defined(HAVE_CPLUS_DEMANGLE) && \
-      defined(__SUNPRO_CC)
+#elif defined(HAVE_SUN_OS) && !defined(HAVE_NON_WORKING_WALKCONTEXT) && \
+    defined(HAVE_UCONTEXT_H) && defined(HAVE_DEMANGLE_H) &&             \
+    defined(HAVE_CPLUS_DEMANGLE) && defined(__SUNPRO_CC)
 
 #ifdef HAVE_UCONTEXT_H
 #include <ucontext.h>
@@ -1375,77 +1296,75 @@ void stack_trace()
 
 void stack_trace()
 {
-   int ret, i;
-   bool demangled_symbol;
-   size_t stack_depth;
-   size_t sz = 200; /* Just a guess, template names will go much wider */
-   const size_t max_depth = 100;
-   void *stack_addrs[100];
-   char **stack_strings, *begin, *end, *j, *function;
+  int ret, i;
+  bool demangled_symbol;
+  size_t stack_depth;
+  size_t sz = 200; /* Just a guess, template names will go much wider */
+  const size_t max_depth = 100;
+  void* stack_addrs[100];
+  char **stack_strings, *begin, *end, *j, *function;
 
-   stack_depth = backtrace(stack_addrs, max_depth);
-   stack_strings = backtrace_symbols(stack_addrs, stack_depth);
+  stack_depth = backtrace(stack_addrs, max_depth);
+  stack_strings = backtrace_symbols(stack_addrs, stack_depth);
 
-   for (i = 1; i < stack_depth; i++) {
-      function = (char *)actuallymalloc(sz);
-      begin = end = 0;
+  for (i = 1; i < stack_depth; i++) {
+    function = (char*)actuallymalloc(sz);
+    begin = end = 0;
+    /*
+     * Find the single quote and address offset surrounding the mangled name
+     */
+    for (j = stack_strings[i]; *j; ++j) {
+      if (*j == '\'') {
+        begin = j;
+      } else if (*j == '+') {
+        end = j;
+      }
+    }
+    if (begin && end) {
+      *begin++ = '\0';
+      *end = '\0';
       /*
-       * Find the single quote and address offset surrounding the mangled name
+       * Found our mangled name, now in [begin, end)
        */
-      for (j = stack_strings[i]; *j; ++j) {
-         if (*j == '\'') {
-            begin = j;
-         } else if (*j == '+') {
-            end = j;
-         }
+      demangled_symbol = false;
+      while (!demangled_symbol) {
+        ret = cplus_demangle(begin, function, sz);
+        switch (ret) {
+          case DEMANGLE_ENAME:
+            /*
+             * Demangling failed, just pretend it's a C function with no args
+             */
+            strcat(function, "()");
+            function[sz - 1] = '\0';
+            demangled_symbol = true;
+            break;
+          case DEMANGLE_ESPACE:
+            /*
+             * Need more space for demangled function name.
+             */
+            Actuallyfree(function);
+            sz = sz * 2;
+            function = (char*)actuallymalloc(sz);
+            continue;
+          default:
+            demangled_symbol = true;
+            break;
+        }
       }
-      if (begin && end) {
-         *begin++ = '\0';
-         *end = '\0';
-         /*
-          * Found our mangled name, now in [begin, end)
-          */
-         demangled_symbol = false;
-         while (!demangled_symbol) {
-            ret = cplus_demangle(begin, function, sz);
-            switch (ret) {
-            case DEMANGLE_ENAME:
-               /*
-                * Demangling failed, just pretend it's a C function with no args
-                */
-               strcat(function, "()");
-               function[sz - 1] = '\0';
-               demangled_symbol = true;
-               break;
-            case DEMANGLE_ESPACE:
-               /*
-                * Need more space for demangled function name.
-                */
-               Actuallyfree(function);
-               sz = sz * 2;
-               function = (char *)actuallymalloc(sz);
-               continue;
-            default:
-               demangled_symbol = true;
-               break;
-            }
-         }
-         Pmsg2(000, "    %s:%s\n", stack_strings[i], function);
-      } else {
-         /*
-          * Didn't find the mangled name, just print the whole line
-          */
-         Pmsg1(000, "    %s\n", stack_strings[i]);
-      }
-      Actuallyfree(function);
-   }
-   Actuallyfree(stack_strings); /* malloc()ed by backtrace_symbols */
+      Pmsg2(000, "    %s:%s\n", stack_strings[i], function);
+    } else {
+      /*
+       * Didn't find the mangled name, just print the whole line
+       */
+      Pmsg1(000, "    %s\n", stack_strings[i]);
+    }
+    Actuallyfree(function);
+  }
+  Actuallyfree(stack_strings); /* malloc()ed by backtrace_symbols */
 }
 
 #else
 
-void stack_trace()
-{
-}
+void stack_trace() {}
 
 #endif

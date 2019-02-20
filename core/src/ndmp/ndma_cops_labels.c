@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1998,1999,2000
- *	Traakan, Inc., Los Altos, CA
- *	All rights reserved.
+ *      Traakan, Inc., Los Altos, CA
+ *      All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -41,126 +41,120 @@
 #ifndef NDMOS_OPTION_NO_CONTROL_AGENT
 
 
-int
-ndmca_op_init_labels (struct ndm_session *sess)
+int ndmca_op_init_labels(struct ndm_session* sess)
 {
-	struct ndm_control_agent *ca = sess->control_acb;
-	struct ndm_job_param *	job = &ca->job;
-	struct ndm_media_table *mtab = &job->media_tab;
-	int			n_media = mtab->n_media;
-	struct ndmmedia *	me;
-	int			rc, errors;
+  struct ndm_control_agent* ca = sess->control_acb;
+  struct ndm_job_param* job = &ca->job;
+  struct ndm_media_table* mtab = &job->media_tab;
+  int n_media = mtab->n_media;
+  struct ndmmedia* me;
+  int rc, errors;
 
-	ca->tape_mode = NDMP9_TAPE_RDWR_MODE;
-	ca->is_label_op = 1;
+  ca->tape_mode = NDMP9_TAPE_RDWR_MODE;
+  ca->is_label_op = 1;
 
-	if (n_media <= 0) {
-		ndmalogf (sess, 0, 0, "No media entries in table");
-		return -1;
-	}
+  if (n_media <= 0) {
+    ndmalogf(sess, 0, 0, "No media entries in table");
+    return -1;
+  }
 
-	errors = 0;
-	for (me = mtab->head; me; me = me->next) {
-		if (me->valid_label)
-			continue;
+  errors = 0;
+  for (me = mtab->head; me; me = me->next) {
+    if (me->valid_label) continue;
 
-		ndmalogf (sess, 0, 0, "media #%d missing a label", me->index);
-		errors++;
-	}
-	if (errors)
-		return -1;
+    ndmalogf(sess, 0, 0, "media #%d missing a label", me->index);
+    errors++;
+  }
+  if (errors) return -1;
 
-	rc = ndmca_op_robot_startup (sess, 1);
-	if (rc) return rc;	/* already tattled */
+  rc = ndmca_op_robot_startup(sess, 1);
+  if (rc) return rc; /* already tattled */
 
-	rc = ndmca_connect_tape_agent (sess);
-	if (rc) {
-		ndmconn_destruct (sess->plumb.tape);
-		sess->plumb.tape = NULL;
-		return rc;	/* already tattled */
-	}
+  rc = ndmca_connect_tape_agent(sess);
+  if (rc) {
+    ndmconn_destruct(sess->plumb.tape);
+    sess->plumb.tape = NULL;
+    return rc; /* already tattled */
+  }
 
-	for (me = mtab->head; me; me = me->next) {
-		ca->cur_media_ix = me->index;
+  for (me = mtab->head; me; me = me->next) {
+    ca->cur_media_ix = me->index;
 
-		rc = ndmca_media_load_current (sess);
-		if (rc) {
-			/* already tattled */
-			continue;
-		}
+    rc = ndmca_media_load_current(sess);
+    if (rc) {
+      /* already tattled */
+      continue;
+    }
 
-		rc = ndmca_media_write_label (sess, 'm', me->label);
-		if (rc) {
-			ndmalogf (sess, 0, 0, "failed label write");
-		}
+    rc = ndmca_media_write_label(sess, 'm', me->label);
+    if (rc) { ndmalogf(sess, 0, 0, "failed label write"); }
 
-		ndmca_media_write_filemarks (sess);
-		ndmca_media_unload_current (sess);
-	}
+    ndmca_media_write_filemarks(sess);
+    ndmca_media_unload_current(sess);
+  }
 
-	return rc;
+  return rc;
 }
 
-int
-ndmca_op_list_labels (struct ndm_session *sess)
+int ndmca_op_list_labels(struct ndm_session* sess)
 {
-	struct ndm_control_agent *ca = sess->control_acb;
-	struct ndm_job_param *	job = &ca->job;
-	struct ndm_media_table *mtab = &job->media_tab;
-	int			n_media;
-	char			labbuf[NDMMEDIA_LABEL_MAX];
-	char			buf[200];
-	struct ndmmedia *	me;
-	int			rc;
+  struct ndm_control_agent* ca = sess->control_acb;
+  struct ndm_job_param* job = &ca->job;
+  struct ndm_media_table* mtab = &job->media_tab;
+  int n_media;
+  char labbuf[NDMMEDIA_LABEL_MAX];
+  char buf[200];
+  struct ndmmedia* me;
+  int rc;
 
-	ca->tape_mode = NDMP9_TAPE_READ_MODE;
-	ca->is_label_op = 1;
+  ca->tape_mode = NDMP9_TAPE_READ_MODE;
+  ca->is_label_op = 1;
 
-	rc = ndmca_op_robot_startup (sess, 0);
-	if (rc) return rc;	/* already tattled */
+  rc = ndmca_op_robot_startup(sess, 0);
+  if (rc) return rc; /* already tattled */
 
-	if (job->media_tab.n_media == 0) {
-		if (job->have_robot) {
-			rc = ndmca_robot_synthesize_media (sess);
-			if (rc) return rc;	/* already tattled */
-		} else {
-			/*
-			 * No fixup. Should be done by now.
-			 * See ndma_job_auto_adjust()
-			 */
-		}
-	}
+  if (job->media_tab.n_media == 0) {
+    if (job->have_robot) {
+      rc = ndmca_robot_synthesize_media(sess);
+      if (rc) return rc; /* already tattled */
+    } else {
+      /*
+       * No fixup. Should be done by now.
+       * See ndma_job_auto_adjust()
+       */
+    }
+  }
 
-	if ((rc = ndmca_connect_tape_agent (sess)) != 0) {
-		ndmconn_destruct (sess->plumb.tape);
-		sess->plumb.tape = NULL;
-		return rc;	/* already tattled */
-	}
+  if ((rc = ndmca_connect_tape_agent(sess)) != 0) {
+    ndmconn_destruct(sess->plumb.tape);
+    sess->plumb.tape = NULL;
+    return rc; /* already tattled */
+  }
 
-	n_media = mtab->n_media;
+  n_media = mtab->n_media;
 
-	for (me = mtab->head; me; me = me->next) {
-		ca->cur_media_ix = me->index;
+  for (me = mtab->head; me; me = me->next) {
+    ca->cur_media_ix = me->index;
 
-		rc = ndmca_media_load_current (sess);
-		if (rc) {
-			/* already tattled */
-			continue;
-		}
+    rc = ndmca_media_load_current(sess);
+    if (rc) {
+      /* already tattled */
+      continue;
+    }
 
-		rc = ndmca_media_read_label (sess, labbuf);
-		if (rc == 'm' || rc == 'V') {
-			strcpy (me->label, labbuf);
-			me->valid_label = 1;
-			ndmmedia_to_str (me, buf);
-			ndmalogf (sess, "ME", 0, "%s", buf);
-		} else {
-			ndmalogf (sess, 0, 0, "failed label read");
-		}
-		ndmca_media_unload_current (sess);
-	}
+    rc = ndmca_media_read_label(sess, labbuf);
+    if (rc == 'm' || rc == 'V') {
+      strcpy(me->label, labbuf);
+      me->valid_label = 1;
+      ndmmedia_to_str(me, buf);
+      ndmalogf(sess, "ME", 0, "%s", buf);
+    } else {
+      ndmalogf(sess, 0, 0, "failed label read");
+    }
+    ndmca_media_unload_current(sess);
+  }
 
-	return rc;
+  return rc;
 }
 
 #endif /* !NDMOS_OPTION_NO_CONTROL_AGENT */

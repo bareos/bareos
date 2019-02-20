@@ -36,27 +36,27 @@
 
 main()
 {
-   unsigned long crc;
-   unsigned long buf[5];
-   int i, j, k;
-   k = 0;
-   for (i = 0; i < 256; i++) {
-      crc = (unsigned long)i;
-      for (j = 0; j < 8; j++) {
-         if (crc & 1) {
-            crc = 0xedb88320L ^ (crc >> 1);
-         } else {
-            crc = crc >> 1;
-         }
+  unsigned long crc;
+  unsigned long buf[5];
+  int i, j, k;
+  k = 0;
+  for (i = 0; i < 256; i++) {
+    crc = (unsigned long)i;
+    for (j = 0; j < 8; j++) {
+      if (crc & 1) {
+        crc = 0xedb88320L ^ (crc >> 1);
+      } else {
+        crc = crc >> 1;
       }
-      buf[k++] = crc;
-      if (k == 5) {
-         k = 0;
-         printf("  0x%08x, 0x%08x, 0x%08x, 0x%08x, 0x%08x,\n",
-            buf[0], buf[1], buf[2], buf[3], buf[4]);
-      }
-   }
-   printf("  0x%08x\n", buf[0]);
+    }
+    buf[k++] = crc;
+    if (k == 5) {
+      k = 0;
+      printf("  0x%08x, 0x%08x, 0x%08x, 0x%08x, 0x%08x,\n", buf[0], buf[1],
+             buf[2], buf[3], buf[4]);
+    }
+  }
+  printf("  0x%08x\n", buf[0]);
 }
 #endif
 
@@ -372,35 +372,35 @@ uint32_t bcrc32(unsigned char*buf, int len)
                         tab[3][(crc >> 24) & 255 ]
 # endif
 
-/* clang-format on */
+  /* clang-format on */
 
-        const uint32_t *b;
-        size_t    rem_len;
-        uint32_t crc = tole(~0);
+  const uint32_t* b;
+  size_t rem_len;
+  uint32_t crc = tole(~0);
 
-        /* Align it */
-        if ((intptr_t)buf & 3 && len) {
-                do {
-                        DO_CRC(*buf++);
-                } while ((--len) && ((intptr_t)buf)&3);
-        }
-        rem_len = len & 3;
-        /* load data 32 bits wide, xor data 32 bits wide. */
-        b = (const uint32_t *)buf;
-        len = len >> 2;
-        for (--b; len; --len) {
-                crc ^= *++b; /* use pre increment for speed */
-                DO_CRC4;
-        }
-        len = rem_len;
-        /* And the last few bytes */
-        if (len) {
-                uint8_t *p = (uint8_t *)(b + 1) - 1;
-                do {
-                        DO_CRC(*++p); /* use pre increment for speed */
-                } while (--len);
-        }
-        return tole(crc) ^ ~0;
+  /* Align it */
+  if ((intptr_t)buf & 3 && len) {
+    do {
+      DO_CRC(*buf++);
+    } while ((--len) && ((intptr_t)buf) & 3);
+  }
+  rem_len = len & 3;
+  /* load data 32 bits wide, xor data 32 bits wide. */
+  b = (const uint32_t*)buf;
+  len = len >> 2;
+  for (--b; len; --len) {
+    crc ^= *++b; /* use pre increment for speed */
+    DO_CRC4;
+  }
+  len = rem_len;
+  /* And the last few bytes */
+  if (len) {
+    uint8_t* p = (uint8_t*)(b + 1) - 1;
+    do {
+      DO_CRC(*++p); /* use pre increment for speed */
+    } while (--len);
+  }
+  return tole(crc) ^ ~0;
 }
 
 
@@ -408,53 +408,53 @@ uint32_t bcrc32(unsigned char*buf, int len)
 
 static void usage()
 {
-   fprintf(stderr,
-"\n"
-"Usage: crc32 <data-file>\n"
-"       -?          print this message.\n"
-"\n\n");
+  fprintf(stderr,
+          "\n"
+          "Usage: crc32 <data-file>\n"
+          "       -?          print this message.\n"
+          "\n\n");
 
-   exit(1);
+  exit(1);
 }
 
 /**
  * Reads a single ASCII file and prints the HEX md5 sum.
  */
 #include <stdio.h>
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-   FILE *fd;
-   char buf[5000];
-   int ch;
+  FILE* fd;
+  char buf[5000];
+  int ch;
 
-   while ((ch = getopt(argc, argv, "h?")) != -1) {
-      switch (ch) {
+  while ((ch = getopt(argc, argv, "h?")) != -1) {
+    switch (ch) {
       case 'h':
       case '?':
       default:
-         usage();
-      }
-   }
+        usage();
+    }
+  }
 
-   argc -= optind;
-   argv += optind;
+  argc -= optind;
+  argv += optind;
 
-   if (argc < 1) {
-      printf("Must have filename\n");
-      exit(1);
-   }
+  if (argc < 1) {
+    printf("Must have filename\n");
+    exit(1);
+  }
 
-   fd = fopen(argv[0], "rb");
-   if (!fd) {
-      printf("Could not open %s: ERR=%s\n", argv[0], strerror(errno));
-      exit(1);
-   }
-   uint32_t res;
-   while (fgets(buf, sizeof(buf), fd)) {
-      res = bcrc32((unsigned char *)buf, strlen(buf));
-      printf("%02x\n", res);
-   }
-   printf("  %s\n", argv[0]);
-   fclose(fd);
+  fd = fopen(argv[0], "rb");
+  if (!fd) {
+    printf("Could not open %s: ERR=%s\n", argv[0], strerror(errno));
+    exit(1);
+  }
+  uint32_t res;
+  while (fgets(buf, sizeof(buf), fd)) {
+    res = bcrc32((unsigned char*)buf, strlen(buf));
+    printf("%02x\n", res);
+  }
+  printf("  %s\n", argv[0]);
+  fclose(fd);
 }
 #endif

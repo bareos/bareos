@@ -35,249 +35,219 @@
 /*
  * We assume ASCII input and don't worry about overflow
  */
-uint64_t str_to_uint64(const char *str)
+uint64_t str_to_uint64(const char* str)
 {
-   const char *p = str;
-   uint64_t value = 0;
+  const char* p = str;
+  uint64_t value = 0;
 
-   if (!p) {
-      return 0;
-   }
+  if (!p) { return 0; }
 
-   while (B_ISSPACE(*p)) {
-      p++;
-   }
+  while (B_ISSPACE(*p)) { p++; }
 
-   if (*p == '+') {
-      p++;
-   }
+  if (*p == '+') { p++; }
 
-   while (B_ISDIGIT(*p)) {
-      value = B_TIMES10(value) + *p - '0';
-      p++;
-   }
+  while (B_ISDIGIT(*p)) {
+    value = B_TIMES10(value) + *p - '0';
+    p++;
+  }
 
-   return value;
+  return value;
 }
 
-int64_t str_to_int64(const char *str)
+int64_t str_to_int64(const char* str)
 {
-   const char *p = str;
-   int64_t value;
-   bool negative = false;
+  const char* p = str;
+  int64_t value;
+  bool negative = false;
 
-   if (!p) {
-      return 0;
-   }
+  if (!p) { return 0; }
 
-   while (B_ISSPACE(*p)) {
-      p++;
-   }
+  while (B_ISSPACE(*p)) { p++; }
 
-   if (*p == '+') {
-      p++;
-   } else if (*p == '-') {
-      negative = true;
-      p++;
-   }
+  if (*p == '+') {
+    p++;
+  } else if (*p == '-') {
+    negative = true;
+    p++;
+  }
 
-   value = str_to_uint64(p);
-   if (negative) {
-      value = -value;
-   }
+  value = str_to_uint64(p);
+  if (negative) { value = -value; }
 
-   return value;
+  return value;
 }
 
 /*
  * Edit an integer number with commas, the supplied buffer must be at least
- * DEFAULT_FORMAT_LENGTH bytes long. The incoming number is always widened to 64 bits.
+ * DEFAULT_FORMAT_LENGTH bytes long. The incoming number is always widened to 64
+ * bits.
  */
-char *edit_uint64_with_commas(uint64_t val, char *buf)
+char* edit_uint64_with_commas(uint64_t val, char* buf)
 {
-   edit_uint64(val, buf);
+  edit_uint64(val, buf);
 
-   return add_commas(buf, buf);
+  return add_commas(buf, buf);
 }
 
 /*
- * Edit an integer into "human-readable" format with four or fewer significant digits
- * followed by a suffix that indicates the scale factor. The buf array inherits a
- * DEFAULT_FORMAT_LENGTH byte minimum length requirement from edit_unit64_with_commas(),
- * although the output string is limited to eight characters.
+ * Edit an integer into "human-readable" format with four or fewer significant
+ * digits followed by a suffix that indicates the scale factor. The buf array
+ * inherits a DEFAULT_FORMAT_LENGTH byte minimum length requirement from
+ * edit_unit64_with_commas(), although the output string is limited to eight
+ * characters.
  */
-char *edit_uint64_with_suffix(uint64_t val, char *buf)
+char* edit_uint64_with_suffix(uint64_t val, char* buf)
 {
   int commas = 0;
   char *c, mbuf[50];
-  static const char *suffix[] = {
-     "",
-     "K",
-     "M",
-     "G",
-     "T",
-     "P",
-     "E",
-     "Z",
-     "Y",
-     "FIX ME"
-  };
+  static const char* suffix[] = {"",  "K", "M", "G", "T",
+                                 "P", "E", "Z", "Y", "FIX ME"};
   int suffixes = sizeof(suffix) / sizeof(*suffix);
 
   edit_uint64_with_commas(val, mbuf);
   if ((c = strchr(mbuf, ',')) != NULL) {
     commas++;
     *c++ = '.';
-    while  ((c = strchr(c, ',')) != NULL) {
+    while ((c = strchr(c, ',')) != NULL) {
       commas++;
       *c++ = '\0';
     }
-    mbuf[5] = '\0';                      /* Drop this to get '123.456 TB' rather than '123.4 TB' */
+    mbuf[5] = '\0'; /* Drop this to get '123.456 TB' rather than '123.4 TB' */
   }
 
-  if (commas >= suffixes) {
-     commas = suffixes - 1;
-  }
+  if (commas >= suffixes) { commas = suffixes - 1; }
   Bsnprintf(buf, DEFAULT_FORMAT_LENGTH, "%s %s", mbuf, suffix[commas]);
 
   return buf;
 }
 
 /*
- * Edit an integer number, the supplied buffer must be at least DEFAULT_FORMAT_LENGTH bytes long.
- * The incoming number is always widened to 64 bits.
- * Replacement for sprintf(buf, "%" llu, val)
+ * Edit an integer number, the supplied buffer must be at least
+ * DEFAULT_FORMAT_LENGTH bytes long. The incoming number is always widened to 64
+ * bits. Replacement for sprintf(buf, "%" llu, val)
  */
-char *edit_uint64(uint64_t val, char *buf)
+char* edit_uint64(uint64_t val, char* buf)
 {
-   char mbuf[50];
-   mbuf[sizeof(mbuf) - 1] = 0;
-   int i = sizeof(mbuf) - 2;             /* Edit backward */
+  char mbuf[50];
+  mbuf[sizeof(mbuf) - 1] = 0;
+  int i = sizeof(mbuf) - 2; /* Edit backward */
 
-   if (val == 0) {
-      mbuf[i--] = '0';
-   } else {
-      while (val != 0) {
-         mbuf[i--] = "0123456789"[val % 10];
-         val /= 10;
-      }
-   }
-   bstrncpy(buf, &mbuf[i + 1], DEFAULT_FORMAT_LENGTH);
+  if (val == 0) {
+    mbuf[i--] = '0';
+  } else {
+    while (val != 0) {
+      mbuf[i--] = "0123456789"[val % 10];
+      val /= 10;
+    }
+  }
+  bstrncpy(buf, &mbuf[i + 1], DEFAULT_FORMAT_LENGTH);
 
-   return buf;
+  return buf;
 }
 
 /*
- * Edit an integer number, the supplied buffer must be at least DEFAULT_FORMAT_LENGTH bytes long.
- * The incoming number is always widened to 64 bits.
- * Replacement for sprintf(buf, "%" llu, val)
+ * Edit an integer number, the supplied buffer must be at least
+ * DEFAULT_FORMAT_LENGTH bytes long. The incoming number is always widened to 64
+ * bits. Replacement for sprintf(buf, "%" llu, val)
  */
-char *edit_int64(int64_t val, char *buf)
+char* edit_int64(int64_t val, char* buf)
 {
-   char mbuf[50];
-   bool negative = false;
-   mbuf[sizeof(mbuf) - 1] = 0;
-   int i = sizeof(mbuf) - 2;               /* Edit backward */
+  char mbuf[50];
+  bool negative = false;
+  mbuf[sizeof(mbuf) - 1] = 0;
+  int i = sizeof(mbuf) - 2; /* Edit backward */
 
-   if (val == 0) {
-      mbuf[i--] = '0';
-   } else {
-      if (val < 0) {
-         negative = true;
-         val = -val;
-      }
-      while (val != 0) {
-         mbuf[i--] = "0123456789"[val % 10];
-         val /= 10;
-      }
-   }
-   if (negative) {
-      mbuf[i--] = '-';
-   }
-   bstrncpy(buf, &mbuf[i + 1], DEFAULT_FORMAT_LENGTH);
+  if (val == 0) {
+    mbuf[i--] = '0';
+  } else {
+    if (val < 0) {
+      negative = true;
+      val = -val;
+    }
+    while (val != 0) {
+      mbuf[i--] = "0123456789"[val % 10];
+      val /= 10;
+    }
+  }
+  if (negative) { mbuf[i--] = '-'; }
+  bstrncpy(buf, &mbuf[i + 1], DEFAULT_FORMAT_LENGTH);
 
-   return buf;
+  return buf;
 }
 
 /*
- * Edit an integer number with commas, the supplied buffer must be at least DEFAULT_FORMAT_LENGTH
- * bytes long. The incoming number is always widened to 64 bits.
+ * Edit an integer number with commas, the supplied buffer must be at least
+ * DEFAULT_FORMAT_LENGTH bytes long. The incoming number is always widened to 64
+ * bits.
  */
-char *edit_int64_with_commas(int64_t val, char *buf)
+char* edit_int64_with_commas(int64_t val, char* buf)
 {
-   edit_int64(val, buf);
+  edit_int64(val, buf);
 
-   return add_commas(buf, buf);
+  return add_commas(buf, buf);
 }
 
 /*
- * Given a string "str", separate the numeric part into str, and the modifier into mod.
+ * Given a string "str", separate the numeric part into str, and the modifier
+ * into mod.
  */
-static bool GetModifier(char *str, char *num, int num_len, char *mod, int mod_len)
+static bool GetModifier(char* str,
+                        char* num,
+                        int num_len,
+                        char* mod,
+                        int mod_len)
 {
-   int i, len, num_begin, num_end, mod_begin, mod_end;
+  int i, len, num_begin, num_end, mod_begin, mod_end;
 
-   StripTrailingJunk(str);
-   len = strlen(str);
+  StripTrailingJunk(str);
+  len = strlen(str);
 
-   for (i = 0; i < len; i++) {
-      if (!B_ISSPACE(str[i])) {
-         break;
-      }
-   }
-   num_begin = i;
+  for (i = 0; i < len; i++) {
+    if (!B_ISSPACE(str[i])) { break; }
+  }
+  num_begin = i;
 
-   /*
-    * Walk through integer part
-    */
-   for ( ; i < len; i++) {
-      if (!B_ISDIGIT(str[i]) && str[i] != '.') {
-         break;
-      }
-   }
+  /*
+   * Walk through integer part
+   */
+  for (; i < len; i++) {
+    if (!B_ISDIGIT(str[i]) && str[i] != '.') { break; }
+  }
 
-   num_end = i;
-   if (num_len > (num_end - num_begin + 1)) {
-      num_len = num_end - num_begin + 1;
-   }
-   if (num_len == 0) {
-      return false;
-   }
+  num_end = i;
+  if (num_len > (num_end - num_begin + 1)) {
+    num_len = num_end - num_begin + 1;
+  }
+  if (num_len == 0) { return false; }
 
-   /*
-    * Eat any spaces in front of modifier
-    */
-   for ( ; i < len; i++) {
-      if (!B_ISSPACE(str[i])) {
-         break;
-      }
-   }
+  /*
+   * Eat any spaces in front of modifier
+   */
+  for (; i < len; i++) {
+    if (!B_ISSPACE(str[i])) { break; }
+  }
 
-   mod_begin = i;
-   for ( ; i < len; i++) {
-      if (!B_ISALPHA(str[i])) {
-         break;
-      }
-   }
+  mod_begin = i;
+  for (; i < len; i++) {
+    if (!B_ISALPHA(str[i])) { break; }
+  }
 
-   mod_end = i;
-   if (mod_len > (mod_end - mod_begin + 1)) {
-      mod_len = mod_end - mod_begin + 1;
-   }
+  mod_end = i;
+  if (mod_len > (mod_end - mod_begin + 1)) {
+    mod_len = mod_end - mod_begin + 1;
+  }
 
-   Dmsg5(900, "str=%s: num_beg=%d num_end=%d mod_beg=%d mod_end=%d\n",
-         str, num_begin, num_end, mod_begin, mod_end);
-   bstrncpy(num, &str[num_begin], num_len);
-   bstrncpy(mod, &str[mod_begin], mod_len);
+  Dmsg5(900, "str=%s: num_beg=%d num_end=%d mod_beg=%d mod_end=%d\n", str,
+        num_begin, num_end, mod_begin, mod_end);
+  bstrncpy(num, &str[num_begin], num_len);
+  bstrncpy(mod, &str[mod_begin], mod_len);
 
-   if (!Is_a_number(num)) {
-      return false;
-   }
+  if (!Is_a_number(num)) { return false; }
 
-   bstrncpy(str, &str[mod_end], len);
-   Dmsg2(900, "num=%s mod=%s\n", num, mod);
+  bstrncpy(str, &str[mod_end], len);
+  Dmsg2(900, "num=%s mod=%s\n", num, mod);
 
-   return true;
+  return true;
 }
 
 /*
@@ -285,184 +255,151 @@ static bool GetModifier(char *str, char *num, int num_len, char *mod, int mod_le
  * Returns false: if error
  *         true:  if OK, and value stored in value
  */
-bool DurationToUtime(char *str, utime_t *value)
+bool DurationToUtime(char* str, utime_t* value)
 {
-   int i, mod_len;
-   double val, total = 0.0;
-   char mod_str[20];
-   char num_str[50];
-   /*
-    * The "n" = mins and months appears before minutes so that m maps to months.
-    */
-   static const char *mod[] = {
-      "n",
-      "seconds",
-      "months",
-      "minutes",
-      "mins",
-      "hours",
-      "days",
-      "weeks",
-      "quarters",
-      "years",
-      (char *)NULL
-   };
-   static const int32_t mult[] = {
-      60,
-      1,
-      60 * 60 * 24 * 30,
-      60,
-      60,
-      3600,
-      3600 * 24,
-      3600 * 24 * 7,
-      3600 * 24 * 91,
-      3600 * 24 * 365,
-      0
-   };
+  int i, mod_len;
+  double val, total = 0.0;
+  char mod_str[20];
+  char num_str[50];
+  /*
+   * The "n" = mins and months appears before minutes so that m maps to months.
+   */
+  static const char* mod[] = {"n",        "seconds", "months",   "minutes",
+                              "mins",     "hours",   "days",     "weeks",
+                              "quarters", "years",   (char*)NULL};
+  static const int32_t mult[] = {60,
+                                 1,
+                                 60 * 60 * 24 * 30,
+                                 60,
+                                 60,
+                                 3600,
+                                 3600 * 24,
+                                 3600 * 24 * 7,
+                                 3600 * 24 * 91,
+                                 3600 * 24 * 365,
+                                 0};
 
-   while (*str) {
-      if (!GetModifier(str, num_str, sizeof(num_str), mod_str, sizeof(mod_str))) {
-         return false;
+  while (*str) {
+    if (!GetModifier(str, num_str, sizeof(num_str), mod_str, sizeof(mod_str))) {
+      return false;
+    }
+
+    /*
+     * Now find the multiplier corresponding to the modifier
+     */
+    mod_len = strlen(mod_str);
+    if (mod_len == 0) {
+      i = 1; /* Default to seconds */
+    } else {
+      for (i = 0; mod[i]; i++) {
+        if (bstrncasecmp(mod_str, mod[i], mod_len)) { break; }
       }
+      if (mod[i] == NULL) { return false; }
+    }
 
-      /*
-       * Now find the multiplier corresponding to the modifier
-       */
-      mod_len = strlen(mod_str);
-      if (mod_len == 0) {
-         i = 1;                          /* Default to seconds */
-      } else {
-         for (i = 0; mod[i]; i++) {
-            if (bstrncasecmp(mod_str, mod[i], mod_len)) {
-               break;
-            }
-         }
-         if (mod[i] == NULL) {
-            return false;
-         }
-      }
+    Dmsg2(900, "str=%s: mult=%d\n", num_str, mult[i]);
+    errno = 0;
+    val = strtod(num_str, NULL);
 
-      Dmsg2(900, "str=%s: mult=%d\n", num_str, mult[i]);
-      errno = 0;
-      val = strtod(num_str, NULL);
+    if (errno != 0 || val < 0) { return false; }
 
-      if (errno != 0 || val < 0) {
-         return false;
-      }
+    total += val * mult[i];
+  }
+  *value = (utime_t)total;
 
-      total += val * mult[i];
-   }
-   *value = (utime_t)total;
-
-   return true;
+  return true;
 }
 
 /*
  * Edit a utime "duration" into ASCII
  */
-char *edit_utime(utime_t val, char *buf, int buf_len)
+char* edit_utime(utime_t val, char* buf, int buf_len)
 {
-   char mybuf[200];
-   static const int32_t mult[] = {
-      60 * 60 * 24 * 365,
-      60 * 60 * 24 * 30,
-      60 * 60 * 24,
-      60 * 60,
-      60
-   };
-   static const char *mod[] = {
-      "year",
-      "month",
-      "day",
-      "hour",
-      "min"
-   };
-   int i;
-   uint32_t times;
+  char mybuf[200];
+  static const int32_t mult[] = {60 * 60 * 24 * 365, 60 * 60 * 24 * 30,
+                                 60 * 60 * 24, 60 * 60, 60};
+  static const char* mod[] = {"year", "month", "day", "hour", "min"};
+  int i;
+  uint32_t times;
 
-   *buf = 0;
-   for (i = 0; i < 5; i++) {
-      times = (uint32_t)(val / mult[i]);
-      if (times > 0) {
-         val = val - (utime_t)times * mult[i];
-         Bsnprintf(mybuf, sizeof(mybuf), "%d %s%s ", times, mod[i], times>1?"s":"");
-         bstrncat(buf, mybuf, buf_len);
-      }
-   }
-
-   if (val == 0 && strlen(buf) == 0) {
-      bstrncat(buf, "0 secs", buf_len);
-   } else if (val != 0) {
-      Bsnprintf(mybuf, sizeof(mybuf), "%d sec%s", (uint32_t)val, val>1?"s":"");
+  *buf = 0;
+  for (i = 0; i < 5; i++) {
+    times = (uint32_t)(val / mult[i]);
+    if (times > 0) {
+      val = val - (utime_t)times * mult[i];
+      Bsnprintf(mybuf, sizeof(mybuf), "%d %s%s ", times, mod[i],
+                times > 1 ? "s" : "");
       bstrncat(buf, mybuf, buf_len);
-   }
+    }
+  }
 
-   return buf;
+  if (val == 0 && strlen(buf) == 0) {
+    bstrncat(buf, "0 secs", buf_len);
+  } else if (val != 0) {
+    Bsnprintf(mybuf, sizeof(mybuf), "%d sec%s", (uint32_t)val,
+              val > 1 ? "s" : "");
+    bstrncat(buf, mybuf, buf_len);
+  }
+
+  return buf;
 }
 
-char *edit_pthread(pthread_t val, char *buf, int buf_len)
+char* edit_pthread(pthread_t val, char* buf, int buf_len)
 {
-   int i;
-   char mybuf[3];
-   unsigned char *ptc = (unsigned char *)(void *)(&val);
+  int i;
+  char mybuf[3];
+  unsigned char* ptc = (unsigned char*)(void*)(&val);
 
-   bstrncpy(buf, "0x", buf_len);
-   for (i = sizeof(val); i; --i) {
-      Bsnprintf(mybuf, sizeof(mybuf), "%02x", (unsigned)(ptc[i]));
-      bstrncat(buf, mybuf, buf_len);
-   }
+  bstrncpy(buf, "0x", buf_len);
+  for (i = sizeof(val); i; --i) {
+    Bsnprintf(mybuf, sizeof(mybuf), "%02x", (unsigned)(ptc[i]));
+    bstrncat(buf, mybuf, buf_len);
+  }
 
-   return buf;
+  return buf;
 }
 
-static bool strunit_to_uint64(char *str, uint64_t *value, const char **mod)
+static bool strunit_to_uint64(char* str, uint64_t* value, const char** mod)
 {
-   int i, mod_len;
-   double val;
-   char mod_str[20];
-   char num_str[50];
-   static const int64_t mult[] = {
-      1,                                 /* Byte */
-      1024,                              /* kiloByte */
-      1000,                              /* KiB KiloByte */
-      1048576,                           /* MegaByte */
-      1000000,                           /* MiB MegaByte */
-      1073741824,                        /* GigaByte */
-      1000000000                         /* GiB GigaByte */
-   };
+  int i, mod_len;
+  double val;
+  char mod_str[20];
+  char num_str[50];
+  static const int64_t mult[] = {
+      1,          /* Byte */
+      1024,       /* kiloByte */
+      1000,       /* KiB KiloByte */
+      1048576,    /* MegaByte */
+      1000000,    /* MiB MegaByte */
+      1073741824, /* GigaByte */
+      1000000000  /* GiB GigaByte */
+  };
 
-   if (!GetModifier(str, num_str, sizeof(num_str), mod_str, sizeof(mod_str))) {
-      return 0;
-   }
+  if (!GetModifier(str, num_str, sizeof(num_str), mod_str, sizeof(mod_str))) {
+    return 0;
+  }
 
-   /*
-    * Now find the multiplier corresponding to the modifier
-    */
-   mod_len = strlen(mod_str);
-   if (mod_len == 0) {
-      i = 0;                             /* Default with no modifier = 1 */
-   } else {
-      for (i = 0; mod[i]; i++) {
-         if (bstrncasecmp(mod_str, mod[i], mod_len)) {
-            break;
-         }
-      }
-      if (mod[i] == NULL) {
-         return false;
-      }
-   }
+  /*
+   * Now find the multiplier corresponding to the modifier
+   */
+  mod_len = strlen(mod_str);
+  if (mod_len == 0) {
+    i = 0; /* Default with no modifier = 1 */
+  } else {
+    for (i = 0; mod[i]; i++) {
+      if (bstrncasecmp(mod_str, mod[i], mod_len)) { break; }
+    }
+    if (mod[i] == NULL) { return false; }
+  }
 
-   Dmsg2(900, "str=%s: mult=%d\n", str, mult[i]);
-   errno = 0;
-   val = strtod(num_str, NULL);
+  Dmsg2(900, "str=%s: mult=%d\n", str, mult[i]);
+  errno = 0;
+  val = strtod(num_str, NULL);
 
-   if (errno != 0 || val < 0) {
-      return false;
-   }
-   *value = (utime_t)(val * mult[i]);
+  if (errno != 0 || val < 0) { return false; }
+  *value = (utime_t)(val * mult[i]);
 
-   return true;
+  return true;
 }
 
 /*
@@ -470,23 +407,14 @@ static bool strunit_to_uint64(char *str, uint64_t *value, const char **mod)
  * Returns false: if error
  *         true:  if OK, and value stored in value
  */
-bool size_to_uint64(char *str, uint64_t *value)
+bool size_to_uint64(char* str, uint64_t* value)
 {
-   /*
-    * First item * not used
-    */
-   static const char *mod[] = {
-      "*",
-      "k",
-      "kb",
-      "m",
-      "mb",
-      "g",
-      "gb",
-      NULL
-   };
+  /*
+   * First item * not used
+   */
+  static const char* mod[] = {"*", "k", "kb", "m", "mb", "g", "gb", NULL};
 
-   return strunit_to_uint64(str, value, mod);
+  return strunit_to_uint64(str, value, mod);
 }
 
 /*
@@ -494,88 +422,79 @@ bool size_to_uint64(char *str, uint64_t *value)
  * Returns false: if error
  *         true:  if OK, and value stored in value
  */
-bool speed_to_uint64(char *str, uint64_t *value)
+bool speed_to_uint64(char* str, uint64_t* value)
 {
-   /*
-    * First item * not used
-    */
-   static const char *mod[]  = {
-      "*",
-      "k/s",
-      "kb/s",
-      "m/s",
-      "mb/s",
-      NULL
-   };
+  /*
+   * First item * not used
+   */
+  static const char* mod[] = {"*", "k/s", "kb/s", "m/s", "mb/s", NULL};
 
-   return strunit_to_uint64(str, value, mod);
+  return strunit_to_uint64(str, value, mod);
 }
 
 /*
  * Check if specified string is a number or not.
  * Taken from SQLite, cool, thanks.
  */
-bool Is_a_number(const char *n)
+bool Is_a_number(const char* n)
 {
-   bool digit_seen = false;
+  bool digit_seen = false;
 
-   if( *n == '-' || *n == '+' ) {
-      n++;
-   }
+  if (*n == '-' || *n == '+') { n++; }
 
-   while (B_ISDIGIT(*n)) {
-      digit_seen = true;
-      n++;
-   }
+  while (B_ISDIGIT(*n)) {
+    digit_seen = true;
+    n++;
+  }
 
-   if (digit_seen && *n == '.') {
-      n++;
-      while (B_ISDIGIT(*n)) { n++; }
-   }
+  if (digit_seen && *n == '.') {
+    n++;
+    while (B_ISDIGIT(*n)) { n++; }
+  }
 
-   if (digit_seen && (*n == 'e' || *n == 'E')
-       && (B_ISDIGIT(n[1]) || ((n[1]=='-' || n[1] == '+') && B_ISDIGIT(n[2])))) {
-      n += 2;                            /* Skip e- or e+ or e digit */
-      while (B_ISDIGIT(*n)) { n++; }
-   }
+  if (digit_seen && (*n == 'e' || *n == 'E') &&
+      (B_ISDIGIT(n[1]) || ((n[1] == '-' || n[1] == '+') && B_ISDIGIT(n[2])))) {
+    n += 2; /* Skip e- or e+ or e digit */
+    while (B_ISDIGIT(*n)) { n++; }
+  }
 
-   return digit_seen && *n==0;
+  return digit_seen && *n == 0;
 }
 
 /*
  * Check if specified string is a list of numbers or not
  */
-bool Is_a_number_list(const char *n)
+bool Is_a_number_list(const char* n)
 {
-   bool previous_digit = false;
-   bool digit_seen = false;
+  bool previous_digit = false;
+  bool digit_seen = false;
 
-   while (*n) {
-      if (B_ISDIGIT(*n)) {
-         previous_digit=true;
-         digit_seen = true;
-      } else if (*n == ',' && previous_digit) {
-         previous_digit = false;
-      } else {
-         return false;
-      }
-      n++;
-   }
+  while (*n) {
+    if (B_ISDIGIT(*n)) {
+      previous_digit = true;
+      digit_seen = true;
+    } else if (*n == ',' && previous_digit) {
+      previous_digit = false;
+    } else {
+      return false;
+    }
+    n++;
+  }
 
-   return digit_seen && *n==0;
+  return digit_seen && *n == 0;
 }
 
 /*
  * Check if the specified string is an integer
  */
-bool IsAnInteger(const char *n)
+bool IsAnInteger(const char* n)
 {
-   bool digit_seen = false;
-   while (B_ISDIGIT(*n)) {
-      digit_seen = true;
-      n++;
-   }
-   return digit_seen && *n==0;
+  bool digit_seen = false;
+  while (B_ISDIGIT(*n)) {
+    digit_seen = true;
+    n++;
+  }
+  return digit_seen && *n == 0;
 }
 
 /*
@@ -584,94 +503,82 @@ bool IsAnInteger(const char *n)
  * Check if the Volume name has legal characters
  * If ua is non-NULL send the message
  */
-bool IsNameValid(const char *name, POOLMEM *&msg)
+bool IsNameValid(const char* name, POOLMEM*& msg)
 {
-   int len;
-   const char *p;
-   /*
-    * Special characters to accept
-    */
-   const char *accept = ":.-_/ ";
+  int len;
+  const char* p;
+  /*
+   * Special characters to accept
+   */
+  const char* accept = ":.-_/ ";
 
-   /*
-    * No name is invalid
-    */
-   if (!name) {
-      if (msg) {
-         Mmsg(msg, _("Empty name not allowed.\n"));
-      }
-      return false;
-   }
+  /*
+   * No name is invalid
+   */
+  if (!name) {
+    if (msg) { Mmsg(msg, _("Empty name not allowed.\n")); }
+    return false;
+  }
 
-   /*
-    * Restrict the characters permitted in the Volume name
-    */
-   for (p = name; *p; p++) {
-      if (B_ISALPHA(*p) || B_ISDIGIT(*p) || strchr(accept, (int)(*p))) {
-         continue;
-      }
-      if (msg) {
-         Mmsg(msg, _("Illegal character \"%c\" in name.\n"), *p);
-      }
-      return false;
-   }
+  /*
+   * Restrict the characters permitted in the Volume name
+   */
+  for (p = name; *p; p++) {
+    if (B_ISALPHA(*p) || B_ISDIGIT(*p) || strchr(accept, (int)(*p))) {
+      continue;
+    }
+    if (msg) { Mmsg(msg, _("Illegal character \"%c\" in name.\n"), *p); }
+    return false;
+  }
 
-   len = p - name;
-   if (len >= MAX_NAME_LENGTH) {
-      if (msg) {
-         Mmsg(msg, _("Name too long.\n"));
-      }
-      return false;
-   }
+  len = p - name;
+  if (len >= MAX_NAME_LENGTH) {
+    if (msg) { Mmsg(msg, _("Name too long.\n")); }
+    return false;
+  }
 
-   if (len == 0) {
-      if (msg) {
-         Mmsg(msg,  _("Volume name must be at least one character long.\n"));
-      }
-      return false;
-   }
+  if (len == 0) {
+    if (msg) {
+      Mmsg(msg, _("Volume name must be at least one character long.\n"));
+    }
+    return false;
+  }
 
-   return true;
+  return true;
 }
 
-bool IsNameValid(const char *name)
+bool IsNameValid(const char* name)
 {
-   bool retval;
-   POOLMEM *msg = GetPoolMemory(PM_NAME);
+  bool retval;
+  POOLMEM* msg = GetPoolMemory(PM_NAME);
 
-   retval = IsNameValid(name, msg);
+  retval = IsNameValid(name, msg);
 
-   FreePoolMemory(msg);
+  FreePoolMemory(msg);
 
-   return retval;
+  return retval;
 }
 
 /*
  * Add commas to a string, which is presumably a number.
  */
-char *add_commas(char *val, char *buf)
+char* add_commas(char* val, char* buf)
 {
-   int len, nc;
-   char *p, *q;
-   int i;
+  int len, nc;
+  char *p, *q;
+  int i;
 
-   if (val != buf) {
-      strcpy(buf, val);
-   }
-   len = strlen(buf);
-   if (len < 1) {
-      len = 1;
-   }
-   nc = (len - 1) / 3;
-   p = buf+len;
-   q = p + nc;
-   *q-- = *p--;
-   for ( ; nc; nc--) {
-      for (i = 0; i < 3; i++) {
-          *q-- = *p--;
-      }
-      *q-- = ',';
-   }
+  if (val != buf) { strcpy(buf, val); }
+  len = strlen(buf);
+  if (len < 1) { len = 1; }
+  nc = (len - 1) / 3;
+  p = buf + len;
+  q = p + nc;
+  *q-- = *p--;
+  for (; nc; nc--) {
+    for (i = 0; i < 3; i++) { *q-- = *p--; }
+    *q-- = ',';
+  }
 
-   return buf;
+  return buf;
 }

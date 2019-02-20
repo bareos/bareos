@@ -24,10 +24,10 @@
 
 namespace storagedaemon {
 
-int WaitForSysop(DeviceControlRecord *dcr);
-bool WaitForDevice(JobControlRecord *jcr, int &retries);
+int WaitForSysop(DeviceControlRecord* dcr);
+bool WaitForDevice(JobControlRecord* jcr, int& retries);
 void ReleaseDeviceCond();
 
 } /* namespace storagedaemon */
 
-#endif // BAREOS_STORED_WAIT_H_
+#endif  // BAREOS_STORED_WAIT_H_

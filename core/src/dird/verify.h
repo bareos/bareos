@@ -26,9 +26,9 @@
 
 namespace directordaemon {
 
-bool DoVerify(JobControlRecord *jcr);
-bool DoVerifyInit(JobControlRecord *jcr);
-void VerifyCleanup(JobControlRecord *jcr, int TermCode);
+bool DoVerify(JobControlRecord* jcr);
+bool DoVerifyInit(JobControlRecord* jcr);
+void VerifyCleanup(JobControlRecord* jcr, int TermCode);
 
 } /* namespace directordaemon */
-#endif // BAREOS_DIRD_VERIFY_H_
+#endif  // BAREOS_DIRD_VERIFY_H_

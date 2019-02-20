@@ -28,4 +28,4 @@ void StopStatisticsThread();
 void stats_job_started();
 
 } /* namespace directordaemon */
-#endif // BAREOS_DIRD_STATS_H_
+#endif  // BAREOS_DIRD_STATS_H_

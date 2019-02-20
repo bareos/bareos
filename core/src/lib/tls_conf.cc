@@ -23,10 +23,10 @@
 #include "lib/tls_conf.h"
 
 TlsResource::TlsResource()
- : cipherlist_(nullptr)
- , authenticate_(false)
- , tls_enable_(false)
- , tls_require_(false)
+    : cipherlist_(nullptr)
+    , authenticate_(false)
+    , tls_enable_(false)
+    , tls_require_(false)
 {
   return;
 }
@@ -38,14 +38,10 @@ bool TlsResource::IsTlsConfigured() const
 
 TlsPolicy TlsResource::GetPolicy() const
 {
- TlsPolicy result = TlsPolicy::kBnetTlsNone;
- if (tls_enable_) {
-    result = TlsPolicy::kBnetTlsEnabled;
- }
- if (tls_require_) {
-    result = TlsPolicy::kBnetTlsRequired;
- }
- return result;
+  TlsPolicy result = TlsPolicy::kBnetTlsNone;
+  if (tls_enable_) { result = TlsPolicy::kBnetTlsEnabled; }
+  if (tls_require_) { result = TlsPolicy::kBnetTlsRequired; }
+  return result;
 }
 
 int TlsResource::SelectTlsPolicy(TlsPolicy remote_policy) const
@@ -55,11 +51,13 @@ int TlsResource::SelectTlsPolicy(TlsPolicy remote_policy) const
   }
   TlsPolicy local_policy = GetPolicy();
 
-  if ((remote_policy == 0 && local_policy == 0) || (remote_policy == 0 && local_policy == 1) ||
+  if ((remote_policy == 0 && local_policy == 0) ||
+      (remote_policy == 0 && local_policy == 1) ||
       (remote_policy == 1 && local_policy == 0)) {
     return TlsPolicy::kBnetTlsNone;
   }
-  if ((remote_policy == 0 && local_policy == 2) || (remote_policy == 2 && local_policy == 0)) {
+  if ((remote_policy == 0 && local_policy == 2) ||
+      (remote_policy == 2 && local_policy == 0)) {
     return TlsPolicy::kBnetTlsDeny;
   }
   return TlsPolicy::kBnetTlsEnabled;

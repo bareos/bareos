@@ -36,51 +36,51 @@
  *
  * bool Drivetype(const char *fname, char *dt, int dtlen);
  */
-#if defined (HAVE_WIN32)
+#if defined(HAVE_WIN32)
 /* Windows */
 
-bool Drivetype(const char *fname, char *dt, int dtlen)
+bool Drivetype(const char* fname, char* dt, int dtlen)
 {
-   CHAR rootpath[4];
-   UINT type;
+  CHAR rootpath[4];
+  UINT type;
 
-   /*
-    * Copy Drive Letter, colon, and backslash to rootpath
-    */
-   bstrncpy(rootpath, fname, 3);
-   rootpath[3] = '\0';
+  /*
+   * Copy Drive Letter, colon, and backslash to rootpath
+   */
+  bstrncpy(rootpath, fname, 3);
+  rootpath[3] = '\0';
 
-   type = GetDriveType(rootpath);
+  type = GetDriveType(rootpath);
 
-   switch (type) {
-   case DRIVE_REMOVABLE:
+  switch (type) {
+    case DRIVE_REMOVABLE:
       bstrncpy(dt, "removable", dtlen);
       return true;
-   case DRIVE_FIXED:
+    case DRIVE_FIXED:
       bstrncpy(dt, "fixed", dtlen);
       return true;
-   case DRIVE_REMOTE:
+    case DRIVE_REMOTE:
       bstrncpy(dt, "remote", dtlen);
       return true;
-   case DRIVE_CDROM:
+    case DRIVE_CDROM:
       bstrncpy(dt, "cdrom", dtlen);
       return true;
-   case DRIVE_RAMDISK:
+    case DRIVE_RAMDISK:
       bstrncpy(dt, "ramdisk", dtlen);
       return true;
-   case DRIVE_UNKNOWN:
-   case DRIVE_NO_ROOT_DIR:
-   default:
+    case DRIVE_UNKNOWN:
+    case DRIVE_NO_ROOT_DIR:
+    default:
       return false;
-   }
+  }
 }
 /* Windows */
 
-#else    /* No recognised OS */
+#else /* No recognised OS */
 
-bool Drivetype(const char *fname, char *dt, int dtlen)
+bool Drivetype(const char* fname, char* dt, int dtlen)
 {
-   Dmsg0(10, "!!! Drivetype() not implemented for this OS. !!!\n");
-   return false;
+  Dmsg0(10, "!!! Drivetype() not implemented for this OS. !!!\n");
+  return false;
 }
 #endif

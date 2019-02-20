@@ -24,8 +24,8 @@
 
 namespace directordaemon {
 
-int VariableExpansion(JobControlRecord *jcr, char *inp, POOLMEM *&exp);
+int VariableExpansion(JobControlRecord* jcr, char* inp, POOLMEM*& exp);
 
 } /* namespace directordaemon */
 
-#endif // BAREOS_DIRD_EXPAND_H_
+#endif  // BAREOS_DIRD_EXPAND_H_

@@ -23,8 +23,8 @@
 
 namespace storagedaemon {
 
-void *HandleDirectorConnection(BareosSocket *dir);
+void* HandleDirectorConnection(BareosSocket* dir);
 
 } /* namespace storagedaemon */
 
-#endif // BAREOS_STORED_DIR_CMD_H_
+#endif  // BAREOS_STORED_DIR_CMD_H_

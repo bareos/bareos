@@ -27,32 +27,32 @@
  */
 
 
-#define QSIZE 10              /**< # of pointers in the queue */
+#define QSIZE 10 /**< # of pointers in the queue */
 
 class CircularBuffer : public SmartAlloc {
-   int size_;
-   int next_in_;
-   int next_out_;
-   int capacity_;
-   bool flush_;
-   pthread_mutex_t lock_;    /**< Lock the structure */
-   pthread_cond_t notfull_;  /**< Full -> not full condition */
-   pthread_cond_t notempty_; /**< Empty -> not empty condition */
-   void **data_;             /**< Circular buffer of pointers */
+  int size_;
+  int next_in_;
+  int next_out_;
+  int capacity_;
+  bool flush_;
+  pthread_mutex_t lock_;    /**< Lock the structure */
+  pthread_cond_t notfull_;  /**< Full -> not full condition */
+  pthread_cond_t notempty_; /**< Empty -> not empty condition */
+  void** data_;             /**< Circular buffer of pointers */
 
-public:
-   CircularBuffer(int capacity = QSIZE);
-   ~CircularBuffer();
-   int init(int capacity);
-   void destroy();
-   int enqueue(void *data);
-   void *dequeue();
-   int NextSlot();
-   int flush();
-   bool full() { return size_ == capacity_; }
-   bool empty() { return size_ == 0; }
-   bool IsFlushing() { return flush_; }
-   int capacity() const { return capacity_; }
+ public:
+  CircularBuffer(int capacity = QSIZE);
+  ~CircularBuffer();
+  int init(int capacity);
+  void destroy();
+  int enqueue(void* data);
+  void* dequeue();
+  int NextSlot();
+  int flush();
+  bool full() { return size_ == capacity_; }
+  bool empty() { return size_ == 0; }
+  bool IsFlushing() { return flush_; }
+  int capacity() const { return capacity_; }
 };
 
 /**
@@ -60,14 +60,11 @@ public:
  */
 inline CircularBuffer::CircularBuffer(int capacity)
 {
-   data_ = NULL;
-   init(capacity);
+  data_ = NULL;
+  init(capacity);
 }
 
 /**
  * Destructor
  */
-inline CircularBuffer::~CircularBuffer()
-{
-   destroy();
-}
+inline CircularBuffer::~CircularBuffer() { destroy(); }

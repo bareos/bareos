@@ -24,15 +24,16 @@
 /*
  * Standard global types with handlers defined in ini.c
  */
-enum {
-   INI_CFG_TYPE_INT32 = 1,          /* 32 bits Integer */
-   INI_CFG_TYPE_PINT32 = 2,         /* Positive 32 bits Integer (unsigned) */
-   INI_CFG_TYPE_INT64 = 3,          /* 64 bits Integer */
-   INI_CFG_TYPE_PINT64 = 4,         /* Positive 64 bits Integer (unsigned) */
-   INI_CFG_TYPE_NAME = 5,           /* Name */
-   INI_CFG_TYPE_STR = 6,            /* String */
-   INI_CFG_TYPE_BOOL = 7,           /* Boolean */
-   INI_CFG_TYPE_ALIST_STR = 8       /* List of strings */
+enum
+{
+  INI_CFG_TYPE_INT32 = 1,    /* 32 bits Integer */
+  INI_CFG_TYPE_PINT32 = 2,   /* Positive 32 bits Integer (unsigned) */
+  INI_CFG_TYPE_INT64 = 3,    /* 64 bits Integer */
+  INI_CFG_TYPE_PINT64 = 4,   /* Positive 64 bits Integer (unsigned) */
+  INI_CFG_TYPE_NAME = 5,     /* Name */
+  INI_CFG_TYPE_STR = 6,      /* String */
+  INI_CFG_TYPE_BOOL = 7,     /* Boolean */
+  INI_CFG_TYPE_ALIST_STR = 8 /* List of strings */
 };
 
 /*
@@ -66,12 +67,12 @@ struct ini_items;
  * Used to store result
  */
 typedef union {
-   char    *strval;
-   char    nameval[MAX_NAME_LENGTH];
-   int64_t int64val;
-   int32_t int32val;
-   alist   *alistval;
-   bool    boolval;
+  char* strval;
+  char nameval[MAX_NAME_LENGTH];
+  int64_t int64val;
+  int32_t int32val;
+  alist* alistval;
+  bool boolval;
 } item_value;
 
 /*
@@ -79,17 +80,17 @@ typedef union {
  * the file itself
  */
 struct ini_items {
-   const char *name;            /* keyword name */
-   int type;                    /* type accepted */
-   const char *comment;         /* comment associated, used in prompt */
+  const char* name;    /* keyword name */
+  int type;            /* type accepted */
+  const char* comment; /* comment associated, used in prompt */
 
-   int required;                /* optional required or not */
-   const char *re_value;        /* optional regexp associated */
-   const char *in_values;       /* optional list of values */
-   const char *default_value;   /* optional default value */
+  int required;              /* optional required or not */
+  const char* re_value;      /* optional regexp associated */
+  const char* in_values;     /* optional list of values */
+  const char* default_value; /* optional default value */
 
-   bool found;                  /* if val is set */
-   item_value val;              /* val contains the value */
+  bool found;     /* if val is set */
+  item_value val; /* val contains the value */
 };
 
 /*
@@ -100,13 +101,14 @@ struct ini_items {
 /*
  * Special RestoreObject name used to get user input at restore time
  */
-#define INI_RESTORE_OBJECT_NAME    "RestoreOptions"
+#define INI_RESTORE_OBJECT_NAME "RestoreOptions"
 
 /*
  * Can be used to set re_value, in_value, default_value, found and val to 0
  * G++ looks to allow partial declaration, let see with another compiler
  */
-#define ITEMS_DEFAULT    NULL,NULL,NULL,0,{0}
+#define ITEMS_DEFAULT \
+  NULL, NULL, NULL, 0, { 0 }
 
 /*
  * Handle simple configuration file such as "ini" files.
@@ -116,123 +118,120 @@ struct ini_items {
  *
  */
 
-class ConfigFile
-{
-private:
-   LEX *lc;                     /* Lex parser */
-   bool items_allocated;
+class ConfigFile {
+ private:
+  LEX* lc; /* Lex parser */
+  bool items_allocated;
 
-public:
-   JobControlRecord *jcr;                    /* JobControlRecord needed for Jmsg */
-   int version;                 /* Internal version check */
-   int sizeof_ini_items;        /* Extra check when using dynamic loading */
-   struct ini_items *items;     /* Structure of the config file */
-   POOLMEM *out_fname;          /* Can be used to dump config to disk */
-   POOLMEM *edit;               /* Can be used to build result file */
+ public:
+  JobControlRecord* jcr;   /* JobControlRecord needed for Jmsg */
+  int version;             /* Internal version check */
+  int sizeof_ini_items;    /* Extra check when using dynamic loading */
+  struct ini_items* items; /* Structure of the config file */
+  POOLMEM* out_fname;      /* Can be used to dump config to disk */
+  POOLMEM* edit;           /* Can be used to build result file */
 
-   ConfigFile() {
-      lc = NULL;
-      jcr = NULL;
-      items = NULL;
-      out_fname = NULL;
+  ConfigFile()
+  {
+    lc = NULL;
+    jcr = NULL;
+    items = NULL;
+    out_fname = NULL;
 
-      version = 1;
-      items_allocated = false;
-      edit = GetPoolMemory(PM_FNAME);
-      sizeof_ini_items = sizeof(struct ini_items);
-   }
+    version = 1;
+    items_allocated = false;
+    edit = GetPoolMemory(PM_FNAME);
+    sizeof_ini_items = sizeof(struct ini_items);
+  }
 
-   ~ConfigFile() {
-      if (lc) {
-         lex_close_file(lc);
-      }
-      if (edit) {
-         FreePoolMemory(edit);
-      }
-      if (out_fname) {
-         unlink(out_fname);
-         FreePoolMemory(out_fname);
-      }
-      FreeItems();
-   }
+  ~ConfigFile()
+  {
+    if (lc) { lex_close_file(lc); }
+    if (edit) { FreePoolMemory(edit); }
+    if (out_fname) {
+      unlink(out_fname);
+      FreePoolMemory(out_fname);
+    }
+    FreeItems();
+  }
 
-   /*
-    * Dump a config string to out_fname
-    */
-   bool DumpString(const char *buf, int32_t len);
+  /*
+   * Dump a config string to out_fname
+   */
+  bool DumpString(const char* buf, int32_t len);
 
-   /*
-    * JobControlRecord needed for Jmsg
-    */
-   void SetJcr(JobControlRecord *ajcr) {
-      jcr = ajcr;
-   }
+  /*
+   * JobControlRecord needed for Jmsg
+   */
+  void SetJcr(JobControlRecord* ajcr) { jcr = ajcr; }
 
-   /*
-    * Free malloced items such as char* or alist or items
-    */
-   void FreeItems();
+  /*
+   * Free malloced items such as char* or alist or items
+   */
+  void FreeItems();
 
-   /*
-    * Clear items member
-    */
-   void ClearItems();
+  /*
+   * Clear items member
+   */
+  void ClearItems();
 
-   /*
-    * Dump the item table to a file (used on plugin side)
-    */
-   bool Serialize(const char *fname);
+  /*
+   * Dump the item table to a file (used on plugin side)
+   */
+  bool Serialize(const char* fname);
 
-   /*
-    * Dump the item table format to a buffer (used on plugin side)
-    * returns the length of the buffer, -1 if error
-    */
-   int Serialize(PoolMem *buf);
+  /*
+   * Dump the item table format to a buffer (used on plugin side)
+   * returns the length of the buffer, -1 if error
+   */
+  int Serialize(PoolMem* buf);
 
-   /*
-    * Dump the item table content to a buffer
-    */
-   int DumpResults(PoolMem *buf);
+  /*
+   * Dump the item table content to a buffer
+   */
+  int DumpResults(PoolMem* buf);
 
-   /*
-    * Get item position in items list (useful when dynamic)
-    */
-   int GetItem(const char *name);
+  /*
+   * Get item position in items list (useful when dynamic)
+   */
+  int GetItem(const char* name);
 
-   /*
-    * Register config file structure, if size doesn't match
-    */
-   bool RegisterItems(struct ini_items *aitems, int size) {
-      int i;
-      if (sizeof_ini_items == size) {
-         for (i = 0; aitems[i].name ; i++);
-         items = (struct ini_items*) malloc((i+1) * size); /* NULL terminated */
-         memcpy(items, aitems, (i+1) * size);
-         items_allocated = false; /* we copy only pointers, don't free them */
-         return true;
-      }
-      return false;
-   }
+  /*
+   * Register config file structure, if size doesn't match
+   */
+  bool RegisterItems(struct ini_items* aitems, int size)
+  {
+    int i;
+    if (sizeof_ini_items == size) {
+      for (i = 0; aitems[i].name; i++)
+        ;
+      items = (struct ini_items*)malloc((i + 1) * size); /* NULL terminated */
+      memcpy(items, aitems, (i + 1) * size);
+      items_allocated = false; /* we copy only pointers, don't free them */
+      return true;
+    }
+    return false;
+  }
 
-   /*
-    * Parse a ini file with a item list previously registred (plugin side)
-    */
-   bool parse(const char *filename);
+  /*
+   * Parse a ini file with a item list previously registred (plugin side)
+   */
+  bool parse(const char* filename);
 
-   /*
-    * Create a item list from a ini file (director side)
-    */
-   bool UnSerialize(const char *filename);
+  /*
+   * Create a item list from a ini file (director side)
+   */
+  bool UnSerialize(const char* filename);
 };
 
 /*
  * Get handler code from storage type.
  */
-const char *ini_get_store_code(int type);
+const char* ini_get_store_code(int type);
 
 /*
  * Get storage type from handler name.
  */
-int IniGetStoreType(const char *key);
+int IniGetStoreType(const char* key);
 
 #endif

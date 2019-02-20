@@ -37,60 +37,67 @@ namespace directordaemon {
 
 /* Forward referenced functions */
 
-bool FindRecycledVolume(JobControlRecord *jcr, bool InChanger, MediaDbRecord *mr,
-                          StorageResource *store, const char *unwanted_volumes)
+bool FindRecycledVolume(JobControlRecord* jcr,
+                        bool InChanger,
+                        MediaDbRecord* mr,
+                        StorageResource* store,
+                        const char* unwanted_volumes)
 {
-   bstrncpy(mr->VolStatus, "Recycle", sizeof(mr->VolStatus));
-   SetStorageidInMr(store, mr);
-   if (jcr->db->FindNextVolume(jcr, 1, InChanger, mr, unwanted_volumes)) {
-      jcr->MediaId = mr->MediaId;
-      Dmsg1(20, "Find_next_vol MediaId=%u\n", jcr->MediaId);
-      PmStrcpy(jcr->VolumeName, mr->VolumeName);
-      SetStorageidInMr(store, mr);
+  bstrncpy(mr->VolStatus, "Recycle", sizeof(mr->VolStatus));
+  SetStorageidInMr(store, mr);
+  if (jcr->db->FindNextVolume(jcr, 1, InChanger, mr, unwanted_volumes)) {
+    jcr->MediaId = mr->MediaId;
+    Dmsg1(20, "Find_next_vol MediaId=%u\n", jcr->MediaId);
+    PmStrcpy(jcr->VolumeName, mr->VolumeName);
+    SetStorageidInMr(store, mr);
 
-      return true;
-   }
+    return true;
+  }
 
-   return false;
+  return false;
 }
 
 /**
  * Look for oldest Purged volume
  */
-bool RecycleOldestPurgedVolume(JobControlRecord *jcr, bool InChanger, MediaDbRecord *mr,
-                                  StorageResource *store, const char *unwanted_volumes)
+bool RecycleOldestPurgedVolume(JobControlRecord* jcr,
+                               bool InChanger,
+                               MediaDbRecord* mr,
+                               StorageResource* store,
+                               const char* unwanted_volumes)
 {
-   bstrncpy(mr->VolStatus, "Purged", sizeof(mr->VolStatus));
-   SetStorageidInMr(store, mr);
+  bstrncpy(mr->VolStatus, "Purged", sizeof(mr->VolStatus));
+  SetStorageidInMr(store, mr);
 
-   if (jcr->db->FindNextVolume(jcr, 1, InChanger, mr, unwanted_volumes)) {
-      Dmsg1(20, "Find_next_vol MediaId=%u\n", mr->MediaId);
-      SetStorageidInMr(store, mr);
-      if (RecycleVolume(jcr, mr)) {
-         Jmsg(jcr, M_INFO, 0, _("Recycled volume \"%s\"\n"), mr->VolumeName);
-         Dmsg1(100, "return 1  RecycleOldestPurgedVolume Vol=%s\n", mr->VolumeName);
+  if (jcr->db->FindNextVolume(jcr, 1, InChanger, mr, unwanted_volumes)) {
+    Dmsg1(20, "Find_next_vol MediaId=%u\n", mr->MediaId);
+    SetStorageidInMr(store, mr);
+    if (RecycleVolume(jcr, mr)) {
+      Jmsg(jcr, M_INFO, 0, _("Recycled volume \"%s\"\n"), mr->VolumeName);
+      Dmsg1(100, "return 1  RecycleOldestPurgedVolume Vol=%s\n",
+            mr->VolumeName);
 
-         return true;
-      }
-   }
-   Dmsg0(100, "return 0  RecycleOldestPurgedVolume end\n");
+      return true;
+    }
+  }
+  Dmsg0(100, "return 0  RecycleOldestPurgedVolume end\n");
 
-   return false;
+  return false;
 }
 
 /**
  * Recycle the specified volume
  */
-bool RecycleVolume(JobControlRecord *jcr, MediaDbRecord *mr)
+bool RecycleVolume(JobControlRecord* jcr, MediaDbRecord* mr)
 {
-   bstrncpy(mr->VolStatus, "Recycle", sizeof(mr->VolStatus));
-   mr->VolJobs = mr->VolFiles = mr->VolBlocks = mr->VolErrors = 0;
-   mr->VolBytes = 1;
-   mr->FirstWritten = mr->LastWritten = 0;
-   mr->RecycleCount++;
-   mr->set_first_written = true;
-   SetStorageidInMr(NULL, mr);
+  bstrncpy(mr->VolStatus, "Recycle", sizeof(mr->VolStatus));
+  mr->VolJobs = mr->VolFiles = mr->VolBlocks = mr->VolErrors = 0;
+  mr->VolBytes = 1;
+  mr->FirstWritten = mr->LastWritten = 0;
+  mr->RecycleCount++;
+  mr->set_first_written = true;
+  SetStorageidInMr(NULL, mr);
 
-   return jcr->db->UpdateMediaRecord(jcr, mr);
+  return jcr->db->UpdateMediaRecord(jcr, mr);
 }
 } /* namespace directordaemon */

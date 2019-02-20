@@ -41,234 +41,233 @@ namespace storagedaemon {
 /**
  * Open a fifo device
  */
-void unix_fifo_device::OpenDevice(DeviceControlRecord *dcr, int omode)
+void unix_fifo_device::OpenDevice(DeviceControlRecord* dcr, int omode)
 {
-   file_size = 0;
-   int timeout = max_open_wait;
-   utime_t start_time = time(NULL);
+  file_size = 0;
+  int timeout = max_open_wait;
+  utime_t start_time = time(NULL);
 
-   mount(dcr, 1);                     /* do mount if required */
+  mount(dcr, 1); /* do mount if required */
 
-   Dmsg0(100, "Open dev: device is fifo\n");
+  Dmsg0(100, "Open dev: device is fifo\n");
 
-   GetAutochangerLoadedSlot(dcr);
+  GetAutochangerLoadedSlot(dcr);
 
-   open_mode = omode;
-   set_mode(omode);
+  open_mode = omode;
+  set_mode(omode);
 
-   if (timeout < 1) {
-      timeout = 1;
-   }
-   errno = 0;
+  if (timeout < 1) { timeout = 1; }
+  errno = 0;
 
-   if (timeout) {
-      /*
-       * Set open timer
-       */
-      tid = start_thread_timer(dcr->jcr, pthread_self(), timeout);
-   }
+  if (timeout) {
+    /*
+     * Set open timer
+     */
+    tid = start_thread_timer(dcr->jcr, pthread_self(), timeout);
+  }
 
-   Dmsg2(100, "Try open %s mode=%s\n", prt_name, mode_to_str(omode));
+  Dmsg2(100, "Try open %s mode=%s\n", prt_name, mode_to_str(omode));
 
-   /*
-    * If busy retry each second for max_open_wait seconds
-    */
-   for ( ;; ) {
-      /*
-       * Try non-blocking open
-       */
-      fd_ = d_open(dev_name, oflags | O_NONBLOCK, 0);
-      if (fd_ < 0) {
-         BErrNo be;
-         dev_errno = errno;
-         Dmsg5(100, "Open error on %s omode=%d oflags=%x errno=%d: ERR=%s\n",
-               prt_name, omode, oflags, errno, be.bstrerror());
-      } else {
-         d_close(fd_);
-         fd_ = d_open(dev_name, oflags, 0); /* open normally */
-         if (fd_ < 0) {
-            BErrNo be;
-            dev_errno = errno;
-            Dmsg5(100, "Open error on %s omode=%d oflags=%x errno=%d: ERR=%s\n",
-                  prt_name, omode, oflags, errno, be.bstrerror());
-            break;
-         }
-         dev_errno = 0;
-         LockDoor();
-         break;                               /* Successfully opened and rewound */
-      }
-      Bmicrosleep(5, 0);
-
-      /*
-       * Exceed wait time ?
-       */
-      if (time(NULL) - start_time >= max_open_wait) {
-         break;                       /* yes, get out */
-      }
-   }
-
-   if (!IsOpen()) {
+  /*
+   * If busy retry each second for max_open_wait seconds
+   */
+  for (;;) {
+    /*
+     * Try non-blocking open
+     */
+    fd_ = d_open(dev_name, oflags | O_NONBLOCK, 0);
+    if (fd_ < 0) {
       BErrNo be;
-      Mmsg2(errmsg, _("Unable to open device %s: ERR=%s\n"),
-            prt_name, be.bstrerror(dev_errno));
-      Dmsg1(100, "%s", errmsg);
-   }
+      dev_errno = errno;
+      Dmsg5(100, "Open error on %s omode=%d oflags=%x errno=%d: ERR=%s\n",
+            prt_name, omode, oflags, errno, be.bstrerror());
+    } else {
+      d_close(fd_);
+      fd_ = d_open(dev_name, oflags, 0); /* open normally */
+      if (fd_ < 0) {
+        BErrNo be;
+        dev_errno = errno;
+        Dmsg5(100, "Open error on %s omode=%d oflags=%x errno=%d: ERR=%s\n",
+              prt_name, omode, oflags, errno, be.bstrerror());
+        break;
+      }
+      dev_errno = 0;
+      LockDoor();
+      break; /* Successfully opened and rewound */
+    }
+    Bmicrosleep(5, 0);
 
-   /*
-    * Stop any open() timer we started
-    */
-   if (tid) {
-      StopThreadTimer(tid);
-      tid = 0;
-   }
+    /*
+     * Exceed wait time ?
+     */
+    if (time(NULL) - start_time >= max_open_wait) { break; /* yes, get out */ }
+  }
 
-   Dmsg1(100, "open dev: fifo %d opened\n", fd_);
+  if (!IsOpen()) {
+    BErrNo be;
+    Mmsg2(errmsg, _("Unable to open device %s: ERR=%s\n"), prt_name,
+          be.bstrerror(dev_errno));
+    Dmsg1(100, "%s", errmsg);
+  }
+
+  /*
+   * Stop any open() timer we started
+   */
+  if (tid) {
+    StopThreadTimer(tid);
+    tid = 0;
+  }
+
+  Dmsg1(100, "open dev: fifo %d opened\n", fd_);
 }
 
-bool unix_fifo_device::eod(DeviceControlRecord *dcr)
+bool unix_fifo_device::eod(DeviceControlRecord* dcr)
 {
-   if (fd_ < 0) {
-      dev_errno = EBADF;
-      Mmsg1(errmsg, _("Bad call to eod. Device %s not open\n"), prt_name);
-      return false;
-   }
+  if (fd_ < 0) {
+    dev_errno = EBADF;
+    Mmsg1(errmsg, _("Bad call to eod. Device %s not open\n"), prt_name);
+    return false;
+  }
 
-   Dmsg0(100, "Enter eod\n");
-   if (AtEot()) {
-      return true;
-   }
+  Dmsg0(100, "Enter eod\n");
+  if (AtEot()) { return true; }
 
-   ClearEof();         /* remove EOF flag */
+  ClearEof(); /* remove EOF flag */
 
-   block_num = file = 0;
-   file_size = 0;
-   file_addr = 0;
-   return true;
+  block_num = file = 0;
+  file_size = 0;
+  file_addr = 0;
+  return true;
 }
 
 /**
  * (Un)mount the device (For a FILE device)
  */
-static bool do_mount(DeviceControlRecord *dcr, bool mount, int dotimeout)
+static bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
 {
-   DeviceResource *device = dcr->dev->device;
-   PoolMem ocmd(PM_FNAME);
-   POOLMEM *results;
-   DIR* dp;
-   char *icmd;
-   struct dirent *entry, *result;
-   int status, tries, name_max, count;
-   BErrNo be;
+  DeviceResource* device = dcr->dev->device;
+  PoolMem ocmd(PM_FNAME);
+  POOLMEM* results;
+  DIR* dp;
+  char* icmd;
+  struct dirent *entry, *result;
+  int status, tries, name_max, count;
+  BErrNo be;
 
-   Dsm_check(200);
-   if (mount) {
-      icmd = device->mount_command;
-   } else {
-      icmd = device->unmount_command;
-   }
+  Dsm_check(200);
+  if (mount) {
+    icmd = device->mount_command;
+  } else {
+    icmd = device->unmount_command;
+  }
 
-   dcr->dev->EditMountCodes(ocmd, icmd);
+  dcr->dev->EditMountCodes(ocmd, icmd);
 
-   Dmsg2(100, "do_mount: cmd=%s mounted=%d\n", ocmd.c_str(), dcr->dev->IsMounted());
+  Dmsg2(100, "do_mount: cmd=%s mounted=%d\n", ocmd.c_str(),
+        dcr->dev->IsMounted());
 
-   if (dotimeout) {
-      /* Try at most 10 times to (un)mount the device. This should perhaps be configurable. */
-      tries = 10;
-   } else {
-      tries = 1;
-   }
-   results = GetMemory(4000);
+  if (dotimeout) {
+    /* Try at most 10 times to (un)mount the device. This should perhaps be
+     * configurable. */
+    tries = 10;
+  } else {
+    tries = 1;
+  }
+  results = GetMemory(4000);
 
-   /* If busy retry each second */
-   Dmsg1(100, "do_mount run_prog=%s\n", ocmd.c_str());
-   while ((status = RunProgramFullOutput(ocmd.c_str(), dcr->dev->max_open_wait / 2, results)) != 0) {
-      /* Doesn't work with internationalization (This is not a problem) */
-      if (mount && fnmatch("*is already mounted on*", results, 0) == 0) {
-         break;
+  /* If busy retry each second */
+  Dmsg1(100, "do_mount run_prog=%s\n", ocmd.c_str());
+  while ((status = RunProgramFullOutput(
+              ocmd.c_str(), dcr->dev->max_open_wait / 2, results)) != 0) {
+    /* Doesn't work with internationalization (This is not a problem) */
+    if (mount && fnmatch("*is already mounted on*", results, 0) == 0) { break; }
+    if (!mount && fnmatch("* not mounted*", results, 0) == 0) { break; }
+    if (tries-- > 0) {
+      /* Sometimes the device cannot be mounted because it is already mounted.
+       * Try to unmount it, then remount it */
+      if (mount) {
+        Dmsg1(400, "Trying to unmount the device %s...\n",
+              dcr->dev->print_name());
+        do_mount(dcr, 0, 0);
       }
-      if (!mount && fnmatch("* not mounted*", results, 0) == 0) {
-         break;
-      }
-      if (tries-- > 0) {
-         /* Sometimes the device cannot be mounted because it is already mounted.
-          * Try to unmount it, then remount it */
-         if (mount) {
-            Dmsg1(400, "Trying to unmount the device %s...\n", dcr->dev->print_name());
-            do_mount(dcr, 0, 0);
-         }
-         Bmicrosleep(1, 0);
-         continue;
-      }
-      Dmsg5(100, "Device %s cannot be %smounted. status=%d result=%s ERR=%s\n", dcr->dev->print_name(),
-           (mount ? "" : "un"), status, results, be.bstrerror(status));
-      Mmsg(dcr->dev->errmsg, _("Device %s cannot be %smounted. ERR=%s\n"),
-           dcr->dev->print_name(), (mount ? "" : "un"), be.bstrerror(status));
+      Bmicrosleep(1, 0);
+      continue;
+    }
+    Dmsg5(100, "Device %s cannot be %smounted. status=%d result=%s ERR=%s\n",
+          dcr->dev->print_name(), (mount ? "" : "un"), status, results,
+          be.bstrerror(status));
+    Mmsg(dcr->dev->errmsg, _("Device %s cannot be %smounted. ERR=%s\n"),
+         dcr->dev->print_name(), (mount ? "" : "un"), be.bstrerror(status));
 
-      /*
-       * Now, just to be sure it is not mounted, try to read the filesystem.
-       */
-      name_max = pathconf(".", _PC_NAME_MAX);
-      if (name_max < 1024) {
-         name_max = 1024;
-      }
+    /*
+     * Now, just to be sure it is not mounted, try to read the filesystem.
+     */
+    name_max = pathconf(".", _PC_NAME_MAX);
+    if (name_max < 1024) { name_max = 1024; }
 
-      if (!(dp = opendir(device->mount_point))) {
-         BErrNo be;
-         dcr->dev->dev_errno = errno;
-         Dmsg3(100, "do_mount: failed to open dir %s (dev=%s), ERR=%s\n",
-               device->mount_point, dcr->dev->print_name(), be.bstrerror());
-         goto get_out;
-      }
+    if (!(dp = opendir(device->mount_point))) {
+      BErrNo be;
+      dcr->dev->dev_errno = errno;
+      Dmsg3(100, "do_mount: failed to open dir %s (dev=%s), ERR=%s\n",
+            device->mount_point, dcr->dev->print_name(), be.bstrerror());
+      goto get_out;
+    }
 
-      entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 1000);
-      count = 0;
-      while (1) {
+    entry = (struct dirent*)malloc(sizeof(struct dirent) + name_max + 1000);
+    count = 0;
+    while (1) {
 #ifdef USE_READDIR_R
-         if ((Readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
+      if ((Readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
 #else
-         result = readdir(dp);
-         if (result == NULL) {
+      result = readdir(dp);
+      if (result == NULL) {
 #endif
-            dcr->dev->dev_errno = EIO;
-            Dmsg2(129, "do_mount: failed to find suitable file in dir %s (dev=%s)\n",
-                  device->mount_point, dcr->dev->print_name());
-            break;
-         }
-         if (!bstrcmp(result->d_name, ".") && !bstrcmp(result->d_name, "..") && !bstrcmp(result->d_name, ".keep")) {
-            count++; /* result->d_name != ., .. or .keep (Gentoo-specific) */
-            break;
-         } else {
-            Dmsg2(129, "do_mount: ignoring %s in %s\n", result->d_name, device->mount_point);
-         }
+        dcr->dev->dev_errno = EIO;
+        Dmsg2(129,
+              "do_mount: failed to find suitable file in dir %s (dev=%s)\n",
+              device->mount_point, dcr->dev->print_name());
+        break;
       }
-      free(entry);
-      closedir(dp);
-
-      Dmsg1(100, "do_mount: got %d files in the mount point (not counting ., .. and .keep)\n", count);
-
-      if (count > 0) {
-         /* If we got more than ., .. and .keep */
-         /*   there must be something mounted */
-         if (mount) {
-            Dmsg1(100, "Did Mount by count=%d\n", count);
-            break;
-         } else {
-            /* An unmount request. We failed to unmount - report an error */
-            FreePoolMemory(results);
-            Dmsg0(200, "== error mount=1 wanted unmount\n");
-            return false;
-         }
+      if (!bstrcmp(result->d_name, ".") && !bstrcmp(result->d_name, "..") &&
+          !bstrcmp(result->d_name, ".keep")) {
+        count++; /* result->d_name != ., .. or .keep (Gentoo-specific) */
+        break;
+      } else {
+        Dmsg2(129, "do_mount: ignoring %s in %s\n", result->d_name,
+              device->mount_point);
       }
-get_out:
-      FreePoolMemory(results);
-      Dmsg0(200, "============ mount=0\n");
-      Dsm_check(200);
-      return false;
-   }
+    }
+    free(entry);
+    closedir(dp);
 
-   FreePoolMemory(results);
-   Dmsg1(200, "============ mount=%d\n", mount);
-   return true;
+    Dmsg1(100,
+          "do_mount: got %d files in the mount point (not counting ., .. and "
+          ".keep)\n",
+          count);
+
+    if (count > 0) {
+      /* If we got more than ., .. and .keep */
+      /*   there must be something mounted */
+      if (mount) {
+        Dmsg1(100, "Did Mount by count=%d\n", count);
+        break;
+      } else {
+        /* An unmount request. We failed to unmount - report an error */
+        FreePoolMemory(results);
+        Dmsg0(200, "== error mount=1 wanted unmount\n");
+        return false;
+      }
+    }
+  get_out:
+    FreePoolMemory(results);
+    Dmsg0(200, "============ mount=0\n");
+    Dsm_check(200);
+    return false;
+  }
+
+  FreePoolMemory(results);
+  Dmsg1(200, "============ mount=%d\n", mount);
+  return true;
 }
 
 /**
@@ -277,15 +276,15 @@ get_out:
  * If timeout, wait until the mount command returns 0.
  * If !timeout, try to mount the device only once.
  */
-bool unix_fifo_device::MountBackend(DeviceControlRecord *dcr, int timeout)
+bool unix_fifo_device::MountBackend(DeviceControlRecord* dcr, int timeout)
 {
-   bool retval = true;
+  bool retval = true;
 
-   if (RequiresMount() && device->mount_command) {
-      retval = do_mount(dcr, true, timeout);
-   }
+  if (RequiresMount() && device->mount_command) {
+    retval = do_mount(dcr, true, timeout);
+  }
 
-   return retval;
+  return retval;
 }
 
 /**
@@ -294,80 +293,71 @@ bool unix_fifo_device::MountBackend(DeviceControlRecord *dcr, int timeout)
  * If timeout, wait until the unmount command returns 0.
  * If !timeout, try to unmount the device only once.
  */
-bool unix_fifo_device::UnmountBackend(DeviceControlRecord *dcr, int timeout)
+bool unix_fifo_device::UnmountBackend(DeviceControlRecord* dcr, int timeout)
 {
-   bool retval = true;
+  bool retval = true;
 
-   if (RequiresMount() && device->unmount_command) {
-      retval = do_mount(dcr, false, timeout);
-   }
+  if (RequiresMount() && device->unmount_command) {
+    retval = do_mount(dcr, false, timeout);
+  }
 
-   return retval;
+  return retval;
 }
 
-int unix_fifo_device::d_open(const char *pathname, int flags, int mode)
+int unix_fifo_device::d_open(const char* pathname, int flags, int mode)
 {
-   return ::open(pathname, flags, mode);
+  return ::open(pathname, flags, mode);
 }
 
-ssize_t unix_fifo_device::d_read(int fd, void *buffer, size_t count)
+ssize_t unix_fifo_device::d_read(int fd, void* buffer, size_t count)
 {
-   return ::read(fd, buffer, count);
+  return ::read(fd, buffer, count);
 }
 
-ssize_t unix_fifo_device::d_write(int fd, const void *buffer, size_t count)
+ssize_t unix_fifo_device::d_write(int fd, const void* buffer, size_t count)
 {
-   return ::write(fd, buffer, count);
+  return ::write(fd, buffer, count);
 }
 
-int unix_fifo_device::d_close(int fd)
+int unix_fifo_device::d_close(int fd) { return ::close(fd); }
+
+int unix_fifo_device::d_ioctl(int fd, ioctl_req_t request, char* op)
 {
-   return ::close(fd);
+  return -1;
 }
 
-int unix_fifo_device::d_ioctl(int fd, ioctl_req_t request, char *op)
+boffset_t unix_fifo_device::d_lseek(DeviceControlRecord* dcr,
+                                    boffset_t offset,
+                                    int whence)
 {
-   return -1;
+  return -1;
 }
 
-boffset_t unix_fifo_device::d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence)
-{
-   return -1;
-}
+bool unix_fifo_device::d_truncate(DeviceControlRecord* dcr) { return true; }
 
-bool unix_fifo_device::d_truncate(DeviceControlRecord *dcr)
-{
-   return true;
-}
+unix_fifo_device::~unix_fifo_device() {}
 
-unix_fifo_device::~unix_fifo_device()
-{
-}
-
-unix_fifo_device::unix_fifo_device()
-{
-}
+unix_fifo_device::unix_fifo_device() {}
 
 #ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" Device *backend_instantiate(JobControlRecord *jcr, int device_type)
+extern "C" Device* backend_instantiate(JobControlRecord* jcr, int device_type)
 {
-   Device *dev = NULL;
+  Device* dev = NULL;
 
-   switch (device_type) {
-   case B_FIFO_DEV:
+  switch (device_type) {
+    case B_FIFO_DEV:
       dev = New(unix_fifo_device);
       break;
-   default:
-      Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"), device_type);
+    default:
+      Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"),
+           device_type);
       break;
-   }
+  }
 
-   return dev;
+  return dev;
 }
 
-extern "C" void flush_backend(void)
-{
-}
+extern "C" void flush_backend(void) {}
 #endif
 
 } /* namespace storagedaemon  */

@@ -23,8 +23,8 @@
 
 namespace storagedaemon {
 
-bool MountNextReadVolume(DeviceControlRecord *dcr);
+bool MountNextReadVolume(DeviceControlRecord* dcr);
 
 } /* namespace storagedaemon */
 
-#endif // BAREOS_STORED_MOUNT_H_
+#endif  // BAREOS_STORED_MOUNT_H_

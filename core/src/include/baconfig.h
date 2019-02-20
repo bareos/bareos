@@ -34,9 +34,9 @@
 
 /* Bareos common configuration defines */
 
-#undef  TRUE
-#undef  FALSE
-#define TRUE  1
+#undef TRUE
+#undef FALSE
+#define TRUE 1
 #define FALSE 0
 
 #ifdef HAVE_TLS
@@ -57,32 +57,36 @@
 
 
 #ifdef PROTOTYPES
-# define __PROTO(p)     p
+#define __PROTO(p) p
 #else
-# define __PROTO(p)     ()
+#define __PROTO(p) ()
 #endif
 
 /**
  * In DEBUG mode an assert that is triggered generates a segmentation
  * fault so we can capture the debug info using btraceback.
  */
-#define ASSERT(x) if (!(x)) { \
-   char *fatal = NULL; \
-   Emsg1(M_ERROR, 0, _("Failed ASSERT: %s\n"), #x); \
-   Pmsg1(000, _("Failed ASSERT: %s\n"), #x); \
-   fatal[0] = 0; }
-#define ASSERT2(x,y) if (!(x)) { \
-   assert_msg =  y; \
-   Emsg1(M_ERROR, 0, _("Failed ASSERT: %s\n"), #x); \
-   Pmsg1(000, _("Failed ASSERT: %s\n"), #x); \
-   char *fatal = NULL; \
-   fatal[0] = 0; }
+#define ASSERT(x)                                    \
+  if (!(x)) {                                        \
+    char* fatal = NULL;                              \
+    Emsg1(M_ERROR, 0, _("Failed ASSERT: %s\n"), #x); \
+    Pmsg1(000, _("Failed ASSERT: %s\n"), #x);        \
+    fatal[0] = 0;                                    \
+  }
+#define ASSERT2(x, y)                                \
+  if (!(x)) {                                        \
+    assert_msg = y;                                  \
+    Emsg1(M_ERROR, 0, _("Failed ASSERT: %s\n"), #x); \
+    Pmsg1(000, _("Failed ASSERT: %s\n"), #x);        \
+    char* fatal = NULL;                              \
+    fatal[0] = 0;                                    \
+  }
 
 /**
  * Allow printing of NULL pointers
  */
-#define NPRT(x) (x)?(x):_("*None*")
-#define NPRTB(x) (x)?(x):""
+#define NPRT(x) (x) ? (x) : _("*None*")
+#define NPRTB(x) (x) ? (x) : ""
 
 #if defined(HAVE_WIN32)
 /**
@@ -92,50 +96,50 @@
 
 void InitWinAPIWrapper();
 
-#define  OSDependentInit()    InitWinAPIWrapper()
+#define OSDependentInit() InitWinAPIWrapper()
 
-#define sbrk(x)  0
+#define sbrk(x) 0
 
 #define ClearThreadId(x) memset(&(x), 0, sizeof(x))
 
-#else  /* HAVE_WIN32 */
+#else /* HAVE_WIN32 */
 
 #define ClearThreadId(x) x = 0
-#define  OSDependentInit()
+#define OSDependentInit()
 
 #endif /* HAVE_WIN32 */
 
 #ifdef ENABLE_NLS
-   #include <libintl.h>
-   #include <locale.h>
-   #ifndef _
-      #define _(s) gettext((s))
-   #endif /* _ */
-   #ifndef N_
-      #define N_(s) (s)
-   #endif /* N_ */
-#else /* !ENABLE_NLS */
-   #undef _
-   #undef N_
-   #undef textdomain
-   #undef bindtextdomain
-   #undef setlocale
+#include <libintl.h>
+#include <locale.h>
+#ifndef _
+#define _(s) gettext((s))
+#endif /* _ */
+#ifndef N_
+#define N_(s) (s)
+#endif /* N_ */
+#else  /* !ENABLE_NLS */
+#undef _
+#undef N_
+#undef textdomain
+#undef bindtextdomain
+#undef setlocale
 
-   #ifndef _
-      #define _(s) (s)
-   #endif
-   #ifndef N_
-      #define N_(s) (s)
-   #endif
-   #ifndef textdomain
-      #define textdomain(d)
-   #endif
-   #ifndef bindtextdomain
-      #define bindtextdomain(p, d)
-   #endif
-   #ifndef setlocale
-      #define setlocale(p, d)
-   #endif
+#ifndef _
+#define _(s) (s)
+#endif
+#ifndef N_
+#define N_(s) (s)
+#endif
+#ifndef textdomain
+#define textdomain(d)
+#endif
+#ifndef bindtextdomain
+#define bindtextdomain(p, d)
+#endif
+#ifndef setlocale
+#define setlocale(p, d)
+#endif
 #endif /* ENABLE_NLS */
 
 
@@ -195,8 +199,8 @@ void InitWinAPIWrapper();
  * Tape label types -- stored in catalog
  */
 #define B_BAREOS_LABEL 0
-#define B_ANSI_LABEL   1
-#define B_IBM_LABEL    2
+#define B_ANSI_LABEL 1
+#define B_IBM_LABEL 2
 
 /**
  * Actions on purge (bit mask)
@@ -223,20 +227,20 @@ void InitWinAPIWrapper();
 #define B_ISDIGIT(c) (isascii((int)(c)) && isdigit((int)(c)))
 
 /** For multiplying by 10 with shift and addition */
-#define B_TIMES10(d) ((d<<3)+(d<<1))
+#define B_TIMES10(d) ((d << 3) + (d << 1))
 
 
-typedef void (HANDLER)();
-typedef int (INTHANDLER)();
+typedef void(HANDLER)();
+typedef int(INTHANDLER)();
 
 #ifdef SETPGRP_VOID
-# define SETPGRP_ARGS(x, y) /* No arguments */
+#define SETPGRP_ARGS(x, y) /* No arguments */
 #else
-# define SETPGRP_ARGS(x, y) (x, y)
+#define SETPGRP_ARGS(x, y) (x, y)
 #endif
 
 #ifndef S_ISLNK
-#define S_ISLNK(m) (((m) & S_IFM) == S_IFLNK)
+#define S_ISLNK(m) (((m)&S_IFM) == S_IFLNK)
 #endif
 
 /** Added by KES to deal with Win32 systems */
@@ -245,7 +249,7 @@ typedef int (INTHANDLER)();
 #endif
 
 #ifndef INADDR_NONE
-#define INADDR_NONE ((unsigned long) -1)
+#define INADDR_NONE ((unsigned long)-1)
 #endif
 
 #ifdef TIME_WITH_SYS_TIME
@@ -272,62 +276,81 @@ typedef int (INTHANDLER)();
 #endif
 
 
-enum {
-API_MODE_OFF = 0,
-API_MODE_ON = 1,
-API_MODE_JSON = 2
+enum
+{
+  API_MODE_OFF = 0,
+  API_MODE_ON = 1,
+  API_MODE_JSON = 2
 };
 
 #if defined(HAVE_WIN32)
-typedef int64_t   boffset_t;
-#define caddr_t  char *
+typedef int64_t boffset_t;
+#define caddr_t char*
 #else
-typedef off_t     boffset_t;
+typedef off_t boffset_t;
 #endif
 
 /**
-* Create some simple types for now int16_t e.g. 65 K should be enough.
-*/
+ * Create some simple types for now int16_t e.g. 65 K should be enough.
+ */
 typedef int16_t slot_number_t;
 typedef int16_t drive_number_t;
 typedef int16_t slot_flags_t;
 
 /* These probably should be subroutines */
-#define Pw(x) \
-do { int errstat; if ((errstat=RwlWritelock(&(x)))) \
-   e_msg(__FILE__, __LINE__, M_ABORT, 0, "Write lock lock failure. ERR=%s\n",\
-        strerror(errstat)); \
-} while(0)
+#define Pw(x)                                                        \
+  do {                                                               \
+    int errstat;                                                     \
+    if ((errstat = RwlWritelock(&(x))))                              \
+      e_msg(__FILE__, __LINE__, M_ABORT, 0,                          \
+            "Write lock lock failure. ERR=%s\n", strerror(errstat)); \
+  } while (0)
 
-#define Vw(x) \
-do { int errstat; if ((errstat=RwlWriteunlock(&(x)))) \
-      e_msg(__FILE__, __LINE__, M_ABORT, 0, "Write lock unlock failure. ERR=%s\n",\
-        strerror(errstat)); \
-} while(0)
+#define Vw(x)                                                          \
+  do {                                                                 \
+    int errstat;                                                       \
+    if ((errstat = RwlWriteunlock(&(x))))                              \
+      e_msg(__FILE__, __LINE__, M_ABORT, 0,                            \
+            "Write lock unlock failure. ERR=%s\n", strerror(errstat)); \
+  } while (0)
 
-#define LockRes(x)   (x)->b_LockRes(__FILE__, __LINE__)
+#define LockRes(x) (x)->b_LockRes(__FILE__, __LINE__)
 #define UnlockRes(x) (x)->b_UnlockRes(__FILE__, __LINE__)
 
 /**
-* As of C++11 varargs macros are part of the standard.
-* We keep the kludgy versions for backwards compatability for now
-* but they're going to go away soon.
-*/
+ * As of C++11 varargs macros are part of the standard.
+ * We keep the kludgy versions for backwards compatability for now
+ * but they're going to go away soon.
+ */
 /** Debug Messages that are printed */
-#define Dmsg0(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
-#define Dmsg1(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
-#define Dmsg2(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
-#define Dmsg3(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
-#define Dmsg4(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
-#define Dmsg5(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
-#define Dmsg6(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
-#define Dmsg7(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
-#define Dmsg8(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
-#define Dmsg9(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
-#define Dmsg10(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
-#define Dmsg11(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
-#define Dmsg12(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
-#define Dmsg13(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Dmsg0(lvl, ...) \
+  if ((lvl) <= debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Dmsg1(lvl, ...) \
+  if ((lvl) <= debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Dmsg2(lvl, ...) \
+  if ((lvl) <= debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Dmsg3(lvl, ...) \
+  if ((lvl) <= debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Dmsg4(lvl, ...) \
+  if ((lvl) <= debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Dmsg5(lvl, ...) \
+  if ((lvl) <= debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Dmsg6(lvl, ...) \
+  if ((lvl) <= debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Dmsg7(lvl, ...) \
+  if ((lvl) <= debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Dmsg8(lvl, ...) \
+  if ((lvl) <= debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Dmsg9(lvl, ...) \
+  if ((lvl) <= debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Dmsg10(lvl, ...) \
+  if ((lvl) <= debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Dmsg11(lvl, ...) \
+  if ((lvl) <= debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Dmsg12(lvl, ...) \
+  if ((lvl) <= debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Dmsg13(lvl, ...) \
+  if ((lvl) <= debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
 
 /** Messages that are printed (uses p_msg) */
 #define Pmsg0(lvl, ...) p_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
@@ -356,7 +379,8 @@ do { int errstat; if ((errstat=RwlWriteunlock(&(x)))) \
 #define FPmsg5(lvl, ...) p_msg_fb(__FILE__, __LINE__, lvl, __VA_ARGS__)
 #define FPmsg6(lvl, ...) p_msg_fb(__FILE__, __LINE__, lvl, __VA_ARGS__)
 
-/** Daemon Error Messages that are delivered according to the message resource */
+/** Daemon Error Messages that are delivered according to the message resource
+ */
 #define Emsg0(typ, lvl, ...) e_msg(__FILE__, __LINE__, typ, lvl, __VA_ARGS__)
 #define Emsg1(typ, lvl, ...) e_msg(__FILE__, __LINE__, typ, lvl, __VA_ARGS__)
 #define Emsg2(typ, lvl, ...) e_msg(__FILE__, __LINE__, typ, lvl, __VA_ARGS__)
@@ -366,24 +390,41 @@ do { int errstat; if ((errstat=RwlWriteunlock(&(x)))) \
 #define Emsg6(typ, lvl, ...) e_msg(__FILE__, __LINE__, typ, lvl, __VA_ARGS__)
 
 /** Job Error Messages that are delivered according to the message resource */
-#define Jmsg0(jcr, typ, lvl, ...) j_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
-#define Jmsg1(jcr, typ, lvl, ...) j_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
-#define Jmsg2(jcr, typ, lvl, ...) j_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
-#define Jmsg3(jcr, typ, lvl, ...) j_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
-#define Jmsg4(jcr, typ, lvl, ...) j_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
-#define Jmsg5(jcr, typ, lvl, ...) j_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
-#define Jmsg6(jcr, typ, lvl, ...) j_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
-#define Jmsg7(jcr, typ, lvl, ...) j_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
-#define Jmsg8(jcr, typ, lvl, ...) j_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Jmsg0(jcr, typ, lvl, ...) \
+  j_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Jmsg1(jcr, typ, lvl, ...) \
+  j_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Jmsg2(jcr, typ, lvl, ...) \
+  j_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Jmsg3(jcr, typ, lvl, ...) \
+  j_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Jmsg4(jcr, typ, lvl, ...) \
+  j_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Jmsg5(jcr, typ, lvl, ...) \
+  j_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Jmsg6(jcr, typ, lvl, ...) \
+  j_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Jmsg7(jcr, typ, lvl, ...) \
+  j_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Jmsg8(jcr, typ, lvl, ...) \
+  j_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
 
-/** Queued Job Error Messages that are delivered according to the message resource */
-#define Qmsg0(jcr, typ, lvl, ...) q_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
-#define Qmsg1(jcr, typ, lvl, ...) q_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
-#define Qmsg2(jcr, typ, lvl, ...) q_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
-#define Qmsg3(jcr, typ, lvl, ...) q_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
-#define Qmsg4(jcr, typ, lvl, ...) q_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
-#define Qmsg5(jcr, typ, lvl, ...) q_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
-#define Qmsg6(jcr, typ, lvl, ...) q_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+/** Queued Job Error Messages that are delivered according to the message
+ * resource */
+#define Qmsg0(jcr, typ, lvl, ...) \
+  q_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Qmsg1(jcr, typ, lvl, ...) \
+  q_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Qmsg2(jcr, typ, lvl, ...) \
+  q_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Qmsg3(jcr, typ, lvl, ...) \
+  q_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Qmsg4(jcr, typ, lvl, ...) \
+  q_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Qmsg5(jcr, typ, lvl, ...) \
+  q_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Qmsg6(jcr, typ, lvl, ...) \
+  q_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
 
 /** Memory Messages that are edited into a Pool Memory buffer */
 #define Mmsg0(buf, ...) msg_(__FILE__, __LINE__, buf, __VA_ARGS__)
@@ -406,18 +447,35 @@ do { int errstat; if ((errstat=RwlWriteunlock(&(x)))) \
 class PoolMem;
 
 /* Edit message into Pool Memory buffer -- no __FILE__ and __LINE__ */
-int Mmsg(POOLMEM *&msgbuf, const char *fmt, ...);
-int Mmsg(PoolMem &msgbuf, const char *fmt, ...);
-int Mmsg(PoolMem *&msgbuf, const char *fmt, ...);
+int Mmsg(POOLMEM*& msgbuf, const char* fmt, ...);
+int Mmsg(PoolMem& msgbuf, const char* fmt, ...);
+int Mmsg(PoolMem*& msgbuf, const char* fmt, ...);
 
 class JobControlRecord;
-void d_msg(const char *file, int line, int level, const char *fmt, ...);
-void p_msg(const char *file, int line, int level, const char *fmt, ...);
-void p_msg_fb(const char *file, int line, int level, const char *fmt,...);
-void e_msg(const char *file, int line, int type, int level, const char *fmt, ...);
-void j_msg(const char *file, int line, JobControlRecord *jcr, int type, utime_t mtime, const char *fmt, ...);
-void q_msg(const char *file, int line, JobControlRecord *jcr, int type, utime_t mtime, const char *fmt, ...);
-int msg_(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...);
+void d_msg(const char* file, int line, int level, const char* fmt, ...);
+void p_msg(const char* file, int line, int level, const char* fmt, ...);
+void p_msg_fb(const char* file, int line, int level, const char* fmt, ...);
+void e_msg(const char* file,
+           int line,
+           int type,
+           int level,
+           const char* fmt,
+           ...);
+void j_msg(const char* file,
+           int line,
+           JobControlRecord* jcr,
+           int type,
+           utime_t mtime,
+           const char* fmt,
+           ...);
+void q_msg(const char* file,
+           int line,
+           JobControlRecord* jcr,
+           int type,
+           utime_t mtime,
+           const char* fmt,
+           ...);
+int msg_(const char* file, int line, POOLMEM*& pool_buf, const char* fmt, ...);
 
 #include "lib/bsys.h"
 #include "lib/scan.h"
@@ -433,37 +491,46 @@ int msg_(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...);
 /** Use our sscanf, which is safer and works with known sizes */
 #define sscanf bsscanf
 
-#define bstrdup(str) strcpy((char *)b_malloc(__FILE__,__LINE__, strlen((str))+1), (str))
+#define bstrdup(str) \
+  strcpy((char*)b_malloc(__FILE__, __LINE__, strlen((str)) + 1), (str))
 
-#define actuallystrdup(str) strcpy((char *)actuallymalloc(strlen((str))+1), (str))
+#define actuallystrdup(str) \
+  strcpy((char*)actuallymalloc(strlen((str)) + 1), (str))
 
 #define bmalloc(size) b_malloc(__FILE__, __LINE__, (size))
 
 /** Macro to simplify free/reset pointers */
-#define BfreeAndNull(a) do{if(a){free(a); (a)=NULL;}} while(0)
+#define BfreeAndNull(a) \
+  do {                  \
+    if (a) {            \
+      free(a);          \
+      (a) = NULL;       \
+    }                   \
+  } while (0)
 
 /**
-* Replace codes needed in both file routines and non-file routines
-* Job replace codes -- in "replace"
-*/
-#define REPLACE_ALWAYS   'a'
-#define REPLACE_IFNEWER  'w'
-#define REPLACE_NEVER    'n'
-#define REPLACE_IFOLDER  'o'
+ * Replace codes needed in both file routines and non-file routines
+ * Job replace codes -- in "replace"
+ */
+#define REPLACE_ALWAYS 'a'
+#define REPLACE_IFNEWER 'w'
+#define REPLACE_NEVER 'n'
+#define REPLACE_IFOLDER 'o'
 
 /** This probably should be done on a machine by machine basis, but it works */
 /** This is critical for the smartalloc routines to properly align memory */
 #define ALIGN_SIZE (sizeof(double))
-#define BALIGN(x) (((x) + ALIGN_SIZE - 1) & ~(ALIGN_SIZE -1))
+#define BALIGN(x) (((x) + ALIGN_SIZE - 1) & ~(ALIGN_SIZE - 1))
 
 
 /* =============================================================
-*               OS Dependent defines
-* =============================================================
-*/
+ *               OS Dependent defines
+ * =============================================================
+ */
 #ifndef HAVE_WIN32
-#if defined (__digital__) && defined (__unix__)
-/* Tru64 - it does have fseeko and ftello , but since ftell/fseek are also 64 bit */
+#if defined(__digital__) && defined(__unix__)
+/* Tru64 - it does have fseeko and ftello , but since ftell/fseek are also 64
+ * bit */
 /* take this 'shortcut' */
 #define fseeko fseek
 #define ftello ftell
@@ -478,12 +545,12 @@ int msg_(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...);
 
 #ifdef HAVE_SUN_OS
 /**
-* On Solaris 2.5/2.6/7 and 8, threads are not timesliced by default,
-* so we need to explictly increase the concurrency level.
-*/
+ * On Solaris 2.5/2.6/7 and 8, threads are not timesliced by default,
+ * so we need to explictly increase the concurrency level.
+ */
 #ifdef USE_THR_SETCONCURRENCY
 #include <thread.h>
-#define SetThreadConcurrency(x)  ThrSetconcurrency(x)
+#define SetThreadConcurrency(x) ThrSetconcurrency(x)
 extern int ThrSetconcurrency(int);
 #define SunOS 1
 #else
@@ -500,11 +567,11 @@ extern int ThrSetconcurrency(int);
 
 #ifdef HAVE_DARWIN_OS
 /* Apparently someone forgot to wrap Getdomainname as a C function */
-#ifdef  __cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-int Getdomainname(char *name, int len);
-#ifdef  __cplusplus
+int Getdomainname(char* name, int len);
+#ifdef __cplusplus
 }
 #endif /* __cplusplus */
 #endif /* HAVE_DARWIN_OS */
@@ -515,15 +582,23 @@ int Getdomainname(char *name, int len);
 /**
  *   Windows
  */
-#define DEFAULT_CONFIGDIR "C:\\Documents and Settings\\All Users\\Application Data\\Bareos"
+#define DEFAULT_CONFIGDIR \
+  "C:\\Documents and Settings\\All Users\\Application Data\\Bareos"
 #define PathSeparator '\\'
 
 inline bool IsPathSeparator(int ch) { return ch == '/' || ch == '\\'; }
-inline char *first_path_separator(char *path) { return strpbrk(path, "/\\"); }
-inline const char *first_path_separator(const char *path) { return strpbrk(path, "/\\"); }
+inline char* first_path_separator(char* path) { return strpbrk(path, "/\\"); }
+inline const char* first_path_separator(const char* path)
+{
+  return strpbrk(path, "/\\");
+}
 
-extern void PauseMsg(const char *file, const char *func, int line, const char *msg);
-#define pause(msg) if (debug_level) PauseMsg(__FILE__, __func__, __LINE__, (msg))
+extern void PauseMsg(const char* file,
+                     const char* func,
+                     int line,
+                     const char* msg);
+#define pause(msg) \
+  if (debug_level) PauseMsg(__FILE__, __func__, __LINE__, (msg))
 
 #else
 /**
@@ -532,12 +607,15 @@ extern void PauseMsg(const char *file, const char *func, int line, const char *m
 #define PathSeparator '/'
 
 /* Define Winsock functions if we aren't on Windows */
-inline int WSA_Init() { return (0); } /* 0 = success */
+inline int WSA_Init() { return (0); }   /* 0 = success */
 inline int WSACleanup() { return (0); } /* 0 = success */
 
 inline bool IsPathSeparator(int ch) { return ch == '/'; }
-inline char *first_path_separator(char *path) { return strchr(path, '/'); }
-inline const char *first_path_separator(const char *path) { return strchr(path, '/'); }
+inline char* first_path_separator(char* path) { return strchr(path, '/'); }
+inline const char* first_path_separator(const char* path)
+{
+  return strchr(path, '/');
+}
 #define pause(msg)
 #endif
 
@@ -545,32 +623,32 @@ inline const char *first_path_separator(const char *path) { return strchr(path, 
 /** HP-UX 11 specific workarounds */
 
 #ifdef HAVE_HPUX_OS
-# undef h_errno
+#undef h_errno
 extern int h_errno;
 /** the {get,set}domainname() functions exist in HPUX's libc.
  * the configure script detects that correctly.
  * the problem is no system headers declares the prototypes for these functions
  * this is done below
  */
-#ifdef  __cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-int Getdomainname(char *name, int namelen);
-int Setdomainname(char *name, int namelen);
-#ifdef  __cplusplus
+int Getdomainname(char* name, int namelen);
+int Setdomainname(char* name, int namelen);
+#ifdef __cplusplus
 }
 #endif /* __cplusplus */
 #endif /* HAVE_HPUX_OS */
 
 
 #ifdef HAVE_OSF1_OS
-#ifdef  __cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 int fchdir(int filedes);
 long gethostid(void);
-int Getdomainname(char *name, int len);
-#ifdef  __cplusplus
+int Getdomainname(char* name, int len);
+#ifdef __cplusplus
 }
 #endif /* __cplusplus */
 #endif /* HAVE_OSF1_OS */

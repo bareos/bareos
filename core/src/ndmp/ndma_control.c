@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1998,1999,2000
- *	Traakan, Inc., Los Altos, CA
- *	All rights reserved.
+ *      Traakan, Inc., Los Altos, CA
+ *      All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,7 +32,7 @@
  *
  * Description:
  *
- *	CONTROL agent entry point.
+ *      CONTROL agent entry point.
  */
 
 
@@ -42,158 +42,143 @@
 #ifndef NDMOS_OPTION_NO_CONTROL_AGENT
 
 /* Initialize -- Set data structure to know value, ignore current value */
-int
-ndmca_initialize (struct ndm_session *sess)
+int ndmca_initialize(struct ndm_session* sess)
 {
-	sess->control_acb = NDMOS_API_MALLOC (sizeof(struct ndm_control_agent));
-	if (!sess->control_acb) {
-		return -1;
-	}
-        NDMOS_MACRO_ZEROFILL (sess->control_acb);
+  sess->control_acb = NDMOS_API_MALLOC(sizeof(struct ndm_control_agent));
+  if (!sess->control_acb) { return -1; }
+  NDMOS_MACRO_ZEROFILL(sess->control_acb);
 
-        return 0;
+  return 0;
 }
 
 /* Commission -- Get agent ready. Entire session has been initialize()d */
-int
-ndmca_commission (struct ndm_session *sess)
-{
-        return 0;
-}
+int ndmca_commission(struct ndm_session* sess) { return 0; }
 
 /* Decommission -- Discard agent */
-int
-ndmca_decommission (struct ndm_session *sess)
-{
-        return 0;
-}
+int ndmca_decommission(struct ndm_session* sess) { return 0; }
 
 /* Decommission -- Discard agent */
-int
-ndmca_destroy (struct ndm_session *sess)
+int ndmca_destroy(struct ndm_session* sess)
 {
-	if (!sess->control_acb) {
-		return 0;
-	}
+  if (!sess->control_acb) { return 0; }
 
-	ndmca_destroy_media_table(&sess->control_acb->job.media_tab);
-	ndmca_destroy_media_table(&sess->control_acb->job.result_media_tab);
+  ndmca_destroy_media_table(&sess->control_acb->job.media_tab);
+  ndmca_destroy_media_table(&sess->control_acb->job.result_media_tab);
 
-	if (sess->control_acb->job.tape_target) {
-		NDMOS_API_FREE (sess->control_acb->job.tape_target);
-	}
+  if (sess->control_acb->job.tape_target) {
+    NDMOS_API_FREE(sess->control_acb->job.tape_target);
+  }
 
-	if (sess->control_acb->job.robot_target) {
-		NDMOS_API_FREE (sess->control_acb->job.robot_target);
-	}
+  if (sess->control_acb->job.robot_target) {
+    NDMOS_API_FREE(sess->control_acb->job.robot_target);
+  }
 
-	if (sess->control_acb->smc_cb) {
-		smc_cleanup_element_status_data(sess->control_acb->smc_cb);
-		NDMOS_API_FREE (sess->control_acb->smc_cb);
-	}
+  if (sess->control_acb->smc_cb) {
+    smc_cleanup_element_status_data(sess->control_acb->smc_cb);
+    NDMOS_API_FREE(sess->control_acb->smc_cb);
+  }
 
-	NDMOS_API_FREE (sess->control_acb);
-	sess->control_acb = NULL;
+  NDMOS_API_FREE(sess->control_acb);
+  sess->control_acb = NULL;
 
-        return 0;
+  return 0;
 }
 
-int
-ndmca_control_agent (struct ndm_session *sess)
+int ndmca_control_agent(struct ndm_session* sess)
 {
-	struct ndm_job_param *	job = &sess->control_acb->job;
-	int			rc = -1;
+  struct ndm_job_param* job = &sess->control_acb->job;
+  int rc = -1;
 
-   if (!sess->control_acb->smc_cb) {
-            sess->control_acb->smc_cb = NDMOS_API_MALLOC (sizeof(struct smc_ctrl_block));
-            NDMOS_MACRO_ZEROFILL (sess->control_acb->smc_cb);
-   }
+  if (!sess->control_acb->smc_cb) {
+    sess->control_acb->smc_cb = NDMOS_API_MALLOC(sizeof(struct smc_ctrl_block));
+    NDMOS_MACRO_ZEROFILL(sess->control_acb->smc_cb);
+  }
 
 
-	switch (job->operation) {
-	default:
-		ndmalogf (sess, 0, 0, "Job operation invalid");
-		break;
+  switch (job->operation) {
+    default:
+      ndmalogf(sess, 0, 0, "Job operation invalid");
+      break;
 
-	case NDM_JOB_OP_INIT_LABELS:
-		rc = ndmca_op_init_labels (sess);
-		break;
+    case NDM_JOB_OP_INIT_LABELS:
+      rc = ndmca_op_init_labels(sess);
+      break;
 
-	case NDM_JOB_OP_LIST_LABELS:
-		rc = ndmca_op_list_labels (sess);
-		break;
+    case NDM_JOB_OP_LIST_LABELS:
+      rc = ndmca_op_list_labels(sess);
+      break;
 
-	case NDM_JOB_OP_BACKUP:
-		rc = ndmca_op_create_backup (sess);
-		break;
+    case NDM_JOB_OP_BACKUP:
+      rc = ndmca_op_create_backup(sess);
+      break;
 
-	case NDM_JOB_OP_EXTRACT:
-		rc = ndmca_op_recover_files (sess);
-		break;
+    case NDM_JOB_OP_EXTRACT:
+      rc = ndmca_op_recover_files(sess);
+      break;
 
-	case NDM_JOB_OP_TOC:
-		rc = ndmca_op_recover_fh (sess);
-		break;
+    case NDM_JOB_OP_TOC:
+      rc = ndmca_op_recover_fh(sess);
+      break;
 
-	case NDM_JOB_OP_REMEDY_ROBOT:
-		rc = ndmca_op_robot_remedy (sess);
-		break;
+    case NDM_JOB_OP_REMEDY_ROBOT:
+      rc = ndmca_op_robot_remedy(sess);
+      break;
 
-	case NDM_JOB_OP_QUERY_AGENTS:
-		rc = ndmca_op_query (sess);
-		break;
+    case NDM_JOB_OP_QUERY_AGENTS:
+      rc = ndmca_op_query(sess);
+      break;
 
-	case NDM_JOB_OP_TEST_TAPE:
+    case NDM_JOB_OP_TEST_TAPE:
 #ifndef NDMOS_OPTION_NO_TEST_AGENTS
-		rc = ndmca_op_test_tape (sess);
+      rc = ndmca_op_test_tape(sess);
 #endif
-		break;
+      break;
 
-	case NDM_JOB_OP_TEST_MOVER:
+    case NDM_JOB_OP_TEST_MOVER:
 #ifndef NDMOS_OPTION_NO_TEST_AGENTS
-		rc = ndmca_op_test_mover (sess);
+      rc = ndmca_op_test_mover(sess);
 #endif
-		break;
+      break;
 
-	case NDM_JOB_OP_TEST_DATA:
+    case NDM_JOB_OP_TEST_DATA:
 #ifndef NDMOS_OPTION_NO_TEST_AGENTS
-		rc = ndmca_op_test_data (sess);
+      rc = ndmca_op_test_data(sess);
 #endif
-		break;
+      break;
 
-	case NDM_JOB_OP_REWIND_TAPE:
-		rc = ndmca_op_rewind_tape (sess);
-		break;
+    case NDM_JOB_OP_REWIND_TAPE:
+      rc = ndmca_op_rewind_tape(sess);
+      break;
 
-	case NDM_JOB_OP_EJECT_TAPE:
-		rc = ndmca_op_eject_tape (sess);
-		break;
+    case NDM_JOB_OP_EJECT_TAPE:
+      rc = ndmca_op_eject_tape(sess);
+      break;
 
-	case NDM_JOB_OP_MOVE_TAPE:
-		rc = ndmca_op_move_tape (sess);
-		break;
+    case NDM_JOB_OP_MOVE_TAPE:
+      rc = ndmca_op_move_tape(sess);
+      break;
 
-	case NDM_JOB_OP_LOAD_TAPE:
-		rc = ndmca_op_load_tape (sess);
-		break;
+    case NDM_JOB_OP_LOAD_TAPE:
+      rc = ndmca_op_load_tape(sess);
+      break;
 
-	case NDM_JOB_OP_UNLOAD_TAPE:
-		rc = ndmca_op_unload_tape (sess);
-		break;
+    case NDM_JOB_OP_UNLOAD_TAPE:
+      rc = ndmca_op_unload_tape(sess);
+      break;
 
-	case NDM_JOB_OP_IMPORT_TAPE:
-		rc = ndmca_op_import_tape (sess);
-		break;
+    case NDM_JOB_OP_IMPORT_TAPE:
+      rc = ndmca_op_import_tape(sess);
+      break;
 
-	case NDM_JOB_OP_EXPORT_TAPE:
-		rc = ndmca_op_export_tape (sess);
-		break;
+    case NDM_JOB_OP_EXPORT_TAPE:
+      rc = ndmca_op_export_tape(sess);
+      break;
 
-	case NDM_JOB_OP_INIT_ELEM_STATUS:
-		rc = ndmca_op_init_elem_status (sess);
-		break;
-	}
+    case NDM_JOB_OP_INIT_ELEM_STATUS:
+      rc = ndmca_op_init_elem_status(sess);
+      break;
+  }
 
-	return rc;
+  return rc;
 }
 #endif /* !NDMOS_OPTION_NO_CONTROL_AGENT */

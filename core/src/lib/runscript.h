@@ -42,71 +42,77 @@
  * script->on_failure = true;
  * script->when = SCRIPT_After;
  *
- * script->run("LabelBefore");  // the label must contain "Before" or "After" special keyword
- * FreeRunscript(script);
+ * script->run("LabelBefore");  // the label must contain "Before" or "After"
+ * special keyword FreeRunscript(script);
  */
 
 /**
  * RunScript->when can take following bit values:
  */
-enum {
-   SCRIPT_Never = 0,
-   SCRIPT_After = (1<<0),       /* AfterJob */
-   SCRIPT_Before = (1<<1),      /* BeforeJob */
-   SCRIPT_AfterVSS = (1<<2),	/* BeforeJob and After VSS */
-   SCRIPT_Any = SCRIPT_Before | SCRIPT_After
+enum
+{
+  SCRIPT_Never = 0,
+  SCRIPT_After = (1 << 0),    /* AfterJob */
+  SCRIPT_Before = (1 << 1),   /* BeforeJob */
+  SCRIPT_AfterVSS = (1 << 2), /* BeforeJob and After VSS */
+  SCRIPT_Any = SCRIPT_Before | SCRIPT_After
 };
 
-enum {
-   SHELL_CMD   = '|',
-   CONSOLE_CMD = '@'
+enum
+{
+  SHELL_CMD = '|',
+  CONSOLE_CMD = '@'
 };
 
 /**
  * Structure for RunScript ressource
  */
 class RunScript {
-public:
-   POOLMEM *command;            /* Command string */
-   POOLMEM *target;             /* Host target */
-   int  when;                   /* SCRIPT_Before|Script_After BEFORE/AFTER JOB*/
-   int  cmd_type;               /* Command type -- Shell, Console */
-   char level;                  /* Base|Full|Incr...|All (NYI) */
-   bool short_form;             /* Run Script in short form */
-   bool from_jobdef;            /* This RUN script comes from JobDef */
-   bool on_success;             /* Execute command on job success (After) */
-   bool on_failure;             /* Execute command on job failure (After) */
-   bool fail_on_error;          /* Abort job on error (Before) */
-   job_code_callback_t job_code_callback;
-                                /* Optional callback function passed to edit_job_code */
-   alist *commands;             /* Use during parsing */
-   bool run(JobControlRecord *job, const char *name=""); /* name must contain "Before" or "After" keyword */
-   bool CanRunAtLevel(int JobLevel) { return true;}        /* TODO */
-   void SetCommand(const char *cmd, int cmd_type = SHELL_CMD);
-   void SetTarget(const char *client_name);
-   void ResetDefault(bool free_string = false);
-   bool IsLocal();             /* True if running on local host */
-   void debug();
+ public:
+  POOLMEM* command;   /* Command string */
+  POOLMEM* target;    /* Host target */
+  int when;           /* SCRIPT_Before|Script_After BEFORE/AFTER JOB*/
+  int cmd_type;       /* Command type -- Shell, Console */
+  char level;         /* Base|Full|Incr...|All (NYI) */
+  bool short_form;    /* Run Script in short form */
+  bool from_jobdef;   /* This RUN script comes from JobDef */
+  bool on_success;    /* Execute command on job success (After) */
+  bool on_failure;    /* Execute command on job failure (After) */
+  bool fail_on_error; /* Abort job on error (Before) */
+  job_code_callback_t job_code_callback;
+  /* Optional callback function passed to edit_job_code */
+  alist* commands; /* Use during parsing */
+  bool run(JobControlRecord* job,
+           const char* name =
+               ""); /* name must contain "Before" or "After" keyword */
+  bool CanRunAtLevel(int JobLevel) { return true; } /* TODO */
+  void SetCommand(const char* cmd, int cmd_type = SHELL_CMD);
+  void SetTarget(const char* client_name);
+  void ResetDefault(bool free_string = false);
+  bool IsLocal(); /* True if running on local host */
+  void debug();
 
-   void SetJobCodeCallback(job_code_callback_t job_code_callback);
+  void SetJobCodeCallback(job_code_callback_t job_code_callback);
 };
 
 /* create new RunScript (set all value to 0) */
-RunScript *NewRunscript();
+RunScript* NewRunscript();
 
 /* create new RunScript from another */
-RunScript *copy_runscript(RunScript *src);
+RunScript* copy_runscript(RunScript* src);
 
 /* launch each script from runscripts*/
-int RunScripts(JobControlRecord *jcr, alist *runscripts, const char *name,
-                alist *allowed_script_dirs = NULL);
+int RunScripts(JobControlRecord* jcr,
+               alist* runscripts,
+               const char* name,
+               alist* allowed_script_dirs = NULL);
 
 /* free RunScript (and all POOLMEM) */
-void FreeRunscript(RunScript *script);
+void FreeRunscript(RunScript* script);
 
 /* foreach_alist free RunScript */
-void FreeRunscripts(alist *runscripts); /* you have to free alist */
+void FreeRunscripts(alist* runscripts); /* you have to free alist */
 
-extern bool (*console_command)(JobControlRecord *jcr, const char *cmd);
+extern bool (*console_command)(JobControlRecord* jcr, const char* cmd);
 
 #endif /* BAREOS_LIB_RUNSCRIPT_H_ */

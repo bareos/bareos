@@ -24,8 +24,12 @@
 
 namespace directordaemon {
 
-bool response(JobControlRecord *jcr, BareosSocket *fd, char *resp, const char *cmd, e_prtmsg PrintMessage);
+bool response(JobControlRecord* jcr,
+              BareosSocket* fd,
+              char* resp,
+              const char* cmd,
+              e_prtmsg PrintMessage);
 
 } /* namespace directordaemon */
 
-#endif // BAREOS_DIRD_GETMSG_H_
+#endif  // BAREOS_DIRD_GETMSG_H_

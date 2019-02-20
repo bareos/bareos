@@ -28,8 +28,8 @@
  */
 
 struct b_queue {
-   struct b_queue *qnext;     /* Next item in queue */
-   struct b_queue *qprev;     /* Previous item in queue */
+  struct b_queue* qnext; /* Next item in queue */
+  struct b_queue* qprev; /* Previous item in queue */
 };
 
 typedef struct b_queue BQUEUE;
@@ -37,7 +37,7 @@ typedef struct b_queue BQUEUE;
 /**
  * Queue functions
  */
-void qinsert(BQUEUE *qhead, BQUEUE *object);
-BQUEUE *qnext(BQUEUE *qhead, BQUEUE *qitem);
-BQUEUE *qdchain(BQUEUE *qitem);
-BQUEUE *qremove(BQUEUE *qhead);
+void qinsert(BQUEUE* qhead, BQUEUE* object);
+BQUEUE* qnext(BQUEUE* qhead, BQUEUE* qitem);
+BQUEUE* qdchain(BQUEUE* qitem);
+BQUEUE* qremove(BQUEUE* qhead);

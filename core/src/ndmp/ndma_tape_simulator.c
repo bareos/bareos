@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1998,1999,2000
- *	Traakan, Inc., Los Altos, CA
- *	All rights reserved.
+ *      Traakan, Inc., Los Altos, CA
+ *      All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -42,242 +42,221 @@
 
 #ifdef NDMOS_OPTION_TAPE_SIMULATOR
 
-void
-ndmos_tape_register_callbacks (struct ndm_session *sess,
-  struct ndm_tape_simulator_callbacks *callbacks)
+void ndmos_tape_register_callbacks(
+    struct ndm_session* sess,
+    struct ndm_tape_simulator_callbacks* callbacks)
 {
-	/*
-	 * Only allow one register.
-	 */
-	if (!sess->ntsc) {
-		sess->ntsc = NDMOS_API_MALLOC (sizeof(struct ndm_tape_simulator_callbacks));
-		memcpy(sess->ntsc, callbacks, sizeof(struct ndm_tape_simulator_callbacks));
-	}
+  /*
+   * Only allow one register.
+   */
+  if (!sess->ntsc) {
+    sess->ntsc = NDMOS_API_MALLOC(sizeof(struct ndm_tape_simulator_callbacks));
+    memcpy(sess->ntsc, callbacks, sizeof(struct ndm_tape_simulator_callbacks));
+  }
 }
 
-void
-ndmos_tape_unregister_callbacks (struct ndm_session *sess)
+void ndmos_tape_unregister_callbacks(struct ndm_session* sess)
 {
-	if (!sess->ntsc) {
-		NDMOS_API_FREE (sess->ntsc);
-		sess->ntsc = NULL;
-	}
+  if (!sess->ntsc) {
+    NDMOS_API_FREE(sess->ntsc);
+    sess->ntsc = NULL;
+  }
 }
 
-int
-ndmos_tape_initialize (struct ndm_session *sess)
+int ndmos_tape_initialize(struct ndm_session* sess)
 {
-	struct ndm_tape_agent *	ta = sess->tape_acb;
+  struct ndm_tape_agent* ta = sess->tape_acb;
 
-	ta->tape_fd = -1;
-	NDMOS_MACRO_ZEROFILL (&ta->tape_state);
-	ta->tape_state.error = NDMP9_DEV_NOT_OPEN_ERR;
-	ta->tape_state.state = NDMP9_TAPE_STATE_IDLE;
+  ta->tape_fd = -1;
+  NDMOS_MACRO_ZEROFILL(&ta->tape_state);
+  ta->tape_state.error = NDMP9_DEV_NOT_OPEN_ERR;
+  ta->tape_state.state = NDMP9_TAPE_STATE_IDLE;
 
-	return 0;
+  return 0;
 }
 
-ndmp9_error
-ndmos_tape_open (struct ndm_session *sess, char *drive_name, int will_write)
+ndmp9_error ndmos_tape_open(struct ndm_session* sess,
+                            char* drive_name,
+                            int will_write)
 {
-	ndmp9_error		err;
-	struct ndm_tape_agent *	ta = sess->tape_acb;
+  ndmp9_error err;
+  struct ndm_tape_agent* ta = sess->tape_acb;
 
-	if (ta->tape_fd >= 0) {
-		ndma_send_logmsg(sess, NDMP9_LOG_ERROR, sess->plumb.control,
-			"device simulator is already open");
-		return NDMP9_DEVICE_OPENED_ERR;
-	}
+  if (ta->tape_fd >= 0) {
+    ndma_send_logmsg(sess, NDMP9_LOG_ERROR, sess->plumb.control,
+                     "device simulator is already open");
+    return NDMP9_DEVICE_OPENED_ERR;
+  }
 
-	if (sess->ntsc && sess->ntsc->tape_open) {
-		err = sess->ntsc->tape_open(sess, drive_name, will_write);
-		if (err != NDMP9_NO_ERR)
-			return err;
-	}
+  if (sess->ntsc && sess->ntsc->tape_open) {
+    err = sess->ntsc->tape_open(sess, drive_name, will_write);
+    if (err != NDMP9_NO_ERR) return err;
+  }
 
-	return NDMP9_NO_ERR;
+  return NDMP9_NO_ERR;
 }
 
-ndmp9_error
-ndmos_tape_close (struct ndm_session *sess)
+ndmp9_error ndmos_tape_close(struct ndm_session* sess)
 {
-	ndmp9_error		err;
-	struct ndm_tape_agent *	ta = sess->tape_acb;
+  ndmp9_error err;
+  struct ndm_tape_agent* ta = sess->tape_acb;
 
-	if (ta->tape_fd < 0) {
-		return NDMP9_DEV_NOT_OPEN_ERR;
-	}
+  if (ta->tape_fd < 0) { return NDMP9_DEV_NOT_OPEN_ERR; }
 
-	if (sess->ntsc && sess->ntsc->tape_close) {
-		err = sess->ntsc->tape_close(sess);
-		if (err != NDMP9_NO_ERR)
-			return err;
-	}
+  if (sess->ntsc && sess->ntsc->tape_close) {
+    err = sess->ntsc->tape_close(sess);
+    if (err != NDMP9_NO_ERR) return err;
+  }
 
-	ndmos_tape_initialize (sess);
+  ndmos_tape_initialize(sess);
 
-	return NDMP9_NO_ERR;
+  return NDMP9_NO_ERR;
 }
 
-void
-ndmos_tape_sync_state (struct ndm_session *sess)
+void ndmos_tape_sync_state(struct ndm_session* sess)
 {
-	struct ndm_tape_agent *	ta = sess->tape_acb;
+  struct ndm_tape_agent* ta = sess->tape_acb;
 
-	if (ta->tape_fd < 0) {
-		ta->tape_state.error = NDMP9_DEV_NOT_OPEN_ERR;
-		ta->tape_state.state = NDMP9_TAPE_STATE_IDLE;
-		ta->tape_state.file_num.valid = NDMP9_VALIDITY_INVALID;
-		ta->tape_state.soft_errors.valid = NDMP9_VALIDITY_INVALID;
-		ta->tape_state.block_size.valid = NDMP9_VALIDITY_INVALID;
-		ta->tape_state.blockno.valid = NDMP9_VALIDITY_INVALID;
-	} else {
-		ta->tape_state.error = NDMP9_NO_ERR;
-		if (ta->mover_state.state == NDMP9_MOVER_STATE_ACTIVE)
-			ta->tape_state.state = NDMP9_TAPE_STATE_MOVER;
-		else
-			ta->tape_state.state = NDMP9_TAPE_STATE_OPEN;
-		ta->tape_state.file_num.valid = NDMP9_VALIDITY_VALID;
-		ta->tape_state.soft_errors.valid = NDMP9_VALIDITY_VALID;
-		ta->tape_state.block_size.valid = NDMP9_VALIDITY_VALID;
-		ta->tape_state.blockno.valid = NDMP9_VALIDITY_VALID;
-	}
+  if (ta->tape_fd < 0) {
+    ta->tape_state.error = NDMP9_DEV_NOT_OPEN_ERR;
+    ta->tape_state.state = NDMP9_TAPE_STATE_IDLE;
+    ta->tape_state.file_num.valid = NDMP9_VALIDITY_INVALID;
+    ta->tape_state.soft_errors.valid = NDMP9_VALIDITY_INVALID;
+    ta->tape_state.block_size.valid = NDMP9_VALIDITY_INVALID;
+    ta->tape_state.blockno.valid = NDMP9_VALIDITY_INVALID;
+  } else {
+    ta->tape_state.error = NDMP9_NO_ERR;
+    if (ta->mover_state.state == NDMP9_MOVER_STATE_ACTIVE)
+      ta->tape_state.state = NDMP9_TAPE_STATE_MOVER;
+    else
+      ta->tape_state.state = NDMP9_TAPE_STATE_OPEN;
+    ta->tape_state.file_num.valid = NDMP9_VALIDITY_VALID;
+    ta->tape_state.soft_errors.valid = NDMP9_VALIDITY_VALID;
+    ta->tape_state.block_size.valid = NDMP9_VALIDITY_VALID;
+    ta->tape_state.blockno.valid = NDMP9_VALIDITY_VALID;
+  }
 
-	return;
+  return;
 }
 
-ndmp9_error
-ndmos_tape_mtio (struct ndm_session *sess,
-  ndmp9_tape_mtio_op op, uint32_t count, uint32_t *resid)
+ndmp9_error ndmos_tape_mtio(struct ndm_session* sess,
+                            ndmp9_tape_mtio_op op,
+                            uint32_t count,
+                            uint32_t* resid)
 {
-	ndmp9_error		err;
-	struct ndm_tape_agent *	ta = sess->tape_acb;
+  ndmp9_error err;
+  struct ndm_tape_agent* ta = sess->tape_acb;
 
-	*resid = 0;
+  *resid = 0;
 
-	if (ta->tape_fd < 0) {
-		return NDMP9_DEV_NOT_OPEN_ERR;
-	}
+  if (ta->tape_fd < 0) { return NDMP9_DEV_NOT_OPEN_ERR; }
 
-	/* audit for valid op and for tape mode */
-	switch (op) {
-	case NDMP9_MTIO_FSF:
-		break;
-	case NDMP9_MTIO_BSF:
-		break;
-	case NDMP9_MTIO_FSR:
-		break;
-	case NDMP9_MTIO_BSR:
-		break;
-	case NDMP9_MTIO_REW:
-		break;
-	case NDMP9_MTIO_OFF:
-		break;
-	case NDMP9_MTIO_EOF:
-		break;
-	default:
-		return NDMP9_ILLEGAL_ARGS_ERR;
-	}
+  /* audit for valid op and for tape mode */
+  switch (op) {
+    case NDMP9_MTIO_FSF:
+      break;
+    case NDMP9_MTIO_BSF:
+      break;
+    case NDMP9_MTIO_FSR:
+      break;
+    case NDMP9_MTIO_BSR:
+      break;
+    case NDMP9_MTIO_REW:
+      break;
+    case NDMP9_MTIO_OFF:
+      break;
+    case NDMP9_MTIO_EOF:
+      break;
+    default:
+      return NDMP9_ILLEGAL_ARGS_ERR;
+  }
 
-	if (sess->ntsc && sess->ntsc->tape_mtio) {
-		err = sess->ntsc->tape_mtio(sess, op, count, resid);
-		if (err != NDMP9_NO_ERR)
-			return err;
-	}
+  if (sess->ntsc && sess->ntsc->tape_mtio) {
+    err = sess->ntsc->tape_mtio(sess, op, count, resid);
+    if (err != NDMP9_NO_ERR) return err;
+  }
 
-	return NDMP9_NO_ERR;
+  return NDMP9_NO_ERR;
 }
 
-ndmp9_error
-ndmos_tape_write (struct ndm_session *sess,
-  char *buf, uint32_t count, uint32_t *done_count)
+ndmp9_error ndmos_tape_write(struct ndm_session* sess,
+                             char* buf,
+                             uint32_t count,
+                             uint32_t* done_count)
 {
-	ndmp9_error		err;
-	struct ndm_tape_agent *	ta = sess->tape_acb;
+  ndmp9_error err;
+  struct ndm_tape_agent* ta = sess->tape_acb;
 
-	if (ta->tape_fd < 0) {
-		return NDMP9_DEV_NOT_OPEN_ERR;
-	}
+  if (ta->tape_fd < 0) { return NDMP9_DEV_NOT_OPEN_ERR; }
 
-	if (!NDMTA_TAPE_IS_WRITABLE(ta)) {
-		return NDMP9_PERMISSION_ERR;
-	}
+  if (!NDMTA_TAPE_IS_WRITABLE(ta)) { return NDMP9_PERMISSION_ERR; }
 
-	if (count == 0) {
-		/*
-		 * NDMPv4 clarification -- a tape read or write with
-		 * a count==0 is a no-op. This is undoubtedly influenced
-		 * by the SCSI Sequential Access specification which
-		 * says much the same thing.
-		 */
-		*done_count = 0;
-		return NDMP9_NO_ERR;
-	}
+  if (count == 0) {
+    /*
+     * NDMPv4 clarification -- a tape read or write with
+     * a count==0 is a no-op. This is undoubtedly influenced
+     * by the SCSI Sequential Access specification which
+     * says much the same thing.
+     */
+    *done_count = 0;
+    return NDMP9_NO_ERR;
+  }
 
-	if (sess->ntsc && sess->ntsc->tape_write) {
-		err = sess->ntsc->tape_write(sess, buf, count, done_count);
-		if (err != NDMP9_NO_ERR)
-			return err;
-	}
+  if (sess->ntsc && sess->ntsc->tape_write) {
+    err = sess->ntsc->tape_write(sess, buf, count, done_count);
+    if (err != NDMP9_NO_ERR) return err;
+  }
 
-	return NDMP9_NO_ERR;
+  return NDMP9_NO_ERR;
 }
 
-ndmp9_error
-ndmos_tape_wfm (struct ndm_session *sess)
+ndmp9_error ndmos_tape_wfm(struct ndm_session* sess)
 {
-	ndmp9_error		err;
-	struct ndm_tape_agent *	ta = sess->tape_acb;
+  ndmp9_error err;
+  struct ndm_tape_agent* ta = sess->tape_acb;
 
-	ta->weof_on_close = 0;
+  ta->weof_on_close = 0;
 
-	if (ta->tape_fd < 0) {
-		return NDMP9_DEV_NOT_OPEN_ERR;
-	}
+  if (ta->tape_fd < 0) { return NDMP9_DEV_NOT_OPEN_ERR; }
 
-	if (!NDMTA_TAPE_IS_WRITABLE(ta)) {
-		return NDMP9_PERMISSION_ERR;
-	}
+  if (!NDMTA_TAPE_IS_WRITABLE(ta)) { return NDMP9_PERMISSION_ERR; }
 
-	if (sess->ntsc && sess->ntsc->tape_wfm) {
-		err = sess->ntsc->tape_wfm(sess);
-		if (err != NDMP9_NO_ERR)
-			return err;
-	}
+  if (sess->ntsc && sess->ntsc->tape_wfm) {
+    err = sess->ntsc->tape_wfm(sess);
+    if (err != NDMP9_NO_ERR) return err;
+  }
 
-	return NDMP9_NO_ERR;
+  return NDMP9_NO_ERR;
 }
 
-ndmp9_error
-ndmos_tape_read (struct ndm_session *sess,
-  char *buf, uint32_t count, uint32_t *done_count)
+ndmp9_error ndmos_tape_read(struct ndm_session* sess,
+                            char* buf,
+                            uint32_t count,
+                            uint32_t* done_count)
 {
-	ndmp9_error		err;
-	struct ndm_tape_agent *	ta = sess->tape_acb;
+  ndmp9_error err;
+  struct ndm_tape_agent* ta = sess->tape_acb;
 
-	if (ta->tape_fd < 0) {
-		return NDMP9_DEV_NOT_OPEN_ERR;
-	}
+  if (ta->tape_fd < 0) { return NDMP9_DEV_NOT_OPEN_ERR; }
 
-	if (count == 0) {
-		/*
-		 * NDMPv4 clarification -- a tape read or write with
-		 * a count==0 is a no-op. This is undoubtedly influenced
-		 * by the SCSI Sequential Access specification which
-		 * says much the same thing.
-		 */
+  if (count == 0) {
+    /*
+     * NDMPv4 clarification -- a tape read or write with
+     * a count==0 is a no-op. This is undoubtedly influenced
+     * by the SCSI Sequential Access specification which
+     * says much the same thing.
+     */
 
-		*done_count = 0;
-		return NDMP9_NO_ERR;
-	}
+    *done_count = 0;
+    return NDMP9_NO_ERR;
+  }
 
-	if (sess->ntsc && sess->ntsc->tape_read) {
-		err = sess->ntsc->tape_read(sess, buf, count, done_count);
-		if (err != NDMP9_NO_ERR)
-			return err;
-	}
+  if (sess->ntsc && sess->ntsc->tape_read) {
+    err = sess->ntsc->tape_read(sess, buf, count, done_count);
+    if (err != NDMP9_NO_ERR) return err;
+  }
 
-	return NDMP9_NO_ERR;
+  return NDMP9_NO_ERR;
 }
 
 #endif /* NDMOS_OPTION_TAPE_SIMULATOR */

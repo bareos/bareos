@@ -43,7 +43,7 @@
 namespace filedaemon {
 
 /* Forward referenced functions */
-static int SetOptions(findFOPTS *fo, const char *opts);
+static int SetOptions(findFOPTS* fo, const char* opts);
 
 /**
  * callback function for edit_job_codes
@@ -52,363 +52,351 @@ static int SetOptions(findFOPTS *fo, const char *opts);
  * %D = Director
  * %m = Modification time (for incremental and differential)
  */
-extern "C" char *job_code_callback_filed(JobControlRecord *jcr, const char* param)
+extern "C" char* job_code_callback_filed(JobControlRecord* jcr,
+                                         const char* param)
 {
-   static char str[50];
+  static char str[50];
 
-   switch (param[0]) {
-   case 'D':
-      if (jcr->director) {
-         return jcr->director->name();
-      }
+  switch (param[0]) {
+    case 'D':
+      if (jcr->director) { return jcr->director->name(); }
       break;
-   case 'm':
+    case 'm':
       return edit_uint64(jcr->mtime, str);
-   }
+  }
 
-   return NULL;
+  return NULL;
 }
 
-bool InitFileset(JobControlRecord *jcr)
+bool InitFileset(JobControlRecord* jcr)
 {
-   FindFilesPacket *ff;
-   findFILESET *fileset;
+  FindFilesPacket* ff;
+  findFILESET* fileset;
 
-   if (!jcr->ff) {
-      return false;
-   }
-   ff = jcr->ff;
-   if (ff->fileset) {
-      return false;
-   }
-   fileset = (findFILESET *)malloc(sizeof(findFILESET));
-   memset(fileset, 0, sizeof(findFILESET));
-   ff->fileset = fileset;
-   fileset->state = state_none;
-   fileset->include_list.init(1, true);
-   fileset->exclude_list.init(1, true);
-   return true;
+  if (!jcr->ff) { return false; }
+  ff = jcr->ff;
+  if (ff->fileset) { return false; }
+  fileset = (findFILESET*)malloc(sizeof(findFILESET));
+  memset(fileset, 0, sizeof(findFILESET));
+  ff->fileset = fileset;
+  fileset->state = state_none;
+  fileset->include_list.init(1, true);
+  fileset->exclude_list.init(1, true);
+  return true;
 }
 
-static void append_file(JobControlRecord *jcr, findIncludeExcludeItem *incexe,
-                        const char *buf, bool IsFile)
+static void append_file(JobControlRecord* jcr,
+                        findIncludeExcludeItem* incexe,
+                        const char* buf,
+                        bool IsFile)
 {
-   if (IsFile) {
-      /*
-       * Sanity check never append empty file patterns.
-       */
-      if (strlen(buf) > 0) {
-         incexe->name_list.append(new_dlistString(buf));
-      }
-   } else if (me->plugin_directory) {
-      GeneratePluginEvent(jcr, bEventPluginCommand, (void *)buf);
-      incexe->plugin_list.append(new_dlistString(buf));
-   } else {
-      Jmsg(jcr, M_FATAL, 0,
-           _("Plugin Directory not defined. Cannot use plugin: \"%s\"\n"),
-           buf);
-   }
+  if (IsFile) {
+    /*
+     * Sanity check never append empty file patterns.
+     */
+    if (strlen(buf) > 0) { incexe->name_list.append(new_dlistString(buf)); }
+  } else if (me->plugin_directory) {
+    GeneratePluginEvent(jcr, bEventPluginCommand, (void*)buf);
+    incexe->plugin_list.append(new_dlistString(buf));
+  } else {
+    Jmsg(jcr, M_FATAL, 0,
+         _("Plugin Directory not defined. Cannot use plugin: \"%s\"\n"), buf);
+  }
 }
 
 /**
  * Add fname to include/exclude fileset list. First check for
  * | and < and if necessary perform command.
  */
-void AddFileToFileset(JobControlRecord *jcr, const char *fname, bool IsFile)
+void AddFileToFileset(JobControlRecord* jcr, const char* fname, bool IsFile)
 {
-   findFILESET *fileset = jcr->ff->fileset;
-   char *p;
-   Bpipe *bpipe;
-   POOLMEM *fn;
-   FILE *ffd;
-   char buf[1000];
-   int ch;
-   int status;
+  findFILESET* fileset = jcr->ff->fileset;
+  char* p;
+  Bpipe* bpipe;
+  POOLMEM* fn;
+  FILE* ffd;
+  char buf[1000];
+  int ch;
+  int status;
 
-   p = (char *)fname;
-   ch = (uint8_t)*p;
-   switch (ch) {
-   case '|':
-      p++;                            /* skip over | */
+  p = (char*)fname;
+  ch = (uint8_t)*p;
+  switch (ch) {
+    case '|':
+      p++; /* skip over | */
       fn = GetPoolMemory(PM_FNAME);
       fn = edit_job_codes(jcr, fn, p, "", job_code_callback_filed);
       bpipe = OpenBpipe(fn, 0, "r");
       if (!bpipe) {
-         BErrNo be;
-         Jmsg(jcr, M_FATAL, 0, _("Cannot run program: %s. ERR=%s\n"),
-            p, be.bstrerror());
-         FreePoolMemory(fn);
-         return;
+        BErrNo be;
+        Jmsg(jcr, M_FATAL, 0, _("Cannot run program: %s. ERR=%s\n"), p,
+             be.bstrerror());
+        FreePoolMemory(fn);
+        return;
       }
       FreePoolMemory(fn);
       while (fgets(buf, sizeof(buf), bpipe->rfd)) {
-         StripTrailingJunk(buf);
-         append_file(jcr, fileset->incexe, buf, IsFile);
+        StripTrailingJunk(buf);
+        append_file(jcr, fileset->incexe, buf, IsFile);
       }
       if ((status = CloseBpipe(bpipe)) != 0) {
-         BErrNo be;
-         Jmsg(jcr, M_FATAL, 0, _("Error running program: %s. status=%d: ERR=%s\n"),
-            p, be.code(status), be.bstrerror(status));
-         return;
+        BErrNo be;
+        Jmsg(jcr, M_FATAL, 0,
+             _("Error running program: %s. status=%d: ERR=%s\n"), p,
+             be.code(status), be.bstrerror(status));
+        return;
       }
       break;
-   case '<':
+    case '<':
       Dmsg1(100, "Doing < of '%s' include on client.\n", p + 1);
-      p++;                      /* skip over < */
+      p++; /* skip over < */
       if ((ffd = fopen(p, "rb")) == NULL) {
-         BErrNo be;
-         Jmsg(jcr, M_FATAL, 0,
-              _("Cannot open FileSet input file: %s. ERR=%s\n"),
-            p, be.bstrerror());
-         return;
+        BErrNo be;
+        Jmsg(jcr, M_FATAL, 0, _("Cannot open FileSet input file: %s. ERR=%s\n"),
+             p, be.bstrerror());
+        return;
       }
       while (fgets(buf, sizeof(buf), ffd)) {
-         StripTrailingJunk(buf);
-         append_file(jcr, fileset->incexe, buf, IsFile);
+        StripTrailingJunk(buf);
+        append_file(jcr, fileset->incexe, buf, IsFile);
       }
       fclose(ffd);
       break;
-   default:
+    default:
       append_file(jcr, fileset->incexe, fname, IsFile);
       break;
-   }
+  }
 }
 
-findIncludeExcludeItem *get_incexe(JobControlRecord *jcr)
+findIncludeExcludeItem* get_incexe(JobControlRecord* jcr)
 {
-   if (jcr->ff && jcr->ff->fileset) {
-      return jcr->ff->fileset->incexe;
-   }
+  if (jcr->ff && jcr->ff->fileset) { return jcr->ff->fileset->incexe; }
 
-   return NULL;
+  return NULL;
 }
 
-void SetIncexe(JobControlRecord *jcr, findIncludeExcludeItem *incexe)
+void SetIncexe(JobControlRecord* jcr, findIncludeExcludeItem* incexe)
 {
-   findFILESET *fileset = jcr->ff->fileset;
-   fileset->incexe = incexe;
+  findFILESET* fileset = jcr->ff->fileset;
+  fileset->incexe = incexe;
 }
 
 /**
  * Add a regex to the current fileset
  */
-int AddRegexToFileset(JobControlRecord *jcr, const char *item, int type)
+int AddRegexToFileset(JobControlRecord* jcr, const char* item, int type)
 {
-   findFOPTS *current_opts = start_options(jcr->ff);
-   regex_t *preg;
-   int rc;
-   char prbuf[500];
+  findFOPTS* current_opts = start_options(jcr->ff);
+  regex_t* preg;
+  int rc;
+  char prbuf[500];
 
-   preg = (regex_t *)malloc(sizeof(regex_t));
-   if (BitIsSet(FO_IGNORECASE, current_opts->flags)) {
-      rc = regcomp(preg, item, REG_EXTENDED|REG_ICASE);
-   } else {
-      rc = regcomp(preg, item, REG_EXTENDED);
-   }
-   if (rc != 0) {
-      regerror(rc, preg, prbuf, sizeof(prbuf));
-      regfree(preg);
-      free(preg);
-      Jmsg(jcr, M_FATAL, 0, _("REGEX %s compile error. ERR=%s\n"), item, prbuf);
-      return state_error;
-   }
-   if (type == ' ') {
-      current_opts->regex.append(preg);
-   } else if (type == 'D') {
-      current_opts->regexdir.append(preg);
-   } else if (type == 'F') {
-      current_opts->regexfile.append(preg);
-   } else {
-      return state_error;
-   }
+  preg = (regex_t*)malloc(sizeof(regex_t));
+  if (BitIsSet(FO_IGNORECASE, current_opts->flags)) {
+    rc = regcomp(preg, item, REG_EXTENDED | REG_ICASE);
+  } else {
+    rc = regcomp(preg, item, REG_EXTENDED);
+  }
+  if (rc != 0) {
+    regerror(rc, preg, prbuf, sizeof(prbuf));
+    regfree(preg);
+    free(preg);
+    Jmsg(jcr, M_FATAL, 0, _("REGEX %s compile error. ERR=%s\n"), item, prbuf);
+    return state_error;
+  }
+  if (type == ' ') {
+    current_opts->regex.append(preg);
+  } else if (type == 'D') {
+    current_opts->regexdir.append(preg);
+  } else if (type == 'F') {
+    current_opts->regexfile.append(preg);
+  } else {
+    return state_error;
+  }
 
-   return state_options;
+  return state_options;
 }
 
 /**
  * Add a wild card to the current fileset
  */
-int AddWildToFileset(JobControlRecord *jcr, const char *item, int type)
+int AddWildToFileset(JobControlRecord* jcr, const char* item, int type)
 {
-   findFOPTS *current_opts = start_options(jcr->ff);
+  findFOPTS* current_opts = start_options(jcr->ff);
 
-   if (type == ' ') {
-      current_opts->wild.append(bstrdup(item));
-   } else if (type == 'D') {
-      current_opts->wilddir.append(bstrdup(item));
-   } else if (type == 'F') {
-      current_opts->wildfile.append(bstrdup(item));
-   } else if (type == 'B') {
-      current_opts->wildbase.append(bstrdup(item));
-   } else {
-      return state_error;
-   }
+  if (type == ' ') {
+    current_opts->wild.append(bstrdup(item));
+  } else if (type == 'D') {
+    current_opts->wilddir.append(bstrdup(item));
+  } else if (type == 'F') {
+    current_opts->wildfile.append(bstrdup(item));
+  } else if (type == 'B') {
+    current_opts->wildbase.append(bstrdup(item));
+  } else {
+    return state_error;
+  }
 
-   return state_options;
+  return state_options;
 }
 
 /**
  * Add options to the current fileset
  */
-int AddOptionsToFileset(JobControlRecord *jcr, const char *item)
+int AddOptionsToFileset(JobControlRecord* jcr, const char* item)
 {
-   findFOPTS *current_opts = start_options(jcr->ff);
+  findFOPTS* current_opts = start_options(jcr->ff);
 
-   SetOptions(current_opts, item);
+  SetOptions(current_opts, item);
 
-   return state_options;
+  return state_options;
 }
 
-void AddFileset(JobControlRecord *jcr, const char *item)
+void AddFileset(JobControlRecord* jcr, const char* item)
 {
-   FindFilesPacket *ff = jcr->ff;
-   findFILESET *fileset = ff->fileset;
-   int code, subcode;
-   int state = fileset->state;
-   findFOPTS *current_opts;
+  FindFilesPacket* ff = jcr->ff;
+  findFILESET* fileset = ff->fileset;
+  int code, subcode;
+  int state = fileset->state;
+  findFOPTS* current_opts;
 
-   /*
-    * Get code, optional subcode, and position item past the dividing space
-    */
-   Dmsg1(100, "%s\n", item);
-   code = item[0];
-   if (code != '\0') {
-      ++item;
-   }
+  /*
+   * Get code, optional subcode, and position item past the dividing space
+   */
+  Dmsg1(100, "%s\n", item);
+  code = item[0];
+  if (code != '\0') { ++item; }
 
-   subcode = ' ';                    /* A space is always a valid subcode */
-   if (item[0] != '\0' && item[0] != ' ') {
-      subcode = item[0];
-      ++item;
-   }
+  subcode = ' '; /* A space is always a valid subcode */
+  if (item[0] != '\0' && item[0] != ' ') {
+    subcode = item[0];
+    ++item;
+  }
 
-   if (*item == ' ') {
-      ++item;
-   }
+  if (*item == ' ') { ++item; }
 
-   /*
-    * Skip all lines we receive after an error
-    */
-   if (state == state_error) {
-      Dmsg0(100, "State=error return\n");
-      return;
-   }
+  /*
+   * Skip all lines we receive after an error
+   */
+  if (state == state_error) {
+    Dmsg0(100, "State=error return\n");
+    return;
+  }
 
-   /**
-    * The switch tests the code for validity.
-    * The subcode is always good if it is a space, otherwise we must confirm.
-    * We set state to state_error first assuming the subcode is invalid,
-    * requiring state to be set in cases below that handle subcodes.
-    */
-   if (subcode != ' ') {
-      state = state_error;
-      Dmsg0(100, "Set state=error or double code.\n");
-   }
-   switch (code) {
-   case 'I':
+  /**
+   * The switch tests the code for validity.
+   * The subcode is always good if it is a space, otherwise we must confirm.
+   * We set state to state_error first assuming the subcode is invalid,
+   * requiring state to be set in cases below that handle subcodes.
+   */
+  if (subcode != ' ') {
+    state = state_error;
+    Dmsg0(100, "Set state=error or double code.\n");
+  }
+  switch (code) {
+    case 'I':
       (void)new_include(jcr->ff->fileset);
       break;
-   case 'E':
+    case 'E':
       (void)new_exclude(jcr->ff->fileset);
       break;
-   case 'N':                             /* Null */
+    case 'N': /* Null */
       state = state_none;
       break;
-   case 'F':                             /* File */
+    case 'F': /* File */
       state = state_include;
       AddFileToFileset(jcr, item, true);
       break;
-   case 'P':                             /* Plugin */
+    case 'P': /* Plugin */
       state = state_include;
       AddFileToFileset(jcr, item, false);
       break;
-   case 'R':                             /* Regex */
+    case 'R': /* Regex */
       state = AddRegexToFileset(jcr, item, subcode);
       break;
-   case 'B':
+    case 'B':
       current_opts = start_options(ff);
       current_opts->base.append(bstrdup(item));
       state = state_options;
       break;
-   case 'X':                             /* Filetype or Drive type */
+    case 'X': /* Filetype or Drive type */
       current_opts = start_options(ff);
       state = state_options;
       if (subcode == ' ') {
-         current_opts->fstype.append(bstrdup(item));
+        current_opts->fstype.append(bstrdup(item));
       } else if (subcode == 'D') {
-         current_opts->Drivetype.append(bstrdup(item));
+        current_opts->Drivetype.append(bstrdup(item));
       } else {
-         state = state_error;
+        state = state_error;
       }
       break;
-   case 'W':                             /* Wild cards */
+    case 'W': /* Wild cards */
       state = AddWildToFileset(jcr, item, subcode);
       break;
-   case 'O':                             /* Options */
+    case 'O': /* Options */
       state = AddOptionsToFileset(jcr, item);
       break;
-   case 'Z':                             /* Ignore dir */
+    case 'Z': /* Ignore dir */
       state = state_include;
       fileset->incexe->ignoredir.append(bstrdup(item));
       break;
-   case 'D':
+    case 'D':
       current_opts = start_options(ff);
       state = state_options;
       break;
-   case 'T':
+    case 'T':
       current_opts = start_options(ff);
       state = state_options;
       break;
-   case 'G':                             /* Plugin command for this Option block */
+    case 'G': /* Plugin command for this Option block */
       current_opts = start_options(ff);
       current_opts->plugin = bstrdup(item);
       state = state_options;
       break;
-   default:
+    default:
       Jmsg(jcr, M_FATAL, 0, _("Invalid FileSet command: %s\n"), item);
       state = state_error;
       break;
-   }
-   ff->fileset->state = state;
+  }
+  ff->fileset->state = state;
 }
 
-bool TermFileset(JobControlRecord *jcr)
+bool TermFileset(JobControlRecord* jcr)
 {
-   findFILESET *fileset;
+  findFILESET* fileset;
 
-   fileset = jcr->ff->fileset;
+  fileset = jcr->ff->fileset;
 #ifdef HAVE_WIN32
-   /*
-    * Expand the fileset to include all drive letters when the fileset includes a File = / entry.
-    */
-   if (!expand_win32_fileset(jcr->ff->fileset)) {
-      return false;
-   }
+  /*
+   * Expand the fileset to include all drive letters when the fileset includes a
+   * File = / entry.
+   */
+  if (!expand_win32_fileset(jcr->ff->fileset)) { return false; }
 
-   /*
-    * Exclude entries in NotToBackup registry key
-    */
-   if (!exclude_win32_not_to_backup_registry_entries(jcr, jcr->ff)) {
-      return false;
-   }
+  /*
+   * Exclude entries in NotToBackup registry key
+   */
+  if (!exclude_win32_not_to_backup_registry_entries(jcr, jcr->ff)) {
+    return false;
+  }
 #endif
 
-   /*
-    * Generate bEventPluginCommand events for each Options Plugin.
-    */
-   for (int i = 0; i < fileset->include_list.size(); i++) {
-      findIncludeExcludeItem *incexe = (findIncludeExcludeItem *)fileset->include_list.get(i);
+  /*
+   * Generate bEventPluginCommand events for each Options Plugin.
+   */
+  for (int i = 0; i < fileset->include_list.size(); i++) {
+    findIncludeExcludeItem* incexe =
+        (findIncludeExcludeItem*)fileset->include_list.get(i);
 
-      for (int j = 0; j < incexe->opts_list.size(); j++) {
-         findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
+    for (int j = 0; j < incexe->opts_list.size(); j++) {
+      findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(j);
 
-         if (fo->plugin) {
-            GeneratePluginEvent(jcr, bEventPluginCommand, (void *)fo->plugin);
-         }
+      if (fo->plugin) {
+        GeneratePluginEvent(jcr, bEventPluginCommand, (void*)fo->plugin);
       }
-   }
+    }
+  }
 
-   return jcr->ff->fileset->state != state_error;
+  return jcr->ff->fileset->state != state_error;
 }
 
 /**
@@ -416,288 +404,278 @@ bool TermFileset(JobControlRecord *jcr)
  *  "compile" time in filed/job.c, and keep only a bit mask
  *  and the Verify options.
  */
-static int SetOptions(findFOPTS *fo, const char *opts)
+static int SetOptions(findFOPTS* fo, const char* opts)
 {
-   int j;
-   const char *p;
-   char strip[21];
-   char size[50];
+  int j;
+  const char* p;
+  char strip[21];
+  char size[50];
 
-   for (p = opts; *p; p++) {
-      switch (*p) {
+  for (p = opts; *p; p++) {
+    switch (*p) {
       case 'A':
-         SetBit(FO_ACL, fo->flags);
-         break;
-      case 'a':                          /* Alway replace */
-      case '0':                          /* No option */
-         break;
-      case 'C':                          /* Accurate options */
-         /*
-          * Copy Accurate Options
-          */
-         for (j = 0; *p && *p != ':'; p++) {
-            fo->AccurateOpts[j] = *p;
-            if (j < (int)sizeof(fo->AccurateOpts) - 1) {
-               j++;
-            }
-         }
-         fo->AccurateOpts[j] = 0;
-         break;
+        SetBit(FO_ACL, fo->flags);
+        break;
+      case 'a': /* Alway replace */
+      case '0': /* No option */
+        break;
+      case 'C': /* Accurate options */
+        /*
+         * Copy Accurate Options
+         */
+        for (j = 0; *p && *p != ':'; p++) {
+          fo->AccurateOpts[j] = *p;
+          if (j < (int)sizeof(fo->AccurateOpts) - 1) { j++; }
+        }
+        fo->AccurateOpts[j] = 0;
+        break;
       case 'c':
-         SetBit(FO_CHKCHANGES, fo->flags);
-         break;
+        SetBit(FO_CHKCHANGES, fo->flags);
+        break;
       case 'd':
-         switch(*(p + 1)) {
-         case '1':
+        switch (*(p + 1)) {
+          case '1':
             fo->shadow_type = check_shadow_local_warn;
             p++;
             break;
-         case '2':
+          case '2':
             fo->shadow_type = check_shadow_local_remove;
             p++;
             break;
-         case '3':
+          case '3':
             fo->shadow_type = check_shadow_global_warn;
             p++;
             break;
-         case '4':
+          case '4':
             fo->shadow_type = check_shadow_global_remove;
             p++;
             break;
-         }
-         break;
+        }
+        break;
       case 'e':
-         SetBit(FO_EXCLUDE, fo->flags);
-         break;
-      case 'E':                          /* Encryption */
-         switch(*(p + 1)) {
-         case '3':
+        SetBit(FO_EXCLUDE, fo->flags);
+        break;
+      case 'E': /* Encryption */
+        switch (*(p + 1)) {
+          case '3':
             fo->Encryption_cipher = CRYPTO_CIPHER_3DES_CBC;
             p++;
             break;
-         case 'a':
-            switch(*(p + 2)) {
-            case '1':
-               fo->Encryption_cipher = CRYPTO_CIPHER_AES_128_CBC;
-               p += 2;
-               break;
-            case '2':
-               fo->Encryption_cipher = CRYPTO_CIPHER_AES_192_CBC;
-               p += 2;
-               break;
-            case '3':
-               fo->Encryption_cipher = CRYPTO_CIPHER_AES_256_CBC;
-               p += 2;
-               break;
+          case 'a':
+            switch (*(p + 2)) {
+              case '1':
+                fo->Encryption_cipher = CRYPTO_CIPHER_AES_128_CBC;
+                p += 2;
+                break;
+              case '2':
+                fo->Encryption_cipher = CRYPTO_CIPHER_AES_192_CBC;
+                p += 2;
+                break;
+              case '3':
+                fo->Encryption_cipher = CRYPTO_CIPHER_AES_256_CBC;
+                p += 2;
+                break;
             }
             break;
-         case 'b':
+          case 'b':
             fo->Encryption_cipher = CRYPTO_CIPHER_BLOWFISH_CBC;
             p++;
             break;
-         case 'c':
-            switch(*(p + 2)) {
-            case '1':
-               fo->Encryption_cipher = CRYPTO_CIPHER_CAMELLIA_128_CBC;
-               p += 2;
-               break;
-            case '2':
-               fo->Encryption_cipher = CRYPTO_CIPHER_CAMELLIA_192_CBC;
-               p += 2;
-               break;
-            case '3':
-               fo->Encryption_cipher = CRYPTO_CIPHER_CAMELLIA_256_CBC;
-               p += 2;
-               break;
+          case 'c':
+            switch (*(p + 2)) {
+              case '1':
+                fo->Encryption_cipher = CRYPTO_CIPHER_CAMELLIA_128_CBC;
+                p += 2;
+                break;
+              case '2':
+                fo->Encryption_cipher = CRYPTO_CIPHER_CAMELLIA_192_CBC;
+                p += 2;
+                break;
+              case '3':
+                fo->Encryption_cipher = CRYPTO_CIPHER_CAMELLIA_256_CBC;
+                p += 2;
+                break;
             }
             break;
-         case 'f':
+          case 'f':
             SetBit(FO_FORCE_ENCRYPT, fo->flags);
             p++;
             break;
-         case 'h':
-            switch(*(p + 2)) {
-            case '1':
-               fo->Encryption_cipher = CRYPTO_CIPHER_AES_128_CBC_HMAC_SHA1;
-               p += 2;
-               break;
-            case '2':
-               fo->Encryption_cipher = CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1;
-               p += 2;
-               break;
+          case 'h':
+            switch (*(p + 2)) {
+              case '1':
+                fo->Encryption_cipher = CRYPTO_CIPHER_AES_128_CBC_HMAC_SHA1;
+                p += 2;
+                break;
+              case '2':
+                fo->Encryption_cipher = CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1;
+                p += 2;
+                break;
             }
-         }
-         break;
+        }
+        break;
       case 'f':
-         SetBit(FO_MULTIFS, fo->flags);
-         break;
-      case 'H':                          /* No hard link handling */
-         SetBit(FO_NO_HARDLINK, fo->flags);
-         break;
-      case 'h':                          /* No recursion */
-         SetBit(FO_NO_RECURSION, fo->flags);
-         break;
+        SetBit(FO_MULTIFS, fo->flags);
+        break;
+      case 'H': /* No hard link handling */
+        SetBit(FO_NO_HARDLINK, fo->flags);
+        break;
+      case 'h': /* No recursion */
+        SetBit(FO_NO_RECURSION, fo->flags);
+        break;
       case 'i':
-         SetBit(FO_IGNORECASE, fo->flags);
-         break;
-      case 'J':                         /* Basejob options */
-         /*
-          * Copy BaseJob Options
-          */
-         for (j = 0; *p && *p != ':'; p++) {
-            fo->BaseJobOpts[j] = *p;
-            if (j < (int)sizeof(fo->BaseJobOpts) - 1) {
-               j++;
-            }
-         }
-         fo->BaseJobOpts[j] = 0;
-         break;
+        SetBit(FO_IGNORECASE, fo->flags);
+        break;
+      case 'J': /* Basejob options */
+        /*
+         * Copy BaseJob Options
+         */
+        for (j = 0; *p && *p != ':'; p++) {
+          fo->BaseJobOpts[j] = *p;
+          if (j < (int)sizeof(fo->BaseJobOpts) - 1) { j++; }
+        }
+        fo->BaseJobOpts[j] = 0;
+        break;
       case 'K':
-         SetBit(FO_NOATIME, fo->flags);
-         break;
+        SetBit(FO_NOATIME, fo->flags);
+        break;
       case 'k':
-         SetBit(FO_KEEPATIME, fo->flags);
-         break;
-      case 'M':                         /* MD5 */
-         SetBit(FO_MD5, fo->flags);
-         break;
+        SetBit(FO_KEEPATIME, fo->flags);
+        break;
+      case 'M': /* MD5 */
+        SetBit(FO_MD5, fo->flags);
+        break;
       case 'm':
-         SetBit(FO_MTIMEONLY, fo->flags);
-         break;
+        SetBit(FO_MTIMEONLY, fo->flags);
+        break;
       case 'N':
-         SetBit(FO_HONOR_NODUMP, fo->flags);
-         break;
+        SetBit(FO_HONOR_NODUMP, fo->flags);
+        break;
       case 'n':
-         SetBit(FO_NOREPLACE, fo->flags);
-         break;
-      case 'P':                         /* Strip path */
-         /*
-          * Get integer
-          */
-         p++;                           /* skip P */
-         for (j = 0; *p && *p != ':'; p++) {
-            strip[j] = *p;
-            if (j < (int)sizeof(strip) - 1) {
-               j++;
-            }
-         }
-         strip[j] = 0;
-         fo->StripPath = atoi(strip);
-         SetBit(FO_STRIPPATH, fo->flags);
-         Dmsg2(100, "strip=%s StripPath=%d\n", strip, fo->StripPath);
-         break;
-      case 'p':                         /* Use portable data format */
-         SetBit(FO_PORTABLE, fo->flags);
-         break;
-      case 'R':                         /* Resource forks and Finder Info */
-         SetBit(FO_HFSPLUS, fo->flags);
-         break;
-      case 'r':                         /* Read fifo */
-         SetBit(FO_READFIFO, fo->flags);
-         break;
+        SetBit(FO_NOREPLACE, fo->flags);
+        break;
+      case 'P': /* Strip path */
+        /*
+         * Get integer
+         */
+        p++; /* skip P */
+        for (j = 0; *p && *p != ':'; p++) {
+          strip[j] = *p;
+          if (j < (int)sizeof(strip) - 1) { j++; }
+        }
+        strip[j] = 0;
+        fo->StripPath = atoi(strip);
+        SetBit(FO_STRIPPATH, fo->flags);
+        Dmsg2(100, "strip=%s StripPath=%d\n", strip, fo->StripPath);
+        break;
+      case 'p': /* Use portable data format */
+        SetBit(FO_PORTABLE, fo->flags);
+        break;
+      case 'R': /* Resource forks and Finder Info */
+        SetBit(FO_HFSPLUS, fo->flags);
+        break;
+      case 'r': /* Read fifo */
+        SetBit(FO_READFIFO, fo->flags);
+        break;
       case 'S':
-         switch(*(p + 1)) {
-         case '1':
+        switch (*(p + 1)) {
+          case '1':
             SetBit(FO_SHA1, fo->flags);
             p++;
             break;
 #ifdef HAVE_SHA2
-         case '2':
+          case '2':
             SetBit(FO_SHA256, fo->flags);
             p++;
             break;
-         case '3':
+          case '3':
             SetBit(FO_SHA512, fo->flags);
             p++;
             break;
 #endif
-         default:
+          default:
             /*
-             * If 2 or 3 is seen here, SHA2 is not configured, so eat the option, and drop back to SHA-1.
+             * If 2 or 3 is seen here, SHA2 is not configured, so eat the
+             * option, and drop back to SHA-1.
              */
-            if (p[1] == '2' || p[1] == '3') {
-               p++;
-            }
+            if (p[1] == '2' || p[1] == '3') { p++; }
             SetBit(FO_SHA1, fo->flags);
             break;
-         }
-         break;
+        }
+        break;
       case 's':
-         SetBit(FO_SPARSE, fo->flags);
-         break;
-      case 'V':                         /* verify options */
-         /*
-          * Copy Verify Options
-          */
-         for (j = 0; *p && *p != ':'; p++) {
-            fo->VerifyOpts[j] = *p;
-            if (j < (int)sizeof(fo->VerifyOpts) - 1) {
-               j++;
-            }
-         }
-         fo->VerifyOpts[j] = 0;
-         break;
+        SetBit(FO_SPARSE, fo->flags);
+        break;
+      case 'V': /* verify options */
+        /*
+         * Copy Verify Options
+         */
+        for (j = 0; *p && *p != ':'; p++) {
+          fo->VerifyOpts[j] = *p;
+          if (j < (int)sizeof(fo->VerifyOpts) - 1) { j++; }
+        }
+        fo->VerifyOpts[j] = 0;
+        break;
       case 'W':
-         SetBit(FO_ENHANCEDWILD, fo->flags);
-         break;
+        SetBit(FO_ENHANCEDWILD, fo->flags);
+        break;
       case 'w':
-         SetBit(FO_IF_NEWER, fo->flags);
-         break;
+        SetBit(FO_IF_NEWER, fo->flags);
+        break;
       case 'x':
-         SetBit(FO_NO_AUTOEXCL, fo->flags);
-         break;
+        SetBit(FO_NO_AUTOEXCL, fo->flags);
+        break;
       case 'X':
-         SetBit(FO_XATTR, fo->flags);
-         break;
-      case 'Z':                         /* Compression */
-         p++;                           /* Skip Z */
-         if (*p >= '0' && *p <= '9') {
+        SetBit(FO_XATTR, fo->flags);
+        break;
+      case 'Z': /* Compression */
+        p++;    /* Skip Z */
+        if (*p >= '0' && *p <= '9') {
+          SetBit(FO_COMPRESS, fo->flags);
+          fo->Compress_algo = COMPRESS_GZIP;
+          fo->Compress_level = *p - '0';
+        } else if (*p == 'o') {
+          SetBit(FO_COMPRESS, fo->flags);
+          fo->Compress_algo = COMPRESS_LZO1X;
+          fo->Compress_level = 1; /* not used with LZO */
+        } else if (*p == 'f') {
+          p++;
+          if (*p == 'f') {
             SetBit(FO_COMPRESS, fo->flags);
-            fo->Compress_algo = COMPRESS_GZIP;
-            fo->Compress_level = *p - '0';
-         } else if (*p == 'o') {
+            fo->Compress_algo = COMPRESS_FZFZ;
+            fo->Compress_level = 1; /* not used with FZFZ */
+          } else if (*p == '4') {
             SetBit(FO_COMPRESS, fo->flags);
-            fo->Compress_algo = COMPRESS_LZO1X;
-            fo->Compress_level = 1;     /* not used with LZO */
-         } else if (*p == 'f') {
-	    p++;
-	    if (*p == 'f') {
-               SetBit(FO_COMPRESS, fo->flags);
-               fo->Compress_algo = COMPRESS_FZFZ;
-               fo->Compress_level = 1;     /* not used with FZFZ */
-            } else if (*p == '4') {
-               SetBit(FO_COMPRESS, fo->flags);
-               fo->Compress_algo = COMPRESS_FZ4L;
-               fo->Compress_level = 1;     /* not used with FZ4L */
-            } else if (*p == 'h') {
-               SetBit(FO_COMPRESS, fo->flags);
-               fo->Compress_algo = COMPRESS_FZ4H;
-               fo->Compress_level = 1;     /* not used with FZ4H */
-            }
-         }
-         break;
-      case 'z':                         /* Min, max or approx size or size range */
-         p++;                           /* Skip z */
-         for (j = 0; *p && *p != ':'; p++) {
-            size[j] = *p;
-            if (j < (int)sizeof(size) - 1) {
-               j++;
-            }
-         }
-         size[j] = 0;
-         if (!fo->size_match) {
-            fo->size_match = (struct s_sz_matching *)malloc(sizeof(struct s_sz_matching));
-         }
-         if (!ParseSizeMatch(size, fo->size_match)) {
-            Emsg1(M_ERROR, 0, _("Unparseable size option: %s\n"), size);
-         }
-         break;
+            fo->Compress_algo = COMPRESS_FZ4L;
+            fo->Compress_level = 1; /* not used with FZ4L */
+          } else if (*p == 'h') {
+            SetBit(FO_COMPRESS, fo->flags);
+            fo->Compress_algo = COMPRESS_FZ4H;
+            fo->Compress_level = 1; /* not used with FZ4H */
+          }
+        }
+        break;
+      case 'z': /* Min, max or approx size or size range */
+        p++;    /* Skip z */
+        for (j = 0; *p && *p != ':'; p++) {
+          size[j] = *p;
+          if (j < (int)sizeof(size) - 1) { j++; }
+        }
+        size[j] = 0;
+        if (!fo->size_match) {
+          fo->size_match =
+              (struct s_sz_matching*)malloc(sizeof(struct s_sz_matching));
+        }
+        if (!ParseSizeMatch(size, fo->size_match)) {
+          Emsg1(M_ERROR, 0, _("Unparseable size option: %s\n"), size);
+        }
+        break;
       default:
-         Emsg1(M_ERROR, 0, _("Unknown include/exclude option: %c\n"), *p);
-         break;
-      }
-   }
+        Emsg1(M_ERROR, 0, _("Unknown include/exclude option: %c\n"), *p);
+        break;
+    }
+  }
 
-   return state_options;
+  return state_options;
 }
 } /* namespace filedaemon */

@@ -44,63 +44,65 @@ static const std::string default_config_filename("bconsole.conf");
  * Resource codes -- they must be sequential for indexing
  */
 
-enum {
-   R_CONSOLE = 1001,
-   R_DIRECTOR,
-   R_FIRST = R_CONSOLE,
-   R_LAST = R_DIRECTOR                /* Keep this updated */
+enum
+{
+  R_CONSOLE = 1001,
+  R_DIRECTOR,
+  R_FIRST = R_CONSOLE,
+  R_LAST = R_DIRECTOR /* Keep this updated */
 };
 
 /**
  * Some resource attributes
  */
-enum {
-   R_NAME = 1020,
-   R_ADDRESS,
-   R_PASSWORD,
-   R_TYPE,
-   R_BACKUP
+enum
+{
+  R_NAME = 1020,
+  R_ADDRESS,
+  R_PASSWORD,
+  R_TYPE,
+  R_BACKUP
 };
 
 /* Definition of the contents of each Resource */
 
 /* Console "globals" */
 class ConsoleResource : public TlsResource {
-   public:
-      char *rc_file;                     /**< startup file */
-      char *history_file;                /**< command history file */
-      s_password password;               /**< UA server password */
-      uint32_t history_length;           /**< readline history length */
-      char *director;                    /**< bind to director */
-      utime_t heartbeat_interval;        /**< Interval to send heartbeats to Dir */
-      ConsoleResource() : TlsResource() {}
+ public:
+  char* rc_file;              /**< startup file */
+  char* history_file;         /**< command history file */
+  s_password password;        /**< UA server password */
+  uint32_t history_length;    /**< readline history length */
+  char* director;             /**< bind to director */
+  utime_t heartbeat_interval; /**< Interval to send heartbeats to Dir */
+  ConsoleResource() : TlsResource() {}
 };
 
 /* Director */
 class DirectorResource : public TlsResource {
-   public:
-      uint32_t DIRport;                  /**< UA server port */
-      char *address;                     /**< UA server address */
-      utime_t heartbeat_interval;        /**< Interval to send heartbeats to Dir */
-      DirectorResource() : TlsResource() {}
+ public:
+  uint32_t DIRport;           /**< UA server port */
+  char* address;              /**< UA server address */
+  utime_t heartbeat_interval; /**< Interval to send heartbeats to Dir */
+  DirectorResource() : TlsResource() {}
 };
 
 /* Define the Union of all the above
  * resource structure definitions.
  */
 union UnionOfResources {
-   DirectorResource res_dir;
-   ConsoleResource res_cons;
-   CommonResourceHeader hdr;
+  DirectorResource res_dir;
+  ConsoleResource res_cons;
+  CommonResourceHeader hdr;
 
-   UnionOfResources() {new(&hdr) CommonResourceHeader();}
-   ~UnionOfResources() {}
+  UnionOfResources() { new (&hdr) CommonResourceHeader(); }
+  ~UnionOfResources() {}
 };
 
-extern ConsoleResource *me;                    /* "Global" Client resource */
+extern ConsoleResource* me; /* "Global" Client resource */
 
-ConfigurationParser *InitConsConfig(const char *configfile, int exit_code);
-bool PrintConfigSchemaJson(PoolMem &buffer);
+ConfigurationParser* InitConsConfig(const char* configfile, int exit_code);
+bool PrintConfigSchemaJson(PoolMem& buffer);
 
 } /* namespace console */
 #endif /* BAREOS_CONSOLE_CONSOLE_CONF_H_ */

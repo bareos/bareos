@@ -31,12 +31,12 @@
  * Extra bits set to interpret errno value differently from errno
  */
 #ifdef HAVE_WIN32
-#define b_errno_win32  (1<<29)        /* user reserved bit */
+#define b_errno_win32 (1 << 29) /* user reserved bit */
 #else
-#define b_errno_win32  0              /* On Unix/Linix system */
+#define b_errno_win32 0 /* On Unix/Linix system */
 #endif
-#define b_errno_exit   (1<<28)        /* child exited, exit code returned */
-#define b_errno_signal (1<<27)        /* child died, signal code returned */
+#define b_errno_exit (1 << 28)   /* child exited, exit code returned */
+#define b_errno_signal (1 << 27) /* child died, signal code returned */
 
 /**
  * A more generalized way of handling errno that works with Unix, Windows,
@@ -52,41 +52,36 @@
  *
  */
 class BErrNo : public SmartAlloc {
-   POOLMEM *buf_;
-   int berrno_;
-   void FormatWin32Message();
-public:
-   BErrNo(int pool=PM_EMSG);
-   ~BErrNo();
-   const char *bstrerror();
-   const char *bstrerror(int errnum);
-   void SetErrno(int errnum);
-   int code() { return berrno_ & ~(b_errno_exit|b_errno_signal); }
-   int code(int stat) { return stat & ~(b_errno_exit|b_errno_signal); }
+  POOLMEM* buf_;
+  int berrno_;
+  void FormatWin32Message();
+
+ public:
+  BErrNo(int pool = PM_EMSG);
+  ~BErrNo();
+  const char* bstrerror();
+  const char* bstrerror(int errnum);
+  void SetErrno(int errnum);
+  int code() { return berrno_ & ~(b_errno_exit | b_errno_signal); }
+  int code(int stat) { return stat & ~(b_errno_exit | b_errno_signal); }
 };
 
 /* Constructor */
 inline BErrNo::BErrNo(int pool)
 {
-   berrno_ = errno;
-   buf_ = GetPoolMemory(pool);
-   *buf_ = 0;
-   errno = berrno_;
+  berrno_ = errno;
+  buf_ = GetPoolMemory(pool);
+  *buf_ = 0;
+  errno = berrno_;
 }
 
-inline BErrNo::~BErrNo()
+inline BErrNo::~BErrNo() { FreePoolMemory(buf_); }
+
+inline const char* BErrNo::bstrerror(int errnum)
 {
-   FreePoolMemory(buf_);
-}
-
-inline const char *BErrNo::bstrerror(int errnum)
-{
-   berrno_ = errnum;
-   return BErrNo::bstrerror();
+  berrno_ = errnum;
+  return BErrNo::bstrerror();
 }
 
 
-inline void BErrNo::SetErrno(int errnum)
-{
-   berrno_ = errnum;
-}
+inline void BErrNo::SetErrno(int errnum) { berrno_ = errnum; }

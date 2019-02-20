@@ -30,12 +30,12 @@
 
 namespace storagedaemon {
 
-class unix_tape_device: public generic_tape_device {
-public:
-   unix_tape_device();
-   ~unix_tape_device();
+class unix_tape_device : public generic_tape_device {
+ public:
+  unix_tape_device();
+  ~unix_tape_device();
 
-   int d_ioctl(int fd, ioctl_req_t request, char *op) override;
+  int d_ioctl(int fd, ioctl_req_t request, char* op) override;
 };
 
 } /* namespace storagedaemon */

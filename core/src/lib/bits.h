@@ -33,22 +33,22 @@
 /*
  * Number of bytes to hold n bits
  */
-#define NbytesForBits(n) ((((n) - 1) >> 3) + 1)
+#define NbytesForBits(n) ((((n)-1) >> 3) + 1)
 
 /*
  * Test if bit is set
  */
-#define BitIsSet(b, var) (((var)[(b) >> 3] & (1 << ((b) & 0x7))) != 0)
+#define BitIsSet(b, var) (((var)[(b) >> 3] & (1 << ((b)&0x7))) != 0)
 
 /*
  * Set bit
  */
-#define SetBit(b, var) ((var)[(b) >> 3] |= (1 << ((b) & 0x7)))
+#define SetBit(b, var) ((var)[(b) >> 3] |= (1 << ((b)&0x7)))
 
 /*
  * Clear bit
  */
-#define ClearBit(b, var) ((var)[(b) >> 3] &= ~(1 << ((b) & 0x7)))
+#define ClearBit(b, var) ((var)[(b) >> 3] &= ~(1 << ((b)&0x7)))
 
 /*
  * Clear all bits
@@ -58,30 +58,30 @@
 /*
  * Set range of bits
  */
-#define SetBits(f, l, var) { \
-   int bit; \
-   for (bit = (f); bit <= (l); bit++)  \
-      SetBit(bit, (var)); \
-}
+#define SetBits(f, l, var)                                 \
+  {                                                        \
+    int bit;                                               \
+    for (bit = (f); bit <= (l); bit++) SetBit(bit, (var)); \
+  }
 
 /*
  * Clear range of bits
  */
-#define ClearBits(f, l, var) { \
-   int bit; \
-   for (bit = (f); bit <= (l); bit++)  \
-      ClearBit(bit, (var)); \
-}
+#define ClearBits(f, l, var)                                 \
+  {                                                          \
+    int bit;                                                 \
+    for (bit = (f); bit <= (l); bit++) ClearBit(bit, (var)); \
+  }
 
 /*
  * Clone all set bits from var1 to var2
  */
-#define CopySetBits(l, var1, var2) { \
-   int bit; \
-   for (bit = 0; bit <= (l); bit++)  \
-      if (BitIsSet(bit, (var1))) \
-         SetBit(bit, (var2)); \
-}
+#define CopySetBits(l, var1, var2)                    \
+  {                                                   \
+    int bit;                                          \
+    for (bit = 0; bit <= (l); bit++)                  \
+      if (BitIsSet(bit, (var1))) SetBit(bit, (var2)); \
+  }
 
 /*
  * Copy all bits from var1 to var2

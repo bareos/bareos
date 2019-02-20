@@ -39,8 +39,10 @@
 /*=============================================================*/
 
 #if !defined(HAVE_WIN32)
-int EnableBackupPrivileges(JobControlRecord *jcr, int ignore_errors)
- { return 0; }
+int EnableBackupPrivileges(JobControlRecord* jcr, int ignore_errors)
+{
+  return 0;
+}
 #endif
 
 /*=============================================================*/
@@ -50,39 +52,42 @@ int EnableBackupPrivileges(JobControlRecord *jcr, int ignore_errors)
 /*=============================================================*/
 
 #if defined(HAVE_WIN32)
-void WinError(JobControlRecord *jcr, const char *prefix, DWORD lerror);
+void WinError(JobControlRecord* jcr, const char* prefix, DWORD lerror);
 
-static int
-enable_priv(JobControlRecord *jcr, HANDLE hToken, const char *name, int ignore_errors)
+static int enable_priv(JobControlRecord* jcr,
+                       HANDLE hToken,
+                       const char* name,
+                       int ignore_errors)
 {
-    TOKEN_PRIVILEGES tkp;
-    DWORD lerror;
+  TOKEN_PRIVILEGES tkp;
+  DWORD lerror;
 
-    if (!(p_LookupPrivilegeValue && p_AdjustTokenPrivileges)) {
-       return 0;                      /* not avail on this OS */
-    }
+  if (!(p_LookupPrivilegeValue && p_AdjustTokenPrivileges)) {
+    return 0; /* not avail on this OS */
+  }
 
-    // Get the LUID for the security privilege.
-    if (!p_LookupPrivilegeValue(NULL, name,  &tkp.Privileges[0].Luid)) {
-       WinError(jcr, "LookupPrivilegeValue", GetLastError());
-       return 0;
-    }
+  // Get the LUID for the security privilege.
+  if (!p_LookupPrivilegeValue(NULL, name, &tkp.Privileges[0].Luid)) {
+    WinError(jcr, "LookupPrivilegeValue", GetLastError());
+    return 0;
+  }
 
-    /* Set the security privilege for this process. */
-    tkp.PrivilegeCount = 1;
-    tkp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-    p_AdjustTokenPrivileges(hToken, FALSE, &tkp, sizeof(TOKEN_PRIVILEGES), NULL, NULL);
-    lerror = GetLastError();
-    if (lerror != ERROR_SUCCESS) {
-       if (!ignore_errors) {
-          char buf[200];
-          strcpy(buf, _("AdjustTokenPrivileges set "));
-          bstrncat(buf, name, sizeof(buf));
-          WinError(jcr, buf, lerror);
-       }
-       return 0;
+  /* Set the security privilege for this process. */
+  tkp.PrivilegeCount = 1;
+  tkp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+  p_AdjustTokenPrivileges(hToken, FALSE, &tkp, sizeof(TOKEN_PRIVILEGES), NULL,
+                          NULL);
+  lerror = GetLastError();
+  if (lerror != ERROR_SUCCESS) {
+    if (!ignore_errors) {
+      char buf[200];
+      strcpy(buf, _("AdjustTokenPrivileges set "));
+      bstrncat(buf, name, sizeof(buf));
+      WinError(jcr, buf, lerror);
     }
-    return 1;
+    return 0;
+  }
+  return 1;
 }
 
 /**
@@ -90,65 +95,59 @@ enable_priv(JobControlRecord *jcr, HANDLE hToken, const char *name, int ignore_e
  *  the SE_SECURITY_NAME, but since nothing seems to be working,
  *  we get it hoping to fix the problems.
  */
-int EnableBackupPrivileges(JobControlRecord *jcr, int ignore_errors)
+int EnableBackupPrivileges(JobControlRecord* jcr, int ignore_errors)
 {
-    HANDLE hToken, hProcess;
-    int status = 0;
+  HANDLE hToken, hProcess;
+  int status = 0;
 
-    if (!p_OpenProcessToken) {
-       return 0;                      /* No avail on this OS */
-    }
+  if (!p_OpenProcessToken) { return 0; /* No avail on this OS */ }
 
-    hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, GetCurrentProcessId());
+  hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, GetCurrentProcessId());
 
-    // Get a token for this process.
-    if (!p_OpenProcessToken(hProcess,
-            TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken)) {
-       if (!ignore_errors) {
-          WinError(jcr, "OpenProcessToken", GetLastError());
-       }
-       /* Forge on anyway */
-    }
+  // Get a token for this process.
+  if (!p_OpenProcessToken(hProcess, TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
+                          &hToken)) {
+    if (!ignore_errors) { WinError(jcr, "OpenProcessToken", GetLastError()); }
+    /* Forge on anyway */
+  }
 
-    /* Return a bit map of permissions set. */
-    if (enable_priv(jcr, hToken, SE_BACKUP_NAME, ignore_errors)) {
-       status |= 1<<1;
-    }
-    if (enable_priv(jcr, hToken, SE_RESTORE_NAME, ignore_errors)) {
-       status |= 1<<2;
-    }
-    if (enable_priv(jcr, hToken, SE_SECURITY_NAME, ignore_errors)) {
-       status |= 1<<0;
-    }
-    if (enable_priv(jcr, hToken, SE_TAKE_OWNERSHIP_NAME, ignore_errors)) {
-       status |= 1<<3;
-    }
-    if (enable_priv(jcr, hToken, SE_ASSIGNPRIMARYTOKEN_NAME, ignore_errors)) {
-       status |= 1<<4;
-    }
-    if (enable_priv(jcr, hToken, SE_SYSTEM_ENVIRONMENT_NAME, ignore_errors)) {
-       status |= 1<<5;
-    }
-    if (enable_priv(jcr, hToken, SE_CREATE_TOKEN_NAME, ignore_errors)) {
-       status |= 1<<6;
-    }
-    if (enable_priv(jcr, hToken, SE_MACHINE_ACCOUNT_NAME, ignore_errors)) {
-       status |= 1<<7;
-    }
-    if (enable_priv(jcr, hToken, SE_TCB_NAME, ignore_errors)) {
-       status |= 1<<8;
-    }
-    if (enable_priv(jcr, hToken, SE_CREATE_PERMANENT_NAME, ignore_errors)) {
-       status |= 1<<10;
-    }
+  /* Return a bit map of permissions set. */
+  if (enable_priv(jcr, hToken, SE_BACKUP_NAME, ignore_errors)) {
+    status |= 1 << 1;
+  }
+  if (enable_priv(jcr, hToken, SE_RESTORE_NAME, ignore_errors)) {
+    status |= 1 << 2;
+  }
+  if (enable_priv(jcr, hToken, SE_SECURITY_NAME, ignore_errors)) {
+    status |= 1 << 0;
+  }
+  if (enable_priv(jcr, hToken, SE_TAKE_OWNERSHIP_NAME, ignore_errors)) {
+    status |= 1 << 3;
+  }
+  if (enable_priv(jcr, hToken, SE_ASSIGNPRIMARYTOKEN_NAME, ignore_errors)) {
+    status |= 1 << 4;
+  }
+  if (enable_priv(jcr, hToken, SE_SYSTEM_ENVIRONMENT_NAME, ignore_errors)) {
+    status |= 1 << 5;
+  }
+  if (enable_priv(jcr, hToken, SE_CREATE_TOKEN_NAME, ignore_errors)) {
+    status |= 1 << 6;
+  }
+  if (enable_priv(jcr, hToken, SE_MACHINE_ACCOUNT_NAME, ignore_errors)) {
+    status |= 1 << 7;
+  }
+  if (enable_priv(jcr, hToken, SE_TCB_NAME, ignore_errors)) {
+    status |= 1 << 8;
+  }
+  if (enable_priv(jcr, hToken, SE_CREATE_PERMANENT_NAME, ignore_errors)) {
+    status |= 1 << 10;
+  }
 
-    if (status) {
-       status |= 1<<9;
-    }
+  if (status) { status |= 1 << 9; }
 
-    CloseHandle(hToken);
-    CloseHandle(hProcess);
-    return status;
+  CloseHandle(hToken);
+  CloseHandle(hProcess);
+  return status;
 }
 
-#endif  /* HAVE_WIN32 */
+#endif /* HAVE_WIN32 */

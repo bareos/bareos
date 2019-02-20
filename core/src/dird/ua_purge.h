@@ -26,14 +26,14 @@
 
 namespace directordaemon {
 
-bool IsVolumePurged(UaContext *ua, MediaDbRecord *mr, bool force = false);
-bool MarkMediaPurged(UaContext *ua, MediaDbRecord *mr);
-void PurgeFilesFromVolume(UaContext *ua, MediaDbRecord *mr);
-bool PurgeJobsFromVolume(UaContext *ua, MediaDbRecord *mr, bool force = false);
-void PurgeFilesFromJobs(UaContext *ua, char *jobs);
-void PurgeJobsFromCatalog(UaContext *ua, char *jobs);
-void PurgeJobListFromCatalog(UaContext *ua, del_ctx &del);
-void PurgeFilesFromJobList(UaContext *ua, del_ctx &del);
+bool IsVolumePurged(UaContext* ua, MediaDbRecord* mr, bool force = false);
+bool MarkMediaPurged(UaContext* ua, MediaDbRecord* mr);
+void PurgeFilesFromVolume(UaContext* ua, MediaDbRecord* mr);
+bool PurgeJobsFromVolume(UaContext* ua, MediaDbRecord* mr, bool force = false);
+void PurgeFilesFromJobs(UaContext* ua, char* jobs);
+void PurgeJobsFromCatalog(UaContext* ua, char* jobs);
+void PurgeJobListFromCatalog(UaContext* ua, del_ctx& del);
+void PurgeFilesFromJobList(UaContext* ua, del_ctx& del);
 
 } /* namespace directordaemon */
-#endif // BAREOS_DIRD_UA_PURGE_H_
+#endif  // BAREOS_DIRD_UA_PURGE_H_

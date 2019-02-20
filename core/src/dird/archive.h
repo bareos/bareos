@@ -24,10 +24,10 @@
 
 namespace directordaemon {
 
-bool DoArchiveInit(JobControlRecord *jcr);
-bool DoArchive(JobControlRecord *jcr);
-void ArchiveCleanup(JobControlRecord *jcr, int TermCode);
+bool DoArchiveInit(JobControlRecord* jcr);
+bool DoArchive(JobControlRecord* jcr);
+void ArchiveCleanup(JobControlRecord* jcr, int TermCode);
 
 } /* namespace directordaemon */
 
-#endif // BAREOS_DIRD_ARCHIVE_H_
+#endif  // BAREOS_DIRD_ARCHIVE_H_

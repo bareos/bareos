@@ -26,70 +26,65 @@
  * Ordered Circular buffer used for producer/consumer problem with pthread.
  */
 
-#define OQSIZE 10             /* # of pointers in the queue */
+#define OQSIZE 10 /* # of pointers in the queue */
 
-enum oc_peek_types {
-   PEEK_FIRST = 0,
-   PEEK_LAST,
-   PEEK_LIST,
-   PEEK_CLONE
+enum oc_peek_types
+{
+  PEEK_FIRST = 0,
+  PEEK_LAST,
+  PEEK_LIST,
+  PEEK_CLONE
 };
 
 struct ocbuf_item {
-   dlink link;
-   uint32_t data_size;
-   void *data;
+  dlink link;
+  uint32_t data_size;
+  void* data;
 };
 
 class ordered_circbuf : public SmartAlloc {
-private:
-   int size_;
-   int capacity_;
-   int reserved_;
-   bool flush_;
-   pthread_mutex_t lock_;    /* Lock the structure */
-   pthread_cond_t notfull_;  /* Full -> not full condition */
-   pthread_cond_t notempty_; /* Empty -> not empty condition */
-   dlist *data_;             /* Circular buffer of pointers */
+ private:
+  int size_;
+  int capacity_;
+  int reserved_;
+  bool flush_;
+  pthread_mutex_t lock_;    /* Lock the structure */
+  pthread_cond_t notfull_;  /* Full -> not full condition */
+  pthread_cond_t notempty_; /* Empty -> not empty condition */
+  dlist* data_;             /* Circular buffer of pointers */
 
-public:
-   ordered_circbuf(int capacity = OQSIZE);
-   ~ordered_circbuf();
-   int init(int capacity);
-   void destroy();
-   void *enqueue(void *data,
-                 uint32_t data_size,
-                 int compare(void *item1, void *item2),
-                 void update(void *item1, void *item2),
-                 bool use_reserved_slot = false,
-                 bool no_signal = false);
-   void *dequeue(bool reserve_slot = false,
-                 bool requeued = false,
-                 struct timespec *ts = NULL,
-                 int timeout = 300);
-   void *peek(enum oc_peek_types type,
-              void *data,
-              int callback(void *item1, void *item2));
-   int unreserve_slot();
-   int flush();
-   bool full() { return size_ == (capacity_ - reserved_); }
-   bool empty() { return size_ == 0; }
-   bool IsFlushing() { return flush_; }
-   int capacity() const { return capacity_; }
+ public:
+  ordered_circbuf(int capacity = OQSIZE);
+  ~ordered_circbuf();
+  int init(int capacity);
+  void destroy();
+  void* enqueue(void* data,
+                uint32_t data_size,
+                int compare(void* item1, void* item2),
+                void update(void* item1, void* item2),
+                bool use_reserved_slot = false,
+                bool no_signal = false);
+  void* dequeue(bool reserve_slot = false,
+                bool requeued = false,
+                struct timespec* ts = NULL,
+                int timeout = 300);
+  void* peek(enum oc_peek_types type,
+             void* data,
+             int callback(void* item1, void* item2));
+  int unreserve_slot();
+  int flush();
+  bool full() { return size_ == (capacity_ - reserved_); }
+  bool empty() { return size_ == 0; }
+  bool IsFlushing() { return flush_; }
+  int capacity() const { return capacity_; }
 };
 
 /*
  * Constructor
  */
-inline ordered_circbuf::ordered_circbuf(int capacity)
-{
-   init(capacity);
-}
+inline ordered_circbuf::ordered_circbuf(int capacity) { init(capacity); }
 
 /*
  * Destructor
  */
-inline ordered_circbuf::~ordered_circbuf()
-{
-   destroy();
-}
+inline ordered_circbuf::~ordered_circbuf() { destroy(); }

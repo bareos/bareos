@@ -5,7 +5,8 @@ class MonitorResource;
 class MonitorItem;
 class JobControlRecord;
 
-enum class AuthenticationResult {
+enum class AuthenticationResult
+{
   kNoError,
   kAlreadyAuthenticated,
   kQualifiedResourceNameFailed,
@@ -17,7 +18,9 @@ enum class AuthenticationResult {
   kUnknownDaemon
 };
 
-AuthenticationResult AuthenticateWithDaemon(MonitorItem *item, JobControlRecord *jcr);
-bool GetAuthenticationResultString(AuthenticationResult err, std::string &buffer);
+AuthenticationResult AuthenticateWithDaemon(MonitorItem* item,
+                                            JobControlRecord* jcr);
+bool GetAuthenticationResultString(AuthenticationResult err,
+                                   std::string& buffer);
 
-#endif // AUTHENTICATE_H_INCLUDED
+#endif  // AUTHENTICATE_H_INCLUDED

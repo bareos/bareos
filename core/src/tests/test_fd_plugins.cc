@@ -23,7 +23,7 @@
 /*
  * extracted the TEST_PROGRAM functionality from filed/fd_plugins.cc
  * and adapted for gtest
- * 
+ *
  * Andreas Rogge, Feb 2019
  */
 
@@ -48,15 +48,24 @@
 /**
  * Function pointers to be set here (findlib)
  */
-extern int (*plugin_bopen)(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode);
-extern int (*plugin_bclose)(BareosWinFilePacket *bfd);
-extern ssize_t (*plugin_bread)(BareosWinFilePacket *bfd, void *buf, size_t count);
-extern ssize_t (*plugin_bwrite)(BareosWinFilePacket *bfd, void *buf, size_t count);
-extern boffset_t (*plugin_blseek)(BareosWinFilePacket *bfd, boffset_t offset, int whence);
+extern int (*plugin_bopen)(BareosWinFilePacket* bfd,
+                           const char* fname,
+                           int flags,
+                           mode_t mode);
+extern int (*plugin_bclose)(BareosWinFilePacket* bfd);
+extern ssize_t (*plugin_bread)(BareosWinFilePacket* bfd,
+                               void* buf,
+                               size_t count);
+extern ssize_t (*plugin_bwrite)(BareosWinFilePacket* bfd,
+                                void* buf,
+                                size_t count);
+extern boffset_t (*plugin_blseek)(BareosWinFilePacket* bfd,
+                                  boffset_t offset,
+                                  int whence);
 
-extern char *exepath;
-extern char *version;
-extern char *dist_name;
+extern char* exepath;
+extern char* version;
+extern char* dist_name;
 
 namespace filedaemon {
 
@@ -64,69 +73,53 @@ int SaveFile(JobControlRecord*, FindFilesPacket*, bool);
 bool SetCmdPlugin(BareosWinFilePacket*, JobControlRecord*);
 
 /* Exported variables */
-ClientResource *me;                        /* my resource */
+ClientResource* me; /* my resource */
 
-int SaveFile(JobControlRecord*, FindFilesPacket*, bool)
-{
-   return 0;
-}
+int SaveFile(JobControlRecord*, FindFilesPacket*, bool) { return 0; }
 
-bool AccurateMarkFileAsSeen(JobControlRecord*, char*)
-{
-   return true;
-}
+bool AccurateMarkFileAsSeen(JobControlRecord*, char*) { return true; }
 
-bool AccurateMarkAllFilesAsSeen(JobControlRecord*)
-{
-   return true;
-}
+bool AccurateMarkAllFilesAsSeen(JobControlRecord*) { return true; }
 
-bool accurate_unMarkFileAsSeen(JobControlRecord*, char*)
-{
-   return true;
-}
+bool accurate_unMarkFileAsSeen(JobControlRecord*, char*) { return true; }
 
-bool accurate_unMarkAllFilesAsSeen(JobControlRecord*)
-{
-   return true;
-}
+bool accurate_unMarkAllFilesAsSeen(JobControlRecord*) { return true; }
 
-bool SetCmdPlugin(BareosWinFilePacket*, JobControlRecord*)
-{
-   return true;
-}
+bool SetCmdPlugin(BareosWinFilePacket*, JobControlRecord*) { return true; }
 
 TEST(fd, fd_plugins)
 {
-   char plugin_dir[PATH_MAX];
-   JobControlRecord mjcr1, mjcr2;
-   JobControlRecord *jcr1 = &mjcr1;
-   JobControlRecord *jcr2 = &mjcr2;
+  char plugin_dir[PATH_MAX];
+  JobControlRecord mjcr1, mjcr2;
+  JobControlRecord* jcr1 = &mjcr1;
+  JobControlRecord* jcr2 = &mjcr2;
 
-   InitMsg(NULL, NULL);
+  InitMsg(NULL, NULL);
 
-   OSDependentInit();
+  OSDependentInit();
 
-   getcwd(plugin_dir, sizeof(plugin_dir)-1);
-   LoadFdPlugins(plugin_dir, NULL);
+  getcwd(plugin_dir, sizeof(plugin_dir) - 1);
+  LoadFdPlugins(plugin_dir, NULL);
 
-   jcr1->JobId = 111;
-   NewPlugins(jcr1);
+  jcr1->JobId = 111;
+  NewPlugins(jcr1);
 
-   jcr2->JobId = 222;
-   NewPlugins(jcr2);
+  jcr2->JobId = 222;
+  NewPlugins(jcr2);
 
-   EXPECT_EQ(GeneratePluginEvent(jcr1, bEventJobStart, (void *)"Start Job 1"), bRC_OK);
-   EXPECT_EQ(GeneratePluginEvent(jcr1, bEventJobEnd), bRC_OK);
-   EXPECT_EQ(GeneratePluginEvent(jcr2, bEventJobStart, (void *)"Start Job 2"), bRC_OK);
-   FreePlugins(jcr1);
-   EXPECT_EQ(GeneratePluginEvent(jcr2, bEventJobEnd), bRC_OK);
-   FreePlugins(jcr2);
+  EXPECT_EQ(GeneratePluginEvent(jcr1, bEventJobStart, (void*)"Start Job 1"),
+            bRC_OK);
+  EXPECT_EQ(GeneratePluginEvent(jcr1, bEventJobEnd), bRC_OK);
+  EXPECT_EQ(GeneratePluginEvent(jcr2, bEventJobStart, (void*)"Start Job 2"),
+            bRC_OK);
+  FreePlugins(jcr1);
+  EXPECT_EQ(GeneratePluginEvent(jcr2, bEventJobEnd), bRC_OK);
+  FreePlugins(jcr2);
 
-   UnloadFdPlugins();
+  UnloadFdPlugins();
 
-   TermMsg();
-   CloseMemoryPool();
-   sm_dump(false);
+  TermMsg();
+  CloseMemoryPool();
+  sm_dump(false);
 }
 } /* namespace filedaemon */

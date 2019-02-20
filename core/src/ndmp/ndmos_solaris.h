@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1998,1999,2000
- *	Traakan, Inc., Los Altos, CA
- *	All rights reserved.
+ *      Traakan, Inc., Los Altos, CA
+ *      All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,30 +31,28 @@
  * Ident:    $Id: $
  *
  * Description:
- *	This establishes the environment and options
- *	for the Solaris platform. This, combined with
- *	the O/S generic ndmos.h, are the foundation
- *	for NDMJOBLIB.
+ *      This establishes the environment and options
+ *      for the Solaris platform. This, combined with
+ *      the O/S generic ndmos.h, are the foundation
+ *      for NDMJOBLIB.
  *
- *	This file is #include'd by ndmos.h when
- *	selected by #ifdef's of NDMOS_ID.
+ *      This file is #include'd by ndmos.h when
+ *      selected by #ifdef's of NDMOS_ID.
  *
- *	Refer to ndmos.h for explanations of the
- *	macros thar are or can be #define'd here.
+ *      Refer to ndmos.h for explanations of the
+ *      macros thar are or can be #define'd here.
  */
 
-#define NDMOS_ID_SOLARIS	NDMOS_IDENT('S','o','l','a')
+#define NDMOS_ID_SOLARIS NDMOS_IDENT('S', 'o', 'l', 'a')
 
 #ifndef NDMOS_ID
 #ifdef __sun__
-#define NDMOS_ID	NDMOS_ID_SOLARIS
+#define NDMOS_ID NDMOS_ID_SOLARIS
 #endif /* __sun__ */
 #endif /* !NDMOS_ID */
 
 
-
-
-#if NDMOS_ID == NDMOS_ID_SOLARIS		/* probably redundant */
+#if NDMOS_ID == NDMOS_ID_SOLARIS /* probably redundant */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -76,13 +74,13 @@
 
 
 #ifndef INADDR_NONE
-#define INADDR_NONE	((in_addr_t)-1)
+#define INADDR_NONE ((in_addr_t)-1)
 #endif
 
 #undef NDMOS_OPTION_HAVE_SIN_LEN
 
 
-#define NDMOS_API_STRTOLL(P,PP,BASE) strtoll(P,PP,BASE)
+#define NDMOS_API_STRTOLL(P, PP, BASE) strtoll(P, PP, BASE)
 
 
 /*

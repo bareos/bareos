@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2001,2002
- *	Traakan, Inc., Los Altos, CA
- *	All rights reserved.
+ *      Traakan, Inc., Los Altos, CA
+ *      All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -40,72 +40,74 @@
 #include "ndmlib.h"
 
 
-
-int
-ndmjobfhdb_add_file (struct ndmlog *ixlog, int tagc,
-  char *raw_name, ndmp9_file_stat *fstat)
+int ndmjobfhdb_add_file(struct ndmlog* ixlog,
+                        int tagc,
+                        char* raw_name,
+                        ndmp9_file_stat* fstat)
 {
-	char		prefix[8];
-	char		statbuf[100];
-	char		namebuf[NDMOS_CONST_PATH_MAX];
+  char prefix[8];
+  char statbuf[100];
+  char namebuf[NDMOS_CONST_PATH_MAX];
 
-	strcpy (prefix, "DHf");
-	prefix[0] = tagc;
+  strcpy(prefix, "DHf");
+  prefix[0] = tagc;
 
-	ndm_fstat_to_str (fstat, statbuf);
+  ndm_fstat_to_str(fstat, statbuf);
 
-	ndmcstr_from_str (raw_name, namebuf, sizeof namebuf);
+  ndmcstr_from_str(raw_name, namebuf, sizeof namebuf);
 
-	ndmlogf (ixlog, prefix, 0, "%s UNIX %s", namebuf, statbuf);
+  ndmlogf(ixlog, prefix, 0, "%s UNIX %s", namebuf, statbuf);
 
-	return 0;
+  return 0;
 }
 
-int
-ndmjobfhdb_add_dir (struct ndmlog *ixlog, int tagc,
-  char *raw_name, ndmp9_u_quad dir_node, ndmp9_u_quad node)
+int ndmjobfhdb_add_dir(struct ndmlog* ixlog,
+                       int tagc,
+                       char* raw_name,
+                       ndmp9_u_quad dir_node,
+                       ndmp9_u_quad node)
 {
-	char		prefix[8];
-	char		namebuf[NDMOS_CONST_PATH_MAX];
+  char prefix[8];
+  char namebuf[NDMOS_CONST_PATH_MAX];
 
-	strcpy (prefix, "DHd");
-	prefix[0] = tagc;
+  strcpy(prefix, "DHd");
+  prefix[0] = tagc;
 
-	ndmcstr_from_str (raw_name, namebuf, sizeof namebuf);
+  ndmcstr_from_str(raw_name, namebuf, sizeof namebuf);
 
-	ndmlogf (ixlog, prefix, 0, "%llu %s UNIX %llu",
-		dir_node, namebuf, node);
+  ndmlogf(ixlog, prefix, 0, "%llu %s UNIX %llu", dir_node, namebuf, node);
 
-	return 0;
+  return 0;
 }
 
-int
-ndmjobfhdb_add_node (struct ndmlog *ixlog, int tagc,
-  ndmp9_u_quad node, ndmp9_file_stat *fstat)
+int ndmjobfhdb_add_node(struct ndmlog* ixlog,
+                        int tagc,
+                        ndmp9_u_quad node,
+                        ndmp9_file_stat* fstat)
 {
-	char		prefix[8];
-	char		statbuf[100];
+  char prefix[8];
+  char statbuf[100];
 
-	strcpy (prefix, "DHn");
-	prefix[0] = tagc;
+  strcpy(prefix, "DHn");
+  prefix[0] = tagc;
 
-	ndm_fstat_to_str (fstat, statbuf);
+  ndm_fstat_to_str(fstat, statbuf);
 
-	ndmlogf (ixlog, prefix, 0, "%llu UNIX %s", node, statbuf);
+  ndmlogf(ixlog, prefix, 0, "%llu UNIX %s", node, statbuf);
 
-	return 0;
+  return 0;
 }
 
-int
-ndmjobfhdb_add_dirnode_root (struct ndmlog *ixlog, int tagc,
-  ndmp9_u_quad root_node)
+int ndmjobfhdb_add_dirnode_root(struct ndmlog* ixlog,
+                                int tagc,
+                                ndmp9_u_quad root_node)
 {
-	char		prefix[8];
+  char prefix[8];
 
-	strcpy (prefix, "DHr");
-	prefix[0] = tagc;
+  strcpy(prefix, "DHr");
+  prefix[0] = tagc;
 
-	ndmlogf (ixlog, prefix, 0, "%llu", root_node);
+  ndmlogf(ixlog, prefix, 0, "%llu", root_node);
 
-	return 0;
+  return 0;
 }

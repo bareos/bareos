@@ -29,69 +29,83 @@
 
 class IPADDR : public SmartAlloc {
  public:
-   typedef enum { R_SINGLE, R_SINGLE_PORT, R_SINGLE_ADDR, R_MULTIPLE,
-                  R_DEFAULT, R_EMPTY, R_UNDEFINED
-   } i_type;
-   IPADDR(int af);
-   IPADDR(const IPADDR & src);
+  typedef enum
+  {
+    R_SINGLE,
+    R_SINGLE_PORT,
+    R_SINGLE_ADDR,
+    R_MULTIPLE,
+    R_DEFAULT,
+    R_EMPTY,
+    R_UNDEFINED
+  } i_type;
+  IPADDR(int af);
+  IPADDR(const IPADDR& src);
+
  private:
-   IPADDR();
-   i_type type;
-   union {
-      struct sockaddr dontuse;
-      struct sockaddr_in dontuse4;
+  IPADDR();
+  i_type type;
+  union {
+    struct sockaddr dontuse;
+    struct sockaddr_in dontuse4;
 #ifdef HAVE_IPV6
-      struct sockaddr_in6 dontuse6;
+    struct sockaddr_in6 dontuse6;
 #endif
-   } saddrbuf;
-   struct sockaddr *saddr;
-   struct sockaddr_in *saddr4;
+  } saddrbuf;
+  struct sockaddr* saddr;
+  struct sockaddr_in* saddr4;
 #ifdef HAVE_IPV6
-   struct sockaddr_in6 *saddr6;
+  struct sockaddr_in6* saddr6;
 #endif
  public:
-   void SetType(i_type o);
-   i_type GetType() const;
-   unsigned short GetPortNetOrder() const;
-   unsigned short GetPortHostOrder() const
-   {
-      return ntohs(GetPortNetOrder());
-   }
-   void SetPortNet(unsigned short port);
-   int GetFamily() const;
-   struct sockaddr *get_sockaddr();
-   int GetSockaddrLen();
-   void CopyAddr(IPADDR * src);
-   void SetAddrAny();
-   void SetAddr4(struct in_addr *ip4);
+  void SetType(i_type o);
+  i_type GetType() const;
+  unsigned short GetPortNetOrder() const;
+  unsigned short GetPortHostOrder() const { return ntohs(GetPortNetOrder()); }
+  void SetPortNet(unsigned short port);
+  int GetFamily() const;
+  struct sockaddr* get_sockaddr();
+  int GetSockaddrLen();
+  void CopyAddr(IPADDR* src);
+  void SetAddrAny();
+  void SetAddr4(struct in_addr* ip4);
 #ifdef HAVE_IPV6
-   void SetAddr6(struct in6_addr *ip6);
+  void SetAddr6(struct in6_addr* ip6);
 #endif
-   const char *GetAddress(char *outputbuf, int outlen);
-   const char *BuildConfigString(char *buf, int blen);
-   const char *build_address_str(char *buf, int blen, bool print_port=true);
+  const char* GetAddress(char* outputbuf, int outlen);
+  const char* BuildConfigString(char* buf, int blen);
+  const char* build_address_str(char* buf, int blen, bool print_port = true);
 
-   /* private */
-   dlink link;
+  /* private */
+  dlink link;
 };
 
-void InitDefaultAddresses(dlist ** addr, const char *port);
-void FreeAddresses(dlist * addrs);
+void InitDefaultAddresses(dlist** addr, const char* port);
+void FreeAddresses(dlist* addrs);
 
-const char *GetFirstAddress(dlist * addrs, char *outputbuf, int outlen);
-int GetFirstPortNetOrder(dlist * addrs);
-int GetFirstPortHostOrder(dlist * addrs);
+const char* GetFirstAddress(dlist* addrs, char* outputbuf, int outlen);
+int GetFirstPortNetOrder(dlist* addrs);
+int GetFirstPortHostOrder(dlist* addrs);
 
-int AddAddress(dlist **out, IPADDR::i_type type, unsigned short defaultport, int family,
-                const char *hostname_str, const char *port_str, char *buf, int buflen);
-const char *BuildAddressesString(dlist *addrs, char *buf, int blen, bool print_port=true);
+int AddAddress(dlist** out,
+               IPADDR::i_type type,
+               unsigned short defaultport,
+               int family,
+               const char* hostname_str,
+               const char* port_str,
+               char* buf,
+               int buflen);
+const char* BuildAddressesString(dlist* addrs,
+                                 char* buf,
+                                 int blen,
+                                 bool print_port = true);
 
-int SockaddrGetPortNetOrder(const struct sockaddr *sa);
-int SockaddrGetPort(const struct sockaddr *sa);
-char *SockaddrToAscii(const struct sockaddr *sa, char *buf, int len);
+int SockaddrGetPortNetOrder(const struct sockaddr* sa);
+int SockaddrGetPort(const struct sockaddr* sa);
+char* SockaddrToAscii(const struct sockaddr* sa, char* buf, int len);
 #ifdef WIN32
 #undef HAVE_OLD_SOCKOPT
 #endif
 #ifdef HAVE_OLD_SOCKOPT
-int inet_aton(const char *cp, struct in_addr *inp);
+int inet_aton(const char* cp, struct in_addr* inp);
 #endif

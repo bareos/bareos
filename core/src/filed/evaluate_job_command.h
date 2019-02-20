@@ -36,16 +36,16 @@ class JobCommand {
   };
 
  public:
-  JobCommand(const char *msg);
-  JobCommand(const JobCommand &) = delete;
+  JobCommand(const char* msg);
+  JobCommand(const JobCommand&) = delete;
   bool EvaluationSuccesful() const;
 
   uint32_t job_id_ = 0;
   char job_[MAX_NAME_LENGTH];
-  uint32_t vol_session_id_   = 0;
+  uint32_t vol_session_id_ = 0;
   uint32_t vol_session_time_ = 0;
   char sd_auth_key_[MAX_NAME_LENGTH];
-  TlsPolicy tls_policy_             = TlsPolicy::kBnetTlsUnknown;
+  TlsPolicy tls_policy_ = TlsPolicy::kBnetTlsUnknown;
 
   ProtocolVersion protocol_version_ = ProtocolVersion::kVersionUndefinded;
 

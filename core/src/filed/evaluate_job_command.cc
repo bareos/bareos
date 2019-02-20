@@ -24,28 +24,29 @@
 
 namespace filedaemon {
 
-const std::string JobCommand::jobcmd_{"JobId=%d Job=%127s SDid=%u SDtime=%u Authorization=%100s"};
+const std::string JobCommand::jobcmd_{
+    "JobId=%d Job=%127s SDid=%u SDtime=%u Authorization=%100s"};
 const std::string JobCommand::jobcmdssl_{
     "JobId=%d Job=%127s SDid=%u SDtime=%u Authorization=%100s ssl=%d\n"};
 
-JobCommand::JobCommand(const char *msg) : job_{0}, sd_auth_key_{0}
+JobCommand::JobCommand(const char* msg) : job_{0}, sd_auth_key_{0}
 {
   ProtocolVersion protocol = ProtocolVersion::kVersionUndefinded;
 
-  std::vector<ProtocolVersion> implemented_protocols{ProtocolVersion::kVersionFrom_18_2,
-                                                     ProtocolVersion::KVersionBefore_18_2};
+  std::vector<ProtocolVersion> implemented_protocols{
+      ProtocolVersion::kVersionFrom_18_2, ProtocolVersion::KVersionBefore_18_2};
 
   for (auto protocol_try : implemented_protocols) {
     switch (protocol_try) {
       case ProtocolVersion::kVersionFrom_18_2:
-        if (sscanf(msg, jobcmdssl_.c_str(), &job_id_, job_, &vol_session_id_, &vol_session_time_, sd_auth_key_,
-                   &tls_policy_) == 6) {
+        if (sscanf(msg, jobcmdssl_.c_str(), &job_id_, job_, &vol_session_id_,
+                   &vol_session_time_, sd_auth_key_, &tls_policy_) == 6) {
           protocol = protocol_try;
         }
         break;
       case ProtocolVersion::KVersionBefore_18_2:
-        if (sscanf(msg, jobcmd_.c_str(), &job_id_, job_, &vol_session_id_, &vol_session_time_, sd_auth_key_) ==
-            5) {
+        if (sscanf(msg, jobcmd_.c_str(), &job_id_, job_, &vol_session_id_,
+                   &vol_session_time_, sd_auth_key_) == 5) {
           protocol = protocol_try;
         }
         break;

@@ -25,12 +25,13 @@
 namespace directordaemon {
 
 struct ua_cmdstruct {
-   const char *key;        /**< Command */
-   bool (*func)(UaContext *ua, const char *cmd); /**< Handler */
-   const char *help;       /**< Main purpose */
-   const char *usage;      /**< All arguments to build usage */
-   const bool use_in_rs;   /**< Can use it in Console RunScript */
-   const bool audit_event; /**< Log an audit event when this Command is executed */
+  const char* key;                              /**< Command */
+  bool (*func)(UaContext* ua, const char* cmd); /**< Handler */
+  const char* help;                             /**< Main purpose */
+  const char* usage;    /**< All arguments to build usage */
+  const bool use_in_rs; /**< Can use it in Console RunScript */
+  const bool
+      audit_event; /**< Log an audit event when this Command is executed */
 };
 
 } /* namespace directordaemon */

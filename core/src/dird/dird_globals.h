@@ -29,11 +29,11 @@ class ConfigurationParser;
 namespace directordaemon {
 
 class DirectorResource;
-extern DirectorResource *me;
-extern ConfigurationParser *my_config;
+extern DirectorResource* me;
+extern ConfigurationParser* my_config;
 
-extern char *configfile;
-extern void *start_heap;
+extern char* configfile;
+extern void* start_heap;
 
 } /* namespace directordaemon */
 

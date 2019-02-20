@@ -33,27 +33,13 @@
 #if HAVE_JANSSON
 static pthread_once_t json_setup = PTHREAD_ONCE_INIT;
 
-static void *json_malloc(size_t size)
-{
-   return bmalloc(size);
-}
+static void* json_malloc(size_t size) { return bmalloc(size); }
 
-static void json_free(void *ptr)
-{
-   bfree(ptr);
-}
+static void json_free(void* ptr) { bfree(ptr); }
 
-static void set_alloc_funcs()
-{
-   json_set_alloc_funcs(json_malloc, json_free);
-}
+static void set_alloc_funcs() { json_set_alloc_funcs(json_malloc, json_free); }
 
-void InitializeJson()
-{
-   pthread_once(&json_setup, set_alloc_funcs);
-}
+void InitializeJson() { pthread_once(&json_setup, set_alloc_funcs); }
 #else
-void InitializeJson()
-{
-}
+void InitializeJson() {}
 #endif /* HAVE_JANSSON */

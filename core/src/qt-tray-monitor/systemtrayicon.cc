@@ -27,54 +27,47 @@
 #include <QDebug>
 
 SystemTrayIcon::SystemTrayIcon(QMainWindow* mainWindow)
-   : QSystemTrayIcon(mainWindow)
-   , iconIdx(0)
-   , timer(new QTimer(this))
+    : QSystemTrayIcon(mainWindow), iconIdx(0), timer(new QTimer(this))
 {
-   // this object name is used for auto-connection to the MainWindow
-   setObjectName("SystemTrayIcon");
+  // this object name is used for auto-connection to the MainWindow
+  setObjectName("SystemTrayIcon");
 
-   TrayMenu* menu = new TrayMenu(mainWindow);
-   setContextMenu(menu);
+  TrayMenu* menu = new TrayMenu(mainWindow);
+  setContextMenu(menu);
 
-   icons << ":/images/bareos_1.png" << ":/images/bareos_2.png" << ":/images/W.png";
-   setIcon(QIcon(icons[iconIdx]));
-   setToolTip("Bareos Tray Monitor");
+  icons << ":/images/bareos_1.png"
+        << ":/images/bareos_2.png"
+        << ":/images/W.png";
+  setIcon(QIcon(icons[iconIdx]));
+  setToolTip("Bareos Tray Monitor");
 
-   timer->setInterval(700);
-   connect(timer, SIGNAL(timeout()), this, SLOT(setIconInternal()));
+  timer->setInterval(700);
+  connect(timer, SIGNAL(timeout()), this, SLOT(setIconInternal()));
 }
 
-SystemTrayIcon::~SystemTrayIcon()
+SystemTrayIcon::~SystemTrayIcon() { timer->stop(); }
+
+void SystemTrayIcon::setNewIcon(int icon)
 {
-   timer->stop();
+  iconIdx = icon;
+  setIcon(QIcon(icons[icon]));
 }
 
-void SystemTrayIcon::setNewIcon(int icon){
-
-   iconIdx = icon;
-   setIcon(QIcon(icons[icon]));
-}
-
-void  SystemTrayIcon::setIconInternal()
+void SystemTrayIcon::setIconInternal()
 {
-   setIcon(QIcon(icons[iconIdx++]));
-   iconIdx %= 2; // 0 if 1 / 1 if 0
+  setIcon(QIcon(icons[iconIdx++]));
+  iconIdx %= 2;  // 0 if 1 / 1 if 0
 }
 
 void SystemTrayIcon::animateIcon(bool on)
 {
-   if (on) {
-      if (!timer->isActive()) {
-         timer->start();
-      }
-   } else { //off
-      if (timer->isActive()) {
-         timer->stop();
-      }
-      if(iconIdx != 2){  // blink if there's no error
-         iconIdx = 0;
-         setIconInternal();
-      }
-   }
+  if (on) {
+    if (!timer->isActive()) { timer->start(); }
+  } else {  // off
+    if (timer->isActive()) { timer->stop(); }
+    if (iconIdx != 2) {  // blink if there's no error
+      iconIdx = 0;
+      setIconInternal();
+    }
+  }
 }

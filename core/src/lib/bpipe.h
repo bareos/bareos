@@ -25,16 +25,18 @@
  */
 
 class Bpipe {
-public:
-   pid_t worker_pid;
-   time_t worker_stime;
-   int wait;
-   btimer_t *timer_id;
-   FILE *rfd;
-   FILE *wfd;
+ public:
+  pid_t worker_pid;
+  time_t worker_stime;
+  int wait;
+  btimer_t* timer_id;
+  FILE* rfd;
+  FILE* wfd;
 };
 
-Bpipe *OpenBpipe(char *prog, int wait, const char *mode,
-                  bool dup_stderr = true);
-int CloseWpipe(Bpipe *bpipe);
-int CloseBpipe(Bpipe *bpipe);
+Bpipe* OpenBpipe(char* prog,
+                 int wait,
+                 const char* mode,
+                 bool dup_stderr = true);
+int CloseWpipe(Bpipe* bpipe);
+int CloseBpipe(Bpipe* bpipe);

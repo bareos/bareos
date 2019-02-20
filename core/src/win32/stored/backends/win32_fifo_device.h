@@ -30,25 +30,25 @@
 
 namespace storagedaemon {
 
-class win32_fifo_device: public Device {
-public:
-   win32_fifo_device();
-   ~win32_fifo_device();
+class win32_fifo_device : public Device {
+ public:
+  win32_fifo_device();
+  ~win32_fifo_device();
 
-   /*
-    * Interface from Device
-    */
-   void OpenDevice(DeviceControlRecord *dcr, int omode);
-   bool eod(DeviceControlRecord *dcr);
-   bool MountBackend(DeviceControlRecord *dcr, int timeout);
-   bool UnmountBackend(DeviceControlRecord *dcr, int timeout);
-   int d_close(int);
-   int d_open(const char *pathname, int flags, int mode);
-   int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL);
-   boffset_t d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence);
-   ssize_t d_read(int fd, void *buffer, size_t count);
-   ssize_t d_write(int fd, const void *buffer, size_t count);
-   bool d_truncate(DeviceControlRecord *dcr);
+  /*
+   * Interface from Device
+   */
+  void OpenDevice(DeviceControlRecord* dcr, int omode);
+  bool eod(DeviceControlRecord* dcr);
+  bool MountBackend(DeviceControlRecord* dcr, int timeout);
+  bool UnmountBackend(DeviceControlRecord* dcr, int timeout);
+  int d_close(int);
+  int d_open(const char* pathname, int flags, int mode);
+  int d_ioctl(int fd, ioctl_req_t request, char* mt = NULL);
+  boffset_t d_lseek(DeviceControlRecord* dcr, boffset_t offset, int whence);
+  ssize_t d_read(int fd, void* buffer, size_t count);
+  ssize_t d_write(int fd, const void* buffer, size_t count);
+  bool d_truncate(DeviceControlRecord* dcr);
 };
 
 } /* namespace storagedaemon */

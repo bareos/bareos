@@ -43,58 +43,64 @@ using namespace filedaemon;
  * { b5946137-7b9f-4925-af80-51abd60b20d5 }
  */
 static const GUID VSS_SWPRV_ProviderID = {
-   0xb5946137, 0x7b9f, 0x4925, { 0xaf, 0x80, 0x51, 0xab, 0xd6, 0x0b, 0x20, 0xd5 }
-};
+    0xb5946137,
+    0x7b9f,
+    0x4925,
+    {0xaf, 0x80, 0x51, 0xab, 0xd6, 0x0b, 0x20, 0xd5}};
 
-static bool VSSPathConvert(const char *szFilePath, char *szShadowPath, int nBuflen)
+static bool VSSPathConvert(const char* szFilePath,
+                           char* szShadowPath,
+                           int nBuflen)
 {
-   JobControlRecord *jcr = get_jcr_from_tsd();
+  JobControlRecord* jcr = get_jcr_from_tsd();
 
-   if (jcr && jcr->pVSSClient) {
-      return jcr->pVSSClient->GetShadowPath(szFilePath, szShadowPath, nBuflen);
-   }
+  if (jcr && jcr->pVSSClient) {
+    return jcr->pVSSClient->GetShadowPath(szFilePath, szShadowPath, nBuflen);
+  }
 
-   return false;
+  return false;
 }
 
-static bool VSSPathConvertW(const wchar_t *szFilePath, wchar_t *szShadowPath, int nBuflen)
+static bool VSSPathConvertW(const wchar_t* szFilePath,
+                            wchar_t* szShadowPath,
+                            int nBuflen)
 {
-   JobControlRecord *jcr = get_jcr_from_tsd();
+  JobControlRecord* jcr = get_jcr_from_tsd();
 
-   if (jcr && jcr->pVSSClient) {
-      return jcr->pVSSClient->GetShadowPathW(szFilePath, szShadowPath, nBuflen);
-   }
+  if (jcr && jcr->pVSSClient) {
+    return jcr->pVSSClient->GetShadowPathW(szFilePath, szShadowPath, nBuflen);
+  }
 
-   return false;
+  return false;
 }
 
-void VSSInit(JobControlRecord *jcr)
+void VSSInit(JobControlRecord* jcr)
 {
-   /*
-    * Decide which vss class to initialize
-    */
-   if (g_MajorVersion == 5) {
-      switch (g_MinorVersion) {
+  /*
+   * Decide which vss class to initialize
+   */
+  if (g_MajorVersion == 5) {
+    switch (g_MinorVersion) {
       case 1:
-         jcr->pVSSClient = new VSSClientXP();
-         break;
+        jcr->pVSSClient = new VSSClientXP();
+        break;
       case 2:
-         jcr->pVSSClient = new VSSClient2003();
-         break;
-      }
-   /*
-    * Vista or Longhorn or later
-    */
-   } else if (g_MajorVersion >= 6) {
-      jcr->pVSSClient = new VSSClientVista();
-   }
+        jcr->pVSSClient = new VSSClient2003();
+        break;
+    }
+    /*
+     * Vista or Longhorn or later
+     */
+  } else if (g_MajorVersion >= 6) {
+    jcr->pVSSClient = new VSSClientVista();
+  }
 
-   /*
-    * Setup the callback functions.
-    */
-   if (!SetVSSPathConvert(VSSPathConvert, VSSPathConvertW)) {
-      Jmsg(jcr, M_FATAL, 0, "Failed to setup VSS Path Conversion callbacks.\n");
-   }
+  /*
+   * Setup the callback functions.
+   */
+  if (!SetVSSPathConvert(VSSPathConvert, VSSPathConvertW)) {
+    Jmsg(jcr, M_FATAL, 0, "Failed to setup VSS Path Conversion callbacks.\n");
+  }
 }
 
 /*
@@ -102,10 +108,10 @@ void VSSInit(JobControlRecord *jcr)
  */
 VSSClient::VSSClient()
 {
-    memset(this, 0, sizeof(VSSClient));
-    pAlistWriterState_ = New(alist(10, not_owned_by_alist));
-    pAlistWriterInfoText_ = New(alist(10, owned_by_alist));
-    uidCurrentSnapshotSet_ = GUID_NULL;
+  memset(this, 0, sizeof(VSSClient));
+  pAlistWriterState_ = New(alist(10, not_owned_by_alist));
+  pAlistWriterInfoText_ = New(alist(10, owned_by_alist));
+  uidCurrentSnapshotSet_ = GUID_NULL;
 }
 
 /*
@@ -113,138 +119,136 @@ VSSClient::VSSClient()
  */
 VSSClient::~VSSClient()
 {
-   /*
-    * Release the IVssBackupComponents interface
-    * WARNING: this must be done BEFORE calling CoUninitialize()
-    */
-   if (pVssObject_) {
-//      pVssObject_->Release();
-      pVssObject_ = NULL;
-   }
+  /*
+   * Release the IVssBackupComponents interface
+   * WARNING: this must be done BEFORE calling CoUninitialize()
+   */
+  if (pVssObject_) {
+    //      pVssObject_->Release();
+    pVssObject_ = NULL;
+  }
 
-   DestroyWriterInfo();
-   delete pAlistWriterState_;
-   delete pAlistWriterInfoText_;
+  DestroyWriterInfo();
+  delete pAlistWriterState_;
+  delete pAlistWriterInfoText_;
 
-   /*
-    * Call CoUninitialize if the CoInitialize was performed successfully
-    */
-   if (bCoInitializeCalled_) {
-      CoUninitialize();
-   }
+  /*
+   * Call CoUninitialize if the CoInitialize was performed successfully
+   */
+  if (bCoInitializeCalled_) { CoUninitialize(); }
 }
 
-bool VSSClient::InitializeForBackup(JobControlRecord *jcr)
+bool VSSClient::InitializeForBackup(JobControlRecord* jcr)
 {
-   jcr_ = jcr;
+  jcr_ = jcr;
 
-   GeneratePluginEvent(jcr, bEventVssInitializeForBackup);
+  GeneratePluginEvent(jcr, bEventVssInitializeForBackup);
 
-   return Initialize(0);
+  return Initialize(0);
 }
 
-bool VSSClient::InitializeForRestore(JobControlRecord *jcr)
+bool VSSClient::InitializeForRestore(JobControlRecord* jcr)
 {
-   metadata_ = NULL;
-   jcr_ = jcr;
+  metadata_ = NULL;
+  jcr_ = jcr;
 
-   GeneratePluginEvent(jcr, bEventVssInitializeForRestore);
+  GeneratePluginEvent(jcr, bEventVssInitializeForRestore);
 
-   return Initialize(0, true /*=>Restore*/);
+  return Initialize(0, true /*=>Restore*/);
 }
 
-bool VSSClient::GetShadowPath(const char *szFilePath, char *szShadowPath, int nBuflen)
+bool VSSClient::GetShadowPath(const char* szFilePath,
+                              char* szShadowPath,
+                              int nBuflen)
 {
-   if (!bBackupIsInitialized_)
-      return false;
+  if (!bBackupIsInitialized_) return false;
 
-   /*
-    * Check for valid pathname
-    */
-   bool bIsValidName;
+  /*
+   * Check for valid pathname
+   */
+  bool bIsValidName;
 
-   bIsValidName = strlen(szFilePath) > 3;
-   if (bIsValidName)
-      bIsValidName &= isalpha (szFilePath[0]) &&
-                      szFilePath[1]==':' &&
-                      szFilePath[2] == '\\';
+  bIsValidName = strlen(szFilePath) > 3;
+  if (bIsValidName)
+    bIsValidName &=
+        isalpha(szFilePath[0]) && szFilePath[1] == ':' && szFilePath[2] == '\\';
 
-   if (bIsValidName) {
-      int nDriveIndex = toupper(szFilePath[0])-'A';
-      if (szShadowCopyName_[nDriveIndex][0] != 0) {
-
-         if (WideCharToMultiByte(CP_UTF8,0,szShadowCopyName_[nDriveIndex],-1,szShadowPath,nBuflen-1,NULL,NULL)) {
-            nBuflen -= (int)strlen(szShadowPath);
-            bstrncat(szShadowPath, szFilePath+2, nBuflen);
-            return true;
-         }
+  if (bIsValidName) {
+    int nDriveIndex = toupper(szFilePath[0]) - 'A';
+    if (szShadowCopyName_[nDriveIndex][0] != 0) {
+      if (WideCharToMultiByte(CP_UTF8, 0, szShadowCopyName_[nDriveIndex], -1,
+                              szShadowPath, nBuflen - 1, NULL, NULL)) {
+        nBuflen -= (int)strlen(szShadowPath);
+        bstrncat(szShadowPath, szFilePath + 2, nBuflen);
+        return true;
       }
-   }
+    }
+  }
 
-   bstrncpy(szShadowPath, szFilePath, nBuflen);
-   errno = EINVAL;
-   return false;
+  bstrncpy(szShadowPath, szFilePath, nBuflen);
+  errno = EINVAL;
+  return false;
 }
 
-bool VSSClient::GetShadowPathW(const wchar_t *szFilePath, wchar_t *szShadowPath, int nBuflen)
+bool VSSClient::GetShadowPathW(const wchar_t* szFilePath,
+                               wchar_t* szShadowPath,
+                               int nBuflen)
 {
-   if (!bBackupIsInitialized_)
-      return false;
+  if (!bBackupIsInitialized_) return false;
 
-   /*
-    * Check for valid pathname
-    */
-   bool bIsValidName;
+  /*
+   * Check for valid pathname
+   */
+  bool bIsValidName;
 
-   bIsValidName = wcslen(szFilePath) > 3;
-   if (bIsValidName)
-      bIsValidName &= iswalpha (szFilePath[0]) &&
-                      szFilePath[1]==':' &&
-                      szFilePath[2] == '\\';
+  bIsValidName = wcslen(szFilePath) > 3;
+  if (bIsValidName)
+    bIsValidName &= iswalpha(szFilePath[0]) && szFilePath[1] == ':' &&
+                    szFilePath[2] == '\\';
 
-   if (bIsValidName) {
-      int nDriveIndex = towupper(szFilePath[0])-'A';
-      if (szShadowCopyName_[nDriveIndex][0] != 0) {
-         wcsncpy(szShadowPath, szShadowCopyName_[nDriveIndex], nBuflen);
-         nBuflen -= (int)wcslen(szShadowCopyName_[nDriveIndex]);
-         wcsncat(szShadowPath, szFilePath+2, nBuflen);
-         return true;
-      }
-   }
+  if (bIsValidName) {
+    int nDriveIndex = towupper(szFilePath[0]) - 'A';
+    if (szShadowCopyName_[nDriveIndex][0] != 0) {
+      wcsncpy(szShadowPath, szShadowCopyName_[nDriveIndex], nBuflen);
+      nBuflen -= (int)wcslen(szShadowCopyName_[nDriveIndex]);
+      wcsncat(szShadowPath, szFilePath + 2, nBuflen);
+      return true;
+    }
+  }
 
-   wcsncpy(szShadowPath, szFilePath, nBuflen);
-   errno = EINVAL;
-   return false;
+  wcsncpy(szShadowPath, szFilePath, nBuflen);
+  errno = EINVAL;
+  return false;
 }
 
 const size_t VSSClient::GetWriterCount()
 {
-   return pAlistWriterInfoText_->size();
+  return pAlistWriterInfoText_->size();
 }
 
 const char* VSSClient::GetWriterInfo(int nIndex)
 {
-   return (char*)pAlistWriterInfoText_->get(nIndex);
+  return (char*)pAlistWriterInfoText_->get(nIndex);
 }
 
 const int VSSClient::GetWriterState(int nIndex)
 {
-   void *item = pAlistWriterState_->get(nIndex);
+  void* item = pAlistWriterState_->get(nIndex);
 
-   /*
-    * Eliminate compiler warnings
-    */
+  /*
+   * Eliminate compiler warnings
+   */
 #ifdef HAVE_VSS64
-   return (int64_t)(char *)item;
+  return (int64_t)(char*)item;
 #else
-   return (int)(char *)item;
+  return (int)(char*)item;
 #endif
 }
 
 void VSSClient::AppendWriterInfo(int nState, const char* pszInfo)
 {
-   pAlistWriterInfoText_->push(bstrdup(pszInfo));
-   pAlistWriterState_->push((void*)nState);
+  pAlistWriterInfoText_->push(bstrdup(pszInfo));
+  pAlistWriterState_->push((void*)nState);
 }
 
 /*
@@ -253,13 +257,10 @@ void VSSClient::AppendWriterInfo(int nState, const char* pszInfo)
  */
 void VSSClient::DestroyWriterInfo()
 {
-   while (!pAlistWriterInfoText_->empty()) {
-      free(pAlistWriterInfoText_->pop());
-   }
+  while (!pAlistWriterInfoText_->empty()) {
+    free(pAlistWriterInfoText_->pop());
+  }
 
-   while (!pAlistWriterState_->empty()) {
-      pAlistWriterState_->pop();
-   }
+  while (!pAlistWriterState_->empty()) { pAlistWriterState_->pop(); }
 }
 #endif
-

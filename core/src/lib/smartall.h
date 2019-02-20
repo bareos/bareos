@@ -33,27 +33,30 @@ extern uint64_t sm_bytes;
 extern uint32_t sm_max_buffers;
 extern uint32_t sm_buffers;
 
-#ifdef  SMARTALLOC
-#undef  SMARTALLOC
+#ifdef SMARTALLOC
+#undef SMARTALLOC
 #define SMARTALLOC SMARTALLOC
 
 
-extern void *sm_malloc(const char *fname, int lineno, unsigned int nbytes),
-            *sm_calloc(const char *fname, int lineno,
-                unsigned int nelem, unsigned int elsize),
-            *sm_realloc(const char *fname, int lineno, void *ptr, unsigned int size),
-            *actuallymalloc(unsigned int size),
-            *actuallycalloc(unsigned int nelem, unsigned int elsize),
-            *actuallyrealloc(void *ptr, unsigned int size);
-extern void sm_free(const char *fname, int lineno, void *fp);
-extern void Actuallyfree(void *cp),
-            sm_dump(bool bufdump, bool in_use=false), SmStatic(int mode);
-extern void SmNewOwner(const char *fname, int lineno, char *buf);
+extern void *sm_malloc(const char*fname, int lineno, unsigned int nbytes),
+    *sm_calloc(const char*fname,
+               int lineno,
+               unsigned int nelem,
+               unsigned int elsize),
+    *sm_realloc(const char*fname, int lineno, void*ptr, unsigned int size),
+    *actuallymalloc(unsigned int size),
+    *actuallycalloc(unsigned int nelem, unsigned int elsize),
+    *actuallyrealloc(void*ptr, unsigned int size);
+extern void sm_free(const char* fname, int lineno, void* fp);
+extern void Actuallyfree(void*cp), sm_dump(bool bufdump, bool in_use = false),
+    SmStatic(int mode);
+extern void SmNewOwner(const char* fname, int lineno, char* buf);
 
 #ifdef SMCHECK
-#define Dsm_check(lvl) if ((lvl)<=debug_level) sm_check(__FILE__, __LINE__, true)
-extern void sm_check(const char *fname, int lineno, bool bufdump);
-extern int sm_check_rtn(const char *fname, int lineno, bool bufdump);
+#define Dsm_check(lvl) \
+  if ((lvl) <= debug_level) sm_check(__FILE__, __LINE__, true)
+extern void sm_check(const char* fname, int lineno, bool bufdump);
+extern int sm_check_rtn(const char* fname, int lineno, bool bufdump);
 #else
 #define Dsm_check(lvl)
 #define sm_check(f, l, fl)
@@ -64,111 +67,110 @@ extern int sm_check_rtn(const char *fname, int lineno, bool bufdump);
 /* Redefine standard memory allocator calls to use our routines
    instead. */
 
-#define free(x)        sm_free(__FILE__, __LINE__, (x))
-#define cfree(x)       sm_free(__FILE__, __LINE__, (x))
-#define malloc(x)      sm_malloc(__FILE__, __LINE__, (x))
-#define calloc(n,e)    sm_calloc(__FILE__, __LINE__, (n), (e))
-#define realloc(p,x)   sm_realloc(__FILE__, __LINE__, (p), (x))
+#define free(x) sm_free(__FILE__, __LINE__, (x))
+#define cfree(x) sm_free(__FILE__, __LINE__, (x))
+#define malloc(x) sm_malloc(__FILE__, __LINE__, (x))
+#define calloc(n, e) sm_calloc(__FILE__, __LINE__, (n), (e))
+#define realloc(p, x) sm_realloc(__FILE__, __LINE__, (p), (x))
 
 #else
 
 /* If SMARTALLOC is disabled, define its special calls to default to
    the standard routines.  */
 
-#define Actuallyfree(x)      free(x)
-#define actuallymalloc(x)    malloc(x)
-#define actuallycalloc(x,y)  calloc(x,y)
-#define actuallyrealloc(x,y) realloc(x,y)
+#define Actuallyfree(x) free(x)
+#define actuallymalloc(x) malloc(x)
+#define actuallycalloc(x, y) calloc(x, y)
+#define actuallyrealloc(x, y) realloc(x, y)
 #define sm_dump(x, false)
 #define SmStatic(x)
 #define SmNewOwner(a, b, c)
-#define sm_malloc(f, l, n)     malloc(n)
-#define sm_free(f, l, n)       free(n)
+#define sm_malloc(f, l, n) malloc(n)
+#define sm_free(f, l, n) free(n)
 #define sm_check(f, l, fl)
 #define sm_check_rtn(f, l, fl) 1
 
 #define Dsm_check(lvl)
 
-extern void *b_malloc(const char *file, int line, size_t size);
+extern void* b_malloc(const char* file, int line, size_t size);
 #define malloc(x) b_malloc(__FILE__, __LINE__, (x))
 
 #endif
 
 #ifdef SMARTALLOC
 
-#define New(type) new(__FILE__, __LINE__) type
+#define New(type) new (__FILE__, __LINE__) type
 
 /* We do memset(0) because it's not possible to memset a class when
  * using subclass with virtual functions
  */
 
-class SmartAlloc
-{
-public:
+class SmartAlloc {
+ public:
+  void* operator new(size_t s, const char* fname, int line)
+  {
+    size_t size = s > sizeof(int) ? (unsigned int)s : sizeof(int);
+    void* p = sm_malloc(fname, line, size);
+    memset(p, 0, size);
+    return p;
+  }
+  void* operator new[](size_t s, const char* fname, int line)
+  {
+    size_t size = s > sizeof(int) ? (unsigned int)s : sizeof(int);
+    void* p = sm_malloc(fname, line, size);
+    memset(p, 0, size);
+    return p;
+  }
 
-void *operator new(size_t s, const char *fname, int line)
-{
-   size_t size =  s > sizeof(int) ? (unsigned int)s : sizeof(int);
-   void *p = sm_malloc(fname, line, size);
-   memset(p, 0, size);
-   return p;
-}
-void *operator new[](size_t s, const char *fname, int line)
-{
-   size_t size =  s > sizeof(int) ? (unsigned int)s : sizeof(int);
-   void *p = sm_malloc(fname, line, size);
-   memset(p, 0, size);
-   return p;
-}
+  void operator delete(void* ptr) { free(ptr); }
+  void operator delete[](void* ptr, size_t /*i*/) { free(ptr); }
 
-void  operator delete(void *ptr)
-{
-   free(ptr);
-}
-void  operator delete[](void *ptr, size_t /*i*/)
-{
-   free(ptr);
-}
+  void operator delete(void* ptr, const char* /*fname*/, int /*line*/)
+  {
+    free(ptr);
+  }
+  void operator delete[](void* ptr,
+                         size_t /*i*/,
+                         const char* /*fname*/,
+                         int /*line*/)
+  {
+    free(ptr);
+  }
 
-void  operator delete(void *ptr, const char * /*fname*/, int /*line*/)
-{
-   free(ptr);
-}
-void  operator delete[](void *ptr, size_t /*i*/,
-                        const char * /*fname*/, int /*line*/)
-{
-   free(ptr);
-}
-
-private:
-void *operator new(size_t s) throw() { (void)s; return 0; }
-void *operator new[](size_t s) throw() { (void)s; return 0; }
+ private:
+  void* operator new(size_t s) throw()
+  {
+    (void)s;
+    return 0;
+  }
+  void* operator new[](size_t s) throw()
+  {
+    (void)s;
+    return 0;
+  }
 };
 
 #else
 
 #define New(type) new type
 
-class SmartAlloc
-{
-   public:
-      void *operator new(size_t s) {
-         void *p = malloc(s);
-         memset(p, 0, s);
-         return p;
-      }
-      void *operator new[](size_t s) {
-         void *p = malloc(s);
-         memset(p, 0, s);
-         return p;
-      }
-      void  operator delete(void *ptr) {
-          free(ptr);
-      }
-      void  operator delete[](void *ptr, size_t i) {
-          free(ptr);
-      }
+class SmartAlloc {
+ public:
+  void* operator new(size_t s)
+  {
+    void* p = malloc(s);
+    memset(p, 0, s);
+    return p;
+  }
+  void* operator new[](size_t s)
+  {
+    void* p = malloc(s);
+    memset(p, 0, s);
+    return p;
+  }
+  void operator delete(void* ptr) { free(ptr); }
+  void operator delete[](void* ptr, size_t i) { free(ptr); }
 };
-#endif  /* SMARTALLOC */
+#endif /* SMARTALLOC */
 
-#endif  /* !BAREOS_LIB_SMARTALL_H_ */
+#endif /* !BAREOS_LIB_SMARTALL_H_ */

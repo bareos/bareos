@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1998,1999,2000
- *	Traakan, Inc., Los Altos, CA
- *	All rights reserved.
+ *      Traakan, Inc., Los Altos, CA
+ *      All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,7 +34,7 @@
  *
  */
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -181,12 +181,11 @@ extern "C" {
  *     +=================================================================+
  */
 
-#define SMC_ELEM_TYPE_ALL	0
-#define SMC_ELEM_TYPE_MTE	1
-#define SMC_ELEM_TYPE_SE	2
-#define SMC_ELEM_TYPE_IEE	3
-#define SMC_ELEM_TYPE_DTE	4
-
+#define SMC_ELEM_TYPE_ALL 0
+#define SMC_ELEM_TYPE_MTE 1
+#define SMC_ELEM_TYPE_SE 2
+#define SMC_ELEM_TYPE_IEE 3
+#define SMC_ELEM_TYPE_DTE 4
 
 
 /*
@@ -286,15 +285,13 @@ extern "C" {
  * via a MOVE MEDIUM command with the invert bit set.
  */
 
-#define SMC_VOL_TAG_LEN		36
+#define SMC_VOL_TAG_LEN 36
 
 struct smc_raw_volume_tag {
-	unsigned char	volume_id[32];
-	unsigned char	resv32[2];
-	unsigned char	volume_seq[2];
+  unsigned char volume_id[32];
+  unsigned char resv32[2];
+  unsigned char volume_seq[2];
 };
-
-
 
 
 /*
@@ -358,7 +355,7 @@ struct smc_raw_volume_tag {
  * are defined in table 333.
  *
  *                         Table 333 - Element type code
- * 	(SEE ABOVE)
+ *      (SEE ABOVE)
  *
  * The starting element address specifies the minimum element address to
  * report. Only elements with an element type code permitted by the
@@ -804,60 +801,58 @@ struct smc_raw_volume_tag {
  */
 
 struct smc_raw_element_status_data_header {
-	unsigned char		first_elem[2];
-	unsigned char		n_elem[2];
-	unsigned char		resv4;
-	unsigned char		byte_count[3];
+  unsigned char first_elem[2];
+  unsigned char n_elem[2];
+  unsigned char resv4;
+  unsigned char byte_count[3];
 };
 
 struct smc_raw_element_status_page_header {
-	unsigned char		element_type;
-	unsigned char		flag1;
-#define SMC_RAW_ESP_F1_PVolTag	0x80
-#define SMC_RAW_ESP_F1_AVolTag	0x40
-	unsigned char		elem_desc_len[2];
-	unsigned char		resv4;
-	unsigned char		byte_count[3];
+  unsigned char element_type;
+  unsigned char flag1;
+#define SMC_RAW_ESP_F1_PVolTag 0x80
+#define SMC_RAW_ESP_F1_AVolTag 0x40
+  unsigned char elem_desc_len[2];
+  unsigned char resv4;
+  unsigned char byte_count[3];
 };
 
 struct smc_raw_element_descriptor {
-	unsigned char		element_address[2];
-	unsigned char		flags2;
-#define SMC_RAW_ED_F2_Full	0x01
-#define SMC_RAW_ED_F2_ImpExp	0x02
-#define SMC_RAW_ED_F2_Except	0x04
-#define SMC_RAW_ED_F2_Access	0x08
-#define SMC_RAW_ED_F2_ExEnab	0x10
-#define SMC_RAW_ED_F2_InEnab	0x20
+  unsigned char element_address[2];
+  unsigned char flags2;
+#define SMC_RAW_ED_F2_Full 0x01
+#define SMC_RAW_ED_F2_ImpExp 0x02
+#define SMC_RAW_ED_F2_Except 0x04
+#define SMC_RAW_ED_F2_Access 0x08
+#define SMC_RAW_ED_F2_ExEnab 0x10
+#define SMC_RAW_ED_F2_InEnab 0x20
 
-	unsigned char		resv3;
-	unsigned char		asc;
-	unsigned char		ascq;
-	unsigned char		flags6;
-#define SMC_RAW_ED_F6_LUN	0x07
-#define SMC_RAW_ED_F6_LU_valid	0x10
-#define SMC_RAW_ED_F6_ID_valid	0x20
-#define SMC_RAW_ED_F6_Not_bus	0x80
+  unsigned char resv3;
+  unsigned char asc;
+  unsigned char ascq;
+  unsigned char flags6;
+#define SMC_RAW_ED_F6_LUN 0x07
+#define SMC_RAW_ED_F6_LU_valid 0x10
+#define SMC_RAW_ED_F6_ID_valid 0x20
+#define SMC_RAW_ED_F6_Not_bus 0x80
 
-	unsigned char		scsi_sid;
+  unsigned char scsi_sid;
 
-	unsigned char		resv8;
+  unsigned char resv8;
 
-	unsigned char		flags9;
-#define SMC_RAW_ED_F9_Invert	0x40
-#define SMC_RAW_ED_F9_SValid	0x80
+  unsigned char flags9;
+#define SMC_RAW_ED_F9_Invert 0x40
+#define SMC_RAW_ED_F9_SValid 0x80
 
-	unsigned char		src_se_addr[2];
+  unsigned char src_se_addr[2];
 
-	/*
-	 * primary_vol_tag (optional)
-	 * alternate_vol_tag (optional)
-	 * resv84
-	 * vendor_specific
-	 */
-	unsigned char		data[SMC_VOL_TAG_LEN +
-				     SMC_VOL_TAG_LEN +
-                                     4 + 4];
+  /*
+   * primary_vol_tag (optional)
+   * alternate_vol_tag (optional)
+   * resv84
+   * vendor_specific
+   */
+  unsigned char data[SMC_VOL_TAG_LEN + SMC_VOL_TAG_LEN + 4 + 4];
 };
 
 
@@ -968,56 +963,45 @@ struct smc_raw_element_descriptor {
  */
 
 struct smc_raw_element_address_assignment_page {
-	unsigned char		page_code;		/* 0x1D */
+  unsigned char page_code; /* 0x1D */
 #define SMC_RAW_EA_PC_PS 0x80
-	unsigned char		param_length;		/* 0x12 */
-	unsigned char		mte_addr[2];
-	unsigned char		mte_count[2];
-	unsigned char		se_addr[2];
-	unsigned char		se_count[2];
-	unsigned char		iee_addr[2];
-	unsigned char		iee_count[2];
-	unsigned char		dte_addr[2];
-	unsigned char		dte_count[2];
-	unsigned char		resv18[2];
+  unsigned char param_length; /* 0x12 */
+  unsigned char mte_addr[2];
+  unsigned char mte_count[2];
+  unsigned char se_addr[2];
+  unsigned char se_count[2];
+  unsigned char iee_addr[2];
+  unsigned char iee_count[2];
+  unsigned char dte_addr[2];
+  unsigned char dte_count[2];
+  unsigned char resv18[2];
 };
 
 
-
-
 #define SMC_GET2(VEC) \
-	(uint16_t) \
-		(  (((unsigned char)(VEC)[0] << 8)) \
-		 + (((unsigned char)(VEC)[1])))
+  (uint16_t)((((unsigned char)(VEC)[0] << 8)) + (((unsigned char)(VEC)[1])))
 
-#define SMC_PUT2(VEC,VAL) \
-	((VEC)[0] = (unsigned char)((VAL)>>8), \
-	 (VEC)[1] = (unsigned char)((VAL)))
+#define SMC_PUT2(VEC, VAL) \
+  ((VEC)[0] = (unsigned char)((VAL) >> 8), (VEC)[1] = (unsigned char)((VAL)))
 
-#define SMC_GET3(VEC) \
-	(uint32_t) \
-		(  (((unsigned char)(VEC)[0] << 16)) \
-		 + (((unsigned char)(VEC)[1] << 8)) \
-		 + ((unsigned char)(VEC)[2]))
+#define SMC_GET3(VEC)                            \
+  (uint32_t)((((unsigned char)(VEC)[0] << 16)) + \
+             (((unsigned char)(VEC)[1] << 8)) + ((unsigned char)(VEC)[2]))
 
-#define SMC_PUT3(VEC,VAL) \
-	((VEC)[0] = (unsigned char)((VAL)>>16), \
-	 (VEC)[1] = (unsigned char)((VAL)>>8), \
-	 (VEC)[2] = (unsigned char)((VAL)))
+#define SMC_PUT3(VEC, VAL)                  \
+  ((VEC)[0] = (unsigned char)((VAL) >> 16), \
+   (VEC)[1] = (unsigned char)((VAL) >> 8), (VEC)[2] = (unsigned char)((VAL)))
 
-#define SMC_GET4(VEC) \
-	(uint32_t) \
-		(  (((unsigned char)(VEC)[0] << 24)) \
-		 + (((unsigned char)(VEC)[1] << 16)) \
-		 + (((unsigned char)(VEC)[2] << 8)) \
-		 + ((unsigned char)(VEC)[3]))
+#define SMC_GET4(VEC)                            \
+  (uint32_t)((((unsigned char)(VEC)[0] << 24)) + \
+             (((unsigned char)(VEC)[1] << 16)) + \
+             (((unsigned char)(VEC)[2] << 8)) + ((unsigned char)(VEC)[3]))
 
-#define SMC_PUT4(VEC,VAL) \
-	((VEC)[0] = (unsigned char)((VAL)>>24), \
-	 (VEC)[1] = (unsigned char)((VAL)>>16), \
-	 (VEC)[2] = (unsigned char)((VAL)>>8), \
-	 (VEC)[3] = (unsigned char)((VAL)))
+#define SMC_PUT4(VEC, VAL)                  \
+  ((VEC)[0] = (unsigned char)((VAL) >> 24), \
+   (VEC)[1] = (unsigned char)((VAL) >> 16), \
+   (VEC)[2] = (unsigned char)((VAL) >> 8), (VEC)[3] = (unsigned char)((VAL)))
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 }
 #endif

@@ -32,30 +32,35 @@
  *
  * Bareos is open source network backup software licensed AGPLv3.
  *
- * The sourcecode is available on <A HREF="https://github.com/bareos/bareos"> github </A>
+ * The sourcecode is available on <A HREF="https://github.com/bareos/bareos">
+ * github </A>
  *
  * Bareos is being developed and maintained by Bareos GmbH & Co. KG.
  *
- * There is true open source software and as such there is only one version of Bareos.
- * Other than other "open core" software, there is no "enterprise" or "professional" version
- * that contain parts that are licensed proprietary and by doing that lose all advantages
- * that open source software gives you.
+ * There is true open source software and as such there is only one version of
+ * Bareos. Other than other "open core" software, there is no "enterprise" or
+ * "professional" version that contain parts that are licensed proprietary and
+ * by doing that lose all advantages that open source software gives you.
  *
  * @section binaries
- * In addition to the source code, Bareos GmbH & Co. KG releases binary packages of every major release.
- * Usually, a major release is released once a year.
+ * In addition to the source code, Bareos GmbH & Co. KG releases binary packages
+ * of every major release. Usually, a major release is released once a year.
  *
- * The binary packages can be downloaded on http://download.bareos.org/bareos/release/
+ * The binary packages can be downloaded on
+ * http://download.bareos.org/bareos/release/
  *
  * Maintenance releases are available in sourcecode.
  *
- * Binary packages of maintenance releases are available in the Bareos Subscription repositories.
+ * Binary packages of maintenance releases are available in the Bareos
+ * Subscription repositories.
  *
- * For more information about subscriptions, consulting, funded development and trainings please see http://www.bareos.com
+ * For more information about subscriptions, consulting, funded development and
+ * trainings please see http://www.bareos.com
  *
  * @section developer documentation
  * @author Bareos GmbH & Co. KG and others, see
- * <A HREF="https://github.com/bareos/bareos/blob/master/AUTHORS"> AUTHORS </A> file
+ * <A HREF="https://github.com/bareos/bareos/blob/master/AUTHORS"> AUTHORS </A>
+ * file
  *
  * @copyright 2012-2016 Bareos GmbH & Co. KG
  *
@@ -88,8 +93,8 @@
 #undef HAVE_POSIX_FADVISE
 #endif
 
-#define _REENTRANT    1
-#define _THREAD_SAFE  1
+#define _REENTRANT 1
+#define _THREAD_SAFE 1
 #define _POSIX_PTHREAD_SEMANTICS 1
 
 /* System includes */
@@ -226,7 +231,7 @@ extern "C" {
 #endif
 
 #ifndef HAVE_ZLIB_H
-#undef HAVE_LIBZ                      /* no good without headers */
+#undef HAVE_LIBZ /* no good without headers */
 #endif
 
 #endif

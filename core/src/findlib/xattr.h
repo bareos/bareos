@@ -27,11 +27,12 @@
 /*
  * Return codes from xattr subroutines.
  */
-enum class BxattrExitCode {
-   kErrorFatal,
-   kError,
-   kWarning,
-   kSuccess
+enum class BxattrExitCode
+{
+  kErrorFatal,
+  kError,
+  kWarning,
+  kSuccess
 };
 
 #if defined(HAVE_LINUX_OS)
@@ -52,68 +53,80 @@ enum class BxattrExitCode {
  * Internal representation of an extended attribute.
  */
 struct xattr_t {
-   uint32_t magic;
-   uint32_t name_length;
-   char *name;
-   uint32_t value_length;
-   char *value;
+  uint32_t magic;
+  uint32_t name_length;
+  char* name;
+  uint32_t value_length;
+  char* value;
 };
 
 /*
  * Internal representation of an extended attribute hardlinked file.
  */
 struct xattr_link_cache_entry_t {
-   uint32_t inum;
-   char *target;
+  uint32_t inum;
+  char* target;
 };
 
-#define BXATTR_FLAG_SAVE_NATIVE    0x01
+#define BXATTR_FLAG_SAVE_NATIVE 0x01
 #define BXATTR_FLAG_RESTORE_NATIVE 0x02
 
 struct xattr_build_data_t {
-   uint32_t nr_errors;
-   uint32_t nr_saved;
-   POOLMEM *content;
-   uint32_t content_length;
-   alist *link_cache;
+  uint32_t nr_errors;
+  uint32_t nr_saved;
+  POOLMEM* content;
+  uint32_t content_length;
+  alist* link_cache;
 };
 
 struct xattr_parse_data_t {
-   uint32_t nr_errors;
+  uint32_t nr_errors;
 };
 
 /*
  * Internal tracking data.
  */
 struct xattr_data_t {
-   POOLMEM *last_fname;
-   uint32_t flags;              /* See BXATTR_FLAG_* */
-   uint32_t current_dev;
-   union {
-      struct xattr_build_data_t *build;
-      struct xattr_parse_data_t *parse;
-   } u;
+  POOLMEM* last_fname;
+  uint32_t flags; /* See BXATTR_FLAG_* */
+  uint32_t current_dev;
+  union {
+    struct xattr_build_data_t* build;
+    struct xattr_parse_data_t* parse;
+  } u;
 };
 
 /*
  * Maximum size of the XATTR stream this prevents us from blowing up the filed.
  */
-#define MAX_XATTR_STREAM  (1 * 1024 * 1024) /* 1 Mb */
+#define MAX_XATTR_STREAM (1 * 1024 * 1024) /* 1 Mb */
 
 /*
  * Upperlimit on a xattr internal buffer
  */
-#define XATTR_BUFSIZ	1024
+#define XATTR_BUFSIZ 1024
 
-BxattrExitCode SendXattrStream(JobControlRecord *jcr, xattr_data_t *xattr_data, int stream);
-void XattrDropInternalTable(alist *xattr_value_list);
-uint32_t SerializeXattrStream(JobControlRecord *jcr, xattr_data_t *xattr_data,
-                                uint32_t expected_serialize_len, alist *xattr_value_list);
-BxattrExitCode UnSerializeXattrStream(JobControlRecord *jcr, xattr_data_t *xattr_data, char *content,
-                                          uint32_t content_length, alist *xattr_value_list);
-BxattrExitCode BuildXattrStreams(JobControlRecord *jcr, struct xattr_data_t *xattr_data, FindFilesPacket *ff_pkt);
-BxattrExitCode ParseXattrStreams(JobControlRecord *jcr, struct xattr_data_t *xattr_data,
-                                     int stream, char *content, uint32_t content_length);
+BxattrExitCode SendXattrStream(JobControlRecord* jcr,
+                               xattr_data_t* xattr_data,
+                               int stream);
+void XattrDropInternalTable(alist* xattr_value_list);
+uint32_t SerializeXattrStream(JobControlRecord* jcr,
+                              xattr_data_t* xattr_data,
+                              uint32_t expected_serialize_len,
+                              alist* xattr_value_list);
+BxattrExitCode UnSerializeXattrStream(JobControlRecord* jcr,
+                                      xattr_data_t* xattr_data,
+                                      char* content,
+                                      uint32_t content_length,
+                                      alist* xattr_value_list);
+BxattrExitCode BuildXattrStreams(JobControlRecord* jcr,
+                                 struct xattr_data_t* xattr_data,
+                                 FindFilesPacket* ff_pkt);
+BxattrExitCode ParseXattrStreams(JobControlRecord* jcr,
+                                 struct xattr_data_t* xattr_data,
+                                 int stream,
+                                 char* content,
+                                 uint32_t content_length);
 
 
 #endif

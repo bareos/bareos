@@ -24,8 +24,8 @@
 
 namespace directordaemon {
 
-bool DoNdmpRestoreInit(JobControlRecord *jcr);
-bool DoNdmpRestore(JobControlRecord *jcr);
+bool DoNdmpRestoreInit(JobControlRecord* jcr);
+bool DoNdmpRestore(JobControlRecord* jcr);
 
 } /* namespace directordaemon */
-#endif // BAREOS_DIRD_NDMP_DMA_RESTORE_NDMP_BAREOS_H_
+#endif  // BAREOS_DIRD_NDMP_DMA_RESTORE_NDMP_BAREOS_H_

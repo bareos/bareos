@@ -24,11 +24,17 @@
 
 namespace directordaemon {
 
-bool FindRecycledVolume(JobControlRecord *jcr, bool InChanger, MediaDbRecord *mr,
-                          StorageResource *store, const char *unwanted_volumes);
-bool RecycleOldestPurgedVolume(JobControlRecord *jcr, bool InChanger, MediaDbRecord *mr,
-                                  StorageResource *store, const char *unwanted_volumes);
-bool RecycleVolume(JobControlRecord *jcr, MediaDbRecord *mr);
+bool FindRecycledVolume(JobControlRecord* jcr,
+                        bool InChanger,
+                        MediaDbRecord* mr,
+                        StorageResource* store,
+                        const char* unwanted_volumes);
+bool RecycleOldestPurgedVolume(JobControlRecord* jcr,
+                               bool InChanger,
+                               MediaDbRecord* mr,
+                               StorageResource* store,
+                               const char* unwanted_volumes);
+bool RecycleVolume(JobControlRecord* jcr, MediaDbRecord* mr);
 
 } /* namespace directordaemon */
-#endif // BAREOS_DIRD_AUTORECYCLE_H_
+#endif  // BAREOS_DIRD_AUTORECYCLE_H_

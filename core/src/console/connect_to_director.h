@@ -26,12 +26,11 @@
 
 class JobControlRecord;
 
-namespace console
-{
-  BareosSocket *ConnectToDirector(JobControlRecord &jcr,
-                                  utime_t heart_beat,
-                                  BStringList &response_args,
-                                  uint32_t &response_id);
+namespace console {
+BareosSocket* ConnectToDirector(JobControlRecord& jcr,
+                                utime_t heart_beat,
+                                BStringList& response_args,
+                                uint32_t& response_id);
 } /* namespace console  */
 
 #endif

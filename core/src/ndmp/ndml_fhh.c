@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1998,1999,2000
- *	Traakan, Inc., Los Altos, CA
- *	All rights reserved.
+ *      Traakan, Inc., Los Altos, CA
+ *      All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,30 +31,30 @@
  * Ident:    $Id: $
  *
  * Description:
- *	The heap is managed like this:
+ *      The heap is managed like this:
  *
- *			+----------------+
- *	table ------>	|     entry      |  <----- heap_top
- *			|    -------     |
- *			|     entry      |
- *			|    -------     |
- *			|     entry      |
- *			|    -------     |
- *	allo_ent --->	|     .....      |
- *		|	|                |
- *		V	|                |
- *			~                ~
- *			~                ~
- *		^	|                |
- *		|	|                |
- *	allo_item--->	|     ....       |
- *			|    -------     |
- *			|     item       |
- *			|    -------     |
- *			|     item       |
- *			|    -------     |
- *			|     item       |
- *			+----------------+  <----- heap_end
+ *                      +----------------+
+ *      table ------>   |     entry      |  <----- heap_top
+ *                      |    -------     |
+ *                      |     entry      |
+ *                      |    -------     |
+ *                      |     entry      |
+ *                      |    -------     |
+ *      allo_ent --->   |     .....      |
+ *              |       |                |
+ *              V       |                |
+ *                      ~                ~
+ *                      ~                ~
+ *              ^       |                |
+ *              |       |                |
+ *      allo_item--->   |     ....       |
+ *                      |    -------     |
+ *                      |     item       |
+ *                      |    -------     |
+ *                      |     item       |
+ *                      |    -------     |
+ *                      |     item       |
+ *                      +----------------+  <----- heap_end
  *
  * n_entry = allo_ent - table;
  */
@@ -63,137 +63,123 @@
 #include "ndmlib.h"
 
 
-
-
-int
-ndmfhh_initialize (struct ndmfhheap *fhh)
+int ndmfhh_initialize(struct ndmfhheap* fhh)
 {
-	NDMOS_MACRO_ZEROFILL (fhh);
+  NDMOS_MACRO_ZEROFILL(fhh);
 
-	return NDMFHH_RET_OK;
+  return NDMFHH_RET_OK;
 }
 
-int
-ndmfhh_commission (struct ndmfhheap *fhh, void *heap, unsigned size)
+int ndmfhh_commission(struct ndmfhheap* fhh, void* heap, unsigned size)
 {
-	fhh->heap_base = heap;
-	fhh->heap_size = size;
-	fhh->heap_end = (char*)heap + size;
+  fhh->heap_base = heap;
+  fhh->heap_size = size;
+  fhh->heap_end = (char*)heap + size;
 
-	/* Align everything */
-	fhh->heap_top = (void*) (((long)heap + (NDMOS_CONST_ALIGN-1))
-						&~ (NDMOS_CONST_ALIGN-1));
-	fhh->heap_bot = (void*)
-		((long)((char*)heap+size) &~ (NDMOS_CONST_ALIGN-1));
+  /* Align everything */
+  fhh->heap_top = (void*)(((long)heap + (NDMOS_CONST_ALIGN - 1)) &
+                          ~(NDMOS_CONST_ALIGN - 1));
+  fhh->heap_bot =
+      (void*)((long)((char*)heap + size) & ~(NDMOS_CONST_ALIGN - 1));
 
-	ndmfhh_reset (fhh);
+  ndmfhh_reset(fhh);
 
-	return NDMFHH_RET_OK;
+  return NDMFHH_RET_OK;
 }
 
-#define SLOP	32
+#define SLOP 32
 
-int
-ndmfhh_prepare (struct ndmfhheap *fhh,
-  int fhtype, int entry_size,
-  unsigned n_item, unsigned total_size_of_items)
+int ndmfhh_prepare(struct ndmfhheap* fhh,
+                   int fhtype,
+                   int entry_size,
+                   unsigned n_item,
+                   unsigned total_size_of_items)
 {
-	void *			pe;
-	void *			pi;
-	unsigned		items_need;
+  void* pe;
+  void* pi;
+  unsigned items_need;
 
-	if (fhh->heap_base == 0)
-		return NDMFHH_RET_NO_HEAP;
+  if (fhh->heap_base == 0) return NDMFHH_RET_NO_HEAP;
 
-	if (fhh->allo_entry == fhh->heap_top) {
-		fhh->fhtype = fhtype;
-		fhh->entry_size = entry_size;
-	} else {
-		if (fhh->fhtype != fhtype)
-			return NDMFHH_RET_TYPE_CHANGE;
+  if (fhh->allo_entry == fhh->heap_top) {
+    fhh->fhtype = fhtype;
+    fhh->entry_size = entry_size;
+  } else {
+    if (fhh->fhtype != fhtype) return NDMFHH_RET_TYPE_CHANGE;
 
-		if (fhh->entry_size != entry_size)
-			return NDMFHH_RET_ENTRY_SIZE_MISMATCH;
-	}
+    if (fhh->entry_size != entry_size) return NDMFHH_RET_ENTRY_SIZE_MISMATCH;
+  }
 
-	items_need = total_size_of_items + n_item * NDMOS_CONST_ALIGN + SLOP;
+  items_need = total_size_of_items + n_item * NDMOS_CONST_ALIGN + SLOP;
 
-	pe = (char*)fhh->allo_entry + fhh->entry_size;
-	pi = (char*)fhh->allo_item - items_need;
+  pe = (char*)fhh->allo_entry + fhh->entry_size;
+  pi = (char*)fhh->allo_item - items_need;
 
-	if (pe >= pi)
-		return NDMFHH_RET_OVERFLOW;
+  if (pe >= pi) return NDMFHH_RET_OVERFLOW;
 
-	/* it'll fit! */
-	return NDMFHH_RET_OK;
+  /* it'll fit! */
+  return NDMFHH_RET_OK;
 }
 
-void *
-ndmfhh_add_entry (struct ndmfhheap *fhh)
+void* ndmfhh_add_entry(struct ndmfhheap* fhh)
 {
-	void *		p;
+  void* p;
 
-	p = fhh->allo_entry;
-	if ((char*)fhh->allo_entry + fhh->entry_size < (char*)fhh->allo_item) {
-		fhh->allo_entry = (char *)p + fhh->entry_size;
-		return p;
-	} else {
-		return 0;
-	}
-
+  p = fhh->allo_entry;
+  if ((char*)fhh->allo_entry + fhh->entry_size < (char*)fhh->allo_item) {
+    fhh->allo_entry = (char*)p + fhh->entry_size;
+    return p;
+  } else {
+    return 0;
+  }
 }
 
-void *
-ndmfhh_add_item (struct ndmfhheap *fhh, unsigned size)
+void* ndmfhh_add_item(struct ndmfhheap* fhh, unsigned size)
 {
-	void *		p;
+  void* p;
 
-	size += (NDMOS_CONST_ALIGN-1);
-	size &= ~(NDMOS_CONST_ALIGN-1);
+  size += (NDMOS_CONST_ALIGN - 1);
+  size &= ~(NDMOS_CONST_ALIGN - 1);
 
-	p = (char*)fhh->allo_item - size;
-	if (p > fhh->allo_entry) {
-		fhh->allo_item = p;
-		return p;
-	} else {
-		return 0;
-	}
+  p = (char*)fhh->allo_item - size;
+  if (p > fhh->allo_entry) {
+    fhh->allo_item = p;
+    return p;
+  } else {
+    return 0;
+  }
 }
 
-void *
-ndmfhh_save_item (struct ndmfhheap *fhh, void *item, unsigned size)
+void* ndmfhh_save_item(struct ndmfhheap* fhh, void* item, unsigned size)
 {
-	void *		p;
+  void* p;
 
-	p = ndmfhh_add_item (fhh, size);
-	if (p) {
-		NDMOS_API_BCOPY (item, p, size);
-	}
-	return p;
+  p = ndmfhh_add_item(fhh, size);
+  if (p) { NDMOS_API_BCOPY(item, p, size); }
+  return p;
 }
 
-int
-ndmfhh_reset (struct ndmfhheap *fhh)
+int ndmfhh_reset(struct ndmfhheap* fhh)
 {
-	fhh->allo_entry = fhh->heap_top;
-	fhh->allo_item = fhh->heap_bot;
+  fhh->allo_entry = fhh->heap_top;
+  fhh->allo_item = fhh->heap_bot;
 
-	return NDMFHH_RET_OK;
+  return NDMFHH_RET_OK;
 }
 
-int
-ndmfhh_get_table (struct ndmfhheap *fhh,
-  int *fhtype_p, void **table_p, unsigned *n_entry_p)
+int ndmfhh_get_table(struct ndmfhheap* fhh,
+                     int* fhtype_p,
+                     void** table_p,
+                     unsigned* n_entry_p)
 {
-	unsigned		n;
+  unsigned n;
 
-	*fhtype_p = fhh->fhtype;
-	*table_p = fhh->heap_top;
-	n = (char*)fhh->allo_entry - (char*)fhh->heap_top;
-	if (n > 0)
-		n /= fhh->entry_size;
+  *fhtype_p = fhh->fhtype;
+  *table_p = fhh->heap_top;
+  n = (char*)fhh->allo_entry - (char*)fhh->heap_top;
+  if (n > 0) n /= fhh->entry_size;
 
-	*n_entry_p = n;
+  *n_entry_p = n;
 
-	return NDMFHH_RET_OK;
+  return NDMFHH_RET_OK;
 }

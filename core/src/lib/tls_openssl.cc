@@ -71,24 +71,26 @@ TlsOpenSsl::~TlsOpenSsl()
   Dmsg0(100, "Destruct TLsOpenSsl Implementation Object\n");
 }
 
-bool TlsOpenSsl::init()
-{
-  return d_->init();
-}
+bool TlsOpenSsl::init() { return d_->init(); }
 
-void TlsOpenSsl::SetTlsPskClientContext(const PskCredentials &credentials)
+void TlsOpenSsl::SetTlsPskClientContext(const PskCredentials& credentials)
 {
   if (!d_->openssl_ctx_) {
     Dmsg0(50, "Could not set TLS_PSK CLIENT context (no SSL_CTX)\n");
   } else {
-  BStringList ident(credentials.get_identity(), AsciiControlCharacters::RecordSeparator());
-  Dmsg1(50, "Preparing TLS_PSK CLIENT context for identity %s\n", ident.JoinReadable().c_str());
+    BStringList ident(credentials.get_identity(),
+                      AsciiControlCharacters::RecordSeparator());
+    Dmsg1(50, "Preparing TLS_PSK CLIENT context for identity %s\n",
+          ident.JoinReadable().c_str());
     d_->ClientContextInsertCredentials(credentials);
-    SSL_CTX_set_psk_client_callback(d_->openssl_ctx_, TlsOpenSslPrivate::psk_client_cb);
+    SSL_CTX_set_psk_client_callback(d_->openssl_ctx_,
+                                    TlsOpenSslPrivate::psk_client_cb);
   }
 }
 
-void TlsOpenSsl::SetTlsPskServerContext(ConfigurationParser *config, GetTlsPskByFullyQualifiedResourceNameCb_t cb)
+void TlsOpenSsl::SetTlsPskServerContext(
+    ConfigurationParser* config,
+    GetTlsPskByFullyQualifiedResourceNameCb_t cb)
 {
   if (!d_->openssl_ctx_) {
     Dmsg0(50, "Could not prepare TLS_PSK SERVER callback (no SSL_CTX)\n");
@@ -97,41 +99,44 @@ void TlsOpenSsl::SetTlsPskServerContext(ConfigurationParser *config, GetTlsPskBy
   } else if (!cb) {
     Dmsg0(50, "Could not prepare TLS_PSK SERVER callback (no callback)\n");
   } else {
-  Dmsg0(50, "Preparing TLS_PSK SERVER callback\n");
-  SSL_CTX_set_ex_data(d_->openssl_ctx_,
-                      TlsOpenSslPrivate::SslCtxExDataIndex::kGetTlsPskByFullyQualifiedResourceNameCb,
-                      (void *)cb);
-  SSL_CTX_set_ex_data(d_->openssl_ctx_,
-                      TlsOpenSslPrivate::SslCtxExDataIndex::kConfigurationParserPtr,
-                      (void *)config);
+    Dmsg0(50, "Preparing TLS_PSK SERVER callback\n");
+    SSL_CTX_set_ex_data(d_->openssl_ctx_,
+                        TlsOpenSslPrivate::SslCtxExDataIndex::
+                            kGetTlsPskByFullyQualifiedResourceNameCb,
+                        (void*)cb);
+    SSL_CTX_set_ex_data(
+        d_->openssl_ctx_,
+        TlsOpenSslPrivate::SslCtxExDataIndex::kConfigurationParserPtr,
+        (void*)config);
 
-    SSL_CTX_set_psk_server_callback(d_->openssl_ctx_, TlsOpenSslPrivate::psk_server_cb);
+    SSL_CTX_set_psk_server_callback(d_->openssl_ctx_,
+                                    TlsOpenSslPrivate::psk_server_cb);
   }
 }
 
 std::string TlsOpenSsl::TlsCipherGetName() const
 {
-  if (!d_->openssl_) {
-    return std::string();
-  }
+  if (!d_->openssl_) { return std::string(); }
 
-  const SSL_CIPHER *cipher = SSL_get_current_cipher(d_->openssl_);
+  const SSL_CIPHER* cipher = SSL_get_current_cipher(d_->openssl_);
 
-  if (cipher) {
-    return std::string(SSL_CIPHER_get_name(cipher));
-  }
+  if (cipher) { return std::string(SSL_CIPHER_get_name(cipher)); }
 
   return std::string();
 }
 
-void TlsOpenSsl::TlsLogConninfo(JobControlRecord *jcr, const char *host, int port, const char *who) const
+void TlsOpenSsl::TlsLogConninfo(JobControlRecord* jcr,
+                                const char* host,
+                                int port,
+                                const char* who) const
 {
   if (!d_->openssl_) {
-    Qmsg(jcr, M_INFO, 0, _("No openssl to %s at %s:%d established\n"), who, host, port);
+    Qmsg(jcr, M_INFO, 0, _("No openssl to %s at %s:%d established\n"), who,
+         host, port);
   } else {
     std::string cipher_name = TlsCipherGetName();
-    Qmsg(jcr, M_INFO, 0, _("Connected %s at %s:%d, encryption: %s\n"), who, host, port,
-         cipher_name.empty() ? "Unknown" : cipher_name.c_str());
+    Qmsg(jcr, M_INFO, 0, _("Connected %s at %s:%d, encryption: %s\n"), who,
+         host, port, cipher_name.empty() ? "Unknown" : cipher_name.c_str());
   }
 }
 
@@ -141,10 +146,12 @@ void TlsOpenSsl::TlsLogConninfo(JobControlRecord *jcr, const char *host, int por
  * Returns: true on success
  *          false on failure
  */
-bool TlsOpenSsl::TlsPostconnectVerifyCn(JobControlRecord *jcr, const std::vector<std::string> &verify_list)
+bool TlsOpenSsl::TlsPostconnectVerifyCn(
+    JobControlRecord* jcr,
+    const std::vector<std::string>& verify_list)
 {
-  X509 *cert;
-  X509_NAME *subject;
+  X509* cert;
+  X509_NAME* subject;
   bool auth_success = false;
 
   if (!(cert = SSL_get_peer_certificate(d_->openssl_))) {
@@ -154,14 +161,14 @@ bool TlsOpenSsl::TlsPostconnectVerifyCn(JobControlRecord *jcr, const std::vector
 
   if ((subject = X509_get_subject_name(cert)) != NULL) {
     char data[256]; /* nullterminated by X509_NAME_get_text_by_NID */
-    if (X509_NAME_get_text_by_NID(subject, NID_commonName, data, sizeof(data)) > 0) {
+    if (X509_NAME_get_text_by_NID(subject, NID_commonName, data, sizeof(data)) >
+        0) {
       std::string cn;
-      for (const std::string &cn : verify_list) {
+      for (const std::string& cn : verify_list) {
         std::string d(data);
-        Dmsg2(120, "comparing CNs: cert-cn=%s, allowed-cn=%s\n", data, cn.c_str());
-        if (d.compare(cn) == 0) {
-          auth_success = true;
-        }
+        Dmsg2(120, "comparing CNs: cert-cn=%s, allowed-cn=%s\n", data,
+              cn.c_str());
+        if (d.compare(cn) == 0) { auth_success = true; }
       }
     }
   }
@@ -171,24 +178,27 @@ bool TlsOpenSsl::TlsPostconnectVerifyCn(JobControlRecord *jcr, const std::vector
 }
 
 /*
- * Verifies a peer's hostname against the subjectAltName and commonName attributes.
+ * Verifies a peer's hostname against the subjectAltName and commonName
+ * attributes.
  *
  * Returns: true on success
  *          false on failure
  */
-bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *host)
+bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
+                                          const char* host)
 {
   int i, j;
   int extensions;
   int cnLastPos = -1;
-  X509 *cert;
-  X509_NAME *subject;
-  X509_NAME_ENTRY *neCN;
-  ASN1_STRING *asn1CN;
+  X509* cert;
+  X509_NAME* subject;
+  X509_NAME_ENTRY* neCN;
+  ASN1_STRING* asn1CN;
   bool auth_success = false;
 
   if (!(cert = SSL_get_peer_certificate(d_->openssl_))) {
-    Qmsg1(jcr, M_ERROR, 0, _("Peer %s failed to present a TLS certificate\n"), host);
+    Qmsg1(jcr, M_ERROR, 0, _("Peer %s failed to present a TLS certificate\n"),
+          host);
     return false;
   }
 
@@ -197,43 +207,43 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *hos
    */
   if ((extensions = X509_get_ext_count(cert)) > 0) {
     for (i = 0; i < extensions; i++) {
-      X509_EXTENSION *ext;
-      const char *extname;
+      X509_EXTENSION* ext;
+      const char* extname;
 
-      ext     = X509_get_ext(cert, i);
+      ext = X509_get_ext(cert, i);
       extname = OBJ_nid2sn(OBJ_obj2nid(X509_EXTENSION_get_object(ext)));
 
       if (bstrcmp(extname, "subjectAltName")) {
 #if (OPENSSL_VERSION_NUMBER >= 0x10000000L)
-        const X509V3_EXT_METHOD *method;
+        const X509V3_EXT_METHOD* method;
 #else
-        X509V3_EXT_METHOD *method;
+        X509V3_EXT_METHOD* method;
 #endif
         STACK_OF(CONF_VALUE) * val;
-        CONF_VALUE *nval;
-        void *extstr = NULL;
+        CONF_VALUE* nval;
+        void* extstr = NULL;
 #if (OPENSSL_VERSION_NUMBER >= 0x0090800FL)
-        const unsigned char *ext_value_data;
+        const unsigned char* ext_value_data;
 #else
-        unsigned char *ext_value_data;
+        unsigned char* ext_value_data;
 #endif
 
-        if (!(method = X509V3_EXT_get(ext))) {
-          break;
-        }
+        if (!(method = X509V3_EXT_get(ext))) { break; }
 
         ext_value_data = X509_EXTENSION_get_data(ext)->data;
 
 #if (OPENSSL_VERSION_NUMBER > 0x00907000L)
         if (method->it) {
-          extstr = ASN1_item_d2i(NULL, &ext_value_data, X509_EXTENSION_get_data(ext)->length,
+          extstr = ASN1_item_d2i(NULL, &ext_value_data,
+                                 X509_EXTENSION_get_data(ext)->length,
                                  ASN1_ITEM_ptr(method->it));
         } else {
           /*
            * Old style ASN1
            * Decode ASN1 item in data
            */
-          extstr = method->d2i(NULL, &ext_value_data, X509_EXTENSION_get_data(ext)->length);
+          extstr = method->d2i(NULL, &ext_value_data,
+                               X509_EXTENSION_get_data(ext)->length);
         }
 
 #else
@@ -267,13 +277,12 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *hos
        * Loop through all CNs
        */
       for (;;) {
-        cnLastPos = X509_NAME_get_index_by_NID(subject, NID_commonName, cnLastPos);
-        if (cnLastPos == -1) {
-          break;
-        }
-        neCN   = X509_NAME_get_entry(subject, cnLastPos);
+        cnLastPos =
+            X509_NAME_get_index_by_NID(subject, NID_commonName, cnLastPos);
+        if (cnLastPos == -1) { break; }
+        neCN = X509_NAME_get_entry(subject, cnLastPos);
         asn1CN = X509_NAME_ENTRY_get_data(neCN);
-        if (Bstrcasecmp((const char *)asn1CN->data, host)) {
+        if (Bstrcasecmp((const char*)asn1CN->data, host)) {
           auth_success = true;
           break;
         }
@@ -287,11 +296,17 @@ success:
   return auth_success;
 }
 
-bool TlsOpenSsl::TlsBsockConnect(BareosSocket *bsock) { return d_->OpensslBsockSessionStart(bsock, false); }
+bool TlsOpenSsl::TlsBsockConnect(BareosSocket* bsock)
+{
+  return d_->OpensslBsockSessionStart(bsock, false);
+}
 
-bool TlsOpenSsl::TlsBsockAccept(BareosSocket *bsock) { return d_->OpensslBsockSessionStart(bsock, true); }
+bool TlsOpenSsl::TlsBsockAccept(BareosSocket* bsock)
+{
+  return d_->OpensslBsockSessionStart(bsock, true);
+}
 
-void TlsOpenSsl::TlsBsockShutdown(BareosSocket *bsock)
+void TlsOpenSsl::TlsBsockShutdown(BareosSocket* bsock)
 {
   /*
    * SSL_shutdown must be called twice to fully complete the process -
@@ -309,7 +324,7 @@ void TlsOpenSsl::TlsBsockShutdown(BareosSocket *bsock)
   /* Set socket blocking for shutdown */
   bsock->SetBlocking();
 
-  btimer_t *tid = StartBsockTimer(bsock, 60 * 2);
+  btimer_t* tid = StartBsockTimer(bsock, 60 * 2);
 
   int err_shutdown = SSL_shutdown(d_->openssl_);
 
@@ -328,13 +343,11 @@ void TlsOpenSsl::TlsBsockShutdown(BareosSocket *bsock)
   d_->openssl_ = nullptr;
 
 
-  JobControlRecord *jcr = bsock->get_jcr();
+  JobControlRecord* jcr = bsock->get_jcr();
 
-  if (jcr && jcr->is_passive_client_connection_probing) {
-    return;
-  }
+  if (jcr && jcr->is_passive_client_connection_probing) { return; }
 
-  std::string message {_("TLS shutdown failure.")};
+  std::string message{_("TLS shutdown failure.")};
 
   switch (ssl_error) {
     case SSL_ERROR_NONE:
@@ -350,12 +363,12 @@ void TlsOpenSsl::TlsBsockShutdown(BareosSocket *bsock)
   }
 }
 
-int TlsOpenSsl::TlsBsockWriten(BareosSocket *bsock, char *ptr, int32_t nbytes)
+int TlsOpenSsl::TlsBsockWriten(BareosSocket* bsock, char* ptr, int32_t nbytes)
 {
   return d_->OpensslBsockReadwrite(bsock, ptr, nbytes, true);
 }
 
-int TlsOpenSsl::TlsBsockReadn(BareosSocket *bsock, char *ptr, int32_t nbytes)
+int TlsOpenSsl::TlsBsockReadn(BareosSocket* bsock, char* ptr, int32_t nbytes)
 {
   return d_->OpensslBsockReadwrite(bsock, ptr, nbytes, false);
 }

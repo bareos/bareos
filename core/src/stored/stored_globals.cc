@@ -25,11 +25,11 @@
 
 namespace storagedaemon {
 
-StorageResource *me;
-char *configfile;
+StorageResource* me;
+char* configfile;
 
-void *start_heap = nullptr;
-bool  init_done = false;
+void* start_heap = nullptr;
+bool init_done = false;
 uint32_t vol_session_time;
 
 static std::mutex mutex_;
@@ -37,13 +37,13 @@ static uint32_t vol_session_id_ = 0;
 
 uint32_t NewVolSessionId()
 {
-   uint32_t id;
+  uint32_t id;
 
-   mutex_.lock();
-   vol_session_id_++;
-   id = vol_session_id_;
-   mutex_.unlock();
-   return id;
+  mutex_.lock();
+  vol_session_id_++;
+  id = vol_session_id_;
+  mutex_.unlock();
+  return id;
 }
 
 } /* namespace storagedaemon */

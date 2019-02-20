@@ -26,9 +26,9 @@ class ConfigurationParser;
 
 namespace console {
 
-   ConfigurationParser *my_config = nullptr;
-   ConsoleResource *me = nullptr;
-   DirectorResource *director_resource = nullptr;
-   ConsoleResource *console_resource = nullptr;
+ConfigurationParser* my_config = nullptr;
+ConsoleResource* me = nullptr;
+DirectorResource* director_resource = nullptr;
+ConsoleResource* console_resource = nullptr;
 
 } /* namespace console */

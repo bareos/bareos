@@ -56,18 +56,18 @@ namespace console {
  * types. Note, these should be unique for each
  * daemon though not a requirement.
  */
-static CommonResourceHeader *sres_head[R_LAST - R_FIRST + 1];
-static CommonResourceHeader **res_head = sres_head;
+static CommonResourceHeader* sres_head[R_LAST - R_FIRST + 1];
+static CommonResourceHeader** res_head = sres_head;
 
 /* Forward referenced subroutines */
-static bool SaveResource(int type, ResourceItem *items, int pass);
-static void FreeResource(CommonResourceHeader *sres, int type);
+static bool SaveResource(int type, ResourceItem* items, int pass);
+static void FreeResource(CommonResourceHeader* sres, int type);
 static void DumpResource(int type,
-                  CommonResourceHeader *reshdr,
-                  void sendit(void *sock, const char *fmt, ...),
-                  void *sock,
-                  bool hide_sensitive_data,
-                  bool verbose);
+                         CommonResourceHeader* reshdr,
+                         void sendit(void* sock, const char* fmt, ...),
+                         void* sock,
+                         bool hide_sensitive_data,
+                         bool verbose);
 
 /* We build the current resource here as we are
  * scanning the resource configuration definition,
@@ -120,37 +120,39 @@ static ResourceTable resources[] = {
 
 
 static void DumpResource(int type,
-                  CommonResourceHeader *reshdr,
-                   void sendit(void *sock, const char *fmt, ...),
-                   void *sock,
-                   bool hide_sensitive_data,
-                   bool verbose)
+                         CommonResourceHeader* reshdr,
+                         void sendit(void* sock, const char* fmt, ...),
+                         void* sock,
+                         bool hide_sensitive_data,
+                         bool verbose)
 {
-   PoolMem buf;
-   UnionOfResources *res = (UnionOfResources *)reshdr;
-   BareosResource *resclass;
-   bool recurse = true;
+  PoolMem buf;
+  UnionOfResources* res = (UnionOfResources*)reshdr;
+  BareosResource* resclass;
+  bool recurse = true;
 
-   if (res == NULL) {
-    sendit(sock, _("Warning: no \"%s\" resource (%d) defined.\n"), my_config->res_to_str(type), type);
-      return;
-   }
-   if (type < 0) {                    /* no recursion */
-      type = - type;
-      recurse = false;
-   }
+  if (res == NULL) {
+    sendit(sock, _("Warning: no \"%s\" resource (%d) defined.\n"),
+           my_config->res_to_str(type), type);
+    return;
+  }
+  if (type < 0) { /* no recursion */
+    type = -type;
+    recurse = false;
+  }
 
-   switch (type) {
-      default:
-         resclass = (BareosResource *)reshdr;
-         resclass->PrintConfig(buf, *my_config);
-         break;
-   }
-   sendit(sock, "%s", buf.c_str());
+  switch (type) {
+    default:
+      resclass = (BareosResource*)reshdr;
+      resclass->PrintConfig(buf, *my_config);
+      break;
+  }
+  sendit(sock, "%s", buf.c_str());
 
-   if (recurse && res->res_dir.hdr.next) {
-    my_config->DumpResourceCb_(type, res->res_dir.hdr.next, sendit, sock, hide_sensitive_data, verbose);
-   }
+  if (recurse && res->res_dir.hdr.next) {
+    my_config->DumpResourceCb_(type, res->res_dir.hdr.next, sendit, sock,
+                               hide_sensitive_data, verbose);
+  }
 }
 
 /**
@@ -160,55 +162,83 @@ static void DumpResource(int type,
  * resource chain is traversed.  Mainly we worry about freeing
  * allocated strings (names).
  */
-static void FreeResource(CommonResourceHeader *sres, int type)
+static void FreeResource(CommonResourceHeader* sres, int type)
 {
-   CommonResourceHeader *nres;
-   UnionOfResources *res = (UnionOfResources *)sres;
+  CommonResourceHeader* nres;
+  UnionOfResources* res = (UnionOfResources*)sres;
 
   if (res == NULL) return;
 
-   /* common stuff -- free the resource name */
-   nres = (CommonResourceHeader *)res->res_dir.hdr.next;
+  /* common stuff -- free the resource name */
+  nres = (CommonResourceHeader*)res->res_dir.hdr.next;
   if (res->res_dir.hdr.name) { free(res->res_dir.hdr.name); }
   if (res->res_dir.hdr.desc) { free(res->res_dir.hdr.desc); }
 
-   switch (type) {
-   case R_CONSOLE:
+  switch (type) {
+    case R_CONSOLE:
       if (res->res_cons.rc_file) { free(res->res_cons.rc_file); }
       if (res->res_cons.history_file) { free(res->res_cons.history_file); }
       if (res->res_cons.tls_cert_.allowed_certificate_common_names_) {
         res->res_cons.tls_cert_.allowed_certificate_common_names_->destroy();
         free(res->res_cons.tls_cert_.allowed_certificate_common_names_);
       }
-      if (res->res_cons.tls_cert_.ca_certfile_) { delete res->res_cons.tls_cert_.ca_certfile_; }
-      if (res->res_cons.tls_cert_.ca_certdir_) { delete res->res_cons.tls_cert_.ca_certdir_; }
-      if (res->res_cons.tls_cert_.crlfile_) { delete res->res_cons.tls_cert_.crlfile_; }
-      if (res->res_cons.tls_cert_.certfile_) { delete res->res_cons.tls_cert_.certfile_; }
-      if (res->res_cons.tls_cert_.keyfile_) { delete res->res_cons.tls_cert_.keyfile_; }
+      if (res->res_cons.tls_cert_.ca_certfile_) {
+        delete res->res_cons.tls_cert_.ca_certfile_;
+      }
+      if (res->res_cons.tls_cert_.ca_certdir_) {
+        delete res->res_cons.tls_cert_.ca_certdir_;
+      }
+      if (res->res_cons.tls_cert_.crlfile_) {
+        delete res->res_cons.tls_cert_.crlfile_;
+      }
+      if (res->res_cons.tls_cert_.certfile_) {
+        delete res->res_cons.tls_cert_.certfile_;
+      }
+      if (res->res_cons.tls_cert_.keyfile_) {
+        delete res->res_cons.tls_cert_.keyfile_;
+      }
       if (res->res_cons.cipherlist_) { delete res->res_cons.cipherlist_; }
-      if (res->res_cons.tls_cert_.dhfile_) { delete res->res_cons.tls_cert_.dhfile_; }
-      if (res->res_cons.tls_cert_.pem_message_) { delete res->res_cons.tls_cert_.pem_message_; }
+      if (res->res_cons.tls_cert_.dhfile_) {
+        delete res->res_cons.tls_cert_.dhfile_;
+      }
+      if (res->res_cons.tls_cert_.pem_message_) {
+        delete res->res_cons.tls_cert_.pem_message_;
+      }
       break;
-   case R_DIRECTOR:
+    case R_DIRECTOR:
       if (res->res_dir.address) { free(res->res_dir.address); }
       if (res->res_dir.tls_cert_.allowed_certificate_common_names_) {
         res->res_dir.tls_cert_.allowed_certificate_common_names_->destroy();
         free(res->res_dir.tls_cert_.allowed_certificate_common_names_);
       }
-      if (res->res_dir.tls_cert_.ca_certfile_) { delete res->res_dir.tls_cert_.ca_certfile_; }
-      if (res->res_dir.tls_cert_.ca_certdir_) { delete res->res_dir.tls_cert_.ca_certdir_; }
-      if (res->res_dir.tls_cert_.crlfile_) { delete res->res_dir.tls_cert_.crlfile_; }
-      if (res->res_dir.tls_cert_.certfile_) { delete res->res_dir.tls_cert_.certfile_; }
-      if (res->res_dir.tls_cert_.keyfile_) { delete res->res_dir.tls_cert_.keyfile_; }
+      if (res->res_dir.tls_cert_.ca_certfile_) {
+        delete res->res_dir.tls_cert_.ca_certfile_;
+      }
+      if (res->res_dir.tls_cert_.ca_certdir_) {
+        delete res->res_dir.tls_cert_.ca_certdir_;
+      }
+      if (res->res_dir.tls_cert_.crlfile_) {
+        delete res->res_dir.tls_cert_.crlfile_;
+      }
+      if (res->res_dir.tls_cert_.certfile_) {
+        delete res->res_dir.tls_cert_.certfile_;
+      }
+      if (res->res_dir.tls_cert_.keyfile_) {
+        delete res->res_dir.tls_cert_.keyfile_;
+      }
       if (res->res_dir.cipherlist_) { delete res->res_dir.cipherlist_; }
-      if (res->res_dir.tls_cert_.dhfile_) { delete res->res_dir.tls_cert_.dhfile_; }
-      if (res->res_dir.tls_cert_.pem_message_) { delete res->res_dir.tls_cert_.pem_message_; }
+      if (res->res_dir.tls_cert_.dhfile_) {
+        delete res->res_dir.tls_cert_.dhfile_;
+      }
+      if (res->res_dir.tls_cert_.pem_message_) {
+        delete res->res_dir.tls_cert_.pem_message_;
+      }
       break;
-   default:
+    default:
       printf(_("Unknown resource type %d\n"), type);
-   }
-   /* Common stuff again -- free the resource, recurse to next one */
-   free(res);
+  }
+  /* Common stuff again -- free the resource, recurse to next one */
+  free(res);
   if (nres) { my_config->FreeResourceCb_(nres, type); }
 }
 
@@ -217,106 +247,116 @@ static void FreeResource(CommonResourceHeader *sres, int type)
  * the resource. If this is pass 2, we update any resource
  * pointers (currently only in the Job resource).
  */
-static bool SaveResource(int type, ResourceItem *items, int pass)
+static bool SaveResource(int type, ResourceItem* items, int pass)
 {
-   UnionOfResources *res;
-   int rindex = type - R_FIRST;
-   int i;
-   int error = 0;
+  UnionOfResources* res;
+  int rindex = type - R_FIRST;
+  int i;
+  int error = 0;
 
-   /*
-    * Ensure that all required items are present
-    */
-   for (i = 0; items[i].name; i++) {
-      if (items[i].flags & CFG_ITEM_REQUIRED) {
-            if (!BitIsSet(i, res_all.res_dir.hdr.item_present)) {
-               Emsg2(M_ABORT, 0, _("%s item is required in %s resource, but not found.\n"),
-                 items[i].name, resources[rindex].name);
-             }
+  /*
+   * Ensure that all required items are present
+   */
+  for (i = 0; items[i].name; i++) {
+    if (items[i].flags & CFG_ITEM_REQUIRED) {
+      if (!BitIsSet(i, res_all.res_dir.hdr.item_present)) {
+        Emsg2(M_ABORT, 0,
+              _("%s item is required in %s resource, but not found.\n"),
+              items[i].name, resources[rindex].name);
       }
-   }
+    }
+  }
 
-   /*
-    * During pass 2, we looked up pointers to all the resources
-    * referrenced in the current resource, , now we
-    * must copy their address from the static record to the allocated
-    * record.
-    */
-   if (pass == 2) {
-      switch (type) {
-         case R_CONSOLE:
-            if ((res = (UnionOfResources *)my_config->GetResWithName(R_CONSOLE, res_all.res_cons.name())) == NULL) {
-               Emsg1(M_ABORT, 0, _("Cannot find Console resource %s\n"), res_all.res_cons.name());
-            } else {
-               res->res_cons.tls_cert_.allowed_certificate_common_names_ = res_all.res_cons.tls_cert_.allowed_certificate_common_names_;
-            }
-            break;
-         case R_DIRECTOR:
-            if ((res = (UnionOfResources *)my_config->GetResWithName(R_DIRECTOR, res_all.res_dir.name())) == NULL) {
-               Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
-            } else {
-               res->res_dir.tls_cert_.allowed_certificate_common_names_ = res_all.res_dir.tls_cert_.allowed_certificate_common_names_;
-            }
-            break;
-         default:
-            Emsg1(M_ERROR, 0, _("Unknown resource type %d\n"), type);
-            error = 1;
-            break;
-      }
+  /*
+   * During pass 2, we looked up pointers to all the resources
+   * referrenced in the current resource, , now we
+   * must copy their address from the static record to the allocated
+   * record.
+   */
+  if (pass == 2) {
+    switch (type) {
+      case R_CONSOLE:
+        if ((res = (UnionOfResources*)my_config->GetResWithName(
+                 R_CONSOLE, res_all.res_cons.name())) == NULL) {
+          Emsg1(M_ABORT, 0, _("Cannot find Console resource %s\n"),
+                res_all.res_cons.name());
+        } else {
+          res->res_cons.tls_cert_.allowed_certificate_common_names_ =
+              res_all.res_cons.tls_cert_.allowed_certificate_common_names_;
+        }
+        break;
+      case R_DIRECTOR:
+        if ((res = (UnionOfResources*)my_config->GetResWithName(
+                 R_DIRECTOR, res_all.res_dir.name())) == NULL) {
+          Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"),
+                res_all.res_dir.name());
+        } else {
+          res->res_dir.tls_cert_.allowed_certificate_common_names_ =
+              res_all.res_dir.tls_cert_.allowed_certificate_common_names_;
+        }
+        break;
+      default:
+        Emsg1(M_ERROR, 0, _("Unknown resource type %d\n"), type);
+        error = 1;
+        break;
+    }
 
-      /*
-       * Note, the resoure name was already saved during pass 1,
-       * so here, we can just release it.
-       */
-      if (res_all.res_dir.hdr.name) {
-         free(res_all.res_dir.hdr.name);
-         res_all.res_dir.hdr.name = NULL;
-      }
-      if (res_all.res_dir.hdr.desc) {
-         free(res_all.res_dir.hdr.desc);
-         res_all.res_dir.hdr.desc = NULL;
-      }
-      return (error == 0);
-   }
+    /*
+     * Note, the resoure name was already saved during pass 1,
+     * so here, we can just release it.
+     */
+    if (res_all.res_dir.hdr.name) {
+      free(res_all.res_dir.hdr.name);
+      res_all.res_dir.hdr.name = NULL;
+    }
+    if (res_all.res_dir.hdr.desc) {
+      free(res_all.res_dir.hdr.desc);
+      res_all.res_dir.hdr.desc = NULL;
+    }
+    return (error == 0);
+  }
 
-   /*
-    * Common
-    */
-   if (!error) {
-      res = (UnionOfResources *)malloc(resources[rindex].size);
-      memcpy(res, &res_all, resources[rindex].size);
-      if (!res_head[rindex]) {
-         res_head[rindex] = (CommonResourceHeader *)res; /* store first entry */
-      } else {
-         CommonResourceHeader *next, *last;
-         for (last=next=res_head[rindex]; next; next=next->next) {
-            last = next;
-            if (bstrcmp(next->name, res->res_dir.name())) {
-               Emsg2(M_ERROR_TERM, 0,
-                     _("Attempt to define second %s resource named \"%s\" is not permitted.\n"),
-                     resources[rindex].name, res->res_dir.name());
-            }
-         }
-         last->next = (CommonResourceHeader *)res;
-         Dmsg2(90, "Inserting %s res: %s\n", my_config->res_to_str(type), res->res_dir.name());
+  /*
+   * Common
+   */
+  if (!error) {
+    res = (UnionOfResources*)malloc(resources[rindex].size);
+    memcpy(res, &res_all, resources[rindex].size);
+    if (!res_head[rindex]) {
+      res_head[rindex] = (CommonResourceHeader*)res; /* store first entry */
+    } else {
+      CommonResourceHeader *next, *last;
+      for (last = next = res_head[rindex]; next; next = next->next) {
+        last = next;
+        if (bstrcmp(next->name, res->res_dir.name())) {
+          Emsg2(M_ERROR_TERM, 0,
+                _("Attempt to define second %s resource named \"%s\" is not "
+                  "permitted.\n"),
+                resources[rindex].name, res->res_dir.name());
+        }
       }
-   }
-   return (error == 0);
+      last->next = (CommonResourceHeader*)res;
+      Dmsg2(90, "Inserting %s res: %s\n", my_config->res_to_str(type),
+            res->res_dir.name());
+    }
+  }
+  return (error == 0);
 }
 
-static void ConfigReadyCallback(ConfigurationParser &my_config)
+static void ConfigReadyCallback(ConfigurationParser& my_config)
 {
-  std::map<int, std::string> map{{R_DIRECTOR, "R_DIRECTOR"}, {R_CONSOLE, "R_CONSOLE"}};
+  std::map<int, std::string> map{{R_DIRECTOR, "R_DIRECTOR"},
+                                 {R_CONSOLE, "R_CONSOLE"}};
   my_config.InitializeQualifiedResourceNameTypeConverter(map);
 }
 
-ConfigurationParser *InitConsConfig(const char *configfile, int exit_code)
+ConfigurationParser* InitConsConfig(const char* configfile, int exit_code)
 {
-  ConfigurationParser *config =
-      new ConfigurationParser(configfile, nullptr, nullptr, nullptr, nullptr, nullptr, exit_code,
-                              (void *)&res_all, res_all_size, R_FIRST, R_LAST, resources, res_head,
-                              default_config_filename.c_str(), "bconsole.d", ConfigReadyCallback,
-                              SaveResource, DumpResource, FreeResource);
+  ConfigurationParser* config = new ConfigurationParser(
+      configfile, nullptr, nullptr, nullptr, nullptr, nullptr, exit_code,
+      (void*)&res_all, res_all_size, R_FIRST, R_LAST, resources, res_head,
+      default_config_filename.c_str(), "bconsole.d", ConfigReadyCallback,
+      SaveResource, DumpResource, FreeResource);
   if (config) { config->r_own_ = R_CONSOLE; }
   return config;
 }
@@ -325,40 +365,40 @@ ConfigurationParser *InitConsConfig(const char *configfile, int exit_code)
  * Print configuration file schema in json format
  */
 #ifdef HAVE_JANSSON
-bool PrintConfigSchemaJson(PoolMem &buffer)
+bool PrintConfigSchemaJson(PoolMem& buffer)
 {
-   ResourceTable *resources = my_config->resources_;
+  ResourceTable* resources = my_config->resources_;
 
-   InitializeJson();
+  InitializeJson();
 
-   json_t *json = json_object();
-   json_object_set_new(json, "format-version", json_integer(2));
-   json_object_set_new(json, "component", json_string("bconsole"));
-   json_object_set_new(json, "version", json_string(VERSION));
+  json_t* json = json_object();
+  json_object_set_new(json, "format-version", json_integer(2));
+  json_object_set_new(json, "component", json_string("bconsole"));
+  json_object_set_new(json, "version", json_string(VERSION));
 
-   /*
-    * Resources
-    */
-   json_t *resource = json_object();
-   json_object_set(json, "resource", resource);
-   json_t *bconsole = json_object();
-   json_object_set(resource, "bconsole", bconsole);
+  /*
+   * Resources
+   */
+  json_t* resource = json_object();
+  json_object_set(json, "resource", resource);
+  json_t* bconsole = json_object();
+  json_object_set(resource, "bconsole", bconsole);
 
-   for (int r = 0; resources[r].name; r++) {
-      ResourceTable resource = my_config->resources_[r];
-      json_object_set(bconsole, resource.name, json_items(resource.items));
-   }
+  for (int r = 0; resources[r].name; r++) {
+    ResourceTable resource = my_config->resources_[r];
+    json_object_set(bconsole, resource.name, json_items(resource.items));
+  }
 
-   PmStrcat(buffer, json_dumps(json, JSON_INDENT(2)));
-   json_decref(json);
+  PmStrcat(buffer, json_dumps(json, JSON_INDENT(2)));
+  json_decref(json);
 
-   return true;
+  return true;
 }
 #else
-bool PrintConfigSchemaJson(PoolMem &buffer)
+bool PrintConfigSchemaJson(PoolMem& buffer)
 {
-   PmStrcat(buffer, "{ \"success\": false, \"message\": \"not available\" }");
-   return false;
+  PmStrcat(buffer, "{ \"success\": false, \"message\": \"not available\" }");
+  return false;
 }
 #endif
 } /* namespace console */

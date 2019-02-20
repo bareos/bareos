@@ -46,194 +46,177 @@
 namespace directordaemon {
 
 /* Commands sent to Storage daemon */
-static char readlabelcmd[] =
-   "readlabel %s Slot=%hd drive=%hd\n";
-static char changerlistallcmd[] =
-   "autochanger listall %s \n";
-static char changerlistcmd[] =
-   "autochanger list %s \n";
-static char changerslotscmd[] =
-   "autochanger slots %s\n";
-static char changerdrivescmd[] =
-   "autochanger drives %s\n";
-static char changertransfercmd[] =
-   "autochanger transfer %s %hd %hd \n";
-static char changervolopslotcmd[] =
-   "%s %s drive=%hd slot=%hd\n";
-static char changervolopcmd[] =
-   "%s %s drive=%hd\n";
-static char canceljobcmd[] =
-   "cancel Job=%s\n";
-static char dotstatuscmd[] =
-   ".status %s\n";
-static char statuscmd[] =
-   "status %s\n";
-static char bandwidthcmd[] =
-   "setbandwidth=%lld Job=%s\n";
-static char pluginoptionscmd[] =
-   "pluginoptions %s\n";
-static char getSecureEraseCmd[] =
-   "getSecureEraseCmd\n";
+static char readlabelcmd[] = "readlabel %s Slot=%hd drive=%hd\n";
+static char changerlistallcmd[] = "autochanger listall %s \n";
+static char changerlistcmd[] = "autochanger list %s \n";
+static char changerslotscmd[] = "autochanger slots %s\n";
+static char changerdrivescmd[] = "autochanger drives %s\n";
+static char changertransfercmd[] = "autochanger transfer %s %hd %hd \n";
+static char changervolopslotcmd[] = "%s %s drive=%hd slot=%hd\n";
+static char changervolopcmd[] = "%s %s drive=%hd\n";
+static char canceljobcmd[] = "cancel Job=%s\n";
+static char dotstatuscmd[] = ".status %s\n";
+static char statuscmd[] = "status %s\n";
+static char bandwidthcmd[] = "setbandwidth=%lld Job=%s\n";
+static char pluginoptionscmd[] = "pluginoptions %s\n";
+static char getSecureEraseCmd[] = "getSecureEraseCmd\n";
 
 /* Responses received from Storage daemon */
-static char OKBandwidth[] =
-   "2000 OK Bandwidth\n";
-static char OKpluginoptions[] =
-   "2000 OK plugin options\n";
-static char OKSecureEraseCmd[] =
-   "2000 OK SDSecureEraseCmd %s\n";
+static char OKBandwidth[] = "2000 OK Bandwidth\n";
+static char OKpluginoptions[] = "2000 OK plugin options\n";
+static char OKSecureEraseCmd[] = "2000 OK SDSecureEraseCmd %s\n";
 
 /* Commands received from storage daemon that need scanning */
-static char readlabelresponse[] =
-   "3001 Volume=%s Slot=%hd";
-static char changerslotsresponse[] =
-   "slots=%hd\n";
-static char changerdrivesresponse[] =
-   "drives=%hd\n";
+static char readlabelresponse[] = "3001 Volume=%s Slot=%hd";
+static char changerslotsresponse[] = "slots=%hd\n";
+static char changerdrivesresponse[] = "drives=%hd\n";
 
-static void TerminateAndCloseJcrStoreSocket(JobControlRecord *jcr)
+static void TerminateAndCloseJcrStoreSocket(JobControlRecord* jcr)
 {
-   if (jcr && jcr->store_bsock) {
-      jcr->store_bsock->signal(BNET_TERMINATE);
-      jcr->store_bsock->close();
-      delete jcr->store_bsock;
-      jcr->store_bsock = nullptr;
-   }
+  if (jcr && jcr->store_bsock) {
+    jcr->store_bsock->signal(BNET_TERMINATE);
+    jcr->store_bsock->close();
+    delete jcr->store_bsock;
+    jcr->store_bsock = nullptr;
+  }
 }
 
-bool ConnectToStorageDaemon(JobControlRecord *jcr, int retry_interval,
-                               int max_retry_time, bool verbose)
+bool ConnectToStorageDaemon(JobControlRecord* jcr,
+                            int retry_interval,
+                            int max_retry_time,
+                            bool verbose)
 {
-   if (jcr->store_bsock) {
-      return true;                    /* already connected */
-   }
+  if (jcr->store_bsock) { return true; /* already connected */ }
 
-   StorageResource *store;
-   if (jcr->res.write_storage) {
-      store = jcr->res.write_storage;
-   } else {
-      store = jcr->res.read_storage;
-   }
+  StorageResource* store;
+  if (jcr->res.write_storage) {
+    store = jcr->res.write_storage;
+  } else {
+    store = jcr->res.read_storage;
+  }
 
-   if (!store) {
-      Dmsg0(200, "ConnectToStorageDaemon: Storage resource pointer is invalid\n");
-      return false;
-   }
+  if (!store) {
+    Dmsg0(200, "ConnectToStorageDaemon: Storage resource pointer is invalid\n");
+    return false;
+  }
 
-   utime_t heart_beat;
-   if (store->heartbeat_interval) {
-      heart_beat = store->heartbeat_interval;
-   } else {
-      heart_beat = me->heartbeat_interval;
-   }
+  utime_t heart_beat;
+  if (store->heartbeat_interval) {
+    heart_beat = store->heartbeat_interval;
+  } else {
+    heart_beat = me->heartbeat_interval;
+  }
 
-   Dmsg2(100, "bNetConnect to Storage daemon %s:%d\n", store->address, store->SDport);
-   std::unique_ptr<BareosSocket> sd(New(BareosSocketTCP));
-   if (!sd) {
-      return false;
-   }
-   sd->SetSourceAddress(me->DIRsrc_addr);
-   if (!sd->connect(jcr, retry_interval, max_retry_time, heart_beat, _("Storage daemon"),
-                    store->address, nullptr, store->SDport, verbose)) {
-      return false;
-   }
+  Dmsg2(100, "bNetConnect to Storage daemon %s:%d\n", store->address,
+        store->SDport);
+  std::unique_ptr<BareosSocket> sd(New(BareosSocketTCP));
+  if (!sd) { return false; }
+  sd->SetSourceAddress(me->DIRsrc_addr);
+  if (!sd->connect(jcr, retry_interval, max_retry_time, heart_beat,
+                   _("Storage daemon"), store->address, nullptr, store->SDport,
+                   verbose)) {
+    return false;
+  }
 
-   if (store->IsTlsConfigured()) {
-     std::string qualified_resource_name;
-     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(me->hdr.name, my_config->r_own_,
-                                                                               qualified_resource_name)) {
-        Dmsg0(100, "Could not generate qualified resource name for a storage resource\n");
-        sd->close();
-        return false;
-     }
-
-     if (!sd->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, store, false, qualified_resource_name.c_str(),
-                             store->password_.value, jcr)) {
-        Dmsg0(100, "Could not DoTlsHandshake() with storagedaemon\n");
-        sd->close();
-        return false;
-     }
-   }
-
-   if (!AuthenticateWithStorageDaemon(sd.get(), jcr, store)) {
+  if (store->IsTlsConfigured()) {
+    std::string qualified_resource_name;
+    if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
+            me->hdr.name, my_config->r_own_, qualified_resource_name)) {
+      Dmsg0(100,
+            "Could not generate qualified resource name for a storage "
+            "resource\n");
       sd->close();
       return false;
-   }
+    }
 
-   jcr->store_bsock = sd.release();
-   return true;
+    if (!sd->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, store, false,
+                            qualified_resource_name.c_str(),
+                            store->password_.value, jcr)) {
+      Dmsg0(100, "Could not DoTlsHandshake() with storagedaemon\n");
+      sd->close();
+      return false;
+    }
+  }
+
+  if (!AuthenticateWithStorageDaemon(sd.get(), jcr, store)) {
+    sd->close();
+    return false;
+  }
+
+  jcr->store_bsock = sd.release();
+  return true;
 }
 
-BareosSocket *open_sd_bsock(UaContext *ua)
+BareosSocket* open_sd_bsock(UaContext* ua)
 {
-   StorageResource *store = ua->jcr->res.write_storage;
+  StorageResource* store = ua->jcr->res.write_storage;
 
-   if (!store) {
-      Dmsg0(200, "open_sd_bsock: No storage resource pointer set\n");
+  if (!store) {
+    Dmsg0(200, "open_sd_bsock: No storage resource pointer set\n");
+    return nullptr;
+  }
+
+  if (!ua->jcr->store_bsock) {
+    ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d ...\n"),
+                store->name(), store->address, store->SDport);
+    /* the next call will set ua->jcr->store_bsock */
+    if (!ConnectToStorageDaemon(ua->jcr, 10, me->SDConnectTimeout, true)) {
+      ua->ErrorMsg(_("Failed to connect to Storage daemon.\n"));
       return nullptr;
-   }
-
-   if (!ua->jcr->store_bsock) {
-      ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d ...\n"),
-                   store->name(), store->address, store->SDport);
-      /* the next call will set ua->jcr->store_bsock */
-      if (!ConnectToStorageDaemon(ua->jcr, 10, me->SDConnectTimeout, true)) {
-         ua->ErrorMsg(_("Failed to connect to Storage daemon.\n"));
-         return nullptr;
-      }
-   }
-   return ua->jcr->store_bsock;
+    }
+  }
+  return ua->jcr->store_bsock;
 }
 
-void CloseSdBsock(UaContext *ua)
+void CloseSdBsock(UaContext* ua)
 {
-   if (ua) {
-      TerminateAndCloseJcrStoreSocket(ua->jcr);
-   }
+  if (ua) { TerminateAndCloseJcrStoreSocket(ua->jcr); }
 }
 
-char *get_volume_name_from_SD(UaContext *ua, slot_number_t Slot, drive_number_t drive)
+char* get_volume_name_from_SD(UaContext* ua,
+                              slot_number_t Slot,
+                              drive_number_t drive)
 {
-   BareosSocket *sd;
-   StorageResource *store = ua->jcr->res.write_storage;
-   char dev_name[MAX_NAME_LENGTH];
-   char *VolName = nullptr;
-   int rtn_slot;
+  BareosSocket* sd;
+  StorageResource* store = ua->jcr->res.write_storage;
+  char dev_name[MAX_NAME_LENGTH];
+  char* VolName = nullptr;
+  int rtn_slot;
 
-   ua->jcr->res.write_storage = store;
-   if (!(sd = open_sd_bsock(ua))) {
-      ua->ErrorMsg(_("Could not open SD socket.\n"));
-      return nullptr;
-   }
-   bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
-   BashSpaces(dev_name);
+  ua->jcr->res.write_storage = store;
+  if (!(sd = open_sd_bsock(ua))) {
+    ua->ErrorMsg(_("Could not open SD socket.\n"));
+    return nullptr;
+  }
+  bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
+  BashSpaces(dev_name);
 
-   /*
-    * Ask storage daemon to read the label of the volume in a
-    * specific slot of the autochanger using the drive number given.
-    * This could change the loaded volume in the drive.
-    */
-   sd->fsend(readlabelcmd, dev_name, Slot, drive);
-   Dmsg1(100, "Sent: %s", sd->msg);
+  /*
+   * Ask storage daemon to read the label of the volume in a
+   * specific slot of the autochanger using the drive number given.
+   * This could change the loaded volume in the drive.
+   */
+  sd->fsend(readlabelcmd, dev_name, Slot, drive);
+  Dmsg1(100, "Sent: %s", sd->msg);
 
-   /*
-    * Get Volume name in this Slot
-    */
-   while (sd->recv() >= 0) {
-      ua->SendMsg("%s", sd->msg);
-      Dmsg1(100, "Got: %s", sd->msg);
-      if (strncmp(sd->msg, NT_("3001 Volume="), 12) == 0) {
-         VolName = (char *)malloc(sd->message_length);
-         if (sscanf(sd->msg, readlabelresponse, VolName, &rtn_slot) == 2) {
-            break;
-         }
-         free(VolName);
-         VolName = nullptr;
+  /*
+   * Get Volume name in this Slot
+   */
+  while (sd->recv() >= 0) {
+    ua->SendMsg("%s", sd->msg);
+    Dmsg1(100, "Got: %s", sd->msg);
+    if (strncmp(sd->msg, NT_("3001 Volume="), 12) == 0) {
+      VolName = (char*)malloc(sd->message_length);
+      if (sscanf(sd->msg, readlabelresponse, VolName, &rtn_slot) == 2) {
+        break;
       }
-   }
-   CloseSdBsock(ua);
-   Dmsg1(100, "get_vol_name=%s\n", NPRT(VolName));
-   return VolName;
+      free(VolName);
+      VolName = nullptr;
+    }
+  }
+  CloseSdBsock(ua);
+  Dmsg1(100, "get_vol_name=%s\n", NPRT(VolName));
+  return VolName;
 }
 
 /**
@@ -266,349 +249,346 @@ char *get_volume_name_from_SD(UaContext *ua, slot_number_t Slot, drive_number_t 
  *
  * If a drive is loaded, the slot *should* be empty
  */
-dlist *native_get_vol_list(UaContext *ua, StorageResource *store, bool listall, bool scan)
+dlist* native_get_vol_list(UaContext* ua,
+                           StorageResource* store,
+                           bool listall,
+                           bool scan)
 {
-   int nr_fields;
-   char *bp;
-   char dev_name[MAX_NAME_LENGTH];
-   char *field1, *field2, *field3, *field4, *field5;
-   vol_list_t *vl = nullptr;
-   dlist *vol_list;
-   BareosSocket *sd = nullptr;
+  int nr_fields;
+  char* bp;
+  char dev_name[MAX_NAME_LENGTH];
+  char *field1, *field2, *field3, *field4, *field5;
+  vol_list_t* vl = nullptr;
+  dlist* vol_list;
+  BareosSocket* sd = nullptr;
 
-   ua->jcr->res.write_storage = store;
-   if (!(sd = open_sd_bsock(ua))) {
-      return nullptr;
-   }
+  ua->jcr->res.write_storage = store;
+  if (!(sd = open_sd_bsock(ua))) { return nullptr; }
 
-   bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
-   BashSpaces(dev_name);
+  bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
+  BashSpaces(dev_name);
 
-   /*
-    * Ask for autochanger list of volumes
-    */
-   if (listall) {
-      sd->fsend(changerlistallcmd , dev_name);
-   } else {
-      sd->fsend(changerlistcmd, dev_name);
-   }
+  /*
+   * Ask for autochanger list of volumes
+   */
+  if (listall) {
+    sd->fsend(changerlistallcmd, dev_name);
+  } else {
+    sd->fsend(changerlistcmd, dev_name);
+  }
 
-   vol_list = New(dlist(vl, &vl->link));
+  vol_list = New(dlist(vl, &vl->link));
 
-   /*
-    * Read and organize list of Volumes
-    */
-   while (BnetRecv(sd) >= 0) {
-      StripTrailingJunk(sd->msg);
+  /*
+   * Read and organize list of Volumes
+   */
+  while (BnetRecv(sd) >= 0) {
+    StripTrailingJunk(sd->msg);
 
-      /*
-       * Check for returned SD messages
-       */
-      if (sd->msg[0] == '3' && B_ISDIGIT(sd->msg[1]) &&
-          B_ISDIGIT(sd->msg[2]) && B_ISDIGIT(sd->msg[3]) &&
-          sd->msg[4] == ' ') {
-         ua->SendMsg("%s\n", sd->msg);   /* pass them on to user */
-         continue;
-      }
+    /*
+     * Check for returned SD messages
+     */
+    if (sd->msg[0] == '3' && B_ISDIGIT(sd->msg[1]) && B_ISDIGIT(sd->msg[2]) &&
+        B_ISDIGIT(sd->msg[3]) && sd->msg[4] == ' ') {
+      ua->SendMsg("%s\n", sd->msg); /* pass them on to user */
+      continue;
+    }
 
-      /*
-       * Parse the message. list gives max 2 fields listall max 5.
-       * We always make sure all fields are initialized to either
-       * a value or nullptr.
-       *
-       * For autochanger list the following mapping is used:
-       * - field1 == slotnr
-       * - field2 == volumename
-       *
-       * For autochanger listall the following mapping is used:
-       * - field1 == type
-       * - field2 == slotnr
-       * - field3 == content (E for Empty, F for Full)
-       * - field4 == loaded (loaded slot if type == D)
-       * - field4 == volumename (if type == S or I)
-       * - field5 == volumename (if type == D)
-       */
-      field1 = sd->msg;
-      field2 = strchr(sd->msg, ':');
-      if (field2) {
-         *field2++ = '\0';
-         if (listall) {
-            field3 = strchr(field2, ':');
-            if (field3) {
-               *field3++ = '\0';
-               field4 = strchr(field3, ':');
-               if (field4) {
-                  *field4++ = '\0';
-                  field5 = strchr(field4, ':');
-                  if (field5) {
-                     *field5++ = '\0';
-                     nr_fields = 5;
-                  } else {
-                     nr_fields = 4;
-                  }
-               } else {
-                  nr_fields = 3;
-                  field5 = nullptr;
-               }
+    /*
+     * Parse the message. list gives max 2 fields listall max 5.
+     * We always make sure all fields are initialized to either
+     * a value or nullptr.
+     *
+     * For autochanger list the following mapping is used:
+     * - field1 == slotnr
+     * - field2 == volumename
+     *
+     * For autochanger listall the following mapping is used:
+     * - field1 == type
+     * - field2 == slotnr
+     * - field3 == content (E for Empty, F for Full)
+     * - field4 == loaded (loaded slot if type == D)
+     * - field4 == volumename (if type == S or I)
+     * - field5 == volumename (if type == D)
+     */
+    field1 = sd->msg;
+    field2 = strchr(sd->msg, ':');
+    if (field2) {
+      *field2++ = '\0';
+      if (listall) {
+        field3 = strchr(field2, ':');
+        if (field3) {
+          *field3++ = '\0';
+          field4 = strchr(field3, ':');
+          if (field4) {
+            *field4++ = '\0';
+            field5 = strchr(field4, ':');
+            if (field5) {
+              *field5++ = '\0';
+              nr_fields = 5;
             } else {
-               nr_fields = 2;
-               field4 = nullptr;
-               field5 = nullptr;
+              nr_fields = 4;
             }
-         } else {
-            nr_fields = 2;
-            field3 = nullptr;
-            field4 = nullptr;
+          } else {
+            nr_fields = 3;
             field5 = nullptr;
-         }
+          }
+        } else {
+          nr_fields = 2;
+          field4 = nullptr;
+          field5 = nullptr;
+        }
       } else {
-         nr_fields = 1;
-         field3 = nullptr;
-         field4 = nullptr;
-         field5 = nullptr;
+        nr_fields = 2;
+        field3 = nullptr;
+        field4 = nullptr;
+        field5 = nullptr;
+      }
+    } else {
+      nr_fields = 1;
+      field3 = nullptr;
+      field4 = nullptr;
+      field5 = nullptr;
+    }
+
+    /*
+     * See if this is a parsable string from either list or listall
+     * e.g. at least f1:f2
+     */
+    if (!field1 && !field2) { goto parse_error; }
+
+    vl = (vol_list_t*)malloc(sizeof(vol_list_t));
+    memset(vl, 0, sizeof(vol_list_t));
+
+    if (scan && !listall) {
+      /*
+       * Scanning -- require only valid slot
+       */
+      vl->bareos_slot_number = atoi(field1);
+      if (vl->bareos_slot_number <= 0) {
+        ua->ErrorMsg(_("Invalid Slot number: %s\n"), sd->msg);
+        free(vl);
+        continue;
+      }
+
+      vl->slot_type = slot_type_storage;
+      if (strlen(field2) > 0) {
+        vl->slot_status = slot_status_full;
+        vl->VolName = bstrdup(field2);
+      } else {
+        vl->slot_status = slot_status_empty;
+      }
+      vl->element_address = INDEX_SLOT_OFFSET + vl->bareos_slot_number;
+    } else if (!listall) {
+      /*
+       * Not scanning and not listall.
+       */
+      if (strlen(field2) == 0) {
+        free(vl);
+        continue;
+      }
+
+      if (!IsAnInteger(field1) ||
+          (vl->bareos_slot_number = atoi(field1)) <= 0) {
+        ua->ErrorMsg(_("Invalid Slot number: %s\n"), field1);
+        free(vl);
+        continue;
+      }
+
+      if (!IsVolumeNameLegal(ua, field2)) {
+        ua->ErrorMsg(_("Invalid Volume name: %s\n"), field2);
+        free(vl);
+        continue;
+      }
+
+      vl->slot_type = slot_type_storage;
+      vl->slot_status = slot_status_full;
+      vl->VolName = bstrdup(field2);
+      vl->element_address = INDEX_SLOT_OFFSET + vl->bareos_slot_number;
+    } else {
+      /*
+       * Listall.
+       */
+      if (!field3) { goto parse_error; }
+
+      switch (*field1) {
+        case 'D':
+          vl->slot_type = slot_type_drive;
+          break;
+        case 'S':
+          vl->slot_type = slot_type_storage;
+          break;
+        case 'I':
+          vl->slot_type = slot_type_import;
+          vl->flags |= (can_import | can_export | by_oper);
+          break;
+        default:
+          vl->slot_type = slot_type_unknown;
+          break;
       }
 
       /*
-       * See if this is a parsable string from either list or listall
-       * e.g. at least f1:f2
+       * For drives the Slot is the actual drive number.
+       * For any other type its the actual slot number.
        */
-      if (!field1 && !field2) {
-         goto parse_error;
+      switch (vl->slot_type) {
+        case slot_type_drive:
+          if (!IsAnInteger(field2) ||
+              (vl->bareos_slot_number = atoi(field2)) < 0) {
+            ua->ErrorMsg(_("Invalid Drive number: %s\n"), field2);
+            free(vl);
+            continue;
+          }
+          vl->element_address = INDEX_DRIVE_OFFSET + vl->bareos_slot_number;
+          if (vl->element_address >= INDEX_MAX_DRIVES) {
+            ua->ErrorMsg(_("Drive number %hd greater then "
+                           "INDEX_MAX_DRIVES(%hd) please increase define\n"),
+                         vl->bareos_slot_number, INDEX_MAX_DRIVES);
+            free(vl);
+            continue;
+          }
+          break;
+        default:
+          if (!IsAnInteger(field2) ||
+              (vl->bareos_slot_number = atoi(field2)) <= 0) {
+            ua->ErrorMsg(_("Invalid Slot number: %s\n"), field2);
+            free(vl);
+            continue;
+          }
+          vl->element_address = INDEX_SLOT_OFFSET + vl->bareos_slot_number;
+          break;
       }
 
-      vl = (vol_list_t *)malloc(sizeof(vol_list_t));
-      memset(vl, 0, sizeof(vol_list_t));
-
-      if (scan && !listall) {
-         /*
-          * Scanning -- require only valid slot
-          */
-         vl->bareos_slot_number = atoi(field1);
-         if (vl->bareos_slot_number <= 0) {
-            ua->ErrorMsg(_("Invalid Slot number: %s\n"), sd->msg);
-            free(vl);
-            continue;
-         }
-
-         vl->slot_type = slot_type_storage;
-         if (strlen(field2) > 0) {
-            vl->slot_status = slot_status_full;
-            vl->VolName = bstrdup(field2);
-         } else {
-            vl->slot_status = slot_status_empty;
-         }
-         vl->element_address = INDEX_SLOT_OFFSET + vl->bareos_slot_number;
-      } else if (!listall) {
-         /*
-          * Not scanning and not listall.
-          */
-         if (strlen(field2) == 0) {
-            free(vl);
-            continue;
-         }
-
-         if (!IsAnInteger(field1) || (vl->bareos_slot_number = atoi(field1)) <= 0) {
-            ua->ErrorMsg(_("Invalid Slot number: %s\n"), field1);
-            free(vl);
-            continue;
-         }
-
-         if (!IsVolumeNameLegal(ua, field2)) {
-            ua->ErrorMsg(_("Invalid Volume name: %s\n"), field2);
-            free(vl);
-            continue;
-         }
-
-         vl->slot_type = slot_type_storage;
-         vl->slot_status = slot_status_full;
-         vl->VolName = bstrdup(field2);
-         vl->element_address = INDEX_SLOT_OFFSET + vl->bareos_slot_number;
-      } else {
-         /*
-          * Listall.
-          */
-         if (!field3) {
-            goto parse_error;
-         }
-
-         switch (*field1) {
-         case 'D':
-            vl->slot_type = slot_type_drive;
-            break;
-         case 'S':
-            vl->slot_type = slot_type_storage;
-            break;
-         case 'I':
-            vl->slot_type = slot_type_import;
-            vl->flags |= (can_import | can_export | by_oper);
-            break;
-         default:
-            vl->slot_type = slot_type_unknown;
-            break;
-         }
-
-         /*
-          * For drives the Slot is the actual drive number.
-          * For any other type its the actual slot number.
-          */
-         switch (vl->slot_type) {
-         case slot_type_drive:
-            if (!IsAnInteger(field2) || (vl->bareos_slot_number = atoi(field2)) < 0) {
-               ua->ErrorMsg(_("Invalid Drive number: %s\n"), field2);
-               free(vl);
-               continue;
-            }
-            vl->element_address = INDEX_DRIVE_OFFSET + vl->bareos_slot_number;
-            if (vl->element_address >= INDEX_MAX_DRIVES) {
-               ua->ErrorMsg(_("Drive number %hd greater then INDEX_MAX_DRIVES(%hd) please increase define\n"),
-                             vl->bareos_slot_number, INDEX_MAX_DRIVES);
-               free(vl);
-               continue;
-            }
-            break;
-         default:
-            if (!IsAnInteger(field2) || (vl->bareos_slot_number = atoi(field2)) <= 0) {
-               ua->ErrorMsg(_("Invalid Slot number: %s\n"), field2);
-               free(vl);
-               continue;
-            }
-            vl->element_address = INDEX_SLOT_OFFSET + vl->bareos_slot_number;
-            break;
-         }
-
-         switch (*field3) {
-         case 'E':
-            vl->slot_status = slot_status_empty;
-            break;
-         case 'F':
-            vl->slot_status = slot_status_full;
-            switch (vl->slot_status) {
+      switch (*field3) {
+        case 'E':
+          vl->slot_status = slot_status_empty;
+          break;
+        case 'F':
+          vl->slot_status = slot_status_full;
+          switch (vl->slot_status) {
             case slot_type_storage:
             case slot_type_import:
-               if (field4) {
-                  vl->VolName = bstrdup(field4);
-               }
-               break;
+              if (field4) { vl->VolName = bstrdup(field4); }
+              break;
             case slot_type_drive:
-               if (field4) {
-                  vl->currently_loaded_slot_number = atoi(field4);
-               }
-               if (field5) {
-                  vl->VolName = bstrdup(field5);
-               }
-               break;
+              if (field4) { vl->currently_loaded_slot_number = atoi(field4); }
+              if (field5) { vl->VolName = bstrdup(field5); }
+              break;
             default:
-               break;
-            }
-            break;
-         default:
-            vl->slot_status = slot_status_unknown;
-            break;
-         }
+              break;
+          }
+          break;
+        default:
+          vl->slot_status = slot_status_unknown;
+          break;
       }
+    }
 
-      if (vl->VolName) {
-         Dmsg6(100, "Add index = %hd slot=%hd loaded=%hd type=%hd content=%hd Vol=%s to SD list.\n",
-               vl->element_address, vl->bareos_slot_number, vl->currently_loaded_slot_number, vl->slot_type, vl->slot_type, NPRT(vl->VolName));
-      } else {
-         Dmsg5(100, "Add index = %hd slot=%hd loaded=%hd type=%hd content=%hd Vol=NULL to SD list.\n",
-               vl->element_address, vl->bareos_slot_number, vl->currently_loaded_slot_number, vl->slot_type, vl->slot_type);
-      }
+    if (vl->VolName) {
+      Dmsg6(100,
+            "Add index = %hd slot=%hd loaded=%hd type=%hd content=%hd Vol=%s "
+            "to SD list.\n",
+            vl->element_address, vl->bareos_slot_number,
+            vl->currently_loaded_slot_number, vl->slot_type, vl->slot_type,
+            NPRT(vl->VolName));
+    } else {
+      Dmsg5(100,
+            "Add index = %hd slot=%hd loaded=%hd type=%hd content=%hd Vol=NULL "
+            "to SD list.\n",
+            vl->element_address, vl->bareos_slot_number,
+            vl->currently_loaded_slot_number, vl->slot_type, vl->slot_type);
+    }
 
-      vol_list->binary_insert(vl, StorageCompareVolListEntry);
-      continue;
+    vol_list->binary_insert(vl, StorageCompareVolListEntry);
+    continue;
 
-parse_error:
-      /*
-       * We encountered a parse error, see how many replacements
-       * we done of ':' with '\0' by looking at the nr_fields
-       * variable and undo those. Number of undo's are nr_fields - 1
-       */
-      while (nr_fields > 1 && (bp = strchr(sd->msg, '\0')) != nullptr) {
-         *bp = ':';
-         nr_fields--;
-      }
-      ua->ErrorMsg(_("Illegal output from autochanger %s: %s\n"),
-                   (listall) ? _("listall") : _("list"), sd->msg);
-      free(vl);
-      continue;
-   }
+  parse_error:
+    /*
+     * We encountered a parse error, see how many replacements
+     * we done of ':' with '\0' by looking at the nr_fields
+     * variable and undo those. Number of undo's are nr_fields - 1
+     */
+    while (nr_fields > 1 && (bp = strchr(sd->msg, '\0')) != nullptr) {
+      *bp = ':';
+      nr_fields--;
+    }
+    ua->ErrorMsg(_("Illegal output from autochanger %s: %s\n"),
+                 (listall) ? _("listall") : _("list"), sd->msg);
+    free(vl);
+    continue;
+  }
 
-   CloseSdBsock(ua);
+  CloseSdBsock(ua);
 
-   if (vol_list->size() == 0) {
-      delete vol_list;
-      vol_list = nullptr;
-   }
+  if (vol_list->size() == 0) {
+    delete vol_list;
+    vol_list = nullptr;
+  }
 
-   return vol_list;
+  return vol_list;
 }
 
 /**
  * We get the number of slots in the changer from the SD
  */
-slot_number_t NativeGetNumSlots(UaContext *ua, StorageResource *store)
+slot_number_t NativeGetNumSlots(UaContext* ua, StorageResource* store)
 {
-   char dev_name[MAX_NAME_LENGTH];
-   BareosSocket *sd;
-   slot_number_t slots = 0;
+  char dev_name[MAX_NAME_LENGTH];
+  BareosSocket* sd;
+  slot_number_t slots = 0;
 
-   ua->jcr->res.write_storage = store;
-   if (!(sd = open_sd_bsock(ua))) {
-      return 0;
-   }
+  ua->jcr->res.write_storage = store;
+  if (!(sd = open_sd_bsock(ua))) { return 0; }
 
-   bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
-   BashSpaces(dev_name);
+  bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
+  BashSpaces(dev_name);
 
-   /*
-    * Ask for autochanger number of slots
-    */
-   sd->fsend(changerslotscmd, dev_name);
-   while (sd->recv() >= 0) {
-      if (sscanf(sd->msg, changerslotsresponse, &slots) == 1) {
-         break;
-      } else {
-         ua->SendMsg("%s", sd->msg);
-      }
-   }
-   CloseSdBsock(ua);
-   ua->SendMsg(_("Device \"%s\" has %hd slots.\n"), store->dev_name(), slots);
+  /*
+   * Ask for autochanger number of slots
+   */
+  sd->fsend(changerslotscmd, dev_name);
+  while (sd->recv() >= 0) {
+    if (sscanf(sd->msg, changerslotsresponse, &slots) == 1) {
+      break;
+    } else {
+      ua->SendMsg("%s", sd->msg);
+    }
+  }
+  CloseSdBsock(ua);
+  ua->SendMsg(_("Device \"%s\" has %hd slots.\n"), store->dev_name(), slots);
 
-   return slots;
+  return slots;
 }
 
 /**
  * We get the number of drives in the changer from the SD
  */
-drive_number_t NativeGetNumDrives(UaContext *ua, StorageResource *store)
+drive_number_t NativeGetNumDrives(UaContext* ua, StorageResource* store)
 {
-   char dev_name[MAX_NAME_LENGTH];
-   BareosSocket *sd;
-   drive_number_t drives = 0;
+  char dev_name[MAX_NAME_LENGTH];
+  BareosSocket* sd;
+  drive_number_t drives = 0;
 
-   ua->jcr->res.write_storage = store;
-   if (!(sd = open_sd_bsock(ua))) {
-      return 0;
-   }
+  ua->jcr->res.write_storage = store;
+  if (!(sd = open_sd_bsock(ua))) { return 0; }
 
-   bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
-   BashSpaces(dev_name);
+  bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
+  BashSpaces(dev_name);
 
-   /*
-    * Ask for autochanger number of drives
-    */
-   sd->fsend(changerdrivescmd, dev_name);
-   while (sd->recv() >= 0) {
-      if (sscanf(sd->msg, changerdrivesresponse, &drives) == 1) {
-         break;
-      } else {
-         ua->SendMsg("%s", sd->msg);
-      }
-   }
-   CloseSdBsock(ua);
+  /*
+   * Ask for autochanger number of drives
+   */
+  sd->fsend(changerdrivescmd, dev_name);
+  while (sd->recv() >= 0) {
+    if (sscanf(sd->msg, changerdrivesresponse, &drives) == 1) {
+      break;
+    } else {
+      ua->SendMsg("%s", sd->msg);
+    }
+  }
+  CloseSdBsock(ua);
 
-   return drives;
+  return drives;
 }
 
 /**
@@ -617,29 +597,29 @@ drive_number_t NativeGetNumDrives(UaContext *ua, StorageResource *store)
  * Director already removed the Job and thinks it finished but the Storage
  * Daemon still thinks its active.
  */
-bool CancelStorageDaemonJob(UaContext *ua, StorageResource *store, char *JobId)
+bool CancelStorageDaemonJob(UaContext* ua, StorageResource* store, char* JobId)
 {
-   JobControlRecord *control_jcr;
+  JobControlRecord* control_jcr;
 
-   control_jcr = new_control_jcr("*JobCancel*", JT_SYSTEM);
+  control_jcr = new_control_jcr("*JobCancel*", JT_SYSTEM);
 
-   control_jcr->res.write_storage = store;
+  control_jcr->res.write_storage = store;
 
-   /* the next call will set control_jcr->store_bsock */
-   if (!ConnectToStorageDaemon(control_jcr, 10, me->SDConnectTimeout, true)) {
-      ua->ErrorMsg(_("Failed to connect to Storage daemon.\n"));
-      return false;
-   }
+  /* the next call will set control_jcr->store_bsock */
+  if (!ConnectToStorageDaemon(control_jcr, 10, me->SDConnectTimeout, true)) {
+    ua->ErrorMsg(_("Failed to connect to Storage daemon.\n"));
+    return false;
+  }
 
-   Dmsg0(200, "Connected to storage daemon\n");
-   control_jcr->store_bsock->fsend("cancel Job=%s\n", JobId);
-   while (control_jcr->store_bsock->recv() >= 0) {
-      ua->SendMsg("%s", control_jcr->store_bsock->msg);
-   }
-   TerminateAndCloseJcrStoreSocket(control_jcr);
-   FreeJcr(control_jcr);
+  Dmsg0(200, "Connected to storage daemon\n");
+  control_jcr->store_bsock->fsend("cancel Job=%s\n", JobId);
+  while (control_jcr->store_bsock->recv() >= 0) {
+    ua->SendMsg("%s", control_jcr->store_bsock->msg);
+  }
+  TerminateAndCloseJcrStoreSocket(control_jcr);
+  FreeJcr(control_jcr);
 
-   return true;
+  return true;
 }
 
 /**
@@ -647,323 +627,308 @@ bool CancelStorageDaemonJob(UaContext *ua, StorageResource *store, char *JobId)
  * if we are interactive or not e.g. when doing an interactive cancel
  * or a system invoked one.
  */
-bool CancelStorageDaemonJob(UaContext *ua, JobControlRecord *jcr, bool interactive)
+bool CancelStorageDaemonJob(UaContext* ua,
+                            JobControlRecord* jcr,
+                            bool interactive)
 {
-   if (!ua->jcr->res.write_storage_list) {
-      if (jcr->res.read_storage_list) {
-         CopyWstorage(ua->jcr, jcr->res.read_storage_list, _("Job resource"));
-      } else {
-         CopyWstorage(ua->jcr, jcr->res.write_storage_list, _("Job resource"));
-      }
-   } else {
-      UnifiedStorageResource store;
-      if (jcr->res.read_storage_list) {
-         store.store = jcr->res.read_storage;
-      } else {
-         store.store = jcr->res.write_storage;
-      }
-      if (!store.store) {
-         Dmsg0(200, "CancelStorageDaemonJob: No storage resource pointer set\n");
-         return false;
-      }
-      SetWstorage(ua->jcr, &store);
-   }
-
-   /* the next call will set ua->jcr->store_bsock */
-   if (!ConnectToStorageDaemon(ua->jcr, 10, me->SDConnectTimeout, true)) {
-      if (interactive) {
-         ua->ErrorMsg(_("Failed to connect to Storage daemon.\n"));
-      }
+  if (!ua->jcr->res.write_storage_list) {
+    if (jcr->res.read_storage_list) {
+      CopyWstorage(ua->jcr, jcr->res.read_storage_list, _("Job resource"));
+    } else {
+      CopyWstorage(ua->jcr, jcr->res.write_storage_list, _("Job resource"));
+    }
+  } else {
+    UnifiedStorageResource store;
+    if (jcr->res.read_storage_list) {
+      store.store = jcr->res.read_storage;
+    } else {
+      store.store = jcr->res.write_storage;
+    }
+    if (!store.store) {
+      Dmsg0(200, "CancelStorageDaemonJob: No storage resource pointer set\n");
       return false;
-   }
-   Dmsg0(200, "Connected to storage daemon\n");
-   ua->jcr->store_bsock->fsend(canceljobcmd, jcr->Job);
-   while (ua->jcr->store_bsock->recv() >= 0) {
-      if (interactive) {
-         ua->SendMsg("%s", ua->jcr->store_bsock->msg);
-      }
-   }
+    }
+    SetWstorage(ua->jcr, &store);
+  }
 
-   if (jcr->store_bsock) {
-     jcr->store_bsock->SetTimedOut();
-     jcr->store_bsock->SetTerminated();
-   }
+  /* the next call will set ua->jcr->store_bsock */
+  if (!ConnectToStorageDaemon(ua->jcr, 10, me->SDConnectTimeout, true)) {
+    if (interactive) {
+      ua->ErrorMsg(_("Failed to connect to Storage daemon.\n"));
+    }
+    return false;
+  }
+  Dmsg0(200, "Connected to storage daemon\n");
+  ua->jcr->store_bsock->fsend(canceljobcmd, jcr->Job);
+  while (ua->jcr->store_bsock->recv() >= 0) {
+    if (interactive) { ua->SendMsg("%s", ua->jcr->store_bsock->msg); }
+  }
 
-   TerminateAndCloseJcrStoreSocket(ua->jcr);
+  if (jcr->store_bsock) {
+    jcr->store_bsock->SetTimedOut();
+    jcr->store_bsock->SetTerminated();
+  }
 
-   if (!interactive) {
-      jcr->sd_canceled = true;
-   }
+  TerminateAndCloseJcrStoreSocket(ua->jcr);
 
-   SdMsgThreadSendSignal(jcr, TIMEOUT_SIGNAL);
+  if (!interactive) { jcr->sd_canceled = true; }
 
-   if (interactive) {
-      jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
-   }
+  SdMsgThreadSendSignal(jcr, TIMEOUT_SIGNAL);
 
-   return true;
+  if (interactive) { jcr->MyThreadSendSignal(TIMEOUT_SIGNAL); }
+
+  return true;
 }
 
-void CancelStorageDaemonJob(JobControlRecord *jcr)
+void CancelStorageDaemonJob(JobControlRecord* jcr)
 {
-   if (jcr->sd_canceled) {
-      return;                   /* cancel only once */
-   }
+  if (jcr->sd_canceled) { return; /* cancel only once */ }
 
-   UaContext *ua = new_ua_context(jcr);
-   JobControlRecord *control_jcr = new_control_jcr("*JobCancel*", JT_SYSTEM);
+  UaContext* ua = new_ua_context(jcr);
+  JobControlRecord* control_jcr = new_control_jcr("*JobCancel*", JT_SYSTEM);
 
-   ua->jcr = control_jcr;
-   if (jcr->store_bsock) {
-      if (!CancelStorageDaemonJob(ua, jcr, false)) {
-         goto bail_out;
-      }
-   }
+  ua->jcr = control_jcr;
+  if (jcr->store_bsock) {
+    if (!CancelStorageDaemonJob(ua, jcr, false)) { goto bail_out; }
+  }
 
 bail_out:
-   FreeJcr(control_jcr);
-   FreeUaContext(ua);
+  FreeJcr(control_jcr);
+  FreeUaContext(ua);
 }
 
-void DoNativeStorageStatus(UaContext *ua, StorageResource *store, char *cmd)
+void DoNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
 {
-   UnifiedStorageResource lstore;
+  UnifiedStorageResource lstore;
 
-   lstore.store = store;
-   PmStrcpy(lstore.store_source, _("unknown source"));
-   SetWstorage(ua->jcr, &lstore);
+  lstore.store = store;
+  PmStrcpy(lstore.store_source, _("unknown source"));
+  SetWstorage(ua->jcr, &lstore);
 
-   if (!ua->api) {
-      ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d\n"),
-                   store->name(), store->address, store->SDport);
-   }
+  if (!ua->api) {
+    ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d\n"), store->name(),
+                store->address, store->SDport);
+  }
 
-   /* the next call will set ua->jcr->store_bsock */
-   if (!ConnectToStorageDaemon(ua->jcr, 10, me->SDConnectTimeout, false)) {
-      ua->SendMsg(_("\nFailed to connect to Storage daemon %s.\n====\n"),
-                   store->name());
-      return;
-   }
+  /* the next call will set ua->jcr->store_bsock */
+  if (!ConnectToStorageDaemon(ua->jcr, 10, me->SDConnectTimeout, false)) {
+    ua->SendMsg(_("\nFailed to connect to Storage daemon %s.\n====\n"),
+                store->name());
+    return;
+  }
 
-   Dmsg0(20, _("Connected to storage daemon\n"));
+  Dmsg0(20, _("Connected to storage daemon\n"));
 
-   if (cmd) {
-      ua->jcr->store_bsock->fsend(dotstatuscmd, cmd);
+  if (cmd) {
+    ua->jcr->store_bsock->fsend(dotstatuscmd, cmd);
 
-   } else {
-      int cnt = 0;
-      DeviceResource *device = nullptr;
-      PoolMem devicenames;
+  } else {
+    int cnt = 0;
+    DeviceResource* device = nullptr;
+    PoolMem devicenames;
 
-      /*
-       * Build a list of devicenames that belong to this storage defintion.
-       */
-      foreach_alist(device, store->device) {
-         if (cnt == 0) {
-            PmStrcpy(devicenames, device->name());
-         } else {
-            PmStrcat(devicenames, ",");
-            PmStrcat(devicenames, device->name());
-         }
-         cnt++;
+    /*
+     * Build a list of devicenames that belong to this storage defintion.
+     */
+    foreach_alist (device, store->device) {
+      if (cnt == 0) {
+        PmStrcpy(devicenames, device->name());
+      } else {
+        PmStrcat(devicenames, ",");
+        PmStrcat(devicenames, device->name());
       }
+      cnt++;
+    }
 
-      BashSpaces(devicenames);
-      ua->jcr->store_bsock->fsend(statuscmd, devicenames.c_str());
-   }
+    BashSpaces(devicenames);
+    ua->jcr->store_bsock->fsend(statuscmd, devicenames.c_str());
+  }
 
-   while (ua->jcr->store_bsock->recv() >= 0) {
-      ua->SendMsg("%s", ua->jcr->store_bsock->msg);
-   }
+  while (ua->jcr->store_bsock->recv() >= 0) {
+    ua->SendMsg("%s", ua->jcr->store_bsock->msg);
+  }
 
-   TerminateAndCloseJcrStoreSocket(ua->jcr);
+  TerminateAndCloseJcrStoreSocket(ua->jcr);
 
-   return;
+  return;
 }
 
 /**
  * Ask the autochanger to move a volume from one slot to another.
  * You have to update the database slots yourself afterwards.
  */
-bool NativeTransferVolume(UaContext *ua, StorageResource *store,
-                            slot_number_t src_slot, slot_number_t dst_slot)
+bool NativeTransferVolume(UaContext* ua,
+                          StorageResource* store,
+                          slot_number_t src_slot,
+                          slot_number_t dst_slot)
 {
-   BareosSocket *sd = nullptr;
-   bool retval = true;
-   char dev_name[MAX_NAME_LENGTH];
+  BareosSocket* sd = nullptr;
+  bool retval = true;
+  char dev_name[MAX_NAME_LENGTH];
 
-   ua->jcr->res.write_storage = store;
-   if (!(sd = open_sd_bsock(ua))) {
-      return false;
-   }
+  ua->jcr->res.write_storage = store;
+  if (!(sd = open_sd_bsock(ua))) { return false; }
 
-   bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
-   BashSpaces(dev_name);
+  bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
+  BashSpaces(dev_name);
 
-   /*
-    * Ask for autochanger transfer of volumes
-    */
-   sd->fsend(changertransfercmd, dev_name, src_slot, dst_slot);
-   while (BnetRecv(sd) >= 0) {
-      StripTrailingJunk(sd->msg);
+  /*
+   * Ask for autochanger transfer of volumes
+   */
+  sd->fsend(changertransfercmd, dev_name, src_slot, dst_slot);
+  while (BnetRecv(sd) >= 0) {
+    StripTrailingJunk(sd->msg);
 
+    /*
+     * Check for returned SD messages
+     */
+    if (sd->msg[0] == '3' && B_ISDIGIT(sd->msg[1]) && B_ISDIGIT(sd->msg[2]) &&
+        B_ISDIGIT(sd->msg[3]) && sd->msg[4] == ' ') {
       /*
-       * Check for returned SD messages
+       * See if this is a failure msg.
        */
-      if (sd->msg[0] == '3' && B_ISDIGIT(sd->msg[1]) &&
-          B_ISDIGIT(sd->msg[2]) && B_ISDIGIT(sd->msg[3]) &&
-          sd->msg[4] == ' ') {
-         /*
-          * See if this is a failure msg.
-          */
-         if (sd->msg[1] == '9')
-            retval = false;
+      if (sd->msg[1] == '9') retval = false;
 
-         ua->SendMsg("%s\n", sd->msg);   /* pass them on to user */
-         continue;
-      }
+      ua->SendMsg("%s\n", sd->msg); /* pass them on to user */
+      continue;
+    }
 
-      ua->SendMsg("%s\n", sd->msg);   /* pass them on to user */
-   }
-   CloseSdBsock(ua);
+    ua->SendMsg("%s\n", sd->msg); /* pass them on to user */
+  }
+  CloseSdBsock(ua);
 
-   return retval;
+  return retval;
 }
 
 /**
  * Ask the autochanger to perform a mount, umount or release operation.
  */
-bool NativeAutochangerVolumeOperation(UaContext *ua, StorageResource *store,
-                                         const char *operation, drive_number_t drive, slot_number_t slot)
+bool NativeAutochangerVolumeOperation(UaContext* ua,
+                                      StorageResource* store,
+                                      const char* operation,
+                                      drive_number_t drive,
+                                      slot_number_t slot)
 {
-   BareosSocket *sd = nullptr;
-   bool retval = true;
-   char dev_name[MAX_NAME_LENGTH];
+  BareosSocket* sd = nullptr;
+  bool retval = true;
+  char dev_name[MAX_NAME_LENGTH];
 
-   ua->jcr->res.write_storage = store;
-   if (!(sd = open_sd_bsock(ua))) {
-      return false;
-   }
+  ua->jcr->res.write_storage = store;
+  if (!(sd = open_sd_bsock(ua))) { return false; }
 
-   bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
-   BashSpaces(dev_name);
+  bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
+  BashSpaces(dev_name);
 
-   if (slot > 0) {
-      sd->fsend(changervolopslotcmd, operation, dev_name, drive, slot);
-   } else {
-      sd->fsend(changervolopcmd, operation, dev_name, drive);
-   }
+  if (slot > 0) {
+    sd->fsend(changervolopslotcmd, operation, dev_name, drive, slot);
+  } else {
+    sd->fsend(changervolopcmd, operation, dev_name, drive);
+  }
 
-   /*
-    * We use BgetDirmsg here and not BnetRecv because as part of
-    * the mount request the stored can request catalog information for
-    * any plugin who listens to the bsdEventLabelVerified event.
-    * As we don't want to loose any non protocol data e.g. errors
-    * without a 3xxx prefix we set the allow_any_message of
-    * BgetDirmsg to true and as such is behaves like a normal
-    * BnetRecv for any non protocol messages.
-    */
-   while (BgetDirmsg(sd, true) >= 0) {
-      ua->SendMsg("%s", sd->msg);
-   }
+  /*
+   * We use BgetDirmsg here and not BnetRecv because as part of
+   * the mount request the stored can request catalog information for
+   * any plugin who listens to the bsdEventLabelVerified event.
+   * As we don't want to loose any non protocol data e.g. errors
+   * without a 3xxx prefix we set the allow_any_message of
+   * BgetDirmsg to true and as such is behaves like a normal
+   * BnetRecv for any non protocol messages.
+   */
+  while (BgetDirmsg(sd, true) >= 0) { ua->SendMsg("%s", sd->msg); }
 
-   CloseSdBsock(ua);
+  CloseSdBsock(ua);
 
-   return retval;
+  return retval;
 }
 
 /**
  * sends request to report secure erase command
  * and receives the command or "*None*" of not set
  */
-bool SendSecureEraseReqToSd(JobControlRecord *jcr) {
-   int32_t n;
-   BareosSocket *sd = jcr->store_bsock;
-
-   if (!jcr->SDSecureEraseCmd) {
-      jcr->SDSecureEraseCmd = GetPoolMemory(PM_NAME);
-   }
-
-   sd->fsend(getSecureEraseCmd);
-   while ((n = BgetDirmsg(sd)) >= 0) {
-      jcr->SDSecureEraseCmd = CheckPoolMemorySize(jcr->SDSecureEraseCmd, sd->message_length);
-      if (sscanf(sd->msg, OKSecureEraseCmd, jcr->SDSecureEraseCmd) == 1) {
-         Dmsg1(421, "Got SD Secure Erase Cmd: %s\n", jcr->SDSecureEraseCmd);
-         break;
-      } else {
-         Jmsg(jcr, M_WARNING, 0, _("Unexpected SD Secure Erase Cmd: %s\n"), sd->msg);
-         PmStrcpy(jcr->SDSecureEraseCmd, "*None*");
-         return false;
-      }
-   }
-
-   return true;
-}
-
-bool SendBwlimitToSd(JobControlRecord *jcr, const char *Job)
+bool SendSecureEraseReqToSd(JobControlRecord* jcr)
 {
-   BareosSocket *sd = jcr->store_bsock;
+  int32_t n;
+  BareosSocket* sd = jcr->store_bsock;
 
-   sd->fsend(bandwidthcmd, jcr->max_bandwidth, Job);
-   if (!response(jcr, sd, OKBandwidth, "Bandwidth", DISPLAY_ERROR)) {
-      jcr->max_bandwidth = 0;      /* can't set bandwidth limit */
+  if (!jcr->SDSecureEraseCmd) {
+    jcr->SDSecureEraseCmd = GetPoolMemory(PM_NAME);
+  }
+
+  sd->fsend(getSecureEraseCmd);
+  while ((n = BgetDirmsg(sd)) >= 0) {
+    jcr->SDSecureEraseCmd =
+        CheckPoolMemorySize(jcr->SDSecureEraseCmd, sd->message_length);
+    if (sscanf(sd->msg, OKSecureEraseCmd, jcr->SDSecureEraseCmd) == 1) {
+      Dmsg1(421, "Got SD Secure Erase Cmd: %s\n", jcr->SDSecureEraseCmd);
+      break;
+    } else {
+      Jmsg(jcr, M_WARNING, 0, _("Unexpected SD Secure Erase Cmd: %s\n"),
+           sd->msg);
+      PmStrcpy(jcr->SDSecureEraseCmd, "*None*");
       return false;
-   }
+    }
+  }
 
-   return true;
+  return true;
 }
 
-bool DoStorageResolve(UaContext *ua, StorageResource *store)
+bool SendBwlimitToSd(JobControlRecord* jcr, const char* Job)
 {
-   BareosSocket *sd;
-   UnifiedStorageResource lstore;
+  BareosSocket* sd = jcr->store_bsock;
 
-   lstore.store = store;
-   PmStrcpy(lstore.store_source, _("unknown source"));
-   SetWstorage(ua->jcr, &lstore);
+  sd->fsend(bandwidthcmd, jcr->max_bandwidth, Job);
+  if (!response(jcr, sd, OKBandwidth, "Bandwidth", DISPLAY_ERROR)) {
+    jcr->max_bandwidth = 0; /* can't set bandwidth limit */
+    return false;
+  }
 
-   ua->jcr->res.write_storage = store;
-   if (!(sd = open_sd_bsock(ua))) {
-      return false;
-   }
-
-   for (int i = 1; i < ua->argc; i++) {
-      if (!*ua->argk[i]) {
-          continue;
-       }
-
-       sd->fsend("resolve %s", ua->argk[i]);
-       while (sd->recv() >= 0) {
-          ua->SendMsg("%s", sd->msg);
-       }
-   }
-
-   CloseSdBsock(ua);
-
-   return true;
+  return true;
 }
 
-bool SendStoragePluginOptions(JobControlRecord *jcr)
+bool DoStorageResolve(UaContext* ua, StorageResource* store)
 {
-   int i;
-   PoolMem cur_plugin_options(PM_MESSAGE);
-   const char *plugin_options;
-   BareosSocket *sd = jcr->store_bsock;
+  BareosSocket* sd;
+  UnifiedStorageResource lstore;
 
-   if (jcr->res.job &&
-       jcr->res.job->SdPluginOptions &&
-       jcr->res.job->SdPluginOptions->size()) {
-      foreach_alist_index(i, plugin_options, jcr->res.job->SdPluginOptions) {
-         PmStrcpy(cur_plugin_options, plugin_options);
-         BashSpaces(cur_plugin_options.c_str());
+  lstore.store = store;
+  PmStrcpy(lstore.store_source, _("unknown source"));
+  SetWstorage(ua->jcr, &lstore);
 
-         sd->fsend(pluginoptionscmd, cur_plugin_options.c_str());
-         if (!response(jcr, sd, OKpluginoptions, "PluginOptions", DISPLAY_ERROR)) {
-            return false;
-         }
+  ua->jcr->res.write_storage = store;
+  if (!(sd = open_sd_bsock(ua))) { return false; }
+
+  for (int i = 1; i < ua->argc; i++) {
+    if (!*ua->argk[i]) { continue; }
+
+    sd->fsend("resolve %s", ua->argk[i]);
+    while (sd->recv() >= 0) { ua->SendMsg("%s", sd->msg); }
+  }
+
+  CloseSdBsock(ua);
+
+  return true;
+}
+
+bool SendStoragePluginOptions(JobControlRecord* jcr)
+{
+  int i;
+  PoolMem cur_plugin_options(PM_MESSAGE);
+  const char* plugin_options;
+  BareosSocket* sd = jcr->store_bsock;
+
+  if (jcr->res.job && jcr->res.job->SdPluginOptions &&
+      jcr->res.job->SdPluginOptions->size()) {
+    foreach_alist_index (i, plugin_options, jcr->res.job->SdPluginOptions) {
+      PmStrcpy(cur_plugin_options, plugin_options);
+      BashSpaces(cur_plugin_options.c_str());
+
+      sd->fsend(pluginoptionscmd, cur_plugin_options.c_str());
+      if (!response(jcr, sd, OKpluginoptions, "PluginOptions", DISPLAY_ERROR)) {
+        return false;
       }
-   }
+    }
+  }
 
-   return true;
+  return true;
 }
 } /* namespace directordaemon */

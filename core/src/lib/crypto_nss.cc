@@ -35,204 +35,195 @@
 
 /* Message Digest Structure */
 struct Digest {
-   crypto_digest_t type;
-   JobControlRecord *jcr;
-   union {
-      SHA1_CTX sha1;
-      MD5_CTX md5;
-   };
+  crypto_digest_t type;
+  JobControlRecord* jcr;
+  union {
+    SHA1_CTX sha1;
+    MD5_CTX md5;
+  };
 };
 
 /* Dummy Signature Structure */
 struct Signature {
-   JobControlRecord *jcr;
+  JobControlRecord* jcr;
 };
 
-DIGEST *crypto_digest_new(JobControlRecord *jcr, crypto_digest_t type)
+DIGEST* crypto_digest_new(JobControlRecord* jcr, crypto_digest_t type)
 {
-   DIGEST *digest;
+  DIGEST* digest;
 
-   digest = (DIGEST *)malloc(sizeof(DIGEST));
-   digest->type = type;
-   digest->jcr = jcr;
+  digest = (DIGEST*)malloc(sizeof(DIGEST));
+  digest->type = type;
+  digest->jcr = jcr;
 
-   switch (type) {
-   case CRYPTO_DIGEST_MD5:
+  switch (type) {
+    case CRYPTO_DIGEST_MD5:
       MD5_Init(&digest->md5);
       break;
-   case CRYPTO_DIGEST_SHA1:
+    case CRYPTO_DIGEST_SHA1:
       SHA1Init(&digest->sha1);
       break;
-   default:
+    default:
       Jmsg1(jcr, M_ERROR, 0, _("Unsupported digest type=%d specified\n"), type);
       free(digest);
       return NULL;
-   }
+  }
 
-   return (digest);
+  return (digest);
 }
 
-bool CryptoDigestUpdate(DIGEST *digest, const uint8_t *data, uint32_t length)
+bool CryptoDigestUpdate(DIGEST* digest, const uint8_t* data, uint32_t length)
 {
-   switch (digest->type) {
-   case CRYPTO_DIGEST_MD5:
+  switch (digest->type) {
+    case CRYPTO_DIGEST_MD5:
       /* Doesn't return anything ... */
-      MD5_Update(&digest->md5, (unsigned char *) data, length);
+      MD5_Update(&digest->md5, (unsigned char*)data, length);
       return true;
-   case CRYPTO_DIGEST_SHA1:
+    case CRYPTO_DIGEST_SHA1:
       /* Doesn't return anything ... */
-      SHA1Update(&digest->sha1, (const u_int8_t *) data, (unsigned int)length);
+      SHA1Update(&digest->sha1, (const u_int8_t*)data, (unsigned int)length);
       return true;
-   default:
+    default:
       return false;
-   }
+  }
 }
 
-bool CryptoDigestFinalize(DIGEST *digest, uint8_t *dest, uint32_t *length)
+bool CryptoDigestFinalize(DIGEST* digest, uint8_t* dest, uint32_t* length)
 {
-   switch (digest->type) {
-   case CRYPTO_DIGEST_MD5:
+  switch (digest->type) {
+    case CRYPTO_DIGEST_MD5:
       /* Guard against programmer error by either the API client or
        * an out-of-sync CRYPTO_DIGEST_MAX_SIZE */
       assert(*length >= CRYPTO_DIGEST_MD5_SIZE);
       *length = CRYPTO_DIGEST_MD5_SIZE;
       /* Doesn't return anything ... */
-      MD5_Final((unsigned char *)dest, &digest->md5);
+      MD5_Final((unsigned char*)dest, &digest->md5);
       return true;
-   case CRYPTO_DIGEST_SHA1:
+    case CRYPTO_DIGEST_SHA1:
       /* Guard against programmer error by either the API client or
        * an out-of-sync CRYPTO_DIGEST_MAX_SIZE */
       assert(*length >= CRYPTO_DIGEST_SHA1_SIZE);
       *length = CRYPTO_DIGEST_SHA1_SIZE;
-      SHA1Final((u_int8_t *) dest, &digest->sha1);
+      SHA1Final((u_int8_t*)dest, &digest->sha1);
       return true;
-   default:
+    default:
       return false;
-   }
+  }
 
-   return false;
+  return false;
 }
 
-void CryptoDigestFree(DIGEST *digest)
+void CryptoDigestFree(DIGEST* digest) { free(digest); }
+
+SIGNATURE* crypto_sign_new(JobControlRecord* jcr) { return NULL; }
+
+crypto_error_t CryptoSignGetDigest(SIGNATURE* sig,
+                                   X509_KEYPAIR* keypair,
+                                   crypto_digest_t& type,
+                                   DIGEST** digest)
 {
-   free(digest);
+  return CRYPTO_ERROR_INTERNAL;
 }
 
-SIGNATURE *crypto_sign_new(JobControlRecord *jcr)
+crypto_error_t CryptoSignVerify(SIGNATURE* sig,
+                                X509_KEYPAIR* keypair,
+                                DIGEST* digest)
 {
-   return NULL;
+  return CRYPTO_ERROR_INTERNAL;
 }
 
-crypto_error_t CryptoSignGetDigest(SIGNATURE *sig, X509_KEYPAIR *keypair,
-                                      crypto_digest_t &type, DIGEST **digest)
+int CryptoSignAddSigner(SIGNATURE* sig, DIGEST* digest, X509_KEYPAIR* keypair)
 {
-   return CRYPTO_ERROR_INTERNAL;
+  return false;
 }
 
-crypto_error_t CryptoSignVerify(SIGNATURE *sig, X509_KEYPAIR *keypair, DIGEST *digest)
+int CryptoSignEncode(SIGNATURE* sig, uint8_t* dest, uint32_t* length)
 {
-   return CRYPTO_ERROR_INTERNAL;
+  return false;
 }
 
-int CryptoSignAddSigner(SIGNATURE *sig, DIGEST *digest, X509_KEYPAIR *keypair)
+SIGNATURE* crypto_sign_decode(JobControlRecord* jcr,
+                              const uint8_t* sigData,
+                              uint32_t length)
 {
-   return false;
+  return NULL;
 }
 
-int CryptoSignEncode(SIGNATURE *sig, uint8_t *dest, uint32_t *length)
+void CryptoSignFree(SIGNATURE* sig) {}
+
+X509_KEYPAIR* crypto_keypair_new(void) { return NULL; }
+
+X509_KEYPAIR* crypto_keypair_dup(X509_KEYPAIR* keypair) { return NULL; }
+
+int CryptoKeypairLoadCert(X509_KEYPAIR* keypair, const char* file)
 {
-   return false;
+  return false;
 }
 
-SIGNATURE *crypto_sign_decode(JobControlRecord *jcr, const uint8_t *sigData, uint32_t length)
+bool CryptoKeypairHasKey(const char* file) { return false; }
+
+int CryptoKeypairLoadKey(X509_KEYPAIR* keypair,
+                         const char* file,
+                         CRYPTO_PEM_PASSWD_CB* pem_callback,
+                         const void* pem_userdata)
 {
-   return NULL;
+  return false;
 }
 
-void CryptoSignFree(SIGNATURE *sig)
+void CryptoKeypairFree(X509_KEYPAIR* keypair) {}
+
+CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher, alist* pubkeys)
 {
+  return NULL;
 }
 
-X509_KEYPAIR *crypto_keypair_new(void)
+void CryptoSessionFree(CRYPTO_SESSION* cs) {}
+
+bool CryptoSessionEncode(CRYPTO_SESSION* cs, uint8_t* dest, uint32_t* length)
 {
-   return NULL;
+  return false;
 }
 
-X509_KEYPAIR *crypto_keypair_dup(X509_KEYPAIR *keypair)
+crypto_error_t CryptoSessionDecode(const uint8_t* data,
+                                   uint32_t length,
+                                   alist* keypairs,
+                                   CRYPTO_SESSION** session)
 {
-   return NULL;
+  return CRYPTO_ERROR_INTERNAL;
 }
 
-int CryptoKeypairLoadCert(X509_KEYPAIR *keypair, const char *file)
+CIPHER_CONTEXT* crypto_cipher_new(CRYPTO_SESSION* cs,
+                                  bool encrypt,
+                                  uint32_t* blocksize)
 {
-   return false;
+  return NULL;
 }
 
-bool CryptoKeypairHasKey(const char *file)
+bool CryptoCipherUpdate(CIPHER_CONTEXT* cipher_ctx,
+                        const uint8_t* data,
+                        uint32_t length,
+                        const uint8_t* dest,
+                        uint32_t* written)
 {
-   return false;
+  return false;
 }
 
-int CryptoKeypairLoadKey(X509_KEYPAIR *keypair, const char *file, CRYPTO_PEM_PASSWD_CB *pem_callback, const void *pem_userdata)
+bool CryptoCipherFinalize(CIPHER_CONTEXT* cipher_ctx,
+                          uint8_t* dest,
+                          uint32_t* written)
 {
-   return false;
+  return false;
 }
 
-void CryptoKeypairFree(X509_KEYPAIR *keypair)
-{
-}
+void CryptoCipherFree(CIPHER_CONTEXT* cipher_ctx) {}
 
-CRYPTO_SESSION *crypto_session_new(crypto_cipher_t cipher, alist *pubkeys)
+const char* crypto_digest_name(DIGEST* digest)
 {
-   return NULL;
-}
-
-void CryptoSessionFree(CRYPTO_SESSION *cs)
-{
-}
-
-bool CryptoSessionEncode(CRYPTO_SESSION *cs, uint8_t *dest, uint32_t *length)
-{
-   return false;
-}
-
-crypto_error_t CryptoSessionDecode(const uint8_t *data, uint32_t length, alist *keypairs, CRYPTO_SESSION **session)
-{
-   return CRYPTO_ERROR_INTERNAL;
-}
-
-CIPHER_CONTEXT *crypto_cipher_new(CRYPTO_SESSION *cs, bool encrypt, uint32_t *blocksize)
-{
-   return NULL;
-}
-
-bool CryptoCipherUpdate(CIPHER_CONTEXT *cipher_ctx, const uint8_t *data, uint32_t length, const uint8_t *dest, uint32_t *written)
-{
-   return false;
-}
-
-bool CryptoCipherFinalize(CIPHER_CONTEXT *cipher_ctx, uint8_t *dest, uint32_t *written)
-{
-   return false;
-}
-
-void CryptoCipherFree(CIPHER_CONTEXT *cipher_ctx)
-{
-}
-
-const char *crypto_digest_name(DIGEST *digest)
-{
-   return crypto_digest_name(digest->type);
+  return crypto_digest_name(digest->type);
 }
 #endif /* HAVE_CRYPTO */
 
-int InitCrypto(void)
-{
-   return 0;
-}
+int InitCrypto(void) { return 0; }
 
-int CleanupCrypto(void)
-{
-   return 0;
-}
+int CleanupCrypto(void) { return 0; }
 #endif /* HAVE_NSS */

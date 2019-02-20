@@ -24,9 +24,9 @@
 
 namespace directordaemon {
 
-bool NdmpValidateClient(JobControlRecord *jcr);
-bool NdmpValidateStorage(JobControlRecord *jcr);
-void DoNdmpClientStatus(UaContext *ua, ClientResource *client, char *cmd);
+bool NdmpValidateClient(JobControlRecord* jcr);
+bool NdmpValidateStorage(JobControlRecord* jcr);
+void DoNdmpClientStatus(UaContext* ua, ClientResource* client, char* cmd);
 
 } /* namespace directordaemon */
-#endif // BAREOS_DIRD_NDMP_DMA_GENERIC_H_
+#endif  // BAREOS_DIRD_NDMP_DMA_GENERIC_H_

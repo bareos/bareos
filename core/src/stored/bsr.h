@@ -43,12 +43,12 @@ namespace storagedaemon {
  *  Formed by Storage daemon from BootStrapRecord
  */
 struct VolumeList {
-   VolumeList *next;
-   char VolumeName[MAX_NAME_LENGTH];
-   char MediaType[MAX_NAME_LENGTH];
-   char device[MAX_NAME_LENGTH];      /* ***FIXME*** use alist here */
-   int Slot;
-   uint32_t start_file;
+  VolumeList* next;
+  char VolumeName[MAX_NAME_LENGTH];
+  char MediaType[MAX_NAME_LENGTH];
+  char device[MAX_NAME_LENGTH]; /* ***FIXME*** use alist here */
+  int Slot;
+  uint32_t start_file;
 };
 
 /**
@@ -61,119 +61,119 @@ struct VolumeList {
  */
 
 struct BsrVolume {
-   BsrVolume *next;
-   char VolumeName[MAX_NAME_LENGTH];
-   char MediaType[MAX_NAME_LENGTH];
-   char device[MAX_NAME_LENGTH];      /* ***FIXME*** use alist here */
-   int32_t Slot;                      /* Slot */
+  BsrVolume* next;
+  char VolumeName[MAX_NAME_LENGTH];
+  char MediaType[MAX_NAME_LENGTH];
+  char device[MAX_NAME_LENGTH]; /* ***FIXME*** use alist here */
+  int32_t Slot;                 /* Slot */
 };
 
 struct BsrClient {
-   BsrClient *next;
-   char ClientName[MAX_NAME_LENGTH];
+  BsrClient* next;
+  char ClientName[MAX_NAME_LENGTH];
 };
 
 struct BsrSessionId {
-   BsrSessionId *next;
-   uint32_t sessid;
-   uint32_t sessid2;
+  BsrSessionId* next;
+  uint32_t sessid;
+  uint32_t sessid2;
 };
 
 struct BsrSessionTime {
-   BsrSessionTime *next;
-   uint32_t sesstime;
-   bool done;                         /* local done */
+  BsrSessionTime* next;
+  uint32_t sesstime;
+  bool done; /* local done */
 };
 
 struct BsrVolumeFile {
-   BsrVolumeFile *next;
-   uint32_t sfile;                    /* start file */
-   uint32_t efile;                    /* end file */
-   bool done;                         /* local done */
+  BsrVolumeFile* next;
+  uint32_t sfile; /* start file */
+  uint32_t efile; /* end file */
+  bool done;      /* local done */
 };
 
 struct BsrVolumeBlock {
-   BsrVolumeBlock *next;
-   uint32_t sblock;                   /* start block */
-   uint32_t eblock;                   /* end block */
-   bool done;                         /* local done */
+  BsrVolumeBlock* next;
+  uint32_t sblock; /* start block */
+  uint32_t eblock; /* end block */
+  bool done;       /* local done */
 };
 
 struct BsrVolumeAddress {
-   BsrVolumeAddress *next;
-   uint64_t saddr;                   /* start address */
-   uint64_t eaddr;                   /* end address */
-   bool done;                        /* local done */
+  BsrVolumeAddress* next;
+  uint64_t saddr; /* start address */
+  uint64_t eaddr; /* end address */
+  bool done;      /* local done */
 };
 
 struct BsrFileIndex {
-   BsrFileIndex *next;
-   int32_t findex;                    /* start file index */
-   int32_t findex2;                   /* end file index */
-   bool done;                         /* local done */
+  BsrFileIndex* next;
+  int32_t findex;  /* start file index */
+  int32_t findex2; /* end file index */
+  bool done;       /* local done */
 };
 
 struct BsrJobid {
-   BsrJobid *next;
-   uint32_t JobId;
-   uint32_t JobId2;
+  BsrJobid* next;
+  uint32_t JobId;
+  uint32_t JobId2;
 };
 
 struct BsrJobType {
-   BsrJobType *next;
-   uint32_t JobType;
+  BsrJobType* next;
+  uint32_t JobType;
 };
 
 struct BsrJoblevel {
-   BsrJoblevel *next;
-   uint32_t JobLevel;
+  BsrJoblevel* next;
+  uint32_t JobLevel;
 };
 
 struct BsrJob {
-   BsrJob *next;
-   char Job[MAX_NAME_LENGTH];
-   bool done;                         /* local done */
+  BsrJob* next;
+  char Job[MAX_NAME_LENGTH];
+  bool done; /* local done */
 };
 
 struct BsrStream {
-   BsrStream *next;
-   int32_t stream;                    /* stream desired */
+  BsrStream* next;
+  int32_t stream; /* stream desired */
 };
 
 struct BootStrapRecord {
-   /* NOTE!!! next must be the first item */
-   BootStrapRecord *next;                         /* pointer to next one */
-   BootStrapRecord *prev;                         /* pointer to previous one */
-   BootStrapRecord *root;                         /* root bsr */
-   bool Reposition;                   /* set when any bsr is marked done */
-   bool mount_next_volume;            /* set when next volume should be mounted */
-   bool done;                         /* set when everything found for this bsr */
-   bool use_fast_rejection;           /* set if fast rejection can be used */
-   bool use_positioning;              /* set if we can position the archive */
-   bool skip_file;                    /* skip all records for current file */
-   BsrVolume *volume;
-   uint32_t count;                    /* count of files to restore this bsr */
-   uint32_t found;                    /* count of restored files this bsr */
-   BsrVolumeFile *volfile;
-   BsrVolumeBlock *volblock;
-   BsrVolumeAddress *voladdr;
-   BsrSessionTime *sesstime;
-   BsrSessionId *sessid;
-   BsrJobid *JobId;
-   BsrJob *job;
-   BsrClient *client;
-   BsrFileIndex *FileIndex;
-   BsrJobType *JobType;
-   BsrJoblevel *JobLevel;
-   BsrStream *stream;
-   char *fileregex;                   /* set if restore is filtered on filename */
-   regex_t *fileregex_re;
-   Attributes *attr;                        /* scratch space for unpacking */
+  /* NOTE!!! next must be the first item */
+  BootStrapRecord* next;   /* pointer to next one */
+  BootStrapRecord* prev;   /* pointer to previous one */
+  BootStrapRecord* root;   /* root bsr */
+  bool Reposition;         /* set when any bsr is marked done */
+  bool mount_next_volume;  /* set when next volume should be mounted */
+  bool done;               /* set when everything found for this bsr */
+  bool use_fast_rejection; /* set if fast rejection can be used */
+  bool use_positioning;    /* set if we can position the archive */
+  bool skip_file;          /* skip all records for current file */
+  BsrVolume* volume;
+  uint32_t count; /* count of files to restore this bsr */
+  uint32_t found; /* count of restored files this bsr */
+  BsrVolumeFile* volfile;
+  BsrVolumeBlock* volblock;
+  BsrVolumeAddress* voladdr;
+  BsrSessionTime* sesstime;
+  BsrSessionId* sessid;
+  BsrJobid* JobId;
+  BsrJob* job;
+  BsrClient* client;
+  BsrFileIndex* FileIndex;
+  BsrJobType* JobType;
+  BsrJoblevel* JobLevel;
+  BsrStream* stream;
+  char* fileregex; /* set if restore is filtered on filename */
+  regex_t* fileregex_re;
+  Attributes* attr; /* scratch space for unpacking */
 };
 
 
-void CreateRestoreVolumeList(JobControlRecord *jcr);
-void FreeRestoreVolumeList(JobControlRecord *jcr);
+void CreateRestoreVolumeList(JobControlRecord* jcr);
+void FreeRestoreVolumeList(JobControlRecord* jcr);
 
 } /* namespace storagedaemon */
 

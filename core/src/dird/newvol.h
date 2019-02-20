@@ -24,7 +24,9 @@
 
 namespace directordaemon {
 
-bool newVolume(JobControlRecord *jcr, MediaDbRecord *mr, StorageResource *store);
+bool newVolume(JobControlRecord* jcr,
+               MediaDbRecord* mr,
+               StorageResource* store);
 
 } /* namespace directordaemon */
-#endif // BAREOS_DIRD_NEWVOL_H_
+#endif  // BAREOS_DIRD_NEWVOL_H_

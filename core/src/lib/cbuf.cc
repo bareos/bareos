@@ -33,31 +33,27 @@
  */
 int CircularBuffer::init(int capacity)
 {
-   if (pthread_mutex_init(&lock_, NULL) != 0) {
-      return -1;
-   }
+  if (pthread_mutex_init(&lock_, NULL) != 0) { return -1; }
 
-   if (pthread_cond_init(&notfull_, NULL) != 0) {
-      pthread_mutex_destroy(&lock_);
-      return -1;
-   }
+  if (pthread_cond_init(&notfull_, NULL) != 0) {
+    pthread_mutex_destroy(&lock_);
+    return -1;
+  }
 
-   if (pthread_cond_init(&notempty_, NULL) != 0) {
-      pthread_cond_destroy(&notfull_);
-      pthread_mutex_destroy(&lock_);
-      return -1;
-   }
+  if (pthread_cond_init(&notempty_, NULL) != 0) {
+    pthread_cond_destroy(&notfull_);
+    pthread_mutex_destroy(&lock_);
+    return -1;
+  }
 
-   next_in_ = 0;
-   next_out_ = 0;
-   size_ = 0;
-   capacity_ = capacity;
-   if (data_) {
-      free(data_);
-   }
-   data_ = (void **)malloc(capacity_ * sizeof(void *));
+  next_in_ = 0;
+  next_out_ = 0;
+  size_ = 0;
+  capacity_ = capacity;
+  if (data_) { free(data_); }
+  data_ = (void**)malloc(capacity_ * sizeof(void*));
 
-   return 0;
+  return 0;
 }
 
 /*
@@ -65,82 +61,72 @@ int CircularBuffer::init(int capacity)
  */
 void CircularBuffer::destroy()
 {
-   pthread_cond_destroy(&notempty_);
-   pthread_cond_destroy(&notfull_);
-   pthread_mutex_destroy(&lock_);
-   if (data_) {
-      free(data_);
-      data_ = NULL;
-   }
+  pthread_cond_destroy(&notempty_);
+  pthread_cond_destroy(&notfull_);
+  pthread_mutex_destroy(&lock_);
+  if (data_) {
+    free(data_);
+    data_ = NULL;
+  }
 }
 
 /*
  * Enqueue a new item into the circular buffer.
  */
-int CircularBuffer::enqueue(void *data)
+int CircularBuffer::enqueue(void* data)
 {
-   if (pthread_mutex_lock(&lock_) != 0) {
-      return -1;
-   }
+  if (pthread_mutex_lock(&lock_) != 0) { return -1; }
 
-   /*
-    * Wait while the buffer is full.
-    */
-   while (full()) {
-      pthread_cond_wait(&notfull_, &lock_);
-   }
-   data_[next_in_++] = data;
-   size_++;
-   next_in_ %= capacity_;
+  /*
+   * Wait while the buffer is full.
+   */
+  while (full()) { pthread_cond_wait(&notfull_, &lock_); }
+  data_[next_in_++] = data;
+  size_++;
+  next_in_ %= capacity_;
 
-   /*
-    * Let any waiting consumer know there is data.
-    */
-   pthread_cond_broadcast(&notempty_);
+  /*
+   * Let any waiting consumer know there is data.
+   */
+  pthread_cond_broadcast(&notempty_);
 
-   pthread_mutex_unlock(&lock_);
+  pthread_mutex_unlock(&lock_);
 
-   return 0;
+  return 0;
 }
 
 /*
  * Dequeue an item from the circular buffer.
  */
-void *CircularBuffer::dequeue()
+void* CircularBuffer::dequeue()
 {
-   void *data = NULL;
+  void* data = NULL;
 
-   if (pthread_mutex_lock(&lock_) != 0) {
-      return NULL;
-   }
+  if (pthread_mutex_lock(&lock_) != 0) { return NULL; }
 
-   /*
-    * Wait while there is nothing in the buffer
-    */
-   while (empty() && !flush_) {
-      pthread_cond_wait(&notempty_, &lock_);
-   }
+  /*
+   * Wait while there is nothing in the buffer
+   */
+  while (empty() && !flush_) { pthread_cond_wait(&notempty_, &lock_); }
 
-   /*
-    * When we are requested to flush and there is no data left return NULL.
-    */
-   if (empty() && flush_) {
-      goto bail_out;
-   }
+  /*
+   * When we are requested to flush and there is no data left return NULL.
+   */
+  if (empty() && flush_) { goto bail_out; }
 
-   data = data_[next_out_++];
-   size_--;
-   next_out_ %= capacity_;
+  data = data_[next_out_++];
+  size_--;
+  next_out_ %= capacity_;
 
-   /*
-    * Let all waiting producers know there is room.
-    */
-   pthread_cond_broadcast(&notfull_);
+  /*
+   * Let all waiting producers know there is room.
+   */
+  pthread_cond_broadcast(&notfull_);
 
 bail_out:
-   pthread_mutex_unlock(&lock_);
+  pthread_mutex_unlock(&lock_);
 
-   return data;
+  return data;
 }
 
 /*
@@ -149,20 +135,16 @@ bail_out:
  */
 int CircularBuffer::NextSlot()
 {
-   if (pthread_mutex_lock(&lock_) != 0) {
-      return -1;
-   }
+  if (pthread_mutex_lock(&lock_) != 0) { return -1; }
 
-   /*
-    * Wait while the buffer is full.
-    */
-   while (full()) {
-      pthread_cond_wait(&notfull_, &lock_);
-   }
+  /*
+   * Wait while the buffer is full.
+   */
+  while (full()) { pthread_cond_wait(&notfull_, &lock_); }
 
-   pthread_mutex_unlock(&lock_);
+  pthread_mutex_unlock(&lock_);
 
-   return next_in_;
+  return next_in_;
 }
 
 /*
@@ -171,21 +153,19 @@ int CircularBuffer::NextSlot()
  */
 int CircularBuffer::flush()
 {
-   if (pthread_mutex_lock(&lock_) != 0) {
-      return -1;
-   }
+  if (pthread_mutex_lock(&lock_) != 0) { return -1; }
 
-   /*
-    * Set the flush flag.
-    */
-   flush_ = true;
+  /*
+   * Set the flush flag.
+   */
+  flush_ = true;
 
-   /*
-    * Let all waiting consumers know there will be no more data.
-    */
-   pthread_cond_broadcast(&notempty_);
+  /*
+   * Let all waiting consumers know there will be no more data.
+   */
+  pthread_cond_broadcast(&notempty_);
 
-   pthread_mutex_unlock(&lock_);
+  pthread_mutex_unlock(&lock_);
 
-   return 0;
+  return 0;
 }

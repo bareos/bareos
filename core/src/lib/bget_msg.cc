@@ -28,11 +28,11 @@
  * network signals for the FD and the SD.
  */
 
-#include "include/bareos.h"                   /* pull in global headers */
+#include "include/bareos.h" /* pull in global headers */
 #include "lib/bnet.h"
 #include "lib/bget_msg.h"
 
-static char OK_msg[]   = "2000 OK\n";
+static char OK_msg[] = "2000 OK\n";
 static char TERM_msg[] = "2999 Terminate\n";
 
 #define messagelevel 500
@@ -48,55 +48,56 @@ static char TERM_msg[] = "2999 Terminate\n";
  * Returns -2 on hard end of file (BNET_HARDEOF)
  * Returns -3 on error  (BNET_ERROR)
  */
-int BgetMsg(BareosSocket *sock)
+int BgetMsg(BareosSocket* sock)
 {
-   int n;
-   for ( ;; ) {
-      n = sock->recv();
-      if (n >= 0) {                  /* normal return */
-         return n;
-      }
-      if (IsBnetStop(sock)) {      /* error return */
-         return n;
-      }
+  int n;
+  for (;;) {
+    n = sock->recv();
+    if (n >= 0) { /* normal return */
+      return n;
+    }
+    if (IsBnetStop(sock)) { /* error return */
+      return n;
+    }
 
-      /* BNET_SIGNAL (-1) return from BnetRecv() => network signal */
-      switch (sock->message_length) {
-      case BNET_EOD:               /* end of data */
-         Dmsg0(messagelevel, "Got BNET_EOD\n");
-         return n;
+    /* BNET_SIGNAL (-1) return from BnetRecv() => network signal */
+    switch (sock->message_length) {
+      case BNET_EOD: /* end of data */
+        Dmsg0(messagelevel, "Got BNET_EOD\n");
+        return n;
       case BNET_EOD_POLL:
-         Dmsg0(messagelevel, "Got BNET_EOD_POLL\n");
-         if (sock->IsTerminated()) {
-            sock->fsend(TERM_msg);
-         } else {
-            sock->fsend(OK_msg); /* send response */
-         }
-         return n;                 /* end of data */
+        Dmsg0(messagelevel, "Got BNET_EOD_POLL\n");
+        if (sock->IsTerminated()) {
+          sock->fsend(TERM_msg);
+        } else {
+          sock->fsend(OK_msg); /* send response */
+        }
+        return n; /* end of data */
       case BNET_TERMINATE:
-         Dmsg0(messagelevel, "Got BNET_TERMINATE\n");
-         sock->SetTerminated();
-         return n;
+        Dmsg0(messagelevel, "Got BNET_TERMINATE\n");
+        sock->SetTerminated();
+        return n;
       case BNET_POLL:
-         Dmsg0(messagelevel, "Got BNET_POLL\n");
-         if (sock->IsTerminated()) {
-            sock->fsend(TERM_msg);
-         } else {
-            sock->fsend(OK_msg); /* send response */
-         }
-         break;
+        Dmsg0(messagelevel, "Got BNET_POLL\n");
+        if (sock->IsTerminated()) {
+          sock->fsend(TERM_msg);
+        } else {
+          sock->fsend(OK_msg); /* send response */
+        }
+        break;
       case BNET_HEARTBEAT:
       case BNET_HB_RESPONSE:
-         break;
+        break;
       case BNET_STATUS:
-         /* *****FIXME***** Implement BNET_STATUS */
-         Dmsg0(messagelevel, "Got BNET_STATUS\n");
-         sock->fsend(_("Status OK\n"));
-         sock->signal(BNET_EOD);
-         break;
+        /* *****FIXME***** Implement BNET_STATUS */
+        Dmsg0(messagelevel, "Got BNET_STATUS\n");
+        sock->fsend(_("Status OK\n"));
+        sock->signal(BNET_EOD);
+        break;
       default:
-         Emsg1(M_ERROR, 0, _("BgetMsg: unknown signal %d\n"), sock->message_length);
-         break;
-      }
-   }
+        Emsg1(M_ERROR, 0, _("BgetMsg: unknown signal %d\n"),
+              sock->message_length);
+        break;
+    }
+  }
 }

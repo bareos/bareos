@@ -46,455 +46,452 @@
 #include "include/jcr.h"
 
 namespace storagedaemon {
-   extern bool ParseSdConfig(const char *configfile, int exit_code);
+extern bool ParseSdConfig(const char* configfile, int exit_code);
 }
 
 using namespace storagedaemon;
 
-static void DoBlocks(char *infname);
-static void do_jobs(char *infname);
-static void do_ls(char *fname);
-static void do_close(JobControlRecord *jcr);
-static void GetSessionRecord(Device *dev, DeviceRecord *rec, SESSION_LABEL *sessrec);
-static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec);
+static void DoBlocks(char* infname);
+static void do_jobs(char* infname);
+static void do_ls(char* fname);
+static void do_close(JobControlRecord* jcr);
+static void GetSessionRecord(Device* dev,
+                             DeviceRecord* rec,
+                             SESSION_LABEL* sessrec);
+static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec);
 
-static Device *dev;
-static DeviceControlRecord *dcr;
+static Device* dev;
+static DeviceControlRecord* dcr;
 static bool dump_label = false;
 static bool list_blocks = false;
 static bool list_jobs = false;
-static DeviceRecord *rec;
-static JobControlRecord *jcr;
+static DeviceRecord* rec;
+static JobControlRecord* jcr;
 static SESSION_LABEL sessrec;
 static uint32_t num_files = 0;
-static Attributes *attr;
+static Attributes* attr;
 
-static FindFilesPacket *ff;
-static BootStrapRecord *bsr = NULL;
+static FindFilesPacket* ff;
+static BootStrapRecord* bsr = NULL;
 
 static void usage()
 {
-   fprintf(stderr, _(
-PROG_COPYRIGHT
-"\nVersion: %s (%s)\n\n"
-"Usage: bls [options] <device-name>\n"
-"       -b <file>       specify a bootstrap file\n"
-"       -c <path>       specify a Storage configuration file or directory\n"
-"       -D <director>   specify a director name specified in the Storage\n"
-"                       configuration file for the Key Encryption Key selection\n"
-"       -d <nn>         set debug level to <nn>\n"
-"       -dt             print timestamp in debug output\n"
-"       -e <file>       exclude list\n"
-"       -i <file>       include list\n"
-"       -j              list jobs\n"
-"       -k              list blocks\n"
-"    (no j or k option) list saved files\n"
-"       -L              dump label\n"
-"       -p              proceed inspite of errors\n"
-"       -v              be verbose (can be specified multiple times)\n"
-"       -V              specify Volume names (separated by |)\n"
-"       -?              print this message\n\n"), 2000, VERSION, BDATE);
-   exit(1);
+  fprintf(
+      stderr,
+      _(PROG_COPYRIGHT
+        "\nVersion: %s (%s)\n\n"
+        "Usage: bls [options] <device-name>\n"
+        "       -b <file>       specify a bootstrap file\n"
+        "       -c <path>       specify a Storage configuration file or "
+        "directory\n"
+        "       -D <director>   specify a director name specified in the "
+        "Storage\n"
+        "                       configuration file for the Key Encryption Key "
+        "selection\n"
+        "       -d <nn>         set debug level to <nn>\n"
+        "       -dt             print timestamp in debug output\n"
+        "       -e <file>       exclude list\n"
+        "       -i <file>       include list\n"
+        "       -j              list jobs\n"
+        "       -k              list blocks\n"
+        "    (no j or k option) list saved files\n"
+        "       -L              dump label\n"
+        "       -p              proceed inspite of errors\n"
+        "       -v              be verbose (can be specified multiple times)\n"
+        "       -V              specify Volume names (separated by |)\n"
+        "       -?              print this message\n\n"),
+      2000, VERSION, BDATE);
+  exit(1);
 }
 
-int main (int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-   int i, ch;
-   FILE *fd;
-   char line[1000];
-   char *VolumeName = NULL;
-   char *bsrName = NULL;
-   char *DirectorName = NULL;
-   bool ignore_label_errors = false;
-   DirectorResource *director = NULL;
+  int i, ch;
+  FILE* fd;
+  char line[1000];
+  char* VolumeName = NULL;
+  char* bsrName = NULL;
+  char* DirectorName = NULL;
+  bool ignore_label_errors = false;
+  DirectorResource* director = NULL;
 
-   setlocale(LC_ALL, "");
-   bindtextdomain("bareos", LOCALEDIR);
-   textdomain("bareos");
-   InitStackDump();
+  setlocale(LC_ALL, "");
+  bindtextdomain("bareos", LOCALEDIR);
+  textdomain("bareos");
+  InitStackDump();
 
-   working_directory = "/tmp";
-   MyNameIs(argc, argv, "bls");
-   InitMsg(NULL, NULL);              /* initialize message handler */
+  working_directory = "/tmp";
+  MyNameIs(argc, argv, "bls");
+  InitMsg(NULL, NULL); /* initialize message handler */
 
-   OSDependentInit();
+  OSDependentInit();
 
-   ff = init_find_files();
+  ff = init_find_files();
 
-   while ((ch = getopt(argc, argv, "b:c:D:d:e:i:jkLpvV:?")) != -1) {
-      switch (ch) {
+  while ((ch = getopt(argc, argv, "b:c:D:d:e:i:jkLpvV:?")) != -1) {
+    switch (ch) {
       case 'b':
-         bsrName = optarg;
-         break;
+        bsrName = optarg;
+        break;
 
-      case 'c':                    /* specify config file */
-         if (configfile != NULL) {
-            free(configfile);
-         }
-         configfile = bstrdup(optarg);
-         break;
+      case 'c': /* specify config file */
+        if (configfile != NULL) { free(configfile); }
+        configfile = bstrdup(optarg);
+        break;
 
-      case 'D':                    /* specify director name */
-         if (DirectorName != NULL) {
-            free(DirectorName);
-         }
-         DirectorName = bstrdup(optarg);
-         break;
+      case 'D': /* specify director name */
+        if (DirectorName != NULL) { free(DirectorName); }
+        DirectorName = bstrdup(optarg);
+        break;
 
-      case 'd':                    /* debug level */
-         if (*optarg == 't') {
-            dbg_timestamp = true;
-         } else {
-            debug_level = atoi(optarg);
-            if (debug_level <= 0) {
-               debug_level = 1;
-            }
-         }
-         break;
+      case 'd': /* debug level */
+        if (*optarg == 't') {
+          dbg_timestamp = true;
+        } else {
+          debug_level = atoi(optarg);
+          if (debug_level <= 0) { debug_level = 1; }
+        }
+        break;
 
-      case 'e':                    /* exclude list */
-         if ((fd = fopen(optarg, "rb")) == NULL) {
-            BErrNo be;
-            Pmsg2(0, _("Could not open exclude file: %s, ERR=%s\n"),
-               optarg, be.bstrerror());
-            exit(1);
-         }
-         while (fgets(line, sizeof(line), fd) != NULL) {
-            StripTrailingJunk(line);
-            Dmsg1(100, "add_exclude %s\n", line);
-            AddFnameToExcludeList(ff, line);
-         }
-         fclose(fd);
-         break;
+      case 'e': /* exclude list */
+        if ((fd = fopen(optarg, "rb")) == NULL) {
+          BErrNo be;
+          Pmsg2(0, _("Could not open exclude file: %s, ERR=%s\n"), optarg,
+                be.bstrerror());
+          exit(1);
+        }
+        while (fgets(line, sizeof(line), fd) != NULL) {
+          StripTrailingJunk(line);
+          Dmsg1(100, "add_exclude %s\n", line);
+          AddFnameToExcludeList(ff, line);
+        }
+        fclose(fd);
+        break;
 
-      case 'i':                    /* include list */
-         if ((fd = fopen(optarg, "rb")) == NULL) {
-            BErrNo be;
-            Pmsg2(0, _("Could not open include file: %s, ERR=%s\n"),
-               optarg, be.bstrerror());
-            exit(1);
-         }
-         while (fgets(line, sizeof(line), fd) != NULL) {
-            StripTrailingJunk(line);
-            Dmsg1(100, "add_include %s\n", line);
-            AddFnameToIncludeList(ff, 0, line);
-         }
-         fclose(fd);
-         break;
+      case 'i': /* include list */
+        if ((fd = fopen(optarg, "rb")) == NULL) {
+          BErrNo be;
+          Pmsg2(0, _("Could not open include file: %s, ERR=%s\n"), optarg,
+                be.bstrerror());
+          exit(1);
+        }
+        while (fgets(line, sizeof(line), fd) != NULL) {
+          StripTrailingJunk(line);
+          Dmsg1(100, "add_include %s\n", line);
+          AddFnameToIncludeList(ff, 0, line);
+        }
+        fclose(fd);
+        break;
 
       case 'j':
-         list_jobs = true;
-         break;
+        list_jobs = true;
+        break;
 
       case 'k':
-         list_blocks = true;
-         break;
+        list_blocks = true;
+        break;
 
       case 'L':
-         dump_label = true;
-         break;
+        dump_label = true;
+        break;
 
       case 'p':
-         ignore_label_errors = true;
-         forge_on = true;
-         break;
+        ignore_label_errors = true;
+        forge_on = true;
+        break;
 
       case 'v':
-         verbose++;
-         break;
+        verbose++;
+        break;
 
-      case 'V':                    /* Volume name */
-         VolumeName = optarg;
-         break;
+      case 'V': /* Volume name */
+        VolumeName = optarg;
+        break;
 
       case '?':
       default:
-         usage();
+        usage();
 
-      } /* end switch */
-   } /* end while */
-   argc -= optind;
-   argv += optind;
+    } /* end switch */
+  }   /* end while */
+  argc -= optind;
+  argv += optind;
 
-   if (!argc) {
-      Pmsg0(0, _("No archive name specified\n"));
-      usage();
-   }
+  if (!argc) {
+    Pmsg0(0, _("No archive name specified\n"));
+    usage();
+  }
 
-   my_config = InitSdConfig(configfile, M_ERROR_TERM);
-   ParseSdConfig(configfile, M_ERROR_TERM);
+  my_config = InitSdConfig(configfile, M_ERROR_TERM);
+  ParseSdConfig(configfile, M_ERROR_TERM);
 
-   if (DirectorName) {
-      foreach_res(director, R_DIRECTOR) {
-         if (bstrcmp(director->name(), DirectorName)) {
-            break;
-         }
-      }
-      if (!director) {
-         Emsg2(M_ERROR_TERM, 0, _("No Director resource named %s defined in %s. Cannot continue.\n"),
-               DirectorName, configfile);
-      }
-   }
+  if (DirectorName) {
+    foreach_res (director, R_DIRECTOR) {
+      if (bstrcmp(director->name(), DirectorName)) { break; }
+    }
+    if (!director) {
+      Emsg2(
+          M_ERROR_TERM, 0,
+          _("No Director resource named %s defined in %s. Cannot continue.\n"),
+          DirectorName, configfile);
+    }
+  }
 
-   LoadSdPlugins(me->plugin_directory, me->plugin_names);
+  LoadSdPlugins(me->plugin_directory, me->plugin_names);
 
-   ReadCryptoCache(me->working_directory, "bareos-sd",
-                     GetFirstPortHostOrder(me->SDaddrs));
+  ReadCryptoCache(me->working_directory, "bareos-sd",
+                  GetFirstPortHostOrder(me->SDaddrs));
 
-   if (ff->included_files_list == NULL) {
-      AddFnameToIncludeList(ff, 0, "/");
-   }
+  if (ff->included_files_list == NULL) { AddFnameToIncludeList(ff, 0, "/"); }
 
-   for (i=0; i < argc; i++) {
-      if (bsrName) {
-         bsr = libbareos::parse_bsr(NULL, bsrName);
-      }
-      dcr = New(DeviceControlRecord);
-      jcr = SetupJcr("bls", argv[i], bsr, director, dcr, VolumeName, true); /* read device */
-      if (!jcr) {
-         exit(1);
-      }
-      jcr->ignore_label_errors = ignore_label_errors;
-      dev = jcr->dcr->dev;
-      if (!dev) {
-         exit(1);
-      }
-      dcr = jcr->dcr;
-      rec = new_record();
-      attr = new_attr(jcr);
-      /*
-       * Assume that we have already read the volume label.
-       * If on second or subsequent volume, adjust buffer pointer
-       */
-      if (dev->VolHdr.PrevVolumeName[0] != 0) { /* second volume */
-         Pmsg1(0, _("\n"
-                    "Warning, this Volume is a continuation of Volume %s\n"),
-                dev->VolHdr.PrevVolumeName);
-      }
+  for (i = 0; i < argc; i++) {
+    if (bsrName) { bsr = libbareos::parse_bsr(NULL, bsrName); }
+    dcr = New(DeviceControlRecord);
+    jcr = SetupJcr("bls", argv[i], bsr, director, dcr, VolumeName,
+                   true); /* read device */
+    if (!jcr) { exit(1); }
+    jcr->ignore_label_errors = ignore_label_errors;
+    dev = jcr->dcr->dev;
+    if (!dev) { exit(1); }
+    dcr = jcr->dcr;
+    rec = new_record();
+    attr = new_attr(jcr);
+    /*
+     * Assume that we have already read the volume label.
+     * If on second or subsequent volume, adjust buffer pointer
+     */
+    if (dev->VolHdr.PrevVolumeName[0] != 0) { /* second volume */
+      Pmsg1(0,
+            _("\n"
+              "Warning, this Volume is a continuation of Volume %s\n"),
+            dev->VolHdr.PrevVolumeName);
+    }
 
-      if (list_blocks) {
-         DoBlocks(argv[i]);
-      } else if (list_jobs) {
-         do_jobs(argv[i]);
-      } else {
-         do_ls(argv[i]);
-      }
-      do_close(jcr);
-   }
-   if (bsr) {
-      libbareos::FreeBsr(bsr);
-   }
-   TermIncludeExcludeFiles(ff);
-   TermFindFiles(ff);
-   return 0;
+    if (list_blocks) {
+      DoBlocks(argv[i]);
+    } else if (list_jobs) {
+      do_jobs(argv[i]);
+    } else {
+      do_ls(argv[i]);
+    }
+    do_close(jcr);
+  }
+  if (bsr) { libbareos::FreeBsr(bsr); }
+  TermIncludeExcludeFiles(ff);
+  TermFindFiles(ff);
+  return 0;
 }
 
-static void do_close(JobControlRecord *jcr)
+static void do_close(JobControlRecord* jcr)
 {
-   FreeAttr(attr);
-   FreeRecord(rec);
-   CleanDevice(jcr->dcr);
-   dev->term();
-   FreeDeviceControlRecord(jcr->dcr);
-   FreeJcr(jcr);
+  FreeAttr(attr);
+  FreeRecord(rec);
+  CleanDevice(jcr->dcr);
+  dev->term();
+  FreeDeviceControlRecord(jcr->dcr);
+  FreeJcr(jcr);
 }
 
 /* List just block information */
-static void DoBlocks(char *infname)
+static void DoBlocks(char* infname)
 {
-   DeviceBlock *block = dcr->block;
-   char buf1[100], buf2[100];
-   for ( ;; ) {
-      switch(dcr->ReadBlockFromDevice(NO_BLOCK_NUMBER_CHECK)) {
-         case DeviceControlRecord::ReadStatus::Ok:
-            // no special handling required
-            break;
-         case DeviceControlRecord::ReadStatus::EndOfTape:
-            if (!MountNextReadVolume(dcr)) {
-               Jmsg(jcr, M_INFO, 0, _("Got EOM at file %u on device %s, Volume \"%s\"\n"),
-                  dev->file, dev->print_name(), dcr->VolumeName);
-               return;
-            }
-            /* Read and discard Volume label */
-            DeviceRecord *record;
-            record = new_record();
-            dcr->ReadBlockFromDevice(NO_BLOCK_NUMBER_CHECK);
-            ReadRecordFromBlock(dcr, record);
-            GetSessionRecord(dev, record, &sessrec);
-            FreeRecord(record);
-            Jmsg(jcr, M_INFO, 0, _("Mounted Volume \"%s\".\n"), dcr->VolumeName);
-            break;
-         case DeviceControlRecord::ReadStatus::EndOfFile:
-            Jmsg(jcr, M_INFO, 0, _("End of file %u on device %s, Volume \"%s\"\n"),
-               dev->file, dev->print_name(), dcr->VolumeName);
-            Dmsg0(20, "read_record got eof. try again\n");
-            continue;
-         default:
-            Dmsg1(100, "!read_block(): ERR=%s\n", dev->bstrerror());
-            if (dev->IsShortBlock()) {
-               Jmsg(jcr, M_INFO, 0, "%s", dev->errmsg);
-               continue;
-            } else {
-               /* I/O error */
-               DisplayTapeErrorStatus(jcr, dev);
-               return;
-            }
-      }
-      if (!MatchBsrBlock(bsr, block)) {
-         Dmsg5(100, "reject Blk=%u blen=%u bVer=%d SessId=%u SessTim=%u\n",
+  DeviceBlock* block = dcr->block;
+  char buf1[100], buf2[100];
+  for (;;) {
+    switch (dcr->ReadBlockFromDevice(NO_BLOCK_NUMBER_CHECK)) {
+      case DeviceControlRecord::ReadStatus::Ok:
+        // no special handling required
+        break;
+      case DeviceControlRecord::ReadStatus::EndOfTape:
+        if (!MountNextReadVolume(dcr)) {
+          Jmsg(jcr, M_INFO, 0,
+               _("Got EOM at file %u on device %s, Volume \"%s\"\n"), dev->file,
+               dev->print_name(), dcr->VolumeName);
+          return;
+        }
+        /* Read and discard Volume label */
+        DeviceRecord* record;
+        record = new_record();
+        dcr->ReadBlockFromDevice(NO_BLOCK_NUMBER_CHECK);
+        ReadRecordFromBlock(dcr, record);
+        GetSessionRecord(dev, record, &sessrec);
+        FreeRecord(record);
+        Jmsg(jcr, M_INFO, 0, _("Mounted Volume \"%s\".\n"), dcr->VolumeName);
+        break;
+      case DeviceControlRecord::ReadStatus::EndOfFile:
+        Jmsg(jcr, M_INFO, 0, _("End of file %u on device %s, Volume \"%s\"\n"),
+             dev->file, dev->print_name(), dcr->VolumeName);
+        Dmsg0(20, "read_record got eof. try again\n");
+        continue;
+      default:
+        Dmsg1(100, "!read_block(): ERR=%s\n", dev->bstrerror());
+        if (dev->IsShortBlock()) {
+          Jmsg(jcr, M_INFO, 0, "%s", dev->errmsg);
+          continue;
+        } else {
+          /* I/O error */
+          DisplayTapeErrorStatus(jcr, dev);
+          return;
+        }
+    }
+    if (!MatchBsrBlock(bsr, block)) {
+      Dmsg5(100, "reject Blk=%u blen=%u bVer=%d SessId=%u SessTim=%u\n",
             block->BlockNumber, block->block_len, block->BlockVer,
             block->VolSessionId, block->VolSessionTime);
-         continue;
-      }
-      Dmsg5(100, "Blk=%u blen=%u bVer=%d SessId=%u SessTim=%u\n",
-        block->BlockNumber, block->block_len, block->BlockVer,
-        block->VolSessionId, block->VolSessionTime);
-      if (verbose == 1) {
-         ReadRecordFromBlock(dcr, rec);
-         Pmsg9(-1, _("File:blk=%u:%u blk_num=%u blen=%u First rec FI=%s SessId=%u SessTim=%u Strm=%s rlen=%d\n"),
-              dev->file, dev->block_num,
-              block->BlockNumber, block->block_len,
-              FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId, rec->VolSessionTime,
-              stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len);
-         rec->remainder = 0;
-      } else if (verbose > 1) {
-         DumpBlock(block, "");
-      } else {
-         printf(_("Block: %d size=%d\n"), block->BlockNumber, block->block_len);
-      }
-
-   }
-   return;
+      continue;
+    }
+    Dmsg5(100, "Blk=%u blen=%u bVer=%d SessId=%u SessTim=%u\n",
+          block->BlockNumber, block->block_len, block->BlockVer,
+          block->VolSessionId, block->VolSessionTime);
+    if (verbose == 1) {
+      ReadRecordFromBlock(dcr, rec);
+      Pmsg9(-1,
+            _("File:blk=%u:%u blk_num=%u blen=%u First rec FI=%s SessId=%u "
+              "SessTim=%u Strm=%s rlen=%d\n"),
+            dev->file, dev->block_num, block->BlockNumber, block->block_len,
+            FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
+            rec->VolSessionTime,
+            stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len);
+      rec->remainder = 0;
+    } else if (verbose > 1) {
+      DumpBlock(block, "");
+    } else {
+      printf(_("Block: %d size=%d\n"), block->BlockNumber, block->block_len);
+    }
+  }
+  return;
 }
 
 /**
  * We are only looking for labels or in particular Job Session records
  */
-static bool jobs_cb(DeviceControlRecord *dcr, DeviceRecord *rec)
+static bool jobs_cb(DeviceControlRecord* dcr, DeviceRecord* rec)
 {
-   if (rec->FileIndex < 0) {
-      DumpLabelRecord(dcr->dev, rec, verbose);
-   }
-   rec->remainder = 0;
-   return true;
+  if (rec->FileIndex < 0) { DumpLabelRecord(dcr->dev, rec, verbose); }
+  rec->remainder = 0;
+  return true;
 }
 
 /* Do list job records */
-static void do_jobs(char *infname)
+static void do_jobs(char* infname)
 {
-   ReadRecords(dcr, jobs_cb, MountNextReadVolume);
+  ReadRecords(dcr, jobs_cb, MountNextReadVolume);
 }
 
 /* Do an ls type listing of an archive */
-static void do_ls(char *infname)
+static void do_ls(char* infname)
 {
-   if (dump_label) {
-      DumpVolumeLabel(dev);
-      return;
-   }
-   ReadRecords(dcr, RecordCb, MountNextReadVolume);
-   printf("%u files and directories found.\n", num_files);
+  if (dump_label) {
+    DumpVolumeLabel(dev);
+    return;
+  }
+  ReadRecords(dcr, RecordCb, MountNextReadVolume);
+  printf("%u files and directories found.\n", num_files);
 }
 
 /**
  * Called here for each record from ReadRecords()
  */
-static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec)
+static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
 {
-   PoolMem record_str(PM_MESSAGE);
+  PoolMem record_str(PM_MESSAGE);
 
-   if (rec->FileIndex < 0) {
-      GetSessionRecord(dev, rec, &sessrec);
-      return true;
-   }
+  if (rec->FileIndex < 0) {
+    GetSessionRecord(dev, rec, &sessrec);
+    return true;
+  }
 
-   /*
-    * File Attributes stream
-    */
-   switch (rec->maskedStream) {
-   case STREAM_UNIX_ATTRIBUTES:
-   case STREAM_UNIX_ATTRIBUTES_EX:
-      if (!UnpackAttributesRecord(jcr, rec->Stream, rec->data, rec->data_len, attr)) {
-         if (!forge_on) {
-            Emsg0(M_ERROR_TERM, 0, _("Cannot continue.\n"));
-         } else {
-            Emsg0(M_ERROR, 0, _("Attrib unpack error!\n"));
-         }
-         num_files++;
-         return true;
+  /*
+   * File Attributes stream
+   */
+  switch (rec->maskedStream) {
+    case STREAM_UNIX_ATTRIBUTES:
+    case STREAM_UNIX_ATTRIBUTES_EX:
+      if (!UnpackAttributesRecord(jcr, rec->Stream, rec->data, rec->data_len,
+                                  attr)) {
+        if (!forge_on) {
+          Emsg0(M_ERROR_TERM, 0, _("Cannot continue.\n"));
+        } else {
+          Emsg0(M_ERROR, 0, _("Attrib unpack error!\n"));
+        }
+        num_files++;
+        return true;
       }
 
-      attr->data_stream = DecodeStat(attr->attr, &attr->statp, sizeof(attr->statp), &attr->LinkFI);
+      attr->data_stream = DecodeStat(attr->attr, &attr->statp,
+                                     sizeof(attr->statp), &attr->LinkFI);
       BuildAttrOutputFnames(jcr, attr);
 
       if (FileIsIncluded(ff, attr->fname) && !FileIsExcluded(ff, attr->fname)) {
-         if (!verbose) {
-            PrintLsOutput(jcr, attr);
-         } else {
-            Pmsg1(-1, "%s\n",  record_to_str(record_str, jcr, rec));
-         }
-         num_files++;
+        if (!verbose) {
+          PrintLsOutput(jcr, attr);
+        } else {
+          Pmsg1(-1, "%s\n", record_to_str(record_str, jcr, rec));
+        }
+        num_files++;
       }
       break;
-   default:
-      if (verbose) {
-         Pmsg1(-1, "%s\n",  record_to_str(record_str, jcr, rec));
-      }
+    default:
+      if (verbose) { Pmsg1(-1, "%s\n", record_to_str(record_str, jcr, rec)); }
       break;
-   }
+  }
 
-   /* debug output of record */
-   DumpRecord("", rec);
+  /* debug output of record */
+  DumpRecord("", rec);
 
-   return true;
+  return true;
 }
 
-static void GetSessionRecord(Device *dev,
-                             DeviceRecord *rec,
-                             SESSION_LABEL *sessrec)
+static void GetSessionRecord(Device* dev,
+                             DeviceRecord* rec,
+                             SESSION_LABEL* sessrec)
 {
-   const char *rtype;
-   memset(sessrec, 0, sizeof(SESSION_LABEL));
-   jcr->JobId = 0;
-   switch (rec->FileIndex) {
-   case PRE_LABEL:
+  const char* rtype;
+  memset(sessrec, 0, sizeof(SESSION_LABEL));
+  jcr->JobId = 0;
+  switch (rec->FileIndex) {
+    case PRE_LABEL:
       rtype = _("Fresh Volume Label");
       break;
-   case VOL_LABEL:
+    case VOL_LABEL:
       rtype = _("Volume Label");
       UnserVolumeLabel(dev, rec);
       break;
-   case SOS_LABEL:
+    case SOS_LABEL:
       rtype = _("Begin Job Session");
       UnserSessionLabel(sessrec, rec);
       jcr->JobId = sessrec->JobId;
       break;
-   case EOS_LABEL:
+    case EOS_LABEL:
       rtype = _("End Job Session");
       break;
-   case 0:
-   case EOM_LABEL:
+    case 0:
+    case EOM_LABEL:
       rtype = _("End of Medium");
       break;
-   case EOT_LABEL:
+    case EOT_LABEL:
       rtype = _("End of Physical Medium");
       break;
-   case SOB_LABEL:
+    case SOB_LABEL:
       rtype = _("Start of object");
       break;
-   case EOB_LABEL:
+    case EOB_LABEL:
       rtype = _("End of object");
       break;
-   default:
+    default:
       rtype = _("Unknown");
       Dmsg1(10, "FI rtype=%d unknown\n", rec->FileIndex);
       break;
-   }
-   Dmsg5(10, "%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d DataLen=%d\n",
-         rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream, rec->data_len);
-   if (verbose) {
-      Pmsg5(-1, _("%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d DataLen=%d\n"),
-            rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream, rec->data_len);
-   }
+  }
+  Dmsg5(10,
+        "%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d DataLen=%d\n",
+        rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream,
+        rec->data_len);
+  if (verbose) {
+    Pmsg5(
+        -1,
+        _("%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d DataLen=%d\n"),
+        rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream,
+        rec->data_len);
+  }
 }
-

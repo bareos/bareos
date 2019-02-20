@@ -43,7 +43,7 @@
 #define NAMELEN(dirent) (strlen((dirent)->d_name))
 #endif
 #ifndef HAVE_READDIR_R
-int Readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
+int Readdir_r(DIR* dirp, struct dirent* entry, struct dirent** result);
 #endif
 
 #ifndef RTLD_NOW
@@ -91,113 +91,109 @@ static const int debuglevel = 50;
  * Create a new plugin "class" entry and enter it in the list of plugins.
  * Note, this is not the same as an instance of the plugin.
  */
-static Plugin *new_plugin()
+static Plugin* new_plugin()
 {
-   Plugin *plugin;
+  Plugin* plugin;
 
-   plugin = (Plugin *)malloc(sizeof(Plugin));
-   memset(plugin, 0, sizeof(Plugin));
-   return plugin;
+  plugin = (Plugin*)malloc(sizeof(Plugin));
+  memset(plugin, 0, sizeof(Plugin));
+  return plugin;
 }
 
-static void ClosePlugin(Plugin *plugin)
+static void ClosePlugin(Plugin* plugin)
 {
-   if (plugin->file) {
-      Dmsg1(50, "Got plugin=%s but not accepted.\n", plugin->file);
-   }
-   if (plugin->unloadPlugin) {
-      plugin->unloadPlugin();
-   }
-   if (plugin->pHandle) {
-      dlclose(plugin->pHandle);
-   }
-   if (plugin->file) {
-      free(plugin->file);
-   }
-   free(plugin);
+  if (plugin->file) {
+    Dmsg1(50, "Got plugin=%s but not accepted.\n", plugin->file);
+  }
+  if (plugin->unloadPlugin) { plugin->unloadPlugin(); }
+  if (plugin->pHandle) { dlclose(plugin->pHandle); }
+  if (plugin->file) { free(plugin->file); }
+  free(plugin);
 }
 
 /*
  * Load a specific plugin and check if the plugin had the correct
  * entry points, the license is compatible and the initialize the plugin.
  */
-static bool load_a_plugin(void *binfo,
-                          void *bfuncs,
-                          const char *plugin_pathname,
-                          const char *plugin_name,
-                          const char *type,
-                          alist *plugin_list,
-                          bool IsPluginCompatible(Plugin *plugin))
+static bool load_a_plugin(void* binfo,
+                          void* bfuncs,
+                          const char* plugin_pathname,
+                          const char* plugin_name,
+                          const char* type,
+                          alist* plugin_list,
+                          bool IsPluginCompatible(Plugin* plugin))
 {
-   t_loadPlugin loadPlugin;
-   Plugin *plugin = NULL;
+  t_loadPlugin loadPlugin;
+  Plugin* plugin = NULL;
 
-   plugin = new_plugin();
-   plugin->file = bstrdup(plugin_name);
-   plugin->file_len = strstr(plugin->file, type) - plugin->file;
+  plugin = new_plugin();
+  plugin->file = bstrdup(plugin_name);
+  plugin->file_len = strstr(plugin->file, type) - plugin->file;
 
-   plugin->pHandle = dlopen(plugin_pathname, LT_LAZY_OR_NOW | LT_GLOBAL);
+  plugin->pHandle = dlopen(plugin_pathname, LT_LAZY_OR_NOW | LT_GLOBAL);
 
-   if (!plugin->pHandle) {
-      const char *error = dlerror();
+  if (!plugin->pHandle) {
+    const char* error = dlerror();
 
-      Jmsg(NULL, M_ERROR, 0, _("dlopen plugin %s failed: ERR=%s\n"),
-           plugin_pathname, NPRT(error));
-      Dmsg2(debuglevel, "dlopen plugin %s failed: ERR=%s\n",
-            plugin_pathname, NPRT(error));
+    Jmsg(NULL, M_ERROR, 0, _("dlopen plugin %s failed: ERR=%s\n"),
+         plugin_pathname, NPRT(error));
+    Dmsg2(debuglevel, "dlopen plugin %s failed: ERR=%s\n", plugin_pathname,
+          NPRT(error));
 
-      ClosePlugin(plugin);
+    ClosePlugin(plugin);
 
-      return false;
-   }
+    return false;
+  }
 
-   /*
-    * Get two global entry points
-    */
-   loadPlugin = (t_loadPlugin)dlsym(plugin->pHandle, "loadPlugin");
-   if (!loadPlugin) {
-      Jmsg(NULL, M_ERROR, 0, _("Lookup of loadPlugin in plugin %s failed: ERR=%s\n"),
-           plugin_pathname, NPRT(dlerror()));
-      Dmsg2(debuglevel, "Lookup of loadPlugin in plugin %s failed: ERR=%s\n",
-            plugin_pathname, NPRT(dlerror()));
+  /*
+   * Get two global entry points
+   */
+  loadPlugin = (t_loadPlugin)dlsym(plugin->pHandle, "loadPlugin");
+  if (!loadPlugin) {
+    Jmsg(NULL, M_ERROR, 0,
+         _("Lookup of loadPlugin in plugin %s failed: ERR=%s\n"),
+         plugin_pathname, NPRT(dlerror()));
+    Dmsg2(debuglevel, "Lookup of loadPlugin in plugin %s failed: ERR=%s\n",
+          plugin_pathname, NPRT(dlerror()));
 
-      ClosePlugin(plugin);
+    ClosePlugin(plugin);
 
-      return false;
-   }
+    return false;
+  }
 
-   plugin->unloadPlugin = (t_unloadPlugin)dlsym(plugin->pHandle, "unloadPlugin");
-   if (!plugin->unloadPlugin) {
-      Jmsg(NULL, M_ERROR, 0, _("Lookup of unloadPlugin in plugin %s failed: ERR=%s\n"),
-           plugin_pathname, NPRT(dlerror()));
-      Dmsg2(debuglevel, "Lookup of unloadPlugin in plugin %s failed: ERR=%s\n",
-            plugin_pathname, NPRT(dlerror()));
+  plugin->unloadPlugin = (t_unloadPlugin)dlsym(plugin->pHandle, "unloadPlugin");
+  if (!plugin->unloadPlugin) {
+    Jmsg(NULL, M_ERROR, 0,
+         _("Lookup of unloadPlugin in plugin %s failed: ERR=%s\n"),
+         plugin_pathname, NPRT(dlerror()));
+    Dmsg2(debuglevel, "Lookup of unloadPlugin in plugin %s failed: ERR=%s\n",
+          plugin_pathname, NPRT(dlerror()));
 
-      ClosePlugin(plugin);
+    ClosePlugin(plugin);
 
-      return false;
-   }
+    return false;
+  }
 
-   /*
-    * Initialize the plugin
-    */
-   if (loadPlugin(binfo, bfuncs, &plugin->pinfo, &plugin->pfuncs) != bRC_OK) {
-      ClosePlugin(plugin);
+  /*
+   * Initialize the plugin
+   */
+  if (loadPlugin(binfo, bfuncs, &plugin->pinfo, &plugin->pfuncs) != bRC_OK) {
+    ClosePlugin(plugin);
 
-      return false;
-   }
+    return false;
+  }
 
-   if (!IsPluginCompatible) {
-      Dmsg0(50, "Plugin compatibility pointer not set.\n");
-   } else if (!IsPluginCompatible(plugin)) {
-      ClosePlugin(plugin);
+  if (!IsPluginCompatible) {
+    Dmsg0(50, "Plugin compatibility pointer not set.\n");
+  } else if (!IsPluginCompatible(plugin)) {
+    ClosePlugin(plugin);
 
-      return false;
-   }
+    return false;
+  }
 
-   plugin_list->append(plugin);
+  plugin_list->append(plugin);
 
-   return true;
+  return true;
 }
 
 /*
@@ -205,228 +201,217 @@ static bool load_a_plugin(void *binfo,
  * Or when plugin_names is give it has a list of plugins
  * to load from the specified directory.
  */
-bool LoadPlugins(void *binfo,
-                  void *bfuncs,
-                  alist *plugin_list,
-                  const char *plugin_dir,
-                  alist *plugin_names,
-                  const char *type,
-                  bool IsPluginCompatible(Plugin *plugin))
+bool LoadPlugins(void* binfo,
+                 void* bfuncs,
+                 alist* plugin_list,
+                 const char* plugin_dir,
+                 alist* plugin_names,
+                 const char* type,
+                 bool IsPluginCompatible(Plugin* plugin))
 {
-   struct stat statp;
-   bool found = false;
-   PoolMem fname(PM_FNAME);
-   bool need_slash = false;
-   int len;
+  struct stat statp;
+  bool found = false;
+  PoolMem fname(PM_FNAME);
+  bool need_slash = false;
+  int len;
 
-   Dmsg0(debuglevel, "LoadPlugins\n");
+  Dmsg0(debuglevel, "LoadPlugins\n");
 
-   len = strlen(plugin_dir);
-   if (len > 0) {
-      need_slash = !IsPathSeparator(plugin_dir[len - 1]);
-   }
+  len = strlen(plugin_dir);
+  if (len > 0) { need_slash = !IsPathSeparator(plugin_dir[len - 1]); }
 
-   /*
-    * See if we are loading certain plugins only or all plugins of a certain type.
-    */
-   if (plugin_names && plugin_names->size()) {
-      char *name = nullptr;
-      PoolMem plugin_name(PM_FNAME);
+  /*
+   * See if we are loading certain plugins only or all plugins of a certain
+   * type.
+   */
+  if (plugin_names && plugin_names->size()) {
+    char* name = nullptr;
+    PoolMem plugin_name(PM_FNAME);
 
-      foreach_alist(name, plugin_names) {
-         /*
-          * Generate the plugin name e.g. <name>-<daemon>.so
-          */
-         Mmsg(plugin_name, "%s%s", name, type);
+    foreach_alist (name, plugin_names) {
+      /*
+       * Generate the plugin name e.g. <name>-<daemon>.so
+       */
+      Mmsg(plugin_name, "%s%s", name, type);
 
-         /*
-          * Generate the full pathname to the plugin to load.
-          */
-         Mmsg(fname, "%s%s%s", plugin_dir, (need_slash) ? "/" : "", plugin_name.c_str());
+      /*
+       * Generate the full pathname to the plugin to load.
+       */
+      Mmsg(fname, "%s%s%s", plugin_dir, (need_slash) ? "/" : "",
+           plugin_name.c_str());
 
-         /*
-          * Make sure the plugin exists and is a regular file.
-          */
-         if (lstat(fname.c_str(), &statp) != 0 || !S_ISREG(statp.st_mode)) {
-            continue;
-         }
-
-         /*
-          * Try to load the plugin and resolve the wanted symbols.
-          */
-         if (load_a_plugin(binfo, bfuncs, fname.c_str(), plugin_name.c_str(), type,
-                           plugin_list, IsPluginCompatible)) {
-            found = true;
-         }
+      /*
+       * Make sure the plugin exists and is a regular file.
+       */
+      if (lstat(fname.c_str(), &statp) != 0 || !S_ISREG(statp.st_mode)) {
+        continue;
       }
-   } else {
-      int name_max, type_len;
-      DIR *dp = NULL;
-      struct dirent *result;
+
+      /*
+       * Try to load the plugin and resolve the wanted symbols.
+       */
+      if (load_a_plugin(binfo, bfuncs, fname.c_str(), plugin_name.c_str(), type,
+                        plugin_list, IsPluginCompatible)) {
+        found = true;
+      }
+    }
+  } else {
+    int name_max, type_len;
+    DIR* dp = NULL;
+    struct dirent* result;
 #ifdef USE_READDIR_R
-      struct dirent *entry = NULL;
+    struct dirent* entry = NULL;
 #endif
-      name_max = pathconf(".", _PC_NAME_MAX);
-      if (name_max < 1024) {
-         name_max = 1024;
-      }
+    name_max = pathconf(".", _PC_NAME_MAX);
+    if (name_max < 1024) { name_max = 1024; }
 
-      if (!(dp = opendir(plugin_dir))) {
-         BErrNo be;
-         Jmsg(NULL, M_ERROR_TERM, 0, _("Failed to open Plugin directory %s: ERR=%s\n"),
-               plugin_dir, be.bstrerror());
-         Dmsg2(debuglevel, "Failed to open Plugin directory %s: ERR=%s\n",
-               plugin_dir, be.bstrerror());
-         goto bail_out;
-      }
+    if (!(dp = opendir(plugin_dir))) {
+      BErrNo be;
+      Jmsg(NULL, M_ERROR_TERM, 0,
+           _("Failed to open Plugin directory %s: ERR=%s\n"), plugin_dir,
+           be.bstrerror());
+      Dmsg2(debuglevel, "Failed to open Plugin directory %s: ERR=%s\n",
+            plugin_dir, be.bstrerror());
+      goto bail_out;
+    }
 
 #ifdef USE_READDIR_R
-      entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 1000);
-      while (1) {
-         if ((Readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
+    entry = (struct dirent*)malloc(sizeof(struct dirent) + name_max + 1000);
+    while (1) {
+      if ((Readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
 #else
-      while (1) {
-         result = readdir(dp);
-         if (result == NULL) {
+    while (1) {
+      result = readdir(dp);
+      if (result == NULL) {
 #endif
-            if (!found) {
-               Jmsg(NULL, M_WARNING, 0, _("Failed to find any plugins in %s\n"), plugin_dir);
-               Dmsg1(debuglevel, "Failed to find any plugins in %s\n", plugin_dir);
-            }
-            break;
-         }
-
-         if (bstrcmp(result->d_name, ".") ||
-             bstrcmp(result->d_name, "..")) {
-            continue;
-         }
-
-         len = strlen(result->d_name);
-         type_len = strlen(type);
-         if (len < type_len + 1 || !bstrcmp(&result->d_name[len - type_len], type)) {
-            Dmsg3(debuglevel, "Rejected plugin: want=%s name=%s len=%d\n", type, result->d_name, len);
-            continue;
-         }
-         Dmsg2(debuglevel, "Found plugin: name=%s len=%d\n", result->d_name, len);
-
-         PmStrcpy(fname, plugin_dir);
-         if (need_slash) {
-            PmStrcat(fname, "/");
-         }
-         PmStrcat(fname, result->d_name);
-
-         /*
-          * Make sure the plugin exists and is a regular file.
-          */
-         if (lstat(fname.c_str(), &statp) != 0 || !S_ISREG(statp.st_mode)) {
-            continue;
-         }
-
-         /*
-          * Try to load the plugin and resolve the wanted symbols.
-          */
-         if (load_a_plugin(binfo, bfuncs, fname.c_str(), result->d_name, type,
-                           plugin_list, IsPluginCompatible)) {
-            found = true;
-         }
+        if (!found) {
+          Jmsg(NULL, M_WARNING, 0, _("Failed to find any plugins in %s\n"),
+               plugin_dir);
+          Dmsg1(debuglevel, "Failed to find any plugins in %s\n", plugin_dir);
+        }
+        break;
       }
+
+      if (bstrcmp(result->d_name, ".") || bstrcmp(result->d_name, "..")) {
+        continue;
+      }
+
+      len = strlen(result->d_name);
+      type_len = strlen(type);
+      if (len < type_len + 1 ||
+          !bstrcmp(&result->d_name[len - type_len], type)) {
+        Dmsg3(debuglevel, "Rejected plugin: want=%s name=%s len=%d\n", type,
+              result->d_name, len);
+        continue;
+      }
+      Dmsg2(debuglevel, "Found plugin: name=%s len=%d\n", result->d_name, len);
+
+      PmStrcpy(fname, plugin_dir);
+      if (need_slash) { PmStrcat(fname, "/"); }
+      PmStrcat(fname, result->d_name);
+
+      /*
+       * Make sure the plugin exists and is a regular file.
+       */
+      if (lstat(fname.c_str(), &statp) != 0 || !S_ISREG(statp.st_mode)) {
+        continue;
+      }
+
+      /*
+       * Try to load the plugin and resolve the wanted symbols.
+       */
+      if (load_a_plugin(binfo, bfuncs, fname.c_str(), result->d_name, type,
+                        plugin_list, IsPluginCompatible)) {
+        found = true;
+      }
+    }
 
 #ifdef USE_READDIR_R
-      if (entry) {
-         free(entry);
-      }
+    if (entry) { free(entry); }
 #endif
-      if (dp) {
-         closedir(dp);
-      }
-   }
+    if (dp) { closedir(dp); }
+  }
 
 bail_out:
-   return found;
+  return found;
 }
 
 /*
  * Unload all the loaded plugins
  */
-void UnloadPlugins(alist *plugin_list)
+void UnloadPlugins(alist* plugin_list)
 {
-   int i;
-   Plugin *plugin;
+  int i;
+  Plugin* plugin;
 
-   if (!plugin_list) {
-      return;
-   }
-   foreach_alist_index(i, plugin, plugin_list) {
-      /*
-       * Shut it down and unload it
-       */
-      plugin->unloadPlugin();
-      dlclose(plugin->pHandle);
-      if (plugin->file) {
-         free(plugin->file);
-      }
-      free(plugin);
-   }
+  if (!plugin_list) { return; }
+  foreach_alist_index (i, plugin, plugin_list) {
+    /*
+     * Shut it down and unload it
+     */
+    plugin->unloadPlugin();
+    dlclose(plugin->pHandle);
+    if (plugin->file) { free(plugin->file); }
+    free(plugin);
+  }
 }
 
-void UnloadPlugin(alist *plugin_list, Plugin *plugin, int index)
+void UnloadPlugin(alist* plugin_list, Plugin* plugin, int index)
 {
-   /*
-    * Shut it down and unload it
-    */
-   plugin->unloadPlugin();
-   dlclose(plugin->pHandle);
-   if (plugin->file) {
-      free(plugin->file);
-   }
-   plugin_list->remove(index);
-   free(plugin);
+  /*
+   * Shut it down and unload it
+   */
+  plugin->unloadPlugin();
+  dlclose(plugin->pHandle);
+  if (plugin->file) { free(plugin->file); }
+  plugin_list->remove(index);
+  free(plugin);
 }
 
-int ListPlugins(alist *plugin_list, PoolMem &msg)
+int ListPlugins(alist* plugin_list, PoolMem& msg)
 {
-   int i, len = 0;
-   Plugin *plugin;
+  int i, len = 0;
+  Plugin* plugin;
 
-   if (plugin_list && plugin_list->size() > 0) {
-      PmStrcpy(msg, "Plugin Info:\n");
-      foreach_alist_index(i, plugin, plugin_list) {
-         PmStrcat(msg, " Plugin     : ");
-         len = PmStrcat(msg, plugin->file);
-         if (plugin->pinfo) {
-            genpInfo *info = (genpInfo *)plugin->pinfo;
-            PmStrcat(msg, "\n");
-            PmStrcat(msg, " Description: ");
-            PmStrcat(msg, NPRT(info->plugin_description));
-            PmStrcat(msg, "\n");
+  if (plugin_list && plugin_list->size() > 0) {
+    PmStrcpy(msg, "Plugin Info:\n");
+    foreach_alist_index (i, plugin, plugin_list) {
+      PmStrcat(msg, " Plugin     : ");
+      len = PmStrcat(msg, plugin->file);
+      if (plugin->pinfo) {
+        genpInfo* info = (genpInfo*)plugin->pinfo;
+        PmStrcat(msg, "\n");
+        PmStrcat(msg, " Description: ");
+        PmStrcat(msg, NPRT(info->plugin_description));
+        PmStrcat(msg, "\n");
 
-            PmStrcat(msg, " Version    : ");
-            PmStrcat(msg, NPRT(info->plugin_version));
-            PmStrcat(msg, ", Date: ");
-            PmStrcat(msg, NPRT(info->plugin_date));
-            PmStrcat(msg, "\n");
+        PmStrcat(msg, " Version    : ");
+        PmStrcat(msg, NPRT(info->plugin_version));
+        PmStrcat(msg, ", Date: ");
+        PmStrcat(msg, NPRT(info->plugin_date));
+        PmStrcat(msg, "\n");
 
-            PmStrcat(msg, " Author     : ");
-            PmStrcat(msg, NPRT(info->plugin_author));
-            PmStrcat(msg, "\n");
+        PmStrcat(msg, " Author     : ");
+        PmStrcat(msg, NPRT(info->plugin_author));
+        PmStrcat(msg, "\n");
 
-            PmStrcat(msg, " License    : ");
-            PmStrcat(msg, NPRT(info->plugin_license));
-            PmStrcat(msg, "\n");
+        PmStrcat(msg, " License    : ");
+        PmStrcat(msg, NPRT(info->plugin_license));
+        PmStrcat(msg, "\n");
 
-            if (info->plugin_usage) {
-               PmStrcat(msg, " Usage      : ");
-               PmStrcat(msg, info->plugin_usage);
-               PmStrcat(msg, "\n");
-            }
+        if (info->plugin_usage) {
+          PmStrcat(msg, " Usage      : ");
+          PmStrcat(msg, info->plugin_usage);
+          PmStrcat(msg, "\n");
+        }
 
-            PmStrcat(msg, "\n");
-         }
+        PmStrcat(msg, "\n");
       }
-      len = PmStrcat(msg, "\n");
-   }
+    }
+    len = PmStrcat(msg, "\n");
+  }
 
-   return len;
+  return len;
 }
 
 /*
@@ -435,37 +420,36 @@ int ListPlugins(alist *plugin_list, PoolMem &msg)
  * after a fatal signal.
  */
 #define DBG_MAX_HOOK 10
-static dbg_plugin_hook_t *dbg_plugin_hooks[DBG_MAX_HOOK];
-static dbg_print_plugin_hook_t *dbg_print_plugin_hook = NULL;
+static dbg_plugin_hook_t* dbg_plugin_hooks[DBG_MAX_HOOK];
+static dbg_print_plugin_hook_t* dbg_print_plugin_hook = NULL;
 static int dbg_plugin_hook_count = 0;
 
-void DbgPluginAddHook(dbg_plugin_hook_t *fct)
+void DbgPluginAddHook(dbg_plugin_hook_t* fct)
 {
-   ASSERT(dbg_plugin_hook_count < DBG_MAX_HOOK);
-   dbg_plugin_hooks[dbg_plugin_hook_count++] = fct;
+  ASSERT(dbg_plugin_hook_count < DBG_MAX_HOOK);
+  dbg_plugin_hooks[dbg_plugin_hook_count++] = fct;
 }
 
-void DbgPrintPluginAddHook(dbg_print_plugin_hook_t *fct)
+void DbgPrintPluginAddHook(dbg_print_plugin_hook_t* fct)
 {
-   dbg_print_plugin_hook = fct;
+  dbg_print_plugin_hook = fct;
 }
 
-void DumpPlugins(alist *plugin_list, FILE *fp)
+void DumpPlugins(alist* plugin_list, FILE* fp)
 {
-   int i;
-   Plugin *plugin;
-   fprintf(fp, "Attempt to dump plugins. Hook count=%d\n", dbg_plugin_hook_count);
+  int i;
+  Plugin* plugin;
+  fprintf(fp, "Attempt to dump plugins. Hook count=%d\n",
+          dbg_plugin_hook_count);
 
-   if (!plugin_list) {
-      return;
-   }
-   foreach_alist_index(i, plugin, plugin_list) {
-      for(int i=0; i < dbg_plugin_hook_count; i++) {
-//       dbg_plugin_hook_t *fct = dbg_plugin_hooks[i];
-         fprintf(fp, "Plugin %p name=\"%s\"\n", plugin, plugin->file);
-//       fct(plugin, fp);
-      }
-   }
+  if (!plugin_list) { return; }
+  foreach_alist_index (i, plugin, plugin_list) {
+    for (int i = 0; i < dbg_plugin_hook_count; i++) {
+      //       dbg_plugin_hook_t *fct = dbg_plugin_hooks[i];
+      fprintf(fp, "Plugin %p name=\"%s\"\n", plugin, plugin->file);
+      //       fct(plugin, fp);
+    }
+  }
 }
 
 /*
@@ -474,9 +458,7 @@ void DumpPlugins(alist *plugin_list, FILE *fp)
  * plugin_list as argument and we don't want to expose it as global variable.
  * If the daemon didn't register a dump plugin function this is a NOP.
  */
-void DbgPrintPlugin(FILE *fp)
+void DbgPrintPlugin(FILE* fp)
 {
-   if (dbg_print_plugin_hook) {
-      dbg_print_plugin_hook(fp);
-   }
+  if (dbg_print_plugin_hook) { dbg_print_plugin_hook(fp); }
 }

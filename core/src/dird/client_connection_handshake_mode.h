@@ -23,7 +23,13 @@
 
 namespace directordaemon {
 
-enum class ClientConnectionHandshakeMode { kUndefined, kTlsFirst, kCleartextFirst, kFailed };
+enum class ClientConnectionHandshakeMode
+{
+  kUndefined,
+  kTlsFirst,
+  kCleartextFirst,
+  kFailed
+};
 
 } /* namespace directordaemon */
 #endif /* BAREOS_DIR_CLIENT_CONNECTION_HANDSHAKE_MODE_H_ */

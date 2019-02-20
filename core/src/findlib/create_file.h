@@ -21,6 +21,9 @@
 #ifndef BAREOS_FINDLIB_CREATE_FILE_H_
 #define BAREOS_FINDLIB_CREATE_FILE_H_
 
-int CreateFile(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *ofd, int replace);
+int CreateFile(JobControlRecord* jcr,
+               Attributes* attr,
+               BareosWinFilePacket* ofd,
+               int replace);
 
-#endif // BAREOS_FINDLIB_CREATE_FILE_H_
+#endif  // BAREOS_FINDLIB_CREATE_FILE_H_

@@ -73,8 +73,8 @@ TEST(BStringList, JoinTest)
   std::string s = list2.Join(AsciiControlCharacters::RecordSeparator());
   EXPECT_EQ(8, s.size());
 
-  std::string test {"Test"};
-  test += AsciiControlCharacters::RecordSeparator(); // 0x1e
+  std::string test{"Test"};
+  test += AsciiControlCharacters::RecordSeparator();  // 0x1e
   test += "123";
 
   EXPECT_STREQ(s.c_str(), test.c_str());
@@ -82,7 +82,7 @@ TEST(BStringList, JoinTest)
 
 TEST(BStringList, SplitStringTest)
 {
-  std::string test {"Test@123@String"};
+  std::string test{"Test@123@String"};
   BStringList list1(test, '@');
   EXPECT_EQ(3, list1.size());
 
@@ -130,7 +130,7 @@ TEST(BNet, EvaluateResponseMessage_Wrong_Id)
   EXPECT_EQ(id, kMessageIdUnknown);
   EXPECT_EQ(ok, false);
 
-  const char *m3 {"A1001 OK: <director-name> Version: <version>"};
+  const char* m3{"A1001 OK: <director-name> Version: <version>"};
   EXPECT_STREQ(args.JoinReadable().c_str(), m3);
 }
 
@@ -149,20 +149,25 @@ TEST(BNet, EvaluateResponseMessage_Correct_Id)
   EXPECT_EQ(id, kMessageIdPamRequired);
   EXPECT_EQ(ok, true);
 
-  const char *m3 {"1001 OK: <director-name> Version: <version>"};
+  const char* m3{"1001 OK: <director-name> Version: <version>"};
   EXPECT_STREQ(args.JoinReadable().c_str(), m3);
 }
 
-enum {
-  R_DIRECTOR = 1, R_CLIENT, R_JOB, R_STORAGE, R_CONSOLE
+enum
+{
+  R_DIRECTOR = 1,
+  R_CLIENT,
+  R_JOB,
+  R_STORAGE,
+  R_CONSOLE
 };
 
 #include "lib/qualified_resource_name_type_converter.h"
 
-static void do_get_name_from_hello_test(const char *client_string_fmt,
-                                        const char *client_name,
-                                        const std::string &r_type_test,
-                                        const BareosVersionNumber &version_test)
+static void do_get_name_from_hello_test(const char* client_string_fmt,
+                                        const char* client_name,
+                                        const std::string& r_type_test,
+                                        const BareosVersionNumber& version_test)
 {
   char bashed_client_name[20];
   sprintf(bashed_client_name, client_name);
@@ -175,7 +180,8 @@ static void do_get_name_from_hello_test(const char *client_string_fmt,
   std::string r_type_str;
   BareosVersionNumber version = BareosVersionNumber::kUndefined;
 
-  bool ok = GetNameAndResourceTypeAndVersionFromHello(output_text, name, r_type_str, version);
+  bool ok = GetNameAndResourceTypeAndVersionFromHello(output_text, name,
+                                                      r_type_str, version);
 
   EXPECT_TRUE(ok);
   EXPECT_STREQ(name.c_str(), client_name);
@@ -209,10 +215,14 @@ TEST(Util, get_name_from_hello_test)
 
 TEST(Util, version_number_test)
 {
-  EXPECT_EQ(BareosVersionNumber::kRelease_18_2, static_cast<BareosVersionNumber>(1802));
-  EXPECT_EQ(BareosVersionNumber::kUndefined, static_cast<BareosVersionNumber>(1));
-  EXPECT_NE(BareosVersionNumber::kRelease_18_2, static_cast<BareosVersionNumber>(1702));
-  EXPECT_GT(BareosVersionNumber::kRelease_18_2, BareosVersionNumber::kUndefined);
+  EXPECT_EQ(BareosVersionNumber::kRelease_18_2,
+            static_cast<BareosVersionNumber>(1802));
+  EXPECT_EQ(BareosVersionNumber::kUndefined,
+            static_cast<BareosVersionNumber>(1));
+  EXPECT_NE(BareosVersionNumber::kRelease_18_2,
+            static_cast<BareosVersionNumber>(1702));
+  EXPECT_GT(BareosVersionNumber::kRelease_18_2,
+            BareosVersionNumber::kUndefined);
 }
 
 TEST(Util, version_number_major_minor)
@@ -220,7 +230,7 @@ TEST(Util, version_number_major_minor)
   BareosVersionNumber version = BareosVersionNumber::kRelease_18_2;
   BareosVersionToMajorMinor v(version);
   EXPECT_EQ(v.major, 18);
-  EXPECT_EQ(v.minor,  2);
+  EXPECT_EQ(v.minor, 2);
 }
 
 #include "filed/evaluate_job_command.h"
@@ -228,12 +238,15 @@ TEST(Util, version_number_major_minor)
 TEST(Filedaemon, evaluate_jobcommand_from_18_2_test)
 {
   /* command with ssl argument */
-  static const char jobcmd_kVersionFrom_18_2[]      = "JobId=111 Job=FirstJob SDid=222 SDtime=333 Authorization=SecretOne ssl=4\n";
+  static const char jobcmd_kVersionFrom_18_2[] =
+      "JobId=111 Job=FirstJob SDid=222 SDtime=333 Authorization=SecretOne "
+      "ssl=4\n";
 
   filedaemon::JobCommand eval(jobcmd_kVersionFrom_18_2);
 
   EXPECT_TRUE(eval.EvaluationSuccesful());
-  EXPECT_EQ(eval.protocol_version_, filedaemon::JobCommand::ProtocolVersion::kVersionFrom_18_2);
+  EXPECT_EQ(eval.protocol_version_,
+            filedaemon::JobCommand::ProtocolVersion::kVersionFrom_18_2);
   EXPECT_EQ(eval.job_id_, 111);
   EXPECT_STREQ(eval.job_, "FirstJob");
   EXPECT_EQ(eval.vol_session_id_, 222);
@@ -245,12 +258,14 @@ TEST(Filedaemon, evaluate_jobcommand_from_18_2_test)
 TEST(Filedaemon, evaluate_jobcommand_before_18_2_test)
 {
   /* command without ssl argument */
-  static char jobcmdssl_KVersionBefore_18_2[] = "JobId=123 Job=SecondJob SDid=456 SDtime=789 Authorization=SecretTwo";
+  static char jobcmdssl_KVersionBefore_18_2[] =
+      "JobId=123 Job=SecondJob SDid=456 SDtime=789 Authorization=SecretTwo";
 
   filedaemon::JobCommand eval(jobcmdssl_KVersionBefore_18_2);
 
   EXPECT_TRUE(eval.EvaluationSuccesful());
-  EXPECT_EQ(eval.protocol_version_, filedaemon::JobCommand::ProtocolVersion::KVersionBefore_18_2);
+  EXPECT_EQ(eval.protocol_version_,
+            filedaemon::JobCommand::ProtocolVersion::KVersionBefore_18_2);
   EXPECT_EQ(eval.job_id_, 123);
   EXPECT_STREQ(eval.job_, "SecondJob");
   EXPECT_EQ(eval.vol_session_id_, 456);
@@ -266,5 +281,6 @@ TEST(Filedaemon, evaluate_jobcommand_wrong_format_test)
   filedaemon::JobCommand eval(jobcmdssl_KVersionBefore_18_2);
 
   EXPECT_FALSE(eval.EvaluationSuccesful());
-  EXPECT_EQ(eval.protocol_version_, filedaemon::JobCommand::ProtocolVersion::kVersionUndefinded);
+  EXPECT_EQ(eval.protocol_version_,
+            filedaemon::JobCommand::ProtocolVersion::kVersionUndefinded);
 }

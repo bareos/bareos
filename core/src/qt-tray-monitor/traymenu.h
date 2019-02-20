@@ -27,19 +27,18 @@
 
 class QAction;
 
-class TrayMenu : public QMenu
-{
-   Q_OBJECT
+class TrayMenu : public QMenu {
+  Q_OBJECT
 
-public:
-   TrayMenu(QWidget* trayMonitor = 0);
-   virtual ~TrayMenu();
+ public:
+  TrayMenu(QWidget* trayMonitor = 0);
+  virtual ~TrayMenu();
 
-private:
-   void createAction(QString objName, QString text, QWidget* trayMonitor);
+ private:
+  void createAction(QString objName, QString text, QWidget* trayMonitor);
 
-public slots:
-signals:
+ public slots:
+ signals:
 };
 
-#endif // TRAYMONITOR_TRAYMENU_H
+#endif  // TRAYMONITOR_TRAYMENU_H

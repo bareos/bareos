@@ -24,12 +24,19 @@
 
 namespace storagedaemon {
 
-void PrintLsOutput(const char *fname, const char *link, int type, struct stat *statp);
-JobControlRecord *SetupJcr(const char *name, char *dev_name,
-               BootStrapRecord *bsr, DirectorResource *director, DeviceControlRecord* dcr,
-               const char *VolumeName, bool readonly);
-void DisplayTapeErrorStatus(JobControlRecord *jcr, Device *dev);
+void PrintLsOutput(const char* fname,
+                   const char* link,
+                   int type,
+                   struct stat* statp);
+JobControlRecord* SetupJcr(const char* name,
+                           char* dev_name,
+                           BootStrapRecord* bsr,
+                           DirectorResource* director,
+                           DeviceControlRecord* dcr,
+                           const char* VolumeName,
+                           bool readonly);
+void DisplayTapeErrorStatus(JobControlRecord* jcr, Device* dev);
 
 } /* namespace storagedaemon */
 
-#endif // BAREOS_STORED_BUTIL_H_
+#endif  // BAREOS_STORED_BUTIL_H_

@@ -27,29 +27,27 @@
 class QMainWindow;
 class QTimer;
 
-class SystemTrayIcon : public QSystemTrayIcon
-{
-   Q_OBJECT
+class SystemTrayIcon : public QSystemTrayIcon {
+  Q_OBJECT
 
-public:
-   SystemTrayIcon(QMainWindow* mainWindow);
-   virtual ~SystemTrayIcon();
+ public:
+  SystemTrayIcon(QMainWindow* mainWindow);
+  virtual ~SystemTrayIcon();
 
-   void animateIcon(bool on);
+  void animateIcon(bool on);
 
-private:
-   Q_DISABLE_COPY(SystemTrayIcon);
-   SystemTrayIcon();
-   QStringList icons;
+ private:
+  Q_DISABLE_COPY(SystemTrayIcon);
+  SystemTrayIcon();
+  QStringList icons;
 
-   int iconIdx;
-   QTimer* timer;
+  int iconIdx;
+  QTimer* timer;
 
-protected:
-
-public slots:
-   void setNewIcon(int icon);
-   void setIconInternal();
+ protected:
+ public slots:
+  void setNewIcon(int icon);
+  void setIconInternal();
 };
 
-#endif // SYSTEMTRAYICON_H
+#endif  // SYSTEMTRAYICON_H

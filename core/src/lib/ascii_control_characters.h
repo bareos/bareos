@@ -24,14 +24,23 @@
 
 class AsciiControlCharacters {
  public:
-  static char UnitSeparator() { return unit_separator_; }     /* smallest data item separator           */
-  static char RecordSeparator() { return record_separator_; } /* data record separator within a group   */
-  static char GroupSeparator() { return group_separator_; }   /* group separator to separate datasets   */
+  static char UnitSeparator()
+  {
+    return unit_separator_;
+  } /* smallest data item separator           */
+  static char RecordSeparator()
+  {
+    return record_separator_;
+  } /* data record separator within a group   */
+  static char GroupSeparator()
+  {
+    return group_separator_;
+  } /* group separator to separate datasets   */
 
  private:
-  static constexpr char unit_separator_   = 0x1f;
+  static constexpr char unit_separator_ = 0x1f;
   static constexpr char record_separator_ = 0x1e;
-  static constexpr char group_separator_  = 0x1d;
+  static constexpr char group_separator_ = 0x1d;
 };
 
 #endif /* BAREOS_LIB_ASCII_CONTROL_CHARACTERS_H_ */

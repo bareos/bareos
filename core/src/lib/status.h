@@ -37,14 +37,14 @@
  * Packet to send to OutputStatus()
  */
 class StatusPacket {
-public:
-  BareosSocket *bs;                       /* used on Unix machines */
-  void *context;                   /* Win32 */
-  void (*callback)(const char *msg, int len, void *context);  /* Win32 */
-  bool api;                        /* set if we want API output */
+ public:
+  BareosSocket* bs; /* used on Unix machines */
+  void* context;    /* Win32 */
+  void (*callback)(const char* msg, int len, void* context); /* Win32 */
+  bool api; /* set if we want API output */
 
   /* Methods */
   StatusPacket() { memset(this, 0, sizeof(StatusPacket)); }
-  ~StatusPacket() { }
+  ~StatusPacket() {}
 };
 #endif

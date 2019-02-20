@@ -30,125 +30,115 @@
 #include "include/bareos.h"
 #include "console_output.h"
 
-enum class PamAuthState {
-   INIT,
-   RECEIVE_MSG_TYPE,
-   RECEIVE_MSG,
-   READ_INPUT,
-   SEND_INPUT,
-   AUTH_OK
+enum class PamAuthState
+{
+  INIT,
+  RECEIVE_MSG_TYPE,
+  RECEIVE_MSG,
+  READ_INPUT,
+  SEND_INPUT,
+  AUTH_OK
 };
 
 static PamAuthState state = PamAuthState::INIT;
-static bool SetEcho(FILE *std_in, bool on);
+static bool SetEcho(FILE* std_in, bool on);
 
 
-bool ConsolePamAuthenticate(FILE *std_in, BareosSocket *UA_sock)
+bool ConsolePamAuthenticate(FILE* std_in, BareosSocket* UA_sock)
 {
-   bool quit = false;
-   bool error = false;
+  bool quit = false;
+  bool error = false;
 
-   int type;
-   btimer_t *tid = nullptr;
-   char *userinput = nullptr;
+  int type;
+  btimer_t* tid = nullptr;
+  char* userinput = nullptr;
 
-   while (!error && !quit) {
-      switch(state) {
-         case PamAuthState::INIT:
-            if(tid) {
-               StopBsockTimer(tid);
-            }
-            tid = StartBsockTimer(UA_sock, 30);
-            if (!tid) {
-               error = true;
-            }
-            state = PamAuthState::RECEIVE_MSG_TYPE;
-            break;
-         case PamAuthState::RECEIVE_MSG_TYPE:
-            if (UA_sock->recv() == 1) {
-               type = UA_sock->msg[0];
-               switch (type) {
-                  case PAM_PROMPT_ECHO_OFF:
-                  case PAM_PROMPT_ECHO_ON:
-                     SetEcho (std_in, type == PAM_PROMPT_ECHO_ON);
-                     state = PamAuthState::RECEIVE_MSG;
-                     break;
-                  case PAM_SUCCESS:
-                     if (UA_sock->recv() == 1) {
-                        state = PamAuthState::AUTH_OK;
-                        quit = true;
-                     } else {
-                        Dmsg0(100, "Error, did not receive 2nd part of a message\n");
-                        error = true;
-                     }
-                     break;
-                  default:
-                     Dmsg1(100, "Error, unknown pam type %d\n", type);
-                     error = true;
-                     break;
-               } /* switch (type) */
-            } else {
-               error = true;
-            }
-            break;
-         case PamAuthState::RECEIVE_MSG:
-            if (UA_sock->recv() > 0) {
-               ConsoleOutput(UA_sock->msg);
-               state = PamAuthState::READ_INPUT;
-            } else {
-               error = true;
-            }
-            break;
-         case PamAuthState::READ_INPUT: {
-               userinput = readline("");
-               if (userinput) {
-                  state = PamAuthState::SEND_INPUT;
-               } else {
-                  error = true;
-               }
-            }
-            break;
-         case PamAuthState::SEND_INPUT:
-            UA_sock->fsend(userinput);
-            Actuallyfree(userinput);
-            state = PamAuthState::INIT;
-            break;
-         default:
-            break;
-      }
-      if (UA_sock->IsStop() || UA_sock->IsError()) {
-         if(userinput) {
-            Actuallyfree(userinput);
-         }
-         error = true;
-         break;
-      }
-   }; /* while (!quit) */
+  while (!error && !quit) {
+    switch (state) {
+      case PamAuthState::INIT:
+        if (tid) { StopBsockTimer(tid); }
+        tid = StartBsockTimer(UA_sock, 30);
+        if (!tid) { error = true; }
+        state = PamAuthState::RECEIVE_MSG_TYPE;
+        break;
+      case PamAuthState::RECEIVE_MSG_TYPE:
+        if (UA_sock->recv() == 1) {
+          type = UA_sock->msg[0];
+          switch (type) {
+            case PAM_PROMPT_ECHO_OFF:
+            case PAM_PROMPT_ECHO_ON:
+              SetEcho(std_in, type == PAM_PROMPT_ECHO_ON);
+              state = PamAuthState::RECEIVE_MSG;
+              break;
+            case PAM_SUCCESS:
+              if (UA_sock->recv() == 1) {
+                state = PamAuthState::AUTH_OK;
+                quit = true;
+              } else {
+                Dmsg0(100, "Error, did not receive 2nd part of a message\n");
+                error = true;
+              }
+              break;
+            default:
+              Dmsg1(100, "Error, unknown pam type %d\n", type);
+              error = true;
+              break;
+          } /* switch (type) */
+        } else {
+          error = true;
+        }
+        break;
+      case PamAuthState::RECEIVE_MSG:
+        if (UA_sock->recv() > 0) {
+          ConsoleOutput(UA_sock->msg);
+          state = PamAuthState::READ_INPUT;
+        } else {
+          error = true;
+        }
+        break;
+      case PamAuthState::READ_INPUT: {
+        userinput = readline("");
+        if (userinput) {
+          state = PamAuthState::SEND_INPUT;
+        } else {
+          error = true;
+        }
+      } break;
+      case PamAuthState::SEND_INPUT:
+        UA_sock->fsend(userinput);
+        Actuallyfree(userinput);
+        state = PamAuthState::INIT;
+        break;
+      default:
+        break;
+    }
+    if (UA_sock->IsStop() || UA_sock->IsError()) {
+      if (userinput) { Actuallyfree(userinput); }
+      error = true;
+      break;
+    }
+  }; /* while (!quit) */
 
-   if(tid) {
-      StopBsockTimer(tid);
-   }
-   SetEcho (std_in, true);
-   ConsoleOutput("\n");
+  if (tid) { StopBsockTimer(tid); }
+  SetEcho(std_in, true);
+  ConsoleOutput("\n");
 
-   return !error;
+  return !error;
 }
 
 #include <termios.h>
-static bool SetEcho(FILE *std_in, bool on)
+static bool SetEcho(FILE* std_in, bool on)
 {
-    struct termios termios_old, termios_new;
+  struct termios termios_old, termios_new;
 
-    /* Turn echoing off and fail if we can’t. */
-    if (tcgetattr (fileno (std_in), &termios_old) != 0)
-        return false;
-    termios_new = termios_old;
-    if (on) {
-      termios_new.c_lflag |=  ECHO;
-    } else {
-      termios_new.c_lflag &= ~ECHO;
-    }
-    if (tcsetattr (fileno (std_in), TCSAFLUSH, &termios_new) != 0)
-        return false;
-   return true;
+  /* Turn echoing off and fail if we can’t. */
+  if (tcgetattr(fileno(std_in), &termios_old) != 0) return false;
+  termios_new = termios_old;
+  if (on) {
+    termios_new.c_lflag |= ECHO;
+  } else {
+    termios_new.c_lflag &= ~ECHO;
+  }
+  if (tcsetattr(fileno(std_in), TCSAFLUSH, &termios_new) != 0) return false;
+  return true;
 }

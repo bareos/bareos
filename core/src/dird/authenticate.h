@@ -27,10 +27,12 @@ namespace directordaemon {
 class StorageResource;
 class UaContext;
 
-bool AuthenticateWithStorageDaemon(BareosSocket *sd, JobControlRecord *jcr, StorageResource *store);
-bool AuthenticateWithFileDaemon(JobControlRecord *jcr);
-bool AuthenticateFileDaemon(BareosSocket *fd, char *client_name);
+bool AuthenticateWithStorageDaemon(BareosSocket* sd,
+                                   JobControlRecord* jcr,
+                                   StorageResource* store);
+bool AuthenticateWithFileDaemon(JobControlRecord* jcr);
+bool AuthenticateFileDaemon(BareosSocket* fd, char* client_name);
 
 } /* namespace directordaemon */
 
-#endif // BAREOS_DIRD_AUTHENTICATE_H_
+#endif  // BAREOS_DIRD_AUTHENTICATE_H_

@@ -32,64 +32,62 @@
 //#include "windows.h"
 
 struct FileSet {
-   alist mylist;
+  alist mylist;
 };
 
 /*
  * helper functions
  */
 
-void AlistFill(alist *list, int max)
+void AlistFill(alist* list, int max)
 {
-   char buf[30];
-   int start = 0;
+  char buf[30];
+  int start = 0;
 
-   if (list) {
-      start = list->size();
-   }
+  if (list) { start = list->size(); }
 
-   /*
-    * fill list with strings of numbers from 0 to n.
-    */
-   for (int i=0; i<max; i++) {
-      sprintf(buf, "%d", start+i);
-      list->append(bstrdup(buf));
-   }
+  /*
+   * fill list with strings of numbers from 0 to n.
+   */
+  for (int i = 0; i < max; i++) {
+    sprintf(buf, "%d", start + i);
+    list->append(bstrdup(buf));
+  }
 
-   /*
-    * verify that max elements have been added
-    */
-   EXPECT_EQ(list->size(), start + max);
+  /*
+   * verify that max elements have been added
+   */
+  EXPECT_EQ(list->size(), start + max);
 }
 
 /*
  * we expect, that the list is filled with strings of numbers from 0 to n.
  */
-void TestForeachAlist(alist *list)
+void TestForeachAlist(alist* list)
 {
-   char *str = NULL;
-   char buf[30];
-   int i=0;
+  char* str = NULL;
+  char buf[30];
+  int i = 0;
 
-   /*
-    * test all available foreach loops
-    */
+  /*
+   * test all available foreach loops
+   */
 
-   foreach_alist(str, list) {
-      sprintf(buf, "%d", i);
-      EXPECT_STREQ(str, buf);
-      i++;
-   }
+  foreach_alist (str, list) {
+    sprintf(buf, "%d", i);
+    EXPECT_STREQ(str, buf);
+    i++;
+  }
 
-   foreach_alist_index(i, str, list) {
-      sprintf(buf, "%d", i);
-      EXPECT_STREQ(str, buf);
-   }
+  foreach_alist_index (i, str, list) {
+    sprintf(buf, "%d", i);
+    EXPECT_STREQ(str, buf);
+  }
 
-   foreach_alist_rindex(i, str, list) {
-      sprintf(buf, "%d", i);
-      EXPECT_STREQ(str, buf);
-   }
+  foreach_alist_rindex (i, str, list) {
+    sprintf(buf, "%d", i);
+    EXPECT_STREQ(str, buf);
+  }
 }
 
 /*
@@ -98,60 +96,60 @@ void TestForeachAlist(alist *list)
 
 void test_alist_init_destroy()
 {
-   FileSet *fileset;
-   fileset = (FileSet *)malloc(sizeof(FileSet));
-   memset(fileset, 0, sizeof(FileSet));
-   fileset->mylist.init();
+  FileSet* fileset;
+  fileset = (FileSet*)malloc(sizeof(FileSet));
+  memset(fileset, 0, sizeof(FileSet));
+  fileset->mylist.init();
 
-   AlistFill(&(fileset->mylist), 20);
-   for (int i=0; i< fileset->mylist.size(); i++) {
-      EXPECT_EQ(i, atoi((char *)fileset->mylist[i]));
-   }
-   fileset->mylist.destroy();
-   free(fileset);
+  AlistFill(&(fileset->mylist), 20);
+  for (int i = 0; i < fileset->mylist.size(); i++) {
+    EXPECT_EQ(i, atoi((char*)fileset->mylist[i]));
+  }
+  fileset->mylist.destroy();
+  free(fileset);
 }
 
 
+void test_alist_dynamic()
+{
+  alist* list = NULL;
+  char* buf;
 
-void test_alist_dynamic() {
-   alist *list=NULL;
-   char *buf;
+  // NULL->size() will segfault
+  // EXPECT_EQ(list->size(), 0);
 
-   // NULL->size() will segfault
-   //EXPECT_EQ(list->size(), 0);
+  // does foreach work for NULL?
+  TestForeachAlist(list);
 
-   // does foreach work for NULL?
-   TestForeachAlist(list);
+  // create empty list, which is prepared for a number of entires
+  list = New(alist(10));
+  EXPECT_EQ(list->size(), 0);
 
-   // create empty list, which is prepared for a number of entires
-   list = New(alist(10));
-   EXPECT_EQ(list->size(), 0);
+  // does foreach work for empty lists?
+  TestForeachAlist(list);
 
-   // does foreach work for empty lists?
-   TestForeachAlist(list);
+  // fill the list
+  AlistFill(list, 20);
+  TestForeachAlist(list);
 
-   // fill the list
-   AlistFill(list, 20);
-   TestForeachAlist(list);
+  // verify and remove the latest entries
+  EXPECT_EQ(list->size(), 20);
+  buf = (char*)list->pop();
+  EXPECT_STREQ(buf, "19");
+  free(buf);
 
-   // verify and remove the latest entries
-   EXPECT_EQ(list->size(), 20);
-   buf = (char *)list->pop();
-   EXPECT_STREQ(buf, "19");
-   free(buf);
+  EXPECT_EQ(list->size(), 19);
+  buf = (char*)list->pop();
+  EXPECT_STREQ(buf, "18");
+  free(buf);
 
-   EXPECT_EQ(list->size(), 19);
-   buf = (char *)list->pop();
-   EXPECT_STREQ(buf, "18");
-   free(buf);
+  // added more entires
+  AlistFill(list, 20);
+  TestForeachAlist(list);
 
-   // added more entires
-   AlistFill(list, 20);
-   TestForeachAlist(list);
+  EXPECT_EQ(list->size(), 38);
 
-   EXPECT_EQ(list->size(), 38);
-
-   delete(list);
+  delete (list);
 }
 
 
@@ -159,9 +157,10 @@ void test_alist_dynamic() {
  * main entry point
  */
 
-TEST(alist, alist) {
-   test_alist_init_destroy();
-   test_alist_dynamic();
+TEST(alist, alist)
+{
+  test_alist_init_destroy();
+  test_alist_dynamic();
 
-   sm_dump(false);
+  sm_dump(false);
 }

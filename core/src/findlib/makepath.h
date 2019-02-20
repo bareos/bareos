@@ -21,8 +21,12 @@
 #ifndef BAREOS_FINDLIB_MAKEPATH_H_
 #define BAREOS_FINDLIB_MAKEPATH_H_
 
-bool makepath(Attributes *attr, const char *path, mode_t mode,
-              mode_t parent_mode, uid_t owner, gid_t group,
+bool makepath(Attributes* attr,
+              const char* path,
+              mode_t mode,
+              mode_t parent_mode,
+              uid_t owner,
+              gid_t group,
               bool keep_dir_modes);
 
-#endif // BAREOS_FINDLIB_MAKEPATH_H_
+#endif  // BAREOS_FINDLIB_MAKEPATH_H_

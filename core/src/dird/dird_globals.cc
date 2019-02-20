@@ -26,9 +26,9 @@
 
 namespace directordaemon {
 
-ConfigurationParser *my_config = nullptr;
-DirectorResource *me = nullptr;
-char *configfile = nullptr;
-void *start_heap = nullptr;
+ConfigurationParser* my_config = nullptr;
+DirectorResource* me = nullptr;
+char* configfile = nullptr;
+void* start_heap = nullptr;
 
 } /* namespace directordaemon */

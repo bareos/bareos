@@ -25,10 +25,10 @@ namespace storagedaemon {
 
 int StartStatisticsThread(void);
 void StopStatisticsThread();
-void UpdateDeviceTapealert(const char *devname, uint64_t flags, utime_t now);
-void UpdateJobStatistics(JobControlRecord *jcr, utime_t now);
-bool StatsCmd(JobControlRecord *jcr);
+void UpdateDeviceTapealert(const char* devname, uint64_t flags, utime_t now);
+void UpdateJobStatistics(JobControlRecord* jcr, utime_t now);
+bool StatsCmd(JobControlRecord* jcr);
 
 } /* namespace storagedaemon */
 
-#endif // BAREOS_STORED_SD_STATS_H_
+#endif  // BAREOS_STORED_SD_STATS_H_

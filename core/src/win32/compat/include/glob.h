@@ -32,7 +32,7 @@
  * ---------------------------------------------------------------------------
  */
 #ifndef _GLOB_H
-#define _GLOB_H  1
+#define _GLOB_H 1
 #include <_mingw.h>
 #pragma GCC system_header
 
@@ -43,22 +43,21 @@
 #define __need_size_t
 #include <stddef.h>
 
-typedef
-struct glob_t
-{ /* The structure, in which glob() returns the list of file system
-   * entities which it has matched.
-   */
-  void     * gl_magic;	/* reserved field; pointer to a glob signature	*/
-  size_t     gl_pathc;	/* counter for paths matched			*/
-  char    ** gl_pathv;	/* list of matching path names			*/
-  size_t     gl_offs;	/* number of initial unused slots in gl_pathv	*/
+typedef struct glob_t { /* The structure, in which glob() returns the list of
+                         * file system entities which it has matched.
+                         */
+  void* gl_magic;       /* reserved field; pointer to a glob signature  */
+  size_t gl_pathc;      /* counter for paths matched        */
+  char** gl_pathv;      /* list of matching path names         */
+  size_t gl_offs;       /* number of initial unused slots in gl_pathv   */
 } glob_t;
 
 /* A macro to facilitate definition of the flags which are used to
  * control the operation of glob().
  */
-#define __GLOB_FLAG__(NAME)  (1 << __GLOB_##NAME##_OFFSET)
-enum {
+#define __GLOB_FLAG__(NAME) (1 << __GLOB_##NAME##_OFFSET)
+enum
+{
   /* Identify the zero-based offset values which are used to specify
    * the individual bit positions for each __GLOB_FLAG; the initial
    * list specifies the standard set of flags required by POSIX.
@@ -89,16 +88,16 @@ enum {
    * custom options, which offer improved handling of MS-Windows
    * specific peculiarities:--
    *
-   *   GLOB_CASEMATCH	    makes glob() respect case sensitivity
-   *			    in path name matches; this is similar
-   *			    to default behaviour on POSIX systems,
-   *			    but to better support the MS-Windows
-   *			    file system, the MinGW implementation
-   *			    of glob() performs a CASE INSENSITIVE
-   *			    character match by default, (except
-   *			    when matching within character group
-   *			    patterns, which are ALWAYS assumed to
-   *			    require CASE SENSITIVE matching).
+   *   GLOB_CASEMATCH       makes glob() respect case sensitivity
+   *            in path name matches; this is similar
+   *            to default behaviour on POSIX systems,
+   *            but to better support the MS-Windows
+   *            file system, the MinGW implementation
+   *            of glob() performs a CASE INSENSITIVE
+   *            character match by default, (except
+   *            when matching within character group
+   *            patterns, which are ALWAYS assumed to
+   *            require CASE SENSITIVE matching).
    */
   __GLOB_CASEMATCH_OFFSET,
   /*
@@ -111,19 +110,19 @@ enum {
 
 /* Definitions of the mandatory flags, as specified by POSIX.
  */
-#define GLOB_APPEND	  __GLOB_FLAG__(APPEND)
-#define GLOB_DOOFFS	  __GLOB_FLAG__(DOOFFS)
-#define GLOB_ERR	  __GLOB_FLAG__(ERR)
-#define GLOB_MARK	  __GLOB_FLAG__(MARK)
-#define GLOB_NOCHECK	  __GLOB_FLAG__(NOCHECK)
-#define GLOB_NOESCAPE	  __GLOB_FLAG__(NOESCAPE)
-#define GLOB_NOSORT	  __GLOB_FLAG__(NOSORT)
+#define GLOB_APPEND __GLOB_FLAG__(APPEND)
+#define GLOB_DOOFFS __GLOB_FLAG__(DOOFFS)
+#define GLOB_ERR __GLOB_FLAG__(ERR)
+#define GLOB_MARK __GLOB_FLAG__(MARK)
+#define GLOB_NOCHECK __GLOB_FLAG__(NOCHECK)
+#define GLOB_NOESCAPE __GLOB_FLAG__(NOESCAPE)
+#define GLOB_NOSORT __GLOB_FLAG__(NOSORT)
 
 /* Additional flags definitions, for MinGW specific extensions.
  */
-#define GLOB_CASEMATCH	  __GLOB_FLAG__(CASEMATCH)
+#define GLOB_CASEMATCH __GLOB_FLAG__(CASEMATCH)
 
-//BEGIN_C_DECLS
+// BEGIN_C_DECLS
 /*
  * Function prototypes.  Formally POSIX mandates:
  *
@@ -133,30 +132,33 @@ enum {
  * However, our actual function implementations are provided via this
  * pair of reserved function names...
  */
-int __mingw_glob( const char *, int, int (*)( const char *, int ), glob_t * );
-void __mingw_globfree( glob_t * );
+int __mingw_glob(const char*, int, int (*)(const char*, int), glob_t*);
+void __mingw_globfree(glob_t*);
 
 /* ...to which the standard names are then mapped as aliases,
  * via inline function expansion.
  */
-#define GLOB_INLINE  static __inline__ __attribute__((__always_inline__))
+#define GLOB_INLINE static __inline__ __attribute__((__always_inline__))
 
-GLOB_INLINE int glob
-( const char *__pattern, int __flags, int (*__errfunc)(const char *, int), glob_t *__data )
-{ return __mingw_glob( __pattern, __flags, __errfunc, __data ); }
+GLOB_INLINE int glob(const char* __pattern,
+                     int __flags,
+                     int (*__errfunc)(const char*, int),
+                     glob_t* __data)
+{
+  return __mingw_glob(__pattern, __flags, __errfunc, __data);
+}
 
-GLOB_INLINE void globfree( glob_t *__data )
-{ return __mingw_globfree( __data ); }
+GLOB_INLINE void globfree(glob_t* __data) { return __mingw_globfree(__data); }
 
-//END_C_DECLS
+// END_C_DECLS
 
 /* Manifest definitions for the possible status values
  * which glob() may return.
  */
-#define GLOB_SUCCESS	(0)
-#define GLOB_ABORTED	(1)
-#define GLOB_NOMATCH	(2)
-#define GLOB_NOSPACE	(3)
+#define GLOB_SUCCESS (0)
+#define GLOB_ABORTED (1)
+#define GLOB_NOMATCH (2)
+#define GLOB_NOSPACE (3)
 
 #endif /* ! RC_INVOKED */
 #endif /* ! defined _GLOB_H */

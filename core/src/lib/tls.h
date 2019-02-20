@@ -38,7 +38,7 @@ class Tls {
  public:
   Tls();
   virtual ~Tls();
-  Tls(Tls &other) = delete;
+  Tls(Tls& other) = delete;
 
   virtual bool init() = 0;
 
@@ -47,39 +47,44 @@ class Tls {
     kTlsUnknown,
     kTlsOpenSsl
   };
-  static Tls *CreateNewTlsContext(Tls::TlsImplementationType type);
+  static Tls* CreateNewTlsContext(Tls::TlsImplementationType type);
 
-  virtual void SetTlsPskClientContext(const PskCredentials &credentials) = 0;
-  virtual void SetTlsPskServerContext(ConfigurationParser *config,
-                                          GetTlsPskByFullyQualifiedResourceNameCb_t cb) = 0;
+  virtual void SetTlsPskClientContext(const PskCredentials& credentials) = 0;
+  virtual void SetTlsPskServerContext(
+      ConfigurationParser* config,
+      GetTlsPskByFullyQualifiedResourceNameCb_t cb) = 0;
 
-  virtual bool TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *host)   = 0;
-  virtual bool TlsPostconnectVerifyCn(JobControlRecord *jcr,
-                                                  const std::vector<std::string> &verify_list) = 0;
+  virtual bool TlsPostconnectVerifyHost(JobControlRecord* jcr,
+                                        const char* host) = 0;
+  virtual bool TlsPostconnectVerifyCn(
+      JobControlRecord* jcr,
+      const std::vector<std::string>& verify_list) = 0;
 
-  virtual bool TlsBsockAccept(BareosSocket *bsock)                           = 0;
-  virtual int TlsBsockWriten(BareosSocket *bsock, char *ptr, int32_t nbytes) = 0;
-  virtual int TlsBsockReadn(BareosSocket *bsock, char *ptr, int32_t nbytes)  = 0;
-  virtual bool TlsBsockConnect(BareosSocket *bsock)                          = 0;
-  virtual void TlsBsockShutdown(BareosSocket *bsock)                         = 0;
-  virtual void TlsLogConninfo(JobControlRecord *jcr,
-                                          const char *host,
-                                          int port,
-                                          const char *who) const                         = 0;
+  virtual bool TlsBsockAccept(BareosSocket* bsock) = 0;
+  virtual int TlsBsockWriten(BareosSocket* bsock,
+                             char* ptr,
+                             int32_t nbytes) = 0;
+  virtual int TlsBsockReadn(BareosSocket* bsock, char* ptr, int32_t nbytes) = 0;
+  virtual bool TlsBsockConnect(BareosSocket* bsock) = 0;
+  virtual void TlsBsockShutdown(BareosSocket* bsock) = 0;
+  virtual void TlsLogConninfo(JobControlRecord* jcr,
+                              const char* host,
+                              int port,
+                              const char* who) const = 0;
   virtual std::string TlsCipherGetName() const { return std::string(); }
 
-  virtual void SetCipherList(const std::string &cipherlist) = 0;
+  virtual void SetCipherList(const std::string& cipherlist) = 0;
 
-  virtual void Setca_certfile_(const std::string &ca_certfile)     = 0;
-  virtual void SetCaCertdir(const std::string &ca_certdir)       = 0;
-  virtual void SetCrlfile(const std::string &crlfile_)            = 0;
-  virtual void SetCertfile(const std::string &certfile_)          = 0;
-  virtual void SetKeyfile(const std::string &keyfile_)            = 0;
+  virtual void Setca_certfile_(const std::string& ca_certfile) = 0;
+  virtual void SetCaCertdir(const std::string& ca_certdir) = 0;
+  virtual void SetCrlfile(const std::string& crlfile_) = 0;
+  virtual void SetCertfile(const std::string& certfile_) = 0;
+  virtual void SetKeyfile(const std::string& keyfile_) = 0;
   virtual void SetPemCallback(CRYPTO_PEM_PASSWD_CB pem_callback) = 0;
-  virtual void SetPemUserdata(void *pem_userdata)                = 0;
-  virtual void SetDhFile(const std::string &dhfile_)              = 0;
-  virtual void SetVerifyPeer(const bool &verify_peer)            = 0;
-  virtual void SetTcpFileDescriptor(const int &fd)               = 0;
+  virtual void SetPemUserdata(void* pem_userdata) = 0;
+  virtual void SetDhFile(const std::string& dhfile_) = 0;
+  virtual void SetVerifyPeer(const bool& verify_peer) = 0;
+  virtual void SetTcpFileDescriptor(const int& fd) = 0;
 };
 
 #endif /* BAREOS_LIB_TLS_H_ */

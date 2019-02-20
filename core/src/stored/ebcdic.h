@@ -25,8 +25,8 @@
 
 namespace storagedaemon {
 
-void AsciiToEbcdic(char *dst, char *src, int count);
-void EbcdicToAscii(char *dst, char *src, int count);
+void AsciiToEbcdic(char* dst, char* src, int count);
+void EbcdicToAscii(char* dst, char* src, int count);
 
 } /* namespace storagedaemon */
 

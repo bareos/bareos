@@ -26,10 +26,10 @@ class ConfigurationParser;
 
 namespace storagedaemon {
 
-void StartSocketServer(dlist *addrs);
+void StartSocketServer(dlist* addrs);
 void StopSocketServer();
-void *HandleConnectionRequest(ConfigurationParser *config, void *arg);
+void* HandleConnectionRequest(ConfigurationParser* config, void* arg);
 
 } /* namespace storagedaemon */
 
-#endif // BAREOS_STORED_SOCKET_SERVER_H_
+#endif  // BAREOS_STORED_SOCKET_SERVER_H_

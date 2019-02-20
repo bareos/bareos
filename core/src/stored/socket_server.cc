@@ -41,7 +41,7 @@
 namespace storagedaemon {
 
 static workq_t socket_workq;
-static alist *sock_fds = NULL;
+static alist* sock_fds = NULL;
 static pthread_t tcp_server_tid;
 
 /**
@@ -59,11 +59,12 @@ static pthread_t tcp_server_tid;
  * Basic tasks done here:
  *  - If it was a connection from the FD, call HandleFiledConnection()
  *  - If it was a connection from another SD, call handle_stored_connection()
- *  - Otherwise it was a connection from the DIR, call handle_director_connection()
+ *  - Otherwise it was a connection from the DIR, call
+ * handle_director_connection()
  */
-void *HandleConnectionRequest(ConfigurationParser *config, void *arg)
+void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
 {
-  BareosSocket *bs = (BareosSocket *)arg;
+  BareosSocket* bs = (BareosSocket*)arg;
   char name[MAX_NAME_LENGTH];
   char tbuf[MAX_TIME_LENGTH];
 
@@ -87,7 +88,8 @@ void *HandleConnectionRequest(ConfigurationParser *config, void *arg)
    */
   if (bs->message_length < MIN_MSG_LEN || bs->message_length > MAX_MSG_LEN) {
     Dmsg1(000, "<filed: %s", bs->msg);
-    Emsg2(M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), bs->who(), bs->message_length);
+    Emsg2(M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), bs->who(),
+          bs->message_length);
     Bmicrosleep(5, 0); /* make user wait 5 seconds */
     bs->signal(BNET_TERMINATE);
     bs->close();
@@ -100,7 +102,8 @@ void *HandleConnectionRequest(ConfigurationParser *config, void *arg)
    * See if this is a File daemon connection. If so call FD handler.
    */
   if (sscanf(bs->msg, "Hello Start Job %127s", name) == 1) {
-    Dmsg1(110, "Got a FD connection at %s\n", bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+    Dmsg1(110, "Got a FD connection at %s\n",
+          bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
     return HandleFiledConnection(bs, name);
   }
 
@@ -108,29 +111,33 @@ void *HandleConnectionRequest(ConfigurationParser *config, void *arg)
    * See if this is a Storage daemon connection. If so call SD handler.
    */
   if (sscanf(bs->msg, "Hello Start Storage Job %127s", name) == 1) {
-    Dmsg1(110, "Got a SD connection at %s\n", bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+    Dmsg1(110, "Got a SD connection at %s\n",
+          bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
     return handle_stored_connection(bs, name);
   }
 
-  Dmsg1(110, "Got a DIR connection at %s\n", bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+  Dmsg1(110, "Got a DIR connection at %s\n",
+        bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
 
   return HandleDirectorConnection(bs);
 }
 
-void StartSocketServer(dlist *addrs)
+void StartSocketServer(dlist* addrs)
 {
-  IPADDR *p;
+  IPADDR* p;
 
   tcp_server_tid = pthread_self();
 
   /*
    * Become server, and handle requests
    */
-  foreach_dlist(p, addrs) { Dmsg1(10, "stored: listening on port %d\n", p->GetPortHostOrder()); }
+  foreach_dlist (p, addrs) {
+    Dmsg1(10, "stored: listening on port %d\n", p->GetPortHostOrder());
+  }
 
   sock_fds = New(alist(10, not_owned_by_alist));
-  BnetThreadServerTcp(addrs, me->MaxConnections, sock_fds, &socket_workq, me->nokeepalive,
-                      HandleConnectionRequest, my_config);
+  BnetThreadServerTcp(addrs, me->MaxConnections, sock_fds, &socket_workq,
+                      me->nokeepalive, HandleConnectionRequest, my_config);
 }
 
 void StopSocketServer()

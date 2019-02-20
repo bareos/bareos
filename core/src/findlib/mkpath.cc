@@ -54,55 +54,61 @@
 #define lchmod chmod
 #endif
 
-static bool makedir(JobControlRecord *jcr, char *path, mode_t mode, int *created)
+static bool makedir(JobControlRecord* jcr,
+                    char* path,
+                    mode_t mode,
+                    int* created)
 {
-   struct stat statp;
+  struct stat statp;
 
-   if (mkdir(path, mode) != 0) {
-      BErrNo be;
-      *created = false;
-      if (stat(path, &statp) != 0) {
-         Jmsg2(jcr, M_ERROR, 0, _("Cannot create directory %s: ERR=%s\n"),
-              path, be.bstrerror());
-         return false;
-      } else if (!S_ISDIR(statp.st_mode)) {
-         Jmsg1(jcr, M_ERROR, 0, _("%s exists but is not a directory.\n"), path);
-         return false;
-      }
-      return true;                 /* directory exists */
-   }
+  if (mkdir(path, mode) != 0) {
+    BErrNo be;
+    *created = false;
+    if (stat(path, &statp) != 0) {
+      Jmsg2(jcr, M_ERROR, 0, _("Cannot create directory %s: ERR=%s\n"), path,
+            be.bstrerror());
+      return false;
+    } else if (!S_ISDIR(statp.st_mode)) {
+      Jmsg1(jcr, M_ERROR, 0, _("%s exists but is not a directory.\n"), path);
+      return false;
+    }
+    return true; /* directory exists */
+  }
 
-   if (jcr->keep_path_list) {
-      /*
-       * When replace = NEVER, we keep track of all directories newly created
-       */
-      if (!jcr->path_list) {
-         jcr->path_list = path_list_init();
-      }
+  if (jcr->keep_path_list) {
+    /*
+     * When replace = NEVER, we keep track of all directories newly created
+     */
+    if (!jcr->path_list) { jcr->path_list = path_list_init(); }
 
-      PathListAdd(jcr->path_list, strlen(path), path);
-   }
+    PathListAdd(jcr->path_list, strlen(path), path);
+  }
 
-   *created = true;
-   return true;
+  *created = true;
+  return true;
 }
 
-static void SetOwnMod(Attributes *attr, char *path, uid_t owner, gid_t group, mode_t mode)
+static void SetOwnMod(Attributes* attr,
+                      char* path,
+                      uid_t owner,
+                      gid_t group,
+                      mode_t mode)
 {
-   if (lchown(path, owner, group) != 0 && attr->uid == 0) {
-      BErrNo be;
-      Jmsg2(attr->jcr, M_WARNING, 0, _("Cannot change owner and/or group of %s: ERR=%s\n"),
-           path, be.bstrerror());
-   }
+  if (lchown(path, owner, group) != 0 && attr->uid == 0) {
+    BErrNo be;
+    Jmsg2(attr->jcr, M_WARNING, 0,
+          _("Cannot change owner and/or group of %s: ERR=%s\n"), path,
+          be.bstrerror());
+  }
 #if defined(HAVE_WIN32)
-   if (win32_chmod(path, mode, 0) != 0 && attr->uid == 0) {
+  if (win32_chmod(path, mode, 0) != 0 && attr->uid == 0) {
 #else
-   if (lchmod(path, mode) != 0 && attr->uid == 0) {
+  if (lchmod(path, mode) != 0 && attr->uid == 0) {
 #endif
-      BErrNo be;
-      Jmsg2(attr->jcr, M_WARNING, 0, _("Cannot change permissions of %s: ERR=%s\n"),
-           path, be.bstrerror());
-   }
+    BErrNo be;
+    Jmsg2(attr->jcr, M_WARNING, 0,
+          _("Cannot change permissions of %s: ERR=%s\n"), path, be.bstrerror());
+  }
 }
 
 /**
@@ -111,163 +117,149 @@ static void SetOwnMod(Attributes *attr, char *path, uid_t owner, gid_t group, mo
  * owner and group are to set on any created dirs
  * keep_dir_modes if set means don't change mode bits if dir exists
  */
-bool makepath(Attributes *attr, const char *apath, mode_t mode, mode_t parent_mode,
-              uid_t owner, gid_t group, bool keep_dir_modes)
+bool makepath(Attributes* attr,
+              const char* apath,
+              mode_t mode,
+              mode_t parent_mode,
+              uid_t owner,
+              gid_t group,
+              bool keep_dir_modes)
 {
-   struct stat statp;
-   mode_t omask, tmode;
-   char *path = (char *)apath;
-   char *p;
-   int len;
-   bool ok = false;
-   int created;
-   char new_dir[5000];
-   int ndir = 0;
-   int i = 0;
-   int max_dirs = (int)sizeof(new_dir);
-   JobControlRecord *jcr = attr->jcr;
+  struct stat statp;
+  mode_t omask, tmode;
+  char* path = (char*)apath;
+  char* p;
+  int len;
+  bool ok = false;
+  int created;
+  char new_dir[5000];
+  int ndir = 0;
+  int i = 0;
+  int max_dirs = (int)sizeof(new_dir);
+  JobControlRecord* jcr = attr->jcr;
 
-   if (stat(path, &statp) == 0) {     /* Does dir exist? */
-      if (!S_ISDIR(statp.st_mode)) {
-         Jmsg1(jcr, M_ERROR, 0, _("%s exists but is not a directory.\n"), path);
-         return false;
-      }
-      /* Full path exists */
-      if (keep_dir_modes) {
-         return true;
-      }
-      SetOwnMod(attr, path, owner, group, mode);
-      return true;
-   }
-   omask = umask(0);
-   umask(omask);
-   len = strlen(apath);
-   path = (char *)alloca(len+1);
-   bstrncpy(path, apath, len+1);
-   StripTrailingSlashes(path);
-   /*
-    * Now for one of the complexities. If we are not running as root,
-    * then if the parent_mode does not have wx user perms, or we are
-    * setting the userid or group, and the parent_mode has setuid, setgid,
-    * or sticky bits, we must create the dir with open permissions, then
-    * go back and patch all the dirs up with the correct perms.
-    * Solution, set everything to 0777, then go back and reset them at the
-    * end.
-    */
-   tmode = 0777;
+  if (stat(path, &statp) == 0) { /* Does dir exist? */
+    if (!S_ISDIR(statp.st_mode)) {
+      Jmsg1(jcr, M_ERROR, 0, _("%s exists but is not a directory.\n"), path);
+      return false;
+    }
+    /* Full path exists */
+    if (keep_dir_modes) { return true; }
+    SetOwnMod(attr, path, owner, group, mode);
+    return true;
+  }
+  omask = umask(0);
+  umask(omask);
+  len = strlen(apath);
+  path = (char*)alloca(len + 1);
+  bstrncpy(path, apath, len + 1);
+  StripTrailingSlashes(path);
+  /*
+   * Now for one of the complexities. If we are not running as root,
+   * then if the parent_mode does not have wx user perms, or we are
+   * setting the userid or group, and the parent_mode has setuid, setgid,
+   * or sticky bits, we must create the dir with open permissions, then
+   * go back and patch all the dirs up with the correct perms.
+   * Solution, set everything to 0777, then go back and reset them at the
+   * end.
+   */
+  tmode = 0777;
 
 #if defined(HAVE_WIN32)
-   /*
-    * Validate drive letter
-    */
-   if (path[1] == ':') {
-      char drive[4] = "X:\\";
+  /*
+   * Validate drive letter
+   */
+  if (path[1] == ':') {
+    char drive[4] = "X:\\";
 
-      drive[0] = path[0];
+    drive[0] = path[0];
 
-      UINT drive_type = GetDriveType(drive);
+    UINT drive_type = GetDriveType(drive);
 
-      if (drive_type == DRIVE_UNKNOWN || drive_type == DRIVE_NO_ROOT_DIR) {
-         Jmsg1(jcr, M_ERROR, 0, _("%c: is not a valid drive.\n"), path[0]);
-         goto bail_out;
-      }
+    if (drive_type == DRIVE_UNKNOWN || drive_type == DRIVE_NO_ROOT_DIR) {
+      Jmsg1(jcr, M_ERROR, 0, _("%c: is not a valid drive.\n"), path[0]);
+      goto bail_out;
+    }
 
-      if (path[2] == '\0') {          /* attempt to create a drive */
-         ok = true;
-         goto bail_out;               /* OK, it is already there */
-      }
+    if (path[2] == '\0') { /* attempt to create a drive */
+      ok = true;
+      goto bail_out; /* OK, it is already there */
+    }
 
-      p = &path[3];
-   } else {
-      p = path;
-   }
+    p = &path[3];
+  } else {
+    p = path;
+  }
 #else
-   p = path;
+  p = path;
 #endif
 
-   /*
-    * Skip leading slash(es)
-    */
-   while (IsPathSeparator(*p)) {
-      p++;
-   }
-   while ((p = first_path_separator(p))) {
-      char save_p;
-      save_p = *p;
-      *p = 0;
-      if (!makedir(jcr, path, tmode, &created)) {
-         goto bail_out;
-      }
-      if (ndir < max_dirs) {
-         new_dir[ndir++] = created;
-      }
-      *p = save_p;
-      while (IsPathSeparator(*p)) {
-         p++;
-      }
-   }
-   /*
-    * Create final component if not a junction/symlink
-    */
-   if(attr->type != FT_JUNCTION ){
-      if (!makedir(jcr, path, tmode, &created)) {
-         goto bail_out;
-      }
-   }
+  /*
+   * Skip leading slash(es)
+   */
+  while (IsPathSeparator(*p)) { p++; }
+  while ((p = first_path_separator(p))) {
+    char save_p;
+    save_p = *p;
+    *p = 0;
+    if (!makedir(jcr, path, tmode, &created)) { goto bail_out; }
+    if (ndir < max_dirs) { new_dir[ndir++] = created; }
+    *p = save_p;
+    while (IsPathSeparator(*p)) { p++; }
+  }
+  /*
+   * Create final component if not a junction/symlink
+   */
+  if (attr->type != FT_JUNCTION) {
+    if (!makedir(jcr, path, tmode, &created)) { goto bail_out; }
+  }
 
-   if (ndir < max_dirs) {
-      new_dir[ndir++] = created;
-   }
-   if (ndir >= max_dirs) {
-      Jmsg0(jcr, M_WARNING, 0, _("Too many subdirectories. Some permissions not reset.\n"));
-   }
+  if (ndir < max_dirs) { new_dir[ndir++] = created; }
+  if (ndir >= max_dirs) {
+    Jmsg0(jcr, M_WARNING, 0,
+          _("Too many subdirectories. Some permissions not reset.\n"));
+  }
 
-   /*
-    * Now set the proper owner and modes
-    */
+  /*
+   * Now set the proper owner and modes
+   */
 #if defined(HAVE_WIN32)
 
-   /*
-    * Don't propagate the hidden attribute to parent directories
-    */
-   parent_mode &= ~S_ISVTX;
+  /*
+   * Don't propagate the hidden attribute to parent directories
+   */
+  parent_mode &= ~S_ISVTX;
 
-   if (path[1] == ':') {
-      p = &path[3];
-   } else {
-      p = path;
-   }
+  if (path[1] == ':') {
+    p = &path[3];
+  } else {
+    p = path;
+  }
 #else
-   p = path;
+  p = path;
 #endif
-   /*
-    * Skip leading slash(es)
-    */
-   while (IsPathSeparator(*p)) {
-      p++;
-   }
-   while ((p = first_path_separator(p))) {
-      char save_p;
-      save_p = *p;
-      *p = 0;
-      if (i < ndir && new_dir[i++] && !keep_dir_modes) {
-         SetOwnMod(attr, path, owner, group, parent_mode);
-      }
-      *p = save_p;
-      while (IsPathSeparator(*p)) {
-         p++;
-      }
-   }
+  /*
+   * Skip leading slash(es)
+   */
+  while (IsPathSeparator(*p)) { p++; }
+  while ((p = first_path_separator(p))) {
+    char save_p;
+    save_p = *p;
+    *p = 0;
+    if (i < ndir && new_dir[i++] && !keep_dir_modes) {
+      SetOwnMod(attr, path, owner, group, parent_mode);
+    }
+    *p = save_p;
+    while (IsPathSeparator(*p)) { p++; }
+  }
 
-   /*
-    * Set for final component
-    */
-   if (i < ndir && new_dir[i++]) {
-      SetOwnMod(attr, path, owner, group, mode);
-   }
+  /*
+   * Set for final component
+   */
+  if (i < ndir && new_dir[i++]) { SetOwnMod(attr, path, owner, group, mode); }
 
-   ok = true;
+  ok = true;
 bail_out:
-   umask(omask);
-   return ok;
+  umask(omask);
+  return ok;
 }

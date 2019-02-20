@@ -24,11 +24,13 @@
 
 namespace directordaemon {
 
-bool StartStorageDaemonJob(JobControlRecord *jcr, alist *read_storage, alist *write_storage,
-                              bool send_bsr = false);
-bool StartStorageDaemonMessageThread(JobControlRecord *jcr);
-int BgetDirmsg(BareosSocket *bs, bool allow_any_msg = false);
-void WaitForStorageDaemonTermination(JobControlRecord *jcr);
+bool StartStorageDaemonJob(JobControlRecord* jcr,
+                           alist* read_storage,
+                           alist* write_storage,
+                           bool send_bsr = false);
+bool StartStorageDaemonMessageThread(JobControlRecord* jcr);
+int BgetDirmsg(BareosSocket* bs, bool allow_any_msg = false);
+void WaitForStorageDaemonTermination(JobControlRecord* jcr);
 
 } /* namespace directordaemon */
-#endif // BAREOS_DIRD_MSGCHAN_H_
+#endif  // BAREOS_DIRD_MSGCHAN_H_

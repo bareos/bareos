@@ -29,15 +29,16 @@ static constexpr char record_separator_ = 0x1e;
 
 enum
 {
-  kOne                = 1,
-  kTwo                = 2,
-  kThree              = 3,
+  kOne = 1,
+  kTwo = 2,
+  kThree = 3,
   kNotInsertedIntoMap = 4
 };
 
 static const std::map<int, std::string> create_test_map()
 {
-  const std::map<int, std::string> map{{kOne, "kOne"}, {kTwo, "kTwo"}, {kThree, "kThree"}};
+  const std::map<int, std::string> map{
+      {kOne, "kOne"}, {kTwo, "kTwo"}, {kThree, "kThree"}};
   return map;
 }
 
@@ -57,7 +58,7 @@ TEST(QualifiedResourceNameTypeConverter, StringToType)
 
   std::string tmp;
   tmp = std::string("kOne") + record_separator_ + std::string("Developer");
-  ok  = c.StringToResource(name, r_type, tmp);
+  ok = c.StringToResource(name, r_type, tmp);
   EXPECT_EQ(ok, true);
 
   /* try invalid string */
@@ -80,7 +81,8 @@ TEST(QualifiedResourceNameTypeConverter, TypeToString)
 
   ok = c.ResourceToString("ResourceName", kTwo, result_str);
   EXPECT_EQ(ok, true);
-  std::string test1 = std::string("kTwo") + record_separator_ + std::string("ResourceName");
+  std::string test1 =
+      std::string("kTwo") + record_separator_ + std::string("ResourceName");
   EXPECT_STREQ(result_str.c_str(), test1.c_str());
 
   /* try invalid resource type */

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1998,1999,2000
- *	Traakan, Inc., Los Altos, CA
- *	All rights reserved.
+ *      Traakan, Inc., Los Altos, CA
+ *      All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -58,7 +58,7 @@
            DTLPWRSOMC
 */
 
-/*OP	   DTLPWRSOMC */
+/*OP       DTLPWRSOMC */
 #define SCSI_CMD_TEST_UNIT_READY 0x00                /* MMMMMMMMMM */
 #define SCSI_CMD_REWIND 0x01                         /* _M________ */
 #define SCSI_CMD_REZERO_UNIT 0x01                    /* O_V_OO_OO_ */

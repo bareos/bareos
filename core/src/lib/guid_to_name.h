@@ -29,13 +29,13 @@
  */
 
 class guid_list {
-public:
-   dlist *uid_list;
-   dlist *gid_list;
+ public:
+  dlist* uid_list;
+  dlist* gid_list;
 
-   char *uid_to_name(uid_t uid, char *name, int maxlen);
-   char *gid_to_name(gid_t gid, char *name, int maxlen);
+  char* uid_to_name(uid_t uid, char* name, int maxlen);
+  char* gid_to_name(gid_t gid, char* name, int maxlen);
 };
 
-guid_list *new_guid_list();
-void FreeGuidList(guid_list *list);
+guid_list* new_guid_list();
+void FreeGuidList(guid_list* list);

@@ -29,18 +29,18 @@ class BareosSocketTCP;
 class BareosSocket;
 
 class TestSockets {
-public:
+ public:
   std::unique_ptr<BareosSocket> server;
   std::unique_ptr<BareosSocketTCP> client;
 
   TestSockets() = default;
-  TestSockets(const TestSockets &) = delete;
+  TestSockets(const TestSockets&) = delete;
 };
 
 extern int listening_server_port_number;
 
 int create_accepted_server_socket(int port);
-BareosSocket *create_new_bareos_socket(int fd);
+BareosSocket* create_new_bareos_socket(int fd);
 std::unique_ptr<TestSockets> create_connected_server_and_client_bareos_socket();
 
 #endif /* BAREOS_TESTS_BAREOS_TEST_SOCKETS_H_ */

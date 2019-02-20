@@ -38,66 +38,74 @@ namespace storagedaemon {
  * Returns DPL_SUCCESS - success
  *         other dpl_status_t value: failure
  */
-typedef dpl_status_t (*t_dpl_walk_directory_call_back)(dpl_dirent_t *dirent, dpl_ctx_t *ctx,
-                                                       const char *dirname, void *data);
-typedef dpl_status_t (*t_dpl_walk_chunks_call_back)(dpl_sysmd_t *sysmd, dpl_ctx_t *ctx, const char *chunkpath, void *data);
+typedef dpl_status_t (*t_dpl_walk_directory_call_back)(dpl_dirent_t* dirent,
+                                                       dpl_ctx_t* ctx,
+                                                       const char* dirname,
+                                                       void* data);
+typedef dpl_status_t (*t_dpl_walk_chunks_call_back)(dpl_sysmd_t* sysmd,
+                                                    dpl_ctx_t* ctx,
+                                                    const char* chunkpath,
+                                                    void* data);
 
 
+class droplet_device : public chunked_device {
+ private:
+  /*
+   * Private Members
+   */
+  /* maximun number of chunks in a volume (0000 to 9999) */
+  const int max_chunks_ = 10000;
+  char* configstring_;
+  const char* profile_;
+  const char* location_;
+  const char* canned_acl_;
+  const char* storage_class_;
+  const char* bucketname_;
+  dpl_ctx_t* ctx_;
+  dpl_sysmd_t sysmd_;
 
+  /*
+   * Private Methods
+   */
+  bool initialize();
+  dpl_status_t check_path(const char* path);
 
-class droplet_device: public chunked_device {
-private:
-   /*
-    * Private Members
-    */
-   /* maximun number of chunks in a volume (0000 to 9999) */
-   const int max_chunks_ = 10000;
-   char *configstring_;
-   const char *profile_;
-   const char *location_;
-   const char *canned_acl_;
-   const char *storage_class_;
-   const char *bucketname_;
-   dpl_ctx_t *ctx_;
-   dpl_sysmd_t sysmd_;
+  /*
+   * Interface from chunked_device
+   */
+  bool CheckRemote();
+  bool remote_chunked_volume_exists();
+  bool FlushRemoteChunk(chunk_io_request* request);
+  bool ReadRemoteChunk(chunk_io_request* request);
+  ssize_t chunked_remote_volume_size();
+  bool TruncateRemoteChunkedVolume(DeviceControlRecord* dcr);
 
-   /*
-    * Private Methods
-    */
-   bool initialize();
-   dpl_status_t check_path(const char *path);
+  bool walk_directory(const char* dirname,
+                      t_dpl_walk_directory_call_back callback,
+                      void* data);
+  bool walk_chunks(const char* dirname,
+                   t_dpl_walk_chunks_call_back callback,
+                   void* data,
+                   bool ignore_gaps = false);
 
-   /*
-    * Interface from chunked_device
-    */
-   bool CheckRemote();
-   bool remote_chunked_volume_exists();
-   bool FlushRemoteChunk(chunk_io_request *request);
-   bool ReadRemoteChunk(chunk_io_request *request);
-   ssize_t chunked_remote_volume_size();
-   bool TruncateRemoteChunkedVolume(DeviceControlRecord *dcr);
+ public:
+  /*
+   * Public Methods
+   */
+  droplet_device();
+  ~droplet_device();
 
-   bool walk_directory(const char *dirname, t_dpl_walk_directory_call_back callback, void *data);
-   bool walk_chunks(const char *dirname, t_dpl_walk_chunks_call_back callback, void *data, bool ignore_gaps = false);
-
-public:
-   /*
-    * Public Methods
-    */
-   droplet_device();
-   ~droplet_device();
-
-   /*
-    * Interface from Device
-    */
-   int d_close(int fd);
-   int d_open(const char *pathname, int flags, int mode);
-   int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL);
-   boffset_t d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence);
-   ssize_t d_read(int fd, void *buffer, size_t count);
-   ssize_t d_write(int fd, const void *buffer, size_t count);
-   bool d_truncate(DeviceControlRecord *dcr);
-   bool d_flush(DeviceControlRecord *dcr);
+  /*
+   * Interface from Device
+   */
+  int d_close(int fd);
+  int d_open(const char* pathname, int flags, int mode);
+  int d_ioctl(int fd, ioctl_req_t request, char* mt = NULL);
+  boffset_t d_lseek(DeviceControlRecord* dcr, boffset_t offset, int whence);
+  ssize_t d_read(int fd, void* buffer, size_t count);
+  ssize_t d_write(int fd, const void* buffer, size_t count);
+  bool d_truncate(DeviceControlRecord* dcr);
+  bool d_flush(DeviceControlRecord* dcr);
 };
 } /* namespace storagedaemon */
 #endif /* OBJECTSTORE_DEVICE_H */

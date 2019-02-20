@@ -24,8 +24,8 @@
 
 #include <cstdio>
 
-void ConsoleOutputFormat(const char *fmt, ...);
-void ConsoleOutput(const char *buf);
+void ConsoleOutputFormat(const char* fmt, ...);
+void ConsoleOutput(const char* buf);
 void EnableTeeOut();
 void DisableTeeOut();
 void SetTeeFile(FILE* f);

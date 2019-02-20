@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1998,1999,2000
- *	Traakan, Inc., Los Altos, CA
- *	All rights reserved.
+ *      Traakan, Inc., Los Altos, CA
+ *      All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,65 +31,65 @@
  * Ident:    $Id: $
  *
  * Description:
- *	This is the key #include file for the NDMP protocol
- *	layer of NDMJOBLIB.
+ *      This is the key #include file for the NDMP protocol
+ *      layer of NDMJOBLIB.
  *
- *	There are multiple version of NDMP. This gathers them together.
- *	Under control of #ifdef NDMOS_OPTION_NO_NDMPx specific versions
- *	may be omitted. At this time, NDMPv2 and NDMPv3 are deployed.
- *	NDMPv1 was defined but not widely deployed, and deemed irrelavent.
- *	NDMPv4 is under consideration.
+ *      There are multiple version of NDMP. This gathers them together.
+ *      Under control of #ifdef NDMOS_OPTION_NO_NDMPx specific versions
+ *      may be omitted. At this time, NDMPv2 and NDMPv3 are deployed.
+ *      NDMPv1 was defined but not widely deployed, and deemed irrelavent.
+ *      NDMPv4 is under consideration.
  *
- *	NDMP is defined using RPC protocol specification
- *	files (.x files). NDMP does not really use the RPC
- *	layer, but it does use the RPC XDR (External Data
- *	Representation) layer.
+ *      NDMP is defined using RPC protocol specification
+ *      files (.x files). NDMP does not really use the RPC
+ *      layer, but it does use the RPC XDR (External Data
+ *      Representation) layer.
  *
- *	The original NDMP .x files are cosmetically transformed for
- *	NDMJOBLIB. The original NDMPv2 and NDMPv3 .x files use names
- *	like ndmp_name and ndmp_config_get_host_info_reply. These
- *	changed between versions even though they have the same name.
- *	Data structures which didn't change, like ndmp_pval, caused
- *	compile-time agony. For example, xdr_ndmp_pval() would be
- *	multiply defined at ld(1)-time. The first approach considered
- *	and rejected to resolve this was to make a unified, all
- *	versions .x file. It was rejected because it becomes difficult,
- *	even impractical, to integrate new versions and to omit old ones.
- *	The approach taken was to transform the names to reflect protocol
- *	version. This same approach was adopted by NFS for NFSv3 and
- *	NFSv4. Now there is an ndmp2_pval and an ndmp3_pval, and the
- *	compiler is happy. When it's defined, there will be an ndmp4_pval.
+ *      The original NDMP .x files are cosmetically transformed for
+ *      NDMJOBLIB. The original NDMPv2 and NDMPv3 .x files use names
+ *      like ndmp_name and ndmp_config_get_host_info_reply. These
+ *      changed between versions even though they have the same name.
+ *      Data structures which didn't change, like ndmp_pval, caused
+ *      compile-time agony. For example, xdr_ndmp_pval() would be
+ *      multiply defined at ld(1)-time. The first approach considered
+ *      and rejected to resolve this was to make a unified, all
+ *      versions .x file. It was rejected because it becomes difficult,
+ *      even impractical, to integrate new versions and to omit old ones.
+ *      The approach taken was to transform the names to reflect protocol
+ *      version. This same approach was adopted by NFS for NFSv3 and
+ *      NFSv4. Now there is an ndmp2_pval and an ndmp3_pval, and the
+ *      compiler is happy. When it's defined, there will be an ndmp4_pval.
  *
- *	There are two pseudo-versions of the protocol here: NDMPv0
- *	and NDMPv9. These are used for internal convenience. These
- *	are also defined using .x files because it's easy to
- *	cut-n-paste from the official .x files. Neither NDMPv0
- *	nor NDMPv9 may be omitted.
+ *      There are two pseudo-versions of the protocol here: NDMPv0
+ *      and NDMPv9. These are used for internal convenience. These
+ *      are also defined using .x files because it's easy to
+ *      cut-n-paste from the official .x files. Neither NDMPv0
+ *      nor NDMPv9 may be omitted.
  *
- *	NDMPv0 is the NDMP protocol subset used before the protocol
- *	version negotiation is complete. This subset of the protocol
- *	must necessarily remain immutable and constant for all time.
- *	NDMPv0 is the over-the-wire protocol until the version is
- *	negotiated.
+ *      NDMPv0 is the NDMP protocol subset used before the protocol
+ *      version negotiation is complete. This subset of the protocol
+ *      must necessarily remain immutable and constant for all time.
+ *      NDMPv0 is the over-the-wire protocol until the version is
+ *      negotiated.
  *
- *	NDMPv9 is an internal representation of the protocol and
- *	isolates higher layers of NDMJOB from most variations between
- *	protocol version. NDMPv9 makes it a little easier to add
- *	new versions and omit older ones. NDMPv9 is never used
- *	over-the-wire, and therefor there are no XDR routines.
+ *      NDMPv9 is an internal representation of the protocol and
+ *      isolates higher layers of NDMJOB from most variations between
+ *      protocol version. NDMPv9 makes it a little easier to add
+ *      new versions and omit older ones. NDMPv9 is never used
+ *      over-the-wire, and therefor there are no XDR routines.
  *
- *	There are three primary elements of this layer:
+ *      There are three primary elements of this layer:
  *
- *	1) Header files which define each version of the protocol.
- *	   These are generated from files (.x files) by rpcgen(1).
+ *      1) Header files which define each version of the protocol.
+ *         These are generated from files (.x files) by rpcgen(1).
  *
- *	2) XDR routines which convert to/from the over-the-wire
- *	   protocol and internal data structures. These are
- *	   also generated by rpcgen(1). There are also
- *	   tables of XDR routines.
+ *      2) XDR routines which convert to/from the over-the-wire
+ *         protocol and internal data structures. These are
+ *         also generated by rpcgen(1). There are also
+ *         tables of XDR routines.
  *
- *	3) Support for pretty-printing the protocol data structures.
- *	   Maybe someday rpcgen(1) will generate these, too.
+ *      3) Support for pretty-printing the protocol data structures.
+ *         Maybe someday rpcgen(1) will generate these, too.
  */
 
 
@@ -116,15 +116,13 @@
 #include "ndmp9.h"
 
 
-
-
 /*
  * Protocol ammendments. These are important constants
  * omitted from the spec and .x files.
  */
 #include "ndmp_ammend.h"
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -137,31 +135,29 @@ extern "C" {
  */
 
 struct ndmp_xdr_message_table {
-	int	msg;
-	int	(*xdr_request)();
-	int	(*xdr_reply)();
+  int msg;
+  int (*xdr_request)();
+  int (*xdr_reply)();
 };
 
-extern struct ndmp_xdr_message_table	ndmp0_xdr_message_table[];
+extern struct ndmp_xdr_message_table ndmp0_xdr_message_table[];
 
 #ifndef NDMOS_OPTION_NO_NDMP2
-extern struct ndmp_xdr_message_table	ndmp2_xdr_message_table[];
+extern struct ndmp_xdr_message_table ndmp2_xdr_message_table[];
 #endif /* !NDMOS_OPTION_NO_NDMP2 */
 
 #ifndef NDMOS_OPTION_NO_NDMP3
-extern struct ndmp_xdr_message_table	ndmp3_xdr_message_table[];
+extern struct ndmp_xdr_message_table ndmp3_xdr_message_table[];
 #endif /* !NDMOS_OPTION_NO_NDMP3 */
 
 #ifndef NDMOS_OPTION_NO_NDMP4
-extern struct ndmp_xdr_message_table	ndmp4_xdr_message_table[];
+extern struct ndmp_xdr_message_table ndmp4_xdr_message_table[];
 #endif /* !NDMOS_OPTION_NO_NDMP4 */
 
 /* Note: no ndmp9 XDRs */
 
-extern struct ndmp_xdr_message_table *
-		ndmp_xmt_lookup (int protocol_version, int msg);
-
-
+extern struct ndmp_xdr_message_table* ndmp_xmt_lookup(int protocol_version,
+                                                      int msg);
 
 
 /*
@@ -170,13 +166,14 @@ extern struct ndmp_xdr_message_table *
  */
 
 struct ndmp_enum_str_table {
-	char *		name;
-	int		value;
+  char* name;
+  int value;
 };
 
-extern char *	ndmp_enum_to_str (int val, struct ndmp_enum_str_table *table);
-extern int	ndmp_enum_from_str (int *valp, char *str,
-				 struct ndmp_enum_str_table *table);
+extern char* ndmp_enum_to_str(int val, struct ndmp_enum_str_table* table);
+extern int ndmp_enum_from_str(int* valp,
+                              char* str,
+                              struct ndmp_enum_str_table* table);
 
 
 #include "ndmp0_enum_strs.h"
@@ -196,17 +193,13 @@ extern int	ndmp_enum_from_str (int *valp, char *str,
 #include "ndmp9_enum_strs.h"
 
 
-
-
 /*
  * MULTI-VERSION ENUM TO STRING CONVERTERS
  ****************************************************************
  */
 
-extern char *	ndmp_message_to_str (int protocol_version, int msg);
-extern char *	ndmp_error_to_str (int protocol_version, int msg);
-
-
+extern char* ndmp_message_to_str(int protocol_version, int msg);
+extern char* ndmp_error_to_str(int protocol_version, int msg);
 
 
 /*
@@ -223,54 +216,62 @@ extern char *	ndmp_error_to_str (int protocol_version, int msg);
  *
  * Line number 0 is usually usable as a summary.
  * Three levels of increasing detail are easy:
- *	1) Just ndmp_pp_header()
- *	2) ndmp_pp_header() and ndmp_pp_{request|reply} w/ lineno=0
- *	3) ndmp_pp_header() and ndmp_pp_{request|reply} all lines
+ *      1) Just ndmp_pp_header()
+ *      2) ndmp_pp_header() and ndmp_pp_{request|reply} w/ lineno=0
+ *      3) ndmp_pp_header() and ndmp_pp_{request|reply} all lines
  */
 
 
-extern int	ndmp_pp_header (int vers, void *data, char *buf);
-extern int	ndmp_pp_request (int vers, int msg,
-				void *data, int lineno, char *buf);
-extern int	ndmp_pp_reply (int vers, int msg,
-				void *data, int lineno, char *buf);
+extern int ndmp_pp_header(int vers, void* data, char* buf);
+extern int ndmp_pp_request(int vers,
+                           int msg,
+                           void* data,
+                           int lineno,
+                           char* buf);
+extern int ndmp_pp_reply(int vers, int msg, void* data, int lineno, char* buf);
 
-extern int	ndmp0_pp_header (void *data, char *buf);
-extern int	ndmp0_pp_request (ndmp0_message msg,
-				void *data, int lineno, char *buf);
-extern int	ndmp0_pp_reply (ndmp0_message msg,
-				void *data, int lineno, char *buf);
+extern int ndmp0_pp_header(void* data, char* buf);
+extern int ndmp0_pp_request(ndmp0_message msg,
+                            void* data,
+                            int lineno,
+                            char* buf);
+extern int ndmp0_pp_reply(ndmp0_message msg, void* data, int lineno, char* buf);
 
 #ifndef NDMOS_OPTION_NO_NDMP2
-extern int	ndmp2_pp_header (void *data, char *buf);
-extern int	ndmp2_pp_request (ndmp2_message msg,
-				void *data, int lineno, char *buf);
-extern int	ndmp2_pp_reply (ndmp2_message msg,
-				void *data, int lineno, char *buf);
+extern int ndmp2_pp_header(void* data, char* buf);
+extern int ndmp2_pp_request(ndmp2_message msg,
+                            void* data,
+                            int lineno,
+                            char* buf);
+extern int ndmp2_pp_reply(ndmp2_message msg, void* data, int lineno, char* buf);
 #endif /* !NDMOS_OPTION_NO_NDMP2 */
 
 #ifndef NDMOS_OPTION_NO_NDMP3
-extern int	ndmp3_pp_header (void *data, char *buf);
-extern int	ndmp3_pp_request (ndmp3_message msg,
-				void *data, int lineno, char *buf);
-extern int	ndmp3_pp_reply (ndmp3_message msg,
-				void *data, int lineno, char *buf);
+extern int ndmp3_pp_header(void* data, char* buf);
+extern int ndmp3_pp_request(ndmp3_message msg,
+                            void* data,
+                            int lineno,
+                            char* buf);
+extern int ndmp3_pp_reply(ndmp3_message msg, void* data, int lineno, char* buf);
 #endif /* !NDMOS_OPTION_NO_NDMP3 */
 
 #ifndef NDMOS_OPTION_NO_NDMP4
-extern int	ndmp4_pp_header (void *data, char *buf);
-extern int	ndmp4_pp_request (ndmp4_message msg,
-				void *data, int lineno, char *buf);
-extern int	ndmp4_pp_reply (ndmp4_message msg,
-				void *data, int lineno, char *buf);
+extern int ndmp4_pp_header(void* data, char* buf);
+extern int ndmp4_pp_request(ndmp4_message msg,
+                            void* data,
+                            int lineno,
+                            char* buf);
+extern int ndmp4_pp_reply(ndmp4_message msg, void* data, int lineno, char* buf);
 #endif /* !NDMOS_OPTION_NO_NDMP4 */
 
 
-#define NDMP_PP_AS(T) ((T *)data)
+#define NDMP_PP_AS(T) ((T*)data)
 
-#define NDMP_PP_WITH(T) { T * p = ((T *)data);
+#define NDMP_PP_WITH(T) \
+  {                     \
+    T* p = ((T*)data);
 #define NDMP_PP_ENDWITH }
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 }
 #endif

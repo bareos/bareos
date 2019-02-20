@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1998,1999,2000
- *	Traakan, Inc., Los Altos, CA
- *	All rights reserved.
+ *      Traakan, Inc., Los Altos, CA
+ *      All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -39,173 +39,165 @@
 #include "scsiconst.h"
 
 
-int
-smc_scsi_xa (struct smc_ctrl_block *smc)
+int smc_scsi_xa(struct smc_ctrl_block* smc)
 {
-	int		try = 0;
-	int		rc;
-	int		sense_key;
-	unsigned char *	sense_data = smc->scsi_req.sense_data;
+  int try
+    = 0;
+  int rc;
+  int sense_key;
+  unsigned char* sense_data = smc->scsi_req.sense_data;
 
-	for (try = 0; try < 2; try++) {
-		rc = (*smc->issue_scsi_req)(smc);
-		if (rc || smc->scsi_req.completion_status != SMCSR_CS_GOOD) {
-			strcpy (smc->errmsg, "SCSI request failed");
-			if (rc == 0) rc = -1;
-			continue;	/* retry */
-		}
+  for (try = 0; try < 2; try ++) {
+    rc = (*smc->issue_scsi_req)(smc);
+    if (rc || smc->scsi_req.completion_status != SMCSR_CS_GOOD) {
+      strcpy(smc->errmsg, "SCSI request failed");
+      if (rc == 0) rc = -1;
+      continue; /* retry */
+    }
 
-		switch (SCSI_STATUS_BYTE_CODE(smc->scsi_req.status_byte)) {
-		case SCSI_STATUS_GOOD:
-			return 0;
+    switch (SCSI_STATUS_BYTE_CODE(smc->scsi_req.status_byte)) {
+      case SCSI_STATUS_GOOD:
+        return 0;
 
-		case SCSI_STATUS_CHECK_CONDITION:
-			/* sense data processed below */
-			break;
+      case SCSI_STATUS_CHECK_CONDITION:
+        /* sense data processed below */
+        break;
 
-		default:
-			strcpy (smc->errmsg, "SCSI unexpected status");
-			return -1;
-		}
+      default:
+        strcpy(smc->errmsg, "SCSI unexpected status");
+        return -1;
+    }
 
-		sense_key = sense_data[2] & SCSI_SENSE_SENSE_KEY_MASK;
+    sense_key = sense_data[2] & SCSI_SENSE_SENSE_KEY_MASK;
 
-		if (sense_key == SCSI_SENSE_KEY_UNIT_ATTENTION) {
-			int	valid;
-			int	asc, ascq, asq, cmd;
-			long	info;
+    if (sense_key == SCSI_SENSE_KEY_UNIT_ATTENTION) {
+      int valid;
+      int asc, ascq, asq, cmd;
+      long info;
 
-			valid = sense_data[0] & SCSI_SENSE_VALID_BIT;
-			info = SMC_GET4(&sense_data[3]);
-			asc = sense_data[12];
-			ascq = sense_data[13];
-			asq = _ASQ(asc,ascq);
-			cmd = smc->scsi_req.cmd[0];
+      valid = sense_data[0] & SCSI_SENSE_VALID_BIT;
+      info = SMC_GET4(&sense_data[3]);
+      asc = sense_data[12];
+      ascq = sense_data[13];
+      asq = _ASQ(asc, ascq);
+      cmd = smc->scsi_req.cmd[0];
 
-			sprintf (smc->errmsg,
-				"SCSI attn s0=%x asq=%x,%x cmd=%x info=%lx",
-				sense_data[0],
-				asc, ascq, cmd, info);
+      sprintf(smc->errmsg, "SCSI attn s0=%x asq=%x,%x cmd=%x info=%lx",
+              sense_data[0], asc, ascq, cmd, info);
 
-			rc = 1;
-		} else {
-			strcpy (smc->errmsg, "SCSI check condition");
-			rc = 1;
-			break;		/* don't retry, investigate */
-		}
-	}
+      rc = 1;
+    } else {
+      strcpy(smc->errmsg, "SCSI check condition");
+      rc = 1;
+      break; /* don't retry, investigate */
+    }
+  }
 
-	if (!rc) rc = -1;
-	return rc;
+  if (!rc) rc = -1;
+  return rc;
 }
 
 
-#define SINQ_MEDIA_CHANGER		0x08
+#define SINQ_MEDIA_CHANGER 0x08
 
-int
-smc_inquire (struct smc_ctrl_block *smc)
+int smc_inquire(struct smc_ctrl_block* smc)
 {
-	struct smc_scsi_req *	sr = &smc->scsi_req;
-	unsigned char		data[128];
-	int			rc;
-	int			i;
+  struct smc_scsi_req* sr = &smc->scsi_req;
+  unsigned char data[128];
+  int rc;
+  int i;
 
-	bzero (sr, sizeof *sr);
-	bzero (data, sizeof data);
+  bzero(sr, sizeof *sr);
+  bzero(data, sizeof data);
 
-	sr->n_cmd = 6;
-	sr->cmd[0] = SCSI_CMD_INQUIRY;
-	sr->cmd[4] = sizeof data;		/* allocation length */
+  sr->n_cmd = 6;
+  sr->cmd[0] = SCSI_CMD_INQUIRY;
+  sr->cmd[4] = sizeof data; /* allocation length */
 
-	sr->data = data;
-	sr->n_data_avail = sizeof data;
-	sr->data_dir = SMCSR_DD_IN;
+  sr->data = data;
+  sr->n_data_avail = sizeof data;
+  sr->data_dir = SMCSR_DD_IN;
 
-	rc = smc_scsi_xa (smc);
-	if (rc != 0) return rc;
+  rc = smc_scsi_xa(smc);
+  if (rc != 0) return rc;
 
-	if (data[0] != SINQ_MEDIA_CHANGER) {
-		strcpy (smc->errmsg, "Not a media changer");
-		return -1;
-	}
+  if (data[0] != SINQ_MEDIA_CHANGER) {
+    strcpy(smc->errmsg, "Not a media changer");
+    return -1;
+  }
 
-	for (i = 28-1; i >= 0; i--) {
-		int		c = data[8+i];
+  for (i = 28 - 1; i >= 0; i--) {
+    int c = data[8 + i];
 
-		if (c != ' ')
-			break;
-	}
+    if (c != ' ') break;
+  }
 
-	for (; i >= 0; i--) {
-		int		c = data[8+i];
+  for (; i >= 0; i--) {
+    int c = data[8 + i];
 
-		if (! (' ' <= c && c < 0x7F))
-			c = '*';
-		smc->ident[i] = c;
-	}
+    if (!(' ' <= c && c < 0x7F)) c = '*';
+    smc->ident[i] = c;
+  }
 
-	return 0;
+  return 0;
 }
 
-int
-smc_test_unit_ready (struct smc_ctrl_block *smc)
+int smc_test_unit_ready(struct smc_ctrl_block* smc)
 {
-	struct smc_scsi_req *	sr = &smc->scsi_req;
-	int			rc;
+  struct smc_scsi_req* sr = &smc->scsi_req;
+  int rc;
 
-	bzero (sr, sizeof *sr);
+  bzero(sr, sizeof *sr);
 
-	sr->n_cmd = 6;
-	sr->cmd[0] = SCSI_CMD_TEST_UNIT_READY;
+  sr->n_cmd = 6;
+  sr->cmd[0] = SCSI_CMD_TEST_UNIT_READY;
 
-	rc = smc_scsi_xa (smc);
+  rc = smc_scsi_xa(smc);
 
-	return rc;
+  return rc;
 }
 
-int
-smc_get_elem_aa (struct smc_ctrl_block *smc)
+int smc_get_elem_aa(struct smc_ctrl_block* smc)
 {
-	struct smc_scsi_req *	sr = &smc->scsi_req;
-	unsigned char		data[256];
-	int			rc;
+  struct smc_scsi_req* sr = &smc->scsi_req;
+  unsigned char data[256];
+  int rc;
 
-	bzero (sr, sizeof *sr);
-	bzero (data, sizeof data);
-	bzero (&smc->elem_aa, sizeof smc->elem_aa);
-	smc->valid_elem_aa = 0;
+  bzero(sr, sizeof *sr);
+  bzero(data, sizeof data);
+  bzero(&smc->elem_aa, sizeof smc->elem_aa);
+  smc->valid_elem_aa = 0;
 
-	sr->n_cmd = 6;
-	sr->cmd[0] = SCSI_CMD_MODE_SENSE_6;
-	sr->cmd[1] = 0x08;			/* DBD */
-	sr->cmd[2] = 0x1D;			/* current elem addrs */
-	sr->cmd[3] = 0;				/* reserved */
-	sr->cmd[4] = 255;			/* allocation length */
-	sr->cmd[5] = 0;				/* reserved */
+  sr->n_cmd = 6;
+  sr->cmd[0] = SCSI_CMD_MODE_SENSE_6;
+  sr->cmd[1] = 0x08; /* DBD */
+  sr->cmd[2] = 0x1D; /* current elem addrs */
+  sr->cmd[3] = 0;    /* reserved */
+  sr->cmd[4] = 255;  /* allocation length */
+  sr->cmd[5] = 0;    /* reserved */
 
-	sr->data = data;
-	sr->n_data_avail = 255;
-	sr->data_dir = SMCSR_DD_IN;
+  sr->data = data;
+  sr->n_data_avail = 255;
+  sr->data_dir = SMCSR_DD_IN;
 
-	rc = smc_scsi_xa (smc);
-	if (rc != 0) return rc;
+  rc = smc_scsi_xa(smc);
+  if (rc != 0) return rc;
 
-	if (data[0] < 18) {
-		strcpy (smc->errmsg, "short sense data");
-		return -1;
-	}
+  if (data[0] < 18) {
+    strcpy(smc->errmsg, "short sense data");
+    return -1;
+  }
 
 
-	rc = smc_parse_element_address_assignment ((void*)&data[4],
-					&smc->elem_aa);
-	if (rc) {
-		strcpy (smc->errmsg, "elem_addr_assignment format error");
-		return -1;
-	}
+  rc = smc_parse_element_address_assignment((void*)&data[4], &smc->elem_aa);
+  if (rc) {
+    strcpy(smc->errmsg, "elem_addr_assignment format error");
+    return -1;
+  }
 
-	smc->valid_elem_aa = 1;
+  smc->valid_elem_aa = 1;
 
-	return 0;
+  return 0;
 }
 
 /*
@@ -239,25 +231,23 @@ smc_get_elem_aa (struct smc_ctrl_block *smc)
  */
 
 
-int
-smc_init_elem_status (struct smc_ctrl_block *smc)
+int smc_init_elem_status(struct smc_ctrl_block* smc)
 {
-	struct smc_scsi_req *	sr = &smc->scsi_req;
-	int			rc;
+  struct smc_scsi_req* sr = &smc->scsi_req;
+  int rc;
 
-	bzero (sr, sizeof *sr);
+  bzero(sr, sizeof *sr);
 
-	sr->n_cmd = 6;
-	sr->cmd[0] = SCSI_CMD_INITIALIZE_ELEMENT_STATUS;
+  sr->n_cmd = 6;
+  sr->cmd[0] = SCSI_CMD_INITIALIZE_ELEMENT_STATUS;
 
-	sr->data_dir = SMCSR_DD_NONE;
+  sr->data_dir = SMCSR_DD_NONE;
 
-	rc = smc_scsi_xa (smc);
-	if (rc != 0) return rc;
+  rc = smc_scsi_xa(smc);
+  if (rc != 0) return rc;
 
-	return 0;
+  return 0;
 }
-
 
 
 /*
@@ -337,101 +327,98 @@ smc_init_elem_status (struct smc_ctrl_block *smc)
  * error.
  */
 
-int
-smc_read_elem_status (struct smc_ctrl_block *smc)
+int smc_read_elem_status(struct smc_ctrl_block* smc)
 {
-	struct smc_scsi_req *	sr = &smc->scsi_req;
-	unsigned char		data[SMC_PAGE_LEN];
-	int			rc;
+  struct smc_scsi_req* sr = &smc->scsi_req;
+  unsigned char data[SMC_PAGE_LEN];
+  int rc;
 
-  retry:
-	bzero (sr, sizeof *sr);
-	bzero (data, sizeof data);
-	smc_cleanup_element_status_data(smc);
-	smc->n_elem_desc = 0;
-	smc->valid_elem_desc = 0;
+retry:
+  bzero(sr, sizeof *sr);
+  bzero(data, sizeof data);
+  smc_cleanup_element_status_data(smc);
+  smc->n_elem_desc = 0;
+  smc->valid_elem_desc = 0;
 
-	sr->n_cmd = 12;
-	sr->cmd[0] = SCSI_CMD_READ_ELEMENT_STATUS;
-	if (!smc->dont_ask_for_voltags) {
-		sr->cmd[1] = 0x10;		/* VolTag, all types */
-	} else {
-		sr->cmd[1] = 0x00;		/* !VolTag, all types */
-	}
-	sr->cmd[2] = 0;				/* starting elem MSB */
-	sr->cmd[3] = 0;				/* starting elem LSB */
-	sr->cmd[4] = (SMC_MAX_ELEMENT >> 8) & 0xff;/* number of elem MSB */
-	sr->cmd[5] = (SMC_MAX_ELEMENT) & 0xff;	/* number of elem LSB */
-	sr->cmd[6] = 0;				/* reserved */
-	SMC_PUT3 (&sr->cmd[7], sizeof data);
-	sr->cmd[10] = 0;			/* reserved */
+  sr->n_cmd = 12;
+  sr->cmd[0] = SCSI_CMD_READ_ELEMENT_STATUS;
+  if (!smc->dont_ask_for_voltags) {
+    sr->cmd[1] = 0x10; /* VolTag, all types */
+  } else {
+    sr->cmd[1] = 0x00; /* !VolTag, all types */
+  }
+  sr->cmd[2] = 0;                             /* starting elem MSB */
+  sr->cmd[3] = 0;                             /* starting elem LSB */
+  sr->cmd[4] = (SMC_MAX_ELEMENT >> 8) & 0xff; /* number of elem MSB */
+  sr->cmd[5] = (SMC_MAX_ELEMENT)&0xff;        /* number of elem LSB */
+  sr->cmd[6] = 0;                             /* reserved */
+  SMC_PUT3(&sr->cmd[7], sizeof data);
+  sr->cmd[10] = 0; /* reserved */
 
-	sr->data = data;
-	sr->n_data_avail = sizeof data;
-	sr->data_dir = SMCSR_DD_IN;
+  sr->data = data;
+  sr->n_data_avail = sizeof data;
+  sr->data_dir = SMCSR_DD_IN;
 
-	rc = smc_scsi_xa (smc);
-	if (rc != 0) {
-		if (smc->dont_ask_for_voltags)
-			return rc;
-		smc->dont_ask_for_voltags = 1;
-		goto retry;
-	}
+  rc = smc_scsi_xa(smc);
+  if (rc != 0) {
+    if (smc->dont_ask_for_voltags) return rc;
+    smc->dont_ask_for_voltags = 1;
+    goto retry;
+  }
 
-	rc = smc_parse_element_status_data ((void*)data, sr->n_data_done,
-				smc, SMC_MAX_ELEMENT);
-	if (rc < 0) {
-		strcpy (smc->errmsg, "elem_status format error");
-		return -1;
-	}
+  rc = smc_parse_element_status_data((void*)data, sr->n_data_done, smc,
+                                     SMC_MAX_ELEMENT);
+  if (rc < 0) {
+    strcpy(smc->errmsg, "elem_status format error");
+    return -1;
+  }
 
-	smc->n_elem_desc = rc;
+  smc->n_elem_desc = rc;
 
-	smc->valid_elem_aa = 1;
+  smc->valid_elem_aa = 1;
 
-	return 0;
+  return 0;
 }
 
 
-int
-smc_move (struct smc_ctrl_block *smc, unsigned from_addr,
-  unsigned to_addr, int invert, unsigned chs_addr)
+int smc_move(struct smc_ctrl_block* smc,
+             unsigned from_addr,
+             unsigned to_addr,
+             int invert,
+             unsigned chs_addr)
 {
-	struct smc_scsi_req *	sr = &smc->scsi_req;
-	int			rc;
+  struct smc_scsi_req* sr = &smc->scsi_req;
+  int rc;
 
-	bzero (sr, sizeof *sr);
+  bzero(sr, sizeof *sr);
 
-	sr->n_cmd = 12;
-	sr->cmd[0] = SCSI_CMD_MOVE_MEDIUM;
-	SMC_PUT2(&sr->cmd[2], chs_addr);
-	SMC_PUT2(&sr->cmd[4], from_addr);
-	SMC_PUT2(&sr->cmd[6], to_addr);
-	/* TODO: invert */
+  sr->n_cmd = 12;
+  sr->cmd[0] = SCSI_CMD_MOVE_MEDIUM;
+  SMC_PUT2(&sr->cmd[2], chs_addr);
+  SMC_PUT2(&sr->cmd[4], from_addr);
+  SMC_PUT2(&sr->cmd[6], to_addr);
+  /* TODO: invert */
 
-	sr->data_dir = SMCSR_DD_NONE;
+  sr->data_dir = SMCSR_DD_NONE;
 
-	rc = smc_scsi_xa (smc);
-	if (rc != 0) return rc;
+  rc = smc_scsi_xa(smc);
+  if (rc != 0) return rc;
 
-	return 0;
+  return 0;
 }
 
-int
-smc_position (struct smc_ctrl_block *smc, unsigned to_addr, int invert)
+int smc_position(struct smc_ctrl_block* smc, unsigned to_addr, int invert)
 {
-	return -1;
+  return -1;
 }
 
 
-int
-smc_handy_move_to_drive (struct smc_ctrl_block *smc, unsigned from_se_ix)
+int smc_handy_move_to_drive(struct smc_ctrl_block* smc, unsigned from_se_ix)
 {
-	return -1;
+  return -1;
 }
 
-int
-smc_handy_move_from_drive (struct smc_ctrl_block *smc, unsigned to_se_ix)
+int smc_handy_move_from_drive(struct smc_ctrl_block* smc, unsigned to_se_ix)
 {
-	return -1;
+  return -1;
 }

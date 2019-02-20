@@ -24,7 +24,7 @@
 
 namespace directordaemon {
 
-void ListDirStatusHeader(UaContext *ua);
+void ListDirStatusHeader(UaContext* ua);
 
 } /* namespace directordaemon */
-#endif // BAREOS_DIRD_UA_STATUS_H_
+#endif  // BAREOS_DIRD_UA_STATUS_H_

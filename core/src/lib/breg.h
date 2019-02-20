@@ -55,60 +55,61 @@
  * Structure for BareosRegex ressource
  */
 class BareosRegex {
-public:
-   POOLMEM *result;             /**< match result */
-   bool success;                /**< match is ok */
+ public:
+  POOLMEM* result; /**< match result */
+  bool success;    /**< match is ok */
 
-   char *replace(const char *fname); /**< return this.result */
-   void debug();
+  char* replace(const char* fname); /**< return this.result */
+  void debug();
 
-   /* private */
-   POOLMEM *expr;               /**< search epression */
-   POOLMEM *subst;              /**< substitution */
-   regex_t preg;                /**< regex_t result of regcomp() */
-   regmatch_t regs[BREG_NREGS]; /**< contains match */
-   char *eor;                   /**< end of regexp in expr */
+  /* private */
+  POOLMEM* expr;               /**< search epression */
+  POOLMEM* subst;              /**< substitution */
+  regex_t preg;                /**< regex_t result of regcomp() */
+  regmatch_t regs[BREG_NREGS]; /**< contains match */
+  char* eor;                   /**< end of regexp in expr */
 
-   char *ReturnFname(const char *fname, int len); /**< return fname as result */
-   char *EditSubst(const char *fname, regmatch_t pmatch[]);
-   int ComputeDestLen(const char *fname, regmatch_t pmatch[]);
-   bool ExtractRegexp(const char *motif);
+  char* ReturnFname(const char* fname, int len); /**< return fname as result */
+  char* EditSubst(const char* fname, regmatch_t pmatch[]);
+  int ComputeDestLen(const char* fname, regmatch_t pmatch[]);
+  bool ExtractRegexp(const char* motif);
 };
 
 /* create new BareosRegex and compile regex_t */
-BareosRegex *NewBregexp(const char *motif);
+BareosRegex* NewBregexp(const char* motif);
 
 /* launch each bregexp on filename */
-int RunBregexp(alist *bregexps, const char *fname);
+int RunBregexp(alist* bregexps, const char* fname);
 
 /* free BareosRegex (and all POOLMEM) */
-void FreeBregexp(BareosRegex *script);
+void FreeBregexp(BareosRegex* script);
 
 /* fill an alist with BareosRegex from where */
-alist *get_bregexps(const char *where);
+alist* get_bregexps(const char* where);
 
 /* apply every regexps from the alist */
-bool ApplyBregexps(const char *fname, alist *bregexps, char **result);
+bool ApplyBregexps(const char* fname, alist* bregexps, char** result);
 
 /* foreach_alist free RunScript */
-void FreeBregexps(alist *bregexps); /* you have to free alist */
+void FreeBregexps(alist* bregexps); /* you have to free alist */
 
 /* get regexp size */
-int BregexpGetBuildWhereSize(char *strip_prefix,
-                                 char *add_prefix,
-                                 char *add_suffix);
+int BregexpGetBuildWhereSize(char* strip_prefix,
+                             char* add_prefix,
+                             char* add_suffix);
 
 /* get a bregexp string from user arguments
  * you must allocate it with BregexpGetBuildWhereSize();
  */
-char *bregexp_build_where(char *dest, int str_size,
-                          char *strip_prefix,
-                          char *add_prefix,
-                          char *add_suffix);
+char* bregexp_build_where(char* dest,
+                          int str_size,
+                          char* strip_prefix,
+                          char* add_prefix,
+                          char* add_suffix);
 
 /* escape a string to regexp format (sep and \)
  * dest must be long enough (dest = 2*src + 1)
  */
-char *bregexp_escape_string(char *dest, const char *src, const char sep);
+char* bregexp_escape_string(char* dest, const char* src, const char sep);
 
 #endif /* BAREOS_LIB_BREG_H_ */

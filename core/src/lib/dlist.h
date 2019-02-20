@@ -33,7 +33,7 @@
 #define M_ABORT 1
 
 /* In case you want to specifically specify the offset to the link */
-#define OFFSET(item, link) (int)((char *)(link) - (char *)(item))
+#define OFFSET(item, link) (int)((char*)(link) - (char*)(item))
 /**
  * There is a lot of extra casting here to work around the fact
  * that some compilers (Sun and Visual C++) do not accept
@@ -43,52 +43,55 @@
  */
 #ifdef HAVE_TYPEOF
 #define foreach_dlist(var, list) \
-        for((var)=NULL; list ? ((var)=(typeof(var))(list)->next(var)) : NULL; )
+  for ((var) = NULL; list ? ((var) = (typeof(var))(list)->next(var)) : NULL;)
 #else
 #define foreach_dlist(var, list) \
-        for((var)=NULL; list ? (*((void **)&(var))=(void*)((list)->next(var))) : NULL; )
+  for ((var) = NULL;             \
+       list ? (*((void**)&(var)) = (void*)((list)->next(var))) : NULL;)
 #endif
 
 struct dlink {
-   void *next;
-   void *prev;
-   dlink() {
-     next = nullptr;
-     prev = nullptr;
-   }
+  void* next;
+  void* prev;
+  dlink()
+  {
+    next = nullptr;
+    prev = nullptr;
+  }
 };
 
 class dlist : public SmartAlloc {
-   void *head;
-   void *tail;
-   int16_t loffset;
-   uint32_t num_items;
-public:
-   dlist(void *item, dlink *link);
-   dlist(void);
-   ~dlist() { destroy(); }
-   void init(void *item, dlink *link);
-   void init();
-   void prepend(void *item);
-   void append(void *item);
-   void SetPrev(void *item, void *prev);
-   void SetNext(void *item, void *next);
-   void *get_prev(void *item);
-   void *get_next(void *item);
-   dlink *get_link(void *item);
-   void InsertBefore(void *item, void *where);
-   void InsertAfter(void *item, void *where);
-   void *binary_insert(void *item, int compare(void *item1, void *item2));
-   void *binary_search(void *item, int compare(void *item1, void *item2));
-   void BinaryInsertMultiple(void *item, int compare(void *item1, void *item2));
-   void remove(void *item);
-   bool empty() const;
-   int  size() const;
-   void *next(void *item);
-   void *prev(void *item);
-   void destroy();
-   void *first() const;
-   void *last() const;
+  void* head;
+  void* tail;
+  int16_t loffset;
+  uint32_t num_items;
+
+ public:
+  dlist(void* item, dlink* link);
+  dlist(void);
+  ~dlist() { destroy(); }
+  void init(void* item, dlink* link);
+  void init();
+  void prepend(void* item);
+  void append(void* item);
+  void SetPrev(void* item, void* prev);
+  void SetNext(void* item, void* next);
+  void* get_prev(void* item);
+  void* get_next(void* item);
+  dlink* get_link(void* item);
+  void InsertBefore(void* item, void* where);
+  void InsertAfter(void* item, void* where);
+  void* binary_insert(void* item, int compare(void* item1, void* item2));
+  void* binary_search(void* item, int compare(void* item1, void* item2));
+  void BinaryInsertMultiple(void* item, int compare(void* item1, void* item2));
+  void remove(void* item);
+  bool empty() const;
+  int size() const;
+  void* next(void* item);
+  void* prev(void* item);
+  void destroy();
+  void* first() const;
+  void* last() const;
 };
 
 
@@ -97,21 +100,21 @@ public:
  *   allowing us to mix C++ classes inside malloc'ed
  *   C structures. Define before called in constructor.
  */
-inline void dlist::init(void *item, dlink *link)
+inline void dlist::init(void* item, dlink* link)
 {
-   head = tail = NULL;
-   loffset = (int)((char *)link - (char *)item);
-   if (loffset < 0 || loffset > 5000) {
-      Emsg0(M_ABORT, 0, "Improper dlist initialization.\n");
-   }
-   num_items = 0;
+  head = tail = NULL;
+  loffset = (int)((char*)link - (char*)item);
+  if (loffset < 0 || loffset > 5000) {
+    Emsg0(M_ABORT, 0, "Improper dlist initialization.\n");
+  }
+  num_items = 0;
 }
 
 inline void dlist::init()
 {
-   head = tail = nullptr;
-   loffset = 0;
-   num_items = 0;
+  head = tail = nullptr;
+  loffset = 0;
+  num_items = 0;
 }
 
 
@@ -123,70 +126,50 @@ inline void dlist::init()
  *   then there is no need to specify the link address
  *   since the offset is zero.
  */
-inline dlist::dlist(void *item, dlink *link)
-{
-   init(item, link);
-}
+inline dlist::dlist(void* item, dlink* link) { init(item, link); }
 
 /* Constructor with link at head of item */
 inline dlist::dlist(void)
-   : head(nullptr)
-   , tail(nullptr)
-   , loffset(0)
-   , num_items(0)
+    : head(nullptr), tail(nullptr), loffset(0), num_items(0)
 {
   return;
 }
 
-inline void dlist::SetPrev(void *item, void *prev)
+inline void dlist::SetPrev(void* item, void* prev)
 {
-   ((dlink *)(((char *)item)+loffset))->prev = prev;
+  ((dlink*)(((char*)item) + loffset))->prev = prev;
 }
 
-inline void dlist::SetNext(void *item, void *next)
+inline void dlist::SetNext(void* item, void* next)
 {
-   ((dlink *)(((char *)item)+loffset))->next = next;
+  ((dlink*)(((char*)item) + loffset))->next = next;
 }
 
-inline void *dlist::get_prev(void *item)
+inline void* dlist::get_prev(void* item)
 {
-   return ((dlink *)(((char *)item)+loffset))->prev;
+  return ((dlink*)(((char*)item) + loffset))->prev;
 }
 
-inline void *dlist::get_next(void *item)
+inline void* dlist::get_next(void* item)
 {
-   return ((dlink *)(((char *)item)+loffset))->next;
-}
-
-
-inline dlink *dlist::get_link(void *item)
-{
-   return (dlink *)(((char *)item)+loffset);
+  return ((dlink*)(((char*)item) + loffset))->next;
 }
 
 
-
-inline bool dlist::empty() const
+inline dlink* dlist::get_link(void* item)
 {
-   return head == NULL;
-}
-
-inline int dlist::size() const
-{
-   return num_items;
+  return (dlink*)(((char*)item) + loffset);
 }
 
 
+inline bool dlist::empty() const { return head == NULL; }
 
-inline void *dlist::first() const
-{
-   return head;
-}
+inline int dlist::size() const { return num_items; }
 
-inline void *dlist::last() const
-{
-   return tail;
-}
+
+inline void* dlist::first() const { return head; }
+
+inline void* dlist::last() const { return tail; }
 
 /**
  * C string helper routines for dlist
@@ -195,25 +178,24 @@ inline void *dlist::last() const
  *   Kern Sibbald, February 2007
  *
  */
-class dlistString
-{
-public:
-   char *c_str() { return str_; }
+class dlistString {
+ public:
+  char* c_str() { return str_; }
 
-private:
+ private:
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-private-field"
 #endif
-   dlink link_;
+  dlink link_;
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
-   char str_[1];
-   /* !!! Don't put anything after this as this space is used
-    *     to hold the string in inline
-    */
+  char str_[1];
+  /* !!! Don't put anything after this as this space is used
+   *     to hold the string in inline
+   */
 };
 
-extern dlistString *new_dlistString(const char *str, int len);
-extern dlistString *new_dlistString(const char *str);
+extern dlistString* new_dlistString(const char* str, int len);
+extern dlistString* new_dlistString(const char* str);

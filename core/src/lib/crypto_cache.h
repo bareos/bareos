@@ -30,27 +30,27 @@
 #ifndef BAREOS_LIB_CRYPTO_CACHE_H_
 #define BAREOS_LIB_CRYPTO_CACHE_H_ 1
 
-#define CRYPTO_CACHE_MAX_AGE	60 * 60 * 24 * 60 /* 60 Days */
+#define CRYPTO_CACHE_MAX_AGE 60 * 60 * 24 * 60 /* 60 Days */
 
 struct s_crypto_cache_hdr {
-   char id[21];
-   int32_t version;
-   int32_t nr_entries;
+  char id[21];
+  int32_t version;
+  int32_t nr_entries;
 };
 
 struct crypto_cache_entry_t {
-   dlink link;
-   char VolumeName[MAX_NAME_LENGTH];
-   char EncryptionKey[MAX_NAME_LENGTH];
-   utime_t added;
+  dlink link;
+  char VolumeName[MAX_NAME_LENGTH];
+  char EncryptionKey[MAX_NAME_LENGTH];
+  utime_t added;
 };
 
-void ReadCryptoCache(const char *dir, const char *progname, int port);
-void ReadCryptoCache(const char *cache_file);
-void WriteCryptoCache(const char *dir, const char *progname, int port);
-void WriteCryptoCache(const char *cache_file);
-bool UpdateCryptoCache(const char *VolumeName, const char *EncryptionKey);
-char *lookup_crypto_cache_entry(const char *VolumeName);
+void ReadCryptoCache(const char* dir, const char* progname, int port);
+void ReadCryptoCache(const char* cache_file);
+void WriteCryptoCache(const char* dir, const char* progname, int port);
+void WriteCryptoCache(const char* cache_file);
+bool UpdateCryptoCache(const char* VolumeName, const char* EncryptionKey);
+char* lookup_crypto_cache_entry(const char* VolumeName);
 void DumpCryptoCache(int fd);
 void ResetCryptoCache(void);
 void FlushCryptoCache(void);

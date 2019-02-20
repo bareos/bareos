@@ -29,15 +29,15 @@
 enum class BareosVersionNumber : uint32_t
 {
   kRelease_18_2 = static_cast<uint32_t>(1802),
-  kUndefined    = static_cast<uint32_t>(1)
+  kUndefined = static_cast<uint32_t>(1)
 };
 
-class BareosVersionToMajorMinor
-{
-public:
+class BareosVersionToMajorMinor {
+ public:
   uint32_t major = 0;
   uint32_t minor = 0;
-  BareosVersionToMajorMinor(BareosVersionNumber version) {
+  BareosVersionToMajorMinor(BareosVersionNumber version)
+  {
     uint32_t version_number = static_cast<uint32_t>(version);
     major = version_number / 100;
     minor = version_number % 100;

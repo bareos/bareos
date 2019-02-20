@@ -28,30 +28,32 @@ namespace directordaemon {
 
 class UaContext;
 
-bool AllowDuplicateJob(JobControlRecord *jcr);
-void SetJcrDefaults(JobControlRecord *jcr, JobResource *job);
-void CreateUniqueJobName(JobControlRecord *jcr, const char *base_name);
-void UpdateJobEndRecord(JobControlRecord *jcr);
-bool GetOrCreateClientRecord(JobControlRecord *jcr);
-bool GetOrCreateFilesetRecord(JobControlRecord *jcr);
-DBId_t GetOrCreatePoolRecord(JobControlRecord *jcr, char *pool_name);
-bool GetLevelSinceTime(JobControlRecord *jcr);
-void ApplyPoolOverrides(JobControlRecord *jcr, bool force = false);
-JobId_t RunJob(JobControlRecord *jcr);
-bool CancelJob(UaContext *ua, JobControlRecord *jcr);
-void GetJobStorage(UnifiedStorageResource *store, JobResource *job, RunResource *run);
-void InitJcrJobRecord(JobControlRecord *jcr);
-void UpdateJobEnd(JobControlRecord *jcr, int TermCode);
-bool SetupJob(JobControlRecord *jcr, bool suppress_output = false);
-void CreateClones(JobControlRecord *jcr);
-int CreateRestoreBootstrapFile(JobControlRecord *jcr);
-void DirdFreeJcr(JobControlRecord *jcr);
-void DirdFreeJcrPointers(JobControlRecord *jcr);
-void CancelStorageDaemonJob(JobControlRecord *jcr);
-bool RunConsoleCommand(JobControlRecord *jcr, const char *cmd);
-void SdMsgThreadSendSignal(JobControlRecord *jcr, int sig);
+bool AllowDuplicateJob(JobControlRecord* jcr);
+void SetJcrDefaults(JobControlRecord* jcr, JobResource* job);
+void CreateUniqueJobName(JobControlRecord* jcr, const char* base_name);
+void UpdateJobEndRecord(JobControlRecord* jcr);
+bool GetOrCreateClientRecord(JobControlRecord* jcr);
+bool GetOrCreateFilesetRecord(JobControlRecord* jcr);
+DBId_t GetOrCreatePoolRecord(JobControlRecord* jcr, char* pool_name);
+bool GetLevelSinceTime(JobControlRecord* jcr);
+void ApplyPoolOverrides(JobControlRecord* jcr, bool force = false);
+JobId_t RunJob(JobControlRecord* jcr);
+bool CancelJob(UaContext* ua, JobControlRecord* jcr);
+void GetJobStorage(UnifiedStorageResource* store,
+                   JobResource* job,
+                   RunResource* run);
+void InitJcrJobRecord(JobControlRecord* jcr);
+void UpdateJobEnd(JobControlRecord* jcr, int TermCode);
+bool SetupJob(JobControlRecord* jcr, bool suppress_output = false);
+void CreateClones(JobControlRecord* jcr);
+int CreateRestoreBootstrapFile(JobControlRecord* jcr);
+void DirdFreeJcr(JobControlRecord* jcr);
+void DirdFreeJcrPointers(JobControlRecord* jcr);
+void CancelStorageDaemonJob(JobControlRecord* jcr);
+bool RunConsoleCommand(JobControlRecord* jcr, const char* cmd);
+void SdMsgThreadSendSignal(JobControlRecord* jcr, int sig);
 void InitJobServer(int max_workers);
 void TermJobServer();
 
 } /* namespace directordaemon */
-#endif // BAREOS_DIRD_JOB_H_
+#endif  // BAREOS_DIRD_JOB_H_

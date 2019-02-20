@@ -48,38 +48,46 @@ namespace directordaemon {
 static const int debuglevel = 50;
 
 /*
- * Commands sent to Storage daemon and File daemon and received from the User Agent
+ * Commands sent to Storage daemon and File daemon and received from the User
+ * Agent
  */
 static char hello[] = "Hello Director %s calling\n";
 
 /*
  * Response from Storage daemon
  */
-static char OKhello[]      = "3000 OK Hello\n";
-static char FDOKhello[]    = "2000 OK Hello\n";
+static char OKhello[] = "3000 OK Hello\n";
+static char FDOKhello[] = "2000 OK Hello\n";
 static char FDOKnewHello[] = "2000 OK Hello %d\n";
 
 static char dir_not_authorized_message[] = "1999 You are not authorized.\n";
 
-bool AuthenticateWithStorageDaemon(BareosSocket* sd, JobControlRecord *jcr, StorageResource *store)
+bool AuthenticateWithStorageDaemon(BareosSocket* sd,
+                                   JobControlRecord* jcr,
+                                   StorageResource* store)
 {
   char dirname[MAX_NAME_LENGTH];
   bstrncpy(dirname, me->hdr.name, sizeof(dirname));
   BashSpaces(dirname);
 
   if (!sd->fsend(hello, dirname)) {
-    Dmsg1(debuglevel, _("Error sending Hello to Storage daemon. ERR=%s\n"), BnetStrerror(sd));
-    Jmsg(jcr, M_FATAL, 0, _("Error sending Hello to Storage daemon. ERR=%s\n"), BnetStrerror(sd));
+    Dmsg1(debuglevel, _("Error sending Hello to Storage daemon. ERR=%s\n"),
+          BnetStrerror(sd));
+    Jmsg(jcr, M_FATAL, 0, _("Error sending Hello to Storage daemon. ERR=%s\n"),
+         BnetStrerror(sd));
     return false;
   }
 
   bool auth_success = false;
-  auth_success = sd->AuthenticateOutboundConnection(jcr, "Storage daemon", dirname, store->password_, store);
+  auth_success = sd->AuthenticateOutboundConnection(
+      jcr, "Storage daemon", dirname, store->password_, store);
   if (!auth_success) {
-    Dmsg2(debuglevel, "Director unable to authenticate with Storage daemon at \"%s:%d\"\n", sd->host(),
-          sd->port());
+    Dmsg2(debuglevel,
+          "Director unable to authenticate with Storage daemon at \"%s:%d\"\n",
+          sd->host(), sd->port());
     Jmsg(jcr, M_FATAL, 0,
-         _("Director unable to authenticate with Storage daemon at \"%s:%d\". Possible causes:\n"
+         _("Director unable to authenticate with Storage daemon at \"%s:%d\". "
+           "Possible causes:\n"
            "Passwords or names not the same or\n"
            "TLS negotiation problem or\n"
            "Maximum Concurrent Jobs exceeded on the SD or\n"
@@ -90,38 +98,45 @@ bool AuthenticateWithStorageDaemon(BareosSocket* sd, JobControlRecord *jcr, Stor
 
   Dmsg1(116, ">stored: %s", sd->msg);
   if (sd->recv() <= 0) {
-    Jmsg3(jcr, M_FATAL, 0, _("dir<stored: \"%s:%s\" bad response to Hello command: ERR=%s\n"), sd->who(),
-          sd->host(), sd->bstrerror());
+    Jmsg3(jcr, M_FATAL, 0,
+          _("dir<stored: \"%s:%s\" bad response to Hello command: ERR=%s\n"),
+          sd->who(), sd->host(), sd->bstrerror());
     return false;
   }
 
   Dmsg1(110, "<stored: %s", sd->msg);
   if (!bstrncmp(sd->msg, OKhello, sizeof(OKhello))) {
     Dmsg0(debuglevel, _("Storage daemon rejected Hello command\n"));
-    Jmsg2(jcr, M_FATAL, 0, _("Storage daemon at \"%s:%d\" rejected Hello command\n"), sd->host(), sd->port());
+    Jmsg2(jcr, M_FATAL, 0,
+          _("Storage daemon at \"%s:%d\" rejected Hello command\n"), sd->host(),
+          sd->port());
     return false;
   }
 
   return true;
 }
 
-bool AuthenticateWithFileDaemon(JobControlRecord *jcr)
+bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
 {
   if (jcr->authenticated) { return true; }
 
-  BareosSocket *fd               = jcr->file_bsock;
-  ClientResource *client         = jcr->res.client;
+  BareosSocket* fd = jcr->file_bsock;
+  ClientResource* client = jcr->res.client;
 
-  if (jcr->connection_handshake_try_ == ClientConnectionHandshakeMode::kTlsFirst) {
+  if (jcr->connection_handshake_try_ ==
+      ClientConnectionHandshakeMode::kTlsFirst) {
     std::string qualified_resource_name;
-    if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(me->hdr.name, my_config->r_own_,
-                                                                              qualified_resource_name)) {
-      Dmsg0(100, "Could not generate qualified resource name for a client resource\n");
+    if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
+            me->hdr.name, my_config->r_own_, qualified_resource_name)) {
+      Dmsg0(
+          100,
+          "Could not generate qualified resource name for a client resource\n");
       return false;
     }
 
     if (!fd->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, client, false,
-                            qualified_resource_name.c_str(), client->password_.value, jcr)) {
+                            qualified_resource_name.c_str(),
+                            client->password_.value, jcr)) {
       Dmsg0(100, "Could not DoTlsHandshake() with a file daemon\n");
       return false;
     }
@@ -132,19 +147,23 @@ bool AuthenticateWithFileDaemon(JobControlRecord *jcr)
   BashSpaces(dirname);
 
   if (!fd->fsend(hello, dirname)) {
-    Jmsg(jcr, M_FATAL, 0, _("Error sending Hello to File daemon at \"%s:%d\". ERR=%s\n"), fd->host(),
-         fd->port(), fd->bstrerror());
+    Jmsg(jcr, M_FATAL, 0,
+         _("Error sending Hello to File daemon at \"%s:%d\". ERR=%s\n"),
+         fd->host(), fd->port(), fd->bstrerror());
     return false;
   }
   Dmsg1(debuglevel, "Sent: %s", fd->msg);
 
   bool auth_success;
-  auth_success = fd->AuthenticateOutboundConnection(jcr, "File Daemon", dirname, client->password_, client);
+  auth_success = fd->AuthenticateOutboundConnection(jcr, "File Daemon", dirname,
+                                                    client->password_, client);
 
   if (!auth_success) {
-    Dmsg2(debuglevel, "Unable to authenticate with File daemon at \"%s:%d\"\n", fd->host(), fd->port());
+    Dmsg2(debuglevel, "Unable to authenticate with File daemon at \"%s:%d\"\n",
+          fd->host(), fd->port());
     Jmsg(jcr, M_FATAL, 0,
-         _("Unable to authenticate with File daemon at \"%s:%d\". Possible causes:\n"
+         _("Unable to authenticate with File daemon at \"%s:%d\". Possible "
+           "causes:\n"
            "Passwords or names not the same or\n"
            "TLS negotiation failed or\n"
            "Maximum Concurrent Jobs exceeded on the FD or\n"
@@ -155,8 +174,12 @@ bool AuthenticateWithFileDaemon(JobControlRecord *jcr)
 
   Dmsg1(116, ">filed: %s", fd->msg);
   if (fd->recv() <= 0) {
-    Dmsg1(debuglevel, _("Bad response from File daemon to Hello command: ERR=%s\n"), BnetStrerror(fd));
-    Jmsg(jcr, M_FATAL, 0, _("Bad response from File daemon at \"%s:%d\" to Hello command: ERR=%s\n"),
+    Dmsg1(debuglevel,
+          _("Bad response from File daemon to Hello command: ERR=%s\n"),
+          BnetStrerror(fd));
+    Jmsg(jcr, M_FATAL, 0,
+         _("Bad response from File daemon at \"%s:%d\" to Hello command: "
+           "ERR=%s\n"),
          fd->host(), fd->port(), fd->bstrerror());
     return false;
   }
@@ -166,24 +189,26 @@ bool AuthenticateWithFileDaemon(JobControlRecord *jcr)
   if (!bstrncmp(fd->msg, FDOKhello, sizeof(FDOKhello)) &&
       sscanf(fd->msg, FDOKnewHello, &jcr->FDVersion) != 1) {
     Dmsg0(debuglevel, _("File daemon rejected Hello command\n"));
-    Jmsg(jcr, M_FATAL, 0, _("File daemon at \"%s:%d\" rejected Hello command\n"), fd->host(), fd->port());
+    Jmsg(jcr, M_FATAL, 0,
+         _("File daemon at \"%s:%d\" rejected Hello command\n"), fd->host(),
+         fd->port());
     return false;
   }
 
   return true;
 }
 
-bool AuthenticateFileDaemon(BareosSocket *fd, char *client_name)
+bool AuthenticateFileDaemon(BareosSocket* fd, char* client_name)
 {
-  ClientResource *client;
+  ClientResource* client;
   bool auth_success = false;
 
   UnbashSpaces(client_name);
-  client = (ClientResource *)my_config->GetResWithName(R_CLIENT, client_name);
+  client = (ClientResource*)my_config->GetResWithName(R_CLIENT, client_name);
   if (client) {
     if (IsConnectFromClientAllowed(client)) {
-      auth_success =
-          fd->AuthenticateInboundConnection(NULL, "File Daemon", client_name, client->password_, client);
+      auth_success = fd->AuthenticateInboundConnection(
+          NULL, "File Daemon", client_name, client->password_, client);
     }
   }
 
@@ -192,8 +217,8 @@ bool AuthenticateFileDaemon(BareosSocket *fd, char *client_name)
    */
   if (!auth_success) {
     fd->fsend("%s", _(dir_not_authorized_message));
-    Emsg4(M_ERROR, 0, _("Unable to authenticate client \"%s\" at %s:%s:%d.\n"), client_name, fd->who(),
-          fd->host(), fd->port());
+    Emsg4(M_ERROR, 0, _("Unable to authenticate client \"%s\" at %s:%s:%d.\n"),
+          client_name, fd->who(), fd->host(), fd->port());
     sleep(5);
     return false;
   }

@@ -27,18 +27,25 @@ namespace filedaemon {
 struct r_ctx;
 struct RestoreCipherContext;
 
-bool CryptoSessionStart(JobControlRecord *jcr, crypto_cipher_t cipher);
-void CryptoSessionEnd(JobControlRecord *jcr);
-bool CryptoSessionSend(JobControlRecord *jcr, BareosSocket *sd);
-bool VerifySignature(JobControlRecord *jcr, r_ctx &rctx);
-bool FlushCipher(JobControlRecord *jcr, BareosWinFilePacket *bfd, uint64_t *addr, char *flags, int32_t stream,
-                  RestoreCipherContext *cipher_ctx);
-void DeallocateCipher(r_ctx &rctx);
-void DeallocateForkCipher(r_ctx &rctx);
-bool SetupEncryptionContext(b_ctx &bctx);
-bool SetupDecryptionContext(r_ctx &rctx, RestoreCipherContext &rcctx);
-bool EncryptData(b_ctx *bctx, bool *need_more_data);
-bool DecryptData(JobControlRecord *jcr, char **data, uint32_t *length, RestoreCipherContext *cipher_ctx);
+bool CryptoSessionStart(JobControlRecord* jcr, crypto_cipher_t cipher);
+void CryptoSessionEnd(JobControlRecord* jcr);
+bool CryptoSessionSend(JobControlRecord* jcr, BareosSocket* sd);
+bool VerifySignature(JobControlRecord* jcr, r_ctx& rctx);
+bool FlushCipher(JobControlRecord* jcr,
+                 BareosWinFilePacket* bfd,
+                 uint64_t* addr,
+                 char* flags,
+                 int32_t stream,
+                 RestoreCipherContext* cipher_ctx);
+void DeallocateCipher(r_ctx& rctx);
+void DeallocateForkCipher(r_ctx& rctx);
+bool SetupEncryptionContext(b_ctx& bctx);
+bool SetupDecryptionContext(r_ctx& rctx, RestoreCipherContext& rcctx);
+bool EncryptData(b_ctx* bctx, bool* need_more_data);
+bool DecryptData(JobControlRecord* jcr,
+                 char** data,
+                 uint32_t* length,
+                 RestoreCipherContext* cipher_ctx);
 
 } /* namespace filedaemon */
 

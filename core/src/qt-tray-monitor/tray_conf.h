@@ -35,110 +35,113 @@
 #ifndef TRAY_CONF_H_INCLUDED
 #define TRAY_CONF_H_INCLUDED
 
-extern ConfigurationParser *my_config;
+extern ConfigurationParser* my_config;
 
-enum Rescode {
-   R_UNKNOWN = 0,
-   R_MONITOR = 1001,
-   R_DIRECTOR,
-   R_CLIENT,
-   R_STORAGE,
-   R_CONSOLE,
-   R_CONSOLE_FONT,
-   R_FIRST = R_MONITOR,
-   R_LAST = R_CONSOLE_FONT                 /* keep this updated */
+enum Rescode
+{
+  R_UNKNOWN = 0,
+  R_MONITOR = 1001,
+  R_DIRECTOR,
+  R_CLIENT,
+  R_STORAGE,
+  R_CONSOLE,
+  R_CONSOLE_FONT,
+  R_FIRST = R_MONITOR,
+  R_LAST = R_CONSOLE_FONT /* keep this updated */
 };
 
 /*
  * Some resource attributes
  */
-enum {
-   R_NAME = 1020,
-   R_ADDRESS,
-   R_PASSWORD,
-   R_TYPE,
-   R_BACKUP
+enum
+{
+  R_NAME = 1020,
+  R_ADDRESS,
+  R_PASSWORD,
+  R_TYPE,
+  R_BACKUP
 };
 
 /*
  * Director Resource
  */
 class DirectorResource : public TlsResource {
-public:
-   uint32_t DIRport;                  /* UA server port */
-   char *address;                     /* UA server address */
-   bool enable_ssl;                   /* Use SSL */
+ public:
+  uint32_t DIRport; /* UA server port */
+  char* address;    /* UA server address */
+  bool enable_ssl;  /* Use SSL */
 
-   DirectorResource() : TlsResource() {}
+  DirectorResource() : TlsResource() {}
 };
 
 /*
  * Tray Monitor Resource
  */
 class MonitorResource : public TlsResource {
-public:
-   bool require_ssl;                  /* Require SSL for all connections */
-   MessagesResource *messages;        /* Daemon message handler */
-   s_password password;               /* UA server password */
-   utime_t RefreshInterval;           /* Status refresh interval */
-   utime_t FDConnectTimeout;          /* timeout for connect in seconds */
-   utime_t SDConnectTimeout;          /* timeout in seconds */
-   utime_t DIRConnectTimeout;         /* timeout in seconds */
+ public:
+  bool require_ssl;           /* Require SSL for all connections */
+  MessagesResource* messages; /* Daemon message handler */
+  s_password password;        /* UA server password */
+  utime_t RefreshInterval;    /* Status refresh interval */
+  utime_t FDConnectTimeout;   /* timeout for connect in seconds */
+  utime_t SDConnectTimeout;   /* timeout in seconds */
+  utime_t DIRConnectTimeout;  /* timeout in seconds */
 
-   MonitorResource() : TlsResource() {}
+  MonitorResource() : TlsResource() {}
 };
 
 /*
  * Client Resource
  */
 class ClientResource : public TlsResource {
-public:
-   uint32_t FDport;                   /* Where File daemon listens */
-   char *address;
-   s_password password;
-   bool enable_ssl;                   /* Use SSL */
+ public:
+  uint32_t FDport; /* Where File daemon listens */
+  char* address;
+  s_password password;
+  bool enable_ssl; /* Use SSL */
 
-   ClientResource() : TlsResource() {}
+  ClientResource() : TlsResource() {}
 };
 
 /*
  * Store Resource
  */
 class StorageResource : public TlsResource {
-public:
-   uint32_t SDport;                   /* port where Directors connect */
-   char *address;
-   s_password password;
-   bool enable_ssl;                   /* Use SSL */
+ public:
+  uint32_t SDport; /* port where Directors connect */
+  char* address;
+  s_password password;
+  bool enable_ssl; /* Use SSL */
 
-   StorageResource() : TlsResource() {}
+  StorageResource() : TlsResource() {}
 };
 
 class ConsoleFontResource : public BareosResource {
-public:
-   char *fontface;                    /* Console Font specification */
+ public:
+  char* fontface; /* Console Font specification */
 };
 
 /* Define the Union of all the above
  * resource structure definitions.
  */
 union UnionOfResources {
-   MonitorResource res_monitor;
-   DirectorResource res_dir;
-   ClientResource res_client;
-   StorageResource res_store;
-   ConsoleFontResource con_font;
-   CommonResourceHeader hdr;
+  MonitorResource res_monitor;
+  DirectorResource res_dir;
+  ClientResource res_client;
+  StorageResource res_store;
+  ConsoleFontResource con_font;
+  CommonResourceHeader hdr;
 
-   UnionOfResources() {
-      new(&hdr) CommonResourceHeader();
-      Dmsg1(900, "hdr:        %p \n", &hdr);
-      Dmsg1(900, "res_dir.hdr %p\n", &res_dir.hdr);
-   }
-   ~UnionOfResources() {}
+  UnionOfResources()
+  {
+    new (&hdr) CommonResourceHeader();
+    Dmsg1(900, "hdr:        %p \n", &hdr);
+    Dmsg1(900, "res_dir.hdr %p\n", &res_dir.hdr);
+  }
+  ~UnionOfResources() {}
 };
 
-ConfigurationParser *InitTmonConfig(const char *configfile, int exit_code);
-bool PrintConfigSchemaJson(PoolMem &buffer);
+ConfigurationParser* InitTmonConfig(const char* configfile, int exit_code);
+bool PrintConfigSchemaJson(PoolMem& buffer);
 
 #endif /* TRAY_CONF_H_INCLUDED */

@@ -35,34 +35,44 @@ class TlsOpenSslPrivate {
 
   bool init();
 
-  enum SslCtxExDataIndex: int { kGetTlsPskByFullyQualifiedResourceNameCb = 0, kConfigurationParserPtr = 1 };
+  enum SslCtxExDataIndex : int
+  {
+    kGetTlsPskByFullyQualifiedResourceNameCb = 0,
+    kConfigurationParserPtr = 1
+  };
 
-  int OpensslBsockReadwrite(BareosSocket *bsock, char *ptr, int nbytes, bool write);
-  bool OpensslBsockSessionStart(BareosSocket *bsock, bool server);
+  int OpensslBsockReadwrite(BareosSocket* bsock,
+                            char* ptr,
+                            int nbytes,
+                            bool write);
+  bool OpensslBsockSessionStart(BareosSocket* bsock, bool server);
 
-  void ClientContextInsertCredentials(const PskCredentials &cred);
-  void ServerContextInsertCredentials(const PskCredentials &cred);
+  void ClientContextInsertCredentials(const PskCredentials& cred);
+  void ServerContextInsertCredentials(const PskCredentials& cred);
 
   /* callbacks */
-  static int tls_pem_callback_dispatch(char *buf, int size, int rwflag, void *userdata);
-  static int OpensslVerifyPeer(int ok, X509_STORE_CTX *store);
-  static unsigned int psk_server_cb(SSL *ssl,
-                                    const char *identity,
-                                    unsigned char *psk,
+  static int tls_pem_callback_dispatch(char* buf,
+                                       int size,
+                                       int rwflag,
+                                       void* userdata);
+  static int OpensslVerifyPeer(int ok, X509_STORE_CTX* store);
+  static unsigned int psk_server_cb(SSL* ssl,
+                                    const char* identity,
+                                    unsigned char* psk,
                                     unsigned int max_psk_len);
-  static unsigned int psk_client_cb(SSL *ssl,
-                                    const char * /*hint*/,
-                                    char *identity,
+  static unsigned int psk_client_cb(SSL* ssl,
+                                    const char* /*hint*/,
+                                    char* identity,
                                     unsigned int max_identity_len,
-                                    unsigned char *psk,
+                                    unsigned char* psk,
                                     unsigned int max_psk_len);
 
   /* each TCP connection has its own SSL_CTX object and SSL object */
-  SSL *openssl_;
-  SSL_CTX *openssl_ctx_;
+  SSL* openssl_;
+  SSL_CTX* openssl_ctx_;
 
   /* PskCredentials lookup map for all connections */
-  static std::map<const SSL_CTX *, PskCredentials> psk_client_credentials_;
+  static std::map<const SSL_CTX*, PskCredentials> psk_client_credentials_;
   static std::mutex psk_client_credentials_mutex_;
   static std::mutex file_access_mutex_;
 
@@ -76,8 +86,8 @@ class TlsOpenSslPrivate {
   std::string crlfile_;
   std::string certfile_;
   std::string keyfile_;
-  CRYPTO_PEM_PASSWD_CB *pem_callback_;
-  void *pem_userdata_;
+  CRYPTO_PEM_PASSWD_CB* pem_callback_;
+  void* pem_userdata_;
   std::string dhfile_;
   std::string cipherlist_;
   bool verify_peer_;

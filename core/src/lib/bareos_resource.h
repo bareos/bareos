@@ -37,11 +37,11 @@ class BareosResource {
   CommonResourceHeader hdr;
 
   /* Methods */
-  inline char *name() const { return this->hdr.name; }
-  bool PrintConfig(PoolMem &buf,
-                   const ConfigurationParser &my_config,
+  inline char* name() const { return this->hdr.name; }
+  bool PrintConfig(PoolMem& buf,
+                   const ConfigurationParser& my_config,
                    bool hide_sensitive_data = false,
-                   bool verbose             = false);
+                   bool verbose = false);
   /*
    * validate can be defined by inherited classes,
    * when special rules for this resource type must be checked.

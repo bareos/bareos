@@ -35,49 +35,51 @@
 
 namespace directordaemon {
 
-DirectorResource *me = nullptr;
+DirectorResource* me = nullptr;
 
 bool DbGetPoolRecord(JobControlRecord*, BareosDb*, PoolDbRecord*);
 bool DbGetPoolRecord(JobControlRecord*, BareosDb*, PoolDbRecord*)
 {
-   return true;
+  return true;
 }
 
 TEST(dir, dir_plugins)
 {
-   me = new DirectorResource;
-   ASSERT_NE(me, nullptr);
+  me = new DirectorResource;
+  ASSERT_NE(me, nullptr);
 
-   char plugin_dir[PATH_MAX];
-   JobControlRecord mjcr1, mjcr2;
-   JobControlRecord *jcr1 = &mjcr1;
-   JobControlRecord *jcr2 = &mjcr2;
+  char plugin_dir[PATH_MAX];
+  JobControlRecord mjcr1, mjcr2;
+  JobControlRecord* jcr1 = &mjcr1;
+  JobControlRecord* jcr2 = &mjcr2;
 
-   InitMsg(NULL, NULL);
+  InitMsg(NULL, NULL);
 
-   OSDependentInit();
+  OSDependentInit();
 
-   getcwd(plugin_dir, sizeof(plugin_dir)-1);
-   LoadDirPlugins(plugin_dir, NULL);
+  getcwd(plugin_dir, sizeof(plugin_dir) - 1);
+  LoadDirPlugins(plugin_dir, NULL);
 
-   jcr1->JobId = 111;
-   NewPlugins(jcr1);
+  jcr1->JobId = 111;
+  NewPlugins(jcr1);
 
-   jcr2->JobId = 222;
-   NewPlugins(jcr2);
+  jcr2->JobId = 222;
+  NewPlugins(jcr2);
 
-   EXPECT_EQ(GeneratePluginEvent(jcr1, bDirEventJobStart, (void *)"Start Job 1"), bRC_OK);
-   EXPECT_EQ(GeneratePluginEvent(jcr1, bDirEventJobEnd), bRC_OK);
-   EXPECT_EQ(GeneratePluginEvent(jcr2, bDirEventJobStart, (void *)"Start Job 1"), bRC_OK);
-   FreePlugins(jcr1);
-   EXPECT_EQ(GeneratePluginEvent(jcr2, bDirEventJobEnd), bRC_OK);
-   FreePlugins(jcr2);
+  EXPECT_EQ(GeneratePluginEvent(jcr1, bDirEventJobStart, (void*)"Start Job 1"),
+            bRC_OK);
+  EXPECT_EQ(GeneratePluginEvent(jcr1, bDirEventJobEnd), bRC_OK);
+  EXPECT_EQ(GeneratePluginEvent(jcr2, bDirEventJobStart, (void*)"Start Job 1"),
+            bRC_OK);
+  FreePlugins(jcr1);
+  EXPECT_EQ(GeneratePluginEvent(jcr2, bDirEventJobEnd), bRC_OK);
+  FreePlugins(jcr2);
 
-   UnloadDirPlugins();
+  UnloadDirPlugins();
 
-   TermMsg();
-   CloseMemoryPool();
-   sm_dump(false);
+  TermMsg();
+  CloseMemoryPool();
+  sm_dump(false);
 }
 
 } /* namespace directordaemon */

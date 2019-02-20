@@ -24,9 +24,9 @@
 
 namespace directordaemon {
 
-bool ImportCmd(UaContext *ua, const char *cmd);
-bool ExportCmd(UaContext *ua, const char *cmd);
-bool move_cmd(UaContext *ua, const char *cmd);
+bool ImportCmd(UaContext* ua, const char* cmd);
+bool ExportCmd(UaContext* ua, const char* cmd);
+bool move_cmd(UaContext* ua, const char* cmd);
 
 } /* namespace directordaemon */
-#endif // BAREOS_DIRD_UA_IMPEXP_H_
+#endif  // BAREOS_DIRD_UA_IMPEXP_H_

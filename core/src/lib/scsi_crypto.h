@@ -382,13 +382,17 @@ typedef struct {
 
 /* clang-format on */
 
-bool ClearScsiEncryptionKey(int fd, const char *device);
-bool SetScsiEncryptionKey(int fd, const char *device, char *encryption_key);
-int GetScsiDriveEncryptionStatus(int fd, const char *device_name,
-                                     POOLMEM *&status, int indent);
-int GetScsiVolumeEncryptionStatus(int fd, const char *device_name,
-                                      POOLMEM *&status, int indent);
-bool NeedScsiCryptoKey(int fd, const char *device_name, bool use_drive_status);
-bool IsScsiEncryptionEnabled(int fd, const char *device_name);
+bool ClearScsiEncryptionKey(int fd, const char* device);
+bool SetScsiEncryptionKey(int fd, const char* device, char* encryption_key);
+int GetScsiDriveEncryptionStatus(int fd,
+                                 const char* device_name,
+                                 POOLMEM*& status,
+                                 int indent);
+int GetScsiVolumeEncryptionStatus(int fd,
+                                  const char* device_name,
+                                  POOLMEM*& status,
+                                  int indent);
+bool NeedScsiCryptoKey(int fd, const char* device_name, bool use_drive_status);
+bool IsScsiEncryptionEnabled(int fd, const char* device_name);
 
 #endif /* BAREOS_LIB_SCSI_CRYPTO_H_ */

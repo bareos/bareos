@@ -39,93 +39,91 @@ namespace directordaemon {
  */
 bool UaContext::AuditEventWanted(bool audit_event_enabled)
 {
-   if (!me->audit_events) {
-      return audit_event_enabled;
-   }
+  if (!me->audit_events) { return audit_event_enabled; }
 
-   if (audit_event_enabled) {
-      const char *event = nullptr;
+  if (audit_event_enabled) {
+    const char* event = nullptr;
 
-      foreach_alist(event, me->audit_events) {
-         if (Bstrcasecmp(event, argk[0])) {
-            return true;
-         }
-      }
-   }
+    foreach_alist (event, me->audit_events) {
+      if (Bstrcasecmp(event, argk[0])) { return true; }
+    }
+  }
 
-   return false;
+  return false;
 }
 
 /**
- * Log an audit event for a console that accesses an resource or cmd that is not allowed.
+ * Log an audit event for a console that accesses an resource or cmd that is not
+ * allowed.
  */
-static inline void LogAuditEventAclMsg(UaContext *ua, const char *audit_msg, int acl, const char *item)
+static inline void LogAuditEventAclMsg(UaContext* ua,
+                                       const char* audit_msg,
+                                       int acl,
+                                       const char* item)
 {
-   const char *console_name;
-   const char *host;
-   const char *acl_type_name;
+  const char* console_name;
+  const char* host;
+  const char* acl_type_name;
 
-   console_name = (ua->cons) ? ua->cons->name() : "default";
-   host = (ua->UA_sock) ? ua->UA_sock->host() : "unknown";
+  console_name = (ua->cons) ? ua->cons->name() : "default";
+  host = (ua->UA_sock) ? ua->UA_sock->host() : "unknown";
 
-   switch (acl) {
-   case Job_ACL:
+  switch (acl) {
+    case Job_ACL:
       acl_type_name = _("for Job");
       break;
-   case Client_ACL:
+    case Client_ACL:
       acl_type_name = _("for Client");
       break;
-   case Storage_ACL:
+    case Storage_ACL:
       acl_type_name = _("for Storage");
       break;
-   case Schedule_ACL:
+    case Schedule_ACL:
       acl_type_name = _("for Schedule");
       break;
-   case Run_ACL:
+    case Run_ACL:
       acl_type_name = _("for Schedule");
       break;
-   case Pool_ACL:
+    case Pool_ACL:
       acl_type_name = _("for Pool");
       break;
-   case Command_ACL:
+    case Command_ACL:
       acl_type_name = _("for Command");
       break;
-   case FileSet_ACL:
+    case FileSet_ACL:
       acl_type_name = _("for Fileset");
       break;
-   case Catalog_ACL:
+    case Catalog_ACL:
       acl_type_name = _("for Catalog");
       break;
-   case Where_ACL:
+    case Where_ACL:
       acl_type_name = _("for Where restore location");
       break;
-   case PluginOptions_ACL:
+    case PluginOptions_ACL:
       acl_type_name = _("for Plugin Options");
       break;
-   default:
+    default:
       acl_type_name = "";
       break;
-   }
+  }
 
-   Emsg4(M_AUDIT, 0, audit_msg, console_name, host, acl_type_name, item);
+  Emsg4(M_AUDIT, 0, audit_msg, console_name, host, acl_type_name, item);
 }
 
-void UaContext::LogAuditEventAclFailure(int acl, const char *item)
+void UaContext::LogAuditEventAclFailure(int acl, const char* item)
 {
-   if (!me->auditing) {
-      return;
-   }
+  if (!me->auditing) { return; }
 
-   LogAuditEventAclMsg(this, _("Console [%s] from [%s], Audit acl failure %s %s\n"), acl, item);
+  LogAuditEventAclMsg(
+      this, _("Console [%s] from [%s], Audit acl failure %s %s\n"), acl, item);
 }
 
-void UaContext::LogAuditEventAclSuccess(int acl, const char *item)
+void UaContext::LogAuditEventAclSuccess(int acl, const char* item)
 {
-   if (!me->auditing) {
-      return;
-   }
+  if (!me->auditing) { return; }
 
-   LogAuditEventAclMsg(this, _("Console [%s] from [%s], Audit acl success %s %s\n"), acl, item);
+  LogAuditEventAclMsg(
+      this, _("Console [%s] from [%s], Audit acl success %s %s\n"), acl, item);
 }
 
 /**
@@ -133,16 +131,15 @@ void UaContext::LogAuditEventAclSuccess(int acl, const char *item)
  */
 void UaContext::LogAuditEventCmdline()
 {
-   const char *console_name;
-   const char *host;
+  const char* console_name;
+  const char* host;
 
-   if (!me->auditing) {
-      return;
-   }
+  if (!me->auditing) { return; }
 
-   console_name = cons ? cons->name() : "default";
-   host = UA_sock ? UA_sock->host() : "unknown";
+  console_name = cons ? cons->name() : "default";
+  host = UA_sock ? UA_sock->host() : "unknown";
 
-   Emsg3(M_AUDIT, 0, _("Console [%s] from [%s] cmdline %s\n"), console_name, host, cmd);
+  Emsg3(M_AUDIT, 0, _("Console [%s] from [%s] cmdline %s\n"), console_name,
+        host, cmd);
 }
 } /* namespace directordaemon */

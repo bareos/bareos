@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1998,1999,2000
- *	Traakan, Inc., Los Altos, CA
- *	All rights reserved.
+ *      Traakan, Inc., Los Altos, CA
+ *      All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,8 +31,8 @@
  * Ident:    $Id: $
  *
  * Description:
- *	Miscellaneous C functions to support protocol versions.
- *	See ndmprotocol.h for explanation.
+ *      Miscellaneous C functions to support protocol versions.
+ *      See ndmprotocol.h for explanation.
  */
 
 
@@ -40,56 +40,49 @@
 #include "ndmprotocol.h"
 
 
-
-
 /*
  * XDR MESSAGE TABLES
  ****************************************************************
  */
 
-struct ndmp_xdr_message_table *
-ndmp_xmt_lookup (int protocol_version, int msg)
+struct ndmp_xdr_message_table* ndmp_xmt_lookup(int protocol_version, int msg)
 {
-	struct ndmp_xdr_message_table *	table;
-	struct ndmp_xdr_message_table *	ent;
+  struct ndmp_xdr_message_table* table;
+  struct ndmp_xdr_message_table* ent;
 
-	switch (protocol_version) {
-	case 0:
-		table = ndmp0_xdr_message_table;
-		break;
+  switch (protocol_version) {
+    case 0:
+      table = ndmp0_xdr_message_table;
+      break;
 
 #ifndef NDMOS_OPTION_NO_NDMP2
-	case NDMP2VER:
-		table = ndmp2_xdr_message_table;
-		break;
+    case NDMP2VER:
+      table = ndmp2_xdr_message_table;
+      break;
 #endif /* !NDMOS_OPTION_NO_NDMP2 */
 
 #ifndef NDMOS_OPTION_NO_NDMP3
-	case NDMP3VER:
-		table = ndmp3_xdr_message_table;
-		break;
+    case NDMP3VER:
+      table = ndmp3_xdr_message_table;
+      break;
 #endif /* !NDMOS_OPTION_NO_NDMP3 */
 
 #ifndef NDMOS_OPTION_NO_NDMP4
-	case NDMP4VER:
-		table = ndmp4_xdr_message_table;
-		break;
+    case NDMP4VER:
+      table = ndmp4_xdr_message_table;
+      break;
 #endif /* !NDMOS_OPTION_NO_NDMP4 */
 
-	default:
-		return 0;
-	}
+    default:
+      return 0;
+  }
 
-	for (ent = table; ent->msg; ent++) {
-		if (ent->msg == msg) {
-			return ent;
-		}
-	}
+  for (ent = table; ent->msg; ent++) {
+    if (ent->msg == msg) { return ent; }
+  }
 
-	return 0;
+  return 0;
 }
-
-
 
 
 /*
@@ -97,38 +90,33 @@ ndmp_xmt_lookup (int protocol_version, int msg)
  ****************************************************************
  */
 
-char *
-ndmp_enum_to_str (int val, struct ndmp_enum_str_table *table)
+char* ndmp_enum_to_str(int val, struct ndmp_enum_str_table* table)
 {
-	static char	vbuf[8][32];
-	static int	vbix;
-	char *		vbp;
+  static char vbuf[8][32];
+  static int vbix;
+  char* vbp;
 
-	for (; table->name; table++)
-		if (table->value == val)
-			return table->name;
+  for (; table->name; table++)
+    if (table->value == val) return table->name;
 
-	vbp = vbuf[vbix&7];
-	vbix++;
+  vbp = vbuf[vbix & 7];
+  vbix++;
 
-	sprintf (vbp, "?0x%x?", val);
-	return vbp;
+  sprintf(vbp, "?0x%x?", val);
+  return vbp;
 }
 
-int
-ndmp_enum_from_str (int *valp, char *str, struct ndmp_enum_str_table *table)
+int ndmp_enum_from_str(int* valp, char* str, struct ndmp_enum_str_table* table)
 {
-	for (; table->name; table++) {
-		if (strcmp(table->name, str) == 0) {
-			*valp = table->value;
-			return 1;
-		}
-	}
+  for (; table->name; table++) {
+    if (strcmp(table->name, str) == 0) {
+      *valp = table->value;
+      return 1;
+    }
+  }
 
-	return 0;
+  return 0;
 }
-
-
 
 
 /*
@@ -136,59 +124,63 @@ ndmp_enum_from_str (int *valp, char *str, struct ndmp_enum_str_table *table)
  ****************************************************************
  */
 
-char *
-ndmp_message_to_str (int protocol_version, int msg)
+char* ndmp_message_to_str(int protocol_version, int msg)
 {
-	static char	yikes_buf[40];		/* non-reentrant */
+  static char yikes_buf[40]; /* non-reentrant */
 
-	switch (protocol_version) {
-	case 0:		return ndmp0_message_to_str (msg);
+  switch (protocol_version) {
+    case 0:
+      return ndmp0_message_to_str(msg);
 #ifndef NDMOS_OPTION_NO_NDMP2
-	case NDMP2VER:	return ndmp2_message_to_str (msg);
+    case NDMP2VER:
+      return ndmp2_message_to_str(msg);
 #endif /* !NDMOS_OPTION_NO_NDMP2 */
 
 #ifndef NDMOS_OPTION_NO_NDMP3
-	case NDMP3VER:	return ndmp3_message_to_str (msg);
+    case NDMP3VER:
+      return ndmp3_message_to_str(msg);
 #endif /* !NDMOS_OPTION_NO_NDMP3 */
 
 #ifndef NDMOS_OPTION_NO_NDMP4
-	case NDMP4VER:	return ndmp4_message_to_str (msg);
+    case NDMP4VER:
+      return ndmp4_message_to_str(msg);
 #endif /* !NDMOS_OPTION_NO_NDMP4 */
 
-	default:	/* should never happen, if so should be rare */
-		sprintf (yikes_buf, "v%dmsg0x%04x", protocol_version, msg);
-		return yikes_buf;
-	}
+    default: /* should never happen, if so should be rare */
+      sprintf(yikes_buf, "v%dmsg0x%04x", protocol_version, msg);
+      return yikes_buf;
+  }
 }
 
-char *
-ndmp_error_to_str (int protocol_version, int err)
+char* ndmp_error_to_str(int protocol_version, int err)
 {
-	static char	yikes_buf[40];		/* non-reentrant */
+  static char yikes_buf[40]; /* non-reentrant */
 
-	switch (protocol_version) {
-	case 0:		return ndmp0_error_to_str (err);
-	case 9:		return ndmp9_error_to_str (err);
+  switch (protocol_version) {
+    case 0:
+      return ndmp0_error_to_str(err);
+    case 9:
+      return ndmp9_error_to_str(err);
 #ifndef NDMOS_OPTION_NO_NDMP2
-	case NDMP2VER:	return ndmp2_error_to_str (err);
+    case NDMP2VER:
+      return ndmp2_error_to_str(err);
 #endif /* !NDMOS_OPTION_NO_NDMP2 */
 
 #ifndef NDMOS_OPTION_NO_NDMP3
-	case NDMP3VER:	return ndmp3_error_to_str (err);
+    case NDMP3VER:
+      return ndmp3_error_to_str(err);
 #endif /* !NDMOS_OPTION_NO_NDMP3 */
 
 #ifndef NDMOS_OPTION_NO_NDMP4
-	case NDMP4VER:	return ndmp4_error_to_str (err);
+    case NDMP4VER:
+      return ndmp4_error_to_str(err);
 #endif /* !NDMOS_OPTION_NO_NDMP4 */
 
-	default:	/* should never happen, if so should be rare */
-		sprintf (yikes_buf, "v%derr%d", protocol_version, err);
-		return yikes_buf;
-	}
+    default: /* should never happen, if so should be rare */
+      sprintf(yikes_buf, "v%derr%d", protocol_version, err);
+      return yikes_buf;
+  }
 }
-
-
-
 
 
 /*
@@ -196,86 +188,83 @@ ndmp_error_to_str (int protocol_version, int err)
  ****************************************************************
  */
 
-int
-ndmp_pp_header (int vers, void *data, char *buf)
+int ndmp_pp_header(int vers, void* data, char* buf)
 {
-	switch (vers) {
-	case 0:
-		return ndmp0_pp_header (data, buf);
+  switch (vers) {
+    case 0:
+      return ndmp0_pp_header(data, buf);
 
 #ifndef NDMOS_OPTION_NO_NDMP2
-	case NDMP2VER:
-		return ndmp2_pp_header (data, buf);
+    case NDMP2VER:
+      return ndmp2_pp_header(data, buf);
 #endif /* !NDMOS_OPTION_NO_NDMP2 */
 
 #ifndef NDMOS_OPTION_NO_NDMP3
-	case NDMP3VER:
-		return ndmp3_pp_header (data, buf);
+    case NDMP3VER:
+      return ndmp3_pp_header(data, buf);
 #endif /* !NDMOS_OPTION_NO_NDMP3 */
 
 #ifndef NDMOS_OPTION_NO_NDMP4
-	case NDMP4VER:
-		return ndmp4_pp_header (data, buf);
+    case NDMP4VER:
+      return ndmp4_pp_header(data, buf);
 #endif /* !NDMOS_OPTION_NO_NDMP4 */
 
-	default:
-		sprintf (buf, "V%d? ", vers);
-		return ndmp0_pp_header (data, NDMOS_API_STREND(buf));
-	}
+    default:
+      sprintf(buf, "V%d? ", vers);
+      return ndmp0_pp_header(data, NDMOS_API_STREND(buf));
+  }
 }
 
-int
-ndmp_pp_request (int vers, int msg, void *data, int lineno, char *buf)
+int ndmp_pp_request(int vers, int msg, void* data, int lineno, char* buf)
 {
-	switch (vers) {
-	case 0:
-		return ndmp0_pp_request (msg, data, lineno, buf);
+  switch (vers) {
+    case 0:
+      return ndmp0_pp_request(msg, data, lineno, buf);
 
 #ifndef NDMOS_OPTION_NO_NDMP2
-	case NDMP2VER:
-		return ndmp2_pp_request (msg, data, lineno, buf);
+    case NDMP2VER:
+      return ndmp2_pp_request(msg, data, lineno, buf);
 #endif /* !NDMOS_OPTION_NO_NDMP2 */
 
 #ifndef NDMOS_OPTION_NO_NDMP3
-	case NDMP3VER:
-		return ndmp3_pp_request (msg, data, lineno, buf);
+    case NDMP3VER:
+      return ndmp3_pp_request(msg, data, lineno, buf);
 #endif /* !NDMOS_OPTION_NO_NDMP3 */
 
 #ifndef NDMOS_OPTION_NO_NDMP4
-	case NDMP4VER:
-		return ndmp4_pp_request (msg, data, lineno, buf);
+    case NDMP4VER:
+      return ndmp4_pp_request(msg, data, lineno, buf);
 #endif /* !NDMOS_OPTION_NO_NDMP4 */
 
-	default:
-		sprintf (buf, "<<INVALID MSG VERS=%d>>", vers);
-		return -1;
-	}
+    default:
+      sprintf(buf, "<<INVALID MSG VERS=%d>>", vers);
+      return -1;
+  }
 }
 
-int
-ndmp_pp_reply (int vers, int msg, void *data, int lineno, char *buf)
+int ndmp_pp_reply(int vers, int msg, void* data, int lineno, char* buf)
 {
-	switch (vers) {
-	case 0:
-		return ndmp0_pp_reply (msg, data, lineno, buf);
+  switch (vers) {
+    case 0:
+      return ndmp0_pp_reply(msg, data, lineno, buf);
 
 #ifndef NDMOS_OPTION_NO_NDMP2
-	case NDMP2VER:
-		return ndmp2_pp_reply (msg, data, lineno, buf);
+    case NDMP2VER:
+      return ndmp2_pp_reply(msg, data, lineno, buf);
 #endif /* !NDMOS_OPTION_NO_NDMP2 */
 
 #ifndef NDMOS_OPTION_NO_NDMP3
-	case NDMP3VER:
-		return ndmp3_pp_reply (msg, data, lineno, buf);
+    case NDMP3VER:
+      return ndmp3_pp_reply(msg, data, lineno, buf);
 #endif /* !NDMOS_OPTION_NO_NDMP3 */
 
 #ifndef NDMOS_OPTION_NO_NDMP4
-	case NDMP4VER:
-		return ndmp4_pp_reply (msg, data, lineno, buf);
+    case NDMP4VER:
+      return ndmp4_pp_reply(msg, data, lineno, buf);
 #endif /* !NDMOS_OPTION_NO_NDMP4 */
 
-	default:
-		sprintf (buf, "<<INVALID MSG VERS=%d>>", vers);
-		return -1;
-	}
+    default:
+      sprintf(buf, "<<INVALID MSG VERS=%d>>", vers);
+      return -1;
+  }
 }

@@ -119,280 +119,293 @@
 
 namespace storagedaemon {
 
-const char *Device::mode_to_str(int mode)
+const char* Device::mode_to_str(int mode)
 {
-   static const char *modes[] = {
-      "CREATE_READ_WRITE",
-      "OPEN_READ_WRITE",
-      "OPEN_READ_ONLY",
-      "OPEN_WRITE_ONLY"
-   };
+  static const char* modes[] = {"CREATE_READ_WRITE", "OPEN_READ_WRITE",
+                                "OPEN_READ_ONLY", "OPEN_WRITE_ONLY"};
 
-   static char buf[100];
+  static char buf[100];
 
-   if (mode < 1 || mode > 4) {
-      Bsnprintf(buf, sizeof(buf), "BAD mode=%d", mode);
-      return buf;
-   }
+  if (mode < 1 || mode > 4) {
+    Bsnprintf(buf, sizeof(buf), "BAD mode=%d", mode);
+    return buf;
+  }
 
-   return modes[mode - 1];
+  return modes[mode - 1];
 }
 
-static inline Device *init_dev(JobControlRecord *jcr, DeviceResource *device, bool new_init)
+static inline Device* init_dev(JobControlRecord* jcr,
+                               DeviceResource* device,
+                               bool new_init)
 {
-   struct stat statp;
-   int errstat;
-   DeviceControlRecord *dcr = NULL;
-   Device *dev = NULL;
-   uint32_t max_bs;
+  struct stat statp;
+  int errstat;
+  DeviceControlRecord* dcr = NULL;
+  Device* dev = NULL;
+  uint32_t max_bs;
 
-   Dmsg1(400, "max_block_size in device res is %u\n", device->max_block_size);
+  Dmsg1(400, "max_block_size in device res is %u\n", device->max_block_size);
 
-   /*
-    * If no device type specified, try to guess
-    */
-   if (!device->dev_type) {
-      /*
-       * Check that device is available
-       */
-      if (stat(device->device_name, &statp) < 0) {
-         BErrNo be;
-         Jmsg2(jcr, M_ERROR, 0, _("Unable to stat device %s: ERR=%s\n"),
+  /*
+   * If no device type specified, try to guess
+   */
+  if (!device->dev_type) {
+    /*
+     * Check that device is available
+     */
+    if (stat(device->device_name, &statp) < 0) {
+      BErrNo be;
+      Jmsg2(jcr, M_ERROR, 0, _("Unable to stat device %s: ERR=%s\n"),
             device->device_name, be.bstrerror());
-         return NULL;
-      }
-      if (S_ISDIR(statp.st_mode)) {
-         device->dev_type = B_FILE_DEV;
-      } else if (S_ISCHR(statp.st_mode)) {
-         device->dev_type = B_TAPE_DEV;
-      } else if (S_ISFIFO(statp.st_mode)) {
-         device->dev_type = B_FIFO_DEV;
-      } else if (!BitIsSet(CAP_REQMOUNT, device->cap_bits)) {
-         Jmsg2(jcr, M_ERROR, 0,
-               _("%s is an unknown device type. Must be tape or directory, st_mode=%04o\n"),
-               device->device_name, (statp.st_mode & ~S_IFMT));
-         return NULL;
-      }
-   }
+      return NULL;
+    }
+    if (S_ISDIR(statp.st_mode)) {
+      device->dev_type = B_FILE_DEV;
+    } else if (S_ISCHR(statp.st_mode)) {
+      device->dev_type = B_TAPE_DEV;
+    } else if (S_ISFIFO(statp.st_mode)) {
+      device->dev_type = B_FIFO_DEV;
+    } else if (!BitIsSet(CAP_REQMOUNT, device->cap_bits)) {
+      Jmsg2(jcr, M_ERROR, 0,
+            _("%s is an unknown device type. Must be tape or directory, "
+              "st_mode=%04o\n"),
+            device->device_name, (statp.st_mode & ~S_IFMT));
+      return NULL;
+    }
+  }
 
-   /*
-    * See what type of device is wanted.
-    */
-   switch (device->dev_type) {
-   /*
-    * When using dynamic loading use the init_backend_dev() function
-    * for any type of device not being of the type file.
-    */
+  /*
+   * See what type of device is wanted.
+   */
+  switch (device->dev_type) {
+    /*
+     * When using dynamic loading use the init_backend_dev() function
+     * for any type of device not being of the type file.
+     */
 #ifndef HAVE_DYNAMIC_SD_BACKENDS
 #ifdef HAVE_GFAPI
-   case B_GFAPI_DEV:
+    case B_GFAPI_DEV:
       dev = New(gfapi_device);
       break;
 #endif
 #ifdef HAVE_DROPLET
-   case B_DROPLET_DEV:
+    case B_DROPLET_DEV:
       dev = New(droplet_device);
       break;
 #endif
 #ifdef HAVE_RADOS
-   case B_RADOS_DEV:
+    case B_RADOS_DEV:
       dev = New(rados_device);
       break;
 #endif
 #ifdef HAVE_CEPHFS
-   case B_CEPHFS_DEV:
+    case B_CEPHFS_DEV:
       dev = New(cephfs_device);
       break;
 #endif
 #ifdef HAVE_ELASTO
-   case B_ELASTO_DEV:
+    case B_ELASTO_DEV:
       dev = New(elasto_device);
       break;
 #endif
 #ifdef HAVE_WIN32
-   case B_TAPE_DEV:
+    case B_TAPE_DEV:
       dev = New(win32_tape_device);
       break;
-   case B_FIFO_DEV:
+    case B_FIFO_DEV:
       dev = New(win32_fifo_device);
       break;
 #else
-   case B_TAPE_DEV:
+    case B_TAPE_DEV:
       dev = New(unix_tape_device);
       break;
-   case B_FIFO_DEV:
+    case B_FIFO_DEV:
       dev = New(unix_fifo_device);
       break;
 #endif
 #endif /* HAVE_DYNAMIC_SD_BACKENDS */
 #ifdef HAVE_WIN32
-   case B_FILE_DEV:
+    case B_FILE_DEV:
       dev = New(win32_file_device);
       break;
 #else
-   case B_FILE_DEV:
+    case B_FILE_DEV:
       dev = New(unix_file_device);
       break;
 #endif
-   default:
+    default:
 #ifdef HAVE_DYNAMIC_SD_BACKENDS
       dev = init_backend_dev(jcr, device->dev_type);
 #endif
       break;
-   }
+  }
 
-   if (!dev) {
-      Jmsg2(jcr, M_ERROR, 0, _("%s has an unknown device type %d\n"),
-            device->device_name, device->dev_type);
-      return NULL;
-   }
-   dev->ClearSlot();         /* unknown */
+  if (!dev) {
+    Jmsg2(jcr, M_ERROR, 0, _("%s has an unknown device type %d\n"),
+          device->device_name, device->dev_type);
+    return NULL;
+  }
+  dev->ClearSlot(); /* unknown */
 
-   /*
-    * Copy user supplied device parameters from Resource
-    */
-   dev->dev_name = GetMemory(strlen(device->device_name) + 1);
-   PmStrcpy(dev->dev_name, device->device_name);
-   if (device->device_options) {
-      dev->dev_options = GetMemory(strlen(device->device_options) + 1);
-      PmStrcpy(dev->dev_options, device->device_options);
-   }
-   dev->prt_name = GetMemory(strlen(device->device_name) + strlen(device->name()) + 20);
+  /*
+   * Copy user supplied device parameters from Resource
+   */
+  dev->dev_name = GetMemory(strlen(device->device_name) + 1);
+  PmStrcpy(dev->dev_name, device->device_name);
+  if (device->device_options) {
+    dev->dev_options = GetMemory(strlen(device->device_options) + 1);
+    PmStrcpy(dev->dev_options, device->device_options);
+  }
+  dev->prt_name =
+      GetMemory(strlen(device->device_name) + strlen(device->name()) + 20);
 
-   /*
-    * We edit "Resource-name" (physical-name)
-    */
-   Mmsg(dev->prt_name, "\"%s\" (%s)", device->name(), device->device_name);
-   Dmsg1(400, "Allocate dev=%s\n", dev->print_name());
-   CopySetBits(CAP_MAX, device->cap_bits, dev->capabilities);
+  /*
+   * We edit "Resource-name" (physical-name)
+   */
+  Mmsg(dev->prt_name, "\"%s\" (%s)", device->name(), device->device_name);
+  Dmsg1(400, "Allocate dev=%s\n", dev->print_name());
+  CopySetBits(CAP_MAX, device->cap_bits, dev->capabilities);
 
-   /*
-    * current block sizes
-    */
-   dev->min_block_size = device->min_block_size;
-   dev->max_block_size = device->max_block_size;
-   dev->max_volume_size = device->max_volume_size;
-   dev->max_file_size = device->max_file_size;
-   dev->max_concurrent_jobs = device->max_concurrent_jobs;
-   dev->volume_capacity = device->volume_capacity;
-   dev->max_rewind_wait = device->max_rewind_wait;
-   dev->max_open_wait = device->max_open_wait;
-   dev->max_open_vols = device->max_open_vols;
-   dev->vol_poll_interval = device->vol_poll_interval;
-   dev->max_spool_size = device->max_spool_size;
-   dev->drive = device->drive;
-   dev->drive_index = device->drive_index;
-   dev->autoselect = device->autoselect;
-   dev->norewindonclose = device->norewindonclose;
-   dev->dev_type = device->dev_type;
-   dev->device = device;
+  /*
+   * current block sizes
+   */
+  dev->min_block_size = device->min_block_size;
+  dev->max_block_size = device->max_block_size;
+  dev->max_volume_size = device->max_volume_size;
+  dev->max_file_size = device->max_file_size;
+  dev->max_concurrent_jobs = device->max_concurrent_jobs;
+  dev->volume_capacity = device->volume_capacity;
+  dev->max_rewind_wait = device->max_rewind_wait;
+  dev->max_open_wait = device->max_open_wait;
+  dev->max_open_vols = device->max_open_vols;
+  dev->vol_poll_interval = device->vol_poll_interval;
+  dev->max_spool_size = device->max_spool_size;
+  dev->drive = device->drive;
+  dev->drive_index = device->drive_index;
+  dev->autoselect = device->autoselect;
+  dev->norewindonclose = device->norewindonclose;
+  dev->dev_type = device->dev_type;
+  dev->device = device;
 
-   /*
-    * Sanity check
-    */
-   if (dev->vol_poll_interval && dev->vol_poll_interval < 60) {
-      dev->vol_poll_interval = 60;
-   }
-   device->dev = dev;
+  /*
+   * Sanity check
+   */
+  if (dev->vol_poll_interval && dev->vol_poll_interval < 60) {
+    dev->vol_poll_interval = 60;
+  }
+  device->dev = dev;
 
-   if (dev->IsFifo()) {
-      dev->SetCap(CAP_STREAM);       /* set stream device */
-   }
+  if (dev->IsFifo()) { dev->SetCap(CAP_STREAM); /* set stream device */ }
 
-   /*
-    * If the device requires mount :
-    * - Check that the mount point is available
-    * - Check that (un)mount commands are defined
-    */
-   if (dev->IsFile() && dev->RequiresMount()) {
-      if (!device->mount_point || stat(device->mount_point, &statp) < 0) {
-         BErrNo be;
-         dev->dev_errno = errno;
-         Jmsg2(jcr, M_ERROR_TERM, 0, _("Unable to stat mount point %s: ERR=%s\n"),
+  /*
+   * If the device requires mount :
+   * - Check that the mount point is available
+   * - Check that (un)mount commands are defined
+   */
+  if (dev->IsFile() && dev->RequiresMount()) {
+    if (!device->mount_point || stat(device->mount_point, &statp) < 0) {
+      BErrNo be;
+      dev->dev_errno = errno;
+      Jmsg2(jcr, M_ERROR_TERM, 0, _("Unable to stat mount point %s: ERR=%s\n"),
             device->mount_point, be.bstrerror());
-      }
+    }
 
-      if (!device->mount_command || !device->unmount_command) {
-         Jmsg0(jcr, M_ERROR_TERM, 0, _("Mount and unmount commands must defined for a device which requires mount.\n"));
-      }
-   }
+    if (!device->mount_command || !device->unmount_command) {
+      Jmsg0(jcr, M_ERROR_TERM, 0,
+            _("Mount and unmount commands must defined for a device which "
+              "requires mount.\n"));
+    }
+  }
 
-   /*
-    * Sanity check
-    */
-   if (dev->max_block_size == 0) {
-      max_bs = DEFAULT_BLOCK_SIZE;
-   } else {
-      max_bs = dev->max_block_size;
-   }
-   if (dev->min_block_size > max_bs) {
-      Jmsg(jcr, M_ERROR_TERM, 0, _("Min block size > max on device %s\n"), dev->print_name());
-   }
-   if (dev->max_block_size > MAX_BLOCK_LENGTH) {
-      Jmsg3(jcr, M_ERROR, 0, _("Block size %u on device %s is too large, using default %u\n"),
-            dev->max_block_size, dev->print_name(), DEFAULT_BLOCK_SIZE);
-      dev->max_block_size = 0;
-   }
-   if (dev->max_block_size % TAPE_BSIZE != 0) {
-      Jmsg3(jcr, M_WARNING, 0, _("Max block size %u not multiple of device %s block size=%d.\n"),
-            dev->max_block_size, dev->print_name(), TAPE_BSIZE);
-   }
-   if (dev->max_volume_size != 0 && dev->max_volume_size < (dev->max_block_size << 4)) {
-      Jmsg(jcr, M_ERROR_TERM, 0, _("Max Vol Size < 8 * Max Block Size for device %s\n"), dev->print_name());
-   }
+  /*
+   * Sanity check
+   */
+  if (dev->max_block_size == 0) {
+    max_bs = DEFAULT_BLOCK_SIZE;
+  } else {
+    max_bs = dev->max_block_size;
+  }
+  if (dev->min_block_size > max_bs) {
+    Jmsg(jcr, M_ERROR_TERM, 0, _("Min block size > max on device %s\n"),
+         dev->print_name());
+  }
+  if (dev->max_block_size > MAX_BLOCK_LENGTH) {
+    Jmsg3(jcr, M_ERROR, 0,
+          _("Block size %u on device %s is too large, using default %u\n"),
+          dev->max_block_size, dev->print_name(), DEFAULT_BLOCK_SIZE);
+    dev->max_block_size = 0;
+  }
+  if (dev->max_block_size % TAPE_BSIZE != 0) {
+    Jmsg3(jcr, M_WARNING, 0,
+          _("Max block size %u not multiple of device %s block size=%d.\n"),
+          dev->max_block_size, dev->print_name(), TAPE_BSIZE);
+  }
+  if (dev->max_volume_size != 0 &&
+      dev->max_volume_size < (dev->max_block_size << 4)) {
+    Jmsg(jcr, M_ERROR_TERM, 0,
+         _("Max Vol Size < 8 * Max Block Size for device %s\n"),
+         dev->print_name());
+  }
 
-   dev->errmsg = GetPoolMemory(PM_EMSG);
-   *dev->errmsg = 0;
+  dev->errmsg = GetPoolMemory(PM_EMSG);
+  *dev->errmsg = 0;
 
-   if ((errstat = dev->InitMutex()) != 0) {
-      BErrNo be;
-      dev->dev_errno = errstat;
-      Mmsg1(dev->errmsg, _("Unable to init mutex: ERR=%s\n"), be.bstrerror(errstat));
-      Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
-   }
+  if ((errstat = dev->InitMutex()) != 0) {
+    BErrNo be;
+    dev->dev_errno = errstat;
+    Mmsg1(dev->errmsg, _("Unable to init mutex: ERR=%s\n"),
+          be.bstrerror(errstat));
+    Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
+  }
 
-   if ((errstat = pthread_cond_init(&dev->wait, NULL)) != 0) {
-      BErrNo be;
-      dev->dev_errno = errstat;
-      Mmsg1(dev->errmsg, _("Unable to init cond variable: ERR=%s\n"), be.bstrerror(errstat));
-      Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
-   }
+  if ((errstat = pthread_cond_init(&dev->wait, NULL)) != 0) {
+    BErrNo be;
+    dev->dev_errno = errstat;
+    Mmsg1(dev->errmsg, _("Unable to init cond variable: ERR=%s\n"),
+          be.bstrerror(errstat));
+    Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
+  }
 
-   if ((errstat = pthread_cond_init(&dev->wait_next_vol, NULL)) != 0) {
-      BErrNo be;
-      dev->dev_errno = errstat;
-      Mmsg1(dev->errmsg, _("Unable to init cond variable: ERR=%s\n"), be.bstrerror(errstat));
-      Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
-   }
+  if ((errstat = pthread_cond_init(&dev->wait_next_vol, NULL)) != 0) {
+    BErrNo be;
+    dev->dev_errno = errstat;
+    Mmsg1(dev->errmsg, _("Unable to init cond variable: ERR=%s\n"),
+          be.bstrerror(errstat));
+    Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
+  }
 
-   if ((errstat = pthread_mutex_init(&dev->spool_mutex, NULL)) != 0) {
-      BErrNo be;
-      dev->dev_errno = errstat;
-      Mmsg1(dev->errmsg, _("Unable to init spool mutex: ERR=%s\n"), be.bstrerror(errstat));
-      Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
-   }
+  if ((errstat = pthread_mutex_init(&dev->spool_mutex, NULL)) != 0) {
+    BErrNo be;
+    dev->dev_errno = errstat;
+    Mmsg1(dev->errmsg, _("Unable to init spool mutex: ERR=%s\n"),
+          be.bstrerror(errstat));
+    Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
+  }
 
-   if ((errstat = dev->InitAcquireMutex()) != 0) {
-      BErrNo be;
-      dev->dev_errno = errstat;
-      Mmsg1(dev->errmsg, _("Unable to init acquire mutex: ERR=%s\n"), be.bstrerror(errstat));
-      Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
-   }
+  if ((errstat = dev->InitAcquireMutex()) != 0) {
+    BErrNo be;
+    dev->dev_errno = errstat;
+    Mmsg1(dev->errmsg, _("Unable to init acquire mutex: ERR=%s\n"),
+          be.bstrerror(errstat));
+    Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
+  }
 
-   if ((errstat = dev->InitReadAcquireMutex()) != 0) {
-      BErrNo be;
-      dev->dev_errno = errstat;
-      Mmsg1(dev->errmsg, _("Unable to init read acquire mutex: ERR=%s\n"), be.bstrerror(errstat));
-      Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
-   }
+  if ((errstat = dev->InitReadAcquireMutex()) != 0) {
+    BErrNo be;
+    dev->dev_errno = errstat;
+    Mmsg1(dev->errmsg, _("Unable to init read acquire mutex: ERR=%s\n"),
+          be.bstrerror(errstat));
+    Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
+  }
 
-   dev->ClearOpened();
-   dev->attached_dcrs = New(dlist(dcr, &dcr->dev_link));
-   Dmsg2(100, "InitDev: tape=%d dev_name=%s\n", dev->IsTape(), dev->dev_name);
-   dev->initiated = true;
-   Dmsg3(100, "dev=%s dev_max_bs=%u max_bs=%u\n", dev->dev_name, dev->device->max_block_size, dev->max_block_size);
+  dev->ClearOpened();
+  dev->attached_dcrs = New(dlist(dcr, &dcr->dev_link));
+  Dmsg2(100, "InitDev: tape=%d dev_name=%s\n", dev->IsTape(), dev->dev_name);
+  dev->initiated = true;
+  Dmsg3(100, "dev=%s dev_max_bs=%u max_bs=%u\n", dev->dev_name,
+        dev->device->max_block_size, dev->max_block_size);
 
-   return dev;
+  return dev;
 }
 
 /**
@@ -405,48 +418,48 @@ static inline Device *init_dev(JobControlRecord *jcr, DeviceResource *device, bo
  * (e.g. /dev/nst0), and for a file, the device name
  * is the directory in which the file will be placed.
  */
-Device *InitDev(JobControlRecord *jcr, DeviceResource *device)
+Device* InitDev(JobControlRecord* jcr, DeviceResource* device)
 {
-   Device *dev;
+  Device* dev;
 
-   dev = init_dev(jcr, device, false);
-   return dev;
+  dev = init_dev(jcr, device, false);
+  return dev;
 }
 
 /**
  * This routine initializes the device wait timers
  */
-void InitDeviceWaitTimers(DeviceControlRecord *dcr)
+void InitDeviceWaitTimers(DeviceControlRecord* dcr)
 {
-   Device *dev = dcr->dev;
-   JobControlRecord *jcr = dcr->jcr;
+  Device* dev = dcr->dev;
+  JobControlRecord* jcr = dcr->jcr;
 
-   /* ******FIXME******* put these on config variables */
-   dev->min_wait = 60 * 60;
-   dev->max_wait = 24 * 60 * 60;
-   dev->max_num_wait = 9;              /* 5 waits =~ 1 day, then 1 day at a time */
-   dev->wait_sec = dev->min_wait;
-   dev->rem_wait_sec = dev->wait_sec;
-   dev->num_wait = 0;
-   dev->poll = false;
+  /* ******FIXME******* put these on config variables */
+  dev->min_wait = 60 * 60;
+  dev->max_wait = 24 * 60 * 60;
+  dev->max_num_wait = 9; /* 5 waits =~ 1 day, then 1 day at a time */
+  dev->wait_sec = dev->min_wait;
+  dev->rem_wait_sec = dev->wait_sec;
+  dev->num_wait = 0;
+  dev->poll = false;
 
-   jcr->min_wait = 60 * 60;
-   jcr->max_wait = 24 * 60 * 60;
-   jcr->max_num_wait = 9;              /* 5 waits =~ 1 day, then 1 day at a time */
-   jcr->wait_sec = jcr->min_wait;
-   jcr->rem_wait_sec = jcr->wait_sec;
-   jcr->num_wait = 0;
+  jcr->min_wait = 60 * 60;
+  jcr->max_wait = 24 * 60 * 60;
+  jcr->max_num_wait = 9; /* 5 waits =~ 1 day, then 1 day at a time */
+  jcr->wait_sec = jcr->min_wait;
+  jcr->rem_wait_sec = jcr->wait_sec;
+  jcr->num_wait = 0;
 }
 
-void InitJcrDeviceWaitTimers(JobControlRecord *jcr)
+void InitJcrDeviceWaitTimers(JobControlRecord* jcr)
 {
-   /* ******FIXME******* put these on config variables */
-   jcr->min_wait = 60 * 60;
-   jcr->max_wait = 24 * 60 * 60;
-   jcr->max_num_wait = 9;              /* 5 waits =~ 1 day, then 1 day at a time */
-   jcr->wait_sec = jcr->min_wait;
-   jcr->rem_wait_sec = jcr->wait_sec;
-   jcr->num_wait = 0;
+  /* ******FIXME******* put these on config variables */
+  jcr->min_wait = 60 * 60;
+  jcr->max_wait = 24 * 60 * 60;
+  jcr->max_num_wait = 9; /* 5 waits =~ 1 day, then 1 day at a time */
+  jcr->wait_sec = jcr->min_wait;
+  jcr->rem_wait_sec = jcr->wait_sec;
+  jcr->num_wait = 0;
 }
 
 /**
@@ -455,24 +468,19 @@ void InitJcrDeviceWaitTimers(JobControlRecord *jcr)
  * Returns: true if time doubled
  *          false if max time expired
  */
-bool DoubleDevWaitTime(Device *dev)
+bool DoubleDevWaitTime(Device* dev)
 {
-   dev->wait_sec *= 2;               /* Double wait time */
-   if (dev->wait_sec > dev->max_wait) { /* But not longer than maxtime */
-      dev->wait_sec = dev->max_wait;
-   }
-   dev->num_wait++;
-   dev->rem_wait_sec = dev->wait_sec;
-   if (dev->num_wait >= dev->max_num_wait) {
-      return false;
-   }
-   return true;
+  dev->wait_sec *= 2;                  /* Double wait time */
+  if (dev->wait_sec > dev->max_wait) { /* But not longer than maxtime */
+    dev->wait_sec = dev->max_wait;
+  }
+  dev->num_wait++;
+  dev->rem_wait_sec = dev->wait_sec;
+  if (dev->num_wait >= dev->max_num_wait) { return false; }
+  return true;
 }
 
-Device::Device()
-{
-   fd_ = -1;
-}
+Device::Device() { fd_ = -1; }
 
 
 /**
@@ -480,73 +488,86 @@ Device::Device()
  * If the volume block size is zero, we set the max block size to what is
  * configured in the device resource i.e. dev->device->max_block_size.
  *
- * If dev->device->max_block_size is zero, do nothing and leave dev->max_block_size as it is.
+ * If dev->device->max_block_size is zero, do nothing and leave
+ * dev->max_block_size as it is.
  */
-void Device::SetBlocksizes(DeviceControlRecord *dcr) {
+void Device::SetBlocksizes(DeviceControlRecord* dcr)
+{
+  Device* dev = this;
+  JobControlRecord* jcr = dcr->jcr;
+  uint32_t max_bs;
 
-   Device* dev = this;
-   JobControlRecord* jcr = dcr->jcr;
-   uint32_t max_bs;
+  Dmsg4(100,
+        "Device %s has dev->device->max_block_size of %u and "
+        "dev->max_block_size of %u, dcr->VolMaxBlocksize is %u\n",
+        dev->print_name(), dev->device->max_block_size, dev->max_block_size,
+        dcr->VolMaxBlocksize);
 
-   Dmsg4(100, "Device %s has dev->device->max_block_size of %u and dev->max_block_size of %u, dcr->VolMaxBlocksize is %u\n",
-         dev->print_name(), dev->device->max_block_size, dev->max_block_size, dcr->VolMaxBlocksize);
+  if (dcr->VolMaxBlocksize == 0 && dev->device->max_block_size != 0) {
+    Dmsg2(100,
+          "setting dev->max_block_size to dev->device->max_block_size=%u "
+          "on device %s because dcr->VolMaxBlocksize is 0\n",
+          dev->device->max_block_size, dev->print_name());
+    dev->min_block_size = dev->device->min_block_size;
+    dev->max_block_size = dev->device->max_block_size;
+  } else if (dcr->VolMaxBlocksize != 0) {
+    dev->min_block_size = dcr->VolMinBlocksize;
+    dev->max_block_size = dcr->VolMaxBlocksize;
+  }
 
-   if (dcr->VolMaxBlocksize == 0 && dev->device->max_block_size != 0) {
-      Dmsg2(100, "setting dev->max_block_size to dev->device->max_block_size=%u "
-                 "on device %s because dcr->VolMaxBlocksize is 0\n",
-            dev->device->max_block_size, dev->print_name());
-      dev->min_block_size = dev->device->min_block_size;
-      dev->max_block_size = dev->device->max_block_size;
-   } else if (dcr->VolMaxBlocksize != 0) {
-       dev->min_block_size = dcr->VolMinBlocksize;
-       dev->max_block_size = dcr->VolMaxBlocksize;
-   }
+  /*
+   * Sanity check
+   */
+  if (dev->max_block_size == 0) {
+    max_bs = DEFAULT_BLOCK_SIZE;
+  } else {
+    max_bs = dev->max_block_size;
+  }
 
-   /*
-    * Sanity check
-    */
-   if (dev->max_block_size == 0) {
-      max_bs = DEFAULT_BLOCK_SIZE;
-   } else {
-      max_bs = dev->max_block_size;
-   }
+  if (dev->min_block_size > max_bs) {
+    Jmsg(jcr, M_ERROR_TERM, 0, _("Min block size > max on device %s\n"),
+         dev->print_name());
+  }
 
-   if (dev->min_block_size > max_bs) {
-      Jmsg(jcr, M_ERROR_TERM, 0, _("Min block size > max on device %s\n"), dev->print_name());
-   }
+  if (dev->max_block_size > MAX_BLOCK_LENGTH) {
+    Jmsg3(jcr, M_ERROR, 0,
+          _("Block size %u on device %s is too large, using default %u\n"),
+          dev->max_block_size, dev->print_name(), DEFAULT_BLOCK_SIZE);
+    dev->max_block_size = 0;
+  }
 
-   if (dev->max_block_size > MAX_BLOCK_LENGTH) {
-      Jmsg3(jcr, M_ERROR, 0, _("Block size %u on device %s is too large, using default %u\n"),
-            dev->max_block_size, dev->print_name(), DEFAULT_BLOCK_SIZE);
-      dev->max_block_size = 0;
-   }
+  if (dev->max_block_size % TAPE_BSIZE != 0) {
+    Jmsg3(jcr, M_WARNING, 0,
+          _("Max block size %u not multiple of device %s block size=%d.\n"),
+          dev->max_block_size, dev->print_name(), TAPE_BSIZE);
+  }
 
-   if (dev->max_block_size % TAPE_BSIZE != 0) {
-      Jmsg3(jcr, M_WARNING, 0, _("Max block size %u not multiple of device %s block size=%d.\n"),
-            dev->max_block_size, dev->print_name(), TAPE_BSIZE);
-   }
+  if (dev->max_volume_size != 0 &&
+      dev->max_volume_size < (dev->max_block_size << 4)) {
+    Jmsg(jcr, M_ERROR_TERM, 0,
+         _("Max Vol Size < 8 * Max Block Size for device %s\n"),
+         dev->print_name());
+  }
 
-   if (dev->max_volume_size != 0 && dev->max_volume_size < (dev->max_block_size << 4)) {
-      Jmsg(jcr, M_ERROR_TERM, 0, _("Max Vol Size < 8 * Max Block Size for device %s\n"), dev->print_name());
-   }
+  Dmsg3(100, "set minblocksize to %d, maxblocksize to %d on device %s\n",
+        dev->min_block_size, dev->max_block_size, dev->print_name());
 
-   Dmsg3(100, "set minblocksize to %d, maxblocksize to %d on device %s\n",
-         dev->min_block_size, dev->max_block_size, dev->print_name());
-
-   /*
-    * If blocklen is not dev->max_block_size create a new block with the right size.
-    * (as header is always dev->label_block_size which is preset with DEFAULT_BLOCK_SIZE)
-    */
-   if (dcr->block) {
-     if (dcr->block->buf_len != dev->max_block_size) {
-         Dmsg2(100, "created new block of buf_len: %u on device %s\n",
-               dev->max_block_size, dev->print_name());
-         FreeBlock(dcr->block);
-         dcr->block = new_block(dev);
-         Dmsg2(100, "created new block of buf_len: %u on device %s, freeing block\n",
-               dcr->block->buf_len, dev->print_name());
-      }
-   }
+  /*
+   * If blocklen is not dev->max_block_size create a new block with the right
+   * size. (as header is always dev->label_block_size which is preset with
+   * DEFAULT_BLOCK_SIZE)
+   */
+  if (dcr->block) {
+    if (dcr->block->buf_len != dev->max_block_size) {
+      Dmsg2(100, "created new block of buf_len: %u on device %s\n",
+            dev->max_block_size, dev->print_name());
+      FreeBlock(dcr->block);
+      dcr->block = new_block(dev);
+      Dmsg2(100,
+            "created new block of buf_len: %u on device %s, freeing block\n",
+            dcr->block->buf_len, dev->print_name());
+    }
+  }
 }
 
 /**
@@ -554,27 +575,29 @@ void Device::SetBlocksizes(DeviceControlRecord *dcr) {
  * to read labels as we want to always use that blocksize when
  * writing volume labels
  */
-void Device::SetLabelBlocksize(DeviceControlRecord *dcr)
+void Device::SetLabelBlocksize(DeviceControlRecord* dcr)
 {
-   Device *dev = this;
-   Dmsg3(100, "setting minblocksize to %u, "
-              "maxblocksize to label_block_size=%u, on device %s\n",
-         dev->device->label_block_size, dev->device->label_block_size, dev->print_name());
+  Device* dev = this;
+  Dmsg3(100,
+        "setting minblocksize to %u, "
+        "maxblocksize to label_block_size=%u, on device %s\n",
+        dev->device->label_block_size, dev->device->label_block_size,
+        dev->print_name());
 
-   dev->min_block_size = dev->device->label_block_size;
-   dev->max_block_size = dev->device->label_block_size;
-   /*
-    * If blocklen is not dev->max_block_size create a new block with the right size
-    * (as header is always label_block_size)
-    */
-   if (dcr->block) {
-     if (dcr->block->buf_len != dev->max_block_size) {
-         FreeBlock(dcr->block);
-         dcr->block = new_block(dev);
-         Dmsg2(100, "created new block of buf_len: %u on device %s\n",
-               dcr->block->buf_len, dev->print_name());
-      }
-   }
+  dev->min_block_size = dev->device->label_block_size;
+  dev->max_block_size = dev->device->label_block_size;
+  /*
+   * If blocklen is not dev->max_block_size create a new block with the right
+   * size (as header is always label_block_size)
+   */
+  if (dcr->block) {
+    if (dcr->block->buf_len != dev->max_block_size) {
+      FreeBlock(dcr->block);
+      dcr->block = new_block(dev);
+      Dmsg2(100, "created new block of buf_len: %u on device %s\n",
+            dcr->block->buf_len, dev->print_name());
+    }
+  }
 }
 
 /**
@@ -590,144 +613,143 @@ void Device::SetLabelBlocksize(DeviceControlRecord *dcr)
  * In the case of a file, the full name is the device name
  * (archive_name) with the VolName concatenated.
  */
-bool Device::open(DeviceControlRecord *dcr, int omode)
+bool Device::open(DeviceControlRecord* dcr, int omode)
 {
-   char preserve[ST_BYTES];
+  char preserve[ST_BYTES];
 
-   ClearAllBits(ST_MAX, preserve);
-   if (IsOpen()) {
-      if (open_mode == omode) {
-         return true;
-      } else {
-         d_close(fd_);
-         ClearOpened();
-         Dmsg0(100, "Close fd for mode change.\n");
+  ClearAllBits(ST_MAX, preserve);
+  if (IsOpen()) {
+    if (open_mode == omode) {
+      return true;
+    } else {
+      d_close(fd_);
+      ClearOpened();
+      Dmsg0(100, "Close fd for mode change.\n");
 
-         if (BitIsSet(ST_LABEL, state))
-            SetBit(ST_LABEL, preserve);
-         if (BitIsSet(ST_APPENDREADY, state))
-            SetBit(ST_APPENDREADY, preserve);
-         if (BitIsSet(ST_READREADY, state))
-            SetBit(ST_READREADY, preserve);
-      }
-   }
+      if (BitIsSet(ST_LABEL, state)) SetBit(ST_LABEL, preserve);
+      if (BitIsSet(ST_APPENDREADY, state)) SetBit(ST_APPENDREADY, preserve);
+      if (BitIsSet(ST_READREADY, state)) SetBit(ST_READREADY, preserve);
+    }
+  }
 
-   if (dcr) {
-      dcr->setVolCatName(dcr->VolumeName);
-      VolCatInfo = dcr->VolCatInfo;    /* structure assign */
-   }
+  if (dcr) {
+    dcr->setVolCatName(dcr->VolumeName);
+    VolCatInfo = dcr->VolCatInfo; /* structure assign */
+  }
 
-   Dmsg4(100, "open dev: type=%d dev_name=%s vol=%s mode=%s\n", dev_type,
-         print_name(), getVolCatName(), mode_to_str(omode));
+  Dmsg4(100, "open dev: type=%d dev_name=%s vol=%s mode=%s\n", dev_type,
+        print_name(), getVolCatName(), mode_to_str(omode));
 
-   ClearBit(ST_LABEL, state);
-   ClearBit(ST_APPENDREADY, state);
-   ClearBit(ST_READREADY, state);
-   ClearBit(ST_EOT, state);
-   ClearBit(ST_WEOT, state);
-   ClearBit(ST_EOF, state);
+  ClearBit(ST_LABEL, state);
+  ClearBit(ST_APPENDREADY, state);
+  ClearBit(ST_READREADY, state);
+  ClearBit(ST_EOT, state);
+  ClearBit(ST_WEOT, state);
+  ClearBit(ST_EOF, state);
 
-   label_type = B_BAREOS_LABEL;
+  label_type = B_BAREOS_LABEL;
 
-   /*
-    * We are about to open the device so let any plugin know we are.
-    */
-   if (dcr && GeneratePluginEvent(dcr->jcr, bsdEventDeviceOpen, dcr) != bRC_OK) {
-      Dmsg0(100, "open_dev: bsdEventDeviceOpen failed\n");
-      return false;
-   }
+  /*
+   * We are about to open the device so let any plugin know we are.
+   */
+  if (dcr && GeneratePluginEvent(dcr->jcr, bsdEventDeviceOpen, dcr) != bRC_OK) {
+    Dmsg0(100, "open_dev: bsdEventDeviceOpen failed\n");
+    return false;
+  }
 
-   Dmsg1(100, "call OpenDevice mode=%s\n", mode_to_str(omode));
-   OpenDevice(dcr, omode);
+  Dmsg1(100, "call OpenDevice mode=%s\n", mode_to_str(omode));
+  OpenDevice(dcr, omode);
 
-   /*
-    * Reset any important state info
-    */
-   CopySetBits(ST_MAX, preserve, state);
+  /*
+   * Reset any important state info
+   */
+  CopySetBits(ST_MAX, preserve, state);
 
-   Dmsg2(100, "preserve=%08o fd=%d\n", preserve, fd_);
+  Dmsg2(100, "preserve=%08o fd=%d\n", preserve, fd_);
 
-   return fd_ >= 0;
+  return fd_ >= 0;
 }
 
 void Device::set_mode(int mode)
 {
-   switch (mode) {
-   case CREATE_READ_WRITE:
+  switch (mode) {
+    case CREATE_READ_WRITE:
       oflags = O_CREAT | O_RDWR | O_BINARY;
       break;
-   case OPEN_READ_WRITE:
+    case OPEN_READ_WRITE:
       oflags = O_RDWR | O_BINARY;
       break;
-   case OPEN_READ_ONLY:
+    case OPEN_READ_ONLY:
       oflags = O_RDONLY | O_BINARY;
       break;
-   case OPEN_WRITE_ONLY:
+    case OPEN_WRITE_ONLY:
       oflags = O_WRONLY | O_BINARY;
       break;
-   default:
+    default:
       Emsg0(M_ABORT, 0, _("Illegal mode given to open dev.\n"));
-   }
+  }
 }
 
 /**
  * Open a device.
  */
-void Device::OpenDevice(DeviceControlRecord *dcr, int omode)
+void Device::OpenDevice(DeviceControlRecord* dcr, int omode)
 {
-   PoolMem archive_name(PM_FNAME);
+  PoolMem archive_name(PM_FNAME);
 
-   GetAutochangerLoadedSlot(dcr);
+  GetAutochangerLoadedSlot(dcr);
 
-   /*
-    * Handle opening of File Archive (not a tape)
-    */
-   PmStrcpy(archive_name, dev_name);
+  /*
+   * Handle opening of File Archive (not a tape)
+   */
+  PmStrcpy(archive_name, dev_name);
 
-   /*
-    * If this is a virtual autochanger (i.e. changer_res != NULL) we simply use
-    * the device name, assuming it has been appropriately setup by the "autochanger".
-    */
-   if (!device->changer_res || device->changer_command[0] == 0) {
-      if (VolCatInfo.VolCatName[0] == 0) {
-         Mmsg(errmsg, _("Could not open file device %s. No Volume name given.\n"),
-            print_name());
-         ClearOpened();
-         return;
-      }
+  /*
+   * If this is a virtual autochanger (i.e. changer_res != NULL) we simply use
+   * the device name, assuming it has been appropriately setup by the
+   * "autochanger".
+   */
+  if (!device->changer_res || device->changer_command[0] == 0) {
+    if (VolCatInfo.VolCatName[0] == 0) {
+      Mmsg(errmsg, _("Could not open file device %s. No Volume name given.\n"),
+           print_name());
+      ClearOpened();
+      return;
+    }
 
-      if (!IsPathSeparator(archive_name.c_str()[strlen(archive_name.c_str())-1])) {
-         PmStrcat(archive_name, "/");
-      }
-      PmStrcat(archive_name, getVolCatName());
-   }
+    if (!IsPathSeparator(
+            archive_name.c_str()[strlen(archive_name.c_str()) - 1])) {
+      PmStrcat(archive_name, "/");
+    }
+    PmStrcat(archive_name, getVolCatName());
+  }
 
-   mount(dcr, 1);                     /* do mount if required */
+  mount(dcr, 1); /* do mount if required */
 
-   open_mode = omode;
-   set_mode(omode);
+  open_mode = omode;
+  set_mode(omode);
 
-   /*
-    * If creating file, give 0640 permissions
-    */
-   Dmsg3(100, "open disk: mode=%s open(%s, %08o, 0640)\n", mode_to_str(omode),
-         archive_name.c_str(), oflags);
+  /*
+   * If creating file, give 0640 permissions
+   */
+  Dmsg3(100, "open disk: mode=%s open(%s, %08o, 0640)\n", mode_to_str(omode),
+        archive_name.c_str(), oflags);
 
-   if ((fd_ = d_open(archive_name.c_str(), oflags, 0640)) < 0) {
-      BErrNo be;
-      dev_errno = errno;
-      Mmsg2(errmsg, _("Could not open: %s, ERR=%s\n"), archive_name.c_str(),
-            be.bstrerror());
-      Dmsg1(100, "open failed: %s", errmsg);
-   }
+  if ((fd_ = d_open(archive_name.c_str(), oflags, 0640)) < 0) {
+    BErrNo be;
+    dev_errno = errno;
+    Mmsg2(errmsg, _("Could not open: %s, ERR=%s\n"), archive_name.c_str(),
+          be.bstrerror());
+    Dmsg1(100, "open failed: %s", errmsg);
+  }
 
-   if (fd_ >= 0) {
-      dev_errno = 0;
-      file = 0;
-      file_addr = 0;
-   }
+  if (fd_ >= 0) {
+    dev_errno = 0;
+    file = 0;
+    file_addr = 0;
+  }
 
-   Dmsg1(100, "open dev: disk fd=%d opened\n", fd_);
+  Dmsg1(100, "open dev: disk fd=%d opened\n", fd_);
 }
 
 /**
@@ -736,37 +758,33 @@ void Device::OpenDevice(DeviceControlRecord *dcr, int omode)
  * Returns: true  on success
  *          false on failure
  */
-bool Device::rewind(DeviceControlRecord *dcr)
+bool Device::rewind(DeviceControlRecord* dcr)
 {
-   Dmsg3(400, "rewind res=%d fd=%d %s\n", NumReserved(), fd_, print_name());
+  Dmsg3(400, "rewind res=%d fd=%d %s\n", NumReserved(), fd_, print_name());
 
-   /*
-    * Remove EOF/EOT flags
-    */
-   ClearBit(ST_EOT, state);
-   ClearBit(ST_EOF, state);
-   ClearBit(ST_WEOT, state);
+  /*
+   * Remove EOF/EOT flags
+   */
+  ClearBit(ST_EOT, state);
+  ClearBit(ST_EOF, state);
+  ClearBit(ST_WEOT, state);
 
-   block_num = file = 0;
-   file_size = 0;
-   file_addr = 0;
+  block_num = file = 0;
+  file_size = 0;
+  file_addr = 0;
 
-   if (fd_ < 0) {
-      return false;
-   }
+  if (fd_ < 0) { return false; }
 
-   if (IsFifo() || IsVtl()) {
-      return true;
-   }
+  if (IsFifo() || IsVtl()) { return true; }
 
-   if (lseek(dcr, (boffset_t)0, SEEK_SET) < 0) {
-      BErrNo be;
-      dev_errno = errno;
-      Mmsg2(errmsg, _("lseek error on %s. ERR=%s"), print_name(), be.bstrerror());
-      return false;
-   }
+  if (lseek(dcr, (boffset_t)0, SEEK_SET) < 0) {
+    BErrNo be;
+    dev_errno = errno;
+    Mmsg2(errmsg, _("lseek error on %s. ERR=%s"), print_name(), be.bstrerror());
+    return false;
+  }
 
-   return true;
+  return true;
 }
 
 /**
@@ -774,24 +792,25 @@ bool Device::rewind(DeviceControlRecord *dcr)
  */
 void Device::SetAteof()
 {
-   SetEof();
-   file_addr = 0;
-   file_size = 0;
-   block_num = 0;
+  SetEof();
+  file_addr = 0;
+  file_size = 0;
+  block_num = 0;
 }
 
 /**
- * Called to indicate we are now at the end of the volume, and writing is not possible.
+ * Called to indicate we are now at the end of the volume, and writing is not
+ * possible.
  */
 void Device::SetAteot()
 {
-   /*
-    * Make volume effectively read-only
-    */
-   SetBit(ST_EOF, state);
-   SetBit(ST_EOT, state);
-   SetBit(ST_WEOT, state);
-   ClearAppend();
+  /*
+   * Make volume effectively read-only
+   */
+  SetBit(ST_EOF, state);
+  SetBit(ST_EOT, state);
+  SetBit(ST_WEOT, state);
+  ClearAppend();
 }
 
 /**
@@ -800,46 +819,43 @@ void Device::SetAteot()
  * Returns: true  on succes
  *          false on error
  */
-bool Device::eod(DeviceControlRecord *dcr)
+bool Device::eod(DeviceControlRecord* dcr)
 {
-   boffset_t pos;
+  boffset_t pos;
 
-   if (fd_ < 0) {
-      dev_errno = EBADF;
-      Mmsg1(errmsg, _("Bad call to eod. Device %s not open\n"), print_name());
-      return false;
-   }
+  if (fd_ < 0) {
+    dev_errno = EBADF;
+    Mmsg1(errmsg, _("Bad call to eod. Device %s not open\n"), print_name());
+    return false;
+  }
 
-   if (IsVtl()) {
-      return true;
-   }
+  if (IsVtl()) { return true; }
 
-   Dmsg0(100, "Enter eod\n");
-   if (AtEot()) {
-      return true;
-   }
+  Dmsg0(100, "Enter eod\n");
+  if (AtEot()) { return true; }
 
-   ClearEof();         /* remove EOF flag */
+  ClearEof(); /* remove EOF flag */
 
-   block_num = file = 0;
-   file_size = 0;
-   file_addr = 0;
+  block_num = file = 0;
+  file_size = 0;
+  file_addr = 0;
 
-   pos = lseek(dcr, (boffset_t)0, SEEK_END);
-   Dmsg1(200, "====== Seek to %lld\n", pos);
+  pos = lseek(dcr, (boffset_t)0, SEEK_END);
+  Dmsg1(200, "====== Seek to %lld\n", pos);
 
-   if (pos >= 0) {
-      UpdatePos(dcr);
-      SetEot();
-      return true;
-   }
+  if (pos >= 0) {
+    UpdatePos(dcr);
+    SetEot();
+    return true;
+  }
 
-   dev_errno = errno;
-   BErrNo be;
-   Mmsg2(errmsg, _("lseek error on %s. ERR=%s.\n"), print_name(), be.bstrerror());
-   Dmsg0(100, errmsg);
+  dev_errno = errno;
+  BErrNo be;
+  Mmsg2(errmsg, _("lseek error on %s. ERR=%s.\n"), print_name(),
+        be.bstrerror());
+  Dmsg0(100, errmsg);
 
-   return false;
+  return false;
 }
 
 /**
@@ -848,97 +864,90 @@ bool Device::eod(DeviceControlRecord *dcr)
  * Returns: true  on succes
  *          false on error
  */
-bool Device::UpdatePos(DeviceControlRecord *dcr)
+bool Device::UpdatePos(DeviceControlRecord* dcr)
 {
-   boffset_t pos;
-   bool ok = true;
+  boffset_t pos;
+  bool ok = true;
 
-   if (!IsOpen()) {
-      dev_errno = EBADF;
-      Mmsg0(errmsg, _("Bad device call. Device not open\n"));
-      Emsg1(M_FATAL, 0, "%s", errmsg);
-      return false;
-   }
+  if (!IsOpen()) {
+    dev_errno = EBADF;
+    Mmsg0(errmsg, _("Bad device call. Device not open\n"));
+    Emsg1(M_FATAL, 0, "%s", errmsg);
+    return false;
+  }
 
-   if (IsFifo() || IsVtl()) {
-      return true;
-   }
+  if (IsFifo() || IsVtl()) { return true; }
 
-   file = 0;
-   file_addr = 0;
-   pos = lseek(dcr, (boffset_t)0, SEEK_CUR);
-   if (pos < 0) {
-      BErrNo be;
-      dev_errno = errno;
-      Pmsg1(000, _("Seek error: ERR=%s\n"), be.bstrerror());
-      Mmsg2(errmsg, _("lseek error on %s. ERR=%s.\n"), print_name(), be.bstrerror());
-      ok = false;
-   } else {
-      file_addr = pos;
-      block_num = (uint32_t)pos;
-      file = (uint32_t)(pos >> 32);
-   }
+  file = 0;
+  file_addr = 0;
+  pos = lseek(dcr, (boffset_t)0, SEEK_CUR);
+  if (pos < 0) {
+    BErrNo be;
+    dev_errno = errno;
+    Pmsg1(000, _("Seek error: ERR=%s\n"), be.bstrerror());
+    Mmsg2(errmsg, _("lseek error on %s. ERR=%s.\n"), print_name(),
+          be.bstrerror());
+    ok = false;
+  } else {
+    file_addr = pos;
+    block_num = (uint32_t)pos;
+    file = (uint32_t)(pos >> 32);
+  }
 
-   return ok;
+  return ok;
 }
 
-char *Device::StatusDev()
+char* Device::StatusDev()
 {
-   char *status;
+  char* status;
 
-   status = (char *)malloc(BMT_BYTES);
-   ClearAllBits(BMT_MAX, status);
+  status = (char*)malloc(BMT_BYTES);
+  ClearAllBits(BMT_MAX, status);
 
-   if (BitIsSet(ST_EOT, state) || BitIsSet(ST_WEOT, state)) {
-      SetBit(BMT_EOD, status);
-      Pmsg0(-20, " EOD");
-   }
+  if (BitIsSet(ST_EOT, state) || BitIsSet(ST_WEOT, state)) {
+    SetBit(BMT_EOD, status);
+    Pmsg0(-20, " EOD");
+  }
 
-   if (BitIsSet(ST_EOF, state)) {
-      SetBit(BMT_EOF, status);
-      Pmsg0(-20, " EOF");
-   }
+  if (BitIsSet(ST_EOF, state)) {
+    SetBit(BMT_EOF, status);
+    Pmsg0(-20, " EOF");
+  }
 
-   SetBit(BMT_ONLINE, status);
-   SetBit(BMT_BOT, status);
+  SetBit(BMT_ONLINE, status);
+  SetBit(BMT_BOT, status);
 
-   return status;
+  return status;
 }
 
 bool Device::OfflineOrRewind()
 {
-   if (fd_ < 0) {
-      return false;
-   }
-   if (HasCap(CAP_OFFLINEUNMOUNT)) {
-      return offline();
-   } else {
-      /*
-       * Note, this rewind probably should not be here (it wasn't
-       * in prior versions of Bareos), but on FreeBSD, this is
-       * needed in the case the tape was "frozen" due to an error
-       * such as backspacing after writing and EOF. If it is not
-       * done, all future references to the drive get and I/O error.
-       */
-      clrerror(MTREW);
-      return rewind(NULL);
-   }
+  if (fd_ < 0) { return false; }
+  if (HasCap(CAP_OFFLINEUNMOUNT)) {
+    return offline();
+  } else {
+    /*
+     * Note, this rewind probably should not be here (it wasn't
+     * in prior versions of Bareos), but on FreeBSD, this is
+     * needed in the case the tape was "frozen" due to an error
+     * such as backspacing after writing and EOF. If it is not
+     * done, all future references to the drive get and I/O error.
+     */
+    clrerror(MTREW);
+    return rewind(NULL);
+  }
 }
 
 void Device::SetSlot(slot_number_t slot)
 {
-   slot_ = slot;
-   if (vol) {
-      vol->ClearSlot();
-   }
+  slot_ = slot;
+  if (vol) { vol->ClearSlot(); }
 }
 
 void Device::ClearSlot()
 {
-   slot_ = -1;
-   if (vol) {
-      vol->SetSlot(-1);
-   }
+  slot_ = -1;
+  if (vol) { vol->SetSlot(-1); }
 }
 
 /**
@@ -947,31 +956,32 @@ void Device::ClearSlot()
  * Returns: false on failure
  *          true  on success
  */
-bool Device::Reposition(DeviceControlRecord *dcr, uint32_t rfile, uint32_t rblock)
+bool Device::Reposition(DeviceControlRecord* dcr,
+                        uint32_t rfile,
+                        uint32_t rblock)
 {
-   if (!IsOpen()) {
-      dev_errno = EBADF;
-      Mmsg0(errmsg, _("Bad call to Reposition. Device not open\n"));
-      Emsg0(M_FATAL, 0, errmsg);
-      return false;
-   }
+  if (!IsOpen()) {
+    dev_errno = EBADF;
+    Mmsg0(errmsg, _("Bad call to Reposition. Device not open\n"));
+    Emsg0(M_FATAL, 0, errmsg);
+    return false;
+  }
 
-   if (IsFifo() || IsVtl()) {
-      return true;
-   }
+  if (IsFifo() || IsVtl()) { return true; }
 
-   boffset_t pos = (((boffset_t)rfile) << 32) | rblock;
-   Dmsg1(100, "===== lseek to %d\n", (int)pos);
-   if (lseek(dcr, pos, SEEK_SET) == (boffset_t)-1) {
-      BErrNo be;
-      dev_errno = errno;
-      Mmsg2(errmsg, _("lseek error on %s. ERR=%s.\n"), print_name(), be.bstrerror());
-      return false;
-   }
-   file = rfile;
-   block_num = rblock;
-   file_addr = pos;
-   return true;
+  boffset_t pos = (((boffset_t)rfile) << 32) | rblock;
+  Dmsg1(100, "===== lseek to %d\n", (int)pos);
+  if (lseek(dcr, pos, SEEK_SET) == (boffset_t)-1) {
+    BErrNo be;
+    dev_errno = errno;
+    Mmsg2(errmsg, _("lseek error on %s. ERR=%s.\n"), print_name(),
+          be.bstrerror());
+    return false;
+  }
+  file = rfile;
+  block_num = rblock;
+  file_addr = pos;
+  return true;
 }
 
 /**
@@ -979,10 +989,10 @@ bool Device::Reposition(DeviceControlRecord *dcr, uint32_t rfile, uint32_t rbloc
  */
 void Device::SetUnload()
 {
-   if (!unload_ && VolHdr.VolumeName[0] != 0) {
-       unload_ = true;
-       memcpy(UnloadVolName, VolHdr.VolumeName, sizeof(UnloadVolName));
-   }
+  if (!unload_ && VolHdr.VolumeName[0] != 0) {
+    unload_ = true;
+    memcpy(UnloadVolName, VolHdr.VolumeName, sizeof(UnloadVolName));
+  }
 }
 
 /**
@@ -990,88 +1000,85 @@ void Device::SetUnload()
  */
 void Device::ClearVolhdr()
 {
-   Dmsg1(100, "Clear volhdr vol=%s\n", VolHdr.VolumeName);
-   memset(&VolHdr, 0, sizeof(VolHdr));
-   setVolCatInfo(false);
+  Dmsg1(100, "Clear volhdr vol=%s\n", VolHdr.VolumeName);
+  memset(&VolHdr, 0, sizeof(VolHdr));
+  setVolCatInfo(false);
 }
 
 /**
  * Close the device.
  */
-bool Device::close(DeviceControlRecord *dcr)
+bool Device::close(DeviceControlRecord* dcr)
 {
-   bool retval = true;
-   int status;
-   Dmsg1(100, "close_dev %s\n", print_name());
+  bool retval = true;
+  int status;
+  Dmsg1(100, "close_dev %s\n", print_name());
 
-   if (!IsOpen()) {
-      Dmsg2(100, "device %s already closed vol=%s\n", print_name(), VolHdr.VolumeName);
-      goto bail_out;                  /* already closed */
-   }
+  if (!IsOpen()) {
+    Dmsg2(100, "device %s already closed vol=%s\n", print_name(),
+          VolHdr.VolumeName);
+    goto bail_out; /* already closed */
+  }
 
-   if (!norewindonclose) {
-      OfflineOrRewind();
-   }
+  if (!norewindonclose) { OfflineOrRewind(); }
 
-   switch (dev_type) {
-   case B_VTL_DEV:
-   case B_TAPE_DEV:
+  switch (dev_type) {
+    case B_VTL_DEV:
+    case B_TAPE_DEV:
       UnlockDoor();
       /*
        * Fall through wanted
        */
-   default:
+    default:
       status = d_close(fd_);
       if (status < 0) {
-         BErrNo be;
+        BErrNo be;
 
-         Mmsg2(errmsg, _("Unable to close device %s. ERR=%s\n"),
-               print_name(), be.bstrerror());
-         dev_errno = errno;
-         retval = false;
+        Mmsg2(errmsg, _("Unable to close device %s. ERR=%s\n"), print_name(),
+              be.bstrerror());
+        dev_errno = errno;
+        retval = false;
       }
       break;
-   }
+  }
 
-   unmount(dcr, 1);                   /* do unmount if required */
+  unmount(dcr, 1); /* do unmount if required */
 
-   /*
-    * Clean up device packet so it can be reused.
-    */
-   ClearOpened();
+  /*
+   * Clean up device packet so it can be reused.
+   */
+  ClearOpened();
 
-   ClearBit(ST_LABEL, state);
-   ClearBit(ST_READREADY, state);
-   ClearBit(ST_APPENDREADY, state);
-   ClearBit(ST_EOT, state);
-   ClearBit(ST_WEOT, state);
-   ClearBit(ST_EOF, state);
-   ClearBit(ST_MOUNTED, state);
-   ClearBit(ST_MEDIA, state);
-   ClearBit(ST_SHORT, state);
+  ClearBit(ST_LABEL, state);
+  ClearBit(ST_READREADY, state);
+  ClearBit(ST_APPENDREADY, state);
+  ClearBit(ST_EOT, state);
+  ClearBit(ST_WEOT, state);
+  ClearBit(ST_EOF, state);
+  ClearBit(ST_MOUNTED, state);
+  ClearBit(ST_MEDIA, state);
+  ClearBit(ST_SHORT, state);
 
-   label_type = B_BAREOS_LABEL;
-   file = block_num = 0;
-   file_size = 0;
-   file_addr = 0;
-   EndFile = EndBlock = 0;
-   open_mode = 0;
-   ClearVolhdr();
-   memset(&VolCatInfo, 0, sizeof(VolCatInfo));
-   if (tid) {
-      StopThreadTimer(tid);
-      tid = 0;
-   }
+  label_type = B_BAREOS_LABEL;
+  file = block_num = 0;
+  file_size = 0;
+  file_addr = 0;
+  EndFile = EndBlock = 0;
+  open_mode = 0;
+  ClearVolhdr();
+  memset(&VolCatInfo, 0, sizeof(VolCatInfo));
+  if (tid) {
+    StopThreadTimer(tid);
+    tid = 0;
+  }
 
-   /*
-    * We closed the device so let any plugin know we did.
-    */
-   if (dcr) {
-      GeneratePluginEvent(dcr->jcr, bsdEventDeviceClose, dcr);
-   }
+  /*
+   * We closed the device so let any plugin know we did.
+   */
+  if (dcr) { GeneratePluginEvent(dcr->jcr, bsdEventDeviceClose, dcr); }
 
 bail_out:
-   return retval;
+  return retval;
 }
 
 /**
@@ -1079,34 +1086,31 @@ bail_out:
  * If timeout, wait until the mount command returns 0.
  * If !timeout, try to mount the device only once.
  */
-bool Device::mount(DeviceControlRecord *dcr, int timeout)
+bool Device::mount(DeviceControlRecord* dcr, int timeout)
 {
-   bool retval = true;
-   Dmsg0(190, "Enter mount\n");
+  bool retval = true;
+  Dmsg0(190, "Enter mount\n");
 
-   if (IsMounted()) {
-      return true;
-   }
+  if (IsMounted()) { return true; }
 
-   retval = MountBackend(dcr, timeout);
+  retval = MountBackend(dcr, timeout);
 
-   /*
-    * When the mount command succeeded sent a
-    * bsdEventDeviceMount plugin event so any plugin
-    * that want to do something can do things now.
-    */
-   if (retval && GeneratePluginEvent(dcr->jcr, bsdEventDeviceMount, dcr) != bRC_OK) {
-      retval = false;
-   }
+  /*
+   * When the mount command succeeded sent a
+   * bsdEventDeviceMount plugin event so any plugin
+   * that want to do something can do things now.
+   */
+  if (retval &&
+      GeneratePluginEvent(dcr->jcr, bsdEventDeviceMount, dcr) != bRC_OK) {
+    retval = false;
+  }
 
-   /*
-    * Mark the device mounted if we succeed.
-    */
-   if (retval) {
-      SetMounted();
-   }
+  /*
+   * Mark the device mounted if we succeed.
+   */
+  if (retval) { SetMounted(); }
 
-   return retval;
+  return retval;
 }
 
 /**
@@ -1114,39 +1118,36 @@ bool Device::mount(DeviceControlRecord *dcr, int timeout)
  * If timeout, wait until the unmount command returns 0.
  * If !timeout, try to unmount the device only once.
  */
-bool Device::unmount(DeviceControlRecord *dcr, int timeout)
+bool Device::unmount(DeviceControlRecord* dcr, int timeout)
 {
-   bool retval = true;
-   Dmsg0(100, "Enter unmount\n");
+  bool retval = true;
+  Dmsg0(100, "Enter unmount\n");
 
-   /*
-    * See if the device is mounted.
-    */
-   if (!IsMounted()) {
-      return true;
-   }
+  /*
+   * See if the device is mounted.
+   */
+  if (!IsMounted()) { return true; }
 
-   /*
-    * Before running the unmount program sent a
-    * bsdEventDeviceUnmount plugin event so any plugin
-    * that want to do something can do things now.
-    */
-   if (dcr && GeneratePluginEvent(dcr->jcr, bsdEventDeviceUnmount, dcr) != bRC_OK) {
-      retval = false;
-      goto bail_out;
-   }
+  /*
+   * Before running the unmount program sent a
+   * bsdEventDeviceUnmount plugin event so any plugin
+   * that want to do something can do things now.
+   */
+  if (dcr &&
+      GeneratePluginEvent(dcr->jcr, bsdEventDeviceUnmount, dcr) != bRC_OK) {
+    retval = false;
+    goto bail_out;
+  }
 
-   retval = UnmountBackend(dcr, timeout);
+  retval = UnmountBackend(dcr, timeout);
 
-   /*
-    * Mark the device unmounted if we succeed.
-    */
-   if (retval) {
-      ClearMounted();
-   }
+  /*
+   * Mark the device unmounted if we succeed.
+   */
+  if (retval) { ClearMounted(); }
 
 bail_out:
-   return retval;
+  return retval;
 }
 
 /**
@@ -1159,44 +1160,44 @@ bail_out:
  *  imsg = input string containing edit codes (%x)
  *
  */
-void Device::EditMountCodes(PoolMem &omsg, const char *imsg)
+void Device::EditMountCodes(PoolMem& omsg, const char* imsg)
 {
-   const char *p;
-   const char *str;
-   char add[20];
+  const char* p;
+  const char* str;
+  char add[20];
 
-   PoolMem archive_name(PM_FNAME);
+  PoolMem archive_name(PM_FNAME);
 
-   omsg.c_str()[0] = 0;
-   Dmsg1(800, "EditMountCodes: %s\n", imsg);
-   for (p=imsg; *p; p++) {
-      if (*p == '%') {
-         switch (*++p) {
-         case '%':
-            str = "%";
-            break;
-         case 'a':
-            str = dev_name;
-            break;
-         case 'm':
-            str = device->mount_point;
-            break;
-         default:
-            add[0] = '%';
-            add[1] = *p;
-            add[2] = 0;
-            str = add;
-            break;
-         }
-      } else {
-         add[0] = *p;
-         add[1] = 0;
-         str = add;
+  omsg.c_str()[0] = 0;
+  Dmsg1(800, "EditMountCodes: %s\n", imsg);
+  for (p = imsg; *p; p++) {
+    if (*p == '%') {
+      switch (*++p) {
+        case '%':
+          str = "%";
+          break;
+        case 'a':
+          str = dev_name;
+          break;
+        case 'm':
+          str = device->mount_point;
+          break;
+        default:
+          add[0] = '%';
+          add[1] = *p;
+          add[2] = 0;
+          str = add;
+          break;
       }
-      Dmsg1(1900, "add_str %s\n", str);
-      PmStrcat(omsg, (char *)str);
-      Dmsg1(1800, "omsg=%s\n", omsg.c_str());
-   }
+    } else {
+      add[0] = *p;
+      add[1] = 0;
+      str = add;
+    }
+    Dmsg1(1900, "add_str %s\n", str);
+    PmStrcat(omsg, (char*)str);
+    Dmsg1(1800, "omsg=%s\n", omsg.c_str());
+  }
 }
 
 /**
@@ -1204,134 +1205,123 @@ void Device::EditMountCodes(PoolMem &omsg, const char *imsg)
  */
 btime_t Device::GetTimerCount()
 {
-   btime_t temp = last_timer;
-   last_timer = GetCurrentBtime();
-   temp = last_timer - temp;   /* get elapsed time */
+  btime_t temp = last_timer;
+  last_timer = GetCurrentBtime();
+  temp = last_timer - temp; /* get elapsed time */
 
-   return (temp > 0) ? temp : 0; /* take care of skewed clock */
+  return (temp > 0) ? temp : 0; /* take care of skewed clock */
 }
 
 /**
  * Read from device.
  */
-ssize_t Device::read(void *buf, size_t len)
+ssize_t Device::read(void* buf, size_t len)
 {
-   ssize_t read_len ;
+  ssize_t read_len;
 
-   GetTimerCount();
+  GetTimerCount();
 
-   read_len = d_read(fd_, buf, len);
+  read_len = d_read(fd_, buf, len);
 
-   last_tick = GetTimerCount();
+  last_tick = GetTimerCount();
 
-   DevReadTime += last_tick;
-   VolCatInfo.VolReadTime += last_tick;
+  DevReadTime += last_tick;
+  VolCatInfo.VolReadTime += last_tick;
 
-   if (read_len > 0) {          /* skip error */
-      DevReadBytes += read_len;
-   }
+  if (read_len > 0) { /* skip error */
+    DevReadBytes += read_len;
+  }
 
-   return read_len;
+  return read_len;
 }
 
 /**
  * Write to device.
  */
-ssize_t Device::write(const void *buf, size_t len)
+ssize_t Device::write(const void* buf, size_t len)
 {
-   ssize_t write_len ;
+  ssize_t write_len;
 
-   GetTimerCount();
+  GetTimerCount();
 
-   write_len = d_write(fd_, buf, len);
+  write_len = d_write(fd_, buf, len);
 
-   last_tick = GetTimerCount();
+  last_tick = GetTimerCount();
 
-   DevWriteTime += last_tick;
-   VolCatInfo.VolWriteTime += last_tick;
+  DevWriteTime += last_tick;
+  VolCatInfo.VolWriteTime += last_tick;
 
-   if (write_len > 0) {         /* skip error */
-      DevWriteBytes += write_len;
-   }
+  if (write_len > 0) { /* skip error */
+    DevWriteBytes += write_len;
+  }
 
-   return write_len;
+  return write_len;
 }
 
 /**
  * Return the resource name for the device
  */
-const char *Device::name() const
-{
-   return device->name();
-}
+const char* Device::name() const { return device->name(); }
 
 /**
  * Free memory allocated for the device
  */
 void Device::term()
 {
-   Dmsg1(900, "term dev: %s\n", print_name());
+  Dmsg1(900, "term dev: %s\n", print_name());
 
-   /*
-    * On termination we don't have any DCRs left
-    * so we call close with a NULL argument as
-    * the dcr argument is only used in the unmount
-    * method to generate a plugin_event we just check
-    * there if the dcr is not NULL and otherwise skip
-    * the plugin event generation.
-    */
-   close(NULL);
+  /*
+   * On termination we don't have any DCRs left
+   * so we call close with a NULL argument as
+   * the dcr argument is only used in the unmount
+   * method to generate a plugin_event we just check
+   * there if the dcr is not NULL and otherwise skip
+   * the plugin event generation.
+   */
+  close(NULL);
 
-   if (dev_name) {
-      FreeMemory(dev_name);
-      dev_name = NULL;
-   }
-   if (dev_options) {
-      FreeMemory(dev_options);
-      dev_options = NULL;
-   }
-   if (prt_name) {
-      FreeMemory(prt_name);
-      prt_name = NULL;
-   }
-   if (errmsg) {
-      FreePoolMemory(errmsg);
-      errmsg = NULL;
-   }
-   pthread_mutex_destroy(&mutex_);
-   pthread_cond_destroy(&wait);
-   pthread_cond_destroy(&wait_next_vol);
-   pthread_mutex_destroy(&spool_mutex);
-// RwlDestroy(&lock);
-   if (attached_dcrs) {
-      delete attached_dcrs;
-      attached_dcrs = NULL;
-   }
-   if (device) {
-      device->dev = NULL;
-   }
-   delete this;
+  if (dev_name) {
+    FreeMemory(dev_name);
+    dev_name = NULL;
+  }
+  if (dev_options) {
+    FreeMemory(dev_options);
+    dev_options = NULL;
+  }
+  if (prt_name) {
+    FreeMemory(prt_name);
+    prt_name = NULL;
+  }
+  if (errmsg) {
+    FreePoolMemory(errmsg);
+    errmsg = NULL;
+  }
+  pthread_mutex_destroy(&mutex_);
+  pthread_cond_destroy(&wait);
+  pthread_cond_destroy(&wait_next_vol);
+  pthread_mutex_destroy(&spool_mutex);
+  // RwlDestroy(&lock);
+  if (attached_dcrs) {
+    delete attached_dcrs;
+    attached_dcrs = NULL;
+  }
+  if (device) { device->dev = NULL; }
+  delete this;
 }
 
 bool Device::CanStealLock() const
 {
-   return   blocked_ &&
-           (blocked_ == BST_UNMOUNTED ||
-            blocked_ == BST_WAITING_FOR_SYSOP ||
-            blocked_ == BST_UNMOUNTED_WAITING_FOR_SYSOP);
+  return blocked_ &&
+         (blocked_ == BST_UNMOUNTED || blocked_ == BST_WAITING_FOR_SYSOP ||
+          blocked_ == BST_UNMOUNTED_WAITING_FOR_SYSOP);
 }
 
 bool Device::waiting_for_mount() const
 {
-   return
-           (blocked_ == BST_UNMOUNTED ||
-            blocked_ == BST_WAITING_FOR_SYSOP ||
-            blocked_ == BST_UNMOUNTED_WAITING_FOR_SYSOP);
+  return (blocked_ == BST_UNMOUNTED || blocked_ == BST_WAITING_FOR_SYSOP ||
+          blocked_ == BST_UNMOUNTED_WAITING_FOR_SYSOP);
 }
 
-bool Device::IsBlocked() const
-{
-   return blocked_ != BST_NOT_BLOCKED;
-}
+bool Device::IsBlocked() const { return blocked_ != BST_NOT_BLOCKED; }
 
 } /* namespace storagedaemon */

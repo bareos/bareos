@@ -27,16 +27,17 @@
 #define MAX_RES_ITEMS 90 /* maximum resource items per CommonResourceHeader */
 
 /*
- * This is the universal header that is at the beginning of every resource record.
+ * This is the universal header that is at the beginning of every resource
+ * record.
  */
 class CommonResourceHeader {
  public:
-  CommonResourceHeader *next;          /* Pointer to next resource of this type */
-  char *name;                          /* Resource name */
-  char *desc;                          /* Resource description */
-  uint32_t rcode;                      /* Resource id or type */
-  int32_t refcnt;                      /* Reference count for releasing */
-  char item_present[MAX_RES_ITEMS];    /* Set if item is present in conf file */
+  CommonResourceHeader* next;       /* Pointer to next resource of this type */
+  char* name;                       /* Resource name */
+  char* desc;                       /* Resource description */
+  uint32_t rcode;                   /* Resource id or type */
+  int32_t refcnt;                   /* Reference count for releasing */
+  char item_present[MAX_RES_ITEMS]; /* Set if item is present in conf file */
   char inherit_content[MAX_RES_ITEMS]; /* Set if item has inherited content */
 };
 

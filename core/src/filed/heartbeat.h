@@ -26,10 +26,10 @@
 
 namespace filedaemon {
 
-void StartHeartbeatMonitor(JobControlRecord *jcr);
-void StopHeartbeatMonitor(JobControlRecord *jcr);
-void StartDirHeartbeat(JobControlRecord *jcr);
-void StopDirHeartbeat(JobControlRecord *jcr);
+void StartHeartbeatMonitor(JobControlRecord* jcr);
+void StopHeartbeatMonitor(JobControlRecord* jcr);
+void StartDirHeartbeat(JobControlRecord* jcr);
+void StopDirHeartbeat(JobControlRecord* jcr);
 
 } /* namespace filedaemon */
 #endif /* BAREOS_FILED_HEARBEAT_H_ */

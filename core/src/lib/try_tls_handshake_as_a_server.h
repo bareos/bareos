@@ -25,6 +25,6 @@
 class BareosSocket;
 class ConfigurationParser;
 
-bool TryTlsHandshakeAsAServer(BareosSocket *bsock, ConfigurationParser *config);
+bool TryTlsHandshakeAsAServer(BareosSocket* bsock, ConfigurationParser* config);
 
 #endif /* BAREOS_LIB_CHECK_FOR_CLEARTEXT_CONNECTION_H_ */

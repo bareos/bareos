@@ -26,8 +26,9 @@
 
 class ConfigurationParser;
 
-typedef bool (*GetTlsPskByFullyQualifiedResourceNameCb_t)(ConfigurationParser *config,
-                                                          const char *fq_name_,
-                                                          std::string &psk_return_value);
+typedef bool (*GetTlsPskByFullyQualifiedResourceNameCb_t)(
+    ConfigurationParser* config,
+    const char* fq_name_,
+    std::string& psk_return_value);
 
 #endif /* BAREOS_LIB_GET_TLS_PSK_BY_FQNAME_CALLBACK_H_ */

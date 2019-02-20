@@ -40,34 +40,37 @@ class ConfigurationParser;
  * Structure to keep track of work queue request
  */
 typedef struct workq_ele_tag {
-   struct workq_ele_tag *next;
-   ConfigurationParser  *config;
-   void                 *data;
+  struct workq_ele_tag* next;
+  ConfigurationParser* config;
+  void* data;
 } workq_ele_t;
 
 /**
  * Structure describing a work queue
  */
 typedef struct workq_tag {
-   pthread_mutex_t   mutex;           /* queue access control */
-   pthread_cond_t    work;            /* wait for work */
-   pthread_attr_t    attr;            /* create detached threads */
-   workq_ele_t       *first, *last;   /* work queue */
-   int               valid;           /* queue initialized */
-   int               quit;            /* workq should quit */
-   int               max_workers;     /* max threads */
-   int               num_workers;     /* current threads */
-   void             *(*HandleConnectionRequest)(ConfigurationParser *config, void *arg);
+  pthread_mutex_t mutex;     /* queue access control */
+  pthread_cond_t work;       /* wait for work */
+  pthread_attr_t attr;       /* create detached threads */
+  workq_ele_t *first, *last; /* work queue */
+  int valid;                 /* queue initialized */
+  int quit;                  /* workq should quit */
+  int max_workers;           /* max threads */
+  int num_workers;           /* current threads */
+  void* (*HandleConnectionRequest)(ConfigurationParser* config, void* arg);
 } workq_t;
 
-#define WORKQ_VALID  0xdec1992
+#define WORKQ_VALID 0xdec1992
 
-extern int WorkqInit(
-              workq_t *wq,
-              int     threads,                                        /* maximum threads */
-              void   *(*engine)(ConfigurationParser* config, void *)  /* engine routine */
-                    );
-extern int WorkqDestroy(workq_t *wq);
-extern int WorkqAdd(workq_t *wq, ConfigurationParser *config, void *element, workq_ele_t **work_item);
+extern int WorkqInit(workq_t* wq,
+                     int threads, /* maximum threads */
+                     void* (*engine)(ConfigurationParser* config,
+                                     void*)/* engine routine */
+);
+extern int WorkqDestroy(workq_t* wq);
+extern int WorkqAdd(workq_t* wq,
+                    ConfigurationParser* config,
+                    void* element,
+                    workq_ele_t** work_item);
 
 #endif /* BAREOS_LIB_WORKQ_H_ */

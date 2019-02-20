@@ -32,28 +32,28 @@
 
 namespace storagedaemon {
 
-class cephfs_device: public Device {
-private:
-   char *cephfs_configstring_;
-   char *cephfs_conffile_;
-   char *basedir_;
-   struct ceph_mount_info *cmount_;
-   POOLMEM *virtual_filename_;
+class cephfs_device : public Device {
+ private:
+  char* cephfs_configstring_;
+  char* cephfs_conffile_;
+  char* basedir_;
+  struct ceph_mount_info* cmount_;
+  POOLMEM* virtual_filename_;
 
-public:
-   cephfs_device();
-   ~cephfs_device();
+ public:
+  cephfs_device();
+  ~cephfs_device();
 
-   /*
-    * Interface from Device
-    */
-   int d_close(int);
-   int d_open(const char *pathname, int flags, int mode);
-   int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL);
-   boffset_t d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence);
-   ssize_t d_read(int fd, void *buffer, size_t count);
-   ssize_t d_write(int fd, const void *buffer, size_t count);
-   bool d_truncate(DeviceControlRecord *dcr);
+  /*
+   * Interface from Device
+   */
+  int d_close(int);
+  int d_open(const char* pathname, int flags, int mode);
+  int d_ioctl(int fd, ioctl_req_t request, char* mt = NULL);
+  boffset_t d_lseek(DeviceControlRecord* dcr, boffset_t offset, int whence);
+  ssize_t d_read(int fd, void* buffer, size_t count);
+  ssize_t d_write(int fd, const void* buffer, size_t count);
+  bool d_truncate(DeviceControlRecord* dcr);
 };
 
 } /* namespace storagedaemon */

@@ -37,7 +37,8 @@
 namespace storagedaemon {
 
 /*
- * Use for versions lower then 0.68.0 of the API the old format and otherwise the new one.
+ * Use for versions lower then 0.68.0 of the API the old format and otherwise
+ * the new one.
  */
 #if LIBRADOS_VERSION_CODE < 17408
 #define DEFAULT_CLIENTID "admin"
@@ -46,66 +47,66 @@ namespace storagedaemon {
 #define DEFAULT_USERNAME "client.admin"
 #endif
 
-class rados_device: public Device {
-private:
-   /*
-    * Private Members
-    */
-   char *rados_configstring_;
-   char *rados_conffile_;
-   char *rados_poolname_;
+class rados_device : public Device {
+ private:
+  /*
+   * Private Members
+   */
+  char* rados_configstring_;
+  char* rados_conffile_;
+  char* rados_poolname_;
 #if LIBRADOS_VERSION_CODE < 17408
-   char *rados_clientid_;
+  char* rados_clientid_;
 #else
-   char *rados_clustername_;
-   char *rados_username_;
+  char* rados_clustername_;
+  char* rados_username_;
 #endif
-   bool cluster_initialized_;
+  bool cluster_initialized_;
 #ifdef HAVE_RADOS_STRIPER
-   bool stripe_volume_;
-   uint64_t stripe_unit_;
-   uint32_t stripe_count_;
-   uint64_t object_size_;
+  bool stripe_volume_;
+  uint64_t stripe_unit_;
+  uint32_t stripe_count_;
+  uint64_t object_size_;
 #endif
-   rados_t cluster_;
-   rados_ioctx_t ctx_;
+  rados_t cluster_;
+  rados_ioctx_t ctx_;
 #ifdef HAVE_RADOS_STRIPER
-   rados_striper_t striper_;
+  rados_striper_t striper_;
 #endif
-   boffset_t offset_;
-   POOLMEM *virtual_filename_;
+  boffset_t offset_;
+  POOLMEM* virtual_filename_;
 
-   /*
-    * Private Methods
-    */
-   ssize_t ReadObjectData(boffset_t offset, char *buffer, size_t count);
-   ssize_t WriteObjectData(boffset_t offset, char *buffer, size_t count);
+  /*
+   * Private Methods
+   */
+  ssize_t ReadObjectData(boffset_t offset, char* buffer, size_t count);
+  ssize_t WriteObjectData(boffset_t offset, char* buffer, size_t count);
 #ifdef HAVE_RADOS_STRIPER
-   ssize_t StriperVolumeSize();
+  ssize_t StriperVolumeSize();
 #endif
-   ssize_t VolumeSize();
+  ssize_t VolumeSize();
 #ifdef HAVE_RADOS_STRIPER
-   bool TruncateStriperVolume(DeviceControlRecord *dcr);
+  bool TruncateStriperVolume(DeviceControlRecord* dcr);
 #endif
-   bool TruncateVolume(DeviceControlRecord *dcr);
+  bool TruncateVolume(DeviceControlRecord* dcr);
 
-public:
-   /*
-    * Public Methods
-    */
-   rados_device();
-   ~rados_device();
+ public:
+  /*
+   * Public Methods
+   */
+  rados_device();
+  ~rados_device();
 
-   /*
-    * Interface from Device
-    */
-   int d_close(int);
-   int d_open(const char *pathname, int flags, int mode);
-   int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL);
-   boffset_t d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence);
-   ssize_t d_read(int fd, void *buffer, size_t count);
-   ssize_t d_write(int fd, const void *buffer, size_t count);
-   bool d_truncate(DeviceControlRecord *dcr);
+  /*
+   * Interface from Device
+   */
+  int d_close(int);
+  int d_open(const char* pathname, int flags, int mode);
+  int d_ioctl(int fd, ioctl_req_t request, char* mt = NULL);
+  boffset_t d_lseek(DeviceControlRecord* dcr, boffset_t offset, int whence);
+  ssize_t d_read(int fd, void* buffer, size_t count);
+  ssize_t d_write(int fd, const void* buffer, size_t count);
+  bool d_truncate(DeviceControlRecord* dcr);
 };
 } /* namespace storagedaemon */
 #endif /* BAREOS_STORED_BACKENDS_RADOS_DEVICE_H_ */

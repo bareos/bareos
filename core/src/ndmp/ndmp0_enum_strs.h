@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2000
- *	Traakan, Inc., Los Altos, CA
- *	All rights reserved.
+ *      Traakan, Inc., Los Altos, CA
+ *      All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -35,14 +35,15 @@
  */
 
 extern struct ndmp_enum_str_table ndmp0_error_table[];
-extern char * ndmp0_error_to_str (ndmp0_error val);
-extern int    ndmp0_error_from_str (ndmp0_error *valp, char *str);
+extern char* ndmp0_error_to_str(ndmp0_error val);
+extern int ndmp0_error_from_str(ndmp0_error* valp, char* str);
 extern struct ndmp_enum_str_table ndmp0_header_message_type_table[];
-extern char * ndmp0_header_message_type_to_str (ndmp0_header_message_type val);
-extern int    ndmp0_header_message_type_from_str (ndmp0_header_message_type *valp, char *str);
+extern char* ndmp0_header_message_type_to_str(ndmp0_header_message_type val);
+extern int ndmp0_header_message_type_from_str(ndmp0_header_message_type* valp,
+                                              char* str);
 extern struct ndmp_enum_str_table ndmp0_message_table[];
-extern char * ndmp0_message_to_str (ndmp0_message val);
-extern int    ndmp0_message_from_str (ndmp0_message *valp, char *str);
+extern char* ndmp0_message_to_str(ndmp0_message val);
+extern int ndmp0_message_from_str(ndmp0_message* valp, char* str);
 extern struct ndmp_enum_str_table ndmp0_connect_reason_table[];
-extern char * ndmp0_connect_reason_to_str (ndmp0_connect_reason val);
-extern int    ndmp0_connect_reason_from_str (ndmp0_connect_reason *valp, char *str);
+extern char* ndmp0_connect_reason_to_str(ndmp0_connect_reason val);
+extern int ndmp0_connect_reason_from_str(ndmp0_connect_reason* valp, char* str);

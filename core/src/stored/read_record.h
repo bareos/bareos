@@ -25,21 +25,22 @@
 
 namespace storagedaemon {
 
-READ_CTX *new_read_context(void);
-void FreeReadContext(READ_CTX *rctx);
-void ReadContextSetRecord(DeviceControlRecord *dcr, READ_CTX *rctx);
-bool ReadNextBlockFromDevice(DeviceControlRecord *dcr,
-                                 SESSION_LABEL *sessrec,
-                                 bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec),
-                                 bool mount_cb(DeviceControlRecord *dcr),
-                                 bool *status);
-bool ReadNextRecordFromBlock(DeviceControlRecord *dcr,
-                                 READ_CTX *rctx,
-                                 bool *done);
-bool ReadRecords(DeviceControlRecord *dcr,
-                  bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec),
-                  bool mount_cb(DeviceControlRecord *dcr));
+READ_CTX* new_read_context(void);
+void FreeReadContext(READ_CTX* rctx);
+void ReadContextSetRecord(DeviceControlRecord* dcr, READ_CTX* rctx);
+bool ReadNextBlockFromDevice(DeviceControlRecord* dcr,
+                             SESSION_LABEL* sessrec,
+                             bool RecordCb(DeviceControlRecord* dcr,
+                                           DeviceRecord* rec),
+                             bool mount_cb(DeviceControlRecord* dcr),
+                             bool* status);
+bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
+                             READ_CTX* rctx,
+                             bool* done);
+bool ReadRecords(DeviceControlRecord* dcr,
+                 bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec),
+                 bool mount_cb(DeviceControlRecord* dcr));
 
 } /* namespace storagedaemon */
 
-#endif // BAREOS_STORED_READ_RECORD_H_
+#endif  // BAREOS_STORED_READ_RECORD_H_

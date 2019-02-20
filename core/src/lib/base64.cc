@@ -29,14 +29,12 @@
 
 #include "include/bareos.h"
 
-static uint8_t const base64_digits[64] =
-{
-  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-  'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-  'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
-};
+static uint8_t const base64_digits[64] = {
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+    'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'};
 
 static int base64_inited = 0;
 static uint8_t base64_map[256];
@@ -44,11 +42,10 @@ static uint8_t base64_map[256];
 /* Initialize the Base 64 conversion routines */
 void Base64Init(void)
 {
-   int i;
-   memset(base64_map, 0, sizeof(base64_map));
-   for (i=0; i<64; i++)
-      base64_map[(uint8_t)base64_digits[i]] = i;
-   base64_inited = 1;
+  int i;
+  memset(base64_map, 0, sizeof(base64_map));
+  for (i = 0; i < 64; i++) base64_map[(uint8_t)base64_digits[i]] = i;
+  base64_inited = 1;
 }
 
 /* Convert a value to base64 characters.
@@ -58,34 +55,34 @@ void Base64Init(void)
  * Returns the number of characters
  * stored (not including the EOS).
  */
-int ToBase64(int64_t value, char *where)
+int ToBase64(int64_t value, char* where)
 {
-   uint64_t val;
-   int i = 0;
-   int n;
+  uint64_t val;
+  int i = 0;
+  int n;
 
-   /* Handle negative values */
-   if (value < 0) {
-      where[i++] = '-';
-      value = -value;
-   }
+  /* Handle negative values */
+  if (value < 0) {
+    where[i++] = '-';
+    value = -value;
+  }
 
-   /* Determine output size */
-   val = value;
-   do {
-      val >>= 6;
-      i++;
-   } while (val);
-   n = i;
+  /* Determine output size */
+  val = value;
+  do {
+    val >>= 6;
+    i++;
+  } while (val);
+  n = i;
 
-   /* Output characters */
-   val = value;
-   where[i] = 0;
-   do {
-      where[--i] = base64_digits[val & (uint64_t)0x3F];
-      val >>= 6;
-   } while (val);
-   return n;
+  /* Output characters */
+  val = value;
+  where[i] = 0;
+  do {
+    where[--i] = base64_digits[val & (uint64_t)0x3F];
+    val >>= 6;
+  } while (val);
+  return n;
 }
 
 /**
@@ -95,27 +92,26 @@ int ToBase64(int64_t value, char *where)
  *
  * Returns the value.
  */
-int FromBase64(int64_t *value, char *where)
+int FromBase64(int64_t* value, char* where)
 {
-   uint64_t val = 0;
-   int i, neg;
+  uint64_t val = 0;
+  int i, neg;
 
-   if (!base64_inited)
-      Base64Init();
-   /* Check if it is negative */
-   i = neg = 0;
-   if (where[i] == '-') {
-      i++;
-      neg = 1;
-   }
-   /* Construct value */
-   while (where[i] != 0 && where[i] != ' ') {
-      val <<= 6;
-      val += base64_map[(uint8_t)where[i++]];
-   }
+  if (!base64_inited) Base64Init();
+  /* Check if it is negative */
+  i = neg = 0;
+  if (where[i] == '-') {
+    i++;
+    neg = 1;
+  }
+  /* Construct value */
+  while (where[i] != 0 && where[i] != ' ') {
+    val <<= 6;
+    val += base64_map[(uint8_t)where[i++]];
+  }
 
-   *value = neg ? -(int64_t)val : (int64_t)val;
-   return i;
+  *value = neg ? -(int64_t)val : (int64_t)val;
+  return i;
 }
 
 
@@ -129,43 +125,41 @@ int FromBase64(int64_t *value, char *where)
  *  Returns: the number of characters stored not
  *           including the EOS
  */
-int BinToBase64(char *buf, int buflen, char *bin, int binlen, bool compatible)
+int BinToBase64(char* buf, int buflen, char* bin, int binlen, bool compatible)
 {
-   uint32_t reg, save, mask;
-   int rem, i;
-   int j = 0;
+  uint32_t reg, save, mask;
+  int rem, i;
+  int j = 0;
 
-   reg = 0;
-   rem = 0;
-   buflen--;                       /* allow for storing EOS */
-   for (i=0; i < binlen; ) {
-      if (rem < 6) {
-         reg <<= 8;
-         if (compatible) {
-            reg |= (uint8_t)bin[i++];
-         } else {
-            reg |= (int8_t)bin[i++];
-         }
-         rem += 8;
-      }
-      save = reg;
-      reg >>= (rem - 6);
-      if (j < buflen) {
-         buf[j++] = base64_digits[reg & 0x3F];
-      }
-      reg = save;
-      rem -= 6;
-   }
-   if (rem && j < buflen) {
-      mask = (1 << rem) - 1;
+  reg = 0;
+  rem = 0;
+  buflen--; /* allow for storing EOS */
+  for (i = 0; i < binlen;) {
+    if (rem < 6) {
+      reg <<= 8;
       if (compatible) {
-         buf[j++] = base64_digits[(reg & mask) << (6 - rem)];
+        reg |= (uint8_t)bin[i++];
       } else {
-         buf[j++] = base64_digits[reg & mask];
+        reg |= (int8_t)bin[i++];
       }
-   }
-   buf[j] = 0;
-   return j;
+      rem += 8;
+    }
+    save = reg;
+    reg >>= (rem - 6);
+    if (j < buflen) { buf[j++] = base64_digits[reg & 0x3F]; }
+    reg = save;
+    rem -= 6;
+  }
+  if (rem && j < buflen) {
+    mask = (1 << rem) - 1;
+    if (compatible) {
+      buf[j++] = base64_digits[(reg & mask) << (6 - rem)];
+    } else {
+      buf[j++] = base64_digits[reg & mask];
+    }
+  }
+  buf[j] = 0;
+  return j;
 }
 
 /**
@@ -178,52 +172,50 @@ int BinToBase64(char *buf, int buflen, char *bin, int binlen, bool compatible)
  *  Returns: the number of characters stored not
  *           including the EOS
  */
-int Base64ToBin(char *dest, int dest_size, char *src, int srclen)
+int Base64ToBin(char* dest, int dest_size, char* src, int srclen)
 {
-   int nprbytes;
-   uint8_t *bufout;
-   uint8_t *bufplain = (uint8_t*) dest;
-   const uint8_t *bufin;
+  int nprbytes;
+  uint8_t* bufout;
+  uint8_t* bufplain = (uint8_t*)dest;
+  const uint8_t* bufin;
 
-   if (!base64_inited)
-      Base64Init();
+  if (!base64_inited) Base64Init();
 
-   if (dest_size < (((srclen + 3) / 4) * 3)) {
-      /* dest buffer too small */
-      *dest = 0;
-      return 0;
-   }
+  if (dest_size < (((srclen + 3) / 4) * 3)) {
+    /* dest buffer too small */
+    *dest = 0;
+    return 0;
+  }
 
-   bufin = (const uint8_t *) src;
-   while ((*bufin != ' ') && (srclen != 0)) {
-      bufin++;
-      srclen--;
-   }
+  bufin = (const uint8_t*)src;
+  while ((*bufin != ' ') && (srclen != 0)) {
+    bufin++;
+    srclen--;
+  }
 
-   nprbytes = bufin - (const uint8_t *) src;
-   bufin = (const uint8_t *) src;
-   bufout = (uint8_t *) bufplain;
+  nprbytes = bufin - (const uint8_t*)src;
+  bufin = (const uint8_t*)src;
+  bufout = (uint8_t*)bufplain;
 
-   while (nprbytes > 4)
-   {
-      *(bufout++) = (base64_map[bufin[0]] << 2 | base64_map[bufin[1]] >> 4);
-      *(bufout++) = (base64_map[bufin[1]] << 4 | base64_map[bufin[2]] >> 2);
-      *(bufout++) = (base64_map[bufin[2]] << 6 | base64_map[bufin[3]]);
-      bufin += 4;
-      nprbytes -= 4;
-   }
+  while (nprbytes > 4) {
+    *(bufout++) = (base64_map[bufin[0]] << 2 | base64_map[bufin[1]] >> 4);
+    *(bufout++) = (base64_map[bufin[1]] << 4 | base64_map[bufin[2]] >> 2);
+    *(bufout++) = (base64_map[bufin[2]] << 6 | base64_map[bufin[3]]);
+    bufin += 4;
+    nprbytes -= 4;
+  }
 
-   /* BAREOS base64 strings are not always padded with = */
-   if (nprbytes > 1) {
-      *(bufout++) = (base64_map[bufin[0]] << 2 | base64_map[bufin[1]] >> 4);
-   }
-   if (nprbytes > 2) {
-      *(bufout++) = (base64_map[bufin[1]] << 4 | base64_map[bufin[2]] >> 2);
-   }
-   if (nprbytes > 3) {
-      *(bufout++) = (base64_map[bufin[2]] << 6 | base64_map[bufin[3]]);
-   }
-   *bufout = 0;
+  /* BAREOS base64 strings are not always padded with = */
+  if (nprbytes > 1) {
+    *(bufout++) = (base64_map[bufin[0]] << 2 | base64_map[bufin[1]] >> 4);
+  }
+  if (nprbytes > 2) {
+    *(bufout++) = (base64_map[bufin[1]] << 4 | base64_map[bufin[2]] >> 2);
+  }
+  if (nprbytes > 3) {
+    *(bufout++) = (base64_map[bufin[2]] << 6 | base64_map[bufin[3]]);
+  }
+  *bufout = 0;
 
-   return (bufout - (uint8_t *) dest);
+  return (bufout - (uint8_t*)dest);
 }

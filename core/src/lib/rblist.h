@@ -37,49 +37,52 @@
  * Loop var through each member of list
  */
 #ifdef HAVE_TYPEOF
-#define foreach_rblist(var, tree) \
-   for (((var)=(typeof(var))(tree)->first()); (var); ((var)=(typeof(var))(tree)->next(var)))
+#define foreach_rblist(var, tree)                     \
+  for (((var) = (typeof(var))(tree)->first()); (var); \
+       ((var) = (typeof(var))(tree)->next(var)))
 #else
-#define foreach_rblist(var, tree) \
-   for ((*((void **)&(var))=(void*)((tree)->first())); (var); (*((void **)&(var))=(void*)((tree)->next(var))))
+#define foreach_rblist(var, tree)                             \
+  for ((*((void**)&(var)) = (void*)((tree)->first())); (var); \
+       (*((void**)&(var)) = (void*)((tree)->next(var))))
 #endif
 
 struct rblink {
-   void *parent;
-   void *left;
-   void *right;
-   bool red;
+  void* parent;
+  void* left;
+  void* right;
+  bool red;
 };
 
 class rblist : public SmartAlloc {
-   void *head;
-   int16_t loffset;
-   uint32_t num_items;
-   bool down;
-   void LeftRotate(void *item);
-   void RightRotate(void *item);
-public:
-   rblist(void *item, rblink *link);
-   rblist(void);
-   ~rblist(void) { destroy(); }
-   void init(void *item, rblink *link);
-   void SetParent(void *item, void *parent);
-   void SetLeft(void *item, void *left);
-   void SetRight(void *item, void *right);
-   void SetRed(void *item, bool red);
-   void *parent(const void *item) const;
-   void *left(const void *item) const;
-   void *right(const void *item) const;
-   bool red(const void *item) const;
-   void *insert(void *item, int compare(void *item1, void *item2));
-   void *search(void *item, int compare(void *item1, void *item2));
-   void *first(void);
-   void *next(void *item);
-   void *any(void *item);
-   void remove(void *item);
-   bool empty(void) const;
-   int size(void) const;
-   void destroy(void);
+  void* head;
+  int16_t loffset;
+  uint32_t num_items;
+  bool down;
+  void LeftRotate(void* item);
+  void RightRotate(void* item);
+
+ public:
+  rblist(void* item, rblink* link);
+  rblist(void);
+  ~rblist(void) { destroy(); }
+  void init(void* item, rblink* link);
+  void SetParent(void* item, void* parent);
+  void SetLeft(void* item, void* left);
+  void SetRight(void* item, void* right);
+  void SetRed(void* item, bool red);
+  void* parent(const void* item) const;
+  void* left(const void* item) const;
+  void* right(const void* item) const;
+  bool red(const void* item) const;
+  void* insert(void* item, int compare(void* item1, void* item2));
+  void* search(void* item, int compare(void* item1, void* item2));
+  void* first(void);
+  void* next(void* item);
+  void* any(void* item);
+  void remove(void* item);
+  bool empty(void) const;
+  int size(void) const;
+  void destroy(void);
 };
 
 
@@ -88,72 +91,61 @@ public:
  *   allowing us to mix C++ classes inside malloc'ed
  *   C structures. Define before called in constructor.
  */
-inline void rblist::init(void *item, rblink *link)
+inline void rblist::init(void* item, rblink* link)
 {
-   head = NULL;
-   loffset = (int)((char *)link - (char *)item);
-   if (loffset < 0 || loffset > 5000) {
-      Emsg0(M_ABORT, 0, "Improper rblist initialization.\n");
-   }
-   num_items = 0;
+  head = NULL;
+  loffset = (int)((char*)link - (char*)item);
+  if (loffset < 0 || loffset > 5000) {
+    Emsg0(M_ABORT, 0, "Improper rblist initialization.\n");
+  }
+  num_items = 0;
 }
 
-inline rblist::rblist(void *item, rblink *link)
-{
-   init(item, link);
-}
+inline rblist::rblist(void* item, rblink* link) { init(item, link); }
 
 /* Constructor with link at head of item */
-inline rblist::rblist(void): head(0), loffset(0), num_items(0)
+inline rblist::rblist(void) : head(0), loffset(0), num_items(0) {}
+
+inline void rblist::SetParent(void* item, void* parent)
 {
+  ((rblink*)(((char*)item) + loffset))->parent = parent;
 }
 
-inline void rblist::SetParent(void *item, void *parent)
+inline void rblist::SetLeft(void* item, void* left)
 {
-   ((rblink *)(((char *)item)+loffset))->parent = parent;
+  ((rblink*)(((char*)item) + loffset))->left = left;
 }
 
-inline void rblist::SetLeft(void *item, void *left)
+inline void rblist::SetRight(void* item, void* right)
 {
-   ((rblink *)(((char *)item)+loffset))->left = left;
+  ((rblink*)(((char*)item) + loffset))->right = right;
 }
 
-inline void rblist::SetRight(void *item, void *right)
+inline void rblist::SetRed(void* item, bool red)
 {
-   ((rblink *)(((char *)item)+loffset))->right = right;
+  ((rblink*)(((char*)item) + loffset))->red = red;
 }
 
-inline void rblist::SetRed(void *item, bool red)
+inline bool rblist::empty(void) const { return head == NULL; }
+
+inline int rblist::size() const { return num_items; }
+
+inline void* rblist::parent(const void* item) const
 {
-   ((rblink *)(((char *)item)+loffset))->red = red;
+  return ((rblink*)(((char*)item) + loffset))->parent;
 }
 
-inline bool rblist::empty(void) const
+inline void* rblist::left(const void* item) const
 {
-   return head == NULL;
+  return ((rblink*)(((char*)item) + loffset))->left;
 }
 
-inline int rblist::size() const
+inline void* rblist::right(const void* item) const
 {
-   return num_items;
+  return ((rblink*)(((char*)item) + loffset))->right;
 }
 
-inline void *rblist::parent(const void *item) const
+inline bool rblist::red(const void* item) const
 {
-   return ((rblink *)(((char *)item)+loffset))->parent;
-}
-
-inline void *rblist::left(const void *item) const
-{
-   return ((rblink *)(((char *)item)+loffset))->left;
-}
-
-inline void *rblist::right(const void *item) const
-{
-   return ((rblink *)(((char *)item)+loffset))->right;
-}
-
-inline bool rblist::red(const void *item) const
-{
-   return ((rblink *)(((char *)item)+loffset))->red;
+  return ((rblink*)(((char*)item) + loffset))->red;
 }

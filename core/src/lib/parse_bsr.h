@@ -25,12 +25,12 @@ class JobControlRecord;
 
 namespace libbareos {
 
-storagedaemon::BootStrapRecord *parse_bsr(JobControlRecord *jcr, char *lf);
-void FreeBsr(storagedaemon::BootStrapRecord *bsr);
-void DumpBsr(storagedaemon::BootStrapRecord *bsr, bool recurse);
+storagedaemon::BootStrapRecord* parse_bsr(JobControlRecord* jcr, char* lf);
+void FreeBsr(storagedaemon::BootStrapRecord* bsr);
+void DumpBsr(storagedaemon::BootStrapRecord* bsr, bool recurse);
 
-void DumpBsr(storagedaemon::BootStrapRecord *bsr, bool recurse);
+void DumpBsr(storagedaemon::BootStrapRecord* bsr, bool recurse);
 
 } /* namespace libbareos */
 
-#endif // BAREOS_STORED_PARSE_BSR_H_
+#endif  // BAREOS_STORED_PARSE_BSR_H_

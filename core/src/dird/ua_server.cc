@@ -44,98 +44,96 @@
 namespace directordaemon {
 
 /**
- * Create a Job Control Record for a control "job", filling in all the appropriate fields.
+ * Create a Job Control Record for a control "job", filling in all the
+ * appropriate fields.
  */
-JobControlRecord *new_control_jcr(const char *base_name, int job_type)
+JobControlRecord* new_control_jcr(const char* base_name, int job_type)
 {
-   JobControlRecord *jcr;
+  JobControlRecord* jcr;
 
-   jcr = new_jcr(sizeof(JobControlRecord), DirdFreeJcr);
+  jcr = new_jcr(sizeof(JobControlRecord), DirdFreeJcr);
 
-   /*
-    * The job and defaults are not really used, but we set them up to ensure that
-    * everything is correctly initialized.
-    */
-   LockRes(my_config);
-   jcr->res.job = (JobResource *)my_config->GetNextRes(R_JOB, NULL);
-   SetJcrDefaults(jcr, jcr->res.job);
-   UnlockRes(my_config);
+  /*
+   * The job and defaults are not really used, but we set them up to ensure that
+   * everything is correctly initialized.
+   */
+  LockRes(my_config);
+  jcr->res.job = (JobResource*)my_config->GetNextRes(R_JOB, NULL);
+  SetJcrDefaults(jcr, jcr->res.job);
+  UnlockRes(my_config);
 
-   jcr->sd_auth_key = bstrdup("dummy"); /* dummy Storage daemon key */
-   CreateUniqueJobName(jcr, base_name);
-   jcr->sched_time = jcr->start_time;
-   jcr->setJobType(job_type);
-   jcr->setJobLevel(L_NONE);
-   jcr->setJobStatus(JS_Running);
-   jcr->JobId = 0;
+  jcr->sd_auth_key = bstrdup("dummy"); /* dummy Storage daemon key */
+  CreateUniqueJobName(jcr, base_name);
+  jcr->sched_time = jcr->start_time;
+  jcr->setJobType(job_type);
+  jcr->setJobLevel(L_NONE);
+  jcr->setJobStatus(JS_Running);
+  jcr->JobId = 0;
 
-   return jcr;
+  return jcr;
 }
 
 /**
  * Handle Director User Agent commands
  */
-void *HandleUserAgentClientRequest(BareosSocket *user_agent_socket)
+void* HandleUserAgentClientRequest(BareosSocket* user_agent_socket)
 {
-   pthread_detach(pthread_self());
+  pthread_detach(pthread_self());
 
-   JobControlRecord *jcr = new_control_jcr("-Console-", JT_CONSOLE);
+  JobControlRecord* jcr = new_control_jcr("-Console-", JT_CONSOLE);
 
-   UaContext *ua = new_ua_context(jcr);
-   ua->UA_sock = user_agent_socket;
-   SetJcrInTsd(INVALID_JCR);
+  UaContext* ua = new_ua_context(jcr);
+  ua->UA_sock = user_agent_socket;
+  SetJcrInTsd(INVALID_JCR);
 
-   bool success = AuthenticateConsole(ua);
+  bool success = AuthenticateConsole(ua);
 
-   if (!success) {
+  if (!success) { ua->quit = true; }
+
+  while (!ua->quit) {
+    if (ua->api) { user_agent_socket->signal(BNET_MAIN_PROMPT); }
+
+    int status = user_agent_socket->recv();
+    if (status >= 0) {
+      PmStrcpy(ua->cmd, ua->UA_sock->msg);
+      ParseUaArgs(ua);
+      Do_a_command(ua);
+
+      DequeueMessages(ua->jcr);
+
+      if (!ua->quit) {
+        if (console_msg_pending && ua->AclAccessOk(Command_ACL, "messages")) {
+          if (ua->auto_display_messages) {
+            PmStrcpy(ua->cmd, "messages");
+            DotMessagesCmd(ua, ua->cmd);
+            ua->user_notified_msg_pending = false;
+          } else if (!ua->gui && !ua->user_notified_msg_pending &&
+                     console_msg_pending) {
+            if (ua->api) {
+              user_agent_socket->signal(BNET_MSGS_PENDING);
+            } else {
+              bsendmsg(ua, _("You have messages.\n"));
+            }
+            ua->user_notified_msg_pending = true;
+          }
+        }
+        if (!ua->api) {
+          user_agent_socket->signal(BNET_EOD); /* send end of command */
+        }
+      }
+    } else if (IsBnetStop(user_agent_socket)) {
       ua->quit = true;
-   }
+    } else { /* signal */
+      user_agent_socket->signal(BNET_POLL);
+    }
+  } /* while (!ua->quit) */
 
-   while (!ua->quit) {
-      if (ua->api) {
-         user_agent_socket->signal(BNET_MAIN_PROMPT);
-      }
+  CloseDb(ua);
+  FreeUaContext(ua);
+  FreeJcr(jcr);
+  user_agent_socket->close();
+  delete user_agent_socket;
 
-      int status = user_agent_socket->recv();
-      if (status >= 0) {
-         PmStrcpy(ua->cmd, ua->UA_sock->msg);
-         ParseUaArgs(ua);
-         Do_a_command(ua);
-
-         DequeueMessages(ua->jcr);
-
-         if (!ua->quit) {
-            if (console_msg_pending && ua->AclAccessOk(Command_ACL, "messages")) {
-               if (ua->auto_display_messages) {
-                  PmStrcpy(ua->cmd, "messages");
-                  DotMessagesCmd(ua, ua->cmd);
-                  ua->user_notified_msg_pending = false;
-               } else if (!ua->gui && !ua->user_notified_msg_pending && console_msg_pending) {
-                  if (ua->api) {
-                     user_agent_socket->signal(BNET_MSGS_PENDING);
-                  } else {
-                     bsendmsg(ua, _("You have messages.\n"));
-                  }
-                  ua->user_notified_msg_pending = true;
-               }
-            }
-            if (!ua->api) {
-               user_agent_socket->signal(BNET_EOD); /* send end of command */
-            }
-         }
-      } else if (IsBnetStop(user_agent_socket)) {
-         ua->quit = true;
-      } else { /* signal */
-         user_agent_socket->signal(BNET_POLL);
-      }
-   } /* while (!ua->quit) */
-
-   CloseDb(ua);
-   FreeUaContext(ua);
-   FreeJcr(jcr);
-   user_agent_socket->close();
-   delete user_agent_socket;
-
-   return NULL;
+  return NULL;
 }
 } /* namespace directordaemon */

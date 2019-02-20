@@ -26,11 +26,16 @@ namespace directordaemon {
 
 class RunResource;
 
-void bsendmsg(void *ua_ctx, const char *fmt, ...);
-of_filter_state filterit(void *ctx, void *data, of_filter_tuple *tuple);
-bool printit(void *ctx, const char *msg);
-bool CompleteJcrForJob(JobControlRecord *jcr, JobResource *job, PoolResource *pool);
-RunResource *find_next_run(RunResource *run, JobResource *job, utime_t &runtime, int ndays);
+void bsendmsg(void* ua_ctx, const char* fmt, ...);
+of_filter_state filterit(void* ctx, void* data, of_filter_tuple* tuple);
+bool printit(void* ctx, const char* msg);
+bool CompleteJcrForJob(JobControlRecord* jcr,
+                       JobResource* job,
+                       PoolResource* pool);
+RunResource* find_next_run(RunResource* run,
+                           JobResource* job,
+                           utime_t& runtime,
+                           int ndays);
 
 } /* namespace directordaemon */
-#endif // BAREOS_DIRD_UA_OUTPUT_H_
+#endif  // BAREOS_DIRD_UA_OUTPUT_H_

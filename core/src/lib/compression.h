@@ -21,16 +21,26 @@
 #ifndef BAREOS_LIB_COMPRESSION_H_
 #define BAREOS_LIB_COMPRESSION_H_
 
-const char *cmprs_algo_to_text(uint32_t compression_algorithm);
-bool SetupCompressionBuffers(JobControlRecord *jcr, bool compatible,
-                               uint32_t compression_algorithm,
-                               uint32_t *compress_buf_size);
-bool SetupDecompressionBuffers(JobControlRecord *jcr, uint32_t *decompress_buf_size);
-bool CompressData(JobControlRecord *jcr, uint32_t compression_algorithm, char *rbuf,
-                   uint32_t rsize, unsigned char *cbuf,
-                   uint32_t max_compress_len, uint32_t *compress_len);
-bool DecompressData(JobControlRecord *jcr, const char *last_fname, int32_t stream,
-                     char **data, uint32_t *length, bool want_data_stream);
-void CleanupCompression(JobControlRecord *jcr);
+const char* cmprs_algo_to_text(uint32_t compression_algorithm);
+bool SetupCompressionBuffers(JobControlRecord* jcr,
+                             bool compatible,
+                             uint32_t compression_algorithm,
+                             uint32_t* compress_buf_size);
+bool SetupDecompressionBuffers(JobControlRecord* jcr,
+                               uint32_t* decompress_buf_size);
+bool CompressData(JobControlRecord* jcr,
+                  uint32_t compression_algorithm,
+                  char* rbuf,
+                  uint32_t rsize,
+                  unsigned char* cbuf,
+                  uint32_t max_compress_len,
+                  uint32_t* compress_len);
+bool DecompressData(JobControlRecord* jcr,
+                    const char* last_fname,
+                    int32_t stream,
+                    char** data,
+                    uint32_t* length,
+                    bool want_data_stream);
+void CleanupCompression(JobControlRecord* jcr);
 
-#endif // BAREOS_LIB_COMPRESSION_H_
+#endif  // BAREOS_LIB_COMPRESSION_H_

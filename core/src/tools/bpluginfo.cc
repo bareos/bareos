@@ -47,17 +47,20 @@
 #endif
 
 extern "C" {
-   typedef int (*loadPlugin) (void *binfo, void *bfuncs, void **pinfo,
-               void **pfuncs);
-   typedef int (*unloadPlugin) (void);
+typedef int (*loadPlugin)(void* binfo,
+                          void* bfuncs,
+                          void** pinfo,
+                          void** pfuncs);
+typedef int (*unloadPlugin)(void);
 }
-#define DEFAULT_API_VERSION   1
+#define DEFAULT_API_VERSION 1
 
-enum plugintype {
-   DIRPLUGIN,
-   FDPLUGIN,
-   SDPLUGIN,
-   ERRORPLUGIN
+enum plugintype
+{
+  DIRPLUGIN,
+  FDPLUGIN,
+  SDPLUGIN,
+  ERRORPLUGIN
 };
 
 /*
@@ -67,9 +70,9 @@ enum plugintype {
  */
 typedef union _plugfuncs plugfuncs;
 union _plugfuncs {
-   directordaemon::pDirFuncs pdirfuncs;
-   filedaemon::pFuncs pfdfuncs;
-   storagedaemon::psdFuncs psdfuncs;
+  directordaemon::pDirFuncs pdirfuncs;
+  filedaemon::pFuncs pfdfuncs;
+  storagedaemon::psdFuncs psdfuncs;
 };
 
 /*
@@ -79,17 +82,26 @@ union _plugfuncs {
  */
 typedef struct _bareosfuncs bareosfuncs;
 struct _bareosfuncs {
-   uint32_t size;
-   uint32_t version;
-   int (*registerBareosEvents) (void *ctx, ...);
-   int (*getBareosValue) (void *ctx, int var, void *value);
-   int (*setBareosValue) (void *ctx, int var, void *value);
-   int (*JobMessage) (void *ctx, const char *file, int line, int type, int64_t mtime,
-            const char *fmt, ...);
-   int (*DebugMessage) (void *ctx, const char *file, int line, int level,
-         const char *fmt, ...);
-   void *(*bareosMalloc) (void *ctx, const char *file, int line, size_t size);
-   void (*bareosFree) (void *ctx, const char *file, int line, void *mem);
+  uint32_t size;
+  uint32_t version;
+  int (*registerBareosEvents)(void* ctx, ...);
+  int (*getBareosValue)(void* ctx, int var, void* value);
+  int (*setBareosValue)(void* ctx, int var, void* value);
+  int (*JobMessage)(void* ctx,
+                    const char* file,
+                    int line,
+                    int type,
+                    int64_t mtime,
+                    const char* fmt,
+                    ...);
+  int (*DebugMessage)(void* ctx,
+                      const char* file,
+                      int line,
+                      int level,
+                      const char* fmt,
+                      ...);
+  void* (*bareosMalloc)(void* ctx, const char* file, int line, size_t size);
+  void (*bareosFree)(void* ctx, const char* file, int line, void* mem);
 };
 
 /*
@@ -99,118 +111,116 @@ struct _bareosfuncs {
  */
 typedef union _bareosinfos bareosinfos;
 union _bareosinfos {
-   directordaemon::bDirInfo bdirinfo;
-   filedaemon::bInfo bfdinfo;
-   storagedaemon::bsdInfo bsdinfo;
+  directordaemon::bDirInfo bdirinfo;
+  filedaemon::bInfo bfdinfo;
+  storagedaemon::bsdInfo bsdinfo;
 };
 
 typedef struct _progdata progdata;
 struct _progdata {
-   bool verbose;
-   bool listinfo;
-   bool listfunc;
-   char *pluginfile;
-   void *pluginhandle;
-   int bapiversion;
-   int bplugtype;
-   gen_pluginInfo *pinfo;
-   plugfuncs *pfuncs;
+  bool verbose;
+  bool listinfo;
+  bool listfunc;
+  char* pluginfile;
+  void* pluginhandle;
+  int bapiversion;
+  int bplugtype;
+  gen_pluginInfo* pinfo;
+  plugfuncs* pfuncs;
 };
 
 /* memory allocation/deallocation */
-#define MALLOC(size) \
-   (char *) bmalloc ( size );
+#define MALLOC(size) (char*)bmalloc(size);
 
-#define ASSERT_MEMORY(m) \
-   if ( m == NULL ){ \
-      printf ( "Error: memory allocation error!\n" ); \
-      exit (10); \
-   }
+#define ASSERT_MEMORY(m)                         \
+  if (m == NULL) {                               \
+    printf("Error: memory allocation error!\n"); \
+    exit(10);                                    \
+  }
 
-#define FREE(ptr) \
-   if ( ptr != NULL ){ \
-      bfree ( ptr ); \
-      ptr = NULL; \
-   }
+#define FREE(ptr)    \
+  if (ptr != NULL) { \
+    bfree(ptr);      \
+    ptr = NULL;      \
+  }
 
-int registerBareosEvents(void *ctx, ...)
-{
-   return 0;
-};
+int registerBareosEvents(void* ctx, ...) { return 0; };
 
-int getBareosValue(void *ctx, int var, void *value)
-{
-   return 0;
-};
+int getBareosValue(void* ctx, int var, void* value) { return 0; };
 
-int setBareosValue(void *ctx, int var, void *value)
-{
-   return 0;
-};
+int setBareosValue(void* ctx, int var, void* value) { return 0; };
 
-int DebugMessage(void *ctx, const char *file, int line, int level, const char *fmt, ...)
+int DebugMessage(void* ctx,
+                 const char* file,
+                 int line,
+                 int level,
+                 const char* fmt,
+                 ...)
 {
 #ifdef DEBUGMSG
-   printf("DG: %s:%d %s\n", file, line, fmt);
+  printf("DG: %s:%d %s\n", file, line, fmt);
 #endif
-   return 0;
+  return 0;
 };
 
-int JobMessage(void *ctx, const char *file, int line, int type, int64_t mtime,
-          const char *fmt, ...)
+int JobMessage(void* ctx,
+               const char* file,
+               int line,
+               int type,
+               int64_t mtime,
+               const char* fmt,
+               ...)
 {
 #ifdef DEBUGMSG
-   printf("JM: %s:%d <%d> %s\n", file, line, type, fmt);
+  printf("JM: %s:%d <%d> %s\n", file, line, type, fmt);
 #endif
-   return 0;
+  return 0;
 };
 
-void *bareosMalloc(void *ctx, const char *file, int line, size_t size)
+void* bareosMalloc(void* ctx, const char* file, int line, size_t size)
 {
-   return MALLOC(size);
+  return MALLOC(size);
 };
 
-void bareosFree(void *ctx, const char *file, int line, void *mem)
+void bareosFree(void* ctx, const char* file, int line, void* mem)
 {
-   FREE(mem);
+  FREE(mem);
 };
 
 /*
  * displays a short help
  */
-void PrintHelp(int argc, char *argv[])
+void PrintHelp(int argc, char* argv[])
 {
-
-   printf("\n"
-     "Usage: bpluginfo [options] <plugin_file.so>\n"
-     "       -v          verbose\n"
-     "       -i          list plugin header information only (default)\n"
-     "       -f          list plugin functions information only\n"
-     "       -a <api>    bareos api version (default %d)\n"
-     "       -h          help screen\n" "\n", DEFAULT_API_VERSION);
+  printf(
+      "\n"
+      "Usage: bpluginfo [options] <plugin_file.so>\n"
+      "       -v          verbose\n"
+      "       -i          list plugin header information only (default)\n"
+      "       -f          list plugin functions information only\n"
+      "       -a <api>    bareos api version (default %d)\n"
+      "       -h          help screen\n"
+      "\n",
+      DEFAULT_API_VERSION);
 }
 
 /* allocates and resets a main program data variable */
-progdata *allocpdata(void)
+progdata* allocpdata(void)
 {
+  progdata* pdata;
 
-   progdata *pdata;
+  pdata = (progdata*)bmalloc(sizeof(progdata));
+  ASSERT_MEMORY(pdata);
+  memset(pdata, 0, sizeof(progdata));
 
-   pdata = (progdata *) bmalloc(sizeof(progdata));
-   ASSERT_MEMORY(pdata);
-   memset(pdata, 0, sizeof(progdata));
-
-   return pdata;
+  return pdata;
 }
 
 /* releases all allocated program data resources */
-void Freepdata(progdata *pdata)
+void Freepdata(progdata* pdata)
 {
-
-   if (pdata->pluginfile) {
-      FREE(pdata->pluginfile);
-   }
-   FREE(pdata);
+  if (pdata->pluginfile) { FREE(pdata->pluginfile); }
+  FREE(pdata);
 }
 
 /*
@@ -229,70 +239,69 @@ void Freepdata(progdata *pdata)
  * -a    bareos api version (default 1)
  * -h    help screen
  */
-void ParseArgs(progdata *pdata, int argc, char *argv[])
+void ParseArgs(progdata* pdata, int argc, char* argv[])
 {
+  int ch;
+  char* dirtmp;
+  char* progdir;
 
-   int ch;
-   char *dirtmp;
-   char *progdir;
-
-   while ((ch = getopt(argc, argv, "a:fiv")) != -1) {
-      switch (ch) {
+  while ((ch = getopt(argc, argv, "a:fiv")) != -1) {
+    switch (ch) {
       case 'a':
-         pdata->bapiversion = atoi(optarg);
-         break;
+        pdata->bapiversion = atoi(optarg);
+        break;
 
       case 'f':
-         pdata->listfunc = true;
-         break;
+        pdata->listfunc = true;
+        break;
 
       case 'i':
-         pdata->listinfo = true;
-         break;
+        pdata->listinfo = true;
+        break;
 
       case 'v':
-         pdata->verbose = true;
-         break;
+        pdata->verbose = true;
+        break;
 
       case '?':
       default:
-         PrintHelp(argc, argv);
-         exit(0);
+        PrintHelp(argc, argv);
+        exit(0);
+    }
+  }
+  argc -= optind;
+  argv += optind;
+
+  if (argc < 1) {
+    PrintHelp(argc, argv);
+    exit(0);
+  }
+
+  if (!pdata->pluginfile) {
+    if (argv[0][0] != '/') {
+      dirtmp = MALLOC(PATH_MAX);
+      ASSERT_MEMORY(dirtmp);
+      progdir = MALLOC(PATH_MAX);
+      ASSERT_MEMORY(progdir);
+      dirtmp = getcwd(dirtmp, PATH_MAX);
+
+      strcat(dirtmp, "/");
+      strcat(dirtmp, argv[0]);
+
+      if (realpath(dirtmp, progdir) == NULL) {
+        /*
+         * Error in resolving path
+         */
+        FREE(progdir);
+        progdir = bstrdup(argv[0]);
       }
-   }
-   argc -= optind;
-   argv += optind;
-
-   if (argc < 1) {
-      PrintHelp(argc, argv);
-      exit(0);
-   }
-
-   if (!pdata->pluginfile) {
-      if (argv[0][0] != '/') {
-         dirtmp = MALLOC(PATH_MAX);
-         ASSERT_MEMORY(dirtmp);
-         progdir = MALLOC(PATH_MAX);
-         ASSERT_MEMORY(progdir);
-         dirtmp = getcwd(dirtmp, PATH_MAX);
-
-         strcat(dirtmp, "/");
-         strcat(dirtmp, argv[0]);
-
-         if (realpath(dirtmp, progdir) == NULL) {
-            /*
-             * Error in resolving path
-             */
-            FREE(progdir);
-            progdir = bstrdup(argv[0]);
-         }
-         pdata->pluginfile = bstrdup(progdir);
-         FREE(dirtmp);
-         FREE(progdir);
-      } else {
-         pdata->pluginfile = bstrdup(argv[0]);
-      }
-   }
+      pdata->pluginfile = bstrdup(progdir);
+      FREE(dirtmp);
+      FREE(progdir);
+    } else {
+      pdata->pluginfile = bstrdup(argv[0]);
+    }
+  }
 }
 
 /*
@@ -303,31 +312,28 @@ void ParseArgs(progdata *pdata, int argc, char *argv[])
  * output:
  *    int - enum plugintype
  */
-int Getplugintype(progdata *pdata)
+int Getplugintype(progdata* pdata)
 {
+  ASSERT_NVAL_RET_V(pdata, ERRORPLUGIN);
 
-   ASSERT_NVAL_RET_V(pdata, ERRORPLUGIN);
+  gen_pluginInfo* pinfo = pdata->pinfo;
 
-   gen_pluginInfo *pinfo = pdata->pinfo;
+  ASSERT_NVAL_RET_V(pinfo, ERRORPLUGIN);
 
-   ASSERT_NVAL_RET_V(pinfo, ERRORPLUGIN);
-
-   if (pinfo->plugin_magic &&
-       bstrcmp(pinfo->plugin_magic, DIR_PLUGIN_MAGIC)) {
-      return DIRPLUGIN;
-   } else {
-      if (pinfo->plugin_magic &&
-          bstrcmp(pinfo->plugin_magic, FD_PLUGIN_MAGIC)) {
+  if (pinfo->plugin_magic && bstrcmp(pinfo->plugin_magic, DIR_PLUGIN_MAGIC)) {
+    return DIRPLUGIN;
+  } else {
+    if (pinfo->plugin_magic && bstrcmp(pinfo->plugin_magic, FD_PLUGIN_MAGIC)) {
       return FDPLUGIN;
+    } else {
+      if (pinfo->plugin_magic &&
+          bstrcmp(pinfo->plugin_magic, SD_PLUGIN_MAGIC)) {
+        return SDPLUGIN;
       } else {
-         if (pinfo->plugin_magic &&
-             bstrcmp(pinfo->plugin_magic, SD_PLUGIN_MAGIC)) {
-         return SDPLUGIN;
-         } else {
-            return ERRORPLUGIN;
-         }
+        return ERRORPLUGIN;
       }
-   }
+    }
+  }
 }
 
 /*
@@ -338,46 +344,45 @@ int Getplugintype(progdata *pdata)
  * output:
  *    printed info
  */
-void DumpPluginfo(progdata *pdata)
+void DumpPluginfo(progdata* pdata)
 {
+  ASSERT_NVAL_RET(pdata);
 
-   ASSERT_NVAL_RET(pdata);
+  gen_pluginInfo* pinfo = pdata->pinfo;
 
-   gen_pluginInfo *pinfo = pdata->pinfo;
+  ASSERT_NVAL_RET(pinfo);
 
-   ASSERT_NVAL_RET(pinfo);
+  plugfuncs* pfuncs = pdata->pfuncs;
 
-   plugfuncs *pfuncs = pdata->pfuncs;
+  ASSERT_NVAL_RET(pfuncs);
 
-   ASSERT_NVAL_RET(pfuncs);
-
-   switch (pdata->bplugtype) {
-   case DIRPLUGIN:
+  switch (pdata->bplugtype) {
+    case DIRPLUGIN:
       printf("\nPlugin type:\t\tBareos Director plugin\n");
       break;
-   case FDPLUGIN:
+    case FDPLUGIN:
       printf("\nPlugin type:\t\tBareos File Daemon plugin\n");
       break;
-   case SDPLUGIN:
+    case SDPLUGIN:
       printf("\nPlugin type:\t\tBareos Storage plugin\n");
       break;
-   default:
+    default:
       printf("\nUnknown plugin type or other Error\n\n");
       return;
-   }
+  }
 
-   if (pdata->verbose) {
-      printf("Plugin magic:\t\t%s\n", NPRT(pinfo->plugin_magic));
-   }
-   printf("Plugin version:\t\t%s\n", pinfo->plugin_version);
-   printf("Plugin release date:\t%s\n", NPRT(pinfo->plugin_date));
-   printf("Plugin author:\t\t%s\n", NPRT(pinfo->plugin_author));
-   printf("Plugin licence:\t\t%s\n", NPRT(pinfo->plugin_license));
-   printf("Plugin description:\t%s\n", NPRT(pinfo->plugin_description));
-   printf("Plugin API version:\t%d\n", pinfo->version);
-   if (pinfo->plugin_usage) {
-      printf("Plugin usage:\n%s\n", pinfo->plugin_usage);
-   }
+  if (pdata->verbose) {
+    printf("Plugin magic:\t\t%s\n", NPRT(pinfo->plugin_magic));
+  }
+  printf("Plugin version:\t\t%s\n", pinfo->plugin_version);
+  printf("Plugin release date:\t%s\n", NPRT(pinfo->plugin_date));
+  printf("Plugin author:\t\t%s\n", NPRT(pinfo->plugin_author));
+  printf("Plugin licence:\t\t%s\n", NPRT(pinfo->plugin_license));
+  printf("Plugin description:\t%s\n", NPRT(pinfo->plugin_description));
+  printf("Plugin API version:\t%d\n", pinfo->version);
+  if (pinfo->plugin_usage) {
+    printf("Plugin usage:\n%s\n", pinfo->plugin_usage);
+  }
 }
 
 /*
@@ -388,102 +393,65 @@ void DumpPluginfo(progdata *pdata)
  * output:
  *    printed info
  */
-void DumpPlugfuncs(progdata *pdata)
+void DumpPlugfuncs(progdata* pdata)
 {
+  ASSERT_NVAL_RET(pdata);
 
-   ASSERT_NVAL_RET(pdata);
+  plugfuncs* pfuncs = pdata->pfuncs;
 
-   plugfuncs *pfuncs = pdata->pfuncs;
+  ASSERT_NVAL_RET(pfuncs);
 
-   ASSERT_NVAL_RET(pfuncs);
+  printf("\nPlugin functions:\n");
 
-   printf("\nPlugin functions:\n");
-
-   switch (pdata->bplugtype) {
-   case DIRPLUGIN:
+  switch (pdata->bplugtype) {
+    case DIRPLUGIN:
       if (pdata->verbose) {
-          if (pfuncs->pdirfuncs.newPlugin) {
-             printf(" newPlugin()\n");
-          }
-          if (pfuncs->pdirfuncs.freePlugin) {
-             printf(" freePlugin()\n");
-          }
+        if (pfuncs->pdirfuncs.newPlugin) { printf(" newPlugin()\n"); }
+        if (pfuncs->pdirfuncs.freePlugin) { printf(" freePlugin()\n"); }
       }
-      if (pfuncs->pdirfuncs.getPluginValue) {
-         printf(" getPluginValue()\n");
-      }
-      if (pfuncs->pdirfuncs.setPluginValue) {
-         printf(" setPluginValue()\n");
-      }
+      if (pfuncs->pdirfuncs.getPluginValue) { printf(" getPluginValue()\n"); }
+      if (pfuncs->pdirfuncs.setPluginValue) { printf(" setPluginValue()\n"); }
       if (pfuncs->pdirfuncs.handlePluginEvent) {
-         printf(" handlePluginEvent()\n");
+        printf(" handlePluginEvent()\n");
       }
       break;
-   case FDPLUGIN:
+    case FDPLUGIN:
       if (pdata->verbose) {
-          if (pfuncs->pfdfuncs.newPlugin) {
-             printf(" newPlugin()\n");
-          }
-          if (pfuncs->pfdfuncs.freePlugin) {
-             printf(" freePlugin()\n");
-          }
+        if (pfuncs->pfdfuncs.newPlugin) { printf(" newPlugin()\n"); }
+        if (pfuncs->pfdfuncs.freePlugin) { printf(" freePlugin()\n"); }
       }
-      if (pfuncs->pfdfuncs.getPluginValue) {
-         printf(" getPluginValue()\n");
-      }
-      if (pfuncs->pfdfuncs.setPluginValue) {
-         printf(" setPluginValue()\n");
-      }
+      if (pfuncs->pfdfuncs.getPluginValue) { printf(" getPluginValue()\n"); }
+      if (pfuncs->pfdfuncs.setPluginValue) { printf(" setPluginValue()\n"); }
       if (pfuncs->pfdfuncs.handlePluginEvent) {
-         printf(" handlePluginEvent()\n");
+        printf(" handlePluginEvent()\n");
       }
-      if (pfuncs->pfdfuncs.startBackupFile) {
-         printf(" startBackupFile()\n");
-      }
-      if (pfuncs->pfdfuncs.endBackupFile) {
-         printf(" endBackupFile()\n");
-      }
+      if (pfuncs->pfdfuncs.startBackupFile) { printf(" startBackupFile()\n"); }
+      if (pfuncs->pfdfuncs.endBackupFile) { printf(" endBackupFile()\n"); }
       if (pfuncs->pfdfuncs.startRestoreFile) {
-         printf(" startRestoreFile()\n");
+        printf(" startRestoreFile()\n");
       }
-      if (pfuncs->pfdfuncs.endRestoreFile) {
-         printf(" endRestoreFile()\n");
-      }
-      if (pfuncs->pfdfuncs.pluginIO) {
-         printf(" pluginIO()\n");
-      }
-      if (pfuncs->pfdfuncs.createFile) {
-         printf(" createFile()\n");
-      }
+      if (pfuncs->pfdfuncs.endRestoreFile) { printf(" endRestoreFile()\n"); }
+      if (pfuncs->pfdfuncs.pluginIO) { printf(" pluginIO()\n"); }
+      if (pfuncs->pfdfuncs.createFile) { printf(" createFile()\n"); }
       if (pfuncs->pfdfuncs.setFileAttributes) {
-         printf(" setFileAttributes()\n");
+        printf(" setFileAttributes()\n");
       }
-      if (pfuncs->pfdfuncs.checkFile) {
-         printf(" checkFile()\n");
-      }
+      if (pfuncs->pfdfuncs.checkFile) { printf(" checkFile()\n"); }
       break;
-   case SDPLUGIN:
+    case SDPLUGIN:
       if (pdata->verbose) {
-          if (pfuncs->psdfuncs.newPlugin) {
-             printf(" newPlugin()\n");
-          }
-          if (pfuncs->psdfuncs.freePlugin) {
-             printf(" freePlugin()\n");
-          }
+        if (pfuncs->psdfuncs.newPlugin) { printf(" newPlugin()\n"); }
+        if (pfuncs->psdfuncs.freePlugin) { printf(" freePlugin()\n"); }
       }
-      if (pfuncs->psdfuncs.getPluginValue) {
-         printf(" getPluginValue()\n");
-      }
-      if (pfuncs->psdfuncs.setPluginValue) {
-         printf(" setPluginValue()\n");
-      }
+      if (pfuncs->psdfuncs.getPluginValue) { printf(" getPluginValue()\n"); }
+      if (pfuncs->psdfuncs.setPluginValue) { printf(" setPluginValue()\n"); }
       if (pfuncs->psdfuncs.handlePluginEvent) {
-         printf(" handlePluginEvent()\n");
+        printf(" handlePluginEvent()\n");
       }
       break;
-   default:
+    default:
       printf("\nUnknown plugin type or other Error\n\n");
-   }
+  }
 }
 
 /*
@@ -497,75 +465,64 @@ void DumpPlugfuncs(progdata *pdata)
  *    3 - cannot find an unloadPlugin function
  *    10 - not enough memory
  */
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-
-   progdata *pdata;
-   loadPlugin loadplugfunc;
-   unloadPlugin unloadplugfunc;
-   bareosfuncs bfuncs = {
-      sizeof(bfuncs),
-      1,
-      registerBareosEvents,
-      getBareosValue,
-      setBareosValue,
-      JobMessage,
-      DebugMessage,
-      bareosMalloc,
+  progdata* pdata;
+  loadPlugin loadplugfunc;
+  unloadPlugin unloadplugfunc;
+  bareosfuncs bfuncs = {
+      sizeof(bfuncs), 1,          registerBareosEvents, getBareosValue,
+      setBareosValue, JobMessage, DebugMessage,         bareosMalloc,
       bareosFree,
-   };
-   bareosinfos binfos;
+  };
+  bareosinfos binfos;
 
-   pdata = allocpdata();
-   ParseArgs(pdata, argc, argv);
+  pdata = allocpdata();
+  ParseArgs(pdata, argc, argv);
 
-   binfos.bfdinfo.size = sizeof(binfos);
-   binfos.bfdinfo.version = DEFAULT_API_VERSION;
+  binfos.bfdinfo.size = sizeof(binfos);
+  binfos.bfdinfo.version = DEFAULT_API_VERSION;
 
-   pdata->pluginhandle = dlopen(pdata->pluginfile, RTLD_LAZY);
-   if (pdata->pluginhandle == NULL) {
-      printf("\nCannot load a plugin: %s\n\n", dlerror());
-      Freepdata(pdata);
-      exit(1);
-   }
+  pdata->pluginhandle = dlopen(pdata->pluginfile, RTLD_LAZY);
+  if (pdata->pluginhandle == NULL) {
+    printf("\nCannot load a plugin: %s\n\n", dlerror());
+    Freepdata(pdata);
+    exit(1);
+  }
 
-   loadplugfunc = (loadPlugin) dlsym(pdata->pluginhandle, "loadPlugin");
-   if (loadplugfunc == NULL) {
-      printf("\nCannot find loadPlugin function: %s\n", dlerror());
-      printf("\nWhether the file is a really Bareos plugin?\n\n");
-      Freepdata(pdata);
-      exit(2);
-   }
+  loadplugfunc = (loadPlugin)dlsym(pdata->pluginhandle, "loadPlugin");
+  if (loadplugfunc == NULL) {
+    printf("\nCannot find loadPlugin function: %s\n", dlerror());
+    printf("\nWhether the file is a really Bareos plugin?\n\n");
+    Freepdata(pdata);
+    exit(2);
+  }
 
-   unloadplugfunc = (unloadPlugin) dlsym(pdata->pluginhandle, "unloadPlugin");
-   if (unloadplugfunc == NULL) {
-      printf("\nCannot find unloadPlugin function: %s\n", dlerror());
-      printf("\nWhether the file is a really Bareos plugin?\n\n");
-      Freepdata(pdata);
-      exit(3);
-   }
+  unloadplugfunc = (unloadPlugin)dlsym(pdata->pluginhandle, "unloadPlugin");
+  if (unloadplugfunc == NULL) {
+    printf("\nCannot find unloadPlugin function: %s\n", dlerror());
+    printf("\nWhether the file is a really Bareos plugin?\n\n");
+    Freepdata(pdata);
+    exit(3);
+  }
 
-   if (pdata->bapiversion > 0) {
-      binfos.bdirinfo.version = pdata->bapiversion;
-   }
+  if (pdata->bapiversion > 0) { binfos.bdirinfo.version = pdata->bapiversion; }
 
-   loadplugfunc(&binfos, &bfuncs, (void **)&pdata->pinfo, (void **)&pdata->pfuncs);
+  loadplugfunc(&binfos, &bfuncs, (void**)&pdata->pinfo, (void**)&pdata->pfuncs);
 
-   pdata->bplugtype = Getplugintype(pdata);
+  pdata->bplugtype = Getplugintype(pdata);
 
-   if (!pdata->listfunc) {
-      DumpPluginfo(pdata);
-   }
-   if ((!pdata->listinfo && pdata->listfunc) || pdata->verbose) {
-      DumpPlugfuncs(pdata);
-   }
-   printf("\n");
+  if (!pdata->listfunc) { DumpPluginfo(pdata); }
+  if ((!pdata->listinfo && pdata->listfunc) || pdata->verbose) {
+    DumpPlugfuncs(pdata);
+  }
+  printf("\n");
 
-   unloadplugfunc();
+  unloadplugfunc();
 
-   dlclose(pdata->pluginhandle);
+  dlclose(pdata->pluginhandle);
 
-   Freepdata(pdata);
+  Freepdata(pdata);
 
-   return 0;
+  return 0;
 }

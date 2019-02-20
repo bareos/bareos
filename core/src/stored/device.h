@@ -24,14 +24,17 @@
 
 namespace storagedaemon {
 
-bool FirstOpenDevice(DeviceControlRecord *dcr);
-bool FixupDeviceBlockWriteError(DeviceControlRecord *dcr, int retries = 4);
-void SetStartVolPosition(DeviceControlRecord *dcr);
-void SetNewVolumeParameters(DeviceControlRecord *dcr);
-void SetNewFileParameters(DeviceControlRecord *dcr);
-BootStrapRecord *PositionDeviceToFirstFile(JobControlRecord *jcr, DeviceControlRecord *dcr);
-bool TryDeviceRepositioning(JobControlRecord *jcr, DeviceRecord *rec, DeviceControlRecord *dcr);
+bool FirstOpenDevice(DeviceControlRecord* dcr);
+bool FixupDeviceBlockWriteError(DeviceControlRecord* dcr, int retries = 4);
+void SetStartVolPosition(DeviceControlRecord* dcr);
+void SetNewVolumeParameters(DeviceControlRecord* dcr);
+void SetNewFileParameters(DeviceControlRecord* dcr);
+BootStrapRecord* PositionDeviceToFirstFile(JobControlRecord* jcr,
+                                           DeviceControlRecord* dcr);
+bool TryDeviceRepositioning(JobControlRecord* jcr,
+                            DeviceRecord* rec,
+                            DeviceControlRecord* dcr);
 
 } /* namespace storagedaemon */
 
-#endif // BAREOS_STORED_DEVICE_H_
+#endif  // BAREOS_STORED_DEVICE_H_

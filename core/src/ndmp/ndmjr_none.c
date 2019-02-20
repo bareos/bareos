@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2000
- *	Traakan, Inc., Los Altos, CA
- *	All rights reserved.
+ *      Traakan, Inc., Los Altos, CA
+ *      All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -35,7 +35,7 @@
  */
 
 
-#include "ndmagents.h"		/* struct ndm_job_param */
+#include "ndmagents.h" /* struct ndm_job_param */
 
 
 #ifndef NDMOS_OPTION_NO_CONTROL_AGENT
@@ -43,10 +43,6 @@
 #include "ndmjr_none.h"
 
 
-int
-ndmjr_none_apply (struct ndm_job_param *job, char *reason)
-{
-	return 0;
-}
+int ndmjr_none_apply(struct ndm_job_param* job, char* reason) { return 0; }
 
 #endif /* !NDMOS_OPTION_NO_CONTROL_AGENT */

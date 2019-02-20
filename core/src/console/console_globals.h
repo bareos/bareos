@@ -30,10 +30,10 @@ namespace console {
 class ConsoleResource;
 class DirectorResource;
 
-extern ConfigurationParser *my_config;
-extern ConsoleResource *me;
-extern ConsoleResource *console_resource;
-extern DirectorResource *director_resource;
+extern ConfigurationParser* my_config;
+extern ConsoleResource* me;
+extern ConsoleResource* console_resource;
+extern DirectorResource* director_resource;
 
 } /* namespace console */
 

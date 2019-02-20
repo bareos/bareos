@@ -42,331 +42,325 @@ namespace directordaemon {
 
 #if HAVE_NDMP
 /*
- * Fill the NDMP backup environment table with the data for the data agent to act on.
+ * Fill the NDMP backup environment table with the data for the data agent to
+ * act on.
  */
-bool FillBackupEnvironment(JobControlRecord *jcr,
-                             IncludeExcludeItem *ie,
-                             char *filesystem,
-                             struct ndm_job_param *job)
+bool FillBackupEnvironment(JobControlRecord* jcr,
+                           IncludeExcludeItem* ie,
+                           char* filesystem,
+                           struct ndm_job_param* job)
 {
-   int i, j, cnt;
-   bool exclude;
-   FileOptions *fo;
-   ndmp9_pval pv;
-   PoolMem pattern;
-   PoolMem tape_device;
-   ndmp_backup_format_option *nbf_options;
+  int i, j, cnt;
+  bool exclude;
+  FileOptions* fo;
+  ndmp9_pval pv;
+  PoolMem pattern;
+  PoolMem tape_device;
+  ndmp_backup_format_option* nbf_options;
 
-   /*
-    * See if we know this backup format and get it options.
-    */
-   nbf_options = ndmp_lookup_backup_format_options(job->bu_type);
+  /*
+   * See if we know this backup format and get it options.
+   */
+  nbf_options = ndmp_lookup_backup_format_options(job->bu_type);
 
-   if (!nbf_options || nbf_options->uses_file_history) {
-      /*
-       * We want to receive file history info from the NDMP backup.
-       */
-      pv.name = ndmp_env_keywords[NDMP_ENV_KW_HIST];
-      pv.value = ndmp_env_values[NDMP_ENV_VALUE_YES];
-      ndma_store_env_list(&job->env_tab, &pv);
-   } else {
-      /*
-       * We don't want to receive file history info from the NDMP backup.
-       */
-      pv.name = ndmp_env_keywords[NDMP_ENV_KW_HIST];
-      pv.value = ndmp_env_values[NDMP_ENV_VALUE_NO];
-      ndma_store_env_list(&job->env_tab, &pv);
-   }
+  if (!nbf_options || nbf_options->uses_file_history) {
+    /*
+     * We want to receive file history info from the NDMP backup.
+     */
+    pv.name = ndmp_env_keywords[NDMP_ENV_KW_HIST];
+    pv.value = ndmp_env_values[NDMP_ENV_VALUE_YES];
+    ndma_store_env_list(&job->env_tab, &pv);
+  } else {
+    /*
+     * We don't want to receive file history info from the NDMP backup.
+     */
+    pv.name = ndmp_env_keywords[NDMP_ENV_KW_HIST];
+    pv.value = ndmp_env_values[NDMP_ENV_VALUE_NO];
+    ndma_store_env_list(&job->env_tab, &pv);
+  }
 
-   /*
-    * Tell the data agent what type of backup to make.
-    */
-   pv.name = ndmp_env_keywords[NDMP_ENV_KW_TYPE];
-   pv.value = job->bu_type;
-   ndma_store_env_list(&job->env_tab, &pv);
+  /*
+   * Tell the data agent what type of backup to make.
+   */
+  pv.name = ndmp_env_keywords[NDMP_ENV_KW_TYPE];
+  pv.value = job->bu_type;
+  ndma_store_env_list(&job->env_tab, &pv);
 
-   /*
-    * See if we are doing a backup type that uses dumplevels.
-    */
-   if (nbf_options && nbf_options->uses_level) {
-      char text_level[50];
+  /*
+   * See if we are doing a backup type that uses dumplevels.
+   */
+  if (nbf_options && nbf_options->uses_level) {
+    char text_level[50];
 
-      /*
-       * Set the dump level for the backup.
-       */
-      jcr->DumpLevel = NativeToNdmpLevel(jcr, filesystem);
-      job->bu_level = jcr->DumpLevel;
-      if (job->bu_level == -1) {
-         return false;
+    /*
+     * Set the dump level for the backup.
+     */
+    jcr->DumpLevel = NativeToNdmpLevel(jcr, filesystem);
+    job->bu_level = jcr->DumpLevel;
+    if (job->bu_level == -1) { return false; }
+
+    pv.name = ndmp_env_keywords[NDMP_ENV_KW_LEVEL];
+    pv.value = edit_uint64(job->bu_level, text_level);
+    ndma_store_env_list(&job->env_tab, &pv);
+
+    /*
+     * Update the dumpdates
+     */
+    pv.name = ndmp_env_keywords[NDMP_ENV_KW_UPDATE];
+    pv.value = ndmp_env_values[NDMP_ENV_VALUE_YES];
+    ndma_store_env_list(&job->env_tab, &pv);
+  }
+
+  /*
+   * Tell the data engine what to backup.
+   */
+  pv.name = ndmp_env_keywords[NDMP_ENV_KW_FILESYSTEM];
+  pv.value = filesystem;
+  ndma_store_env_list(&job->env_tab, &pv);
+
+  /*
+   * Loop over each option block for this fileset and append any
+   * INCLUDE/EXCLUDE and/or META tags to the env_tab of the NDMP backup.
+   */
+  for (i = 0; i < ie->num_opts; i++) {
+    fo = ie->opts_list[i];
+
+    /*
+     * Pickup any interesting patterns.
+     */
+    cnt = 0;
+    PmStrcpy(pattern, "");
+    for (j = 0; j < fo->wild.size(); j++) {
+      if (cnt != 0) { PmStrcat(pattern, ","); }
+      PmStrcat(pattern, (char*)fo->wild.get(j));
+      cnt++;
+    }
+    for (j = 0; j < fo->wildfile.size(); j++) {
+      if (cnt != 0) { PmStrcat(pattern, ","); }
+      PmStrcat(pattern, (char*)fo->wildfile.get(j));
+      cnt++;
+    }
+    for (j = 0; j < fo->wilddir.size(); j++) {
+      if (cnt != 0) { PmStrcat(pattern, ","); }
+      PmStrcat(pattern, (char*)fo->wilddir.get(j));
+      cnt++;
+    }
+
+    /*
+     * See if this is a INCLUDE or EXCLUDE block.
+     */
+    if (cnt > 0) {
+      exclude = false;
+      for (j = 0; fo->opts[j] != '\0'; j++) {
+        if (fo->opts[j] == 'e') {
+          exclude = true;
+          break;
+        }
       }
 
-      pv.name = ndmp_env_keywords[NDMP_ENV_KW_LEVEL];
-      pv.value = edit_uint64(job->bu_level, text_level);
-      ndma_store_env_list(&job->env_tab, &pv);
-
-      /*
-       * Update the dumpdates
-       */
-      pv.name = ndmp_env_keywords[NDMP_ENV_KW_UPDATE];
-      pv.value = ndmp_env_values[NDMP_ENV_VALUE_YES];
-      ndma_store_env_list(&job->env_tab, &pv);
-   }
-
-   /*
-    * Tell the data engine what to backup.
-    */
-   pv.name = ndmp_env_keywords[NDMP_ENV_KW_FILESYSTEM];
-   pv.value = filesystem;
-   ndma_store_env_list(&job->env_tab, &pv);
-
-   /*
-    * Loop over each option block for this fileset and append any
-    * INCLUDE/EXCLUDE and/or META tags to the env_tab of the NDMP backup.
-    */
-   for (i = 0; i < ie->num_opts; i++) {
-      fo = ie->opts_list[i];
-
-      /*
-       * Pickup any interesting patterns.
-       */
-      cnt = 0;
-      PmStrcpy(pattern, "");
-      for (j = 0; j < fo->wild.size(); j++) {
-         if (cnt != 0) {
-            PmStrcat(pattern, ",");
-         }
-         PmStrcat(pattern, (char *)fo->wild.get(j));
-         cnt++;
-      }
-      for (j = 0; j < fo->wildfile.size(); j++) {
-         if (cnt != 0) {
-            PmStrcat(pattern, ",");
-         }
-         PmStrcat(pattern, (char *)fo->wildfile.get(j));
-         cnt++;
-      }
-      for (j = 0; j < fo->wilddir.size(); j++) {
-         if (cnt != 0) {
-            PmStrcat(pattern, ",");
-         }
-         PmStrcat(pattern, (char *)fo->wilddir.get(j));
-         cnt++;
-      }
-
-      /*
-       * See if this is a INCLUDE or EXCLUDE block.
-       */
-      if (cnt > 0) {
-         exclude = false;
-         for (j = 0; fo->opts[j] != '\0'; j++) {
-            if (fo->opts[j] == 'e') {
-               exclude = true;
-               break;
-            }
-         }
-
-         if (exclude) {
-            pv.name = ndmp_env_keywords[NDMP_ENV_KW_EXCLUDE];
-         } else {
-            pv.name = ndmp_env_keywords[NDMP_ENV_KW_INCLUDE];
-         }
-
-         pv.value = pattern.c_str();
-         ndma_store_env_list(&job->env_tab, &pv);
-      }
-
-      /*
-       * Parse all specific META tags for this option block.
-       */
-      for (j = 0; j < fo->meta.size(); j++) {
-         NdmpParseMetaTag(&job->env_tab, (char *)fo->meta.get(j));
-      }
-   }
-
-   /*
-    * If we have a paired storage definition we put the
-    * - Storage Daemon Auth Key
-    * - Filesystem
-    * - Dumplevel
-    * into the tape device name of the  NDMP session. This way the storage
-    * daemon can link the NDMP data and the normal save session together.
-    */
-   if (jcr->store_bsock) {
-      if (nbf_options && nbf_options->uses_level) {
-         Mmsg(tape_device, "%s@%s%%%d", jcr->sd_auth_key, filesystem, jcr->DumpLevel);
+      if (exclude) {
+        pv.name = ndmp_env_keywords[NDMP_ENV_KW_EXCLUDE];
       } else {
-         Mmsg(tape_device, "%s@%s", jcr->sd_auth_key, filesystem);
+        pv.name = ndmp_env_keywords[NDMP_ENV_KW_INCLUDE];
       }
-      job->tape_device = bstrdup(tape_device.c_str());
-   }
 
-   return true;
+      pv.value = pattern.c_str();
+      ndma_store_env_list(&job->env_tab, &pv);
+    }
+
+    /*
+     * Parse all specific META tags for this option block.
+     */
+    for (j = 0; j < fo->meta.size(); j++) {
+      NdmpParseMetaTag(&job->env_tab, (char*)fo->meta.get(j));
+    }
+  }
+
+  /*
+   * If we have a paired storage definition we put the
+   * - Storage Daemon Auth Key
+   * - Filesystem
+   * - Dumplevel
+   * into the tape device name of the  NDMP session. This way the storage
+   * daemon can link the NDMP data and the normal save session together.
+   */
+  if (jcr->store_bsock) {
+    if (nbf_options && nbf_options->uses_level) {
+      Mmsg(tape_device, "%s@%s%%%d", jcr->sd_auth_key, filesystem,
+           jcr->DumpLevel);
+    } else {
+      Mmsg(tape_device, "%s@%s", jcr->sd_auth_key, filesystem);
+    }
+    job->tape_device = bstrdup(tape_device.c_str());
+  }
+
+  return true;
 }
 
 
 /*
  * Translate bareos native backup level to NDMP backup level
  */
-int NativeToNdmpLevel(JobControlRecord *jcr, char *filesystem)
+int NativeToNdmpLevel(JobControlRecord* jcr, char* filesystem)
 {
-   int level = -1;
+  int level = -1;
 
-   if (!jcr->db->CreateNdmpLevelMapping(jcr, &jcr->jr, filesystem)) {
-      return -1;
-   }
+  if (!jcr->db->CreateNdmpLevelMapping(jcr, &jcr->jr, filesystem)) {
+    return -1;
+  }
 
-   switch (jcr->getJobLevel()) {
-   case L_FULL:
+  switch (jcr->getJobLevel()) {
+    case L_FULL:
       level = 0;
       break;
-   case L_DIFFERENTIAL:
+    case L_DIFFERENTIAL:
       level = 1;
       break;
-   case L_INCREMENTAL:
+    case L_INCREMENTAL:
       level = jcr->db->GetNdmpLevelMapping(jcr, &jcr->jr, filesystem);
       break;
-   default:
-      Jmsg(jcr, M_FATAL, 0, _("Illegal Job Level %c for NDMP Job\n"), jcr->getJobLevel());
+    default:
+      Jmsg(jcr, M_FATAL, 0, _("Illegal Job Level %c for NDMP Job\n"),
+           jcr->getJobLevel());
       break;
-   }
+  }
 
-   /*
-    * Dump level can be from 0 - 9
-    */
-   if (level < 0 || level > 9) {
-      Jmsg(jcr, M_FATAL, 0, _("NDMP dump format doesn't support more than 8 "
-                              "incrementals, please run a Differential or a Full Backup\n"));
-      level = -1;
-   }
+  /*
+   * Dump level can be from 0 - 9
+   */
+  if (level < 0 || level > 9) {
+    Jmsg(jcr, M_FATAL, 0,
+         _("NDMP dump format doesn't support more than 8 "
+           "incrementals, please run a Differential or a Full Backup\n"));
+    level = -1;
+  }
 
-   return level;
+  return level;
 }
 
 /*
  * This glues the NDMP File Handle DB with internal code.
  */
-void RegisterCallbackHooks(struct ndmlog *ixlog)
+void RegisterCallbackHooks(struct ndmlog* ixlog)
 {
 #ifdef HAVE_LMDB
-   NIS *nis = (NIS *)ixlog->ctx;
+  NIS* nis = (NIS*)ixlog->ctx;
 
-   if (nis->jcr->res.client->ndmp_use_lmdb) {
-      NdmpFhdbLmdbRegister(ixlog);
-   } else {
-      NdmpFhdbMemRegister(ixlog);
-   }
+  if (nis->jcr->res.client->ndmp_use_lmdb) {
+    NdmpFhdbLmdbRegister(ixlog);
+  } else {
+    NdmpFhdbMemRegister(ixlog);
+  }
 #else
-   NdmpFhdbMemRegister(ixlog);
+  NdmpFhdbMemRegister(ixlog);
 #endif
 }
 
-void UnregisterCallbackHooks(struct ndmlog *ixlog)
+void UnregisterCallbackHooks(struct ndmlog* ixlog)
 {
 #ifdef HAVE_LMDB
-   NIS *nis = (NIS *)ixlog->ctx;
+  NIS* nis = (NIS*)ixlog->ctx;
 
-   if (nis->jcr->res.client->ndmp_use_lmdb) {
-      NdmpFhdbLmdbUnregister(ixlog);
-   } else {
-      NdmpFhdbMemUnregister(ixlog);
-   }
+  if (nis->jcr->res.client->ndmp_use_lmdb) {
+    NdmpFhdbLmdbUnregister(ixlog);
+  } else {
+    NdmpFhdbMemUnregister(ixlog);
+  }
 #else
-   NdmpFhdbMemUnregister(ixlog);
+  NdmpFhdbMemUnregister(ixlog);
 #endif
 }
 
-void ProcessFhdb(struct ndmlog *ixlog)
+void ProcessFhdb(struct ndmlog* ixlog)
 {
 #ifdef HAVE_LMDB
-   NIS *nis = (NIS *)ixlog->ctx;
+  NIS* nis = (NIS*)ixlog->ctx;
 
-   if (nis->jcr->res.client->ndmp_use_lmdb) {
-      NdmpFhdbLmdbProcessDb(ixlog);
-   } else {
-      NdmpFhdbMemProcessDb(ixlog);
-   }
+  if (nis->jcr->res.client->ndmp_use_lmdb) {
+    NdmpFhdbLmdbProcessDb(ixlog);
+  } else {
+    NdmpFhdbMemProcessDb(ixlog);
+  }
 #else
-   NdmpFhdbMemProcessDb(ixlog);
+  NdmpFhdbMemProcessDb(ixlog);
 #endif
 }
 
 /*
  * Cleanup a NDMP backup session.
  */
-void NdmpBackupCleanup(JobControlRecord *jcr, int TermCode)
+void NdmpBackupCleanup(JobControlRecord* jcr, int TermCode)
 {
-   const char *TermMsg;
-   char term_code[100];
-   int msg_type = M_INFO;
-   ClientDbRecord cr;
+  const char* TermMsg;
+  char term_code[100];
+  int msg_type = M_INFO;
+  ClientDbRecord cr;
 
-   Dmsg2(100, "Enter NdmpBackupCleanup %d %c\n", TermCode, TermCode);
-   memset(&cr, 0, sizeof(cr));
+  Dmsg2(100, "Enter NdmpBackupCleanup %d %c\n", TermCode, TermCode);
+  memset(&cr, 0, sizeof(cr));
 
-   if (jcr->is_JobStatus(JS_Terminated) &&
+  if (jcr->is_JobStatus(JS_Terminated) &&
       (jcr->JobErrors || jcr->SDErrors || jcr->JobWarnings)) {
-      TermCode = JS_Warnings;
-   }
+    TermCode = JS_Warnings;
+  }
 
-   UpdateJobEnd(jcr, TermCode);
+  UpdateJobEnd(jcr, TermCode);
 
-   if (!jcr->db->GetJobRecord(jcr, &jcr->jr)) {
-      Jmsg(jcr, M_WARNING, 0, _("Error getting Job record for Job report: ERR=%s"),
+  if (!jcr->db->GetJobRecord(jcr, &jcr->jr)) {
+    Jmsg(jcr, M_WARNING, 0,
+         _("Error getting Job record for Job report: ERR=%s"),
          jcr->db->strerror());
-      jcr->setJobStatus(JS_ErrorTerminated);
-   }
+    jcr->setJobStatus(JS_ErrorTerminated);
+  }
 
-   bstrncpy(cr.Name, jcr->res.client->name(), sizeof(cr.Name));
-   if (!jcr->db->GetClientRecord(jcr, &cr)) {
-      Jmsg(jcr, M_WARNING, 0, _("Error getting Client record for Job report: ERR=%s"),
+  bstrncpy(cr.Name, jcr->res.client->name(), sizeof(cr.Name));
+  if (!jcr->db->GetClientRecord(jcr, &cr)) {
+    Jmsg(jcr, M_WARNING, 0,
+         _("Error getting Client record for Job report: ERR=%s"),
          jcr->db->strerror());
-   }
+  }
 
-   UpdateBootstrapFile(jcr);
+  UpdateBootstrapFile(jcr);
 
-   switch (jcr->JobStatus) {
-      case JS_Terminated:
-         TermMsg = _("Backup OK");
-         break;
-      case JS_Warnings:
-         TermMsg = _("Backup OK -- with warnings");
-         break;
-      case JS_FatalError:
-      case JS_ErrorTerminated:
-         TermMsg = _("*** Backup Error ***");
-         msg_type = M_ERROR;          /* Generate error message */
-         if (jcr->store_bsock) {
-            jcr->store_bsock->signal(BNET_TERMINATE);
-            if (jcr->SD_msg_chan_started) {
-               pthread_cancel(jcr->SD_msg_chan);
-            }
-         }
-         break;
-      case JS_Canceled:
-         TermMsg = _("Backup Canceled");
-         if (jcr->store_bsock) {
-            jcr->store_bsock->signal(BNET_TERMINATE);
-            if (jcr->SD_msg_chan_started) {
-               pthread_cancel(jcr->SD_msg_chan);
-            }
-         }
-         break;
-      default:
-         TermMsg = term_code;
-         sprintf(term_code, _("Inappropriate term code: %c\n"), jcr->JobStatus);
-         break;
-   }
+  switch (jcr->JobStatus) {
+    case JS_Terminated:
+      TermMsg = _("Backup OK");
+      break;
+    case JS_Warnings:
+      TermMsg = _("Backup OK -- with warnings");
+      break;
+    case JS_FatalError:
+    case JS_ErrorTerminated:
+      TermMsg = _("*** Backup Error ***");
+      msg_type = M_ERROR; /* Generate error message */
+      if (jcr->store_bsock) {
+        jcr->store_bsock->signal(BNET_TERMINATE);
+        if (jcr->SD_msg_chan_started) { pthread_cancel(jcr->SD_msg_chan); }
+      }
+      break;
+    case JS_Canceled:
+      TermMsg = _("Backup Canceled");
+      if (jcr->store_bsock) {
+        jcr->store_bsock->signal(BNET_TERMINATE);
+        if (jcr->SD_msg_chan_started) { pthread_cancel(jcr->SD_msg_chan); }
+      }
+      break;
+    default:
+      TermMsg = term_code;
+      sprintf(term_code, _("Inappropriate term code: %c\n"), jcr->JobStatus);
+      break;
+  }
 
-   GenerateBackupSummary(jcr, &cr, msg_type, TermMsg);
+  GenerateBackupSummary(jcr, &cr, msg_type, TermMsg);
 
-   Dmsg0(100, "Leave NdmpBackupCleanup\n");
+  Dmsg0(100, "Leave NdmpBackupCleanup\n");
 }
 
-#else  /* HAVE_NDMP */
+#else /* HAVE_NDMP */
 
-void NdmpBackupCleanup(JobControlRecord *jcr, int TermCode)
+void NdmpBackupCleanup(JobControlRecord* jcr, int TermCode)
 {
-   Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
+  Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
 }
 
 #endif /* HAVE_NDMP */

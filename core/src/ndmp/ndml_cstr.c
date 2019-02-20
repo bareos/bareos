@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2000
- *	Traakan, Inc., Los Altos, CA
- *	All rights reserved.
+ *      Traakan, Inc., Los Altos, CA
+ *      All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,96 +31,87 @@
  * Ident:    $Id: $
  *
  * Description:
- *	Convert strings to/from a canonical strings (CSTR).
+ *      Convert strings to/from a canonical strings (CSTR).
  *
- *	The main reason for this is to eliminate spaces
- *	in strings thus making multiple strings easily
- *	delimited by white space.
+ *      The main reason for this is to eliminate spaces
+ *      in strings thus making multiple strings easily
+ *      delimited by white space.
  *
- *	Canonical strings use the HTTP convention of
- *	percent sign followed by two hex digits (%xx).
- *	Characters outside the printable ASCII range,
- *	space, and percent sign are so converted.
+ *      Canonical strings use the HTTP convention of
+ *      percent sign followed by two hex digits (%xx).
+ *      Characters outside the printable ASCII range,
+ *      space, and percent sign are so converted.
  *
- *	Both interfaces return the length of the resulting
- *	string, -1 if there is an overflow, or -2
- *	there is a conversion error.
+ *      Both interfaces return the length of the resulting
+ *      string, -1 if there is an overflow, or -2
+ *      there is a conversion error.
  */
 
 
 #include "ndmlib.h"
 
 
-static char	ndmcstr_to_hex[] = "0123456789ABCDEF";
+static char ndmcstr_to_hex[] = "0123456789ABCDEF";
 
-extern int	ndmcstr_from_hex (int c);
+extern int ndmcstr_from_hex(int c);
 
-int
-ndmcstr_from_str (char *src, char *dst, unsigned dst_max)
+int ndmcstr_from_str(char* src, char* dst, unsigned dst_max)
 {
-	unsigned char *		p = (unsigned char *)src;
-	unsigned char *		q = (unsigned char *)dst;
-	unsigned char *		q_end = q + dst_max - 1;
-	int			c;
+  unsigned char* p = (unsigned char*)src;
+  unsigned char* q = (unsigned char*)dst;
+  unsigned char* q_end = q + dst_max - 1;
+  int c;
 
-	while ((c = *p++) != 0) {
-		if (c <= ' ' || c > 0x7E || c == NDMCSTR_WARN) {
-			if (q+3 > q_end)
-				return -1;
-			*q++ = NDMCSTR_WARN;
-			*q++ = ndmcstr_to_hex[(c>>4)&0xF];
-			*q++ = ndmcstr_to_hex[c&0xF];
-		} else {
-			if (q+1 > q_end)
-				return -1;
-			*q++ = c;
-		}
-	}
-	*q = 0;
+  while ((c = *p++) != 0) {
+    if (c <= ' ' || c > 0x7E || c == NDMCSTR_WARN) {
+      if (q + 3 > q_end) return -1;
+      *q++ = NDMCSTR_WARN;
+      *q++ = ndmcstr_to_hex[(c >> 4) & 0xF];
+      *q++ = ndmcstr_to_hex[c & 0xF];
+    } else {
+      if (q + 1 > q_end) return -1;
+      *q++ = c;
+    }
+  }
+  *q = 0;
 
-	return q - (unsigned char *)dst;
+  return q - (unsigned char*)dst;
 }
 
-int
-ndmcstr_to_str (char *src, char *dst, unsigned dst_max)
+int ndmcstr_to_str(char* src, char* dst, unsigned dst_max)
 {
-	unsigned char *		p = (unsigned char *)src;
-	unsigned char *		q = (unsigned char *)dst;
-	unsigned char *		q_end = q + dst_max - 1;
-	int			c, c1, c2;
+  unsigned char* p = (unsigned char*)src;
+  unsigned char* q = (unsigned char*)dst;
+  unsigned char* q_end = q + dst_max - 1;
+  int c, c1, c2;
 
-	while ((c = *p++) != 0) {
-		if (q+1 > q_end)
-			return -1;
-		if (c != NDMCSTR_WARN) {
-			*q++ = c;
-			continue;
-		}
-		c1 = ndmcstr_from_hex (p[0]);
-		c2 = ndmcstr_from_hex (p[1]);
+  while ((c = *p++) != 0) {
+    if (q + 1 > q_end) return -1;
+    if (c != NDMCSTR_WARN) {
+      *q++ = c;
+      continue;
+    }
+    c1 = ndmcstr_from_hex(p[0]);
+    c2 = ndmcstr_from_hex(p[1]);
 
-		if (c1 < 0 || c2 < 0) {
-			/* busted conversion */
-			return -2;
-		}
+    if (c1 < 0 || c2 < 0) {
+      /* busted conversion */
+      return -2;
+    }
 
-		c = (c1<<4) + c2;
-		*q++ = c;
-		p += 2;
-	}
-	*q = 0;
+    c = (c1 << 4) + c2;
+    *q++ = c;
+    p += 2;
+  }
+  *q = 0;
 
-	return q - (unsigned char *)dst;
+  return q - (unsigned char*)dst;
 }
 
-int
-ndmcstr_from_hex (int c)
+int ndmcstr_from_hex(int c)
 {
-	if ('0' <= c && c <= '9')
-		return c - '0';
-	if ('a' <= c && c <= 'f')
-		return (c - 'a') + 10;
-	if ('A' <= c && c <= 'F')
-		return (c - 'A') + 10;
-	return -1;
+  if ('0' <= c && c <= '9') return c - '0';
+  if ('a' <= c && c <= 'f') return (c - 'a') + 10;
+  if ('A' <= c && c <= 'F') return (c - 'A') + 10;
+  return -1;
 }

@@ -25,7 +25,8 @@
 #define APP_NAME "Bareos-fd"
 #define LC_APP_NAME "bareos-fd"
 #define APP_DESC "Bareos File Backup Service"
-#define SERVICE_DESC "Provides file backup and restore services (bareos client)."
+#define SERVICE_DESC \
+  "Provides file backup and restore services (bareos client)."
 
 #define TerminateApp(x) filedaemon::TerminateFiled(x)
 namespace filedaemon {

@@ -25,36 +25,42 @@
 
 class QualifiedResourceNameTypeConverter;
 
-void EscapeString(PoolMem &snew, char *old, int len);
-bool IsBufZero(char *buf, int len);
-void lcase(char *str);
-void BashSpaces(char *str);
-void BashSpaces(PoolMem &pm);
-void UnbashSpaces(char *str);
-void UnbashSpaces(PoolMem &pm);
-bool GetNameAndResourceTypeAndVersionFromHello(const std::string &input,
-                                     std::string &name,
-                                     std::string &r_type_str,
-                                     BareosVersionNumber &version);
-const char* IndentMultilineString(PoolMem &resultbuffer, const char *multilinestring, const char *separator);
-char *encode_time(utime_t time, char *buf);
-bool ConvertTimeoutToTimespec(timespec &timeout, int timeout_in_seconds);
-char *encode_mode(mode_t mode, char *buf);
-int DoShellExpansion(char *name, int name_len);
-void JobstatusToAscii(int JobStatus, char *msg, int maxlen);
-void JobstatusToAsciiGui(int JobStatus, char *msg, int maxlen);
-int RunProgram(char *prog, int wait, POOLMEM *&results);
-int RunProgramFullOutput(char *prog, int wait, POOLMEM *&results);
-char *action_on_purge_to_string(int aop, PoolMem &ret);
-const char *job_type_to_str(int type);
-const char *job_status_to_str(int stat);
-const char *job_level_to_str(int level);
-const char *volume_status_to_str(const char *status);
-void MakeSessionKey(char *key, char *seed, int mode);
-void EncodeSessionKey(char *encode, char *session, char *key, int maxlen);
-void DecodeSessionKey(char *decode, char *session, char *key, int maxlen);
-POOLMEM *edit_job_codes(JobControlRecord *jcr, char *omsg, char *imsg, const char *to, job_code_callback_t job_code_callback = NULL);
-void SetWorkingDirectory(char *wd);
-const char *last_path_separator(const char *str);
+void EscapeString(PoolMem& snew, char* old, int len);
+bool IsBufZero(char* buf, int len);
+void lcase(char* str);
+void BashSpaces(char* str);
+void BashSpaces(PoolMem& pm);
+void UnbashSpaces(char* str);
+void UnbashSpaces(PoolMem& pm);
+bool GetNameAndResourceTypeAndVersionFromHello(const std::string& input,
+                                               std::string& name,
+                                               std::string& r_type_str,
+                                               BareosVersionNumber& version);
+const char* IndentMultilineString(PoolMem& resultbuffer,
+                                  const char* multilinestring,
+                                  const char* separator);
+char* encode_time(utime_t time, char* buf);
+bool ConvertTimeoutToTimespec(timespec& timeout, int timeout_in_seconds);
+char* encode_mode(mode_t mode, char* buf);
+int DoShellExpansion(char* name, int name_len);
+void JobstatusToAscii(int JobStatus, char* msg, int maxlen);
+void JobstatusToAsciiGui(int JobStatus, char* msg, int maxlen);
+int RunProgram(char* prog, int wait, POOLMEM*& results);
+int RunProgramFullOutput(char* prog, int wait, POOLMEM*& results);
+char* action_on_purge_to_string(int aop, PoolMem& ret);
+const char* job_type_to_str(int type);
+const char* job_status_to_str(int stat);
+const char* job_level_to_str(int level);
+const char* volume_status_to_str(const char* status);
+void MakeSessionKey(char* key, char* seed, int mode);
+void EncodeSessionKey(char* encode, char* session, char* key, int maxlen);
+void DecodeSessionKey(char* decode, char* session, char* key, int maxlen);
+POOLMEM* edit_job_codes(JobControlRecord* jcr,
+                        char* omsg,
+                        char* imsg,
+                        const char* to,
+                        job_code_callback_t job_code_callback = NULL);
+void SetWorkingDirectory(char* wd);
+const char* last_path_separator(const char* str);
 
-#endif // BAREOS_LIB_UTIL_H_
+#endif  // BAREOS_LIB_UTIL_H_

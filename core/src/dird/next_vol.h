@@ -24,13 +24,22 @@
 
 namespace directordaemon {
 
-void SetStorageidInMr(StorageResource *store, MediaDbRecord *mr);
-int FindNextVolumeForAppend(JobControlRecord *jcr, MediaDbRecord *mr, int index,
-                                const char *unwanted_volumes, bool create, bool purge);
-bool HasVolumeExpired(JobControlRecord *jcr, MediaDbRecord *mr);
-void CheckIfVolumeValidOrRecyclable(JobControlRecord *jcr, MediaDbRecord *mr, const char **reason);
-bool GetScratchVolume(JobControlRecord *jcr, bool InChanger, MediaDbRecord *mr, StorageResource *store);
+void SetStorageidInMr(StorageResource* store, MediaDbRecord* mr);
+int FindNextVolumeForAppend(JobControlRecord* jcr,
+                            MediaDbRecord* mr,
+                            int index,
+                            const char* unwanted_volumes,
+                            bool create,
+                            bool purge);
+bool HasVolumeExpired(JobControlRecord* jcr, MediaDbRecord* mr);
+void CheckIfVolumeValidOrRecyclable(JobControlRecord* jcr,
+                                    MediaDbRecord* mr,
+                                    const char** reason);
+bool GetScratchVolume(JobControlRecord* jcr,
+                      bool InChanger,
+                      MediaDbRecord* mr,
+                      StorageResource* store);
 
 } /* namespace directordaemon */
 
-#endif // BAREOS_DIRD_NEXT_VOL_H_
+#endif  // BAREOS_DIRD_NEXT_VOL_H_

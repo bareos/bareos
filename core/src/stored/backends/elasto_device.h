@@ -33,30 +33,30 @@
 
 namespace storagedaemon {
 
-class elasto_device: public Device {
-private:
-   char *elasto_configstring_;
-   char *elasto_ps_file_;      /* Azure publishsettings file */
-   char *basedir_;
-   bool insecure_http_;
-   struct elasto_fh *efh_;
-   POOLMEM *virtual_filename_;
-   boffset_t offset_;
+class elasto_device : public Device {
+ private:
+  char* elasto_configstring_;
+  char* elasto_ps_file_; /* Azure publishsettings file */
+  char* basedir_;
+  bool insecure_http_;
+  struct elasto_fh* efh_;
+  POOLMEM* virtual_filename_;
+  boffset_t offset_;
 
-public:
-   elasto_device();
-   ~elasto_device();
+ public:
+  elasto_device();
+  ~elasto_device();
 
-   /*
-    * Interface from Device
-    */
-   int d_close(int);
-   int d_open(const char *pathname, int flags, int mode);
-   int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL);
-   boffset_t d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence);
-   ssize_t d_read(int fd, void *buffer, size_t count);
-   ssize_t d_write(int fd, const void *buffer, size_t count);
-   bool d_truncate(DeviceControlRecord *dcr);
+  /*
+   * Interface from Device
+   */
+  int d_close(int);
+  int d_open(const char* pathname, int flags, int mode);
+  int d_ioctl(int fd, ioctl_req_t request, char* mt = NULL);
+  boffset_t d_lseek(DeviceControlRecord* dcr, boffset_t offset, int whence);
+  ssize_t d_read(int fd, void* buffer, size_t count);
+  ssize_t d_write(int fd, const void* buffer, size_t count);
+  bool d_truncate(DeviceControlRecord* dcr);
 };
 } /* namespace storagedaemon */
 #endif /* BAREOS_STORED_BACKENDS_ELASTO_DEVICE_H_ */

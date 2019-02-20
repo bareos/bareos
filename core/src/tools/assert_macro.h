@@ -31,128 +31,91 @@
 /* check valid pointer if not return */
 #ifndef ASSERT_NVAL_RET
 #define ASSERT_NVAL_RET(value) \
-   if ( ! value ){ \
-      return; \
-   }
+  if (!value) { return; }
 #endif
 
 /* check an error if true return */
 #ifndef ASSERT_VAL_RET
 #define ASSERT_VAL_RET(value) \
-   if ( value ){ \
-      return; \
-   }
+  if (value) { return; }
 #endif
 
 /* check valid pointer with Null return */
 #ifndef ASSERT_NVAL_RET_NULL
 #define ASSERT_NVAL_RET_NULL(value) \
-   if ( ! value ) \
-   { \
-      return NULL; \
-   }
+  if (!value) { return NULL; }
 #endif
 
 /* if value then Null return */
 #ifndef ASSERT_VAL_RET_NULL
 #define ASSERT_VAL_RET_NULL(value) \
-   if ( value ) \
-   { \
-      return NULL; \
-   }
+  if (value) { return NULL; }
 #endif
 
 /* check valid pointer with int/err return */
 #ifndef ASSERT_NVAL_RET_ONE
 #define ASSERT_NVAL_RET_ONE(value) \
-   if ( ! value ) \
-   { \
-      return 1; \
-   }
+  if (!value) { return 1; }
 #endif
 
 /* check valid pointer with int/err return */
 #ifndef ASSERT_NVAL_RET_NONE
 #define ASSERT_NVAL_RET_NONE(value) \
-   if ( ! value ) \
-   { \
-      return -1; \
-   }
+  if (!value) { return -1; }
 #endif
 
 /* check error if not exit with error */
 #ifndef ASSERT_NVAL_EXIT_ONE
 #define ASSERT_NVAL_EXIT_ONE(value) \
-   if ( ! value ){ \
-      exit ( 1 ); \
-   }
+  if (!value) { exit(1); }
 #endif
 
 /* check error if not exit with error */
 #ifndef ASSERT_NVAL_EXIT_E
-#define ASSERT_NVAL_EXIT_E(value,ev) \
-   if ( ! value ){ \
-      exit ( ev ); \
-   }
+#define ASSERT_NVAL_EXIT_E(value, ev) \
+  if (!value) { exit(ev); }
 #endif
 
 /* check error if not return zero */
 #ifndef ASSERT_NVAL_RET_ZERO
 #define ASSERT_NVAL_RET_ZERO(value) \
-   if ( ! value ){ \
-      return 0; \
-   }
+  if (!value) { return 0; }
 #endif
 
 /* check error if not return value */
 #ifndef ASSERT_NVAL_RET_V
-#define ASSERT_NVAL_RET_V(value,rv) \
-   if ( ! value ){ \
-      return rv; \
-   }
+#define ASSERT_NVAL_RET_V(value, rv) \
+  if (!value) { return rv; }
 #endif
 
 /* checks error value then int/err return */
 #ifndef ASSERT_VAL_RET_ONE
 #define ASSERT_VAL_RET_ONE(value) \
-   if ( value ) \
-   { \
-      return 1; \
-   }
+  if (value) { return 1; }
 #endif
 
 /* checks error value then int/err return */
 #ifndef ASSERT_VAL_RET_NONE
 #define ASSERT_VAL_RET_NONE(value) \
-   if ( value ) \
-   { \
-      return -1; \
-   }
+  if (value) { return -1; }
 #endif
 
 /* checks error value then exit one */
 #ifndef ASSERT_VAL_EXIT_ONE
 #define ASSERT_VAL_EXIT_ONE(value) \
-   if ( value ) \
-   { \
-      exit (1); \
-   }
+  if (value) { exit(1); }
 #endif
 
 /* check error if not return zero */
 #ifndef ASSERT_VAL_RET_ZERO
 #define ASSERT_VAL_RET_ZERO(value) \
-   if ( value ){ \
-      return 0; \
-   }
+  if (value) { return 0; }
 #endif
 
 /* check error if not return value */
 #ifndef ASSERT_VAL_RET_V
-#define ASSERT_VAL_RET_V(value,rv) \
-   if ( value ){ \
-      return rv; \
-   }
+#define ASSERT_VAL_RET_V(value, rv) \
+  if (value) { return rv; }
 #endif
 
 #endif /* BAREOS_TOOLS_ASSERT_MACRO_H_ */

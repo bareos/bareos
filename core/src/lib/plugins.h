@@ -39,75 +39,83 @@
 /**
  * Universal return codes from all plugin functions
  */
-typedef enum {
-   bRC_OK     = 0,                       /* OK */
-   bRC_Stop   = 1,                       /* Stop calling other plugins */
-   bRC_Error  = 2,                       /* Some kind of error */
-   bRC_More   = 3,                       /* More files to backup */
-   bRC_Term   = 4,                       /* Unload me */
-   bRC_Seen   = 5,                       /* Return code from checkFiles */
-   bRC_Core   = 6,                       /* Let BAREOS core handles this file */
-   bRC_Skip   = 7,                       /* Skip the proposed file */
-   bRC_Cancel = 8,                       /* Job cancelled */
+typedef enum
+{
+  bRC_OK = 0,     /* OK */
+  bRC_Stop = 1,   /* Stop calling other plugins */
+  bRC_Error = 2,  /* Some kind of error */
+  bRC_More = 3,   /* More files to backup */
+  bRC_Term = 4,   /* Unload me */
+  bRC_Seen = 5,   /* Return code from checkFiles */
+  bRC_Core = 6,   /* Let BAREOS core handles this file */
+  bRC_Skip = 7,   /* Skip the proposed file */
+  bRC_Cancel = 8, /* Job cancelled */
 
-   bRC_Max    = 9999                     /* Max code BAREOS can use */
+  bRC_Max = 9999 /* Max code BAREOS can use */
 } bRC;
 
 #define LOWEST_PLUGIN_INSTANCE 0
 #define HIGHEST_PLUGIN_INSTANCE 127
 
 extern "C" {
-   typedef bRC (*t_loadPlugin)(void *binfo, void *bfuncs, void **pinfo, void **pfuncs);
-   typedef bRC (*t_unloadPlugin)(void);
+typedef bRC (*t_loadPlugin)(void* binfo,
+                            void* bfuncs,
+                            void** pinfo,
+                            void** pfuncs);
+typedef bRC (*t_unloadPlugin)(void);
 }
 
 class Plugin {
-public:
-   char *file;
-   int32_t file_len;
-   t_unloadPlugin unloadPlugin;
-   void *pinfo;
-   void *pfuncs;
-   void *pHandle;
+ public:
+  char* file;
+  int32_t file_len;
+  t_unloadPlugin unloadPlugin;
+  void* pinfo;
+  void* pfuncs;
+  void* pHandle;
 };
 
 /**
  * Context packet as first argument of all functions
  */
 struct bpContext {
-   uint32_t instance;
-   Plugin *plugin;
-   void *bContext;                       /* BAREOS private context */
-   void *pContext;                       /* Plugin private context */
+  uint32_t instance;
+  Plugin* plugin;
+  void* bContext; /* BAREOS private context */
+  void* pContext; /* Plugin private context */
 };
 
 typedef struct gen_pluginInfo {
-   uint32_t size;
-   uint32_t version;
-   const char *plugin_magic;
-   const char *plugin_license;
-   const char *plugin_author;
-   const char *plugin_date;
-   const char *plugin_version;
-   const char *plugin_description;
-   const char *plugin_usage;
+  uint32_t size;
+  uint32_t version;
+  const char* plugin_magic;
+  const char* plugin_license;
+  const char* plugin_author;
+  const char* plugin_date;
+  const char* plugin_version;
+  const char* plugin_description;
+  const char* plugin_usage;
 } genpInfo;
 
 /* Functions */
-bool LoadPlugins(void *binfo, void *bfuncs, alist *plugin_list,
-                  const char *plugin_dir, alist *plugin_names,
-                  const char *type, bool IsPluginCompatible(Plugin *plugin));
-void UnloadPlugins(alist *plugin_list);
-void UnloadPlugin(alist *plugin_list, Plugin *plugin, int index);
-int ListPlugins(alist *plugin_list, PoolMem &msg);
+bool LoadPlugins(void* binfo,
+                 void* bfuncs,
+                 alist* plugin_list,
+                 const char* plugin_dir,
+                 alist* plugin_names,
+                 const char* type,
+                 bool IsPluginCompatible(Plugin* plugin));
+void UnloadPlugins(alist* plugin_list);
+void UnloadPlugin(alist* plugin_list, Plugin* plugin, int index);
+int ListPlugins(alist* plugin_list, PoolMem& msg);
 
 /* Each daemon can register a debug hook that will be called
  * after a fatal signal
  */
-typedef void (dbg_plugin_hook_t)(Plugin *plug, FILE *fp);
-void DbgPluginAddHook(dbg_plugin_hook_t *fct);
-typedef void(dbg_print_plugin_hook_t)(FILE *fp);
-void DbgPrintPluginAddHook(dbg_print_plugin_hook_t *fct);
-void DumpPlugins(alist *plugin_list, FILE *fp);
+typedef void(dbg_plugin_hook_t)(Plugin* plug, FILE* fp);
+void DbgPluginAddHook(dbg_plugin_hook_t* fct);
+typedef void(dbg_print_plugin_hook_t)(FILE* fp);
+void DbgPrintPluginAddHook(dbg_print_plugin_hook_t* fct);
+void DumpPlugins(alist* plugin_list, FILE* fp);
 
 #endif /* BAREOS_LIB_PLUGINS_H_ */

@@ -30,6 +30,6 @@ class BareosSocket;
 void InitForTest();
 
 int create_accepted_server_socket(int port);
-BareosSocket *create_new_bareos_socket(int fd);
+BareosSocket* create_new_bareos_socket(int fd);
 
 #endif /* BAREOS_LIB_UNITTESTS_BSOCK_TEST_H_ */
