@@ -253,7 +253,7 @@ static void get_device_specific_status(DEVRES *device,
    dst.status = get_pool_memory(PM_MESSAGE);
    dst.status_length = 0;
 
-   if (device->dev->device_status(&dst)) {
+   if (device && device->dev && device->dev->device_status(&dst)) {
       if (dst.status_length > 0) {
          sendit(dst.status, dst.status_length, sp);
       }
