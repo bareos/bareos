@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1077,11 +1077,10 @@ bool PathAppend(PoolMem &path, const char *extra)
       return true;
    }
 
-   required_length = path.strlen() + 1 + strlen(extra);
+   required_length = path.strlen() + 2 + strlen(extra);
    if (!path.check_size(required_length)) {
       return false;
    }
-
    return PathAppend(path.c_str(), extra, required_length);
 }
 
