@@ -957,7 +957,7 @@ bool PathAppend(PoolMem& path, const char* extra)
 
   if (!extra) { return true; }
 
-  required_length = path.strlen() + 1 + strlen(extra);
+  required_length = path.strlen() + 2 + strlen(extra);
   if (!path.check_size(required_length)) { return false; }
 
   return PathAppend(path.c_str(), extra, required_length);
