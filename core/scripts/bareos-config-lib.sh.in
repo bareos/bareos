@@ -1,14 +1,13 @@
-#!/bin/sh
-
-CONFIG_LIB=@scriptdir@/bareos-config-lib.sh
-DIR_CFG=${BAREOS_CONFIG_DIR:-@confdir@}
-DIR_SCRIPTS=@scriptdir@
-DBCHECK="@sbindir@/bareos-dbcheck -c ${DIR_CFG} -B"
+BAREOS_SCRIPTS_DIR="${BAREOS_SCRIPTS_DIR:-@scriptdir@}"
+BAREOS_CONFIG_LIB=${BAREOS_SCRIPTS_DIR}/bareos-config-lib.sh
+BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-@confdir@}
+BAREOS_SBIN_DIR=${BAREOS_SBIN_DIR:-@sbindir@}
+DBCHECK="${BAREOS_SBIN_DIR}/bareos-dbcheck -c ${BAREOS_CONFIG_DIR} -B"
 AWK="@AWK@"
 
 SEC_GROUPS="tape disk"
 
-WORKING_DIR="@working_dir@"
+BAREOS_WORKING_DIR="${BAREOS_WORKING_DIR:-@working_dir@}"
 FILE_DAEMON_USER="${BAREOS_FD_GROUP:-@fd_user@}"
 FILE_DAEMON_GROUP="${BAREOS_FD_GROUP:-@fd_group@}"
 STORAGE_DAEMON_USER="${BAREOS_SD_USER:-@sd_user@}"
@@ -18,9 +17,9 @@ DIRECTOR_DAEMON_GROUP="${BAREOS_DIR_GROUP:-@dir_group@}"
 DAEMON_USER="$DIRECTOR_DAEMON_USER"
 DAEMON_GROUP="$DIRECTOR_DAEMON_GROUP"
 
-DB_NAME="@db_name@"
+DB_NAME="${db_name:-@db_name@}"
 DB_VERSION="@BDB_VERSION@"
-SQL_DDL_DIR="@scriptdir@/ddl"
+SQL_DDL_DIR="${BAREOS_SCRIPTS_DIR}/ddl"
 SQLITE_BINDIR="@SQLITE_BINDIR@"
 MYSQL_BINDIR="@MYSQL_BINDIR@"
 POSTGRESQL_BINDIR="@POSTGRESQL_BINDIR@"
@@ -77,7 +76,7 @@ get_config_lib_file()
     # can be used in following way:
     # LIB=`bareos-config get_config_lib_file`
     # . $LIB
-    echo "${CONFIG_LIB}"
+    echo "${BAREOS_CONFIG_LIB}"
 }
 
 get_user_fd()
@@ -122,7 +121,7 @@ get_bareos_dir()
 
 get_working_dir()
 {
-    echo "${WORKING_DIR}"
+    echo "${BAREOS_WORKING_DIR}"
 }
 
 get_database_ddl_dir()
@@ -297,7 +296,7 @@ setup_sd_user()
         #
         # Create a new storage_daemon_user
         #
-        useradd -r --comment "bareos" --home ${WORKING_DIR} -g ${STORAGE_DAEMON_GROUP} ${NEW_ADD_GROUPS} --shell /bin/false ${STORAGE_DAEMON_USER} || warn "failed to create user ${STORAGE_DAEMON_USER}"
+        useradd -r --comment "bareos" --home ${BAREOS_WORKING_DIR} -g ${STORAGE_DAEMON_GROUP} ${NEW_ADD_GROUPS} --shell /bin/false ${STORAGE_DAEMON_USER} || warn "failed to create user ${STORAGE_DAEMON_USER}"
     fi
 }
 
@@ -315,10 +314,10 @@ get_config_path()
 
     if [ -f "${COMPONENT}" ]; then
         printf "%s" "${COMPONENT}"
-    elif [ -f "${DIR_CFG}/${COMPONENT}.conf" ]; then
-        printf "%s" "${DIR_CFG}/${COMPONENT}.conf"
-    elif [ -d "${DIR_CFG}/${COMPONENT}.d/" ]; then
-        printf "%s" "${DIR_CFG}/${COMPONENT}.d/"
+    elif [ -f "${BAREOS_CONFIG_DIR}/${COMPONENT}.conf" ]; then
+        printf "%s" "${BAREOS_CONFIG_DIR}/${COMPONENT}.conf"
+    elif [ -d "${BAREOS_CONFIG_DIR}/${COMPONENT}.d/" ]; then
+        printf "%s" "${BAREOS_CONFIG_DIR}/${COMPONENT}.d/"
     else
         warn "failed to find config for component \"${COMPONENT}\"."
         return 1
@@ -1007,7 +1006,7 @@ replace()
     SEARCH="$1"
     REPLACE="$2"
 
-    for file in `grep -l ${SEARCH} ${DIR_CFG}/*.conf ${DIR_CFG}/bareos-*.d/*/*.conf 2>/dev/null`; do
+    for file in `grep -l ${SEARCH} ${BAREOS_CONFIG_DIR}/*.conf ${BAREOS_CONFIG_DIR}/bareos-*.d/*/*.conf 2>/dev/null`; do
         if [ -f "$file" ]; then
             echo "replacing '${SEARCH}' with '${REPLACE}' in $file"
             if [ "$os_type" = "Darwin" -o "$os_type" = "FreeBSD" ]; then
@@ -1042,7 +1041,7 @@ replace_password()
     SEARCH="$1"
     REPLACE="$2"
 
-    for file in `grep -l ${SEARCH} ${DIR_CFG}/*.conf ${DIR_CFG}/bareos-*.d/*/*.conf ${DIR_CFG}/tray-monitor.d/*/*.conf 2>/dev/null`; do
+    for file in `grep -l ${SEARCH} ${BAREOS_CONFIG_DIR}/*.conf ${BAREOS_CONFIG_DIR}/bareos-*.d/*/*.conf ${BAREOS_CONFIG_DIR}/tray-monitor.d/*/*.conf 2>/dev/null`; do
         echo "replacing '${SEARCH}' in $file"
         if [ "$os_type" = "Darwin" -o "$os_type" = "FreeBSD" ]; then
            sed -i '' "s#${SEARCH}#${REPLACE}#g" "${file}"
@@ -1061,17 +1060,17 @@ initialize_passwords()
     #
     # See if we need to generate a set of random passwords.
     #
-    if [ ! -f ${DIR_CFG}/.rndpwd ]; then
+    if [ ! -f ${BAREOS_CONFIG_DIR}/.rndpwd ]; then
         for string in ${PASSWORD_SUBST}
         do
            pass=`RANDFILE=/dev/urandom openssl rand -base64 33`
-           echo "${string}=${pass}" >> ${DIR_CFG}/.rndpwd
+           echo "${string}=${pass}" >> ${BAREOS_CONFIG_DIR}/.rndpwd
         done
-        chmod 400 ${DIR_CFG}/.rndpwd
+        chmod 400 ${BAREOS_CONFIG_DIR}/.rndpwd
     fi
 
     # Source the passwords
-    . ${DIR_CFG}/.rndpwd
+    . ${BAREOS_CONFIG_DIR}/.rndpwd
 
     for string in ${PASSWORD_SUBST}
     do

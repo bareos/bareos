@@ -75,11 +75,11 @@ killproc() {
          if ${PS} -p "$pid">/dev/null 2>&1; then
             # TERM first, then KILL if not dead
             kill -TERM $pid 2>/dev/null
-            sleep 1
+            #sleep 0.1
             if ${PS} -p "$pid" >/dev/null 2>&1 ; then
-               sleep 1
+               #sleep 0.1
                if ${PS} -p "$pid" >/dev/null 2>&1 ; then
-                  sleep 3
+                 #sleep 0.3
                   if ${PS} -p "$pid" >/dev/null 2>&1 ; then
                      kill -KILL $pid 2>/dev/null
                   fi
@@ -103,7 +103,7 @@ killproc() {
    fi
    # Remove pid file if any.
    if [ "$notset" = "1" ]; then
-      rm -f ${PIDDIR}/$base.$2.pid
+      rm -f "${PIDDIR}/$base.$2.pid"
    fi
    return $RC
 }
@@ -113,10 +113,10 @@ checkcfg() {
    RC=0
    echo "Checking Configuration and Database connection ... "
    if [ ! -z "${DIR_USER}" -a "${DIR_USER}" != "${USER}" ]; then
-      su -s /bin/sh ${DIR_USER} -c "${BAREOS_DIR_BIN} ${OPTIONS} -f -t"
+      su -s /bin/sh "${DIR_USER}" -c "${BAREOS_DIRECTOR_BINARY}" ${OPTIONS} -f -t
       RC=$?
    else
-      ${BAREOS_DIR_BIN} ${OPTIONS} -f -t
+      "${BAREOS_DIRECTOR_BINARY}" ${OPTIONS} -f -t
       RC=$?
    fi
    return $RC

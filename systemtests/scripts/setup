@@ -1,0 +1,22 @@
+#!/bin/sh
+echo "running $0"
+${scripts}/bareos-config initialize_database_driver
+. ${scripts}/functions
+
+print_debug "drop database \"${db_name}\" (${DBTYPE})"
+#${scripts}/drop_bareos_tables ${DBTYPE} >/dev/null 2>&1
+${scripts}/drop_bareos_database ${DBTYPE} >/dev/null 2>&1
+
+print_debug "creating database \"${db_name}\" (${DBTYPE})"
+${scripts}/create_bareos_database ${DBTYPE} >/dev/null 2>&1
+${scripts}/make_bareos_tables ${DBTYPE} >/dev/null 2>&1
+${scripts}/grant_bareos_privileges ${DBTYPE} >/dev/null 2>&1
+
+exit 0
+/bin/cp -f ${rscripts}/bareos-dir.conf ${conf}/bareos-dir.conf
+/bin/cp -f ${rscripts}/bareos-sd.conf ${conf}/bareos-sd.conf
+/bin/cp -f ${rscripts}/bareos-fd.conf ${conf}/bareos-fd.conf
+/bin/cp -f ${rscripts}/bconsole.conf ${conf}/bconsole.conf
+/bin/cp -f ${rscripts}/bconsole.conf ${conf}/bat.conf
+
+${rscripts}/set_tape_options

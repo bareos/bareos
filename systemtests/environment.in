@@ -1,0 +1,49 @@
+# DB parameters
+db_name="@db_name@"
+db_user="@db_user@"
+db_password="@db_password@"
+
+PROJECT_BINARY_DIR=@PROJECT_BINARY_DIR@
+bin=${PROJECT_BINARY_DIR}/bin
+
+current_test_directory=${PROJECT_BINARY_DIR}/tests/@TEST_NAME@
+
+conf=${current_test_directory}/etc/bareos
+confdir=${conf}
+configs=${conf}
+BAREOS_CONFIG_DIR=${conf}
+
+working=${current_test_directory}/working
+working_dir=${working}
+tmp=${current_test_directory}/tmp
+
+
+dumps=${current_test_directory}/dumps
+plugindir=${PROJECT_BINARY_DIR}/plugins
+plugindirtmp=${PROJECT_BINARY_DIR}/pluginstmp
+rscripts=${PROJECT_BINARY_DIR}/scripts
+scripts=${PROJECT_BINARY_DIR}/scripts
+cats=${PROJECT_BINARY_DIR}/cats
+src=${PROJECT_BINARY_DIR}/src
+tmpsrc=${PROJECT_BINARY_DIR}/tmpsrc
+DBTYPE=@DEFAULT_DB_TYPE@
+
+# exported variables used by start/stop and other bareos scripts
+# to override the defaults
+export BAREOS_CONFIG_DIR=${conf}
+export BAREOS_SCRIPTS_DIR=${scripts}
+export BAREOS_SBIN_DIR=${bin}
+export BAREOS_WORKING_DIR=${working}
+export BASEPORT=@BASEPORT@
+export BAREOS_DIRECTOR_PORT=@dir_port@
+export BAREOS_STORAGE_PORT=@sd_port@
+export BAREOS_FD_PORT=@fd_port@
+export PIDDIR=@piddir@
+
+export scripts
+export DBTYPE
+export tmp
+
+export db_name=@db_name@
+export db_password=@db_password@
+export db_user=@db_user@

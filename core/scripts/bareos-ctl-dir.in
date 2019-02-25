@@ -1,64 +1,41 @@
-#! /bin/sh
+#! /bin/sh -x
 #
 # bareos-ctl-dir This shell script takes care of starting and stopping
 #		 the bareos Director daemon
 #
-#   This is pretty much watered down version of the RedHat script
-#   that works on Solaris as well as Linux, but it won't work everywhere.
-#
 # description: Backup Archiving REcovery Open Sourced.
 #
+export PSCMD="@PSCMD@"
+export PS="ps"
+export AWK="@AWK@"
+export PIDOF="@PIDOF@"
+export PGREP="@PGREP@"
 
-PSCMD="@PSCMD@"
-PS="ps"
-
-#
-# On Solaris, you may need to use nawk, or alternatively,
-#  add the GNU binaries to your path, such as /usr/xpg4/bin
-#
-AWK=@AWK@
-
-# All these are not *really* needed but it makes it
-#  easier to "steal" this code for the development
-#  environment where they are different.
-#
-BIN=@sbindir@/bareos-dir
-BAREOS_DIR_BIN=$BIN
-PIDDIR=@piddir@
-SUBSYSDIR=@subsysdir@
-
-BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-@confdir@}
-BAREOS_DIR_PORT=${BAREOS_DIR_PORT:-@dir_port@}
-BAREOS_DIR_USER=${BAREOS_DIR_USER:-@dir_user@}
-BAREOS_DIR_GROUP=${BAREOS_DIR_GROUP:-@dir_group@}
-
+BAREOS_DIRECTOR_BINARY="${BAREOS_BIN_DIR:-@sbindir@/bareos-dir}"
+export BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-@confdir@}
+BAREOS_DIRECTOR_PORT=${BAREOS_DIRECTOR_PORT:-@dir_port@}
+BAREOS_DIRECTOR_USER=${BAREOS_DIRECTOR_USER:-@dir_user@}
+BAREOS_DIRECTOR_GROUP=${BAREOS_DIRECTOR_GROUP:-@dir_group@}
+BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-@scriptdir@}
 Bareos="@BAREOS@"
-PIDOF="@PIDOF@"
-PGREP="@PGREP@"
-
-OS=`uname -s`
 
 #
 # Source the generic functions.
 #
-. @scriptdir@/bareos-ctl-funcs
+. "${BAREOS_SCRIPT_DIR}/bareos-ctl-funcs"
 
-# if /lib/tls exists, force Bareos to use the glibc pthreads instead
-if [ -d "/lib/tls" -a $OS = "Linux" -a `uname -r | cut -c1-3` = "2.4" ] ; then
-   export LD_ASSUME_KERNEL=2.4.19
-fi
 
 case "$1" in
     start)
-        if [ -x ${BIN} ]; then
+        if [ -x "${BAREOS_DIRECTOR_BINARY}" ]; then
             echo "Starting the $Bareos Director daemon"
             OPTIONS=''
-            if [ "${BAREOS_DIR_USER}" != '' ]; then
-                OPTIONS="${OPTIONS} -u ${BAREOS_DIR_USER}"
+            if [ "${BAREOS_DIRECTOR_USER}" != '' ]; then
+                OPTIONS="${OPTIONS} -u ${BAREOS_DIRECTOR_USER}"
             fi
 
-            if [ "${BAREOS_DIR_GROUP}" != '' ]; then
-                OPTIONS="${OPTIONS} -g ${BAREOS_DIR_GROUP}"
+            if [ "${BAREOS_DIRECTOR_GROUP}" != '' ]; then
+                OPTIONS="${OPTIONS} -g ${BAREOS_DIRECTOR_GROUP}"
             fi
 
             if [ "${BAREOS_CONFIG_DIR}" != '' ]; then
@@ -70,19 +47,14 @@ case "$1" in
                 exit 1
             fi
 
-            if [ "x${VALGRIND_DIR}" = "x1" ]; then
-                valgrind --leak-check=full ${BIN} -v $2 $3 ${OPTIONS}
-            else
-                ${BIN} -v $2 $3 ${OPTIONS}
-            fi
-            sleep 1
+            "${BAREOS_DIRECTOR_BINARY}" -v $2 $3 ${OPTIONS}
         fi
         ;;
 
     stop)
-        if [ -x ${BIN} ]; then
+        if [ -x "${BAREOS_DIRECTOR_BINARY}" ]; then
             echo "Stopping the $Bareos Director daemon"
-            killproc ${BIN} ${BAREOS_DIR_PORT}
+            killproc "${BAREOS_DIRECTOR_BINARY}" "${BAREOS_DIRECTOR_PORT}"
         fi
         ;;
 
@@ -93,7 +65,7 @@ case "$1" in
         ;;
 
     status)
-        [ -x ${BIN} ] && status ${BIN} ${BAREOS_DIR_PORT}
+        [ -x "${BAREOS_DIRECTOR_BINARY}" ] && status "${BAREOS_DIRECTOR_BINARY}" "${BAREOS_DIRECTOR_PORT}"
         exit $?
         ;;
 

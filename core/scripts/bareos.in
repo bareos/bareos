@@ -3,17 +3,11 @@
 # bareos       This shell script takes care of starting and stopping
 #	       the bareos daemons.
 #
-#   This is pretty much watered down version of the RedHat script
-#   that works on Solaris as well as Linux, but it won't work everywhere.
-#
 # description: Backup Archiving REcovery Open Sourced.
 #
-
-# All these are not *really* needed but it makes it
-#  easier to "steal" this code for the development
-#  environment where they are different.
 #
-SCRIPTDIR=@scriptdir@
+export BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-@confdir@}
+BAREOS_SCRIPTDIR=${BAREOS_SCRIPTDIR:-@scriptdir@}
 #
 # Disable Glibc malloc checks, it doesn't help and it keeps from getting
 #   good dumps
@@ -22,16 +16,16 @@ export MALLOC_CHECK_
 
 case "$1" in
    start)
-      [ -x ${SCRIPTDIR}/bareos-ctl-sd ] && ${SCRIPTDIR}/bareos-ctl-sd $1 $2
-      [ -x ${SCRIPTDIR}/bareos-ctl-fd ] && ${SCRIPTDIR}/bareos-ctl-fd $1 $2
-      [ -x ${SCRIPTDIR}/bareos-ctl-dir ] && ${SCRIPTDIR}/bareos-ctl-dir $1 $2
+      [ -x ${BAREOS_SCRIPTDIR}/bareos-ctl-sd ] && ${BAREOS_SCRIPTDIR}/bareos-ctl-sd $1 $2
+      [ -x ${BAREOS_SCRIPTDIR}/bareos-ctl-fd ] && ${BAREOS_SCRIPTDIR}/bareos-ctl-fd $1 $2
+      [ -x ${BAREOS_SCRIPTDIR}/bareos-ctl-dir ] && ${BAREOS_SCRIPTDIR}/bareos-ctl-dir $1 $2
       ;;
 
    stop)
       # Stop the FD first so that SD will fail jobs and update catalog
-      [ -x ${SCRIPTDIR}/bareos-ctl-fd ] && ${SCRIPTDIR}/bareos-ctl-fd $1 $2
-      [ -x ${SCRIPTDIR}/bareos-ctl-sd ] && ${SCRIPTDIR}/bareos-ctl-sd $1 $2
-      [ -x ${SCRIPTDIR}/bareos-ctl-dir ] && ${SCRIPTDIR}/bareos-ctl-dir $1 $2
+      [ -x ${BAREOS_SCRIPTDIR}/bareos-ctl-fd ] && ${BAREOS_SCRIPTDIR}/bareos-ctl-fd $1 $2
+      [ -x ${BAREOS_SCRIPTDIR}/bareos-ctl-sd ] && ${BAREOS_SCRIPTDIR}/bareos-ctl-sd $1 $2
+      [ -x ${BAREOS_SCRIPTDIR}/bareos-ctl-dir ] && ${BAREOS_SCRIPTDIR}/bareos-ctl-dir $1 $2
       ;;
 
    restart)
@@ -41,16 +35,16 @@ case "$1" in
       ;;
 
    status)
-      if [ -x ${SCRIPTDIR}/bareos-ctl-dir ]; then
-         ${SCRIPTDIR}/bareos-ctl-dir status
+      if [ -x ${BAREOS_SCRIPTDIR}/bareos-ctl-dir ]; then
+         ${BAREOS_SCRIPTDIR}/bareos-ctl-dir status
          status_dir=$?
       fi
-      if [ -x ${SCRIPTDIR}/bareos-ctl-sd ]; then
-         ${SCRIPTDIR}/bareos-ctl-sd status
+      if [ -x ${BAREOS_SCRIPTDIR}/bareos-ctl-sd ]; then
+         ${BAREOS_SCRIPTDIR}/bareos-ctl-sd status
          status_sd=$?
       fi
-      if [ -x ${SCRIPTDIR}/bareos-ctl-fd ]; then
-         ${SCRIPTDIR}/bareos-ctl-fd status
+      if [ -x ${BAREOS_SCRIPTDIR}/bareos-ctl-fd ]; then
+         ${BAREOS_SCRIPTDIR}/bareos-ctl-fd status
          status_fd=$?
       fi
       status_all=`expr ${status_dir:-0} + ${status_sd:-0} + ${status_fd:-0}`
