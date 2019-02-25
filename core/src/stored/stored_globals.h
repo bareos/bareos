@@ -26,7 +26,11 @@
 
 #include "include/bareos.h"
 
+class ConfigurationParser;
+
 namespace storagedaemon {
+
+extern ConfigurationParser* my_config;
 
 class StorageResource;
 extern StorageResource* me;

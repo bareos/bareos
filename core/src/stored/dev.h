@@ -99,6 +99,7 @@ enum
  */
 enum
 {
+  B_UNKNOWN_DEV = 0,
   B_FILE_DEV = 1,
   B_TAPE_DEV,
   B_FIFO_DEV,

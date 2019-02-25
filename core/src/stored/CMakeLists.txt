@@ -75,7 +75,8 @@ ENDIF()
 
 set (LIBBAREOSSD_SRCS acquire.cc ansi_label.cc askdir.cc autochanger.cc
          block.cc bsr.cc
-         butil.cc crc32.cc dev.cc device.cc ebcdic.cc label.cc lock.cc
+         butil.cc crc32.cc dev.cc device.cc device_resource.cc
+         ebcdic.cc label.cc lock.cc
          mount.cc read_record.cc record.cc reserve.cc scan.cc
          sd_backends.cc sd_plugins.cc sd_stats.cc spool.cc
          stored_globals.cc stored_conf.cc vol_mgr.cc wait.cc

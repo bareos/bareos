@@ -1,0 +1,11 @@
+Autochanger {
+  Name = "virtual-autochanger"
+
+  Changer Device = /dev/null
+
+  # list here only the basename of the multidevice
+  Device = MultiFileStorage
+
+  Changer Command = ""
+}
+

@@ -3,7 +3,7 @@
 # Run a simple backup
 #   then restore it.
 #
-TestName="backup-bareos-test"
+TestName="$(basename "$(pwd)")"
 export TestName
 
 JobName=backup-bareos-fd

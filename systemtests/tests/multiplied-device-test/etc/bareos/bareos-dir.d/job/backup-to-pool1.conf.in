@@ -1,0 +1,7 @@
+Job {
+  Name = "backup-to-pool1"
+  JobDefs = "DefaultJob"
+  Client = "bareos-fd"
+  MaximumConcurrentJobs = 10
+  Pool = Pool1
+}

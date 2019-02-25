@@ -103,7 +103,7 @@ set(piddir ${PROJECT_BINARY_DIR}/piddir)
 file(MAKE_DIRECTORY ${piddir})
 
 
-  #set(BASEPORT ${dir_port})
+#set(BASEPORT ${dir_port})
 
 # for config-lib.sh: do not remove @DB___@ but replace them with the original
 set(DB_NAME @DB_NAME@)
@@ -198,7 +198,7 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
 
   set(logdir ${current_test_directory}/log)
   set(tmpdir ${current_test_directory}/tmp)
-  set(tmp ${tmpdir})
+  set(tmp ${tmpdir}/tmp)
   set(working_dir ${current_test_directory}/working)
 
   file(MAKE_DIRECTORY ${archivedir})
@@ -241,7 +241,7 @@ set(BINARIES_TO_LINK_TO_SBIN
 
 foreach (BINARY_SOURCEPATH ${BINARIES_TO_LINK_TO_SBIN})
   get_filename_component(BINARY_NAME ${BINARY_SOURCEPATH} NAME)
-  execute_process(COMMAND
+execute_process(COMMAND
     ${CMAKE_COMMAND} -E create_symlink ${PROJECT_BINARY_DIR}/../core/src/${BINARY_SOURCEPATH} ${sbindir}/${BINARY_NAME})
 endforeach()
 
@@ -261,7 +261,12 @@ set(BINARIES_TO_LINK_TO_BIN
 
 foreach (BINARY_SOURCEPATH ${BINARIES_TO_LINK_TO_BIN})
   get_filename_component(BINARY_NAME ${BINARY_SOURCEPATH} NAME)
-  execute_process(COMMAND
+execute_process(COMMAND
     ${CMAKE_COMMAND} -E create_symlink ${PROJECT_BINARY_DIR}/../core/src/${BINARY_SOURCEPATH} ${bindir}/${BINARY_NAME})
 endforeach()
 
+execute_process(COMMAND
+  ${CMAKE_COMMAND} -E create_symlink ${PROJECT_BINARY_DIR}/../core/src/console/bconsole ${bindir}/bconsole)
+
+execute_process(COMMAND
+  ${CMAKE_COMMAND} -E create_symlink ${scriptdir}/bareos ${bindir}/bareos)

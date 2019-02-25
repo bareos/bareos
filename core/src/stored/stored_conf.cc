@@ -30,6 +30,8 @@
 
 #define NEED_JANSSON_NAMESPACE 1
 #include "include/bareos.h"
+#include "stored/stored_conf.h"
+#include "stored/device_resource.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "stored/sd_backends.h"
@@ -53,6 +55,7 @@ static void DumpResource(int type,
                          void* sock,
                          bool hide_sensitive_data,
                          bool verbose);
+static void AppendToResourcesChain(UnionOfResources* new_resource, int type);
 
 /**
  * We build the current resource here statically,
@@ -220,6 +223,9 @@ static ResourceItem dev_items[] = {
   {"EofOnErrorIsEot", CFG_TYPE_BOOL, ITEM(res_dev.eof_on_error_is_eot), 0, CFG_ITEM_DEFAULT, NULL, "18.2.4-",
       "If Yes, Bareos will treat any read error at an end-of-file mark as end-of-tape. You should only set "
       "this option if your tape-drive fails to detect end-of-tape while reading."},
+  {"Count", CFG_TYPE_PINT32, ITEM(res_dev.count), 0, CFG_ITEM_DEFAULT, "1", NULL, "If Count is set to (1 < Count < 10000), "
+  "this resource will be multiplied Count times. The names of multiplied resources will have a serial number (0001, 0002, ...) attached. "
+  "If set to 1 only this single resource will be used and then its name will not be altered."},
   {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}};
 
 /**
@@ -251,7 +257,8 @@ static ResourceTable resources[] = {
   {"Ndmp", ndmp_items, R_NDMP, sizeof(NdmpResource)},
   {"Storage", store_items, R_STORAGE, sizeof(StorageResource),
       [](void *res) { return new ((StorageResource *)res) StorageResource(); }},
-  {"Device", dev_items, R_DEVICE, sizeof(DeviceResource)},
+  {"Device", dev_items, R_DEVICE, sizeof(DeviceResource),
+      [](void *res) { return new ((DeviceResource *)res) DeviceResource(); }},
   {"Messages", msgs_items, R_MSGS, sizeof(MessagesResource)},
   {"Autochanger", changer_items, R_AUTOCHANGER, sizeof(AutochangerResource)},
   {NULL, NULL, 0}};
@@ -503,6 +510,50 @@ static void ParseConfigCb(LEX* lc, ResourceItem* item, int index, int pass)
   }
 }
 
+static void MultiplyDevice(DeviceResource& multiplied_device_resource)
+{
+  /* append 0001 to the name of the existing resource */
+  multiplied_device_resource.CreateAndAssignSerialNumber(1);
+
+  multiplied_device_resource.multiplied_device_resource =
+      std::addressof(multiplied_device_resource);
+
+  uint32_t count = multiplied_device_resource.count - 1;
+
+  /* create the copied devices */
+  for (uint32_t i = 0; i < count; i++) {
+    DeviceResource* copied_device_resource =
+        new DeviceResource(multiplied_device_resource);
+
+    /* append 0002, 0003, ... */
+    copied_device_resource->CreateAndAssignSerialNumber(i + 2);
+
+    copied_device_resource->multiplied_device_resource =
+        std::addressof(multiplied_device_resource);
+    copied_device_resource->count = 0;
+
+    AppendToResourcesChain(
+        reinterpret_cast<UnionOfResources*>(copied_device_resource),
+        copied_device_resource->hdr.rcode);
+
+    if (copied_device_resource->changer_res) {
+      if (copied_device_resource->changer_res->device) {
+        copied_device_resource->changer_res->device->append(
+            copied_device_resource);
+      }
+    }
+  }
+}
+
+static void MultiplyConfiguredDevices(ConfigurationParser& my_config)
+{
+  CommonResourceHeader* p = nullptr;
+  while ((p = my_config.GetNextRes(R_DEVICE, p))) {
+    DeviceResource* d = reinterpret_cast<DeviceResource*>(p);
+    if (d && d->count > 1) { MultiplyDevice(*d); }
+  }
+}
+
 static void ConfigReadyCallback(ConfigurationParser& my_config)
 {
   std::map<int, std::string> map{
@@ -514,6 +565,7 @@ static void ConfigReadyCallback(ConfigurationParser& my_config)
       {R_DEVICE, "R_DEVICE"},
       {R_AUTOCHANGER, "R_AUTOCHANGER"}};
   my_config.InitializeQualifiedResourceNameTypeConverter(map);
+  MultiplyConfiguredDevices(my_config);
 }
 
 ConfigurationParser* InitSdConfig(const char* configfile, int exit_code)
@@ -591,28 +643,30 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
 }
 #endif
 
-static void DumpResource(int type,
-                         CommonResourceHeader* reshdr,
-                         void sendit(void* sock, const char* fmt, ...),
-                         void* sock,
-                         bool hide_sensitive_data,
-                         bool verbose)
+static bool DumpResource_(int type,
+                          CommonResourceHeader* reshdr,
+                          void sendit(void* sock, const char* fmt, ...),
+                          void* sock,
+                          bool hide_sensitive_data,
+                          bool verbose)
 {
   PoolMem buf;
-  UnionOfResources* res = (UnionOfResources*)reshdr;
+  UnionOfResources* res = reinterpret_cast<UnionOfResources*>(reshdr);
   BareosResource* resclass;
-  int recurse = 1;
+  bool recurse = true;
 
   if (res == NULL) {
     sendit(sock, _("Warning: no \"%s\" resource (%d) defined.\n"),
            my_config->res_to_str(type), type);
-    return;
+    return false;
   }
 
   if (type < 0) { /* no recursion */
     type = -type;
-    recurse = 0;
+    recurse = false;
   }
+
+  bool buffer_is_valid = true;
 
   switch (type) {
     case R_MSGS: {
@@ -620,17 +674,91 @@ static void DumpResource(int type,
       resclass->PrintConfig(buf);
       break;
     }
+    case R_DEVICE: {
+      DeviceResource* dev = reinterpret_cast<DeviceResource*>(reshdr);
+      buffer_is_valid = dev->PrintConfigToBuffer(buf);
+      break;
+    }
+    case R_AUTOCHANGER: {
+      AutochangerResource* autochanger =
+          reinterpret_cast<AutochangerResource*>(reshdr);
+      alist* original_alist = autochanger->device;
+      alist* temp_alist = new (__FILE__, __LINE__)
+          alist(original_alist->size(), not_owned_by_alist);
+      DeviceResource* dev = nullptr;
+      foreach_alist (dev, original_alist) {
+        if (dev->multiplied_device_resource) {
+          if (dev->multiplied_device_resource == dev) {
+            DeviceResource* tmp_dev = new DeviceResource(*dev);
+            tmp_dev->MultipliedDeviceRestoreBaseName();
+            temp_alist->append(tmp_dev);
+          }
+        } else {
+          DeviceResource* tmp_dev = new DeviceResource(*dev);
+          temp_alist->append(tmp_dev);
+        }
+      }
+      autochanger->device = temp_alist;
+      resclass = (BareosResource*)reshdr;
+      resclass->PrintConfig(buf, *my_config);
+      autochanger->device = original_alist;
+      foreach_alist (dev, temp_alist) {
+        delete dev;
+      }
+      delete temp_alist;
+      break;
+    }
     default:
       resclass = (BareosResource*)reshdr;
       resclass->PrintConfig(buf, *my_config);
       break;
   }
-  sendit(sock, "%s", buf.c_str());
 
-  if (recurse && res->res_dir.hdr.next) {
-    my_config->DumpResourceCb_(type,
-                               (CommonResourceHeader*)res->res_dir.hdr.next,
-                               sendit, sock, hide_sensitive_data, verbose);
+  if (buffer_is_valid) { sendit(sock, "%s", buf.c_str()); }
+
+  return recurse;
+}
+
+static void DumpResource(int type,
+                         CommonResourceHeader* reshdr,
+                         void sendit(void* sock, const char* fmt, ...),
+                         void* sock,
+                         bool hide_sensitive_data,
+                         bool verbose)
+{
+  bool recurse = true;
+  CommonResourceHeader* p = reshdr;
+
+  while (recurse && p) {
+    recurse =
+        DumpResource_(type, p, sendit, sock, hide_sensitive_data, verbose);
+    p = p->next;
+  }
+}
+
+static void AppendToResourcesChain(UnionOfResources* new_resource, int type)
+{
+  int rindex = type - R_FIRST;
+
+  if (!res_head[rindex]) {
+    /* store first entry */
+    res_head[rindex] = (CommonResourceHeader*)new_resource;
+  } else {
+    /* Add new resource to end of chain */
+    CommonResourceHeader *next, *last;
+    for (last = next = res_head[rindex]; next; next = next->next) {
+      last = next;
+      if (bstrcmp(next->name, new_resource->res_dir.name())) {
+        Emsg2(M_ERROR_TERM, 0,
+              _("Attempt to define second \"%s\" resource named \"%s\" is "
+                "not permitted.\n"),
+              resources[rindex].name, new_resource->res_dir.name());
+        return;
+      }
+    }
+    last->next = (CommonResourceHeader*)new_resource;
+    Dmsg2(90, "Inserting %s new_resource: %s\n", my_config->res_to_str(type),
+          new_resource->res_dir.name());
   }
 }
 
@@ -641,7 +769,6 @@ static void DumpResource(int type,
  */
 static bool SaveResource(int type, ResourceItem* items, int pass)
 {
-  UnionOfResources* res;
   int rindex = type - R_FIRST;
   int i;
   int error = 0;
@@ -673,8 +800,8 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
    * record.
    */
   if (pass == 2) {
+    UnionOfResources* res = nullptr;
     DeviceResource* dev = nullptr;
-    int errstat;
 
     switch (type) {
       case R_DEVICE:
@@ -730,6 +857,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
             dev->changer_res = (AutochangerResource*)&res->res_changer;
           }
 
+          int errstat;
           if ((errstat = RwlInit(&res->res_changer.changer_lock,
                                  PRIO_SD_ACH_ACCESS)) != 0) {
             BErrNo be;
@@ -757,32 +885,21 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
     return (error == 0);
   }
 
-  /*
-   * Common
-   */
   if (!error) {
-    res = (UnionOfResources*)malloc(resources[rindex].size);
-    memcpy(res, &res_all, resources[rindex].size);
-    if (!res_head[rindex]) {
-      res_head[rindex] = (CommonResourceHeader*)res; /* store first entry */
-    } else {
-      CommonResourceHeader *next, *last;
-      /*
-       * Add new res to end of chain
-       */
-      for (last = next = res_head[rindex]; next; next = next->next) {
-        last = next;
-        if (bstrcmp(next->name, res->res_dir.name())) {
-          Emsg2(M_ERROR_TERM, 0,
-                _("Attempt to define second \"%s\" resource named \"%s\" is "
-                  "not permitted.\n"),
-                resources[rindex].name, res->res_dir.name());
-        }
+    UnionOfResources* new_resource;
+    switch (resources[rindex].rcode) {
+      case R_DEVICE: {
+        DeviceResource* p = new DeviceResource();
+        *p = res_all.res_dev;
+        new_resource = reinterpret_cast<UnionOfResources*>(p);
+        break;
       }
-      last->next = (CommonResourceHeader*)res;
-      Dmsg2(90, "Inserting %s res: %s\n", my_config->res_to_str(type),
-            res->res_dir.name());
+      default:
+        new_resource = (UnionOfResources*)malloc(resources[rindex].size);
+        memcpy(new_resource, &res_all, resources[rindex].size);
+        break;
     }
+    AppendToResourcesChain(new_resource, type);
   }
   return (error == 0);
 }
@@ -807,6 +924,8 @@ static void FreeResource(CommonResourceHeader* sres, int type)
   nres = (CommonResourceHeader*)res->res_dir.hdr.next;
   if (res->res_dir.hdr.name) { free(res->res_dir.hdr.name); }
   if (res->res_dir.hdr.desc) { free(res->res_dir.hdr.desc); }
+
+  bool resource_uses_smalloc_memory = true;
 
   switch (type) {
     case R_DIRECTOR:
@@ -914,6 +1033,7 @@ static void FreeResource(CommonResourceHeader* sres, int type)
       }
       break;
     case R_DEVICE:
+      resource_uses_smalloc_memory = false;
       if (res->res_dev.media_type) { free(res->res_dev.media_type); }
       if (res->res_dev.device_name) { free(res->res_dev.device_name); }
       if (res->res_dev.device_options) { free(res->res_dev.device_options); }
@@ -947,10 +1067,18 @@ static void FreeResource(CommonResourceHeader* sres, int type)
       Dmsg1(0, _("Unknown resource type %d\n"), type);
       break;
   }
-  /*
-   * Common stuff again -- free the resource, recurse to next one
-   */
-  if (res) { free(res); }
+    /*
+     * Common stuff again -- free the resource, recurse to next one
+     */
+#ifdef SMARTALLOC
+  if (resource_uses_smalloc_memory) {
+    if (res) { free(res); }
+  } else {
+    delete res;
+  }
+#else
+#error "Check free of resource memory"
+#endif
   if (nres) { my_config->FreeResourceCb_(nres, type); }
 }
 

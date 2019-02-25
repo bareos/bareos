@@ -25,6 +25,8 @@
 
 namespace storagedaemon {
 
+ConfigurationParser* my_config = nullptr;
+
 StorageResource* me;
 char* configfile;
 

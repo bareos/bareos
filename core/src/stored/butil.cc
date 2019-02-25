@@ -43,8 +43,6 @@
 #include "lib/parse_bsr.h"
 #include "include/jcr.h"
 
-ConfigurationParser* my_config = NULL; /* Our Global config */
-
 namespace storagedaemon {
 
 /* Forward referenced functions */
