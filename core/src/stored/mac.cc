@@ -490,6 +490,7 @@ bool DoMacRun(JobControlRecord* jcr)
   char ec1[50];
   const char* Type;
   bool ok = true;
+  bool acquire_fail = false;
   BareosSocket* dir = jcr->dir_bsock;
   Device* dev = jcr->dcr->dev;
 
@@ -543,6 +544,7 @@ bool DoMacRun(JobControlRecord* jcr)
      */
     if (!AcquireDeviceForRead(jcr->read_dcr)) {
       ok = false;
+      acquire_fail = true;
       goto bail_out;
     }
 
@@ -661,6 +663,7 @@ bool DoMacRun(JobControlRecord* jcr)
     if (!AcquireDeviceForRead(jcr->read_dcr) ||
         !AcquireDeviceForAppend(jcr->dcr)) {
       ok = false;
+      acquire_fail = true;
       goto bail_out;
     }
 
@@ -699,7 +702,7 @@ bool DoMacRun(JobControlRecord* jcr)
 bail_out:
   if (!ok) { jcr->setJobStatus(JS_ErrorTerminated); }
 
-  if (!jcr->remote_replicate && jcr->dcr) {
+  if (!acquire_fail && !jcr->remote_replicate && jcr->dcr) {
     /*
      * Don't use time_t for job_elapsed as time_t can be 32 or 64 bits,
      *   and the subsequent Jmsg() editing will break
