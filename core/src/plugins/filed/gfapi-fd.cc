@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2017 Planets Communications B.V.
-   Copyright (C) 2014-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,7 +31,19 @@
 #include "lib/edit.h"
 
 #include <api/glfs.h>
+
+
+/* avoid missing config.h problem on Debian 8 and Ubuntu 16:
+   compat-errno.h includes not existing config.h when
+   _CONFIG_H is not defined
+ */
+#ifndef _CONFIG_H
+#define _CONFIG_H
 #include <compat-errno.h>
+#undef _CONFIG_H
+#else
+#include <compat-errno.h>
+#endif
 
 namespace filedaemon {
 
