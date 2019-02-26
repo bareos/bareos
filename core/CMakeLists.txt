@@ -195,7 +195,7 @@ INCLUDE(BareosSetVariableDefaults)
 if (${CMAKE_SYSTEM_NAME} MATCHES "AIX")
    SET(ENABLE_NLS 0)
 endif()
-
+INCLUDE(BareosFindStaticCodeAnalysisTools)
 
 INCLUDE(BareosGetDistInfo)
 
@@ -694,7 +694,17 @@ message("   GAWK:                         ${GAWK}")
 message("   RPCGEN:                       ${RPCGEN}")
 message("   MTX:                          ${MTX}")
 message("   DEVELOPER:                    ${developer}")
-message("   LocalBuildDefinitionsFile     ${BareosLocalBuildDefinitionsFile}")
+message("   LocalBuildDefinitionsFile:    ${BareosLocalBuildDefinitionsFile}")
+
+message("   do-static-code-checks:        ${DO_STATIC_CODE_CHECKS}")
+if(DO_STATIC_CODE_CHECKS)
+message("    static code check tools:")
+message("    CMAKE_CXX_INCLUDE_WHAT_YOU_USE: ${CMAKE_CXX_INCLUDE_WHAT_YOU_USE}")
+message("    CMAKE_CXX_CLANG_TIDY:           ${CMAKE_CXX_CLANG_TIDY}")
+message("    CMAKE_CXX_CPPCHECK:             ${CMAKE_CXX_CPPCHECK}")
+message("    CMAKE_CXX_CPPLINT:              ${CMAKE_CXX_CPPLINT}")
+message("    CMAKE_LINK_WHAT_YOU_USE:        ${CMAKE_LINK_WHAT_YOU_USE}")
+endif()
 
 IF(HAVE_WIN32)
    message("   WINDOWS_VERSION:              ${WINDOWS_VERSION}")

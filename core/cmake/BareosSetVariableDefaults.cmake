@@ -683,3 +683,9 @@ IF(HAVE_WIN32)
    ENDIF()
 
 ENDIF()
+
+IF(DEFINED do-static-code-checks)
+  SET(DO_STATIC_CODE_CHECKS ${do-static-code-checks})
+ELSE()
+  SET(DO_STATIC_CODE_CHECKS OFF)
+ENDIF()
