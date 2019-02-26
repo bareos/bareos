@@ -76,8 +76,7 @@ target_link_libraries(test_lib
    ${GTEST_MAIN_LIBRARIES}
    )
 
-add_test(NAME test_lib COMMAND test_lib)
-gtest_discover_tests(test_lib)
+ gtest_discover_tests(test_lib TEST_PREFIX gtest:)
 
 ####### test_fd_plugins #####################################
 add_executable(test_fd_plugins
@@ -93,8 +92,7 @@ target_link_libraries(test_fd_plugins
     ${GTEST_MAIN_LIBRARIES}
     )
 
-add_test(NAME test_fd_plugins COMMAND test_fd_plugins)
-gtest_discover_tests(test_fd_plugins)
+  gtest_discover_tests(test_fd_plugins TEST_PREFIX gtest:)
 
 ####### test_sd_plugins #####################################
 add_executable(test_sd_plugins
@@ -108,8 +106,7 @@ target_link_libraries(test_sd_plugins
     ${GTEST_MAIN_LIBRARIES}
     )
 
-add_test(NAME test_sd_plugins COMMAND test_sd_plugins)
-gtest_discover_tests(test_sd_plugins)
+  gtest_discover_tests(test_sd_plugins TEST_PREFIX gtest:)
 
 ####### test_dir_plugins #####################################
 add_executable(test_dir_plugins
@@ -125,8 +122,7 @@ target_link_libraries(test_dir_plugins
     ${GTEST_MAIN_LIBRARIES}
     )
 
-add_test(NAME test_dir_plugins COMMAND test_dir_plugins)
-gtest_discover_tests(test_dir_plugins)
+  gtest_discover_tests(test_dir_plugins TEST_PREFIX gtest:)
 
 ####### test_output_formatter ###############################
 add_executable(test_output_formatter
@@ -138,8 +134,7 @@ target_link_libraries(test_output_formatter
    ${GTEST_LIBRARIES}
    ${GTEST_MAIN_LIBRARIES}
    )
-add_test(NAME test_output_formatter COMMAND test_output_formatter)
-gtest_discover_tests(test_output_formatter)
+ gtest_discover_tests(test_output_formatter TEST_PREFIX gtest:)
 
 ####### test_bsock ###############################
 add_executable(test_bsock
@@ -151,8 +146,7 @@ add_executable(test_bsock
     ${SSL_UNIT_TEST_FILES}
     )
 target_link_libraries(test_bsock ${LINK_LIBRARIES})
-add_test(NAME test_bsock COMMAND test_bsock)
-gtest_discover_tests(test_bsock)
+gtest_discover_tests(test_bsock TEST_PREFIX gtest:)
 
 ####### test_connection_setup ###############################
 add_executable(test_connection_setup
@@ -162,8 +156,7 @@ add_executable(test_connection_setup
 
 target_link_libraries(test_connection_setup ${LINK_LIBRARIES})
 
-add_test(NAME test_connection_setup COMMAND test_connection_setup)
-gtest_discover_tests(test_connection_setup)
+gtest_discover_tests(test_connection_setup TEST_PREFIX gtest:)
 
 
 ####### test_ndmp_address_translate ###############################
@@ -174,6 +167,5 @@ add_executable(test_ndmp_address_translate
 
 target_link_libraries(test_ndmp_address_translate ${LINK_LIBRARIES})
 
-add_test(NAME test_ndmp_address_translate COMMAND test_ndmp_address_translate)
-gtest_discover_tests(test_ndmp_address_translate)
+gtest_discover_tests(test_ndmp_address_translate TEST_PREFIX gtest:)
 
