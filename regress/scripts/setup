@@ -36,7 +36,6 @@ if [ -f ${BAREOS_SOURCE}/.git/config ] && type git >/dev/null 2>&1; then
     #
     (
         cd ${BAREOS_SOURCE};
-        git pull;
         git show HEAD | grep commit | head -1 | awk '{print $2}' > git-version
     )
 else
