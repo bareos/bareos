@@ -217,13 +217,18 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   #set(scriptdir ${current_test_directory}/)
 
   ConfigureFilesToSystemtest("systemtests"  "tests/${TEST_NAME}" "*" @ONLY)
+
   configure_file("environment.in" "tests/${TEST_NAME}/environment" @ONLY)
-  add_test(NAME ${TEST_NAME}
+  # create a bin/bareos and bin/bconsole script
+  # in every testdir for start/stop and bconsole
+  file(MAKE_DIRECTORY "tests/${TEST_NAME}/bin")
+  configure_file("bin/bconsole" "tests/${TEST_NAME}/bin/bconsole" COPYONLY)
+  configure_file("bin/bareos" "tests/${TEST_NAME}/bin/bareos" COPYONLY)
+
+  add_test(NAME "system:${TEST_NAME}"
     COMMAND ${tests_dir}/${TEST_NAME}/testrunner
     WORKING_DIRECTORY ${tests_dir}/${TEST_NAME})
   math(EXPR BASEPORT "${BASEPORT} + 10")
-
-
 
 endforeach()
 
