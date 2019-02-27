@@ -1,4 +1,4 @@
-#! /bin/sh -x
+#! /bin/sh
 #
 # bareos-ctl-dir This shell script takes care of starting and stopping
 #		 the bareos Director daemon
