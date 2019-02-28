@@ -65,6 +65,7 @@ messages
 @# now do a restore
 @#
 @$out $tmp/log2.out
+wait
 restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done
 yes
 wait
@@ -94,11 +95,6 @@ wait
 messages
 quit
 END_OF_DATA
-
-#
-# Now do a second backup after making a few changes
-#
-echo "test test" > ${BackupDirectory}/xxx
 
 run_bareos
 check_for_zombie_jobs storage=File
