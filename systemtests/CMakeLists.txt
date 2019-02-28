@@ -197,7 +197,7 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
 
   set(logdir ${current_test_directory}/log)
   set(tmpdir ${current_test_directory}/tmp)
-  set(tmp ${tmpdir}/tmp)
+  set(tmp ${tmpdir})
   set(working_dir ${current_test_directory}/working)
 
   file(MAKE_DIRECTORY ${archivedir})

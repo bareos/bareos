@@ -7,5 +7,5 @@ Job {
   Storage = File
   Pool = Incremental
   Messages = Standard
-  Where = /tmp/bareos-restores
+  Where = @tmp@/bareos-restores
 }
