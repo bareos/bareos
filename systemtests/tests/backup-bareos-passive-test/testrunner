@@ -3,7 +3,7 @@
 # Run a simple backup
 #   then restore it.
 #
-TestName="backup-bareos-test"
+TestName="$(basename "$(pwd)")"
 export TestName
 
 JobName=backup-bareos-fd
@@ -41,9 +41,23 @@ messages
 setdebug level=100 storage=File
 label volume=TestVolume001 storage=File pool=Full
 run job=$JobName yes
+status storage=File
+status storage=File
+status storage=File
+status storage=File
+status storage=File
+status storage=File
 @sleep 1
-status director
-status client
+status storage=File
+status storage=File
+status storage=File
+status storage=File
+status storage=File
+@sleep 1
+status storage=File
+status storage=File
+status storage=File
+status storage=File
 status storage=File
 wait
 messages

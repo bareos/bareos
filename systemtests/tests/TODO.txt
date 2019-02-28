@@ -6,6 +6,7 @@ tests ported to systemtests:
 ----------------------------
 
 disk:backup-bareos-test
+disk:backup-bareos-passive-test
 
 Tests to be ported:
 ------------------
@@ -31,7 +32,6 @@ disk:allowed-scriptdir-test
 disk:always-incremental-test
 disk:auto-label-test
 disk:backup-bareos-client-initiated-connection-test
-disk:backup-bareos-passive-test
 disk:backup-to-null
 disk:bandwidth-limit-per-client-test
 disk:base-job-test
