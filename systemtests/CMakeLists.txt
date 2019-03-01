@@ -22,16 +22,18 @@ project(bareos-systemtests)
 
 
 function(ConfigureFilesToSystemtest srcdir subdirectory globexpression configure_option)
-  MESSAGE(STATUS "ConfigureFilesToSystemtest from ${srcdir} to ${subdirectory} with glob ${globexpression} ${configure_option}" )
+  set(count 1)
   file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${subdirectory})
   file(GLOB_RECURSE ALL_FILES "${CMAKE_SOURCE_DIR}/${srcdir}/${subdirectory}/${globexpression}")
   foreach(CURRENT_FILE ${ALL_FILES})
+    MATH(EXPR COUNT "${COUNT}+1")
     string(REPLACE "${CMAKE_SOURCE_DIR}/" "" TARGET_FILE ${CURRENT_FILE})
     string(REPLACE ".in" "" TARGET_FILE ${TARGET_FILE})
-    MESSAGE(STATUS "configuring  ${TARGET_FILE}" )
+    #MESSAGE(STATUS "configuring  ${TARGET_FILE}" )
     string(REPLACE "${srcdir}/${subdirectory}" "" TARGET_FILE ${TARGET_FILE})
     configure_file(${CURRENT_FILE} ${PROJECT_BINARY_DIR}/${subdirectory}/${TARGET_FILE} ${configure_option})
   endforeach()
+  MESSAGE(STATUS "Configured ${COUNT} files from ${srcdir} to ${subdirectory} with glob ${globexpression} ${configure_option}" )
 endfunction()
 
 
@@ -151,7 +153,7 @@ file(GLOB ALL_FILES "${CMAKE_BINARY_DIR}/systemtests/cats/*_bareos_*")
 foreach(CURRENT_FILE ${ALL_FILES})
   string(REPLACE "${CMAKE_BINARY_DIR}/systemtests/cats/" "" TARGET_FILE ${CURRENT_FILE})
   file(RENAME ${CURRENT_FILE} ${scripts}/${TARGET_FILE})
-  MESSAGE(STATUS "moved  ${scripts}/${TARGET_FILE}")
+  # MESSAGE(STATUS "moved  ${scripts}/${TARGET_FILE}")
 endforeach()
 
 
@@ -167,10 +169,7 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   # base directory for this test
   set(current_test_directory ${PROJECT_BINARY_DIR}/tests/${TEST_NAME})
 
-  #set(basename ${current_test_directory}/)
-
   #db parameters
-
   set(db_password "")
   #db_name is regress-${TEST_NAME} replacing - by _
   string(REPLACE "-" "_" db_name "regress-${TEST_NAME}")
@@ -206,17 +205,6 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   file(MAKE_DIRECTORY ${tmpdir})
   file(MAKE_DIRECTORY ${working_dir})
 
-  # common to all tests, set above and commented out here
-
-  #set(hostname ${current_test_directory}/)
-  # directories where things are loaded
-  #set(backenddir ${current_test_directory}/)
-  #set(plugindir ${current_test_directory}/)
-
-  #set(sbindir ${current_test_directory}/sbin)
-  #set(bindir ${current_test_directory}/)
-  #set(scriptdir ${current_test_directory}/)
-
   ConfigureFilesToSystemtest("systemtests"  "tests/${TEST_NAME}" "*" @ONLY)
 
   configure_file("environment.in" "tests/${TEST_NAME}/environment" @ONLY)
@@ -236,20 +224,42 @@ endforeach()
 
 # create symlinks for the binaries
 
-execute_process(COMMAND
-  ${CMAKE_COMMAND} -E create_symlink ${PROJECT_BINARY_DIR}/../core/src/dird/bareos-dir ${sbindir}/bareos-dir)
+set(BINARIES_TO_LINK_TO_SBIN
+  dird/bareos-dir
+  dird/bareos-dbcheck
+  filed/bareos-fd
+  stored/bareos-sd
+  stored/bcopy
+  stored/btape
+  stored/bextract
+  stored/bareos-sd
+  stored/bls
+  stored/bscan
+  )
 
-execute_process(COMMAND
-  ${CMAKE_COMMAND} -E create_symlink ${PROJECT_BINARY_DIR}/../core/src/dird/bareos-dbcheck ${sbindir}/bareos-dbcheck)
+foreach (BINARY_SOURCEPATH ${BINARIES_TO_LINK_TO_SBIN})
+  get_filename_component(BINARY_NAME ${BINARY_SOURCEPATH} NAME)
+  execute_process(COMMAND
+    ${CMAKE_COMMAND} -E create_symlink ${PROJECT_BINARY_DIR}/../core/src/${BINARY_SOURCEPATH} ${sbindir}/${BINARY_NAME})
+endforeach()
 
-execute_process(COMMAND
-  ${CMAKE_COMMAND} -E create_symlink ${PROJECT_BINARY_DIR}/../core/src/stored/bareos-sd ${sbindir}/bareos-sd)
+set(BINARIES_TO_LINK_TO_BIN
+  console/bconsole
+  tools/bsmtp
+  tools/timelimit
+  tools/bwild
+  tools/bpluginfo
+  tools/bsmtp
+  tools/bscrypto
+  tools/btestls
+  tools/drivetype
+  tools/fstype
+  tools/bregex
+  )
 
-execute_process(COMMAND
-  ${CMAKE_COMMAND} -E create_symlink ${PROJECT_BINARY_DIR}/../core/src/filed/bareos-fd ${sbindir}/bareos-fd)
+foreach (BINARY_SOURCEPATH ${BINARIES_TO_LINK_TO_BIN})
+  get_filename_component(BINARY_NAME ${BINARY_SOURCEPATH} NAME)
+  execute_process(COMMAND
+    ${CMAKE_COMMAND} -E create_symlink ${PROJECT_BINARY_DIR}/../core/src/${BINARY_SOURCEPATH} ${bindir}/${BINARY_NAME})
+endforeach()
 
-execute_process(COMMAND
-  ${CMAKE_COMMAND} -E create_symlink ${PROJECT_BINARY_DIR}/../core/src/console/bconsole ${bindir}/bconsole)
-
-execute_process(COMMAND
-  ${CMAKE_COMMAND} -E create_symlink ${scriptdir}/bareos ${bindir}/bareos)
