@@ -55,7 +55,6 @@ message(STATUS "DEFAULT_DB_TYPE is ${DEFAULT_DB_TYPE}")
 set(archivedir "${PROJECT_BINARY_DIR}/archivedir")
 set(backenddir "${PROJECT_BINARY_DIR}/../core/src/cats")
 
-set(basename test)
 set(bin ${PROJECT_BINARY_DIR}/bin)
 set(bindir ${PROJECT_BINARY_DIR}/bin)
 
@@ -168,6 +167,7 @@ set(BASEPORT 42001)
 foreach(TEST_NAME ${SYSTEM_TESTS})
   # base directory for this test
   set(current_test_directory ${PROJECT_BINARY_DIR}/tests/${TEST_NAME})
+  set(basename ${TEST_NAME})
 
   #db parameters
   set(db_password "")
@@ -210,7 +210,7 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   configure_file("environment.in" "tests/${TEST_NAME}/environment" @ONLY)
   # create a bin/bareos and bin/bconsole script
   # in every testdir for start/stop and bconsole
-  file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/tests/${TEST_NAME}/bin")
+  #file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/tests/${TEST_NAME}/bin")
   configure_file("bin/bconsole" "tests/${TEST_NAME}/bin/bconsole" COPYONLY)
   configure_file("bin/bareos" "tests/${TEST_NAME}/bin/bareos" COPYONLY)
 

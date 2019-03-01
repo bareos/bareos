@@ -8,6 +8,8 @@ rm -rf ${working}/log
 rm -rf ${working}/*.bsr ${working}/log*.sd
 rm -rf ${working}/*.trace ${working}/*.traceback ${working}/*.bactrace
 rm -rf ${working}/*.state
+rm -rf ${working}/*.conmsg
+rm -rf ${working}/*.pid
 rm -rf ${working}/CLEANUPMARKER
 rm -rf ${working}/plugins/*
 find . -name "gigaslam.gif" -exec rm -f {} \;
