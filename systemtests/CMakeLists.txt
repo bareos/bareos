@@ -80,7 +80,6 @@ set(logdir "log")
 set(mon_dir_password "mon_dir_password")
 set(mon_fd_password "mon_fd_password")
 set(mon_sd_password "mon_sd_password")
-set(piddir ${PROJECT_BINARY_DIR}/piddir)
 set(plugindir ${PROJECT_BINARY_DIR}/plugindir)
 set(plugindirtmp ${PROJECT_BINARY_DIR}/plugindirtmp)
 set(rscripts ${PROJECT_BINARY_DIR}/scripts)
@@ -100,7 +99,11 @@ set(tmpsrc ${PROJECT_BINARY_DIR}/tmpsrc)
 set(working ${PROJECT_BINARY_DIR}/working)
 set(working_dir ${PROJECT_BINARY_DIR}/working)
 
-#set(BASEPORT ${dir_port})
+set(piddir ${PROJECT_BINARY_DIR}/piddir)
+file(MAKE_DIRECTORY ${piddir})
+
+
+  #set(BASEPORT ${dir_port})
 
 # for config-lib.sh: do not remove @DB___@ but replace them with the original
 set(DB_NAME @DB_NAME@)
@@ -137,7 +140,6 @@ ConfigureFilesToSystemtest("core/src" "console" "*.in" @ONLY)
 execute_process(COMMAND
   ${CMAKE_COMMAND} -E create_symlink ${scriptdir}/btraceback ${sbindir}/btraceback)
 
-file(MAKE_DIRECTORY ${piddir})
 file(MAKE_DIRECTORY ${subsysdir})
 file(MAKE_DIRECTORY ${sbindir})
 file(MAKE_DIRECTORY ${bindir})

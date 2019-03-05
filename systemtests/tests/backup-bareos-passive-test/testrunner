@@ -31,7 +31,6 @@ messages
 setdebug level=100 storage=File
 label volume=TestVolume001 storage=File pool=Full
 run job=$JobName yes
-@sleep 1
 status director
 status client
 status storage=File

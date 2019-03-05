@@ -23,7 +23,7 @@ AWK=@AWK@
 #  environment where they are different.
 #
 BIN=@sbindir@/bareos-sd
-PIDDIR=@piddir@
+export PIDDIR=@piddir@
 SUBSYSDIR=@subsysdir@
 
 BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-@confdir@}

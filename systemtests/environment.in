@@ -28,6 +28,7 @@ src=${PROJECT_BINARY_DIR}/src
 tmpsrc=${PROJECT_BINARY_DIR}/tmpsrc
 DBTYPE=@DEFAULT_DB_TYPE@
 archivedir=@archivedir@
+logdir=@logdir@
 
 # exported variables used by start/stop and other bareos scripts
 # to override the defaults
