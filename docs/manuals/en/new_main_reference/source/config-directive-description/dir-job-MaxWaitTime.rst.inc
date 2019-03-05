@@ -2,7 +2,7 @@ The time specifies the maximum allowed time that a job may block waiting for a r
 
 \centering
 
-.. figure:: /_static/images/different_time.*
+.. figure:: /include/images/different_time.*
    :alt: Job time control directives
    :name: fig:differenttime
    :width: 13cm

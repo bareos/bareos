@@ -42,7 +42,7 @@ A default installation will use the program bsmtp as :strong:`Mail Command`. The
 
 
 
-   .. literalinclude:: /_static/config/MessagesMailCommand1.conf
+   .. literalinclude:: /include/config/MessagesMailCommand1.conf
 
 
 

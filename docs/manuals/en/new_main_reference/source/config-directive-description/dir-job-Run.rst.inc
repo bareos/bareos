@@ -5,7 +5,7 @@ same time for comparison as used on the current job. Note, in the case of the si
 
 
 
-   .. literalinclude:: /_static/config/DirJobRun1.conf
+   .. literalinclude:: /include/config/DirJobRun1.conf
 
 
 

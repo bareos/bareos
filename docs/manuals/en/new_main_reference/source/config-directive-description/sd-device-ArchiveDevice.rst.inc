@@ -19,7 +19,7 @@ fifo
 
    
 
-      .. literalinclude:: /_static/config/SdDeviceArchiveDevice1.conf
+      .. literalinclude:: /include/config/SdDeviceArchiveDevice1.conf
 
 
 

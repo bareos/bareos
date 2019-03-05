@@ -4,7 +4,7 @@ Most frequently, you will define it as follows:
 
 
 
-   .. literalinclude:: /_static/config/SdDeviceUnmountCommand1.conf
+   .. literalinclude:: /include/config/SdDeviceUnmountCommand1.conf
 
 
 

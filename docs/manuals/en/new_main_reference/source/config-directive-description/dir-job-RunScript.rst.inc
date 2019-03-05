@@ -8,7 +8,7 @@ You can use following console command: ``delete``, ``disable``, ``enable``, ``es
 
 
 
-   .. literalinclude:: /_static/config/DirJobRunScript1.conf
+   .. literalinclude:: /include/config/DirJobRunScript1.conf
 
 
 
@@ -157,7 +157,7 @@ Keyword                                                              RunsOnSucce
 
 Examples: 
 
-.. literalinclude:: /_static/config/DirJobRunScript2.conf
+.. literalinclude:: /include/config/DirJobRunScript2.conf
 
 
 
@@ -180,7 +180,7 @@ System environment variables can be referenced with %var% and used as either par
 
 
 
-   .. literalinclude:: /_static/config/DirJobRunScript3.conf
+   .. literalinclude:: /include/config/DirJobRunScript3.conf
 
 
 

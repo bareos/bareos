@@ -4,13 +4,13 @@ Note, it is not necessary to have an autochanger to use this command. The exampl
 
 An example of the use of this command to print Tape Alerts in the Job report is: 
 
-.. literalinclude:: /_static/config/SdDeviceAlertCommand1.conf
+.. literalinclude:: /include/config/SdDeviceAlertCommand1.conf
 
 
 
 and an example output when there is a problem could be: 
 
-.. literalinclude:: /_static/config/SdDeviceAlertCommand2.conf
+.. literalinclude:: /include/config/SdDeviceAlertCommand2.conf
 
 
 

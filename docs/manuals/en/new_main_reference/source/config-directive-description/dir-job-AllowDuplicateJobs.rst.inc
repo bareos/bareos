@@ -1,6 +1,6 @@
 \centering
 
-.. figure:: /_static/images/duplicate-real.*
+.. figure:: /include/images/duplicate-real.*
    :alt: Allow Duplicate Jobs usage
    :name: fig:allowduplicatejobs
    :width: 50.0%

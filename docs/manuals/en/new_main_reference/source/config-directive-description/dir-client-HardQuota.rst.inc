@@ -4,6 +4,6 @@ If the Hard Quota is exceeded, the running job is terminated:
 
 
 
-   .. literalinclude:: /_static/config/DirClientHardQuota1.conf
+   .. literalinclude:: /include/config/DirClientHardQuota1.conf
 
 

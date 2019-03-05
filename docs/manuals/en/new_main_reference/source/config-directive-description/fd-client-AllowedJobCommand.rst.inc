@@ -6,7 +6,7 @@ You specify all commands you want to be executed by the filedaemon. When you don
 
 The following example shows how to use this functionality: 
 
-.. literalinclude:: /_static/config/FdClientAllowedJobCommand1.conf
+.. literalinclude:: /include/config/FdClientAllowedJobCommand1.conf
 
 
 

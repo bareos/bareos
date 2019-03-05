@@ -138,7 +138,7 @@ class RegexDefs(object):
             'idir': {
                 'pattern': r'\\idir\ *(.*?)\n',
                 'flags':   re.VERBOSE,
-                'replace': r'/_static/images/\1.*\n'
+                'replace': r'/include/images/\1.*\n'
             },
             'EnvBareosConfigResource': {
                 'pattern': r'::\n\n(\s*)\\begin{bareosConfigResource}{(.*?)}{(.*?)}{(.*?)}\s*\n(.*?)\n\s*\\end{bareosConfigResource}',
@@ -229,7 +229,7 @@ class RegexDefs(object):
                 'pattern': r'\.\.\s\|image\|\simage::\s\\idir\s(.*?)$(.*?)(?=\n[^\s]|^$)',
                 'flags':   self.regexOpts, 
                 'replace': r'',
-                'return':  r'.. image:: /_static/images/\1.*\2\n\n',
+                'return':  r'.. image:: /include/images/\1.*\2\n\n',
                 'extraHandling': True
             },
         }
@@ -690,7 +690,7 @@ class Translate(object):
 
     @staticmethod
     def bconfigInput(item):
-        item.replace(b'\n\n{indent}.. literalinclude:: /_static/{0}\n\n'.format(*item.getParameters(), indent = ' ' * item.getIndent()))
+        item.replace(b'\n\n{indent}.. literalinclude:: /include/{0}\n\n'.format(*item.getParameters(), indent = ' ' * item.getIndent()))
 
     @staticmethod
     def bcommand(item):
@@ -1222,7 +1222,7 @@ class Translate(object):
     @staticmethod
     def verbatiminput(item):
         # file must be in the source/ directory (at least there have to be a link)
-        item.replace(b'\n\n.. literalinclude:: /_static/{0}\n\n'.format(*item.getParameters()))
+        item.replace(b'\n\n.. literalinclude:: /include/{0}\n\n'.format(*item.getParameters()))
 
 
     #

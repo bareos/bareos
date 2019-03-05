@@ -4,7 +4,7 @@ When the amount of data backed up by the client outruns the value specified by t
 
 
 
-   .. literalinclude:: /_static/config/DirClientSoftQuotaGracePeriod1.conf
+   .. literalinclude:: /include/config/DirClientSoftQuotaGracePeriod1.conf
 
 
 
@@ -16,7 +16,7 @@ If in this state, the job log will write:
 
 
 
-   .. literalinclude:: /_static/config/DirClientSoftQuotaGracePeriod2.conf
+   .. literalinclude:: /include/config/DirClientSoftQuotaGracePeriod2.conf
 
 
 
@@ -24,7 +24,7 @@ After the grace time expires, in the next backup job of the client, the value fo
 
 
 
-   .. literalinclude:: /_static/config/DirClientSoftQuotaGracePeriod3.conf
+   .. literalinclude:: /include/config/DirClientSoftQuotaGracePeriod3.conf
 
 
 

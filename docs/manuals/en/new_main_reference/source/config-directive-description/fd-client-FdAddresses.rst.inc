@@ -2,7 +2,7 @@ Specify the ports and addresses on which the File daemon listens for Director co
 
 
 
-   .. literalinclude:: /_static/config/FdClientFDAddresses1.conf
+   .. literalinclude:: /include/config/FdClientFDAddresses1.conf
 
 
 

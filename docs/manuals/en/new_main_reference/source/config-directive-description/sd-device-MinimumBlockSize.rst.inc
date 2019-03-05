@@ -6,7 +6,7 @@ For example, suppose you want a fixed block size of 100K bytes, then you would s
 
 
 
-   .. literalinclude:: /_static/config/SdDeviceMinimumBlockSize1.conf
+   .. literalinclude:: /include/config/SdDeviceMinimumBlockSize1.conf
 
 
 
@@ -16,6 +16,6 @@ If you want the block size to be variable but with a 63K minimum and 200K maximu
 
 
 
-   .. literalinclude:: /_static/config/SdDeviceMinimumBlockSize2.conf
+   .. literalinclude:: /include/config/SdDeviceMinimumBlockSize2.conf
 
 

@@ -8,6 +8,6 @@ The following example shows how to use this functionality:
 
 
 
-   .. literalinclude:: /_static/config/FdClientAllowedScriptDir1.conf
+   .. literalinclude:: /include/config/FdClientAllowedScriptDir1.conf
 
 

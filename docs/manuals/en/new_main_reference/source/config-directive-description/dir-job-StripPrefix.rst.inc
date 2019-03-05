@@ -6,6 +6,6 @@ Under Windows, if you want to restore ``c:/files`` to ``d:/files``, you can use:
 
 
 
-   .. literalinclude:: /_static/config/DirJobStripPrefix1.conf
+   .. literalinclude:: /include/config/DirJobStripPrefix1.conf
 
 

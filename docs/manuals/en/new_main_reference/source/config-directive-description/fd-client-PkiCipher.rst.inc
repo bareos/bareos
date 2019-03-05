@@ -4,7 +4,7 @@ Depending on the openssl library version different ciphers are available. To cho
 
 
 
-   .. literalinclude:: /_static/config/FdClientPki.conf
+   .. literalinclude:: /include/config/FdClientPki.conf
 
 
 

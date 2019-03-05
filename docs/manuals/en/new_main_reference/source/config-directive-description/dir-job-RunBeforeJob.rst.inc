@@ -4,7 +4,7 @@ If the exit code of the program run is non-zero, the current Bareos job will be 
 
 
 
-   .. literalinclude:: /_static/config/DirJobRunBeforeJob1.conf
+   .. literalinclude:: /include/config/DirJobRunBeforeJob1.conf
 
 
 
@@ -12,6 +12,6 @@ is equivalent to:
 
 
 
-   .. literalinclude:: /_static/config/DirJobRunBeforeJob2.conf
+   .. literalinclude:: /include/config/DirJobRunBeforeJob2.conf
 
 

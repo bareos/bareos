@@ -86,7 +86,11 @@ def convertToFilename(string):
 
     result = ''
     
-    for i in re.sub("[^a-zA-Z0-9 ]", "", string).split(' '):
+    # replace / by " "
+    string1 = re.sub('/', ' ', string)
+    # remove all non-standard characters 
+    string2 = re.sub('[^a-zA-Z0-9 ]', '', string1)
+    for i in string2.split(' '):
         result += i.capitalize()
     return result
 

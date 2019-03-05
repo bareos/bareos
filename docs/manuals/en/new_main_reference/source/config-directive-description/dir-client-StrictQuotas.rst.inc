@@ -4,7 +4,7 @@ The Job Log shows either
 
 
 
-   .. literalinclude:: /_static/config/DirClientStrictQuotas1.conf
+   .. literalinclude:: /include/config/DirClientStrictQuotas1.conf
 
 
 
@@ -12,6 +12,6 @@ or
 
 
 
-   .. literalinclude:: /_static/config/DirClientStrictQuotas2.conf
+   .. literalinclude:: /include/config/DirClientStrictQuotas2.conf
 
 
