@@ -211,6 +211,13 @@ class RegexDefs(object):
                 'flags':   self.regexOpts, 
                 'replace': r'.. code-block:: sh\n\1:caption: \2\n\n\3'
             },
+            'EnvVerbatimRst': {
+                # pre script already created preformated RST and put it in a verbatim environment.
+                # Here we only have to delete the comment directive and RST: header.
+                'pattern': r'::\n\n(\s*)RST:',
+                'flags':   self.regexOpts,
+                'replace': r''
+            },
             #${PERL} 's#\{logging\}\{(.*)\}#\n.. code-block:: sh\n    :caption: \1\n#g'   ${DESTFILE}
             'ImageReference': {
                 'pattern': r'\ *\|image\|',
@@ -708,6 +715,10 @@ class Translate(object):
     #
     # c
     #
+    @staticmethod
+    def clearpage(item):
+        item.replace(r'')
+
     @staticmethod
     def cmlink(item):
         # % check mark internal link

@@ -1,5 +1,3 @@
-.. master index
-
 Bareos Main Reference and Documentation
 =======================================
 
@@ -14,26 +12,14 @@ perfectly converted, we still have the `old documentation <http://doc.bareos.org
 The Information regarding the newest release in the :ref:`bareos-current-releasenotes`.
 
 
-
 .. toctree::
-   :maxdepth: 3
-   :numbered: 4
 
-   index-part-1
-   index-part-2
-   index-part-3
-   index-part-4
-   index-developer-guide
-   developers/releasenotes.rst
-   bareos-18.2.rst
-   webui-tls.rst
-
-
-Indices and tables
-===================
-
-* :ref:`genindex`
-
-.. * :ref:`modindex`
-.. * :ref:`search`
-
+   /IntroductionAndTutorial.rst
+   /Configuration.rst
+   /TasksAndConcepts.rst
+   /Appendix.rst
+   /developers/releasenotes.rst
+   /developers.rst
+   /bareos-18.2.rst
+   /webui-tls.rst
+   /genindex
