@@ -225,7 +225,7 @@ static ResourceItem dev_items[] = {
       "this option if your tape-drive fails to detect end-of-tape while reading."},
   {"Count", CFG_TYPE_PINT32, ITEM(res_dev.count), 0, CFG_ITEM_DEFAULT, "1", NULL, "If Count is set to (1 < Count < 10000), "
   "this resource will be multiplied Count times. The names of multiplied resources will have a serial number (0001, 0002, ...) attached. "
-  "If set to 1 only this single resource will be used and then its name will not be altered."},
+  "If set to 1 only this single resource will be used and its name will not be altered."},
   {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}};
 
 /**
@@ -269,9 +269,9 @@ static ResourceTable resources[] = {
  * Authentication methods
  */
 static struct s_kw authmethods[] = {{"None", AT_NONE},
-                                    {"Clear", AT_CLEAR},
-                                    {"MD5", AT_MD5},
-                                    {NULL, 0}};
+                                               {"Clear", AT_CLEAR},
+                                               {"MD5", AT_MD5},
+                                               {NULL, 0}};
 
 /**
  * Device types
@@ -937,7 +937,7 @@ static void FreeResource(CommonResourceHeader* sres, int type)
       if (res->res_dir.tls_cert_.allowed_certificate_common_names_) {
         res->res_dir.tls_cert_.allowed_certificate_common_names_->destroy();
         free(res->res_dir.tls_cert_.allowed_certificate_common_names_);
-      }
+    }
       if (res->res_dir.tls_cert_.ca_certfile_) {
         delete res->res_dir.tls_cert_.ca_certfile_;
       }
@@ -968,7 +968,7 @@ static void FreeResource(CommonResourceHeader* sres, int type)
     case R_AUTOCHANGER:
       if (res->res_changer.changer_name) {
         free(res->res_changer.changer_name);
-      }
+    }
       if (res->res_changer.changer_command) {
         free(res->res_changer.changer_command);
       }
@@ -979,7 +979,7 @@ static void FreeResource(CommonResourceHeader* sres, int type)
       if (res->res_store.SDaddrs) { FreeAddresses(res->res_store.SDaddrs); }
       if (res->res_store.SDsrc_addr) {
         FreeAddresses(res->res_store.SDsrc_addr);
-      }
+    }
       if (res->res_store.NDMPaddrs) { FreeAddresses(res->res_store.NDMPaddrs); }
       if (res->res_store.working_directory) {
         free(res->res_store.working_directory);
@@ -1039,7 +1039,7 @@ static void FreeResource(CommonResourceHeader* sres, int type)
       if (res->res_dev.device_options) { free(res->res_dev.device_options); }
       if (res->res_dev.diag_device_name) {
         free(res->res_dev.diag_device_name);
-      }
+    }
       if (res->res_dev.changer_name) { free(res->res_dev.changer_name); }
       if (res->res_dev.changer_command) { free(res->res_dev.changer_command); }
       if (res->res_dev.alert_command) { free(res->res_dev.alert_command); }
@@ -1059,7 +1059,7 @@ static void FreeResource(CommonResourceHeader* sres, int type)
       if (res->res_msgs.operator_cmd) { free(res->res_msgs.operator_cmd); }
       if (res->res_msgs.timestamp_format) {
         free(res->res_msgs.timestamp_format);
-      }
+    }
       FreeMsgsRes((MessagesResource*)res); /* free message resource */
       res = NULL;
       break;

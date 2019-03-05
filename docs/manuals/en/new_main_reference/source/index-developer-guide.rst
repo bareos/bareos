@@ -10,6 +10,7 @@ Bareos Developer Guide
  developers/daemonprotocol.rst
  developers/file.rst
  developers/storage.rst
+ multiplied_device.rst
  developers/catalog.rst
  developers/mediaformat.rst
  developers/porting.rst
