@@ -7,10 +7,10 @@ Configuration
    .. toctree::
 
       /Configuration/CustomizingTheConfiguration.rst
-      /Configuration/DirectorConfiguration.rst
-      /Configuration/StorageDaemonConfiguration.rst
-      /Configuration/ClientFileDaemonConfiguration.rst
-      /Configuration/MessagesConfiguration.rst
-      /Configuration/ConsoleConfiguration.rst
-      /Configuration/MonitorConfiguration.rst
+      /Configuration/Director.rst
+      /Configuration/StorageDaemon.rst
+      /Configuration/FileDaemon.rst
+      /Configuration/Messages.rst
+      /Configuration/Console.rst
+      /Configuration/Monitor.rst
 

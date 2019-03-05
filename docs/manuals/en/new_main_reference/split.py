@@ -164,6 +164,22 @@ class LatexSplit(object):
             header = findAll[i+0]
             title = findAll[i+1]
             content = header + findAll[i+2]
+
+            # special handling for the Configuration Part,
+            # to make URLs shorter.
+            if title == 'Director Configuration':
+                title = 'Director'
+            elif title == 'Storage Daemon Configuration':
+                title = 'Storage Daemon'
+            elif title == 'Client/File Daemon Configuration':
+                title = 'File Daemon'
+            elif title == 'Messages Configuration':
+                title = 'Messages'
+            elif title == 'Console Configuration':
+                title = 'Console'
+            elif title == 'Monitor Configuration':
+                title = 'Monitor'
+
             self.nodes.append(LatexNode(self.level, title, content))
             i += 3
 
@@ -212,12 +228,15 @@ class LatexParts(LatexSplit):
     def __init__(self, text, targetdir, relpath, write = True):
         
         super(LatexParts, self).__init__(text, r'\\part', 1, targetdir, relpath, write)
-        self.toc_extra_nodes = [ 'developers/releasenotes.rst', 'developers.rst', 'bareos-18.2.rst', 'webui-tls.rst', 'genindex' ]
+        self.toc_extra_nodes = [ '/developers/releasenotes.rst', '/developers.rst', '/bareos-18.2.rst', '/webui-tls.rst', '/genindex' ]
 
     def getToc(self):
+        '''
+        Generate TOC, but add some static entries.
+        '''
         content = super(LatexParts, self).getToc()
         for section in self.toc_extra_nodes:
-            path = os.path.normpath('/{}'.format(section))
+            path = os.path.normpath('{}'.format(section))
             content += '   {}\n'.format(path)
         
         return content
