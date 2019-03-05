@@ -1096,3 +1096,31 @@ Storage Configuration - Device Resource Directives
 
 See chapter :ref:`section-JobStatistics` for additional information.
 
+.. _section-RemoveClient:
+
+Remove Client
+-------------
+
+Removing a client can mean several things in Bareos context. You can disable the client so no jobs that use this client will run anymore. You can also remove the client’s configuration so that the client cannot be referenced anymore. However, you will still have the client in your catalog unless you explicitly remove it.
+
+Disable a client
+~~~~~~~~~~~~~~~~
+
+It is possible to disable a client either by calling disable client=<client-name> or by setting **Enabled**:sup:`Dir`:sub:`Client`\  to no. While the configuration change will persist across restarts, the command just disables the client temporarily.
+
+When a client is disabled, the scheduler will not run any job for this client anymore, but you can still restore to it or manually trigger a job.
+
+Remove configuration for client
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you want to remove the client permanently, you can also completely remove the client from your configuration. This will make sure that no job (neither backup nor restore) can use that client machine. After removing the Client Resource from the director configuration, you will also need to change or remove all Job and JobDefs Resources in the Director configuration that reference the removed client.
+
+Removing the client configuration does not remove the associated backups. You can still restore the data that has been backed up from the client to a different client.
+
+Remove orphaned client information from database
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As soon as all jobs for a client have been removed from the catalog that client becomes orphaned. You can remove orphaned clients using option 12 "Check for orphaned Client records" from :command:`bareos-dbcheck`.
+
+By default :command:`bareos-dbcheck` only lists the orphaned clients it finds. You need to enable the modify database flag (option 1) to make it write to the database.
+
