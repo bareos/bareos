@@ -12,6 +12,7 @@ rm -rf ${working}/*.conmsg
 rm -rf ${working}/*.pid
 rm -rf ${working}/CLEANUPMARKER
 rm -rf ${working}/plugins/*
+rm -rf ${archivedir}/*
 find . -name "gigaslam.gif" -exec rm -f {} \;
 # cleanup old config files
 # don't delete mtx-changer.conf (and other files?)

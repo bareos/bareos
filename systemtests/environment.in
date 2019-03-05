@@ -27,6 +27,7 @@ cats=${PROJECT_BINARY_DIR}/cats
 src=${PROJECT_BINARY_DIR}/src
 tmpsrc=${PROJECT_BINARY_DIR}/tmpsrc
 DBTYPE=@DEFAULT_DB_TYPE@
+archivedir=@archivedir@
 
 # exported variables used by start/stop and other bareos scripts
 # to override the defaults
@@ -39,6 +40,8 @@ export BAREOS_DIRECTOR_PORT=@dir_port@
 export BAREOS_STORAGE_PORT=@sd_port@
 export BAREOS_FD_PORT=@fd_port@
 export PIDDIR=@piddir@
+
+export archivedir
 
 export scripts
 export DBTYPE
