@@ -227,6 +227,41 @@ as :program:`pandoc` has created RST file with this section markers (except of p
    and possibly renders the result incorrectly.
 
 
+
+Explicit Markup
+---------------
+
+“Explicit markup” is used in reST for most constructs that need special handling, such as footnotes, specially-highlighted paragraphs, comments, and generic directives.
+
+An explicit markup block begins with a line starting with .. followed by whitespace and is terminated by the next paragraph at the same level of indentation. (There needs to be a blank line between explicit markup and normal paragraphs. This may all sound a bit complicated, but it is intuitive enough when you write it.)
+
+Directives
+^^^^^^^^^^
+
+A directive is a generic block of explicit markup. Besides roles, it is one of the extension mechanisms of reST, and Sphinx makes heavy use of it.
+
+Basically, a directive consists of a name, arguments, options and content. (Keep this terminology in mind, it is used in the next chapter describing custom directives.) Looking at this example,
+
+::
+
+  .. function:: foo(x)
+                foo(y, z)
+     :bar: no
+
+   Return a line of text input from the user.
+
+function is the directive name. It is given two arguments here, the remainder of the first line and the second line, as well as one option bar (as you can see, options are given in the lines immediately following the arguments and indicated by the colons).
+
+The directive content follows after a blank line and is indented relative to the directive start.
+
+
+Comments
+^^^^^^^^
+
+Every explicit markup block which isn’t a valid markup construct (like the footnotes above) is regarded as a comment.
+
+
+
 File/Directory/Path
 -------------------
 
