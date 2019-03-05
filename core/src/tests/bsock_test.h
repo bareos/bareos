@@ -23,7 +23,6 @@
 #define BAREOS_LIB_UNITTESTS_BSOCK_TEST_H_
 
 #define HOST "127.0.0.1"
-#define BSOCK_TEST_PORT_NUMBER 54321
 
 class BareosSocket;
 

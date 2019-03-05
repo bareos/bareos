@@ -37,10 +37,9 @@ class TestSockets {
   TestSockets(const TestSockets&) = delete;
 };
 
-extern int listening_server_port_number;
-
 int create_accepted_server_socket(int port);
 BareosSocket* create_new_bareos_socket(int fd);
 std::unique_ptr<TestSockets> create_connected_server_and_client_bareos_socket();
+uint16_t create_unique_socket_number();
 
 #endif /* BAREOS_TESTS_BAREOS_TEST_SOCKETS_H_ */

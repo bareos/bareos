@@ -246,7 +246,8 @@ std::string server_cons_password;
 
 TEST(bsock, auth_works)
 {
-  listening_server_port_number++;
+  uint16_t portnumber = create_unique_socket_number();
+
   std::promise<bool> promise;
   std::future<bool> future = promise.get_future();
 
@@ -263,12 +264,11 @@ TEST(bsock, auth_works)
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name,
-                            server_cons_password, HOST,
-                            listening_server_port_number);
+                            server_cons_password, HOST, portnumber);
 
   Dmsg0(10, "connecting to server\n");
   EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST,
-                                listening_server_port_number));
+                                portnumber));
 
   server_thread.join();
   EXPECT_TRUE(future.get());
@@ -277,7 +277,8 @@ TEST(bsock, auth_works)
 
 TEST(bsock, auth_works_with_different_names)
 {
-  listening_server_port_number++;
+  uint16_t portnumber = create_unique_socket_number();
+
   std::promise<bool> promise;
   std::future<bool> future = promise.get_future();
 
@@ -294,12 +295,11 @@ TEST(bsock, auth_works_with_different_names)
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name,
-                            server_cons_password, HOST,
-                            listening_server_port_number);
+                            server_cons_password, HOST, portnumber);
 
   Dmsg0(10, "connecting to server\n");
   EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST,
-                                listening_server_port_number));
+                                portnumber));
 
   server_thread.join();
   EXPECT_TRUE(future.get());
@@ -307,7 +307,8 @@ TEST(bsock, auth_works_with_different_names)
 
 TEST(bsock, auth_fails_with_different_passwords)
 {
-  listening_server_port_number++;
+  uint16_t portnumber = create_unique_socket_number();
+
   std::promise<bool> promise;
   std::future<bool> future = promise.get_future();
 
@@ -324,12 +325,11 @@ TEST(bsock, auth_fails_with_different_passwords)
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name,
-                            server_cons_password, HOST,
-                            listening_server_port_number);
+                            server_cons_password, HOST, portnumber);
 
   Dmsg0(10, "connecting to server\n");
   EXPECT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST,
-                                 listening_server_port_number));
+                                 portnumber));
 
   server_thread.join();
   EXPECT_FALSE(future.get());
@@ -337,7 +337,8 @@ TEST(bsock, auth_fails_with_different_passwords)
 
 TEST(bsock, auth_works_with_tls_cert)
 {
-  listening_server_port_number++;
+  uint16_t portnumber = create_unique_socket_number();
+
   std::promise<bool> promise;
   std::future<bool> future = promise.get_future();
 
@@ -354,19 +355,18 @@ TEST(bsock, auth_works_with_tls_cert)
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name,
-                            server_cons_password, HOST,
-                            listening_server_port_number);
+                            server_cons_password, HOST, portnumber);
 
   Dmsg0(10, "connecting to server\n");
 
 #if CLIENT_AS_A_THREAD
-  std::thread client_thread(
-      connect_to_server, client_cons_name, client_cons_password, HOST,
-      listening_server_port_number, cons_dir_config.get());
+  std::thread client_thread(connect_to_server, client_cons_name,
+                            client_cons_password, HOST, portnumber,
+                            cons_dir_config.get());
   client_thread.join();
 #else
   EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST,
-                                listening_server_port_number));
+                                portnumber));
 #endif
 
   server_thread.join();

@@ -20,6 +20,7 @@
 */
 #include "create_resource.h"
 #include "bsock_test.h"
+#include "bareos_test_sockets.h"
 
 #include "include/bareos.h"
 #include "console/console_conf.h"
@@ -31,7 +32,7 @@ console::DirectorResource* CreateAndInitializeNewDirectorResource()
 {
   console::DirectorResource* dir = new (console::DirectorResource);
   dir->address = (char*)HOST;
-  dir->DIRport = htons(BSOCK_TEST_PORT_NUMBER);
+  dir->DIRport = htons(create_unique_socket_number());
   dir->tls_enable_ = false;
   dir->tls_require_ = false;
   dir->tls_cert_.certfile_ =
@@ -87,7 +88,7 @@ directordaemon::StorageResource* CreateAndInitializeNewStorageResource()
   directordaemon::StorageResource* store =
       new (directordaemon::StorageResource);
   store->address = (char*)HOST;
-  store->SDport = htons(BSOCK_TEST_PORT_NUMBER);
+  store->SDport = htons(create_unique_socket_number());
   store->tls_enable_ = false;
   store->tls_require_ = false;
   store->tls_cert_.certfile_ =

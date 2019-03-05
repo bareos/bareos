@@ -25,8 +25,6 @@
 #include "gtest/gtest.h"
 #include "include/bareos.h"
 
-int listening_server_port_number = BSOCK_TEST_PORT_NUMBER;
-
 static int create_listening_server_socket(int port)
 {
   int listen_file_descriptor;
@@ -97,9 +95,9 @@ std::unique_ptr<TestSockets> create_connected_server_and_client_bareos_socket()
 {
   std::unique_ptr<TestSockets> test_sockets(new TestSockets);
 
-  listening_server_port_number++;
-  int server_file_descriptor =
-      create_listening_server_socket(listening_server_port_number);
+  uint16_t portnumber = create_unique_socket_number();
+
+  int server_file_descriptor = create_listening_server_socket(portnumber);
 
   EXPECT_GE(server_file_descriptor, 0) << "Could not create listening socket";
   if (server_file_descriptor < 0) { return nullptr; }
@@ -107,9 +105,8 @@ std::unique_ptr<TestSockets> create_connected_server_and_client_bareos_socket()
   test_sockets->client.reset(New(BareosSocketTCP));
   test_sockets->client->sleep_time_after_authentication_error = 0;
 
-  bool ok =
-      test_sockets->client->connect(NULL, 1, 1, 0, "Director daemon", HOST,
-                                    NULL, listening_server_port_number, false);
+  bool ok = test_sockets->client->connect(NULL, 1, 1, 0, "Director daemon",
+                                          HOST, NULL, portnumber, false);
   EXPECT_EQ(ok, true) << "Could not connect client socket with server socket.";
   if (!ok) { return nullptr; }
 
@@ -131,4 +128,23 @@ BareosSocket* create_new_bareos_socket(int fd)
   bs->SetWho(bstrdup("client"));
   memset(&bs->peer_addr, 0, sizeof(bs->peer_addr));
   return bs;
+}
+
+
+#include <sys/types.h>
+#include <unistd.h>
+
+static uint16_t listening_server_port_number = 0;
+
+uint16_t create_unique_socket_number()
+{
+  if (listening_server_port_number == 0) {
+    pid_t pid = getpid();
+    uint16_t port_number = 5 * (static_cast<uint32_t>(pid) % 10000) + 10000;
+    listening_server_port_number = port_number;
+  } else {
+    ++listening_server_port_number;
+  }
+
+  return listening_server_port_number;
 }
