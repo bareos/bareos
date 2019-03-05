@@ -1,6 +1,3 @@
-Schedule
---------
-
 .. config:option:: dir/schedule/Description
 
    :type: STRING

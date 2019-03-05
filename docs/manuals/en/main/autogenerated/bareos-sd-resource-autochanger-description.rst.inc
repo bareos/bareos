@@ -1,6 +1,3 @@
-Autochanger
------------
-
 .. config:option:: sd/autochanger/ChangerCommand
 
    :required: True

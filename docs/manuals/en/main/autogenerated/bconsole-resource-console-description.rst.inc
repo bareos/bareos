@@ -1,6 +1,3 @@
-Console
--------
-
 .. config:option:: console/console/Description
 
    :type: STRING
@@ -94,7 +91,7 @@ Console
 
 .. config:option:: console/console/TlsCaCertificateDir
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a TLS CA certificate directory.
 
@@ -104,7 +101,7 @@ Console
 
 .. config:option:: console/console/TlsCaCertificateFile
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a PEM encoded TLS CA certificate(s) file.
 
@@ -114,7 +111,7 @@ Console
 
 .. config:option:: console/console/TlsCertificate
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a PEM encoded TLS certificate.
 
@@ -124,7 +121,7 @@ Console
 
 .. config:option:: console/console/TlsCertificateRevocationList
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a Certificate Revocation List file.
 
@@ -134,7 +131,7 @@ Console
 
 .. config:option:: console/console/TlsCipherList
 
-   :type: STRING
+   :type: DIRECTORY
 
    List of valid TLS Ciphers.
 
@@ -144,7 +141,7 @@ Console
 
 .. config:option:: console/console/TlsDhFile
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications.
 
@@ -155,7 +152,7 @@ Console
 .. config:option:: console/console/TlsEnable
 
    :type: BOOLEAN
-   :default: no
+   :default: yes
 
    Enable TLS support.
 
@@ -165,33 +162,11 @@ Console
 
 .. config:option:: console/console/TlsKey
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a PEM encoded private key. It must correspond to the specified "TLS Certificate".
 
    .. include:: /config-directive-description/console-console-TlsKey.rst.inc
-
-
-
-.. config:option:: console/console/TlsPskEnable
-
-   :type: BOOLEAN
-   :default: yes
-
-   Enable TLS-PSK support.
-
-   .. include:: /config-directive-description/console-console-TlsPskEnable.rst.inc
-
-
-
-.. config:option:: console/console/TlsPskRequire
-
-   :type: BOOLEAN
-   :default: no
-
-   Without setting this to yes, Bareos can fall back to use unencryption connections. Enabling this implicitly sets "TLS-PSK Enable = yes".
-
-   .. include:: /config-directive-description/console-console-TlsPskRequire.rst.inc
 
 
 

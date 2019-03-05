@@ -1,6 +1,3 @@
-Messages
---------
-
 .. config:option:: sd/messages/Append
 
    :type: MESSAGES

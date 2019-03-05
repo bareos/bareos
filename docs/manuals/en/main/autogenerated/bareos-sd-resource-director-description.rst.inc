@@ -1,6 +1,3 @@
-Director
---------
-
 .. config:option:: sd/director/Description
 
    :type: STRING
@@ -74,7 +71,7 @@ Director
 
 .. config:option:: sd/director/TlsCaCertificateDir
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a TLS CA certificate directory.
 
@@ -84,7 +81,7 @@ Director
 
 .. config:option:: sd/director/TlsCaCertificateFile
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a PEM encoded TLS CA certificate(s) file.
 
@@ -94,7 +91,7 @@ Director
 
 .. config:option:: sd/director/TlsCertificate
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a PEM encoded TLS certificate.
 
@@ -104,7 +101,7 @@ Director
 
 .. config:option:: sd/director/TlsCertificateRevocationList
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a Certificate Revocation List file.
 
@@ -114,7 +111,7 @@ Director
 
 .. config:option:: sd/director/TlsCipherList
 
-   :type: STRING
+   :type: DIRECTORY
 
    List of valid TLS Ciphers.
 
@@ -124,7 +121,7 @@ Director
 
 .. config:option:: sd/director/TlsDhFile
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications.
 
@@ -135,7 +132,7 @@ Director
 .. config:option:: sd/director/TlsEnable
 
    :type: BOOLEAN
-   :default: no
+   :default: yes
 
    Enable TLS support.
 
@@ -145,33 +142,11 @@ Director
 
 .. config:option:: sd/director/TlsKey
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a PEM encoded private key. It must correspond to the specified "TLS Certificate".
 
    .. include:: /config-directive-description/sd-director-TlsKey.rst.inc
-
-
-
-.. config:option:: sd/director/TlsPskEnable
-
-   :type: BOOLEAN
-   :default: yes
-
-   Enable TLS-PSK support.
-
-   .. include:: /config-directive-description/sd-director-TlsPskEnable.rst.inc
-
-
-
-.. config:option:: sd/director/TlsPskRequire
-
-   :type: BOOLEAN
-   :default: no
-
-   Without setting this to yes, Bareos can fall back to use unencryption connections. Enabling this implicitly sets "TLS-PSK Enable = yes".
-
-   .. include:: /config-directive-description/sd-director-TlsPskRequire.rst.inc
 
 
 

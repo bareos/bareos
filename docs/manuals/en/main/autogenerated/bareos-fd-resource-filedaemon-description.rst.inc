@@ -1,6 +1,3 @@
-FileDaemon
-----------
-
 .. config:option:: fd/filedaemon/AbsoluteJobTimeout
 
    :type: PINT32
@@ -63,7 +60,7 @@ FileDaemon
 .. config:option:: fd/filedaemon/FdAddress
 
    :type: ADDRESS
-   :default: 8102
+   :default: 9102
 
    .. include:: /config-directive-description/fd-filedaemon-FdAddress.rst.inc
 
@@ -72,7 +69,7 @@ FileDaemon
 .. config:option:: fd/filedaemon/FdAddresses
 
    :type: ADDRESSES
-   :default: 8102
+   :default: 9102
 
    .. include:: /config-directive-description/fd-filedaemon-FdAddresses.rst.inc
 
@@ -81,7 +78,7 @@ FileDaemon
 .. config:option:: fd/filedaemon/FdPort
 
    :type: PORT
-   :default: 8102
+   :default: 9102
 
    .. include:: /config-directive-description/fd-filedaemon-FdPort.rst.inc
 
@@ -159,7 +156,7 @@ FileDaemon
 
 .. config:option:: fd/filedaemon/Messages
 
-   :type: CommonResourceHeader
+   :type: RES
 
    .. include:: /config-directive-description/fd-filedaemon-Messages.rst.inc
 
@@ -179,7 +176,7 @@ FileDaemon
 .. config:option:: fd/filedaemon/PidDirectory
 
    :type: DIRECTORY
-   :default: /home/joergs/git/bareos/bareos-18.2/regress/working *(platform specific)*
+   :default: /var/lib/bareos *(platform specific)*
 
    .. include:: /config-directive-description/fd-filedaemon-PidDirectory.rst.inc
 
@@ -324,7 +321,7 @@ FileDaemon
 
 .. config:option:: fd/filedaemon/TlsCaCertificateDir
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a TLS CA certificate directory.
 
@@ -334,7 +331,7 @@ FileDaemon
 
 .. config:option:: fd/filedaemon/TlsCaCertificateFile
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a PEM encoded TLS CA certificate(s) file.
 
@@ -344,7 +341,7 @@ FileDaemon
 
 .. config:option:: fd/filedaemon/TlsCertificate
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a PEM encoded TLS certificate.
 
@@ -354,7 +351,7 @@ FileDaemon
 
 .. config:option:: fd/filedaemon/TlsCertificateRevocationList
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a Certificate Revocation List file.
 
@@ -364,7 +361,7 @@ FileDaemon
 
 .. config:option:: fd/filedaemon/TlsCipherList
 
-   :type: STRING
+   :type: DIRECTORY
 
    List of valid TLS Ciphers.
 
@@ -374,7 +371,7 @@ FileDaemon
 
 .. config:option:: fd/filedaemon/TlsDhFile
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications.
 
@@ -385,7 +382,7 @@ FileDaemon
 .. config:option:: fd/filedaemon/TlsEnable
 
    :type: BOOLEAN
-   :default: no
+   :default: yes
 
    Enable TLS support.
 
@@ -395,33 +392,11 @@ FileDaemon
 
 .. config:option:: fd/filedaemon/TlsKey
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a PEM encoded private key. It must correspond to the specified "TLS Certificate".
 
    .. include:: /config-directive-description/fd-filedaemon-TlsKey.rst.inc
-
-
-
-.. config:option:: fd/filedaemon/TlsPskEnable
-
-   :type: BOOLEAN
-   :default: yes
-
-   Enable TLS-PSK support.
-
-   .. include:: /config-directive-description/fd-filedaemon-TlsPskEnable.rst.inc
-
-
-
-.. config:option:: fd/filedaemon/TlsPskRequire
-
-   :type: BOOLEAN
-   :default: no
-
-   Without setting this to yes, Bareos can fall back to use unencryption connections. Enabling this implicitly sets "TLS-PSK Enable = yes".
-
-   .. include:: /config-directive-description/fd-filedaemon-TlsPskRequire.rst.inc
 
 
 
@@ -458,7 +433,7 @@ FileDaemon
 .. config:option:: fd/filedaemon/WorkingDirectory
 
    :type: DIRECTORY
-   :default: /home/joergs/git/bareos/bareos-18.2/regress/working *(platform specific)*
+   :default: /var/lib/bareos *(platform specific)*
 
    .. include:: /config-directive-description/fd-filedaemon-WorkingDirectory.rst.inc
 

@@ -1,6 +1,3 @@
-Catalog
--------
-
 .. config:option:: dir/catalog/Address
 
    :type: STRING

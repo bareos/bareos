@@ -1,6 +1,3 @@
-Director
---------
-
 .. config:option:: dir/director/AbsoluteJobTimeout
 
    :type: PINT32
@@ -32,7 +29,7 @@ Director
 .. config:option:: dir/director/BackendDirectory
 
    :type: DIRECTORY_LIST
-   :default: /home/joergs/git/bareos/bareos-18.2/regress/usr/lib/bareos/backends *(platform specific)*
+   :default: /usr/local/lib64/bareos/backends *(platform specific)*
 
    .. include:: /config-directive-description/dir-director-BackendDirectory.rst.inc
 
@@ -49,7 +46,7 @@ Director
 .. config:option:: dir/director/DirAddress
 
    :type: ADDRESS
-   :default: 8101
+   :default: 9101
 
    .. include:: /config-directive-description/dir-director-DirAddress.rst.inc
 
@@ -58,7 +55,7 @@ Director
 .. config:option:: dir/director/DirAddresses
 
    :type: ADDRESSES
-   :default: 8101
+   :default: 9101
 
    .. include:: /config-directive-description/dir-director-DirAddresses.rst.inc
 
@@ -67,7 +64,7 @@ Director
 .. config:option:: dir/director/DirPort
 
    :type: PORT
-   :default: 8101
+   :default: 9101
 
    .. include:: /config-directive-description/dir-director-DirPort.rst.inc
 
@@ -146,7 +143,7 @@ Director
 
 .. config:option:: dir/director/Messages
 
-   :type: CommonResourceHeader
+   :type: RES
 
    .. include:: /config-directive-description/dir-director-Messages.rst.inc
 
@@ -224,7 +221,7 @@ Director
 .. config:option:: dir/director/PidDirectory
 
    :type: DIRECTORY
-   :default: /home/joergs/git/bareos/bareos-18.2/regress/working *(platform specific)*
+   :default: /var/lib/bareos *(platform specific)*
 
    .. include:: /config-directive-description/dir-director-PidDirectory.rst.inc
 
@@ -352,7 +349,7 @@ Director
 
 .. config:option:: dir/director/TlsCaCertificateDir
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a TLS CA certificate directory.
 
@@ -362,7 +359,7 @@ Director
 
 .. config:option:: dir/director/TlsCaCertificateFile
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a PEM encoded TLS CA certificate(s) file.
 
@@ -372,7 +369,7 @@ Director
 
 .. config:option:: dir/director/TlsCertificate
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a PEM encoded TLS certificate.
 
@@ -382,7 +379,7 @@ Director
 
 .. config:option:: dir/director/TlsCertificateRevocationList
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a Certificate Revocation List file.
 
@@ -392,7 +389,7 @@ Director
 
 .. config:option:: dir/director/TlsCipherList
 
-   :type: STRING
+   :type: DIRECTORY
 
    List of valid TLS Ciphers.
 
@@ -402,7 +399,7 @@ Director
 
 .. config:option:: dir/director/TlsDhFile
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications.
 
@@ -413,7 +410,7 @@ Director
 .. config:option:: dir/director/TlsEnable
 
    :type: BOOLEAN
-   :default: no
+   :default: yes
 
    Enable TLS support.
 
@@ -423,33 +420,11 @@ Director
 
 .. config:option:: dir/director/TlsKey
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a PEM encoded private key. It must correspond to the specified "TLS Certificate".
 
    .. include:: /config-directive-description/dir-director-TlsKey.rst.inc
-
-
-
-.. config:option:: dir/director/TlsPskEnable
-
-   :type: BOOLEAN
-   :default: yes
-
-   Enable TLS-PSK support.
-
-   .. include:: /config-directive-description/dir-director-TlsPskEnable.rst.inc
-
-
-
-.. config:option:: dir/director/TlsPskRequire
-
-   :type: BOOLEAN
-   :default: no
-
-   Without setting this to yes, Bareos can fall back to use unencryption connections. Enabling this implicitly sets "TLS-PSK Enable = yes".
-
-   .. include:: /config-directive-description/dir-director-TlsPskRequire.rst.inc
 
 
 
@@ -475,15 +450,6 @@ Director
 
 
 
-.. config:option:: dir/director/UsePamAuthentication
-
-   :type: BOOLEAN
-   :default: no
-
-   .. include:: /config-directive-description/dir-director-UsePamAuthentication.rst.inc
-
-
-
 .. config:option:: dir/director/VerId
 
    :type: STRING
@@ -495,7 +461,7 @@ Director
 .. config:option:: dir/director/WorkingDirectory
 
    :type: DIRECTORY
-   :default: /home/joergs/git/bareos/bareos-18.2/regress/working *(platform specific)*
+   :default: /var/lib/bareos *(platform specific)*
 
    .. include:: /config-directive-description/dir-director-WorkingDirectory.rst.inc
 

@@ -1,6 +1,3 @@
-FileSet
--------
-
 .. config:option:: dir/fileset/Description
 
    :type: STRING

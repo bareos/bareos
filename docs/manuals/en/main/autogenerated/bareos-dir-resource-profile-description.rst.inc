@@ -1,6 +1,3 @@
-Profile
--------
-
 .. config:option:: dir/profile/CatalogACL
 
    :type: ACL

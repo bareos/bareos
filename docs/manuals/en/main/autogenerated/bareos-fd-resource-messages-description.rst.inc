@@ -1,6 +1,3 @@
-Messages
---------
-
 .. config:option:: fd/messages/Append
 
    :type: MESSAGES

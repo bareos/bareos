@@ -1,6 +1,3 @@
-ConsoleFont
------------
-
 .. config:option:: console/consolefont/Description
 
    :type: STRING

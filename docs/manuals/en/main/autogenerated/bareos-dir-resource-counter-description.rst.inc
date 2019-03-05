@@ -1,9 +1,6 @@
-Counter
--------
-
 .. config:option:: dir/counter/Catalog
 
-   :type: CommonResourceHeader
+   :type: RES
 
    .. include:: /config-directive-description/dir-counter-Catalog.rst.inc
 
@@ -48,7 +45,7 @@ Counter
 
 .. config:option:: dir/counter/WrapCounter
 
-   :type: CommonResourceHeader
+   :type: RES
 
    .. include:: /config-directive-description/dir-counter-WrapCounter.rst.inc
 

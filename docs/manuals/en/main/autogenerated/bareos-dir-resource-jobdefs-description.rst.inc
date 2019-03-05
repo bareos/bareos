@@ -1,6 +1,3 @@
-JobDefs
--------
-
 .. config:option:: dir/jobdefs/Accurate
 
    :type: BOOLEAN
@@ -154,7 +151,7 @@ JobDefs
 
 .. config:option:: dir/jobdefs/Catalog
 
-   :type: CommonResourceHeader
+   :type: RES
    :version: 13.4.0
 
    .. include:: /config-directive-description/dir-jobdefs-Catalog.rst.inc
@@ -163,7 +160,7 @@ JobDefs
 
 .. config:option:: dir/jobdefs/Client
 
-   :type: CommonResourceHeader
+   :type: RES
 
    .. include:: /config-directive-description/dir-jobdefs-Client.rst.inc
 
@@ -195,7 +192,7 @@ JobDefs
 
 .. config:option:: dir/jobdefs/DifferentialBackupPool
 
-   :type: CommonResourceHeader
+   :type: RES
 
    .. include:: /config-directive-description/dir-jobdefs-DifferentialBackupPool.rst.inc
 
@@ -257,7 +254,7 @@ JobDefs
 
 .. config:option:: dir/jobdefs/FileSet
 
-   :type: CommonResourceHeader
+   :type: RES
 
    .. include:: /config-directive-description/dir-jobdefs-FileSet.rst.inc
 
@@ -265,7 +262,7 @@ JobDefs
 
 .. config:option:: dir/jobdefs/FullBackupPool
 
-   :type: CommonResourceHeader
+   :type: RES
 
    .. include:: /config-directive-description/dir-jobdefs-FullBackupPool.rst.inc
 
@@ -290,7 +287,7 @@ JobDefs
 
 .. config:option:: dir/jobdefs/IncrementalBackupPool
 
-   :type: CommonResourceHeader
+   :type: RES
 
    .. include:: /config-directive-description/dir-jobdefs-IncrementalBackupPool.rst.inc
 
@@ -315,7 +312,7 @@ JobDefs
 
 .. config:option:: dir/jobdefs/JobDefs
 
-   :type: CommonResourceHeader
+   :type: RES
 
    .. include:: /config-directive-description/dir-jobdefs-JobDefs.rst.inc
 
@@ -323,7 +320,7 @@ JobDefs
 
 .. config:option:: dir/jobdefs/JobToVerify
 
-   :type: CommonResourceHeader
+   :type: RES
 
    .. include:: /config-directive-description/dir-jobdefs-JobToVerify.rst.inc
 
@@ -435,7 +432,7 @@ JobDefs
 .. config:option:: dir/jobdefs/Messages
 
    :required: True
-   :type: CommonResourceHeader
+   :type: RES
 
    .. include:: /config-directive-description/dir-jobdefs-Messages.rst.inc
 
@@ -454,7 +451,7 @@ JobDefs
 
 .. config:option:: dir/jobdefs/NextPool
 
-   :type: CommonResourceHeader
+   :type: RES
 
    .. include:: /config-directive-description/dir-jobdefs-NextPool.rst.inc
 
@@ -474,7 +471,7 @@ JobDefs
 .. config:option:: dir/jobdefs/Pool
 
    :required: True
-   :type: CommonResourceHeader
+   :type: RES
 
    .. include:: /config-directive-description/dir-jobdefs-Pool.rst.inc
 
@@ -639,7 +636,7 @@ JobDefs
 
 .. config:option:: dir/jobdefs/RunScript
 
-   :type: RunScript
+   :type: RUNSCRIPT
 
    .. include:: /config-directive-description/dir-jobdefs-RunScript.rst.inc
 
@@ -657,7 +654,7 @@ JobDefs
 
 .. config:option:: dir/jobdefs/Schedule
 
-   :type: CommonResourceHeader
+   :type: RES
 
    .. include:: /config-directive-description/dir-jobdefs-Schedule.rst.inc
 
@@ -740,7 +737,7 @@ JobDefs
 
 .. config:option:: dir/jobdefs/VerifyJob
 
-   :type: CommonResourceHeader
+   :type: RES
 
    *This directive is an alias.*
 
@@ -750,7 +747,7 @@ JobDefs
 
 .. config:option:: dir/jobdefs/VirtualFullBackupPool
 
-   :type: CommonResourceHeader
+   :type: RES
 
    .. include:: /config-directive-description/dir-jobdefs-VirtualFullBackupPool.rst.inc
 

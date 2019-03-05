@@ -1,6 +1,3 @@
-Ndmp
-----
-
 .. config:option:: sd/ndmp/AuthType
 
    :type: AUTH_TYPE

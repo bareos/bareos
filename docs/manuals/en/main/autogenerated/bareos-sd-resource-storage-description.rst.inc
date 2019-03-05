@@ -1,6 +1,3 @@
-Storage
--------
-
 .. config:option:: sd/storage/AbsoluteJobTimeout
 
    :type: PINT32
@@ -31,7 +28,7 @@ Storage
 .. config:option:: sd/storage/BackendDirectory
 
    :type: DIRECTORY_LIST
-   :default: /home/joergs/git/bareos/bareos-18.2/regress/usr/lib/bareos/backends *(platform specific)*
+   :default: /usr/local/lib64/bareos/backends *(platform specific)*
 
    .. include:: /config-directive-description/sd-storage-BackendDirectory.rst.inc
 
@@ -163,7 +160,7 @@ Storage
 
 .. config:option:: sd/storage/Messages
 
-   :type: CommonResourceHeader
+   :type: RES
 
    .. include:: /config-directive-description/sd-storage-Messages.rst.inc
 
@@ -235,7 +232,7 @@ Storage
 .. config:option:: sd/storage/PidDirectory
 
    :type: DIRECTORY
-   :default: /home/joergs/git/bareos/bareos-18.2/regress/working *(platform specific)*
+   :default: /var/lib/bareos *(platform specific)*
 
    .. include:: /config-directive-description/sd-storage-PidDirectory.rst.inc
 
@@ -268,7 +265,7 @@ Storage
 .. config:option:: sd/storage/SdAddress
 
    :type: ADDRESS
-   :default: 8103
+   :default: 9103
 
    .. include:: /config-directive-description/sd-storage-SdAddress.rst.inc
 
@@ -277,7 +274,7 @@ Storage
 .. config:option:: sd/storage/SdAddresses
 
    :type: ADDRESSES
-   :default: 8103
+   :default: 9103
 
    .. include:: /config-directive-description/sd-storage-SdAddresses.rst.inc
 
@@ -295,7 +292,7 @@ Storage
 .. config:option:: sd/storage/SdPort
 
    :type: PORT
-   :default: 8103
+   :default: 9103
 
    .. include:: /config-directive-description/sd-storage-SdPort.rst.inc
 
@@ -361,7 +358,7 @@ Storage
 
 .. config:option:: sd/storage/TlsCaCertificateDir
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a TLS CA certificate directory.
 
@@ -371,7 +368,7 @@ Storage
 
 .. config:option:: sd/storage/TlsCaCertificateFile
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a PEM encoded TLS CA certificate(s) file.
 
@@ -381,7 +378,7 @@ Storage
 
 .. config:option:: sd/storage/TlsCertificate
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a PEM encoded TLS certificate.
 
@@ -391,7 +388,7 @@ Storage
 
 .. config:option:: sd/storage/TlsCertificateRevocationList
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a Certificate Revocation List file.
 
@@ -401,7 +398,7 @@ Storage
 
 .. config:option:: sd/storage/TlsCipherList
 
-   :type: STRING
+   :type: DIRECTORY
 
    List of valid TLS Ciphers.
 
@@ -411,7 +408,7 @@ Storage
 
 .. config:option:: sd/storage/TlsDhFile
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications.
 
@@ -422,7 +419,7 @@ Storage
 .. config:option:: sd/storage/TlsEnable
 
    :type: BOOLEAN
-   :default: no
+   :default: yes
 
    Enable TLS support.
 
@@ -432,33 +429,11 @@ Storage
 
 .. config:option:: sd/storage/TlsKey
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a PEM encoded private key. It must correspond to the specified "TLS Certificate".
 
    .. include:: /config-directive-description/sd-storage-TlsKey.rst.inc
-
-
-
-.. config:option:: sd/storage/TlsPskEnable
-
-   :type: BOOLEAN
-   :default: yes
-
-   Enable TLS-PSK support.
-
-   .. include:: /config-directive-description/sd-storage-TlsPskEnable.rst.inc
-
-
-
-.. config:option:: sd/storage/TlsPskRequire
-
-   :type: BOOLEAN
-   :default: no
-
-   Without setting this to yes, Bareos can fall back to use unencryption connections. Enabling this implicitly sets "TLS-PSK Enable = yes".
-
-   .. include:: /config-directive-description/sd-storage-TlsPskRequire.rst.inc
 
 
 
@@ -495,7 +470,7 @@ Storage
 .. config:option:: sd/storage/WorkingDirectory
 
    :type: DIRECTORY
-   :default: /home/joergs/git/bareos/bareos-18.2/regress/working *(platform specific)*
+   :default: /var/lib/bareos *(platform specific)*
 
    .. include:: /config-directive-description/sd-storage-WorkingDirectory.rst.inc
 

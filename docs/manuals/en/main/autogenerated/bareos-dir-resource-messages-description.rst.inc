@@ -1,6 +1,3 @@
-Messages
---------
-
 .. config:option:: dir/messages/Append
 
    :type: MESSAGES

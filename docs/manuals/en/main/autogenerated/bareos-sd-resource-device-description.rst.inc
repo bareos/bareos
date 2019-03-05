@@ -1,6 +1,3 @@
-Device
-------
-
 .. config:option:: sd/device/AlertCommand
 
    :type: STRNAME
@@ -235,6 +232,17 @@ Device
    :type: BOOLEAN
 
    .. include:: /config-directive-description/sd-device-DriveTapeAlertEnabled.rst.inc
+
+
+
+.. config:option:: sd/device/EofOnErrorIsEot
+
+   :type: BOOLEAN
+   :version: 18.2.4
+
+   If Yes, Bareos will treat any read error at an end-of-file mark as end-of-tape. You should only set this option if your tape-drive fails to detect end-of-tape while reading.
+
+   .. include:: /config-directive-description/sd-device-EofOnErrorIsEot.rst.inc
 
 
 

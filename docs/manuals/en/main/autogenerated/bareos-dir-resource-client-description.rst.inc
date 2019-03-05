@@ -1,6 +1,3 @@
-Client
-------
-
 .. config:option:: dir/client/Address
 
    :required: True
@@ -41,7 +38,7 @@ Client
 
 .. config:option:: dir/client/Catalog
 
-   :type: CommonResourceHeader
+   :type: RES
 
    .. include:: /config-directive-description/dir-client-Catalog.rst.inc
 
@@ -113,7 +110,7 @@ Client
 .. config:option:: dir/client/FdPort
 
    :type: PINT32
-   :default: 8102
+   :default: 9102
 
    *This directive is an alias.*
 
@@ -247,7 +244,7 @@ Client
 .. config:option:: dir/client/Port
 
    :type: PINT32
-   :default: 8102
+   :default: 9102
 
    .. include:: /config-directive-description/dir-client-Port.rst.inc
 
@@ -322,7 +319,7 @@ Client
 
 .. config:option:: dir/client/TlsCaCertificateDir
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a TLS CA certificate directory.
 
@@ -332,7 +329,7 @@ Client
 
 .. config:option:: dir/client/TlsCaCertificateFile
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a PEM encoded TLS CA certificate(s) file.
 
@@ -342,7 +339,7 @@ Client
 
 .. config:option:: dir/client/TlsCertificate
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a PEM encoded TLS certificate.
 
@@ -352,7 +349,7 @@ Client
 
 .. config:option:: dir/client/TlsCertificateRevocationList
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a Certificate Revocation List file.
 
@@ -362,7 +359,7 @@ Client
 
 .. config:option:: dir/client/TlsCipherList
 
-   :type: STRING
+   :type: DIRECTORY
 
    List of valid TLS Ciphers.
 
@@ -372,7 +369,7 @@ Client
 
 .. config:option:: dir/client/TlsDhFile
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications.
 
@@ -383,7 +380,7 @@ Client
 .. config:option:: dir/client/TlsEnable
 
    :type: BOOLEAN
-   :default: no
+   :default: yes
 
    Enable TLS support.
 
@@ -393,33 +390,11 @@ Client
 
 .. config:option:: dir/client/TlsKey
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a PEM encoded private key. It must correspond to the specified "TLS Certificate".
 
    .. include:: /config-directive-description/dir-client-TlsKey.rst.inc
-
-
-
-.. config:option:: dir/client/TlsPskEnable
-
-   :type: BOOLEAN
-   :default: yes
-
-   Enable TLS-PSK support.
-
-   .. include:: /config-directive-description/dir-client-TlsPskEnable.rst.inc
-
-
-
-.. config:option:: dir/client/TlsPskRequire
-
-   :type: BOOLEAN
-   :default: no
-
-   Without setting this to yes, Bareos can fall back to use unencryption connections. Enabling this implicitly sets "TLS-PSK Enable = yes".
-
-   .. include:: /config-directive-description/dir-client-TlsPskRequire.rst.inc
 
 
 

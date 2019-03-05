@@ -1,6 +1,3 @@
-Director
---------
-
 .. config:option:: fd/director/Address
 
    :type: STRING
@@ -97,7 +94,7 @@ Director
 .. config:option:: fd/director/Port
 
    :type: PINT32
-   :default: 8101
+   :default: 9101
    :version: 16.2.2
 
    Director Network Port. Only used if "Connection From Client To Director" is enabled.
@@ -129,7 +126,7 @@ Director
 
 .. config:option:: fd/director/TlsCaCertificateDir
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a TLS CA certificate directory.
 
@@ -139,7 +136,7 @@ Director
 
 .. config:option:: fd/director/TlsCaCertificateFile
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a PEM encoded TLS CA certificate(s) file.
 
@@ -149,7 +146,7 @@ Director
 
 .. config:option:: fd/director/TlsCertificate
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a PEM encoded TLS certificate.
 
@@ -159,7 +156,7 @@ Director
 
 .. config:option:: fd/director/TlsCertificateRevocationList
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a Certificate Revocation List file.
 
@@ -169,7 +166,7 @@ Director
 
 .. config:option:: fd/director/TlsCipherList
 
-   :type: STRING
+   :type: DIRECTORY
 
    List of valid TLS Ciphers.
 
@@ -179,7 +176,7 @@ Director
 
 .. config:option:: fd/director/TlsDhFile
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications.
 
@@ -190,7 +187,7 @@ Director
 .. config:option:: fd/director/TlsEnable
 
    :type: BOOLEAN
-   :default: no
+   :default: yes
 
    Enable TLS support.
 
@@ -200,33 +197,11 @@ Director
 
 .. config:option:: fd/director/TlsKey
 
-   :type: STDDIRECTORY
+   :type: DIRECTORY
 
    Path of a PEM encoded private key. It must correspond to the specified "TLS Certificate".
 
    .. include:: /config-directive-description/fd-director-TlsKey.rst.inc
-
-
-
-.. config:option:: fd/director/TlsPskEnable
-
-   :type: BOOLEAN
-   :default: yes
-
-   Enable TLS-PSK support.
-
-   .. include:: /config-directive-description/fd-director-TlsPskEnable.rst.inc
-
-
-
-.. config:option:: fd/director/TlsPskRequire
-
-   :type: BOOLEAN
-   :default: no
-
-   Without setting this to yes, Bareos can fall back to use unencryption connections. Enabling this implicitly sets "TLS-PSK Enable = yes".
-
-   .. include:: /config-directive-description/fd-director-TlsPskRequire.rst.inc
 
 
 

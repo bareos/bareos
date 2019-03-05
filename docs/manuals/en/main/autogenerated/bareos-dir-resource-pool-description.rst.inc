@@ -1,6 +1,3 @@
-Pool
-----
-
 .. config:option:: dir/pool/ActionOnPurge
 
    :type: ACTION_ON_PURGE
@@ -20,7 +17,7 @@ Pool
 
 .. config:option:: dir/pool/Catalog
 
-   :type: CommonResourceHeader
+   :type: RES
 
    .. include:: /config-directive-description/dir-pool-Catalog.rst.inc
 
@@ -170,7 +167,7 @@ Pool
 
 .. config:option:: dir/pool/NextPool
 
-   :type: CommonResourceHeader
+   :type: RES
 
    .. include:: /config-directive-description/dir-pool-NextPool.rst.inc
 
@@ -223,7 +220,7 @@ Pool
 
 .. config:option:: dir/pool/RecyclePool
 
-   :type: CommonResourceHeader
+   :type: RES
 
    .. include:: /config-directive-description/dir-pool-RecyclePool.rst.inc
 
@@ -231,7 +228,7 @@ Pool
 
 .. config:option:: dir/pool/ScratchPool
 
-   :type: CommonResourceHeader
+   :type: RES
 
    .. include:: /config-directive-description/dir-pool-ScratchPool.rst.inc
 
