@@ -171,6 +171,556 @@ Packages names not containing the word **bareos** are required packages where we
 
 
 
+:index:`[TAG=Platform->CentOS->5] <triple: Platform; CentOS; 5>`:index:`[TAG=Platform->CentOS->6] <triple: Platform; CentOS; 6>`:index:`[TAG=Platform->CentOS->7] <triple: Platform; CentOS; 7>`:index:`[TAG=Platform->RHEL->4] <triple: Platform; RHEL; 4>`:index:`[TAG=Platform->RHEL->5] <triple: Platform; RHEL; 5>`:index:`[TAG=Platform->RHEL->6] <triple: Platform; RHEL; 6>`:index:`[TAG=Platform->RHEL->7] <triple: Platform; RHEL; 7>`
+
+# Tabular in LaTex format (original)
+
+::
+
+   \begin{longtable}{ l | c | c | c | c | c | c | c }
+   \hline 
+    & 
+   :strong:`CentOS`  &
+   :strong:`RHEL` 
+   \\ 
+    & 5 & 6 & 7 & 4 & 5 & 6 & 7\\ 
+   \hline 
+   \hline 
+   **bareos** & 12.4-16.2 & 12.4-17.2 & 12.4-17.2 & 13.2-14.2 & 12.4-17.2 & 12.4-17.2 & 12.4-17.2 \\ 
+   **bareos-bat** &   & 12.4-16.2 & 12.4-16.2 &   &   & 12.4-16.2 & 12.4-16.2 \\ 
+   **bareos-bconsole** & 12.4-16.2 & 12.4-17.2 & 12.4-17.2 & 13.2-14.2 & 12.4-17.2 & 12.4-17.2 & 12.4-17.2 \\ 
+   **bareos-client** & 12.4-16.2 & 12.4-17.2 & 12.4-17.2 & 13.2-14.2 & 12.4-17.2 & 12.4-17.2 & 12.4-17.2 \\ 
+   **bareos-common** & 12.4-16.2 & 12.4-17.2 & 12.4-17.2 & 13.2-14.2 & 12.4-17.2 & 12.4-17.2 & 12.4-17.2 \\ 
+   **bareos-database-common** & 12.4-16.2 & 12.4-17.2 & 12.4-17.2 &   & 12.4-17.2 & 12.4-17.2 & 12.4-17.2 \\ 
+   **bareos-database-mysql** & 12.4-16.2 & 12.4-17.2 & 12.4-17.2 &   & 12.4-17.2 & 12.4-17.2 & 12.4-17.2 \\ 
+   **bareos-database-postgresql** & 12.4-16.2 & 12.4-17.2 & 12.4-17.2 &   & 12.4-17.2 & 12.4-17.2 & 12.4-17.2 \\ 
+   **bareos-database-sqlite3** & 12.4-16.2 & 12.4-17.2 & 12.4-17.2 &   & 12.4-17.2 & 12.4-17.2 & 12.4-17.2 \\ 
+   **bareos-database-tools** & 12.4-16.2 & 12.4-17.2 & 12.4-17.2 &   & 12.4-17.2 & 12.4-17.2 & 12.4-17.2 \\ 
+   **bareos-director** & 12.4-16.2 & 12.4-17.2 & 12.4-17.2 &   & 12.4-17.2 & 12.4-17.2 & 12.4-17.2 \\ 
+   **bareos-director-python-plugin** &   & 14.2-17.2 & 14.2-17.2 &   &   & 14.2-17.2 & 14.2-17.2 \\ 
+   **bareos-filedaemon** & 12.4-16.2 & 12.4-17.2 & 12.4-17.2 & 13.2-14.2 & 12.4-17.2 & 12.4-17.2 & 12.4-17.2 \\ 
+   **bareos-filedaemon-ceph-plugin** &   &   &   &   &   &   & 15.2-17.2 \\ 
+   **bareos-filedaemon-glusterfs-plugin** &   &   & 15.2-17.2 &   &   &   & 15.2-17.2 \\ 
+   **bareos-filedaemon-ldap-python-plugin** &   & 15.2-17.2 & 15.2-17.2 &   &   & 15.2-17.2 & 15.2-17.2 \\ 
+   **bareos-filedaemon-python-plugin** &   & 14.2-17.2 & 14.2-17.2 &   &   & 14.2-17.2 & 14.2-17.2 \\ 
+   **bareos-regress-config** &   & 17.2 & 17.2 &   & 17.2 & 17.2 & 17.2 \\ 
+   **bareos-storage** & 12.4-16.2 & 12.4-17.2 & 12.4-17.2 &   & 12.4-17.2 & 12.4-17.2 & 12.4-17.2 \\ 
+   **bareos-storage-ceph** &   &   &   &   &   &   & 14.2-17.2 \\ 
+   **bareos-storage-droplet** &   &   & 17.2 &   &   &   & 17.2 \\ 
+   **bareos-storage-fifo** & 14.2-16.2 & 14.2-17.2 & 14.2-17.2 &   & 14.2-17.2 & 14.2-17.2 & 14.2-17.2 \\ 
+   **bareos-storage-glusterfs** &   &   & 14.2-17.2 &   &   &   & 14.2-17.2 \\ 
+   **bareos-storage-python-plugin** &   & 14.2-17.2 & 14.2-17.2 &   &   & 14.2-17.2 & 14.2-17.2 \\ 
+   **bareos-storage-tape** & 12.4-16.2 & 12.4-17.2 & 12.4-17.2 &   & 12.4-17.2 & 12.4-17.2 & 12.4-17.2 \\ 
+   **bareos-tools** & 12.4-16.2 & 12.4-17.2 & 12.4-17.2 &   & 12.4-17.2 & 12.4-17.2 & 12.4-17.2 \\ 
+   **bareos-traymonitor** &   & 12.4-17.2 & 12.4-17.2 &   &   & 12.4-17.2 & 12.4-17.2 \\ 
+   **bareos-vadp-dumper** &   &   & 15.2-17.2 &   &   &   & 15.2-17.2 \\ 
+   **bareos-vmware-plugin** &   &   & 15.2-17.2 &   &   &   & 15.2-17.2 \\ 
+   **bareos-vmware-vix-disklib** &   &   & 15.2-17.2 &   &   &   & 15.2-17.2 \\ 
+   **bareos-webui** &   & 15.2 & 15.2-17.2 &   &   & 15.2 & 15.2-17.2 \\ 
+   **libdroplet** &   & 17.2 & 17.2 &   &   & 17.2 & 17.2 \\ 
+   **libfastlz** & 12.4-16.2 & 12.4-17.2 & 12.4-17.2 & 13.2-14.2 & 12.4-17.2 & 12.4-17.2 & 12.4-17.2 \\ 
+   **lzo** & 12.4-16.2 &   &   & 13.2-14.2 & 12.4-17.2 &   &   \\ 
+   **python-bareos** &   & 17.2 & 17.2 &   & 17.2 & 17.2 & 17.2 \\ 
+   \hline 
+   \end{longtable}
+
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
+
+=========================================================== ========================================= ============================= ========= ========= ========= ========= =========
+\                                                           :strong:`CentOS`  .. raw:: latex                                                       
+                                                                                                                                                                           
+                                                                                                         :strong:`RHEL`                                         
+\                                                           5                                         6                             7         4         5         6         7
+**bareos**                               12.4-16.2                                 12.4-17.2                     12.4-17.2 13.2-14.2 12.4-17.2 12.4-17.2 12.4-17.2
+**bareos-bat**                                                                     12.4-16.2                     12.4-16.2                     12.4-16.2 12.4-16.2
+**bareos-bconsole**                      12.4-16.2                                 12.4-17.2                     12.4-17.2 13.2-14.2 12.4-17.2 12.4-17.2 12.4-17.2
+**bareos-client**                        12.4-16.2                                 12.4-17.2                     12.4-17.2 13.2-14.2 12.4-17.2 12.4-17.2 12.4-17.2
+**bareos-common**                        12.4-16.2                                 12.4-17.2                     12.4-17.2 13.2-14.2 12.4-17.2 12.4-17.2 12.4-17.2
+**bareos-database-common**               12.4-16.2                                 12.4-17.2                     12.4-17.2           12.4-17.2 12.4-17.2 12.4-17.2
+**bareos-database-mysql**                12.4-16.2                                 12.4-17.2                     12.4-17.2           12.4-17.2 12.4-17.2 12.4-17.2
+**bareos-database-postgresql**           12.4-16.2                                 12.4-17.2                     12.4-17.2           12.4-17.2 12.4-17.2 12.4-17.2
+**bareos-database-sqlite3**              12.4-16.2                                 12.4-17.2                     12.4-17.2           12.4-17.2 12.4-17.2 12.4-17.2
+**bareos-database-tools**                12.4-16.2                                 12.4-17.2                     12.4-17.2           12.4-17.2 12.4-17.2 12.4-17.2
+**bareos-director**                      12.4-16.2                                 12.4-17.2                     12.4-17.2           12.4-17.2 12.4-17.2 12.4-17.2
+**bareos-director-python-plugin**                                                  14.2-17.2                     14.2-17.2                     14.2-17.2 14.2-17.2
+**bareos-filedaemon**                    12.4-16.2                                 12.4-17.2                     12.4-17.2 13.2-14.2 12.4-17.2 12.4-17.2 12.4-17.2
+**bareos-filedaemon-ceph-plugin**                                                                                                                        15.2-17.2
+**bareos-filedaemon-glusterfs-plugin**                                                                           15.2-17.2                               15.2-17.2
+**bareos-filedaemon-ldap-python-plugin**                                           15.2-17.2                     15.2-17.2                     15.2-17.2 15.2-17.2
+**bareos-filedaemon-python-plugin**                                                14.2-17.2                     14.2-17.2                     14.2-17.2 14.2-17.2
+**bareos-regress-config**                                                          17.2                          17.2                17.2      17.2      17.2
+**bareos-storage**                       12.4-16.2                                 12.4-17.2                     12.4-17.2           12.4-17.2 12.4-17.2 12.4-17.2
+**bareos-storage-ceph**                                                                                                                                  14.2-17.2
+**bareos-storage-droplet**                                                                                       17.2                                    17.2
+**bareos-storage-fifo**                  14.2-16.2                                 14.2-17.2                     14.2-17.2           14.2-17.2 14.2-17.2 14.2-17.2
+**bareos-storage-glusterfs**                                                                                     14.2-17.2                               14.2-17.2
+**bareos-storage-python-plugin**                                                   14.2-17.2                     14.2-17.2                     14.2-17.2 14.2-17.2
+**bareos-storage-tape**                  12.4-16.2                                 12.4-17.2                     12.4-17.2           12.4-17.2 12.4-17.2 12.4-17.2
+**bareos-tools**                         12.4-16.2                                 12.4-17.2                     12.4-17.2           12.4-17.2 12.4-17.2 12.4-17.2
+**bareos-traymonitor**                                                             12.4-17.2                     12.4-17.2                     12.4-17.2 12.4-17.2
+**bareos-vadp-dumper**                                                                                           15.2-17.2                               15.2-17.2
+**bareos-vmware-plugin**                                                                                         15.2-17.2                               15.2-17.2
+**bareos-vmware-vix-disklib**                                                                                    15.2-17.2                               15.2-17.2
+**bareos-webui**                                                                   15.2                          15.2-17.2                     15.2      15.2-17.2
+**libdroplet**                                                                     17.2                          17.2                          17.2      17.2
+**libfastlz**                            12.4-16.2                                 12.4-17.2                     12.4-17.2 13.2-14.2 12.4-17.2 12.4-17.2 12.4-17.2
+**lzo**                                  12.4-16.2                                                                         13.2-14.2 12.4-17.2          
+**python-bareos**                                                                  17.2                          17.2                17.2      17.2      17.2
+=========================================================== ========================================= ============================= ========= ========= ========= ========= =========
+
+:index:`[TAG=Platform->Fedora->20] <triple: Platform; Fedora; 20>`:index:`[TAG=Platform->Fedora->21] <triple: Platform; Fedora; 21>`:index:`[TAG=Platform->Fedora->22] <triple: Platform; Fedora; 22>`:index:`[TAG=Platform->Fedora->23] <triple: Platform; Fedora; 23>`:index:`[TAG=Platform->Fedora->24] <triple: Platform; Fedora; 24>`:index:`[TAG=Platform->Fedora->25] <triple: Platform; Fedora; 25>`:index:`[TAG=Platform->Fedora->26] <triple: Platform; Fedora; 26>`:index:`[TAG=Platform->Fedora->27] <triple: Platform; Fedora; 27>`
+
+# Tabular in LaTex format (original)
+
+::
+
+   \begin{longtable}{ l | c | c | c | c | c | c | c | c }
+   \hline 
+    & 
+   :strong:`Fedora` 
+   \\ 
+    & 20 & 21 & 22 & 23 & 24 & 25 & 26 & 27\\ 
+   \hline 
+   \hline 
+   **bareos** & 12.4-15.2 & 14.2-15.2 & 15.2 & 15.2-16.2 & 16.2 & 17.2 & 17.2 &   \\ 
+   **bareos-bat** & 12.4-15.2 & 14.2-15.2 & 15.2 & 15.2-16.2 & 16.2 &   &   &   \\ 
+   **bareos-bconsole** & 12.4-15.2 & 14.2-15.2 & 15.2 & 15.2-16.2 & 16.2 & 17.2 & 17.2 &   \\ 
+   **bareos-client** & 12.4-15.2 & 14.2-15.2 & 15.2 & 15.2-16.2 & 16.2 & 17.2 & 17.2 &   \\ 
+   **bareos-common** & 12.4-15.2 & 14.2-15.2 & 15.2 & 15.2-16.2 & 16.2 & 17.2 & 17.2 &   \\ 
+   **bareos-database-common** & 12.4-15.2 & 14.2-15.2 & 15.2 & 15.2-16.2 & 16.2 & 17.2 & 17.2 &   \\ 
+   **bareos-database-mysql** & 12.4-15.2 & 14.2-15.2 & 15.2 & 15.2-16.2 & 16.2 & 17.2 & 17.2 &   \\ 
+   **bareos-database-postgresql** & 12.4-15.2 & 14.2-15.2 & 15.2 & 15.2-16.2 & 16.2 & 17.2 & 17.2 &   \\ 
+   **bareos-database-sqlite3** & 12.4-15.2 & 14.2-15.2 & 15.2 & 15.2-16.2 & 16.2 & 17.2 & 17.2 &   \\ 
+   **bareos-database-tools** & 12.4-15.2 & 14.2-15.2 & 15.2 & 15.2-16.2 & 16.2 & 17.2 & 17.2 &   \\ 
+   **bareos-director** & 12.4-15.2 & 14.2-15.2 & 15.2 & 15.2-16.2 & 16.2 & 17.2 & 17.2 &   \\ 
+   **bareos-director-python-plugin** & 14.2-15.2 & 14.2-15.2 & 15.2 & 15.2-16.2 & 16.2 & 17.2 & 17.2 &   \\ 
+   **bareos-filedaemon** & 12.4-15.2 & 14.2-15.2 & 15.2 & 15.2-16.2 & 16.2 & 17.2 & 17.2 &   \\ 
+   **bareos-filedaemon-glusterfs-plugin** & 15.2 & 15.2 & 15.2 & 15.2-16.2 & 16.2 & 17.2 & 17.2 &   \\ 
+   **bareos-filedaemon-ldap-python-plugin** & 15.2 & 15.2 & 15.2 & 15.2-16.2 & 16.2 & 17.2 & 17.2 &   \\ 
+   **bareos-filedaemon-python-plugin** & 14.2-15.2 & 14.2-15.2 & 15.2 & 15.2-16.2 & 16.2 & 17.2 & 17.2 &   \\ 
+   **bareos-regress-config** &   &   &   &   &   & 17.2 & 17.2 &   \\ 
+   **bareos-storage** & 12.4-15.2 & 14.2-15.2 & 15.2 & 15.2-16.2 & 16.2 & 17.2 & 17.2 &   \\ 
+   **bareos-storage-fifo** & 14.2-15.2 & 14.2-15.2 & 15.2 & 15.2-16.2 & 16.2 & 17.2 & 17.2 &   \\ 
+   **bareos-storage-glusterfs** & 14.2-15.2 & 14.2-15.2 & 15.2 & 15.2-16.2 & 16.2 & 17.2 & 17.2 &   \\ 
+   **bareos-storage-python-plugin** & 14.2-15.2 & 14.2-15.2 & 15.2 & 15.2-16.2 & 16.2 & 17.2 & 17.2 &   \\ 
+   **bareos-storage-tape** & 12.4-15.2 & 14.2-15.2 & 15.2 & 15.2-16.2 & 16.2 & 17.2 & 17.2 &   \\ 
+   **bareos-tools** & 12.4-15.2 & 14.2-15.2 & 15.2 & 15.2-16.2 & 16.2 & 17.2 & 17.2 &   \\ 
+   **bareos-traymonitor** & 12.4-15.2 & 14.2-15.2 & 15.2 & 15.2-16.2 & 16.2 & 17.2 & 17.2 &   \\ 
+   **bareos-webui** & 15.2 & 15.2 & 15.2 & 15.2-16.2 & 16.2 & 17.2 & 17.2 &   \\ 
+   **libfastlz** & 12.4-15.2 & 14.2-15.2 & 15.2 & 15.2-16.2 & 16.2 & 17.2 & 17.2 & 17.2 \\ 
+   **python-bareos** &   &   &   &   &   & 17.2 & 17.2 & 17.2 \\ 
+   \hline 
+   \end{longtable}
+
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
+
+=========================================================== =============================== ========= ==== ========= ==== ==== ==== ====
+\                                                           .. raw:: latex                                                         
+                                                                                                                                   
+                                                               :strong:`Fedora`                                         
+\                                                           20                              21        22   23        24   25   26   27
+**bareos**                               12.4-15.2                       14.2-15.2 15.2 15.2-16.2 16.2 17.2 17.2
+**bareos-bat**                           12.4-15.2                       14.2-15.2 15.2 15.2-16.2 16.2          
+**bareos-bconsole**                      12.4-15.2                       14.2-15.2 15.2 15.2-16.2 16.2 17.2 17.2
+**bareos-client**                        12.4-15.2                       14.2-15.2 15.2 15.2-16.2 16.2 17.2 17.2
+**bareos-common**                        12.4-15.2                       14.2-15.2 15.2 15.2-16.2 16.2 17.2 17.2
+**bareos-database-common**               12.4-15.2                       14.2-15.2 15.2 15.2-16.2 16.2 17.2 17.2
+**bareos-database-mysql**                12.4-15.2                       14.2-15.2 15.2 15.2-16.2 16.2 17.2 17.2
+**bareos-database-postgresql**           12.4-15.2                       14.2-15.2 15.2 15.2-16.2 16.2 17.2 17.2
+**bareos-database-sqlite3**              12.4-15.2                       14.2-15.2 15.2 15.2-16.2 16.2 17.2 17.2
+**bareos-database-tools**                12.4-15.2                       14.2-15.2 15.2 15.2-16.2 16.2 17.2 17.2
+**bareos-director**                      12.4-15.2                       14.2-15.2 15.2 15.2-16.2 16.2 17.2 17.2
+**bareos-director-python-plugin**        14.2-15.2                       14.2-15.2 15.2 15.2-16.2 16.2 17.2 17.2
+**bareos-filedaemon**                    12.4-15.2                       14.2-15.2 15.2 15.2-16.2 16.2 17.2 17.2
+**bareos-filedaemon-glusterfs-plugin**   15.2                            15.2      15.2 15.2-16.2 16.2 17.2 17.2
+**bareos-filedaemon-ldap-python-plugin** 15.2                            15.2      15.2 15.2-16.2 16.2 17.2 17.2
+**bareos-filedaemon-python-plugin**      14.2-15.2                       14.2-15.2 15.2 15.2-16.2 16.2 17.2 17.2
+**bareos-regress-config**                                                                              17.2 17.2
+**bareos-storage**                       12.4-15.2                       14.2-15.2 15.2 15.2-16.2 16.2 17.2 17.2
+**bareos-storage-fifo**                  14.2-15.2                       14.2-15.2 15.2 15.2-16.2 16.2 17.2 17.2
+**bareos-storage-glusterfs**             14.2-15.2                       14.2-15.2 15.2 15.2-16.2 16.2 17.2 17.2
+**bareos-storage-python-plugin**         14.2-15.2                       14.2-15.2 15.2 15.2-16.2 16.2 17.2 17.2
+**bareos-storage-tape**                  12.4-15.2                       14.2-15.2 15.2 15.2-16.2 16.2 17.2 17.2
+**bareos-tools**                         12.4-15.2                       14.2-15.2 15.2 15.2-16.2 16.2 17.2 17.2
+**bareos-traymonitor**                   12.4-15.2                       14.2-15.2 15.2 15.2-16.2 16.2 17.2 17.2
+**bareos-webui**                         15.2                            15.2      15.2 15.2-16.2 16.2 17.2 17.2
+**libfastlz**                            12.4-15.2                       14.2-15.2 15.2 15.2-16.2 16.2 17.2 17.2 17.2
+**python-bareos**                                                                                      17.2 17.2 17.2
+=========================================================== =============================== ========= ==== ========= ==== ==== ==== ====
+
+:index:`[TAG=Platform->SLES->10sp4] <triple: Platform; SLES; 10sp4>`:index:`[TAG=Platform->SLES->11sp4] <triple: Platform; SLES; 11sp4>`:index:`[TAG=Platform->SLES->12sp1] <triple: Platform; SLES; 12sp1>`:index:`[TAG=Platform->SLES->12sp2] <triple: Platform; SLES; 12sp2>`:index:`[TAG=Platform->SLES->12sp3] <triple: Platform; SLES; 12sp3>`
+
+# Tabular in LaTex format (original)
+
+::
+
+   \begin{longtable}{ l | c | c | c | c | c }
+   \hline 
+    & 
+   :strong:`SLES` 
+   \\ 
+    & 10sp4 & 11sp4 & 12sp1 & 12sp2 & 12sp3\\ 
+   \hline 
+   \hline 
+   **bareos** & 14.2 & 14.2-17.2 & 14.2-17.2 & 17.2 & 17.2 \\ 
+   **bareos-bat** &   & 14.2-16.2 & 14.2-16.2 &   &   \\ 
+   **bareos-bconsole** & 14.2 & 14.2-17.2 & 14.2-17.2 & 17.2 & 17.2 \\ 
+   **bareos-client** & 14.2 & 14.2-17.2 & 14.2-17.2 & 17.2 & 17.2 \\ 
+   **bareos-common** & 14.2 & 14.2-17.2 & 14.2-17.2 & 17.2 & 17.2 \\ 
+   **bareos-database-common** & 14.2 & 14.2-17.2 & 14.2-17.2 & 17.2 & 17.2 \\ 
+   **bareos-database-mysql** & 14.2 & 14.2-17.2 & 14.2-17.2 & 17.2 & 17.2 \\ 
+   **bareos-database-postgresql** & 14.2 & 14.2-17.2 & 14.2-17.2 & 17.2 & 17.2 \\ 
+   **bareos-database-sqlite3** &   & 14.2-17.2 & 14.2-17.2 & 17.2 & 17.2 \\ 
+   **bareos-database-tools** & 14.2 & 14.2-17.2 & 14.2-17.2 & 17.2 & 17.2 \\ 
+   **bareos-director** & 14.2 & 14.2-17.2 & 14.2-17.2 & 17.2 & 17.2 \\ 
+   **bareos-director-python-plugin** &   & 14.2-17.2 & 14.2-17.2 & 17.2 & 17.2 \\ 
+   **bareos-filedaemon** & 14.2 & 14.2-17.2 & 14.2-17.2 & 17.2 & 17.2 \\ 
+   **bareos-filedaemon-ceph-plugin** &   &   & 15.2-17.2 &   &   \\ 
+   **bareos-filedaemon-ldap-python-plugin** &   & 15.2-17.2 & 15.2-17.2 & 17.2 & 17.2 \\ 
+   **bareos-filedaemon-python-plugin** &   & 14.2-17.2 & 14.2-17.2 & 17.2 & 17.2 \\ 
+   **bareos-regress-config** &   & 17.2 & 17.2 & 17.2 & 17.2 \\ 
+   **bareos-storage** & 14.2 & 14.2-17.2 & 14.2-17.2 & 17.2 & 17.2 \\ 
+   **bareos-storage-ceph** &   &   & 15.2-17.2 &   &   \\ 
+   **bareos-storage-droplet** &   &   & 17.2 & 17.2 & 17.2 \\ 
+   **bareos-storage-fifo** & 14.2 & 14.2-17.2 & 14.2-17.2 & 17.2 & 17.2 \\ 
+   **bareos-storage-python-plugin** &   & 14.2-17.2 & 14.2-17.2 & 17.2 & 17.2 \\ 
+   **bareos-storage-tape** & 14.2 & 14.2-17.2 & 14.2-17.2 & 17.2 & 17.2 \\ 
+   **bareos-tools** & 14.2 & 14.2-17.2 & 14.2-17.2 & 17.2 & 17.2 \\ 
+   **bareos-traymonitor** &   & 14.2-17.2 & 14.2-17.2 & 17.2 & 17.2 \\ 
+   **bareos-vadp-dumper** &   & 15.2-16.2 & 16.2-17.2 & 17.2 & 17.2 \\ 
+   **bareos-vmware-plugin** &   & 15.2-16.2 & 16.2-17.2 & 17.2 & 17.2 \\ 
+   **bareos-vmware-vix-disklib** &   & 15.2-16.2 & 16.2-17.2 & 17.2 & 17.2 \\ 
+   **bareos-webui** &   & 15.2-17.2 & 15.2-17.2 & 17.2 & 17.2 \\ 
+   **libdroplet** &   &   & 17.2 & 17.2 & 17.2 \\ 
+   **libfastlz** & 14.2 & 14.2-17.2 & 14.2-17.2 & 17.2 & 17.2 \\ 
+   **libjansson4** &   & 15.2-17.2 & 15.2-17.2 & 17.2 & 17.2 \\ 
+   **libjansson4-32bit** &   & 15.2-17.2 &   &   &   \\ 
+   **libjansson4-x86** &   & 15.2-17.2 &   &   &   \\ 
+   **python-bareos** &   & 17.2 & 17.2 & 17.2 & 17.2 \\ 
+   **python-py** &   & 15.2-16.2 &   &   &   \\ 
+   **python-pyvmomi** &   & 15.2-17.2 & 16.2-17.2 & 17.2 & 17.2 \\ 
+   **python-requests** &   & 15.2-16.2 &   &   &   \\ 
+   **python-six** &   & 15.2-16.2 &   &   &   \\ 
+   \hline 
+   \end{longtable}
+
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
+
+=========================================================== ============================= ========= ========= ===== =====
+\                                                           .. raw:: latex                                         
+                                                                                                                   
+                                                               :strong:`SLES`                           
+\                                                           10sp4                         11sp4     12sp1     12sp2 12sp3
+**bareos**                               14.2                          14.2-17.2 14.2-17.2 17.2  17.2
+**bareos-bat**                                                         14.2-16.2 14.2-16.2      
+**bareos-bconsole**                      14.2                          14.2-17.2 14.2-17.2 17.2  17.2
+**bareos-client**                        14.2                          14.2-17.2 14.2-17.2 17.2  17.2
+**bareos-common**                        14.2                          14.2-17.2 14.2-17.2 17.2  17.2
+**bareos-database-common**               14.2                          14.2-17.2 14.2-17.2 17.2  17.2
+**bareos-database-mysql**                14.2                          14.2-17.2 14.2-17.2 17.2  17.2
+**bareos-database-postgresql**           14.2                          14.2-17.2 14.2-17.2 17.2  17.2
+**bareos-database-sqlite3**                                            14.2-17.2 14.2-17.2 17.2  17.2
+**bareos-database-tools**                14.2                          14.2-17.2 14.2-17.2 17.2  17.2
+**bareos-director**                      14.2                          14.2-17.2 14.2-17.2 17.2  17.2
+**bareos-director-python-plugin**                                      14.2-17.2 14.2-17.2 17.2  17.2
+**bareos-filedaemon**                    14.2                          14.2-17.2 14.2-17.2 17.2  17.2
+**bareos-filedaemon-ceph-plugin**                                                15.2-17.2      
+**bareos-filedaemon-ldap-python-plugin**                               15.2-17.2 15.2-17.2 17.2  17.2
+**bareos-filedaemon-python-plugin**                                    14.2-17.2 14.2-17.2 17.2  17.2
+**bareos-regress-config**                                              17.2      17.2      17.2  17.2
+**bareos-storage**                       14.2                          14.2-17.2 14.2-17.2 17.2  17.2
+**bareos-storage-ceph**                                                          15.2-17.2      
+**bareos-storage-droplet**                                                       17.2      17.2  17.2
+**bareos-storage-fifo**                  14.2                          14.2-17.2 14.2-17.2 17.2  17.2
+**bareos-storage-python-plugin**                                       14.2-17.2 14.2-17.2 17.2  17.2
+**bareos-storage-tape**                  14.2                          14.2-17.2 14.2-17.2 17.2  17.2
+**bareos-tools**                         14.2                          14.2-17.2 14.2-17.2 17.2  17.2
+**bareos-traymonitor**                                                 14.2-17.2 14.2-17.2 17.2  17.2
+**bareos-vadp-dumper**                                                 15.2-16.2 16.2-17.2 17.2  17.2
+**bareos-vmware-plugin**                                               15.2-16.2 16.2-17.2 17.2  17.2
+**bareos-vmware-vix-disklib**                                          15.2-16.2 16.2-17.2 17.2  17.2
+**bareos-webui**                                                       15.2-17.2 15.2-17.2 17.2  17.2
+**libdroplet**                                                                   17.2      17.2  17.2
+**libfastlz**                            14.2                          14.2-17.2 14.2-17.2 17.2  17.2
+**libjansson4**                                                        15.2-17.2 15.2-17.2 17.2  17.2
+**libjansson4-32bit**                                                  15.2-17.2                
+**libjansson4-x86**                                                    15.2-17.2                
+**python-bareos**                                                      17.2      17.2      17.2  17.2
+**python-py**                                                          15.2-16.2                
+**python-pyvmomi**                                                     15.2-17.2 16.2-17.2 17.2  17.2
+**python-requests**                                                    15.2-16.2                
+**python-six**                                                         15.2-16.2                
+=========================================================== ============================= ========= ========= ===== =====
+
+:index:`[TAG=Platform->openSUSE->13.1] <triple: Platform; openSUSE; 13.1>`:index:`[TAG=Platform->openSUSE->13.2] <triple: Platform; openSUSE; 13.2>`:index:`[TAG=Platform->openSUSE->42.1] <triple: Platform; openSUSE; 42.1>`:index:`[TAG=Platform->openSUSE->42.2] <triple: Platform; openSUSE; 42.2>`:index:`[TAG=Platform->openSUSE->42.3] <triple: Platform; openSUSE; 42.3>`
+
+# Tabular in LaTex format (original)
+
+::
+
+   \begin{longtable}{ l | c | c | c | c | c }
+   \hline 
+    & 
+   :strong:`openSUSE` 
+   \\ 
+    & 13.1 & 13.2 & 42.1 & 42.2 & 42.3\\ 
+   \hline 
+   \hline 
+   **bareos** & 12.4-15.2 & 13.2-16.2 & 15.2-16.2 & 17.2 & 17.2 \\ 
+   **bareos-bat** & 12.4-15.2 & 13.2-16.2 & 15.2-16.2 &   &   \\ 
+   **bareos-bconsole** & 12.4-15.2 & 13.2-16.2 & 15.2-16.2 & 17.2 & 17.2 \\ 
+   **bareos-client** & 12.4-15.2 & 13.2-16.2 & 15.2-16.2 & 17.2 & 17.2 \\ 
+   **bareos-common** & 12.4-15.2 & 13.2-16.2 & 15.2-16.2 & 17.2 & 17.2 \\ 
+   **bareos-database-common** & 12.4-15.2 & 13.2-16.2 & 15.2-16.2 & 17.2 & 17.2 \\ 
+   **bareos-database-mysql** & 12.4-15.2 & 13.2-16.2 & 15.2-16.2 & 17.2 & 17.2 \\ 
+   **bareos-database-postgresql** & 12.4-15.2 & 13.2-16.2 & 15.2-16.2 & 17.2 & 17.2 \\ 
+   **bareos-database-sqlite3** & 12.4-15.2 & 13.2-16.2 & 15.2-16.2 & 17.2 & 17.2 \\ 
+   **bareos-database-tools** & 12.4-15.2 & 13.2-16.2 & 15.2-16.2 & 17.2 & 17.2 \\ 
+   **bareos-director** & 12.4-15.2 & 13.2-16.2 & 15.2-16.2 & 17.2 & 17.2 \\ 
+   **bareos-director-python-plugin** & 14.2-15.2 & 14.2-16.2 & 15.2-16.2 & 17.2 & 17.2 \\ 
+   **bareos-filedaemon** & 12.4-15.2 & 13.2-16.2 & 15.2-16.2 & 17.2 & 17.2 \\ 
+   **bareos-filedaemon-ldap-python-plugin** & 15.2 & 15.2-16.2 & 15.2-16.2 & 17.2 & 17.2 \\ 
+   **bareos-filedaemon-python-plugin** & 14.2-15.2 & 14.2-16.2 & 15.2-16.2 & 17.2 & 17.2 \\ 
+   **bareos-regress-config** &   &   &   & 17.2 & 17.2 \\ 
+   **bareos-storage** & 12.4-15.2 & 13.2-16.2 & 15.2-16.2 & 17.2 & 17.2 \\ 
+   **bareos-storage-droplet** &   &   &   & 17.2 & 17.2 \\ 
+   **bareos-storage-fifo** & 14.2-15.2 & 14.2-16.2 & 15.2-16.2 & 17.2 & 17.2 \\ 
+   **bareos-storage-python-plugin** & 14.2-15.2 & 14.2-16.2 & 15.2-16.2 & 17.2 & 17.2 \\ 
+   **bareos-storage-tape** & 12.4-15.2 & 13.2-16.2 & 15.2-16.2 & 17.2 & 17.2 \\ 
+   **bareos-tools** & 12.4-15.2 & 13.2-16.2 & 15.2-16.2 & 17.2 & 17.2 \\ 
+   **bareos-traymonitor** & 12.4-15.2 & 13.2-16.2 & 15.2-16.2 & 17.2 & 17.2 \\ 
+   **bareos-webui** & 15.2 & 15.2-16.2 & 15.2-16.2 & 17.2 & 17.2 \\ 
+   **libdroplet** &   &   &   & 17.2 & 17.2 \\ 
+   **libfastlz** & 12.4-15.2 & 13.2-16.2 & 15.2-16.2 & 17.2 & 17.2 \\ 
+   **python-bareos** &   &   &   & 17.2 & 17.2 \\ 
+   \hline 
+   \end{longtable}
+
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
+
+=========================================================== ================================= ========= ========= ==== ====
+\                                                           .. raw:: latex                                            
+                                                                                                                      
+                                                               :strong:`openSUSE`                          
+\                                                           13.1                              13.2      42.1      42.2 42.3
+**bareos**                               12.4-15.2                         13.2-16.2 15.2-16.2 17.2 17.2
+**bareos-bat**                           12.4-15.2                         13.2-16.2 15.2-16.2     
+**bareos-bconsole**                      12.4-15.2                         13.2-16.2 15.2-16.2 17.2 17.2
+**bareos-client**                        12.4-15.2                         13.2-16.2 15.2-16.2 17.2 17.2
+**bareos-common**                        12.4-15.2                         13.2-16.2 15.2-16.2 17.2 17.2
+**bareos-database-common**               12.4-15.2                         13.2-16.2 15.2-16.2 17.2 17.2
+**bareos-database-mysql**                12.4-15.2                         13.2-16.2 15.2-16.2 17.2 17.2
+**bareos-database-postgresql**           12.4-15.2                         13.2-16.2 15.2-16.2 17.2 17.2
+**bareos-database-sqlite3**              12.4-15.2                         13.2-16.2 15.2-16.2 17.2 17.2
+**bareos-database-tools**                12.4-15.2                         13.2-16.2 15.2-16.2 17.2 17.2
+**bareos-director**                      12.4-15.2                         13.2-16.2 15.2-16.2 17.2 17.2
+**bareos-director-python-plugin**        14.2-15.2                         14.2-16.2 15.2-16.2 17.2 17.2
+**bareos-filedaemon**                    12.4-15.2                         13.2-16.2 15.2-16.2 17.2 17.2
+**bareos-filedaemon-ldap-python-plugin** 15.2                              15.2-16.2 15.2-16.2 17.2 17.2
+**bareos-filedaemon-python-plugin**      14.2-15.2                         14.2-16.2 15.2-16.2 17.2 17.2
+**bareos-regress-config**                                                                      17.2 17.2
+**bareos-storage**                       12.4-15.2                         13.2-16.2 15.2-16.2 17.2 17.2
+**bareos-storage-droplet**                                                                     17.2 17.2
+**bareos-storage-fifo**                  14.2-15.2                         14.2-16.2 15.2-16.2 17.2 17.2
+**bareos-storage-python-plugin**         14.2-15.2                         14.2-16.2 15.2-16.2 17.2 17.2
+**bareos-storage-tape**                  12.4-15.2                         13.2-16.2 15.2-16.2 17.2 17.2
+**bareos-tools**                         12.4-15.2                         13.2-16.2 15.2-16.2 17.2 17.2
+**bareos-traymonitor**                   12.4-15.2                         13.2-16.2 15.2-16.2 17.2 17.2
+**bareos-webui**                         15.2                              15.2-16.2 15.2-16.2 17.2 17.2
+**libdroplet**                                                                                 17.2 17.2
+**libfastlz**                            12.4-15.2                         13.2-16.2 15.2-16.2 17.2 17.2
+**python-bareos**                                                                              17.2 17.2
+=========================================================== ================================= ========= ========= ==== ====
+
+:index:`[TAG=Platform->Debian->6] <triple: Platform; Debian; 6>`:index:`[TAG=Platform->Debian->7] <triple: Platform; Debian; 7>`:index:`[TAG=Platform->Debian->8] <triple: Platform; Debian; 8>`:index:`[TAG=Platform->Debian->9] <triple: Platform; Debian; 9>`:index:`[TAG=Platform->Univention->4.0] <triple: Platform; Univention; 4.0>`:index:`[TAG=Platform->Univention->4.2] <triple: Platform; Univention; 4.2>`
+
+# Tabular in LaTex format (original)
+
+::
+
+   \begin{longtable}{ l | c | c | c | c | c | c }
+   \hline 
+    & 
+   :strong:`Debian`  &
+   :strong:`Univention` 
+   \\ 
+    & 6 & 7 & 8 & 9 & 4.0 & 4.2\\ 
+   \hline 
+   \hline 
+   **bareos** & 12.4-15.2 & 12.4-17.2 & 14.2-17.2 & 17.2 & 15.2-16.2 & 17.2 \\ 
+   **bareos-bat** & 12.4-15.2 & 12.4-16.2 & 14.2-16.2 &   & 15.2-16.2 &   \\ 
+   **bareos-bconsole** & 12.4-15.2 & 12.4-17.2 & 14.2-17.2 & 17.2 & 15.2-16.2 & 17.2 \\ 
+   **bareos-client** & 12.4-15.2 & 12.4-17.2 & 14.2-17.2 & 17.2 & 15.2-16.2 & 17.2 \\ 
+   **bareos-common** & 12.4-15.2 & 12.4-17.2 & 14.2-17.2 & 17.2 & 15.2-16.2 & 17.2 \\ 
+   **bareos-database-common** & 12.4-15.2 & 12.4-17.2 & 14.2-17.2 & 17.2 & 15.2-16.2 & 17.2 \\ 
+   **bareos-database-mysql** & 12.4-15.2 & 12.4-17.2 & 14.2-17.2 & 17.2 & 15.2-16.2 & 17.2 \\ 
+   **bareos-database-postgresql** & 12.4-15.2 & 12.4-17.2 & 14.2-17.2 & 17.2 & 15.2-16.2 & 17.2 \\ 
+   **bareos-database-sqlite3** & 12.4-15.2 & 12.4-17.2 & 14.2-17.2 & 17.2 & 15.2-16.2 & 17.2 \\ 
+   **bareos-database-tools** & 12.4-15.2 & 12.4-17.2 & 14.2-17.2 & 17.2 & 15.2-16.2 & 17.2 \\ 
+   **bareos-director** & 12.4-15.2 & 12.4-17.2 & 14.2-17.2 & 17.2 & 15.2-16.2 & 17.2 \\ 
+   **bareos-director-python-plugin** & 14.2-15.2 & 14.2-17.2 & 14.2-17.2 & 17.2 & 15.2-16.2 & 17.2 \\ 
+   **bareos-filedaemon** & 12.4-15.2 & 12.4-17.2 & 14.2-17.2 & 17.2 & 15.2-16.2 & 17.2 \\ 
+   **bareos-filedaemon-ceph-plugin** &   &   & 15.2-16.2 & 17.2 &   &   \\ 
+   **bareos-filedaemon-glusterfs-plugin** &   &   & 15.2-17.2 & 17.2 &   & 17.2 \\ 
+   **bareos-filedaemon-ldap-python-plugin** & 15.2 & 15.2-17.2 & 15.2-17.2 & 17.2 & 15.2-16.2 & 17.2 \\ 
+   **bareos-filedaemon-python-plugin** & 14.2-15.2 & 14.2-17.2 & 14.2-17.2 & 17.2 & 15.2-16.2 & 17.2 \\ 
+   **bareos-regress-config** &   & 17.2 & 17.2 & 17.2 &   & 17.2 \\ 
+   **bareos-storage** & 12.4-15.2 & 12.4-17.2 & 14.2-17.2 & 17.2 & 15.2-16.2 & 17.2 \\ 
+   **bareos-storage-ceph** &   &   & 15.2-16.2 & 17.2 &   &   \\ 
+   **bareos-storage-fifo** & 14.2-15.2 & 14.2-17.2 & 14.2-17.2 & 17.2 & 15.2-16.2 & 17.2 \\ 
+   **bareos-storage-glusterfs** &   &   & 15.2-17.2 & 17.2 &   & 17.2 \\ 
+   **bareos-storage-python-plugin** & 14.2-15.2 & 14.2-17.2 & 14.2-17.2 & 17.2 & 15.2-16.2 & 17.2 \\ 
+   **bareos-storage-tape** & 12.4-15.2 & 12.4-17.2 & 14.2-17.2 & 17.2 & 15.2-16.2 & 17.2 \\ 
+   **bareos-tools** & 12.4-15.2 & 12.4-17.2 & 14.2-17.2 & 17.2 & 15.2-16.2 & 17.2 \\ 
+   **bareos-traymonitor** & 12.4-15.2 & 12.4-17.2 & 14.2-17.2 & 17.2 & 15.2-16.2 & 17.2 \\ 
+   **bareos-vadp-dumper** &   &   & 15.2-17.2 &   &   &   \\ 
+   **bareos-vmware-plugin** &   &   & 15.2-17.2 &   &   &   \\ 
+   **bareos-vmware-vix-disklib** &   &   & 17.2 &   &   & 17.2 \\ 
+   **bareos-vmware-vix-disklib5** &   &   & 15.2-16.2 &   &   &   \\ 
+   **bareos-webui** &   & 15.2-17.2 & 15.2-17.2 & 17.2 & 15.2-16.2 & 17.2 \\ 
+   **libfastlz** & 12.4-15.2 & 12.4-17.2 & 14.2-17.2 & 17.2 & 15.2-16.2 & 17.2 \\ 
+   **libjansson4** & 15.2 &   &   &   &   &   \\ 
+   **python-bareos** &   &   & 17.2 & 17.2 &   & 17.2 \\ 
+   **univention-bareos** &   &   &   &   & 15.2-16.2 & 17.2 \\ 
+   \hline 
+   \end{longtable}
+
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
+
+=========================================================== ========================================= =================================== ========= ==== ========= ====
+\                                                           :strong:`Debian`  .. raw:: latex                                              
+                                                                                                                                                                  
+                                                                                                         :strong:`Univention`                          
+\                                                           6                                         7                                   8         9    4.0       4.2
+**bareos**                               12.4-15.2                                 12.4-17.2                           14.2-17.2 17.2 15.2-16.2 17.2
+**bareos-bat**                           12.4-15.2                                 12.4-16.2                           14.2-16.2      15.2-16.2
+**bareos-bconsole**                      12.4-15.2                                 12.4-17.2                           14.2-17.2 17.2 15.2-16.2 17.2
+**bareos-client**                        12.4-15.2                                 12.4-17.2                           14.2-17.2 17.2 15.2-16.2 17.2
+**bareos-common**                        12.4-15.2                                 12.4-17.2                           14.2-17.2 17.2 15.2-16.2 17.2
+**bareos-database-common**               12.4-15.2                                 12.4-17.2                           14.2-17.2 17.2 15.2-16.2 17.2
+**bareos-database-mysql**                12.4-15.2                                 12.4-17.2                           14.2-17.2 17.2 15.2-16.2 17.2
+**bareos-database-postgresql**           12.4-15.2                                 12.4-17.2                           14.2-17.2 17.2 15.2-16.2 17.2
+**bareos-database-sqlite3**              12.4-15.2                                 12.4-17.2                           14.2-17.2 17.2 15.2-16.2 17.2
+**bareos-database-tools**                12.4-15.2                                 12.4-17.2                           14.2-17.2 17.2 15.2-16.2 17.2
+**bareos-director**                      12.4-15.2                                 12.4-17.2                           14.2-17.2 17.2 15.2-16.2 17.2
+**bareos-director-python-plugin**        14.2-15.2                                 14.2-17.2                           14.2-17.2 17.2 15.2-16.2 17.2
+**bareos-filedaemon**                    12.4-15.2                                 12.4-17.2                           14.2-17.2 17.2 15.2-16.2 17.2
+**bareos-filedaemon-ceph-plugin**                                                                                      15.2-16.2 17.2          
+**bareos-filedaemon-glusterfs-plugin**                                                                                 15.2-17.2 17.2           17.2
+**bareos-filedaemon-ldap-python-plugin** 15.2                                      15.2-17.2                           15.2-17.2 17.2 15.2-16.2 17.2
+**bareos-filedaemon-python-plugin**      14.2-15.2                                 14.2-17.2                           14.2-17.2 17.2 15.2-16.2 17.2
+**bareos-regress-config**                                                          17.2                                17.2      17.2           17.2
+**bareos-storage**                       12.4-15.2                                 12.4-17.2                           14.2-17.2 17.2 15.2-16.2 17.2
+**bareos-storage-ceph**                                                                                                15.2-16.2 17.2          
+**bareos-storage-fifo**                  14.2-15.2                                 14.2-17.2                           14.2-17.2 17.2 15.2-16.2 17.2
+**bareos-storage-glusterfs**                                                                                           15.2-17.2 17.2           17.2
+**bareos-storage-python-plugin**         14.2-15.2                                 14.2-17.2                           14.2-17.2 17.2 15.2-16.2 17.2
+**bareos-storage-tape**                  12.4-15.2                                 12.4-17.2                           14.2-17.2 17.2 15.2-16.2 17.2
+**bareos-tools**                         12.4-15.2                                 12.4-17.2                           14.2-17.2 17.2 15.2-16.2 17.2
+**bareos-traymonitor**                   12.4-15.2                                 12.4-17.2                           14.2-17.2 17.2 15.2-16.2 17.2
+**bareos-vadp-dumper**                                                                                                 15.2-17.2               
+**bareos-vmware-plugin**                                                                                               15.2-17.2               
+**bareos-vmware-vix-disklib**                                                                                          17.2                     17.2
+**bareos-vmware-vix-disklib5**                                                                                         15.2-16.2               
+**bareos-webui**                                                                   15.2-17.2                           15.2-17.2 17.2 15.2-16.2 17.2
+**libfastlz**                            12.4-15.2                                 12.4-17.2                           14.2-17.2 17.2 15.2-16.2 17.2
+**libjansson4**                          15.2                                                                                                  
+**python-bareos**                                                                                                      17.2      17.2           17.2
+**univention-bareos**                                                                                                                 15.2-16.2 17.2
+=========================================================== ========================================= =================================== ========= ==== ========= ====
+
+:index:`[TAG=Platform->Ubuntu->10.04] <triple: Platform; Ubuntu; 10.04>`:index:`[TAG=Platform->Ubuntu->12.04] <triple: Platform; Ubuntu; 12.04>`:index:`[TAG=Platform->Ubuntu->14.04] <triple: Platform; Ubuntu; 14.04>`:index:`[TAG=Platform->Ubuntu->16.04] <triple: Platform; Ubuntu; 16.04>`:index:`[TAG=Platform->Ubuntu->8.04] <triple: Platform; Ubuntu; 8.04>`
+
+# Tabular in LaTex format (original)
+
+::
+
+   \begin{longtable}{ l | c | c | c | c | c }
+   \hline 
+    & 
+   :strong:`Ubuntu` 
+   \\ 
+    & 10.04 & 12.04 & 14.04 & 16.04 & 8.04\\ 
+   \hline 
+   \hline 
+   **bareos** & 12.4-15.2 & 12.4-17.2 & 13.2-17.2 & 15.2-17.2 & 13.2-14.2 \\ 
+   **bareos-bat** & 12.4-15.2 & 12.4-16.2 & 13.2-16.2 & 15.2-16.2 &   \\ 
+   **bareos-bconsole** & 12.4-15.2 & 12.4-17.2 & 13.2-17.2 & 15.2-17.2 & 13.2-14.2 \\ 
+   **bareos-client** & 12.4-15.2 & 12.4-17.2 & 13.2-17.2 & 15.2-17.2 & 13.2-14.2 \\ 
+   **bareos-common** & 12.4-15.2 & 12.4-17.2 & 13.2-17.2 & 15.2-17.2 & 13.2-14.2 \\ 
+   **bareos-database-common** & 12.4-15.2 & 12.4-17.2 & 13.2-17.2 & 15.2-17.2 & 13.2-14.2 \\ 
+   **bareos-database-mysql** & 12.4-15.2 & 12.4-17.2 & 13.2-17.2 & 15.2-17.2 & 13.2-14.2 \\ 
+   **bareos-database-postgresql** & 12.4-15.2 & 12.4-17.2 & 13.2-17.2 & 15.2-17.2 & 13.2-14.2 \\ 
+   **bareos-database-sqlite3** & 12.4-15.2 & 12.4-17.2 & 13.2-17.2 & 15.2-17.2 & 13.2-14.2 \\ 
+   **bareos-database-tools** & 12.4-15.2 & 12.4-17.2 & 13.2-17.2 & 15.2-17.2 & 13.2-14.2 \\ 
+   **bareos-director** & 12.4-15.2 & 12.4-17.2 & 13.2-17.2 & 15.2-17.2 & 13.2-14.2 \\ 
+   **bareos-director-python-plugin** & 14.2-15.2 & 14.2-17.2 & 14.2-17.2 & 15.2-17.2 &   \\ 
+   **bareos-filedaemon** & 12.4-15.2 & 12.4-17.2 & 13.2-17.2 & 15.2-17.2 & 13.2-14.2 \\ 
+   **bareos-filedaemon-ceph-plugin** &   &   & 15.2-16.2 & 15.2-17.2 &   \\ 
+   **bareos-filedaemon-glusterfs-plugin** &   &   &   & 15.2-17.2 &   \\ 
+   **bareos-filedaemon-ldap-python-plugin** & 15.2 & 15.2-17.2 & 15.2-17.2 & 15.2-17.2 &   \\ 
+   **bareos-filedaemon-python-plugin** & 14.2-15.2 & 14.2-17.2 & 14.2-17.2 & 15.2-17.2 &   \\ 
+   **bareos-regress-config** &   & 17.2 & 17.2 & 17.2 &   \\ 
+   **bareos-storage** & 12.4-15.2 & 12.4-17.2 & 13.2-17.2 & 15.2-17.2 & 13.2-14.2 \\ 
+   **bareos-storage-ceph** &   &   & 15.2-16.2 & 15.2-17.2 &   \\ 
+   **bareos-storage-fifo** & 14.2-15.2 & 14.2-17.2 & 14.2-17.2 & 15.2-17.2 & 14.2 \\ 
+   **bareos-storage-glusterfs** &   &   &   & 15.2-17.2 &   \\ 
+   **bareos-storage-python-plugin** & 14.2-15.2 & 14.2-17.2 & 14.2-17.2 & 15.2-17.2 &   \\ 
+   **bareos-storage-tape** & 12.4-15.2 & 12.4-17.2 & 13.2-17.2 & 15.2-17.2 & 13.2-14.2 \\ 
+   **bareos-tools** & 12.4-15.2 & 12.4-17.2 & 13.2-17.2 & 15.2-17.2 & 13.2-14.2 \\ 
+   **bareos-traymonitor** & 12.4-15.2 & 12.4-17.2 & 13.2-17.2 & 15.2-17.2 &   \\ 
+   **bareos-vadp-dumper** &   &   &   & 17.2 &   \\ 
+   **bareos-vmware-plugin** &   &   &   & 17.2 &   \\ 
+   **bareos-vmware-vix-disklib** &   &   &   & 17.2 &   \\ 
+   **bareos-webui** & 15.2 & 15.2-17.2 & 15.2-17.2 & 15.2-17.2 &   \\ 
+   **libfastlz** & 12.4-15.2 & 12.4-17.2 & 12.4-17.2 & 15.2-17.2 & 13.2-14.2 \\ 
+   **libjansson4** & 15.2 &   &   &   &   \\ 
+   **python-bareos** &   &   & 17.2 & 17.2 &   \\ 
+   \hline 
+   \end{longtable}
+
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
+
+=========================================================== =============================== ========= ========= ========= =========
+\                                                           .. raw:: latex                                               
+                                                                                                                         
+                                                               :strong:`Ubuntu`                               
+\                                                           10.04                           12.04     14.04     16.04     8.04
+**bareos**                               12.4-15.2                       12.4-17.2 13.2-17.2 15.2-17.2 13.2-14.2
+**bareos-bat**                           12.4-15.2                       12.4-16.2 13.2-16.2 15.2-16.2
+**bareos-bconsole**                      12.4-15.2                       12.4-17.2 13.2-17.2 15.2-17.2 13.2-14.2
+**bareos-client**                        12.4-15.2                       12.4-17.2 13.2-17.2 15.2-17.2 13.2-14.2
+**bareos-common**                        12.4-15.2                       12.4-17.2 13.2-17.2 15.2-17.2 13.2-14.2
+**bareos-database-common**               12.4-15.2                       12.4-17.2 13.2-17.2 15.2-17.2 13.2-14.2
+**bareos-database-mysql**                12.4-15.2                       12.4-17.2 13.2-17.2 15.2-17.2 13.2-14.2
+**bareos-database-postgresql**           12.4-15.2                       12.4-17.2 13.2-17.2 15.2-17.2 13.2-14.2
+**bareos-database-sqlite3**              12.4-15.2                       12.4-17.2 13.2-17.2 15.2-17.2 13.2-14.2
+**bareos-database-tools**                12.4-15.2                       12.4-17.2 13.2-17.2 15.2-17.2 13.2-14.2
+**bareos-director**                      12.4-15.2                       12.4-17.2 13.2-17.2 15.2-17.2 13.2-14.2
+**bareos-director-python-plugin**        14.2-15.2                       14.2-17.2 14.2-17.2 15.2-17.2
+**bareos-filedaemon**                    12.4-15.2                       12.4-17.2 13.2-17.2 15.2-17.2 13.2-14.2
+**bareos-filedaemon-ceph-plugin**                                                  15.2-16.2 15.2-17.2
+**bareos-filedaemon-glusterfs-plugin**                                                       15.2-17.2
+**bareos-filedaemon-ldap-python-plugin** 15.2                            15.2-17.2 15.2-17.2 15.2-17.2
+**bareos-filedaemon-python-plugin**      14.2-15.2                       14.2-17.2 14.2-17.2 15.2-17.2
+**bareos-regress-config**                                                17.2      17.2      17.2     
+**bareos-storage**                       12.4-15.2                       12.4-17.2 13.2-17.2 15.2-17.2 13.2-14.2
+**bareos-storage-ceph**                                                            15.2-16.2 15.2-17.2
+**bareos-storage-fifo**                  14.2-15.2                       14.2-17.2 14.2-17.2 15.2-17.2 14.2
+**bareos-storage-glusterfs**                                                                 15.2-17.2
+**bareos-storage-python-plugin**         14.2-15.2                       14.2-17.2 14.2-17.2 15.2-17.2
+**bareos-storage-tape**                  12.4-15.2                       12.4-17.2 13.2-17.2 15.2-17.2 13.2-14.2
+**bareos-tools**                         12.4-15.2                       12.4-17.2 13.2-17.2 15.2-17.2 13.2-14.2
+**bareos-traymonitor**                   12.4-15.2                       12.4-17.2 13.2-17.2 15.2-17.2
+**bareos-vadp-dumper**                                                                       17.2     
+**bareos-vmware-plugin**                                                                     17.2     
+**bareos-vmware-vix-disklib**                                                                17.2     
+**bareos-webui**                         15.2                            15.2-17.2 15.2-17.2 15.2-17.2
+**libfastlz**                            12.4-15.2                       12.4-17.2 12.4-17.2 15.2-17.2 13.2-14.2
+**libjansson4**                          15.2                                                         
+**python-bareos**                                                                  17.2      17.2     
+=========================================================== =============================== ========= ========= ========= =========
+
 .. _section-UniventionCorporateServer:
 
 Univention Corporate Server

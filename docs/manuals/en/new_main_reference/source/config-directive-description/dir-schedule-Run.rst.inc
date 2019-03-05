@@ -47,6 +47,50 @@ Note, by default with no other specification, your job will run at the beginning
 
 The date/time to run the Job can be specified in the following way in pseudo-BNF:
 
+# Tabular in LaTex format (original)
+
+::
+
+   \begin{longtable}{ l @{ ::= } p{0.5\textwidth} }
+      \bnfvar{week-keyword}    & 1st \pipe 2nd \pipe 3rd \pipe 4th \pipe 5th \pipe first \pipe
+                           second \pipe third \pipe fourth \pipe fifth \pipe last \\
+      \bnfvar{wday-keyword}    & sun \pipe mon \pipe tue \pipe wed \pipe thu \pipe fri \pipe sat \pipe
+                          sunday \pipe monday \pipe tuesday \pipe wednesday \pipe
+                          thursday \pipe friday \pipe saturday \\
+      \bnfvar{week-of-year-keyword} & w00 \pipe w01 \pipe ... w52 \pipe w53 \\
+      \bnfvar{month-keyword}   & jan \pipe feb \pipe mar \pipe apr \pipe may \pipe jun \pipe jul \pipe
+                          aug \pipe sep \pipe oct \pipe nov \pipe dec \pipe
+                          january \pipe february \pipe ... \pipe december \\
+      \bnfvar{digit}           & 1 \pipe 2 \pipe 3 \pipe 4 \pipe 5 \pipe 6 \pipe 7 \pipe 8 \pipe 9 \pipe 0 \\
+      \bnfvar{number}          & \bnfvar{digit} \pipe \bnfvar{digit}\bnfvar{number} \\
+      \bnfvar{12hour}          & 0 \pipe 1 \pipe 2 \pipe ... 12 \\
+      \bnfvar{hour}            & 0 \pipe 1 \pipe 2 \pipe ... 23 \\
+      \bnfvar{minute}          & 0 \pipe 1 \pipe 2 \pipe ... 59 \\
+      \bnfvar{day}             & 1 \pipe 2 \pipe ... 31 \\
+      \bnfvar{time}            & \bnfvar{hour}:\bnfvar{minute} \pipe
+                          \bnfvar{12hour}:\bnfvar{minute}am \pipe
+                          \bnfvar{12hour}:\bnfvar{minute}pm \\
+      \bnfvar{time-spec}       & at \bnfvar{time} \pipe hourly \\
+      % ??? \bnfvar{date-keyword}    & on \pipe weekly \\
+      \bnfvar{day-range}       & \bnfvar{day}-\bnfvar{day} \\
+      \bnfvar{month-range}     & \bnfvar{month-keyword}-\bnfvar{month-keyword} \\
+      \bnfvar{wday-range}      & \bnfvar{wday-keyword}-\bnfvar{wday-keyword} \\
+      \bnfvar{range}           & \bnfvar{day-range} \pipe \bnfvar{month-range} \pipe
+                                \bnfvar{wday-range} \\
+      \bnfvar{modulo}          & \bnfvar{day}/\bnfvar{day} \pipe \bnfvar{week-of-year-keyword}/\bnfvar{week-of-year-keyword} \\
+      \bnfvar{date}            & \bnfvar{date-keyword} \pipe \bnfvar{day} \pipe \bnfvar{range} \\
+      \bnfvar{date-spec}       & \bnfvar{date} \pipe \bnfvar{date-spec} \\
+      \bnfvar{day-spec}        & \bnfvar{day} \pipe \bnfvar{wday-keyword} \pipe
+                          \bnfvar{day} \pipe \bnfvar{wday-range} \pipe
+                          \bnfvar{week-keyword} \bnfvar{wday-keyword} \pipe
+                          \bnfvar{week-keyword} \bnfvar{wday-range} \pipe
+                          daily \\
+      \bnfvar{month-spec}      & \bnfvar{month-keyword} \pipe \bnfvar{month-range} \pipe monthly \\
+      \bnfvar{date-time-spec}  & \bnfvar{month-spec} \bnfvar{day-spec} \bnfvar{time-spec} \\
+      \end{longtable}
+
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
+
 ========================================== =========================================================================================================================================================================================================================================================================================================================================================================================
 \bnfvar{week-keyword}         1st \pipe 2nd \pipe 3rd \pipe 4th \pipe 5th \pipe first \pipe second \pipe third \pipe fourth \pipe fifth \pipe last
 \bnfvar{wday-keyword}         sun \pipe mon \pipe tue \pipe wed \pipe thu \pipe fri \pipe sat \pipe sunday \pipe monday \pipe tuesday \pipe wednesday \pipe thursday \pipe friday \pipe saturday

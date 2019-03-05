@@ -1030,6 +1030,53 @@ The following table lists all current Bareos resource types. It shows what resou
 
 \addcontentsline{lot}{table}{Resource Types}
 
+# Tabular in LaTex format (original)
+
+::
+
+   \begin{longtable}{|l||c|c|c|c|}
+    \hline
+   :strong:`\bf Resource `  &
+   :strong:` :ref:`Director <DirectorConfChapter>` `  &
+   :strong:` :ref:`Client <FiledConfChapter>` `  &
+   :strong:` :ref:`Storage <StoredConfChapter>` `  &
+   :strong:` :ref:`Console <ConsoleConfChapter>`  `  \\
+    \hline
+    \hline
+   {Autochanger} &                                 &                                 & :ref:`x <StorageResourceAutochanger>` &  \\
+   \hline
+   {Catalog }  & :ref:`x <DirectorResourceCatalog>`  &                                 &    &    \\
+    \hline
+   {Client  }  & :ref:`x <DirectorResourceClient>`   & :ref:`x <ClientResourceClient>`   &    &    \\
+    \hline
+   {Console }  & :ref:`x <DirectorResourceConsole>`  &                                 &                                  & :ref:`x <ConsoleResourceConsole>` \\
+    \hline
+   {Device  }  &                                   &                                 & :ref:`x <StorageResourceDevice>`   &    \\
+    \hline
+   {Director } & :ref:`x <DirectorResourceDirector>` & :ref:`x <ClientResourceDirector>` & :ref:`x <StorageResourceDirector>` & :ref:`x <ConsoleResourceDirector>` \\
+    \hline
+   {FileSet }  & :ref:`x <DirectorResourceFileSet>`  &                                 &    &    \\
+    \hline
+   {Job}       & :ref:`x <DirectorResourceJob>`      &                                 &    &    \\
+    \hline
+   {JobDefs }  & :ref:`x <DirectorResourceJobDefs>`  &                                 &    &    \\
+    \hline
+   {Message }  & :ref:`x <ResourceMessages>`         & :ref:`x <ResourceMessages>`       & :ref:`x <ResourceMessages>` &    \\
+    \hline
+   {NDMP }     &                                   &                                 & :ref:`x <StorageResourceNDMP>` &    \\
+    \hline
+   {Pool  }    & :ref:`x <DirectorResourcePool>`     &                                 &    &    \\
+    \hline
+   {Profile}   & :ref:`x <DirectorResourceProfile>`  &                                 &    &    \\
+    \hline
+   {Schedule } & :ref:`x <DirectorResourceSchedule>` &                                 &    &    \\
+    \hline
+   {Storage }  & :ref:`x <DirectorResourceStorage>`  &                                 & :ref:`x <StorageResourceStorage>` & \\
+   \hline
+   \end{longtable}
+
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
+
 ================================================== ========================================================================== ===================================================================== ======================================================================= =========================================================================
 :strong:`\bf Resource `  :strong:` :ref:`Director <DirectorConfChapter>` `  :strong:` :ref:`Client <FiledConfChapter>` `  :strong:` :ref:`Storage <StoredConfChapter>` `  :strong:` :ref:`Console <ConsoleConfChapter>`  ` 
 ================================================== ========================================================================== ===================================================================== ======================================================================= =========================================================================

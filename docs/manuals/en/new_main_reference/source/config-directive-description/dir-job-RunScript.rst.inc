@@ -74,7 +74,36 @@ Before executing the specified command, Bareos performs character substitution o
 
 .. _character substitution:
 
- 
+  # Tabular in LaTex format (original)
+
+::
+
+   \begin{longtable}{ l l }
+          \%\% & \% \\
+          \%b & Job Bytes \\
+          \%B & Job Bytes in human readable format \\
+          \%c & Client's name \\
+          \%d & Daemon's name (Such as host-dir or host-fd) \\
+          \%D & Director's name (Also valid on file daemon) \\
+          \%e & Job Exit Status \\
+          \%f & Job FileSet (Only on director side) \\
+          \%F & Job Files \\
+          \%h & Client address \\
+          \%i & Job Id \\
+          \%j & Unique Job Id \\
+          \%l & Job Level \\
+          \%n & Job name \\
+          \%p & Pool name (Only on director side) \\
+          \%P & Daemon PID \\
+          \%s & Since time \\
+          \%t & Job type (Backup, ...) \\
+          \%v & Read Volume name(s) (Only on director side) \\
+          \%V & Write Volume name(s) (Only on director side) \\
+          \%w & Storage name (Only on director side) \\
+          \%x & Spooling enabled? ("yes" or "no") \\
+      \end{longtable}
+
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
 == ============================================
 %% %
