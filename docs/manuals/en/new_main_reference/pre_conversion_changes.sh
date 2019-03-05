@@ -45,6 +45,8 @@ for FILENAME in ${SOURCEFILES}; do
 \
     | perl -0 -pe 's|(\\begin\{tabular\}.*?\\end\{tabular\})|\# Tabular in LaTex format (original)\n\\begin{verbatim}\1\\end{verbatim}\n\n\# Tabular converted from LaTeX to RST (or empty, in case of problems):\n\1|smg' \
 \
+    | perl -0 -pe 's|(\\begin\{longtable\}.*?\\end\{longtable\})|\# Tabular in LaTex format (original)\n\\begin{verbatim}\1\\end{verbatim}\n\n\# Tabular converted from LaTeX to RST (or empty, in case of problems):\n\1|smg' \
+\
     | perl -0 -pe 's|\\subsubsubsection\{|\\paragraph\{|g' \
 \
     | perl -0 -pe 's|\\releasenoteSection\{(.*?)\}|\\section*{\1}\n\n|smg' \
