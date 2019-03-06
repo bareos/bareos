@@ -109,7 +109,7 @@ class chunked_device : public Device {
   bool readonly_;
   uint8_t inflight_chunks_;
   char* current_volname_;
-  storagedaemon::ordered_circbuf* cb_;
+  ordered_circbuf* cb_;
   alist* thread_ids_;
   chunk_descriptor* current_chunk_;
 

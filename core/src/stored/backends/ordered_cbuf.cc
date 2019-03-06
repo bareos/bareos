@@ -27,7 +27,6 @@
  */
 #include "include/bareos.h"
 #include "lib/dlist.h"
-
 #include "ordered_cbuf.h"
 namespace storagedaemon {
 

@@ -184,9 +184,9 @@ bool chunked_device::StartIoThreads()
    * the producer (the storage driver) and multiple consumers (io-threads).
    */
   if (io_slots_) {
-    cb_ = New(ordered_circbuf(io_threads_ * io_slots_));
+    cb_ = New(storagedaemon::ordered_circbuf(io_threads_ * io_slots_));
   } else {
-    cb_ = New(ordered_circbuf(io_threads_ * OQSIZE));
+    cb_ = New(storagedaemon::ordered_circbuf(io_threads_ * OQSIZE));
   }
 
   /*
