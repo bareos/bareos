@@ -17,10 +17,10 @@ make -j4
         echo 'Testing ...'
         sh '''export PATH=/usr/local/bin:$PATH
 cd build
-ctest -R gtest'''
+ctest -R gtest -D Experimental'''
         sh '''export PATH=/usr/local/bin:$PATH
 cd  build
-ctest -R system:backup-bareos-test'''
+ctest -R system:backup-bareos-test -D Experimental'''
       }
     }
     stage('Deploy') {
