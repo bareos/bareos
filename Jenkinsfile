@@ -4,16 +4,16 @@ pipeline {
     stage('Build') {
       steps {
         echo 'Building...'
-        sh '''ls
-export PATH=/usr/local/bin:$PATH
+        sh '''export PATH=/usr/local/bin:$PATH
 mkdir build
 cd build
 cmake .. -Dsqlite3=yes -Dcoverage=yes -Ddeveloper=yes
 make -j4
-make test
-ctest -VV
 '''
-        sh 'ctest -V -R system'
+        sh '''export PATH=/usr/local/bin:$PATH
+ctest -R gtest'''
+        sh '''export PATH=/usr/local/bin:$PATH
+ctest -R system'''
       }
     }
     stage('Test') {
