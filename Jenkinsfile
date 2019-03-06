@@ -20,7 +20,7 @@ cd build
 ctest -R gtest'''
         sh '''export PATH=/usr/local/bin:$PATH
 cd  build
-ctest -R system'''
+ctest -R system:backup-bareos-test'''
       }
     }
     stage('Deploy') {
