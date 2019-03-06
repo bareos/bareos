@@ -35,8 +35,8 @@
 #include "cats.h"
 #include "sql_pooling.h"
 
-/* pull in the generated query_names definitions */
 #include "bdb_query_names.inc"
+#include "lib/berrno.h"
 
 
 bool BareosDb::MatchDatabase(const char* db_driver,

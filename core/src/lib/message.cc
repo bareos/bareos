@@ -33,7 +33,11 @@
 
 #include "include/bareos.h"
 #include "include/jcr.h"
+#include "lib/berrno.h"
+#include "lib/bsock.h"
 #include "lib/util.h"
+#include "lib/watchdog.h"
+#include "lib/messages_resource.h"
 
 db_log_insert_func p_db_log_insert = NULL;
 

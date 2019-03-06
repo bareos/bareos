@@ -26,6 +26,10 @@
  * @file
  * alist header file
  */
+#ifndef BAREOS_LIB_ALIST_H_
+#define BAREOS_LIB_ALIST_H_
+
+#include "lib/smartall.h"
 
 /**
  * There is a lot of extra casting here to work around the fact
@@ -161,3 +165,5 @@ inline int alist::size() const
 
 /* How much to grow by each time */
 inline void alist::grow(int num) { num_grow = num; }
+
+#endif /* BAREOS_LIB_ALIST_H_ */

@@ -21,6 +21,7 @@
 
 #include "gtest/gtest.h"
 #include "include/bareos.h"
+#include "lib/alist.h"
 #include "lib/tls_conf_cert.h"
 
 TEST(bsock, config_tls_cert_verify_common_names_list_test)

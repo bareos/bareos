@@ -26,6 +26,7 @@
 #include "tray-monitor.h"
 #include "monitoritem.h"
 #include "tray_conf.h"
+#include "lib/parse_conf.h"
 
 MonitorItemThread* MonitorItemThread::monitorItemThreadSingleton;
 bool MonitorItemThread::already_destroyed = false;

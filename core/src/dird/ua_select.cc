@@ -36,6 +36,7 @@
 #include "dird/ua_select.h"
 #include "dird/ua_select.h"
 #include "lib/edit.h"
+#include "lib/parse_conf.h"
 
 namespace directordaemon {
 

@@ -27,6 +27,21 @@
  */
 
 #include "include/bareos.h"
+#include "lib/dlist.h"
+
+
+/**
+ * Init dlist
+ */
+void dlist::init(void* item, dlink* link)
+{
+  head = tail = NULL;
+  loffset = (int)((char*)link - (char*)item);
+  if (loffset < 0 || loffset > 5000) {
+    Emsg0(M_ABORT, 0, "Improper dlist initialization.\n");
+  }
+  num_items = 0;
+}
 
 /*
  * Append an item to the list

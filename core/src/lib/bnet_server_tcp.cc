@@ -30,8 +30,12 @@
  */
 
 #include "include/bareos.h"
+#include "lib/alist.h"
+#include "lib/berrno.h"
 #include "lib/bnet_server_tcp.h"
+#include "lib/bsock_tcp.h"
 #include "lib/bsys.h"
+#include "lib/watchdog.h"
 
 #include <netinet/in.h>
 #include <sys/socket.h>

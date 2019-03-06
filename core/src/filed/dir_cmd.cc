@@ -43,12 +43,17 @@
 #include "filed/verify.h"
 #include "findlib/enable_priv.h"
 #include "findlib/shadowing.h"
+#include "lib/berrno.h"
 #include "lib/bget_msg.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
 #include "lib/path_list.h"
 #include "lib/qualified_resource_name_type_converter.h"
 #include "lib/tls_conf.h"
+#include "lib/parse_conf.h"
+#include "lib/bsock_tcp.h"
+#include "lib/watchdog.h"
+#include "lib/util.h"
 
 #if defined(WIN32_VSS)
 #include "win32/findlib/win32.h"

@@ -27,6 +27,8 @@
 
 #ifndef BAREOS_WIN32_STORED_BACKENDS_WIN32_FIFO_DEVICE_H_
 #define BAREOS_WIN32_STORED_BACKENDS_WIN32_FIFO_DEVICE_H_
+#include "lib/btimers.h"
+#include "lib/util.h"
 
 namespace storagedaemon {
 

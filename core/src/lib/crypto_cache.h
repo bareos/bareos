@@ -30,6 +30,8 @@
 #ifndef BAREOS_LIB_CRYPTO_CACHE_H_
 #define BAREOS_LIB_CRYPTO_CACHE_H_ 1
 
+#include "lib/dlink.h"
+
 #define CRYPTO_CACHE_MAX_AGE 60 * 60 * 24 * 60 /* 60 Days */
 
 struct s_crypto_cache_hdr {

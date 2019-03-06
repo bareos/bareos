@@ -28,6 +28,8 @@
 #ifndef BAREOS_DIRD_INC_CONF_H_
 #define BAREOS_DIRD_INC_CONF_H_ 1
 
+#include "lib/keyword_table_s.h"
+
 namespace directordaemon {
 
 /*

@@ -27,7 +27,13 @@
  * @file
  * Define Message Types for BAREOS
  */
-#include "bits.h"
+
+#ifndef BAREOS_LIB_MESSAGE_H_
+#define BAREOS_LIB_MESSAGE_H_
+
+#include "lib/bits.h"
+#include "lib/dlink.h"
+#include "lib/rwlock.h"
 
 #undef M_DEBUG
 #undef M_ABORT
@@ -162,6 +168,8 @@ struct MessageQeueItem {
   char msg[1];
 };
 
+class JobControlRecord;
+
 extern "C" {
 typedef char* (*job_code_callback_t)(JobControlRecord*, const char*);
 }
@@ -219,3 +227,5 @@ void SetTimestamp(int timestamp_flag);
 bool GetTimestamp(void);
 void SetDbType(const char* name);
 void RegisterMessageCallback(void msg_callback(int type, char* msg));
+
+#endif /* BAREOS_LIB_MESSAGE_H_ */

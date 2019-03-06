@@ -31,8 +31,11 @@
 #include "include/bareos.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
+#include "filed/restore.h"
 #include "lib/bnet.h"
-#include "restore.h"
+#include "lib/bsock.h"
+#include "lib/parse_conf.h"
+#include "lib/util.h"
 
 namespace filedaemon {
 

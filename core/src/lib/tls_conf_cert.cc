@@ -21,6 +21,7 @@
 #include "include/bareos.h"
 #include "tls_conf.h"
 #include "tls_openssl.h"
+#include "lib/alist.h"
 
 std::vector<std::string> TlsConfigCert::AllowedCertificateCommonNames() const
 {

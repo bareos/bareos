@@ -207,7 +207,6 @@ extern "C" {
 #include "lib/lib.h"
 #include "lib/compression.h"
 #include "lib/json.h"
-#include "lib/util.h"
 
 /**
  * For wx-console compiles, we undo some Bareos defines.

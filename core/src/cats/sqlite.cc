@@ -40,6 +40,8 @@
 /* pull in the generated queries definitions */
 #include "sqlite_queries.inc"
 #include "lib/edit.h"
+#include "lib/berrno.h"
+#include "lib/dlist.h"
 
 /* -----------------------------------------------------------------------
  *

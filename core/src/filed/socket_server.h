@@ -23,6 +23,8 @@
 #ifndef BAREOS_FILED_SOCKET_SERVER_H_
 #define BAREOS_FILED_SOCKET_SERVER_H_ 1
 
+class dlist;
+
 namespace filedaemon {
 
 void StartSocketServer(dlist* addrs);

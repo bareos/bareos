@@ -23,6 +23,7 @@
 #define BAREOS_DIRD_NDMP_DMA_STORAGE_H_
 
 struct ndm_job_param;
+class dlist;
 
 namespace directordaemon {
 

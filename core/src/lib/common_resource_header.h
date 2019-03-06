@@ -24,6 +24,8 @@
 #ifndef BAREOS_LIB_COMMON_RESOURCE_HEADER_
 #define BAREOS_LIB_COMMON_RESOURCE_HEADER_
 
+#include "include/bareos.h"
+
 #define MAX_RES_ITEMS 90 /* maximum resource items per CommonResourceHeader */
 
 /*

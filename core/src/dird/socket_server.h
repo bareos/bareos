@@ -22,6 +22,8 @@
 #ifndef BAREOS_DIRD_SOCKET_SERVER_H_
 #define BAREOS_DIRD_SOCKET_SERVER_H_
 
+class dlist;
+
 namespace directordaemon {
 
 bool StartSocketServer(dlist* addrs);

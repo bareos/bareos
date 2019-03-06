@@ -35,6 +35,7 @@
 #include "stored/mount.h"
 #include "stored/read_record.h"
 #include "lib/bnet.h"
+#include "lib/bsock.h"
 #include "include/jcr.h"
 
 namespace storagedaemon {

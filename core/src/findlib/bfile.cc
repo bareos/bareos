@@ -32,6 +32,7 @@
 
 #include "include/bareos.h"
 #include "find.h"
+#include "lib/berrno.h"
 
 const int debuglevel = 200;
 

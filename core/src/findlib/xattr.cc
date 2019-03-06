@@ -58,6 +58,8 @@
 
 #include "include/bareos.h"
 #include "find.h"
+#include "lib/berrno.h"
+#include "lib/bsock.h"
 #include "include/jcr.h"
 
 static std::string error_message_disabling_xattributes{

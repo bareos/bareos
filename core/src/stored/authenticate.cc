@@ -31,6 +31,9 @@
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "include/jcr.h"
+#include "lib/parse_conf.h"
+#include "lib/bsock.h"
+#include "lib/util.h"
 
 namespace storagedaemon {
 

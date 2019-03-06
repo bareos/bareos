@@ -31,6 +31,10 @@
 #ifndef BAREOS_LIB_BTIMERS_H_
 #define BAREOS_LIB_BTIMERS_H_
 
+#include "lib/watchdog.h"
+
+class BareosSocket;
+
 struct btimer_t {
   watchdog_t* wd; /**< Parent watchdog */
   int type;

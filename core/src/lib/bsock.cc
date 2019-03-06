@@ -25,14 +25,17 @@
  *
  * Kern Sibbald
  */
+#include "lib/bsock.h"
 
 #include "include/bareos.h"
 #include "include/jcr.h"
+#include "lib/berrno.h"
 #include "lib/bnet.h"
 #include "lib/cram_md5.h"
 #include "lib/tls.h"
 #include "lib/util.h"
 #include "lib/bstringlist.h"
+#include "lib/parse_conf.h"
 
 #include <algorithm>
 

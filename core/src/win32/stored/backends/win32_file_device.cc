@@ -29,6 +29,7 @@
  */
 
 #include "include/bareos.h"
+#include "lib/berrno.h"
 #include "stored/stored.h"
 #include "win32_file_device.h"
 

@@ -29,6 +29,12 @@
 #ifndef BAREOS_FILED_FILED_CONF_H_
 #define BAREOS_FILED_FILED_CONF_H_ 1
 
+#include "lib/messages_resource.h"
+#include "lib/tls_conf.h"
+
+class alist;
+class dlist;
+
 namespace filedaemon {
 
 static const std::string default_config_filename("bareos-fd.conf");

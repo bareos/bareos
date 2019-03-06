@@ -40,11 +40,13 @@
  * Nicolas Boichat, August MMIV
  */
 
-#define NEED_JANSSON_NAMESPACE 1
 #include "include/bareos.h"
+#define NEED_JANSSON_NAMESPACE 1
+#include "lib/output_formatter.h"
 #include "tray_conf.h"
 
 #include "lib/parse_conf.h"
+#include "lib/resource_item.h"
 
 static const std::string default_config_filename("tray-monitor.conf");
 

@@ -35,6 +35,8 @@
 #include "generic_tape_device.h"
 #include "stored/autochanger.h"
 #include "lib/scsi_lli.h"
+#include "lib/berrno.h"
+#include "lib/util.h"
 
 namespace storagedaemon {
 

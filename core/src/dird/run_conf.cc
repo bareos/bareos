@@ -33,6 +33,9 @@
 #include "dird.h"
 #include "dird/dird_globals.h"
 #include "lib/edit.h"
+#include "lib/keyword_table_s.h"
+#include "lib/parse_conf.h"
+#include "lib/util.h"
 
 namespace directordaemon {
 

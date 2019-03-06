@@ -33,6 +33,7 @@
 #include "stored/stored.h"
 #include "stored/backends/gfapi_device.h"
 #include "lib/edit.h"
+#include "lib/berrno.h"
 
 namespace storagedaemon {
 

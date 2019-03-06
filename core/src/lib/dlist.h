@@ -30,6 +30,14 @@
  * facilitates storing strings in a dlist.
  */
 
+#ifndef BAREOS_LIB_DLIST_H_
+#define BAREOS_LIB_DLIST_H_
+
+#include "include/bareos.h"
+#include "lib/dlink.h"
+#include "lib/smartall.h"
+#include "lib/message.h"
+
 #define M_ABORT 1
 
 /* In case you want to specifically specify the offset to the link */
@@ -49,16 +57,6 @@
   for ((var) = NULL;             \
        list ? (*((void**)&(var)) = (void*)((list)->next(var))) : NULL;)
 #endif
-
-struct dlink {
-  void* next;
-  void* prev;
-  dlink()
-  {
-    next = nullptr;
-    prev = nullptr;
-  }
-};
 
 class dlist : public SmartAlloc {
   void* head;
@@ -93,22 +91,6 @@ class dlist : public SmartAlloc {
   void* first() const;
   void* last() const;
 };
-
-
-/**
- * This allows us to do explicit initialization,
- *   allowing us to mix C++ classes inside malloc'ed
- *   C structures. Define before called in constructor.
- */
-inline void dlist::init(void* item, dlink* link)
-{
-  head = tail = NULL;
-  loffset = (int)((char*)link - (char*)item);
-  if (loffset < 0 || loffset > 5000) {
-    Emsg0(M_ABORT, 0, "Improper dlist initialization.\n");
-  }
-  num_items = 0;
-}
 
 inline void dlist::init()
 {
@@ -199,3 +181,5 @@ class dlistString {
 
 extern dlistString* new_dlistString(const char* str, int len);
 extern dlistString* new_dlistString(const char* str);
+
+#endif /* BAREOS_LIB_DLIST_H_ */

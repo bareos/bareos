@@ -29,6 +29,7 @@
 #include "include/bareos.h"
 #include "jcr.h"
 #include "stored/bsr.h"
+#include "lib/berrno.h"
 #include "lib/parse_bsr.h"
 
 namespace libbareos {

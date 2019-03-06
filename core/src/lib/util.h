@@ -22,8 +22,10 @@
 #define BAREOS_LIB_UTIL_H_
 
 #include "lib/ascii_control_characters.h"
+#include "lib/message.h"
 
 class QualifiedResourceNameTypeConverter;
+enum class BareosVersionNumber : uint32_t;
 
 void EscapeString(PoolMem& snew, char* old, int len);
 bool IsBufZero(char* buf, int len);

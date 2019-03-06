@@ -28,6 +28,10 @@
 
 #include "include/bareos.h"
 #include "include/jcr.h"
+#include "lib/berrno.h"
+#include "lib/dlist.h"
+#include "lib/watchdog.h"
+
 
 /* Exported globals */
 utime_t watchdog_time = 0;        /* this has granularity of SLEEP_TIME */

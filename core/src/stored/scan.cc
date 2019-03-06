@@ -29,6 +29,7 @@
 
 #include "include/bareos.h"
 #include "stored/stored.h"
+#include "lib/berrno.h"
 
 namespace storagedaemon {
 

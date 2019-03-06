@@ -26,6 +26,9 @@
 #include "include/bareos.h"
 #include "connection_pool.h"
 #include "lib/util.h"
+#include "lib/alist.h"
+#include "lib/bsys.h"
+#include "lib/bsock.h"
 
 /*
  * Connection

@@ -33,6 +33,7 @@
 #include "dird.h"
 #include "dird/dird_globals.h"
 #include "findlib/match.h"
+#include "lib/parse_conf.h"
 
 #ifndef HAVE_REGEX_H
 #include "lib/bregex.h"

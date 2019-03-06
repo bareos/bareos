@@ -28,6 +28,7 @@
 
 #include "include/bareos.h"
 #include "lib/cram_md5.h"
+#include "lib/bsock.h"
 
 
 CramMd5Handshake::CramMd5Handshake(BareosSocket* bs,

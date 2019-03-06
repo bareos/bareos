@@ -35,6 +35,12 @@
 #ifndef BAREOS_CATS_CATS_H_
 #define BAREOS_CATS_CATS_H_ 1
 
+#include "lib/smartall.h"
+#include "lib/output_formatter.h"
+
+
+class dlist;
+
 /* import automatically generated SQL_QUERY_ENUM */
 #include "bdb_query_enum_class.h"
 

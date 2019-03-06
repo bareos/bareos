@@ -32,7 +32,10 @@
 #include "findlib/find.h"
 #include "findlib/attribs.h"
 #include "lib/attribs.h"
+#include "lib/berrno.h"
 #include "lib/bnet.h"
+#include "lib/bsock.h"
+#include "lib/util.h"
 
 namespace filedaemon {
 

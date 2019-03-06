@@ -21,6 +21,10 @@
 #ifndef LIB_CRAM_MD5_H_
 #define LIB_CRAM_MD5_H_
 
+#include "lib/tls_conf.h"
+
+class BareosSocket;
+
 class CramMd5Handshake {
  public:
   CramMd5Handshake(BareosSocket* bs,

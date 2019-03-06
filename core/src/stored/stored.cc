@@ -48,8 +48,13 @@
 #include "stored/socket_server.h"
 #include "stored/stored_globals.h"
 #include "stored/wait.h"
+#include "lib/berrno.h"
+#include "lib/bsock.h"
 #include "lib/daemon.h"
 #include "lib/bsignal.h"
+#include "lib/parse_conf.h"
+#include "lib/util.h"
+#include "lib/watchdog.h"
 #include "include/jcr.h"
 
 

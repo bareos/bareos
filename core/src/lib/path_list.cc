@@ -25,6 +25,7 @@
 
 #include "include/bareos.h"
 #include "lib/path_list.h"
+#include "lib/htable.h"
 
 #define debuglevel 50
 

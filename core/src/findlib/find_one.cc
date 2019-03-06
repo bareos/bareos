@@ -39,6 +39,7 @@
 #include "findlib/hardlink.h"
 #include "findlib/fstype.h"
 #include "findlib/drivetype.h"
+#include "lib/berrno.h"
 
 #ifdef HAVE_DARWIN_OS
 #include <sys/param.h>

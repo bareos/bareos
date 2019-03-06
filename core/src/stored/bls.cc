@@ -31,6 +31,7 @@
 #include "include/bareos.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
+#include "lib/berrno.h"
 #include "lib/crypto_cache.h"
 #include "findlib/find.h"
 #include "stored/acquire.h"
@@ -40,10 +41,12 @@
 #include "stored/mount.h"
 #include "stored/read_record.h"
 #include "findlib/match.h"
+#include "lib/address_conf.h"
 #include "lib/attribs.h"
 #include "lib/bsignal.h"
 #include "lib/parse_bsr.h"
 #include "include/jcr.h"
+#include "lib/parse_conf.h"
 
 namespace storagedaemon {
 extern bool ParseSdConfig(const char* configfile, int exit_code);

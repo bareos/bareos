@@ -40,6 +40,7 @@
 #include "dird/ua_output.h"
 #include "dird/ua_server.h"
 #include "lib/bnet.h"
+#include "lib/parse_conf.h"
 
 namespace directordaemon {
 

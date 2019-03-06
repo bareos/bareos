@@ -33,6 +33,8 @@
 #include "dird/dird.h"
 #include "dird/dird_globals.h"
 #include "dird/sd_cmds.h"
+#include "lib/parse_conf.h"
+#include "lib/util.h"
 
 #if HAVE_NDMP
 #include "ndmp/ndmagents.h"

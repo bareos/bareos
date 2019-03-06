@@ -26,6 +26,7 @@
 #include "include/bareos.h"
 #include "filed/fd_plugins.h"
 #include "fd_common.h"
+#include "lib/berrno.h"
 
 #include <rados/librados.h>
 

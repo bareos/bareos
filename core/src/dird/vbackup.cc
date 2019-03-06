@@ -50,6 +50,7 @@
 #include "dird/ua_purge.h"
 #include "dird/vbackup.h"
 #include "lib/edit.h"
+#include "lib/util.h"
 
 namespace directordaemon {
 

@@ -58,6 +58,7 @@
 
 #include "include/bareos.h"
 #include "mntent_cache.h"
+#include "lib/dlist.h"
 
 #include <errno.h>
 #include <stdlib.h>

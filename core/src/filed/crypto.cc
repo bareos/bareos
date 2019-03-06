@@ -33,6 +33,7 @@
 #include "filed/filed.h"
 #include "filed/restore.h"
 #include "findlib/find_one.h"
+#include "lib/bsock.h"
 #include "lib/edit.h"
 
 namespace filedaemon {

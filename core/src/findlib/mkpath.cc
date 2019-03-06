@@ -36,6 +36,7 @@
  */
 #include "include/bareos.h"
 #include "include/jcr.h"
+#include "lib/berrno.h"
 #include "lib/path_list.h"
 
 #define debuglevel 50

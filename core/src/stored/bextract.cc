@@ -41,10 +41,13 @@
 #include "findlib/create_file.h"
 #include "findlib/match.h"
 #include "findlib/get_priv.h"
+#include "lib/address_conf.h"
 #include "lib/attribs.h"
+#include "lib/berrno.h"
 #include "lib/edit.h"
 #include "lib/bsignal.h"
 #include "lib/parse_bsr.h"
+#include "lib/parse_conf.h"
 #include "include/jcr.h"
 
 namespace storagedaemon {

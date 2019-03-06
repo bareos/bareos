@@ -33,6 +33,7 @@
 #include "stored/stored_globals.h"
 #include "stored/autochanger.h"
 #include "include/jcr.h"
+#include "lib/berrno.h"
 
 namespace storagedaemon {
 

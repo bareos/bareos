@@ -27,6 +27,12 @@
  * BErrNo header file
  */
 
+#ifndef BAREOS_LIB_BERRNO_H_
+#define BAREOS_LIB_BERRNO_H_
+
+#include "lib/berrno.h"
+#include "lib/smartall.h"
+
 /**
  * Extra bits set to interpret errno value differently from errno
  */
@@ -85,3 +91,5 @@ inline const char* BErrNo::bstrerror(int errnum)
 
 
 inline void BErrNo::SetErrno(int errnum) { berrno_ = errnum; }
+
+#endif /* BAREOS_LIB_BERRNO_H_ */

@@ -33,8 +33,10 @@
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
 #include "lib/status.h"
+#include "lib/bsock.h"
 #include "lib/edit.h"
 #include "findlib/enable_priv.h"
+#include "lib/util.h"
 
 extern bool GetWindowsVersionString(char* buf, int maxsiz);
 

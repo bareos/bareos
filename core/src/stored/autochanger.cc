@@ -33,9 +33,13 @@
 #include "stored/stored_globals.h"
 #include "stored/autochanger.h"
 #include "stored/wait.h"
+#include "lib/berrno.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
 #include "lib/util.h"
+#include "lib/parse_conf.h"
+#include "lib/bsock.h"
+#include "lib/berrno.h"
 
 namespace storagedaemon {
 

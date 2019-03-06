@@ -46,6 +46,8 @@
 #ifndef BAREOS_STORED_VOL_MGR_H_
 #define BAREOS_STORED_VOL_MGR_H_ 1
 
+class dlist;
+
 namespace storagedaemon {
 
 class VolumeReservationItem;

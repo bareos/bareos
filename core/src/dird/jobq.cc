@@ -44,6 +44,7 @@
 #include "dird/job.h"
 #include "dird/jobq.h"
 #include "dird/storage.h"
+#include "lib/berrno.h"
 
 namespace directordaemon {
 

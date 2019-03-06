@@ -45,8 +45,11 @@
 
 #include "include/bareos.h"
 #include "include/jcr.h"
+#include "lib/berrno.h"
 #include "lib/edit.h"
 #include "lib/tls_conf.h"
+#include "lib/bsock.h"
+#include "lib/watchdog.h"
 
 const int debuglevel = 3400;
 
@@ -1171,7 +1174,7 @@ bool InitJcrSubsystem(int timeout)
   return true;
 }
 
-static void JcrTimeoutCheck(watchdog_t* self)
+static void JcrTimeoutCheck(watchdog_t* /* self */)
 {
   JobControlRecord* jcr;
   BareosSocket* bs;

@@ -21,9 +21,12 @@
 
 #include "gtest/gtest.h"
 #include "include/bareos.h"
+#include "include/version_numbers.h"
 #define BAREOS_TEST_LIB
 #include "lib/bnet.h"
 #include "lib/bstringlist.h"
+#include "lib/ascii_control_characters.h"
+#include "lib/util.h"
 
 TEST(BStringList, ConstructorsTest)
 {

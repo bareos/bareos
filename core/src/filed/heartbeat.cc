@@ -34,6 +34,8 @@
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
 #include "lib/bnet.h"
+#include "lib/bsock.h"
+#include "lib/watchdog.h"
 
 namespace filedaemon {
 

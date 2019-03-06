@@ -37,8 +37,10 @@
 #include "stored/label.h"
 #include "stored/mount.h"
 #include "stored/read_record.h"
+#include "lib/address_conf.h"
 #include "lib/bsignal.h"
 #include "lib/parse_bsr.h"
+#include "lib/parse_conf.h"
 #include "include/jcr.h"
 
 namespace storagedaemon {

@@ -97,6 +97,8 @@ typedef struct gen_pluginInfo {
   const char* plugin_usage;
 } genpInfo;
 
+class alist;
+
 /* Functions */
 bool LoadPlugins(void* binfo,
                  void* bfuncs,

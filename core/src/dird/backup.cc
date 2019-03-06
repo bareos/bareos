@@ -51,6 +51,8 @@
 #include "cats/sql.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
+#include "lib/berrno.h"
+#include "lib/util.h"
 
 namespace directordaemon {
 

@@ -31,6 +31,9 @@
 #include "include/bc_types.h"
 #include "lib/parse_conf_callbacks.h"
 #include "lib/s_password.h"
+#include "lib/tls_conf.h"
+#include "lib/parse_conf.h"
+#include "lib/keyword_table_s.h"
 
 #include <functional>
 
@@ -42,31 +45,6 @@ enum parse_state
 {
   p_none,
   p_resource
-};
-
-/*
- * Used for message destinations.
- */
-struct s_mdestination {
-  int code;
-  const char* destination;
-  bool where;
-};
-
-/*
- * Used for message types.
- */
-struct s_mtypes {
-  const char* name;
-  uint32_t token;
-};
-
-/*
- * Used for certain KeyWord tables
- */
-struct s_kw {
-  const char* name;
-  uint32_t token;
 };
 
 /**
@@ -170,47 +148,6 @@ struct s_kw {
         ITEM(res.tls_cert_.allowed_certificate_common_names_), 0, 0, NULL, \
         NULL, "\"Common Name\"s (CNs) of the allowed peer certificates."   \
   }
-
-/*
- * This is the structure that defines the record types (items) permitted within
- * each resource. It is used to define the configuration tables.
- */
-struct ResourceItem {
-  const char* name; /* Resource name i.e. Director, ... */
-  const int type;
-  union {
-    char** value; /* Where to store the item */
-    std::string** strValue;
-    uint16_t* ui16value;
-    uint32_t* ui32value;
-    int16_t* i16value;
-    int32_t* i32value;
-    uint64_t* ui64value;
-    int64_t* i64value;
-    bool* boolvalue;
-    utime_t* utimevalue;
-    s_password* pwdvalue;
-    CommonResourceHeader** resvalue;
-    alist** alistvalue;
-    dlist** dlistvalue;
-    char* bitvalue;
-  };
-  int32_t code;              /* Item code/additional info */
-  uint32_t flags;            /* Flags: See CFG_ITEM_* */
-  const char* default_value; /* Default value */
-  /*
-   * version string in format: [start_version]-[end_version]
-   * start_version: directive has been introduced in this version
-   * end_version:   directive is deprecated since this version
-   */
-  const char* versions;
-  /*
-   * description of the directive, used for the documentation.
-   * Full sentence.
-   * Every new directive should have a description.
-   */
-  const char* description;
-};
 
 /* For storing name_addr items in res_items table */
 #define ITEM(x)        \
@@ -351,64 +288,6 @@ struct DatatypeName {
   const int number;
   const char* name;
   const char* description;
-};
-
-/*
- * Message Resource
- */
-class MessagesResource : public BareosResource {
-  /*
-   * Members
-   */
- public:
-  char* mail_cmd;                         /* Mail command */
-  char* operator_cmd;                     /* Operator command */
-  char* timestamp_format;                 /* Timestamp format */
-  DEST* dest_chain;                       /* chain of destinations */
-  char SendMsg[NbytesForBits(M_MAX + 1)]; /* Bit array of types */
-
- private:
-  bool in_use_;  /* Set when using to send a message */
-  bool closing_; /* Set when closing message resource */
-
- public:
-  /*
-   * Methods
-   */
-  void ClearInUse()
-  {
-    lock();
-    in_use_ = false;
-    unlock();
-  }
-  void SetInUse()
-  {
-    WaitNotInUse();
-    in_use_ = true;
-    unlock();
-  }
-  void SetClosing() { closing_ = true; }
-  bool GetClosing() { return closing_; }
-  void ClearClosing()
-  {
-    lock();
-    closing_ = false;
-    unlock();
-  }
-  bool IsClosing()
-  {
-    lock();
-    bool rtn = closing_;
-    unlock();
-    return rtn;
-  }
-
-  void WaitNotInUse(); /* in message.c */
-  void lock();         /* in message.c */
-  void unlock();       /* in message.c */
-  bool PrintConfig(PoolMem& buff,
-                   bool hide_sensitive_data = false,
-                   bool verbose = false);
 };
 
 typedef void(INIT_RES_HANDLER)(ResourceItem* item, int pass);
@@ -644,15 +523,6 @@ void IndentConfigItem(PoolMem& cfg_str,
                       bool inherited = false);
 void InitResource(int type, ResourceItem* item);
 
-#ifdef HAVE_JANSSON
-/*
- * JSON output helper functions
- */
-json_t* json_item(s_kw* item);
-json_t* json_item(ResourceItem* item);
-json_t* json_items(ResourceItem items[]);
-#endif
-
 /*
  * Loop through each resource of type, returning in var
  */
@@ -665,5 +535,8 @@ json_t* json_items(ResourceItem items[]);
   for (var = NULL; (*((void**)&(var)) = (void*)my_config->GetNextRes( \
                         (type), (CommonResourceHeader*)var));)
 #endif
+
+#define LockRes(x) (x)->b_LockRes(__FILE__, __LINE__)
+#define UnlockRes(x) (x)->b_UnlockRes(__FILE__, __LINE__)
 
 #endif  // BAREOS_CORE_SRC_LIB_PARSE_CONF_H_

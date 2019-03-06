@@ -32,6 +32,7 @@
  */
 
 #include "include/bareos.h"
+#include "lib/alist.h"
 
 /**
  * Private grow list function. Used to insure that

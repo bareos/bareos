@@ -26,6 +26,10 @@
  * @file
  * red-black binary tree routines -- rblist.h
  */
+#ifndef BAREOS_LIB_RBLIST_H_
+#define BAREOS_LIB_RBLIST_H_
+
+#include "lib/smartall.h"
 
 #define M_ABORT 1
 
@@ -149,3 +153,5 @@ inline bool rblist::red(const void* item) const
 {
   return ((rblink*)(((char*)item) + loffset))->red;
 }
+
+#endif /* BAREOS_LIB_RBLIST_H_ */

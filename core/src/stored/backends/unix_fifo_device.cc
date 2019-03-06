@@ -33,6 +33,7 @@
 #include "stored/stored.h"
 #include "stored/autochanger.h"
 #include "stored/backends/unix_fifo_device.h"
+#include "lib/berrno.h"
 #include "lib/util.h"
 #include "lib/btimers.h"
 

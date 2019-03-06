@@ -22,6 +22,8 @@
 #ifndef BAREOS_LIB_BSOCK_TCP_H_
 #define BAREOS_LIB_BSOCK_TCP_H_
 
+#include "lib/bsock.h"
+
 class BareosSocketTCP : public BareosSocket {
  private:
   /*

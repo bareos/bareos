@@ -27,6 +27,7 @@
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "runscript.h"
+#include "lib/berrno.h"
 #include "lib/util.h"
 
 /*

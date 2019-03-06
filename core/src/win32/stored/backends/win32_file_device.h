@@ -27,6 +27,7 @@
 
 #ifndef BAREOS_WIN32_STORED_BACKENDS_WIN32_FILE_DEVICE_H_
 #define BAREOS_WIN32_STORED_BACKENDS_WIN32_FILE_DEVICE_H_
+#include "lib/util.h"
 
 namespace storagedaemon {
 

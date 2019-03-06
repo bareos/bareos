@@ -33,6 +33,7 @@
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "unix_file_device.h"
+#include "lib/berrno.h"
 #include "lib/util.h"
 
 namespace storagedaemon {

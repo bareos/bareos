@@ -27,6 +27,8 @@
  * address configuration
  */
 
+#include "lib/dlist.h"
+
 class IPADDR : public SmartAlloc {
  public:
   typedef enum

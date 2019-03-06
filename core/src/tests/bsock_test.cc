@@ -38,6 +38,7 @@
 #include "dird/dird_globals.h"
 
 #include "lib/tls_openssl.h"
+#include "lib/bsock_tcp.h"
 #include "lib/bnet.h"
 #include "lib/bstringlist.h"
 

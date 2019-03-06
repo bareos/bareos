@@ -32,6 +32,7 @@
 #ifdef HAVE_RADOS
 #include "stored/stored.h"
 #include "rados_device.h"
+#include "lib/berrno.h"
 #include "lib/edit.h"
 
 namespace storagedaemon {

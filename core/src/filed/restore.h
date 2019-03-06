@@ -25,6 +25,8 @@
 
 #include "findlib/bfile.h"
 
+class alist;
+
 namespace filedaemon {
 
 struct DelayedDataStream {

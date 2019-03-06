@@ -31,6 +31,7 @@
 #ifndef BAREOS_INCLUDE_BACONFIG_H_
 #define BAREOS_INCLUDE_BACONFIG_H_ 1
 
+#include "lib/message.h"
 
 /* Bareos common configuration defines */
 
@@ -313,9 +314,6 @@ typedef int16_t slot_flags_t;
       e_msg(__FILE__, __LINE__, M_ABORT, 0,                            \
             "Write lock unlock failure. ERR=%s\n", strerror(errstat)); \
   } while (0)
-
-#define LockRes(x) (x)->b_LockRes(__FILE__, __LINE__)
-#define UnlockRes(x) (x)->b_UnlockRes(__FILE__, __LINE__)
 
 /**
  * As of C++11 varargs macros are part of the standard.

@@ -24,6 +24,7 @@
 
 #include "gtest/gtest.h"
 #include "include/bareos.h"
+#include "lib/bsock_tcp.h"
 
 static int create_listening_server_socket(int port)
 {

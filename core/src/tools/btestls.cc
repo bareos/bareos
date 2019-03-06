@@ -32,6 +32,7 @@
 #include "filed/fd_plugins.h"
 #include "findlib/match.h"
 #include "lib/edit.h"
+#include "lib/util.h"
 
 /* Dummy functions */
 int GenerateJobEvent(JobControlRecord* jcr, const char* event) { return 1; }

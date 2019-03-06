@@ -33,6 +33,7 @@
 #include "monitoritem.h"
 #include "monitoritemthread.h"
 #include "lib/bsignal.h"
+#include "lib/parse_conf.h"
 
 ConfigurationParser* my_config = nullptr;
 

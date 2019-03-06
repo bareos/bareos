@@ -25,8 +25,13 @@
 /*
  * Ordered Circular buffer used for producer/consumer problem with pthread.
  */
+#include "lib/smartall.h"
+
+class dlist;
 
 #define OQSIZE 10 /* # of pointers in the queue */
+
+namespace storagedaemon {
 
 enum oc_peek_types
 {
@@ -88,3 +93,4 @@ inline ordered_circbuf::ordered_circbuf(int capacity) { init(capacity); }
  * Destructor
  */
 inline ordered_circbuf::~ordered_circbuf() { destroy(); }
+}

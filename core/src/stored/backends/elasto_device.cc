@@ -32,6 +32,7 @@
 #ifdef HAVE_ELASTO
 #include "stored/stored.h"
 #include "elasto_device.h"
+#include "lib/berrno.h"
 
 namespace storagedaemon {
 

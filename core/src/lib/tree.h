@@ -28,6 +28,10 @@
  */
 
 #include "lib/htable.h"
+#include "lib/rblist.h"
+
+#ifndef BAREOS_LIB_TREE_H_
+#define BAREOS_LIB_TREE_H_
 
 #include "include/hostconfig.h"
 
@@ -165,3 +169,5 @@ void TreeRemoveNode(TREE_ROOT* root, TREE_NODE* node);
  */
 #define FirstTreeNode(r) (r)->first
 #define NextTreeNode(n) (n)->next
+
+#endif /* #ifndef BAREOS_LIB_TREE_H_ */

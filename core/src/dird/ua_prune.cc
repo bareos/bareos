@@ -40,6 +40,7 @@
 #include "dird/ua_prune.h"
 #include "dird/ua_purge.h"
 #include "lib/edit.h"
+#include "lib/parse_conf.h"
 
 namespace directordaemon {
 

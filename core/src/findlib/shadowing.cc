@@ -33,6 +33,7 @@
  */
 
 #include "include/bareos.h"
+#include "lib/berrno.h"
 #include "find.h"
 #include "findlib/shadowing.h"
 

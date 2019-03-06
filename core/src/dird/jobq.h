@@ -33,6 +33,8 @@
 #ifndef BAREOS_DIRD_JOBQ_H_
 #define BAREOS_DIRD_JOBQ_H_ 1
 
+class dlist;
+
 namespace directordaemon {
 
 /**

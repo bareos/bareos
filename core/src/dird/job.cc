@@ -60,8 +60,13 @@
 
 #include "cats/cats_backends.h"
 #include "cats/sql_pooling.h"
+#include "lib/berrno.h"
 #include "lib/edit.h"
 #include "lib/parse_bsr.h"
+#include "lib/parse_conf.h"
+#include "lib/tree.h"
+#include "lib/util.h"
+#include "lib/watchdog.h"
 
 
 namespace directordaemon {

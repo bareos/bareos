@@ -46,9 +46,14 @@
 #include "stored/label.h"
 #include "stored/read_record.h"
 #include "stored/sd_backends.h"
+#include "lib/address_conf.h"
+#include "lib/berrno.h"
 #include "lib/edit.h"
 #include "lib/bsignal.h"
 #include "lib/parse_bsr.h"
+#include "lib/parse_conf.h"
+#include "lib/util.h"
+#include "lib/watchdog.h"
 #include "include/jcr.h"
 
 namespace storagedaemon {

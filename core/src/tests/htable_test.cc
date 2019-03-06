@@ -27,8 +27,7 @@
  * Philipp Storz, November 2017
  */
 #include "gtest/gtest.h"
-#include "include/bareos.h"
-
+#include "lib/htable.h"
 
 struct HTABLEJCR {
 #ifndef TEST_NON_CHAR

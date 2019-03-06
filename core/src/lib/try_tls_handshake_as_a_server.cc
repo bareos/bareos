@@ -23,6 +23,7 @@
 #include "try_tls_handshake_as_a_server.h"
 
 #include "lib/bsock_tcp.h"
+#include "lib/parse_conf.h"
 
 enum class ConnectionHandshakeMode
 {

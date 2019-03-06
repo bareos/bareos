@@ -27,8 +27,10 @@
 
 #include "include/bareos.h"
 #include "jcr.h"
+#include "lib/berrno.h"
 #include "lib/bsys.h"
 #include "lib/btimers.h"
+#include "lib/util.h"
 
 int execvp_errors[] = {EACCES,  ENOEXEC,      EFAULT, EINTR,
                        E2BIG,   ENAMETOOLONG, ENOMEM,

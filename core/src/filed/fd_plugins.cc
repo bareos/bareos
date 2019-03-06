@@ -38,6 +38,8 @@
 #include "findlib/find.h"
 #include "findlib/find_one.h"
 #include "findlib/hardlink.h"
+#include "lib/berrno.h"
+#include "lib/bsock.h"
 
 /**
  * Function pointers to be set here (findlib)

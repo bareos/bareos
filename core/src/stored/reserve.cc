@@ -34,8 +34,11 @@
 #include "stored/acquire.h"
 #include "stored/autochanger.h"
 #include "stored/wait.h"
+#include "lib/berrno.h"
 #include "lib/util.h"
+#include "lib/bsock.h"
 #include "include/jcr.h"
+#include "lib/parse_conf.h"
 
 namespace storagedaemon {
 

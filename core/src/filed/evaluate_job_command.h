@@ -23,6 +23,7 @@
 #define BAREOS_FILED_EVALUATE_JOB_COMMAND_H_
 
 #include "include/bareos.h"
+#include "lib/tls_conf.h"
 
 namespace filedaemon {
 

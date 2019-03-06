@@ -33,6 +33,9 @@
 
 #include "include/fileopts.h"
 #include "bfile.h"
+#include "lib/htable.h"
+#include "lib/dlist.h"
+#include "lib/alist.h"
 
 #ifdef HAVE_DIRENT_H
 #include <dirent.h>

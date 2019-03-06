@@ -31,6 +31,7 @@
 #include "filed/filed_globals.h"
 #include "filed/authenticate.h"
 #include "lib/bnet.h"
+#include "lib/bsock.h"
 
 namespace filedaemon {
 

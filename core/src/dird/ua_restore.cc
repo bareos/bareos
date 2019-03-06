@@ -43,6 +43,8 @@
 #include "dird/ua_run.h"
 #include "dird/bsr.h"
 #include "lib/edit.h"
+#include "lib/berrno.h"
+#include "lib/parse_conf.h"
 
 namespace directordaemon {
 

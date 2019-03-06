@@ -34,6 +34,8 @@
 #include "dird/sd_cmds.h"
 #include "dird/ua_server.h"
 #include "lib/bnet.h"
+#include "lib/parse_conf.h"
+#include "lib/util.h"
 
 namespace directordaemon {
 

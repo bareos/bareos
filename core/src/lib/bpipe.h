@@ -24,6 +24,8 @@
  * Bi-directional pipe structure
  */
 
+struct btimer_t;
+
 class Bpipe {
  public:
   pid_t worker_pid;

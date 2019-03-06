@@ -32,9 +32,12 @@
 #include "monitoritemthread.h"
 
 #include "lib/tls_conf.h"
+#include "lib/bsock.h"
 #include "lib/bnet.h"
 #include "lib/qualified_resource_name_type_converter.h"
 #include "lib/bstringlist.h"
+#include "lib/parse_conf.h"
+#include "lib/util.h"
 
 const int debuglevel = 50;
 

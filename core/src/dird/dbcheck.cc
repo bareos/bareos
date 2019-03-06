@@ -34,6 +34,8 @@
 #include "dird/dird_conf.h"
 #include "dird/dird_globals.h"
 #include "lib/edit.h"
+#include "lib/parse_conf.h"
+#include "lib/util.h"
 
 using namespace directordaemon;
 

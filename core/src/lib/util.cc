@@ -31,6 +31,7 @@
 #include "lib/ascii_control_characters.h"
 #include "lib/bstringlist.h"
 #include "lib/qualified_resource_name_type_converter.h"
+#include "include/version_numbers.h"
 
 #include <algorithm>
 

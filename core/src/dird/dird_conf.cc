@@ -51,8 +51,12 @@
 #include "dird.h"
 #include "dird/inc_conf.h"
 #include "dird/dird_globals.h"
+#include "lib/berrno.h"
 #include "lib/tls_conf.h"
 #include "lib/qualified_resource_name_type_converter.h"
+#include "lib/parse_conf.h"
+#include "lib/keyword_table_s.h"
+#include "lib/util.h"
 
 namespace directordaemon {
 

@@ -29,6 +29,7 @@
  */
 
 #include "include/bareos.h"
+#include "lib/address_conf.h"
 #include "lib/bnet.h"
 #include "lib/bsys.h"
 #include "lib/edit.h"

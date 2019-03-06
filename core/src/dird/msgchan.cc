@@ -42,8 +42,11 @@
 #include "dird/msgchan.h"
 #include "dird/quota.h"
 #include "dird/sd_cmds.h"
+#include "lib/berrno.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
+#include "lib/util.h"
+#include "lib/watchdog.h"
 
 namespace directordaemon {
 

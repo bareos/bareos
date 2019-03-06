@@ -29,7 +29,26 @@
 #ifndef BAREOS_LIB_GENERIC_RES_H_
 #define BAREOS_LIB_GENERIC_RES_H_ 1
 
+#include "lib/keyword_table_s.h"
+
 #ifndef DIRECTOR_DAEMON
+/*
+ * Used for message destinations.
+ */
+struct s_mdestination {
+  int code;
+  const char* destination;
+  bool where;
+};
+
+/*
+ * Used for message types.
+ */
+struct s_mtypes {
+  const char* name;
+  uint32_t token;
+};
+
 /*
  * Various message destinations.
  */

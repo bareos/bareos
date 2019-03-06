@@ -21,6 +21,8 @@
 #ifndef BAREOS_STORED_NDMP_TAPE_H_
 #define BAREOS_STORED_NDMP_TAPE_H_
 
+class dlist;
+
 namespace storagedaemon {
 
 void EndOfNdmpBackup(JobControlRecord* jcr);

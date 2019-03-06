@@ -79,6 +79,7 @@
 #include "stored/sd_backends.h"
 #include "lib/btimers.h"
 #include "include/jcr.h"
+#include "lib/berrno.h"
 
 #ifndef HAVE_DYNAMIC_SD_BACKENDS
 #ifdef HAVE_GFAPI

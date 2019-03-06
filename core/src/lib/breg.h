@@ -78,6 +78,8 @@ class BareosRegex {
 /* create new BareosRegex and compile regex_t */
 BareosRegex* NewBregexp(const char* motif);
 
+class alist;
+
 /* launch each bregexp on filename */
 int RunBregexp(alist* bregexps, const char* fname);
 

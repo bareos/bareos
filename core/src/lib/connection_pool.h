@@ -28,6 +28,11 @@
 #ifndef BAREOS_LIB_CONNECTION_POOL_H_
 #define BAREOS_LIB_CONNECTION_POOL_H_
 
+#include "lib/smartall.h"
+
+class alist;
+class BareosSocket;
+
 class Connection : public SmartAlloc {
  public:
   Connection(const char* name,

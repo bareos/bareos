@@ -25,6 +25,7 @@
  */
 
 #include "include/bareos.h"
+#include "lib/tree.h"
 #include "lib/util.h"
 
 #define B_PAGE_SIZE 4096

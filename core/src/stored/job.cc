@@ -36,8 +36,10 @@
 #include "stored/ndmp_tape.h"
 #include "stored/read_record.h"
 #include "stored/stored_globals.h"
+#include "lib/bsock.h"
 #include "lib/edit.h"
 #include "lib/parse_bsr.h"
+#include "lib/util.h"
 #include "include/jcr.h"
 
 namespace storagedaemon {

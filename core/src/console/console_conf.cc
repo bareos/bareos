@@ -47,7 +47,10 @@
 #include "include/bareos.h"
 #include "console/console_globals.h"
 #include "console/console_conf.h"
+#include "lib/alist.h"
 #include "lib/json.h"
+#include "lib/resource_item.h"
+#include "lib/output_formatter.h"
 
 namespace console {
 

@@ -29,8 +29,10 @@
 #include "dird/dird_globals.h"
 
 #include "lib/tls_openssl.h"
+#include "lib/bsock.h"
 #include "lib/bnet.h"
 #include "lib/bstringlist.h"
+#include "lib/watchdog.h"
 #include "tests/init_openssl.h"
 
 #include "include/jcr.h"

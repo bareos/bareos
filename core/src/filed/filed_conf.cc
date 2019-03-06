@@ -43,10 +43,15 @@
  *    for the resource records.
  */
 
-#define NEED_JANSSON_NAMESPACE 1
 #include "include/bareos.h"
+#define NEED_JANSSON_NAMESPACE 1
+#include "lib/output_formatter.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
+#include "lib/parse_conf.h"
+#include "lib/resource_item.h"
+#include "lib/address_conf.h"
+
 
 namespace filedaemon {
 

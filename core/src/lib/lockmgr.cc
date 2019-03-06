@@ -21,6 +21,7 @@
 
 #include "include/bareos.h"
 #include "lib/edit.h"
+#include "lib/berrno.h"
 
 #undef ASSERT
 #define ASSERT(x)                                                           \

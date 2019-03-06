@@ -53,6 +53,7 @@
 #ifdef HAVE_DBI
 
 #include "cats.h"
+#include "lib/berrno.h"
 #include <dbi/dbi.h>
 #include <dbi/dbi-dev.h>
 #include <bdb_dbi.h>

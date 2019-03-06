@@ -20,7 +20,6 @@
 */
 #ifndef BAREOS_LIB_ATTRIBS_H_
 #define BAREOS_LIB_ATTRIBS_H_
-#include "include/baconfig.h"
 
 void EncodeStat(char* buf,
                 struct stat* statp,

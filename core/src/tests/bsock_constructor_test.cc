@@ -26,6 +26,7 @@
 #define protected public
 #define private public
 #include "include/bareos.h"
+#include "lib/bsock_tcp.h"
 
 
 TEST(bsock, bareossockettcp_standard_constructor_test)

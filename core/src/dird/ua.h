@@ -32,8 +32,10 @@
 #define BAREOS_DIRD_UA_H_ 1
 
 #include "include/bareos.h"
+#include "lib/bsock.h"
+#include "lib/output_formatter.h"
+#include "lib/tree.h"
 
-class BareosSocket;
 class JobControlRecord;
 class BareosDb;
 class guid_list;

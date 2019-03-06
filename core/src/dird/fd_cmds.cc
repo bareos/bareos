@@ -42,8 +42,13 @@
 #include "dird/fd_cmds.h"
 #include "dird/getmsg.h"
 #include "dird/msgchan.h"
+#include "lib/berrno.h"
+#include "lib/bsock_tcp.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
+#include "lib/parse_conf.h"
+#include "lib/util.h"
+#include "lib/watchdog.h"
 
 
 namespace directordaemon {

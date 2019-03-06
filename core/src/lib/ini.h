@@ -66,6 +66,7 @@ struct ini_items;
 /*
  * Used to store result
  */
+class alist;
 typedef union {
   char* strval;
   char nameval[MAX_NAME_LENGTH];

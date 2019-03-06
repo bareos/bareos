@@ -38,9 +38,11 @@
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
 
+#include "lib/bsock.h"
 #include "lib/tls_openssl.h"
 #include "lib/tls_openssl_private.h"
 #include "lib/bstringlist.h"
+#include "lib/ascii_control_characters.h"
 #include "include/jcr.h"
 
 #include "parse_conf.h"

@@ -50,6 +50,7 @@
 
 #include "include/bareos.h"
 #include "include/jcr.h"
+#include "lib/berrno.h"
 
 /* Forward referenced functions */
 extern "C" void* workq_server(void* arg);

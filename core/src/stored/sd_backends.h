@@ -30,6 +30,8 @@
 #ifndef BAREOS_STORED_SD_BACKENDS_H_
 #define BAREOS_STORED_SD_BACKENDS_H_ 1
 
+class alist;
+
 namespace storagedaemon {
 
 extern "C" {

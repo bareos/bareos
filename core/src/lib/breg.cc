@@ -28,6 +28,8 @@
 
 #include "breg.h"
 #include "mem_pool.h"
+#include "lib/parse_conf.h"
+#include "lib/alist.h"
 
 BareosRegex* NewBregexp(const char* motif)
 {

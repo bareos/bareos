@@ -41,8 +41,10 @@
 #include <include/bareos.h>
 #include <mutex>
 #include <functional>
+#include "lib/address_conf.h"
 #include "lib/tls.h"
 #include "lib/s_password.h"
+#include "lib/tls_conf.h"
 #include "include/version_numbers.h"
 
 struct btimer_t; /* forward reference */
@@ -50,6 +52,7 @@ class BareosSocket;
 class Tls;
 class BStringList;
 class QualifiedResourceNameTypeConverter;
+class dlist;
 btimer_t* StartBsockTimer(BareosSocket* bs, uint32_t wait);
 void StopBsockTimer(btimer_t* wid);
 

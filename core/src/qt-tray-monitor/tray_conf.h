@@ -35,6 +35,8 @@
 #ifndef TRAY_CONF_H_INCLUDED
 #define TRAY_CONF_H_INCLUDED
 
+#include "lib/tls_conf.h"
+
 extern ConfigurationParser* my_config;
 
 enum Rescode

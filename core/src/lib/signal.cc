@@ -33,6 +33,7 @@
 
 #ifndef HAVE_WIN32
 #include "include/bareos.h"
+#include "lib/berrno.h"
 #include "lib/bsignal.h"
 
 #ifndef _NSIG

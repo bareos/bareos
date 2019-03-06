@@ -48,6 +48,9 @@
 #include "lib/parse_bsr.h"
 #include "lib/bsignal.h"
 #include "include/jcr.h"
+#include "lib/bsock.h"
+#include "lib/parse_conf.h"
+#include "lib/util.h"
 
 /* Dummy functions */
 namespace storagedaemon {

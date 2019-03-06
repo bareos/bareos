@@ -30,6 +30,7 @@
 #include "include/jcr.h"
 #include "lib/crypto_cache.h"
 #include "lib/edit.h"
+#include "lib/parse_conf.h"
 #include "stored/job.h"
 #include "stored/sd_plugins.h"
 #include "stored/sd_stats.h"

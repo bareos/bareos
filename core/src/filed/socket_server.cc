@@ -33,6 +33,7 @@
 #include "filed/filed_globals.h"
 #include "filed/dir_cmd.h"
 #include "filed/sd_cmds.h"
+#include "lib/bsock.h"
 #include "lib/bnet_server_tcp.h"
 #include "lib/try_tls_handshake_as_a_server.h"
 

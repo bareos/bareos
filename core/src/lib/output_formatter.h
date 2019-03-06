@@ -37,9 +37,6 @@
 #define OF_MAX_NR_HIDDEN_COLUMNS 64
 
 #if HAVE_JANSSON
-#define UA_JSON_FLAGS_NORMAL JSON_INDENT(2)
-#define UA_JSON_FLAGS_COMPACT JSON_COMPACT
-
 /**
  * See if the source file needs the full JANSSON namespace or that we can
  * get away with using a forward declaration of the json_t struct.
@@ -49,7 +46,13 @@ typedef struct json_t json_t;
 #else
 #include <jansson.h>
 #endif
+
+#define UA_JSON_FLAGS_NORMAL JSON_INDENT(2)
+#define UA_JSON_FLAGS_COMPACT JSON_COMPACT
+
 #endif /* HAVE_JANSSON */
+
+#include "lib/alist.h"
 
 /**
  * Filtering states.
@@ -260,5 +263,17 @@ class OutputFormatter : public SmartAlloc {
   void JsonFinalizeResult(bool result);
 #endif
 };
+
+#ifdef HAVE_JANSSON
+/*
+ * JSON output helper functions
+ */
+struct s_kw;
+class ResourceItem;
+
+json_t* json_item(s_kw* item);
+json_t* json_item(ResourceItem* item);
+json_t* json_items(ResourceItem items[]);
+#endif
 
 #endif

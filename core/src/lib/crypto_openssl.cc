@@ -26,6 +26,7 @@
  */
 
 #include "include/bareos.h"
+#include "lib/berrno.h"
 #include "lib/crypto_openssl.h"
 
 #if defined(HAVE_OPENSSL)
@@ -37,6 +38,8 @@
 
 #include "jcr.h"
 #include <assert.h>
+
+#include "lib/alist.h"
 
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>

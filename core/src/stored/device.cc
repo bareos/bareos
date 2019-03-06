@@ -56,6 +56,7 @@
 #include "stored/match_bsr.h"
 #include "lib/edit.h"
 #include "include/jcr.h"
+#include "lib/berrno.h"
 
 namespace storagedaemon {
 

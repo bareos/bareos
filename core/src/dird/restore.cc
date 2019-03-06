@@ -52,6 +52,7 @@
 #include "dird/sd_cmds.h"
 #include "dird/storage.h"
 #include "lib/edit.h"
+#include "lib/util.h"
 
 namespace directordaemon {
 

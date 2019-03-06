@@ -40,6 +40,7 @@
 #include "dird/ua_run.h"
 #include "dird/dird_globals.h"
 #include "lib/edit.h"
+#include "lib/parse_conf.h"
 
 namespace directordaemon {
 

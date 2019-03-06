@@ -32,6 +32,12 @@
 #include "lib/edit.h"
 #include "include/jcr.h"
 #include "qualified_resource_name_type_converter.h"
+#include "lib/parse_conf.h"
+#include "lib/messages_resource.h"
+#include "lib/resource_item.h"
+#include "lib/util.h"
+#include "lib/address_conf.h"
+#include "lib/output_formatter.h"
 
 /*
  * Set default indention e.g. 2 spaces.

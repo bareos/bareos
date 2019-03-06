@@ -41,6 +41,8 @@
 #include "pg_config_manual.h" /* get NAMEDATALEN on version 8.3 or later */
 #include "bdb_postgresql.h"
 #include "lib/edit.h"
+#include "lib/berrno.h"
+#include "lib/dlist.h"
 
 /* pull in the generated queries definitions */
 #include "postgresql_queries.inc"

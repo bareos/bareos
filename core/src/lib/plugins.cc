@@ -27,6 +27,8 @@
  */
 
 #include "include/bareos.h"
+#include "lib/alist.h"
+#include "lib/berrno.h"
 
 #if defined(HAVE_DLFCN_H)
 #include <dlfcn.h>

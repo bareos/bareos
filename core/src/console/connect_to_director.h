@@ -23,8 +23,10 @@
 #define BAREOS_CONSOLE_CONNECT_TO_DIRECTOR_H_
 
 #include "include/bareos.h"
+#include "lib/bstringlist.h"
 
 class JobControlRecord;
+class BareosSocket;
 
 namespace console {
 BareosSocket* ConnectToDirector(JobControlRecord& jcr,

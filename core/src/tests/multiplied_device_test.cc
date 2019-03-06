@@ -21,6 +21,7 @@
 
 #include "gtest/gtest.h"
 #include "include/bareos.h"
+#include "lib/alist.h"
 #include "lib/parse_conf.h"
 #include "stored/stored_conf.h"
 #include "stored/stored_globals.h"

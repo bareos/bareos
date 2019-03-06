@@ -47,6 +47,7 @@
 #endif
 
 #include "include/bareos.h"
+#include "lib/htable.h"
 
 #define B_PAGE_SIZE 4096
 #define MIN_PAGES 32

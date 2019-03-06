@@ -53,11 +53,16 @@
 
 #include "include/bareos.h"
 #include "include/jcr.h"
+#include "lib/address_conf.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "lib/qualified_resource_name_type_converter.h"
 #include "lib/bstringlist.h"
 #include "lib/ascii_control_characters.h"
+#include "lib/messages_resource.h"
+#include "lib/resource_item.h"
+#include "lib/berrno.h"
+#include "lib/util.h"
 
 #include <algorithm>
 

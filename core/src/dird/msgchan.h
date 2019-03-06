@@ -22,6 +22,8 @@
 #ifndef BAREOS_DIRD_MSGCHAN_H_
 #define BAREOS_DIRD_MSGCHAN_H_
 
+class alist;
+
 namespace directordaemon {
 
 bool StartStorageDaemonJob(JobControlRecord* jcr,

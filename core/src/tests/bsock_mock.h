@@ -29,6 +29,7 @@
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "lib/bnet.h"
+#include "lib/bsock.h"
 #include "lib/bstringlist.h"
 #include "lib/cram_md5.h"
 #include "lib/tls.h"

@@ -31,6 +31,7 @@
  */
 
 #include "include/bareos.h"
+#include "lib/berrno.h"
 #include "stored/stored.h"
 #include "win32_fifo_device.h"
 #include "stored/autochanger.h"

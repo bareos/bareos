@@ -39,9 +39,13 @@
 #include "dird/storage.h"
 #include "dird/ua_label.h"
 #include "dird/ua_server.h"
+#include "lib/bsock_tcp.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
 #include "lib/qualified_resource_name_type_converter.h"
+#include "lib/parse_conf.h"
+#include "lib/util.h"
+#include "lib/watchdog.h"
 
 namespace directordaemon {
 

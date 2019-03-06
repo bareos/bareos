@@ -32,6 +32,9 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
+#include "lib/parse_conf.h"
+#include "lib/util.h"
+#include "lib/output_formatter.h"
 
 namespace directordaemon {
 

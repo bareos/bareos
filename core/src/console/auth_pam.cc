@@ -29,6 +29,8 @@
 
 #include "include/bareos.h"
 #include "console_output.h"
+#include "lib/bsock.h"
+#include "lib/bsock_tcp.h"
 
 enum class PamAuthState
 {

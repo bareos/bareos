@@ -23,6 +23,7 @@
 #define BAREOS_DIRD_UA_SELECT_H_
 
 #include "dird/ua.h"
+class alist;
 
 namespace directordaemon {
 

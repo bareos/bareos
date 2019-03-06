@@ -29,6 +29,7 @@
 
 #define NEED_JANSSON_NAMESPACE 1
 #include "include/bareos.h"
+#include "lib/output_formatter.h"
 
 #if HAVE_JANSSON
 static pthread_once_t json_setup = PTHREAD_ONCE_INIT;

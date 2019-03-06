@@ -35,9 +35,12 @@
 #include "console/console_output.h"
 #include "console/connect_to_director.h"
 #include "include/jcr.h"
+#include "lib/berrno.h"
 #include "lib/bnet.h"
+#include "lib/bsock_tcp.h"
 #include "lib/bstringlist.h"
 #include "lib/qualified_resource_name_type_converter.h"
+#include "lib/watchdog.h"
 #include <stdio.h>
 #include <fstream>
 #include <string>

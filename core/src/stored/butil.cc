@@ -41,6 +41,7 @@
 #include "stored/device.h"
 #include "stored/bsr.h"
 #include "lib/parse_bsr.h"
+#include "lib/parse_conf.h"
 #include "include/jcr.h"
 
 namespace storagedaemon {

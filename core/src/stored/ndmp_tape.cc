@@ -50,9 +50,12 @@
 #include "stored/mount.h"
 #include "stored/read_record.h"
 #include "stored/spool.h"
+#include "lib/address_conf.h"
 #include "lib/attribs.h"
+#include "lib/berrno.h"
 #include "lib/edit.h"
 #include "lib/bpoll.h"
+#include "lib/parse_conf.h"
 #include "include/jcr.h"
 
 #include <netinet/in.h>

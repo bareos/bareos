@@ -32,6 +32,7 @@
 #ifdef HAVE_CEPHFS
 #include "stored/stored.h"
 #include "stored/backends/cephfs_device.h"
+#include "lib/berrno.h"
 
 namespace storagedaemon {
 

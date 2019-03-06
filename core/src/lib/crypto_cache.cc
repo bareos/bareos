@@ -27,6 +27,8 @@
 
 #include "include/bareos.h"
 #include "crypto_cache.h"
+#include "lib/berrno.h"
+#include "lib/dlist.h"
 
 static pthread_mutex_t crypto_cache_lock = PTHREAD_MUTEX_INITIALIZER;
 static dlist* cached_crypto_keys = NULL;

@@ -46,6 +46,11 @@
 #include "dird/client_connection_handshake_mode.h"
 #endif
 
+#include "lib/alist.h"
+#include "lib/tree.h"
+
+class dlist;
+
 namespace directordaemon {
 class JobResource;
 class StorageResource;
@@ -218,9 +223,9 @@ struct bpContext;
 #ifdef HAVE_WIN32
 struct CopyThreadContext;
 #endif
+class htable;
 
 #ifdef FILE_DAEMON
-class htable;
 struct acl_data_t;
 struct xattr_data_t;
 

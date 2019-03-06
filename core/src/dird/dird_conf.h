@@ -29,9 +29,15 @@
  */
 #ifndef BAREOS_DIRD_DIRD_CONF_H_
 #define BAREOS_DIRD_DIRD_CONF_H_
-/* NOTE:  #includes at the end of this file */
 
 #include "dird/client_connection_handshake_mode.h"
+#include "lib/alist.h"
+#include "lib/messages_resource.h"
+#include "lib/resource_item.h"
+#include "lib/output_formatter.h"
+#include "lib/tls_conf.h"
+
+class dlist;
 
 namespace directordaemon {
 

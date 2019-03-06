@@ -29,8 +29,7 @@
 
 #include "gtest/gtest.h"
 #include "include/bareos.h"
-//#include "../lib/protos.h"
-//#include "protos.h"
+#include "lib/dlist.h"
 
 
 struct MYJCR {

@@ -24,6 +24,8 @@
 
 #include "ndmp/smc.h"
 
+class alist;
+
 namespace directordaemon {
 
 void CopyRwstorage(JobControlRecord* jcr, alist* storage, const char* where);

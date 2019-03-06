@@ -43,6 +43,7 @@
 #include "stored/spool.h"
 #include "lib/bget_msg.h"
 #include "lib/bnet.h"
+#include "lib/bsock.h"
 #include "lib/edit.h"
 #include "include/jcr.h"
 

@@ -38,6 +38,7 @@
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
 #include "lib/edit.h"
+#include "lib/util.h"
 
 namespace directordaemon {
 

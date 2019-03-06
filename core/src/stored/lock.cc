@@ -30,6 +30,8 @@
 #include "include/bareos.h" /* pull in global headers */
 #include "stored/stored.h"  /* pull in Storage Daemon headers */
 #include "lib/edit.h"
+#include "lib/util.h"
+#include "lib/berrno.h"
 
 namespace storagedaemon {
 

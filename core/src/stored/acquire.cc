@@ -38,7 +38,9 @@
 #include "stored/sd_plugins.h"
 #include "stored/sd_stats.h"
 #include "stored/wait.h"
+#include "lib/berrno.h"
 #include "lib/edit.h"
+#include "lib/berrno.h"
 #include "include/jcr.h"
 #include "stored/block.h"
 

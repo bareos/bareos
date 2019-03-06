@@ -39,6 +39,8 @@
 #include "stored/dev.h"
 #include "lib/edit.h"
 #include "lib/util.h"
+#include "lib/berrno.h"
+#include "lib/bsock.h"
 
 namespace storagedaemon {
 

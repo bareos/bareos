@@ -31,6 +31,10 @@
 #ifndef BAREOS_STORED_RECORD_H_
 #define BAREOS_STORED_RECORD_H_ 1
 
+#include "lib/dlist.h"
+
+class dlist;
+
 namespace storagedaemon {
 
 /**

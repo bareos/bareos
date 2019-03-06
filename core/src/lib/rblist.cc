@@ -29,6 +29,7 @@
  */
 
 #include "include/bareos.h"
+#include "lib/rblist.h"
 
 /*
  *  Insert an item in the tree, but only if it is unique

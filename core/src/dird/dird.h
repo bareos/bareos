@@ -45,6 +45,8 @@
 #include "ua.h"
 #include "jobq.h"
 
+class dlist;
+
 namespace directordaemon {
 
 /* Used in ua_prune.c and ua_purge.c */

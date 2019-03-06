@@ -39,6 +39,8 @@
 
 #ifdef WIN32_VSS
 
+class alist;
+
 void VSSInit(JobControlRecord* jcr);
 
 #define VSS_INIT_RESTORE_AFTER_INIT 1

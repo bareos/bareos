@@ -46,8 +46,10 @@
 #include "dird/sd_cmds.h"
 #include "dird/storage.h"
 #include "dird/verify.h"
+#include "lib/berrno.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
+#include "lib/util.h"
 
 namespace directordaemon {
 

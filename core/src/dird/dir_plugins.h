@@ -49,6 +49,8 @@
 #include "include/bc_types.h"
 #include "lib/plugins.h"
 
+class alist;
+
 namespace directordaemon {
 
 /*

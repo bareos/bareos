@@ -62,11 +62,12 @@
 #ifndef BAREOS_STORED_DEV_H_
 #define BAREOS_STORED_DEV_H_ 1
 
-
 #include "stored/record.h"
 #include "stored/lock.h"
 #include "stored/block.h"
 #include "lib/bsys.h"
+
+class dlist;
 
 namespace storagedaemon {
 

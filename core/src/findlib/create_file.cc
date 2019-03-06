@@ -35,6 +35,7 @@
 #include "findlib/create_file.h"
 #include "lib/path_list.h"
 #include "lib/btimers.h"
+#include "lib/berrno.h"
 
 #ifndef S_IRWXUGO
 #define S_IRWXUGO (S_IRWXU | S_IRWXG | S_IRWXO)

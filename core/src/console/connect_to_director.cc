@@ -26,6 +26,8 @@
 #include "console/console_conf.h"
 #include "include/jcr.h"
 #include "lib/qualified_resource_name_type_converter.h"
+#include "lib/bstringlist.h"
+#include "lib/bsock_tcp.h"
 
 namespace console {
 BareosSocket* ConnectToDirector(JobControlRecord& jcr,

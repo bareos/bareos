@@ -27,6 +27,7 @@
  */
 
 #include "include/bareos.h"
+#include "lib/berrno.h"
 #include "scsi_lli.h"
 
 /* Forward referenced functions */

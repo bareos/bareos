@@ -345,8 +345,8 @@ int chunked_device::NrInflightChunks()
  */
 static int CompareChunkIoRequest(void* item1, void* item2)
 {
-  ocbuf_item* ocbuf1 = (ocbuf_item*)item1;
-  ocbuf_item* ocbuf2 = (ocbuf_item*)item2;
+  storagedaemon::ocbuf_item* ocbuf1 = (storagedaemon::ocbuf_item*)item1;
+  storagedaemon::ocbuf_item* ocbuf2 = (storagedaemon::ocbuf_item*)item2;
   chunk_io_request* chunk1 = (chunk_io_request*)ocbuf1->data;
   chunk_io_request* chunk2 = (chunk_io_request*)ocbuf2->data;
 
@@ -1127,7 +1127,7 @@ ssize_t chunked_device::ChunkedVolumeSize()
          * there is still data inflight and as such we need to look at the last
          * chunk that is still not uploaded of the volume.
          */
-        request = (chunk_io_request*)cb_->peek(PEEK_LAST, current_volname_,
+        request = (chunk_io_request*)cb_->peek(storagedaemon::PEEK_LAST, current_volname_,
                                                CompareVolumeName);
         if (request) {
           ssize_t retval;
@@ -1237,7 +1237,7 @@ bool chunked_device::is_written()
        * inflight and as such we need to look at the last chunk that is still
        * not uploaded of the volume.
        */
-      request = (chunk_io_request*)cb_->peek(PEEK_FIRST, current_volname_,
+      request = (chunk_io_request*)cb_->peek(storagedaemon::PEEK_FIRST, current_volname_,
                                              CompareVolumeName);
       if (request) {
         free(request);
@@ -1359,7 +1359,7 @@ bool chunked_device::LoadChunk()
            * to read the data from the backing store as that will not have the
            * latest data anyway.
            */
-          if (cb_->peek(PEEK_CLONE, &request, CloneIoRequest) == &request) {
+          if (cb_->peek(storagedaemon::PEEK_CLONE, &request, CloneIoRequest) == &request) {
             goto bail_out;
           }
         }
@@ -1477,7 +1477,7 @@ bool chunked_device::DeviceStatus(bsdDevStatTrig* dst)
       /*
        * Peek on the ordered circular queue and list all pending requests.
        */
-      cb_->peek(PEEK_LIST, dst, ListIoRequest);
+      cb_->peek(storagedaemon::PEEK_LIST, dst, ListIoRequest);
     }
   }
 

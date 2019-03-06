@@ -26,6 +26,8 @@
 
 #include "include/bareos.h"
 #include "ini.h"
+#include "lib/berrno.h"
+#include "lib/alist.h"
 
 #define bfree_and_null_const(a) \
   do {                          \

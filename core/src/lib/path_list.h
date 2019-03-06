@@ -21,6 +21,8 @@
 #ifndef BAREOS_LIB_PATH_LIST_H_
 #define BAREOS_LIB_PATH_LIST_H_
 
+class htable;
+
 htable* path_list_init();
 bool PathListLookup(htable* path_list, const char* fname);
 bool PathListAdd(htable* path_list, uint32_t len, const char* fname);

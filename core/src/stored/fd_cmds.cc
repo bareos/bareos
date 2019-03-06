@@ -42,6 +42,7 @@
 #include "stored/read.h"
 #include "stored/sd_stats.h"
 #include "lib/bnet.h"
+#include "lib/bsock.h"
 #include "lib/edit.h"
 #include "include/jcr.h"
 

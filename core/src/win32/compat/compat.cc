@@ -38,6 +38,8 @@
 #include "lib/btimers.h"
 #include "lib/bsignal.h"
 #include "lib/daemon.h"
+#include "lib/berrno.h"
+#include "vss.h"
 
 /**
  * Sanity check to make sure FILE_ATTRIBUTE_VALID_FLAGS is always smaller

@@ -40,6 +40,8 @@
 #ifndef BAREOS_STORED_RESERVE_H_
 #define BAREOS_STORED_RESERVE_H_ 1
 
+class alist;
+
 namespace storagedaemon {
 
 class DirectorStorage {

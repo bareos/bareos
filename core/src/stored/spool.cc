@@ -32,6 +32,8 @@
 #include "stored/stored_globals.h"
 #include "stored/acquire.h"
 #include "stored/device.h"
+#include "lib/berrno.h"
+#include "lib/bsock.h"
 #include "lib/edit.h"
 #include "lib/util.h"
 #include "include/jcr.h"

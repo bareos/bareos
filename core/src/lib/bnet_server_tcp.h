@@ -34,6 +34,9 @@ enum class BnetServerState
   kEnded
 };
 
+class alist;
+class dlist;
+
 void BnetThreadServerTcp(
     dlist* addr_list,
     int max_clients,

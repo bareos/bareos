@@ -28,6 +28,8 @@
  * for performance reasons.
  */
 
+class dlist;
+
 class guid_list {
  public:
   dlist* uid_list;

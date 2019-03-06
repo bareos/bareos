@@ -105,6 +105,7 @@ struct xattr_data_t {
  * Upperlimit on a xattr internal buffer
  */
 #define XATTR_BUFSIZ 1024
+class alist;
 
 BxattrExitCode SendXattrStream(JobControlRecord* jcr,
                                xattr_data_t* xattr_data,

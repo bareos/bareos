@@ -34,6 +34,7 @@
 #include "dird/ua_db.h"
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
+#include "lib/berrno.h"
 
 namespace directordaemon {
 

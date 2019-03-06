@@ -35,6 +35,8 @@
 #include "lib/bpoll.h"
 #include "lib/btimers.h"
 #include "lib/tls_openssl.h"
+#include "lib/bsock_tcp.h"
+#include "lib/berrno.h"
 
 #ifndef ENODATA /* not defined on BSD systems */
 #define ENODATA EPIPE

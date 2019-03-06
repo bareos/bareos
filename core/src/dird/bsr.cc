@@ -35,7 +35,9 @@
 #include "dird/ua_restore.h"
 #include "dird/ua_server.h"
 #include "dird/ua_select.h"
+#include "lib/berrno.h"
 #include "lib/edit.h"
+#include "lib/parse_conf.h"
 
 namespace directordaemon {
 

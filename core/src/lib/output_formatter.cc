@@ -29,8 +29,10 @@
  * Joerg Steffens, April 2015
  */
 
-#define NEED_JANSSON_NAMESPACE 1
+
 #include "include/bareos.h"
+#define NEED_JANSSON_NAMESPACE
+#include "lib/output_formatter.h"
 #include "lib/json.h"
 
 const char* json_error_message_template =

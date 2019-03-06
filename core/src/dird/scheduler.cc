@@ -37,6 +37,7 @@
 #include "dird/dird_globals.h"
 #include "dird/job.h"
 #include "dird/storage.h"
+#include "lib/parse_conf.h"
 
 namespace directordaemon {
 

@@ -33,8 +33,10 @@
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
 #include "findlib/match.h"
+#include "lib/berrno.h"
 #include "lib/edit.h"
 #include "include/ch.h"
+#include "lib/util.h"
 
 #ifdef HAVE_WIN32
 #include "win32/findlib/win32.h"

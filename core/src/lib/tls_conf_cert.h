@@ -22,6 +22,8 @@
 #ifndef BAREOS_LIB_TLS_CONF_CERT_H_
 #define BAREOS_LIB_TLS_CONF_CERT_H_
 
+class alist;
+
 class TlsConfigCert {
  public:
   bool verify_peer_;         /* TLS Verify Peer Certificate */

@@ -47,6 +47,7 @@
 #include "dird/ua_select.h"
 #include "lib/crypto_wrap.h"
 #include "lib/passphrase.h"
+#include "lib/util.h"
 
 namespace directordaemon {
 

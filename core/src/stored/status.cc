@@ -35,6 +35,9 @@
 #include "stored/spool.h"
 #include "lib/edit.h"
 #include "include/jcr.h"
+#include "lib/parse_conf.h"
+#include "lib/bsock.h"
+#include "lib/util.h"
 
 /* Imported functions */
 extern bool GetWindowsVersionString(char* buf, int maxsiz);

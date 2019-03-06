@@ -30,6 +30,8 @@
 #ifndef BAREOS_LIB_CRYPTO_H_
 #define BAREOS_LIB_CRYPTO_H_
 
+class alist;
+
 /* Opaque X509 Public/Private Key Pair Structure */
 typedef struct X509_Keypair X509_KEYPAIR;
 

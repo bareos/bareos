@@ -33,7 +33,7 @@
                   http://www.fourmilab.ch/smartall/
 */
 
-#include "include/bareos.h"
+#include "lib/smartall.h"
 
 /*
  * Use the real routines here

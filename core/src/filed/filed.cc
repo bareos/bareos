@@ -36,6 +36,10 @@
 #include "lib/mntent_cache.h"
 #include "lib/daemon.h"
 #include "lib/bsignal.h"
+#include "lib/parse_conf.h"
+#include "lib/watchdog.h"
+#include "lib/util.h"
+#include "lib/address_conf.h"
 
 using namespace filedaemon;
 

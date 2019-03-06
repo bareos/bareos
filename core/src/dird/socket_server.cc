@@ -33,6 +33,7 @@
 #include "dird/dird_globals.h"
 #include "dird/fd_cmds.h"
 #include "dird/ua_server.h"
+#include "lib/berrno.h"
 #include "lib/bnet_server_tcp.h"
 #include "lib/try_tls_handshake_as_a_server.h"
 

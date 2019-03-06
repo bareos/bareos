@@ -28,6 +28,9 @@
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "lib/edit.h"
+#include "lib/bsock.h"
+#include "lib/btimers.h"
+#include "lib/watchdog.h"
 
 const int debuglevel = 900;
 

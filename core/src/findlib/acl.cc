@@ -63,6 +63,8 @@
 
 #include "include/bareos.h"
 #include "include/jcr.h"
+#include "lib/berrno.h"
+#include "lib/bsock.h"
 #include "find.h"
 
 #if !defined(HAVE_ACL) && !defined(HAVE_AFS_ACL)

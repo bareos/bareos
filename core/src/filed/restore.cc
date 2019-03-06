@@ -39,9 +39,12 @@
 #include "findlib/create_file.h"
 #include "findlib/attribs.h"
 #include "findlib/find.h"
+#include "lib/berrno.h"
 #include "lib/bget_msg.h"
 #include "lib/bnet.h"
+#include "lib/bsock.h"
 #include "lib/edit.h"
+#include "lib/parse_conf.h"
 
 #ifdef HAVE_WIN32
 #include "win32/findlib/win32.h"

@@ -26,6 +26,10 @@
  * @file
  * Watchdog timer routines
  */
+#ifndef BAREOS_LIB_WATCHDOG_H_
+#define BAREOS_LIB_WATCHDOG_H_
+
+#include "lib/dlist.h"
 
 enum
 {
@@ -57,3 +61,5 @@ watchdog_t* new_watchdog(void);
 bool RegisterWatchdog(watchdog_t* wd);
 bool UnregisterWatchdog(watchdog_t* wd);
 bool IsWatchdog();
+
+#endif /* BAREOS_LIB_WATCHDOG_H_ */

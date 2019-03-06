@@ -49,6 +49,8 @@
 #include "dird/ua_run.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
+#include "lib/parse_conf.h"
+#include "lib/util.h"
 
 namespace directordaemon {
 

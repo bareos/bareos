@@ -23,6 +23,8 @@
 
 #include "tls.h"
 
+class dlist;
+
 int32_t BnetRecv(BareosSocket* bsock);
 bool BnetSend(BareosSocket* bsock);
 bool BnetFsend(BareosSocket* bs, const char* fmt, ...);

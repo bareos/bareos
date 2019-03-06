@@ -27,6 +27,7 @@
 #include "filed/filed_globals.h"
 #include "filed/verify.h"
 #include "lib/attribs.h"
+#include "lib/bsock.h"
 #include "lib/edit.h"
 
 namespace filedaemon {

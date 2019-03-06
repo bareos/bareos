@@ -45,6 +45,8 @@
 #include "dird/ua_select.h"
 #include "dird/ua_status.h"
 #include "lib/edit.h"
+#include "lib/parse_conf.h"
+#include "lib/util.h"
 
 #define DEFAULT_STATUS_SCHED_DAYS 7
 

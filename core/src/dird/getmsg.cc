@@ -49,6 +49,7 @@
 #include "dird/msgchan.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
+#include "lib/util.h"
 
 namespace directordaemon {
 

@@ -34,6 +34,7 @@
 #include "include/ch.h"
 #include "findlib/attribs.h"
 #include "lib/edit.h"
+#include "lib/berrno.h"
 
 static uid_t my_uid = 1;
 static gid_t my_gid = 1;

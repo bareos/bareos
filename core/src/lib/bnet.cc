@@ -35,7 +35,9 @@
 
 #include "include/bareos.h"
 #include "jcr.h"
+#include "lib/berrno.h"
 #include "lib/bnet.h"
+#include "lib/bsock.h"
 #include "lib/bsys.h"
 #include "lib/ascii_control_characters.h"
 #include "lib/bstringlist.h"

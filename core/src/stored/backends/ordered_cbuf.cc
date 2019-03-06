@@ -26,8 +26,11 @@
  * Ordered Circular buffer used for producer/consumer problem with pthreads.
  */
 #include "include/bareos.h"
-namespace storagedaemon {
+#include "lib/dlist.h"
+
 #include "ordered_cbuf.h"
+namespace storagedaemon {
+
 
 /*
  * Initialize a new ordered circular buffer.

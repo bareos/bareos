@@ -32,6 +32,8 @@
 
 #include "jcr.h"
 
+class alist;
+
 /* Usage:
  *
  * #define USE_RUNSCRIPT

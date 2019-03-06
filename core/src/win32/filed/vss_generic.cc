@@ -33,6 +33,7 @@
 
 #include "include/bareos.h"
 #include "include/jcr.h"
+#include "lib/berrno.h"
 #include "findlib/find.h"
 #define FILE_DAEMON 1
 #include "filed/fd_plugins.h"

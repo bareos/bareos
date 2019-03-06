@@ -36,6 +36,7 @@
 #include "include/jcr.h"
 #include "find.h"
 #include "findlib/find_one.h"
+#include "lib/util.h"
 
 static const int debuglevel = 450;
 
