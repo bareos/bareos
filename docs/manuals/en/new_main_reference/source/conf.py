@@ -245,3 +245,5 @@ scv_banner_main_ref = 'bareos-18.2'
 
 #scv_root_ref = 'dev/pstorz/bareos-18.2/sphinx-versioning'
 #scv_banner_main_ref = 'dev/pstorz/bareos-18.2/sphinx-versioning'
+
+plantuml_output_format = 'svg_img'

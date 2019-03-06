@@ -1,0 +1,154 @@
+.. uml::
+  :caption: Control flow of ReserveDevice()
+
+  @startuml
+  |ReserveDevice|
+  start
+  #limegreen:if (device matches requested media_type?) then (yes)
+    if (device initialized?) then (no)
+      :InitDev()|
+    endif
+    if (device exists and is open?) then (yes)
+      #aqua:set suitable_device]
+      :initialize DCR;
+      if (append?) then (no)
+        :ReserveDeviceForRead()|
+      else (yes)
+        |ReserveDeviceForAppend|
+        if (CanRead()) then (no)
+          if (IsDeviceUnmounted()) then (no)
+            |CanReserveDrive|
+            if (IsMaxJobsOk()) then (yes)
+              #aqua:if (any_drive set?) then (no)
+                #aqua:if (try_low_use_drive set?) then (yes)
+                  #aqua:if (low_use_drive is current drive?) then (yes)
+                    (S)
+                    detach
+                  endif
+                endif
+                #aqua:if (PreferMountedVols set?) then (no)
+                  if (isBusy()) then (yes)
+                    #aqua:if (dev.num_writers + NumReserved() < num_writers) then (yes)
+                      #aqua:set num_writers := dev.numwriters + NumReserved()]
+                      #aqua:set low_use_drive := dev]
+                    endif
+                    (X)
+                    detach
+                  endif
+                else (yes)
+                  if (IsTape() but no volume) then (yes)
+                    (X)
+                    detach
+                  endif
+                endif
+                #aqua:if(exact_match set? and have_volume set?) then (yes)
+                  #aqua:if(VolumeName matches mounted volume) then (no)
+                    (X)
+                    detach
+                  endif
+                  if (Can_i_use_volume()) then (no)
+                    (X)
+                    detach
+                  endif
+                endif
+                :line 1080;
+
+                :line 1152;
+              endif
+              #aqua:if (autochanger_only) then (yes)
+                if (IsBusy()) then (no)
+                  if (volume in drive) then (no)
+                    (S)
+                    detach
+                  endif
+                endif
+              endif
+              if (num_writers == 0) then (yes)
+                if (NumReserved()) then (yes)
+                  if (IsPoolOk()) then (yes)
+                    (S)
+                    detach
+                  else (no)
+                    (X)
+                    detach
+                  endif
+                elseif (CanAppend()) then (yes)
+                  if (IsPoolOk()) then (no)
+                    :UnloadAutoChanger()|
+                  endif
+                  (S)
+                  detach
+                endif
+              endif
+              if (num_writers > 0 || CanAppend()) then (yes)
+                if (IsPoolOk()) then (yes)
+                  (S)
+                  #tomato:return success;
+                else (no)
+                  (X)
+                  detach
+                endif
+              else (no)
+                #tomato:cancel job (M_FATAL);
+                detach
+              endif
+            else (no)
+              (X)
+              #tomato:return failure;
+            endif
+            |ReserveDeviceForAppend|
+            if (success?) then (yes)
+              :reserve device;
+              :set have_device]
+            endif
+          endif
+        endif
+        |ReserveDevice|
+        if (have_device?) then (yes)
+          #aqua:if (have_volume set?) then (yes)
+            if (reserve_volume()) then (no)
+              (F)
+              detach
+            endif
+          else (no)
+            if (DirFindNextAppendableVolume()) then (yes)
+              #aqua:set have_volume]
+              #aqua:set VolumeName]
+            else (no)
+              #aqua:clear have_volume]
+              #aqua:clear VolumeName]
+              if (FoundInUse()) then (yes)
+                #aqua:if(PreferMountedVols set?) then (no)
+                  #aqua:set PreferMountedVols]
+                  if (dcr has volume?) then (yes)
+                    :UnreserveDevice()|
+                  endif
+                  (F)
+                  detach
+                endif
+              endif
+              if (num_writers != 0) then (yes)
+                  if (dcr has volume?) then (yes)
+                    :UnreserveDevice()|
+                  endif
+                  (F)
+                  detach
+              endif
+            endif
+          endif
+        else (no)
+          (F)
+          detach
+        endif
+      endif
+  if (have_device?) then (yes)
+    :OK device message>
+  else (no)
+    (F)
+    #aqua:clear have_volume]
+    #aqua:clear VolumeName]
+  endif
+    endif
+  endif
+
+  @enduml
