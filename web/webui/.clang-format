@@ -1,0 +1,6 @@
+BasedOnStyle: Google
+Language: JavaScript
+ColumnLimit: 80
+IndentWidth: 2
+UseTab: Never
+Cpp11BracedListStyle: false
