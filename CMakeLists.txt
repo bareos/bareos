@@ -17,9 +17,9 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 cmake_minimum_required(VERSION 3.0)
-set(default_build_type "Debug")
 project(bareos)
 
+set(default_build_type "Debug")
 # enable "make test"
 enable_testing()
 set(CMAKE_CTEST_COMMAND ctest -V)
