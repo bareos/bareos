@@ -13,6 +13,7 @@ make -j4
 make test
 ctest -VV
 '''
+        sh 'ctest -V -R system'
       }
     }
     stage('Test') {
