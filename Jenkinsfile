@@ -10,15 +10,17 @@ cd build
 cmake .. -Dsqlite3=yes -Dcoverage=yes -Ddeveloper=yes
 make -j4
 '''
-        sh '''export PATH=/usr/local/bin:$PATH
-ctest -R gtest'''
-        sh '''export PATH=/usr/local/bin:$PATH
-ctest -R system'''
       }
     }
     stage('Test') {
       steps {
         echo 'Testing ...'
+        sh '''export PATH=/usr/local/bin:$PATH
+cd build
+ctest -R gtest'''
+        sh '''export PATH=/usr/local/bin:$PATH
+cd  build
+ctest -R system'''
       }
     }
     stage('Deploy') {
