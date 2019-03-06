@@ -26,6 +26,7 @@ ctest -R system'''
     stage('Deploy') {
       steps {
         echo 'deploying'
+        deleteDir()
       }
     }
   }
