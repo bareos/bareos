@@ -167,5 +167,25 @@ add_executable(test_ndmp_address_translate
 
 target_link_libraries(test_ndmp_address_translate ${LINK_LIBRARIES})
 
-gtest_discover_tests(test_ndmp_address_translate TEST_PREFIX gtest:)
+add_test(NAME test_ndmp_address_translate COMMAND test_ndmp_address_translate)
 
+set_property(TEST test_ndmp_address_translate
+   PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib:${CMAKE_BINARY_DIR}/src/stored:${CMAKE_BINARY_DIR}/src/cats:${CMAKE_BINARY_DIR}/src/findlib:${CMAKE_BINARY_DIR}/src/lmdb:${CMAKE_BINARY_DIR}/src/ndmp"
+   PROPERTY ENVIRONMENT "GTEST_COLOR=yes"
+   )
+
+####### test_sd_reservation #####################################
+add_executable(sd_reservation sd_reservation.cc)
+
+target_link_libraries(sd_reservation ${LINK_LIBRARIES} gmock)
+
+add_test(NAME sd_reservation
+    COMMAND sd_reservation
+    )
+
+set_property(TEST sd_reservation
+  PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib:${CMAKE_BINARY_DIR}/src/stored:${CMAKE_BINARY_DIR}/src/stored/backends:${CMAKE_BINARY_DIR}/src/cats:${CMAKE_BINARY_DIR}/src/findlib:${CMAKE_BINARY_DIR}/src/lmdb:${CMAKE_BINARY_DIR}/src/ndmp"
+   PROPERTY ENVIRONMENT "GTEST_COLOR=yes"
+   )
+
+gtest_discover_tests(test_ndmp_address_translate TEST_PREFIX gtest:)

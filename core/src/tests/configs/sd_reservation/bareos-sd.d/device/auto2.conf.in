@@ -1,0 +1,71 @@
+Device {
+  Name = auto2dev0
+  Media Type = NotFile
+  Archive Device = @PROJECT_BINARY_DIR@
+  LabelMedia = yes
+  Random Access = yes
+  Autochanger = yes
+  AlwaysOpen = no
+  RemovableMedia = no
+  Drive Index = 0
+  Autoselect = no
+}
+
+Device {
+  Name = auto2dev1
+  Media Type = NotFile
+  Archive Device = @PROJECT_BINARY_DIR@/non-existent
+  LabelMedia = yes
+  Random Access = yes
+  Autochanger = yes
+  AlwaysOpen = no
+  RemovableMedia = no
+  Drive Index = 1
+}
+
+Device {
+  Name = auto2dev2
+  Media Type = NotFile
+  Archive Device = @PROJECT_BINARY_DIR@
+  LabelMedia = yes
+  Random Access = yes
+  Autochanger = yes
+  AlwaysOpen = no
+  RemovableMedia = no
+  Drive Index = 2
+}
+
+Device {
+  Name = auto2dev3
+  Media Type = NotFile
+  Archive Device = @PROJECT_BINARY_DIR@
+  LabelMedia = yes
+  Random Access = yes
+  Autochanger = yes
+  AlwaysOpen = no
+  RemovableMedia = no
+  Drive Index = 3
+}
+
+Device {
+  Name = auto2dev4
+  Media Type = NotFile
+  Archive Device = @PROJECT_BINARY_DIR@
+  LabelMedia = yes
+  Random Access = yes
+  Autochanger = yes
+  AlwaysOpen = no
+  RemovableMedia = no
+  Drive Index = 4
+}
+
+Autochanger {
+  Name = auto2
+  Device = auto2dev0
+  Device = auto2dev1
+  Device = auto2dev2
+  Device = auto2dev3
+  Device = auto2dev4
+  Changer Device  = /dev/null
+  Changer Command = ""
+}
