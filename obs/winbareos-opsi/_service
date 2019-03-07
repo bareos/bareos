@@ -1,0 +1,109 @@
+<?xml version="1.0"?>
+<services>
+   <service name="obs_scm">
+
+      <param name="submodules">disable</param>
+      <param name="url">git://gitmirror/bareos</param>
+      <param name="filename">bareos</param>
+      <param name="scm">git</param>
+      <param name="revision">origin/master</param>
+      <param name="versionprefix">19.1.2</param>
+      <param name="subdir">core</param>
+      <!--  
+      <param name="extract">platforms/opsi/CLIENT_DATA</param>
+      <param name="extract">platforms/opsi/OPSI</param>
+      -->
+      <param name="extract">platforms/opsi/winbareos-opsi.changes</param>
+      <param name="extract">platforms/opsi/winbareos-opsi.spec</param>
+   </service>
+   <service mode="buildtime" name="tar" />
+   <service mode="buildtime" name="recompress">
+      <param name="file">*.tar</param>
+      <param name="compression">gz</param>
+   </service>
+   <service name="set_version" />
+</services>
+<!-- Do 16. Aug 16:13:38 CEST 2018 -->
+<!-- Do 16. Aug 18:33:03 CEST 2018 -->
+<!-- Do 16. Aug 21:41:25 CEST 2018 -->
+<!-- Do 16. Aug 21:53:53 CEST 2018 -->
+<!-- Thu Aug 23 12:23:38 CEST 2018 -->
+<!-- Thu Aug 23 12:28:51 CEST 2018 -->
+<!-- Thu Aug 23 12:39:02 CEST 2018 -->
+<!-- Mon Aug 27 11:14:29 CEST 2018 -->
+<!-- Tue Aug 28 12:18:55 CEST 2018 -->
+<!-- Tue Aug 28 13:08:54 CEST 2018 -->
+<!-- Wed Aug 29 14:14:57 CEST 2018 -->
+<!-- Fri Sep 14 22:19:10 CEST 2018 -->
+<!-- Fri Sep 14 23:42:29 CEST 2018 -->
+<!-- Mon Sep 17 11:59:56 CEST 2018 -->
+<!-- Tue Sep 18 12:39:21 CEST 2018 -->
+<!-- Thu Sep 20 12:30:32 CEST 2018 -->
+<!-- Fri Sep 21 16:08:10 CEST 2018 -->
+<!-- Sat Sep 22 01:38:04 CEST 2018 -->
+<!-- Sat Sep 22 09:35:00 CEST 2018 -->
+<!-- Sat Sep 22 20:01:19 CEST 2018 -->
+<!-- Sun Sep 23 00:01:53 CEST 2018 -->
+<!-- Sun Sep 23 12:11:05 CEST 2018 -->
+<!-- Tue Sep 25 11:10:49 CEST 2018 -->
+<!-- Tue Sep 25 17:04:24 CEST 2018 -->
+<!-- Fri Sep 28 10:42:59 CEST 2018 -->
+<!-- Fr 28. Sep 13:00:13 CEST 2018 -->
+<!-- Fri Sep 28 13:16:58 CEST 2018 -->
+<!-- Fri Sep 28 16:38:10 CEST 2018 -->
+<!-- Wed Oct  3 21:31:58 CEST 2018 -->
+<!-- Wed Oct  3 23:27:13 CEST 2018 -->
+<!-- Thu Oct  4 23:30:37 CEST 2018 -->
+<!-- Fri Oct  5 15:46:06 CEST 2018 -->
+<!-- Mon Oct  8 19:40:58 CEST 2018 -->
+<!-- Tue Oct  9 10:30:20 CEST 2018 -->
+<!-- Tue Oct  9 10:39:02 CEST 2018 -->
+<!-- Tue Oct  9 14:19:33 CEST 2018 -->
+<!-- Tue Oct  9 16:18:47 CEST 2018 -->
+<!-- Tue Oct  9 16:53:34 CEST 2018 -->
+<!-- Tue Oct  9 17:13:45 CEST 2018 -->
+<!-- Wed Oct 10 11:36:02 CEST 2018 -->
+<!-- Thu Oct 11 15:59:13 CEST 2018 -->
+<!-- Thu Oct 11 21:44:05 CEST 2018 -->
+<!-- Wed Oct 17 16:01:18 CEST 2018 -->
+<!-- Wed Oct 17 22:13:46 CEST 2018 -->
+<!-- Fri Oct 19 21:44:39 CEST 2018 -->
+<!-- Mon Oct 29 15:03:32 CET 2018 -->
+<!-- Tue Oct 30 10:50:59 CET 2018 -->
+<!-- Tue Oct 30 12:07:33 CET 2018 -->
+<!-- Wed Nov  7 16:03:04 CET 2018 -->
+<!-- Wed Nov  7 17:02:36 CET 2018 -->
+<!-- Wed Nov 14 10:44:39 CET 2018 -->
+<!-- Thu Nov 15 09:27:39 CET 2018 -->
+<!-- Thu Nov 22 15:29:42 CET 2018 -->
+<!-- Fri Nov 30 13:39:02 CET 2018 -->
+<!-- Tue Dec  4 14:42:26 CET 2018 -->
+<!-- Wed Dec  5 11:20:22 CET 2018 -->
+<!-- Wed Dec  5 12:35:23 CET 2018 -->
+<!-- Thu Dec  6 11:54:57 CET 2018 -->
+<!-- Thu Dec  6 12:02:26 CET 2018 -->
+<!-- Thu Jan 10 12:02:59 CET 2019 -->
+<!-- Fri Feb  1 10:45:59 CET 2019 -->
+<!-- Fri Feb  1 11:50:15 CET 2019 -->
+<!-- Sat Feb  2 14:44:19 CET 2019 -->
+<!-- Mon Feb  4 16:41:12 CET 2019 -->
+<!-- Tue Feb 12 11:11:42 CET 2019 -->
+<!-- Tue Feb 12 20:25:36 CET 2019 -->
+<!-- Tue Feb 12 21:30:01 CET 2019 -->
+<!-- Tue Feb 12 22:02:29 CET 2019 -->
+<!-- Thu Feb 14 12:40:51 CET 2019 -->
+<!-- Thu Feb 14 14:53:35 CET 2019 -->
+<!-- Fri Feb 15 11:58:36 CET 2019 -->
+<!-- Fri Feb 15 12:53:21 CET 2019 -->
+<!-- Tue Feb 19 10:45:17 CET 2019 -->
+<!-- Wed Feb 20 11:33:42 CET 2019 -->
+<!-- Wed Feb 20 17:28:20 CET 2019 -->
+<!-- Thu Feb 21 17:08:26 CET 2019 -->
+<!-- Mon Feb 25 17:58:59 CET 2019 -->
+<!-- Tue Feb 26 11:25:26 CET 2019 -->
+<!-- Tue Feb 26 16:57:12 CET 2019 -->
+<!-- Wed Feb 27 12:06:08 CET 2019 -->
+<!-- Wed Feb 27 12:22:22 CET 2019 -->
+<!-- Wed Feb 27 15:10:58 CET 2019 -->
+<!-- Fri Mar  1 15:42:01 CET 2019 -->
+<!-- Wed Mar  6 14:23:51 CET 2019 -->

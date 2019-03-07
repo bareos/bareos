@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<services>
+    <service name="obs_scm">
+        <param name="url">git://gitmirror/bareos</param>
+        <param name="scm">git</param>
+        <param name="revision">origin/master</param>
+        <param name="package-meta">yes</param>
+        <param name="subdir">python-bareos</param>
+        <param name="filename">python-bareos</param>
+        <param name="versionprefix">19.1.2</param>
+        <param name="extract">packaging/debian.debtransform</param>
+        <param name="extract">packaging/python-bareos.changes</param>
+        <param name="extract">packaging/python-bareos.dsc</param>
+        <param name="extract">packaging/python-bareos.spec</param>
+    </service>
+   <service mode="buildtime" name="tar" />
+   <service mode="buildtime" name="recompress">
+    <param name="file">*.tar</param>
+    <param name="compression">gz</param>
+   </service>
+   <service name="set_version" />
+</services>
+
+<!-- Fri Sep 21 16:09:35 CEST 2018 -->
+<!-- Sat Sep 22 01:38:51 CEST 2018 -->
+<!-- Sat Sep 22 09:37:08 CEST 2018 -->
+<!-- Sat Sep 22 20:02:59 CEST 2018 -->
+<!-- Sun Sep 23 00:04:24 CEST 2018 -->
+<!-- Sun Sep 23 12:11:43 CEST 2018 -->
+<!-- Tue Sep 25 11:11:53 CEST 2018 -->
+<!-- Tue Sep 25 17:05:26 CEST 2018 -->
+<!-- Fri Sep 28 10:44:18 CEST 2018 -->
+<!-- Fr 28. Sep 13:01:10 CEST 2018 -->
+<!-- Fri Sep 28 13:18:28 CEST 2018 -->
+<!-- Fri Sep 28 16:39:10 CEST 2018 -->
+<!-- Wed Oct  3 21:33:10 CEST 2018 -->
+<!-- Wed Oct  3 23:28:30 CEST 2018 -->
+<!-- Thu Oct  4 23:31:46 CEST 2018 -->
+<!-- Fri Oct  5 15:46:57 CEST 2018 -->
+<!-- Mon Oct  8 19:42:24 CEST 2018 -->
+<!-- Tue Oct  9 10:31:06 CEST 2018 -->
+<!-- Tue Oct  9 10:41:13 CEST 2018 -->
+<!-- Tue Oct  9 14:20:27 CEST 2018 -->
+<!-- Tue Oct  9 16:19:55 CEST 2018 -->
+<!-- Tue Oct  9 16:55:38 CEST 2018 -->
+<!-- Tue Oct  9 17:15:48 CEST 2018 -->
+<!-- Wed Oct 10 11:36:56 CEST 2018 -->
+<!-- Thu Oct 11 16:00:50 CEST 2018 -->
+<!-- Thu Oct 11 21:45:13 CEST 2018 -->
+<!-- Wed Oct 17 16:02:06 CEST 2018 -->
+<!-- Wed Oct 17 22:14:43 CEST 2018 -->
+<!-- Fri Oct 19 21:45:34 CEST 2018 -->
+<!-- Mon Oct 29 15:04:10 CET 2018 -->
+<!-- Tue Oct 30 10:51:40 CET 2018 -->
+<!-- Tue Oct 30 12:08:59 CET 2018 -->
+<!-- Wed Nov  7 16:04:03 CET 2018 -->
+<!-- Wed Nov  7 17:03:51 CET 2018 -->
+<!-- Wed Nov 14 10:45:28 CET 2018 -->
+<!-- Thu Nov 15 09:29:08 CET 2018 -->
+<!-- Thu Nov 22 15:30:44 CET 2018 -->
+<!-- Fri Nov 30 13:39:51 CET 2018 -->
+<!-- Tue Dec  4 14:43:13 CET 2018 -->
+<!-- Wed Dec  5 11:21:44 CET 2018 -->
+<!-- Wed Dec  5 12:36:01 CET 2018 -->
+<!-- Thu Dec  6 11:55:51 CET 2018 -->
+<!-- Thu Dec  6 12:04:22 CET 2018 -->
+<!-- Thu Jan 10 12:04:13 CET 2019 -->
+<!-- Fri Feb  1 10:45:00 CET 2019 -->
+<!-- Fri Feb  1 11:48:45 CET 2019 -->
+<!-- Sat Feb  2 14:42:55 CET 2019 -->
+<!-- Mon Feb  4 16:40:10 CET 2019 -->
+<!-- Tue Feb 12 11:10:46 CET 2019 -->
+<!-- Tue Feb 12 20:24:06 CET 2019 -->
+<!-- Tue Feb 12 21:28:23 CET 2019 -->
+<!-- Tue Feb 12 22:00:22 CET 2019 -->
+<!-- Thu Feb 14 12:39:38 CET 2019 -->
+<!-- Thu Feb 14 14:52:30 CET 2019 -->
+<!-- Fri Feb 15 11:57:20 CET 2019 -->
+<!-- Fri Feb 15 12:52:12 CET 2019 -->
+<!-- Tue Feb 19 10:43:39 CET 2019 -->
+<!-- Wed Feb 20 11:32:27 CET 2019 -->
+<!-- Wed Feb 20 17:27:02 CET 2019 -->
+<!-- Thu Feb 21 17:07:14 CET 2019 -->
+<!-- Mon Feb 25 17:57:47 CET 2019 -->
+<!-- Tue Feb 26 11:23:47 CET 2019 -->
+<!-- Tue Feb 26 16:56:03 CET 2019 -->
+<!-- Wed Feb 27 12:04:44 CET 2019 -->
+<!-- Wed Feb 27 12:21:05 CET 2019 -->
+<!-- Wed Feb 27 15:09:49 CET 2019 -->
+<!-- Fri Mar  1 15:40:55 CET 2019 -->
+<!-- Wed Mar  6 14:22:49 CET 2019 -->

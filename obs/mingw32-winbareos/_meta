@@ -1,0 +1,8 @@
+<package name="mingw32-winbareos" project="@BASEPROJECT@:@BRANCH@">
+  <title/>
+  <description/>
+  <build>
+    <disable/>
+    <enable repository="win_cross"/>
+  </build>
+</package>

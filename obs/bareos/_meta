@@ -1,0 +1,11 @@
+<package name="bareos" project="@BASEPROJECT@:@BRANCH@">
+  <title/>
+  <description/>
+  <build>
+    <disable repository="win_cross"/>
+    <enable repository="SLE_12_SP4"/>
+  </build>
+  <debuginfo>
+    <enable/>
+  </debuginfo>
+</package>

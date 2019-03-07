@@ -1,0 +1,7 @@
+<package name="bareos-docs" project="@BASEPROJECT@:@BRANCH@">
+  <title/>
+  <description/>
+  <build>
+    <disable/>
+  </build>
+</package>
