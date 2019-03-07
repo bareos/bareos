@@ -24,6 +24,5 @@ for pkg in `cat packages`; do
   osc add *
   osc commit -m "import"
   cd -
-  rm -Rvf jenkins:master/${pkg}/
 done
-
+rm -Rvf jenkins:master/${pkg}/

@@ -6,7 +6,7 @@ pipeline {
         echo 'Building...'
         sh '''export PATH=/usr/local/bin:$PATH
 cd obs
-./configure_obs.sh
+sh -x ./configure_obs.sh
 '''
       }
     }
