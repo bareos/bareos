@@ -21,3 +21,4 @@ Bareos Developer Guide
    developers/netprotocol.rst
    developers/directorConsole.rst
    developers/smartall.rst
+   developers/reservation.rst
