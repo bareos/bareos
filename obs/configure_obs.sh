@@ -7,7 +7,7 @@ rm -Rvf jenkins:master
 cat prj.xml.in  | sed 's#@BASEPROJECT@#jenkins#g' | sed 's#@BRANCH@#master#' | $OSC meta prj jenkins:master -F -
 
 # set project config
-$OSC meta prjconf jenkins:master -f  prjconf
+$OSC meta prjconf jenkins:master -F  prjconf
 
 
 # for every package, create it via setting the package meta info:
