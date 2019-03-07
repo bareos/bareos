@@ -1,6 +1,8 @@
 #!/bin/bash
 OSC=osc
 
+rm -Rvf jenkins:master/${pkg}/
+
 # update project config and create project if it does not exist:
 
 cat prj.xml.in  | sed 's#@BASEPROJECT@#jenkins#g' | sed 's#@BRANCH@#master#' | $OSC meta prj jenkins:master -F -
