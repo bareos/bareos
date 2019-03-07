@@ -4,7 +4,7 @@ OSC=osc
 rm -Rvf jenkins:${GIT_BRANCH}
 # update project config and create project if it does not exist:
 
-cat prj.xml.in  | sed 's#@BASEPROJECT@#jenkins#g' | sed 's#@BRANCH@#${GIT_BRANCH}#' | $OSC meta prj jenkins:${GIT_BRANCH} -F -
+cat prj.xml.in  | sed 's#@BASEPROJECT@#jenkins#g' | sed "s#@BRANCH@#${GIT_BRANCH}#" | $OSC meta prj jenkins:${GIT_BRANCH} -F -
 
 # set project config
 $OSC meta prjconf jenkins:${GIT_BRANCH} -F  prjconf
@@ -13,7 +13,7 @@ $OSC meta prjconf jenkins:${GIT_BRANCH} -F  prjconf
 # for every package, create it via setting the package meta info:
 
 for pkg in $(cat packages); do
-cat "${pkg}"/_meta.in  | sed 's#@BASEPROJECT@#jenkins#g' | sed 's#@BRANCH@#${GIT_BRANCH}#' | $OSC meta pkg jenkins:${GIT_BRANCH} "${pkg}" -F -
+cat "${pkg}"/_meta.in  | sed 's#@BASEPROJECT@#jenkins#g' | sed "s#@BRANCH@#${GIT_BRANCH}#" | $OSC meta pkg jenkins:${GIT_BRANCH} "${pkg}" -F -
 done
 # for every package, add files that belong to this package, especially service files
 
