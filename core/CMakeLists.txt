@@ -485,7 +485,7 @@ set(build_stored "${build-stored}" )
 set(have_plugins "${have_plugins}" )
 set(have_afs "" )
 
-if(${HAVE_SYS_ACL_H})
+if(${acl} AND ${HAVE_SYS_ACL_H})
    set(HAVE_ACL 1)
    Message(STATUS "acl found, libs: ${ACL_LIBS}")
 endif()
