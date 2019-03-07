@@ -1,0 +1,90 @@
+-------------------------------------------------------------------
+Wed Nov 05 10:18:23 UTC 2014 - efimovov@gmail.com
+
+- Update to new upstream release 2.7
+* The json_pack et al functions recognize the specifiers "s%", "+%"
+  and "+#"
+* Add length-aware string constructors "json_stringn()" and
+  "json_stringn_nocheck()", length-aware string mutators
+  "json_string_setn()" and "json_string_setn_nocheck()",
+  and a function for getting string's length "json_string_length()"
+* Support ""\u0000"" escapes in the decoder. The support can be
+  enabled by using the ""JSON_ALLOW_NUL"" decoding flag
+* Add "json_boolean_value()" as an alias for "json_is_true()"
+* Add JSON_REAL_PRECISION encoding flag/macro for controlling real
+  number precision
+* Define the maximum indentation as JSON_MAX_INDENT.
+* Fix cases when some malformed ""\uNNNN"" escapes could crash
+  the decoder with an assertion failure
+* Avoid integer overflows with very long strings in UTF-8 decoder
+   and hashtable
+* Check for *NULL* key in "json_object_get()"
+  and "json_object_del()"
+* "json_unpack()": Allow mixing JSON_STRICT with optional keys.
+* Fix int/int32 mismatch
+* Parse subnormal numbers correctly
+
+-------------------------------------------------------------------
+Thu Sep 11 18:59:04 UTC 2014 - hrvoje.senjan@gmail.com
+
+- Add baselibs.conf
+
+-------------------------------------------------------------------
+Sun Jul 20 10:50:34 UTC 2014 - jengelh@inai.de
+
+- Update to new upstream release 2.6
+* Fixed CVE-2013-6401: avoid bad performance in large JSON objects
+* The json_pack et al functions recognize the specifiers "s#", "+"
+  and "+#"
+* Add the "JSON_DECODE_INT_AS_REAL" flag
+* Add "json_array_foreach()" function
+* Add the "json_boolean()" macro that returns the JSON true or
+  false value based on its argument
+* Add "json_load_callback()" that calls a callback function
+  repeatedly to read the JSON input.
+* Add JSON_ESCAPE_SLASH encoding flag to escape all occurences of
+  '/' with '\/'.
+- Drop defunct gpg-offline and use local source_validator instead
+
+-------------------------------------------------------------------
+Wed Nov 28 19:42:17 CET 2012 - sbrabec@suse.cz
+
+- Verify GPG signature.
+
+-------------------------------------------------------------------
+Sat May 12 15:18:44 UTC 2012 - jengelh@inai.de
+
+- Update to new upstream release 2.3.1
+* Add support for optional object keys with the "{s?o}" syntax
+  in json_unpack and the like
+* Add json_object_update_existing() and json_object_update_missing()
+  for updating only existing keys or only adding missing keys to an
+  object.
+* Add json_object_foreach() for more convenient iteration over
+  objects.
+* When decoding JSON, write the number of bytes that were read from
+  input to "error.position" also on success. This is handy with
+  JSON_DISABLE_EOF_CHECK.
+* Add support for decoding any JSON value, not just arrays or
+  objects. The support is enabled with the new "JSON_DECODE_ANY"
+  flag.
+* Avoid problems with object's serial number growing too big.
+* Remove "+" and leading zeros from exponents in the encoder.
+* Decoding functions now return NULL if the first argument is NULL.
+
+-------------------------------------------------------------------
+Tue Jan 31 16:50:56 UTC 2012 - jengelh@medozas.de
+
+- Provide pkgconfig symbols
+
+-------------------------------------------------------------------
+Fri Oct 21 16:03:16 UTC 2011 - jengelh@medozas.de
+
+- Remove redundant tags/sections (cf. specfile guidelines)
+- Centralize the shlib package name
+
+-------------------------------------------------------------------
+Mon Oct 17 14:53:08 UTC 2011 - fcastelli@suse.com
+
+- Create initial package (v2.2.1)
+

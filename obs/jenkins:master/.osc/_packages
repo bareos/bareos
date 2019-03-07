@@ -10,4 +10,6 @@
   <package name="winbareos-nsi" state=" " />
   <package name="winbareos-opsi" state=" " />
   <package name="libfastlz" state=" " />
+  <package name="libdroplet" state=" " />
+  <package name="libjansson" state=" " />
 </project>

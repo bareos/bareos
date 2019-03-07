@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<services>
+    <service name="tar_scm">
+        <param name="submodules">disable</param>
+        <param name="filename">libdroplet</param>
+        <param name="url">https://readonly:bareos@gitblit.intern.bareos:8443/r/bareos/droplet.git</param>
+        <param name="scm">git</param>
+        <param name="revision">origin/bareos-master</param>
+        <param name="versionprefix">3.0.git</param>
+        <param name="sslverify">disable</param>
+    </service>
+    <service name="recompress">
+        <param name="file">*git*.tar</param>
+        <param name="compression">bz2</param>
+    </service>
+    <service name="extract_file">
+        <param name="archive">*.tar.bz2</param>
+        <param name="files">*/*.spec</param>
+    </service>
+    <service name="set_version"/>
+</services>
+
+
+

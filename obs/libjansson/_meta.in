@@ -1,0 +1,10 @@
+<package name="libjansson" project="@BASEPROJECT@:@BRANCH@">
+  <title/>
+  <description/>
+  <build>
+    <disable/>
+    <enable repository="SLE_12_SP4"/>
+    <enable repository="SLE_12_SP3"/>
+    <enable repository="SLE_11_SP4"/>
+  </build>
+</package>
