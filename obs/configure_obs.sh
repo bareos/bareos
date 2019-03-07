@@ -30,3 +30,5 @@ for pkg in `cat packages`; do
 done
 rm -Rvf jenkins:master
 
+
+$OSC prjresults jenkins:master
