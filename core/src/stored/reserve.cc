@@ -206,7 +206,6 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
    * If there are multiple devices, the director sends us
    * use_device for each device that it wants to use.
    */
-  dirstore = New(alist(10, not_owned_by_alist));
   jcr->reserve_msgs = New(alist(10, not_owned_by_alist));
   do {
     Dmsg1(debuglevel, "<dird: %s", dir->msg);
@@ -214,6 +213,7 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
                 pool_name.c_str(), pool_type.c_str(), &append, &Copy,
                 &Stripe) == 7;
     if (!ok) { break; }
+    dirstore = New(alist(10, not_owned_by_alist));
     if (append) {
       jcr->write_store = dirstore;
     } else {
