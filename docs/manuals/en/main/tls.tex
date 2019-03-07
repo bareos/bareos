@@ -42,12 +42,12 @@ different Console programs.
 These directives are defined as follows:
 
 \begin{description}
-\directive{dir}{TLS Enable}{yes{\textbar}no}{}{no}{}%
+\item [\linkResourceDirective{Dir}{Director}{TLS Enable}]%
 Enable TLS support. Without setting \configdirective{TLS Require}=yes,
 the connection can fall back to unencrypted connection,
 if the other side does not support TLS.
 
-\directive{dir}{TLS Require}{yes{\textbar}no}{}{no}{}%
+\item [\linkResourceDirective{Dir}{Director}{TLS Require}]%
 Require TLS connections.
 If TLS is not required,
 then Bareos will connect with other daemons either with or without TLS depending
@@ -56,18 +56,18 @@ If TLS is required,
 then Bareos will refuse any connection that does not use TLS.
 \configdirective{TLS Require}=yes  implicitly sets \configdirective{TLS Enable}=yes.
 
-\directive{dir}{TLS Certificate}{filename}{}{}{}%
+\item [\linkResourceDirective{Dir}{Director}{TLS Certificate}]%
 The full path and filename of a PEM encoded TLS certificate.  It can be
 used as either a client or server certificate.
 It is used because PEM files are base64 encoded and hence ASCII
 text based rather than binary.
 They may also contain encrypted information.
 
-\directive{dir}{TLS Key}{filename}{}{}{}%
+\item [\linkResourceDirective{Dir}{Director}{TLS Key}]%
 The full path and filename of a PEM encoded TLS private key.  It must
 correspond to the certificate specified in the \configdirective{TLS Certificate} configuration directive.
 
-\directive{dir}{TLS Verify Peer}{yes{\textbar}no}{}{}{}%
+\item [\linkResourceDirective{Dir}{Director}{TLS Verify Peer}]%
 Request and verify the peers certificate.
 
 In server context, unless the \configdirective{TLS Allowed CN} configuration directive is specified,
@@ -77,7 +77,7 @@ In client context, the server certificate CommonName attribute is checked agains
 the \configdirective{Address} and \configdirective{TLS Allowed CN} configuration directives.
 
 
-\directive{dir}{TLS Allowed CN}{stringlist}{}{}{}%
+\item [\linkResourceDirective{Dir}{Director}{TLS Allowed CN}]%
 Common name attribute of allowed peer certificates.
 If \configdirective{TLS Verify Peer}=yes, all connection request certificates
 will be checked against this list.
@@ -85,7 +85,7 @@ will be checked against this list.
 This directive may be specified more than once.
 
 
-\directive{dir}{TLS CA Certificate File}{filename}{}{}{}%
+\item [\linkResourceDirective{Dir}{Director}{TLS CA Certificate File}]%
 The full path and filename specifying a
 PEM encoded TLS CA certificate(s).  Multiple certificates are
 permitted in the file.
@@ -96,7 +96,7 @@ is required.
 
 In a server context, it is only required if \configdirective{TLS Verify Peer} is used.
 
-\directive{dir}{TLS CA Certificate Dir}{directory}{}{}{}%
+\item [\linkResourceDirective{Dir}{Director}{TLS CA Certificate Dir}]%
 Full path to TLS CA certificate directory.  In the current implementation,
 certificates must be stored PEM encoded with OpenSSL-compatible hashes,
 which is the subject name's hash and an extension of {\bf .0}.
@@ -108,7 +108,7 @@ is required.
 In a server context, it is only required if \configdirective{TLS Verify Peer} is used.
 
 
-\directive{dir}{TLS DH File}{filename}{}{}{}%
+\item [\linkResourceDirective{Dir}{Director}{TLS DH File}]%
 Path to PEM encoded Diffie-Hellman parameter file.  If this directive is
 specified, DH key exchange will be used for the ephemeral keying, allowing
 for forward secrecy of communications.  DH key exchange adds an additional

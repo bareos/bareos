@@ -1,5 +1,5 @@
 
-SUBDIRS = manuals/en/new_main_reference/ manuals/en/main/
+SUBDIRS = manuals/en/main/
 .PHONY: $(SUBDIRS)
 
 all:   TARGET=

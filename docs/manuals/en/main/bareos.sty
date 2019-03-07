@@ -376,24 +376,6 @@ Version $>=$ #3%
 \newcommand{\deprecatedSince}[3]{This option is deprecated since version #3}
 \newcommand{\removedSince}[3]{This option is removed since version #3}
 
-% deprecated. use xdirective instead.
-\newcommand{\directive}[6]{
-% 1: config file (dir | sd | fd)
-% 2: directive name
-% 3: directive type/value
-% 4: "required" | ""
-% 5: default value
-% 6: since version
-\item [#2 = {\textless}#3{\textgreater}]
-    \hfill
-  \ifthenelse{\isempty{#5}}{}{(default: #5)}
-  \ifthenelse{\isempty{#4}}{}{(#4)}
-  \ifthenelse{\isempty{#6}}{}{\sinceVersion{#1}{#2}{#6}}
-  \hfill \\
-  \index[#1]{#2}
-  \index[#1]{Directive!#2}
-}
-
 \newcommand{\xdirective}[8]{
 % 1: config file (Dir | Sd | Fd | Console)
 % 2: Resource

@@ -30,7 +30,7 @@ Please take note of the following items in the FileSet syntax:
 \end{enumerate}
 
 \begin{description}
-\directive{dir}{File}{ filename \textbar\ dirname \textbar\ \textbar command \textbar\ \textbackslash\textless includefile-client \textbar\ \textless includefile-server }{}{}{}
+\item [File = filename \textbar\ dirname \textbar\ \textbar command \textbar\ \textbackslash\textless includefile-client \textbar\ \textless includefile-server]  \hfill \\
     The file list
     consists of one file or directory name per line.  Directory names should be
     specified without a trailing slash with Unix path notation.
@@ -289,7 +289,7 @@ Include {
 
 
 
-\directive{dir}{Exclude Dir Containing}{filename}{}{}{}
+\item [Exclude Dir Containing = filename]
     This directive can be added to the Include section of the FileSet resource.  If the specified
     filename ({\bf filename-string}) is found on the Client in any directory to be
     backed up, the whole directory will be ignored (not backed up).
@@ -335,7 +335,7 @@ Include {
     files, directories, etc).
 
 
-\directive{dir}{Plugin}{plugin-name:plugin-parameter1:plugin-parameter2:$\ldots$}{}{}{}
+\item [Plugin = plugin-name:plugin-parameter1:plugin-parameter2:$\ldots$]
 \label{directive-fileset-plugin}
         Instead of only specifying files, a file set can also use plugins.
         Plugins are additional libraries that handle specific requirements.
@@ -354,7 +354,7 @@ Include {
 
         Note: It is also possible to define more than one plugin directive in a FileSet to do several database dumps at once.
 
-\directive{dir}{Options}{$\ldots$}{}{}{}
+\item [Options = $\ldots$]
     See the \nameref{fileset-options} section.
 
 \end{description}
@@ -412,10 +412,10 @@ convert them to Wild statements which are much more efficient.
 The directives within an Options resource may be one of the following:
 
 \begin{description}
-    \xdirective{Dir}{}{AutoExclude}{\dtYesNo}{}{yes}{14.2.2}{%
+    \item[Auto Exclude = \dtYesNo]  (default: yes) \hfill \\
         Automatically exclude files not intended for backup.
         Currently only used for Windows, to exclude files defined in the registry key \registrykey{HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\BackupRestore\FilesNotToBackup}, see section \nameref{FilesNotToBackup}.
-    }
+        Since \sinceVersion{Dir}{Auto Exclude}{14.2.2}.
 
     \item [compression={\textless}GZIP{\textbar}GZIP1{\textbar}...{\textbar}GZIP9{\textbar}LZO{\textbar}LZFAST{\textbar}LZ4{\textbar}LZ4HC{\textgreater}] \hfill \\
         \index[dir]{compression}
@@ -1044,10 +1044,9 @@ Include {
    so you may want to test your expressions prior to running your
    backup by using the \nameref{bregex} program.
 
-\xdirective{dir}{}{Exclude}{\dtYesNo}{}{no}{}{%
+\item[Exclude = \dtYesNo]%
    When enabled, any files matched within the
    Options will be excluded from the backup.
-}
 
 \item [aclsupport=yes{\textbar}no] \hfill \\
 \index[dir]{aclsupport}
@@ -1264,15 +1263,8 @@ FileSet Exclude-Ressources very similar to Include-Ressources, except that they 
 
 \begin{description}
 % file | directoy | |command | \<includefile-client | <includefile-server
-\xdirective{dir}{}{File}{ 
-  filename \textbar\ 
-  directory \textbar\ 
-  \textbar command \textbar\ 
-  \textbackslash\textless includefile-client \textbar\ 
-  \textless includefile-server 
-  }{}{}{}{%
+\item [File = filename \textbar\ dirname \textbar\ \textbar command \textbar\ \textbackslash\textless includefile-client \textbar\ \textless includefile-server]  \hfill \\
     Files to exclude are descripted in the same way as at the \nameref{fileset-include}.
-}
 \end{description}
 
 For example:
