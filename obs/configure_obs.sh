@@ -12,23 +12,22 @@ $OSC meta prjconf jenkins:master -F  prjconf
 
 # for every package, create it via setting the package meta info:
 
-for pkg in `cat packages`; do
+for pkg in $(cat packages); do
 cat "${pkg}"/_meta.in  | sed 's#@BASEPROJECT@#jenkins#g' | sed 's#@BRANCH@#master#' | $OSC meta pkg jenkins:master "${pkg}" -F -
 done
 # for every package, add files that belong to this package, especially service files
 
-for pkg in `cat packages`; do
-  $OSC co jenkins:master/${pkg};
+for pkg in $(cat packages); do
+  $OSC co "jenkins:master/${pkg}";
   pwd
   ls "${pkg}"
   cp -v "${pkg}"/* jenkins:master/"${pkg}"/;
-  cd jenkins:master/"${pkg}"/
+  cd jenkins:master/"${pkg}"/ || exit
   rm _meta.in
-  osc add *
+  osc add ./*
   osc commit -m "import"
-  cd -
+  cd - || exit
 done
 rm -Rvf jenkins:master
 
 
-$OSC prjresults jenkins:master
