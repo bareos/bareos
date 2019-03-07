@@ -15,3 +15,10 @@ $OSC rebuild -f jenkins:master
 date
 $OSC prjresults jenkins:master --watch --xml
 date
+
+# rebuild failed jobs
+$OSC rebuild -f jenkins:master
+
+date
+$OSC prjresults jenkins:master --watch --xml
+date
