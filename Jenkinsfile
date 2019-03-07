@@ -6,7 +6,6 @@ pipeline {
         sh '''export PATH=/usr/local/bin:$PATH
 cd obs
 sh -x ./configure_obs.sh
-sh -x ./wait_for_completion.sh
 '''
       }
     }
