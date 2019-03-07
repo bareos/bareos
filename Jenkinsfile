@@ -5,9 +5,8 @@ pipeline {
       steps {
         sh '''export PATH=/usr/local/bin:$PATH
 cd obs
-echo ${BRANCH_NAME}
-echo ${GIT_BRANCH}
 env
+export GIT_BRANCH
 sh -x ./configure_obs.sh
 '''
       }
