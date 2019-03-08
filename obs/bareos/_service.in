@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<services>
+    <service name="obs_scm">
+        <param name="revision">@REVISION@</param>
+        <param name="@VERSION_OR_VERSIONPREFIX@">@VERSION_NUMBER@</param>
+
+        <param name="url">git://gitmirror/bareos</param>
+        <param name="scm">git</param>
+        <param name="package-meta">yes</param>
+        <param name="subdir">core</param>
+        <param name="extract">platforms/packaging/bareos-Univention_4.0.dsc</param>
+        <param name="extract">platforms/packaging/bareos-Univention_4.2.dsc</param>
+        <param name="extract">platforms/packaging/bareos-rpmlintrc</param>
+        <param name="extract">platforms/packaging/bareos.changes</param>
+        <param name="extract">platforms/packaging/bareos.dsc</param>
+        <param name="extract">platforms/packaging/bareos.spec</param>
+        <param name="extract">platforms/packaging/debian.debtransform</param>
+    </service>
+   <service mode="buildtime" name="tar" />
+   <service mode="buildtime" name="recompress">
+    <param name="file">*.tar</param>
+    <param name="compression">gz</param>
+   </service>
+   <service name="set_version" />
+   <service name="download_url">
+      <param name="protocol">http</param>
+      <param name="host">obs2018</param>
+      <param name="path">builddefinitions/bareos.org/BareosLocalBuildDefinitions.cmake</param>
+   </service>
+</services>
