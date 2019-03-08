@@ -41,7 +41,7 @@ for pkg in $(cat packages); do
     sed "s#@GIT_URL@#${GIT_URL}#g" |\
     sed "s#@REVISION@#${GIT_COMMIT}#"  > "${pkg}"/_service
   ls "${pkg}"
-  cp -v "${pkg}"/* jenkins:${GIT_BRANCH}/"${pkg}"/;
+  cp -v "${pkg}"/* jenkins:${GIT_BRANCH}/"${pkg}"/
 
   cd jenkins:${GIT_BRANCH}/"${pkg}"/ || exit
   rm _meta.in
