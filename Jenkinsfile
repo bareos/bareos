@@ -1,5 +1,7 @@
 pipeline {
-  agent  master
+  agent {
+    label 'osc'
+  }
   stages {
     stage('Configure OBS') {
       steps {
