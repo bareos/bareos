@@ -1,6 +1,13 @@
 #!/bin/bash
 OSC=osc
 
+if [ "${GIT_BRANCH}" = "master" ]; then
+  VERSION_OR_VERSIONPREFIX="versionprefix"
+else
+  VERSION_OR_VERSIONPREFIX="version"
+fi
+
+# get version from version.h
 VERSION=`cat ../core/src/include/version.h | \
                 grep "#define VERSION" | \
                 cut -b 17- | \
@@ -26,7 +33,7 @@ done
 for pkg in $(cat packages); do
   $OSC co "jenkins:${GIT_BRANCH}/${pkg}";
   cat "${pkg}"/_service.in  |\
-    sed 's#@VERSION_OR_VERSIONPREFIX@#versionprefix#g' |\
+    sed 's#@VERSION_OR_VERSIONPREFIX@#${VERSION_OR_VERSIONPREFIX}#g' |\
     sed 's#@VERSION_NUMBER@#${VERSION}#g' |\
     sed "s#@REVISION@#${GIT_COMMIT}#"  > "${pkg}"/_service
   ls "${pkg}"
