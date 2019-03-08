@@ -4,7 +4,7 @@
         <param name="revision">@REVISION@</param>
         <param name="@VERSION_OR_VERSIONPREFIX@">@VERSION_NUMBER@</param>
 
-        <param name="url">git://gitmirror/bareos</param>
+        <param name="url">git://github.com/pstorz/bareos</param>
         <param name="scm">git</param>
         <param name="package-meta">yes</param>
         <param name="subdir">core</param>
