@@ -1,11 +1,10 @@
 #!/bin/bash
 OSC=osc
 
-VERSION=`wget "https://raw.githubusercontent.com/bareos/bareos/${GIT_BRANCH}/core/src/include/version.h" --no-check-certificate -O - | \
+VERSION=`cat ../core/src/include/version.h | \
                 grep "#define VERSION" | \
                 cut -b 17- | \
                 sed 's/\"//g'`
-
 
 rm -Rvf jenkins:${GIT_BRANCH}
 # update project config and create project if it does not exist:
