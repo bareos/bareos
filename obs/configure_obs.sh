@@ -8,7 +8,7 @@ else
 fi
 
 # get version from version.h
-VERSION=`cat ../core/src/include/version.h | \
+BAREOS_VERSION_NUMBER=`cat ../core/src/include/version.h | \
                 grep "#define VERSION" | \
                 cut -b 17- | \
                 sed 's/\"//g'`
@@ -33,8 +33,8 @@ done
 for pkg in $(cat packages); do
   $OSC co "jenkins:${GIT_BRANCH}/${pkg}";
   cat "${pkg}"/_service.in  |\
-    sed 's#@VERSION_OR_VERSIONPREFIX@#${VERSION_OR_VERSIONPREFIX}#g' |\
-    sed 's#@VERSION_NUMBER@#${VERSION}#g' |\
+    sed "s#@VERSION_OR_VERSIONPREFIX@#${VERSION_OR_VERSIONPREFIX}#g" |\
+    sed "s#@VERSION_NUMBER@#${BAREOS_VERSION_NUMBER}#g" |\
     sed "s#@REVISION@#${GIT_COMMIT}#"  > "${pkg}"/_service
   ls "${pkg}"
   cp -v "${pkg}"/* jenkins:${GIT_BRANCH}/"${pkg}"/;
