@@ -15,15 +15,25 @@ $OSC meta prjconf jenkins:${GIT_BRANCH} -F  prjconf
 for pkg in $(cat packages); do
 cat "${pkg}"/_meta.in  | sed 's#@BASEPROJECT@#jenkins#g' | sed "s#@BRANCH@#${GIT_BRANCH}#" | $OSC meta pkg jenkins:${GIT_BRANCH} "${pkg}" -F -
 done
+
+GIT_COMMIT=3ccdf52d3761fc7bbf0feb7fec0396c7dc05541f
+        <param name="revision">@REVISION@</param>
+        <param name="@VERSION_OR_VERSIONPREFIX@">@VERSION_NUMBER@</param>
+
 # for every package, add files that belong to this package, especially service files
 
 for pkg in $(cat packages); do
   $OSC co "jenkins:${GIT_BRANCH}/${pkg}";
-  pwd
+  cat "${pkg}"/_service.in  |\
+    sed 's#@VERSION_OR_VERSIONPREFIX@#versionprefix#g' |\
+    sed 's#@VERSION_NUMBER@#19.1.2#g' |\
+    sed "s#@REVISION@#${GIT_COMMIT}#"  > "${pkg}"/_service
   ls "${pkg}"
   cp -v "${pkg}"/* jenkins:${GIT_BRANCH}/"${pkg}"/;
+
   cd jenkins:${GIT_BRANCH}/"${pkg}"/ || exit
   rm _meta.in
+  rm _service.in
   osc add ./*
   osc commit -m "import"
   cd - || exit
