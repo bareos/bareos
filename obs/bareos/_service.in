@@ -5,6 +5,7 @@
     <param name="@VERSION_OR_VERSIONPREFIX@">@VERSION_NUMBER@</param>
     <param name="url">@GIT_URL@</param>
 
+    <param name="filename">bareos</param>
     <param name="scm">git</param>
     <param name="package-meta">yes</param>
     <param name="subdir">core</param>
