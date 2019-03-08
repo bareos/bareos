@@ -1,7 +1,7 @@
 #!/bin/bash
 OSC=osc
 
-GIT_URL="git://github.com/pstorz/bareos"
+GIT_URL="git://gitmirror/pstorz-bareos"
 
 
 if [ "${GIT_BRANCH}" = "master" ]; then
