@@ -1,6 +1,9 @@
 #!/bin/bash
 OSC=osc
 
+GIT_URL="git://github.com/pstorz/bareos"
+
+
 if [ "${GIT_BRANCH}" = "master" ]; then
   VERSION_OR_VERSIONPREFIX="versionprefix"
 else
@@ -35,6 +38,7 @@ for pkg in $(cat packages); do
   cat "${pkg}"/_service.in  |\
     sed "s#@VERSION_OR_VERSIONPREFIX@#${VERSION_OR_VERSIONPREFIX}#g" |\
     sed "s#@VERSION_NUMBER@#${BAREOS_VERSION_NUMBER}#g" |\
+    sed "s#@GIT_URL@#${GIT_URL}#g" |\
     sed "s#@REVISION@#${GIT_COMMIT}#"  > "${pkg}"/_service
   ls "${pkg}"
   cp -v "${pkg}"/* jenkins:${GIT_BRANCH}/"${pkg}"/;
