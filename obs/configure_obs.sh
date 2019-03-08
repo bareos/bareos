@@ -16,10 +16,6 @@ for pkg in $(cat packages); do
 cat "${pkg}"/_meta.in  | sed 's#@BASEPROJECT@#jenkins#g' | sed "s#@BRANCH@#${GIT_BRANCH}#" | $OSC meta pkg jenkins:${GIT_BRANCH} "${pkg}" -F -
 done
 
-GIT_COMMIT=3ccdf52d3761fc7bbf0feb7fec0396c7dc05541f
-        <param name="revision">@REVISION@</param>
-        <param name="@VERSION_OR_VERSIONPREFIX@">@VERSION_NUMBER@</param>
-
 # for every package, add files that belong to this package, especially service files
 
 for pkg in $(cat packages); do
