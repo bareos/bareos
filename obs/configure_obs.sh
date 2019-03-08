@@ -1,6 +1,12 @@
 #!/bin/bash
 OSC=osc
 
+VERSION=`wget "https://raw.githubusercontent.com/bareos/bareos/${GIT_BRANCH}/core/src/include/version.h" --no-check-certificate -O - | \
+                grep "#define VERSION" | \
+                cut -b 17- | \
+                sed 's/\"//g'`
+
+
 rm -Rvf jenkins:${GIT_BRANCH}
 # update project config and create project if it does not exist:
 
@@ -22,7 +28,7 @@ for pkg in $(cat packages); do
   $OSC co "jenkins:${GIT_BRANCH}/${pkg}";
   cat "${pkg}"/_service.in  |\
     sed 's#@VERSION_OR_VERSIONPREFIX@#versionprefix#g' |\
-    sed 's#@VERSION_NUMBER@#19.1.2#g' |\
+    sed 's#@VERSION_NUMBER@#${VERSION}#g' |\
     sed "s#@REVISION@#${GIT_COMMIT}#"  > "${pkg}"/_service
   ls "${pkg}"
   cp -v "${pkg}"/* jenkins:${GIT_BRANCH}/"${pkg}"/;
