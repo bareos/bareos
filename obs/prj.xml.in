@@ -10,6 +10,7 @@
   <debuginfo>
     <enable/>
   </debuginfo>
+<!--
   <repository name="xUbuntu_18.04">
     <path project="openSUSE.org:Ubuntu:18.04" repository="universe"/>
     <path project="bareos:@BRANCH@:common" repository="xUbuntu_18.04"/>
@@ -104,15 +105,18 @@
     <arch>i586</arch>
     <arch>x86_64</arch>
   </repository>
+-->
   <repository name="CentOS_7">
     <path project="bareos:@BRANCH@:common" repository="CentOS_7"/>
     <path project="openSUSE.org:CentOS:CentOS-7" repository="standard"/>
     <arch>x86_64</arch>
   </repository>
+<!--
   <repository name="CentOS_6">
     <path project="bareos:@BRANCH@:common" repository="CentOS_6"/>
     <path project="bareos:@BRANCH@:dod" repository="CentOS_6"/>
     <path project="openSUSE.org:CentOS:CentOS-6" repository="standard"/>
     <arch>x86_64</arch>
   </repository>
+-->
 </project>
