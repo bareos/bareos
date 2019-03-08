@@ -163,6 +163,7 @@ For a detailed explanation of all connection modes see :ref:`ConnectionOverviewR
 .. uml::
   :caption: Full overview of all Bareos connections possible with Bareos 18.2
 
+  left to right direction
   skinparam shadowing false
 
   (Python 17,18) as Py1718
