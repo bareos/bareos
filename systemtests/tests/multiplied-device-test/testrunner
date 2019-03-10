@@ -6,23 +6,13 @@
 TestName="$(basename "$(pwd)")"
 export TestName
 
-JobName=backup-bareos-fd
+JobName=backup-to-pool1
 . ./environment
 . ${scripts}/functions
 
 ${scripts}/cleanup
 ${scripts}/setup
 
-#
-# Zap out any schedule in default conf file so that
-#  it doesn't start during our test
-#
-#outf="$tmp/sed_tmp"
-#echo "s%  Schedule =%# Schedule =%g" >${outf}
-#cp $rscripts/bareos-dir.conf $tmp/1
-#sed -f ${outf} $tmp/1 >$conf/bareos-dir.conf
-
-#change_jobname BackupClient1FileList $JobName
 
 # Directory to backup.
 # This directory will be created by setup_data().
@@ -46,23 +36,6 @@ run job=backup-to-pool1 level=Full yes
 run job=backup-to-pool2 level=Full yes
 run job=backup-to-pool3 level=Full yes
 status storage=File
-status storage=File
-status storage=File
-status storage=File
-status storage=File
-status storage=File
-@#sleep 1
-status storage=File
-status storage=File
-status storage=File
-status storage=File
-status storage=File
-@#sleep 1
-status storage=File
-status storage=File
-status storage=File
-status storage=File
-status storage=File
 wait
 messages
 @#
@@ -70,30 +43,6 @@ messages
 @#
 @$out $tmp/log2.out
 restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done
-yes
-wait
-messages
-quit
-END_OF_DATA
-
-run_bareos
-
-check_for_zombie_jobs storage=File
-stop_bareos
-
-cat <<END_OF_DATA >$tmp/bconcmds
-@$out /dev/null
-messages
-@$out $tmp/log1.out
-@#setdebug level=100 storage=File
-run job=$JobName yes
-wait
-messages
-@#
-@# now do a restore
-@#
-@$out $tmp/log2.out
-restore where=$tmp/bareos-restores select all done
 yes
 wait
 messages
