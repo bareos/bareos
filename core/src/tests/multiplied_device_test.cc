@@ -299,3 +299,42 @@ TEST(sd,
 
   EXPECT_EQ(count, 3);
 }
+
+TEST(sd, MultipliedDeviceTest_CheckPointerReferenceOfOriginalDevice)
+{
+  InitGlobals();
+  std::string path_to_config =
+      PROJECT_SOURCE_DIR "/src/tests/configs/stored_multiplied_device/";
+
+  PConfigParser my_config(InitSdConfig(path_to_config.c_str(), M_INFO));
+  storagedaemon::my_config = my_config.get();
+
+  ASSERT_TRUE(my_config->ParseConfig());
+
+  CommonResourceHeader* p;
+  p = my_config->GetResWithName(R_DEVICE, "MultipliedDeviceResource0001");
+  ASSERT_TRUE(p);
+  DeviceResource* original_device = reinterpret_cast<DeviceResource*>(p);
+  EXPECT_EQ(original_device, original_device->multiplied_device_resource);
+}
+
+TEST(sd, MultipliedDeviceTest_CheckPointerReferenceOfCopiedDevice)
+{
+  InitGlobals();
+  std::string path_to_config =
+      PROJECT_SOURCE_DIR "/src/tests/configs/stored_multiplied_device/";
+
+  PConfigParser my_config(InitSdConfig(path_to_config.c_str(), M_INFO));
+  storagedaemon::my_config = my_config.get();
+
+  ASSERT_TRUE(my_config->ParseConfig());
+
+  CommonResourceHeader* p;
+  p = my_config->GetResWithName(R_DEVICE, "MultipliedDeviceResource0001");
+  ASSERT_TRUE(p);
+  DeviceResource* original_device = reinterpret_cast<DeviceResource*>(p);
+  p = my_config->GetResWithName(R_DEVICE, "MultipliedDeviceResource0002");
+  ASSERT_TRUE(p);
+  DeviceResource* multiplied_device = reinterpret_cast<DeviceResource*>(p);
+  EXPECT_EQ(original_device, multiplied_device->multiplied_device_resource);
+}

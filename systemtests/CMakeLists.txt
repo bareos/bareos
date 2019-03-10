@@ -162,6 +162,7 @@ set(tests_dir ${PROJECT_BINARY_DIR}/tests)
 set(SYSTEM_TESTS
   backup-bareos-test
   backup-bareos-passive-test
+  multiplied-device-test
 )
 
 set(BASEPORT 42001)
