@@ -1,7 +1,7 @@
 #!/bin/bash
 
 OBS_SERVER="http://obs2018"
-JENKINS_JOB_NAME="jenkins:${GIT_BRANCH}"
+JENKINS_JOB_NAME="jenkins-${GIT_BRANCH}"
 
 
 # Variables to replace in xml
