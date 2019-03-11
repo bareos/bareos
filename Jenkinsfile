@@ -3,17 +3,7 @@ pipeline {
     label 'osc'
   }
   stages {
-    stage('Configure  Jenkins') {
-      steps {
-        sh '''export PATH=/usr/local/bin:$PATH
-cd jenkins
-env
-export GIT_BRANCH
-sh -x ./configure_jenkins.sh
-'''
-      }
-    }
-    stage('Configure OBS') {
+    stage('Build in OBS') {
       steps {
         sh '''export PATH=/usr/local/bin:$PATH
 cd obs
@@ -23,7 +13,7 @@ sh -x ./configure_obs.sh
 '''
       }
     }
-    stage('Build') {
+    stage('Test in Jenkins') {
       steps {
         sh '''export PATH=/usr/local/bin:$PATH
 cd obs
@@ -31,15 +21,14 @@ sh -x ./wait_for_completion.sh
 '''
       }
     }
-    stage('Test') {
+    stage('Configure  Jenkins') {
       steps {
-        echo 'Testing ...'
         sh '''export PATH=/usr/local/bin:$PATH
-cd build
-ctest -R gtest -D Experimental'''
-        sh '''export PATH=/usr/local/bin:$PATH
-cd  build
-ctest -R system:backup-bareos-test -D Experimental'''
+cd jenkins
+env
+export GIT_BRANCH
+sh -x ./configure_jenkins.sh
+'''
       }
     }
     stage('Deploy') {
