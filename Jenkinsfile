@@ -34,7 +34,6 @@ sh -x ./configure_jenkins.sh
     stage('Deploy') {
       steps {
         echo 'deploying'
-        deleteDir()
       }
     }
   }
