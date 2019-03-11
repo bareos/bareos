@@ -24,7 +24,7 @@
         <hudson.model.StringParameterDefinition>
           <name>REPOURL</name>
           <description>list of repositories to use</description>
-          <defaultValue>http://obs2018.dass-it/bareos:/master/</defaultValue>
+          <defaultValue>@REPOURL@/</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
           <name>STAGE</name>
