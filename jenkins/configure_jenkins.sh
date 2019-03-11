@@ -1,6 +1,8 @@
 #!/bin/bash
 
 OBS_SERVER="http://obs2018"
+JENKINS_JOB_NAME="jenkins:${GIT_BRANCH}"
+
 
 # Variables to replace in xml
 #GIT_BRANCH   name of the current branch, e.g. master, bareos-18.2
@@ -14,8 +16,11 @@ for DR in ${DISTRELEASES}; do
   DISTRELEASES_XML="${DISTRELEASES_XML}<string>${DR}</string> "
 done
 
+
+/usr/local/bin/jenkins-cli.sh delete-job $"{JOBNAME}"
 cat bareos.xml.in |\
   sed "s#@GIT_BRANCH@#${GIT_BRANCH}#g" |\
   sed "s#@DISTRELEASES_XML@#${DISTRELEASES_XML}#g" |\
-  sed "s#@REPOURL@#${OBS_SERVER}/bareos:/${GIT_BRANCH}/#"
+  sed "s#@REPOURL@#${OBS_SERVER}/bareos:/${GIT_BRANCH}/#"  |\
+  /usr/local/bin/jenkins-cli.sh create-job $"{JOBNAME}"
 
