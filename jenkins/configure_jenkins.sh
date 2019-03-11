@@ -9,7 +9,7 @@ JENKINS_JOB_NAME="jenkins-${GIT_BRANCH}"
 #REPOURL      url of the packages on obs server, e.g. http://obs2018.dass-it/bareos:/master/
 #DISTRELEASES list of distreleases as xml string list like <string>CentOS-6-x86_64</string><string>CentOS-7-x86_64</string>
 
-DISTRELEASES="CentOS-6-x86_64 CentOS-7-x86_64 Fedora-29-x86_64"
+DISTRELEASES="CentOS-7-x86_64"
 
 DISTRELEASES_XML=""
 for DR in ${DISTRELEASES}; do
