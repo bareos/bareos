@@ -23,3 +23,9 @@ cat bareos.xml.in |\
   sed "s#@REPOURL@#${OBS_SERVER}/bareos:/${GIT_BRANCH}/#"  |\
   /usr/local/bin/jenkins-cli.sh create-job "${JENKINS_JOB_NAME}"
 
+
+# run the job, and wait until complete and show output
+/usr/local/bin/jenkins-cli.sh build "${JENKINS_JOB_NAME}" -s -v
+
+
+
