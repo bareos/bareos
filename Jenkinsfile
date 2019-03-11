@@ -13,6 +13,7 @@ sh -x ./configure_jenkins.sh
 '''
       }
     }
+  }
   stages {
     stage('Configure OBS') {
       steps {
