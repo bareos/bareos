@@ -22,5 +22,5 @@ cat bareos.xml.in |\
   sed "s#@GIT_BRANCH@#${GIT_BRANCH}#g" |\
   sed "s#@DISTRELEASES_XML@#${DISTRELEASES_XML}#g" |\
   sed "s#@REPOURL@#${OBS_SERVER}/bareos:/${GIT_BRANCH}/#"  |\
-  /usr/local/bin/jenkins-cli.sh create-job $"{JOBNAME}"
+  /usr/local/bin/jenkins-cli.sh create-job "${JENKINS_JOB_NAME}"
 
