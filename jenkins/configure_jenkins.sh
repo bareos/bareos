@@ -1,6 +1,7 @@
 #!/bin/bash
 
 OBS_SERVER="http://obs2018"
+OBS_PROJECT_BASE="jenkins"
 JENKINS_JOB_NAME="jenkins-${GIT_BRANCH}"
 
 
@@ -20,7 +21,7 @@ done
 cat bareos.xml.in |\
   sed "s#@GIT_BRANCH@#${GIT_BRANCH}#g" |\
   sed "s#@DISTRELEASES_XML@#${DISTRELEASES_XML}#g" |\
-  sed "s#@REPOURL@#${OBS_SERVER}/bareos:/${GIT_BRANCH}/#"  |\
+  sed "s#@REPOURL@#${OBS_SERVER}/${OBS_PROJECT_BASE}:/${GIT_BRANCH}/#"  |\
   /usr/local/bin/jenkins-cli.sh create-job "${JENKINS_JOB_NAME}"
 
 
