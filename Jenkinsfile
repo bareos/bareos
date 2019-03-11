@@ -1,4 +1,4 @@
-CD {
+pipeline {
   agent {
     label 'osc'
   }
