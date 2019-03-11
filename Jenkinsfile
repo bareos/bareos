@@ -13,8 +13,6 @@ sh -x ./configure_jenkins.sh
 '''
       }
     }
-  }
-  stages {
     stage('Configure OBS') {
       steps {
         sh '''export PATH=/usr/local/bin:$PATH
