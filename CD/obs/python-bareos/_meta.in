@@ -1,0 +1,4 @@
+<package name="python-bareos" project="@BASEPROJECT@:@BRANCH@">
+  <title/>
+  <description/>
+</package>

@@ -1,0 +1,4 @@
+<project name="bareos:master">
+  <package name="libdroplet" state=" " />
+  <package name="libjansson" state=" " />
+</project>

@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<services>
+  <service name="tar_scm">
+  <param name="version">0.1</param>
+  <param name="filename">libfastlz</param>
+  <param name="revision">master</param>
+  <param name="submodules">disable</param>
+  <param name="url">git://github.com/bareos/fastlzlib.git</param>
+  <param name="scm">git</param></service>
+  <service name="recompress">
+      <param name="file">*.tar</param>
+      <param name="compression">bz2</param>
+  </service>
+ <service name="set_version"/>
+</services>

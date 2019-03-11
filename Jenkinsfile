@@ -1,4 +1,4 @@
-pipeline {
+CD {
   agent {
     label 'osc'
   }
@@ -6,7 +6,7 @@ pipeline {
     stage('Configure OBS') {
       steps {
         sh '''export PATH=/usr/local/bin:$PATH
-cd pipeline/obs
+cd CD/obs
 env
 export GIT_BRANCH
 sh -x ./configure_obs.sh
@@ -16,7 +16,7 @@ sh -x ./configure_obs.sh
     stage('Wait for OBS to complete') {
       steps {
         sh '''export PATH=/usr/local/bin:$PATH
-cd pipeline/obs
+cd CD/obs
 sh -x ./wait_for_completion.sh
 '''
       }
@@ -24,7 +24,7 @@ sh -x ./wait_for_completion.sh
     stage('Configure Jenkins and run tests') {
       steps {
         sh '''export PATH=/usr/local/bin:$PATH
-cd pipeline/jenkins
+cd CD/jenkins
 env
 export GIT_BRANCH
 sh -x ./configure_jenkins.sh

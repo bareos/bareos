@@ -1,0 +1,11 @@
+jansson (2.7-1) unstable; urgency=low
+
+  * update to libjansson 2.7
+
+ -- root <root@ci-Debian-7-64>  Tue, 11 May 2015 09:53:38 +0200
+
+jansson (2.6-1) unstable; urgency=low
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- root <root@ci-Debian-7-64>  Tue, 14 Apr 2015 09:53:38 +0200

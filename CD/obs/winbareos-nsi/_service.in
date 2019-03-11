@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<services>
+  <service name="obs_scm">
+    <param name="revision">@REVISION@</param>
+    <param name="@VERSION_OR_VERSIONPREFIX@">@VERSION_NUMBER@</param>
+
+    <param name="url">@GIT_URL@</param>
+
+    <param name="filename">bareos</param>
+    <param name="submodules">disable</param>
+    <param name="url">git://gitmirror/bareos</param>
+    <param name="scm">git</param>
+    <param name="subdir">core</param>
+  </service>
+  <service name="recompress">
+    <param name="compression">bz2</param>
+    <param name="file">*.tar</param>
+  </service>
+  <service name="extract_file">
+    <param name="files">*/LICENSE</param>
+    <param name="files">*/platforms/win32/winbareos-nsi.spec</param>
+    <param name="archive">*.tar.bz2</param>
+    <param name="files">*/platforms/win32/*.ini</param>
+    <param name="files">*/platforms/win32/*.ico</param>
+    <param name="files">*/platforms/win32/winbareos.nsi</param>
+  </service>
+  <service name="set_version"/>
+  <service name="download_files"/>
+</services>

@@ -1,0 +1,14 @@
+#!/usr/bin/make -f
+#export DH_VERBOSE=1
+%:
+	dh $@
+
+override_dh_auto_build:
+	dh_auto_build
+ifeq ($(shell dpkg-query -s python-sphinx 1>/dev/null 2>&1 && echo yes),yes)
+	$(MAKE) html
+endif
+
+override_dh_strip:
+	dh_strip --dbg-package=libjansson-dbg
+

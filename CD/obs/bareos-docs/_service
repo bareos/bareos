@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<services>
+    <service name="obs_scm">
+        <param name="revision">origin/master</param>
+        <param name="versionprefix">19.1.2</param>
+
+        <param name="url">git://gitmirror/bareos</param>
+        <param name="scm">git</param>
+        <param name="package-meta">yes</param>
+        <param name="subdir">docs</param>
+        <param name="filename">bareos-docs</param>
+        <param name="extract">packaging/bareos-docs.changes</param>
+        <param name="extract">packaging/bareos-docs.dsc</param>
+        <param name="extract">packaging/bareos-docs.spec</param>
+        <param name="extract">packaging/debian.debtransform</param>
+    </service>
+   <service mode="buildtime" name="tar" />
+   <service mode="buildtime" name="recompress">
+    <param name="file">*.tar</param>
+    <param name="compression">gz</param>
+   </service>
+   <service name="set_version" />
+</services>

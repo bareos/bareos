@@ -1,0 +1,9 @@
+<package name="bareos-webui" project="@BASEPROJECT@:@BRANCH@">
+  <title/>
+  <description/>
+  <build>
+    <disable repository="CentOS_6"/>
+    <disable arch="x86_64" repository="openSUSE_Leap_15.0"/>
+    <disable repository="RHEL_6"/>
+  </build>
+</package>

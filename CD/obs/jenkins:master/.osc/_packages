@@ -1,0 +1,15 @@
+<project name="jenkins:master">
+  <package name="bareos" state=" " />
+  <package name="bareos-docs" state=" " />
+  <package name="bareos-regress" state=" " />
+  <package name="bareos-webui" state=" " />
+  <package name="mingw-debugsrc" state=" " />
+  <package name="mingw32-winbareos" state=" " />
+  <package name="mingw64-winbareos" state=" " />
+  <package name="python-bareos" state=" " />
+  <package name="winbareos-nsi" state=" " />
+  <package name="winbareos-opsi" state=" " />
+  <package name="libfastlz" state=" " />
+  <package name="libdroplet" state=" " />
+  <package name="libjansson" state=" " />
+</project>
