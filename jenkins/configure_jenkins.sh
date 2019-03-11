@@ -16,7 +16,6 @@ for DR in ${DISTRELEASES}; do
   DISTRELEASES_XML="${DISTRELEASES_XML}<string>${DR}</string> "
 done
 
-
 /usr/local/bin/jenkins-cli.sh delete-job $"{JOBNAME}"
 cat bareos.xml.in |\
   sed "s#@GIT_BRANCH@#${GIT_BRANCH}#g" |\
