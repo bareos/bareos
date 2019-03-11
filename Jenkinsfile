@@ -3,7 +3,7 @@ pipeline {
     label 'osc'
   }
   stages {
-    stage('Build in OBS') {
+    stage('Configure OBS') {
       steps {
         sh '''export PATH=/usr/local/bin:$PATH
 cd obs
@@ -13,7 +13,7 @@ sh -x ./configure_obs.sh
 '''
       }
     }
-    stage('Test in Jenkins') {
+    stage('Wait for OBS to complete') {
       steps {
         sh '''export PATH=/usr/local/bin:$PATH
 cd obs
@@ -21,7 +21,7 @@ sh -x ./wait_for_completion.sh
 '''
       }
     }
-    stage('Configure  Jenkins') {
+    stage('Configure Jenkins and run tests') {
       steps {
         sh '''export PATH=/usr/local/bin:$PATH
 cd jenkins
