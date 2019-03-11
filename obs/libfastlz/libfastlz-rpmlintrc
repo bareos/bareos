@@ -1,3 +1,0 @@
-setBadness('arch-independent-package-contains-binary-or-object', 0)
-addFilter("shlib-policy-name-error")
-addFilter("SUSE_Backports_policy-SLE_conflict")

@@ -1,8 +1,0 @@
-<package name="libfastlz" project="@BASEPROJECT@:@BRANCH@">
-  <title/>
-  <description/>
-  <build>
-    <enable/>
-    <disable repository="win_cross"/>
-  </build>
-</package>
