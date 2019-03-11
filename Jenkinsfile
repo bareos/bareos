@@ -3,6 +3,17 @@ pipeline {
     label 'osc'
   }
   stages {
+    stage('Configure  Jenkins') {
+      steps {
+        sh '''export PATH=/usr/local/bin:$PATH
+cd jenkins
+env
+export GIT_BRANCH
+sh -x ./configure_jenkins.sh
+'''
+      }
+    }
+  stages {
     stage('Configure OBS') {
       steps {
         sh '''export PATH=/usr/local/bin:$PATH
