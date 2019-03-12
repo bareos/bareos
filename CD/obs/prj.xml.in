@@ -1,162 +1,118 @@
-xUbuntu
-18.04:
-PATH: openSUSE.org:Ubuntu:18.04
-REPOSITORY: repository="universe
-PATH: bareos:@BRANCH@:common
-REPOSITORY: repository="xUbuntu_18.04
-    - x86_64
-  
-xUbuntu
-16.04:
-PATH: openSUSE.org:Ubuntu:16.04
-REPOSITORY: repository="standard
-PATH: openSUSE.org:Ubuntu:16.04
-REPOSITORY: repository="universe
-PATH: bareos:@BRANCH@:dod
-REPOSITORY: repository="xUbuntu_16.04
-PATH: bareos:@BRANCH@:common
-REPOSITORY: repository="xUbuntu_16.04
-    - i586
-    - x86_64
-
-xUbuntu
-14.04:
-
-PATH: bareos:@BRANCH@:common
-REPOSITORY: repository="xUbuntu_14.04
-PATH: openSUSE.org:Ubuntu:14.04
-REPOSITORY: repository="universe
-PATH: openSUSE.org:Ubuntu:14.04
-REPOSITORY: repository="standard
-PATH: bareos:@BRANCH@:dod
-REPOSITORY: repository="xUbuntu_14.04
-    - i586
-    - x86_64
-  
-     win_cross:
-PATH: openSUSE.org:SUSE:SLE-12-SP4:GA
-REPOSITORY: repository="standard
-PATH: bareos:@BRANCH@:win32
-REPOSITORY: repository="win_cross
-PATH: bareos:@BRANCH@:win64
-REPOSITORY: repository="win_cross
-PATH: openSUSE.org:home:uibmz:opsi:opsi40-experimental
-REPOSITORY: repository="SLE_12_SP3
-PATH: bareos:@BRANCH@:common
-REPOSITORY: repository="win_cross
-PATH: bareos:master
-REPOSITORY: repository="SLE_12_SP4
-    - x86_64
-  
-     openSUSE_Leap_15.0:
-PATH: bareos:@BRANCH@:common
-REPOSITORY: repository="openSUSE_Leap_15.0
-PATH: openSUSE.org:openSUSE:Leap:15.0
-REPOSITORY: repository="standard
-    - x86_64
-  
-     Univention_4.3:
-PATH: bareos:@BRANCH@:common
-REPOSITORY: repository="Univention_4.3
-PATH: openSUSE.org:Univention:4.3
-REPOSITORY: repository="standard
-PATH: openSUSE.org:Debian:9.0
-REPOSITORY: repository="standard
-    - x86_64
-  
-     SLE_15:
-PATH: openSUSE.org:SUSE:SLE-15:GA
-REPOSITORY: repository="SLES
-PATH: openSUSE.org:openSUSE:Backports:SLE-15:Checks
-REPOSITORY: repository="standard
-PATH: openSUSE.org:openSUSE:Backports:SLE-15
-REPOSITORY: repository="standard
-PATH: openSUSE.org:SUSE:SLE-15:GA
-REPOSITORY: repository="standard
-PATH: bareos:@BRANCH@:common
-REPOSITORY: repository="SLE_15
-    - x86_64
-  
-     SLE_12_SP4:
-PATH: openSUSE.org:SUSE:SLE-12-SP4:GA
-REPOSITORY: repository="SDK
-PATH: openSUSE.org:SUSE:SLE-12-SP4:GA
-REPOSITORY: repository="standard
-PATH: bareos:@BRANCH@:common
-REPOSITORY: repository="SLE_12_SP4
-    - x86_64
-  
-     RHEL_7:
-PATH: bareos:@BRANCH@:dod
-REPOSITORY: repository="rhel-x86_64-server-rh-common-7
-PATH: bareos:@BRANCH@:dod
-REPOSITORY: repository="rhel-x86_64-server-7-rhceph-2-tools
-PATH: bareos:@BRANCH@:dod
-REPOSITORY: repository="rhel-x86_64-server-optional-7
-PATH: bareos:@BRANCH@:common
-REPOSITORY: repository="RHEL_7
-PATH: bareos:@BRANCH@:dod
-REPOSITORY: repository="RHEL_7
-PATH: openSUSE.org:RedHat:RHEL-7
-REPOSITORY: repository="standard
-    - x86_64
-  
-     RHEL_6:
-PATH: bareos:@BRANCH@:common
-REPOSITORY: repository="RHEL_6
-PATH: bareos:@BRANCH@:dod
-REPOSITORY: repository="RHEL_6
-PATH: openSUSE.org:RedHat:RHEL-6
-REPOSITORY: repository="standard
-PATH: openSUSE.org:CentOS:CentOS-6
-REPOSITORY: repository="standard
-    - x86_64
-  
-     Fedora_29:
-PATH: bareos:@BRANCH@:common
-REPOSITORY: repository="Fedora_29
-PATH: openSUSE.org:Fedora:29
-REPOSITORY: repository="standard
-    - x86_64
-  
-     Fedora_28:
-PATH: bareos:@BRANCH@:common
-REPOSITORY: repository="Fedora_28
-PATH: openSUSE.org:Fedora:28
-REPOSITORY: repository="standard
-    - x86_64
-  
-     Debian_9.0:
-PATH: bareos:@BRANCH@:dod
-REPOSITORY: repository="Debian_9.0
-PATH: openSUSE.org:Debian:9.0
-REPOSITORY: repository="standard
-PATH: bareos:@BRANCH@:common
-REPOSITORY: repository="Debian_9.0
-    - i586
-    - x86_64
-  
-     Debian_8.0:
-PATH: bareos:@BRANCH@:common
-REPOSITORY: repository="Debian_8.0
-PATH: openSUSE.org:Debian:8.0
-REPOSITORY: repository="standard
-    - i586
-    - x86_64
-  
-     CentOS_7:
-PATH: bareos:@BRANCH@:common
-REPOSITORY: repository="CentOS_7
-PATH: openSUSE.org:CentOS:CentOS-7
-REPOSITORY: repository="standard
-    - x86_64
-  
-     CentOS_6:
-PATH: bareos:@BRANCH@:common
-REPOSITORY: repository="CentOS_6
-PATH: bareos:@BRANCH@:dod
-REPOSITORY: repository="CentOS_6
-PATH: openSUSE.org:CentOS:CentOS-6
-REPOSITORY: repository="standard
-    - x86_64
-  
+<project name="@BASEPROJECT@:@BRANCH@">
+  <title/>
+  <description/>
+  <person userid="franku" role="maintainer"/>
+  <person userid="obsrun" role="maintainer"/>
+  <person userid="pstorz" role="maintainer"/>
+  <build>
+    <disable repository="win_cross"/>
+  </build>
+  <debuginfo>
+    <enable/>
+  </debuginfo>
+  <repository name="xUbuntu_18.04">
+    <path project="openSUSE.org:Ubuntu:18.04" repository="universe"/>
+    <path project="bareos:@BRANCH@:common" repository="xUbuntu_18.04"/>
+    <arch>x86_64</arch>
+  </repository>
+  <repository name="xUbuntu_16.04">
+    <path project="openSUSE.org:Ubuntu:16.04" repository="standard"/>
+    <path project="openSUSE.org:Ubuntu:16.04" repository="universe"/>
+    <path project="bareos:@BRANCH@:dod" repository="xUbuntu_16.04"/>
+    <path project="bareos:@BRANCH@:common" repository="xUbuntu_16.04"/>
+    <arch>i586</arch>
+    <arch>x86_64</arch>
+  </repository>
+  <repository name="xUbuntu_14.04">
+    <path project="bareos:@BRANCH@:common" repository="xUbuntu_14.04"/>
+    <path project="openSUSE.org:Ubuntu:14.04" repository="universe"/>
+    <path project="openSUSE.org:Ubuntu:14.04" repository="standard"/>
+    <path project="bareos:@BRANCH@:dod" repository="xUbuntu_14.04"/>
+    <arch>i586</arch>
+    <arch>x86_64</arch>
+  </repository>
+  <repository name="win_cross">
+    <path project="openSUSE.org:SUSE:SLE-12-SP4:GA" repository="standard"/>
+    <path project="bareos:@BRANCH@:win32" repository="win_cross"/>
+    <path project="bareos:@BRANCH@:win64" repository="win_cross"/>
+    <path project="openSUSE.org:home:uibmz:opsi:opsi40-experimental" repository="SLE_12_SP3"/>
+    <path project="bareos:@BRANCH@:common" repository="win_cross"/>
+    <path project="bareos:master" repository="SLE_12_SP4"/>
+    <arch>x86_64</arch>
+  </repository>
+  <repository name="openSUSE_Leap_15.0">
+    <path project="bareos:@BRANCH@:common" repository="openSUSE_Leap_15.0"/>
+    <path project="openSUSE.org:openSUSE:Leap:15.0" repository="standard"/>
+    <arch>x86_64</arch>
+  </repository>
+  <repository name="Univention_4.3">
+    <path project="bareos:@BRANCH@:common" repository="Univention_4.3"/>
+    <path project="openSUSE.org:Univention:4.3" repository="standard"/>
+    <path project="openSUSE.org:Debian:9.0" repository="standard"/>
+    <arch>x86_64</arch>
+  </repository>
+  <repository name="SLE_15">
+    <path project="openSUSE.org:SUSE:SLE-15:GA" repository="SLES"/>
+    <path project="openSUSE.org:openSUSE:Backports:SLE-15:Checks" repository="standard"/>
+    <path project="openSUSE.org:openSUSE:Backports:SLE-15" repository="standard"/>
+    <path project="openSUSE.org:SUSE:SLE-15:GA" repository="standard"/>
+    <path project="bareos:@BRANCH@:common" repository="SLE_15"/>
+    <arch>x86_64</arch>
+  </repository>
+  <repository name="SLE_12_SP4">
+    <path project="openSUSE.org:SUSE:SLE-12-SP4:GA" repository="SDK"/>
+    <path project="openSUSE.org:SUSE:SLE-12-SP4:GA" repository="standard"/>
+    <path project="bareos:@BRANCH@:common" repository="SLE_12_SP4"/>
+    <arch>x86_64</arch>
+  </repository>
+  <repository name="RHEL_7">
+    <path project="bareos:@BRANCH@:dod" repository="rhel-x86_64-server-rh-common-7"/>
+    <path project="bareos:@BRANCH@:dod" repository="rhel-x86_64-server-7-rhceph-2-tools"/>
+    <path project="bareos:@BRANCH@:dod" repository="rhel-x86_64-server-optional-7"/>
+    <path project="bareos:@BRANCH@:common" repository="RHEL_7"/>
+    <path project="bareos:@BRANCH@:dod" repository="RHEL_7"/>
+    <path project="openSUSE.org:RedHat:RHEL-7" repository="standard"/>
+    <arch>x86_64</arch>
+  </repository>
+  <repository name="RHEL_6">
+    <path project="bareos:@BRANCH@:common" repository="RHEL_6"/>
+    <path project="bareos:@BRANCH@:dod" repository="RHEL_6"/>
+    <path project="openSUSE.org:RedHat:RHEL-6" repository="standard"/>
+    <path project="openSUSE.org:CentOS:CentOS-6" repository="standard"/>
+    <arch>x86_64</arch>
+  </repository>
+  <repository name="Fedora_29">
+    <path project="bareos:@BRANCH@:common" repository="Fedora_29"/>
+    <path project="openSUSE.org:Fedora:29" repository="standard"/>
+    <arch>x86_64</arch>
+  </repository>
+  <repository name="Fedora_28">
+    <path project="bareos:@BRANCH@:common" repository="Fedora_28"/>
+    <path project="openSUSE.org:Fedora:28" repository="standard"/>
+    <arch>x86_64</arch>
+  </repository>
+  <repository name="Debian_9.0">
+    <path project="bareos:@BRANCH@:dod" repository="Debian_9.0"/>
+    <path project="openSUSE.org:Debian:9.0" repository="standard"/>
+    <path project="bareos:@BRANCH@:common" repository="Debian_9.0"/>
+    <arch>i586</arch>
+    <arch>x86_64</arch>
+  </repository>
+  <repository name="Debian_8.0">
+    <path project="bareos:@BRANCH@:common" repository="Debian_8.0"/>
+    <path project="openSUSE.org:Debian:8.0" repository="standard"/>
+    <arch>i586</arch>
+    <arch>x86_64</arch>
+  </repository>
+  <repository name="CentOS_7">
+    <path project="bareos:@BRANCH@:common" repository="CentOS_7"/>
+    <path project="openSUSE.org:CentOS:CentOS-7" repository="standard"/>
+    <arch>x86_64</arch>
+  </repository>
+  <repository name="CentOS_6">
+    <path project="bareos:@BRANCH@:common" repository="CentOS_6"/>
+    <path project="bareos:@BRANCH@:dod" repository="CentOS_6"/>
+    <path project="openSUSE.org:CentOS:CentOS-6" repository="standard"/>
+    <arch>x86_64</arch>
+  </repository>
+</project>
