@@ -21,7 +21,7 @@ rm -Rvf jenkins:${GIT_BRANCH}
 
 #cat prj.xml.in  | sed 's#@BASEPROJECT@#jenkins#g' | sed "s#@BRANCH@#${GIT_BRANCH}#" | $OSC meta prj jenkins:${GIT_BRANCH} -F -
 
-./create_prjconf_xml.py | sed 's#@BASEPROJECT@#jenkins#g' | sed "s#@BRANCH@#${GIT_BRANCH}#" | $OSC meta prj jenkins:${GIT_BRANCH} -F -
+./create_obs_project_from_yaml.py | sed 's#@BASEPROJECT@#jenkins#g' | sed "s#@BRANCH@#${GIT_BRANCH}#" | $OSC meta prj jenkins:${GIT_BRANCH} -F -
 
 # set project config
 $OSC meta prjconf jenkins:${GIT_BRANCH} -F  prjconf
