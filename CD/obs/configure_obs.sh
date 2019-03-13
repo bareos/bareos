@@ -62,6 +62,7 @@ for pkg in $(cat packages); do
   cat "${pkg}"/_service.in  | \
     sed "s#@VERSION_OR_VERSIONPREFIX@#${VERSION_OR_VERSIONPREFIX}#g" | \
     sed "s#@VERSION_NUMBER@#${BAREOS_VERSION_NUMBER}#g" | \
+    sed "s#@SUBPROJECTNAME@#${SUBPROJECT_NAME}#g" | \
     sed "s#@GIT_URL@#${GIT_URL}#g" | \
     sed "s#@REVISION@#${GIT_COMMIT}#"  > "${pkg}"/_service
   ls "${pkg}"
