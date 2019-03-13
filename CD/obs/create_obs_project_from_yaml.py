@@ -5,6 +5,7 @@ import lxml.etree as ET
 
 # create the XML file structure
 project = ET.Element('project')
+project.set('name', '@BASEPROJECT@:@BRANCH@')
 title = ET.SubElement(project, 'title')
 description = ET.SubElement(project, 'description')
 build = ET.SubElement(project, 'build')
