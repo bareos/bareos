@@ -1,6 +1,6 @@
 #!/bin/bash
 
-OBS_SERVER="http://obs2018"
+OBS_SERVER="http://obs2018.dass-it"
 OBS_PROJECT_BASE="jenkins"
 JENKINS_JOB_NAME="jenkins-${GIT_BRANCH}"
 
