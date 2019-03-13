@@ -11,10 +11,6 @@
     <param name="scm">git</param>
     <param name="subdir">core</param>
   </service>
-  <service name="recompress">
-    <param name="compression">bz2</param>
-    <param name="file">*.tar</param>
-  </service>
   <service name="extract_file">
     <param name="files">*/LICENSE</param>
     <param name="files">*/platforms/win32/winbareos-nsi.spec</param>
