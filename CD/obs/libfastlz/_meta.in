@@ -1,4 +1,4 @@
-<package name="libfastlz" project="@BASEPROJECT@:@SUBPROJECTNAME@">
+<package name="libfastlz" project="@BASEPROJECT@:@ORIGINALBRANCH@">
   <title/>
   <description/>
   <build>

@@ -1,4 +1,4 @@
-<package name="libdroplet" project="@BASEPROJECT@:@SUBPROJECTNAME@">
+<package name="libdroplet" project="@BASEPROJECT@:@ORIGINALBRANCH@">
   <title/>
   <description/>
   <build>
