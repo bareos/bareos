@@ -11,7 +11,7 @@ else
 fi
 
 # get version from version.h
-BAREOS_VERSION_NUMBER=`cat ../core/src/include/version.h | \
+BAREOS_VERSION_NUMBER=`cat core/src/include/version.h | \
                 grep "#define VERSION" | \
                 cut -b 17- | \
                 sed 's/\"//g'`
