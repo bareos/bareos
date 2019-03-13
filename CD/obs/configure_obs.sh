@@ -34,9 +34,9 @@ BAREOS_VERSION_NUMBER=`cat ../../core/src/include/version.h | \
 rm -Rvf ${BASEPROJECT_NAME}:${SUBPROJECT_NAME}
 # update project config and create project if it does not exist:
 
-./create_obs_project_from_yaml.py |\
-  sed 's#@BASEPROJECT@#jenkins#g' |\
-  sed "s#@BRANCH@#${GIT_BRANCH}#g" |\
+./create_obs_project_from_yaml.py | \
+  sed 's#@BASEPROJECT@#jenkins#g' | \
+  sed "s#@BRANCH@#${GIT_BRANCH}#g" | \
   sed "s#@ORIGINALBRANCH@#${ORIGINAL_BRANCH}#g" |\
   $OSC meta prj ${BASEPROJECT_NAME}:${SUBPROJECT_NAME} -F -
 
@@ -50,7 +50,7 @@ for pkg in $(cat packages); do
 cat "${pkg}"/_meta.in  | \
   sed 's#@BASEPROJECT@#jenkins#g' | \
   sed "s#@BRANCH@#${GIT_BRANCH}#g" | \
-  sed "s#@ORIGINALBRANCH@#${ORIGINAL_BRANCH}#g" |\
+  sed "s#@ORIGINALBRANCH@#${ORIGINAL_BRANCH}#g" | \
   $OSC meta pkg ${BASEPROJECT_NAME}:${SUBPROJECT_NAME} "${pkg}" -F -
 done
 
@@ -58,10 +58,10 @@ done
 
 for pkg in $(cat packages); do
   $OSC co "${BASEPROJECT_NAME}:${SUBPROJECT_NAME}/${pkg}";
-  cat "${pkg}"/_service.in  |\
-    sed "s#@VERSION_OR_VERSIONPREFIX@#${VERSION_OR_VERSIONPREFIX}#g" |\
-    sed "s#@VERSION_NUMBER@#${BAREOS_VERSION_NUMBER}#g" |\
-    sed "s#@GIT_URL@#${GIT_URL}#g" |\
+  cat "${pkg}"/_service.in  | \
+    sed "s#@VERSION_OR_VERSIONPREFIX@#${VERSION_OR_VERSIONPREFIX}#g" | \
+    sed "s#@VERSION_NUMBER@#${BAREOS_VERSION_NUMBER}#g" | \
+    sed "s#@GIT_URL@#${GIT_URL}#g" | \
     sed "s#@REVISION@#${GIT_COMMIT}#"  > "${pkg}"/_service
   ls "${pkg}"
   cp -v "${pkg}"/* ${BASEPROJECT_NAME}:${SUBPROJECT_NAME}/"${pkg}"/
