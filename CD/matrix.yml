@@ -8,6 +8,14 @@ OS:
           REPOSITORY: universe
         - PATH: bareos:@BRANCH@:common
           REPOSITORY: xUbuntu_18.04
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-regress
+           - bareos-webui
+           - libfastlz
+           - python-bareos
+
     16.04:
       ARCH:
         - i586
@@ -21,6 +29,20 @@ OS:
         REPOSITORY: xUbuntu_16.04
       - PATH: bareos:@BRANCH@:common
         REPOSITORY: xUbuntu_16.04
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-regress
+           - bareos-vmware
+           - bareos-webui
+           - libfastlz
+           - python-bareos
+        i586: 
+           - bareos
+           - bareos-regress
+           - bareos-webui
+           - libfastlz
+           - python-bareos
 
     14.04:
       ARCH:
@@ -35,6 +57,19 @@ OS:
          REPOSITORY: standard
        - PATH: bareos:@BRANCH@:dod
          REPOSITORY: xUbuntu_14.04
+      PROJECTPACKAGES:
+        i586:
+           - bareos
+           - bareos-regress
+           - bareos-webui
+           - libfastlz
+           - python-bareos
+        x86_64:
+           - bareos
+           - bareos-regress
+           - bareos-webui
+           - libfastlz
+           - python-bareos
 
   win:
     cross:
@@ -53,16 +88,30 @@ OS:
          REPOSITORY: win_cross
        - PATH: bareos:master
          REPOSITORY: SLE_12_SP4
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos-freebsd
+           - bareos-macos
+           - mingw-debugsrc
+           - mingw32-winbareos
+           - mingw64-winbareos
+           - winbareos-nsi
 
   openSUSE:
     Leap_15.0:
-       ARCH:
-       - x86_64
-       PROJECTPATH:
-       - PATH: bareos:@BRANCH@:common
-         REPOSITORY: openSUSE_Leap_15.0
-       - PATH: openSUSE.org:openSUSE:Leap:15.0
-         REPOSITORY: standard
+      ARCH:
+      - x86_64
+      PROJECTPATH:
+      - PATH: bareos:@BRANCH@:common
+        REPOSITORY: openSUSE_Leap_15.0
+      - PATH: openSUSE.org:openSUSE:Leap:15.0
+        REPOSITORY: standard
+      PROJECTPACKAGES:
+       x86_64:
+          - bareos
+          - libfastlz
+          - python-bareos
+
   Univention:
     4.3:
       ARCH:
@@ -74,6 +123,13 @@ OS:
         REPOSITORY: standard
       - PATH: openSUSE.org:Debian:9.0
         REPOSITORY: standard
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-regress
+           - bareos-webui
+           - libfastlz
+           - python-bareos
 
   SLE:
     15:
@@ -90,6 +146,13 @@ OS:
         REPOSITORY: standard
       - PATH: bareos:@BRANCH@:common
         REPOSITORY: SLE_15
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-regress
+           - bareos-webui
+           - libfastlz
+           - python-bareos
 
     12_SP4:
       ARCH:
@@ -101,6 +164,15 @@ OS:
         REPOSITORY: standard
       - PATH: bareos:@BRANCH@:common
         REPOSITORY: SLE_12_SP4
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-regress
+           - bareos-webui
+           - libdroplet
+           - libfastlz
+           - libjansson
+           - python-bareos
 
   RHEL:
     7:
@@ -119,6 +191,15 @@ OS:
         REPOSITORY: RHEL_7
       - PATH: openSUSE.org:RedHat:RHEL-7
         REPOSITORY: standard
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-regress
+           - bareos-vmware
+           - bareos-webui
+           - libdroplet
+           - libfastlz
+           - python-bareos
 
     6:
       ARCH:
@@ -132,6 +213,11 @@ OS:
         REPOSITORY: standard
       - PATH: openSUSE.org:CentOS:CentOS-6
         REPOSITORY: standard
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - libfastlz
+           - python-bareos
 
   Fedora:
     29:
@@ -142,6 +228,12 @@ OS:
         REPOSITORY: Fedora_29
       - PATH: openSUSE.org:Fedora:29
         REPOSITORY: standard
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-webui
+           - libfastlz
+           - python-bareos
 
     28:
       ARCH:
@@ -151,6 +243,12 @@ OS:
         REPOSITORY: Fedora_28
       - PATH: openSUSE.org:Fedora:28
         REPOSITORY: standard
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-webui
+           - libfastlz
+           - python-bareos
 
   Debian:
     9.0:
@@ -164,6 +262,20 @@ OS:
         REPOSITORY: standard
       - PATH: bareos:@BRANCH@:common
         REPOSITORY: Debian_9.0
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-regress
+           - bareos-vmware
+           - bareos-webui
+           - libfastlz
+           - python-bareos
+        i586:
+           - bareos
+           - bareos-regress
+           - bareos-webui
+           - libfastlz
+           - python-bareos
 
     8.0:
       ARCH:
@@ -174,7 +286,20 @@ OS:
         REPOSITORY: Debian_8.0
       - PATH: openSUSE.org:Debian:8.0
         REPOSITORY: standard
-
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-regress
+           - bareos-vmware
+           - bareos-webui
+           - libfastlz
+           - python-bareos
+        i586:
+           - bareos
+           - bareos-regress
+           - bareos-webui
+           - libfastlz
+           - python-bareos
   CentOS:
     7:
       ARCH:
@@ -184,6 +309,16 @@ OS:
         REPOSITORY: CentOS_7
       - PATH: openSUSE.org:CentOS:CentOS-7
         REPOSITORY: standard
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-regress
+           - bareos-vmware
+           - bareos-vmware-vix-disklib65
+           - bareos-webui
+           - libdroplet
+           - libfastlz
+           - python-bareos
 
     6:
       ARCH:
@@ -195,6 +330,11 @@ OS:
         REPOSITORY: CentOS_6
       - PATH: openSUSE.org:CentOS:CentOS-6
         REPOSITORY: standard
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - libfastlz
+           - python-bareos
 
 
 

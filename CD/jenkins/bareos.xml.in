@@ -74,7 +74,8 @@
         <hudson.model.TextParameterDefinition>
           <name>PROJECT_PACKAGES</name>
           <description>BUILD parameter, set by repo-status</description>
-          <defaultValue>SLE-15-x86_64:bareos,bareos-regress,bareos-webui,libfastlz,python-bareos
+          <defaultValue>
+SLE-15-x86_64:bareos,bareos-regress,bareos-webui,libfastlz,python-bareos
 Debian-8.0-x86_64:bareos,bareos-regress,bareos-vmware,bareos-webui,libfastlz,python-bareos
 Debian-9.0-x86_64:bareos,bareos-regress,bareos-vmware,bareos-webui,libfastlz,python-bareos
 Fedora-29-x86_64:bareos,bareos-webui,libfastlz,python-bareos
