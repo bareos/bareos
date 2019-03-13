@@ -10,7 +10,6 @@
     <param name="subdir">core</param>
     <param name="extract">*/LICENSE</param>
     <param name="extract">*/platforms/win32/winbareos-nsi.spec</param>
-    <param name="archive">*.tar.bz2</param>
     <param name="extract">*/platforms/win32/*.ini</param>
     <param name="extract">*/platforms/win32/*.ico</param>
     <param name="extract">*/platforms/win32/winbareos.nsi</param>
