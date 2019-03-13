@@ -76,6 +76,7 @@ for pkg in $(cat packages); do
   timeout 5 osc commit -m "import"
   cd - || exit
 done
-rm -Rvf ${BASEPROJECT_NAME}:${SUBPROJECT_NAME}
+
+#rm -Rvf ${BASEPROJECT_NAME}:${SUBPROJECT_NAME}
 
 
