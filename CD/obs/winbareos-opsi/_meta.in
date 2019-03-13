@@ -1,4 +1,4 @@
-<package name="winbareos-opsi" project="@BASEPROJECT@:@BRANCH@">
+<package name="winbareos-opsi" project="@BASEPROJECT@:@SUBPROJECTNAME@">
   <title/>
   <description/>
   <build>

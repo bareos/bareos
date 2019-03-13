@@ -1,4 +1,4 @@
-<package name="mingw64-winbareos" project="@BASEPROJECT@:@BRANCH@">
+<package name="mingw64-winbareos" project="@BASEPROJECT@:@SUBPROJECTNAME@">
   <title/>
   <description/>
   <build>

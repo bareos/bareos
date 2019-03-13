@@ -1,4 +1,4 @@
-<package name="winbareos-nsi" project="@BASEPROJECT@:@BRANCH@">
+<package name="winbareos-nsi" project="@BASEPROJECT@:@SUBPROJECTNAME@">
   <title/>
   <description/>
   <build>

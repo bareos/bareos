@@ -1,4 +1,4 @@
-<package name="bareos-webui" project="@BASEPROJECT@:@BRANCH@">
+<package name="bareos-webui" project="@BASEPROJECT@:@SUBPROJECTNAME@">
   <title/>
   <description/>
   <build>

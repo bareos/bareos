@@ -1,4 +1,4 @@
-<package name="bareos-regress" project="@BASEPROJECT@:@BRANCH@">
+<package name="bareos-regress" project="@BASEPROJECT@:@SUBPROJECTNAME@">
   <title/>
   <description/>
   <build>

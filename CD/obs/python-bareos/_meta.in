@@ -1,4 +1,4 @@
-<package name="python-bareos" project="@BASEPROJECT@:@BRANCH@">
+<package name="python-bareos" project="@BASEPROJECT@:@SUBPROJECTNAME@">
   <title/>
   <description/>
 </package>

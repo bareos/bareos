@@ -37,7 +37,7 @@ rm -Rvf ${BASEPROJECT_NAME}:${SUBPROJECT_NAME}
 
 ./create_obs_project_from_yaml.py | \
   sed 's#@BASEPROJECT@#jenkins#g' | \
-  sed "s#@BRANCH@#${GIT_BRANCH}#g" | \
+  sed "s#@SUBPROJECTNAME@#${SUBPROJECT_NAME}#g" | \
   sed "s#@ORIGINALBRANCH@#${ORIGINAL_BRANCH}#g" |\
   $OSC meta prj ${BASEPROJECT_NAME}:${SUBPROJECT_NAME} -F -
 
@@ -50,7 +50,7 @@ $OSC meta prjconf ${BASEPROJECT_NAME}:${SUBPROJECT_NAME} -F  prjconf
 for pkg in $(cat packages); do
 cat "${pkg}"/_meta.in  | \
   sed 's#@BASEPROJECT@#jenkins#g' | \
-  sed "s#@BRANCH@#${GIT_BRANCH}#g" | \
+  sed "s#@SUBPROJECTNAME@#${SUBPROJECT_NAME}#g" | \
   sed "s#@ORIGINALBRANCH@#${ORIGINAL_BRANCH}#g" | \
   $OSC meta pkg ${BASEPROJECT_NAME}:${SUBPROJECT_NAME} "${pkg}" -F -
 done

@@ -1,4 +1,4 @@
-<package name="mingw-debugsrc" project="@BASEPROJECT@:@BRANCH@">
+<package name="mingw-debugsrc" project="@BASEPROJECT@:@SUBPROJECTNAME@">
   <title/>
   <description/>
   <build>

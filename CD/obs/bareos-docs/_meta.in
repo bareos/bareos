@@ -1,4 +1,4 @@
-<package name="bareos-docs" project="@BASEPROJECT@:@BRANCH@">
+<package name="bareos-docs" project="@BASEPROJECT@:@SUBPROJECTNAME@">
   <title/>
   <description/>
   <build>

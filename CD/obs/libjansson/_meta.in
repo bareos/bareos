@@ -1,4 +1,4 @@
-<package name="libjansson" project="@BASEPROJECT@:@BRANCH@">
+<package name="libjansson" project="@BASEPROJECT@:@SUBPROJECTNAME@">
   <title/>
   <description/>
   <build>
