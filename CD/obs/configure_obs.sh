@@ -19,7 +19,9 @@ BAREOS_VERSION_NUMBER=`cat ../core/src/include/version.h | \
 rm -Rvf jenkins:${GIT_BRANCH}
 # update project config and create project if it does not exist:
 
-cat prj.xml.in  | sed 's#@BASEPROJECT@#jenkins#g' | sed "s#@BRANCH@#${GIT_BRANCH}#" | $OSC meta prj jenkins:${GIT_BRANCH} -F -
+#cat prj.xml.in  | sed 's#@BASEPROJECT@#jenkins#g' | sed "s#@BRANCH@#${GIT_BRANCH}#" | $OSC meta prj jenkins:${GIT_BRANCH} -F -
+
+./create_prjconf_xml.py | sed 's#@BASEPROJECT@#jenkins#g' | sed "s#@BRANCH@#${GIT_BRANCH}#" | $OSC meta prj jenkins:${GIT_BRANCH} -F -
 
 # set project config
 $OSC meta prjconf jenkins:${GIT_BRANCH} -F  prjconf

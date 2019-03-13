@@ -1,9 +1,6 @@
 <project name="@BASEPROJECT@:@BRANCH@">
   <title/>
   <description/>
-  <person userid="franku" role="maintainer"/>
-  <person userid="obsrun" role="maintainer"/>
-  <person userid="pstorz" role="maintainer"/>
   <build>
     <disable repository="win_cross"/>
   </build>
