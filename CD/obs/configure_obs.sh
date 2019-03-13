@@ -19,6 +19,7 @@ if [ "${DEV}" = "dev" ]; then
   DEVELOPER=$(echo ${GIT_BRANCH} | cut -d '/' -f2)
   ORIGINAL_BRANCH=$(echo ${GIT_BRANCH} | cut -d '/' -f3) #OBS common project?
   DEVELOPER_BRANCH=$(echo ${GIT_BRANCH} | cut -d '/' -f4)
+  SUBPROJECT_NAME="${DEVELOPER}:${ORIGINAL_BRANCH}:${DEVELOPER_BRANCH}"
 fi
 
 export ORIGINAL_BRANCH
