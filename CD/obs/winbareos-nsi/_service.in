@@ -8,7 +8,6 @@
 
     <param name="filename">bareos</param>
     <param name="submodules">disable</param>
-    <param name="url">git://gitmirror/bareos</param>
     <param name="scm">git</param>
     <param name="subdir">core</param>
   </service>
