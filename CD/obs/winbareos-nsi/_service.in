@@ -14,14 +14,14 @@
     <param name="extract">platforms/win32/clientdialog.ini</param>
     <param name="extract">platforms/win32/databasedialog.ini</param>
     <param name="extract">platforms/win32/directordialog.ini</param>
-    <param name="extract">platforms/win32/bareos.icog</param>
-    <param name="extract">platforms/win32/bareosdir.icog</param>
-    <param name="extract">platforms/win32/bareosfd.icog</param>
-    <param name="extract">platforms/win32/bareossd.icog</param>
-    <param name="extract">platforms/win32/bareostools.icog</param>
-    <param name="extract">platforms/win32/bconsole.icog</param>
-    <param name="extract">platforms/win32/bsmtp.icog</param>
-    <param name="extract">platforms/win32/traymon.icog</param>
+    <param name="extract">platforms/win32/bareos.ico</param>
+    <param name="extract">platforms/win32/bareosdir.ico</param>
+    <param name="extract">platforms/win32/bareosfd.ico</param>
+    <param name="extract">platforms/win32/bareossd.ico</param>
+    <param name="extract">platforms/win32/bareostools.ico</param>
+    <param name="extract">platforms/win32/bconsole.ico</param>
+    <param name="extract">platforms/win32/bsmtp.ico</param>
+    <param name="extract">platforms/win32/traymon.ico</param>
     <param name="extract">platforms/win32/winbareos.nsi</param>
   </service>
   <service mode="buildtime" name="tar" />
