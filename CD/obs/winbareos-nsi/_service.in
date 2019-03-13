@@ -8,11 +8,11 @@
     <param name="filename">bareos</param>
     <param name="scm">git</param>
     <param name="subdir">core</param>
-    <param name="extract">*/LICENSE</param>
-    <param name="extract">*/platforms/win32/winbareos-nsi.spec</param>
-    <param name="extract">*/platforms/win32/*.ini</param>
-    <param name="extract">*/platforms/win32/*.ico</param>
-    <param name="extract">*/platforms/win32/winbareos.nsi</param>
+    <param name="extract">LICENSE</param>
+    <param name="extract">platforms/win32/winbareos-nsi.spec</param>
+    <param name="extract">platforms/win32/*.ini</param>
+    <param name="extract">platforms/win32/*.ico</param>
+    <param name="extract">platforms/win32/winbareos.nsi</param>
   </service>
   <service mode="buildtime" name="tar" />
   <service mode="buildtime" name="recompress">
