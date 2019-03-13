@@ -10,42 +10,58 @@ else
   VERSION_OR_VERSIONPREFIX="version"
 fi
 
+BASEPROJECT_NAME=jenkins
+ORIGINAL_BRANCH=${GIT_BRANCH}
+SUBPROJECT_NAME=${GIT_BRANCH}
+DEV=$(echo ${GIT_BRANCH} | cut -d '/' -f1)
+if [ "${DEV}" = "dev" ]; then
+  DEVELOPER=$(echo ${GIT_BRANCH} | cut -d '/' -f2)
+  ORIGINAL_BRANCH=$(echo ${GIT_BRANCH} | cut -d '/' -f3) #OBS common project?
+  DEVELOPER_BRANCH=$(echo ${GIT_BRANCH} | cut -d '/' -f4)
+fi
+
 # get version from version.h
 BAREOS_VERSION_NUMBER=`cat ../../core/src/include/version.h | \
                 grep "#define VERSION" | \
                 cut -b 17- | \
                 sed 's/\"//g'`
 
-rm -Rvf jenkins:${GIT_BRANCH}
+rm -Rvf ${BASEPROJECT_NAME}:${SUBPROJECT_NAME}
 # update project config and create project if it does not exist:
 
-#cat prj.xml.in  | sed 's#@BASEPROJECT@#jenkins#g' | sed "s#@BRANCH@#${GIT_BRANCH}#" | $OSC meta prj jenkins:${GIT_BRANCH} -F -
-
-./create_obs_project_from_yaml.py | sed 's#@BASEPROJECT@#jenkins#g' | sed "s#@BRANCH@#${GIT_BRANCH}#" | $OSC meta prj jenkins:${GIT_BRANCH} -F -
+./create_obs_project_from_yaml.py |\
+  sed 's#@BASEPROJECT@#jenkins#g' |\
+  sed "s#@BRANCH@#${GIT_BRANCH}#" |\
+  sed "s#@ORIGINAL_BRANCH@#${ORIGINAL_BRANCH}#" |\
+  $OSC meta prj ${BASEPROJECT_NAME}:${SUBPROJECT_NAME} -F -
 
 # set project config
-$OSC meta prjconf jenkins:${GIT_BRANCH} -F  prjconf
+$OSC meta prjconf ${BASEPROJECT_NAME}:${SUBPROJECT_NAME} -F  prjconf
 
 
 # for every package, create it via setting the package meta info:
 
 for pkg in $(cat packages); do
-cat "${pkg}"/_meta.in  | sed 's#@BASEPROJECT@#jenkins#g' | sed "s#@BRANCH@#${GIT_BRANCH}#" | $OSC meta pkg jenkins:${GIT_BRANCH} "${pkg}" -F -
+cat "${pkg}"/_meta.in  | \
+  sed 's#@BASEPROJECT@#jenkins#g' | \
+  sed "s#@BRANCH@#${GIT_BRANCH}#" | \
+  sed "s#@ORIGINAL_BRANCH@#${ORIGINAL_BRANCH}#" |\
+  $OSC meta pkg ${BASEPROJECT_NAME}:${SUBPROJECT_NAME} "${pkg}" -F -
 done
 
 # for every package, add files that belong to this package, especially service files
 
 for pkg in $(cat packages); do
-  $OSC co "jenkins:${GIT_BRANCH}/${pkg}";
+  $OSC co "${BASEPROJECT_NAME}:${SUBPROJECT_NAME}/${pkg}";
   cat "${pkg}"/_service.in  |\
     sed "s#@VERSION_OR_VERSIONPREFIX@#${VERSION_OR_VERSIONPREFIX}#g" |\
     sed "s#@VERSION_NUMBER@#${BAREOS_VERSION_NUMBER}#g" |\
     sed "s#@GIT_URL@#${GIT_URL}#g" |\
     sed "s#@REVISION@#${GIT_COMMIT}#"  > "${pkg}"/_service
   ls "${pkg}"
-  cp -v "${pkg}"/* jenkins:${GIT_BRANCH}/"${pkg}"/
+  cp -v "${pkg}"/* ${BASEPROJECT_NAME}:${SUBPROJECT_NAME}/"${pkg}"/
 
-  cd jenkins:${GIT_BRANCH}/"${pkg}"/ || exit
+  cd ${BASEPROJECT_NAME}:${SUBPROJECT_NAME}/"${pkg}"/ || exit
   rm _meta.in
   rm _service.in
   osc add ./*
@@ -53,6 +69,6 @@ for pkg in $(cat packages); do
   timeout 5 osc commit -m "import"
   cd - || exit
 done
-rm -Rvf jenkins:${GIT_BRANCH}
+rm -Rvf ${BASEPROJECT_NAME}:${SUBPROJECT_NAME}
 
 
