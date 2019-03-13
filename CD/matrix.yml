@@ -277,64 +277,64 @@ OS:
 #            - libfastlz
 #            - python-bareos
 
-#     8.0:
-#       ARCH:
-#         - i586
-#         - x86_64
-#       PROJECTPATH:
-#       - PATH: bareos:@BRANCH@:common
-#         REPOSITORY: Debian_8.0
-#       - PATH: openSUSE.org:Debian:8.0
-#         REPOSITORY: standard
-#       PROJECTPACKAGES:
-#         x86_64:
-#            - bareos
-#            - bareos-regress
-#            - bareos-vmware
-#            - bareos-webui
-#            - libfastlz
-#            - python-bareos
-#         i586:
-#            - bareos
-#            - bareos-regress
-#            - bareos-webui
-#            - libfastlz
-#            - python-bareos
-  CentOS:
-    7:
+    8.0:
       ARCH:
-      - x86_64
+        - i586
+        - x86_64
       PROJECTPATH:
       - PATH: bareos:@BRANCH@:common
-        REPOSITORY: CentOS_7
-      - PATH: openSUSE.org:CentOS:CentOS-7
+        REPOSITORY: Debian_8.0
+      - PATH: openSUSE.org:Debian:8.0
         REPOSITORY: standard
       PROJECTPACKAGES:
         x86_64:
            - bareos
            - bareos-regress
            - bareos-vmware
-           - bareos-vmware-vix-disklib65
            - bareos-webui
-           - libdroplet
            - libfastlz
            - python-bareos
-
-    6:
-      ARCH:
-      - x86_64
-      PROJECTPATH:
-      - PATH: bareos:@BRANCH@:common
-        REPOSITORY: CentOS_6
-      - PATH: bareos:@BRANCH@:dod
-        REPOSITORY: CentOS_6
-      - PATH: openSUSE.org:CentOS:CentOS-6
-        REPOSITORY: standard
-      PROJECTPACKAGES:
-        x86_64:
+        i586:
            - bareos
+           - bareos-regress
+           - bareos-webui
            - libfastlz
            - python-bareos
+  # CentOS:
+  #   7:
+  #     ARCH:
+  #     - x86_64
+  #     PROJECTPATH:
+  #     - PATH: bareos:@BRANCH@:common
+  #       REPOSITORY: CentOS_7
+  #     - PATH: openSUSE.org:CentOS:CentOS-7
+  #       REPOSITORY: standard
+  #     PROJECTPACKAGES:
+  #       x86_64:
+  #          - bareos
+  #          - bareos-regress
+  #          - bareos-vmware
+  #          - bareos-vmware-vix-disklib65
+  #          - bareos-webui
+  #          - libdroplet
+  #          - libfastlz
+  #          - python-bareos
+
+  #   6:
+  #     ARCH:
+  #     - x86_64
+  #     PROJECTPATH:
+  #     - PATH: bareos:@BRANCH@:common
+  #       REPOSITORY: CentOS_6
+  #     - PATH: bareos:@BRANCH@:dod
+  #       REPOSITORY: CentOS_6
+  #     - PATH: openSUSE.org:CentOS:CentOS-6
+  #       REPOSITORY: standard
+  #     PROJECTPACKAGES:
+  #       x86_64:
+  #          - bareos
+  #          - libfastlz
+  #          - python-bareos
 
 
 
