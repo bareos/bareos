@@ -4,7 +4,6 @@
     <param name="revision">@REVISION@</param>
     <param name="@VERSION_OR_VERSIONPREFIX@">@VERSION_NUMBER@</param>
     <param name="url">@GIT_URL@</param>
-
     <param name="submodules">disable</param>
     <param name="filename">bareos</param>
     <param name="scm">git</param>
@@ -17,5 +16,5 @@
     <param name="file">*.tar</param>
     <param name="compression">gz</param>
   </service>
-  <service name="set_version" />
+  <service name="set_version"/>
 </services>
