@@ -49,7 +49,8 @@ for pkg in $(cat packages); do
   rm _meta.in
   rm _service.in
   osc add ./*
-  osc commit -m "import"
+  # run with timeout so dont wait for service to complete
+  timeout 5 osc commit -m "import"
   cd - || exit
 done
 rm -Rvf jenkins:${GIT_BRANCH}
