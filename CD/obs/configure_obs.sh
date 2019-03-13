@@ -15,10 +15,15 @@ ORIGINAL_BRANCH=${GIT_BRANCH}
 SUBPROJECT_NAME=${GIT_BRANCH}
 DEV=$(echo ${GIT_BRANCH} | cut -d '/' -f1)
 if [ "${DEV}" = "dev" ]; then
+  VERSION_OR_VERSIONPREFIX="version"
   DEVELOPER=$(echo ${GIT_BRANCH} | cut -d '/' -f2)
   ORIGINAL_BRANCH=$(echo ${GIT_BRANCH} | cut -d '/' -f3) #OBS common project?
   DEVELOPER_BRANCH=$(echo ${GIT_BRANCH} | cut -d '/' -f4)
 fi
+
+export ORIGINAL_BRANCH
+
+
 
 # get version from version.h
 BAREOS_VERSION_NUMBER=`cat ../../core/src/include/version.h | \
@@ -31,8 +36,8 @@ rm -Rvf ${BASEPROJECT_NAME}:${SUBPROJECT_NAME}
 
 ./create_obs_project_from_yaml.py |\
   sed 's#@BASEPROJECT@#jenkins#g' |\
-  sed "s#@BRANCH@#${GIT_BRANCH}#" |\
-  sed "s#@ORIGINAL_BRANCH@#${ORIGINAL_BRANCH}#" |\
+  sed "s#@BRANCH@#${GIT_BRANCH}#g" |\
+  sed "s#@ORIGINALBRANCH@#${ORIGINAL_BRANCH}#g" |\
   $OSC meta prj ${BASEPROJECT_NAME}:${SUBPROJECT_NAME} -F -
 
 # set project config
@@ -44,8 +49,8 @@ $OSC meta prjconf ${BASEPROJECT_NAME}:${SUBPROJECT_NAME} -F  prjconf
 for pkg in $(cat packages); do
 cat "${pkg}"/_meta.in  | \
   sed 's#@BASEPROJECT@#jenkins#g' | \
-  sed "s#@BRANCH@#${GIT_BRANCH}#" | \
-  sed "s#@ORIGINAL_BRANCH@#${ORIGINAL_BRANCH}#" |\
+  sed "s#@BRANCH@#${GIT_BRANCH}#g" | \
+  sed "s#@ORIGINALBRANCH@#${ORIGINAL_BRANCH}#g" |\
   $OSC meta pkg ${BASEPROJECT_NAME}:${SUBPROJECT_NAME} "${pkg}" -F -
 done
 

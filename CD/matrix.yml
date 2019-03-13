@@ -6,13 +6,13 @@ OS:
       PROJECTPATH:
        - PATH: openSUSE.org:SUSE:SLE-12-SP4:GA
          REPOSITORY: standard
-       - PATH: bareos:@ORIGINAL_BRANCH@:win32
+       - PATH: bareos:@ORIGINALBRANCH@:win32
          REPOSITORY: win_cross
-       - PATH: bareos:@ORIGINAL_BRANCH@:win64
+       - PATH: bareos:@ORIGINALBRANCH@:win64
          REPOSITORY: win_cross
        - PATH: openSUSE.org:home:uibmz:opsi:opsi40-experimental
          REPOSITORY: SLE_12_SP3
-       - PATH: bareos:@ORIGINAL_BRANCH@:common
+       - PATH: bareos:@ORIGINALBRANCH@:common
          REPOSITORY: win_cross
        - PATH: bareos:master
          REPOSITORY: SLE_12_SP4
@@ -30,7 +30,7 @@ OS:
       ARCH:
       - x86_64
       PROJECTPATH:
-      - PATH: bareos:@ORIGINAL_BRANCH@:common
+      - PATH: bareos:@ORIGINALBRANCH@:common
         REPOSITORY: openSUSE_Leap_15.0
       - PATH: openSUSE.org:openSUSE:Leap:15.0
         REPOSITORY: standard
@@ -45,7 +45,7 @@ OS:
       ARCH:
       - x86_64
       PROJECTPATH:
-      - PATH: bareos:@ORIGINAL_BRANCH@:common
+      - PATH: bareos:@ORIGINALBRANCH@:common
         REPOSITORY: Univention_4.3
       - PATH: openSUSE.org:Univention:4.3
         REPOSITORY: standard
@@ -72,7 +72,7 @@ OS:
         REPOSITORY: standard
       - PATH: openSUSE.org:SUSE:SLE-15:GA
         REPOSITORY: standard
-      - PATH: bareos:@ORIGINAL_BRANCH@:common
+      - PATH: bareos:@ORIGINALBRANCH@:common
         REPOSITORY: SLE_15
       PROJECTPACKAGES:
         x86_64:
@@ -90,7 +90,7 @@ OS:
         REPOSITORY: SDK
       - PATH: openSUSE.org:SUSE:SLE-12-SP4:GA
         REPOSITORY: standard
-      - PATH: bareos:@ORIGINAL_BRANCH@:common
+      - PATH: bareos:@ORIGINALBRANCH@:common
         REPOSITORY: SLE_12_SP4
       PROJECTPACKAGES:
         x86_64:
@@ -107,7 +107,7 @@ OS:
       ARCH:
       - x86_64
       PROJECTPATH:
-      - PATH: bareos:@ORIGINAL_BRANCH@:common
+      - PATH: bareos:@ORIGINALBRANCH@:common
         REPOSITORY: Fedora_29
       - PATH: openSUSE.org:Fedora:29
         REPOSITORY: standard
@@ -122,7 +122,7 @@ OS:
       ARCH:
       - x86_64
       PROJECTPATH:
-      - PATH: bareos:@ORIGINAL_BRANCH@:common
+      - PATH: bareos:@ORIGINALBRANCH@:common
         REPOSITORY: Fedora_28
       - PATH: openSUSE.org:Fedora:28
         REPOSITORY: standard
@@ -139,11 +139,11 @@ OS:
         - i586
         - x86_64
       PROJECTPATH:
-      - PATH: bareos:@ORIGINAL_BRANCH@:dod
+      - PATH: bareos:@ORIGINALBRANCH@:dod
         REPOSITORY: Debian_9.0
       - PATH: openSUSE.org:Debian:9.0
         REPOSITORY: standard
-      - PATH: bareos:@ORIGINAL_BRANCH@:common
+      - PATH: bareos:@ORIGINALBRANCH@:common
         REPOSITORY: Debian_9.0
       PROJECTPACKAGES:
         x86_64:
@@ -165,7 +165,7 @@ OS:
         - i586
         - x86_64
       PROJECTPATH:
-      - PATH: bareos:@ORIGINAL_BRANCH@:common
+      - PATH: bareos:@ORIGINALBRANCH@:common
         REPOSITORY: Debian_8.0
       - PATH: openSUSE.org:Debian:8.0
         REPOSITORY: standard
