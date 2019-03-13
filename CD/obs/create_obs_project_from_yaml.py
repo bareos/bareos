@@ -22,7 +22,7 @@ with open("../matrix.yml", 'r') as stream:
             #print "OS:", OS #, " -> ",  data["OS"][OS], "\n\n"
             for VERSION in data['OS'][OS]:
                 repository = ET.SubElement(project,'repository')
-                repository.set('name', OS + "_" + str(VERSION))
+                repository.set('name', str(OS) + "_" + str(VERSION))
 
                 #print "   ", VERSION
                 #for  PROJECTPATH in data['OS'][OS][VERSION]['PROJECTPATH']:
