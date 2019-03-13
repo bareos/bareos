@@ -1,5 +1,5 @@
+#!/bin/bash
 MATRIX_FILE=../matrix.yml
-
 
 DISTS=$(yq '.OS | (keys)' ${MATRIX_FILE} -c | tr '[],\"' '  ')
 

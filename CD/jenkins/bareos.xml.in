@@ -136,12 +136,7 @@ win-cross-x86_64:bareos-freebsd,bareos-macos,mingw-debugsrc,mingw32-winbareos,mi
         <string>bareos-postgresql</string>
       </values>
     </hudson.matrix.TextAxis>
-    <hudson.matrix.TextAxis>
-      <name>DISTRELEASE</name>
-      <values>
-        @DISTRELEASES_XML@
-      </values>
-    </hudson.matrix.TextAxis>
+    @DISTRELEASES_XML@
     <hudson.matrix.TextAxis>
       <name>INSTALL_START</name>
       <values>
