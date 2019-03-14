@@ -44,6 +44,9 @@ rm -Rvf ${BASEPROJECT_NAME}:${SUBPROJECT_NAME}
 # set project config
 $OSC meta prjconf ${BASEPROJECT_NAME}:${SUBPROJECT_NAME} -F  prjconf
 
+# create signkey
+$OSC signkey --create  ${BASEPROJECT_NAME}:${SUBPROJECT_NAME}
+
 
 # for every package, create it via setting the package meta info:
 
