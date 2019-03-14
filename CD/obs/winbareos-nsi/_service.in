@@ -14,6 +14,7 @@
     <param name="extract">platforms/win32/clientdialog.ini</param>
     <param name="extract">platforms/win32/databasedialog.ini</param>
     <param name="extract">platforms/win32/directordialog.ini</param>
+    <param name="extract">platforms/win32/storagedialog.ini</param>
     <param name="extract">platforms/win32/bareos.ico</param>
     <param name="extract">platforms/win32/bareosdir.ico</param>
     <param name="extract">platforms/win32/bareosfd.ico</param>
