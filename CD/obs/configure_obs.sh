@@ -61,6 +61,8 @@ done
 # for every package, add files that belong to this package, especially service files
 
 for pkg in $(cat packages); do
+  # do each one in subshell
+  (
   $OSC co "${BASEPROJECT_NAME}:${SUBPROJECT_NAME}/${pkg}";
   if [ -f "${pkg}/_service.in" ]; then
   cat "${pkg}/_service.in" | \
@@ -77,9 +79,12 @@ for pkg in $(cat packages); do
   rm _service.in
   osc add ./*
   # run with timeout so dont wait for service to complete
-  timeout 5 osc commit -m "import"
+  osc commit -m "import"
   cd - || exit
+  ) & # subshell end
 done
+
+wait # wait for subshells
 
 #rm -Rvf ${BASEPROJECT_NAME}:${SUBPROJECT_NAME}
 
