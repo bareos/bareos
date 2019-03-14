@@ -35,6 +35,8 @@
 #ifndef BAREOS_CATS_CATS_H_
 #define BAREOS_CATS_CATS_H_ 1
 
+#include "lib/volume_session_info.h"
+
 /* import automatically generated SQL_QUERY_ENUM */
 #include "bdb_query_enum_class.h"
 
@@ -821,12 +823,15 @@ class BareosDb
   int GetNdmpLevelMapping(JobControlRecord* jcr,
                           JobDbRecord* jr,
                           char* filesystem);
-  bool GetNdmpEnvironmentString(JobControlRecord* jcr,
-                                JobDbRecord* jr,
+  bool GetNdmpEnvironmentString(const VolumeSessionInfo vsi,
+                                const int32_t FileIndex,
                                 DB_RESULT_HANDLER* ResultHandler,
                                 void* ctx);
-  bool GetNdmpEnvironmentString(JobControlRecord* jcr,
-                                JobId_t JobId,
+  bool GetNdmpEnvironmentString(const JobId_t JobId,
+                                DB_RESULT_HANDLER* ResultHandler,
+                                void* ctx);
+  bool GetNdmpEnvironmentString(const JobId_t JobId,
+                                const int32_t FileIndex,
                                 DB_RESULT_HANDLER* ResultHandler,
                                 void* ctx);
   bool PrepareMediaSqlQuery(JobControlRecord* jcr,
