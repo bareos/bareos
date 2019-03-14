@@ -39,6 +39,7 @@
 #include "cats.h"
 #include "sql.h"
 #include "lib/edit.h"
+#include "lib/volume_session_info.h"
 
 /* -----------------------------------------------------------------------
  *
@@ -1711,32 +1712,46 @@ bail_out:
 
 
 /**
- * Fetch the NDMP Job Environment Strings for NDMP_NATIVE Backups
+ * Fetch the NDMP Job Environment Strings based on JobId only
  *
  * Returns false: on failure
  *         true: on success
  */
-bool BareosDb::GetNdmpEnvironmentString(JobControlRecord* jcr,
-                                        JobId_t JobId,
+bool BareosDb::GetNdmpEnvironmentString(const JobId_t JobId,
                                         DB_RESULT_HANDLER* ResultHandler,
                                         void* ctx)
 {
-  PoolMem query(PM_FNAME);
-  char ed1[50];
-  db_int64_ctx lctx;
-  bool retval = false;
+  ASSERT(JobId > 0)
+  /* ***FIXME*** better use std::string */
+  char query[100];
+  Bsnprintf(
+      query, 99,
+      "SELECT EnvName, EnvValue FROM NDMPJobEnvironment WHERE JobId=%lld ",
+      JobId);
+  bool status = SqlQueryWithHandler(query, ResultHandler, ctx);
+  return status && SqlNumRows() > 0;  // no rows means no environment was found
+}
 
-  /*
-   * Lookup all environment settings belonging to this JobId.
-   */
-  Mmsg(query,
-       "SELECT EnvName, EnvValue FROM NDMPJobEnvironment "
-       "WHERE JobId='%s' ",
-       edit_uint64(JobId, ed1));
-
-  retval = SqlQueryWithHandler(query.c_str(), ResultHandler, ctx);
-
-  return retval;
+/**
+ * Fetch the NDMP Job Environment Strings based on JobId and FileIndex
+ *
+ * Returns false: on failure
+ *         true: on success
+ */
+bool BareosDb::GetNdmpEnvironmentString(const JobId_t JobId,
+                                        const int32_t FileIndex,
+                                        DB_RESULT_HANDLER* ResultHandler,
+                                        void* ctx)
+{
+  ASSERT(JobId > 0)
+  /* ***FIXME*** better use std::string */
+  char query[150];
+  Bsnprintf(query, 149,
+            "SELECT EnvName, EnvValue FROM NDMPJobEnvironment "
+            "WHERE JobId=%lld AND FileIndex=%lld ",
+            JobId, FileIndex);
+  bool status = SqlQueryWithHandler(query, ResultHandler, ctx);
+  return status && SqlNumRows() > 0;  // no rows means no environment was found
 }
 
 
@@ -1746,48 +1761,29 @@ bool BareosDb::GetNdmpEnvironmentString(JobControlRecord* jcr,
  * Returns false: on failure
  *         true: on success
  */
-bool BareosDb::GetNdmpEnvironmentString(JobControlRecord* jcr,
-                                        JobDbRecord* jr,
+bool BareosDb::GetNdmpEnvironmentString(const VolumeSessionInfo vsi,
+                                        const int32_t FileIndex,
                                         DB_RESULT_HANDLER* ResultHandler,
                                         void* ctx)
 {
-  PoolMem query(PM_MESSAGE);
-  char ed1[50], ed2[50];
+  char query[150];
   db_int64_ctx lctx;
-  JobId_t JobId;
-  bool retval = false;
 
-  lctx.count = 0;
-  lctx.value = 0;
-
-  /*
-   * Lookup the JobId
-   */
-  Mmsg(query,
-       "SELECT JobId FROM Job "
-       "WHERE VolSessionId = '%s' "
-       "AND VolSessionTime = '%s'",
-       edit_uint64(jr->VolSessionId, ed1),
-       edit_uint64(jr->VolSessionTime, ed2));
-  if (!SqlQueryWithHandler(query.c_str(), db_int64_handler, &lctx)) {
-    goto bail_out;
+  /* Lookup the JobId and pass it to the JobId-based version */
+  Bsnprintf(query, 149,
+            "SELECT JobId FROM Job WHERE VolSessionId = %lld "
+            "AND VolSessionTime = %lld ",
+            vsi.id, vsi.time);
+  if (SqlQueryWithHandler(query, db_int64_handler, &lctx)) {
+    if (lctx.count == 1) {
+      return GetNdmpEnvironmentString(lctx.value, FileIndex, ResultHandler,
+                                      ctx);
+    }
   }
-
-  JobId = (JobId_t)lctx.value;
-
-  /*
-   * Lookup all environment settings belonging to this JobId and FileIndex.
-   */
-  Mmsg(query,
-       "SELECT EnvName, EnvValue FROM NDMPJobEnvironment "
-       "WHERE JobId='%s' "
-       "AND FileIndex='%s'",
-       edit_uint64(JobId, ed1), edit_uint64(jr->FileIndex, ed2));
-
-  retval = SqlQueryWithHandler(query.c_str(), ResultHandler, ctx);
-
-bail_out:
-  return retval;
+  Dmsg3(100,
+        "Got %d JobIds for VolSessionTime=%lld VolSessionId=%lld instead of 1",
+        lctx.count, vsi.time, vsi.id);
+  return false;
 }
 
 /**
