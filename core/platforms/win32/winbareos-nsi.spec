@@ -224,7 +224,7 @@ for flavor in %{flavors}; do
       echo "" >> %_sourcedir/LICENSE
 
       # bareos-webui
-      cp -av /usr/share/bareos-webui bareos-webui  # copy bareos-webui
+      cp /usr/share/bareos-webui bareos-webui  # copy bareos-webui
       pushd bareos-webui
 
       mkdir install
