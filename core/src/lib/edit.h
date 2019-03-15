@@ -22,6 +22,8 @@
 #define BAREOS_LIB_EDIT_H_
 
 uint64_t str_to_uint64(const char* str);
+#define str_to_uint16(str) ((uint16_t)str_to_uint64(str))
+#define str_to_uint32(str) ((uint32_t)str_to_uint64(str))
 int64_t str_to_int64(const char* str);
 #define str_to_int16(str) ((int16_t)str_to_int64(str))
 #define str_to_int32(str) ((int32_t)str_to_int64(str))

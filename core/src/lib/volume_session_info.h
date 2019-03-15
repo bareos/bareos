@@ -29,7 +29,10 @@ struct VolumeSessionInfo {
   uint32_t time;
 
   /* explicit constructor disables default construction */
-  VolumeSessionInfo(uint32_t t_id, uint32_t t_time) : id(t_id), time(t_time) {}
+  VolumeSessionInfo(const uint32_t t_id, const uint32_t t_time)
+      : id(t_id), time(t_time)
+  {
+  }
 };
 
 #endif /**  BAREOS_LIB_VOLUME_SESSION_INFO_H_ */

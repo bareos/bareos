@@ -1722,13 +1722,9 @@ bool BareosDb::GetNdmpEnvironmentString(const JobId_t JobId,
                                         void* ctx)
 {
   ASSERT(JobId > 0)
-  /* ***FIXME*** better use std::string */
-  char query[100];
-  Bsnprintf(
-      query, 99,
-      "SELECT EnvName, EnvValue FROM NDMPJobEnvironment WHERE JobId=%lld ",
-      JobId);
-  bool status = SqlQueryWithHandler(query, ResultHandler, ctx);
+  std::string query{"SELECT EnvName, EnvValue FROM NDMPJobEnvironment"};
+  query += " WHERE JobId=" + std::to_string(JobId);
+  bool status = SqlQueryWithHandler(query.c_str(), ResultHandler, ctx);
   return status && SqlNumRows() > 0;  // no rows means no environment was found
 }
 
@@ -1744,13 +1740,10 @@ bool BareosDb::GetNdmpEnvironmentString(const JobId_t JobId,
                                         void* ctx)
 {
   ASSERT(JobId > 0)
-  /* ***FIXME*** better use std::string */
-  char query[150];
-  Bsnprintf(query, 149,
-            "SELECT EnvName, EnvValue FROM NDMPJobEnvironment "
-            "WHERE JobId=%lld AND FileIndex=%lld ",
-            JobId, FileIndex);
-  bool status = SqlQueryWithHandler(query, ResultHandler, ctx);
+  std::string query{"SELECT EnvName, EnvValue FROM NDMPJobEnvironment"};
+  query += " WHERE JobId=" + std::to_string(JobId);
+  query += " AND FileIndex=" + std::to_string(JobId);
+  bool status = SqlQueryWithHandler(query.c_str(), ResultHandler, ctx);
   return status && SqlNumRows() > 0;  // no rows means no environment was found
 }
 
@@ -1761,21 +1754,19 @@ bool BareosDb::GetNdmpEnvironmentString(const JobId_t JobId,
  * Returns false: on failure
  *         true: on success
  */
-bool BareosDb::GetNdmpEnvironmentString(const VolumeSessionInfo vsi,
+bool BareosDb::GetNdmpEnvironmentString(const VolumeSessionInfo& vsi,
                                         const int32_t FileIndex,
                                         DB_RESULT_HANDLER* ResultHandler,
                                         void* ctx)
 {
-  char query[150];
   db_int64_ctx lctx;
+  std::string query{"SELECT JobId FROM Job"};
+  query += " WHERE VolSessionId = " + std::to_string(vsi.id);
+  query += " AND VolSessionTime = " + std::to_string(vsi.time);
 
-  /* Lookup the JobId and pass it to the JobId-based version */
-  Bsnprintf(query, 149,
-            "SELECT JobId FROM Job WHERE VolSessionId = %lld "
-            "AND VolSessionTime = %lld ",
-            vsi.id, vsi.time);
-  if (SqlQueryWithHandler(query, db_int64_handler, &lctx)) {
+  if (SqlQueryWithHandler(query.c_str(), db_int64_handler, &lctx)) {
     if (lctx.count == 1) {
+      /* now lctx.value contains the jobid we restore */
       return GetNdmpEnvironmentString(lctx.value, FileIndex, ResultHandler,
                                       ctx);
     }
