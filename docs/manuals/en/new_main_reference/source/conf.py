@@ -247,3 +247,14 @@ scv_banner_main_ref = 'bareos-18.2'
 #scv_banner_main_ref = 'dev/pstorz/bareos-18.2/sphinx-versioning'
 
 plantuml_output_format = 'svg_img'
+
+
+#
+# code-block highlighting
+#
+from sphinx.highlighting import lexers
+from bareos_lexers import *
+lexers['bareosconfig'] = BareosConfigLexer()
+lexers['bconsole'] = BareosConsoleLexer()
+lexers['bareoslog'] = BareosLogLexer()
+lexers['bareosmessage'] = BareosMessageLexer()
