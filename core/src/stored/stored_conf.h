@@ -29,6 +29,7 @@
 #define BAREOS_STORED_STORED_CONF_H_ 1
 
 #include "stored/dev.h"
+#include "stored/autochanger_resource.h"
 #include "stored/device_resource.h"
 #include "lib/messages_resource.h"
 #include "lib/tls_conf.h"
@@ -132,16 +133,6 @@ class StorageResource : public TlsResource {
   uint64_t max_bandwidth_per_job; /**< Bandwidth limitation (global) */
 
   StorageResource() : TlsResource() {}
-};
-
-class AutochangerResource : public BareosResource {
- public:
-  alist* device;          /**< List of DeviceResource device pointers */
-  char* changer_name;     /**< Changer device name */
-  char* changer_command;  /**< Changer command  -- external program */
-  brwlock_t changer_lock; /**< One changer operation at a time */
-
-  AutochangerResource() : BareosResource() {}
 };
 
 union UnionOfResources {

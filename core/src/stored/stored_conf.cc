@@ -30,6 +30,7 @@
 
 #include "include/bareos.h"
 #include "stored/stored_conf.h"
+#include "stored/autochanger_resource.h"
 #include "stored/device_resource.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
@@ -265,7 +266,8 @@ static ResourceTable resources[] = {
   {"Device", dev_items, R_DEVICE, sizeof(DeviceResource),
       [](void *res) { return new ((DeviceResource *)res) DeviceResource(); }},
   {"Messages", msgs_items, R_MSGS, sizeof(MessagesResource)},
-  {"Autochanger", changer_items, R_AUTOCHANGER, sizeof(AutochangerResource)},
+  {"Autochanger", changer_items, R_AUTOCHANGER, sizeof(AutochangerResource),
+      [](void *res) { return new ((AutochangerResource *)res) AutochangerResource(); }},
   {NULL, NULL, 0}};
 
 /* clang-format on */
@@ -687,30 +689,7 @@ static bool DumpResource_(int type,
     case R_AUTOCHANGER: {
       AutochangerResource* autochanger =
           reinterpret_cast<AutochangerResource*>(reshdr);
-      alist* original_alist = autochanger->device;
-      alist* temp_alist = new (__FILE__, __LINE__)
-          alist(original_alist->size(), not_owned_by_alist);
-      DeviceResource* dev = nullptr;
-      foreach_alist (dev, original_alist) {
-        if (dev->multiplied_device_resource) {
-          if (dev->multiplied_device_resource == dev) {
-            DeviceResource* tmp_dev = new DeviceResource(*dev);
-            tmp_dev->MultipliedDeviceRestoreBaseName();
-            temp_alist->append(tmp_dev);
-          }
-        } else {
-          DeviceResource* tmp_dev = new DeviceResource(*dev);
-          temp_alist->append(tmp_dev);
-        }
-      }
-      autochanger->device = temp_alist;
-      resclass = (BareosResource*)reshdr;
-      resclass->PrintConfig(buf, *my_config);
-      autochanger->device = original_alist;
-      foreach_alist (dev, temp_alist) {
-        delete dev;
-      }
-      delete temp_alist;
+      autochanger->PrintConfigToBuffer(buf);
       break;
     }
     default:
@@ -899,6 +878,12 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         new_resource = reinterpret_cast<UnionOfResources*>(p);
         break;
       }
+      case R_AUTOCHANGER: {
+        AutochangerResource* p = new AutochangerResource();
+        *p = res_all.res_changer;
+        new_resource = reinterpret_cast<UnionOfResources*>(p);
+        break;
+      }
       default:
         new_resource = (UnionOfResources*)malloc(resources[rindex].size);
         memcpy(new_resource, &res_all, resources[rindex].size);
@@ -971,6 +956,7 @@ static void FreeResource(CommonResourceHeader* sres, int type)
       if (res->res_ndmp.password.value) { free(res->res_ndmp.password.value); }
       break;
     case R_AUTOCHANGER:
+      resource_uses_smalloc_memory = false;
       if (res->res_changer.changer_name) {
         free(res->res_changer.changer_name);
     }
