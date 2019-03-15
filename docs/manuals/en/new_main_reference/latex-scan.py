@@ -143,40 +143,40 @@ class RegexDefs(object):
             'EnvBareosConfigResource': {
                 'pattern': r'::\n\n(\s*)\\begin{bareosConfigResource}{(.*?)}{(.*?)}{(.*?)}\s*\n(.*?)\n\s*\\end{bareosConfigResource}',
                 'flags':   self.regexOpts, 
-                'replace': r'.. code-block:: sh\n\1:caption: \2.d/\3/\4.conf\n\n\5'
+                'replace': r'.. code-block:: bareosconfig\n\1:caption: \2.d/\3/\4.conf\n\n\5'
             },
             #${PERL} 's#\{bareosConfigResource\}\{(.*?)\}\{(.*?)\}\{(.*?)\}#\n.. code-block:: sh\n    :caption: \1 \2 \3\n#g'   ${DESTFILE}
             'EnvBconfig0':  {
                 'pattern': r'::\n\n\s*\\begin{bconfig}{}\s*\n(.*?)\n\s*\\end{bconfig}',
                 'flags':   self.regexOpts, 
-                'replace': r'.. code-block:: sh\n\n\1'
+                'replace': r'.. code-block:: bareosconfig\n\n\1'
             },
             'EnvBconfig':  {
                 'pattern': r'::\n\n(\s*)\\begin{bconfig}{([^}]+?)}\s*\n(.*?)\n\s*\\end{bconfig}',
                 'flags':   self.regexOpts, 
-                'replace': r'.. code-block:: sh\n\1:caption: \2\n\n\3'
+                'replace': r'.. code-block:: bareosconfig\n\1:caption: \2\n\n\3'
             },
             #${PERL} 's#\{bconfig\}\{(.*)\}#\n.. code-block:: sh\n    :caption: \1\n#g'   ${DESTFILE}
             'EnvBconsole0': {
                 'pattern': r'::\n\n\s*\\begin{bconsole}{}\s*\n(.*?)\n\s*\\end{bconsole}',
                 'flags':   self.regexOpts, 
-                'replace': r'.. code-block:: sh\n\n\1'
+                'replace': r'.. code-block:: bconsole\n\n\1'
             },
             'EnvBconsole': {
                 'pattern': r'::\n\n(\s*)\\begin{bconsole}{([^}]+?)}\s*\n(.*?)\n\s*\\end{bconsole}',
                 'flags':   self.regexOpts, 
-                'replace': r'.. code-block:: sh\n\1:caption: \2\n\n\3'
+                'replace': r'.. code-block:: bconsole\n\1:caption: \2\n\n\3'
             },
             #${PERL} 's#\{bconsole\}\{(.*)\}#\n.. code-block:: sh\n    :caption: \1\n#g'   ${DESTFILE}
             'EnvBmessage0': {
                 'pattern': r'::\n\n\s*\\begin{bmessage}{}\s*\n(.*?)\n\s*\\end{bmessage}',
                 'flags':   self.regexOpts, 
-                'replace': r'.. code-block:: sh\n\n\1'
+                'replace': r'.. code-block:: bareosmessage\n\n\1'
             },
             'EnvBmessage': {
                 'pattern': r'::\n\n(\s*)\\begin{bmessage}{([^}]+?)}\s*\n(.*?)\n\s*\\end{bmessage}',
                 'flags':   self.regexOpts, 
-                'replace': r'.. code-block:: sh\n\1:caption: \2\n\n\3'
+                'replace': r'.. code-block:: bareosmessage\n\1:caption: \2\n\n\3'
             },
             'EnvCommands0': {
                 'pattern': r'::\n\n\s*\\begin{commands}{}\s*\n(.*?)\n\s*\\end{commands}',
@@ -198,18 +198,18 @@ class RegexDefs(object):
             'EnvConfig0': {
                 'pattern': r'::\n\n\s*\\begin{config}{}\s*\n(.*?)\n\s*\\end{config}',
                 'flags':   self.regexOpts, 
-                'replace': r'.. code-block:: sh\n\n\1'
+                'replace': r'.. code-block:: cfg\n\n\1'
             },
             'EnvConfig': {
                 'pattern': r'::\n\n(\s*)\\begin{config}{([^}]+?)}\s*\n(.*?)\n\s*\\end{config}',
                 'flags':   self.regexOpts, 
-                'replace': r'.. code-block:: sh\n\1:caption: \2\n\n\3'
+                'replace': r'.. code-block:: cfg\n\1:caption: \2\n\n\3'
             },
             #${PERL} 's#\{config\}\{(.*)\}#\n.. code-block:: sh\n    :caption: \1\n#g'   ${DESTFILE}
             'EnvLogging': {
                 'pattern': r'::\n\n(\s*)\\begin{logging}{([^}]+?)}\s*\n(.*?)\n\s*\\end{logging}',
                 'flags':   self.regexOpts, 
-                'replace': r'.. code-block:: sh\n\1:caption: \2\n\n\3'
+                'replace': r'.. code-block:: bareoslog\n\1:caption: \2\n\n\3'
             },
             'EnvVerbatimRst': {
                 # pre script already created preformated RST and put it in a verbatim environment.
@@ -690,7 +690,7 @@ class Translate(object):
 
     @staticmethod
     def bconfigInput(item):
-        item.replace(b'\n\n{indent}.. literalinclude:: /include/{0}\n\n'.format(*item.getParameters(), indent = ' ' * item.getIndent()))
+        item.replace(b'\n\n{indent}.. literalinclude:: /include/{0}\n{indent}   :language: bareosconfig\n\n'.format(*item.getParameters(), indent = ' ' * item.getIndent()))
 
     @staticmethod
     def bcommand(item):
@@ -838,7 +838,9 @@ class Translate(object):
 
     @staticmethod
     def fileset(item):
-        item.replace(b'**{0}**'.format(*item.getParameters()))
+        #item.replace(b'**{0}**'.format(*item.getParameters()))
+        item.replace(r':config:option:`dir/fileset = {0}`\ '.format(*item.getParameters()))
+        
 
 
     #
@@ -915,7 +917,8 @@ class Translate(object):
     #
     @staticmethod
     def job(item):
-        item.replace(b'**{0}**:sup:`Dir`:sub:`job`\ '.format(*item.getParameters()))
+        #item.replace(b'**{0}**:sup:`Dir`:sub:`job`\ '.format(*item.getParameters()))
+        item.replace(r':config:option:`dir/job = {0}`\ '.format(*item.getParameters()))
 
     #
     # k
@@ -929,7 +932,7 @@ class Translate(object):
         #item.replace(b'**{2}**:sup:`{0}`:sub:`{1}`\ = **{3}**'.format(*item.getParameters()))
         daemon, resourcetype, directive, value = item.getParameters()
         resourceReference = Translate.getResourceReferenceString(daemon, resourcetype, directive)
-        item.replace(b':config:option:`{0}`\ = **{1}**'.format(resourceReference, value))
+        item.replace(b':config:option:`{0} = {1}`\ '.format(resourceReference, value))
 
 
     ## TODO: add link
@@ -1053,7 +1056,8 @@ class Translate(object):
 
     @staticmethod
     def pool(item):
-        item.replace(b'**{0}**:sup:`Dir`:sub:`pool`\ '.format(*item.getParameters()))
+        #item.replace(b'**{0}**:sup:`Dir`:sub:`pool`\ '.format(*item.getParameters()))
+        item.replace(r':config:option:`dir/pool = {0}`\ '.format(*item.getParameters()))
 
 
     #
@@ -1073,12 +1077,13 @@ class Translate(object):
 
     @staticmethod
     def resourcename(item):
-        item.replace(b'**{2}**:sup:`{0}`:sub:`{1}` '.format(*item.getParameters()))
+        #item.replace(b'**{2}**:sup:`{0}`:sub:`{1}` '.format(*item.getParameters()))
+        item.replace(r':config:option:`{0}/{1} = {2}`\ '.format(*item.getParameters()))
 
     @staticmethod
     def resourcetype(item):
-        item.replace(b':sup:`{0}`\ :strong:`{1}`'.format(*item.getParameters()))
-
+        #item.replace(b':sup:`{0}`\ :strong:`{1}`'.format(*item.getParameters()))
+        item.replace(r':config:option:`{0}/{1}`\ '.format(*item.getParameters()))
 
     #
     # s
