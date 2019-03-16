@@ -16,8 +16,6 @@ import re
 #
 # modifies the default rule for rendering
 # .. config::option:
-# and
-# :config:option:`$cfg['AuthLog']`
 #
 # Also modifes the generated index.
 # If this extension is not loaded,
@@ -347,3 +345,5 @@ class ConfigFileDomain(Domain):
 
 def setup(app):
     app.add_domain(ConfigFileDomain)
+
+    return {'version': '0.1'}   # identifies the version of our extension
