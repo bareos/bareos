@@ -1,26 +1,84 @@
-General
-#######
+reST Overview
+#############
 
 .. highlight:: none
 
+The outline for this chapter has been taken from
+https://devguide.python.org/documenting/
+and adapted and extended for our needs.
 
 Use of whitespace
 -----------------
-
-From https://devguide.python.org/documenting/#use-of-whitespace.
 
 All reST files use an indentation of 3 spaces; no tabs are allowed. The maximum line length is 80 characters for normal text, but tables, deeply indented code samples and long links may extend beyond that. Code example bodies should use normal Python 4-space indentation.
 
 Make generous use of blank lines where applicable; they help group things together.
 
-(A sentence-ending period may be followed by one or two spaces; while reST ignores the second space, it is customarily put in by some users, for example to aid Emacs’ auto-fill mode.)
+
+Sphinx naming
+-------------
+
+reST/Sphinx have some specific wording.
+
+Role
+~~~~
+
+A role is an inline markup (see :ref:`RestOverview:Inline markup`\ ). Own roles can be created.
+They are used inside other text structures.
+
+Usage::
+
+   :strong:`text`
+   
+Output:
+
+   :strong:`text`
+
+Directive
+~~~~~~~~~
+
+A directive is an Explicit Markup (see :ref:`RestOverview:Explicit markup`\ ). Own directives can be created.
+Directives are written as a block.
+
+Usage::
+
+   .. directive:: arg1 arg2 ...
+      :option1: value
+      :option2: value
+      :option5: value
+      ...
+      
+      Multiline content,
+      ...
+
+``arg1, arg2, ...``
+   Arguments. The last argument can contain spaces (depending on the directive implementation).
+   
+``:option1:``
+   Options are optional.
+      
+Example:
+
+.. literalinclude:: /example/code-block-bareosconfig.rst.inc
+   :language: none
+
+Output:
+
+.. include:: /example/code-block-bareosconfig.rst.inc
+
+
+Domain
+~~~~~~
+
+A domain is a collection of markup (reStructuredText directives and roles) to describe and link to objects belonging together.
+
 
 
 Paragraphs
 ----------
 
 The paragraph is the most basic block in a reST document.  Paragraphs are simply
-chunks of text separated by one or more blank lines.  As in Python, indentation
+chunks of text seperated by one or more blank lines.  As in Python, indentation
 is significant in reST, so all lines of the same paragraph must be left-aligned
 to the same level of indentation.
 
@@ -31,7 +89,7 @@ Inline markup
 The standard reST inline markup is quite simple: use
 
 * one asterisk: ``*text*`` for emphasis (italics),
-* two asterisks: ``**text**`` for strong emphasis (boldface), and
+* two asterisks: ``**text**`` or ``:strong:`text``` for strong emphasis (boldface), and
 * backquotes: ````text```` for code samples.
 
 If asterisks or backquotes appear in running text and could be confused with
@@ -41,7 +99,7 @@ Be aware of some restrictions of this markup:
 
 * it may not be nested,
 * content may not start or end with whitespace: ``* text*`` is wrong,
-* it must be separated from surrounding text by non-word characters.  Use a
+* it must be seperated from surrounding text by non-word characters.  Use a
   backslash escaped space to work around that: ``thisis\ *one*\ word``.
 
 These restrictions may be lifted in future versions of the docutils.
@@ -52,8 +110,8 @@ provide semantic markup and cross-referencing of identifiers, as described in
 the appropriate section.  The general syntax is ``:rolename:`content```.
 
 
-Lists and Quotes
-----------------
+Lists, Definition Lists  and Quotes
+-----------------------------------
 
 List markup is natural: just place an asterisk at the start of a paragraph and
 indent properly.  The same goes for numbered lists; they can also be
@@ -70,7 +128,7 @@ automatically numbered using a ``#`` sign::
    #. It has two items too.
 
 
-Nested lists are possible, but be aware that they must be separated from the
+Nested lists are possible, but be aware that they must be seperated from the
 parent list items by blank lines::
 
    * this is
@@ -96,8 +154,8 @@ Paragraphs are quoted by just indenting them more than the surrounding
 paragraphs.
 
 
-Source Code
------------
+Literal block
+-------------
 
 Literal code blocks are introduced by ending a paragraph with the special marker
 ``::``.  The literal block must be indented::
@@ -123,18 +181,87 @@ That way, the second sentence in the above example's first paragraph would be
 rendered as "The next paragraph is a code sample:".
 
 
+Source Code
+-----------
+
+Source code will be formatted by the directive ``code-block``.
+
+Example::
+
+   .. code-block:: sh
+      :caption: Titel
+      
+      Line 1
+      Line 2
+      ...
+
+Output:
+
+.. code-block:: sh
+   :caption: Titel
+      
+   Line 1
+   Line 2
+   ...
+
+
+
+Valid values for the highlighting language are:
+
+  * ``none`` (no highlighting)
+  * ``python`` (the default)
+  * ``bareosconfig`` (Bareos configuration files or parts thereof)
+  * ``bconsole`` (Bareos console (bconsole) sessions)
+  * ``bareoslog`` (Bareos log files)
+  * ``bareosmessage`` (Bareos messages)
+  * ``sh`` (Shell scripts)
+  * ``shell-session`` (Shell sessions)
+  * ``dosbatch`` (DOS/Windows Batch file)
+  * ``doscon`` (MSDOS sessions)  
+  * ``cfg`` (Generic configuration file, mostly INI files)
+  * ``sql`` (Generic SQL commands)
+  * ``registry`` (Windows Registry files produced by regedit)
+  * ``guess`` (let Pygments guess the lexer based on contents, only works with
+    certain well-recognizable languages)
+  * ``rest``
+  * ``c``
+  * ... and any other `lexer alias that Pygments supports
+    <http://pygments.org/docs/lexers/>`_.
+
+If the text resides in a seperate file, use::    
+
+   .. literalinclude:: /include/config/backup-client1.cfg
+      :language: bareosconfig
+
+All included files should be located under :file:`/include`.
+
+The beginning :file:`/` means, root directory of the documenation source directory.
+Without it, the path is relative to the directory of the including file.
+
+Configuration files should be located under :file:`/include/config/`\ .
+
 Hyperlinks
 ----------
 
 External links
-^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~
 
 Use ```Link text <http://target>`_`` for inline web links.  If the link text
 should be the web address, you don't need special markup at all, the parser
 finds links and mail addresses in ordinary text.
 
+Example:
+
+.. literalinclude:: /example/urls.rst.inc
+   :language: none
+
+Output:
+
+.. include:: /example/urls.rst.inc
+
+
 Internal links
-^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~
 
 Internal linking is done via a special reST role, see the section on specific
 markup, :ref:`doc-ref-role`.
@@ -167,6 +294,27 @@ The ``:ref:`` invocation is replaced with the section title.
 
 Alternatively, you can reference any label (not just section titles)
 if you provide the link text ``:ref:`link text <reference-label>```.
+
+.. warning::
+
+   If the label is not defined immediately before a section title and no link text is given,
+   ``:ref:`` will fail and not create a link at all.
+   Instead it produces a warning and writes the parameter as plain text.
+
+In the Bareos documentation we use the Sphinx extension **sphinx.ext.autosectionlabel**
+with the parameter ``autosectionlabel_prefix_document = True``.
+
+With this, all section titles do automatically create a section label.
+This causes warnings when there are multiple sections with the same title.
+To reduce the number of warnings, the parameter ``autosectionlabel_prefix_document = True`` is set,
+This prefix each section label with the name (including the relative path from the top directory) of the document it is in, followed by a colon.
+
+Example::
+
+  :ref:`RestOverview:Cross-linking markup`
+  
+This will link to :ref:`RestOverview:Cross-linking markup`\ .
+
 
 
 Sections
@@ -236,7 +384,7 @@ Explicit Markup
 An explicit markup block begins with a line starting with .. followed by whitespace and is terminated by the next paragraph at the same level of indentation. (There needs to be a blank line between explicit markup and normal paragraphs. This may all sound a bit complicated, but it is intuitive enough when you write it.)
 
 Directives
-^^^^^^^^^^
+~~~~~~~~~~
 
 A directive is a generic block of explicit markup. Besides roles, it is one of the extension mechanisms of reST, and Sphinx makes heavy use of it.
 
@@ -256,9 +404,11 @@ The directive content follows after a blank line and is indented relative to the
 
 
 Comments
-^^^^^^^^
+~~~~~~~~
 
 Every explicit markup block which isn’t a valid markup construct (like the footnotes above) is regarded as a comment.
+
+However, it must have some text in the ".. " line, otherwise it is ignored, and content will be displayed (indented).
 
 
 
@@ -278,117 +428,31 @@ Backslahes (Windows paths) ``\`` have to written as ``\\``:
 
    :file:`/var/lib/pgsql/data`
 
-The output should look like this:
-  
-.. include:: include/file.rst.inc
-
 The formatting looks a follows:
 
-.. literalinclude:: include/file.rst.inc
+.. literalinclude:: /example/file.rst.inc
+
+Output:
+  
+.. include:: /example/file.rst.inc
 
 
 
-Host name
----------
+Note
+----
 
-If you want to display a hostname, the following formatting should be followed:
+If you want to display a note, the following formatting should be used::
 
-.. \newcommand{\host}[1]{\path|#1|}
+   .. note::
 
-   Post Conversion Changes
-   ${PERL} 's#:raw-latex:`\\host\{(.*?)\}`#:strong:`\1`#g' ${DESTFILE}
-   
-   Note: :strong:`XXX` is identical with **XXX**.
-
-.. code-block:: sh
-
-   :strong:`client1.example.com`
+   It is important to ...
 
 The output should look like this:
 
-:strong:`client1.example.com`
+.. note::
 
-.. list-table:: Common host names
-   :header-rows: 1
+   It is important to ...
 
-   * - Host name
-     - Description
-   * - :strong:`bareos-dir.example.com`
-     - Bareos Director host
-   * - :strong:`bareos-sd.example.com`
-     - Bareos Storage Daemon host, if only one Storage Daemon is used.
-   * - :strong:`bareos-sd1.example.com`, :strong:`bareos-sd2.example.com`, ...
-     - Bareos Storage Daemon host, if multiple Storage Daemons are used.
-   * - :strong:`bareos-sd-tape.example.com`
-     - Bareos Storage Daemon with a specific backend.
-   * - :strong:`client1.example.com`, :strong:`client2.example.com`, ...
-     - Bareos File Daemon
-
-     
-System User
------------
-
-If you want to display a system user name, the following formatting should be followed:
-
-.. \newcommand{\user}[1]{\path|#1|}
-
-   Post Conversion Changes
-   ${PERL} 's#:raw-latex:`\\user\{(.*)\}`#**\1**#g'   ${DESTFILE}
-   ${PERL} 's#\\user\{(.*)\}#**\1**#g'   ${DESTFILE}
-
-.. code-block:: sh
-
-   **root**
-
-The output should look like this:
-
-**root**
-
-
-
-Operating System
-----------------
-
-If you want to display an operating system name, the following formatting should be used:
-
-.. \newcommand{\os}[2]{\ifthenelse{\isempty{#2}}{%
-    \path|#1|\index[general]{Platform!#1}%
-    }{%
-    \path|#1 #2|\index[general]{Platform!#1!#2}%
-    }}
-
-    Post Conversion Changes
-    ${PERL} 's#\\os\{(.*?)\}\{}#:strong:`\1`#g' ${DESTFILE}
-    ${PERL} 's#\\os\{(.*?)\}\{(.*?)}#:strong:`\1 \2`#g' ${DESTFILE}
-
-.. code-block:: sh
-
-   :strong:`Fedora 21`
-
-The output should look like this:
-
-:strong:`Fedora 21`
-
-
-
-Software Package
-----------------
-
-If you want to display a software package name (mostly Linux), the following formatting should be used:
-
-.. \newcommand{\package}[1]{\index[general]{Package!#1}\path|#1|\xspace}
-
-   Post Conversion Changes
-   ${PERL} 's#:raw-latex:`\\package\{(.*?)\}`#**\1**#g'   ${DESTFILE}
-   ${PERL} 's#:raw-latex:`\\package\{(.*?)\}`#**\1**#g'   ${DESTFILE}
-
-.. code-block:: sh
-
-   **bareos-common**
-
-The output should look like this:
-
-**bareos-common**
 
 
 
@@ -416,60 +480,41 @@ The output should look like this:
    This record ignores retention periods!
    
    
-Windows Registry Key
---------------------
-
-If you want to display a path where registry key is defined, this formatting should be used.
-
-.. \newcommand{\registrykey}[1]{\path|#1|}
-
-   Pre Conversion Changes
-   perl -pe 's#registrykey#textbf#g'
-
-.. code-block:: sh
-
-   ``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\BackupRestore\FilesNotToBackup``
-
-The output should look like this:
-
-``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\BackupRestore\FilesNotToBackup``
-
-
-Environment Variable
---------------------
-
-If you want to display an (Unix) environment variable name, the following formating should be followed:
-
-
-..   \newcommand{\variable}[1]{\path|#1|}
-  perl -pe 's#\\variable\{\$#\\textbf\{\\\$#g'
-
-.. code-block:: sh
-
-  ``$HOSTNAME``
-  
-  ``$VERSION="18.2.5"``
-
-The output should look like this:
-
-``$HOSTNAME``
-  
-``$VERSION="18.2.5"``
-
 Quote
 ------
-
-If you want to quote a certain text, the following formatting should be used:
 
 .. \newcommand{\bquote}[1]{``#1''}
 
    Post Conversion Changes
    ${PERL} 's#:raw-latex:`\\bquote\{(.*?)\}`#:emphasis:`\1`#g' ${DESTFILE}
 
-.. code-block:: sh
+If you want to quote a certain text, the following formatting should be used::
 
    ''Application Managed''
 
 The output should look like this:
 
 ''Application Managed''
+
+
+Image
+-----
+
+Image can be included by::
+
+   .. image:: /include/images/bareos-webui-jobs.*
+      :caption: Bareos WebUI: Job Overview
+      :width: 80.0%
+      
+All images should be located in the :file:`/include/images/` directory.
+Sphinx supports a number of image format.
+With the file extension :file:`.*` Sphinx chooses the best one.
+In general, images should be stored as SVG.
+
+
+Table
+-----
+
+Sphinx offeres multiple methods to create tables, see https://www.sphinx-doc.org/en/2.0/usage/restructuredtext/basics.html#tables\ .
+
+Choose whatever sucks least.

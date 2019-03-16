@@ -9,12 +9,9 @@ Bareos Style Guide
    :maxdepth: 2
    :numbered:
 
-   introduction
-   naming
-   general
-   bareos
-   important_text
-   seldom_text
-   images
-   releases
-   trouble
+   Introduction.rst
+   RestOverview.rst
+   CommonNames.rst
+   SpecificFormatting.rst
+   BareosSpecificFormatting.rst
+   Gotchas.rst

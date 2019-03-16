@@ -935,7 +935,6 @@ class Translate(object):
         item.replace(b':config:option:`{0} = {1}`\ '.format(resourceReference, value))
 
 
-    ## TODO: add link
     @staticmethod
     def linkResourceDirective(item):
         #item.replace(b'**{2}**:sup:`{0}`:sub:`{1}`\ '.format(*item.getParameters()))
@@ -1128,28 +1127,16 @@ class Translate(object):
 
         par = item.getParameters()
 
-        newitems = []
         version = par[2]
-        newitems.append(version)
-        newitems.append('bareos-{}'.format(version))
         daemon = Translate.getDaemonName(par[0])
         #if daemon is not None:
         #    newitems.append(daemon)
 
         # Parameter 1 can contain additional index separators
-        items = par[1].split('!')
-        newitems.extend(items)
+        summary = par[1].replace('!', ': ')
 
-        nr = len(newitems)-1
-        if nr == 2:
-            item.replace(r':index:`Version >= {0} <pair: {1}; {2}>`'.format(*newitems))
-        elif nr >= 3:
-            item.replace(r':index:`Version >= {0} <triple: {1}; {2}; {3}>`'.format(*newitems))
-            if nr > 3:
-                logger.warning('sinceVersion: only using the first 3 items of {}. Given: {}'.format(nr, str(par)))
-        ##              raw-latex:`\sinceVersion{dir}{requires!jansson}{15.2.0}`
-        ##sed  's#:raw-latex:`\\sinceVersion\{(.*)\}\{(.*)\}\{(.*)\}`#\n\n.. versionadded:: \3\n   \1 \2\n#g'   ${DESTFILE}
-        #${PERL} 's|:raw-latex:`\\sinceVersion\{(.*)\}\{(.*)\}\{(.*)\}`|\3|g'   ${DESTFILE}
+        item.replace(r':sinceVersion:`{version}: {summary}`'.format(version=version, summary=summary))           
+
 
     # moved to preconversion, to avoid errors.
     #@staticmethod
@@ -1176,7 +1163,7 @@ class Translate(object):
 
     @staticmethod
     def ticket(item):
-        item.replace(r':issue:`{0}`'.format(*item.getParameters()))
+        item.replace(r':ticket:`{0}`'.format(*item.getParameters()))
 
     @staticmethod
     def TODO(item):
