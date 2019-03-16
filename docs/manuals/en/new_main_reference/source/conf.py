@@ -29,7 +29,7 @@ rst_epilog = '''
 
 .. |bareosFd| replace:: Bareos File Daemon
 .. |bareosSd| replace:: Bareos Storage Daemon
-.. |bareosDir| replace:: Bareos Director Daemon
+.. |bareosDir| replace:: Bareos Director
 .. |bconsole| replace:: Bareos Console
 .. |bareosTraymonitor| replace:: Bareos Traymonitor
 .. |bareosWebui| replace:: Bareos Webui
@@ -39,9 +39,16 @@ rst_epilog = '''
 .. |sqlite| replace:: Sqlite
 .. |vmware| replace:: VMware
 .. |vsphere| replace:: VMware vSphere
-.. |commandPrompt| replace:: ``root@linux:~#`` 
+
+.. |DataManagementAgent| replace:: Data Management Agent
+.. |DataAgent| replace:: Data Agent
+.. |TapeAgent| replace:: Tape Agent
+.. |RobotAgent| replace:: Robot Agent
+.. |ndmpBareos| replace:: :ref:`section-NdmpBareos`
+.. |ndmpNative| replace:: :ref:`section-NdmpNative`
 
 '''
+
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #
@@ -73,8 +80,9 @@ extensions = [
 # Useful for avoiding ambiguity when the same section heading appears in different documents.
 autosectionlabel_prefix_document = True
 
-issues_uri = 'https://bugs.bareos.org/view.php?id={issue}'
-issues_pr_uri = 'https://github.com/bareos/bareos/pull/{pr}'
+issues_github_path = 'bareos/bareos'
+#issues_uri = 'https://bugs.bareos.org/view.php?id={issue}'
+#issues_pr_uri = 'https://github.com/bareos/bareos/pull/{pr}'
 
 
 # Add any paths that contain templates here, relative to this directory.

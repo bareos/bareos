@@ -696,12 +696,15 @@ class Translate(object):
     def bcommand(item):
         logger = logging.getLogger()
 
-        parameter = item.getNotEmptyParameters()
-        if len(parameter) >= 2:
-            item.replace(b':strong:`{0} {1}`'.format(*parameter))
-        else:
-            logger.warn("bcommand should use 2 parameter.")
-            item.replace(b':strong:`{0}`'.format(*parameter))
+        #parameter = item.getNotEmptyParameters()
+        #if len(parameter) >= 2:
+            #item.replace(b':strong:`{0} {1}`'.format(*parameter))
+        #else:
+            #logger.warn("bcommand should use 2 parameter.")
+            #item.replace(b':strong:`{0}`'.format(*parameter))
+            
+        item.replace(r':bcommand:`{0}`'.format(' '.join(item.getNotEmptyParameters())))
+
         #${PERL} 's#:raw-latex:`\\bcommand\{(\w+)\}\{([\w/ ]+)}`#:strong:`\1 \2`#g' ${DESTFILE}
         #${PERL} 's#:raw-latex:`\\bcommand\{(.*?)\}\{}`#:strong:`\1`#g'  ${DESTFILE}
         #${PERL} 's#:raw-latex:`\\bcommand\{(.*?)\}`#:strong:`\1`#g'  ${DESTFILE}
@@ -709,7 +712,7 @@ class Translate(object):
 
     @staticmethod
     def bquote(item):
-        item.replace(b':emphasis:`{0}`'.format(*item.getParameters()))
+        item.replace(r"''{0}''".format(*item.getParameters()))
 
 
     #
@@ -727,7 +730,7 @@ class Translate(object):
 
     @staticmethod
     def configline(item):
-        item.replace(b':strong:`{0}`'.format(*item.getParameters()))
+        item.replace(r'``{0}``'.format(*item.getParameters()))
         #${PERL} "s#:raw-latex:\`\\configline${BRACKET}\`#:strong:\`\1\`#g"  ${DESTFILE}
 
     @staticmethod
@@ -819,6 +822,10 @@ class Translate(object):
     @staticmethod
     def elink(item):
         item.replace(r'`{0} <{1}>`_'.format(*item.getParameters()))
+
+    @staticmethod
+    def email(item):
+        item.replace(r'{0}'.format(*item.getParameters()))
 
     @staticmethod
     def externalReferenceDroplet(item):
@@ -984,29 +991,29 @@ class Translate(object):
     @staticmethod
     def NdmpBareos(item):
         # \ilink{NDMP\_BAREOS}{sec:NdmpBareos}
-        item.replace(r'\ilink{NDMP_BAREOS}{section-NdmpBareos}')
+        item.replace(r'|ndmpBareos|')
 
     @staticmethod
     def NdmpNative(item):
         # \ilink{NDMP\_BAREOS}{sec:NdmpBareos}
-        item.replace(r'\ilink{NDMP_NATIVE}{section-NdmpNative}')
+        item.replace(r'|ndmpNative|')
 
     # NDMP
     @staticmethod
     def DataManagementAgent(item):
-        item.replace(r'Data Management Agent')
+        item.replace(r'|DataManagementAgent|')
 
     @staticmethod
     def DataAgent(item):
-        item.replace(r'Data Agent')
+        item.replace(r'|DataAgent|')
 
     @staticmethod
     def TapeAgent(item):
-        item.replace(r'Tape Agent')
+        item.replace(r'|TapeAgent|')
 
     @staticmethod
     def RobotAgent(item):
-        item.replace(r'Robot Agent')
+        item.replace(r'|RobotAgent|')
 
     #
     # m
@@ -1025,9 +1032,9 @@ class Translate(object):
     def os(item):
         dist, version = item.getParameters()
         if version:
-            item.replace(b':strong:`{0} {1}`'.format(dist, version))
+            item.replace(b':os:`{0} {1}`'.format(dist, version))
         else:
-            item.replace(b':strong:`{0}`'.format(dist))
+            item.replace(b':os:`{0}`'.format(dist))
         #${PERL} 's#\\os\{(.*?)\}\{}#:strong:`\1`#g' ${DESTFILE}
         #${PERL} 's#\\os\{(.*?)\}\{(.*?)}#:strong:`\1 \2`#g' ${DESTFILE}
 

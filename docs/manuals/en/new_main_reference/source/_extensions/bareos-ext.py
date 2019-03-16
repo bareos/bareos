@@ -343,7 +343,130 @@ class ConfigFileDomain(Domain):
             yield (name, name, type, info[0], info[1],
                    self.object_types[type].attrs['searchprio'])
 
+
+def autolink(urlpattern, textpattern = '{}'):
+    def role(name, rawtext, text, lineno, inliner, options={}, content=[]):
+        url = urlpattern.format(text)
+        xtext = textpattern.format(text)
+        node = nodes.reference(rawtext, xtext, refuri=url, **options)
+        return [node], []
+    return role
+
+
+def bcommand():
+    def role(name, rawtext, text, lineno, inliner, options={}, content=[]):
+
+        env = inliner.document.settings.env
+        
+        try:
+            command, parameter = text.split(' ', 1)
+        except ValueError:
+            command = text
+            parameter = ''
+        
+        indexstring = 'Console; Command; {}'.format(command)
+        targetid = 'bcommand-{}-{}'.format(command, env.new_serialno('bcommand'))
+        
+        # Generic index entries
+        indexnode = addnodes.index()
+        indexnode['entries'] = []
+
+        indexnode['entries'].append([
+            'single',
+            indexstring,
+            targetid, '', None
+        ])
+
+        targetnode = nodes.target('', '', ids=[targetid])
+
+        text_node = nodes.strong(text='{}'.format(text))
+        
+        return [targetnode, text_node, indexnode], []
+    return role
+
+
+def os():
+    
+    #\newcommand{\os}[2]{\ifthenelse{\isempty{#2}}{%
+        #\path|#1|\index[general]{Platform!#1}%
+    #}{%
+        #\path|#1 #2|\index[general]{Platform!#1!#2}%
+    #}}    
+    
+    def role(name, rawtext, text, lineno, inliner, options={}, content=[]):
+
+        env = inliner.document.settings.env
+
+        # Generic index entries
+        indexnode = addnodes.index()
+        indexnode['entries'] = []
+        
+        try:
+            platform, version = text.split(' ', 1)
+            targetid = 'os-{}-{}-{}'.format(platform, version, env.new_serialno('os'))
+            indexnode['entries'].append([
+                'single',
+                'Platform; {}; {}'.format(platform, version),
+                targetid, '', None
+            ])            
+        except ValueError:
+            platform = text
+            version = ''
+            targetid = 'os-{}-{}-{}'.format(platform, version, env.new_serialno('os'))            
+            indexnode['entries'].append([
+                'single',
+                'Platform; {}'.format(platform),
+                targetid, '', None
+            ])
+
+        targetnode = nodes.target('', '', ids=[targetid])
+
+        text_node = nodes.strong(text='{}'.format(text))
+        
+        return [targetnode, text_node, indexnode], []
+    return role
+
+
+def sinceVersion():
+    def role(name, rawtext, text, lineno, inliner, options={}, content=[]):
+        #version = self.arguments[0]
+        #summary = self.arguments[1]
+        version, summary = text.split(':', 1)
+        summary = summary.strip()
+        
+        indexstring = 'bareos-{}; {}'.format(version, summary)
+        idstring = 'bareos-{}-{}'.format(version, summary)
+        _id = nodes.make_id(idstring)
+        
+        # Generic index entries
+        indexnode = addnodes.index()
+        indexnode['entries'] = []
+
+        indexnode['entries'].append([
+            'pair',
+            indexstring,
+            _id, '', None
+        ])
+
+        targetnode = nodes.target('', '', ids=[_id])
+
+        #text_node = nodes.Text(text='Version >= {}'.format(version))
+        #text_node = nodes.strong(text='Version >= {}'.format(version))
+        text_node = nodes.emphasis(text='Version >= {}'.format(version))
+        # target does not work with generated.
+        #text_node = nodes.generated(text='Version >= {}'.format(version))
+        
+        return [targetnode, text_node, indexnode], []
+    return role
+
+
 def setup(app):
     app.add_domain(ConfigFileDomain)
+    app.add_role('bcommand', bcommand())
+    app.add_role('os', os())    
+    app.add_role('sinceversion', sinceVersion())
+    app.add_role('ticket', autolink('https://bugs.bareos.org/view.php?id={}', 'Ticket #{}'))
 
-    return {'version': '0.1'}   # identifies the version of our extension
+    
+    # identifies the version of our extension
+    return {'version': '0.4'}
