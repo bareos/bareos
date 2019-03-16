@@ -20,6 +20,7 @@ fifo
    
 
       .. literalinclude:: /include/config/SdDeviceArchiveDevice1.conf
+         :language: bareosconfig
 
 
 
@@ -32,12 +33,12 @@ GlusterFS Storage
 
 .. _GlusterArchiveType:
 
- don’t use this directive, but only :config:option:`sd/device/DeviceType`\  and :config:option:`sd/device/DeviceOptions`\  (this behavior have changed with :index:`Version >= 15.2.0 <pair: bareos-15.2.0; Device Options>`).
+ don’t use this directive, but only :config:option:`sd/device/DeviceType`\  and :config:option:`sd/device/DeviceOptions`\  (this behavior have changed with :sinceVersion:`15.2.0: Device Options`).
 
 Ceph Object Store
    
 
 .. _CephArchiveType:
 
- don’t use this directive, but only :config:option:`sd/device/DeviceType`\  and :config:option:`sd/device/DeviceOptions`\ . (this behavior have changed with :index:`Version >= 15.2.0 <pair: bareos-15.2.0; Device Options>`).
+ don’t use this directive, but only :config:option:`sd/device/DeviceType`\  and :config:option:`sd/device/DeviceOptions`\ . (this behavior have changed with :sinceVersion:`15.2.0: Device Options`).
 

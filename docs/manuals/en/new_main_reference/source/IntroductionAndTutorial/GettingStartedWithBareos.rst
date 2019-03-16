@@ -35,7 +35,7 @@ Although the basic Pool options are specified in the Director’s :ref:`Pool <Di
 
 For each Volume, Bareos maintains a fair amount of catalog information such as the first write date/time, the last write date/time, the number of files on the Volume, the number of bytes on the Volume, the number of Mounts, etc.
 
-Before Bareos will read or write a Volume, the physical Volume must have a Bareos software label so that Bareos can be sure the correct Volume is mounted. Depending on your configuration, this is either done automatically by Bareos or manually using the :strong:`label` command in the Console program.
+Before Bareos will read or write a Volume, the physical Volume must have a Bareos software label so that Bareos can be sure the correct Volume is mounted. Depending on your configuration, this is either done automatically by Bareos or manually using the :bcommand:`label` command in the Console program.
 
 The steps for creating a Pool, adding Volumes to it, and writing software labels to the Volumes, may seem tedious at first, but in fact, they are quite simple to do, and they allow you to use multiple Volumes (rather than being limited to the size of a single tape). Pools also give you significant flexibility in your backup process. For example, you can have a "Daily" Pool of Volumes for Incremental backups and a "Weekly" Pool of Volumes for Full backups. By specifying the appropriate Pool in
 the daily and weekly backup Jobs, you thereby insure that no daily Job ever writes to a Volume in the Weekly Pool and vice versa, and Bareos will tell you what tape is needed and when.
@@ -49,7 +49,7 @@ Setting Up Bareos Configuration Files
 
 :index:`[TAG=Configuration->Files] <pair: Configuration; Files>`
 
-On Unix, Bareos configuration files are usually located in the :file:`/etc/bareos/` directory and are named accordingly to the programs that use it. Since Bareos :index:`Version >= 16.2.4 <pair: bareos-16.2.4; Subdirectory Configuration Scheme used as Default>` the default configuration is stored as one file per resource in subdirectories under :file:`bareos-dir.d`, :file:`bareos-sd.d` or :file:`bareos-fd.d`. For details, see
+On Unix, Bareos configuration files are usually located in the :file:`/etc/bareos/` directory and are named accordingly to the programs that use it. Since Bareos :sinceVersion:`16.2.4: Subdirectory Configuration Scheme used as Default` the default configuration is stored as one file per resource in subdirectories under :file:`bareos-dir.d`, :file:`bareos-sd.d` or :file:`bareos-fd.d`. For details, see
 :ref:`ConfigureChapter` and :ref:`section-SubdirectoryConfigurationScheme`.
 
 Testing your Configuration Files

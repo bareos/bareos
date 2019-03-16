@@ -5,5 +5,6 @@ If the exit code of the program run is non-zero, Bareos will print a warning mes
 
 
    .. literalinclude:: /include/config/DirJobRunAfterFailedJob1.conf
+      :language: bareosconfig
 
 

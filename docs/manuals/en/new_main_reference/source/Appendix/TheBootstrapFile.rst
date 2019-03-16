@@ -7,7 +7,7 @@ The Bootstrap File
 
 .. TODO: This chapter is going to be rewritten (by Philipp).
 
-The information in this chapter is provided so that you may either create your own bootstrap files, or so that you can edit a bootstrap file produced by Bareos. However, normally the bootstrap file will be automatically created for you during the :strong:`restore` in the Console program, or by using a :config:option:`dir/job/WriteBootstrap`\  record in your Backup Jobs, and thus you will never need to know the details of this file.
+The information in this chapter is provided so that you may either create your own bootstrap files, or so that you can edit a bootstrap file produced by Bareos. However, normally the bootstrap file will be automatically created for you during the :bcommand:`restore` in the Console program, or by using a :config:option:`dir/job/WriteBootstrap`\  record in your Backup Jobs, and thus you will never need to know the details of this file.
 
 The bootstrap file contains ASCII information that permits precise specification of what files should be restored, what volume they are on, and where they are on the volume. It is a relatively compact form of specifying the information, is human readable, and can be edited with any text editor.
 

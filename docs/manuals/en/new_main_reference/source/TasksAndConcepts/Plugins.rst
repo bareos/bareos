@@ -40,7 +40,7 @@ The bpipe plugin is so simple and flexible, you may call it the "Swiss Army Knif
 
 The bpipe plugin is specified in the Include section of your Job’s FileSet resource in your :file:`bareos-dir.conf`.
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bpipe fileset
 
    FileSet {
@@ -56,7 +56,7 @@ The bpipe plugin is specified in the Include section of your Job’s FileSet res
 
 The syntax and semantics of the Plugin directive require the first part of the string up to the colon to be the name of the plugin. Everything after the first colon is ignored by the File daemon but is passed to the plugin. Thus the plugin writer may define the meaning of the rest of the string as he wishes. The full syntax of the plugin directive as interpreted by the bpipe plugin is:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bpipe directive
 
    Plugin = "<plugin>:file=<filepath>:reader=<readprogram>:writer=<writeprogram>"
@@ -65,7 +65,7 @@ plugin
    is the name of the plugin with the trailing -fd.so stripped off, so in this case, we would put bpipe in the field.
 
 filepath
-   specifies the namespace, which for bpipe is the pseudo path and filename under which the backup will be saved. This pseudo path and filename will be seen by the user in the restore file tree. For example, if the value is :strong:`/MySQL/mydump.sql`, the data backed up by the plugin will be put under that :emphasis:`pseudo` path and filename. You must be careful to choose a naming convention that is unique to avoid a conflict with a path and filename that actually
+   specifies the namespace, which for bpipe is the pseudo path and filename under which the backup will be saved. This pseudo path and filename will be seen by the user in the restore file tree. For example, if the value is :strong:`/MySQL/mydump.sql`, the data backed up by the plugin will be put under that ''pseudo'' path and filename. You must be careful to choose a naming convention that is unique to avoid a conflict with a path and filename that actually
    exists on your system.
 
 readprogram
@@ -99,28 +99,28 @@ LDAP Plugin
 
 :index:`[TAG=Plugin->ldap] <pair: Plugin; ldap>`
 
-This plugin is intended to backup (and restore) the contents of a LDAP server. It uses normal LDAP operation for this. The package **bareos-filedaemon-ldap-python-plugin** (:index:`Version >= 15.2.0 <pair: bareos-15.2.0; LDAP Plugin>`) contains an example configuration file, that must be adapted to your envirnoment.
+This plugin is intended to backup (and restore) the contents of a LDAP server. It uses normal LDAP operation for this. The package **bareos-filedaemon-ldap-python-plugin** (:sinceVersion:`15.2.0: LDAP Plugin`) contains an example configuration file, that must be adapted to your envirnoment.
 
 Cephfs Plugin
 ~~~~~~~~~~~~~
 
 :index:`[TAG=Plugin->ceph->cephfs] <triple: Plugin; ceph; cephfs>` :index:`[TAG=Ceph->Cephfs Plugin] <pair: Ceph; Cephfs Plugin>`
 
-Opposite to the :ref:`Rados Backend <SdBackendRados>` that is used to store data on a CEPH Object Store, this plugin is intended to backup a CEPH Object Store via the Cephfs interface to other media. The package **bareos-filedaemon-ceph-plugin** (:index:`Version >= 15.2.0 <pair: bareos-15.2.0; Cephfs Plugin>`) contains an example configuration file, that must be adapted to your envirnoment.
+Opposite to the :ref:`Rados Backend <SdBackendRados>` that is used to store data on a CEPH Object Store, this plugin is intended to backup a CEPH Object Store via the Cephfs interface to other media. The package **bareos-filedaemon-ceph-plugin** (:sinceVersion:`15.2.0: Cephfs Plugin`) contains an example configuration file, that must be adapted to your envirnoment.
 
 Rados Plugin
 ~~~~~~~~~~~~
 
 :index:`[TAG=Plugin->ceph->rados] <triple: Plugin; ceph; rados>` :index:`[TAG=Ceph->Rados Plugin] <pair: Ceph; Rados Plugin>`
 
-Opposite to the :ref:`Rados Backend <SdBackendRados>` that is used to store data on a CEPH Object Store, this plugin is intended to backup a CEPH Object Store via the Rados interface to other media. The package **bareos-filedaemon-ceph-plugin** (:index:`Version >= 15.2.0 <pair: bareos-15.2.0; CEPH Rados Plugin>`) contains an example configuration file, that must be adapted to your envirnoment.
+Opposite to the :ref:`Rados Backend <SdBackendRados>` that is used to store data on a CEPH Object Store, this plugin is intended to backup a CEPH Object Store via the Rados interface to other media. The package **bareos-filedaemon-ceph-plugin** (:sinceVersion:`15.2.0: CEPH Rados Plugin`) contains an example configuration file, that must be adapted to your envirnoment.
 
 GlusterFS Plugin
 ~~~~~~~~~~~~~~~~
 
 :index:`[TAG=Plugin->glusterfs] <pair: Plugin; glusterfs>` :index:`[TAG=GlusterFS->Plugin] <pair: GlusterFS; Plugin>`
 
-Opposite to the :ref:`GFAPI Backend <SdBackendGfapi>` that is used to store data on a Gluster system, this plugin is intended to backup data from a Gluster system to other media. The package **bareos-filedaemon-glusterfs-plugin** (:index:`Version >= 15.2.0 <pair: bareos-15.2.0; GlusterFS Plugin>`) contains an example configuration file, that must be adapted to your envirnoment.
+Opposite to the :ref:`GFAPI Backend <SdBackendGfapi>` that is used to store data on a Gluster system, this plugin is intended to backup data from a Gluster system to other media. The package **bareos-filedaemon-glusterfs-plugin** (:sinceVersion:`15.2.0: GlusterFS Plugin`) contains an example configuration file, that must be adapted to your envirnoment.
 
 python-fd Plugin
 ~~~~~~~~~~~~~~~~
@@ -136,7 +136,7 @@ Command Plugins
 
 Command plugins are used to replace or extend the FileSet definition in the File Section. If you have a command-plugin, you can use it like in this example:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.conf: Python FD command plugins
 
    FileSet {
@@ -159,7 +159,7 @@ Option plugins are activated in the Options resource of a FileSet definition.
 
 Example:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.conf: Python FD option plugins
 
    FileSet {
@@ -185,7 +185,7 @@ VMware Plugin
 
 The |vmware| Plugin can be used for agentless backups of virtual machines running on |vsphere|. It makes use of CBT (Changed Block Tracking) to do space efficient full and incremental backups, see below for mandatory requirements.
 
-It is included in Bareos since :index:`Version >= 15.2.0 <pair: bareos-15.2.0; VMware Plugin>`.
+It is included in Bareos since :sinceVersion:`15.2.0: VMware Plugin`.
 
 Status
 ^^^^^^
@@ -210,16 +210,16 @@ Current limitations amongst others are:
 
 .. limitation:: VMware Plugin: Virtual Disks have to be smaller than 2TB.
 
-       Virtual Disks have to be smaller than 2 TB, see :issue:`670`.
+       Virtual Disks have to be smaller than 2 TB, see :ticket:`670`.
 
 
 
 .. limitation:: VMware Plugin: Restore can only be done to the same VM or to local VMDK files.
 
        Until Bareos Version 15.2.2, the restore has only be possible to the same existing VM with existing virtual disks.
-       Since :index:`Version >= 15.2.3 <pair: bareos-15.2.3; VMware Plugin: restore to VMDK files>`
-       %**bareos-vadp-dumper** :index:`Version >= 15.2.2-15 <pair: bareos-15.2.2-15; bareos-vadp-dumper>` and 
-       %**bareos-vmware-plugin** :index:`Version >= 15.2.2-27 <pair: bareos-15.2.2-27; bareos-vmware-plugin>`
+       Since :sinceVersion:`15.2.3: VMware Plugin: restore to VMDK files`
+       %**bareos-vadp-dumper** :sinceVersion:`15.2.2-15: bareos-vadp-dumper` and 
+       %**bareos-vmware-plugin** :sinceVersion:`15.2.2-27: bareos-vmware-plugin`
        it is also possible to restore to local VMDK files, see below for more details.
 
 
@@ -229,7 +229,7 @@ Requirements
 
 As the Plugin is based on the |vsphere| Storage APIs for Data Protection, which requires at least a |vsphere| Essentials License. It is tested against |vsphere| Storage APIs for Data Protection of |vmware| 5.x. It does not work with standalone unlicensed |vmware| ESXi\ :sup:`(TM)`.
 
-Since Bareos :index:`Version >= 17.2.4 <pair: bareos-17.2.4; VMware Plugin: VDDK 6.5.2>` the plugin is using the Virtual Disk Development Kit (VDDK) 6.5.2, as of the VDDK 6.5 release notes, it should be compatible with vSphere 6.5 and the next major release (except new features) and backward compatible with vSphere 5.5 and 6.0, see VDDK release notes at https://code.vmware.com/web/sdk/65/vddk for details.
+Since Bareos :sinceVersion:`17.2.4: VMware Plugin: VDDK 6.5.2` the plugin is using the Virtual Disk Development Kit (VDDK) 6.5.2, as of the VDDK 6.5 release notes, it should be compatible with vSphere 6.5 and the next major release (except new features) and backward compatible with vSphere 5.5 and 6.0, see VDDK release notes at https://code.vmware.com/web/sdk/65/vddk for details.
 
 Installation
 ^^^^^^^^^^^^
@@ -253,7 +253,7 @@ For more details regarding users and permissions in vSphere see
 
 Make sure to add or enable the following settings in your |bareosFd| configuration:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-fd.d/client/myself.conf
 
    Client {
@@ -267,7 +267,7 @@ Note: Depending on Platform, the Plugin Directory may also be :file:`/usr/lib64/
 
 To define the backup of a VM in Bareos, a job definition and a fileset resource must be added to the Bareos director configuration. In vCenter, VMs are usually organized in datacenters and folders. The following example shows how to configure the backup of the VM named *websrv1* in the datacenter *mydc1* folder *webservers* on the vCenter server :command:`vcenter.example.org`:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.conf: VMware Plugin Job and FileSet definition
 
    Job {
@@ -290,23 +290,23 @@ To define the backup of a VM in Bareos, a job definition and a fileset resource 
 
 For VMs defined in the root-folder, :command:`folder=/` must be specified in the Plugin definition.
 
-Since Bareos :index:`Version >= 17.2.4 <pair: bareos-17.2.4; bareos-vmware-plugin: module\_path without vmware\_plugin subdirectory>` the :strong:`module\_path` is without :file:`vmware_plugin` directory. On upgrades you either adapt your configuration from
+Since Bareos :sinceVersion:`17.2.4: bareos-vmware-plugin: module\_path without vmware\_plugin subdirectory` the :strong:`module\_path` is without :file:`vmware_plugin` directory. On upgrades you either adapt your configuration from
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: python:module\_path for Bareos < 17.2.0
 
    Plugin = "python:module_path=/usr/lib64/bareos/plugins/vmware_plugin:module_name=bareos-fd-vmware:...
 
 to
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: python:module\_path for Bareos >= 17.2.0
 
    Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-vmware:...
 
 or install the **bareos-vmware-plugin-compat** package which includes compatibility symbolic links.
 
-Since :index:`Version >= 17.2.4 <pair: bareos-17.2.4; VMware Plugin: vcthumbprint>`: as the Plugin is using the Virtual Disk Development Kit (VDDK) 6.5, it is required to pass the thumbprint of the vCenter SSL Certificate, which is the SHA1 checksum of the SSL Certificate. The thumbprint can be retrieved like this:
+Since :sinceVersion:`17.2.4: VMware Plugin: vcthumbprint`: as the Plugin is using the Virtual Disk Development Kit (VDDK) 6.5, it is required to pass the thumbprint of the vCenter SSL Certificate, which is the SHA1 checksum of the SSL Certificate. The thumbprint can be retrieved like this:
 
 .. code-block:: sh
    :caption: Example Retrieving vCenter SSL Certificate Thumbprint
@@ -322,7 +322,7 @@ The result would look like this:
 
 For additional security, there is a now plugin option :command:`vcthumbprint`, that can optionally be added. It must be given without colons like in the following example:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.conf: VMware Plugin Options with vcthumbprint
 
        ...
@@ -331,7 +331,7 @@ For additional security, there is a now plugin option :command:`vcthumbprint`, t
 
 For ease of use (but less secure) when the :command:`vcthumbprint` is not given, the plugin will retrieve the thumbprint.
 
-Also since :index:`Version >= 17.2.4 <pair: bareos-17.2.4; VMware Plugin: transport=nbdssl>` another optional plugin option has been added that can be used for trying to force a given transport method. Normally, when no transport method is given, VDDK will negotiate available transport methods and select the best one. For a description of transport methods, see
+Also since :sinceVersion:`17.2.4: VMware Plugin: transport=nbdssl` another optional plugin option has been added that can be used for trying to force a given transport method. Normally, when no transport method is given, VDDK will negotiate available transport methods and select the best one. For a description of transport methods, see
 
 https://code.vmware.com/doc/preview?id=4076#/doc/vddkDataStruct.5.5.html
 
@@ -339,7 +339,7 @@ When the plugin runs in a VMware virtual machine which has access to datastore w
 
 To try forcing a given transport method, the plugin option :command:`transport` can be used, for example
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.conf: VMware Plugin options with transport
 
        ...
@@ -348,10 +348,10 @@ To try forcing a given transport method, the plugin option :command:`transport` 
 
 Note that the backup will fail when specifying a transport method that is not available.
 
-Since :index:`Version >= 17.2.8 <pair: bareos-17.2.8; VMware Plugin: non-ascii characters>` it is possible to use non-ascii characters and blanks in the configuration for :strong:`folder` and :strong:`vmname`. Also virtual disk file names or paths containing non-ascii characters are handled correctly now. For backing up VMs that are contained in vApps, it is now possible to use the vApp name like a folder component. For example, if we have the vApp named
+Since :sinceVersion:`17.2.8: VMware Plugin: non-ascii characters` it is possible to use non-ascii characters and blanks in the configuration for :strong:`folder` and :strong:`vmname`. Also virtual disk file names or paths containing non-ascii characters are handled correctly now. For backing up VMs that are contained in vApps, it is now possible to use the vApp name like a folder component. For example, if we have the vApp named
 :command:`Test vApp` in the folder :file:`/Test/Test Folder` and the vApp contains the two VMs :command:`Test VM 01` and :command:`Test VM 02`, then the configuration of the filesets should look like this:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.conf: VMware Plugin FileSet definition for vApp
 
    FileSet {
@@ -382,7 +382,7 @@ However, it is important to know that it is not possible to use non-ascii charac
 
 Before this, it was only possible specify VMs contained in vApps by using the instance UUID with the :strong:`uuid` instead of :strong:`folder` and :strong:`vmname` like this:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.conf: VMware Plugin FileSet definition for vApp
 
    FileSet {
@@ -435,7 +435,7 @@ As of http://kb.vmware.com/kb/2075984 manually enabling CBT is currently not wor
      --listall             List all VMs in the given datacenter with UUID and
                            containing folder
 
-Note: the options :command:`--vm-uuid` and :command:`--listall` have been added in version :index:`Version >= 17.2.8 <pair: bareos-17.2.8; VMware Plugin: new options in vmware\_cbt\_tool.py>`, the tool is also able now to process non-ascii character arguments for the :command:`--folder` and :command:`--vmname` arguments and vApp names can be used like folder name components. With :command:`--listall` all VMs in the given datacenter are reported
+Note: the options :command:`--vm-uuid` and :command:`--listall` have been added in version :sinceVersion:`17.2.8: VMware Plugin: new options in vmware\_cbt\_tool.py`, the tool is also able now to process non-ascii character arguments for the :command:`--folder` and :command:`--vmname` arguments and vApp names can be used like folder name components. With :command:`--listall` all VMs in the given datacenter are reported
 in a tabular output including instance UUID and containing Folder/vApp name.
 
 For the above configuration example, the command to enable CBT would be
@@ -449,19 +449,19 @@ Note: CBT does not work if the virtual hardware version is 6 or earlier.
 
 After enabling CBT, Backup Jobs can be run or scheduled as usual, for example in :command:`bconsole`:
 
-:strong:`run job=vm-websrv1 level=Full`
+:bcommand:`run job=vm-websrv1 level=Full`
 
 Restore
 ^^^^^^^
 
-For restore, the VM must be powered off and no snapshot must exist. In :command:`bconsole` use the restore menu 5, select the correct FileSet and enter :strong:`mark *`, then :strong:`done`. After restore has finished, the VM can be powered on.
+For restore, the VM must be powered off and no snapshot must exist. In :command:`bconsole` use the restore menu 5, select the correct FileSet and enter :bcommand:`mark *`, then :bcommand:`done`. After restore has finished, the VM can be powered on.
 
 Restore to local VMDK File
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 :index:`[TAG=VMware Plugin->VMDK files] <pair: VMware Plugin; VMDK files>`
 
-Since :index:`Version >= 15.2.3 <pair: bareos-15.2.3; VMware Plugin: restore to VMDK files>` it is possible to restore to local VMDK files. That means, instead of directly restoring a disk that belongs to the VM, the restore creates VMDK disk image files on the filesystem of the system that runs the |bareosFd|. As the VM that the backup was taken from is not affected by this, it can remain switched on while restoring to local VMDK. Such a restored VMDK file can then be uploaded to a
+Since :sinceVersion:`15.2.3: VMware Plugin: restore to VMDK files` it is possible to restore to local VMDK files. That means, instead of directly restoring a disk that belongs to the VM, the restore creates VMDK disk image files on the filesystem of the system that runs the |bareosFd|. As the VM that the backup was taken from is not affected by this, it can remain switched on while restoring to local VMDK. Such a restored VMDK file can then be uploaded to a
 |vsphere| datastore or accessed by tools like `guestfish <http://libguestfs.org/guestfish.1.html>`_ to extract single files.
 
 For restoring to local VMDK, the plugin option :strong:`localvmdk=yes` must be passed. The following example shows how to perform such a restore using :command:`bconsole`:
@@ -565,7 +565,7 @@ For restoring to local VMDK, the plugin option :strong:`localvmdk=yes` must be p
    OK to run? (yes/mod/no): <input>yes</input>
    Job queued. JobId=639
 
-Note: Since Bareos :index:`Version >= 15.2.3 <pair: bareos-15.2.3; Add additional python plugin options>` it is sufficient to add Python plugin options, e.g. by
+Note: Since Bareos :sinceVersion:`15.2.3: Add additional python plugin options` it is sufficient to add Python plugin options, e.g. by
 
 :strong:`python:localvmdk=yes`
 
@@ -638,17 +638,17 @@ Multi-core cpus will be utilized when using parallel jobs as the compression is 
 
 When the autoxflate plugin is configured, it will write some status information into the joblog.
 
-.. code-block:: sh
+.. code-block:: bareosmessage
    :caption: used compression algorithm
 
    autodeflation: compressor on device FileStorage is FZ4H
 
-.. code-block:: sh
+.. code-block:: bareosmessage
    :caption: configured inflation and deflation blocks
 
    autoxflate-sd.c: FileStorage OUT:[SD->inflate=yes->deflate=yes->DEV] IN:[DEV->inflate=yes->deflate=yes->SD]
 
-.. code-block:: sh
+.. code-block:: bareosmessage
    :caption: overall deflation/inflation ratio
 
    autoxflate-sd.c: deflate ratio: 50.59%
@@ -765,7 +765,7 @@ Check the setting with
 
 :command:`getcap` and :command:`setcap` are part of libcap-progs.
 
-If :command:`bareos-sd` does not have the appropriate capabilities, all other tape operations may still work correctly, but you will get :emphasis:`Unable to perform SG\_IO ioctl` errors.
+If :command:`bareos-sd` does not have the appropriate capabilities, all other tape operations may still work correctly, but you will get ''Unable to perform SG\_IO ioctl'' errors.
 
 Solaris (USCSI ioctl interface):
                                 
@@ -778,7 +778,7 @@ If you are running the storage daemon as another user than root (which has the `
 
 For SMF make sure you have something like this in the instance block:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
 
    <method_context working_directory=":default"> <method_credential user="bareos" group="bareos" privileges="basic,sys_devices"/> </method_context>
 
@@ -813,7 +813,7 @@ Testing
 
 Restart the Storage Daemon and the Director. After this you can label new volumes with the encrypt option, e.g.
 
-.. code-block:: sh
+.. code-block:: bareosconfig
 
    label slots=1-5 barcodes encrypt
 
@@ -848,7 +848,7 @@ Most of the times the needed information, e.g. the bootstrap info, is available 
 
 Or something similar (change paths to follow where you installed the software or where the package put it).
 
-**Note:** As described at the beginning of this chapter, there are different types of key management, AME, LME and KMA. If the Library is set up for LME or KMA, it probably won’t allow our AME setup and the scsi-crypto plugin will fail to set/clear the encryption key. To be able to use AME you need to :emphasis:`Modify Encryption Method` and set it to something like :emphasis:`Application Managed`. If you decide to use LME or KMA you don’t have to bother with the whole setup
+**Note:** As described at the beginning of this chapter, there are different types of key management, AME, LME and KMA. If the Library is set up for LME or KMA, it probably won’t allow our AME setup and the scsi-crypto plugin will fail to set/clear the encryption key. To be able to use AME you need to ''Modify Encryption Method'' and set it to something like ''Application Managed''. If you decide to use LME or KMA you don’t have to bother with the whole setup
 of AME which may for big libraries be easier, although the overhead of using AME even for very big libraries should be minimal.
 
 scsitapealert-sd
@@ -896,7 +896,7 @@ The **python-dir** plugin is intended to extend the functionality of the Bareos 
 Loading plugins
 ^^^^^^^^^^^^^^^
 
-Since :index:`Version >= 14.4.0 <pair: bareos-14.4.0; multiple Python plugins>` multiple Python plugins can be loaded and plugin names can be arbitrary. Before this, the Python plugin always loads the file :file:`bareos-dir.py`.
+Since :sinceVersion:`14.4.0: multiple Python plugins` multiple Python plugins can be loaded and plugin names can be arbitrary. Before this, the Python plugin always loads the file :file:`bareos-dir.py`.
 
 The director plugins are configured in the Job-Resource (or JobDefs resource). To load a Python plugin you need
 
@@ -910,7 +910,7 @@ The director plugins are configured in the Job-Resource (or JobDefs resource). T
 
 Single Python Plugin Loading Example:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.conf: Single Python Plugin Loading Example
 
    Director {
@@ -932,7 +932,7 @@ Single Python Plugin Loading Example:
 
 Multiple Python Plugin Loading Example:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.conf: Multiple Python Plugin Loading Example
 
    Director {

@@ -77,7 +77,7 @@ If set, the secure erase command is used to delete files instead of the normal d
 
 If files are securely erased during a job, the secure delete command output will be shown in the job log.
 
-.. code-block:: sh
+.. code-block:: bareoslog
    :caption: bareos.log
 
    08-Sep 12:58 win-fd JobId 10: secure_erase: executing C:/cygwin64/bin/shred.exe "C:/temp/bareos-restores/C/Program Files/Bareos/Plugins/bareos_fd_consts.py"
@@ -90,7 +90,7 @@ If the secure erase command is configured, the current value is printed.
 
 Example:
 
-.. code-block:: sh
+.. code-block:: bconsole
 
    * <input>status dir</input>
    backup1.example.com-dir Version: 15.3.0 (24 August 2015) x86_64-suse-linux-gnu suse openSUSE 13.2 (Harlequin) (x86_64)

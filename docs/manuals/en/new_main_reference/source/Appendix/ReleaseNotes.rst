@@ -35,7 +35,7 @@ bareos-17.2.7
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2018-07-13\\
    Database Version  & 2171 (unchanged)\\
-   Release Ticket    & :issue:`966`\\
+   Release Ticket    & :ticket:`966`\\
    Url               & `<http://download.bareos.com/bareos/release/17.2/>`_ \\
    \end{tabular}
 
@@ -44,21 +44,21 @@ bareos-17.2.7
 ================ ===============================================
 Code Release     2018-07-13
 Database Version 2171 (unchanged)
-Release Ticket   :issue:`966`
+Release Ticket   :ticket:`966`
 Url              `<http://download.bareos.com/bareos/release/17.2/>`_
 ================ ===============================================
 
 This release contains several bugfixes and enhancements. Excerpt:
 
--  :issue:`892` **bareos-storage-droplet**: improve error handling on unavailable backend.
+-  :ticket:`892` **bareos-storage-droplet**: improve error handling on unavailable backend.
 
--  :issue:`902` **bareos-storage-droplet**: improve job status handling (terminate job after all data is written).
+-  :ticket:`902` **bareos-storage-droplet**: improve job status handling (terminate job after all data is written).
 
--  :issue:`967` :strong:`Windows`: overwrite symbolic links on restore.
+-  :ticket:`967` :os:`Windows`: overwrite symbolic links on restore.
 
--  :issue:`983` |bareosSd|: prevent sporadic crash when :config:option:`sd/storage/CollectJobStatistics`\ = **yes**.
+-  :ticket:`983` |bareosSd|: prevent sporadic crash when :config:option:`sd/storage/CollectJobStatistics = yes`\ .
 
--  :strong:`SLES 12sp2` and :strong:`SLES 12sp3`: provide **bareos-storage-ceph** and **bareos-filedaemon-ceph-plugin** packages.
+-  :os:`SLES 12sp2` and :os:`SLES 12sp3`: provide **bareos-storage-ceph** and **bareos-filedaemon-ceph-plugin** packages.
 
 bareos-17.2.6
 ~~~~~~~~~~~~~
@@ -72,7 +72,7 @@ bareos-17.2.6
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2018-06-21\\
    Database Version  & 2171 (unchanged)\\
-   Release Ticket    & :issue:`916`\\
+   Release Ticket    & :ticket:`916`\\
    Url               & `<http://download.bareos.com/bareos/release/17.2/>`_ \\
    \end{tabular}
 
@@ -81,25 +81,25 @@ bareos-17.2.6
 ================ ===============================================
 Code Release     2018-06-21
 Database Version 2171 (unchanged)
-Release Ticket   :issue:`916`
+Release Ticket   :ticket:`916`
 Url              `<http://download.bareos.com/bareos/release/17.2/>`_
 ================ ===============================================
 
 This release contains several bugfixes and enhancements. Excerpt:
 
--  added platforms: :strong:`Fedora 27`, :strong:`Fedora 28`, :strong:`openSUSE 15.0`, :strong:`Ubuntu 18.04` and :strong:`Univention 4.3`.
+-  added platforms: :os:`Fedora 27`, :os:`Fedora 28`, :os:`openSUSE 15.0`, :os:`Ubuntu 18.04` and :os:`Univention 4.3`.
 
--  :strong:`Univention 4.3`: fixes integration.
+-  :os:`Univention 4.3`: fixes integration.
 
--  :issue:`872` adapted to new Ceph API.
+-  :ticket:`872` adapted to new Ceph API.
 
--  :issue:`943` use **tirpc** if Sun-RPC is not provided.
+-  :ticket:`943` use **tirpc** if Sun-RPC is not provided.
 
--  :issue:`964` fixes the predefined queries.
+-  :ticket:`964` fixes the predefined queries.
 
--  :issue:`969` fixes a problem of restoring more files then selected in |bareosWebui|/BVFS.
+-  :ticket:`969` fixes a problem of restoring more files then selected in |bareosWebui|/BVFS.
 
--  |bareosDir|: fixes for a crash after reload in the statistics thread (:issue:`695`, :issue:`903`).
+-  |bareosDir|: fixes for a crash after reload in the statistics thread (:ticket:`695`, :ticket:`903`).
 
 -  :command:`bareos-dbcheck`: cleanup and speedup for some some of the checks.
 
@@ -119,7 +119,7 @@ bareos-17.2.5
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2018-02-16\\
    Database Version  & 2171 (unchanged)\\
-   Release Ticket    & :issue:`910`\\
+   Release Ticket    & :ticket:`910`\\
    Url               & `<http://download.bareos.com/bareos/release/17.2/>`_ \\
    \end{tabular}
 
@@ -128,15 +128,15 @@ bareos-17.2.5
 ================ ===============================================
 Code Release     2018-02-16
 Database Version 2171 (unchanged)
-Release Ticket   :issue:`910`
+Release Ticket   :ticket:`910`
 Url              `<http://download.bareos.com/bareos/release/17.2/>`_
 ================ ===============================================
 
 This release contains several bugfixes and enhancements. Excerpt:
 
--  |bareosFd| is ready for :strong:`AIX 7.1.0.0`.
+-  |bareosFd| is ready for :os:`AIX 7.1.0.0`.
 
--  :ref:`VMwarePlugin` is also provided for :strong:`Debian 9`.
+-  :ref:`VMwarePlugin` is also provided for :os:`Debian 9`.
 
 -  NDMP fixes
 
@@ -144,23 +144,23 @@ This release contains several bugfixes and enhancements. Excerpt:
 
 -  **bareos-storage-droplet**: improvements
 
--  :command:`bareos-dbcheck` improvements and fixes: with older versions it could happen, that it destroys structures required by :strong:`.bvfs_*`.
+-  :command:`bareos-dbcheck` improvements and fixes: with older versions it could happen, that it destroys structures required by :bcommand:`.bvfs_*`.
 
--  :issue:`850` fixes a bug on :strong:`Univention`: fixes a problem of regenerating passwords when resyncing settings.
+-  :ticket:`850` fixes a bug on :os:`Univention`: fixes a problem of regenerating passwords when resyncing settings.
 
--  :issue:`890` :strong:`.bvfs_update` fix. Before there have been cases where it did not update the cache.
+-  :ticket:`890` :bcommand:`.bvfs_update` fix. Before there have been cases where it did not update the cache.
 
--  :strong:`.bvfs_lsdirs` make limit- and offset-option work correctly.
+-  :bcommand:`.bvfs_lsdirs` make limit- and offset-option work correctly.
 
--  :strong:`.bvfs_lsdirs` show special directory (like :file:`@bpipe@/`) on the same level as :file:`/`.
+-  :bcommand:`.bvfs_lsdirs` show special directory (like :file:`@bpipe@/`) on the same level as :file:`/`.
 
--  :issue:`895` added description to the output of :strong:`show filesets`.
+-  :ticket:`895` added description to the output of :bcommand:`show filesets`.
 
 -  |bareosWebui|: Restore Browser fixes
 
-   -  There was the possibility of an endless loop if the BVFS API delivers unexpected results. This has been fixed. See bugreports :issue:`887` and :issue:`893` for details.
+   -  There was the possibility of an endless loop if the BVFS API delivers unexpected results. This has been fixed. See bugreports :ticket:`887` and :ticket:`893` for details.
 
-   -  :issue:`905` fixes a problem with file names containing quotes.
+   -  :ticket:`905` fixes a problem with file names containing quotes.
 
 -  :config:option:`dir/client/NdmpBlockSize`\  changed type from :strong:`Pint32` to :strong:`Size32`. This should not affect any configuration, but is more consistent with other block size configuration directives.
 
@@ -176,7 +176,7 @@ bareos-17.2.4
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2017-12-14\\
    Database Version  & 2171\\
-   Release Ticket    & :issue:`861`\\
+   Release Ticket    & :ticket:`861`\\
    Url               & `<http://download.bareos.org/bareos/release/17.2/>`_ \\
                      & `<http://download.bareos.com/bareos/release/17.2/>`_ \\
    \end{tabular}
@@ -186,7 +186,7 @@ bareos-17.2.4
 ================ ===============================================
 Code Release     2017-12-14
 Database Version 2171
-Release Ticket   :issue:`861`
+Release Ticket   :ticket:`861`
 Url              `<http://download.bareos.org/bareos/release/17.2/>`_
 \                `<http://download.bareos.com/bareos/release/17.2/>`_
 ================ ===============================================
@@ -223,7 +223,7 @@ This release contains several enhancements. Excerpt:
                       Updating the database to schema version >= 2170 will increase the required disk space.
                       Especially it will require around twice the amount of the current database disk space during the migration.
 
-   -  The **Filename** database table does no longer exists. Therefore the :strong:`.bvfs_*` commands do no longer output the \dbcolumn{FilenameId} column.
+   -  The **Filename** database table does no longer exists. Therefore the :bcommand:`.bvfs_*` commands do no longer output the \dbcolumn{FilenameId} column.
 
 -  NDMP_NATIVE support has been added. This include the NDMP features DAR and DDAR. For details see :ref:`section-NdmpNative`.
 
@@ -233,23 +233,23 @@ This release contains several enhancements. Excerpt:
 
 -  :command:`bareos-dbcheck`: disable all interactive questions in batch mode.
 
--  :strong:`list files`: also show deleted files (accurate mode).
+-  :bcommand:`list files`: also show deleted files (accurate mode).
 
--  :strong:`list jobstatastics`: added.
+-  :bcommand:`list jobstatastics`: added.
 
--  :strong:`purge`: added confirmation.
+-  :bcommand:`purge`: added confirmation.
 
--  :strong:`list volumes`: fix limit and offset handling.
+-  :bcommand:`list volumes`: fix limit and offset handling.
 
--  :issue:`629` Windows: restore directory attributes.
+-  :ticket:`629` Windows: restore directory attributes.
 
--  :issue:`639` tape: fix block size handling, AWS VTL iSCSI devices
+-  :ticket:`639` tape: fix block size handling, AWS VTL iSCSI devices
 
--  :issue:`705` support for MySQL 5.7
+-  :ticket:`705` support for MySQL 5.7
 
--  :issue:`719` allow long JSON messages (has been increased from 100KB to 2GB).
+-  :ticket:`719` allow long JSON messages (has been increased from 100KB to 2GB).
 
--  :issue:`793` Virtual Backups: skip jobs with no files.
+-  :ticket:`793` Virtual Backups: skip jobs with no files.
 
 Bareos-16.2
 -----------
@@ -266,7 +266,7 @@ bareos-16.2.8
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2018-07-06\\
    Database Version  & 2004 (unchanged)\\
-   Release Ticket    & :issue:`863`\\
+   Release Ticket    & :ticket:`863`\\
    Url               & `<http://download.bareos.com/bareos/release/16.2/>`_ \\
    \end{tabular}
 
@@ -275,7 +275,7 @@ bareos-16.2.8
 ================ ===============================================
 Code Release     2018-07-06
 Database Version 2004 (unchanged)
-Release Ticket   :issue:`863`
+Release Ticket   :ticket:`863`
 Url              `<http://download.bareos.com/bareos/release/16.2/>`_
 ================ ===============================================
 
@@ -299,7 +299,7 @@ This release contains several bugfixes and enhancements. Excerpt:
 
 -  Backport ceph: ported cephfs-fd and :command:`cephfs_device` to new api
 
--  :issue:`967` Windows: Symbolic links are now replaceable during restore
+-  :ticket:`967` Windows: Symbolic links are now replaceable during restore
 
 bareos-16.2.7
 ~~~~~~~~~~~~~
@@ -313,7 +313,7 @@ bareos-16.2.7
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2017-10-09\\
    Database Version  & 2004 (unchanged)\\
-   Release Ticket    & :issue:`836`\\
+   Release Ticket    & :ticket:`836`\\
    Url               & `<http://download.bareos.com/bareos/release/16.2/>`_ \\
    \end{tabular}
 
@@ -322,7 +322,7 @@ bareos-16.2.7
 ================ ===============================================
 Code Release     2017-10-09
 Database Version 2004 (unchanged)
-Release Ticket   :issue:`836`
+Release Ticket   :ticket:`836`
 Url              `<http://download.bareos.com/bareos/release/16.2/>`_
 ================ ===============================================
 
@@ -330,9 +330,9 @@ This release contains several bugfixes and enhancements. Excerpt:
 
 -  Fixes a Director crash, when enabling debugging output
 
--  :strong:`.bvfs_lsdirs`: improve performance, especially when having a large number of directories
+-  :bcommand:`.bvfs_lsdirs`: improve performance, especially when having a large number of directories
 
-   -  To optimize the performance of the SQL query used by :strong:`.bvfs_lsdirs`, it is important to have the following indexes:
+   -  To optimize the performance of the SQL query used by :bcommand:`.bvfs_lsdirs`, it is important to have the following indexes:
 
    -  PostgreSQL
 
@@ -376,7 +376,7 @@ bareos-16.2.6
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2017-06-22\\
    Database Version  & 2004 (unchanged)\\
-   Release Ticket    & :issue:`794`\\
+   Release Ticket    & :ticket:`794`\\
    Url               & `<http://download.bareos.com/bareos/release/16.2/>`_ \\
    \end{tabular}
 
@@ -385,13 +385,13 @@ bareos-16.2.6
 ================ ===============================================
 Code Release     2017-06-22
 Database Version 2004 (unchanged)
-Release Ticket   :issue:`794`
+Release Ticket   :ticket:`794`
 Url              `<http://download.bareos.com/bareos/release/16.2/>`_
 ================ ===============================================
 
 This release contains several bugfixes and enhancements. Excerpt:
 
--  Prevent from director crash when using incorrect paramaters of :strong:`.bvfs_*` commands.
+-  Prevent from director crash when using incorrect paramaters of :bcommand:`.bvfs_*` commands.
 
 -  Director now closes all configuration files when reloading failed.
 
@@ -403,7 +403,7 @@ This release contains several bugfixes and enhancements. Excerpt:
 
 -  The device spool size calculation when using secure erase was fixed.
 
--  :strong:`.bvfs_lsdirs` no longer shows empty directories from accurate jobs.
+-  :bcommand:`.bvfs_lsdirs` no longer shows empty directories from accurate jobs.
 
    -  
 
@@ -432,7 +432,7 @@ This release contains several bugfixes and enhancements. Excerpt:
       -  | Run following command to create the index:
          | :file:`echo "CREATE INDEX PathId_JobId_FileIndex_FileNameId ON File(PathId,JobId,FileIndex,FilenameId);" | mysql -u root bareos`
 
-      -  However, with larger amounts of directories and/or involved jobs, even with this index the performance of :strong:`.bvfs_lsdirs` may still be insufficient. We are working on optimizing the SQL query for MySQL/MariaDB to solve this problem.
+      -  However, with larger amounts of directories and/or involved jobs, even with this index the performance of :bcommand:`.bvfs_lsdirs` may still be insufficient. We are working on optimizing the SQL query for MySQL/MariaDB to solve this problem.
 
 -  Packages for Univention UCS 4.2 have been added.
 
@@ -458,7 +458,7 @@ bareos-16.2.5
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2017-03-03\\
    Database Version  & 2004 (unchanged)\\
-   Release Ticket    & :issue:`734`\\
+   Release Ticket    & :ticket:`734`\\
    Url               & `<http://download.bareos.com/bareos/release/16.2/>`_ \\
    \end{tabular}
 
@@ -467,7 +467,7 @@ bareos-16.2.5
 ================ ===============================================
 Code Release     2017-03-03
 Database Version 2004 (unchanged)
-Release Ticket   :issue:`734`
+Release Ticket   :ticket:`734`
 Url              `<http://download.bareos.com/bareos/release/16.2/>`_
 ================ ===============================================
 
@@ -495,7 +495,7 @@ bareos-16.2.4
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2016-10-28\\
    Database Version  & 2004 (unchanged)\\
-   Release Ticket    & :issue:`698`\\
+   Release Ticket    & :ticket:`698`\\
    Url               & `<http://download.bareos.org/bareos/release/16.2/>`_ \\
                      & `<http://download.bareos.com/bareos/release/16.2/>`_ \\
    \end{tabular}
@@ -505,7 +505,7 @@ bareos-16.2.4
 ================ ===============================================
 Code Release     2016-10-28
 Database Version 2004 (unchanged)
-Release Ticket   :issue:`698`
+Release Ticket   :ticket:`698`
 Url              `<http://download.bareos.org/bareos/release/16.2/>`_
 \                `<http://download.bareos.com/bareos/release/16.2/>`_
 ================ ===============================================
@@ -516,10 +516,10 @@ First stable release of the Bareos 16.2 branch.
 
    -  Bareos packages contain the default configuration in :ref:`section-ConfigurationSubdirectories`. Please read :ref:`section-UpdateToConfigurationSubdirectories` before updating (make a copy of your configuration directories for your |bareosDir| and |bareosSd| before updating). Note: as the old configuration files are still supported, in most cases no changes are required.
 
-   -  The default configuration does no longer name the :sup:`Dir`\ :strong:`Director` and :sup:`Sd`\ :strong:`Storage` resources after the systems hostname (:file:`$HOSTNAME-dir` resp. :file:`$HOSTNAME-sd`) but use **bareos-dir**:sup:`Dir`:sub:`Director`  resp. **bareos-sd**:sup:`Sd`:sub:`Storage`  as defaults. The prior solution had the disadvantage, that :file:`$HOSTNAME-dir` has also been set on |bareosFd| not running on the
+   -  The default configuration does no longer name the :config:option:`Dir/Director`\  and :config:option:`Sd/Storage`\  resources after the systems hostname (:file:`$HOSTNAME-dir` resp. :file:`$HOSTNAME-sd`) but use :config:option:`Dir/Director = bareos-dir`\  resp. :config:option:`Sd/Storage = bareos-sd`\  as defaults. The prior solution had the disadvantage, that :file:`$HOSTNAME-dir` has also been set on |bareosFd| not running on the
       |bareosDir|, which almost ever did require changing this setting. Also the new approach aligns better with :ref:`section-ConfigurationSubdirectories`.
 
-   -  Due to limitation of the build system, the default resource **Linux All**:sup:`Dir`:sub:`FileSet`  have been renamed to **LinuxAll**:sup:`Dir`:sub:`FileSet`  (no space between Linux and All).
+   -  Due to limitation of the build system, the default resource :config:option:`Dir/FileSet = Linux All`\  have been renamed to :config:option:`Dir/FileSet = LinuxAll`\  (no space between Linux and All).
 
    -  The configuration of the **bareos-traymonitor** has also been split into resource files. Additional, these resource files are now packaged in other packages:
 
@@ -535,14 +535,14 @@ First stable release of the Bareos 16.2 branch.
 
 -  Strict ACL handling
 
-   -  Bareos Console :strong:`Acl`s do no longer automatically matches substrings (to avoid that e.g. :config:option:`dir/console/PoolAcl`\ = **Full** also matches **VirtualFull**:sup:`Dir`:sub:`pool`\ ). To configure the ACL to work as before, :config:option:`dir/console/PoolAcl`\ = **.*Full.*** must be set. Unfortunately the |bareosWebui| 15.2 **webui**:sup:`Dir`:sub:`Profile`  did use
-      :config:option:`dir/console/CommandAcl`\ = **.bvfs***, which is also no longer works as intended. Moreover, to use all of |bareosWebui| 16.2 features, some additional commands must be permitted, so best use the new **webui-admin**:sup:`Dir`:sub:`Profile` .
+   -  Bareos Console :strong:`Acl`s do no longer automatically matches substrings (to avoid that e.g. :config:option:`dir/console/PoolAcl = Full`\  also matches :config:option:`dir/pool = VirtualFull`\ ). To configure the ACL to work as before, :config:option:`dir/console/PoolAcl = .*Full.*`\  must be set. Unfortunately the |bareosWebui| 15.2 :config:option:`Dir/Profile = webui`\  did use
+      :config:option:`dir/console/CommandAcl = .bvfs*`\ , which is also no longer works as intended. Moreover, to use all of |bareosWebui| 16.2 features, some additional commands must be permitted, so best use the new :config:option:`Dir/Profile = webui-admin`\ .
 
 -  
 
    |bareosWebui|
 
-   -  Updating from Bareos 15.2: Adapt **webui**:sup:`Dir`:sub:`Profile`  (from bareos 15.2) to allow all commands of **webui-admin**:sup:`Dir`:sub:`Profile`  (:config:option:`dir/console/CommandAcl`\ ). Alternately modify all :sup:`Dir`\ :strong:`Console`s currently using **webui**:sup:`Dir`:sub:`Profile`  to use **webui-admin**:sup:`Dir`:sub:`Profile`  instead.
+   -  Updating from Bareos 15.2: Adapt :config:option:`Dir/Profile = webui`\  (from bareos 15.2) to allow all commands of :config:option:`Dir/Profile = webui-admin`\  (:config:option:`dir/console/CommandAcl`\ ). Alternately modify all :config:option:`Dir/Console`\ s currently using :config:option:`Dir/Profile = webui`\  to use :config:option:`Dir/Profile = webui-admin`\  instead.
 
    -  While RHEL 6 and CentOS 6 are still platforms supported by Bareos, the package **bareos-webui** is not available for these platforms, as the required ZendFramework 2.4 do require PHP >= 5.3.17 (5.3.23). However, it is possible to use **bareos-webui** 15.2 against **bareos-director** 16.2. Also here, the profile must be adapted.
 
@@ -561,7 +561,7 @@ bareos-15.2.4
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2016-06-10\\
    Database Version  & 2004 (unchanged)\\
-   Release Ticket    & :issue:`641` \\
+   Release Ticket    & :ticket:`641` \\
    Url               & `<http://download.bareos.com/bareos/release/15.2/>`_ \\
    \end{tabular}
 
@@ -570,7 +570,7 @@ bareos-15.2.4
 ================ ===============================================
 Code Release     2016-06-10
 Database Version 2004 (unchanged)
-Release Ticket   :issue:`641`
+Release Ticket   :ticket:`641`
 Url              `<http://download.bareos.com/bareos/release/15.2/>`_
 ================ ===============================================
 
@@ -598,7 +598,7 @@ bareos-15.2.3
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2016-03-11\\
    Database Version  & 2004 (unchanged)\\
-   Release Ticket    & :issue:`625` \\
+   Release Ticket    & :ticket:`625` \\
    Url               & `<http://download.bareos.com/bareos/release/15.2/>`_ \\
    \end{tabular}
 
@@ -607,7 +607,7 @@ bareos-15.2.3
 ================ ===============================================
 Code Release     2016-03-11
 Database Version 2004 (unchanged)
-Release Ticket   :issue:`625`
+Release Ticket   :ticket:`625`
 Url              `<http://download.bareos.com/bareos/release/15.2/>`_
 ================ ===============================================
 
@@ -644,7 +644,7 @@ bareos-15.2.2
    Code Release      & 2015-11-19\\
    Database Version  & 2004\\
                      & Database update required (if coming from bareos-14.2). See the :ref:`bareos-update` section.\\
-   Release Ticket    & :issue:`554` \\
+   Release Ticket    & :ticket:`554` \\
    Url               & `<http://download.bareos.org/bareos/release/15.2/>`_ \\
                      & `<http://download.bareos.com/bareos/release/15.2/>`_ \\
    \end{tabular}
@@ -655,7 +655,7 @@ bareos-15.2.2
 Code Release     2015-11-19
 Database Version 2004
 \                Database update required (if coming from bareos-14.2). See the :ref:`bareos-update` section.
-Release Ticket   :issue:`554`
+Release Ticket   :ticket:`554`
 Url              `<http://download.bareos.org/bareos/release/15.2/>`_
 \                `<http://download.bareos.com/bareos/release/15.2/>`_
 ================ ============================================================================================================
@@ -679,7 +679,7 @@ When coming from bareos-14.2.x, the following things have changed (same as in ba
    Code Release      & 2015-09-16\\
    Database Version  & 2004\\
                      & Database update required, see the :ref:`bareos-update` section.\\
-   Release Ticket    & :issue:`501` \\
+   Release Ticket    & :ticket:`501` \\
    Url               & `<http://download.bareos.org/bareos/release/15.2/>`_ \\
    \end{tabular}
 
@@ -689,7 +689,7 @@ When coming from bareos-14.2.x, the following things have changed (same as in ba
 Code Release     2015-09-16
 Database Version 2004
 \                Database update required, see the :ref:`bareos-update` section.
-Release Ticket   :issue:`501`
+Release Ticket   :ticket:`501`
 Url              `<http://download.bareos.org/bareos/release/15.2/>`_
 ================ ===============================================================================
 
@@ -716,7 +716,7 @@ bareos-14.2.7
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2016-07-11\\
    Database Version  & 2003 (unchanged)\\
-   Release Ticket    & :issue:`584` \\
+   Release Ticket    & :ticket:`584` \\
    Url               & `<http://download.bareos.com/bareos/release/14.2/>`_ \\
    \end{tabular}
 
@@ -725,7 +725,7 @@ bareos-14.2.7
 ================ ===============================================
 Code Release     2016-07-11
 Database Version 2003 (unchanged)
-Release Ticket   :issue:`584`
+Release Ticket   :ticket:`584`
 Url              `<http://download.bareos.com/bareos/release/14.2/>`_
 ================ ===============================================
 
@@ -734,46 +734,46 @@ This release contains several bugfixes. Excerpt:
 -  bareos-dir
 
    -  | Fixes pretty printing of Fileset options block
-      | :issue:`591`: config pretty-printer does not print filesets correctly
+      | :ticket:`591`: config pretty-printer does not print filesets correctly
 
    -  | run command: fixes changing the pool when changing the backup level in interactive mode
-      | :issue:`633`: Interactive run doesn’t update pool on level change
+      | :ticket:`633`: Interactive run doesn’t update pool on level change
 
    -  | Ignore the Fileset option DriveType on non Windows systems
-      | :issue:`644`: Setting DriveType causes empty backups on Linux
+      | :ticket:`644`: Setting DriveType causes empty backups on Linux
 
    -  | Suppress already queued jobs for disabled schedules
-      | :issue:`659`: Suppress already queued jobs for disabled schedules
+      | :ticket:`659`: Suppress already queued jobs for disabled schedules
 
 -  NDMP
 
    -  | Fixes cancel of NDMP jobs
-      | :issue:`604`: Cancel a NDMP Job causes the sd to crash
+      | :ticket:`604`: Cancel a NDMP Job causes the sd to crash
 
 -  bpipe-fd plugin
 
    -  | Only take stdout into account, ignore stderr (like earlier versions)
-      | :issue:`632`: fd-bpipe plugin merges stderr with stdout, which can result in corrupted backups
+      | :ticket:`632`: fd-bpipe plugin merges stderr with stdout, which can result in corrupted backups
 
 -  win32
 
    -  | Fix symlink and junction support
-      | :issue:`575`: charset problem in symlinks/junctions windows restore
-      | :issue:`615`: symlinks/junctions wrong target path on restore (wide chars)
+      | :ticket:`575`: charset problem in symlinks/junctions windows restore
+      | :ticket:`615`: symlinks/junctions wrong target path on restore (wide chars)
 
    -  | Fixes quoting for bmail.exe in bareos-dir.conf
-      | :issue:`581`: Installer is setting up a wrong path to bmail.exe without quotes / bmail not called
+      | :ticket:`581`: Installer is setting up a wrong path to bmail.exe without quotes / bmail not called
 
    -  | Fix crash on restore of sparse files
-      | :issue:`640`: File daemon crashed after restoring sparse file on windows
+      | :ticket:`640`: File daemon crashed after restoring sparse file on windows
 
 -  win32 mssql plugin
 
    -  | Allow connecting to non default instance
-      | :issue:`383`: mssqldvi problem with connection to mssql not default instance
+      | :ticket:`383`: mssqldvi problem with connection to mssql not default instance
 
    -  | Fix backup/restore of incremental backups
-      | :issue:`588`: Incremental MSSQL backup fails when database name contains spaces
+      | :ticket:`588`: Incremental MSSQL backup fails when database name contains spaces
 
 bareos-14.2.6
 ~~~~~~~~~~~~~
@@ -787,7 +787,7 @@ bareos-14.2.6
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2015-12-03\\
    Database Version  & 2003 (unchanged)\\
-   Release Ticket    & :issue:`474` \\
+   Release Ticket    & :ticket:`474` \\
    Url               & `<http://download.bareos.com/bareos/release/14.2/>`_ \\
    \end{tabular}
 
@@ -796,7 +796,7 @@ bareos-14.2.6
 ================ ===============================================
 Code Release     2015-12-03
 Database Version 2003 (unchanged)
-Release Ticket   :issue:`474`
+Release Ticket   :ticket:`474`
 Url              `<http://download.bareos.com/bareos/release/14.2/>`_
 ================ ===============================================
 
@@ -814,7 +814,7 @@ bareos-14.2.5
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2015-06-01\\
    Database Version  & 2003 (unchanged)\\
-   Release Ticket    & :issue:`447` \\
+   Release Ticket    & :ticket:`447` \\
    Url               & `<http://download.bareos.com/bareos/release/14.2/>`_ \\
    \end{tabular}
 
@@ -823,11 +823,11 @@ bareos-14.2.5
 ================ ===============================================
 Code Release     2015-06-01
 Database Version 2003 (unchanged)
-Release Ticket   :issue:`447`
+Release Ticket   :ticket:`447`
 Url              `<http://download.bareos.com/bareos/release/14.2/>`_
 ================ ===============================================
 
-This release contains several bugfixes and added the platforms :strong:`Debian 8` and :strong:`Fedora 21`.
+This release contains several bugfixes and added the platforms :os:`Debian 8` and :os:`Fedora 21`.
 
 bareos-14.2.4
 ~~~~~~~~~~~~~
@@ -841,7 +841,7 @@ bareos-14.2.4
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2015-03-23 \\
    Database Version  & 2003 (unchanged)\\
-   Release Ticket    & :issue:`420` \\
+   Release Ticket    & :ticket:`420` \\
    Url               & `<http://download.bareos.com/bareos/release/14.2/>`_ \\
    \end{tabular}
 
@@ -850,11 +850,11 @@ bareos-14.2.4
 ================ ===============================================
 Code Release     2015-03-23
 Database Version 2003 (unchanged)
-Release Ticket   :issue:`420`
+Release Ticket   :ticket:`420`
 Url              `<http://download.bareos.com/bareos/release/14.2/>`_
 ================ ===============================================
 
-This release contains several bugfixes, including one major bugfix (:issue:`437`), relevant for those of you using backup to disk with autolabeling enabled.
+This release contains several bugfixes, including one major bugfix (:ticket:`437`), relevant for those of you using backup to disk with autolabeling enabled.
 
 It can lead to loss of a 64k block of data when all of this conditions apply:
 
@@ -886,7 +886,7 @@ bareos-14.2.3
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2015-02-02 \\
    Database Version  & 2003 (unchanged)\\
-   Release Ticket    & :issue:`393`\\
+   Release Ticket    & :ticket:`393`\\
    Url               & `<http://download.bareos.com/bareos/release/14.2/>`_ \\
    \end{tabular}
 
@@ -895,7 +895,7 @@ bareos-14.2.3
 ================ ===============================================
 Code Release     2015-02-02
 Database Version 2003 (unchanged)
-Release Ticket   :issue:`393`
+Release Ticket   :ticket:`393`
 Url              `<http://download.bareos.com/bareos/release/14.2/>`_
 ================ ===============================================
 

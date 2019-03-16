@@ -83,7 +83,7 @@ Configuration
 
 Assuming you have a working Bareos configuration on the system you want to protect with ReaR and Bareos references this system by the name ``bareosclient-fd``, the only configuration for ReaR is:
 
-.. code-block:: sh
+.. code-block:: cfg
 
    BACKUP=BAREOS
    BAREOS_CLIENT=bareosclient-fd
@@ -92,7 +92,7 @@ You also need to specify in your ReaR configuration file (:file:`/etc/rear/local
 
 For example, if you want to create an ISO image and store it to an NFS server with the IP Address 192.168.10.1, you can use the following configuration:
 
-.. code-block:: sh
+.. code-block:: cfg
    :caption: Full Rear configuration in /etc/rear/local.conf
 
    # This is default:

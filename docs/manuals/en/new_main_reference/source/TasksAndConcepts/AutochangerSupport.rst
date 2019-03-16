@@ -11,18 +11,18 @@ Bareos provides autochanger support for reading and writing tapes. In order to w
 
 -  A script that actually controls the autochanger according to commands sent by Bareos. Bareos contains the script :command:`mtx-changer`, that utilize the command :command:`mtx`. It’s config file is normally located at :file:`/etc/bareos/mtx-changer.conf`
 
--  That each Volume (tape) to be used must be defined in the Catalog and have a Slot number assigned to it so that Bareos knows where the Volume is in the autochanger. This is generally done with the :strong:`label` command, but can also done after the tape is labeled using the :strong:`update slots` command. See below for more details. You must pre-label the tapes manually before using them.
+-  That each Volume (tape) to be used must be defined in the Catalog and have a Slot number assigned to it so that Bareos knows where the Volume is in the autochanger. This is generally done with the :bcommand:`label` command, but can also done after the tape is labeled using the :bcommand:`update slots` command. See below for more details. You must pre-label the tapes manually before using them.
 
 -  Modifications to your Storage daemon’s Device configuration resource to identify that the device is a changer, as well as a few other parameters.
 
 -  You need to ensure that your Storage daemon has access permissions to both the tape drive and the control device. On Linux, the system user **bareos** is added to the groups \group{disk} and \group{tape}, so that it should have the permission to access the library.
 
--  Set :config:option:`dir/storage/AutoChanger`\ = **yes**.
+-  Set :config:option:`dir/storage/AutoChanger = yes`\ .
 
 Bareos uses its own :command:`mtx-changer` script to interface with a program that actually does the tape changing. Thus in principle, :command:`mtx-changer` can be adapted to function with any autochanger program, or you can call any other script or program. The current version of :command:`mtx-changer` works with the :command:`mtx` program. FreeBSD users might need to adapt this script to use :command:`chio`. For more details, refer
 to the :ref:`Testing Autochanger <AutochangerTesting>` chapter.
 
-Bareos also supports autochangers with barcode readers. This support includes two Console commands: :strong:`label barcodes` and :strong:`update slots`. For more details on these commands, see the chapter about :ref:`Barcodes`.
+Bareos also supports autochangers with barcode readers. This support includes two Console commands: :bcommand:`label barcodes` and :bcommand:`update slots`. For more details on these commands, see the chapter about :ref:`Barcodes`.
 
 Current Bareos autochanger support does not include cleaning, stackers, or silos. Stackers and silos are not supported because Bareos expects to be able to access the Slots randomly. However, if you are very careful to setup Bareos to access the Volumes in the autochanger sequentially, you may be able to make Bareos work with stackers (gravity feed and such).
 
@@ -128,11 +128,11 @@ Slots
 To properly address autochangers, Bareos must know which Volume is in each slot of the autochanger. Slots are where the changer cartridges reside when not loaded into the drive. Bareos numbers these slots from one to the number of cartridges contained in the autochanger.
 
 Bareos will not automatically use a Volume in your autochanger unless it is labeled and the slot number is stored in the catalog and the Volume is marked as InChanger. This is because it must know where each volume is to be able to load the volume. For each Volume in your changer, you will, using the Console program, assign a slot. This information is kept in Bareos’s catalog database along with the other data for the volume. If no slot is given, or the slot is set to zero, Bareos will not
-attempt to use the autochanger even if all the necessary configuration records are present. When doing a :strong:`mount` command on an autochanger, you must specify which slot you want mounted. If the drive is loaded with a tape from another slot, it will unload it and load the correct tape, but normally, no tape will be loaded because an :strong:`unmount` command causes Bareos to unload the tape in the drive.
+attempt to use the autochanger even if all the necessary configuration records are present. When doing a :bcommand:`mount` command on an autochanger, you must specify which slot you want mounted. If the drive is loaded with a tape from another slot, it will unload it and load the correct tape, but normally, no tape will be loaded because an :bcommand:`unmount` command causes Bareos to unload the tape in the drive.
 
 You can check if the Slot number and InChanger flag by:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: list volumes
 
    *list volumes
@@ -149,7 +149,7 @@ uses the mtx-changer script at a time, and also that two drives don’t referenc
 
 Multi-drive requires the use of the :config:option:`sd/device/DriveIndex`\  directive. Drive numbers or the Device Index are numbered beginning at zero, which is the default. To use the second Drive in an autochanger, you need to define a second Device resource, set the :config:option:`sd/device/DriveIndex`\  and set the :config:option:`sd/device/ArchiveDevice`\ .
 
-As a default, Bareos jobs will prefer to write to a Volume that is already mounted. If you have a multiple drive autochanger and you want Bareos to write to more than one Volume in the same Pool at the same time, you will need to set :config:option:`dir/job/PreferMountedVolumes`\ = **no**. This will cause the Storage daemon to maximize the use of drives.
+As a default, Bareos jobs will prefer to write to a Volume that is already mounted. If you have a multiple drive autochanger and you want Bareos to write to more than one Volume in the same Pool at the same time, you will need to set :config:option:`dir/job/PreferMountedVolumes = no`\ . This will cause the Storage daemon to maximize the use of drives.
 
 Device Configuration Records
 ----------------------------
@@ -187,7 +187,7 @@ Thus all stages of dealing with tapes can be totally automated. It is also possi
 
 Even though all the above configuration statements are specified and correct, Bareos will attempt to access the autochanger only if a slot is non-zero in the catalog Volume record (with the Volume name).
 
-If your autochanger has barcode labels, you can label all the Volumes in your autochanger one after another by using the :strong:`label barcodes` command. For each tape in the changer containing a barcode, Bareos will mount the tape and then label it with the same name as the barcode. An appropriate Media record will also be created in the catalog. Any barcode that begins with the same characters as specified on the "CleaningPrefix=xxx" command, will be treated as a cleaning tape,
+If your autochanger has barcode labels, you can label all the Volumes in your autochanger one after another by using the :bcommand:`label barcodes` command. For each tape in the changer containing a barcode, Bareos will mount the tape and then label it with the same name as the barcode. An appropriate Media record will also be created in the catalog. Any barcode that begins with the same characters as specified on the "CleaningPrefix=xxx" command, will be treated as a cleaning tape,
 and will not be labeled. For example with:
 
 
@@ -543,7 +543,7 @@ The problem that arises here is that reading a block header with a wrong block s
 
 This is a potential source of data loss, because in normal operation, Bareos refuses to relabel an already labeled volume to be sure to not overwrite data that is still needed. If Bareos cannot read the volume label, this security mechanism does not work and you might label tapes already labeled accidentally.
 
-To solve this problem, the block size handling was changed in Bareos :index:`Version >= 14.2.0 <pair: bareos-14.2.0; Maximum Block Size>` in the following way:
+To solve this problem, the block size handling was changed in Bareos :sinceVersion:`14.2.0: Maximum Block Size` in the following way:
 
 -  The tape label block is always written in the standard 63k (64512) block size.
 
@@ -573,7 +573,7 @@ This approach has the following advantages:
 
 -  If you want to switch an existing installation that uses the default block size and move to a new (usually bigger) block size, you can do that easily by creating a new pool, where :config:option:`dir/pool/MaximumBlockSize`\  is set to the new value that you wish to use in the future:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Pool Ressource: setting Maximum Block Size
 
    Pool {
@@ -651,7 +651,7 @@ This shows that the block size for the data blocks that we need is 131072.
 
 Now we have to set this block size in the :file:`bareos-sd.conf`, device resource as :config:option:`sd/device/MaximumBlockSize`\ :
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Storage Device Resource: setting Maximum Block Size
 
    Device {
@@ -698,7 +698,7 @@ The directive :config:option:`dir/pool/CleaningPrefix`\  is only used for making
 
 If your tape libraries auto-cleaning won’t work when there are tapes in the drives, it’s probably best to set up an admin job that removes the tapes from the drives. This job has to run, when no other backups do run. A job definition for an admin job to do that may look like this:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/job/ReleaseAllTapeDrives.conf
 
    Job {
@@ -715,6 +715,6 @@ If your tape libraries auto-cleaning won’t work when there are tapes in the dr
        }
    }
 
-Replace **Tape**:sup:`Dir`:sub:`Storage`  by the storage name of your tape library. Use the highest :config:option:`dir/job/Priority`\  value to make sure no other jobs are running. In the default configuration for example, the **CatalogBackup**:sup:`Dir`:sub:`job`\  job has Priority = 100. The higher the number, the lower the job priority.  
+Replace :config:option:`Dir/Storage = Tape`\  by the storage name of your tape library. Use the highest :config:option:`dir/job/Priority`\  value to make sure no other jobs are running. In the default configuration for example, the :config:option:`dir/job = CatalogBackup`\  job has Priority = 100. The higher the number, the lower the job priority.  
 
 

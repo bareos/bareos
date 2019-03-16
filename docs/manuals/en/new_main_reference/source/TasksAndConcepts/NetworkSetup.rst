@@ -14,7 +14,7 @@ However, there are setups where this can cause problems, as this means that:
 
 -  The |bareosDir| must be able to connect to the |bareosFd| over the network.
 
-To circumvent these problems, since Bareos :index:`Version >= 16.2.2 <pair: bareos-16.2.2; Client Initiated Connection>` it is possible to let the |bareosFd| initiate the network connection to the |bareosDir|.
+To circumvent these problems, since Bareos :sinceVersion:`16.2.2: Client Initiated Connection` it is possible to let the |bareosFd| initiate the network connection to the |bareosDir|.
 
 Which address the client connects to reach the |bareosDir| is configured in the :config:option:`fd/director/Address`\  directive.
 
@@ -38,9 +38,9 @@ To only allow Connection From the Client to the Director use:
 
 -  :config:option:`fd/director/ConnectionFromClientToDirector`\  = yes
 
-Using Client Initiated Connections has disadvantages. Without Client Initiated Connections the |bareosDir| only establishes a network connection when this is required. With Client Initiated Connections, the |bareosFd| connects to the |bareosDir| and the |bareosDir| keeps these connections open. The command :strong:`status dir` will show all waiting connections:
+Using Client Initiated Connections has disadvantages. Without Client Initiated Connections the |bareosDir| only establishes a network connection when this is required. With Client Initiated Connections, the |bareosFd| connects to the |bareosDir| and the |bareosDir| keeps these connections open. The command :bcommand:`status dir` will show all waiting connections:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: show waiting client connections
 
    *<input>status dir</input>
@@ -62,15 +62,15 @@ When both connection directions are allowed, the |bareosDir|
 
 If none of this worked, the job fails.
 
-When a waiting connection is used for a job, the |bareosFd| will detect this and creates an additional connection. This is required, to keep the client responsive for additional commands, like :strong:`cancel`.
+When a waiting connection is used for a job, the |bareosFd| will detect this and creates an additional connection. This is required, to keep the client responsive for additional commands, like :bcommand:`cancel`.
 
 To get feedback in case the |bareosFd| fails to connect to the |bareosDir|, consider configuring |bareosFd| to log in a local file. This can be archived by adding the line
 
-:strong:`Append = "/var/log/bareos/bareos-fd.log" = all, !skipped, !restored`
+``Append = "/var/log/bareos/bareos-fd.log" = all, !skipped, !restored``
 
-to the default message resource **Standard**:sup:`Fd`:sub:`Messages` :
+to the default message resource :config:option:`Fd/Messages = Standard`\ :
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-fd.d/messages/Standard.conf
 
    Messages {
@@ -113,7 +113,7 @@ Usage
 
 To use this new feature, just configure :config:option:`dir/client/Passive`\ =yes in the client definition of the |bareosDir|:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Enable passive mode in bareos-dir.conf
 
    Client {
@@ -125,7 +125,7 @@ To use this new feature, just configure :config:option:`dir/client/Passive`\ =ye
 
 Also, prior to bareos version 15, you need to set :config:option:`fd/client/Compatible`\ =no in the :file:`bareos-fd.conf` configuration file. Since Bareos Version 15, the compatible option is set to no per default and does not need to be specified anymore.
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Disable compatible mode for the |bareosFd| in bareos-fd.conf
 
    Director {
@@ -184,7 +184,7 @@ All resources are configured so that the :strong:`Address` directive gets the ad
 
 Additionally, devices being in the LAN get the LAN address configured in the :strong:`Lan Address` directive. The configuration looks as follows:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/client/FD\_LAN.conf
 
    Client {
@@ -194,7 +194,7 @@ Additionally, devices being in the LAN get the LAN address configured in the :st
       ...
    }
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/client/SD\_LAN.conf
 
    Storage {
@@ -204,7 +204,7 @@ Additionally, devices being in the LAN get the LAN address configured in the :st
       ...
    }
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/client/FD\_WAN.conf
 
    Client {
@@ -213,7 +213,7 @@ Additionally, devices being in the LAN get the LAN address configured in the :st
       ...
    }
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/client/SD\_WAN.conf
 
    Storage {

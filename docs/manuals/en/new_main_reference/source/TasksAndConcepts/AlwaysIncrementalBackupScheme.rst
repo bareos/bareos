@@ -5,7 +5,7 @@ Always Incremental Backup Scheme
 
 :index:`[TAG=Always Incremental] <single: Always Incremental>`
 
-Always Incremental Backups are available since Bareos :index:`Version >= 16.2.4 <pair: bareos-16.2.4; Always Incremental>`.
+Always Incremental Backups are available since Bareos :sinceVersion:`16.2.4: Always Incremental`.
 
 Conventional Backup Scheme Drawbacks
 ------------------------------------
@@ -84,7 +84,7 @@ Always Incremental Backup Job
 
 To configure a job to use Always Incremental Backup Scheme, following configuration is required:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/job/example.conf
 
    Job {
@@ -96,10 +96,10 @@ To configure a job to use Always Incremental Backup Scheme, following configurat
        ...
    }
 
-:config:option:`dir/job/Accurate`\ = **yes**
+:config:option:`dir/job/Accurate = yes`\ 
    is required to detect deleted files and prevent that they are kept in the consolidated backup jobs.
 
-:config:option:`dir/job/AlwaysIncremental`\ = **yes**
+:config:option:`dir/job/AlwaysIncremental = yes`\ 
    enables the Always Incremental feature.
 
 :config:option:`dir/job/AlwaysIncrementalJobRetention`\ 
@@ -114,7 +114,7 @@ To configure a job to use Always Incremental Backup Scheme, following configurat
 Consolidate Job
 ~~~~~~~~~~~~~~~
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/job/Consolidate.conf
 
    Job {
@@ -127,13 +127,13 @@ Consolidate Job
 \resourceDirectiveValue{Dir}{Job}{Type}{Consolidate}
    configures a job to be a consolidate job. This type have been introduced with the Always Incremental feature. When used, it automatically trigger the consolidation of incremental jobs that need to be consolidated.
 
-:config:option:`dir/job/Accurate`\ = **yes**
+:config:option:`dir/job/Accurate = yes`\ 
    let the generated virtual backup job keep the accurate information.
 
 :config:option:`dir/job/MaxFullConsolidations`\ 
    is described later, see :ref:`section-MaxFullConsolidations`.
 
-The **Consolidate**:sup:`Dir`:sub:`job`\  job evaluates all jobs configured with :config:option:`dir/job/AlwaysIncremental`\ = **yes**. When a job is selected for consolidation, all job runs are taken into account, independent of the pool and storage where they are located.
+The :config:option:`dir/job = Consolidate`\  job evaluates all jobs configured with :config:option:`dir/job/AlwaysIncremental = yes`\ . When a job is selected for consolidation, all job runs are taken into account, independent of the pool and storage where they are located.
 
 The always incremental jobs need to be executed during the backup window (usually at night), while the consolidation jobs should be scheduled during the daytime when no backups are executed.
 
@@ -151,7 +151,7 @@ Storages and Pools
 
 For the Always Incremental Backup Scheme at least two storages are needed. See :ref:`section-MultipleStorageDevices` how to setup multiple storages.
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/pool/AI-Incremental.conf
 
    Pool {
@@ -167,7 +167,7 @@ For the Always Incremental Backup Scheme at least two storages are needed. See :
      Next Pool = AI-Consolidated         # consolidated jobs go to this pool
    }
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/pool/AI-Consolidated.conf
 
    Pool {
@@ -183,7 +183,7 @@ For the Always Incremental Backup Scheme at least two storages are needed. See :
      Next Pool = AI-Longterm             # copy jobs write to this pool
    }
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/pool/AI-Longterm.conf
 
    Pool {
@@ -198,14 +198,14 @@ For the Always Incremental Backup Scheme at least two storages are needed. See :
      Storage = File1
    }
 
-**AI-Longterm**:sup:`Dir`:sub:`pool`\  is optional and will be explained in :ref:`section-AlwaysIncrementalLongTermStorage`.
+:config:option:`dir/pool = AI-Longterm`\  is optional and will be explained in :ref:`section-AlwaysIncrementalLongTermStorage`.
 
 How it works
 ------------
 
 The following configuration extract shows how a client backup is configured for always incremental Backup. The Backup itself is scheduled every night to run as incremental backup, while the consolidation is scheduled to run every day.
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/job/BackupClient1.conf
 
    Job {
@@ -222,7 +222,7 @@ The following configuration extract shows how a client backup is configured for 
        Full Backup Pool = AI-Consolidated
    }
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/job/Consolidate.conf
 
    Job {
@@ -341,7 +341,7 @@ This is of course not desirable so the directive :config:option:`dir/job/MaxFull
 
 :config:option:`dir/job/MaxFullConsolidations`\  needs to be configured in the \resourceDirectiveValue{Dir}{Job}{Type}{Consolidate} job:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/job/Consolidate.conf
 
    Job {
@@ -391,9 +391,9 @@ Copy Jobs
 
 The configuration of archiving via copy job is simple, just configure a copy job that copies over the latest full backup at that point in time.
 
-As all full backups go into the **AI-Consolidated**:sup:`Dir`:sub:`pool`\ , we just copy all uncopied backups in the **AI-Consolidated**:sup:`Dir`:sub:`pool`\  to a longterm pool:
+As all full backups go into the :config:option:`dir/pool = AI-Consolidated`\ , we just copy all uncopied backups in the :config:option:`dir/pool = AI-Consolidated`\  to a longterm pool:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/job/CopyLongtermFull.conf
 
    Job {
@@ -419,7 +419,7 @@ Virtual Full Jobs
 
 The alternative to Copy Jobs is creating a virtual Full Backup Job when the data should be stored in a long-term pool.
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/job/VirtualLongtermFull.conf
 
    Job {

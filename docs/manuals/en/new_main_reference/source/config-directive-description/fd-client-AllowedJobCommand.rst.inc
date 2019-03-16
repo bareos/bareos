@@ -7,6 +7,7 @@ You specify all commands you want to be executed by the filedaemon. When you don
 The following example shows how to use this functionality: 
 
 .. literalinclude:: /include/config/FdClientAllowedJobCommand1.conf
+   :language: bareosconfig
 
 
 

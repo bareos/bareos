@@ -38,7 +38,7 @@ The following directives can be used to control data spooling.
 
 -  This setting can be overwritten in a Schedule :config:option:`dir/schedule/Run`\  directive: ``SpoolData=``:strong:`Yes|No`
 
--  To override the Job specification in a bconsole session using the :strong:`run` command: ``SpoolData=``:strong:`Yes|No`
+-  To override the Job specification in a bconsole session using the :bcommand:`run` command: ``SpoolData=``:strong:`Yes|No`
 
    Please note that this does not refer to a configuration statement, but to an argument for the run command.
 

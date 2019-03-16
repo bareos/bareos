@@ -7,6 +7,7 @@ For example, suppose you want a fixed block size of 100K bytes, then you would s
 
 
    .. literalinclude:: /include/config/SdDeviceMinimumBlockSize1.conf
+      :language: bareosconfig
 
 
 
@@ -17,5 +18,6 @@ If you want the block size to be variable but with a 63K minimum and 200K maximu
 
 
    .. literalinclude:: /include/config/SdDeviceMinimumBlockSize2.conf
+      :language: bareosconfig
 
 

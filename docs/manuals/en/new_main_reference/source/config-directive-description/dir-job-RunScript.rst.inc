@@ -9,6 +9,7 @@ You can use following console command: ``delete``, ``disable``, ``enable``, ``es
 
 
    .. literalinclude:: /include/config/DirJobRunScript1.conf
+      :language: bareosconfig
 
 
 
@@ -187,6 +188,7 @@ Keyword                                                              RunsOnSucce
 Examples: 
 
 .. literalinclude:: /include/config/DirJobRunScript2.conf
+   :language: bareosconfig
 
 
 
@@ -210,6 +212,7 @@ System environment variables can be referenced with %var% and used as either par
 
 
    .. literalinclude:: /include/config/DirJobRunScript3.conf
+      :language: bareosconfig
 
 
 
@@ -227,15 +230,15 @@ Some Suggestions from Phil Stracchino for running on Win32 machines with the nat
 
 #. The path to the batch file should be specified in Unix form:
 
-   :strong:`Client Run Before Job = "c:/bareos/bin/systemstate.bat"`
+   ``Client Run Before Job = "c:/bareos/bin/systemstate.bat"``
 
    rather than DOS/Windows form:
 
-   INCORRECT: :strong:`Client Run Before Job = "c:\bareos\bin\systemstate.bat"`
+   INCORRECT: ``Client Run Before Job = "c:\bareos\bin\systemstate.bat"``
 
 For Win32, please note that there are certain limitations:
 
-:strong:`Client Run Before Job = "C:/Program Files/Bareos/bin/pre-exec.bat"`
+``Client Run Before Job = "C:/Program Files/Bareos/bin/pre-exec.bat"``
 
 Lines like the above do not work because there are limitations of cmd.exe that is used to execute the command. Bareos prefixes the string you supply with :command:`cmd.exe /c`. To test that your command works you should type :command:`cmd /c "C:/Program Files/test.exe"` at a cmd prompt and see what happens. Once the command is correct insert a backslash (\) before each double quote ("), and then put quotes around the whole thing when putting it in the director’s .conf
 file. You either need to have only one set of quotes or else use the short name and don’t put quotes around the command path.

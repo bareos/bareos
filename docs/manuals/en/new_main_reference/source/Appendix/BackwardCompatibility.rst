@@ -35,7 +35,7 @@ Compatibility between Bareos and Bacula
 A Director and a Storage Daemon should (must) always run at the same version. This is true for Bareos as well as for Bacula. It is not possible to mix these components. This is because the protocol between Director and Storage Daemon itself is not versioned (also true for Bareos and Bacula). If you want to be able to switch back from Bareos to Bacula after using a Bareos director and storage daemon you have to enable the compatible mode in the Bareos storage daemon to have it write the data in
 the same format as the Bacula storage daemon.
 
-The |bareosFd| is compatible with all version of the Bacula director (tested with version 5.2.13 and lower) when you enable the compatible mode in the configuration of the |bareosFd|. The compatible option was set by default in Bareos < 15.2.0, and is disabled by default since :index:`Version >= 15.2.0 <pair: bareos-15.2.0; Compatible = no>`.
+The |bareosFd| is compatible with all version of the Bacula director (tested with version 5.2.13 and lower) when you enable the compatible mode in the configuration of the |bareosFd|. The compatible option was set by default in Bareos < 15.2.0, and is disabled by default since :sinceVersion:`15.2.0: Compatible = no`.
 
 To be sure this is enabled you can explicitly set the compatible option:
 

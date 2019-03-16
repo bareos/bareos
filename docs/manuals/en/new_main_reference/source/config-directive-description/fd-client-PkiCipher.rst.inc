@@ -5,6 +5,7 @@ Depending on the openssl library version different ciphers are available. To cho
 
 
    .. literalinclude:: /include/config/FdClientPki.conf
+      :language: bareosconfig
 
 
 

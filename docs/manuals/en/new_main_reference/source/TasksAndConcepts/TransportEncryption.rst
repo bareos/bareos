@@ -21,7 +21,7 @@ Supported features of this code include:
 
 -  Forward Secrecy Support via Diffie-Hellman Ephemeral Keying
 
-This document will refer to both :emphasis:`server` and :emphasis:`client` contexts. These terms refer to the accepting and initiating peer, respectively.
+This document will refer to both ''server'' and ''client'' contexts. These terms refer to the accepting and initiating peer, respectively.
 
 Diffie-Hellman anonymous ciphers are not supported by this code. The use of DH anonymous ciphers increases the code complexity and places explicit trust upon the two-way CRAM-MD5 implementation. CRAM-MD5 is subject to known plaintext attacks, and it should be considered considerably less secure than PKI certificate-based authentication.
 
@@ -32,91 +32,54 @@ TLS Configuration Directives
 
 Additional configuration directives have been added to all the daemons (Director, File daemon, and Storage daemon) as well as the various different Console programs. These directives are defined as follows:
 
-\begin{description}
-   \directive{dir}{TLS Enable}{yes|no}{}{no}{}%
-   Enable TLS support. Without setting :strong:`TLS Require`=yes,
-   the connection can fall back to unencrypted connection,
-   if the other side does not support TLS.
+:config:option:`dir/director/TlsEnable`\ 
+   Enable TLS support. Without setting :strong:`TLS Require`=yes, the connection can fall back to unencrypted connection, if the other side does not support TLS.
 
-   \directive{dir}{TLS Require}{yes|no}{}{no}{}%
-   Require TLS connections.
-   If TLS is not required,
-   then Bareos will connect with other daemons either with or without TLS depending
-   on what the other daemon requests.
-   If TLS is required,
-   then Bareos will refuse any connection that does not use TLS.
-   :strong:`TLS Require`=yes  implicitly sets :strong:`TLS Enable`=yes.
+:config:option:`dir/director/TlsRequire`\ 
+   Require TLS connections. If TLS is not required, then Bareos will connect with other daemons either with or without TLS depending on what the other daemon requests. If TLS is required, then Bareos will refuse any connection that does not use TLS. :strong:`TLS Require`=yes implicitly sets :strong:`TLS Enable`=yes.
 
-   \directive{dir}{TLS Certificate}{filename}{}{}{}%
-   The full path and filename of a PEM encoded TLS certificate.  It can be
-   used as either a client or server certificate.
-   It is used because PEM files are base64 encoded and hence ASCII
-   text based rather than binary.
-   They may also contain encrypted information.
+:config:option:`dir/director/TlsCertificate`\ 
+   The full path and filename of a PEM encoded TLS certificate. It can be used as either a client or server certificate. It is used because PEM files are base64 encoded and hence ASCII text based rather than binary. They may also contain encrypted information.
 
-   \directive{dir}{TLS Key}{filename}{}{}{}%
-   The full path and filename of a PEM encoded TLS private key.  It must
-   correspond to the certificate specified in the :strong:`TLS Certificate` configuration directive.
+:config:option:`dir/director/TlsKey`\ 
+   The full path and filename of a PEM encoded TLS private key. It must correspond to the certificate specified in the :strong:`TLS Certificate` configuration directive.
 
-   \directive{dir}{TLS Verify Peer}{yes|no}{}{}{}%
+:config:option:`dir/director/TlsVerifyPeer`\ 
    Request and verify the peers certificate.
 
-   In server context, unless the :strong:`TLS Allowed CN` configuration directive is specified,
-   any client certificate signed by a known-CA will be accepted.
+   In server context, unless the :strong:`TLS Allowed CN` configuration directive is specified, any client certificate signed by a known-CA will be accepted.
 
-   In client context, the server certificate CommonName attribute is checked against
-   the :strong:`Address` and :strong:`TLS Allowed CN` configuration directives.
+   In client context, the server certificate CommonName attribute is checked against the :strong:`Address` and :strong:`TLS Allowed CN` configuration directives.
 
-
-   \directive{dir}{TLS Allowed CN}{stringlist}{}{}{}%
-   Common name attribute of allowed peer certificates.
-   If :strong:`TLS Verify Peer`=yes, all connection request certificates
-   will be checked against this list.
+:config:option:`dir/director/TlsAllowedCn`\ 
+   Common name attribute of allowed peer certificates. If :strong:`TLS Verify Peer`=yes, all connection request certificates will be checked against this list.
 
    This directive may be specified more than once.
 
+:config:option:`dir/director/TlsCaCertificateFile`\ 
+   The full path and filename specifying a PEM encoded TLS CA certificate(s). Multiple certificates are permitted in the file.
 
-   \directive{dir}{TLS CA Certificate File}{filename}{}{}{}%
-   The full path and filename specifying a
-   PEM encoded TLS CA certificate(s).  Multiple certificates are
-   permitted in the file.
-
-   In a client context, one of
-   :strong:`TLS CA Certificate File` or :strong:`TLS CA Certificate Dir`
-   is required.
+   In a client context, one of :strong:`TLS CA Certificate File` or :strong:`TLS CA Certificate Dir` is required.
 
    In a server context, it is only required if :strong:`TLS Verify Peer` is used.
 
-   \directive{dir}{TLS CA Certificate Dir}{directory}{}{}{}%
-   Full path to TLS CA certificate directory.  In the current implementation,
-   certificates must be stored PEM encoded with OpenSSL-compatible hashes,
-   which is the subject name's hash and an extension of {\bf .0}.
+:config:option:`dir/director/TlsCaCertificateDir`\ 
+   Full path to TLS CA certificate directory. In the current implementation, certificates must be stored PEM encoded with OpenSSL-compatible hashes, which is the subject name’s hash and an extension of .0.
 
-   In a client context, one of
-   :strong:`TLS CA Certificate File` or :strong:`TLS CA Certificate Dir`
-   is required.
+   In a client context, one of :strong:`TLS CA Certificate File` or :strong:`TLS CA Certificate Dir` is required.
 
    In a server context, it is only required if :strong:`TLS Verify Peer` is used.
 
+:config:option:`dir/director/TlsDhFile`\ 
+   Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications. DH key exchange adds an additional level of security because the key used for encryption/decryption by the server and the client is computed on each end and thus is never passed over the network if Diffie-Hellman key exchange is used. Even if DH key exchange is not used, the encryption/decryption key is always
+   passed encrypted. This directive is only valid within a server context.
 
-   \directive{dir}{TLS DH File}{filename}{}{}{}%
-   Path to PEM encoded Diffie-Hellman parameter file.  If this directive is
-   specified, DH key exchange will be used for the ephemeral keying, allowing
-   for forward secrecy of communications.  DH key exchange adds an additional
-   level of security because the key used for encryption/decryption by the
-   server and the client is computed on each end and thus is never passed over
-   the network if Diffie-Hellman key exchange is used.  Even if DH key
-   exchange is not used, the encryption/decryption key is always passed
-   encrypted.  This directive is only valid within a server context.
+   To generate the parameter file, you may use openssl:
 
-   To generate the parameter file, you
-   may use openssl:
+   .. code-block:: sh
+      :caption: create DH key
 
-   \begin{verbatim}\begin{commands}{create DH key}
-   openssl dhparam -out dh1024.pem -5 1024
-   \end{commands}\end{verbatim}
-
-   \end{description}
+      openssl dhparam -out dh1024.pem -5 1024
 
 Getting TLS Certificates
 ------------------------
@@ -139,7 +102,7 @@ Another example can be found at `Bareos Regression Testing Base Configuration <h
 Bareos Director
 ~~~~~~~~~~~~~~~
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/director/bareos-dir.conf
 
    Director {                            # define myself
@@ -157,7 +120,7 @@ Bareos Director
        TLS Allowed CN = "administrator@example.com"
    }
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/storage/File.conf
 
    Storage {
@@ -173,7 +136,7 @@ Bareos Director
        TLS Allowed CN = bareos-sd1.example.com
    }
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/client/client1-fd.conf
 
    Client {
@@ -191,7 +154,7 @@ Bareos Director
 Bareos Storage Daemon
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-sd.d/storage/bareos-sd1.conf
 
    Storage {
@@ -214,7 +177,7 @@ Bareos Storage Daemon
        TLS Verify Peer = no
    }
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-sd.d/director/bareos-dir.conf
 
    Director {
@@ -236,7 +199,7 @@ Bareos Storage Daemon
 Bareos File Daemon
 ~~~~~~~~~~~~~~~~~~
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-fd.d/client/myself.conf
 
    Client {
@@ -254,7 +217,7 @@ Bareos File Daemon
        TLS Allowed CN = bareos-sd1.example.com
    }
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-fd.d/director/bareos-dir.conf
 
    Director {

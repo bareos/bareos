@@ -27,7 +27,7 @@ Copy
    specifically choose them by JobId. If you subsequently delete a JobId that has a copy, the copy will be automatically upgraded to a Backup rather than a Copy, and it will subsequently be used for restoration.
 
 Consolidate
-   is used to consolidate Always Incremental Backups jobs, see :ref:`section-alwaysincremental`. It has been introduced in Bareos :index:`Version >= 16.2.4 <pair: bareos-16.2.4; Job Type Consolidate>`.
+   is used to consolidate Always Incremental Backups jobs, see :ref:`section-alwaysincremental`. It has been introduced in Bareos :sinceVersion:`16.2.4: Job Type Consolidate`.
 
 Within a particular Job Type, there are also Levels, see :config:option:`dir/job/Level`\ .
 

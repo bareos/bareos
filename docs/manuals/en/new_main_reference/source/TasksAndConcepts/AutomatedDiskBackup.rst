@@ -52,7 +52,7 @@ Full Pool
 
 Putting a single Full backup on each Volume, will require six Full save Volumes, and a retention period of six months. The Pool needed to do that is:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Full-Pool
 
    Pool {
@@ -85,7 +85,7 @@ Differential Pool
 
 For the Differential backup Pool, we choose a retention period of a bit longer than a month and ensure that there is at least one Volume for each of the maximum of five weeks in a month. So the following works:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Differential Pool
 
    Pool {
@@ -118,7 +118,7 @@ Incremental Pool
 
 Finally, here is the resource for the Incremental Pool:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Incremental Pool
 
    Pool {
@@ -143,7 +143,7 @@ The following example shows you the actual files used, with only a few minor mod
 
 The Director’s configuration file is as follows:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.conf
 
    Director {          # define myself
@@ -329,7 +329,7 @@ The Director’s configuration file is as follows:
 
 and the Storage daemon’s configuration file is:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-sd.conf
 
    Storage {               # definition of myself

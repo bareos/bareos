@@ -34,7 +34,7 @@ The following substitutions are made in the command before it is sent to the ope
 %v
    Volume name
 
-A typical setting for this is :config:option:`sd/autochanger/ChangerCommand`\ = **"/usr/lib/bareos/scripts/mtx-changer \%c \%o \%S \%a \%d"**.
+A typical setting for this is :config:option:`sd/autochanger/ChangerCommand = "/usr/lib/bareos/scripts/mtx-changer \%c \%o \%S \%a \%d"`\ .
 
 Details of the three commands currently used by Bareos (loaded, load, unload) as well as the output expected by Bareos are given in the :ref:`Bareos Autochanger Interface <autochanger-interface>` section.
 

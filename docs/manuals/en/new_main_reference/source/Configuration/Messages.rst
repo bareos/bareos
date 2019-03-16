@@ -139,7 +139,7 @@ audit
 
 The following is an example of a valid Messages resource definition, where all messages except files explicitly skipped or daemon termination messages are sent by email to backupoperator@example.com. In addition all mount messages are sent to the operator (i.e. emailed to backupoperator@example.com). Finally all messages other than explicitly skipped files and files saved are sent to the console:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Message resource
 
    Messages {
@@ -151,7 +151,7 @@ The following is an example of a valid Messages resource definition, where all m
 
 With the exception of the email address, an example Director’s Messages resource is as follows:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Message resource
 
    Messages {

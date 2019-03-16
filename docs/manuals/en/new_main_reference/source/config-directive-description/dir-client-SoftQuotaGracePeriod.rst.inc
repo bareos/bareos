@@ -5,6 +5,7 @@ When the amount of data backed up by the client outruns the value specified by t
 
 
    .. literalinclude:: /include/config/DirClientSoftQuotaGracePeriod1.conf
+      :language: bareosconfig
 
 
 
@@ -17,6 +18,7 @@ If in this state, the job log will write:
 
 
    .. literalinclude:: /include/config/DirClientSoftQuotaGracePeriod2.conf
+      :language: bareosconfig
 
 
 
@@ -25,6 +27,7 @@ After the grace time expires, in the next backup job of the client, the value fo
 
 
    .. literalinclude:: /include/config/DirClientSoftQuotaGracePeriod3.conf
+      :language: bareosconfig
 
 
 

@@ -29,7 +29,7 @@ dbconfig-common (Debian)
 
 
 
-Since Bareos :index:`Version >= 14.2.0 <pair: bareos-14.2.0; dbconfig-common (Debian)>` the Debian (and Ubuntu) based packages support the **dbconfig-common** mechanism to create and update the Bareos database, according to the user choices.
+Since Bareos :sinceVersion:`14.2.0: dbconfig-common (Debian)` the Debian (and Ubuntu) based packages support the **dbconfig-common** mechanism to create and update the Bareos database, according to the user choices.
 
 The first choice is, if **dbconfig-common** should be used at all. If you decide against it, the database must be configured manually, see :ref:`CatMaintenanceManualConfiguration`.
 
@@ -219,7 +219,7 @@ If this works on your system can be verified by
 
 If your database is configured to require a password, this must be definied in the file `:file:`~/.pgpass` <http://www.postgresql.org/docs/8.2/static/libpq-pgpass.html>`_ in the following syntax: ``HOST:PORT:DATABASE:USER:PASSWORD``, e.g.
 
-.. code-block:: sh
+.. code-block:: cfg
    :caption: PostgreSQL access credentials
 
    localhost:*:bareos:bareos:secret
@@ -386,7 +386,7 @@ On some distributions access to the MySQL database is allowed password-less as d
 
 The bareos database preparation scripts require password-less access to the database. To guarantee this, create a MySQL credentials file `:file:`~/.my.cnf` <http://dev.mysql.com/doc/refman/4.1/en/password-security.html>`_ with the credentials of the database administrator:
 
-.. code-block:: sh
+.. code-block:: cfg
    :caption: MySQL credentials file .my.cnf
 
    [client]
@@ -400,7 +400,7 @@ Verify that you have specified the correct settings by calling the :command:`mys
 
 For the Bareos database connection, you should specify a database password. Otherwise the Bareos database user gets the permission to connect without password. This is not recommended. Choose a database password and add it into the Bareos Director configuration file :file:`/etc/bareos/bareos-dir.conf`:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Bareos catalog configuration
 
    ...
@@ -416,7 +416,7 @@ For the Bareos database connection, you should specify a database password. Othe
    }
    ...
 
-After this, run the Bareos database preparation scripts. For Bareos <= 13.2.2, the database password must be specified as environment variable \variable{db_password}. From :index:`Version >= 13.2.3 <pair: bareos-13.2.3; MySQL password from configuration file>` the database password is read from the configuration, if no environment variable is given.
+After this, run the Bareos database preparation scripts. For Bareos <= 13.2.2, the database password must be specified as environment variable \variable{db_password}. From :sinceVersion:`13.2.3: MySQL password from configuration file` the database password is read from the configuration, if no environment variable is given.
 
 .. code-block:: sh
    :caption: Setup Bareos catalog database
@@ -541,7 +541,7 @@ If you want to change the Bareos database credentials, do the following:
 
 Modify the configuration, set a new password:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/Catalog/MyCatalog.conf
 
    Catalog {
@@ -689,16 +689,16 @@ If you want to have statistics on your backups to provide some Service Level Agr
 
 However, these statistics are accurate only if your job retention is greater than your statistics period. Ie, if jobs are purged from the catalog, you won’t be able to use them.
 
-Now, you can use the :strong:`update stats [days=num]` console command to fill the JobHistory table with new Job records. If you want to be sure to take in account only good jobs, ie if one of your important job has failed but you have fixed the problem and restarted it on time, you probably want to delete the first bad job record and keep only the successful one. For that simply let your staff do the job, and update JobHistory table after two or three days depending on your
+Now, you can use the :bcommand:`update stats [days=num]` console command to fill the JobHistory table with new Job records. If you want to be sure to take in account only good jobs, ie if one of your important job has failed but you have fixed the problem and restarted it on time, you probably want to delete the first bad job record and keep only the successful one. For that simply let your staff do the job, and update JobHistory table after two or three days depending on your
 organization using the ``[days=num]`` option.
 
 These statistics records aren’t used for restoring, but mainly for capacity planning, billings, etc.
 
-The :config:option:`dir/director/StatisticsRetention`\  defines the length of time that Bareos will keep statistics job records in the Catalog database after the Job End time. This information is stored in the ``JobHistory`` table. When this time period expires, and if user runs :strong:`prune stats` command, Bareos will prune (remove) Job records that are older than the specified period.
+The :config:option:`dir/director/StatisticsRetention`\  defines the length of time that Bareos will keep statistics job records in the Catalog database after the Job End time. This information is stored in the ``JobHistory`` table. When this time period expires, and if user runs :bcommand:`prune stats` command, Bareos will prune (remove) Job records that are older than the specified period.
 
-You can use the following Job resource in your nightly **BackupCatalog**:sup:`Dir`:sub:`job`\  job to maintain statistics.
+You can use the following Job resource in your nightly :config:option:`dir/job = BackupCatalog`\  job to maintain statistics.
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/Job/BackupCatalog.conf
 
    Job {
@@ -1028,14 +1028,14 @@ MySQL: Lock Wait Timeout
 
 In large environments, the Bareos |mysql| backend may run in a lock wait timeout. This can be seen as Bareos message, e.g.:
 
-.. code-block:: sh
+.. code-block:: bareosmessage
    :caption: Bareos error message because of |mysql| lock time timeout
 
    Fatal error: sql_create.c:899 Fill File table Query failed: INSERT INTO File (FileIndex, JobId, PathId, FilenameId, LStat, MD5, DeltaSeq) SELECT batch.FileIndex, batch.JobId, Path.PathId, Filename.FilenameId,batch.LStat, batch.MD5, batch.DeltaSeq FROM batch JOIN Path ON (batch.Path = Path.Path) JOIN Filename ON (batch.Name = Filename.Name): ERR=Lock wait timeout exceeded; try restarting transaction
 
-In this case the |mysql| :strong:`innodb_lock_wait_timeout` must be increased. A value of 300 should be sufficient.
+In this case the |mysql| ``innodb_lock_wait_timeout`` must be increased. A value of 300 should be sufficient.
 
-.. code-block:: sh
+.. code-block:: cfg
    :caption: /etc/my.cnf.d/server.cnf
 
    ...
@@ -1074,7 +1074,7 @@ The basic sequence of events to make this work correctly is as follows:
 
 Assuming that you start all your nightly backup jobs at 1:05 am (and that they run one after another), you can do the catalog backup with the following additional Director configuration statements:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/Job/BackupCatalog.conf
 
    # Backup the catalog database (after the nightly save)
@@ -1098,7 +1098,7 @@ Assuming that you start all your nightly backup jobs at 1:05 am (and that they r
      Write Bootstrap = "|/usr/sbin/bsmtp -h localhost -f \"\(Bareos\) \" -s \"Bootstrap for Job %j\" root@localhost"
    }
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/Schedule/WeeklyCycleAfterBackup.conf
 
    # This schedule does the catalog. It starts after the WeeklyCycle
@@ -1107,7 +1107,7 @@ Assuming that you start all your nightly backup jobs at 1:05 am (and that they r
      Run = Level=Full sun-sat at 1:10
    }
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/FileSet/Catalog.conf
 
    # This is the backup of the catalog

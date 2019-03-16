@@ -22,7 +22,7 @@ NDMP
 
 The Bareos NDMP implementation is based on the NDMJOB NDMP reference implementation of Traakan, Inc., Los Altos, CA which has a BSD style license (2 clause one) with some enhancements.
 
-In NDMP, there are different components (called :emphasis:`agents`) involved in doing backups. The most important agents are:
+In NDMP, there are different components (called ''agents'') involved in doing backups. The most important agents are:
 
 Data Management Agent (DMA)
    is the part that controls the NDMP backup or recover operation.
@@ -38,11 +38,11 @@ Robot Agent
 
 All elements involved talk to each other via the NDMP protocol which is usually transported via TCP/IP port 10000.
 
-The Data Management Agent is part of the Backup Application.
+The |DataManagementAgent| is part of the Backup Application.
 
-The Data Agent is part of the (NAS)-System being backed up and recovered.
+The |DataAgent| is part of the (NAS)-System being backed up and recovered.
 
-The Tape Agent and Robot Agent can
+The |TapeAgent| and |RobotAgent| can
 
 -  run on the system being backed up
 
@@ -55,19 +55,19 @@ This flexibility leads to different topologies how NDMP backups can be done.
 NDMP Topologies
 ~~~~~~~~~~~~~~~
 
-When looking at the different topologies, the location of the Robot Agent is not specially considered, as the data needed to control the robot is minimal compared to the backup data.
+When looking at the different topologies, the location of the |RobotAgent| is not specially considered, as the data needed to control the robot is minimal compared to the backup data.
 
 So the parts considered are
 
--  the Data Management Agent controlling the operation
+-  the |DataManagementAgent| controlling the operation
 
--  the Data Agent as source of the backup data and
+-  the |DataAgent| as source of the backup data and
 
--  the Tape Agent as destination of the backup data
+-  the |TapeAgent| as destination of the backup data
 
-The Data Management Agent always controls both Data Agent and Tape Agent over the Network via NDMP.
+The |DataManagementAgent| always controls both |DataAgent| and |TapeAgent| over the Network via NDMP.
 
-The Tape Agent can either
+The |TapeAgent| can either
 
 -  run on a separate system
 
@@ -117,7 +117,7 @@ NDMP 2-way Backup: Data Agent and Tape Agent running on the same system
                                 |    Agent |====>TAPE DRIVE
                                 \----------/
 
-Data Agent and Tape Agent are both part of the same process on the system, so the data path consists of two ways:
+|DataAgent| and |TapeAgent| are both part of the same process on the system, so the data path consists of two ways:
 
 -  From Disk to Data Agent (1)
 
@@ -154,15 +154,15 @@ NDMP_BAREOS
 
 In both cases,
 
--  |bareosDir| acts as Data Management Agent.
+-  |bareosDir| acts as |DataManagementAgent|.
 
--  The Data Agent is part of the storage system and must be provided by the storage vendor.
+-  The |DataAgent| is part of the storage system and must be provided by the storage vendor.
 
-The main difference is which Tape Agent is used.
+The main difference is which |TapeAgent| is used.
 
-When using NDMP_BAREOS, the |bareosSd| acts as Tape Agent.
+When using NDMP_BAREOS, the |bareosSd| acts as |TapeAgent|.
 
-When using NDMP_NATIVE, the Tape Agent must be provided by some other systems. Some storage vendors provide it with there storages, or offer it as an option, e.g. Isilon with their :emphasis:`Isilon Backup Accelerator`.
+When using NDMP_NATIVE, the |TapeAgent| must be provided by some other systems. Some storage vendors provide it with there storages, or offer it as an option, e.g. Isilon with their ''Isilon Backup Accelerator''.
 
 # Tabular in LaTex format (original)
 
@@ -170,11 +170,11 @@ When using NDMP_NATIVE, the Tape Agent must be provided by some other systems. S
 
    \begin{tabular}{l | c | c}
    \hline
-                                                                   & :ref:`NDMP_BAREOS <section-NdmpBareos>`                          & :ref:`NDMP_NATIVE <section-NdmpNative>` \\
+                                                                   & |ndmpBareos|                          & |ndmpNative| \\
    \hline
-   Data Management Agent                                            & |bareosDir|                           & |bareosDir|  \\
-   Tape Agent                                                      & |bareosSd|                            & external    \\
-   requires external Tape Agent                                    &                                      & x \\
+   |DataManagementAgent|                                            & |bareosDir|                           & |bareosDir|  \\
+   |TapeAgent|                                                      & |bareosSd|                            & external    \\
+   requires external |TapeAgent|                                    &                                      & x \\
    backup to tape (and VTL)                                        & x                          & x \\
    backup to other :config:option:`sd/device/DeviceType`\  & x                          & \\
    2-way backup                                                    &                                      & x \\
@@ -192,11 +192,11 @@ When using NDMP_NATIVE, the Tape Agent must be provided by some other systems. S
 # Tabular converted from LaTeX to RST (or empty, in case of problems):
 
 ============================================================================= ================================================== =================================================
-\                                                                             :ref:`NDMP_BAREOS <section-NdmpBareos>`  :ref:`NDMP_NATIVE <section-NdmpNative>` 
+\                                                                             |ndmpBareos|  |ndmpNative| 
 ============================================================================= ================================================== =================================================
-Data Management Agent  |bareosDir|  |bareosDir| 
-Tape Agent  |bareosSd|  external
-requires external Tape Agent                                                     x 
+|DataManagementAgent|  |bareosDir|  |bareosDir| 
+|TapeAgent|  |bareosSd|  external
+requires external |TapeAgent|                                                     x 
 backup to tape (and VTL)                                                      x  x 
 backup to other :config:option:`sd/device/DeviceType`\   x 
 2-way backup                                                                                                                     x 
@@ -215,9 +215,9 @@ DDAR                                                                            
 NDMP_BAREOS
 -----------
 
-Bareos implements the Data Management Agent inside of the |bareosDir| and a Tape Agent in the |bareosSd|.
+Bareos implements the |DataManagementAgent| inside of the |bareosDir| and a |TapeAgent| in the |bareosSd|.
 
-The Tape Agent in the |bareosSd| emulates a NDMP tape drive that has an infinite tape. Because of the infinite tape, no Robot Agent is required and therefore not implemented. The blocks being written to the NDMP tape are wrapped into a normal Bareos backup stream and then stored into the volumes managed by Bareos.
+The |TapeAgent| in the |bareosSd| emulates a NDMP tape drive that has an infinite tape. Because of the infinite tape, no |RobotAgent| is required and therefore not implemented. The blocks being written to the NDMP tape are wrapped into a normal Bareos backup stream and then stored into the volumes managed by Bareos.
 
 There is always a pair of storage resource definitions:
 
@@ -225,7 +225,7 @@ There is always a pair of storage resource definitions:
 
 -  a NDMP storage resource
 
-These two are linked together. Data that is received by the Tape Agent inside of the |bareosSd| is then stored as Bareos backup stream inside of the paired conventional Bareos storage resource.
+These two are linked together. Data that is received by the |TapeAgent| inside of the |bareosSd| is then stored as Bareos backup stream inside of the paired conventional Bareos storage resource.
 
 On restore, the data is read by the conventional resource, and then recovered as NDMP stream from the NDMP resource.
 
@@ -251,7 +251,7 @@ The storage appliance needs to be configured to allow NDMP connections. Therefor
 Bareos Director: Configure NDMP Client Resource
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Add a Client resource to the |bareosDir| configuration and configure it to access your NDMP storage system (Primary Storage System/Data Agent).
+Add a Client resource to the |bareosDir| configuration and configure it to access your NDMP storage system (Primary Storage System/|DataAgent|).
 
 -  :config:option:`dir/client/Protocol`\  must be either NDMPv2, NDMPv3 or NDMPv4.
 
@@ -263,7 +263,7 @@ Add a Client resource to the |bareosDir| configuration and configure it to acces
 
 In our example we connect to a Isilon storage appliance emulator:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
 
    Client {
      Name = ndmp-client
@@ -277,7 +277,7 @@ In our example we connect to a Isilon storage appliance emulator:
 
 Verify, that you can access your Primary Storage System via Bareos:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: verify connection to NDMP Primary Storage System
 
    *<input>status client=ndmp-client</input>
@@ -354,9 +354,9 @@ Bareos Storage Daemon: Configure NDMP
 Enabling NDMP
 '''''''''''''
 
-To enable the NDMP Tape Agent inside of the |bareosSd|, set :config:option:`sd/storage/NdmpEnable`\ =yes:
+To enable the NDMP |TapeAgent| inside of the |bareosSd|, set :config:option:`sd/storage/NdmpEnable`\ =yes:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: enable NDMP in |bareosSd|
 
    #
@@ -376,7 +376,7 @@ Additionally, we need to define the access credentials for our NDMP TAPE AGENT (
 
 These are configured by adding a NDMP resource to :file:`bareos-sd.conf`:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
 
    #
    # This resource gives the DMA in the Director access to the Bareos SD via the NDMP protocol.
@@ -404,9 +404,9 @@ Now restart the |bareosSd|. If everything is correct, the |bareosSd| starts and 
 Bareos Director: Configure a Paired Storage
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For NDMP Backups, we always need two storages that are paired together. The default configuration already has a Storage **File**:sup:`Dir`:sub:`Storage`  defined:
+For NDMP Backups, we always need two storages that are paired together. The default configuration already has a Storage :config:option:`Dir/Storage = File`\  defined:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
 
    Storage {
      Name = File
@@ -416,9 +416,9 @@ For NDMP Backups, we always need two storages that are paired together. The defa
      Media Type = File
    }
 
-We now add a paired storage to the already existing **File**:sup:`Dir`:sub:``  storage:
+We now add a paired storage to the already existing :config:option:`Dir/ = File`\  storage:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
 
    #
    # Same storage daemon but via NDMP protocol.
@@ -442,7 +442,7 @@ The settings of Username and Password need to match the settings of the |bareosS
 
 Now save the director resource and restart the |bareosDir|. Verify that the configuration is correct:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: verify connection to the |bareosSd|
 
    *<input>status storage=NDMPFile</input>
@@ -476,7 +476,7 @@ Now save the director resource and restart the |bareosDir|. Verify that the conf
 
    *
 
-The output looks the same, as if a :strong:`status storage=File` would have been called.
+The output looks the same, as if a :bcommand:`status storage=File` would have been called.
 
 .. _section-NdmpFileset:
 
@@ -485,11 +485,11 @@ Bareos Director: Configure NDMP Fileset
 
 To specify what files and directories from the storage appliance should be backed up, a Fileset needs to be specified. In our example, we decided to backup :file:`/ifs/home` directory.
 
-The specified directory needs to be a filesystem or a subdirectory of a filesystem which can be accessed by NDMP. Which filesystems are available is showed in the :strong:`status client` output of the NDMP client.
+The specified directory needs to be a filesystem or a subdirectory of a filesystem which can be accessed by NDMP. Which filesystems are available is showed in the :bcommand:`status client` output of the NDMP client.
 
 :index:`[TAG=NDMP->Environment variables] <pair: NDMP; Environment variables>` Additionally, NDMP can be configured via NDMP environment variables. These can be specified in the Options Block of the Fileset with the :strong:`Meta` keyword. Which variables are available is partly depending on the NDMP implementation of the Storage Appliance.
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: NDMP Fileset
 
    Fileset {
@@ -545,7 +545,7 @@ LEVEL
 
 PREFIX
 TYPE
-   is set accordingly to BUTYPE. Default :emphasis:`DUMP`.
+   is set accordingly to BUTYPE. Default ''DUMP''.
 
 UPDATE
    = Y
@@ -555,7 +555,7 @@ Example NDMP Fileset to backup a subset of a NDMP filesystem
 
 The following fileset is intended to backup all files and directories matching :file:`/ifs/home/users/a*`. It has been tested against Isilon OneFS 7.2.0.1. See `Isilon OneFS 7.2.0 CLI Administration Guide <https://www.emc.com/collateral/TechnicalDocument/docu56048.pdf>`_, section quote{NDMP environment variables} for details about the supported NDMP environment variables. Excludes are not used in this example.
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: NDMP Fileset Isilon Include/Exclude
 
    Fileset {
@@ -584,7 +584,7 @@ Bareos Director: Configure NDMP Jobs
 
 To do NDMP backups and restores, some special settings need to be configured. We define special Backup and Restore jobs for NDMP.
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: NDMP backup job
 
    Job {
@@ -600,7 +600,7 @@ To do NDMP backups and restores, some special settings need to be configured. We
      Messages      = Standard
    }
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: NDMP restore job
 
    Job {
@@ -631,7 +631,7 @@ Run NDMP Backup
 
 Now we are ready to do our first NDMP backup:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: run NDMP backup
 
    *<input>run job=ndmp-backup-job</input>
@@ -751,7 +751,7 @@ We have successfully created our first NDMP backup.
 
 Let us have a look what files are in our backup:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: list the files of the backup job
 
    *<input>list files jobid=1</input>
@@ -760,7 +760,7 @@ Let us have a look what files are in our backup:
     /ifs/home/admin/
     /ifs/home/admin/.zshrc
 
-The real backup data is stored in the file :file:`/@NDMP/ifs/home%0` (we will refer to it as :emphasis:`NDMP main backup file` or :emphasis:`main backup file` later on). One NDMP main backup file is created for every directory specified in the used Fileset. The other files show the file history and are hardlinks to the backup file.
+The real backup data is stored in the file :file:`/@NDMP/ifs/home%0` (we will refer to it as ''NDMP main backup file'' or ''main backup file'' later on). One NDMP main backup file is created for every directory specified in the used Fileset. The other files show the file history and are hardlinks to the backup file.
 
 Run NDMP Restore
 ~~~~~~~~~~~~~~~~
@@ -775,7 +775,7 @@ Either select all files or the main backup file (:file:`/@NDMP/ifs/home%0`). If 
 Restore files to original path
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code-block:: sh
+.. code-block:: bconsole
 
    *<input>restore jobid=1</input>
    You have selected the following JobId: 1
@@ -907,7 +907,7 @@ Restore files to original path
 Restore files to different path
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The restore location is determined by the :config:option:`dir/job/Where`\  setting of the restore job. In NDMP, this parameter works in a special manner, the prefix can be either :emphasis:`relative` to the filesystem or :emphasis:`absolute`. If a prefix is set in form of a directory (like :file:`/bareos-restores`), it will be a relative prefix and will be added between the filesystem and the filename. This is needed to make sure that the
+The restore location is determined by the :config:option:`dir/job/Where`\  setting of the restore job. In NDMP, this parameter works in a special manner, the prefix can be either ''relative'' to the filesystem or ''absolute''. If a prefix is set in form of a directory (like :file:`/bareos-restores`), it will be a relative prefix and will be added between the filesystem and the filename. This is needed to make sure that the
 data is restored in a different directory, but into the same filesystem. If the prefix is set with a leading caret (^), it will be an absolute prefix and will be put at the front of the restore path. This is needed if the restored data should be stored into a different filesystem.
 
 Example:
@@ -939,13 +939,13 @@ NDMP Copy Jobs
 
 :index:`[TAG=Copy->NDMP] <pair: Copy; NDMP>` :index:`[TAG=NDMP->Copy jobs] <pair: NDMP; Copy jobs>`
 
-To be able to do copy jobs, we need to have a second storage resource where we can copy the data to. Depending on your requirements, this resource can be added to the existing |bareosSd| (e.g. **autochanger-0**:sup:`Sd`:sub:`Storage`  for tape based backups) or to an additional |bareosSd|.
+To be able to do copy jobs, we need to have a second storage resource where we can copy the data to. Depending on your requirements, this resource can be added to the existing |bareosSd| (e.g. :config:option:`Sd/Storage = autochanger-0`\  for tape based backups) or to an additional |bareosSd|.
 
-We set up an additional |bareosSd| on a host named :strong:`bareos-sd2.example.com` with the default **FileStorage**:sup:`Sd`:sub:`Storage`  device.
+We set up an additional |bareosSd| on a host named :strong:`bareos-sd2.example.com` with the default :config:option:`Sd/Storage = FileStorage`\  device.
 
-When this is done, add a second storage resource **File2**:sup:`Dir`:sub:`Storage`  to the :file:`bareos-dir.conf`:
+When this is done, add a second storage resource :config:option:`Dir/Storage = File2`\  to the :file:`bareos-dir.conf`:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Storage resource File2
 
    Storage {
@@ -960,7 +960,7 @@ Copy Jobs copy data from one pool to another (see :ref:`MigrationChapter`). So w
 
 Add a Pool that the copies will run to:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Pool resource Copy
 
    #
@@ -980,9 +980,9 @@ Add a Pool that the copies will run to:
 
 Then we need to define the just defined pool as the :config:option:`dir/pool/NextPool`\  of the pool that actually holds the data to be copied.
 
-In our case this is the **Full**:sup:`Dir`:sub:`Pool`  Pool:
+In our case this is the :config:option:`Dir/Pool = Full`\  Pool:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: add Next Pool setting
 
    #
@@ -994,9 +994,9 @@ In our case this is the **Full**:sup:`Dir`:sub:`Pool`  Pool:
      Next Pool = Copy   # <- this line needs to be added!
    }
 
-Finally, we need to define a Copy Job that will select the jobs that are in the **Full**:sup:`Dir`:sub:`Pool`  pool and copy them over to the **Copy**:sup:`Dir`:sub:`Pool`  pool reading the data via the **File**:sup:`Dir`:sub:`Storage`  Storage and writing the data via the **File2**:sup:`Dir`:sub:`Storage`  Storage:
+Finally, we need to define a Copy Job that will select the jobs that are in the :config:option:`Dir/Pool = Full`\  pool and copy them over to the :config:option:`Dir/Pool = Copy`\  pool reading the data via the :config:option:`Dir/Storage = File`\  Storage and writing the data via the :config:option:`Dir/Storage = File2`\  Storage:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: NDMP copy job
 
    Job {
@@ -1010,7 +1010,7 @@ Finally, we need to define a Copy Job that will select the jobs that are in the 
 
 After restarting the director and storage daemon, we can run the Copy job:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: run copy job
 
    *<input>run job=NDMPCopy</input>
@@ -1094,20 +1094,20 @@ Now we successfully copied over the NDMP job.
 
 
 .. warning::
-   :strong:`list jobs` will only show the number of main backup files as JobFiles. However, with :strong:`list files jobid=...` all files are visible.
+   :bcommand:`list jobs` will only show the number of main backup files as JobFiles. However, with :bcommand:`list files jobid=...` all files are visible.
 
 Restore to NDMP Primary Storage System
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Unfortunately, we are not able to restore the copied data to our NDMP storage. If we try we get this message:
 
-.. code-block:: sh
+.. code-block:: bareosmessage
 
    21-Jan 09:21 bareos-dir JobId 77: Fatal error: Read storage File2 doesn't point to storage definition with paired storage option.
 
-To be able to do NDMP operations from the storage that was used to store the copies, we need to define a NDMP storage that is paired with it. The definition is very similar to our **NDMPFile**:sup:`Dir`:sub:`Storage`  Storage, as we want to restore the data to the same NDMP Storage system:
+To be able to do NDMP operations from the storage that was used to store the copies, we need to define a NDMP storage that is paired with it. The definition is very similar to our :config:option:`Dir/Storage = NDMPFile`\  Storage, as we want to restore the data to the same NDMP Storage system:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: add paired Storage resource for File2
 
    Storage {
@@ -1147,7 +1147,7 @@ For NDMP jobs, all data is stored into a single big file. The file and directory
 
    As storing the database dump for disaster recovery and storing the bootstrap file offsite is recommended  anyway (see :ref:`section-before-disaster`), this should be not a big problem in correctly setup environments.
 
-   For the same reason, the information about the number of files of a job (e.g. JobFiles with :strong:`list jobs` command) is limited to the number of NDMP backup files in copied jobs.
+   For the same reason, the information about the number of files of a job (e.g. JobFiles with :bcommand:`list jobs` command) is limited to the number of NDMP backup files in copied jobs.
    
 
 
@@ -1155,7 +1155,7 @@ For NDMP jobs, all data is stored into a single big file. The file and directory
 Restore always transfers the full main backup file to the Primary Storage System
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Contrary to :ref:`NDMP_NATIVE <section-NdmpNative>`, the :ref:`NDMP_BAREOS <section-NdmpBareos>` implementation do not support NDMP :emphasis:`Direct Access Restore` (DAR).
+Contrary to |ndmpNative|, the |ndmpBareos| implementation do not support NDMP ''Direct Access Restore'' (DAR).
 
 On restore, the full main backup file (:file:`@NDMP/...%.`) is always transfered back to the Primary Storage System, together with a description, what files to restore.
 
@@ -1166,11 +1166,11 @@ The reason for this is that the Primary Storage System handles the backup data b
 NDMP_NATIVE
 -----------
 
-The NDMP_NATIVE protocol is implemented since Bareos :index:`Version >= 17.2.3 <pair: bareos-17.2.3; NDMP NATIVE>`.
+The NDMP_NATIVE protocol is implemented since Bareos :sinceVersion:`17.2.3: NDMP NATIVE`.
 
-Bareos implements the Data Management Agent inside of the |bareosDir| and is the only Bareos Daemon involved in the backups.
+Bareos implements the |DataManagementAgent| inside of the |bareosDir| and is the only Bareos Daemon involved in the backups.
 
-When using NDMP_NATIVE, the Tape Agent must be provided by some other systems. Some storage vendors provide it with there storages, or offer it as an option, e.g. Isilon with there :emphasis:`Isilon Backup Accelerator`.
+When using NDMP_NATIVE, the |TapeAgent| must be provided by some other systems. Some storage vendors provide it with there storages, or offer it as an option, e.g. Isilon with there ''Isilon Backup Accelerator''.
 
 Example Setup for NDMP_NATIVE backup
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1182,7 +1182,7 @@ Configure a NDMP Client
 
 This defines the connection to the NDMP Data Agent.
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/Client/isilon.conf
 
    Client {
@@ -1196,9 +1196,9 @@ This defines the connection to the NDMP Data Agent.
      Maximum Concurrent Jobs = 1
    }
 
-Verify, that you can access your Primary Storage System (Tape Agent) via Bareos:
+Verify, that you can access your Primary Storage System (|TapeAgent|) via Bareos:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: status ndmp client
 
    *<input>status client=isilon</input>
@@ -1270,7 +1270,7 @@ Configure a NDMP Fileset
 
 This determines what filesystem to backup and configures the NDMP environment to use in the meta options for it.
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/Fileset/isilon.conf
 
    Fileset {
@@ -1286,7 +1286,7 @@ This determines what filesystem to backup and configures the NDMP environment to
        }
    }
 
-The setting of :strong:`"DIRECT = Y"` is required for Direct Access Recovery.
+The setting of ``"DIRECT = Y"`` is required for Direct Access Recovery.
 
 For more information, see :ref:`section-NdmpFileset`.
 
@@ -1297,7 +1297,7 @@ This defines now to connect to the Tape and Robot Agents and what devices to use
 
 As we do not yet now the device names, we can put a placeholder string in :config:option:`dir/storage/Device`\  and :config:option:`dir/storage/NdmpChangerDevice`\ :
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/Storage/isilon.conf
 
    Storage {
@@ -1316,11 +1316,11 @@ As we do not yet now the device names, we can put a placeholder string in :confi
      NDMP Changer Device = unknown  # use "status storage" to determine the changer device
    }
 
-Verify that the connection to the NDMP Tape Agent and Robot Agent work, by running the :strong:`status storage` command.
+Verify that the connection to the NDMP Tape Agent and Robot Agent work, by running the :bcommand:`status storage` command.
 
-The Tape Agent will return information about the available tape drives. The Robot Agent will return information about the available tape changer device.
+The |TapeAgent| will return information about the available tape drives. The |RobotAgent| will return information about the available tape changer device.
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: status ndmp storage (Tape Agent and Robot Agent)
 
    *<input>status storage=isilon</input>
@@ -1369,13 +1369,13 @@ The Tape Agent will return information about the available tape drives. The Robo
        device     mc001
          set        SERIAL_NUMBER=VL002CX1252BVE01177
 
-The interesting parts of the output is the device information both of the Tape Agent and Robot Agent.
+The interesting parts of the output is the device information both of the |TapeAgent| and |RobotAgent|.
 
 As each NDMP backup or recovery operation always involves exactly one tape and at one robot agent.
 
-We now know the device names and can configure what robot and what tape to use when this storage is used by bareos by updating the **isilon**:sup:`Sd`:sub:`Storage`  resource:
+We now know the device names and can configure what robot and what tape to use when this storage is used by bareos by updating the :config:option:`Sd/Storage = isilon`\  resource:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/Storage/isilon.conf
 
    Storage {
@@ -1397,7 +1397,7 @@ We now know the device names and can configure what robot and what tape to use w
 Configure a Pool for the NDMP Tapes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/Pool/NDMP-Tape.conf
 
    Pool {
@@ -1413,7 +1413,7 @@ Configure NDMP Jobs
 
 To be able to do scheduled backups, we need to configure a backup job that will use the NDMP client and NDMP storage resources:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/Job/ndmp-native-backup-job.conf
 
    Job {
@@ -1432,7 +1432,7 @@ To be able to do scheduled backups, we need to configure a backup job that will 
 
 As we also need to be able to do a restore of the backuped data, we also need to define an adequate restore job:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/Job/ndmp-native-restore-job.conf
 
    Job{
@@ -1455,7 +1455,7 @@ Before we can really start do do backups, first we need to label the tapes that 
 
 First we check if our robot has tapes with barcodes by running status slots:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: status storage=isilon slots
 
    *<input>status slots</input>
@@ -1477,7 +1477,7 @@ First we check if our robot has tapes with barcodes by running status slots:
 
 Now we can label these tapes and add them to the pool that we have created for NDMP Tapes:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: label barcodes
 
    *<input>label storage=isilon barcodes slots=251-257</input>
@@ -1525,7 +1525,7 @@ We have now 7 volumes in our NDMP-Tape Pool that were labeled and can be used fo
 Run NDMP_NATIVE Backup
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: run backup job
 
    *<input>run job=ndmp-native-backup-job yes</input>
@@ -1704,7 +1704,7 @@ Run NDMP_NATIVE Restore
 
 Now we want to restore some files from the backup we just did:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: run ndmp restore job
 
    *<input>restore</input>
@@ -1966,7 +1966,7 @@ Incremental Backups
 
 are supported. The NDMP backup level will increment with each run, until a Full (0) or Differential (1) will be made. The maximum backup level will be 9. Additional Incremental backups will result in a failed job and the message:
 
-.. code-block:: sh
+.. code-block:: bareosmessage
 
     2016-01-21 13:35:51 bareos-dir JobId 12: Fatal error: NDMP dump format doesn't support more than 8 incrementals, please run a Differential or a Full Backup
 
@@ -2051,7 +2051,7 @@ Bareos NDMP support have been tested against:
 
    \begin{tabular}{l | l | l | l | l | l | l}
    \hline
-   Vendor     & Product                       & NDMP Subsystem       & Bareos version & Tape Agent     & Features & Remarks \\
+   Vendor     & Product                       & NDMP Subsystem       & Bareos version & |TapeAgent|     & Features & Remarks \\
    \hline
    Isilon     & Isilon OneFS v7.2.1.4         & Isilon NDMP 2.2.1    & bareos-17.2.3  & Isilon Backup Accelerator & & Protocol: \NdmpNative\\
 
@@ -2065,9 +2065,9 @@ Bareos NDMP support have been tested against:
 # Tabular converted from LaTeX to RST (or empty, in case of problems):
 
 ========== ============================= ==================== ============== ============================ ======== ==================================
-Vendor     Product                       NDMP Subsystem       Bareos version Tape Agent  Features Remarks
+Vendor     Product                       NDMP Subsystem       Bareos version |TapeAgent|  Features Remarks
 ========== ============================= ==================== ============== ============================ ======== ==================================
-Isilon     Isilon OneFS v7.2.1.4         Isilon NDMP 2.2.1    bareos-17.2.3  Isilon Backup Accelerator             Protocol: :ref:`NDMP_NATIVE <section-NdmpNative>`
+Isilon     Isilon OneFS v7.2.1.4         Isilon NDMP 2.2.1    bareos-17.2.3  Isilon Backup Accelerator             Protocol: |ndmpNative|
 Isilon     Isilon OneFS v7.2.0.1         Isilon NDMP 2.2      bareos-16.2.6  |bareosSd|               
 Isilon     Isilon OneFS v7.1.1.5         Isilon NDMP 2.2      bareos-15.2.2  |bareosSd|               
 NetApp                                   Release 8.2.3 7-Mode bareos-15.2.2  |bareosSd|               

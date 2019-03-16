@@ -138,7 +138,7 @@ Example Console Configuration File
 
 A Console configuration file might look like this:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bconsole configuration
 
    Director {
@@ -158,7 +158,7 @@ The following configuration files were supplied by Phil Stracchino.
 
 To use named consoles from :command:`bconsole`, use a :file:`bconsole.conf` configuration file like this:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bconsole: restricted-user
 
    Director {
@@ -174,7 +174,7 @@ To use named consoles from :command:`bconsole`, use a :file:`bconsole.conf` conf
 
 Where the Password in the Director section is deliberately incorrect and the Console resource is given a name, in this case :strong:`restricted-user`. Then in the Director configuration (not directly accessible by the user), we define:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/console/restricted-user.conf
 
    Console {
@@ -190,12 +190,12 @@ Where the Password in the Director section is deliberately incorrect and the Con
      CommandACL = run
    }
 
-The user login into the Director from his Console will get logged in as **restricted-user**:sup:`Dir`:sub:`Console`  and he will only be able to see or access a Job with the name **Restricted Client Save**:sup:`Dir`:sub:`Job` , a Client with the name **restricted-client**:sup:`Dir`:sub:`Client` , a storage device **main-storage**:sup:`Dir`:sub:`Storage` , any Schedule or Pool, a FileSet named
-**Restricted Client's FileSet**:sup:`Dir`:sub:`FileSet` , a Catalog named **MyCatalog**:sup:`Dir`:sub:`Catalog`  and the only command he can use in the Console is the :strong:`run` command. In other words, this user is rather limited in what he can see and do with Bareos. For details how to configure ACLs, see the :strong:`Acl` data type description.
+The user login into the Director from his Console will get logged in as :config:option:`Dir/Console = restricted-user`\  and he will only be able to see or access a Job with the name :config:option:`Dir/Job = Restricted Client Save`\ , a Client with the name :config:option:`Dir/Client = restricted-client`\ , a storage device :config:option:`Dir/Storage = main-storage`\ , any Schedule or Pool, a FileSet named
+:config:option:`Dir/FileSet = Restricted Client's FileSet`\ , a Catalog named :config:option:`Dir/Catalog = MyCatalog`\  and the only command he can use in the Console is the :bcommand:`run` command. In other words, this user is rather limited in what he can see and do with Bareos. For details how to configure ACLs, see the :strong:`Acl` data type description.
 
 The following is an example of a :file:`bconsole.conf` file that can access several Directors and has different Consoles depending on the Director:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bconsole: multiple consoles
 
    Director {
@@ -222,9 +222,9 @@ The following is an example of a :file:`bconsole.conf` file that can access seve
       Director = SecondDirector
    }
 
-The second Director referenced at **secondserver**:sup:`Dir`:sub:`Director`  might look like the following:
+The second Director referenced at :config:option:`Dir/Director = secondserver`\  might look like the following:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/console/restricted-user2.conf
 
    Console {

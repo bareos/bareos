@@ -15,7 +15,7 @@ JobStatus
 
 :index:`[TAG=Job->JobStatus] <pair: Job; JobStatus>` :index:`[TAG=Catalog->Job->JobStatus] <triple: Catalog; Job; JobStatus>`
 
-The status of a Bareos job is stored as abbreviation in the Catalog database table Job. It is also displayed by some bconsole commands, eg. :strong:`list jobs`.
+The status of a Bareos job is stored as abbreviation in the Catalog database table Job. It is also displayed by some bconsole commands, eg. :bcommand:`list jobs`.
 
 This table lists the abbreviations together with its description and weight. The weight is used, when multiple states are applicable for a job. In this case, only the status with the highest weight/priority is applied.
 

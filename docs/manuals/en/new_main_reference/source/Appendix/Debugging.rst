@@ -23,7 +23,7 @@ For this to work, you need to ensure that a few things are setup correctly on yo
 
 #. On Linux, :command:`gdb` (the GNU debugger) must be installed. On some systems such as Solaris, :command:`gdb` may be replaced by :command:`dbx`.
 
-#. By default, btraceback uses :command:`bsmtp` to send the traceback via email. Therefore it expects a local mail transfer daemon running. It send the traceback to \email{root@localhost} via :strong:`localhost`.
+#. By default, btraceback uses :command:`bsmtp` to send the traceback via email. Therefore it expects a local mail transfer daemon running. It send the traceback to root@localhost via :strong:`localhost`.
 
 #. Some Linux distributions, e.g. Ubuntu:index:`[TAG=Platform->Ubuntu->Debug] <triple: Platform; Ubuntu; Debug>`, disable the possibility to examine the memory of other processes. While this is a good idea for hardening a system, our debug mechanismen will fail. To disable this feature, run (as root):
 

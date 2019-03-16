@@ -46,7 +46,7 @@ Starting the Daemons
 
 Assuming you have installed the packages, to start the three daemons, from your installation directory, simply enter:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: start services
 
    service bareos-dir start
@@ -72,9 +72,9 @@ The :command:`bconsole` runs the Bareos Console program, which connects to the |
 
 The asterisk is the console command prompt.
 
-Type :strong:`help` to see a list of available commands:
+Type :bcommand:`help` to see a list of available commands:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: help
 
    *<input>help</input>
@@ -150,9 +150,9 @@ At this point, we assume you have done the following:
 
 Furthermore, we assume for the moment you are using the default configuration files.
 
-At this point, enter the :strong:`show filesets` and you should get something similar this:
+At this point, enter the :bcommand:`show filesets` and you should get something similar this:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: show filesets
 
    *<input>show filesets</input>
@@ -179,12 +179,12 @@ At this point, enter the :strong:`show filesets` and you should get something si
    }
    ...
 
-One of the FileSets is the pre-defined **SelfTest** FileSet that will backup the :file:`/usr/sbin` directory. For testing purposes, we have chosen a directory of moderate size (about 30 Megabytes) and complexity without being too big. The FileSet **Catalog** is used for backing up Bareos’s catalog and is not of interest to us for the moment. You can change what is backed up by editing the configuration and changing the :file:`File =` line in the
-:sup:`Dir`\ :strong:`FileSet` resource.
+One of the FileSets is the pre-defined :config:option:`dir/fileset = SelfTest`\  FileSet that will backup the :file:`/usr/sbin` directory. For testing purposes, we have chosen a directory of moderate size (about 30 Megabytes) and complexity without being too big. The FileSet :config:option:`dir/fileset = Catalog`\  is used for backing up Bareos’s catalog and is not of interest to us for the moment. You can change what is backed up by editing the configuration and changing the :file:`File =` line in the
+:config:option:`Dir/FileSet`\  resource.
 
 Now is the time to run your first backup job. We are going to backup your Bareos source directory to a File Volume in your :file:`/var/lib/bareos/storage/` directory just to show you how easy it is. Now enter:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: status dir
 
    *<input>status dir</input>
@@ -204,11 +204,11 @@ Now is the time to run your first backup job. We are going to backup your Bareos
    No Jobs running.
    ====
 
-where the times and the Director’s name will be different according to your setup. This shows that an Incremental job is scheduled to run for the Job **BackupClient1**:sup:`Dir`:sub:`Job`  at 1:05am and that at 1:10, a **BackupCatalog**:sup:`Dir`:sub:`Job`  is scheduled to run.
+where the times and the Director’s name will be different according to your setup. This shows that an Incremental job is scheduled to run for the Job :config:option:`Dir/Job = BackupClient1`\  at 1:05am and that at 1:10, a :config:option:`Dir/Job = BackupCatalog`\  is scheduled to run.
 
 Now enter:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: status client
 
    *<input>status client</input>
@@ -225,11 +225,11 @@ Now enter:
    No Jobs running.
    ====
 
-In this case, the client is named **bareos-fd**:sup:`Dir`:sub:`Client`  your name might be different, but the line beginning with :file:`bareos-fd Version` is printed by your |bareosFd|, so we are now sure it is up and running.
+In this case, the client is named :config:option:`Dir/Client = bareos-fd`\  your name might be different, but the line beginning with :file:`bareos-fd Version` is printed by your |bareosFd|, so we are now sure it is up and running.
 
 Finally do the same for your |bareosSd| with:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: status storage
 
    *<input>status storage</input>
@@ -256,13 +256,13 @@ Finally do the same for your |bareosSd| with:
 
    ====
 
-You will notice that the default |bareosSd| device is named **File**:sup:`Dir`:sub:`Storage`  and that it will use device :file:`/var/lib/bareos/storage`, which is not currently open.
+You will notice that the default |bareosSd| device is named :config:option:`Dir/Storage = File`\  and that it will use device :file:`/var/lib/bareos/storage`, which is not currently open.
 
 Now, let’s actually run a job with:
 
 
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: run
 
    run
@@ -273,7 +273,7 @@ you should get the following output:
 
 
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: select job
 
    Automatically selected Catalog: MyCatalog
@@ -291,7 +291,7 @@ Here, Bareos has listed the three different Jobs that you can run, and you shoul
 
 
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: run job
 
    Run Backup job
@@ -309,15 +309,15 @@ Here, Bareos has listed the three different Jobs that you can run, and you shoul
 
 
 
-At this point, take some time to look carefully at what is printed and understand it. It is asking you if it is OK to run a job named **BackupClient1**:sup:`Dir`:sub:`job`\  with FileSet **SelfTest** as an Incremental job on your Client, and to use Storage **File**:sup:`Dir`:sub:`Storage`  and Pool **Full**:sup:`Dir`:sub:`pool`\ , and finally, it wants to run it now (the current time should be displayed by your console).
+At this point, take some time to look carefully at what is printed and understand it. It is asking you if it is OK to run a job named :config:option:`dir/job = BackupClient1`\  with FileSet :config:option:`dir/fileset = SelfTest`\  as an Incremental job on your Client, and to use Storage :config:option:`Dir/Storage = File`\  and Pool :config:option:`dir/pool = Full`\ , and finally, it wants to run it now (the current time should be displayed by your console).
 
 Here we have the choice to run (yes), to modify one or more of the above parameters (mod), or to not run the job (no). Please enter yes, at which point you should immediately get the command prompt (an asterisk).
 
-If you wait a few seconds, then enter the command :strong:`messages` you will get back something like:
+If you wait a few seconds, then enter the command :bcommand:`messages` you will get back something like:
 
 .. TODO: Replace bconsole output by current version of Bareos.
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: run
 
    *<input>messages</input>
@@ -348,24 +348,24 @@ If you wait a few seconds, then enter the command :strong:`messages` you will ge
    28-Apr-2003 14:30 rufus-dir: No Files found to prune.
    28-Apr-2003 14:30 rufus-dir: End auto prune.
 
-If you don’t see the output immediately, you can keep entering :strong:`messages` until the job terminates.
+If you don’t see the output immediately, you can keep entering :bcommand:`messages` until the job terminates.
 
-Instead of typing :strong:`messages` multiple times, you can also ask bconsole to wait, until a specific job is finished:
+Instead of typing :bcommand:`messages` multiple times, you can also ask bconsole to wait, until a specific job is finished:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: wait
 
    *<input>wait jobid=1</input>
 
-or just :strong:`wait`, which waits for all running jobs to finish.
+or just :bcommand:`wait`, which waits for all running jobs to finish.
 
-Another useful command is :strong:`autodisplay on`. With autodisplay activated, messages will automatically be displayed as soon as they are ready.
+Another useful command is :bcommand:`autodisplay on`. With autodisplay activated, messages will automatically be displayed as soon as they are ready.
 
 If you do an :command:`ls -l` of your :file:`/var/lib/bareos/storage` directory, you will see that you have the following item:
 
 
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: volume
 
    -rw-r-----    1 bareos bareos   39072153 Apr 28 14:30 Full-001
@@ -374,7 +374,7 @@ If you do an :command:`ls -l` of your :file:`/var/lib/bareos/storage` directory,
 
 This is the file Volume that you just wrote and it contains all the data of the job just run. If you run additional jobs, they will be appended to this Volume unless you specify otherwise.
 
-If you would like to stop here, you can simply enter :strong:`quit` in the Console program.
+If you would like to stop here, you can simply enter :bcommand:`quit` in the Console program.
 
 If you would like to try restoring the files that you just backed up, read the following section. 
 
@@ -389,7 +389,7 @@ Restoring Your Files
 
 If you have run the default configuration and run the job as demonstrated above, you can restore the backed up files in the Console program by entering:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: restore
 
    *<input>restore all</input>
@@ -418,7 +418,7 @@ As you can see, there are a number of options, but for the current demonstration
 
 
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: select resource
 
    Automatically selected Client: bareos-fd
@@ -433,7 +433,7 @@ As you can see, Bareos knows what client you have, and since there was only one,
 
 
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: restore filesystem
 
    +-------+-------+----------+------------+---------------------+---------------+
@@ -458,14 +458,14 @@ As you can see, Bareos knows what client you have, and since there was only one,
 
 where I have truncated the listing on the right side to make it more readable.
 
-Then Bareos produced a listing containing all the jobs that form the current backup, in this case, there is only one, and the Storage daemon was also automatically chosen. Bareos then took all the files that were in Job number 1 and entered them into a directory tree (a sort of in memory representation of your filesystem). At this point, you can use the :strong:`cd` and :strong:`ls` or :strong:`dir` commands to walk up and down the directory tree
-and view what files will be restored. For example, if you enter :strong:`cd /usr/sbin` and then enter :strong:`dir` you will get a listing of all the files in the :file:`/usr/sbin/` directory. On your system, the path might be somewhat different. For more information on this, please refer to the :ref:`Restore Command Chapter <RestoreChapter>` of this manual for more details.
+Then Bareos produced a listing containing all the jobs that form the current backup, in this case, there is only one, and the Storage daemon was also automatically chosen. Bareos then took all the files that were in Job number 1 and entered them into a directory tree (a sort of in memory representation of your filesystem). At this point, you can use the :bcommand:`cd` and :bcommand:`ls` or :bcommand:`dir` commands to walk up and down the directory tree
+and view what files will be restored. For example, if you enter :bcommand:`cd /usr/sbin` and then enter :bcommand:`dir` you will get a listing of all the files in the :file:`/usr/sbin/` directory. On your system, the path might be somewhat different. For more information on this, please refer to the :ref:`Restore Command Chapter <RestoreChapter>` of this manual for more details.
 
 To exit this mode, simply enter:
 
 
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: done
 
    done
@@ -476,7 +476,7 @@ and you will get the following output:
 
 
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: job report
 
    Bootstrap records written to
@@ -528,11 +528,11 @@ and you will get the following output:
 
 
 
-If you answer yes your files will be restored to :file:`/tmp/bareos-restores`. If you want to restore the files to their original locations, you must use the mod option and explicitly set Where: to nothing (or to /). We recommend you go ahead and answer yes and after a brief moment, enter :strong:`messages`, at which point you should get a listing of all the files that were restored as well as a summary of the job that looks similar to this:
+If you answer yes your files will be restored to :file:`/tmp/bareos-restores`. If you want to restore the files to their original locations, you must use the mod option and explicitly set Where: to nothing (or to /). We recommend you go ahead and answer yes and after a brief moment, enter :bcommand:`messages`, at which point you should get a listing of all the files that were restored as well as a summary of the job that looks similar to this:
 
 
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: job report
 
    23-May 15:24 bareos-dir JobId 2: Start Restore Job RestoreFiles.2013-05-23_15.24.01_10
@@ -569,7 +569,7 @@ Quitting the Console Program
 
 :index:`[TAG=Program->Quitting the Console] <pair: Program; Quitting the Console>` :index:`[TAG=Quitting the Console Program] <single: Quitting the Console Program>`
 
-Simply enter the command :strong:`quit`.
+Simply enter the command :bcommand:`quit`.
 
 .. _SecondClient:
 
@@ -603,11 +603,11 @@ See :ref:`InstallChapter` about how to add the Bareos repository. The only part 
 Director: configure client
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Bareos :index:`Version >= 16.2.4 <pair: bareos-16.2.4; configure add>` offers the :ref:`configure add command <section-bcommandConfigure>` to add resources to the |bareosDir|.
+Bareos :sinceVersion:`16.2.4: configure add` offers the :ref:`configure add command <section-bcommandConfigure>` to add resources to the |bareosDir|.
 
-Start the :command:`bconsole` and use the :strong:`configure add client` command. Address must be a DNS resolvable name or an IP address.
+Start the :command:`bconsole` and use the :bcommand:`configure add client` command. Address must be a DNS resolvable name or an IP address.
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: add a client
 
    *<input>configure add client name=client2-fd address=192.168.0.2 password=secret</input>
@@ -638,7 +638,7 @@ Manual configuration
 
 Alternatively you can configure your resources manually. On the |bareosDir| create the file
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/client/client2-fd.conf
 
    Client {
@@ -649,7 +649,7 @@ Alternatively you can configure your resources manually. On the |bareosDir| crea
 
 Reload or restart your |bareosDir|:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: reload the Director configuration
 
    *<input>reload</input>
@@ -660,7 +660,7 @@ The corresponding |bareosFd| director resource can be created directly on the cl
 Client: configure
 ~~~~~~~~~~~~~~~~~
 
-The package **bareos-filedaemon** :index:`Version >= 16.2.4 <pair: bareos-16.2.4; Client resource files>` brings several configuration files:
+The package **bareos-filedaemon** :sinceVersion:`16.2.4: Client resource files` brings several configuration files:
 
 -  
 
@@ -684,7 +684,7 @@ In detail:
    defines the name of the client. The default is :file:`<hostname>-fd`. Changes are only required, if you want to use another name or en- or disable special |bareosFd| features. See :ref:`ClientResourceClient`.
 
 :file:`director/bareos-dir.conf`
-   gives the |bareosDir| **bareos-dir** full access to this |bareosFd|. During installation, the :config:option:`fd/director/Password`\  is set to a random default. Adapt the name and/or the password to your |bareosDir|. (The name **bareos-dir** is the default |bareosDir| name since Bareos :index:`Version >= 16.2.4 <pair: bareos-16.2.4; bareos-dir is the default |bareosDir| name>`.)
+   gives the |bareosDir| **bareos-dir** full access to this |bareosFd|. During installation, the :config:option:`fd/director/Password`\  is set to a random default. Adapt the name and/or the password to your |bareosDir|. (The name **bareos-dir** is the default |bareosDir| name since Bareos :sinceVersion:`16.2.4: bareos-dir is the default |bareosDir| name`.)
 
 :file:`director/bareos-mon.conf`
    gives the |bareosDir| **bareos-mon** restricted access to this |bareosFd|. During installation, the :config:option:`fd/director/Password`\  is set to a random value. This resource is intended to be used by the local **bareos-tray-monitor**.
@@ -692,12 +692,12 @@ In detail:
 :file:`messages/Standard.conf`
    defines, how messages should be handled. The default sends all relevant messages to the |bareosDir|.
 
-If your |bareosDir| is named **bareos-dir**, the :file:`/etc/bareos/bareos-fd.d/director/bareos-dir.conf` may already be overwritten by the file you copied from the |bareosDir|. If your Director has another name, an addition resource file will exists. You can define an arbitrary number of |bareosDir|’s in your |bareosFd| configuration. However, normally you will only have one :sup:`Fd`\ :strong:`Director` with
-full control of your |bareosFd| and optional one :sup:`Fd`\ :strong:`Director` for monitoring (used by the |bareosTrayMonitor|).
+If your |bareosDir| is named **bareos-dir**, the :file:`/etc/bareos/bareos-fd.d/director/bareos-dir.conf` may already be overwritten by the file you copied from the |bareosDir|. If your Director has another name, an addition resource file will exists. You can define an arbitrary number of |bareosDir|’s in your |bareosFd| configuration. However, normally you will only have one :config:option:`Fd/Director`\  with
+full control of your |bareosFd| and optional one :config:option:`Fd/Director`\  for monitoring (used by the |bareosTrayMonitor|).
 
 Anyhow, the resource will look similar to this:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-fd.d/director/bareos-dir.conf
 
    Director {
@@ -717,9 +717,9 @@ After a restart of the |bareosFd| to reload the configuration this resource allo
 Manual configuration
 ^^^^^^^^^^^^^^^^^^^^
 
-If you have not created the :sup:`Fd`\ :strong:`Director` by :strong:`configure`, you can create it also manually. If your |bareosDir| is also named **bareos-dir**, modify or create the file :file:`/etc/bareos/bareos-fd.d/director/bareos-dir.conf`:
+If you have not created the :config:option:`Fd/Director`\  by :bcommand:`configure`, you can create it also manually. If your |bareosDir| is also named **bareos-dir**, modify or create the file :file:`/etc/bareos/bareos-fd.d/director/bareos-dir.conf`:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-fd.d/director/bareos-dir.conf
 
    Director {
@@ -754,7 +754,7 @@ The following example show how to
 
 -  Add a job resource.
 
--  Dry-run the job (:strong:`estimate listing`).
+-  Dry-run the job (:bcommand:`estimate listing`).
 
 -  Run the job.
 
@@ -762,7 +762,7 @@ The following example show how to
 
 -  Verify the job.
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: test the client and add a job resource
 
    *<input>status client=client2-fd</input>
@@ -793,7 +793,7 @@ Patience When Starting Daemons or Mounting Blank Tapes
 When you start the Bareos daemons, the Storage daemon attempts to open all defined storage devices and verify the currently mounted Volume (if configured). Until all the storage devices are verified, the Storage daemon will not accept connections from the Console program. If a tape was previously used, it will be rewound, and on some devices this can take several minutes. As a consequence, you may need to have a bit of patience when first contacting the Storage daemon after starting the daemons.
 If you can see your tape drive, once the lights stop flashing, the drive will be ready to be used.
 
-The same considerations apply if you have just mounted a blank tape in a drive. It can take a minute or two before the drive properly recognizes that the tape is blank. If you attempt to :strong:`mount` the tape with the Console program during this recognition period, it is quite possible that you will hang your SCSI driver. As a consequence, you are again urged to have patience when inserting blank tapes. Let the device settle down before attempting to access it.
+The same considerations apply if you have just mounted a blank tape in a drive. It can take a minute or two before the drive properly recognizes that the tape is blank. If you attempt to :bcommand:`mount` the tape with the Console program during this recognition period, it is quite possible that you will hang your SCSI driver. As a consequence, you are again urged to have patience when inserting blank tapes. Let the device settle down before attempting to access it.
 
 .. _Pool:
 
@@ -813,7 +813,7 @@ Bareos keeps track of the Pool name, the volumes contained in the Pool, and a nu
 
 When Bareos starts, it ensures that all Pool resource definitions have been recorded in the catalog. You can verify this by entering:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: list pools
 
    *<input>list pools</input>
@@ -835,7 +835,7 @@ help
    Show the list all all available commands.
 
 help list
-   Show detail information about a specific command, in this case the command :strong:`list`.
+   Show detail information about a specific command, in this case the command :bcommand:`list`.
 
 status dir
    :index:`[TAG=Console->Command->status dir] <triple: Console; Command; status dir>` Print a status of all running jobs and jobs scheduled in the next 24 hours.

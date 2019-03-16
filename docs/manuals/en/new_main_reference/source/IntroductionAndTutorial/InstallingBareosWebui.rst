@@ -11,7 +11,7 @@ Installing Bareos Webui
 
 This chapter addresses the installation process of the |bareosWebui|.
 
-Since :index:`Version >= 15.2.0 <pair: bareos-15.2.0; bareos-webui>` |bareosWebui| is part of the Bareos project and available for a number of platforms.
+Since :sinceVersion:`15.2.0: bareos-webui` |bareosWebui| is part of the Bareos project and available for a number of platforms.
 
 .. image:: /include/images/bareos-webui-jobs.*
    :width: 80.0%
@@ -76,7 +76,7 @@ System Requirements
 Version < 16.2
 ~~~~~~~~~~~~~~
 
-|bareosWebui| :index:`Version >= 16.2.4 <pair: bareos-16.2.4; bareos-webui incorporates Zend Framework 2>` incorporates the required Zend Framework 2 components, no extra Zend Framework installation is required. For older versions of **bareos-webui**, you must install Zend Framework separately. Unfortunately, not all distributions offer Zend Framework 2 packages. The following list shows where to get the Zend Framework 2 package:
+|bareosWebui| :sinceVersion:`16.2.4: bareos-webui incorporates Zend Framework 2` incorporates the required Zend Framework 2 components, no extra Zend Framework installation is required. For older versions of **bareos-webui**, you must install Zend Framework separately. Unfortunately, not all distributions offer Zend Framework 2 packages. The following list shows where to get the Zend Framework 2 package:
 
 -  RHEL, CentOS
 
@@ -150,9 +150,9 @@ This assumes, |bareosDir| and |bareosWebui| are installed on the same host.
 
 .. _item:webui-create-user:
 
- Use :command:`bconsole` to create a user with name **admin** and password **secret** and permissions defined in **webui-admin**:sup:`Dir`:sub:`Profile` :
+ Use :command:`bconsole` to create a user with name **admin** and password **secret** and permissions defined in :config:option:`Dir/Profile = webui-admin`\ :
 
-   .. code-block:: sh
+   .. code-block:: bconsole
       :caption: add a named console
 
       *<input>configure add console name=admin password=secret profile=webui-admin</input>
@@ -169,15 +169,15 @@ Configuration Details
 Create a restricted consoles
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-There is not need, that |bareosWebui| itself provide a user management. Instead it uses so named :sup:`Dir`\ :strong:`Console` defined in the |bareosDir|. You can have multiple consoles with different names and passwords, sort of like multiple users, each with different privileges.
+There is not need, that |bareosWebui| itself provide a user management. Instead it uses so named :config:option:`Dir/Console`\  defined in the |bareosDir|. You can have multiple consoles with different names and passwords, sort of like multiple users, each with different privileges.
 
-At least one :sup:`Dir`\ :strong:`Console` is required to use the |bareosWebui|.
+At least one :config:option:`Dir/Console`\  is required to use the |bareosWebui|.
 
-To allow a user with name **admin** and password **secret** to access the |bareosDir| with permissions defined in the **webui-admin**:sup:`Dir`:sub:`Profile`  (see :ref:`section-webui-profile`), either
+To allow a user with name **admin** and password **secret** to access the |bareosDir| with permissions defined in the :config:option:`Dir/Profile = webui-admin`\  (see :ref:`section-webui-profile`), either
 
 -  create a file :file:`/etc/bareos/bareos-dir.d/console/admin.conf` with following content:
 
-   .. code-block:: sh
+   .. code-block:: bareosconfig
       :caption: bareos-dir.d/console/admin.conf
 
       Console {
@@ -190,7 +190,7 @@ To allow a user with name **admin** and password **secret** to access the |bareo
 
 -  or use the :command:`bconsole`:
 
-   .. code-block:: sh
+   .. code-block:: bconsole
       :caption: add console
 
       *<input>configure add console name=admin password=secret profile=webui-admin</input>
@@ -202,13 +202,13 @@ For details, please read :ref:`DirectorResourceConsole`.
 Configuration of profile resources
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The package **bareos-webui** comes with a predefined profile for |bareosWebui|: **webui-admin**:sup:`Dir`:sub:`Profile` .
+The package **bareos-webui** comes with a predefined profile for |bareosWebui|: :config:option:`Dir/Profile = webui-admin`\ .
 
 If your |bareosWebui| is installed on another system than the |bareosDir|, you have to copy the profile to the |bareosDir|.
 
 This is the default profile, giving access to all Bareos resources and allowing all commands used by the |bareosWebui|:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/profile/webui-admin.conf
 
    Profile {
@@ -225,7 +225,7 @@ This is the default profile, giving access to all Bareos resources and allowing 
      Plugin Options ACL = *all*
    }
 
-The :sup:`Dir`\ :strong:`Profile` itself does not give any access to the |bareosDir|, but can be used by :sup:`Dir`\ :strong:`Console`, which do give access to the |bareosDir|, see :ref:`section-webui-console`.
+The :config:option:`Dir/Profile`\  itself does not give any access to the |bareosDir|, but can be used by :config:option:`Dir/Console`\ , which do give access to the |bareosDir|, see :ref:`section-webui-console`.
 
 For details, please read :ref:`DirectorResourceProfile`.
 
@@ -268,7 +268,7 @@ Configure your directors in :file:`/etc/bareos-webui/directors.ini` to match you
 
 The configuration file :file:`/etc/bareos-webui/directors.ini` should look similar to this:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: /etc/bareos-webui/directors.ini
 
    ;
@@ -352,9 +352,9 @@ You can add as many directors as you want, also the same host with a different n
 Configure your /etc/bareos-webui/configuration.ini
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Since :index:`Version >= 16.2.2 <pair: bareos-16.2.2; /etc/bareos-webui/configuration.ini>` you are able to configure some parameters of the |bareosWebui| to your needs.
+Since :sinceVersion:`16.2.2: /etc/bareos-webui/configuration.ini` you are able to configure some parameters of the |bareosWebui| to your needs.
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: /etc/bareos-webui/configuration.ini
 
    ;
@@ -410,9 +410,9 @@ Upgrade from 15.2 to 16.2
 Console/Profile changes
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The |bareosWebui| Director profile shipped with Bareos 15.2 (**webui**:sup:`Dir`:sub:`Profile`  in the file :file:`/etc/bareos/bareos-dir.d/webui-profiles.conf`) is not sufficient to use the |bareosWebui| 16.2. This has several reasons:
+The |bareosWebui| Director profile shipped with Bareos 15.2 (:config:option:`Dir/Profile = webui`\  in the file :file:`/etc/bareos/bareos-dir.d/webui-profiles.conf`) is not sufficient to use the |bareosWebui| 16.2. This has several reasons:
 
-#. The handling of :strong:`Acl`s is more strict in Bareos 16.2 than it has been in Bareos 15.2. Substring matching is no longer enabled, therefore you need to change :strong:`.bvfs_*` to :strong:`.bvfs_.*` in your :config:option:`dir/profile/CommandAcl`\  to have a proper regular expression. Otherwise the restore module won’t work any longer, especially the file browser.
+#. The handling of :strong:`Acl`s is more strict in Bareos 16.2 than it has been in Bareos 15.2. Substring matching is no longer enabled, therefore you need to change :bcommand:`.bvfs_*` to :bcommand:`.bvfs_.*` in your :config:option:`dir/profile/CommandAcl`\  to have a proper regular expression. Otherwise the restore module won’t work any longer, especially the file browser.
 
 #. The |bareosWebui| 16.2 uses following additional commands:
 
@@ -434,12 +434,12 @@ The |bareosWebui| Director profile shipped with Bareos 15.2 (**webui**:sup:`Dir`
 
    -  disable
 
-If you used an unmodified :file:`/etc/bareos/bareos-dir.d/webui-profiles.conf` file, the easiest way is to overwrite it with the new profile file :file:`/etc/bareos/bareos-dir.d/profile/webui-admin.conf`. The new **webui-admin**:sup:`Dir`:sub:`Profile`  allows all commands, except of the dangerous ones, see :ref:`section-webui-profile`.
+If you used an unmodified :file:`/etc/bareos/bareos-dir.d/webui-profiles.conf` file, the easiest way is to overwrite it with the new profile file :file:`/etc/bareos/bareos-dir.d/profile/webui-admin.conf`. The new :config:option:`Dir/Profile = webui-admin`\  allows all commands, except of the dangerous ones, see :ref:`section-webui-profile`.
 
 directors.ini
 ~~~~~~~~~~~~~
 
-Since :index:`Version >= 16.2.0 <pair: bareos-16.2.0; Webui offers limited support for multiple catalogs>` it is possible to work with different catalogs. Therefore the catalog parameter has been introduced. If you don’t set a catalog explicitly the default **MyCatalog**:sup:`Dir`:sub:`Catalog`  will be used. Please see :ref:`section-webui-configuration-files` for more details.
+Since :sinceVersion:`16.2.0: Webui offers limited support for multiple catalogs` it is possible to work with different catalogs. Therefore the catalog parameter has been introduced. If you don’t set a catalog explicitly the default :config:option:`Dir/Catalog = MyCatalog`\  will be used. Please see :ref:`section-webui-configuration-files` for more details.
 
 configuration.ini
 ~~~~~~~~~~~~~~~~~
@@ -456,7 +456,7 @@ NGINX
 
 If you prefer to use |bareosWebui| on Nginx with php5-fpm instead of Apache, a basic working configuration could look like this:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-webui on nginx
 
    server {

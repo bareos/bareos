@@ -5,6 +5,7 @@ Most frequently, you will define it as follows:
 
 
    .. literalinclude:: /include/config/SdDeviceUnmountCommand1.conf
+      :language: bareosconfig
 
 
 

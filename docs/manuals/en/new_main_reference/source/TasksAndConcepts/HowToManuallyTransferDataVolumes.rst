@@ -31,7 +31,7 @@ First setup client, fileset, job and schedule as needed for a always incremental
 
 Run the first backup but make sure that you choose the remote storage to be used.
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: run
 
    *run job=BackupClient-remote level=Full storage=File-remote
@@ -44,7 +44,7 @@ Now tell the director that the volume now belongs to the local storage daemon.
 
 List volumes shows that the volumes used still belong to the remote storage:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: list volumes
 
    *<input>list volumes</input>
@@ -56,9 +56,9 @@ List volumes shows that the volumes used still belong to the remote storage:
    | 1       | Full-0001  | Append    | 1       | 38600329 | 0        | 31536000     | 1       | 0    | 0         | File      | 2016-07-28 14:00:47 | File-remote |
    +---------+------------+-----------+---------+----------+----------+--------------+---------+------+-----------+-----------+---------------------+-------------+
 
-Use :strong:`update volume` to set the right storage and check with list volumes that it worked:
+Use :bcommand:`update volume` to set the right storage and check with list volumes that it worked:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: update volume
 
    *<input>update volume=Full-0001 storage=File</input>
@@ -86,9 +86,9 @@ If a network connection between the local director and the remote storage daemon
 
 -  Configure the Job that should backup the remote client with the fileset.
 
--  Run :strong:`estimate listing` on the remote backup job.
+-  Run :bcommand:`estimate listing` on the remote backup job.
 
--  Run :strong:`list filesets` to make sure the fileset was added to the catalog.
+-  Run :bcommand:`list filesets` to make sure the fileset was added to the catalog.
 
 Then we need to create a backup on the remote machine onto a portable disk which we can then import into our local installation.
 
@@ -100,7 +100,7 @@ On remote machine:
 
 -  Add fileset which the client will be backed up.
 
--  Add Pool with name **transfer**:sup:`Dir`:sub:`pool`\  where the data will be written to.
+-  Add Pool with name :config:option:`dir/pool = transfer`\  where the data will be written to.
 
 -  create job that will backup the remote client with the remote fileset into the new pool
 

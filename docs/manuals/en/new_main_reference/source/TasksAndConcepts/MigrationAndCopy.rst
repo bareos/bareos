@@ -124,7 +124,7 @@ Example Migration Jobs
 
 Assume a simple configuration with a single backup job as described below.
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Backup Job
 
    # Define the backup Job
@@ -177,12 +177,12 @@ Assume a simple configuration with a single backup job as described below.
      Media Type = DLT8000      # same as MediaType in Storage daemon
    }
 
-Note that the backup job writes to the **Default**:sup:`Dir`:sub:`pool`\  pool, which corresponds to **File**:sup:`Dir`:sub:`Storage`  storage. There is no :config:option:`dir/pool/Storage`\  directive in the Job resource while the two :sup:`Dir`\ :strong:`Pool` resources contain different :config:option:`dir/pool/Storage`\  directives. Moreover, the **Default**:sup:`Dir`:sub:`pool`\  pool contains a
-:config:option:`dir/pool/NextPool`\  directive that refers to the **Tape**:sup:`Dir`:sub:`pool`\  pool.
+Note that the backup job writes to the :config:option:`dir/pool = Default`\  pool, which corresponds to :config:option:`Dir/Storage = File`\  storage. There is no :config:option:`dir/pool/Storage`\  directive in the Job resource while the two :config:option:`Dir/Pool`\  resources contain different :config:option:`dir/pool/Storage`\  directives. Moreover, the :config:option:`dir/pool = Default`\  pool contains a
+:config:option:`dir/pool/NextPool`\  directive that refers to the :config:option:`dir/pool = Tape`\  pool.
 
-In order to migrate jobs from the **Default**:sup:`Dir`:sub:`Pool`  pool to the **Tape**:sup:`Dir`:sub:`Pool`  pool we add the following Job resource:
+In order to migrate jobs from the :config:option:`Dir/Pool = Default`\  pool to the :config:option:`Dir/Pool = Tape`\  pool we add the following Job resource:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: migrate all volumes of a pool
 
    Job {
@@ -194,12 +194,12 @@ In order to migrate jobs from the **Default**:sup:`Dir`:sub:`Pool`  pool to the 
      Selection Pattern = "."
    }
 
-The :config:option:`dir/job/SelectionType`\  and :config:option:`dir/job/SelectionPattern`\  directives instruct Bareos to select all volumes of the given pool (**Default**:sup:`Dir`:sub:`pool`\ ) whose volume names match the given regular expression (:strong:`"."`), i.e., all volumes. Hence those jobs which were backed up to any volume in the **Default**:sup:`Dir`:sub:`pool`\  pool will be migrated. Because of the
-:config:option:`dir/pool/NextPool`\  directive of the **Default**:sup:`Dir`:sub:`pool`\  pool resource, the jobs will be migrated to tape storage.
+The :config:option:`dir/job/SelectionType`\  and :config:option:`dir/job/SelectionPattern`\  directives instruct Bareos to select all volumes of the given pool (:config:option:`dir/pool = Default`\ ) whose volume names match the given regular expression (:strong:`"."`), i.e., all volumes. Hence those jobs which were backed up to any volume in the :config:option:`dir/pool = Default`\  pool will be migrated. Because of the
+:config:option:`dir/pool/NextPool`\  directive of the :config:option:`dir/pool = Default`\  pool resource, the jobs will be migrated to tape storage.
 
 Another way to accomplish the same is the following Job resource:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: migrate all jobs named *Save
 
    Job {
@@ -211,14 +211,14 @@ Another way to accomplish the same is the following Job resource:
      Selection Pattern = ".*Save"
    }
 
-This migrates all jobs ending with :strong:`Save` from the **Default**:sup:`Dir`:sub:`pool`\  pool to the **Tape**:sup:`Dir`:sub:`pool`\  pool, i.e., from File storage to Tape storage.
+This migrates all jobs ending with :strong:`Save` from the :config:option:`dir/pool = Default`\  pool to the :config:option:`dir/pool = Tape`\  pool, i.e., from File storage to Tape storage.
 
 .. _section-CopyMigrationJobsMultipleStorageDaemons:
 
 Multiple Storage Daemons
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-Beginning from Bareos :index:`Version >= 13.2.0 <pair: bareos-13.2.0; Copy and Migration Jobs between different Storage Daemons>`, Migration and Copy jobs are also possible from one Storage daemon to another Storage Daemon.
+Beginning from Bareos :sinceVersion:`13.2.0: Copy and Migration Jobs between different Storage Daemons`, Migration and Copy jobs are also possible from one Storage daemon to another Storage Daemon.
 
 Please note:
 
@@ -234,7 +234,7 @@ Please note:
 
 Example:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.conf: Copy Job between different Storage Daemons
 
    #bareos-dir.conf

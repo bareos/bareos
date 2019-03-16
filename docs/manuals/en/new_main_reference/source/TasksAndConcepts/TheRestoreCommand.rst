@@ -32,7 +32,7 @@ If a Job’s file records have been pruned from the catalog, the restore command
 
 Within the Console program, after entering the restore command, you are presented with the following selection prompt:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: restore
 
    * <input>restore</input>
@@ -99,7 +99,7 @@ There are a lot of options, and as a point of reference, most people will want t
 
 As an example, suppose that we select item 5 (restore to most recent state). If you have not specified a client=xxx on the command line, it it will then ask for the desired Client, which on my system, will print all the Clients found in the database as follows:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: restore: select client
 
    Select item:  (1-13): <input>5</input>
@@ -153,7 +153,7 @@ At this point, Bareos has all the information it needs to find the most recent s
 
 
 
-Depending on the number of JobFiles for each JobId, the :emphasis:`Building directory tree ...` can take a bit of time. If you notice ath all the JobFiles are zero, your Files have probably been pruned and you will not be able to select any individual files – it will be restore everything or nothing.
+Depending on the number of JobFiles for each JobId, the ''Building directory tree ...'' can take a bit of time. If you notice ath all the JobFiles are zero, your Files have probably been pruned and you will not be able to select any individual files – it will be restore everything or nothing.
 
 In our example, Bareos found four Jobs that comprise the most recent backup of the specified Client and FileSet. Two of the Jobs have the same JobId because that Job wrote on two different Volumes. The third Job was an incremental backup to the previous Full backup, and it only saved 254 Files compared to 128,374 for the Full backup. The fourth Job was also an incremental backup that saved 15 files.
 
@@ -256,7 +256,7 @@ If you have a small number of files to restore, and you know the filenames, you 
 
 To enter the files, after the restore, you select item number 7 from the prompt list:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: restore list of files
 
    * <input>restore</input>

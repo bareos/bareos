@@ -3,6 +3,7 @@ Specify the ports and addresses on which the File daemon listens for Director co
 
 
    .. literalinclude:: /include/config/FdClientFDAddresses1.conf
+      :language: bareosconfig
 
 
 

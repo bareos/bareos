@@ -148,7 +148,7 @@ Example Tray Monitor configuration
 
 An example Tray Monitor configuration file might be the following:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Example tray-monitor.conf
 
    #
@@ -181,7 +181,7 @@ An example Tray Monitor configuration file might be the following:
 Example File daemon’s Director record
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Example Monitor resource
 
    #
@@ -199,7 +199,7 @@ A full example can be found at :ref:`SampleClientConfiguration`.
 Example Storage daemon’s Director record
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Example Monitor resource
 
    #
@@ -215,7 +215,7 @@ Example Storage daemon’s Director record
 Example Director’s Console record
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Example Monitor resource
 
    #

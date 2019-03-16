@@ -95,7 +95,7 @@ bat
 
 
 
-The Bacula/Bareos Administration Tool (:command:`bat`) has been a native GUI for Bareos. It has been marked deprecated since :index:`Version >= 15.2.0 <pair: bareos-15.2.0; bat vs. bareos-webui>`. Since Bareos :index:`Version >= 17.2.0 <pair: bareos-17.2.0; bat: removed from core distribution>` it is no longer part of Bareos. We encourage the use of |bareosWebui| instead.
+The Bacula/Bareos Administration Tool (:command:`bat`) has been a native GUI for Bareos. It has been marked deprecated since :sinceVersion:`15.2.0: bat vs. bareos-webui`. Since Bareos :sinceVersion:`17.2.0: bat: removed from core distribution` it is no longer part of Bareos. We encourage the use of |bareosWebui| instead.
 
 Volume Utility Commands
 -----------------------
@@ -114,7 +114,7 @@ Parameter
 Specifying the Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Each of the utilities that deal with Volumes require a valid |bareosSd| configuration (actually, the only part of the configuration file that these programs need is the :sup:`Sd`\ :strong:`Device` resource definitions). This permits the programs to find the configuration parameters for your :config:option:`sd/device/ArchiveDevice`\ . Using the ``-c`` option a custom |bareosSd| configuration file or directory can be
+Each of the utilities that deal with Volumes require a valid |bareosSd| configuration (actually, the only part of the configuration file that these programs need is the :config:option:`Sd/Device`\  resource definitions). This permits the programs to find the configuration parameters for your :config:option:`sd/device/ArchiveDevice`\ . Using the ``-c`` option a custom |bareosSd| configuration file or directory can be
 selected.
 
 Specifying a Device
@@ -132,7 +132,7 @@ In the case of a tape, this is the physical device name such as /dev/nst0 or /de
 .. warning::
    If you have Bareos running and you want to use
    one of these programs, you will either need to stop the |bareosSd|
-   or :strong:`unmount` any tape drive you want to use,
+   or :bcommand:`unmount` any tape drive you want to use,
    otherwise the drive may get busy because Bareos is using it.
    After this, you can use the command :command:`mtx` or :ref:`mtx-changer script <section-MtxChangerManualUsage>`
    to load the required volume into the tape drive.
@@ -188,7 +188,7 @@ You may also specify an asterisk (*) to indicate that the program should accept 
 
 If your |bareosSd| has following resource,
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-sd.d/device/FileStorage.conf
 
    Device {
@@ -566,7 +566,7 @@ After installing, :command:`bextract` can be called via command line:
 
 If you want to use exclude or include files you need to write them like you do on Linux. That means each path begins with a "/" and not with "yourdrive:/". You need to specify the parameter -e exclude.list as first parameter. For example:
 
-.. code-block:: sh
+.. code-block:: cfg
    :caption: Example exclude.list
 
    /Program Files/Bareos/bareos-dir.exe
@@ -667,7 +667,7 @@ necessary Volumes on a single bscan command, bscan will not be able to correctly
 
 Note, the restoration process using bscan is not identical to the original creation of the catalog data. This is because certain data such as Client records and other non-essential data such as volume reads, volume mounts, etc is not stored on the Volume, and thus is not restored by bscan. The results of bscanning are, however, perfectly valid, and will permit restoration of any or all the files in the catalog using the normal Bareos console commands. If you are starting with an empty catalog
 and expecting bscan to reconstruct it, you may be a bit disappointed, but at a minimum, you must ensure that your Bareos-dir.conf file is the same as what it previously was – that is, it must contain all the appropriate Client resources so that they will be recreated in your new database before running bscan. Normally when the Director starts, it will recreate any missing Client records in the catalog. Another problem you will have is that even if the Volumes (Media records) are recreated in the
-database, they will not have their autochanger status and slots properly set. As a result, you will need to repair that by using the :strong:`update slots` command. There may be other considerations as well. Rather than bscanning, you should always attempt to recover you previous catalog backup.
+database, they will not have their autochanger status and slots properly set. As a result, you will need to repair that by using the :bcommand:`update slots` command. There may be other considerations as well. Rather than bscanning, you should always attempt to recover you previous catalog backup.
 
 Using bscan to Compare a Volume to an existing Catalog
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -738,9 +738,9 @@ You will also notice that it read an end of file after each Job (Got EOF on devi
 
 If you had added a second -v option to the command line, Bareos would have been even more verbose, dumping virtually all the details of each Job record it encountered.
 
-Now if you start Bareos and enter a :strong:`list jobs` command to the console program, you will get:
+Now if you start Bareos and enter a :bcommand:`list jobs` command to the console program, you will get:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: list jobs
 
    +-------+----------+------------------+------+-----+----------+----------+---------+
@@ -758,7 +758,7 @@ It should be noted that :command:`bscan` cannot restore a database to the exact 
 An interesting aspect of restoring a catalog backup using :command:`bscan` is that the backup was made while Bareos was running and writing to a tape. At the point the backup of the catalog is made, the tape Bareos is writing to will have say 10 files on it, but after the catalog backup is made, there will be 11 files on the tape Bareos is writing. This there is a difference between what is contained in the backed up catalog and what is actually on the tape. If after restoring a
 catalog, you attempt to write on the same tape that was used to backup the catalog, Bareos will detect the difference in the number of files registered in the catalog compared to what is on the tape, and will mark the tape in error.
 
-There are two solutions to this problem. The first is possibly the simplest and is to mark the volume as Used before doing any backups. The second is to manually correct the number of files listed in the Media record of the catalog. This procedure is documented elsewhere in the manual and involves using the :strong:`update volume` command in :command:`bconsole`.
+There are two solutions to this problem. The first is possibly the simplest and is to mark the volume as Used before doing any backups. The second is to manually correct the number of files listed in the Media record of the catalog. This procedure is documented elsewhere in the manual and involves using the :bcommand:`update volume` command in :command:`bconsole`.
 
 Using bscan to Correct the Volume File Count
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -848,7 +848,7 @@ btape Commands
 
 The full list of commands are:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: btape commands
 
      Command    Description
@@ -917,7 +917,7 @@ This command can have the following arguments:
 
 -  This flag permits to skip tests with Bareos block access.
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: btape speed
 
    *speed file_size=3 skip_raw
@@ -1025,7 +1025,7 @@ The body of the email message is read from standard input.
 
 An example of the use of :command:`bsmtp` would be to put the following statement in the :ref:`Messages resource <MessagesChapter>` of your |bareosDir| configuration.
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bsmtp in Message resource
 
    Mail Command     = "bsmtp -h mail.example.com -f \"\(Bareos\) %r\" -s \"Bareos: %t %e of %c %l\" %r"
@@ -1129,7 +1129,7 @@ If the ``-b`` option is specified, :command:`bareos-dbcheck` will run in batch m
 
 By entering 1 or 2, you can toggle the modify database flag (``-f`` option) and the verbose flag (``-v``). It can be helpful and reassuring to turn off the modify database flag, then select one or more of the consistency checks (items 3 through 13) to see what will be done, then toggle the modify flag on and re-run the check.
 
-Since Bareos :index:`Version >= 16.2.5 <pair: bareos-16.2.5; bareos-dbcheck -b -v>`, when running :command:`bareos-dbcheck` with ``-b`` and ``-v``, it will not interactively ask if results should be printed or not. Instead, it does not print any detail results.
+Since Bareos :sinceVersion:`16.2.5: bareos-dbcheck -b -v`, when running :command:`bareos-dbcheck` with ``-b`` and ``-v``, it will not interactively ask if results should be printed or not. Instead, it does not print any detail results.
 
 The inconsistencies examined are the following:
 

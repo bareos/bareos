@@ -87,7 +87,7 @@ RHEL>7, CentOS>7, Fedora
 
 :index:`[TAG=Platform->RHEL] <pair: Platform; RHEL>` :index:`[TAG=Platform->CentOS] <pair: Platform; CentOS>` :index:`[TAG=Platform->Fedora] <pair: Platform; Fedora>`
 
-Bareos :index:`Version >= 15.2.0 <triple: bareos-15.2.0; requires; jansson>` requires the :ref:`Jansson library <jansson>` package. On RHEL 7 it is available through the RHEL Server Optional channel. On CentOS 7 and Fedora is it included on the main repository.
+Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson library <jansson>` package. On RHEL 7 it is available through the RHEL Server Optional channel. On CentOS 7 and Fedora is it included on the main repository.
 
 .. code-block:: sh
    :caption: Bareos installation on RHEL > 7 / CentOS > 7 / Fedora
@@ -119,7 +119,7 @@ RHEL 6, CentOS 6
 
 :index:`[TAG=Platform->RHEL->6] <triple: Platform; RHEL; 6>` :index:`[TAG=Platform->CentOS->6] <triple: Platform; CentOS; 6>`
 
-Bareos :index:`Version >= 15.2.0 <triple: bareos-15.2.0; requires; jansson>` requires the :ref:`Jansson library <jansson>` package. This package is available on `EPEL <https://fedoraproject.org/wiki/EPEL>`_ 6. Make sure, it is available on your system.
+Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson library <jansson>` package. This package is available on `EPEL <https://fedoraproject.org/wiki/EPEL>`_ 6. Make sure, it is available on your system.
 
 .. code-block:: sh
    :caption: Bareos installation on RHEL > 6 / CentOS > 6
@@ -223,7 +223,7 @@ Debian / Ubuntu
 
 :index:`[TAG=Platform->Debian] <pair: Platform; Debian>` :index:`[TAG=Platform->Ubuntu] <pair: Platform; Ubuntu>`
 
-Bareos :index:`Version >= 15.2.0 <triple: bareos-15.2.0; requires; jansson>` requires the :ref:`Jansson library <jansson>` package. On Ubuntu is it available in Ubuntu Universe. In Debian, is it included in the main repository.
+Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson library <jansson>` package. On Ubuntu is it available in Ubuntu Universe. In Debian, is it included in the main repository.
 
 .. code-block:: sh
    :caption: Bareos installation on Debian / Ubuntu
@@ -261,7 +261,7 @@ If you prefer using the versions of Bareos directly integrated into the distribu
 Install on Univention Corporate Server
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:strong:`Univention`
+:os:`Univention`
 
 Bareos offers additional functionality and integration into an Univention Corporate Server environment. Please follow the intructions in :ref:`section-UniventionCorporateServer`.
 
@@ -281,7 +281,7 @@ For details, see chapter :ref:`CatMaintenanceChapter`.
 Debian based Linux Distributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Since Bareos :index:`Version >= 14.2.0 <pair: bareos-14.2.0; dbconfig-common (Debian)>` the Debian (and Ubuntu) based packages support the **dbconfig-common** mechanism to create and update the Bareos database.
+Since Bareos :sinceVersion:`14.2.0: dbconfig-common (Debian)` the Debian (and Ubuntu) based packages support the **dbconfig-common** mechanism to create and update the Bareos database.
 
 Follow the instructions during install to configure it according to your needs.
 
@@ -322,7 +322,7 @@ MySQL/MariaDB
 
 Make sure, that **root** has direct access to the local MySQL server. Check if the command :command:`mysql` connects to the database without defining the password. This is the default on RedHat and SUSE distributions. On other systems (Debian, Ubuntu), create the file :file:`~/.my.cnf` with your authentication informations:
 
-.. code-block:: sh
+.. code-block:: cfg
    :caption: MySQL credentials file .my.cnf
 
    [client]

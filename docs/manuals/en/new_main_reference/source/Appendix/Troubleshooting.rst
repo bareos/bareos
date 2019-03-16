@@ -137,9 +137,9 @@ then test your multiple concurrent backup including restore testing before you p
 
 When using random access media as backup space (e.g. disk), you should also read the chapter about :ref:`ConcurrentDiskJobs`.
 
-Below is a super stripped down :file:`bareos-dir.conf` file showing you the four places where the the file must be modified to allow the same job **NightlySave**:sup:`Dir`:sub:`Job`  to run up to four times concurrently. The change to the Job resource is not necessary if you want different Jobs to run at the same time, which is the normal case.
+Below is a super stripped down :file:`bareos-dir.conf` file showing you the four places where the the file must be modified to allow the same job :config:option:`Dir/Job = NightlySave`\  to run up to four times concurrently. The change to the Job resource is not necessary if you want different Jobs to run at the same time, which is the normal case.
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Concurrent Jobs Example
 
    #
@@ -175,7 +175,7 @@ Media VolWrites: integer out of range
 
 In some situation, you receive an error message similar to this:
 
-.. code-block:: sh
+.. code-block:: bconsole
 
    12-Apr 15:10 bareos-dir JobId 15860: Fatal error: Catalog error updating Media record. sql_update.c:385 update UPDATE Media SET VolJobs=12,VolFiles=10,VolBlocks=155013,VolBytes=10000263168,VolMounts=233,VolErrors=0,VolWrites=2147626019,MaxVolBytes=0,VolStatus='Append',Slot=1,InChanger=1,VolReadTime=0,VolWriteTime=842658562655,LabelType=0,StorageId=3,PoolId=2,VolRetention=144000,VolUseDuration=82800,MaxVolJobs=0,MaxVolFiles=0,Enabled=1,LocationId=0,ScratchPoolId=0,RecyclePoolId=0,RecycleCount=201,Recycle=1,ActionOnPurge=0,MinBlocksize=0,MaxBlocksize=0 WHERE VolumeName='000194L5' failed:
    ERROR: integer out of range
@@ -186,7 +186,7 @@ However, it has happened that the number of write accesses exceeds the maximum v
 
 As a temporary fix, just reset this counter:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: Reset the VolWrites counter
 
    1000 OK: bareos-dir Version: 17.2.5 (14 Feb 2018)

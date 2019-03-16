@@ -29,7 +29,7 @@ Configuration Path Layout
 
 :index:`[TAG=Configuration->Directories] <pair: Configuration; Directories>` :index:`[TAG=Configuration->Subdirectories] <pair: Configuration; Subdirectories>`
 
-When a Bareos component starts, it reads its configuration. In Bareos < 16.2.2 only configuration files (which optionally can include other files) are supported. Since Bareos :index:`Version >= 16.2.2 <pair: bareos-16.2.2; Subdirectory Configuration Scheme>` also configuration subdirectories are supported.
+When a Bareos component starts, it reads its configuration. In Bareos < 16.2.2 only configuration files (which optionally can include other files) are supported. Since Bareos :sinceVersion:`16.2.2: Subdirectory Configuration Scheme` also configuration subdirectories are supported.
 
 Naming
 ~~~~~~
@@ -186,7 +186,7 @@ Also some extra packages (bareos-webui, plugins, ...) require a configuration, w
 
 The Bareos :ref:`configure <section-bcommandConfigure>` command requires a configuration directory structure, as provided by the subdirectory approach.
 
-From Bareos :index:`Version >= 16.2.4 <pair: bareos-16.2.4; Subdirectory Configuration Scheme used as Default>` on, new installations will use configuration subdirectories by default.
+From Bareos :sinceVersion:`16.2.4: Subdirectory Configuration Scheme used as Default` on, new installations will use configuration subdirectories by default.
 
 .. _section-ConfigurationResourceFileConventions:
 
@@ -223,7 +223,7 @@ Resource file conventions
 
 -  extbfsection-deleteConfigurationResourceFilesDisable/remove configuration resource files:
 
-   -  Normally you should not remove resources that are already in use (jobs, clients, ...). Instead you should disable them by adding the directive :strong:`Enable = no`. Otherwise you take the risk that orphaned entries are kept in the Bareos catalog. However, if a resource has not been used or all references have been cleared from the database, they can also be removed from the configuration.
+   -  Normally you should not remove resources that are already in use (jobs, clients, ...). Instead you should disable them by adding the directive ``Enable = no``. Otherwise you take the risk that orphaned entries are kept in the Bareos catalog. However, if a resource has not been used or all references have been cleared from the database, they can also be removed from the configuration.
       
 
                        .. warning::
@@ -237,7 +237,7 @@ Using Subdirectories Configuration Scheme
 New installation
 ''''''''''''''''
 
--  The Subdirectories Configuration Scheme is used by default from Bareos :index:`Version >= 16.2.4 <pair: bareos-16.2.4; Subdirectory Configuration Scheme used as Default>` onwards.
+-  The Subdirectories Configuration Scheme is used by default from Bareos :sinceVersion:`16.2.4: Subdirectory Configuration Scheme used as Default` onwards.
 
 -  They will be usable immediately after installing a Bareos component.
 
@@ -348,28 +348,28 @@ Including other Configuration Files
 
 If you wish to break your configuration file into smaller pieces, you can do so by including other files using the syntax :strong:`@filename` where :file:`filename` is the full path and filename of another file. The :strong:`@filename` specification can be given anywhere a primitive token would appear.
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: include a configuration file
 
    @/etc/bareos/extra/clients.conf
 
-Since Bareos :index:`Version >= 16.2.1 <pair: bareos-16.2.1; Including configuration files by wildcard>` wildcards in pathes are supported:
+Since Bareos :sinceVersion:`16.2.1: Including configuration files by wildcard` wildcards in pathes are supported:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: include multiple configuration files
 
    @/etc/bareos/extra/*.conf
 
 By using :strong:`@|command` it is also possible to include the output of a script as a configuration:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: use the output of a script as configuration
 
    @|"/etc/bareos/generate_configuration_to_stdout.sh"
 
 or if a parameter should be used:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: use the output of a script with parameter as a configuration
 
    @|"sh -c '/etc/bareos/generate_client_configuration_to_stdout.sh clientname=client1.example.com'"
@@ -387,7 +387,7 @@ A resource is defined as the resource type (see :ref:`ResTypes`), followed by an
 
 Each resource definition MUST contain a :strong:`Name` directive. It can contain a :strong:`Description` directive. The :strong:`Name` directive is used to uniquely identify the resource. The :strong:`Description` directive can be used during the display of the Resource to provide easier human recognition. For example:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Resource example
 
    Director {
@@ -486,7 +486,7 @@ acl
 
    Depending on the type of the ACL, the regular expressions can be either resource names, paths or console commands.
 
-   Since Bareos :index:`Version >= 16.2.4 <pair: bareos-16.2.4; ACL: strict regular expression handling>` regular expression are handled more strictly. Before also substring matches has been accepted.
+   Since Bareos :sinceVersion:`16.2.4: ACL: strict regular expression handling` regular expression are handled more strictly. Before also substring matches has been accepted.
 
    
 
@@ -494,40 +494,40 @@ acl
 
  For clarification, we demonstrate the usage of ACLs by some examples for :config:option:`dir/console/CommandAcl`\ :
 
-   .. code-block:: sh
+   .. code-block:: bareosconfig
       :caption: Allow only the help command
 
       Command ACL = help
 
-   .. code-block:: sh
+   .. code-block:: bareosconfig
       :caption: Allow the help and the list command
 
       Command ACL = help, list
 
-   .. code-block:: sh
+   .. code-block:: bareosconfig
       :caption: Allow the help and the (not existing) iDoNotExist command
 
       Command ACL = help, iDoNotExist
 
-   .. code-block:: sh
+   .. code-block:: bareosconfig
       :caption: Allow all commands (special keyword)
 
       Command ACL = *all*
 
-   .. code-block:: sh
+   .. code-block:: bareosconfig
       :caption: Allow all commands except sqlquery and commands starting with u
 
       Command ACL = !sqlquery, !u.*, *all*
 
    Same:
 
-   .. code-block:: sh
+   .. code-block:: bareosconfig
       :caption: Some as above. Specifying it in multiple lines doesn't change the meaning
 
       Command ACL = !sqlquery, !u.*
       Command ACL = *all*
 
-   .. code-block:: sh
+   .. code-block:: bareosconfig
       :caption: Additional deny the setip and setdebug commands
 
       Command ACL = !sqlquery
@@ -542,7 +542,7 @@ acl
       ACL checking stops at the first match. So the following definition allows all commands, which might not be what you expected:
       
 
-   .. code-block:: sh
+   .. code-block:: bareosconfig
       :caption: Wrong: Allows all commands
 
       # WARNING: this configuration ignores !sqlquery, as *all* is matched before.
@@ -597,13 +597,13 @@ job protocol
       Native Bareos job protocol.
 
    NDMP
-      Deprecated. Alias for :ref:`NDMP_BAREOS <section-NdmpBareos>`.
+      Deprecated. Alias for |ndmpBareos|.
 
    NDMP_BAREOS
-      Since Bareos :index:`Version >= 17.2.3 <pair: bareos-17.2.3; NDMP BAREOS>`. See :ref:`section-NdmpBareos`.
+      Since Bareos :sinceVersion:`17.2.3: NDMP BAREOS`. See :ref:`section-NdmpBareos`.
 
    NDMP_NATIVE
-      Since Bareos :index:`Version >= 17.2.3 <pair: bareos-17.2.3; NDMP NATIVE>`. See :ref:`section-NdmpNative`.
+      Since Bareos :sinceVersion:`17.2.3: NDMP NATIVE`. See :ref:`section-NdmpNative`.
 
 name
    :index:`[TAG=Data Type->name] <pair: Data Type; name>` 
@@ -681,7 +681,7 @@ net-addresses
 
  Specify a set of net-addresses and net-ports. Probably the simplest way to explain this is to show an example:
 
-   .. code-block:: sh
+   .. code-block:: bareosconfig
       :caption: net-addresses
 
       Addresses  = {
@@ -813,7 +813,7 @@ audit-command-list
 
  Specifies the commands that should be logged on execution (audited). E.g.
 
-   .. code-block:: sh
+   .. code-block:: bareosconfig
 
       Audit Events = label
       Audit Events = restore

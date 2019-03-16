@@ -131,7 +131,7 @@ In general, the properties specified under the Storage resource define global pr
 
 The following is a typical Storage daemon storage resource definition.
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Storage daemon storage definition
 
    #
@@ -190,7 +190,7 @@ The Director resource specifies the Name of the Director which is permitted to u
 
 The following is an example of a valid Director resource definition:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Storage daemon Director definition
 
    Director {
@@ -485,7 +485,7 @@ The Autochanger resource supports single or multiple drive autochangers by group
 
 The following is an example of a valid Autochanger resource definition:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Autochanger Configuration Example
 
    Autochanger {
@@ -513,7 +513,7 @@ The following is an example of a valid Autochanger resource definition:
      ...
    }
 
-Please note that it is important to include the :config:option:`sd/device/Autochanger`\ = **yes** directive in each device definition that belongs to an Autochanger. A device definition should not belong to more than one Autochanger resource.
+Please note that it is important to include the :config:option:`sd/device/Autochanger = yes`\  directive in each device definition that belongs to an Autochanger. A device definition should not belong to more than one Autochanger resource.
 
 Also, your :config:option:`dir/storage/Device`\  must refer to the Autochanger’s resource name rather than a name of one of the Devices.
 

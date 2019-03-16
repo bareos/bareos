@@ -98,7 +98,7 @@ Here are the important steps.
 Command Line (Silent) Installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Silent installation is possible since :index:`Version >= 12.4.4 <triple: bareos-12.4.4; Windows; silent installation>`. All inputs that are given during interactive install can now directly be configured on the commandline, so that an automatic silent install is possible.
+Silent installation is possible since :sinceVersion:`12.4.4: Windows: silent installation`. All inputs that are given during interactive install can now directly be configured on the commandline, so that an automatic silent install is possible.
 
 Commandline Switches
 ^^^^^^^^^^^^^^^^^^^^
@@ -122,10 +122,10 @@ Commandline Switches
    sets the password to access the client
 
 /DBADMINUSER=user
-   sets the database admin user, default=postgres. :index:`Version >= 14.2.1 <triple: bareos-14.2.1; Windows Installation; DBADMINUSER>`
+   sets the database admin user, default=postgres. :sinceVersion:`14.2.1: Windows Installation: DBADMINUSER`
 
 /DBADMINPASSWORD=password
-   sets the database admin password, default=\ *none*. :index:`Version >= 14.2.1 <triple: bareos-14.2.1; Windows Installation; DBADMINPASSWORD>`
+   sets the database admin password, default=\ *none*. :sinceVersion:`14.2.1: Windows Installation: DBADMINPASSWORD`
 
 /DIRECTORADDRESS
    sets network address of the director for bconsole or bat access
@@ -137,16 +137,16 @@ Commandline Switches
    set the password to access the director
 
 /SILENTKEEPCONFIG
-   keep configuration files on silent uninstall and use exinsting config files during silent install. :index:`Version >= 12.4.4 <triple: bareos-12.4.4; Windows Installation; SILENTKEEPCONFIG>`
+   keep configuration files on silent uninstall and use exinsting config files during silent install. :sinceVersion:`12.4.4: Windows Installation: SILENTKEEPCONFIG`
 
 /INSTALLDIRECTOR
-   install the Bareos Director (and bconsole). :index:`Version >= 14.2.1 <triple: bareos-14.2.1; Windows Installation; INSTALLDIRECTOR>`
+   install the Bareos Director (and bconsole). :sinceVersion:`14.2.1: Windows Installation: INSTALLDIRECTOR`
 
 /INSTALLSTORAGE
-   install the Bareos Storage Daemon. :index:`Version >= 14.2.1 <triple: bareos-14.2.1; Windows Installation; INSTALLSTORAGE>`
+   install the Bareos Storage Daemon. :sinceVersion:`14.2.1: Windows Installation: INSTALLSTORAGE`
 
 /WRITELOGS
-   makes also non-debug installer write a log file. :index:`Version >= 14.2.1 <triple: bareos-14.2.1; Windows Installation; WRITELOGS>`
+   makes also non-debug installer write a log file. :sinceVersion:`14.2.1: Windows Installation: WRITELOGS`
 
 /D=:file:`C:\specify\installation\directory`
    (Important: It has to be the last option!)
@@ -181,7 +181,7 @@ Enable Debuggging
 
 In case of problems, you can enable the creation of log files. For this you have to use the :command:`bconsole` :ref:`setdebug <bcommandSetdebug>` command:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: Enable debug
 
    *<input>setdebug client=bareos-fd level=200 trace=1</input>
@@ -209,7 +209,7 @@ During backup, Bareos doesn’t know about the system registry, so you will eith
 Windows Reparse Points
 ~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`Version >= 12.4.5 <triple: bareos-12.4.5; Windows; Reparse points>`
+:sinceVersion:`12.4.5: Windows: Reparse points`
 
 :index:`[TAG=Windows->Symbolic links] <pair: Windows; Symbolic links>` :index:`[TAG=Windows->Junction points] <pair: Windows; Junction points>` :index:`[TAG=Windows->Volume Mount Points (VMP)] <pair: Windows; Volume Mount Points (VMP)>`
 
@@ -257,7 +257,7 @@ When backing up a Volume Mount Point, it is backed up as directory.
 
 If :strong:`OneFS` is set to yes (default), the Volume Mount Point (VMP) is backed up as directory but the content of the VMP will not be backed up. Also, the Joblog will contain a message like this:
 
-.. code-block:: sh
+.. code-block:: bareosmessage
    :caption: Warning on Volume Moint Point and OneFS=yes
 
    C:/linktest/vmp is a different filesystem. Will not descend from C:/linktest into it.
@@ -269,7 +269,7 @@ If OneFS is set to no, the filedaemon will change into the VMP as if it was a no
 VMPs and VSS Snapshots
 ^^^^^^^^^^^^^^^^^^^^^^
 
-As Virtual Mount Points mounts another Volume into the current filesystem, it is desired that if the content of the VMP will be backed up during the backup (:strong:`onefs = no`), we also want to have this volume snapshotted via VSS.
+As Virtual Mount Points mounts another Volume into the current filesystem, it is desired that if the content of the VMP will be backed up during the backup (``onefs = no``), we also want to have this volume snapshotted via VSS.
 
 To achieve this, we now automatically check every volume added to the VSS snapshotset if it contains VMPs, and add the volumes mounted by those VMPs to the vss snapshotset recursively.
 
@@ -277,14 +277,14 @@ Volumes can be mounted nested and multiple times, but can only be added to the s
 
 The Job Log will show how many VMPs were found like this:
 
-.. code-block:: sh
+.. code-block:: bareosmessage
    :caption: Volume Mount Points are added automatically to VSS snapshots (if onefs=no)
 
    Volume Mount Points found: 7, added to snapshotset: 5
 
 Accordingly, if OneFS is set to yes, we do not need to handle Volume Mount Points this way. If OneFS is set to yes (default), the joblog will contain the following information:
 
-.. code-block:: sh
+.. code-block:: bareosmessage
    :caption: Volume Mount Points are ignored on VSS snapshots (if onefs=yes)
 
    VolumeMountpoints are not processed as onefs = yes.
@@ -299,7 +299,7 @@ Windows also supports hard links, even so they are seldom used. These are treate
 FilesNotToBackup Registry Key
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`Version >= 14.2.0 <triple: bareos-14.2.0; Windows; FilesNotToBackup>`
+:sinceVersion:`14.2.0: Windows: FilesNotToBackup`
 
 :index:`[TAG=Windows->Exclude Files from Backup] <pair: Windows; Exclude Files from Backup>`
 
@@ -311,14 +311,14 @@ Bareos automatically converts these entries to wildcards which will be automatic
 
 The backup log shows a short information about the creation of the exludes like this:
 
-.. code-block:: sh
+.. code-block:: bareosmessage
    :caption: Excludes according to the FilesNotToBackup registry key
 
    Created 28 wildcard excludes from FilesNotToBackup Registry key
 
 More details can be found if the filedaemon is run in debug mode inside of the :file:`bareos-fd.trace` logfile. Each entry and the resulting wildcard are logged.
 
-.. code-block:: sh
+.. code-block:: bareosmessage
    :caption: translation between registry key FilesNotToBackup and Bareos Exclude FileSet
 
    client-win-fd: win32.c:465-0 (1) "WER" :
@@ -342,7 +342,7 @@ It is possible to disable this functionality by setting the FileSet option :stro
 
 The JobLog will then show the following informational line:
 
-.. code-block:: sh
+.. code-block:: bareosmessage
    :caption: AutoExclude disabled
 
    Fileset has autoexclude disabled, ignoring FilesNotToBackup Registry key
@@ -352,21 +352,21 @@ For more details about the Windows registry key see http://msdn.microsoft.com/en
 Windows dedup support
 ~~~~~~~~~~~~~~~~~~~~~
 
-:index:`Version >= 12.4.5 <triple: bareos-12.4.5; Windows; dedupclication>`
+:sinceVersion:`12.4.5: Windows: dedupclication`
 
 Windows 2012 has dedup support which needs handling.
 
 Store all file attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`Version >= 12.4.5 <triple: bareos-12.4.5; Windows; file attributes>`
+:sinceVersion:`12.4.5: Windows: file attributes`
 
 Windows has gathered quite some special specific file flags over the years but not all are saved during backup so some are never restored by the restore process. The most important ones are the ARCHIVE flag which is "misused" by some programs for storing some special information. Others that are known not to be stored are the COMPRESSED flag which means that a restored file looses it and will be restored as an uncompressed file.
 
 Support for Windows EFS filesystems
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`Version >= 12.4.5 <triple: bareos-12.4.5; Windows; Encrypted Filesystems (EFS)>`
+:sinceVersion:`12.4.5: Windows: Encrypted Filesystems (EFS)`
 
 Windows has support for a so called EFS filesystem. This is an encrypted filesystem, to be able to backup the data and to restore it we need to use a special API. With this API you in essence export the data on backup and import it on restore. This way you never have access to the unencrypted data but just import and export the encrypted data. This is the cleanest way of handling encryption by just seeing the data as some opaque data and not try to do anything special with it.
 

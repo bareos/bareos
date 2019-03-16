@@ -50,7 +50,7 @@ The Director resource defines the attributes of the Directors running on the net
 
 The following is an example of a valid Director resource definition:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Director Resource example
 
    Director {
@@ -325,7 +325,7 @@ definitions (the names must be different, but the contents of the FileSets may b
 
 The following is an example of a valid Job resource definition:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Job Resource Example
 
    Job {
@@ -374,7 +374,7 @@ According to the NIST (US National Institute of Standards and Technology), 12am 
 
 An example schedule resource that is named WeeklyCycle and runs a job with level full each Sunday at 2:05am and an incremental job Monday through Saturday at 2:05am is:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Schedule Example
 
    Schedule {
@@ -385,7 +385,7 @@ An example schedule resource that is named WeeklyCycle and runs a job with level
 
 An example of a possible monthly cycle is as follows:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
 
    Schedule {
      Name = "MonthlyCycle"
@@ -396,7 +396,7 @@ An example of a possible monthly cycle is as follows:
 
 The first of every month:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
 
    Schedule {
      Name = "First"
@@ -406,7 +406,7 @@ The first of every month:
 
 The last friday of the month (i.e. the last friday in the last week of the month)
 
-.. code-block:: sh
+.. code-block:: bareosconfig
 
    Schedule {
      Name = "Last Friday"
@@ -415,7 +415,7 @@ The last friday of the month (i.e. the last friday in the last week of the month
 
 Every 10 minutes:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
 
    Schedule {
      Name = "TenMinutes"
@@ -430,7 +430,7 @@ Every 10 minutes:
 The modulo scheduler makes it easy to specify schedules like odd or even days/weeks, or more generally every n days or weeks. It is called modulo scheduler because it uses the modulo to determine if the schedule must be run or not. The second variable behind the slash lets you determine in which cycle of days/weeks a job should be run. The first part determines on which day/week the job should be run first. E.g. if you want to run a backup in a 5-week-cycle, starting on week 3, you set it up as
 w03/w05.
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Schedule Examples: modulo
 
    Schedule {
@@ -518,339 +518,227 @@ Please take note of the following items in the FileSet syntax:
 
 #. When using wild-cards or regular expressions, directory names are always terminated with a slash (/) and filenames have no trailing slash.
 
-\begin{description}
-   \directive{dir}{File}{ filename \textbar\ dirname \textbar\ \textbar command \textbar\ \textbackslash\textless includefile-client \textbar\ \textless includefile-server }{}{}{}
-       The file list
-       consists of one file or directory name per line.  Directory names should be
-       specified without a trailing slash with Unix path notation.
+File = filename | dirname | | command | \<includefile-client | <includefile-server
+   | 
+   | The file list consists of one file or directory name per line. Directory names should be specified without a trailing slash with Unix path notation.
 
-       Windows users, please take note to specify directories (even c:/...) in
-       Unix path notation. If you use Windows conventions, you will most likely
-       not be able to restore your files due to the fact that the Windows
-       path separator was defined as an escape character long before Windows
-       existed, and Bareos adheres to that convention (i.e. means the next character
-       appears as itself).
+   Windows users, please take note to specify directories (even c:/...) in Unix path notation. If you use Windows conventions, you will most likely not be able to restore your files due to the fact that the Windows path separator was defined as an escape character long before Windows existed, and Bareos adheres to that convention (i.e. means the next character appears as itself).
 
-       You should always specify a full path for every directory and file that you
-       list in the FileSet.  In addition, on Windows machines, you should {\bf
-       always} prefix the directory or filename with the drive specification
-       (e.g.  {\bf c:/xxx}) using Unix directory name separators
-       (forward slash).  The drive letter itself can be upper or lower case (e.g.
-       c:/xxx or C:/xxx).
+   You should always specify a full path for every directory and file that you list in the FileSet. In addition, on Windows machines, you should always prefix the directory or filename with the drive specification (e.g. c:/xxx) using Unix directory name separators (forward slash). The drive letter itself can be upper or lower case (e.g. c:/xxx or C:/xxx).
 
-       Bareos's default for processing directories is to recursively descend in
-       the directory saving all files and subdirectories.  Bareos will not by
-       default cross filesystems (or mount points in Unix parlance).  This means
-       that if you specify the root partition (e.g.  {\bf /}), Bareos will save
-       only the root partition and not any of the other mounted filesystems.
-       Similarly on Windows systems, you must explicitly specify each of the
-       drives you want saved (e.g.
-       {\bf c:/} and {\bf d:/} ...). In addition, at least for Windows systems, you
-       will most likely want to enclose each specification within double quotes
-       particularly if the directory (or file) name contains spaces. The {\bf df}
-       command on Unix systems will show you which mount points you must specify to
-       save everything. See below for an example.
+   Bareos’s default for processing directories is to recursively descend in the directory saving all files and subdirectories. Bareos will not by default cross filesystems (or mount points in Unix parlance). This means that if you specify the root partition (e.g. /), Bareos will save only the root partition and not any of the other mounted filesystems. Similarly on Windows systems, you must explicitly specify each of the drives you want saved (e.g. c:/ and d:/ ...). In addition, at least for
+   Windows systems, you will most likely want to enclose each specification within double quotes particularly if the directory (or file) name contains spaces. The df command on Unix systems will show you which mount points you must specify to save everything. See below for an example.
 
-   Take special care not to include a directory twice or Bareos will backup
-   the same files two times wasting a lot of space on your archive device.
-   Including a directory twice is very easy to do.  For example:
+   Take special care not to include a directory twice or Bareos will backup the same files two times wasting a lot of space on your archive device. Including a directory twice is very easy to do. For example:
 
-   \begin{verbatim}\begin{bconfig}{File Set}
-     Include {
-       Options {
-         compression=GZIP
-       }
-       File = /
-       File = /usr
-     }
-   \end{bconfig}\end{verbatim}
-   on a Unix system where /usr is a subdirectory (rather than a mounted
-   filesystem) will cause /usr to be backed up twice.
+   .. code-block:: bareosconfig
+      :caption: File Set
 
-   {\bf <file-list>} is a list of directory and/or filename names
-   specified with a {\bf File =} directive. To include names containing spaces,
-   enclose the name between double-quotes. Wild-cards are not interpreted
-   in file-lists. They can only be specified in Options resources.
+        Include {
+          Options {
+            compression=GZIP
+          }
+          File = /
+          File = /usr
+        }
 
-   There are a number of special cases when specifying directories and files in a
-   {\bf file-list}. They are:
+   on a Unix system where /usr is a subdirectory (rather than a mounted filesystem) will cause /usr to be backed up twice.
 
-   \begin{itemize}
-   \item Any name preceded by an at-sign (@) is assumed to be the  name of a
-      file, which contains a list of files each preceded by a "File =".  The
-      named file is read once when the configuration file is parsed during the
-      Director startup.  Note, that the file is read on the Director's machine
-      and not on the Client's.  In fact, the @filename can appear anywhere
-      within a configuration file where a token would be read, and the contents of
-      the named file will be logically inserted in the place of the @filename.
-      What must be in the file depends on the location the @filename is
-      specified in the conf file.  For example:
+   <file-list> is a list of directory and/or filename names specified with a File = directive. To include names containing spaces, enclose the name between double-quotes. Wild-cards are not interpreted in file-lists. They can only be specified in Options resources.
 
-   \begin{verbatim}\begin{bconfig}{File Set with Include File}
-   Include {
-     Options {
-       compression=GZIP
-     }
-     @/home/files/my-files
-   }
-   \end{bconfig}\end{verbatim}
+   There are a number of special cases when specifying directories and files in a file-list. They are:
 
+   -  Any name preceded by an at-sign (@) is assumed to be the name of a file, which contains a list of files each preceded by a "File =". The named file is read once when the configuration file is parsed during the Director startup. Note, that the file is read on the Director’s machine and not on the Client’s. In fact, the @filename can appear anywhere within a configuration file where a token would be read, and the contents of the named file will be logically inserted in the place of the
+      @filename. What must be in the file depends on the location the @filename is specified in the conf file. For example:
 
-   \item Any name beginning with a vertical bar (|) is  assumed to
-      be the name of a program.  This program will be executed on the Director's
-      machine at the time the Job starts (not when the Director reads the
-      configuration file), and any output from that program will be assumed to
-      be a list of files or directories, one per line, to be included. Before
-      submitting the specified command Bareos will performe
-      :ref:`character substitution <character substitution>`.
+      .. code-block:: bareosconfig
+         :caption: File Set with Include File
 
-      This allows you to have a job that, for example, includes all the local
-      partitions even if you change the partitioning by adding a disk.  The
-      examples below show you how to do this.  However, please note two
-      things: \\
-      1.  if you want the local filesystems, you probably should be
-      using the {\bf fstype} directive and set {\bf onefs=no}.
-      \\
+         Include {
+           Options {
+             compression=GZIP
+           }
+           @/home/files/my-files
+         }
 
-      2.  the exact syntax of the command needed in the examples below is very
-      system dependent.  For example, on recent Linux systems, you may need to
-      add the -P option, on FreeBSD systems, the options will be different as
-      well.
+   -  Any name beginning with a vertical bar (|) is assumed to be the name of a program. This program will be executed on the Director’s machine at the time the Job starts (not when the Director reads the configuration file), and any output from that program will be assumed to be a list of files or directories, one per line, to be included. Before submitting the specified command Bareos will performe :ref:`character substitution <character substitution>`.
 
-      In general, you will need to prefix your command or commands with a {\bf
-      sh -c} so that they are invoked by a shell.  This will not be the case
-      if you are invoking a script as in the second example below.  Also, you
-      must take care to escape (precede with a \textbackslash{}) wild-cards,
-      shell character, and to ensure that any spaces in your command are
-      escaped as well.  If you use a single quotes (') within a double quote
-      ("), Bareos will treat everything between the single quotes as one field
-      so it will not be necessary to escape the spaces.  In general, getting
-      all the quotes and escapes correct is a real pain as you can see by the
-      next example.  As a consequence, it is often easier to put everything in
-      a file and simply use the file name within Bareos.  In that case the
-      {\bf sh -c} will not be necessary providing the first line of the file
-      is {\bf \#!/bin/sh}.
+      | This allows you to have a job that, for example, includes all the local partitions even if you change the partitioning by adding a disk. The examples below show you how to do this. However, please note two things:
+      | 1. if you want the local filesystems, you probably should be using the fstype directive and set onefs=no.
+      | 2. the exact syntax of the command needed in the examples below is very system dependent. For example, on recent Linux systems, you may need to add the -P option, on FreeBSD systems, the options will be different as well.
 
-      As an  example:
+      In general, you will need to prefix your command or commands with a sh -c so that they are invoked by a shell. This will not be the case if you are invoking a script as in the second example below. Also, you must take care to escape (precede with a \\) wild-cards, shell character, and to ensure that any spaces in your command are escaped as well. If you use a single quotes (’) within a double quote ("), Bareos will treat everything between the single quotes as one field so it will not be
+      necessary to escape the spaces. In general, getting all the quotes and escapes correct is a real pain as you can see by the next example. As a consequence, it is often easier to put everything in a file and simply use the file name within Bareos. In that case the sh -c will not be necessary providing the first line of the file is #!/bin/sh.
 
-   \begin{verbatim}\begin{bconfig}{File Set with inline script}
-   Include {
-      Options {
-        signature = SHA1
-      }
-      File = "|sh -c 'df -l | grep \"^/dev/hd[ab]\" | grep -v \".*/tmp\" | awk \"{print \\$6}\"'"
-   }
-   \end{bconfig}\end{verbatim}
-   % workaround for kile editor
+      As an example:
 
-      will produce a list of all the local partitions on a Linux system.
-      Quoting is a real problem because you must quote for Bareos  which consists of
-      preceding every \textbackslash{} and every " with a \textbackslash{}, and
-      you must also quote for the shell command. In the end, it is probably  easier
-      just to execute a script file with:
+      .. code-block:: bareosconfig
+         :caption: File Set with inline script
 
-   \begin{verbatim}\begin{bconfig}{File Set with external script}
-   Include {
-     Options {
-       signature=MD5
-     }
-     File = "|my_partitions"
-   }
-   \end{bconfig}\end{verbatim}
+         Include {
+            Options {
+              signature = SHA1
+            }
+            File = "|sh -c 'df -l | grep \"^/dev/hd[ab]\" | grep -v \".*/tmp\" | awk \"{print \\$6}\"'"
+         }
+
+      will produce a list of all the local partitions on a Linux system. Quoting is a real problem because you must quote for Bareos which consists of preceding every \\ and every " with a \\, and you must also quote for the shell command. In the end, it is probably easier just to execute a script file with:
+
+      .. code-block:: bareosconfig
+         :caption: File Set with external script
+
+         Include {
+           Options {
+             signature=MD5
+           }
+           File = "|my_partitions"
+         }
 
       where :command:`my_partitions` has:
 
-   
-   \begin{verbatim}
-   #!/bin/sh
-   df -l | grep "^/dev/hd[ab]" | grep -v ".*/tmp" \
-         | awk "{print \$6}"
-   \end{verbatim}
-   
+      
 
-      If the vertical bar (\verb+|+) in front of :command:`my_partitions` is preceded by a
-      backslash as in \textbackslash{}\verb+|+, the program will be executed on the
-      Client's machine instead of on the Director's machine.
-      Please note that if the filename is given within quotes, you
-      will need to use two slashes.  An example, provided by John Donagher,
-      that backs up all the local UFS partitions on a remote system is:
+      ::
 
-   \begin{verbatim}\begin{bconfig}{File Set with inline script in quotes}
-   FileSet {
-     Name = "All local partitions"
-     Include {
-       Options {
-         signature=SHA1
-         onefs=yes
-       }
-       File = "\\|bash -c \"df -klF ufs | tail +2 | awk '{print \$6}'\""
-     }
-   }
-   \end{bconfig}\end{verbatim}
+         #!/bin/sh
+         df -l | grep "^/dev/hd[ab]" | grep -v ".*/tmp" \
+               | awk "{print \$6}"
 
-      The above requires two backslash characters after the double quote (one
-      preserves  the next one). If you are a Linux user, just change the {\bf ufs}
-      to  {\bf ext3} (or your preferred filesystem type), and you will be in
-      business.
+      
 
-      If you know what filesystems you have mounted on your system, e.g.
-      for Linux only using ext2, ext3 or ext4, you can backup
-      all local filesystems using something like:
+      If the vertical bar (``|``) in front of :command:`my_partitions` is preceded by a backslash as in \\\ ``|``, the program will be executed on the Client’s machine instead of on the Director’s machine. Please note that if the filename is given within quotes, you will need to use two slashes. An example, provided by John Donagher, that backs up all the local UFS partitions on a remote system is:
 
-   \begin{verbatim}\begin{bconfig}{File Set to backup all extfs partions}
-   Include {
-      Options {
-        signature = SHA1
-        onfs=no
-        fstype=ext2
-      }
-      File = /
-   }
-   \end{bconfig}\end{verbatim}
+      .. code-block:: bareosconfig
+         :caption: File Set with inline script in quotes
 
-   \item Any file-list item preceded by a less-than sign (<)  will be taken
-      to be a file. This file will be read on the Director's machine (see
-      below for doing it on the Client machine) at the time
-      the Job starts, and the  data will be assumed to be a list of directories or
-      files,  one per line, to be included. The names should start in  column 1 and
-      should not be quoted even if they contain  spaces. This feature allows you to
-      modify the external  file and change what will be saved without stopping and
-      restarting Bareos as would be necessary if using the @  modifier noted above.
-      For example:
-
-   
-   \begin{verbatim}
-   Include {
-     Options {
-       signature = SHA1
-     }
-     File = "</home/files/local-filelist"
-   }
-   \end{verbatim}
-   
-
-      If you precede the less-than sign (<) with a backslash as in
-      \textbackslash{}<, the file-list will be read on the Client machine
-      instead of on the Director's machine.  Please note that if the filename
-      is given within quotes, you will need to use two slashes.
-
-   
-   \begin{verbatim}
-   Include {
-     Options {
-       signature = SHA1
-     }
-     File = "\\</home/xxx/filelist-on-client"
-   }
-   \end{verbatim}
-   
-
-   \item     
-       :index:`[TAG=Backup->Partitions] <pair: Backup; Partitions>`
-       :index:`[TAG=Backup->Raw Partitions] <pair: Backup; Raw Partitions>`
-       If you explicitly specify a block device such as {\bf /dev/hda1},  then
-      Bareos will assume that this  is a raw partition
-      to be backed up. In this case, you are strongly  urged to specify a {\bf
-      sparse=yes} include option, otherwise, you  will save the whole partition
-      rather than just the actual data that  the partition contains. For example:
-
-   \begin{verbatim}\begin{bconfig}{Backup Raw Partitions}
-   Include {
-     Options {
-       signature=MD5
-       sparse=yes
-     }
-     File = /dev/hd6
-   }
-   \end{bconfig}\end{verbatim}
-
-      will backup the data in device /dev/hd6. Note, the {bf /dev/hd6} must be
-      the raw partition itself. Bareos will not back it up as a raw device if
-      you specify a symbolic link to a raw device such as my be created by the
-      LVM Snapshot utilities.
-
-
-   \item A file-list may not contain wild-cards. Use directives in the
-      Options resource if you wish to specify wild-cards or regular expression
-      matching.
-
-   \end{itemize}
-
-
-
-   \directive{dir}{Exclude Dir Containing}{filename}{}{}{}
-       This directive can be added to the Include section of the FileSet resource.  If the specified
-       filename ({\bf filename-string}) is found on the Client in any directory to be
-       backed up, the whole directory will be ignored (not backed up).
-       We recommend to use the filename :file:`.nobackup`, as it is a hidden file on unix
-       systems, and explains what is the purpose of the file.
-
-       For example:
-
-       \begin{verbatim}\begin{bconfig}{Exlude Directories containing the file .nobackup}
-       # List of files to be backed up
-       FileSet {
-           Name = "MyFileSet"
+         FileSet {
+           Name = "All local partitions"
            Include {
-               Options {
-                   signature = MD5
-               }
-               File = /home
-               Exclude Dir Containing = .nobackup
+             Options {
+               signature=SHA1
+               onefs=yes
+             }
+             File = "\\|bash -c \"df -klF ufs | tail +2 | awk '{print \$6}'\""
            }
-       }
-       \end{bconfig}\end{verbatim}
+         }
 
-       But in /home, there may be hundreds of directories of users and some
-       people want to indicate that they don't want to have certain
-       directories backed up. For example, with the above FileSet, if
-       the user or sysadmin creates a file named {\bf .nobackup} in
-       specific directories, such as
+      The above requires two backslash characters after the double quote (one preserves the next one). If you are a Linux user, just change the ufs to ext3 (or your preferred filesystem type), and you will be in business.
 
-       \begin{verbatim}
-       /home/user/www/cache/.nobackup
-       /home/user/temp/.nobackup
-       \end{verbatim}
+      If you know what filesystems you have mounted on your system, e.g. for Linux only using ext2, ext3 or ext4, you can backup all local filesystems using something like:
 
-       then Bareos will not backup the two directories named:
+      .. code-block:: bareosconfig
+         :caption: File Set to backup all extfs partions
 
-       \begin{verbatim}
-       /home/user/www/cache
-       /home/user/temp
-       \end{verbatim}
+         Include {
+            Options {
+              signature = SHA1
+              onfs=no
+              fstype=ext2
+            }
+            File = /
+         }
 
-       NOTE: subdirectories will not be backed up.  That is, the directive
-       applies to the two directories in question and any children (be they
-       files, directories, etc).
+   -  Any file-list item preceded by a less-than sign (<) will be taken to be a file. This file will be read on the Director’s machine (see below for doing it on the Client machine) at the time the Job starts, and the data will be assumed to be a list of directories or files, one per line, to be included. The names should start in column 1 and should not be quoted even if they contain spaces. This feature allows you to modify the external file and change what will be saved without stopping and
+      restarting Bareos as would be necessary if using the @ modifier noted above. For example:
 
+      
 
-   \directive{dir}{Plugin}{plugin-name:plugin-parameter1:plugin-parameter2:...}{}{}{}
+      ::
+
+         Include {
+           Options {
+             signature = SHA1
+           }
+           File = "</home/files/local-filelist"
+         }
+
+      
+
+      If you precede the less-than sign (<) with a backslash as in \\<, the file-list will be read on the Client machine instead of on the Director’s machine. Please note that if the filename is given within quotes, you will need to use two slashes.
+
+      
+
+      ::
+
+         Include {
+           Options {
+             signature = SHA1
+           }
+           File = "\\</home/xxx/filelist-on-client"
+         }
+
+      
+
+   -  :index:`[TAG=Backup->Partitions] <pair: Backup; Partitions>` :index:`[TAG=Backup->Raw Partitions] <pair: Backup; Raw Partitions>` If you explicitly specify a block device such as /dev/hda1, then Bareos will assume that this is a raw partition to be backed up. In this case, you are strongly urged to specify a sparse=yes include option, otherwise, you will save the whole partition rather than just the actual data that the partition contains. For example:
+
+      .. code-block:: bareosconfig
+         :caption: Backup Raw Partitions
+
+         Include {
+           Options {
+             signature=MD5
+             sparse=yes
+           }
+           File = /dev/hd6
+         }
+
+      will backup the data in device /dev/hd6. Note, the bf /dev/hd6 must be the raw partition itself. Bareos will not back it up as a raw device if you specify a symbolic link to a raw device such as my be created by the LVM Snapshot utilities.
+
+   -  A file-list may not contain wild-cards. Use directives in the Options resource if you wish to specify wild-cards or regular expression matching.
+
+Exclude Dir Containing = filename
+   This directive can be added to the Include section of the FileSet resource. If the specified filename (filename-string) is found on the Client in any directory to be backed up, the whole directory will be ignored (not backed up). We recommend to use the filename :file:`.nobackup`, as it is a hidden file on unix systems, and explains what is the purpose of the file.
+
+   For example:
+
+   .. code-block:: bareosconfig
+      :caption: Exlude Directories containing the file .nobackup
+
+          # List of files to be backed up
+          FileSet {
+              Name = "MyFileSet"
+              Include {
+                  Options {
+                      signature = MD5
+                  }
+                  File = /home
+                  Exclude Dir Containing = .nobackup
+              }
+          }
+
+   But in /home, there may be hundreds of directories of users and some people want to indicate that they don’t want to have certain directories backed up. For example, with the above FileSet, if the user or sysadmin creates a file named .nobackup in specific directories, such as
+
+   ::
+
+          /home/user/www/cache/.nobackup
+          /home/user/temp/.nobackup
+
+   then Bareos will not backup the two directories named:
+
+   ::
+
+          /home/user/www/cache
+          /home/user/temp
+
+   NOTE: subdirectories will not be backed up. That is, the directive applies to the two directories in question and any children (be they files, directories, etc).
+
+Plugin = plugin-name:plugin-parameter1:plugin-parameter2:...
    
 
 .. _directive-fileset-plugin:
 
+ Instead of only specifying files, a file set can also use plugins. Plugins are additional libraries that handle specific requirements. The purpose of plugins is to provide an interface to any system program for backup and restore. That allows you, for example, to do database backups without a local dump.
 
-           Instead of only specifying files, a file set can also use plugins.
-           Plugins are additional libraries that handle specific requirements.
-           The purpose of plugins is to provide an interface to any system program
-           for backup and restore. That allows you, for example, to do database backups without a local dump.
+   The syntax and semantics of the Plugin directive require the first part of the string up to the colon to be the name of the plugin. Everything after the first colon is ignored by the File daemon but is passed to the plugin. Thus the plugin writer may define the meaning of the rest of the string as he wishes.
 
-           The syntax and semantics of the Plugin directive require
-           the first part of the string up to the colon to be the name of the plugin.
-           Everything after the first colon is ignored by the File daemon but is passed to the plugin.
-           Thus the plugin writer may define the
-           meaning of the rest of the string as he wishes.
+   For more information, see :ref:`fdPlugins`.
 
-           For more information, see :ref:`fdPlugins`.
+   The program :ref:`bpluginfo` can be used, to retrieve information about a specific plugin.
 
-           The program :ref:`bpluginfo` can be used, to retrieve information about a specific plugin.
+   Note: It is also possible to define more than one plugin directive in a FileSet to do several database dumps at once.
 
-           Note: It is also possible to define more than one plugin directive in a FileSet to do several database dumps at once.
-
-   \directive{dir}{Options}{...}{}{}{}
-       See the :ref:`fileset-options` section.
-
-   \end{description}
+Options = ...
+   See the :ref:`fileset-options` section.
 
 .. _fileset-options:
 
@@ -877,10 +765,10 @@ You find yourself using a lot of Regex statements, which will cost quite a lot o
 The directives within an Options resource may be one of the following:
 
 \begin{description}
-       \xdirective{Dir}{}{AutoExclude}{\dtYesNo}{}{yes}{14.2.2}{%
+       \item[Auto Exclude = \dtYesNo]  (default: yes)  \\
            Automatically exclude files not intended for backup.
-           Currently only used for Windows, to exclude files defined in the registry key \registrykey{HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\BackupRestore\FilesNotToBackup}, see section \nameref{FilesNotToBackup}.
-       }
+           Currently only used for Windows, to exclude files defined in the registry key ``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\BackupRestore\FilesNotToBackup``, see section :ref:`FilesNotToBackup`.
+           Since :sinceVersion:`14.2.2: Auto Exclude`.
 
        \item [compression=<GZIP|GZIP1|...|GZIP9|LZO|LZFAST|LZ4|LZ4HC>]  \\
            :index:`[TAG=compression] <single: compression>`
@@ -1527,10 +1415,9 @@ The directives within an Options resource may be one of the following:
       so you may want to test your expressions prior to running your
       backup by using the :ref:`bregex` program.
 
-   \xdirective{dir}{}{Exclude}{\dtYesNo}{}{no}{}{%
+   \item[Exclude = \dtYesNo]%
       When enabled, any files matched within the
       Options will be excluded from the backup.
-   }
 
    \item [aclsupport=yes|no]  \\
    :index:`[TAG=aclsupport] <single: aclsupport>`
@@ -1754,22 +1641,13 @@ FileSet Exclude Ressource
 
 FileSet Exclude-Ressources very similar to Include-Ressources, except that they only allow following directives:
 
-\begin{description}
-   % file | directoy | |command | \<includefile-client | <includefile-server
-   \xdirective{dir}{}{File}{ 
-     filename \textbar\ 
-     directory \textbar\ 
-     \textbar command \textbar\ 
-     \textbackslash\textless includefile-client \textbar\ 
-     \textless includefile-server 
-     }{}{}{}{%
-       Files to exclude are descripted in the same way as at the \nameref{fileset-include}.
-   }
-   \end{description}
+File = filename | dirname | | command | \<includefile-client | <includefile-server
+   | 
+   | Files to exclude are descripted in the same way as at the :ref:`fileset-include`.
 
 For example:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: FileSet using Exclude
 
    FileSet {
@@ -1801,7 +1679,7 @@ FileSet Examples
 
 The following is an example of a valid FileSet resource definition. Note, the first Include pulls in the contents of the file :file:`/etc/backup.list` when Bareos is started (i.e. the @), and that file must have each filename to be backed up preceded by a File = and on a separate line.
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: FileSet using import
 
    FileSet {
@@ -1831,7 +1709,7 @@ The two directories :file:`/root/myfile` and :file:`/usr/lib/another_file` will 
 
 Let’s say that you now want to exclude the directory :file:`/tmp`. The simplest way to do so is to add an exclude directive that lists :file:`/tmp`. The example above would then become:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: extended FileSet excluding /tmp
 
    FileSet {
@@ -1887,7 +1765,7 @@ Now lets take a slight variation on the above and suppose you want to save all y
 
 And we see that there are a number of separate filesystems (/ /boot /home /rescue /tmp and /usr not to mention mounted systems). If you specify only / in your Include list, Bareos will only save the Filesystem /dev/hda5. To save all filesystems except /tmp with out including any of the Samba or NFS mounted systems, and explicitly excluding a /tmp, /proc, .journal, and .autofsck, which you will not want to be saved and restored, you can use the following:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: FileSet mount points
 
    FileSet {
@@ -1912,7 +1790,7 @@ Since :file:`/tmp` is on its own filesystem and it was not explicitly named in t
 
 Now, lets assume you only want to backup .Z and .gz files and nothing else. This is a bit trickier because Bareos by default will select everything to backup, so we must exclude everything but .Z and .gz files. If we take the first example above and make the obvious modifications to it, we might come up with a FileSet that looks like this:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Non-working example
 
    FileSet {
@@ -1931,7 +1809,7 @@ The \*.Z and \*.gz files will indeed be backed up, but all other files that are 
 
 To accomplish what we want, we must explicitly exclude all other files. We do this with the following:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Exclude all except specific wildcards
 
    FileSet {
@@ -1951,12 +1829,12 @@ To accomplish what we want, we must explicitly exclude all other files. We do th
 
 The "trick" here was to add a RegexFile expression that matches all files. It does not match directory names, so all directories in /myfile will be backed up (the directory entry) and any \*.Z and \*.gz files contained in them. If you know that certain directories do not contain any \*.Z or \*.gz files and you do not want the directory entries backed up, you will need to explicitly exclude those directories. Backing up a directory entries is not very expensive.
 
-Bareos uses the system regex library and some of them are different on different OSes. The above has been reported not to work on FreeBSD. This can be tested by using the :strong:`estimate job=job-name
+Bareos uses the system regex library and some of them are different on different OSes. The above has been reported not to work on FreeBSD. This can be tested by using the :bcommand:`estimate job=job-name
 listing` command in the console and adapting the RegexFile expression appropriately.
 
 Please be aware that allowing Bareos to traverse or change file systems can be very dangerous. For example, with the following:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: backup all filesystem below /mnt/matou (use with care)
 
    FileSet {
@@ -1973,7 +1851,7 @@ you will be backing up an NFS mounted partition (/mnt/matou), and since onefs is
 
 As a final example, let’s say that you have only one or two subdirectories of /home that you want to backup. For example, you want to backup only subdirectories beginning with the letter a and the letter b – i.e. :file:`/home/a*` and :file:`/home/b*`. Now, you might first try:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Non-working example
 
    FileSet {
@@ -1989,7 +1867,7 @@ As a final example, let’s say that you have only one or two subdirectories of 
 
 The problem is that the above will include everything in /home. To get things to work correctly, you need to start with the idea of exclusion instead of inclusion. So, you could simply exclude all directories except the two you want to use:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Exclude by regex
 
    FileSet {
@@ -2007,7 +1885,7 @@ And assuming that all subdirectories start with a lowercase letter, this would w
 
 An alternative would be to include the two subdirectories desired and exclude everything else:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Include and Exclude
 
    FileSet {
@@ -2037,7 +1915,7 @@ Secondly, each directory and file is compared to the Options clauses in the orde
 
 The FileSet resource definition below implements this by including specifc directories and files and excluding everything else.
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Include/Exclude example
 
    FileSet {
@@ -2089,7 +1967,7 @@ Windows FileSets
  If you are entering Windows file names, the directory path may be preceded by the drive and a colon (as in c:). However, the path separators must be specified in Unix convention (i.e. forward slash (/)). If you wish to include a quote in a file name, precede the quote with a backslash (\). For example you might use the following for a Windows machine to backup the "My Documents"
 directory:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Windows FileSet
 
    FileSet {
@@ -2125,7 +2003,7 @@ Example Fileset for Windows
 
 The following example demostrates a Windows FileSet. It backups all data from all fixed drives and only excludes some Windows temporary data.
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Windows All Drives FileSet
 
    FileSet {
@@ -2157,7 +2035,7 @@ If you wish to get an idea of what your FileSet will really backup or if your ex
 
 As an example, suppose you add the following test FileSet:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: FileSet for all *.c files
 
    FileSet {
@@ -2172,7 +2050,7 @@ As an example, suppose you add the following test FileSet:
 
 You could then add some test files to the directory /home/xxx/test and use the following command in the console:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: estimate
 
    estimate job=<any-job-name> listing client=<desired-client> fileset=Test
@@ -2270,7 +2148,7 @@ The Client (or FileDaemon) resource defines the attributes of the Clients that a
 
 The following is an example of a valid Client resource definition:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Minimal client resource definition in bareos-dir.conf
 
    Client {
@@ -2281,7 +2159,7 @@ The following is an example of a valid Client resource definition:
 
 The following is an example of a Quota Configuration in Client resource:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Quota Configuration in Client resource
 
    Client {
@@ -2374,7 +2252,7 @@ The Storage resource defines which Storage daemons are available for use by the 
 
 The following is an example of a valid Storage resource definition:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Storage resource (tape) example
 
    Storage {
@@ -2394,23 +2272,23 @@ Pool Resource
 
 The Pool resource defines the set of storage Volumes (tapes or files) to be used by Bareos to write the data. By configuring different Pools, you can determine which set of Volumes (media) receives the backup data. This permits, for example, to store all full backup data on one set of Volumes and all incremental backups on another set of Volumes. Alternatively, you could assign a different set of Volumes to each machine that you backup. This is most easily done by defining multiple Pools.
 
-Another important aspect of a Pool is that it contains the default attributes (Maximum Jobs, Retention Period, Recycle flag, ...) that will be given to a Volume when it is created. This avoids the need for you to answer a large number of questions when labeling a new Volume. Each of these attributes can later be changed on a Volume by Volume basis using the :strong:`update` command in the console program. Note that you must explicitly specify which Pool Bareos is to use with each
+Another important aspect of a Pool is that it contains the default attributes (Maximum Jobs, Retention Period, Recycle flag, ...) that will be given to a Volume when it is created. This avoids the need for you to answer a large number of questions when labeling a new Volume. Each of these attributes can later be changed on a Volume by Volume basis using the :bcommand:`update` command in the console program. Note that you must explicitly specify which Pool Bareos is to use with each
 Job. Bareos will not automatically search for the correct Pool.
 
-To use a Pool, there are three distinct steps. First the Pool must be defined in the Director’s configuration. Then the Pool must be written to the Catalog database. This is done automatically by the Director each time that it starts. Finally, if you change the Pool definition in the Director’s configuration file and restart Bareos, the pool will be updated alternatively you can use the :strong:`update pool` console command to refresh the database image. It is this database image
+To use a Pool, there are three distinct steps. First the Pool must be defined in the Director’s configuration. Then the Pool must be written to the Catalog database. This is done automatically by the Director each time that it starts. Finally, if you change the Pool definition in the Director’s configuration file and restart Bareos, the pool will be updated alternatively you can use the :bcommand:`update pool` console command to refresh the database image. It is this database image
 rather than the Director’s resource image that is used for the default Volume attributes. Note, for the pool to be automatically created or updated, it must be explicitly referenced by a Job resource.
 
-If automatic labeling is not enabled (see :ref:`AutomaticLabeling`) the physical media must be manually labeled. The labeling can either be done with the :strong:`label` command in the console program or using the :command:`btape` program. The preferred method is to use the :strong:`label` command in the console program. Generally, automatic labeling is enabled for :config:option:`sd/device/DeviceType`\ = **File**
-and disabled for :config:option:`sd/device/DeviceType`\ = **Tape**.
+If automatic labeling is not enabled (see :ref:`AutomaticLabeling`) the physical media must be manually labeled. The labeling can either be done with the :bcommand:`label` command in the console program or using the :command:`btape` program. The preferred method is to use the :bcommand:`label` command in the console program. Generally, automatic labeling is enabled for :config:option:`sd/device/DeviceType = File`\ 
+and disabled for :config:option:`sd/device/DeviceType = Tape`\ .
 
 Finally, you must add Volume names (and their attributes) to the Pool. For Volumes to be used by Bareos they must be of the same :config:option:`sd/device/MediaType`\  as the archive device specified for the job (i.e. if you are going to back up to a DLT device, the Pool must have DLT volumes defined since 8mm volumes cannot be mounted on a DLT drive). The :config:option:`sd/device/MediaType`\  has particular importance if you are backing up to files.
 When running a Job, you must explicitly specify which Pool to use. Bareos will then automatically select the next Volume to use from the Pool, but it will ensure that the :config:option:`sd/device/MediaType`\  of any Volume selected from the Pool is identical to that required by the Storage resource you have specified for the Job.
 
-If you use the :strong:`label` command in the console program to label the Volumes, they will automatically be added to the Pool, so this last step is not normally required.
+If you use the :bcommand:`label` command in the console program to label the Volumes, they will automatically be added to the Pool, so this last step is not normally required.
 
-It is also possible to add Volumes to the database without explicitly labeling the physical volume. This is done with the :strong:`add` console command.
+It is also possible to add Volumes to the database without explicitly labeling the physical volume. This is done with the :bcommand:`add` console command.
 
-As previously mentioned, each time Bareos starts, it scans all the Pools associated with each Catalog, and if the database record does not already exist, it will be created from the Pool Resource definition. If you change the Pool definition, you manually have to call :strong:`update pool` command in the console program to propagate the changes to existing volumes.
+As previously mentioned, each time Bareos starts, it scans all the Pools associated with each Catalog, and if the database record does not already exist, it will be created from the Pool Resource definition. If you change the Pool definition, you manually have to call :bcommand:`update pool` command in the console program to propagate the changes to existing volumes.
 
 The Pool Resource defined in the Director’s configuration may contain the following directives:
 
@@ -2484,7 +2362,7 @@ The Pool Resource defined in the Director’s configuration may contain the foll
 
 The following is an example of a valid Pool resource definition:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Pool resource example
 
    Pool {
@@ -2554,7 +2432,7 @@ Since SQLite is compiled in, it always runs on the same machine as the Director 
 
 The following is an example of a valid Catalog resource definition:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Catalog Resource for Sqlite
 
    Catalog
@@ -2568,7 +2446,7 @@ The following is an example of a valid Catalog resource definition:
 
 or for a Catalog on another machine:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Catalog Resource for remote MySQL
 
    Catalog
@@ -2601,15 +2479,15 @@ Console Resource
 There are three different kinds of consoles, which the administrator or user can use to interact with the Director. These three kinds of consoles comprise three different security levels.
 
 Default Console
-   :index:`[TAG=Console->Default Console] <pair: Console; Default Console>` the first console type is an :emphasis:`anonymous` or :emphasis:`default` console, which has full privileges. There is no console resource necessary for this type since the password is specified in the Director’s resource and consequently such consoles do not have a name as defined on a :strong:`Name` directive. Typically you would use it only for administrators.
+   :index:`[TAG=Console->Default Console] <pair: Console; Default Console>` the first console type is an ''anonymous'' or ''default'' console, which has full privileges. There is no console resource necessary for this type since the password is specified in the Director’s resource and consequently such consoles do not have a name as defined on a :strong:`Name` directive. Typically you would use it only for administrators.
 
 Named Console
-   :index:`[TAG=Named Console] <single: Named Console>` :index:`[TAG=Console->Named Console] <pair: Console; Named Console>` :index:`[TAG=Console->Restricted Console] <pair: Console; Restricted Console>` the second type of console, is a :emphasis:`named` console (also called :emphasis:`Restricted Console`) defined within a Console resource in both the Director’s configuration file and in the Console’s configuration file. Both the names and the passwords in these two entries must match much as is the case for Client programs.
+   :index:`[TAG=Named Console] <single: Named Console>` :index:`[TAG=Console->Named Console] <pair: Console; Named Console>` :index:`[TAG=Console->Restricted Console] <pair: Console; Restricted Console>` the second type of console, is a ''named'' console (also called ''Restricted Console'') defined within a Console resource in both the Director’s configuration file and in the Console’s configuration file. Both the names and the passwords in these two entries must match much as is the case for Client programs.
 
    This second type of console begins with absolutely no privileges except those explicitly specified in the Director’s Console resource. Thus you can have multiple Consoles with different names and passwords, sort of like multiple users, each with different privileges. As a default, these consoles can do absolutely nothing – no commands whatsoever. You give them privileges or rather access to commands and resources by specifying access control lists in the Director’s Console resource. The ACLs
    are specified by a directive followed by a list of access names. Examples of this are shown below.
 
-   -  The third type of console is similar to the above mentioned one in that it requires a Console resource definition in both the Director and the Console. In addition, if the console name, provided on the :config:option:`dir/console/Name`\  directive, is the same as a Client name, that console is permitted to use the :strong:`SetIP` command to change the Address directive in the Director’s client resource to the IP address of the Console. This permits
+   -  The third type of console is similar to the above mentioned one in that it requires a Console resource definition in both the Director and the Console. In addition, if the console name, provided on the :config:option:`dir/console/Name`\  directive, is the same as a Client name, that console is permitted to use the :bcommand:`SetIP` command to change the Address directive in the Director’s client resource to the IP address of the Console. This permits
       portables or other machines using DHCP (non-fixed IP addresses) to "notify" the Director of their current IP address.
 
 The Console resource is optional and need not be specified. The following directives are permitted within these resources:

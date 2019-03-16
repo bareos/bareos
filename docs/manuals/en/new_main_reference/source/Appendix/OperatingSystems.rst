@@ -726,7 +726,7 @@ Packages names not containing the word **bareos** are required packages where we
 Univention Corporate Server
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Platform->Univention Corporate Server|see {Platform, Univention}] <pair: Platform; Univention Corporate Server|see {Platform, Univention}>` :strong:`Univention` The Bareos version for the Univention App Center integraties into the Univention Enterprise Linux environment, making it easy to backup all the systems managed by the central Univention Corporate Server.
+:index:`[TAG=Platform->Univention Corporate Server|see {Platform, Univention}] <pair: Platform; Univention Corporate Server|see {Platform, Univention}>` :os:`Univention` The Bareos version for the Univention App Center integraties into the Univention Enterprise Linux environment, making it easy to backup all the systems managed by the central Univention Corporate Server.
 
 Preamble
 ^^^^^^^^
@@ -778,32 +778,32 @@ UCR variables
 ``bareos/max_full_volume_bytes``
    : 20 (default)
 
-   -  Maximum size (in GB) of a volume for the **Full**:sup:`Dir`:sub:`pool`\  backup pool
+   -  Maximum size (in GB) of a volume for the :config:option:`dir/pool = Full`\  backup pool
 
 ``bareos/max_full_volumes``
    : 1 (default)
 
-   -  Maximum number of volumes for the **Full**:sup:`Dir`:sub:`pool`\  backup pool
+   -  Maximum number of volumes for the :config:option:`dir/pool = Full`\  backup pool
 
 ``bareos/max_diff_volume_bytes``
    : 10 (default)
 
-   -  Maximum size (in GB) of a volume for the **Differential**:sup:`Dir`:sub:`pool`\  backup pool
+   -  Maximum size (in GB) of a volume for the :config:option:`dir/pool = Differential`\  backup pool
 
 ``bareos/max_diff_volumes``
    : 1 (default)
 
-   -  Maximum number of volumes for the **Differential**:sup:`Dir`:sub:`pool`\  backup pool
+   -  Maximum number of volumes for the :config:option:`dir/pool = Differential`\  backup pool
 
 ``bareos/max_incr_volume_bytes``
    : 1 (default)
 
-   -  Maximum size (in GB) of a volume for the **Incremental**:sup:`Dir`:sub:`pool`\  backup pool
+   -  Maximum size (in GB) of a volume for the :config:option:`dir/pool = Incremental`\  backup pool
 
 ``bareos/max_incr_volumes``
    : 1 (default)
 
-   -  Maximum number of volumes for the **Incremental**:sup:`Dir`:sub:`pool`\  backup pool
+   -  Maximum number of volumes for the :config:option:`dir/pool = Incremental`\  backup pool
 
 ``bareos/backup_myself``
    : no (default)
@@ -883,21 +883,21 @@ Backup Schedule
 As a result of the default configuration located at the :command:`bareos-dir`, the backup schedule will look as follows:
 
 Full Backups
-   -  are written into the **Full**:sup:`Dir`:sub:`pool`\  pool
+   -  are written into the :config:option:`dir/pool = Full`\  pool
 
    -  on the first saturday at 21:00 o’clock
 
    -  and kept for 365 days
 
 Differential Backups
-   -  are written into the **Differential**:sup:`Dir`:sub:`pool`\  pool
+   -  are written into the :config:option:`dir/pool = Differential`\  pool
 
    -  on every 2nd to 5th saturday at 21:00 o’clock
 
    -  and kept for 90 days
 
 Incremental Backups
-   -  are written into the **Incremental**:sup:`Dir`:sub:`pool`\  pool
+   -  are written into the :config:option:`dir/pool = Incremental`\  pool
 
    -  on every day from monday to friday at 21:00 o’clock
 
@@ -914,7 +914,7 @@ Backup data management
 
 Data from the backup jobs is written to volumes, which are organized in pools (see chapter :ref:`DirectorResourcePool`).
 
-The default configuration uses three different pools, called **Full**:sup:`Dir`:sub:`pool`\ , **Differential**:sup:`Dir`:sub:`pool`\  and **Incremental**:sup:`Dir`:sub:`pool`\ , which are used for full backups, differential and incremental backups, respectively.
+The default configuration uses three different pools, called :config:option:`dir/pool = Full`\ , :config:option:`dir/pool = Differential`\  and :config:option:`dir/pool = Incremental`\ , which are used for full backups, differential and incremental backups, respectively.
 
 If you change the UCR variables, the configuration files will be rewritten automatically. After each change you will need to reload the director daemon.
 
@@ -1166,7 +1166,7 @@ On your local Mac, you must be an admin user. The main user is an admin user.
 
 Download the :file:`bareos-client*.pkg` installer package from http://download.bareos.org/bareos/release/latest/MacOS/.
 
-Find the .pkg you just downloaded. Install the .pkg by holding the CTRL key, left-clicking the installer and choosing :emphasis:`open`.
+Find the .pkg you just downloaded. Install the .pkg by holding the CTRL key, left-clicking the installer and choosing ''open''.
 
 Follow the directions given to you and finish the installation.
 
@@ -1182,7 +1182,7 @@ After configuring the server-side you can either transfer the necessary configur
 Option 1: Copy the director resource from the Bareos Director to the Client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Assuming your client has the DNS entry :strong:`client2.example.com` and has been added to |bareosDir| as **client2-fd**:sup:`bareos-dir`:sub:`client` :
+Assuming your client has the DNS entry :strong:`client2.example.com` and has been added to |bareosDir| as :config:option:`bareos-dir/client = client2-fd`\ :
 
 .. code-block:: sh
 
@@ -1195,7 +1195,7 @@ Option 2: Edit the director resource on the Client
 
 Alternatively, you can edit the file :file:`/usr/local/etc/bareos/bareos-fd.d/director/bareos-dir.conf`.
 
-This can be done by right-clicking the finder icon in your task bar, select :emphasis:`Go to folder ...` and paste :file:`/usr/local/etc/bareos/bareos-fd.d/director/`.
+This can be done by right-clicking the finder icon in your task bar, select ''Go to folder ...'' and paste :file:`/usr/local/etc/bareos/bareos-fd.d/director/`.
 
 Select the :file:`bareos-dir.conf` file and open it.
 
@@ -1207,7 +1207,7 @@ Alternatively you can also call following command on the command console:
 
 The file should look similar to this:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-fd.d/director/bareos-dir.conf
 
    Director {
@@ -1239,7 +1239,7 @@ Verify that the Bareos File Daemon is working
 
 Open the :command:`bconsole` on your |bareosDir| and check the status of the client with
 
-.. code-block:: sh
+.. code-block:: bareosconfig
 
    *<input>status client=client2-fd</input>
 

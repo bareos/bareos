@@ -28,7 +28,7 @@ Droplet Storage Backend
 
 :index:`[TAG=Backend->Droplet] <pair: Backend; Droplet>` :index:`[TAG=Backend->Droplet->S3] <triple: Backend; Droplet; S3>` :index:`[TAG=Backend->S3|see {Backend->Droplet}] <triple: Backend; S3|see {Backend; Droplet}>`
 
-The **bareos-storage-droplet** backend (:index:`Version >= 17.2.7 <pair: bareos-17.2.7; Droplet>`) can be used to access Object Storage through **libdroplet**. Droplet support a number of backends, most notably S3. For details about Droplet itself see `<https://github.com/scality/Droplet>`_.
+The **bareos-storage-droplet** backend (:sinceVersion:`17.2.7: Droplet`) can be used to access Object Storage through **libdroplet**. Droplet support a number of backends, most notably S3. For details about Droplet itself see `<https://github.com/scality/Droplet>`_.
 
 Requirements
 ~~~~~~~~~~~~
@@ -61,13 +61,13 @@ First, we will create the new |bareosDir| :ref:`DirectorResourceStorage`.
 
 For the following example, we
 
--  choose the name **S3_Object**:sup:`Dir`:sub:`Storage` .
+-  choose the name :config:option:`Dir/Storage = S3_Object`\ .
 
 -  choose \resourceDirectiveValue{Dir}{Storage}{Media Type}{S3_Object1}. We name it this way, in case we later add more separated Object Storages that don’t have access to the same volumes.
 
--  assume the |bareosSd| is located on the host :strong:`bareos-sd.example.com` and will offers the :ref:`StorageResourceDevice` **S3_ObjectStorage**:sup:`Sd`:sub:`Device`  (to be configured in the next section).
+-  assume the |bareosSd| is located on the host :strong:`bareos-sd.example.com` and will offers the :ref:`StorageResourceDevice` :config:option:`Sd/Device = S3_ObjectStorage`\  (to be configured in the next section).
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/storage/S3\_Object.conf
 
    Storage {
@@ -93,7 +93,7 @@ The name and media type must correspond to those settings in the |bareosDir| :re
 
 A device for the usage of AWS S3 object storage with a bucket named :file:`backup-bareos` located in EU Central 1 (Frankfurt, Germany), would look like this:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-sd.d/device/AWS\_S3\_1-00.conf
 
    Device {
@@ -149,7 +149,7 @@ Create the Droplet profile to be used. This profile is used later by the droplet
 
 An example for AWS S3 could look like this:
 
-.. code-block:: sh
+.. code-block:: cfg
    :caption: aws.profile
 
    host = s3.amazonaws.com         # This parameter is only used as baseurl and will be prepended with bucket and location set in device ressource to form correct url
@@ -170,7 +170,7 @@ Please note, that there is also the :ref:`SdBackendRados` backend, which can bac
 
 While parameters have been explained in the :ref:`section-DropletAwsS3` section, this gives an example about how to backup to a CEPH Object Gateway S3.
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/storage/S3\_Object.conf
 
    Storage {
@@ -183,7 +183,7 @@ While parameters have been explained in the :ref:`section-DropletAwsS3` section,
 
 A device for CEPH object storage could look like this:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-sd.d/device/CEPH\_1-00.conf
 
    Device {
@@ -202,7 +202,7 @@ A device for CEPH object storage could look like this:
 
 The correspondig Droplet profile looks like this:
 
-.. code-block:: sh
+.. code-block:: cfg
    :caption: ceph-rados-gateway.profile
 
    host = CEPH-host.example.com
@@ -232,9 +232,9 @@ continuously try to write the cached files.
 
 Great caution should be used when using :strong:`retries` :math:`>=0` combined with cached writing. If the backend becomes unavailable and the |bareosSd| reaches the predefined tries, the job will be discarded silently yet marked as :file:`OK` in the |bareosDir|.
 
-You can always check the status of the writing process by using :strong:`status storage=...`. The current writing status will be displayed then:
+You can always check the status of the writing process by using :bcommand:`status storage=...`. The current writing status will be displayed then:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: status storage
 
    ...
@@ -256,7 +256,7 @@ You can always check the status of the writing process by using :strong:`status 
 
 Status without pending IO chunks:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: status storage
 
    ...
@@ -289,7 +289,7 @@ As a new DNS entry is not available immediatly, Amazon solves this by using HTTP
 
 Requesting the device status only resturn a unspecific error:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: status storage
 
    *status storage=...
@@ -302,9 +302,9 @@ Workaround:
 
 -  Wait until bucket is available a permanet hostname. This can take up to 24 hours.
 
--  Configure the AWS location into the profiles host entry. For the AWS location :file:`eu-central-1`, change :strong:`host = s3.amazonaws.com` into :strong:`host = s3.eu-central-1.amazonaws.com`:
+-  Configure the AWS location into the profiles host entry. For the AWS location :file:`eu-central-1`, change ``host = s3.amazonaws.com`` into ``host = s3.eu-central-1.amazonaws.com``:
 
-   .. code-block:: sh
+   .. code-block:: cfg
       :caption: Droplet profile
 
       ...
@@ -330,12 +330,13 @@ configure it as storage device:
 
 
    .. literalinclude:: /include/config/SdDeviceDeviceOptionsGfapi1.conf
+      :language: bareosconfig
 
 
 
 Adapt server and volume name to your environment.
 
-:index:`Version >= 15.2.0 <pair: bareos-15.2.0; GlusterFS Storage>`
+:sinceVersion:`15.2.0: GlusterFS Storage`
 
 .. _SdBackendRados:
 
@@ -348,10 +349,11 @@ Here you configure the Ceph object store, which is accessed by the SD using the 
 storage device: 
 
 .. literalinclude:: /include/config/SdDeviceDeviceOptionsRados1.conf
+   :language: bareosconfig
 
 
 
-:index:`Version >= 15.2.0 <pair: bareos-15.2.0; Ceph Storage>`
+:sinceVersion:`15.2.0: Ceph Storage`
 
 
 

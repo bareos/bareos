@@ -14,7 +14,7 @@ Use a dummy device to test the backup
 
 Obviously, it can not be used to do a restore.
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: FIFO Storage Device Configuration
 
    Device {
@@ -52,7 +52,7 @@ Backup of MSSQL Databases with Bareos Plugin
 
 
 
-:index:`Version >= 13.2.0 <pair: bareos-13.2.0; MSSQL>`
+:sinceVersion:`13.2.0: MSSQL`
 
 Preparation
 ^^^^^^^^^^^
@@ -102,7 +102,7 @@ Manual install
 
 After downloading the plugin you need to copy it into :file:`C:\Program Files\Bareos\Plugins`. Then you need to define the plugin directory and which plugin the bareos-filedaemon should use. You have to edit the bareos-filedaemon resource in :file:`C:\Program Data\bareos-fd.conf` as follows:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: MSSQL plugin configuration
 
    FileDaemon {
@@ -119,7 +119,7 @@ After downloading the plugin you need to copy it into :file:`C:\Program Files\Ba
 Plugin Test
 ^^^^^^^^^^^
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: status client=mssqlserver-fd
 
    *<input>status client=mssqlserver-fd</input>
@@ -159,7 +159,7 @@ Configure the FileSet
 
 To use the plugin you need to configure it in the fileset as a plugin resource. For each database instance you need to define a exclusive backup job and fileset.
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: MSSQL FileSet
 
    Fileset {
@@ -181,7 +181,7 @@ mssqlvdi
    This is the reference to the MSSQL plugin.
 
 serveraddress
-   (:index:`Version >= 14.2.2 <pair: bareos-14.2.2; MSSQL: serveraddress>`) Defines the server address to connect to (if empty defaults to localhost).
+   (:sinceVersion:`14.2.2: MSSQL: serveraddress`) Defines the server address to connect to (if empty defaults to localhost).
 
 instance
    Defines the instance within the database server.
@@ -201,7 +201,7 @@ Run Backups
 
 Here you can see an example for a backup:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: run MSSQL backup job
 
    *<input>run job=MSSQLBak</input>
@@ -323,7 +323,7 @@ When you specify for restore a where path which is lets say ’c:/temp’ the pl
 
 Example for a full restore:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: restore MSSQL database
 
    *<input>restore client=mssqlserver-fd</input>
@@ -488,7 +488,7 @@ stopat=<timestamp>
 
 Followed is a example for a restore of full, differential and incremental backup with a replace of the original database:
 
-.. code-block:: sh
+.. code-block:: bconsole
    :caption: restore MSSQL database chain
 
    *<input>restore client=mssqlserver-fd</input>
@@ -649,7 +649,7 @@ One method to backup a PostgreSQL database is to use the :command:`pg_dumpall` t
 
 This can be done by using :config:option:`dir/job/RunScript`\  directives inside a Job Resource, for example:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: RunScript job resource for a PostgreSQL backup
 
    Job {
@@ -697,7 +697,7 @@ Backup of a PostgreSQL Databases by using the bpipe plugin
 
 Instead of creating a temporary database dump file, the bpipe plugin can be used. For general information about bpipe, see the :ref:`bpipe` section. The bpipe plugin is configured inside the :config:option:`dir/fileset/Include`\  section of a File Set, e.g.:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bpipe directive for PostgreSQL backup
 
    FileSet {
@@ -716,7 +716,7 @@ case is psql. When psql is called, it will read the data sent to it by the plugi
 
 This can also be used, to backup a database that is running on a remote host:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bpipe directive to backup a PostgreSQL database that is running on a remote host
 
    FileSet {
@@ -765,7 +765,7 @@ Backup of MySQL Databases using the Bareos MySQL Percona xtrabackup Plugin
 
 
 
-This plugin is available since :index:`Version >= 16.2.4 <pair: bareos-16.2.4; MySQL Incremental Backup Plugin for using Percona xtrabackup>`, it uses the :command:`xtrabackup` tool from Percona to perform full and incremental hot-backups of MySQL / MariaDB tables of type InnoDB. It can also backup MyISAM tables but only as full backups. On restore it requires a preparation using the xtrabackup tools, before the tables can be restored. If you simply want to backup full dumps, then using
+This plugin is available since :sinceVersion:`16.2.4: MySQL Incremental Backup Plugin for using Percona xtrabackup`, it uses the :command:`xtrabackup` tool from Percona to perform full and incremental hot-backups of MySQL / MariaDB tables of type InnoDB. It can also backup MyISAM tables but only as full backups. On restore it requires a preparation using the xtrabackup tools, before the tables can be restored. If you simply want to backup full dumps, then using
 :ref:`backup-mysql-python` is the easier way.
 
 Prerequisites
@@ -787,7 +787,7 @@ Configuration
 
 Activate your plugin directory in the |bareosFd| configuration. See :ref:`fdPlugins` for more about plugins in general.
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-fd.d/client/myself.conf
 
    Client {
@@ -798,7 +798,7 @@ Activate your plugin directory in the |bareosFd| configuration. See :ref:`fdPlug
 
 Now include the plugin as command-plugin in the Fileset resource:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/fileset/mysql.conf
 
    FileSet {
@@ -874,7 +874,7 @@ Following settings must be done on the Bareos client (|bareosFd|):
 
 -  disable bacula compatibility (default for Bareos >= 15.2)
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-fd.d/client/myself.conf
 
    Client {
@@ -886,7 +886,7 @@ Following settings must be done on the Bareos client (|bareosFd|):
 
 Configure the plugin in the |bareosDir|:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bareos-dir.d/fileset/mysql.conf
 
    FileSet {
@@ -914,7 +914,7 @@ dumpbinary
    command (with or without full path) to create the dumps. Default: :strong:`mysqldump`
 
 dumpoptions
-   options for dumpbinary, default: :emphasis:`:strong:`--events --single-transaction``
+   options for dumpbinary, default: '':strong:`--events --single-transaction`''
 
 drop_and_recreate
    if not set to :strong:`false`, adds :strong:`--add-drop-database --databases` to dumpoptions
@@ -939,7 +939,7 @@ One method to backup a MySQL database is to use the :command:`mysqldump` tool to
 
 This can be done by using :config:option:`dir/job/RunScript`\  directives, for example:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: RunScript job resource for a MySQL backup
 
    Job {
@@ -987,7 +987,7 @@ Backup of a MySQL Database by using the bpipe plugin
 
 Instead of creating a temporary database dump file, the bpipe plugin can be used. For general information about bpipe, see the :ref:`bpipe` section. The bpipe plugin is configured inside the Include section of a File Set, e.g.:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bpipe fileset for MySQL backup
 
    FileSet {
@@ -1003,7 +1003,7 @@ Instead of creating a temporary database dump file, the bpipe plugin can be used
 
 This can also be used, to backup a database that is running on a remote host:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bpipe directive to backup a MySQL database that is running on a remote host
 
    FileSet{
@@ -1019,7 +1019,7 @@ This can also be used, to backup a database that is running on a remote host:
 
 If you do not want a direct restore of your data in your plugin directive, as shown in the examples above, there is the possibility to restore the dump to the filesystem first, which offers you more control over the restore process, e.g.:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bpipe directive to backup a MySQL database and restore the dump to the filesystem first
 
    FileSet{
@@ -1035,7 +1035,7 @@ If you do not want a direct restore of your data in your plugin directive, as sh
 
 A very simple corresponding shell script (:command:`bpipe-restore.sh`) to the method above might look like the following one:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: bpipe shell script for a restore to filesystem
 
    #!/bin/bash
@@ -1091,6 +1091,44 @@ Storage Configuration - Device Resource Directives
 
    :config:option:`sd/device/CollectStatistics`\ 
 
-See chapter :ref:`section-JobStatistics` for additional information. 
+See chapter :ref:`section-JobStatistics` for additional information.
+
+.. _section-RemoveClient:
+
+Removing a Client
+-----------------
+
+Removing a client can mean several things in Bareos context. You can disable the client so no jobs that use this client will run anymore. You can also remove the client’s configuration so that no job can use the client anymore. However, you will still have the client in your catalog unless you explicitly remove it.
+
+Disable a client
+~~~~~~~~~~~~~~~~
+
+It is possible to disable a client either by calling :bcommand:`disable client=<client-name>` or by setting :config:option:`dir/client/Enabled`\  to no. While the configuration change will persist across restarts, the command just disables the client temporarily.
+
+When a client is disabled, the scheduler will not run any job for this client anymore, but you can still restore to it or manually trigger a job.
+
+Remove configuration for client
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you want to remove the client permanently, you can also completely remove the client from your configuration. This will make sure that no job (neither backup nor restore) can use that client machine. After removing the Client Resource from the director configuration, you will also need to change or remove all Job and JobDefs Resources in the Director configuration that reference the removed client.
+
+Removing the client configuration does not remove the backed up data or the file and job records in the catalog for the client. You can still restore the data that has been backed up from the client to a different client.
+
+Remove catalog records related to the client
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Removing the client from the configuration will leave you with catalog records concerning the client. If you don’t want to restore any data backed up from the client anymore, you can call :bcommand:`purge jobs client=<client-name>`. This will remove all job and file records for the named client from the catalog. However, it will not remove the data from the volumes.
+
+
+
+  .. warning::
+     
+     After removing the job and file records you will be unable to restore the client's data.
+     The :bcommand:`purge` command ignores retention policies, so please take careful.
+   
+
+As soon as all jobs for a client have been removed from the catalog that client record becomes orphaned. Orphaned client records usually stay in your database indefinitely, but if you want them removed for cosmetic reasons you can do so using "Check for orphaned Client records" in :command:`bareos-dbcheck`.
+
+By default :command:`bareos-dbcheck` only lists the orphaned clients it finds. You need to enable the modify database flag to make it actually change the database. 
 
 

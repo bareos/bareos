@@ -43,6 +43,7 @@ A default installation will use the program bsmtp as :strong:`Mail Command`. The
 
 
    .. literalinclude:: /include/config/MessagesMailCommand1.conf
+      :language: bareosconfig
 
 
 

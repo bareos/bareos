@@ -23,7 +23,7 @@ System Requirements
 
 .. _jansson:
 
- :index:`[TAG=JSON] <single: JSON>` :index:`[TAG=Jansson->\see{JSON}] <pair: Jansson; \see{JSON}>` Bareos :index:`Version >= 15.2.0 <triple: bareos-15.2.0; requires; jansson>` offers a JSON API mode, see `Bareos Developer Guide (api-mode-2-json) <http://doc.bareos.org/master/html/bareos-developer-guide.html#api-mode-2-json>`_. On some platform, the Jansson library is directory available. On others it can easly be added. For some older platforms, we compile Bareos without JSON API mode.
+ :index:`[TAG=JSON] <single: JSON>` :index:`[TAG=Jansson->\see{JSON}] <pair: Jansson; \see{JSON}>` Bareos :sinceVersion:`15.2.0: requires: jansson` offers a JSON API mode, see `Bareos Developer Guide (api-mode-2-json) <http://doc.bareos.org/master/html/bareos-developer-guide.html#api-mode-2-json>`_. On some platform, the Jansson library is directory available. On others it can easly be added. For some older platforms, we compile Bareos without JSON API mode.
 
 
 

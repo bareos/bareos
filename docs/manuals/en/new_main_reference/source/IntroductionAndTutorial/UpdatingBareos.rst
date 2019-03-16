@@ -41,7 +41,7 @@ Take a look into the :ref:`Release Notes <releasenotes>` to see which Bareos upd
 Debian based Linux Distributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Since Bareos :index:`Version >= 14.2.0 <pair: bareos-14.2.0; dbconfig-common (Debian)>` the Debian (and Ubuntu) based packages support the **dbconfig-common** mechanism to create and update the Bareos database. If this is properly configured, the database schema will be automatically adapted by the Bareos packages.
+Since Bareos :sinceVersion:`14.2.0: dbconfig-common (Debian)` the Debian (and Ubuntu) based packages support the **dbconfig-common** mechanism to create and update the Bareos database. If this is properly configured, the database schema will be automatically adapted by the Bareos packages.
 
 
 
@@ -92,7 +92,7 @@ MySQL/MariaDB
 
 Make sure, that **root** has direct access to the local MySQL server. Check if the command :command:`mysql` without parameter connects to the database. If not, you may be required to adapt your local MySQL configuration file :file:`~/.my.cnf`. It should look similar to this:
 
-.. code-block:: sh
+.. code-block:: cfg
    :caption: MySQL credentials file .my.cnf
 
    [client]

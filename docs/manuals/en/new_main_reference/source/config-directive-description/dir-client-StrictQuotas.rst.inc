@@ -5,6 +5,7 @@ The Job Log shows either
 
 
    .. literalinclude:: /include/config/DirClientStrictQuotas1.conf
+      :language: bareosconfig
 
 
 
@@ -13,5 +14,6 @@ or
 
 
    .. literalinclude:: /include/config/DirClientStrictQuotas2.conf
+      :language: bareosconfig
 
 

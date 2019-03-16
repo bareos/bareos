@@ -105,6 +105,7 @@ Example Data Encryption Configurations (bareos-fd.conf)
 
 
    .. literalinclude:: /include/config/FdClientPki.conf
+      :language: bareosconfig
 
 
 

@@ -8,6 +8,7 @@ If the bootstrap-file-specification begins with a vertical bar (|), Bareos will 
 Before opening the file or executing the specified command, Bareos performs :ref:`character substitution <character substitution>` like in RunScript directive. To automatically manage your bootstrap files, you can use this in your JobDefs resources: 
 
 .. literalinclude:: /include/config/DirJobWriteBootstrap1.conf
+   :language: bareosconfig
 
 
 

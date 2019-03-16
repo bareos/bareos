@@ -73,9 +73,9 @@ Some of the options you have, all of which are specified in the Pool record, are
 Note that although you probably would not want to limit the number of bytes on a tape as you would on a disk Volume, the other options can be very useful in limiting the time Bareos will use a particular Volume (be it tape or disk). For example, the above directives can allow you to ensure that you rotate through a set of daily Volumes if you wish.
 
 As mentioned above, each of those directives is specified in the Pool or Pools that you use for your Volumes. In the case of :config:option:`dir/pool/MaximumVolumeJobs`\ , :config:option:`dir/pool/MaximumVolumeBytes`\  and :config:option:`dir/pool/VolumeUseDuration`\ , you can actually specify the desired value on a Volume by Volume basis. The value specified in the Pool record becomes the default when labeling new Volumes. Once a
-Volume has been created, it gets its own copy of the Pool defaults, and subsequently changing the Pool will have no effect on existing Volumes. You can either manually change the Volume values, or refresh them from the Pool defaults using the :strong:`update volume` command in the Console. As an example of the use of one of the above, suppose your Pool resource contains:
+Volume has been created, it gets its own copy of the Pool defaults, and subsequently changing the Pool will have no effect on existing Volumes. You can either manually change the Volume values, or refresh them from the Pool defaults using the :bcommand:`update volume` command in the Console. As an example of the use of one of the above, suppose your Pool resource contains:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Volume Use Duration
 
    Pool {
@@ -97,10 +97,10 @@ Use of the above records brings up another problem – that of labeling your Vol
 
 Please note that automatic Volume labeling can also be used with tapes, but it is not nearly so practical since the tapes must be pre-mounted. This requires some user interaction. Automatic labeling from templates does NOT work with autochangers since Bareos will not access unknown slots. There are several methods of labeling all volumes in an autochanger magazine. For more information on this, please see the :ref:`AutochangersChapter` chapter.
 
-Automatic Volume labeling is enabled by making a change to both the :sup:`Dir`\ :strong:`Pool` resource and to the :sup:`Sd`\ :strong:`Device` resource shown above. In the case of the Pool resource, you must provide Bareos with a label format that it will use to create new names. In the simplest form, the label format is simply the Volume name, to which Bareos will append a four digit number. This number starts at 0001 and is incremented for each Volume the catalog
+Automatic Volume labeling is enabled by making a change to both the :config:option:`Dir/Pool`\  resource and to the :config:option:`Sd/Device`\  resource shown above. In the case of the Pool resource, you must provide Bareos with a label format that it will use to create new names. In the simplest form, the label format is simply the Volume name, to which Bareos will append a four digit number. This number starts at 0001 and is incremented for each Volume the catalog
 contains. Thus if you modify your Pool resource to be:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Label Format
 
    Pool {
@@ -114,7 +114,7 @@ Bareos will create Volume names Vol0001, Vol0002, and so on when new Volumes are
 
 The second change that is necessary to make automatic labeling work is to give the Storage daemon permission to automatically label Volumes. Do so by adding :config:option:`sd/device/LabelMedia`\  = yes to the :strong:`Device` resource as follows:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: Label Media = yes
 
    Device {
@@ -180,7 +180,7 @@ Concurrent Disk Jobs
 
 .. _ConcurrentDiskJobs:
 
- Above, we discussed how you could have a single device named **FileBackup**:sup:`Sd`:sub:`Device`  that writes to volumes in :file:`/var/lib/bareos/storage/`. You can, in fact, run multiple concurrent jobs using the Storage definition given with this example, and all the jobs will simultaneously write into the Volume that is being written.
+ Above, we discussed how you could have a single device named :config:option:`Sd/Device = FileBackup`\  that writes to volumes in :file:`/var/lib/bareos/storage/`. You can, in fact, run multiple concurrent jobs using the Storage definition given with this example, and all the jobs will simultaneously write into the Volume that is being written.
 
 Now suppose you want to use multiple Pools, which means multiple Volumes, or suppose you want each client to have its own Volume and perhaps its own directory such as /home/bareos/client1 and /home/bareos/client2 ... . With the single Storage and Device definition above, neither of these two is possible. Why? Because Bareos disk storage follows the same rules as tape devices. Only one Volume can be mounted on any Device at any time. If you want to simultaneously write multiple Volumes, you will
 need multiple Device resources in your |bareosSd| configuration and thus multiple Storage resources in your |bareosDir| configuration.
@@ -200,7 +200,7 @@ What is key here is that each physical device on the |bareosSd| has a different 
 
 The |bareosDir| configuration is as follows:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
 
    Director {
      Name = bareos-dir
@@ -313,7 +313,7 @@ The |bareosDir| configuration is as follows:
 
 and the |bareosSd| configuration is:
 
-.. code-block:: sh
+.. code-block:: bareosconfig
 
    Storage {
      Name = bareos-sd
@@ -361,20 +361,20 @@ Using Multiple Storage Devices
 
 :index:`[TAG=Multiple Storage Devices] <single: Multiple Storage Devices>` :index:`[TAG=Storage Device->Multiple] <pair: Storage Device; Multiple>`
 
-Bareos treats disk volumes similar to tape volumes as much as it can. This means that you can only have a single Volume mounted at one time on a disk as defined in your :sup:`Sd`\ :strong:`Device` resource.
+Bareos treats disk volumes similar to tape volumes as much as it can. This means that you can only have a single Volume mounted at one time on a disk as defined in your :config:option:`Sd/Device`\  resource.
 
 If you use Bareos without :ref:`section-DataSpooling`, multiple concurrent backup jobs can be written to a Volume using interleaving. However, interleaving has disadvantages, see :ref:`section-Interleaving`.
 
-Also the :sup:`Sd`\ :strong:`Device` will be in use. If there are other jobs, requesting other Volumes, these jobs have to wait.
+Also the :config:option:`Sd/Device`\  will be in use. If there are other jobs, requesting other Volumes, these jobs have to wait.
 
 On a tape (or autochanger), this is a physical limitation of the hardware. However, when using disk storage, this is only a limitation of the software.
 
-To enable Bareos to run concurrent jobs (on disk storage), define as many :sup:`Sd`\ :strong:`Device` as concurrent jobs should run. All these :sup:`Sd`\ :strong:`Device`s can use the same :config:option:`sd/device/ArchiveDevice`\  directory. Set :config:option:`sd/device/MaximumConcurrentJobs`\  = 1 for all these devices.
+To enable Bareos to run concurrent jobs (on disk storage), define as many :config:option:`Sd/Device`\  as concurrent jobs should run. All these :config:option:`Sd/Device`\ s can use the same :config:option:`sd/device/ArchiveDevice`\  directory. Set :config:option:`sd/device/MaximumConcurrentJobs`\  = 1 for all these devices.
 
 Example: use four storage devices pointing to the same directory
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: |bareosDir| configuration: using 4 storage devices
 
    Director {
@@ -399,7 +399,7 @@ Example: use four storage devices pointing to the same directory
 
    [...]
 
-.. code-block:: sh
+.. code-block:: bareosconfig
    :caption: |bareosSd| configuraton: using 4 storage devices
 
    Storage {
@@ -478,7 +478,7 @@ Most people prefer to have a Pool of tapes that are used for daily backups and r
 
 By properly defining your Volume Pools with appropriate Retention periods, Bareos can manage the recycling (such as defined above) automatically.
 
-Automatic recycling of Volumes is controlled by four records in the :sup:`Dir`\ :strong:`Pool` resource definition. These four records are:
+Automatic recycling of Volumes is controlled by four records in the :config:option:`Dir/Pool`\  resource definition. These four records are:
 
 -  :config:option:`dir/pool/AutoPrune`\  = yes
 
@@ -520,7 +520,7 @@ Only Volumes marked **Full** or **Used** will be considerd for pruning. The Volu
 
 Until recycling actually occurs, the Volume data remains intact. If no Volumes can be found for recycling for any of the reasons stated above, Bareos will request operator intervention (i.e. it will ask you to label a new volume).
 
-A key point mentioned above, that can be a source of frustration, is that Bareos will only recycle purged Volumes if there is no other appendable Volume available. Otherwise, it will always write to an appendable Volume before recycling even if there are Volume marked as Purged. This preserves your data as long as possible. So, if you wish to :emphasis:`force` Bareos to use a purged Volume, you must first ensure that no other Volume in the Pool is marked Append. If necessary, you can
+A key point mentioned above, that can be a source of frustration, is that Bareos will only recycle purged Volumes if there is no other appendable Volume available. Otherwise, it will always write to an appendable Volume before recycling even if there are Volume marked as Purged. This preserves your data as long as possible. So, if you wish to ''force'' Bareos to use a purged Volume, you must first ensure that no other Volume in the Pool is marked Append. If necessary, you can
 manually set a volume to Full. The reason for this is that Bareos wants to preserve the data on your old tapes (even though purged from the catalog) as long as absolutely possible before overwriting it. There are also a number of directives such as **Volume Use Duration** that will automatically mark a volume as **Used** and thus no longer appendable.
 
 .. _AutoPruning:
@@ -547,7 +547,7 @@ There are three pruning durations. All apply to catalog database records and not
 
 Having the File records in the database means that you can examine all the files backed up for a particular Job. They take the most space in the catalog (probably 90-95% of the total). When the File records are pruned, the Job records can remain, and you can still examine what Jobs ran, but not the details of the Files backed up. In addition, without the File records, you cannot use the Console restore command to restore the files.
 
-When a Job record is pruned, the Volume (Media record) for that Job can still remain in the database, and if you do a :strong:`list volumes`, you will see the volume information, but the Job records (and its File records) will no longer be available.
+When a Job record is pruned, the Volume (Media record) for that Job can still remain in the database, and if you do a :bcommand:`list volumes`, you will see the volume information, but the Job records (and its File records) will no longer be available.
 
 In each case, pruning removes information about where older files are, but it also prevents the catalog from growing to be too large. You choose the retention periods in function of how many files you are backing up and the time periods you want to keep those records online, and the size of the database. It is possible to re-insert the records (with 98% of the original data) by using :command:`bscan` to scan in a whole Volume or any part of the volume that you want.
 
@@ -568,7 +568,7 @@ files are pruned from a Volume (i.e. no records in the catalog), the Volume will
    When this time period expires and if :config:option:`dir/pool/AutoPrune`\  = yes and a new Volume is needed, but no appendable Volume is available, Bareos will prune (remove) Job records that are older than the specified **Volume Retention** period.
 
    The **Volume Retention** period takes precedence over any :config:option:`dir/client/JobRetention`\  period you have specified in the Client resource. It should also be noted, that the **Volume Retention** period is obtained by reading the Catalog Database Media record rather than the Pool resource record. This means that if you change the :config:option:`dir/pool/VolumeRetention`\  in the Pool
-   resource record, you must ensure that the corresponding change is made in the catalog by using the :strong:`update pool` command. Doing so will insure that any new Volumes will be created with the changed **Volume Retention** period. Any existing Volumes will have their own copy of the **Volume Retention** period that can only be changed on a Volume by Volume basis using the :strong:`update volume`
+   resource record, you must ensure that the corresponding change is made in the catalog by using the :bcommand:`update pool` command. Doing so will insure that any new Volumes will be created with the changed **Volume Retention** period. Any existing Volumes will have their own copy of the **Volume Retention** period that can only be changed on a Volume by Volume basis using the :bcommand:`update volume`
    command.
 
    When all file catalog entries are removed from the volume, its Volume status is set to **Purged**. The files remain physically on the Volume until the volume is overwritten.
@@ -611,7 +611,7 @@ The algorithm described below assumes that :strong:`Auto Prune` is enabled, that
 
 #. Search the Pool for a Volume with VolStatus=Purged
 
-#. If a Pool named **Scratch**:sup:`Dir`:sub:`pool`\  exists, search for a Volume and if found move it to the current Pool for the Job and use it. Note, when the Scratch Volume is moved into the current Pool, the basic Pool defaults are applied as if it is a newly labeled Volume (equivalent to an :strong:`update volume from pool` command).
+#. If a Pool named :config:option:`dir/pool = Scratch`\  exists, search for a Volume and if found move it to the current Pool for the Job and use it. Note, when the Scratch Volume is moved into the current Pool, the basic Pool defaults are applied as if it is a newly labeled Volume (equivalent to an :bcommand:`update volume from pool` command).
 
 #. If we were looking for Volumes in the Autochanger, go back to step 2 above, but this time, look for any Volume whether or not it is in the Autochanger.
 
@@ -913,20 +913,20 @@ Although automatic recycling of Volumes is implemented (see the :ref:`RecyclingC
 
 Assuming that you want to keep the Volume name, but you simply want to write new data on the tape, the steps to take are:
 
--  Use the :strong:`update volume` command in the Console to ensure that **Recycle = yes**.
+-  Use the :bcommand:`update volume` command in the Console to ensure that **Recycle = yes**.
 
--  Use the :strong:`purge jobs volume` command in the Console to mark the Volume as **Purged**. Check by using :strong:`list volumes`.
+-  Use the :bcommand:`purge jobs volume` command in the Console to mark the Volume as **Purged**. Check by using :bcommand:`list volumes`.
 
 Once the Volume is marked Purged, it will be recycled the next time a Volume is needed.
 
-If you wish to reuse the tape by giving it a new name, use the :strong:`relabel` instead of the :strong:`purge` command.
+If you wish to reuse the tape by giving it a new name, use the :bcommand:`relabel` instead of the :bcommand:`purge` command.
 
 
 
 .. warning::
-   The :strong:`delete` command can be dangerous. Once it is
+   The :bcommand:`delete` command can be dangerous. Once it is
    done, to recover the File records, you must either restore your database as it
-   was before the :strong:`delete` command or use the :ref:`bscan` utility program to
+   was before the :bcommand:`delete` command or use the :ref:`bscan` utility program to
    scan the tape and recreate the database entries.
 
 
