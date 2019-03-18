@@ -1757,7 +1757,7 @@ bool BareosDb::GetNdmpEnvironmentString(const std::string& query,
  * Returns false: on failure
  *         true: on success
  */
-bool BareosDb::GetNdmpEnvironmentString(const JobId_t JobId,
+bool BareosDb::GetNdmpEnvironmentString(JobId_t JobId,
                                         DB_RESULT_HANDLER* ResultHandler,
                                         void* ctx)
 {
@@ -1774,8 +1774,8 @@ bool BareosDb::GetNdmpEnvironmentString(const JobId_t JobId,
  * Returns false: on failure
  *         true: on success
  */
-bool BareosDb::GetNdmpEnvironmentString(const JobId_t JobId,
-                                        const int32_t FileIndex,
+bool BareosDb::GetNdmpEnvironmentString(JobId_t JobId,
+                                        int32_t FileIndex,
                                         DB_RESULT_HANDLER* ResultHandler,
                                         void* ctx)
 {
@@ -1795,7 +1795,7 @@ bool BareosDb::GetNdmpEnvironmentString(const JobId_t JobId,
  *         true: on success
  */
 bool BareosDb::GetNdmpEnvironmentString(const VolumeSessionInfo& vsi,
-                                        const int32_t FileIndex,
+                                        int32_t FileIndex,
                                         DB_RESULT_HANDLER* ResultHandler,
                                         void* ctx)
 {
