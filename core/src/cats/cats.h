@@ -823,6 +823,9 @@ class BareosDb
   int GetNdmpLevelMapping(JobControlRecord* jcr,
                           JobDbRecord* jr,
                           char* filesystem);
+  bool GetNdmpEnvironmentString(const std::string& query,
+                                DB_RESULT_HANDLER* ResultHandler,
+                                void* ctx);
   bool GetNdmpEnvironmentString(const VolumeSessionInfo& vsi,
                                 const int32_t FileIndex,
                                 DB_RESULT_HANDLER* ResultHandler,
