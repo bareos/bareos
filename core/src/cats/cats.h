@@ -827,14 +827,14 @@ class BareosDb
                                 DB_RESULT_HANDLER* ResultHandler,
                                 void* ctx);
   bool GetNdmpEnvironmentString(const VolumeSessionInfo& vsi,
-                                const int32_t FileIndex,
+                                int32_t FileIndex,
                                 DB_RESULT_HANDLER* ResultHandler,
                                 void* ctx);
-  bool GetNdmpEnvironmentString(const JobId_t JobId,
+  bool GetNdmpEnvironmentString(JobId_t JobId,
                                 DB_RESULT_HANDLER* ResultHandler,
                                 void* ctx);
-  bool GetNdmpEnvironmentString(const JobId_t JobId,
-                                const int32_t FileIndex,
+  bool GetNdmpEnvironmentString(JobId_t JobId,
+                                int32_t FileIndex,
                                 DB_RESULT_HANDLER* ResultHandler,
                                 void* ctx);
   bool PrepareMediaSqlQuery(JobControlRecord* jcr,
