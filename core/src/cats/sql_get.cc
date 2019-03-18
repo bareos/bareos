@@ -40,6 +40,7 @@
 #include "sql.h"
 #include "lib/edit.h"
 #include "lib/volume_session_info.h"
+#include "include/make_unique.h"
 
 /* -----------------------------------------------------------------------
  *
@@ -1710,6 +1711,45 @@ bail_out:
   return dumplevel;
 }
 
+/**
+ * CountingHandler() with a count_context* can be used to count the number of
+ * times that SqlQueryWithHandler() calls the handler.
+ * This is not neccesarily the number of rows, because the ResultHandler can
+ * stop processing of further rows by returning non-zero.
+ */
+struct count_context {
+  DB_RESULT_HANDLER* handler;
+  void* ctx;
+  int count;
+
+  count_context(DB_RESULT_HANDLER* t_handler, void* t_ctx)
+      : handler(t_handler), ctx(t_ctx), count(0)
+  {
+  }
+};
+
+static int CountingHandler(void* counting_ctx, int num_fields, char** rows)
+{
+  auto* c = (struct count_context*)counting_ctx;
+  c->count++;
+  return c->handler(c->ctx, num_fields, rows);
+}
+
+/**
+ * Fetch NDMP Job Environment based on raw SQL query.
+ * Returns false: on sql failure or when 0 rows were returned
+ *         true:  otherwise
+ */
+bool BareosDb::GetNdmpEnvironmentString(const std::string& query,
+                                        DB_RESULT_HANDLER* ResultHandler,
+                                        void* ctx)
+{
+  auto myctx = std::make_unique<count_context>(ResultHandler, ctx);
+  bool status =
+      SqlQueryWithHandler(query.c_str(), CountingHandler, myctx.get());
+  Dmsg3(150, "Got %d NDMP environment records", myctx->count);
+  return status && myctx->count > 0;  // no rows means no environment was found
+}
 
 /**
  * Fetch the NDMP Job Environment Strings based on JobId only
@@ -1724,8 +1764,8 @@ bool BareosDb::GetNdmpEnvironmentString(const JobId_t JobId,
   ASSERT(JobId > 0)
   std::string query{"SELECT EnvName, EnvValue FROM NDMPJobEnvironment"};
   query += " WHERE JobId=" + std::to_string(JobId);
-  bool status = SqlQueryWithHandler(query.c_str(), ResultHandler, ctx);
-  return status && SqlNumRows() > 0;  // no rows means no environment was found
+
+  return GetNdmpEnvironmentString(query, ResultHandler, ctx);
 }
 
 /**
@@ -1742,9 +1782,9 @@ bool BareosDb::GetNdmpEnvironmentString(const JobId_t JobId,
   ASSERT(JobId > 0)
   std::string query{"SELECT EnvName, EnvValue FROM NDMPJobEnvironment"};
   query += " WHERE JobId=" + std::to_string(JobId);
-  query += " AND FileIndex=" + std::to_string(JobId);
-  bool status = SqlQueryWithHandler(query.c_str(), ResultHandler, ctx);
-  return status && SqlNumRows() > 0;  // no rows means no environment was found
+  query += " AND FileIndex=" + std::to_string(FileIndex);
+
+  return GetNdmpEnvironmentString(query, ResultHandler, ctx);
 }
 
 
