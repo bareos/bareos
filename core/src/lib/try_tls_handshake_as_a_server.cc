@@ -23,6 +23,7 @@
 #include "try_tls_handshake_as_a_server.h"
 
 #include "lib/bsock_tcp.h"
+#include "lib/configured_tls_policy_getter.h"
 #include "lib/parse_conf.h"
 
 enum class ConnectionHandshakeMode
@@ -32,8 +33,9 @@ enum class ConnectionHandshakeMode
   CloseConnection
 };
 
-static ConnectionHandshakeMode GetHandshakeMode(BareosSocket* bs,
-                                                ConfigurationParser* config)
+static ConnectionHandshakeMode GetHandshakeMode(
+    BareosSocket* bs,
+    const ConfigurationParser& config)
 {
   bool cleartext_hello;
   std::string client_name;
@@ -49,8 +51,9 @@ static ConnectionHandshakeMode GetHandshakeMode(BareosSocket* bs,
   bs->connected_daemon_version_ = static_cast<BareosVersionNumber>(version);
 
   if (cleartext_hello) {
+    ConfiguredTlsPolicyGetter tls_policy_getter(config);
     TlsPolicy tls_policy;
-    if (!config->GetConfiguredTlsPolicyFromCleartextHello(
+    if (!tls_policy_getter.GetConfiguredTlsPolicyFromCleartextHello(
             r_code_str, client_name, tls_policy)) {
       Dmsg0(200, "Could not read out cleartext configuration\n");
       return ConnectionHandshakeMode::CloseConnection;
@@ -81,7 +84,8 @@ static ConnectionHandshakeMode GetHandshakeMode(BareosSocket* bs,
 
 bool TryTlsHandshakeAsAServer(BareosSocket* bs, ConfigurationParser* config)
 {
-  ConnectionHandshakeMode mode = GetHandshakeMode(bs, config);
+  ASSERT(config);
+  ConnectionHandshakeMode mode = GetHandshakeMode(bs, *config);
 
   bool success = false;
 

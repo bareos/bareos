@@ -36,6 +36,7 @@
 #include "lib/keyword_table_s.h"
 
 #include <functional>
+#include <memory>
 
 struct ResourceItem;
 class CommonResourceHeader;
@@ -307,6 +308,8 @@ class QualifiedResourceNameTypeConverter;
  * New C++ configuration routines
  */
 class ConfigurationParser {
+  friend class ConfiguredTlsPolicyGetterPrivate;
+
  public:
   std::string cf_;                    /* Config file parameter */
   LEX_ERROR_HANDLER* scan_error_;     /* Error handler if non-null */
@@ -490,16 +493,12 @@ class ConfigurationParser {
   void StoreAddresses(LEX* lc, ResourceItem* item, int index, int pass);
   void StoreAddressesAddress(LEX* lc, ResourceItem* item, int index, int pass);
   void StoreAddressesPort(LEX* lc, ResourceItem* item, int index, int pass);
-  void scan_types(LEX* lc,
-                  MessagesResource* msg,
-                  int dest_code,
-                  char* where,
-                  char* cmd,
-                  char* timestamp_format);
-  TlsPolicy GetTlsPolicyForRootConsole() const;
-  TlsPolicy GetTlsPolicyForJob(const std::string& name) const;
-  TlsPolicy GetTlsPolicyForResourceCodeAndName(const std::string& r_code_str,
-                                               const std::string& name) const;
+  void ScanTypes(LEX* lc,
+                 MessagesResource* msg,
+                 int dest_code,
+                 char* where,
+                 char* cmd,
+                 char* timestamp_format);
 };
 
 void PrintMessage(void* sock, const char* fmt, ...);
