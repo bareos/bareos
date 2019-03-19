@@ -281,7 +281,7 @@ bool ConfigurationParser::ParseConfigFile(const char* cf,
                       lc->str);
             goto bail_out;
           }
-          res_table = get_resource_table(lc->str);
+          res_table = GetResourceTable(lc->str);
           if (res_table && res_table->items) {
             items = res_table->items;
             state = p_resource;
@@ -413,11 +413,6 @@ bail_out:
   return false;
 }
 
-const char* ConfigurationParser::get_resource_type_name(int code)
-{
-  return res_to_str(code);
-}
-
 int ConfigurationParser::GetResourceTableIndex(int resource_type)
 {
   int rindex = -1;
@@ -429,7 +424,7 @@ int ConfigurationParser::GetResourceTableIndex(int resource_type)
   return rindex;
 }
 
-ResourceTable* ConfigurationParser::get_resource_table(int resource_type)
+ResourceTable* ConfigurationParser::GetResourceTable(int resource_type)
 {
   ResourceTable* result = NULL;
   int rindex = GetResourceTableIndex(resource_type);
@@ -439,7 +434,7 @@ ResourceTable* ConfigurationParser::get_resource_table(int resource_type)
   return result;
 }
 
-ResourceTable* ConfigurationParser::get_resource_table(
+ResourceTable* ConfigurationParser::GetResourceTable(
     const char* resource_type_name)
 {
   ResourceTable* result = NULL;
@@ -470,8 +465,8 @@ int ConfigurationParser::GetResourceItemIndex(ResourceItem* items,
   return result;
 }
 
-ResourceItem* ConfigurationParser::get_resource_item(ResourceItem* items,
-                                                     const char* item)
+ResourceItem* ConfigurationParser::GetResourceItem(ResourceItem* items,
+                                                   const char* item)
 {
   ResourceItem* result = NULL;
   int i = -1;
@@ -482,7 +477,7 @@ ResourceItem* ConfigurationParser::get_resource_item(ResourceItem* items,
   return result;
 }
 
-const char* ConfigurationParser::get_default_configdir()
+const char* ConfigurationParser::GetDefaultConfigDir()
 {
 #if defined(HAVE_WIN32)
   HRESULT hr;
@@ -589,11 +584,11 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
     /*
      * No path is given, so use the defaults.
      */
-    found = GetConfigFile(full_path, get_default_configdir(),
+    found = GetConfigFile(full_path, GetDefaultConfigDir(),
                           config_default_filename_.c_str());
     if (!found) {
       config_path_file.strcpy(full_path);
-      found = GetConfigIncludePath(full_path, get_default_configdir());
+      found = GetConfigIncludePath(full_path, GetDefaultConfigDir());
     }
     if (!found) {
       Jmsg2(NULL, M_ERROR, 0,
@@ -632,7 +627,7 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
      * If config_default_filename_ is not set,
      * cf_ may contain what is expected in config_default_filename_.
      */
-    found = GetConfigFile(full_path, get_default_configdir(), cf_.c_str());
+    found = GetConfigFile(full_path, GetDefaultConfigDir(), cf_.c_str());
     if (!found) {
       Jmsg2(NULL, M_ERROR, 0,
             _("Failed to find configuration files at \"%s\" and \"%s\".\n"),
@@ -648,7 +643,7 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
   return found;
 }
 
-CommonResourceHeader** ConfigurationParser::save_resources()
+CommonResourceHeader** ConfigurationParser::SaveResources()
 {
   int num = r_last_ - r_first_ + 1;
   CommonResourceHeader** res =
@@ -658,16 +653,6 @@ CommonResourceHeader** ConfigurationParser::save_resources()
     res[i] = res_head_[i];
     res_head_[i] = NULL;
   }
-
-  return res;
-}
-
-CommonResourceHeader** ConfigurationParser::new_res_head()
-{
-  int size = (r_last_ - r_first_ + 1) * sizeof(CommonResourceHeader*);
-  CommonResourceHeader** res = (CommonResourceHeader**)malloc(size);
-
-  memset(res, 0, size);
 
   return res;
 }

@@ -584,7 +584,7 @@ bool DoReloadConfig()
 
   DbSqlPoolFlush();
 
-  prev_config.res_table = my_config->save_resources();
+  prev_config.res_table = my_config->SaveResources();
   prev_config.JobCount = 0;
 
   Dmsg0(100, "Reloading config file\n");
@@ -599,7 +599,7 @@ bool DoReloadConfig()
     Jmsg(NULL, M_ERROR, 0, _("Resetting to previous configuration.\n"));
 
     resource_table_reference temp_config;
-    temp_config.res_table = my_config->save_resources();
+    temp_config.res_table = my_config->SaveResources();
 
     int num_rcodes = my_config->r_last_ - my_config->r_first_ + 1;
     for (int i = 0; i < num_rcodes; i++) {

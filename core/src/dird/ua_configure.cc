@@ -99,7 +99,7 @@ static inline ResourceItem* config_get_res_item(UaContext* ua,
   const char* errorcharmsg = NULL;
 
   if (res_table) {
-    item = my_config->get_resource_item(res_table->items, key);
+    item = my_config->GetResourceItem(res_table->items, key);
     if (!item) {
       ua->ErrorMsg("Resource \"%s\" does not permit directive \"%s\".\n",
                    res_table->name, key);
@@ -394,7 +394,7 @@ static inline bool ConfigureAdd(UaContext* ua, int resource_type_parameter)
   bool result = false;
   ResourceTable* res_table = NULL;
 
-  res_table = my_config->get_resource_table(ua->argk[resource_type_parameter]);
+  res_table = my_config->GetResourceTable(ua->argk[resource_type_parameter]);
   if (!res_table) {
     ua->ErrorMsg(_("invalid resource type %s.\n"),
                  ua->argk[resource_type_parameter]);

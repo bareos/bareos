@@ -366,8 +366,7 @@ class ConfigurationParser {
                        LEX_WARNING_HANDLER* scan_warning = NULL);
   const std::string& get_base_config_path() const { return used_config_path_; }
   void FreeResources();
-  CommonResourceHeader** save_resources();
-  CommonResourceHeader** new_res_head();
+  CommonResourceHeader** SaveResources();
   void InitResource(int type,
                     ResourceItem* items,
                     int pass,
@@ -376,12 +375,11 @@ class ConfigurationParser {
   void DumpResources(void sendit(void* sock, const char* fmt, ...),
                      void* sock,
                      bool hide_sensitive_data = false);
-  const char* get_resource_type_name(int code);
   int GetResourceCode(const char* resource_type);
-  ResourceTable* get_resource_table(int resource_type);
-  ResourceTable* get_resource_table(const char* resource_type_name);
+  ResourceTable* GetResourceTable(int resource_type);
+  ResourceTable* GetResourceTable(const char* resource_type_name);
   int GetResourceItemIndex(ResourceItem* res_table, const char* item);
-  ResourceItem* get_resource_item(ResourceItem* res_table, const char* item);
+  ResourceItem* GetResourceItem(ResourceItem* res_table, const char* item);
   bool GetPathOfResource(PoolMem& path,
                          const char* component,
                          const char* resourcetype,
@@ -449,7 +447,7 @@ class ConfigurationParser {
   bool parser_first_run_;
 
 
-  const char* get_default_configdir();
+  const char* GetDefaultConfigDir();
   bool GetConfigFile(PoolMem& full_path,
                      const char* config_dir,
                      const char* config_filename);
