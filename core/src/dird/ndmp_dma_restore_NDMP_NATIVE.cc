@@ -98,6 +98,9 @@ static inline bool fill_restore_environment_ndmp_native(
      * the database when its either expired or when an old NDMP backup is
      * restored where the whole environment was not saved.
      */
+    Jmsg(jcr, M_WARNING, 0,
+         _("Could not load NDMP environment. Using fallback.\n"));
+
 
     if (!nbf_options || nbf_options->uses_file_history) {
       /*
@@ -117,6 +120,7 @@ static inline bool fill_restore_environment_ndmp_native(
 
     /*
      * Tell the data engine what was backuped.
+     * As we have no idea without an environment, just set to a nullstring.
      */
     pv.name = ndmp_env_keywords[NDMP_ENV_KW_FILESYSTEM];
     pv.value = ndmp_filesystem;
