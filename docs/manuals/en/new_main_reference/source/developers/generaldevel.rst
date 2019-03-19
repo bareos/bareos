@@ -185,8 +185,6 @@ Please make sure to use the Bareos `formatting standards`_.
 Don’t forget any Copyrights and acknowledgments if it isn’t 100% your code.
 Also, include the Bareos copyright notice that can be found in every source file.
 
-If you plan on doing significant development work over a period of time, after having your first patch reviewed and approved, you will be eligible for GitHub write access so that you can commit your changes directly into branches of the main GitHub repository.
-
 Commit message guideline
 ~~~~~~~~~~~~~~~~~~~~~~~~
 Start with a subject on a single line.
@@ -477,14 +475,14 @@ Memory Leaks
 ~~~~~~~~~~~~
 Most of Bareos still uses SmartAlloc.
 This tracks memory allocation and allows you to detect memory leaks.
-However, newer code should not use SmartAlloc, but use standard C++11 resource management (RAII).
+However, newer code should not use SmartAlloc, but use standard C++11 resource management (RAII and smart pointers).
 If you need to detect memory leaks, you can just use ``valgrind`` to do so.
 
 Guiding Principles
 ~~~~~~~~~~~~~~~~~~
 All new code should be written in modern C++11 following the `Google C++ Style Guide`_ and the `C++ Core Guidelines`_.
 
-We consider simple better than complex, but complex code is still better than complicated code.
+We like simple rather than complex code, but complex code is still better than complicated code.
 
 Currently there is still a lot of old C++ and C code in the code base and a lot of existing code violates our `do's`_ and `don'ts`_.
 Our long-term goal is to modernize the code-base to make it easier to understand, easier to maintain and better approachable for new developers.
@@ -501,8 +499,8 @@ We sometimes do this for larger tables and deeply nested brace initialization.
 If you need to hand-optimize make sure you add **clang-format off** and **clang-format on** comments so applying **clang-format** on your source will not undo your manual optimization.
 Please apply common sense and use this exception sparingly.
 
-Prefer ``/* */`` for code comments.
-You can use ``//`` for single-line comments.
+Use ``/* */`` for multi-line comments.
+Use ``//`` for single-line comments.
 
 Do's
 ~~~~
@@ -513,7 +511,7 @@ Do's
 - honor `Rule of three`_/`Rule of five`/`Rule of zero`
 - use ``std::string`` instead of ``char*`` for strings where possible
 - use `fixed width integer types`_ if the size of your integer matters
-- when in doubt always prefer the standard library above a custom implementation
+- when in doubt always prefer the standard library over a custom implementation
 - follow the `Google C++ Style Guide`_
 - follow the `C++ Core Guidelines`_
 - get in touch with us on the `bareos-devel`_ mailing list
@@ -528,23 +526,25 @@ Do's
 Don'ts
 ~~~~~~
 avoid ``new``
-  We provide a backport of C++14's ``make_unique()`` in ``make_unique.h``.
-  Whereever possible this should be used instead of ``new``.
+  Starting with C++11 there are smart pointers like ``shared_ptr`` and ``unique_ptr``.
+  To create a ``shared_ptr`` you should use ``make_shared()`` from the standard library.
+  We provide a backport of C++14's ``make_unique()`` in ``include/make_unique.h`` to create a ``unique_ptr``.
+  If possible use ``unique_ptr`` instead of ``shared_ptr``.
 
 avoid ``delete``
-  Cleanup should be handled automatically with RAII.
+  You should use the RAII_ paradigm, so cleanup is handled automatically.
 
 don't transfer ownership of heap memory without move semantics
-  No returning of raw pointers where the caller is supposed to free()
+  No returning of raw pointers where the caller is supposed to free the resource.
 
 don't use C++14 or later
   Currently we support platforms where the newest available compiler supports only C++11.
 
 don't use C string functions
-  If you can, use ``std::string`` and don't rely on C's string functions.
-  If you can't use the bareos replacement for the string function.
-  This is usually just prefixed with a "b".
-  These replacements will play nicely with the (now deprecated) smart allocator.
+  If you can, use ``std::string`` and don't rely on C string functions.
+
+don't use the bareos replacements for C string functions.
+  These are deprecated.
 
 avoid the ``edit_*()`` functions from ``edit.cc``
   Just use the appropriate format string.
@@ -554,6 +554,6 @@ don't subclass ``SmartAlloc``
   It forces the use of ancient memory management methods and severely limits the capabilities of your class
 
 avoid smart allocation
-  The whole smart allocation library with ``get_pool_memory()``, ``sm_free()`` and friends does not mix with RAII, so we will try to remove them step by step in the future.
+  The whole smart allocation library with ``get_pool_memory()``, ``sm_free()`` and friends do not mix with RAII, so we will try to remove them step by step in the future.
   Avoid in new code if possible.
   
