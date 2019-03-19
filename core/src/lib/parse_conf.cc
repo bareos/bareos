@@ -908,10 +908,10 @@ bool ConfigurationParser::RemoveResource(int type, const char* name)
       if (!last) {
         Dmsg2(900,
               _("removing resource %s, name=%s (first resource in list)\n"),
-              res_to_str(type), name);
+              ResToStr(type), name);
         res_head_[rindex] = res->next;
       } else {
-        Dmsg2(900, _("removing resource %s, name=%s\n"), res_to_str(type),
+        Dmsg2(900, _("removing resource %s, name=%s\n"), ResToStr(type),
               name);
         last->next = res->next;
       }

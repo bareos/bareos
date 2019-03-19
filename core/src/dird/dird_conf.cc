@@ -790,7 +790,7 @@ json_t* json_item(s_jt* item)
 json_t* json_datatype_header(const int type, const char* typeclass)
 {
   json_t* json = json_object();
-  const char* description = datatype_to_description(type);
+  const char* description = DatatypeToDescription(type);
 
   json_object_set_new(json, "number", json_integer(type));
 
@@ -896,66 +896,66 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
   json_object_set(json, "datatype", json_datatype_obj);
 
   int d = 0;
-  while (get_datatype(d)->name != NULL) {
-    datatype = get_datatype(d);
+  while (GetDatatype(d)->name != NULL) {
+    datatype = GetDatatype(d);
 
     switch (datatype->number) {
       case CFG_TYPE_RUNSCRIPT:
-        json_object_set(json_datatype_obj, datatype_to_str(datatype->number),
+        json_object_set(json_datatype_obj, DatatypeToString(datatype->number),
                         json_datatype(CFG_TYPE_RUNSCRIPT, runscript_items));
         break;
       case CFG_TYPE_INCEXC:
-        json_object_set(json_datatype_obj, datatype_to_str(datatype->number),
+        json_object_set(json_datatype_obj, DatatypeToString(datatype->number),
                         json_incexc(CFG_TYPE_INCEXC));
         break;
       case CFG_TYPE_OPTIONS:
-        json_object_set(json_datatype_obj, datatype_to_str(datatype->number),
+        json_object_set(json_datatype_obj, DatatypeToString(datatype->number),
                         json_options(CFG_TYPE_OPTIONS));
         break;
       case CFG_TYPE_PROTOCOLTYPE:
-        json_object_set(json_datatype_obj, datatype_to_str(datatype->number),
+        json_object_set(json_datatype_obj, DatatypeToString(datatype->number),
                         json_datatype(CFG_TYPE_PROTOCOLTYPE, backupprotocols));
         break;
       case CFG_TYPE_AUTHPROTOCOLTYPE:
         json_object_set(
-            json_datatype_obj, datatype_to_str(datatype->number),
+            json_datatype_obj, DatatypeToString(datatype->number),
             json_datatype(CFG_TYPE_AUTHPROTOCOLTYPE, authprotocols));
         break;
       case CFG_TYPE_AUTHTYPE:
-        json_object_set(json_datatype_obj, datatype_to_str(datatype->number),
+        json_object_set(json_datatype_obj, DatatypeToString(datatype->number),
                         json_datatype(CFG_TYPE_AUTHTYPE, authmethods));
         break;
       case CFG_TYPE_LEVEL:
-        json_object_set(json_datatype_obj, datatype_to_str(datatype->number),
+        json_object_set(json_datatype_obj, DatatypeToString(datatype->number),
                         json_datatype(CFG_TYPE_LEVEL, joblevels));
         break;
       case CFG_TYPE_JOBTYPE:
-        json_object_set(json_datatype_obj, datatype_to_str(datatype->number),
+        json_object_set(json_datatype_obj, DatatypeToString(datatype->number),
                         json_datatype(CFG_TYPE_JOBTYPE, jobtypes));
         break;
       case CFG_TYPE_MIGTYPE:
-        json_object_set(json_datatype_obj, datatype_to_str(datatype->number),
+        json_object_set(json_datatype_obj, DatatypeToString(datatype->number),
                         json_datatype(CFG_TYPE_MIGTYPE, migtypes));
         break;
       case CFG_TYPE_REPLACE:
-        json_object_set(json_datatype_obj, datatype_to_str(datatype->number),
+        json_object_set(json_datatype_obj, DatatypeToString(datatype->number),
                         json_datatype(CFG_TYPE_REPLACE, ReplaceOptions));
         break;
       case CFG_TYPE_ACTIONONPURGE:
         json_object_set(
-            json_datatype_obj, datatype_to_str(datatype->number),
+            json_datatype_obj, DatatypeToString(datatype->number),
             json_datatype(CFG_TYPE_ACTIONONPURGE, ActionOnPurgeOptions));
         break;
       case CFG_TYPE_POOLTYPE:
-        json_object_set(json_datatype_obj, datatype_to_str(datatype->number),
+        json_object_set(json_datatype_obj, DatatypeToString(datatype->number),
                         json_datatype(CFG_TYPE_POOLTYPE, PoolTypes));
         break;
       case CFG_TYPE_RUN:
-        json_object_set(json_datatype_obj, datatype_to_str(datatype->number),
+        json_object_set(json_datatype_obj, DatatypeToString(datatype->number),
                         json_datatype(CFG_TYPE_RUN, RunFields));
         break;
       default:
-        json_object_set(json_datatype_obj, datatype_to_str(datatype->number),
+        json_object_set(json_datatype_obj, DatatypeToString(datatype->number),
                         json_datatype(datatype->number));
         break;
     }
@@ -1013,7 +1013,7 @@ static inline bool CmdlineItem(PoolMem* buffer, ResourceItem* item)
   key.toLower();
 
   temp.bsprintf(" %s%s=<%s>%s", mod_start, key.c_str(),
-                datatype_to_str(item->type), mod_end);
+                DatatypeToString(item->type), mod_end);
   PmStrcat(buffer, temp.c_str());
 
   return true;
@@ -1301,7 +1301,7 @@ bool ValidateResource(int res_type, ResourceItem* items, BareosResource* res)
         Jmsg(NULL, M_ERROR, 0,
              _("\"%s\" directive in %s \"%s\" resource is required, but not "
                "found.\n"),
-             items[i].name, my_config->res_to_str(res_type), res->name());
+             items[i].name, my_config->ResToStr(res_type), res->name());
         return false;
       }
     }
@@ -1311,7 +1311,7 @@ bool ValidateResource(int res_type, ResourceItem* items, BareosResource* res)
      */
     if (i >= MAX_RES_ITEMS) {
       Emsg1(M_ERROR, 0, _("Too many items in %s resource\n"),
-            my_config->res_to_str(res_type));
+            my_config->ResToStr(res_type));
       return false;
     }
   }
@@ -2802,7 +2802,7 @@ static void StoreDevice(LEX* lc, ResourceItem* item, int index, int pass)
       res->res_dev.hdr.name = bstrdup(lc->str);
       res_head[rindex] = (CommonResourceHeader*)res; /* store first entry */
       Dmsg3(900, "Inserting first %s res: %s index=%d\n",
-            my_config->res_to_str(R_DEVICE), res->res_dir.name(), rindex);
+            my_config->ResToStr(R_DEVICE), res->res_dir.name(), rindex);
     } else {
       CommonResourceHeader* next;
       /*
@@ -2820,7 +2820,7 @@ static void StoreDevice(LEX* lc, ResourceItem* item, int index, int pass)
         res->res_dev.hdr.name = bstrdup(lc->str);
         next->next = (CommonResourceHeader*)res;
         Dmsg4(900, "Inserting %s res: %s index=%d pass=%d\n",
-              my_config->res_to_str(R_DEVICE), res->res_dir.name(), rindex,
+              my_config->ResToStr(R_DEVICE), res->res_dir.name(), rindex,
               pass);
       }
     }
@@ -3863,7 +3863,7 @@ static bool AddResourceCopyToEndOfChain(UnionOfResources* res_to_add, int type)
   if (!res_head[rindex]) {
     res_head[rindex] = (CommonResourceHeader*)res; /* store first entry */
     Dmsg3(900, "Inserting first %s res: %s index=%d\n",
-          my_config->res_to_str(type), res->res_dir.name(), rindex);
+          my_config->ResToStr(type), res->res_dir.name(), rindex);
   } else {
     CommonResourceHeader *next, *last;
     if (!res->res_dir.name()) {
@@ -3887,7 +3887,7 @@ static bool AddResourceCopyToEndOfChain(UnionOfResources* res_to_add, int type)
     }
     last->next = (CommonResourceHeader*)res;
     Dmsg3(900, _("Inserting %s res: %s index=%d\n"),
-          my_config->res_to_str(type), res->res_dir.name(), rindex);
+          my_config->ResToStr(type), res->res_dir.name(), rindex);
   }
   return true;
 }
@@ -3945,7 +3945,7 @@ static void DumpResource(int type,
   UaContext* ua = (UaContext*)sock;
 
   if (!res) {
-    sendit(sock, _("No %s resource defined\n"), my_config->res_to_str(type));
+    sendit(sock, _("No %s resource defined\n"), my_config->ResToStr(type));
     return;
   }
 

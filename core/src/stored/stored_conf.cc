@@ -664,7 +664,7 @@ static bool DumpResource_(int type,
 
   if (res == NULL) {
     sendit(sock, _("Warning: no \"%s\" resource (%d) defined.\n"),
-           my_config->res_to_str(type), type);
+           my_config->ResToStr(type), type);
     return false;
   }
 
@@ -741,7 +741,7 @@ static void AppendToResourcesChain(UnionOfResources* new_resource, int type)
       }
     }
     last->next = (CommonResourceHeader*)new_resource;
-    Dmsg2(90, "Inserting %s new_resource: %s\n", my_config->res_to_str(type),
+    Dmsg2(90, "Inserting %s new_resource: %s\n", my_config->ResToStr(type),
           new_resource->res_dir.name());
   }
 }

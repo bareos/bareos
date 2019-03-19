@@ -139,7 +139,7 @@ CommonResourceHeader* ConfigurationParser::GetNextRes(
   return nres;
 }
 
-const char* ConfigurationParser::res_to_str(int rcode) const
+const char* ConfigurationParser::ResToStr(int rcode) const
 {
   if (rcode < r_first_ || rcode > r_last_) {
     return _("***UNKNOWN***");
@@ -191,12 +191,12 @@ bool ConfigurationParser::GetTlsPskByFullyQualifiedResourceName(
  * (WARNING, ERROR, FATAL, INFO, ...) with an appropriate
  * destination (MAIL, FILE, OPERATOR, ...)
  */
-void ConfigurationParser::scan_types(LEX* lc,
-                                     MessagesResource* msg,
-                                     int dest_code,
-                                     char* where,
-                                     char* cmd,
-                                     char* timestamp_format)
+void ConfigurationParser::ScanTypes(LEX* lc,
+                                    MessagesResource* msg,
+                                    int dest_code,
+                                    char* where,
+                                    char* cmd,
+                                    char* timestamp_format)
 {
   int i;
   bool found, is_not;
@@ -238,7 +238,7 @@ void ConfigurationParser::scan_types(LEX* lc,
     Dmsg0(900, "call LexGetToken() to eat comma\n");
     LexGetToken(lc, BCT_ALL); /* eat comma */
   }
-  Dmsg0(900, "Done scan_types()\n");
+  Dmsg0(900, "Done ScanTypes()\n");
 }
 
 /*
@@ -264,8 +264,8 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
       case MD_STDERR:
       case MD_CONSOLE:
       case MD_CATALOG:
-        scan_types(lc, (MessagesResource*)(item->value), item->code, NULL, NULL,
-                   tsf);
+        ScanTypes(lc, (MessagesResource*)(item->value), item->code, NULL, NULL,
+                  tsf);
         break;
       case MD_SYSLOG: { /* syslog */
         char* p;
@@ -309,13 +309,13 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
           dest_len = lc->str_len;
           token = LexGetToken(lc, BCT_SKIP_EOL);
 
-          scan_types(lc, (MessagesResource*)(item->value), item->code, dest,
-                     NULL, NULL);
+          ScanTypes(lc, (MessagesResource*)(item->value), item->code, dest,
+                    NULL, NULL);
           FreePoolMemory(dest);
           Dmsg0(900, "done with dest codes\n");
         } else {
-          scan_types(lc, (MessagesResource*)(item->value), item->code, NULL,
-                     NULL, NULL);
+          ScanTypes(lc, (MessagesResource*)(item->value), item->code, NULL,
+                    NULL, NULL);
         }
         break;
       }
@@ -355,8 +355,8 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
           break;
         }
         Dmsg1(900, "mail_cmd=%s\n", NPRT(cmd));
-        scan_types(lc, (MessagesResource*)(item->value), item->code, dest, cmd,
-                   tsf);
+        ScanTypes(lc, (MessagesResource*)(item->value), item->code, dest, cmd,
+                  tsf);
         FreePoolMemory(dest);
         Dmsg0(900, "done with dest codes\n");
         break;
@@ -376,8 +376,8 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
           scan_err1(lc, _("expected an =, got: %s"), lc->str);
           return;
         }
-        scan_types(lc, (MessagesResource*)(item->value), item->code, dest, NULL,
-                   tsf);
+        ScanTypes(lc, (MessagesResource*)(item->value), item->code, dest, NULL,
+                  tsf);
         FreePoolMemory(dest);
         Dmsg0(900, "done with dest codes\n");
         break;
@@ -543,10 +543,10 @@ void ConfigurationParser::StoreStdstrdir(LEX* lc,
 /*
  * Store a password at specified address in MD5 coding
  */
-void ConfigurationParser::store_md5password(LEX* lc,
-                                            ResourceItem* item,
-                                            int index,
-                                            int pass)
+void ConfigurationParser::StoreMd5Password(LEX* lc,
+                                           ResourceItem* item,
+                                           int index,
+                                           int pass)
 {
   s_password* pwd;
   UnionOfResources* res_all = reinterpret_cast<UnionOfResources*>(res_all_);
@@ -1397,7 +1397,7 @@ bool ConfigurationParser::StoreResource(int type,
       StoreStdstrdir(lc, item, index, pass);
       break;
     case CFG_TYPE_MD5PASSWORD:
-      store_md5password(lc, item, index, pass);
+      StoreMd5Password(lc, item, index, pass);
       break;
     case CFG_TYPE_CLEARPASSWORD:
       StoreClearpassword(lc, item, index, pass);
@@ -1808,7 +1808,7 @@ bool BareosResource::PrintConfig(PoolMem& buff,
 
   memcpy(my_config.res_all_, this, my_config.resources_[rindex].size);
 
-  PmStrcat(cfg_str, my_config.res_to_str(this->hdr.rcode));
+  PmStrcat(cfg_str, my_config.ResToStr(this->hdr.rcode));
   PmStrcat(cfg_str, " {\n");
 
   items = my_config.resources_[rindex].items;
@@ -2120,7 +2120,7 @@ json_t* json_item(ResourceItem* item)
   json_t* json = json_object();
 
   json_object_set_new(json, "datatype",
-                      json_string(datatype_to_str(item->type)));
+                      json_string(DatatypeToString(item->type)));
   json_object_set_new(json, "code", json_integer(item->code));
 
   if (item->flags & CFG_ITEM_ALIAS) {
@@ -2272,7 +2272,7 @@ static DatatypeName datatype_names[] = {
 
     {0, NULL, NULL}};
 
-DatatypeName* get_datatype(int number)
+DatatypeName* GetDatatype(int number)
 {
   int size = sizeof(datatype_names) / sizeof(datatype_names[0]);
 
@@ -2286,7 +2286,7 @@ DatatypeName* get_datatype(int number)
   return &(datatype_names[number]);
 }
 
-const char* datatype_to_str(int type)
+const char* DatatypeToString(int type)
 {
   for (int i = 0; datatype_names[i].name; i++) {
     if (datatype_names[i].number == type) { return datatype_names[i].name; }
@@ -2295,7 +2295,7 @@ const char* datatype_to_str(int type)
   return "unknown";
 }
 
-const char* datatype_to_description(int type)
+const char* DatatypeToDescription(int type)
 {
   for (int i = 0; datatype_names[i].name; i++) {
     if (datatype_names[i].number == type) {

@@ -136,7 +136,7 @@ static void DumpResource(int type,
 
   if (res == NULL) {
     sendit(sock, _("Warning: no \"%s\" resource (%d) defined.\n"),
-           my_config->res_to_str(type), type);
+           my_config->ResToStr(type), type);
     return;
   }
   if (type < 0) { /* no recursion */
@@ -339,7 +339,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         }
       }
       last->next = (CommonResourceHeader*)res;
-      Dmsg2(90, "Inserting %s res: %s\n", my_config->res_to_str(type),
+      Dmsg2(90, "Inserting %s res: %s\n", my_config->ResToStr(type),
             res->res_dir.name());
     }
   }

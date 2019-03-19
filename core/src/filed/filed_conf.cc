@@ -327,7 +327,7 @@ static void DumpResource(int type,
   int recurse = 1;
 
   if (res == NULL) {
-    sendit(sock, "No record for %d %s\n", type, my_config->res_to_str(type));
+    sendit(sock, "No record for %d %s\n", type, my_config->ResToStr(type));
     return;
   }
 
@@ -635,7 +635,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         }
       }
       last->next = (CommonResourceHeader*)res;
-      Dmsg2(90, "Inserting %s res: %s\n", my_config->res_to_str(type),
+      Dmsg2(90, "Inserting %s res: %s\n", my_config->ResToStr(type),
             res->res_dir.name());
     }
   }

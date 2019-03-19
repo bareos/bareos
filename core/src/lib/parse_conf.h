@@ -401,7 +401,7 @@ class ConfigurationParser {
                                        bool lock = true) const;
   void b_LockRes(const char* file, int line) const;
   void b_UnlockRes(const char* file, int line) const;
-  const char* res_to_str(int rcode) const;
+  const char* ResToStr(int rcode) const;
   bool StoreResource(int type,
                      LEX* lc,
                      ResourceItem* item,
@@ -464,7 +464,7 @@ class ConfigurationParser {
   void StoreStdstr(LEX* lc, ResourceItem* item, int index, int pass);
   void StoreDir(LEX* lc, ResourceItem* item, int index, int pass);
   void StoreStdstrdir(LEX* lc, ResourceItem* item, int index, int pass);
-  void store_md5password(LEX* lc, ResourceItem* item, int index, int pass);
+  void StoreMd5Password(LEX* lc, ResourceItem* item, int index, int pass);
   void StoreClearpassword(LEX* lc, ResourceItem* item, int index, int pass);
   void StoreRes(LEX* lc, ResourceItem* item, int index, int pass);
   void StoreAlistRes(LEX* lc, ResourceItem* item, int index, int pass);
@@ -507,9 +507,9 @@ bool IsTlsConfigured(TlsResource* tls_resource);
 /*
  * Data type routines
  */
-DatatypeName* get_datatype(int number);
-const char* datatype_to_str(int type);
-const char* datatype_to_description(int type);
+DatatypeName* GetDatatype(int number);
+const char* DatatypeToString(int type);
+const char* DatatypeToDescription(int type);
 
 /*
  * Resource routines
