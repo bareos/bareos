@@ -1730,7 +1730,7 @@ struct count_context {
 
 static int CountingHandler(void* counting_ctx, int num_fields, char** rows)
 {
-  auto* c = (struct count_context*)counting_ctx;
+  auto* c = static_cast<struct count_context*>(counting_ctx);
   c->count++;
   return c->handler(c->ctx, num_fields, rows);
 }
@@ -1747,7 +1747,7 @@ bool BareosDb::GetNdmpEnvironmentString(const std::string& query,
   auto myctx = std::make_unique<count_context>(ResultHandler, ctx);
   bool status =
       SqlQueryWithHandler(query.c_str(), CountingHandler, myctx.get());
-  Dmsg3(150, "Got %d NDMP environment records", myctx->count);
+  Dmsg3(150, "Got %d NDMP environment records\n", myctx->count);
   return status && myctx->count > 0;  // no rows means no environment was found
 }
 
@@ -1811,9 +1811,10 @@ bool BareosDb::GetNdmpEnvironmentString(const VolumeSessionInfo& vsi,
                                       ctx);
     }
   }
-  Dmsg3(100,
-        "Got %d JobIds for VolSessionTime=%lld VolSessionId=%lld instead of 1",
-        lctx.count, vsi.time, vsi.id);
+  Dmsg3(
+      100,
+      "Got %d JobIds for VolSessionTime=%lld VolSessionId=%lld instead of 1\n",
+      lctx.count, vsi.time, vsi.id);
   return false;
 }
 
