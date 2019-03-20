@@ -143,9 +143,6 @@ union UnionOfResources {
   MessagesResource res_msgs;
   AutochangerResource res_changer;
   CommonResourceHeader hdr;
-
-  UnionOfResources() { new (&hdr) CommonResourceHeader(); }
-  ~UnionOfResources() {}
 };
 
 ConfigurationParser* InitSdConfig(const char* configfile, int exit_code);

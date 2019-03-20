@@ -35,7 +35,7 @@
 class CommonResourceHeader {
  public:
   CommonResourceHeader* next;       /* Pointer to next resource of this type */
-  char* name;                       /* Resource name */
+  char* resource_name;              /* Resource name */
   char* desc;                       /* Resource description */
   uint32_t rcode;                   /* Resource id or type */
   int32_t refcnt;                   /* Reference count for releasing */

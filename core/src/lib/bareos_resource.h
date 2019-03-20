@@ -32,11 +32,8 @@ class ConfigurationParser;
 /*
  * Base Class for all Resource Classes
  */
-class BareosResource {
+class BareosResource : public CommonResourceHeader {
  public:
-  CommonResourceHeader hdr;
-
-  inline char* name() const { return hdr.name; }
   bool PrintConfig(PoolMem& buf,
                    const ConfigurationParser& my_config,
                    bool hide_sensitive_data = false,
@@ -45,7 +42,7 @@ class BareosResource {
   BareosResource() = default;
   BareosResource& operator=(const BareosResource& rhs)
   {
-    hdr = rhs.hdr;
+    CommonResourceHeader::operator=(rhs);
     return *this;
   }
 };
