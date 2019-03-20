@@ -90,12 +90,19 @@ class DeviceResource : public BareosResource {
   AutochangerResource* changer_res; /* Pointer to changer res if any */
 
   DeviceResource();
+  virtual ~DeviceResource() = default;
   DeviceResource(const DeviceResource& other);
   DeviceResource& operator=(const DeviceResource& rhs);
   bool PrintConfigToBuffer(PoolMem& buf);
   void CreateAndAssignSerialNumber(uint16_t number);
   void MultipliedDeviceRestoreBaseName();
   void MultipliedDeviceRestoreNumberedName();
+
+  void CopyToStaticMemory(CommonResourceHeader* p) const override
+  {
+    DeviceResource* r = dynamic_cast<DeviceResource*>(p);
+    if (r) { *r = *this; }
+  };
 
  private:
   std::string multiplied_device_resource_base_name; /** < base name without

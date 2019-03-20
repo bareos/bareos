@@ -356,7 +356,7 @@ static void StoreAuthtype(LEX* lc, ResourceItem* item, int index, int pass)
  */
 static void StoreAutopassword(LEX* lc, ResourceItem* item, int index, int pass)
 {
-  switch (item->static_resource->rcode) {
+  switch (item->static_resource->rcode_) {
     case R_DIRECTOR:
       /*
        * As we need to store both clear and MD5 hashed within the same
@@ -549,7 +549,7 @@ static void MultiplyDevice(DeviceResource& multiplied_device_resource)
     copied_device_resource->count = 0;
 
     AppendToResourcesChain(copied_device_resource,
-                           copied_device_resource->rcode);
+                           copied_device_resource->rcode_);
 
     if (copied_device_resource->changer_res) {
       if (copied_device_resource->changer_res->device) {
@@ -732,7 +732,7 @@ static void AppendToResourcesChain(CommonResourceHeader* new_resource, int type)
 
   if (!res_head[rindex]) {
     /* store first entry */
-    res_head[rindex] = (CommonResourceHeader*)new_resource;
+    res_head[rindex] = new_resource;
   } else {
     /* Add new resource to end of chain */
     CommonResourceHeader *next, *last;
@@ -932,7 +932,6 @@ static void FreeResource(CommonResourceHeader* res, int type)
   if (res->resource_name_) { free(res->resource_name_); }
   if (res->description_) { free(res->description_); }
 
-  bool resource_uses_smalloc_memory = true;
   CommonResourceHeader* next_ressource = (CommonResourceHeader*)res->next_;
 
   switch (type) {
@@ -953,21 +952,23 @@ static void FreeResource(CommonResourceHeader* res, int type)
       if (p->cipherlist_) { delete p->cipherlist_; }
       if (p->tls_cert_.dhfile_) { delete p->tls_cert_.dhfile_; }
       if (p->tls_cert_.pem_message_) { delete p->tls_cert_.pem_message_; }
+      delete p;
       break;
       }
     case R_NDMP: {
       NdmpResource* p = dynamic_cast<NdmpResource*>(res);
       if (p->username) { free(p->username); }
       if (p->password.value) { free(p->password.value); }
+      delete p;
       break;
       }
     case R_AUTOCHANGER: {
       AutochangerResource* p = dynamic_cast<AutochangerResource*>(res);
-      resource_uses_smalloc_memory = false;
       if (p->changer_name) { free(p->changer_name); }
       if (p->changer_command) { free(p->changer_command); }
       if (p->device) { delete p->device; }
       RwlDestroy(&p->changer_lock);
+      delete p;
       break;
       }
     case R_STORAGE: {
@@ -997,11 +998,11 @@ static void FreeResource(CommonResourceHeader* res, int type)
       if (p->cipherlist_) { delete p->cipherlist_; }
       if (p->tls_cert_.dhfile_) { delete p->tls_cert_.dhfile_; }
       if (p->tls_cert_.pem_message_) { delete p->tls_cert_.pem_message_; }
+      delete p;
       break;
       }
     case R_DEVICE: {
       DeviceResource* p = dynamic_cast<DeviceResource*>(res);
-      resource_uses_smalloc_memory = false;
       if (p->media_type) { free(p->media_type); }
       if (p->device_name) { free(p->device_name); }
       if (p->device_options) { free(p->device_options); }
@@ -1015,6 +1016,7 @@ static void FreeResource(CommonResourceHeader* res, int type)
       if (p->unmount_command) { free(p->unmount_command); }
       if (p->write_part_command) { free(p->write_part_command); }
       if (p->free_space_command) { free(p->free_space_command); }
+      delete p;
       break;
       }
     case R_MSGS: {
@@ -1022,18 +1024,12 @@ static void FreeResource(CommonResourceHeader* res, int type)
       if (p->mail_cmd) { free(p->mail_cmd); }
       if (p->operator_cmd) { free(p->operator_cmd); }
       if (p->timestamp_format) { free(p->timestamp_format); }
-      FreeMsgsRes(p); /* free message resource */
-      res = NULL;
+      delete p;
       break;
     }
     default:
       Dmsg1(0, _("Unknown resource type %d\n"), type);
       break;
-  }
-  if (resource_uses_smalloc_memory) {
-    if (res) { free(res); }
-  } else {
-    if (res) { delete res; }
   }
   if (next_ressource) { my_config->FreeResourceCb_(next_ressource, type); }
 }

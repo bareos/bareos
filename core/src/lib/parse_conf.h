@@ -300,9 +300,6 @@ typedef void(PRINT_RES_HANDLER)(ResourceItem* items,
 
 class QualifiedResourceNameTypeConverter;
 
-/*
- * New C++ configuration routines
- */
 class ConfigurationParser {
   friend class ConfiguredTlsPolicyGetterPrivate;
 
@@ -323,12 +320,12 @@ class ConfigurationParser {
   bool omit_defaults_; /* Omit config variables with default values when dumping
                           the config */
 
-  int32_t r_first_;            /* First daemon resource type */
-  int32_t r_last_;             /* Last daemon resource type */
-  int32_t r_own_;              /* own resource type */
-  ResourceTable* resources_;   /* Pointer to table of permitted resources */
-  BareosResource** res_head_;  /* Pointer to defined resources */
-  mutable brwlock_t res_lock_; /* Resource lock */
+  int32_t r_first_;          /* First daemon resource type */
+  int32_t r_last_;           /* Last daemon resource type */
+  int32_t r_own_;            /* own resource type */
+  ResourceTable* resources_; /* Pointer to table of permitted resources */
+  CommonResourceHeader** res_head_; /* Pointer to defined resources */
+  mutable brwlock_t res_lock_;      /* Resource lock */
 
   SaveResourceCb_t SaveResourceCb_;
   DumpResourceCb_t DumpResourceCb_;
@@ -363,12 +360,11 @@ class ConfigurationParser {
                        LEX_WARNING_HANDLER* scan_warning = NULL);
   const std::string& get_base_config_path() const { return used_config_path_; }
   void FreeResources();
-  BareosResource** SaveResources();
+  CommonResourceHeader** SaveResources();
   void InitResource(int type,
                     ResourceItem* items,
                     int pass,
-                    std::function<void*()> initres,
-                    BareosResource* static_initialization_resource);
+                    std::function<void*()> initres);
   bool RemoveResource(int type, const char* name);
   void DumpResources(void sendit(void* sock, const char* fmt, ...),
                      void* sock,

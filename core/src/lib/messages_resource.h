@@ -74,7 +74,13 @@ class MessagesResource : public BareosResource {
   }
 
   MessagesResource() = default;
-  virtual ~MessagesResource();
+  virtual ~MessagesResource() = default;
+
+  void CopyToStaticMemory(CommonResourceHeader* p) const override
+  {
+    MessagesResource* r = dynamic_cast<MessagesResource*>(p);
+    if (r) { *r = *this; }
+  };
 
   void WaitNotInUse(); /* in message.c */
   void lock();         /* in message.c */

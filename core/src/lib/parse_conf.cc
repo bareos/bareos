@@ -201,7 +201,6 @@ bool ConfigurationParser::ParseConfigFile(const char* cf,
   ResourceTable* res_table = nullptr;
   ResourceItem* items = nullptr;
   ResourceItem* item = nullptr;
-  BareosResource* static_initialization_resource = nullptr;
   int level = 0;
 
   /*
@@ -269,10 +268,7 @@ bool ConfigurationParser::ParseConfigFile(const char* cf,
             items = res_table->items;
             state = p_resource;
             res_type = res_table->rcode;
-            static_initialization_resource =
-                res_table->static_initialization_resource_;
-            InitResource(res_type, items, pass, res_table->initres,
-                         static_initialization_resource);
+            InitResource(res_type, items, pass, res_table->initres);
           }
           if (state == p_none) {
             scan_err1(lc, _("expected resource name, got: %s"), lc->str);
@@ -347,7 +343,7 @@ bool ConfigurationParser::ParseConfigFile(const char* cf,
               level--;
               state = p_none;
               Dmsg0(900, "BCT_EOB => define new resource\n");
-              if (!static_resource_ptr->resource_name_) {
+              if (!item->static_resource->resource_name_) {
                 scan_err0(lc, _("Name not specified for resource"));
                 goto bail_out;
               }
@@ -647,18 +643,12 @@ CommonResourceHeader** ConfigurationParser::SaveResources()
 /*
  * Initialize the static structure to zeros, then apply all the default values.
  */
-void ConfigurationParser::InitResource(
-    int type,
-    ResourceItem* items,
-    int pass,
-    std::function<void*(void* res)> initres,
-    BareosResource* static_initialization_resource)
+void ConfigurationParser::InitResource(int type,
+                                       ResourceItem* items,
+                                       int pass,
+                                       std::function<void*()> initres)
 {
   if (initres) { initres(); }
-  BareosResource* static_resource_ptr = static_initialization_resource;
-
-  static_resource_ptr->rcode = type;
-  static_resource_ptr->refcnt = 1;
 
   /*
    * See what pass of the config parsing this is.
@@ -672,6 +662,9 @@ void ConfigurationParser::InitResource(
       int i;
 
       for (i = 0; items[i].name; i++) {
+        items[i].static_resource->rcode_ = type;
+        items[i].static_resource->refcnt_ = 1;
+
         Dmsg3(900, "Item=%s def=%s defval=%s\n", items[i].name,
               (items[i].flags & CFG_ITEM_DEFAULT) ? "yes" : "no",
               (items[i].default_value) ? items[i].default_value : "None");
@@ -788,7 +781,7 @@ void ConfigurationParser::InitResource(
           }
 
           if (!omit_defaults_) {
-            SetBit(i, static_resource_ptr->inherit_content);
+            SetBit(i, items[i].static_resource->inherit_content_);
           }
         }
 
@@ -861,7 +854,7 @@ void ConfigurationParser::InitResource(
           }
 
           if (!omit_defaults_) {
-            SetBit(i, static_resource_ptr->inherit_content);
+            SetBit(i, items[i].static_resource->inherit_content_);
           }
         }
 
@@ -894,18 +887,18 @@ bool ConfigurationParser::RemoveResource(int type, const char* name)
    * resources must be added. If it is referenced, don't remove it.
    */
   last = nullptr;
-  for (CommonResourceHeader* res = res_head_[rindex]; res; res = res->next) {
-    if (bstrcmp(res->name, name)) {
+  for (CommonResourceHeader* res = res_head_[rindex]; res; res = res->next_) {
+    if (bstrcmp(res->resource_name_, name)) {
       if (!last) {
         Dmsg2(900,
               _("removing resource %s, name=%s (first resource in list)\n"),
               ResToStr(type), name);
-        res_head_[rindex] = res->next;
+        res_head_[rindex] = res->next_;
       } else {
         Dmsg2(900, _("removing resource %s, name=%s\n"), ResToStr(type), name);
-        last->next = res->next;
+        last->next_ = res->next_;
       }
-      res->next = nullptr;
+      res->next_ = nullptr;
       FreeResourceCb_(res, type);
       return true;
     }

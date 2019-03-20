@@ -37,8 +37,8 @@ class CommonResourceHeader {
   CommonResourceHeader* next_;       /* Pointer to next resource of this type */
   char* resource_name_;              /* Resource name */
   char* description_;                /* Resource description */
-  uint32_t rcode;                    /* Resource id or type */
-  int32_t refcnt;                    /* Reference count for releasing */
+  uint32_t rcode_;                   /* Resource id or type */
+  int32_t refcnt_;                   /* Reference count for releasing */
   char item_present_[MAX_RES_ITEMS]; /* Set if item is present in conf file */
   char inherit_content_[MAX_RES_ITEMS]; /* Set if item has inherited content */
 
@@ -46,8 +46,8 @@ class CommonResourceHeader {
       : next_(nullptr)
       , resource_name_(nullptr)
       , description_(nullptr)
-      , rcode(0)
-      , refcnt(0)
+      , rcode_(0)
+      , refcnt_(0)
       , item_present_{0}
       , inherit_content_{0}
   {
@@ -64,8 +64,8 @@ class CommonResourceHeader {
       resource_name_ = bstrdup(other.resource_name_);
     }
     if (other.description_) { description_ = bstrdup(other.description_); }
-    rcode = other.rcode;
-    refcnt = other.refcnt;
+    rcode_ = other.rcode_;
+    refcnt_ = other.refcnt_;
     ::memcpy(item_present_, other.item_present_, MAX_RES_ITEMS);
     ::memcpy(inherit_content_, other.inherit_content_, MAX_RES_ITEMS);
   }
@@ -75,8 +75,8 @@ class CommonResourceHeader {
     next_ = rhs.next_;
     resource_name_ = rhs.resource_name_;
     description_ = rhs.description_;
-    rcode = rhs.rcode;
-    refcnt = rhs.refcnt;
+    rcode_ = rhs.rcode_;
+    refcnt_ = rhs.refcnt_;
     ::memcpy(item_present_, rhs.item_present_, MAX_RES_ITEMS);
     ::memcpy(inherit_content_, rhs.inherit_content_, MAX_RES_ITEMS);
     return *this;

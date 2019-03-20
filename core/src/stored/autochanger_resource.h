@@ -33,8 +33,15 @@ namespace storagedaemon {
 class AutochangerResource : public BareosResource {
  public:
   AutochangerResource();
+  virtual ~AutochangerResource() = default;
   AutochangerResource& operator=(const AutochangerResource& rhs);
   bool PrintConfigToBuffer(PoolMem& buf);
+
+  void CopyToStaticMemory(CommonResourceHeader* p) const override
+  {
+    AutochangerResource* r = dynamic_cast<AutochangerResource*>(p);
+    if (r) { *r = *this; }
+  };
 
   alist* device;          /**< List of DeviceResource device pointers */
   char* changer_name;     /**< Changer device name */

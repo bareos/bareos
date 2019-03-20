@@ -75,6 +75,15 @@ class DirectorResource
   bool monitor;  /**< Have only access to status and .status functions */
   uint64_t max_bandwidth_per_job; /**< Bandwidth limitation (per director) */
   s_password keyencrkey;          /**< Key Encryption Key */
+
+  DirectorResource() = default;
+  virtual ~DirectorResource() = default;
+
+  void CopyToStaticMemory(CommonResourceHeader* p) const override
+  {
+    DirectorResource* r = dynamic_cast<DirectorResource*>(p);
+    if (r) { *r = *this; }
+  };
 };
 
 class NdmpResource : public BareosResource {
@@ -83,6 +92,15 @@ class NdmpResource : public BareosResource {
   uint32_t LogLevel;   /**< Log level to use for logging NDMP protocol msgs */
   char* username;      /**< NDMP username */
   s_password password; /**< NDMP password */
+
+  NdmpResource() = default;
+  virtual ~NdmpResource() = default;
+
+  void CopyToStaticMemory(CommonResourceHeader* p) const override
+  {
+    NdmpResource* r = dynamic_cast<NdmpResource*>(p);
+    if (r) { *r = *this; }
+  };
 };
 
 /* Storage daemon "global" definitions */
@@ -132,6 +150,15 @@ class StorageResource
   char* log_timestamp_format; /**< Timestamp format to use in generic logging
                                  messages */
   uint64_t max_bandwidth_per_job; /**< Bandwidth limitation (global) */
+
+  StorageResource() = default;
+  virtual ~StorageResource() = default;
+
+  void CopyToStaticMemory(CommonResourceHeader* p) const override
+  {
+    StorageResource* r = dynamic_cast<StorageResource*>(p);
+    if (r) { *r = *this; }
+  };
 };
 
 ConfigurationParser* InitSdConfig(const char* configfile, int exit_code);

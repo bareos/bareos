@@ -47,6 +47,7 @@ class BareosResource : public CommonResourceHeader {
     CommonResourceHeader::operator=(rhs);
     return *this;
   }
+  virtual void CopyToStaticMemory(CommonResourceHeader* p) const {};
 };
 
 #endif /* BAREOS_LIB_BAREOS_RESOURCE_H_ */

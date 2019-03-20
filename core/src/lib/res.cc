@@ -253,19 +253,27 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
   char *cmd = NULL, *tsf = NULL;
   POOLMEM* dest;
   int dest_len;
-  UnionOfResources* res_all = reinterpret_cast<UnionOfResources*>(res_all_);
 
   Dmsg2(900, "StoreMsgs pass=%d code=%d\n", pass, item->code);
 
-  tsf = res_all->res_msgs.timestamp_format;
+  MessagesResource* message_resource =
+      dynamic_cast<MessagesResource*>(item->static_resource);
+
+  if (!message_resource) {
+    Dmsg0(900, "Could not dynamic_cast to MessageResource\n");
+    ASSERT(false);
+    return;
+  }
+
+  tsf = message_resource->timestamp_format;
+
   if (pass == 1) {
     switch (item->code) {
       case MD_STDOUT:
       case MD_STDERR:
       case MD_CONSOLE:
       case MD_CATALOG:
-        ScanTypes(lc, (MessagesResource*)(item->value), item->code, NULL, NULL,
-                  tsf);
+        ScanTypes(lc, message_resource, item->code, NULL, NULL, tsf);
         break;
       case MD_SYSLOG: { /* syslog */
         char* p;
@@ -309,13 +317,11 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
           dest_len = lc->str_len;
           token = LexGetToken(lc, BCT_SKIP_EOL);
 
-          ScanTypes(lc, (MessagesResource*)(item->value), item->code, dest,
-                    NULL, NULL);
+          ScanTypes(lc, message_resource, item->code, dest, NULL, NULL);
           FreePoolMemory(dest);
           Dmsg0(900, "done with dest codes\n");
         } else {
-          ScanTypes(lc, (MessagesResource*)(item->value), item->code, NULL,
-                    NULL, NULL);
+          ScanTypes(lc, message_resource, item->code, NULL, NULL, NULL);
         }
         break;
       }
@@ -325,9 +331,9 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
       case MD_MAIL_ON_ERROR:   /* Mail if Job errors */
       case MD_MAIL_ON_SUCCESS: /* Mail if Job succeeds */
         if (item->code == MD_OPERATOR) {
-          cmd = res_all->res_msgs.operator_cmd;
+          cmd = message_resource->operator_cmd;
         } else {
-          cmd = res_all->res_msgs.mail_cmd;
+          cmd = message_resource->mail_cmd;
         }
         dest = GetPoolMemory(PM_MESSAGE);
         dest[0] = 0;
@@ -355,8 +361,7 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
           break;
         }
         Dmsg1(900, "mail_cmd=%s\n", NPRT(cmd));
-        ScanTypes(lc, (MessagesResource*)(item->value), item->code, dest, cmd,
-                  tsf);
+        ScanTypes(lc, message_resource, item->code, dest, cmd, tsf);
         FreePoolMemory(dest);
         Dmsg0(900, "done with dest codes\n");
         break;
@@ -376,8 +381,7 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
           scan_err1(lc, _("expected an =, got: %s"), lc->str);
           return;
         }
-        ScanTypes(lc, (MessagesResource*)(item->value), item->code, dest, NULL,
-                  tsf);
+        ScanTypes(lc, message_resource, item->code, dest, NULL, tsf);
         FreePoolMemory(dest);
         Dmsg0(900, "done with dest codes\n");
         break;
@@ -387,8 +391,8 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
     }
   }
   ScanToEol(lc);
-  SetBit(index, res_all->item_present_);
-  ClearBit(index, res_all->hdr.inherit_content);
+  SetBit(index, message_resource->item_present_);
+  ClearBit(index, message_resource->inherit_content_);
   Dmsg0(900, "Done StoreMsgs\n");
 }
 
@@ -402,7 +406,6 @@ void ConfigurationParser::StoreName(LEX* lc,
                                     int pass)
 {
   POOLMEM* msg = GetPoolMemory(PM_EMSG);
-  UnionOfResources* res_all = reinterpret_cast<UnionOfResources*>(res_all_);
 
   LexGetToken(lc, BCT_NAME);
   if (!IsNameValid(lc->str, msg)) {
@@ -420,8 +423,8 @@ void ConfigurationParser::StoreName(LEX* lc,
   }
   *(item->value) = bstrdup(lc->str);
   ScanToEol(lc);
-  SetBit(index, res_all->item_present_);
-  ClearBit(index, res_all->hdr.inherit_content);
+  SetBit(index, item->static_resource->item_present_);
+  ClearBit(index, item->static_resource->inherit_content_);
 }
 
 /*
@@ -433,8 +436,6 @@ void ConfigurationParser::StoreStrname(LEX* lc,
                                        int index,
                                        int pass)
 {
-  UnionOfResources* res_all = reinterpret_cast<UnionOfResources*>(res_all_);
-
   LexGetToken(lc, BCT_NAME);
   if (pass == 1) {
     if (*(item->value)) { /* free old item */
@@ -443,8 +444,8 @@ void ConfigurationParser::StoreStrname(LEX* lc,
     *(item->value) = bstrdup(lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, res_all->item_present_);
-  ClearBit(index, res_all->hdr.inherit_content);
+  SetBit(index, item->static_resource->item_present_);
+  ClearBit(index, item->static_resource->inherit_content_);
 }
 
 /*
@@ -455,8 +456,6 @@ void ConfigurationParser::StoreStr(LEX* lc,
                                    int index,
                                    int pass)
 {
-  UnionOfResources* res_all = reinterpret_cast<UnionOfResources*>(res_all_);
-
   LexGetToken(lc, BCT_STRING);
   if (pass == 1) {
     if (*(item->value)) { /* free old item */
@@ -465,8 +464,8 @@ void ConfigurationParser::StoreStr(LEX* lc,
     *(item->value) = bstrdup(lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, res_all->item_present_);
-  ClearBit(index, res_all->hdr.inherit_content);
+  SetBit(index, item->static_resource->item_present_);
+  ClearBit(index, item->static_resource->inherit_content_);
 }
 
 /*
@@ -477,8 +476,6 @@ void ConfigurationParser::StoreStdstr(LEX* lc,
                                       int index,
                                       int pass)
 {
-  UnionOfResources* res_all = reinterpret_cast<UnionOfResources*>(res_all_);
-
   LexGetToken(lc, BCT_STRING);
   if (pass == 1) {
     if (*(item->strValue)) { /* free old item */
@@ -487,8 +484,8 @@ void ConfigurationParser::StoreStdstr(LEX* lc,
     *(item->strValue) = new std::string(lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, res_all->item_present_);
-  ClearBit(index, res_all->hdr.inherit_content);
+  SetBit(index, item->static_resource->item_present_);
+  ClearBit(index, item->static_resource->inherit_content_);
 }
 
 /*
@@ -501,8 +498,6 @@ void ConfigurationParser::StoreDir(LEX* lc,
                                    int index,
                                    int pass)
 {
-  UnionOfResources* res_all = reinterpret_cast<UnionOfResources*>(res_all_);
-
   LexGetToken(lc, BCT_STRING);
   if (pass == 1) {
     if (*(item->value)) { /* free old item */
@@ -514,8 +509,8 @@ void ConfigurationParser::StoreDir(LEX* lc,
     *(item->value) = bstrdup(lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, res_all->item_present_);
-  ClearBit(index, res_all->hdr.inherit_content);
+  SetBit(index, item->static_resource->item_present_);
+  ClearBit(index, item->static_resource->inherit_content_);
 }
 
 void ConfigurationParser::StoreStdstrdir(LEX* lc,
@@ -523,8 +518,6 @@ void ConfigurationParser::StoreStdstrdir(LEX* lc,
                                          int index,
                                          int pass)
 {
-  UnionOfResources* res_all = reinterpret_cast<UnionOfResources*>(res_all_);
-
   LexGetToken(lc, BCT_STRING);
   if (pass == 1) {
     if (*(item->strValue)) { /* free old item */
@@ -536,8 +529,8 @@ void ConfigurationParser::StoreStdstrdir(LEX* lc,
     *(item->strValue) = new std::string(lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, res_all->item_present_);
-  ClearBit(index, res_all->hdr.inherit_content);
+  SetBit(index, item->static_resource->item_present_);
+  ClearBit(index, item->static_resource->inherit_content_);
 }
 
 /*
@@ -548,12 +541,9 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
                                            int index,
                                            int pass)
 {
-  s_password* pwd;
-  UnionOfResources* res_all = reinterpret_cast<UnionOfResources*>(res_all_);
-
   LexGetToken(lc, BCT_STRING);
   if (pass == 1) { /* free old item */
-    pwd = item->pwdvalue;
+    s_password* pwd = item->pwdvalue;
 
     if (pwd->value) { free(pwd->value); }
 
@@ -581,8 +571,8 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
     }
   }
   ScanToEol(lc);
-  SetBit(index, res_all->item_present_);
-  ClearBit(index, res_all->hdr.inherit_content);
+  SetBit(index, item->static_resource->item_present_);
+  ClearBit(index, item->static_resource->inherit_content_);
 }
 
 /*
@@ -593,12 +583,9 @@ void ConfigurationParser::StoreClearpassword(LEX* lc,
                                              int index,
                                              int pass)
 {
-  s_password* pwd;
-  UnionOfResources* res_all = reinterpret_cast<UnionOfResources*>(res_all_);
-
   LexGetToken(lc, BCT_STRING);
   if (pass == 1) {
-    pwd = item->pwdvalue;
+    s_password* pwd = item->pwdvalue;
 
     if (pwd->value) { free(pwd->value); }
 
@@ -606,8 +593,8 @@ void ConfigurationParser::StoreClearpassword(LEX* lc,
     pwd->value = bstrdup(lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, res_all->item_present_);
-  ClearBit(index, res_all->hdr.inherit_content);
+  SetBit(index, item->static_resource->item_present_);
+  ClearBit(index, item->static_resource->inherit_content_);
 }
 
 /*
@@ -620,12 +607,9 @@ void ConfigurationParser::StoreRes(LEX* lc,
                                    int index,
                                    int pass)
 {
-  CommonResourceHeader* res;
-  UnionOfResources* res_all = reinterpret_cast<UnionOfResources*>(res_all_);
-
   LexGetToken(lc, BCT_NAME);
   if (pass == 2) {
-    res = GetResWithName(item->code, lc->str);
+    CommonResourceHeader* res = GetResWithName(item->code, lc->str);
     if (res == NULL) {
       scan_err3(
           lc,
@@ -643,8 +627,8 @@ void ConfigurationParser::StoreRes(LEX* lc,
     *(item->resvalue) = res;
   }
   ScanToEol(lc);
-  SetBit(index, res_all->item_present_);
-  ClearBit(index, res_all->hdr.inherit_content);
+  SetBit(index, item->static_resource->item_present_);
+  ClearBit(index, item->static_resource->inherit_content_);
 }
 
 /*
@@ -658,10 +642,8 @@ void ConfigurationParser::StoreAlistRes(LEX* lc,
                                         int index,
                                         int pass)
 {
-  CommonResourceHeader* res;
   int i = 0;
   alist* list;
-  UnionOfResources* res_all = reinterpret_cast<UnionOfResources*>(res_all_);
   int count = str_to_int32(item->default_value);
 
   if (pass == 2) {
@@ -686,7 +668,7 @@ void ConfigurationParser::StoreAlistRes(LEX* lc,
 
     for (;;) {
       LexGetToken(lc, BCT_NAME); /* scan next item */
-      res = GetResWithName(item->code, lc->str);
+      CommonResourceHeader* res = GetResWithName(item->code, lc->str);
       if (res == NULL) {
         scan_err3(lc,
                   _("Could not find config Resource \"%s\" referenced on line "
@@ -704,8 +686,8 @@ void ConfigurationParser::StoreAlistRes(LEX* lc,
     }
   }
   ScanToEol(lc);
-  SetBit(index, res_all->item_present_);
-  ClearBit(index, res_all->hdr.inherit_content);
+  SetBit(index, item->static_resource->item_present_);
+  ClearBit(index, item->static_resource->inherit_content_);
 }
 
 /*
@@ -716,14 +698,11 @@ void ConfigurationParser::StoreAlistStr(LEX* lc,
                                         int index,
                                         int pass)
 {
-  alist* list;
-  UnionOfResources* res_all = reinterpret_cast<UnionOfResources*>(res_all_);
-
   if (pass == 2) {
     if (!*(item->value)) {
       *(item->alistvalue) = New(alist(10, owned_by_alist));
     }
-    list = *(item->alistvalue);
+    alist* list = *(item->alistvalue);
 
     LexGetToken(lc, BCT_STRING); /* scan next item */
     Dmsg4(900, "Append %s to alist %p size=%d %s\n", lc->str, list,
@@ -748,8 +727,8 @@ void ConfigurationParser::StoreAlistStr(LEX* lc,
     list->append(bstrdup(lc->str));
   }
   ScanToEol(lc);
-  SetBit(index, res_all->item_present_);
-  ClearBit(index, res_all->hdr.inherit_content);
+  SetBit(index, item->static_resource->item_present_);
+  ClearBit(index, item->static_resource->inherit_content_);
 }
 
 /*
@@ -763,14 +742,11 @@ void ConfigurationParser::StoreAlistDir(LEX* lc,
                                         int index,
                                         int pass)
 {
-  alist* list;
-  UnionOfResources* res_all = reinterpret_cast<UnionOfResources*>(res_all_);
-
   if (pass == 2) {
     if (!*(item->alistvalue)) {
       *(item->alistvalue) = New(alist(10, owned_by_alist));
     }
-    list = *(item->alistvalue);
+    alist* list = *(item->alistvalue);
 
     LexGetToken(lc, BCT_STRING); /* scan next item */
     Dmsg4(900, "Append %s to alist %p size=%d %s\n", lc->str, list,
@@ -799,8 +775,8 @@ void ConfigurationParser::StoreAlistDir(LEX* lc,
     list->append(bstrdup(lc->str));
   }
   ScanToEol(lc);
-  SetBit(index, res_all->item_present_);
-  ClearBit(index, res_all->hdr.inherit_content);
+  SetBit(index, item->static_resource->item_present_);
+  ClearBit(index, item->static_resource->inherit_content_);
 }
 
 /*
@@ -811,17 +787,14 @@ void ConfigurationParser::StorePluginNames(LEX* lc,
                                            int index,
                                            int pass)
 {
-  alist* list;
-  char *p, *plugin_name, *plugin_names;
-  UnionOfResources* res_all = reinterpret_cast<UnionOfResources*>(res_all_);
-
   if (pass == 2) {
+    char *p, *plugin_name, *plugin_names;
     LexGetToken(lc, BCT_STRING); /* scan next item */
 
     if (!*(item->alistvalue)) {
       *(item->alistvalue) = New(alist(10, owned_by_alist));
     }
-    list = *(item->alistvalue);
+    alist* list = *(item->alistvalue);
 
     plugin_names = bstrdup(lc->str);
     plugin_name = plugin_names;
@@ -836,8 +809,8 @@ void ConfigurationParser::StorePluginNames(LEX* lc,
     free(plugin_names);
   }
   ScanToEol(lc);
-  SetBit(index, res_all->item_present_);
-  ClearBit(index, res_all->hdr.inherit_content);
+  SetBit(index, item->static_resource->item_present_);
+  ClearBit(index, item->static_resource->inherit_content_);
 }
 
 /*
@@ -878,13 +851,11 @@ void ConfigurationParser::store_int16(LEX* lc,
                                       int index,
                                       int pass)
 {
-  UnionOfResources* res_all = reinterpret_cast<UnionOfResources*>(res_all_);
-
   LexGetToken(lc, BCT_INT16);
   *(item->i16value) = lc->u.int16_val;
   ScanToEol(lc);
-  SetBit(index, res_all->item_present_);
-  ClearBit(index, res_all->hdr.inherit_content);
+  SetBit(index, item->static_resource->item_present_);
+  ClearBit(index, item->static_resource->inherit_content_);
 }
 
 void ConfigurationParser::store_int32(LEX* lc,
@@ -892,13 +863,11 @@ void ConfigurationParser::store_int32(LEX* lc,
                                       int index,
                                       int pass)
 {
-  UnionOfResources* res_all = reinterpret_cast<UnionOfResources*>(res_all_);
-
   LexGetToken(lc, BCT_INT32);
   *(item->i32value) = lc->u.int32_val;
   ScanToEol(lc);
-  SetBit(index, res_all->item_present_);
-  ClearBit(index, res_all->hdr.inherit_content);
+  SetBit(index, item->static_resource->item_present_);
+  ClearBit(index, item->static_resource->inherit_content_);
 }
 
 /*
@@ -909,13 +878,11 @@ void ConfigurationParser::store_pint16(LEX* lc,
                                        int index,
                                        int pass)
 {
-  UnionOfResources* res_all = reinterpret_cast<UnionOfResources*>(res_all_);
-
   LexGetToken(lc, BCT_PINT16);
   *(item->ui16value) = lc->u.pint16_val;
   ScanToEol(lc);
-  SetBit(index, res_all->item_present_);
-  ClearBit(index, res_all->hdr.inherit_content);
+  SetBit(index, item->static_resource->item_present_);
+  ClearBit(index, item->static_resource->inherit_content_);
 }
 
 void ConfigurationParser::store_pint32(LEX* lc,
@@ -923,13 +890,11 @@ void ConfigurationParser::store_pint32(LEX* lc,
                                        int index,
                                        int pass)
 {
-  UnionOfResources* res_all = reinterpret_cast<UnionOfResources*>(res_all_);
-
   LexGetToken(lc, BCT_PINT32);
   *(item->ui32value) = lc->u.pint32_val;
   ScanToEol(lc);
-  SetBit(index, res_all->item_present_);
-  ClearBit(index, res_all->hdr.inherit_content);
+  SetBit(index, item->static_resource->item_present_);
+  ClearBit(index, item->static_resource->inherit_content_);
 }
 
 /*
@@ -940,13 +905,11 @@ void ConfigurationParser::store_int64(LEX* lc,
                                       int index,
                                       int pass)
 {
-  UnionOfResources* res_all = reinterpret_cast<UnionOfResources*>(res_all_);
-
   LexGetToken(lc, BCT_INT64);
   *(item->i64value) = lc->u.int64_val;
   ScanToEol(lc);
-  SetBit(index, res_all->item_present_);
-  ClearBit(index, res_all->hdr.inherit_content);
+  SetBit(index, item->static_resource->item_present_);
+  ClearBit(index, item->static_resource->inherit_content_);
 }
 
 /*
@@ -959,13 +922,11 @@ void ConfigurationParser::store_int_unit(LEX* lc,
                                          bool size32,
                                          enum unit_type type)
 {
-  int token;
   uint64_t uvalue;
   char bsize[500];
-  UnionOfResources* res_all = reinterpret_cast<UnionOfResources*>(res_all_);
 
   Dmsg0(900, "Enter store_unit\n");
-  token = LexGetToken(lc, BCT_SKIP_EOL);
+  int token = LexGetToken(lc, BCT_SKIP_EOL);
   errno = 0;
   switch (token) {
     case BCT_NUMBER:
@@ -1023,8 +984,8 @@ void ConfigurationParser::store_int_unit(LEX* lc,
       return;
   }
   if (token != BCT_EOL) { ScanToEol(lc); }
-  SetBit(index, res_all->item_present_);
-  ClearBit(index, res_all->hdr.inherit_content);
+  SetBit(index, item->static_resource->item_present_);
+  ClearBit(index, item->static_resource->inherit_content_);
   Dmsg0(900, "Leave store_unit\n");
 }
 
@@ -1069,12 +1030,10 @@ void ConfigurationParser::StoreTime(LEX* lc,
                                     int index,
                                     int pass)
 {
-  int token;
   utime_t utime;
   char period[500];
-  UnionOfResources* res_all = reinterpret_cast<UnionOfResources*>(res_all_);
 
-  token = LexGetToken(lc, BCT_SKIP_EOL);
+  int token = LexGetToken(lc, BCT_SKIP_EOL);
   errno = 0;
   switch (token) {
     case BCT_NUMBER:
@@ -1105,8 +1064,8 @@ void ConfigurationParser::StoreTime(LEX* lc,
       return;
   }
   if (token != BCT_EOL) { ScanToEol(lc); }
-  SetBit(index, res_all->item_present_);
-  ClearBit(index, res_all->hdr.inherit_content);
+  SetBit(index, item->static_resource->item_present_);
+  ClearBit(index, item->static_resource->inherit_content_);
 }
 
 /*
@@ -1117,8 +1076,6 @@ void ConfigurationParser::StoreBit(LEX* lc,
                                    int index,
                                    int pass)
 {
-  UnionOfResources* res_all = reinterpret_cast<UnionOfResources*>(res_all_);
-
   LexGetToken(lc, BCT_NAME);
   if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
     SetBit(item->code, item->bitvalue);
@@ -1130,8 +1087,8 @@ void ConfigurationParser::StoreBit(LEX* lc,
     return;
   }
   ScanToEol(lc);
-  SetBit(index, res_all->item_present_);
-  ClearBit(index, res_all->hdr.inherit_content);
+  SetBit(index, item->static_resource->item_present_);
+  ClearBit(index, item->static_resource->inherit_content_);
 }
 
 /*
@@ -1142,8 +1099,6 @@ void ConfigurationParser::StoreBool(LEX* lc,
                                     int index,
                                     int pass)
 {
-  UnionOfResources* res_all = reinterpret_cast<UnionOfResources*>(res_all_);
-
   LexGetToken(lc, BCT_NAME);
   if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
     *item->boolvalue = true;
@@ -1155,8 +1110,8 @@ void ConfigurationParser::StoreBool(LEX* lc,
     return;
   }
   ScanToEol(lc);
-  SetBit(index, res_all->item_present_);
-  ClearBit(index, res_all->hdr.inherit_content);
+  SetBit(index, item->static_resource->item_present_);
+  ClearBit(index, item->static_resource->inherit_content_);
 }
 
 /*
@@ -1167,13 +1122,11 @@ void ConfigurationParser::StoreLabel(LEX* lc,
                                      int index,
                                      int pass)
 {
-  int i;
-  UnionOfResources* res_all = reinterpret_cast<UnionOfResources*>(res_all_);
-
   LexGetToken(lc, BCT_NAME);
   /*
    * Store the label pass 2 so that type is defined
    */
+  int i;
   for (i = 0; tapelabels[i].name; i++) {
     if (Bstrcasecmp(lc->str, tapelabels[i].name)) {
       *(item->ui32value) = tapelabels[i].token;
@@ -1186,8 +1139,8 @@ void ConfigurationParser::StoreLabel(LEX* lc,
     return;
   }
   ScanToEol(lc);
-  SetBit(index, res_all->item_present_);
-  ClearBit(index, res_all->hdr.inherit_content);
+  SetBit(index, item->static_resource->item_present_);
+  ClearBit(index, item->static_resource->inherit_content_);
 }
 
 /*
@@ -1795,27 +1748,26 @@ bool BareosResource::PrintConfig(PoolMem& buff,
   /*
    * If entry is not used, then there is nothing to print.
    */
-  if (this->hdr.rcode < (uint32_t)my_config.r_first_ || this->hdr.refcnt <= 0) {
-    return true;
-  }
+  if (rcode_ < (uint32_t)my_config.r_first_ || refcnt_ <= 0) { return true; }
 
-  rindex = this->hdr.rcode - my_config.r_first_;
+  rindex = rcode_ - my_config.r_first_;
 
   /*
    * Make sure the resource class has any items.
    */
   if (!my_config.resources_[rindex].items) { return true; }
 
-  memcpy(my_config.res_all_, this, my_config.resources_[rindex].size);
+  CopyToStaticMemory(
+      my_config.resources_[rindex].static_initialization_resource_);
 
-  PmStrcat(cfg_str, my_config.ResToStr(this->hdr.rcode));
+  PmStrcat(cfg_str, my_config.ResToStr(rcode_));
   PmStrcat(cfg_str, " {\n");
 
   items = my_config.resources_[rindex].items;
 
   for (i = 0; items[i].name; i++) {
     bool print_item = false;
-    inherited = BitIsSet(i, this->hdr.inherit_content);
+    inherited = BitIsSet(i, inherit_content_);
 
     /*
      * If this is an alias for another config keyword suppress it.
@@ -2014,9 +1966,9 @@ bool BareosResource::PrintConfig(PoolMem& buff,
           PmStrcpy(res_names, "");
           foreach_alist (res, list) {
             if (cnt) {
-              Mmsg(temp, ",\"%s\"", res->name);
+              Mmsg(temp, ",\"%s\"", res->resource_name_);
             } else {
-              Mmsg(temp, "\"%s\"", res->name);
+              Mmsg(temp, "\"%s\"", res->resource_name_);
             }
             PmStrcat(res_names, temp.c_str());
             cnt++;
@@ -2031,8 +1983,8 @@ bool BareosResource::PrintConfig(PoolMem& buff,
         CommonResourceHeader* res;
 
         res = *(items[i].resvalue);
-        if (res != NULL && res->name != NULL) {
-          Mmsg(temp, "%s = \"%s\"\n", items[i].name, res->name);
+        if (res != NULL && res->resource_name_ != NULL) {
+          Mmsg(temp, "%s = \"%s\"\n", items[i].name, res->resource_name_);
           IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
         }
         break;
