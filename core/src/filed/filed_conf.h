@@ -65,7 +65,9 @@ enum
 };
 
 /* Definition of the contents of each Resource */
-class DirectorResource : public TlsResource {
+class DirectorResource
+    : public BareosResource
+    , public TlsResource {
  public:
   char* address;            /* Director address or zero */
   uint32_t port;            /* Director port */
@@ -78,10 +80,12 @@ class DirectorResource : public TlsResource {
                               executed */
   uint64_t max_bandwidth_per_job; /* Bandwidth limitation (per director) */
 
-  DirectorResource() : TlsResource() {}
+  DirectorResource() = default;
 };
 
-class ClientResource : public TlsResource {
+class ClientResource
+    : public BareosResource
+    , public TlsResource {
  public:
   dlist* FDaddrs;
   dlist* FDsrc_addr; /* Address to source connections from */
@@ -125,7 +129,7 @@ class ClientResource : public TlsResource {
                                  messages */
   uint64_t max_bandwidth_per_job; /* Bandwidth limitation (global) */
 
-  ClientResource() : TlsResource() {}
+  ClientResource() = default;
 };
 
 /* Define the Union of all the above

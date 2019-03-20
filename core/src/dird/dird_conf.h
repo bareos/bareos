@@ -115,9 +115,11 @@ bool PrintConfigSchemaJson(PoolMem& buff);
 /*
  *   Director Resource
  */
-class DirectorResource : public TlsResource {
+class DirectorResource
+    : public BareosResource
+    , public TlsResource {
  public:
-  dlist* DIRaddrs;
+  dlist* DIRaddrs = nullptr;
   dlist* DIRsrc_addr;             /* Address to source connections from */
   char* query_file;               /* SQL query file */
   char* working_directory;        /* WorkingDirectory */
@@ -157,7 +159,7 @@ class DirectorResource : public TlsResource {
                                  messages */
   s_password keyencrkey;      /* Key Encryption Key */
 
-  DirectorResource() : TlsResource(), DIRaddrs(nullptr) {}
+  DirectorResource() = default;
 };
 
 /*
@@ -221,7 +223,9 @@ class ProfileResource : public BareosResource {
 /**
  * Console Resource
  */
-class ConsoleResource : public TlsResource {
+class ConsoleResource
+    : public BareosResource
+    , public TlsResource {
  public:
   alist* ACL_lists[Num_ACL];    /**< Pointers to ACLs */
   alist* profiles;              /**< Pointers to profile resources */
@@ -262,7 +266,6 @@ class CatalogResource : public BareosResource {
 
   /**< Methods */
   char* display(POOLMEM* dst); /**< Get catalog information */
-  CatalogResource() : BareosResource() {}
 };
 
 /**
@@ -275,7 +278,9 @@ struct runtime_job_status_t;
 /**
  * Client Resource
  */
-class ClientResource : public TlsResource {
+class ClientResource
+    : public BareosResource
+    , public TlsResource {
  public:
   uint32_t Protocol;            /* Protocol to use to connect */
   uint32_t AuthType;            /* Authentication Type to use for protocol */
@@ -308,14 +313,14 @@ class ClientResource : public TlsResource {
   int64_t max_bandwidth;        /* Limit speed on this client */
   runtime_client_status_t* rcs; /* Runtime Client Status */
   ClientConnectionHandshakeMode connection_successful_handshake_;
-
-  ClientResource() : TlsResource() {}
 };
 
 /**
  * Store Resource
  */
-class StorageResource : public TlsResource {
+class StorageResource
+    : public BareosResource
+    , public TlsResource {
  public:
   uint32_t Protocol; /* Protocol to use to connect */
   uint32_t AuthType; /* Authentication Type to use for protocol */
@@ -349,8 +354,6 @@ class StorageResource : public TlsResource {
 
   /* Methods */
   char* dev_name() const;
-
-  StorageResource() : TlsResource() {}
 };
 
 inline char* StorageResource::dev_name() const

@@ -67,7 +67,9 @@ enum
 /* Definition of the contents of each Resource */
 
 /* Console "globals" */
-class ConsoleResource : public TlsResource {
+class ConsoleResource
+    : public BareosResource
+    , public TlsResource {
  public:
   char* rc_file;              /**< startup file */
   char* history_file;         /**< command history file */
@@ -79,7 +81,9 @@ class ConsoleResource : public TlsResource {
 };
 
 /* Director */
-class DirectorResource : public TlsResource {
+class DirectorResource
+    : public BareosResource
+    , public TlsResource {
  public:
   uint32_t DIRport;           /**< UA server port */
   char* address;              /**< UA server address */

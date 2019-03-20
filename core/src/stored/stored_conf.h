@@ -67,13 +67,14 @@ enum
 };
 
 /* Definition of the contents of each Resource */
-class DirectorResource : public TlsResource {
+class DirectorResource
+    : public BareosResource
+    , public TlsResource {
  public:
   char* address; /**< Director IP address or zero */
   bool monitor;  /**< Have only access to status and .status functions */
   uint64_t max_bandwidth_per_job; /**< Bandwidth limitation (per director) */
   s_password keyencrkey;          /**< Key Encryption Key */
-  DirectorResource() : TlsResource() {}
 };
 
 class NdmpResource {
@@ -87,7 +88,9 @@ class NdmpResource {
 };
 
 /* Storage daemon "global" definitions */
-class StorageResource : public TlsResource {
+class StorageResource
+    : public BareosResource
+    , public TlsResource {
  public:
   dlist* SDaddrs;
   dlist* SDsrc_addr; /**< Address to source connections from */
@@ -131,8 +134,6 @@ class StorageResource : public TlsResource {
   char* log_timestamp_format; /**< Timestamp format to use in generic logging
                                  messages */
   uint64_t max_bandwidth_per_job; /**< Bandwidth limitation (global) */
-
-  StorageResource() : TlsResource() {}
 };
 
 union UnionOfResources {

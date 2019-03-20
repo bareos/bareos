@@ -67,19 +67,21 @@ enum
 /*
  * Director Resource
  */
-class DirectorResource : public TlsResource {
+class DirectorResource
+    : public BareosResource
+    , public TlsResource {
  public:
   uint32_t DIRport; /* UA server port */
   char* address;    /* UA server address */
   bool enable_ssl;  /* Use SSL */
-
-  DirectorResource() : TlsResource() {}
 };
 
 /*
  * Tray Monitor Resource
  */
-class MonitorResource : public TlsResource {
+class MonitorResource
+    : public BareosResource
+    , public TlsResource {
  public:
   bool require_ssl;           /* Require SSL for all connections */
   MessagesResource* messages; /* Daemon message handler */
@@ -88,37 +90,37 @@ class MonitorResource : public TlsResource {
   utime_t FDConnectTimeout;   /* timeout for connect in seconds */
   utime_t SDConnectTimeout;   /* timeout in seconds */
   utime_t DIRConnectTimeout;  /* timeout in seconds */
-
-  MonitorResource() : TlsResource() {}
 };
 
 /*
  * Client Resource
  */
-class ClientResource : public TlsResource {
+class ClientResource
+    : public BareosResource
+    , public TlsResource {
  public:
   uint32_t FDport; /* Where File daemon listens */
   char* address;
   s_password password;
   bool enable_ssl; /* Use SSL */
-
-  ClientResource() : TlsResource() {}
 };
 
 /*
  * Store Resource
  */
-class StorageResource : public TlsResource {
+class StorageResource
+    : public BareosResource
+    , public TlsResource {
  public:
   uint32_t SDport; /* port where Directors connect */
   char* address;
   s_password password;
   bool enable_ssl; /* Use SSL */
-
-  StorageResource() : TlsResource() {}
 };
 
-class ConsoleFontResource : public BareosResource {
+class ConsoleFontResource
+    : public BareosResource
+    , public TlsResource {
  public:
   char* fontface; /* Console Font specification */
 };

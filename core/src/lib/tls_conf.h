@@ -37,7 +37,7 @@ enum TlsPolicy : uint32_t
   kBnetTlsUnknown = 0xFE /*!< TLS connection not allowed */
 };
 
-class TlsResource : public BareosResource {
+class TlsResource {
  public:
   s_password password_;     /* UA server password */
   TlsConfigCert tls_cert_;  /* TLS structure */
