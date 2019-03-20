@@ -262,8 +262,8 @@ static DeviceResource* find_device_res(char* device_name, bool readonly)
       if (len > 0) { device_name[len - 1] = 0; /* zap trailing " */ }
     }
     foreach_res (device, R_DEVICE) {
-      Dmsg2(900, "Compare %s and %s\n", device->name(), device_name);
-      if (bstrcmp(device->name(), device_name)) {
+      Dmsg2(900, "Compare %s and %s\n", device->resource_name_, device_name);
+      if (bstrcmp(device->resource_name_, device_name)) {
         found = true;
         break;
       }

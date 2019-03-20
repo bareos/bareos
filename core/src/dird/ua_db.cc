@@ -75,9 +75,9 @@ bool OpenClientDb(UaContext* ua, bool use_private)
     if (client) {
       catalog = client->catalog;
       if (ua->catalog && ua->catalog != catalog) { CloseDb(ua); }
-      if (!ua->AclAccessOk(Catalog_ACL, catalog->name(), true)) {
+      if (!ua->AclAccessOk(Catalog_ACL, catalog->resource_name_, true)) {
         ua->ErrorMsg(_("No authorization for Catalog \"%s\"\n"),
-                     catalog->name());
+                     catalog->resource_name_);
         return false;
       }
       ua->catalog = catalog;
@@ -94,9 +94,9 @@ bool OpenClientDb(UaContext* ua, bool use_private)
     if (job && job->client) {
       catalog = job->client->catalog;
       if (ua->catalog && ua->catalog != catalog) { CloseDb(ua); }
-      if (!ua->AclAccessOk(Catalog_ACL, catalog->name(), true)) {
+      if (!ua->AclAccessOk(Catalog_ACL, catalog->resource_name_, true)) {
         ua->ErrorMsg(_("No authorization for Catalog \"%s\"\n"),
-                     catalog->name());
+                     catalog->resource_name_);
         return false;
       }
       ua->catalog = catalog;
@@ -171,7 +171,7 @@ bool OpenDb(UaContext* ua, bool use_private)
   }
 
   if (!ua->api && !ua->runscript) {
-    ua->SendMsg(_("Using Catalog \"%s\"\n"), ua->catalog->name());
+    ua->SendMsg(_("Using Catalog \"%s\"\n"), ua->catalog->resource_name_);
   }
 
   Dmsg1(150, "DB %s opened\n", ua->catalog->db_name);
@@ -209,7 +209,7 @@ int CreatePool(JobControlRecord* jcr,
 
   memset(&pr, 0, sizeof(pr));
 
-  bstrncpy(pr.Name, pool->name(), sizeof(pr.Name));
+  bstrncpy(pr.Name, pool->resource_name_, sizeof(pr.Name));
 
   if (db->GetPoolRecord(jcr, &pr)) {
     /*
@@ -267,14 +267,14 @@ bool SetPooldbrReferences(JobControlRecord* jcr,
   if (pool->RecyclePool) {
     memset(&rpool, 0, sizeof(rpool));
 
-    bstrncpy(rpool.Name, pool->RecyclePool->name(), sizeof(rpool.Name));
+    bstrncpy(rpool.Name, pool->RecyclePool->resource_name_, sizeof(rpool.Name));
     if (db->GetPoolRecord(jcr, &rpool)) {
       pr->RecyclePoolId = rpool.PoolId;
     } else {
       Jmsg(jcr, M_WARNING, 0,
            _("Can't set %s RecyclePool to %s, %s is not in database.\n"
              "Try to update it with 'update pool=%s'\n"),
-           pool->name(), rpool.Name, rpool.Name, pool->name());
+           pool->resource_name_, rpool.Name, rpool.Name, pool->resource_name_);
 
       ret = false;
     }
@@ -285,14 +285,14 @@ bool SetPooldbrReferences(JobControlRecord* jcr,
   if (pool->ScratchPool) {
     memset(&rpool, 0, sizeof(rpool));
 
-    bstrncpy(rpool.Name, pool->ScratchPool->name(), sizeof(rpool.Name));
+    bstrncpy(rpool.Name, pool->ScratchPool->resource_name_, sizeof(rpool.Name));
     if (db->GetPoolRecord(jcr, &rpool)) {
       pr->ScratchPoolId = rpool.PoolId;
     } else {
       Jmsg(jcr, M_WARNING, 0,
            _("Can't set %s ScratchPool to %s, %s is not in database.\n"
              "Try to update it with 'update pool=%s'\n"),
-           pool->name(), rpool.Name, rpool.Name, pool->name());
+           pool->resource_name_, rpool.Name, rpool.Name, pool->resource_name_);
       ret = false;
     }
   } else { /* no ScratchPool used, set it to 0 */
@@ -361,7 +361,7 @@ int UpdatePoolReferences(JobControlRecord* jcr,
   if (!pool->RecyclePool && !pool->ScratchPool) { return true; }
 
   memset(&pr, 0, sizeof(pr));
-  bstrncpy(pr.Name, pool->name(), sizeof(pr.Name));
+  bstrncpy(pr.Name, pool->resource_name_, sizeof(pr.Name));
 
   if (!db->GetPoolRecord(jcr, &pr)) { return -1; /* not exists in database */ }
 

@@ -69,7 +69,7 @@ bool AuthenticateWithStorageDaemon(BareosSocket* sd,
                                    StorageResource* store)
 {
   char dirname[MAX_NAME_LENGTH];
-  bstrncpy(dirname, me->hdr.name, sizeof(dirname));
+  bstrncpy(dirname, me->resource_name_, sizeof(dirname));
   BashSpaces(dirname);
 
   if (!sd->fsend(hello, dirname)) {
@@ -129,7 +129,7 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
       ClientConnectionHandshakeMode::kTlsFirst) {
     std::string qualified_resource_name;
     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
-            me->hdr.name, my_config->r_own_, qualified_resource_name)) {
+            me->resource_name_, my_config->r_own_, qualified_resource_name)) {
       Dmsg0(
           100,
           "Could not generate qualified resource name for a client resource\n");
@@ -145,7 +145,7 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
   }
 
   char dirname[MAX_NAME_LENGTH];
-  bstrncpy(dirname, me->name(), sizeof(dirname));
+  bstrncpy(dirname, me->resource_name_, sizeof(dirname));
   BashSpaces(dirname);
 
   if (!fd->fsend(hello, dirname)) {

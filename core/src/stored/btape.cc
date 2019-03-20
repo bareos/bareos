@@ -278,7 +278,7 @@ int main(int margc, char* margv[])
 
   if (DirectorName) {
     foreach_res (director, R_DIRECTOR) {
-      if (bstrcmp(director->name(), DirectorName)) { break; }
+      if (bstrcmp(director->resource_name_, DirectorName)) { break; }
     }
     if (!director) {
       Emsg2(

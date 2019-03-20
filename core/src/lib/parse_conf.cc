@@ -72,19 +72,6 @@
 #define MAX_PATH 1024
 #endif
 
-/*
- * Define the Union of all the common resource structure definitions.
- */
-union UnionOfResources {
-  MessagesResource res_msgs;
-  CommonResourceHeader hdr;
-};
-
-/* Common Resource definitions */
-
-/*
- * Simply print a message
- */
 void PrintMessage(void* sock, const char* fmt, ...)
 {
   va_list arg_ptr;
@@ -101,8 +88,6 @@ ConfigurationParser::ConfigurationParser()
     , store_res_(nullptr)
     , print_res_(nullptr)
     , err_type_(0)
-    , res_all_(nullptr)
-    , res_all_size_(0)
     , omit_defaults_(false)
     , r_first_(0)
     , r_last_(0)
@@ -127,8 +112,6 @@ ConfigurationParser::ConfigurationParser(
     STORE_RES_HANDLER* StoreRes,
     PRINT_RES_HANDLER* print_res,
     int32_t err_type,
-    void* vres_all,
-    int32_t res_all_size,
     int32_t r_first,
     int32_t r_last,
     ResourceTable* resources,
@@ -150,8 +133,6 @@ ConfigurationParser::ConfigurationParser(
   store_res_ = StoreRes;
   print_res_ = print_res;
   err_type_ = err_type;
-  res_all_ = vres_all;
-  res_all_size_ = res_all_size;
   r_first_ = r_first;
   r_last_ = r_last;
   resources_ = resources;
@@ -172,7 +153,7 @@ ConfigurationParser::~ConfigurationParser()
 {
   for (int i = r_first_; i <= r_last_; i++) {
     FreeResourceCb_(res_head_[i - r_first_], i);
-    res_head_[i - r_first_] = NULL;
+    res_head_[i - r_first_] = nullptr;
   }
 }
 
@@ -190,18 +171,19 @@ bool ConfigurationParser::ParseConfig()
 
   if (parser_first_run_ && (errstat = RwlInit(&res_lock_)) != 0) {
     BErrNo be;
-    Jmsg1(NULL, M_ABORT, 0, _("Unable to initialize resource lock. ERR=%s\n"),
+    Jmsg1(nullptr, M_ABORT, 0,
+          _("Unable to initialize resource lock. ERR=%s\n"),
           be.bstrerror(errstat));
   }
   parser_first_run_ = false;
 
   if (!FindConfigPath(config_path)) {
-    Jmsg0(NULL, M_ERROR_TERM, 0, _("Failed to find config filename.\n"));
+    Jmsg0(nullptr, M_ERROR_TERM, 0, _("Failed to find config filename.\n"));
   }
   used_config_path_ = config_path.c_str();
   Dmsg1(100, "config file = %s\n", used_config_path_.c_str());
   bool success =
-      ParseConfigFile(config_path.c_str(), NULL, scan_error_, scan_warning_);
+      ParseConfigFile(config_path.c_str(), nullptr, scan_error_, scan_warning_);
   if (success && ParseConfigReadyCb_) { ParseConfigReadyCb_(*this); }
   return success;
 }
@@ -212,13 +194,14 @@ bool ConfigurationParser::ParseConfigFile(const char* cf,
                                           LEX_WARNING_HANDLER* scan_warning)
 {
   bool result = true;
-  LEX* lc = NULL;
+  LEX* lc = nullptr;
   int token, i, pass;
   int res_type = 0;
   enum parse_state state = p_none;
-  ResourceTable* res_table = NULL;
-  ResourceItem* items = NULL;
-  ResourceItem* item = NULL;
+  ResourceTable* res_table = nullptr;
+  ResourceItem* items = nullptr;
+  ResourceItem* item = nullptr;
+  BareosResource* static_initialization_resource = nullptr;
   int level = 0;
 
   /*
@@ -228,7 +211,7 @@ bool ConfigurationParser::ParseConfigFile(const char* cf,
   Dmsg1(900, "Enter ParseConfigFile(%s)\n", cf);
   for (pass = 1; pass <= 2; pass++) {
     Dmsg1(900, "ParseConfig pass %d\n", pass);
-    if ((lc = lex_open_file(lc, cf, ScanError, scan_warning)) == NULL) {
+    if ((lc = lex_open_file(lc, cf, ScanError, scan_warning)) == nullptr) {
       BErrNo be;
 
       /*
@@ -286,7 +269,10 @@ bool ConfigurationParser::ParseConfigFile(const char* cf,
             items = res_table->items;
             state = p_resource;
             res_type = res_table->rcode;
-            InitResource(res_type, items, pass, res_table->initres);
+            static_initialization_resource =
+                res_table->static_initialization_resource_;
+            InitResource(res_type, items, pass, res_table->initres,
+                         static_initialization_resource);
           }
           if (state == p_none) {
             scan_err1(lc, _("expected resource name, got: %s"), lc->str);
@@ -361,7 +347,7 @@ bool ConfigurationParser::ParseConfigFile(const char* cf,
               level--;
               state = p_none;
               Dmsg0(900, "BCT_EOB => define new resource\n");
-              if (((UnionOfResources*)res_all_)->hdr.name == NULL) {
+              if (!static_resource_ptr->resource_name_) {
                 scan_err0(lc, _("Name not specified for resource"));
                 goto bail_out;
               }
@@ -393,8 +379,8 @@ bool ConfigurationParser::ParseConfigFile(const char* cf,
     if (debug_level >= 900 && pass == 2) {
       int i;
       for (i = r_first_; i <= r_last_; i++) {
-        DumpResourceCb_(i, res_head_[i - r_first_], PrintMessage, NULL, false,
-                        false);
+        DumpResourceCb_(i, res_head_[i - r_first_], PrintMessage, nullptr,
+                        false, false);
       }
     }
 
@@ -426,7 +412,7 @@ int ConfigurationParser::GetResourceTableIndex(int resource_type)
 
 ResourceTable* ConfigurationParser::GetResourceTable(int resource_type)
 {
-  ResourceTable* result = NULL;
+  ResourceTable* result = nullptr;
   int rindex = GetResourceTableIndex(resource_type);
 
   if (rindex >= 0) { result = &resources_[rindex]; }
@@ -437,7 +423,7 @@ ResourceTable* ConfigurationParser::GetResourceTable(int resource_type)
 ResourceTable* ConfigurationParser::GetResourceTable(
     const char* resource_type_name)
 {
-  ResourceTable* result = NULL;
+  ResourceTable* result = nullptr;
   int i;
 
   for (i = 0; resources_[i].name; i++) {
@@ -468,7 +454,7 @@ int ConfigurationParser::GetResourceItemIndex(ResourceItem* items,
 ResourceItem* ConfigurationParser::GetResourceItem(ResourceItem* items,
                                                    const char* item)
 {
-  ResourceItem* result = NULL;
+  ResourceItem* result = nullptr;
   int i = -1;
 
   i = GetResourceItemIndex(items, item);
@@ -489,7 +475,8 @@ const char* ConfigurationParser::GetDefaultConfigDir()
   }
 
   if (szConfigDir[0] == '\0') {
-    hr = p_SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, szConfigDir);
+    hr = p_SHGetFolderPath(nullptr, CSIDL_COMMON_APPDATA, nullptr, 0,
+                           szConfigDir);
 
     if (SUCCEEDED(hr)) {
       bstrncat(szConfigDir, "\\Bareos", sizeof(szConfigDir));
@@ -560,7 +547,7 @@ bool ConfigurationParser::GetConfigIncludePath(PoolMem& full_path,
       /*
        * Set full_path to wildcard path.
        */
-      if (GetPathOfResource(full_path, NULL, NULL, NULL, true)) {
+      if (GetPathOfResource(full_path, nullptr, nullptr, nullptr, true)) {
         use_config_include_dir_ = true;
         found = true;
       }
@@ -591,7 +578,7 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
       found = GetConfigIncludePath(full_path, GetDefaultConfigDir());
     }
     if (!found) {
-      Jmsg2(NULL, M_ERROR, 0,
+      Jmsg2(nullptr, M_ERROR, 0,
             _("Failed to read config file at the default locations "
               "\"%s\" (config file path) and \"%s\" (config include "
               "directory).\n"),
@@ -609,7 +596,7 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
         found = GetConfigIncludePath(full_path, cf_.c_str());
       }
       if (!found) {
-        Jmsg3(NULL, M_ERROR, 0,
+        Jmsg3(nullptr, M_ERROR, 0,
               _("Failed to find configuration files under directory \"%s\". "
                 "Did look for \"%s\" (config file path) and \"%s\" (config "
                 "include directory).\n"),
@@ -629,12 +616,12 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
      */
     found = GetConfigFile(full_path, GetDefaultConfigDir(), cf_.c_str());
     if (!found) {
-      Jmsg2(NULL, M_ERROR, 0,
+      Jmsg2(nullptr, M_ERROR, 0,
             _("Failed to find configuration files at \"%s\" and \"%s\".\n"),
             cf_.c_str(), full_path.c_str());
     }
   } else {
-    Jmsg1(NULL, M_ERROR, 0, _("Failed to read config file \"%s\"\n"),
+    Jmsg1(nullptr, M_ERROR, 0, _("Failed to read config file \"%s\"\n"),
           cf_.c_str());
   }
 
@@ -651,7 +638,7 @@ CommonResourceHeader** ConfigurationParser::SaveResources()
 
   for (int i = 0; i < num; i++) {
     res[i] = res_head_[i];
-    res_head_[i] = NULL;
+    res_head_[i] = nullptr;
   }
 
   return res;
@@ -660,18 +647,18 @@ CommonResourceHeader** ConfigurationParser::SaveResources()
 /*
  * Initialize the static structure to zeros, then apply all the default values.
  */
-void ConfigurationParser::InitResource(int type,
-                                       ResourceItem* items,
-                                       int pass,
-                                       std::function<void*(void* res)> initres)
+void ConfigurationParser::InitResource(
+    int type,
+    ResourceItem* items,
+    int pass,
+    std::function<void*(void* res)> initres,
+    BareosResource* static_initialization_resource)
 {
-  UnionOfResources* res_all;
+  if (initres) { initres(); }
+  BareosResource* static_resource_ptr = static_initialization_resource;
 
-  memset(res_all_, 0, res_all_size_);
-  res_all = ((UnionOfResources*)res_all_);
-  if (initres != nullptr) { initres(res_all); }
-  res_all->hdr.rcode = type;
-  res_all->hdr.refcnt = 1;
+  static_resource_ptr->rcode = type;
+  static_resource_ptr->refcnt = 1;
 
   /*
    * See what pass of the config parsing this is.
@@ -695,7 +682,7 @@ void ConfigurationParser::InitResource(int type,
          * Items with a default value but without the CFG_ITEM_DEFAULT flag set
          * are most of the time an indication of a programmers error.
          */
-        if (items[i].default_value != NULL &&
+        if (items[i].default_value != nullptr &&
             !(items[i].flags & CFG_ITEM_DEFAULT)) {
           Pmsg1(000,
                 _("Found config item %s which has default value but no "
@@ -709,7 +696,7 @@ void ConfigurationParser::InitResource(int type,
          * available.
          */
         if (items[i].flags & CFG_ITEM_DEFAULT &&
-            items[i].default_value != NULL) {
+            items[i].default_value != nullptr) {
           /*
            * First try to handle the generic types.
            */
@@ -800,7 +787,9 @@ void ConfigurationParser::InitResource(int type,
               break;
           }
 
-          if (!omit_defaults_) { SetBit(i, res_all->hdr.inherit_content); }
+          if (!omit_defaults_) {
+            SetBit(i, static_resource_ptr->inherit_content);
+          }
         }
 
         /*
@@ -830,7 +819,7 @@ void ConfigurationParser::InitResource(int type,
          * available.
          */
         if (items[i].flags & CFG_ITEM_DEFAULT &&
-            items[i].default_value != NULL) {
+            items[i].default_value != nullptr) {
           /*
            * First try to handle the generic types.
            */
@@ -871,7 +860,9 @@ void ConfigurationParser::InitResource(int type,
               break;
           }
 
-          if (!omit_defaults_) { SetBit(i, res_all->hdr.inherit_content); }
+          if (!omit_defaults_) {
+            SetBit(i, static_resource_ptr->inherit_content);
+          }
         }
 
         /*
@@ -902,7 +893,7 @@ bool ConfigurationParser::RemoveResource(int type, const char* name)
    * For a general approach, a check if this resource is referenced by other
    * resources must be added. If it is referenced, don't remove it.
    */
-  last = NULL;
+  last = nullptr;
   for (CommonResourceHeader* res = res_head_[rindex]; res; res = res->next) {
     if (bstrcmp(res->name, name)) {
       if (!last) {
@@ -911,11 +902,10 @@ bool ConfigurationParser::RemoveResource(int type, const char* name)
               ResToStr(type), name);
         res_head_[rindex] = res->next;
       } else {
-        Dmsg2(900, _("removing resource %s, name=%s\n"), ResToStr(type),
-              name);
+        Dmsg2(900, _("removing resource %s, name=%s\n"), ResToStr(type), name);
         last->next = res->next;
       }
-      res->next = NULL;
+      res->next = nullptr;
       FreeResourceCb_(res, type);
       return true;
     }

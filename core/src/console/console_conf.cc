@@ -88,8 +88,8 @@ static int32_t res_all_size = sizeof(res_all);
 /* clang-format off */
 
 static ResourceItem cons_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_cons.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, "The name of this resource." },
-  { "Description", CFG_TYPE_STR, ITEM(res_cons.hdr.desc), 0, 0, NULL, NULL, NULL },
+  { "Name", CFG_TYPE_NAME, ITEM(res_cons.resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, "The name of this resource." },
+  { "Description", CFG_TYPE_STR, ITEM(res_cons.description_), 0, 0, NULL, NULL, NULL },
   { "RcFile", CFG_TYPE_DIR, ITEM(res_cons.rc_file), 0, 0, NULL, NULL, NULL },
   { "HistoryFile", CFG_TYPE_DIR, ITEM(res_cons.history_file), 0, 0, NULL, NULL, NULL },
   { "HistoryLength", CFG_TYPE_PINT32, ITEM(res_cons.history_length), 0, CFG_ITEM_DEFAULT, "100", NULL, NULL },
@@ -102,8 +102,8 @@ static ResourceItem cons_items[] = {
 };
 
 static ResourceItem dir_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-  { "Description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL, NULL, NULL },
+  { "Name", CFG_TYPE_NAME, ITEM(res_dir.resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+  { "Description", CFG_TYPE_STR, ITEM(res_dir.description_), 0, 0, NULL, NULL, NULL },
   { "DirPort", CFG_TYPE_PINT32, ITEM(res_dir.DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL },
   { "Address", CFG_TYPE_STR, ITEM(res_dir.address), 0, 0, NULL, NULL, NULL },
   { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir.password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
@@ -152,8 +152,8 @@ static void DumpResource(int type,
   }
   sendit(sock, "%s", buf.c_str());
 
-  if (recurse && res->res_dir.hdr.next) {
-    my_config->DumpResourceCb_(type, res->res_dir.hdr.next, sendit, sock,
+  if (recurse && res->res_dir.next_) {
+    my_config->DumpResourceCb_(type, res->res_dir.next_, sendit, sock,
                                hide_sensitive_data, verbose);
   }
 }
@@ -173,9 +173,9 @@ static void FreeResource(CommonResourceHeader* sres, int type)
   if (res == NULL) return;
 
   /* common stuff -- free the resource name */
-  nres = (CommonResourceHeader*)res->res_dir.hdr.next;
-  if (res->res_dir.hdr.name) { free(res->res_dir.hdr.name); }
-  if (res->res_dir.hdr.desc) { free(res->res_dir.hdr.desc); }
+  nres = (CommonResourceHeader*)res->res_dir.next_;
+  if (res->res_dir.resource_name_) { free(res->res_dir.resource_name_); }
+  if (res->res_dir.description_) { free(res->res_dir.description_); }
 
   switch (type) {
     case R_CONSOLE:
@@ -262,7 +262,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
    */
   for (i = 0; items[i].name; i++) {
     if (items[i].flags & CFG_ITEM_REQUIRED) {
-      if (!BitIsSet(i, res_all.res_dir.hdr.item_present)) {
+      if (!BitIsSet(i, res_all.res_dir.item_present_)) {
         Emsg2(M_ABORT, 0,
               _("%s item is required in %s resource, but not found.\n"),
               items[i].name, resources[rindex].name);
@@ -280,9 +280,9 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
     switch (type) {
       case R_CONSOLE:
         if ((res = (UnionOfResources*)my_config->GetResWithName(
-                 R_CONSOLE, res_all.res_cons.name())) == NULL) {
+                 R_CONSOLE, res_all.res_cons.resource_name_)) == NULL) {
           Emsg1(M_ABORT, 0, _("Cannot find Console resource %s\n"),
-                res_all.res_cons.name());
+                res_all.res_cons.resource_name_);
         } else {
           res->res_cons.tls_cert_.allowed_certificate_common_names_ =
               res_all.res_cons.tls_cert_.allowed_certificate_common_names_;
@@ -290,9 +290,9 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         break;
       case R_DIRECTOR:
         if ((res = (UnionOfResources*)my_config->GetResWithName(
-                 R_DIRECTOR, res_all.res_dir.name())) == NULL) {
+                 R_DIRECTOR, res_all.res_dir.resource_name_)) == NULL) {
           Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"),
-                res_all.res_dir.name());
+                res_all.res_dir.resource_name_);
         } else {
           res->res_dir.tls_cert_.allowed_certificate_common_names_ =
               res_all.res_dir.tls_cert_.allowed_certificate_common_names_;
@@ -308,13 +308,13 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
      * Note, the resoure name was already saved during pass 1,
      * so here, we can just release it.
      */
-    if (res_all.res_dir.hdr.name) {
-      free(res_all.res_dir.hdr.name);
-      res_all.res_dir.hdr.name = NULL;
+    if (res_all.res_dir.resource_name_) {
+      free(res_all.res_dir.resource_name_);
+      res_all.res_dir.resource_name_ = NULL;
     }
-    if (res_all.res_dir.hdr.desc) {
-      free(res_all.res_dir.hdr.desc);
-      res_all.res_dir.hdr.desc = NULL;
+    if (res_all.res_dir.description_) {
+      free(res_all.res_dir.description_);
+      res_all.res_dir.description_ = NULL;
     }
     return (error == 0);
   }
@@ -329,18 +329,18 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
       res_head[rindex] = (CommonResourceHeader*)res; /* store first entry */
     } else {
       CommonResourceHeader *next, *last;
-      for (last = next = res_head[rindex]; next; next = next->next) {
+      for (last = next = res_head[rindex]; next; next = next->next_) {
         last = next;
-        if (bstrcmp(next->name, res->res_dir.name())) {
+        if (bstrcmp(next->resource_name_, res->res_dir.resource_name_)) {
           Emsg2(M_ERROR_TERM, 0,
                 _("Attempt to define second %s resource named \"%s\" is not "
                   "permitted.\n"),
-                resources[rindex].name, res->res_dir.name());
+                resources[rindex].name, res->res_dir.resource_name_);
         }
       }
-      last->next = (CommonResourceHeader*)res;
+      last->next_ = (CommonResourceHeader*)res;
       Dmsg2(90, "Inserting %s res: %s\n", my_config->ResToStr(type),
-            res->res_dir.name());
+            res->res_dir.resource_name_);
     }
   }
   return (error == 0);

@@ -98,7 +98,7 @@ bool NdmpValidateClient(JobControlRecord* jcr)
         Jmsg(jcr, M_FATAL, 0,
              _("Client %s, has incompatible password encoding for running NDMP "
                "backup.\n"),
-             jcr->res.client->name());
+             jcr->res.client->resource_name_);
         return false;
       }
       break;
@@ -106,7 +106,7 @@ bool NdmpValidateClient(JobControlRecord* jcr)
       Jmsg(jcr, M_FATAL, 0,
            _("Client %s, with backup protocol %s  not compatible for running "
              "NDMP backup.\n"),
-           jcr->res.client->name(),
+           jcr->res.client->resource_name_,
            auth_protocol_to_str(jcr->res.client->Protocol));
       return false;
   }
@@ -125,14 +125,14 @@ static inline bool NdmpValidateStorage(JobControlRecord* jcr,
         Jmsg(jcr, M_FATAL, 0,
              _("Storage %s, has incompatible password encoding for running "
                "NDMP backup.\n"),
-             store->name());
+             store->resource_name_);
         return false;
       }
       break;
     default:
       Jmsg(jcr, M_FATAL, 0,
            _("Storage %s has illegal backup protocol %s for NDMP backup\n"),
-           store->name(), auth_protocol_to_str(store->Protocol));
+           store->resource_name_, auth_protocol_to_str(store->Protocol));
       return false;
   }
 

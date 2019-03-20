@@ -41,7 +41,7 @@ console::DirectorResource* CreateAndInitializeNewDirectorResource()
       new (std::string)(CERTDIR "/bareos-dir.bareos.org-key.pem");
   dir->tls_cert_.ca_certfile_ = new (std::string)(CERTDIR "/bareos-ca.pem");
   dir->tls_cert_.verify_peer_ = false;
-  dir->hdr.name = (char*)"director";
+  dir->resource_name_ = (char*)"director";
   dir->password_.encoding = p_encoding_md5;
   dir->password_.value = (char*)"verysecretpassword";
   return dir;
@@ -58,7 +58,7 @@ console::ConsoleResource* CreateAndInitializeNewConsoleResource()
       new (std::string)(CERTDIR "/bareos-dir.bareos.org-key.pem");
   cons->tls_cert_.ca_certfile_ = new (std::string)(CERTDIR "/bareos-ca.pem");
   cons->tls_cert_.verify_peer_ = false;
-  cons->hdr.name = (char*)"clientname";
+  cons->resource_name_ = (char*)"clientname";
   cons->password.encoding = p_encoding_md5;
   cons->password.value = (char*)"verysecretpassword";
   return cons;
@@ -77,7 +77,7 @@ directordaemon::ConsoleResource* CreateAndInitializeNewConsoleResource()
       new (std::string)(CERTDIR "/console.bareos.org-key.pem");
   cons->tls_cert_.ca_certfile_ = new (std::string)(CERTDIR "/bareos-ca.pem");
   cons->tls_cert_.verify_peer_ = false;
-  cons->hdr.name = (char*)"clientname";
+  cons->resource_name_ = (char*)"clientname";
   cons->password_.encoding = p_encoding_md5;
   cons->password_.value = (char*)"verysecretpassword";
   return cons;
@@ -97,7 +97,7 @@ directordaemon::StorageResource* CreateAndInitializeNewStorageResource()
       new (std::string)(CERTDIR "/bareos-dir.bareos.org-key.pem");
   store->tls_cert_.ca_certfile_ = new (std::string)(CERTDIR "/bareos-ca.pem");
   store->tls_cert_.verify_peer_ = false;
-  store->hdr.name = (char*)"storage";
+  store->resource_name_ = (char*)"storage";
   return store;
 }
 
@@ -114,7 +114,7 @@ directordaemon::DirectorResource* CreateAndInitializeNewDirectorResource()
   dir->tls_cert_.ca_certfile_ = new (std::string)(CERTDIR "/bareos-ca.pem");
   dir->tls_cert_.verify_peer_ = false;
   dir->DIRsrc_addr = 0;
-  dir->hdr.name = (char*)"director";
+  dir->resource_name_ = (char*)"director";
   dir->password_.encoding = p_encoding_md5;
   dir->password_.value = (char*)"verysecretpassword";
   return dir;
@@ -133,7 +133,7 @@ storagedaemon::DirectorResource* CreateAndInitializeNewDirectorResource()
       new (std::string)(CERTDIR "/bareos-dir.bareos.org-key.pem");
   dir->tls_cert_.ca_certfile_ = new (std::string)(CERTDIR "/bareos-ca.pem");
   dir->tls_cert_.verify_peer_ = false;
-  dir->hdr.name = (char*)"director";
+  dir->resource_name_ = (char*)"director";
   return dir;
 }
 
@@ -148,7 +148,7 @@ storagedaemon::StorageResource* CreateAndInitializeNewStorageResource()
       new (std::string)(CERTDIR "/bareos-dir.bareos.org-key.pem");
   store->tls_cert_.ca_certfile_ = new (std::string)(CERTDIR "/bareos-ca.pem");
   store->tls_cert_.verify_peer_ = false;
-  store->hdr.name = (char*)"storage";
+  store->resource_name_ = (char*)"storage";
   return store;
 }
 } /* namespace storagedaemon */

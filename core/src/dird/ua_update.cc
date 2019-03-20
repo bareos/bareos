@@ -816,7 +816,7 @@ static bool UpdateVolume(UaContext* ua)
         return true;
       case 12:
         pool = select_pool_resource(ua);
-        if (pool) { UpdateAllVolsFromPool(ua, pool->name()); }
+        if (pool) { UpdateAllVolsFromPool(ua, pool->resource_name_); }
         return true;
 
       case 13:
@@ -904,7 +904,7 @@ static bool UpdatePool(UaContext* ua)
   if (!pool) { return false; }
 
   memset(&pr, 0, sizeof(pr));
-  bstrncpy(pr.Name, pool->name(), sizeof(pr.Name));
+  bstrncpy(pr.Name, pool->resource_name_, sizeof(pr.Name));
   if (!GetPoolDbr(ua, &pr)) { return false; }
 
   SetPooldbrFromPoolres(&pr, pool, POOL_OP_UPDATE); /* update */

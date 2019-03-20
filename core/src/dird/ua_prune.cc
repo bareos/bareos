@@ -341,7 +341,7 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
     char ed1[50];
 
     memset(&cr, 0, sizeof(cr));
-    bstrncpy(cr.Name, client->name(), sizeof(cr.Name));
+    bstrncpy(cr.Name, client->resource_name_, sizeof(cr.Name));
     if (!ua->db->CreateClientRecord(ua->jcr, &cr)) { goto bail_out; }
 
     Mmsg(temp,
@@ -456,14 +456,14 @@ static bool prune_set_filter(UaContext* ua,
 
   DbLock(ua->db);
   if (client) {
-    ua->db->EscapeString(ua->jcr, ed2, client->name(), strlen(client->name()));
+    ua->db->EscapeString(ua->jcr, ed2, client->resource_name_, strlen(client->resource_name_));
     Mmsg(tmp, " AND Client.Name = '%s' ", ed2);
     PmStrcat(*add_where, tmp.c_str());
     PmStrcat(*add_from, " JOIN Client USING (ClientId) ");
   }
 
   if (pool) {
-    ua->db->EscapeString(ua->jcr, ed2, pool->name(), strlen(pool->name()));
+    ua->db->EscapeString(ua->jcr, ed2, pool->resource_name_, strlen(pool->resource_name_));
     Mmsg(tmp, " AND Pool.Name = '%s' ", ed2);
     PmStrcat(*add_where, tmp.c_str());
     /* Use ON() instead of USING for some old SQLite */
@@ -554,7 +554,7 @@ bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool)
 
   edit_uint64_with_commas(del.num_del, ed1);
   ua->InfoMsg(_("Pruned Files from %s Jobs for client %s from catalog.\n"), ed1,
-              client->name());
+              client->resource_name_);
 
 bail_out:
   DbUnlock(ua->db);
@@ -807,7 +807,7 @@ static bool PruneBackupJobs(UaContext* ua,
 
   if (del.num_del > 0) {
     ua->InfoMsg(_("Pruned %d %s for client %s from catalog.\n"), del.num_del,
-                del.num_del == 1 ? _("Job") : _("Jobs"), client->name());
+                del.num_del == 1 ? _("Job") : _("Jobs"), client->resource_name_);
   } else if (ua->verbose) {
     ua->InfoMsg(_("No Jobs found to prune.\n"));
   }

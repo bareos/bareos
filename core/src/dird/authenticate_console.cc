@@ -220,7 +220,7 @@ bool ConsoleAuthenticatorFrom_18_2::SendInfoMessage()
   message += "You are ";
   if (ua_->cons) {
     message += "logged in as: ";
-    message += ua_->cons->name();
+    message += ua_->cons->resource_name_;
   } else {
     message += "connected using the default console";
   }

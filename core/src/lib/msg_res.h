@@ -36,24 +36,24 @@
  * name config_data_type value code flags default_value
  */
 static ResourceItem msgs_items[] = {
-   { "Name", CFG_TYPE_NAME, ITEM(res_msgs.hdr.name), 0, 0, NULL, NULL, NULL },
-   { "Description", CFG_TYPE_STR, ITEM(res_msgs.hdr.desc), 0, 0, NULL, NULL, NULL },
-   { "MailCommand", CFG_TYPE_STR, ITEM(res_msgs.mail_cmd), 0, 0, NULL, NULL, NULL },
-   { "OperatorCommand", CFG_TYPE_STR, ITEM(res_msgs.operator_cmd), 0, 0, NULL, NULL, NULL },
-   { "TimestampFormat", CFG_TYPE_STR, ITEM(res_msgs.timestamp_format), 0, 0, NULL, NULL, NULL },
-   { "Syslog", CFG_TYPE_MSGS, ITEM(res_msgs), MD_SYSLOG, 0, NULL, NULL, NULL },
-   { "Mail", CFG_TYPE_MSGS, ITEM(res_msgs), MD_MAIL, 0, NULL, NULL, NULL },
-   { "MailOnError", CFG_TYPE_MSGS, ITEM(res_msgs), MD_MAIL_ON_ERROR, 0, NULL, NULL, NULL },
-   { "MailOnSuccess", CFG_TYPE_MSGS, ITEM(res_msgs), MD_MAIL_ON_SUCCESS, 0, NULL, NULL, NULL },
-   { "File", CFG_TYPE_MSGS, ITEM(res_msgs), MD_FILE, 0, NULL, NULL, NULL },
-   { "Append", CFG_TYPE_MSGS, ITEM(res_msgs), MD_APPEND, 0, NULL, NULL, NULL },
-   { "Stdout", CFG_TYPE_MSGS, ITEM(res_msgs), MD_STDOUT, 0, NULL, NULL, NULL },
-   { "Stderr", CFG_TYPE_MSGS, ITEM(res_msgs), MD_STDERR, 0, NULL, NULL, NULL },
-   { "Director", CFG_TYPE_MSGS, ITEM(res_msgs), MD_DIRECTOR, 0, NULL, NULL, NULL },
-   { "Console", CFG_TYPE_MSGS, ITEM(res_msgs), MD_CONSOLE, 0, NULL, NULL, NULL },
-   { "Operator", CFG_TYPE_MSGS, ITEM(res_msgs), MD_OPERATOR, 0, NULL, NULL, NULL },
-   { "Catalog", CFG_TYPE_MSGS, ITEM(res_msgs), MD_CATALOG, 0, NULL, NULL, NULL },
-   { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
+   { "Name", CFG_TYPE_NAME, ITEM(res_msgs,resource_name_), 0, 0, NULL, NULL, NULL },
+   { "Description", CFG_TYPE_STR, ITEM(res_msgs,description_), 0, 0, NULL, NULL, NULL },
+   { "MailCommand", CFG_TYPE_STR, ITEM(res_msgs,mail_cmd), 0, 0, NULL, NULL, NULL },
+   { "OperatorCommand", CFG_TYPE_STR, ITEM(res_msgs,operator_cmd), 0, 0, NULL, NULL, NULL },
+   { "TimestampFormat", CFG_TYPE_STR, ITEM(res_msgs,timestamp_format), 0, 0, NULL, NULL, NULL },
+   { "Syslog", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_SYSLOG, 0, NULL, NULL, NULL },
+   { "Mail", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_MAIL, 0, NULL, NULL, NULL },
+   { "MailOnError", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_MAIL_ON_ERROR, 0, NULL, NULL, NULL },
+   { "MailOnSuccess", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_MAIL_ON_SUCCESS, 0, NULL, NULL, NULL },
+   { "File", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_FILE, 0, NULL, NULL, NULL },
+   { "Append", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_APPEND, 0, NULL, NULL, NULL },
+   { "Stdout", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_STDOUT, 0, NULL, NULL, NULL },
+   { "Stderr", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_STDERR, 0, NULL, NULL, NULL },
+   { "Director", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_DIRECTOR, 0, NULL, NULL, NULL },
+   { "Console", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_CONSOLE, 0, NULL, NULL, NULL },
+   { "Operator", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_OPERATOR, 0, NULL, NULL, NULL },
+   { "Catalog", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_CATALOG, 0, NULL, NULL, NULL },
+   {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 /* clang-format on */

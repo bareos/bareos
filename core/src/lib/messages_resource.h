@@ -73,6 +73,9 @@ class MessagesResource : public BareosResource {
     return rtn;
   }
 
+  MessagesResource() = default;
+  virtual ~MessagesResource();
+
   void WaitNotInUse(); /* in message.c */
   void lock();         /* in message.c */
   void unlock();       /* in message.c */

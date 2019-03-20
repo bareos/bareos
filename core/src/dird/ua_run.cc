@@ -137,7 +137,7 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
 
         job = ua->GetJobResWithName(jr.Name, false);
         if (job) {
-          Mmsg(cmdline, " pool=\"%s\"", job->pool->name());
+          Mmsg(cmdline, " pool=\"%s\"", job->pool->resource_name_);
           PmStrcat(ua->cmd, cmdline);
         }
         break;
@@ -149,7 +149,7 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
 
             job = ua->GetJobResWithName(jr.Name, false);
             if (job) {
-              Mmsg(cmdline, " pool=\"%s\"", job->pool->name());
+              Mmsg(cmdline, " pool=\"%s\"", job->pool->resource_name_);
               PmStrcat(ua->cmd, cmdline);
             }
             break;
@@ -515,13 +515,13 @@ try_again:
 
   start_job:
     Dmsg3(100, "JobId=%u using pool %s priority=%d\n", (int)jcr->JobId,
-          jcr->res.pool->name(), jcr->JobPriority);
+          jcr->res.pool->resource_name_, jcr->JobPriority);
     Dmsg1(900, "Running a job; its spool_data = %d\n", jcr->spool_data);
 
     JobId = RunJob(jcr);
 
     Dmsg4(100, "JobId=%u NewJobId=%d using pool %s priority=%d\n",
-          (int)jcr->JobId, JobId, jcr->res.pool->name(), jcr->JobPriority);
+          (int)jcr->JobId, JobId, jcr->res.pool->resource_name_, jcr->JobPriority);
 
     FreeJcr(jcr); /* release jcr */
 
@@ -694,7 +694,7 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
             jcr->res.pool = rc.pool;
             rc.level_override = false;
             rc.pool_override = true;
-            Dmsg1(100, "Set new pool=%s\n", jcr->res.pool->name());
+            Dmsg1(100, "Set new pool=%s\n", jcr->res.pool->resource_name_);
             goto try_again;
           }
         } else {
@@ -731,7 +731,7 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
           rc.next_pool = select_pool_resource(ua);
           if (rc.next_pool) {
             jcr->res.next_pool = rc.next_pool;
-            Dmsg1(100, "Set new next_pool=%s\n", jcr->res.next_pool->name());
+            Dmsg1(100, "Set new next_pool=%s\n", jcr->res.next_pool->resource_name_);
             goto try_again;
           }
         } else if (jcr->is_JobType(JT_VERIFY)) { /* Verify Job */
@@ -868,7 +868,7 @@ static bool ResetRestoreContext(UaContext* ua,
   }
 
   jcr->res.client = rc.client;
-  if (jcr->res.client) { PmStrcpy(jcr->client_name, rc.client->name()); }
+  if (jcr->res.client) { PmStrcpy(jcr->client_name, rc.client->resource_name_); }
   jcr->res.fileset = rc.fileset;
   jcr->ExpectedFiles = rc.files;
 
@@ -1231,9 +1231,9 @@ static bool DisplayJobParameters(UaContext* ua,
             "Storage:  %s\n"
             "When:     %s\n"
             "Priority: %d\n",
-            job->name(), jcr->res.fileset->name(),
-            NPRT(jcr->res.client->name()),
-            jcr->res.write_storage ? jcr->res.write_storage->name()
+            job->resource_name_, jcr->res.fileset->resource_name_,
+            NPRT(jcr->res.client->resource_name_),
+            jcr->res.write_storage ? jcr->res.write_storage->resource_name_
                                    : _("*None*"),
             bstrutime(dt, sizeof(dt), jcr->sched_time), jcr->JobPriority);
       } else {
@@ -1244,9 +1244,9 @@ static bool DisplayJobParameters(UaContext* ua,
                       "Storage:  %s\n"
                       "When:     %s\n"
                       "Priority: %d\n"),
-                    job->name(), jcr->res.fileset->name(),
-                    NPRT(jcr->res.client->name()),
-                    jcr->res.write_storage ? jcr->res.write_storage->name()
+                    job->resource_name_, jcr->res.fileset->resource_name_,
+                    NPRT(jcr->res.client->resource_name_),
+                    jcr->res.write_storage ? jcr->res.write_storage->resource_name_
                                            : _("*None*"),
                     bstrutime(dt, sizeof(dt), jcr->sched_time),
                     jcr->JobPriority);
@@ -1265,9 +1265,9 @@ static bool DisplayJobParameters(UaContext* ua,
             "Storage:  %s\n"
             "When:     %s\n"
             "Priority: %d\n",
-            job->name(), jcr->res.fileset->name(),
-            NPRT(jcr->res.client->name()),
-            jcr->res.write_storage ? jcr->res.write_storage->name()
+            job->resource_name_, jcr->res.fileset->resource_name_,
+            NPRT(jcr->res.client->resource_name_),
+            jcr->res.write_storage ? jcr->res.write_storage->resource_name_
                                    : _("*None*"),
             bstrutime(dt, sizeof(dt), jcr->sched_time), jcr->JobPriority);
       } else {
@@ -1278,9 +1278,9 @@ static bool DisplayJobParameters(UaContext* ua,
                       "Storage:  %s\n"
                       "When:     %s\n"
                       "Priority: %d\n"),
-                    job->name(), jcr->res.fileset->name(),
-                    NPRT(jcr->res.client->name()),
-                    jcr->res.write_storage ? jcr->res.write_storage->name()
+                    job->resource_name_, jcr->res.fileset->resource_name_,
+                    NPRT(jcr->res.client->resource_name_),
+                    jcr->res.write_storage ? jcr->res.write_storage->resource_name_
                                            : _("*None*"),
                     bstrutime(dt, sizeof(dt), jcr->sched_time),
                     jcr->JobPriority);
@@ -1299,9 +1299,9 @@ static bool DisplayJobParameters(UaContext* ua,
             "Storage:  %s\n"
             "When:     %s\n"
             "Priority: %d\n",
-            job->name(), jcr->res.fileset->name(),
-            NPRT(jcr->res.client->name()),
-            jcr->res.write_storage ? jcr->res.write_storage->name()
+            job->resource_name_, jcr->res.fileset->resource_name_,
+            NPRT(jcr->res.client->resource_name_),
+            jcr->res.write_storage ? jcr->res.write_storage->resource_name_
                                    : _("*None*"),
             bstrutime(dt, sizeof(dt), jcr->sched_time), jcr->JobPriority);
       } else {
@@ -1312,9 +1312,9 @@ static bool DisplayJobParameters(UaContext* ua,
                       "Storage:  %s\n"
                       "When:     %s\n"
                       "Priority: %d\n"),
-                    job->name(), jcr->res.fileset->name(),
-                    NPRT(jcr->res.client->name()),
-                    jcr->res.write_storage ? jcr->res.write_storage->name()
+                    job->resource_name_, jcr->res.fileset->resource_name_,
+                    NPRT(jcr->res.client->resource_name_),
+                    jcr->res.write_storage ? jcr->res.write_storage->resource_name_
                                            : _("*None*"),
                     bstrutime(dt, sizeof(dt), jcr->sched_time),
                     jcr->JobPriority);
@@ -1342,15 +1342,15 @@ static bool DisplayJobParameters(UaContext* ua,
               "When:     %s\n"
               "Priority: %d\n"
               "%s%s%s",
-              job->name(), level_to_str(jcr->getJobLevel()),
-              jcr->res.client->name(), jcr->backup_format,
-              jcr->res.fileset->name(), NPRT(jcr->res.pool->name()),
+              job->resource_name_, level_to_str(jcr->getJobLevel()),
+              jcr->res.client->resource_name_, jcr->backup_format,
+              jcr->res.fileset->resource_name_, NPRT(jcr->res.pool->resource_name_),
               is_virtual ? "NextPool: " : "",
-              is_virtual ? (jcr->res.next_pool ? jcr->res.next_pool->name()
+              is_virtual ? (jcr->res.next_pool ? jcr->res.next_pool->resource_name_
                                                : _("*None*"))
                          : "",
               is_virtual ? "\n" : "",
-              jcr->res.write_storage ? jcr->res.write_storage->name()
+              jcr->res.write_storage ? jcr->res.write_storage->resource_name_
                                      : _("*None*"),
               bstrutime(dt, sizeof(dt), jcr->sched_time), jcr->JobPriority,
               jcr->plugin_options ? "Plugin Options: " : "",
@@ -1370,16 +1370,16 @@ static bool DisplayJobParameters(UaContext* ua,
                 "When:     %s\n"
                 "Priority: %d\n"
                 "%s%s%s"),
-              job->name(), level_to_str(jcr->getJobLevel()),
-              jcr->res.client->name(), jcr->backup_format,
-              jcr->res.fileset->name(), NPRT(jcr->res.pool->name()),
+              job->resource_name_, level_to_str(jcr->getJobLevel()),
+              jcr->res.client->resource_name_, jcr->backup_format,
+              jcr->res.fileset->resource_name_, NPRT(jcr->res.pool->resource_name_),
               jcr->res.pool_source, is_virtual ? "NextPool: " : "",
-              is_virtual ? (jcr->res.next_pool ? jcr->res.next_pool->name()
+              is_virtual ? (jcr->res.next_pool ? jcr->res.next_pool->resource_name_
                                                : _("*None*"))
                          : "",
               is_virtual ? " (From " : "",
               is_virtual ? jcr->res.npool_source : "", is_virtual ? ")\n" : "",
-              jcr->res.write_storage ? jcr->res.write_storage->name()
+              jcr->res.write_storage ? jcr->res.write_storage->resource_name_
                                      : _("*None*"),
               jcr->res.wstore_source,
               bstrutime(dt, sizeof(dt), jcr->sched_time), jcr->JobPriority,
@@ -1391,7 +1391,7 @@ static bool DisplayJobParameters(UaContext* ua,
         JobDbRecord jr;
         const char* Name;
         if (jcr->res.verify_job) {
-          Name = jcr->res.verify_job->name();
+          Name = jcr->res.verify_job->resource_name_;
         } else if (jcr->RestoreJobId) { /* Display job name if jobid requested
                                          */
           memset(&jr, 0, sizeof(jr));
@@ -1423,10 +1423,10 @@ static bool DisplayJobParameters(UaContext* ua,
               "Verify List: %s\n"
               "When:        %s\n"
               "Priority:    %d\n",
-              job->name(), level_to_str(jcr->getJobLevel()),
-              jcr->res.client->name(), jcr->res.fileset->name(),
-              NPRT(jcr->res.pool->name()), jcr->res.pool_source,
-              jcr->res.read_storage->name(), jcr->res.rstore_source, Name,
+              job->resource_name_, level_to_str(jcr->getJobLevel()),
+              jcr->res.client->resource_name_, jcr->res.fileset->resource_name_,
+              NPRT(jcr->res.pool->resource_name_), jcr->res.pool_source,
+              jcr->res.read_storage->resource_name_, jcr->res.rstore_source, Name,
               verify_list, bstrutime(dt, sizeof(dt), jcr->sched_time),
               jcr->JobPriority);
         } else {
@@ -1441,10 +1441,10 @@ static bool DisplayJobParameters(UaContext* ua,
                         "Verify List: %s\n"
                         "When:        %s\n"
                         "Priority:    %d\n"),
-                      job->name(), level_to_str(jcr->getJobLevel()),
-                      jcr->res.client->name(), jcr->res.fileset->name(),
-                      NPRT(jcr->res.pool->name()), jcr->res.pool_source,
-                      jcr->res.read_storage->name(), jcr->res.rstore_source,
+                      job->resource_name_, level_to_str(jcr->getJobLevel()),
+                      jcr->res.client->resource_name_, jcr->res.fileset->resource_name_,
+                      NPRT(jcr->res.pool->resource_name_), jcr->res.pool_source,
+                      jcr->res.read_storage->resource_name_, jcr->res.rstore_source,
                       Name, verify_list,
                       bstrutime(dt, sizeof(dt), jcr->sched_time),
                       jcr->JobPriority);
@@ -1485,13 +1485,13 @@ static bool DisplayJobParameters(UaContext* ua,
                 "Catalog:         %s\n"
                 "Priority:        %d\n"
                 "Plugin Options:  %s\n",
-                job->name(), NPRT(jcr->RestoreBootstrap),
+                job->resource_name_, NPRT(jcr->RestoreBootstrap),
                 jcr->RegexWhere ? jcr->RegexWhere : job->RegexWhere, rc.replace,
-                jcr->res.fileset->name(), rc.client_name,
-                jcr->res.client->name(), jcr->backup_format,
-                jcr->res.read_storage->name(),
+                jcr->res.fileset->resource_name_, rc.client_name,
+                jcr->res.client->resource_name_, jcr->backup_format,
+                jcr->res.read_storage->resource_name_,
                 bstrutime(dt, sizeof(dt), jcr->sched_time),
-                jcr->res.catalog->name(), jcr->JobPriority,
+                jcr->res.catalog->resource_name_, jcr->JobPriority,
                 NPRT(jcr->plugin_options));
           } else {
             ua->SendMsg(_("Run Restore job\n"
@@ -1508,13 +1508,13 @@ static bool DisplayJobParameters(UaContext* ua,
                           "Catalog:         %s\n"
                           "Priority:        %d\n"
                           "Plugin Options:  %s\n"),
-                        job->name(), NPRT(jcr->RestoreBootstrap),
+                        job->resource_name_, NPRT(jcr->RestoreBootstrap),
                         jcr->RegexWhere ? jcr->RegexWhere : job->RegexWhere,
-                        rc.replace, jcr->res.fileset->name(), rc.client_name,
-                        jcr->res.client->name(), jcr->backup_format,
-                        jcr->res.read_storage->name(),
+                        rc.replace, jcr->res.fileset->resource_name_, rc.client_name,
+                        jcr->res.client->resource_name_, jcr->backup_format,
+                        jcr->res.read_storage->resource_name_,
                         bstrutime(dt, sizeof(dt), jcr->sched_time),
-                        jcr->res.catalog->name(), jcr->JobPriority,
+                        jcr->res.catalog->resource_name_, jcr->JobPriority,
                         NPRT(jcr->plugin_options));
           }
         } else {
@@ -1536,13 +1536,13 @@ static bool DisplayJobParameters(UaContext* ua,
                 "Catalog:         %s\n"
                 "Priority:        %d\n"
                 "Plugin Options:  %s\n",
-                job->name(), NPRT(jcr->RestoreBootstrap),
+                job->resource_name_, NPRT(jcr->RestoreBootstrap),
                 jcr->where ? jcr->where : NPRT(job->RestoreWhere), rc.replace,
-                jcr->res.fileset->name(), rc.client_name,
-                jcr->res.client->name(), jcr->backup_format,
-                jcr->res.read_storage->name(),
+                jcr->res.fileset->resource_name_, rc.client_name,
+                jcr->res.client->resource_name_, jcr->backup_format,
+                jcr->res.read_storage->resource_name_,
                 bstrutime(dt, sizeof(dt), jcr->sched_time),
-                jcr->res.catalog->name(), jcr->JobPriority,
+                jcr->res.catalog->resource_name_, jcr->JobPriority,
                 NPRT(jcr->plugin_options));
           } else {
             ua->SendMsg(_("Run Restore job\n"
@@ -1559,13 +1559,13 @@ static bool DisplayJobParameters(UaContext* ua,
                           "Catalog:         %s\n"
                           "Priority:        %d\n"
                           "Plugin Options:  %s\n"),
-                        job->name(), NPRT(jcr->RestoreBootstrap),
+                        job->resource_name_, NPRT(jcr->RestoreBootstrap),
                         jcr->where ? jcr->where : NPRT(job->RestoreWhere),
-                        rc.replace, jcr->res.fileset->name(), rc.client_name,
-                        jcr->res.client->name(), jcr->backup_format,
-                        jcr->res.read_storage->name(),
+                        rc.replace, jcr->res.fileset->resource_name_, rc.client_name,
+                        jcr->res.client->resource_name_, jcr->backup_format,
+                        jcr->res.read_storage->resource_name_,
                         bstrutime(dt, sizeof(dt), jcr->sched_time),
-                        jcr->res.catalog->name(), jcr->JobPriority,
+                        jcr->res.catalog->resource_name_, jcr->JobPriority,
                         NPRT(jcr->plugin_options));
           }
         }
@@ -1576,7 +1576,7 @@ static bool DisplayJobParameters(UaContext* ua,
         ua->SendMsg(_("Run Restore job\n"
                       "JobName:    %s\n"
                       "Bootstrap:  %s\n"),
-                    job->name(), NPRT(jcr->RestoreBootstrap));
+                    job->resource_name_, NPRT(jcr->RestoreBootstrap));
 
         /* RegexWhere is take before RestoreWhere */
         if (jcr->RegexWhere || (job->RegexWhere && !jcr->where)) {
@@ -1596,13 +1596,13 @@ static bool DisplayJobParameters(UaContext* ua,
                       "Catalog:         %s\n"
                       "Priority:        %d\n"
                       "Plugin Options:  %s\n"),
-                    rc.replace, jcr->res.client->name(), jcr->backup_format,
-                    jcr->res.read_storage->name(),
+                    rc.replace, jcr->res.client->resource_name_, jcr->backup_format,
+                    jcr->res.read_storage->resource_name_,
                     (jcr->RestoreJobId == 0)
                         ? _("*None*")
                         : edit_uint64(jcr->RestoreJobId, ec1),
                     bstrutime(dt, sizeof(dt), jcr->sched_time),
-                    jcr->res.catalog->name(), jcr->JobPriority,
+                    jcr->res.catalog->resource_name_, jcr->JobPriority,
                     NPRT(jcr->plugin_options));
       }
       break;
@@ -1630,16 +1630,16 @@ static bool DisplayJobParameters(UaContext* ua,
             "When:          %s\n"
             "Catalog:       %s\n"
             "Priority:      %d\n",
-            prt_type, job->name(), NPRT(jcr->RestoreBootstrap),
-            jcr->res.read_storage ? jcr->res.read_storage->name() : _("*None*"),
-            NPRT(jcr->res.pool->name()),
-            jcr->res.next_pool ? jcr->res.next_pool->name() : _("*None*"),
-            jcr->res.write_storage ? jcr->res.write_storage->name()
+            prt_type, job->resource_name_, NPRT(jcr->RestoreBootstrap),
+            jcr->res.read_storage ? jcr->res.read_storage->resource_name_ : _("*None*"),
+            NPRT(jcr->res.pool->resource_name_),
+            jcr->res.next_pool ? jcr->res.next_pool->resource_name_ : _("*None*"),
+            jcr->res.write_storage ? jcr->res.write_storage->resource_name_
                                    : _("*None*"),
             (jcr->MigrateJobId == 0) ? _("*None*")
                                      : edit_uint64(jcr->MigrateJobId, ec1),
             bstrutime(dt, sizeof(dt), jcr->sched_time),
-            jcr->res.catalog->name(), jcr->JobPriority);
+            jcr->res.catalog->resource_name_, jcr->JobPriority);
       } else {
         if (jcr->is_JobType(JT_COPY)) {
           prt_type = _("Run Copy job\n");
@@ -1658,19 +1658,19 @@ static bool DisplayJobParameters(UaContext* ua,
               "When:          %s\n"
               "Catalog:       %s\n"
               "Priority:      %d\n"),
-            prt_type, job->name(), NPRT(jcr->RestoreBootstrap),
-            jcr->res.read_storage ? jcr->res.read_storage->name() : _("*None*"),
-            jcr->res.rstore_source, NPRT(jcr->res.pool->name()),
+            prt_type, job->resource_name_, NPRT(jcr->RestoreBootstrap),
+            jcr->res.read_storage ? jcr->res.read_storage->resource_name_ : _("*None*"),
+            jcr->res.rstore_source, NPRT(jcr->res.pool->resource_name_),
             jcr->res.pool_source,
-            jcr->res.write_storage ? jcr->res.write_storage->name()
+            jcr->res.write_storage ? jcr->res.write_storage->resource_name_
                                    : _("*None*"),
             jcr->res.wstore_source,
-            jcr->res.next_pool ? jcr->res.next_pool->name() : _("*None*"),
+            jcr->res.next_pool ? jcr->res.next_pool->resource_name_ : _("*None*"),
             NPRT(jcr->res.npool_source),
             jcr->MigrateJobId == 0 ? _("*None*")
                                    : edit_uint64(jcr->MigrateJobId, ec1),
             bstrutime(dt, sizeof(dt), jcr->sched_time),
-            jcr->res.catalog->name(), jcr->JobPriority);
+            jcr->res.catalog->resource_name_, jcr->JobPriority);
       }
       break;
     default:
@@ -2067,7 +2067,7 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
     rc.pool = rc.job->pool; /* use default */
   }
   if (!rc.pool) { return false; }
-  Dmsg1(100, "Using pool %s\n", rc.pool->name());
+  Dmsg1(100, "Using pool %s\n", rc.pool->resource_name_);
 
   if (rc.next_pool_name) {
     rc.next_pool = ua->GetPoolResWithName(rc.next_pool_name);
@@ -2081,7 +2081,7 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
     rc.next_pool = rc.pool->NextPool; /* use default */
   }
   if (rc.next_pool) {
-    Dmsg1(100, "Using next pool %s\n", rc.next_pool->name());
+    Dmsg1(100, "Using next pool %s\n", rc.next_pool->resource_name_);
   }
 
   if (rc.StoreName) {
@@ -2110,12 +2110,12 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
       if (!rc.store->store) {
         ua->ErrorMsg(_("No storage specified.\n"));
         return false;
-      } else if (!ua->AclAccessOk(Storage_ACL, rc.store->store->name(), true)) {
+      } else if (!ua->AclAccessOk(Storage_ACL, rc.store->store->resource_name_, true)) {
         ua->ErrorMsg(_("No authorization. Storage \"%s\".\n"),
-                     rc.store->store->name());
+                     rc.store->store->resource_name_);
         return false;
       }
-      Dmsg1(800, "Using storage=%s\n", rc.store->store->name());
+      Dmsg1(800, "Using storage=%s\n", rc.store->store->resource_name_);
       break;
   }
 
@@ -2132,11 +2132,11 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
   }
 
   if (rc.client) {
-    if (!ua->AclAccessOk(Client_ACL, rc.client->name(), true)) {
-      ua->ErrorMsg(_("No authorization. Client \"%s\".\n"), rc.client->name());
+    if (!ua->AclAccessOk(Client_ACL, rc.client->resource_name_, true)) {
+      ua->ErrorMsg(_("No authorization. Client \"%s\".\n"), rc.client->resource_name_);
       return false;
     } else {
-      Dmsg1(800, "Using client=%s\n", rc.client->name());
+      Dmsg1(800, "Using client=%s\n", rc.client->resource_name_);
     }
   }
 
@@ -2154,11 +2154,11 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
   }
 
   if (rc.client) {
-    if (!ua->AclAccessOk(Client_ACL, rc.client->name(), true)) {
-      ua->ErrorMsg(_("No authorization. Client \"%s\".\n"), rc.client->name());
+    if (!ua->AclAccessOk(Client_ACL, rc.client->resource_name_, true)) {
+      ua->ErrorMsg(_("No authorization. Client \"%s\".\n"), rc.client->resource_name_);
       return false;
     } else {
-      Dmsg1(800, "Using restore client=%s\n", rc.client->name());
+      Dmsg1(800, "Using restore client=%s\n", rc.client->resource_name_);
     }
   }
 

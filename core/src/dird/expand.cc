@@ -93,7 +93,7 @@ static int job_item(JobControlRecord* jcr,
 
   switch (code) {
     case 1: /* Job */
-      str = jcr->res.job->name();
+      str = jcr->res.job->resource_name_;
       break;
     case 2: /* Director's name */
       str = my_name;
@@ -109,7 +109,7 @@ static int job_item(JobControlRecord* jcr,
       str = buf;
       break;
     case 6: /* Client */
-      str = jcr->res.client->name();
+      str = jcr->res.client->resource_name_;
       if (!str) { str = " "; }
       break;
     case 7: /* NumVols */
@@ -117,17 +117,17 @@ static int job_item(JobControlRecord* jcr,
       str = buf;
       break;
     case 8: /* Pool */
-      str = jcr->res.pool->name();
+      str = jcr->res.pool->resource_name_;
       break;
     case 9: /* Storage */
       if (jcr->res.write_storage) {
-        str = jcr->res.write_storage->name();
+        str = jcr->res.write_storage->resource_name_;
       } else {
-        str = jcr->res.read_storage->name();
+        str = jcr->res.read_storage->resource_name_;
       }
       break;
     case 10: /* Catalog */
-      str = jcr->res.catalog->name();
+      str = jcr->res.catalog->resource_name_;
       break;
     case 11: /* MediaType */
       if (jcr->res.write_storage) {
@@ -235,7 +235,7 @@ static var_rc_t lookup_counter_var(var_t* ctx,
   LockRes(my_config);
   for (counter = NULL; (counter = (CounterResource*)my_config->GetNextRes(
                             R_COUNTER, (CommonResourceHeader*)counter));) {
-    if (bstrcmp(counter->name(), buf.c_str())) {
+    if (bstrcmp(counter->resource_name_, buf.c_str())) {
       Dmsg2(100, "Counter=%s val=%d\n", buf.c_str(), counter->CurrentValue);
       /*
        * -1 => return size of array
@@ -262,20 +262,20 @@ static var_rc_t lookup_counter_var(var_t* ctx,
           CounterDbRecord cr;
           JobControlRecord* jcr = (JobControlRecord*)my_ctx;
           memset(&cr, 0, sizeof(cr));
-          bstrncpy(cr.Counter, counter->name(), sizeof(cr.Counter));
+          bstrncpy(cr.Counter, counter->resource_name_, sizeof(cr.Counter));
           cr.MinValue = counter->MinValue;
           cr.MaxValue = counter->MaxValue;
           cr.CurrentValue = counter->CurrentValue;
           Dmsg1(100, "New value=%d\n", cr.CurrentValue);
           if (counter->WrapCounter) {
-            bstrncpy(cr.WrapCounter, counter->WrapCounter->name(),
+            bstrncpy(cr.WrapCounter, counter->WrapCounter->resource_name_,
                      sizeof(cr.WrapCounter));
           } else {
             cr.WrapCounter[0] = 0;
           }
           if (!jcr->db->UpdateCounterRecord(jcr, &cr)) {
             Jmsg(jcr, M_ERROR, 0, _("Count not update counter %s: ERR=%s\n"),
-                 counter->name(), jcr->db->strerror());
+                 counter->resource_name_, jcr->db->strerror());
           }
         }
       }
@@ -444,8 +444,8 @@ static var_rc_t operate_var(var_t* var,
     LockRes(my_config);
     for (counter = NULL; (counter = (CounterResource*)my_config->GetNextRes(
                               R_COUNTER, (CommonResourceHeader*)counter));) {
-      if (bstrcmp(counter->name(), buf.c_str())) {
-        Dmsg2(100, "counter=%s val=%s\n", counter->name(), buf.c_str());
+      if (bstrcmp(counter->resource_name_, buf.c_str())) {
+        Dmsg2(100, "counter=%s val=%s\n", counter->resource_name_, buf.c_str());
         break;
       }
     }

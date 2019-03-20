@@ -248,8 +248,8 @@ bool DeviceResource::PrintConfigToBuffer(PoolMem& buf)
 
 void DeviceResource::MultipliedDeviceRestoreBaseName()
 {
-  temporarily_swapped_numbered_name = hdr.name;
-  hdr.name = const_cast<char*>(multiplied_device_resource_base_name.c_str());
+  temporarily_swapped_numbered_name = resource_name_;
+  resource_name_ = const_cast<char*>(multiplied_device_resource_base_name.c_str());
 }
 
 void DeviceResource::MultipliedDeviceRestoreNumberedName()
@@ -257,7 +257,7 @@ void DeviceResource::MultipliedDeviceRestoreNumberedName()
   /* call MultipliedDeviceRestoreBaseName() before */
   ASSERT(temporarily_swapped_numbered_name);
 
-  hdr.name = temporarily_swapped_numbered_name;
+  resource_name_ = temporarily_swapped_numbered_name;
   temporarily_swapped_numbered_name = nullptr;
 }
 
@@ -266,7 +266,7 @@ void DeviceResource::CreateAndAssignSerialNumber(uint16_t number)
   if (multiplied_device_resource_base_name.empty()) {
     /* save the original name which is
      * the base name for multiplied devices */
-    multiplied_device_resource_base_name = hdr.name;
+    multiplied_device_resource_base_name = resource_name_;
   }
 
   std::string tmp_name = multiplied_device_resource_base_name;
@@ -275,8 +275,8 @@ void DeviceResource::CreateAndAssignSerialNumber(uint16_t number)
   ::sprintf(b, "%04d", number < 10000 ? number : 9999);
   tmp_name += b;
 
-  free(hdr.name);
-  hdr.name = bstrdup(tmp_name.c_str());
+  free(resource_name_);
+  resource_name_ = bstrdup(tmp_name.c_str());
 }
 
 

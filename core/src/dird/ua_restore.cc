@@ -261,10 +261,10 @@ bool RestoreCmd(UaContext* ua, const char* cmd)
   Mmsg(ua->cmd,
        "run job=\"%s\" client=\"%s\" restoreclient=\"%s\" storage=\"%s\""
        " bootstrap=\"%s\" files=%u catalog=\"%s\"",
-       job->name(), rx.ClientName, rx.RestoreClientName,
-       rx.store ? rx.store->name() : "",
+       job->resource_name_, rx.ClientName, rx.RestoreClientName,
+       rx.store ? rx.store->resource_name_ : "",
        escaped_bsr_name ? escaped_bsr_name : jcr->RestoreBootstrap,
-       rx.selected_files, ua->catalog->name());
+       rx.selected_files, ua->catalog->resource_name_);
 
   /*
    * Build run command
@@ -1320,7 +1320,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
     PoolDbRecord pr;
 
     memset(&pr, 0, sizeof(pr));
-    bstrncpy(pr.Name, rx->pool->name(), sizeof(pr.Name));
+    bstrncpy(pr.Name, rx->pool->resource_name_, sizeof(pr.Name));
     if (ua->db->GetPoolRecord(ua->jcr, &pr)) {
       Bsnprintf(pool_select, sizeof(pool_select), "AND Media.PoolId=%s ",
                 edit_int64(pr.PoolId, ed1));
@@ -1549,7 +1549,7 @@ void FindStorageResource(UaContext* ua,
   StorageResource* store;
 
   if (rx.store) {
-    Dmsg1(200, "Already have store=%s\n", rx.store->name());
+    Dmsg1(200, "Already have store=%s\n", rx.store->resource_name_);
     return;
   }
   /*
@@ -1557,8 +1557,8 @@ void FindStorageResource(UaContext* ua,
    */
   LockRes(my_config);
   foreach_res (store, R_STORAGE) {
-    if (bstrcmp(Storage, store->name())) {
-      if (ua->AclAccessOk(Storage_ACL, store->name())) { rx.store = store; }
+    if (bstrcmp(Storage, store->resource_name_)) {
+      if (ua->AclAccessOk(Storage_ACL, store->resource_name_)) { rx.store = store; }
       break;
     }
   }
@@ -1576,9 +1576,9 @@ void FindStorageResource(UaContext* ua,
     if (store && (store != rx.store)) {
       ua->InfoMsg(
           _("Warning default storage overridden by \"%s\" on command line.\n"),
-          store->name());
+          store->resource_name_);
       rx.store = store;
-      Dmsg1(200, "Set store=%s\n", rx.store->name());
+      Dmsg1(200, "Set store=%s\n", rx.store->resource_name_);
     }
     return;
   }
@@ -1590,16 +1590,16 @@ void FindStorageResource(UaContext* ua,
     LockRes(my_config);
     foreach_res (store, R_STORAGE) {
       if (bstrcmp(MediaType, store->media_type)) {
-        if (ua->AclAccessOk(Storage_ACL, store->name())) {
+        if (ua->AclAccessOk(Storage_ACL, store->resource_name_)) {
           rx.store = store;
-          Dmsg1(200, "Set store=%s\n", rx.store->name());
+          Dmsg1(200, "Set store=%s\n", rx.store->resource_name_);
           if (Storage == NULL) {
             ua->WarningMsg(_("Using Storage \"%s\" from MediaType \"%s\".\n"),
-                           store->name(), MediaType);
+                           store->resource_name_, MediaType);
           } else {
             ua->WarningMsg(_("Storage \"%s\" not found, using Storage \"%s\" "
                              "from MediaType \"%s\".\n"),
-                           Storage, store->name(), MediaType);
+                           Storage, store->resource_name_, MediaType);
           }
         }
         UnlockRes(my_config);
@@ -1616,6 +1616,6 @@ void FindStorageResource(UaContext* ua,
    * Take command line arg, or ask user if none
    */
   rx.store = get_storage_resource(ua);
-  if (rx.store) { Dmsg1(200, "Set store=%s\n", rx.store->name()); }
+  if (rx.store) { Dmsg1(200, "Set store=%s\n", rx.store->resource_name_); }
 }
 } /* namespace directordaemon */

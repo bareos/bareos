@@ -153,7 +153,7 @@ int main(int argc, char* const* argv)
     fprintf(stderr, "Valid FileSets:\n");
 
     foreach_res (var, R_FILESET) {
-      fprintf(stderr, "    %s\n", var->hdr.name);
+      fprintf(stderr, "    %s\n", var->resource_name_);
     }
 
     exit(1);

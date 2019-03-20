@@ -149,18 +149,18 @@ bool StartStorageDaemonJob(JobControlRecord* jcr,
   /*
    * Now send JobId and permissions, and get back the authorization key.
    */
-  PmStrcpy(job_name, jcr->res.job->name());
+  PmStrcpy(job_name, jcr->res.job->resource_name_);
   BashSpaces(job_name);
 
   if (jcr->res.client) {
-    PmStrcpy(client_name, jcr->res.client->name());
+    PmStrcpy(client_name, jcr->res.client->resource_name_);
   } else {
     PmStrcpy(client_name, "**None**");
   }
   BashSpaces(client_name);
 
   if (jcr->res.fileset) {
-    PmStrcpy(fileset_name, jcr->res.fileset->name());
+    PmStrcpy(fileset_name, jcr->res.fileset->resource_name_);
   } else {
     PmStrcpy(fileset_name, "**None**");
   }
@@ -253,16 +253,16 @@ bool StartStorageDaemonJob(JobControlRecord* jcr,
     if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY) ||
         (jcr->is_JobType(JT_BACKUP) && jcr->is_JobLevel(L_VIRTUAL_FULL))) {
       PmStrcpy(pool_type, jcr->res.rpool->pool_type);
-      PmStrcpy(pool_name, jcr->res.rpool->name());
+      PmStrcpy(pool_name, jcr->res.rpool->resource_name_);
     } else {
       PmStrcpy(pool_type, jcr->res.pool->pool_type);
-      PmStrcpy(pool_name, jcr->res.pool->name());
+      PmStrcpy(pool_name, jcr->res.pool->resource_name_);
     }
     BashSpaces(pool_type);
     BashSpaces(pool_name);
     foreach_alist (storage, read_storage) {
-      Dmsg1(100, "Rstore=%s\n", storage->name());
-      PmStrcpy(StoreName, storage->name());
+      Dmsg1(100, "Rstore=%s\n", storage->resource_name_);
+      PmStrcpy(StoreName, storage->resource_name_);
       BashSpaces(StoreName);
       PmStrcpy(media_type, storage->media_type);
       BashSpaces(media_type);
@@ -272,7 +272,7 @@ bool StartStorageDaemonJob(JobControlRecord* jcr,
       DeviceResource* dev = nullptr;
       /* Loop over alternative storage Devices until one is OK */
       foreach_alist (dev, storage->device) {
-        PmStrcpy(device_name, dev->name());
+        PmStrcpy(device_name, dev->resource_name_);
         BashSpaces(device_name);
         sd->fsend(use_device, device_name.c_str());
         Dmsg1(100, ">stored: %s", sd->msg);
@@ -296,11 +296,11 @@ bool StartStorageDaemonJob(JobControlRecord* jcr,
   /* Do write side of storage daemon */
   if (ok && write_storage) {
     PmStrcpy(pool_type, jcr->res.pool->pool_type);
-    PmStrcpy(pool_name, jcr->res.pool->name());
+    PmStrcpy(pool_name, jcr->res.pool->resource_name_);
     BashSpaces(pool_type);
     BashSpaces(pool_name);
     foreach_alist (storage, write_storage) {
-      PmStrcpy(StoreName, storage->name());
+      PmStrcpy(StoreName, storage->resource_name_);
       BashSpaces(StoreName);
       PmStrcpy(media_type, storage->media_type);
       BashSpaces(media_type);
@@ -311,7 +311,7 @@ bool StartStorageDaemonJob(JobControlRecord* jcr,
       DeviceResource* dev = nullptr;
       /* Loop over alternative storage Devices until one is OK */
       foreach_alist (dev, storage->device) {
-        PmStrcpy(device_name, dev->name());
+        PmStrcpy(device_name, dev->resource_name_);
         BashSpaces(device_name);
         sd->fsend(use_device, device_name.c_str());
         Dmsg1(100, ">stored: %s", sd->msg);

@@ -589,7 +589,7 @@ static bRC bareosGetValue(bpContext* ctx, brDirVariable var, void* value)
               NPRT(*((char**)value)));
         break;
       case bDirVarJob:
-        *((char**)value) = jcr->res.job->hdr.name;
+        *((char**)value) = jcr->res.job->resource_name_;
         Dmsg1(debuglevel, "dir-plugin: return bDirVarJob=%s\n",
               NPRT(*((char**)value)));
         break;
@@ -604,7 +604,7 @@ static bRC bareosGetValue(bpContext* ctx, brDirVariable var, void* value)
               jcr->getJobType());
         break;
       case bDirVarClient:
-        *((char**)value) = jcr->res.client->hdr.name;
+        *((char**)value) = jcr->res.client->resource_name_;
         Dmsg1(debuglevel, "dir-plugin: return bDirVarClient=%s\n",
               NPRT(*((char**)value)));
         break;
@@ -612,21 +612,21 @@ static bRC bareosGetValue(bpContext* ctx, brDirVariable var, void* value)
         PoolDbRecord pr;
 
         memset(&pr, 0, sizeof(pr));
-        bstrncpy(pr.Name, jcr->res.pool->hdr.name, sizeof(pr.Name));
+        bstrncpy(pr.Name, jcr->res.pool->resource_name_, sizeof(pr.Name));
         if (!jcr->db->GetPoolRecord(jcr, &pr)) { retval = bRC_Error; }
         *((int*)value) = pr.NumVols;
         Dmsg1(debuglevel, "dir-plugin: return bDirVarNumVols=%d\n", pr.NumVols);
         break;
       case bDirVarPool:
-        *((char**)value) = jcr->res.pool->hdr.name;
+        *((char**)value) = jcr->res.pool->resource_name_;
         Dmsg1(debuglevel, "dir-plugin: return bDirVarPool=%s\n",
               NPRT(*((char**)value)));
         break;
       case bDirVarStorage:
         if (jcr->res.write_storage) {
-          *((char**)value) = jcr->res.write_storage->hdr.name;
+          *((char**)value) = jcr->res.write_storage->resource_name_;
         } else if (jcr->res.read_storage) {
-          *((char**)value) = jcr->res.read_storage->hdr.name;
+          *((char**)value) = jcr->res.read_storage->resource_name_;
         } else {
           *((char**)value) = NULL;
           retval = bRC_Error;
@@ -636,7 +636,7 @@ static bRC bareosGetValue(bpContext* ctx, brDirVariable var, void* value)
         break;
       case bDirVarWriteStorage:
         if (jcr->res.write_storage) {
-          *((char**)value) = jcr->res.write_storage->hdr.name;
+          *((char**)value) = jcr->res.write_storage->resource_name_;
         } else {
           *((char**)value) = NULL;
           retval = bRC_Error;
@@ -646,7 +646,7 @@ static bRC bareosGetValue(bpContext* ctx, brDirVariable var, void* value)
         break;
       case bDirVarReadStorage:
         if (jcr->res.read_storage) {
-          *((char**)value) = jcr->res.read_storage->hdr.name;
+          *((char**)value) = jcr->res.read_storage->resource_name_;
         } else {
           *((char**)value) = NULL;
           retval = bRC_Error;
@@ -655,7 +655,7 @@ static bRC bareosGetValue(bpContext* ctx, brDirVariable var, void* value)
               NPRT(*((char**)value)));
         break;
       case bDirVarCatalog:
-        *((char**)value) = jcr->res.catalog->hdr.name;
+        *((char**)value) = jcr->res.catalog->resource_name_;
         Dmsg1(debuglevel, "dir-plugin: return bDirVarCatalog=%s\n",
               NPRT(*((char**)value)));
         break;

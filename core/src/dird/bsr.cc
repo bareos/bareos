@@ -80,7 +80,7 @@ static bool GetStorageDevice(char* device, char* storage)
   if (!store) { return false; }
   DeviceResource* dev = (DeviceResource*)(store->device->first());
   if (!dev) { return false; }
-  bstrncpy(device, dev->hdr.name, MAX_NAME_LENGTH);
+  bstrncpy(device, dev->resource_name_, MAX_NAME_LENGTH);
   return true;
 }
 
@@ -712,7 +712,7 @@ bool OpenBootstrapFile(JobControlRecord* jcr, bootstrap_info& info)
   info.ua = NULL;
 
   if (!jcr->RestoreBootstrap) { return false; }
-  bstrncpy(info.storage, jcr->res.read_storage->name(), MAX_NAME_LENGTH);
+  bstrncpy(info.storage, jcr->res.read_storage->resource_name_, MAX_NAME_LENGTH);
 
   bs = fopen(jcr->RestoreBootstrap, "rb");
   if (!bs) {
@@ -761,7 +761,7 @@ static inline bool IsOnSameStorage(JobControlRecord* jcr, char* new_one)
   /*
    * Same name
    */
-  if (bstrcmp(new_one, jcr->res.read_storage->name())) { return true; }
+  if (bstrcmp(new_one, jcr->res.read_storage->resource_name_)) { return true; }
 
   new_store = (StorageResource*)my_config->GetResWithName(R_STORAGE, new_one);
   if (!new_store) {

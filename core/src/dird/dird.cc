@@ -411,7 +411,7 @@ int main(int argc, char* argv[])
     goto bail_out;
   }
 
-  MyNameIs(0, NULL, me->name()); /* set user defined name */
+  MyNameIs(0, NULL, me->resource_name_); /* set user defined name */
 
   CleanUpOldFiles();
 
@@ -769,7 +769,7 @@ static bool CheckResources()
       Jmsg(NULL, M_FATAL, 0,
            _("MaxFullConsolidations configured in job %s which is not of job "
              "type \"consolidate\" in file %s\n"),
-           job->name(), configfile.c_str());
+           job->resource_name_, configfile.c_str());
       OK = false;
       goto bail_out;
     }
@@ -781,7 +781,7 @@ static bool CheckResources()
       Jmsg(NULL, M_FATAL, 0,
            _("AlwaysIncremental configured in job %s which is not of job type "
              "\"backup\" in file %s\n"),
-           job->name(), configfile.c_str());
+           job->resource_name_, configfile.c_str());
       OK = false;
       goto bail_out;
     }
@@ -842,7 +842,7 @@ static bool CheckResources()
           Dmsg1(200,
                 _("Disabling collectstats for storage \"%s\""
                   " as other storage already collects from this SD.\n"),
-                nstore->name());
+                nstore->resource_name_);
         }
       }
     }
@@ -884,7 +884,7 @@ static bool InitializeSqlPooling(void)
       Jmsg(NULL, M_FATAL, 0,
            _("Could not setup sql pooling for Catalog \"%s\", database "
              "\"%s\".\n"),
-           catalog->name(), catalog->db_name);
+           catalog->resource_name_, catalog->db_name);
       retval = false;
       goto bail_out;
     }
@@ -923,10 +923,10 @@ static bool CheckCatalog(cat_op mode)
 
     if (!db || !db->OpenDatabase(NULL)) {
       Pmsg2(000, _("Could not open Catalog \"%s\", database \"%s\".\n"),
-            catalog->name(), catalog->db_name);
+            catalog->resource_name_, catalog->db_name);
       Jmsg(NULL, M_FATAL, 0,
            _("Could not open Catalog \"%s\", database \"%s\".\n"),
-           catalog->name(), catalog->db_name);
+           catalog->resource_name_, catalog->db_name);
       if (db) {
         Jmsg(NULL, M_FATAL, 0, _("%s"), db->strerror());
         Pmsg1(000, "%s", db->strerror());
@@ -938,7 +938,7 @@ static bool CheckCatalog(cat_op mode)
 
     /* Display a message if the db max_connections is too low */
     if (!db->CheckMaxConnections(NULL, me->MaxConcurrentJobs)) {
-      Pmsg1(000, "Warning, settings problem for Catalog=%s\n", catalog->name());
+      Pmsg1(000, "Warning, settings problem for Catalog=%s\n", catalog->resource_name_);
       Pmsg1(000, "%s", db->strerror());
     }
 
@@ -980,13 +980,13 @@ static bool CheckCatalog(cat_op mode)
       /* Create clients only if they use the current catalog */
       if (client->catalog != catalog) {
         Dmsg3(500, "Skip client=%s with cat=%s not catalog=%s\n",
-              client->name(), client->catalog->name(), catalog->name());
+              client->resource_name_, client->catalog->resource_name_, catalog->resource_name_);
         continue;
       }
-      Dmsg2(500, "create cat=%s for client=%s\n", client->catalog->name(),
-            client->name());
+      Dmsg2(500, "create cat=%s for client=%s\n", client->catalog->resource_name_,
+            client->resource_name_);
       memset(&cr, 0, sizeof(cr));
-      bstrncpy(cr.Name, client->name(), sizeof(cr.Name));
+      bstrncpy(cr.Name, client->resource_name_, sizeof(cr.Name));
       db->CreateClientRecord(NULL, &cr);
     }
 
@@ -1004,11 +1004,11 @@ static bool CheckCatalog(cat_op mode)
       } else {
         mtr.MediaTypeId = 0;
       }
-      bstrncpy(sr.Name, store->name(), sizeof(sr.Name));
+      bstrncpy(sr.Name, store->resource_name_, sizeof(sr.Name));
       sr.AutoChanger = store->autochanger;
       if (!db->CreateStorageRecord(NULL, &sr)) {
         Jmsg(NULL, M_FATAL, 0, _("Could not create storage record for %s\n"),
-             store->name());
+             store->resource_name_);
         OK = false;
         goto bail_out;
       }
@@ -1017,7 +1017,7 @@ static bool CheckCatalog(cat_op mode)
         sr.AutoChanger = store->autochanger;
         if (!db->UpdateStorageRecord(NULL, &sr)) {
           Jmsg(NULL, M_FATAL, 0, _("Could not update storage record for %s\n"),
-               store->name());
+               store->resource_name_);
           OK = false;
           goto bail_out;
         }
@@ -1031,12 +1031,12 @@ static bool CheckCatalog(cat_op mode)
       /* Write to catalog? */
       if (!counter->created && counter->Catalog == catalog) {
         CounterDbRecord cr;
-        bstrncpy(cr.Counter, counter->name(), sizeof(cr.Counter));
+        bstrncpy(cr.Counter, counter->resource_name_, sizeof(cr.Counter));
         cr.MinValue = counter->MinValue;
         cr.MaxValue = counter->MaxValue;
         cr.CurrentValue = counter->MinValue;
         if (counter->WrapCounter) {
-          bstrncpy(cr.WrapCounter, counter->WrapCounter->name(),
+          bstrncpy(cr.WrapCounter, counter->WrapCounter->resource_name_,
                    sizeof(cr.WrapCounter));
         } else {
           cr.WrapCounter[0] = 0; /* empty string */
@@ -1044,7 +1044,7 @@ static bool CheckCatalog(cat_op mode)
         if (db->CreateCounterRecord(NULL, &cr)) {
           counter->CurrentValue = cr.CurrentValue;
           counter->created = true;
-          Dmsg2(100, "Create counter %s val=%d\n", counter->name(),
+          Dmsg2(100, "Create counter %s val=%d\n", counter->resource_name_,
                 counter->CurrentValue);
         }
       }

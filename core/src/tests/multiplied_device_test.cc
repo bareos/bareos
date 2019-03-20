@@ -125,7 +125,7 @@ static uint32_t CheckNamesOfConfiguredDeviceResources_1(
         default:
           return 0;
       } /* switch (count_devices) */
-      std::string name_of_device(device->name());
+      std::string name_of_device(device->resource_name_);
       std::string name_to_compare(name ? name : "???");
       if (name_of_device == name_to_compare) { ++count_str_ok; }
     } /* if (device->multiplied_device_resource) */
@@ -188,7 +188,7 @@ static uint32_t CheckNamesOfConfiguredDeviceResources_2(
             return 0;
           }
       } /* switch (count_devices) */
-      std::string name_of_device(device->name());
+      std::string name_of_device(device->resource_name_);
       std::string name_to_compare(name ? name : "???");
       if (name_of_device == name_to_compare) { ++count_str_ok; }
     } /* if (device->multiplied_device_resource) */
@@ -231,10 +231,10 @@ static uint32_t CheckAutochangerInAllDevices(ConfigurationParser& my_config)
   while ((p = my_config.GetNextRes(R_DEVICE, p))) {
     DeviceResource* device = reinterpret_cast<DeviceResource*>(p);
     if (device->multiplied_device_resource) {
-      if (device->changer_res && device->changer_res->name()) {
-        std::string changer_name(device->changer_res->name());
-        if (names.find(device->name()) != names.end()) {
-          if (names.at(device->name()) == changer_name) { ++count_str_ok; }
+      if (device->changer_res && device->changer_res->resource_name_) {
+        std::string changer_name(device->changer_res->resource_name_);
+        if (names.find(device->resource_name_) != names.end()) {
+          if (names.at(device->resource_name_) == changer_name) { ++count_str_ok; }
         }
       }
     }
@@ -270,12 +270,12 @@ static uint32_t CheckSomeDevicesInAutochanger(ConfigurationParser& my_config)
   while ((p = my_config.GetNextRes(R_AUTOCHANGER, p))) {
     AutochangerResource* autochanger =
         reinterpret_cast<AutochangerResource*>(p);
-    std::string autochanger_name(autochanger->name());
+    std::string autochanger_name(autochanger->resource_name_);
     std::string autochanger_name_test("virtual-multiplied-device-autochanger");
     if (autochanger_name == autochanger_name_test) {
       DeviceResource* device = nullptr;
       foreach_alist (device, autochanger->device) {
-        std::string device_name(device->name());
+        std::string device_name(device->resource_name_);
         if (names.find(device_name) != names.end()) { ++count_str_ok; }
       }
     }

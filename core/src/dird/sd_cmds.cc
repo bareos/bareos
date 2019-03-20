@@ -125,7 +125,7 @@ bool ConnectToStorageDaemon(JobControlRecord* jcr,
   if (store->IsTlsConfigured()) {
     std::string qualified_resource_name;
     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
-            me->hdr.name, my_config->r_own_, qualified_resource_name)) {
+            me->resource_name_, my_config->r_own_, qualified_resource_name)) {
       Dmsg0(100,
             "Could not generate qualified resource name for a storage "
             "resource\n");
@@ -162,7 +162,7 @@ BareosSocket* open_sd_bsock(UaContext* ua)
 
   if (!ua->jcr->store_bsock) {
     ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d ...\n"),
-                store->name(), store->address, store->SDport);
+                store->resource_name_, store->address, store->SDport);
     /* the next call will set ua->jcr->store_bsock */
     if (!ConnectToStorageDaemon(ua->jcr, 10, me->SDConnectTimeout, true)) {
       ua->ErrorMsg(_("Failed to connect to Storage daemon.\n"));
@@ -713,14 +713,14 @@ void DoNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
   SetWstorage(ua->jcr, &lstore);
 
   if (!ua->api) {
-    ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d\n"), store->name(),
+    ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d\n"), store->resource_name_,
                 store->address, store->SDport);
   }
 
   /* the next call will set ua->jcr->store_bsock */
   if (!ConnectToStorageDaemon(ua->jcr, 10, me->SDConnectTimeout, false)) {
     ua->SendMsg(_("\nFailed to connect to Storage daemon %s.\n====\n"),
-                store->name());
+                store->resource_name_);
     return;
   }
 
@@ -739,10 +739,10 @@ void DoNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
      */
     foreach_alist (device, store->device) {
       if (cnt == 0) {
-        PmStrcpy(devicenames, device->name());
+        PmStrcpy(devicenames, device->resource_name_);
       } else {
         PmStrcat(devicenames, ",");
-        PmStrcat(devicenames, device->name());
+        PmStrcat(devicenames, device->resource_name_);
       }
       cnt++;
     }

@@ -83,8 +83,8 @@ int32_t res_all_size = sizeof(res_all);
  * name handler value code flags default_value
  */
 static ResourceItem mon_items[] = {
-  {"Name", CFG_TYPE_NAME, ITEM(res_monitor.hdr.name), 0, CFG_ITEM_REQUIRED, 0, NULL, NULL},
-  {"Description", CFG_TYPE_STR, ITEM(res_monitor.hdr.desc), 0, 0, 0, NULL, NULL},
+  {"Name", CFG_TYPE_NAME, ITEM(res_monitor.resource_name_), 0, CFG_ITEM_REQUIRED, 0, NULL, NULL},
+  {"Description", CFG_TYPE_STR, ITEM(res_monitor.description_), 0, 0, 0, NULL, NULL},
   {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_monitor.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"RefreshInterval", CFG_TYPE_TIME, ITEM(res_monitor.RefreshInterval), 0, CFG_ITEM_DEFAULT, "60", NULL, NULL},
   {"FdConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor.FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "10", NULL, NULL},
@@ -101,8 +101,8 @@ static ResourceItem mon_items[] = {
  * name handler value code flags default_value
  */
 static ResourceItem dir_items[] = {
-  {"Name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"Description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL, NULL, NULL},
+  {"Name", CFG_TYPE_NAME, ITEM(res_dir.resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"Description", CFG_TYPE_STR, ITEM(res_dir.description_), 0, 0, NULL, NULL, NULL},
   {"DirPort", CFG_TYPE_PINT32, ITEM(res_dir.DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL},
   {"Address", CFG_TYPE_STR, ITEM(res_dir.address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
     TLS_COMMON_CONFIG(res_dir),
@@ -116,8 +116,8 @@ static ResourceItem dir_items[] = {
  * name handler value code flags default_value
  */
 static ResourceItem cli_items[] = {
-  {"Name", CFG_TYPE_NAME, ITEM(res_client.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"Description", CFG_TYPE_STR, ITEM(res_client.hdr.desc), 0, 0, NULL, NULL, NULL},
+  {"Name", CFG_TYPE_NAME, ITEM(res_client.resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"Description", CFG_TYPE_STR, ITEM(res_client.description_), 0, 0, NULL, NULL, NULL},
   {"Address", CFG_TYPE_STR, ITEM(res_client.address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"FdPort", CFG_TYPE_PINT32, ITEM(res_client.FDport), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT, NULL, NULL},
   {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_client.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
@@ -132,8 +132,8 @@ static ResourceItem cli_items[] = {
  * name handler value code flags default_value
  */
 static ResourceItem store_items[] = {
-  {"Name", CFG_TYPE_NAME, ITEM(res_store.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"Description", CFG_TYPE_STR, ITEM(res_store.hdr.desc), 0, 0, NULL, NULL, NULL},
+  {"Name", CFG_TYPE_NAME, ITEM(res_store.resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"Description", CFG_TYPE_STR, ITEM(res_store.description_), 0, 0, NULL, NULL, NULL},
   {"SdPort", CFG_TYPE_PINT32, ITEM(res_store.SDport), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT, NULL, NULL},
   {"Address", CFG_TYPE_STR, ITEM(res_store.address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"SdAddress", CFG_TYPE_STR, ITEM(res_store.address), 0, 0, NULL, NULL, NULL},
@@ -150,8 +150,8 @@ static ResourceItem store_items[] = {
  * name handler value code flags default_value
  */
 static ResourceItem con_font_items[] = {
-  {"Name", CFG_TYPE_NAME, ITEM(con_font.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"Description", CFG_TYPE_STR, ITEM(con_font.hdr.desc), 0, 0, NULL, NULL, NULL},
+  {"Name", CFG_TYPE_NAME, ITEM(con_font.resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"Description", CFG_TYPE_STR, ITEM(con_font.description_), 0, 0, NULL, NULL, NULL},
   {"Font", CFG_TYPE_STR, ITEM(con_font.fontface), 0, 0, NULL, NULL, NULL},
   {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}
 };
@@ -212,8 +212,8 @@ static void DumpResource(int type,
   }
   sendit(sock, "%s", buf.c_str());
 
-  if (recurse && res->res_monitor.hdr.next) {
-    my_config->DumpResourceCb_(type, res->res_monitor.hdr.next, sendit, sock,
+  if (recurse && res->res_monitor.next_) {
+    my_config->DumpResourceCb_(type, res->res_monitor.next_, sendit, sock,
                                hide_sensitive_data, verbose);
   }
 }
@@ -235,9 +235,11 @@ static void FreeResource(CommonResourceHeader* sres, int type)
   /*
    * Common stuff -- free the resource name and description
    */
-  nres = (CommonResourceHeader*)res->res_monitor.hdr.next;
-  if (res->res_monitor.hdr.name) { free(res->res_monitor.hdr.name); }
-  if (res->res_monitor.hdr.desc) { free(res->res_monitor.hdr.desc); }
+  nres = (CommonResourceHeader*)res->res_monitor.next_;
+  if (res->res_monitor.resource_name_) {
+    free(res->res_monitor.resource_name_);
+  }
+  if (res->res_monitor.description_) { free(res->res_monitor.description_); }
 
   switch (type) {
     case R_MONITOR:
@@ -289,7 +291,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
    */
   for (i = 0; items[i].name; i++) {
     if (items[i].flags & CFG_ITEM_REQUIRED) {
-      if (!BitIsSet(i, res_all.res_monitor.hdr.item_present)) {
+      if (!BitIsSet(i, res_all.res_monitor.item_present_)) {
         Emsg2(M_ERROR_TERM, 0,
               _("%s item is required in %s resource, but not found.\n"),
               items[i].name, resources[rindex].name);
@@ -329,13 +331,13 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
      * Note, the resource name was already saved during pass 1,
      * so here, we can just release it.
      */
-    if (res_all.res_monitor.hdr.name) {
-      free(res_all.res_monitor.hdr.name);
-      res_all.res_monitor.hdr.name = NULL;
+    if (res_all.res_monitor.resource_name_) {
+      free(res_all.res_monitor.resource_name_);
+      res_all.res_monitor.resource_name_ = NULL;
     }
-    if (res_all.res_monitor.hdr.desc) {
-      free(res_all.res_monitor.hdr.desc);
-      res_all.res_monitor.hdr.desc = NULL;
+    if (res_all.res_monitor.description_) {
+      free(res_all.res_monitor.description_);
+      res_all.res_monitor.description_ = NULL;
     }
     return (error == 0);
   }
@@ -349,7 +351,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
     if (!res_head[rindex]) {
       res_head[rindex] = (CommonResourceHeader*)res; /* store first entry */
       Dmsg3(900, "Inserting first %s res: %s index=%d\n",
-            my_config->ResToStr(type), res->res_monitor.name(), rindex);
+            my_config->ResToStr(type), res->res_monitor.resource_name_, rindex);
     } else {
       CommonResourceHeader *next, *last;
       /*
@@ -357,16 +359,17 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
        */
       for (last = next = res_head[rindex]; next; next = next->next) {
         last = next;
-        if (strcmp(next->name, res->res_monitor.name()) == 0) {
+        if (strcmp(next->name, res->res_monitor.resource_name_) == 0) {
           Emsg2(M_ERROR_TERM, 0,
                 _("Attempt to define second %s resource named \"%s\" is not "
                   "permitted.\n"),
-                resources[rindex].name, res->res_monitor.name());
+                resources[rindex].name, res->res_monitor.resource_name_);
         }
       }
       last->next = (CommonResourceHeader*)res;
       Dmsg4(900, "Inserting %s res: %s index=%d pass=%d\n",
-            my_config->ResToStr(type), res->res_monitor.name(), rindex, pass);
+            my_config->ResToStr(type), res->res_monitor.resource_name_, rindex,
+            pass);
     }
   }
   return (error == 0);

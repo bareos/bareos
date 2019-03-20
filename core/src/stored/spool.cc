@@ -174,7 +174,7 @@ static void MakeUniqueDataSpoolFilename(DeviceControlRecord* dcr,
   }
 
   Mmsg(name, "%s/%s.data.%u.%s.%s.spool", dir, my_name, dcr->jcr->JobId,
-       dcr->jcr->Job, dcr->device->name());
+       dcr->jcr->Job, dcr->device->resource_name_);
 }
 
 static bool OpenDataSpoolFile(DeviceControlRecord* dcr)

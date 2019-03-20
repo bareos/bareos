@@ -195,7 +195,7 @@ static void ListRunningJobsPlain(StatusPacket* sp)
 #endif
     } else if ((njcr->JobId == 0) && (njcr->director)) {
       len = Mmsg(msg, _("%s (director) connected at: %s\n"),
-                 njcr->director->name(), dt);
+                 njcr->director->resource_name_, dt);
     } else {
       /*
        * This should only occur shortly, until the JobControlRecord values are

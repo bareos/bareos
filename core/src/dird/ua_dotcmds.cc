@@ -749,7 +749,7 @@ static void DoClientCmd(UaContext* ua, ClientResource* client, const char* cmd)
 
   ua->jcr->res.client = client;
   /* Try to connect for 15 seconds */
-  ua->SendMsg(_("Connecting to Client %s at %s:%d\n"), client->name(),
+  ua->SendMsg(_("Connecting to Client %s at %s:%d\n"), client->resource_name_,
               client->address, client->FDport);
   if (!ConnectToFileDaemon(ua->jcr, 1, 15, false, ua)) {
     ua->ErrorMsg(_("Failed to connect to Client.\n"));
@@ -909,9 +909,9 @@ bool DotJobdefsCmd(UaContext* ua, const char* cmd)
   LockRes(my_config);
   ua->send->ArrayStart("jobdefs");
   foreach_res (jobdefs, R_JOBDEFS) {
-    if (ua->AclAccessOk(Job_ACL, jobdefs->name())) {
+    if (ua->AclAccessOk(Job_ACL, jobdefs->resource_name_)) {
       ua->send->ObjectStart();
-      ua->send->ObjectKeyValue("name", jobdefs->name(), "%s\n");
+      ua->send->ObjectKeyValue("name", jobdefs->resource_name_, "%s\n");
       ua->send->ObjectEnd();
     }
   }
@@ -942,12 +942,12 @@ bool DotJobsCmd(UaContext* ua, const char* cmd)
   ua->send->ArrayStart("jobs");
   foreach_res (job, R_JOB) {
     if (!type || type == job->JobType) {
-      if (ua->AclAccessOk(Job_ACL, job->name())) {
+      if (ua->AclAccessOk(Job_ACL, job->resource_name_)) {
         if (enabled && !job->enabled) { continue; }
         if (disabled && job->enabled) { continue; }
 
         ua->send->ObjectStart();
-        ua->send->ObjectKeyValue("name", job->name(), "%s\n");
+        ua->send->ObjectKeyValue("name", job->resource_name_, "%s\n");
         ua->send->ObjectKeyValueBool("enabled", job->enabled);
         ua->send->ObjectEnd();
       }
@@ -996,9 +996,9 @@ bool DotFilesetsCmd(UaContext* ua, const char* cmd)
   LockRes(my_config);
   ua->send->ArrayStart("filesets");
   foreach_res (fs, R_FILESET) {
-    if (ua->AclAccessOk(FileSet_ACL, fs->name())) {
+    if (ua->AclAccessOk(FileSet_ACL, fs->resource_name_)) {
       ua->send->ObjectStart();
-      ua->send->ObjectKeyValue("name", fs->name(), "%s\n");
+      ua->send->ObjectKeyValue("name", fs->resource_name_, "%s\n");
       ua->send->ObjectEnd();
     }
   }
@@ -1015,9 +1015,9 @@ bool DotCatalogsCmd(UaContext* ua, const char* cmd)
   LockRes(my_config);
   ua->send->ArrayStart("catalogs");
   foreach_res (cat, R_CATALOG) {
-    if (ua->AclAccessOk(Catalog_ACL, cat->name())) {
+    if (ua->AclAccessOk(Catalog_ACL, cat->resource_name_)) {
       ua->send->ObjectStart();
-      ua->send->ObjectKeyValue("name", cat->name(), "%s\n");
+      ua->send->ObjectKeyValue("name", cat->resource_name_, "%s\n");
       ua->send->ObjectEnd();
     }
   }
@@ -1039,12 +1039,12 @@ bool DotClientsCmd(UaContext* ua, const char* cmd)
   LockRes(my_config);
   ua->send->ArrayStart("clients");
   foreach_res (client, R_CLIENT) {
-    if (ua->AclAccessOk(Client_ACL, client->name())) {
+    if (ua->AclAccessOk(Client_ACL, client->resource_name_)) {
       if (enabled && !client->enabled) { continue; }
       if (disabled && client->enabled) { continue; }
 
       ua->send->ObjectStart();
-      ua->send->ObjectKeyValue("name", client->name(), "%s\n");
+      ua->send->ObjectKeyValue("name", client->resource_name_, "%s\n");
       ua->send->ObjectKeyValueBool("enabled", client->enabled);
       ua->send->ObjectEnd();
     }
@@ -1063,7 +1063,7 @@ bool DotConsolesCmd(UaContext* ua, const char* cmd)
   ua->send->ArrayStart("consoles");
   foreach_res (console, R_CONSOLE) {
     ua->send->ObjectStart();
-    ua->send->ObjectKeyValue("name", console->name(), "%s\n");
+    ua->send->ObjectKeyValue("name", console->resource_name_, "%s\n");
     ua->send->ObjectEnd();
   }
   ua->send->ArrayEnd("consoles");
@@ -1080,7 +1080,7 @@ bool DotMsgsCmd(UaContext* ua, const char* cmd)
   ua->send->ArrayStart("messages");
   foreach_res (msgs, R_MSGS) {
     ua->send->ObjectStart();
-    ua->send->ObjectKeyValue("text", msgs->name(), "%s\n");
+    ua->send->ObjectKeyValue("text", msgs->resource_name_, "%s\n");
     ua->send->ObjectEnd();
   }
   ua->send->ArrayEnd("messages");
@@ -1104,10 +1104,10 @@ bool DotPoolsCmd(UaContext* ua, const char* cmd)
   LockRes(my_config);
   ua->send->ArrayStart("pools");
   foreach_res (pool, R_POOL) {
-    if (ua->AclAccessOk(Pool_ACL, pool->name())) {
+    if (ua->AclAccessOk(Pool_ACL, pool->resource_name_)) {
       if (pos == -1 || bstrncasecmp(pool->pool_type, ua->argv[pos], length)) {
         ua->send->ObjectStart();
-        ua->send->ObjectKeyValue("name", pool->name(), "%s\n");
+        ua->send->ObjectKeyValue("name", pool->resource_name_, "%s\n");
         ua->send->ObjectEnd();
       }
     }
@@ -1130,12 +1130,12 @@ bool DotStorageCmd(UaContext* ua, const char* cmd)
   LockRes(my_config);
   ua->send->ArrayStart("storages");
   foreach_res (store, R_STORAGE) {
-    if (ua->AclAccessOk(Storage_ACL, store->name())) {
+    if (ua->AclAccessOk(Storage_ACL, store->resource_name_)) {
       if (enabled && !store->enabled) { continue; }
       if (disabled && store->enabled) { continue; }
 
       ua->send->ObjectStart();
-      ua->send->ObjectKeyValue("name", store->name(), "%s\n");
+      ua->send->ObjectKeyValue("name", store->resource_name_, "%s\n");
       ua->send->ObjectKeyValueBool("enabled", store->enabled);
       ua->send->ObjectEnd();
     }
@@ -1154,7 +1154,7 @@ bool DotProfilesCmd(UaContext* ua, const char* cmd)
   ua->send->ArrayStart("profiles");
   foreach_res (profile, R_PROFILE) {
     ua->send->ObjectStart();
-    ua->send->ObjectKeyValue("name", profile->name(), "%s\n");
+    ua->send->ObjectKeyValue("name", profile->resource_name_, "%s\n");
     ua->send->ObjectEnd();
   }
   ua->send->ArrayEnd("profiles");
@@ -1348,12 +1348,12 @@ bool DotScheduleCmd(UaContext* ua, const char* cmd)
   LockRes(my_config);
   ua->send->ArrayStart("schedules");
   foreach_res (sched, R_SCHEDULE) {
-    if (ua->AclAccessOk(Schedule_ACL, sched->name())) {
+    if (ua->AclAccessOk(Schedule_ACL, sched->resource_name_)) {
       if (enabled && !sched->enabled) { continue; }
       if (disabled && sched->enabled) { continue; }
 
       ua->send->ObjectStart();
-      ua->send->ObjectKeyValue("name", sched->hdr.name, "%s\n");
+      ua->send->ObjectKeyValue("name", sched->resource_name_, "%s\n");
       ua->send->ObjectKeyValueBool("enabled", sched->enabled);
       ua->send->ObjectEnd();
     }
@@ -1461,19 +1461,19 @@ bool DotDefaultsCmd(UaContext* ua, const char* cmd)
        * instead of looking for a separator.
        * Therefore the SendBuffer() function is called after each line.
        */
-      ua->send->ObjectKeyValue("job", "%s=", job->name(), "%s\n");
+      ua->send->ObjectKeyValue("job", "%s=", job->resource_name_, "%s\n");
       ua->send->SendBuffer();
-      ua->send->ObjectKeyValue("pool", "%s=", job->pool->name(), "%s\n");
+      ua->send->ObjectKeyValue("pool", "%s=", job->pool->resource_name_, "%s\n");
       ua->send->SendBuffer();
-      ua->send->ObjectKeyValue("messages", "%s=", job->messages->name(),
+      ua->send->ObjectKeyValue("messages", "%s=", job->messages->resource_name_,
                                "%s\n");
       ua->send->SendBuffer();
       ua->send->ObjectKeyValue(
-          "client", "%s=", ((job->client) ? job->client->name() : _("*None*")),
+          "client", "%s=", ((job->client) ? job->client->resource_name_ : _("*None*")),
           "%s\n");
       ua->send->SendBuffer();
       GetJobStorage(&store, job, NULL);
-      ua->send->ObjectKeyValue("storage", "%s=", store.store->name(), "%s\n");
+      ua->send->ObjectKeyValue("storage", "%s=", store.store->resource_name_, "%s\n");
       ua->send->SendBuffer();
       ua->send->ObjectKeyValue(
           "where", "%s=", (job->RestoreWhere ? job->RestoreWhere : ""), "%s\n");
@@ -1486,13 +1486,13 @@ bool DotDefaultsCmd(UaContext* ua, const char* cmd)
       ua->send->SendBuffer();
       ua->send->ObjectKeyValue(
           "fileset",
-          "%s=", ((job->fileset) ? job->fileset->name() : _("*None*")), "%s\n");
+          "%s=", ((job->fileset) ? job->fileset->resource_name_ : _("*None*")), "%s\n");
       ua->send->SendBuffer();
       ua->send->ObjectKeyValue("enabled", "%s=", job->enabled, "%d\n");
       ua->send->SendBuffer();
       ua->send->ObjectKeyValue(
           "catalog",
-          "%s=", ((job->client) ? job->client->catalog->name() : _("*None*")),
+          "%s=", ((job->client) ? job->client->catalog->resource_name_ : _("*None*")),
           "%s\n");
       ua->send->SendBuffer();
     }
@@ -1504,7 +1504,7 @@ bool DotDefaultsCmd(UaContext* ua, const char* cmd)
      */
     client = ua->GetClientResWithName(ua->argv[pos]);
     if (client) {
-      ua->send->ObjectKeyValue("client", "%s=", client->name(), "%s\n");
+      ua->send->ObjectKeyValue("client", "%s=", client->resource_name_, "%s\n");
       ua->send->ObjectKeyValue("address", "%s=", client->address, "%s\n");
       ua->send->ObjectKeyValue("port", "%s=", client->FDport, "%d\n");
       ua->send->ObjectKeyValue("file_retention",
@@ -1515,7 +1515,7 @@ bool DotDefaultsCmd(UaContext* ua, const char* cmd)
                                "%s\n");
       ua->send->ObjectKeyValue("autoprune", "%s=", client->AutoPrune, "%d\n");
       ua->send->ObjectKeyValue("enabled", "%s=", client->enabled, "%d\n");
-      ua->send->ObjectKeyValue("catalog", "%s=", client->catalog->name(),
+      ua->send->ObjectKeyValue("catalog", "%s=", client->catalog->resource_name_,
                                "%s\n");
     }
   } else if ((pos = FindArgWithValue(ua, "storage")) >= 0) {
@@ -1529,7 +1529,7 @@ bool DotDefaultsCmd(UaContext* ua, const char* cmd)
       DeviceResource* device;
       PoolMem devices;
 
-      ua->send->ObjectKeyValue("storage", "%s=", storage->name(), "%s\n");
+      ua->send->ObjectKeyValue("storage", "%s=", storage->resource_name_, "%s\n");
       ua->send->ObjectKeyValue("address", "%s=", storage->address, "%s\n");
       ua->send->ObjectKeyValue("port", "%s=", storage->SDport, "%d\n");
       ua->send->ObjectKeyValue("enabled", "%s=", storage->enabled, "%d\n");
@@ -1538,11 +1538,11 @@ bool DotDefaultsCmd(UaContext* ua, const char* cmd)
 
       device = (DeviceResource*)storage->device->first();
       if (device) {
-        devices.strcpy(device->name());
+        devices.strcpy(device->resource_name_);
         if (storage->device->size() > 1) {
           while ((device = (DeviceResource*)storage->device->next())) {
             devices.strcat(",");
-            devices.strcat(device->name());
+            devices.strcat(device->resource_name_);
           }
         }
         ua->send->ObjectKeyValue("device", "%s=", devices.c_str(), "%s\n");
@@ -1556,7 +1556,7 @@ bool DotDefaultsCmd(UaContext* ua, const char* cmd)
      */
     pool = ua->GetPoolResWithName(ua->argv[pos]);
     if (pool) {
-      ua->send->ObjectKeyValue("pool", "%s=", pool->name(), "%s\n");
+      ua->send->ObjectKeyValue("pool", "%s=", pool->resource_name_, "%s\n");
       ua->send->ObjectKeyValue("pool_type", "%s=", pool->pool_type, "%s\n");
       ua->send->ObjectKeyValue(
           "label_format", "%s=", (pool->label_format ? pool->label_format : ""),

@@ -630,10 +630,10 @@ static void* handle_connection_to_director(void* director_resource)
     dir_bsock = connect_to_director(jcr, dir_res, true);
     if (!dir_bsock) {
       Emsg2(M_ERROR, 0, "Failed to connect to Director \"%s\". Retry in %ds.\n",
-            dir_res->name(), retry_period);
+            dir_res->resource_name_, retry_period);
       sleep(retry_period);
     } else {
-      Dmsg1(120, "Connected to \"%s\".\n", dir_res->name());
+      Dmsg1(120, "Connected to \"%s\".\n", dir_res->resource_name_);
 
       /*
        * Returns: 1 if data available, 0 if timeout, -1 if error
@@ -641,14 +641,14 @@ static void* handle_connection_to_director(void* director_resource)
       data_available = 0;
       while ((data_available == 0) && (!quit_client_initiate_connection)) {
         Dmsg2(120, "Waiting for data from Director \"%s\" (timeout: %ds)\n",
-              dir_res->name(), timeout_data);
+              dir_res->resource_name_, timeout_data);
         data_available = dir_bsock->WaitDataIntr(timeout_data);
       }
       if (!quit_client_initiate_connection) {
         if (data_available < 0) {
           Emsg1(M_ABORT, 0,
                 _("Failed while waiting for data from Director \"%s\"\n"),
-                dir_res->name());
+                dir_res->resource_name_);
         } else {
           /*
            * data is available
@@ -668,7 +668,7 @@ static void* handle_connection_to_director(void* director_resource)
   }
 
   Dmsg1(100, "Exiting Client Initiated Connection thread for %s\n",
-        dir_res->name());
+        dir_res->resource_name_);
   if (jcr) {
     /*
      * cleanup old data structures
@@ -695,15 +695,15 @@ bool StartConnectToDirectorThreads()
         Emsg1(M_ERROR, 0,
               "Failed to connect to Director \"%s\". The address config "
               "directive is missing.\n",
-              dir_res->name());
+              dir_res->resource_name_);
       } else if (!dir_res->port) {
         Emsg1(M_ERROR, 0,
               "Failed to connect to Director \"%s\". The port config directive "
               "is missing.\n",
-              dir_res->name());
+              dir_res->resource_name_);
       } else {
         Dmsg3(120, "Connecting to Director \"%s\", address %s:%d.\n",
-              dir_res->name(), dir_res->address, dir_res->port);
+              dir_res->resource_name_, dir_res->address, dir_res->port);
         thread = (pthread_t*)bmalloc(sizeof(pthread_t));
         if ((pthread_create_result =
                  pthread_create(thread, nullptr, handle_connection_to_director,
@@ -1402,7 +1402,7 @@ static bool BootstrapCmd(JobControlRecord* jcr)
   FreeBootstrap(jcr);
   P(bsr_mutex);
   bsr_uniq++;
-  Mmsg(fname, "%s/%s.%s.%d.bootstrap", me->working_directory, me->name(),
+  Mmsg(fname, "%s/%s.%s.%d.bootstrap", me->working_directory, me->resource_name_,
        jcr->Job, bsr_uniq);
   V(bsr_mutex);
   Dmsg1(400, "bootstrap=%s\n", fname);
@@ -2299,7 +2299,7 @@ static BareosSocket* connect_to_director(JobControlRecord* jcr,
   int max_retry_time = 0;
   utime_t heart_beat = me->heartbeat_interval;
   if (!director_socket->connect(jcr, retry_interval, max_retry_time, heart_beat,
-                                dir_res->name(), dir_res->address, nullptr,
+                                dir_res->resource_name_, dir_res->address, nullptr,
                                 dir_res->port, verbose)) {
     return nullptr;
   }
@@ -2307,7 +2307,7 @@ static BareosSocket* connect_to_director(JobControlRecord* jcr,
   if (dir_res->IsTlsConfigured()) {
     std::string qualified_resource_name;
     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
-            me->hdr.name, my_config->r_own_, qualified_resource_name)) {
+            me->resource_name_, my_config->r_own_, qualified_resource_name)) {
       Dmsg0(100,
             "Could not generate qualified resource name for a storage "
             "resource\n");
@@ -2322,7 +2322,7 @@ static BareosSocket* connect_to_director(JobControlRecord* jcr,
     }
   }
 
-  Dmsg1(10, "Opened connection with Director %s\n", dir_res->name());
+  Dmsg1(10, "Opened connection with Director %s\n", dir_res->resource_name_);
   jcr->dir_bsock = director_socket.get();
 
   director_socket->fsend(hello_client, my_name, FD_PROTOCOL_VERSION);

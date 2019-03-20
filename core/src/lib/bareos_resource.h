@@ -40,6 +40,8 @@ class BareosResource : public CommonResourceHeader {
                    bool verbose = false);
 
   BareosResource() = default;
+  virtual ~BareosResource() = default;
+
   BareosResource& operator=(const BareosResource& rhs)
   {
     CommonResourceHeader::operator=(rhs);

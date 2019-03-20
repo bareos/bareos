@@ -141,7 +141,7 @@ bool DoVerify(JobControlRecord* jcr)
       memcpy(&jr, &jcr->jr, sizeof(jr));
       if (jcr->res.verify_job && (JobLevel == L_VERIFY_VOLUME_TO_CATALOG ||
                                   JobLevel == L_VERIFY_DISK_TO_CATALOG)) {
-        Name = jcr->res.verify_job->name();
+        Name = jcr->res.verify_job->resource_name_;
       } else {
         Name = NULL;
       }
@@ -286,7 +286,7 @@ bool DoVerify(JobControlRecord* jcr)
         Jmsg(jcr, M_FATAL, 0,
              _("Client \"%s\" doesn't support passive client mode. "
                "Please upgrade your client or disable compat mode.\n"),
-             jcr->res.client->name());
+             jcr->res.client->resource_name_);
         goto bail_out;
       }
       break;
@@ -533,7 +533,7 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
   bstrftimes(sdt, sizeof(sdt), jcr->jr.StartTime);
   bstrftimes(edt, sizeof(edt), jcr->jr.EndTime);
   if (jcr->res.verify_job) {
-    Name = jcr->res.verify_job->hdr.name;
+    Name = jcr->res.verify_job->resource_name_;
   } else {
     Name = "";
   }
@@ -562,8 +562,8 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
              "  Bareos binary info:     %s\n"
              "  Termination:            %s\n\n"),
            BAREOS, my_name, VERSION, LSMDATE, HOST_OS, DISTNAME, DISTVER,
-           jcr->jr.JobId, jcr->jr.Job, jcr->res.fileset->hdr.name,
-           level_to_str(JobLevel), jcr->res.client->hdr.name,
+           jcr->jr.JobId, jcr->jr.Job, jcr->res.fileset->resource_name_,
+           level_to_str(JobLevel), jcr->res.client->resource_name_,
            jcr->previous_jr.JobId, Name, sdt, edt,
            edit_uint64_with_commas(jcr->ExpectedFiles, ec1),
            edit_uint64_with_commas(jcr->JobFiles, ec2), jcr->JobErrors,
@@ -588,8 +588,8 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
              "  Bareos binary info:     %s\n"
              "  Termination:            %s\n\n"),
            BAREOS, my_name, VERSION, LSMDATE, HOST_OS, DISTNAME, DISTVER,
-           jcr->jr.JobId, jcr->jr.Job, jcr->res.fileset->hdr.name,
-           level_to_str(JobLevel), jcr->res.client->name(),
+           jcr->jr.JobId, jcr->jr.Job, jcr->res.fileset->resource_name_,
+           level_to_str(JobLevel), jcr->res.client->resource_name_,
            jcr->previous_jr.JobId, Name, sdt, edt,
            edit_uint64_with_commas(jcr->JobFiles, ec1), jcr->JobErrors,
            fd_term_msg, BAREOS_JOBLOG_MESSAGE, TermMsg);

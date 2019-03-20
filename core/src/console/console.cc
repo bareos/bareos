@@ -739,7 +739,7 @@ static bool SelectDirector(const char* director,
   if (director) { /* Command line choice overwrite the no choose option */
     LockRes(my_config);
     foreach_res (director_resource_tmp, R_DIRECTOR) {
-      if (bstrcmp(director_resource_tmp->name(), director)) { break; }
+      if (bstrcmp(director_resource_tmp->resource_name_, director)) { break; }
     }
     UnlockRes(my_config);
     if (!director_resource_tmp) { /* Can't find Director used as argument */
@@ -756,7 +756,7 @@ static bool SelectDirector(const char* director,
     numdir = 0;
     foreach_res (director_resource_tmp, R_DIRECTOR) {
       ConsoleOutputFormat(
-          _("%2d:  %s at %s:%d\n"), 1 + numdir++, director_resource_tmp->name(),
+          _("%2d:  %s at %s:%d\n"), 1 + numdir++, director_resource_tmp->resource_name_,
           director_resource_tmp->address, director_resource_tmp->DIRport);
     }
     UnlockRes(my_config);
@@ -796,7 +796,7 @@ static bool SelectDirector(const char* director,
         R_CONSOLE, (CommonResourceHeader*)console_resource_tmp);
     if (console_resource_tmp->director &&
         bstrcmp(console_resource_tmp->director,
-                director_resource_tmp->name())) {
+                director_resource_tmp->resource_name_)) {
       break;
     }
     console_resource_tmp = NULL;
@@ -1028,7 +1028,7 @@ int main(int argc, char* argv[])
   if (list_directors) {
     LockRes(my_config);
     foreach_res (director_resource, R_DIRECTOR) {
-      ConsoleOutputFormat("%s\n", director_resource->name());
+      ConsoleOutputFormat("%s\n", director_resource->resource_name_);
     }
     UnlockRes(my_config);
   }

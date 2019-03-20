@@ -90,7 +90,7 @@ static AuthenticationResult AuthenticateWithDirector(JobControlRecord* jcr,
   if (dir_res->IsTlsConfigured()) {
     std::string qualified_resource_name;
     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
-            monitor->name(), R_CONSOLE, qualified_resource_name)) {
+            monitor->resource_name_, R_CONSOLE, qualified_resource_name)) {
       return AuthenticationResult::kQualifiedResourceNameFailed;
     }
 
@@ -103,7 +103,7 @@ static AuthenticationResult AuthenticateWithDirector(JobControlRecord* jcr,
 
   uint32_t response_id;
   BStringList response_args;
-  if (!dir->ConsoleAuthenticateWithDirector(jcr, monitor->name(),
+  if (!dir->ConsoleAuthenticateWithDirector(jcr, monitor->resource_name_,
                                             monitor->password, dir_res,
                                             response_args, response_id)) {
     Jmsg(jcr, M_FATAL, 0,
@@ -128,7 +128,7 @@ static AuthenticationResult AuthenticateWithStorageDaemon(
   if (store->IsTlsConfigured()) {
     std::string qualified_resource_name;
     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
-            monitor->name(), R_DIRECTOR, qualified_resource_name)) {
+            monitor->resource_name_, R_DIRECTOR, qualified_resource_name)) {
       return AuthenticationResult::kQualifiedResourceNameFailed;
     }
 
@@ -143,7 +143,7 @@ static AuthenticationResult AuthenticateWithStorageDaemon(
    * Send my name to the Storage daemon then do authentication
    */
   char dirname[MAX_NAME_LENGTH];
-  bstrncpy(dirname, monitor->name(), sizeof(dirname));
+  bstrncpy(dirname, monitor->resource_name_, sizeof(dirname));
   BashSpaces(dirname);
 
   if (!sd->fsend(SDFDhello, dirname)) {
@@ -203,7 +203,7 @@ static AuthenticationResult AuthenticateWithFileDaemon(JobControlRecord* jcr,
   if (client->IsTlsConfigured()) {
     std::string qualified_resource_name;
     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
-            monitor->name(), R_DIRECTOR, qualified_resource_name)) {
+            monitor->resource_name_, R_DIRECTOR, qualified_resource_name)) {
       return AuthenticationResult::kQualifiedResourceNameFailed;
     }
 
@@ -218,7 +218,7 @@ static AuthenticationResult AuthenticateWithFileDaemon(JobControlRecord* jcr,
    * Send my name to the File daemon then do authentication
    */
   char dirname[MAX_NAME_LENGTH];
-  bstrncpy(dirname, monitor->name(), sizeof(dirname));
+  bstrncpy(dirname, monitor->resource_name_, sizeof(dirname));
   BashSpaces(dirname);
 
   if (!fd->fsend(SDFDhello, dirname)) {

@@ -160,11 +160,11 @@ StorageResource* select_storage_resource(UaContext* ua, bool autochanger_only)
 
   LockRes(my_config);
   foreach_res (store, R_STORAGE) {
-    if (ua->AclAccessOk(Storage_ACL, store->name())) {
+    if (ua->AclAccessOk(Storage_ACL, store->resource_name_)) {
       if (autochanger_only && !store->autochanger) {
         continue;
       } else {
-        AddPrompt(ua, store->name());
+        AddPrompt(ua, store->resource_name_);
       }
     }
   }
@@ -191,7 +191,7 @@ FilesetResource* select_fileset_resource(UaContext* ua)
 
   LockRes(my_config);
   foreach_res (fs, R_FILESET) {
-    if (ua->AclAccessOk(FileSet_ACL, fs->name())) { AddPrompt(ua, fs->name()); }
+    if (ua->AclAccessOk(FileSet_ACL, fs->resource_name_)) { AddPrompt(ua, fs->resource_name_); }
   }
   UnlockRes(my_config);
 
@@ -228,7 +228,7 @@ CatalogResource* get_catalog_resource(UaContext* ua)
     if (!catalog) {
       ua->ErrorMsg(_("Could not find a Catalog resource\n"));
       return NULL;
-    } else if (!ua->AclAccessOk(Catalog_ACL, catalog->name())) {
+    } else if (!ua->AclAccessOk(Catalog_ACL, catalog->resource_name_)) {
       ua->ErrorMsg(
           _("You must specify a \"use <catalog-name>\" command before "
             "continuing.\n"));
@@ -243,8 +243,8 @@ CatalogResource* get_catalog_resource(UaContext* ua)
 
     LockRes(my_config);
     foreach_res (catalog, R_CATALOG) {
-      if (ua->AclAccessOk(Catalog_ACL, catalog->name())) {
-        AddPrompt(ua, catalog->name());
+      if (ua->AclAccessOk(Catalog_ACL, catalog->resource_name_)) {
+        AddPrompt(ua, catalog->resource_name_);
       }
     }
     UnlockRes(my_config);
@@ -272,11 +272,11 @@ JobResource* select_enable_disable_job_resource(UaContext* ua, bool enable)
 
   LockRes(my_config);
   foreach_res (job, R_JOB) {
-    if (!ua->AclAccessOk(Job_ACL, job->name())) { continue; }
+    if (!ua->AclAccessOk(Job_ACL, job->resource_name_)) { continue; }
     if (job->enabled == enable) { /* Already enabled/disabled? */
       continue;                   /* yes, skip */
     }
-    AddPrompt(ua, job->name());
+    AddPrompt(ua, job->resource_name_);
   }
   UnlockRes(my_config);
 
@@ -302,7 +302,7 @@ JobResource* select_job_resource(UaContext* ua)
 
   LockRes(my_config);
   foreach_res (job, R_JOB) {
-    if (ua->AclAccessOk(Job_ACL, job->name())) { AddPrompt(ua, job->name()); }
+    if (ua->AclAccessOk(Job_ACL, job->resource_name_)) { AddPrompt(ua, job->resource_name_); }
   }
   UnlockRes(my_config);
 
@@ -347,8 +347,8 @@ JobResource* select_restore_job_resource(UaContext* ua)
 
   LockRes(my_config);
   foreach_res (job, R_JOB) {
-    if (job->JobType == JT_RESTORE && ua->AclAccessOk(Job_ACL, job->name())) {
-      AddPrompt(ua, job->name());
+    if (job->JobType == JT_RESTORE && ua->AclAccessOk(Job_ACL, job->resource_name_)) {
+      AddPrompt(ua, job->resource_name_);
     }
   }
   UnlockRes(my_config);
@@ -374,8 +374,8 @@ ClientResource* select_client_resource(UaContext* ua)
 
   LockRes(my_config);
   foreach_res (client, R_CLIENT) {
-    if (ua->AclAccessOk(Client_ACL, client->name())) {
-      AddPrompt(ua, client->name());
+    if (ua->AclAccessOk(Client_ACL, client->resource_name_)) {
+      AddPrompt(ua, client->resource_name_);
     }
   }
   UnlockRes(my_config);
@@ -403,11 +403,11 @@ ClientResource* select_enable_disable_client_resource(UaContext* ua,
 
   LockRes(my_config);
   foreach_res (client, R_CLIENT) {
-    if (!ua->AclAccessOk(Client_ACL, client->name())) { continue; }
+    if (!ua->AclAccessOk(Client_ACL, client->resource_name_)) { continue; }
     if (client->enabled == enable) { /* Already enabled/disabled? */
       continue;                      /* yes, skip */
     }
-    AddPrompt(ua, client->name());
+    AddPrompt(ua, client->resource_name_);
   }
   UnlockRes(my_config);
 
@@ -460,11 +460,11 @@ ScheduleResource* select_enable_disable_schedule_resource(UaContext* ua,
 
   LockRes(my_config);
   foreach_res (sched, R_SCHEDULE) {
-    if (!ua->AclAccessOk(Schedule_ACL, sched->name())) { continue; }
+    if (!ua->AclAccessOk(Schedule_ACL, sched->resource_name_)) { continue; }
     if (sched->enabled == enable) { /* Already enabled/disabled? */
       continue;                     /* yes, skip */
     }
-    AddPrompt(ua, sched->name());
+    AddPrompt(ua, sched->resource_name_);
   }
   UnlockRes(my_config);
 
@@ -876,8 +876,8 @@ PoolResource* select_pool_resource(UaContext* ua)
   StartPrompt(ua, _("The defined Pool resources are:\n"));
   LockRes(my_config);
   foreach_res (pool, R_POOL) {
-    if (ua->AclAccessOk(Pool_ACL, pool->name())) {
-      AddPrompt(ua, pool->name());
+    if (ua->AclAccessOk(Pool_ACL, pool->resource_name_)) {
+      AddPrompt(ua, pool->resource_name_);
     }
   }
   UnlockRes(my_config);
@@ -1224,7 +1224,7 @@ StorageResource* get_storage_resource(UaContext* ua,
     }
   }
 
-  if (store && !ua->AclAccessOk(Storage_ACL, store->name())) { store = NULL; }
+  if (store && !ua->AclAccessOk(Storage_ACL, store->resource_name_)) { store = NULL; }
 
   if (!store && StoreName && StoreName[0] != 0) {
     store = ua->GetStoreResWithName(StoreName);
@@ -1234,7 +1234,7 @@ StorageResource* get_storage_resource(UaContext* ua,
     }
   }
 
-  if (store && !ua->AclAccessOk(Storage_ACL, store->name())) { store = NULL; }
+  if (store && !ua->AclAccessOk(Storage_ACL, store->resource_name_)) { store = NULL; }
 
   /*
    * No keywords found, so present a selection list
@@ -1347,7 +1347,7 @@ int GetMediaType(UaContext* ua, char* MediaType, int max_media)
 
   LockRes(my_config);
   foreach_res (store, R_STORAGE) {
-    if (ua->AclAccessOk(Storage_ACL, store->name())) {
+    if (ua->AclAccessOk(Storage_ACL, store->resource_name_)) {
       AddPrompt(ua, store->media_type);
     }
   }
@@ -1479,7 +1479,7 @@ alist* select_jobs(UaContext* ua, const char* reason)
 
       if (jcr) {
         if (jcr->res.job &&
-            !ua->AclAccessOk(Job_ACL, jcr->res.job->name(), true)) {
+            !ua->AclAccessOk(Job_ACL, jcr->res.job->resource_name_, true)) {
           ua->ErrorMsg(_("Unauthorized command from this console.\n"));
           goto bail_out;
         }
@@ -1508,7 +1508,7 @@ alist* select_jobs(UaContext* ua, const char* reason)
         continue;
       }
       tjobs++; /* Count of all jobs */
-      if (!ua->AclAccessOk(Job_ACL, jcr->res.job->name())) {
+      if (!ua->AclAccessOk(Job_ACL, jcr->res.job->resource_name_)) {
         continue; /* Skip not authorized */
       }
       njobs++; /* Count of authorized jobs */
@@ -1567,7 +1567,7 @@ alist* select_jobs(UaContext* ua, const char* reason)
           continue;
         }
 
-        if (!ua->AclAccessOk(Job_ACL, jcr->res.job->name())) {
+        if (!ua->AclAccessOk(Job_ACL, jcr->res.job->resource_name_)) {
           continue; /* Skip not authorized */
         }
 
@@ -1624,7 +1624,7 @@ alist* select_jobs(UaContext* ua, const char* reason)
         if (jcr->JobId == 0) { /* This is us */
           continue;
         }
-        if (!ua->AclAccessOk(Job_ACL, jcr->res.job->name())) {
+        if (!ua->AclAccessOk(Job_ACL, jcr->res.job->resource_name_)) {
           continue; /* Skip not authorized */
         }
         Bsnprintf(buf, sizeof(buf), _("JobId=%s Job=%s"),

@@ -175,7 +175,7 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
   }
   jcr->nextrun_ready_inited = true;
 
-  CreateUniqueJobName(jcr, jcr->res.job->name());
+  CreateUniqueJobName(jcr, jcr->res.job->resource_name_);
   jcr->setJobStatus(JS_Created);
   jcr->unlock();
 
@@ -419,16 +419,16 @@ bool UseWaitingClient(JobControlRecord* jcr, int timeout)
 
   if (!IsConnectFromClientAllowed(jcr)) {
     Dmsg1(120, "Client Initiated Connection from \"%s\" is not allowed.\n",
-          jcr->res.client->name());
+          jcr->res.client->resource_name_);
   } else {
-    connection = connections->remove(jcr->res.client->name(), timeout);
+    connection = connections->remove(jcr->res.client->resource_name_, timeout);
     if (connection) {
       jcr->file_bsock = connection->bsock();
       jcr->FDVersion = connection->protocol_version();
       jcr->authenticated = connection->authenticated();
       delete (connection);
       Jmsg(jcr, M_INFO, 0, _("Using Client Initiated Connection (%s).\n"),
-           jcr->res.client->name());
+           jcr->res.client->resource_name_);
       result = true;
     }
   }
@@ -954,7 +954,7 @@ bool AllowDuplicateJob(JobControlRecord* jcr)
      */
     if (djcr->IgnoreDuplicateJobChecking) { continue; }
 
-    if (bstrcmp(job->name(), djcr->res.job->name())) {
+    if (bstrcmp(job->resource_name_, djcr->res.job->resource_name_)) {
       if (job->DuplicateJobProximity > 0) {
         utime_t now = (utime_t)time(NULL);
         if ((now - djcr->start_time) > job->DuplicateJobProximity) {
@@ -1269,7 +1269,7 @@ void ApplyPoolOverrides(JobControlRecord* jcr, bool force)
       !jcr->res.run_vfull_pool_override && !jcr->res.run_inc_pool_override &&
       !jcr->res.run_diff_pool_override) {
     PmStrcpy(jcr->res.pool_source, _("Run Pool override"));
-    Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.pool->name(),
+    Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.pool->resource_name_,
           _("Run Pool override\n"));
   } else {
     /*
@@ -1283,11 +1283,11 @@ void ApplyPoolOverrides(JobControlRecord* jcr, bool force)
           if (jcr->res.run_full_pool_override) {
             PmStrcpy(jcr->res.pool_source, _("Run FullPool override"));
             Dmsg2(100, "Pool set to '%s' because of %s",
-                  jcr->res.full_pool->name(), "Run FullPool override\n");
+                  jcr->res.full_pool->resource_name_, "Run FullPool override\n");
           } else {
             PmStrcpy(jcr->res.pool_source, _("Job FullPool override"));
             Dmsg2(100, "Pool set to '%s' because of %s",
-                  jcr->res.full_pool->name(), "Job FullPool override\n");
+                  jcr->res.full_pool->resource_name_, "Job FullPool override\n");
           }
         }
         break;
@@ -1298,11 +1298,11 @@ void ApplyPoolOverrides(JobControlRecord* jcr, bool force)
           if (jcr->res.run_vfull_pool_override) {
             PmStrcpy(jcr->res.pool_source, _("Run VFullPool override"));
             Dmsg2(100, "Pool set to '%s' because of %s",
-                  jcr->res.vfull_pool->name(), "Run VFullPool override\n");
+                  jcr->res.vfull_pool->resource_name_, "Run VFullPool override\n");
           } else {
             PmStrcpy(jcr->res.pool_source, _("Job VFullPool override"));
             Dmsg2(100, "Pool set to '%s' because of %s",
-                  jcr->res.vfull_pool->name(), "Job VFullPool override\n");
+                  jcr->res.vfull_pool->resource_name_, "Job VFullPool override\n");
           }
         }
         break;
@@ -1313,11 +1313,11 @@ void ApplyPoolOverrides(JobControlRecord* jcr, bool force)
           if (jcr->res.run_inc_pool_override) {
             PmStrcpy(jcr->res.pool_source, _("Run IncPool override"));
             Dmsg2(100, "Pool set to '%s' because of %s",
-                  jcr->res.inc_pool->name(), "Run IncPool override\n");
+                  jcr->res.inc_pool->resource_name_, "Run IncPool override\n");
           } else {
             PmStrcpy(jcr->res.pool_source, _("Job IncPool override"));
             Dmsg2(100, "Pool set to '%s' because of %s",
-                  jcr->res.inc_pool->name(), "Job IncPool override\n");
+                  jcr->res.inc_pool->resource_name_, "Job IncPool override\n");
           }
         }
         break;
@@ -1328,11 +1328,11 @@ void ApplyPoolOverrides(JobControlRecord* jcr, bool force)
           if (jcr->res.run_diff_pool_override) {
             PmStrcpy(jcr->res.pool_source, _("Run DiffPool override"));
             Dmsg2(100, "Pool set to '%s' because of %s",
-                  jcr->res.diff_pool->name(), "Run DiffPool override\n");
+                  jcr->res.diff_pool->resource_name_, "Run DiffPool override\n");
           } else {
             PmStrcpy(jcr->res.pool_source, _("Job DiffPool override"));
             Dmsg2(100, "Pool set to '%s' because of %s",
-                  jcr->res.diff_pool->name(), "Job DiffPool override\n");
+                  jcr->res.diff_pool->resource_name_, "Job DiffPool override\n");
           }
         }
         break;
@@ -1356,12 +1356,12 @@ bool GetOrCreateClientRecord(JobControlRecord* jcr)
   ClientDbRecord cr;
 
   memset(&cr, 0, sizeof(cr));
-  bstrncpy(cr.Name, jcr->res.client->hdr.name, sizeof(cr.Name));
+  bstrncpy(cr.Name, jcr->res.client->resource_name_, sizeof(cr.Name));
   cr.AutoPrune = jcr->res.client->AutoPrune;
   cr.FileRetention = jcr->res.client->FileRetention;
   cr.JobRetention = jcr->res.client->JobRetention;
   if (!jcr->client_name) { jcr->client_name = GetPoolMemory(PM_NAME); }
-  PmStrcpy(jcr->client_name, jcr->res.client->hdr.name);
+  PmStrcpy(jcr->client_name, jcr->res.client->resource_name_);
   if (!jcr->db->CreateClientRecord(jcr, &cr)) {
     Jmsg(jcr, M_FATAL, 0, _("Could not create Client record. ERR=%s\n"),
          jcr->db->strerror());
@@ -1387,7 +1387,7 @@ bool GetOrCreateClientRecord(JobControlRecord* jcr)
     if (!jcr->client_uname) { jcr->client_uname = GetPoolMemory(PM_NAME); }
     PmStrcpy(jcr->client_uname, cr.Uname);
   }
-  Dmsg2(100, "Created Client %s record %d\n", jcr->res.client->hdr.name,
+  Dmsg2(100, "Created Client %s record %d\n", jcr->res.client->resource_name_,
         jcr->jr.ClientId);
   return true;
 }
@@ -1400,7 +1400,7 @@ bool GetOrCreateFilesetRecord(JobControlRecord* jcr)
    * Get or Create FileSet record
    */
   memset(&fsr, 0, sizeof(fsr));
-  bstrncpy(fsr.FileSet, jcr->res.fileset->hdr.name, sizeof(fsr.FileSet));
+  bstrncpy(fsr.FileSet, jcr->res.fileset->resource_name_, sizeof(fsr.FileSet));
   if (jcr->res.fileset->have_MD5) {
     MD5_CTX md5c;
     unsigned char digest[MD5HashSize];
@@ -1433,7 +1433,7 @@ bool GetOrCreateFilesetRecord(JobControlRecord* jcr)
   jcr->jr.FileSetId = fsr.FileSetId;
   bstrncpy(jcr->FSCreateTime, fsr.cCreateTime, sizeof(jcr->FSCreateTime));
 
-  Dmsg2(119, "Created FileSet %s record %u\n", jcr->res.fileset->hdr.name,
+  Dmsg2(119, "Created FileSet %s record %u\n", jcr->res.fileset->resource_name_,
         jcr->jr.FileSetId);
 
   return true;
@@ -1449,7 +1449,7 @@ void InitJcrJobRecord(JobControlRecord* jcr)
   jcr->jr.JobStatus = jcr->JobStatus;
   jcr->jr.JobId = jcr->JobId;
   jcr->jr.JobSumTotalBytes = 18446744073709551615LLU;
-  bstrncpy(jcr->jr.Name, jcr->res.job->name(), sizeof(jcr->jr.Name));
+  bstrncpy(jcr->jr.Name, jcr->res.job->resource_name_, sizeof(jcr->jr.Name));
   bstrncpy(jcr->jr.Job, jcr->Job, sizeof(jcr->jr.Job));
 }
 
@@ -1719,7 +1719,7 @@ void SetJcrDefaults(JobControlRecord* jcr, JobResource* job)
 
   if (jcr->res.client) {
     if (!jcr->client_name) { jcr->client_name = GetPoolMemory(PM_NAME); }
-    PmStrcpy(jcr->client_name, jcr->res.client->hdr.name);
+    PmStrcpy(jcr->client_name, jcr->res.client->resource_name_);
   }
 
   PmStrcpy(jcr->res.pool_source, _("Job resource"));

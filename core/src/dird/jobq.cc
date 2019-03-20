@@ -870,7 +870,7 @@ static bool IncClientConcurrency(JobControlRecord* jcr)
   if (jcr->res.client->rcs->NumConcurrentJobs <
       jcr->res.client->MaxConcurrentJobs) {
     jcr->res.client->rcs->NumConcurrentJobs++;
-    Dmsg2(50, "Inc Client=%s rncj=%d\n", jcr->res.client->name(),
+    Dmsg2(50, "Inc Client=%s rncj=%d\n", jcr->res.client->resource_name_,
           jcr->res.client->rcs->NumConcurrentJobs);
     V(mutex);
 
@@ -889,7 +889,7 @@ static void DecClientConcurrency(JobControlRecord* jcr)
   P(mutex);
   if (jcr->res.client) {
     jcr->res.client->rcs->NumConcurrentJobs--;
-    Dmsg2(50, "Dec Client=%s rncj=%d\n", jcr->res.client->name(),
+    Dmsg2(50, "Dec Client=%s rncj=%d\n", jcr->res.client->resource_name_,
           jcr->res.client->rcs->NumConcurrentJobs);
   }
   V(mutex);
@@ -900,7 +900,7 @@ static bool IncJobConcurrency(JobControlRecord* jcr)
   P(mutex);
   if (jcr->res.job->rjs->NumConcurrentJobs < jcr->res.job->MaxConcurrentJobs) {
     jcr->res.job->rjs->NumConcurrentJobs++;
-    Dmsg2(50, "Inc Job=%s rncj=%d\n", jcr->res.job->name(),
+    Dmsg2(50, "Inc Job=%s rncj=%d\n", jcr->res.job->resource_name_,
           jcr->res.job->rjs->NumConcurrentJobs);
     V(mutex);
 
@@ -916,7 +916,7 @@ static void DecJobConcurrency(JobControlRecord* jcr)
 {
   P(mutex);
   jcr->res.job->rjs->NumConcurrentJobs--;
-  Dmsg2(50, "Dec Job=%s rncj=%d\n", jcr->res.job->name(),
+  Dmsg2(50, "Dec Job=%s rncj=%d\n", jcr->res.job->resource_name_,
         jcr->res.job->rjs->NumConcurrentJobs);
   V(mutex);
 }
@@ -934,7 +934,7 @@ bool IncReadStore(JobControlRecord* jcr)
       jcr->res.read_storage->MaxConcurrentJobs) {
     jcr->res.read_storage->rss->NumConcurrentReadJobs++;
     jcr->res.read_storage->rss->NumConcurrentJobs++;
-    Dmsg2(50, "Inc Rstore=%s rncj=%d\n", jcr->res.read_storage->name(),
+    Dmsg2(50, "Inc Rstore=%s rncj=%d\n", jcr->res.read_storage->resource_name_,
           jcr->res.read_storage->rss->NumConcurrentJobs);
     V(mutex);
 
@@ -943,7 +943,7 @@ bool IncReadStore(JobControlRecord* jcr)
   V(mutex);
 
   Dmsg2(50, "Fail to acquire Rstore=%s rncj=%d\n",
-        jcr->res.read_storage->name(),
+        jcr->res.read_storage->resource_name_,
         jcr->res.read_storage->rss->NumConcurrentJobs);
 
   return false;
@@ -955,18 +955,18 @@ void DecReadStore(JobControlRecord* jcr)
     P(mutex);
     jcr->res.read_storage->rss->NumConcurrentReadJobs--;
     jcr->res.read_storage->rss->NumConcurrentJobs--;
-    Dmsg2(50, "Dec Rstore=%s rncj=%d\n", jcr->res.read_storage->name(),
+    Dmsg2(50, "Dec Rstore=%s rncj=%d\n", jcr->res.read_storage->resource_name_,
           jcr->res.read_storage->rss->NumConcurrentJobs);
 
     if (jcr->res.read_storage->rss->NumConcurrentReadJobs < 0) {
       Jmsg(jcr, M_FATAL, 0, _("NumConcurrentReadJobs Dec Rstore=%s rncj=%d\n"),
-           jcr->res.read_storage->name(),
+           jcr->res.read_storage->resource_name_,
            jcr->res.read_storage->rss->NumConcurrentReadJobs);
     }
 
     if (jcr->res.read_storage->rss->NumConcurrentJobs < 0) {
       Jmsg(jcr, M_FATAL, 0, _("NumConcurrentJobs Dec Rstore=%s rncj=%d\n"),
-           jcr->res.read_storage->name(),
+           jcr->res.read_storage->resource_name_,
            jcr->res.read_storage->rss->NumConcurrentJobs);
     }
     V(mutex);
@@ -981,7 +981,7 @@ static bool IncWriteStore(JobControlRecord* jcr)
   if (jcr->res.write_storage->rss->NumConcurrentJobs <
       jcr->res.write_storage->MaxConcurrentJobs) {
     jcr->res.write_storage->rss->NumConcurrentJobs++;
-    Dmsg2(50, "Inc Wstore=%s wncj=%d\n", jcr->res.write_storage->name(),
+    Dmsg2(50, "Inc Wstore=%s wncj=%d\n", jcr->res.write_storage->resource_name_,
           jcr->res.write_storage->rss->NumConcurrentJobs);
     V(mutex);
 
@@ -990,7 +990,7 @@ static bool IncWriteStore(JobControlRecord* jcr)
   V(mutex);
 
   Dmsg2(50, "Fail to acquire Wstore=%s wncj=%d\n",
-        jcr->res.write_storage->name(),
+        jcr->res.write_storage->resource_name_,
         jcr->res.write_storage->rss->NumConcurrentJobs);
 
   return false;
@@ -1001,12 +1001,12 @@ static void DecWriteStore(JobControlRecord* jcr)
   if (jcr->res.write_storage && !jcr->IgnoreStorageConcurrency) {
     P(mutex);
     jcr->res.write_storage->rss->NumConcurrentJobs--;
-    Dmsg2(50, "Dec Wstore=%s wncj=%d\n", jcr->res.write_storage->name(),
+    Dmsg2(50, "Dec Wstore=%s wncj=%d\n", jcr->res.write_storage->resource_name_,
           jcr->res.write_storage->rss->NumConcurrentJobs);
 
     if (jcr->res.write_storage->rss->NumConcurrentJobs < 0) {
       Jmsg(jcr, M_FATAL, 0, _("NumConcurrentJobs Dec Wstore=%s wncj=%d\n"),
-           jcr->res.write_storage->name(),
+           jcr->res.write_storage->resource_name_,
            jcr->res.write_storage->rss->NumConcurrentJobs);
     }
     V(mutex);

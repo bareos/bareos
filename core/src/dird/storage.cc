@@ -143,7 +143,7 @@ void CopyWstorage(JobControlRecord* jcr, alist* storage, const char* where)
     if (jcr->res.write_storage_list) { delete jcr->res.write_storage_list; }
     jcr->res.write_storage_list = New(alist(10, not_owned_by_alist));
     foreach_alist (st, storage) {
-      Dmsg1(100, "write_storage_list=%s\n", st->name());
+      Dmsg1(100, "write_storage_list=%s\n", st->resource_name_);
       jcr->res.write_storage_list->append(st);
     }
     if (!jcr->res.wstore_source) {
@@ -153,7 +153,7 @@ void CopyWstorage(JobControlRecord* jcr, alist* storage, const char* where)
     if (jcr->res.write_storage_list) {
       jcr->res.write_storage =
           (StorageResource*)jcr->res.write_storage_list->first();
-      Dmsg2(100, "write_storage=%s where=%s\n", jcr->res.write_storage->name(),
+      Dmsg2(100, "write_storage=%s where=%s\n", jcr->res.write_storage->resource_name_,
             jcr->res.wstore_source);
     }
   }
@@ -177,7 +177,7 @@ void SetWstorage(JobControlRecord* jcr, UnifiedStorageResource* store)
     jcr->res.wstore_source = GetPoolMemory(PM_MESSAGE);
   }
   PmStrcpy(jcr->res.wstore_source, store->store_source);
-  Dmsg2(50, "write_storage=%s where=%s\n", jcr->res.write_storage->name(),
+  Dmsg2(50, "write_storage=%s where=%s\n", jcr->res.write_storage->resource_name_,
         jcr->res.wstore_source);
   foreach_alist (storage, jcr->res.write_storage_list) {
     if (store->store == storage) { return; }
@@ -225,7 +225,7 @@ void SetPairedStorage(JobControlRecord* jcr)
         foreach_alist (store, jcr->res.paired_read_write_storage_list) {
           if (store->paired_storage) {
             Dmsg1(100, "write_storage_list=%s\n",
-                  store->paired_storage->name());
+                  store->paired_storage->resource_name_);
             jcr->res.write_storage_list->append(store->paired_storage);
           }
         }
@@ -304,7 +304,7 @@ void SetPairedStorage(JobControlRecord* jcr)
         jcr->res.read_storage_list = New(alist(10, not_owned_by_alist));
         foreach_alist (store, jcr->res.paired_read_write_storage_list) {
           if (store->paired_storage) {
-            Dmsg1(100, "read_storage_list=%s\n", store->paired_storage->name());
+            Dmsg1(100, "read_storage_list=%s\n", store->paired_storage->resource_name_);
             jcr->res.read_storage_list->append(store->paired_storage);
           }
         }
@@ -449,7 +449,7 @@ bool SelectNextRstore(JobControlRecord* jcr, bootstrap_info& info)
 {
   UnifiedStorageResource ustore;
 
-  if (bstrcmp(jcr->res.read_storage->name(), info.storage)) {
+  if (bstrcmp(jcr->res.read_storage->resource_name_, info.storage)) {
     return true; /* Same SD nothing to change */
   }
 

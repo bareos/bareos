@@ -299,7 +299,7 @@ void UpdateJobStatistics(JobControlRecord* jcr, utime_t now)
   job_stat->JobFiles = jcr->JobFiles;
   job_stat->JobBytes = jcr->JobBytes;
   if (jcr->dcr && jcr->dcr->device) {
-    job_stat->DevName = bstrdup(jcr->dcr->device->name());
+    job_stat->DevName = bstrdup(jcr->dcr->device->resource_name_);
   } else {
     job_stat->DevName = bstrdup("unknown");
   }
@@ -378,7 +378,7 @@ extern "C" void* statistics_thread_runner(void* arg)
 
           dev = device->dev;
           if (dev && dev->initiated) {
-            UpdateDeviceStatistics(device->name(), dev, now);
+            UpdateDeviceStatistics(device->resource_name_, dev, now);
           }
         }
       }

@@ -454,7 +454,7 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
     Jmsg(jcr, M_FATAL, 0,
          _("Read storage %s doesn't point to storage definition with paired "
            "storage option.\n"),
-         jcr->res.read_storage->name());
+         jcr->res.read_storage->resource_name_);
     goto bail_out;
   }
 

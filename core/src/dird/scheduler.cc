@@ -348,7 +348,7 @@ static void find_runs()
       continue;                                   /* no, skip this job */
     }
 
-    Dmsg1(debuglevel, "Got job: %s\n", job->hdr.name);
+    Dmsg1(debuglevel, "Got job: %s\n", job->resource_name_);
     for (run = sched->run; run; run = run->next) {
       bool run_now, run_nh;
       /*

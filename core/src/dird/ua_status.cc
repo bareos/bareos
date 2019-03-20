@@ -109,7 +109,7 @@ bool DotStatusCmd(UaContext* ua, const char* cmd)
       ua->SendMsg(OKdotstatus, ua->argk[2]);
       foreach_jcr (njcr) {
         if (njcr->JobId != 0 &&
-            ua->AclAccessOk(Job_ACL, njcr->res.job->name())) {
+            ua->AclAccessOk(Job_ACL, njcr->res.job->resource_name_)) {
           ua->SendMsg(DotStatusJob, edit_int64(njcr->JobId, ed1),
                       njcr->JobStatus, njcr->JobErrors);
         }
@@ -140,7 +140,7 @@ bool DotStatusCmd(UaContext* ua, const char* cmd)
     client = get_client_resource(ua);
     if (client) {
       if (ua->argc == 3) { statuscmd = ua->argk[2]; }
-      Dmsg2(200, "Client=%s arg=%s\n", client->name(), NPRT(statuscmd));
+      Dmsg2(200, "Client=%s arg=%s\n", client->resource_name_, NPRT(statuscmd));
       ClientStatus(ua, client, statuscmd);
     }
   } else if (Bstrcasecmp(ua->argk[1], "storage")) {
@@ -279,7 +279,7 @@ static void DoAllStatus(UaContext* ua)
   i = 0;
   foreach_res (store, R_STORAGE) {
     found = false;
-    if (!ua->AclAccessOk(Storage_ACL, store->name())) { continue; }
+    if (!ua->AclAccessOk(Storage_ACL, store->resource_name_)) { continue; }
     for (j = 0; j < i; j++) {
       if (bstrcmp(unique_store[j]->address, store->address) &&
           unique_store[j]->SDport == store->SDport) {
@@ -314,7 +314,7 @@ static void DoAllStatus(UaContext* ua)
   i = 0;
   foreach_res (client, R_CLIENT) {
     found = false;
-    if (!ua->AclAccessOk(Client_ACL, client->name())) { continue; }
+    if (!ua->AclAccessOk(Client_ACL, client->resource_name_)) { continue; }
     for (j = 0; j < i; j++) {
       if (bstrcmp(unique_client[j]->address, client->address) &&
           unique_client[j]->FDport == client->FDport) {
@@ -443,7 +443,7 @@ static bool show_scheduled_preview(UaContext* ua,
         }
       }
 
-      Mmsg(temp, "%-*s  %-22.22s  ", *max_date_len, dt, sched->hdr.name);
+      Mmsg(temp, "%-*s  %-22.22s  ", *max_date_len, dt, sched->resource_name_);
       PmStrcat(overview, temp.c_str());
 
       if (run->level) {
@@ -472,19 +472,19 @@ static bool show_scheduled_preview(UaContext* ua,
 
       if (run->pool) {
         if (cnt++ > 0) { PmStrcat(overview, " "); }
-        Mmsg(temp, "Pool=%s", run->pool->name());
+        Mmsg(temp, "Pool=%s", run->pool->resource_name_);
         PmStrcat(overview, temp.c_str());
       }
 
       if (run->storage) {
         if (cnt++ > 0) { PmStrcat(overview, " "); }
-        Mmsg(temp, "Storage=%s", run->storage->name());
+        Mmsg(temp, "Storage=%s", run->storage->resource_name_);
         PmStrcat(overview, temp.c_str());
       }
 
       if (run->msgs) {
         if (cnt++ > 0) { PmStrcat(overview, " "); }
-        Mmsg(temp, "Messages=%s", run->msgs->name());
+        Mmsg(temp, "Messages=%s", run->msgs->resource_name_);
         PmStrcat(overview, temp.c_str());
       }
 
@@ -607,30 +607,30 @@ static void DoSchedulerStatus(UaContext* ua)
 
     if (!schedulegiven && !sched->enabled) { continue; }
 
-    if (!ua->AclAccessOk(Schedule_ACL, sched->hdr.name)) { continue; }
+    if (!ua->AclAccessOk(Schedule_ACL, sched->resource_name_)) { continue; }
 
     if (schedulegiven) {
-      if (!bstrcmp(sched->hdr.name, schedulename)) { continue; }
+      if (!bstrcmp(sched->resource_name_, schedulename)) { continue; }
     }
 
     if (job) {
-      if (job->schedule && bstrcmp(sched->hdr.name, job->schedule->hdr.name)) {
-        if (cnt++ == 0) { ua->SendMsg("%s\n", sched->hdr.name); }
-        ua->SendMsg("                       %s\n", job->name());
+      if (job->schedule && bstrcmp(sched->resource_name_, job->schedule->resource_name_)) {
+        if (cnt++ == 0) { ua->SendMsg("%s\n", sched->resource_name_); }
+        ua->SendMsg("                       %s\n", job->resource_name_);
       }
     } else {
       foreach_res (job, R_JOB) {
-        if (!ua->AclAccessOk(Job_ACL, job->hdr.name)) { continue; }
+        if (!ua->AclAccessOk(Job_ACL, job->resource_name_)) { continue; }
 
         if (client && job->client != client) { continue; }
 
         if (job->schedule &&
-            bstrcmp(sched->hdr.name, job->schedule->hdr.name)) {
-          if (cnt++ == 0) { ua->SendMsg("%s\n", sched->hdr.name); }
+            bstrcmp(sched->resource_name_, job->schedule->resource_name_)) {
+          if (cnt++ == 0) { ua->SendMsg("%s\n", sched->resource_name_); }
           if (job->enabled && (!job->client || job->client->enabled)) {
-            ua->SendMsg("                       %s\n", job->name());
+            ua->SendMsg("                       %s\n", job->resource_name_);
           } else {
-            ua->SendMsg("                       %s (disabled)\n", job->name());
+            ua->SendMsg("                       %s (disabled)\n", job->resource_name_);
           }
         }
       }
@@ -670,7 +670,7 @@ start_again:
       } else {
         LockRes(my_config);
         foreach_res (job, R_JOB) {
-          if (!ua->AclAccessOk(Job_ACL, job->hdr.name)) { continue; }
+          if (!ua->AclAccessOk(Job_ACL, job->resource_name_)) { continue; }
 
           if (job->schedule && job->client == client) {
             if (!show_scheduled_preview(ua, job->schedule, overview,
@@ -692,10 +692,10 @@ start_again:
       foreach_res (sched, R_SCHEDULE) {
         if (!schedulegiven && !sched->enabled) { continue; }
 
-        if (!ua->AclAccessOk(Schedule_ACL, sched->hdr.name)) { continue; }
+        if (!ua->AclAccessOk(Schedule_ACL, sched->resource_name_)) { continue; }
 
         if (schedulegiven) {
-          if (!bstrcmp(sched->hdr.name, schedulename)) { continue; }
+          if (!bstrcmp(sched->resource_name_, schedulename)) { continue; }
         }
 
         if (!show_scheduled_preview(ua, sched, overview, &max_date_len, tm,
@@ -784,7 +784,7 @@ static void PrtRuntime(UaContext* ua, sched_pkt* sp)
   if (sp->job->JobType == JT_BACKUP) {
     jcr->db = NULL;
     ok = CompleteJcrForJob(jcr, sp->job, sp->pool);
-    Dmsg1(250, "Using pool=%s\n", jcr->res.pool->name());
+    Dmsg1(250, "Using pool=%s\n", jcr->res.pool->resource_name_);
     if (jcr->db) { CloseDb = true; /* new db opened, remember to close it */ }
     if (ok) {
       mr.PoolId = jcr->jr.PoolId;
@@ -811,11 +811,11 @@ static void PrtRuntime(UaContext* ua, sched_pkt* sp)
   if (ua->api) {
     ua->SendMsg(_("%-14s\t%-8s\t%3d\t%-18s\t%-18s\t%s\n"), level_ptr,
                 job_type_to_str(sp->job->JobType), sp->priority, dt,
-                sp->job->name(), mr.VolumeName);
+                sp->job->resource_name_, mr.VolumeName);
   } else {
     ua->SendMsg(_("%-14s %-8s %3d  %-18s %-18s %s\n"), level_ptr,
                 job_type_to_str(sp->job->JobType), sp->priority, dt,
-                sp->job->name(), mr.VolumeName);
+                sp->job->resource_name_, mr.VolumeName);
   }
   if (CloseDb) { DbSqlClosePooledConnection(jcr, jcr->db); }
   jcr->db = ua->db; /* restore ua db to jcr */
@@ -877,7 +877,7 @@ static void ListScheduledJobs(UaContext* ua)
    */
   LockRes(my_config);
   foreach_res (job, R_JOB) {
-    if (!ua->AclAccessOk(Job_ACL, job->name()) || !job->enabled ||
+    if (!ua->AclAccessOk(Job_ACL, job->resource_name_) || !job->enabled ||
         (job->client && !job->client->enabled)) {
       continue;
     }
@@ -900,10 +900,10 @@ static void ListScheduledJobs(UaContext* ua)
       GetJobStorage(&store, job, run);
       sp->store = store.store;
       if (sp->store) {
-        Dmsg3(250, "job=%s storage=%s MediaType=%s\n", job->name(),
-              sp->store->name(), sp->store->media_type);
+        Dmsg3(250, "job=%s storage=%s MediaType=%s\n", job->resource_name_,
+              sp->store->resource_name_, sp->store->media_type);
       } else {
-        Dmsg1(250, "job=%s could not get job storage\n", job->name());
+        Dmsg1(250, "job=%s could not get job storage\n", job->resource_name_);
       }
       sched.BinaryInsertMultiple(sp, CompareByRuntimePriority);
       num_jobs++;
@@ -959,7 +959,7 @@ static void ListRunningJobs(UaContext* ua)
           "==\n"));
   }
   foreach_jcr (jcr) {
-    if (jcr->JobId == 0 || !ua->AclAccessOk(Job_ACL, jcr->res.job->name())) {
+    if (jcr->JobId == 0 || !ua->AclAccessOk(Job_ACL, jcr->res.job->resource_name_)) {
       continue;
     }
     njobs++;
@@ -999,7 +999,7 @@ static void ListRunningJobs(UaContext* ua)
         if (!jcr->res.client) {
           Mmsg(emsg, _("is waiting on Client"));
         } else {
-          Mmsg(emsg, _("is waiting on Client %s"), jcr->res.client->name());
+          Mmsg(emsg, _("is waiting on Client %s"), jcr->res.client->resource_name_);
         }
         pool_mem = true;
         msg = emsg;
@@ -1008,10 +1008,10 @@ static void ListRunningJobs(UaContext* ua)
         emsg = (char*)GetPoolMemory(PM_FNAME);
         if (jcr->res.write_storage) {
           Mmsg(emsg, _("is waiting on Storage \"%s\""),
-               jcr->res.write_storage->name());
+               jcr->res.write_storage->resource_name_);
         } else if (jcr->res.read_storage) {
           Mmsg(emsg, _("is waiting on Storage \"%s\""),
-               jcr->res.read_storage->name());
+               jcr->res.read_storage->resource_name_);
         } else {
           Mmsg(emsg, _("is waiting on Storage"));
         }
@@ -1098,7 +1098,7 @@ static void ListRunningJobs(UaContext* ua)
           Mmsg(emsg, _("is waiting for Client to connect to Storage daemon"));
         } else {
           Mmsg(emsg, _("is waiting for Client %s to connect to Storage %s"),
-               jcr->res.client->name(), jcr->res.write_storage->name());
+               jcr->res.client->resource_name_, jcr->res.write_storage->resource_name_);
         }
         msg = emsg;
         break;
@@ -1259,7 +1259,7 @@ static void ListConnectedClients(UaContext* ua)
                              "%-20d");
     ua->send->ObjectKeyValue("authenticated", connection->authenticated(),
                              "%-20d");
-    ua->send->ObjectKeyValue("name", connection->name(), "%-40s");
+    ua->send->ObjectKeyValue("name", connection->resource_name_, "%-40s");
     ua->send->ObjectEnd();
     ua->send->Decoration("\n");
   }

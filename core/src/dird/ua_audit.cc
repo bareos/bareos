@@ -65,7 +65,7 @@ static inline void LogAuditEventAclMsg(UaContext* ua,
   const char* host;
   const char* acl_type_name;
 
-  console_name = (ua->cons) ? ua->cons->name() : "default";
+  console_name = (ua->cons) ? ua->cons->resource_name_ : "default";
   host = (ua->UA_sock) ? ua->UA_sock->host() : "unknown";
 
   switch (acl) {
@@ -136,7 +136,7 @@ void UaContext::LogAuditEventCmdline()
 
   if (!me->auditing) { return; }
 
-  console_name = cons ? cons->name() : "default";
+  console_name = cons ? cons->resource_name_ : "default";
   host = UA_sock ? UA_sock->host() : "unknown";
 
   Emsg3(M_AUDIT, 0, _("Console [%s] from [%s] cmdline %s\n"), console_name,

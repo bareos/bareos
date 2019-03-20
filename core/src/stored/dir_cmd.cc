@@ -870,7 +870,7 @@ static DeviceControlRecord* find_device(JobControlRecord* jcr,
     /*
      * Find resource, and make sure we were able to open it
      */
-    if (bstrcmp(device->name(), devname.c_str())) {
+    if (bstrcmp(device->resource_name_, devname.c_str())) {
       if (!device->dev) { device->dev = InitDev(jcr, device); }
       if (!device->dev) {
         Jmsg(jcr, M_WARNING, 0,
@@ -880,7 +880,7 @@ static DeviceControlRecord* find_device(JobControlRecord* jcr,
              devname.c_str());
         continue;
       }
-      Dmsg1(20, "Found device %s\n", device->name());
+      Dmsg1(20, "Found device %s\n", device->resource_name_);
       found = true;
       break;
     }
@@ -891,12 +891,12 @@ static DeviceControlRecord* find_device(JobControlRecord* jcr,
       /*
        * Find resource, and make sure we were able to open it
        */
-      if (bstrcmp(devname.c_str(), changer->name())) {
+      if (bstrcmp(devname.c_str(), changer->resource_name_)) {
         /*
          * Try each device in this AutoChanger
          */
         foreach_alist (device, changer->device) {
-          Dmsg1(100, "Try changer device %s\n", device->name());
+          Dmsg1(100, "Try changer device %s\n", device->resource_name_);
           if (!device->dev) { device->dev = InitDev(jcr, device); }
           if (!device->dev) {
             Dmsg1(100, "Device %s could not be opened. Skipped\n",
@@ -905,7 +905,7 @@ static DeviceControlRecord* find_device(JobControlRecord* jcr,
                  _("\n"
                    "     Device \"%s\" in changer \"%s\" requested by DIR "
                    "could not be opened or does not exist.\n"),
-                 device->name(), devname.c_str());
+                 device->resource_name_, devname.c_str());
             continue;
           }
           if (!device->dev->autoselect) {
@@ -913,7 +913,7 @@ static DeviceControlRecord* find_device(JobControlRecord* jcr,
             continue; /* device is not available */
           }
           if (drive < 0 || drive == device->dev->drive) {
-            Dmsg1(20, "Found changer device %s\n", device->name());
+            Dmsg1(20, "Found changer device %s\n", device->resource_name_);
             found = true;
             break;
           }
@@ -926,7 +926,7 @@ static DeviceControlRecord* find_device(JobControlRecord* jcr,
   }
 
   if (found) {
-    Dmsg1(100, "Found device %s\n", device->name());
+    Dmsg1(100, "Found device %s\n", device->resource_name_);
     dcr = New(StorageDaemonDeviceControlRecord);
     SetupNewDcrDevice(jcr, dcr, device->dev, blocksizes);
     dcr->SetWillWrite();
@@ -1279,7 +1279,7 @@ static inline bool GetBootstrapFile(JobControlRecord* jcr, BareosSocket* sock)
   }
   P(bsr_mutex);
   bsr_uniq++;
-  Mmsg(fname, "%s/%s.%s.%d.bootstrap", me->working_directory, me->name(),
+  Mmsg(fname, "%s/%s.%s.%d.bootstrap", me->working_directory, me->resource_name_,
        jcr->Job, bsr_uniq);
   V(bsr_mutex);
   Dmsg1(400, "bootstrap=%s\n", fname);

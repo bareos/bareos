@@ -39,7 +39,6 @@
 #include <memory>
 
 struct ResourceItem;
-class CommonResourceHeader;
 class ConfigurationParser;
 
 enum parse_state
@@ -51,111 +50,108 @@ enum parse_state
 /**
  * Common TLS-Settings for both (Certificate and PSK).
  */
-#define TLS_COMMON_CONFIG(res)                                                 \
-  {"TlsAuthenticate",                                                          \
-   CFG_TYPE_BOOL,                                                              \
-   ITEM(res.authenticate_),                                                    \
-   0,                                                                          \
-   CFG_ITEM_DEFAULT,                                                           \
-   "false",                                                                    \
-   NULL,                                                                       \
-   "Use TLS only to authenticate, not for encryption."},                       \
-      {"TlsEnable", CFG_TYPE_BOOL, ITEM(res.tls_enable_), 0, CFG_ITEM_DEFAULT, \
-       "true",      NULL,          "Enable TLS support."},                     \
-      {"TlsRequire",                                                           \
-       CFG_TYPE_BOOL,                                                          \
-       ITEM(res.tls_require_),                                                 \
-       0,                                                                      \
-       CFG_ITEM_DEFAULT,                                                       \
-       "false",                                                                \
-       NULL,                                                                   \
-       "Without setting this to yes, Bareos can fall back to use unencrypted " \
-       "connections. "                                                         \
-       "Enabling this implicitly sets \"TLS Enable = yes\"."},                 \
-      {"TlsCipherList",                                                        \
-       CFG_TYPE_STDSTRDIR,                                                     \
-       ITEM(res.cipherlist_),                                                  \
-       0,                                                                      \
-       CFG_ITEM_PLATFORM_SPECIFIC,                                             \
-       NULL,                                                                   \
-       NULL,                                                                   \
-       "List of valid TLS Ciphers."},                                          \
-  {                                                                            \
-    "TlsDhFile", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert_.dhfile_), 0, 0, NULL,  \
-        NULL,                                                                  \
-        "Path to PEM encoded Diffie-Hellman parameter file. "                  \
-        "If this directive is specified, DH key exchange will be used for "    \
-        "the ephemeral keying, "                                               \
-        "allowing for forward secrecy of communications."                      \
+#define TLS_COMMON_CONFIG(res)                                                  \
+  {"TlsAuthenticate",                                                           \
+   CFG_TYPE_BOOL,                                                               \
+   ITEM(res, authenticate_),                                                    \
+   0,                                                                           \
+   CFG_ITEM_DEFAULT,                                                            \
+   "false",                                                                     \
+   NULL,                                                                        \
+   "Use TLS only to authenticate, not for encryption."},                        \
+      {"TlsEnable", CFG_TYPE_BOOL, ITEM(res, tls_enable_), 0, CFG_ITEM_DEFAULT, \
+       "true",      NULL,          "Enable TLS support."},                      \
+      {"TlsRequire",                                                            \
+       CFG_TYPE_BOOL,                                                           \
+       ITEM(res, tls_require_),                                                 \
+       0,                                                                       \
+       CFG_ITEM_DEFAULT,                                                        \
+       "false",                                                                 \
+       NULL,                                                                    \
+       "Without setting this to yes, Bareos can fall back to use unencrypted "  \
+       "connections. "                                                          \
+       "Enabling this implicitly sets \"TLS Enable = yes\"."},                  \
+      {"TlsCipherList",                                                         \
+       CFG_TYPE_STDSTRDIR,                                                      \
+       ITEM(res, cipherlist_),                                                  \
+       0,                                                                       \
+       CFG_ITEM_PLATFORM_SPECIFIC,                                              \
+       NULL,                                                                    \
+       NULL,                                                                    \
+       "List of valid TLS Ciphers."},                                           \
+  {                                                                             \
+    "TlsDhFile", CFG_TYPE_STDSTRDIR, ITEM(res, tls_cert_.dhfile_), 0, 0, NULL,  \
+        NULL,                                                                   \
+        "Path to PEM encoded Diffie-Hellman parameter file. "                   \
+        "If this directive is specified, DH key exchange will be used for "     \
+        "the ephemeral keying, "                                                \
+        "allowing for forward secrecy of communications."                       \
   }
 
 /*
  * TLS Settings for Certificate only
  */
-#define TLS_CERT_CONFIG(res)                                               \
-  {"TlsVerifyPeer",                                                        \
-   CFG_TYPE_BOOL,                                                          \
-   ITEM(res.tls_cert_.verify_peer_),                                       \
-   0,                                                                      \
-   CFG_ITEM_DEFAULT,                                                       \
-   "false",                                                                \
-   NULL,                                                                   \
-   "If disabled, all certificates signed by a known CA will be accepted. " \
-   "If enabled, the CN of a certificate must the Address or in the \"TLS " \
-   "Allowed CN\" list."},                                                  \
-      {"TlsCaCertificateFile",                                             \
-       CFG_TYPE_STDSTRDIR,                                                 \
-       ITEM(res.tls_cert_.ca_certfile_),                                   \
-       0,                                                                  \
-       0,                                                                  \
-       NULL,                                                               \
-       NULL,                                                               \
-       "Path of a PEM encoded TLS CA certificate(s) file."},               \
-      {"TlsCaCertificateDir",                                              \
-       CFG_TYPE_STDSTRDIR,                                                 \
-       ITEM(res.tls_cert_.ca_certdir_),                                    \
-       0,                                                                  \
-       0,                                                                  \
-       NULL,                                                               \
-       NULL,                                                               \
-       "Path of a TLS CA certificate directory."},                         \
-      {"TlsCertificateRevocationList",                                     \
-       CFG_TYPE_STDSTRDIR,                                                 \
-       ITEM(res.tls_cert_.crlfile_),                                       \
-       0,                                                                  \
-       0,                                                                  \
-       NULL,                                                               \
-       NULL,                                                               \
-       "Path of a Certificate Revocation List file."},                     \
-      {"TlsCertificate",                                                   \
-       CFG_TYPE_STDSTRDIR,                                                 \
-       ITEM(res.tls_cert_.certfile_),                                      \
-       0,                                                                  \
-       0,                                                                  \
-       NULL,                                                               \
-       NULL,                                                               \
-       "Path of a PEM encoded TLS certificate."},                          \
-      {"TlsKey",                                                           \
-       CFG_TYPE_STDSTRDIR,                                                 \
-       ITEM(res.tls_cert_.keyfile_),                                       \
-       0,                                                                  \
-       0,                                                                  \
-       NULL,                                                               \
-       NULL,                                                               \
-       "Path of a PEM encoded private key. It must correspond to the "     \
-       "specified \"TLS Certificate\"."},                                  \
-  {                                                                        \
-    "TlsAllowedCn", CFG_TYPE_ALIST_STR,                                    \
-        ITEM(res.tls_cert_.allowed_certificate_common_names_), 0, 0, NULL, \
-        NULL, "\"Common Name\"s (CNs) of the allowed peer certificates."   \
+#define TLS_CERT_CONFIG(res)                                                \
+  {"TlsVerifyPeer",                                                         \
+   CFG_TYPE_BOOL,                                                           \
+   ITEM(res, tls_cert_.verify_peer_),                                       \
+   0,                                                                       \
+   CFG_ITEM_DEFAULT,                                                        \
+   "false",                                                                 \
+   NULL,                                                                    \
+   "If disabled, all certificates signed by a known CA will be accepted. "  \
+   "If enabled, the CN of a certificate must the Address or in the \"TLS "  \
+   "Allowed CN\" list."},                                                   \
+      {"TlsCaCertificateFile",                                              \
+       CFG_TYPE_STDSTRDIR,                                                  \
+       ITEM(res, tls_cert_.ca_certfile_),                                   \
+       0,                                                                   \
+       0,                                                                   \
+       NULL,                                                                \
+       NULL,                                                                \
+       "Path of a PEM encoded TLS CA certificate(s) file."},                \
+      {"TlsCaCertificateDir",                                               \
+       CFG_TYPE_STDSTRDIR,                                                  \
+       ITEM(res, tls_cert_.ca_certdir_),                                    \
+       0,                                                                   \
+       0,                                                                   \
+       NULL,                                                                \
+       NULL,                                                                \
+       "Path of a TLS CA certificate directory."},                          \
+      {"TlsCertificateRevocationList",                                      \
+       CFG_TYPE_STDSTRDIR,                                                  \
+       ITEM(res, tls_cert_.crlfile_),                                       \
+       0,                                                                   \
+       0,                                                                   \
+       NULL,                                                                \
+       NULL,                                                                \
+       "Path of a Certificate Revocation List file."},                      \
+      {"TlsCertificate",                                                    \
+       CFG_TYPE_STDSTRDIR,                                                  \
+       ITEM(res, tls_cert_.certfile_),                                      \
+       0,                                                                   \
+       0,                                                                   \
+       NULL,                                                                \
+       NULL,                                                                \
+       "Path of a PEM encoded TLS certificate."},                           \
+      {"TlsKey",                                                            \
+       CFG_TYPE_STDSTRDIR,                                                  \
+       ITEM(res, tls_cert_.keyfile_),                                       \
+       0,                                                                   \
+       0,                                                                   \
+       NULL,                                                                \
+       NULL,                                                                \
+       "Path of a PEM encoded private key. It must correspond to the "      \
+       "specified \"TLS Certificate\"."},                                   \
+  {                                                                         \
+    "TlsAllowedCn", CFG_TYPE_ALIST_STR,                                     \
+        ITEM(res, tls_cert_.allowed_certificate_common_names_), 0, 0, NULL, \
+        NULL, "\"Common Name\"s (CNs) of the allowed peer certificates."    \
   }
 
 /* For storing name_addr items in res_items table */
-#define ITEM(x)        \
-  {                    \
-    (char**)&res_all.x \
-  }
-
+#define ITEM(c, m) ((char**)(&(c.m))), (&c)
+#define ITEMC(c) ((char**)(&(c))), (&c)
 /*
  * Master Resource configuration structure definition
  * This is the structure that defines the resources that are available to this
@@ -167,8 +163,8 @@ struct ResourceTable {
   uint32_t rcode;      /* Code if needed */
   uint32_t size;       /* Size of resource */
 
-  std::function<void*(void* res)>
-      initres; /* this shoud call the new replacement*/
+  std::function<void*()> initres; /* this shoud call the new replacement*/
+  BareosResource* static_initialization_resource_;
 };
 
 /*
@@ -321,18 +317,18 @@ class ConfigurationParser {
   PRINT_RES_HANDLER*
       print_res_; /* Print resource handler for non default types if non-null */
 
-  int32_t err_type_;     /* The way to Terminate on failure */
-  void* res_all_;        /* Pointer to res_all buffer */
-  int32_t res_all_size_; /* Length of buffer */
+  int32_t err_type_; /* The way to Terminate on failure */
+  // void* res_all_;        /* Pointer to res_all buffer */
+  // int32_t res_all_size_; /* Length of buffer */
   bool omit_defaults_; /* Omit config variables with default values when dumping
                           the config */
 
-  int32_t r_first_;          /* First daemon resource type */
-  int32_t r_last_;           /* Last daemon resource type */
-  int32_t r_own_;            /* own resource type */
-  ResourceTable* resources_; /* Pointer to table of permitted resources */
-  CommonResourceHeader** res_head_; /* Pointer to defined resources */
-  mutable brwlock_t res_lock_;      /* Resource lock */
+  int32_t r_first_;            /* First daemon resource type */
+  int32_t r_last_;             /* Last daemon resource type */
+  int32_t r_own_;              /* own resource type */
+  ResourceTable* resources_;   /* Pointer to table of permitted resources */
+  BareosResource** res_head_;  /* Pointer to defined resources */
+  mutable brwlock_t res_lock_; /* Resource lock */
 
   SaveResourceCb_t SaveResourceCb_;
   DumpResourceCb_t DumpResourceCb_;
@@ -346,8 +342,6 @@ class ConfigurationParser {
                       STORE_RES_HANDLER* StoreRes,
                       PRINT_RES_HANDLER* print_res,
                       int32_t err_type,
-                      void* vres_all,
-                      int32_t res_all_size,
                       int32_t r_first,
                       int32_t r_last,
                       ResourceTable* resources,
@@ -369,11 +363,12 @@ class ConfigurationParser {
                        LEX_WARNING_HANDLER* scan_warning = NULL);
   const std::string& get_base_config_path() const { return used_config_path_; }
   void FreeResources();
-  CommonResourceHeader** SaveResources();
+  BareosResource** SaveResources();
   void InitResource(int type,
                     ResourceItem* items,
                     int pass,
-                    std::function<void*(void* res)> initres);
+                    std::function<void*()> initres,
+                    BareosResource* static_initialization_resource);
   bool RemoveResource(int type, const char* name);
   void DumpResources(void sendit(void* sock, const char* fmt, ...),
                      void* sock,
@@ -526,11 +521,11 @@ void InitResource(int type, ResourceItem* item);
 #ifdef HAVE_TYPEOF
 #define foreach_res(var, type)                                    \
   for ((var) = NULL; ((var) = (typeof(var))my_config->GetNextRes( \
-                          (type), (CommonResourceHeader*)var));)
+                          (type), (BareosResource*)var));)
 #else
 #define foreach_res(var, type)                                        \
   for (var = NULL; (*((void**)&(var)) = (void*)my_config->GetNextRes( \
-                        (type), (CommonResourceHeader*)var));)
+                        (type), (BareosResource*)var));)
 #endif
 
 #define LockRes(x) (x)->b_LockRes(__FILE__, __LINE__)

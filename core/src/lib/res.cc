@@ -109,8 +109,8 @@ CommonResourceHeader* ConfigurationParser::GetResWithName(int rcode,
 
   res = res_head_[rindex];
   while (res) {
-    if (bstrcmp(res->name, name)) { break; }
-    res = res->next;
+    if (bstrcmp(res->resource_name_, name)) { break; }
+    res = res->next_;
   }
 
   if (lock) { UnlockRes(this); }
@@ -133,7 +133,7 @@ CommonResourceHeader* ConfigurationParser::GetNextRes(
   if (res == NULL) {
     nres = res_head_[rindex];
   } else {
-    nres = res->next;
+    nres = res->next_;
   }
 
   return nres;
@@ -387,7 +387,7 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
     }
   }
   ScanToEol(lc);
-  SetBit(index, res_all->hdr.item_present);
+  SetBit(index, res_all->item_present_);
   ClearBit(index, res_all->hdr.inherit_content);
   Dmsg0(900, "Done StoreMsgs\n");
 }
@@ -420,7 +420,7 @@ void ConfigurationParser::StoreName(LEX* lc,
   }
   *(item->value) = bstrdup(lc->str);
   ScanToEol(lc);
-  SetBit(index, res_all->hdr.item_present);
+  SetBit(index, res_all->item_present_);
   ClearBit(index, res_all->hdr.inherit_content);
 }
 
@@ -443,7 +443,7 @@ void ConfigurationParser::StoreStrname(LEX* lc,
     *(item->value) = bstrdup(lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, res_all->hdr.item_present);
+  SetBit(index, res_all->item_present_);
   ClearBit(index, res_all->hdr.inherit_content);
 }
 
@@ -465,7 +465,7 @@ void ConfigurationParser::StoreStr(LEX* lc,
     *(item->value) = bstrdup(lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, res_all->hdr.item_present);
+  SetBit(index, res_all->item_present_);
   ClearBit(index, res_all->hdr.inherit_content);
 }
 
@@ -487,7 +487,7 @@ void ConfigurationParser::StoreStdstr(LEX* lc,
     *(item->strValue) = new std::string(lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, res_all->hdr.item_present);
+  SetBit(index, res_all->item_present_);
   ClearBit(index, res_all->hdr.inherit_content);
 }
 
@@ -514,7 +514,7 @@ void ConfigurationParser::StoreDir(LEX* lc,
     *(item->value) = bstrdup(lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, res_all->hdr.item_present);
+  SetBit(index, res_all->item_present_);
   ClearBit(index, res_all->hdr.inherit_content);
 }
 
@@ -536,7 +536,7 @@ void ConfigurationParser::StoreStdstrdir(LEX* lc,
     *(item->strValue) = new std::string(lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, res_all->hdr.item_present);
+  SetBit(index, res_all->item_present_);
   ClearBit(index, res_all->hdr.inherit_content);
 }
 
@@ -581,7 +581,7 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
     }
   }
   ScanToEol(lc);
-  SetBit(index, res_all->hdr.item_present);
+  SetBit(index, res_all->item_present_);
   ClearBit(index, res_all->hdr.inherit_content);
 }
 
@@ -606,7 +606,7 @@ void ConfigurationParser::StoreClearpassword(LEX* lc,
     pwd->value = bstrdup(lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, res_all->hdr.item_present);
+  SetBit(index, res_all->item_present_);
   ClearBit(index, res_all->hdr.inherit_content);
 }
 
@@ -643,7 +643,7 @@ void ConfigurationParser::StoreRes(LEX* lc,
     *(item->resvalue) = res;
   }
   ScanToEol(lc);
-  SetBit(index, res_all->hdr.item_present);
+  SetBit(index, res_all->item_present_);
   ClearBit(index, res_all->hdr.inherit_content);
 }
 
@@ -704,7 +704,7 @@ void ConfigurationParser::StoreAlistRes(LEX* lc,
     }
   }
   ScanToEol(lc);
-  SetBit(index, res_all->hdr.item_present);
+  SetBit(index, res_all->item_present_);
   ClearBit(index, res_all->hdr.inherit_content);
 }
 
@@ -748,7 +748,7 @@ void ConfigurationParser::StoreAlistStr(LEX* lc,
     list->append(bstrdup(lc->str));
   }
   ScanToEol(lc);
-  SetBit(index, res_all->hdr.item_present);
+  SetBit(index, res_all->item_present_);
   ClearBit(index, res_all->hdr.inherit_content);
 }
 
@@ -799,7 +799,7 @@ void ConfigurationParser::StoreAlistDir(LEX* lc,
     list->append(bstrdup(lc->str));
   }
   ScanToEol(lc);
-  SetBit(index, res_all->hdr.item_present);
+  SetBit(index, res_all->item_present_);
   ClearBit(index, res_all->hdr.inherit_content);
 }
 
@@ -836,7 +836,7 @@ void ConfigurationParser::StorePluginNames(LEX* lc,
     free(plugin_names);
   }
   ScanToEol(lc);
-  SetBit(index, res_all->hdr.item_present);
+  SetBit(index, res_all->item_present_);
   ClearBit(index, res_all->hdr.inherit_content);
 }
 
@@ -883,7 +883,7 @@ void ConfigurationParser::store_int16(LEX* lc,
   LexGetToken(lc, BCT_INT16);
   *(item->i16value) = lc->u.int16_val;
   ScanToEol(lc);
-  SetBit(index, res_all->hdr.item_present);
+  SetBit(index, res_all->item_present_);
   ClearBit(index, res_all->hdr.inherit_content);
 }
 
@@ -897,7 +897,7 @@ void ConfigurationParser::store_int32(LEX* lc,
   LexGetToken(lc, BCT_INT32);
   *(item->i32value) = lc->u.int32_val;
   ScanToEol(lc);
-  SetBit(index, res_all->hdr.item_present);
+  SetBit(index, res_all->item_present_);
   ClearBit(index, res_all->hdr.inherit_content);
 }
 
@@ -914,7 +914,7 @@ void ConfigurationParser::store_pint16(LEX* lc,
   LexGetToken(lc, BCT_PINT16);
   *(item->ui16value) = lc->u.pint16_val;
   ScanToEol(lc);
-  SetBit(index, res_all->hdr.item_present);
+  SetBit(index, res_all->item_present_);
   ClearBit(index, res_all->hdr.inherit_content);
 }
 
@@ -928,7 +928,7 @@ void ConfigurationParser::store_pint32(LEX* lc,
   LexGetToken(lc, BCT_PINT32);
   *(item->ui32value) = lc->u.pint32_val;
   ScanToEol(lc);
-  SetBit(index, res_all->hdr.item_present);
+  SetBit(index, res_all->item_present_);
   ClearBit(index, res_all->hdr.inherit_content);
 }
 
@@ -945,7 +945,7 @@ void ConfigurationParser::store_int64(LEX* lc,
   LexGetToken(lc, BCT_INT64);
   *(item->i64value) = lc->u.int64_val;
   ScanToEol(lc);
-  SetBit(index, res_all->hdr.item_present);
+  SetBit(index, res_all->item_present_);
   ClearBit(index, res_all->hdr.inherit_content);
 }
 
@@ -1023,7 +1023,7 @@ void ConfigurationParser::store_int_unit(LEX* lc,
       return;
   }
   if (token != BCT_EOL) { ScanToEol(lc); }
-  SetBit(index, res_all->hdr.item_present);
+  SetBit(index, res_all->item_present_);
   ClearBit(index, res_all->hdr.inherit_content);
   Dmsg0(900, "Leave store_unit\n");
 }
@@ -1105,7 +1105,7 @@ void ConfigurationParser::StoreTime(LEX* lc,
       return;
   }
   if (token != BCT_EOL) { ScanToEol(lc); }
-  SetBit(index, res_all->hdr.item_present);
+  SetBit(index, res_all->item_present_);
   ClearBit(index, res_all->hdr.inherit_content);
 }
 
@@ -1130,7 +1130,7 @@ void ConfigurationParser::StoreBit(LEX* lc,
     return;
   }
   ScanToEol(lc);
-  SetBit(index, res_all->hdr.item_present);
+  SetBit(index, res_all->item_present_);
   ClearBit(index, res_all->hdr.inherit_content);
 }
 
@@ -1155,7 +1155,7 @@ void ConfigurationParser::StoreBool(LEX* lc,
     return;
   }
   ScanToEol(lc);
-  SetBit(index, res_all->hdr.item_present);
+  SetBit(index, res_all->item_present_);
   ClearBit(index, res_all->hdr.inherit_content);
 }
 
@@ -1186,7 +1186,7 @@ void ConfigurationParser::StoreLabel(LEX* lc,
     return;
   }
   ScanToEol(lc);
-  SetBit(index, res_all->hdr.item_present);
+  SetBit(index, res_all->item_present_);
   ClearBit(index, res_all->hdr.inherit_content);
 }
 
@@ -1589,7 +1589,7 @@ bool MessagesResource::PrintConfig(PoolMem& buff,
   msgres = this;
 
   PmStrcat(cfg_str, "Messages {\n");
-  Mmsg(temp, "   %s = \"%s\"\n", "Name", msgres->name());
+  Mmsg(temp, "   %s = \"%s\"\n", "Name", msgres->resource_name_);
   PmStrcat(cfg_str, temp.c_str());
 
   if (msgres->mail_cmd) {

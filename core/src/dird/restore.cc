@@ -202,7 +202,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
         Jmsg(jcr, M_FATAL, 0,
              _("Client \"%s\" doesn't support passive client mode. "
                "Please upgrade your client or disable compat mode.\n"),
-             jcr->res.client->name());
+             jcr->res.client->resource_name_);
         goto bail_out;
       }
     }
@@ -346,7 +346,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
           Jmsg(jcr, M_FATAL, 0,
                _("Client \"%s\" doesn't support plugin option passing. "
                  "Please upgrade your client or disable compat mode.\n"),
-               jcr->res.client->name());
+               jcr->res.client->resource_name_);
           goto bail_out;
         }
       }
@@ -561,7 +561,7 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
              "  Bareos binary info:     %s\n"
              "  Termination:            %s\n\n"),
            BAREOS, my_name, VERSION, LSMDATE, HOST_OS, DISTNAME, DISTVER,
-           jcr->jr.JobId, jcr->jr.Job, jcr->res.client->name(), sdt, edt,
+           jcr->jr.JobId, jcr->jr.Job, jcr->res.client->resource_name_, sdt, edt,
            edit_utime(RunTime, elapsed, sizeof(elapsed)),
            edit_uint64_with_commas((uint64_t)jcr->ExpectedFiles, ec1),
            edit_uint64_with_commas((uint64_t)jcr->jr.JobFiles, ec2),
@@ -602,7 +602,7 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
              "  Bareos binary info:     %s\n"
              "  Termination:            %s\n\n"),
            BAREOS, my_name, VERSION, LSMDATE, HOST_OS, DISTNAME, DISTVER,
-           jcr->jr.JobId, jcr->jr.Job, jcr->res.client->name(), sdt, edt,
+           jcr->jr.JobId, jcr->jr.Job, jcr->res.client->resource_name_, sdt, edt,
            edit_utime(RunTime, elapsed, sizeof(elapsed)),
            edit_uint64_with_commas((uint64_t)jcr->ExpectedFiles, ec1),
            edit_uint64_with_commas((uint64_t)jcr->jr.JobFiles, ec2),

@@ -136,7 +136,7 @@ bool DoNdmpBackupInit(JobControlRecord* jcr)
 
   if (!AllowDuplicateJob(jcr)) { return false; }
 
-  jcr->jr.PoolId = GetOrCreatePoolRecord(jcr, jcr->res.pool->name());
+  jcr->jr.PoolId = GetOrCreatePoolRecord(jcr, jcr->res.pool->resource_name_);
   if (jcr->jr.PoolId == 0) { return false; }
 
   jcr->start_time = time(NULL);

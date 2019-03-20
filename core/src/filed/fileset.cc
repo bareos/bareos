@@ -61,7 +61,7 @@ extern "C" char* job_code_callback_filed(JobControlRecord* jcr,
 
   switch (param[0]) {
     case 'D':
-      if (jcr->director) { return jcr->director->name(); }
+      if (jcr->director) { return jcr->director->resource_name_; }
       break;
     case 'm':
       return edit_uint64(jcr->mtime, str);

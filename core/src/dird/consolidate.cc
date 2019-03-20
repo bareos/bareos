@@ -127,7 +127,7 @@ bool DoConsolidate(JobControlRecord* jcr)
       int32_t max_incrementals_to_consolidate;
 
       Jmsg(jcr, M_INFO, 0, _("Looking at always incremental job %s\n"),
-           job->name());
+           job->resource_name_);
 
       /*
        * Fake always incremental job as job of current jcr.
@@ -170,11 +170,11 @@ bool DoConsolidate(JobControlRecord* jcr)
         bstrftimes(sdt, sizeof(sdt), jcr->jr.StartTime);
         Jmsg(jcr, M_INFO, 0,
              _("%s: considering jobs older than %s for consolidation.\n"),
-             job->name(), sdt);
+             job->resource_name_, sdt);
         Dmsg4(10,
               _("%s: considering jobs with ClientId %d and FilesetId %d older "
                 "than %s for consolidation.\n"),
-              job->name(), jcr->jr.ClientId, jcr->jr.FileSetId, sdt);
+              job->resource_name_, jcr->jr.ClientId, jcr->jr.FileSetId, sdt);
       }
 
       jcr->db->AccurateGetJobids(jcr, &jcr->jr, &jobids_ctx);
@@ -187,7 +187,7 @@ bool DoConsolidate(JobControlRecord* jcr)
       if (incrementals_total < 1) {
         Jmsg(jcr, M_INFO, 0,
              _("%s: less than two jobs to consolidate found, doing nothing.\n"),
-             job->name());
+             job->resource_name_);
         continue;
       }
 
@@ -214,13 +214,13 @@ bool DoConsolidate(JobControlRecord* jcr)
           Jmsg(jcr, M_INFO, 0,
                _("%s: After limited query: less incrementals than required, "
                  "not consolidating\n"),
-               job->name());
+               job->resource_name_);
           continue;
         }
       } else {
         Jmsg(jcr, M_INFO, 0,
              _("%s: less incrementals than required, not consolidating\n"),
-             job->name());
+             job->resource_name_);
         continue;
       }
 
@@ -244,7 +244,7 @@ bool DoConsolidate(JobControlRecord* jcr)
           Jmsg(jcr, M_INFO, 0,
                _("%s: less incrementals than required to consolidate without "
                  "full, not consolidating\n"),
-               job->name());
+               job->resource_name_);
           continue;
         }
         Jmsg(jcr, M_INFO, 0, _("before ConsolidateFull: jobids: %s\n"), jobids);
@@ -311,8 +311,8 @@ bool DoConsolidate(JobControlRecord* jcr)
       if (!jcr->vf_jobids) { jcr->vf_jobids = GetPoolMemory(PM_MESSAGE); }
       PmStrcpy(jcr->vf_jobids, p);
 
-      Jmsg(jcr, M_INFO, 0, _("%s: Start new consolidation\n"), job->name());
-      StartNewConsolidationJob(jcr, job->name());
+      Jmsg(jcr, M_INFO, 0, _("%s: Start new consolidation\n"), job->resource_name_);
+      StartNewConsolidationJob(jcr, job->resource_name_);
     }
   }
 

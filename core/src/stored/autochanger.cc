@@ -88,14 +88,14 @@ bool InitAutochangers()
       if (!device->changer_name) {
         Jmsg(NULL, M_ERROR, 0,
              _("No Changer Name given for device %s. Cannot continue.\n"),
-             device->name());
+             device->resource_name_);
         OK = false;
       }
 
       if (!device->changer_command) {
         Jmsg(NULL, M_ERROR, 0,
              _("No Changer Command given for device %s. Cannot continue.\n"),
-             device->name());
+             device->resource_name_);
         OK = false;
       }
 
@@ -397,7 +397,7 @@ static bool LockChanger(DeviceControlRecord* dcr)
 
   if (changer_res) {
     int errstat;
-    Dmsg1(200, "Locking changer %s\n", changer_res->name());
+    Dmsg1(200, "Locking changer %s\n", changer_res->resource_name_);
     if ((errstat = RwlWritelock(&changer_res->changer_lock)) != 0) {
       BErrNo be;
       Jmsg(dcr->jcr, M_ERROR_TERM, 0,
@@ -427,7 +427,7 @@ static bool UnlockChanger(DeviceControlRecord* dcr)
 
     GeneratePluginEvent(dcr->jcr, bsdEventChangerUnlock, dcr);
 
-    Dmsg1(200, "Unlocking changer %s\n", changer_res->name());
+    Dmsg1(200, "Unlocking changer %s\n", changer_res->resource_name_);
     if ((errstat = RwlWriteunlock(&changer_res->changer_lock)) != 0) {
       BErrNo be;
       Jmsg(dcr->jcr, M_ERROR_TERM, 0,

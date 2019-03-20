@@ -207,7 +207,7 @@ static inline bool ConfigureCreateFdResourceString(UaContext* ua,
   password = &client->password_;
 
   resource.strcat("Director {\n");
-  config_add_directive(NULL, NULL, "Name", me->name(), resource);
+  config_add_directive(NULL, NULL, "Name", me->resource_name_, resource);
 
   switch (password->encoding) {
     case p_encoding_clear:

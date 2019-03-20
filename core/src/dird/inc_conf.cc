@@ -858,7 +858,7 @@ static void StoreNewinc(LEX* lc, ResourceItem* item, int index, int pass)
     }
   }
   ScanToEol(lc);
-  SetBit(index, res_all->hdr.item_present);
+  SetBit(index, res_all->hdr.item_present_);
   ClearBit(index, res_all->hdr.inherit_content);
 }
 

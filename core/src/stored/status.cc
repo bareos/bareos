@@ -165,7 +165,7 @@ static bool NeedToListDevice(const char* devicenames, DeviceResource* device)
    * e.g. this happens when people address one particular device in
    * a autochanger via its own storage definition or an non autochanger device.
    */
-  if (!NeedToListDevice(devicenames, device->name())) {
+  if (!NeedToListDevice(devicenames, device->resource_name_)) {
     /*
      * See if this device is part of an autochanger.
      */
@@ -174,7 +174,7 @@ static bool NeedToListDevice(const char* devicenames, DeviceResource* device)
        * See if we need to list this particular device part of the given
        * autochanger.
        */
-      if (!NeedToListDevice(devicenames, device->changer_res->name())) {
+      if (!NeedToListDevice(devicenames, device->changer_res->resource_name_)) {
         return false;
       }
     } else {
@@ -244,11 +244,13 @@ static void ListDevices(JobControlRecord* jcr,
     /*
      * See if we need to list this autochanger.
      */
-    if (devicenames && !NeedToListDevice(devicenames, changer->name())) {
+    if (devicenames &&
+        !NeedToListDevice(devicenames, changer->resource_name_)) {
       continue;
     }
 
-    len = Mmsg(msg, _("Autochanger \"%s\" with devices:\n"), changer->name());
+    len = Mmsg(msg, _("Autochanger \"%s\" with devices:\n"),
+               changer->resource_name_);
     sendit(msg, len, sp);
 
     foreach_alist (device, changer->device) {
@@ -256,7 +258,7 @@ static void ListDevices(JobControlRecord* jcr,
         len = Mmsg(msg, "   %s\n", device->dev->print_name());
         sendit(msg, len, sp);
       } else {
-        len = Mmsg(msg, "   %s\n", device->name());
+        len = Mmsg(msg, "   %s\n", device->resource_name_);
         sendit(msg, len, sp);
       }
     }
@@ -355,7 +357,7 @@ static void ListDevices(JobControlRecord* jcr,
         SendBlockedStatus(dev, sp);
       } else {
         len = Mmsg(msg, _("\nDevice \"%s\" is not open or does not exist.\n"),
-                   device->name());
+                   device->resource_name_);
         sendit(msg, len, sp);
       }
 

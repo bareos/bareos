@@ -90,9 +90,9 @@ static int32_t res_all_size = sizeof(res_all);
  * Client or File daemon "Global" resources
  */
 static ResourceItem cli_items[] = {
-  {"Name", CFG_TYPE_NAME, ITEM(res_client.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
+  {"Name", CFG_TYPE_NAME, ITEM(res_client.resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL,
       "The name of this resource. It is used to reference to it."},
-  {"Description", CFG_TYPE_STR, ITEM(res_client.hdr.desc), 0, 0, NULL, NULL, NULL},
+  {"Description", CFG_TYPE_STR, ITEM(res_client.description_), 0, 0, NULL, NULL, NULL},
   {"FdPort", CFG_TYPE_ADDRESSES_PORT, ITEM(res_client.FDaddrs), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT, NULL, NULL},
   {"FdAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_client.FDaddrs), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT, NULL, NULL},
   {"FdAddresses", CFG_TYPE_ADDRESSES, ITEM(res_client.FDaddrs), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT, NULL, NULL},
@@ -141,8 +141,8 @@ static ResourceItem cli_items[] = {
  * Directors that can use our services
  */
 static ResourceItem dir_items[] = {
-  {"Name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"Description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL, NULL, NULL},
+  {"Name", CFG_TYPE_NAME, ITEM(res_dir.resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"Description", CFG_TYPE_STR, ITEM(res_dir.description_), 0, 0, NULL, NULL, NULL},
   {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir.password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"Address", CFG_TYPE_STR, ITEM(res_dir.address), 0, 0, NULL, NULL,
       "Director Network Address. Only required if \"Connection From Client To Director\" is enabled."},
@@ -208,7 +208,7 @@ static void StoreCipher(LEX* lc, ResourceItem* item, int index, int pass)
     scan_err1(lc, _("Expected a Crypto Cipher option, got: %s"), lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, res_all.hdr.item_present);
+  SetBit(index, res_all.item_present_);
   ClearBit(index, res_all.hdr.inherit_content);
 }
 
@@ -349,8 +349,8 @@ static void DumpResource(int type,
   }
   sendit(sock, "%s", buf.c_str());
 
-  if (recurse && res->res_dir.hdr.next) {
-    my_config->DumpResourceCb_(type, res->res_dir.hdr.next, sendit, sock,
+  if (recurse && res->res_dir.next_) {
+    my_config->DumpResourceCb_(type, res->res_dir.next_, sendit, sock,
                                hide_sensitive_data, verbose);
   }
 }
@@ -372,9 +372,9 @@ static void FreeResource(CommonResourceHeader* sres, int type)
   /*
    * Common stuff -- free the resource name
    */
-  nres = (CommonResourceHeader*)res->res_dir.hdr.next;
-  if (res->res_dir.hdr.name) { free(res->res_dir.hdr.name); }
-  if (res->res_dir.hdr.desc) { free(res->res_dir.hdr.desc); }
+  nres = (CommonResourceHeader*)res->res_dir.next_;
+  if (res->res_dir.resource_name_) { free(res->res_dir.resource_name_); }
+  if (res->res_dir.description_) { free(res->res_dir.description_); }
   switch (type) {
     case R_DIRECTOR:
       if (res->res_dir.password_.value) { free(res->res_dir.password_.value); }
@@ -533,7 +533,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
    */
   for (i = 0; items[i].name; i++) {
     if (items[i].flags & CFG_ITEM_REQUIRED) {
-      if (!BitIsSet(i, res_all.res_dir.hdr.item_present)) {
+      if (!BitIsSet(i, res_all.res_dir.item_present_)) {
         Emsg2(M_ABORT, 0,
               _("%s item is required in %s resource, but not found.\n"),
               items[i].name, resources[rindex].name);
@@ -559,9 +559,9 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
          * Resources containing another resource
          */
         if ((res = (UnionOfResources*)my_config->GetResWithName(
-                 R_DIRECTOR, res_all.res_dir.name())) == NULL) {
+                 R_DIRECTOR, res_all.res_dir.resource_name_)) == NULL) {
           Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"),
-                res_all.res_dir.name());
+                res_all.res_dir.resource_name_);
         } else {
           res->res_dir.tls_cert_.allowed_certificate_common_names_ =
               res_all.res_dir.tls_cert_.allowed_certificate_common_names_;
@@ -572,9 +572,9 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         break;
       case R_CLIENT:
         if ((res = (UnionOfResources*)my_config->GetResWithName(
-                 R_CLIENT, res_all.res_dir.name())) == NULL) {
+                 R_CLIENT, res_all.res_dir.resource_name_)) == NULL) {
           Emsg1(M_ABORT, 0, _("Cannot find Client resource %s\n"),
-                res_all.res_dir.name());
+                res_all.res_dir.resource_name_);
         } else {
           res->res_client.plugin_names = res_all.res_client.plugin_names;
           res->res_client.pki_signing_key_files =
@@ -601,13 +601,13 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
      * Note, the resoure name was already saved during pass 1,
      * so here, we can just release it.
      */
-    if (res_all.res_dir.hdr.name) {
-      free(res_all.res_dir.hdr.name);
-      res_all.res_dir.hdr.name = NULL;
+    if (res_all.res_dir.resource_name_) {
+      free(res_all.res_dir.resource_name_);
+      res_all.res_dir.resource_name_ = NULL;
     }
-    if (res_all.res_dir.hdr.desc) {
-      free(res_all.res_dir.hdr.desc);
-      res_all.res_dir.hdr.desc = NULL;
+    if (res_all.res_dir.description_) {
+      free(res_all.res_dir.description_);
+      res_all.res_dir.description_ = NULL;
     }
     return (error == 0);
   }
@@ -627,16 +627,16 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
        */
       for (last = next = res_head[rindex]; next; next = next->next) {
         last = next;
-        if (bstrcmp(next->name, res->res_dir.name())) {
+        if (bstrcmp(next->name, res->res_dir.resource_name_)) {
           Emsg2(M_ERROR_TERM, 0,
                 _("Attempt to define second %s resource named \"%s\" is not "
                   "permitted.\n"),
-                resources[rindex].name, res->res_dir.name());
+                resources[rindex].name, res->res_dir.resource_name_);
         }
       }
       last->next = (CommonResourceHeader*)res;
       Dmsg2(90, "Inserting %s res: %s\n", my_config->ResToStr(type),
-            res->res_dir.name());
+            res->res_dir.resource_name_);
     }
   }
   return (error == 0);

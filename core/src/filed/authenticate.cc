@@ -159,7 +159,7 @@ bool AuthenticateDirector(JobControlRecord* jcr)
 bool AuthenticateWithDirector(JobControlRecord* jcr, DirectorResource* director)
 {
   return jcr->dir_bsock->AuthenticateOutboundConnection(
-      jcr, "Director", me->name(), director->password_, director);
+      jcr, "Director", me->resource_name_, director->password_, director);
 }
 
 /**

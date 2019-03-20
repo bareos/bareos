@@ -116,14 +116,14 @@ static void ShowDisabledJobs(UaContext* ua)
   bool first = true;
 
   foreach_res (job, R_JOB) {
-    if (!ua->AclAccessOk(Job_ACL, job->name(), false)) { continue; }
+    if (!ua->AclAccessOk(Job_ACL, job->resource_name_, false)) { continue; }
 
     if (!job->enabled) {
       if (first) {
         first = false;
         ua->SendMsg(_("Disabled Jobs:\n"));
       }
-      ua->SendMsg("   %s\n", job->name());
+      ua->SendMsg("   %s\n", job->resource_name_);
     }
   }
 
@@ -139,14 +139,14 @@ static void ShowDisabledClients(UaContext* ua)
   bool first = true;
 
   foreach_res (client, R_CLIENT) {
-    if (!ua->AclAccessOk(Client_ACL, client->name(), false)) { continue; }
+    if (!ua->AclAccessOk(Client_ACL, client->resource_name_, false)) { continue; }
 
     if (!client->enabled) {
       if (first) {
         first = false;
         ua->SendMsg(_("Disabled Clients:\n"));
       }
-      ua->SendMsg("   %s\n", client->name());
+      ua->SendMsg("   %s\n", client->resource_name_);
     }
   }
 
@@ -162,14 +162,14 @@ static void ShowDisabledSchedules(UaContext* ua)
   bool first = true;
 
   foreach_res (sched, R_SCHEDULE) {
-    if (!ua->AclAccessOk(Schedule_ACL, sched->name(), false)) { continue; }
+    if (!ua->AclAccessOk(Schedule_ACL, sched->resource_name_, false)) { continue; }
 
     if (!sched->enabled) {
       if (first) {
         first = false;
         ua->SendMsg(_("Disabled Schedules:\n"));
       }
-      ua->SendMsg("   %s\n", sched->name());
+      ua->SendMsg("   %s\n", sched->resource_name_);
     }
   }
 
@@ -1149,11 +1149,11 @@ static inline bool parse_fileset_selection_param(PoolMem& selection,
 
     LockRes(my_config);
     foreach_res (fs, R_FILESET) {
-      if (!ua->AclAccessOk(FileSet_ACL, fs->name(), false)) { continue; }
+      if (!ua->AclAccessOk(FileSet_ACL, fs->resource_name_, false)) { continue; }
       if (selection.strlen() == 0) {
-        temp.bsprintf("AND (FileSet='%s'", fs->name());
+        temp.bsprintf("AND (FileSet='%s'", fs->resource_name_);
       } else {
-        temp.bsprintf(" OR FileSet='%s'", fs->name());
+        temp.bsprintf(" OR FileSet='%s'", fs->resource_name_);
       }
       PmStrcat(selection, temp.c_str());
     }
@@ -1267,7 +1267,7 @@ static bool ListNextvol(UaContext* ua, int ndays)
       goto get_out;
     }
     if (!jcr->jr.PoolId) {
-      ua->ErrorMsg(_("Could not find Pool for Job %s\n"), job->name());
+      ua->ErrorMsg(_("Could not find Pool for Job %s\n"), job->resource_name_);
       continue;
     }
     memset(&pr, 0, sizeof(pr));
@@ -1283,11 +1283,11 @@ static bool ListNextvol(UaContext* ua, int ndays)
                                  fnv_prune)) {
       ua->ErrorMsg(
           _("Could not find next Volume for Job %s (Pool=%s, Level=%s).\n"),
-          job->name(), pr.Name, level_to_str(run->level));
+          job->resource_name_, pr.Name, level_to_str(run->level));
     } else {
       ua->SendMsg(_("The next Volume to be used by Job \"%s\" (Pool=%s, "
                     "Level=%s) will be %s\n"),
-                  job->name(), pr.Name, level_to_str(run->level),
+                  job->resource_name_, pr.Name, level_to_str(run->level),
                   mr.VolumeName);
       found = true;
     }
@@ -1300,7 +1300,7 @@ get_out:
   }
   FreeJcr(jcr);
   if (!found) {
-    ua->ErrorMsg(_("Could not find next Volume for Job %s.\n"), job->hdr.name);
+    ua->ErrorMsg(_("Could not find next Volume for Job %s.\n"), job->resource_name_);
     return false;
   }
   return true;
@@ -1411,7 +1411,7 @@ bool CompleteJcrForJob(JobControlRecord* jcr,
          jcr->res.catalog->db_name);
     return false;
   }
-  bstrncpy(pr.Name, jcr->res.pool->name(), sizeof(pr.Name));
+  bstrncpy(pr.Name, jcr->res.pool->resource_name_, sizeof(pr.Name));
   while (!jcr->db->GetPoolRecord(jcr, &pr)) { /* get by Name */
     /* Try to create the pool */
     if (CreatePool(jcr, jcr->db, jcr->res.pool, POOL_OP_CREATE) < 0) {

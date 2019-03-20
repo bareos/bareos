@@ -40,7 +40,7 @@ MonitorItem::~MonitorItem() { delete d; }
 
 char* MonitorItem::get_name() const
 {
-  return static_cast<UnionOfResources*>(d->resource)->hdr.name;
+  return static_cast<UnionOfResources*>(d->resource)->resource_name_;
 }
 
 void MonitorItem::writecmd(const char* command)

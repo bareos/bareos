@@ -359,7 +359,7 @@ class StorageResource
 inline char* StorageResource::dev_name() const
 {
   DeviceResource* dev = (DeviceResource*)device->first();
-  return dev->name();
+  return dev->resource_name_;
 }
 
 /**
@@ -698,8 +698,8 @@ union UnionOfResources {
   {
     new (&hdr) CommonResourceHeader();
     Dmsg1(900, "hdr:        %p \n", &hdr);
-    Dmsg1(900, "res_dir.hdr %p\n", &res_dir.hdr);
-    Dmsg1(900, "res_con.hdr %p\n", &res_con.hdr);
+    Dmsg1(900, "res_dir.hdr %p\n", &res_dir);
+    Dmsg1(900, "res_con.hdr %p\n", &res_con);
   }
   ~UnionOfResources() {}
 };

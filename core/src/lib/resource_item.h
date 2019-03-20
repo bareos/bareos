@@ -52,6 +52,7 @@ struct ResourceItem {
     dlist** dlistvalue;
     char* bitvalue;
   };
+  BareosResource* static_resource;
   int32_t code;              /* Item code/additional info */
   uint32_t flags;            /* Flags: See CFG_ITEM_* */
   const char* default_value; /* Default value */

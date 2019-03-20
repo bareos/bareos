@@ -363,7 +363,7 @@ static bool CheckResources()
             configfile.c_str());
       OK = false;
     }
-    MyNameIs(0, NULL, me->name());
+    MyNameIs(0, NULL, me->resource_name_);
     if (!me->messages) {
       me->messages = (MessagesResource*)my_config->GetNextRes(R_MSGS, NULL);
       if (!me->messages) {
@@ -388,7 +388,7 @@ static bool CheckResources()
             _("\"PKI Key Pair\" must be defined for File"
               " daemon \"%s\" in %s if either \"PKI Sign\" or"
               " \"PKI Encrypt\" are enabled.\n"),
-            me->name(), configfile.c_str());
+            me->resource_name_, configfile.c_str());
       OK = false;
     }
 
@@ -405,7 +405,7 @@ static bool CheckResources()
           Emsg2(M_FATAL, 0,
                 _("Failed to load public certificate for File"
                   " daemon \"%s\" in %s.\n"),
-                me->name(), configfile.c_str());
+                me->resource_name_, configfile.c_str());
           OK = false;
         }
 
@@ -414,7 +414,7 @@ static bool CheckResources()
           Emsg2(M_FATAL, 0,
                 _("Failed to load private key for File"
                   " daemon \"%s\" in %s.\n"),
-                me->name(), configfile.c_str());
+                me->resource_name_, configfile.c_str());
           OK = false;
         }
       }
@@ -446,7 +446,7 @@ static bool CheckResources()
                   Emsg3(M_FATAL, 0,
                         _("Failed to load private key from file %s for File"
                           " daemon \"%s\" in %s.\n"),
-                        filepath, me->name(), configfile.c_str());
+                        filepath, me->resource_name_, configfile.c_str());
                   OK = false;
                 }
               }
@@ -455,7 +455,7 @@ static bool CheckResources()
               Emsg3(M_FATAL, 0,
                     _("Failed to load trusted signer certificate"
                       " from file %s for File daemon \"%s\" in %s.\n"),
-                    filepath, me->name(), configfile.c_str());
+                    filepath, me->resource_name_, configfile.c_str());
               OK = false;
             }
           }
@@ -488,7 +488,7 @@ static bool CheckResources()
               Emsg3(M_FATAL, 0,
                     _("Failed to load master key certificate"
                       " from file %s for File daemon \"%s\" in %s.\n"),
-                    filepath, me->name(), configfile.c_str());
+                    filepath, me->resource_name_, configfile.c_str());
               OK = false;
             }
           }

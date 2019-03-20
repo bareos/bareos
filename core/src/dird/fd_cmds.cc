@@ -123,7 +123,7 @@ static bool connect_outbound_to_file_daemon(JobControlRecord* jcr,
 
   if (!IsConnectingToClientAllowed(jcr)) {
     Dmsg1(120, "connecting to client \"%s\" is not allowed.\n",
-          jcr->res.client->name());
+          jcr->res.client->resource_name_);
     return false;
   }
 
@@ -133,7 +133,7 @@ static bool connect_outbound_to_file_daemon(JobControlRecord* jcr,
 
   char name[MAX_NAME_LENGTH + 100];
   bstrncpy(name, _("Client: "), sizeof(name));
-  bstrncat(name, jcr->res.client->name(), sizeof(name));
+  bstrncat(name, jcr->res.client->resource_name_, sizeof(name));
 
   fd->SetSourceAddress(me->DIRsrc_addr);
   if (!fd->connect(jcr, retry_interval, max_retry_time, heart_beat, name,
@@ -302,7 +302,7 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
       }
     } else {
       Jmsg(jcr, M_FATAL, 0, "\nFailed to connect to client \"%s\".\n",
-           jcr->res.client->name());
+           jcr->res.client->resource_name_);
     }
     connect_tries--;
   } while (!tcp_connect_failed && connect_tries && !success &&
@@ -370,14 +370,14 @@ int SendJobInfoToFileDaemon(JobControlRecord* jcr)
     Dmsg1(110, "<filed: %s", fd->msg);
     if (!bstrncmp(fd->msg, OKjob, strlen(OKjob))) {
       Jmsg(jcr, M_FATAL, 0, _("File daemon \"%s\" rejected Job command: %s\n"),
-           jcr->res.client->hdr.name, fd->msg);
+           jcr->res.client->resource_name_, fd->msg);
       jcr->setJobStatus(JS_ErrorTerminated);
       return 0;
     } else if (jcr->db) {
       ClientDbRecord cr;
 
       memset(&cr, 0, sizeof(cr));
-      bstrncpy(cr.Name, jcr->res.client->hdr.name, sizeof(cr.Name));
+      bstrncpy(cr.Name, jcr->res.client->resource_name_, sizeof(cr.Name));
       cr.AutoPrune = jcr->res.client->AutoPrune;
       cr.FileRetention = jcr->res.client->FileRetention;
       cr.JobRetention = jcr->res.client->JobRetention;
@@ -838,7 +838,7 @@ int SendRunscriptsCommands(JobControlRecord* jcr)
       ehost = edit_job_codes(jcr, ehost, cmd->target, "");
       Dmsg2(200, "dird: runscript %s -> %s\n", cmd->target, ehost);
 
-      if (bstrcmp(ehost, jcr->res.client->name())) {
+      if (bstrcmp(ehost, jcr->res.client->resource_name_)) {
         PmStrcpy(msg, cmd->command);
         BashSpaces(msg);
 
@@ -915,7 +915,7 @@ static int RestoreObjectHandler(void* ctx, int num_fields, char** row)
     Jmsg(jcr, M_WARNING, 0,
          _("Client \"%s\" may not be used to restore "
            "this job. Please upgrade your client.\n"),
-         jcr->res.client->name());
+         jcr->res.client->resource_name_);
     return 1;
   }
 
@@ -1235,12 +1235,12 @@ void DoNativeClientStatus(UaContext* ua, ClientResource* client, char* cmd)
    * Try to connect for 15 seconds
    */
   if (!ua->api) {
-    ua->SendMsg(_("Connecting to Client %s at %s:%d\n"), client->name(),
+    ua->SendMsg(_("Connecting to Client %s at %s:%d\n"), client->resource_name_,
                 client->address, client->FDport);
   }
 
   if (!ConnectToFileDaemon(ua->jcr, 1, 15, false, ua)) {
-    ua->SendMsg(_("\nFailed to connect to Client %s.\n====\n"), client->name());
+    ua->SendMsg(_("\nFailed to connect to Client %s.\n====\n"), client->resource_name_);
     if (ua->jcr->file_bsock) {
       ua->jcr->file_bsock->close();
       delete ua->jcr->file_bsock;
@@ -1283,12 +1283,12 @@ void DoClientResolve(UaContext* ua, ClientResource* client)
    * Try to connect for 15 seconds
    */
   if (!ua->api) {
-    ua->SendMsg(_("Connecting to Client %s at %s:%d\n"), client->name(),
+    ua->SendMsg(_("Connecting to Client %s at %s:%d\n"), client->resource_name_,
                 client->address, client->FDport);
   }
 
   if (!ConnectToFileDaemon(ua->jcr, 1, 15, false, ua)) {
-    ua->SendMsg(_("\nFailed to connect to Client %s.\n====\n"), client->name());
+    ua->SendMsg(_("\nFailed to connect to Client %s.\n====\n"), client->resource_name_);
     if (ua->jcr->file_bsock) {
       ua->jcr->file_bsock->close();
       delete ua->jcr->file_bsock;

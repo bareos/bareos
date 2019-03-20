@@ -273,7 +273,7 @@ int main(int argc, char* argv[])
 
   if (test_config) { TerminateStored(0); }
 
-  MyNameIs(0, (char**)NULL, me->name()); /* Set our real name */
+  MyNameIs(0, (char**)NULL, me->resource_name_); /* Set our real name */
 
   CreatePidFile(me->pid_directory, "bareos-sd",
                 GetFirstPortHostOrder(me->SDaddrs));
@@ -403,7 +403,7 @@ static int CheckResources()
       Jmsg(NULL, M_FATAL, 0,
            _("LabelMedia enabled is incompatible with tape crypto on Device "
              "\"%s\" in %s.\n"),
-           device->name(), configfile.c_str());
+           device->resource_name_, configfile.c_str());
       OK = false;
     }
   }

@@ -115,8 +115,8 @@ static int32_t res_all_size = sizeof(res_all);
  *
  */
 static ResourceItem dir_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, "The name of the resource." },
-  { "Description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL, NULL, NULL },
+  { "Name", CFG_TYPE_NAME, ITEM(res_dir.resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, "The name of the resource." },
+  { "Description", CFG_TYPE_STR, ITEM(res_dir.description_), 0, 0, NULL, NULL, NULL },
   { "Messages", CFG_TYPE_RES, ITEM(res_dir.messages), R_MSGS, 0, NULL, NULL, NULL },
   { "DirPort", CFG_TYPE_ADDRESSES_PORT, ITEM(res_dir.DIRaddrs), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL },
   { "DirAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_dir.DIRaddrs), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL },
@@ -169,9 +169,9 @@ static ResourceItem dir_items[] = {
  * name handler value code flags default_value
  */
 static ResourceItem profile_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_profile.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
+  { "Name", CFG_TYPE_NAME, ITEM(res_profile.resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL,
      "The name of the resource." },
-  { "Description", CFG_TYPE_STR, ITEM(res_profile.hdr.desc), 0, 0, NULL, NULL,
+  { "Description", CFG_TYPE_STR, ITEM(res_profile.description_), 0, 0, NULL, NULL,
      "Additional information about the resource. Only used for UIs." },
   { "JobACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Job_ACL, 0, NULL, NULL,
      "Lists the Job resources, this resource has access to. The special keyword *all* allows access to all Job resources." },
@@ -202,8 +202,8 @@ static ResourceItem profile_items[] = {
  * name handler value code flags default_value
  */
 static ResourceItem con_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_con.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-  { "Description", CFG_TYPE_STR, ITEM(res_con.hdr.desc), 0, 0, NULL, NULL, NULL },
+  { "Name", CFG_TYPE_NAME, ITEM(res_con.resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+  { "Description", CFG_TYPE_STR, ITEM(res_con.description_), 0, 0, NULL, NULL, NULL },
   { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_con.password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
   { "JobACL", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Job_ACL, 0, NULL, NULL, NULL },
   { "ClientACL", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Client_ACL, 0, NULL, NULL, NULL },
@@ -232,9 +232,9 @@ static ResourceItem con_items[] = {
  * name handler value code flags default_value
  */
 static ResourceItem cli_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_client.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
+  { "Name", CFG_TYPE_NAME, ITEM(res_client.resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL,
      "The name of the resource." },
-  { "Description", CFG_TYPE_STR, ITEM(res_client.hdr.desc), 0, 0, NULL, NULL, NULL },
+  { "Description", CFG_TYPE_STR, ITEM(res_client.description_), 0, 0, NULL, NULL, NULL },
   { "Protocol", CFG_TYPE_AUTHPROTOCOLTYPE, ITEM(res_client.Protocol), 0, CFG_ITEM_DEFAULT, "Native", "13.2.0-", NULL },
   { "AuthType", CFG_TYPE_AUTHTYPE, ITEM(res_client.AuthType), 0, CFG_ITEM_DEFAULT, "None", NULL, NULL },
   { "Address", CFG_TYPE_STR, ITEM(res_client.address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
@@ -281,9 +281,9 @@ static ResourceItem cli_items[] = {
  * name handler value code flags default_value
  */
 static ResourceItem store_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_store.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
+  { "Name", CFG_TYPE_NAME, ITEM(res_store.resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL,
       "The name of the resource." },
-  { "Description", CFG_TYPE_STR, ITEM(res_store.hdr.desc), 0, 0, NULL, NULL, NULL },
+  { "Description", CFG_TYPE_STR, ITEM(res_store.description_), 0, 0, NULL, NULL, NULL },
   { "Protocol", CFG_TYPE_AUTHPROTOCOLTYPE, ITEM(res_store.Protocol), 0, CFG_ITEM_DEFAULT, "Native", NULL, NULL },
   { "AuthType", CFG_TYPE_AUTHTYPE, ITEM(res_store.AuthType), 0, CFG_ITEM_DEFAULT, "None", NULL, NULL },
   { "Address", CFG_TYPE_STR, ITEM(res_store.address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
@@ -326,9 +326,9 @@ static ResourceItem store_items[] = {
  * name handler value code flags default_value
  */
 static ResourceItem cat_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_cat.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
+  { "Name", CFG_TYPE_NAME, ITEM(res_cat.resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL,
      "The name of the resource." },
-  { "Description", CFG_TYPE_STR, ITEM(res_cat.hdr.desc), 0, 0, NULL, NULL, NULL },
+  { "Description", CFG_TYPE_STR, ITEM(res_cat.description_), 0, 0, NULL, NULL, NULL },
   { "Address", CFG_TYPE_STR, ITEM(res_cat.db_address), 0, CFG_ITEM_ALIAS, NULL, NULL, NULL },
   { "DbAddress", CFG_TYPE_STR, ITEM(res_cat.db_address), 0, 0, NULL, NULL, NULL },
   { "DbPort", CFG_TYPE_PINT32, ITEM(res_cat.db_port), 0, 0, NULL, NULL, NULL },
@@ -369,9 +369,9 @@ static ResourceItem cat_items[] = {
  * name handler value code flags default_value
  */
 ResourceItem job_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_job.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
+  { "Name", CFG_TYPE_NAME, ITEM(res_job.resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL,
      "The name of the resource." },
-  { "Description", CFG_TYPE_STR, ITEM(res_job.hdr.desc), 0, 0, NULL, NULL, NULL },
+  { "Description", CFG_TYPE_STR, ITEM(res_job.description_), 0, 0, NULL, NULL, NULL },
   { "Type", CFG_TYPE_JOBTYPE, ITEM(res_job.JobType), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
   { "Protocol", CFG_TYPE_PROTOCOLTYPE, ITEM(res_job.Protocol), 0, CFG_ITEM_DEFAULT, "Native", NULL, NULL },
   { "BackupFormat", CFG_TYPE_STR, ITEM(res_job.backup_format), 0, CFG_ITEM_DEFAULT, "Native", NULL, NULL },
@@ -479,9 +479,9 @@ ResourceItem job_items[] = {
  * name handler value code flags default_value
  */
 static ResourceItem fs_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_fs.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
+  { "Name", CFG_TYPE_NAME, ITEM(res_fs.resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL,
      "The name of the resource." },
-  { "Description", CFG_TYPE_STR, ITEM(res_fs.hdr.desc), 0, 0, NULL, NULL, NULL },
+  { "Description", CFG_TYPE_STR, ITEM(res_fs.description_), 0, 0, NULL, NULL, NULL },
   { "Include", CFG_TYPE_INCEXC, { 0 }, 0, CFG_ITEM_NO_EQUALS, NULL, NULL, NULL },
   { "Exclude", CFG_TYPE_INCEXC, { 0 }, 1, CFG_ITEM_NO_EQUALS, NULL, NULL, NULL },
   { "IgnoreFileSetChanges", CFG_TYPE_BOOL, ITEM(res_fs.ignore_fs_changes), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
@@ -495,9 +495,9 @@ static ResourceItem fs_items[] = {
  * name handler value code flags default_value
  */
 static ResourceItem sch_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_sch.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
+  { "Name", CFG_TYPE_NAME, ITEM(res_sch.resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL,
      "The name of the resource." },
-  { "Description", CFG_TYPE_STR, ITEM(res_sch.hdr.desc), 0, 0, NULL, NULL, NULL },
+  { "Description", CFG_TYPE_STR, ITEM(res_sch.description_), 0, 0, NULL, NULL, NULL },
   { "Run", CFG_TYPE_RUN, ITEM(res_sch.run), 0, 0, NULL, NULL, NULL },
   { "Enabled", CFG_TYPE_BOOL, ITEM(res_sch.enabled), 0, CFG_ITEM_DEFAULT, "true", NULL,
      "En- or disable this resource." },
@@ -510,9 +510,9 @@ static ResourceItem sch_items[] = {
  * name handler value code flags default_value
  */
 static ResourceItem pool_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_pool.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
+  { "Name", CFG_TYPE_NAME, ITEM(res_pool.resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL,
      "The name of the resource." },
-  { "Description", CFG_TYPE_STR, ITEM(res_pool.hdr.desc), 0, 0, NULL, NULL, NULL },
+  { "Description", CFG_TYPE_STR, ITEM(res_pool.description_), 0, 0, NULL, NULL, NULL },
   { "PoolType", CFG_TYPE_POOLTYPE, ITEM(res_pool.pool_type), 0, CFG_ITEM_DEFAULT, "Backup", NULL, NULL },
   { "LabelFormat", CFG_TYPE_STRNAME, ITEM(res_pool.label_format), 0, 0, NULL, NULL, NULL },
   { "LabelType", CFG_TYPE_LABEL, ITEM(res_pool.LabelType), 0, 0, NULL, NULL, NULL },
@@ -553,9 +553,9 @@ static ResourceItem pool_items[] = {
  * name handler value code flags default_value
  */
 static ResourceItem counter_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_counter.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
+  { "Name", CFG_TYPE_NAME, ITEM(res_counter.resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL,
      "The name of the resource." },
-  { "Description", CFG_TYPE_STR, ITEM(res_counter.hdr.desc), 0, 0, NULL, NULL, NULL },
+  { "Description", CFG_TYPE_STR, ITEM(res_counter.description_), 0, 0, NULL, NULL, NULL },
   { "Minimum", CFG_TYPE_INT32, ITEM(res_counter.MinValue), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
   { "Maximum", CFG_TYPE_PINT32, ITEM(res_counter.MaxValue), 0, CFG_ITEM_DEFAULT, "2147483647" /* INT32_MAX */, NULL, NULL },
   { "WrapCounter", CFG_TYPE_RES, ITEM(res_counter.WrapCounter), R_COUNTER, 0, NULL, NULL, NULL },
@@ -1091,8 +1091,8 @@ static void PropagateResource(ResourceItem* items,
   uint32_t offset;
 
   for (int i = 0; items[i].name; i++) {
-    if (!BitIsSet(i, dest->hdr.item_present) &&
-        BitIsSet(i, source->hdr.item_present)) {
+    if (!BitIsSet(i, dest->item_present_) &&
+        BitIsSet(i, source->item_present_)) {
       offset = (char*)(items[i].value) - (char*)&res_all;
       switch (items[i].type) {
         case CFG_TYPE_STR:
@@ -1106,7 +1106,7 @@ static void PropagateResource(ResourceItem* items,
           svalue = (char**)((char*)dest + offset);
           if (*svalue) { free(*svalue); }
           *svalue = bstrdup(*def_svalue);
-          SetBit(i, dest->hdr.item_present);
+          SetBit(i, dest->item_present_);
           SetBit(i, dest->hdr.inherit_content);
           break;
         }
@@ -1122,7 +1122,7 @@ static void PropagateResource(ResourceItem* items,
             Pmsg1(000, _("Hey something is wrong. p=0x%lu\n"), *svalue);
           }
           *svalue = *def_svalue;
-          SetBit(i, dest->hdr.item_present);
+          SetBit(i, dest->item_present_);
           SetBit(i, dest->hdr.inherit_content);
           break;
         }
@@ -1147,7 +1147,7 @@ static void PropagateResource(ResourceItem* items,
               (*new_list)->append(bstrdup(str));
             }
 
-            SetBit(i, dest->hdr.item_present);
+            SetBit(i, dest->item_present_);
             SetBit(i, dest->hdr.inherit_content);
           }
           break;
@@ -1173,7 +1173,7 @@ static void PropagateResource(ResourceItem* items,
               (*new_list)->append(res);
             }
 
-            SetBit(i, dest->hdr.item_present);
+            SetBit(i, dest->item_present_);
             SetBit(i, dest->hdr.inherit_content);
           }
           break;
@@ -1199,7 +1199,7 @@ static void PropagateResource(ResourceItem* items,
               (*new_list)->append(bstrdup(str));
             }
 
-            SetBit(i, dest->hdr.item_present);
+            SetBit(i, dest->item_present_);
             SetBit(i, dest->hdr.inherit_content);
           }
           break;
@@ -1222,7 +1222,7 @@ static void PropagateResource(ResourceItem* items,
           def_ivalue = (uint32_t*)((char*)(source) + offset);
           ivalue = (uint32_t*)((char*)dest + offset);
           *ivalue = *def_ivalue;
-          SetBit(i, dest->hdr.item_present);
+          SetBit(i, dest->item_present_);
           SetBit(i, dest->hdr.inherit_content);
           break;
         }
@@ -1238,7 +1238,7 @@ static void PropagateResource(ResourceItem* items,
           def_lvalue = (int64_t*)((char*)(source) + offset);
           lvalue = (int64_t*)((char*)dest + offset);
           *lvalue = *def_lvalue;
-          SetBit(i, dest->hdr.item_present);
+          SetBit(i, dest->item_present_);
           SetBit(i, dest->hdr.inherit_content);
           break;
         }
@@ -1251,7 +1251,7 @@ static void PropagateResource(ResourceItem* items,
           def_bvalue = (bool*)((char*)(source) + offset);
           bvalue = (bool*)((char*)dest + offset);
           *bvalue = *def_bvalue;
-          SetBit(i, dest->hdr.item_present);
+          SetBit(i, dest->item_present_);
           SetBit(i, dest->hdr.inherit_content);
           break;
         }
@@ -1266,7 +1266,7 @@ static void PropagateResource(ResourceItem* items,
 
           d_pwd->encoding = s_pwd->encoding;
           d_pwd->value = bstrdup(s_pwd->value);
-          SetBit(i, dest->hdr.item_present);
+          SetBit(i, dest->item_present_);
           SetBit(i, dest->hdr.inherit_content);
           break;
         }
@@ -1297,11 +1297,11 @@ bool ValidateResource(int res_type, ResourceItem* items, BareosResource* res)
 
   for (int i = 0; items[i].name; i++) {
     if (items[i].flags & CFG_ITEM_REQUIRED) {
-      if (!BitIsSet(i, res->hdr.item_present)) {
+      if (!BitIsSet(i, res->item_present_)) {
         Jmsg(NULL, M_ERROR, 0,
              _("\"%s\" directive in %s \"%s\" resource is required, but not "
                "found.\n"),
-             items[i].name, my_config->ResToStr(res_type), res->name());
+             items[i].name, my_config->ResToStr(res_type), res->resource_name_);
         return false;
       }
     }
@@ -1339,7 +1339,7 @@ bool JobResource::validate()
         Jmsg(NULL, M_ERROR, 0,
              _("\"client\" directive in Job \"%s\" resource is required, but "
                "not found.\n"),
-             name());
+             resource_name_);
         return false;
       }
 
@@ -1347,13 +1347,14 @@ bool JobResource::validate()
         Jmsg(NULL, M_ERROR, 0,
              _("\"fileset\" directive in Job \"%s\" resource is required, but "
                "not found.\n"),
-             name());
+             resource_name_);
         return false;
       }
 
       if (!storage && (!pool || !pool->storage)) {
         Jmsg(NULL, M_ERROR, 0,
-             _("No storage specified in Job \"%s\" nor in Pool.\n"), name());
+             _("No storage specified in Job \"%s\" nor in Pool.\n"),
+             resource_name_);
         return false;
       }
       break;
@@ -1368,7 +1369,7 @@ char* CatalogResource::display(POOLMEM* dst)
        "catalog=%s\ndb_name=%s\ndb_driver=%s\ndb_user=%s\n"
        "db_password=%s\ndb_address=%s\ndb_port=%i\n"
        "db_socket=%s\n",
-       name(), NPRTB(db_name), NPRTB(db_driver), NPRTB(db_user),
+       resource_name_, NPRTB(db_name), NPRTB(db_driver), NPRTB(db_user),
        NPRTB(db_password.value), NPRTB(db_address), db_port, NPRTB(db_socket));
 
   return dst;
@@ -1565,32 +1566,32 @@ static inline void PrintConfigRun(ResourceItem* item, PoolMem& cfg_str)
        * Overrides
        */
       if (run->pool) {
-        Mmsg(temp, "pool=\"%s\" ", run->pool->name());
+        Mmsg(temp, "pool=\"%s\" ", run->pool->resource_name_);
         PmStrcat(run_str, temp.c_str());
       }
 
       if (run->full_pool) {
-        Mmsg(temp, "fullpool=\"%s\" ", run->full_pool->name());
+        Mmsg(temp, "fullpool=\"%s\" ", run->full_pool->resource_name_);
         PmStrcat(run_str, temp.c_str());
       }
 
       if (run->vfull_pool) {
-        Mmsg(temp, "virtualfullpool=\"%s\" ", run->vfull_pool->name());
+        Mmsg(temp, "virtualfullpool=\"%s\" ", run->vfull_pool->resource_name_);
         PmStrcat(run_str, temp.c_str());
       }
 
       if (run->inc_pool) {
-        Mmsg(temp, "incrementalpool=\"%s\" ", run->inc_pool->name());
+        Mmsg(temp, "incrementalpool=\"%s\" ", run->inc_pool->resource_name_);
         PmStrcat(run_str, temp.c_str());
       }
 
       if (run->diff_pool) {
-        Mmsg(temp, "differentialpool=\"%s\" ", run->diff_pool->name());
+        Mmsg(temp, "differentialpool=\"%s\" ", run->diff_pool->resource_name_);
         PmStrcat(run_str, temp.c_str());
       }
 
       if (run->next_pool) {
-        Mmsg(temp, "nextpool=\"%s\" ", run->next_pool->name());
+        Mmsg(temp, "nextpool=\"%s\" ", run->next_pool->resource_name_);
         PmStrcat(run_str, temp.c_str());
       }
 
@@ -1605,12 +1606,12 @@ static inline void PrintConfigRun(ResourceItem* item, PoolMem& cfg_str)
       }
 
       if (run->storage) {
-        Mmsg(temp, "storage=\"%s\" ", run->storage->name());
+        Mmsg(temp, "storage=\"%s\" ", run->storage->resource_name_);
         PmStrcat(run_str, temp.c_str());
       }
 
       if (run->msgs) {
-        Mmsg(temp, "messages=\"%s\" ", run->msgs->name());
+        Mmsg(temp, "messages=\"%s\" ", run->msgs->resource_name_);
         PmStrcat(run_str, temp.c_str());
       }
 
@@ -1960,11 +1961,11 @@ bool FilesetResource::PrintConfig(PoolMem& buff,
   Mmsg(temp, "FileSet {\n");
   PmStrcat(cfg_str, temp.c_str());
 
-  Mmsg(temp, "Name = \"%s\"\n", this->name());
+  Mmsg(temp, "Name = \"%s\"\n", this->resource_name_);
   IndentConfigItem(cfg_str, 1, temp.c_str());
 
-  if (this->hdr.desc != NULL) {
-    Mmsg(temp, "Description = \"%s\"\n", this->hdr.desc);
+  if (this->description_ != NULL) {
+    Mmsg(temp, "Description = \"%s\"\n", this->description_);
     IndentConfigItem(cfg_str, 1, temp.c_str());
   }
 
@@ -2434,9 +2435,9 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
        * Find resource saved in pass 1
        */
       if (!(res = (UnionOfResources*)my_config->GetResWithName(
-                R_POOL, res_all.res_pool.name()))) {
+                R_POOL, res_all.res_pool.resource_name_))) {
         Emsg1(M_ERROR, 0, _("Cannot find Pool resource %s\n"),
-              res_all.res_pool.name());
+              res_all.res_pool.resource_name_);
         return false;
       } else {
         /*
@@ -2453,9 +2454,9 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       break;
     case R_CONSOLE:
       if (!(res = (UnionOfResources*)my_config->GetResWithName(
-                R_CONSOLE, res_all.res_con.name()))) {
+                R_CONSOLE, res_all.res_con.resource_name_))) {
         Emsg1(M_ERROR, 0, _("Cannot find Console resource %s\n"),
-              res_all.res_con.name());
+              res_all.res_con.resource_name_);
         return false;
       } else {
         res->res_con.tls_cert_.allowed_certificate_common_names_ =
@@ -2465,9 +2466,9 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       break;
     case R_DIRECTOR:
       if (!(res = (UnionOfResources*)my_config->GetResWithName(
-                R_DIRECTOR, res_all.res_dir.name()))) {
+                R_DIRECTOR, res_all.res_dir.resource_name_))) {
         Emsg1(M_ERROR, 0, _("Cannot find Director resource %s\n"),
-              res_all.res_dir.name());
+              res_all.res_dir.resource_name_);
         return false;
       } else {
         res->res_dir.plugin_names = res_all.res_dir.plugin_names;
@@ -2479,9 +2480,9 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       break;
     case R_STORAGE:
       if (!(res = (UnionOfResources*)my_config->GetResWithName(
-                type, res_all.res_store.name()))) {
+                type, res_all.res_store.resource_name_))) {
         Emsg1(M_ERROR, 0, _("Cannot find Storage resource %s\n"),
-              res_all.res_dir.name());
+              res_all.res_dir.resource_name_);
         return false;
       } else {
         int status;
@@ -2517,9 +2518,9 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
     case R_JOBDEFS:
     case R_JOB:
       if (!(res = (UnionOfResources*)my_config->GetResWithName(
-                type, res_all.res_job.name()))) {
+                type, res_all.res_job.resource_name_))) {
         Emsg1(M_ERROR, 0, _("Cannot find Job resource %s\n"),
-              res_all.res_job.name());
+              res_all.res_job.resource_name_);
         return false;
       } else {
         res->res_job.messages = res_all.res_job.messages;
@@ -2545,7 +2546,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
 
         /*
          * TODO: JobDefs where/regexwhere doesn't work well (but this is not
-         * very useful) We have to SetBit(index, res_all.hdr.item_present); or
+         * very useful) We have to SetBit(index, res_all.item_present_); or
          * something like that
          *
          * We take RegexWhere before all other options
@@ -2579,9 +2580,9 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       break;
     case R_COUNTER:
       if (!(res = (UnionOfResources*)my_config->GetResWithName(
-                R_COUNTER, res_all.res_counter.name()))) {
+                R_COUNTER, res_all.res_counter.resource_name_))) {
         Emsg1(M_ERROR, 0, _("Cannot find Counter resource %s\n"),
-              res_all.res_counter.name());
+              res_all.res_counter.resource_name_);
         return false;
       } else {
         res->res_counter.Catalog = res_all.res_counter.Catalog;
@@ -2590,9 +2591,9 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       break;
     case R_CLIENT:
       if (!(res = (UnionOfResources*)my_config->GetResWithName(
-                R_CLIENT, res_all.res_client.name()))) {
+                R_CLIENT, res_all.res_client.resource_name_))) {
         Emsg1(M_ERROR, 0, _("Cannot find Client resource %s\n"),
-              res_all.res_client.name());
+              res_all.res_client.resource_name_);
         return false;
       } else {
         if (res_all.res_client.catalog) {
@@ -2620,9 +2621,9 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
        * into the Schedule resource.
        */
       if (!(res = (UnionOfResources*)my_config->GetResWithName(
-                R_SCHEDULE, res_all.res_client.name()))) {
+                R_SCHEDULE, res_all.res_client.resource_name_))) {
         Emsg1(M_ERROR, 0, _("Cannot find Schedule resource %s\n"),
-              res_all.res_client.name());
+              res_all.res_client.resource_name_);
         return false;
       } else {
         res->res_sch.run = res_all.res_sch.run;
@@ -2638,14 +2639,14 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
    * Note, the resource name was already saved during pass 1,
    * so here, we can just release it.
    */
-  if (res_all.res_dir.hdr.name) {
-    free(res_all.res_dir.hdr.name);
-    res_all.res_dir.hdr.name = NULL;
+  if (res_all.res_dir.resource_name_) {
+    free(res_all.res_dir.resource_name_);
+    res_all.res_dir.resource_name_ = NULL;
   }
 
-  if (res_all.res_dir.hdr.desc) {
-    free(res_all.res_dir.hdr.desc);
-    res_all.res_dir.hdr.desc = NULL;
+  if (res_all.res_dir.description_) {
+    free(res_all.res_dir.description_);
+    res_all.res_dir.description_ = NULL;
   }
 
   return result;
@@ -2752,7 +2753,7 @@ static void StorePooltype(LEX* lc, ResourceItem* item, int index, int pass)
   }
 
   ScanToEol(lc);
-  SetBit(index, res_all.hdr.item_present);
+  SetBit(index, res_all.item_present_);
   ClearBit(index, res_all.hdr.inherit_content);
 }
 
@@ -2779,7 +2780,7 @@ static void StoreActiononpurge(LEX* lc, ResourceItem* item, int index, int pass)
   }
 
   ScanToEol(lc);
-  SetBit(index, res_all.hdr.item_present);
+  SetBit(index, res_all.item_present_);
   ClearBit(index, res_all.hdr.inherit_content);
 }
 
@@ -2799,10 +2800,10 @@ static void StoreDevice(LEX* lc, ResourceItem* item, int index, int pass)
     if (!res_head[rindex]) {
       res = (UnionOfResources*)malloc(resources[rindex].size);
       memset(res, 0, resources[rindex].size);
-      res->res_dev.hdr.name = bstrdup(lc->str);
+      res->res_dev.resource_name_ = bstrdup(lc->str);
       res_head[rindex] = (CommonResourceHeader*)res; /* store first entry */
       Dmsg3(900, "Inserting first %s res: %s index=%d\n",
-            my_config->ResToStr(R_DEVICE), res->res_dir.name(), rindex);
+            my_config->ResToStr(R_DEVICE), res->res_dir.resource_name_, rindex);
     } else {
       CommonResourceHeader* next;
       /*
@@ -2817,16 +2818,16 @@ static void StoreDevice(LEX* lc, ResourceItem* item, int index, int pass)
       if (!found) {
         res = (UnionOfResources*)malloc(resources[rindex].size);
         memset(res, 0, resources[rindex].size);
-        res->res_dev.hdr.name = bstrdup(lc->str);
+        res->res_dev.resource_name_ = bstrdup(lc->str);
         next->next = (CommonResourceHeader*)res;
         Dmsg4(900, "Inserting %s res: %s index=%d pass=%d\n",
-              my_config->ResToStr(R_DEVICE), res->res_dir.name(), rindex,
-              pass);
+              my_config->ResToStr(R_DEVICE), res->res_dir.resource_name_,
+              rindex, pass);
       }
     }
 
     ScanToEol(lc);
-    SetBit(index, res_all.hdr.item_present);
+    SetBit(index, res_all.item_present_);
     ClearBit(index, res_all.hdr.inherit_content);
   } else {
     my_config->StoreResource(CFG_TYPE_ALIST_RES, lc, item, index, pass);
@@ -2857,7 +2858,7 @@ static void StoreMigtype(LEX* lc, ResourceItem* item, int index, int pass)
   }
 
   ScanToEol(lc);
-  SetBit(index, res_all.hdr.item_present);
+  SetBit(index, res_all.item_present_);
   ClearBit(index, res_all.hdr.inherit_content);
 }
 
@@ -2885,7 +2886,7 @@ static void StoreJobtype(LEX* lc, ResourceItem* item, int index, int pass)
   }
 
   ScanToEol(lc);
-  SetBit(index, res_all.hdr.item_present);
+  SetBit(index, res_all.item_present_);
   ClearBit(index, res_all.hdr.inherit_content);
 }
 
@@ -2913,7 +2914,7 @@ static void StoreProtocoltype(LEX* lc, ResourceItem* item, int index, int pass)
   }
 
   ScanToEol(lc);
-  SetBit(index, res_all.hdr.item_present);
+  SetBit(index, res_all.item_present_);
   ClearBit(index, res_all.hdr.inherit_content);
 }
 
@@ -2938,7 +2939,7 @@ static void StoreReplace(LEX* lc, ResourceItem* item, int index, int pass)
   }
 
   ScanToEol(lc);
-  SetBit(index, res_all.hdr.item_present);
+  SetBit(index, res_all.item_present_);
   ClearBit(index, res_all.hdr.inherit_content);
 }
 
@@ -2968,7 +2969,7 @@ static void StoreAuthprotocoltype(LEX* lc,
     scan_err1(lc, _("Expected a Auth Protocol Type keyword, got: %s"), lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, res_all.hdr.item_present);
+  SetBit(index, res_all.item_present_);
   ClearBit(index, res_all.hdr.inherit_content);
 }
 
@@ -2997,7 +2998,7 @@ static void StoreAuthtype(LEX* lc, ResourceItem* item, int index, int pass)
   }
 
   ScanToEol(lc);
-  SetBit(index, res_all.hdr.item_present);
+  SetBit(index, res_all.item_present_);
   ClearBit(index, res_all.hdr.inherit_content);
 }
 
@@ -3025,7 +3026,7 @@ static void StoreLevel(LEX* lc, ResourceItem* item, int index, int pass)
   }
 
   ScanToEol(lc);
-  SetBit(index, res_all.hdr.item_present);
+  SetBit(index, res_all.item_present_);
   ClearBit(index, res_all.hdr.inherit_content);
 }
 
@@ -3112,7 +3113,7 @@ static void StoreAcl(LEX* lc, ResourceItem* item, int index, int pass)
     if (token == BCT_COMMA) { continue; /* get another ACL */ }
     break;
   }
-  SetBit(index, res_all.hdr.item_present);
+  SetBit(index, res_all.item_present_);
   ClearBit(index, res_all.hdr.inherit_content);
 }
 
@@ -3138,7 +3139,7 @@ static void StoreAudit(LEX* lc, ResourceItem* item, int index, int pass)
     if (token == BCT_COMMA) { continue; }
     break;
   }
-  SetBit(index, res_all.hdr.item_present);
+  SetBit(index, res_all.item_present_);
   ClearBit(index, res_all.hdr.inherit_content);
 }
 /**
@@ -3401,7 +3402,7 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
   }
 
   ScanToEol(lc);
-  SetBit(index, res_all.hdr.item_present);
+  SetBit(index, res_all.item_present_);
   ClearBit(index, res_all.hdr.inherit_content);
 }
 
@@ -3426,16 +3427,18 @@ extern "C" char* job_code_callback_director(JobControlRecord* jcr,
 
   switch (param[0]) {
     case 'f':
-      if (jcr->res.fileset) { return jcr->res.fileset->name(); }
+      if (jcr->res.fileset) { return jcr->res.fileset->resource_name_; }
       break;
     case 'h':
       if (jcr->res.client) { return jcr->res.client->address; }
       break;
     case 'p':
-      if (jcr->res.pool) { return jcr->res.pool->name(); }
+      if (jcr->res.pool) { return jcr->res.pool->resource_name_; }
       break;
     case 'w':
-      if (jcr->res.write_storage) { return jcr->res.write_storage->name(); }
+      if (jcr->res.write_storage) {
+        return jcr->res.write_storage->resource_name_;
+      }
       break;
     case 'x':
       return jcr->spool_data ? yes : no;
@@ -3863,10 +3866,10 @@ static bool AddResourceCopyToEndOfChain(UnionOfResources* res_to_add, int type)
   if (!res_head[rindex]) {
     res_head[rindex] = (CommonResourceHeader*)res; /* store first entry */
     Dmsg3(900, "Inserting first %s res: %s index=%d\n",
-          my_config->ResToStr(type), res->res_dir.name(), rindex);
+          my_config->ResToStr(type), res->res_dir.resource_name_, rindex);
   } else {
     CommonResourceHeader *next, *last;
-    if (!res->res_dir.name()) {
+    if (!res->res_dir.resource_name_) {
       Emsg1(M_ERROR, 0,
             _("Name item is required in %s resource, but not found.\n"),
             resources[rindex].name);
@@ -3877,17 +3880,17 @@ static bool AddResourceCopyToEndOfChain(UnionOfResources* res_to_add, int type)
      */
     for (last = next = res_head[rindex]; next; next = next->next) {
       last = next;
-      if (bstrcmp(next->name, res->res_dir.name())) {
+      if (bstrcmp(next->name, res->res_dir.resource_name_)) {
         Emsg2(M_ERROR, 0,
               _("Attempt to define second %s resource named \"%s\" is not "
                 "permitted.\n"),
-              resources[rindex].name, res->res_dir.name());
+              resources[rindex].name, res->res_dir.resource_name_);
         return false;
       }
     }
     last->next = (CommonResourceHeader*)res;
-    Dmsg3(900, _("Inserting %s res: %s index=%d\n"),
-          my_config->ResToStr(type), res->res_dir.name(), rindex);
+    Dmsg3(900, _("Inserting %s res: %s index=%d\n"), my_config->ResToStr(type),
+          res->res_dir.resource_name_, rindex);
   }
   return true;
 }
@@ -3909,8 +3912,8 @@ static void CreateAndAddUserAgentConsoleResource(ConfigurationParser& my_config)
   console.password_.encoding = dir_resource->password_.encoding;
   console.password_.value = bstrdup(dir_resource->password_.value);
   console.tls_enable_ = true;
-  console.hdr.name = bstrdup("*UserAgent*");
-  console.hdr.desc = bstrdup("root console definition");
+  console.resource_name_ = bstrdup("*UserAgent*");
+  console.description_ = bstrdup("root console definition");
   console.hdr.rcode = 1013;
   console.hdr.refcnt = 1;
 
@@ -4019,8 +4022,8 @@ static void DumpResource(int type,
   }
 
 bail_out:
-  if (recurse && res->res_dir.hdr.next) {
-    my_config->DumpResourceCb_(type, res->res_dir.hdr.next, sendit, sock,
+  if (recurse && res->res_dir.next_) {
+    my_config->DumpResourceCb_(type, res->res_dir.next_, sendit, sock,
                                hide_sensitive_data, verbose);
   }
 }
@@ -4043,9 +4046,9 @@ static void FreeResource(CommonResourceHeader* sres, int type)
   /*
    * Common stuff -- free the resource name and description
    */
-  nres = (CommonResourceHeader*)res->res_dir.hdr.next;
-  if (res->res_dir.hdr.name) { free(res->res_dir.hdr.name); }
-  if (res->res_dir.hdr.desc) { free(res->res_dir.hdr.desc); }
+  nres = (CommonResourceHeader*)res->res_dir.next_;
+  if (res->res_dir.resource_name_) { free(res->res_dir.resource_name_); }
+  if (res->res_dir.description_) { free(res->res_dir.description_); }
 
   switch (type) {
     case R_DIRECTOR:
@@ -4355,7 +4358,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
        * Ensure that the name item is present however.
        */
       if (items[0].flags & CFG_ITEM_REQUIRED) {
-        if (!BitIsSet(0, res_all.res_dir.hdr.item_present)) {
+        if (!BitIsSet(0, res_all.res_dir.item_present_)) {
           Emsg2(M_ERROR, 0,
                 _("%s item is required in %s resource, but not found.\n"),
                 items[0].name, resources[rindex].name);

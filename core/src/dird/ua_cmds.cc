@@ -877,7 +877,7 @@ static bool CreateCmd(UaContext* ua, const char* cmd)
     case 0:
       ua->ErrorMsg(_("Error: Pool %s already exists.\n"
                      "Use update to change it.\n"),
-                   pool->name());
+                   pool->resource_name_);
       break;
 
     case -1:
@@ -887,7 +887,7 @@ static bool CreateCmd(UaContext* ua, const char* cmd)
     default:
       break;
   }
-  ua->SendMsg(_("Pool %s created.\n"), pool->name());
+  ua->SendMsg(_("Pool %s created.\n"), pool->resource_name_);
   return true;
 }
 
@@ -905,7 +905,7 @@ static inline bool SetbwlimitFiled(UaContext* ua,
   /*
    * Try to connect for 15 seconds
    */
-  ua->SendMsg(_("Connecting to Client %s at %s:%d\n"), client->name(),
+  ua->SendMsg(_("Connecting to Client %s at %s:%d\n"), client->resource_name_,
               client->address, client->FDport);
 
   if (!ConnectToFileDaemon(ua->jcr, 1, 15, false)) {
@@ -959,7 +959,7 @@ static inline bool setbwlimit_stored(UaContext* ua,
   /*
    * Try to connect for 15 seconds
    */
-  ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d\n"), store->name(),
+  ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d\n"), store->resource_name_,
               store->address, store->SDport);
 
   if (!ConnectToStorageDaemon(ua->jcr, 1, 15, false)) {
@@ -1054,9 +1054,9 @@ static bool SetipCmd(UaContext* ua, const char* cmd)
   ClientResource* client;
   char buf[1024];
 
-  client = ua->GetClientResWithName(ua->cons->name());
+  client = ua->GetClientResWithName(ua->cons->resource_name_);
   if (!client) {
-    ua->ErrorMsg(_("Client \"%s\" not found.\n"), ua->cons->name());
+    ua->ErrorMsg(_("Client \"%s\" not found.\n"), ua->cons->resource_name_);
     return false;
   }
 
@@ -1064,7 +1064,7 @@ static bool SetipCmd(UaContext* ua, const char* cmd)
 
   SockaddrToAscii(&(ua->UA_sock->client_addr), buf, sizeof(buf));
   client->address = bstrdup(buf);
-  ua->SendMsg(_("Client \"%s\" address set to %s\n"), client->name(),
+  ua->SendMsg(_("Client \"%s\" address set to %s\n"), client->resource_name_,
               client->address);
 
   return true;
@@ -1124,15 +1124,15 @@ static void DoEnDisableCmd(UaContext* ua, bool setting)
 
   if (sched) {
     sched->enabled = setting;
-    ua->SendMsg(_("Schedule \"%s\" %sabled\n"), sched->name(),
+    ua->SendMsg(_("Schedule \"%s\" %sabled\n"), sched->resource_name_,
                 setting ? "en" : "dis");
   } else if (client) {
     client->enabled = setting;
-    ua->SendMsg(_("Client \"%s\" %sabled\n"), client->name(),
+    ua->SendMsg(_("Client \"%s\" %sabled\n"), client->resource_name_,
                 setting ? "en" : "dis");
   } else if (job) {
     job->enabled = setting;
-    ua->SendMsg(_("Job \"%s\" %sabled\n"), job->name(), setting ? "en" : "dis");
+    ua->SendMsg(_("Job \"%s\" %sabled\n"), job->resource_name_, setting ? "en" : "dis");
   }
 
   ua->WarningMsg(
@@ -1178,7 +1178,7 @@ static void do_storage_setdebug(UaContext* ua,
   /*
    * Try connecting for up to 15 seconds
    */
-  ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d\n"), store->name(),
+  ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d\n"), store->resource_name_,
               store->address, store->SDport);
 
   if (!ConnectToStorageDaemon(jcr, 1, 15, false)) {
@@ -1236,7 +1236,7 @@ static void do_client_setdebug(UaContext* ua,
   /*
    * Try to connect for 15 seconds
    */
-  ua->SendMsg(_("Connecting to Client %s at %s:%d\n"), client->name(),
+  ua->SendMsg(_("Connecting to Client %s at %s:%d\n"), client->resource_name_,
               client->address, client->FDport);
 
   if (!ConnectToFileDaemon(ua->jcr, 1, 15, false)) {
@@ -1804,7 +1804,7 @@ static bool EstimateCmd(UaContext* ua, const char* cmd)
 
   GetLevelSinceTime(jcr);
 
-  ua->SendMsg(_("Connecting to Client %s at %s:%d\n"), jcr->res.client->name(),
+  ua->SendMsg(_("Connecting to Client %s at %s:%d\n"), jcr->res.client->resource_name_,
               jcr->res.client->address, jcr->res.client->FDport);
   if (!ConnectToFileDaemon(jcr, 1, 15, false)) {
     ua->ErrorMsg(_("Failed to connect to Client.\n"));
@@ -2491,7 +2491,7 @@ static bool use_cmd(UaContext* ua, const char* cmd)
     ua->catalog = catalog;
   }
   if (OpenDb(ua)) {
-    ua->SendMsg(_("Using Catalog name=%s DB=%s\n"), ua->catalog->name(),
+    ua->SendMsg(_("Using Catalog name=%s DB=%s\n"), ua->catalog->resource_name_,
                 ua->catalog->db_name);
   }
   return true;
@@ -2675,7 +2675,7 @@ static bool wait_cmd(UaContext* ua, const char* cmd)
 static bool WhoAmICmd(UaContext* ua, const char* cmd)
 {
   std::string message;
-  message = ua->cons ? ua->cons->name() : "root";
+  message = ua->cons ? ua->cons->resource_name_ : "root";
   message += '\n';
   return ua->UA_sock->fsend(message.c_str());
 }

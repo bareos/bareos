@@ -405,11 +405,11 @@ static bool IsVolInAutochanger(ReserveContext& rctx, VolumeReservationItem* vol)
   /*
    * Find resource, and make sure we were able to open it
    */
-  if (bstrcmp(rctx.device_name, changer->name())) {
-    Dmsg1(debuglevel, "Found changer device %s\n", vol->dev->device->name());
+  if (bstrcmp(rctx.device_name, changer->resource_name_)) {
+    Dmsg1(debuglevel, "Found changer device %s\n", vol->dev->device->resource_name_);
     return true;
   }
-  Dmsg1(debuglevel, "Incorrect changer device %s\n", changer->name());
+  Dmsg1(debuglevel, "Incorrect changer device %s\n", changer->resource_name_);
 
   return false;
 }
@@ -483,9 +483,9 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
             if (!IsVolInAutochanger(rctx, vol) || !vol->dev->autoselect) {
               continue;
             }
-          } else if (!bstrcmp(device_name, vol->dev->device->name())) {
+          } else if (!bstrcmp(device_name, vol->dev->device->resource_name_)) {
             Dmsg2(debuglevel, "device=%s not suitable want %s\n",
-                  vol->dev->device->name(), device_name);
+                  vol->dev->device->resource_name_, device_name);
             continue;
           }
 
@@ -572,20 +572,20 @@ int SearchResForDevice(ReserveContext& rctx)
    * Look through Autochangers first
    */
   foreach_res (changer, R_AUTOCHANGER) {
-    Dmsg2(debuglevel, "Try match changer res=%s, wanted %s\n", changer->name(),
+    Dmsg2(debuglevel, "Try match changer res=%s, wanted %s\n", changer->resource_name_,
           rctx.device_name);
     /*
      * Find resource, and make sure we were able to open it
      */
-    if (bstrcmp(rctx.device_name, changer->name())) {
+    if (bstrcmp(rctx.device_name, changer->resource_name_)) {
       /*
        * Try each device in this AutoChanger
        */
       foreach_alist (rctx.device, changer->device) {
-        Dmsg1(debuglevel, "Try changer device %s\n", rctx.device->name());
+        Dmsg1(debuglevel, "Try changer device %s\n", rctx.device->resource_name_);
         if (!rctx.device->autoselect) {
           Dmsg1(100, "Device %s not autoselect skipped.\n",
-                rctx.device->name());
+                rctx.device->resource_name_);
           continue; /* Device is not available */
         }
         status = ReserveDevice(rctx);
@@ -598,10 +598,10 @@ int SearchResForDevice(ReserveContext& rctx)
          */
         if (rctx.store->append == SD_APPEND) {
           Dmsg2(debuglevel, "Device %s reserved=%d for append.\n",
-                rctx.device->name(), rctx.jcr->dcr->dev->NumReserved());
+                rctx.device->resource_name_, rctx.jcr->dcr->dev->NumReserved());
         } else {
           Dmsg2(debuglevel, "Device %s reserved=%d for read.\n",
-                rctx.device->name(), rctx.jcr->read_dcr->dev->NumReserved());
+                rctx.device->resource_name_, rctx.jcr->read_dcr->dev->NumReserved());
         }
         return status;
       }
@@ -613,13 +613,13 @@ int SearchResForDevice(ReserveContext& rctx)
    */
   if (!rctx.autochanger_only) {
     foreach_res (rctx.device, R_DEVICE) {
-      Dmsg2(debuglevel, "Try match res=%s wanted %s\n", rctx.device->name(),
+      Dmsg2(debuglevel, "Try match res=%s wanted %s\n", rctx.device->resource_name_,
             rctx.device_name);
 
       /*
        * Find resource, and make sure we were able to open it
        */
-      if (bstrcmp(rctx.device_name, rctx.device->name())) {
+      if (bstrcmp(rctx.device_name, rctx.device->resource_name_)) {
         status = ReserveDevice(rctx);
         if (status != 1) { /* Try another device */
           continue;
@@ -629,10 +629,10 @@ int SearchResForDevice(ReserveContext& rctx)
          */
         if (rctx.store->append == SD_APPEND) {
           Dmsg2(debuglevel, "Device %s reserved=%d for append.\n",
-                rctx.device->name(), rctx.jcr->dcr->dev->NumReserved());
+                rctx.device->resource_name_, rctx.jcr->dcr->dev->NumReserved());
         } else {
           Dmsg2(debuglevel, "Device %s reserved=%d for read.\n",
-                rctx.device->name(), rctx.jcr->read_dcr->dev->NumReserved());
+                rctx.device->resource_name_, rctx.jcr->read_dcr->dev->NumReserved());
         }
         return status;
       }
@@ -647,7 +647,7 @@ int SearchResForDevice(ReserveContext& rctx)
       foreach_res (rctx.device, R_DEVICE) {
         Dmsg3(debuglevel,
               "Try match res=%s, mediatype=%s wanted mediatype=%s\n",
-              rctx.device->name(), rctx.store->media_type,
+              rctx.device->resource_name_, rctx.store->media_type,
               rctx.store->media_type);
 
         if (bstrcmp(rctx.store->media_type, rctx.device->media_type)) {
@@ -661,10 +661,10 @@ int SearchResForDevice(ReserveContext& rctx)
            */
           if (rctx.store->append == SD_APPEND) {
             Dmsg2(debuglevel, "Device %s reserved=%d for append.\n",
-                  rctx.device->name(), rctx.jcr->dcr->dev->NumReserved());
+                  rctx.device->resource_name_, rctx.jcr->dcr->dev->NumReserved());
           } else {
             Dmsg2(debuglevel, "Device %s reserved=%d for read.\n",
-                  rctx.device->name(), rctx.jcr->read_dcr->dev->NumReserved());
+                  rctx.device->resource_name_, rctx.jcr->read_dcr->dev->NumReserved());
           }
           return status;
         }
@@ -705,7 +705,7 @@ static int ReserveDevice(ReserveContext& rctx)
            _("\n"
              "     Device \"%s\" in changer \"%s\" requested by DIR could not "
              "be opened or does not exist.\n"),
-           rctx.device->name(), rctx.device_name);
+           rctx.device->resource_name_, rctx.device_name);
     } else {
       Jmsg(rctx.jcr, M_WARNING, 0,
            _("\n"
@@ -717,7 +717,7 @@ static int ReserveDevice(ReserveContext& rctx)
   }
 
   rctx.suitable_device = true;
-  Dmsg1(debuglevel, "try reserve %s\n", rctx.device->name());
+  Dmsg1(debuglevel, "try reserve %s\n", rctx.device->resource_name_);
 
   if (rctx.store->append) {
     SetupNewDcrDevice(rctx.jcr, rctx.jcr->dcr, rctx.device->dev, NULL);
@@ -818,7 +818,7 @@ static int ReserveDevice(ReserveContext& rctx)
   if (rctx.notify_dir) {
     PoolMem dev_name;
     BareosSocket* dir = rctx.jcr->dir_bsock;
-    PmStrcpy(dev_name, rctx.device->name());
+    PmStrcpy(dev_name, rctx.device->resource_name_);
     BashSpaces(dev_name);
     ok = dir->fsend(OK_device, dev_name.c_str()); /* Return real device name */
     Dmsg1(debuglevel, ">dird: %s", dir->msg);

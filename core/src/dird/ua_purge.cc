@@ -245,7 +245,7 @@ static bool PurgeFilesFromClient(UaContext* ua, ClientResource* client)
   char ed1[50];
 
   memset(&cr, 0, sizeof(cr));
-  bstrncpy(cr.Name, client->name(), sizeof(cr.Name));
+  bstrncpy(cr.Name, client->resource_name_, sizeof(cr.Name));
   if (!ua->db->CreateClientRecord(ua->jcr, &cr)) { return false; }
 
   memset(&del, 0, sizeof(del));
@@ -261,11 +261,11 @@ static bool PurgeFilesFromClient(UaContext* ua, ClientResource* client)
   if (del.num_ids == 0) {
     ua->WarningMsg(
         _("No Files found for client %s to purge from %s catalog.\n"),
-        client->name(), client->catalog->name());
+        client->resource_name_, client->catalog->resource_name_);
   } else {
     ua->InfoMsg(
         _("Found Files in %d Jobs for client \"%s\" in catalog \"%s\".\n"),
-        del.num_ids, client->name(), client->catalog->name());
+        del.num_ids, client->resource_name_, client->catalog->resource_name_);
     if (!GetConfirmation(ua, "Purge (yes/no)? ")) {
       ua->InfoMsg(_("Purge canceled.\n"));
     } else {
@@ -294,7 +294,7 @@ static bool PurgeJobsFromClient(UaContext* ua, ClientResource* client)
 
   memset(&cr, 0, sizeof(cr));
 
-  bstrncpy(cr.Name, client->name(), sizeof(cr.Name));
+  bstrncpy(cr.Name, client->resource_name_, sizeof(cr.Name));
   if (!ua->db->CreateClientRecord(ua->jcr, &cr)) { return false; }
 
   memset(&del, 0, sizeof(del));
@@ -310,10 +310,10 @@ static bool PurgeJobsFromClient(UaContext* ua, ClientResource* client)
 
   if (del.num_ids == 0) {
     ua->WarningMsg(_("No Jobs found for client %s to purge from %s catalog.\n"),
-                   client->name(), client->catalog->name());
+                   client->resource_name_, client->catalog->resource_name_);
   } else {
     ua->InfoMsg(_("Found %d Jobs for client \"%s\" in catalog \"%s\".\n"),
-                del.num_ids, client->name(), client->catalog->name());
+                del.num_ids, client->resource_name_, client->catalog->resource_name_);
     if (!GetConfirmation(ua, "Purge (yes/no)? ")) {
       ua->InfoMsg(_("Purge canceled.\n"));
     } else {
@@ -427,7 +427,7 @@ static bool PurgeQuotaFromClient(UaContext* ua, ClientResource* client)
   ClientDbRecord cr;
 
   memset(&cr, 0, sizeof(cr));
-  bstrncpy(cr.Name, client->name(), sizeof(cr.Name));
+  bstrncpy(cr.Name, client->resource_name_, sizeof(cr.Name));
   if (!ua->db->CreateClientRecord(ua->jcr, &cr)) { return false; }
   if (!ua->db->CreateQuotaRecord(ua->jcr, &cr)) { return false; }
   if (!ua->db->ResetQuotaRecord(ua->jcr, &cr)) { return false; }
@@ -791,7 +791,7 @@ static bool ActionOnPurgeCmd(UaContext* ua, const char* cmd)
       Dmsg0(100, "Can't get pool resource\n");
       goto bail_out;
     }
-    bstrncpy(pr.Name, pool->name(), sizeof(pr.Name));
+    bstrncpy(pr.Name, pool->resource_name_, sizeof(pr.Name));
     if (!ua->db->GetPoolRecord(ua->jcr, &pr)) {
       Dmsg0(100, "Can't get pool record\n");
       goto bail_out;

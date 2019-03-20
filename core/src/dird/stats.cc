@@ -185,7 +185,7 @@ extern "C" void* statistics_thread(void* arg)
         break;
       }
 
-      PmStrcpy(current_store, store->name());
+      PmStrcpy(current_store, store->resource_name_);
       if (!store->collectstats) {
         UnlockRes(my_config);
         continue;

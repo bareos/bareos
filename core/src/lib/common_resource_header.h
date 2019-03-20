@@ -34,47 +34,51 @@
  */
 class CommonResourceHeader {
  public:
-  CommonResourceHeader* next;       /* Pointer to next resource of this type */
-  char* resource_name;              /* Resource name */
-  char* desc;                       /* Resource description */
-  uint32_t rcode;                   /* Resource id or type */
-  int32_t refcnt;                   /* Reference count for releasing */
-  char item_present[MAX_RES_ITEMS]; /* Set if item is present in conf file */
-  char inherit_content[MAX_RES_ITEMS]; /* Set if item has inherited content */
+  CommonResourceHeader* next_;       /* Pointer to next resource of this type */
+  char* resource_name_;              /* Resource name */
+  char* description_;                /* Resource description */
+  uint32_t rcode;                    /* Resource id or type */
+  int32_t refcnt;                    /* Reference count for releasing */
+  char item_present_[MAX_RES_ITEMS]; /* Set if item is present in conf file */
+  char inherit_content_[MAX_RES_ITEMS]; /* Set if item has inherited content */
 
   CommonResourceHeader()
-      : next(nullptr)
-      , name(nullptr)
-      , desc(nullptr)
+      : next_(nullptr)
+      , resource_name_(nullptr)
+      , description_(nullptr)
       , rcode(0)
       , refcnt(0)
-      , item_present{0}
-      , inherit_content{0}
+      , item_present_{0}
+      , inherit_content_{0}
   {
     return;
   }
 
+  virtual ~CommonResourceHeader() = default;
+
   CommonResourceHeader(const CommonResourceHeader& other)
       : CommonResourceHeader()
   {
-    /* do not copy next because that is part of the resource chain */
-    if (other.name) { name = bstrdup(other.name); }
-    if (other.desc) { desc = bstrdup(other.desc); }
+    /* do not copy next_ because that is part of the resource chain */
+    if (other.resource_name_) {
+      resource_name_ = bstrdup(other.resource_name_);
+    }
+    if (other.description_) { description_ = bstrdup(other.description_); }
     rcode = other.rcode;
     refcnt = other.refcnt;
-    ::memcpy(item_present, other.item_present, MAX_RES_ITEMS);
-    ::memcpy(inherit_content, other.inherit_content, MAX_RES_ITEMS);
+    ::memcpy(item_present_, other.item_present_, MAX_RES_ITEMS);
+    ::memcpy(inherit_content_, other.inherit_content_, MAX_RES_ITEMS);
   }
 
   CommonResourceHeader& operator=(const CommonResourceHeader& rhs)
   {
-    next = rhs.next;
-    name = rhs.name;
-    desc = rhs.desc;
+    next_ = rhs.next_;
+    resource_name_ = rhs.resource_name_;
+    description_ = rhs.description_;
     rcode = rhs.rcode;
     refcnt = rhs.refcnt;
-    ::memcpy(item_present, rhs.item_present, MAX_RES_ITEMS);
-    ::memcpy(inherit_content, rhs.inherit_content, MAX_RES_ITEMS);
+    ::memcpy(item_present_, rhs.item_present_, MAX_RES_ITEMS);
+    ::memcpy(inherit_content_, rhs.inherit_content_, MAX_RES_ITEMS);
     return *this;
   }
 };

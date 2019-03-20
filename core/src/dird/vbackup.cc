@@ -74,7 +74,7 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
 
   if (!AllowDuplicateJob(jcr)) { return false; }
 
-  jcr->jr.PoolId = GetOrCreatePoolRecord(jcr, jcr->res.pool->name());
+  jcr->jr.PoolId = GetOrCreatePoolRecord(jcr, jcr->res.pool->resource_name_);
   if (jcr->jr.PoolId == 0) {
     Dmsg1(dbglevel, "JobId=%d no PoolId\n", (int)jcr->JobId);
     Jmsg(jcr, M_FATAL, 0, _("Could not get or create a Pool record.\n"));
@@ -95,7 +95,7 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
    */
   CopyRstorage(jcr, jcr->res.pool->storage, _("Pool resource"));
 
-  Dmsg2(dbglevel, "Read pool=%s (From %s)\n", jcr->res.rpool->name(),
+  Dmsg2(dbglevel, "Read pool=%s (From %s)\n", jcr->res.rpool->resource_name_,
         jcr->res.rpool_source);
 
   jcr->start_time = time(NULL);
@@ -137,7 +137,7 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
    * will be migrating from pool to pool->NextPool.
    */
   if (jcr->res.next_pool) {
-    jcr->jr.PoolId = GetOrCreatePoolRecord(jcr, jcr->res.next_pool->name());
+    jcr->jr.PoolId = GetOrCreatePoolRecord(jcr, jcr->res.next_pool->resource_name_);
     if (jcr->jr.PoolId == 0) { return false; }
   }
 
@@ -148,8 +148,8 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
 
   jcr->res.pool = jcr->res.next_pool;
 
-  Dmsg2(dbglevel, "Write pool=%s read rpool=%s\n", jcr->res.pool->name(),
-        jcr->res.rpool->name());
+  Dmsg2(dbglevel, "Write pool=%s read rpool=%s\n", jcr->res.pool->resource_name_,
+        jcr->res.rpool->resource_name_);
 
   // CreateClones(jcr);
 
@@ -184,8 +184,8 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   Dmsg2(100, "read_storage_list=%p write_storage_list=%p\n",
         jcr->res.read_storage_list, jcr->res.write_storage_list);
   Dmsg2(100, "Read store=%s, write store=%s\n",
-        ((StorageResource*)jcr->res.read_storage_list->first())->name(),
-        ((StorageResource*)jcr->res.write_storage_list->first())->name());
+        ((StorageResource*)jcr->res.read_storage_list->first())->resource_name_,
+        ((StorageResource*)jcr->res.write_storage_list->first())->resource_name_);
 
   /*
    * Print Job Start message
@@ -434,7 +434,7 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
     jcr->setJobStatus(JS_ErrorTerminated);
   }
 
-  bstrncpy(cr.Name, jcr->res.client->name(), sizeof(cr.Name));
+  bstrncpy(cr.Name, jcr->res.client->resource_name_, sizeof(cr.Name));
   if (!jcr->db->GetClientRecord(jcr, &cr)) {
     Jmsg(jcr, M_WARNING, 0,
          _("Error getting Client record for Job report: ERR=%s"),

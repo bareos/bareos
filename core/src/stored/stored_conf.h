@@ -77,10 +77,8 @@ class DirectorResource
   s_password keyencrkey;          /**< Key Encryption Key */
 };
 
-class NdmpResource {
+class NdmpResource : public BareosResource {
  public:
-  CommonResourceHeader hdr;
-
   uint32_t AuthType;   /**< Authentication Type to use */
   uint32_t LogLevel;   /**< Log level to use for logging NDMP protocol msgs */
   char* username;      /**< NDMP username */
@@ -134,16 +132,6 @@ class StorageResource
   char* log_timestamp_format; /**< Timestamp format to use in generic logging
                                  messages */
   uint64_t max_bandwidth_per_job; /**< Bandwidth limitation (global) */
-};
-
-union UnionOfResources {
-  DirectorResource res_dir;
-  NdmpResource res_ndmp;
-  StorageResource res_store;
-  DeviceResource res_dev;
-  MessagesResource res_msgs;
-  AutochangerResource res_changer;
-  CommonResourceHeader hdr;
 };
 
 ConfigurationParser* InitSdConfig(const char* configfile, int exit_code);

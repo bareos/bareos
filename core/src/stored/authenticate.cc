@@ -100,11 +100,12 @@ bool AuthenticateDirector(JobControlRecord* jcr)
     return false;
   }
 
-  if (!dir->AuthenticateInboundConnection(jcr, "Director", director->name(),
+  if (!dir->AuthenticateInboundConnection(jcr, "Director",
+                                          director->resource_name_,
                                           director->password_, director)) {
     dir->fsend("%s", Dir_sorry);
     Dmsg2(debuglevel, "Unable to authenticate Director \"%s\" at %s.\n",
-          director->name(), dir->who());
+          director->resource_name_, dir->who());
     Jmsg1(jcr, M_ERROR, 0, _("Unable to authenticate Director at %s.\n"),
           dir->who());
     Bmicrosleep(5, 0);

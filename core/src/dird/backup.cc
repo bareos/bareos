@@ -78,7 +78,7 @@ static inline bool ValidateClient(JobControlRecord* jcr)
     default:
       Jmsg(jcr, M_FATAL, 0,
            _("Client %s has illegal backup protocol %s for Native backup\n"),
-           jcr->res.client->name(),
+           jcr->res.client->resource_name_,
            auth_protocol_to_str(jcr->res.client->Protocol));
       return false;
   }
@@ -137,7 +137,7 @@ static inline bool ValidateStorage(JobControlRecord* jcr)
       default:
         Jmsg(jcr, M_FATAL, 0,
              _("Storage %s has illegal backup protocol %s for Native backup\n"),
-             store->name(), auth_protocol_to_str(store->Protocol));
+             store->resource_name_, auth_protocol_to_str(store->Protocol));
         return false;
     }
   }
@@ -154,7 +154,7 @@ bool DoNativeBackupInit(JobControlRecord* jcr)
 
   if (!AllowDuplicateJob(jcr)) { return false; }
 
-  jcr->jr.PoolId = GetOrCreatePoolRecord(jcr, jcr->res.pool->name());
+  jcr->jr.PoolId = GetOrCreatePoolRecord(jcr, jcr->res.pool->resource_name_);
   if (jcr->jr.PoolId == 0) { return false; }
 
   /*
@@ -193,7 +193,7 @@ static bool GetBaseJobids(JobControlRecord* jcr, db_list_ctx* jobids)
   jr.StartTime = jcr->jr.StartTime;
 
   foreach_alist (job, jcr->res.job->base) {
-    bstrncpy(jr.Name, job->name(), sizeof(jr.Name));
+    bstrncpy(jr.Name, job->resource_name_, sizeof(jr.Name));
     jcr->db->GetBaseJobid(jcr, &jr, &id);
 
     if (id) {
@@ -482,7 +482,7 @@ bool DoNativeBackup(JobControlRecord* jcr)
     Jmsg(jcr, M_FATAL, 0,
          _("Client \"%s\" doesn't support passive client mode. "
            "Please upgrade your client or disable compat mode.\n"),
-         jcr->res.client->name());
+         jcr->res.client->resource_name_);
     goto close_fd;
   }
 
@@ -798,7 +798,7 @@ void NativeBackupCleanup(JobControlRecord* jcr, int TermCode)
     jcr->setJobStatus(JS_ErrorTerminated);
   }
 
-  bstrncpy(cr.Name, jcr->res.client->name(), sizeof(cr.Name));
+  bstrncpy(cr.Name, jcr->res.client->resource_name_, sizeof(cr.Name));
   if (!jcr->db->GetClientRecord(jcr, &cr)) {
     Jmsg(jcr, M_WARNING, 0,
          _("Error getting Client record for Job report: ERR=%s"),
@@ -1183,11 +1183,11 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
         jcr->jr.JobId,
         jcr->jr.Job,
         level_info.c_str(),
-        jcr->res.client->name(), cr->Uname,
-        jcr->res.fileset->name(), jcr->FSCreateTime,
-        jcr->res.pool->name(), jcr->res.pool_source,
-        jcr->res.catalog->name(), jcr->res.catalog_source,
-        jcr->res.write_storage->name(), jcr->res.wstore_source,
+        jcr->res.client->resource_name_, cr->Uname,
+        jcr->res.fileset->resource_name_, jcr->FSCreateTime,
+        jcr->res.pool->resource_name_, jcr->res.pool_source,
+        jcr->res.catalog->resource_name_, jcr->res.catalog_source,
+        jcr->res.write_storage->resource_name_, jcr->res.wstore_source,
         schedt,
         sdt,
         edt,

@@ -163,10 +163,10 @@ bool do_ndmp_native_query_tape_and_robot_agents(JobControlRecord* jcr,
    */
 
   if (store->rss->ndmp_deviceinfo) {
-    Jmsg(jcr, M_INFO, 0, "NDMP Devices for storage %s:(%s)\n", store->name(),
+    Jmsg(jcr, M_INFO, 0, "NDMP Devices for storage %s:(%s)\n", store->resource_name_,
          store->rss->smc_ident);
   } else {
-    Jmsg(jcr, M_INFO, 0, "No NDMP Devices for storage %s:(%s)\n", store->name(),
+    Jmsg(jcr, M_INFO, 0, "No NDMP Devices for storage %s:(%s)\n", store->resource_name_,
          store->rss->smc_ident);
     return false;
   }
@@ -203,7 +203,7 @@ void DoNdmpNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
   ndmp_deviceinfo_t* deviceinfo = NULL;
   int i = 0;
   if (store->rss->ndmp_deviceinfo) {
-    ua->InfoMsg("NDMP Devices for storage %s:(%s)\n", store->name(),
+    ua->InfoMsg("NDMP Devices for storage %s:(%s)\n", store->resource_name_,
                 store->rss->smc_ident);
     ua->InfoMsg(" element_address   Device   Model   (JobId)   \n");
     for (auto devinfo = store->rss->ndmp_deviceinfo->begin();
@@ -1021,7 +1021,7 @@ bool NdmpSendLabelRequest(UaContext* ua,
    * Set the remote tape drive to use.
    */
   ndmp_job.tape_device =
-      bstrdup(((DeviceResource*)(store->device->first()))->name());
+      bstrdup(((DeviceResource*)(store->device->first()))->resource_name_);
   if (!ndmp_job.tape_device) { Actuallyfree(ndmp_job.robot_target); }
 
   /*

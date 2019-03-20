@@ -1053,7 +1053,7 @@ int main(int argc, char* argv[])
     my_config->ParseConfig();
     LockRes(my_config);
     foreach_res (catalog, R_CATALOG) {
-      if (catalogname && bstrcmp(catalog->hdr.name, catalogname)) {
+      if (catalogname && bstrcmp(catalog->resource_name_, catalogname)) {
         ++found;
         break;
       } else if (!catalogname) {  // stop on first if no catalogname is given

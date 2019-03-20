@@ -488,7 +488,7 @@ bool GetScratchVolume(JobControlRecord* jcr,
        * add a Volume.
        */
       memset(&pr, 0, sizeof(pr));
-      bstrncpy(pr.Name, jcr->res.pool->name(), sizeof(pr.Name));
+      bstrncpy(pr.Name, jcr->res.pool->resource_name_, sizeof(pr.Name));
 
       if (!jcr->db->GetPoolRecord(jcr, &pr)) {
         Jmsg(jcr, M_WARNING, 0, _("Unable to get Pool record: ERR=%s"),
@@ -502,7 +502,7 @@ bool GetScratchVolume(JobControlRecord* jcr,
       if (pr.MaxVols > 0 && pr.NumVols >= pr.MaxVols) {
         Jmsg(jcr, M_WARNING, 0,
              _("Unable add Scratch Volume, Pool \"%s\" full MaxVols=%d\n"),
-             jcr->res.pool->name(), pr.MaxVols);
+             jcr->res.pool->resource_name_, pr.MaxVols);
         goto bail_out;
       }
 
