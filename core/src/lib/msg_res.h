@@ -38,9 +38,9 @@
 static ResourceItem msgs_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_msgs,resource_name_), 0, 0, NULL, NULL, NULL },
    { "Description", CFG_TYPE_STR, ITEM(res_msgs,description_), 0, 0, NULL, NULL, NULL },
-   { "MailCommand", CFG_TYPE_STR, ITEM(res_msgs,mail_cmd), 0, 0, NULL, NULL, NULL },
-   { "OperatorCommand", CFG_TYPE_STR, ITEM(res_msgs,operator_cmd), 0, 0, NULL, NULL, NULL },
-   { "TimestampFormat", CFG_TYPE_STR, ITEM(res_msgs,timestamp_format), 0, 0, NULL, NULL, NULL },
+   { "MailCommand", CFG_TYPE_STDSTR, ITEM(res_msgs,mail_cmd_), 0, 0, NULL, NULL, NULL },
+   { "OperatorCommand", CFG_TYPE_STDSTR, ITEM(res_msgs,operator_cmd_), 0, 0, NULL, NULL, NULL },
+   { "TimestampFormat", CFG_TYPE_STDSTR, ITEM(res_msgs,timestamp_format_), 0, 0, NULL, NULL, NULL },
    { "Syslog", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_SYSLOG, 0, NULL, NULL, NULL },
    { "Mail", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_MAIL, 0, NULL, NULL, NULL },
    { "MailOnError", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_MAIL_ON_ERROR, 0, NULL, NULL, NULL },

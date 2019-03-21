@@ -27,64 +27,33 @@
 #include "lib/bareos_resource.h"
 
 class MessagesResource : public BareosResource {
-  /*
-   * Members
-   */
  public:
-  char* mail_cmd;                         /* Mail command */
-  char* operator_cmd;                     /* Operator command */
-  char* timestamp_format;                 /* Timestamp format */
-  DEST* dest_chain;                       /* chain of destinations */
-  char SendMsg[NbytesForBits(M_MAX + 1)]; /* Bit array of types */
+  std::string mail_cmd_;                          /* Mail command */
+  std::string operator_cmd_;                      /* Operator command */
+  std::string timestamp_format_;                  /* Timestamp format */
+  DEST* dest_chain_;                              /* chain of destinations */
+  char send_msg_types_[NbytesForBits(M_MAX + 1)]; /* Bit array of types */
 
  private:
+  static pthread_mutex_t mutex_;
   bool in_use_;  /* Set when using to send a message */
   bool closing_; /* Set when closing message resource */
 
  public:
-  /*
-   * Methods
-   */
-  void ClearInUse()
-  {
-    lock();
-    in_use_ = false;
-    unlock();
-  }
-  void SetInUse()
-  {
-    WaitNotInUse();
-    in_use_ = true;
-    unlock();
-  }
-  void SetClosing() { closing_ = true; }
-  bool GetClosing() { return closing_; }
-  void ClearClosing()
-  {
-    lock();
-    closing_ = false;
-    unlock();
-  }
-  bool IsClosing()
-  {
-    lock();
-    bool rtn = closing_;
-    unlock();
-    return rtn;
-  }
+  MessagesResource();
+  virtual ~MessagesResource();
 
-  MessagesResource() = default;
-  virtual ~MessagesResource() = default;
+  void CopyToStaticMemory(CommonResourceHeader* p) const override;
 
-  void CopyToStaticMemory(CommonResourceHeader* p) const override
-  {
-    MessagesResource* r = dynamic_cast<MessagesResource*>(p);
-    if (r) { *r = *this; }
-  };
-
-  void WaitNotInUse(); /* in message.c */
-  void lock();         /* in message.c */
-  void unlock();       /* in message.c */
+  void ClearInUse();
+  void SetInUse();
+  void SetClosing();
+  bool GetClosing();
+  void ClearClosing();
+  bool IsClosing();
+  void WaitNotInUse();
+  void lock();
+  void unlock();
   bool PrintConfig(PoolMem& buff,
                    bool hide_sensitive_data = false,
                    bool verbose = false);

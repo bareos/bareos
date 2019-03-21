@@ -43,9 +43,10 @@
  * Escape special characters in bareos configuration strings
  * needed for dumping config strings
  */
-void EscapeString(PoolMem& snew, char* old, int len)
+void EscapeString(PoolMem& snew, const char* old, int len)
 {
-  char *n, *o;
+  char* n;
+  const char* o;
 
   snew.check_size(len * 2);
   n = snew.c_str();
@@ -904,11 +905,12 @@ void DecodeSessionKey(char* decode, char* session, char* key, int maxlen)
  */
 POOLMEM* edit_job_codes(JobControlRecord* jcr,
                         char* omsg,
-                        char* imsg,
+                        const char* imsg,
                         const char* to,
                         job_code_callback_t callback)
 {
-  char *p, *q;
+  const char* p;
+  char* q;
   const char* str;
   char ed1[50];
   char add[50];

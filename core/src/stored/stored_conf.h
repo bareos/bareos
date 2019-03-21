@@ -162,6 +162,7 @@ class StorageResource
 };
 
 ConfigurationParser* InitSdConfig(const char* configfile, int exit_code);
+bool ParseSdConfig(const char* configfile, int exit_code);
 bool PrintConfigSchemaJson(PoolMem& buffer);
 
 } /* namespace storagedaemon */

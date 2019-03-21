@@ -388,7 +388,7 @@ JobControlRecord* new_jcr(int size, JCR_free_HANDLER* daemon_free_jcr)
   memset(jcr, 0, size);
   jcr = new (jcr) JobControlRecord();
 
-  jcr->msg_queue = New(dlist(item, &item->link));
+  jcr->msg_queue = New(dlist(item, &item->link_));
   if ((status = pthread_mutex_init(&jcr->msg_queue_mutex, nullptr)) != 0) {
     BErrNo be;
     Jmsg(nullptr, M_ABORT, 0, _("Could not init msg_queue mutex. ERR=%s\n"),

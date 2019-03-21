@@ -488,8 +488,8 @@ class ConfigurationParser {
                  MessagesResource* msg,
                  int dest_code,
                  char* where,
-                 char* cmd,
-                 char* timestamp_format);
+                 const std::string& cmd,
+                 const std::string& timestamp_format);
 };
 
 void PrintMessage(void* sock, const char* fmt, ...);

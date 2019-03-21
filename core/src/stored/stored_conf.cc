@@ -856,16 +856,6 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         break;
     }
 
-    if (res_dir.resource_name_) {
-      free(res_dir.resource_name_);
-      res_dir.resource_name_ = NULL;
-    }
-
-    if (res_dir.description_) {
-      free(res_dir.description_);
-      res_dir.description_ = NULL;
-    }
-
     return (error == 0);
   }
 
@@ -929,8 +919,14 @@ static void FreeResource(CommonResourceHeader* res, int type)
 {
   if (res == NULL) return;
 
-  if (res->resource_name_) { free(res->resource_name_); }
-  if (res->description_) { free(res->description_); }
+  if (res->resource_name_) {
+    free(res->resource_name_);
+    res->resource_name_ = nullptr;
+  }
+  if (res->description_) {
+    free(res->description_);
+    res->description_ = nullptr;
+  }
 
   CommonResourceHeader* next_ressource = (CommonResourceHeader*)res->next_;
 
@@ -1021,9 +1017,6 @@ static void FreeResource(CommonResourceHeader* res, int type)
       }
     case R_MSGS: {
       MessagesResource* p = dynamic_cast<MessagesResource*>(res);
-      if (p->mail_cmd) { free(p->mail_cmd); }
-      if (p->operator_cmd) { free(p->operator_cmd); }
-      if (p->timestamp_format) { free(p->timestamp_format); }
       delete p;
       break;
     }

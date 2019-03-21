@@ -87,6 +87,7 @@
  * Allow printing of NULL pointers
  */
 #define NPRT(x) (x) ? (x) : _("*None*")
+#define NSTDPRNT(x) x.empty() ? "*None*" : x.c_str()
 #define NPRTB(x) (x) ? (x) : ""
 
 #if defined(HAVE_WIN32)

@@ -35,6 +35,8 @@
 #include "lib/dlink.h"
 #include "lib/rwlock.h"
 
+#include <string>
+
 #undef M_DEBUG
 #undef M_ABORT
 #undef M_FATAL
@@ -113,18 +115,30 @@ enum
  * Define message destination structure
  */
 /* *** FIXME **** where should be extended to handle multiple values */
-typedef struct s_dest {
-  struct s_dest* next;
-  int dest_code;                /* Destination (one of the MD_ codes) */
-  int max_len;                  /* Max mail line length */
-  FILE* fd;                     /* File descriptor */
-  char msg_types[NR_MSG_TYPES]; /* Message type mask */
-  char* where;                  /* Filename/program name */
-  char* mail_cmd;               /* Mail command */
-  char* timestamp_format; /* Timestamp format to use in logging messages */
-  int syslog_facility;    /* Syslog Facility */
-  POOLMEM* mail_filename; /* Unique mail filename */
-} DEST;
+struct DEST {
+ public:
+  DEST()
+      : next_(nullptr)
+      , file_pointer_(nullptr)
+      , dest_code_(0)
+      , max_len_(0)
+      , syslog_facility_(0)
+      , msg_types_{0}
+  {
+    return;
+  }
+
+  struct DEST* next_;
+  FILE* file_pointer_;
+  int dest_code_;                /* Destination (one of the MD_ codes) */
+  int max_len_;                  /* Max mail line length */
+  int syslog_facility_;          /* Syslog Facility */
+  char msg_types_[NR_MSG_TYPES]; /* Message type mask */
+  std::string where_;            /* Filename/program name */
+  std::string mail_cmd_;         /* Mail command */
+  std::string timestamp_format_; /* used in logging messages */
+  std::string mail_filename_;    /* Unique mail filename */
+};
 
 /**
  * Message Destination values for dest field of DEST
@@ -161,11 +175,13 @@ enum
 /**
  * Queued message item
  */
-struct MessageQeueItem {
-  dlink link;
-  int type;
-  utime_t mtime;
-  char msg[1];
+class MessageQeueItem {
+ public:
+  MessageQeueItem() : type_(0), mtime_{0} {}
+  dlink link_;
+  int type_;
+  utime_t mtime_;
+  std::string msg_;
 };
 
 class JobControlRecord;
@@ -210,14 +226,14 @@ void CloseMsg(JobControlRecord* jcr);
 void AddMsgDest(MessagesResource* msg,
                 int dest,
                 int type,
-                char* where,
-                char* mail_cmd,
-                char* timestamp_format);
+                const std::string& where,
+                const std::string& mail_cmd,
+                const std::string& timestamp_format);
 void RemMsgDest(MessagesResource* msg, int dest, int type, char* where);
 void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...);
 void DispatchMessage(JobControlRecord* jcr, int type, utime_t mtime, char* buf);
 void InitConsoleMsg(const char* wd);
-void FreeMsgsRes(MessagesResource* msgs);
+void FreeMsgsRes(MessagesResource* msgs);  // Ueb
 void DequeueMessages(JobControlRecord* jcr);
 void SetTrace(int trace_flag);
 bool GetTrace(void);

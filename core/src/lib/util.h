@@ -27,7 +27,7 @@
 class QualifiedResourceNameTypeConverter;
 enum class BareosVersionNumber : uint32_t;
 
-void EscapeString(PoolMem& snew, char* old, int len);
+void EscapeString(PoolMem& snew, const char* old, int len);
 bool IsBufZero(char* buf, int len);
 void lcase(char* str);
 void BashSpaces(char* str);
@@ -59,7 +59,7 @@ void EncodeSessionKey(char* encode, char* session, char* key, int maxlen);
 void DecodeSessionKey(char* decode, char* session, char* key, int maxlen);
 POOLMEM* edit_job_codes(JobControlRecord* jcr,
                         char* omsg,
-                        char* imsg,
+                        const char* imsg,
                         const char* to,
                         job_code_callback_t job_code_callback = NULL);
 void SetWorkingDirectory(char* wd);

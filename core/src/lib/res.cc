@@ -44,14 +44,6 @@
  */
 #define DEFAULT_INDENT_STRING "  "
 
-/*
- * Define the Union of all the common resource structure definitions.
- */
-union UnionOfResources {
-  MessagesResource res_msgs;
-  CommonResourceHeader hdr;
-};
-
 static int res_locked = 0; /* resource chain lock count -- for debug */
 
 // #define TRACE_RES
@@ -195,8 +187,8 @@ void ConfigurationParser::ScanTypes(LEX* lc,
                                     MessagesResource* msg,
                                     int dest_code,
                                     char* where,
-                                    char* cmd,
-                                    char* timestamp_format)
+                                    const std::string& cmd,
+                                    const std::string& timestamp_format)
 {
   int i;
   bool found, is_not;
@@ -250,7 +242,8 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
                                     int pass)
 {
   int token;
-  char *cmd = NULL, *tsf = NULL;
+  const char* cmd = nullptr;
+  const char* tsf = nullptr;
   POOLMEM* dest;
   int dest_len;
 
@@ -265,7 +258,7 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
     return;
   }
 
-  tsf = message_resource->timestamp_format;
+  tsf = message_resource->timestamp_format_.c_str();
 
   if (pass == 1) {
     switch (item->code) {
@@ -331,9 +324,9 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
       case MD_MAIL_ON_ERROR:   /* Mail if Job errors */
       case MD_MAIL_ON_SUCCESS: /* Mail if Job succeeds */
         if (item->code == MD_OPERATOR) {
-          cmd = message_resource->operator_cmd;
+          cmd = message_resource->operator_cmd_.c_str();
         } else {
-          cmd = message_resource->mail_cmd;
+          cmd = message_resource->mail_cmd_.c_str();
         }
         dest = GetPoolMemory(PM_MESSAGE);
         dest[0] = 0;
@@ -1545,42 +1538,43 @@ bool MessagesResource::PrintConfig(PoolMem& buff,
   Mmsg(temp, "   %s = \"%s\"\n", "Name", msgres->resource_name_);
   PmStrcat(cfg_str, temp.c_str());
 
-  if (msgres->mail_cmd) {
+  if (!msgres->mail_cmd_.empty()) {
     PoolMem esc;
 
-    EscapeString(esc, msgres->mail_cmd, strlen(msgres->mail_cmd));
+    EscapeString(esc, msgres->mail_cmd_.c_str(), msgres->mail_cmd_.size());
     Mmsg(temp, "   MailCommand = \"%s\"\n", esc.c_str());
     PmStrcat(cfg_str, temp.c_str());
   }
 
-  if (msgres->operator_cmd) {
+  if (!msgres->operator_cmd_.empty()) {
     PoolMem esc;
 
-    EscapeString(esc, msgres->operator_cmd, strlen(msgres->operator_cmd));
+    EscapeString(esc, msgres->operator_cmd_.c_str(),
+                 msgres->operator_cmd_.size());
     Mmsg(temp, "   OperatorCommand = \"%s\"\n", esc.c_str());
     PmStrcat(cfg_str, temp.c_str());
   }
 
-  if (msgres->timestamp_format) {
+  if (!msgres->timestamp_format_.empty()) {
     PoolMem esc;
 
-    EscapeString(esc, msgres->timestamp_format,
-                 strlen(msgres->timestamp_format));
+    EscapeString(esc, msgres->timestamp_format_.c_str(),
+                 msgres->timestamp_format_.size());
     Mmsg(temp, "   TimestampFormat = \"%s\"\n", esc.c_str());
     PmStrcat(cfg_str, temp.c_str());
   }
 
-  for (d = msgres->dest_chain; d; d = d->next) {
+  for (d = msgres->dest_chain_; d; d = d->next_) {
     int nr_set = 0;
     int nr_unset = 0;
     PoolMem t; /* number of set   types */
     PoolMem u; /* number of unset types */
 
     for (int i = 0; msg_destinations[i].code; i++) {
-      if (msg_destinations[i].code == d->dest_code) {
+      if (msg_destinations[i].code == d->dest_code_) {
         if (msg_destinations[i].where) {
           Mmsg(temp, "   %s = %s = ", msg_destinations[i].destination,
-               d->where);
+               d->where_.c_str());
         } else {
           Mmsg(temp, "   %s = ", msg_destinations[i].destination);
         }
@@ -1591,7 +1585,7 @@ bool MessagesResource::PrintConfig(PoolMem& buff,
 
     for (int j = 0; j < M_MAX - 1; j++) {
       if
-        BitIsSet(msg_types[j].token, d->msg_types)
+        BitIsSet(msg_types[j].token, d->msg_types_)
         {
           nr_set++;
           Mmsg(temp, ",%s", msg_types[j].name);
