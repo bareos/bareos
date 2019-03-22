@@ -497,6 +497,120 @@ The output should look like this:
 ''Application Managed''
 
 
+
+Index
+-----
+
+``.. index::``
+~~~~~~~~~~~~~~
+
+Some roles and directives do already create indices automatically.
+
+However, there is also an explicit directive available, to make the index more
+comprehensive and enable index entries in documents where information is not
+mainly contained in information units.
+
+The directive is ``index`` and contains one or more index entries.  Each entry
+consists of a type and a value, separated by a colon.
+
+For example::
+
+   .. index::
+      single: execution; context
+      triple: module; search; path
+
+This directive contains five entries, which will be converted to entries in the
+generated index which link to the exact location of the index statement (or, in
+case of offline media, the corresponding page number).
+
+Since index directives generate cross-reference targets at their location in the source,
+it makes sense to put them before the thing they refer to – e.g. a heading, as in the example above.
+
+The possible entry types are:
+
+single
+   Creates a single index entry.  Can be made a subentry by separating the
+   subentry text with a semicolon (this notation is also used below to describe
+   what entries are created).
+pair
+   ``pair: loop; statement`` is a shortcut that creates two index entries,
+   namely ``loop; statement`` and ``statement; loop``.
+triple
+   Likewise, ``triple: module; search; path`` is a shortcut that creates three
+   index entries, which are ``module; search path``, ``search; path, module``
+   and ``path; module search``.
+see
+    ``see: entry; other`` creates an index entry that refers from ``entry`` to
+    ``other``.
+seealso
+    Like ``see``, but inserts "see also" instead of "see".
+
+You can mark up "main" index entries by prefixing them with an exclamation
+mark.  The references to "main" entries are emphasized in the generated
+index.  For example, if two pages contain ::
+
+      .. index:: Python
+
+and one page contains ::
+
+      .. index:: ! Python
+
+then the backlink to the latter page is emphasized among the three backlinks.
+   
+For index directives containing only "single" entries, there is a shorthand
+notation::
+
+   .. index:: BNF, grammar, syntax, notation
+
+This creates four index entries.
+
+``:index:``
+~~~~~~~~~~~
+
+While the :rst:dir:`index` directive is a block-level markup and links to the
+beginning of the next paragraph, there is also a corresponding role that sets
+the link target directly where it is used.
+
+The content of the role can be a simple phrase, which is then kept in the
+text and used as an index entry.  It can also be a combination of text and
+index entry, styled like with explicit targets of cross-references.  In that
+case, the "target" part can be a full entry as described for the directive
+above.  For example::
+
+    This is a normal reST :index:`paragraph` that contains several
+    :index:`index entries <pair: index; entry>`.
+
+.. note::
+
+   The ``:index:`` role must contain text. This text will be printed and referenced by the index.
+   
+    
+Converted (Latex2Sphinx) Indices
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Neither of ``.. index::`` nor ``:index:`` correspond well to a Latex ``\index``\ .
+
+A Latex index will not be printed and the index will refer to the exact location.
+In the Latex documentation indices have also been used inside of other structures (e.g. tables),
+which prevents an easy automatic convertation to ``.. index::``.
+
+To work around these problem, following substitution have been used::
+
+  \index{Console!Command!restore}
+  
+is substitted by::
+
+  :index:`[TAG=Console->Command->restore] <triple: Console; Command; restore>`
+
+Disadvantages:
+   The text ``[TAG=Console->Command->restore]`` will be shown.
+
+When the Sphinx Bareos Manual is edited manually,
+these ''TAGs'' can be replaced to some better fitting indices.
+
+Note: ``triple`` is not required. The original behavior would be more like ``single``. However, we used triple to use some of the Sphinx advantages.
+
+
 Image
 -----
 
