@@ -37,7 +37,7 @@ struct ResourceItem {
   const int type;
   union {
     char** value; /* Where to store the item */
-    std::string** strValue;
+    std::string* strValue;
     uint16_t* ui16value;
     uint32_t* ui32value;
     int16_t* i16value;

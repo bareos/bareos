@@ -224,8 +224,8 @@ enum
   CFG_TYPE_ADDRESSES_ADDRESS = 27, /* Ip address */
   CFG_TYPE_ADDRESSES_PORT = 28,    /* Ip port */
   CFG_TYPE_PLUGIN_NAMES = 29,      /* Plugin Name(s) */
-  CFG_TYPE_STDSTR = 30,            /* String as std::string*/
-  CFG_TYPE_STDSTRDIR = 31,         /* Directory as std::string*/
+  CFG_TYPE_STDSTR = 30,            /* String as std::string */
+  CFG_TYPE_STDSTRDIR = 31,         /* Directory as std::string */
 
   /*
    * Director resource types. handlers in dird_conf.

@@ -940,14 +940,6 @@ static void FreeResource(CommonResourceHeader* res, int type)
         p->tls_cert_.allowed_certificate_common_names_->destroy();
         free(p->tls_cert_.allowed_certificate_common_names_);
       }
-      if (p->tls_cert_.ca_certfile_) { delete p->tls_cert_.ca_certfile_; }
-      if (p->tls_cert_.ca_certdir_) { delete p->tls_cert_.ca_certdir_; }
-      if (p->tls_cert_.crlfile_) { delete p->tls_cert_.crlfile_; }
-      if (p->tls_cert_.certfile_) { delete p->tls_cert_.certfile_; }
-      if (p->tls_cert_.keyfile_) { delete p->tls_cert_.keyfile_; }
-      if (p->cipherlist_) { delete p->cipherlist_; }
-      if (p->tls_cert_.dhfile_) { delete p->tls_cert_.dhfile_; }
-      if (p->tls_cert_.pem_message_) { delete p->tls_cert_.pem_message_; }
       delete p;
       break;
       }
@@ -986,14 +978,6 @@ static void FreeResource(CommonResourceHeader* res, int type)
         p->tls_cert_.allowed_certificate_common_names_->destroy();
         free(p->tls_cert_.allowed_certificate_common_names_);
       }
-      if (p->tls_cert_.ca_certfile_) { delete p->tls_cert_.ca_certfile_; }
-      if (p->tls_cert_.ca_certdir_) { delete p->tls_cert_.ca_certdir_; }
-      if (p->tls_cert_.crlfile_) { delete p->tls_cert_.crlfile_; }
-      if (p->tls_cert_.certfile_) { delete p->tls_cert_.certfile_; }
-      if (p->tls_cert_.keyfile_) { delete p->tls_cert_.keyfile_; }
-      if (p->cipherlist_) { delete p->cipherlist_; }
-      if (p->tls_cert_.dhfile_) { delete p->tls_cert_.dhfile_; }
-      if (p->tls_cert_.pem_message_) { delete p->tls_cert_.pem_message_; }
       delete p;
       break;
       }

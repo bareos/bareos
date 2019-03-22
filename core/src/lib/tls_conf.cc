@@ -23,10 +23,7 @@
 #include "lib/tls_conf.h"
 
 TlsResource::TlsResource()
-    : cipherlist_(nullptr)
-    , authenticate_(false)
-    , tls_enable_(false)
-    , tls_require_(false)
+    : authenticate_(false), tls_enable_(false), tls_require_(false)
 {
   return;
 }

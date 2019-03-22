@@ -732,7 +732,7 @@ void ConfigurationParser::InitResource(int type,
               *(items[i].value) = bstrdup(items[i].default_value);
               break;
             case CFG_TYPE_STDSTR:
-              *(items[i].strValue) = new std::string(items[i].default_value);
+              *(items[i].strValue) = std::string(items[i].default_value);
               break;
             case CFG_TYPE_DIR: {
               PoolMem pathname(PM_FNAME);
@@ -765,7 +765,7 @@ void ConfigurationParser::InitResource(int type,
                 pathname.check_size(size);
                 DoShellExpansion(pathname.c_str(), pathname.size());
               }
-              *(items[i].strValue) = new std::string(pathname.c_str());
+              *(items[i].strValue) = std::string(pathname.c_str());
               break;
             }
             case CFG_TYPE_ADDRESSES:

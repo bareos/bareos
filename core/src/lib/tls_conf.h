@@ -39,10 +39,10 @@ enum TlsPolicy : uint32_t
 
 class TlsResource {
  public:
-  s_password password_;     /* UA server password */
-  TlsConfigCert tls_cert_;  /* TLS structure */
-  std::string* cipherlist_; /* TLS Cipher List */
-  bool authenticate_;       /* Authenticate only with TLS */
+  s_password password_;    /* UA server password */
+  TlsConfigCert tls_cert_; /* TLS structure */
+  std::string cipherlist_; /* TLS Cipher List */
+  bool authenticate_;      /* Authenticate only with TLS */
   bool tls_enable_;
   bool tls_require_;
 
