@@ -40,7 +40,6 @@
 #include "sql.h"
 #include "lib/edit.h"
 #include "lib/volume_session_info.h"
-#include "include/make_unique.h"
 
 /* -----------------------------------------------------------------------
  *
@@ -1744,10 +1743,10 @@ bool BareosDb::GetNdmpEnvironmentString(const std::string& query,
                                         DB_RESULT_HANDLER* ResultHandler,
                                         void* ctx)
 {
-  auto myctx = std::make_unique<count_context>(ResultHandler, ctx);
+  auto myctx = std::unique_ptr<count_context>(new count_context(ResultHandler, ctx));
   bool status =
       SqlQueryWithHandler(query.c_str(), CountingHandler, myctx.get());
-  Dmsg3(150, "Got %d NDMP environment records\n", myctx->count);
+  Dmsg1(150, "Got %d NDMP environment records\n", myctx->count);
   return status && myctx->count > 0;  // no rows means no environment was found
 }
 
