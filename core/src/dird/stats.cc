@@ -178,7 +178,7 @@ extern "C" void* statistics_thread(void* arg)
       }
 
       store = (StorageResource*)my_config->GetNextRes(
-          R_STORAGE, (CommonResourceHeader*)store);
+          R_STORAGE, (BareosResource*)store);
       if (!store) {
         PmStrcpy(current_store, "");
         UnlockRes(my_config);

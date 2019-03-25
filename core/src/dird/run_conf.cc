@@ -182,7 +182,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
   int token, state, state2 = 0, code = 0, code2 = 0;
   bool found;
   utime_t utime;
-  CommonResourceHeader* res;
+  BareosResource* res;
   RunResource** run = (RunResource**)(item->value);
   UnionOfResources* res_all = (UnionOfResources*)my_config->res_all_;
 

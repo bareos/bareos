@@ -115,7 +115,7 @@ ConfigurationParser::ConfigurationParser(
     int32_t r_first,
     int32_t r_last,
     ResourceTable* resources,
-    CommonResourceHeader** res_head,
+    BareosResource** res_head,
     const char* config_default_filename,
     const char* config_include_dir,
     void (*ParseConfigReadyCb)(ConfigurationParser&),
@@ -626,11 +626,11 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
   return found;
 }
 
-CommonResourceHeader** ConfigurationParser::SaveResources()
+BareosResource** ConfigurationParser::SaveResources()
 {
   int num = r_last_ - r_first_ + 1;
-  CommonResourceHeader** res =
-      (CommonResourceHeader**)malloc(num * sizeof(CommonResourceHeader*));
+  BareosResource** res =
+      (BareosResource**)malloc(num * sizeof(BareosResource*));
 
   for (int i = 0; i < num; i++) {
     res[i] = res_head_[i];
@@ -876,7 +876,7 @@ void ConfigurationParser::InitResource(int type,
 bool ConfigurationParser::RemoveResource(int type, const char* name)
 {
   int rindex = type - r_first_;
-  CommonResourceHeader* last;
+  BareosResource* last;
 
   /*
    * Remove resource from list.
@@ -887,7 +887,7 @@ bool ConfigurationParser::RemoveResource(int type, const char* name)
    * resources must be added. If it is referenced, don't remove it.
    */
   last = nullptr;
-  for (CommonResourceHeader* res = res_head_[rindex]; res; res = res->next_) {
+  for (BareosResource* res = res_head_[rindex]; res; res = res->next_) {
     if (bstrcmp(res->resource_name_, name)) {
       if (!last) {
         Dmsg2(900,

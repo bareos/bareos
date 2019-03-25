@@ -692,11 +692,11 @@ union UnionOfResources {
   MessagesResource res_msgs;
   CounterResource res_counter;
   DeviceResource res_dev;
-  CommonResourceHeader hdr;
+  BareosResource hdr;
 
   UnionOfResources()
   {
-    new (&hdr) CommonResourceHeader();
+    new (&hdr) BareosResource();
     Dmsg1(900, "hdr:        %p \n", &hdr);
     Dmsg1(900, "res_dir.hdr %p\n", &res_dir);
     Dmsg1(900, "res_con.hdr %p\n", &res_con);

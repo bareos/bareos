@@ -55,13 +55,13 @@ static const std::string default_config_filename("tray-monitor.conf");
  * types. Note, these should be unique for each
  * daemon though not a requirement.
  */
-static CommonResourceHeader* sres_head[R_LAST - R_FIRST + 1];
-static CommonResourceHeader** res_head = sres_head;
+static BareosResource* sres_head[R_LAST - R_FIRST + 1];
+static BareosResource** res_head = sres_head;
 
 static bool SaveResource(int type, ResourceItem* items, int pass);
-static void FreeResource(CommonResourceHeader* sres, int type);
+static void FreeResource(BareosResource* sres, int type);
 static void DumpResource(int type,
-                         CommonResourceHeader* reshdr,
+                         BareosResource* reshdr,
                          void sendit(void* sock, const char* fmt, ...),
                          void* sock,
                          bool hide_sensitive_data,
@@ -184,7 +184,7 @@ static ResourceTable resources[] = {
  * Dump contents of resource
  */
 static void DumpResource(int type,
-                         CommonResourceHeader* reshdr,
+                         BareosResource* reshdr,
                          void sendit(void* sock, const char* fmt, ...),
                          void* sock,
                          bool hide_sensitive_data,
@@ -225,9 +225,9 @@ static void DumpResource(int type,
  * resource chain is traversed.  Mainly we worry about freeing
  * allocated strings (names).
  */
-static void FreeResource(CommonResourceHeader* sres, int type)
+static void FreeResource(BareosResource* sres, int type)
 {
-  CommonResourceHeader* nres; /* next resource if linked */
+  BareosResource* nres; /* next resource if linked */
   UnionOfResources* res = reinterpret_cast<UnionOfResources*>(sres);
 
   if (res == NULL) return;
@@ -235,7 +235,7 @@ static void FreeResource(CommonResourceHeader* sres, int type)
   /*
    * Common stuff -- free the resource name and description
    */
-  nres = (CommonResourceHeader*)res->res_monitor.next_;
+  nres = (BareosResource*)res->res_monitor.next_;
   if (res->res_monitor.resource_name_) {
     free(res->res_monitor.resource_name_);
   }
@@ -349,11 +349,11 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
     res = (UnionOfResources*)malloc(resources[rindex].size);
     memcpy(res, &res_all, resources[rindex].size);
     if (!res_head[rindex]) {
-      res_head[rindex] = (CommonResourceHeader*)res; /* store first entry */
+      res_head[rindex] = (BareosResource*)res; /* store first entry */
       Dmsg3(900, "Inserting first %s res: %s index=%d\n",
             my_config->ResToStr(type), res->res_monitor.resource_name_, rindex);
     } else {
-      CommonResourceHeader *next, *last;
+      BareosResource *next, *last;
       /*
        * Add new res to end of chain
        */
@@ -366,7 +366,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
                 resources[rindex].name, res->res_monitor.resource_name_);
         }
       }
-      last->next = (CommonResourceHeader*)res;
+      last->next = (BareosResource*)res;
       Dmsg4(900, "Inserting %s res: %s index=%d pass=%d\n",
             my_config->ResToStr(type), res->res_monitor.resource_name_, rindex,
             pass);

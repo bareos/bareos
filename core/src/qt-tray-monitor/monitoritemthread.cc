@@ -110,7 +110,7 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
   }
 
   monitor = reinterpret_cast<MonitorResource*>(
-      my_config->GetNextRes(R_MONITOR, (CommonResourceHeader*)NULL));
+      my_config->GetNextRes(R_MONITOR, (BareosResource*)NULL));
 
   int nitems = 0;
 

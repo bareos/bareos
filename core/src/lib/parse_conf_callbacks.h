@@ -23,18 +23,18 @@
 #define BAREOS_LIB_PARSE_CONF_CALLBACKS_H_ 1
 
 struct ResourceItem;
-class CommonResourceHeader;
+class BareosResource;
 class ConfigurationParser;
 
 typedef bool (*SaveResourceCb_t)(int type, ResourceItem* item, int pass);
 typedef void (*DumpResourceCb_t)(int type,
-                                 CommonResourceHeader* res,
+                                 BareosResource* res,
                                  void sendmsg(void* sock, const char* fmt, ...),
                                  void* sock,
                                  bool hide_sensitive_data,
                                  bool verbose);
 
-typedef void (*FreeResourceCb_t)(CommonResourceHeader* res, int type);
+typedef void (*FreeResourceCb_t)(BareosResource* res, int type);
 typedef void (*ParseConfigReadyCb_t)(ConfigurationParser&);
 
 #endif /* BAREOS_LIB_PARSE_CONF_CALLBACKS_H_ */

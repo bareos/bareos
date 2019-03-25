@@ -72,7 +72,7 @@ ELSE()
      scsi_tapealert.cc)
 ENDIF()
 
-set (BAREOSCFG_SRCS configured_tls_policy_getter.cc ini.cc lex.cc
+set (BAREOSCFG_SRCS bareos_resource.cc configured_tls_policy_getter.cc ini.cc lex.cc
      parse_bsr.cc res.cc parse_conf.cc
      res.cc qualified_resource_name_type_converter.cc)
 LIST(APPEND BAREOS_SRCS ${BAREOSCFG_SRCS})

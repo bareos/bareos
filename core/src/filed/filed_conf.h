@@ -139,9 +139,9 @@ union UnionOfResources {
   DirectorResource res_dir;
   ClientResource res_client;
   MessagesResource res_msgs;
-  CommonResourceHeader hdr;
+  BareosResource hdr;
 
-  UnionOfResources() { new (&hdr) CommonResourceHeader(); }
+  UnionOfResources() { new (&hdr) BareosResource(); }
   ~UnionOfResources() {}
 };
 

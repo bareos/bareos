@@ -37,7 +37,7 @@ class AutochangerResource : public BareosResource {
   AutochangerResource& operator=(const AutochangerResource& rhs);
   bool PrintConfigToBuffer(PoolMem& buf);
 
-  void CopyToStaticMemory(CommonResourceHeader* p) const override
+  void CopyToStaticMemory(BareosResource* p) const override
   {
     AutochangerResource* r = dynamic_cast<AutochangerResource*>(p);
     if (r) { *r = *this; }

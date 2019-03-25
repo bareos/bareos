@@ -782,7 +782,7 @@ static bool SelectDirector(const char* director,
     LockRes(my_config);
     for (i = 0; i < item; i++) {
       director_resource_tmp = (DirectorResource*)my_config->GetNextRes(
-          R_DIRECTOR, (CommonResourceHeader*)director_resource_tmp);
+          R_DIRECTOR, (BareosResource*)director_resource_tmp);
     }
     UnlockRes(my_config);
   }
@@ -793,7 +793,7 @@ static bool SelectDirector(const char* director,
   LockRes(my_config);
   for (i = 0; i < numcon; i++) {
     console_resource_tmp = (ConsoleResource*)my_config->GetNextRes(
-        R_CONSOLE, (CommonResourceHeader*)console_resource_tmp);
+        R_CONSOLE, (BareosResource*)console_resource_tmp);
     if (console_resource_tmp->director &&
         bstrcmp(console_resource_tmp->director,
                 director_resource_tmp->resource_name_)) {
@@ -808,7 +808,7 @@ static bool SelectDirector(const char* director,
   if (console_resource_tmp == NULL) {
     for (i = 0; i < numcon; i++) {
       console_resource_tmp = (ConsoleResource*)my_config->GetNextRes(
-          R_CONSOLE, (CommonResourceHeader*)console_resource_tmp);
+          R_CONSOLE, (BareosResource*)console_resource_tmp);
       if (console_resource_tmp->director == NULL) break;
       console_resource_tmp = NULL;
     }
@@ -819,7 +819,7 @@ static bool SelectDirector(const char* director,
    */
   if (!console_resource_tmp) {
     console_resource_tmp = (ConsoleResource*)my_config->GetNextRes(
-        R_CONSOLE, (CommonResourceHeader*)NULL);
+        R_CONSOLE, (BareosResource*)NULL);
   }
   UnlockRes(my_config);
 

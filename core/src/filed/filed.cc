@@ -358,7 +358,7 @@ static bool CheckResources()
       me->MaxConnections = (2 * me->MaxConcurrentJobs) + 2;
     }
 
-    if (my_config->GetNextRes(R_CLIENT, (CommonResourceHeader*)me) != NULL) {
+    if (my_config->GetNextRes(R_CLIENT, (BareosResource*)me) != NULL) {
       Emsg1(M_FATAL, 0, _("Only one Client resource permitted in %s\n"),
             configfile.c_str());
       OK = false;

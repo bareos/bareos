@@ -263,7 +263,7 @@ void SetPairedStorage(JobControlRecord* jcr)
             if (store->paired_storage == paired_read_write_storage) { break; }
 
             store = (StorageResource*)my_config->GetNextRes(
-                R_STORAGE, (CommonResourceHeader*)store);
+                R_STORAGE, (BareosResource*)store);
           }
 
           /*

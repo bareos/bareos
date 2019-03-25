@@ -357,7 +357,7 @@ int UaContext::RcodeToAcltype(int rcode)
 /**
  * This checks the right ACL if the UA has access to the wanted resource.
  */
-bool UaContext::IsResAllowed(CommonResourceHeader* res)
+bool UaContext::IsResAllowed(BareosResource* res)
 {
   int acl;
 
@@ -378,7 +378,7 @@ bool UaContext::IsResAllowed(CommonResourceHeader* res)
  * Try to get a resource and make sure the current ACL allows it to be
  * retrieved.
  */
-CommonResourceHeader* UaContext::GetResWithName(int rcode,
+BareosResource* UaContext::GetResWithName(int rcode,
                                                 const char* name,
                                                 bool audit_event,
                                                 bool lock)

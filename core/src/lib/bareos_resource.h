@@ -24,30 +24,35 @@
 #ifndef BAREOS_LIB_BAREOS_RESOURCE_H_
 #define BAREOS_LIB_BAREOS_RESOURCE_H_
 
-#include "lib/common_resource_header.h"
+#include "include/bareos.h"
 
 class PoolMem;
 class ConfigurationParser;
 
-/*
- * Base Class for all Resource Classes
- */
-class BareosResource : public CommonResourceHeader {
- public:
-  bool PrintConfig(PoolMem& buf,
-                   const ConfigurationParser& my_config,
-                   bool hide_sensitive_data = false,
-                   bool verbose = false);
+#define MAX_RES_ITEMS 90 /* maximum resource items per BareosResource */
 
-  BareosResource() = default;
+class BareosResource {
+ public:
+  BareosResource* next_;             /* Pointer to next resource of this type */
+  char* resource_name_;              /* Resource name */
+  char* description_;                /* Resource description */
+  uint32_t rcode_;                   /* Resource id or type */
+  int32_t refcnt_;                   /* Reference count for releasing */
+  char item_present_[MAX_RES_ITEMS]; /* Set if item is present in conf file */
+  char inherit_content_[MAX_RES_ITEMS]; /* Set if item has inherited content */
+
+  BareosResource();
+  BareosResource(const BareosResource& other);
+  BareosResource& operator=(const BareosResource& rhs);
+
   virtual ~BareosResource() = default;
 
-  BareosResource& operator=(const BareosResource& rhs)
-  {
-    CommonResourceHeader::operator=(rhs);
-    return *this;
-  }
-  virtual void CopyToStaticMemory(CommonResourceHeader* p) const {};
+  virtual void CopyToStaticMemory(BareosResource* p) const {};
+
+  virtual bool PrintConfig(PoolMem& buf,
+                           const ConfigurationParser& my_config,
+                           bool hide_sensitive_data = false,
+                           bool verbose = false);
 };
 
 #endif /* BAREOS_LIB_BAREOS_RESOURCE_H_ */

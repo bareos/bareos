@@ -324,7 +324,7 @@ class ConfigurationParser {
   int32_t r_last_;           /* Last daemon resource type */
   int32_t r_own_;            /* own resource type */
   ResourceTable* resources_; /* Pointer to table of permitted resources */
-  CommonResourceHeader** res_head_; /* Pointer to defined resources */
+  BareosResource** res_head_; /* Pointer to defined resources */
   mutable brwlock_t res_lock_;      /* Resource lock */
 
   SaveResourceCb_t SaveResourceCb_;
@@ -342,7 +342,7 @@ class ConfigurationParser {
                       int32_t r_first,
                       int32_t r_last,
                       ResourceTable* resources,
-                      CommonResourceHeader** res_head,
+                      BareosResource** res_head,
                       const char* config_default_filename,
                       const char* config_include_dir,
                       void (*ParseConfigReadyCb)(ConfigurationParser&),
@@ -360,7 +360,7 @@ class ConfigurationParser {
                        LEX_WARNING_HANDLER* scan_warning = NULL);
   const std::string& get_base_config_path() const { return used_config_path_; }
   void FreeResources();
-  CommonResourceHeader** SaveResources();
+  BareosResource** SaveResources();
   void InitResource(int type,
                     ResourceItem* items,
                     int pass,
@@ -386,8 +386,8 @@ class ConfigurationParser {
                             const char* name,
                             bool error_if_exits = false,
                             bool create_directories = false);
-  CommonResourceHeader* GetNextRes(int rcode, CommonResourceHeader* res) const;
-  CommonResourceHeader* GetResWithName(int rcode,
+  BareosResource* GetNextRes(int rcode, BareosResource* res) const;
+  BareosResource* GetResWithName(int rcode,
                                        const char* name,
                                        bool lock = true) const;
   void b_LockRes(const char* file, int line) const;

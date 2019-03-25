@@ -345,7 +345,7 @@ static int CheckResources()
   bool OK = true;
   const std::string& configfile = my_config->get_base_config_path();
 
-  if (my_config->GetNextRes(R_STORAGE, (CommonResourceHeader*)me) != NULL) {
+  if (my_config->GetNextRes(R_STORAGE, (BareosResource*)me) != NULL) {
     Jmsg1(NULL, M_ERROR, 0, _("Only one Storage resource permitted in %s\n"),
           configfile.c_str());
     OK = false;

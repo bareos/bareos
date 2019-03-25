@@ -827,7 +827,7 @@ char* lookup_ndmp_drive(StorageResource* store, drive_number_t drivenumber)
 {
   int cnt = 0;
   char* tapedevice;
-  CommonResourceHeader* tapedeviceres = nullptr;
+  BareosResource* tapedeviceres = nullptr;
 
   if (store->device) {
     foreach_alist (tapedeviceres, store->device) {

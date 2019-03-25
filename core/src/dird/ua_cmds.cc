@@ -1313,7 +1313,7 @@ static void do_all_setdebug(UaContext* ua,
   i = 0;
   unique_store[i++] = store;
   while ((store = (StorageResource*)my_config->GetNextRes(
-              R_STORAGE, (CommonResourceHeader*)store))) {
+              R_STORAGE, (BareosResource*)store))) {
     found = 0;
     for (j = 0; j < i; j++) {
       if (bstrcmp(unique_store[j]->address, store->address) &&
@@ -1355,7 +1355,7 @@ static void do_all_setdebug(UaContext* ua,
   i = 0;
   unique_client[i++] = client;
   while ((client = (ClientResource*)my_config->GetNextRes(
-              R_CLIENT, (CommonResourceHeader*)client))) {
+              R_CLIENT, (BareosResource*)client))) {
     found = 0;
     for (j = 0; j < i; j++) {
       if (bstrcmp(unique_client[j]->address, client->address) &&

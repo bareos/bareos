@@ -107,7 +107,7 @@ typedef enum
 
 struct resource_table_reference {
   int JobCount;
-  CommonResourceHeader** res_table;
+  BareosResource** res_table;
 };
 
 static bool CheckCatalog(cat_op mode);
@@ -732,7 +732,7 @@ static bool CheckResources()
       goto bail_out;
     }
 
-    if (my_config->GetNextRes(R_DIRECTOR, (CommonResourceHeader*)me) != NULL) {
+    if (my_config->GetNextRes(R_DIRECTOR, (BareosResource*)me) != NULL) {
       Jmsg(NULL, M_FATAL, 0, _("Only one Director resource permitted in %s\n"),
            configfile.c_str());
       OK = false;
@@ -836,7 +836,7 @@ static bool CheckResources()
     if (store->collectstats) {
       nstore = store;
       while ((nstore = (StorageResource*)my_config->GetNextRes(
-                  R_STORAGE, (CommonResourceHeader*)nstore))) {
+                  R_STORAGE, (BareosResource*)nstore))) {
         if (IsSameStorageDaemon(store, nstore) && nstore->collectstats) {
           nstore->collectstats = false;
           Dmsg1(200,

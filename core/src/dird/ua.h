@@ -115,8 +115,8 @@ class UaContext {
   /*
    * Resource retrieval methods including check on ACL.
    */
-  bool IsResAllowed(CommonResourceHeader* res);
-  CommonResourceHeader* GetResWithName(int rcode,
+  bool IsResAllowed(BareosResource* res);
+  BareosResource* GetResWithName(int rcode,
                                        const char* name,
                                        bool audit_event = false,
                                        bool lock = true);

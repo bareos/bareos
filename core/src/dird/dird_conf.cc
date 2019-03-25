@@ -70,8 +70,8 @@ extern struct s_kw RunFields[];
  * types. Note, these should be unique for each
  * daemon though not a requirement.
  */
-static CommonResourceHeader* sres_head[R_LAST - R_FIRST + 1];
-static CommonResourceHeader** res_head = sres_head;
+static BareosResource* sres_head[R_LAST - R_FIRST + 1];
+static BareosResource** res_head = sres_head;
 static PoolMem* configure_usage_string = NULL;
 
 /**
@@ -91,9 +91,9 @@ extern void StoreRun(LEX* lc, ResourceItem* item, int index, int pass);
 static void CreateAndAddUserAgentConsoleResource(
     ConfigurationParser& my_config);
 static bool SaveResource(int type, ResourceItem* items, int pass);
-static void FreeResource(CommonResourceHeader* sres, int type);
+static void FreeResource(BareosResource* sres, int type);
 static void DumpResource(int type,
-                         CommonResourceHeader* ures,
+                         BareosResource* ures,
                          void sendit(void* sock, const char* fmt, ...),
                          void* sock,
                          bool hide_sensitive_data,
@@ -1153,7 +1153,7 @@ static void PropagateResource(ResourceItem* items,
           break;
         }
         case CFG_TYPE_ALIST_RES: {
-          CommonResourceHeader* res = nullptr;
+          BareosResource* res = nullptr;
           alist *orig_list, **new_list;
 
           /*
@@ -2801,11 +2801,11 @@ static void StoreDevice(LEX* lc, ResourceItem* item, int index, int pass)
       res = (UnionOfResources*)malloc(resources[rindex].size);
       memset(res, 0, resources[rindex].size);
       res->res_dev.resource_name_ = bstrdup(lc->str);
-      res_head[rindex] = (CommonResourceHeader*)res; /* store first entry */
+      res_head[rindex] = (BareosResource*)res; /* store first entry */
       Dmsg3(900, "Inserting first %s res: %s index=%d\n",
             my_config->ResToStr(R_DEVICE), res->res_dir.resource_name_, rindex);
     } else {
-      CommonResourceHeader* next;
+      BareosResource* next;
       /*
        * See if it is already defined
        */
@@ -2819,7 +2819,7 @@ static void StoreDevice(LEX* lc, ResourceItem* item, int index, int pass)
         res = (UnionOfResources*)malloc(resources[rindex].size);
         memset(res, 0, resources[rindex].size);
         res->res_dev.resource_name_ = bstrdup(lc->str);
-        next->next = (CommonResourceHeader*)res;
+        next->next = (BareosResource*)res;
         Dmsg4(900, "Inserting %s res: %s index=%d pass=%d\n",
               my_config->ResToStr(R_DEVICE), res->res_dir.resource_name_,
               rindex, pass);
@@ -3182,7 +3182,7 @@ static void StoreRunscriptTarget(LEX* lc,
     } else if (Bstrcasecmp(lc->str, "no")) {
       ((RunScript*)item->value)->SetTarget("");
     } else {
-      CommonResourceHeader* res;
+      BareosResource* res;
 
       if (!(res = my_config->GetResWithName(R_CLIENT, lc->str))) {
         scan_err3(
@@ -3591,7 +3591,7 @@ static void PrintConfigCb(ResourceItem* items,
        * Each member of the list is comma-separated
        */
       int cnt = 0;
-      CommonResourceHeader* res = nullptr;
+      BareosResource* res = nullptr;
       alist* list;
       PoolMem res_names;
 
@@ -3829,7 +3829,7 @@ static void PrintConfigCb(ResourceItem* items,
 static void ResetAllClientConnectionHandshakeModes(
     ConfigurationParser& my_config)
 {
-  CommonResourceHeader* header = nullptr;
+  BareosResource* header = nullptr;
   header = my_config.GetNextRes(R_CLIENT, header);
   while (header) {
     ClientResource* client = reinterpret_cast<ClientResource*>(header);
@@ -3864,11 +3864,11 @@ static bool AddResourceCopyToEndOfChain(UnionOfResources* res_to_add, int type)
   UnionOfResources* res = (UnionOfResources*)malloc(resources[rindex].size);
   memcpy(res, res_to_add, resources[rindex].size);
   if (!res_head[rindex]) {
-    res_head[rindex] = (CommonResourceHeader*)res; /* store first entry */
+    res_head[rindex] = (BareosResource*)res; /* store first entry */
     Dmsg3(900, "Inserting first %s res: %s index=%d\n",
           my_config->ResToStr(type), res->res_dir.resource_name_, rindex);
   } else {
-    CommonResourceHeader *next, *last;
+    BareosResource *next, *last;
     if (!res->res_dir.resource_name_) {
       Emsg1(M_ERROR, 0,
             _("Name item is required in %s resource, but not found.\n"),
@@ -3888,7 +3888,7 @@ static bool AddResourceCopyToEndOfChain(UnionOfResources* res_to_add, int type)
         return false;
       }
     }
-    last->next = (CommonResourceHeader*)res;
+    last->next = (BareosResource*)res;
     Dmsg3(900, _("Inserting %s res: %s index=%d\n"), my_config->ResToStr(type),
           res->res_dir.resource_name_, rindex);
   }
@@ -3936,7 +3936,7 @@ ConfigurationParser* InitDirConfig(const char* configfile, int exit_code)
  * Dump contents of resource
  */
 static void DumpResource(int type,
-                         CommonResourceHeader* ures,
+                         BareosResource* ures,
                          void sendit(void* sock, const char* fmt, ...),
                          void* sock,
                          bool hide_sensitive_data,
@@ -4035,10 +4035,10 @@ bail_out:
  * resource chain is traversed.  Mainly we worry about freeing
  * allocated strings (names).
  */
-static void FreeResource(CommonResourceHeader* sres, int type)
+static void FreeResource(BareosResource* sres, int type)
 {
   int num;
-  CommonResourceHeader* nres; /* next resource if linked */
+  BareosResource* nres; /* next resource if linked */
   UnionOfResources* res = (UnionOfResources*)sres;
 
   if (!res) return;
@@ -4046,7 +4046,7 @@ static void FreeResource(CommonResourceHeader* sres, int type)
   /*
    * Common stuff -- free the resource name and description
    */
-  nres = (CommonResourceHeader*)res->res_dir.next_;
+  nres = (BareosResource*)res->res_dir.next_;
   if (res->res_dir.resource_name_) { free(res->res_dir.resource_name_); }
   if (res->res_dir.description_) { free(res->res_dir.description_); }
 

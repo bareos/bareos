@@ -134,11 +134,11 @@ union UnionOfResources {
   ClientResource res_client;
   StorageResource res_store;
   ConsoleFontResource con_font;
-  CommonResourceHeader hdr;
+  BareosResource hdr;
 
   UnionOfResources()
   {
-    new (&hdr) CommonResourceHeader();
+    new (&hdr) BareosResource();
     Dmsg1(900, "hdr:        %p \n", &hdr);
     Dmsg1(900, "res_dir.hdr %p\n", &res_dir.hdr);
   }

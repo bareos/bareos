@@ -98,7 +98,7 @@ class DeviceResource : public BareosResource {
   void MultipliedDeviceRestoreBaseName();
   void MultipliedDeviceRestoreNumberedName();
 
-  void CopyToStaticMemory(CommonResourceHeader* p) const override
+  void CopyToStaticMemory(BareosResource* p) const override
   {
     DeviceResource* r = dynamic_cast<DeviceResource*>(p);
     if (r) { *r = *this; }

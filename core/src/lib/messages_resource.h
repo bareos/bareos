@@ -43,7 +43,7 @@ class MessagesResource : public BareosResource {
   MessagesResource();
   virtual ~MessagesResource();
 
-  void CopyToStaticMemory(CommonResourceHeader* p) const override;
+  void CopyToStaticMemory(BareosResource* p) const override;
 
   void ClearInUse();
   void SetInUse();

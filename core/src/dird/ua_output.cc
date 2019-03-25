@@ -215,7 +215,7 @@ bool show_cmd(UaContext* ua, const char* cmd)
   int i, j, type, len;
   int recurse;
   char* res_name;
-  CommonResourceHeader* res = NULL;
+  BareosResource* res = NULL;
   bool verbose = false;
   bool hide_sensitive_data;
 
@@ -282,7 +282,7 @@ bool show_cmd(UaContext* ua, const char* cmd)
       for (j = 0; avail_resources[j].res_name; j++) {
         if (bstrncasecmp(res_name, _(avail_resources[j].res_name), len)) {
           type = avail_resources[j].type;
-          res = (CommonResourceHeader*)ua->GetResWithName(type, ua->argv[i],
+          res = (BareosResource*)ua->GetResWithName(type, ua->argv[i],
                                                           true);
           if (!res) { type = -3; }
           break;

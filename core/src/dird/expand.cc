@@ -234,7 +234,7 @@ static var_rc_t lookup_counter_var(var_t* ctx,
 
   LockRes(my_config);
   for (counter = NULL; (counter = (CounterResource*)my_config->GetNextRes(
-                            R_COUNTER, (CommonResourceHeader*)counter));) {
+                            R_COUNTER, (BareosResource*)counter));) {
     if (bstrcmp(counter->resource_name_, buf.c_str())) {
       Dmsg2(100, "Counter=%s val=%d\n", buf.c_str(), counter->CurrentValue);
       /*
@@ -443,7 +443,7 @@ static var_rc_t operate_var(var_t* var,
 
     LockRes(my_config);
     for (counter = NULL; (counter = (CounterResource*)my_config->GetNextRes(
-                              R_COUNTER, (CommonResourceHeader*)counter));) {
+                              R_COUNTER, (BareosResource*)counter));) {
       if (bstrcmp(counter->resource_name_, buf.c_str())) {
         Dmsg2(100, "counter=%s val=%s\n", counter->resource_name_, buf.c_str());
         break;

@@ -47,7 +47,7 @@ struct ResourceItem {
     bool* boolvalue;
     utime_t* utimevalue;
     s_password* pwdvalue;
-    CommonResourceHeader** resvalue;
+    BareosResource** resvalue;
     alist** alistvalue;
     dlist** dlistvalue;
     char* bitvalue;

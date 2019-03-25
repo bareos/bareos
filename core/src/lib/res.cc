@@ -90,11 +90,11 @@ void ConfigurationParser::b_UnlockRes(const char* file, int line) const
 /*
  * Return resource of type rcode that matches name
  */
-CommonResourceHeader* ConfigurationParser::GetResWithName(int rcode,
+BareosResource* ConfigurationParser::GetResWithName(int rcode,
                                                           const char* name,
                                                           bool lock) const
 {
-  CommonResourceHeader* res;
+  BareosResource* res;
   int rindex = rcode - r_first_;
 
   if (lock) { LockRes(this); }
@@ -115,11 +115,11 @@ CommonResourceHeader* ConfigurationParser::GetResWithName(int rcode,
  * call second arg (res) is NULL, on subsequent
  * calls, it is called with previous value.
  */
-CommonResourceHeader* ConfigurationParser::GetNextRes(
+BareosResource* ConfigurationParser::GetNextRes(
     int rcode,
-    CommonResourceHeader* res) const
+    BareosResource* res) const
 {
-  CommonResourceHeader* nres;
+  BareosResource* nres;
   int rindex = rcode - r_first_;
 
   if (res == NULL) {
@@ -594,7 +594,7 @@ void ConfigurationParser::StoreRes(LEX* lc,
 {
   LexGetToken(lc, BCT_NAME);
   if (pass == 2) {
-    CommonResourceHeader* res = GetResWithName(item->code, lc->str);
+    BareosResource* res = GetResWithName(item->code, lc->str);
     if (res == NULL) {
       scan_err3(
           lc,
@@ -653,7 +653,7 @@ void ConfigurationParser::StoreAlistRes(LEX* lc,
 
     for (;;) {
       LexGetToken(lc, BCT_NAME); /* scan next item */
-      CommonResourceHeader* res = GetResWithName(item->code, lc->str);
+      BareosResource* res = GetResWithName(item->code, lc->str);
       if (res == NULL) {
         scan_err3(lc,
                   _("Could not find config Resource \"%s\" referenced on line "
@@ -812,7 +812,7 @@ void ConfigurationParser::StoreDefs(LEX* lc,
                                     int index,
                                     int pass)
 {
-  CommonResourceHeader* res;
+  BareosResource* res;
 
   LexGetToken(lc, BCT_NAME);
   if (pass == 2) {
@@ -1939,7 +1939,7 @@ bool BareosResource::PrintConfig(PoolMem& buff,
          * Each member of the list is comma-separated
          */
         int cnt = 0;
-        CommonResourceHeader* res = nullptr;
+        BareosResource* res = nullptr;
         alist* list;
         PoolMem res_names;
 
@@ -1965,7 +1965,7 @@ bool BareosResource::PrintConfig(PoolMem& buff,
         break;
       }
       case CFG_TYPE_RES: {
-        CommonResourceHeader* res;
+        BareosResource* res;
 
         res = *(items[i].resvalue);
         if (res != NULL && res->resource_name_ != NULL) {

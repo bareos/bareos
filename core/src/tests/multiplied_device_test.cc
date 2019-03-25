@@ -37,7 +37,7 @@ static DeviceResource* GetMultipliedDeviceResource(
 {
   const char* name = "MultipliedDeviceResource0001";
 
-  CommonResourceHeader* p = my_config.GetResWithName(R_DEVICE, name, false);
+  BareosResource* p = my_config.GetResWithName(R_DEVICE, name, false);
   DeviceResource* device = reinterpret_cast<DeviceResource*>(p);
   if (device->count) { return device; }
 
@@ -63,7 +63,7 @@ TEST(sd, MultipliedDeviceTest_ConfigParameter)
 static uint32_t CountAllDeviceResources(ConfigurationParser& my_config)
 {
   uint32_t count = 0;
-  CommonResourceHeader* p = nullptr;
+  BareosResource* p = nullptr;
   while ((p = my_config.GetNextRes(R_DEVICE, p))) {
     DeviceResource* device = reinterpret_cast<DeviceResource*>(p);
     if (device->multiplied_device_resource) { count++; }
@@ -91,7 +91,7 @@ TEST(sd, MultipliedDeviceTest_CountAllAutomaticallyCreatedResources)
 DeviceResource* GetDeviceResourceByName(ConfigurationParser& my_config,
                                         const char* name)
 {
-  CommonResourceHeader* p = my_config.GetResWithName(R_DEVICE, name, false);
+  BareosResource* p = my_config.GetResWithName(R_DEVICE, name, false);
   return reinterpret_cast<DeviceResource*>(p);
 }
 
@@ -106,7 +106,7 @@ static uint32_t CheckNamesOfConfiguredDeviceResources_1(
   if (!source_device) { return 0; }
 
   /* find all matching multiplied-devices, this includes the source device */
-  CommonResourceHeader* p = nullptr;
+  BareosResource* p = nullptr;
   while ((p = my_config.GetNextRes(R_DEVICE, p))) {
     DeviceResource* device = reinterpret_cast<DeviceResource*>(p);
     if (device->multiplied_device_resource == source_device) {
@@ -159,7 +159,7 @@ static uint32_t CheckNamesOfConfiguredDeviceResources_2(
       GetDeviceResourceByName(my_config, "AnotherMultipliedDeviceResource0001");
   if (!source_device) { return 0; }
 
-  CommonResourceHeader* p = nullptr;
+  BareosResource* p = nullptr;
   while ((p = my_config.GetNextRes(R_DEVICE, p))) {
     DeviceResource* device = reinterpret_cast<DeviceResource*>(p);
     if (device->multiplied_device_resource == source_device) {
@@ -226,7 +226,7 @@ static uint32_t CheckAutochangerInAllDevices(ConfigurationParser& my_config)
        "another-virtual-multiplied-device-autochanger"}};
 
   uint32_t count_str_ok = 0;
-  CommonResourceHeader* p = nullptr;
+  BareosResource* p = nullptr;
 
   while ((p = my_config.GetNextRes(R_DEVICE, p))) {
     DeviceResource* device = reinterpret_cast<DeviceResource*>(p);
@@ -261,7 +261,7 @@ TEST(sd, MultipliedDeviceTest_CheckNameOfAutomaticallyAttachedAutochanger)
 static uint32_t CheckSomeDevicesInAutochanger(ConfigurationParser& my_config)
 {
   uint32_t count_str_ok = 0;
-  CommonResourceHeader* p = nullptr;
+  BareosResource* p = nullptr;
 
   std::set<std::string> names = {{"MultipliedDeviceResource0001"},
                                  {"MultipliedDeviceResource0002"},
@@ -311,7 +311,7 @@ TEST(sd, MultipliedDeviceTest_CheckPointerReferenceOfOriginalDevice)
 
   ASSERT_TRUE(my_config->ParseConfig());
 
-  CommonResourceHeader* p;
+  BareosResource* p;
   p = my_config->GetResWithName(R_DEVICE, "MultipliedDeviceResource0001");
   ASSERT_TRUE(p);
   DeviceResource* original_device = reinterpret_cast<DeviceResource*>(p);
@@ -329,7 +329,7 @@ TEST(sd, MultipliedDeviceTest_CheckPointerReferenceOfCopiedDevice)
 
   ASSERT_TRUE(my_config->ParseConfig());
 
-  CommonResourceHeader* p;
+  BareosResource* p;
   p = my_config->GetResWithName(R_DEVICE, "MultipliedDeviceResource0001");
   ASSERT_TRUE(p);
   DeviceResource* original_device = reinterpret_cast<DeviceResource*>(p);

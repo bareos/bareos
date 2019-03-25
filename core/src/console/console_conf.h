@@ -97,9 +97,9 @@ class DirectorResource
 union UnionOfResources {
   DirectorResource res_dir;
   ConsoleResource res_cons;
-  CommonResourceHeader hdr;
+  BareosResource hdr;
 
-  UnionOfResources() { new (&hdr) CommonResourceHeader(); }
+  UnionOfResources() { new (&hdr) BareosResource(); }
   ~UnionOfResources() {}
 };
 

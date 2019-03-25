@@ -35,7 +35,7 @@ MessagesResource::MessagesResource()
   return;
 }
 
-void MessagesResource::CopyToStaticMemory(CommonResourceHeader* p) const
+void MessagesResource::CopyToStaticMemory(BareosResource* p) const
 {
   MessagesResource* r = dynamic_cast<MessagesResource*>(p);
   if (r) { *r = *this; }
