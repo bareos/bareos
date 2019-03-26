@@ -52,9 +52,6 @@ enum
   R_LAST = R_DIRECTOR /* Keep this updated */
 };
 
-/**
- * Some resource attributes
- */
 enum
 {
   R_NAME = 1020,
@@ -64,46 +61,28 @@ enum
   R_BACKUP
 };
 
-/* Definition of the contents of each Resource */
-
-/* Console "globals" */
 class ConsoleResource
     : public BareosResource
     , public TlsResource {
  public:
-  char* rc_file;              /**< startup file */
-  char* history_file;         /**< command history file */
-  s_password password;        /**< UA server password */
-  uint32_t history_length;    /**< readline history length */
-  char* director;             /**< bind to director */
-  utime_t heartbeat_interval; /**< Interval to send heartbeats to Dir */
-  ConsoleResource() : TlsResource() {}
+  char* rc_file = nullptr;       /**< startup file */
+  char* history_file = nullptr;  /**< command history file */
+  s_password password;           /**< UA server password */
+  uint32_t history_length = 0;   /**< readline history length */
+  char* director = nullptr;      /**< bind to director */
+  utime_t heartbeat_interval{0}; /**< Interval to send heartbeats to Dir */
+  ConsoleResource() = default;
 };
 
-/* Director */
 class DirectorResource
     : public BareosResource
     , public TlsResource {
  public:
-  uint32_t DIRport;           /**< UA server port */
-  char* address;              /**< UA server address */
-  utime_t heartbeat_interval; /**< Interval to send heartbeats to Dir */
-  DirectorResource() : TlsResource() {}
+  uint32_t DIRport = 0;          /**< UA server port */
+  char* address = nullptr;       /**< UA server address */
+  utime_t heartbeat_interval{0}; /**< Interval to send heartbeats to Dir */
+  DirectorResource() = default;
 };
-
-/* Define the Union of all the above
- * resource structure definitions.
- */
-union UnionOfResources {
-  DirectorResource res_dir;
-  ConsoleResource res_cons;
-  BareosResource hdr;
-
-  UnionOfResources() { new (&hdr) BareosResource(); }
-  ~UnionOfResources() {}
-};
-
-extern ConsoleResource* me; /* "Global" Client resource */
 
 ConfigurationParser* InitConsConfig(const char* configfile, int exit_code);
 bool PrintConfigSchemaJson(PoolMem& buffer);

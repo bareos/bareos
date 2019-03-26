@@ -755,9 +755,10 @@ static bool SelectDirector(const char* director,
     LockRes(my_config);
     numdir = 0;
     foreach_res (director_resource_tmp, R_DIRECTOR) {
-      ConsoleOutputFormat(
-          _("%2d:  %s at %s:%d\n"), 1 + numdir++, director_resource_tmp->resource_name_,
-          director_resource_tmp->address, director_resource_tmp->DIRport);
+      ConsoleOutputFormat(_("%2d:  %s at %s:%d\n"), 1 + numdir++,
+                          director_resource_tmp->resource_name_,
+                          director_resource_tmp->address,
+                          director_resource_tmp->DIRport);
     }
     UnlockRes(my_config);
     if (GetCmd(stdin, _("Select Director by entering a number: "), UA_sock,
@@ -1011,6 +1012,7 @@ int main(int argc, char* argv[])
 
   if (export_config) {
     my_config->DumpResources(PrintMessage, NULL);
+    TerminateConsole(0);
     exit(0);
   }
 

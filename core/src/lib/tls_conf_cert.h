@@ -35,7 +35,7 @@ class TlsConfigCert {
   std::string dhfile_;      /* TLS Diffie-Hellman File */
   alist* allowed_certificate_common_names_;
 
-  std::string pem_message_; /* not implemented */
+  // std::string pem_message_; /* not implemented */
 
   TlsConfigCert() : verify_peer_(0), allowed_certificate_common_names_(nullptr)
   {
