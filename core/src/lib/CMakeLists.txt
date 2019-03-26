@@ -26,7 +26,8 @@ set(INCLUDE_FILES ../include/baconfig.h ../include/bareos.h
    bsock_tcp.h btime.h btimers.h cbuf.h
    crypto.h crypto_cache.h devlock.h dlist.h fnmatch.h
    guid_to_name.h htable.h ini.h lex.h lib.h lockmgr.h
-   md5.h mem_pool.h message.h messages_resource.h mntent_cache.h parse_conf.h
+   md5.h mem_pool.h message.h messages_resource.h messages_resource_items.h
+   mntent_cache.h parse_conf.h
    plugins.h qualified_resource_name_type_converter.h queue.h rblist.h
    runscript.h rwlock.h scsi_crypto.h scsi_lli.h scsi_tapealert.h
    serial.h sha1.h smartall.h status.h tls.h tls_conf.h tree.h try_tls_handshake_as_a_server.h

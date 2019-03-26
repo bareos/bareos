@@ -41,6 +41,7 @@
 #include "lib/messages_resource.h"
 #include "lib/resource_item.h"
 #include "lib/parse_conf.h"
+#include "lib/tls_resource_items.h"
 #define NEED_JANSSON_NAMESPACE 1
 #include "lib/output_formatter.h"
 #include "lib/json.h"
@@ -68,7 +69,7 @@ static DeviceResource res_dev;
 static AutochangerResource res_changer;
 
 static MessagesResource res_msgs;
-#include "lib/msg_res.h"
+#include "lib/messages_resource_items.h"
 
 /* clang-format off */
 

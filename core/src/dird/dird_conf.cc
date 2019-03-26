@@ -57,6 +57,7 @@
 #include "lib/parse_conf.h"
 #include "lib/keyword_table_s.h"
 #include "lib/util.h"
+#include "lib/tls_resource_items.h"
 
 namespace directordaemon {
 
@@ -566,7 +567,7 @@ static ResourceItem counter_items[] = {
 /**
  * Message resource
  */
-#include "lib/msg_res.h"
+#include "lib/messages_resource_items.h"
 #include "lib/json.h"
 
 /**

@@ -51,6 +51,7 @@
 #include "lib/parse_conf.h"
 #include "lib/resource_item.h"
 #include "lib/address_conf.h"
+#include "lib/tls_resource_items.h"
 
 
 namespace filedaemon {
@@ -163,7 +164,7 @@ static ResourceItem dir_items[] = {
 /**
  * Message resource
  */
-#include "lib/msg_res.h"
+#include "lib/messages_resource_items.h"
 
 static ResourceTable resources[] = {
   {"Director", dir_items, R_DIRECTOR, sizeof(DirectorResource),

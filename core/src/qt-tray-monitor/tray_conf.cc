@@ -47,6 +47,7 @@
 
 #include "lib/parse_conf.h"
 #include "lib/resource_item.h"
+#include "lib/tls_resource_items.h"
 
 static const std::string default_config_filename("tray-monitor.conf");
 
