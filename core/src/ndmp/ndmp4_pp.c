@@ -80,17 +80,13 @@ ndmp4_pp_addr (char *buf, ndmp4_addr *ma)
       for (i = 0; i < ma->ndmp4_addr_u.tcp_addr.tcp_addr_len; i++) {
          tcp = &ma->ndmp4_addr_u.tcp_addr.tcp_addr_val[i];
 
-#ifndef NDMOS_OPTION_PRETTYPRINT_HUMAN_READABLE_IP
-         sprintf (NDMOS_API_STREND(buf), " #%d(%lx,%d",
-			i, tcp->ip_addr, tcp->port);
-#else
          char ip_addr[100];
          ip_in_host_order = ntohl(tcp->ip_addr);
          sprintf (NDMOS_API_STREND(buf), "%d(%s:%u",
                i,
                inet_ntop (AF_INET, &ip_in_host_order, ip_addr, sizeof(ip_addr)),
                tcp->port);
-#endif /* NDMOS_OPTION_PRETTYPRINT_HUMAN_READABLE_IP */
+
          for (j = 0; j < tcp->addr_env.addr_env_len; j++) {
             sprintf (NDMOS_API_STREND(buf), ",%s=%s",
                   tcp->addr_env.addr_env_val[j].name,
