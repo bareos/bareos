@@ -46,6 +46,7 @@
 using ::testing::Assign;
 using ::testing::DoAll;
 using ::testing::Return;
+using namespace storagedaemon;
 
 template <typename T, typename... Args>
 std::unique_ptr<T> sm_make_unique(Args&&... args) {
@@ -54,9 +55,9 @@ std::unique_ptr<T> sm_make_unique(Args&&... args) {
 }
 
 namespace storagedaemon {
-
 /* import this to parse the config */
 extern bool ParseSdConfig(const char* configfile, int exit_code);
+}
 
 class ReservationTest : public ::testing::Test {
   void SetUp() override;
@@ -304,5 +305,3 @@ TEST_F(ReservationTest, use_cmd_reserve_read_twice_wait) {
   ASSERT_EQ(use_cmd(job2->jcr), true);
   ASSERT_STREQ(bsock->msg, "3000 OK use device device=single3\n");
 }
-
-} /* namespace storagedaemon */
