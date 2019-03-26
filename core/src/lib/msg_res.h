@@ -31,10 +31,6 @@
 
 /* clang-format off */
 
-/*
- * Message resource directives
- * name config_data_type value code flags default_value
- */
 static ResourceItem msgs_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_msgs,resource_name_), 0, 0, NULL, NULL, NULL },
    { "Description", CFG_TYPE_STR, ITEM(res_msgs,description_), 0, 0, NULL, NULL, NULL },

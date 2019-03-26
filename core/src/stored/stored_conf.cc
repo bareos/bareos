@@ -43,18 +43,14 @@
 #include "lib/parse_conf.h"
 #define NEED_JANSSON_NAMESPACE 1
 #include "lib/output_formatter.h"
+#include "lib/json.h"
+#include "include/jcr.h"
 
 namespace storagedaemon {
 
-/**
- * First and last resource ids
- */
 static BareosResource* sres_head[R_LAST - R_FIRST + 1];
 static BareosResource** res_head = sres_head;
 
-/**
- * Forward referenced subroutines
- */
 static void FreeResource(BareosResource* sres, int type);
 static bool SaveResource(int type, ResourceItem* items, int pass);
 static void DumpResource(int type,
@@ -64,22 +60,18 @@ static void DumpResource(int type,
                          bool hide_sensitive_data,
                          bool verbose);
 
-/**
- * build the current resource here statically,
- * then move it to dynamic memory
- */
+/* the first configuration pass uses this static memory */
 static DirectorResource res_dir;
 static NdmpResource res_ndmp;
 static StorageResource res_store;
 static DeviceResource res_dev;
-static MessagesResource res_msgs;
 static AutochangerResource res_changer;
+
+static MessagesResource res_msgs;
+#include "lib/msg_res.h"
 
 /* clang-format off */
 
-/**
- * Globals for the Storage daemon.
- */
 static ResourceItem store_items[] = {
   {"Name", CFG_TYPE_NAME, ITEM(res_store,resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"Description", CFG_TYPE_STR, ITEM(res_store,description_), 0, 0, NULL, NULL, NULL},
@@ -131,9 +123,6 @@ static ResourceItem store_items[] = {
     TLS_CERT_CONFIG(res_store),
   {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}};
 
-/**
- * Directors that can speak to the Storage daemon
- */
 static ResourceItem dir_items[] = {
   {"Name", CFG_TYPE_NAME, ITEM(res_dir,resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"Description", CFG_TYPE_STR, ITEM(res_dir,description_), 0, 0, NULL, NULL, NULL},
@@ -145,9 +134,6 @@ static ResourceItem dir_items[] = {
     TLS_CERT_CONFIG(res_dir),
   {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}};
 
-/**
- * NDMP DMA's that can speak to the Storage daemon
- */
 static ResourceItem ndmp_items[] = {
   {"Name", CFG_TYPE_NAME, ITEM(res_ndmp,resource_name_), 0, CFG_ITEM_REQUIRED, 0, NULL, NULL},
   {"Description", CFG_TYPE_STR, ITEM(res_ndmp,description_), 0, 0, 0, NULL, NULL},
@@ -157,9 +143,6 @@ static ResourceItem ndmp_items[] = {
   {"LogLevel", CFG_TYPE_PINT32, ITEM(res_ndmp,LogLevel), 0, CFG_ITEM_DEFAULT, "4", NULL, NULL},
   {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}};
 
-/**
- * Device definition
- */
 static ResourceItem dev_items[] = {
   {"Name", CFG_TYPE_NAME, ITEM(res_dev,resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, "Unique identifier of the resource."},
   {"Description", CFG_TYPE_STR, ITEM(res_dev,description_), 0, 0, NULL, NULL,
@@ -239,10 +222,7 @@ static ResourceItem dev_items[] = {
   "If set to 1 only this single resource will be used and its name will not be altered."},
   {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}};
 
-/**
- * Autochanger definition
- */
-static ResourceItem changer_items[] = {
+static ResourceItem autochanger_items[] = {
   {"Name", CFG_TYPE_NAME, ITEM(res_changer,resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"Description", CFG_TYPE_STR, ITEM(res_changer,description_), 0, 0, NULL, NULL, NULL},
   {"Device", CFG_TYPE_ALIST_RES, ITEM(res_changer,device), R_DEVICE, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
@@ -250,18 +230,6 @@ static ResourceItem changer_items[] = {
   {"ChangerCommand", CFG_TYPE_STRNAME, ITEM(res_changer,changer_command), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}};
 
-// { "mountanonymousvolumes", CFG_TYPE_BIT, ITEM(res_dev,cap_bits), CAP_ANONVOLS, CFG_ITEM_DEFAULT, "off" },
-
-/**
- * Message resource
- */
-#include "lib/msg_res.h"
-#include "lib/json.h"
-#include "include/jcr.h"
-
-/**
- * This is the master resource definition
- */
 static ResourceTable resources[] = {
   {"Director", dir_items, R_DIRECTOR, sizeof(DirectorResource),
       []() { return new (&res_dir) DirectorResource(); }, &res_dir},
@@ -273,26 +241,18 @@ static ResourceTable resources[] = {
       []() { return new (&res_dev) DeviceResource(); }, &res_dev},
   {"Messages", msgs_items, R_MSGS, sizeof(MessagesResource),
       []() { return new (&res_msgs) MessagesResource(); }, &res_msgs},
-  {"Autochanger", changer_items, R_AUTOCHANGER, sizeof(AutochangerResource),
+  {"Autochanger", autochanger_items, R_AUTOCHANGER, sizeof(AutochangerResource),
       []() { return new (&res_changer) AutochangerResource(); }, &res_changer},
   {nullptr, nullptr, 0, 0, nullptr, nullptr}};
 
 /* clang-format on */
 
-/**
- * Authentication methods
- */
-static struct s_kw authmethods[] = {{"None", AT_NONE},
-                                    {"Clear", AT_CLEAR},
-                                    {"MD5", AT_MD5},
-                                    {NULL, 0}};
+static struct s_kw authentication_methods[] = {{"None", AT_NONE},
+                                               {"Clear", AT_CLEAR},
+                                               {"MD5", AT_MD5},
+                                               {NULL, 0}};
 
-/**
- * Device types
- *
- * device type, device code = token
- */
-static s_kw dev_types[] = {
+static s_kw device_types[] = {
     {"file", B_FILE_DEV},
     {"tape", B_TAPE_DEV},
     {"fifo", B_FIFO_DEV},
@@ -306,26 +266,20 @@ static s_kw dev_types[] = {
     {"elasto", B_ELASTO_DEV},
     {NULL, 0}};
 
-/**
- * IO directions.
- */
 static s_kw io_directions[] = {{"in", IO_DIRECTION_IN},
                                {"out", IO_DIRECTION_OUT},
                                {"both", IO_DIRECTION_INOUT},
                                {NULL, 0}};
 
-/**
- * Compression algorithms
- */
 static s_kw compression_algorithms[] = {
     {"gzip", COMPRESS_GZIP},   {"lzo", COMPRESS_LZO1X},
     {"lzfast", COMPRESS_FZFZ}, {"lz4", COMPRESS_FZ4L},
     {"lz4hc", COMPRESS_FZ4H},  {NULL, 0}};
 
-/**
- * Store authentication type (Mostly for NDMP like clear or MD5).
- */
-static void StoreAuthtype(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreAuthenticationType(LEX* lc,
+                                    ResourceItem* item,
+                                    int index,
+                                    int pass)
 {
   int i;
 
@@ -333,9 +287,9 @@ static void StoreAuthtype(LEX* lc, ResourceItem* item, int index, int pass)
   /*
    * Store the type both pass 1 and pass 2
    */
-  for (i = 0; authmethods[i].name; i++) {
-    if (Bstrcasecmp(lc->str, authmethods[i].name)) {
-      *(uint32_t*)(item->value) = authmethods[i].token;
+  for (i = 0; authentication_methods[i].name; i++) {
+    if (Bstrcasecmp(lc->str, authentication_methods[i].name)) {
+      *(uint32_t*)(item->value) = authentication_methods[i].token;
       i = 0;
       break;
     }
@@ -379,10 +333,8 @@ static void StoreAutopassword(LEX* lc, ResourceItem* item, int index, int pass)
       break;
   }
 }
-/**
- * Store Device Type (File, FIFO, Tape)
- */
-static void StoreDevtype(LEX* lc, ResourceItem* item, int index, int pass)
+
+static void StoreDeviceType(LEX* lc, ResourceItem* item, int index, int pass)
 {
   int i;
 
@@ -390,9 +342,9 @@ static void StoreDevtype(LEX* lc, ResourceItem* item, int index, int pass)
   /*
    * Store the label pass 2 so that type is defined
    */
-  for (i = 0; dev_types[i].name; i++) {
-    if (Bstrcasecmp(lc->str, dev_types[i].name)) {
-      *(uint32_t*)(item->value) = dev_types[i].token;
+  for (i = 0; device_types[i].name; i++) {
+    if (Bstrcasecmp(lc->str, device_types[i].name)) {
+      *(uint32_t*)(item->value) = device_types[i].token;
       i = 0;
       break;
     }
@@ -479,9 +431,10 @@ static void InitResourceCb(ResourceItem* item, int pass)
     case 1:
       switch (item->type) {
         case CFG_TYPE_AUTHTYPE:
-          for (int i = 0; authmethods[i].name; i++) {
-            if (Bstrcasecmp(item->default_value, authmethods[i].name)) {
-              *(uint32_t*)(item->value) = authmethods[i].token;
+          for (int i = 0; authentication_methods[i].name; i++) {
+            if (Bstrcasecmp(item->default_value,
+                            authentication_methods[i].name)) {
+              *(uint32_t*)(item->value) = authentication_methods[i].token;
             }
           }
           break;
@@ -494,10 +447,6 @@ static void InitResourceCb(ResourceItem* item, int pass)
   }
 }
 
-/**
- * callback function for parse_config
- * See ../lib/parse_conf.c, function ParseConfig, for more generic handling.
- */
 static void ParseConfigCb(LEX* lc, ResourceItem* item, int index, int pass)
 {
   switch (item->type) {
@@ -505,10 +454,10 @@ static void ParseConfigCb(LEX* lc, ResourceItem* item, int index, int pass)
       StoreAutopassword(lc, item, index, pass);
       break;
     case CFG_TYPE_AUTHTYPE:
-      StoreAuthtype(lc, item, index, pass);
+      StoreAuthenticationType(lc, item, index, pass);
       break;
     case CFG_TYPE_DEVTYPE:
-      StoreDevtype(lc, item, index, pass);
+      StoreDeviceType(lc, item, index, pass);
       break;
     case CFG_TYPE_MAXBLOCKSIZE:
       StoreMaxblocksize(lc, item, index, pass);
@@ -724,20 +673,13 @@ static void DumpResource(int type,
   }
 }
 
-/**
- * Save the new resource by chaining it into the head list for
- * the resource. If this is pass 2, we update any resource
- * or alist pointers.
- */
 static bool SaveResource(int type, ResourceItem* items, int pass)
 {
   int rindex = type - R_FIRST;
   int i;
   int error = 0;
 
-  /*
-   * Ensure that all required items are present
-   */
+  // Ensure that all required items are present
   for (i = 0; items[i].name; i++) {
     if (items[i].flags & CFG_ITEM_REQUIRED) {
       if (!BitIsSet(i, items[i].static_resource->item_present_)) {
@@ -746,29 +688,20 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
               items[i].name, resources[rindex].name);
       }
     }
-    /*
-     * If this triggers, take a look at lib/parse_conf.h
-     */
+
     if (i >= MAX_RES_ITEMS) {
       Emsg1(M_ERROR_TERM, 0, _("Too many items in \"%s\" resource\n"),
             resources[rindex].name);
     }
   }
 
-  /*
-   * During pass 2, we looked up pointers to all the resources
-   * referrenced in the current resource, , now we
-   * must copy their address from the static record to the allocated
-   * record.
-   */
+  // save previously discovered pointers into dynamic memory
   if (pass == 2) {
     switch (type) {
       case R_DEVICE:
       case R_MSGS:
       case R_NDMP:
-        /*
-         * Resources not containing a resource
-         */
+        // Resources not containing a resource
         break;
       case R_DIRECTOR: {
         DirectorResource* p = dynamic_cast<DirectorResource*>(
@@ -880,13 +813,6 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
   return (error == 0);
 }
 
-/**
- * Free memory of resource.
- * NB, we don't need to worry about freeing any references
- * to other resources as they will be freed when that
- * resource chain is traversed.  Mainly we worry about freeing
- * allocated strings (names).
- */
 static void FreeResource(BareosResource* res, int type)
 {
   if (res == NULL) return;

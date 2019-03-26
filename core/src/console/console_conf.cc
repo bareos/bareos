@@ -79,8 +79,10 @@ static ResourceItem dir_items[] = {
 };
 
 static ResourceTable resources[] = {
-  { "Console", cons_items, R_CONSOLE, sizeof(ConsoleResource), [] (){ return new(&res_cons) ConsoleResource(); }, &res_cons },
-  { "Director", dir_items, R_DIRECTOR, sizeof(DirectorResource), [] (){ return new(&res_dir) DirectorResource(); }, &res_dir },
+  { "Console", cons_items, R_CONSOLE, sizeof(ConsoleResource),
+      [] (){ return new(&res_cons) ConsoleResource(); }, &res_cons },
+  { "Director", dir_items, R_DIRECTOR, sizeof(DirectorResource),
+      [] (){ return new(&res_dir) DirectorResource(); }, &res_dir },
   {nullptr, nullptr, 0, 0, nullptr, nullptr}
 };
 
