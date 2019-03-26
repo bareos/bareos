@@ -162,7 +162,7 @@ is technically also a fork of the documenation created following the
 rules of the GNU Free Documentation License.
 
 Original author of Bacula and it’s documentation is Kern Sibbald. We
-thank Kern and all contributors to Bacula and it’s documentation. We
+thank Kern and all contributors to Bacula and its documentation. We
 maintain a list of contributors to Bacula (until the time we’ve started
 the fork) and Bareos in our AUTHORS file.
 
@@ -455,6 +455,7 @@ usually be found quickly using a good multiple thread debugger such as
 **bareos-dir**. You might use the following to find the problem:
 
 ::
+
   <start the Storage and File daemons>
   cd dird
   gdb ./bareos-dir
