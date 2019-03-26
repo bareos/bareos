@@ -395,6 +395,33 @@ bail_out:
   return false;
 }
 
+void ConfigurationParser::AppendToResourcesChain(BareosResource* new_resource,
+                                                 int type)
+{
+  int rindex = type - r_first_;
+
+  if (!res_head_[rindex]) {
+    /* store first entry */
+    res_head_[rindex] = new_resource;
+  } else {
+    /* Add new resource to end of chain */
+    BareosResource *next, *last;
+    for (last = next = res_head_[rindex]; next; next = next->next_) {
+      last = next;
+      if (bstrcmp(next->resource_name_, new_resource->resource_name_)) {
+        Emsg2(M_ERROR_TERM, 0,
+              _("Attempt to define second \"%s\" resource named \"%s\" is "
+                "not permitted.\n"),
+              resources_[rindex].name, new_resource->resource_name_);
+        return;
+      }
+    }
+    last->next_ = new_resource;
+    Dmsg2(90, "Inserting %s new_resource: %s\n", ResToStr(type),
+          new_resource->resource_name_);
+  }
+}
+
 int ConfigurationParser::GetResourceTableIndex(int resource_type)
 {
   int rindex = -1;

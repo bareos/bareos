@@ -63,8 +63,6 @@ static void DumpResource(int type,
                          void* sock,
                          bool hide_sensitive_data,
                          bool verbose);
-static void AppendToResourcesChain(BareosResource* new_resource,
-                                   int type);
 
 /**
  * build the current resource here statically,
@@ -548,8 +546,8 @@ static void MultiplyDevice(DeviceResource& multiplied_device_resource)
         std::addressof(multiplied_device_resource);
     copied_device_resource->count = 0;
 
-    AppendToResourcesChain(copied_device_resource,
-                           copied_device_resource->rcode_);
+    my_config->AppendToResourcesChain(copied_device_resource,
+                                      copied_device_resource->rcode_);
 
     if (copied_device_resource->changer_res) {
       if (copied_device_resource->changer_res->device) {
@@ -726,32 +724,6 @@ static void DumpResource(int type,
   }
 }
 
-static void AppendToResourcesChain(BareosResource* new_resource, int type)
-{
-  int rindex = type - R_FIRST;
-
-  if (!res_head[rindex]) {
-    /* store first entry */
-    res_head[rindex] = new_resource;
-  } else {
-    /* Add new resource to end of chain */
-    BareosResource *next, *last;
-    for (last = next = res_head[rindex]; next; next = next->next_) {
-      last = next;
-      if (bstrcmp(next->resource_name_, new_resource->resource_name_)) {
-        Emsg2(M_ERROR_TERM, 0,
-              _("Attempt to define second \"%s\" resource named \"%s\" is "
-                "not permitted.\n"),
-              resources[rindex].name, new_resource->resource_name_);
-        return;
-      }
-    }
-    last->next_ = new_resource;
-    Dmsg2(90, "Inserting %s new_resource: %s\n", my_config->ResToStr(type),
-          new_resource->resource_name_);
-  }
-}
-
 /**
  * Save the new resource by chaining it into the head list for
  * the resource. If this is pass 2, we update any resource
@@ -903,7 +875,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         ASSERT(false);
         break;
     }
-    AppendToResourcesChain(new_resource, type);
+    my_config->AppendToResourcesChain(new_resource, type);
   }
   return (error == 0);
 }

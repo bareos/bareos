@@ -320,12 +320,12 @@ class ConfigurationParser {
   bool omit_defaults_; /* Omit config variables with default values when dumping
                           the config */
 
-  int32_t r_first_;          /* First daemon resource type */
-  int32_t r_last_;           /* Last daemon resource type */
-  int32_t r_own_;            /* own resource type */
-  ResourceTable* resources_; /* Pointer to table of permitted resources */
-  BareosResource** res_head_; /* Pointer to defined resources */
-  mutable brwlock_t res_lock_;      /* Resource lock */
+  int32_t r_first_;            /* First daemon resource type */
+  int32_t r_last_;             /* Last daemon resource type */
+  int32_t r_own_;              /* own resource type */
+  ResourceTable* resources_;   /* Pointer to table of permitted resources */
+  BareosResource** res_head_;  /* Pointer to defined resources */
+  mutable brwlock_t res_lock_; /* Resource lock */
 
   SaveResourceCb_t SaveResourceCb_;
   DumpResourceCb_t DumpResourceCb_;
@@ -365,6 +365,7 @@ class ConfigurationParser {
                     ResourceItem* items,
                     int pass,
                     std::function<void*()> initres);
+  void AppendToResourcesChain(BareosResource* new_resource, int type);
   bool RemoveResource(int type, const char* name);
   void DumpResources(void sendit(void* sock, const char* fmt, ...),
                      void* sock,
@@ -388,8 +389,8 @@ class ConfigurationParser {
                             bool create_directories = false);
   BareosResource* GetNextRes(int rcode, BareosResource* res) const;
   BareosResource* GetResWithName(int rcode,
-                                       const char* name,
-                                       bool lock = true) const;
+                                 const char* name,
+                                 bool lock = true) const;
   void b_LockRes(const char* file, int line) const;
   void b_UnlockRes(const char* file, int line) const;
   const char* ResToStr(int rcode) const;

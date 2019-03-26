@@ -232,24 +232,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
               resources[rindex].rcode);
         return false;
     }
-
-    if (!res_head[rindex]) {
-      res_head[rindex] = new_resource;
-    } else {
-      BareosResource *next, *last;
-      for (last = next = res_head[rindex]; next; next = next->next_) {
-        last = next;
-        if (bstrcmp(next->resource_name_, new_resource->resource_name_)) {
-          Emsg2(M_ERROR_TERM, 0,
-                _("Attempt to define second %s resource named \"%s\" is not "
-                  "permitted.\n"),
-                resources[rindex].name, new_resource->resource_name_);
-        }
-      }
-      last->next_ = new_resource;
-      Dmsg2(90, "Inserting %s res: %s\n", my_config->ResToStr(type),
-            new_resource->resource_name_);
-    }
+    my_config->AppendToResourcesChain(new_resource, type);
   }
   return (error == 0);
 }
