@@ -91,8 +91,8 @@ void ConfigurationParser::b_UnlockRes(const char* file, int line) const
  * Return resource of type rcode that matches name
  */
 BareosResource* ConfigurationParser::GetResWithName(int rcode,
-                                                          const char* name,
-                                                          bool lock) const
+                                                    const char* name,
+                                                    bool lock) const
 {
   BareosResource* res;
   int rindex = rcode - r_first_;
@@ -115,9 +115,8 @@ BareosResource* ConfigurationParser::GetResWithName(int rcode,
  * call second arg (res) is NULL, on subsequent
  * calls, it is called with previous value.
  */
-BareosResource* ConfigurationParser::GetNextRes(
-    int rcode,
-    BareosResource* res) const
+BareosResource* ConfigurationParser::GetNextRes(int rcode,
+                                                BareosResource* res) const
 {
   BareosResource* nres;
   int rindex = rcode - r_first_;
@@ -186,7 +185,7 @@ bool ConfigurationParser::GetTlsPskByFullyQualifiedResourceName(
 void ConfigurationParser::ScanTypes(LEX* lc,
                                     MessagesResource* msg,
                                     int dest_code,
-                                    char* where,
+                                    const std::string& where,
                                     const std::string& cmd,
                                     const std::string& timestamp_format)
 {
@@ -243,7 +242,6 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
 {
   int token;
   const char* cmd = nullptr;
-  const char* tsf = nullptr;
   POOLMEM* dest;
   int dest_len;
 
@@ -258,15 +256,14 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
     return;
   }
 
-  tsf = message_resource->timestamp_format_.c_str();
-
   if (pass == 1) {
     switch (item->code) {
       case MD_STDOUT:
       case MD_STDERR:
       case MD_CONSOLE:
       case MD_CATALOG:
-        ScanTypes(lc, message_resource, item->code, NULL, NULL, tsf);
+        ScanTypes(lc, message_resource, item->code, std::string(),
+                  std::string(), message_resource->timestamp_format_);
         break;
       case MD_SYSLOG: { /* syslog */
         char* p;
@@ -354,7 +351,8 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
           break;
         }
         Dmsg1(900, "mail_cmd=%s\n", NPRT(cmd));
-        ScanTypes(lc, message_resource, item->code, dest, cmd, tsf);
+        ScanTypes(lc, message_resource, item->code, dest, cmd,
+                  message_resource->timestamp_format_);
         FreePoolMemory(dest);
         Dmsg0(900, "done with dest codes\n");
         break;
@@ -374,7 +372,8 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
           scan_err1(lc, _("expected an =, got: %s"), lc->str);
           return;
         }
-        ScanTypes(lc, message_resource, item->code, dest, NULL, tsf);
+        ScanTypes(lc, message_resource, item->code, dest, std::string(),
+                  message_resource->timestamp_format_);
         FreePoolMemory(dest);
         Dmsg0(900, "done with dest codes\n");
         break;

@@ -163,11 +163,11 @@ bool do_ndmp_native_query_tape_and_robot_agents(JobControlRecord* jcr,
    */
 
   if (store->rss->ndmp_deviceinfo) {
-    Jmsg(jcr, M_INFO, 0, "NDMP Devices for storage %s:(%s)\n", store->resource_name_,
-         store->rss->smc_ident);
+    Jmsg(jcr, M_INFO, 0, "NDMP Devices for storage %s:(%s)\n",
+         store->resource_name_, store->rss->smc_ident);
   } else {
-    Jmsg(jcr, M_INFO, 0, "No NDMP Devices for storage %s:(%s)\n", store->resource_name_,
-         store->rss->smc_ident);
+    Jmsg(jcr, M_INFO, 0, "No NDMP Devices for storage %s:(%s)\n",
+         store->resource_name_, store->rss->smc_ident);
     return false;
   }
   for (auto devinfo = store->rss->ndmp_deviceinfo->begin();
@@ -832,7 +832,7 @@ char* lookup_ndmp_drive(StorageResource* store, drive_number_t drivenumber)
   if (store->device) {
     foreach_alist (tapedeviceres, store->device) {
       if (cnt == drivenumber) {
-        tapedevice = tapedeviceres->name;
+        tapedevice = tapedeviceres->resource_name_;
         return tapedevice;
       }
       cnt++;

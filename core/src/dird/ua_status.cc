@@ -614,7 +614,8 @@ static void DoSchedulerStatus(UaContext* ua)
     }
 
     if (job) {
-      if (job->schedule && bstrcmp(sched->resource_name_, job->schedule->resource_name_)) {
+      if (job->schedule &&
+          bstrcmp(sched->resource_name_, job->schedule->resource_name_)) {
         if (cnt++ == 0) { ua->SendMsg("%s\n", sched->resource_name_); }
         ua->SendMsg("                       %s\n", job->resource_name_);
       }
@@ -630,7 +631,8 @@ static void DoSchedulerStatus(UaContext* ua)
           if (job->enabled && (!job->client || job->client->enabled)) {
             ua->SendMsg("                       %s\n", job->resource_name_);
           } else {
-            ua->SendMsg("                       %s (disabled)\n", job->resource_name_);
+            ua->SendMsg("                       %s (disabled)\n",
+                        job->resource_name_);
           }
         }
       }
@@ -959,7 +961,8 @@ static void ListRunningJobs(UaContext* ua)
           "==\n"));
   }
   foreach_jcr (jcr) {
-    if (jcr->JobId == 0 || !ua->AclAccessOk(Job_ACL, jcr->res.job->resource_name_)) {
+    if (jcr->JobId == 0 ||
+        !ua->AclAccessOk(Job_ACL, jcr->res.job->resource_name_)) {
       continue;
     }
     njobs++;
@@ -999,7 +1002,8 @@ static void ListRunningJobs(UaContext* ua)
         if (!jcr->res.client) {
           Mmsg(emsg, _("is waiting on Client"));
         } else {
-          Mmsg(emsg, _("is waiting on Client %s"), jcr->res.client->resource_name_);
+          Mmsg(emsg, _("is waiting on Client %s"),
+               jcr->res.client->resource_name_);
         }
         pool_mem = true;
         msg = emsg;
@@ -1098,7 +1102,8 @@ static void ListRunningJobs(UaContext* ua)
           Mmsg(emsg, _("is waiting for Client to connect to Storage daemon"));
         } else {
           Mmsg(emsg, _("is waiting for Client %s to connect to Storage %s"),
-               jcr->res.client->resource_name_, jcr->res.write_storage->resource_name_);
+               jcr->res.client->resource_name_,
+               jcr->res.write_storage->resource_name_);
         }
         msg = emsg;
         break;
@@ -1259,7 +1264,7 @@ static void ListConnectedClients(UaContext* ua)
                              "%-20d");
     ua->send->ObjectKeyValue("authenticated", connection->authenticated(),
                              "%-20d");
-    ua->send->ObjectKeyValue("name", connection->resource_name_, "%-40s");
+    ua->send->ObjectKeyValue("name", connection->name(), "%-40s");
     ua->send->ObjectEnd();
     ua->send->Decoration("\n");
   }

@@ -184,7 +184,6 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
   utime_t utime;
   BareosResource* res;
   RunResource** run = (RunResource**)(item->value);
-  UnionOfResources* res_all = (UnionOfResources*)my_config->res_all_;
 
   lc->options |= LOPT_NO_IDENT; /* Want only "strings" */
 
@@ -742,7 +741,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
   }
 
   lc->options = options; /* Restore scanner options */
-  SetBit(index, res_all->res_sch.item_present_);
-  ClearBit(index, res_all->hdr.inherit_content);
+  SetBit(index, item->static_resource->item_present_);
+  ClearBit(index, item->static_resource->inherit_content_);
 }
 } /* namespace directordaemon */

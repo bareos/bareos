@@ -386,7 +386,7 @@ class ConfigurationParser {
   void ScanTypes(LEX* lc,
                  MessagesResource* msg,
                  int dest_code,
-                 char* where,
+                 const std::string& where,
                  const std::string& cmd,
                  const std::string& timestamp_format);
 };

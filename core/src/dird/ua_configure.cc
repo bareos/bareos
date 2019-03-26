@@ -251,7 +251,7 @@ static inline bool ConfigureCreateFdResource(UaContext* ua,
    * Get the path where the resource should get stored.
    */
   basedir.bsprintf("bareos-dir-export/client/%s/bareos-fd.d", clientname);
-  dirname = my_config->GetNextRes(R_DIRECTOR, NULL)->name;
+  dirname = my_config->GetNextRes(R_DIRECTOR, NULL)->resource_name_;
   if (!my_config->GetPathOfNewResource(filename, temp, basedir.c_str(),
                                        "director", dirname, error_if_exists,
                                        create_directories)) {

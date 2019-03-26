@@ -402,14 +402,17 @@ void AddMsgDest(MessagesResource* msg,
  *
  * Remove a message destination
  */
-void RemMsgDest(MessagesResource* msg, int dest_code, int msg_type, char* where)
+void RemMsgDest(MessagesResource* msg,
+                int dest_code,
+                int msg_type,
+                const std::string& where)
 {
   DEST* d;
 
   for (d = msg->dest_chain_; d; d = d->next_) {
     Dmsg2(850, "Remove_msg_dest d=%p where=%s\n", d, NSTDPRNT(d->where_));
     if (BitIsSet(msg_type, d->msg_types_) && (dest_code == d->dest_code_) &&
-        ((where == NULL && d->where_.empty()) || (where == d->where_))) {
+        ((where.empty() && d->where_.empty()) || (where == d->where_))) {
       Dmsg3(850, "Found for remove d=%p msgtype=%d destcode=%d\n", d, msg_type,
             dest_code);
       ClearBit(msg_type, d->msg_types_);

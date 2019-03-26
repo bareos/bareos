@@ -674,36 +674,6 @@ class RunResource : public BareosResource {
   RunResource() : BareosResource() {}
 };
 
-/**
- * Define the Union of all the above
- * resource structure definitions.
- */
-union UnionOfResources {
-  DirectorResource res_dir;
-  ConsoleResource res_con;
-  ProfileResource res_profile;
-  ClientResource res_client;
-  StorageResource res_store;
-  CatalogResource res_cat;
-  JobResource res_job;
-  FilesetResource res_fs;
-  ScheduleResource res_sch;
-  PoolResource res_pool;
-  MessagesResource res_msgs;
-  CounterResource res_counter;
-  DeviceResource res_dev;
-  BareosResource hdr;
-
-  UnionOfResources()
-  {
-    new (&hdr) BareosResource();
-    Dmsg1(900, "hdr:        %p \n", &hdr);
-    Dmsg1(900, "res_dir.hdr %p\n", &res_dir);
-    Dmsg1(900, "res_con.hdr %p\n", &res_con);
-  }
-  ~UnionOfResources() {}
-};
-
 ConfigurationParser* InitDirConfig(const char* configfile, int exit_code);
 bool PropagateJobdefs(int res_type, JobResource* res);
 bool ValidateResource(int type, ResourceItem* items, BareosResource* res);

@@ -361,7 +361,7 @@ bool UaContext::IsResAllowed(BareosResource* res)
 {
   int acl;
 
-  acl = RcodeToAcltype(res->rcode);
+  acl = RcodeToAcltype(res->rcode_);
   if (acl == -1) {
     /*
      * For all resources for which we don't know an explicit mapping
@@ -371,7 +371,7 @@ bool UaContext::IsResAllowed(BareosResource* res)
     return AclAccessOk(Command_ACL, "configure", false);
   }
 
-  return AclAccessOk(acl, res->name, false);
+  return AclAccessOk(acl, res->resource_name_, false);
 }
 
 /**
@@ -379,9 +379,9 @@ bool UaContext::IsResAllowed(BareosResource* res)
  * retrieved.
  */
 BareosResource* UaContext::GetResWithName(int rcode,
-                                                const char* name,
-                                                bool audit_event,
-                                                bool lock)
+                                          const char* name,
+                                          bool audit_event,
+                                          bool lock)
 {
   int acl;
 

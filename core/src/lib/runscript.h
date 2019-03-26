@@ -31,6 +31,7 @@
 #define BAREOS_LIB_RUNSCRIPT_H_ 1
 
 #include "jcr.h"
+#include "lib/bareos_resource.h"
 
 class alist;
 
@@ -69,7 +70,7 @@ enum
 /**
  * Structure for RunScript ressource
  */
-class RunScript {
+class RunScript : public BareosResource {
  public:
   POOLMEM* command;   /* Command string */
   POOLMEM* target;    /* Host target */

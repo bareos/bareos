@@ -68,11 +68,11 @@ static IncludeExcludeItem res_incexe;
  * name handler value code flags default_value
  */
 ResourceItem newinc_items[] = {
-  { "File", CFG_TYPE_FNAME, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "Plugin", CFG_TYPE_PLUGINNAME, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "ExcludeDirContaining", CFG_TYPE_EXCLUDEDIR,  { 0 }, 0, 0, NULL, NULL, NULL },
-  { "Options", CFG_TYPE_OPTIONS, { 0 }, 0, 0, NULL, NULL, NULL },
-  { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
+  { "File", CFG_TYPE_FNAME, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "Plugin", CFG_TYPE_PLUGINNAME, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "ExcludeDirContaining", CFG_TYPE_EXCLUDEDIR,  nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "Options", CFG_TYPE_OPTIONS, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { NULL, 0, nullptr, nullptr, 0, 0, NULL, NULL, NULL }
 };
 
 /*
@@ -80,46 +80,46 @@ ResourceItem newinc_items[] = {
  * name handler value code flags default_value
  */
 ResourceItem options_items[] = {
-  { "Compression", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "Signature", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "BaseJob", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "Accurate", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "Verify", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "OneFs", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "Recurse", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "Sparse", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "HardLinks", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "ReadFifo", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "Replace", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "Portable", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "MtimeOnly", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "KeepAtime", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "Regex", CFG_TYPE_REGEX, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "RegexDir", CFG_TYPE_REGEX, { 0 }, 1, 0, NULL, NULL, NULL },
-  { "RegexFile", CFG_TYPE_REGEX, { 0 }, 2, 0, NULL, NULL, NULL },
-  { "Base", CFG_TYPE_BASE, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "Wild", CFG_TYPE_WILD, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "WildDir", CFG_TYPE_WILD, { 0 }, 1, 0, NULL, NULL, NULL },
-  { "WildFile", CFG_TYPE_WILD, { 0 }, 2, 0, NULL, NULL, NULL },
-  { "Exclude", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "AclSupport", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "Plugin", CFG_TYPE_PLUGIN, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "IgnoreCase", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "FsType", CFG_TYPE_FSTYPE, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "HfsPlusSupport", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "NoAtime", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "EnhancedWild", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "DriveType", CFG_TYPE_DRIVETYPE, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "CheckFileChanges", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "StripPath", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "HonornoDumpFlag", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "XAttrSupport", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "Size", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "Shadowing", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "AutoExclude", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "ForceEncryption", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-  { "Meta", CFG_TYPE_META, { 0 }, 0, 0, 0, NULL, NULL },
-  { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
+  { "Compression", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "Signature", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "BaseJob", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "Accurate", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "Verify", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "OneFs", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "Recurse", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "Sparse", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "HardLinks", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "ReadFifo", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "Replace", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "Portable", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "MtimeOnly", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "KeepAtime", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "Regex", CFG_TYPE_REGEX, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "RegexDir", CFG_TYPE_REGEX, nullptr, nullptr, 1, 0, NULL, NULL, NULL },
+  { "RegexFile", CFG_TYPE_REGEX, nullptr, nullptr, 2, 0, NULL, NULL, NULL },
+  { "Base", CFG_TYPE_BASE, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "Wild", CFG_TYPE_WILD, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "WildDir", CFG_TYPE_WILD, nullptr, nullptr, 1, 0, NULL, NULL, NULL },
+  { "WildFile", CFG_TYPE_WILD, nullptr, nullptr, 2, 0, NULL, NULL, NULL },
+  { "Exclude", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "AclSupport", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "Plugin", CFG_TYPE_PLUGIN, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "IgnoreCase", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "FsType", CFG_TYPE_FSTYPE, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "HfsPlusSupport", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "NoAtime", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "EnhancedWild", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "DriveType", CFG_TYPE_DRIVETYPE, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "CheckFileChanges", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "StripPath", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "HonornoDumpFlag", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "XAttrSupport", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "Size", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "Shadowing", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "AutoExclude", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "ForceEncryption", CFG_TYPE_OPTION, nullptr, nullptr, 0, 0, NULL, NULL, NULL },
+  { "Meta", CFG_TYPE_META, nullptr, nullptr, 0, 0, 0, NULL, NULL },
+  { NULL, 0, nullptr, nullptr, 0, 0, NULL, NULL, NULL }
 };
 
 /* clang-format on */
@@ -642,6 +642,16 @@ static void StoreOptionsRes(LEX* lc,
   }
 }
 
+static FilesetResource* GetStaticFilesetResource()
+{
+  FilesetResource* res_fs = nullptr;
+  ResourceTable* t = my_config->GetResourceTable("FileSet");  // Ueb
+  if (t) {
+    res_fs = dynamic_cast<FilesetResource*>(t->static_initialization_resource_);
+  }
+  return res_fs;
+}
+
 /**
  * Store Filename info. Note, for minor efficiency reasons, we
  * always increase the name buffer by 10 items because we expect
@@ -655,7 +665,6 @@ static void StoreFname(LEX* lc,
 {
   int token;
   IncludeExcludeItem* incexe;
-  UnionOfResources* res_all = (UnionOfResources*)my_config->res_all_;
 
   token = LexGetToken(lc, BCT_SKIP_EOL);
   if (pass == 1) {
@@ -671,22 +680,24 @@ static void StoreFname(LEX* lc,
                     lc->str);
           /* NOT REACHED */
         }
-      case BCT_QUOTED_STRING:
-        if (res_all->res_fs.have_MD5) {
-          MD5_Update(&res_all->res_fs.md5c, (unsigned char*)lc->str,
-                     lc->str_len);
+      case BCT_QUOTED_STRING: {
+        FilesetResource* res_fs = GetStaticFilesetResource();
+        if (res_fs && res_fs->have_MD5) {
+          MD5_Update(&res_fs->md5c, (unsigned char*)lc->str, lc->str_len);
         }
+
         incexe = &res_incexe;
         if (incexe->name_list.size() == 0) { incexe->name_list.init(10, true); }
         incexe->name_list.append(bstrdup(lc->str));
         Dmsg1(900, "Add to name_list %s\n", lc->str);
         break;
+      }
       default:
         scan_err1(lc, _("Expected a filename, got: %s"), lc->str);
     }
   }
   ScanToEol(lc);
-}
+}  // namespace directordaemon
 
 /**
  * Store Filename info. Note, for minor efficiency reasons, we
@@ -701,7 +712,6 @@ static void StorePluginName(LEX* lc,
 {
   int token;
   IncludeExcludeItem* incexe;
-  UnionOfResources* res_all = (UnionOfResources*)my_config->res_all_;
 
   if (exclude) {
     scan_err0(lc, _("Plugin directive not permitted in Exclude\n"));
@@ -721,10 +731,11 @@ static void StorePluginName(LEX* lc,
                     lc->str);
           /* NOT REACHED */
         }
-      case BCT_QUOTED_STRING:
-        if (res_all->res_fs.have_MD5) {
-          MD5_Update(&res_all->res_fs.md5c, (unsigned char*)lc->str,
-                     lc->str_len);
+      case BCT_QUOTED_STRING: {
+        FilesetResource* res_fs = GetStaticFilesetResource();
+
+        if (res_fs->have_MD5) {
+          MD5_Update(&res_fs->md5c, (unsigned char*)lc->str, lc->str_len);
         }
         incexe = &res_incexe;
         if (incexe->plugin_list.size() == 0) {
@@ -733,6 +744,7 @@ static void StorePluginName(LEX* lc,
         incexe->plugin_list.append(bstrdup(lc->str));
         Dmsg1(900, "Add to plugin_list %s\n", lc->str);
         break;
+      }
       default:
         scan_err1(lc, _("Expected a filename, got: %s"), lc->str);
         /* NOT REACHED */
@@ -781,14 +793,15 @@ static void StoreNewinc(LEX* lc, ResourceItem* item, int index, int pass)
   bool options;
   int token, i;
   IncludeExcludeItem* incexe;
-  UnionOfResources* res_all = (UnionOfResources*)my_config->res_all_;
 
-  if (!res_all->res_fs.have_MD5) {
-    MD5_Init(&res_all->res_fs.md5c);
-    res_all->res_fs.have_MD5 = true;
+  FilesetResource* res_fs = GetStaticFilesetResource();
+
+  if (!res_fs->have_MD5) {
+    MD5_Init(&res_fs->md5c);
+    res_fs->have_MD5 = true;
   }
   memset(&res_incexe, 0, sizeof(res_incexe));
-  res_all->res_fs.new_include = true;
+  res_fs->new_include = true;
   while ((token = LexGetToken(lc, BCT_SKIP_EOL)) != BCT_EOF) {
     if (token == BCT_EOB) { break; }
     if (token != BCT_IDENTIFIER) {
@@ -834,32 +847,32 @@ static void StoreNewinc(LEX* lc, ResourceItem* item, int index, int pass)
     memcpy(incexe, &res_incexe, sizeof(IncludeExcludeItem));
     memset(&res_incexe, 0, sizeof(res_incexe));
     if (item->code == 0) { /* include */
-      if (res_all->res_fs.num_includes == 0) {
-        res_all->res_fs.include_items =
+      if (res_fs->num_includes == 0) {
+        res_fs->include_items =
             (IncludeExcludeItem**)malloc(sizeof(IncludeExcludeItem*));
       } else {
-        res_all->res_fs.include_items = (IncludeExcludeItem**)realloc(
-            res_all->res_fs.include_items,
-            sizeof(IncludeExcludeItem*) * (res_all->res_fs.num_includes + 1));
+        res_fs->include_items = (IncludeExcludeItem**)realloc(
+            res_fs->include_items,
+            sizeof(IncludeExcludeItem*) * (res_fs->num_includes + 1));
       }
-      res_all->res_fs.include_items[res_all->res_fs.num_includes++] = incexe;
-      Dmsg1(900, "num_includes=%d\n", res_all->res_fs.num_includes);
+      res_fs->include_items[res_fs->num_includes++] = incexe;
+      Dmsg1(900, "num_includes=%d\n", res_fs->num_includes);
     } else { /* exclude */
-      if (res_all->res_fs.num_excludes == 0) {
-        res_all->res_fs.exclude_items =
+      if (res_fs->num_excludes == 0) {
+        res_fs->exclude_items =
             (IncludeExcludeItem**)malloc(sizeof(IncludeExcludeItem*));
       } else {
-        res_all->res_fs.exclude_items = (IncludeExcludeItem**)realloc(
-            res_all->res_fs.exclude_items,
-            sizeof(IncludeExcludeItem*) * (res_all->res_fs.num_excludes + 1));
+        res_fs->exclude_items = (IncludeExcludeItem**)realloc(
+            res_fs->exclude_items,
+            sizeof(IncludeExcludeItem*) * (res_fs->num_excludes + 1));
       }
-      res_all->res_fs.exclude_items[res_all->res_fs.num_excludes++] = incexe;
-      Dmsg1(900, "num_excludes=%d\n", res_all->res_fs.num_excludes);
+      res_fs->exclude_items[res_fs->num_excludes++] = incexe;
+      Dmsg1(900, "num_excludes=%d\n", res_fs->num_excludes);
     }
   }
   ScanToEol(lc);
-  SetBit(index, res_all->hdr.item_present_);
-  ClearBit(index, res_all->hdr.inherit_content);
+  SetBit(index, item->static_resource->item_present_);
+  ClearBit(index, item->static_resource->inherit_content_);
 }
 
 /**

@@ -229,7 +229,10 @@ void AddMsgDest(MessagesResource* msg,
                 const std::string& where,
                 const std::string& mail_cmd,
                 const std::string& timestamp_format);
-void RemMsgDest(MessagesResource* msg, int dest, int type, char* where);
+void RemMsgDest(MessagesResource* msg,
+                int dest,
+                int type,
+                const std::string& where);
 void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...);
 void DispatchMessage(JobControlRecord* jcr, int type, utime_t mtime, char* buf);
 void InitConsoleMsg(const char* wd);
