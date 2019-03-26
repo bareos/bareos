@@ -15,6 +15,7 @@ that are virtually usable. See the chapters :ref:`below for specific diagrams <C
 .. uml::
   :caption: Sequence diagram of a Bareos File Daemon connection
 
+  left to right direction
   skinparam shadowing false
 
   (Console\nPython\nWebUI) as Con
@@ -81,6 +82,7 @@ Named Console and Default Console
 .. uml::
   :caption: Diagram of Console to Director connection
 
+  left to right direction
   skinparam shadowing false
 
   (Console\nPython\nWebUI) as Con
@@ -121,6 +123,7 @@ Default Backup/Restore
 .. uml::
   :caption: Diagram of a default Backup or Restore operation
 
+  left to right direction
   skinparam shadowing false
 
   (Console\nPython\nWebUI) as Con
@@ -161,6 +164,7 @@ Client Initiated Backup/Restore
 .. uml::
   :caption: Diagram of a **client initiated** Backup or Restore operation
 
+  left to right direction
   skinparam shadowing false
 
   (Console\nPython\nWebUI) as Con
@@ -201,6 +205,7 @@ Passive Client Backup/Restore
 .. uml::
   :caption: Diagram of a **passive client** Backup or Restore operation
 
+  left to right direction
   skinparam shadowing false
 
   (Console\nPython\nWebUI) as Con
@@ -241,6 +246,7 @@ Storage-Storage Migration
 .. uml::
   :caption: Diagram of a Storage to Storage copy or migrate operation
 
+  left to right direction
   skinparam shadowing false
 
   (Console\nPython\nWebUI) as Con
@@ -281,6 +287,7 @@ Tray-Monitor
 .. uml::
   :caption: Diagram of all Tray Monitor Connections
 
+  left to right direction
   skinparam shadowing false
 
   (Console\nPython\nWebUI) as Con
