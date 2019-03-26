@@ -47,13 +47,28 @@ class BareosFdPluginFileElasticsearch  (BareosFdPluginBaseclass):
             # Next one is for metadata only:
             #result_payload=tika_client.extract_only_metadata(savepkt.fname)
             # This one includes file contents as text:
-            result_payload=tika_client.extract_all_content(savepkt.fname)
+            try:
+                result_payload=tika_client.extract_all_content(savepkt.fname)
+            except Exception as ex:
+                JobMessage(context,  bJobMessageType['M_ERROR'], 'Error extracting contents from %s. Tika error: %s' % (savepkt.fname, str(ex)))
+                return bRCs['bRC_OK'];
             # result_payload is a list of json-strings. Nested structes like
             # tar-files or emails with attachments or inline documents are
             # returned as distinct json string.
             # The first string [0] contains information for the main file
             # TODO: care about nested structures, for now we only takte the first/main file 
-            data = json.loads(result_payload)[0]
+            try:
+                data = json.loads(result_payload)[0]
+            except Exception as ex:
+                JobMessage(context,  bJobMessageType['M_ERROR'], 
+                    'Error reading json fields delivered by Tika examining file %s. Json error: %s' % (savepkt.fname, str(ex)))
+                return bRCs['bRC_OK'];
+            # Tika eventually adds "Unkonwn Tags (id)", with id as increasing number, which
+            # could lead to exceed the keyword limit in elasticsearch indices, we
+            # remove those tags
+            for data_keyword in data.keys():
+                if data_keyword.startswith ("Unknown tag ("):
+                    del data[data_keyword]
             # Tika adds some emptylines at the beginning of content, we strip it here
             if 'X-TIKA:content' in data:
                 data['X-TIKA:content'] = data['X-TIKA:content'].strip()
