@@ -202,21 +202,24 @@ struct ndmp_deviceinfo_t {
 #endif
 
 
-struct runtime_storage_status_t {
-  int32_t NumConcurrentJobs;     /**< Number of concurrent jobs running */
-  int32_t NumConcurrentReadJobs; /**< Number of jobs reading */
-  drive_number_t drives;         /**< Number of drives in autochanger */
-  slot_number_t slots;           /**< Number of slots in autochanger */
-  pthread_mutex_t changer_lock; /**< Any access to the autochanger is controlled
-                                   by this lock */
-  unsigned char smc_ident[32];  /**< smc ident info = changer name */
-  changer_vol_list_t* vol_list; /**< Cached content of autochanger */
-  pthread_mutex_t ndmp_deviceinfo_lock; /**< Any access to the list devices is
-                                           controlled by this lock */
+struct RuntimeStorageStatus {
+  RuntimeStorageStatus() = default;
+  ~RuntimeStorageStatus() = default;
+
+  int32_t NumConcurrentJobs = 0;     /**< Number of concurrent jobs running */
+  int32_t NumConcurrentReadJobs = 0; /**< Number of jobs reading */
+  drive_number_t drives = {0};       /**< Number of drives in autochanger */
+  slot_number_t slots = {0};         /**< Number of slots in autochanger */
+  pthread_mutex_t changer_lock = PTHREAD_MUTEX_INITIALIZER; /**< Any access to
+                                   the autochanger is controlled by this lock */
+  unsigned char smc_ident[32] = {0};      /**< smc ident info = changer name */
+  changer_vol_list_t* vol_list = nullptr; /**< Cached content of autochanger */
+  pthread_mutex_t ndmp_deviceinfo_lock =
+      PTHREAD_MUTEX_INITIALIZER; /**< Any access to the list devices is
+       controlled by this lock */
 #if HAVE_NDMP
-  smc_element_address_assignment storage_mapping; /**< smc element assignment */
-  std::list<ndmp_deviceinfo_t>*
-      ndmp_deviceinfo; /**< NDMP device info for devices in this Storage */
+  smc_element_address_assignment storage_mapping = {0};
+  std::list<ndmp_deviceinfo_t> ndmp_deviceinfo;
 #endif
 };
 

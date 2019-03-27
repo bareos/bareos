@@ -2434,17 +2434,18 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
 
         p->device = res_store.device;
 
-        p->rss =
-            (runtime_storage_status_t*)malloc(sizeof(runtime_storage_status_t));
-        memset(p->rss, 0, sizeof(runtime_storage_status_t));
-        if ((status = pthread_mutex_init(&p->rss->changer_lock, NULL)) != 0) {
+        p->runtime_storage_status = new RuntimeStorageStatus;
+
+        if ((status = pthread_mutex_init(
+                 &p->runtime_storage_status->changer_lock, NULL)) != 0) {
           BErrNo be;
 
           Emsg1(M_ERROR_TERM, 0, _("pthread_mutex_init: ERR=%s\n"),
                 be.bstrerror(status));
         }
-        if ((status = pthread_mutex_init(&p->rss->ndmp_deviceinfo_lock,
-                                         NULL)) != 0) {
+        if ((status = pthread_mutex_init(
+                 &p->runtime_storage_status->ndmp_deviceinfo_lock, NULL)) !=
+            0) {
           BErrNo be;
 
           Emsg1(M_ERROR_TERM, 0, _("pthread_mutex_init: ERR=%s\n"),
@@ -4112,22 +4113,22 @@ static void FreeResource(BareosResource* res, int type)
       if (p->media_type) { free(p->media_type); }
       if (p->ndmp_changer_device) { free(p->ndmp_changer_device); }
       if (p->device) { delete p->device; }
-      if (p->rss) {
-        if (p->rss->vol_list) {
-          if (p->rss->vol_list->contents) {
+      if (p->runtime_storage_status) {
+        if (p->runtime_storage_status->vol_list) {
+          if (p->runtime_storage_status->vol_list->contents) {
             vol_list_t* vl;
 
-            foreach_dlist (vl, p->rss->vol_list->contents) {
+            foreach_dlist (vl, p->runtime_storage_status->vol_list->contents) {
               if (vl->VolName) { free(vl->VolName); }
             }
-            p->rss->vol_list->contents->destroy();
-            delete p->rss->vol_list->contents;
+            p->runtime_storage_status->vol_list->contents->destroy();
+            delete p->runtime_storage_status->vol_list->contents;
           }
-          free(p->rss->vol_list);
+          free(p->runtime_storage_status->vol_list);
         }
-        pthread_mutex_destroy(&p->rss->changer_lock);
-        pthread_mutex_destroy(&p->rss->ndmp_deviceinfo_lock);
-        free(p->rss);
+        pthread_mutex_destroy(&p->runtime_storage_status->changer_lock);
+        pthread_mutex_destroy(&p->runtime_storage_status->ndmp_deviceinfo_lock);
+        delete p->runtime_storage_status;
       }
       if (p->tls_cert_.allowed_certificate_common_names_) {
         p->tls_cert_.allowed_certificate_common_names_->destroy();

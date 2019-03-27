@@ -569,7 +569,7 @@ changer_vol_list_t* get_vol_list_from_storage(UaContext* ua,
   dlist* contents = NULL;
   changer_vol_list_t* vol_list = NULL;
 
-  P(store->rss->changer_lock);
+  P(store->runtime_storage_status->changer_lock);
 
   if (listall) {
     type = VOL_LIST_ALL;
@@ -580,7 +580,7 @@ changer_vol_list_t* get_vol_list_from_storage(UaContext* ua,
   /*
    * Do we have a cached version of the content that is still valid ?
    */
-  if (store->rss->vol_list) {
+  if (store->runtime_storage_status->vol_list) {
     utime_t now;
 
     now = (utime_t)time(NULL);
@@ -588,11 +588,11 @@ changer_vol_list_t* get_vol_list_from_storage(UaContext* ua,
     /*
      * Are we allowed to return a cached list ?
      */
-    if (cached && store->rss->vol_list->type == type) {
-      if ((now - store->rss->vol_list->timestamp) <=
+    if (cached && store->runtime_storage_status->vol_list->type == type) {
+      if ((now - store->runtime_storage_status->vol_list->timestamp) <=
           store->cache_status_interval) {
         Dmsg0(100, "Using cached storage status\n");
-        vol_list = store->rss->vol_list;
+        vol_list = store->runtime_storage_status->vol_list;
         vol_list->reference_count++;
         goto bail_out;
       }
@@ -604,8 +604,8 @@ changer_vol_list_t* get_vol_list_from_storage(UaContext* ua,
      * autochanger.
      */
     Dmsg0(100, "Freeing volume list\n");
-    if (store->rss->vol_list->reference_count == 0) {
-      FreeVolList(store->rss->vol_list);
+    if (store->runtime_storage_status->vol_list->reference_count == 0) {
+      FreeVolList(store->runtime_storage_status->vol_list);
     } else {
       /*
        * Need to cleanup but things are still referenced.
@@ -614,9 +614,9 @@ changer_vol_list_t* get_vol_list_from_storage(UaContext* ua,
        * then be destroyed.
        */
       Dmsg0(100, "Need to free still referenced vol_list\n");
-      store->rss->vol_list =
+      store->runtime_storage_status->vol_list =
           (changer_vol_list_t*)malloc(sizeof(changer_vol_list_t));
-      memset(store->rss->vol_list, 0, sizeof(changer_vol_list_t));
+      memset(store->runtime_storage_status->vol_list, 0, sizeof(changer_vol_list_t));
     }
   }
 
@@ -640,12 +640,12 @@ changer_vol_list_t* get_vol_list_from_storage(UaContext* ua,
     /*
      * Cache the returned content of the autochanger.
      */
-    if (!store->rss->vol_list) {
-      store->rss->vol_list =
+    if (!store->runtime_storage_status->vol_list) {
+      store->runtime_storage_status->vol_list =
           (changer_vol_list_t*)malloc(sizeof(changer_vol_list_t));
-      memset(store->rss->vol_list, 0, sizeof(changer_vol_list_t));
+      memset(store->runtime_storage_status->vol_list, 0, sizeof(changer_vol_list_t));
     }
-    vol_list = store->rss->vol_list;
+    vol_list = store->runtime_storage_status->vol_list;
     vol_list->reference_count++;
     vol_list->contents = contents;
     vol_list->timestamp = (utime_t)time(NULL);
@@ -653,7 +653,7 @@ changer_vol_list_t* get_vol_list_from_storage(UaContext* ua,
   }
 
 bail_out:
-  V(store->rss->changer_lock);
+  V(store->runtime_storage_status->changer_lock);
 
   return vol_list;
 }
@@ -665,9 +665,9 @@ slot_number_t GetNumSlots(UaContext* ua, StorageResource* store)
   /*
    * See if we can use the cached number of slots.
    */
-  if (store->rss->slots > 0) { return store->rss->slots; }
+  if (store->runtime_storage_status->slots > 0) { return store->runtime_storage_status->slots; }
 
-  P(store->rss->changer_lock);
+  P(store->runtime_storage_status->changer_lock);
 
   switch (store->Protocol) {
     case APT_NATIVE:
@@ -682,9 +682,9 @@ slot_number_t GetNumSlots(UaContext* ua, StorageResource* store)
       break;
   }
 
-  store->rss->slots = slots;
+  store->runtime_storage_status->slots = slots;
 
-  V(store->rss->changer_lock);
+  V(store->runtime_storage_status->changer_lock);
 
   return slots;
 }
@@ -696,9 +696,9 @@ slot_number_t GetNumDrives(UaContext* ua, StorageResource* store)
   /*
    * See if we can use the cached number of drives.
    */
-  if (store->rss->drives > 0) { return store->rss->drives; }
+  if (store->runtime_storage_status->drives > 0) { return store->runtime_storage_status->drives; }
 
-  P(store->rss->changer_lock);
+  P(store->runtime_storage_status->changer_lock);
 
   switch (store->Protocol) {
     case APT_NATIVE:
@@ -713,9 +713,9 @@ slot_number_t GetNumDrives(UaContext* ua, StorageResource* store)
       break;
   }
 
-  store->rss->drives = drives;
+  store->runtime_storage_status->drives = drives;
 
-  V(store->rss->changer_lock);
+  V(store->runtime_storage_status->changer_lock);
 
   return drives;
 }
@@ -727,7 +727,7 @@ bool transfer_volume(UaContext* ua,
 {
   bool retval = false;
 
-  P(store->rss->changer_lock);
+  P(store->runtime_storage_status->changer_lock);
 
   switch (store->Protocol) {
     case APT_NATIVE:
@@ -742,7 +742,7 @@ bool transfer_volume(UaContext* ua,
       break;
   }
 
-  V(store->rss->changer_lock);
+  V(store->runtime_storage_status->changer_lock);
 
   return retval;
 }
@@ -755,7 +755,7 @@ bool DoAutochangerVolumeOperation(UaContext* ua,
 {
   bool retval = false;
 
-  P(store->rss->changer_lock);
+  P(store->runtime_storage_status->changer_lock);
 
   switch (store->Protocol) {
     case APT_NATIVE:
@@ -772,7 +772,7 @@ bool DoAutochangerVolumeOperation(UaContext* ua,
       break;
   }
 
-  V(store->rss->changer_lock);
+  V(store->runtime_storage_status->changer_lock);
 
   return retval;
 }
@@ -809,14 +809,14 @@ vol_list_t* vol_is_loaded_in_drive(StorageResource* store,
  */
 void StorageReleaseVolList(StorageResource* store, changer_vol_list_t* vol_list)
 {
-  P(store->rss->changer_lock);
+  P(store->runtime_storage_status->changer_lock);
 
   Dmsg0(100, "Releasing volume list\n");
 
   /*
    * See if we are releasing a reference to the currently cached value.
    */
-  if (store->rss->vol_list == vol_list) {
+  if (store->runtime_storage_status->vol_list == vol_list) {
     vol_list->reference_count--;
   } else {
     vol_list->reference_count--;
@@ -830,7 +830,7 @@ void StorageReleaseVolList(StorageResource* store, changer_vol_list_t* vol_list)
     }
   }
 
-  V(store->rss->changer_lock);
+  V(store->runtime_storage_status->changer_lock);
 }
 
 /**
@@ -838,7 +838,7 @@ void StorageReleaseVolList(StorageResource* store, changer_vol_list_t* vol_list)
  */
 void StorageFreeVolList(StorageResource* store, changer_vol_list_t* vol_list)
 {
-  P(store->rss->changer_lock);
+  P(store->runtime_storage_status->changer_lock);
 
   Dmsg1(100, "Freeing volume list at %p\n", vol_list);
 
@@ -847,9 +847,9 @@ void StorageFreeVolList(StorageResource* store, changer_vol_list_t* vol_list)
   /*
    * Clear the cached vol_list if needed.
    */
-  if (store->rss->vol_list == vol_list) { store->rss->vol_list = NULL; }
+  if (store->runtime_storage_status->vol_list == vol_list) { store->runtime_storage_status->vol_list = NULL; }
 
-  V(store->rss->changer_lock);
+  V(store->runtime_storage_status->changer_lock);
 }
 
 /**
@@ -859,24 +859,24 @@ void StorageFreeVolList(StorageResource* store, changer_vol_list_t* vol_list)
  */
 void InvalidateVolList(StorageResource* store)
 {
-  P(store->rss->changer_lock);
+  P(store->runtime_storage_status->changer_lock);
 
-  if (store->rss->vol_list) {
-    Dmsg1(100, "Invalidating volume list at %p\n", store->rss->vol_list);
+  if (store->runtime_storage_status->vol_list) {
+    Dmsg1(100, "Invalidating volume list at %p\n", store->runtime_storage_status->vol_list);
 
     /*
      * If the volume list is unreferenced we can destroy it otherwise we just
      * reset the pointer and the StorageReleaseVolList() will destroy it for
      * us the moment there are no more references.
      */
-    if (store->rss->vol_list->reference_count == 0) {
-      FreeVolList(store->rss->vol_list);
+    if (store->runtime_storage_status->vol_list->reference_count == 0) {
+      FreeVolList(store->runtime_storage_status->vol_list);
     } else {
-      store->rss->vol_list = NULL;
+      store->runtime_storage_status->vol_list = NULL;
     }
   }
 
-  V(store->rss->changer_lock);
+  V(store->runtime_storage_status->changer_lock);
 }
 
 

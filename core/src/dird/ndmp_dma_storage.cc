@@ -78,13 +78,11 @@ int get_tape_info_cb(struct ndm_session* sess,
     return -1;
   }
 
-  /* if (store->rss->ndmp_deviceinfo) { */
-  /*    delete(store->rss->ndmp_deviceinfo); */
-  /*    store->rss->ndmp_deviceinfo = NULL; */
+  /* if (store->runtime_storage_status->ndmp_deviceinfo) { */
+  /*    delete(store->runtime_storage_status->ndmp_deviceinfo); */
+  /*    store->runtime_storage_status->ndmp_deviceinfo = NULL; */
   /* } */
-  if (!store->rss->ndmp_deviceinfo) {
-    store->rss->ndmp_deviceinfo = new (std::list<ndmp_deviceinfo_t>);
-
+  if (store->runtime_storage_status->ndmp_deviceinfo.empty()) {
     for (i = 0; i < n_info; i++) {
       Dmsg2(100, "  %s %s\n", what, info[i].model);
 
@@ -95,7 +93,7 @@ int get_tape_info_cb(struct ndm_session* sess,
       info_dc = info[i].caplist.caplist_val;
       devinfo->model = info[i].model;
       devinfo->device = info_dc->device;
-      store->rss->ndmp_deviceinfo->push_back(*devinfo);
+      store->runtime_storage_status->ndmp_deviceinfo.push_back(*devinfo);
 
       for (j = 0; j < info[i].caplist.caplist_len; j++) {
         ndmp9_device_capability* dc;
@@ -162,16 +160,16 @@ bool do_ndmp_native_query_tape_and_robot_agents(JobControlRecord* jcr,
    * Debug output
    */
 
-  if (store->rss->ndmp_deviceinfo) {
+  if (!store->runtime_storage_status->ndmp_deviceinfo.empty()) {
     Jmsg(jcr, M_INFO, 0, "NDMP Devices for storage %s:(%s)\n",
-         store->resource_name_, store->rss->smc_ident);
+         store->resource_name_, store->runtime_storage_status->smc_ident);
   } else {
     Jmsg(jcr, M_INFO, 0, "No NDMP Devices for storage %s:(%s)\n",
-         store->resource_name_, store->rss->smc_ident);
+         store->resource_name_, store->runtime_storage_status->smc_ident);
     return false;
   }
-  for (auto devinfo = store->rss->ndmp_deviceinfo->begin();
-       devinfo != store->rss->ndmp_deviceinfo->end(); devinfo++) {
+  for (auto devinfo = store->runtime_storage_status->ndmp_deviceinfo.begin();
+       devinfo != store->runtime_storage_status->ndmp_deviceinfo.end(); devinfo++) {
     Jmsg(jcr, M_INFO, 0, " %s\n", devinfo->device.c_str(),
          devinfo->model.c_str());
   }
@@ -202,12 +200,12 @@ void DoNdmpNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
 
   ndmp_deviceinfo_t* deviceinfo = NULL;
   int i = 0;
-  if (store->rss->ndmp_deviceinfo) {
+  if (!store->runtime_storage_status->ndmp_deviceinfo.empty()) {
     ua->InfoMsg("NDMP Devices for storage %s:(%s)\n", store->resource_name_,
-                store->rss->smc_ident);
+                store->runtime_storage_status->smc_ident);
     ua->InfoMsg(" element_address   Device   Model   (JobId)   \n");
-    for (auto devinfo = store->rss->ndmp_deviceinfo->begin();
-         devinfo != store->rss->ndmp_deviceinfo->end(); devinfo++) {
+    for (auto devinfo = store->runtime_storage_status->ndmp_deviceinfo.begin();
+         devinfo != store->runtime_storage_status->ndmp_deviceinfo.end(); devinfo++) {
       ua->InfoMsg("   %d   %s   %s   (%d)\n", i++, devinfo->device.c_str(),
                   devinfo->model.c_str(), devinfo->JobIdUsingDevice);
     }
@@ -412,11 +410,11 @@ static void NdmpFillStorageMappings(StorageResource* store,
   struct smc_ctrl_block* smc;
 
   smc = ndmp_sess->control_acb->smc_cb;
-  memcpy(store->rss->smc_ident, smc->ident, sizeof(store->rss->smc_ident));
+  memcpy(store->runtime_storage_status->smc_ident, smc->ident, sizeof(store->runtime_storage_status->smc_ident));
 
   if (smc->valid_elem_aa) {
-    memcpy(&store->rss->storage_mapping, &smc->elem_aa,
-           sizeof(store->rss->storage_mapping));
+    memcpy(&store->runtime_storage_status->storage_mapping, &smc->elem_aa,
+           sizeof(store->runtime_storage_status->storage_mapping));
 
   } else {
     Dmsg0(0, "Warning, smc does not have valid elem_aa info\n");
@@ -459,7 +457,7 @@ dlist* ndmp_get_vol_list(UaContext* ua,
   smc = ndmp_sess->control_acb->smc_cb;
   for (edp = smc->elem_desc; edp; edp = edp->next) {
     vl = (vol_list_t*)malloc(sizeof(vol_list_t));
-    new (vl) vol_list_t();
+    memset(vl, 0, sizeof(vol_list_t));
 
     if (scan && !listall) {
       /*
@@ -470,7 +468,7 @@ dlist* ndmp_get_vol_list(UaContext* ua,
           /*
            * Normal slot
            */
-          vl->slot_type = kSlotTypeStorage;
+          vl->slot_type = slot_type_storage;
           if (edp->Full) {
             vl->slot_status = slot_status_full;
             FillVolumeName(vl, edp);
@@ -492,7 +490,7 @@ dlist* ndmp_get_vol_list(UaContext* ua,
           /*
            * Normal slot
            */
-          vl->slot_type = kSlotTypeStorage;
+          vl->slot_type = slot_type_storage;
           vl->element_address = edp->element_address;
           if (!edp->Full) {
             free(vl);
@@ -521,7 +519,7 @@ dlist* ndmp_get_vol_list(UaContext* ua,
           /*
            * Normal slot
            */
-          vl->slot_type = kSlotTypeStorage;
+          vl->slot_type = slot_type_storage;
           vl->element_address = edp->element_address;
           if (edp->Full) {
             vl->slot_status = slot_status_full;
@@ -534,7 +532,7 @@ dlist* ndmp_get_vol_list(UaContext* ua,
           /*
            * Import/Export bareos_slot_number
            */
-          vl->slot_type = kSlotTypeImport;
+          vl->slot_type = slot_type_import;
           vl->element_address = edp->element_address;
           if (edp->Full) {
             vl->slot_status = slot_status_full;
@@ -554,13 +552,13 @@ dlist* ndmp_get_vol_list(UaContext* ua,
           /*
            * Drive
            */
-          vl->slot_type = kSlotTypeDrive;
+          vl->slot_type = slot_type_drive;
           vl->element_address = edp->element_address;
           if (edp->Full) {
             slot_number_t slot_mapping;
             vl->slot_status = slot_status_full;
             slot_mapping = GetBareosSlotNumberByElementAddress(
-                &store->rss->storage_mapping, kSlotTypeStorage,
+                &store->runtime_storage_status->storage_mapping, slot_type_storage,
                 edp->src_se_addr);
             vl->currently_loaded_slot_number = slot_mapping;
             FillVolumeName(vl, edp);
@@ -569,7 +567,7 @@ dlist* ndmp_get_vol_list(UaContext* ua,
           }
           break;
         default:
-          vl->slot_type = kSlotTypeUnknown;
+          vl->slot_type = slot_type_unknown;
           vl->element_address = edp->element_address;
           break;
       }
@@ -580,7 +578,7 @@ dlist* ndmp_get_vol_list(UaContext* ua,
      * Map physical storage address to logical one using the storage mappings.
      */
     vl->bareos_slot_number = GetBareosSlotNumberByElementAddress(
-        &store->rss->storage_mapping, vl->slot_type, edp->element_address);
+        &store->runtime_storage_status->storage_mapping, vl->slot_type, edp->element_address);
     if (vl->VolName) {
       Dmsg6(100,
             "Add phys_slot = %hd logi_slot=%hd loaded=%hd type=%hd status=%hd "
@@ -653,8 +651,8 @@ slot_number_t NdmpGetNumSlots(UaContext* ua, StorageResource* store)
    */
   if (!NdmpUpdateStorageMappings(ua, store)) { return slots; }
 
-  return store->rss->storage_mapping.se_count +
-         store->rss->storage_mapping.iee_count;
+  return store->runtime_storage_status->storage_mapping.se_count +
+         store->runtime_storage_status->storage_mapping.iee_count;
 }
 
 /**
@@ -669,7 +667,7 @@ drive_number_t NdmpGetNumDrives(UaContext* ua, StorageResource* store)
    */
   if (!NdmpUpdateStorageMappings(ua, store)) { return drives; }
 
-  return store->rss->storage_mapping.dte_count;
+  return store->runtime_storage_status->storage_mapping.dte_count;
 }
 
 /**
@@ -703,8 +701,8 @@ bool NdmpTransferVolume(UaContext* ua,
    * As the upper level functions work with logical slot numbers convert them
    * to physical slot numbers for the actual NDMP operation.
    */
-  from_addr = GetBareosSlotNumberByElementAddress(&store->rss->storage_mapping,
-                                                  kSlotTypeStorage, src_slot);
+  from_addr = GetBareosSlotNumberByElementAddress(&store->runtime_storage_status->storage_mapping,
+                                                  slot_type_storage, src_slot);
   if (from_addr == -1) {
     ua->ErrorMsg("No slot mapping for slot %hd\n", src_slot);
     return retval;
@@ -712,8 +710,8 @@ bool NdmpTransferVolume(UaContext* ua,
   ndmp_job.from_addr = from_addr;
   ndmp_job.from_addr_given = 1;
 
-  to_addr = GetElementAddressByBareosSlotNumber(&store->rss->storage_mapping,
-                                                kSlotTypeStorage, dst_slot);
+  to_addr = GetElementAddressByBareosSlotNumber(&store->runtime_storage_status->storage_mapping,
+                                                slot_type_storage, dst_slot);
   if (to_addr == -1) {
     ua->ErrorMsg("No slot mapping for slot %hd\n", dst_slot);
     return retval;
@@ -770,11 +768,11 @@ std::string reserve_ndmp_tapedevice_for_job(StorageResource* store,
 {
   JobId_t jobid = jcr->JobId;
   std::string returnvalue;
-  P(store->rss->ndmp_deviceinfo_lock);
+  P(store->runtime_storage_status->ndmp_deviceinfo_lock);
 
-  if (store->rss->ndmp_deviceinfo) {
-    for (auto devinfo = store->rss->ndmp_deviceinfo->begin();
-         devinfo != store->rss->ndmp_deviceinfo->end(); devinfo++) {
+  if (!store->runtime_storage_status->ndmp_deviceinfo.empty()) {
+    for (auto devinfo = store->runtime_storage_status->ndmp_deviceinfo.begin();
+         devinfo != store->runtime_storage_status->ndmp_deviceinfo.end(); devinfo++) {
       if (devinfo->JobIdUsingDevice == 0) {
         devinfo->JobIdUsingDevice = jobid;
         returnvalue = devinfo->device;
@@ -789,7 +787,7 @@ std::string reserve_ndmp_tapedevice_for_job(StorageResource* store,
       }
     }
   }
-  V(store->rss->ndmp_deviceinfo_lock);
+  V(store->runtime_storage_status->ndmp_deviceinfo_lock);
   return returnvalue;
 }
 
@@ -801,11 +799,11 @@ bool unreserve_ndmp_tapedevice_for_job(StorageResource* store,
 {
   JobId_t jobid = jcr->JobId;
   bool retval = false;
-  P(store->rss->ndmp_deviceinfo_lock);
+  P(store->runtime_storage_status->ndmp_deviceinfo_lock);
 
-  if (store->rss->ndmp_deviceinfo) {
-    for (auto devinfo = store->rss->ndmp_deviceinfo->begin();
-         devinfo != store->rss->ndmp_deviceinfo->end(); devinfo++) {
+  if (!store->runtime_storage_status->ndmp_deviceinfo.empty()) {
+    for (auto devinfo = store->runtime_storage_status->ndmp_deviceinfo.begin();
+         devinfo != store->runtime_storage_status->ndmp_deviceinfo.end(); devinfo++) {
       if (devinfo->JobIdUsingDevice == jobid) {
         devinfo->JobIdUsingDevice = 0;
         retval = true;
@@ -816,7 +814,7 @@ bool unreserve_ndmp_tapedevice_for_job(StorageResource* store,
       }
     }
   }
-  V(store->rss->ndmp_deviceinfo_lock);
+  V(store->runtime_storage_status->ndmp_deviceinfo_lock);
   return retval;
 }
 
@@ -851,9 +849,9 @@ int lookup_ndmp_driveindex_by_name(StorageResource* store, char* drivename)
 
   if (!drivename) { return -1; }
 
-  if (store->rss->ndmp_deviceinfo) {
-    for (auto devinfo = store->rss->ndmp_deviceinfo->begin();
-         devinfo != store->rss->ndmp_deviceinfo->end(); devinfo++) {
+  if (!store->runtime_storage_status->ndmp_deviceinfo.empty()) {
+    for (auto devinfo = store->runtime_storage_status->ndmp_deviceinfo.begin();
+         devinfo != store->runtime_storage_status->ndmp_deviceinfo.end(); devinfo++) {
       if ((drivename == devinfo->device)) { return cnt; }
       cnt++;
     }
@@ -914,7 +912,7 @@ bool NdmpAutochangerVolumeOperation(UaContext* ua,
      * Map the logical address to a physical one.
      */
     slot_mapping = GetElementAddressByBareosSlotNumber(
-        &store->rss->storage_mapping, kSlotTypeStorage, slot);
+        &store->runtime_storage_status->storage_mapping, kSlotTypeStorage, slot);
     if (slot_mapping == kInvalidSlotNumber) {
       ua->ErrorMsg("No slot mapping for slot %hd\n", slot);
       return retval;
@@ -927,7 +925,7 @@ bool NdmpAutochangerVolumeOperation(UaContext* ua,
    * Map the logical address to a physical one.
    */
   drive_mapping = GetElementAddressByBareosSlotNumber(
-      &store->rss->storage_mapping, kSlotTypeDrive, slot);
+      &store->runtime_storage_status->storage_mapping, kSlotTypeDrive, slot);
   if (drive_mapping == -1) {
     ua->ErrorMsg("No slot mapping for drive %hd\n", drive);
     return retval;
@@ -1031,7 +1029,7 @@ bool NdmpSendLabelRequest(UaContext* ua,
     slot_number_t slot_mapping;
 
     slot_mapping = GetElementAddressByBareosSlotNumber(
-        &store->rss->storage_mapping, kSlotTypeStorage, slot);
+        &store->runtime_storage_status->storage_mapping, kSlotTypeStorage, slot);
     if (slot_mapping == kInvalidSlotNumber) {
       ua->ErrorMsg("No slot mapping for slot %hd\n", slot);
       return retval;
@@ -1068,15 +1066,15 @@ static bool ndmp_native_update_runtime_storage_status(JobControlRecord* jcr,
 {
   bool retval = true;
 
-  P(store->rss->changer_lock);
+  P(store->runtime_storage_status->changer_lock);
   if (!do_ndmp_native_query_tape_and_robot_agents(jcr, store)) {
     retval = false;
   }
-  V(store->rss->changer_lock);
+  V(store->runtime_storage_status->changer_lock);
 
-  P(store->rss->changer_lock);
+  P(store->runtime_storage_status->changer_lock);
   if (!NdmpUpdateStorageMappings(jcr, store)) { retval = false; }
-  V(store->rss->changer_lock);
+  V(store->runtime_storage_status->changer_lock);
 
   return retval;
 }
@@ -1116,7 +1114,7 @@ bool ndmp_native_setup_robot_and_tape_for_native_backup_job(
   }
 
   driveaddress = GetElementAddressByBareosSlotNumber(
-      &store->rss->storage_mapping, kSlotTypeDrive, driveindex);
+      &store->runtime_storage_status->storage_mapping, slot_type_drive, driveindex);
   if (driveaddress == -1) {
     Jmsg(jcr, M_ERROR, 0,
          _("Could not lookup driveaddress for driveindex %d\n"), driveaddress);
@@ -1136,7 +1134,7 @@ bool ndmp_native_setup_robot_and_tape_for_native_backup_job(
   Jmsg(jcr, M_INFO, 0, _("Using Tape  host:device:address  %s:%s:@%d\n"),
        ndmp_job.tape_agent.host, ndmp_job.tape_device, ndmp_job.drive_addr);
   Jmsg(jcr, M_INFO, 0, _("Using Robot host:device(ident)  %s:%s(%s)\n"),
-       ndmp_job.robot_agent.host, ndmp_job.robot_target, store->rss->smc_ident);
+       ndmp_job.robot_agent.host, ndmp_job.robot_target, store->runtime_storage_status->smc_ident);
   Jmsg(jcr, M_INFO, 0, _("Using Tape record size %d\n"), ndmp_job.record_size);
 
   return true;

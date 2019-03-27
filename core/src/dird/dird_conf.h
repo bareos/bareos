@@ -285,7 +285,7 @@ class CatalogResource : public BareosResource {
  * Forward referenced structures
  */
 struct runtime_client_status_t;
-struct runtime_storage_status_t;
+struct RuntimeStorageStatus;
 struct runtime_job_status_t;
 
 /**
@@ -371,8 +371,8 @@ class StorageResource
       0; /**< Limit speed on this storage daemon for replication */
   utime_t heartbeat_interval = {0}; /**< Interval to send heartbeats */
   utime_t cache_status_interval = {
-      0}; /**< Interval to cache the vol_list in the rss */
-  runtime_storage_status_t* rss = nullptr;   /**< Runtime Storage Status */
+      0}; /**< Interval to cache the vol_list in the runtime_storage_status */
+  RuntimeStorageStatus* runtime_storage_status = nullptr;
   StorageResource* paired_storage = nullptr; /**< Paired storage configuration
                                       item for protocols like NDMP */
 
