@@ -122,7 +122,7 @@ bool FillBackupEnvironment(JobControlRecord* jcr,
    * Loop over each option block for this fileset and append any
    * INCLUDE/EXCLUDE and/or META tags to the env_tab of the NDMP backup.
    */
-  for (i = 0; i < ie->num_opts; i++) {
+  for (i = 0; i < ie->opts_list.size(); i++) {
     fo = ie->opts_list[i];
 
     /*

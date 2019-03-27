@@ -236,7 +236,7 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
    */
   fileset = jcr->res.fileset;
 
-  if (fileset->num_includes > 1) {
+  if (fileset->include_items.size() > 1) {
     Jmsg(jcr, M_ERROR, 0,
          "Exactly one include set is supported in NDMP NATIVE mode\n");
     return retval;

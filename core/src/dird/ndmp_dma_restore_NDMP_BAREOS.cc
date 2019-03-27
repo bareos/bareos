@@ -163,7 +163,6 @@ static inline bool fill_restore_environment(JobControlRecord* jcr,
                                             VolumeSessionInfo current_session,
                                             struct ndm_job_param* job)
 {
-  int i;
   char* bp;
   ndmp9_pval pv;
   FilesetResource* fileset;
@@ -253,31 +252,22 @@ static inline bool fill_restore_environment(JobControlRecord* jcr,
    * Lookup any meta tags that need to be added.
    */
   fileset = jcr->res.fileset;
-  for (i = 0; i < fileset->num_includes; i++) {
-    int j;
-    char* item;
-    IncludeExcludeItem* ie = fileset->include_items[i];
-
+  for (IncludeExcludeItem* ie : fileset->include_items) {
     /*
      * Loop over each file = entry of the fileset.
      */
-    for (j = 0; j < ie->name_list.size(); j++) {
-      item = (char*)ie->name_list.get(j);
+    for (int j = 0; j < ie->name_list.size(); j++) {
+      char* item = (char*)ie->name_list.get(j);
 
       /*
        * See if the original path matches.
        */
       if (Bstrcasecmp(item, ndmp_filesystem)) {
-        int k, l;
-        FileOptions* fo;
-
-        for (k = 0; k < ie->num_opts; k++) {
-          fo = ie->opts_list[i];
-
+        for (FileOptions* fo : ie->opts_list) {
           /*
            * Parse all specific META tags for this option block.
            */
-          for (l = 0; l < fo->meta.size(); l++) {
+          for (int l = 0; l < fo->meta.size(); l++) {
             NdmpParseMetaTag(&job->env_tab, (char*)fo->meta.get(l));
           }
         }

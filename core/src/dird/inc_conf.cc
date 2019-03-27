@@ -138,10 +138,10 @@ void FindUsedCompressalgos(PoolMem* compressalgos, JobControlRecord* jcr)
   if (!jcr->res.job || !jcr->res.job->fileset) { return; }
 
   fs = jcr->res.job->fileset;
-  for (int i = 0; i < fs->num_includes; i++) { /* Parse all Include {} */
+  for (int i = 0; i < fs->include_items.size(); i++) {
     inc = fs->include_items[i];
 
-    for (int j = 0; j < inc->num_opts; j++) { /* Parse all Options {} */
+    for (int j = 0; j < inc->opts_list.size(); j++) { /* Parse all Options {} */
       fopts = inc->opts_list[j];
 
       for (char* k = fopts->opts; *k; k++) { /* Try to find one request */
@@ -529,8 +529,7 @@ static void StoreOption(
  */
 static void SetupCurrentOpts(void)
 {
-  FileOptions* fo = (FileOptions*)malloc(sizeof(FileOptions));
-  memset(fo, 0, sizeof(FileOptions));
+  FileOptions* fo = new FileOptions;
   fo->regex.init(1, true);
   fo->regexdir.init(1, true);
   fo->regexfile.init(1, true);
@@ -543,13 +542,7 @@ static void SetupCurrentOpts(void)
   fo->Drivetype.init(1, true);
   fo->meta.init(1, true);
   res_incexe.current_opts = fo;
-  if (res_incexe.num_opts == 0) {
-    res_incexe.opts_list = (FileOptions**)malloc(sizeof(FileOptions*));
-  } else {
-    res_incexe.opts_list = (FileOptions**)realloc(
-        res_incexe.opts_list, sizeof(FileOptions*) * (res_incexe.num_opts + 1));
-  }
-  res_incexe.opts_list[res_incexe.num_opts++] = fo;
+  res_incexe.opts_list.push_back(fo);
 }
 
 /**
@@ -843,31 +836,15 @@ static void StoreNewinc(LEX* lc, ResourceItem* item, int index, int pass)
     }
   }
   if (pass == 1) {
-    incexe = (IncludeExcludeItem*)malloc(sizeof(IncludeExcludeItem));
-    memcpy(incexe, &res_incexe, sizeof(IncludeExcludeItem));
-    memset(&res_incexe, 0, sizeof(res_incexe));
+    incexe = new IncludeExcludeItem;
+    *incexe = res_incexe;
+    new (&res_incexe) IncludeExcludeItem();
     if (item->code == 0) { /* include */
-      if (res_fs->num_includes == 0) {
-        res_fs->include_items =
-            (IncludeExcludeItem**)malloc(sizeof(IncludeExcludeItem*));
-      } else {
-        res_fs->include_items = (IncludeExcludeItem**)realloc(
-            res_fs->include_items,
-            sizeof(IncludeExcludeItem*) * (res_fs->num_includes + 1));
-      }
-      res_fs->include_items[res_fs->num_includes++] = incexe;
-      Dmsg1(900, "num_includes=%d\n", res_fs->num_includes);
+      res_fs->include_items.push_back(incexe);
+      Dmsg1(900, "num_includes=%d\n", res_fs->include_items.size());
     } else { /* exclude */
-      if (res_fs->num_excludes == 0) {
-        res_fs->exclude_items =
-            (IncludeExcludeItem**)malloc(sizeof(IncludeExcludeItem*));
-      } else {
-        res_fs->exclude_items = (IncludeExcludeItem**)realloc(
-            res_fs->exclude_items,
-            sizeof(IncludeExcludeItem*) * (res_fs->num_excludes + 1));
-      }
-      res_fs->exclude_items[res_fs->num_excludes++] = incexe;
-      Dmsg1(900, "num_excludes=%d\n", res_fs->num_excludes);
+      res_fs->exclude_items.push_back(incexe);
+      Dmsg1(900, "num_excludes=%d\n", res_fs->exclude_items.size());
     }
   }
   ScanToEol(lc);

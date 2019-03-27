@@ -554,21 +554,21 @@ struct FileOptions {
   FileOptions() = default;
   virtual ~FileOptions() = default;
 
-  char opts[MAX_FOPTS]{0}; /**< Options string */
-  alist regex;             /**< Regex string(s) */
-  alist regexdir;          /**< Regex string(s) for directories */
-  alist regexfile;         /**< Regex string(s) for files */
-  alist wild;              /**< Wild card strings */
-  alist wilddir;           /**< Wild card strings for directories */
-  alist wildfile;          /**< Wild card strings for files */
-  alist wildbase;          /**< Wild card strings for files without '/' */
-  alist base;              /**< List of base names */
-  alist fstype;            /**< File system type limitation */
-  alist Drivetype;         /**< Drive type limitation */
-  alist meta;              /**< Backup meta information */
-  char* reader = nullptr;  /**< Reader program */
-  char* writer = nullptr;  /**< Writer program */
-  char* plugin = nullptr;  /**< Plugin program */
+  char opts[MAX_FOPTS] = {0}; /**< Options string */
+  alist regex;                /**< Regex string(s) */
+  alist regexdir;             /**< Regex string(s) for directories */
+  alist regexfile;            /**< Regex string(s) for files */
+  alist wild;                 /**< Wild card strings */
+  alist wilddir;              /**< Wild card strings for directories */
+  alist wildfile;             /**< Wild card strings for files */
+  alist wildbase;             /**< Wild card strings for files without '/' */
+  alist base;                 /**< List of base names */
+  alist fstype;               /**< File system type limitation */
+  alist Drivetype;            /**< Drive type limitation */
+  alist meta;                 /**< Backup meta information */
+  char* reader = nullptr;     /**< Reader program */
+  char* writer = nullptr;     /**< Writer program */
+  char* plugin = nullptr;     /**< Plugin program */
 };
 
 /**
@@ -578,13 +578,11 @@ struct IncludeExcludeItem {
   IncludeExcludeItem() = default;
   virtual ~IncludeExcludeItem() = default;
 
-  FileOptions* current_opts =
-      nullptr;                       /**< Points to current options structure */
-  FileOptions** opts_list = nullptr; /**< Options list */
-  int32_t num_opts = 0;              /**< Number of options items */
-  alist name_list;                   /**< Filename list -- holds char * */
-  alist plugin_list;                 /**< Filename list for plugins */
-  alist ignoredir;                   /**< Ignoredir string */
+  FileOptions* current_opts = nullptr;
+  std::vector<FileOptions*> opts_list;
+  alist name_list;   /**< Filename list -- holds char * */
+  alist plugin_list; /**< Filename list for plugins */
+  alist ignoredir;   /**< Ignoredir string */
 };
 
 /**
@@ -596,11 +594,8 @@ class FilesetResource : public BareosResource {
   virtual ~FilesetResource() = default;
 
   bool new_include = false; /**< Set if new include used */
-  IncludeExcludeItem** include_items =
-      nullptr;              /**< Array of incexe structures */
-  int32_t num_includes = 0; /**< Number in array */
-  IncludeExcludeItem** exclude_items = nullptr;
-  int32_t num_excludes = 0;
+  std::vector<IncludeExcludeItem*> include_items;
+  std::vector<IncludeExcludeItem*> exclude_items;
   bool have_MD5 = false;          /**< Set if MD5 initialized */
   MD5_CTX md5c = {0};             /**< MD5 of include/exclude */
   char MD5[30]{0};                /**< Base 64 representation of MD5 */

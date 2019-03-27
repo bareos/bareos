@@ -1925,381 +1925,365 @@ bool FilesetResource::PrintConfig(PoolMem& buff,
     IndentConfigItem(cfg_str, 1, temp.c_str());
   }
 
-  if (num_includes) {
+  for (int i = 0; i < include_items.size(); i++) {
+    IncludeExcludeItem* incexe = include_items[i];
+
+    IndentConfigItem(cfg_str, 1, "Include {\n");
+
     /*
-     * Loop over all exclude blocks.
+     * Start options block
      */
-    for (int i = 0; i < num_includes; i++) {
-      IncludeExcludeItem* incexe = include_items[i];
+    for (int j = 0; j < incexe->opts_list.size(); j++) {
+      FileOptions* fo = incexe->opts_list[j];
 
-      IndentConfigItem(cfg_str, 1, "Include {\n");
-
-      /*
-       * Start options block
-       */
-      if (incexe->num_opts > 0) {
-        for (int j = 0; j < incexe->num_opts; j++) {
-          FileOptions* fo = incexe->opts_list[j];
-
-          IndentConfigItem(cfg_str, 2, "Options {\n");
-          for (p = &fo->opts[0]; *p; p++) {
+      IndentConfigItem(cfg_str, 2, "Options {\n");
+      for (p = &fo->opts[0]; *p; p++) {
+        switch (*p) {
+          case '0': /* no option */
+            break;
+          case 'a': /* alway replace */
+            IndentConfigItem(cfg_str, 3, "Replace = Always\n");
+            break;
+          case 'C': /* */
+            IndentConfigItem(cfg_str, 3, "Accurate = ");
+            p++; /* skip C */
+            for (; *p && *p != ':'; p++) {
+              Mmsg(temp, "%c", *p);
+              PmStrcat(cfg_str, temp.c_str());
+            }
+            PmStrcat(cfg_str, "\n");
+            break;
+          case 'c':
+            IndentConfigItem(cfg_str, 3, "CheckFileChanges = Yes\n");
+            break;
+          case 'd':
+            switch (*(p + 1)) {
+              case '1':
+                IndentConfigItem(cfg_str, 3, "Shadowing = LocalWarn\n");
+                p++;
+                break;
+              case '2':
+                IndentConfigItem(cfg_str, 3, "Shadowing = LocalRemove\n");
+                p++;
+                break;
+              case '3':
+                IndentConfigItem(cfg_str, 3, "Shadowing = GlobalWarn\n");
+                p++;
+                break;
+              case '4':
+                IndentConfigItem(cfg_str, 3, "Shadowing = GlobalRemove\n");
+                p++;
+                break;
+            }
+            break;
+          case 'e':
+            IndentConfigItem(cfg_str, 3, "Exclude = Yes\n");
+            break;
+          case 'f':
+            IndentConfigItem(cfg_str, 3, "OneFS = No\n");
+            break;
+          case 'h': /* no recursion */
+            IndentConfigItem(cfg_str, 3, "Recurse = No\n");
+            break;
+          case 'H': /* no hard link handling */
+            IndentConfigItem(cfg_str, 3, "Hardlinks = No\n");
+            break;
+          case 'i':
+            IndentConfigItem(cfg_str, 3, "IgnoreCase = Yes\n");
+            break;
+          case 'J': /* Base Job */
+            IndentConfigItem(cfg_str, 3, "BaseJob = ");
+            p++; /* skip J */
+            for (; *p && *p != ':'; p++) {
+              Mmsg(temp, "%c", *p);
+              PmStrcat(cfg_str, temp.c_str());
+            }
+            PmStrcat(cfg_str, "\n");
+            break;
+          case 'M': /* MD5 */
+            IndentConfigItem(cfg_str, 3, "Signature = MD5\n");
+            break;
+          case 'n':
+            IndentConfigItem(cfg_str, 3, "Replace = Never\n");
+            break;
+          case 'p': /* use portable data format */
+            IndentConfigItem(cfg_str, 3, "Portable = Yes\n");
+            break;
+          case 'P': /* strip path */
+            IndentConfigItem(cfg_str, 3, "Strip = ");
+            p++; /* skip P */
+            for (; *p && *p != ':'; p++) {
+              Mmsg(temp, "%c", *p);
+              PmStrcat(cfg_str, temp.c_str());
+            }
+            PmStrcat(cfg_str, "\n");
+            break;
+          case 'R': /* Resource forks and Finder Info */
+            IndentConfigItem(cfg_str, 3, "HFSPlusSupport = Yes\n");
+            break;
+          case 'r': /* read fifo */
+            IndentConfigItem(cfg_str, 3, "ReadFifo = Yes\n");
+            break;
+          case 'S':
+            switch (*(p + 1)) {
+#ifdef HAVE_SHA2
+              case '2':
+                IndentConfigItem(cfg_str, 3, "Signature = SHA256\n");
+                p++;
+                break;
+              case '3':
+                IndentConfigItem(cfg_str, 3, "Signature = SHA512\n");
+                p++;
+                break;
+#endif
+              default:
+                IndentConfigItem(cfg_str, 3, "Signature = SHA1\n");
+                break;
+            }
+            break;
+          case 's':
+            IndentConfigItem(cfg_str, 3, "Sparse = Yes\n");
+            break;
+          case 'm':
+            IndentConfigItem(cfg_str, 3, "MtimeOnly = Yes\n");
+            break;
+          case 'k':
+            IndentConfigItem(cfg_str, 3, "KeepAtime = Yes\n");
+            break;
+          case 'K':
+            IndentConfigItem(cfg_str, 3, "NoAtime = Yes\n");
+            break;
+          case 'A':
+            IndentConfigItem(cfg_str, 3, "AclSupport = Yes\n");
+            break;
+          case 'V': /* verify options */
+            IndentConfigItem(cfg_str, 3, "Verify = ");
+            p++; /* skip V */
+            for (; *p && *p != ':'; p++) {
+              Mmsg(temp, "%c", *p);
+              PmStrcat(cfg_str, temp.c_str());
+            }
+            PmStrcat(cfg_str, "\n");
+            break;
+          case 'w':
+            IndentConfigItem(cfg_str, 3, "Replace = IfNewer\n");
+            break;
+          case 'W':
+            IndentConfigItem(cfg_str, 3, "EnhancedWild = Yes\n");
+            break;
+          case 'z': /* size */
+            IndentConfigItem(cfg_str, 3, "Size = ");
+            p++; /* skip z */
+            for (; *p && *p != ':'; p++) {
+              Mmsg(temp, "%c", *p);
+              PmStrcat(cfg_str, temp.c_str());
+            }
+            PmStrcat(cfg_str, "\n");
+            break;
+          case 'Z': /* compression */
+            IndentConfigItem(cfg_str, 3, "Compression = ");
+            p++; /* skip Z */
             switch (*p) {
-              case '0': /* no option */
+              case '0':
+              case '1':
+              case '2':
+              case '3':
+              case '4':
+              case '5':
+              case '6':
+              case '7':
+              case '8':
+              case '9':
+                Mmsg(temp, "GZIP%c\n", *p);
+                PmStrcat(cfg_str, temp.c_str());
                 break;
-              case 'a': /* alway replace */
-                IndentConfigItem(cfg_str, 3, "Replace = Always\n");
-                break;
-              case 'C': /* */
-                IndentConfigItem(cfg_str, 3, "Accurate = ");
-                p++; /* skip C */
-                for (; *p && *p != ':'; p++) {
-                  Mmsg(temp, "%c", *p);
-                  PmStrcat(cfg_str, temp.c_str());
-                }
-                PmStrcat(cfg_str, "\n");
-                break;
-              case 'c':
-                IndentConfigItem(cfg_str, 3, "CheckFileChanges = Yes\n");
-                break;
-              case 'd':
-                switch (*(p + 1)) {
-                  case '1':
-                    IndentConfigItem(cfg_str, 3, "Shadowing = LocalWarn\n");
-                    p++;
-                    break;
-                  case '2':
-                    IndentConfigItem(cfg_str, 3, "Shadowing = LocalRemove\n");
-                    p++;
-                    break;
-                  case '3':
-                    IndentConfigItem(cfg_str, 3, "Shadowing = GlobalWarn\n");
-                    p++;
-                    break;
-                  case '4':
-                    IndentConfigItem(cfg_str, 3, "Shadowing = GlobalRemove\n");
-                    p++;
-                    break;
-                }
-                break;
-              case 'e':
-                IndentConfigItem(cfg_str, 3, "Exclude = Yes\n");
+              case 'o':
+                Mmsg(temp, "LZO\n");
+                PmStrcat(cfg_str, temp.c_str());
                 break;
               case 'f':
-                IndentConfigItem(cfg_str, 3, "OneFS = No\n");
-                break;
-              case 'h': /* no recursion */
-                IndentConfigItem(cfg_str, 3, "Recurse = No\n");
-                break;
-              case 'H': /* no hard link handling */
-                IndentConfigItem(cfg_str, 3, "Hardlinks = No\n");
-                break;
-              case 'i':
-                IndentConfigItem(cfg_str, 3, "IgnoreCase = Yes\n");
-                break;
-              case 'J': /* Base Job */
-                IndentConfigItem(cfg_str, 3, "BaseJob = ");
-                p++; /* skip J */
-                for (; *p && *p != ':'; p++) {
-                  Mmsg(temp, "%c", *p);
-                  PmStrcat(cfg_str, temp.c_str());
-                }
-                PmStrcat(cfg_str, "\n");
-                break;
-              case 'M': /* MD5 */
-                IndentConfigItem(cfg_str, 3, "Signature = MD5\n");
-                break;
-              case 'n':
-                IndentConfigItem(cfg_str, 3, "Replace = Never\n");
-                break;
-              case 'p': /* use portable data format */
-                IndentConfigItem(cfg_str, 3, "Portable = Yes\n");
-                break;
-              case 'P': /* strip path */
-                IndentConfigItem(cfg_str, 3, "Strip = ");
-                p++; /* skip P */
-                for (; *p && *p != ':'; p++) {
-                  Mmsg(temp, "%c", *p);
-                  PmStrcat(cfg_str, temp.c_str());
-                }
-                PmStrcat(cfg_str, "\n");
-                break;
-              case 'R': /* Resource forks and Finder Info */
-                IndentConfigItem(cfg_str, 3, "HFSPlusSupport = Yes\n");
-                break;
-              case 'r': /* read fifo */
-                IndentConfigItem(cfg_str, 3, "ReadFifo = Yes\n");
-                break;
-              case 'S':
-                switch (*(p + 1)) {
-#ifdef HAVE_SHA2
-                  case '2':
-                    IndentConfigItem(cfg_str, 3, "Signature = SHA256\n");
-                    p++;
-                    break;
-                  case '3':
-                    IndentConfigItem(cfg_str, 3, "Signature = SHA512\n");
-                    p++;
-                    break;
-#endif
-                  default:
-                    IndentConfigItem(cfg_str, 3, "Signature = SHA1\n");
-                    break;
-                }
-                break;
-              case 's':
-                IndentConfigItem(cfg_str, 3, "Sparse = Yes\n");
-                break;
-              case 'm':
-                IndentConfigItem(cfg_str, 3, "MtimeOnly = Yes\n");
-                break;
-              case 'k':
-                IndentConfigItem(cfg_str, 3, "KeepAtime = Yes\n");
-                break;
-              case 'K':
-                IndentConfigItem(cfg_str, 3, "NoAtime = Yes\n");
-                break;
-              case 'A':
-                IndentConfigItem(cfg_str, 3, "AclSupport = Yes\n");
-                break;
-              case 'V': /* verify options */
-                IndentConfigItem(cfg_str, 3, "Verify = ");
-                p++; /* skip V */
-                for (; *p && *p != ':'; p++) {
-                  Mmsg(temp, "%c", *p);
-                  PmStrcat(cfg_str, temp.c_str());
-                }
-                PmStrcat(cfg_str, "\n");
-                break;
-              case 'w':
-                IndentConfigItem(cfg_str, 3, "Replace = IfNewer\n");
-                break;
-              case 'W':
-                IndentConfigItem(cfg_str, 3, "EnhancedWild = Yes\n");
-                break;
-              case 'z': /* size */
-                IndentConfigItem(cfg_str, 3, "Size = ");
-                p++; /* skip z */
-                for (; *p && *p != ':'; p++) {
-                  Mmsg(temp, "%c", *p);
-                  PmStrcat(cfg_str, temp.c_str());
-                }
-                PmStrcat(cfg_str, "\n");
-                break;
-              case 'Z': /* compression */
-                IndentConfigItem(cfg_str, 3, "Compression = ");
-                p++; /* skip Z */
+                p++; /* skip f */
                 switch (*p) {
-                  case '0':
-                  case '1':
-                  case '2':
-                  case '3':
-                  case '4':
-                  case '5':
-                  case '6':
-                  case '7':
-                  case '8':
-                  case '9':
-                    Mmsg(temp, "GZIP%c\n", *p);
-                    PmStrcat(cfg_str, temp.c_str());
-                    break;
-                  case 'o':
-                    Mmsg(temp, "LZO\n");
-                    PmStrcat(cfg_str, temp.c_str());
-                    break;
                   case 'f':
-                    p++; /* skip f */
-                    switch (*p) {
-                      case 'f':
-                        Mmsg(temp, "LZFAST\n");
-                        PmStrcat(cfg_str, temp.c_str());
-                        break;
-                      case '4':
-                        Mmsg(temp, "LZ4\n");
-                        PmStrcat(cfg_str, temp.c_str());
-                        break;
-                      case 'h':
-                        Mmsg(temp, "LZ4HC\n");
-                        PmStrcat(cfg_str, temp.c_str());
-                        break;
-                      default:
-                        Emsg1(M_ERROR, 0,
-                              _("Unknown compression include/exclude option: "
-                                "%c\n"),
-                              *p);
-                        break;
-                    }
+                    Mmsg(temp, "LZFAST\n");
+                    PmStrcat(cfg_str, temp.c_str());
+                    break;
+                  case '4':
+                    Mmsg(temp, "LZ4\n");
+                    PmStrcat(cfg_str, temp.c_str());
+                    break;
+                  case 'h':
+                    Mmsg(temp, "LZ4HC\n");
+                    PmStrcat(cfg_str, temp.c_str());
                     break;
                   default:
                     Emsg1(M_ERROR, 0,
-                          _("Unknown compression include/exclude option: %c\n"),
+                          _("Unknown compression include/exclude option: "
+                            "%c\n"),
                           *p);
                     break;
                 }
                 break;
-              case 'X':
-                IndentConfigItem(cfg_str, 3, "XattrSupport = Yes\n");
-                break;
-              case 'x':
-                IndentConfigItem(cfg_str, 3, "AutoExclude = No\n");
-                break;
               default:
-                Emsg1(M_ERROR, 0, _("Unknown include/exclude option: %c\n"),
+                Emsg1(M_ERROR, 0,
+                      _("Unknown compression include/exclude option: %c\n"),
                       *p);
                 break;
             }
-          }
-
-          for (int k = 0; k < fo->regex.size(); k++) {
-            Mmsg(temp, "Regex = \"%s\"\n", fo->regex.get(k));
-            IndentConfigItem(cfg_str, 3, temp.c_str());
-          }
-
-          for (int k = 0; k < fo->regexdir.size(); k++) {
-            Mmsg(temp, "Regex Dir = \"%s\"\n", fo->regexdir.get(k));
-            IndentConfigItem(cfg_str, 3, temp.c_str());
-          }
-
-          for (int k = 0; k < fo->regexfile.size(); k++) {
-            Mmsg(temp, "Regex File = \"%s\"\n", fo->regexfile.get(k));
-            IndentConfigItem(cfg_str, 3, temp.c_str());
-          }
-
-          for (int k = 0; k < fo->wild.size(); k++) {
-            Mmsg(temp, "Wild = \"%s\"\n", fo->wild.get(k));
-            IndentConfigItem(cfg_str, 3, temp.c_str());
-          }
-
-          for (int k = 0; k < fo->wilddir.size(); k++) {
-            Mmsg(temp, "Wild Dir = \"%s\"\n", fo->wilddir.get(k));
-            IndentConfigItem(cfg_str, 3, temp.c_str());
-          }
-
-          for (int k = 0; k < fo->wildfile.size(); k++) {
-            Mmsg(temp, "Wild File = \"%s\"\n", fo->wildfile.get(k));
-            IndentConfigItem(cfg_str, 3, temp.c_str());
-          }
-
-          /*
-           *  Wildbase is WildFile not containing a / or \\
-           *  see  void StoreWild() in inc_conf.c
-           *  so we need to translate it back to a Wild File entry
-           */
-          for (int k = 0; k < fo->wildbase.size(); k++) {
-            Mmsg(temp, "Wild File = \"%s\"\n", fo->wildbase.get(k));
-            IndentConfigItem(cfg_str, 3, temp.c_str());
-          }
-
-          for (int k = 0; k < fo->base.size(); k++) {
-            Mmsg(temp, "Base = \"%s\"\n", fo->base.get(k));
-            IndentConfigItem(cfg_str, 3, temp.c_str());
-          }
-
-          for (int k = 0; k < fo->fstype.size(); k++) {
-            Mmsg(temp, "Fs Type = \"%s\"\n", fo->fstype.get(k));
-            IndentConfigItem(cfg_str, 3, temp.c_str());
-          }
-
-          for (int k = 0; k < fo->Drivetype.size(); k++) {
-            Mmsg(temp, "Drive Type = \"%s\"\n", fo->Drivetype.get(k));
-            IndentConfigItem(cfg_str, 3, temp.c_str());
-          }
-
-          for (int k = 0; k < fo->meta.size(); k++) {
-            Mmsg(temp, "Meta = \"%s\"\n", fo->meta.get(k));
-            IndentConfigItem(cfg_str, 3, temp.c_str());
-          }
-
-          if (fo->plugin) {
-            Mmsg(temp, "Plugin = \"%s\"\n", fo->plugin);
-            IndentConfigItem(cfg_str, 3, temp.c_str());
-          }
-
-          if (fo->reader) {
-            Mmsg(temp, "Reader = \"%s\"\n", fo->reader);
-            IndentConfigItem(cfg_str, 3, temp.c_str());
-          }
-
-          if (fo->writer) {
-            Mmsg(temp, "Writer = \"%s\"\n", fo->writer);
-            IndentConfigItem(cfg_str, 3, temp.c_str());
-          }
-
-          IndentConfigItem(cfg_str, 2, "}\n");
-        }
-      } /* end options block */
-
-      /*
-       * File = entries.
-       */
-      if (incexe->name_list.size()) {
-        char* entry;
-        PoolMem esc;
-
-        for (int l = 0; l < incexe->name_list.size(); l++) {
-          entry = (char*)incexe->name_list.get(l);
-          EscapeString(esc, entry, strlen(entry));
-          Mmsg(temp, "File = \"%s\"\n", esc.c_str());
-          IndentConfigItem(cfg_str, 2, temp.c_str());
+            break;
+          case 'X':
+            IndentConfigItem(cfg_str, 3, "XattrSupport = Yes\n");
+            break;
+          case 'x':
+            IndentConfigItem(cfg_str, 3, "AutoExclude = No\n");
+            break;
+          default:
+            Emsg1(M_ERROR, 0, _("Unknown include/exclude option: %c\n"), *p);
+            break;
         }
       }
 
-      /*
-       * Plugin = entries.
-       */
-      if (incexe->plugin_list.size()) {
-        char* entry;
-        PoolMem esc;
+      for (int k = 0; k < fo->regex.size(); k++) {
+        Mmsg(temp, "Regex = \"%s\"\n", fo->regex.get(k));
+        IndentConfigItem(cfg_str, 3, temp.c_str());
+      }
 
-        for (int l = 0; l < incexe->plugin_list.size(); l++) {
-          entry = (char*)incexe->plugin_list.get(l);
-          EscapeString(esc, entry, strlen(entry));
-          Mmsg(temp, "Plugin = \"%s\"\n", esc.c_str());
-          IndentConfigItem(cfg_str, 2, temp.c_str());
-        }
+      for (int k = 0; k < fo->regexdir.size(); k++) {
+        Mmsg(temp, "Regex Dir = \"%s\"\n", fo->regexdir.get(k));
+        IndentConfigItem(cfg_str, 3, temp.c_str());
+      }
+
+      for (int k = 0; k < fo->regexfile.size(); k++) {
+        Mmsg(temp, "Regex File = \"%s\"\n", fo->regexfile.get(k));
+        IndentConfigItem(cfg_str, 3, temp.c_str());
+      }
+
+      for (int k = 0; k < fo->wild.size(); k++) {
+        Mmsg(temp, "Wild = \"%s\"\n", fo->wild.get(k));
+        IndentConfigItem(cfg_str, 3, temp.c_str());
+      }
+
+      for (int k = 0; k < fo->wilddir.size(); k++) {
+        Mmsg(temp, "Wild Dir = \"%s\"\n", fo->wilddir.get(k));
+        IndentConfigItem(cfg_str, 3, temp.c_str());
+      }
+
+      for (int k = 0; k < fo->wildfile.size(); k++) {
+        Mmsg(temp, "Wild File = \"%s\"\n", fo->wildfile.get(k));
+        IndentConfigItem(cfg_str, 3, temp.c_str());
       }
 
       /*
-       * Exclude Dir Containing = entry.
+       *  Wildbase is WildFile not containing a / or \\
+       *  see  void StoreWild() in inc_conf.c
+       *  so we need to translate it back to a Wild File entry
        */
-      if (incexe->ignoredir.size()) {
-        for (int l = 0; l < incexe->ignoredir.size(); l++) {
-          Mmsg(temp, "Exclude Dir Containing = \"%s\"\n",
-               incexe->ignoredir.get(l));
-          IndentConfigItem(cfg_str, 2, temp.c_str());
-        }
+      for (int k = 0; k < fo->wildbase.size(); k++) {
+        Mmsg(temp, "Wild File = \"%s\"\n", fo->wildbase.get(k));
+        IndentConfigItem(cfg_str, 3, temp.c_str());
+      }
+
+      for (int k = 0; k < fo->base.size(); k++) {
+        Mmsg(temp, "Base = \"%s\"\n", fo->base.get(k));
+        IndentConfigItem(cfg_str, 3, temp.c_str());
+      }
+
+      for (int k = 0; k < fo->fstype.size(); k++) {
+        Mmsg(temp, "Fs Type = \"%s\"\n", fo->fstype.get(k));
+        IndentConfigItem(cfg_str, 3, temp.c_str());
+      }
+
+      for (int k = 0; k < fo->Drivetype.size(); k++) {
+        Mmsg(temp, "Drive Type = \"%s\"\n", fo->Drivetype.get(k));
+        IndentConfigItem(cfg_str, 3, temp.c_str());
+      }
+
+      for (int k = 0; k < fo->meta.size(); k++) {
+        Mmsg(temp, "Meta = \"%s\"\n", fo->meta.get(k));
+        IndentConfigItem(cfg_str, 3, temp.c_str());
+      }
+
+      if (fo->plugin) {
+        Mmsg(temp, "Plugin = \"%s\"\n", fo->plugin);
+        IndentConfigItem(cfg_str, 3, temp.c_str());
+      }
+
+      if (fo->reader) {
+        Mmsg(temp, "Reader = \"%s\"\n", fo->reader);
+        IndentConfigItem(cfg_str, 3, temp.c_str());
+      }
+
+      if (fo->writer) {
+        Mmsg(temp, "Writer = \"%s\"\n", fo->writer);
+        IndentConfigItem(cfg_str, 3, temp.c_str());
+      }
+
+      IndentConfigItem(cfg_str, 2, "}\n");
+    } /* end options block */
+
+    /*
+     * File = entries.
+     */
+    if (incexe->name_list.size()) {
+      char* entry;
+      PoolMem esc;
+
+      for (int l = 0; l < incexe->name_list.size(); l++) {
+        entry = (char*)incexe->name_list.get(l);
+        EscapeString(esc, entry, strlen(entry));
+        Mmsg(temp, "File = \"%s\"\n", esc.c_str());
+        IndentConfigItem(cfg_str, 2, temp.c_str());
+      }
+    }
+
+    /*
+     * Plugin = entries.
+     */
+    if (incexe->plugin_list.size()) {
+      char* entry;
+      PoolMem esc;
+
+      for (int l = 0; l < incexe->plugin_list.size(); l++) {
+        entry = (char*)incexe->plugin_list.get(l);
+        EscapeString(esc, entry, strlen(entry));
+        Mmsg(temp, "Plugin = \"%s\"\n", esc.c_str());
+        IndentConfigItem(cfg_str, 2, temp.c_str());
+      }
+    }
+
+    /*
+     * Exclude Dir Containing = entry.
+     */
+    if (incexe->ignoredir.size()) {
+      for (int l = 0; l < incexe->ignoredir.size(); l++) {
+        Mmsg(temp, "Exclude Dir Containing = \"%s\"\n",
+             incexe->ignoredir.get(l));
+        IndentConfigItem(cfg_str, 2, temp.c_str());
+      }
+    }
+
+    IndentConfigItem(cfg_str, 1, "}\n");
+
+  } /* loop over all include blocks */
+
+  for (int j = 0; j < exclude_items.size(); j++) {
+    IncludeExcludeItem* incexe = exclude_items[j];
+
+    if (incexe->name_list.size()) {
+      char* entry;
+      PoolMem esc;
+
+      IndentConfigItem(cfg_str, 1, "Exclude {\n");
+      for (int k = 0; k < incexe->name_list.size(); k++) {
+        entry = (char*)incexe->name_list.get(k);
+        EscapeString(esc, entry, strlen(entry));
+        Mmsg(temp, "File = \"%s\"\n", esc.c_str());
+        IndentConfigItem(cfg_str, 2, temp.c_str());
       }
 
       IndentConfigItem(cfg_str, 1, "}\n");
-
-      /*
-       * End Include block
-       */
-    } /* loop over all include blocks */
-  }
-
-  if (num_excludes) {
-    /*
-     * Loop over all exclude blocks.
-     */
-    for (int j = 0; j < num_excludes; j++) {
-      IncludeExcludeItem* incexe = exclude_items[j];
-
-      if (incexe->name_list.size()) {
-        char* entry;
-        PoolMem esc;
-
-        IndentConfigItem(cfg_str, 1, "Exclude {\n");
-        for (int k = 0; k < incexe->name_list.size(); k++) {
-          entry = (char*)incexe->name_list.get(k);
-          EscapeString(esc, entry, strlen(entry));
-          Mmsg(temp, "File = \"%s\"\n", esc.c_str());
-          IndentConfigItem(cfg_str, 2, temp.c_str());
-        }
-
-        IndentConfigItem(cfg_str, 1, "}\n");
-      }
-    } /* loop over all exclude blocks */
-  }
+    }
+  } /* loop over all exclude blocks */
 
   PmStrcat(cfg_str, "}\n\n");
   PmStrcat(buff, cfg_str.c_str());
@@ -2342,8 +2326,7 @@ static void FreeIncexe(IncludeExcludeItem* incexe)
 {
   incexe->name_list.destroy();
   incexe->plugin_list.destroy();
-  for (int i = 0; i < incexe->num_opts; i++) {
-    FileOptions* fopt = incexe->opts_list[i];
+  for (FileOptions* fopt : incexe->opts_list) {
     fopt->regex.destroy();
     fopt->regexdir.destroy();
     fopt->regexfile.destroy();
@@ -2358,11 +2341,10 @@ static void FreeIncexe(IncludeExcludeItem* incexe)
     if (fopt->plugin) { free(fopt->plugin); }
     if (fopt->reader) { free(fopt->reader); }
     if (fopt->writer) { free(fopt->writer); }
-    free(fopt);
+    delete fopt;
   }
-  if (incexe->opts_list) { free(incexe->opts_list); }
+  incexe->opts_list.clear();
   incexe->ignoredir.destroy();
-  free(incexe);
 }
 
 static bool UpdateResourcePointer(int type, ResourceItem* items)
@@ -4167,17 +4149,10 @@ static void FreeResource(BareosResource* res, int type)
     }
     case R_FILESET: {
       FilesetResource* p = reinterpret_cast<FilesetResource*>(res);
-      int num;
-      if ((num = p->num_includes)) {
-        while (--num >= 0) { FreeIncexe(p->include_items[num]); }
-        free(p->include_items);
-      }
-      p->num_includes = 0;
-      if ((num = p->num_excludes)) {
-        while (--num >= 0) { FreeIncexe(p->exclude_items[num]); }
-        free(p->exclude_items);
-      }
-      p->num_excludes = 0;
+      for (auto q : p->include_items) { FreeIncexe(q); }
+      p->include_items.clear();
+      for (auto q : p->exclude_items) { FreeIncexe(q); }
+      p->exclude_items.clear();
       delete p;
       break;
     }

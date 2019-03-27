@@ -541,9 +541,9 @@ static bool SendFileset(JobControlRecord* jcr)
 
   while (1) {
     if (include) {
-      num = fileset->num_includes;
+      num = fileset->include_items.size();
     } else {
-      num = fileset->num_excludes;
+      num = fileset->exclude_items.size();
     }
     for (int i = 0; i < num; i++) {
       char* item;
@@ -561,7 +561,7 @@ static bool SendFileset(JobControlRecord* jcr)
         fd->fsend("Z %s\n", ie->ignoredir.get(j));
       }
 
-      for (int j = 0; j < ie->num_opts; j++) {
+      for (int j = 0; j < ie->opts_list.size(); j++) {
         FileOptions* fo = ie->opts_list[j];
         bool enhanced_wild = false;
 
@@ -1240,7 +1240,8 @@ void DoNativeClientStatus(UaContext* ua, ClientResource* client, char* cmd)
   }
 
   if (!ConnectToFileDaemon(ua->jcr, 1, 15, false, ua)) {
-    ua->SendMsg(_("\nFailed to connect to Client %s.\n====\n"), client->resource_name_);
+    ua->SendMsg(_("\nFailed to connect to Client %s.\n====\n"),
+                client->resource_name_);
     if (ua->jcr->file_bsock) {
       ua->jcr->file_bsock->close();
       delete ua->jcr->file_bsock;
@@ -1288,7 +1289,8 @@ void DoClientResolve(UaContext* ua, ClientResource* client)
   }
 
   if (!ConnectToFileDaemon(ua->jcr, 1, 15, false, ua)) {
-    ua->SendMsg(_("\nFailed to connect to Client %s.\n====\n"), client->resource_name_);
+    ua->SendMsg(_("\nFailed to connect to Client %s.\n====\n"),
+                client->resource_name_);
     if (ua->jcr->file_bsock) {
       ua->jcr->file_bsock->close();
       delete ua->jcr->file_bsock;

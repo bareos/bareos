@@ -249,10 +249,10 @@ static bool IsChecksumNeededByFileset(JobControlRecord* jcr)
   if (!jcr->res.job || !jcr->res.job->fileset) { return false; }
 
   fs = jcr->res.job->fileset;
-  for (int i = 0; i < fs->num_includes; i++) { /* Parse all Include {} */
+  for (int i = 0; i < fs->include_items.size(); i++) {
     inc = fs->include_items[i];
 
-    for (int j = 0; j < inc->num_opts; j++) { /* Parse all Options {} */
+    for (int j = 0; j < inc->opts_list.size(); j++) { /* Parse all Options {} */
       fopts = inc->opts_list[j];
 
       for (char* k = fopts->opts; *k; k++) { /* Try to find one request */

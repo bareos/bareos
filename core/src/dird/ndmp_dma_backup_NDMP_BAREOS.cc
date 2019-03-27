@@ -285,7 +285,7 @@ bool DoNdmpBackup(JobControlRecord* jcr)
   fileset = jcr->res.fileset;
 
 
-  for (i = 0; i < fileset->num_includes; i++) {
+  for (i = 0; i < fileset->include_items.size(); i++) {
     int j;
     char* item;
     IncludeExcludeItem* ie = fileset->include_items[i];
