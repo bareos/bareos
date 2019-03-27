@@ -1,0 +1,75 @@
+Device {
+  Name = auto1dev0
+  Media Type = File
+  Device Type = tape
+  Archive Device = @PROJECT_BINARY_DIR@
+  LabelMedia = yes
+  Random Access = yes
+  Autochanger = yes
+  AlwaysOpen = no
+  RemovableMedia = no
+  Drive Index = 0
+  Autoselect = no
+}
+
+Device {
+  Name = auto1dev1
+  Media Type = File
+  Archive Device = @PROJECT_BINARY_DIR@/non-existent
+  LabelMedia = yes
+  Random Access = yes
+  Autochanger = yes
+  AlwaysOpen = no
+  RemovableMedia = no
+  Drive Index = 1
+}
+
+Device {
+  Name = auto1dev2
+  Media Type = File
+  Device Type = tape
+  Archive Device = @PROJECT_BINARY_DIR@
+  LabelMedia = yes
+  Random Access = yes
+  Autochanger = yes
+  AlwaysOpen = no
+  RemovableMedia = no
+  Drive Index = 2
+}
+
+Device {
+  Name = auto1dev3
+  Media Type = File
+  Device Type = tape
+  Archive Device = @PROJECT_BINARY_DIR@
+  LabelMedia = yes
+  Random Access = yes
+  Autochanger = yes
+  AlwaysOpen = no
+  RemovableMedia = no
+  Drive Index = 3
+}
+
+Device {
+  Name = auto1dev4
+  Media Type = File
+  Device Type = tape
+  Archive Device = @PROJECT_BINARY_DIR@
+  LabelMedia = yes
+  Random Access = yes
+  Autochanger = yes
+  AlwaysOpen = no
+  RemovableMedia = no
+  Drive Index = 4
+}
+
+Autochanger {
+  Name = auto1
+  Device = auto1dev0
+  Device = auto1dev1
+  Device = auto1dev2
+  Device = auto1dev3
+  Device = auto1dev4
+  Changer Device  = /dev/null
+  Changer Command = ""
+}
