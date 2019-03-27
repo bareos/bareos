@@ -12,9 +12,9 @@
 import Console from '../components/Console'
 
 export default {
-  data () {
+  data() {
     return {
-      terminal: {}
+      terminal: {},
       // output: '',
       // command: '',
       // terminal: {
@@ -36,11 +36,11 @@ export default {
     //   this.command = ''
     // }
   },
-  beforeMounted () {
+  beforeMounted() {
     console.log('debug: beforeMounted()')
     // delete this.$socket.onmessage
   },
-  mounted () {
+  mounted() {
     console.log('debug: mounted()')
     // this.$refs.xterm.term.write('* ')
     // this.$refs.xterm.term.on('data', (data) => {
@@ -62,24 +62,24 @@ export default {
     //   }
     // })
   },
-  beforeUpdated () {
+  beforeUpdated() {
     console.log('debug: beforeUpdated()')
   },
-  updated () {
+  updated() {
     console.log('debug: updated()')
   },
-  created () {
+  created() {
     console.log('debug: created()')
   },
-  destroyed () {
+  destroyed() {
     console.log('debug: destroyed()')
   },
   components: {
-    'my-terminal': Console
+    'my-terminal': Console,
   },
   computed: {
 
-  }
+  },
 }
 </script>
 

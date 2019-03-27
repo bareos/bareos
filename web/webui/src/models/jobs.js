@@ -1,7 +1,7 @@
 
 // todo: replace \n by <br /> or wrap into <p></p>
 
-export async function getJobs (http) {
+export async function getJobs(http) {
   console.log('getJobs')
   try {
     const response = await http.get(`/command/llist/jobs`)
@@ -12,7 +12,7 @@ export async function getJobs (http) {
   return null
 }
 
-export async function getJob (http, jobid) {
+export async function getJob(http, jobid) {
   console.log('getJob')
   try {
     const response = await http.get(`/command/llist/job/${jobid}`)
@@ -23,7 +23,7 @@ export async function getJob (http, jobid) {
   return null
 }
 
-export async function getJobLog (http, jobid) {
+export async function getJobLog(http, jobid) {
   console.log('getJoblog')
   try {
     const response = await http.get(`/command/llist/joblog/${jobid}`)
@@ -60,7 +60,7 @@ export const jobStatus = new Map([
   ['t', 'Waiting on start time'],
   ['p', 'Waiting on higher priority jobs'],
   ['i', 'Doing batch insert ﬁle records'],
-  ['a', 'SD despooling attributes']
+  ['a', 'SD despooling attributes'],
 ])
 
 export const jobTypes = new Map([
@@ -76,7 +76,7 @@ export const jobTypes = new Map([
   ['c', 'Copy job'],
   ['g', 'Migration job'],
   ['S', 'Scan'],
-  ['O', 'Consolidate']
+  ['O', 'Consolidate'],
 ])
 
 export const jobLevels = new Map([
@@ -90,5 +90,5 @@ export const jobLevels = new Map([
   ['O', 'VolumeToCatalog'],
   ['d', 'DiskToCatalog'],
   ['A', 'Data'],
-  [' ', 'None']
+  [' ', 'None'],
 ])

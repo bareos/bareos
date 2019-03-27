@@ -19,13 +19,13 @@
 
 export default {
   name: 'BConsole',
-  data () {
+  data() {
     return {
-      command: ''
+      command: '',
       // consoleOutput: ''
     }
   },
-  created () {
+  created() {
     // const enc = new TextDecoder('utf-8')
     //    this.$connect('ws://localhost:9000/dingens')
     //    this.$socket.send(command)
@@ -39,12 +39,12 @@ export default {
     // })
     this.$store.state.socket.message = []
   },
-  destroyed () {
+  destroyed() {
     // this.$disconnect()
     this.$store.state.socket.message = []
   },
   methods: {
-    onSubmit: function () {
+    onSubmit: function() {
       console.log(this.command)
       // if (this.$route.params.id) {
       //   console.log(this.$route.params.id)
@@ -52,14 +52,14 @@ export default {
       // }
       this.$socket.send(this.command)
       this.command = ''
-    }
+    },
   },
   computed: {
-    consoleOutput () {
+    consoleOutput() {
       console.dir(this.$store.state.socket.message)
       return this.$store.state.socket.message
-    }
-  }
+    },
+  },
 }
 </script>
 

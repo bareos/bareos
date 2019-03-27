@@ -1,67 +1,58 @@
 <template>
-    <div class="console" id="terminal"></div>
+  <div>
+    <div>
+      <pre v-bind:class="[mes.src]" v-for="mes in message" v-bind:key="mes.data">{{ mes.data }}</pre>
+    </div>
+
+    <v-text-field v-on:keypress.enter="submit"
+      label="Outline"
+      placeholder="Placeholder"
+      v-model="command"
+      outline
+    ></v-text-field>  </div>
 </template>
 
 <script>
-
-import Terminal from '../Xterm'
-
 export default {
   name: 'Console',
-  props: {
-    terminal: {
-      type: Object,
-      default: {}
-    }
-  },
-  data () {
+  data() {
     return {
       term: null,
-      terminalSocket: null
+      terminalSocket: null,
+      buffer: [],
+      command: '',
     }
+  },
+  computed: {
+    message() {
+      this.buffer.push({ data: this.$store.state.socket.message, src: 'socket' })
+      return this.buffer
+    },
   },
   methods: {
-    runRealTerminal () {
-      console.log('webSocket is finished')
+    sendCommand: function(data) {
+      this.buffer.push({ data, src: 'local' })
+      this.$store.dispatch('sendMessage', data)
     },
-    errorRealTerminal () {
-      console.log('error')
+    submit: function() {
+      this.sendCommand(this.command)
+      this.command = ''
     },
-    closeRealTerminal () {
-      console.log('close')
-    },
-    ondataRealTerminal (data) {
-      console.log('ondata')
-      console.log(data)
-    },
-    onmessageRealTerminal (data) {
-      console.log('onmessage')
-      console.log(data.data)
-    }
   },
-  mounted () {
-    console.log('pid : ' + this.terminal.pid + ' is on ready')
-    let terminalContainer = document.getElementById('terminal')
-    this.term = new Terminal({
-      // cursorBlink: true,
-      cols: 128,
-      rows: 32
-    })
-    this.term.open(terminalContainer)
-    this.terminalSocket = this.$socket
-    this.terminalSocket.onopen = this.runRealTerminal
-    this.terminalSocket.onclose = this.closeRealTerminal
-    this.terminalSocket.onerror = this.errorRealTerminal
-    this.term.attach(this.terminalSocket)
-    this.terminalSocket.onmessage = (data) => { this.onmessageRealTerminal(data) }
-    this.term.on('data', (data) => { this.ondataRealTerminal(data) })
-    this.term._initialized = true
-    console.log('mounted is going on')
-    this.term.fit()
+  mounted() {
+    this.sendCommand('list clients')
   },
-  beforeDestroy () {
-    this.terminalSocket.close()
-    this.term.destroy()
-  }
+  beforeDestroy() {
+  },
 }
 </script>
+
+<style lang="scss">
+  .socket {
+    background-color: palegreen;
+  }
+
+  .local {
+    background-color: indianred;
+  }
+</style>

@@ -11,12 +11,12 @@ import ClientListing from '../components/ClientListing'
 export default {
   name: 'Clients',
   components: {
-    ClientListing
+    ClientListing,
   },
-  data () {
+  data() {
     return {}
   },
-  methods: {}
+  methods: {},
 }
 
 </script>

@@ -18,14 +18,14 @@ export default {
   name: 'Jobs',
   components: {
     JobLog,
-    JobListing
+    JobListing,
   },
-  data () {
+  data() {
     return {
-      selectedJob: 0
+      selectedJob: 0,
     }
   },
-  methods: {}
+  methods: {},
 }
 </script>
 
