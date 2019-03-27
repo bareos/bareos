@@ -47,6 +47,8 @@
 
 #define faddr_t long
 
+struct VolumeSessionInfo;
+
 /**
  * Generic definitions of list types, list handlers and result handlers.
  */
@@ -821,12 +823,18 @@ class BareosDb
   int GetNdmpLevelMapping(JobControlRecord* jcr,
                           JobDbRecord* jr,
                           char* filesystem);
-  bool GetNdmpEnvironmentString(JobControlRecord* jcr,
-                                JobDbRecord* jr,
+  bool GetNdmpEnvironmentString(const std::string& query,
                                 DB_RESULT_HANDLER* ResultHandler,
                                 void* ctx);
-  bool GetNdmpEnvironmentString(JobControlRecord* jcr,
-                                JobId_t JobId,
+  bool GetNdmpEnvironmentString(const VolumeSessionInfo& vsi,
+                                int32_t FileIndex,
+                                DB_RESULT_HANDLER* ResultHandler,
+                                void* ctx);
+  bool GetNdmpEnvironmentString(JobId_t JobId,
+                                DB_RESULT_HANDLER* ResultHandler,
+                                void* ctx);
+  bool GetNdmpEnvironmentString(JobId_t JobId,
+                                int32_t FileIndex,
                                 DB_RESULT_HANDLER* ResultHandler,
                                 void* ctx);
   bool PrepareMediaSqlQuery(JobControlRecord* jcr,

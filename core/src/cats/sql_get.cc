@@ -39,6 +39,8 @@
 #include "cats.h"
 #include "sql.h"
 #include "lib/edit.h"
+#include "lib/volume_session_info.h"
+#include "include/make_unique.h"
 
 /* -----------------------------------------------------------------------
  *
@@ -1709,34 +1711,80 @@ bail_out:
   return dumplevel;
 }
 
+/**
+ * CountingHandler() with a CountContext* can be used to count the number of
+ * times that SqlQueryWithHandler() calls the handler.
+ * This is not neccesarily the number of rows, because the ResultHandler can
+ * stop processing of further rows by returning non-zero.
+ */
+struct CountContext {
+  DB_RESULT_HANDLER* handler;
+  void* ctx;
+  int count;
+
+  CountContext(DB_RESULT_HANDLER* t_handler, void* t_ctx)
+      : handler(t_handler), ctx(t_ctx), count(0)
+  {
+  }
+};
+
+static int CountingHandler(void* counting_ctx, int num_fields, char** rows)
+{
+  auto* c = static_cast<struct CountContext*>(counting_ctx);
+  c->count++;
+  return c->handler(c->ctx, num_fields, rows);
+}
 
 /**
- * Fetch the NDMP Job Environment Strings for NDMP_NATIVE Backups
+ * Fetch NDMP Job Environment based on raw SQL query.
+ * Returns false: on sql failure or when 0 rows were returned
+ *         true:  otherwise
+ */
+bool BareosDb::GetNdmpEnvironmentString(const std::string& query,
+                                        DB_RESULT_HANDLER* ResultHandler,
+                                        void* ctx)
+{
+  auto myctx = std::make_unique<CountContext>(ResultHandler, ctx);
+  bool status =
+      SqlQueryWithHandler(query.c_str(), CountingHandler, myctx.get());
+  Dmsg3(150, "Got %d NDMP environment records\n", myctx->count);
+  return status && myctx->count > 0;  // no rows means no environment was found
+}
+
+/**
+ * Fetch the NDMP Job Environment Strings based on JobId only
  *
  * Returns false: on failure
  *         true: on success
  */
-bool BareosDb::GetNdmpEnvironmentString(JobControlRecord* jcr,
-                                        JobId_t JobId,
+bool BareosDb::GetNdmpEnvironmentString(JobId_t JobId,
                                         DB_RESULT_HANDLER* ResultHandler,
                                         void* ctx)
 {
-  PoolMem query(PM_FNAME);
-  char ed1[50];
-  db_int64_ctx lctx;
-  bool retval = false;
+  ASSERT(JobId > 0)
+  std::string query{"SELECT EnvName, EnvValue FROM NDMPJobEnvironment"};
+  query += " WHERE JobId=" + std::to_string(JobId);
 
-  /*
-   * Lookup all environment settings belonging to this JobId.
-   */
-  Mmsg(query,
-       "SELECT EnvName, EnvValue FROM NDMPJobEnvironment "
-       "WHERE JobId='%s' ",
-       edit_uint64(JobId, ed1));
+  return GetNdmpEnvironmentString(query, ResultHandler, ctx);
+}
 
-  retval = SqlQueryWithHandler(query.c_str(), ResultHandler, ctx);
+/**
+ * Fetch the NDMP Job Environment Strings based on JobId and FileIndex
+ *
+ * Returns false: on failure
+ *         true: on success
+ */
+bool BareosDb::GetNdmpEnvironmentString(JobId_t JobId,
+                                        int32_t FileIndex,
+                                        DB_RESULT_HANDLER* ResultHandler,
+                                        void* ctx)
+{
+  ASSERT(JobId > 0)
+  std::string query{"SELECT EnvName, EnvValue FROM NDMPJobEnvironment"};
+  query += " WHERE JobId=" + std::to_string(JobId);
+  query += " AND FileIndex=" + std::to_string(FileIndex);
 
-  return retval;
+  return GetNdmpEnvironmentString(query, ResultHandler, ctx);
 }
 
 
@@ -1746,48 +1794,28 @@ bool BareosDb::GetNdmpEnvironmentString(JobControlRecord* jcr,
  * Returns false: on failure
  *         true: on success
  */
-bool BareosDb::GetNdmpEnvironmentString(JobControlRecord* jcr,
-                                        JobDbRecord* jr,
+bool BareosDb::GetNdmpEnvironmentString(const VolumeSessionInfo& vsi,
+                                        int32_t FileIndex,
                                         DB_RESULT_HANDLER* ResultHandler,
                                         void* ctx)
 {
-  PoolMem query(PM_MESSAGE);
-  char ed1[50], ed2[50];
   db_int64_ctx lctx;
-  JobId_t JobId;
-  bool retval = false;
+  std::string query{"SELECT JobId FROM Job"};
+  query += " WHERE VolSessionId = " + std::to_string(vsi.id);
+  query += " AND VolSessionTime = " + std::to_string(vsi.time);
 
-  lctx.count = 0;
-  lctx.value = 0;
-
-  /*
-   * Lookup the JobId
-   */
-  Mmsg(query,
-       "SELECT JobId FROM Job "
-       "WHERE VolSessionId = '%s' "
-       "AND VolSessionTime = '%s'",
-       edit_uint64(jr->VolSessionId, ed1),
-       edit_uint64(jr->VolSessionTime, ed2));
-  if (!SqlQueryWithHandler(query.c_str(), db_int64_handler, &lctx)) {
-    goto bail_out;
+  if (SqlQueryWithHandler(query.c_str(), db_int64_handler, &lctx)) {
+    if (lctx.count == 1) {
+      /* now lctx.value contains the jobid we restore */
+      return GetNdmpEnvironmentString(lctx.value, FileIndex, ResultHandler,
+                                      ctx);
+    }
   }
-
-  JobId = (JobId_t)lctx.value;
-
-  /*
-   * Lookup all environment settings belonging to this JobId and FileIndex.
-   */
-  Mmsg(query,
-       "SELECT EnvName, EnvValue FROM NDMPJobEnvironment "
-       "WHERE JobId='%s' "
-       "AND FileIndex='%s'",
-       edit_uint64(JobId, ed1), edit_uint64(jr->FileIndex, ed2));
-
-  retval = SqlQueryWithHandler(query.c_str(), ResultHandler, ctx);
-
-bail_out:
-  return retval;
+  Dmsg3(
+      100,
+      "Got %d JobIds for VolSessionTime=%lld VolSessionId=%lld instead of 1\n",
+      lctx.count, vsi.time, vsi.id);
+  return false;
 }
 
 /**

@@ -55,12 +55,9 @@ static inline bool fill_restore_environment_ndmp_native(
     struct ndm_job_param* job)
 {
   ndmp9_pval pv;
-  char *ndmp_filesystem, *restore_prefix;
   PoolMem tape_device;
   PoolMem destination_path;
   ndmp_backup_format_option* nbf_options;
-
-  ndmp_filesystem = NULL;
 
   /*
    * See if we know this backup format and get it options.
@@ -73,59 +70,39 @@ static inline bool fill_restore_environment_ndmp_native(
    * We use the first jobid to get the environment string
    */
 
-  JobId_t JobId = str_to_int32(jcr->JobIds);
-  // TODO: Check if JobId is Zero as this indicates error
-
-  if (jcr->db->GetNdmpEnvironmentString(jcr, JobId, NdmpEnvHandler,
-                                        &job->env_tab)) {
-    /*
-     * extract ndmp_filesystem from environment
-     */
-    for (struct ndm_env_entry* entry = job->env_tab.head; entry;
-         entry = entry->next) {
-      if (bstrcmp(entry->pval.name,
-                  ndmp_env_keywords[NDMP_ENV_KW_FILESYSTEM])) {
-        ndmp_filesystem = entry->pval.value;
-        break;
-      }
-    }
-  } else {
-    /*
-     * Fallback code try to build a environment stack that is good enough to
-     * restore this NDMP backup. This is used when the data is not available in
-     * the database when its either expired or when an old NDMP backup is
-     * restored where the whole environment was not saved.
-     */
-
-    if (!nbf_options || nbf_options->uses_file_history) {
-      /*
-       * We asked during the NDMP backup to receive file history info.
-       */
-      pv.name = ndmp_env_keywords[NDMP_ENV_KW_HIST];
-      pv.value = ndmp_env_values[NDMP_ENV_VALUE_YES];
-      ndma_store_env_list(&job->env_tab, &pv);
-    }
-
-    /*
-     * Tell the data agent what type of restore stream to expect.
-     */
-    pv.name = ndmp_env_keywords[NDMP_ENV_KW_TYPE];
-    pv.value = job->bu_type;
-    ndma_store_env_list(&job->env_tab, &pv);
-
-    /*
-     * Tell the data engine what was backuped.
-     */
-    pv.name = ndmp_env_keywords[NDMP_ENV_KW_FILESYSTEM];
-    pv.value = ndmp_filesystem;
-    ndma_store_env_list(&job->env_tab, &pv);
+  JobId_t JobId{str_to_uint32(jcr->JobIds)};
+  if (JobId <= 0) {
+    Jmsg(jcr, M_FATAL, 0, "Impossible JobId: %d", JobId);
+    return false;
   }
 
+  if (!jcr->db->GetNdmpEnvironmentString(JobId, NdmpEnvHandler,
+                                         &job->env_tab)) {
+    Jmsg(jcr, M_FATAL, 0,
+         _("Could not load NDMP environment. Cannot continue without one.\n"));
+    return false;
+  }
+
+  /* try to extract ndmp_filesystem from environment */
+  char *ndmp_filesystem = nullptr;
+  for (struct ndm_env_entry* entry = job->env_tab.head; entry;
+       entry = entry->next) {
+    if (bstrcmp(entry->pval.name, ndmp_env_keywords[NDMP_ENV_KW_FILESYSTEM])) {
+      ndmp_filesystem = entry->pval.value;
+      break;
+    }
+  }
+
+  if (!ndmp_filesystem) {
+    Jmsg(jcr, M_FATAL, 0, _("No %s in NDMP environment. Cannot continue.\n"),
+         ndmp_env_keywords[NDMP_ENV_KW_FILESYSTEM]);
+    return false;
+  }
 
   /*
    * See where to restore the data.
    */
-  restore_prefix = NULL;
+  char* restore_prefix = nullptr;
   if (jcr->where) {
     restore_prefix = jcr->where;
   } else {

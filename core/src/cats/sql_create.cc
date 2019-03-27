@@ -1322,6 +1322,8 @@ bool BareosDb::CreateNdmpEnvironmentString(JobControlRecord* jcr,
   char esc_envname[MAX_ESCAPE_NAME_LENGTH];
   char esc_envvalue[MAX_ESCAPE_NAME_LENGTH];
 
+  Jmsg(jcr, M_INFO, 0, "NDMP Environment: %s=%s\n", name, value);
+
   DbLock(this);
 
   EscapeString(jcr, esc_envname, name, strlen(name));

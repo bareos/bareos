@@ -36,6 +36,7 @@
 #include "dird/storage.h"
 
 #include "lib/parse_bsr.h"
+#include "lib/volume_session_info.h"
 
 #if HAVE_NDMP
 #include "dird/ndmp_dma_generic.h"
@@ -159,6 +160,7 @@ static inline int set_files_to_restore(JobControlRecord* jcr,
  */
 static inline bool fill_restore_environment(JobControlRecord* jcr,
                                             int32_t current_fi,
+                                            VolumeSessionInfo current_session,
                                             struct ndm_job_param* job)
 {
   int i;
@@ -202,14 +204,16 @@ static inline bool fill_restore_environment(JobControlRecord* jcr,
   /*
    * Lookup the environment stack saved during the backup so we can restore it.
    */
-  if (!jcr->db->GetNdmpEnvironmentString(jcr, &jcr->jr, NdmpEnvHandler,
-                                         &job->env_tab)) {
+  if (!jcr->db->GetNdmpEnvironmentString(current_session, current_fi,
+                                         NdmpEnvHandler, &job->env_tab)) {
     /*
      * Fallback code try to build a environment stack that is good enough to
      * restore this NDMP backup. This is used when the data is not available in
      * the database when its either expired or when an old NDMP backup is
      * restored where the whole environment was not saved.
      */
+    Jmsg(jcr, M_WARNING, 0,
+         _("Could not load NDMP environment. Using fallback.\n"));
 
     if (!nbf_options || nbf_options->uses_file_history) {
       /*
@@ -540,14 +544,13 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
     bool next_fi = true;
     int first_fi = jcr->bsr->FileIndex->findex;
     int last_fi = jcr->bsr->FileIndex->findex2;
-    uint32_t current_sessionid = jcr->bsr->sessid->sessid;
-    uint32_t current_sessiontime = jcr->bsr->sesstime->sesstime;
+    VolumeSessionInfo current_session{jcr->bsr->sessid->sessid,
+                                      jcr->bsr->sesstime->sesstime};
     cnt = 0;
 
     for (bsr = jcr->bsr; bsr; bsr = bsr->next) {
-      if (current_sessionid != bsr->sessid->sessid) {
-        current_sessionid = bsr->sessid->sessid;
-        current_sessiontime = bsr->sesstime->sesstime;
+      if (current_session.id != bsr->sessid->sessid) {
+        current_session = {bsr->sessid->sessid, bsr->sesstime->sesstime};
         first_run = true;
         next_sessid = true;
       }
@@ -568,7 +571,7 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
           }
         }
         Dmsg4(20, "sessionid:sesstime : first_fi/last_fi : %d:%d %d/%d \n",
-              current_sessionid, current_sessiontime, first_fi, last_fi);
+              current_session.id, current_session.time, first_fi, last_fi);
       }
 
       if (next_sessid | next_fi) {
@@ -580,8 +583,8 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
         Jmsg(
             jcr, M_INFO, 0,
             _("Run restore for sesstime %s (%d), sessionid %d, fileindex %d\n"),
-            bstrftime(dt, sizeof(dt), current_sessiontime, NULL),
-            current_sessiontime, current_sessionid, current_fi);
+            bstrftime(dt, sizeof(dt), current_session.time, NULL),
+            current_session.time, current_session.id, current_fi);
 
 
         /*
@@ -630,7 +633,7 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
 
         memcpy(&ndmp_sess.control_acb->job, &ndmp_job,
                sizeof(struct ndm_job_param));
-        if (!fill_restore_environment(jcr, current_fi,
+        if (!fill_restore_environment(jcr, current_fi, current_session,
                                       &ndmp_sess.control_acb->job)) {
           Jmsg(jcr, M_ERROR, 0, _("ERROR in fill_restore_environment\n"));
           goto cleanup_ndmp;

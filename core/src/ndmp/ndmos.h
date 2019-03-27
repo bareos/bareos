@@ -329,9 +329,6 @@
 #define NDMOS_OPTION_ROBOT_SIMULATOR 1
 #define NDMOS_OPTION_GAP_SIMULATOR 1
 
-/* Convert IP to human readable string instead of HEX String */
-/* #define NDMOS_OPTION_PRETTYPRINT_HUMAN_READABLE_IP 1 */
-
 /*
  * Constants
  */
