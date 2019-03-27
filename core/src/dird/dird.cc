@@ -938,7 +938,8 @@ static bool CheckCatalog(cat_op mode)
 
     /* Display a message if the db max_connections is too low */
     if (!db->CheckMaxConnections(NULL, me->MaxConcurrentJobs)) {
-      Pmsg1(000, "Warning, settings problem for Catalog=%s\n", catalog->resource_name_);
+      Pmsg1(000, "Warning, settings problem for Catalog=%s\n",
+            catalog->resource_name_);
       Pmsg1(000, "%s", db->strerror());
     }
 
@@ -980,11 +981,12 @@ static bool CheckCatalog(cat_op mode)
       /* Create clients only if they use the current catalog */
       if (client->catalog != catalog) {
         Dmsg3(500, "Skip client=%s with cat=%s not catalog=%s\n",
-              client->resource_name_, client->catalog->resource_name_, catalog->resource_name_);
+              client->resource_name_, client->catalog->resource_name_,
+              catalog->resource_name_);
         continue;
       }
-      Dmsg2(500, "create cat=%s for client=%s\n", client->catalog->resource_name_,
-            client->resource_name_);
+      Dmsg2(500, "create cat=%s for client=%s\n",
+            client->catalog->resource_name_, client->resource_name_);
       memset(&cr, 0, sizeof(cr));
       bstrncpy(cr.Name, client->resource_name_, sizeof(cr.Name));
       db->CreateClientRecord(NULL, &cr);

@@ -256,8 +256,8 @@ class CatalogResource : public BareosResource {
   char* db_name = nullptr;
   char* db_driver = nullptr;        /**< Select appropriate driver */
   uint32_t mult_db_connections = 0; /**< Set if multiple connections wanted */
-  bool disable_batch_insert = false;
-  ;                           /**< Set if batch inserts should be disabled */
+  bool disable_batch_insert =
+      false;                  /**< Set if batch inserts should be disabled */
   bool try_reconnect = false; /**< Try to reconnect a database connection when
                          its dropped */
   bool exit_on_fatal = false; /**< Make any fatal error in the connection to the
@@ -424,6 +424,7 @@ inline void UnifiedStorageResource::SetSource(const char* where)
 /**
  * Job Resource
  */
+/* clang-format off */
 class JobResource : public BareosResource {
  public:
   JobResource() = default;
@@ -443,8 +444,7 @@ class JobResource : public BareosResource {
   char* strip_prefix = nullptr;  /**< Remove prefix from filename  */
   char* add_prefix = nullptr;    /**< add prefix to filename  */
   char* add_suffix = nullptr;    /**< add suffix to filename -- .old */
-  char* backup_format = nullptr; /**< Format of backup to use for protocols
-                          supporting multiple backup formats */
+  char* backup_format = nullptr; /**< Format of backup to use for protocols supporting multiple backup formats */
   char* RestoreBootstrap = nullptr; /**< Bootstrap file */
   char* WriteBootstrap = nullptr;   /**< Where to write bootstrap Job updates */
   char* WriteVerifyList = nullptr;  /**< List of changed files */
@@ -454,65 +454,49 @@ class JobResource : public BareosResource {
   utime_t DiffMaxRunTime = {0};     /**< Max Differential job run time */
   utime_t IncMaxRunTime = {0};      /**< Max Incremental job run time */
   utime_t MaxStartDelay = {0};      /**< Max start delay in seconds */
-  utime_t MaxRunSchedTime = {
-      0}; /**< Max run time in seconds from Scheduled time*/
+  utime_t MaxRunSchedTime = {0}; /**< Max run time in seconds from Scheduled time*/
   utime_t RescheduleInterval = {0}; /**< Reschedule interval */
   utime_t MaxFullInterval = {0};    /**< Maximum time interval between Fulls */
-  utime_t MaxVFullInterval = {
-      0}; /**< Maximum time interval between Virtual Fulls */
+  utime_t MaxVFullInterval = {0}; /**< Maximum time interval between Virtual Fulls */
   utime_t MaxDiffInterval = {0}; /**< Maximum time interval between Diffs */
-  utime_t DuplicateJobProximity = {
-      0}; /**< Permitted time between duplicicates */
-  utime_t AlwaysIncrementalJobRetention = {0}; /**< Timeinterval where
-                                            incrementals are not consolidated */
-  utime_t AlwaysIncrementalMaxFullAge = {0};   /**< If Full Backup is older than
-                                            this   age the consolidation job will
-                                            include   also the full */
+  utime_t DuplicateJobProximity = {0}; /**< Permitted time between duplicicates */
+  utime_t AlwaysIncrementalJobRetention = {0}; /**< Timeinterval where incrementals are not consolidated */
+  utime_t AlwaysIncrementalMaxFullAge = {0};   /**< If Full Backup is older than this age
+   *                                            *   the consolidation job will include also the full */
   int64_t spool_size = 0;    /**< Size of spool file for this job */
   int64_t max_bandwidth = 0; /**< Speed limit on this job */
-  int64_t FileHistSize =
-      0; /**< Hint about the size of the expected File history */
+  int64_t FileHistSize = 0; /**< Hint about the size of the expected File history */
   int32_t MaxConcurrentJobs = 0;   /**< Maximum concurrent jobs */
-  int32_t MaxConcurrentCopies = 0; /**< Limit number of concurrent jobs one Copy
-                                   Job spawns */
-  int32_t AlwaysIncrementalKeepNumber = 0; /**< Number of incrementals that are
-                                           always left and not consolidated */
-  int32_t MaxFullConsolidations = 0;       /**< Number of consolidate jobs to be
-                                          started       that will include a full */
+  int32_t MaxConcurrentCopies = 0; /**< Limit number of concurrent jobs one Copy Job spawns */
+  int32_t AlwaysIncrementalKeepNumber = 0; /**< Number of incrementals that are always left and not consolidated */
+  int32_t MaxFullConsolidations = 0;       /**< Number of consolidate jobs to be started that will include a full */
 
   MessagesResource* messages = nullptr; /**< How and where to send messages */
   ScheduleResource* schedule = nullptr; /**< When -- Automatic schedule */
   ClientResource* client = nullptr;     /**< Who to backup */
   FilesetResource* fileset = nullptr;   /**< What to backup -- Fileset */
   CatalogResource* catalog = nullptr;   /**< Which Catalog to use */
-  alist* storage =
-      nullptr; /**< Where is device -- list of Storage to be used */
+  alist* storage = nullptr; /**< Where is device -- list of Storage to be used */
   PoolResource* pool = nullptr;       /**< Where is media -- Media Pool */
   PoolResource* full_pool = nullptr;  /**< Pool for Full backups */
   PoolResource* vfull_pool = nullptr; /**< Pool for Virtual Full backups */
   PoolResource* inc_pool = nullptr;   /**< Pool for Incremental backups */
   PoolResource* diff_pool = nullptr;  /**< Pool for Differental backups */
-  PoolResource* next_pool =
-      nullptr; /**< Next Pool for Copy/Migration Jobs and Virtual backups */
+  PoolResource* next_pool = nullptr; /**< Next Pool for Copy/Migration Jobs and Virtual backups */
   char* selection_pattern = nullptr;
   JobResource* verify_job = nullptr; /**< Job name to verify */
   JobResource* jobdefs = nullptr;    /**< Job defaults */
   alist* run_cmds = nullptr;         /**< Run commands */
   alist* RunScripts = nullptr; /**< Run {client} program {after|before} Job */
-  alist* FdPluginOptions =
-      nullptr; /**< Generic FD plugin options used by this Job */
-  alist* SdPluginOptions =
-      nullptr; /**< Generic SD plugin options used by this Job */
-  alist* DirPluginOptions =
-      nullptr;           /**< Generic DIR plugin options used by this Job */
+  alist* FdPluginOptions = nullptr; /**< Generic FD plugin options used by this Job */
+  alist* SdPluginOptions = nullptr; /**< Generic SD plugin options used by this Job */
+  alist* DirPluginOptions = nullptr;           /**< Generic DIR plugin options used by this Job */
   alist* base = nullptr; /**< Base jobs */
 
-  bool allow_mixed_priority = false; /**< Allow jobs with higher priority
-                                concurrently with this */
+  bool allow_mixed_priority = false; /**< Allow jobs with higher priority concurrently with this */
   bool where_use_regexp = false;  /**< true if RestoreWhere is a BareosRegex */
   bool RescheduleOnError = false; /**< Set to reschedule on error */
-  bool RescheduleIncompleteJobs =
-      false;                        /**< Set to reschedule incomplete Jobs */
+  bool RescheduleIncompleteJobs = false; /**< Set to reschedule incomplete Jobs */
   bool PrefixLinks = false;         /**< Prefix soft links with Where path */
   bool PruneJobs = false;           /**< Force pruning of Jobs */
   bool PruneFiles = false;          /**< Force pruning of Files */
@@ -520,29 +504,26 @@ class JobResource : public BareosResource {
   bool SpoolAttributes = false;     /**< Set to spool attributes in SD */
   bool spool_data = false;          /**< Set to spool data in SD */
   bool rerun_failed_levels = false; /**< Upgrade to rerun failed levels */
-  bool PreferMountedVolumes =
-      false; /**< Prefer vols mounted rather than new one */
+  bool PreferMountedVolumes = false; /**< Prefer vols mounted rather than new one */
   bool write_part_after_job = false; /**< Set to write part after job in SD */
   bool enabled = false;              /**< Set if job enabled */
   bool accurate = false;             /**< Set if it is an accurate backup job */
   bool AllowDuplicateJobs = false;   /**< Allow duplicate jobs */
   bool AllowHigherDuplicates = false; /**< Permit Higher Level */
-  bool CancelLowerLevelDuplicates =
-      false;                            /**< Cancel lower level backup jobs */
+  bool CancelLowerLevelDuplicates = false; /**< Cancel lower level backup jobs */
   bool CancelQueuedDuplicates = false;  /**< Cancel queued jobs */
   bool CancelRunningDuplicates = false; /**< Cancel Running jobs */
   bool PurgeMigrateJob = false;         /**< Purges source job on completion */
   bool IgnoreDuplicateJobChecking = false; /**< Ignore Duplicate Job Checking */
-  bool SaveFileHist = false; /**< Ability to disable File history saving for
-                        certain protocols */
-  bool AlwaysIncremental =
-      false; /**< Always incremental with regular consolidation */
+  bool SaveFileHist = false; /**< Ability to disable File history saving for certain protocols */
+  bool AlwaysIncremental = false; /**< Always incremental with regular consolidation */
 
   runtime_job_status_t* rjs = nullptr; /**< Runtime Job Status */
 
   /* Methods */
   bool validate();
 };
+/* clang-format on */
 
 #undef MAX_FOPTS
 #define MAX_FOPTS 40
