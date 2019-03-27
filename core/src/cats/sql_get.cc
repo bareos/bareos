@@ -1711,17 +1711,17 @@ bail_out:
 }
 
 /**
- * CountingHandler() with a count_context* can be used to count the number of
+ * CountingHandler() with a CountContext* can be used to count the number of
  * times that SqlQueryWithHandler() calls the handler.
  * This is not neccesarily the number of rows, because the ResultHandler can
  * stop processing of further rows by returning non-zero.
  */
-struct count_context {
+struct CountContext {
   DB_RESULT_HANDLER* handler;
   void* ctx;
   int count;
 
-  count_context(DB_RESULT_HANDLER* t_handler, void* t_ctx)
+  CountContext(DB_RESULT_HANDLER* t_handler, void* t_ctx)
       : handler(t_handler), ctx(t_ctx), count(0)
   {
   }
@@ -1729,7 +1729,7 @@ struct count_context {
 
 static int CountingHandler(void* counting_ctx, int num_fields, char** rows)
 {
-  auto* c = static_cast<struct count_context*>(counting_ctx);
+  auto* c = static_cast<struct CountContext*>(counting_ctx);
   c->count++;
   return c->handler(c->ctx, num_fields, rows);
 }
@@ -1743,7 +1743,7 @@ bool BareosDb::GetNdmpEnvironmentString(const std::string& query,
                                         DB_RESULT_HANDLER* ResultHandler,
                                         void* ctx)
 {
-  auto myctx = std::unique_ptr<count_context>(new count_context(ResultHandler, ctx));
+  auto myctx = std::unique_ptr<CountContext>(new CountContext(ResultHandler, ctx));
   bool status =
       SqlQueryWithHandler(query.c_str(), CountingHandler, myctx.get());
   Dmsg1(150, "Got %d NDMP environment records\n", myctx->count);
