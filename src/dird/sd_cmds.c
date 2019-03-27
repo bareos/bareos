@@ -668,8 +668,10 @@ bool cancel_storage_daemon_job(UAContext *ua, JCR *jcr, bool interactive)
    if (!interactive) {
       jcr->sd_canceled = true;
    }
-   jcr->store_bsock->set_timed_out();
-   jcr->store_bsock->set_terminated();
+   if (jcr->store_bsock) {
+     jcr->store_bsock->set_timed_out();
+     jcr->store_bsock->set_terminated();
+   }
    sd_msg_thread_send_signal(jcr, TIMEOUT_SIGNAL);
 
    /*
