@@ -190,7 +190,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
   /*
    * Clear local copy of run record
    */
-  memset(&lrun, 0, sizeof(lrun));
+  new (&lrun) RunResource();
 
   /*
    * Scan for Job level "full", "incremental", ...
@@ -728,8 +728,8 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
     RunResource* tail;
 
     /* Create new run record */
-    RunResource* nrun = (RunResource*)malloc(sizeof(RunResource));
-    memcpy(nrun, &lrun, sizeof(RunResource));
+    RunResource* nrun = new RunResource;
+    *nrun = lrun;
     nrun->next = NULL;
 
     if (!*run) {   /* If empty list */

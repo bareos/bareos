@@ -4197,7 +4197,7 @@ static void FreeResource(BareosResource* res, int type)
         nrun = p->run;
         while (nrun) {
           next = nrun->next;
-          free(nrun);
+          delete nrun;
           nrun = next;
         }
       }
