@@ -22,7 +22,7 @@ import { getClients } from '@/models/clients'
 
 export default {
   name: 'ClientListing',
-  data () {
+  data() {
     return {
       clients: [],
       headers: [
@@ -31,30 +31,30 @@ export default {
         { text: 'uname', value: 'uname' },
         { text: 'fileretention', value: 'fileretention' },
         { text: 'jobretention', value: 'jobretention' },
-        { text: 'autoprune', value: 'autoprune' }
-      ]
+        { text: 'autoprune', value: 'autoprune' },
+      ],
     }
   },
-  mounted () {
+  mounted() {
     getClients(this.$socket)
   },
-  created () {
+  created() {
     this.$socket.onmessage = (data) => {
-      let x = JSON.parse(data.data)
+      const x = JSON.parse(data.data)
       this.clients.push(x.result.clients)
     }
     // console.log(this.clients)
   },
   methods: {
-    getClients (ws) {
+    getClients(ws) {
       this.clients = []
       ws.send('llist clients')
-    }
+    },
   },
   watch: {
   },
   computed: {
-  }
+  },
 }
 </script>
 

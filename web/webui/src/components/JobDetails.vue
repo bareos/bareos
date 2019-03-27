@@ -45,21 +45,21 @@ import { getJob } from '@/models/jobs'
 export default {
   name: 'JobDetails',
   props: {
-    jobid: Number
+    jobid: Number,
   },
-  data () {
+  data() {
     return {
       job: Object,
-      jobLog: Object
+      jobLog: Object,
     }
   },
   watch: {
-    jobid: async function (val) {
+    jobid: async function(val) {
       const jobs = await getJob(this.$http, val)
       // todo: validate result and catch exceptions
       this.job = jobs[0]
-    }
-  }
+    },
+  },
 }
 </script>
 

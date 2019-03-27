@@ -15,11 +15,11 @@ import MainNavigation from './components/MainNavigation'
 export default {
   name: 'BareosWebUI',
   components: {
-    MainNavigation
+    MainNavigation,
   },
-  beforeCreate () {
+  beforeCreate() {
     this.$store.commit('initializeStore')
-  }
+  },
 }
 </script>
 

@@ -100,40 +100,40 @@ import * as moment from 'moment'
 
 export default {
   name: 'JobListing',
-  data () {
+  data() {
     return {
       jobs: [],
       openedDetails: [],
-      selectedJob: null
+      selectedJob: null,
     }
   },
   computed: {},
   watch: {
-    selectedJob: function (val) {
+    selectedJob: function(val) {
       this.$emit('job-selected', Number(val.jobid))
-    }
+    },
   },
-  created: async function () {
+  created: async function() {
     const jobs = await getJobs(this.$http)
     this.jobs = jobs
   },
   methods: {
-    js: function (code) {
+    js: function(code) {
       return jobStatus.get(code)
     },
-    jt: function (code) {
+    jt: function(code) {
       return jobTypes.get(code)
     },
-    jl: function (code) {
+    jl: function(code) {
       return jobLevels.get(code)
     },
-    dateFormat: function (date) {
+    dateFormat: function(date) {
       return moment(date).fromNow()
     },
-    getDetails: function (selectedItem) {
+    getDetails: function(selectedItem) {
       return Object.entries(selectedItem).map(([key, value]) => ({ key, value }))
-    }
-  }
+    },
+  },
 }
 </script>
 

@@ -21,26 +21,26 @@ import { getJobLog } from '@/models/jobs'
 export default {
   name: 'JobLog',
   props: {
-    jobid: Number
+    jobid: Number,
   },
-  data () {
+  data() {
     return {
       job: Object,
-      jobLog: Object
+      jobLog: Object,
     }
   },
   computed: {
-    formatTimeStamp: function (date) {
+    formatTimeStamp: function(date) {
       // todo: date formate here
       return date
-    }
+    },
   },
   watch: {
-    jobid: async function (val) {
+    jobid: async function(val) {
       // todo: check result and catch exceptions
       this.jobLog = await getJobLog(this.$http, val)
-    }
-  }
+    },
+  },
 }
 </script>
 

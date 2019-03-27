@@ -155,13 +155,13 @@ export default {
         icon: 'dashboard',
         title: 'Dashboard',
         path: '/dashboard',
-        items: []
+        items: [],
       },
       {
         icon: 'notifications',
         title: 'Notifications',
         path: '/notifications',
-        items: []
+        items: [],
       },
       {
         icon: 'archive',
@@ -171,35 +171,35 @@ export default {
           {
             icon: 'history',
             title: 'History',
-            path: '/backup/history'
+            path: '/backup/history',
           },
           {
             icon: 'laptop',
             title: 'Clients',
-            path: '/backup/clients'
+            path: '/backup/clients',
           },
           {
             icon: 'assignment',
             title: 'Jobs',
-            path: '/backup/jobs'
+            path: '/backup/jobs',
           },
           {
             icon: 'description',
             title: 'Filesets',
-            path: '/backup/filesets'
+            path: '/backup/filesets',
           },
           {
             icon: 'schedule',
             title: 'Schedules',
-            path: '/backup/Schedules'
-          }
-        ]
+            path: '/backup/Schedules',
+          },
+        ],
       },
       {
         icon: 'unarchive',
         title: 'Restore',
         path: '/restore',
-        items: []
+        items: [],
       },
       {
         icon: 'settings',
@@ -209,19 +209,19 @@ export default {
           {
             icon: 'person',
             title: 'Users',
-            path: '/settings/users'
+            path: '/settings/users',
           },
           {
             icon: 'group',
             title: 'Groups',
-            path: '/settings/groups'
-          }
-        ]
-      }
-    ]
+            path: '/settings/groups',
+          },
+        ],
+      },
+    ],
   }),
   props: {
-    source: String
-  }
+    source: String,
+  },
 }
 </script>

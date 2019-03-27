@@ -12,7 +12,7 @@ Vue.use(Vuetify)
 
 Vue.use(VueNativeSock, process.env.VUE_APP_SOCKET, {
   store: store,
-  connectManually: false
+  connectManually: false,
 })
 
 Vue.config.productionTip = false
@@ -26,5 +26,5 @@ store.subscribe((mutation, state) => {
 new Vue({
   router,
   store,
-  render: h => h(App)
+  render: (h) => h(App),
 }).$mount('#app')

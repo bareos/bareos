@@ -14,22 +14,22 @@ export default new Router({
     {
       path: '/',
       name: 'Dashboard',
-      component: Dashboard
+      component: Dashboard,
     },
     {
       path: '/backup/history',
       name: 'BackupHistory',
-      component: BackupHistory
+      component: BackupHistory,
     },
     {
       path: '/backup/clients',
       name: 'Clients',
-      component: Clients
+      component: Clients,
     },
     {
       path: '/backup/jobs',
       name: 'Jobs',
-      component: Jobs
+      component: Jobs,
     },
     {
       path: '/bconsole',
@@ -37,7 +37,7 @@ export default new Router({
       // route level code-splitting
       // this generates a separate chunk (about.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
-      component: () => import(/* webpackChunkName: "about" */ './views/BConsole.vue')
+      component: () => import(/* webpackChunkName: "about" */ './views/BConsole.vue'),
     },
     {
       path: '/console',
@@ -45,7 +45,7 @@ export default new Router({
       // route level code-splitting
       // this generates a separate chunk (about.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
-      component: () => import(/* webpackChunkName: "about" */ './views/Console.vue')
+      component: () => import(/* webpackChunkName: "about" */ './views/Console.vue'),
     },
     {
       path: '/bconsole/:id',
@@ -53,7 +53,7 @@ export default new Router({
       // route level code-splitting
       // this generates a separate chunk (about.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
-      component: () => import(/* webpackChunkName: "about" */ './views/BConsole.vue')
-    }
-  ]
+      component: () => import(/* webpackChunkName: "about" */ './views/BConsole.vue'),
+    },
+  ],
 })
