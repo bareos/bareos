@@ -8,12 +8,13 @@
         <span v-if="mes.src == 'socket'" class="console-socket-prompt">&gt;</span>
         <pre>{{ mes.data }}</pre>
       </div>
-    </div>
-    <div class="console-input">
-      <v-text-field v-on:keypress.enter="submit"
-                    placeholder="help"
-                    v-model="command"
-      ></v-text-field>
+      <div class="console-input">
+        <span class="console-local-prompt">&amp;&gt;</span>
+        <input class="console-prompt" v-on:keypress.enter="submit"
+               placeholder="help" type="text"
+               v-model="command"
+        >
+      </div>
     </div>
   </div>
 </template>
@@ -77,9 +78,9 @@ export default {
   .console-container {
     overflow-y: scroll;
     overflow-x: scroll;
-    margin-left:auto;
-    margin-right: auto;
-    overflow: auto;
+    margin-left: 10px;
+    margin-right: 10px;
+    // overflow: auto;
     scroll-behavior: smooth;
   }
 
@@ -101,6 +102,19 @@ export default {
   }
 
   .console-input {
+    display: flex;
+    flex-direction: row;
+    background-color: black;
+
+  }
+
+  .console-prompt {
+    margin: auto;
+    width: 100%;
+    background-color: black;
+    color: white;
+    font-family: monospace;
+    border: 0;
   }
 
   .socket {
@@ -108,5 +122,9 @@ export default {
 
   .local {
 
+  }
+
+  textarea:focus, input:focus{
+    outline: none;
   }
 </style>
