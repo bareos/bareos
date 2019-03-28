@@ -66,8 +66,8 @@ export default {
   .console {
     display: flex;
     flex-direction: column;
-    max-height: 80vh;
-    height: 80vh;
+    max-height: 100vh;
+    height: 100vh;
     margin: auto;
     overflow: no-content;
   }
