@@ -51,9 +51,6 @@ export default {
       })
     },
   },
-  mounted() {
-    this.sendCommand('list clients')
-  },
   beforeDestroy() {
   },
 }
