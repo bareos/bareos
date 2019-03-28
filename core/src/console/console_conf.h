@@ -68,7 +68,7 @@ class ConsoleResource
   ConsoleResource() = default;
   virtual ~ConsoleResource() = default;
 
-  void CopyToStaticMemory(BareosResource* p) const override
+  void ShallowCopyTo(BareosResource* p) const override
   {
     ConsoleResource* r = dynamic_cast<ConsoleResource*>(p);
     if (r) { *r = *this; }
@@ -89,7 +89,7 @@ class DirectorResource
   DirectorResource() = default;
   virtual ~DirectorResource() = default;
 
-  void CopyToStaticMemory(BareosResource* p) const override
+  void ShallowCopyTo(BareosResource* p) const override
   {
     DirectorResource* r = dynamic_cast<DirectorResource*>(p);
     if (r) { *r = *this; }

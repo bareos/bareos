@@ -121,7 +121,7 @@ class DirectorResource
   DirectorResource() = default;
   virtual ~DirectorResource() = default;
 
-  void CopyToStaticMemory(BareosResource* p) const override
+  void ShallowCopyTo(BareosResource* p) const override
   {
     DirectorResource* r = dynamic_cast<DirectorResource*>(p);
     if (r) { *r = *this; }
@@ -183,7 +183,7 @@ class DeviceResource : public BareosResource {
   DeviceResource() = default;
   virtual ~DeviceResource() = default;
 
-  void CopyToStaticMemory(BareosResource* p) const override
+  void ShallowCopyTo(BareosResource* p) const override
   {
     DeviceResource* r = dynamic_cast<DeviceResource*>(p);
     if (r) { *r = *this; }
@@ -234,7 +234,7 @@ class ProfileResource : public BareosResource {
   ProfileResource() = default;
   virtual ~ProfileResource() = default;
 
-  void CopyToStaticMemory(BareosResource* p) const override
+  void ShallowCopyTo(BareosResource* p) const override
   {
     ProfileResource* r = dynamic_cast<ProfileResource*>(p);
     if (r) { *r = *this; }
@@ -253,7 +253,7 @@ class ConsoleResource
   ConsoleResource() = default;
   virtual ~ConsoleResource() = default;
 
-  void CopyToStaticMemory(BareosResource* p) const override
+  void ShallowCopyTo(BareosResource* p) const override
   {
     ConsoleResource* r = dynamic_cast<ConsoleResource*>(p);
     if (r) { *r = *this; }
@@ -272,7 +272,7 @@ class CatalogResource : public BareosResource {
   CatalogResource() = default;
   virtual ~CatalogResource() = default;
 
-  void CopyToStaticMemory(BareosResource* p) const override
+  void ShallowCopyTo(BareosResource* p) const override
   {
     CatalogResource* r = dynamic_cast<CatalogResource*>(p);
     if (r) { *r = *this; }
@@ -328,7 +328,7 @@ class ClientResource
   ClientResource() = default;
   virtual ~ClientResource() = default;
 
-  void CopyToStaticMemory(BareosResource* p) const override
+  void ShallowCopyTo(BareosResource* p) const override
   {
     ClientResource* r = dynamic_cast<ClientResource*>(p);
     if (r) { *r = *this; }
@@ -381,7 +381,7 @@ class StorageResource
   StorageResource() = default;
   virtual ~StorageResource() = default;
 
-  void CopyToStaticMemory(BareosResource* p) const override
+  void ShallowCopyTo(BareosResource* p) const override
   {
     StorageResource* r = dynamic_cast<StorageResource*>(p);
     if (r) { *r = *this; }
@@ -446,7 +446,7 @@ class UnifiedStorageResource : public BareosResource {
   }
   ~UnifiedStorageResource() { destroy(); }
 
-  void CopyToStaticMemory(BareosResource* p) const override
+  void ShallowCopyTo(BareosResource* p) const override
   {
     UnifiedStorageResource* r = dynamic_cast<UnifiedStorageResource*>(p);
     if (r) { *r = *this; }
@@ -479,7 +479,7 @@ class JobResource : public BareosResource {
   JobResource() = default;
   virtual ~JobResource() = default;
 
-  void CopyToStaticMemory(BareosResource* p) const override
+  void ShallowCopyTo(BareosResource* p) const override
   {
     JobResource* r = dynamic_cast<JobResource*>(p);
     if (r) { *r = *this; }
@@ -629,7 +629,7 @@ class FilesetResource : public BareosResource {
   FilesetResource() = default;
   virtual ~FilesetResource() = default;
 
-  void CopyToStaticMemory(BareosResource* p) const override
+  void ShallowCopyTo(BareosResource* p) const override
   {
     FilesetResource* r = dynamic_cast<FilesetResource*>(p);
     if (r) { *r = *this; }
@@ -658,7 +658,7 @@ class ScheduleResource : public BareosResource {
   ScheduleResource() = default;
   virtual ~ScheduleResource() = default;
 
-  void CopyToStaticMemory(BareosResource* p) const override
+  void ShallowCopyTo(BareosResource* p) const override
   {
     ScheduleResource* r = dynamic_cast<ScheduleResource*>(p);
     if (r) { *r = *this; }
@@ -676,7 +676,7 @@ class CounterResource : public BareosResource {
   CounterResource() = default;
   virtual ~CounterResource() = default;
 
-  void CopyToStaticMemory(BareosResource* p) const override
+  void ShallowCopyTo(BareosResource* p) const override
   {
     CounterResource* r = dynamic_cast<CounterResource*>(p);
     if (r) { *r = *this; }
@@ -698,7 +698,7 @@ class PoolResource : public BareosResource {
   PoolResource() = default;
   virtual ~PoolResource() = default;
 
-  void CopyToStaticMemory(BareosResource* p) const override
+  void ShallowCopyTo(BareosResource* p) const override
   {
     PoolResource* r = dynamic_cast<PoolResource*>(p);
     if (r) { *r = *this; }
@@ -748,7 +748,7 @@ class RunResource : public BareosResource {
   RunResource() = default;
   virtual ~RunResource() = default;
 
-  void CopyToStaticMemory(BareosResource* p) const override
+  void ShallowCopyTo(BareosResource* p) const override
   {
     RunResource* r = dynamic_cast<RunResource*>(p);
     if (r) { *r = *this; }

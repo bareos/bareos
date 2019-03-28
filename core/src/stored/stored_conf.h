@@ -79,7 +79,7 @@ class DirectorResource
   DirectorResource() = default;
   virtual ~DirectorResource() = default;
 
-  void CopyToStaticMemory(BareosResource* p) const override
+  void ShallowCopyTo(BareosResource* p) const override
   {
     DirectorResource* r = dynamic_cast<DirectorResource*>(p);
     if (r) { *r = *this; }
@@ -96,7 +96,7 @@ class NdmpResource : public BareosResource {
   NdmpResource() = default;
   virtual ~NdmpResource() = default;
 
-  void CopyToStaticMemory(BareosResource* p) const override
+  void ShallowCopyTo(BareosResource* p) const override
   {
     NdmpResource* r = dynamic_cast<NdmpResource*>(p);
     if (r) { *r = *this; }
@@ -154,7 +154,7 @@ class StorageResource
   StorageResource() = default;
   virtual ~StorageResource() = default;
 
-  void CopyToStaticMemory(BareosResource* p) const override
+  void ShallowCopyTo(BareosResource* p) const override
   {
     StorageResource* r = dynamic_cast<StorageResource*>(p);
     if (r) { *r = *this; }

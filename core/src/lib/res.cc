@@ -1741,8 +1741,7 @@ bool BareosResource::PrintConfig(PoolMem& buff,
    */
   if (!my_config.resources_[rindex].items) { return true; }
 
-  CopyToStaticMemory(
-      my_config.resources_[rindex].static_initialization_resource_);
+  ShallowCopyTo(my_config.resources_[rindex].static_initialization_resource_);
 
   PmStrcat(cfg_str, my_config.ResToStr(rcode_));
   PmStrcat(cfg_str, " {\n");

@@ -75,7 +75,7 @@ class RunScript : public BareosResource {
   RunScript() = default;
   virtual ~RunScript() = default;
 
-  void CopyToStaticMemory(BareosResource* p) const override
+  void ShallowCopyTo(BareosResource* p) const override
   {
     RunScript* r = dynamic_cast<RunScript*>(p);
     if (r) { *r = *this; }
