@@ -72,19 +72,28 @@ enum
  */
 class RunScript : public BareosResource {
  public:
-  POOLMEM* command;   /* Command string */
-  POOLMEM* target;    /* Host target */
-  int when;           /* SCRIPT_Before|Script_After BEFORE/AFTER JOB*/
-  int cmd_type;       /* Command type -- Shell, Console */
-  char level;         /* Base|Full|Incr...|All (NYI) */
-  bool short_form;    /* Run Script in short form */
-  bool from_jobdef;   /* This RUN script comes from JobDef */
-  bool on_success;    /* Execute command on job success (After) */
-  bool on_failure;    /* Execute command on job failure (After) */
-  bool fail_on_error; /* Abort job on error (Before) */
-  job_code_callback_t job_code_callback;
+  RunScript() = default;
+  virtual ~RunScript() = default;
+
+  void CopyToStaticMemory(BareosResource* p) const override
+  {
+    RunScript* r = dynamic_cast<RunScript*>(p);
+    if (r) { *r = *this; }
+  };
+
+  POOLMEM* command = nullptr; /* Command string */
+  POOLMEM* target = nullptr;  /* Host target */
+  int when = 0;               /* SCRIPT_Before|Script_After BEFORE/AFTER JOB*/
+  int cmd_type = 0;           /* Command type -- Shell, Console */
+  char level = 0;             /* Base|Full|Incr...|All (NYI) */
+  bool short_form = false;    /* Run Script in short form */
+  bool from_jobdef = false;   /* This RUN script comes from JobDef */
+  bool on_success = false;    /* Execute command on job success (After) */
+  bool on_failure = false;    /* Execute command on job failure (After) */
+  bool fail_on_error = false; /* Abort job on error (Before) */
+  job_code_callback_t job_code_callback = nullptr;
   /* Optional callback function passed to edit_job_code */
-  alist* commands; /* Use during parsing */
+  alist* commands = nullptr; /* Use during parsing */
   bool run(JobControlRecord* job,
            const char* name =
                ""); /* name must contain "Before" or "After" keyword */

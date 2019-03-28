@@ -65,23 +65,39 @@ class ConsoleResource
     : public BareosResource
     , public TlsResource {
  public:
+  ConsoleResource() = default;
+  virtual ~ConsoleResource() = default;
+
+  void CopyToStaticMemory(BareosResource* p) const override
+  {
+    ConsoleResource* r = dynamic_cast<ConsoleResource*>(p);
+    if (r) { *r = *this; }
+  };
+
   char* rc_file = nullptr;       /**< startup file */
   char* history_file = nullptr;  /**< command history file */
   s_password password;           /**< UA server password */
   uint32_t history_length = 0;   /**< readline history length */
   char* director = nullptr;      /**< bind to director */
   utime_t heartbeat_interval{0}; /**< Interval to send heartbeats to Dir */
-  ConsoleResource() = default;
 };
 
 class DirectorResource
     : public BareosResource
     , public TlsResource {
  public:
+  DirectorResource() = default;
+  virtual ~DirectorResource() = default;
+
+  void CopyToStaticMemory(BareosResource* p) const override
+  {
+    DirectorResource* r = dynamic_cast<DirectorResource*>(p);
+    if (r) { *r = *this; }
+  };
+
   uint32_t DIRport = 0;          /**< UA server port */
   char* address = nullptr;       /**< UA server address */
   utime_t heartbeat_interval{0}; /**< Interval to send heartbeats to Dir */
-  DirectorResource() = default;
 };
 
 ConfigurationParser* InitConsConfig(const char* configfile, int exit_code);

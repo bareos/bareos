@@ -47,7 +47,7 @@ class BareosResource {
 
   virtual ~BareosResource() = default;
 
-  virtual void CopyToStaticMemory(BareosResource* p) const {};
+  virtual void CopyToStaticMemory(BareosResource* static_memory) const = 0;
 
   virtual bool PrintConfig(PoolMem& buf,
                            const ConfigurationParser& my_config,

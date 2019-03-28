@@ -4022,7 +4022,7 @@ static void FreeResource(BareosResource* res, int type)
   /*
    * Common stuff -- free the resource name and description
    */
-  BareosResource* next_resource = (BareosResource*)res->next_;
+  BareosResource* next_resource = res->next_;
   if (res->resource_name_) { free(res->resource_name_); }
   if (res->description_) { free(res->description_); }
 
