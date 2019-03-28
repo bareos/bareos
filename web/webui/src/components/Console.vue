@@ -19,9 +19,6 @@
 </template>
 
 <script>
-import concat from 'lodash/concat'
-import map from 'lodash/map'
-
 export default {
   name: 'Console',
   data() {
@@ -34,20 +31,12 @@ export default {
   },
   computed: {
     message() {
-      this.appendMessage(this.$store.state.socket.message, 'socket')
       this.scrollToEnd()
-      return this.buffer
+      return this.$store.state.socket.message
     },
   },
   methods: {
-    appendMessage(message, src) {
-      let count = this.buffer.length
-      const rearrange = map(message.trimRight().split('\n'), (v) => {return { data: v, src: src, id: count++ }})
-      this.buffer = concat(this.buffer, rearrange)
-    },
     sendCommand: function(data) {
-      this.appendMessage(data, 'local')
-      this.scrollToEnd()
       this.$store.dispatch('sendMessage', data)
     },
     submit: function() {
@@ -81,8 +70,8 @@ export default {
     flex-direction: column;
     max-height: 80vh;
     height: 80vh;
-    background-color: blueviolet;
     margin: auto;
+    overflow: no-content;
   }
 
   .console-container {
@@ -92,7 +81,6 @@ export default {
     margin-right: auto;
     overflow: auto;
     scroll-behavior: smooth;
-    width: 80vw;
   }
 
   .console-local-prompt {

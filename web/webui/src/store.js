@@ -1,7 +1,19 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 
+import concat from 'lodash/concat'
+import map from 'lodash/map'
+
+
 Vue.use(Vuex)
+
+const appendMessage = (state, message, src) => {
+  let count = state.socket.message
+  const rearranged = map(message.trimRight().split('\n'),
+      (v) => {return { data: v, src: src, id: count++ }})
+  state.socket.message = concat(state.socket.message, rearranged)
+}
+
 
 export default new Vuex.Store({
   state: {
@@ -38,7 +50,7 @@ export default new Vuex.Store({
     // default handler called for all methods
     SOCKET_ONMESSAGE(state, message) {
       // state.socket.message.push(message.data)
-      state.socket.message = message.data
+      appendMessage(state, message.data, 'socket')
       console.log('SOCKET_ONMESSAGE')
       console.log(message)
     },
@@ -54,10 +66,11 @@ export default new Vuex.Store({
   },
   actions: {
     sendMessage(context, message) {
+      appendMessage(context.state, message, 'local')
       Vue.prototype.$socket.send(message)
     },
-    receiveMessage() {
-      return this.state.socket.message
+    receiveMessage(context) {
+      return context.state.socket.message
     },
   },
 })
