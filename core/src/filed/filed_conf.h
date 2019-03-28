@@ -69,81 +69,84 @@ class DirectorResource
     : public BareosResource
     , public TlsResource {
  public:
-  char* address;            /* Director address or zero */
-  uint32_t port;            /* Director port */
-  bool conn_from_dir_to_fd; /* Allow incoming connections */
-  bool conn_from_fd_to_dir; /* Connect to director */
+  char* address = nullptr;          /* Director address or zero */
+  uint32_t port = 0;                /* Director port */
+  bool conn_from_dir_to_fd = false; /* Allow incoming connections */
+  bool conn_from_fd_to_dir = false; /* Connect to director */
   bool monitor; /* Have only access to status and .status functions */
-  alist*
-      allowed_script_dirs; /* Only allow to run scripts in this directories */
-  alist* allowed_job_cmds; /* Only allow the following Job commands to be
-                              executed */
-  uint64_t max_bandwidth_per_job; /* Bandwidth limitation (per director) */
+  alist* allowed_script_dirs =
+      nullptr; /* Only allow to run scripts in this directories */
+  alist* allowed_job_cmds = nullptr; /* Only allow the following Job commands to
+                              be executed */
+  uint64_t max_bandwidth_per_job = 0; /* Bandwidth limitation (per director) */
 
   DirectorResource() = default;
+  virtual ~DirectorResource() = default;
+
+  void ShallowCopyTo(BareosResource* p) const override
+  {
+    DirectorResource* r = dynamic_cast<DirectorResource*>(p);
+    if (r) { *r = *this; }
+  }
 };
 
 class ClientResource
     : public BareosResource
     , public TlsResource {
  public:
-  dlist* FDaddrs;
-  dlist* FDsrc_addr; /* Address to source connections from */
-  char* working_directory;
-  char* pid_directory;
-  char* subsys_directory;
-  char* plugin_directory; /* Plugin directory */
-  alist* plugin_names;
-  char* scripts_directory;
-  MessagesResource* messages; /* Daemon message handler */
-  uint32_t MaxConcurrentJobs;
-  uint32_t MaxConnections;
-  utime_t SDConnectTimeout;         /* Timeout in seconds */
-  utime_t heartbeat_interval;       /* Interval to send heartbeats */
-  uint32_t max_network_buffer_size; /* Max network buf size */
-  uint32_t jcr_watchdog_time; /* Absolute time after which a Job gets terminated
-                                 regardless of its progress */
-  bool compatible;            /* Support old protocol keywords */
-  bool allow_bw_bursting;     /* Allow bursting with bandwidth limiting */
-  bool pki_sign; /* Enable Data Integrity Verification via Digital Signatures */
-  bool pki_encrypt;             /* Enable Data Encryption */
-  char* pki_keypair_file;       /* PKI Key Pair File */
-  alist* pki_signing_key_files; /* PKI Signing Key Files */
-  alist* pki_master_key_files;  /* PKI Master Key Files */
-  crypto_cipher_t pki_cipher;   /* PKI Cipher to use */
-  bool nokeepalive;             /* Don't use SO_KEEPALIVE on sockets */
-  bool always_use_lmdb;         /* Use LMDB for accurate data */
-  uint32_t lmdb_threshold;      /* Switch to using LDMD when number of accurate
-                                   entries exceeds treshold. */
-  X509_KEYPAIR* pki_keypair;    /* Shared PKI Public/Private Keypair */
-  alist* pki_signers;           /* Shared PKI Trusted Signers */
-  alist* pki_recipients;        /* Shared PKI Recipients */
-  alist*
-      allowed_script_dirs; /* Only allow to run scripts in this directories */
-  alist* allowed_job_cmds; /* Only allow the following Job commands to be
-                              executed */
-  char* verid;             /* Custom Id to print in version command */
-  char* secure_erase_cmdline; /* Cmdline to execute to perform secure erase of
-                                 file */
-  char* log_timestamp_format; /* Timestamp format to use in generic logging
-                                 messages */
-  uint64_t max_bandwidth_per_job; /* Bandwidth limitation (global) */
-
   ClientResource() = default;
+  virtual ~ClientResource() = default;
+
+  void ShallowCopyTo(BareosResource* p) const override
+  {
+    ClientResource* r = dynamic_cast<ClientResource*>(p);
+    if (r) { *r = *this; }
+  }
+
+  dlist* FDaddrs = nullptr;
+  dlist* FDsrc_addr = nullptr; /* Address to source connections from */
+  char* working_directory = nullptr;
+  char* pid_directory = nullptr;
+  char* subsys_directory = nullptr;
+  char* plugin_directory = nullptr; /* Plugin directory */
+  alist* plugin_names = nullptr;
+  char* scripts_directory = nullptr;
+  MessagesResource* messages = nullptr; /* Daemon message handler */
+  uint32_t MaxConcurrentJobs = 0;
+  uint32_t MaxConnections = 0;
+  utime_t SDConnectTimeout = {0};       /* Timeout in seconds */
+  utime_t heartbeat_interval = {0};     /* Interval to send heartbeats */
+  uint32_t max_network_buffer_size = 0; /* Max network buf size */
+  uint32_t jcr_watchdog_time = 0;       /* Absolute time after which a Job gets
+                                       terminated       regardless of its progress */
+  bool compatible = false;              /* Support old protocol keywords */
+  bool allow_bw_bursting = false; /* Allow bursting with bandwidth limiting */
+  bool pki_sign =
+      false; /* Enable Data Integrity Verification via Digital Signatures */
+  bool pki_encrypt = false;                        /* Enable Data Encryption */
+  char* pki_keypair_file = nullptr;                /* PKI Key Pair File */
+  alist* pki_signing_key_files = nullptr;          /* PKI Signing Key Files */
+  alist* pki_master_key_files = nullptr;           /* PKI Master Key Files */
+  crypto_cipher_t pki_cipher = CRYPTO_CIPHER_NONE; /* PKI Cipher to use */
+  bool nokeepalive = false;     /* Don't use SO_KEEPALIVE on sockets */
+  bool always_use_lmdb = false; /* Use LMDB for accurate data */
+  uint32_t lmdb_threshold = 0;  /* Switch to using LDMD when number of accurate
+                               entries exceeds treshold. */
+  X509_KEYPAIR* pki_keypair = nullptr; /* Shared PKI Public/Private Keypair */
+  alist* pki_signers = nullptr;        /* Shared PKI Trusted Signers */
+  alist* pki_recipients = nullptr;     /* Shared PKI Recipients */
+  alist* allowed_script_dirs =
+      nullptr; /* Only allow to run scripts in this directories */
+  alist* allowed_job_cmds = nullptr; /* Only allow the following Job commands to
+                                be executed */
+  char* verid = nullptr;             /* Custom Id to print in version command */
+  char* secure_erase_cmdline = nullptr; /* Cmdline to execute to perform secure
+                                  erase of file */
+  char* log_timestamp_format = nullptr; /* Timestamp format to use in generic
+                                 logging messages */
+  uint64_t max_bandwidth_per_job = 0;   /* Bandwidth limitation (global) */
 };
 
-/* Define the Union of all the above
- * resource structure definitions.
- */
-union UnionOfResources {
-  DirectorResource res_dir;
-  ClientResource res_client;
-  MessagesResource res_msgs;
-  BareosResource hdr;
-
-  UnionOfResources() { new (&hdr) BareosResource(); }
-  ~UnionOfResources() {}
-};
 
 ConfigurationParser* InitFdConfig(const char* configfile, int exit_code);
 bool PrintConfigSchemaJson(PoolMem& buffer);

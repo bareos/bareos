@@ -56,17 +56,9 @@
 
 namespace filedaemon {
 
-/**
- * Define the first and last resource ID record
- * types. Note, these should be unique for each
- * daemon though not a requirement.
- */
 static BareosResource* sres_head[R_LAST - R_FIRST + 1];
 static BareosResource** res_head = sres_head;
 
-/**
- * Forward referenced subroutines
- */
 static bool SaveResource(int type, ResourceItem* items, int pass);
 static void FreeResource(BareosResource* sres, int type);
 static void DumpResource(int type,
@@ -82,8 +74,9 @@ static void DumpResource(int type,
  * then move it to allocated memory when the resource
  * scan is complete.
  */
-static UnionOfResources res_all;
-static int32_t res_all_size = sizeof(res_all);
+static DirectorResource res_dir;
+static ClientResource res_client;
+static MessagesResource res_msgs;
 
 /* clang-format off */
 
@@ -91,76 +84,76 @@ static int32_t res_all_size = sizeof(res_all);
  * Client or File daemon "Global" resources
  */
 static ResourceItem cli_items[] = {
-  {"Name", CFG_TYPE_NAME, ITEM(res_client.resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL,
+  {"Name", CFG_TYPE_NAME, ITEM(res_client,resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL,
       "The name of this resource. It is used to reference to it."},
-  {"Description", CFG_TYPE_STR, ITEM(res_client.description_), 0, 0, NULL, NULL, NULL},
-  {"FdPort", CFG_TYPE_ADDRESSES_PORT, ITEM(res_client.FDaddrs), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT, NULL, NULL},
-  {"FdAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_client.FDaddrs), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT, NULL, NULL},
-  {"FdAddresses", CFG_TYPE_ADDRESSES, ITEM(res_client.FDaddrs), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT, NULL, NULL},
-  {"FdSourceAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_client.FDsrc_addr), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL},
-  {"WorkingDirectory", CFG_TYPE_DIR, ITEM(res_client.working_directory), 0,
+  {"Description", CFG_TYPE_STR, ITEM(res_client,description_), 0, 0, NULL, NULL, NULL},
+  {"FdPort", CFG_TYPE_ADDRESSES_PORT, ITEM(res_client,FDaddrs), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT, NULL, NULL},
+  {"FdAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_client,FDaddrs), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT, NULL, NULL},
+  {"FdAddresses", CFG_TYPE_ADDRESSES, ITEM(res_client,FDaddrs), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT, NULL, NULL},
+  {"FdSourceAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_client,FDsrc_addr), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL},
+  {"WorkingDirectory", CFG_TYPE_DIR, ITEM(res_client,working_directory), 0,
       CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, _PATH_BAREOS_WORKINGDIR, NULL, NULL},
-  {"PidDirectory", CFG_TYPE_DIR, ITEM(res_client.pid_directory), 0,
+  {"PidDirectory", CFG_TYPE_DIR, ITEM(res_client,pid_directory), 0,
       CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, _PATH_BAREOS_PIDDIR, NULL, NULL},
-  {"SubSysDirectory", CFG_TYPE_DIR, ITEM(res_client.subsys_directory), 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL},
-  {"PluginDirectory", CFG_TYPE_DIR, ITEM(res_client.plugin_directory), 0, 0, NULL, NULL, NULL},
-  {"PluginNames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_client.plugin_names), 0, 0, NULL, NULL, NULL},
-  {"ScriptsDirectory", CFG_TYPE_DIR, ITEM(res_client.scripts_directory), 0, 0, NULL, NULL, NULL},
-  {"MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_client.MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "20", NULL, NULL},
-  {"MaximumConnections", CFG_TYPE_PINT32, ITEM(res_client.MaxConnections), 0, CFG_ITEM_DEFAULT, "42", "15.2.3-", NULL},
-  {"Messages", CFG_TYPE_RES, ITEM(res_client.messages), R_MSGS, 0, NULL, NULL, NULL},
-  {"SdConnectTimeout", CFG_TYPE_TIME, ITEM(res_client.SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */, NULL, NULL},
-  {"HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_client.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL},
-  {"MaximumNetworkBufferSize", CFG_TYPE_PINT32, ITEM(res_client.max_network_buffer_size), 0, 0, NULL, NULL, NULL},
-  {"PkiSignatures", CFG_TYPE_BOOL, ITEM(res_client.pki_sign), 0, CFG_ITEM_DEFAULT, "false", NULL, "Enable Data Signing."},
-  {"PkiEncryption", CFG_TYPE_BOOL, ITEM(res_client.pki_encrypt), 0, CFG_ITEM_DEFAULT, "false", NULL, "Enable Data Encryption."},
-  {"PkiKeyPair", CFG_TYPE_DIR, ITEM(res_client.pki_keypair_file), 0, 0, NULL, NULL,
+  {"SubSysDirectory", CFG_TYPE_DIR, ITEM(res_client,subsys_directory), 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL},
+  {"PluginDirectory", CFG_TYPE_DIR, ITEM(res_client,plugin_directory), 0, 0, NULL, NULL, NULL},
+  {"PluginNames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_client,plugin_names), 0, 0, NULL, NULL, NULL},
+  {"ScriptsDirectory", CFG_TYPE_DIR, ITEM(res_client,scripts_directory), 0, 0, NULL, NULL, NULL},
+  {"MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_client,MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "20", NULL, NULL},
+  {"MaximumConnections", CFG_TYPE_PINT32, ITEM(res_client,MaxConnections), 0, CFG_ITEM_DEFAULT, "42", "15.2.3-", NULL},
+  {"Messages", CFG_TYPE_RES, ITEM(res_client,messages), R_MSGS, 0, NULL, NULL, NULL},
+  {"SdConnectTimeout", CFG_TYPE_TIME, ITEM(res_client,SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */, NULL, NULL},
+  {"HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_client,heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL},
+  {"MaximumNetworkBufferSize", CFG_TYPE_PINT32, ITEM(res_client,max_network_buffer_size), 0, 0, NULL, NULL, NULL},
+  {"PkiSignatures", CFG_TYPE_BOOL, ITEM(res_client,pki_sign), 0, CFG_ITEM_DEFAULT, "false", NULL, "Enable Data Signing."},
+  {"PkiEncryption", CFG_TYPE_BOOL, ITEM(res_client,pki_encrypt), 0, CFG_ITEM_DEFAULT, "false", NULL, "Enable Data Encryption."},
+  {"PkiKeyPair", CFG_TYPE_DIR, ITEM(res_client,pki_keypair_file), 0, 0, NULL, NULL,
       "File with public and private key to sign, encrypt (backup) and decrypt (restore) the data."},
-  {"PkiSigner", CFG_TYPE_ALIST_DIR, ITEM(res_client.pki_signing_key_files), 0, 0, NULL, NULL,
+  {"PkiSigner", CFG_TYPE_ALIST_DIR, ITEM(res_client,pki_signing_key_files), 0, 0, NULL, NULL,
       "Additional public/private key files to sign or verify the data."},
-  {"PkiMasterKey", CFG_TYPE_ALIST_DIR, ITEM(res_client.pki_master_key_files), 0, 0, NULL, NULL,
+  {"PkiMasterKey", CFG_TYPE_ALIST_DIR, ITEM(res_client,pki_master_key_files), 0, 0, NULL, NULL,
       "List of public key files. Data will be decryptable via the corresponding private keys."},
-  {"PkiCipher", CFG_TYPE_CIPHER, ITEM(res_client.pki_cipher), 0, CFG_ITEM_DEFAULT, "aes128", NULL,
+  {"PkiCipher", CFG_TYPE_CIPHER, ITEM(res_client,pki_cipher), 0, CFG_ITEM_DEFAULT, "aes128", NULL,
       "PKI Cipher used for data encryption."},
-  {"VerId", CFG_TYPE_STR, ITEM(res_client.verid), 0, 0, NULL, NULL, NULL},
-  {"Compatible", CFG_TYPE_BOOL, ITEM(res_client.compatible), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
-  {"MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_client.max_bandwidth_per_job), 0, 0, NULL, NULL, NULL},
-  {"AllowBandwidthBursting", CFG_TYPE_BOOL, ITEM(res_client.allow_bw_bursting), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
-  {"AllowedScriptDir", CFG_TYPE_ALIST_DIR, ITEM(res_client.allowed_script_dirs), 0, 0, NULL, NULL, NULL},
-  {"AllowedJobCommand", CFG_TYPE_ALIST_STR, ITEM(res_client.allowed_job_cmds), 0, 0, NULL, NULL, NULL},
-  {"AbsoluteJobTimeout", CFG_TYPE_PINT32, ITEM(res_client.jcr_watchdog_time), 0, 0, NULL, NULL, NULL},
-  {"AlwaysUseLmdb", CFG_TYPE_BOOL, ITEM(res_client.always_use_lmdb), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
-  {"LmdbThreshold", CFG_TYPE_PINT32, ITEM(res_client.lmdb_threshold), 0, 0, NULL, NULL, NULL},
-  {"SecureEraseCommand", CFG_TYPE_STR, ITEM(res_client.secure_erase_cmdline), 0, 0, NULL, "15.2.1-",
+  {"VerId", CFG_TYPE_STR, ITEM(res_client,verid), 0, 0, NULL, NULL, NULL},
+  {"Compatible", CFG_TYPE_BOOL, ITEM(res_client,compatible), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
+  {"MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_client,max_bandwidth_per_job), 0, 0, NULL, NULL, NULL},
+  {"AllowBandwidthBursting", CFG_TYPE_BOOL, ITEM(res_client,allow_bw_bursting), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
+  {"AllowedScriptDir", CFG_TYPE_ALIST_DIR, ITEM(res_client,allowed_script_dirs), 0, 0, NULL, NULL, NULL},
+  {"AllowedJobCommand", CFG_TYPE_ALIST_STR, ITEM(res_client,allowed_job_cmds), 0, 0, NULL, NULL, NULL},
+  {"AbsoluteJobTimeout", CFG_TYPE_PINT32, ITEM(res_client,jcr_watchdog_time), 0, 0, NULL, NULL, NULL},
+  {"AlwaysUseLmdb", CFG_TYPE_BOOL, ITEM(res_client,always_use_lmdb), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
+  {"LmdbThreshold", CFG_TYPE_PINT32, ITEM(res_client,lmdb_threshold), 0, 0, NULL, NULL, NULL},
+  {"SecureEraseCommand", CFG_TYPE_STR, ITEM(res_client,secure_erase_cmdline), 0, 0, NULL, "15.2.1-",
       "Specify command that will be called when bareos unlinks files."},
-  {"LogTimestampFormat", CFG_TYPE_STR, ITEM(res_client.log_timestamp_format), 0, 0, NULL, "15.2.3-", NULL},
+  {"LogTimestampFormat", CFG_TYPE_STR, ITEM(res_client,log_timestamp_format), 0, 0, NULL, "15.2.3-", NULL},
     TLS_COMMON_CONFIG(res_client),
     TLS_CERT_CONFIG(res_client),
-  {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}};
-
+  {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}
+};
 /**
  * Directors that can use our services
  */
 static ResourceItem dir_items[] = {
-  {"Name", CFG_TYPE_NAME, ITEM(res_dir.resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"Description", CFG_TYPE_STR, ITEM(res_dir.description_), 0, 0, NULL, NULL, NULL},
-  {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir.password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"Address", CFG_TYPE_STR, ITEM(res_dir.address), 0, 0, NULL, NULL,
+  {"Name", CFG_TYPE_NAME, ITEM(res_dir,resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"Description", CFG_TYPE_STR, ITEM(res_dir,description_), 0, 0, NULL, NULL, NULL},
+  {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir,password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"Address", CFG_TYPE_STR, ITEM(res_dir,address), 0, 0, NULL, NULL,
       "Director Network Address. Only required if \"Connection From Client To Director\" is enabled."},
-  {"Port", CFG_TYPE_PINT32, ITEM(res_dir.port), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, "16.2.2",
+  {"Port", CFG_TYPE_PINT32, ITEM(res_dir,port), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, "16.2.2",
       "Director Network Port. Only used if \"Connection From Client To Director\" is enabled."},
-  {"ConnectionFromDirectorToClient", CFG_TYPE_BOOL, ITEM(res_dir.conn_from_dir_to_fd), 0, CFG_ITEM_DEFAULT,
+  {"ConnectionFromDirectorToClient", CFG_TYPE_BOOL, ITEM(res_dir,conn_from_dir_to_fd), 0, CFG_ITEM_DEFAULT,
       "true", "16.2.2", "This Client will accept incoming network connection from this Director."},
-  {"ConnectionFromClientToDirector", CFG_TYPE_BOOL, ITEM(res_dir.conn_from_fd_to_dir), 0, CFG_ITEM_DEFAULT,
+  {"ConnectionFromClientToDirector", CFG_TYPE_BOOL, ITEM(res_dir,conn_from_fd_to_dir), 0, CFG_ITEM_DEFAULT,
       "false", "16.2.2", "Let the Filedaemon initiate network connections to the Director."},
-  {"Monitor", CFG_TYPE_BOOL, ITEM(res_dir.monitor), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
-  {"MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_dir.max_bandwidth_per_job), 0, 0, NULL, NULL, NULL},
-  {"AllowedScriptDir", CFG_TYPE_ALIST_DIR, ITEM(res_dir.allowed_script_dirs), 0, 0, NULL, NULL, NULL},
-  {"AllowedJobCommand", CFG_TYPE_ALIST_STR, ITEM(res_dir.allowed_job_cmds), 0, 0, NULL, NULL, NULL},
-    TLS_COMMON_CONFIG(res_client),
-    TLS_CERT_CONFIG(res_client),
-  {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}};
-
+  {"Monitor", CFG_TYPE_BOOL, ITEM(res_dir,monitor), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
+  {"MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_dir,max_bandwidth_per_job), 0, 0, NULL, NULL, NULL},
+  {"AllowedScriptDir", CFG_TYPE_ALIST_DIR, ITEM(res_dir,allowed_script_dirs), 0, 0, NULL, NULL, NULL},
+  {"AllowedJobCommand", CFG_TYPE_ALIST_STR, ITEM(res_dir,allowed_job_cmds), 0, 0, NULL, NULL, NULL},
+    TLS_COMMON_CONFIG(res_dir),
+    TLS_CERT_CONFIG(res_dir),
+  {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}
+};
 /**
  * Message resource
  */
@@ -168,12 +161,15 @@ static ResourceItem dir_items[] = {
 
 static ResourceTable resources[] = {
   {"Director", dir_items, R_DIRECTOR, sizeof(DirectorResource),
-      [](void *res) { return new ((DirectorResource *)res) DirectorResource(); }},
+      []() { return new (&res_dir) DirectorResource(); }, &res_dir},
   {"FileDaemon", cli_items, R_CLIENT, sizeof(ClientResource),
-      [](void *res) { return new ((ClientResource *)res) ClientResource(); }},
+      []() { return new (&res_client) ClientResource(); }, &res_client},
   {"Client", cli_items, R_CLIENT, sizeof(ClientResource),
-      [](void *res) { return new ((ClientResource *)res) ClientResource(); }}, /* alias for filedaemon */
-  {"Messages", msgs_items, R_MSGS, sizeof(MessagesResource)}, {NULL, NULL, 0}};
+      []() { return new (&res_client) ClientResource(); }, &res_client}, /* alias for filedaemon */
+  {"Messages", msgs_items, R_MSGS, sizeof(MessagesResource),
+      []() { return new (&res_msgs) MessagesResource(); }, &res_msgs},
+  {nullptr, nullptr, 0, 0, nullptr, nullptr}
+};
 
 /* clang-format on */
 
@@ -209,8 +205,8 @@ static void StoreCipher(LEX* lc, ResourceItem* item, int index, int pass)
     scan_err1(lc, _("Expected a Crypto Cipher option, got: %s"), lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, res_all.item_present_);
-  ClearBit(index, res_all.hdr.inherit_content);
+  SetBit(index, item->static_resource->item_present_);
+  ClearBit(index, item->static_resource->inherit_content_);
 }
 
 /**
@@ -267,9 +263,9 @@ ConfigurationParser* InitFdConfig(const char* configfile, int exit_code)
 {
   ConfigurationParser* config = new ConfigurationParser(
       configfile, nullptr, nullptr, InitResourceCb, ParseConfigCb, nullptr,
-      exit_code, (void*)&res_all, res_all_size, R_FIRST, R_LAST, resources,
-      res_head, default_config_filename.c_str(), "bareos-fd.d",
-      ConfigReadyCallback, SaveResource, DumpResource, FreeResource);
+      exit_code, R_FIRST, R_LAST, resources, res_head,
+      default_config_filename.c_str(), "bareos-fd.d", ConfigReadyCallback,
+      SaveResource, DumpResource, FreeResource);
   if (config) { config->r_own_ = R_CLIENT; }
   return config;
 }
@@ -316,15 +312,13 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
 #endif
 
 static void DumpResource(int type,
-                         BareosResource* reshdr,
+                         BareosResource* res,
                          void sendit(void* sock, const char* fmt, ...),
                          void* sock,
                          bool hide_sensitive_data,
                          bool verbose)
 {
   PoolMem buf;
-  UnionOfResources* res = (UnionOfResources*)reshdr;
-  BareosResource* resclass;
   int recurse = 1;
 
   if (res == NULL) {
@@ -339,19 +333,18 @@ static void DumpResource(int type,
 
   switch (type) {
     case R_MSGS: {
-      MessagesResource* resclass = (MessagesResource*)reshdr;
+      MessagesResource* resclass = dynamic_cast<MessagesResource*>(res);
       resclass->PrintConfig(buf);
       break;
     }
     default:
-      resclass = (BareosResource*)reshdr;
-      resclass->PrintConfig(buf, *my_config);
+      res->PrintConfig(buf, *my_config);
       break;
   }
   sendit(sock, "%s", buf.c_str());
 
-  if (recurse && res->res_dir.next_) {
-    my_config->DumpResourceCb_(type, res->res_dir.next_, sendit, sock,
+  if (recurse && res->next_) {
+    my_config->DumpResourceCb_(type, res->next_, sendit, sock,
                                hide_sensitive_data, verbose);
   }
 }
@@ -363,158 +356,84 @@ static void DumpResource(int type,
  * resource chain is traversed.  Mainly we worry about freeing
  * allocated strings (names).
  */
-static void FreeResource(BareosResource* sres, int type)
+static void FreeResource(BareosResource* res, int type)
 {
-  BareosResource* nres;
-  UnionOfResources* res = (UnionOfResources*)sres;
+  BareosResource* next_resource;
 
   if (res == NULL) { return; }
 
   /*
    * Common stuff -- free the resource name
    */
-  nres = (BareosResource*)res->res_dir.next_;
-  if (res->res_dir.resource_name_) { free(res->res_dir.resource_name_); }
-  if (res->res_dir.description_) { free(res->res_dir.description_); }
+  next_resource = (BareosResource*)res->next_;
+
+  if (res->resource_name_) { free(res->resource_name_); }
+  if (res->description_) { free(res->description_); }
+
   switch (type) {
-    case R_DIRECTOR:
-      if (res->res_dir.password_.value) { free(res->res_dir.password_.value); }
-      if (res->res_dir.address) { free(res->res_dir.address); }
-      if (res->res_dir.allowed_script_dirs) {
-        delete res->res_dir.allowed_script_dirs;
+    case R_DIRECTOR: {
+      DirectorResource* p = dynamic_cast<DirectorResource*>(res);
+      if (p->password_.value) { free(p->password_.value); }
+      if (p->address) { free(p->address); }
+      if (p->allowed_script_dirs) { delete p->allowed_script_dirs; }
+      if (p->allowed_job_cmds) { delete p->allowed_job_cmds; }
+      if (p->tls_cert_.allowed_certificate_common_names_) {
+        p->tls_cert_.allowed_certificate_common_names_->destroy();
+        free(p->tls_cert_.allowed_certificate_common_names_);
       }
-      if (res->res_dir.allowed_job_cmds) {
-        delete res->res_dir.allowed_job_cmds;
-      }
-      if (res->res_dir.tls_cert_.allowed_certificate_common_names_) {
-        res->res_dir.tls_cert_.allowed_certificate_common_names_->destroy();
-        free(res->res_dir.tls_cert_.allowed_certificate_common_names_);
-      }
-      if (res->res_dir.tls_cert_.ca_certfile_) {
-        delete res->res_dir.tls_cert_.ca_certfile_;
-      }
-      if (res->res_dir.tls_cert_.ca_certdir_) {
-        delete res->res_dir.tls_cert_.ca_certdir_;
-      }
-      if (res->res_dir.tls_cert_.crlfile_) {
-        delete res->res_dir.tls_cert_.crlfile_;
-      }
-      if (res->res_dir.tls_cert_.certfile_) {
-        delete res->res_dir.tls_cert_.certfile_;
-      }
-      if (res->res_dir.tls_cert_.keyfile_) {
-        delete res->res_dir.tls_cert_.keyfile_;
-      }
-      if (res->res_dir.cipherlist_) { delete res->res_dir.cipherlist_; }
-      if (res->res_dir.tls_cert_.dhfile_) {
-        delete res->res_dir.tls_cert_.dhfile_;
-      }
-      if (res->res_dir.tls_cert_.pem_message_) {
-        delete res->res_dir.tls_cert_.pem_message_;
-      }
+      delete p;
       break;
-    case R_CLIENT:
-      if (res->res_client.working_directory) {
-        free(res->res_client.working_directory);
-      }
-      if (res->res_client.pid_directory) {
-        free(res->res_client.pid_directory);
-      }
-      if (res->res_client.subsys_directory) {
-        free(res->res_client.subsys_directory);
-      }
-      if (res->res_client.scripts_directory) {
-        free(res->res_client.scripts_directory);
-      }
-      if (res->res_client.plugin_directory) {
-        free(res->res_client.plugin_directory);
-      }
-      if (res->res_client.plugin_names) { delete res->res_client.plugin_names; }
-      if (res->res_client.FDaddrs) { FreeAddresses(res->res_client.FDaddrs); }
-      if (res->res_client.FDsrc_addr) {
-        FreeAddresses(res->res_client.FDsrc_addr);
-      }
-      if (res->res_client.pki_keypair_file) {
-        free(res->res_client.pki_keypair_file);
-      }
-      if (res->res_client.pki_keypair) {
-        CryptoKeypairFree(res->res_client.pki_keypair);
-      }
-      if (res->res_client.pki_signing_key_files) {
-        delete res->res_client.pki_signing_key_files;
-      }
-      if (res->res_client.pki_signers) {
+    }
+    case R_CLIENT: {
+      ClientResource* p = dynamic_cast<ClientResource*>(res);
+      if (p->working_directory) { free(p->working_directory); }
+      if (p->pid_directory) { free(p->pid_directory); }
+      if (p->subsys_directory) { free(p->subsys_directory); }
+      if (p->scripts_directory) { free(p->scripts_directory); }
+      if (p->plugin_directory) { free(p->plugin_directory); }
+      if (p->plugin_names) { delete p->plugin_names; }
+      if (p->FDaddrs) { FreeAddresses(p->FDaddrs); }
+      if (p->FDsrc_addr) { FreeAddresses(p->FDsrc_addr); }
+      if (p->pki_keypair_file) { free(p->pki_keypair_file); }
+      if (p->pki_keypair) { CryptoKeypairFree(p->pki_keypair); }
+      if (p->pki_signing_key_files) { delete p->pki_signing_key_files; }
+      if (p->pki_signers) {
         X509_KEYPAIR* keypair = nullptr;
-        foreach_alist (keypair, res->res_client.pki_signers) {
+        foreach_alist (keypair, p->pki_signers) {
           CryptoKeypairFree(keypair);
         }
-        delete res->res_client.pki_signers;
+        delete p->pki_signers;
       }
-      if (res->res_client.pki_master_key_files) {
-        delete res->res_client.pki_master_key_files;
-      }
-      if (res->res_client.pki_recipients) {
+      if (p->pki_master_key_files) { delete p->pki_master_key_files; }
+      if (p->pki_recipients) {
         X509_KEYPAIR* keypair = nullptr;
-        foreach_alist (keypair, res->res_client.pki_recipients) {
+        foreach_alist (keypair, p->pki_recipients) {
           CryptoKeypairFree(keypair);
         }
-        delete res->res_client.pki_recipients;
+        delete p->pki_recipients;
       }
-      if (res->res_client.verid) { free(res->res_client.verid); }
-      if (res->res_client.allowed_script_dirs) {
-        delete res->res_client.allowed_script_dirs;
+      if (p->verid) { free(p->verid); }
+      if (p->allowed_script_dirs) { delete p->allowed_script_dirs; }
+      if (p->allowed_job_cmds) { delete p->allowed_job_cmds; }
+      if (p->secure_erase_cmdline) { free(p->secure_erase_cmdline); }
+      if (p->log_timestamp_format) { free(p->log_timestamp_format); }
+      if (p->tls_cert_.allowed_certificate_common_names_) {
+        p->tls_cert_.allowed_certificate_common_names_->destroy();
+        free(p->tls_cert_.allowed_certificate_common_names_);
       }
-      if (res->res_client.allowed_job_cmds) {
-        delete res->res_client.allowed_job_cmds;
-      }
-      if (res->res_client.secure_erase_cmdline) {
-        free(res->res_client.secure_erase_cmdline);
-      }
-      if (res->res_client.log_timestamp_format) {
-        free(res->res_client.log_timestamp_format);
-      }
-      if (res->res_client.tls_cert_.allowed_certificate_common_names_) {
-        res->res_client.tls_cert_.allowed_certificate_common_names_->destroy();
-        free(res->res_client.tls_cert_.allowed_certificate_common_names_);
-      }
-      if (res->res_client.tls_cert_.ca_certfile_) {
-        delete res->res_client.tls_cert_.ca_certfile_;
-      }
-      if (res->res_client.tls_cert_.ca_certdir_) {
-        delete res->res_client.tls_cert_.ca_certdir_;
-      }
-      if (res->res_client.tls_cert_.crlfile_) {
-        delete res->res_client.tls_cert_.crlfile_;
-      }
-      if (res->res_client.tls_cert_.certfile_) {
-        delete res->res_client.tls_cert_.certfile_;
-      }
-      if (res->res_client.tls_cert_.keyfile_) {
-        delete res->res_client.tls_cert_.keyfile_;
-      }
-      if (res->res_client.cipherlist_) { delete res->res_client.cipherlist_; }
-      if (res->res_client.tls_cert_.dhfile_) {
-        delete res->res_client.tls_cert_.dhfile_;
-      }
-      if (res->res_client.tls_cert_.pem_message_) {
-        delete res->res_client.tls_cert_.pem_message_;
-      }
+      delete p;
       break;
-    case R_MSGS:
-      if (res->res_msgs.mail_cmd) { free(res->res_msgs.mail_cmd); }
-      if (res->res_msgs.operator_cmd) { free(res->res_msgs.operator_cmd); }
-      if (res->res_msgs.timestamp_format) {
-        free(res->res_msgs.timestamp_format);
-      }
-      FreeMsgsRes((MessagesResource*)res); /* free message resource */
-      res = NULL;
+    }
+    case R_MSGS: {
+      MessagesResource* p = dynamic_cast<MessagesResource*>(res);
+      delete p;
       break;
+    }
     default:
       printf(_("Unknown resource type %d\n"), type);
+      break;
   }
-  /* Common stuff again -- free the resource, recurse to next one */
-  if (res) { free(res); }
-  if (nres) { my_config->FreeResourceCb_(nres, type); }
+  if (next_resource) { FreeResource(next_resource, type); }
 }
 
 /**
@@ -524,7 +443,6 @@ static void FreeResource(BareosResource* sres, int type)
  */
 static bool SaveResource(int type, ResourceItem* items, int pass)
 {
-  UnionOfResources* res;
   int rindex = type - R_FIRST;
   int i;
   int error = 0;
@@ -534,7 +452,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
    */
   for (i = 0; items[i].name; i++) {
     if (items[i].flags & CFG_ITEM_REQUIRED) {
-      if (!BitIsSet(i, res_all.res_dir.item_present_)) {
+      if (!BitIsSet(i, items[i].static_resource->item_present_)) {
         Emsg2(M_ABORT, 0,
               _("%s item is required in %s resource, but not found.\n"),
               items[i].name, resources[rindex].name);
@@ -542,104 +460,84 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
     }
   }
 
-  /*
-   * During pass 2, we looked up pointers to all the resources
-   * referrenced in the current resource, , now we
-   * must copy their address from the static record to the allocated
-   * record.
-   */
+  // save previously discovered pointers into dynamic memory
   if (pass == 2) {
     switch (type) {
       case R_MSGS:
-        /*
-         * Resources not containing a resource
-         */
+        // Resources not containing a resource
         break;
-      case R_DIRECTOR:
-        /*
-         * Resources containing another resource
-         */
-        if ((res = (UnionOfResources*)my_config->GetResWithName(
-                 R_DIRECTOR, res_all.res_dir.resource_name_)) == NULL) {
+      case R_DIRECTOR: {
+        DirectorResource* p = dynamic_cast<DirectorResource*>(
+            my_config->GetResWithName(R_DIRECTOR, res_dir.resource_name_));
+        if (!p) {
           Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"),
-                res_all.res_dir.resource_name_);
+                res_dir.resource_name_);
         } else {
-          res->res_dir.tls_cert_.allowed_certificate_common_names_ =
-              res_all.res_dir.tls_cert_.allowed_certificate_common_names_;
-          res->res_dir.allowed_script_dirs =
-              res_all.res_dir.allowed_script_dirs;
-          res->res_dir.allowed_job_cmds = res_all.res_dir.allowed_job_cmds;
+          p->tls_cert_.allowed_certificate_common_names_ =
+              res_dir.tls_cert_.allowed_certificate_common_names_;
+          p->allowed_script_dirs = res_dir.allowed_script_dirs;
+          p->allowed_job_cmds = res_dir.allowed_job_cmds;
         }
         break;
-      case R_CLIENT:
-        if ((res = (UnionOfResources*)my_config->GetResWithName(
-                 R_CLIENT, res_all.res_dir.resource_name_)) == NULL) {
+      }
+      case R_CLIENT: {
+        ClientResource* p = dynamic_cast<ClientResource*>(
+            my_config->GetResWithName(R_CLIENT, res_client.resource_name_));
+        if (!p) {
           Emsg1(M_ABORT, 0, _("Cannot find Client resource %s\n"),
-                res_all.res_dir.resource_name_);
+                res_client.resource_name_);
         } else {
-          res->res_client.plugin_names = res_all.res_client.plugin_names;
-          res->res_client.pki_signing_key_files =
-              res_all.res_client.pki_signing_key_files;
-          res->res_client.pki_master_key_files =
-              res_all.res_client.pki_master_key_files;
-          res->res_client.pki_signers = res_all.res_client.pki_signers;
-          res->res_client.pki_recipients = res_all.res_client.pki_recipients;
-          res->res_client.messages = res_all.res_client.messages;
-          res->res_client.tls_cert_.allowed_certificate_common_names_ =
-              res_all.res_client.tls_cert_.allowed_certificate_common_names_;
-          res->res_client.allowed_script_dirs =
-              res_all.res_client.allowed_script_dirs;
-          res->res_client.allowed_job_cmds =
-              res_all.res_client.allowed_job_cmds;
+          p->plugin_names = res_client.plugin_names;
+          p->pki_signing_key_files = res_client.pki_signing_key_files;
+          p->pki_master_key_files = res_client.pki_master_key_files;
+          p->pki_signers = res_client.pki_signers;
+          p->pki_recipients = res_client.pki_recipients;
+          p->messages = res_client.messages;
+          p->tls_cert_.allowed_certificate_common_names_ =
+              res_client.tls_cert_.allowed_certificate_common_names_;
+          p->allowed_script_dirs = res_client.allowed_script_dirs;
+          p->allowed_job_cmds = res_client.allowed_job_cmds;
         }
         break;
+      }
       default:
         Emsg1(M_ERROR, 0, _("Unknown resource type %d\n"), type);
         error = 1;
         break;
     }
-    /*
-     * Note, the resoure name was already saved during pass 1,
-     * so here, we can just release it.
-     */
-    if (res_all.res_dir.resource_name_) {
-      free(res_all.res_dir.resource_name_);
-      res_all.res_dir.resource_name_ = NULL;
-    }
-    if (res_all.res_dir.description_) {
-      free(res_all.res_dir.description_);
-      res_all.res_dir.description_ = NULL;
-    }
     return (error == 0);
   }
 
-  /*
-   * Common
-   */
   if (!error) {
-    res = (UnionOfResources*)malloc(resources[rindex].size);
-    memcpy(res, &res_all, resources[rindex].size);
-    if (!res_head[rindex]) {
-      res_head[rindex] = (BareosResource*)res; /* store first entry */
-    } else {
-      BareosResource *next, *last;
-      /*
-       * Add new res to end of chain
-       */
-      for (last = next = res_head[rindex]; next; next = next->next) {
-        last = next;
-        if (bstrcmp(next->name, res->res_dir.resource_name_)) {
-          Emsg2(M_ERROR_TERM, 0,
-                _("Attempt to define second %s resource named \"%s\" is not "
-                  "permitted.\n"),
-                resources[rindex].name, res->res_dir.resource_name_);
+    if (!error) {
+      BareosResource* new_resource;
+      switch (type) {
+        case R_DIRECTOR: {
+          DirectorResource* p = new DirectorResource();
+          *p = res_dir;
+          new_resource = p;
+          break;
         }
+        case R_CLIENT: {
+          ClientResource* p = new ClientResource();
+          *p = res_client;
+          new_resource = p;
+          break;
+        }
+        case R_MSGS: {
+          MessagesResource* p = new MessagesResource();
+          *p = res_msgs;
+          new_resource = p;
+          break;
+        }
+        default:
+          ASSERT(false);
+          break;
       }
-      last->next = (BareosResource*)res;
-      Dmsg2(90, "Inserting %s res: %s\n", my_config->ResToStr(type),
-            res->res_dir.resource_name_);
+
+      my_config->AppendToResourcesChain(new_resource, type);
     }
+    return (error == 0);
   }
-  return (error == 0);
 }
 } /* namespace filedaemon */
