@@ -58,18 +58,19 @@ export default {
 
 <style lang="scss">
   pre {
-    white-space: pre-wrap;       /* Since CSS 2.1 */
-    white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
-    word-wrap: break-word;       /* Internet Explorer 5.5+ */
+    // white-space: pre-wrap;       /* Since CSS 2.1 */
+    // white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+    // word-wrap: break-word;       /* Internet Explorer 5.5+ */
   }
 
   .console {
     display: flex;
     flex-direction: column;
-    max-height: 100vh;
-    height: 100vh;
+    max-height: calc(100vh - 120px);
+    // height: 100vh;
     margin: auto;
     overflow: no-content;
+    background-color: black;
   }
 
   .console-container {
@@ -77,7 +78,7 @@ export default {
     overflow-x: scroll;
     margin-left: 10px;
     margin-right: 10px;
-    // overflow: auto;
+    overflow: auto;
     scroll-behavior: smooth;
   }
 
