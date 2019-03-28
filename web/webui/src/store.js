@@ -37,11 +37,9 @@ export default new Vuex.Store({
       Vue.prototype.$socket = event.currentTarget
       state.socket.isConnected = true
       // Vue.prototype.$socket.send('.api 2')
-      console.log('SOCKET_ONOPEN')
     },
     SOCKET_ONCLOSE(state, event) {
       state.socket.isConnected = false
-      console.log('SOCKET_ONCLOSE')
     },
     SOCKET_ONERROR(state, event) {
       console.error(state, event)
@@ -51,12 +49,9 @@ export default new Vuex.Store({
     SOCKET_ONMESSAGE(state, message) {
       // state.socket.message.push(message.data)
       appendMessage(state, message.data, 'socket')
-      console.log('SOCKET_ONMESSAGE')
-      console.log(message)
     },
     // mutations for reconnect methods
     SOCKET_RECONNECT(state, count) {
-      console.info(state, count)
       console.log('SOCKET_ORECONNECT')
     },
     SOCKET_RECONNECT_ERROR(state) {
