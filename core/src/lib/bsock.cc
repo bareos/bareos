@@ -413,8 +413,8 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord* jcr,
 bool BareosSocket::DoTlsHandshakeAsAServer(ConfigurationParser* config,
                                            JobControlRecord* jcr)
 {
-  TlsResource* tls_resource = reinterpret_cast<TlsResource*>(
-      config->GetNextRes(config->r_own_, nullptr));
+  TlsResource* tls_resource =
+      dynamic_cast<TlsResource*>(config->GetNextRes(config->r_own_, nullptr));
   if (!tls_resource) {
     Dmsg1(100, "Could not get tls resource for %d.\n", config->r_own_);
     return false;
@@ -463,8 +463,8 @@ bool BareosSocket::ParameterizeAndInitTlsConnectionAsAServer(
 
   tls_conn_init->SetTcpFileDescriptor(fd_);
 
-  TlsResource* tls_resource = reinterpret_cast<TlsResource*>(
-      config->GetNextRes(config->r_own_, nullptr));
+  TlsResource* tls_resource =
+      dynamic_cast<TlsResource*>(config->GetNextRes(config->r_own_, nullptr));
   if (!tls_resource) {
     Dmsg1(100, "Could not get tls resource for %d.\n", config->r_own_);
     return false;

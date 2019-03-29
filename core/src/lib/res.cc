@@ -166,11 +166,13 @@ bool ConfigurationParser::GetTlsPskByFullyQualifiedResourceName(
       return true;
     }
   } else {
-    TlsResource* tls = reinterpret_cast<TlsResource*>(
+    TlsResource* tls = dynamic_cast<TlsResource*>(
         config->GetResWithName(r_type, name.c_str()));
     if (tls) {
       psk = tls->password_.value;
       return true;
+    } else {
+      Dmsg1(100, "Could not get tls resource for %d.\n", r_type);
     }
   }
   return false;

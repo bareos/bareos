@@ -59,7 +59,7 @@ ConfiguredTlsPolicyGetter::~ConfiguredTlsPolicyGetter() = default;
 
 TlsPolicy ConfiguredTlsPolicyGetterPrivate::GetTlsPolicyForRootConsole() const
 {
-  TlsResource* own_tls_resource = reinterpret_cast<TlsResource*>(
+  TlsResource* own_tls_resource = dynamic_cast<TlsResource*>(
       my_config_.GetNextRes(my_config_.r_own_, nullptr));
   if (!own_tls_resource) {
     Dmsg1(100, "Could not find own tls resource: %d\n", my_config_.r_own_);
@@ -96,7 +96,7 @@ TlsPolicy ConfiguredTlsPolicyGetterPrivate::GetTlsPolicyForResourceCodeAndName(
           r_code_str);
   if (r_code < 0) { return TlsPolicy::kBnetTlsUnknown; }
 
-  TlsResource* foreign_tls_resource = reinterpret_cast<TlsResource*>(
+  TlsResource* foreign_tls_resource = dynamic_cast<TlsResource*>(
       my_config_.GetResWithName(r_code, name.c_str()));
   if (!foreign_tls_resource) {
     Dmsg2(100, "Could not find foreign tls resource: %s-%s\n",

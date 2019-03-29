@@ -83,9 +83,9 @@ static PConfigParser ConsolePrepareResources(const std::string& path_to_config)
   EXPECT_TRUE(parse_console_config_ok) << "Could not parse console config";
   if (!parse_console_config_ok) { return nullptr; }
 
-  console::director_resource = reinterpret_cast<console::DirectorResource*>(
+  console::director_resource = dynamic_cast<console::DirectorResource*>(
       console_config->GetNextRes(console::R_DIRECTOR, NULL));
-  console::console_resource = reinterpret_cast<console::ConsoleResource*>(
+  console::console_resource = dynamic_cast<console::ConsoleResource*>(
       console_config->GetNextRes(console::R_CONSOLE, NULL));
 
   return console_config;

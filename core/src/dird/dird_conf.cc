@@ -2389,7 +2389,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       break;
     }
     case R_CONSOLE: {
-      ConsoleResource* p = reinterpret_cast<ConsoleResource*>(
+      ConsoleResource* p = dynamic_cast<ConsoleResource*>(
           my_config->GetResWithName(R_CONSOLE, res_con.resource_name_));
       if (!p) {
         Emsg1(M_ERROR, 0, _("Cannot find Console resource %s\n"),
@@ -2403,7 +2403,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       break;
     }
     case R_DIRECTOR: {
-      DirectorResource* p = reinterpret_cast<DirectorResource*>(
+      DirectorResource* p = dynamic_cast<DirectorResource*>(
           my_config->GetResWithName(R_DIRECTOR, res_dir.resource_name_));
       if (!p) {
         Emsg1(M_ERROR, 0, _("Cannot find Director resource %s\n"),
@@ -2419,7 +2419,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       break;
     }
     case R_STORAGE: {
-      StorageResource* p = reinterpret_cast<StorageResource*>(
+      StorageResource* p = dynamic_cast<StorageResource*>(
           my_config->GetResWithName(type, res_store.resource_name_));
       if (!p) {
         Emsg1(M_ERROR, 0, _("Cannot find Storage resource %s\n"),
@@ -2456,7 +2456,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
     }
     case R_JOBDEFS:
     case R_JOB: {
-      JobResource* p = reinterpret_cast<JobResource*>(
+      JobResource* p = dynamic_cast<JobResource*>(
           my_config->GetResWithName(type, res_job.resource_name_));
       if (!p) {
         Emsg1(M_ERROR, 0, _("Cannot find Job resource %s\n"),
@@ -2516,7 +2516,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       break;
     }
     case R_COUNTER: {
-      CounterResource* p = reinterpret_cast<CounterResource*>(
+      CounterResource* p = dynamic_cast<CounterResource*>(
           my_config->GetResWithName(type, res_counter.resource_name_));
       if (!p) {
         Emsg1(M_ERROR, 0, _("Cannot find Counter resource %s\n"),
@@ -2529,7 +2529,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       break;
     }
     case R_CLIENT: {
-      ClientResource* p = reinterpret_cast<ClientResource*>(
+      ClientResource* p = dynamic_cast<ClientResource*>(
           my_config->GetResWithName(type, res_client.resource_name_));
       if (!p) {
         Emsg1(M_ERROR, 0, _("Cannot find Client resource %s\n"),
@@ -2560,7 +2560,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
        * in by run_conf.c during pass 2, so here we jam the pointer
        * into the Schedule resource.
        */
-      ScheduleResource* p = reinterpret_cast<ScheduleResource*>(
+      ScheduleResource* p = dynamic_cast<ScheduleResource*>(
           my_config->GetResWithName(type, res_sch.resource_name_));
       if (!p) {
         Emsg1(M_ERROR, 0, _("Cannot find Schedule resource %s\n"),
@@ -3753,15 +3753,14 @@ static void PrintConfigCb(ResourceItem* items,
 static void ResetAllClientConnectionHandshakeModes(
     ConfigurationParser& my_config)
 {
-  BareosResource* header = nullptr;
-  header = my_config.GetNextRes(R_CLIENT, header);
-  while (header) {
-    ClientResource* client = reinterpret_cast<ClientResource*>(header);
+  BareosResource* p = my_config.GetNextRes(R_CLIENT, nullptr);
+  while (p) {
+    ClientResource* client = dynamic_cast<ClientResource*>(p);
     if (client) {
       client->connection_successful_handshake_ =
           ClientConnectionHandshakeMode::kUndefined;
     }
-    header = my_config.GetNextRes(R_CLIENT, header);
+    p = my_config.GetNextRes(R_CLIENT, p);
   };
 }
 
@@ -4028,7 +4027,7 @@ static void FreeResource(BareosResource* res, int type)
 
   switch (type) {
     case R_DIRECTOR: {
-      DirectorResource* p = reinterpret_cast<DirectorResource*>(res);
+      DirectorResource* p = dynamic_cast<DirectorResource*>(res);
       if (p->working_directory) { free(p->working_directory); }
       if (p->scripts_directory) { free(p->scripts_directory); }
       if (p->plugin_directory) { free(p->plugin_directory); }
@@ -4053,17 +4052,17 @@ static void FreeResource(BareosResource* res, int type)
       break;
     }
     case R_DEVICE: {
-      DeviceResource* p = reinterpret_cast<DeviceResource*>(res);
+      DeviceResource* p = dynamic_cast<DeviceResource*>(res);
       delete p;
       break;
     }
     case R_COUNTER: {
-      CounterResource* p = reinterpret_cast<CounterResource*>(res);
+      CounterResource* p = dynamic_cast<CounterResource*>(res);
       delete p;
       break;
     }
     case R_PROFILE: {
-      ProfileResource* p = reinterpret_cast<ProfileResource*>(res);
+      ProfileResource* p = dynamic_cast<ProfileResource*>(res);
       for (int i = 0; i < Num_ACL; i++) {
         if (p->ACL_lists[i]) {
           delete p->ACL_lists[i];
@@ -4074,7 +4073,7 @@ static void FreeResource(BareosResource* res, int type)
       break;
     }
     case R_CONSOLE: {
-      ConsoleResource* p = reinterpret_cast<ConsoleResource*>(res);
+      ConsoleResource* p = dynamic_cast<ConsoleResource*>(res);
       if (p->password_.value) { free(p->password_.value); }
       if (p->profiles) { delete p->profiles; }
       for (int i = 0; i < Num_ACL; i++) {
@@ -4091,7 +4090,7 @@ static void FreeResource(BareosResource* res, int type)
       break;
     }
     case R_CLIENT: {
-      ClientResource* p = reinterpret_cast<ClientResource*>(res);
+      ClientResource* p = dynamic_cast<ClientResource*>(res);
       if (p->address) { free(p->address); }
       if (p->lanaddress) { free(p->lanaddress); }
       if (p->username) { free(p->username); }
@@ -4105,7 +4104,7 @@ static void FreeResource(BareosResource* res, int type)
       break;
     }
     case R_STORAGE: {
-      StorageResource* p = reinterpret_cast<StorageResource*>(res);
+      StorageResource* p = dynamic_cast<StorageResource*>(res);
       if (p->address) { free(p->address); }
       if (p->lanaddress) { free(p->lanaddress); }
       if (p->username) { free(p->username); }
@@ -4138,7 +4137,7 @@ static void FreeResource(BareosResource* res, int type)
       break;
     }
     case R_CATALOG: {
-      CatalogResource* p = reinterpret_cast<CatalogResource*>(res);
+      CatalogResource* p = dynamic_cast<CatalogResource*>(res);
       if (p->db_address) { free(p->db_address); }
       if (p->db_socket) { free(p->db_socket); }
       if (p->db_user) { free(p->db_user); }
@@ -4149,7 +4148,7 @@ static void FreeResource(BareosResource* res, int type)
       break;
     }
     case R_FILESET: {
-      FilesetResource* p = reinterpret_cast<FilesetResource*>(res);
+      FilesetResource* p = dynamic_cast<FilesetResource*>(res);
       for (auto q : p->include_items) { FreeIncexe(q); }
       p->include_items.clear();
       for (auto q : p->exclude_items) { FreeIncexe(q); }
@@ -4158,7 +4157,7 @@ static void FreeResource(BareosResource* res, int type)
       break;
     }
     case R_POOL: {
-      PoolResource* p = reinterpret_cast<PoolResource*>(res);
+      PoolResource* p = dynamic_cast<PoolResource*>(res);
       if (p->pool_type) { free(p->pool_type); }
       if (p->label_format) { free(p->label_format); }
       if (p->cleaning_prefix) { free(p->cleaning_prefix); }
@@ -4167,7 +4166,7 @@ static void FreeResource(BareosResource* res, int type)
       break;
     }
     case R_SCHEDULE: {
-      ScheduleResource* p = reinterpret_cast<ScheduleResource*>(res);
+      ScheduleResource* p = dynamic_cast<ScheduleResource*>(res);
       if (p->run) {
         RunResource *nrun, *next;
         nrun = p->run;
@@ -4182,7 +4181,7 @@ static void FreeResource(BareosResource* res, int type)
     }
     case R_JOBDEFS:
     case R_JOB: {
-      JobResource* p = reinterpret_cast<JobResource*>(res);
+      JobResource* p = dynamic_cast<JobResource*>(res);
       if (p->backup_format) { free(p->backup_format); }
       if (p->RestoreWhere) { free(p->RestoreWhere); }
       if (p->RegexWhere) { free(p->RegexWhere); }
@@ -4208,7 +4207,7 @@ static void FreeResource(BareosResource* res, int type)
       break;
     }
     case R_MSGS: {
-      MessagesResource* p = reinterpret_cast<MessagesResource*>(res);
+      MessagesResource* p = dynamic_cast<MessagesResource*>(res);
       delete p;
       break;
     }

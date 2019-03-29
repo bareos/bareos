@@ -50,7 +50,8 @@ using ::testing::Return;
 using namespace storagedaemon;
 
 template <typename T, typename... Args>
-std::unique_ptr<T> sm_make_unique(Args&&... args) {
+std::unique_ptr<T> sm_make_unique(Args&&... args)
+{
   return std::unique_ptr<T>(new ("unique_ptr", 123)
                                 T(std::forward<Args>(args)...));
 }
@@ -58,14 +59,15 @@ std::unique_ptr<T> sm_make_unique(Args&&... args) {
 namespace storagedaemon {
 /* import this to parse the config */
 extern bool ParseSdConfig(const char* configfile, int exit_code);
-}
+}  // namespace storagedaemon
 
 class ReservationTest : public ::testing::Test {
   void SetUp() override;
   void TearDown() override;
 };
 
-void ReservationTest::SetUp() {
+void ReservationTest::SetUp()
+{
   InitMsg(NULL, NULL);
   OSDependentInit();
 
@@ -81,12 +83,13 @@ void ReservationTest::SetUp() {
   InitReservationsLock();
   CreateVolumeLists();
 }
-void ReservationTest::TearDown() {
+void ReservationTest::TearDown()
+{
   FreeVolumeLists();
 
   {
     DeviceResource* device;
-    foreach_res(device, R_DEVICE) {
+    foreach_res (device, R_DEVICE) {
       Dmsg1(10, "Term device %s\n", device->device_name);
       if (device->dev) {
         device->dev->ClearVolhdr();
@@ -99,12 +102,8 @@ void ReservationTest::TearDown() {
   DevFlushBackends();
 #endif
 
-  if (configfile) {
-    free(configfile);
-  }
-  if (my_config) {
-    delete my_config;
-  }
+  if (configfile) { free(configfile); }
+  if (my_config) { delete my_config; }
 
   TermMsg();
   TermReservationsLock();
@@ -122,13 +121,15 @@ struct TestJob {
   JobControlRecord* jcr;
 
   TestJob() = delete;
-  TestJob(uint32_t jobid) {
+  TestJob(uint32_t jobid)
+  {
     jcr = new_jcr(sizeof(JobControlRecord), storagedaemon::StoredFreeJcr);
     jcr->JobId = jobid;
     jcr->sd_auth_key = bstrdup("no key set");
   }
 
-  ~TestJob() {
+  ~TestJob()
+  {
     // set jobid = 0 before Free, so we don't try to
     // write a status file
     jcr->JobId = 0;
@@ -143,7 +144,8 @@ struct TestJob {
 };
 
 void WaitThenUnreserve(std::unique_ptr<TestJob>&);
-void WaitThenUnreserve(std::unique_ptr<TestJob>& job) {
+void WaitThenUnreserve(std::unique_ptr<TestJob>& job)
+{
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
   job->jcr->dcr->UnreserveDevice();
   ReleaseDeviceCond();
@@ -152,7 +154,8 @@ void WaitThenUnreserve(std::unique_ptr<TestJob>& job) {
 /*
  * Test that an illegal command passed to use_cmd will fail gracefully
  */
-TEST_F(ReservationTest, use_cmd_illegal) {
+TEST_F(ReservationTest, use_cmd_illegal)
+{
   auto bsock = sm_make_unique<BareosSocketMock>();
   auto job = std::make_unique<TestJob>(111u);
 
@@ -171,7 +174,8 @@ TEST_F(ReservationTest, use_cmd_illegal) {
  * Test that an illegal device command passed to use_cmd after the use storage
  * command will also fail gracefully
  */
-TEST_F(ReservationTest, use_cmd_illegal_dev) {
+TEST_F(ReservationTest, use_cmd_illegal_dev)
+{
   auto bsock = sm_make_unique<BareosSocketMock>();
   auto job = std::make_unique<TestJob>(111u);
   job->jcr->dir_bsock = bsock.get();
@@ -191,7 +195,8 @@ TEST_F(ReservationTest, use_cmd_illegal_dev) {
 /*
  * Test reserving a device for read works correctly
  */
-TEST_F(ReservationTest, use_cmd_reserve_read_twice_success) {
+TEST_F(ReservationTest, use_cmd_reserve_read_twice_success)
+{
   auto bsock = sm_make_unique<BareosSocketMock>();
   auto job1 = std::make_unique<TestJob>(111u);
   auto job2 = std::make_unique<TestJob>(222u);
@@ -225,7 +230,8 @@ TEST_F(ReservationTest, use_cmd_reserve_read_twice_success) {
 /*
  * Test reserving broken device
  */
-TEST_F(ReservationTest, use_cmd_reserve_broken) {
+TEST_F(ReservationTest, use_cmd_reserve_broken)
+{
   auto bsock = sm_make_unique<BareosSocketMock>();
   auto job1 = std::make_unique<TestJob>(111u);
   job1->jcr->dir_bsock = bsock.get();
@@ -250,7 +256,8 @@ TEST_F(ReservationTest, use_cmd_reserve_broken) {
 /*
  * Test reserving device with wrong mediatype
  */
-TEST_F(ReservationTest, use_cmd_reserve_wrong_mediatype) {
+TEST_F(ReservationTest, use_cmd_reserve_wrong_mediatype)
+{
   auto bsock = sm_make_unique<BareosSocketMock>();
   auto job1 = std::make_unique<TestJob>(111u);
   job1->jcr->dir_bsock = bsock.get();
@@ -275,7 +282,8 @@ TEST_F(ReservationTest, use_cmd_reserve_wrong_mediatype) {
 /*
  * Test reserving a reserved device and wait for it to become free
  */
-TEST_F(ReservationTest, use_cmd_reserve_read_twice_wait) {
+TEST_F(ReservationTest, use_cmd_reserve_read_twice_wait)
+{
   auto bsock = sm_make_unique<BareosSocketMock>();
   auto job1 = std::make_unique<TestJob>(111u);
   auto job2 = std::make_unique<TestJob>(222u);

@@ -33,6 +33,7 @@
 #include "include/bareos.h"
 #include "console/console.h"
 #include "console/console_conf.h"
+#include "console/console_globals.h"
 #include "stored/stored_conf.h"
 #include "dird/dird_conf.h"
 #include "dird/dird_globals.h"

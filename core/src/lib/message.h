@@ -177,10 +177,11 @@ enum
  */
 class MessageQeueItem {
  public:
-  MessageQeueItem() : type_(0), mtime_{0} {}
+  MessageQeueItem() = default;
+  virtual ~MessageQeueItem() = default;
   dlink link_;
-  int type_;
-  utime_t mtime_;
+  int type_ = 0;
+  utime_t mtime_ = {0};
   std::string msg_;
 };
 

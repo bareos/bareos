@@ -43,8 +43,16 @@ class BareosSocketMock : public BareosSocket {
   ~BareosSocketMock();
 
   MOCK_METHOD0(clone, BareosSocket*());
-  MOCK_METHOD9(connect, bool(JobControlRecord*, int, utime_t, utime_t,
-                             const char*, const char*, char*, int, bool));
+  MOCK_METHOD9(connect,
+               bool(JobControlRecord*,
+                    int,
+                    utime_t,
+                    utime_t,
+                    const char*,
+                    const char*,
+                    char*,
+                    int,
+                    bool));
   MOCK_METHOD0(recv, int32_t());
   MOCK_METHOD0(send, bool());
   MOCK_METHOD2(read_nbytes, int32_t(char*, int32_t));
@@ -59,20 +67,33 @@ class BareosSocketMock : public BareosSocket {
   MOCK_METHOD0(ConnectionReceivedTerminateSignal, bool());
   MOCK_METHOD2(WaitData, int(int, int));
   MOCK_METHOD2(WaitDataIntr, int(int, int));
-  MOCK_METHOD6(FinInit, void(JobControlRecord*, int, const char*, const char*,
-                             int, struct sockaddr*));
-  MOCK_METHOD7(open, bool(JobControlRecord*, const char*, const char*, char*,
-                          int, utime_t, int*));
+  MOCK_METHOD6(FinInit,
+               void(JobControlRecord*,
+                    int,
+                    const char*,
+                    const char*,
+                    int,
+                    struct sockaddr*));
+  MOCK_METHOD7(open,
+               bool(JobControlRecord*,
+                    const char*,
+                    const char*,
+                    char*,
+                    int,
+                    utime_t,
+                    int*));
 };
 
 /* define a gmock action that fills bsock->msg so we can recv() a message */
-ACTION_P2(BareosSocket_Recv, bsock, msg) {
+ACTION_P2(BareosSocket_Recv, bsock, msg)
+{
   Bsnprintf(bsock->msg, int32_t(strlen(msg) + 1), msg);
 }
 #define BSOCK_RECV(bsock, msg) \
   DoAll(BareosSocket_Recv(bsock, msg), Return(strlen(msg)))
 
-BareosSocketMock::~BareosSocketMock() {
+BareosSocketMock::~BareosSocketMock()
+{
   if (msg) { /* duplicated */
     FreePoolMemory(msg);
     msg = nullptr;

@@ -222,14 +222,18 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
   if (!error) {
     BareosResource* new_resource = nullptr;
     switch (resources[rindex].rcode) {
-      case R_DIRECTOR:
-        new_resource = new DirectorResource;
-        *new_resource = res_dir;
+      case R_DIRECTOR: {
+        DirectorResource* p = new DirectorResource;
+        *p = res_dir;
+        new_resource = p;
         break;
-      case R_CONSOLE:
-        new_resource = new ConsoleResource;
-        *new_resource = res_cons;
+      }
+      case R_CONSOLE: {
+        ConsoleResource* p = new ConsoleResource;
+        *p = res_cons;
+        new_resource = p;
         break;
+      }
       default:
         Emsg1(M_ERROR_TERM, 0, "Unknown resource type: %d\n",
               resources[rindex].rcode);

@@ -38,8 +38,8 @@ static DeviceResource* GetMultipliedDeviceResource(
   const char* name = "MultipliedDeviceResource0001";
 
   BareosResource* p = my_config.GetResWithName(R_DEVICE, name, false);
-  DeviceResource* device = reinterpret_cast<DeviceResource*>(p);
-  if (device->count) { return device; }
+  DeviceResource* device = dynamic_cast<DeviceResource*>(p);
+  if (device && device->count) { return device; }
 
   return nullptr;
 }
@@ -65,8 +65,8 @@ static uint32_t CountAllDeviceResources(ConfigurationParser& my_config)
   uint32_t count = 0;
   BareosResource* p = nullptr;
   while ((p = my_config.GetNextRes(R_DEVICE, p))) {
-    DeviceResource* device = reinterpret_cast<DeviceResource*>(p);
-    if (device->multiplied_device_resource) { count++; }
+    DeviceResource* device = dynamic_cast<DeviceResource*>(p);
+    if (device && device->multiplied_device_resource) { count++; }
   }
   return count;
 }
@@ -92,7 +92,7 @@ DeviceResource* GetDeviceResourceByName(ConfigurationParser& my_config,
                                         const char* name)
 {
   BareosResource* p = my_config.GetResWithName(R_DEVICE, name, false);
-  return reinterpret_cast<DeviceResource*>(p);
+  return dynamic_cast<DeviceResource*>(p);
 }
 
 static uint32_t CheckNamesOfConfiguredDeviceResources_1(
@@ -108,7 +108,7 @@ static uint32_t CheckNamesOfConfiguredDeviceResources_1(
   /* find all matching multiplied-devices, this includes the source device */
   BareosResource* p = nullptr;
   while ((p = my_config.GetNextRes(R_DEVICE, p))) {
-    DeviceResource* device = reinterpret_cast<DeviceResource*>(p);
+    DeviceResource* device = dynamic_cast<DeviceResource*>(p);
     if (device->multiplied_device_resource == source_device) {
       const char* name = nullptr;
       ++count_devices;
@@ -161,7 +161,7 @@ static uint32_t CheckNamesOfConfiguredDeviceResources_2(
 
   BareosResource* p = nullptr;
   while ((p = my_config.GetNextRes(R_DEVICE, p))) {
-    DeviceResource* device = reinterpret_cast<DeviceResource*>(p);
+    DeviceResource* device = dynamic_cast<DeviceResource*>(p);
     if (device->multiplied_device_resource == source_device) {
       const char* name = nullptr;
       ++count_devices;
@@ -229,12 +229,14 @@ static uint32_t CheckAutochangerInAllDevices(ConfigurationParser& my_config)
   BareosResource* p = nullptr;
 
   while ((p = my_config.GetNextRes(R_DEVICE, p))) {
-    DeviceResource* device = reinterpret_cast<DeviceResource*>(p);
-    if (device->multiplied_device_resource) {
+    DeviceResource* device = dynamic_cast<DeviceResource*>(p);
+    if (device && device->multiplied_device_resource) {
       if (device->changer_res && device->changer_res->resource_name_) {
         std::string changer_name(device->changer_res->resource_name_);
         if (names.find(device->resource_name_) != names.end()) {
-          if (names.at(device->resource_name_) == changer_name) { ++count_str_ok; }
+          if (names.at(device->resource_name_) == changer_name) {
+            ++count_str_ok;
+          }
         }
       }
     }
@@ -268,15 +270,17 @@ static uint32_t CheckSomeDevicesInAutochanger(ConfigurationParser& my_config)
                                  {"MultipliedDeviceResource0003"}};
 
   while ((p = my_config.GetNextRes(R_AUTOCHANGER, p))) {
-    AutochangerResource* autochanger =
-        reinterpret_cast<AutochangerResource*>(p);
-    std::string autochanger_name(autochanger->resource_name_);
-    std::string autochanger_name_test("virtual-multiplied-device-autochanger");
-    if (autochanger_name == autochanger_name_test) {
-      DeviceResource* device = nullptr;
-      foreach_alist (device, autochanger->device) {
-        std::string device_name(device->resource_name_);
-        if (names.find(device_name) != names.end()) { ++count_str_ok; }
+    AutochangerResource* autochanger = dynamic_cast<AutochangerResource*>(p);
+    if (autochanger) {
+      std::string autochanger_name(autochanger->resource_name_);
+      std::string autochanger_name_test(
+          "virtual-multiplied-device-autochanger");
+      if (autochanger_name == autochanger_name_test) {
+        DeviceResource* device = nullptr;
+        foreach_alist (device, autochanger->device) {
+          std::string device_name(device->resource_name_);
+          if (names.find(device_name) != names.end()) { ++count_str_ok; }
+        }
       }
     }
   }
@@ -314,7 +318,7 @@ TEST(sd, MultipliedDeviceTest_CheckPointerReferenceOfOriginalDevice)
   BareosResource* p;
   p = my_config->GetResWithName(R_DEVICE, "MultipliedDeviceResource0001");
   ASSERT_TRUE(p);
-  DeviceResource* original_device = reinterpret_cast<DeviceResource*>(p);
+  DeviceResource* original_device = dynamic_cast<DeviceResource*>(p);
   EXPECT_EQ(original_device, original_device->multiplied_device_resource);
 }
 
@@ -332,9 +336,9 @@ TEST(sd, MultipliedDeviceTest_CheckPointerReferenceOfCopiedDevice)
   BareosResource* p;
   p = my_config->GetResWithName(R_DEVICE, "MultipliedDeviceResource0001");
   ASSERT_TRUE(p);
-  DeviceResource* original_device = reinterpret_cast<DeviceResource*>(p);
+  DeviceResource* original_device = dynamic_cast<DeviceResource*>(p);
   p = my_config->GetResWithName(R_DEVICE, "MultipliedDeviceResource0002");
   ASSERT_TRUE(p);
-  DeviceResource* multiplied_device = reinterpret_cast<DeviceResource*>(p);
+  DeviceResource* multiplied_device = dynamic_cast<DeviceResource*>(p);
   EXPECT_EQ(original_device, multiplied_device->multiplied_device_resource);
 }

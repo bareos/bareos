@@ -1745,7 +1745,8 @@ void Qmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
     break;
   }
 
-  item = (MessageQeueItem*)malloc(sizeof(MessageQeueItem) + len + 1);
+  item = (MessageQeueItem*)malloc(sizeof(MessageQeueItem));
+  new (item) MessageQeueItem();
   item->type_ = type;
   item->mtime_ = time(NULL);
   item->msg_ = buf.c_str();
