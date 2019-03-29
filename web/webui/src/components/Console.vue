@@ -5,7 +5,6 @@
            v-for="mes in message"
            v-bind:key="mes.count">
         <span v-if="mes.src == 'local'" class="console-local-prompt">&amp;&gt;</span>
-        <span v-if="mes.src == 'socket'" class="console-socket-prompt">&gt;</span>
         <pre>{{ mes.data }}</pre>
       </div>
       <div class="console-input">
