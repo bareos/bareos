@@ -137,7 +137,8 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
    * will be migrating from pool to pool->NextPool.
    */
   if (jcr->res.next_pool) {
-    jcr->jr.PoolId = GetOrCreatePoolRecord(jcr, jcr->res.next_pool->resource_name_);
+    jcr->jr.PoolId =
+        GetOrCreatePoolRecord(jcr, jcr->res.next_pool->resource_name_);
     if (jcr->jr.PoolId == 0) { return false; }
   }
 
@@ -148,8 +149,8 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
 
   jcr->res.pool = jcr->res.next_pool;
 
-  Dmsg2(dbglevel, "Write pool=%s read rpool=%s\n", jcr->res.pool->resource_name_,
-        jcr->res.rpool->resource_name_);
+  Dmsg2(dbglevel, "Write pool=%s read rpool=%s\n",
+        jcr->res.pool->resource_name_, jcr->res.rpool->resource_name_);
 
   // CreateClones(jcr);
 
@@ -183,9 +184,10 @@ bool DoNativeVbackup(JobControlRecord* jcr)
 
   Dmsg2(100, "read_storage_list=%p write_storage_list=%p\n",
         jcr->res.read_storage_list, jcr->res.write_storage_list);
-  Dmsg2(100, "Read store=%s, write store=%s\n",
-        ((StorageResource*)jcr->res.read_storage_list->first())->resource_name_,
-        ((StorageResource*)jcr->res.write_storage_list->first())->resource_name_);
+  Dmsg2(
+      100, "Read store=%s, write store=%s\n",
+      ((StorageResource*)jcr->res.read_storage_list->first())->resource_name_,
+      ((StorageResource*)jcr->res.write_storage_list->first())->resource_name_);
 
   /*
    * Print Job Start message
@@ -505,7 +507,6 @@ static bool CreateBootstrapFile(JobControlRecord* jcr, char* jobids)
   RestoreContext rx;
   UaContext* ua;
 
-  memset(&rx, 0, sizeof(rx));
   rx.bsr = new_bsr();
   ua = new_ua_context(jcr);
   rx.JobIds = jobids;

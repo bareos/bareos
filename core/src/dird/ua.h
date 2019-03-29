@@ -117,9 +117,9 @@ class UaContext {
    */
   bool IsResAllowed(BareosResource* res);
   BareosResource* GetResWithName(int rcode,
-                                       const char* name,
-                                       bool audit_event = false,
-                                       bool lock = true);
+                                 const char* name,
+                                 bool audit_event = false,
+                                 bool lock = true);
   PoolResource* GetPoolResWithName(const char* name,
                                    bool audit_event = true,
                                    bool lock = true);
@@ -166,58 +166,67 @@ class UaContext {
  * Context for InsertTreeHandler()
  */
 struct TreeContext {
-  TREE_ROOT* root;       /**< Root */
-  TREE_NODE* node;       /**< Current node */
-  TREE_NODE* avail_node; /**< Unused node last insert */
-  int cnt;               /**< Count for user feedback */
-  bool all;              /**< If set mark all as default */
-  UaContext* ua;
-  uint32_t FileEstimate; /**< Estimate of number of files */
-  uint32_t FileCount;    /**< Current count of files */
-  uint32_t LastCount;    /**< Last count of files */
-  uint32_t DeltaCount;   /**< Trigger for printing */
+  TREE_ROOT* root = nullptr;       /**< Root */
+  TREE_NODE* node = nullptr;       /**< Current node */
+  TREE_NODE* avail_node = nullptr; /**< Unused node last insert */
+  int cnt = 0;                     /**< Count for user feedback */
+  bool all = false;                /**< If set mark all as default */
+  UaContext* ua = nullptr;
+  uint32_t FileEstimate = 0; /**< Estimate of number of files */
+  uint32_t FileCount = 0;    /**< Current count of files */
+  uint32_t LastCount = 0;    /**< Last count of files */
+  uint32_t DeltaCount = 0;   /**< Trigger for printing */
+
+  TreeContext() = default;
+  ~TreeContext() = default;
 };
 
 struct NameList {
-  char** name; /**< List of names */
-  int num_ids; /**< Ids stored */
-  int max_ids; /**< Size of array */
-  int num_del; /**< Number deleted */
-  int tot_ids; /**< Total to process */
+  char** name = nullptr; /**< List of names */
+  int num_ids = 0;       /**< Ids stored */
+  int max_ids = 0;       /**< Size of array */
+  int num_del = 0;       /**< Number deleted */
+  int tot_ids = 0;       /**< Total to process */
+
+  NameList() = default;
+  ~NameList() = default;
 };
 
 /*
  * Context for restore job.
  */
 struct RestoreContext {
-  utime_t JobTDate;
-  uint32_t TotalFiles;
-  JobId_t JobId;
-  char* backup_format;
-  char* ClientName;        /**< Backup client */
-  char* RestoreClientName; /**< Restore client */
-  char last_jobid[20];
-  POOLMEM* JobIds;     /**< User entered string of JobIds */
-  POOLMEM* BaseJobIds; /**< Base jobids */
-  StorageResource* store;
-  JobResource* restore_job;
-  PoolResource* pool;
-  int restore_jobs;
-  uint32_t selected_files;
-  char* comment;
-  char* where;
-  char* RegexWhere;
-  char* replace;
-  char* plugin_options;
-  RestoreBootstrapRecord* bsr;
-  POOLMEM* fname; /**< Filename only */
-  POOLMEM* path;  /**< Path only */
-  POOLMEM* query;
-  int fnl; /**< Filename length */
-  int pnl; /**< Path length */
-  bool found;
-  bool all; /**< Mark all as default */
+  utime_t JobTDate = {0};
+  uint32_t TotalFiles = 0;
+  JobId_t JobId = 0;
+  char* backup_format = nullptr;
+  char* ClientName = nullptr;        /**< Backup client */
+  char* RestoreClientName = nullptr; /**< Restore client */
+  char last_jobid[20]{0};
+  POOLMEM* JobIds = nullptr;     /**< User entered string of JobIds */
+  POOLMEM* BaseJobIds = nullptr; /**< Base jobids */
+  StorageResource* store = nullptr;
+  JobResource* restore_job = nullptr;
+  PoolResource* pool = nullptr;
+  int restore_jobs = 0;
+  uint32_t selected_files = 0;
+  char* comment = nullptr;
+  char* where = nullptr;
+  char* RegexWhere = nullptr;
+  char* replace = nullptr;
+  char* plugin_options = nullptr;
+  RestoreBootstrapRecord* bsr = nullptr;
+  POOLMEM* fname = nullptr; /**< Filename only */
+  POOLMEM* path = nullptr;  /**< Path only */
+  POOLMEM* query = nullptr;
+  int fnl = 0; /**< Filename length */
+  int pnl = 0; /**< Path length */
+  bool found = false;
+  bool all = false; /**< Mark all as default */
   NameList name_list;
+
+  RestoreContext() = default;
+  ~RestoreContext() = default;
 };
 
 /*
@@ -225,54 +234,51 @@ struct RestoreContext {
  */
 class RunContext {
  public:
-  char* backup_format;
-  char* bootstrap;
-  char* catalog_name;
-  char* client_name;
-  char* comment;
-  char* fileset_name;
-  char* jid;
-  char* job_name;
-  char* level_name;
-  char* next_pool_name;
-  char* plugin_options;
-  char* pool_name;
-  char* previous_job_name;
-  char* regexwhere;
-  char* restore_client_name;
-  char* since;
-  char* StoreName;
-  char* verify_job_name;
-  char* when;
-  char* where;
-  const char* replace;
-  const char* verify_list;
-  JobResource* job;
-  JobResource* verify_job;
-  JobResource* previous_job;
-  UnifiedStorageResource* store;
-  ClientResource* client;
-  FilesetResource* fileset;
-  PoolResource* pool;
-  PoolResource* next_pool;
-  CatalogResource* catalog;
-  int Priority;
-  int files;
-  bool level_override;
-  bool pool_override;
-  bool spool_data;
-  bool accurate;
-  bool ignoreduplicatecheck;
-  bool cloned;
-  bool mod;
-  bool spool_data_set;
-  bool nextpool_set;
-  bool accurate_set;
-  bool ignoreduplicatecheck_set;
+  char* backup_format = nullptr;
+  char* bootstrap = nullptr;
+  char* catalog_name = nullptr;
+  char* client_name = nullptr;
+  char* comment = nullptr;
+  char* fileset_name = nullptr;
+  char* jid = nullptr;
+  char* job_name = nullptr;
+  char* level_name = nullptr;
+  char* next_pool_name = nullptr;
+  char* plugin_options = nullptr;
+  char* pool_name = nullptr;
+  char* previous_job_name = nullptr;
+  char* regexwhere = nullptr;
+  char* restore_client_name = nullptr;
+  char* since = nullptr;
+  char* StoreName = nullptr;
+  char* verify_job_name = nullptr;
+  char* when = nullptr;
+  char* where = nullptr;
+  const char* replace = nullptr;
+  const char* verify_list = nullptr;
+  JobResource* job = nullptr;
+  JobResource* verify_job = nullptr;
+  JobResource* previous_job = nullptr;
+  UnifiedStorageResource* store = nullptr;
+  ClientResource* client = nullptr;
+  FilesetResource* fileset = nullptr;
+  PoolResource* pool = nullptr;
+  PoolResource* next_pool = nullptr;
+  CatalogResource* catalog = nullptr;
+  int Priority = 0;
+  int files = 0;
+  bool level_override = false;
+  bool pool_override = false;
+  bool spool_data = false;
+  bool accurate = false;
+  bool ignoreduplicatecheck = false;
+  bool cloned = false;
+  bool mod = false;
+  bool spool_data_set = false;
+  bool nextpool_set = false;
+  bool accurate_set = false;
+  bool ignoreduplicatecheck_set = false;
 
-  /*
-   * Methods
-   */
   RunContext();
   ~RunContext();
 };

@@ -103,7 +103,6 @@ bool RestoreCmd(UaContext* ua, const char* cmd)
   char *strip_prefix, *add_prefix, *add_suffix, *regexp;
   strip_prefix = add_prefix = add_suffix = regexp = NULL;
 
-  memset(&rx, 0, sizeof(rx));
   rx.path = GetPoolMemory(PM_FNAME);
   rx.fname = GetPoolMemory(PM_FNAME);
   rx.JobIds = GetPoolMemory(PM_FNAME);
@@ -1100,8 +1099,6 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
   bool OK = true;
   char ed1[50];
 
-  memset(&tree, 0, sizeof(tree));
-
   /*
    * Build the directory tree containing JobIds user selected
    */
@@ -1558,7 +1555,9 @@ void FindStorageResource(UaContext* ua,
   LockRes(my_config);
   foreach_res (store, R_STORAGE) {
     if (bstrcmp(Storage, store->resource_name_)) {
-      if (ua->AclAccessOk(Storage_ACL, store->resource_name_)) { rx.store = store; }
+      if (ua->AclAccessOk(Storage_ACL, store->resource_name_)) {
+        rx.store = store;
+      }
       break;
     }
   }

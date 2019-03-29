@@ -103,11 +103,7 @@ void FreeUaContext(UaContext* ua)
   free(ua);
 }
 
-RunContext::RunContext()
-{
-  memset(this, 0, sizeof(RunContext));
-  store = new UnifiedStorageResource;
-}
+RunContext::RunContext() { store = new UnifiedStorageResource; }
 
 RunContext::~RunContext()
 {

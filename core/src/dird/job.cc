@@ -1283,11 +1283,13 @@ void ApplyPoolOverrides(JobControlRecord* jcr, bool force)
           if (jcr->res.run_full_pool_override) {
             PmStrcpy(jcr->res.pool_source, _("Run FullPool override"));
             Dmsg2(100, "Pool set to '%s' because of %s",
-                  jcr->res.full_pool->resource_name_, "Run FullPool override\n");
+                  jcr->res.full_pool->resource_name_,
+                  "Run FullPool override\n");
           } else {
             PmStrcpy(jcr->res.pool_source, _("Job FullPool override"));
             Dmsg2(100, "Pool set to '%s' because of %s",
-                  jcr->res.full_pool->resource_name_, "Job FullPool override\n");
+                  jcr->res.full_pool->resource_name_,
+                  "Job FullPool override\n");
           }
         }
         break;
@@ -1298,11 +1300,13 @@ void ApplyPoolOverrides(JobControlRecord* jcr, bool force)
           if (jcr->res.run_vfull_pool_override) {
             PmStrcpy(jcr->res.pool_source, _("Run VFullPool override"));
             Dmsg2(100, "Pool set to '%s' because of %s",
-                  jcr->res.vfull_pool->resource_name_, "Run VFullPool override\n");
+                  jcr->res.vfull_pool->resource_name_,
+                  "Run VFullPool override\n");
           } else {
             PmStrcpy(jcr->res.pool_source, _("Job VFullPool override"));
             Dmsg2(100, "Pool set to '%s' because of %s",
-                  jcr->res.vfull_pool->resource_name_, "Job VFullPool override\n");
+                  jcr->res.vfull_pool->resource_name_,
+                  "Job VFullPool override\n");
           }
         }
         break;
@@ -1328,11 +1332,13 @@ void ApplyPoolOverrides(JobControlRecord* jcr, bool force)
           if (jcr->res.run_diff_pool_override) {
             PmStrcpy(jcr->res.pool_source, _("Run DiffPool override"));
             Dmsg2(100, "Pool set to '%s' because of %s",
-                  jcr->res.diff_pool->resource_name_, "Run DiffPool override\n");
+                  jcr->res.diff_pool->resource_name_,
+                  "Run DiffPool override\n");
           } else {
             PmStrcpy(jcr->res.pool_source, _("Job DiffPool override"));
             Dmsg2(100, "Pool set to '%s' because of %s",
-                  jcr->res.diff_pool->resource_name_, "Job DiffPool override\n");
+                  jcr->res.diff_pool->resource_name_,
+                  "Job DiffPool override\n");
           }
         }
         break;
@@ -1842,7 +1848,6 @@ int CreateRestoreBootstrapFile(JobControlRecord* jcr)
   UaContext* ua;
   int files;
 
-  memset(&rx, 0, sizeof(rx));
   rx.bsr = new_bsr();
   rx.JobIds = (char*)"";
   rx.bsr->JobId = jcr->previous_jr.JobId;
