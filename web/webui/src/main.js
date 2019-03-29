@@ -3,16 +3,19 @@ import Vuetify from 'vuetify'
 import App from './App.vue'
 import router from './router'
 import store from './store'
-import VueNativeSock from 'vue-native-websocket'
 
 import 'vuetify/dist/vuetify.min.css' // Ensure are using css-loader
 import 'xterm/dist/xterm.css'
 
-Vue.use(Vuetify)
+import BSocket from './modules/bsocket'
 
-Vue.use(VueNativeSock, process.env.VUE_APP_SOCKET, {
+Vue.use(Vuetify)
+Vue.use(BSocket, {
+  socket: {
+    console: process.env.VUE_APP_SOCKET,
+    api2: process.env.VUE_APP_SOCKET,
+  },
   store: store,
-  connectManually: false,
 })
 
 Vue.config.productionTip = false

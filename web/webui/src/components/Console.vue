@@ -3,7 +3,7 @@
     <div class="console-container" id="console-container">
       <div class="console-row" v-bind:class="[mes.src]"
            v-for="mes in message"
-           v-bind:key="mes.count">
+           v-bind:key="mes.id">
         <span v-if="mes.src == 'local'" class="console-local-prompt">&amp;&gt;</span>
         <pre>{{ mes.data }}</pre>
       </div>
@@ -32,7 +32,7 @@ export default {
   computed: {
     message() {
       this.scrollToEnd()
-      return this.$store.state.socket.message
+      return this.$store.state.socket['console'].message
     },
   },
   methods: {
