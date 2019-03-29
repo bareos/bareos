@@ -38,13 +38,14 @@
  */
 class StatusPacket {
  public:
-  BareosSocket* bs; /* used on Unix machines */
-  void* context;    /* Win32 */
-  void (*callback)(const char* msg, int len, void* context); /* Win32 */
-  bool api; /* set if we want API output */
+  StatusPacket() = default;
 
-  /* Methods */
-  StatusPacket() { memset(this, 0, sizeof(StatusPacket)); }
-  ~StatusPacket() {}
+  virtual ~StatusPacket() = default;
+  BareosSocket* bs = nullptr; /* used on Unix machines */
+  void* context = nullptr;    /* Win32 */
+  void (*callback)(const char* msg,
+                   int len,
+                   void* context) = nullptr; /* Win32 */
+  bool api = false;                          /* set if we want API output */
 };
 #endif
