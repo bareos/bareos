@@ -38,10 +38,7 @@ MonitorItem::MonitorItem(QObject* parent)
 
 MonitorItem::~MonitorItem() { delete d; }
 
-char* MonitorItem::get_name() const
-{
-  return static_cast<UnionOfResources*>(d->resource)->resource_name_;
-}
+char* MonitorItem::get_name() const { return d->resource->resource_name_; }
 
 void MonitorItem::writecmd(const char* command)
 {
@@ -343,7 +340,10 @@ MonitorItem::StateEnum MonitorItem::state() const { return d->state; }
 int MonitorItem::connectTimeout() const { return d->connectTimeout; }
 
 void MonitorItem::setType(Rescode type) { d->type = type; }
-void MonitorItem::setResource(void* resource) { d->resource = resource; }
+void MonitorItem::setResource(BareosResource* resource)
+{
+  d->resource = resource;
+}
 void MonitorItem::setDSock(BareosSocket* DSock) { d->DSock = DSock; }
 void MonitorItem::setState(MonitorItem::StateEnum state) { d->state = state; }
 void MonitorItem::setConnectTimeout(int timeout)

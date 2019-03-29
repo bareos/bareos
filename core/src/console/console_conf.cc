@@ -62,8 +62,8 @@ static ResourceItem cons_items[] = {
   { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_cons,password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
   { "Director", CFG_TYPE_STR, ITEM(res_cons,director), 0, 0, NULL, NULL, NULL },
   { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_cons,heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
-  TLS_COMMON_CONFIG(res_dir),
-  TLS_CERT_CONFIG(res_dir),
+  TLS_COMMON_CONFIG(res_cons),
+  TLS_CERT_CONFIG(res_cons),
   {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 

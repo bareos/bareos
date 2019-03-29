@@ -51,11 +51,6 @@
 
 static const std::string default_config_filename("tray-monitor.conf");
 
-/*
- * Define the first and last resource ID record
- * types. Note, these should be unique for each
- * daemon though not a requirement.
- */
 static BareosResource* sres_head[R_LAST - R_FIRST + 1];
 static BareosResource** res_head = sres_head;
 
@@ -73,8 +68,11 @@ static void DumpResource(int type,
  * then move it to allocated memory when the resource
  * scan is complete.
  */
-UnionOfResources res_all;
-int32_t res_all_size = sizeof(res_all);
+static MonitorResource res_monitor;
+static DirectorResource res_dir;
+static ClientResource res_client;
+static StorageResource res_store;
+static ConsoleFontResource res_font;
 
 /* clang-format off */
 
@@ -84,13 +82,13 @@ int32_t res_all_size = sizeof(res_all);
  * name handler value code flags default_value
  */
 static ResourceItem mon_items[] = {
-  {"Name", CFG_TYPE_NAME, ITEM(res_monitor.resource_name_), 0, CFG_ITEM_REQUIRED, 0, NULL, NULL},
-  {"Description", CFG_TYPE_STR, ITEM(res_monitor.description_), 0, 0, 0, NULL, NULL},
-  {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_monitor.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"RefreshInterval", CFG_TYPE_TIME, ITEM(res_monitor.RefreshInterval), 0, CFG_ITEM_DEFAULT, "60", NULL, NULL},
-  {"FdConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor.FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "10", NULL, NULL},
-  {"SdConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor.SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "10", NULL, NULL},
-  {"DirConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor.DIRConnectTimeout), 0, CFG_ITEM_DEFAULT, "10", NULL, NULL},
+  {"Name", CFG_TYPE_NAME, ITEM(res_monitor,resource_name_), 0, CFG_ITEM_REQUIRED, 0, NULL, NULL},
+  {"Description", CFG_TYPE_STR, ITEM(res_monitor,description_), 0, 0, 0, NULL, NULL},
+  {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_monitor,password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"RefreshInterval", CFG_TYPE_TIME, ITEM(res_monitor,RefreshInterval), 0, CFG_ITEM_DEFAULT, "60", NULL, NULL},
+  {"FdConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor,FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "10", NULL, NULL},
+  {"SdConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor,SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "10", NULL, NULL},
+  {"DirConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor,DIRConnectTimeout), 0, CFG_ITEM_DEFAULT, "10", NULL, NULL},
     TLS_COMMON_CONFIG(res_monitor),
     TLS_CERT_CONFIG(res_monitor),
   {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}
@@ -102,10 +100,10 @@ static ResourceItem mon_items[] = {
  * name handler value code flags default_value
  */
 static ResourceItem dir_items[] = {
-  {"Name", CFG_TYPE_NAME, ITEM(res_dir.resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"Description", CFG_TYPE_STR, ITEM(res_dir.description_), 0, 0, NULL, NULL, NULL},
-  {"DirPort", CFG_TYPE_PINT32, ITEM(res_dir.DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL},
-  {"Address", CFG_TYPE_STR, ITEM(res_dir.address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"Name", CFG_TYPE_NAME, ITEM(res_dir,resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"Description", CFG_TYPE_STR, ITEM(res_dir,description_), 0, 0, NULL, NULL, NULL},
+  {"DirPort", CFG_TYPE_PINT32, ITEM(res_dir,DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL},
+  {"Address", CFG_TYPE_STR, ITEM(res_dir,address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
     TLS_COMMON_CONFIG(res_dir),
     TLS_CERT_CONFIG(res_dir),
   {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}
@@ -117,11 +115,11 @@ static ResourceItem dir_items[] = {
  * name handler value code flags default_value
  */
 static ResourceItem cli_items[] = {
-  {"Name", CFG_TYPE_NAME, ITEM(res_client.resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"Description", CFG_TYPE_STR, ITEM(res_client.description_), 0, 0, NULL, NULL, NULL},
-  {"Address", CFG_TYPE_STR, ITEM(res_client.address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"FdPort", CFG_TYPE_PINT32, ITEM(res_client.FDport), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT, NULL, NULL},
-  {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_client.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"Name", CFG_TYPE_NAME, ITEM(res_client,resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"Description", CFG_TYPE_STR, ITEM(res_client,description_), 0, 0, NULL, NULL, NULL},
+  {"Address", CFG_TYPE_STR, ITEM(res_client,address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"FdPort", CFG_TYPE_PINT32, ITEM(res_client,FDport), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT, NULL, NULL},
+  {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_client,password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
     TLS_COMMON_CONFIG(res_client),
     TLS_CERT_CONFIG(res_client),
   {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}
@@ -133,13 +131,13 @@ static ResourceItem cli_items[] = {
  * name handler value code flags default_value
  */
 static ResourceItem store_items[] = {
-  {"Name", CFG_TYPE_NAME, ITEM(res_store.resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"Description", CFG_TYPE_STR, ITEM(res_store.description_), 0, 0, NULL, NULL, NULL},
-  {"SdPort", CFG_TYPE_PINT32, ITEM(res_store.SDport), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT, NULL, NULL},
-  {"Address", CFG_TYPE_STR, ITEM(res_store.address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"SdAddress", CFG_TYPE_STR, ITEM(res_store.address), 0, 0, NULL, NULL, NULL},
-  {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_store.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"SdPassword", CFG_TYPE_MD5PASSWORD, ITEM(res_store.password), 0, 0, NULL, NULL, NULL},
+  {"Name", CFG_TYPE_NAME, ITEM(res_store,resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"Description", CFG_TYPE_STR, ITEM(res_store,description_), 0, 0, NULL, NULL, NULL},
+  {"SdPort", CFG_TYPE_PINT32, ITEM(res_store,SDport), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT, NULL, NULL},
+  {"Address", CFG_TYPE_STR, ITEM(res_store,address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"SdAddress", CFG_TYPE_STR, ITEM(res_store,address), 0, 0, NULL, NULL, NULL},
+  {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_store,password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"SdPassword", CFG_TYPE_MD5PASSWORD, ITEM(res_store,password), 0, 0, NULL, NULL, NULL},
     TLS_COMMON_CONFIG(res_store),
     TLS_CERT_CONFIG(res_store),
   {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}
@@ -151,9 +149,9 @@ static ResourceItem store_items[] = {
  * name handler value code flags default_value
  */
 static ResourceItem con_font_items[] = {
-  {"Name", CFG_TYPE_NAME, ITEM(con_font.resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"Description", CFG_TYPE_STR, ITEM(con_font.description_), 0, 0, NULL, NULL, NULL},
-  {"Font", CFG_TYPE_STR, ITEM(con_font.fontface), 0, 0, NULL, NULL, NULL},
+  {"Name", CFG_TYPE_NAME, ITEM(res_font,resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"Description", CFG_TYPE_STR, ITEM(res_font,description_), 0, 0, NULL, NULL, NULL},
+  {"Font", CFG_TYPE_STR, ITEM(res_font,fontface), 0, 0, NULL, NULL, NULL},
   {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}
 };
 
@@ -168,14 +166,15 @@ static ResourceItem con_font_items[] = {
  */
 static ResourceTable resources[] = {
   {"Monitor", mon_items, R_MONITOR, sizeof(MonitorResource),
-      [](void *res) { return new ((MonitorResource *)res) MonitorResource(); }},
+      []() { return new (&res_monitor) MonitorResource(); }, &res_monitor},
   {"Director", dir_items, R_DIRECTOR, sizeof(DirectorResource),
-      [](void *res) { return new ((DirectorResource *)res) DirectorResource(); }},
+      []() { return new (&res_dir) DirectorResource(); }, &res_dir},
   {"Client", cli_items, R_CLIENT, sizeof(ClientResource),
-      [](void *res) { return new ((ClientResource *)res) ClientResource(); }},
+      []() { return new (&res_client) ClientResource(); }, &res_client},
   {"Storage", store_items, R_STORAGE, sizeof(StorageResource),
-      [](void *res) { return new ((StorageResource *)res) StorageResource(); }},
-  {"ConsoleFont", con_font_items, R_CONSOLE_FONT, sizeof(ConsoleFontResource)},
+      []() { return new (&res_store) StorageResource(); }, &res_store},
+  {"ConsoleFont", con_font_items, R_CONSOLE_FONT, sizeof(ConsoleFontResource),
+      []() { return new (&res_font) ConsoleFontResource(); }, &res_font},
   {NULL, NULL, 0, 0}
 };
 
@@ -185,15 +184,13 @@ static ResourceTable resources[] = {
  * Dump contents of resource
  */
 static void DumpResource(int type,
-                         BareosResource* reshdr,
+                         BareosResource* res,
                          void sendit(void* sock, const char* fmt, ...),
                          void* sock,
                          bool hide_sensitive_data,
                          bool verbose)
 {
   PoolMem buf;
-  UnionOfResources* res = reinterpret_cast<UnionOfResources*>(reshdr);
-  BareosResource* resclass;
   bool recurse = true;
 
   if (res == NULL) {
@@ -207,15 +204,13 @@ static void DumpResource(int type,
   }
   switch (type) {
     default:
-      resclass = (BareosResource*)reshdr;
-      resclass->PrintConfig(buf, *my_config);
+      res->PrintConfig(buf, *my_config);
       break;
   }
   sendit(sock, "%s", buf.c_str());
 
-  if (recurse && res->res_monitor.next_) {
-    my_config->DumpResourceCb_(type, res->res_monitor.next_, sendit, sock,
-                               hide_sensitive_data, verbose);
+  if (recurse && res->next_) {
+    DumpResource(type, res->next_, sendit, sock, hide_sensitive_data, verbose);
   }
 }
 
@@ -226,52 +221,46 @@ static void DumpResource(int type,
  * resource chain is traversed.  Mainly we worry about freeing
  * allocated strings (names).
  */
-static void FreeResource(BareosResource* sres, int type)
+static void FreeResource(BareosResource* res, int type)
 {
-  BareosResource* nres; /* next resource if linked */
-  UnionOfResources* res = reinterpret_cast<UnionOfResources*>(sres);
-
   if (res == NULL) return;
 
-  /*
-   * Common stuff -- free the resource name and description
-   */
-  nres = (BareosResource*)res->res_monitor.next_;
-  if (res->res_monitor.resource_name_) {
-    free(res->res_monitor.resource_name_);
-  }
-  if (res->res_monitor.description_) { free(res->res_monitor.description_); }
+  BareosResource* next_resource = (BareosResource*)res->next_;
+
+  if (res->resource_name_) { free(res->resource_name_); }
+  if (res->description_) { free(res->description_); }
 
   switch (type) {
     case R_MONITOR:
       break;
-    case R_DIRECTOR:
-      if (res->res_dir.address) { free(res->res_dir.address); }
+    case R_DIRECTOR: {
+      DirectorResource* p = dynamic_cast<DirectorResource*>(res);
+      if (p->address) { free(p->address); }
       break;
-    case R_CLIENT:
-      if (res->res_client.address) { free(res->res_client.address); }
-      if (res->res_client.password.value) {
-        free(res->res_client.password.value);
-      }
+    }
+    case R_CLIENT: {
+      ClientResource* p = dynamic_cast<ClientResource*>(res);
+      if (p->address) { free(p->address); }
+      if (p->password.value) { free(p->password.value); }
       break;
-    case R_STORAGE:
-      if (res->res_store.address) { free(res->res_store.address); }
-      if (res->res_store.password.value) {
-        free(res->res_store.password.value);
-      }
+    }
+    case R_STORAGE: {
+      StorageResource* p = dynamic_cast<StorageResource*>(res);
+      if (p->address) { free(p->address); }
+      if (p->password.value) { free(p->password.value); }
       break;
-    case R_CONSOLE_FONT:
-      if (res->con_font.fontface) { free(res->con_font.fontface); }
+    }
+    case R_CONSOLE_FONT: {
+      ConsoleFontResource* p = dynamic_cast<ConsoleFontResource*>(res);
+      if (p->fontface) { free(p->fontface); }
       break;
+    }
     default:
       printf(_("Unknown resource type %d in FreeResource.\n"), type);
+      break;
   }
 
-  /*
-   * Common stuff again -- free the resource, recurse to next one
-   */
-  if (res) { free(res); }
-  if (nres) { my_config->FreeResourceCb_(nres, type); }
+  if (next_resource) { FreeResource(next_resource, type); }
 }
 
 /*
@@ -282,7 +271,6 @@ static void FreeResource(BareosResource* sres, int type)
  */
 static bool SaveResource(int type, ResourceItem* items, int pass)
 {
-  UnionOfResources* res;
   int rindex = type - R_FIRST;
   int i;
   int error = 0;
@@ -292,7 +280,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
    */
   for (i = 0; items[i].name; i++) {
     if (items[i].flags & CFG_ITEM_REQUIRED) {
-      if (!BitIsSet(i, res_all.res_monitor.item_present_)) {
+      if (!BitIsSet(i, items[i].static_resource->item_present_)) {
         Emsg2(M_ERROR_TERM, 0,
               _("%s item is required in %s resource, but not found.\n"),
               items[i].name, resources[rindex].name);
@@ -313,14 +301,12 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
    */
   if (pass == 2) {
     switch (type) {
-      /*
-       * Resources not containing a resource
-       */
       case R_MONITOR:
       case R_CLIENT:
       case R_STORAGE:
       case R_DIRECTOR:
       case R_CONSOLE_FONT:
+        // Resources not containing a resource
         break;
       default:
         Emsg1(M_ERROR, 0, _("Unknown resource type %d in SaveResource.\n"),
@@ -328,50 +314,47 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         error = 1;
         break;
     }
-    /*
-     * Note, the resource name was already saved during pass 1,
-     * so here, we can just release it.
-     */
-    if (res_all.res_monitor.resource_name_) {
-      free(res_all.res_monitor.resource_name_);
-      res_all.res_monitor.resource_name_ = NULL;
-    }
-    if (res_all.res_monitor.description_) {
-      free(res_all.res_monitor.description_);
-      res_all.res_monitor.description_ = NULL;
-    }
     return (error == 0);
   }
 
-  /*
-   * Common
-   */
   if (!error) {
-    res = (UnionOfResources*)malloc(resources[rindex].size);
-    memcpy(res, &res_all, resources[rindex].size);
-    if (!res_head[rindex]) {
-      res_head[rindex] = (BareosResource*)res; /* store first entry */
-      Dmsg3(900, "Inserting first %s res: %s index=%d\n",
-            my_config->ResToStr(type), res->res_monitor.resource_name_, rindex);
-    } else {
-      BareosResource *next, *last;
-      /*
-       * Add new res to end of chain
-       */
-      for (last = next = res_head[rindex]; next; next = next->next) {
-        last = next;
-        if (strcmp(next->name, res->res_monitor.resource_name_) == 0) {
-          Emsg2(M_ERROR_TERM, 0,
-                _("Attempt to define second %s resource named \"%s\" is not "
-                  "permitted.\n"),
-                resources[rindex].name, res->res_monitor.resource_name_);
-        }
+    BareosResource* new_resource;
+    switch (type) {
+      case R_MONITOR: {
+        MonitorResource* p = new MonitorResource;
+        *p = res_monitor;
+        new_resource = p;
+        break;
       }
-      last->next = (BareosResource*)res;
-      Dmsg4(900, "Inserting %s res: %s index=%d pass=%d\n",
-            my_config->ResToStr(type), res->res_monitor.resource_name_, rindex,
-            pass);
+      case R_CLIENT: {
+        ClientResource* p = new ClientResource;
+        *p = res_client;
+        new_resource = p;
+        break;
+      }
+      case R_STORAGE: {
+        StorageResource* p = new StorageResource;
+        *p = res_store;
+        new_resource = p;
+        break;
+      }
+      case R_DIRECTOR: {
+        DirectorResource* p = new DirectorResource;
+        *p = res_dir;
+        new_resource = p;
+        break;
+      }
+      case R_CONSOLE_FONT: {
+        ConsoleFontResource* p = new ConsoleFontResource;
+        *p = res_font;
+        new_resource = p;
+        break;
+      }
+      default:
+        ASSERT(false);
+        break;
     }
+    my_config->AppendToResourcesChain(new_resource, type);
   }
   return (error == 0);
 }
@@ -389,9 +372,9 @@ ConfigurationParser* InitTmonConfig(const char* configfile, int exit_code)
 {
   ConfigurationParser* config = new ConfigurationParser(
       configfile, nullptr, nullptr, nullptr, nullptr, nullptr, exit_code,
-      (void*)&res_all, res_all_size, R_FIRST, R_LAST, resources, res_head,
-      default_config_filename.c_str(), "tray-monitor.d", ConfigReadyCallback,
-      SaveResource, DumpResource, FreeResource);
+      R_FIRST, R_LAST, resources, res_head, default_config_filename.c_str(),
+      "tray-monitor.d", ConfigReadyCallback, SaveResource, DumpResource,
+      FreeResource);
   if (config) { config->r_own_ = R_MONITOR; }
   return config;
 }

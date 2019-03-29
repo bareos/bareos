@@ -92,7 +92,7 @@ class MonitorItem : public QObject {
   int connectTimeout() const;
 
   void setType(Rescode type);
-  void setResource(void* resource);
+  void setResource(BareosResource* resource);
   void setDSock(BareosSocket* DSock);
   void setState(StateEnum state);
   void setConnectTimeout(int timeout);
@@ -122,8 +122,8 @@ class MonitorItemPrivate {
   {
   }
 
-  Rescode type;   /* R_DIRECTOR, R_CLIENT or R_STORAGE */
-  void* resource; /* DirectorResource*, ClientResource* or StorageResource* */
+  Rescode type; /* R_DIRECTOR, R_CLIENT or R_STORAGE */
+  BareosResource* resource;
   BareosSocket* DSock;
   int connectTimeout;
 

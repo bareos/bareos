@@ -71,9 +71,17 @@ class DirectorResource
     : public BareosResource
     , public TlsResource {
  public:
-  uint32_t DIRport; /* UA server port */
-  char* address;    /* UA server address */
-  bool enable_ssl;  /* Use SSL */
+  DirectorResource() = default;
+  virtual ~DirectorResource() = default;
+
+  void ShallowCopyTo(BareosResource* p) const override
+  {
+    DirectorResource* r = dynamic_cast<DirectorResource*>(p);
+    if (r) { *r = *this; }
+  };
+
+  uint32_t DIRport = 0;    /* UA server port */
+  char* address = nullptr; /* UA server address */
 };
 
 /*
@@ -83,13 +91,21 @@ class MonitorResource
     : public BareosResource
     , public TlsResource {
  public:
-  bool require_ssl;           /* Require SSL for all connections */
-  MessagesResource* messages; /* Daemon message handler */
-  s_password password;        /* UA server password */
-  utime_t RefreshInterval;    /* Status refresh interval */
-  utime_t FDConnectTimeout;   /* timeout for connect in seconds */
-  utime_t SDConnectTimeout;   /* timeout in seconds */
-  utime_t DIRConnectTimeout;  /* timeout in seconds */
+  MonitorResource() = default;
+  virtual ~MonitorResource() = default;
+
+  void ShallowCopyTo(BareosResource* p) const override
+  {
+    MonitorResource* r = dynamic_cast<MonitorResource*>(p);
+    if (r) { *r = *this; }
+  };
+
+  MessagesResource* messages = nullptr; /* Daemon message handler */
+  s_password password;                  /* UA server password */
+  utime_t RefreshInterval = {0};        /* Status refresh interval */
+  utime_t FDConnectTimeout = {0};       /* timeout for connect in seconds */
+  utime_t SDConnectTimeout = {0};       /* timeout in seconds */
+  utime_t DIRConnectTimeout = {0};      /* timeout in seconds */
 };
 
 /*
@@ -99,10 +115,18 @@ class ClientResource
     : public BareosResource
     , public TlsResource {
  public:
-  uint32_t FDport; /* Where File daemon listens */
-  char* address;
+  ClientResource() = default;
+  virtual ~ClientResource() = default;
+
+  void ShallowCopyTo(BareosResource* p) const override
+  {
+    ClientResource* r = dynamic_cast<ClientResource*>(p);
+    if (r) { *r = *this; }
+  };
+
+  uint32_t FDport = 0; /* Where File daemon listens */
+  char* address = nullptr;
   s_password password;
-  bool enable_ssl; /* Use SSL */
 };
 
 /*
@@ -112,37 +136,34 @@ class StorageResource
     : public BareosResource
     , public TlsResource {
  public:
-  uint32_t SDport; /* port where Directors connect */
-  char* address;
+  StorageResource() = default;
+  virtual ~StorageResource() = default;
+
+  void ShallowCopyTo(BareosResource* p) const override
+  {
+    StorageResource* r = dynamic_cast<StorageResource*>(p);
+    if (r) { *r = *this; }
+  };
+
+  uint32_t SDport = 0; /* port where Directors connect */
+  char* address = nullptr;
   s_password password;
-  bool enable_ssl; /* Use SSL */
 };
 
 class ConsoleFontResource
     : public BareosResource
     , public TlsResource {
  public:
-  char* fontface; /* Console Font specification */
-};
+  ConsoleFontResource() = default;
+  virtual ~ConsoleFontResource() = default;
 
-/* Define the Union of all the above
- * resource structure definitions.
- */
-union UnionOfResources {
-  MonitorResource res_monitor;
-  DirectorResource res_dir;
-  ClientResource res_client;
-  StorageResource res_store;
-  ConsoleFontResource con_font;
-  BareosResource hdr;
-
-  UnionOfResources()
+  void ShallowCopyTo(BareosResource* p) const override
   {
-    new (&hdr) BareosResource();
-    Dmsg1(900, "hdr:        %p \n", &hdr);
-    Dmsg1(900, "res_dir.hdr %p\n", &res_dir.hdr);
-  }
-  ~UnionOfResources() {}
+    ConsoleFontResource* r = dynamic_cast<ConsoleFontResource*>(p);
+    if (r) { *r = *this; }
+  };
+
+  char* fontface = nullptr; /* Console Font specification */
 };
 
 ConfigurationParser* InitTmonConfig(const char* configfile, int exit_code);
