@@ -33,6 +33,9 @@
 //#include "windows.h"
 
 struct FileSet {
+  FileSet() = default;
+  ~FileSet() = default;
+
   alist mylist;
 };
 
@@ -98,8 +101,7 @@ void TestForeachAlist(alist* list)
 void test_alist_init_destroy()
 {
   FileSet* fileset;
-  fileset = (FileSet*)malloc(sizeof(FileSet));
-  memset(fileset, 0, sizeof(FileSet));
+  fileset = new FileSet;
   fileset->mylist.init();
 
   AlistFill(&(fileset->mylist), 20);
@@ -107,7 +109,7 @@ void test_alist_init_destroy()
     EXPECT_EQ(i, atoi((char*)fileset->mylist[i]));
   }
   fileset->mylist.destroy();
-  free(fileset);
+  delete fileset;
 }
 
 
