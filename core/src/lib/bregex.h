@@ -79,8 +79,8 @@ extern "C" {
 #define regoff_t int
 
 typedef struct {
-  regoff_t rm_so;
-  regoff_t rm_eo;
+  regoff_t rm_so = 0;
+  regoff_t rm_eo = 0;
 } regmatch_t;
 
 
@@ -92,28 +92,28 @@ typedef struct {
 
 #define REG_NOMATCH -1
 
+/* clang-format off */
 struct regex_t {
-  unsigned char* buffer;  /* compiled pattern */
-  int allocated;          /* allocated size of compiled pattern */
-  int used;               /* actual length of compiled pattern */
-  unsigned char* fastmap; /* fastmap[ch] is true if ch can start pattern */
-  unsigned char*
-      translate; /* translation to apply during compilation/matching */
-  unsigned char fastmap_accurate; /* true if fastmap is valid */
-  unsigned char can_be_null;      /* true if can match empty string */
-  unsigned char
-      uses_registers;   /* registers are used and need to be initialized */
-  int num_registers;    /* number of registers used */
-  unsigned char anchor; /* anchor: 0=none 1=begline 2=begbuf */
-  char* errmsg;
-  int cflags;     /* compilation flags */
-  POOLMEM* lcase; /* used by REG_ICASE */
+  unsigned char* buffer = nullptr;  /* compiled pattern */
+  int allocated = 0;                /* allocated size of compiled pattern */
+  int used = 0;                     /* actual length of compiled pattern */
+  unsigned char* fastmap = nullptr; /* fastmap[ch] is true if ch can start pattern */
+  unsigned char* translate = nullptr; /* translation to apply during compilation/matching */
+  unsigned char fastmap_accurate = 0; /* true if fastmap is valid */
+  unsigned char can_be_null = 0;      /* true if can match empty string */
+  unsigned char uses_registers = 0;   /* registers are used and need to be initialized */
+  int num_registers = 0;    /* number of registers used */
+  unsigned char anchor = 0; /* anchor: 0=none 1=begline 2=begbuf */
+  char* errmsg = nullptr;
+  int cflags = 0;           /* compilation flags */
+  POOLMEM* lcase = nullptr; /* used by REG_ICASE */
 };
+/* clang-format on */
 
 
 typedef struct re_registers {
-  int start[RE_NREGS]; /* start offset of region */
-  int end[RE_NREGS];   /* end offset of region */
+  int start[RE_NREGS]{0}; /* start offset of region */
+  int end[RE_NREGS]{0};   /* end offset of region */
 } * regexp_registers_t;
 
 /* bit definitions for syntax */

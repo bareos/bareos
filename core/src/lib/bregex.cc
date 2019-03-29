@@ -1354,7 +1354,7 @@ too_complex:
 
 int regcomp(regex_t* bufp, const char* regex, int cflags)
 {
-  memset(bufp, 0, sizeof(regex_t));
+  new (bufp) regex_t();
   bufp->cflags = cflags;
   if (bufp->cflags & REG_ICASE) {
     char *p, *lcase = bstrdup(regex);

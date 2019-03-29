@@ -56,18 +56,21 @@
  */
 class BareosRegex {
  public:
-  POOLMEM* result; /**< match result */
-  bool success;    /**< match is ok */
+  BareosRegex() = default;
+  ~BareosRegex() = default;
+
+  POOLMEM* result = nullptr; /**< match result */
+  bool success = false;      /**< match is ok */
 
   char* replace(const char* fname); /**< return this.result */
   void debug();
 
   /* private */
-  POOLMEM* expr;               /**< search epression */
-  POOLMEM* subst;              /**< substitution */
+  POOLMEM* expr = nullptr;     /**< search epression */
+  POOLMEM* subst = nullptr;    /**< substitution */
   regex_t preg;                /**< regex_t result of regcomp() */
   regmatch_t regs[BREG_NREGS]; /**< contains match */
-  char* eor;                   /**< end of regexp in expr */
+  char* eor = nullptr;         /**< end of regexp in expr */
 
   char* ReturnFname(const char* fname, int len); /**< return fname as result */
   char* EditSubst(const char* fname, regmatch_t pmatch[]);

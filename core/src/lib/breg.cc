@@ -34,8 +34,7 @@
 BareosRegex* NewBregexp(const char* motif)
 {
   Dmsg0(500, "bregexp: creating new bregexp object\n");
-  BareosRegex* self = (BareosRegex*)bmalloc(sizeof(BareosRegex));
-  memset(self, 0, sizeof(BareosRegex));
+  BareosRegex* self = new BareosRegex;
 
   if (!self->ExtractRegexp(motif)) {
     Dmsg0(100, "bregexp: ExtractRegexp error\n");
@@ -58,7 +57,7 @@ void FreeBregexp(BareosRegex* self)
   if (self->expr) { bfree(self->expr); }
   if (self->result) { FreePoolMemory(self->result); }
   regfree(&self->preg);
-  bfree(self);
+  delete self;
 }
 
 /* Free a bregexps alist
