@@ -41,8 +41,7 @@ bool (*console_command)(JobControlRecord* jcr, const char* cmd) = NULL;
 RunScript* NewRunscript()
 {
   Dmsg0(500, "runscript: creating new RunScript object\n");
-  RunScript* cmd = (RunScript*)malloc(sizeof(RunScript));
-  memset(cmd, 0, sizeof(RunScript));
+  RunScript* cmd = new RunScript;
   cmd->ResetDefault();
 
   return cmd;
@@ -84,7 +83,7 @@ void FreeRunscript(RunScript* script)
 
   if (script->command) { FreePoolMemory(script->command); }
   if (script->target) { FreePoolMemory(script->target); }
-  free(script);
+  delete script;
 }
 
 static inline bool ScriptDirAllowed(JobControlRecord* jcr,
