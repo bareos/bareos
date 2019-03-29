@@ -1279,8 +1279,8 @@ static inline bool GetBootstrapFile(JobControlRecord* jcr, BareosSocket* sock)
   }
   P(bsr_mutex);
   bsr_uniq++;
-  Mmsg(fname, "%s/%s.%s.%d.bootstrap", me->working_directory, me->resource_name_,
-       jcr->Job, bsr_uniq);
+  Mmsg(fname, "%s/%s.%s.%d.bootstrap", me->working_directory,
+       me->resource_name_, jcr->Job, bsr_uniq);
   V(bsr_mutex);
   Dmsg1(400, "bootstrap=%s\n", fname);
   jcr->RestoreBootstrap = fname;
@@ -1734,7 +1734,7 @@ static bool PassiveCmd(JobControlRecord* jcr)
 
   jcr->passive_client = true;
 
-  fd = New(BareosSocketTCP);
+  fd = new BareosSocketTCP;
   if (me->nokeepalive) { fd->ClearKeepalive(); }
   fd->SetSourceAddress(me->SDsrc_addr);
 

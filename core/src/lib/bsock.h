@@ -56,7 +56,7 @@ class dlist;
 btimer_t* StartBsockTimer(BareosSocket* bs, uint32_t wait);
 void StopBsockTimer(btimer_t* wid);
 
-class BareosSocket : public SmartAlloc {
+class BareosSocket {
   /*
    * Note, keep this public part before the private otherwise
    *  bat breaks on some systems such as RedHat.

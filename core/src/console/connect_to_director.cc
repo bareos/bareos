@@ -35,7 +35,7 @@ BareosSocket* ConnectToDirector(JobControlRecord& jcr,
                                 BStringList& response_args,
                                 uint32_t& response_id)
 {
-  BareosSocketTCP* UA_sock = New(BareosSocketTCP);
+  BareosSocketTCP* UA_sock = new BareosSocketTCP;
   if (!UA_sock->connect(NULL, 5, 15, heart_beat, "Director daemon",
                         director_resource->address, NULL,
                         director_resource->DIRport, false)) {

@@ -1402,8 +1402,8 @@ static bool BootstrapCmd(JobControlRecord* jcr)
   FreeBootstrap(jcr);
   P(bsr_mutex);
   bsr_uniq++;
-  Mmsg(fname, "%s/%s.%s.%d.bootstrap", me->working_directory, me->resource_name_,
-       jcr->Job, bsr_uniq);
+  Mmsg(fname, "%s/%s.%s.%d.bootstrap", me->working_directory,
+       me->resource_name_, jcr->Job, bsr_uniq);
   V(bsr_mutex);
   Dmsg1(400, "bootstrap=%s\n", fname);
   jcr->RestoreBootstrap = fname;
@@ -1632,7 +1632,7 @@ static bool StorageCmd(JobControlRecord* jcr)
   char stored_addr[MAX_NAME_LENGTH];
   PoolMem sd_auth_key(PM_MESSAGE);
   BareosSocket* dir = jcr->dir_bsock;
-  BareosSocket* storage_daemon_socket = New(BareosSocketTCP);
+  BareosSocket* storage_daemon_socket = new BareosSocketTCP;
 
   if (me->nokeepalive) { storage_daemon_socket->ClearKeepalive(); }
   Dmsg1(100, "StorageCmd: %s", dir->msg);
@@ -2299,8 +2299,8 @@ static BareosSocket* connect_to_director(JobControlRecord* jcr,
   int max_retry_time = 0;
   utime_t heart_beat = me->heartbeat_interval;
   if (!director_socket->connect(jcr, retry_interval, max_retry_time, heart_beat,
-                                dir_res->resource_name_, dir_res->address, nullptr,
-                                dir_res->port, verbose)) {
+                                dir_res->resource_name_, dir_res->address,
+                                nullptr, dir_res->port, verbose)) {
     return nullptr;
   }
 

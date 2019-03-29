@@ -749,7 +749,7 @@ static bool SelectDirector(const char* director,
   }
 
   if (!director_resource_tmp) { /* prompt for director */
-    UA_sock = New(BareosSocketTCP);
+    UA_sock = new BareosSocketTCP;
   try_again:
     ConsoleOutput(_("Available Directors:\n"));
     LockRes(my_config);

@@ -49,13 +49,6 @@ using ::testing::DoAll;
 using ::testing::Return;
 using namespace storagedaemon;
 
-template <typename T, typename... Args>
-std::unique_ptr<T> sm_make_unique(Args&&... args)
-{
-  return std::unique_ptr<T>(new ("unique_ptr", 123)
-                                T(std::forward<Args>(args)...));
-}
-
 namespace storagedaemon {
 /* import this to parse the config */
 extern bool ParseSdConfig(const char* configfile, int exit_code);
@@ -156,7 +149,7 @@ void WaitThenUnreserve(std::unique_ptr<TestJob>& job)
  */
 TEST_F(ReservationTest, use_cmd_illegal)
 {
-  auto bsock = sm_make_unique<BareosSocketMock>();
+  auto bsock = std::make_unique<BareosSocketMock>();
   auto job = std::make_unique<TestJob>(111u);
 
   job->jcr->dir_bsock = bsock.get();
@@ -176,7 +169,7 @@ TEST_F(ReservationTest, use_cmd_illegal)
  */
 TEST_F(ReservationTest, use_cmd_illegal_dev)
 {
-  auto bsock = sm_make_unique<BareosSocketMock>();
+  auto bsock = std::make_unique<BareosSocketMock>();
   auto job = std::make_unique<TestJob>(111u);
   job->jcr->dir_bsock = bsock.get();
 
@@ -197,7 +190,7 @@ TEST_F(ReservationTest, use_cmd_illegal_dev)
  */
 TEST_F(ReservationTest, use_cmd_reserve_read_twice_success)
 {
-  auto bsock = sm_make_unique<BareosSocketMock>();
+  auto bsock = std::make_unique<BareosSocketMock>();
   auto job1 = std::make_unique<TestJob>(111u);
   auto job2 = std::make_unique<TestJob>(222u);
   job1->jcr->dir_bsock = job2->jcr->dir_bsock = bsock.get();
@@ -232,7 +225,7 @@ TEST_F(ReservationTest, use_cmd_reserve_read_twice_success)
  */
 TEST_F(ReservationTest, use_cmd_reserve_broken)
 {
-  auto bsock = sm_make_unique<BareosSocketMock>();
+  auto bsock = std::make_unique<BareosSocketMock>();
   auto job1 = std::make_unique<TestJob>(111u);
   job1->jcr->dir_bsock = bsock.get();
 
@@ -258,7 +251,7 @@ TEST_F(ReservationTest, use_cmd_reserve_broken)
  */
 TEST_F(ReservationTest, use_cmd_reserve_wrong_mediatype)
 {
-  auto bsock = sm_make_unique<BareosSocketMock>();
+  auto bsock = std::make_unique<BareosSocketMock>();
   auto job1 = std::make_unique<TestJob>(111u);
   job1->jcr->dir_bsock = bsock.get();
 
@@ -284,7 +277,7 @@ TEST_F(ReservationTest, use_cmd_reserve_wrong_mediatype)
  */
 TEST_F(ReservationTest, use_cmd_reserve_read_twice_wait)
 {
-  auto bsock = sm_make_unique<BareosSocketMock>();
+  auto bsock = std::make_unique<BareosSocketMock>();
   auto job1 = std::make_unique<TestJob>(111u);
   auto job2 = std::make_unique<TestJob>(222u);
   job1->jcr->dir_bsock = job2->jcr->dir_bsock = bsock.get();

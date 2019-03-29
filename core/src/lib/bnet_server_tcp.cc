@@ -394,7 +394,7 @@ void BnetThreadServerTcp(
         V(mutex);
 
         BareosSocket* bs;
-        bs = New(BareosSocketTCP);
+        bs = new BareosSocketTCP;
         if (nokeepalive) { bs->ClearKeepalive(); }
 
         bs->fd_ = newsockfd;

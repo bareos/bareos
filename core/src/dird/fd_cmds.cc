@@ -127,7 +127,7 @@ static bool connect_outbound_to_file_daemon(JobControlRecord* jcr,
     return false;
   }
 
-  fd = New(BareosSocketTCP);
+  fd = new BareosSocketTCP;
   if (me->nokeepalive) { fd->ClearKeepalive(); }
   heart_beat = get_heartbeat_interval(jcr->res.client);
 

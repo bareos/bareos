@@ -113,7 +113,7 @@ bool ConnectToStorageDaemon(JobControlRecord* jcr,
 
   Dmsg2(100, "bNetConnect to Storage daemon %s:%d\n", store->address,
         store->SDport);
-  std::unique_ptr<BareosSocket> sd(New(BareosSocketTCP));
+  std::unique_ptr<BareosSocket> sd(new BareosSocketTCP);
   if (!sd) { return false; }
   sd->SetSourceAddress(me->DIRsrc_addr);
   if (!sd->connect(jcr, retry_interval, max_retry_time, heart_beat,
@@ -713,8 +713,8 @@ void DoNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
   SetWstorage(ua->jcr, &lstore);
 
   if (!ua->api) {
-    ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d\n"), store->resource_name_,
-                store->address, store->SDport);
+    ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d\n"),
+                store->resource_name_, store->address, store->SDport);
   }
 
   /* the next call will set ua->jcr->store_bsock */

@@ -117,7 +117,7 @@ bool MonitorItem::doconnect()
                     .arg(dird->address)
                     .arg(dird->DIRport);
       emit showStatusbarMessage(message);
-      d->DSock = New(BareosSocketTCP);
+      d->DSock = new BareosSocketTCP;
       if (!d->DSock->connect(NULL, d->connectTimeout, 0, 0, "Director daemon",
                              dird->address, NULL, dird->DIRport, false)) {
         delete d->DSock;
@@ -133,7 +133,7 @@ bool MonitorItem::doconnect()
                     .arg(filed->address)
                     .arg(filed->FDport);
       emit showStatusbarMessage(message);
-      d->DSock = New(BareosSocketTCP);
+      d->DSock = new BareosSocketTCP;
       if (!d->DSock->connect(NULL, d->connectTimeout, 0, 0, "File daemon",
                              filed->address, NULL, filed->FDport, false)) {
         delete d->DSock;
@@ -149,7 +149,7 @@ bool MonitorItem::doconnect()
                     .arg(stored->address)
                     .arg(stored->SDport);
       emit showStatusbarMessage(message);
-      d->DSock = New(BareosSocketTCP);
+      d->DSock = new BareosSocketTCP;
       if (!d->DSock->connect(NULL, d->connectTimeout, 0, 0, "Storage daemon",
                              stored->address, NULL, stored->SDport, false)) {
         delete d->DSock;
