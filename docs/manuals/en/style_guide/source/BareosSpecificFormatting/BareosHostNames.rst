@@ -22,7 +22,7 @@ The output should look like this:
 :strong:`client1.example.com`
 
 
-.. csv-table:: NDMP Names
+.. csv-table:: Host Names
    :header: "Host name", "Description"
 
    ":strong:`bareos-dir.example.com`",     "Bareos Director host"

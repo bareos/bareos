@@ -25,13 +25,21 @@ sys.path.insert(0, os.path.abspath('./_extensions'))
 
 # -- General configuration ------------------------------------------------
 
+# Substitutions have been CamelCase in the past.
+# Now they are all lowercase.
+# CamelCase version can be removed,
+# when they are no longer required.
 rst_epilog = '''
 
 .. |bareosFd| replace:: Bareos File Daemon
+.. |fd| replace:: Bareos File Daemon
 .. |bareosSd| replace:: Bareos Storage Daemon
+.. |sd| replace:: Bareos Storage Daemon
 .. |bareosDir| replace:: Bareos Director
+.. |dir| replace:: Bareos Director
 .. |bconsole| replace:: Bareos Console
 .. |bareosTraymonitor| replace:: Bareos Traymonitor
+.. |traymonitor| replace:: Bareos Traymonitor
 .. |bareosWebui| replace:: Bareos Webui
 .. |webui| replace:: Bareos WebUI
 .. |mysql| replace:: MySQL/MariaDB
@@ -41,11 +49,17 @@ rst_epilog = '''
 .. |vsphere| replace:: VMware vSphere
 
 .. |DataManagementAgent| replace:: Data Management Agent
+.. |datamanagementagent| replace:: Data Management Agent
 .. |DataAgent| replace:: Data Agent
+.. |dataagent| replace:: Data Agent
 .. |TapeAgent| replace:: Tape Agent
+.. |tapeagent| replace:: Tape Agent
 .. |RobotAgent| replace:: Robot Agent
+.. |robotagent| replace:: Robot Agent
 .. |ndmpBareos| replace:: :ref:`section-NdmpBareos`
+.. |ndmpbareos| replace:: :ref:`section-NdmpBareos`
 .. |ndmpNative| replace:: :ref:`section-NdmpNative`
+.. |ndmpnative| replace:: :ref:`section-NdmpNative`
 
 '''
 

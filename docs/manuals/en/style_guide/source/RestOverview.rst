@@ -1,5 +1,5 @@
 reST Overview
-#############
+=============
 
 .. highlight:: none
 
@@ -295,11 +295,31 @@ The ``:ref:`` invocation is replaced with the section title.
 Alternatively, you can reference any label (not just section titles)
 if you provide the link text ``:ref:`link text <reference-label>```.
 
+Manual defined labels should use following naming rules:
+
+   * without spaces
+   * without columns (:)
+
 .. warning::
 
    If the label is not defined immediately before a section title and no link text is given,
    ``:ref:`` will fail and not create a link at all.
-   Instead it produces a warning and writes the parameter as plain text.
+   Instead it produces a warning (``WARNING: undefined label: mytestlabel (if the link has no caption the label must precede a section header)``)
+   and writes the parameter as plain text.
+
+It is possible, however uncommon,
+to define multiple labels before a section header::
+
+   .. _section-feature1:
+
+   .. _section-feature2:
+
+   Section about Feature 1 and Feature 2
+   -------------------------------------
+
+   This is the text of the section.
+
+
 
 In the Bareos documentation we use the Sphinx extension **sphinx.ext.autosectionlabel**
 with the parameter ``autosectionlabel_prefix_document = True``.
@@ -328,7 +348,9 @@ Section headers are created by underlining (and optionally overlining) the secti
    This is a heading
    #################
 
-Normally, there are no heading levels assigned to certain characters as the structure is determined from the succession of headings. However, this is our convention:
+Normally, there are no heading levels assigned to certain characters as the structure is determined from the succession of headings.
+
+Our convention is to use them in this order:
 
 * ``#`` with overline, for parts
 * ``=`` for chapters
@@ -359,8 +381,14 @@ Normally, there are no heading levels assigned to certain characters as the stru
    '''''''''
 
 
-This convention has be introduced from the conversion of thw original LaTex source to RST,
+This convention has be introduced from the conversion of the original LaTex source to reST,
 as :program:`pandoc` has created RST file with this section markers (except of parts, which are not created at all).
+
+The part section header is not used at all by us.
+
+All our regular documents starts with a section heading underlined by  ``=``.
+
+Therefore the specific names part, chapter, section ... might not match the actual context. Generally we speak about ''sections'' (or ''section headings'' or ''section markers'').
 
 .. note::
 
@@ -417,7 +445,7 @@ File/Directory/Path
 
 File and directories (or generally paths) are formated by ``:file:`` inline markup.
 
-Backslahes (Windows paths) ``\`` have to written as ``\\``:
+Backslashes (Windows paths) ``\`` have to written as ``\\``:
 
 .. \newcommand{\directory}[1]{\path|#1|}
 
@@ -490,11 +518,11 @@ Quote
 
 If you want to quote a certain text, the following formatting should be used::
 
-   ''Application Managed''
+   "Application Managed"
 
 The output should look like this:
 
-''Application Managed''
+"Application Managed"
 
 
 
@@ -536,14 +564,18 @@ pair
    ``pair: loop; statement`` is a shortcut that creates two index entries,
    namely ``loop; statement`` and ``statement; loop``.
 triple
-   Likewise, ``triple: module; search; path`` is a shortcut that creates three
-   index entries, which are ``module; search path``, ``search; path, module``
-   and ``path; module search``.
+   Likewise, ``triple: T1; T2; T3`` is a shortcut that creates three
+   index entries, which are ``T1; T2 T3``, ``T2; T3, T1`` and ``T3; T1 T2``.
+   Generally, this should be avoided.
 see
     ``see: entry; other`` creates an index entry that refers from ``entry`` to
     ``other``.
 seealso
     Like ``see``, but inserts "see also" instead of "see".
+
+    
+Sphinx indices, at least in HTML, are only structured in up to two level.
+More level will only be combined into the second level.
 
 You can mark up "main" index entries by prefixing them with an exclamation
 mark.  The references to "main" entries are emphasized in the generated

@@ -43,7 +43,7 @@ This will be displayed as:
 Note
 ----
 
-``:sinceVersion:`` is a legacy role. Sphinx itself offer
+``:sinceVersion:`` is a legacy role. Sphinx itself offers
 
   * https://www.sphinx-doc.org/en/master/usage/restructuredtext/directives.html#directive-versionadded
   * https://www.sphinx-doc.org/en/master/usage/restructuredtext/directives.html#directive-versionchanged

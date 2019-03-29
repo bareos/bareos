@@ -1,5 +1,5 @@
 Releases
-########
+========
 
 Release Notes - Stable Version
 ------------------------------
@@ -43,12 +43,12 @@ Output:
 This refers to :ref:`bareos-17.2.7`\ .
 
 
-Release Notes - Unstable Version
---------------------------------
+.. Release Notes - Unstable Version
+   --------------------------------
 
-TODO: required?
-
-If you want to display the release notes of a bareos unstable release, the following formatting should be used:
+   TODO: required?
+   
+  If you want to display the release notes of a bareos unstable release, the following formatting should be used:
 
 .. \newcommand{\releasenoteUnstable}[2]{
     \subsection*{\textit{bareos-#1 (unstable)}}
@@ -57,21 +57,13 @@ If you want to display the release notes of a bareos unstable release, the follo
     #2
    }
 
-* Heading: ``bareos-<release_version> (unstable)``
-* Mandatory information to be provided in release notes:
-   1. Code Release
-   2. Database Version
-   3. Release Ticket
-   4. Download URL
-   5. Beta Release
-
 
 
 URLs
-####
+----
 
 Release URL - Bareos.org
-------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you want to display the release download URL from the Bareos.org site, the following formatting should be used:
 
@@ -86,7 +78,7 @@ http://download.bareos.org/bareos/release/18.2/
 
 
 Release URL - Bareos.com
-------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you want to display the release download URL from the Bareos.com site, the following formatting should be used:
 
@@ -102,7 +94,7 @@ https://download.bareos.com/bareos/release/18.2/
 
 
 Contributions Download URL
---------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you want to display the download URL of plugins available on Bareos.org, the following formatting should be used:
 

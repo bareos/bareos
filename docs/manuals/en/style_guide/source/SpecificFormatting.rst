@@ -1,5 +1,5 @@
 Specific Formatting
-###################
+===================
 
 Configuration File
 ------------------
@@ -76,11 +76,11 @@ If only a single command should be shown, or you just want to refer to a system 
 
 ::
 
-   :program:`bareos-dbcheck`
+   :command:`bareos-dbcheck`
 
 The output will look like this:
 
-:program:`bareos-dbcheck`
+:command:`bareos-dbcheck`
 
 Windows
 -------
@@ -178,12 +178,13 @@ Especially it should be used for:
 * Software Package (e.g. package **bareos-common**, has been ``\package{<name>}`` in Latex. Did create indices in the past.)
 * System User (e.g. user **root**, has been ``\user{<name>}`` in Latex))
 * System Group (e.g. group **bareos**, has been ``\group{<name>}`` in Latex))
+* Variable Name (has been ``\variable{<name>}`` in Latex)
 * Volume Name (has been ``\volume{<name>}`` in Latex)
 * Volume Status (UPPPERCASE) (has been ``\volumestatus{<name>}`` in Latex)
    
 Unless a specific rule for this kind of item exists.
 
-Specific rule do exists for:
+Specific rules exist for:
 
 * Substitutions form :ref:`CommonNames:Common Names`.
 * :ref:`BareosSpecificFormatting/BareosHostNames:Bareos Host Names`.

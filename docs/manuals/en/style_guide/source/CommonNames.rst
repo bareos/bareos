@@ -1,5 +1,5 @@
 Common Names
-############
+============
 
 Specific strings are used again and again in the Bareos documentation.
 
@@ -8,28 +8,27 @@ Here we define how these name should be written (upper or lower case, in one wor
 Text subsitutions can be defined in :file:`conf.py` file.
 
 Bareos Names
-============
-
+------------
 
 +----------------------------------------+-------------------------------------------+
 |      **Text to be Displayed**          |           **Text Formatting**             |
 +----------------------------------------+-------------------------------------------+
 | Bareos 	                         | Bareos                                    |
 +----------------------------------------+-------------------------------------------+
-| |bareosDir| 	                         | ``|bareosDir|``                           |
+| |dir| 	                         | ``|dir|``                                 |
 +----------------------------------------+-------------------------------------------+
-| |bareosSd|		                 | ``|bareosSd|``                            |
+| |sd|	         	                 | ``|sd|``                                  |
 +----------------------------------------+-------------------------------------------+
-| |bareosFd|                             | ``|bareosSd|``       		     |
+| |fd|                                   | ``|fd|``       		             |
 +----------------------------------------+-------------------------------------------+
 | |bconsole|                             | ``|bconsole|``                            |
 +----------------------------------------+-------------------------------------------+
-| |bareosWebui|     			 | ``|bareosWebui|``                         |
+| |webui|         			 | ``|webui|``                               |
 +----------------------------------------+-------------------------------------------+
-| |bareosTraymonitor|                    | ``|bareosTraymonitor|``                   |
+| |traymonitor|                          | ``|traymonitor|``                         |
 +----------------------------------------+-------------------------------------------+
 
-The name **Bareos** should always be written as capital B (except in technical terms like URLs, releases (bareos-18.2.5) or host names).
+The name **Bareos** should always be written with capital B (except in technical terms like URLs, releases (bareos-18.2.5) or host names).
 
 
 Bareos Paths and Filenames
@@ -64,26 +63,26 @@ NDMP
 .. csv-table:: NDMP Names
    :header: "Text to be Displayed", "Text Formatting"
 
-   |DataManagementAgent|,     ``|DataManagementAgent|``
-   |DataAgent|,               ``|DataAgent|``
-   |TapeAgent|,               ``|TapeAgent|``
-   |RobotAgent|,              ``|RobotAgent|``
-   |ndmpBareos|,              ``|ndmpBareos|``
-   |ndmpNative|,              ``|ndmpNative|``
+   "Data Management Agent", "Data Management Agent"
+   "Data Agent",            "Data Agent"
+   "Tape Agent",            "Tape Agent"
+   "Robot Agent",           "Robot Agent"
+   |ndmpbareos|,            ``|ndmpbareos|``
+   |ndmpnative|,            ``|ndmpnative|``
 
 .. _section-NdmpBareos:
 
 NDMP_BAREOS
 ~~~~~~~~~~~
 
-This is only a fake section to demonstrate ``|ndmpBareos|``. Ignore it.
+This is only a fake section to demonstrate ``|ndmpbareos|``. Ignore it.
 
 .. _section-NdmpNative:
 
 NDMP_NATIVE
 ~~~~~~~~~~~
 
-This is only a fake section to demonstrate ``|ndmpNative|``. Ignore it.
+This is only a fake section to demonstrate ``|ndmpnative|``. Ignore it.
 
 
 Products
