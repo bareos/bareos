@@ -5,7 +5,6 @@ import router from './router'
 import store from './store'
 
 import 'vuetify/dist/vuetify.min.css' // Ensure are using css-loader
-import 'xterm/dist/xterm.css'
 
 import BSocket from './modules/bsocket'
 
