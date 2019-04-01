@@ -1517,6 +1517,7 @@ static void PrintConfigTime(ResourceItem* item,
 }
 
 bool MessagesResource::PrintConfig(PoolMem& buff,
+                                   const ConfigurationParser& /* unused */,
                                    bool hide_sensitive_data,
                                    bool verbose)
 {
@@ -1743,7 +1744,7 @@ bool BareosResource::PrintConfig(PoolMem& buff,
    */
   if (!my_config.resources_[rindex].items) { return true; }
 
-  ShallowCopyTo(my_config.resources_[rindex].static_initialization_resource_);
+  ShallowCopyTo(my_config.resources_[rindex].static_resource_);
 
   PmStrcat(cfg_str, my_config.ResToStr(rcode_));
   PmStrcat(cfg_str, " {\n");

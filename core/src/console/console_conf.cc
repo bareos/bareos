@@ -64,7 +64,7 @@ static ResourceItem cons_items[] = {
   { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_cons,heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
   TLS_COMMON_CONFIG(res_cons),
   TLS_CERT_CONFIG(res_cons),
-  {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 static ResourceItem dir_items[] = {
@@ -76,7 +76,7 @@ static ResourceItem dir_items[] = {
   { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_dir,heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
   TLS_COMMON_CONFIG(res_dir),
   TLS_CERT_CONFIG(res_dir),
-  {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 static ResourceTable resources[] = {

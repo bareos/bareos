@@ -229,19 +229,22 @@ DeviceResource& DeviceResource::operator=(const DeviceResource& rhs)
   return *this;
 }
 
-bool DeviceResource::PrintConfigToBuffer(PoolMem& buf)
+bool DeviceResource::PrintConfig(PoolMem& buf,
+                                 const ConfigurationParser& /* unused */,
+                                 bool hide_sensitive_data,
+                                 bool verbose)
 {
   if (multiplied_device_resource) {
     if (multiplied_device_resource == this) {
       MultipliedDeviceRestoreBaseName();
-      PrintConfig(buf, *my_config);
+      BareosResource::PrintConfig(buf, *my_config);
       MultipliedDeviceRestoreNumberedName();
     } else {
       /* do not print the multiplied devices */
       return false;
     }
   } else {
-    PrintConfig(buf, *my_config);
+    BareosResource::PrintConfig(buf, *my_config);
   }
   return true;
 }
@@ -249,7 +252,8 @@ bool DeviceResource::PrintConfigToBuffer(PoolMem& buf)
 void DeviceResource::MultipliedDeviceRestoreBaseName()
 {
   temporarily_swapped_numbered_name = resource_name_;
-  resource_name_ = const_cast<char*>(multiplied_device_resource_base_name.c_str());
+  resource_name_ =
+      const_cast<char*>(multiplied_device_resource_base_name.c_str());
 }
 
 void DeviceResource::MultipliedDeviceRestoreNumberedName()

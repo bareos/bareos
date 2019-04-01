@@ -77,7 +77,7 @@ class MonitorItem : public QObject {
 
   char* get_name() const;
   void writecmd(const char* command);
-  bool GetJobDefaults(struct JobDefaults& job_defs);
+  bool GetJobDefaults(JobDefaults& job_defs);
   bool doconnect();
   void disconnect();
   bool docmd(const char* command);

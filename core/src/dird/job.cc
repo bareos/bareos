@@ -1425,7 +1425,7 @@ bool GetOrCreateFilesetRecord(JobControlRecord* jcr)
       !jcr->db->GetFilesetRecord(jcr, &fsr)) {
     PoolMem FileSetText(PM_MESSAGE);
 
-    jcr->res.fileset->PrintConfig(FileSetText, false, false);
+    jcr->res.fileset->PrintConfig(FileSetText, *my_config, false, false);
     fsr.FileSetText = FileSetText.c_str();
 
     if (!jcr->db->CreateFilesetRecord(jcr, &fsr)) {

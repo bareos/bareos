@@ -55,8 +55,9 @@ class MessagesResource : public BareosResource {
   void lock();
   void unlock();
   bool PrintConfig(PoolMem& buff,
+                   const ConfigurationParser& /* unused */,
                    bool hide_sensitive_data = false,
-                   bool verbose = false);
+                   bool verbose = false) override;
 };
 
 #endif /* BAREOS_LIB_MESSAGES_RESOURCE_H_ */

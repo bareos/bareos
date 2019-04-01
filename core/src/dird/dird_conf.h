@@ -646,8 +646,9 @@ class FilesetResource : public BareosResource {
 
   /* Methods */
   bool PrintConfig(PoolMem& buf,
+                   const ConfigurationParser& /* unused */,
                    bool hide_sensitive_data = false,
-                   bool verbose = false);
+                   bool verbose = false) override;
 };
 
 /**

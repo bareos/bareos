@@ -122,7 +122,8 @@ static ResourceItem store_items[] = {
   {"LogTimestampFormat", CFG_TYPE_STR, ITEM(res_store,log_timestamp_format), 0, 0, NULL, "15.2.3-", NULL},
     TLS_COMMON_CONFIG(res_store),
     TLS_CERT_CONFIG(res_store),
-  {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}};
+  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
+};
 
 static ResourceItem dir_items[] = {
   {"Name", CFG_TYPE_NAME, ITEM(res_dir,resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
@@ -133,7 +134,8 @@ static ResourceItem dir_items[] = {
   {"KeyEncryptionKey", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir,keyencrkey), 1, 0, NULL, NULL, NULL},
     TLS_COMMON_CONFIG(res_dir),
     TLS_CERT_CONFIG(res_dir),
-  {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}};
+  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
+};
 
 static ResourceItem ndmp_items[] = {
   {"Name", CFG_TYPE_NAME, ITEM(res_ndmp,resource_name_), 0, CFG_ITEM_REQUIRED, 0, NULL, NULL},
@@ -142,7 +144,8 @@ static ResourceItem ndmp_items[] = {
   {"Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_ndmp,password), 0, CFG_ITEM_REQUIRED, 0, NULL, NULL},
   {"AuthType", CFG_TYPE_AUTHTYPE, ITEM(res_ndmp,AuthType), 0, CFG_ITEM_DEFAULT, "None", NULL, NULL},
   {"LogLevel", CFG_TYPE_PINT32, ITEM(res_ndmp,LogLevel), 0, CFG_ITEM_DEFAULT, "4", NULL, NULL},
-  {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}};
+  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
+};
 
 static ResourceItem dev_items[] = {
   {"Name", CFG_TYPE_NAME, ITEM(res_dev,resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, "Unique identifier of the resource."},
@@ -221,7 +224,8 @@ static ResourceItem dev_items[] = {
   {"Count", CFG_TYPE_PINT32, ITEM(res_dev,count), 0, CFG_ITEM_DEFAULT, "1", NULL, "If Count is set to (1 < Count < 10000), "
   "this resource will be multiplied Count times. The names of multiplied resources will have a serial number (0001, 0002, ...) attached. "
   "If set to 1 only this single resource will be used and its name will not be altered."},
-  {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}};
+  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
+};
 
 static ResourceItem autochanger_items[] = {
   {"Name", CFG_TYPE_NAME, ITEM(res_changer,resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
@@ -229,7 +233,8 @@ static ResourceItem autochanger_items[] = {
   {"Device", CFG_TYPE_ALIST_RES, ITEM(res_changer,device), R_DEVICE, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"ChangerDevice", CFG_TYPE_STRNAME, ITEM(res_changer,changer_name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"ChangerCommand", CFG_TYPE_STRNAME, ITEM(res_changer,changer_command), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}};
+  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
+};
 
 static ResourceTable resources[] = {
   {"Director", dir_items, R_DIRECTOR, sizeof(DirectorResource),
@@ -632,12 +637,12 @@ static bool DumpResource_(int type,
   switch (type) {
     case R_MSGS: {
       MessagesResource* resclass = dynamic_cast<MessagesResource*>(res);
-      resclass->PrintConfig(buf);
+      resclass->PrintConfig(buf, *my_config);
       break;
     }
     case R_DEVICE: {
       DeviceResource* dev = dynamic_cast<DeviceResource*>(res);
-      buffer_is_valid = dev->PrintConfigToBuffer(buf);
+      buffer_is_valid = dev->PrintConfig(buf, *my_config);
       break;
     }
     case R_AUTOCHANGER: {
@@ -766,7 +771,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
   }
 
   if (!error) {
-    BareosResource* new_resource;
+    BareosResource* new_resource = nullptr;
     switch (resources[rindex].rcode) {
       case R_DIRECTOR: {
         DirectorResource* p = new DirectorResource();
@@ -804,7 +809,6 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         new_resource = p;
         break;
       }
-
       default:
         ASSERT(false);
         break;
@@ -841,14 +845,14 @@ static void FreeResource(BareosResource* res, int type)
       }
       delete p;
       break;
-      }
+    }
     case R_NDMP: {
       NdmpResource* p = dynamic_cast<NdmpResource*>(res);
       if (p->username) { free(p->username); }
       if (p->password.value) { free(p->password.value); }
       delete p;
       break;
-      }
+    }
     case R_AUTOCHANGER: {
       AutochangerResource* p = dynamic_cast<AutochangerResource*>(res);
       if (p->changer_name) { free(p->changer_name); }
@@ -857,7 +861,7 @@ static void FreeResource(BareosResource* res, int type)
       RwlDestroy(&p->changer_lock);
       delete p;
       break;
-      }
+    }
     case R_STORAGE: {
       StorageResource* p = dynamic_cast<StorageResource*>(res);
       if (p->SDaddrs) { FreeAddresses(p->SDaddrs); }
@@ -879,7 +883,7 @@ static void FreeResource(BareosResource* res, int type)
       }
       delete p;
       break;
-      }
+    }
     case R_DEVICE: {
       DeviceResource* p = dynamic_cast<DeviceResource*>(res);
       if (p->media_type) { free(p->media_type); }
@@ -897,7 +901,7 @@ static void FreeResource(BareosResource* res, int type)
       if (p->free_space_command) { free(p->free_space_command); }
       delete p;
       break;
-      }
+    }
     case R_MSGS: {
       MessagesResource* p = dynamic_cast<MessagesResource*>(res);
       delete p;

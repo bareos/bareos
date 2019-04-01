@@ -153,7 +153,7 @@ static ResourceItem dir_items[] = {
   { "LogTimestampFormat", CFG_TYPE_STR, ITEM(res_dir,log_timestamp_format), 0, 0, NULL, "15.2.3-", NULL },
    TLS_COMMON_CONFIG(res_dir),
    TLS_CERT_CONFIG(res_dir),
-  {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 static ResourceItem profile_items[] = {
@@ -181,7 +181,7 @@ static ResourceItem profile_items[] = {
      "Specifies the base directories, where files could be restored. An empty string allows restores to all directories." },
   { "PluginOptionsACL", CFG_TYPE_ACL, ITEM(res_profile,ACL_lists), PluginOptions_ACL, 0, NULL, NULL,
      "Specifies the allowed plugin options. An empty strings allows all Plugin Options." },
-  {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 static ResourceItem con_items[] = {
@@ -206,7 +206,7 @@ static ResourceItem con_items[] = {
      "false", "18.2.4-", NULL },
    TLS_COMMON_CONFIG(res_con),
    TLS_CERT_CONFIG(res_con),
-  {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 static ResourceItem cli_items[] = {
@@ -251,7 +251,7 @@ static ResourceItem cli_items[] = {
   { "NdmpUseLmdb", CFG_TYPE_BOOL, ITEM(res_client,ndmp_use_lmdb), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
    TLS_COMMON_CONFIG(res_client),
    TLS_CERT_CONFIG(res_client),
-  {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 static ResourceItem store_items[] = {
@@ -291,7 +291,7 @@ static ResourceItem store_items[] = {
    //  "Allows direct control of Storage Daemon Tape devices by the Director. Only used in NDMP_NATIVE environments." },
    TLS_COMMON_CONFIG(res_store),
    TLS_CERT_CONFIG(res_store),
-  {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 static ResourceItem cat_items[] = {
@@ -329,7 +329,7 @@ static ResourceItem cat_items[] = {
      "This directive is used by the experimental database pooling functionality. Only use this for non production sites.  This sets the idle time after which a database pool should be shrinked." },
   { "ValidateTimeout", CFG_TYPE_PINT32, ITEM(res_cat,pooling_validate_timeout), 0, CFG_ITEM_DEFAULT, "120", NULL,
      "This directive is used by the experimental database pooling functionality. Only use this for non production sites. This sets the validation timeout after which the database connection is polled to see if its still alive." },
-  {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 ResourceItem job_items[] = {
@@ -434,7 +434,7 @@ ResourceItem job_items[] = {
      "If \"AlwaysIncrementalMaxFullAge\" is set, during consolidations only incremental backups will be considered while the Full Backup remains to reduce the amount of data being consolidated. Only if the Full Backup is older than \"AlwaysIncrementalMaxFullAge\", the Full Backup will be part of the consolidation to avoid the Full Backup becoming too old ." },
   { "MaxFullConsolidations", CFG_TYPE_PINT32, ITEM(res_job,MaxFullConsolidations), 0, CFG_ITEM_DEFAULT, "0", "16.2.4-",
      "If \"AlwaysIncrementalMaxFullAge\" is configured, do not run more than \"MaxFullConsolidations\" consolidation jobs that include the Full backup."},
-  {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 static ResourceItem fs_items[] = {
@@ -445,7 +445,7 @@ static ResourceItem fs_items[] = {
   { "Exclude", CFG_TYPE_INCEXC, ITEMC(res_fs), 1, CFG_ITEM_NO_EQUALS, NULL, NULL, NULL },
   { "IgnoreFileSetChanges", CFG_TYPE_BOOL, ITEM(res_fs,ignore_fs_changes), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
   { "EnableVSS", CFG_TYPE_BOOL, ITEM(res_fs,enable_vss), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
-  {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 static ResourceItem sch_items[] = {
@@ -455,7 +455,7 @@ static ResourceItem sch_items[] = {
   { "Run", CFG_TYPE_RUN, ITEM(res_sch,run), 0, 0, NULL, NULL, NULL },
   { "Enabled", CFG_TYPE_BOOL, ITEM(res_sch,enabled), 0, CFG_ITEM_DEFAULT, "true", NULL,
      "En- or disable this resource." },
-  {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 static ResourceItem pool_items[] = {
@@ -493,7 +493,7 @@ static ResourceItem pool_items[] = {
   { "JobRetention", CFG_TYPE_TIME, ITEM(res_pool,JobRetention), 0, 0, NULL, NULL, NULL },
   { "MinimumBlockSize", CFG_TYPE_SIZE32, ITEM(res_pool,MinBlocksize), 0, 0, NULL, NULL, NULL },
   { "MaximumBlockSize", CFG_TYPE_SIZE32, ITEM(res_pool,MaxBlocksize), 0, 0, NULL, "14.2.0-", NULL },
-  {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 static ResourceItem counter_items[] = {
@@ -504,7 +504,7 @@ static ResourceItem counter_items[] = {
   { "Maximum", CFG_TYPE_PINT32, ITEM(res_counter,MaxValue), 0, CFG_ITEM_DEFAULT, "2147483647" /* INT32_MAX */, NULL, NULL },
   { "WrapCounter", CFG_TYPE_RES, ITEM(res_counter,WrapCounter), R_COUNTER, 0, NULL, NULL, NULL },
   { "Catalog", CFG_TYPE_RES, ITEM(res_counter,Catalog), R_CATALOG, 0, NULL, NULL, NULL },
-  {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 #include "lib/messages_resource_items.h"
@@ -578,7 +578,7 @@ static ResourceItem runscript_items[] = {
  { "AbortJobOnError", CFG_TYPE_RUNSCRIPT_BOOL, ITEM(res_runscript,fail_on_error), 0, 0, NULL, NULL, NULL },
  { "RunsWhen", CFG_TYPE_RUNSCRIPT_WHEN, ITEM(res_runscript,when), 0, 0, NULL, NULL, NULL },
  { "RunsOnClient", CFG_TYPE_RUNSCRIPT_TARGET, ITEMC(res_runscript), 0, 0, NULL, NULL, NULL }, /* TODO */
- {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}
+ {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 /* clang-format on */
@@ -1905,6 +1905,7 @@ static void PrintConfigRun(ResourceItem* item, PoolMem& cfg_str)
 }
 
 bool FilesetResource::PrintConfig(PoolMem& buff,
+                                  const ConfigurationParser& /* unused */,
                                   bool hide_sensitive_data,
                                   bool verbose)
 {
@@ -3985,14 +3986,14 @@ static void DumpResource(int type,
     case R_FILESET: {
       FilesetResource* p = dynamic_cast<FilesetResource*>(res);
       ASSERT(p);  // Ueb --> Fehlermeldung
-      p->PrintConfig(buf, hide_sensitive_data, verbose);
+      p->PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
     }
     case R_MSGS: {
       MessagesResource* p = dynamic_cast<MessagesResource*>(res);
       ASSERT(p);  // Ueb --> Fehlermeldung
-      p->PrintConfig(buf, hide_sensitive_data, verbose);
+      p->PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
     }
@@ -4228,7 +4229,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
 {
   int rindex = type - R_FIRST;
   BareosResource* static_resource =
-      resources[rindex].static_initialization_resource_;
+      resources[rindex].static_resource_;
 
   switch (type) {
     case R_JOBDEFS:

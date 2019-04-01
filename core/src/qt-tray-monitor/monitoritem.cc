@@ -48,7 +48,7 @@ void MonitorItem::writecmd(const char* command)
   }
 }
 
-bool MonitorItem::GetJobDefaults(struct JobDefaults& job_defs)
+bool MonitorItem::GetJobDefaults(JobDefaults& job_defs)
 {
   int stat;
   char* def;

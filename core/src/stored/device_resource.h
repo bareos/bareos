@@ -93,7 +93,10 @@ class DeviceResource : public BareosResource {
   virtual ~DeviceResource() = default;
   DeviceResource(const DeviceResource& other);
   DeviceResource& operator=(const DeviceResource& rhs);
-  bool PrintConfigToBuffer(PoolMem& buf);
+  bool PrintConfig(PoolMem& buf,
+                   const ConfigurationParser& /* unused */,
+                   bool hide_sensitive_data = false,
+                   bool verbose = false) override;
   void CreateAndAssignSerialNumber(uint16_t number);
   void MultipliedDeviceRestoreBaseName();
   void MultipliedDeviceRestoreNumberedName();

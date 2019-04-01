@@ -129,7 +129,7 @@ static ResourceItem cli_items[] = {
   {"LogTimestampFormat", CFG_TYPE_STR, ITEM(res_client,log_timestamp_format), 0, 0, NULL, "15.2.3-", NULL},
     TLS_COMMON_CONFIG(res_client),
     TLS_CERT_CONFIG(res_client),
-  {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 /**
  * Directors that can use our services
@@ -152,7 +152,7 @@ static ResourceItem dir_items[] = {
   {"AllowedJobCommand", CFG_TYPE_ALIST_STR, ITEM(res_dir,allowed_job_cmds), 0, 0, NULL, NULL, NULL},
     TLS_COMMON_CONFIG(res_dir),
     TLS_CERT_CONFIG(res_dir),
-  {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 /**
  * Message resource
@@ -334,7 +334,7 @@ static void DumpResource(int type,
   switch (type) {
     case R_MSGS: {
       MessagesResource* resclass = dynamic_cast<MessagesResource*>(res);
-      resclass->PrintConfig(buf);
+      resclass->PrintConfig(buf, *my_config);
       break;
     }
     default:
@@ -509,35 +509,32 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
   }
 
   if (!error) {
-    if (!error) {
-      BareosResource* new_resource;
-      switch (type) {
-        case R_DIRECTOR: {
-          DirectorResource* p = new DirectorResource();
-          *p = res_dir;
-          new_resource = p;
-          break;
-        }
-        case R_CLIENT: {
-          ClientResource* p = new ClientResource();
-          *p = res_client;
-          new_resource = p;
-          break;
-        }
-        case R_MSGS: {
-          MessagesResource* p = new MessagesResource();
-          *p = res_msgs;
-          new_resource = p;
-          break;
-        }
-        default:
-          ASSERT(false);
-          break;
+    BareosResource* new_resource = nullptr;
+    switch (type) {
+      case R_DIRECTOR: {
+        DirectorResource* p = new DirectorResource();
+        *p = res_dir;
+        new_resource = p;
+        break;
       }
-
-      my_config->AppendToResourcesChain(new_resource, type);
+      case R_CLIENT: {
+        ClientResource* p = new ClientResource();
+        *p = res_client;
+        new_resource = p;
+        break;
+      }
+      case R_MSGS: {
+        MessagesResource* p = new MessagesResource();
+        *p = res_msgs;
+        new_resource = p;
+        break;
+      }
+      default:
+        ASSERT(false);
+        break;
     }
-    return (error == 0);
+    my_config->AppendToResourcesChain(new_resource, type);
   }
+  return (error == 0);
 }
 } /* namespace filedaemon */

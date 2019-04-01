@@ -48,8 +48,10 @@ enum parse_state
 };
 
 /* For storing name_addr items in res_items table */
-#define ITEM(c, m) ((char**)(&(c.m))), (&c)
-#define ITEMC(c) ((char**)(&(c))), (&c)
+/* clang-format off */
+#define ITEM(c, m) {(char**)&c.m}, &c
+#define ITEMC(c)   {(char**)&c},   &c
+/* clang-format on */
 /*
  * Master Resource configuration structure definition
  * This is the structure that defines the resources that are available to this
@@ -62,7 +64,7 @@ struct ResourceTable {
   uint32_t size;       /* Size of resource */
 
   std::function<void*()> initres; /* this shoud call the new replacement*/
-  BareosResource* static_initialization_resource_;
+  BareosResource* static_resource_;
 };
 
 /*

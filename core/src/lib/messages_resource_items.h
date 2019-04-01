@@ -49,7 +49,7 @@ static ResourceItem msgs_items[] = {
    { "Console", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_CONSOLE, 0, NULL, NULL, NULL },
    { "Operator", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_OPERATOR, 0, NULL, NULL, NULL },
    { "Catalog", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_CATALOG, 0, NULL, NULL, NULL },
-   {nullptr, 0, nullptr, nullptr, 0, 0, nullptr, nullptr, nullptr}
+   {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 /* clang-format on */
