@@ -512,8 +512,8 @@ static void MultiplyConfiguredDevices(ConfigurationParser& my_config)
 {
   BareosResource* p = nullptr;
   while ((p = my_config.GetNextRes(R_DEVICE, p))) {
-    DeviceResource* d = dynamic_cast<DeviceResource*>(p);
-    if (d && d->count > 1) { MultiplyDevice(*d); }
+    DeviceResource& d = dynamic_cast<DeviceResource&>(*p);
+    if (d.count > 1) { MultiplyDevice(d); }
   }
 }
 
