@@ -4,11 +4,11 @@
       <div class="console-row" v-bind:class="[mes.src]"
            v-for="mes in message"
            v-bind:key="mes.id">
-        <span v-if="mes.src == 'local'" class="console-local-prompt">&amp;&gt;</span>
+        <span v-if="mes.src == 'local'" class="console-local-prompt">*</span>
         <pre>{{ mes.data }}</pre>
       </div>
       <div class="console-input">
-        <span class="console-local-prompt">&amp;&gt;</span>
+        <span class="console-local-prompt">*</span>
         <input class="console-prompt" v-on:keypress.enter="submit"
                placeholder="help" type="text"
                v-model="command"
