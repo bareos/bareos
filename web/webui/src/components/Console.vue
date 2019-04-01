@@ -32,12 +32,16 @@ export default {
   computed: {
     message() {
       this.scrollToEnd()
-      return this.$store.state.socket['console'].message
+      return this.$store.getters.messages('console')
     },
   },
   methods: {
-    sendCommand: function(data) {
-      this.$store.dispatch('sendMessage', data)
+    sendCommand: async function(data) {
+      try {
+        await this.$store.dispatch('sendMessage', data)
+      } catch (e) {
+        console.error(e)
+      }
     },
     submit: function() {
       this.sendCommand(this.command)

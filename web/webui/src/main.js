@@ -11,8 +11,8 @@ import BSocket from './modules/bsocket'
 Vue.use(Vuetify)
 Vue.use(BSocket, {
   socket: {
-    console: process.env.VUE_APP_SOCKET,
-    api2: process.env.VUE_APP_SOCKET,
+    console: process.env.VUE_APP_CONSOLE_SOCKET,
+    api2: process.env.VUE_APP_API2_SOCKET,
   },
   store: store,
 })
@@ -20,10 +20,10 @@ Vue.use(BSocket, {
 Vue.config.productionTip = false
 
 // Subscribe to store updates
-store.subscribe((mutation, state) => {
-  // Store the state object as a JSON string
-  localStorage.setItem('store', JSON.stringify(state))
-})
+// store.subscribe((mutation, state) => {
+//   // Store the state object as a JSON string
+//   localStorage.setItem('store', JSON.stringify(state))
+// })
 
 new Vue({
   router,

@@ -11,7 +11,7 @@ const appendMessage = (state, socket, message, src) => {
   const buffer = state.socket[socket]
   let count = buffer.message.length
   const rearranged = map(message.trimRight().split('\n'),
-    (v) => {return { data: v, src: src, id: count++ }})
+      (v) => {return { data: v, src: src, id: count++ }})
   buffer.message = concat(buffer.message, rearranged)
 }
 
@@ -29,13 +29,15 @@ export default new Vuex.Store({
   },
   mutations: {
     initializeStore(state) {
-      // Check if the ID exists
-      if (localStorage.getItem('store')) {
-        // Replace the state object with the stored item
-        this.replaceState(
-          Object.assign(state, JSON.parse(localStorage.getItem('store'))),
-        )
-      }
+      // checkout store data from localStorage
+      // if (localStorage.getItem('store')) {
+      //   // Replace the state object with the stored item
+      //   this.replaceState(
+      //       Object.assign(state, JSON.parse(localStorage.getItem('store'))),
+      //   )
+      // }
+
+      state.messages = []
     },
     SOCKET_ONOPEN(state, event) {
       let socketBuffer = state.socket[event.socket]
@@ -67,19 +69,14 @@ export default new Vuex.Store({
         appendMessageObject(state, message.socket, message.data, 'socket')
       }
     },
-    // mutations for reconnect methods
-    SOCKET_ONRECONNECT(state, count) {
-      console.log('SOCKET_ORECONNECT')
-    },
-    SOCKET_ONRECONNECT_ERROR(state) {
-      // state.socket.reconnectError = true
-      console.log('SOCKET_ONRECONNECT_ERROR')
-    },
   },
   actions: {
-    sendMessage(context, message) {
+    async sendMessage(context, message) {
       appendMessage(context.state, 'console', message, 'local')
       Vue.prototype.$wsSend('console', message)
     },
+  },
+  getters: {
+    messages: (state) => (socketName) => state.socket[socketName].message,
   },
 })
