@@ -31,7 +31,6 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
 
 ## to do
 
-* Click on terminal area activates input field
 * Terminal area may be full height on start
 * make VUE_APP_SOCKET address configurable 
 * fix url /chat into something suitable
