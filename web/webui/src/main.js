@@ -3,10 +3,24 @@ import Vuetify from 'vuetify'
 import App from './App.vue'
 import router from './router'
 import store from './store'
+import VueLogger from 'vuejs-logger'
 
 import 'vuetify/dist/vuetify.min.css' // Ensure are using css-loader
 
 import BSocket from './modules/bsocket'
+
+const isProduction = process.env.NODE_ENV === 'production'
+
+Vue.use(VueLogger, {
+  isEnabled: true,
+  logLevel: isProduction ? 'error' : 'debug',
+  stringifyArguments: false,
+  showLogLevel: true,
+  showMethodName: true,
+  separator: '|',
+  showConsoleColors: true,
+})
+
 
 Vue.use(Vuetify)
 Vue.use(BSocket, {

@@ -46,7 +46,7 @@ export default {
       try {
         await this.$store.dispatch('sendMessage', data)
       } catch (e) {
-        console.error(e)
+        this.$log.error(e)
       }
     },
     submit: function() {

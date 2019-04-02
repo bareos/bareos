@@ -41,7 +41,7 @@ export default new Vuex.Store({
       const buffer = state.socket[event.socket]
       let count = buffer.message.length
       const rearranged = map(event.message.trimRight().split('\n'),
-        (v) => {return { data: v, src: event.src, id: count++ }})
+          (v) => {return { data: v, src: event.src, id: count++ }})
       buffer.message = concat(buffer.message, rearranged)
     },
     APPEND_OBJECT(state, event) {
@@ -57,7 +57,7 @@ export default new Vuex.Store({
       context.commit('INIT_SOCKET', event)
 
       if (event.socket == 'api2') {
-        console.log('api2 connected... switching to api2')
+        Vue.prototype.$log.info('api2 connected... switching to api2')
         Vue.prototype.$wsSend(event.socket, '.api 2')
       }
     },
@@ -65,8 +65,8 @@ export default new Vuex.Store({
       state.socket[event.socket].isConnected = false
     },
     SOCKET_ONERROR(state, event) {
-      console.error(state, event)
-      console.log('SOCKET_ERROR')
+      Vue.prototype.$log.error(state, event)
+      Vue.prototype.$log.debug('SOCKET_ERROR')
     },
     SOCKET_ONMESSAGE(context, message) {
       if (message.socket === 'console') {
