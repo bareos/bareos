@@ -76,7 +76,7 @@ export default {
     display: flex;
     flex-direction: column;
     max-height: calc(100vh - 120px);
-    // height: 100vh;
+    height: calc(100vh - 120px);
     margin: auto;
     overflow: no-content;
     background-color: black;
@@ -86,7 +86,7 @@ export default {
     overflow-y: scroll;
     overflow-x: scroll;
     margin-left: 10px;
-    margin-right: 10px;
+    margin-right: 0px;
     overflow: auto;
     scroll-behavior: smooth;
   }
