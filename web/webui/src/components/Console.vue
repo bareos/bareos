@@ -25,9 +25,6 @@ export default {
   name: 'Console',
   data() {
     return {
-      term: null,
-      terminalSocket: null,
-      buffer: [],
       command: '',
     }
   },
