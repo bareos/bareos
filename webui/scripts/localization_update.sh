@@ -13,9 +13,9 @@ find ../ -regextype posix-egrep -regex '.*(functions.js)$$' | xargs xgettext --k
 
 echo 'Message merge ...'
 cd $LOCDIR
-for i in cn_CN cs_CZ de_DE en_EN es_ES fr_FR hu_HU it_IT nl_BE pt_BR ru_RU sk_SK tr_TR; do echo $i && msgmerge --backup=none -U $i.po webui.pot && touch $i.po; done;
+for i in cn_CN cs_CZ de_DE en_EN es_ES fr_FR hu_HU it_IT nl_BE pl_PL pt_BR ru_RU sk_SK tr_TR; do echo $i && msgmerge --backup=none -U $i.po webui.pot && touch $i.po; done;
 
 #echo 'Message format ...'
-#for i in cn_CN cs_CZ de_DE en_EN es_ES fr_FR hu_HU it_IT nl_BE pt_BR ru_RU sk_SK tr_TR; do echo $i && msgfmt $i.po --output-file=$i.mo; done;
+#for i in cn_CN cs_CZ de_DE en_EN es_ES fr_FR hu_HU it_IT nl_BE pl_PL pt_BR ru_RU sk_SK tr_TR; do echo $i && msgfmt $i.po --output-file=$i.mo; done;
 
 echo 'Done'

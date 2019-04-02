@@ -58,6 +58,10 @@ function setDtLocale(val) {
       case 'it_IT':
          dt_locale = 'it_IT';
          break;
+      case 'pl':
+      case 'pl_PL':
+         dt_locale = 'pl_PL';
+         break;
       case 'pt':
       case 'pt_BR':
          dt_locale = 'pt_BR';
@@ -489,6 +493,10 @@ function getLocale(locale) {
       case 'it':
       case 'it_IT':
          lang = 'Italian.json';
+         break;
+      case 'pl':
+      case 'pl_PL':
+         lang = 'Polish.json';
          break;
       case 'pt':
       case 'pt_BR':
