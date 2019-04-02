@@ -184,3 +184,40 @@ if(GMOCK_FOUND)
   target_link_libraries(test_sd_reservation ${LINK_LIBRARIES} ${GMOCK_LIBRARIES})
   gtest_discover_tests(test_sd_reservation TEST_PREFIX gtest:)
 endif()
+
+####### test_config_parser_sd #####################################
+add_executable(test_config_parser_sd test_config_parser_sd.cc)
+
+target_link_libraries(test_config_parser_sd
+   stored_objects
+   bareossd
+   bareos
+   ${GTEST_LIBRARIES}
+   ${GTEST_MAIN_LIBRARIES}
+)
+
+add_test(NAME test_config_parser_sd
+    COMMAND test_config_parser_sd
+)
+
+gtest_discover_tests(test_config_parser_sd TEST_PREFIX gtest:)
+
+####### test_config_parser_dir  #####################################
+add_executable(test_config_parser_dir test_config_parser_dir.cc)
+
+target_link_libraries(test_config_parser_dir
+   dird_objects
+   bareos
+   bareosfind
+   bareoscats
+   bareossql
+   ${GTEST_LIBRARIES}
+   ${GTEST_MAIN_LIBRARIES}
+)
+
+add_test(NAME test_config_parser_dir
+    COMMAND test_config_parser_dir
+)
+
+gtest_discover_tests(test_config_parser_dir TEST_PREFIX gtest:)
+
