@@ -1,5 +1,9 @@
 # webui
 
+Provides Console connection to bareos-dir websocket service.
+uses <https://github.com/bareos/bareos/tree/dev/franku/master/websockets> 
+to be running
+
 ## Project setup
 ```
 npm install
@@ -24,10 +28,6 @@ npm run test
 ```
 npm run lint
 ```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
-
 
 ## to do
 
