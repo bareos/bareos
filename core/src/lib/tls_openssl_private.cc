@@ -110,7 +110,7 @@ bool TlsOpenSslPrivate::init()
   SSL_CTX_set_default_passwd_cb(openssl_ctx_,
                                 TlsOpenSslPrivate::tls_pem_callback_dispatch);
   SSL_CTX_set_default_passwd_cb_userdata(openssl_ctx_,
-                                         reinterpret_cast<void*>(this));
+                                         static_cast<void*>(this));
 
   const char* ca_certfile =
       ca_certfile_.empty() ? nullptr : ca_certfile_.c_str();
@@ -379,7 +379,7 @@ int TlsOpenSslPrivate::tls_pem_callback_dispatch(char* buf,
                                                  int rwflag,
                                                  void* userdata)
 {
-  TlsOpenSslPrivate* p = reinterpret_cast<TlsOpenSslPrivate*>(userdata);
+  TlsOpenSslPrivate* p = static_cast<TlsOpenSslPrivate*>(userdata);
   return (p->pem_callback_(buf, size, p->pem_userdata_));
 }
 
@@ -534,15 +534,13 @@ void TlsOpenSsl::SetKeyfile(const std::string& keyfile_)
 
 void TlsOpenSsl::SetPemCallback(CRYPTO_PEM_PASSWD_CB pem_callback)
 {
-  Dmsg1(100, "Set pem_callback to address: <%#x>\n",
-        reinterpret_cast<uint64_t>(pem_callback));
+  Dmsg1(100, "Set pem_callback to address: <%#x>\n", pem_callback);
   d_->pem_callback_ = pem_callback;
 }
 
 void TlsOpenSsl::SetPemUserdata(void* pem_userdata)
 {
-  Dmsg1(100, "Set pem_userdata to address: <%#x>\n",
-        reinterpret_cast<uint64_t>(pem_userdata));
+  Dmsg1(100, "Set pem_userdata to address: <%#x>\n", pem_userdata);
   d_->pem_userdata_ = pem_userdata;
 }
 

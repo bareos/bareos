@@ -72,7 +72,7 @@ static int PamConversationCallback(int num_msg,
     return (PAM_CONV_ERR);
   }
 
-  struct pam_response* resp = reinterpret_cast<pam_response*>(
+  struct pam_response* resp = static_cast<pam_response*>(
       actuallycalloc(num_msg, sizeof(struct pam_response)));
 
   if (!resp) {
@@ -80,7 +80,7 @@ static int PamConversationCallback(int num_msg,
     return PAM_BUF_ERR;
   }
 
-  PamData* pam_data = reinterpret_cast<PamData*>(appdata_ptr);
+  PamData* pam_data = static_cast<PamData*>(appdata_ptr);
 
   bool error = false;
   int i = 0;
@@ -143,10 +143,10 @@ static int PamLocalCallback(int num_msg,
                             struct pam_response** response,
                             void* appdata_ptr)
 {
-  struct pam_response* resp = reinterpret_cast<pam_response*>(
+  struct pam_response* resp = static_cast<pam_response*>(
       actuallycalloc(num_msg, sizeof(struct pam_response)));
 
-  PamData* pam_data = reinterpret_cast<PamData*>(appdata_ptr);
+  PamData* pam_data = static_cast<PamData*>(appdata_ptr);
 
   if (num_msg == 1) {
     resp[0].resp = actuallystrdup(pam_data->passwd_.c_str());
@@ -201,7 +201,7 @@ bool PamAuthenticateUser(BareosSocket* UA_sock,
     return false;
   } else {
     if (data) {
-      const char* temp_str = reinterpret_cast<const char*>(data);
+      const char* temp_str = static_cast<const char*>(data);
       authenticated_username = temp_str;
     }
   }
