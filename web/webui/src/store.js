@@ -22,10 +22,10 @@ export default new Vuex.Store({
       // }
     },
     INIT_SOCKET(state, event) {
-      Object.assign(state.socket[event.socket], {
+      state.socket[event.socket] = {
         message: [],
         isConnected: true,
-      })
+      }
     },
     APPEND_MESSAGE(state, event) {
       if (!state.socket[event.socket]) {
@@ -36,7 +36,7 @@ export default new Vuex.Store({
       const buffer = state.socket[event.socket]
       let count = buffer.message.length
       const rearranged = map(event.message.trimRight().split('\n'),
-          (v) => {return { data: v, src: event.src, id: count++ }})
+        (v) => {return { data: v, src: event.src, id: count++ }})
       buffer.message = concat(buffer.message, rearranged)
     },
     APPEND_OBJECT(state, event) {
@@ -65,18 +65,30 @@ export default new Vuex.Store({
     },
     SOCKET_ONMESSAGE(context, message) {
       if (message.socket === 'console') {
-        context.commit('APPEND_MESSAGE', { socket: message.socket, message: message.data, src: 'socket' })
+        context.commit('APPEND_MESSAGE', {
+          socket: message.socket,
+          message: message.data,
+          src: 'socket',
+        })
       } else if (message.socket === 'api2') {
-        context.commit('APPEND_OBJECT', { socket: message.socket, message: message.data, src: 'socket' })
+        context.commit('APPEND_OBJECT', {
+          socket: message.socket,
+          message: message.data,
+          src: 'socket',
+        })
       }
     },
     async sendMessage(context, message) {
-      context.commit('APPEND_MESSAGE', { socket: 'console', message, src: 'local' })
+      context.commit('APPEND_MESSAGE', {
+        socket: 'console',
+        message,
+        src: 'local',
+      })
       Vue.prototype.$wsSend('console', message)
     },
   },
   getters: {
     messages: (state) => (socketName) =>
-      state.socket[socketName] ? state.socket[socketName].message : [],
+      state.socket[socketName] ? state.socket[socketName].message : null,
   },
 })
