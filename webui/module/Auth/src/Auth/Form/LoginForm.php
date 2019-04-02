@@ -260,6 +260,12 @@ class LoginForm extends Form
          case 'it_IT':
             $l['it_IT'] = 'Italian';
             break;
+         case 'pl':
+            $l['pl_PL'] = 'Polish';
+            break;
+         case 'pl_PL':
+            $l['pl_PL'] = 'Polish';
+            break;
          case 'pt':
             $l['pt_BR'] = 'Portuguese (BR)';
             break;
@@ -312,6 +318,7 @@ class LoginForm extends Form
       $locales['de_DE'] = "German";
       $locales['hu_HU'] = "Hungarian";
       $locales['it_IT'] = "Italian";
+      $locales['pl_PL'] = "Polish";
       $locales['pt_BR'] = "Portuguese (BR)";
       $locales['ru_RU'] = "Russian";
       $locales['sk_SK'] = "Slovak";
