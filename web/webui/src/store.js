@@ -7,22 +7,6 @@ import map from 'lodash/map'
 
 Vue.use(Vuex)
 
-const appendMessage = (state, socket, message, src) => {
-  const buffer = state.socket[socket]
-  let count = buffer.message.length
-  const rearranged = map(message.trimRight().split('\n'),
-      (v) => {return { data: v, src: src, id: count++ }})
-  buffer.message = concat(buffer.message, rearranged)
-}
-
-const appendMessageObject = (state, socket, message, src) => {
-  const buffer = state.socket[socket]
-  let count = buffer.message.length
-  const o = { data: JSON.parse(message), src: src, id: count++ }
-  buffer.message = concat(buffer.message, o)
-}
-
-
 export default new Vuex.Store({
   state: {
     socket: {},
@@ -36,18 +20,36 @@ export default new Vuex.Store({
       //       Object.assign(state, JSON.parse(localStorage.getItem('store'))),
       //   )
       // }
-
-      state.messages = []
     },
-    SOCKET_ONOPEN(state, event) {
-      let socketBuffer = state.socket[event.socket]
-      if (!socketBuffer) {
-        socketBuffer = {
+    INIT_SOCKET(state, event) {
+      Object.assign(state.socket[event.socket], {
+        message: [],
+        isConnected: true,
+      })
+    },
+    APPEND_MESSAGE(state, event) {
+      if (!state.socket[event.socket]) {
+        state.socket[event.socket] = {
           message: [],
         }
       }
-      socketBuffer.isConnected = true
-      state.socket[event.socket] = socketBuffer
+      const buffer = state.socket[event.socket]
+      let count = buffer.message.length
+      const rearranged = map(event.message.trimRight().split('\n'),
+          (v) => {return { data: v, src: event.src, id: count++ }})
+      buffer.message = concat(buffer.message, rearranged)
+    },
+    APPEND_OBJECT(state, event) {
+      const buffer = state.socket[event.socket]
+      let count = buffer.message.length
+      const o = { data: JSON.parse(event.message), src: event.src, id: count++ }
+      buffer.message = concat(buffer.message, o)
+    },
+    // default handler called for all methods
+  },
+  actions: {
+    SOCKET_ONOPEN(context, event) {
+      context.commit('INIT_SOCKET', event)
 
       if (event.socket == 'api2') {
         console.log('api2 connected... switching to api2')
@@ -61,22 +63,20 @@ export default new Vuex.Store({
       console.error(state, event)
       console.log('SOCKET_ERROR')
     },
-    // default handler called for all methods
-    SOCKET_ONMESSAGE(state, message) {
+    SOCKET_ONMESSAGE(context, message) {
       if (message.socket === 'console') {
-        appendMessage(state, message.socket, message.data, 'socket')
+        context.commit('APPEND_MESSAGE', { socket: message.socket, message: message.data, src: 'socket' })
       } else if (message.socket === 'api2') {
-        appendMessageObject(state, message.socket, message.data, 'socket')
+        context.commit('APPEND_OBJECT', { socket: message.socket, message: message.data, src: 'socket' })
       }
     },
-  },
-  actions: {
     async sendMessage(context, message) {
-      appendMessage(context.state, 'console', message, 'local')
+      context.commit('APPEND_MESSAGE', { socket: 'console', message, src: 'local' })
       Vue.prototype.$wsSend('console', message)
     },
   },
   getters: {
-    messages: (state) => (socketName) => state.socket[socketName].message,
+    messages: (state) => (socketName) =>
+      state.socket[socketName] ? state.socket[socketName].message : [],
   },
 })

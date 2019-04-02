@@ -57,7 +57,7 @@ export default {
   passToStore(socket, eventType, data) {
     const target = (this.eventPrefix + eventType).toUpperCase()
     if (this.store) {
-      this.store.commit(target, { socket, eventType, data })
+      this.store.dispatch(target, { socket, eventType, data })
     }
   },
 }

@@ -1,5 +1,5 @@
 <template>
-  <div class="console">
+  <div class="console" v-on:click="focusInput()">
     <div class="console-container" id="console-container">
       <div class="console-row" v-bind:class="[mes.src]"
            v-for="mes in message"
@@ -9,7 +9,9 @@
       </div>
       <div class="console-input">
         <span class="console-local-prompt">*</span>
-        <input class="console-prompt" v-on:keypress.enter="submit"
+        <input class="console-prompt"
+               ref="consolePrompt"
+               v-on:keypress.enter="submit"
                placeholder="help" type="text"
                v-model="command"
         >
@@ -36,6 +38,10 @@ export default {
     },
   },
   methods: {
+    focusInput() {
+      const el = this.$refs.consolePrompt
+      this.$nextTick(function() {el.focus()})
+    },
     sendCommand: async function(data) {
       try {
         await this.$store.dispatch('sendMessage', data)
