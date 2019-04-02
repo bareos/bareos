@@ -9,7 +9,12 @@ Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
-    socket: {},
+    socket: {
+      // todo: find out how these properties could be created on first access
+      // binding to them is impossible when they are not present
+      console: null,
+      api2: null,
+    },
   },
   mutations: {
     initializeStore(state) {
@@ -88,7 +93,11 @@ export default new Vuex.Store({
     },
   },
   getters: {
-    messages: (state) => (socketName) =>
-      state.socket[socketName] ? state.socket[socketName].message : null,
+    messages: (state) => (socketName) => {
+      if (!state.socket[socketName]) {
+        state.commit('INIT_SOCKET', { socket: socketName })
+      }
+      return state.socket[socketName].message
+    },
   },
 })
