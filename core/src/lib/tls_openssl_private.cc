@@ -414,20 +414,9 @@ unsigned int TlsOpenSslPrivate::psk_server_cb(SSL* ssl,
   Dmsg1(100, "psk_server_cb. identitiy: %s.\n", lst.JoinReadable().c_str());
 
   std::string configured_psk;
-  GetTlsPskByFullyQualifiedResourceNameCb_t
-      GetTlsPskByFullyQualifiedResourceNameCb =
-          reinterpret_cast<GetTlsPskByFullyQualifiedResourceNameCb_t>(
-              SSL_CTX_get_ex_data(
-                  openssl_ctx, TlsOpenSslPrivate::SslCtxExDataIndex::
-                                   kGetTlsPskByFullyQualifiedResourceNameCb));
-
-  if (!GetTlsPskByFullyQualifiedResourceNameCb) {
-    Dmsg0(100, "Callback not set: kGetTlsPskByFullyQualifiedResourceNameCb\n");
-    return result;
-  }
 
   ConfigurationParser* config =
-      reinterpret_cast<ConfigurationParser*>(SSL_CTX_get_ex_data(
+      static_cast<ConfigurationParser*>(SSL_CTX_get_ex_data(
           openssl_ctx,
           TlsOpenSslPrivate::SslCtxExDataIndex::kConfigurationParserPtr));
 
@@ -436,8 +425,8 @@ unsigned int TlsOpenSslPrivate::psk_server_cb(SSL* ssl,
     return result;
   }
 
-  if (!GetTlsPskByFullyQualifiedResourceNameCb(config, identity,
-                                               configured_psk)) {
+  if (!config->GetTlsPskByFullyQualifiedResourceName(config, identity,
+                                                     configured_psk)) {
     Dmsg0(100, "Error, TLS-PSK credentials not found.\n");
   } else {
     int psklen =

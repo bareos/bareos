@@ -90,22 +90,14 @@ void TlsOpenSsl::SetTlsPskClientContext(const PskCredentials& credentials)
   }
 }
 
-void TlsOpenSsl::SetTlsPskServerContext(
-    ConfigurationParser* config,
-    GetTlsPskByFullyQualifiedResourceNameCb_t cb)
+void TlsOpenSsl::SetTlsPskServerContext(ConfigurationParser* config)
 {
   if (!d_->openssl_ctx_) {
     Dmsg0(50, "Could not prepare TLS_PSK SERVER callback (no SSL_CTX)\n");
   } else if (!config) {
     Dmsg0(50, "Could not prepare TLS_PSK SERVER callback (no config)\n");
-  } else if (!cb) {
-    Dmsg0(50, "Could not prepare TLS_PSK SERVER callback (no callback)\n");
   } else {
     Dmsg0(50, "Preparing TLS_PSK SERVER callback\n");
-    SSL_CTX_set_ex_data(d_->openssl_ctx_,
-                        TlsOpenSslPrivate::SslCtxExDataIndex::
-                            kGetTlsPskByFullyQualifiedResourceNameCb,
-                        (void*)cb);
     SSL_CTX_set_ex_data(
         d_->openssl_ctx_,
         TlsOpenSslPrivate::SslCtxExDataIndex::kConfigurationParserPtr,

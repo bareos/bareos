@@ -472,8 +472,7 @@ bool BareosSocket::ParameterizeAndInitTlsConnectionAsAServer(
 
   ParameterizeTlsCert(tls_conn_init.get(), tls_resource);
 
-  tls_conn_init->SetTlsPskServerContext(
-      config, config->GetTlsPskByFullyQualifiedResourceName);
+  tls_conn_init->SetTlsPskServerContext(config);
 
   if (!tls_conn_init->init()) {
     tls_conn_init.reset();

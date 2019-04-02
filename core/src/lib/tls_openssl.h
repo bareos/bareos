@@ -55,9 +55,7 @@ class TlsOpenSsl : public Tls {
                       int port,
                       const char* who) const override;
   void SetTlsPskClientContext(const PskCredentials& credentials) override;
-  void SetTlsPskServerContext(
-      ConfigurationParser* config,
-      GetTlsPskByFullyQualifiedResourceNameCb_t cb) override;
+  void SetTlsPskServerContext(ConfigurationParser* config) override;
 
   void Setca_certfile_(const std::string& ca_certfile) override;
   void SetCaCertdir(const std::string& ca_certdir) override;

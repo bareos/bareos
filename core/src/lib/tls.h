@@ -50,9 +50,7 @@ class Tls {
   static Tls* CreateNewTlsContext(Tls::TlsImplementationType type);
 
   virtual void SetTlsPskClientContext(const PskCredentials& credentials) = 0;
-  virtual void SetTlsPskServerContext(
-      ConfigurationParser* config,
-      GetTlsPskByFullyQualifiedResourceNameCb_t cb) = 0;
+  virtual void SetTlsPskServerContext(ConfigurationParser* config) = 0;
 
   virtual bool TlsPostconnectVerifyHost(JobControlRecord* jcr,
                                         const char* host) = 0;
