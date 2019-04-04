@@ -77,7 +77,7 @@ class LimitationDirective(Directive):
 
             indexnode['entries'].append([
                 'pair',
-                'Limitation; {}; {}'.format(summary),
+                'Limitation; {}'.format(summary),
                 _id, '', None
             ])
 

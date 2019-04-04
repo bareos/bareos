@@ -29,7 +29,15 @@ sys.path.insert(0, os.path.abspath('./_extensions'))
 # Now they are all lowercase.
 # CamelCase version can be removed,
 # when they are no longer required.
+
+# about <isonum.txt>, see
+# http://docutils.sourceforge.net/docs/ref/rst/definitions.html#substitution-definitions
+# http://docutils.sourceforge.net/docutils/parsers/rst/include/isonum.txt
 rst_epilog = '''
+.. include:: <isonum.txt>
+.. |checkmark| unicode:: U+2713
+
+.. |configCharsToQuote| replace:: ``&<>()@^|``
 
 .. |bareosFd| replace:: Bareos File Daemon
 .. |fd| replace:: Bareos File Daemon
@@ -48,17 +56,7 @@ rst_epilog = '''
 .. |vmware| replace:: VMware
 .. |vsphere| replace:: VMware vSphere
 
-.. |DataManagementAgent| replace:: Data Management Agent
-.. |datamanagementagent| replace:: Data Management Agent
-.. |DataAgent| replace:: Data Agent
-.. |dataagent| replace:: Data Agent
-.. |TapeAgent| replace:: Tape Agent
-.. |tapeagent| replace:: Tape Agent
-.. |RobotAgent| replace:: Robot Agent
-.. |robotagent| replace:: Robot Agent
-.. |ndmpBareos| replace:: :ref:`section-NdmpBareos`
 .. |ndmpbareos| replace:: :ref:`section-NdmpBareos`
-.. |ndmpNative| replace:: :ref:`section-NdmpNative`
 .. |ndmpnative| replace:: :ref:`section-NdmpNative`
 
 '''

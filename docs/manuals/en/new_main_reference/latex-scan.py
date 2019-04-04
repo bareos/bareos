@@ -120,6 +120,11 @@ class RegexDefs(object):
         self.regexOpts = re.MULTILINE | re.DOTALL | re.VERBOSE
 
         self.regex = {
+            'bf': {
+                'pattern': r'{\\bf\ *([^{}]+?)}',
+                'flags':   re.VERBOSE,
+                'replace': r':strong:`\1`'
+            },
             'Path': {
                 'pattern': r'``path:(.*?)``',
                 'flags':   re.VERBOSE,
@@ -181,12 +186,12 @@ class RegexDefs(object):
             'EnvCommands0': {
                 'pattern': r'::\n\n\s*\\begin{commands}{}\s*\n(.*?)\n\s*\\end{commands}',
                 'flags':   self.regexOpts, 
-                'replace': r'.. code-block:: sh\n\n\1'
+                'replace': r'.. code-block:: shell-session\n\n\1'
             },
             'EnvCommands': {
                 'pattern': r'::\n\n(\s*)\\begin{commands}{([^}]+?)}\s*\n(.*?)\n\s*\\end{commands}',
                 'flags':   self.regexOpts, 
-                'replace': r'.. code-block:: sh\n\1:caption: \2\n\n\3'
+                'replace': r'.. code-block:: shell-session\n\1:caption: \2\n\n\3'
             },
             #${PERL} 's#\{commands\}\{(.*)\}#\n.. code-block:: sh\n    :caption: \1\n#g'   ${DESTFILE}d
             'EnvCommandOut': {
@@ -659,12 +664,20 @@ class Translate(object):
     # a
     #
     @staticmethod
+    def addcontentsline(item):
+        item.replace(r'')
+
+    @staticmethod
     def argument(item):
         item.replace(b':strong:`{0}`'.format(*item.getParameters()))
 
     @staticmethod
     def at(item):
         item.replace(b'@')
+
+    @staticmethod
+    def appendix(item):
+        item.replace(r'')
 
     #
     # b
@@ -679,14 +692,14 @@ class Translate(object):
 
     @staticmethod
     def bareosTlsConfigurationExample(item):
-        item.replace(b'\\elink{Bareos Regression Testing Base Configuration}{https://github.com/bareos/bareos-regress/tree/master/configs/BASE/}')
+        item.replace(b'\\elink{Bareos Regression Testing Base Configuration}{https://github.com/bareos/bareos/tree/master/regress/configs/BASE/}')
 
     @staticmethod
     def bcheckmark(item):
         # REMARK: should show a Checkmark symbol.
         # As this has not worked in Latex, a 'x' is shown instead.
         # Could be adapted to show the checkmark.
-        item.replace(r'x'.format(*item.getParameters()))
+        item.replace(r'|checkmark|'.format(*item.getParameters()))
 
     @staticmethod
     def bconfigInput(item):
@@ -712,12 +725,30 @@ class Translate(object):
 
     @staticmethod
     def bquote(item):
-        item.replace(r"''{0}''".format(*item.getParameters()))
+        item.replace(r'"{0}"'.format(*item.getParameters()))
+
+    @staticmethod
+    def bf(item):
+        # if found here, it will be lines like:
+        # {\bf barcode}
+        # These we can replace properly,
+        # so we replace \bf with nothing.
+        item.replace(r''.format(*item.getParameters()))
+
+    @staticmethod
+    def bnfvar(item):
+        item.replace(r'<{0}>'.format(*item.getParameters()))
+        
+
 
 
     #
     # c
     #
+    @staticmethod
+    def centering(item):
+        item.replace(r'')
+
     @staticmethod
     def clearpage(item):
         item.replace(r'')
@@ -729,21 +760,26 @@ class Translate(object):
         item.replace(r'\ilink{{\bcheckmark}}{{{0}}}'.format(*item.getParameters()))
 
     @staticmethod
+    def configCharsToQuote(item):
+        item.replace(r'|configCharsToQuote|'.format(*item.getParameters()))
+
+    @staticmethod
     def configline(item):
         item.replace(r'``{0}``'.format(*item.getParameters()))
         #${PERL} "s#:raw-latex:\`\\configline${BRACKET}\`#:strong:\`\1\`#g"  ${DESTFILE}
 
     @staticmethod
     def configdirective(item):
-        item.replace(b':strong:`{0}`'.format(*item.getParameters()))
+        item.replace(b':strong:`{0}`\ '.format(*item.getParameters()))
 
     @staticmethod
     def configresource(item):
+        # no longer used
         item.replace(b':strong:`{0}`'.format(*item.getParameters()))
 
     @staticmethod
     def contribDownloadBareosOrg(item):
-        item.replace(r'`<http://download.bareos.org/bareos/contrib/>`_'.format(*item.getParameters()))
+        item.replace(r'http://download.bareos.org/bareos/contrib/\ '.format(*item.getParameters()))
 
     @staticmethod
     def command(item):
@@ -754,8 +790,12 @@ class Translate(object):
     # d
     #
     @staticmethod
+    def dbcolumn(item):
+        item.replace(r'**{0}**'.format(*item.getParameters()))
+
+    @staticmethod
     def dbtable(item):
-        item.replace(b'**{0}**'.format(*item.getParameters()))
+        item.replace(r'**{0}**'.format(*item.getParameters()))
 
     @staticmethod
     def defDirective(item):
@@ -797,11 +837,11 @@ class Translate(object):
 
     @staticmethod
     def bareosDeveloperGuideApiModeJson(item):
-        item.replace(u'\developerGuide{{dot-commands}}'.format(*item.getParameters()))
+        item.replace(u'\developerGuide{{api-mode-2-json}}'.format(*item.getParameters()))
 
     @staticmethod
-    def bareosDeveloperGuideApiModeJson(item):
-        item.replace(u'\developerGuide{{api-mode-2-json}}'.format(*item.getParameters()))
+    def bareosDeveloperGuideDotCommands(item):
+        item.replace(u'\developerGuide{{dot-commands}}'.format(*item.getParameters()))
 
     @staticmethod
     def directory(item):
@@ -810,6 +850,18 @@ class Translate(object):
     @staticmethod
     def dt(item):
         item.replace(b':strong:`{0}`'.format(*item.getParameters()))
+
+    @staticmethod
+    def dtName(item):
+        item.replace(r':strong:`Name`'.format(*item.getParameters()))
+
+    @staticmethod
+    def dtNetAddresses(item):
+        item.replace(b':strong:`NetAddresses`'.format(*item.getParameters()))
+
+    @staticmethod
+    def dtNetPort(item):
+        item.replace(b':strong:`NetPort`'.format(*item.getParameters()))
 
     @staticmethod
     def dtYesNo(item):
@@ -829,7 +881,7 @@ class Translate(object):
 
     @staticmethod
     def externalReferenceDroplet(item):
-        item.replace(b'\\url{https://github.com/scality/Droplet}')
+        item.replace(b'https://github.com/scality/Droplet')
 
     @staticmethod
     def externalReferenceIsilonNdmpEnvironmentVariables(item):
@@ -853,6 +905,9 @@ class Translate(object):
     #
     # g
     #
+    @staticmethod
+    def group(item):
+        item.replace(r':strong:`{0}`'.format(*item.getParameters()))
 
     #
     # h
@@ -908,16 +963,23 @@ class Translate(object):
         #logger.debug(str(item.get()))
         par = item.getParameters()[0]
         items = par.split('!')
-        nr = len(items)
-        if nr == 1:
-            #item.replace(b'\n.. index::\n   {0}   single: {0}\n'.format(*items))
-            item.replace(r':index:`[TAG={0}] <single: {0}>`'.format(*items))
-        elif nr == 2:
-            #item.replace(b'\n.. index::\n   {0}   pair: {0}; {1}\n'.format(*items))
-            item.replace(r':index:`[TAG={0}->{1}] <pair: {0}; {1}>`'.format(*items))
-        elif nr == 3:
-            #item.replace(b'\n.. index::\n   {0}   triple: {0}; {1}; {2}\n'.format(*items))
-            item.replace(r':index:`[TAG={0}->{1}->{2}] <triple: {0}; {1}; {2}>`'.format(*items))
+        tag = '[TAG={0}]'.format('->'.join(items))
+        index = '; '.join(items)
+        #nr = len(items)
+        #if nr == 1:
+            ##item.replace(b'\n.. index::\n   {0}   single: {0}\n'.format(*items))
+            #item.replace(r':index:`[TAG={0}] <single: {0}>`'.format(*items))
+        #elif nr == 2:
+            ##item.replace(b'\n.. index::\n   {0}   pair: {0}; {1}\n'.format(*items))
+            #item.replace(r':index:`[TAG={0}->{1}] <pair: {0}; {1}>`'.format(*items))
+        #elif nr == 3:
+            ##item.replace(b'\n.. index::\n   {0}   triple: {0}; {1}; {2}\n'.format(*items))
+            ##item.replace(r':index:`[TAG={0}->{1}->{2}] <triple: {0}; {1}; {2}>`'.format(*items))
+            #item.replace(r':index:`[TAG={0}->{1}->{2}] <single: {0}; {1}; {2}>`'.format(*items))
+        #elif nr >= 4:
+            #item.replace(r':index:`[TAG={0}] <single: {1}>`'.format('->'.join(items), '; '.join(items)))
+        item.replace(r':index:`{0} <single: {1}>`'.format(tag, index))
+
 
     #
     # j
@@ -935,14 +997,6 @@ class Translate(object):
     # l
     #
     @staticmethod
-    def linkResourceDirectiveValue(item):
-        #item.replace(b'**{2}**:sup:`{0}`:sub:`{1}`\ = **{3}**'.format(*item.getParameters()))
-        daemon, resourcetype, directive, value = item.getParameters()
-        resourceReference = Translate.getResourceReferenceString(daemon, resourcetype, directive)
-        item.replace(b':config:option:`{0} = {1}`\ '.format(resourceReference, value))
-
-
-    @staticmethod
     def linkResourceDirective(item):
         #item.replace(b'**{2}**:sup:`{0}`:sub:`{1}`\ '.format(*item.getParameters()))
         daemon, resourcetype, directive = item.getParameters()
@@ -950,6 +1004,14 @@ class Translate(object):
         item.replace(b':config:option:`{0}`\ '.format(resourceReference))
         #${PERL} 's#:raw-latex:`\\linkResourceDirective\*\{(.*?)\}\{(.*?)\}\{(.*?)\}`#**\3**:sup:`\1`:sub:`\2`\ #g' ${DESTFILE}
         #${PERL} 's#:raw-latex:`\\resourceDirectiveValue\{(.*?)\}\{(.*?)\}\{(.*?)\}\{(.*?)\}`#**\3**:sup:`\1`:sub:`\2`\ = **\4**#g' ${DESTFILE}
+    
+    @staticmethod
+    def linkResourceDirectiveValue(item):
+        #item.replace(b'**{2}**:sup:`{0}`:sub:`{1}`\ = **{3}**'.format(*item.getParameters()))
+        daemon, resourcetype, directive, value = item.getParameters()
+        resourceReference = Translate.getResourceReferenceString(daemon, resourcetype, directive)
+        item.replace(b':config:option:`{0} = {1}`\ '.format(resourceReference, value))
+
 
     @staticmethod
     def limitation(item):
@@ -988,32 +1050,32 @@ class Translate(object):
     def name(item):
         item.replace(b'**{0}**'.format(*item.getParameters()))
 
+    # NDMP
+    @staticmethod
+    def DataManagementAgent(item):
+        item.replace(r'Data Management Agent')
+
+    @staticmethod
+    def DataAgent(item):
+        item.replace(r'Data Agent')
+
+    @staticmethod
+    def TapeAgent(item):
+        item.replace(r'Tape Agent')
+
+    @staticmethod
+    def RobotAgent(item):
+        item.replace(r'Robot Agent')
+
     @staticmethod
     def NdmpBareos(item):
         # \ilink{NDMP\_BAREOS}{sec:NdmpBareos}
-        item.replace(r'|ndmpBareos|')
+        item.replace(r'|ndmpbareos|')
 
     @staticmethod
     def NdmpNative(item):
         # \ilink{NDMP\_BAREOS}{sec:NdmpBareos}
-        item.replace(r'|ndmpNative|')
-
-    # NDMP
-    @staticmethod
-    def DataManagementAgent(item):
-        item.replace(r'|DataManagementAgent|')
-
-    @staticmethod
-    def DataAgent(item):
-        item.replace(r'|DataAgent|')
-
-    @staticmethod
-    def TapeAgent(item):
-        item.replace(r'|TapeAgent|')
-
-    @staticmethod
-    def RobotAgent(item):
-        item.replace(r'|RobotAgent|')
+        item.replace(r'|ndmpnative|')
 
     #
     # m
@@ -1053,8 +1115,12 @@ class Translate(object):
     @staticmethod
     def parameter(item):
         # don't use :option:, as this has a special behavior, that we don't use.
-        item.replace(b'``{0}``'.format(*item.getParameters()))
+        item.replace(b':strong:`{0}`'.format(*item.getParameters()))
         #${PERL} 's#(\s+)\\parameter\{(.*?)\}(\s*)#\1                  :option:`\2`\3#g' ${DESTFILE}
+
+    @staticmethod
+    def pipe(item):
+        item.replace(r'|')
 
     @staticmethod
     def pluginevent(item):
@@ -1070,16 +1136,24 @@ class Translate(object):
     # r
     #
     @staticmethod
+    def registerd(item):
+        item.replace(r'|reg|')
+
+    @staticmethod
     def registrykey(item):
         item.replace(r'``{0}``'.format(*item.getParameters()))
 
     @staticmethod
     def releaseUrlDownloadBareosOrg(item):
-        item.replace(r'`<http://download.bareos.org/bareos/release/{0}/>`_'.format(*item.getParameters()))
+        item.replace(r'http://download.bareos.org/bareos/release/{0}/'.format(*item.getParameters()))
 
     @staticmethod
     def releaseUrlDownloadBareosCom(item):
-        item.replace(r'`<http://download.bareos.com/bareos/release/{0}/>`_'.format(*item.getParameters()))
+        item.replace(r'http://download.bareos.com/bareos/release/{0}/'.format(*item.getParameters()))
+
+    @staticmethod
+    def resourceDirectiveValue(item):
+        Translate.linkResourceDirectiveValue(item)
 
     @staticmethod
     def resourcename(item):
@@ -1144,6 +1218,10 @@ class Translate(object):
 
         item.replace(r':sinceVersion:`{version}: {summary}`'.format(version=version, summary=summary))           
 
+    @staticmethod
+    def sqlcommand(item):
+        item.replace(r'``{0}``'.format(*item.getParameters()))
+
 
     # moved to preconversion, to avoid errors.
     #@staticmethod
@@ -1164,7 +1242,7 @@ class Translate(object):
 
     @staticmethod
     def textrightarrow(item):
-        item.replace(b'->')
+        item.replace(b'|rarr|')
         #${PERL} 's#:raw-latex:`\\textrightarrow`#->#g' ${DESTFILE}
         #${PERL} 's#:raw-latex:`\\textrightarrow `#->#g' ${DESTFILE}
 
@@ -1178,22 +1256,21 @@ class Translate(object):
 
     @staticmethod
     def trademark(item):
-        # TODO: fix this
-        item.replace(r'\ :sup:`(TM)`')
+        item.replace(r'\ |trade|')
 
     #
     # u
     #
     @staticmethod
     def url(item):
-        item.replace(r'`<{0}>`_'.format(*item.getParameters()))
+        item.replace(r'{0}'.format(*item.getParameters()))
         ##``URL:http://download.bareos.org/bareos/release/latest/``
         #${PERL} 's#``URL:(.*?)``#`\1 <\1>`_#g'   ${DESTFILE}
         #${PERL} 's#``\\url\{(.*?)\}#`\1 \1>`_#g'   ${DESTFILE}
 
     @staticmethod
     def user(item):
-        item.replace(b'**{0}**'.format(*item.getParameters()))
+        item.replace(r'**{0}**'.format(*item.getParameters()))
         #${PERL} "s#:raw-latex:\`\\user${BRACKET}\`#**\1**#g"   ${DESTFILE}
         ##${PERL} 's#\\user\{(.*)\}#**\1**#g'   ${DESTFILE}
 
@@ -1202,16 +1279,24 @@ class Translate(object):
     # v
     #
     @staticmethod
+    def variable(item):
+        item.replace(r'**{0}**'.format(*item.getParameters()))
+
+    @staticmethod
+    def volume(item):
+        item.replace(r'**{0}**'.format(*item.getParameters()))
+    
+    @staticmethod
     def volumestatus(item):
-        item.replace(b'**{0}**'.format(*item.getParameters()))
+        item.replace(r'**{0}**'.format(*item.getParameters()))
 
     @staticmethod
     def volumeparameter(item):
         parameter, value = item.getParameters()
         if value:
-            item.replace(b'**{0} = {1}**'.format(parameter, value))
+            item.replace(r'**{0} = {1}**'.format(parameter, value))
         else:
-            item.replace(b'**{0}**'.format(parameter))
+            item.replace(r'**{0}**'.format(parameter))
         #\newcommand{\volumeparameter}[2]{\ifthenelse{\isempty{#2}}{%
         #  \path|#1|%
         # }{%
@@ -1232,15 +1317,8 @@ class Translate(object):
         # TODO: prepand indention level (\s*, \s*|\s, arbitrary text)
         #item.replace(b'\n.. warning::\n   {0}'.format(*item.getParameters()))
         text = item.getParameters()[0]
-        indenttext = '   '
-        # get indention of 2. line
-        match = re.match(r'.*?\n(\s*).*', text)
-        if match:
-            indenttext = match.expand(r'\1')
-        indentwarning = ''
-        if len(indenttext) >= 3:
-            indentwarning = ' ' * (len(indenttext) - 3)
-        item.replace(b'\n\n{0}.. warning::\n{1}{2}'.format(indentwarning, indenttext, text))
+        item.replace(b'\n\n{indent}.. warning::\n\n{indent}   {text}'.format(indent = ' ' * item.getIndent(), text = text))
+                     
         ## warning
         #${PERL0} 's#:raw-latex:`\\warning${BRACKET}`#\n.. warning:: \n  \1#ims' ${DESTFILE}
         ##${PERL0} 's#\\warning\{(.*?)\}#\n.. warning:: \n  \1#ims'  ${DESTFILE}
@@ -1253,7 +1331,7 @@ class Translate(object):
     #
     @staticmethod
     def yesno(item):
-        item.replace(b'yes\\|no`')
+        item.replace(r'yes\\|no`')
 
     #
     ## link targets
@@ -1278,23 +1356,23 @@ class Translate(object):
     #
     @staticmethod
     def bareosDir(item):
-        item.replace(r'|bareosDir|')
+        item.replace(r'|dir|')
 
     @staticmethod
     def bareosFd(item):
-        item.replace(r'|bareosFd|')
+        item.replace(r'|fd|')
 
     @staticmethod
     def bareosSd(item):
-        item.replace(r'|bareosSd|')
+        item.replace(r'|sd|')
 
     @staticmethod
     def bareosTrayMonitor(item):
-        item.replace(b'|bareosTrayMonitor|')
+        item.replace(b'|traymonitor|')
 
     @staticmethod
     def bareosWebui(item):
-        item.replace(b'|bareosWebui|')
+        item.replace(b'|webui|')
 
     @staticmethod
     def mysql(item):
@@ -1418,22 +1496,6 @@ class Translate(object):
     #
     # TODO
     #
-
-    # images:
-    # \includegraphics[width=0.8\textwidth]{\idir win-install-1}
-    # =>
-    # .. image:: images/win-install-1.*
-    # :width: 80%
-    # currently done by incomplete substition. Fails if more than 1 image is defined per file.
-
-    ## highlighting in listings/code blocks
-
-    #${PERL} 's#\<input\>##g'  ${DESTFILE}
-    #${PERL} 's#\</input\>##g'  ${DESTFILE}
-    #${PERL} 's#\<command\>##g'  ${DESTFILE}
-    #${PERL} 's#\</command\>##g'  ${DESTFILE}
-    # <command>
-    # <parameter>
 
     ## rename sec: to section- as : has special meaning in sphinx (done in pre)
     #${PERL} 's#sec:#section-#g'   ${DESTFILE}
