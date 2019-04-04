@@ -2,5 +2,6 @@ This directive applies only to a Restore job and specifies a prefix to the direc
 
 
 
-.. warning::
-   To use Where on NDMP backups, please read :ref:`section-ndmp-where`
+   .. warning::
+
+      To use Where on NDMP backups, please read :ref:`section-ndmp-where`

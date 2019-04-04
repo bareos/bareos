@@ -3,7 +3,7 @@
 Bareos Copyright, Trademark, and Licenses
 =========================================
 
-:index:`[TAG=License->Bareos Copyright Trademark Licenses] <pair: License; Bareos Copyright Trademark Licenses>` :index:`[TAG=Bareos Copyright, Trademark, and Licenses] <single: Bareos Copyright, Trademark, and Licenses>`
+:index:`[TAG=License->Bareos Copyright Trademark Licenses] <single: License; Bareos Copyright Trademark Licenses>` :index:`[TAG=Bareos Copyright, Trademark, and Licenses] <single: Bareos Copyright, Trademark, and Licenses>`
 
 Licenses Overview
 -----------------
@@ -13,14 +13,14 @@ There are a number of different licenses that are used in Bareos.
 FDL
 ~~~
 
-:index:`[TAG=License->FDL] <pair: License; FDL>`
+:index:`[TAG=License->FDL] <single: License; FDL>`
 
 The :ref:`GNU Free Documentation License (FDL) <fdl>` is used for this manual, which is a free and open license. This means that you may freely reproduce it and even make changes to it.
 
 AGPL
 ~~~~
 
-:index:`[TAG=License->AGPL] <pair: License; AGPL>`
+:index:`[TAG=License->AGPL] <single: License; AGPL>`
 
 The vast bulk of the source code is released under the :ref:`GNU Affero General Public License (AGPL) version 3 <agpl>`.
 
@@ -33,14 +33,14 @@ Portions may be copyrighted by other people. These files are released under diff
 LGPL
 ~~~~
 
-:index:`[TAG=License->LGPL] <pair: License; LGPL>`
+:index:`[TAG=License->LGPL] <single: License; LGPL>`
 
 Some of the Bareos library source code is released under the :ref:`GNU Lesser General Public License (LGPL) <lgpl>`. This permits third parties to use these parts of our code in their proprietary programs to interface to Bareos.
 
 Public Domain
 ~~~~~~~~~~~~~
 
-:index:`[TAG=License->Public Domain] <pair: License; Public Domain>`
+:index:`[TAG=License->Public Domain] <single: License; Public Domain>`
 
 Some of the Bareos code, or code that Bareos references, has been released to the public domain. E.g. md5.c, SQLite.
 

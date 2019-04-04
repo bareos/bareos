@@ -8,12 +8,12 @@ Bareos stores its information in a database, named Catalog. It is configured by 
 Job
 ---
 
-:index:`[TAG=Catalog->Job] <pair: Catalog; Job>` :index:`[TAG=Job->Catalog] <pair: Job; Catalog>`
+:index:`[TAG=Catalog->Job] <single: Catalog; Job>` :index:`[TAG=Job->Catalog] <single: Job; Catalog>`
 
 JobStatus
 ~~~~~~~~~
 
-:index:`[TAG=Job->JobStatus] <pair: Job; JobStatus>` :index:`[TAG=Catalog->Job->JobStatus] <triple: Catalog; Job; JobStatus>`
+:index:`[TAG=Job->JobStatus] <single: Job; JobStatus>` :index:`[TAG=Catalog->Job->JobStatus] <single: Catalog; Job; JobStatus>`
 
 The status of a Bareos job is stored as abbreviation in the Catalog database table Job. It is also displayed by some bconsole commands, eg. :bcommand:`list jobs`.
 

@@ -1,4 +1,4 @@
-If this directive is set to ``yes``, the Storage daemon will be requested to spool the data for this Job to disk rather than write it directly to the Volume (normally a tape).
+If this directive is set to :strong:`yes`, the Storage daemon will be requested to spool the data for this Job to disk rather than write it directly to the Volume (normally a tape).
 
 Thus the data is written in large blocks to the Volume rather than small blocks. This directive is particularly useful when running multiple simultaneous backups to tape. Once all the data arrives or the spool files’ maximum sizes are reached, the data will be despooled and written to tape.
 

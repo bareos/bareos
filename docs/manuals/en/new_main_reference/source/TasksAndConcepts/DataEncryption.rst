@@ -3,14 +3,15 @@
 Data Encryption
 ===============
 
-:index:`[TAG=Data Encryption] <single: Data Encryption>` :index:`[TAG=Encryption->Data] <pair: Encryption; Data>`
+:index:`[TAG=Data Encryption] <single: Data Encryption>` :index:`[TAG=Encryption->Data] <single: Encryption; Data>`
 
 Bareos permits file data encryption and signing within the File Daemon (or Client) prior to sending data to the Storage Daemon. Upon restoration, file signatures are validated and any mismatches are reported. At no time does the Director or the Storage Daemon have access to unencrypted file contents.
 
 
 
-.. warning::
-   These feature is only available, if Bareos is build against OpenSSL.
+   .. warning::
+
+      These feature is only available, if Bareos is build against OpenSSL.
 
 It is very important to specify what this implementation does NOT do:
 
@@ -26,9 +27,10 @@ While less critical than the Master Keys, File Daemon Keys are also a prime cand
 
 
 
-.. warning::
-   If you lose your encryption keys, backups will be unrecoverable.
-   {\bf always} store a copy of your master keys in a secure, off-site location.
+   .. warning::
+
+      If you lose your encryption keys, backups will be unrecoverable.
+   :strong:`always` store a copy of your master keys in a secure, off-site location.
 
 The basic algorithm used for each backup session (Job) is:
 
@@ -41,7 +43,7 @@ The basic algorithm used for each backup session (Job) is:
 Encryption Technical Details
 ----------------------------
 
-:index:`[TAG=Encryption->Technical Details] <pair: Encryption; Technical Details>`
+:index:`[TAG=Encryption->Technical Details] <single: Encryption; Technical Details>`
 
 The implementation uses 128bit AES-CBC, with RSA encrypted symmetric session keys. The RSA key is user supplied. If you are running OpenSSL >= 0.9.8, the signed file hash uses SHA-256, otherwise SHA-1 is used.
 
@@ -67,7 +69,7 @@ The various algorithms are exposed via an entirely re-usable, OpenSSL-agnostic A
 Generating Private/Public Encryption Keys
 -----------------------------------------
 
-:index:`[TAG=Encryption->Generating Private/Public Encryption Keypairs] <pair: Encryption; Generating Private/Public Encryption Keypairs>`
+:index:`[TAG=Encryption->Generating Private/Public Encryption Keypairs] <single: Encryption; Generating Private/Public Encryption Keypairs>`
 
 Generate a Master Key Pair with:
 
@@ -100,7 +102,7 @@ Above we have used the .cert extension to refer to X509 certificate encoding tha
 Example Data Encryption Configurations (bareos-fd.conf)
 -------------------------------------------------------
 
-:index:`[TAG=Example->Data Encryption Configuration File] <pair: Example; Data Encryption Configuration File>`
+:index:`[TAG=Example->Data Encryption Configuration File] <single: Example; Data Encryption Configuration File>`
 
 
 
@@ -112,7 +114,7 @@ Example Data Encryption Configurations (bareos-fd.conf)
 Decrypting with a Master Key
 ----------------------------
 
-:index:`[TAG=Decrypting with a Master Key] <single: Decrypting with a Master Key>` :index:`[TAG=Encryption->Decrypting with a Master Key] <pair: Encryption; Decrypting with a Master Key>`
+:index:`[TAG=Decrypting with a Master Key] <single: Decrypting with a Master Key>` :index:`[TAG=Encryption->Decrypting with a Master Key] <single: Encryption; Decrypting with a Master Key>`
 
 It is preferable to retain a secure, non-encrypted copy of the client’s own encryption keypair. However, should you lose the client’s keypair, recovery with the master keypair is possible.
 

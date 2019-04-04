@@ -3,7 +3,7 @@
 Critical Items to Implement Before Production
 =============================================
 
-:index:`[TAG=Production->Critical Items to Implement Before] <pair: Production; Critical Items to Implement Before>` :index:`[TAG=Critical Items to Implement Before Production] <single: Critical Items to Implement Before Production>`
+:index:`[TAG=Production->Critical Items to Implement Before] <single: Production; Critical Items to Implement Before>` :index:`[TAG=Critical Items to Implement Before Production] <single: Critical Items to Implement Before Production>`
 
 We recommend you take your time before implementing a production on a Bareos backup system since Bareos is a rather complex program, and if you make a mistake, you may suddenly find that you cannot restore your files in case of a disaster. This is especially true if you have not previously used a major backup product.
 

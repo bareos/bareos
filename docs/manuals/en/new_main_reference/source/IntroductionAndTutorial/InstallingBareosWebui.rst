@@ -7,11 +7,11 @@ Installing Bareos Webui
 
 .. _section-install-webui:
 
- :index:`[TAG=Webui] <single: Webui>` :index:`[TAG=Webui->Install] <pair: Webui; Install>`
+ :index:`[TAG=Webui] <single: Webui>` :index:`[TAG=Webui->Install] <single: Webui; Install>`
 
-This chapter addresses the installation process of the |bareosWebui|.
+This chapter addresses the installation process of the |webui|.
 
-Since :sinceVersion:`15.2.0: bareos-webui` |bareosWebui| is part of the Bareos project and available for a number of platforms.
+Since :sinceVersion:`15.2.0: bareos-webui` |webui| is part of the Bareos project and available for a number of platforms.
 
 .. image:: /include/images/bareos-webui-jobs.*
    :width: 80.0%
@@ -63,9 +63,9 @@ System Requirements
 
 -  A working Bareos environment.
 
--  |bareosDir| version >= |bareosWebui| version.
+-  |dir| version >= |webui| version.
 
--  The |bareosWebui| can be installed on any host. It does not have to be installed on the same as the |bareosDir|.
+-  The |webui| can be installed on any host. It does not have to be installed on the same as the |dir|.
 
 -  The default installation uses an Apache webserver with mod-rewrite, mod-php and mod-setenv.
 
@@ -76,7 +76,7 @@ System Requirements
 Version < 16.2
 ~~~~~~~~~~~~~~
 
-|bareosWebui| :sinceVersion:`16.2.4: bareos-webui incorporates Zend Framework 2` incorporates the required Zend Framework 2 components, no extra Zend Framework installation is required. For older versions of **bareos-webui**, you must install Zend Framework separately. Unfortunately, not all distributions offer Zend Framework 2 packages. The following list shows where to get the Zend Framework 2 package:
+|webui| :sinceVersion:`16.2.4: bareos-webui incorporates Zend Framework 2` incorporates the required Zend Framework 2 components, no extra Zend Framework installation is required. For older versions of **bareos-webui**, you must install Zend Framework separately. Unfortunately, not all distributions offer Zend Framework 2 packages. The following list shows where to get the Zend Framework 2 package:
 
 -  RHEL, CentOS
 
@@ -92,7 +92,7 @@ Version < 16.2
 
    -  http://download.bareos.org/bareos
 
-Also be aware, that older versions of |bareosDir| do not support the :ref:`section-SubdirectoryConfigurationScheme` and therefore Bareos configuration resource files must be included manually.
+Also be aware, that older versions of |dir| do not support the :ref:`section-SubdirectoryConfigurationScheme` and therefore Bareos configuration resource files must be included manually.
 
 Installation
 ------------
@@ -109,36 +109,36 @@ After adding the repository simply install the bareos-webui package via your pac
 
 -  RHEL, CentOS and Fedora
 
-   .. code-block:: sh
+   .. code-block:: shell-session
 
       yum install bareos-webui
 
    or
 
-   .. code-block:: sh
+   .. code-block:: shell-session
 
       dnf install bareos-webui
 
 -  SUSE Linux Enterprise Server (SLES), openSUSE
 
-   .. code-block:: sh
+   .. code-block:: shell-session
 
       zypper install bareos-webui
 
 -  Debian, Ubuntu
 
-   .. code-block:: sh
+   .. code-block:: shell-session
 
       apt-get install bareos-webui
 
 Minimal Configuration
 ~~~~~~~~~~~~~~~~~~~~~
 
-This assumes, |bareosDir| and |bareosWebui| are installed on the same host.
+This assumes, |dir| and |webui| are installed on the same host.
 
 #. If you are using SELinux, allow HTTPD scripts and modules make network connections:
 
-   .. code-block:: sh
+   .. code-block:: shell-session
 
       setsebool -P httpd_can_network_connect on
 
@@ -169,11 +169,11 @@ Configuration Details
 Create a restricted consoles
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-There is not need, that |bareosWebui| itself provide a user management. Instead it uses so named :config:option:`Dir/Console`\  defined in the |bareosDir|. You can have multiple consoles with different names and passwords, sort of like multiple users, each with different privileges.
+There is not need, that |webui| itself provide a user management. Instead it uses so named :config:option:`Dir/Console`\  defined in the |dir|. You can have multiple consoles with different names and passwords, sort of like multiple users, each with different privileges.
 
-At least one :config:option:`Dir/Console`\  is required to use the |bareosWebui|.
+At least one :config:option:`Dir/Console`\  is required to use the |webui|.
 
-To allow a user with name **admin** and password **secret** to access the |bareosDir| with permissions defined in the :config:option:`Dir/Profile = webui-admin`\  (see :ref:`section-webui-profile`), either
+To allow a user with name **admin** and password **secret** to access the |dir| with permissions defined in the :config:option:`Dir/Profile = webui-admin`\  (see :ref:`section-webui-profile`), either
 
 -  create a file :file:`/etc/bareos/bareos-dir.d/console/admin.conf` with following content:
 
@@ -186,7 +186,7 @@ To allow a user with name **admin** and password **secret** to access the |bareo
         Profile = "webui-admin"
       }
 
-   To enable this, reload or restart your |bareosDir|.
+   To enable this, reload or restart your |dir|.
 
 -  or use the :command:`bconsole`:
 
@@ -202,11 +202,11 @@ For details, please read :ref:`DirectorResourceConsole`.
 Configuration of profile resources
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The package **bareos-webui** comes with a predefined profile for |bareosWebui|: :config:option:`Dir/Profile = webui-admin`\ .
+The package **bareos-webui** comes with a predefined profile for |webui|: :config:option:`Dir/Profile = webui-admin`\ .
 
-If your |bareosWebui| is installed on another system than the |bareosDir|, you have to copy the profile to the |bareosDir|.
+If your |webui| is installed on another system than the |dir|, you have to copy the profile to the |dir|.
 
-This is the default profile, giving access to all Bareos resources and allowing all commands used by the |bareosWebui|:
+This is the default profile, giving access to all Bareos resources and allowing all commands used by the |webui|:
 
 .. code-block:: bareosconfig
    :caption: bareos-dir.d/profile/webui-admin.conf
@@ -225,7 +225,7 @@ This is the default profile, giving access to all Bareos resources and allowing 
      Plugin Options ACL = *all*
    }
 
-The :config:option:`Dir/Profile`\  itself does not give any access to the |bareosDir|, but can be used by :config:option:`Dir/Console`\ , which do give access to the |bareosDir|, see :ref:`section-webui-console`.
+The :config:option:`Dir/Profile`\  itself does not give any access to the |dir|, but can be used by :config:option:`Dir/Console`\ , which do give access to the |dir|, see :ref:`section-webui-console`.
 
 For details, please read :ref:`DirectorResourceProfile`.
 
@@ -234,18 +234,18 @@ For details, please read :ref:`DirectorResourceProfile`.
 SELinux
 ^^^^^^^
 
-:index:`[TAG=SELinux->bareos-webui] <pair: SELinux; bareos-webui>`
+:index:`[TAG=SELinux->bareos-webui] <single: SELinux; bareos-webui>`
 
-To use |bareosDir| on a system with SELinux enabled, permission must be given to HTTPD to make network connections:
+To use |dir| on a system with SELinux enabled, permission must be given to HTTPD to make network connections:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    setsebool -P httpd_can_network_connect on
 
 Configure your Apache Webserver
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=Apache->bareos-webui] <pair: Apache; bareos-webui>` 
+:index:`[TAG=Apache->bareos-webui] <single: Apache; bareos-webui>` 
 
 .. _section-webui-apache:
 
@@ -258,7 +258,7 @@ The required Apache modules, :strong:`setenv`, :strong:`rewrite` and :strong:`ph
 Configure your /etc/bareos-webui/directors.ini
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=Configuration->WebUI] <pair: Configuration; WebUI>` 
+:index:`[TAG=Configuration->WebUI] <single: Configuration; WebUI>` 
 
 .. _section-webui-configuration-files:
 
@@ -352,7 +352,7 @@ You can add as many directors as you want, also the same host with a different n
 Configure your /etc/bareos-webui/configuration.ini
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Since :sinceVersion:`16.2.2: /etc/bareos-webui/configuration.ini` you are able to configure some parameters of the |bareosWebui| to your needs.
+Since :sinceVersion:`16.2.2: /etc/bareos-webui/configuration.ini` you are able to configure some parameters of the |webui| to your needs.
 
 .. code-block:: bareosconfig
    :caption: /etc/bareos-webui/configuration.ini
@@ -410,11 +410,11 @@ Upgrade from 15.2 to 16.2
 Console/Profile changes
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The |bareosWebui| Director profile shipped with Bareos 15.2 (:config:option:`Dir/Profile = webui`\  in the file :file:`/etc/bareos/bareos-dir.d/webui-profiles.conf`) is not sufficient to use the |bareosWebui| 16.2. This has several reasons:
+The |webui| Director profile shipped with Bareos 15.2 (:config:option:`Dir/Profile = webui`\  in the file :file:`/etc/bareos/bareos-dir.d/webui-profiles.conf`) is not sufficient to use the |webui| 16.2. This has several reasons:
 
 #. The handling of :strong:`Acl`s is more strict in Bareos 16.2 than it has been in Bareos 15.2. Substring matching is no longer enabled, therefore you need to change :bcommand:`.bvfs_*` to :bcommand:`.bvfs_.*` in your :config:option:`dir/profile/CommandAcl`\  to have a proper regular expression. Otherwise the restore module won’t work any longer, especially the file browser.
 
-#. The |bareosWebui| 16.2 uses following additional commands:
+#. The |webui| 16.2 uses following additional commands:
 
    -  .help
 
@@ -444,7 +444,7 @@ Since :sinceVersion:`16.2.0: Webui offers limited support for multiple catalogs`
 configuration.ini
 ~~~~~~~~~~~~~~~~~
 
-Since 16.2 the |bareosWebui| introduced an additional configuration file besides the directors.ini file named configuration.ini where you are able to adjust some parameters of the webui to your needs. Please see :ref:`section-webui-configuration-files` for more details.
+Since 16.2 the |webui| introduced an additional configuration file besides the directors.ini file named configuration.ini where you are able to adjust some parameters of the webui to your needs. Please see :ref:`section-webui-configuration-files` for more details.
 
 Additional information
 ----------------------
@@ -452,9 +452,9 @@ Additional information
 NGINX
 ~~~~~
 
-:index:`[TAG=nginx->bareos-webui] <pair: nginx; bareos-webui>`
+:index:`[TAG=nginx->bareos-webui] <single: nginx; bareos-webui>`
 
-If you prefer to use |bareosWebui| on Nginx with php5-fpm instead of Apache, a basic working configuration could look like this:
+If you prefer to use |webui| on Nginx with php5-fpm instead of Apache, a basic working configuration could look like this:
 
 .. code-block:: bareosconfig
    :caption: bareos-webui on nginx
@@ -491,6 +491,6 @@ If you prefer to use |bareosWebui| on Nginx with php5-fpm instead of Apache, a b
 
    }
 
-This will make the |bareosWebui| accessible at http://bareos:9100/ (assuming your DNS resolve the hostname :strong:`bareos` to the NGINX server).  
+This will make the |webui| accessible at http://bareos:9100/ (assuming your DNS resolve the hostname :strong:`bareos` to the NGINX server).  
 
 

@@ -50,7 +50,7 @@ If the Migration control Job finds more than one existing Job to migrate, it cre
 Important Migration Considerations
 ----------------------------------
 
-:index:`[TAG=Migration->Important Migration Considerations] <pair: Migration; Important Migration Considerations>`
+:index:`[TAG=Migration->Important Migration Considerations] <single: Migration; Important Migration Considerations>`
 
 -  Each Pool into which you migrate Jobs or Volumes must contain Volumes of only one :config:option:`dir/storage/MediaType`\ .
 
@@ -120,7 +120,7 @@ Pool Resource
 Example Migration Jobs
 ~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Example->Migration Jobs] <pair: Example; Migration Jobs>`
+:index:`[TAG=Example->Migration Jobs] <single: Example; Migration Jobs>`
 
 Assume a simple configuration with a single backup job as described below.
 

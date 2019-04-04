@@ -26,9 +26,9 @@ A Bareos Storage Daemon can use various storage backends:
 Droplet Storage Backend
 -----------------------
 
-:index:`[TAG=Backend->Droplet] <pair: Backend; Droplet>` :index:`[TAG=Backend->Droplet->S3] <triple: Backend; Droplet; S3>` :index:`[TAG=Backend->S3|see {Backend->Droplet}] <triple: Backend; S3|see {Backend; Droplet}>`
+:index:`[TAG=Backend->Droplet] <single: Backend; Droplet>` :index:`[TAG=Backend->Droplet->S3] <single: Backend; Droplet; S3>` :index:`[TAG=Backend->S3|see {Backend->Droplet}] <single: Backend; S3|see {Backend; Droplet}>`
 
-The **bareos-storage-droplet** backend (:sinceVersion:`17.2.7: Droplet`) can be used to access Object Storage through **libdroplet**. Droplet support a number of backends, most notably S3. For details about Droplet itself see `<https://github.com/scality/Droplet>`_.
+The **bareos-storage-droplet** backend (:sinceVersion:`17.2.7: Droplet`) can be used to access Object Storage through **libdroplet**. Droplet support a number of backends, most notably S3. For details about Droplet itself see https://github.com/scality/Droplet.
 
 Requirements
 ~~~~~~~~~~~~
@@ -47,7 +47,7 @@ Install the package **bareos-storage-droplet** by using an appropriate package m
 Configuration
 ~~~~~~~~~~~~~
 
-The droplet backend requires a |bareosDir| :ref:`DirectorResourceStorage`, a |bareosSd| :ref:`StorageResourceDevice` as well as a Droplet profile file where your access– and secret–keys and other parameters for the connection to your object storage are stored.
+The droplet backend requires a |dir| :ref:`DirectorResourceStorage`, a |sd| :ref:`StorageResourceDevice` as well as a Droplet profile file where your access– and secret–keys and other parameters for the connection to your object storage are stored.
 
 .. _section-DropletAwsS3:
 
@@ -57,15 +57,15 @@ AWS S3
 Director
 ''''''''
 
-First, we will create the new |bareosDir| :ref:`DirectorResourceStorage`.
+First, we will create the new |dir| :ref:`DirectorResourceStorage`.
 
 For the following example, we
 
 -  choose the name :config:option:`Dir/Storage = S3_Object`\ .
 
--  choose \resourceDirectiveValue{Dir}{Storage}{Media Type}{S3_Object1}. We name it this way, in case we later add more separated Object Storages that don’t have access to the same volumes.
+-  choose :config:option:`dir/storage/MediaType = S3_Object1`\ . We name it this way, in case we later add more separated Object Storages that don’t have access to the same volumes.
 
--  assume the |bareosSd| is located on the host :strong:`bareos-sd.example.com` and will offers the :ref:`StorageResourceDevice` :config:option:`Sd/Device = S3_ObjectStorage`\  (to be configured in the next section).
+-  assume the |sd| is located on the host :strong:`bareos-sd.example.com` and will offers the :ref:`StorageResourceDevice` :config:option:`Sd/Device = S3_ObjectStorage`\  (to be configured in the next section).
 
 .. code-block:: bareosconfig
    :caption: bareos-dir.d/storage/S3\_Object.conf
@@ -78,14 +78,14 @@ For the following example, we
        Media Type = "S3_Object1"
    }
 
-These credentials are only used to connect to the |bareosSd|. The credentials to access the object store (e.g. S3) are stored in the |bareosSd| Droplet Profile.
+These credentials are only used to connect to the |sd|. The credentials to access the object store (e.g. S3) are stored in the |sd| Droplet Profile.
 
 Storage Daemon
 ''''''''''''''
 
-As of your |bareosSd| configuration, we need to setup a new device that acts as a link to Object Storage backend.
+As of your |sd| configuration, we need to setup a new device that acts as a link to Object Storage backend.
 
-The name and media type must correspond to those settings in the |bareosDir| :ref:`DirectorResourceStorage`:
+The name and media type must correspond to those settings in the |dir| :ref:`DirectorResourceStorage`:
 
 -  :config:option:`sd/device/Name`\  = :config:option:`dir/storage/Device`\ 
 
@@ -110,7 +110,7 @@ A device for the usage of AWS S3 object storage with a bucket named :file:`backu
      Maximum Concurrent Jobs = 1
    }
 
-In these examples all the backup data is placed in the :file:`bareos-backup` bucket on the defined S3 storage. In contrast to other |bareosSd| backends, a Bareos volume is not represented by a single file. Instead a volume is a sub-directory in the defined bucket and every chunk is placed in the volume directory with the filename 0000-9999 and a size defined in the chunksize option. It is implemented this way, as S3 does not allow to append to a file. Instead it always writes full
+In these examples all the backup data is placed in the :file:`bareos-backup` bucket on the defined S3 storage. In contrast to other |sd| backends, a Bareos volume is not represented by a single file. Instead a volume is a sub-directory in the defined bucket and every chunk is placed in the volume directory with the filename 0000-9999 and a size defined in the chunksize option. It is implemented this way, as S3 does not allow to append to a file. Instead it always writes full
 files, so every append operation could result in reading and writing the full volume file.
 
 Following :config:option:`sd/device/DeviceOptions`\  settings are possible:
@@ -227,10 +227,10 @@ For testing following :config:option:`sd/device/DeviceOptions`\  should be used:
 
 -  :file:`retries=1`
 
-If the S3 backend is or becomes unreachable, the |bareosSd| will behave depending on :strong:`iothreads` and :strong:`retries`. When the |bareosSd| is using cached writing (:strong:`iothreads`\ :math:`>=1`) and :strong:`retries` is set to zero (unlimited tries), the job will continue running until the backend becomes available again. The job cannot be canceled in this case, as the |bareosSd| will
+If the S3 backend is or becomes unreachable, the |sd| will behave depending on :strong:`iothreads` and :strong:`retries`. When the |sd| is using cached writing (:strong:`iothreads`\ :math:`>=1`) and :strong:`retries` is set to zero (unlimited tries), the job will continue running until the backend becomes available again. The job cannot be canceled in this case, as the |sd| will
 continuously try to write the cached files.
 
-Great caution should be used when using :strong:`retries` :math:`>=0` combined with cached writing. If the backend becomes unavailable and the |bareosSd| reaches the predefined tries, the job will be discarded silently yet marked as :file:`OK` in the |bareosDir|.
+Great caution should be used when using :strong:`retries` :math:`>=0` combined with cached writing. If the backend becomes unavailable and the |sd| reaches the predefined tries, the job will be discarded silently yet marked as :file:`OK` in the |dir|.
 
 You can always check the status of the writing process by using :bcommand:`status storage=...`. The current writing status will be displayed then:
 

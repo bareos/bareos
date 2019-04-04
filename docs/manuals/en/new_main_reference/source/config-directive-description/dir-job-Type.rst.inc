@@ -1,4 +1,4 @@
-The :strong:`Type` directive specifies the Job type, which is one of the following:
+The :strong:`Type`\  directive specifies the Job type, which is one of the following:
 
 Backup
    | 

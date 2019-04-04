@@ -11,7 +11,7 @@ Data Spooling
 
 .. _section-DataSpooling:
 
- :index:`[TAG=Data Spooling] <single: Data Spooling>` :index:`[TAG=Spooling->Data] <pair: Spooling; Data>`
+ :index:`[TAG=Data Spooling] <single: Data Spooling>` :index:`[TAG=Spooling->Data] <single: Spooling; Data>`
 
 Bareos allows you to specify that you want the Storage daemon to initially write your data to disk and then subsequently to tape. This serves several important purposes.
 
@@ -30,15 +30,15 @@ The remainder of this chapter explains the various directives that you can use i
 Data Spooling Directives
 ------------------------
 
-:index:`[TAG=Data Spooling->Directives] <pair: Data Spooling; Directives>`
+:index:`[TAG=Data Spooling->Directives] <single: Data Spooling; Directives>`
 
 The following directives can be used to control data spooling.
 
 -  Turn data spooling on/off at the Job level: :config:option:`dir/job/SpoolData`\  = :strong:`Yes|No`
 
--  This setting can be overwritten in a Schedule :config:option:`dir/schedule/Run`\  directive: ``SpoolData=``:strong:`Yes|No`
+-  This setting can be overwritten in a Schedule :config:option:`dir/schedule/Run`\  directive: :strong:`SpoolData=`:strong:`Yes|No`
 
--  To override the Job specification in a bconsole session using the :bcommand:`run` command: ``SpoolData=``:strong:`Yes|No`
+-  To override the Job specification in a bconsole session using the :bcommand:`run` command: :strong:`SpoolData=`:strong:`Yes|No`
 
    Please note that this does not refer to a configuration statement, but to an argument for the run command.
 
@@ -57,8 +57,9 @@ Additional Notes
 
    
 
-   .. warning::
-      Exclude your the spool directory from any backup,
+      .. warning::
+
+         Exclude your the spool directory from any backup,
       otherwise, your job will write enormous amounts of data to the Volume, and
       most probably terminate in error. This is because in attempting to backup the
       spool file, the backup data will be written a second time to the spool file,

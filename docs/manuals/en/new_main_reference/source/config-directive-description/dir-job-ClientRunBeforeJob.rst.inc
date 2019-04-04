@@ -3,6 +3,7 @@ This is basically a shortcut for the :config:option:`dir/job/RunScript`\  resour
 
 
    .. warning::
+
       For compatibility reasons, with this shortcut, the command is executed
       directly when the client receive it. And if the command is in error, other
       remote runscripts will be discarded. To be sure that all commands will be

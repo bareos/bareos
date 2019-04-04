@@ -13,7 +13,7 @@ The Bareos programs contain a lot of debug messages. Normally, these are not pri
 Client Access Problems
 ----------------------
 
-:index:`[TAG=Problem->Cannot Access a Client] <pair: Problem; Cannot Access a Client>` There are several reasons why a |bareosDir| could not contact a client on a different machine. They are:
+:index:`[TAG=Problem->Cannot Access a Client] <single: Problem; Cannot Access a Client>` There are several reasons why a |dir| could not contact a client on a different machine. They are:
 
 -  Check if the client file daemon is really running.
 
@@ -30,12 +30,12 @@ Some of the DNS and Firewall problems can be circumvented by configuring clients
 Difficulties Connecting from the FD to the SD
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Problem->Connecting from the FD to the SD] <pair: Problem; Connecting from the FD to the SD>`
+:index:`[TAG=Problem->Connecting from the FD to the SD] <single: Problem; Connecting from the FD to the SD>`
 
 If you are having difficulties getting one or more of your File daemons to connect to the Storage daemon, it is most likely because you have not used a fully qualified domain name on the :config:option:`dir/storage/Address`\  directive. That is the resolver on the File daemon’s machine (not on the Director’s) must be able to resolve the name you supply into an IP address. An example of an address that is guaranteed not to work: :strong:`localhost`. An example that
 may work: :strong:`bareos-sd1`. An example that is more likely to work: :strong:`bareos-sd1.example.com`.
 
-You can verify how a |bareosFd| resolves a DNS name by the following command:
+You can verify how a |fd| resolves a DNS name by the following command:
 
 ::
 
@@ -48,12 +48,12 @@ You can verify how a |bareosFd| resolves a DNS name by the following command:
    bareos-fd resolves bareos-sd1.example.com to host[ipv4;192.168.0.1]
    \end{bconsole}
 
-If your address is correct, then make sure that no other program is using the port 9103 on the Storage daemon’s machine. The Bacula project has reserved these port numbers by IANA, therefore they should only be used by Bacula and its replacements like Bareos. However, apparently some HP printers do use these port numbers. A :command:`netstat -lntp` on the |bareosSd|’s machine can determine who is listening on the 9103 port (used for FD to SD communications in Bareos).
+If your address is correct, then make sure that no other program is using the port 9103 on the Storage daemon’s machine. The Bacula project has reserved these port numbers by IANA, therefore they should only be used by Bacula and its replacements like Bareos. However, apparently some HP printers do use these port numbers. A :command:`netstat -lntp` on the |sd|’s machine can determine who is listening on the 9103 port (used for FD to SD communications in Bareos).
 
 Authorization Errors
 ~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Problem->Authorization Errors] <pair: Problem; Authorization Errors>` :index:`[TAG=Concurrent Jobs] <single: Concurrent Jobs>` 
+:index:`[TAG=Problem->Authorization Errors] <single: Problem; Authorization Errors>` :index:`[TAG=Concurrent Jobs] <single: Concurrent Jobs>` 
 
 .. _AuthorizationErrors:
 
@@ -76,20 +76,20 @@ Here is a picture that indicates what names/passwords in which files/Resources m
 
 
 
-In the left column, you will find the Director, Storage, and Client resources, with their names and passwords – these are all in the |bareosDir| configuration. The right column is where the corresponding values should be found in the Console, Storage daemon (SD), and File daemon (FD) configuration files.
+In the left column, you will find the Director, Storage, and Client resources, with their names and passwords – these are all in the |dir| configuration. The right column is where the corresponding values should be found in the Console, Storage daemon (SD), and File daemon (FD) configuration files.
 
-Another thing to check is to ensure that the Bareos component you are trying to access has :strong:`Maximum Concurrent Jobs` set large enough to handle each of the Jobs and the Console that want to connect simultaneously. Once the maximum connections has been reached, each Bareos component will reject all new connections.
+Another thing to check is to ensure that the Bareos component you are trying to access has :strong:`Maximum Concurrent Jobs`\  set large enough to handle each of the Jobs and the Console that want to connect simultaneously. Once the maximum connections has been reached, each Bareos component will reject all new connections.
 
 .. _ConcurrentJobs:
 
 Concurrent Jobs
 ---------------
 
-:index:`[TAG=Job->Concurrent Jobs] <pair: Job; Concurrent Jobs>` :index:`[TAG=Running Concurrent Jobs] <single: Running Concurrent Jobs>` :index:`[TAG=Concurrent Jobs] <single: Concurrent Jobs>`
+:index:`[TAG=Job->Concurrent Jobs] <single: Job; Concurrent Jobs>` :index:`[TAG=Running Concurrent Jobs] <single: Running Concurrent Jobs>` :index:`[TAG=Concurrent Jobs] <single: Concurrent Jobs>`
 
-Bareos can run multiple concurrent jobs. Using the :strong:`Maximum Concurrent Jobs` directives, you can configure how many and which jobs can be run simultaneously:
+Bareos can run multiple concurrent jobs. Using the :strong:`Maximum Concurrent Jobs`\  directives, you can configure how many and which jobs can be run simultaneously:
 
-|bareosDir|
+|dir|
    | 
 
    -  
@@ -108,7 +108,7 @@ Bareos can run multiple concurrent jobs. Using the :strong:`Maximum Concurrent J
 
       :config:option:`dir/storage/MaximumConcurrentJobs`\ 
 
-|bareosSd|
+|sd|
    | 
 
    -  
@@ -119,14 +119,14 @@ Bareos can run multiple concurrent jobs. Using the :strong:`Maximum Concurrent J
 
       :config:option:`sd/device/MaximumConcurrentJobs`\ 
 
-|bareosFd|
+|fd|
    | 
 
    -  
 
       :config:option:`fd/client/MaximumConcurrentJobs`\ 
 
-For example, if you want two different jobs to run simultaneously backing up the same Client to the same Storage device, they will run concurrently only if you have set :strong:`Maximum Concurrent Jobs` greater than one in the :strong:`Director` resource, the :strong:`Client` resource, and the :strong:`Storage` resource in |bareosDir| configuration.
+For example, if you want two different jobs to run simultaneously backing up the same Client to the same Storage device, they will run concurrently only if you have set :strong:`Maximum Concurrent Jobs`\  greater than one in the :config:option:`Dir/Director`\  resource, the :config:option:`Dir/Client`\  resource, and the :config:option:`Dir/Storage`\  resource in |dir| configuration.
 
 
 
@@ -171,7 +171,7 @@ Below is a super stripped down :file:`bareos-dir.conf` file showing you the four
 Media VolWrites: integer out of range
 -------------------------------------
 
-:index:`[TAG=Errors->integer out of range] <pair: Errors; integer out of range>` :index:`[TAG=Catalog->Media->VolWrites] <triple: Catalog; Media; VolWrites>`
+:index:`[TAG=Errors->integer out of range] <single: Errors; integer out of range>` :index:`[TAG=Catalog->Media->VolWrites] <single: Catalog; Media; VolWrites>`
 
 In some situation, you receive an error message similar to this:
 
@@ -180,7 +180,7 @@ In some situation, you receive an error message similar to this:
    12-Apr 15:10 bareos-dir JobId 15860: Fatal error: Catalog error updating Media record. sql_update.c:385 update UPDATE Media SET VolJobs=12,VolFiles=10,VolBlocks=155013,VolBytes=10000263168,VolMounts=233,VolErrors=0,VolWrites=2147626019,MaxVolBytes=0,VolStatus='Append',Slot=1,InChanger=1,VolReadTime=0,VolWriteTime=842658562655,LabelType=0,StorageId=3,PoolId=2,VolRetention=144000,VolUseDuration=82800,MaxVolJobs=0,MaxVolFiles=0,Enabled=1,LocationId=0,ScratchPoolId=0,RecyclePoolId=0,RecycleCount=201,Recycle=1,ActionOnPurge=0,MinBlocksize=0,MaxBlocksize=0 WHERE VolumeName='000194L5' failed:
    ERROR: integer out of range
 
-The database column \dbcolumn{VolWrites} in the **Media** table stores the number of write accesses to a volume. It is only used for statistics.
+The database column **VolWrites** in the **Media** table stores the number of write accesses to a volume. It is only used for statistics.
 
 However, it has happened that the number of write accesses exceeds the maximum value supported by the database column (on |postgresql| it is currently 2147483647, 32 bit, signed integer). The result is a database error, similar to the one mentioned above.
 
@@ -217,14 +217,14 @@ In the long run, it is planed to modify the database schema to enable storing mu
 Tape Labels: ANSI or IBM
 ------------------------
 
-:index:`[TAG=Label->Tape Labels] <pair: Label; Tape Labels>` :index:`[TAG=Tape->Label->ANSI] <triple: Tape; Label; ANSI>` :index:`[TAG=Tape->Label->IBM] <triple: Tape; Label; IBM>`
+:index:`[TAG=Label->Tape Labels] <single: Label; Tape Labels>` :index:`[TAG=Tape->Label->ANSI] <single: Tape; Label; ANSI>` :index:`[TAG=Tape->Label->IBM] <single: Tape; Label; IBM>`
 
 By default, Bareos uses its own tape label (see :ref:`backward-compatibility-tape-format` and :config:option:`dir/pool/LabelType`\ ). However, Bareos also supports reading and write ANSI and IBM tape labels.
 
 Reading
 ~~~~~~~
 
-Reading ANSI/IBM labels is important, if some of your tapes are used by other programs that also support ANSI/IBM labels. For example, LTFS tapes :index:`[TAG=Tape->LTFS] <pair: Tape; LTFS>` are indicated by an ANSI label.
+Reading ANSI/IBM labels is important, if some of your tapes are used by other programs that also support ANSI/IBM labels. For example, LTFS tapes :index:`[TAG=Tape->LTFS] <single: Tape; LTFS>` are indicated by an ANSI label.
 
 If your are running Bareos in such an environment, you must set :config:option:`sd/device/CheckLabels`\  to yes, otherwise Bareos will not recognize that these tapes are already in use.
 
@@ -242,7 +242,7 @@ If you have labeled your volumes outside of Bareos, then the ANSI/IBM label will
 Tape Drive
 ----------
 
-:index:`[TAG=Problem->Tape] <pair: Problem; Tape>`
+:index:`[TAG=Problem->Tape] <single: Problem; Tape>`
 
 This chapter is concerned with testing and configuring your tape drive to make sure that it will work properly with Bareos using the btape program.
 
@@ -269,8 +269,7 @@ Do not proceed to the next item until you have succeeded with the previous one.
    
 
 #. Make sure you have a valid and correct Device resource corresponding to your drive. For Linux users, generally, the default one works. For FreeBSD users, there are two possible Device configurations (see below). For other drives and/or OSes, you will need to first ensure that your system tape modes are properly setup (see below), then possibly modify you Device resource depending on the output from the btape program (next item). When doing this, you should consult the
-   :ref:`Storage Daemon
-      Configuration <StoredConfChapter>` of this manual.
+   :ref:`Storage Daemon Configuration <StoredConfChapter>` of this manual.
 
 #. If you are using a Fibre Channel to connect your tape drive to Bareos, please be sure to disable any caching in the NSR (network storage router, which is a Fibre Channel to SCSI converter).
 
@@ -285,8 +284,7 @@ Do not proceed to the next item until you have succeeded with the previous one.
 
    
 
-   It isn’t necessary to run the autochanger part of the test at this time, but do not go past this point until the basic test succeeds. If you do have an autochanger, please be sure to read the :ref:`Autochanger
-      chapter <AutochangersChapter>` of this manual.
+   It isn’t necessary to run the autochanger part of the test at this time, but do not go past this point until the basic test succeeds. If you do have an autochanger, please be sure to read the :ref:`Autochanger chapter <AutochangersChapter>` of this manual.
 
 #. Run the btape fill command, preferably with two volumes. This can take a long time. If you have an autochanger and it is configured, Bareos will automatically use it. If you do not have it configured, you can manually issue the appropriate mtx command, or press the autochanger buttons to change the tape when requested to do so.
 
@@ -334,7 +332,7 @@ Testing Autochanger and Adapting mtx-changer script
 
 .. _section-MtxChangerManualUsage:
 
- :index:`[TAG=Autochanger->Testing] <pair: Autochanger; Testing>` :index:`[TAG=Autochanger->mtx-changer] <pair: Autochanger; mtx-changer>` :index:`[TAG=Command->mtx-changer] <pair: Command; mtx-changer>` :index:`[TAG=Problem->Autochanger] <pair: Problem; Autochanger>` :index:`[TAG=Problem->mtx-changer] <pair: Problem; mtx-changer>`
+ :index:`[TAG=Autochanger->Testing] <single: Autochanger; Testing>` :index:`[TAG=Autochanger->mtx-changer] <single: Autochanger; mtx-changer>` :index:`[TAG=Command->mtx-changer] <single: Command; mtx-changer>` :index:`[TAG=Problem->Autochanger] <single: Problem; Autochanger>` :index:`[TAG=Problem->mtx-changer] <single: Problem; mtx-changer>`
 
 In case, Bareos does not work well with the Autochanger, it is preferable to "hand-test" that the changer works. To do so, we suggest you do the following commands:
 
@@ -423,7 +421,7 @@ It should print "3" Note, we have used an "illegal" slot number 0. In this case,
 will unload the tape into slot 3.
 
 Once all the above commands work correctly, assuming that you have the right Changer Command in your configuration, Bareos should be able to operate the changer. The only remaining area of problems will be if your autoloader needs some time to get the tape loaded after issuing the command. After the mtx-changer script returns, Bareos will immediately rewind and read the tape. If Bareos gets rewind I/O errors after a tape change, you will probably need to configure the
-``load_sleep`` paramenter in the config file :file:`/etc/bareos/mtx-changer.conf`. You can test whether or not you need a sleep by putting the following commands into a file and running it as a script:
+:strong:`load_sleep` paramenter in the config file :file:`/etc/bareos/mtx-changer.conf`. You can test whether or not you need a sleep by putting the following commands into a file and running it as a script:
 
 
 
@@ -437,7 +435,7 @@ Once all the above commands work correctly, assuming that you have the right Cha
 
 
 
-If the above script runs, you probably have no timing problems. If it does not run, start by putting a sleep 30 or possibly a sleep 60 in the script just after the mtx-changer load command. If that works, then you should configure the ``load_sleep`` paramenter in the config file :file:`/etc/bareos/mtx-changer.conf` to the specified value so that it will be effective when Bareos runs.
+If the above script runs, you probably have no timing problems. If it does not run, start by putting a sleep 30 or possibly a sleep 60 in the script just after the mtx-changer load command. If that works, then you should configure the :strong:`load_sleep` paramenter in the config file :file:`/etc/bareos/mtx-changer.conf` to the specified value so that it will be effective when Bareos runs.
 
 A second problem that comes up with a small number of autochangers is that they need to have the cartridge ejected before it can be removed. If this is the case, the load 3 will never succeed regardless of how long you wait. If this seems to be your problem, you can insert an eject just after the unload so that the script looks like:
 
@@ -454,7 +452,7 @@ A second problem that comes up with a small number of autochangers is that they 
 
 
 
-If this solves your problems, set the parameter ``offline`` in the config file :file:`/etc/bareos/mtx-changer.conf` to "1".
+If this solves your problems, set the parameter :strong:`offline` in the config file :file:`/etc/bareos/mtx-changer.conf` to "1".
 
 Restore
 -------
@@ -462,7 +460,7 @@ Restore
 Restore a pruned job using a pattern
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Restore->pruned job] <pair: Restore; pruned job>` :index:`[TAG=Problem->Restore->pruned job] <triple: Problem; Restore; pruned job>` :index:`[TAG=Regex] <single: Regex>`
+:index:`[TAG=Restore->pruned job] <single: Restore; pruned job>` :index:`[TAG=Problem->Restore->pruned job] <single: Problem; Restore; pruned job>` :index:`[TAG=Regex] <single: Regex>`
 
 It is possible to configure Bareos in a way, that job information are still stored in the Bareos catalog, while the individual file information are already pruned.
 
@@ -484,7 +482,7 @@ See also :ref:`FileRegex bsr option <FileRegex>` for more information.
 Problems Restoring Files
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Restore->Files->Problem] <triple: Restore; Files; Problem>` :index:`[TAG=Problem->Restoring Files] <pair: Problem; Restoring Files>` :index:`[TAG=Problem->Tape->fixed mode] <triple: Problem; Tape; fixed mode>` :index:`[TAG=Problem->Tape->variable mode] <triple: Problem; Tape; variable mode>`
+:index:`[TAG=Restore->Files->Problem] <single: Restore; Files; Problem>` :index:`[TAG=Problem->Restoring Files] <single: Problem; Restoring Files>` :index:`[TAG=Problem->Tape->fixed mode] <single: Problem; Tape; fixed mode>` :index:`[TAG=Problem->Tape->variable mode] <single: Problem; Tape; variable mode>`
 
 The most frequent problems users have restoring files are error messages such as:
 
@@ -525,7 +523,7 @@ Try the following things, each separately, and reset your Device resource to wha
 Restoring Files Can Be Slow
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Restore->slow] <pair: Restore; slow>` :index:`[TAG=Problem->Restore->slow] <triple: Problem; Restore; slow>`
+:index:`[TAG=Restore->slow] <single: Restore; slow>` :index:`[TAG=Problem->Restore->slow] <single: Problem; Restore; slow>`
 
 Restoring files is generally much slower than backing them up for several reasons. The first is that during a backup the tape is normally already positioned and Bareos only needs to write. On the other hand, because restoring files is done so rarely, Bareos keeps only the start file and block on the tape for the whole job rather than on a file by file basis which would use quite a lot of space in the catalog.
 
@@ -540,7 +538,7 @@ For all the above reasons the restore process is generally much slower than back
 Restoring When Things Go Wrong
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Catalog->Restore] <pair: Catalog; Restore>` :index:`[TAG=Restore->Catalog] <pair: Restore; Catalog>` :index:`[TAG=Disaster->Recovery->Catalog] <triple: Disaster; Recovery; Catalog>` :index:`[TAG=Problem->Repair Catalog] <pair: Problem; Repair Catalog>`
+:index:`[TAG=Catalog->Restore] <single: Catalog; Restore>` :index:`[TAG=Restore->Catalog] <single: Restore; Catalog>` :index:`[TAG=Disaster->Recovery->Catalog] <single: Disaster; Recovery; Catalog>` :index:`[TAG=Problem->Repair Catalog] <single: Problem; Repair Catalog>`
 
 This and the following sections will try to present a few of the kinds of problems that can come up making restoring more difficult. We will try to provide a few ideas how to get out of these problem situations. In addition to what is presented here, there is more specific information on restoring a :ref:`Client <section-BareMetalRestoreClient>` and your :ref:`Server <section-RestoreServer>` in the :ref:`RescueChapter` chapter of this manual.
 

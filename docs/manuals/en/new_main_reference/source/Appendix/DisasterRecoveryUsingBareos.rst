@@ -3,7 +3,7 @@
 Disaster Recovery Using Bareos
 ==============================
 
-:index:`[TAG=Disaster->Recovery] <pair: Disaster; Recovery>` :index:`[TAG=Recovery->Disaster Recovery] <pair: Recovery; Disaster Recovery>`
+:index:`[TAG=Disaster->Recovery] <single: Disaster; Recovery>` :index:`[TAG=Recovery->Disaster Recovery] <single: Recovery; Disaster Recovery>`
 
 General
 -------
@@ -28,7 +28,7 @@ Here are a few important considerations concerning disaster recovery that you sh
 Steps to Take Before Disaster Strikes
 -------------------------------------
 
-:index:`[TAG=Disaster->Before] <pair: Disaster; Before>`
+:index:`[TAG=Disaster->Before] <single: Disaster; Before>`
 
 -  Create a rescue or CDROM for your systems. Generally, they are offered by each distribution, and there are many good rescue disks on the Web
 
@@ -64,7 +64,7 @@ Generally, following components are required for a Bare Metal Recovery:
 Linux
 ~~~~~
 
-:index:`[TAG=Disaster->Recovery->Linux] <triple: Disaster; Recovery; Linux>`
+:index:`[TAG=Disaster->Recovery->Linux] <single: Disaster; Recovery; Linux>`
 
 From the Relax-and-Recover web site (`http://relax-and-recover.org <http://relax-and-recover.org>`_):
 
@@ -75,13 +75,13 @@ Relax-and-Recover (ReaR) is quite easy to use with Bareos.
 Installation
 ^^^^^^^^^^^^
 
-Bareos is a supported backend for ReaR >= 1.15. To use the ``BAREOS_CLIENT`` option, ReaR >= 1.17 is required. If ReaR >= 1.17 is not part of your distribution, check the `download section on the
+Bareos is a supported backend for ReaR >= 1.15. To use the :strong:`BAREOS_CLIENT` option, ReaR >= 1.17 is required. If ReaR >= 1.17 is not part of your distribution, check the `download section on the
 ReaR website <http://relax-and-recover.org/download/>`_.
 
 Configuration
 ^^^^^^^^^^^^^
 
-Assuming you have a working Bareos configuration on the system you want to protect with ReaR and Bareos references this system by the name ``bareosclient-fd``, the only configuration for ReaR is:
+Assuming you have a working Bareos configuration on the system you want to protect with ReaR and Bareos references this system by the name :strong:`bareosclient-fd`, the only configuration for ReaR is:
 
 .. code-block:: cfg
 
@@ -110,7 +110,7 @@ Backup
 
 If you have installed and configured ReaR on your system, type
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Create Rescue Image
 
    <command>rear</command><parameter> -v mkrescue</parameter>
@@ -119,8 +119,9 @@ to create the rescue image. If you used the configuration example above, you wil
 
 
 
-.. warning::
-   This will not create a Bareos backup on your system! You will have to do that by
+   .. warning::
+
+      This will not create a Bareos backup on your system! You will have to do that by
    other means, e.g. by a regular Bareos backup schedule.
    Also :command:`rear mkbackup` will not create a backup. 
    In this configuration it will only create the rescue ISO 
@@ -131,7 +132,7 @@ Recovery
 
 In case, you want to recover your system, boot it using the generated ReaR recovery ISO. After booting log in as user **root** and type
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Restore your system using Rear and Bareos
 
    <command>rear</command><parameter> recover</parameter>
@@ -148,7 +149,7 @@ ReaR will restore your bootloader. Recovery is complete.
 Restoring a Bareos Server
 -------------------------
 
-:index:`[TAG=Restore->Bareos Server] <pair: Restore; Bareos Server>` 
+:index:`[TAG=Restore->Bareos Server] <single: Restore; Bareos Server>` 
 
 .. _section-RestoreServer:
 

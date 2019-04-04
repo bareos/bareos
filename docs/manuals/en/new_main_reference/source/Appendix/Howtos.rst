@@ -33,7 +33,7 @@ Obviously, it can not be used to do a restore.
 Backup Of Third Party Databases
 -------------------------------
 
-:index:`[TAG=Backup->of Third Party Databases] <pair: Backup; of Third Party Databases>` :index:`[TAG=Database->Backup Of Third Party] <pair: Database; Backup Of Third Party>` 
+:index:`[TAG=Backup->of Third Party Databases] <single: Backup; of Third Party Databases>` :index:`[TAG=Database->Backup Of Third Party] <single: Database; Backup Of Third Party>` 
 
 .. _BackupOtherDBs:
 
@@ -46,7 +46,7 @@ The best solution is to shutdown your database before backing it up, or use some
 Backup of MSSQL Databases with Bareos Plugin
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=MSSQL Backup] <single: MSSQL Backup>` :index:`[TAG=Database->MSSQL] <pair: Database; MSSQL>` :index:`[TAG=Plugin->MSSQL backup] <pair: Plugin; MSSQL backup>` 
+:index:`[TAG=MSSQL Backup] <single: MSSQL Backup>` :index:`[TAG=Database->MSSQL] <single: Database; MSSQL>` :index:`[TAG=Plugin->MSSQL backup] <single: Plugin; MSSQL backup>` 
 
 .. _MSSQL:
 
@@ -64,6 +64,7 @@ If you like to use the MSSQL-Plugin to backing up your Databases you need to con
    | 
 
 .. warning::
+
    If you set the databases into the mentionend mode you have to consider some maintance facts. The database doesn't shrink or delete the logs unanttended, so you have to shrink them manual once a week and you have to truncate the logs once in a month.
 
 -  | Security and Access
@@ -90,7 +91,7 @@ There is no difference for the rights and roles between using a systemaccount (t
 MSSQL Plugin Installation
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For Bareos < 14.2, install the Bareos MSSQL plugin onto the MSSQL server you want to backup. Bareos >= 14.2 also allows to backup remote MSSQL servers (option ``serveraddress``).
+For Bareos < 14.2, install the Bareos MSSQL plugin onto the MSSQL server you want to backup. Bareos >= 14.2 also allows to backup remote MSSQL servers (option :strong:`serveraddress`).
 
 Bareos Windows-Installer
 ''''''''''''''''''''''''
@@ -632,7 +633,7 @@ Followed is a example for a restore of full, differential and incremental backup
 Backup of a PostgreSQL Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=PostgreSQL->Backup] <pair: PostgreSQL; Backup>` :index:`[TAG=Database->PostgreSQL->Backup] <triple: Database; PostgreSQL; Backup>` 
+:index:`[TAG=PostgreSQL->Backup] <single: PostgreSQL; Backup>` :index:`[TAG=Database->PostgreSQL->Backup] <single: Database; PostgreSQL; Backup>` 
 
 .. _backup-postgresql:
 
@@ -643,7 +644,7 @@ In this section, we describe different methods how to do backups of the PostgreS
 Backup of a PostgreSQL Database by using the RunScript directive
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=RunScript->Example] <pair: RunScript; Example>`
+:index:`[TAG=RunScript->Example] <single: RunScript; Example>`
 
 One method to backup a PostgreSQL database is to use the :command:`pg_dumpall` tool to dump the database into a file and then backup it as a normal file. After the backup, the file can be removed. It may also be an option not to remove it, so that the latest version is always available immediately. On the next job run it will be overwritten anyway.
 
@@ -693,7 +694,7 @@ Note that redirecting the :command:`pg_dumpall` output to a file requires to run
 Backup of a PostgreSQL Databases by using the bpipe plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=bpipe->PostgreSQL backup] <pair: bpipe; PostgreSQL backup>`
+:index:`[TAG=bpipe->PostgreSQL backup] <single: bpipe; PostgreSQL backup>`
 
 Instead of creating a temporary database dump file, the bpipe plugin can be used. For general information about bpipe, see the :ref:`bpipe` section. The bpipe plugin is configured inside the :config:option:`dir/fileset/Include`\  section of a File Set, e.g.:
 
@@ -733,7 +734,7 @@ This can also be used, to backup a database that is running on a remote host:
 Backup of a PostgreSQL Databases by using the PGSQL-Plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=Plugin->PostgreSQL Backup] <pair: Plugin; PostgreSQL Backup>` 
+:index:`[TAG=Plugin->PostgreSQL Backup] <single: Plugin; PostgreSQL Backup>` 
 
 .. _backup-postgresql-plugin:
 
@@ -748,7 +749,7 @@ For a full description, see https://github.com/bareos/contrib-pgsql-plugin/wiki.
 Backup of a MySQL Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=MySQL->Backup] <pair: MySQL; Backup>` :index:`[TAG=Database->MySQL->Backup] <triple: Database; MySQL; Backup>` 
+:index:`[TAG=MySQL->Backup] <single: MySQL; Backup>` :index:`[TAG=Database->MySQL->Backup] <single: Database; MySQL; Backup>` 
 
 .. _backup-mysql:
 
@@ -759,7 +760,7 @@ In this section, we describe different methods to do a full backup of a MySQL da
 Backup of MySQL Databases using the Bareos MySQL Percona xtrabackup Plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=Plugin->MySQL Backup] <pair: Plugin; MySQL Backup>` :index:`[TAG=Percona xtrabackup] <single: Percona xtrabackup>` :index:`[TAG=xtrabackup] <single: xtrabackup>` 
+:index:`[TAG=Plugin->MySQL Backup] <single: Plugin; MySQL Backup>` :index:`[TAG=Percona xtrabackup] <single: Percona xtrabackup>` :index:`[TAG=xtrabackup] <single: xtrabackup>` 
 
 .. _backup-mysql-xtrabackup:
 
@@ -773,9 +774,9 @@ Prerequisites
 
 Install the xtrabackup tool from Percona. Documentation and packages are available here: https://www.percona.com/software/mysql-database/percona-xtrabackup. The plugin was successfully tested with xtrabackup versions 2.3.5 and 2.4.4.
 
-As it is a Python plugin, it will also require to have the package **bareos-filedaemon-python-plugin** installed on the |bareosFd|, where you run it.
+As it is a Python plugin, it will also require to have the package **bareos-filedaemon-python-plugin** installed on the |fd|, where you run it.
 
-For authentication the :file:`.mycnf` file of the user running the |bareosFd|. Before proceeding, make sure that xtrabackup can connect to the database and create backups.
+For authentication the :file:`.mycnf` file of the user running the |fd|. Before proceeding, make sure that xtrabackup can connect to the database and create backups.
 
 Installation
 ''''''''''''
@@ -785,7 +786,7 @@ Make sure you have met the prerequisites. Install the files :file:`BareosFdPerco
 Configuration
 '''''''''''''
 
-Activate your plugin directory in the |bareosFd| configuration. See :ref:`fdPlugins` for more about plugins in general.
+Activate your plugin directory in the |fd| configuration. See :ref:`fdPlugins` for more about plugins in general.
 
 .. code-block:: bareosconfig
    :caption: bareos-fd.d/client/myself.conf
@@ -818,15 +819,15 @@ If used this way, the plugin will call xtrabackup to create a backup of all data
 
 You can append options to the plugin call as key=value pairs, separated by ’:’. The following options are available:
 
--  With ``mycnf`` you can make xtrabackup use a special mycnf-file with login credentials.
+-  With :strong:`mycnf` you can make xtrabackup use a special mycnf-file with login credentials.
 
--  ``dumpbinary`` lets you modify the default command xtrabackup.
+-  :strong:`dumpbinary` lets you modify the default command xtrabackup.
 
--  ``dumpoptions`` to modify the options for xtrabackup. Default setting is: :command:`--backup --datadir=/var/lib/mysql/ --stream=xbstream --extra-lsndir=/tmp/individual_tempdir`
+-  :strong:`dumpoptions` to modify the options for xtrabackup. Default setting is: :command:`--backup --datadir=/var/lib/mysql/ --stream=xbstream --extra-lsndir=/tmp/individual_tempdir`
 
--  ``restorecommand`` to modify the command for restore. Default setting is: :command:`xbstream -x -C`
+-  :strong:`restorecommand` to modify the command for restore. Default setting is: :command:`xbstream -x -C`
 
--  ``strictIncremental``: By default (false), an incremental backup will create data, even if the Log Sequence Number (LSN) wasn’t increased since last backup. This is to ensure, that eventual changes to MYISAM tables get into the backup. MYISAM does not support incremental backups, you will always get a full bakcup of these tables. If set to true, no data will be written into backup, if the LSN wasn’t changed.
+-  :strong:`strictIncremental`: By default (false), an incremental backup will create data, even if the Log Sequence Number (LSN) wasn’t increased since last backup. This is to ensure, that eventual changes to MYISAM tables get into the backup. MYISAM does not support incremental backups, you will always get a full bakcup of these tables. If set to true, no data will be written into backup, if the LSN wasn’t changed.
 
 Restore
 '''''''
@@ -857,20 +858,20 @@ To further prepare the restored files, use the :command:`xtrabackup --prepare` c
 Backup of MySQL Databases using the Python MySQL plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=Plugin->MySQL Backup] <pair: Plugin; MySQL Backup>` 
+:index:`[TAG=Plugin->MySQL Backup] <single: Plugin; MySQL Backup>` 
 
 .. _backup-mysql-python:
 
 
 
-The Python plugin from https://github.com/bareos/bareos-contrib/tree/master/fd-plugins/mysql-python makes a backup of all or selected MySQL databases from the |bareosFd| or any other MySQL server. It makes use of the mysqldump command and basically grabs data from mysqldump via pipe. This plugin is suitable to backup database dumps. If you prefer to use mechanisms like incremental hot-backups of InnoDB tables, please use the Bareos MySQL / MariaDB Percona xtrabackup Plugin (see
+The Python plugin from https://github.com/bareos/bareos-contrib/tree/master/fd-plugins/mysql-python makes a backup of all or selected MySQL databases from the |fd| or any other MySQL server. It makes use of the mysqldump command and basically grabs data from mysqldump via pipe. This plugin is suitable to backup database dumps. If you prefer to use mechanisms like incremental hot-backups of InnoDB tables, please use the Bareos MySQL / MariaDB Percona xtrabackup Plugin (see
 :ref:`backup-mysql-xtrabackup`).
 
-Following settings must be done on the Bareos client (|bareosFd|):
+Following settings must be done on the Bareos client (|fd|):
 
--  install and enable the |bareosFd| Python plugin
+-  install and enable the |fd| Python plugin
 
--  install the Python MySQL plugin (for some platforms it is available prepackaged from `<http://download.bareos.org/bareos/contrib/>`_, on the other platforms: copy the plugin files to the Bareos Plugin Directory)
+-  install the Python MySQL plugin (for some platforms it is available prepackaged from http://download.bareos.org/bareos/contrib/\ , on the other platforms: copy the plugin files to the Bareos Plugin Directory)
 
 -  disable bacula compatibility (default for Bareos >= 15.2)
 
@@ -884,7 +885,7 @@ Following settings must be done on the Bareos client (|bareosFd|):
      compatible = no
    }
 
-Configure the plugin in the |bareosDir|:
+Configure the plugin in the |dir|:
 
 .. code-block:: bareosconfig
    :caption: bareos-dir.d/fileset/mysql.conf
@@ -901,7 +902,7 @@ Configure the plugin in the |bareosDir|:
        }
    }
 
-In the above example the plugin creates and saves a dump from the databases called :strong:`test` and :strong:`wikidb`, running on the file-daemon. The commented example below specifies an explicit MySQL server called ``dbhost``, and connects with user :strong:`bareos`, password :strong:`bareos`, to create and save a backup of all databases.
+In the above example the plugin creates and saves a dump from the databases called :strong:`test` and :strong:`wikidb`, running on the file-daemon. The commented example below specifies an explicit MySQL server called :strong:`dbhost`, and connects with user :strong:`bareos`, password :strong:`bareos`, to create and save a backup of all databases.
 
 The plugin creates a pipe internally, thus no extra space on disk is needed. You will find one file per database in the backups in the virtual directory :file:`/_mysqlbackups_`.
 
@@ -914,7 +915,7 @@ dumpbinary
    command (with or without full path) to create the dumps. Default: :strong:`mysqldump`
 
 dumpoptions
-   options for dumpbinary, default: '':strong:`--events --single-transaction`''
+   options for dumpbinary, default: ":strong:`--events --single-transaction`"
 
 drop_and_recreate
    if not set to :strong:`false`, adds :strong:`--add-drop-database --databases` to dumpoptions
@@ -933,7 +934,7 @@ On restore, the database dumps are restored to the subdirectory :file:`_mysqlbac
 Backup of a MySQL Database by using the RunScript directive
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=RunScript->Example] <pair: RunScript; Example>`
+:index:`[TAG=RunScript->Example] <single: RunScript; Example>`
 
 One method to backup a MySQL database is to use the :command:`mysqldump` tool to dump the database into a file and then backup it as a normal file. After the backup, the file can be removed. It may also be an option not to remove it, so that the latest version is always available immediately. On the next job run it will be overwritten anyway.
 
@@ -983,7 +984,7 @@ Note that redirecting the :command:`mysqldump` output to a file requires to run 
 Backup of a MySQL Database by using the bpipe plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=bpipe->MySQL backup] <pair: bpipe; MySQL backup>`
+:index:`[TAG=bpipe->MySQL backup] <single: bpipe; MySQL backup>`
 
 Instead of creating a temporary database dump file, the bpipe plugin can be used. For general information about bpipe, see the :ref:`bpipe` section. The bpipe plugin is configured inside the Include section of a File Set, e.g.:
 
@@ -1047,9 +1048,9 @@ A very simple corresponding shell script (:command:`bpipe-restore.sh`) to the me
 Statistics Collection
 ---------------------
 
-Statistics Collection can be controlled by a number of configuration directives. If Statistics Collection is enabled, statistics are collected by the |bareosDir| and stored into the Catalog database. So enabling this feature will increase your database size.
+Statistics Collection can be controlled by a number of configuration directives. If Statistics Collection is enabled, statistics are collected by the |dir| and stored into the Catalog database. So enabling this feature will increase your database size.
 
-The Statistics are used by the |bareosWebui| to show the status of a running job. :index:`[TAG=Webui->Configure Statistics Collection] <pair: Webui; Configure Statistics Collection>`
+The Statistics are used by the |webui| to show the status of a running job. :index:`[TAG=Webui->Configure Statistics Collection] <single: Webui; Configure Statistics Collection>`
 
 Director Configuration - Director Resource Directives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1121,8 +1122,9 @@ Removing the client from the configuration will leave you with catalog records c
 
 
 
-  .. warning::
-     
+   .. warning::
+
+      
      After removing the job and file records you will be unable to restore the client's data.
      The :bcommand:`purge` command ignores retention policies, so please take careful.
    

@@ -4,8 +4,9 @@ If no value is specified or zero is specified, the Storage daemon will use a def
 
 
 
-.. warning::
-   If your are using LTO drives, changing the block size after labeling the tape will result into unreadable tapes.
+   .. warning::
+
+      If your are using LTO drives, changing the block size after labeling the tape will result into unreadable tapes.
 
 Please read chapter :ref:`Tapespeed and blocksizes`, to see how to tune this value in a safe manner.
 

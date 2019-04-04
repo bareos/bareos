@@ -124,7 +124,7 @@ Consolidate Job
        JobDefs = "DefaultJob"
    }
 
-\resourceDirectiveValue{Dir}{Job}{Type}{Consolidate}
+:config:option:`dir/job/Type = Consolidate`\ 
    configures a job to be a consolidate job. This type have been introduced with the Always Incremental feature. When used, it automatically trigger the consolidation of incremental jobs that need to be consolidated.
 
 :config:option:`dir/job/Accurate = yes`\ 
@@ -139,11 +139,12 @@ The always incremental jobs need to be executed during the backup window (usuall
 
 
 
-.. warning::
-   All Bareos job resources have some required directives, e.g. :config:option:`dir/job/Client`\ .
-   Even so, none other than the mentioned directives are evaluated by a \resourceDirectiveValue{Dir}{Job}{Type}{Consolidate},
+   .. warning::
+
+      All Bareos job resources have some required directives, e.g. :config:option:`dir/job/Client`\ .
+   Even so, none other than the mentioned directives are evaluated by a :config:option:`dir/job/Type = Consolidate`\ ,
    they still have to be defined.
-   Normally all required directives are already set in \resourceDirectiveValue{Dir}{Job}{Job Defs}{DefaultJob}.
+   Normally all required directives are already set in :config:option:`dir/job/JobDefs = DefaultJob`\ .
    If not, you have to add them. You can use arbitrary, but valid values.
 
 Storages and Pools
@@ -308,14 +309,14 @@ Depending on the setting of the :config:option:`dir/job/AlwaysIncrementalMaxFull
 
 The resulting interval between full consolidations when running daily backups and daily consolidations is :config:option:`dir/job/AlwaysIncrementalMaxFullAge`\  - :config:option:`dir/job/AlwaysIncrementalJobRetention`\ .
 
-\centering
+
 
 .. figure:: /include/images/always-incremental-jobdata-AlwaysIncrementalMaxFullAge_21_days.*
    :alt: Data Volume being moved with "Always Incremental Max Full Age"
 
    Data Volume being moved with "Always Incremental Max Full Age"
 
-\centering
+
 
 .. figure:: /include/images/always-incremental-jobs_available-AlwaysIncrementalMaxFullAge_21_days.*
    :alt: Jobs Available with "Always Incremental Max Full Age"
@@ -339,7 +340,7 @@ As can be seen, virtual jobs including the full are triggered for all three clie
 
 This is of course not desirable so the directive :config:option:`dir/job/MaxFullConsolidations`\  was introduced.
 
-:config:option:`dir/job/MaxFullConsolidations`\  needs to be configured in the \resourceDirectiveValue{Dir}{Job}{Type}{Consolidate} job:
+:config:option:`dir/job/MaxFullConsolidations`\  needs to be configured in the :config:option:`dir/job/Type = Consolidate`\  job:
 
 .. code-block:: bareosconfig
    :caption: bareos-dir.d/job/Consolidate.conf
@@ -359,14 +360,14 @@ This leads to a better load balancing of full backup consolidations over differe
 
 The number of always incremental jobs, the interval that the jobs are triggered and the setting of :config:option:`dir/job/AlwaysIncrementalMaxFullAge`\  influence the value that makes sense for :config:option:`dir/job/MaxFullConsolidations`\ .
 
-\centering
+
 
 .. figure:: /include/images/jobdata_multiple_clients_maxfullconsilidate.*
    :alt: Data Volume being moved with Max Full Consolidations = 1
 
    Data Volume being moved with Max Full Consolidations = 1
 
-\centering
+
 
 .. figure:: /include/images/jobs_available_multiple_clients_maxfullconsolidate.*
    :alt: Jobs Available with Max Full Consolidations = 1
@@ -441,9 +442,9 @@ The alternative to Copy Jobs is creating a virtual Full Backup Job when the data
      }
    }
 
-To make sure the longterm \resourceDirectiveValue{Dir}{Job}{Level}{VirtualFull} is not taken as base for the next incrementals, the job type of the copied job is set to \resourceDirectiveValue{Dir}{Job}{Type}{Archive} with the :config:option:`dir/job/RunScript`\ .
+To make sure the longterm :config:option:`dir/job/Level = VirtualFull`\  is not taken as base for the next incrementals, the job type of the copied job is set to :config:option:`dir/job/Type = Archive`\  with the :config:option:`dir/job/RunScript`\ .
 
-As can be seen on the plot, the \resourceDirectiveValue{Dir}{Job}{Level}{VirtualFull} archives the current data, i.e. it consolidates the full and all incrementals that are currently available.
+As can be seen on the plot, the :config:option:`dir/job/Level = VirtualFull`\  archives the current data, i.e. it consolidates the full and all incrementals that are currently available.
 
 .. image:: /include/images/always-incremental-virtualfull-job-archiving.*
 

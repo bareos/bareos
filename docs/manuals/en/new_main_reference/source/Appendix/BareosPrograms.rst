@@ -9,7 +9,7 @@ Bareos Daemons
 Daemon Command Line Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Daemon->Command Line Options] <pair: Daemon; Command Line Options>` :index:`[TAG=Command Line Options->Daemon] <pair: Command Line Options; Daemon>`
+:index:`[TAG=Daemon->Command Line Options] <single: Daemon; Command Line Options>` :index:`[TAG=Command Line Options->Daemon] <single: Command Line Options; Daemon>`
 
 Each of the three daemons (Director, File, Storage) accepts a small set of options on the command line. In general, each of the daemons as well as the Console program accepts the following options:
 
@@ -51,27 +51,27 @@ Each of the three daemons (Director, File, Storage) accepts a small set of optio
 bareos-dir
 ~~~~~~~~~~
 
-:index:`[TAG=Command->bareos-dir] <pair: Command; bareos-dir>` :index:`[TAG=Command Line Options] <single: Command Line Options>`
+:index:`[TAG=Command->bareos-dir] <single: Command; bareos-dir>` :index:`[TAG=Command Line Options] <single: Command Line Options>`
 
-|bareosDir|.
+|dir|.
 
 .. _command-bareos-sd:
 
 bareos-sd
 ~~~~~~~~~
 
-:index:`[TAG=Command->bareos-sd] <pair: Command; bareos-sd>` :index:`[TAG=Command Line Options] <single: Command Line Options>`
+:index:`[TAG=Command->bareos-sd] <single: Command; bareos-sd>` :index:`[TAG=Command Line Options] <single: Command Line Options>`
 
-|bareosSd|.
+|sd|.
 
 .. _command-bareos-fd:
 
 bareos-fd
 ~~~~~~~~~
 
-:index:`[TAG=Command->bareos-fd] <pair: Command; bareos-fd>` :index:`[TAG=Command Line Options] <single: Command Line Options>`
+:index:`[TAG=Command->bareos-fd] <single: Command; bareos-fd>` :index:`[TAG=Command Line Options] <single: Command Line Options>`
 
-|bareosFd|.
+|fd|.
 
 Interactive Programs
 --------------------
@@ -89,18 +89,18 @@ For further information regarding the Bareos Webui, please refer to :ref:`sectio
 bat
 ~~~
 
-:index:`[TAG=Command->bat] <pair: Command; bat>` 
+:index:`[TAG=Command->bat] <single: Command; bat>` 
 
 .. _bat:
 
 
 
-The Bacula/Bareos Administration Tool (:command:`bat`) has been a native GUI for Bareos. It has been marked deprecated since :sinceVersion:`15.2.0: bat vs. bareos-webui`. Since Bareos :sinceVersion:`17.2.0: bat: removed from core distribution` it is no longer part of Bareos. We encourage the use of |bareosWebui| instead.
+The Bacula/Bareos Administration Tool (:command:`bat`) has been a native GUI for Bareos. It has been marked deprecated since :sinceVersion:`15.2.0: bat vs. bareos-webui`. Since Bareos :sinceVersion:`17.2.0: bat: removed from core distribution` it is no longer part of Bareos. We encourage the use of |webui| instead.
 
 Volume Utility Commands
 -----------------------
 
-:index:`[TAG=Volume Utility Tools] <single: Volume Utility Tools>` :index:`[TAG=Tools->Volume Utility] <pair: Tools; Volume Utility>` 
+:index:`[TAG=Volume Utility Tools] <single: Volume Utility Tools>` :index:`[TAG=Tools->Volume Utility] <single: Tools; Volume Utility>` 
 
 .. _section-VolumeUtilityCommands:
 
@@ -114,13 +114,13 @@ Parameter
 Specifying the Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Each of the utilities that deal with Volumes require a valid |bareosSd| configuration (actually, the only part of the configuration file that these programs need is the :config:option:`Sd/Device`\  resource definitions). This permits the programs to find the configuration parameters for your :config:option:`sd/device/ArchiveDevice`\ . Using the ``-c`` option a custom |bareosSd| configuration file or directory can be
+Each of the utilities that deal with Volumes require a valid |sd| configuration (actually, the only part of the configuration file that these programs need is the :config:option:`Sd/Device`\  resource definitions). This permits the programs to find the configuration parameters for your :config:option:`sd/device/ArchiveDevice`\ . Using the :strong:`-c` option a custom |sd| configuration file or directory can be
 selected.
 
 Specifying a Device
 ^^^^^^^^^^^^^^^^^^^
 
-Each of these programs require a ``device-name`` where the Volume can be found. The device-name is either the name of the |bareosSd| device (:config:option:`sd/device/Name`\ ) or its :config:option:`sd/device/ArchiveDevice`\ .
+Each of these programs require a :strong:`device-name` where the Volume can be found. The device-name is either the name of the |sd| device (:config:option:`sd/device/Name`\ ) or its :config:option:`sd/device/ArchiveDevice`\ .
 
 Specifying a Device Name For a Tape
 '''''''''''''''''''''''''''''''''''
@@ -129,9 +129,10 @@ In the case of a tape, this is the physical device name such as /dev/nst0 or /de
 
 
 
-.. warning::
-   If you have Bareos running and you want to use
-   one of these programs, you will either need to stop the |bareosSd|
+   .. warning::
+
+      If you have Bareos running and you want to use
+   one of these programs, you will either need to stop the |sd|
    or :bcommand:`unmount` any tape drive you want to use,
    otherwise the drive may get busy because Bareos is using it.
    After this, you can use the command :command:`mtx` or :ref:`mtx-changer script <section-MtxChangerManualUsage>`
@@ -141,15 +142,15 @@ In the case of a tape, this is the physical device name such as /dev/nst0 or /de
 Specifying a Device Name For a File
 '''''''''''''''''''''''''''''''''''
 
-If you are attempting to read or write an archive file rather than a tape, the ``device-name`` can be the full path to the archive location specified at :config:option:`sd/device/ArchiveDevice`\  or this including the filename of the volume. The filename (last part of the specification) will be stripped and used as the Volume name So, the path is equivalent to the :config:option:`sd/device/ArchiveDevice`\  and the filename is
+If you are attempting to read or write an archive file rather than a tape, the :strong:`device-name` can be the full path to the archive location specified at :config:option:`sd/device/ArchiveDevice`\  or this including the filename of the volume. The filename (last part of the specification) will be stripped and used as the Volume name So, the path is equivalent to the :config:option:`sd/device/ArchiveDevice`\  and the filename is
 equivalent to the volume name.
 
 Specifying Volumes
 ^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=Volumes->Specifying] <pair: Volumes; Specifying>` :index:`[TAG=Bootstrap] <single: Bootstrap>`
+:index:`[TAG=Volumes->Specifying] <single: Volumes; Specifying>` :index:`[TAG=Bootstrap] <single: Bootstrap>`
 
-Often you must specify the Volume name to the programs below. The best method to do so is to specify a bootstrap file on the command line with the ``-b`` option. As part of the bootstrap file, you will then specify the Volume name or Volume names if more than one volume is needed. For example, suppose you want to read tapes \volume{tapevolume1} and \volume{tapevolume2}. First construct a bootstrap file named say, :file:`list.bsr` which
+Often you must specify the Volume name to the programs below. The best method to do so is to specify a bootstrap file on the command line with the :strong:`-b` option. As part of the bootstrap file, you will then specify the Volume name or Volume names if more than one volume is needed. For example, suppose you want to read tapes **tapevolume1** and **tapevolume2**. First construct a bootstrap file named say, :file:`list.bsr` which
 contains:
 
 
@@ -162,31 +163,31 @@ contains:
 
 where each Volume is separated by a vertical bar. Then simply use:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    bls -b list.bsr /dev/nst0
 
 In the case of Bareos Volumes that are on files, you may simply append volumes as follows:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    bls /var/lib/bareos/storage/volume1\|volume2
 
 where the backslash (\) was necessary as a shell escape to permit entering the vertical bar (|).
 
-And finally, if you feel that specifying a Volume name is a bit complicated with a bootstrap file, you can use the ``-V`` option (on all programs except :command:`bcopy`) to specify one or more Volume names separated by the vertical bar (|). For example:
+And finally, if you feel that specifying a Volume name is a bit complicated with a bootstrap file, you can use the :strong:`-V` option (on all programs except :command:`bcopy`) to specify one or more Volume names separated by the vertical bar (|). For example:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    bls /dev/nst0 -V tapevolume1
 
 You may also specify an asterisk (*) to indicate that the program should accept any volume. For example:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    bls /dev/nst0 -V*
 
-If your |bareosSd| has following resource,
+If your |sd| has following resource,
 
 .. code-block:: bareosconfig
    :caption: bareos-sd.d/device/FileStorage.conf
@@ -199,21 +200,21 @@ If your |bareosSd| has following resource,
 
 following calls of :command:`bls` should behave identical:
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: bls using Storage Device Name
 
    bls FileStorage -V Full1
 
 or
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: bls using the Archive Device of a Storage Device
 
    bls /var/lib/bareos/storage -V Full1
 
 or
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: bls using the Archive Device of a Storage Device and volume name
 
    bls /var/lib/bareos/storage/Full1
@@ -226,11 +227,11 @@ If you use Bareos with non-default block sizes defined in the pools (:config:opt
 bls
 ~~~
 
-:index:`[TAG=bls] <single: bls>` :index:`[TAG=Command->bls] <pair: Command; bls>`
+:index:`[TAG=bls] <single: bls>` :index:`[TAG=Command->bls] <single: Command; bls>`
 
 :command:`bls` can be used to do an :command:`ls` type listing of a Bareos tape or file. It is called:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    Usage: bls [options] <device-name>
           -b <file>       specify a bootstrap file
@@ -254,31 +255,31 @@ Normally if no options are specified, :command:`bls` will produce the equivalent
 
 For example, to list the contents of a tape:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    bls -V Volume-name /dev/nst0
 
 Or to list the contents of a volume file:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    bls FileStorage -V Full1
 
 or
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    bls /var/lib/bareos/storage -V Full1
 
 or
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    bls /var/lib/bareos/storage/Full1
 
 For example:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    <command>bls</command> <parameter>FileStorage -V Full1</parameter>
    bls: butil.c:282-0 Using device: "/var/lib/bareos/storage" for reading.
@@ -301,7 +302,7 @@ Show Detailed File Information
 
 To retrieve information, about how a file is stored on the volume, you can use :command:`bls` in verbose mode:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    <command>bls</command> <parameter>FileStorage -V TestVolume001 -v</parameter>
    bls: butil.c:273-0 Using device: "FileStorage" for reading.
@@ -327,11 +328,11 @@ For details about the Volume format, see \bareosDeveloperGuideStorageMediaOutput
 Show Label Information
 ^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=bls->Label] <pair: bls; Label>`
+:index:`[TAG=bls->Label] <single: bls; Label>`
 
-Using the ``-L`` the label information of a Volume is shown:
+Using the :strong:`-L` the label information of a Volume is shown:
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: bls: show volume label
 
    <command>bls</command> <parameter>-L /var/lib/bareos/storage/testvol</parameter>
@@ -355,11 +356,11 @@ Using the ``-L`` the label information of a Volume is shown:
 Listing Jobs
 ^^^^^^^^^^^^
 
-:index:`[TAG=Listing Jobs with bls] <single: Listing Jobs with bls>` :index:`[TAG=bls->Listing Jobs] <pair: bls; Listing Jobs>`
+:index:`[TAG=Listing Jobs with bls] <single: Listing Jobs with bls>` :index:`[TAG=bls->Listing Jobs] <single: bls; Listing Jobs>`
 
-If you are listing a Volume to determine what Jobs to restore, normally the ``-j`` option provides you with most of what you will need as long as you don’t have multiple clients. For example:
+If you are listing a Volume to determine what Jobs to restore, normally the :strong:`-j` option provides you with most of what you will need as long as you don’t have multiple clients. For example:
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: bls: list jobs
 
    <command>bls</command> <parameter>/var/lib/bareos/storage/testvol -j</parameter>
@@ -386,16 +387,16 @@ If you are listing a Volume to determine what Jobs to restore, normally the ``-j
    12-Sep 18:32 bls JobId 0: End of Volume at file 0 on device "FileStorage" (/var/lib/bareos/storage), Volume "testvol"
    12-Sep 18:32 bls JobId 0: End of all volumes.
 
-Adding the ``-v`` option will display virtually all information that is available for each record.
+Adding the :strong:`-v` option will display virtually all information that is available for each record.
 
 Listing Blocks
 ^^^^^^^^^^^^^^
 
-:index:`[TAG=Listing Blocks with bls] <single: Listing Blocks with bls>` :index:`[TAG=bls->Listing Blocks] <pair: bls; Listing Blocks>`
+:index:`[TAG=Listing Blocks with bls] <single: Listing Blocks with bls>` :index:`[TAG=bls->Listing Blocks] <single: bls; Listing Blocks>`
 
 Normally, except for debugging purposes, you will not need to list Bareos blocks (the "primitive" unit of Bareos data on the Volume). However, you can do so with:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    <command>bls</command> <parameter>-k /tmp/File002</parameter>
    bls: butil.c:148 Using device: /tmp
@@ -407,9 +408,9 @@ Normally, except for debugging purposes, you will not need to list Bareos blocks
    bls: Got EOF on device /tmp
    End of File on device
 
-By adding the ``-v`` option, you can get more information, which can be useful in knowing what sessions were written to the volume:
+By adding the :strong:`-v` option, you can get more information, which can be useful in knowing what sessions were written to the volume:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    <command>bls</command> <parameter>-k -v /tmp/File002</parameter>
    Date label written: 2002-10-19 at 21:16
@@ -425,9 +426,9 @@ By adding the ``-v`` option, you can get more information, which can be useful i
 
 Armed with the SessionId and the SessionTime, you can extract just about anything.
 
-If you want to know even more, add a second ``-v`` to the command line to get a dump of every record in every block.
+If you want to know even more, add a second :strong:`-v` to the command line to get a dump of every record in every block.
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    <command>bls</command> <parameter>-k -vv /tmp/File002</parameter>
    bls: block.c:79 Dump block  80f8ad0: size=64512 BlkNum=1
@@ -458,7 +459,7 @@ If you want to know even more, add a second ``-v`` to the command line to get a 
 bextract
 ~~~~~~~~
 
-:index:`[TAG=bextract] <single: bextract>` :index:`[TAG=Command->bextract] <pair: Command; bextract>` :index:`[TAG=Disaster->Recovery->bextract] <triple: Disaster; Recovery; bextract>`
+:index:`[TAG=bextract] <single: bextract>` :index:`[TAG=Command->bextract] <single: Command; bextract>` :index:`[TAG=Disaster->Recovery->bextract] <single: Disaster; Recovery; bextract>`
 
 If you find yourself using :command:`bextract`, you probably have done something wrong. For example, if you are trying to recover a file but are having problems, please see the :ref:`section-RestoreCatalog` chapter.
 
@@ -476,7 +477,7 @@ Please note that some of the current limitations of :command:`bextract` are:
 
 It is called:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    Usage: bextract <options> <bareos-archive-device-name> <directory-to-store-files>
           -b <file>       specify a bootstrap file
@@ -496,8 +497,9 @@ where device-name is the Archive Device (raw device name or full filename) of th
 
 
 
-.. warning::
-   On Windows systems, if you specify a prefix of say d:/tmp, any file that
+   .. warning::
+
+      On Windows systems, if you specify a prefix of say d:/tmp, any file that
    would have been restored to :file:`C:/My Documents` will be restored to :file:`D:/tmp/My Documents`.
    That is, the original drive specification will be
    stripped. If no prefix is specified, the file will be restored to the original
@@ -523,7 +525,7 @@ For example, if the file include-list contains:
 
 Then the command:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    bextract -i include-list -V Volume /dev/nst0 /tmp
 
@@ -534,7 +536,7 @@ Extracting With a Bootstrap File
 
 The -b option is used to specify a bootstrap file containing the information needed to restore precisely the files you want. Specifying a bootstrap file is optional but recommended because it gives you the most control over which files will be restored. For more details on the bootstrap file, please see :ref:`Restoring Files with the Bootstrap File <BootstrapChapter>` chapter of this document. Note, you may also use a bootstrap file produced by the restore command. For example:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    bextract -b bootstrap-file /dev/nst0 /tmp
 
@@ -548,18 +550,19 @@ If you wish to extract files that span several Volumes, you can specify the Volu
 Extracting Under Windows
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=Windows->bextract] <pair: Windows; bextract>`
+:index:`[TAG=Windows->bextract] <single: Windows; bextract>`
 
 
 
-.. warning::
-   If you use :command:`bextract` under Windows, the ordering of the parameters is essential.
+   .. warning::
+
+      If you use :command:`bextract` under Windows, the ordering of the parameters is essential.
 
 To use :command:`bextract`, the Bareos Storage Daemon must be installed. As bextract works on tapes or disk volumes, these must be configured in the Storage Daemon configuration file, normally found at :file:`C:\\ProgrammData\\Bareos\\bareos-sd.conf`. However, it is not required to start the Bareos Storage Daemon. Normally, if the Storage Daemon would be able to run, :command:`bextract` would not be required.
 
 After installing, :command:`bextract` can be called via command line:
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Call of bextract
 
    C:\Program Files\Bareos .\bextract.exe -c "C:\ProgrammData\Bareos\bareos-sd.conf" -V <Volume> <YourStorage> <YourDestination>
@@ -572,7 +575,7 @@ If you want to use exclude or include files you need to write them like you do o
    /Program Files/Bareos/bareos-dir.exe
    /ProgramData/
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Call bextract with exclude list
 
    C:\Program Files\Bareos .\bextract.exe -e exclude.list -c "C:\ProgrammData\Bareos\bareos-sd.conf" -V <Volume> <YourStorage> <YourDestination>
@@ -580,7 +583,7 @@ If you want to use exclude or include files you need to write them like you do o
 bscan
 ~~~~~
 
-:index:`[TAG=bscan] <single: bscan>` :index:`[TAG=Command->bscan] <pair: Command; bscan>`
+:index:`[TAG=bscan] <single: bscan>` :index:`[TAG=Command->bscan] <single: Command; bscan>`
 
 If you find yourself using this program, you have probably done something wrong. For example, the best way to recover a lost or damaged Bareos database is to reload the database by using the bootstrap file that was written when you saved it (default Bareos-dir.conf file).
 
@@ -593,7 +596,7 @@ With some care, :command:`bscan` can also be used to synchronize your existing c
 
 It is called:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    Usage: bscan [options] <Bareos-archive>
           -B <driver name>  specify the database driver name (default NULL) <postgresql|mysql|sqlite>
@@ -627,7 +630,7 @@ chapter of the manual. Finally, before scanning into an empty database, you must
 
 Forgetting for the moment the extra complications of a full rebuild of your catalog, let’s suppose that you did a backup to Volumes "Vol001" and "Vol002", then sometime later all records of one or both those Volumes were pruned or purged from the database. By using bscan you can recreate the catalog entries for those Volumes and then use the restore command in the Console to restore whatever you want. A command something like:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    bscan -v -V Vol001|Vol002 /dev/nst0
 
@@ -636,7 +639,7 @@ This must correspond to the Archive Device in the conf file.
 
 Then to actually write or store the records in the catalog, add the -s option as follows:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    bscan -s -m -v -V Vol001|Vol002 /dev/nst0
 
@@ -644,7 +647,7 @@ When writing to the database, if :command:`bscan` finds existing records, it wil
 
 If you have multiple tapes, you should scan them with:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    bscan -s -m -v -V Vol001|Vol002|Vol003 /dev/nst0
 
@@ -672,20 +675,20 @@ database, they will not have their autochanger status and slots properly set. As
 Using bscan to Compare a Volume to an existing Catalog
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=Catalog->Using bscan to Compare a Volume to an existing] <pair: Catalog; Using bscan to Compare a Volume to an existing>`
+:index:`[TAG=Catalog->Using bscan to Compare a Volume to an existing] <single: Catalog; Using bscan to Compare a Volume to an existing>`
 
 If you wish to compare the contents of a Volume to an existing catalog without changing the catalog, you can safely do so if and only if you do not specify either the -m or the -s options. However, the comparison routines are not as good or as thorough as they should be, so we don’t particularly recommend this mode other than for testing.
 
 Using bscan to Recreate a Catalog from a Volume
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=Catalog->Recreate Using bscan] <pair: Catalog; Recreate Using bscan>` :index:`[TAG=bscan->Recreate Catalog] <pair: bscan; Recreate Catalog>`
+:index:`[TAG=Catalog->Recreate Using bscan] <single: Catalog; Recreate Using bscan>` :index:`[TAG=bscan->Recreate Catalog] <single: bscan; Recreate Catalog>`
 
 This is the mode for which bscan is most useful. You can either bscan into a freshly created catalog, or directly into your existing catalog (after having made an ASCII copy as described above). Normally, you should start with a freshly created catalog that contains no data.
 
 Starting with a single Volume named TestVolume1, you run a command such as:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    bscan -V TestVolume1 -v -s -m /dev/nst0
 
@@ -693,13 +696,13 @@ If there is more than one volume, simply append it to the first one separating i
 
 For example, after having done a full backup of a directory, then two incrementals, I reinitialized the SQLite database as described above, and using the bootstrap.bsr file noted above, I entered the following command:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    bscan -b bootstrap.bsr -v -s /dev/nst0
 
 which produced the following output:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    bscan: bscan.c:182 Using Database: Bareos, User: bacula
    bscan: bscan.c:673 Created Pool record for Pool: Default
@@ -763,7 +766,7 @@ There are two solutions to this problem. The first is possibly the simplest and 
 Using bscan to Correct the Volume File Count
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=bscan->Correct Volume File Count] <pair: bscan; Correct Volume File Count>` :index:`[TAG=Volume->File Count] <pair: Volume; File Count>`
+:index:`[TAG=bscan->Correct Volume File Count] <single: bscan; Correct Volume File Count>` :index:`[TAG=Volume->File Count] <single: Volume; File Count>`
 
 If the Storage daemon crashes during a backup Job, the catalog will not be properly updated for the Volume being used at the time of the crash. This means that the Storage daemon will have written say 20 files on the tape, but the catalog record for the Volume indicates only 19 files.
 
@@ -772,7 +775,7 @@ Bareos refuses to write on a tape that contains a different number of files from
 After bscan
 ^^^^^^^^^^^
 
-:index:`[TAG=bscan->after] <pair: bscan; after>`
+:index:`[TAG=bscan->after] <single: bscan; after>`
 
 If you use bscan to enter the contents of the Volume into an existing catalog, you should be aware that the records you entered may be immediately pruned during the next job, particularly if the Volume is very old or had been previously purged. To avoid this, after running bscan, you can manually set the volume status (VolStatus) to Read-Only by using the update command in the catalog. This will allow you to restore from the volume without having it immediately purged. When you have restored and
 backed up the data, you can reset the VolStatus to Used and the Volume will be purged from the catalog.
@@ -780,12 +783,12 @@ backed up the data, you can reset the VolStatus to Used and the Volume will be p
 bcopy
 ~~~~~
 
-:index:`[TAG=bcopy] <single: bcopy>` :index:`[TAG=Command->bcopy] <pair: Command; bcopy>`
+:index:`[TAG=bcopy] <single: bcopy>` :index:`[TAG=Command->bcopy] <single: Command; bcopy>`
 
 The :command:`bcopy` program can be used to copy one Bareos archive file to another. For example, you may copy a tape to a file, a file to a tape, a file to a file, or a tape to a tape. For tape to tape, you will need two tape drives. In the process of making the copy, no record of the information written to the new Volume is stored in the catalog. This means that the new Volume, though it contains valid backup data, cannot be accessed directly from existing catalog entries. If you
 wish to be able to use the Volume with the Console restore command, for example, you must first bscan the new Volume into the catalog.
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    Usage: bcopy [-d debug_level] <input-archive> <output-archive>
           -b bootstrap    specify a bootstrap file
@@ -810,7 +813,7 @@ As this is a new program, any feedback on its use would be appreciated. In addit
 btape
 ~~~~~
 
-:index:`[TAG=btape] <single: btape>` :index:`[TAG=Command->btape] <pair: Command; btape>`
+:index:`[TAG=btape] <single: btape>` :index:`[TAG=Command->btape] <single: Command; btape>`
 
 This program permits a number of elementary tape operations via a tty command interface. It works only with tapes and not with other kinds of Bareos storage media (DVD, File, ...). The test command, described below, can be very useful for testing older tape drive compatibility problems. Aside from initial testing of tape drive compatibility with Bareos, btape will be mostly used by developers writing new tape drivers.
 
@@ -820,7 +823,7 @@ To work properly, :command:`btape` needs to read the Storage daemon’s configur
 
 The physical device name must be specified on the command line, and this same device name must be present in the Storage daemon’s configuration file read by :command:`btape`.
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    Usage: btape <options> <device_name>
           -b <file>     specify bootstrap file
@@ -837,7 +840,7 @@ The physical device name must be specified on the command line, and this same de
 Using btape to Verify your Tape Drive
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=Drive->Verify using btape] <pair: Drive; Verify using btape>`
+:index:`[TAG=Drive->Verify using btape] <single: Drive; Verify using btape>`
 
 An important reason for this program is to ensure that a Storage daemon configuration file is defined so that Bareos will correctly read and write tapes.
 
@@ -945,9 +948,9 @@ You can change the block size in the Storage Daemon configuration file.
 bscrypto
 ~~~~~~~~
 
-:index:`[TAG=bscrypto] <single: bscrypto>` :index:`[TAG=Command->bscrypto] <pair: Command; bscrypto>`
+:index:`[TAG=bscrypto] <single: bscrypto>` :index:`[TAG=Command->bscrypto] <single: Command; bscrypto>`
 
-:command:`bscrypto` is used in the process of encrypting tapes (see also :ref:`LTOHardwareEncryptionGeneral`). The |bareosSd| and the btools (:command:`bls`, :command:`bextract`, :command:`bscan`, :command:`btape`, :command:`bextract`) will use a so called |bareosSd| plugin to perform the setting and clearing of the encryption keys. To bootstrap the encryption support and for
+:command:`bscrypto` is used in the process of encrypting tapes (see also :ref:`LTOHardwareEncryptionGeneral`). The |sd| and the btools (:command:`bls`, :command:`bextract`, :command:`bscan`, :command:`btape`, :command:`bextract`) will use a so called |sd| plugin to perform the setting and clearing of the encryption keys. To bootstrap the encryption support and for
 populating things like the crypto cache with encryption keys of volumes that you want to scan, you need to use the bscrypto tool. The bscrypto tool has the following capabilities:
 
 -  Generate a new passphrase
@@ -990,13 +993,13 @@ The following programs are general utility programs and in general do not need a
 bsmtp
 ~~~~~
 
-:index:`[TAG=bsmtp] <single: bsmtp>` :index:`[TAG=Command->bsmtp] <pair: Command; bsmtp>`
+:index:`[TAG=bsmtp] <single: bsmtp>` :index:`[TAG=Command->bsmtp] <single: Command; bsmtp>`
 
 :command:`bsmtp` is a simple mail transport program that permits more flexibility than the standard mail programs typically found on Unix systems. It can even be used on Windows machines.
 
 It is called:
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: bsmtp
 
    Usage: bsmtp [-f from] [-h mailhost] [-s subject] [-c copy] [recipient ...]
@@ -1023,7 +1026,7 @@ recipients is a space separated list of email recipients.
 
 The body of the email message is read from standard input.
 
-An example of the use of :command:`bsmtp` would be to put the following statement in the :ref:`Messages resource <MessagesChapter>` of your |bareosDir| configuration.
+An example of the use of :command:`bsmtp` would be to put the following statement in the :ref:`Messages resource <MessagesChapter>` of your |dir| configuration.
 
 .. code-block:: bareosconfig
    :caption: bsmtp in Message resource
@@ -1050,14 +1053,14 @@ bareos-dbcheck
 
 .. _dbcheck:
 
- :index:`[TAG=bareos-dbcheck] <single: bareos-dbcheck>` :index:`[TAG=Command->bareos-dbcheck] <pair: Command; bareos-dbcheck>` :index:`[TAG=Catalog->database check] <pair: Catalog; database check>`
+ :index:`[TAG=bareos-dbcheck] <single: bareos-dbcheck>` :index:`[TAG=Command->bareos-dbcheck] <single: Command; bareos-dbcheck>` :index:`[TAG=Catalog->database check] <single: Catalog; database check>`
 
 :command:`bareos-dbcheck` is a simple program that will search for logical inconsistencies in the Bareos tables in your database, and optionally fix them. It is a database maintenance routine, in the sense that it can detect and remove unused rows, but it is not a database repair routine. To repair a database, see the tools furnished by the database vendor. Normally :command:`bareos-dbcheck` should never need to be run, but if Bareos has crashed or you have a lot of
 Clients, Pools, or Jobs that you have removed, it could be useful.
 
-:command:`bareos-dbcheck` is best started as the same user, as the |bareosDir| is running, normally **bareos**. If you are **root** on Linux, use the following command to switch to user **bareos**:
+:command:`bareos-dbcheck` is best started as the same user, as the |dir| is running, normally **bareos**. If you are **root** on Linux, use the following command to switch to user **bareos**:
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Substitute user to bareos
 
    su -s /bin/bash - bareos
@@ -1066,7 +1069,7 @@ If not, problems of reading the Bareos configuration or accessing the database c
 
 :command:`bareos-dbcheck` supports following command line options:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    Usage: bareos-dbcheck [-c config ] [-B] [-C catalog name] [-d debug level] [-D driver name] <working-directory> <bareos-database> <user> <password> [<dbhost>] [<dbport>]
           -b                batch mode
@@ -1080,11 +1083,11 @@ If not, problems of reading the Bareos configuration or accessing the database c
           -v                verbose
           -?                print this message
 
-When using the default configuration paths, it is not necessary to specify any options. Optionally, as Bareos supports loading its database backend dynamically you may specify the right database driver to use using the ``-D`` option.
+When using the default configuration paths, it is not necessary to specify any options. Optionally, as Bareos supports loading its database backend dynamically you may specify the right database driver to use using the :strong:`-D` option.
 
-If the ``-B`` option is specified, :command:`bareos-dbcheck` will print out catalog information in a simple text based format:
+If the :strong:`-B` option is specified, :command:`bareos-dbcheck` will print out catalog information in a simple text based format:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    # <input>bareos-dbcheck -B</input>
    catalog=MyCatalog
@@ -1097,13 +1100,13 @@ If the ``-B`` option is specified, :command:`bareos-dbcheck` will print out cata
    db_port=0
    db_socket=
 
-If the ``-c`` option is given with the |bareosDir| configuration, there is no need to enter any of the command line arguments, in particular the working directory as :command:`bareos-dbcheck` will read them from the file.
+If the :strong:`-c` option is given with the |dir| configuration, there is no need to enter any of the command line arguments, in particular the working directory as :command:`bareos-dbcheck` will read them from the file.
 
-If the ``-f`` option is specified, :command:`bareos-dbcheck` will repair (fix) the inconsistencies it finds. Otherwise, it will report only.
+If the :strong:`-f` option is specified, :command:`bareos-dbcheck` will repair (fix) the inconsistencies it finds. Otherwise, it will report only.
 
-If the ``-b`` option is specified, :command:`bareos-dbcheck` will run in batch mode, and it will proceed to examine and fix (if ``-f`` is set) all programmed inconsistency checks. If the ``-b`` option is not specified, :command:`bareos-dbcheck` will enter interactive mode and prompt with the following:
+If the :strong:`-b` option is specified, :command:`bareos-dbcheck` will run in batch mode, and it will proceed to examine and fix (if :strong:`-f` is set) all programmed inconsistency checks. If the :strong:`-b` option is not specified, :command:`bareos-dbcheck` will enter interactive mode and prompt with the following:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    Hello, this is the database check/correct program.
    Modify database is off. Verbose is off.
@@ -1127,9 +1130,9 @@ If the ``-b`` option is specified, :command:`bareos-dbcheck` will run in batch m
        17) Quit
    Select function number:
 
-By entering 1 or 2, you can toggle the modify database flag (``-f`` option) and the verbose flag (``-v``). It can be helpful and reassuring to turn off the modify database flag, then select one or more of the consistency checks (items 3 through 13) to see what will be done, then toggle the modify flag on and re-run the check.
+By entering 1 or 2, you can toggle the modify database flag (:strong:`-f` option) and the verbose flag (:strong:`-v`). It can be helpful and reassuring to turn off the modify database flag, then select one or more of the consistency checks (items 3 through 13) to see what will be done, then toggle the modify flag on and re-run the check.
 
-Since Bareos :sinceVersion:`16.2.5: bareos-dbcheck -b -v`, when running :command:`bareos-dbcheck` with ``-b`` and ``-v``, it will not interactively ask if results should be printed or not. Instead, it does not print any detail results.
+Since Bareos :sinceVersion:`16.2.5: bareos-dbcheck -b -v`, when running :command:`bareos-dbcheck` with :strong:`-b` and :strong:`-v`, it will not interactively ask if results should be printed or not. Instead, it does not print any detail results.
 
 The inconsistencies examined are the following:
 
@@ -1160,16 +1163,16 @@ The inconsistencies examined are the following:
 
 -  All Restore records. This command will remove all Restore records, regardless of their age.
 
-If you are using MySQL, :command:`bareos-dbcheck` in interactive mode will ask you if you want to create temporary indexes to speed up orphaned Path and Filename elimination. In batch mode (``-b``) the temporary indexes will be created without asking.
+If you are using MySQL, :command:`bareos-dbcheck` in interactive mode will ask you if you want to create temporary indexes to speed up orphaned Path and Filename elimination. In batch mode (:strong:`-b`) the temporary indexes will be created without asking.
 
-If you are using bvfs (e.g. used by :ref:`bareos-webui <section-webui>`), don’t eliminate orphaned path, else you will have to rebuild \variable{brestore_pathvisibility} and \variable{brestore_pathhierarchy} indexes.
+If you are using bvfs (e.g. used by :ref:`bareos-webui <section-webui>`), don’t eliminate orphaned path, else you will have to rebuild ``brestore_pathvisibility``\  and ``brestore_pathhierarchy``\  indexes.
 
 Normally you should never need to run :command:`bareos-dbcheck` in spite of the recommendations given above, which are given so that users don’t waste their time running :command:`bareos-dbcheck` too often.
 
 bregex
 ~~~~~~
 
-:index:`[TAG=bregex] <single: bregex>` :index:`[TAG=Command->bregex] <pair: Command; bregex>`
+:index:`[TAG=bregex] <single: bregex>` :index:`[TAG=Command->bregex] <single: Command; bregex>`
 
 :command:`bregex` is a simple program that will allow you to test regular expressions against a file of data. This can be useful because the regex libraries on most systems differ, and in addition, regex expressions can be complicated.
 
@@ -1192,7 +1195,7 @@ This program can be useful for testing regex expressions to be applied against a
 bwild
 ~~~~~
 
-:index:`[TAG=bwild] <single: bwild>` :index:`[TAG=Command->bwild] <pair: Command; bwild>`
+:index:`[TAG=bwild] <single: bwild>` :index:`[TAG=Command->bwild] <single: Command; bwild>`
 
 :command:`bwild` is a simple program that will allow you to test wild-card expressions against a file of data.
 
@@ -1215,7 +1218,7 @@ This program can be useful for testing wild expressions to be applied against a 
 bpluginfo
 ~~~~~~~~~
 
-:index:`[TAG=bpluginfo] <single: bpluginfo>` :index:`[TAG=Command->bpluginfo] <pair: Command; bpluginfo>`
+:index:`[TAG=bpluginfo] <single: bpluginfo>` :index:`[TAG=Command->bpluginfo] <single: Command; bpluginfo>`
 
 The main purpose of bpluginfo is to display different information about Bareos plugin. You can use it to check a plugin name, author, license and short description. You can use -f option to display API implemented by the plugin. Some plugins may require additional ’-a’ option for val- idating a Bareos Daemons API. In most cases it is not required. 
 

@@ -3,7 +3,7 @@
 Operating Systems
 =================
 
-:index:`[TAG=Systems->Supported Operating Systems] <pair: Systems; Supported Operating Systems>` :index:`[TAG=Support->Operating Systems] <pair: Support; Operating Systems>`
+:index:`[TAG=Systems->Supported Operating Systems] <single: Systems; Supported Operating Systems>` :index:`[TAG=Support->Operating Systems] <single: Support; Operating Systems>`
 
 The Bareos project provides and supports packages that have been released at http://download.bareos.org/bareos/release/
 
@@ -18,10 +18,10 @@ However, the following tabular gives an overview, what components are expected o
      :strong:`Operating Systems` & :strong:`Version` & :strong:`Client Daemon` & :strong:`Director Daemon` & :strong:`Storage Daemon` \\
      \hline
      \hline
-     :strong:`:strong:`Linux``  :index:`[TAG=Platform->Linux] <pair: Platform; Linux>` \\
+     :strong:`:strong:`Linux``  :index:`[TAG=Platform->Linux] <single: Platform; Linux>` \\
      \hline
      Arch Linux
-     :index:`[TAG=Platform->Arch Linux] <pair: Platform; Arch Linux>`
+     :index:`[TAG=Platform->Arch Linux] <single: Platform; Arch Linux>`
                      & ~ & `X <https://aur.archlinux.org/pkgbase/bareos/>`_ & `X <https://aur.archlinux.org/pkgbase/bareos/>`_ & `X <https://aur.archlinux.org/pkgbase/bareos/>`_ \\
      \hline
      CentOS          & current & v12.4 & v12.4 & v12.4 \\
@@ -31,7 +31,7 @@ However, the following tabular gives an overview, what components are expected o
      Fedora          & current & v12.4 & v12.4 & v12.4 \\
      \hline
      Gentoo
-     :index:`[TAG=Platform->Gentoo] <pair: Platform; Gentoo>`
+     :index:`[TAG=Platform->Gentoo] <single: Platform; Gentoo>`
                        & ~ & `X <https://packages.gentoo.org/package/app-backup/bareos>`_ & `X <https://packages.gentoo.org/package/app-backup/bareos>`_ & `X <https://packages.gentoo.org/package/app-backup/bareos>`_ \\
      \hline
      openSUSE        & current & v12.4 & v12.4 & v12.4 \\
@@ -60,7 +60,7 @@ However, the following tabular gives an overview, what components are expected o
      :strong:`:strong:`BSD``  \\
      \hline
      FreeBSD
-     :index:`[TAG=Platform->FreeBSD] <pair: Platform; FreeBSD>`
+     :index:`[TAG=Platform->FreeBSD] <single: Platform; FreeBSD>`
                        & >= 5.0 & `X <http://www.freshports.org/sysutils/bareos-client/>`_ & `X <http://www.freshports.org/sysutils/bareos-server/>`_ & `X <http://www.freshports.org/sysutils/bareos-server/>`_  \\
      \hline
      OpenBSD          & ~ & X &  & ~ \\
@@ -72,11 +72,11 @@ However, the following tabular gives an overview, what components are expected o
      %BSDI             & ~ & * & ~ & ~ \\
      \hline
      AIX
-     :index:`[TAG=Platform->AIX] <pair: Platform; AIX>`
+     :index:`[TAG=Platform->AIX] <single: Platform; AIX>`
                       & >= 4.3 & com-13.2 & * & * \\
      \hline
      HP-UX
-     :index:`[TAG=Platform->HP-UX] <pair: Platform; HP-UX>`
+     :index:`[TAG=Platform->HP-UX] <single: Platform; HP-UX>`
                       & ~ & com-13.2 & ~ & ~ \\
      \hline
      Irix             & ~ & * & ~ & ~ \\
@@ -84,7 +84,7 @@ However, the following tabular gives an overview, what components are expected o
      %OpenSolaris      & ~ & X & X & X \\
      \hline
      Solaris
-     :index:`[TAG=Platform->Solaris] <pair: Platform; Solaris>`
+     :index:`[TAG=Platform->Solaris] <single: Platform; Solaris>`
                       & >= 8 & com-12.4 & com-12.4 & com-12.4 \\
      \hline
      True64           & ~ & * & ~ & ~ \\
@@ -96,12 +96,12 @@ However, the following tabular gives an overview, what components are expected o
 ============================================================================================ =========== ============================================================================= ============================================================================= =============================================================================
 **Operating Systems**                                                                        **Version** **Client Daemon**                                                             **Director Daemon**                                                           **Storage Daemon**
 ============================================================================================ =========== ============================================================================= ============================================================================= =============================================================================
-:strong:`:strong:`Linux``  :index:`[TAG=Platform->Linux] <pair: Platform; Linux>`                                                                                                                                                                        
-Arch Linux :index:`[TAG=Platform->Arch Linux] <pair: Platform; Arch Linux>`                                             `X <https://aur.archlinux.org/pkgbase/bareos/>`_             `X <https://aur.archlinux.org/pkgbase/bareos/>`_             `X <https://aur.archlinux.org/pkgbase/bareos/>`_
+:strong:`:strong:`Linux``  :index:`[TAG=Platform->Linux] <single: Platform; Linux>`                                                                                                                                                                        
+Arch Linux :index:`[TAG=Platform->Arch Linux] <single: Platform; Arch Linux>`                                             `X <https://aur.archlinux.org/pkgbase/bareos/>`_             `X <https://aur.archlinux.org/pkgbase/bareos/>`_             `X <https://aur.archlinux.org/pkgbase/bareos/>`_
 CentOS                                                                                       current     v12.4                                                                         v12.4                                                                         v12.4
 Debian                                                                                       current     v12.4                                                                         v12.4                                                                         v12.4
 Fedora                                                                                       current     v12.4                                                                         v12.4                                                                         v12.4
-Gentoo :index:`[TAG=Platform->Gentoo] <pair: Platform; Gentoo>`                                                     `X <https://packages.gentoo.org/package/app-backup/bareos>`_ `X <https://packages.gentoo.org/package/app-backup/bareos>`_ `X <https://packages.gentoo.org/package/app-backup/bareos>`_
+Gentoo :index:`[TAG=Platform->Gentoo] <single: Platform; Gentoo>`                                                     `X <https://packages.gentoo.org/package/app-backup/bareos>`_ `X <https://packages.gentoo.org/package/app-backup/bareos>`_ `X <https://packages.gentoo.org/package/app-backup/bareos>`_
 openSUSE                                                                                     current     v12.4                                                                         v12.4                                                                         v12.4
 RHEL                                                                                         current     v12.4                                                                         v12.4                                                                         v12.4
 SLES                                                                                         current     v12.4                                                                         v12.4                                                                         v12.4
@@ -116,14 +116,14 @@ Ubuntu                                                                          
 :strong:`:strong:`Mac OS``                                                                                                                                                                                                                     
 :ref:`Mac OS X/Darwin <section-macosx>`                                                     v14.2                                                                                                                                                      
 :strong:`:strong:`BSD``                                                                                                                                                                                                                        
-FreeBSD :index:`[TAG=Platform->FreeBSD] <pair: Platform; FreeBSD>`                                       >= 5.0      `X <http://www.freshports.org/sysutils/bareos-client/>`_     `X <http://www.freshports.org/sysutils/bareos-server/>`_     `X <http://www.freshports.org/sysutils/bareos-server/>`_
+FreeBSD :index:`[TAG=Platform->FreeBSD] <single: Platform; FreeBSD>`                                       >= 5.0      `X <http://www.freshports.org/sysutils/bareos-client/>`_     `X <http://www.freshports.org/sysutils/bareos-server/>`_     `X <http://www.freshports.org/sysutils/bareos-server/>`_
 OpenBSD                                                                                                  X                                                                                                                                                            
 NetBSD                                                                                                   X                                                                                                                                                            
 :strong:`:strong:`Unix``                                                                                                                                                                                                                       
-AIX :index:`[TAG=Platform->AIX] <pair: Platform; AIX>`                                               >= 4.3      com-13.2                                                                      \*                                                                            \*
-HP-UX :index:`[TAG=Platform->HP-UX] <pair: Platform; HP-UX>`                                                       com-13.2                                                                                                                                                     
+AIX :index:`[TAG=Platform->AIX] <single: Platform; AIX>`                                               >= 4.3      com-13.2                                                                      \*                                                                            \*
+HP-UX :index:`[TAG=Platform->HP-UX] <single: Platform; HP-UX>`                                                       com-13.2                                                                                                                                                     
 Irix                                                                                                     \*                                                                                                                                                           
-Solaris :index:`[TAG=Platform->Solaris] <pair: Platform; Solaris>`                                       >= 8        com-12.4                                                                      com-12.4                                                                      com-12.4
+Solaris :index:`[TAG=Platform->Solaris] <single: Platform; Solaris>`                                       >= 8        com-12.4                                                                      com-12.4                                                                      com-12.4
 True64                                                                                                   \*                                                                                                                                                           
 ============================================================================================ =========== ============================================================================= ============================================================================= =============================================================================
 
@@ -171,7 +171,7 @@ Packages names not containing the word **bareos** are required packages where we
 
 
 
-:index:`[TAG=Platform->CentOS->5] <triple: Platform; CentOS; 5>`:index:`[TAG=Platform->CentOS->6] <triple: Platform; CentOS; 6>`:index:`[TAG=Platform->CentOS->7] <triple: Platform; CentOS; 7>`:index:`[TAG=Platform->RHEL->4] <triple: Platform; RHEL; 4>`:index:`[TAG=Platform->RHEL->5] <triple: Platform; RHEL; 5>`:index:`[TAG=Platform->RHEL->6] <triple: Platform; RHEL; 6>`:index:`[TAG=Platform->RHEL->7] <triple: Platform; RHEL; 7>`
+:index:`[TAG=Platform->CentOS->5] <single: Platform; CentOS; 5>`:index:`[TAG=Platform->CentOS->6] <single: Platform; CentOS; 6>`:index:`[TAG=Platform->CentOS->7] <single: Platform; CentOS; 7>`:index:`[TAG=Platform->RHEL->4] <single: Platform; RHEL; 4>`:index:`[TAG=Platform->RHEL->5] <single: Platform; RHEL; 5>`:index:`[TAG=Platform->RHEL->6] <single: Platform; RHEL; 6>`:index:`[TAG=Platform->RHEL->7] <single: Platform; RHEL; 7>`
 
 # Tabular in LaTex format (original)
 
@@ -268,7 +268,7 @@ Packages names not containing the word **bareos** are required packages where we
 **python-bareos**                                                                  17.2                          17.2                17.2      17.2      17.2
 =========================================================== ========================================= ============================= ========= ========= ========= ========= =========
 
-:index:`[TAG=Platform->Fedora->20] <triple: Platform; Fedora; 20>`:index:`[TAG=Platform->Fedora->21] <triple: Platform; Fedora; 21>`:index:`[TAG=Platform->Fedora->22] <triple: Platform; Fedora; 22>`:index:`[TAG=Platform->Fedora->23] <triple: Platform; Fedora; 23>`:index:`[TAG=Platform->Fedora->24] <triple: Platform; Fedora; 24>`:index:`[TAG=Platform->Fedora->25] <triple: Platform; Fedora; 25>`:index:`[TAG=Platform->Fedora->26] <triple: Platform; Fedora; 26>`:index:`[TAG=Platform->Fedora->27] <triple: Platform; Fedora; 27>`
+:index:`[TAG=Platform->Fedora->20] <single: Platform; Fedora; 20>`:index:`[TAG=Platform->Fedora->21] <single: Platform; Fedora; 21>`:index:`[TAG=Platform->Fedora->22] <single: Platform; Fedora; 22>`:index:`[TAG=Platform->Fedora->23] <single: Platform; Fedora; 23>`:index:`[TAG=Platform->Fedora->24] <single: Platform; Fedora; 24>`:index:`[TAG=Platform->Fedora->25] <single: Platform; Fedora; 25>`:index:`[TAG=Platform->Fedora->26] <single: Platform; Fedora; 26>`:index:`[TAG=Platform->Fedora->27] <single: Platform; Fedora; 27>`
 
 # Tabular in LaTex format (original)
 
@@ -348,7 +348,7 @@ Packages names not containing the word **bareos** are required packages where we
 **python-bareos**                                                                                      17.2 17.2 17.2
 =========================================================== =============================== ========= ==== ========= ==== ==== ==== ====
 
-:index:`[TAG=Platform->SLES->10sp4] <triple: Platform; SLES; 10sp4>`:index:`[TAG=Platform->SLES->11sp4] <triple: Platform; SLES; 11sp4>`:index:`[TAG=Platform->SLES->12sp1] <triple: Platform; SLES; 12sp1>`:index:`[TAG=Platform->SLES->12sp2] <triple: Platform; SLES; 12sp2>`:index:`[TAG=Platform->SLES->12sp3] <triple: Platform; SLES; 12sp3>`
+:index:`[TAG=Platform->SLES->10sp4] <single: Platform; SLES; 10sp4>`:index:`[TAG=Platform->SLES->11sp4] <single: Platform; SLES; 11sp4>`:index:`[TAG=Platform->SLES->12sp1] <single: Platform; SLES; 12sp1>`:index:`[TAG=Platform->SLES->12sp2] <single: Platform; SLES; 12sp2>`:index:`[TAG=Platform->SLES->12sp3] <single: Platform; SLES; 12sp3>`
 
 # Tabular in LaTex format (original)
 
@@ -452,7 +452,7 @@ Packages names not containing the word **bareos** are required packages where we
 **python-six**                                                         15.2-16.2                
 =========================================================== ============================= ========= ========= ===== =====
 
-:index:`[TAG=Platform->openSUSE->13.1] <triple: Platform; openSUSE; 13.1>`:index:`[TAG=Platform->openSUSE->13.2] <triple: Platform; openSUSE; 13.2>`:index:`[TAG=Platform->openSUSE->42.1] <triple: Platform; openSUSE; 42.1>`:index:`[TAG=Platform->openSUSE->42.2] <triple: Platform; openSUSE; 42.2>`:index:`[TAG=Platform->openSUSE->42.3] <triple: Platform; openSUSE; 42.3>`
+:index:`[TAG=Platform->openSUSE->13.1] <single: Platform; openSUSE; 13.1>`:index:`[TAG=Platform->openSUSE->13.2] <single: Platform; openSUSE; 13.2>`:index:`[TAG=Platform->openSUSE->42.1] <single: Platform; openSUSE; 42.1>`:index:`[TAG=Platform->openSUSE->42.2] <single: Platform; openSUSE; 42.2>`:index:`[TAG=Platform->openSUSE->42.3] <single: Platform; openSUSE; 42.3>`
 
 # Tabular in LaTex format (original)
 
@@ -532,7 +532,7 @@ Packages names not containing the word **bareos** are required packages where we
 **python-bareos**                                                                              17.2 17.2
 =========================================================== ================================= ========= ========= ==== ====
 
-:index:`[TAG=Platform->Debian->6] <triple: Platform; Debian; 6>`:index:`[TAG=Platform->Debian->7] <triple: Platform; Debian; 7>`:index:`[TAG=Platform->Debian->8] <triple: Platform; Debian; 8>`:index:`[TAG=Platform->Debian->9] <triple: Platform; Debian; 9>`:index:`[TAG=Platform->Univention->4.0] <triple: Platform; Univention; 4.0>`:index:`[TAG=Platform->Univention->4.2] <triple: Platform; Univention; 4.2>`
+:index:`[TAG=Platform->Debian->6] <single: Platform; Debian; 6>`:index:`[TAG=Platform->Debian->7] <single: Platform; Debian; 7>`:index:`[TAG=Platform->Debian->8] <single: Platform; Debian; 8>`:index:`[TAG=Platform->Debian->9] <single: Platform; Debian; 9>`:index:`[TAG=Platform->Univention->4.0] <single: Platform; Univention; 4.0>`:index:`[TAG=Platform->Univention->4.2] <single: Platform; Univention; 4.2>`
 
 # Tabular in LaTex format (original)
 
@@ -629,7 +629,7 @@ Packages names not containing the word **bareos** are required packages where we
 **univention-bareos**                                                                                                                 15.2-16.2 17.2
 =========================================================== ========================================= =================================== ========= ==== ========= ====
 
-:index:`[TAG=Platform->Ubuntu->10.04] <triple: Platform; Ubuntu; 10.04>`:index:`[TAG=Platform->Ubuntu->12.04] <triple: Platform; Ubuntu; 12.04>`:index:`[TAG=Platform->Ubuntu->14.04] <triple: Platform; Ubuntu; 14.04>`:index:`[TAG=Platform->Ubuntu->16.04] <triple: Platform; Ubuntu; 16.04>`:index:`[TAG=Platform->Ubuntu->8.04] <triple: Platform; Ubuntu; 8.04>`
+:index:`[TAG=Platform->Ubuntu->10.04] <single: Platform; Ubuntu; 10.04>`:index:`[TAG=Platform->Ubuntu->12.04] <single: Platform; Ubuntu; 12.04>`:index:`[TAG=Platform->Ubuntu->14.04] <single: Platform; Ubuntu; 14.04>`:index:`[TAG=Platform->Ubuntu->16.04] <single: Platform; Ubuntu; 16.04>`:index:`[TAG=Platform->Ubuntu->8.04] <single: Platform; Ubuntu; 8.04>`
 
 # Tabular in LaTex format (original)
 
@@ -726,7 +726,7 @@ Packages names not containing the word **bareos** are required packages where we
 Univention Corporate Server
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Platform->Univention Corporate Server|see {Platform, Univention}] <pair: Platform; Univention Corporate Server|see {Platform, Univention}>` :os:`Univention` The Bareos version for the Univention App Center integraties into the Univention Enterprise Linux environment, making it easy to backup all the systems managed by the central Univention Corporate Server.
+:index:`[TAG=Platform->Univention Corporate Server|see {Platform, Univention}] <single: Platform; Univention Corporate Server|see {Platform, Univention}>` :os:`Univention` The Bareos version for the Univention App Center integraties into the Univention Enterprise Linux environment, making it easy to backup all the systems managed by the central Univention Corporate Server.
 
 Preamble
 ^^^^^^^^
@@ -739,8 +739,9 @@ The Bareos Univention App is shipped with a default configuration for the direct
 
 
 
-.. warning::
-   You need to review some Univention configuration registry (UCR) variables. Most likely, you will want to set the location where the backups are stored. Otherwise, you may quickly run out of disk space on your backup server!
+   .. warning::
+
+      You need to review some Univention configuration registry (UCR) variables. Most likely, you will want to set the location where the backups are stored. Otherwise, you may quickly run out of disk space on your backup server!
 
 You will find further information under :ref:`section-UniventionBackupStorage`.
 
@@ -749,7 +750,7 @@ Quick Start
 
 -  Determine the space requirements and where to store your backup data
 
--  Set the ``bareos/*`` UCR variables according to your needs, see :ref:`section-UCR`
+-  Set the :strong:`bareos/*` UCR variables according to your needs, see :ref:`section-UCR`
 
 -  Restart :command:`bareos-dir`, :command:`bareos-sd` and :command:`bareos-fd` (or simply reboot the server)
 
@@ -770,42 +771,42 @@ Quick Start
 UCR variables
 ^^^^^^^^^^^^^
 
-``bareos/filestorage``
+:strong:`bareos/filestorage`
    : /var/lib/bareos/storage (default)
 
    -  Location where to store the backup files. Make sure, it offers enough disk space for a configured backup volumes.
 
-``bareos/max_full_volume_bytes``
+:strong:`bareos/max_full_volume_bytes`
    : 20 (default)
 
    -  Maximum size (in GB) of a volume for the :config:option:`dir/pool = Full`\  backup pool
 
-``bareos/max_full_volumes``
+:strong:`bareos/max_full_volumes`
    : 1 (default)
 
    -  Maximum number of volumes for the :config:option:`dir/pool = Full`\  backup pool
 
-``bareos/max_diff_volume_bytes``
+:strong:`bareos/max_diff_volume_bytes`
    : 10 (default)
 
    -  Maximum size (in GB) of a volume for the :config:option:`dir/pool = Differential`\  backup pool
 
-``bareos/max_diff_volumes``
+:strong:`bareos/max_diff_volumes`
    : 1 (default)
 
    -  Maximum number of volumes for the :config:option:`dir/pool = Differential`\  backup pool
 
-``bareos/max_incr_volume_bytes``
+:strong:`bareos/max_incr_volume_bytes`
    : 1 (default)
 
    -  Maximum size (in GB) of a volume for the :config:option:`dir/pool = Incremental`\  backup pool
 
-``bareos/max_incr_volumes``
+:strong:`bareos/max_incr_volumes`
    : 1 (default)
 
    -  Maximum number of volumes for the :config:option:`dir/pool = Incremental`\  backup pool
 
-``bareos/backup_myself``
+:strong:`bareos/backup_myself`
    : no (default)
 
    no
@@ -814,12 +815,12 @@ UCR variables
    yes
       backup the server itself
 
-``bareos/webui/console/user1/username``
+:strong:`bareos/webui/console/user1/username`
    : Administrator (default)
 
    -  User name to login at the bareos-webui
 
-``bareos/webui/console/user1/password``
+:strong:`bareos/webui/console/user1/password`
    : (no default value)
 
    -  Password to login at the bareos-webui
@@ -833,7 +834,7 @@ UCR variables can be set via the Univention Configuration Registry Web interface
 
 or using the :command:`ucr` command line tool:
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Enable backup of the server itself
 
    root@ucs:~# <input>ucr set bareos/backup_myself=yes</input>
@@ -843,10 +844,11 @@ or using the :command:`ucr` command line tool:
 
 
 
-.. warning::
-   univention-bareos < 15.2 did require a manual reload/restart of the bareos-dir service:
+   .. warning::
 
-.. code-block:: sh
+      univention-bareos < 15.2 did require a manual reload/restart of the bareos-dir service:
+
+.. code-block:: shell-session
    :caption: let bareos-dir reload its configuration
 
    root@ucs:~# <input>service bareos-dir reload</input>
@@ -859,14 +861,14 @@ After installation of the Bareos app, Bareos is ready for operation. A default c
 
 Bareos consists of three daemons called :command:`director` (or :command:`bareos-dir`), :command:`storage-daemon` (or :command:`bareos-sd`) and :command:`filedaemon` (or :command:`bareos-fd`). All three daemons are started right after the installation by the Univention App Center.
 
-If you want to enable automatic backups of the server, you need to set the Univention configuration registry (UCR) variable ``bareos/backup_myself`` to :strong:`yes` and reload the director daemon.
+If you want to enable automatic backups of the server, you need to set the Univention configuration registry (UCR) variable :strong:`bareos/backup_myself` to :strong:`yes` and reload the director daemon.
 
 Administration
 ^^^^^^^^^^^^^^
 
 For general tasks the :ref:`bareos-webui <section-webui>` can be used. Additional, there is the :command:`bconsole` command line tool:
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Starting the bconsole
 
    root@ucs:~# <input>bconsole</input>
@@ -918,7 +920,7 @@ The default configuration uses three different pools, called :config:option:`dir
 
 If you change the UCR variables, the configuration files will be rewritten automatically. After each change you will need to reload the director daemon.
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Example for changing the Full pool size to $10 \ast 20$ GB
 
    root@ucs:~# <input>ucr set bareos/max_full_volumes=10</input>
@@ -932,8 +934,9 @@ If you change the UCR variables, the configuration files will be rewritten autom
 
 
 
-.. warning::
-   This only affects new volumes. Existing volumes will not change there size.
+   .. warning::
+
+      This only affects new volumes. Existing volumes will not change there size.
 
 .. _section-UniventionBackupStorage:
 
@@ -942,14 +945,15 @@ Backup Storage
 
 
 
-.. warning::
-   Using the default configuration, Bareos will store backups on your local disk. You may want to store the data to another location to avoid using up all of your disk space.
+   .. warning::
+
+      Using the default configuration, Bareos will store backups on your local disk. You may want to store the data to another location to avoid using up all of your disk space.
 
 The location for backups is :file:`/var/lib/bareos/storage` in the default configuration.
 
-For example, to use a NAS device for storing backups, you can mount your NAS volume via NFS on :file:`/var/lib/bareos/storage`. Alternatively, you can mount the NAS volume to another directory of your own choice, and change the UCR variable ``bareos/filestorage`` to the corresponding path. The directory needs to be writable by user **bareos**.
+For example, to use a NAS device for storing backups, you can mount your NAS volume via NFS on :file:`/var/lib/bareos/storage`. Alternatively, you can mount the NAS volume to another directory of your own choice, and change the UCR variable :strong:`bareos/filestorage` to the corresponding path. The directory needs to be writable by user **bareos**.
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Example for changing the storage path
 
    root@ucs:/etc/bareos# <input>ucr set bareos/filestorage=/path/to/your/storage</input>
@@ -958,21 +962,22 @@ For example, to use a NAS device for storing backups, you can mount your NAS vol
 
 
 
-.. warning::
-   You need to restart the Bareos storage daemon after having changed the storage path:
+   .. warning::
 
-.. code-block:: sh
+      You need to restart the Bareos storage daemon after having changed the storage path:
+
+.. code-block:: shell-session
 
    root@ucs:/# <input>service bareos-sd restart</input>
 
 Bareos Webui Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-After installation you just need to setup your login credentials via UCR variables. Therefore, set the Univention configuration registry (UCR) variable ``bareos/webui/console/user1/username`` and ``bareos/webui/consoles/user1/password`` according to your needs. The director configuration is automatically reloaded if one of those two variables changes.
+After installation you just need to setup your login credentials via UCR variables. Therefore, set the Univention configuration registry (UCR) variable :strong:`bareos/webui/console/user1/username` and :strong:`bareos/webui/consoles/user1/password` according to your needs. The director configuration is automatically reloaded if one of those two variables changes.
 
 Alternatively you can also set those UCR variables via commandline.
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Example for changing webui login credentials
 
    root@ucs:~# <input>ucr set bareos/webui/console/user1/username="bareos"</input>
@@ -1035,7 +1040,7 @@ Generated configuration files under :file:`/etc/bareos/bareos-dir-export/client/
 
 -  on Windows: :file:`C:\Program Files\Bareos\bareos-fd.d/director/`
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: copy client configuration from the server to the testw1.example.com client (Linux)
 
    root@ucs:~# <input>CLIENTNAME=testw1.example.com</input>
@@ -1062,7 +1067,7 @@ If you disable the Bareos backup for a client, the client will not be removed fr
 
 If you add three client, your client directory will look similar to this:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    root@ucs:/etc/bareos/autogenerated/clients# <input>ls -l</input>
    -rw-r--r-- 1 root root 430 16. Mai 15:15 generic.template
@@ -1073,7 +1078,7 @@ If you add three client, your client directory will look similar to this:
 
 The client configuration file contains, as you can see below, the client connection and the job information:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    root@ucs:/etc/bareos/autogenerated/clients# <input>cat testw2.example.com.include</input>
    Client {
@@ -1110,7 +1115,7 @@ Here the files intended for the target systems are generated under :file:`/etc/b
 
 -  on Windows: :file:`C:\Program Files\Bareos\bareos-fd.conf`
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: copy client configuration from the server to the testw1.example.com client (Linux)
 
    root@ucs:~# <input>CLIENTNAME=testw1.example.com</input>
@@ -1119,7 +1124,7 @@ Here the files intended for the target systems are generated under :file:`/etc/b
 Debian.org / Ubuntu Universe
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Platform->Debian->Debian.org] <triple: Platform; Debian; Debian.org>` :index:`[TAG=Platform->Debian->8] <triple: Platform; Debian; 8>` :index:`[TAG=Platform->Ubuntu->Universe] <triple: Platform; Ubuntu; Universe>` \index[general]{Platform!Ubuntu!Universe!15.04} 
+:index:`[TAG=Platform->Debian->Debian.org] <single: Platform; Debian; Debian.org>` :index:`[TAG=Platform->Debian->8] <single: Platform; Debian; 8>` :index:`[TAG=Platform->Ubuntu->Universe] <single: Platform; Ubuntu; Universe>` :index:`[TAG=Platform->Ubuntu->Universe->15.04] <single: Platform; Ubuntu; Universe; 15.04>` 
 
 .. _section-DebianOrg:
 
@@ -1134,7 +1139,7 @@ In the further text, these version will be named **Bareos (Debian.org)** (also f
 Limitations of the Debian.org/Ubuntu Universe version of Bareos
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
--  Debian.org does not include the libfastlz compression library and therefore the Bareos (Debian.org) packages do not offer the fileset options ``compression=LZFAST``, ``compression=LZ4`` and ``compression=LZ4HC``.
+-  Debian.org does not include the libfastlz compression library and therefore the Bareos (Debian.org) packages do not offer the fileset options :strong:`compression=LZFAST`, :strong:`compression=LZ4` and :strong:`compression=LZ4HC`.
 
 -  Debian.org does not include the **bareos-webui** package.
 
@@ -1143,7 +1148,7 @@ Limitations of the Debian.org/Ubuntu Universe version of Bareos
 Mac OS X
 --------
 
-:index:`[TAG=Platform->Mac->OS X] <triple: Platform; Mac; OS X>`
+:index:`[TAG=Platform->Mac->OS X] <single: Platform; Mac; OS X>`
 
 Bareos for MacOS X is available either
 
@@ -1153,27 +1158,27 @@ Bareos for MacOS X is available either
 
 However, you have to choose upfront, which client you want to use. Otherwise conflicts do occur.
 
-Both packages contain the |bareosFd| and :command:`bconsole`.
+Both packages contain the |fd| and :command:`bconsole`.
 
 Installing the Bareos Client as PKG
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Installation->MacOS] <pair: Installation; MacOS>`
+:index:`[TAG=Installation->MacOS] <single: Installation; MacOS>`
 
-The Bareos installer package for Mac OS X contains the |bareosFd| for Mac OS X 10.5 or later.
+The Bareos installer package for Mac OS X contains the |fd| for Mac OS X 10.5 or later.
 
 On your local Mac, you must be an admin user. The main user is an admin user.
 
 Download the :file:`bareos-client*.pkg` installer package from http://download.bareos.org/bareos/release/latest/MacOS/.
 
-Find the .pkg you just downloaded. Install the .pkg by holding the CTRL key, left-clicking the installer and choosing ''open''.
+Find the .pkg you just downloaded. Install the .pkg by holding the CTRL key, left-clicking the installer and choosing "open".
 
 Follow the directions given to you and finish the installation.
 
 Configuration
 ~~~~~~~~~~~~~
 
-To make use of your |bareosFd| on your system, it is required to configure the |bareosDir| and the local |bareosFd|.
+To make use of your |fd| on your system, it is required to configure the |dir| and the local |fd|.
 
 Configure the server-side by follow the instructions at :ref:`section-AddAClient`.
 
@@ -1182,9 +1187,9 @@ After configuring the server-side you can either transfer the necessary configur
 Option 1: Copy the director resource from the Bareos Director to the Client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Assuming your client has the DNS entry :strong:`client2.example.com` and has been added to |bareosDir| as :config:option:`bareos-dir/client = client2-fd`\ :
+Assuming your client has the DNS entry :strong:`client2.example.com` and has been added to |dir| as :config:option:`bareos-dir/client = client2-fd`\ :
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    scp /etc/bareos/bareos-dir-export/client/client2-fd/bareos-fd.d/director/bareos-dir.conf root@client2.example.com:/usr/local/etc/bareos/bareos-fd.d/director/
 
@@ -1195,13 +1200,13 @@ Option 2: Edit the director resource on the Client
 
 Alternatively, you can edit the file :file:`/usr/local/etc/bareos/bareos-fd.d/director/bareos-dir.conf`.
 
-This can be done by right-clicking the finder icon in your task bar, select ''Go to folder ...'' and paste :file:`/usr/local/etc/bareos/bareos-fd.d/director/`.
+This can be done by right-clicking the finder icon in your task bar, select "Go to folder ..." and paste :file:`/usr/local/etc/bareos/bareos-fd.d/director/`.
 
 Select the :file:`bareos-dir.conf` file and open it.
 
 Alternatively you can also call following command on the command console:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    open -t /usr/local/etc/bareos/bareos-fd.d/director/bareos-dir.conf
 
@@ -1220,16 +1225,17 @@ Set this client-side password to the same value as given on the server-side.
 
 
 
-.. warning::
-   The configuration file contains passwords and therefore must not be accessible for any users except admin users.
+   .. warning::
+
+      The configuration file contains passwords and therefore must not be accessible for any users except admin users.
 
 Restart bareos-fd after changing the configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The bareos-fd must be restarted to reread its configuration:
 
-.. code-block:: sh
-   :caption: Restart the |bareosFd|
+.. code-block:: shell-session
+   :caption: Restart the |fd|
 
    sudo launchctl stop  org.bareos.bareos-fd
    sudo launchctl start org.bareos.bareos-fd
@@ -1237,7 +1243,7 @@ The bareos-fd must be restarted to reread its configuration:
 Verify that the Bareos File Daemon is working
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Open the :command:`bconsole` on your |bareosDir| and check the status of the client with
+Open the :command:`bconsole` on your |dir| and check the status of the client with
 
 .. code-block:: bareosconfig
 
@@ -1245,8 +1251,8 @@ Open the :command:`bconsole` on your |bareosDir| and check the status of the cli
 
 In case, the client does not react, following command are useful the check the status:
 
-.. code-block:: sh
-   :caption: Verify the status of |bareosFd|
+.. code-block:: shell-session
+   :caption: Verify the status of |fd|
 
    # check if bareos-fd is started by system:
    sudo launchctl list org.bareos.bareos-fd
@@ -1257,13 +1263,13 @@ In case, the client does not react, following command are useful the check the s
    # show files opened by bareos-fd
    sudo lsof -p `pgrep bareos-fd`
 
-   # check what process is listening on the |bareosFd| port
+   # check what process is listening on the |fd| port
    sudo lsof -n -iTCP:9102 | grep LISTEN
 
 You can also manually start bareos-fd in debug mode by:
 
-.. code-block:: sh
-   :caption: Start |bareosFd| in debug mode
+.. code-block:: shell-session
+   :caption: Start |fd| in debug mode
 
    sudo /usr/local/sbin/bareos-fd -f -d 100
 

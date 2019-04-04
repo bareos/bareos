@@ -9,7 +9,7 @@ When the amount of data backed up by the client outruns the value specified by t
 
 
 
-In the Job Overview, the value of Grace Expiry Date: will then change from ``Soft Quota was never exceeded`` to the date when the grace time expires, e.g. ``11-Dec-2012 04:09:05``.
+In the Job Overview, the value of Grace Expiry Date: will then change from :strong:`Soft Quota was never exceeded` to the date when the grace time expires, e.g. :strong:`11-Dec-2012 04:09:05`.
 
 During that period, it is possible to do backups even if the total amount of stored data exceeds the limit specified by soft quota.
 

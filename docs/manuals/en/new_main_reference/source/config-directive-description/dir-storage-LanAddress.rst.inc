@@ -1,4 +1,4 @@
-This directive might be useful in network setups where the |bareosDir| and |bareosFd| need different addresses to communicate with the |bareosSd|.
+This directive might be useful in network setups where the |dir| and |fd| need different addresses to communicate with the |sd|.
 
 For details, see :ref:`LanAddress`.
 

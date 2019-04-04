@@ -7,30 +7,31 @@ Plugins
 
 The functionality of Bareos can be extended by plugins. They do exists plugins for the different daemons (Director, Storage- and File-Daemon).
 
-To use plugins, they must be enabled in the configuration (:strong:`Plugin Directory` and optionally :strong:`Plugin Names`).
+To use plugins, they must be enabled in the configuration (:strong:`Plugin Directory`\  and optionally :strong:`Plugin Names`\ ).
 
-If a :strong:`Plugin Directory` is specified :strong:`Plugin Names` defines, which plugins get loaded.
+If a :strong:`Plugin Directory`\  is specified :strong:`Plugin Names`\  defines, which plugins get loaded.
 
-If :strong:`Plugin Names` is not defined, all plugins get loaded.
+If :strong:`Plugin Names`\  is not defined, all plugins get loaded.
 
 .. _fdPlugins:
 
 File Daemon Plugins
 -------------------
 
-File Daemon plugins are configured by the :strong:`Plugin` directive of a :ref:`File Set <directive-fileset-plugin>`.
+File Daemon plugins are configured by the :strong:`Plugin`\  directive of a :ref:`File Set <directive-fileset-plugin>`.
 
 
 
-.. warning::
-   Currently the plugin command is being stored as part of the backup. The restore command in your directive should be flexible enough if things might change in future, otherwise you could run into trouble.
+   .. warning::
+
+      Currently the plugin command is being stored as part of the backup. The restore command in your directive should be flexible enough if things might change in future, otherwise you could run into trouble.
 
 .. _bpipe:
 
 bpipe Plugin
 ~~~~~~~~~~~~
 
-:index:`[TAG=Plugin->bpipe] <pair: Plugin; bpipe>`
+:index:`[TAG=Plugin->bpipe] <single: Plugin; bpipe>`
 
 The bpipe plugin is a generic pipe program, that simply transmits the data from a specified program to Bareos for backup, and from Bareos to a specified program for restore. The purpose of the plugin is to provide an interface to any system program for backup and restore. That allows you, for example, to do database backups without a local dump. By using different command lines to bpipe, you can backup any kind of data (ASCII or binary) depending on the program called.
 
@@ -65,7 +66,7 @@ plugin
    is the name of the plugin with the trailing -fd.so stripped off, so in this case, we would put bpipe in the field.
 
 filepath
-   specifies the namespace, which for bpipe is the pseudo path and filename under which the backup will be saved. This pseudo path and filename will be seen by the user in the restore file tree. For example, if the value is :strong:`/MySQL/mydump.sql`, the data backed up by the plugin will be put under that ''pseudo'' path and filename. You must be careful to choose a naming convention that is unique to avoid a conflict with a path and filename that actually
+   specifies the namespace, which for bpipe is the pseudo path and filename under which the backup will be saved. This pseudo path and filename will be seen by the user in the restore file tree. For example, if the value is :strong:`/MySQL/mydump.sql`, the data backed up by the plugin will be put under that "pseudo" path and filename. You must be careful to choose a naming convention that is unique to avoid a conflict with a path and filename that actually
    exists on your system.
 
 readprogram
@@ -97,35 +98,35 @@ See chapter :ref:`MSSQL`.
 LDAP Plugin
 ~~~~~~~~~~~
 
-:index:`[TAG=Plugin->ldap] <pair: Plugin; ldap>`
+:index:`[TAG=Plugin->ldap] <single: Plugin; ldap>`
 
 This plugin is intended to backup (and restore) the contents of a LDAP server. It uses normal LDAP operation for this. The package **bareos-filedaemon-ldap-python-plugin** (:sinceVersion:`15.2.0: LDAP Plugin`) contains an example configuration file, that must be adapted to your envirnoment.
 
 Cephfs Plugin
 ~~~~~~~~~~~~~
 
-:index:`[TAG=Plugin->ceph->cephfs] <triple: Plugin; ceph; cephfs>` :index:`[TAG=Ceph->Cephfs Plugin] <pair: Ceph; Cephfs Plugin>`
+:index:`[TAG=Plugin->ceph->cephfs] <single: Plugin; ceph; cephfs>` :index:`[TAG=Ceph->Cephfs Plugin] <single: Ceph; Cephfs Plugin>`
 
 Opposite to the :ref:`Rados Backend <SdBackendRados>` that is used to store data on a CEPH Object Store, this plugin is intended to backup a CEPH Object Store via the Cephfs interface to other media. The package **bareos-filedaemon-ceph-plugin** (:sinceVersion:`15.2.0: Cephfs Plugin`) contains an example configuration file, that must be adapted to your envirnoment.
 
 Rados Plugin
 ~~~~~~~~~~~~
 
-:index:`[TAG=Plugin->ceph->rados] <triple: Plugin; ceph; rados>` :index:`[TAG=Ceph->Rados Plugin] <pair: Ceph; Rados Plugin>`
+:index:`[TAG=Plugin->ceph->rados] <single: Plugin; ceph; rados>` :index:`[TAG=Ceph->Rados Plugin] <single: Ceph; Rados Plugin>`
 
 Opposite to the :ref:`Rados Backend <SdBackendRados>` that is used to store data on a CEPH Object Store, this plugin is intended to backup a CEPH Object Store via the Rados interface to other media. The package **bareos-filedaemon-ceph-plugin** (:sinceVersion:`15.2.0: CEPH Rados Plugin`) contains an example configuration file, that must be adapted to your envirnoment.
 
 GlusterFS Plugin
 ~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Plugin->glusterfs] <pair: Plugin; glusterfs>` :index:`[TAG=GlusterFS->Plugin] <pair: GlusterFS; Plugin>`
+:index:`[TAG=Plugin->glusterfs] <single: Plugin; glusterfs>` :index:`[TAG=GlusterFS->Plugin] <single: GlusterFS; Plugin>`
 
 Opposite to the :ref:`GFAPI Backend <SdBackendGfapi>` that is used to store data on a Gluster system, this plugin is intended to backup data from a Gluster system to other media. The package **bareos-filedaemon-glusterfs-plugin** (:sinceVersion:`15.2.0: GlusterFS Plugin`) contains an example configuration file, that must be adapted to your envirnoment.
 
 python-fd Plugin
 ~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Plugin->Python->File Daemon] <triple: Plugin; Python; File Daemon>`
+:index:`[TAG=Plugin->Python->File Daemon] <single: Plugin; Python; File Daemon>`
 
 The **python-fd** plugin behaves similar to the :ref:`director-python-plugin`. Base plugins and an example get installed via the package bareos-filedaemon-python-plugin. Configuration is done in the :ref:`DirectorResourceFileSet` on the director.
 
@@ -150,7 +151,7 @@ Command plugins are used to replace or extend the FileSet definition in the File
      }
    } 
 
-:index:`[TAG=MySQL->Backup] <pair: MySQL; Backup>` This example uses the :ref:`MySQL plugin <backup-mysql-python>` to backup MySQL dumps in addition to :file:`/etc`.
+:index:`[TAG=MySQL->Backup] <single: MySQL; Backup>` This example uses the :ref:`MySQL plugin <backup-mysql-python>` to backup MySQL dumps in addition to :file:`/etc`.
 
 Option Plugins
 ^^^^^^^^^^^^^^
@@ -181,7 +182,7 @@ This plugin bareos-fd-file-interact from https://github.com/bareos/bareos-contri
 VMware Plugin
 ~~~~~~~~~~~~~
 
-:index:`[TAG=Plugin->VMware] <pair: Plugin; VMware>` :index:`[TAG=VMware Plugin] <single: VMware Plugin>`
+:index:`[TAG=Plugin->VMware] <single: Plugin; VMware>` :index:`[TAG=VMware Plugin] <single: VMware Plugin>`
 
 The |vmware| Plugin can be used for agentless backups of virtual machines running on |vsphere|. It makes use of CBT (Changed Block Tracking) to do space efficient full and incremental backups, see below for mandatory requirements.
 
@@ -227,7 +228,7 @@ Current limitations amongst others are:
 Requirements
 ^^^^^^^^^^^^
 
-As the Plugin is based on the |vsphere| Storage APIs for Data Protection, which requires at least a |vsphere| Essentials License. It is tested against |vsphere| Storage APIs for Data Protection of |vmware| 5.x. It does not work with standalone unlicensed |vmware| ESXi\ :sup:`(TM)`.
+As the Plugin is based on the |vsphere| Storage APIs for Data Protection, which requires at least a |vsphere| Essentials License. It is tested against |vsphere| Storage APIs for Data Protection of |vmware| 5.x. It does not work with standalone unlicensed |vmware| ESXi\ |trade|.
 
 Since Bareos :sinceVersion:`17.2.4: VMware Plugin: VDDK 6.5.2` the plugin is using the Virtual Disk Development Kit (VDDK) 6.5.2, as of the VDDK 6.5 release notes, it should be compatible with vSphere 6.5 and the next major release (except new features) and backward compatible with vSphere 5.5 and 6.0, see VDDK release notes at https://code.vmware.com/web/sdk/65/vddk for details.
 
@@ -251,7 +252,7 @@ For more details regarding users and permissions in vSphere see
 
 -  http://pubs.vmware.com/vsphere-55/topic/com.vmware.vsphere.security.doc/GUID-5372F580-5C23-4E9C-8A4E-EF1B4DD9033E.html
 
-Make sure to add or enable the following settings in your |bareosFd| configuration:
+Make sure to add or enable the following settings in your |fd| configuration:
 
 .. code-block:: bareosconfig
    :caption: bareos-fd.d/client/myself.conf
@@ -308,14 +309,14 @@ or install the **bareos-vmware-plugin-compat** package which includes compatibil
 
 Since :sinceVersion:`17.2.4: VMware Plugin: vcthumbprint`: as the Plugin is using the Virtual Disk Development Kit (VDDK) 6.5, it is required to pass the thumbprint of the vCenter SSL Certificate, which is the SHA1 checksum of the SSL Certificate. The thumbprint can be retrieved like this:
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Example Retrieving vCenter SSL Certificate Thumbprint
 
    echo -n | openssl s_client -connect vcenter.example.org:443 2>/dev/null | openssl x509 -noout -fingerprint -sha1
 
 The result would look like this:
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Example Result Thumbprint
 
    SHA1 Fingerprint=CC:81:81:84:A3:CF:53:ED:63:B1:46:EF:97:13:4A:DF:A5:9F:37:89
@@ -378,7 +379,7 @@ Since :sinceVersion:`17.2.8: VMware Plugin: non-ascii characters` it is possible
      }
    }
 
-However, it is important to know that it is not possible to use non-ascii characters as an argument for the :strong:`Name` of a job or fileset resource.
+However, it is important to know that it is not possible to use non-ascii characters as an argument for the :strong:`Name`\  of a job or fileset resource.
 
 Before this, it was only possible specify VMs contained in vApps by using the instance UUID with the :strong:`uuid` instead of :strong:`folder` and :strong:`vmname` like this:
 
@@ -402,7 +403,7 @@ Before running the first backup, CBT (Changed Block Tracking) must be enabled fo
 
 As of http://kb.vmware.com/kb/2075984 manually enabling CBT is currently not working properly. The API however works properly. To enable CBT use the Script :command:`vmware_cbt_tool.py`, it is packaged in the bareos-vmware-plugin package:
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: usage of vmware\_cbt\_tool.py
 
    # <parameter>vmware_cbt_tool.py --help</parameter>
@@ -440,7 +441,7 @@ in a tabular output including instance UUID and containing Folder/vApp name.
 
 For the above configuration example, the command to enable CBT would be
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Example using vmware\_cbt\_tool.py
 
    # <parameter>vmware_cbt_tool.py -s vcenter.example.org -u bakadm@vsphere.local -p Bak.Adm-1234 -d mydc1 -f /webservers -v websrv1 --enablecbt</parameter>
@@ -459,14 +460,14 @@ For restore, the VM must be powered off and no snapshot must exist. In :command:
 Restore to local VMDK File
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=VMware Plugin->VMDK files] <pair: VMware Plugin; VMDK files>`
+:index:`[TAG=VMware Plugin->VMDK files] <single: VMware Plugin; VMDK files>`
 
-Since :sinceVersion:`15.2.3: VMware Plugin: restore to VMDK files` it is possible to restore to local VMDK files. That means, instead of directly restoring a disk that belongs to the VM, the restore creates VMDK disk image files on the filesystem of the system that runs the |bareosFd|. As the VM that the backup was taken from is not affected by this, it can remain switched on while restoring to local VMDK. Such a restored VMDK file can then be uploaded to a
+Since :sinceVersion:`15.2.3: VMware Plugin: restore to VMDK files` it is possible to restore to local VMDK files. That means, instead of directly restoring a disk that belongs to the VM, the restore creates VMDK disk image files on the filesystem of the system that runs the |fd|. As the VM that the backup was taken from is not affected by this, it can remain switched on while restoring to local VMDK. Such a restored VMDK file can then be uploaded to a
 |vsphere| datastore or accessed by tools like `guestfish <http://libguestfs.org/guestfish.1.html>`_ to extract single files.
 
 For restoring to local VMDK, the plugin option :strong:`localvmdk=yes` must be passed. The following example shows how to perform such a restore using :command:`bconsole`:
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Example restore to local VMDK
 
    *<input>restore</input>
@@ -573,7 +574,7 @@ Before, all Python plugin must be repeated and the additional be added, like: :f
 
 After the restore process has finished, the restored VMDK files can be found under \path{/tmp/bareos-restores/}:
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Example result of restore to local VMDK
 
    # <input>ls -laR /tmp/bareos-restores</input>
@@ -600,7 +601,7 @@ Storage Daemon Plugins
 autoxflate-sd
 ~~~~~~~~~~~~~
 
-:index:`[TAG=Plugin->autoxflate-sd] <pair: Plugin; autoxflate-sd>`
+:index:`[TAG=Plugin->autoxflate-sd] <single: Plugin; autoxflate-sd>`
 
 This plugin is part of the **bareos-storage** package.
 
@@ -630,7 +631,7 @@ Szenarios where this plugin can be used are for example:
 
 -  client computers with weak cpus can do backups without compression and let the sd do the compression when writing to disk
 
--  compressed backups can be recompressed to a different compression format (e.g. gzip -> lzo) using migration jobs
+-  compressed backups can be recompressed to a different compression format (e.g. gzip |rarr| lzo) using migration jobs
 
 -  client backups can be compressed with compression algorithms that the client itself does not support
 
@@ -658,7 +659,7 @@ Additional :config:option:`sd/storage/AutoXflateOnReplication`\  can be configur
 scsicrypto-sd
 ~~~~~~~~~~~~~
 
-:index:`[TAG=Plugin->scsicrypto-sd] <pair: Plugin; scsicrypto-sd>`
+:index:`[TAG=Plugin->scsicrypto-sd] <single: Plugin; scsicrypto-sd>`
 
 This plugin is part of the **bareos-storage-tape** package.
 
@@ -721,7 +722,7 @@ The initial setup of SCSI crypto looks something like this:
 
 -  Generate a Key Encryption Key e.g.
 
-   .. code-block:: sh
+   .. code-block:: shell-session
 
       bscrypto -g -
 
@@ -737,44 +738,44 @@ The following additional security is needed for the following operating systems:
 Linux (SG_IO ioctl interface):
                               
 
-The user running the storage daemon needs the following additional capabilities: :index:`[TAG=Platform->Linux->Privileges] <triple: Platform; Linux; Privileges>`
+The user running the storage daemon needs the following additional capabilities: :index:`[TAG=Platform->Linux->Privileges] <single: Platform; Linux; Privileges>`
 
--  ``CAP_SYS_RAWIO`` (see capabilities(7))
+-  :strong:`CAP_SYS_RAWIO` (see capabilities(7))
 
-   -  On older kernels you might need ``CAP_SYS_ADMIN``. Try ``CAP_SYS_RAWIO`` first and if that doesn’t work try ``CAP_SYS_ADMIN``
+   -  On older kernels you might need :strong:`CAP_SYS_ADMIN`. Try :strong:`CAP_SYS_RAWIO` first and if that doesn’t work try :strong:`CAP_SYS_ADMIN`
 
--  If you are running the storage daemon as another user than root (which has the ``CAP_SYS_RAWIO`` capability), you need to add it to the current set of capabilities.
+-  If you are running the storage daemon as another user than root (which has the :strong:`CAP_SYS_RAWIO` capability), you need to add it to the current set of capabilities.
 
 -  If you are using systemd, you could add this additional capability to the CapabilityBoundingSet parameter.
 
-   -  For systemd add the following to the bareos-sd.service: ``Capabilities=cap_sys_rawio+ep``
+   -  For systemd add the following to the bareos-sd.service: :strong:`Capabilities=cap_sys_rawio+ep`
 
 You can also set up the extra capability on :command:`bscrypto` and :command:`bareos-sd` by running the following commands:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    setcap cap_sys_rawio=ep bscrypto
    setcap cap_sys_rawio=ep bareos-sd
 
 Check the setting with
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    getcap -v bscrypto
    getcap -v bareos-sd
 
 :command:`getcap` and :command:`setcap` are part of libcap-progs.
 
-If :command:`bareos-sd` does not have the appropriate capabilities, all other tape operations may still work correctly, but you will get ''Unable to perform SG\_IO ioctl'' errors.
+If :command:`bareos-sd` does not have the appropriate capabilities, all other tape operations may still work correctly, but you will get "Unable to perform SG\_IO ioctl" errors.
 
 Solaris (USCSI ioctl interface):
                                 
 
-The user running the storage daemon needs the following additional privileges: :index:`[TAG=Platform->Solaris->Privileges] <triple: Platform; Solaris; Privileges>`
+The user running the storage daemon needs the following additional privileges: :index:`[TAG=Platform->Solaris->Privileges] <single: Platform; Solaris; Privileges>`
 
--  ``PRIV_SYS_DEVICES`` (see privileges(5))
+-  :strong:`PRIV_SYS_DEVICES` (see privileges(5))
 
-If you are running the storage daemon as another user than root (which has the ``PRIV_SYS_DEVICES`` privilege), you need to add it to the current set of privileges. This can be set up by setting this either as a project for the user, or as a set of extra privileges in the SMF definition starting the storage daemon. The SMF setup is the cleanest one.
+If you are running the storage daemon as another user than root (which has the :strong:`PRIV_SYS_DEVICES` privilege), you need to add it to the current set of privileges. This can be set up by setting this either as a project for the user, or as a set of extra privileges in the SMF definition starting the storage daemon. The SMF setup is the cleanest one.
 
 For SMF make sure you have something like this in the instance block:
 
@@ -828,10 +829,10 @@ For Disaster Recovery (DR) you need the following information:
 
 This data needs to be availabe as a so called crypto cache file which is used by the plugin when no connection to the director can be made to do a lookup (most likely on DR).
 
-Most of the times the needed information, e.g. the bootstrap info, is available on recently written volumes and most of the time the encryption cache will contain the most recent data, so a recent copy of the :file:`bareos-sd.<portnr>.cryptoc` file in the working directory is enough most of the time. You can also save the info from database in a safe place and use bscrypto to populate this info (VolumeName -> EncryptKey) into the crypto cache file used by
+Most of the times the needed information, e.g. the bootstrap info, is available on recently written volumes and most of the time the encryption cache will contain the most recent data, so a recent copy of the :file:`bareos-sd.<portnr>.cryptoc` file in the working directory is enough most of the time. You can also save the info from database in a safe place and use bscrypto to populate this info (VolumeName |rarr| EncryptKey) into the crypto cache file used by
 :command:`bextract` and :command:`bscan`. You can use :command:`bscrypto` with the following flags to create a new or update an existing crypto cache file e.g.:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    bscrypto -p /var/lib/bareos/bareos-sd.<portnr>.cryptoc
 
@@ -839,7 +840,7 @@ Most of the times the needed information, e.g. the bootstrap info, is available 
 
 -  Recover the database in the normal way e.g. for postgresql:
 
-   .. code-block:: sh
+   .. code-block:: shell-session
 
       bextract -D <director_name> -c bareos-sd.conf -V <volname> \ /dev/nst0 /tmp -b bootstrap.bsr
       /usr/lib64/bareos/create_bareos_database
@@ -848,20 +849,20 @@ Most of the times the needed information, e.g. the bootstrap info, is available 
 
 Or something similar (change paths to follow where you installed the software or where the package put it).
 
-**Note:** As described at the beginning of this chapter, there are different types of key management, AME, LME and KMA. If the Library is set up for LME or KMA, it probably won’t allow our AME setup and the scsi-crypto plugin will fail to set/clear the encryption key. To be able to use AME you need to ''Modify Encryption Method'' and set it to something like ''Application Managed''. If you decide to use LME or KMA you don’t have to bother with the whole setup
+**Note:** As described at the beginning of this chapter, there are different types of key management, AME, LME and KMA. If the Library is set up for LME or KMA, it probably won’t allow our AME setup and the scsi-crypto plugin will fail to set/clear the encryption key. To be able to use AME you need to "Modify Encryption Method" and set it to something like "Application Managed". If you decide to use LME or KMA you don’t have to bother with the whole setup
 of AME which may for big libraries be easier, although the overhead of using AME even for very big libraries should be minimal.
 
 scsitapealert-sd
 ~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Plugin->scsitapealert-sd] <pair: Plugin; scsitapealert-sd>`
+:index:`[TAG=Plugin->scsitapealert-sd] <single: Plugin; scsitapealert-sd>`
 
 This plugin is part of the **bareos-storage-tape** package.
 
 python-sd Plugin
 ~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Plugin->Python->Storage Daemon] <triple: Plugin; Python; Storage Daemon>`
+:index:`[TAG=Plugin->Python->Storage Daemon] <single: Plugin; Python; Storage Daemon>`
 
 The **python-sd** plugin behaves similar to the :ref:`director-python-plugin`.
 
@@ -875,7 +876,7 @@ Director Plugins
 python-dir Plugin
 ~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Plugin->Python->Director] <triple: Plugin; Python; Director>`
+:index:`[TAG=Plugin->Python->Director] <single: Plugin; Python; Director>`
 
 The **python-dir** plugin is intended to extend the functionality of the Bareos Director by Python code. A working example is included.
 

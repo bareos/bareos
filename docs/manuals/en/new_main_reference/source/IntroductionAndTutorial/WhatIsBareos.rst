@@ -50,27 +50,27 @@ The Director is the central control program for all the other daemons. It schedu
 Bareos Console
 ~~~~~~~~~~~~~~
 
-The Bareos Console (:command:`bconsole`) is the program that allows the administrator or user to communicate with the |bareosDir|. It runs in a shell window (i.e. TTY interface). Most system administrators will find this completely adequate. For more details see the :ref:`section-bconsole`.
+The Bareos Console (:command:`bconsole`) is the program that allows the administrator or user to communicate with the |dir|. It runs in a shell window (i.e. TTY interface). Most system administrators will find this completely adequate. For more details see the :ref:`section-bconsole`.
 
 .. _FDDef:
 
 Bareos File Daemon
 ~~~~~~~~~~~~~~~~~~
 
-The |bareosFd| is a program that must be installed on each (Client) machine that should be backed up. At the request of the |bareosDir|, it finds the files to be backed up and sends them (their data) to the |bareosSd|.
+The |fd| is a program that must be installed on each (Client) machine that should be backed up. At the request of the |dir|, it finds the files to be backed up and sends them (their data) to the |sd|.
 
-It is specific to the operating system on which it runs and is responsible for providing the file attributes and data when requested by the |bareosDir|.
+It is specific to the operating system on which it runs and is responsible for providing the file attributes and data when requested by the |dir|.
 
-The |bareosFd| is also responsible for the file system dependent part of restoring the file attributes and data during a recovery operation. This program runs as a daemon on the machine to be backed up.
+The |fd| is also responsible for the file system dependent part of restoring the file attributes and data during a recovery operation. This program runs as a daemon on the machine to be backed up.
 
 .. _SDDef:
 
 Bareos Storage Daemon
 ~~~~~~~~~~~~~~~~~~~~~
 
-The |bareosSd| is responsible, at the |bareosDir| request, for accepting data from a |bareosFd| and storing the file attributes and data to the physical backup media or volumes. In the case of a restore request, it is responsible to find the data and send it to the |bareosFd|.
+The |sd| is responsible, at the |dir| request, for accepting data from a |fd| and storing the file attributes and data to the physical backup media or volumes. In the case of a restore request, it is responsible to find the data and send it to the |fd|.
 
-There can be multiple |bareosSd| in your environment, all controlled by the same |bareosDir|.
+There can be multiple |sd| in your environment, all controlled by the same |dir|.
 
 The Storage services runs as a daemon on the machine that has the backup device (such as a tape drive).
 
@@ -225,11 +225,11 @@ Not all packages are required to run Bareos.
 
 -  For the Bareos Director, the package **bareos-director** and one of **bareos-database-postgresql**, **bareos-database-mysql** or **bareos-database-sqlite3** are required. It is recommended to use **bareos-database-postgresql**.
 
--  For the |bareosSd|, the package **bareos-storage** is required. If you plan to connect tape drives to the storage director, also install the package **bareos-storage-tape**. This is kept separately, because it has additional dependencies for tape tools.
+-  For the |sd|, the package **bareos-storage** is required. If you plan to connect tape drives to the storage director, also install the package **bareos-storage-tape**. This is kept separately, because it has additional dependencies for tape tools.
 
 -  On a client, only the package **bareos-filedaemon** is required. If you run it on a workstation, the packages **bareos-traymonitor** gives the user information about running backups.
 
--  On a Backup Administration system you need to install at least **bareos-bconsole** to have an interactive console to the |bareosDir|.
+-  On a Backup Administration system you need to install at least **bareos-bconsole** to have an interactive console to the |dir|.
 
 Quick Start
 -----------
@@ -379,7 +379,7 @@ The Current State of Bareos
 What is Implemented
 ~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Implementation->What is implemented] <pair: Implementation; What is implemented>`
+:index:`[TAG=Implementation->What is implemented] <single: Implementation; What is implemented>`
 
 -  Job Control
 
@@ -507,7 +507,7 @@ Advantages Over Other Backup Programs
 Current Implementation Restrictions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Restrictions->Current Implementation] <pair: Restrictions; Current Implementation>`
+:index:`[TAG=Restrictions->Current Implementation] <single: Restrictions; Current Implementation>`
 
 -  
 
@@ -522,7 +522,7 @@ Current Implementation Restrictions
 Design Limitations or Restrictions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Restrictions->Design Limitations] <pair: Restrictions; Design Limitations>` :index:`[TAG=Design->Limitations] <pair: Design; Limitations>`
+:index:`[TAG=Restrictions->Design Limitations] <single: Restrictions; Design Limitations>` :index:`[TAG=Design->Limitations] <single: Design; Limitations>`
 
 -  Names (resource names, volume names, and such) defined in Bareos configuration files are limited to a fixed number of characters. Currently the limit is defined as 127 characters. Note, this does not apply to filenames, which may be arbitrarily long.
 

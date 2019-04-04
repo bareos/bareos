@@ -17,7 +17,7 @@ The general flow of running Bareos is:
 
 #. Start the Bareos Daemons
 
-#. Start the Console program to interact with the |bareosDir|
+#. Start the Console program to interact with the |dir|
 
 #. Run a job
 
@@ -30,7 +30,7 @@ Each of these steps is described in more detail below.
 Starting the Database
 ---------------------
 
-If you are using |postgresql| or |mysql| as the Bareos database, you should start it before you install Bareos. If you are using |sqlite| you need do nothing. |sqlite| is automatically started by the |bareosDir|.
+If you are using |postgresql| or |mysql| as the Bareos database, you should start it before you install Bareos. If you are using |sqlite| you need do nothing. |sqlite| is automatically started by the |dir|.
 
 Installing Bareos
 -----------------
@@ -42,7 +42,7 @@ For installing Bareos, follow the instructions from the :ref:`InstallChapter` ch
 Starting the Daemons
 --------------------
 
-:index:`[TAG=Starting the Daemons] <single: Starting the Daemons>` :index:`[TAG=Daemon->Start] <pair: Daemon; Start>`
+:index:`[TAG=Starting the Daemons] <single: Starting the Daemons>` :index:`[TAG=Daemon->Start] <single: Daemon; Start>`
 
 Assuming you have installed the packages, to start the three daemons, from your installation directory, simply enter:
 
@@ -58,11 +58,11 @@ Assuming you have installed the packages, to start the three daemons, from your 
 Using the Director to Query and Start Jobs
 ------------------------------------------
 
-To communicate with the |bareosDir| and to query the state of Bareos or run jobs, the :command:`bconsole` program can be used as a textual interface. Alternatively, for most purposes, also the :ref:`|bareosWebui| <section-webui>` can be used, but for simplicity, here we will describe only the :command:`bconsole` program.
+To communicate with the |dir| and to query the state of Bareos or run jobs, the :command:`bconsole` program can be used as a textual interface. Alternatively, for most purposes, also the :ref:`|webui| <section-webui>` can be used, but for simplicity, here we will describe only the :command:`bconsole` program.
 
-The :command:`bconsole` runs the Bareos Console program, which connects to the |bareosDir|. Since Bareos is a network program, you can run the Console program anywhere on your network. Most frequently, however, one runs it on the same machine as the |bareosDir|. Normally, the Console program will print something similar to the following:
+The :command:`bconsole` runs the Bareos Console program, which connects to the |dir|. Since Bareos is a network program, you can run the Console program anywhere on your network. Most frequently, however, one runs it on the same machine as the |dir|. Normally, the Console program will print something similar to the following:
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: bconsole
 
    <command>bconsole</command>
@@ -134,7 +134,7 @@ Details of the console program’s commands are explained in the :ref:`section-b
 Running a Job
 -------------
 
-:index:`[TAG=Job->Running a] <pair: Job; Running a>` :index:`[TAG=Running a Job] <single: Running a Job>`
+:index:`[TAG=Job->Running a] <single: Job; Running a>` :index:`[TAG=Running a Job] <single: Running a Job>`
 
 At this point, we assume you have done the following:
 
@@ -225,9 +225,9 @@ Now enter:
    No Jobs running.
    ====
 
-In this case, the client is named :config:option:`Dir/Client = bareos-fd`\  your name might be different, but the line beginning with :file:`bareos-fd Version` is printed by your |bareosFd|, so we are now sure it is up and running.
+In this case, the client is named :config:option:`Dir/Client = bareos-fd`\  your name might be different, but the line beginning with :file:`bareos-fd Version` is printed by your |fd|, so we are now sure it is up and running.
 
-Finally do the same for your |bareosSd| with:
+Finally do the same for your |sd| with:
 
 .. code-block:: bconsole
    :caption: status storage
@@ -256,7 +256,7 @@ Finally do the same for your |bareosSd| with:
 
    ====
 
-You will notice that the default |bareosSd| device is named :config:option:`Dir/Storage = File`\  and that it will use device :file:`/var/lib/bareos/storage`, which is not currently open.
+You will notice that the default |sd| device is named :config:option:`Dir/Storage = File`\  and that it will use device :file:`/var/lib/bareos/storage`, which is not currently open.
 
 Now, let’s actually run a job with:
 
@@ -385,7 +385,7 @@ If you would like to try restoring the files that you just backed up, read the f
 Restoring Your Files
 --------------------
 
-:index:`[TAG=Files->Restoring Your] <pair: Files; Restoring Your>` :index:`[TAG=Restoring Your Files] <single: Restoring Your Files>`
+:index:`[TAG=Files->Restoring Your] <single: Files; Restoring Your>` :index:`[TAG=Restoring Your Files] <single: Restoring Your Files>`
 
 If you have run the default configuration and run the job as demonstrated above, you can restore the backed up files in the Console program by entering:
 
@@ -559,7 +559,7 @@ If you answer yes your files will be restored to :file:`/tmp/bareos-restores`. I
 
 After exiting the Console program, you can examine the files in :file:`/tmp/bareos-restores`, which will contain a small directory tree with all the files. Be sure to clean up at the end with:
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: remove restore directory
 
    <command>rm</command> -rf /tmp/bareos-restore
@@ -567,7 +567,7 @@ After exiting the Console program, you can examine the files in :file:`/tmp/bare
 Quitting the Console Program
 ----------------------------
 
-:index:`[TAG=Program->Quitting the Console] <pair: Program; Quitting the Console>` :index:`[TAG=Quitting the Console Program] <single: Quitting the Console Program>`
+:index:`[TAG=Program->Quitting the Console] <single: Program; Quitting the Console>` :index:`[TAG=Quitting the Console Program] <single: Quitting the Console Program>`
 
 Simply enter the command :bcommand:`quit`.
 
@@ -580,9 +580,9 @@ Adding a Client
 
 .. _section-AddAClient:
 
- :index:`[TAG=Client->Adding a Second] <pair: Client; Adding a Second>` :index:`[TAG=Adding a Client] <single: Adding a Client>`
+ :index:`[TAG=Client->Adding a Second] <single: Client; Adding a Second>` :index:`[TAG=Adding a Client] <single: Adding a Client>`
 
-If you have gotten the example shown above to work on your system, you may be ready to add a second Client (|bareosFd|). That is you have a second machine that you would like backed up. Lets assume, following settings about the machine you want to add to your backup environment:
+If you have gotten the example shown above to work on your system, you may be ready to add a second Client (|fd|). That is you have a second machine that you would like backed up. Lets assume, following settings about the machine you want to add to your backup environment:
 
 Hostname (FQDN)
    :strong:`client2.example.com`
@@ -593,7 +593,7 @@ IP Address
 OS
    Linux (otherwise the paths may differ)
 
-For this you have to make changes on the server side (|bareosDir|) and the client side.
+For this you have to make changes on the server side (|dir|) and the client side.
 
 Client: install package
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -603,7 +603,7 @@ See :ref:`InstallChapter` about how to add the Bareos repository. The only part 
 Director: configure client
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Bareos :sinceVersion:`16.2.4: configure add` offers the :ref:`configure add command <section-bcommandConfigure>` to add resources to the |bareosDir|.
+Bareos :sinceVersion:`16.2.4: configure add` offers the :ref:`configure add command <section-bcommandConfigure>` to add resources to the |dir|.
 
 Start the :command:`bconsole` and use the :bcommand:`configure add client` command. Address must be a DNS resolvable name or an IP address.
 
@@ -626,9 +626,9 @@ This creates two resource configuration files:
 
 -  :file:`/etc/bareos/bareos-dir-export/client/client2-fd/bareos-fd.d/director/bareos-dir.conf` (assuming your director resource is named **bareos-dir**)
 
-The :file:`/etc/bareos/bareos-dir-export/client/client2-fd/bareos-fd.d/director/bareos-dir.conf` is the required resource needed on the |bareosFd|. You can copy it to the destination:
+The :file:`/etc/bareos/bareos-dir-export/client/client2-fd/bareos-fd.d/director/bareos-dir.conf` is the required resource needed on the |fd|. You can copy it to the destination:
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Copy the bareos-fd director resource to the new client
 
    scp /etc/bareos/bareos-dir-export/client/client2-fd/bareos-fd.d/director/bareos-dir.conf root@client2.example.com:/etc/bareos/bareos-fd.d/director/
@@ -636,7 +636,7 @@ The :file:`/etc/bareos/bareos-dir-export/client/client2-fd/bareos-fd.d/director/
 Manual configuration
 ^^^^^^^^^^^^^^^^^^^^
 
-Alternatively you can configure your resources manually. On the |bareosDir| create the file
+Alternatively you can configure your resources manually. On the |dir| create the file
 
 .. code-block:: bareosconfig
    :caption: bareos-dir.d/client/client2-fd.conf
@@ -647,7 +647,7 @@ Alternatively you can configure your resources manually. On the |bareosDir| crea
      Password = secret
    }
 
-Reload or restart your |bareosDir|:
+Reload or restart your |dir|:
 
 .. code-block:: bconsole
    :caption: reload the Director configuration
@@ -655,7 +655,7 @@ Reload or restart your |bareosDir|:
    *<input>reload</input>
    reloaded
 
-The corresponding |bareosFd| director resource can be created directly on the client, see below.
+The corresponding |fd| director resource can be created directly on the client, see below.
 
 Client: configure
 ~~~~~~~~~~~~~~~~~
@@ -681,19 +681,19 @@ The package **bareos-filedaemon** :sinceVersion:`16.2.4: Client resource files` 
 In detail:
 
 :file:`client/myself.conf`
-   defines the name of the client. The default is :file:`<hostname>-fd`. Changes are only required, if you want to use another name or en- or disable special |bareosFd| features. See :ref:`ClientResourceClient`.
+   defines the name of the client. The default is :file:`<hostname>-fd`. Changes are only required, if you want to use another name or en- or disable special |fd| features. See :ref:`ClientResourceClient`.
 
 :file:`director/bareos-dir.conf`
-   gives the |bareosDir| **bareos-dir** full access to this |bareosFd|. During installation, the :config:option:`fd/director/Password`\  is set to a random default. Adapt the name and/or the password to your |bareosDir|. (The name **bareos-dir** is the default |bareosDir| name since Bareos :sinceVersion:`16.2.4: bareos-dir is the default |bareosDir| name`.)
+   gives the |dir| **bareos-dir** full access to this |fd|. During installation, the :config:option:`fd/director/Password`\  is set to a random default. Adapt the name and/or the password to your |dir|. (The name **bareos-dir** is the default |dir| name since Bareos :sinceVersion:`16.2.4: bareos-dir is the default |dir| name`.)
 
 :file:`director/bareos-mon.conf`
-   gives the |bareosDir| **bareos-mon** restricted access to this |bareosFd|. During installation, the :config:option:`fd/director/Password`\  is set to a random value. This resource is intended to be used by the local **bareos-tray-monitor**.
+   gives the |dir| **bareos-mon** restricted access to this |fd|. During installation, the :config:option:`fd/director/Password`\  is set to a random value. This resource is intended to be used by the local **bareos-tray-monitor**.
 
 :file:`messages/Standard.conf`
-   defines, how messages should be handled. The default sends all relevant messages to the |bareosDir|.
+   defines, how messages should be handled. The default sends all relevant messages to the |dir|.
 
-If your |bareosDir| is named **bareos-dir**, the :file:`/etc/bareos/bareos-fd.d/director/bareos-dir.conf` may already be overwritten by the file you copied from the |bareosDir|. If your Director has another name, an addition resource file will exists. You can define an arbitrary number of |bareosDir|’s in your |bareosFd| configuration. However, normally you will only have one :config:option:`Fd/Director`\  with
-full control of your |bareosFd| and optional one :config:option:`Fd/Director`\  for monitoring (used by the |bareosTrayMonitor|).
+If your |dir| is named **bareos-dir**, the :file:`/etc/bareos/bareos-fd.d/director/bareos-dir.conf` may already be overwritten by the file you copied from the |dir|. If your Director has another name, an addition resource file will exists. You can define an arbitrary number of |dir|’s in your |fd| configuration. However, normally you will only have one :config:option:`Fd/Director`\  with
+full control of your |fd| and optional one :config:option:`Fd/Director`\  for monitoring (used by the |traymonitor|).
 
 Anyhow, the resource will look similar to this:
 
@@ -705,9 +705,9 @@ Anyhow, the resource will look similar to this:
      Password = "[md5]5ebe2294ecd0e0f08eab7690d2a6ee69"
    }
 
-After a restart of the |bareosFd| to reload the configuration this resource allows the access for a |bareosDir| with name **bareos-dir** and password **secret** (stored in MD5 format).
+After a restart of the |fd| to reload the configuration this resource allows the access for a |dir| with name **bareos-dir** and password **secret** (stored in MD5 format).
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: restart bareos-fd
 
    service bareos-fd restart
@@ -717,7 +717,7 @@ After a restart of the |bareosFd| to reload the configuration this resource allo
 Manual configuration
 ^^^^^^^^^^^^^^^^^^^^
 
-If you have not created the :config:option:`Fd/Director`\  by :bcommand:`configure`, you can create it also manually. If your |bareosDir| is also named **bareos-dir**, modify or create the file :file:`/etc/bareos/bareos-fd.d/director/bareos-dir.conf`:
+If you have not created the :config:option:`Fd/Director`\  by :bcommand:`configure`, you can create it also manually. If your |dir| is also named **bareos-dir**, modify or create the file :file:`/etc/bareos/bareos-fd.d/director/bareos-dir.conf`:
 
 .. code-block:: bareosconfig
    :caption: bareos-fd.d/director/bareos-dir.conf
@@ -731,16 +731,16 @@ If you have not created the :config:option:`Fd/Director`\  by :bcommand:`configu
 
 See the relation between resource names and password of the different Bareos components in :ref:`section-resource-relation`.
 
-If your are not using the :ref:`section-SubdirectoryConfigurationScheme`, make sure that this resource file gets included in your |bareosFd| configuration. You can verify this by
+If your are not using the :ref:`section-SubdirectoryConfigurationScheme`, make sure that this resource file gets included in your |fd| configuration. You can verify this by
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: show how bareos-fd would read the current configuration files
 
    bareos-fd -xc
 
-After modifying the file, you have to restart the |bareosFd|:
+After modifying the file, you have to restart the |fd|:
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: restart bareos-fd
 
    service bareos-fd restart
@@ -750,7 +750,7 @@ Director: test client, add a job
 
 The following example show how to
 
--  Verify the network connection from |bareosDir| to the |bareosFd|.
+-  Verify the network connection from |dir| to the |fd|.
 
 -  Add a job resource.
 
@@ -800,9 +800,9 @@ The same considerations apply if you have just mounted a blank tape in a drive. 
 Pools
 -----
 
-:index:`[TAG=Pool->Overview] <pair: Pool; Overview>`
+:index:`[TAG=Pool->Overview] <single: Pool; Overview>`
 
-Creating the Pool is automatically done when the |bareosDir| starts, so if you understand Pools, you can skip to the next section.
+Creating the Pool is automatically done when the |dir| starts, so if you understand Pools, you can skip to the next section.
 
 When you run a backup job, one of the things that Bareos must know is what Volumes to use. Instead of specifying a Volume (tape) directly, you specify which Pool of Volumes you want Bareos to consult when it wants a Volume for writing backups. Bareos will select the first available Volume from the Pool that is appropriate for the :config:option:`dir/job/Storage`\  you have specified for the Job being run. When a volume has filled up with data, Bareos will change its
 **VolStatus** from **Append** to **Full**, and then Bareos will use the next volume and so on. If no appendable Volume exists in the Pool, the Director will attempt to recycle an old Volume. For details, please read the :ref:`RecyclingChapter` chapter.
@@ -829,7 +829,7 @@ When Bareos starts, it ensures that all Pool resource definitions have been reco
 Other Useful Console Commands
 -----------------------------
 
-:index:`[TAG=Console->Commands->Useful] <triple: Console; Commands; Useful>`
+:index:`[TAG=Console->Commands->Useful] <single: Console; Commands; Useful>`
 
 help
    Show the list all all available commands.
@@ -838,40 +838,40 @@ help list
    Show detail information about a specific command, in this case the command :bcommand:`list`.
 
 status dir
-   :index:`[TAG=Console->Command->status dir] <triple: Console; Command; status dir>` Print a status of all running jobs and jobs scheduled in the next 24 hours.
+   :index:`[TAG=Console->Command->status dir] <single: Console; Command; status dir>` Print a status of all running jobs and jobs scheduled in the next 24 hours.
 
 status
-   :index:`[TAG=Console->Command->status] <triple: Console; Command; status>` The console program will prompt you to select a daemon type, then will request the daemon’s status.
+   :index:`[TAG=Console->Command->status] <single: Console; Command; status>` The console program will prompt you to select a daemon type, then will request the daemon’s status.
 
 status jobid=nn
-   :index:`[TAG=Console->Command->status jobid] <triple: Console; Command; status jobid>` Print a status of JobId nn if it is running. The Storage daemon is contacted and requested to print a current status of the job as well.
+   :index:`[TAG=Console->Command->status jobid] <single: Console; Command; status jobid>` Print a status of JobId nn if it is running. The Storage daemon is contacted and requested to print a current status of the job as well.
 
 list pools
-   :index:`[TAG=Console->Command->list pools] <triple: Console; Command; list pools>` List the pools defined in the Catalog (normally only Default is used).
+   :index:`[TAG=Console->Command->list pools] <single: Console; Command; list pools>` List the pools defined in the Catalog (normally only Default is used).
 
 list volumes
-   :index:`[TAG=Console->Command->list volumes] <triple: Console; Command; list volumes>` Lists all the media defined in the Catalog.
+   :index:`[TAG=Console->Command->list volumes] <single: Console; Command; list volumes>` Lists all the media defined in the Catalog.
 
 list jobs
-   :index:`[TAG=Console->Command->list jobs] <triple: Console; Command; list jobs>` Lists all jobs in the Catalog that have run.
+   :index:`[TAG=Console->Command->list jobs] <single: Console; Command; list jobs>` Lists all jobs in the Catalog that have run.
 
 list jobid=nn
-   :index:`[TAG=Console->Command->list jobid] <triple: Console; Command; list jobid>` Lists JobId nn from the Catalog.
+   :index:`[TAG=Console->Command->list jobid] <single: Console; Command; list jobid>` Lists JobId nn from the Catalog.
 
 list jobtotals
-   :index:`[TAG=Console->Command->list jobtotals] <triple: Console; Command; list jobtotals>` Lists totals for all jobs in the Catalog.
+   :index:`[TAG=Console->Command->list jobtotals] <single: Console; Command; list jobtotals>` Lists totals for all jobs in the Catalog.
 
 list files jobid=nn
-   :index:`[TAG=Console->Command->list files jobid] <triple: Console; Command; list files jobid>` List the files that were saved for JobId nn.
+   :index:`[TAG=Console->Command->list files jobid] <single: Console; Command; list files jobid>` List the files that were saved for JobId nn.
 
 list jobmedia
-   :index:`[TAG=Console->Command->list jobmedia] <triple: Console; Command; list jobmedia>` List the media information for each Job run.
+   :index:`[TAG=Console->Command->list jobmedia] <single: Console; Command; list jobmedia>` List the media information for each Job run.
 
 messages
-   :index:`[TAG=Console->Command->messages] <triple: Console; Command; messages>` Prints any messages that have been directed to the console.
+   :index:`[TAG=Console->Command->messages] <single: Console; Command; messages>` Prints any messages that have been directed to the console.
 
 quit
-   :index:`[TAG=Console->Command->quit] <triple: Console; Command; quit>` Exit or quit the console program.
+   :index:`[TAG=Console->Command->quit] <single: Console; Command; quit>` Exit or quit the console program.
 
 Most of the commands given above, with the exception of list, will prompt you for the necessary arguments if you simply enter the command name.
 

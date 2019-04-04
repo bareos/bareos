@@ -78,9 +78,9 @@ The next incremental run will take the previously taken full backup as reference
 Import Data from a Independent Remote Full Bareos Installation
 --------------------------------------------------------------
 
-If a network connection between the local director and the remote storage daemon is not possible, it is also an option to setup a fully functional Bareos installation remotely and then to import the created volumes. Of course the network connection between the |bareosDir| and the |bareosFd| is needed in any case to make the incremental backups possible.
+If a network connection between the local director and the remote storage daemon is not possible, it is also an option to setup a fully functional Bareos installation remotely and then to import the created volumes. Of course the network connection between the |dir| and the |fd| is needed in any case to make the incremental backups possible.
 
--  Configure the connection from local |bareosDir| to remote |bareosFd|, give the remote client the same name as it was when the data was backed up.
+-  Configure the connection from local |dir| to remote |fd|, give the remote client the same name as it was when the data was backed up.
 
 -  Add the Fileset created on remote machine to local machine.
 

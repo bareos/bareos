@@ -6,7 +6,7 @@
 
 /usr/lib/sendmail -F BAREOS <recipients>
 
-In many cases, depending on your machine, this command may not work. However, by using the :strong:`Mail Command`, you can specify exactly how to send the mail. During the processing of the command part, normally specified as a quoted string, the following substitutions will be used:
+In many cases, depending on your machine, this command may not work. However, by using the :strong:`Mail Command`\ , you can specify exactly how to send the mail. During the processing of the command part, normally specified as a quoted string, the following substitutions will be used:
 
 -  %% = %
 
@@ -36,9 +36,9 @@ In many cases, depending on your machine, this command may not work. However, by
 
 -  %V = Write Volume name (Only on director side)
 
-Please note: any :strong:`Mail Command` directive must be specified in the Messages resource before the desired :config:option:`dir/messages/Mail`\ , :config:option:`dir/messages/MailOnSuccess`\  or :config:option:`dir/messages/MailOnError`\  directive. In fact, each of those directives may be preceded by a different :strong:`Mail Command`.
+Please note: any :strong:`Mail Command`\  directive must be specified in the Messages resource before the desired :config:option:`dir/messages/Mail`\ , :config:option:`dir/messages/MailOnSuccess`\  or :config:option:`dir/messages/MailOnError`\  directive. In fact, each of those directives may be preceded by a different :strong:`Mail Command`\ .
 
-A default installation will use the program bsmtp as :strong:`Mail Command`. The program :command:`bsmtp` is provided by Bareos and unifies the usage of a mail client to a certain degree:
+A default installation will use the program bsmtp as :strong:`Mail Command`\ . The program :command:`bsmtp` is provided by Bareos and unifies the usage of a mail client to a certain degree:
 
 
 
@@ -47,5 +47,5 @@ A default installation will use the program bsmtp as :strong:`Mail Command`. The
 
 
 
-The :command:`bsmtp` program is provided as part of Bareos. For additional details, please see the :ref:`bsmtp` section. Please test any :strong:`Mail Command` that you use to ensure that your smtp gateway accepts the addressing form that you use. Certain programs such as Exim can be very selective as to what forms are permitted particularly in the from part.
+The :command:`bsmtp` program is provided as part of Bareos. For additional details, please see the :ref:`bsmtp` section. Please test any :strong:`Mail Command`\  that you use to ensure that your smtp gateway accepts the addressing form that you use. Certain programs such as Exim can be very selective as to what forms are permitted particularly in the from part.
 

@@ -3,7 +3,7 @@
 Catalog Maintenance
 ===================
 
-:index:`[TAG=Maintenance->Catalog] <pair: Maintenance; Catalog>` :index:`[TAG=Catalog Maintenance] <single: Catalog Maintenance>`
+:index:`[TAG=Maintenance->Catalog] <single: Maintenance; Catalog>` :index:`[TAG=Catalog Maintenance] <single: Catalog Maintenance>`
 
 Catalog Database
 ----------------
@@ -16,14 +16,14 @@ Bareos stores its catalog in a database. Different database backends are offered
 
 -  Sqlite (only for testing)
 
-What database will be used, can be configured in the |bareosDir| configuration, see the :ref:`DirectorResourceCatalog`.
+What database will be used, can be configured in the |dir| configuration, see the :ref:`DirectorResourceCatalog`.
 
-The database often runs on the same server as the |bareosDir|. However, it is also possible to run it on a different system. This might require some more manual configuration, a PostgreSQL example can be found in :ref:`catalog-maintenance-remote-psql`.
+The database often runs on the same server as the |dir|. However, it is also possible to run it on a different system. This might require some more manual configuration, a PostgreSQL example can be found in :ref:`catalog-maintenance-remote-psql`.
 
 dbconfig-common (Debian)
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Platform->Debian->dbconfig-common] <triple: Platform; Debian; dbconfig-common>` :index:`[TAG=Platform->Ubuntu->dbconfig-common] <triple: Platform; Ubuntu; dbconfig-common>` 
+:index:`[TAG=Platform->Debian->dbconfig-common] <single: Platform; Debian; dbconfig-common>` :index:`[TAG=Platform->Ubuntu->dbconfig-common] <single: Platform; Ubuntu; dbconfig-common>` 
 
 .. _section-dbconfig:
 
@@ -52,10 +52,11 @@ The Bareos database backend will get automatically configured in :file:`/etc/bar
 
 
 
-.. warning::
-   When using the PostgreSQL backend and updating to Bareos < 14.2.3, it is necessary to manually grant database permissions (:command:`grant_bareos_privileges`), normally by
+   .. warning::
 
-.. code-block:: sh
+      When using the PostgreSQL backend and updating to Bareos < 14.2.3, it is necessary to manually grant database permissions (:command:`grant_bareos_privileges`), normally by
+
+.. code-block:: shell-session
 
    <command> </command><parameter>su - postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges</parameter>
 
@@ -110,73 +111,45 @@ Bareos comes with a number of scripts to prepare and update the databases. All t
 
 The database preparation scripts have following configuration options:
 
-::
+db_type
+   -  command line parameter $1
 
-   \begin{tabular}{| l | l | l |}
-   % \hline
-   % :strong:`Parameter`      & :strong:`Values` & :strong:`Default` \\
-   % \hline
-   % \hline
-   % ``db_type``     & parameter, dbdriver from \configFileDirUnix, installed database backends & \\
-   % ``db_name``     & environment variable \variable{db_name}, dbdriver from :file:`/etc/bareos/bareos-dir.conf` & bareos \\
-   % ``db_user``     & environment variable \variable{db_user} & bareos \\
-   % ``db_password`` & environment variable \variable{db_password} & \textit{none} \\
-   % \hline
-   % \end{tabular}\end{verbatim}
+   -  :config:option:`dir/catalog/DbDriver`\  from the configuration
 
-   # Tabular converted from LaTeX to RST (or empty, in case of problems):
-   \begin{tabular}{| l | l | l |}
-   % \hline
-   % :strong:`Parameter`      & :strong:`Values` & :strong:`Default` \\
-   % \hline
-   % \hline
-   % ``db_type``     & parameter, dbdriver from \configFileDirUnix, installed database backends & \\
-   % ``db_name``     & environment variable \variable{db_name}, dbdriver from :file:`/etc/bareos/bareos-dir.conf` & bareos \\
-   % ``db_user``     & environment variable \variable{db_user} & bareos \\
-   % ``db_password`` & environment variable \variable{db_password} & \textit{none} \\
-   % \hline
-   % \end{tabular}
-   % \end{center}
+   -  installed database backends
 
-   \begin{description}
-       \item[db\_type] 
-           \begin{itemize}
-               \item command line parameter \$1
-               \item :config:option:`dir/catalog/DbDriver`\  from the configuration
-               \item installed database backends
-               \item fallback: postgresql
-           \end{itemize}
-       \item[db\_name] 
-           \begin{itemize}
-               \item environment variable \variable{db_name}
-               \item :config:option:`dir/catalog/DbName`\  from the configuration
-               \item default: bareos
-           \end{itemize}
-       \item[db\_user] 
-           \begin{itemize}
-               \item environment variable \variable{db_user}
-               \item :config:option:`dir/catalog/DbUser`\  from the configuration
-               \item default: bareos
-           \end{itemize}
-       \item[db\_password] 
-           \begin{itemize}
-               \item environment variable \variable{db_password}
-               \item :config:option:`dir/catalog/DbPassword`\  from the configuration
-               \item default: \textit{none}
-           \end{itemize}
-   \end{description}
+   -  fallback: postgresql
 
-   Reading the settings from the configuration require read permission for the current user.
-   The normal PostgreSQL administrator user (**postgres**) don't have these permissions.
-   So if you plan to use non-default database settings, you might add the user **postgres** to the group \group{bareos}.
+db_name
+   -  environment variable ``db_name``\ 
 
-   The database preparation scripts need to have password-less administrator access to the database.
-   Depending on the distribution you're using, this require additional configuration.
-   See the following section about howto achieve this for the different database systems.
+   -  :config:option:`dir/catalog/DbName`\  from the configuration
 
+   -  default: bareos
 
-   To view and test the currently configured settings, use following commands:
-   \begin{verbatim}\begin{commands}{Show current database configuration}
+db_user
+   -  environment variable ``db_user``\ 
+
+   -  :config:option:`dir/catalog/DbUser`\  from the configuration
+
+   -  default: bareos
+
+db_password
+   -  environment variable ``db_password``\ 
+
+   -  :config:option:`dir/catalog/DbPassword`\  from the configuration
+
+   -  default: *none*
+
+Reading the settings from the configuration require read permission for the current user. The normal PostgreSQL administrator user (**postgres**) don’t have these permissions. So if you plan to use non-default database settings, you might add the user **postgres** to the group :strong:`bareos`.
+
+The database preparation scripts need to have password-less administrator access to the database. Depending on the distribution you’re using, this require additional configuration. See the following section about howto achieve this for the different database systems.
+
+To view and test the currently configured settings, use following commands:
+
+.. code-block:: shell-session
+   :caption: Show current database configuration
+
    <command> </command><parameter>/usr/sbin/bareos-dbcheck -B</parameter>
    catalog=MyCatalog
    db_name=bareos
@@ -188,9 +161,8 @@ The database preparation scripts have following configuration options:
    db_socket=
    db_type=MySQL
    working_dir=/var/lib/bareos
-   \end{commands}
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Test the database connection. Example: wrong password
 
    <command> </command><parameter>/usr/sbin/bareos-dir -t -f -d 500</parameter>
@@ -211,13 +183,13 @@ On most distributions, PostgreSQL uses ident to allow access to the database sys
 
 If this works on your system can be verified by
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Access the local PostgreSQL database
 
    su - postgres
    psql
 
-If your database is configured to require a password, this must be definied in the file `:file:`~/.pgpass` <http://www.postgresql.org/docs/8.2/static/libpq-pgpass.html>`_ in the following syntax: ``HOST:PORT:DATABASE:USER:PASSWORD``, e.g.
+If your database is configured to require a password, this must be definied in the file `:file:`~/.pgpass` <http://www.postgresql.org/docs/8.2/static/libpq-pgpass.html>`_ in the following syntax: :strong:`HOST:PORT:DATABASE:USER:PASSWORD`, e.g.
 
 .. code-block:: cfg
    :caption: PostgreSQL access credentials
@@ -228,7 +200,7 @@ The permission of this file must be 0600 (:command:`chmod 0600 ~/.pgpass`).
 
 Again, verify that you have specified the correct settings by calling the :command:`psql` command. If this connects you to the database, your credentials are good. Exit the PostgreSQL client and run the Bareos database preparation scripts:
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Setup Bareos catalog database
 
    su - postgres
@@ -236,9 +208,9 @@ Again, verify that you have specified the correct settings by calling the :comma
    /usr/lib/bareos/scripts/make_bareos_tables
    /usr/lib/bareos/scripts/grant_bareos_privileges
 
-The encoding of the bareos database must be ``SQL_ASCII``. The command :command:`create_bareos_database` automatically creates the database with this encoding. This can be verified by the command :command:`psql -l`, which shows information about existing databases:
+The encoding of the bareos database must be :strong:`SQL_ASCII`. The command :command:`create_bareos_database` automatically creates the database with this encoding. This can be verified by the command :command:`psql -l`, which shows information about existing databases:
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: List existing databases
 
    <command>psql</command><parameter> -l</parameter>
@@ -255,7 +227,7 @@ The owner of the database may vary. The Bareos database maintance scripts don’
 
 By default, using PostgreSQL ident, a Unix user can access a database of the same name. Therefore the user **bareos** can access the database :file:`bareos`.
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Verify Bareos database on PostgreSQL as Unix user bareos (bareos-13.2.3)
 
    root@linux:~# <input>su - bareos -s /bin/sh</input>
@@ -333,9 +305,9 @@ By default, using PostgreSQL ident, a Unix user can access a database of the sam
 Remote PostgreSQL Database
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When configuring bareos with a remote database, your first step is to check the connection from the |bareosDir| host into the database. A functional connection can be verified by
+When configuring bareos with a remote database, your first step is to check the connection from the |dir| host into the database. A functional connection can be verified by
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Access the remote PostgreSQL database
 
    su - postgres
@@ -343,14 +315,14 @@ When configuring bareos with a remote database, your first step is to check the 
 
 With a correct configuration you can access the database, if it fails you need to correct the PostgreSQL servers configuration files.
 
-One way to manually create the database would be calling the bareos database preparation scripts with the ``--host`` option, explained later. How ever, it is advised to use the **dbconfig-common**. Both methods require you to add the database hostname/address as :config:option:`dir/catalog/DbAddress`\ .
+One way to manually create the database would be calling the bareos database preparation scripts with the :strong:`--host` option, explained later. How ever, it is advised to use the **dbconfig-common**. Both methods require you to add the database hostname/address as :config:option:`dir/catalog/DbAddress`\ .
 
-If you’re using **dbconfig-common** you should choose ``New Host``, enter the hostname or the local address followed by the password. As **dbconfig-common** uses the ``ident`` authentication by default the first try to connect will fail. Don’t be bothered by that. Choose ``Retry`` when prompted. From there, read carefully and configure the database to your needs. The authentication should be set
+If you’re using **dbconfig-common** you should choose :strong:`New Host`, enter the hostname or the local address followed by the password. As **dbconfig-common** uses the :strong:`ident` authentication by default the first try to connect will fail. Don’t be bothered by that. Choose :strong:`Retry` when prompted. From there, read carefully and configure the database to your needs. The authentication should be set
 to password, as the ident method will not work with a remote server. Set the user and administrator according to your PostgreSQL servers settings.
 
 Set the PostgreSQL server IP as :config:option:`dir/catalog/DbAddress`\  in :ref:`DirectorResourceCatalog`. You can also customize other parameters or use the defaults. A quick check should display your recent changes:
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Show current database configuration
 
    <command> </command><parameter>/usr/sbin/bareos-dbcheck -B</parameter>
@@ -367,7 +339,7 @@ Set the PostgreSQL server IP as :config:option:`dir/catalog/DbAddress`\  in :ref
 
 If **dbconfig-common** did not succeed or you choosed not to use it, run the Bareos database preparation scripts with:
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Setup Bareos catalog database
 
    su - postgres
@@ -416,9 +388,9 @@ For the Bareos database connection, you should specify a database password. Othe
    }
    ...
 
-After this, run the Bareos database preparation scripts. For Bareos <= 13.2.2, the database password must be specified as environment variable \variable{db_password}. From :sinceVersion:`13.2.3: MySQL password from configuration file` the database password is read from the configuration, if no environment variable is given.
+After this, run the Bareos database preparation scripts. For Bareos <= 13.2.2, the database password must be specified as environment variable ``db_password``\ . From :sinceVersion:`13.2.3: MySQL password from configuration file` the database password is read from the configuration, if no environment variable is given.
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Setup Bareos catalog database
 
    export db_password=<input>YourSecretPassword</input>
@@ -428,7 +400,7 @@ After this, run the Bareos database preparation scripts. For Bareos <= 13.2.2, t
 
 After this, you can use the :command:`mysql` command to verify that your database setup is okay and works with your the Bareos database user. The result should look similar as this (here Bareos 13.2 is used on SLES11):
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Verify Bareos database on MySQL
 
    root@linux:~# <input>mysql --user=bareos --password=YourSecretPassword bareos</input>
@@ -554,7 +526,7 @@ Modify the configuration, set a new password:
 
 Rerun the Bareos grant script :command:`grant_bareos_privileges` ...
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Modify database privileges
 
    export db_password=<input>MyNewSecretPassword</input>
@@ -575,7 +547,7 @@ Sqlite does not offer access permissions. The only permissions that do apply are
 
 The database is accessable by following command:
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Verify Bareos database on Sqlite3 (bareos-13.2.3)
 
    <command>sqlite3</command><input> /var/lib/bareos/bareos.db</input>
@@ -601,7 +573,7 @@ Retention Periods
 Database Size
 ~~~~~~~~~~~~~
 
-:index:`[TAG=Size->Database] <pair: Size; Database>` :index:`[TAG=Database Size] <single: Database Size>`
+:index:`[TAG=Size->Database] <single: Size; Database>` :index:`[TAG=Database Size] <single: Database Size>`
 
 As mentioned above, if you do not do automatic pruning, your Catalog will grow each time you run a Job. Normally, you should decide how long you want File records to be maintained in the Catalog and set the File Retention period to that time. Then you can either wait and see how big your Catalog gets or make a calculation assuming approximately 154 bytes for each File saved and knowing the number of Files that are saved during each backup and the number of Clients you backup.
 
@@ -637,14 +609,14 @@ database size will remain constant.
 Setting Retention Periods
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Setting Retention Periods] <single: Setting Retention Periods>` :index:`[TAG=Periods->Setting Retention] <pair: Periods; Setting Retention>`
+:index:`[TAG=Setting Retention Periods] <single: Setting Retention Periods>` :index:`[TAG=Periods->Setting Retention] <single: Periods; Setting Retention>`
 
 Bareos uses three Retention periods: the File Retention period, the Job Retention period, and the Volume Retention period. Of these three, the File Retention period is by far the most important in determining how large your database will become.
 
 The File Retention and the Job Retention are specified in each Client resource as is shown below. The Volume Retention period is specified in the Pool resource, and the details are given in the next chapter of this manual.
 
 File Retention = <time-period-specification>
-   :index:`[TAG=File Retention] <single: File Retention>` :index:`[TAG=Retention->File] <pair: Retention; File>` The File Retention record defines the length of time that Bareos will keep File records in the Catalog database. When this time period expires, and if AutoPrune is set to yes, Bareos will prune (remove) File records that are older than the specified File Retention period. The pruning will occur at the end of a backup Job for the given Client. Note that the Client database record contains a copy of the
+   :index:`[TAG=File Retention] <single: File Retention>` :index:`[TAG=Retention->File] <single: Retention; File>` The File Retention record defines the length of time that Bareos will keep File records in the Catalog database. When this time period expires, and if AutoPrune is set to yes, Bareos will prune (remove) File records that are older than the specified File Retention period. The pruning will occur at the end of a backup Job for the given Client. Note that the Client database record contains a copy of the
    File and Job retention periods, but Bareos uses the current values found in the Director’s Client resource to do the pruning.
 
    Since File records in the database account for probably 80 percent of the size of the database, you should carefully determine exactly what File Retention period you need. Once the File records have been removed from the database, you will no longer be able to restore individual files in a Job. However, as long as the Job record still exists, you will be able to restore all files in the job.
@@ -654,7 +626,7 @@ File Retention = <time-period-specification>
    The default File retention period is 60 days.
 
 Job Retention = <time-period-specification>
-   :index:`[TAG=Job->Retention] <pair: Job; Retention>` :index:`[TAG=Retention->Job] <pair: Retention; Job>` The Job Retention record defines the length of time that Bareos will keep Job records in the Catalog database. When this time period expires, and if AutoPrune is set to yes Bareos will prune (remove) Job records that are older than the specified Job Retention period. Note, if a Job record is selected for pruning, all associated File and JobMedia records will also be pruned regardless of the File Retention
+   :index:`[TAG=Job->Retention] <single: Job; Retention>` :index:`[TAG=Retention->Job] <single: Retention; Job>` The Job Retention record defines the length of time that Bareos will keep Job records in the Catalog database. When this time period expires, and if AutoPrune is set to yes Bareos will prune (remove) Job records that are older than the specified Job Retention period. Note, if a Job record is selected for pruning, all associated File and JobMedia records will also be pruned regardless of the File Retention
    period set. As a consequence, you normally will set the File retention period to be less than the Job retention period.
 
    As mentioned above, once the File records are removed from the database, you will no longer be able to restore individual files from the Job. However, as long as the Job record remains in the database, you will be able to restore all the files backuped for the Job. As a consequence, it is generally a good idea to retain the Job records much longer than the File records.
@@ -664,14 +636,14 @@ Job Retention = <time-period-specification>
    The default Job Retention period is 180 days.
 
 :config:option:`dir/client/AutoPrune`\ 
-   :index:`[TAG=AutoPrune] <single: AutoPrune>` :index:`[TAG=Job->Retention->AutoPrune] <triple: Job; Retention; AutoPrune>` If set to yes, Bareos will automatically apply the File retention period and the Job retention period for the Client at the end of the Job. If you turn this off by setting it to no, your Catalog will grow each time you run a Job.
+   :index:`[TAG=AutoPrune] <single: AutoPrune>` :index:`[TAG=Job->Retention->AutoPrune] <single: Job; Retention; AutoPrune>` If set to yes, Bareos will automatically apply the File retention period and the Job retention period for the Client at the end of the Job. If you turn this off by setting it to no, your Catalog will grow each time you run a Job.
 
 .. _section-JobStatistics:
 
 Job Statistics
 ^^^^^^^^^^^^^^
 
-:index:`[TAG=Statistics] <single: Statistics>` :index:`[TAG=Job->Statistics] <pair: Job; Statistics>`
+:index:`[TAG=Statistics] <single: Statistics>` :index:`[TAG=Job->Statistics] <single: Job; Statistics>`
 
 Bareos catalog contains lot of information about your IT infrastructure, how many files, their size, the number of video or music files etc. Using Bareos catalog during the day to get them permit to save resources on your servers.
 
@@ -690,7 +662,7 @@ If you want to have statistics on your backups to provide some Service Level Agr
 However, these statistics are accurate only if your job retention is greater than your statistics period. Ie, if jobs are purged from the catalog, you won’t be able to use them.
 
 Now, you can use the :bcommand:`update stats [days=num]` console command to fill the JobHistory table with new Job records. If you want to be sure to take in account only good jobs, ie if one of your important job has failed but you have fixed the problem and restarted it on time, you probably want to delete the first bad job record and keep only the successful one. For that simply let your staff do the job, and update JobHistory table after two or three days depending on your
-organization using the ``[days=num]`` option.
+organization using the :strong:`[days=num]` option.
 
 These statistics records aren’t used for restoring, but mainly for capacity planning, billings, etc.
 
@@ -717,12 +689,12 @@ You can use the following Job resource in your nightly :config:option:`dir/job =
 PostgreSQL
 ----------
 
-:index:`[TAG=Database->PostgreSQL] <pair: Database; PostgreSQL>` :index:`[TAG=PostgreSQL] <single: PostgreSQL>`
+:index:`[TAG=Database->PostgreSQL] <single: Database; PostgreSQL>` :index:`[TAG=PostgreSQL] <single: PostgreSQL>`
 
 Compacting Your PostgreSQL Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Database->PostgreSQL->Compacting] <triple: Database; PostgreSQL; Compacting>` 
+:index:`[TAG=Database->PostgreSQL->Compacting] <single: Database; PostgreSQL; Compacting>` 
 
 .. _CompactingPostgres:
 
@@ -739,7 +711,7 @@ All database programs have some means of writing the database out in ASCII forma
 
 For a PostgreSQL database, you could write the Bareos database as an ASCII file (:file:`bareos.sql`) then reload it by doing the following:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    pg_dump -c bareos > bareos.sql
    cat bareos.sql | psql bareos
@@ -760,7 +732,7 @@ Especially when a high number of files are beeing backed up or when working with
 
 The reason for autovacuuming not beeing triggered is then probably the default setting of ``autovacuum_vacuum_scale_factor = 0.2``, the current value can be shown with the following query or looked up in ``postgresql.conf``:
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: SQL statement to show the autovacuum\_vacuum\_scale\_factor parameter
 
    bareos=# show autovacuum_vacuum_scale_factor;
@@ -777,7 +749,7 @@ The following example shows how to configure running VACUUM on the file table by
 
 First step is to check the amount of dead tuples and if autovacuum triggers VACUUM:
 
-.. code-block:: sh
+.. code-block:: shell-session
    :caption: Check dead tuples and vacuuming on PostgreSQL
 
    bareos=# SELECT relname, n_dead_tup, last_vacuum, last_autovacuum, last_analyze, last_autoanalyze
@@ -815,7 +787,7 @@ To setup a scheduled admin job for vacuuming the file table, the following must 
    | ``/usr/local/lib/bareos/scripts/postgresql_file_table_maintenance.sql``
    | with the following content:
 
-   .. code-block:: sh
+   .. code-block:: shell-session
       :caption: SQL Script for vacuuming the file table on PostgreSQL
 
       \t \x
@@ -838,7 +810,7 @@ To setup a scheduled admin job for vacuuming the file table, the following must 
    | ``/usr/local/lib/bareos/scripts/postgresql_file_table_maintenance.sh``
    | with the following content:
 
-   .. code-block:: sh
+   .. code-block:: shell-session
       :caption: SQL Script for vacuuming the file table on PostgreSQL
 
       #!/bin/sh
@@ -846,7 +818,7 @@ To setup a scheduled admin job for vacuuming the file table, the following must 
 
 #. As in PostgreSQL only the database owner or a database superuser is allowed to run VACUUM, the script will be run as the ``postgres`` user. To permit the ``bareos`` user to run the script via ``sudo``, write the following sudo rule to a file by executing ``visudo -f /etc/sudoers.d/bareos_postgres_vacuum``:
 
-   .. code-block:: sh
+   .. code-block:: shell-session
       :caption: sudo rule for allowing bareos to run a script as postgres
 
       bareos ALL = (postgres) NOPASSWD: /usr/local/lib/bareos/scripts/postgresql_file_table_maintenance.sh
@@ -861,7 +833,7 @@ To setup a scheduled admin job for vacuuming the file table, the following must 
 
 #. Create the following admin job in the director configuration
 
-   .. code-block:: sh
+   .. code-block:: shell-session
       :caption: SQL Script for vacuuming the file table on PostgreSQL
 
       # PostgreSQL file table maintenance job
@@ -887,7 +859,7 @@ To setup a scheduled admin job for vacuuming the file table, the following must 
 Repairing Your PostgreSQL Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Database->Repairing Your PostgreSQL] <pair: Database; Repairing Your PostgreSQL>` :index:`[TAG=Repairing Your PostgreSQL Database] <single: Repairing Your PostgreSQL Database>`
+:index:`[TAG=Database->Repairing Your PostgreSQL] <single: Database; Repairing Your PostgreSQL>` :index:`[TAG=Repairing Your PostgreSQL Database] <single: Repairing Your PostgreSQL Database>`
 
 The same considerations apply as for :ref:`RepairingMySQL`. Consult the PostgreSQL documents for how to repair the database.
 
@@ -896,7 +868,7 @@ For Bareos specific problems, consider using :ref:`bareos-dbcheck` program.
 MySQL/MariaDB
 -------------
 
-:index:`[TAG=Database->MySQL] <pair: Database; MySQL>` :index:`[TAG=MySQL] <single: MySQL>`
+:index:`[TAG=Database->MySQL] <single: Database; MySQL>` :index:`[TAG=MySQL] <single: MySQL>`
 
 MySQL/MariaDB Support
 ~~~~~~~~~~~~~~~~~~~~~
@@ -914,7 +886,7 @@ As MariaDB is a fork of MySQL, we use MySQL as synonym for MariaDB and fully sup
 Compacting Your MySQL Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Database->MySQL->Compacting] <triple: Database; MySQL; Compacting>` 
+:index:`[TAG=Database->MySQL->Compacting] <single: Database; MySQL; Compacting>` 
 
 .. _CompactingMySQL:
 
@@ -941,7 +913,7 @@ Please note that the database files are never shrunk by MySQL. If you really nee
 Repairing Your MySQL Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Database->Repairing Your MySQL] <pair: Database; Repairing Your MySQL>` :index:`[TAG=Repairing Your MySQL Database] <single: Repairing Your MySQL Database>` 
+:index:`[TAG=Database->Repairing Your MySQL] <single: Database; Repairing Your MySQL>` :index:`[TAG=Repairing Your MySQL Database] <single: Repairing Your MySQL Database>` 
 
 .. _RepairingMySQL:
 
@@ -964,7 +936,7 @@ A typical cause of MySQL database problems is if your partition fills. In such a
 MySQL Table is Full
 ~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Database->MySQL Table is Full] <pair: Database; MySQL Table is Full>` :index:`[TAG=MySQL Table is Full] <single: MySQL Table is Full>`
+:index:`[TAG=Database->MySQL Table is Full] <single: Database; MySQL Table is Full>` :index:`[TAG=MySQL Table is Full] <single: MySQL Table is Full>`
 
 If you are running into the error The table ’File’ is full ..., it is probably because on version 4.x MySQL, the table is limited by default to a maximum size of 4 GB and you have probably run into the limit. The solution can be found at: `http://dev.mysql.com/doc/refman/5.0/en/full-table.html <http://dev.mysql.com/doc/refman/5.0/en/full-table.html>`_
 
@@ -993,7 +965,7 @@ If the column labeled "Max_data_length" is around 4Gb, this is likely to be the 
 MySQL Server Has Gone Away
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Database->MySQL Server Has Gone Away] <pair: Database; MySQL Server Has Gone Away>` :index:`[TAG=MySQL Server Has Gone Away] <single: MySQL Server Has Gone Away>` If you are having problems with the MySQL server disconnecting or with messages saying that your MySQL server has gone away, then please read the MySQL documentation, which can be found at:
+:index:`[TAG=Database->MySQL Server Has Gone Away] <single: Database; MySQL Server Has Gone Away>` :index:`[TAG=MySQL Server Has Gone Away] <single: MySQL Server Has Gone Away>` If you are having problems with the MySQL server disconnecting or with messages saying that your MySQL server has gone away, then please read the MySQL documentation, which can be found at:
 
 `http://dev.mysql.com/doc/refman/5.0/en/gone-away.html <http://dev.mysql.com/doc/refman/5.0/en/gone-away.html>`_
 
@@ -1050,7 +1022,7 @@ In this case the |mysql| ``innodb_lock_wait_timeout`` must be increased. A value
 Backing Up Your Bareos Database
 -------------------------------
 
-:index:`[TAG=Backup->Bareos database] <pair: Backup; Bareos database>` :index:`[TAG=Backup->Catalog] <pair: Backup; Catalog>` :index:`[TAG=Database->Backup Bareos database] <pair: Database; Backup Bareos database>` 
+:index:`[TAG=Backup->Bareos database] <single: Backup; Bareos database>` :index:`[TAG=Backup->Catalog] <single: Backup; Catalog>` :index:`[TAG=Database->Backup Bareos database] <single: Database; Backup Bareos database>` 
 
 .. _BackingUpBareos:
 

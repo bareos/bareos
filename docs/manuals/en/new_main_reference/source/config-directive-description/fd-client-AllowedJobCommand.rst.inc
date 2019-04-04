@@ -34,5 +34,5 @@ Only the important commands the filedaemon can perform are filtered, as some com
 
 If runscripts are not needed it would be recommended as a security measure to disable running those or only allow the commands that you really want to be used.
 
-Runscripts are particularly a problem as they allow the |bareosFd| to run arbitrary commands. You may also look into the :config:option:`fd/client/AllowedScriptDir`\  keyword to limit the impact of the runscript command.
+Runscripts are particularly a problem as they allow the |fd| to run arbitrary commands. You may also look into the :config:option:`fd/client/AllowedScriptDir`\  keyword to limit the impact of the runscript command.
 

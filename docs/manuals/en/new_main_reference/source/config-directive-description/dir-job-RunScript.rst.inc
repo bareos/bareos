@@ -32,7 +32,7 @@ You can specify more than one Command/Console option per RunScript.
       \hline
       Runs On Client  & :strong:`Yes` | No & run command on client\\
       \hline
-      Runs When       & :strong:`\variable{Never}` | \variable{Before} | \variable{After} | \variable{Always} | \textsl{\variable{AfterVSS}} & When to run\\
+      Runs When       & :strong:```Never``\ ` | ``Before``\  | ``After``\  | ``Always``\  | \textsl{\variable{AfterVSS}} & When to run\\
       \hline
       Fail Job On Error & :strong:`Yes` | No & Fail job if script returns something different from 0\\
       \hline
@@ -50,7 +50,7 @@ Options           Value                                                         
 Runs On Success   **Yes** \| No                                                                                                                                                                run if JobStatus is successful
 Runs On Failure   Yes \| **No**                                                                                                                                                                run if JobStatus isn’t successful
 Runs On Client    **Yes** \| No                                                                                                                                                                run command on client
-Runs When         **\variable{Never}** \| \variable{Before} \| \variable{After} \| \variable{Always} \| *\variable{AfterVSS}* When to run
+Runs When         **``Never``\ ** \| ``Before``\  \| ``After``\  \| ``Always``\  \| *``AfterVSS``\ * When to run
 Fail Job On Error **Yes** \| No                                                                                                                                                                Fail job if script returns something different from 0
 Command                                                                                                                                                                                        External command
 Console                                                                                                                                                                                        Console command
@@ -61,6 +61,7 @@ Any output sent by the command to standard output will be included in the Bareos
 
 
    .. warning::
+
       The command string is parsed then fed to the OS,
       which means that the path will be searched to execute your specified
       command, but there is no shell interpretation. As a consequence, if you
@@ -192,7 +193,7 @@ Examples:
 
 
 
-Special Windows Considerations :index:`[TAG=Windows->Run Script] <pair: Windows; Run Script>`
+Special Windows Considerations :index:`[TAG=Windows->Run Script] <single: Windows; Run Script>`
 
 You can run scripts just after snapshots initializations with *AfterVSS* keyword.
 
@@ -218,7 +219,7 @@ System environment variables can be referenced with %var% and used as either par
 
 The outer set of quotes is removed when the configuration file is parsed. You need to escape the inner quotes so that they are there when the code that parses the command line for execution runs so it can tell what the program name is.
 
-The special characters \configCharsToQuote will need to be quoted, if they are part of a filename or argument.
+The special characters |configCharsToQuote| will need to be quoted, if they are part of a filename or argument.
 
 If someone is logged in, a blank "command" window running the commands will be present during the execution of the command.
 
@@ -253,7 +254,7 @@ If /C or /K is specified, then the remainder of the command line after the switc
 
    -  exactly two quote characters.
 
-   -  no special characters between the two quote characters, where special is one of: \configCharsToQuote
+   -  no special characters between the two quote characters, where special is one of: |configCharsToQuote|
 
    -  there are one or more whitespace characters between the the two quote characters.
 

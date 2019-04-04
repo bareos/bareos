@@ -3,5 +3,5 @@ the data will remain valid. If you want to reuse (re-write) the Volume, and the 
 
 Please note that the value defined by this directive in the configuration file is the default value used when a Volume is created. Once the volume is created, changing the value in the configuration file will not change what is stored for the Volume. To change the value for an existing Volume you must use the :bcommand:`update volume` command.
 
-When all Job and File records have been pruned or purged from the catalog for a particular Volume, if that Volume is marked as Append, Full, Used, or Error, it will then be marked as Purged. Only Volumes marked as Purged will be considered to be converted to the Recycled state if the :strong:`Recycle` directive is set to :strong:`yes`.
+When all Job and File records have been pruned or purged from the catalog for a particular Volume, if that Volume is marked as Append, Full, Used, or Error, it will then be marked as Purged. Only Volumes marked as Purged will be considered to be converted to the Recycled state if the :strong:`Recycle`\  directive is set to :strong:`yes`.
 

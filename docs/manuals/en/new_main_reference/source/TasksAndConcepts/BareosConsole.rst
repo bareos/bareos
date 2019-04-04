@@ -3,7 +3,7 @@
 Bareos Console
 ==============
 
-:index:`[TAG=Bareos Console] <single: Bareos Console>` :index:`[TAG=bconsole] <single: bconsole>` :index:`[TAG=Command->bconsole] <pair: Command; bconsole>`
+:index:`[TAG=Bareos Console] <single: Bareos Console>` :index:`[TAG=bconsole] <single: bconsole>` :index:`[TAG=Command->bconsole] <single: Command; bconsole>`
 
 The Bareos Console (:command:`bconsole`) is a program that allows the user or the System Administrator, to interact with the Bareos Director daemon while the daemon is running.
 
@@ -16,7 +16,7 @@ In fact, a certain minimal knowledge of the Console program is needed in order f
 Console Configuration
 ---------------------
 
-:index:`[TAG=Configuration->Console] <pair: Configuration; Console>` :index:`[TAG=Configuration->bconsole] <pair: Configuration; bconsole>`
+:index:`[TAG=Configuration->Console] <single: Configuration; Console>` :index:`[TAG=Configuration->bconsole] <single: Configuration; bconsole>`
 
 When the Console starts, it reads a standard Bareos configuration file named bconsole.conf unless you specify the -c command line option (see below). This file allows default configuration of the Console, and at the current time, the only Resource Record defined is the Director resource, which gives the Console the name and address of the Director. For more information on configuration of the Console program, please see the :ref:`Console Configuration <ConsoleConfChapter>` chapter
 of this document.
@@ -28,9 +28,10 @@ The console program can be run with the following options:
 
 :index:`[TAG=Command Line Options] <single: Command Line Options>`
 
-::
+.. code-block:: shell-session
+   :caption: bconsole command line options
 
-   \begin{commandOut}{bconsole command line options}{}{bconsole -?}
+   root@host:~# bconsole -?
    Usage: bconsole [-s] [-c config_file] [-d debug_level]
           -D <dir>    select a Director
           -l          list Directors defined
@@ -45,7 +46,6 @@ The console program can be run with the following options:
           -xc         print configuration and exit
           -xs         print configuration file schema in JSON format and exit
           -?          print this message.
-   \end{commandOut}
 
 After launching the Console program (bconsole), it will prompt you for the next command with an asterisk (*). Generally, for all commands, you can simply enter the command name and the Console program will prompt you for the necessary arguments. Alternatively, in most cases, you may enter the command followed by arguments. The general format is:
 
@@ -86,7 +86,7 @@ The maximum command line length is limited to 511 characters, so if you are scri
 Exit the Console Program
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Command->bconsole->exit] <triple: Command; bconsole; exit>`
+:index:`[TAG=Command->bconsole->exit] <single: Command; bconsole; exit>`
 
 Normally, you simply enter quit or exit and the Console program will terminate. However, it waits until the Director acknowledges the command. If the Director is already doing a lengthy command (e.g. prune), it may take some time. If you want to immediately terminate the Console program, enter the .quit command.
 
@@ -96,7 +96,7 @@ Volume name. In that case, you will most likely be able to cancel at the next pr
 Running the Console from a Shell Script
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Console->Running from a Shell] <pair: Console; Running from a Shell>` 
+:index:`[TAG=Console->Running from a Shell] <single: Console; Running from a Shell>` 
 
 .. _scripting:
 
@@ -173,7 +173,7 @@ The output from the backup is directed to /tmp/log1.out and the output from the 
 Console Keywords
 ----------------
 
-:index:`[TAG=Console->Keywords] <pair: Console; Keywords>`
+:index:`[TAG=Console->Keywords] <single: Console; Keywords>`
 
 Unless otherwise specified, each of the following keywords takes an argument, which is specified after the keyword following an equal sign. For example:
 
@@ -335,7 +335,7 @@ Console Commands
 The following commands are currently implemented:
 
 add
-   :index:`[TAG=Console->Command->add|textbf] <triple: Console; Command; add|textbf>` This command is used to add Volumes to an existing Pool. That is, it creates the Volume name in the catalog and inserts into the Pool in the catalog, but does not attempt to access the physical Volume. Once added, Bareos expects that Volume to exist and to be labeled. This command is not normally used since Bareos will automatically do the equivalent when Volumes are labeled. However, there may be times when you have removed a Volume
+   :index:`[TAG=Console->Command->add|textbf] <single: Console; Command; add|textbf>` This command is used to add Volumes to an existing Pool. That is, it creates the Volume name in the catalog and inserts into the Pool in the catalog, but does not attempt to access the physical Volume. Once added, Bareos expects that Volume to exist and to be labeled. This command is not normally used since Bareos will automatically do the equivalent when Volumes are labeled. However, there may be times when you have removed a Volume
    from the catalog and want to later add it back.
 
    The full form of this command is:
@@ -349,15 +349,15 @@ add
    can, however, be useful if you wish to add a number of Volumes to the Pool that will be physically labeled at a later time. It can also be useful if you are importing a tape from another site. Please see the :bcommand:`label` command for the list of legal characters in a Volume name.
 
 autodisplay
-   :index:`[TAG=Console->Command->autodisplay on/off] <triple: Console; Command; autodisplay on/off>` This command accepts on or off as an argument, and turns auto-display of messages on or off respectively. The default for the console program is off, which means that you will be notified when there are console messages pending, but they will not automatically be displayed.
+   :index:`[TAG=Console->Command->autodisplay on/off] <single: Console; Command; autodisplay on/off>` This command accepts on or off as an argument, and turns auto-display of messages on or off respectively. The default for the console program is off, which means that you will be notified when there are console messages pending, but they will not automatically be displayed.
 
    When autodisplay is turned off, you must explicitly retrieve the messages with the messages command. When autodisplay is turned on, the messages will be displayed on the console as they are received.
 
 automount
-   :index:`[TAG=Console->Command->automount on/off] <triple: Console; Command; automount on/off>` This command accepts on or off as the argument, and turns auto-mounting of the Volume after a label command on or off respectively. The default is on. If automount is turned off, you must explicitly mount tape Volumes after a label command to use it.
+   :index:`[TAG=Console->Command->automount on/off] <single: Console; Command; automount on/off>` This command accepts on or off as the argument, and turns auto-mounting of the Volume after a label command on or off respectively. The default is on. If automount is turned off, you must explicitly mount tape Volumes after a label command to use it.
 
 cancel
-   :index:`[TAG=Console->Command->cancel jobid] <triple: Console; Command; cancel jobid>` This command is used to cancel a job and accepts jobid=nnn or job=xxx as an argument where nnn is replaced by the JobId and xxx is replaced by the job name. If you do not specify a keyword, the Console program will prompt you with the names of all the active jobs allowing you to choose one.
+   :index:`[TAG=Console->Command->cancel jobid] <single: Console; Command; cancel jobid>` This command is used to cancel a job and accepts jobid=nnn or job=xxx as an argument where nnn is replaced by the JobId and xxx is replaced by the job name. If you do not specify a keyword, the Console program will prompt you with the names of all the active jobs allowing you to choose one.
 
    The full form of this command is:
 
@@ -400,7 +400,7 @@ cancel
    This way you can also remove a job that blocks any other jobs from running without the need to restart the whole storage daemon.
 
 create
-   :index:`[TAG=Console->Command->create pool] <triple: Console; Command; create pool>` This command is not normally used as the Pool records are automatically created by the Director when it starts based on what it finds in the configuration. If needed, this command can be used, to create a Pool record in the database using the Pool resource record defined in the Director’s configuration file. So in a sense, this command simply transfers the information from the Pool resource in the configuration file into the Catalog.
+   :index:`[TAG=Console->Command->create pool] <single: Console; Command; create pool>` This command is not normally used as the Pool records are automatically created by the Director when it starts based on what it finds in the configuration. If needed, this command can be used, to create a Pool record in the database using the Pool resource record defined in the Director’s configuration file. So in a sense, this command simply transfers the information from the Pool resource in the configuration file into the Catalog.
    Normally this command is done automatically for you when the Director starts providing the Pool is referenced within a Job resource. If you use this command on an existing Pool, it will automatically update the Catalog to have the same information as the Pool resource. After creating a Pool, you will most likely use the label command to label one or more volumes and add their names to the Media database.
 
    The full form of this command is:
@@ -426,7 +426,7 @@ configure
 
 .. _section-bcommandConfigureAdd:
 
- :index:`[TAG=Console->Command->configure add] <triple: Console; Command; configure add>`
+ :index:`[TAG=Console->Command->configure add] <single: Console; Command; configure add>`
 
       This command allows to add resources during runtime. Usage:
 
@@ -450,7 +450,7 @@ configure
 
       This feature requires :ref:`section-ConfigurationSubdirectories`.
 
-      All kinds of resources can be added. When adding a client resource, the :ref:`ClientResourceDirector` for the |bareosFd| is also created and stored at:
+      All kinds of resources can be added. When adding a client resource, the :ref:`ClientResourceDirector` for the |fd| is also created and stored at:
 
       :file:`<CONFIGDIR>/bareos-dir-export/client/<clientname>/bareos-fd.d/director/<clientname>.conf`
 
@@ -484,12 +484,13 @@ configure
 
          :file:`/etc/bareos/bareos-dir.d/job/client2-job.conf`
 
-      The files in :file:`bareos-dir-export/client/` directory are not used by the |bareosDir|. However, they can be copied to new clients to configure these clients for the |bareosDir|.
+      The files in :file:`bareos-dir-export/client/` directory are not used by the |dir|. However, they can be copied to new clients to configure these clients for the |dir|.
 
       
 
-.. warning::
-   Don't be confused by the extensive output of :bcommand:`help configure`. As :bcommand:`configure add` allows configuring arbitrary resources, the output of :bcommand:`help configure` lists all the resources, each with all valid directives. The same data is also used for :command:`bconsole` command line completion.
+         .. warning::
+
+            Don't be confused by the extensive output of :bcommand:`help configure`. As :bcommand:`configure add` allows configuring arbitrary resources, the output of :bcommand:`help configure` lists all the resources, each with all valid directives. The same data is also used for :command:`bconsole` command line completion.
 
       Available since Bareos :sinceVersion:`16.2.4: configure add`.
 
@@ -498,9 +499,9 @@ configure
 
 .. _section-bcommandConfigureExport:
 
- :index:`[TAG=Console->Command->configure export] <triple: Console; Command; configure export>`
+ :index:`[TAG=Console->Command->configure export] <single: Console; Command; configure export>`
 
-      This command allows to export the :config:option:`Fd/Director`\  resource for clients already configured in the |bareosDir|.
+      This command allows to export the :config:option:`Fd/Director`\  resource for clients already configured in the |dir|.
 
       Usage:
 
@@ -514,12 +515,12 @@ configure
            Password = "[md5]932d1d3ef3c298047809119510f4bee6"
          }
 
-      To use it, copy the :config:option:`Fd/Director`\  resource file to the client machine (on Linux: to :file:`/etc/bareos/bareos-fd.d/director/`) and restart the |bareosFd|.
+      To use it, copy the :config:option:`Fd/Director`\  resource file to the client machine (on Linux: to :file:`/etc/bareos/bareos-fd.d/director/`) and restart the |fd|.
 
       Available since Bareos :sinceVersion:`16.2.4: configure export`.
 
 delete
-   :index:`[TAG=Console->Command->delete] <triple: Console; Command; delete>` The delete command is used to delete a Volume, Pool or Job record from the Catalog as well as all associated catalog Volume records that were created. This command operates only on the Catalog database and has no effect on the actual data written to a Volume. This command can be dangerous and we strongly recommend that you do not use it unless you know what you are doing.
+   :index:`[TAG=Console->Command->delete] <single: Console; Command; delete>` The delete command is used to delete a Volume, Pool or Job record from the Catalog as well as all associated catalog Volume records that were created. This command operates only on the Catalog database and has no effect on the actual data written to a Volume. This command can be dangerous and we strongly recommend that you do not use it unless you know what you are doing.
 
    If the keyword Volume appears on the command line, the named Volume will be deleted from the catalog, if the keyword Pool appears on the command line, a Pool will be deleted, and if the keyword Job appears on the command line, a Job and all its associated records (File and JobMedia) will be deleted from the catalog.
 
@@ -536,7 +537,7 @@ delete
    The first form deletes a Pool record from the catalog database. The second form deletes a Volume record from the specified pool in the catalog database. The third form deletes the specified Job record from the catalog database. The last form deletes JobId records for JobIds n, m, o, p, q, r, and t. Where each one of the n,m,... is, of course, a number. That is a "delete jobid" accepts lists and ranges of jobids.
 
 disable
-   :index:`[TAG=Console->Command->disable] <triple: Console; Command; disable>` This command permits you to disable a Job for automatic scheduling. The job may have been previously enabled with the Job resource Enabled directive or using the console enable command. The next time the Director is reloaded or restarted, the Enable/Disable state will be set to the value in the Job resource (default enabled) as defined in the |bareosDir| configuration.
+   :index:`[TAG=Console->Command->disable] <single: Console; Command; disable>` This command permits you to disable a Job for automatic scheduling. The job may have been previously enabled with the Job resource Enabled directive or using the console enable command. The next time the Director is reloaded or restarted, the Enable/Disable state will be set to the value in the Job resource (default enabled) as defined in the |dir| configuration.
 
    The full form of this command is:
 
@@ -546,7 +547,7 @@ disable
       disable job=<job-name>
 
 enable
-   :index:`[TAG=Console->Command->enable] <triple: Console; Command; enable>` This command permits you to enable a Job for automatic scheduling. The job may have been previously disabled with the Job resource Enabled directive or using the console disable command. The next time the Director is reloaded or restarted, the Enable/Disable state will be set to the value in the Job resource (default enabled) as defined in the |bareosDir| configuration.
+   :index:`[TAG=Console->Command->enable] <single: Console; Command; enable>` This command permits you to enable a Job for automatic scheduling. The job may have been previously disabled with the Job resource Enabled directive or using the console disable command. The next time the Director is reloaded or restarted, the Enable/Disable state will be set to the value in the Job resource (default enabled) as defined in the |dir| configuration.
 
    The full form of this command is:
 
@@ -562,7 +563,7 @@ enable
 
 
 estimate
-   :index:`[TAG=Console->Command->estimate] <triple: Console; Command; estimate>` Using this command, you can get an idea how many files will be backed up, or if you are unsure about your Include statements in your FileSet, you can test them without doing an actual backup. The default is to assume a Full backup. However, you can override this by specifying a level=Incremental or level=Differential on the command line. A Job name must be specified or you will be prompted for one, and optionally a Client and FileSet may
+   :index:`[TAG=Console->Command->estimate] <single: Console; Command; estimate>` Using this command, you can get an idea how many files will be backed up, or if you are unsure about your Include statements in your FileSet, you can test them without doing an actual backup. The default is to assume a Full backup. However, you can override this by specifying a level=Incremental or level=Differential on the command line. A Job name must be specified or you will be prompted for one, and optionally a Client and FileSet may
    be specified on the command line. It then contacts the client which computes the number of files and bytes that would be backed up. Please note that this is an estimate calculated from the number of blocks in the file rather than by reading the actual bytes. As such, the estimated backup size will generally be larger than an actual backup.
 
    The ``estimate`` command can use the accurate code to detect changes and give a better estimation. You can set the accurate behavior on command line using ``accurate=yes/no`` or use the Job setting as default value.
@@ -591,10 +592,10 @@ estimate
    the sparse option is not specified in the FileSet. There is currently no way to get an estimate of the real file size that would be found should the sparse option be enabled.
 
 exit
-   :index:`[TAG=Console->Command->exit] <triple: Console; Command; exit>` This command terminates the console program.
+   :index:`[TAG=Console->Command->exit] <single: Console; Command; exit>` This command terminates the console program.
 
 export
-   :index:`[TAG=Console->Command->export] <triple: Console; Command; export>` The export command is used to export tapes from an autochanger. Most Automatic Tapechangers offer special slots for importing new tape cartridges or exporting written tape cartridges. This can happen without having to set the device offline.
+   :index:`[TAG=Console->Command->export] <single: Console; Command; export>` The export command is used to export tapes from an autochanger. Most Automatic Tapechangers offer special slots for importing new tape cartridges or exporting written tape cartridges. This can happen without having to set the device offline.
 
    The full form of this command is:
 
@@ -643,13 +644,13 @@ export
       /usr/sbin/bsmtp -h localhost -f root@localhost -s 'Remove Tape %V' root@localhost \""
 
 gui
-   :index:`[TAG=Console->Command->gui] <triple: Console; Command; gui>` Invoke the non-interactive gui mode. This command is only used when :command:`bconsole` is commanded by an external program.
+   :index:`[TAG=Console->Command->gui] <single: Console; Command; gui>` Invoke the non-interactive gui mode. This command is only used when :command:`bconsole` is commanded by an external program.
 
 help
-   :index:`[TAG=Console->Command->help] <triple: Console; Command; help>` This command displays the list of commands available.
+   :index:`[TAG=Console->Command->help] <single: Console; Command; help>` This command displays the list of commands available.
 
 import
-   :index:`[TAG=Console->Command->import] <triple: Console; Command; import>` The import command is used to import tapes into an autochanger. Most Automatic Tapechangers offer special slots for importing new tape cartridges or exporting written tape cartridges. This can happen without having to set the device offline.
+   :index:`[TAG=Console->Command->import] <single: Console; Command; import>` The import command is used to import tapes into an autochanger. Most Automatic Tapechangers offer special slots for importing new tape cartridges or exporting written tape cartridges. This can happen without having to set the device offline.
 
    The full form of this command is:
 
@@ -701,7 +702,7 @@ import
       3308 Successfully transfered volume from slot 37 to 20.
 
 label
-   :index:`[TAG=Console->Command->label] <triple: Console; Command; label>` :index:`[TAG=Console->Command->relabel] <triple: Console; Command; relabel>` This command is used to label physical volumes. The full form of this command is:
+   :index:`[TAG=Console->Command->label] <single: Console; Command; label>` :index:`[TAG=Console->Command->relabel] <single: Console; Command; relabel>` This command is used to label physical volumes. The full form of this command is:
 
    .. code-block:: bconsole
       :caption: label
@@ -769,7 +770,7 @@ label
       label storage=xxx pool=yyy slots=1-5,10 barcodes
 
 list
-   :index:`[TAG=Console->Command->list] <triple: Console; Command; list>` The list command lists the requested contents of the Catalog. The various fields of each record are listed on a single line. The various forms of the list command are:
+   :index:`[TAG=Console->Command->list] <single: Console; Command; list>` The list command lists the requested contents of the Catalog. The various fields of each record are listed on a single line. The various forms of the list command are:
 
    .. code-block:: bconsole
       :caption: list
@@ -825,7 +826,7 @@ list
    If you want to see what Client resources you have available in your conf file, you use the Console command show clients.
 
 llist
-   :index:`[TAG=Console->Command->llist] <triple: Console; Command; llist>` The llist or "long list" command takes all the same arguments that the list command described above does. The difference is that the llist command list the full contents of each database record selected. It does so by listing the various fields of the record vertically, with one field per line. It is possible to produce a very large number of output lines with this command.
+   :index:`[TAG=Console->Command->llist] <single: Console; Command; llist>` The llist or "long list" command takes all the same arguments that the list command described above does. The difference is that the llist command list the full contents of each database record selected. It does so by listing the various fields of the record vertically, with one field per line. It is possible to produce a very large number of output lines with this command.
 
    If instead of the list pools as in the example above, you enter llist pools you might get the following output:
 
@@ -866,13 +867,13 @@ llist
            LabelFormat: File
 
 messages
-   :index:`[TAG=Console->Command->messages] <triple: Console; Command; messages>` This command causes any pending console messages to be immediately displayed.
+   :index:`[TAG=Console->Command->messages] <single: Console; Command; messages>` This command causes any pending console messages to be immediately displayed.
 
 memory
-   :index:`[TAG=Console->Command->memory] <triple: Console; Command; memory>` Print current memory usage.
+   :index:`[TAG=Console->Command->memory] <single: Console; Command; memory>` Print current memory usage.
 
 mount
-   :index:`[TAG=Console->Command->mount] <triple: Console; Command; mount>` The mount command is used to get Bareos to read a volume on a physical device. It is a way to tell Bareos that you have mounted a tape and that Bareos should examine the tape. This command is normally used only after there was no Volume in a drive and Bareos requests you to mount a new Volume or when you have specifically unmounted a Volume with the :bcommand:`unmount` console command, which causes Bareos to close the drive. If
+   :index:`[TAG=Console->Command->mount] <single: Console; Command; mount>` The mount command is used to get Bareos to read a volume on a physical device. It is a way to tell Bareos that you have mounted a tape and that Bareos should examine the tape. This command is normally used only after there was no Volume in a drive and Bareos requests you to mount a new Volume or when you have specifically unmounted a Volume with the :bcommand:`unmount` console command, which causes Bareos to close the drive. If
    you have an autoloader, the mount command will not cause Bareos to operate the autoloader unless you specify a slot and possibly a drive. The various forms of the mount command are:
 
    .. code-block:: bconsole
@@ -884,7 +885,7 @@ mount
    If you have specified :config:option:`sd/device/AutomaticMount = yes`\ , under most circumstances, Bareos will automatically access the Volume unless you have explicitly unmounted it (in the Console program).
 
 move
-   :index:`[TAG=Console->Command->move] <triple: Console; Command; move>` The move command allows to move volumes between slots in an autochanger without having to leave the bconsole.
+   :index:`[TAG=Console->Command->move] <single: Console; Command; move>` The move command allows to move volumes between slots in an autochanger without having to leave the bconsole.
 
    To move a volume from slot 32 to slots 33, use:
 
@@ -902,7 +903,7 @@ move
       3308 Successfully transfered volume from slot 32 to 33.
 
 prune
-   :index:`[TAG=Console->Command->prune] <triple: Console; Command; prune>` 
+   :index:`[TAG=Console->Command->prune] <single: Console; Command; prune>` 
 
 .. _ManualPruning:
 
@@ -920,7 +921,7 @@ prune
    For a Volume to be pruned, the volume status must be **Full**, **Used** or **Append** otherwise the pruning will not take place.
 
 purge
-   :index:`[TAG=Console->Command->purge] <triple: Console; Command; purge>` 
+   :index:`[TAG=Console->Command->purge] <single: Console; Command; purge>` 
 
 .. _bcommandPurge:
 
@@ -945,10 +946,10 @@ purge
 
       *<input>purge volume action=truncate storage=File pool=Full</input>
 
-   However, normally you should use the :bcommand:`purge` command only to purge a volume from the catalog and use the :bcommand:`truncate` command to truncate the volume on the |bareosSd|.
+   However, normally you should use the :bcommand:`purge` command only to purge a volume from the catalog and use the :bcommand:`truncate` command to truncate the volume on the |sd|.
 
 resolve
-   :index:`[TAG=Console->Command->resolve] <triple: Console; Command; resolve>` In the configuration files, Addresses can (and normally should) be specified as DNS names. As the different components of Bareos will establish network connections to other Bareos components, it is important that DNS name resolution works on involved components and delivers the same results. The :bcommand:`resolve` command can be used to test DNS resolution of a given hostname on director, storage daemon or client.
+   :index:`[TAG=Console->Command->resolve] <single: Console; Command; resolve>` In the configuration files, Addresses can (and normally should) be specified as DNS names. As the different components of Bareos will establish network connections to other Bareos components, it is important that DNS name resolution works on involved components and delivers the same results. The :bcommand:`resolve` command can be used to test DNS resolution of a given hostname on director, storage daemon or client.
 
    .. code-block:: bconsole
       :caption: resolve example
@@ -963,7 +964,7 @@ resolve
       bareos-sd resolves www.bareos.com to host[ipv4:84.44.166.242]
 
 query
-   :index:`[TAG=Console->Command->query] <triple: Console; Command; query>` 
+   :index:`[TAG=Console->Command->query] <single: Console; Command; query>` 
 
 .. _section-bcommandQuery:
 
@@ -973,7 +974,7 @@ quit
    :index:`[TAG=quit] <single: quit>` This command terminates the console program. The console program sends the quit request to the Director and waits for acknowledgment. If the Director is busy doing a previous command for you that has not terminated, it may take some time. You may quit immediately by issuing the .quit command (i.e. quit preceded by a period).
 
 relabel
-   :index:`[TAG=Console->Command->relabel] <triple: Console; Command; relabel>` This command is used to label physical volumes.
+   :index:`[TAG=Console->Command->relabel] <single: Console; Command; relabel>` This command is used to label physical volumes.
 
    The full form of this command is:
 
@@ -987,7 +988,7 @@ relabel
    Once the volume is physically relabeled, the old data previously written on the Volume is lost and cannot be recovered.
 
 release
-   :index:`[TAG=Console->Command->release] <triple: Console; Command; release>` This command is used to cause the Storage daemon to release (and rewind) the current tape in the drive, and to re-read the Volume label the next time the tape is used.
+   :index:`[TAG=Console->Command->release] <single: Console; Command; release>` This command is used to cause the Storage daemon to release (and rewind) the current tape in the drive, and to re-read the Volume label the next time the tape is used.
 
    .. code-block:: bconsole
       :caption: release
@@ -998,14 +999,14 @@ release
    must use the :bcommand:`unmount` command to cause Bareos to completely release (close) the device.
 
 reload
-   :index:`[TAG=Console->Command->reload] <triple: Console; Command; reload>` The reload command causes the Director to re-read its configuration file and apply the new values. The new values will take effect immediately for all new jobs. However, if you change schedules, be aware that the scheduler pre-schedules jobs up to two hours in advance, so any changes that are to take place during the next two hours may be delayed. Jobs that have already been scheduled to run (i.e. surpassed their requested start time) will
+   :index:`[TAG=Console->Command->reload] <single: Console; Command; reload>` The reload command causes the Director to re-read its configuration file and apply the new values. The new values will take effect immediately for all new jobs. However, if you change schedules, be aware that the scheduler pre-schedules jobs up to two hours in advance, so any changes that are to take place during the next two hours may be delayed. Jobs that have already been scheduled to run (i.e. surpassed their requested start time) will
    continue with the old values. New jobs will use the new values. Each time you issue a reload command while jobs are running, the prior config values will queued until all jobs that were running before issuing the reload terminate, at which time the old config values will be released from memory. The Directory permits keeping up to ten prior set of configurations before it will refuse a reload command. Once at least one old set of config values has been released it will again accept new reload
    commands.
 
    While it is possible to reload the Director’s configuration on the fly, even while jobs are executing, this is a complex operation and not without side effects. Accordingly, if you have to reload the Director’s configuration while Bareos is running, it is advisable to restart the Director at the next convenient opportunity.
 
 rerun
-   :index:`[TAG=Console->Command->rerun] <triple: Console; Command; rerun>` The rerun command allows you to re-run a Job with exactly the same setting as the original Job. In Bareos, the job configuration is often altered by job overrides. These overrides alter the configuration of the job just for one job run. If because of any reason, a job with overrides fails, it is not easy to restart a new job that is exactly configured as the job that failed. The whole job configuration is automatically set to the defaults
+   :index:`[TAG=Console->Command->rerun] <single: Console; Command; rerun>` The rerun command allows you to re-run a Job with exactly the same setting as the original Job. In Bareos, the job configuration is often altered by job overrides. These overrides alter the configuration of the job just for one job run. If because of any reason, a job with overrides fails, it is not easy to restart a new job that is exactly configured as the job that failed. The whole job configuration is automatically set to the defaults
    and it is hard to configure everything like it was.
 
    By using the rerun command, it is much easier to rerun a job exactly as it was configured. You only have to specify the JobId of the failed job.
@@ -1018,7 +1019,7 @@ rerun
    You can select the jobid(s) to rerun by using one of the selection criteria. Using jobid= will automatically select all jobs failed after and including the given jobid for rerunning. By using days= or hours=, you can select all failed jobids in the last number of days or number of hours respectively for rerunning.
 
 restore
-   :index:`[TAG=Restore] <single: Restore>` :index:`[TAG=Console->Command->restore] <triple: Console; Command; restore>` :index:`[TAG=Console->File Selection] <pair: Console; File Selection>` 
+   :index:`[TAG=Restore] <single: Restore>` :index:`[TAG=Console->Command->restore] <single: Console; Command; restore>` :index:`[TAG=Console->File Selection] <single: Console; File Selection>` 
 
 .. _bcommandRestore:
 
@@ -1043,7 +1044,7 @@ restore
    For more details, see the :ref:`Restore chapter <RestoreChapter>`.
 
 run
-   :index:`[TAG=Console->Command->run] <triple: Console; Command; run>` This command allows you to schedule jobs to be run immediately.
+   :index:`[TAG=Console->Command->run] <single: Console; Command; run>` This command allows you to schedule jobs to be run immediately.
 
    The full form of the command is:
 
@@ -1067,7 +1068,7 @@ run
    The spooldata argument of the run command cannot be modified through the menu and is only accessible by setting its value on the intial command line. If no spooldata flag is set, the job, storage or schedule flag is used.
 
 setbandwidth
-   :index:`[TAG=Console->Command->setbandwidth] <triple: Console; Command; setbandwidth>` This command (:sinceVersion:`12.4.1: setbandwidth`) is used to limit the bandwidth of a running job or a client.
+   :index:`[TAG=Console->Command->setbandwidth] <single: Console; Command; setbandwidth>` This command (:sinceVersion:`12.4.1: setbandwidth`) is used to limit the bandwidth of a running job or a client.
 
    .. code-block:: bconsole
       :caption: setbandwidth
@@ -1079,7 +1080,7 @@ setdebug
 
 .. _bcommandSetdebug:
 
- :index:`[TAG=Console->Command->setdebug] <triple: Console; Command; setdebug>` :index:`[TAG=Debug->setdebug] <pair: Debug; setdebug>` :index:`[TAG=Debug->Windows] <pair: Debug; Windows>` :index:`[TAG=Windows->Debug] <pair: Windows; Debug>` This command is used to set the debug level in each daemon. The form of this command is:
+ :index:`[TAG=Console->Command->setdebug] <single: Console; Command; setdebug>` :index:`[TAG=Debug->setdebug] <single: Debug; setdebug>` :index:`[TAG=Debug->Windows] <single: Debug; Windows>` :index:`[TAG=Windows->Debug] <single: Windows; Debug>` This command is used to set the debug level in each daemon. The form of this command is:
 
    .. code-block:: bconsole
       :caption: setdebug
@@ -1105,16 +1106,16 @@ setip
 
 .. _bcommandSetIP:
 
- :index:`[TAG=Console->Command->setip] <triple: Console; Command; setip>` Sets new client address – if authorized.
+ :index:`[TAG=Console->Command->setip] <single: Console; Command; setip>` Sets new client address – if authorized.
 
    A console is authorized to use the SetIP command only if it has a Console resource definition in both the Director and the Console. In addition, if the console name, provided on the Name = directive, must be the same as a Client name, the user of that console is permitted to use the SetIP command to change the Address directive in the Director’s client resource to the IP address of the Console. This permits portables or other machines using DHCP (non-fixed IP addresses) to "notify" the
    Director of their current IP address.
 
 show
-   :index:`[TAG=Console->Command->show] <triple: Console; Command; show>` The show command will list the Director’s resource records as defined in the Director’s configuration. This command is used mainly for debugging purposes by developers. The following keywords are accepted on the show command line: catalogs, clients, counters, devices, directors, filesets, jobs, messages, pools, schedules, storages, all, help. Please don’t confuse this command with the list, which displays the contents of the catalog.
+   :index:`[TAG=Console->Command->show] <single: Console; Command; show>` The show command will list the Director’s resource records as defined in the Director’s configuration. This command is used mainly for debugging purposes by developers. The following keywords are accepted on the show command line: catalogs, clients, counters, devices, directors, filesets, jobs, messages, pools, schedules, storages, all, help. Please don’t confuse this command with the list, which displays the contents of the catalog.
 
 sqlquery
-   :index:`[TAG=Console->Command->sqlquery] <triple: Console; Command; sqlquery>` The sqlquery command puts the Console program into SQL query mode where each line you enter is concatenated to the previous line until a semicolon (;) is seen. The semicolon terminates the command, which is then passed directly to the SQL database engine. When the output from the SQL engine is displayed, the formation of a new SQL command begins. To terminate SQL query mode and return to the Console command prompt, you enter a period (.)
+   :index:`[TAG=Console->Command->sqlquery] <single: Console; Command; sqlquery>` The sqlquery command puts the Console program into SQL query mode where each line you enter is concatenated to the previous line until a semicolon (;) is seen. The semicolon terminates the command, which is then passed directly to the SQL database engine. When the output from the SQL engine is displayed, the formation of a new SQL command begins. To terminate SQL query mode and return to the Console command prompt, you enter a period (.)
    in column 1.
 
    Using this command, you can query the SQL catalog database directly. Note you should really know what you are doing otherwise you could damage the catalog database. See the query command below for simpler and safer way of entering SQL queries.
@@ -1122,7 +1123,7 @@ sqlquery
    Depending on what database engine you are using (MySQL, PostgreSQL or SQLite), you will have somewhat different SQL commands available. For more detailed information, please refer to the MySQL, PostgreSQL or SQLite documentation.
 
 status
-   :index:`[TAG=Console->Command->status] <triple: Console; Command; status>`
+   :index:`[TAG=Console->Command->status] <single: Console; Command; status>`
 
    This command will display the status of all components. For the director, it will display the next jobs that are scheduled during the next 24 hours as well as the status of currently running jobs. For the Storage Daemon, you will have drive status or autochanger content. The File Daemon will give you information about current jobs like average speed or file accounting. The full form of this command is:
 
@@ -1314,13 +1315,13 @@ status
    Not configuring the directive at all also disables it, as the default value for the Subscriptions directive is zero.
 
 time
-   :index:`[TAG=Console->Command->time] <triple: Console; Command; time>` The time command shows the current date, time and weekday.
+   :index:`[TAG=Console->Command->time] <single: Console; Command; time>` The time command shows the current date, time and weekday.
 
 trace
-   :index:`[TAG=Console->Command->trace] <triple: Console; Command; trace>` Turn on/off trace to file.
+   :index:`[TAG=Console->Command->trace] <single: Console; Command; trace>` Turn on/off trace to file.
 
 truncate
-   :index:`[TAG=Console->Command->truncate] <triple: Console; Command; truncate>` :index:`[TAG=Disk->Freeing disk space] <pair: Disk; Freeing disk space>` :index:`[TAG=Disk->Freeing disk space] <pair: Disk; Freeing disk space>` 
+   :index:`[TAG=Console->Command->truncate] <single: Console; Command; truncate>` :index:`[TAG=Disk->Freeing disk space] <single: Disk; Freeing disk space>` :index:`[TAG=Disk->Freeing disk space] <single: Disk; Freeing disk space>` 
 
 .. _bcommandTruncate:
 
@@ -1333,17 +1334,17 @@ truncate
 
       truncate volstatus=Purged [storage=<storage>] [pool=<pool>] [volume=<volume>] [yes]
 
-   When using a disk volume (and other volume types also) the volume file still resides on the |bareosSd|. If you want to reclaim disk space, you can use the :bcommand:`truncate volstatus=Purged` command. When used on a volume, it rewrites the header and by this frees the rest of the disk space.
+   When using a disk volume (and other volume types also) the volume file still resides on the |sd|. If you want to reclaim disk space, you can use the :bcommand:`truncate volstatus=Purged` command. When used on a volume, it rewrites the header and by this frees the rest of the disk space.
 
    If the volume you want to get rid of has not the **Purged** status, you first have to use the :bcommand:`prune volume` or even the :bcommand:`purge volume` command to free the volume from all remaining jobs.
 
    This command is available since Bareos :sinceVersion:`16.2.5: truncate command`.
 
 umount
-   :index:`[TAG=Console->Command->umount] <triple: Console; Command; umount>` Alias for :bcommand:`unmount`.
+   :index:`[TAG=Console->Command->umount] <single: Console; Command; umount>` Alias for :bcommand:`unmount`.
 
 unmount
-   :index:`[TAG=Console->Command->unmount] <triple: Console; Command; unmount>` This command causes the indicated Bareos Storage daemon to unmount the specified device. The forms of the command are the same as the mount command:
+   :index:`[TAG=Console->Command->unmount] <single: Console; Command; unmount>` This command causes the indicated Bareos Storage daemon to unmount the specified device. The forms of the command are the same as the mount command:
 
    .. code-block:: bconsole
       :caption: unmount
@@ -1358,7 +1359,7 @@ unmount
    In most cases, it is preferable to use the :bcommand:`release` instead.
 
 update
-   :index:`[TAG=Console->Command->update] <triple: Console; Command; update>` 
+   :index:`[TAG=Console->Command->update] <single: Console; Command; update>` 
 
 .. _UpdateCommand:
 
@@ -1402,7 +1403,7 @@ update
    For slots :bcommand:`update slots`, Bareos will obtain a list of slots and their barcodes from the Storage daemon, and for each barcode found, it will automatically update the slot in the catalog Media record to correspond to the new value. This is very useful if you have moved cassettes in the magazine, or if you have removed the magazine and inserted a different one. As the slot of each Volume is updated, the InChanger flag for that Volume will also be set, and any other
    Volumes in the Pool that were last mounted on the same Storage device will have their InChanger flag turned off. This permits Bareos to know what magazine (tape holder) is currently in the autochanger.
 
-   If you do not have barcodes, you can accomplish the same thing by using the :bcommand:`update slots scan` command. The ``scan`` keyword tells Bareos to physically mount each tape and to read its VolumeName.
+   If you do not have barcodes, you can accomplish the same thing by using the :bcommand:`update slots scan` command. The :strong:`scan` keyword tells Bareos to physically mount each tape and to read its VolumeName.
 
    For Pool :bcommand:`update pool`, Bareos will move the Volume record from its existing pool to the pool specified.
 
@@ -1428,7 +1429,7 @@ update
               stats [days=<number>]
 
 use
-   :index:`[TAG=Console->Command->use] <triple: Console; Command; use>` This command allows you to specify which Catalog database to use. Normally, you will be using only one database so this will be done automatically. In the case that you are using more than one database, you can use this command to switch from one to another.
+   :index:`[TAG=Console->Command->use] <single: Console; Command; use>` This command allows you to specify which Catalog database to use. Normally, you will be using only one database so this will be done automatically. In the case that you are using more than one database, you can use this command to switch from one to another.
 
    .. code-block:: bconsole
       :caption: use
@@ -1440,14 +1441,14 @@ var
 
 .. _var:
 
- :index:`[TAG=Console->Command->var] <triple: Console; Command; var>` This command takes a string or quoted string and does variable expansion on it mostly the same way variable expansion is done on the :config:option:`dir/pool/LabelFormat`\  string. The difference between the :bcommand:`var` command and the actual :config:option:`dir/pool/LabelFormat`\  process is that during the var command, no job is running so dummy values are
+ :index:`[TAG=Console->Command->var] <single: Console; Command; var>` This command takes a string or quoted string and does variable expansion on it mostly the same way variable expansion is done on the :config:option:`dir/pool/LabelFormat`\  string. The difference between the :bcommand:`var` command and the actual :config:option:`dir/pool/LabelFormat`\  process is that during the var command, no job is running so dummy values are
    used in place of Job specific variables.
 
 version
-   :index:`[TAG=Console->Command->version] <triple: Console; Command; version>` The command prints the Director’s version.
+   :index:`[TAG=Console->Command->version] <single: Console; Command; version>` The command prints the Director’s version.
 
 wait
-   :index:`[TAG=Console->Command->wait] <triple: Console; Command; wait>` The wait command causes the Director to pause until there are no jobs running. This command is useful in a batch situation such as regression testing where you wish to start a job and wait until that job completes before continuing. This command now has the following options:
+   :index:`[TAG=Console->Command->wait] <single: Console; Command; wait>` The wait command causes the Director to pause until there are no jobs running. This command is useful in a batch situation such as regression testing where you wish to start a job and wait until that job completes before continuing. This command now has the following options:
 
    .. code-block:: bconsole
       :caption: wait
@@ -1461,9 +1462,9 @@ wait
 Special dot (.) Commands
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Console->Command->. commands] <triple: Console; Command; . commands>`
+:index:`[TAG=Console->Command->. commands] <single: Console; Command; . commands>`
 
-There is a list of commands that are prefixed with a period (.). These commands are intended to be used either by batch programs or graphical user interface front-ends. They are not normally used by interactive users. For details, see \bareosDeveloperGuideDotCommands.
+There is a list of commands that are prefixed with a period (.). These commands are intended to be used either by batch programs or graphical user interface front-ends. They are not normally used by interactive users. For details, see `Bareos Developer Guide (dot-commands) <http://doc.bareos.org/master/html/bareos-developer-guide.html#dot-commands>`_.
 
 .. _atcommands:
 
@@ -1473,10 +1474,10 @@ Special At (@) Commands
 Normally, all commands entered to the Console program are immediately forwarded to the Director, which may be on another machine, to be executed. However, there is a small list of at commands, all beginning with an at character (@), that will not be sent to the Director, but rather interpreted by the Console program directly. Note, these commands are implemented only in the TTY console program and not in the Bat Console. These commands are:
 
 @input <filename>
-   :index:`[TAG=Console->Command->@input <filename>] <triple: Console; Command; @input <filename>>` Read and execute the commands contained in the file specified.
+   :index:`[TAG=Console->Command->@input <filename>] <single: Console; Command; @input <filename>>` Read and execute the commands contained in the file specified.
 
 @output <filename> <w|a>
-   :index:`[TAG=Console->Command->@output <filename> <w|a>] <triple: Console; Command; @output <filename> <w|a>>` Send all following output to the filename specified either overwriting the file (w) or appending to the file (a). To redirect the output to the terminal, simply enter @output without a filename specification. WARNING: be careful not to overwrite a valid file. A typical example during a regression test might be:
+   :index:`[TAG=Console->Command->@output <filename> <w|a>] <single: Console; Command; @output <filename> <w|a>>` Send all following output to the filename specified either overwriting the file (w) or appending to the file (a). To redirect the output to the terminal, simply enter @output without a filename specification. WARNING: be careful not to overwrite a valid file. A typical example during a regression test might be:
 
    
 
@@ -1489,31 +1490,31 @@ Normally, all commands entered to the Console program are immediately forwarded 
    
 
 @tee <filename> <w|a>
-   :index:`[TAG=Console->Command->@tee <filename> <w|a>] <triple: Console; Command; @tee <filename> <w|a>>` Send all subsequent output to both the specified file and the terminal. It is turned off by specifying @tee or @output without a filename.
+   :index:`[TAG=Console->Command->@tee <filename> <w|a>] <single: Console; Command; @tee <filename> <w|a>>` Send all subsequent output to both the specified file and the terminal. It is turned off by specifying @tee or @output without a filename.
 
 @sleep <seconds>
-   :index:`[TAG=Console->Command->@sleep <seconds>] <triple: Console; Command; @sleep <seconds>>` Sleep the specified number of seconds.
+   :index:`[TAG=Console->Command->@sleep <seconds>] <single: Console; Command; @sleep <seconds>>` Sleep the specified number of seconds.
 
 @time
-   :index:`[TAG=Console->Command->@time] <triple: Console; Command; @time>` Print the current time and date.
+   :index:`[TAG=Console->Command->@time] <single: Console; Command; @time>` Print the current time and date.
 
 @version
-   :index:`[TAG=Console->Command->@version] <triple: Console; Command; @version>` Print the console’s version.
+   :index:`[TAG=Console->Command->@version] <single: Console; Command; @version>` Print the console’s version.
 
 @quit
-   :index:`[TAG=Console->Command->@quit] <triple: Console; Command; @quit>` quit
+   :index:`[TAG=Console->Command->@quit] <single: Console; Command; @quit>` quit
 
 @exit
-   :index:`[TAG=Console->Command->@exit] <triple: Console; Command; @exit>` quit
+   :index:`[TAG=Console->Command->@exit] <single: Console; Command; @exit>` quit
 
 @# anything
-   :index:`[TAG=Console->Command->@# anything] <triple: Console; Command; @# anything>` Comment
+   :index:`[TAG=Console->Command->@# anything] <single: Console; Command; @# anything>` Comment
 
 @help
-   :index:`[TAG=Console->Command->@help] <triple: Console; Command; @help>` Get the list of every special @ commands.
+   :index:`[TAG=Console->Command->@help] <single: Console; Command; @help>` Get the list of every special @ commands.
 
 @separator <char>
-   :index:`[TAG=Console->Command->@separator] <triple: Console; Command; @separator>` When using bconsole with readline, you can set the command separator to one of those characters to write commands who require multiple input on one line, or to put multiple commands on a single line.
+   :index:`[TAG=Console->Command->@separator] <single: Console; Command; @separator>` When using bconsole with readline, you can set the command separator to one of those characters to write commands who require multiple input on one line, or to put multiple commands on a single line.
 
    ::
 
@@ -1524,7 +1525,7 @@ Normally, all commands entered to the Console program are immediately forwarded 
 Adding Volumes to a Pool
 ------------------------
 
-:index:`[TAG=Console->Adding a Volume to a Pool] <pair: Console; Adding a Volume to a Pool>`
+:index:`[TAG=Console->Adding a Volume to a Pool] <single: Console; Adding a Volume to a Pool>`
 
 .. TODO: move to another chapter
 

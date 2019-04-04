@@ -7,8 +7,9 @@ In most cases, you should use :config:option:`dir/pool/RecycleOldestVolume`\  in
 
 
    .. warning::
+
       
-      Be aware that :strong:`Purge Oldest Volume` disregards all retention
+      Be aware that :strong:`Purge Oldest Volume`\  disregards all retention
       periods. If you have only a single Volume defined and you turn this
       variable on, that Volume will always be immediately overwritten when it
       fills!  So at a minimum, ensure that you have a decent number of Volumes

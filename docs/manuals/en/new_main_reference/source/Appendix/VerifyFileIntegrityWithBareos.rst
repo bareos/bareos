@@ -3,7 +3,7 @@
 Verify File Integrity with Bareos
 =================================
 
-:index:`[TAG=Security->Using Bareos to Improve Computer] <pair: Security; Using Bareos to Improve Computer>` :index:`[TAG=Verify->File Integrity] <pair: Verify; File Integrity>`
+:index:`[TAG=Security->Using Bareos to Improve Computer] <single: Security; Using Bareos to Improve Computer>` :index:`[TAG=Verify->File Integrity] <single: Verify; File Integrity>`
 
 Since Bareos maintains a catalog of files, their attributes, and either SHA1 or MD5 signatures, it can be an ideal tool for improving computer security. This is done by making a snapshot of your system files with a Verify Job and then checking the current state of your system against the snapshot, on a regular basis (e.g. nightly).
 
@@ -38,7 +38,7 @@ Then you decide what attributes of each file you want compared by specifying com
 The Details
 -----------
 
-:index:`[TAG=Verify->Details] <pair: Verify; Details>`
+:index:`[TAG=Verify->Details] <single: Verify; Details>`
 
 In the discussion that follows, we will make reference to the Verify Configuration Example that is included below in the A Verify Configuration Example section. You might want to look it over now to get an idea of what it does.
 
@@ -61,7 +61,7 @@ other hand, as long as I don’t load any new packages, none of these files chan
 Running the Verify
 ------------------
 
-:index:`[TAG=Verify->Running] <pair: Verify; Running>`
+:index:`[TAG=Verify->Running] <single: Verify; Running>`
 
 The first thing you will want to do is to run an InitCatalog level Verify Job. This will initialize the catalog to contain the file information that will later be used as a basis for comparisons with the actual file system, thus allowing you to detect any changes (and possible intrusions into your system).
 
@@ -177,7 +177,7 @@ To use a previous job, you can add ``jobid=xxx`` option in run command line. It 
 What To Do When Differences Are Found
 -------------------------------------
 
-:index:`[TAG=Verify->Differences] <pair: Verify; Differences>`
+:index:`[TAG=Verify->Differences] <single: Verify; Differences>`
 
 If you have setup your messages correctly, you should be notified if there are any differences and exactly what they are. For example, below is the email received after doing an update of OpenSSH:
 
@@ -264,7 +264,7 @@ The FileSet that is shown below is what I use on my Red Hat 7.3 system. With a b
 A Verify Configuration Example
 ------------------------------
 
-:index:`[TAG=Verify->Example] <pair: Verify; Example>`
+:index:`[TAG=Verify->Example] <single: Verify; Example>`
 
 
 

@@ -10,7 +10,7 @@ necessary.
 
 Imagine having 100 nearly identical Windows or Linux machine containing the OS and user files. Now for the OS part, a Base job will be backed up once, and rather than making 100 copies of the OS, there will be only one. If one or more of the systems have some files updated, no problem, they will be automatically backuped.
 
-A new Job directive :strong:`Base=JobX,JobY,...` permits to specify the list of files that will be used during Full backup as base.
+A new Job directive :strong:`Base=JobX,JobY,...`\  permits to specify the list of files that will be used during Full backup as base.
 
 ::
 
@@ -27,9 +27,9 @@ A new Job directive :strong:`Base=JobX,JobY,...` permits to specify the list of 
       ...
    }
 
-In this example, the job ``BackupZog4`` will use the most recent version of all files contained in ``BackupZog4`` and ``BackupLinux`` jobs. Base jobs should have run with :strong:`Level=Base` to be used.
+In this example, the job ``BackupZog4`` will use the most recent version of all files contained in ``BackupZog4`` and ``BackupLinux`` jobs. Base jobs should have run with :strong:`Level=Base`\  to be used.
 
-By default, Bareos will compare permissions bits, user and group fields, modification time, size and the checksum of the file to choose between the current backup and the BaseJob file list. You can change this behavior with the ``BaseJob`` FileSet option. This option works like the :strong:`Verify`, that is described in the :ref:`FileSet <FileSetResource>` chapter.
+By default, Bareos will compare permissions bits, user and group fields, modification time, size and the checksum of the file to choose between the current backup and the BaseJob file list. You can change this behavior with the ``BaseJob`` FileSet option. This option works like the :strong:`Verify`\ , that is described in the :ref:`FileSet <FileSetResource>` chapter.
 
 ::
 
@@ -47,8 +47,9 @@ By default, Bareos will compare permissions bits, user and group fields, modific
 
 
 
-.. warning::
-   The current implementation doesn't permit to scan
+   .. warning::
+
+      The current implementation doesn't permit to scan
    volume with :command:`bscan`. The result wouldn't permit to restore files easily.
 
 

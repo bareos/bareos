@@ -22,7 +22,7 @@ well, if so desired. By default, Bareos will restore data to the same Client tha
 The Restore Command
 -------------------
 
-:index:`[TAG=Console->Command->restore] <triple: Console; Command; restore>`
+:index:`[TAG=Console->Command->restore] <single: Console; Command; restore>`
 
 Since Bareos maintains a catalog of your files and on which Volumes (disk or tape), they are stored, it can do most of the bookkeeping work, allowing you simply to specify what kind of restore you want (current, before a particular date), and what files to restore. Bareos will then do the rest.
 
@@ -153,7 +153,7 @@ At this point, Bareos has all the information it needs to find the most recent s
 
 
 
-Depending on the number of JobFiles for each JobId, the ''Building directory tree ...'' can take a bit of time. If you notice ath all the JobFiles are zero, your Files have probably been pruned and you will not be able to select any individual files – it will be restore everything or nothing.
+Depending on the number of JobFiles for each JobId, the "Building directory tree ..." can take a bit of time. If you notice ath all the JobFiles are zero, your Files have probably been pruned and you will not be able to select any individual files – it will be restore everything or nothing.
 
 In our example, Bareos found four Jobs that comprise the most recent backup of the specified Client and FileSet. Two of the Jobs have the same JobId because that Job wrote on two different Volumes. The third Job was an incremental backup to the previous Full backup, and it only saved 254 Files compared to 128,374 for the Full backup. The fourth Job was also an incremental backup that saved 15 files.
 
@@ -250,7 +250,7 @@ If you now enter yes, Bareos will run the restore Job.
 Selecting Files by Filename
 ---------------------------
 
-:index:`[TAG=Restore->by filename] <pair: Restore; by filename>`
+:index:`[TAG=Restore->by filename] <single: Restore; by filename>`
 
 If you have a small number of files to restore, and you know the filenames, you can either put the list of filenames in a file to be read by Bareos, or you can enter the names one at a time. The filenames must include the full path and filename. No wild cards are used.
 
@@ -413,7 +413,7 @@ The full list of possible command line arguments are:
 Using File Relocation
 ---------------------
 
-:index:`[TAG=File Relocation->using] <pair: File Relocation; using>` 
+:index:`[TAG=File Relocation->using] <single: File Relocation; using>` 
 
 .. _filerelocation:
 
@@ -514,7 +514,7 @@ Orignal filename     New filename          RegexWhere                        Com
 Restoring Directory Attributes
 ------------------------------
 
-:index:`[TAG=Attributes->Restoring Directory] <pair: Attributes; Restoring Directory>` :index:`[TAG=Restoring Directory Attributes] <single: Restoring Directory Attributes>`
+:index:`[TAG=Attributes->Restoring Directory] <single: Attributes; Restoring Directory>` :index:`[TAG=Restoring Directory Attributes] <single: Restoring Directory Attributes>`
 
 Depending how you do the restore, you may or may not get the directory entries back to their original state. Here are a few of the problems you can encounter, and for same machine restores, how to avoid them.
 
@@ -533,7 +533,7 @@ Depending how you do the restore, you may or may not get the directory entries b
 Restoring on Windows
 --------------------
 
-:index:`[TAG=Restoring on Windows] <single: Restoring on Windows>` :index:`[TAG=Windows->Restoring on] <pair: Windows; Restoring on>`
+:index:`[TAG=Restoring on Windows] <single: Restoring on Windows>` :index:`[TAG=Windows->Restoring on] <single: Windows; Restoring on>`
 
 If you are restoring on Windows systems, Bareos will restore the files with the original ownerships and permissions as would be expected. This is also true if you are restoring those files to an alternate directory (using the Where option in restore). However, if the alternate directory does not already exist, the Bareos File daemon (Client) will try to create it. In some cases, it may not create the directories, and if it does since the File daemon runs under the SYSTEM account, the directory
 will be created with SYSTEM ownership and permissions. In this case, you may have problems accessing the newly restored files.
@@ -547,7 +547,7 @@ Some users have experienced problems restoring files that participate in the Act
 Restore Errors
 --------------
 
-:index:`[TAG=Errors->Restore] <pair: Errors; Restore>` :index:`[TAG=Restore Errors] <single: Restore Errors>`
+:index:`[TAG=Errors->Restore] <single: Errors; Restore>` :index:`[TAG=Restore Errors] <single: Restore Errors>`
 
 There are a number of reasons why there may be restore errors or warning messages. Some of the more common ones are:
 
@@ -566,7 +566,7 @@ file size error
 Example Restore Job Resource
 ----------------------------
 
-:index:`[TAG=Resource->Example Restore Job] <pair: Resource; Example Restore Job>`
+:index:`[TAG=Resource->Example Restore Job] <single: Resource; Example Restore Job>`
 
 
 
@@ -594,35 +594,35 @@ If Where is not specified, the default location for restoring files will be thei
 File Selection Commands
 -----------------------
 
-:index:`[TAG=Console->File Selection] <pair: Console; File Selection>` :index:`[TAG=File Selection Commands] <single: File Selection Commands>`
+:index:`[TAG=Console->File Selection] <single: Console; File Selection>` :index:`[TAG=File Selection Commands] <single: File Selection Commands>`
 
 After you have selected the Jobs to be restored and Bareos has created the in-memory directory tree, you will enter file selection mode as indicated by the dollar sign ($) prompt. While in this mode, you may use the commands listed above. The basic idea is to move up and down the in memory directory structure with the cd command much as you normally do on the system. Once you are in a directory, you may select the files that you want restored. As a default no files are marked to be restored. If
 you wish to start with all files, simply enter: cd / and mark \*. Otherwise proceed to select the files you wish to restore by marking them with the mark command. The available commands are:
 
 cd
-   :index:`[TAG=Console->File Selection->cd] <triple: Console; File Selection; cd>` The cd command changes the current directory to the argument specified. It operates much like the Unix cd command. Wildcard specifications are not permitted.
+   :index:`[TAG=Console->File Selection->cd] <single: Console; File Selection; cd>` The cd command changes the current directory to the argument specified. It operates much like the Unix cd command. Wildcard specifications are not permitted.
 
    Note, on Windows systems, the various drives (c:, d:, ...) are treated like a directory within the file tree while in the file selection mode. As a consequence, you must do a cd c: or possibly in some cases a cd C: (note upper case) to get down to the first directory.
 
 dir
-   :index:`[TAG=Console->File Selection->dir] <triple: Console; File Selection; dir>` The dir command is similar to the ls command, except that it prints it in long format (all details). This command can be a bit slower than the ls command because it must access the catalog database for the detailed information for each file.
+   :index:`[TAG=Console->File Selection->dir] <single: Console; File Selection; dir>` The dir command is similar to the ls command, except that it prints it in long format (all details). This command can be a bit slower than the ls command because it must access the catalog database for the detailed information for each file.
 
 estimate
-   :index:`[TAG=Console->File Selection->estimate] <triple: Console; File Selection; estimate>` The estimate command prints a summary of the total files in the tree, how many are marked to be restored, and an estimate of the number of bytes to be restored. This can be useful if you are short on disk space on the machine where the files will be restored.
+   :index:`[TAG=Console->File Selection->estimate] <single: Console; File Selection; estimate>` The estimate command prints a summary of the total files in the tree, how many are marked to be restored, and an estimate of the number of bytes to be restored. This can be useful if you are short on disk space on the machine where the files will be restored.
 
 find
-   :index:`[TAG=Console->File Selection->find] <triple: Console; File Selection; find>` The find command accepts one or more arguments and displays all files in the tree that match that argument. The argument may have wildcards. It is somewhat similar to the Unix command find / -name arg.
+   :index:`[TAG=Console->File Selection->find] <single: Console; File Selection; find>` The find command accepts one or more arguments and displays all files in the tree that match that argument. The argument may have wildcards. It is somewhat similar to the Unix command find / -name arg.
 
 ls
-   :index:`[TAG=Console->File Selection->ls] <triple: Console; File Selection; ls>` The ls command produces a listing of all the files contained in the current directory much like the Unix ls command. You may specify an argument containing wildcards, in which case only those files will be listed.
+   :index:`[TAG=Console->File Selection->ls] <single: Console; File Selection; ls>` The ls command produces a listing of all the files contained in the current directory much like the Unix ls command. You may specify an argument containing wildcards, in which case only those files will be listed.
 
    Any file that is marked to be restored will have its name preceded by an asterisk (). Directory names will be terminated with a forward slash (/) to distinguish them from filenames.
 
 lsmark
-   :index:`[TAG=Console->File Selection->lsmark] <triple: Console; File Selection; lsmark>` The lsmark command is the same as the ls except that it will print only those files marked for extraction. The other distinction is that it will recursively descend into any directory selected.
+   :index:`[TAG=Console->File Selection->lsmark] <single: Console; File Selection; lsmark>` The lsmark command is the same as the ls except that it will print only those files marked for extraction. The other distinction is that it will recursively descend into any directory selected.
 
 mark
-   :index:`[TAG=Console->File Selection->mark] <triple: Console; File Selection; mark>` The mark command allows you to mark files to be restored. It takes a single argument which is the filename or directory name in the current directory to be marked for extraction. The argument may be a wildcard specification, in which case all files that match in the current directory are marked to be restored. If the argument matches a directory rather than a file, then the directory and all the files contained in that directory
+   :index:`[TAG=Console->File Selection->mark] <single: Console; File Selection; mark>` The mark command allows you to mark files to be restored. It takes a single argument which is the filename or directory name in the current directory to be marked for extraction. The argument may be a wildcard specification, in which case all files that match in the current directory are marked to be restored. If the argument matches a directory rather than a file, then the directory and all the files contained in that directory
    (recursively) are marked to be restored. Any marked file will have its name preceded with an asterisk () in the output produced by the ls or dir commands. Note, supplying a full path on the mark command does not work as expected to select a file or directory in the current directory. Also, the mark command works on the current and lower directories but does not touch higher level directories.
 
    After executing the mark command, it will print a brief summary:
@@ -648,28 +648,28 @@ mark
    if some files are marked.
 
 unmark
-   :index:`[TAG=Console->File Selection->unmark] <triple: Console; File Selection; unmark>` The unmark is identical to the mark command, except that it unmarks the specified file or files so that they will not be restored. Note: the unmark command works from the current directory, so it does not unmark any files at a higher level. First do a cd / before the unmark \* command if you want to unmark everything.
+   :index:`[TAG=Console->File Selection->unmark] <single: Console; File Selection; unmark>` The unmark is identical to the mark command, except that it unmarks the specified file or files so that they will not be restored. Note: the unmark command works from the current directory, so it does not unmark any files at a higher level. First do a cd / before the unmark \* command if you want to unmark everything.
 
 pwd
-   :index:`[TAG=Console->File Selection->pwd] <triple: Console; File Selection; pwd>` The pwd command prints the current working directory. It accepts no arguments.
+   :index:`[TAG=Console->File Selection->pwd] <single: Console; File Selection; pwd>` The pwd command prints the current working directory. It accepts no arguments.
 
 count
-   :index:`[TAG=Console->File Selection->count] <triple: Console; File Selection; count>` The count command prints the total files in the directory tree and the number of files marked to be restored.
+   :index:`[TAG=Console->File Selection->count] <single: Console; File Selection; count>` The count command prints the total files in the directory tree and the number of files marked to be restored.
 
 done
-   :index:`[TAG=Console->File Selection->done] <triple: Console; File Selection; done>` This command terminates file selection mode.
+   :index:`[TAG=Console->File Selection->done] <single: Console; File Selection; done>` This command terminates file selection mode.
 
 exit
-   :index:`[TAG=Console->File Selection->exit] <triple: Console; File Selection; exit>` This command terminates file selection mode (the same as done).
+   :index:`[TAG=Console->File Selection->exit] <single: Console; File Selection; exit>` This command terminates file selection mode (the same as done).
 
 quit
-   :index:`[TAG=Console->File Selection->quit] <triple: Console; File Selection; quit>` This command terminates the file selection and does not run the restore job.
+   :index:`[TAG=Console->File Selection->quit] <single: Console; File Selection; quit>` This command terminates the file selection and does not run the restore job.
 
 help
-   :index:`[TAG=Console->File Selection->help] <triple: Console; File Selection; help>` This command prints a summary of the commands available.
+   :index:`[TAG=Console->File Selection->help] <single: Console; File Selection; help>` This command prints a summary of the commands available.
 
 ?
-   :index:`[TAG=Console->File Selection->?] <triple: Console; File Selection; ?>` This command is the same as the help command.
+   :index:`[TAG=Console->File Selection->?] <single: Console; File Selection; ?>` This command is the same as the help command.
 
 If your filename contains some weird caracters, you can use ``?``, ``*`` or \\\. For example, if your filename contains a \\, you can use \\\\\.
 

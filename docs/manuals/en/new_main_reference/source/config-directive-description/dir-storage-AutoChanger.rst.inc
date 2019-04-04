@@ -1,6 +1,6 @@
-When :config:option:`dir/storage/Device`\  refers to an Auto Changer (:config:option:`sd/device/Autochanger`\ ), this directive must be set to ``yes``.
+When :config:option:`dir/storage/Device`\  refers to an Auto Changer (:config:option:`sd/device/Autochanger`\ ), this directive must be set to :strong:`yes`.
 
-If you specify ``yes``,
+If you specify :strong:`yes`,
 
 -  Volume management command like :bcommand:`label` or :bcommand:`add` will request a Autochanger Slot number.
 

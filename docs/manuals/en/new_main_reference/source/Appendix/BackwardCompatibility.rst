@@ -1,7 +1,7 @@
 Backward Compatibility
 ======================
 
-:index:`[TAG=Compatibility->Backward] <pair: Compatibility; Backward>` 
+:index:`[TAG=Compatibility->Backward] <single: Compatibility; Backward>` 
 
 .. _backward-compatibility:
 
@@ -10,7 +10,7 @@ Backward Compatibility
 Tape Formats
 ------------
 
-:index:`[TAG=Tape->Format] <pair: Tape; Format>` 
+:index:`[TAG=Tape->Format] <single: Tape; Format>` 
 
 .. _backward-compatibility-tape-format:
 
@@ -26,7 +26,7 @@ Though the tape format is basically fixed, the kinds of data that we can put on 
 Compatibility between Bareos and Bacula
 ---------------------------------------
 
-:index:`[TAG=Compatibility->Bacula] <pair: Compatibility; Bacula>` :index:`[TAG=Bacula] <single: Bacula>` 
+:index:`[TAG=Compatibility->Bacula] <single: Compatibility; Bacula>` :index:`[TAG=Bacula] <single: Bacula>` 
 
 .. _compat-bacula:
 
@@ -35,13 +35,13 @@ Compatibility between Bareos and Bacula
 A Director and a Storage Daemon should (must) always run at the same version. This is true for Bareos as well as for Bacula. It is not possible to mix these components. This is because the protocol between Director and Storage Daemon itself is not versioned (also true for Bareos and Bacula). If you want to be able to switch back from Bareos to Bacula after using a Bareos director and storage daemon you have to enable the compatible mode in the Bareos storage daemon to have it write the data in
 the same format as the Bacula storage daemon.
 
-The |bareosFd| is compatible with all version of the Bacula director (tested with version 5.2.13 and lower) when you enable the compatible mode in the configuration of the |bareosFd|. The compatible option was set by default in Bareos < 15.2.0, and is disabled by default since :sinceVersion:`15.2.0: Compatible = no`.
+The |fd| is compatible with all version of the Bacula director (tested with version 5.2.13 and lower) when you enable the compatible mode in the configuration of the |fd|. The compatible option was set by default in Bareos < 15.2.0, and is disabled by default since :sinceVersion:`15.2.0: Compatible = no`.
 
 To be sure this is enabled you can explicitly set the compatible option:
 
-\resourceDirectiveValue{Fd}{Client}{Compatible}{True}
+:config:option:`fd/client/Compatible = True`\ 
 
-A |bareosDir| can only talk to Bacula file daemons of version 2.0 or higher. Through a change in the Bacula network protocols, it is currently not possible to use a Bacula file daemon > 6.0 with a |bareosDir|.
+A |dir| can only talk to Bacula file daemons of version 2.0 or higher. Through a change in the Bacula network protocols, it is currently not possible to use a Bacula file daemon > 6.0 with a |dir|.
 
 These combinations of Bareos and Bacula are know to work together:
 
@@ -75,12 +75,12 @@ Bacula       Bacula             Bacula 
 Bacula       Bacula             Bareos (compatibility mode)
 ============ ================== =========================== ===========
 
-Other combinations like Bacula Director with |bareosSd| will not work. However this wasn’t even possible with different versions of bacula-dir and bacula-sd.
+Other combinations like Bacula Director with |sd| will not work. However this wasn’t even possible with different versions of bacula-dir and bacula-sd.
 
 Upgrade from Bacula 5.2 to Bareos
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Upgrade from Bacula to Bareos] <single: Upgrade from Bacula to Bareos>` :index:`[TAG=Bareos->Upgrading] <pair: Bareos; Upgrading>` 
+:index:`[TAG=Upgrade from Bacula to Bareos] <single: Upgrade from Bacula to Bareos>` :index:`[TAG=Bareos->Upgrading] <single: Bareos; Upgrading>` 
 
 .. _upgrade-from-bacula-to-bareos:
 
@@ -90,13 +90,15 @@ Upgrade is supported from Bacula version 5.2.x. If you are running any older ver
 
 
 
-.. warning::
-   Updating from Bacula >= 7.0 to Bareos has not been tested.
+   .. warning::
+
+      Updating from Bacula >= 7.0 to Bareos has not been tested.
 
 
 
-.. warning::
-   As Bareos and Bacula packages bring binaries with identical paths and names,
+   .. warning::
+
+      As Bareos and Bacula packages bring binaries with identical paths and names,
    it is on most platforms not possible to install components from both in parallel.
    Your package management tool will warn you about this.
 
@@ -107,7 +109,7 @@ To have bareos running without any permission hassle, it is recommended to renam
 
 The required commands should look something like this:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    usermod  -l bareos bacula
    groupmod -n bareos bacula
@@ -121,7 +123,7 @@ Proceed with the following steps:
 
 -  Backup your catalog database:
 
-   .. code-block:: sh
+   .. code-block:: shell-session
 
       mysqldump bacula > /tmp/bacula_5.2.sql
 
@@ -131,7 +133,7 @@ Proceed with the following steps:
 
 -  Run the update script on the old bacula database:
 
-   .. code-block:: sh
+   .. code-block:: shell-session
 
       export db_name=bacula
       /usr/lib/bareos/update_bareos_tables
@@ -139,25 +141,25 @@ Proceed with the following steps:
 
 -  Backup upgraded DB:
 
-   .. code-block:: sh
+   .. code-block:: shell-session
 
       mysqldump bacula > /tmp/bacula.sql
 
 -  Create bareos database:
 
-   .. code-block:: sh
+   .. code-block:: shell-session
 
       /usr/lib/bareos/create_bareos_database
 
 -  Insert backuped db into new database:
 
-   .. code-block:: sh
+   .. code-block:: shell-session
 
       cat /tmp/bacula.sql | mysql bareos
 
 -  Grant permissions:
 
-   .. code-block:: sh
+   .. code-block:: shell-session
 
       /usr/lib/bareos/grant_mysql_privileges
 
@@ -176,7 +178,7 @@ Renaming a postgresql database:
 
 -  psql template1
 
-   .. code-block:: sh
+   .. code-block:: shell-session
 
       ALTER DATABASE bacula RENAME TO bareos;
       ALTER USER bacula RENAME TO bareos;

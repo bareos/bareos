@@ -3,9 +3,9 @@
 Storage Daemon Configuration
 ============================
 
-:index:`[TAG=Configuration] <single: Configuration>` :index:`[TAG=Storage Daemon->Configuration] <pair: Storage Daemon; Configuration>` :index:`[TAG=Configuration->Storage Daemon] <pair: Configuration; Storage Daemon>`
+:index:`[TAG=Configuration] <single: Configuration>` :index:`[TAG=Storage Daemon->Configuration] <single: Storage Daemon; Configuration>` :index:`[TAG=Configuration->Storage Daemon] <single: Configuration; Storage Daemon>`
 
-The |bareosSd| configuration file has relatively few resource definitions. However, due to the great variation in backup media and system capabilities, the storage daemon must be highly configurable. As a consequence, there are quite a large number of directives in the Device Resource definition that allow you to define all the characteristics of your Storage device (normally a tape drive). Fortunately, with modern storage devices, the defaults are sufficient, and very few directives
+The |sd| configuration file has relatively few resource definitions. However, due to the great variation in backup media and system capabilities, the storage daemon must be highly configurable. As a consequence, there are quite a large number of directives in the Device Resource definition that allow you to define all the characteristics of your Storage device (normally a tape drive). Fortunately, with modern storage devices, the defaults are sufficient, and very few directives
 are actually needed.
 
 For a general discussion of configuration file and resources including the data types recognized by Bareos, please see the :ref:`Configuration <ConfigureChapter>` chapter of this manual. The following Storage Resource definitions must be defined:
@@ -29,7 +29,7 @@ Following resources are optional:
 Storage Resource
 ----------------
 
-:index:`[TAG=Resource->Storage] <pair: Resource; Storage>` :index:`[TAG=Storage->Resource] <pair: Storage; Resource>`
+:index:`[TAG=Resource->Storage] <single: Resource; Storage>` :index:`[TAG=Storage->Resource] <single: Storage; Resource>`
 
 In general, the properties specified under the Storage resource define global properties of the Storage daemon. Each Storage daemon configuration file must have one and only one Storage resource definition.
 
@@ -148,7 +148,7 @@ The following is a typical Storage daemon storage resource definition.
 Director Resource
 -----------------
 
-:index:`[TAG=Resource->Director] <pair: Resource; Director>` :index:`[TAG=Director->Resource] <pair: Director; Resource>`
+:index:`[TAG=Resource->Director] <single: Resource; Director>` :index:`[TAG=Director->Resource] <single: Director; Resource>`
 
 The Director resource specifies the Name of the Director which is permitted to use the services of the Storage daemon. There may be multiple Director resources. The Director Name and Password must match the corresponding values in the Director’s configuration file.
 
@@ -207,7 +207,7 @@ NDMP Resource
 
 .. _StorageResourceNDMP:
 
- :index:`[TAG=Resource->NDMP] <pair: Resource; NDMP>` :index:`[TAG=NDMP->Resource] <pair: NDMP; Resource>`
+ :index:`[TAG=Resource->NDMP] <single: Resource; NDMP>` :index:`[TAG=NDMP->Resource] <single: NDMP; Resource>`
 
 The NDMP Resource specifies the authentication details of each NDMP client. There may be multiple NDMP resources for a single Storage daemon. In general, the properties specified within the NDMP resource are specific to one client.
 
@@ -230,7 +230,7 @@ The NDMP Resource specifies the authentication details of each NDMP client. Ther
 Device Resource
 ---------------
 
-:index:`[TAG=Resource->Device] <pair: Resource; Device>` :index:`[TAG=Device->Resource] <pair: Device; Resource>`
+:index:`[TAG=Resource->Device] <single: Resource; Device>` :index:`[TAG=Device->Resource] <single: Device; Resource>`
 
 The Device Resource specifies the details of each device (normally a tape drive) that can be used by the Storage daemon. There may be multiple Device resources for a single Storage daemon. In general, the properties specified within the Device resource are specific to the Device.
 
@@ -399,8 +399,8 @@ Devices that require a mount (USB)
 
 \begin{description}
    \item :config:option:`sd/device/RequiresMount`\ 
-   You must set this directive to {\bf yes} for removable devices such as
-   USB unless they are automounted, and to {\bf no} for all other devices
+   You must set this directive to :strong:`yes` for removable devices such as
+   USB unless they are automounted, and to :strong:`no` for all other devices
    (tapes/files).  This directive indicates if the device requires to be
    mounted to be read, and if it must be written in a special way.  If it
    set, :config:option:`sd/device/MountPoint`\ , 
@@ -459,7 +459,7 @@ Devices that require a mount (USB)
 Autochanger Resource
 --------------------
 
-:index:`[TAG=Autochanger Resource] <single: Autochanger Resource>` :index:`[TAG=Resource->Autochanger] <pair: Resource; Autochanger>` 
+:index:`[TAG=Autochanger Resource] <single: Autochanger Resource>` :index:`[TAG=Resource->Autochanger] <single: Resource; Autochanger>` 
 
 .. _AutochangerRes:
 
@@ -524,7 +524,7 @@ For details refer to the :ref:`AutochangersChapter` chapter.
 Messages Resource
 -----------------
 
-:index:`[TAG=Resource->Messages] <pair: Resource; Messages>` :index:`[TAG=Messages->Resource] <pair: Messages; Resource>`
+:index:`[TAG=Resource->Messages] <single: Resource; Messages>` :index:`[TAG=Messages->Resource] <single: Messages; Resource>`
 
 For a description of the Messages Resource, please see the :ref:`MessagesChapter` chapter of this manual.  
 

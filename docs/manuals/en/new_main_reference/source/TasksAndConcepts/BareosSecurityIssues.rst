@@ -32,7 +32,7 @@ Bareos Security Issues
 Configuring and Testing TCP Wrappers
 ------------------------------------
 
-:index:`[TAG=TCP Wrappers] <single: TCP Wrappers>` :index:`[TAG=Wrappers->TCP] <pair: Wrappers; TCP>` :index:`[TAG=libwrappers] <single: libwrappers>`
+:index:`[TAG=TCP Wrappers] <single: TCP Wrappers>` :index:`[TAG=Wrappers->TCP] <single: Wrappers; TCP>` :index:`[TAG=libwrappers] <single: libwrappers>`
 
 The TCP wrapper functionality is available on different platforms. Be default, it is activated on Bareos for Linux. With this enabled, you may control who may access your daemons. This control is done by modifying the file: /etc/hosts.allow. The program name that Bareos uses when applying these access restrictions is the name you specify in the daemon configuration file (see below for examples). You must not use the twist option in your /etc/hosts.allow or it will terminate the Bareos daemon
 when a connection is refused.
@@ -55,7 +55,7 @@ Bareos supports the secure erase of files that usually are simply deleted. Bareo
 
 This makes it easy to choose a tool that meets the secure erase requirements.
 
-To configure this functionality, a new configuration directive with the name :strong:`Secure Erase Command` has been introduced.
+To configure this functionality, a new configuration directive with the name :strong:`Secure Erase Command`\  has been introduced.
 
 This directive is optional and can be configured in:
 
@@ -101,10 +101,10 @@ Example:
 Example for Secure Erase Command Settings:
 
 Linux:
-   :strong:`Secure Erase Command = "/usr/bin/wipe -V"`
+   :strong:`Secure Erase Command = "/usr/bin/wipe -V"`\ 
 
 Windows:
-   :strong:`Secure Erase Command = "C:/cygwin64/bin/shred.exe"`
+   :strong:`Secure Erase Command = "C:/cygwin64/bin/shred.exe"`\ 
 
 Our tests with the :command:`sdelete` command was not successful, as :command:`sdelete` seems to stay active in the background. 
 

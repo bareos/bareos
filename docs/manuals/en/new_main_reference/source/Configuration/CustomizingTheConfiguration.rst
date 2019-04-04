@@ -27,7 +27,7 @@ The following configuration files must be present:
 Configuration Path Layout
 -------------------------
 
-:index:`[TAG=Configuration->Directories] <pair: Configuration; Directories>` :index:`[TAG=Configuration->Subdirectories] <pair: Configuration; Subdirectories>`
+:index:`[TAG=Configuration->Directories] <single: Configuration; Directories>` :index:`[TAG=Configuration->Subdirectories] <single: Configuration; Subdirectories>`
 
 When a Bareos component starts, it reads its configuration. In Bareos < 16.2.2 only configuration files (which optionally can include other files) are supported. Since Bareos :sinceVersion:`16.2.2: Subdirectory Configuration Scheme` also configuration subdirectories are supported.
 
@@ -182,7 +182,7 @@ In Bareos < 16.2.2, Bareos uses one configuration file per component.
 
 Most larger Bareos environments split their configuration into separate files, making it easier to manage the configuration.
 
-Also some extra packages (bareos-webui, plugins, ...) require a configuration, which must be included into the |bareosDir| or |bareosSd| configuration. The subdirectory approach makes it easier to add or modify the configuration resources of different Bareos packages.
+Also some extra packages (bareos-webui, plugins, ...) require a configuration, which must be included into the |dir| or |sd| configuration. The subdirectory approach makes it easier to add or modify the configuration resources of different Bareos packages.
 
 The Bareos :ref:`configure <section-bcommandConfigure>` command requires a configuration directory structure, as provided by the subdirectory approach.
 
@@ -215,7 +215,7 @@ Resource file conventions
 
       -  :file:`CONFIGDIR/COMPONENT.d/RESOURCE/NAME.conf.example`
 
-      -  For example, the |bareosWebui| entails one config resource and one config resource example for the |bareosDir|:
+      -  For example, the |webui| entails one config resource and one config resource example for the |dir|:
 
          -  :file:`CONFIGDIR/bareos-director.d/profile/webui-admin.conf`
 
@@ -226,8 +226,9 @@ Resource file conventions
    -  Normally you should not remove resources that are already in use (jobs, clients, ...). Instead you should disable them by adding the directive ``Enable = no``. Otherwise you take the risk that orphaned entries are kept in the Bareos catalog. However, if a resource has not been used or all references have been cleared from the database, they can also be removed from the configuration.
       
 
-                       .. warning::
-                          If you want to remove a configuration resource that is part of a Bareos package,
+.. warning::
+
+   If you want to remove a configuration resource that is part of a Bareos package,
                           replace the resource configuration file by an empty file.
                           This prevents the resource from reappearing in the course of a package update.
 
@@ -254,8 +255,9 @@ Updates from Bareos < 16.2.4
 
       
 
-                  .. warning::
-                     Problems can occur if you have implemented an own wildcard mechanism to load your configuration
+         .. warning::
+
+            Problems can occur if you have implemented an own wildcard mechanism to load your configuration
                      from the same subdirectories as used by the new packages (:file:`CONFIGDIR/COMPONENT.d/*/*.conf`).
                      In this case, newly installed configuration resource files can alter
                      your current configuration by adding resources.
@@ -266,9 +268,9 @@ Updates from Bareos < 16.2.4
 
 -  The correct way of migrating to the new configuration scheme would be to split the configuration file into resources, store them in the resource directories and then remove the original configuration file.
 
-   -  For migrating the |bareosDir| configuration, the script `bareos-migrate-config.sh <https://github.com/bareos/bareos-contrib/blob/master/misc/bareos-migrate-config/bareos-migrate-config.sh>`_ exists. Being called, it connects via :command:`bconsole` to a running |bareosDir| and creates subdirectories with the resource configuration files.
+   -  For migrating the |dir| configuration, the script `bareos-migrate-config.sh <https://github.com/bareos/bareos-contrib/blob/master/misc/bareos-migrate-config/bareos-migrate-config.sh>`_ exists. Being called, it connects via :command:`bconsole` to a running |dir| and creates subdirectories with the resource configuration files.
 
-      .. code-block:: sh
+      .. code-block:: shell-session
          :caption: bareos-migrate-config.sh
 
          # prepare temporary directory
@@ -292,11 +294,11 @@ Updates from Bareos < 16.2.4
          # install newly generated configuration
          cp -a /tmp/bareos-dir.d /etc/bareos/
 
-      Restart the |bareosDir| and verify your configuration. Also make sure, that all resource configuration files coming from Bareos packages exists, in doubt as empty files, see `remove configuration resource files <#section-deleteConfigurationResourceFiles>`__.
+      Restart the |dir| and verify your configuration. Also make sure, that all resource configuration files coming from Bareos packages exists, in doubt as empty files, see `remove configuration resource files <#section-deleteConfigurationResourceFiles>`__.
 
    -  Another way, without splitting the configuration into resource files is:
 
-      -  .. code-block:: sh
+      -  .. code-block:: shell-session
             :caption: move configuration to subdirectory
 
             mkdir CONFIGDIR/COMPONENT.d/migrate && mv CONFIGDIR/COMPONENT.conf CONFIGDIR/COMPONENT.d/migrate
@@ -321,7 +323,7 @@ Character Sets
 
 :index:`[TAG=Character Sets] <single: Character Sets>` Bareos is designed to handle most character sets of the world, US ASCII, German, French, Chinese, ... However, it does this by encoding everything in UTF-8, and it expects all configuration files (including those read on Win32 machines) to be in UTF-8 format. UTF-8 is typically the default on Linux machines, but not on all Unix machines, nor on Windows, so you must take some care to ensure that your locale is set properly before starting Bareos.
 
-:index:`[TAG=Windows->Configuration Files->UTF-8] <triple: Windows; Configuration Files; UTF-8>` To ensure that Bareos configuration files can be correctly read including foreign characters, the LANG environment variable must end in .UTF-8. A full example is en_US.UTF-8. The exact syntax may vary a bit from OS to OS, so that the way you have to define it will differ from the example. On most newer Win32 machines you can use :command:`notepad` to edit the conf files, then choose output encoding UTF-8.
+:index:`[TAG=Windows->Configuration Files->UTF-8] <single: Windows; Configuration Files; UTF-8>` To ensure that Bareos configuration files can be correctly read including foreign characters, the LANG environment variable must end in .UTF-8. A full example is en_US.UTF-8. The exact syntax may vary a bit from OS to OS, so that the way you have to define it will differ from the example. On most newer Win32 machines you can use :command:`notepad` to edit the conf files, then choose output encoding UTF-8.
 
 Bareos assumes that all filenames are in UTF-8 format on Linux and Unix machines. On Win32 they are in Unicode (UTF-16) and will hence be automatically converted to UTF-8 format.
 
@@ -330,7 +332,7 @@ Bareos assumes that all filenames are in UTF-8 format on Linux and Unix machines
 Comments
 ~~~~~~~~
 
-:index:`[TAG=Configuration->Comments] <pair: Configuration; Comments>`
+:index:`[TAG=Configuration->Comments] <single: Configuration; Comments>`
 
 When reading a configuration, blank lines are ignored and everything after a hash sign (#) until the end of the line is taken to be a comment.
 
@@ -344,9 +346,9 @@ A semicolon (;) is a logical end of line and anything after the semicolon is con
 Including other Configuration Files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Including other Configuration Files] <single: Including other Configuration Files>` :index:`[TAG=Files->Including other Configuration] <pair: Files; Including other Configuration>` :index:`[TAG=Configuration->Including Files] <pair: Configuration; Including Files>`
+:index:`[TAG=Including other Configuration Files] <single: Including other Configuration Files>` :index:`[TAG=Files->Including other Configuration] <single: Files; Including other Configuration>` :index:`[TAG=Configuration->Including Files] <single: Configuration; Including Files>`
 
-If you wish to break your configuration file into smaller pieces, you can do so by including other files using the syntax :strong:`@filename` where :file:`filename` is the full path and filename of another file. The :strong:`@filename` specification can be given anywhere a primitive token would appear.
+If you wish to break your configuration file into smaller pieces, you can do so by including other files using the syntax :strong:`@filename`\  where :file:`filename` is the full path and filename of another file. The :strong:`@filename`\  specification can be given anywhere a primitive token would appear.
 
 .. code-block:: bareosconfig
    :caption: include a configuration file
@@ -360,7 +362,7 @@ Since Bareos :sinceVersion:`16.2.1: Including configuration files by wildcard` w
 
    @/etc/bareos/extra/*.conf
 
-By using :strong:`@|command` it is also possible to include the output of a script as a configuration:
+By using :strong:`@|command`\  it is also possible to include the output of a script as a configuration:
 
 .. code-block:: bareosconfig
    :caption: use the output of a script as configuration
@@ -381,11 +383,11 @@ The scripts are called at the start of the daemon. You should use this with care
 Resource
 --------
 
-:index:`[TAG=Configuration->Resource] <pair: Configuration; Resource>`
+:index:`[TAG=Configuration->Resource] <single: Configuration; Resource>`
 
 A resource is defined as the resource type (see :ref:`ResTypes`), followed by an open brace (:file:`{`), a number of :ref:`section-ConfigurationResourceDirective`s, and ended by a closing brace (:file:`}`)
 
-Each resource definition MUST contain a :strong:`Name` directive. It can contain a :strong:`Description` directive. The :strong:`Name` directive is used to uniquely identify the resource. The :strong:`Description` directive can be used during the display of the Resource to provide easier human recognition. For example:
+Each resource definition MUST contain a :strong:`Name`\  directive. It can contain a :strong:`Description`\  directive. The :strong:`Name`\  directive is used to uniquely identify the resource. The :strong:`Description`\  directive can be used during the display of the Resource to provide easier human recognition. For example:
 
 .. code-block:: bareosconfig
    :caption: Resource example
@@ -396,9 +398,9 @@ Each resource definition MUST contain a :strong:`Name` directive. It can contain
      Query File = "/usr/lib/bareos/scripts/query.sql"
    }
 
-defines the Director resource with the name ``bareos-dir`` and a query file :file:`/usr/lib/bareos/scripts/query.sql`.
+defines the Director resource with the name :strong:`bareos-dir` and a query file :file:`/usr/lib/bareos/scripts/query.sql`.
 
-:index:`[TAG=Configuration->Naming Convention] <pair: Configuration; Naming Convention>`
+:index:`[TAG=Configuration->Naming Convention] <single: Configuration; Naming Convention>`
 
 When naming resources, for some resource types naming conventions should be applied:
 
@@ -457,8 +459,9 @@ Within a quoted string, any character following a backslash (\) is taken as itse
 
 
 
-.. warning::
-   If the configure directive is used to define a number, the number is never to be put between surrounding quotes. This is even true if the number is specified together with its unit, like ``365 days``.
+   .. warning::
+
+      If the configure directive is used to define a number, the number is never to be put between surrounding quotes. This is even true if the number is specified together with its unit, like :strong:`365 days`.
    
 
 Numbers
@@ -469,7 +472,7 @@ Numbers are not to be quoted, see :ref:`section-Quotes`. Also do not prepend num
 Data Types
 ^^^^^^^^^^
 
-:index:`[TAG=Configuration->Data Types] <pair: Configuration; Data Types>` :index:`[TAG=Data Type] <single: Data Type>` 
+:index:`[TAG=Configuration->Data Types] <single: Configuration; Data Types>` :index:`[TAG=Data Type] <single: Data Type>` 
 
 .. _DataTypes:
 
@@ -478,11 +481,11 @@ Data Types
 When parsing the resource directives, Bareos classifies the data according to the types listed below.
 
 acl
-   :index:`[TAG=Data Type->acl] <pair: Data Type; acl>` 
+   :index:`[TAG=Data Type->acl] <single: Data Type; acl>` 
 
 .. _DataTypeAcl:
 
- This directive defines what is permitted to be accessed. It does this by using a list of regular expressions, separated by commas (:strong:`,`) or using multiple directives. If :strong:`!` is prepended, the expression is negated. The special keyword ``*all*`` allows unrestricted access.
+ This directive defines what is permitted to be accessed. It does this by using a list of regular expressions, separated by commas (:strong:`,`) or using multiple directives. If :strong:`!` is prepended, the expression is negated. The special keyword :strong:`*all*` allows unrestricted access.
 
    Depending on the type of the ACL, the regular expressions can be either resource names, paths or console commands.
 
@@ -537,8 +540,9 @@ acl
 
    
 
-   .. warning::
-      
+      .. warning::
+
+         
       ACL checking stops at the first match. So the following definition allows all commands, which might not be what you expected:
       
 
@@ -549,7 +553,7 @@ acl
       Command ACL = *all*, !sqlquery
 
 auth-type
-   :index:`[TAG=Data Type->auth-type] <pair: Data Type; auth-type>` 
+   :index:`[TAG=Data Type->auth-type] <single: Data Type; auth-type>` 
 
 .. _DataTypeAuthType:
 
@@ -567,7 +571,7 @@ auth-type
       - Use MD5 hashing
 
 integer
-   :index:`[TAG=Data Type->integer] <pair: Data Type; integer>` 
+   :index:`[TAG=Data Type->integer] <single: Data Type; integer>` 
 
 .. _DataTypeInteger:
 
@@ -576,7 +580,7 @@ integer
    Don’t use quotes around the number, see :ref:`section-Quotes`.
 
 long integer
-   :index:`[TAG=Data Type->long integer] <pair: Data Type; long integer>` 
+   :index:`[TAG=Data Type->long integer] <single: Data Type; long integer>` 
 
 .. _DataTypeLongInteger:
 
@@ -585,7 +589,7 @@ long integer
    Don’t use quotes around the number, see :ref:`section-Quotes`.
 
 job protocol
-   :index:`[TAG=Data Type->job protocol] <pair: Data Type; job protocol>` 
+   :index:`[TAG=Data Type->job protocol] <single: Data Type; job protocol>` 
 
 .. _DataTypeJobProtocol:
 
@@ -597,7 +601,7 @@ job protocol
       Native Bareos job protocol.
 
    NDMP
-      Deprecated. Alias for |ndmpBareos|.
+      Deprecated. Alias for |ndmpbareos|.
 
    NDMP_BAREOS
       Since Bareos :sinceVersion:`17.2.3: NDMP BAREOS`. See :ref:`section-NdmpBareos`.
@@ -606,7 +610,7 @@ job protocol
       Since Bareos :sinceVersion:`17.2.3: NDMP NATIVE`. See :ref:`section-NdmpNative`.
 
 name
-   :index:`[TAG=Data Type->name] <pair: Data Type; name>` 
+   :index:`[TAG=Data Type->name] <single: Data Type; name>` 
 
 .. _DataTypeName:
 
@@ -615,21 +619,21 @@ name
    Please note that Bareos resource names as well as certain other names (e.g. Volume names) must contain only letters (including ISO accented letters), numbers, and a few special characters (space, underscore, ...). All other characters and punctuation are invalid.
 
 password
-   :index:`[TAG=Data Type->password] <pair: Data Type; password>` 
+   :index:`[TAG=Data Type->password] <single: Data Type; password>` 
 
 .. _DataTypePassword:
 
  This is a Bareos password and it is stored internally in MD5 hashed format.
 
 path
-   :index:`[TAG=Data Type->path] <pair: Data Type; path>` 
+   :index:`[TAG=Data Type->path] <single: Data Type; path>` 
 
 .. _DataTypeDirectory:
 
  A path is either a quoted or non-quoted string. A path will be passed to your standard shell for expansion when it is scanned. Thus constructs such as $HOME are interpreted to be their correct values. The path can either reference to a file or a directory.
 
 positive integer
-   :index:`[TAG=Data Type->positive integer] <pair: Data Type; positive integer>` 
+   :index:`[TAG=Data Type->positive integer] <single: Data Type; positive integer>` 
 
 .. _DataTypePositiveInteger:
 
@@ -638,7 +642,7 @@ positive integer
    Don’t use quotes around the number, see :ref:`section-Quotes`.
 
 speed
-   :index:`[TAG=Data Type->speed] <pair: Data Type; speed>` 
+   :index:`[TAG=Data Type->speed] <single: Data Type; speed>` 
 
 .. _DataTypeSpeed:
 
@@ -647,35 +651,35 @@ speed
    Don’t use quotes around the parameter, see :ref:`section-Quotes`.
 
 string
-   :index:`[TAG=Data Type->string] <pair: Data Type; string>` 
+   :index:`[TAG=Data Type->string] <single: Data Type; string>` 
 
 .. _DataTypeString:
 
  A quoted string containing virtually any character including spaces, or a non-quoted string. A string may be of any length. Strings are typically values that correspond to filenames, directories, or system command names. A backslash (\) turns the next character into itself, so to include a double quote in a string, you precede the double quote with a backslash. Likewise to include a backslash.
 
 string-list
-   :index:`[TAG=Data Type->string list] <pair: Data Type; string list>` 
+   :index:`[TAG=Data Type->string list] <single: Data Type; string list>` 
 
 .. _DataTypeStringList:
 
  Multiple strings, specified in multiple directives, or in a single directive, separated by commas (**,**).
 
 strname
-   :index:`[TAG=Data Type->strname] <pair: Data Type; strname>` 
+   :index:`[TAG=Data Type->strname] <single: Data Type; strname>` 
 
 .. _DataTypeStrname:
 
- is similar to a \dtName, except that the name may be quoted and can thus contain additional characters including spaces.
+ is similar to a :strong:`Name`, except that the name may be quoted and can thus contain additional characters including spaces.
 
 net-address
-   :index:`[TAG=Data Type->net-address] <pair: Data Type; net-address>` 
+   :index:`[TAG=Data Type->net-address] <single: Data Type; net-address>` 
 
 .. _DataTypeNetAddress:
 
- is either a domain name or an IP address specified as a dotted quadruple in string or quoted string format. This directive only permits a single address to be specified. The \dtNetPort must be specificly separated. If multiple net-addresses are needed, please assess if it is also possible to specify \dtNetAddresses (plural).
+ is either a domain name or an IP address specified as a dotted quadruple in string or quoted string format. This directive only permits a single address to be specified. The :strong:`NetPort` must be specificly separated. If multiple net-addresses are needed, please assess if it is also possible to specify :strong:`NetAddresses` (plural).
 
 net-addresses
-   :index:`[TAG=Data Type->net-addresses] <pair: Data Type; net-addresses>` 
+   :index:`[TAG=Data Type->net-addresses] <single: Data Type; net-addresses>` 
 
 .. _DataTypeNetAddresses:
 
@@ -707,7 +711,7 @@ net-addresses
    resolutions will be permitted, and likewise with ip6.
 
 net-port
-   :index:`[TAG=Data Type->net-port] <pair: Data Type; net-port>` 
+   :index:`[TAG=Data Type->net-port] <single: Data Type; net-port>` 
 
 .. _DataTypeNetPort:
 
@@ -716,14 +720,14 @@ net-port
    Don’t use quotes around the parameter, see :ref:`section-Quotes`.
 
 resource
-   :index:`[TAG=Data Type->resource] <pair: Data Type; resource>` 
+   :index:`[TAG=Data Type->resource] <single: Data Type; resource>` 
 
 .. _DataTypeRes:
 
  A resource defines a relation to the name of another resource.
 
 size
-   :index:`[TAG=Data Type->size] <pair: Data Type; size>` 
+   :index:`[TAG=Data Type->size] <single: Data Type; size>` 
 
 .. _DataTypeSize:
 
@@ -754,7 +758,7 @@ size
    Don’t use quotes around the parameter, see :ref:`section-Quotes`.
 
 time
-   :index:`[TAG=Data Type->time] <pair: Data Type; time>` 
+   :index:`[TAG=Data Type->time] <single: Data Type; time>` 
 
 .. _DataTypeTime:
 
@@ -807,7 +811,7 @@ time
    Don’t use quotes around the parameter, see :ref:`section-Quotes`.
 
 audit-command-list
-   :index:`[TAG=Data Type->audit command list] <pair: Data Type; audit command list>` 
+   :index:`[TAG=Data Type->audit command list] <single: Data Type; audit command list>` 
 
 .. _DataTypeAuditCommandList:
 
@@ -820,12 +824,12 @@ audit-command-list
 
    Based on the type \dtStringList.
 
-yes\|no`
-   :index:`[TAG=Data Type->\yesno] <pair: Data Type; \yesno>` :index:`[TAG=Data Type->boolean] <pair: Data Type; boolean>` 
+yes\\|no`
+   :index:`[TAG=Data Type->\yesno] <single: Data Type; \yesno>` :index:`[TAG=Data Type->boolean] <single: Data Type; boolean>` 
 
 .. _DataTypeYesNo:
 
- Either a ``yes`` or a ``no`` (or ``true`` or ``false``).
+ Either a :strong:`yes` or a :strong:`no` (or :strong:`true` or :strong:`false`).
 
 .. _VarsChapter:
 
@@ -908,30 +912,30 @@ At the configuration of autochanger commands the following variables can be used
 
    \begin{tabular}{p{2cm}p{7cm}}
    :strong:`Variable` & :strong:`Description` \\
-   ``\%a`` & Archive Device Name\\
-   ``\%c`` & Changer Device Name\\
-   ``\%d`` & Changer Drive Index\\
-   ``\%f`` & Client's Name\\
-   ``\%j`` & Job Name\\
-   ``\%o`` & Command\\
-   ``\%s`` & Slot Base 0\\
-   ``\%S`` & Slot Base 1\\
-   ``\%v`` & Volume Name
+   :strong:`\%a` & Archive Device Name\\
+   :strong:`\%c` & Changer Device Name\\
+   :strong:`\%d` & Changer Drive Index\\
+   :strong:`\%f` & Client's Name\\
+   :strong:`\%j` & Job Name\\
+   :strong:`\%o` & Command\\
+   :strong:`\%s` & Slot Base 0\\
+   :strong:`\%S` & Slot Base 1\\
+   :strong:`\%v` & Volume Name
    \end{tabular}
 
 # Tabular converted from LaTeX to RST (or empty, in case of problems):
 
 ============================ ===================
 **Variable**                 **Description**
-``\%a`` Archive Device Name
-``\%c`` Changer Device Name
-``\%d`` Changer Drive Index
-``\%f`` Client’s Name
-``\%j`` Job Name
-``\%o`` Command
-``\%s`` Slot Base 0
-``\%S`` Slot Base 1
-``\%v`` Volume Name
+:strong:`\%a` Archive Device Name
+:strong:`\%c` Changer Device Name
+:strong:`\%d` Changer Drive Index
+:strong:`\%f` Client’s Name
+:strong:`\%j` Job Name
+:strong:`\%o` Command
+:strong:`\%s` Slot Base 0
+:strong:`\%S` Slot Base 1
+:strong:`\%v` Volume Name
 ============================ ===================
 
 Variable Expansion in Mount Commands
@@ -945,22 +949,22 @@ At the configuration of mount commands the following variables can be used:
 
    \begin{tabular}{p{2cm}p{7cm}}
    :strong:`Variable` & :strong:`Description` \\
-   ``\%a`` & Archive Device Name\\
-   ``\%e`` & Erase\\
-   ``\%n`` & Part Number\\
-   ``\%m`` & Mount Point\\
-   ``\%v`` & Last Part Name
+   :strong:`\%a` & Archive Device Name\\
+   :strong:`\%e` & Erase\\
+   :strong:`\%n` & Part Number\\
+   :strong:`\%m` & Mount Point\\
+   :strong:`\%v` & Last Part Name
    \end{tabular}
 
 # Tabular converted from LaTeX to RST (or empty, in case of problems):
 
 ============================ ===================
 **Variable**                 **Description**
-``\%a`` Archive Device Name
-``\%e`` Erase
-``\%n`` Part Number
-``\%m`` Mount Point
-``\%v`` Last Part Name
+:strong:`\%a` Archive Device Name
+:strong:`\%e` Erase
+:strong:`\%n` Part Number
+:strong:`\%m` Mount Point
+:strong:`\%v` Last Part Name
 ============================ ===================
 
 Variable Expansion on RunScripts
@@ -979,48 +983,48 @@ At the configuration of mail and operator commands the following variables can b
 
    \begin{tabular}{p{2cm}p{7cm}}
    :strong:`Variable` & :strong:`Description` \\
-   ``\%c`` & Client's Name\\
-   ``\%d`` & Director's Name\\
-   ``\%e`` & Job Exit Code\\
-   ``\%i`` & JobId\\
-   ``\%j`` & Unique Job Id\\
-   ``\%l`` & Job Level\\
-   ``\%n`` & Unadorned Job Name\\
-   ``\%s`` & Since Time\\
-   ``\%t`` & Job Type (Backup, ...)\\
-   ``\%r`` & Recipients\\
-   ``\%v`` & Read Volume Name\\
-   ``\%V`` & Write Volume Name\\
-   ``\%b`` & Job Bytes\\
-   ``\%B`` & Job Bytes in human readable format \\
-   ``\%F`` & Job Files
+   :strong:`\%c` & Client's Name\\
+   :strong:`\%d` & Director's Name\\
+   :strong:`\%e` & Job Exit Code\\
+   :strong:`\%i` & JobId\\
+   :strong:`\%j` & Unique Job Id\\
+   :strong:`\%l` & Job Level\\
+   :strong:`\%n` & Unadorned Job Name\\
+   :strong:`\%s` & Since Time\\
+   :strong:`\%t` & Job Type (Backup, ...)\\
+   :strong:`\%r` & Recipients\\
+   :strong:`\%v` & Read Volume Name\\
+   :strong:`\%V` & Write Volume Name\\
+   :strong:`\%b` & Job Bytes\\
+   :strong:`\%B` & Job Bytes in human readable format \\
+   :strong:`\%F` & Job Files
    \end{tabular}
 
 # Tabular converted from LaTeX to RST (or empty, in case of problems):
 
 ============================ ==================================
 **Variable**                 **Description**
-``\%c`` Client’s Name
-``\%d`` Director’s Name
-``\%e`` Job Exit Code
-``\%i`` JobId
-``\%j`` Unique Job Id
-``\%l`` Job Level
-``\%n`` Unadorned Job Name
-``\%s`` Since Time
-``\%t`` Job Type (Backup, ...)
-``\%r`` Recipients
-``\%v`` Read Volume Name
-``\%V`` Write Volume Name
-``\%b`` Job Bytes
-``\%B`` Job Bytes in human readable format
-``\%F`` Job Files
+:strong:`\%c` Client’s Name
+:strong:`\%d` Director’s Name
+:strong:`\%e` Job Exit Code
+:strong:`\%i` JobId
+:strong:`\%j` Unique Job Id
+:strong:`\%l` Job Level
+:strong:`\%n` Unadorned Job Name
+:strong:`\%s` Since Time
+:strong:`\%t` Job Type (Backup, ...)
+:strong:`\%r` Recipients
+:strong:`\%v` Read Volume Name
+:strong:`\%V` Write Volume Name
+:strong:`\%b` Job Bytes
+:strong:`\%B` Job Bytes in human readable format
+:strong:`\%F` Job Files
 ============================ ==================================
 
 Resource Types
 ~~~~~~~~~~~~~~
 
-:index:`[TAG=Types->Resource] <pair: Types; Resource>` :index:`[TAG=Resource Types] <single: Resource Types>` 
+:index:`[TAG=Types->Resource] <single: Types; Resource>` :index:`[TAG=Resource Types] <single: Resource Types>` 
 
 .. _ResTypes:
 
@@ -1028,7 +1032,7 @@ Resource Types
 
 The following table lists all current Bareos resource types. It shows what resources must be defined for each service (daemon). The default configuration files will already contain at least one example of each permitted resource.
 
-\addcontentsline{lot}{table}{Resource Types}
+
 
 # Tabular in LaTex format (original)
 
@@ -1036,65 +1040,65 @@ The following table lists all current Bareos resource types. It shows what resou
 
    \begin{longtable}{|l||c|c|c|c|}
     \hline
-   :strong:`\bf Resource `  &
+   :strong:` Resource `  &
    :strong:` :ref:`Director <DirectorConfChapter>` `  &
    :strong:` :ref:`Client <FiledConfChapter>` `  &
    :strong:` :ref:`Storage <StoredConfChapter>` `  &
    :strong:` :ref:`Console <ConsoleConfChapter>`  `  \\
     \hline
     \hline
-   {Autochanger} &                                 &                                 & :ref:`x <StorageResourceAutochanger>` &  \\
+   {Autochanger} &                                 &                                 & :ref:`|checkmark| <StorageResourceAutochanger>` &  \\
    \hline
-   {Catalog }  & :ref:`x <DirectorResourceCatalog>`  &                                 &    &    \\
+   {Catalog }  & :ref:`|checkmark| <DirectorResourceCatalog>`  &                                 &    &    \\
     \hline
-   {Client  }  & :ref:`x <DirectorResourceClient>`   & :ref:`x <ClientResourceClient>`   &    &    \\
+   {Client  }  & :ref:`|checkmark| <DirectorResourceClient>`   & :ref:`|checkmark| <ClientResourceClient>`   &    &    \\
     \hline
-   {Console }  & :ref:`x <DirectorResourceConsole>`  &                                 &                                  & :ref:`x <ConsoleResourceConsole>` \\
+   {Console }  & :ref:`|checkmark| <DirectorResourceConsole>`  &                                 &                                  & :ref:`|checkmark| <ConsoleResourceConsole>` \\
     \hline
-   {Device  }  &                                   &                                 & :ref:`x <StorageResourceDevice>`   &    \\
+   {Device  }  &                                   &                                 & :ref:`|checkmark| <StorageResourceDevice>`   &    \\
     \hline
-   {Director } & :ref:`x <DirectorResourceDirector>` & :ref:`x <ClientResourceDirector>` & :ref:`x <StorageResourceDirector>` & :ref:`x <ConsoleResourceDirector>` \\
+   {Director } & :ref:`|checkmark| <DirectorResourceDirector>` & :ref:`|checkmark| <ClientResourceDirector>` & :ref:`|checkmark| <StorageResourceDirector>` & :ref:`|checkmark| <ConsoleResourceDirector>` \\
     \hline
-   {FileSet }  & :ref:`x <DirectorResourceFileSet>`  &                                 &    &    \\
+   {FileSet }  & :ref:`|checkmark| <DirectorResourceFileSet>`  &                                 &    &    \\
     \hline
-   {Job}       & :ref:`x <DirectorResourceJob>`      &                                 &    &    \\
+   {Job}       & :ref:`|checkmark| <DirectorResourceJob>`      &                                 &    &    \\
     \hline
-   {JobDefs }  & :ref:`x <DirectorResourceJobDefs>`  &                                 &    &    \\
+   {JobDefs }  & :ref:`|checkmark| <DirectorResourceJobDefs>`  &                                 &    &    \\
     \hline
-   {Message }  & :ref:`x <ResourceMessages>`         & :ref:`x <ResourceMessages>`       & :ref:`x <ResourceMessages>` &    \\
+   {Message }  & :ref:`|checkmark| <ResourceMessages>`         & :ref:`|checkmark| <ResourceMessages>`       & :ref:`|checkmark| <ResourceMessages>` &    \\
     \hline
-   {NDMP }     &                                   &                                 & :ref:`x <StorageResourceNDMP>` &    \\
+   {NDMP }     &                                   &                                 & :ref:`|checkmark| <StorageResourceNDMP>` &    \\
     \hline
-   {Pool  }    & :ref:`x <DirectorResourcePool>`     &                                 &    &    \\
+   {Pool  }    & :ref:`|checkmark| <DirectorResourcePool>`     &                                 &    &    \\
     \hline
-   {Profile}   & :ref:`x <DirectorResourceProfile>`  &                                 &    &    \\
+   {Profile}   & :ref:`|checkmark| <DirectorResourceProfile>`  &                                 &    &    \\
     \hline
-   {Schedule } & :ref:`x <DirectorResourceSchedule>` &                                 &    &    \\
+   {Schedule } & :ref:`|checkmark| <DirectorResourceSchedule>` &                                 &    &    \\
     \hline
-   {Storage }  & :ref:`x <DirectorResourceStorage>`  &                                 & :ref:`x <StorageResourceStorage>` & \\
+   {Storage }  & :ref:`|checkmark| <DirectorResourceStorage>`  &                                 & :ref:`|checkmark| <StorageResourceStorage>` & \\
    \hline
    \end{longtable}
 
 # Tabular converted from LaTeX to RST (or empty, in case of problems):
 
 ================================================== ========================================================================== ===================================================================== ======================================================================= =========================================================================
-:strong:`\bf Resource `  :strong:` :ref:`Director <DirectorConfChapter>` `  :strong:` :ref:`Client <FiledConfChapter>` `  :strong:` :ref:`Storage <StoredConfChapter>` `  :strong:` :ref:`Console <ConsoleConfChapter>`  ` 
+:strong:` Resource `  :strong:` :ref:`Director <DirectorConfChapter>` `  :strong:` :ref:`Client <FiledConfChapter>` `  :strong:` :ref:`Storage <StoredConfChapter>` `  :strong:` :ref:`Console <ConsoleConfChapter>`  ` 
 ================================================== ========================================================================== ===================================================================== ======================================================================= =========================================================================
-Autochanger                                                                                                                                                                                         :ref:`x <StorageResourceAutochanger>`                       
-Catalog                                            :ref:`x <DirectorResourceCatalog>`                                                                                                                                                                           
-Client                                             :ref:`x <DirectorResourceClient>`                               :ref:`x <ClientResourceClient>`                                                                                                   
-Console                                            :ref:`x <DirectorResourceConsole>`                                                                                                                                                                            :ref:`x <ConsoleResourceConsole>`
-Device                                                                                                                                                                                              :ref:`x <StorageResourceDevice>`                            
-Director                                           :ref:`x <DirectorResourceDirector>`                             :ref:`x <ClientResourceDirector>`                          :ref:`x <StorageResourceDirector>`                           :ref:`x <ConsoleResourceDirector>`
-FileSet                                            :ref:`x <DirectorResourceFileSet>`                                                                                                                                                                           
-Job                                                :ref:`x <DirectorResourceJob>`                                                                                                                                                                               
-JobDefs                                            :ref:`x <DirectorResourceJobDefs>`                                                                                                                                                                           
-Message                                            :ref:`x <ResourceMessages>`                                     :ref:`x <ResourceMessages>`                                :ref:`x <ResourceMessages>`                                 
-NDMP                                                                                                                                                                                                :ref:`x <StorageResourceNDMP>`                              
-Pool                                               :ref:`x <DirectorResourcePool>`                                                                                                                                                                              
-Profile                                            :ref:`x <DirectorResourceProfile>`                                                                                                                                                                           
-Schedule                                           :ref:`x <DirectorResourceSchedule>`                                                                                                                                                                          
-Storage                                            :ref:`x <DirectorResourceStorage>`                                                                                                    :ref:`x <StorageResourceStorage>`                           
+Autochanger                                                                                                                                                                                         :ref:`|checkmark| <StorageResourceAutochanger>`                       
+Catalog                                            :ref:`|checkmark| <DirectorResourceCatalog>`                                                                                                                                                                           
+Client                                             :ref:`|checkmark| <DirectorResourceClient>`                               :ref:`|checkmark| <ClientResourceClient>`                                                                                                   
+Console                                            :ref:`|checkmark| <DirectorResourceConsole>`                                                                                                                                                                            :ref:`|checkmark| <ConsoleResourceConsole>`
+Device                                                                                                                                                                                              :ref:`|checkmark| <StorageResourceDevice>`                            
+Director                                           :ref:`|checkmark| <DirectorResourceDirector>`                             :ref:`|checkmark| <ClientResourceDirector>`                          :ref:`|checkmark| <StorageResourceDirector>`                           :ref:`|checkmark| <ConsoleResourceDirector>`
+FileSet                                            :ref:`|checkmark| <DirectorResourceFileSet>`                                                                                                                                                                           
+Job                                                :ref:`|checkmark| <DirectorResourceJob>`                                                                                                                                                                               
+JobDefs                                            :ref:`|checkmark| <DirectorResourceJobDefs>`                                                                                                                                                                           
+Message                                            :ref:`|checkmark| <ResourceMessages>`                                     :ref:`|checkmark| <ResourceMessages>`                                :ref:`|checkmark| <ResourceMessages>`                                 
+NDMP                                                                                                                                                                                                :ref:`|checkmark| <StorageResourceNDMP>`                              
+Pool                                               :ref:`|checkmark| <DirectorResourcePool>`                                                                                                                                                                              
+Profile                                            :ref:`|checkmark| <DirectorResourceProfile>`                                                                                                                                                                           
+Schedule                                           :ref:`|checkmark| <DirectorResourceSchedule>`                                                                                                                                                                          
+Storage                                            :ref:`|checkmark| <DirectorResourceStorage>`                                                                                                    :ref:`|checkmark| <StorageResourceStorage>`                           
 ================================================== ========================================================================== ===================================================================== ======================================================================= =========================================================================
 
 .. _Names:
@@ -1102,7 +1106,7 @@ Storage                                            :ref:`x <DirectorResourceStor
 Names, Passwords and Authorization
 ----------------------------------
 
-:index:`[TAG=Authorization->Names and Passwords] <pair: Authorization; Names and Passwords>` :index:`[TAG=Passwords] <single: Passwords>`
+:index:`[TAG=Authorization->Names and Passwords] <single: Authorization; Names and Passwords>` :index:`[TAG=Passwords] <single: Passwords>`
 
 In order for one daemon to contact another daemon, it must authorize itself with a password. In most cases, the password corresponds to a particular name, so both the name and the password must match to be authorized. Passwords are plain text, any text. They are not generated by any special process; just use random text.
 

@@ -29,7 +29,7 @@ Backup
 
       The File daemon (Client) decides which files to backup for an Incremental backup by comparing start time of the prior Job (Full, Differential, or Incremental) against the time each file was last "modified" (st_mtime) and the time its attributes were last "changed"(st_ctime). If the file was modified or its attributes changed on or after this start time, it will then be backed up.
 
-      Some virus scanning software may change st_ctime while doing the scan. For example, if the virus scanning program attempts to reset the access time (st_atime), which Bareos does not use, it will cause st_ctime to change and hence Bareos will backup the file during an Incremental or Differential backup. In the case of Sophos virus scanning, you can prevent it from resetting the access time (st_atime) and hence changing st_ctime by using the ``--no-reset-atime`` option.
+      Some virus scanning software may change st_ctime while doing the scan. For example, if the virus scanning program attempts to reset the access time (st_atime), which Bareos does not use, it will cause st_ctime to change and hence Bareos will backup the file during an Incremental or Differential backup. In the case of Sophos virus scanning, you can prevent it from resetting the access time (st_atime) and hence changing st_ctime by using the :strong:`--no-reset-atime` option.
       For other software, please see their manual.
 
       When Bareos does an Incremental backup, all modified files that are still on the system are backed up. However, any file that has been deleted since the last Full backup remains in the Bareos catalog, which means that if between a Full save and the time you do a restore, some files are deleted, those deleted files will also be restored. The deleted files will no longer appear in the catalog after doing another Full save.
@@ -81,8 +81,9 @@ Backup
 
       
 
-.. warning::
-   Opposite to the other backup levels, VirtualFull may require read and write access to multiple volumes. In most cases you have to make sure, that Bareos does not try to read and write to the same Volume.
+         .. warning::
+
+            Opposite to the other backup levels, VirtualFull may require read and write access to multiple volumes. In most cases you have to make sure, that Bareos does not try to read and write to the same Volume.
 
 Restore
    | 
@@ -105,6 +106,7 @@ Verify
       
 
          .. warning::
+
             If you run two Verify Catalog jobs on the same client at
             the same time, the results will certainly be incorrect.  This is because
             Verify Catalog modifies the Catalog database while running in order to
@@ -120,6 +122,7 @@ Verify
       
 
          .. warning::
+
             If you run two Verify VolumeToCatalog jobs on the same
             client at the same time, the results will certainly be incorrect.  This
             is because the Verify VolumeToCatalog modifies the Catalog database
