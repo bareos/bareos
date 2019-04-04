@@ -171,13 +171,11 @@ Include {
 
    where \command{my_partitions} has:
 
-\footnotesize
-\begin{verbatim}
+\begin{commands}{}
 #!/bin/sh
 df -l | grep "^/dev/hd[ab]" | grep -v ".*/tmp" \
       | awk "{print \$6}"
-\end{verbatim}
-\normalsize
+\end{commands}
 
    If the vertical bar (\verb+|+) in front of \command{my_partitions} is preceded by a
    backslash as in \textbackslash{}\verb+|+, the program will be executed on the
@@ -229,32 +227,28 @@ Include {
    restarting Bareos as would be necessary if using the @  modifier noted above.
    For example:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconfig}{}
 Include {
   Options {
     signature = SHA1
   }
   File = "</home/files/local-filelist"
 }
-\end{verbatim}
-\normalsize
+\end{bconfig}
 
    If you precede the less-than sign ({\textless}) with a backslash as in
    \textbackslash{}{\textless}, the file-list will be read on the Client machine
    instead of on the Director's machine.  Please note that if the filename
    is given within quotes, you will need to use two slashes.
 
-\footnotesize
-\begin{verbatim}
+\begin{bconfig}{}
 Include {
   Options {
     signature = SHA1
   }
   File = "\\</home/xxx/filelist-on-client"
 }
-\end{verbatim}
-\normalsize
+\end{bconfig}
 
 \item     
     \index[general]{Backup!Partitions}
@@ -621,8 +615,7 @@ option below.
    to backup a particular partition.  An example of the informational
    message in the job report is:
 
-\footnotesize
-\begin{verbatim}
+\begin{bmessage}{}
 rufus-fd: /misc is a different filesystem. Will not descend from / into /misc
 rufus-fd: /net is a different filesystem. Will not descend from / into /net
 rufus-fd: /var/lib/nfs/rpc_pipefs is a different filesystem. Will not descend from /var/lib/nfs into /var/lib/nfs/rpc_pipefs
@@ -630,8 +623,7 @@ rufus-fd: /selinux is a different filesystem. Will not descend from / into /seli
 rufus-fd: /sys is a different filesystem. Will not descend from / into /sys
 rufus-fd: /dev is a different filesystem. Will not descend from / into /dev
 rufus-fd: /home is a different filesystem. Will not descend from / into /home
-\end{verbatim}
-\normalsize
+\end{bmessage}
 
    If you wish to backup multiple filesystems, you can  explicitly
    list each filesystem you want saved.  Otherwise, if you set the onefs option
@@ -649,18 +641,17 @@ rufus-fd: /home is a different filesystem. Will not descend from / into /home
    and it is not, and you have {\bf onefs=no} set, before you complain,
    please do:
 
-\footnotesize
-\begin{verbatim}
-  stat /
-  stat <filesystem>
-\end{verbatim}
-\normalsize
+
+\begin{commands}{}
+stat /
+stat <filesystem>
+\end{commands}
 
 where you replace {\bf filesystem} with the one in question.  If the
 {\bf Device:} number is different for / and for your filesystem, then they
 are on different filesystems.  E.g.
-\footnotesize
-\begin{verbatim}
+
+\begin{commands}{}
 stat /
   File: `/'
   Size: 4096            Blocks: 16         IO Block: 4096   directory
@@ -678,8 +669,8 @@ Access: (0755/drwxr-xr-x)  Uid: (    0/    root)   Gid: (    0/    root)
 Access: 2005-11-10 12:28:02.000000000 +0100
 Modify: 2005-11-06 12:36:48.000000000 +0100
 Change: 2005-11-06 12:36:48.000000000 +0100
-\end{verbatim}
-\normalsize
+\end{commands}
+
 
    Also be aware that even if you include {\bf /home} in your list
    of files to backup, as you most likely should, you will get the
@@ -691,12 +682,10 @@ Change: 2005-11-06 12:36:48.000000000 +0100
    However, it is possible that the separate filesystem will be backed up
    despite the message. For example, consider the following FileSet:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconfig}{}
   File = /
   File = /var
-\end{verbatim}
-\normalsize
+\end{bconfig}
 
    where {\bf /var} is a separate filesystem.  In this example, you will get a
    message saying that Bareos will not decend from {\bf /} into {\bf /var}.  But
@@ -806,9 +795,9 @@ Change: 2005-11-06 12:36:48.000000000 +0100
    to work correctly.  He simply adds the following to the beginning
    of the RunBeforeJob script:
 
-\begin{verbatim}
-   exec > /dev/null
-\end{verbatim}
+\begin{commands}{}
+exec > /dev/null
+\end{commands}
 
 
 \begin{bconfig}{FileSet with Fifo}
@@ -894,9 +883,9 @@ Include {
    their backup to see if they have changed during backup. If time
    or size mismatch, an error will raise.
 
-\begin{verbatim}
+\begin{bmessage}{}
  zog-fd: Client1.2007-03-31_09.46.21 Error: /tmp/test mtime changed during backup.
-\end{verbatim}
+\end{bmessage}
 
    In general, it is recommended to use this option.
 
@@ -1685,7 +1674,7 @@ enough disk to copy the directory or files, move them, but then initiate a
 Full backup.
 
 
-\paragraph*{Example Fileset for Windows}
+\subsubsection*{Example Fileset for Windows}
 \index[general]{FileSet!Windows Example}
 \index[general]{Windows!FileSet!Example}
 

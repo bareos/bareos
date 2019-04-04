@@ -147,8 +147,8 @@ can configure how many and which jobs can be run simultaneously:
 
 For example, if you want two different jobs to run simultaneously backing up
 the same Client to the same Storage device, they will run concurrently only if
-you have set \configdirective{Maximum Concurrent Jobs} greater than one in the \configresource{Director}
-resource, the \configresource{Client} resource, and the \configresource{Storage} resource in \bareosDir configuration.
+you have set \configdirective{Maximum Concurrent Jobs} greater than one in the \resourcetype{Dir}{Director}
+resource, the \resourcetype{Dir}{Client} resource, and the \resourcetype{Dir}{Storage} resource in \bareosDir configuration.
 
 % TODO: is there a better explaination for interleaving? Then more label to that place.
 \label{sec:Interleaving}
@@ -607,7 +607,7 @@ OK to run? (yes/mod/no):
 
    You will then need to follow the instructions for your
    database type to recreate the database from the ASCII backup file.
-   See the \ilink {Catalog Maintenance}{CatMaintenanceChapter} chapter of
+   See the \ilink{Catalog Maintenance}{CatMaintenanceChapter} chapter of
    this manual for examples of the command needed to restore a
    database from an ASCII dump (they are shown in the Compacting Your
    XXX Database sections).

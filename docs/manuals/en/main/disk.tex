@@ -36,7 +36,7 @@ Device {
 \end{verbatim}
 \normalsize
 
-Assuming you have the appropriate \configresource{Storage} resource in your Director's
+Assuming you have the appropriate \resourcetype{Dir}{Storage} resource in your Director's
 configuration file that references the above Device resource,
 
 \footnotesize
@@ -162,7 +162,7 @@ variable expansion defined in the
 
 The second change that is necessary to make automatic labeling work is to give
 the Storage daemon permission to automatically label Volumes. Do so by adding
-\linkResourceDirective{Sd}{Device}{Label Media} = yes to the \configresource{Device} resource as follows:
+\linkResourceDirective{Sd}{Device}{Label Media} = yes to the \resourcetype{Sd}{Device} resource as follows:
 
 \begin{bconfig}{Label Media = yes}
 Device {
