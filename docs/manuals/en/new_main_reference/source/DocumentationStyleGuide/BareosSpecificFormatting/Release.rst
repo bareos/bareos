@@ -14,16 +14,16 @@ If you want to display the release notes of a Bareos stable release, use the fol
     #2
    }
 
-.. literalinclude:: /example/releasenotes-template.rst.inc
+.. literalinclude:: /DocumentationStyleGuide/example/releasenotes-template.rst.inc
    
 Example:
 
-.. literalinclude:: /example/releasenotes.rst.inc
+.. literalinclude:: /DocumentationStyleGuide/example/releasenotes-17.2.7.rst.inc
 
 
-Output:
+See the output at :ref:`bareos-17.2.7`\ .
 
-.. include:: /example/releasenotes.rst.inc
+.. COMMENT include:: /DocumentationStyleGuide/example/releasenotes.rst.inc
 
 
 

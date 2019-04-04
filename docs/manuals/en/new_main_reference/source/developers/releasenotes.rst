@@ -2,6 +2,8 @@
 
 .. _bareos-1826-releasenotes:
 
+.. _bareos-18.2.6:
+
 Bareos 18.2.6 Release Notes
 ===========================
 
@@ -58,6 +60,8 @@ New Features
 
 
 .. _bareos-1825-releasenotes:
+
+.. _bareos-18.2.5:
 
 Bareos 18.2.5 Release Notes
 ===========================

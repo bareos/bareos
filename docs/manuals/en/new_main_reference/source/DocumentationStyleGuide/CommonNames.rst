@@ -70,20 +70,6 @@ NDMP
    |ndmpbareos|,            ``|ndmpbareos|``
    |ndmpnative|,            ``|ndmpnative|``
 
-.. _section-NdmpBareos:
-
-NDMP_BAREOS
-~~~~~~~~~~~
-
-This is only a fake section to demonstrate ``|ndmpbareos|``. Ignore it.
-
-.. _section-NdmpNative:
-
-NDMP_NATIVE
-~~~~~~~~~~~
-
-This is only a fake section to demonstrate ``|ndmpnative|``. Ignore it.
-
 
 Products
 --------

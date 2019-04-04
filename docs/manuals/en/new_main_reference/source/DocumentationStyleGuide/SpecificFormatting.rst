@@ -6,17 +6,17 @@ Configuration File
 
 Configuration file (snippets) should be formatted as
 
-.. literalinclude:: /example/code-block-cfg-mysql.rst.inc
+.. literalinclude:: /DocumentationStyleGuide/example/code-block-cfg-mysql.rst.inc
    :language: none
    
 This will be displayed as:
 
-.. include:: /example/code-block-cfg-mysql.rst.inc
+.. include:: /DocumentationStyleGuide/example/code-block-cfg-mysql.rst.inc
 
 The code-block highlighting scheme should be suitable for all kind of configuration files, especially ini files. However, Bareos configuration resources, we use our own scheme,
-see :ref:`BareosSpecificFormatting/BareosConfiguration:Bareos Configuration Resource`.
+see :ref:`DocumentationStyleGuide/BareosSpecificFormatting/BareosConfiguration:Bareos Configuration Resource`.
 
-.. seealso:: :ref:`BareosSpecificFormatting/BareosConfiguration:Bareos Configuration Resource`
+.. seealso:: :ref:`DocumentationStyleGuide/BareosSpecificFormatting/BareosConfiguration:Bareos Configuration Resource`
 
 
 Configuration
@@ -35,7 +35,7 @@ The output should look like this:
 
 ``host = s3.amazonaws.com``
 
-However, for a Bareos configuration directive with value use :ref:`BareosSpecificFormatting/BareosConfiguration:Resource Directive With Value`\ .
+However, for a Bareos configuration directive with value use :ref:`DocumentationStyleGuide/BareosSpecificFormatting/BareosConfiguration:Resource Directive With Value`\ .
 
 
 
@@ -46,12 +46,12 @@ If you want to display a unix command, then it needs to be put in a code block.
 
 Example:
 
-.. literalinclude:: /example/code-block-shell-session.rst.inc
+.. literalinclude:: /DocumentationStyleGuide/example/code-block-shell-session.rst.inc
    :language: none
    
 This will be displayed as:
 
-.. include:: /example/code-block-shell-session.rst.inc
+.. include:: /DocumentationStyleGuide/example/code-block-shell-session.rst.inc
 
 
 Unix Commmand Prompt
@@ -62,7 +62,7 @@ Normally, we assume a root console on Linux: ``root@host:~#``\ . Mind a space af
 
 The hostname **host** is used, if it is a generic host.
 If the command runs on a specific Bareos server,
-the specific host name from :ref:`BareosSpecificFormatting/BareosHostNames:Bareos Host Names` should be used.
+the specific host name from :ref:`DocumentationStyleGuide/BareosSpecificFormatting/BareosHostNames:Bareos Host Names` should be used.
 
 System Command
 ~~~~~~~~~~~~~~
@@ -130,28 +130,28 @@ SQL
 
 Example:
 
-.. literalinclude:: /example/code-block-sql-create-index.rst.inc
+.. literalinclude:: /DocumentationStyleGuide/example/code-block-sql-create-index.rst.inc
    :language: none
    
 This will be displayed as:
 
-.. include:: /example/code-block-sql-create-index.rst.inc
+.. include:: /DocumentationStyleGuide/example/code-block-sql-create-index.rst.inc
 
 
 Logging
 -------
 
-Currently, only Bareos logs (:ref:`BareosSpecificFormatting/BareosLogging:Bareos Logging`)
+Currently, only Bareos logs (:ref:`DocumentationStyleGuide/BareosSpecificFormatting/BareosLogging:Bareos Logging`)
 are part of the documentation. General logs are currently not used.
 
 If they should be used in the future, use
 
-.. literalinclude:: /example/logfile.rst.inc
+.. literalinclude:: /DocumentationStyleGuide/example/logfile.rst.inc
    :language: none
 
 The output will look like this:
 
-.. include:: /example/logfile.rst.inc
+.. include:: /DocumentationStyleGuide/example/logfile.rst.inc
 
 If logfiles should be shown more often, an own language marker can be implemented for it.
 
@@ -178,7 +178,6 @@ Especially it should be used for:
 * Software Package (e.g. package **bareos-common**, has been ``\package{<name>}`` in Latex. Did create indices in the past.)
 * System User (e.g. user **root**, has been ``\user{<name>}`` in Latex))
 * System Group (e.g. group **bareos**, has been ``\group{<name>}`` in Latex))
-* Variable Name (has been ``\variable{<name>}`` in Latex)
 * Volume Name (has been ``\volume{<name>}`` in Latex)
 * Volume Status (UPPPERCASE) (has been ``\volumestatus{<name>}`` in Latex)
    
@@ -186,10 +185,11 @@ Unless a specific rule for this kind of item exists.
 
 Specific rules exist for:
 
-* Substitutions form :ref:`CommonNames:Common Names`.
-* :ref:`BareosSpecificFormatting/BareosHostNames:Bareos Host Names`.
-* :ref:`SpecificFormatting:Operating System`.
-* :ref:`Configuration Resource Names <BareosSpecificFormatting/BareosConfiguration:Resource Name>`.
+* Substitutions form :ref:`DocumentationStyleGuide/CommonNames:Common Names`.
+* :ref:`DocumentationStyleGuide/BareosSpecificFormatting/BareosHostNames:Bareos Host Names`.
+* :ref:`DocumentationStyleGuide/SpecificFormatting:Operating System`.
+* :ref:`DocumentationStyleGuide/SpecificFormatting:Environment Variable`.
+* :ref:`Configuration Resource Names <DocumentationStyleGuide/BareosSpecificFormatting/BareosConfiguration:Resource Name>`.
 
 
 
@@ -230,12 +230,12 @@ Operating System
 
 If you want to display an operating system name, the following formatting should be used:
 
-.. literalinclude:: /example/os.rst.inc
+.. literalinclude:: /DocumentationStyleGuide/example/os.rst.inc
    :language: none
    
 The output will look like this:
 
-.. include:: /example/os.rst.inc
+.. include:: /DocumentationStyleGuide/example/os.rst.inc
 
 As an index is generated from the operation systems, the naming should be identical in all occurances.
 The first space seperates the platform from the version.
@@ -260,8 +260,8 @@ Backus–Naur form
 
 To display Backus–Naur form (BNF) definitions, use following formatting:
 
-.. literalinclude:: /example/code-block-bnf.rst.inc
+.. literalinclude:: /DocumentationStyleGuide/example/code-block-bnf.rst.inc
 
 The output will look like this:
 
-.. include:: /example/code-block-bnf.rst.inc
+.. include:: /DocumentationStyleGuide/example/code-block-bnf.rst.inc

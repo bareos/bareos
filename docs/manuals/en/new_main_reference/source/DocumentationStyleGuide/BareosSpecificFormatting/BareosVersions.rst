@@ -32,12 +32,12 @@ and
 
 Example:
 
-.. literalinclude:: /example/sinceVersion-configuration-scheme.rst.inc
+.. literalinclude:: /DocumentationStyleGuide/example/sinceVersion-documentation-sphinx.rst.inc
    :language: none
    
 This will be displayed as:
 
-.. include:: /example/sinceVersion-configuration-scheme.rst.inc
+.. include:: /DocumentationStyleGuide/example/sinceVersion-documentation-sphinx.rst.inc
 
 
 Note

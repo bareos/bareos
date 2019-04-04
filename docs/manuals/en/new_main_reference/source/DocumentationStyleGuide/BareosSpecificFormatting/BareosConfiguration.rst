@@ -9,12 +9,12 @@ To display a Bareos specific resource configuration file, use a code block:
 .. ${PERL} 's#\{bareosConfigResource\}\{(.*?)\}\{(.*?)\}\{(.*?)\}#\n.. code-block:: sh\n    :caption: \1 \2 \3\n#g'   ${DESTFILE}
    perl -i -pe 's#\{bareosConfigResource\}\{(.*)\}\{(.*)\}\{(.*)\}#\n.. code-block:: sh\n    :caption: daemon:\1 resource:\2 name:\3\n#g' ${DESTFILE}
 
-.. literalinclude:: /example/code-block-bareosconfig.rst.inc
+.. literalinclude:: /DocumentationStyleGuide/example/code-block-bareosconfig.rst.inc
    :language: none
 
 which will be displayed as
 
-.. include:: /example/code-block-bareosconfig.rst.inc
+.. include:: /DocumentationStyleGuide/example/code-block-bareosconfig.rst.inc
 
   
 The *caption* shows the relevant path where to expect the configuration resource:
@@ -147,7 +147,7 @@ For example:
     
 .. note::
 
-   If the reference to a Resource Directive does not match a  :ref:`BareosSpecificFormatting/BareosConfiguration:Resource Directive Definition`,
+   If the reference to a Resource Directive does not match a  :ref:`DocumentationStyleGuide/BareosSpecificFormatting/BareosConfiguration:Resource Directive Definition`,
    the displayed text will look the same, but there will be no hyperlink behind it.
    
    Unfortenatly, if this is the case (the reference is wrong (e.g. because of a typo))

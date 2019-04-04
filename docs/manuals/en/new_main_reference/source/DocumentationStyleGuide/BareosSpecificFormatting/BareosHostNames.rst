@@ -15,11 +15,11 @@ If you want to display a hostname, the following formatting should be followed:
 
 .. code-block:: sh
 
-   :strong:`client1.example.com`
+   :strong:`host1.example.com`
 
 The output should look like this:
 
-:strong:`client1.example.com`
+:strong:`host1.example.com`
 
 
 .. csv-table:: Host Names
@@ -29,4 +29,5 @@ The output should look like this:
    ":strong:`bareos-sd.example.com`",      "Bareos Storage Daemon host, if only one Storage Daemon is used."
    ":strong:`bareos-sd1.example.com`, :strong:`bareos-sd2.example.com`, ...", "Bareos Storage Daemon host, if multiple Storage Daemons are used."
    ":strong:`bareos-sd-tape.example.com`", "Bareos Storage Daemon with a specific backend."
-   ":strong:`client1.example.com`, :strong:`client2.example.com`, ...", "Bareos File Daemon"
+   ":strong:`host.example.com`", "An arbitrary system, without special requirements."
+   ":strong:`host1.example.com`, :strong:`host2.example.com`, ...", "Bareos File Daemon"

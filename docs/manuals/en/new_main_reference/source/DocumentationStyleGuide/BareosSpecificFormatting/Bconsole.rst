@@ -44,12 +44,12 @@ Bconsole session
 
 If you want to show complete Bareos console session, then it needs to be put in a code block.
    
-.. literalinclude:: /example/code-block-bconsole-configure-add.rst.inc
+.. literalinclude:: /DocumentationStyleGuide/example/code-block-bconsole-configure-add.rst.inc
    :language: none
 
 The output will look like this:
    
-.. include:: /example/code-block-bconsole-configure-add.rst.inc
+.. include:: /DocumentationStyleGuide/example/code-block-bconsole-configure-add.rst.inc
 
 A prompt is indicated by ''*''.
 

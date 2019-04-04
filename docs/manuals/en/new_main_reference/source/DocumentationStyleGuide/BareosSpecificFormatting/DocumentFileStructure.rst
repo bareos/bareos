@@ -40,7 +40,7 @@ The first heading should be underlined by ``=``, like::
    Section Heading
    ===============
 
-Please read :ref:`RestOverview:Sections` to get known to the section ordering conventions.
+Please read :ref:`DocumentationStyleGuide/RestOverview:Sections` to get known to the section ordering conventions.
     
 All documents should only contain one highest level section (underlined by ``=``).
 
@@ -61,10 +61,10 @@ Files included by toctree will be inserted as one section level below the sectio
 .. warning::
 
    Changing the file names will change the published URLs
-   and the autosectionlabels (see :ref:`RestOverview:Cross-linking markup`).
+   and the autosectionlabels (see :ref:`DocumentationStyleGuide/RestOverview:Cross-linking markup`).
    So link used from external source
    and also some internal links will no longer work.
-   See :ref:`Gotchas:toctree vs include`.
+   See :ref:`DocumentationStyleGuide/Gotchas:toctree vs include`.
    
    (Even without changing the file name,
    changing the section name will also break links.)

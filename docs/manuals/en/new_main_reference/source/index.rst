@@ -22,4 +22,5 @@ The Information regarding the newest release in the :ref:`bareos-current-release
    /developers.rst
    /bareos-18.2.rst
    /webui-tls.rst
+   /DocumentationStyleGuide.rst
    /genindex

@@ -6,12 +6,12 @@ bugs.bareos.org
 
 If you want to reference to a ticket in https://bugs.bareos.org, the following formatting should be used:
 
-.. literalinclude:: /example/ticket.rst.inc
+.. literalinclude:: /DocumentationStyleGuide/example/ticket.rst.inc
    :language: none
    
 This will be displayed as:
 
-.. include:: /example/ticket.rst.inc
+.. include:: /DocumentationStyleGuide/example/ticket.rst.inc
 
 Github
 ------
@@ -28,12 +28,12 @@ Pull request
 
 Refer to a Github Pull request by:
 
-.. literalinclude:: /example/github-pull-request.rst.inc
+.. literalinclude:: /DocumentationStyleGuide/example/github-pull-request.rst.inc
    :language: none
    
 This will be displayed as:
 
-.. include:: /example/github-pull-request.rst.inc
+.. include:: /DocumentationStyleGuide/example/github-pull-request.rst.inc
 
 
 Commit
@@ -41,9 +41,9 @@ Commit
 
 Refer to a Github Commit by:
 
-.. literalinclude:: /example/github-commit.rst.inc
+.. literalinclude:: /DocumentationStyleGuide/example/github-commit.rst.inc
    :language: none
    
 This will be displayed as:
 
-.. include:: /example/github-commit.rst.inc
+.. include:: /DocumentationStyleGuide/example/github-commit.rst.inc

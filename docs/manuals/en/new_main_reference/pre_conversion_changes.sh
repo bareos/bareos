@@ -49,9 +49,9 @@ for FILENAME in ${SOURCEFILES}; do
 \
     | perl -0 -pe 's|\\subsubsubsection\{|\\paragraph\{|g' \
 \
-    | perl -0 -pe 's|\\releasenoteSection\{(.*?)\}|\\section*{\1}\n\n|smg' \
+    | perl -0 -pe 's|\\releasenoteSection\{(.*?)\}|\\section{\1}|smg' \
 \
-    | perl -0 -pe 's|\\releasenote\{(.*?)\}|\\subsection*{bareos-\1}\n\\index[general]{bareos-\1!Release Notes}\n\n|smg' \
+    | perl -0 -pe 's|\\releasenote\{(.*?)\}|\\subsection{bareos-\1}\n\n\\label{LOWERBAREOS-\1}\n\n\\index[general]{bareos-\1!Release Notes}\n\n|smg' \
 \
     | perl -0 -pe 's|\\releasenoteUnstable\{(.*?)\}|\\subsection*{\\textit{bareos-\1 (unstable)}}\n\n|smg' \
 \

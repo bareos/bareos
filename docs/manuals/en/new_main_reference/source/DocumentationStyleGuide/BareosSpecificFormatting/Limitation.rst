@@ -14,9 +14,9 @@ The short description should be as short as possible, as it will get part of the
 
 Example:
 
-.. literalinclude:: /example/limitation-vm-configuration.rst.inc
+.. literalinclude:: /DocumentationStyleGuide/example/limitation-example.rst.inc
    :language: none
    
 This will be displayed as:
 
-.. include:: /example/limitation-vm-configuration.rst.inc
+.. include:: /DocumentationStyleGuide/example/limitation-example.rst.inc

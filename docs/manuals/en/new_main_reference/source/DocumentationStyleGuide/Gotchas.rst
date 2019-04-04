@@ -13,7 +13,7 @@ or run :program:`make clean` before.
 Not shown text
 --------------
 
-When using :ref:`RestOverview:Directives`, they are prepanded by the comment directives: ''.. ''
+When using :ref:`DocumentationStyleGuide/RestOverview:Directives`, they are prepanded by the comment directives: ''.. ''
 
 For this reason, any mispelled directives will not be shown at all (and not even are warning is shown during sphinx-build).
 
@@ -29,14 +29,19 @@ For example, config directives can be defined and later on referenced by::
 
    :config:option:`...`
 
-If the link target :ref:`BareosSpecificFormatting/BareosConfiguration:Reference to a Resource Directive` is unknown,
+If the link target :ref:`DocumentationStyleGuide/BareosSpecificFormatting/BareosConfiguration:Reference to a Resource Directive` is unknown,
 the displayed text will not alter.
 
 There will not even be a warning during Sphinx build,
 making it really hard to find typos in this kind of references.
 
-TODO: example
+* valid reference:
 
+  * :config:option:`dir/job/AlwaysIncrementalJobRetention`
+
+* invalid reference:
+
+  * :config:option:`dir/job/ThisIsaDeadEntry`
 
 toctree vs include
 ------------------
@@ -75,4 +80,4 @@ toctree
 Don't use the ``:options:`` role, as this tries to refers to a option definition, which we don't have.
 Also, as we document different programs, using option would require to prefix it with the program name, see https://www.sphinx-doc.org/en/1.7/domains.html#directive-program.
 
-This only applies to ``:options:`` without domain. We do you ``:config:option:`` in :ref:`BareosSpecificFormatting/BareosConfiguration:Bareos Configuration`.
+This only applies to ``:options:`` without domain. We do you ``:config:option:`` in :ref:`DocumentationStyleGuide/BareosSpecificFormatting/BareosConfiguration:Bareos Configuration`.

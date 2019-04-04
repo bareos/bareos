@@ -1,1 +1,0 @@
-../../new_main_reference/source/conf.py

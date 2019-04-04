@@ -145,6 +145,11 @@ class RegexDefs(object):
                 'flags':   re.VERBOSE,
                 'replace': r'/include/images/\1.*\n'
             },
+            'LOWERBAREOS': {
+                'pattern': r' _LOWERBAREOS-',
+                'flags':   re.VERBOSE,
+                'replace': r'_bareos-'
+            },
             'EnvBareosConfigResource': {
                 'pattern': r'::\n\n(\s*)\\begin{bareosConfigResource}{(.*?)}{(.*?)}{(.*?)}\s*\n(.*?)\n\s*\\end{bareosConfigResource}',
                 'flags':   self.regexOpts, 
@@ -1280,7 +1285,7 @@ class Translate(object):
     #
     @staticmethod
     def variable(item):
-        item.replace(r'**{0}**'.format(*item.getParameters()))
+        item.replace(r'``{0}``\ '.format(*item.getParameters()))
 
     @staticmethod
     def volume(item):

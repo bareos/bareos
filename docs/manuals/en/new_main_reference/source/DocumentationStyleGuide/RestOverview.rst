@@ -23,7 +23,7 @@ reST/Sphinx have some specific wording.
 Role
 ~~~~
 
-A role is an inline markup (see :ref:`RestOverview:Inline markup`\ ). Own roles can be created.
+A role is an inline markup (see :ref:`DocumentationStyleGuide/RestOverview:Inline markup`\ ). Own roles can be created.
 They are used inside other text structures.
 
 Usage::
@@ -37,7 +37,7 @@ Output:
 Directive
 ~~~~~~~~~
 
-A directive is an Explicit Markup (see :ref:`RestOverview:Explicit markup`\ ). Own directives can be created.
+A directive is an Explicit Markup (see :ref:`DocumentationStyleGuide/RestOverview:Explicit markup`\ ). Own directives can be created.
 Directives are written as a block.
 
 Usage::
@@ -59,12 +59,12 @@ Usage::
       
 Example:
 
-.. literalinclude:: /example/code-block-bareosconfig.rst.inc
+.. literalinclude:: /DocumentationStyleGuide/example/code-block-bareosconfig.rst.inc
    :language: none
 
 Output:
 
-.. include:: /example/code-block-bareosconfig.rst.inc
+.. include:: /DocumentationStyleGuide/example/code-block-bareosconfig.rst.inc
 
 
 Domain
@@ -252,12 +252,12 @@ finds links and mail addresses in ordinary text.
 
 Example:
 
-.. literalinclude:: /example/urls.rst.inc
+.. literalinclude:: /DocumentationStyleGuide/example/urls.rst.inc
    :language: none
 
 Output:
 
-.. include:: /example/urls.rst.inc
+.. include:: /DocumentationStyleGuide/example/urls.rst.inc
 
 
 Internal links
@@ -331,9 +331,9 @@ This prefix each section label with the name (including the relative path from t
 
 Example::
 
-  :ref:`RestOverview:Cross-linking markup`
+  :ref:`DocumentationStyleGuide/RestOverview:Cross-linking markup`
   
-This will link to :ref:`RestOverview:Cross-linking markup`\ .
+This will link to :ref:`DocumentationStyleGuide/RestOverview:Cross-linking markup`\ .
 
 
 
@@ -382,7 +382,7 @@ Our convention is to use them in this order:
 
 
 This convention has be introduced from the conversion of the original LaTex source to reST,
-as :program:`pandoc` has created RST file with this section markers (except of parts, which are not created at all).
+as :program:`pandoc` has created reST file with this section markers (except of parts, which are not created at all).
 
 The part section header is not used at all by us.
 
@@ -392,7 +392,7 @@ Therefore the specific names part, chapter, section ... might not match the actu
 
 .. note::
 
-   With RST, there is no leaving out a section level.
+   With reST, there is no leaving out a section level.
    If you write a chapter it is not possible to continue with a paragraph.
    Instead the next section must be of the type section.
    
@@ -458,11 +458,11 @@ Backslashes (Windows paths) ``\`` have to written as ``\\``:
 
 The formatting looks a follows:
 
-.. literalinclude:: /example/file.rst.inc
+.. literalinclude:: /DocumentationStyleGuide/example/file.rst.inc
 
 Output:
   
-.. include:: /example/file.rst.inc
+.. include:: /DocumentationStyleGuide/example/file.rst.inc
 
 
 
@@ -632,7 +632,7 @@ To work around these problem, following substitution have been used::
   
 is substitted by::
 
-  :index:`[TAG=Console->Command->restore] <triple: Console; Command; restore>`
+  :index:`[TAG=Console->Command->restore] <single: Console; Command; restore>`
 
 Disadvantages:
    The text ``[TAG=Console->Command->restore]`` will be shown.
