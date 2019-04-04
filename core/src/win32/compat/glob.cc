@@ -102,7 +102,7 @@ GLOB_INLINE char* glob_strdup(const char* pattern)
     if (*origin == GLOB_HARD_ESC) ++origin;
     *copy++ = *origin;
   } while (*origin++);
-  return bstrdup(buf);
+  return strdup(buf);
 }
 
 #else

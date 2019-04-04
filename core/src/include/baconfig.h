@@ -478,10 +478,6 @@ int msg_(const char* file, int line, POOLMEM*& pool_buf, const char* fmt, ...);
 #include "lib/bsys.h"
 #include "lib/scan.h"
 
-/** Use our strdup with smartalloc */
-#undef strdup
-#define strdup(buf) BadCallOnStrdupUseBstrdup(buf)
-
 /** Use our fgets which handles interrupts */
 #undef fgets
 #define fgets(x, y, z) bfgets((x), (y), (z))
