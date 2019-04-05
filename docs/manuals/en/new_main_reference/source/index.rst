@@ -18,9 +18,9 @@ The Information regarding the newest release in the :ref:`bareos-current-release
    /Configuration.rst
    /TasksAndConcepts.rst
    /Appendix.rst
-   /developers/releasenotes.rst
-   /developers.rst
+   /releasenotes-18.2.rst
    /bareos-18.2.rst
    /webui-tls.rst
+   /DeveloperGuide.rst
    /DocumentationStyleGuide.rst
    /genindex

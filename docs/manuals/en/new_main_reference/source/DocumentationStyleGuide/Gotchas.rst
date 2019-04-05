@@ -10,6 +10,8 @@ as it interprets only changed files.
 To check for warnings, :program:`touch` all source reST files
 or run :program:`make clean` before.
 
+Also do a :program:`make clean` if you change the structure of the document (e.g. rename or move a file).
+
 Not shown text
 --------------
 

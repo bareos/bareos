@@ -228,7 +228,7 @@ class LatexParts(LatexSplit):
     def __init__(self, text, targetdir, relpath, write = True):
         
         super(LatexParts, self).__init__(text, r'\\part', 1, targetdir, relpath, write)
-        self.toc_extra_nodes = [ '/developers/releasenotes.rst', '/developers.rst', '/bareos-18.2.rst', '/webui-tls.rst', '/DocumentationStyleGuide.rst', '/genindex' ]
+        self.toc_extra_nodes = [ '/releasenotes-18.2.rst', '/bareos-18.2.rst', '/webui-tls.rst', '/DeveloperGuide.rst', '/DocumentationStyleGuide.rst', '/genindex' ]
 
     def getToc(self):
         '''
