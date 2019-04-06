@@ -55,16 +55,36 @@ def get_config_directive(text):
     '''
     This function generates from the signature
     the different required formats of a configuration directive.
-    The signature (text) must be given as
+    The signature (text) must be given (depending on the type) as:
 
-    <dir|sd|fd|console>/<resourcetype_lower_case>/<DirectiveInCamelCase>
+    <dir|sd|fd|console>/<resourcetype_lower_case>/<DirectiveInCamelCase> = <value>
 
-    For example:
+    Examples for the different types:
+
+    Daemon:
+    dir
+
+    Resource Type:
+    dir/job
+
+    Resource Name:
+    dir/job = backup-client1
+
+    (Reference to a) Resource Directive:
     dir/job/TlsAlwaysIncrementalMaxFullAcl
+
+    Resource Directive With Value:
+    dir/job/TlsAlwaysIncrementalMaxFullAcl = False
     '''
+
     logger = logging.getLogger(__name__)
-    displaynametemplate = u'{Directive} ({Dmn}->{Resource})'
-    indextemplate  = u'Configuration Directive; ' + displaynametemplate
+    displayTemplateDaemon = u'{Daemon}'
+    displayTemplateResourceType = u'{Resource} ({Dmn})'
+    displayTemplateResourceName = u'{Resource} ({Dmn}) = {value}'
+    displayTemplateResourceDirective = u'{Directive} ({Dmn}->{Resource})'
+    displayTemplateResourceDirectiveWithValue = u'{Directive} ({Dmn}->{Resource}) = {value}'
+    indextemplate  = u'Configuration Directive; ' + displayTemplateResourceDirective
+    internaltargettemplate = u'{dmn}/{resource}/{CamelCaseDirective}'
 
     # Latex: directiveDirJobCancel%20Lower%20Level%20Duplicates
     # The follow targettemplate will create identical anchors as Latex,
@@ -72,20 +92,22 @@ def get_config_directive(text):
     # targettemplate = u'directive{dmn}{resource}{directive}'
     targettemplate = u'config-{Dmn}_{Resource}_{CamelCaseDirective}'
 
-    input_daemon = None
-    input_resource = None
-    try:
-        input_daemon, input_resource, input_directive = text.split('/', 2)
-    except ValueError:
-        # fall back
-        input_directive = text
-
     result = {
         'signature': text,
     }
 
-    if input_daemon:
-        daemon = input_daemon.lower()
+    try:
+        key, value = text.split('=', 1)
+        result['value'] = value.strip()
+    except ValueError:
+        # fall back
+        key = text
+
+    inputComponent = key.strip().split('/', 2)
+    components = len(inputComponent)
+
+    if components >= 1:
+        daemon = inputComponent[0].lower()
         if daemon == 'director' or daemon == 'dir':
             result['Daemon'] = 'Director'
             result['dmn'] = 'dir'
@@ -103,33 +125,35 @@ def get_config_directive(text):
             result['dmn'] = 'console'
             result['Dmn'] = 'Console'
         else:
+            # TODO: raise
             result['Daemon'] = 'UNKNOWN'
             result['dmn'] = 'UNKNOWN'
             result['Dmn'] = 'UNKNOWN'
+        result['displayname'] = displayTemplateDaemon.format(**result)
 
-    else:
-        result['Daemon'] = None
-        result['Dmn'] = None
-        result['dmn'] = None
+    if components >= 2:
+        result['resource'] = inputComponent[1].replace(' ', '').lower()
+        result['Resource'] = inputComponent[1].replace(' ', '').capitalize()
+        if 'value' in result:
+            result['displayname'] = displayTemplateResourceName.format(**result)
+        else:
+            result['displayname'] = displayTemplateResourceType.format(**result)
 
-    if input_resource:
-        result['resource'] = input_resource.replace(' ', '').lower()
-        result['Resource'] = input_resource.replace(' ', '').capitalize()
-    else:
-        result['resource'] = None
-        result['Resource'] = None
+    if components >= 3:
+        # input_directive should be without spaces.
+        # However, we make sure, by removing all spaces.
+        result['CamelCaseDirective'] = inputComponent[2].replace(' ', '')
+        result['Directive'] = convertCamelCase2Spaces(result['CamelCaseDirective'])
+        if 'value' in result:
+            result['displayname'] = displayTemplateResourceDirectiveWithValue.format(**result)
+        else:
+            result['displayname'] = displayTemplateResourceDirective.format(**result)
 
+        result['indexentry'] = indextemplate.format(**result)
+        result['target'] = targettemplate.format(**result)
+        result['internaltarget'] = internaltargettemplate.format(**result)
 
-    # input_directive should be without spaces.
-    # However, we make sure, by removing all spaces.
-    result['CamelCaseDirective'] = input_directive.replace(' ', '')
-    result['Directive'] = convertCamelCase2Spaces(result['CamelCaseDirective'])
-
-    result['displayname'] = displaynametemplate.format(**result)
-    result['indexentry'] = indextemplate.format(**result)
-    result['target'] = targettemplate.format(**result)
-
-    logger.debug('[bareos] ' + pformat(result))
+    #logger.debug('[bareos] ' + pformat(result))
 
     return result
 
@@ -200,10 +224,11 @@ class ConfigOption(ObjectDescription):
         signode['ids'].append(targetname)
         self.state.document.note_explicit_target(signode)
 
-        indextype = 'single'
-        # Generic index entries
-        self.indexnode['entries'].append((indextype, directive['indexentry'],
-                                          targetname, targetname, None))
+        if 'indexentry' in directive:
+            indextype = 'single'
+            # Generic index entries
+            self.indexnode['entries'].append((indextype, directive['indexentry'],
+                                            targetname, targetname, None))
 
         self.env.domaindata['config']['objects'][self.objtype, sig] = \
             self.env.docname, targetname
@@ -216,14 +241,17 @@ class ConfigOptionXRefRole(XRefRole):
 
     def result_nodes(self, document, env, node, is_ref):
         logger = logging.getLogger(__name__)
-        logger.debug('[bareos] is_ref: {}, node[reftarget]: {}, {}'.format(str(is_ref), node['reftarget'], type(node['reftarget'])))
+        #logger.debug('[bareos] is_ref: {}, node[reftarget]: {}, {}'.format(str(is_ref), node['reftarget'], type(node['reftarget'])))
+        #logger.debug('[bareos] ' + pformat(result))
 
         if not is_ref:
             return [node], []
 
         varname = node['reftarget']
-
         directive = get_config_directive(varname)
+
+        if not 'indexentry' in directive:
+            return [node], []
 
         tgtid = 'index-%s' % env.new_serialno('index')
 
@@ -239,12 +267,20 @@ class ConfigOptionXRefRole(XRefRole):
 
 
     def process_link(self, env, refnode, has_explicit_title, title, target):
+
+        logger = logging.getLogger(__name__)
+
         if has_explicit_title:
             return title, target
 
         directive = get_config_directive(title)
-        return directive['displayname'], target
+        #logger.debug('process_link({}, {})'.format(title, target))
+        #logger.debug('process_link: ' + pformat(directive))
 
+        if 'internaltarget' in directive:
+            return directive['displayname'], directive['internaltarget']
+        else:
+            return directive['displayname'], target
 
 
 

@@ -68,11 +68,6 @@ This will get displayed as
 
 :config:option:`dir/job`
 
-TODO
-~~~~
-
-  * needs implmentation
-
 
 Resource Name
 -------------
@@ -86,10 +81,6 @@ This will get displayed as
 
 :config:option:`dir/job = backup-client1`
 
-TODO
-~~~~
-
-    * needs implmentation
 
 Resource Directive
 ------------------
@@ -168,7 +159,3 @@ This will get displayed as
 
 :config:option:`dir/job/AlwaysIncrementalJobRetention = 900`
 
-TODO
-^^^^
-
-  * needs implmentation
