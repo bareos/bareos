@@ -1558,7 +1558,7 @@ bool MessagesResource::PrintConfig(PoolMem& buff,
     PmStrcat(cfg_str, temp.c_str());
   }
 
-  for (d = msgres->dest_chain_; d; d = d->next_) {
+  for (DEST* d : msgres->dest_chain_) {
     int nr_set = 0;
     int nr_unset = 0;
     PoolMem t; /* number of set   types */

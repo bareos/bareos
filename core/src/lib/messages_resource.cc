@@ -26,8 +26,7 @@
 pthread_mutex_t MessagesResource::mutex_ = PTHREAD_MUTEX_INITIALIZER;
 
 MessagesResource::MessagesResource()
-    : dest_chain_(nullptr)
-    , send_msg_types_{0}
+    : send_msg_types_{0}
 
     , in_use_(false)
     , closing_(false)
@@ -43,13 +42,7 @@ void MessagesResource::ShallowCopyTo(BareosResource* p) const
 
 MessagesResource::~MessagesResource()
 {
-  DEST *d, *old;
-  for (d = dest_chain_; d;) {
-    old = d;      /* save pointer to release */
-    d = d->next_; /* point to next buffer */
-    delete old;
-  }
-  dest_chain_ = nullptr;
+  for (DEST* d : dest_chain_) { delete d; }
 }
 
 void MessagesResource::lock() { P(mutex_); }

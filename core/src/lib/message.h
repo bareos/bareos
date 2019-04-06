@@ -118,8 +118,7 @@ enum
 struct DEST {
  public:
   DEST()
-      : next_(nullptr)
-      , file_pointer_(nullptr)
+      : file_pointer_(nullptr)
       , dest_code_(0)
       , max_len_(0)
       , syslog_facility_(0)
@@ -128,7 +127,6 @@ struct DEST {
     return;
   }
 
-  struct DEST* next_;
   FILE* file_pointer_;
   int dest_code_;                /* Destination (one of the MD_ codes) */
   int max_len_;                  /* Max mail line length */

@@ -31,7 +31,7 @@ class MessagesResource : public BareosResource {
   std::string mail_cmd_;                          /* Mail command */
   std::string operator_cmd_;                      /* Operator command */
   std::string timestamp_format_;                  /* Timestamp format */
-  DEST* dest_chain_;                              /* chain of destinations */
+  std::vector<DEST*> dest_chain_;                 /* chain of destinations */
   char send_msg_types_[NbytesForBits(M_MAX + 1)]; /* Bit array of types */
 
  private:
