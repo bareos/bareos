@@ -254,10 +254,8 @@ void InitMsg(JobControlRecord* jcr,
   }
 #endif
 
-  /*
-   * If msg is NULL, initialize global chain for STDOUT and syslog
-   */
-  if (msg == NULL) {
+  if (!msg) {
+    // initialize default chain for stdout and syslog
     daemon_msgs = new MessagesResource;
     for (i = 1; i <= M_MAX; i++) {
       AddMsgDest(daemon_msgs, MD_STDOUT, i, std::string(), std::string(),
@@ -267,38 +265,17 @@ void InitMsg(JobControlRecord* jcr,
     return;
   }
 
-  /*
-   * Walk down the message resource chain duplicating it for the current Job.
-   */
-  std::vector<DEST*> temp_chain;
-
-  for (DEST* d : msg->dest_chain_) {
-    DEST* dnew = new DEST;
-    *dnew = *d;
-    temp_chain.push_back(dnew);
-    dnew->file_pointer_ = NULL;
-    dnew->mail_filename_.clear();
-    if (!d->mail_cmd_.empty()) { dnew->mail_cmd_ = d->mail_cmd_; }
-    if (!d->where_.empty()) { dnew->where_ = d->where_; }
-  }
-
   if (jcr) {
     jcr->jcr_msgs = new MessagesResource;
-    jcr->jcr_msgs->dest_chain_ = temp_chain;
-    memcpy(jcr->jcr_msgs->send_msg_types_, msg->send_msg_types_,
-           sizeof(msg->send_msg_types_));
+    msg->DuplicateResourceTo(*jcr->jcr_msgs);
   } else {
-    /*
-     * If we have default values, release them now
-     */
+    // replace the defaults
     if (daemon_msgs) { delete daemon_msgs; }
     daemon_msgs = new MessagesResource;
-    daemon_msgs->dest_chain_ = temp_chain;
-    memcpy(daemon_msgs->send_msg_types_, msg->send_msg_types_,
-           sizeof(msg->send_msg_types_));
+    msg->DuplicateResourceTo(*daemon_msgs);
   }
 
-  Dmsg2(250, "Copy message resource %p to %p\n", msg, &temp_chain);
+  Dmsg2(250, "Copied message resource %p\n", msg);
 }
 
 /*

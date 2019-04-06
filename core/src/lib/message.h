@@ -111,31 +111,21 @@ enum
 #define M_MAX M_AUDIT /* keep this updated ! */
 #define NR_MSG_TYPES NbytesForBits(M_MAX + 1)
 
-/**
- * Define message destination structure
- */
-/* *** FIXME **** where should be extended to handle multiple values */
 struct DEST {
  public:
-  DEST()
-      : file_pointer_(nullptr)
-      , dest_code_(0)
-      , max_len_(0)
-      , syslog_facility_(0)
-      , msg_types_{0}
-  {
-    return;
-  }
+  DEST() = default;
+  ~DEST() = default;
+  DEST(const DEST& other) = default;
 
-  FILE* file_pointer_;
-  int dest_code_;                /* Destination (one of the MD_ codes) */
-  int max_len_;                  /* Max mail line length */
-  int syslog_facility_;          /* Syslog Facility */
-  char msg_types_[NR_MSG_TYPES]; /* Message type mask */
-  std::string where_;            /* Filename/program name */
-  std::string mail_cmd_;         /* Mail command */
-  std::string timestamp_format_; /* used in logging messages */
-  std::string mail_filename_;    /* Unique mail filename */
+  FILE* file_pointer_ = nullptr;
+  int dest_code_ = 0;               /* Destination (one of the MD_ codes) */
+  int max_len_ = 0;                 /* Max mail line length */
+  int syslog_facility_ = 0;         /* Syslog Facility */
+  char msg_types_[NR_MSG_TYPES]{0}; /* Message type mask */
+  std::string where_;               /* Filename/program name */
+  std::string mail_cmd_;            /* Mail command */
+  std::string timestamp_format_;    /* used in logging messages */
+  std::string mail_filename_;       /* Unique mail filename */
 };
 
 /**

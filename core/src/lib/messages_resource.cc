@@ -91,3 +91,23 @@ bool MessagesResource::IsClosing()
   unlock();
   return rtn;
 }
+
+std::vector<DEST*> MessagesResource::DuplicateDestChain() const
+{
+  std::vector<DEST*> temp_chain;
+
+  for (DEST* d : dest_chain_) {
+    DEST* dnew = new DEST(*d);
+    dnew->file_pointer_ = nullptr;
+    dnew->mail_filename_.clear();
+    temp_chain.push_back(dnew);
+  }
+
+  return temp_chain;
+}
+
+void MessagesResource::DuplicateResourceTo(MessagesResource& other) const
+{
+  other.dest_chain_ = DuplicateDestChain();
+  memcpy(other.send_msg_types_, send_msg_types_, sizeof(send_msg_types_));
+}

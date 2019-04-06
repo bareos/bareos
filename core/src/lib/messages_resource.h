@@ -58,6 +58,11 @@ class MessagesResource : public BareosResource {
                    const ConfigurationParser& /* unused */,
                    bool hide_sensitive_data = false,
                    bool verbose = false) override;
+
+  void DuplicateResourceTo(MessagesResource& other) const;
+
+ private:
+  std::vector<DEST*> DuplicateDestChain() const;
 };
 
 #endif /* BAREOS_LIB_MESSAGES_RESOURCE_H_ */
