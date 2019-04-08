@@ -34,84 +34,68 @@
 #include "lib/berrno.h"
 #include "lib/daemon.h"
 
-extern int debug_level;
+
+#if defined(HAVE_WIN32)
+
+void daemon_start() { return; }
+
+#else  // !HAVE_WIN32
+
+#if defined(DEVELOPER)
+static void SetupStdFileDescriptors() {}
+#else
+static void SetupStdFileDescriptors()
+{
+  extern int debug_level;
+  if (debug_level > 0) { return; }
+  int fd = open("/dev/null", O_RDONLY);
+  ASSERT(fd > STDERR_FILENO);
+  close(STDIN_FILENO);
+  close(STDOUT_FILENO);
+  close(STDERR_FILENO);
+  dup2(fd, STDIN_FILENO);
+  dup2(fd, STDOUT_FILENO);
+  dup2(fd, STDERR_FILENO);
+  close(fd);
+}
+#endif  // DEVELOPER
+
+static void CloseNonStdFileDescriptors()
+{
+  constexpr int min_fd_to_be_closed = STDERR_FILENO + 1;
+
+#if defined(HAVE_FCNTL_F_CLOSEM)
+  fcntl(min_fd_to_be_closed, F_CLOSEM);
+#elif defined(HAVE_CLOSEFROM)
+  closefrom(min_fd_to_be_closed);
+#else
+  for (int i = sysconf(_SC_OPEN_MAX) - 1; i >= min_fd_to_be_closed; i--) {
+    close(i);
+  }
+#endif
+}
 
 void daemon_start()
 {
-#if !defined(HAVE_WIN32)
-  int i;
-  int fd;
-  pid_t cpid;
-  mode_t oldmask;
-#ifdef DEVELOPER
-  int low_fd = 2;
-#else
-  int low_fd = -1;
-#endif
-  /*
-   *  Become a daemon.
-   */
-
   Dmsg0(900, "Enter daemon_start\n");
-  if ((cpid = fork()) < 0) {
-    BErrNo be;
-    Emsg1(M_ABORT, 0, _("Cannot fork to become daemon: ERR=%s\n"),
-          be.bstrerror());
-  } else if (cpid > 0) {
-    exit(0); /* parent exits */
-  }
-  /* Child continues */
 
-  setsid();
-
-  /* In the PRODUCTION system, we close ALL
-   * file descriptors except stdin, stdout, and stderr.
-   */
-  if (debug_level > 0) { low_fd = 2; /* don't close debug output */ }
-
-#if defined(HAVE_FCNTL_F_CLOSEM)
-  /*
-   * fcntl(fd, F_CLOSEM) needs the lowest filedescriptor
-   * to close. the current code sets the last one to keep
-   * open. So increment it with 1 and use that as argument.
-   */
-  low_fd++;
-  fcntl(low_fd, F_CLOSEM);
-#elif defined(HAVE_CLOSEFROM)
-  /*
-   * closefrom needs the lowest filedescriptor to close.
-   * the current code sets the last one to keep open.
-   * So increment it with 1 and use that as argument.
-   */
-  low_fd++;
-  closefrom(low_fd);
-#else
-  for (i = sysconf(_SC_OPEN_MAX) - 1; i > low_fd; i--) { close(i); }
-#endif
-
-  /*
-   * Avoid creating files 666 but don't override any
-   * more restrictive mask set by the user.
-   */
-  oldmask = umask(026);
-  oldmask |= 026;
-  umask(oldmask);
-
-
-  /*
-   * Make sure we have fd's 0, 1, 2 open
-   *  If we don't do this one of our sockets may open
-   *  there and if we then use stdout, it could
-   *  send total garbage to our socket.
-   *
-   */
-  fd = open("/dev/null", O_RDONLY, 0644);
-  if (fd > 2) {
-    close(fd);
-  } else {
-    for (i = 1; fd + i <= 2; i++) { dup2(fd, fd + i); }
+  switch (fork()) {
+    case 0:
+      setsid();
+      umask(umask(0) | S_IWGRP | S_IROTH | S_IWOTH);
+      SetupStdFileDescriptors();
+      CloseNonStdFileDescriptors();
+      break;
+    case -1: {
+      BErrNo be;
+      Emsg1(M_ABORT, 0, _("Cannot fork to become daemon: ERR=%s\n"),
+            be.bstrerror());
+      break;
+    }
+    default:
+      exit(0);
   }
 
-#endif /* HAVE_WIN32 */
   Dmsg0(900, "Exit daemon_start\n");
 }
+#endif /* defined(HAVE_WIN32) */
