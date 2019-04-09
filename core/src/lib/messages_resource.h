@@ -30,20 +30,24 @@ class MessageDestinationInfo;
 
 class MessagesResource : public BareosResource {
  public:
-  std::string mail_cmd_;                            /* Mail command */
-  std::string operator_cmd_;                        /* Operator command */
-  std::string timestamp_format_;                    /* Timestamp format */
-  std::vector<MessageDestinationInfo*> dest_chain_; /* chain of destinations */
-  char send_msg_types_[NbytesForBits(M_MAX + 1)];   /* Bit array of types */
+  std::string mail_cmd_;                             /* Mail command */
+  std::string operator_cmd_;                         /* Operator command */
+  std::string timestamp_format_;                     /* Timestamp format */
+  std::vector<MessageDestinationInfo*> dest_chain_;  /* chain of destinations */
+  char send_msg_types_[NbytesForBits(M_MAX + 1)]{0}; /* Bit array of types */
 
  private:
   static pthread_mutex_t mutex_;
-  bool in_use_;  /* Set when using to send a message */
-  bool closing_; /* Set when closing message resource */
+  bool in_use_ = false;  /* Set when using to send a message */
+  bool closing_ = false; /* Set when closing message resource */
 
  public:
-  MessagesResource();
+  MessagesResource() = default;
   virtual ~MessagesResource();
+  MessagesResource(const MessagesResource& other) = delete;
+  MessagesResource(const MessagesResource&& other) = delete;
+  MessagesResource& operator=(const MessagesResource& rhs) = default;
+  MessagesResource& operator=(const MessagesResource&& rhs) = delete;
 
   void ShallowCopyTo(BareosResource* p) const override;
 

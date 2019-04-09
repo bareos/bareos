@@ -43,5 +43,6 @@ void SetJcrInTsd(JobControlRecord* jcr);
 void RemoveJcrFromTsd(JobControlRecord* jcr);
 uint32_t GetJobidFromTsd();
 uint32_t GetJobidFromTid(pthread_t tid);
+void setup_tsd_key();
 
 #endif  // BAREOS_LIB_JCR_H_

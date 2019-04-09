@@ -24,7 +24,7 @@
 #ifndef BAREOS_LIB_MESSAGE_DESTINATION_INFO_H_
 #define BAREOS_LIB_MESSAGE_DESTINATION_INFO_H_
 
-#include "lib/message_level.h"
+#include "lib/message_severity.h"
 
 enum class MessageDestinationCode : int
 {

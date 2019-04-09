@@ -41,13 +41,9 @@
 #include "lib/message_destination_info.h"
 #include "lib/message_queue_item.h"
 
-db_log_insert_func p_db_log_insert = NULL;
+static db_log_insert_func p_db_log_insert = NULL;
 
-#define FULL_LOCATION 1 /* set for file:line in Debug messages */
-
-/*
- * This is where we define "Globals" because all the daemons include this file.
- */
+// globals
 const char* working_directory = NULL; /* working directory path stored here */
 const char* assert_msg = (char*)NULL; /* ASSERT2 error message */
 int verbose = 0;                      /* increase User messages */
@@ -65,22 +61,11 @@ int console_msg_pending = false;
 char con_fname[500]; /* Console filename */
 FILE* con_fd = NULL; /* Console file descriptor */
 brwlock_t con_lock;  /* Console lock structure */
-job_code_callback_t message_job_code_callback =
-    NULL; /* Job code callback. Only used by director. */
-
-/* Forward referenced functions */
-
-/* Imported functions */
-void setup_tsd_key();
-
-/* Static storage */
+job_code_callback_t message_job_code_callback = NULL;  // Only used by director
 
 /* Exclude spaces but require .mail at end */
 #define MAIL_REGEX "^[^ ]+\\.mail$"
 
-/*
- * Allow only one thread to tweak d->fd at a time
- */
 static MessagesResource* daemon_msgs; /* Global messages */
 static char* catalog_db = NULL;       /* Database type */
 static const char* log_timestamp_format = "%d-%b %H:%M";
@@ -115,9 +100,6 @@ static const char* bstrrpath(const char* start, const char* end)
   return end;
 }
 
-/*
- * Handle message delivery errors
- */
 static void DeliveryError(const char* fmt, ...)
 {
   va_list ap;
@@ -313,9 +295,6 @@ void InitConsoleMsg(const char* wd)
   }
 }
 
-/*
- * Create a unique filename for the mail command
- */
 static void MakeUniqueMailFilename(JobControlRecord* jcr,
                                    POOLMEM*& name,
                                    MessageDestinationInfo* d)
@@ -330,9 +309,6 @@ static void MakeUniqueMailFilename(JobControlRecord* jcr,
   Dmsg1(850, "mailname=%s\n", name);
 }
 
-/*
- * Open a mail pipe
- */
 static Bpipe* open_mail_pipe(JobControlRecord* jcr,
                              POOLMEM*& cmd,
                              MessageDestinationInfo* d)
@@ -1044,12 +1020,10 @@ void d_msg(const char* file, int line, int level, const char* fmt, ...)
       pt_out(buf.c_str());
     }
 
-#ifdef FULL_LOCATION
     if (details) {
       Mmsg(buf, "%s (%d): %s:%d-%u ", my_name, level, get_basename(file), line,
            GetJobidFromTsd());
     }
-#endif
 
     while (1) {
       maxlen = more.MaxSize() - 1;
@@ -1065,9 +1039,7 @@ void d_msg(const char* file, int line, int level, const char* fmt, ...)
       break;
     }
 
-#ifdef FULL_LOCATION
     if (details) { pt_out(buf.c_str()); }
-#endif
 
     pt_out(more.c_str());
   }
@@ -1132,12 +1104,10 @@ void p_msg(const char* file, int line, int level, const char* fmt, ...)
   int len, maxlen;
   PoolMem buf(PM_EMSG), more(PM_EMSG);
 
-#ifdef FULL_LOCATION
   if (level >= 0) {
     Mmsg(buf, "%s: %s:%d-%u ", my_name, get_basename(file), line,
          GetJobidFromTsd());
   }
-#endif
 
   while (1) {
     maxlen = more.MaxSize() - 1;
@@ -1153,9 +1123,7 @@ void p_msg(const char* file, int line, int level, const char* fmt, ...)
     break;
   }
 
-#ifdef FULL_LOCATION
   if (level >= 0) { pt_out(buf.c_str()); }
-#endif
 
   pt_out(more.c_str());
 }
@@ -1172,12 +1140,10 @@ void p_msg_fb(const char* file, int line, int level, const char* fmt, ...)
   int len = 0;
   va_list arg_ptr;
 
-#ifdef FULL_LOCATION
   if (level >= 0) {
     len = Bsnprintf(buf, sizeof(buf), "%s: %s:%d-%u ", my_name,
                     get_basename(file), line, GetJobidFromTsd());
   }
-#endif
 
   va_start(arg_ptr, fmt);
   Bvsnprintf(buf + len, sizeof(buf) - len, (char*)fmt, arg_ptr);
@@ -1214,12 +1180,10 @@ void t_msg(const char* file, int line, int level, const char* fmt, ...)
       trace_fd = fopen(fn.c_str(), "a+b");
     }
 
-#ifdef FULL_LOCATION
     if (details) {
       Mmsg(buf, "%s: %s:%d-%u ", my_name, get_basename(file), line,
            GetJobidFromTsd());
     }
-#endif
 
     while (1) {
       maxlen = more.MaxSize() - 1;
@@ -1236,9 +1200,7 @@ void t_msg(const char* file, int line, int level, const char* fmt, ...)
     }
 
     if (trace_fd != NULL) {
-#ifdef FULL_LOCATION
       if (details) { fputs(buf.c_str(), trace_fd); }
-#endif
       fputs(more.c_str(), trace_fd);
       fflush(trace_fd);
     }
@@ -1726,3 +1688,5 @@ void SetLogTimestampFormat(const char* format)
 {
   log_timestamp_format = format;
 }
+
+void SetDbLogInsertCallback(db_log_insert_func f) { p_db_log_insert = f; }

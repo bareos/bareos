@@ -28,15 +28,6 @@
 
 pthread_mutex_t MessagesResource::mutex_ = PTHREAD_MUTEX_INITIALIZER;
 
-MessagesResource::MessagesResource()
-    : send_msg_types_{0}
-
-    , in_use_(false)
-    , closing_(false)
-{
-  return;
-}
-
 void MessagesResource::ShallowCopyTo(BareosResource* p) const
 {
   MessagesResource* r = dynamic_cast<MessagesResource*>(p);

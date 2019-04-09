@@ -53,8 +53,7 @@ void SetLogTimestampFormat(const char* format);
 typedef bool (*db_log_insert_func)(JobControlRecord* jcr,
                                    utime_t mtime,
                                    char* msg);
-extern db_log_insert_func p_db_log_insert;
-
+void SetDbLogInsertCallback(db_log_insert_func f);
 
 class MessagesResource;
 

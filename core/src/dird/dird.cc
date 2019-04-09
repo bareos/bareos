@@ -415,7 +415,7 @@ int main(int argc, char* argv[])
 
   CleanUpOldFiles();
 
-  p_db_log_insert = (db_log_insert_func)DirDbLogInsert;
+  SetDbLogInsertCallback(DirDbLogInsert);
 
   InitSighandlerSighup();
 
