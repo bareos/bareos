@@ -923,7 +923,6 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
    * - VolumeStatus: only used in ua_dotcmds, not a datatype
    * - FS_option_kw: from inc_conf. Replaced by CFG_TYPE_OPTIONS",
    * options_items.
-   * - FS_options: are they needed?
    */
 
   PmStrcat(buffer, json_dumps(json, JSON_INDENT(2)));
@@ -1926,7 +1925,7 @@ bool FilesetResource::PrintConfig(PoolMem& buff,
     IndentConfigItem(cfg_str, 1, temp.c_str());
   }
 
-  for (int i = 0; i < include_items.size(); i++) {
+  for (std::size_t i = 0; i < include_items.size(); i++) {
     IncludeExcludeItem* incexe = include_items[i];
 
     IndentConfigItem(cfg_str, 1, "Include {\n");
@@ -1934,7 +1933,7 @@ bool FilesetResource::PrintConfig(PoolMem& buff,
     /*
      * Start options block
      */
-    for (int j = 0; j < incexe->opts_list.size(); j++) {
+    for (std::size_t j = 0; j < incexe->opts_list.size(); j++) {
       FileOptions* fo = incexe->opts_list[j];
 
       IndentConfigItem(cfg_str, 2, "Options {\n");
@@ -2267,7 +2266,7 @@ bool FilesetResource::PrintConfig(PoolMem& buff,
 
   } /* loop over all include blocks */
 
-  for (int j = 0; j < exclude_items.size(); j++) {
+  for (std::size_t j = 0; j < exclude_items.size(); j++) {
     IncludeExcludeItem* incexe = exclude_items[j];
 
     if (incexe->name_list.size()) {

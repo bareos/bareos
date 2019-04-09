@@ -409,7 +409,7 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
 {
   int i, j, len;
   Plugin* plugin;
-  bpContext* ctx;
+  bpContext* ctx = nullptr;
   uint32_t instance;
   bDirEvent event;
   bDirEventType eventType;
