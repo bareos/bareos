@@ -186,7 +186,7 @@ bool ConfigurationParser::GetTlsPskByFullyQualifiedResourceName(
  */
 void ConfigurationParser::ScanTypes(LEX* lc,
                                     MessagesResource* msg,
-                                    int dest_code,
+                                    MessageDestinationCode dest_code,
                                     const std::string& where,
                                     const std::string& cmd,
                                     const std::string& timestamp_format)
@@ -220,12 +220,12 @@ void ConfigurationParser::ScanTypes(LEX* lc,
 
     if (msg_type == M_MAX + 1) {     /* all? */
       for (i = 1; i <= M_MAX; i++) { /* yes set all types */
-        AddMsgDest(msg, dest_code, i, where, cmd, timestamp_format);
+        msg->AddMessageDestination(dest_code, i, where, cmd, timestamp_format);
       }
     } else if (is_not) {
-      RemMsgDest(msg, dest_code, msg_type, where);
+      msg->RemoveMessageDestination(dest_code, msg_type, where);
     } else {
-      AddMsgDest(msg, dest_code, msg_type, where, cmd, timestamp_format);
+      msg->AddMessageDestination(dest_code, msg_type, where, cmd, timestamp_format);
     }
     if (lc->ch != ',') { break; }
     Dmsg0(900, "call LexGetToken() to eat comma\n");
@@ -259,15 +259,17 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
   }
 
   if (pass == 1) {
-    switch (item->code) {
-      case MD_STDOUT:
-      case MD_STDERR:
-      case MD_CONSOLE:
-      case MD_CATALOG:
-        ScanTypes(lc, message_resource, item->code, std::string(),
-                  std::string(), message_resource->timestamp_format_);
+    switch (static_cast<MessageDestinationCode>(item->code)) {
+      case MessageDestinationCode::kStdout:
+      case MessageDestinationCode::kStderr:
+      case MessageDestinationCode::kConsole:
+      case MessageDestinationCode::kCatalog:
+        ScanTypes(lc, message_resource,
+                  static_cast<MessageDestinationCode>(item->code),
+                  std::string(), std::string(),
+                  message_resource->timestamp_format_);
         break;
-      case MD_SYSLOG: { /* syslog */
+      case MessageDestinationCode::kSyslog: { /* syslog */
         char* p;
         int cnt = 0;
         bool done = false;
@@ -309,20 +311,25 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
           dest_len = lc->str_len;
           token = LexGetToken(lc, BCT_SKIP_EOL);
 
-          ScanTypes(lc, message_resource, item->code, dest, NULL, NULL);
+          ScanTypes(lc, message_resource,
+                    static_cast<MessageDestinationCode>(item->code), dest, NULL,
+                    NULL);
           FreePoolMemory(dest);
           Dmsg0(900, "done with dest codes\n");
         } else {
-          ScanTypes(lc, message_resource, item->code, NULL, NULL, NULL);
+          ScanTypes(lc, message_resource,
+                    static_cast<MessageDestinationCode>(item->code), NULL, NULL,
+                    NULL);
         }
         break;
       }
-      case MD_OPERATOR:        /* Send to operator */
-      case MD_DIRECTOR:        /* Send to Director */
-      case MD_MAIL:            /* Mail */
-      case MD_MAIL_ON_ERROR:   /* Mail if Job errors */
-      case MD_MAIL_ON_SUCCESS: /* Mail if Job succeeds */
-        if (item->code == MD_OPERATOR) {
+      case MessageDestinationCode::kOperator:
+      case MessageDestinationCode::kDirector:
+      case MessageDestinationCode::kMail:
+      case MessageDestinationCode::KMailOnError:
+      case MessageDestinationCode::kMailOnSuccess:
+        if (static_cast<MessageDestinationCode>(item->code) ==
+            MessageDestinationCode::kOperator) {
           cmd = message_resource->operator_cmd_.c_str();
         } else {
           cmd = message_resource->mail_cmd_.c_str();
@@ -353,13 +360,14 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
           break;
         }
         Dmsg1(900, "mail_cmd=%s\n", NPRT(cmd));
-        ScanTypes(lc, message_resource, item->code, dest, cmd,
+        ScanTypes(lc, message_resource,
+                  static_cast<MessageDestinationCode>(item->code), dest, cmd,
                   message_resource->timestamp_format_);
         FreePoolMemory(dest);
         Dmsg0(900, "done with dest codes\n");
         break;
-      case MD_FILE:   /* File */
-      case MD_APPEND: /* Append */
+      case MessageDestinationCode::kFile:
+      case MessageDestinationCode::kAppend:
         dest = GetPoolMemory(PM_MESSAGE);
 
         /*
@@ -374,8 +382,9 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
           scan_err1(lc, _("expected an =, got: %s"), lc->str);
           return;
         }
-        ScanTypes(lc, message_resource, item->code, dest, std::string(),
-                  message_resource->timestamp_format_);
+        ScanTypes(lc, message_resource,
+                  static_cast<MessageDestinationCode>(item->code), dest,
+                  std::string(), message_resource->timestamp_format_);
         FreePoolMemory(dest);
         Dmsg0(900, "done with dest codes\n");
         break;
@@ -1516,6 +1525,26 @@ static void PrintConfigTime(ResourceItem* item,
   IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
 }
 
+// message destinations
+struct s_mdestination {
+  const char* destination;
+  bool where;
+};
+
+static std::map<MessageDestinationCode, s_mdestination> msg_destinations = {
+    {MessageDestinationCode::kSyslog, {"syslog", false}},
+    {MessageDestinationCode::kMail, {"mail", true}},
+    {MessageDestinationCode::kFile, {"file", true}},
+    {MessageDestinationCode::kAppend, {"append", true}},
+    {MessageDestinationCode::kStdout, {"stdout", false}},
+    {MessageDestinationCode::kStderr, {"stderr", false}},
+    {MessageDestinationCode::kDirector, {"director", true}},
+    {MessageDestinationCode::kOperator, {"operator", true}},
+    {MessageDestinationCode::kConsole, {"console", false}},
+    {MessageDestinationCode::KMailOnError, {"mailonerror", true}},
+    {MessageDestinationCode::kMailOnSuccess, {"mailonsuccess", true}},
+    {MessageDestinationCode::kCatalog, {"catalog", false}}};
+
 bool MessagesResource::PrintConfig(PoolMem& buff,
                                    const ConfigurationParser& /* unused */,
                                    bool hide_sensitive_data,
@@ -1524,7 +1553,6 @@ bool MessagesResource::PrintConfig(PoolMem& buff,
   PoolMem cfg_str; /* configuration as string  */
   PoolMem temp;
   MessagesResource* msgres;
-  DEST* d;
 
   msgres = this;
 
@@ -1558,23 +1586,22 @@ bool MessagesResource::PrintConfig(PoolMem& buff,
     PmStrcat(cfg_str, temp.c_str());
   }
 
-  for (DEST* d : msgres->dest_chain_) {
+  for (MessageDestinationInfo* d : msgres->dest_chain_) {
     int nr_set = 0;
     int nr_unset = 0;
     PoolMem t; /* number of set   types */
     PoolMem u; /* number of unset types */
 
-    for (int i = 0; msg_destinations[i].code; i++) {
-      if (msg_destinations[i].code == d->dest_code_) {
-        if (msg_destinations[i].where) {
-          Mmsg(temp, "   %s = %s = ", msg_destinations[i].destination,
-               d->where_.c_str());
-        } else {
-          Mmsg(temp, "   %s = ", msg_destinations[i].destination);
-        }
-        PmStrcat(cfg_str, temp.c_str());
-        break;
+    std::map<MessageDestinationCode, s_mdestination>::iterator dest =
+        msg_destinations.find(d->dest_code_);
+    if (dest != msg_destinations.end()) {
+      if (dest->second.where) {
+        Mmsg(temp, "   %s = %s = ", dest->second.destination,
+             d->where_.c_str());
+      } else {
+        Mmsg(temp, "   %s = ", dest->second.destination);
       }
+      PmStrcat(cfg_str, temp.c_str());
     }
 
     for (int j = 0; j < M_MAX - 1; j++) {

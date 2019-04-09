@@ -29,27 +29,29 @@
 #ifndef BAREOS_LIB_MSG_RES_H_
 #define BAREOS_LIB_MSG_RES_H_ 1
 
+#include "lib/message_destination_info.h"
+
 /* clang-format off */
 
 static ResourceItem msgs_items[] = {
-   { "Name", CFG_TYPE_NAME, ITEM(res_msgs,resource_name_), 0, 0, NULL, NULL, NULL },
-   { "Description", CFG_TYPE_STR, ITEM(res_msgs,description_), 0, 0, NULL, NULL, NULL },
-   { "MailCommand", CFG_TYPE_STDSTR, ITEM(res_msgs,mail_cmd_), 0, 0, NULL, NULL, NULL },
-   { "OperatorCommand", CFG_TYPE_STDSTR, ITEM(res_msgs,operator_cmd_), 0, 0, NULL, NULL, NULL },
-   { "TimestampFormat", CFG_TYPE_STDSTR, ITEM(res_msgs,timestamp_format_), 0, 0, NULL, NULL, NULL },
-   { "Syslog", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_SYSLOG, 0, NULL, NULL, NULL },
-   { "Mail", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_MAIL, 0, NULL, NULL, NULL },
-   { "MailOnError", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_MAIL_ON_ERROR, 0, NULL, NULL, NULL },
-   { "MailOnSuccess", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_MAIL_ON_SUCCESS, 0, NULL, NULL, NULL },
-   { "File", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_FILE, 0, NULL, NULL, NULL },
-   { "Append", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_APPEND, 0, NULL, NULL, NULL },
-   { "Stdout", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_STDOUT, 0, NULL, NULL, NULL },
-   { "Stderr", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_STDERR, 0, NULL, NULL, NULL },
-   { "Director", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_DIRECTOR, 0, NULL, NULL, NULL },
-   { "Console", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_CONSOLE, 0, NULL, NULL, NULL },
-   { "Operator", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_OPERATOR, 0, NULL, NULL, NULL },
-   { "Catalog", CFG_TYPE_MSGS, ITEMC(res_msgs), MD_CATALOG, 0, NULL, NULL, NULL },
-   {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
+   { "Name", CFG_TYPE_NAME, ITEM(res_msgs, resource_name_), static_cast<int>(MessageDestinationCode::kUndefined), 0, NULL, NULL, NULL },
+   { "Description", CFG_TYPE_STR, ITEM(res_msgs, description_), static_cast<int>(MessageDestinationCode::kUndefined), 0, NULL, NULL, NULL },
+   { "MailCommand", CFG_TYPE_STDSTR, ITEM(res_msgs, mail_cmd_), static_cast<int>(MessageDestinationCode::kUndefined), 0, NULL, NULL, NULL },
+   { "OperatorCommand", CFG_TYPE_STDSTR, ITEM(res_msgs, operator_cmd_), static_cast<int>(MessageDestinationCode::kUndefined), 0, NULL, NULL, NULL },
+   { "TimestampFormat", CFG_TYPE_STDSTR, ITEM(res_msgs, timestamp_format_), static_cast<int>(MessageDestinationCode::kUndefined), 0, NULL, NULL, NULL },
+   { "Syslog", CFG_TYPE_MSGS, ITEMC(res_msgs), static_cast<int>(MessageDestinationCode::kSyslog), 0, NULL, NULL, NULL },
+   { "Mail", CFG_TYPE_MSGS, ITEMC(res_msgs), static_cast<int>(MessageDestinationCode::kMail), 0, NULL, NULL, NULL },
+   { "MailOnError", CFG_TYPE_MSGS, ITEMC(res_msgs), static_cast<int>(MessageDestinationCode::KMailOnError), 0, NULL, NULL, NULL },
+   { "MailOnSuccess", CFG_TYPE_MSGS, ITEMC(res_msgs), static_cast<int>(MessageDestinationCode::kMailOnSuccess), 0, NULL, NULL, NULL },
+   { "File", CFG_TYPE_MSGS, ITEMC(res_msgs), static_cast<int>(MessageDestinationCode::kFile), 0, NULL, NULL, NULL },
+   { "Append", CFG_TYPE_MSGS, ITEMC(res_msgs), static_cast<int>(MessageDestinationCode::kAppend), 0, NULL, NULL, NULL },
+   { "Stdout", CFG_TYPE_MSGS, ITEMC(res_msgs), static_cast<int>(MessageDestinationCode::kStdout), 0, NULL, NULL, NULL },
+   { "Stderr", CFG_TYPE_MSGS, ITEMC(res_msgs), static_cast<int>(MessageDestinationCode::kStderr), 0, NULL, NULL, NULL },
+   { "Director", CFG_TYPE_MSGS, ITEMC(res_msgs), static_cast<int>(MessageDestinationCode::kDirector), 0, NULL, NULL, NULL },
+   { "Console", CFG_TYPE_MSGS, ITEMC(res_msgs), static_cast<int>(MessageDestinationCode::kConsole), 0, NULL, NULL, NULL },
+   { "Operator", CFG_TYPE_MSGS, ITEMC(res_msgs), static_cast<int>(MessageDestinationCode::kOperator), 0, NULL, NULL, NULL },
+   { "Catalog", CFG_TYPE_MSGS, ITEMC(res_msgs), static_cast<int>(MessageDestinationCode::kCatalog), 0, NULL, NULL, NULL },
+   {nullptr, 0, {nullptr}, nullptr, static_cast<int>(MessageDestinationCode::kUndefined), 0, nullptr, nullptr, nullptr}
 };
 
 /* clang-format on */

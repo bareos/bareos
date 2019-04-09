@@ -34,131 +34,9 @@
 #include "lib/bits.h"
 #include "lib/dlink.h"
 #include "lib/rwlock.h"
+#include "lib/message_destination_info.h"
 
 #include <string>
-
-#undef M_DEBUG
-#undef M_ABORT
-#undef M_FATAL
-#undef M_ERROR
-#undef M_WARNING
-#undef M_INFO
-#undef M_MOUNT
-#undef M_ERROR_TERM
-#undef M_TERM
-#undef M_RESTORED
-#undef M_SECURITY
-#undef M_ALERT
-#undef M_VOLMGMT
-#undef M_AUDIT
-
-/**
- * Most of these message levels are more or less obvious.
- * They have evolved somewhat during the development of BAREOS,
- * and here are some of the details of where I am trying to
- * head (in the process of changing the code) as of 15 June 2002.
- *
- * M_ABORT       BAREOS immediately aborts and tries to produce a traceback
- *               This is for really serious errors like segmentation fault.
- * M_ERROR_TERM  BAREOS immediately terminates but no dump. This is for
- *               "obvious" serious errors like daemon already running or
- *               cannot open critical file, ... where a dump is not wanted.
- * M_TERM        BAREOS daemon shutting down because of request (SIGTERM).
- * M_DEBUG       Debug Messages
- *
- * The remaining apply to Jobs rather than the daemon.
- *
- * M_FATAL       BAREOS detected a fatal Job error. The Job will be killed,
- *               but BAREOS continues running.
- * M_ERROR       BAREOS detected a Job error. The Job will continue running
- *               but the termination status will be error.
- * M_WARNING     Job warning message.
- * M_INFO        Job information message.
- * M_SAVED       Info on saved file
- * M_NOTSAVED    Info on not saved file
- * M_RESTORED    An ls -l of each restored file.
- * M_SKIPPED     File skipped during backup by option setting
- * M_SECURITY    For security viloations. This is equivalent to FATAL.
- * M_ALERT       For Tape Alert messages.
- * M_VOLMGMT     Volume Management message
- * M_AUDIT       Auditing message
- * M_MOUNT       Mount requests
- */
-enum
-{
-  /*
-   * Keep M_ABORT=1 for dlist.h
-   */
-  M_ABORT = 1,
-  M_DEBUG,
-  M_FATAL,
-  M_ERROR,
-  M_WARNING,
-  M_INFO,
-  M_SAVED,
-  M_NOTSAVED,
-  M_SKIPPED,
-  M_MOUNT,
-  M_ERROR_TERM,
-  M_TERM,
-  M_RESTORED,
-  M_SECURITY,
-  M_ALERT,
-  M_VOLMGMT,
-  M_AUDIT
-};
-
-#define M_MAX M_AUDIT /* keep this updated ! */
-#define NR_MSG_TYPES NbytesForBits(M_MAX + 1)
-
-struct DEST {
- public:
-  DEST() = default;
-  ~DEST() = default;
-  DEST(const DEST& other) = default;
-
-  FILE* file_pointer_ = nullptr;
-  int dest_code_ = 0;               /* Destination (one of the MD_ codes) */
-  int max_len_ = 0;                 /* Max mail line length */
-  int syslog_facility_ = 0;         /* Syslog Facility */
-  char msg_types_[NR_MSG_TYPES]{0}; /* Message type mask */
-  std::string where_;               /* Filename/program name */
-  std::string mail_cmd_;            /* Mail command */
-  std::string timestamp_format_;    /* used in logging messages */
-  std::string mail_filename_;       /* Unique mail filename */
-};
-
-/**
- * Message Destination values for dest field of DEST
- *
- * MD_SYSLOG          Send msg to syslog
- * MD_MAIL            Email group of messages
- * MD_FILE            Write messages to a file
- * MD_APPEND          Append messages to a file
- * MD_STDOUT          Print messages
- * MD_STDERR          Print messages to stderr
- * MD_DIRECTOR,       Send message to the Director
- * MD_OPERATOR        Email a single message to the operator
- * MD_CONSOLE         Send msg to UserAgent or console
- * MD_MAIL_ON_ERROR   Email messages if job errors
- * MD_MAIL_ON_SUCCESS Email messages if job succeeds
- * MD_CATALOG
- */
-enum
-{
-  MD_SYSLOG = 1,
-  MD_MAIL,
-  MD_FILE,
-  MD_APPEND,
-  MD_STDOUT,
-  MD_STDERR,
-  MD_DIRECTOR,
-  MD_OPERATOR,
-  MD_CONSOLE,
-  MD_MAIL_ON_ERROR,
-  MD_MAIL_ON_SUCCESS,
-  MD_CATALOG
-};
 
 /**
  * Queued message item
@@ -212,16 +90,6 @@ void InitMsg(JobControlRecord* jcr,
              job_code_callback_t job_code_callback = NULL);
 void TermMsg(void);
 void CloseMsg(JobControlRecord* jcr);
-void AddMsgDest(MessagesResource* msg,
-                int dest,
-                int type,
-                const std::string& where,
-                const std::string& mail_cmd,
-                const std::string& timestamp_format);
-void RemMsgDest(MessagesResource* msg,
-                int dest,
-                int type,
-                const std::string& where);
 void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...);
 void DispatchMessage(JobControlRecord* jcr, int type, utime_t mtime, char* buf);
 void InitConsoleMsg(const char* wd);

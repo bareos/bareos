@@ -26,13 +26,15 @@
 
 #include "lib/bareos_resource.h"
 
+class MessageDestinationInfo;
+
 class MessagesResource : public BareosResource {
  public:
-  std::string mail_cmd_;                          /* Mail command */
-  std::string operator_cmd_;                      /* Operator command */
-  std::string timestamp_format_;                  /* Timestamp format */
-  std::vector<DEST*> dest_chain_;                 /* chain of destinations */
-  char send_msg_types_[NbytesForBits(M_MAX + 1)]; /* Bit array of types */
+  std::string mail_cmd_;                            /* Mail command */
+  std::string operator_cmd_;                        /* Operator command */
+  std::string timestamp_format_;                    /* Timestamp format */
+  std::vector<MessageDestinationInfo*> dest_chain_; /* chain of destinations */
+  char send_msg_types_[NbytesForBits(M_MAX + 1)];   /* Bit array of types */
 
  private:
   static pthread_mutex_t mutex_;
@@ -60,9 +62,25 @@ class MessagesResource : public BareosResource {
                    bool verbose = false) override;
 
   void DuplicateResourceTo(MessagesResource& other) const;
+  void AddMessageDestination(MessageDestinationCode dest_code,
+                             int msg_type,
+                             const std::string& where,
+                             const std::string& mail_cmd,
+                             const std::string& timestamp_format);
+  void RemoveMessageDestination(MessageDestinationCode dest_code,
+                                int msg_type,
+                                const std::string& where);
 
  private:
-  std::vector<DEST*> DuplicateDestChain() const;
+  std::vector<MessageDestinationInfo*> DuplicateDestChain() const;
+  bool AddToExistingChain(MessageDestinationCode dest_code,
+                          int msg_type,
+                          const std::string& where);
+  void AddToNewChain(MessageDestinationCode dest_code,
+                     int msg_type,
+                     const std::string& where,
+                     const std::string& mail_cmd,
+                     const std::string& timestamp_format);
 };
 
 #endif /* BAREOS_LIB_MESSAGES_RESOURCE_H_ */

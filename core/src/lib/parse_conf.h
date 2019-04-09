@@ -34,6 +34,7 @@
 #include "lib/tls_conf.h"
 #include "lib/parse_conf.h"
 #include "lib/keyword_table_s.h"
+#include "lib/message_destination_info.h"
 
 #include <functional>
 #include <memory>
@@ -387,7 +388,7 @@ class ConfigurationParser {
   void StoreAddressesPort(LEX* lc, ResourceItem* item, int index, int pass);
   void ScanTypes(LEX* lc,
                  MessagesResource* msg,
-                 int dest_code,
+                 MessageDestinationCode dest_code,
                  const std::string& where,
                  const std::string& cmd,
                  const std::string& timestamp_format);

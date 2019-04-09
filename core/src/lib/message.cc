@@ -38,6 +38,7 @@
 #include "lib/util.h"
 #include "lib/watchdog.h"
 #include "lib/messages_resource.h"
+#include "lib/message_destination_info.h"
 
 db_log_insert_func p_db_log_insert = NULL;
 
@@ -258,8 +259,9 @@ void InitMsg(JobControlRecord* jcr,
     // initialize default chain for stdout and syslog
     daemon_msgs = new MessagesResource;
     for (i = 1; i <= M_MAX; i++) {
-      AddMsgDest(daemon_msgs, MD_STDOUT, i, std::string(), std::string(),
-                 std::string());
+      daemon_msgs->AddMessageDestination(MessageDestinationCode::kStdout, i,
+                                         std::string(), std::string(),
+                                         std::string());
     }
     Dmsg1(050, "Create daemon global message resource %p\n", daemon_msgs);
     return;
@@ -311,90 +313,11 @@ void InitConsoleMsg(const char* wd)
 }
 
 /*
- * Called only during parsing of the config file.
- *
- * Add a message destination. I.e. associate a message type with
- * a destination (code).
- *
- * Note, where in the case of dest_code FILE is a filename,
- * but in the case of MAIL is a space separated list of
- * email addresses, ...
- */
-void AddMsgDest(MessagesResource* msg,
-                int dest_code,
-                int msg_type,
-                const std::string& where,
-                const std::string& mail_cmd,
-                const std::string& timestamp_format)
-{
-  DEST* d;
-  /*
-   * First search the existing chain and see if we
-   * can simply add this msg_type to an existing entry.
-   */
-  for (DEST* d : msg->dest_chain_) {
-    if (dest_code == d->dest_code_ &&
-        ((where.empty() && d->where_.empty()) || where == d->where_)) {
-      Dmsg4(850, "Add to existing d=%p msgtype=%d destcode=%d where=%s\n", d,
-            msg_type, dest_code, NSTDPRNT(where));
-      SetBit(msg_type, d->msg_types_);
-      SetBit(msg_type,
-             msg->send_msg_types_); /* Set msg_type bit in our local */
-      return;
-    }
-  }
-
-  /*
-   * Not found, create a new entry
-   */
-  d = new DEST;
-  msg->dest_chain_.push_back(d);
-  d->dest_code_ = dest_code;
-  SetBit(msg_type, d->msg_types_);        /* Set type bit in structure */
-  SetBit(msg_type, msg->send_msg_types_); /* Set type bit in our local */
-
-  if (!where.empty()) { d->where_ = where; }
-
-  if (!mail_cmd.empty()) { d->mail_cmd_ = mail_cmd; }
-
-  if (!timestamp_format.empty()) { d->timestamp_format_ = timestamp_format; }
-
-  Dmsg6(850,
-        "add new d=%p msgtype=%d destcode=%d where=%s mailcmd=%s "
-        "timestampformat=%s\n",
-        d, msg_type, dest_code, NSTDPRNT(where), NSTDPRNT(d->mail_cmd_),
-        NSTDPRNT(d->timestamp_format_));
-}
-
-/*
- * Called only during parsing of the config file.
- *
- * Remove a message destination
- */
-void RemMsgDest(MessagesResource* msg,
-                int dest_code,
-                int msg_type,
-                const std::string& where)
-{
-  for (DEST* d : msg->dest_chain_) {
-    Dmsg2(850, "Remove_msg_dest d=%p where=%s\n", d, NSTDPRNT(d->where_));
-    if (BitIsSet(msg_type, d->msg_types_) && (dest_code == d->dest_code_) &&
-        ((where.empty() && d->where_.empty()) || (where == d->where_))) {
-      Dmsg3(850, "Found for remove d=%p msgtype=%d destcode=%d\n", d, msg_type,
-            dest_code);
-      ClearBit(msg_type, d->msg_types_);
-      Dmsg0(850, "Return RemMsgDest\n");
-      return;
-    }
-  }
-}
-
-/*
  * Create a unique filename for the mail command
  */
 static void MakeUniqueMailFilename(JobControlRecord* jcr,
                                    POOLMEM*& name,
-                                   DEST* d)
+                                   MessageDestinationInfo* d)
 {
   if (jcr) {
     Mmsg(name, "%s/%s.%s.%d.mail", working_directory, my_name, jcr->Job,
@@ -409,7 +332,9 @@ static void MakeUniqueMailFilename(JobControlRecord* jcr,
 /*
  * Open a mail pipe
  */
-static Bpipe* open_mail_pipe(JobControlRecord* jcr, POOLMEM*& cmd, DEST* d)
+static Bpipe* open_mail_pipe(JobControlRecord* jcr,
+                             POOLMEM*& cmd,
+                             MessageDestinationInfo* d)
 {
   Bpipe* bpipe;
 
@@ -474,24 +399,24 @@ void CloseMsg(JobControlRecord* jcr)
 
   Dmsg1(850, "===Begin close msg resource at %p\n", msgs);
   cmd = GetPoolMemory(PM_MESSAGE);
-  for (DEST* d : msgs->dest_chain_) {
+  for (MessageDestinationInfo* d : msgs->dest_chain_) {
     if (d->file_pointer_) {
       switch (d->dest_code_) {
-        case MD_FILE:
-        case MD_APPEND:
+        case MessageDestinationCode::kFile:
+        case MessageDestinationCode::kAppend:
           if (d->file_pointer_) {
             fclose(d->file_pointer_); /* close open file descriptor */
             d->file_pointer_ = NULL;
           }
           break;
-        case MD_MAIL:
-        case MD_MAIL_ON_ERROR:
-        case MD_MAIL_ON_SUCCESS:
-          Dmsg0(850, "Got MD_MAIL, MD_MAIL_ON_ERROR or MD_MAIL_ON_SUCCESS\n");
+        case MessageDestinationCode::kMail:
+        case MessageDestinationCode::KMailOnError:
+        case MessageDestinationCode::kMailOnSuccess:
+          Dmsg0(850, "Got kMail, KMailOnError or kMailOnSuccess\n");
           if (!d->file_pointer_) { break; }
 
           switch (d->dest_code_) {
-            case MD_MAIL_ON_ERROR:
+            case MessageDestinationCode::KMailOnError:
               if (jcr) {
                 switch (jcr->JobStatus) {
                   case JS_Terminated:
@@ -502,7 +427,7 @@ void CloseMsg(JobControlRecord* jcr)
                 }
               }
               break;
-            case MD_MAIL_ON_SUCCESS:
+            case MessageDestinationCode::kMailOnSuccess:
               if (jcr) {
                 switch (jcr->JobStatus) {
                   case JS_Terminated:
@@ -631,7 +556,7 @@ void TermMsg()
 }
 
 static inline bool OpenDestFile(JobControlRecord* jcr,
-                                DEST* d,
+                                MessageDestinationInfo* d,
                                 const char* mode)
 {
   d->file_pointer_ = fopen(d->where_.c_str(), mode);
@@ -677,7 +602,8 @@ static struct syslog_facility_name {
     {"local3", LOG_LOCAL3},     {"local4", LOG_LOCAL4}, {"local5", LOG_LOCAL5},
     {"local6", LOG_LOCAL6},     {"local7", LOG_LOCAL7}, {NULL, -1}};
 
-static inline bool SetSyslogFacility(JobControlRecord* jcr, DEST* d)
+static inline bool SetSyslogFacility(JobControlRecord* jcr,
+                                     MessageDestinationInfo* d)
 {
   int i;
 
@@ -822,7 +748,7 @@ void DispatchMessage(JobControlRecord* jcr, int type, utime_t mtime, char* msg)
     return;
   }
 
-  for (DEST* d : msgs->dest_chain_) {
+  for (MessageDestinationInfo* d : msgs->dest_chain_) {
     if (BitIsSet(type, d->msg_types_)) {
       /*
        * See if a specific timestamp format was specified for this log resource.
@@ -839,7 +765,7 @@ void DispatchMessage(JobControlRecord* jcr, int type, utime_t mtime, char* msg)
       }
 
       switch (d->dest_code_) {
-        case MD_CATALOG:
+        case MessageDestinationCode::kCatalog:
           if (!jcr || !jcr->db) { break; }
 
           if (p_db_log_insert) {
@@ -849,7 +775,7 @@ void DispatchMessage(JobControlRecord* jcr, int type, utime_t mtime, char* msg)
             }
           }
           break;
-        case MD_CONSOLE:
+        case MessageDestinationCode::kConsole:
           Dmsg1(850, "CONSOLE for following msg: %s", msg);
           if (!con_fd) {
             con_fd = fopen(con_fname, "a+b");
@@ -871,7 +797,7 @@ void DispatchMessage(JobControlRecord* jcr, int type, utime_t mtime, char* msg)
             Vw(con_lock);
           }
           break;
-        case MD_SYSLOG:
+        case MessageDestinationCode::kSyslog:
           Dmsg1(850, "SYSLOG for following msg: %s\n", msg);
 
           if (!d->syslog_facility_ && !SetSyslogFacility(jcr, d)) {
@@ -918,7 +844,7 @@ void DispatchMessage(JobControlRecord* jcr, int type, utime_t mtime, char* msg)
               break;
           }
           break;
-        case MD_OPERATOR:
+        case MessageDestinationCode::kOperator:
           Dmsg1(850, "OPERATOR for following msg: %s\n", msg);
           if (!jcr) { break; }
           mcmd = GetPoolMemory(PM_MESSAGE);
@@ -941,9 +867,9 @@ void DispatchMessage(JobControlRecord* jcr, int type, utime_t mtime, char* msg)
           }
           FreePoolMemory(mcmd);
           break;
-        case MD_MAIL:
-        case MD_MAIL_ON_ERROR:
-        case MD_MAIL_ON_SUCCESS:
+        case MessageDestinationCode::kMail:
+        case MessageDestinationCode::KMailOnError:
+        case MessageDestinationCode::kMailOnSuccess:
           Dmsg1(850, "MAIL for following msg: %s", msg);
           if (msgs->IsClosing()) { break; }
           msgs->SetInUse();
@@ -969,11 +895,11 @@ void DispatchMessage(JobControlRecord* jcr, int type, utime_t mtime, char* msg)
           fputs(msg, d->file_pointer_);
           msgs->ClearInUse();
           break;
-        case MD_APPEND:
+        case MessageDestinationCode::kAppend:
           Dmsg1(850, "APPEND for following msg: %s", msg);
           mode = "ab";
           goto send_to_file;
-        case MD_FILE:
+        case MessageDestinationCode::kFile:
           Dmsg1(850, "FILE for following msg: %s", msg);
           mode = "w+b";
         send_to_file:
@@ -1000,7 +926,7 @@ void DispatchMessage(JobControlRecord* jcr, int type, utime_t mtime, char* msg)
           fflush(d->file_pointer_);
           msgs->ClearInUse();
           break;
-        case MD_DIRECTOR:
+        case MessageDestinationCode::kDirector:
           Dmsg1(850, "DIRECTOR for following msg: %s", msg);
           if (jcr && jcr->dir_bsock && !jcr->dir_bsock->errors) {
             jcr->dir_bsock->fsend("Jmsg Job=%s type=%d level=%lld %s", jcr->Job,
@@ -1009,7 +935,7 @@ void DispatchMessage(JobControlRecord* jcr, int type, utime_t mtime, char* msg)
             Dmsg1(800, "no jcr for following msg: %s", msg);
           }
           break;
-        case MD_STDOUT:
+        case MessageDestinationCode::kStdout:
           Dmsg1(850, "STDOUT for following msg: %s", msg);
           if (type != M_ABORT && type != M_ERROR_TERM) { /* already printed */
             fputs(dt, stdout);
@@ -1017,7 +943,7 @@ void DispatchMessage(JobControlRecord* jcr, int type, utime_t mtime, char* msg)
             fflush(stdout);
           }
           break;
-        case MD_STDERR:
+        case MessageDestinationCode::kStderr:
           Dmsg1(850, "STDERR for following msg: %s", msg);
           fputs(dt, stderr);
           fputs(msg, stderr);

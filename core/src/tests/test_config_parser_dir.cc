@@ -35,6 +35,7 @@ TEST(ConfigParser, test_stored_config)
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   my_config->ParseConfig();
 
+  my_config->DumpResources(PrintMessage, NULL);
   delete my_config;
 }
 

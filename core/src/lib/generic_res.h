@@ -33,39 +33,12 @@
 
 #ifndef DIRECTOR_DAEMON
 /*
- * Used for message destinations.
- */
-struct s_mdestination {
-  int code;
-  const char* destination;
-  bool where;
-};
-
-/*
  * Used for message types.
  */
 struct s_mtypes {
   const char* name;
   uint32_t token;
 };
-
-/*
- * Various message destinations.
- */
-static s_mdestination msg_destinations[] = {
-    {MD_SYSLOG, "syslog", false},
-    {MD_MAIL, "mail", true},
-    {MD_FILE, "file", true},
-    {MD_APPEND, "append", true},
-    {MD_STDOUT, "stdout", false},
-    {MD_STDERR, "stderr", false},
-    {MD_DIRECTOR, "director", true},
-    {MD_OPERATOR, "operator", true},
-    {MD_CONSOLE, "console", false},
-    {MD_MAIL_ON_ERROR, "mailonerror", true},
-    {MD_MAIL_ON_SUCCESS, "mailonsuccess", true},
-    {MD_CATALOG, "catalog", false},
-    {0, NULL}};
 
 /*
  * Various message types
