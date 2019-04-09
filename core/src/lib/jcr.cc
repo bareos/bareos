@@ -49,6 +49,7 @@
 #include "lib/edit.h"
 #include "lib/tls_conf.h"
 #include "lib/bsock.h"
+#include "lib/message_queue_item.h"
 #include "lib/watchdog.h"
 
 const int debuglevel = 3400;
@@ -376,7 +377,7 @@ void setup_tsd_key()
 JobControlRecord* new_jcr(int size, JCR_free_HANDLER* daemon_free_jcr)
 {
   JobControlRecord* jcr;
-  MessageQeueItem* item = nullptr;
+  MessageQueueItem* item = nullptr;
   struct sigaction sigtimer;
   int status;
 

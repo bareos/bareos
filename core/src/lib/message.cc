@@ -39,6 +39,7 @@
 #include "lib/watchdog.h"
 #include "lib/messages_resource.h"
 #include "lib/message_destination_info.h"
+#include "lib/message_queue_item.h"
 
 db_log_insert_func p_db_log_insert = NULL;
 
@@ -1619,7 +1620,7 @@ void Qmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
   va_list ap;
   int len, maxlen;
   PoolMem buf(PM_EMSG);
-  MessageQeueItem* item;
+  MessageQueueItem* item;
 
   while (1) {
     maxlen = buf.MaxSize() - 1;
@@ -1635,8 +1636,8 @@ void Qmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
     break;
   }
 
-  item = (MessageQeueItem*)malloc(sizeof(MessageQeueItem));
-  new (item) MessageQeueItem();
+  item = (MessageQueueItem*)malloc(sizeof(MessageQueueItem));
+  new (item) MessageQueueItem();
   item->type_ = type;
   item->mtime_ = time(NULL);
   item->msg_ = buf.c_str();
@@ -1664,7 +1665,7 @@ void Qmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
  */
 void DequeueMessages(JobControlRecord* jcr)
 {
-  MessageQeueItem* item;
+  MessageQueueItem* item;
 
   if (!jcr->msg_queue) { return; }
 

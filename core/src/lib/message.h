@@ -38,19 +38,6 @@
 
 #include <string>
 
-/**
- * Queued message item
- */
-class MessageQeueItem {
- public:
-  MessageQeueItem() = default;
-  virtual ~MessageQeueItem() = default;
-  dlink link_;
-  int type_ = 0;
-  utime_t mtime_ = {0};
-  std::string msg_;
-};
-
 class JobControlRecord;
 
 extern "C" {
