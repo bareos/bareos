@@ -1,0 +1,149 @@
+#!/bin/sh
+# run a backup
+# copy it
+# purge/delete original volume
+# bscan
+# restore
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+. ./environment
+. "${scripts}/functions"
+
+"${scripts}/cleanup"
+"${scripts}/setup"
+
+mkdir -p "${archivedir}-remote"
+find "${archivedir}-remote" -mindepth 1 -delete
+
+bareos_ctl_sd2() {
+  BAREOS_CONFIG_DIR="${BAREOS_CONFIG_DIR}-remote" BAREOS_SD_PORT=${BAREOS_STORAGE2_PORT} "${scripts}/bareos-ctl-sd" "$@"
+}
+
+my_stop_bareos() {
+  stop_bareos
+  bareos_ctl_sd2 stop
+}
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data
+
+start_test
+
+start_bareos
+bareos_ctl_sd2 start
+
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+setdebug level=100 storage=File
+label volume=TestVolume001 storage=File pool=Full
+run job=$JobName yes
+status director
+status client
+status storage=File
+wait
+update volume=TestVolume001 volstatus=Used
+messages
+@#
+@# do a copy
+@#
+@$out $tmp/log1.out
+label volume=TestCopyVolume001 storage=RemoteFile pool=FullCopy
+run copy yes
+status director
+status client
+status storage=File
+wait
+messages
+purge volume=TestVolume001 yes
+delete volume=TestVolume001 yes
+purge volume=TestCopyVolume001 yes
+delete volume=TestCopyVolume001 yes
+quit
+END_OF_DATA
+
+run_bconsole "$tmp/bconcmds"
+
+oldconf="${conf}"
+conf="${conf}-remote"
+run_bscan_db -vv -d100 -s -V TestCopyVolume001 RemoteFileStorage
+ret=$?
+conf="${oldconf}"
+
+if [ $ret -ne 0 ]; then
+  echo "bscan exit code: $ret"
+  my_stop_bareos
+  exit $ret
+fi
+
+# we set this to the *wrong* number that is currently written to the SOS
+original_job_id=4
+new_job_id=5
+
+if ! grep -q "Created new JobId=${new_job_id} record for original JobId=${original_job_id}" "$tmp/bscan.out"; then
+  echo 'Job numbers of scanned job are not correct'
+  my_stop_bareos
+  exit 1
+fi
+
+num_sos=$(grep -c '^Begin Job Session Record:$' "$tmp/bscan.out")
+if [ "$num_sos" -ne 1 ]; then
+  echo "Found $num_sos start of session records instead of 1"
+  my_stop_bareos
+  exit 1
+fi
+num_eos=$(grep -c '^End Job Session Record:$' "$tmp/bscan.out")
+if [ "$num_eos" -ne 1 ]; then
+  echo "Found $eum_sos end of session records instead of 1"
+  my_stop_bareos
+  exit 1
+fi
+
+total_jobid_records=$(grep -cE '^JobId +: ' "$tmp/bscan.out")
+my_jobid_records=$(grep -cE "^JobId +: ${original_job_id}" "$tmp/bscan.out")
+
+if [ "$my_jobid_records" -ne 2 ]; then
+  echo "Got $my_jobid_records mentions of my jobid, expected 2"
+  my_stop_bareos
+  exit 1
+fi
+if [ "$my_jobid_records" -ne "$total_jobid_records" ]; then
+  echo "Volume containes excess session records:"
+  echo "Got $total_jobid_records in total, only $my_jobid_records mention my original jobid"
+  my_stop_bareos
+  exit 1
+fi
+
+
+cat <<END_OF_DATA >"$tmp/bconcmds2"
+@#
+@# now do a restore
+@#
+@$out $tmp/log2.out
+wait
+restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done
+yes
+wait
+messages
+quit
+END_OF_DATA
+                                                                                
+run_bconsole "$tmp/bconcmds2"
+
+check_for_zombie_jobs storage=File
+
+my_stop_bareos
+
+check_two_logs
+check_restore_diff "${BackupDirectory}"
+end_test

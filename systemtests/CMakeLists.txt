@@ -163,6 +163,11 @@ set(SYSTEM_TESTS
   backup-bareos-test
   backup-bareos-passive-test
   multiplied-device-test
+  virtualfull
+  virtualfull-bscan
+  backup-bscan
+  copy-bscan
+  copy-remote-bscan
 )
 
 set(BASEPORT 42001)
@@ -191,6 +196,7 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   math(EXPR dir_port "${BASEPORT} + 0")
   math(EXPR  fd_port "${BASEPORT} + 1")
   math(EXPR  sd_port "${BASEPORT} + 2")
+  math(EXPR sd2_port "${BASEPORT} + 3")
 
 
   # set(DEFAULT_DB_TYPE )

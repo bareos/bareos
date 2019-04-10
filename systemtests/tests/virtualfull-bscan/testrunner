@@ -1,0 +1,134 @@
+#!/bin/sh
+# run a backup
+# run a incr backup
+# run a virtual full
+# purge all volumes
+# bscan virtual full
+# restore
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+. ./environment
+. "${scripts}/functions"
+
+"${scripts}/cleanup"
+"${scripts}/setup"
+
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data
+
+start_test
+
+start_bareos
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+setdebug level=100 storage=File
+label volume=TestVolume001 storage=File pool=Full
+label volume=TestVolume002 storage=File pool=Incremental
+label volume=TestVolume003 storage=File pool=VirtualFull
+run job=$JobName level=Full yes
+wait
+messages
+list jobs
+@exec "sh -c 'touch ${tmp}/data/*.c'"
+run job=$JobName level=Incremental yes
+wait
+messages
+list jobs
+run job=$JobName level=VirtualFull yes
+wait
+messages
+list jobs
+@# make sure we really restore the virtualfull
+purge volume=TestVolume001 yes
+delete volume=TestVolume001 yes
+purge volume=TestVolume002 yes
+delete volume=TestVolume002 yes
+purge volume=TestVolume003 yes
+delete volume=TestVolume003 yes
+status director
+status client
+status storage=File
+quit
+END_OF_DATA
+
+run_bconsole "$tmp/bconcmds"
+
+run_bscan_db -vv -d100 -s -V TestVolume003 FileStorage
+ret=$?
+if [ $ret -ne 0 ]; then
+  echo "bscan exit code: $ret"
+  stop_bareos
+  exit $ret
+fi
+
+original_job_id=3
+new_job_id=4
+
+if ! grep -q "Created new JobId=${new_job_id} record for original JobId=${original_job_id}" "$tmp/bscan.out"; then
+  echo 'Job numbers of scanned job are not correct'
+  stop_bareos
+  exit 1
+fi
+
+num_sos=$(grep -c '^Begin Job Session Record:$' "$tmp/bscan.out")
+if [ "$num_sos" -ne 1 ]; then
+  echo "Found $num_sos start of session records instead of 1"
+  stop_bareos
+  exit 1
+fi
+num_eos=$(grep -c '^End Job Session Record:$' "$tmp/bscan.out")
+if [ "$num_eos" -ne 1 ]; then
+  echo "Found $eum_sos end of session records instead of 1"
+  stop_bareos
+  exit 1
+fi
+
+total_jobid_records=$(grep -cE '^JobId +: ' "$tmp/bscan.out")
+my_jobid_records=$(grep -cE "^JobId +: ${original_job_id}" "$tmp/bscan.out")
+
+if [ "$my_jobid_records" -ne 2 ]; then
+  echo "Got $my_jobid_records mentions of my jobid, expected 2"
+  stop_bareos
+  exit 1
+fi
+if [ "$my_jobid_records" -ne "$total_jobid_records" ]; then
+  echo "Volume containes excess session records:"
+  echo "Got $total_jobid_records in total, only $my_jobid_records mention my original jobid"
+  stop_bareos
+  exit 1
+fi
+
+
+cat <<END_OF_DATA >"$tmp/bconcmds2"
+@#
+@# now do a restore
+@#
+@$out $tmp/log2.out
+wait
+restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done
+yes
+wait
+messages
+quit
+END_OF_DATA
+                                                                                
+run_bconsole "$tmp/bconcmds2"
+
+check_for_zombie_jobs storage=File
+stop_bareos
+
+check_two_logs
+check_restore_diff "${BackupDirectory}"
+end_test
