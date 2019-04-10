@@ -395,31 +395,39 @@ bail_out:
   return false;
 }
 
-void ConfigurationParser::AppendToResourcesChain(BareosResource* new_resource,
+bool ConfigurationParser::AppendToResourcesChain(BareosResource* new_resource,
                                                  int type)
 {
   int rindex = type - r_first_;
 
+  if (!new_resource->resource_name_) {
+    Emsg1(M_ERROR, 0,
+          _("Name item is required in %s resource, but not found.\n"),
+          resources_[rindex].name);
+    return false;
+  }
+
   if (!res_head_[rindex]) {
-    /* store first entry */
     res_head_[rindex] = new_resource;
-  } else {
-    /* Add new resource to end of chain */
+    Dmsg3(900, "Inserting first %s res: %s index=%d\n", ResToStr(type),
+          new_resource->resource_name_, rindex);
+  } else {  // append
     BareosResource *next, *last;
     for (last = next = res_head_[rindex]; next; next = next->next_) {
       last = next;
       if (bstrcmp(next->resource_name_, new_resource->resource_name_)) {
-        Emsg2(M_ERROR_TERM, 0,
-              _("Attempt to define second \"%s\" resource named \"%s\" is "
-                "not permitted.\n"),
+        Emsg2(M_ERROR, 0,
+              _("Attempt to define second %s resource named \"%s\" is not "
+                "permitted.\n"),
               resources_[rindex].name, new_resource->resource_name_);
-        return;
+        return false;
       }
     }
     last->next_ = new_resource;
-    Dmsg2(90, "Inserting %s new_resource: %s\n", ResToStr(type),
-          new_resource->resource_name_);
+    Dmsg3(900, _("Inserting %s res: %s index=%d\n"), ResToStr(type),
+          new_resource->resource_name_, rindex);
   }
+  return true;
 }
 
 int ConfigurationParser::GetResourceTableIndex(int resource_type)
@@ -668,7 +676,8 @@ BareosResource** ConfigurationParser::SaveResources()
 }
 
 /*
- * Initialize the static structure to zeros, then apply all the default values.
+ * Initialize the static structure to zeros, then apply all the default
+ * values.
  */
 void ConfigurationParser::InitResource(int type,
                                        ResourceItem* items,
@@ -699,8 +708,8 @@ void ConfigurationParser::InitResource(int type,
         /*
          * Sanity check.
          *
-         * Items with a default value but without the CFG_ITEM_DEFAULT flag set
-         * are most of the time an indication of a programmers error.
+         * Items with a default value but without the CFG_ITEM_DEFAULT flag
+         * set are most of the time an indication of a programmers error.
          */
         if (items[i].default_value != nullptr &&
             !(items[i].flags & CFG_ITEM_DEFAULT)) {

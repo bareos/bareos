@@ -239,7 +239,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
               resources[rindex].rcode);
         return false;
     }
-    my_config->AppendToResourcesChain(new_resource, type);
+    error = my_config->AppendToResourcesChain(new_resource, type) ? 0 : 1;
   }
   return (error == 0);
 }

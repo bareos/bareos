@@ -3870,38 +3870,7 @@ static bool AddResourceCopyToEndOfChain(int type)
       Dmsg3(100, "Unhandled resource type: %d\n", type);
       return false;
   }
-
-
-  if (!res_head[rindex]) {           // Ueb --> AppendToResourcesChain()
-    res_head[rindex] = new_resource; /* store first entry */
-    Dmsg3(900, "Inserting first %s res: %s index=%d\n",
-          my_config->ResToStr(type), new_resource->resource_name_, rindex);
-  } else {
-    BareosResource *next, *last;
-    if (!new_resource->resource_name_) {
-      Emsg1(M_ERROR, 0,
-            _("Name item is required in %s resource, but not found.\n"),
-            resources[rindex].name);
-      return false;
-    }
-    /*
-     * Add new res to end of chain
-     */
-    for (last = next = res_head[rindex]; next; next = next->next_) {
-      last = next;
-      if (bstrcmp(next->resource_name_, new_resource->resource_name_)) {
-        Emsg2(M_ERROR, 0,
-              _("Attempt to define second %s resource named \"%s\" is not "
-                "permitted.\n"),
-              resources[rindex].name, new_resource->resource_name_);
-        return false;
-      }
-    }
-    last->next_ = new_resource;
-    Dmsg3(900, _("Inserting %s res: %s index=%d\n"), my_config->ResToStr(type),
-          new_resource->resource_name_, rindex);
-  }
-  return true;
+  return my_config->AppendToResourcesChain(new_resource, type);
 }
 
 /*
@@ -4007,23 +3976,20 @@ bail_out:
   }
 }
 
-/**
- * Free memory of resource -- called when daemon terminates.
- * NB, we don't need to worry about freeing any references
- * to other resources as they will be freed when that
- * resource chain is traversed.  Mainly we worry about freeing
- * allocated strings (names).
- */
 static void FreeResource(BareosResource* res, int type)
 {
   if (!res) return;
 
-  /*
-   * Common stuff -- free the resource name and description
-   */
+  if (res->resource_name_) {
+    free(res->resource_name_);
+    res->resource_name_ = nullptr;
+  }
+  if (res->description_) {
+    free(res->description_);
+    res->description_ = nullptr;
+  }
+
   BareosResource* next_resource = res->next_;
-  if (res->resource_name_) { free(res->resource_name_); }
-  if (res->description_) { free(res->description_); }
 
   switch (type) {
     case R_DIRECTOR: {

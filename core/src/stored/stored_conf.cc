@@ -813,14 +813,14 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         ASSERT(false);
         break;
     }
-    my_config->AppendToResourcesChain(new_resource, type);
+    error = my_config->AppendToResourcesChain(new_resource, type) ? 0 : 1;
   }
   return (error == 0);
 }
 
 static void FreeResource(BareosResource* res, int type)
 {
-  if (res == NULL) return;
+  if (!res) return;
 
   if (res->resource_name_) {
     free(res->resource_name_);

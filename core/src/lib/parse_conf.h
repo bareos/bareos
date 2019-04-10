@@ -266,7 +266,7 @@ class ConfigurationParser {
                     ResourceItem* items,
                     int pass,
                     std::function<void*()> initres);
-  void AppendToResourcesChain(BareosResource* new_resource, int type);
+  bool AppendToResourcesChain(BareosResource* new_resource, int type);
   bool RemoveResource(int type, const char* name);
   void DumpResources(void sendit(void* sock, const char* fmt, ...),
                      void* sock,

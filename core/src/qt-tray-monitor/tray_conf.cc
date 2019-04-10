@@ -214,13 +214,6 @@ static void DumpResource(int type,
   }
 }
 
-/*
- * Free memory of resource -- called when daemon terminates.
- * NB, we don't need to worry about freeing any references
- * to other resources as they will be freed when that
- * resource chain is traversed.  Mainly we worry about freeing
- * allocated strings (names).
- */
 static void FreeResource(BareosResource* res, int type)
 {
   if (res == NULL) return;
@@ -354,7 +347,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         ASSERT(false);
         break;
     }
-    my_config->AppendToResourcesChain(new_resource, type);
+    error = my_config->AppendToResourcesChain(new_resource, type) ? 0 : 1;
   }
   return (error == 0);
 }

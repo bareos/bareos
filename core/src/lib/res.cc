@@ -225,7 +225,8 @@ void ConfigurationParser::ScanTypes(LEX* lc,
     } else if (is_not) {
       msg->RemoveMessageDestination(dest_code, msg_type, where);
     } else {
-      msg->AddMessageDestination(dest_code, msg_type, where, cmd, timestamp_format);
+      msg->AddMessageDestination(dest_code, msg_type, where, cmd,
+                                 timestamp_format);
     }
     if (lc->ch != ',') { break; }
     Dmsg0(900, "call LexGetToken() to eat comma\n");
