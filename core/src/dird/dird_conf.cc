@@ -2349,8 +2349,6 @@ static void FreeIncexe(IncludeExcludeItem* incexe)
 
 static bool UpdateResourcePointer(int type, ResourceItem* items)
 {
-  bool result = true;
-
   switch (type) {
     case R_PROFILE:
     case R_CATALOG:
@@ -2573,10 +2571,29 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
     }
     default:
       Emsg1(M_ERROR, 0, _("Unknown resource type %d in SaveResource.\n"), type);
-      result = false;
-      break;
+      return false;
   }
-  return result;
+
+  /* resource_name_ was already deep copied during 1. pass
+   * as matter of fact the remaining allocated memory is
+   * redundant and would not be freed in the dynamic resources;
+   *
+   * currently, this is the best place to free that */
+
+  BareosResource* res = items[0].static_resource;
+
+  if (res) {
+    if (res->resource_name_) {
+      free(res->resource_name_);
+      res->resource_name_ = nullptr;
+    }
+    if (res->description_) {
+      free(res->description_);
+      res->description_ = nullptr;
+    }
+  }
+
+  return true;
 }
 
 bool PropagateJobdefs(int res_type, JobResource* res)

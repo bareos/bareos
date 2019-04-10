@@ -307,6 +307,25 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         error = 1;
         break;
     }
+
+    /* resource_name_ was already deep copied during 1. pass
+     * as matter of fact the remaining allocated memory is
+     * redundant and would not be freed in the dynamic resources;
+     *
+     * currently, this is the best place to free that */
+
+    BareosResource* res = items[0].static_resource;
+
+    if (res) {
+      if (res->resource_name_) {
+        free(res->resource_name_);
+        res->resource_name_ = nullptr;
+      }
+      if (res->description_) {
+        free(res->description_);
+        res->description_ = nullptr;
+      }
+    }
     return (error == 0);
   }
 
