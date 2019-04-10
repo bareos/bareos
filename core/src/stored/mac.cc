@@ -146,13 +146,16 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
 
         UnserSessionLabel(label, rec);
 
-        /*
-         * set job info from first SOS label
-         */
+        if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY)) {
+          bstrncpy(jcr->Job, label->Job, sizeof(jcr->Job));
+          PmStrcpy(jcr->job_name, label->JobName);
+          PmStrcpy(jcr->client_name, label->ClientName);
+          PmStrcpy(jcr->fileset_name, label->FileSetName);
+          PmStrcpy(jcr->fileset_md5, label->FileSetMD5);
+        }
         jcr->setJobType(label->JobType);
         jcr->setJobLevel(label->JobLevel);
         Dmsg1(200, "joblevel from SOS_LABEL is now %c\n", label->JobLevel);
-        bstrncpy(jcr->Job, label->Job, sizeof(jcr->Job));
 
         if (label->VerNum >= 11) {
           jcr->sched_time = BtimeToUnix(label->write_btime);
@@ -176,15 +179,11 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
         }
       } else {
         Dmsg0(200, "Found additional SOS_LABEL, ignoring! \n");
-        retval = true;
-        goto bail_out;
       }
-
-    } else {
-      /* Other label than SOS -> skip */
-      retval = true;
-      goto bail_out;
     }
+    /* Other label than SOS -> skip */
+    retval = true;
+    goto bail_out;
   }
 
   /*
