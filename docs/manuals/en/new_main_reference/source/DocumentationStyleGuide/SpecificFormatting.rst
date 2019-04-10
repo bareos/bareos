@@ -1,8 +1,11 @@
 Specific Formatting
 ===================
 
+Configuration
+-------------
+
 Configuration File
-------------------
+~~~~~~~~~~~~~~~~~~
 
 Configuration file (snippets) should be formatted as
 
@@ -19,8 +22,8 @@ see :ref:`DocumentationStyleGuide/BareosSpecificFormatting/BareosConfiguration:B
 .. seealso:: :ref:`DocumentationStyleGuide/BareosSpecificFormatting/BareosConfiguration:Bareos Configuration Resource`
 
 
-Configuration
-~~~~~~~~~~~~~
+Configuration Directive
+~~~~~~~~~~~~~~~~~~~~~~~
 
 .. \newcommand{\configline}[1]{\path|#1|}
 
@@ -36,6 +39,25 @@ The output should look like this:
 ``host = s3.amazonaws.com``
 
 However, for a Bareos configuration directive with value use :ref:`DocumentationStyleGuide/BareosSpecificFormatting/BareosConfiguration:Resource Directive With Value`\ .
+
+
+System Command
+--------------
+
+If only a single command should be shown, or you just want to refer to a system command from the text use:
+
+..  \newcommand{\command}[1]{\path|#1|}
+
+    Post Conversion Changes:
+    ${PERL} 's#:raw-latex:`\\command\{(.*?)\}`#:program:`\1`#g'  ${DESTFILE}
+
+::
+
+   :command:`bareos-dbcheck`
+
+The output will look like this:
+
+:command:`bareos-dbcheck`
 
 
 
@@ -64,23 +86,6 @@ The hostname **host** is used, if it is a generic host.
 If the command runs on a specific Bareos server,
 the specific host name from :ref:`DocumentationStyleGuide/BareosSpecificFormatting/BareosHostNames:Bareos Host Names` should be used.
 
-System Command
-~~~~~~~~~~~~~~
-
-If only a single command should be shown, or you just want to refer to a system command from the text use:
-
-..  \newcommand{\command}[1]{\path|#1|}
-
-    Post Conversion Changes:
-    ${PERL} 's#:raw-latex:`\\command\{(.*?)\}`#:program:`\1`#g'  ${DESTFILE}
-
-::
-
-   :command:`bareos-dbcheck`
-
-The output will look like this:
-
-:command:`bareos-dbcheck`
 
 Windows
 -------
