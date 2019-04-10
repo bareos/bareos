@@ -5,6 +5,7 @@ db_password="@db_password@"
 
 PROJECT_BINARY_DIR=@PROJECT_BINARY_DIR@
 bin=${PROJECT_BINARY_DIR}/bin
+sbin=${PROJECT_BINARY_DIR}/sbin
 
 current_test_directory=${PROJECT_BINARY_DIR}/tests/@TEST_NAME@
 
@@ -19,6 +20,7 @@ tmp=${current_test_directory}/tmp
 
 
 dumps=${current_test_directory}/dumps
+backenddir=@backenddir@
 plugindir=${PROJECT_BINARY_DIR}/plugins
 plugindirtmp=${PROJECT_BINARY_DIR}/pluginstmp
 rscripts=${PROJECT_BINARY_DIR}/scripts
@@ -39,6 +41,7 @@ export BAREOS_WORKING_DIR=${working}
 export BASEPORT=@BASEPORT@
 export BAREOS_DIRECTOR_PORT=@dir_port@
 export BAREOS_STORAGE_PORT=@sd_port@
+export BAREOS_STORAGE2_PORT=@sd2_port@
 export BAREOS_FD_PORT=@fd_port@
 export PIDDIR=@piddir@
 

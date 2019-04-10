@@ -1,0 +1,6 @@
+Director {
+  Name = bareos-mon
+  Password = "@mon_fd_password@"
+  Monitor = yes
+  Description = "Restricted Director, used by tray-monitor to get the status of this file daemon."
+}
