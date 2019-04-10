@@ -10,5 +10,4 @@ Bareos Specific Formatting
    /DocumentationStyleGuide/BareosSpecificFormatting/BareosLogging.rst   
    /DocumentationStyleGuide/BareosSpecificFormatting/Limitation.rst
    /DocumentationStyleGuide/BareosSpecificFormatting/Ticket.rst
-   /DocumentationStyleGuide/BareosSpecificFormatting/BareosVersions.rst
    /DocumentationStyleGuide/BareosSpecificFormatting/Release.rst
