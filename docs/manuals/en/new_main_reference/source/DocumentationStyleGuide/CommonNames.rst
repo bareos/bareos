@@ -82,4 +82,4 @@ Products
    reST,         reST
    |sqlite|,     ``|sqlite|``
    |vmware|,     ``|vmware|``
-   |vSphere|,    ``|vSphere|``
+   |vsphere|,    ``|vsphere|``

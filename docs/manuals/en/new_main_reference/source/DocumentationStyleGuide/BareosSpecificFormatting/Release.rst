@@ -1,8 +1,8 @@
 Releases
 ========
 
-Functinal Changes
------------------
+Functional Changes
+------------------
 
 If the documenation wants to point out,
 that a feature has been added

@@ -473,7 +473,7 @@ If you want to display a note, the following formatting should be used::
 
    .. note::
 
-   It is important to ...
+      It is important to ...
 
 The output should look like this:
 
@@ -495,11 +495,11 @@ If you want to display a warning, the following formatting should be used:
    ${PERL0} 's#:raw-latex:`\\warning\{(.*?)\}`#\n.. warning:: \n  \1#ims' ${DESTFILE}
    ${PERL0} 's#\\warning\{(.*?)\}#\n.. warning:: \n  \1#ims'  ${DESTFILE}
 
-.. code-block:: sh
+::
 
    .. warning::
 
-   This record ignores retention periods!
+      This record ignores retention periods!
 
 The output should look like this:
 
@@ -624,23 +624,19 @@ Neither of ``.. index::`` nor ``:index:`` correspond well to a Latex ``\index``\
 
 A Latex index will not be printed and the index will refer to the exact location.
 In the Latex documentation indices have also been used inside of other structures (e.g. tables),
-which prevents an easy automatic convertation to ``.. index::``.
+which prevents an easy automatic conversation to ``.. index::``.
 
 To work around these problem, following substitution have been used::
 
   \index{Console!Command!restore}
   
-is substitted by::
+is substituted by::
 
-  :index:`[TAG=Console->Command->restore] <single: Console; Command; restore>`
+  :index:`\ <single: Console; Command; restore>`
 
-Disadvantages:
-   The text ``[TAG=Console->Command->restore]`` will be shown.
-
+The backslash + space sequence create a invisible string.
 When the Sphinx Bareos Manual is edited manually,
-these ''TAGs'' can be replaced to some better fitting indices.
-
-Note: ``triple`` is not required. The original behavior would be more like ``single``. However, we used triple to use some of the Sphinx advantages.
+these entries can be replaced to some better fitting indices.
 
 
 Image
@@ -661,6 +657,6 @@ In general, images should be stored as SVG.
 Table
 -----
 
-Sphinx offeres multiple methods to create tables, see https://www.sphinx-doc.org/en/2.0/usage/restructuredtext/basics.html#tables\ .
+Sphinx offers multiple methods to create tables, see https://www.sphinx-doc.org/en/2.0/usage/restructuredtext/basics.html#tables\ .
 
 Choose whatever sucks least.
