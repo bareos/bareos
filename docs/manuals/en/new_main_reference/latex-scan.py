@@ -983,7 +983,8 @@ class Translate(object):
             #item.replace(r':index:`[TAG={0}->{1}->{2}] <single: {0}; {1}; {2}>`'.format(*items))
         #elif nr >= 4:
             #item.replace(r':index:`[TAG={0}] <single: {1}>`'.format('->'.join(items), '; '.join(items)))
-        item.replace(r':index:`{0} <single: {1}>`'.format(tag, index))
+        #item.replace(r':index:`{0} <single: {1}>`'.format(tag, index))
+        item.replace(r':index:`\ <single: {1}>`'.format(tag, index))
 
 
     #
