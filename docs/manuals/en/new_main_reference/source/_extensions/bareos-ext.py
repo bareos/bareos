@@ -80,7 +80,7 @@ def get_config_directive(text):
     logger = logging.getLogger(__name__)
     displayTemplateDaemon = u'{Daemon}'
     displayTemplateResourceType = u'{Resource} ({Dmn})'
-    displayTemplateResourceName = u'{Resource} ({Dmn}) = {value}'
+    displayTemplateResourceName = u'{value} ({Dmn}->{Resource})'
     displayTemplateResourceDirective = u'{Directive} ({Dmn}->{Resource})'
     displayTemplateResourceDirectiveWithValue = u'{Directive} ({Dmn}->{Resource}) = {value}'
     indextemplate  = u'Configuration Directive; ' + displayTemplateResourceDirective
