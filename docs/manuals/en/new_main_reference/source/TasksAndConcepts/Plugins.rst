@@ -3,7 +3,7 @@
 Plugins
 =======
 
-:index:`[TAG=Plugin] <single: Plugin>`
+:index:`\ <single: Plugin>`
 
 The functionality of Bareos can be extended by plugins. They do exists plugins for the different daemons (Director, Storage- and File-Daemon).
 
@@ -31,7 +31,7 @@ File Daemon plugins are configured by the :strong:`Plugin`\  directive of a :ref
 bpipe Plugin
 ~~~~~~~~~~~~
 
-:index:`[TAG=Plugin->bpipe] <single: Plugin; bpipe>`
+:index:`\ <single: Plugin; bpipe>`
 
 The bpipe plugin is a generic pipe program, that simply transmits the data from a specified program to Bareos for backup, and from Bareos to a specified program for restore. The purpose of the plugin is to provide an interface to any system program for backup and restore. That allows you, for example, to do database backups without a local dump. By using different command lines to bpipe, you can backup any kind of data (ASCII or binary) depending on the program called.
 
@@ -98,35 +98,35 @@ See chapter :ref:`MSSQL`.
 LDAP Plugin
 ~~~~~~~~~~~
 
-:index:`[TAG=Plugin->ldap] <single: Plugin; ldap>`
+:index:`\ <single: Plugin; ldap>`
 
 This plugin is intended to backup (and restore) the contents of a LDAP server. It uses normal LDAP operation for this. The package **bareos-filedaemon-ldap-python-plugin** (:sinceVersion:`15.2.0: LDAP Plugin`) contains an example configuration file, that must be adapted to your envirnoment.
 
 Cephfs Plugin
 ~~~~~~~~~~~~~
 
-:index:`[TAG=Plugin->ceph->cephfs] <single: Plugin; ceph; cephfs>` :index:`[TAG=Ceph->Cephfs Plugin] <single: Ceph; Cephfs Plugin>`
+:index:`\ <single: Plugin; ceph; cephfs>` :index:`\ <single: Ceph; Cephfs Plugin>`
 
 Opposite to the :ref:`Rados Backend <SdBackendRados>` that is used to store data on a CEPH Object Store, this plugin is intended to backup a CEPH Object Store via the Cephfs interface to other media. The package **bareos-filedaemon-ceph-plugin** (:sinceVersion:`15.2.0: Cephfs Plugin`) contains an example configuration file, that must be adapted to your envirnoment.
 
 Rados Plugin
 ~~~~~~~~~~~~
 
-:index:`[TAG=Plugin->ceph->rados] <single: Plugin; ceph; rados>` :index:`[TAG=Ceph->Rados Plugin] <single: Ceph; Rados Plugin>`
+:index:`\ <single: Plugin; ceph; rados>` :index:`\ <single: Ceph; Rados Plugin>`
 
 Opposite to the :ref:`Rados Backend <SdBackendRados>` that is used to store data on a CEPH Object Store, this plugin is intended to backup a CEPH Object Store via the Rados interface to other media. The package **bareos-filedaemon-ceph-plugin** (:sinceVersion:`15.2.0: CEPH Rados Plugin`) contains an example configuration file, that must be adapted to your envirnoment.
 
 GlusterFS Plugin
 ~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Plugin->glusterfs] <single: Plugin; glusterfs>` :index:`[TAG=GlusterFS->Plugin] <single: GlusterFS; Plugin>`
+:index:`\ <single: Plugin; glusterfs>` :index:`\ <single: GlusterFS; Plugin>`
 
 Opposite to the :ref:`GFAPI Backend <SdBackendGfapi>` that is used to store data on a Gluster system, this plugin is intended to backup data from a Gluster system to other media. The package **bareos-filedaemon-glusterfs-plugin** (:sinceVersion:`15.2.0: GlusterFS Plugin`) contains an example configuration file, that must be adapted to your envirnoment.
 
 python-fd Plugin
 ~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Plugin->Python->File Daemon] <single: Plugin; Python; File Daemon>`
+:index:`\ <single: Plugin; Python; File Daemon>`
 
 The **python-fd** plugin behaves similar to the :ref:`director-python-plugin`. Base plugins and an example get installed via the package bareos-filedaemon-python-plugin. Configuration is done in the :ref:`DirectorResourceFileSet` on the director.
 
@@ -151,7 +151,7 @@ Command plugins are used to replace or extend the FileSet definition in the File
      }
    } 
 
-:index:`[TAG=MySQL->Backup] <single: MySQL; Backup>` This example uses the :ref:`MySQL plugin <backup-mysql-python>` to backup MySQL dumps in addition to :file:`/etc`.
+:index:`\ <single: MySQL; Backup>` This example uses the :ref:`MySQL plugin <backup-mysql-python>` to backup MySQL dumps in addition to :file:`/etc`.
 
 Option Plugins
 ^^^^^^^^^^^^^^
@@ -182,7 +182,7 @@ This plugin bareos-fd-file-interact from https://github.com/bareos/bareos-contri
 VMware Plugin
 ~~~~~~~~~~~~~
 
-:index:`[TAG=Plugin->VMware] <single: Plugin; VMware>` :index:`[TAG=VMware Plugin] <single: VMware Plugin>`
+:index:`\ <single: Plugin; VMware>` :index:`\ <single: VMware Plugin>`
 
 The |vmware| Plugin can be used for agentless backups of virtual machines running on |vsphere|. It makes use of CBT (Changed Block Tracking) to do space efficient full and incremental backups, see below for mandatory requirements.
 
@@ -460,7 +460,7 @@ For restore, the VM must be powered off and no snapshot must exist. In :command:
 Restore to local VMDK File
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=VMware Plugin->VMDK files] <single: VMware Plugin; VMDK files>`
+:index:`\ <single: VMware Plugin; VMDK files>`
 
 Since :sinceVersion:`15.2.3: VMware Plugin: restore to VMDK files` it is possible to restore to local VMDK files. That means, instead of directly restoring a disk that belongs to the VM, the restore creates VMDK disk image files on the filesystem of the system that runs the |fd|. As the VM that the backup was taken from is not affected by this, it can remain switched on while restoring to local VMDK. Such a restored VMDK file can then be uploaded to a
 |vsphere| datastore or accessed by tools like `guestfish <http://libguestfs.org/guestfish.1.html>`_ to extract single files.
@@ -601,7 +601,7 @@ Storage Daemon Plugins
 autoxflate-sd
 ~~~~~~~~~~~~~
 
-:index:`[TAG=Plugin->autoxflate-sd] <single: Plugin; autoxflate-sd>`
+:index:`\ <single: Plugin; autoxflate-sd>`
 
 This plugin is part of the **bareos-storage** package.
 
@@ -659,7 +659,7 @@ Additional :config:option:`sd/storage/AutoXflateOnReplication`\  can be configur
 scsicrypto-sd
 ~~~~~~~~~~~~~
 
-:index:`[TAG=Plugin->scsicrypto-sd] <single: Plugin; scsicrypto-sd>`
+:index:`\ <single: Plugin; scsicrypto-sd>`
 
 This plugin is part of the **bareos-storage-tape** package.
 
@@ -738,7 +738,7 @@ The following additional security is needed for the following operating systems:
 Linux (SG_IO ioctl interface):
                               
 
-The user running the storage daemon needs the following additional capabilities: :index:`[TAG=Platform->Linux->Privileges] <single: Platform; Linux; Privileges>`
+The user running the storage daemon needs the following additional capabilities: :index:`\ <single: Platform; Linux; Privileges>`
 
 -  :strong:`CAP_SYS_RAWIO` (see capabilities(7))
 
@@ -771,7 +771,7 @@ If :command:`bareos-sd` does not have the appropriate capabilities, all other ta
 Solaris (USCSI ioctl interface):
                                 
 
-The user running the storage daemon needs the following additional privileges: :index:`[TAG=Platform->Solaris->Privileges] <single: Platform; Solaris; Privileges>`
+The user running the storage daemon needs the following additional privileges: :index:`\ <single: Platform; Solaris; Privileges>`
 
 -  :strong:`PRIV_SYS_DEVICES` (see privileges(5))
 
@@ -855,14 +855,14 @@ of AME which may for big libraries be easier, although the overhead of using AME
 scsitapealert-sd
 ~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Plugin->scsitapealert-sd] <single: Plugin; scsitapealert-sd>`
+:index:`\ <single: Plugin; scsitapealert-sd>`
 
 This plugin is part of the **bareos-storage-tape** package.
 
 python-sd Plugin
 ~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Plugin->Python->Storage Daemon] <single: Plugin; Python; Storage Daemon>`
+:index:`\ <single: Plugin; Python; Storage Daemon>`
 
 The **python-sd** plugin behaves similar to the :ref:`director-python-plugin`.
 
@@ -876,7 +876,7 @@ Director Plugins
 python-dir Plugin
 ~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Plugin->Python->Director] <single: Plugin; Python; Director>`
+:index:`\ <single: Plugin; Python; Director>`
 
 The **python-dir** plugin is intended to extend the functionality of the Bareos Director by Python code. A working example is included.
 
@@ -957,8 +957,8 @@ Multiple Python Plugin Loading Example:
 Write your own Python Plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Some plugin examples are available on https://github.com/bareos/bareos-contrib. The class-based approach lets you easily reuse stuff already defined in the baseclass BareosDirPluginBaseclass, which ships with the **bareos-director-python-plugin** package. The examples contain the plugin bareos-dir-nsca-sender, that submits the results and performance data of a backup job directly to Icinga:index:`[TAG=Icinga] <single: Icinga>` or
-Nagios:index:`[TAG=Nagios|see{Icinga}] <single: Nagios|see{Icinga}>` using the NSCA protocol.
+Some plugin examples are available on https://github.com/bareos/bareos-contrib. The class-based approach lets you easily reuse stuff already defined in the baseclass BareosDirPluginBaseclass, which ships with the **bareos-director-python-plugin** package. The examples contain the plugin bareos-dir-nsca-sender, that submits the results and performance data of a backup job directly to Icinga:index:`\ <single: Icinga>` or
+Nagios:index:`\ <single: Nagios|see{Icinga}>` using the NSCA protocol.
 
 
 

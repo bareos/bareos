@@ -3,7 +3,7 @@
 Monitor Configuration
 =====================
 
-:index:`[TAG=Monitor Configuration] <single: Monitor Configuration>` :index:`[TAG=Configuration->Monitor] <single: Configuration; Monitor>`
+:index:`\ <single: Monitor Configuration>` :index:`\ <single: Configuration; Monitor>`
 
 The Monitor configuration file is a stripped down version of the Director configuration file, mixed with a Console configuration file. It simply contains the information necessary to contact Directors, Clients, and Storage daemons you want to monitor.
 
@@ -20,7 +20,7 @@ The following Monitor Resource definition must be defined:
 Monitor Resource
 ----------------
 
-:index:`[TAG=Monitor Resource] <single: Monitor Resource>` :index:`[TAG=Resource->Monitor] <single: Resource; Monitor>`
+:index:`\ <single: Monitor Resource>` :index:`\ <single: Resource; Monitor>`
 
 The Monitor resource defines the attributes of the Monitor running on the network. The parameters you define here must be configured as a Director resource in Clients and Storages configuration files, and as a Console resource in Directors configuration files.
 
@@ -47,7 +47,7 @@ The Monitor resource defines the attributes of the Monitor running on the networ
 Director Resource
 -----------------
 
-:index:`[TAG=Director Resource] <single: Director Resource>` :index:`[TAG=Resource->Director] <single: Resource; Director>`
+:index:`\ <single: Director Resource>` :index:`\ <single: Resource; Director>`
 
 The Director resource defines the attributes of the Directors that are monitored by this Monitor.
 
@@ -72,7 +72,7 @@ You may have multiple Director resource specifications in a single Monitor confi
 Client Resource
 ---------------
 
-:index:`[TAG=Resource->Client] <single: Resource; Client>` :index:`[TAG=Client Resource] <single: Client Resource>`
+:index:`\ <single: Resource; Client>` :index:`\ <single: Client Resource>`
 
 The Client resource defines the attributes of the Clients that are monitored by this Monitor.
 
@@ -99,7 +99,7 @@ You may have multiple Director resource specifications in a single Monitor confi
 Storage Resource
 ----------------
 
-:index:`[TAG=Resource->Storage] <single: Resource; Storage>` :index:`[TAG=Storage Resource] <single: Storage Resource>`
+:index:`\ <single: Resource; Storage>` :index:`\ <single: Storage Resource>`
 
 The Storage resource defines the attributes of the Storages that are monitored by this Monitor.
 
@@ -131,7 +131,7 @@ Tray Monitor
 Tray Monitor Security
 ~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Tray Monitor Security] <single: Tray Monitor Security>` :index:`[TAG=Security->Tray Monitor] <single: Security; Tray Monitor>`
+:index:`\ <single: Tray Monitor Security>` :index:`\ <single: Security; Tray Monitor>`
 
 There is no security problem in relaxing the permissions on tray-monitor.conf as long as FD, SD and DIR are configured properly, so the passwords contained in this file only gives access to the status of the daemons. It could be a security problem if you consider the status information as potentially dangerous (most people consider this as not being dangerous).
 
@@ -144,7 +144,7 @@ There is no security problem in relaxing the permissions on tray-monitor.conf as
 Example Tray Monitor configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Tray Monitor->Configuration] <single: Tray Monitor; Configuration>` :index:`[TAG=Configuration->Tray Monitor] <single: Configuration; Tray Monitor>`
+:index:`\ <single: Tray Monitor; Configuration>` :index:`\ <single: Configuration; Tray Monitor>`
 
 An example Tray Monitor configuration file might be the following:
 

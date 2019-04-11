@@ -1,7 +1,7 @@
 Backward Compatibility
 ======================
 
-:index:`[TAG=Compatibility->Backward] <single: Compatibility; Backward>` 
+:index:`\ <single: Compatibility; Backward>` 
 
 .. _backward-compatibility:
 
@@ -10,7 +10,7 @@ Backward Compatibility
 Tape Formats
 ------------
 
-:index:`[TAG=Tape->Format] <single: Tape; Format>` 
+:index:`\ <single: Tape; Format>` 
 
 .. _backward-compatibility-tape-format:
 
@@ -26,7 +26,7 @@ Though the tape format is basically fixed, the kinds of data that we can put on 
 Compatibility between Bareos and Bacula
 ---------------------------------------
 
-:index:`[TAG=Compatibility->Bacula] <single: Compatibility; Bacula>` :index:`[TAG=Bacula] <single: Bacula>` 
+:index:`\ <single: Compatibility; Bacula>` :index:`\ <single: Bacula>` 
 
 .. _compat-bacula:
 
@@ -80,7 +80,7 @@ Other combinations like Bacula Director with |sd| will not work. However this wa
 Upgrade from Bacula 5.2 to Bareos
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Upgrade from Bacula to Bareos] <single: Upgrade from Bacula to Bareos>` :index:`[TAG=Bareos->Upgrading] <single: Bareos; Upgrading>` 
+:index:`\ <single: Upgrade from Bacula to Bareos>` :index:`\ <single: Bareos; Upgrading>` 
 
 .. _upgrade-from-bacula-to-bareos:
 

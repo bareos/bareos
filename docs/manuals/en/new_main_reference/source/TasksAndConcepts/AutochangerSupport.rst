@@ -3,7 +3,7 @@
 Autochanger Support
 ===================
 
-:index:`[TAG=Support->Autochanger] <single: Support; Autochanger>` :index:`[TAG=Autochanger->Support] <single: Autochanger; Support>`
+:index:`\ <single: Support; Autochanger>` :index:`\ <single: Autochanger; Support>`
 
 Bareos provides autochanger support for reading and writing tapes. In order to work with an autochanger, Bareos requires a number of things, each of which is explained in more detail after this list:
 
@@ -37,7 +37,7 @@ Some users have reported that the the Storage daemon blocks under certain circum
 Knowing What SCSI Devices You Have
 ----------------------------------
 
-:index:`[TAG=SCSI devices] <single: SCSI devices>` :index:`[TAG=Devices->SCSI] <single: Devices; SCSI>` :index:`[TAG=Devices->Detecting] <single: Devices; Detecting>`
+:index:`\ <single: SCSI devices>` :index:`\ <single: Devices; SCSI>` :index:`\ <single: Devices; Detecting>`
 
 Linux
 ~~~~~
@@ -119,7 +119,7 @@ On Solaris, the changer device will typically be some file under :file:`/dev/rds
 Slots
 -----
 
-:index:`[TAG=Slots] <single: Slots>` 
+:index:`\ <single: Slots>` 
 
 .. _Slots:
 
@@ -142,7 +142,7 @@ You can check if the Slot number and InChanger flag by:
 Multiple Devices
 ----------------
 
-:index:`[TAG=Devices->Multiple] <single: Devices; Multiple>` :index:`[TAG=Multiple Devices] <single: Multiple Devices>`
+:index:`\ <single: Devices; Multiple>` :index:`\ <single: Multiple Devices>`
 
 Some autochangers have more than one read/write device (drive). The :ref:`Autochanger resource <AutochangerRes>` permits you to group Device resources, where each device represents a drive. The Director may still reference the Devices (drives) directly, but doing so, bypasses the proper functioning of the drives together. Instead, the Director (in the Storage resource) should reference the Autochanger resource name. Doing so permits the Storage daemon to ensure that only one drive
 uses the mtx-changer script at a time, and also that two drives don’t reference the same Volume.
@@ -154,7 +154,7 @@ As a default, Bareos jobs will prefer to write to a Volume that is already mount
 Device Configuration Records
 ----------------------------
 
-:index:`[TAG=Device Configuration Records] <single: Device Configuration Records>`
+:index:`\ <single: Device Configuration Records>`
 
 Configuration of autochangers within Bareos is done in the Device resource of the Storage daemon.
 
@@ -173,7 +173,7 @@ Following records control how Bareos uses the autochanger:
 Specifying Slots When Labeling
 ------------------------------
 
-:index:`[TAG=Specifying Slots When Labeling] <single: Specifying Slots When Labeling>` :index:`[TAG=Label->Specifying Slots When Labeling] <single: Label; Specifying Slots When Labeling>` 
+:index:`\ <single: Specifying Slots When Labeling>` :index:`\ <single: Label; Specifying Slots When Labeling>` 
 
 .. _SpecifyingSlots:
 
@@ -206,7 +206,7 @@ Any slot containing a barcode of CLNxxxx will be treated as a cleaning tape and 
 Changing Cartridges
 -------------------
 
-:index:`[TAG=Cartridges->Changing] <single: Cartridges; Changing>` If you wish to insert or remove cartridges in your autochanger or you manually run the mtx program, you must first tell Bareos to release the autochanger by doing:
+:index:`\ <single: Cartridges; Changing>` If you wish to insert or remove cartridges in your autochanger or you manually run the mtx program, you must first tell Bareos to release the autochanger by doing:
 
 
 
@@ -223,7 +223,7 @@ If you do not do the unmount before making such a change, Bareos will become com
 Dealing with Multiple Magazines
 -------------------------------
 
-:index:`[TAG=Magazines->Dealing with Multiple] <single: Magazines; Dealing with Multiple>`
+:index:`\ <single: Magazines; Dealing with Multiple>`
 
 If you have several magazines or if you insert or remove cartridges from a magazine, you should notify Bareos of this. By doing so, Bareos will as a preference, use Volumes that it knows to be in the autochanger before accessing Volumes that are not in the autochanger. This prevents unneeded operator intervention.
 
@@ -265,7 +265,7 @@ If you do not have a barcode reader on your autochanger, you have several altern
 Update Slots Command
 --------------------
 
-:index:`[TAG=Console->Command->update slots] <single: Console; Command; update slots>` 
+:index:`\ <single: Console; Command; update slots>` 
 
 .. _updateslots:
 
@@ -310,7 +310,7 @@ will read the barcoded Volume names for slots 1,2,3 and 6 and make the appropria
 Using the Autochanger
 ---------------------
 
-:index:`[TAG=Autochanger->Using the] <single: Autochanger; Using the>` 
+:index:`\ <single: Autochanger; Using the>` 
 
 .. _using:
 
@@ -421,7 +421,7 @@ To "see" how you have labeled your Volumes, simply enter the list volumes comman
 Barcode Support
 ---------------
 
-:index:`[TAG=Support->Barcode] <single: Support; Barcode>` :index:`[TAG=Barcode Support] <single: Barcode Support>` 
+:index:`\ <single: Support; Barcode>` :index:`\ <single: Barcode Support>` 
 
 .. _Barcodes:
 
@@ -459,7 +459,7 @@ If you see a near the slot number, you have to run update slots command to synch
 Bareos Autochanger Interface
 ----------------------------
 
-:index:`[TAG=Autochanger->Interface] <single: Autochanger; Interface>` 
+:index:`\ <single: Autochanger; Interface>` 
 
 .. _autochanger-interface:
 
@@ -494,7 +494,7 @@ Bareos checks the exit status of the program called, and if it is zero, the data
 Tapespeed and blocksizes
 ------------------------
 
-:index:`[TAG=Tuning->Tape] <single: Tuning; Tape>` :index:`[TAG=Tuning->blocksize] <single: Tuning; blocksize>` :index:`[TAG=Tape->speed] <single: Tape; speed>` :index:`[TAG=Blocksize->optimize] <single: Blocksize; optimize>` 
+:index:`\ <single: Tuning; Tape>` :index:`\ <single: Tuning; blocksize>` :index:`\ <single: Tape; speed>` :index:`\ <single: Blocksize; optimize>` 
 
 .. _Tapespeed and blocksizes:
 
@@ -616,7 +616,7 @@ Here, the block was written with 1M block size but we only read 64k.
 Direct access to Volumes with with non-default block sizes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=bls->block size] <single: bls; block size>` :index:`[TAG=bextract->block size] <single: bextract; block size>` :index:`[TAG=Command->bls->block size] <single: Command; bls; block size>` :index:`[TAG=Command->bextract->block size] <single: Command; bextract; block size>`
+:index:`\ <single: bls; block size>` :index:`\ <single: bextract; block size>` :index:`\ <single: Command; bls; block size>` :index:`\ <single: Command; bextract; block size>`
 
 :command:`bls` and :command:`bextract` can directly access Bareos volumes without catalog database. This means that these programs don’t have information about the used block size.
 

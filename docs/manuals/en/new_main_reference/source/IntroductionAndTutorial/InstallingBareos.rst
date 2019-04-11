@@ -3,7 +3,7 @@
 Installing Bareos
 =================
 
-:index:`[TAG=Bareos->Installing] <single: Bareos; Installing>` :index:`[TAG=Installation->Linux] <single: Installation; Linux>`
+:index:`\ <single: Bareos; Installing>` :index:`\ <single: Installation; Linux>`
 
 If you are like me, you want to get Bareos running immediately to get a feel for it, then later you want to go back and read about all the details. This chapter attempts to accomplish just that: get you going quickly without all the details.
 
@@ -86,7 +86,7 @@ Install on RedHat based Linux Distributions
 RHEL>7, CentOS>7, Fedora
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=Platform->RHEL] <single: Platform; RHEL>` :index:`[TAG=Platform->CentOS] <single: Platform; CentOS>` :index:`[TAG=Platform->Fedora] <single: Platform; Fedora>`
+:index:`\ <single: Platform; RHEL>` :index:`\ <single: Platform; CentOS>` :index:`\ <single: Platform; Fedora>`
 
 Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson library <jansson>` package. On RHEL 7 it is available through the RHEL Server Optional channel. On CentOS 7 and Fedora is it included on the main repository.
 
@@ -118,7 +118,7 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson libr
 RHEL 6, CentOS 6
 ^^^^^^^^^^^^^^^^
 
-:index:`[TAG=Platform->RHEL->6] <single: Platform; RHEL; 6>` :index:`[TAG=Platform->CentOS->6] <single: Platform; CentOS; 6>`
+:index:`\ <single: Platform; RHEL; 6>` :index:`\ <single: Platform; CentOS; 6>`
 
 Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson library <jansson>` package. This package is available on `EPEL <https://fedoraproject.org/wiki/EPEL>`_ 6. Make sure, it is available on your system.
 
@@ -153,7 +153,7 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson libr
 RHEL 5
 ^^^^^^
 
-:index:`[TAG=Platform->RHEL->5] <single: Platform; RHEL; 5>`
+:index:`\ <single: Platform; RHEL; 5>`
 
 yum in RHEL 5/CentOS 5 has slightly different behaviour as far as dependency resolving is concerned: it sometimes install a dependent package after the one that has the dependency defined. To make sure that it works, install the desired Bareos database backend package first in a separate step:
 
@@ -185,7 +185,7 @@ Install on SUSE based Linux Distributions
 SUSE Linux Enterprise Server (SLES), openSUSE
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=Platform->SLES] <single: Platform; SLES>` :index:`[TAG=Platform->openSUSE] <single: Platform; openSUSE>`
+:index:`\ <single: Platform; SLES>` :index:`\ <single: Platform; openSUSE>`
 
 .. code-block:: shell-session
    :caption: Bareos installation on SLES / openSUSE
@@ -222,7 +222,7 @@ Install on Debian based Linux Distributions
 Debian / Ubuntu
 ^^^^^^^^^^^^^^^
 
-:index:`[TAG=Platform->Debian] <single: Platform; Debian>` :index:`[TAG=Platform->Ubuntu] <single: Platform; Ubuntu>`
+:index:`\ <single: Platform; Debian>` :index:`\ <single: Platform; Ubuntu>`
 
 Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson library <jansson>` package. On Ubuntu is it available in Ubuntu Universe. In Debian, is it included in the main repository.
 

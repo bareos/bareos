@@ -3,7 +3,7 @@
 Disaster Recovery Using Bareos
 ==============================
 
-:index:`[TAG=Disaster->Recovery] <single: Disaster; Recovery>` :index:`[TAG=Recovery->Disaster Recovery] <single: Recovery; Disaster Recovery>`
+:index:`\ <single: Disaster; Recovery>` :index:`\ <single: Recovery; Disaster Recovery>`
 
 General
 -------
@@ -28,7 +28,7 @@ Here are a few important considerations concerning disaster recovery that you sh
 Steps to Take Before Disaster Strikes
 -------------------------------------
 
-:index:`[TAG=Disaster->Before] <single: Disaster; Before>`
+:index:`\ <single: Disaster; Before>`
 
 -  Create a rescue or CDROM for your systems. Generally, they are offered by each distribution, and there are many good rescue disks on the Web
 
@@ -64,7 +64,7 @@ Generally, following components are required for a Bare Metal Recovery:
 Linux
 ~~~~~
 
-:index:`[TAG=Disaster->Recovery->Linux] <single: Disaster; Recovery; Linux>`
+:index:`\ <single: Disaster; Recovery; Linux>`
 
 From the Relax-and-Recover web site (`http://relax-and-recover.org <http://relax-and-recover.org>`_):
 
@@ -149,7 +149,7 @@ ReaR will restore your bootloader. Recovery is complete.
 Restoring a Bareos Server
 -------------------------
 
-:index:`[TAG=Restore->Bareos Server] <single: Restore; Bareos Server>` 
+:index:`\ <single: Restore; Bareos Server>` 
 
 .. _section-RestoreServer:
 

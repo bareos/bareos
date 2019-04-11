@@ -136,7 +136,7 @@ Before executing the specified command, Bareos performs character substitution o
 
 Some character substitutions are not available in all situations. The Job Exit Status code %e edits the following values:
 
-:index:`[TAG=Exit Status] <single: Exit Status>`
+:index:`\ <single: Exit Status>`
 
 -  OK
 
@@ -193,7 +193,7 @@ Examples:
 
 
 
-Special Windows Considerations :index:`[TAG=Windows->Run Script] <single: Windows; Run Script>`
+Special Windows Considerations :index:`\ <single: Windows; Run Script>`
 
 You can run scripts just after snapshots initializations with *AfterVSS* keyword.
 

@@ -11,7 +11,7 @@ Data Spooling
 
 .. _section-DataSpooling:
 
- :index:`[TAG=Data Spooling] <single: Data Spooling>` :index:`[TAG=Spooling->Data] <single: Spooling; Data>`
+ :index:`\ <single: Data Spooling>` :index:`\ <single: Spooling; Data>`
 
 Bareos allows you to specify that you want the Storage daemon to initially write your data to disk and then subsequently to tape. This serves several important purposes.
 
@@ -30,7 +30,7 @@ The remainder of this chapter explains the various directives that you can use i
 Data Spooling Directives
 ------------------------
 
-:index:`[TAG=Data Spooling->Directives] <single: Data Spooling; Directives>`
+:index:`\ <single: Data Spooling; Directives>`
 
 The following directives can be used to control data spooling.
 

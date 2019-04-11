@@ -1,4 +1,4 @@
-:index:`[TAG=Clone a Job] <single: Clone a Job>` The Run directive (not to be confused with the Run option in a Schedule) allows you to start other jobs or to clone the current jobs.
+:index:`\ <single: Clone a Job>` The Run directive (not to be confused with the Run option in a Schedule) allows you to start other jobs or to clone the current jobs.
 
 The part after the equal sign must be enclosed in double quotes, and can contain any string or set of options (overrides) that you can specify when entering the :bcommand:`run` command from the console. For example storage=DDS-4 .... In addition, there are two special keywords that permit you to clone the current job. They are level=%l and since=%s. The %l in the level keyword permits entering the actual level of the current job and the %s in the since keyword permits putting the
 same time for comparison as used on the current job. Note, in the case of the since keyword, the %s must be enclosed in double quotes, and thus they must be preceded by a backslash since they are already inside quotes. For example:

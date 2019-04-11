@@ -1,4 +1,4 @@
-:index:`[TAG=NDMP->File History] <single: NDMP; File History>` Allow disabling storing the file history, as this causes problems problems with some implementations of NDMP (out-of-order metadata).
+:index:`\ <single: NDMP; File History>` Allow disabling storing the file history, as this causes problems problems with some implementations of NDMP (out-of-order metadata).
 
 With :config:option:`dir/job/FileHistorySize`\  the maximum number of files and directories inside a NDMP job can be configured.
 

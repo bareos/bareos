@@ -144,7 +144,7 @@ Also, prior to bareos version 15, you need to set :config:option:`fd/client/Comp
 Using different IP Adresses for SD – FD Communication
 -----------------------------------------------------
 
-:index:`[TAG=Lan Address] <single: Lan Address>`
+:index:`\ <single: Lan Address>`
 
 Bareos supports network topologies where the |fd| and |sd| are situated inside of a LAN, but the |dir| is outside of that LAN in the Internet and accesses the |fd| and |sd| via SNAT / port forwarding.
 

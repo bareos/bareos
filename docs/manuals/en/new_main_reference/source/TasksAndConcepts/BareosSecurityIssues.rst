@@ -3,7 +3,7 @@
 Bareos Security Issues
 ======================
 
-:index:`[TAG=Security] <single: Security>`
+:index:`\ <single: Security>`
 
 -  Security means being able to restore your files, so read the :ref:`Critical Items Chapter <Critical>` of this manual.
 
@@ -32,7 +32,7 @@ Bareos Security Issues
 Configuring and Testing TCP Wrappers
 ------------------------------------
 
-:index:`[TAG=TCP Wrappers] <single: TCP Wrappers>` :index:`[TAG=Wrappers->TCP] <single: Wrappers; TCP>` :index:`[TAG=libwrappers] <single: libwrappers>`
+:index:`\ <single: TCP Wrappers>` :index:`\ <single: Wrappers; TCP>` :index:`\ <single: libwrappers>`
 
 The TCP wrapper functionality is available on different platforms. Be default, it is activated on Bareos for Linux. With this enabled, you may control who may access your daemons. This control is done by modifying the file: /etc/hosts.allow. The program name that Bareos uses when applying these access restrictions is the name you specify in the daemon configuration file (see below for examples). You must not use the twist option in your /etc/hosts.allow or it will terminate the Bareos daemon
 when a connection is refused.

@@ -3,7 +3,7 @@
 Customizing the Configuration
 =============================
 
-:index:`[TAG=Customizing the Configuration] <single: Customizing the Configuration>`
+:index:`\ <single: Customizing the Configuration>`
 
 Each Bareos component (Director, Client, Storage, Console) has its own configuration containing a set of resource definitions. These resources are very similar from one service to another, but may contain different directives (records) depending on the component. For example, in the Director configuration, the :ref:`DirectorResourceDirector` defines the name of the Director, a number of global Director parameters and his password. In the File daemon configuration, the
 :ref:`ClientResourceDirector` specifies which Directors are permitted to use the File daemon.
@@ -27,7 +27,7 @@ The following configuration files must be present:
 Configuration Path Layout
 -------------------------
 
-:index:`[TAG=Configuration->Directories] <single: Configuration; Directories>` :index:`[TAG=Configuration->Subdirectories] <single: Configuration; Subdirectories>`
+:index:`\ <single: Configuration; Directories>` :index:`\ <single: Configuration; Subdirectories>`
 
 When a Bareos component starts, it reads its configuration. In Bareos < 16.2.2 only configuration files (which optionally can include other files) are supported. Since Bareos :sinceVersion:`16.2.2: Subdirectory Configuration Scheme` also configuration subdirectories are supported.
 
@@ -321,9 +321,9 @@ Bareos programs can work with
 Character Sets
 ~~~~~~~~~~~~~~
 
-:index:`[TAG=Character Sets] <single: Character Sets>` Bareos is designed to handle most character sets of the world, US ASCII, German, French, Chinese, ... However, it does this by encoding everything in UTF-8, and it expects all configuration files (including those read on Win32 machines) to be in UTF-8 format. UTF-8 is typically the default on Linux machines, but not on all Unix machines, nor on Windows, so you must take some care to ensure that your locale is set properly before starting Bareos.
+:index:`\ <single: Character Sets>` Bareos is designed to handle most character sets of the world, US ASCII, German, French, Chinese, ... However, it does this by encoding everything in UTF-8, and it expects all configuration files (including those read on Win32 machines) to be in UTF-8 format. UTF-8 is typically the default on Linux machines, but not on all Unix machines, nor on Windows, so you must take some care to ensure that your locale is set properly before starting Bareos.
 
-:index:`[TAG=Windows->Configuration Files->UTF-8] <single: Windows; Configuration Files; UTF-8>` To ensure that Bareos configuration files can be correctly read including foreign characters, the LANG environment variable must end in .UTF-8. A full example is en_US.UTF-8. The exact syntax may vary a bit from OS to OS, so that the way you have to define it will differ from the example. On most newer Win32 machines you can use :command:`notepad` to edit the conf files, then choose output encoding UTF-8.
+:index:`\ <single: Windows; Configuration Files; UTF-8>` To ensure that Bareos configuration files can be correctly read including foreign characters, the LANG environment variable must end in .UTF-8. A full example is en_US.UTF-8. The exact syntax may vary a bit from OS to OS, so that the way you have to define it will differ from the example. On most newer Win32 machines you can use :command:`notepad` to edit the conf files, then choose output encoding UTF-8.
 
 Bareos assumes that all filenames are in UTF-8 format on Linux and Unix machines. On Win32 they are in Unicode (UTF-16) and will hence be automatically converted to UTF-8 format.
 
@@ -332,7 +332,7 @@ Bareos assumes that all filenames are in UTF-8 format on Linux and Unix machines
 Comments
 ~~~~~~~~
 
-:index:`[TAG=Configuration->Comments] <single: Configuration; Comments>`
+:index:`\ <single: Configuration; Comments>`
 
 When reading a configuration, blank lines are ignored and everything after a hash sign (#) until the end of the line is taken to be a comment.
 
@@ -346,7 +346,7 @@ A semicolon (;) is a logical end of line and anything after the semicolon is con
 Including other Configuration Files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Including other Configuration Files] <single: Including other Configuration Files>` :index:`[TAG=Files->Including other Configuration] <single: Files; Including other Configuration>` :index:`[TAG=Configuration->Including Files] <single: Configuration; Including Files>`
+:index:`\ <single: Including other Configuration Files>` :index:`\ <single: Files; Including other Configuration>` :index:`\ <single: Configuration; Including Files>`
 
 If you wish to break your configuration file into smaller pieces, you can do so by including other files using the syntax :strong:`@filename`\  where :file:`filename` is the full path and filename of another file. The :strong:`@filename`\  specification can be given anywhere a primitive token would appear.
 
@@ -383,7 +383,7 @@ The scripts are called at the start of the daemon. You should use this with care
 Resource
 --------
 
-:index:`[TAG=Configuration->Resource] <single: Configuration; Resource>`
+:index:`\ <single: Configuration; Resource>`
 
 A resource is defined as the resource type (see :ref:`ResTypes`), followed by an open brace (:file:`{`), a number of :ref:`section-ConfigurationResourceDirective`s, and ended by a closing brace (:file:`}`)
 
@@ -400,7 +400,7 @@ Each resource definition MUST contain a :strong:`Name`\  directive. It can conta
 
 defines the Director resource with the name :strong:`bareos-dir` and a query file :file:`/usr/lib/bareos/scripts/query.sql`.
 
-:index:`[TAG=Configuration->Naming Convention] <single: Configuration; Naming Convention>`
+:index:`\ <single: Configuration; Naming Convention>`
 
 When naming resources, for some resource types naming conventions should be applied:
 
@@ -472,7 +472,7 @@ Numbers are not to be quoted, see :ref:`section-Quotes`. Also do not prepend num
 Data Types
 ^^^^^^^^^^
 
-:index:`[TAG=Configuration->Data Types] <single: Configuration; Data Types>` :index:`[TAG=Data Type] <single: Data Type>` 
+:index:`\ <single: Configuration; Data Types>` :index:`\ <single: Data Type>` 
 
 .. _DataTypes:
 
@@ -481,7 +481,7 @@ Data Types
 When parsing the resource directives, Bareos classifies the data according to the types listed below.
 
 acl
-   :index:`[TAG=Data Type->acl] <single: Data Type; acl>` 
+   :index:`\ <single: Data Type; acl>` 
 
 .. _DataTypeAcl:
 
@@ -553,7 +553,7 @@ acl
       Command ACL = *all*, !sqlquery
 
 auth-type
-   :index:`[TAG=Data Type->auth-type] <single: Data Type; auth-type>` 
+   :index:`\ <single: Data Type; auth-type>` 
 
 .. _DataTypeAuthType:
 
@@ -571,7 +571,7 @@ auth-type
       - Use MD5 hashing
 
 integer
-   :index:`[TAG=Data Type->integer] <single: Data Type; integer>` 
+   :index:`\ <single: Data Type; integer>` 
 
 .. _DataTypeInteger:
 
@@ -580,7 +580,7 @@ integer
    Don’t use quotes around the number, see :ref:`section-Quotes`.
 
 long integer
-   :index:`[TAG=Data Type->long integer] <single: Data Type; long integer>` 
+   :index:`\ <single: Data Type; long integer>` 
 
 .. _DataTypeLongInteger:
 
@@ -589,7 +589,7 @@ long integer
    Don’t use quotes around the number, see :ref:`section-Quotes`.
 
 job protocol
-   :index:`[TAG=Data Type->job protocol] <single: Data Type; job protocol>` 
+   :index:`\ <single: Data Type; job protocol>` 
 
 .. _DataTypeJobProtocol:
 
@@ -610,7 +610,7 @@ job protocol
       Since Bareos :sinceVersion:`17.2.3: NDMP NATIVE`. See :ref:`section-NdmpNative`.
 
 name
-   :index:`[TAG=Data Type->name] <single: Data Type; name>` 
+   :index:`\ <single: Data Type; name>` 
 
 .. _DataTypeName:
 
@@ -619,21 +619,21 @@ name
    Please note that Bareos resource names as well as certain other names (e.g. Volume names) must contain only letters (including ISO accented letters), numbers, and a few special characters (space, underscore, ...). All other characters and punctuation are invalid.
 
 password
-   :index:`[TAG=Data Type->password] <single: Data Type; password>` 
+   :index:`\ <single: Data Type; password>` 
 
 .. _DataTypePassword:
 
  This is a Bareos password and it is stored internally in MD5 hashed format.
 
 path
-   :index:`[TAG=Data Type->path] <single: Data Type; path>` 
+   :index:`\ <single: Data Type; path>` 
 
 .. _DataTypeDirectory:
 
  A path is either a quoted or non-quoted string. A path will be passed to your standard shell for expansion when it is scanned. Thus constructs such as $HOME are interpreted to be their correct values. The path can either reference to a file or a directory.
 
 positive integer
-   :index:`[TAG=Data Type->positive integer] <single: Data Type; positive integer>` 
+   :index:`\ <single: Data Type; positive integer>` 
 
 .. _DataTypePositiveInteger:
 
@@ -642,7 +642,7 @@ positive integer
    Don’t use quotes around the number, see :ref:`section-Quotes`.
 
 speed
-   :index:`[TAG=Data Type->speed] <single: Data Type; speed>` 
+   :index:`\ <single: Data Type; speed>` 
 
 .. _DataTypeSpeed:
 
@@ -651,35 +651,35 @@ speed
    Don’t use quotes around the parameter, see :ref:`section-Quotes`.
 
 string
-   :index:`[TAG=Data Type->string] <single: Data Type; string>` 
+   :index:`\ <single: Data Type; string>` 
 
 .. _DataTypeString:
 
  A quoted string containing virtually any character including spaces, or a non-quoted string. A string may be of any length. Strings are typically values that correspond to filenames, directories, or system command names. A backslash (\) turns the next character into itself, so to include a double quote in a string, you precede the double quote with a backslash. Likewise to include a backslash.
 
 string-list
-   :index:`[TAG=Data Type->string list] <single: Data Type; string list>` 
+   :index:`\ <single: Data Type; string list>` 
 
 .. _DataTypeStringList:
 
  Multiple strings, specified in multiple directives, or in a single directive, separated by commas (**,**).
 
 strname
-   :index:`[TAG=Data Type->strname] <single: Data Type; strname>` 
+   :index:`\ <single: Data Type; strname>` 
 
 .. _DataTypeStrname:
 
  is similar to a :strong:`Name`, except that the name may be quoted and can thus contain additional characters including spaces.
 
 net-address
-   :index:`[TAG=Data Type->net-address] <single: Data Type; net-address>` 
+   :index:`\ <single: Data Type; net-address>` 
 
 .. _DataTypeNetAddress:
 
  is either a domain name or an IP address specified as a dotted quadruple in string or quoted string format. This directive only permits a single address to be specified. The :strong:`NetPort` must be specificly separated. If multiple net-addresses are needed, please assess if it is also possible to specify :strong:`NetAddresses` (plural).
 
 net-addresses
-   :index:`[TAG=Data Type->net-addresses] <single: Data Type; net-addresses>` 
+   :index:`\ <single: Data Type; net-addresses>` 
 
 .. _DataTypeNetAddresses:
 
@@ -711,7 +711,7 @@ net-addresses
    resolutions will be permitted, and likewise with ip6.
 
 net-port
-   :index:`[TAG=Data Type->net-port] <single: Data Type; net-port>` 
+   :index:`\ <single: Data Type; net-port>` 
 
 .. _DataTypeNetPort:
 
@@ -720,14 +720,14 @@ net-port
    Don’t use quotes around the parameter, see :ref:`section-Quotes`.
 
 resource
-   :index:`[TAG=Data Type->resource] <single: Data Type; resource>` 
+   :index:`\ <single: Data Type; resource>` 
 
 .. _DataTypeRes:
 
  A resource defines a relation to the name of another resource.
 
 size
-   :index:`[TAG=Data Type->size] <single: Data Type; size>` 
+   :index:`\ <single: Data Type; size>` 
 
 .. _DataTypeSize:
 
@@ -758,7 +758,7 @@ size
    Don’t use quotes around the parameter, see :ref:`section-Quotes`.
 
 time
-   :index:`[TAG=Data Type->time] <single: Data Type; time>` 
+   :index:`\ <single: Data Type; time>` 
 
 .. _DataTypeTime:
 
@@ -770,28 +770,28 @@ time
    intervening spaces. The following modifiers are permitted:
 
    seconds
-      :index:`[TAG=seconds] <single: seconds>`
+      :index:`\ <single: seconds>`
 
    minutes
-      :index:`[TAG=minutes] <single: minutes>` (60 seconds)
+      :index:`\ <single: minutes>` (60 seconds)
 
    hours
-      :index:`[TAG=hours] <single: hours>` (3600 seconds)
+      :index:`\ <single: hours>` (3600 seconds)
 
    days
-      :index:`[TAG=days] <single: days>` (3600*24 seconds)
+      :index:`\ <single: days>` (3600*24 seconds)
 
    weeks
-      :index:`[TAG=weeks] <single: weeks>` (3600*24*7 seconds)
+      :index:`\ <single: weeks>` (3600*24*7 seconds)
 
    months
-      :index:`[TAG=months] <single: months>` (3600*24*30 seconds)
+      :index:`\ <single: months>` (3600*24*30 seconds)
 
    quarters
-      :index:`[TAG=quarters] <single: quarters>` (3600*24*91 seconds)
+      :index:`\ <single: quarters>` (3600*24*91 seconds)
 
    years
-      :index:`[TAG=years] <single: years>` (3600*24*365 seconds)
+      :index:`\ <single: years>` (3600*24*365 seconds)
 
    Any abbreviation of these modifiers is also permitted (i.e. seconds may be specified as sec or s). A specification of m will be taken as months.
 
@@ -811,7 +811,7 @@ time
    Don’t use quotes around the parameter, see :ref:`section-Quotes`.
 
 audit-command-list
-   :index:`[TAG=Data Type->audit command list] <single: Data Type; audit command list>` 
+   :index:`\ <single: Data Type; audit command list>` 
 
 .. _DataTypeAuditCommandList:
 
@@ -825,7 +825,7 @@ audit-command-list
    Based on the type \dtStringList.
 
 yes\\|no`
-   :index:`[TAG=Data Type->\yesno] <single: Data Type; \yesno>` :index:`[TAG=Data Type->boolean] <single: Data Type; boolean>` 
+   :index:`\ <single: Data Type; \yesno>` :index:`\ <single: Data Type; boolean>` 
 
 .. _DataTypeYesNo:
 
@@ -1024,7 +1024,7 @@ At the configuration of mail and operator commands the following variables can b
 Resource Types
 ~~~~~~~~~~~~~~
 
-:index:`[TAG=Types->Resource] <single: Types; Resource>` :index:`[TAG=Resource Types] <single: Resource Types>` 
+:index:`\ <single: Types; Resource>` :index:`\ <single: Resource Types>` 
 
 .. _ResTypes:
 
@@ -1106,7 +1106,7 @@ Storage                                            :ref:`|checkmark| <DirectorRe
 Names, Passwords and Authorization
 ----------------------------------
 
-:index:`[TAG=Authorization->Names and Passwords] <single: Authorization; Names and Passwords>` :index:`[TAG=Passwords] <single: Passwords>`
+:index:`\ <single: Authorization; Names and Passwords>` :index:`\ <single: Passwords>`
 
 In order for one daemon to contact another daemon, it must authorize itself with a password. In most cases, the password corresponds to a particular name, so both the name and the password must match to be authorized. Passwords are plain text, any text. They are not generated by any special process; just use random text.
 

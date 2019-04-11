@@ -3,7 +3,7 @@
 Automated Disk Backup
 =====================
 
-:index:`[TAG=Volumes->Using Pools to Manage] <single: Volumes; Using Pools to Manage>` :index:`[TAG=Disk->Automated Backup] <single: Disk; Automated Backup>` :index:`[TAG=Automated Disk Backup] <single: Automated Disk Backup>` :index:`[TAG=Pool] <single: Pool>`
+:index:`\ <single: Volumes; Using Pools to Manage>` :index:`\ <single: Disk; Automated Backup>` :index:`\ <single: Automated Disk Backup>` :index:`\ <single: Pool>`
 
 If you manage five or ten machines and have a nice tape backup, you don’t need Pools, and you may wonder what they are good for. In this chapter, you will see that Pools can help you optimize disk storage space. The same techniques can be applied to a shop that has multiple tape drives, or that wants to mount various different Volumes to meet their needs.
 
@@ -48,7 +48,7 @@ The decision was to use three Pools: one for Full saves, one for Differential sa
 Full Pool
 ~~~~~~~~~
 
-:index:`[TAG=Pool->Full] <single: Pool; Full>` :index:`[TAG=Full Pool] <single: Full Pool>`
+:index:`\ <single: Pool; Full>` :index:`\ <single: Full Pool>`
 
 Putting a single Full backup on each Volume, will require six Full save Volumes, and a retention period of six months. The Pool needed to do that is:
 
@@ -81,7 +81,7 @@ If you have two clients, you would want to set Maximum Volume Jobs to 2 instead 
 Differential Pool
 ~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Pool->Differential] <single: Pool; Differential>` :index:`[TAG=Differential Pool] <single: Differential Pool>`
+:index:`\ <single: Pool; Differential>` :index:`\ <single: Differential Pool>`
 
 For the Differential backup Pool, we choose a retention period of a bit longer than a month and ensure that there is at least one Volume for each of the maximum of five weeks in a month. So the following works:
 
@@ -114,7 +114,7 @@ See the discussion above concering the Full pool for how to handle multiple clie
 Incremental Pool
 ~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Incremental Pool] <single: Incremental Pool>` :index:`[TAG=Pool->Incremental] <single: Pool; Incremental>`
+:index:`\ <single: Incremental Pool>` :index:`\ <single: Pool; Incremental>`
 
 Finally, here is the resource for the Incremental Pool:
 

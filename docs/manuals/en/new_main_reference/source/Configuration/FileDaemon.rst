@@ -3,7 +3,7 @@
 Client/File Daemon Configuration
 ================================
 
-:index:`[TAG=Configuration->Client/File daemon] <single: Configuration; Client/File daemon>` :index:`[TAG=Client/File daemon Configuration] <single: Client/File daemon Configuration>`
+:index:`\ <single: Configuration; Client/File daemon>` :index:`\ <single: Client/File daemon Configuration>`
 
 The Client (or File Daemon) Configuration is one of the simpler ones to specify. Generally, other than changing the Client name so that error messages are easily identified, you will not need to modify the default Client configuration file.
 
@@ -20,7 +20,7 @@ For a general discussion of configuration file and resources including the data 
 Client Resource
 ---------------
 
-:index:`[TAG=Resource->Client] <single: Resource; Client>` :index:`[TAG=Client Resource] <single: Client Resource>`
+:index:`\ <single: Resource; Client>` :index:`\ <single: Client Resource>`
 
 The Client Resource (or FileDaemon) resource defines the name of the Client (as used by the Director) as well as the port on which the Client listens for Director connections.
 
@@ -129,7 +129,7 @@ The following is an example of a valid Client resource definition:
 Director Resource
 -----------------
 
-:index:`[TAG=Director Resource] <single: Director Resource>` :index:`[TAG=Resource->Director] <single: Resource; Director>`
+:index:`\ <single: Director Resource>` :index:`\ <single: Resource; Director>`
 
 The Director resource defines the name and password of the Directors that are permitted to contact this Client.
 
@@ -205,7 +205,7 @@ The following is an example of a valid Director resource definition:
 Messages Resource
 -----------------
 
-:index:`[TAG=Messages Resource] <single: Messages Resource>` :index:`[TAG=Resource->Messages] <single: Resource; Messages>`
+:index:`\ <single: Messages Resource>` :index:`\ <single: Resource; Messages>`
 
 Please see the :ref:`Messages Resource <MessagesChapter>` Chapter of this manual for the details of the Messages Resource.
 

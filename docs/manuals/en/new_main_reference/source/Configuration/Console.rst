@@ -3,7 +3,7 @@
 Console Configuration
 =====================
 
-:index:`[TAG=Configuration->Console] <single: Configuration; Console>` :index:`[TAG=Console Configuration] <single: Console Configuration>`
+:index:`\ <single: Configuration; Console>` :index:`\ <single: Console Configuration>`
 
 The Console configuration file is the simplest of all the configuration files, and in general, you should not need to change it except for the password. It simply contains the information necessary to contact the Director or Directors.
 
@@ -16,7 +16,7 @@ The following Console Resource definition must be defined:
 Director Resource
 -----------------
 
-:index:`[TAG=Director Resource] <single: Director Resource>` :index:`[TAG=Resource->Director] <single: Resource; Director>`
+:index:`\ <single: Director Resource>` :index:`\ <single: Resource; Director>`
 
 The Director resource defines the attributes of the Director running on the network. You may have multiple Director resource specifications in a single Console configuration file. If you have more than one, you will be prompted to choose one when you start the Console program.
 
@@ -73,7 +73,7 @@ An actual example might be:
 Console Resource
 ----------------
 
-:index:`[TAG=Console Resource] <single: Console Resource>` :index:`[TAG=Resource->Console] <single: Resource; Console>`
+:index:`\ <single: Console Resource>` :index:`\ <single: Resource; Console>`
 
 There are three different kinds of consoles, which the administrator or user can use to interact with the Director. These three kinds of consoles comprise three different security levels.
 
@@ -134,7 +134,7 @@ Note, the Console resource is optional, but can be useful for restricted console
 Example Console Configuration File
 ----------------------------------
 
-:index:`[TAG=Configuration->bconsole] <single: Configuration; bconsole>`
+:index:`\ <single: Configuration; bconsole>`
 
 A Console configuration file might look like this:
 

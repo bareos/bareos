@@ -3,14 +3,14 @@
 Always Incremental Backup Scheme
 ================================
 
-:index:`[TAG=Always Incremental] <single: Always Incremental>`
+:index:`\ <single: Always Incremental>`
 
 Always Incremental Backups are available since Bareos :sinceVersion:`16.2.4: Always Incremental`.
 
 Conventional Backup Scheme Drawbacks
 ------------------------------------
 
-:index:`[TAG=Retention] <single: Retention>`
+:index:`\ <single: Retention>`
 
 To better understand the advantages of the Always Incremental Backup scheme, we first analyze the way that the conventional Incremental - Differential - Full Backup Scheme works.
 

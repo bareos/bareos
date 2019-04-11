@@ -7,7 +7,7 @@ The Windows Version of Bareos
 
 .. _section-windows:
 
- :index:`[TAG=Platform->Windows] <single: Platform; Windows>` :index:`[TAG=Windows] <single: Windows>`
+ :index:`\ <single: Platform; Windows>` :index:`\ <single: Windows>`
 
 The Windows version of Bareos is a native Win32 port, but there are very few source code changes to the Unix code, which means that the Windows version is for the most part running code that has long proved stable on Unix systems.
 
@@ -26,7 +26,7 @@ Windows Installation
 
 .. _Windows:Configuration:Files:
 
- :index:`[TAG=Installation->Windows] <single: Installation; Windows>` :index:`[TAG=Windows->File Daemon->Installation] <single: Windows; File Daemon; Installation>`
+ :index:`\ <single: Installation; Windows>` :index:`\ <single: Windows; File Daemon; Installation>`
 
 Normally, you will install the Windows version of Bareos from the binaries. The **winbareos** binary packages are provided under http://download.bareos.org/bareos/release/latest/windows. Additionally, there are `OPSI <http://www.opsi.org>`_ packages available under http://download.bareos.org/bareos/release/latest/windows/opsi.
 
@@ -166,7 +166,7 @@ DBADMINUSER and DBADMINPASSWORD are used to create the bareos databases. If logi
 Dealing with Windows Problems
 -----------------------------
 
-:index:`[TAG=Problem->Windows] <single: Problem; Windows>` :index:`[TAG=Windows->Dealing with Problems] <single: Windows; Dealing with Problems>`
+:index:`\ <single: Problem; Windows>` :index:`\ <single: Windows; Dealing with Problems>`
 
 Antivirus Program
 ~~~~~~~~~~~~~~~~~
@@ -193,7 +193,7 @@ In case of problems, you can enable the creation of log files. For this you have
 Windows Compatibility Considerations
 ------------------------------------
 
-:index:`[TAG=Windows->Compatibility Considerations] <single: Windows; Compatibility Considerations>`
+:index:`\ <single: Windows; Compatibility Considerations>`
 
 Exclusively Opened Files
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -211,7 +211,7 @@ Windows Reparse Points
 
 :sinceVersion:`12.4.5: Windows: Reparse points`
 
-:index:`[TAG=Windows->Symbolic links] <single: Windows; Symbolic links>` :index:`[TAG=Windows->Junction points] <single: Windows; Junction points>` :index:`[TAG=Windows->Volume Mount Points (VMP)] <single: Windows; Volume Mount Points (VMP)>`
+:index:`\ <single: Windows; Symbolic links>` :index:`\ <single: Windows; Junction points>` :index:`\ <single: Windows; Volume Mount Points (VMP)>`
 
 Besides normal files and directories, Windows filesystems also support special files, called "Reparse Points". Bareos can handle the following types of Reparse points:
 
@@ -301,7 +301,7 @@ FilesNotToBackup Registry Key
 
 :sinceVersion:`14.2.0: Windows: FilesNotToBackup`
 
-:index:`[TAG=Windows->Exclude Files from Backup] <single: Windows; Exclude Files from Backup>`
+:index:`\ <single: Windows; Exclude Files from Backup>`
 
 Windows supports a special Registry Key that specifies the names of the files and directories that backup applications should not backup or restore.
 
@@ -373,7 +373,7 @@ Windows has support for a so called EFS filesystem. This is an encrypted filesys
 Volume Shadow Copy Service (VSS)
 --------------------------------
 
-:index:`[TAG=Windows->Volume Shadow Copy Service] <single: Windows; Volume Shadow Copy Service>` :index:`[TAG=Windows->VSS] <single: Windows; VSS>` 
+:index:`\ <single: Windows; Volume Shadow Copy Service>` :index:`\ <single: Windows; VSS>` 
 
 .. _VSS:
 
@@ -388,7 +388,7 @@ Technically Bareos creates a shadow copy as soon as the backup process starts. I
 
 VSS can be turned on by placing an
 
-:index:`[TAG=Enable VSS] <single: Enable VSS>` :index:`[TAG=VSS->Enable] <single: VSS; Enable>`
+:index:`\ <single: Enable VSS>` :index:`\ <single: VSS; Enable>`
 
 ::
 
@@ -438,7 +438,7 @@ In the above Job Report listing, you see that the VSS snapshot was generated for
 VSS Problems
 ~~~~~~~~~~~~
 
-:index:`[TAG=Windows->Problem->VSS] <single: Windows; Problem; VSS>` :index:`[TAG=Windows->VSS->Problem] <single: Windows; VSS; Problem>` :index:`[TAG=Windows->Problem->VSS] <single: Windows; Problem; VSS>` :index:`[TAG=Problem->Windows->VSS] <single: Problem; Windows; VSS>`
+:index:`\ <single: Windows; Problem; VSS>` :index:`\ <single: Windows; VSS; Problem>` :index:`\ <single: Windows; Problem; VSS>` :index:`\ <single: Problem; Windows; VSS>`
 
 If you are experiencing problems such as VSS hanging on MSDE, first try running vssadmin to check for problems, then try running ntbackup which also uses VSS to see if it has similar problems. If so, you know that the problem is in your Windows machine and not with Bareos.
 
@@ -451,7 +451,7 @@ The FD hang problems were reported with MSDEwriter when:
 Windows Firewalls
 -----------------
 
-:index:`[TAG=Firewall->Windows] <single: Firewall; Windows>` :index:`[TAG=Windows->Firewall] <single: Windows; Firewall>`
+:index:`\ <single: Firewall; Windows>` :index:`\ <single: Windows; Firewall>`
 
 The Windows buildin Firewall is enabled since Windows version WinXP SP2. The Bareos installer opens the required network ports for Bareos. However, if you are using another Firewall, you might need to manually open the Bareos network ports. The |fd| listens on 9102/TCP.
 
@@ -467,14 +467,14 @@ If you want to see if the File daemon has properly opened the port and is listen
 Windows Restore Problems
 ------------------------
 
-:index:`[TAG=Problem->Windows Restore] <single: Problem; Windows Restore>` :index:`[TAG=Windows->Restore Problem] <single: Windows; Restore Problem>`
+:index:`\ <single: Problem; Windows Restore>` :index:`\ <single: Windows; Restore Problem>`
 
 Please see the :ref:`section-RestoreOnWindows` chapter for problems that you might encounter doing a restore.
 
 Windows Backup Problems
 -----------------------
 
-:index:`[TAG=Problem->Windows Backup] <single: Problem; Windows Backup>` :index:`[TAG=Windows->Backup Problems] <single: Windows; Backup Problems>`
+:index:`\ <single: Problem; Windows Backup>` :index:`\ <single: Windows; Backup Problems>`
 
 If during a Backup, you get the message: ERR=Access is denied and you are using the portable option, you should try both adding both the non-portable (backup API) and the Volume Shadow Copy options to your Director’s conf file.
 
@@ -505,7 +505,7 @@ Thanks to Georger Araujo for the above information.
 Windows Ownership and Permissions Problems
 ------------------------------------------
 
-:index:`[TAG=Problem->Windows Ownership and Permissions] <single: Problem; Windows Ownership and Permissions>` :index:`[TAG=Windows->Ownership and Permissions Problems] <single: Windows; Ownership and Permissions Problems>`
+:index:`\ <single: Problem; Windows Ownership and Permissions>` :index:`\ <single: Windows; Ownership and Permissions Problems>`
 
 If you restore files backed up from Windows to an alternate directory, Bareos may need to create some higher level directories that were not saved (or restored). In this case, the File daemon will create them under the SYSTEM account because that is the account that Bareos runs under as a service and with full access permission. However, there may be cases where you have problems accessing those files even if you run as administrator. In principle, Microsoft supplies you with the way to cease
 the ownership of those files and thus change the permissions. However, a much better solution to working with and changing Win32 permissions is the program SetACL, which can be found at `http://setacl.sourceforge.net/ <http://setacl.sourceforge.net/>`_.
@@ -581,7 +581,7 @@ and
 Windows Specific Command Line Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Windows->File Daemon->Command Line Options] <single: Windows; File Daemon; Command Line Options>`
+:index:`\ <single: Windows; File Daemon; Command Line Options>`
 
 These options are not normally seen or used by the user, and are documented here only for information purposes. At the current time, to change the default options, you must either manually run Bareos or you must manually edit the system registry and modify the appropriate entries.
 

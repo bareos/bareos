@@ -3,7 +3,7 @@
 Catalog Maintenance
 ===================
 
-:index:`[TAG=Maintenance->Catalog] <single: Maintenance; Catalog>` :index:`[TAG=Catalog Maintenance] <single: Catalog Maintenance>`
+:index:`\ <single: Maintenance; Catalog>` :index:`\ <single: Catalog Maintenance>`
 
 Catalog Database
 ----------------
@@ -23,7 +23,7 @@ The database often runs on the same server as the |dir|. However, it is also pos
 dbconfig-common (Debian)
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Platform->Debian->dbconfig-common] <single: Platform; Debian; dbconfig-common>` :index:`[TAG=Platform->Ubuntu->dbconfig-common] <single: Platform; Ubuntu; dbconfig-common>` 
+:index:`\ <single: Platform; Debian; dbconfig-common>` :index:`\ <single: Platform; Ubuntu; dbconfig-common>` 
 
 .. _section-dbconfig:
 
@@ -573,7 +573,7 @@ Retention Periods
 Database Size
 ~~~~~~~~~~~~~
 
-:index:`[TAG=Size->Database] <single: Size; Database>` :index:`[TAG=Database Size] <single: Database Size>`
+:index:`\ <single: Size; Database>` :index:`\ <single: Database Size>`
 
 As mentioned above, if you do not do automatic pruning, your Catalog will grow each time you run a Job. Normally, you should decide how long you want File records to be maintained in the Catalog and set the File Retention period to that time. Then you can either wait and see how big your Catalog gets or make a calculation assuming approximately 154 bytes for each File saved and knowing the number of Files that are saved during each backup and the number of Clients you backup.
 
@@ -609,14 +609,14 @@ database size will remain constant.
 Setting Retention Periods
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Setting Retention Periods] <single: Setting Retention Periods>` :index:`[TAG=Periods->Setting Retention] <single: Periods; Setting Retention>`
+:index:`\ <single: Setting Retention Periods>` :index:`\ <single: Periods; Setting Retention>`
 
 Bareos uses three Retention periods: the File Retention period, the Job Retention period, and the Volume Retention period. Of these three, the File Retention period is by far the most important in determining how large your database will become.
 
 The File Retention and the Job Retention are specified in each Client resource as is shown below. The Volume Retention period is specified in the Pool resource, and the details are given in the next chapter of this manual.
 
 File Retention = <time-period-specification>
-   :index:`[TAG=File Retention] <single: File Retention>` :index:`[TAG=Retention->File] <single: Retention; File>` The File Retention record defines the length of time that Bareos will keep File records in the Catalog database. When this time period expires, and if AutoPrune is set to yes, Bareos will prune (remove) File records that are older than the specified File Retention period. The pruning will occur at the end of a backup Job for the given Client. Note that the Client database record contains a copy of the
+   :index:`\ <single: File Retention>` :index:`\ <single: Retention; File>` The File Retention record defines the length of time that Bareos will keep File records in the Catalog database. When this time period expires, and if AutoPrune is set to yes, Bareos will prune (remove) File records that are older than the specified File Retention period. The pruning will occur at the end of a backup Job for the given Client. Note that the Client database record contains a copy of the
    File and Job retention periods, but Bareos uses the current values found in the Director’s Client resource to do the pruning.
 
    Since File records in the database account for probably 80 percent of the size of the database, you should carefully determine exactly what File Retention period you need. Once the File records have been removed from the database, you will no longer be able to restore individual files in a Job. However, as long as the Job record still exists, you will be able to restore all files in the job.
@@ -626,7 +626,7 @@ File Retention = <time-period-specification>
    The default File retention period is 60 days.
 
 Job Retention = <time-period-specification>
-   :index:`[TAG=Job->Retention] <single: Job; Retention>` :index:`[TAG=Retention->Job] <single: Retention; Job>` The Job Retention record defines the length of time that Bareos will keep Job records in the Catalog database. When this time period expires, and if AutoPrune is set to yes Bareos will prune (remove) Job records that are older than the specified Job Retention period. Note, if a Job record is selected for pruning, all associated File and JobMedia records will also be pruned regardless of the File Retention
+   :index:`\ <single: Job; Retention>` :index:`\ <single: Retention; Job>` The Job Retention record defines the length of time that Bareos will keep Job records in the Catalog database. When this time period expires, and if AutoPrune is set to yes Bareos will prune (remove) Job records that are older than the specified Job Retention period. Note, if a Job record is selected for pruning, all associated File and JobMedia records will also be pruned regardless of the File Retention
    period set. As a consequence, you normally will set the File retention period to be less than the Job retention period.
 
    As mentioned above, once the File records are removed from the database, you will no longer be able to restore individual files from the Job. However, as long as the Job record remains in the database, you will be able to restore all the files backuped for the Job. As a consequence, it is generally a good idea to retain the Job records much longer than the File records.
@@ -636,14 +636,14 @@ Job Retention = <time-period-specification>
    The default Job Retention period is 180 days.
 
 :config:option:`dir/client/AutoPrune`\ 
-   :index:`[TAG=AutoPrune] <single: AutoPrune>` :index:`[TAG=Job->Retention->AutoPrune] <single: Job; Retention; AutoPrune>` If set to yes, Bareos will automatically apply the File retention period and the Job retention period for the Client at the end of the Job. If you turn this off by setting it to no, your Catalog will grow each time you run a Job.
+   :index:`\ <single: AutoPrune>` :index:`\ <single: Job; Retention; AutoPrune>` If set to yes, Bareos will automatically apply the File retention period and the Job retention period for the Client at the end of the Job. If you turn this off by setting it to no, your Catalog will grow each time you run a Job.
 
 .. _section-JobStatistics:
 
 Job Statistics
 ^^^^^^^^^^^^^^
 
-:index:`[TAG=Statistics] <single: Statistics>` :index:`[TAG=Job->Statistics] <single: Job; Statistics>`
+:index:`\ <single: Statistics>` :index:`\ <single: Job; Statistics>`
 
 Bareos catalog contains lot of information about your IT infrastructure, how many files, their size, the number of video or music files etc. Using Bareos catalog during the day to get them permit to save resources on your servers.
 
@@ -689,12 +689,12 @@ You can use the following Job resource in your nightly :config:option:`dir/job =
 PostgreSQL
 ----------
 
-:index:`[TAG=Database->PostgreSQL] <single: Database; PostgreSQL>` :index:`[TAG=PostgreSQL] <single: PostgreSQL>`
+:index:`\ <single: Database; PostgreSQL>` :index:`\ <single: PostgreSQL>`
 
 Compacting Your PostgreSQL Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Database->PostgreSQL->Compacting] <single: Database; PostgreSQL; Compacting>` 
+:index:`\ <single: Database; PostgreSQL; Compacting>` 
 
 .. _CompactingPostgres:
 
@@ -859,7 +859,7 @@ To setup a scheduled admin job for vacuuming the file table, the following must 
 Repairing Your PostgreSQL Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Database->Repairing Your PostgreSQL] <single: Database; Repairing Your PostgreSQL>` :index:`[TAG=Repairing Your PostgreSQL Database] <single: Repairing Your PostgreSQL Database>`
+:index:`\ <single: Database; Repairing Your PostgreSQL>` :index:`\ <single: Repairing Your PostgreSQL Database>`
 
 The same considerations apply as for :ref:`RepairingMySQL`. Consult the PostgreSQL documents for how to repair the database.
 
@@ -868,12 +868,12 @@ For Bareos specific problems, consider using :ref:`bareos-dbcheck` program.
 MySQL/MariaDB
 -------------
 
-:index:`[TAG=Database->MySQL] <single: Database; MySQL>` :index:`[TAG=MySQL] <single: MySQL>`
+:index:`\ <single: Database; MySQL>` :index:`\ <single: MySQL>`
 
 MySQL/MariaDB Support
 ~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=MariaDB|see{MySQL}] <single: MariaDB|see{MySQL}>` 
+:index:`\ <single: MariaDB|see{MySQL}>` 
 
 .. _section-MysqlSupport:
 
@@ -886,7 +886,7 @@ As MariaDB is a fork of MySQL, we use MySQL as synonym for MariaDB and fully sup
 Compacting Your MySQL Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Database->MySQL->Compacting] <single: Database; MySQL; Compacting>` 
+:index:`\ <single: Database; MySQL; Compacting>` 
 
 .. _CompactingMySQL:
 
@@ -913,7 +913,7 @@ Please note that the database files are never shrunk by MySQL. If you really nee
 Repairing Your MySQL Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Database->Repairing Your MySQL] <single: Database; Repairing Your MySQL>` :index:`[TAG=Repairing Your MySQL Database] <single: Repairing Your MySQL Database>` 
+:index:`\ <single: Database; Repairing Your MySQL>` :index:`\ <single: Repairing Your MySQL Database>` 
 
 .. _RepairingMySQL:
 
@@ -936,7 +936,7 @@ A typical cause of MySQL database problems is if your partition fills. In such a
 MySQL Table is Full
 ~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Database->MySQL Table is Full] <single: Database; MySQL Table is Full>` :index:`[TAG=MySQL Table is Full] <single: MySQL Table is Full>`
+:index:`\ <single: Database; MySQL Table is Full>` :index:`\ <single: MySQL Table is Full>`
 
 If you are running into the error The table ’File’ is full ..., it is probably because on version 4.x MySQL, the table is limited by default to a maximum size of 4 GB and you have probably run into the limit. The solution can be found at: `http://dev.mysql.com/doc/refman/5.0/en/full-table.html <http://dev.mysql.com/doc/refman/5.0/en/full-table.html>`_
 
@@ -965,7 +965,7 @@ If the column labeled "Max_data_length" is around 4Gb, this is likely to be the 
 MySQL Server Has Gone Away
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Database->MySQL Server Has Gone Away] <single: Database; MySQL Server Has Gone Away>` :index:`[TAG=MySQL Server Has Gone Away] <single: MySQL Server Has Gone Away>` If you are having problems with the MySQL server disconnecting or with messages saying that your MySQL server has gone away, then please read the MySQL documentation, which can be found at:
+:index:`\ <single: Database; MySQL Server Has Gone Away>` :index:`\ <single: MySQL Server Has Gone Away>` If you are having problems with the MySQL server disconnecting or with messages saying that your MySQL server has gone away, then please read the MySQL documentation, which can be found at:
 
 `http://dev.mysql.com/doc/refman/5.0/en/gone-away.html <http://dev.mysql.com/doc/refman/5.0/en/gone-away.html>`_
 
@@ -1022,7 +1022,7 @@ In this case the |mysql| ``innodb_lock_wait_timeout`` must be increased. A value
 Backing Up Your Bareos Database
 -------------------------------
 
-:index:`[TAG=Backup->Bareos database] <single: Backup; Bareos database>` :index:`[TAG=Backup->Catalog] <single: Backup; Catalog>` :index:`[TAG=Database->Backup Bareos database] <single: Database; Backup Bareos database>` 
+:index:`\ <single: Backup; Bareos database>` :index:`\ <single: Backup; Catalog>` :index:`\ <single: Database; Backup Bareos database>` 
 
 .. _BackingUpBareos:
 

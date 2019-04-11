@@ -3,7 +3,7 @@
 Critical Items to Implement Before Production
 =============================================
 
-:index:`[TAG=Production->Critical Items to Implement Before] <single: Production; Critical Items to Implement Before>` :index:`[TAG=Critical Items to Implement Before Production] <single: Critical Items to Implement Before Production>`
+:index:`\ <single: Production; Critical Items to Implement Before>` :index:`\ <single: Critical Items to Implement Before Production>`
 
 We recommend you take your time before implementing a production on a Bareos backup system since Bareos is a rather complex program, and if you make a mistake, you may suddenly find that you cannot restore your files in case of a disaster. This is especially true if you have not previously used a major backup product.
 
@@ -18,7 +18,7 @@ If you follow the instructions in this chapter, you will have covered most of th
 Critical Items
 --------------
 
-:index:`[TAG=Critical Items] <single: Critical Items>`
+:index:`\ <single: Critical Items>`
 
 The following assumes that you have installed Bareos, you more or less understand it, you have at least worked through the tutorial or have equivalent experience, and that you have set up a basic production configuration. If you haven’t done the above, please do so and then come back here. The following is a sort of checklist that points with perhaps a brief explanation of why you should do it. In most cases, you will find the details elsewhere in the manual. The order is more or less the order
 you would use in setting up a production system (if you already are in production, use the checklist anyway).
@@ -44,7 +44,7 @@ you would use in setting up a production system (if you already are in productio
 Recommended Items
 -----------------
 
-:index:`[TAG=Recommended Items] <single: Recommended Items>`
+:index:`\ <single: Recommended Items>`
 
 Although these items may not be critical, they are recommended and will help you avoid problems.
 

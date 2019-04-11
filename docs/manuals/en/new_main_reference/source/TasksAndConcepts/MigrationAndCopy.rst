@@ -3,7 +3,7 @@
 Migration and Copy
 ==================
 
-:index:`[TAG=Migration] <single: Migration>` :index:`[TAG=Copy] <single: Copy>`
+:index:`\ <single: Migration>` :index:`\ <single: Copy>`
 
 The term Migration, as used in the context of Bareos, means moving data from one Volume to another. In particular it refers to a Job (similar to a backup job) that reads data that was previously backed up to a Volume and writes it to another Volume. As part of this process, the File catalog records associated with the first backup job are purged. In other words, Migration moves Bareos Job data from one Volume to another by reading the Job data from the Volume it is stored on, writing it to a
 different Volume in a different Pool, and then purging the database records for the first Job.
@@ -50,7 +50,7 @@ If the Migration control Job finds more than one existing Job to migrate, it cre
 Important Migration Considerations
 ----------------------------------
 
-:index:`[TAG=Migration->Important Migration Considerations] <single: Migration; Important Migration Considerations>`
+:index:`\ <single: Migration; Important Migration Considerations>`
 
 -  Each Pool into which you migrate Jobs or Volumes must contain Volumes of only one :config:option:`dir/storage/MediaType`\ .
 
@@ -120,7 +120,7 @@ Pool Resource
 Example Migration Jobs
 ~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Example->Migration Jobs] <single: Example; Migration Jobs>`
+:index:`\ <single: Example; Migration Jobs>`
 
 Assume a simple configuration with a single backup job as described below.
 

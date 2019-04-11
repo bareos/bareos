@@ -3,7 +3,7 @@
 Operating Systems
 =================
 
-:index:`[TAG=Systems->Supported Operating Systems] <single: Systems; Supported Operating Systems>` :index:`[TAG=Support->Operating Systems] <single: Support; Operating Systems>`
+:index:`\ <single: Systems; Supported Operating Systems>` :index:`\ <single: Support; Operating Systems>`
 
 The Bareos project provides and supports packages that have been released at http://download.bareos.org/bareos/release/
 
@@ -18,10 +18,10 @@ However, the following tabular gives an overview, what components are expected o
      :strong:`Operating Systems` & :strong:`Version` & :strong:`Client Daemon` & :strong:`Director Daemon` & :strong:`Storage Daemon` \\
      \hline
      \hline
-     :strong:`:strong:`Linux``  :index:`[TAG=Platform->Linux] <single: Platform; Linux>` \\
+     :strong:`:strong:`Linux``  :index:`\ <single: Platform; Linux>` \\
      \hline
      Arch Linux
-     :index:`[TAG=Platform->Arch Linux] <single: Platform; Arch Linux>`
+     :index:`\ <single: Platform; Arch Linux>`
                      & ~ & `X <https://aur.archlinux.org/pkgbase/bareos/>`_ & `X <https://aur.archlinux.org/pkgbase/bareos/>`_ & `X <https://aur.archlinux.org/pkgbase/bareos/>`_ \\
      \hline
      CentOS          & current & v12.4 & v12.4 & v12.4 \\
@@ -31,7 +31,7 @@ However, the following tabular gives an overview, what components are expected o
      Fedora          & current & v12.4 & v12.4 & v12.4 \\
      \hline
      Gentoo
-     :index:`[TAG=Platform->Gentoo] <single: Platform; Gentoo>`
+     :index:`\ <single: Platform; Gentoo>`
                        & ~ & `X <https://packages.gentoo.org/package/app-backup/bareos>`_ & `X <https://packages.gentoo.org/package/app-backup/bareos>`_ & `X <https://packages.gentoo.org/package/app-backup/bareos>`_ \\
      \hline
      openSUSE        & current & v12.4 & v12.4 & v12.4 \\
@@ -60,7 +60,7 @@ However, the following tabular gives an overview, what components are expected o
      :strong:`:strong:`BSD``  \\
      \hline
      FreeBSD
-     :index:`[TAG=Platform->FreeBSD] <single: Platform; FreeBSD>`
+     :index:`\ <single: Platform; FreeBSD>`
                        & >= 5.0 & `X <http://www.freshports.org/sysutils/bareos-client/>`_ & `X <http://www.freshports.org/sysutils/bareos-server/>`_ & `X <http://www.freshports.org/sysutils/bareos-server/>`_  \\
      \hline
      OpenBSD          & ~ & X &  & ~ \\
@@ -72,11 +72,11 @@ However, the following tabular gives an overview, what components are expected o
      %BSDI             & ~ & * & ~ & ~ \\
      \hline
      AIX
-     :index:`[TAG=Platform->AIX] <single: Platform; AIX>`
+     :index:`\ <single: Platform; AIX>`
                       & >= 4.3 & com-13.2 & * & * \\
      \hline
      HP-UX
-     :index:`[TAG=Platform->HP-UX] <single: Platform; HP-UX>`
+     :index:`\ <single: Platform; HP-UX>`
                       & ~ & com-13.2 & ~ & ~ \\
      \hline
      Irix             & ~ & * & ~ & ~ \\
@@ -84,7 +84,7 @@ However, the following tabular gives an overview, what components are expected o
      %OpenSolaris      & ~ & X & X & X \\
      \hline
      Solaris
-     :index:`[TAG=Platform->Solaris] <single: Platform; Solaris>`
+     :index:`\ <single: Platform; Solaris>`
                       & >= 8 & com-12.4 & com-12.4 & com-12.4 \\
      \hline
      True64           & ~ & * & ~ & ~ \\
@@ -96,12 +96,12 @@ However, the following tabular gives an overview, what components are expected o
 ============================================================================================ =========== ============================================================================= ============================================================================= =============================================================================
 **Operating Systems**                                                                        **Version** **Client Daemon**                                                             **Director Daemon**                                                           **Storage Daemon**
 ============================================================================================ =========== ============================================================================= ============================================================================= =============================================================================
-:strong:`:strong:`Linux``  :index:`[TAG=Platform->Linux] <single: Platform; Linux>`                                                                                                                                                                        
-Arch Linux :index:`[TAG=Platform->Arch Linux] <single: Platform; Arch Linux>`                                             `X <https://aur.archlinux.org/pkgbase/bareos/>`_             `X <https://aur.archlinux.org/pkgbase/bareos/>`_             `X <https://aur.archlinux.org/pkgbase/bareos/>`_
+:strong:`:strong:`Linux``  :index:`\ <single: Platform; Linux>`                                                                                                                                                                        
+Arch Linux :index:`\ <single: Platform; Arch Linux>`                                             `X <https://aur.archlinux.org/pkgbase/bareos/>`_             `X <https://aur.archlinux.org/pkgbase/bareos/>`_             `X <https://aur.archlinux.org/pkgbase/bareos/>`_
 CentOS                                                                                       current     v12.4                                                                         v12.4                                                                         v12.4
 Debian                                                                                       current     v12.4                                                                         v12.4                                                                         v12.4
 Fedora                                                                                       current     v12.4                                                                         v12.4                                                                         v12.4
-Gentoo :index:`[TAG=Platform->Gentoo] <single: Platform; Gentoo>`                                                     `X <https://packages.gentoo.org/package/app-backup/bareos>`_ `X <https://packages.gentoo.org/package/app-backup/bareos>`_ `X <https://packages.gentoo.org/package/app-backup/bareos>`_
+Gentoo :index:`\ <single: Platform; Gentoo>`                                                     `X <https://packages.gentoo.org/package/app-backup/bareos>`_ `X <https://packages.gentoo.org/package/app-backup/bareos>`_ `X <https://packages.gentoo.org/package/app-backup/bareos>`_
 openSUSE                                                                                     current     v12.4                                                                         v12.4                                                                         v12.4
 RHEL                                                                                         current     v12.4                                                                         v12.4                                                                         v12.4
 SLES                                                                                         current     v12.4                                                                         v12.4                                                                         v12.4
@@ -116,14 +116,14 @@ Ubuntu                                                                          
 :strong:`:strong:`Mac OS``                                                                                                                                                                                                                     
 :ref:`Mac OS X/Darwin <section-macosx>`                                                     v14.2                                                                                                                                                      
 :strong:`:strong:`BSD``                                                                                                                                                                                                                        
-FreeBSD :index:`[TAG=Platform->FreeBSD] <single: Platform; FreeBSD>`                                       >= 5.0      `X <http://www.freshports.org/sysutils/bareos-client/>`_     `X <http://www.freshports.org/sysutils/bareos-server/>`_     `X <http://www.freshports.org/sysutils/bareos-server/>`_
+FreeBSD :index:`\ <single: Platform; FreeBSD>`                                       >= 5.0      `X <http://www.freshports.org/sysutils/bareos-client/>`_     `X <http://www.freshports.org/sysutils/bareos-server/>`_     `X <http://www.freshports.org/sysutils/bareos-server/>`_
 OpenBSD                                                                                                  X                                                                                                                                                            
 NetBSD                                                                                                   X                                                                                                                                                            
 :strong:`:strong:`Unix``                                                                                                                                                                                                                       
-AIX :index:`[TAG=Platform->AIX] <single: Platform; AIX>`                                               >= 4.3      com-13.2                                                                      \*                                                                            \*
-HP-UX :index:`[TAG=Platform->HP-UX] <single: Platform; HP-UX>`                                                       com-13.2                                                                                                                                                     
+AIX :index:`\ <single: Platform; AIX>`                                               >= 4.3      com-13.2                                                                      \*                                                                            \*
+HP-UX :index:`\ <single: Platform; HP-UX>`                                                       com-13.2                                                                                                                                                     
 Irix                                                                                                     \*                                                                                                                                                           
-Solaris :index:`[TAG=Platform->Solaris] <single: Platform; Solaris>`                                       >= 8        com-12.4                                                                      com-12.4                                                                      com-12.4
+Solaris :index:`\ <single: Platform; Solaris>`                                       >= 8        com-12.4                                                                      com-12.4                                                                      com-12.4
 True64                                                                                                   \*                                                                                                                                                           
 ============================================================================================ =========== ============================================================================= ============================================================================= =============================================================================
 
@@ -171,7 +171,7 @@ Packages names not containing the word **bareos** are required packages where we
 
 
 
-:index:`[TAG=Platform->CentOS->5] <single: Platform; CentOS; 5>`:index:`[TAG=Platform->CentOS->6] <single: Platform; CentOS; 6>`:index:`[TAG=Platform->CentOS->7] <single: Platform; CentOS; 7>`:index:`[TAG=Platform->RHEL->4] <single: Platform; RHEL; 4>`:index:`[TAG=Platform->RHEL->5] <single: Platform; RHEL; 5>`:index:`[TAG=Platform->RHEL->6] <single: Platform; RHEL; 6>`:index:`[TAG=Platform->RHEL->7] <single: Platform; RHEL; 7>`
+:index:`\ <single: Platform; CentOS; 5>`:index:`\ <single: Platform; CentOS; 6>`:index:`\ <single: Platform; CentOS; 7>`:index:`\ <single: Platform; RHEL; 4>`:index:`\ <single: Platform; RHEL; 5>`:index:`\ <single: Platform; RHEL; 6>`:index:`\ <single: Platform; RHEL; 7>`
 
 # Tabular in LaTex format (original)
 
@@ -268,7 +268,7 @@ Packages names not containing the word **bareos** are required packages where we
 **python-bareos**                                                                  17.2                          17.2                17.2      17.2      17.2
 =========================================================== ========================================= ============================= ========= ========= ========= ========= =========
 
-:index:`[TAG=Platform->Fedora->20] <single: Platform; Fedora; 20>`:index:`[TAG=Platform->Fedora->21] <single: Platform; Fedora; 21>`:index:`[TAG=Platform->Fedora->22] <single: Platform; Fedora; 22>`:index:`[TAG=Platform->Fedora->23] <single: Platform; Fedora; 23>`:index:`[TAG=Platform->Fedora->24] <single: Platform; Fedora; 24>`:index:`[TAG=Platform->Fedora->25] <single: Platform; Fedora; 25>`:index:`[TAG=Platform->Fedora->26] <single: Platform; Fedora; 26>`:index:`[TAG=Platform->Fedora->27] <single: Platform; Fedora; 27>`
+:index:`\ <single: Platform; Fedora; 20>`:index:`\ <single: Platform; Fedora; 21>`:index:`\ <single: Platform; Fedora; 22>`:index:`\ <single: Platform; Fedora; 23>`:index:`\ <single: Platform; Fedora; 24>`:index:`\ <single: Platform; Fedora; 25>`:index:`\ <single: Platform; Fedora; 26>`:index:`\ <single: Platform; Fedora; 27>`
 
 # Tabular in LaTex format (original)
 
@@ -348,7 +348,7 @@ Packages names not containing the word **bareos** are required packages where we
 **python-bareos**                                                                                      17.2 17.2 17.2
 =========================================================== =============================== ========= ==== ========= ==== ==== ==== ====
 
-:index:`[TAG=Platform->SLES->10sp4] <single: Platform; SLES; 10sp4>`:index:`[TAG=Platform->SLES->11sp4] <single: Platform; SLES; 11sp4>`:index:`[TAG=Platform->SLES->12sp1] <single: Platform; SLES; 12sp1>`:index:`[TAG=Platform->SLES->12sp2] <single: Platform; SLES; 12sp2>`:index:`[TAG=Platform->SLES->12sp3] <single: Platform; SLES; 12sp3>`
+:index:`\ <single: Platform; SLES; 10sp4>`:index:`\ <single: Platform; SLES; 11sp4>`:index:`\ <single: Platform; SLES; 12sp1>`:index:`\ <single: Platform; SLES; 12sp2>`:index:`\ <single: Platform; SLES; 12sp3>`
 
 # Tabular in LaTex format (original)
 
@@ -452,7 +452,7 @@ Packages names not containing the word **bareos** are required packages where we
 **python-six**                                                         15.2-16.2                
 =========================================================== ============================= ========= ========= ===== =====
 
-:index:`[TAG=Platform->openSUSE->13.1] <single: Platform; openSUSE; 13.1>`:index:`[TAG=Platform->openSUSE->13.2] <single: Platform; openSUSE; 13.2>`:index:`[TAG=Platform->openSUSE->42.1] <single: Platform; openSUSE; 42.1>`:index:`[TAG=Platform->openSUSE->42.2] <single: Platform; openSUSE; 42.2>`:index:`[TAG=Platform->openSUSE->42.3] <single: Platform; openSUSE; 42.3>`
+:index:`\ <single: Platform; openSUSE; 13.1>`:index:`\ <single: Platform; openSUSE; 13.2>`:index:`\ <single: Platform; openSUSE; 42.1>`:index:`\ <single: Platform; openSUSE; 42.2>`:index:`\ <single: Platform; openSUSE; 42.3>`
 
 # Tabular in LaTex format (original)
 
@@ -532,7 +532,7 @@ Packages names not containing the word **bareos** are required packages where we
 **python-bareos**                                                                              17.2 17.2
 =========================================================== ================================= ========= ========= ==== ====
 
-:index:`[TAG=Platform->Debian->6] <single: Platform; Debian; 6>`:index:`[TAG=Platform->Debian->7] <single: Platform; Debian; 7>`:index:`[TAG=Platform->Debian->8] <single: Platform; Debian; 8>`:index:`[TAG=Platform->Debian->9] <single: Platform; Debian; 9>`:index:`[TAG=Platform->Univention->4.0] <single: Platform; Univention; 4.0>`:index:`[TAG=Platform->Univention->4.2] <single: Platform; Univention; 4.2>`
+:index:`\ <single: Platform; Debian; 6>`:index:`\ <single: Platform; Debian; 7>`:index:`\ <single: Platform; Debian; 8>`:index:`\ <single: Platform; Debian; 9>`:index:`\ <single: Platform; Univention; 4.0>`:index:`\ <single: Platform; Univention; 4.2>`
 
 # Tabular in LaTex format (original)
 
@@ -629,7 +629,7 @@ Packages names not containing the word **bareos** are required packages where we
 **univention-bareos**                                                                                                                 15.2-16.2 17.2
 =========================================================== ========================================= =================================== ========= ==== ========= ====
 
-:index:`[TAG=Platform->Ubuntu->10.04] <single: Platform; Ubuntu; 10.04>`:index:`[TAG=Platform->Ubuntu->12.04] <single: Platform; Ubuntu; 12.04>`:index:`[TAG=Platform->Ubuntu->14.04] <single: Platform; Ubuntu; 14.04>`:index:`[TAG=Platform->Ubuntu->16.04] <single: Platform; Ubuntu; 16.04>`:index:`[TAG=Platform->Ubuntu->8.04] <single: Platform; Ubuntu; 8.04>`
+:index:`\ <single: Platform; Ubuntu; 10.04>`:index:`\ <single: Platform; Ubuntu; 12.04>`:index:`\ <single: Platform; Ubuntu; 14.04>`:index:`\ <single: Platform; Ubuntu; 16.04>`:index:`\ <single: Platform; Ubuntu; 8.04>`
 
 # Tabular in LaTex format (original)
 
@@ -726,7 +726,7 @@ Packages names not containing the word **bareos** are required packages where we
 Univention Corporate Server
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Platform->Univention Corporate Server|see {Platform, Univention}] <single: Platform; Univention Corporate Server|see {Platform, Univention}>` :os:`Univention` The Bareos version for the Univention App Center integraties into the Univention Enterprise Linux environment, making it easy to backup all the systems managed by the central Univention Corporate Server.
+:index:`\ <single: Platform; Univention Corporate Server|see {Platform, Univention}>` :os:`Univention` The Bareos version for the Univention App Center integraties into the Univention Enterprise Linux environment, making it easy to backup all the systems managed by the central Univention Corporate Server.
 
 Preamble
 ^^^^^^^^
@@ -1124,7 +1124,7 @@ Here the files intended for the target systems are generated under :file:`/etc/b
 Debian.org / Ubuntu Universe
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Platform->Debian->Debian.org] <single: Platform; Debian; Debian.org>` :index:`[TAG=Platform->Debian->8] <single: Platform; Debian; 8>` :index:`[TAG=Platform->Ubuntu->Universe] <single: Platform; Ubuntu; Universe>` :index:`[TAG=Platform->Ubuntu->Universe->15.04] <single: Platform; Ubuntu; Universe; 15.04>` 
+:index:`\ <single: Platform; Debian; Debian.org>` :index:`\ <single: Platform; Debian; 8>` :index:`\ <single: Platform; Ubuntu; Universe>` :index:`\ <single: Platform; Ubuntu; Universe; 15.04>` 
 
 .. _section-DebianOrg:
 
@@ -1148,7 +1148,7 @@ Limitations of the Debian.org/Ubuntu Universe version of Bareos
 Mac OS X
 --------
 
-:index:`[TAG=Platform->Mac->OS X] <single: Platform; Mac; OS X>`
+:index:`\ <single: Platform; Mac; OS X>`
 
 Bareos for MacOS X is available either
 
@@ -1163,7 +1163,7 @@ Both packages contain the |fd| and :command:`bconsole`.
 Installing the Bareos Client as PKG
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Installation->MacOS] <single: Installation; MacOS>`
+:index:`\ <single: Installation; MacOS>`
 
 The Bareos installer package for Mac OS X contains the |fd| for Mac OS X 10.5 or later.
 

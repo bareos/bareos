@@ -33,7 +33,7 @@ Obviously, it can not be used to do a restore.
 Backup Of Third Party Databases
 -------------------------------
 
-:index:`[TAG=Backup->of Third Party Databases] <single: Backup; of Third Party Databases>` :index:`[TAG=Database->Backup Of Third Party] <single: Database; Backup Of Third Party>` 
+:index:`\ <single: Backup; of Third Party Databases>` :index:`\ <single: Database; Backup Of Third Party>` 
 
 .. _BackupOtherDBs:
 
@@ -46,7 +46,7 @@ The best solution is to shutdown your database before backing it up, or use some
 Backup of MSSQL Databases with Bareos Plugin
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=MSSQL Backup] <single: MSSQL Backup>` :index:`[TAG=Database->MSSQL] <single: Database; MSSQL>` :index:`[TAG=Plugin->MSSQL backup] <single: Plugin; MSSQL backup>` 
+:index:`\ <single: MSSQL Backup>` :index:`\ <single: Database; MSSQL>` :index:`\ <single: Plugin; MSSQL backup>` 
 
 .. _MSSQL:
 
@@ -633,7 +633,7 @@ Followed is a example for a restore of full, differential and incremental backup
 Backup of a PostgreSQL Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=PostgreSQL->Backup] <single: PostgreSQL; Backup>` :index:`[TAG=Database->PostgreSQL->Backup] <single: Database; PostgreSQL; Backup>` 
+:index:`\ <single: PostgreSQL; Backup>` :index:`\ <single: Database; PostgreSQL; Backup>` 
 
 .. _backup-postgresql:
 
@@ -644,7 +644,7 @@ In this section, we describe different methods how to do backups of the PostgreS
 Backup of a PostgreSQL Database by using the RunScript directive
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=RunScript->Example] <single: RunScript; Example>`
+:index:`\ <single: RunScript; Example>`
 
 One method to backup a PostgreSQL database is to use the :command:`pg_dumpall` tool to dump the database into a file and then backup it as a normal file. After the backup, the file can be removed. It may also be an option not to remove it, so that the latest version is always available immediately. On the next job run it will be overwritten anyway.
 
@@ -694,7 +694,7 @@ Note that redirecting the :command:`pg_dumpall` output to a file requires to run
 Backup of a PostgreSQL Databases by using the bpipe plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=bpipe->PostgreSQL backup] <single: bpipe; PostgreSQL backup>`
+:index:`\ <single: bpipe; PostgreSQL backup>`
 
 Instead of creating a temporary database dump file, the bpipe plugin can be used. For general information about bpipe, see the :ref:`bpipe` section. The bpipe plugin is configured inside the :config:option:`dir/fileset/Include`\  section of a File Set, e.g.:
 
@@ -734,7 +734,7 @@ This can also be used, to backup a database that is running on a remote host:
 Backup of a PostgreSQL Databases by using the PGSQL-Plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=Plugin->PostgreSQL Backup] <single: Plugin; PostgreSQL Backup>` 
+:index:`\ <single: Plugin; PostgreSQL Backup>` 
 
 .. _backup-postgresql-plugin:
 
@@ -749,7 +749,7 @@ For a full description, see https://github.com/bareos/contrib-pgsql-plugin/wiki.
 Backup of a MySQL Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=MySQL->Backup] <single: MySQL; Backup>` :index:`[TAG=Database->MySQL->Backup] <single: Database; MySQL; Backup>` 
+:index:`\ <single: MySQL; Backup>` :index:`\ <single: Database; MySQL; Backup>` 
 
 .. _backup-mysql:
 
@@ -760,7 +760,7 @@ In this section, we describe different methods to do a full backup of a MySQL da
 Backup of MySQL Databases using the Bareos MySQL Percona xtrabackup Plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=Plugin->MySQL Backup] <single: Plugin; MySQL Backup>` :index:`[TAG=Percona xtrabackup] <single: Percona xtrabackup>` :index:`[TAG=xtrabackup] <single: xtrabackup>` 
+:index:`\ <single: Plugin; MySQL Backup>` :index:`\ <single: Percona xtrabackup>` :index:`\ <single: xtrabackup>` 
 
 .. _backup-mysql-xtrabackup:
 
@@ -858,7 +858,7 @@ To further prepare the restored files, use the :command:`xtrabackup --prepare` c
 Backup of MySQL Databases using the Python MySQL plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=Plugin->MySQL Backup] <single: Plugin; MySQL Backup>` 
+:index:`\ <single: Plugin; MySQL Backup>` 
 
 .. _backup-mysql-python:
 
@@ -934,7 +934,7 @@ On restore, the database dumps are restored to the subdirectory :file:`_mysqlbac
 Backup of a MySQL Database by using the RunScript directive
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=RunScript->Example] <single: RunScript; Example>`
+:index:`\ <single: RunScript; Example>`
 
 One method to backup a MySQL database is to use the :command:`mysqldump` tool to dump the database into a file and then backup it as a normal file. After the backup, the file can be removed. It may also be an option not to remove it, so that the latest version is always available immediately. On the next job run it will be overwritten anyway.
 
@@ -984,7 +984,7 @@ Note that redirecting the :command:`mysqldump` output to a file requires to run 
 Backup of a MySQL Database by using the bpipe plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=bpipe->MySQL backup] <single: bpipe; MySQL backup>`
+:index:`\ <single: bpipe; MySQL backup>`
 
 Instead of creating a temporary database dump file, the bpipe plugin can be used. For general information about bpipe, see the :ref:`bpipe` section. The bpipe plugin is configured inside the Include section of a File Set, e.g.:
 
@@ -1050,7 +1050,7 @@ Statistics Collection
 
 Statistics Collection can be controlled by a number of configuration directives. If Statistics Collection is enabled, statistics are collected by the |dir| and stored into the Catalog database. So enabling this feature will increase your database size.
 
-The Statistics are used by the |webui| to show the status of a running job. :index:`[TAG=Webui->Configure Statistics Collection] <single: Webui; Configure Statistics Collection>`
+The Statistics are used by the |webui| to show the status of a running job. :index:`\ <single: Webui; Configure Statistics Collection>`
 
 Director Configuration - Director Resource Directives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

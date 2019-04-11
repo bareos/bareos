@@ -3,7 +3,7 @@
 Storage Daemon Configuration
 ============================
 
-:index:`[TAG=Configuration] <single: Configuration>` :index:`[TAG=Storage Daemon->Configuration] <single: Storage Daemon; Configuration>` :index:`[TAG=Configuration->Storage Daemon] <single: Configuration; Storage Daemon>`
+:index:`\ <single: Configuration>` :index:`\ <single: Storage Daemon; Configuration>` :index:`\ <single: Configuration; Storage Daemon>`
 
 The |sd| configuration file has relatively few resource definitions. However, due to the great variation in backup media and system capabilities, the storage daemon must be highly configurable. As a consequence, there are quite a large number of directives in the Device Resource definition that allow you to define all the characteristics of your Storage device (normally a tape drive). Fortunately, with modern storage devices, the defaults are sufficient, and very few directives
 are actually needed.
@@ -29,7 +29,7 @@ Following resources are optional:
 Storage Resource
 ----------------
 
-:index:`[TAG=Resource->Storage] <single: Resource; Storage>` :index:`[TAG=Storage->Resource] <single: Storage; Resource>`
+:index:`\ <single: Resource; Storage>` :index:`\ <single: Storage; Resource>`
 
 In general, the properties specified under the Storage resource define global properties of the Storage daemon. Each Storage daemon configuration file must have one and only one Storage resource definition.
 
@@ -148,7 +148,7 @@ The following is a typical Storage daemon storage resource definition.
 Director Resource
 -----------------
 
-:index:`[TAG=Resource->Director] <single: Resource; Director>` :index:`[TAG=Director->Resource] <single: Director; Resource>`
+:index:`\ <single: Resource; Director>` :index:`\ <single: Director; Resource>`
 
 The Director resource specifies the Name of the Director which is permitted to use the services of the Storage daemon. There may be multiple Director resources. The Director Name and Password must match the corresponding values in the Director’s configuration file.
 
@@ -207,7 +207,7 @@ NDMP Resource
 
 .. _StorageResourceNDMP:
 
- :index:`[TAG=Resource->NDMP] <single: Resource; NDMP>` :index:`[TAG=NDMP->Resource] <single: NDMP; Resource>`
+ :index:`\ <single: Resource; NDMP>` :index:`\ <single: NDMP; Resource>`
 
 The NDMP Resource specifies the authentication details of each NDMP client. There may be multiple NDMP resources for a single Storage daemon. In general, the properties specified within the NDMP resource are specific to one client.
 
@@ -230,7 +230,7 @@ The NDMP Resource specifies the authentication details of each NDMP client. Ther
 Device Resource
 ---------------
 
-:index:`[TAG=Resource->Device] <single: Resource; Device>` :index:`[TAG=Device->Resource] <single: Device; Resource>`
+:index:`\ <single: Resource; Device>` :index:`\ <single: Device; Resource>`
 
 The Device Resource specifies the details of each device (normally a tape drive) that can be used by the Storage daemon. There may be multiple Device resources for a single Storage daemon. In general, the properties specified within the Device resource are specific to the Device.
 
@@ -371,7 +371,7 @@ The Device Resource specifies the details of each device (normally a tape drive)
 Edit Codes for Mount and Unmount Directives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Edit Codes for Mount and Unmount Directives] <single: Edit Codes for Mount and Unmount Directives>` :index:`[TAG=Mount and Unmount: use variables in directives] <single: Mount and Unmount: use variables in directives>` 
+:index:`\ <single: Edit Codes for Mount and Unmount Directives>` :index:`\ <single: Mount and Unmount: use variables in directives>` 
 
 .. _mountcodes:
 
@@ -395,7 +395,7 @@ Before submitting the Mount Command, or Unmount Command directives to the operat
 Devices that require a mount (USB)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Devices that require a mount (USB)] <single: Devices that require a mount (USB)>`
+:index:`\ <single: Devices that require a mount (USB)>`
 
 \begin{description}
    \item :config:option:`sd/device/RequiresMount`\ 
@@ -459,7 +459,7 @@ Devices that require a mount (USB)
 Autochanger Resource
 --------------------
 
-:index:`[TAG=Autochanger Resource] <single: Autochanger Resource>` :index:`[TAG=Resource->Autochanger] <single: Resource; Autochanger>` 
+:index:`\ <single: Autochanger Resource>` :index:`\ <single: Resource; Autochanger>` 
 
 .. _AutochangerRes:
 
@@ -524,7 +524,7 @@ For details refer to the :ref:`AutochangersChapter` chapter.
 Messages Resource
 -----------------
 
-:index:`[TAG=Resource->Messages] <single: Resource; Messages>` :index:`[TAG=Messages->Resource] <single: Messages; Resource>`
+:index:`\ <single: Resource; Messages>` :index:`\ <single: Messages; Resource>`
 
 For a description of the Messages Resource, please see the :ref:`MessagesChapter` chapter of this manual.  
 

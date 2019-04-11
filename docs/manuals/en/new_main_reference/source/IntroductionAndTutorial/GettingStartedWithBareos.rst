@@ -6,7 +6,7 @@ Getting Started with Bareos
 Understanding Jobs and Schedules
 --------------------------------
 
-:index:`[TAG=Schedule->Understanding Schedules] <single: Schedule; Understanding Schedules>` 
+:index:`\ <single: Schedule; Understanding Schedules>` 
 
 .. _JobsandSchedules:
 
@@ -22,7 +22,7 @@ Finally, be aware that in addition to the backup jobs there are restore, verify,
 Understanding Pools, Volumes and Labels
 ---------------------------------------
 
-:index:`[TAG=Pools->Understanding] <single: Pools; Understanding>` :index:`[TAG=Volumes->Understanding] <single: Volumes; Understanding>` :index:`[TAG=Label->Understanding Labels] <single: Label; Understanding Labels>` 
+:index:`\ <single: Pools; Understanding>` :index:`\ <single: Volumes; Understanding>` :index:`\ <single: Label; Understanding Labels>` 
 
 .. _PoolsVolsLabels:
 
@@ -47,7 +47,7 @@ For more on Pools, see the :ref:`DirectorResourcePool` section of the Director C
 Setting Up Bareos Configuration Files
 -------------------------------------
 
-:index:`[TAG=Configuration->Files] <single: Configuration; Files>`
+:index:`\ <single: Configuration; Files>`
 
 On Unix, Bareos configuration files are usually located in the :file:`/etc/bareos/` directory and are named accordingly to the programs that use it. Since Bareos :sinceVersion:`16.2.4: Subdirectory Configuration Scheme used as Default` the default configuration is stored as one file per resource in subdirectories under :file:`bareos-dir.d`, :file:`bareos-sd.d` or :file:`bareos-fd.d`. For details, see
 :ref:`ConfigureChapter` and :ref:`section-SubdirectoryConfigurationScheme`.
@@ -55,7 +55,7 @@ On Unix, Bareos configuration files are usually located in the :file:`/etc/bareo
 Testing your Configuration Files
 --------------------------------
 
-:index:`[TAG=Testing->Configuration Files] <single: Testing; Configuration Files>`
+:index:`\ <single: Testing; Configuration Files>`
 
 You can test if your configuration file is syntactically correct by running the appropriate daemon with the :strong:`-t` option. The daemon will process the configuration file and print any error messages then terminate.
 

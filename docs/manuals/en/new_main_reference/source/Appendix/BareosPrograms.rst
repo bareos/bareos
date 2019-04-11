@@ -9,7 +9,7 @@ Bareos Daemons
 Daemon Command Line Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Daemon->Command Line Options] <single: Daemon; Command Line Options>` :index:`[TAG=Command Line Options->Daemon] <single: Command Line Options; Daemon>`
+:index:`\ <single: Daemon; Command Line Options>` :index:`\ <single: Command Line Options; Daemon>`
 
 Each of the three daemons (Director, File, Storage) accepts a small set of options on the command line. In general, each of the daemons as well as the Console program accepts the following options:
 
@@ -51,7 +51,7 @@ Each of the three daemons (Director, File, Storage) accepts a small set of optio
 bareos-dir
 ~~~~~~~~~~
 
-:index:`[TAG=Command->bareos-dir] <single: Command; bareos-dir>` :index:`[TAG=Command Line Options] <single: Command Line Options>`
+:index:`\ <single: Command; bareos-dir>` :index:`\ <single: Command Line Options>`
 
 |dir|.
 
@@ -60,7 +60,7 @@ bareos-dir
 bareos-sd
 ~~~~~~~~~
 
-:index:`[TAG=Command->bareos-sd] <single: Command; bareos-sd>` :index:`[TAG=Command Line Options] <single: Command Line Options>`
+:index:`\ <single: Command; bareos-sd>` :index:`\ <single: Command Line Options>`
 
 |sd|.
 
@@ -69,7 +69,7 @@ bareos-sd
 bareos-fd
 ~~~~~~~~~
 
-:index:`[TAG=Command->bareos-fd] <single: Command; bareos-fd>` :index:`[TAG=Command Line Options] <single: Command Line Options>`
+:index:`\ <single: Command; bareos-fd>` :index:`\ <single: Command Line Options>`
 
 |fd|.
 
@@ -89,7 +89,7 @@ For further information regarding the Bareos Webui, please refer to :ref:`sectio
 bat
 ~~~
 
-:index:`[TAG=Command->bat] <single: Command; bat>` 
+:index:`\ <single: Command; bat>` 
 
 .. _bat:
 
@@ -100,7 +100,7 @@ The Bacula/Bareos Administration Tool (:command:`bat`) has been a native GUI for
 Volume Utility Commands
 -----------------------
 
-:index:`[TAG=Volume Utility Tools] <single: Volume Utility Tools>` :index:`[TAG=Tools->Volume Utility] <single: Tools; Volume Utility>` 
+:index:`\ <single: Volume Utility Tools>` :index:`\ <single: Tools; Volume Utility>` 
 
 .. _section-VolumeUtilityCommands:
 
@@ -148,7 +148,7 @@ equivalent to the volume name.
 Specifying Volumes
 ^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=Volumes->Specifying] <single: Volumes; Specifying>` :index:`[TAG=Bootstrap] <single: Bootstrap>`
+:index:`\ <single: Volumes; Specifying>` :index:`\ <single: Bootstrap>`
 
 Often you must specify the Volume name to the programs below. The best method to do so is to specify a bootstrap file on the command line with the :strong:`-b` option. As part of the bootstrap file, you will then specify the Volume name or Volume names if more than one volume is needed. For example, suppose you want to read tapes **tapevolume1** and **tapevolume2**. First construct a bootstrap file named say, :file:`list.bsr` which
 contains:
@@ -227,7 +227,7 @@ If you use Bareos with non-default block sizes defined in the pools (:config:opt
 bls
 ~~~
 
-:index:`[TAG=bls] <single: bls>` :index:`[TAG=Command->bls] <single: Command; bls>`
+:index:`\ <single: bls>` :index:`\ <single: Command; bls>`
 
 :command:`bls` can be used to do an :command:`ls` type listing of a Bareos tape or file. It is called:
 
@@ -328,7 +328,7 @@ For details about the Volume format, see \bareosDeveloperGuideStorageMediaOutput
 Show Label Information
 ^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=bls->Label] <single: bls; Label>`
+:index:`\ <single: bls; Label>`
 
 Using the :strong:`-L` the label information of a Volume is shown:
 
@@ -356,7 +356,7 @@ Using the :strong:`-L` the label information of a Volume is shown:
 Listing Jobs
 ^^^^^^^^^^^^
 
-:index:`[TAG=Listing Jobs with bls] <single: Listing Jobs with bls>` :index:`[TAG=bls->Listing Jobs] <single: bls; Listing Jobs>`
+:index:`\ <single: Listing Jobs with bls>` :index:`\ <single: bls; Listing Jobs>`
 
 If you are listing a Volume to determine what Jobs to restore, normally the :strong:`-j` option provides you with most of what you will need as long as you don’t have multiple clients. For example:
 
@@ -392,7 +392,7 @@ Adding the :strong:`-v` option will display virtually all information that is av
 Listing Blocks
 ^^^^^^^^^^^^^^
 
-:index:`[TAG=Listing Blocks with bls] <single: Listing Blocks with bls>` :index:`[TAG=bls->Listing Blocks] <single: bls; Listing Blocks>`
+:index:`\ <single: Listing Blocks with bls>` :index:`\ <single: bls; Listing Blocks>`
 
 Normally, except for debugging purposes, you will not need to list Bareos blocks (the "primitive" unit of Bareos data on the Volume). However, you can do so with:
 
@@ -459,7 +459,7 @@ If you want to know even more, add a second :strong:`-v` to the command line to 
 bextract
 ~~~~~~~~
 
-:index:`[TAG=bextract] <single: bextract>` :index:`[TAG=Command->bextract] <single: Command; bextract>` :index:`[TAG=Disaster->Recovery->bextract] <single: Disaster; Recovery; bextract>`
+:index:`\ <single: bextract>` :index:`\ <single: Command; bextract>` :index:`\ <single: Disaster; Recovery; bextract>`
 
 If you find yourself using :command:`bextract`, you probably have done something wrong. For example, if you are trying to recover a file but are having problems, please see the :ref:`section-RestoreCatalog` chapter.
 
@@ -550,7 +550,7 @@ If you wish to extract files that span several Volumes, you can specify the Volu
 Extracting Under Windows
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=Windows->bextract] <single: Windows; bextract>`
+:index:`\ <single: Windows; bextract>`
 
 
 
@@ -583,7 +583,7 @@ If you want to use exclude or include files you need to write them like you do o
 bscan
 ~~~~~
 
-:index:`[TAG=bscan] <single: bscan>` :index:`[TAG=Command->bscan] <single: Command; bscan>`
+:index:`\ <single: bscan>` :index:`\ <single: Command; bscan>`
 
 If you find yourself using this program, you have probably done something wrong. For example, the best way to recover a lost or damaged Bareos database is to reload the database by using the bootstrap file that was written when you saved it (default Bareos-dir.conf file).
 
@@ -675,14 +675,14 @@ database, they will not have their autochanger status and slots properly set. As
 Using bscan to Compare a Volume to an existing Catalog
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=Catalog->Using bscan to Compare a Volume to an existing] <single: Catalog; Using bscan to Compare a Volume to an existing>`
+:index:`\ <single: Catalog; Using bscan to Compare a Volume to an existing>`
 
 If you wish to compare the contents of a Volume to an existing catalog without changing the catalog, you can safely do so if and only if you do not specify either the -m or the -s options. However, the comparison routines are not as good or as thorough as they should be, so we don’t particularly recommend this mode other than for testing.
 
 Using bscan to Recreate a Catalog from a Volume
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=Catalog->Recreate Using bscan] <single: Catalog; Recreate Using bscan>` :index:`[TAG=bscan->Recreate Catalog] <single: bscan; Recreate Catalog>`
+:index:`\ <single: Catalog; Recreate Using bscan>` :index:`\ <single: bscan; Recreate Catalog>`
 
 This is the mode for which bscan is most useful. You can either bscan into a freshly created catalog, or directly into your existing catalog (after having made an ASCII copy as described above). Normally, you should start with a freshly created catalog that contains no data.
 
@@ -766,7 +766,7 @@ There are two solutions to this problem. The first is possibly the simplest and 
 Using bscan to Correct the Volume File Count
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=bscan->Correct Volume File Count] <single: bscan; Correct Volume File Count>` :index:`[TAG=Volume->File Count] <single: Volume; File Count>`
+:index:`\ <single: bscan; Correct Volume File Count>` :index:`\ <single: Volume; File Count>`
 
 If the Storage daemon crashes during a backup Job, the catalog will not be properly updated for the Volume being used at the time of the crash. This means that the Storage daemon will have written say 20 files on the tape, but the catalog record for the Volume indicates only 19 files.
 
@@ -775,7 +775,7 @@ Bareos refuses to write on a tape that contains a different number of files from
 After bscan
 ^^^^^^^^^^^
 
-:index:`[TAG=bscan->after] <single: bscan; after>`
+:index:`\ <single: bscan; after>`
 
 If you use bscan to enter the contents of the Volume into an existing catalog, you should be aware that the records you entered may be immediately pruned during the next job, particularly if the Volume is very old or had been previously purged. To avoid this, after running bscan, you can manually set the volume status (VolStatus) to Read-Only by using the update command in the catalog. This will allow you to restore from the volume without having it immediately purged. When you have restored and
 backed up the data, you can reset the VolStatus to Used and the Volume will be purged from the catalog.
@@ -783,7 +783,7 @@ backed up the data, you can reset the VolStatus to Used and the Volume will be p
 bcopy
 ~~~~~
 
-:index:`[TAG=bcopy] <single: bcopy>` :index:`[TAG=Command->bcopy] <single: Command; bcopy>`
+:index:`\ <single: bcopy>` :index:`\ <single: Command; bcopy>`
 
 The :command:`bcopy` program can be used to copy one Bareos archive file to another. For example, you may copy a tape to a file, a file to a tape, a file to a file, or a tape to a tape. For tape to tape, you will need two tape drives. In the process of making the copy, no record of the information written to the new Volume is stored in the catalog. This means that the new Volume, though it contains valid backup data, cannot be accessed directly from existing catalog entries. If you
 wish to be able to use the Volume with the Console restore command, for example, you must first bscan the new Volume into the catalog.
@@ -813,7 +813,7 @@ As this is a new program, any feedback on its use would be appreciated. In addit
 btape
 ~~~~~
 
-:index:`[TAG=btape] <single: btape>` :index:`[TAG=Command->btape] <single: Command; btape>`
+:index:`\ <single: btape>` :index:`\ <single: Command; btape>`
 
 This program permits a number of elementary tape operations via a tty command interface. It works only with tapes and not with other kinds of Bareos storage media (DVD, File, ...). The test command, described below, can be very useful for testing older tape drive compatibility problems. Aside from initial testing of tape drive compatibility with Bareos, btape will be mostly used by developers writing new tape drivers.
 
@@ -840,7 +840,7 @@ The physical device name must be specified on the command line, and this same de
 Using btape to Verify your Tape Drive
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`[TAG=Drive->Verify using btape] <single: Drive; Verify using btape>`
+:index:`\ <single: Drive; Verify using btape>`
 
 An important reason for this program is to ensure that a Storage daemon configuration file is defined so that Bareos will correctly read and write tapes.
 
@@ -948,7 +948,7 @@ You can change the block size in the Storage Daemon configuration file.
 bscrypto
 ~~~~~~~~
 
-:index:`[TAG=bscrypto] <single: bscrypto>` :index:`[TAG=Command->bscrypto] <single: Command; bscrypto>`
+:index:`\ <single: bscrypto>` :index:`\ <single: Command; bscrypto>`
 
 :command:`bscrypto` is used in the process of encrypting tapes (see also :ref:`LTOHardwareEncryptionGeneral`). The |sd| and the btools (:command:`bls`, :command:`bextract`, :command:`bscan`, :command:`btape`, :command:`bextract`) will use a so called |sd| plugin to perform the setting and clearing of the encryption keys. To bootstrap the encryption support and for
 populating things like the crypto cache with encryption keys of volumes that you want to scan, you need to use the bscrypto tool. The bscrypto tool has the following capabilities:
@@ -993,7 +993,7 @@ The following programs are general utility programs and in general do not need a
 bsmtp
 ~~~~~
 
-:index:`[TAG=bsmtp] <single: bsmtp>` :index:`[TAG=Command->bsmtp] <single: Command; bsmtp>`
+:index:`\ <single: bsmtp>` :index:`\ <single: Command; bsmtp>`
 
 :command:`bsmtp` is a simple mail transport program that permits more flexibility than the standard mail programs typically found on Unix systems. It can even be used on Windows machines.
 
@@ -1053,7 +1053,7 @@ bareos-dbcheck
 
 .. _dbcheck:
 
- :index:`[TAG=bareos-dbcheck] <single: bareos-dbcheck>` :index:`[TAG=Command->bareos-dbcheck] <single: Command; bareos-dbcheck>` :index:`[TAG=Catalog->database check] <single: Catalog; database check>`
+ :index:`\ <single: bareos-dbcheck>` :index:`\ <single: Command; bareos-dbcheck>` :index:`\ <single: Catalog; database check>`
 
 :command:`bareos-dbcheck` is a simple program that will search for logical inconsistencies in the Bareos tables in your database, and optionally fix them. It is a database maintenance routine, in the sense that it can detect and remove unused rows, but it is not a database repair routine. To repair a database, see the tools furnished by the database vendor. Normally :command:`bareos-dbcheck` should never need to be run, but if Bareos has crashed or you have a lot of
 Clients, Pools, or Jobs that you have removed, it could be useful.
@@ -1172,7 +1172,7 @@ Normally you should never need to run :command:`bareos-dbcheck` in spite of the 
 bregex
 ~~~~~~
 
-:index:`[TAG=bregex] <single: bregex>` :index:`[TAG=Command->bregex] <single: Command; bregex>`
+:index:`\ <single: bregex>` :index:`\ <single: Command; bregex>`
 
 :command:`bregex` is a simple program that will allow you to test regular expressions against a file of data. This can be useful because the regex libraries on most systems differ, and in addition, regex expressions can be complicated.
 
@@ -1195,7 +1195,7 @@ This program can be useful for testing regex expressions to be applied against a
 bwild
 ~~~~~
 
-:index:`[TAG=bwild] <single: bwild>` :index:`[TAG=Command->bwild] <single: Command; bwild>`
+:index:`\ <single: bwild>` :index:`\ <single: Command; bwild>`
 
 :command:`bwild` is a simple program that will allow you to test wild-card expressions against a file of data.
 
@@ -1218,7 +1218,7 @@ This program can be useful for testing wild expressions to be applied against a 
 bpluginfo
 ~~~~~~~~~
 
-:index:`[TAG=bpluginfo] <single: bpluginfo>` :index:`[TAG=Command->bpluginfo] <single: Command; bpluginfo>`
+:index:`\ <single: bpluginfo>` :index:`\ <single: Command; bpluginfo>`
 
 The main purpose of bpluginfo is to display different information about Bareos plugin. You can use it to check a plugin name, author, license and short description. You can use -f option to display API implemented by the plugin. Some plugins may require additional ’-a’ option for val- idating a Bareos Daemons API. In most cases it is not required. 
 
