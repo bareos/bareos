@@ -62,7 +62,7 @@
   { "TlsKey", CFG_TYPE_STDSTRDIR, ITEM(res, tls_cert_.keyfile_), 0, 0, NULL, \
      NULL, "Path of a PEM encoded private key. It must correspond to the " \
      "specified \"TLS Certificate\"."}, \
-  { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res, tls_cert_.allowed_certificate_common_names_), 0, 0, NULL, \
+  { "TlsAllowedCn", CFG_TYPE_STR_VECTOR, ITEM(res, tls_cert_.allowed_certificate_common_names_), 0, 0, NULL, \
      NULL, "\"Common Name\"s (CNs) of the allowed peer certificates." }
 
 

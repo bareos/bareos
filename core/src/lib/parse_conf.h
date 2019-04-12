@@ -127,6 +127,7 @@ enum
   CFG_TYPE_PLUGIN_NAMES = 29,      /* Plugin Name(s) */
   CFG_TYPE_STDSTR = 30,            /* String as std::string */
   CFG_TYPE_STDSTRDIR = 31,         /* Directory as std::string */
+  CFG_TYPE_STR_VECTOR = 32,        /* List of strings */
 
   /*
    * Director resource types. handlers in dird_conf.
@@ -362,6 +363,7 @@ class ConfigurationParser {
   void StoreRes(LEX* lc, ResourceItem* item, int index, int pass);
   void StoreAlistRes(LEX* lc, ResourceItem* item, int index, int pass);
   void StoreAlistStr(LEX* lc, ResourceItem* item, int index, int pass);
+  void StoreStdVectorStr(LEX* lc, ResourceItem* item, int index, int pass);
   void StoreAlistDir(LEX* lc, ResourceItem* item, int index, int pass);
   void StorePluginNames(LEX* lc, ResourceItem* item, int index, int pass);
   void StoreDefs(LEX* lc, ResourceItem* item, int index, int pass);

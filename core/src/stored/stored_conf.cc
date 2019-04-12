@@ -717,7 +717,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
                 res_dir.resource_name_);
         } else {
           p->tls_cert_.allowed_certificate_common_names_ =
-              res_dir.tls_cert_.allowed_certificate_common_names_;
+              std::move(res_dir.tls_cert_.allowed_certificate_common_names_);
         }
         break;
       }
@@ -732,7 +732,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
           p->messages = res_store.messages;
           p->backend_directories = res_store.backend_directories;
           p->tls_cert_.allowed_certificate_common_names_ =
-              res_store.tls_cert_.allowed_certificate_common_names_;
+              std::move(res_store.tls_cert_.allowed_certificate_common_names_);
         }
         break;
       }
@@ -839,10 +839,6 @@ static void FreeResource(BareosResource* res, int type)
       if (p->password_.value) { free(p->password_.value); }
       if (p->address) { free(p->address); }
       if (p->keyencrkey.value) { free(p->keyencrkey.value); }
-      if (p->tls_cert_.allowed_certificate_common_names_) {
-        p->tls_cert_.allowed_certificate_common_names_->destroy();
-        free(p->tls_cert_.allowed_certificate_common_names_);
-      }
       delete p;
       break;
     }
@@ -877,10 +873,6 @@ static void FreeResource(BareosResource* res, int type)
       if (p->verid) { free(p->verid); }
       if (p->secure_erase_cmdline) { free(p->secure_erase_cmdline); }
       if (p->log_timestamp_format) { free(p->log_timestamp_format); }
-      if (p->tls_cert_.allowed_certificate_common_names_) {
-        p->tls_cert_.allowed_certificate_common_names_->destroy();
-        free(p->tls_cert_.allowed_certificate_common_names_);
-      }
       delete p;
       break;
     }

@@ -687,6 +687,36 @@ void ConfigurationParser::StoreAlistRes(LEX* lc,
 }
 
 /*
+ * Store a std::string in an std::vector<std::string>.
+ */
+void ConfigurationParser::StoreStdVectorStr(LEX* lc,
+                                            ResourceItem* item,
+                                            int index,
+                                            int pass)
+{
+  if (pass == 2) {
+    std::vector<std::string>* list = item->std_vector_of_strings;
+    LexGetToken(lc, BCT_STRING); /* scan next item */
+    Dmsg4(900, "Append %s to vector %p size=%d %s\n", lc->str, list,
+          list->size(), item->name);
+
+    /*
+     * See if we need to drop the default value from the alist.
+     *
+     * We first check to see if the config item has the CFG_ITEM_DEFAULT
+     * flag set and currently has exactly one entry.
+     */
+    if ((item->flags & CFG_ITEM_DEFAULT) && list->size() == 1) {
+      if (list->at(0) == item->default_value) { list->clear(); }
+    }
+    list->push_back(lc->str);
+  }
+  ScanToEol(lc);
+  SetBit(index, item->static_resource->item_present_);
+  ClearBit(index, item->static_resource->inherit_content_);
+}
+
+/*
  * Store a string in an alist.
  */
 void ConfigurationParser::StoreAlistStr(LEX* lc,
@@ -1366,6 +1396,9 @@ bool ConfigurationParser::StoreResource(int type,
     case CFG_TYPE_ALIST_STR:
       StoreAlistStr(lc, item, index, pass);
       break;
+    case CFG_TYPE_STR_VECTOR:
+      StoreStdVectorStr(lc, item, index, pass);
+      break;
     case CFG_TYPE_ALIST_DIR:
       StoreAlistDir(lc, item, index, pass);
       break;
@@ -1939,6 +1972,21 @@ bool BareosResource::PrintConfig(PoolMem& buff,
           IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
         }
         break;
+      case CFG_TYPE_STR_VECTOR: {
+        /*
+         * One line for each member of the list
+         */
+        const std::vector<std::string>& list = *items[i].std_vector_of_strings;
+
+        for (const std::string& s : list) {
+          if (items[i].flags & CFG_ITEM_DEFAULT) {
+            if (s == items[i].default_value) { continue; }
+          }
+          Mmsg(temp, "%s = \"%s\"\n", items[i].name, s.c_str());
+          IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
+        }
+        break;
+      }
       case CFG_TYPE_ALIST_STR:
       case CFG_TYPE_ALIST_DIR:
       case CFG_TYPE_PLUGIN_NAMES: {
@@ -2181,7 +2229,7 @@ static DatatypeName datatype_names[] = {
     {CFG_TYPE_ADDRESSES_ADDRESS, "ADDRESS", "ip address"},
     {CFG_TYPE_ADDRESSES_PORT, "PORT", "network port"},
     {CFG_TYPE_PLUGIN_NAMES, "PLUGIN_NAMES", "Plugin Name(s)"},
-
+    {CFG_TYPE_STR_VECTOR, "STD_VECTOR_OF_STRINGS", "std string vector"},
     /*
      * Director resource types. handlers in dird_conf.
      */

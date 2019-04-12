@@ -22,29 +22,23 @@
 #ifndef BAREOS_LIB_TLS_CONF_CERT_H_
 #define BAREOS_LIB_TLS_CONF_CERT_H_
 
-class alist;
-
 class TlsConfigCert {
  public:
-  bool verify_peer_;        /* TLS Verify Peer Certificate */
-  std::string ca_certfile_; /* TLS CA Certificate File */
-  std::string ca_certdir_;  /* TLS CA Certificate Directory */
-  std::string crlfile_;     /* TLS CA Certificate Revocation List File */
-  std::string certfile_;    /* TLS Client Certificate File */
-  std::string keyfile_;     /* TLS Client Key File */
-  std::string dhfile_;      /* TLS Diffie-Hellman File */
-  alist* allowed_certificate_common_names_;
+  bool verify_peer_ = false; /* TLS Verify Peer Certificate */
+  std::string ca_certfile_;  /* TLS CA Certificate File */
+  std::string ca_certdir_;   /* TLS CA Certificate Directory */
+  std::string crlfile_;      /* TLS CA Certificate Revocation List File */
+  std::string certfile_;     /* TLS Client Certificate File */
+  std::string keyfile_;      /* TLS Client Key File */
+  std::string dhfile_;       /* TLS Diffie-Hellman File */
+  std::vector<std::string> allowed_certificate_common_names_;
 
   // std::string pem_message_; /* not implemented */
 
-  TlsConfigCert() : verify_peer_(0), allowed_certificate_common_names_(nullptr)
-  {
-  }
-  virtual ~TlsConfigCert();
+  TlsConfigCert() = default;
+  virtual ~TlsConfigCert() = default;
 
   int (*TlsPemCallback)(char* buf, int size, const void* userdata);
-
-  std::vector<std::string> AllowedCertificateCommonNames() const;
 };
 
 #endif /* BAREOS_LIB_TLS_CONF_CERT_H_ */

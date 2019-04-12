@@ -142,20 +142,12 @@ static void FreeResource(BareosResource* res, int type)
       ConsoleResource* p = dynamic_cast<ConsoleResource*>(res);
       if (p->rc_file) { free(p->rc_file); }
       if (p->history_file) { free(p->history_file); }
-      if (p->tls_cert_.allowed_certificate_common_names_) {
-        p->tls_cert_.allowed_certificate_common_names_->destroy();
-        free(p->tls_cert_.allowed_certificate_common_names_);
-      }
       delete p;
       break;
     }
     case R_DIRECTOR: {
       DirectorResource* p = dynamic_cast<DirectorResource*>(res);
       if (p->address) { free(p->address); }
-      if (p->tls_cert_.allowed_certificate_common_names_) {
-        p->tls_cert_.allowed_certificate_common_names_->destroy();
-        free(p->tls_cert_.allowed_certificate_common_names_);
-      }
       delete p;
       break;
     }
@@ -194,7 +186,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
                 res_cons.resource_name_);
         } else {
           p->tls_cert_.allowed_certificate_common_names_ =
-              res_cons.tls_cert_.allowed_certificate_common_names_;
+              std::move(res_cons.tls_cert_.allowed_certificate_common_names_);
         }
         break;
       }
@@ -206,7 +198,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
                 res_dir.resource_name_);
         } else {
           p->tls_cert_.allowed_certificate_common_names_ =
-              p->tls_cert_.allowed_certificate_common_names_;
+              std::move(p->tls_cert_.allowed_certificate_common_names_);
         }
         break;
       }

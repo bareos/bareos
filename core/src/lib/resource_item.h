@@ -51,6 +51,7 @@ struct ResourceItem {
     alist** alistvalue;
     dlist** dlistvalue;
     char* bitvalue;
+    std::vector<std::string>* std_vector_of_strings;
   };
   BareosResource* static_resource;
   int32_t code;              /* Item code/additional info */

@@ -570,7 +570,7 @@ bool BareosSocket::DoTlsHandshakeWithClient(TlsConfigCert* local_tls_cert,
   std::vector<std::string> verify_list;
 
   if (local_tls_cert->verify_peer_) {
-    verify_list = local_tls_cert->AllowedCertificateCommonNames();
+    verify_list = local_tls_cert->allowed_certificate_common_names_;
   }
   if (BnetTlsServer(this, verify_list)) { return true; }
   if (jcr && jcr->JobId != 0) {
@@ -586,7 +586,7 @@ bool BareosSocket::DoTlsHandshakeWithServer(TlsConfigCert* local_tls_cert,
                                             JobControlRecord* jcr)
 {
   if (BnetTlsClient(this, local_tls_cert->verify_peer_,
-                    local_tls_cert->AllowedCertificateCommonNames())) {
+                    local_tls_cert->allowed_certificate_common_names_)) {
     return true;
   }
 

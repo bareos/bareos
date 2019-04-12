@@ -370,10 +370,6 @@ static void FreeResource(BareosResource* res, int type)
       if (p->address) { free(p->address); }
       if (p->allowed_script_dirs) { delete p->allowed_script_dirs; }
       if (p->allowed_job_cmds) { delete p->allowed_job_cmds; }
-      if (p->tls_cert_.allowed_certificate_common_names_) {
-        p->tls_cert_.allowed_certificate_common_names_->destroy();
-        free(p->tls_cert_.allowed_certificate_common_names_);
-      }
       delete p;
       break;
     }
@@ -410,10 +406,6 @@ static void FreeResource(BareosResource* res, int type)
       if (p->allowed_job_cmds) { delete p->allowed_job_cmds; }
       if (p->secure_erase_cmdline) { free(p->secure_erase_cmdline); }
       if (p->log_timestamp_format) { free(p->log_timestamp_format); }
-      if (p->tls_cert_.allowed_certificate_common_names_) {
-        p->tls_cert_.allowed_certificate_common_names_->destroy();
-        free(p->tls_cert_.allowed_certificate_common_names_);
-      }
       delete p;
       break;
     }
@@ -467,7 +459,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
                 res_dir.resource_name_);
         } else {
           p->tls_cert_.allowed_certificate_common_names_ =
-              res_dir.tls_cert_.allowed_certificate_common_names_;
+              std::move(res_dir.tls_cert_.allowed_certificate_common_names_);
           p->allowed_script_dirs = res_dir.allowed_script_dirs;
           p->allowed_job_cmds = res_dir.allowed_job_cmds;
         }
@@ -487,7 +479,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
           p->pki_recipients = res_client.pki_recipients;
           p->messages = res_client.messages;
           p->tls_cert_.allowed_certificate_common_names_ =
-              res_client.tls_cert_.allowed_certificate_common_names_;
+              std::move(res_client.tls_cert_.allowed_certificate_common_names_);
           p->allowed_script_dirs = res_client.allowed_script_dirs;
           p->allowed_job_cmds = res_client.allowed_job_cmds;
         }

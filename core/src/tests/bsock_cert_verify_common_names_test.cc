@@ -26,11 +26,11 @@
 
 TEST(bsock, config_tls_cert_verify_common_names_list_test)
 {
-  alist* list = New(alist(3, owned_by_alist));
+  std::vector<std::string> list;
   const char* cstrings[3] = {"123", "456", "789"};
-  list->append(bstrdup(cstrings[0]));
-  list->append(bstrdup(cstrings[1]));
-  list->append(bstrdup(cstrings[2]));
+  list.push_back(std::string(cstrings[0]));
+  list.push_back(std::string(cstrings[1]));
+  list.push_back(std::string(cstrings[2]));
 
   TlsConfigCert tls_config_cert;
 
@@ -38,10 +38,10 @@ TEST(bsock, config_tls_cert_verify_common_names_list_test)
   tls_config_cert.allowed_certificate_common_names_ = list;
 
   std::vector<std::string> vec =
-      tls_config_cert.AllowedCertificateCommonNames();
+      tls_config_cert.allowed_certificate_common_names_;
 
   EXPECT_EQ(vec.size(), 3);
-  EXPECT_EQ(vec[0], std::string("123"));
-  EXPECT_EQ(vec[1], std::string("456"));
-  EXPECT_EQ(vec[2], std::string("789"));
+  EXPECT_STREQ(vec.at(0).c_str(), "123");
+  EXPECT_STREQ(vec.at(1).c_str(), "456");
+  EXPECT_STREQ(vec.at(2).c_str(), "789");
 }

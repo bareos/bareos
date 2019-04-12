@@ -2397,7 +2397,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
         return false;
       } else {
         p->tls_cert_.allowed_certificate_common_names_ =
-            res_con.tls_cert_.allowed_certificate_common_names_;
+            std::move(res_con.tls_cert_.allowed_certificate_common_names_);
         p->profiles = res_con.profiles;
       }
       break;
@@ -2414,7 +2414,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
         p->messages = res_dir.messages;
         p->backend_directories = res_dir.backend_directories;
         p->tls_cert_.allowed_certificate_common_names_ =
-            res_dir.tls_cert_.allowed_certificate_common_names_;
+            std::move(res_dir.tls_cert_.allowed_certificate_common_names_);
       }
       break;
     }
@@ -2430,7 +2430,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
 
         p->paired_storage = res_store.paired_storage;
         p->tls_cert_.allowed_certificate_common_names_ =
-            res_store.tls_cert_.allowed_certificate_common_names_;
+            std::move(res_store.tls_cert_.allowed_certificate_common_names_);
 
         p->device = res_store.device;
 
@@ -2545,7 +2545,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
           p->catalog = (CatalogResource*)my_config->GetNextRes(R_CATALOG, NULL);
         }
         p->tls_cert_.allowed_certificate_common_names_ =
-            res_client.tls_cert_.allowed_certificate_common_names_;
+            std::move(res_client.tls_cert_.allowed_certificate_common_names_);
 
         p->rcs =
             (runtime_client_status_t*)malloc(sizeof(runtime_client_status_t));
@@ -4010,10 +4010,6 @@ static void FreeResource(BareosResource* res, int type)
       if (p->audit_events) { delete p->audit_events; }
       if (p->secure_erase_cmdline) { free(p->secure_erase_cmdline); }
       if (p->log_timestamp_format) { free(p->log_timestamp_format); }
-      if (p->tls_cert_.allowed_certificate_common_names_) {
-        p->tls_cert_.allowed_certificate_common_names_->destroy();
-        free(p->tls_cert_.allowed_certificate_common_names_);
-      }
       delete p;
       break;
     }
@@ -4048,10 +4044,6 @@ static void FreeResource(BareosResource* res, int type)
           p->ACL_lists[i] = NULL;
         }
       }
-      if (p->tls_cert_.allowed_certificate_common_names_) {
-        p->tls_cert_.allowed_certificate_common_names_->destroy();
-        free(p->tls_cert_.allowed_certificate_common_names_);
-      }
       delete p;
       break;
     }
@@ -4062,10 +4054,6 @@ static void FreeResource(BareosResource* res, int type)
       if (p->username) { free(p->username); }
       if (p->password_.value) { free(p->password_.value); }
       if (p->rcs) { free(p->rcs); }
-      if (p->tls_cert_.allowed_certificate_common_names_) {
-        p->tls_cert_.allowed_certificate_common_names_->destroy();
-        free(p->tls_cert_.allowed_certificate_common_names_);
-      }
       delete p;
       break;
     }
@@ -4094,10 +4082,6 @@ static void FreeResource(BareosResource* res, int type)
         pthread_mutex_destroy(&p->runtime_storage_status->changer_lock);
         pthread_mutex_destroy(&p->runtime_storage_status->ndmp_deviceinfo_lock);
         delete p->runtime_storage_status;
-      }
-      if (p->tls_cert_.allowed_certificate_common_names_) {
-        p->tls_cert_.allowed_certificate_common_names_->destroy();
-        free(p->tls_cert_.allowed_certificate_common_names_);
       }
       delete p;
       break;
