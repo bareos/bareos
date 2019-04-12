@@ -119,6 +119,7 @@ author = 'Bareos GmbH & Co. KG'
 import os,re
 release = os.popen('./get-version.sh').read()
 version = re.match(r'\d+\.\d+',release).group()
+branch = os.popen('git name-rev --name-only HEAD').read()
 #print release
 #print version
 
@@ -178,6 +179,23 @@ html_theme = 'sphinx_rtd_theme'
 #    'includehidden': True,
 #    'titles_only': False
 #}
+
+# Enable link of 'View page source'
+#html_show_sourcelink = False
+# Add 'Edit on Github' link instead of 'View page source'
+# reference:https://docs.readthedocs.io/en/latest/vcs.html
+html_context = {
+    # Enable the "Edit in GitHub link within the header of each page.
+    'display_github': True,
+    # Set the following variables to generate the resulting github URL for each page. 
+    # Format Template: https://{{ github_host|default("github.com") }}/{{ github_user }}
+    #/{{ github_repo }}/blob/{{ github_version }}{{ conf_py_path }}{{ pagename }}{{ suffix }}
+    #https://github.com/runawayhorse001/SphinxGithub/blob/master/doc/index.rst
+    'github_user': 'bareos',
+    'github_repo': 'bareos',
+    'github_version': branch,
+    'conf_py_path': '/docs/manuals/en/new_main_reference/source/'
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
