@@ -1,7 +1,7 @@
 Debugging
 =========
 
-:index:`\ <single: Crash>` :index:`\ <single: Debug; crash>`
+:index:`\ <single: Crash>`\  :index:`\ <single: Debug; crash>`\ 
 
 This chapter describes, how to debug Bareos, when the program crashes. If you are just interested about how to get more information about a running Bareos daemon, please read :ref:`section-debug-messages`.
 
@@ -13,7 +13,7 @@ Bareos will force itself to crash with a SEGFAULT. However, before crashing, Bar
 Traceback
 ---------
 
-:index:`\ <single: Traceback>`
+:index:`\ <single: Traceback>`\ 
 
 Each of the three Bareos daemons has a built-in exception handler which, in case of an error, will attempt to produce a traceback. If successful the traceback will be emailed to you.
 
@@ -25,7 +25,7 @@ For this to work, you need to ensure that a few things are setup correctly on yo
 
 #. By default, btraceback uses :command:`bsmtp` to send the traceback via email. Therefore it expects a local mail transfer daemon running. It send the traceback to root@localhost via :strong:`localhost`.
 
-#. Some Linux distributions, e.g. Ubuntu:index:`\ <single: Platform; Ubuntu; Debug>`, disable the possibility to examine the memory of other processes. While this is a good idea for hardening a system, our debug mechanismen will fail. To disable this feature, run (as root):
+#. Some Linux distributions, e.g. Ubuntu:index:`\ <single: Platform; Ubuntu; Debug>`\ , disable the possibility to examine the memory of other processes. While this is a good idea for hardening a system, our debug mechanismen will fail. To disable this feature, run (as root):
 
    .. code-block:: shell-session
       :caption: disable ptrace protection to enable debugging (required on Ubuntu Linux)
@@ -37,7 +37,7 @@ If all the above conditions are met, the daemon that crashes will produce a trac
 Testing The Traceback
 ---------------------
 
-:index:`\ <single: Traceback; Test>`
+:index:`\ <single: Traceback; Test>`\ 
 
 To "manually" test the traceback feature, you simply start Bareos then obtain the PID of the main daemon thread (there are multiple threads). The output produced here will look different depending on what OS and what version of the kernel you are running.
 
@@ -59,7 +59,7 @@ It should produce an email showing you the current state of the daemon (in this 
 Getting A Traceback On Other Systems
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-It should be possible to produce a similar traceback on systems other than Linux, either using :command:`gdb` or some other debugger. Solaris:index:`\ <single: Platform; Solaris; Debug>` with :command:`dbx` loaded works quite fine. On other systems, you will need to modify the :command:`btraceback` program to invoke the correct debugger, and possibly correct the :file:`btraceback.gdb` script to have appropriate commands for your debugger.
+It should be possible to produce a similar traceback on systems other than Linux, either using :command:`gdb` or some other debugger. Solaris:index:`\ <single: Platform; Solaris; Debug>`\  with :command:`dbx` loaded works quite fine. On other systems, you will need to modify the :command:`btraceback` program to invoke the correct debugger, and possibly correct the :file:`btraceback.gdb` script to have appropriate commands for your debugger.
 Please keep in mind that for any debugger to work, it will most likely need to run as root.
 
 Manually Running Bareos Under The Debugger

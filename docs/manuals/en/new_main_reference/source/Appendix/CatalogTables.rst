@@ -1,19 +1,19 @@
 Catalog Tables
 ==============
 
-:index:`\ <single: Catalog>`
+:index:`\ <single: Catalog>`\ 
 
 Bareos stores its information in a database, named Catalog. It is configured by :ref:`DirectorResourceCatalog`.
 
 Job
 ---
 
-:index:`\ <single: Catalog; Job>` :index:`\ <single: Job; Catalog>`
+:index:`\ <single: Catalog; Job>`\  :index:`\ <single: Job; Catalog>`\ 
 
 JobStatus
 ~~~~~~~~~
 
-:index:`\ <single: Job; JobStatus>` :index:`\ <single: Catalog; Job; JobStatus>`
+:index:`\ <single: Job; JobStatus>`\  :index:`\ <single: Catalog; Job; JobStatus>`\ 
 
 The status of a Bareos job is stored as abbreviation in the Catalog database table Job. It is also displayed by some bconsole commands, eg. :bcommand:`list jobs`.
 

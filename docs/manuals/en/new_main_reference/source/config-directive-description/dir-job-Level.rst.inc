@@ -7,11 +7,11 @@ Backup
 
    Full
       | 
-      | :index:`\ <single: Full>` When the Level is set to Full all files in the FileSet whether or not they have changed will be backed up.
+      | :index:`\ <single: Full>`\  When the Level is set to Full all files in the FileSet whether or not they have changed will be backed up.
 
    Incremental
       | 
-      | :index:`\ <single: Incremental>` When the Level is set to Incremental all files specified in the FileSet that have changed since the last successful backup of the the same Job using the same FileSet and Client, will be backed up. If the Director cannot find a previous valid Full backup then the job will be upgraded into a Full backup. When the Director looks for a valid backup record in the catalog database, it looks for a previous Job with:
+      | :index:`\ <single: Incremental>`\  When the Level is set to Incremental all files specified in the FileSet that have changed since the last successful backup of the the same Job using the same FileSet and Client, will be backed up. If the Director cannot find a previous valid Full backup then the job will be upgraded into a Full backup. When the Director looks for a valid backup record in the catalog database, it looks for a previous Job with:
 
       -  The same Job name.
 
@@ -40,7 +40,7 @@ Backup
 
    Differential
       | 
-      | :index:`\ <single: Differential>` When the Level is set to Differential all files specified in the FileSet that have changed since the last successful Full backup of the same Job will be backed up. If the Director cannot find a valid previous Full backup for the same Job, FileSet, and Client, backup, then the Differential job will be upgraded into a Full backup. When the Director looks for a valid Full backup record in the catalog database, it looks for a previous Job with:
+      | :index:`\ <single: Differential>`\  When the Level is set to Differential all files specified in the FileSet that have changed since the last successful Full backup of the same Job will be backed up. If the Director cannot find a valid previous Full backup for the same Job, FileSet, and Client, backup, then the Differential job will be upgraded into a Full backup. When the Director looks for a valid Full backup record in the catalog database, it looks for a previous Job with:
 
       -  The same Job name.
 
@@ -72,7 +72,7 @@ Backup
 
    VirtualFull
       | 
-      | :index:`\ <single: VirtualFull Backup>` 
+      | :index:`\ <single: VirtualFull Backup>`\  
 
 .. _VirtualFull:
 
@@ -95,13 +95,13 @@ Verify
 
    InitCatalog
       | 
-      | :index:`\ <single: InitCatalog>` does a scan of the specified FileSet and stores the file attributes in the Catalog database. Since no file data is saved, you might ask why you would want to do this. It turns out to be a very simple and easy way to have a Tripwire like feature using Bareos. In other words, it allows you to save the state of a set of files defined by the FileSet and later check to see if those files have been modified or deleted and if any new files have been added.
+      | :index:`\ <single: InitCatalog>`\  does a scan of the specified FileSet and stores the file attributes in the Catalog database. Since no file data is saved, you might ask why you would want to do this. It turns out to be a very simple and easy way to have a Tripwire like feature using Bareos. In other words, it allows you to save the state of a set of files defined by the FileSet and later check to see if those files have been modified or deleted and if any new files have been added.
         This can be used to detect system intrusion. Typically you would specify a FileSet that contains the set of system files that should not change (e.g. /sbin, /boot, /lib, /bin, ...). Normally, you run the InitCatalog level verify one time when your system is first setup, and then once again after each modification (upgrade) to your system. Thereafter, when your want to check the state of your system files, you use a Verify level = Catalog. This compares the results of your InitCatalog
         with the current state of the files.
 
    Catalog
       | 
-      | :index:`\ <single: Catalog>` Compares the current state of the files against the state previously saved during an InitCatalog. Any discrepancies are reported. The items reported are determined by the verify options specified on the Include directive in the specified FileSet (see the FileSet resource below for more details). Typically this command will be run once a day (or night) to check for any changes to your system files.
+      | :index:`\ <single: Catalog>`\  Compares the current state of the files against the state previously saved during an InitCatalog. Any discrepancies are reported. The items reported are determined by the verify options specified on the Include directive in the specified FileSet (see the FileSet resource below for more details). Typically this command will be run once a day (or night) to check for any changes to your system files.
 
       
 
@@ -114,7 +114,7 @@ Verify
 
    VolumeToCatalog
       | 
-      | :index:`\ <single: VolumeToCatalog>` This level causes Bareos to read the file attribute data written to the Volume from the last backup Job for the job specified on the VerifyJob directive. The file attribute data are compared to the values saved in the Catalog database and any differences are reported. This is similar to the DiskToCatalog level except that instead of comparing the disk file attributes to the catalog database, the attribute data written to the Volume is read and
+      | :index:`\ <single: VolumeToCatalog>`\  This level causes Bareos to read the file attribute data written to the Volume from the last backup Job for the job specified on the VerifyJob directive. The file attribute data are compared to the values saved in the Catalog database and any differences are reported. This is similar to the DiskToCatalog level except that instead of comparing the disk file attributes to the catalog database, the attribute data written to the Volume is read and
         compared to the catalog database. Although the attribute data including the signatures (MD5 or SHA1) are compared, the actual file data is not compared (it is not in the catalog).
 
       VolumeToCatalog jobs need a client to extract the metadata, but this client does not have to be the original client. We suggest to use the client on the backup server itself for maximum performance.
@@ -130,7 +130,7 @@ Verify
 
    DiskToCatalog
       | 
-      | :index:`\ <single: DiskToCatalog>` This level causes Bareos to read the files as they currently are on disk, and to compare the current file attributes with the attributes saved in the catalog from the last backup for the job specified on the VerifyJob directive. This level differs from the VolumeToCatalog level described above by the fact that it doesn’t compare against a previous Verify job but against a previous backup. When you run this level, you must supply the verify options
+      | :index:`\ <single: DiskToCatalog>`\  This level causes Bareos to read the files as they currently are on disk, and to compare the current file attributes with the attributes saved in the catalog from the last backup for the job specified on the VerifyJob directive. This level differs from the VolumeToCatalog level described above by the fact that it doesn’t compare against a previous Verify job but against a previous backup. When you run this level, you must supply the verify options
         on your Include statements. Those options determine what attribute fields are compared.
 
       This command can be very useful if you have disk problems because it will compare the current state of your disk against the last successful backup, which may be several jobs.

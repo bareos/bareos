@@ -7,7 +7,7 @@ Messages Configuration
 
 .. _ResourceMessages:
 
- :index:`\ <single: Resource; Messages>` :index:`\ <single: Messages Resource>`
+ :index:`\ <single: Resource; Messages>`\  :index:`\ <single: Messages Resource>`\ 
 
 Messages Resource
 -----------------
@@ -21,7 +21,7 @@ Each message that Bareos generates (i.e. that each daemon generates) has an asso
 
 In general, messages are attached to a Job and are included in the Job report. There are some rare cases, where this is not possible, e.g. when no job is running, or if a communications error occurs between a daemon and the director. In those cases, the message may remain in the system, and should be flushed at the end of the next Job.
 
-The records contained in a Messages resource consist of a destination specification followed by a list of message-types in the format: :index:`\ <single: Messages; destination>`
+The records contained in a Messages resource consist of a destination specification followed by a list of message-types in the format: :index:`\ <single: Messages; destination>`\ 
 
 destination = message-type1, message-type2, message-type3, ... 
 
@@ -83,59 +83,59 @@ For any destination, the message-type field is a comma separated list of the fol
 
 info
    | 
-   | :index:`\ <single: Messages; type; info>` General information messages.
+   | :index:`\ <single: Messages; type; info>`\  General information messages.
 
 warning
    | 
-   | :index:`\ <single: Messages; type; warning>` Warning messages. Generally this is some unusual condition but not expected to be serious.
+   | :index:`\ <single: Messages; type; warning>`\  Warning messages. Generally this is some unusual condition but not expected to be serious.
 
 error
    | 
-   | :index:`\ <single: Messages; type; error>` Non-fatal error messages. The job continues running. Any error message should be investigated as it means that something went wrong.
+   | :index:`\ <single: Messages; type; error>`\  Non-fatal error messages. The job continues running. Any error message should be investigated as it means that something went wrong.
 
 fatal
    | 
-   | :index:`\ <single: Messages; type; fatal>` Fatal error messages. Fatal errors cause the job to terminate.
+   | :index:`\ <single: Messages; type; fatal>`\  Fatal error messages. Fatal errors cause the job to terminate.
 
 terminate
    | 
-   | :index:`\ <single: Messages; type; terminate>` Message generated when the daemon shuts down.
+   | :index:`\ <single: Messages; type; terminate>`\  Message generated when the daemon shuts down.
 
 notsaved
    | 
-   | :index:`\ <single: Messages; type; notsaved>` Files not saved because of some error. Usually because the file cannot be accessed (i.e. it does not exist or is not mounted).
+   | :index:`\ <single: Messages; type; notsaved>`\  Files not saved because of some error. Usually because the file cannot be accessed (i.e. it does not exist or is not mounted).
 
 skipped
    | 
-   | :index:`\ <single: Messages; type; skipped>` Files that were skipped because of a user supplied option such as an incremental backup or a file that matches an exclusion pattern. This is not considered an error condition such as the files listed for the notsaved type because the configuration file explicitly requests these types of files to be skipped. For example, any unchanged file during an incremental backup, or any subdirectory if the no recursion option is specified.
+   | :index:`\ <single: Messages; type; skipped>`\  Files that were skipped because of a user supplied option such as an incremental backup or a file that matches an exclusion pattern. This is not considered an error condition such as the files listed for the notsaved type because the configuration file explicitly requests these types of files to be skipped. For example, any unchanged file during an incremental backup, or any subdirectory if the no recursion option is specified.
 
 mount
    | 
-   | :index:`\ <single: Messages; type; mount>` Volume mount or intervention requests from the Storage daemon. These requests require a specific operator intervention for the job to continue.
+   | :index:`\ <single: Messages; type; mount>`\  Volume mount or intervention requests from the Storage daemon. These requests require a specific operator intervention for the job to continue.
 
 restored
    | 
-   | :index:`\ <single: Messages; type; restored>` The ls style listing generated for each file restored is sent to this message class.
+   | :index:`\ <single: Messages; type; restored>`\  The ls style listing generated for each file restored is sent to this message class.
 
 all
    | 
-   | :index:`\ <single: Messages; type; all>` All message types.
+   | :index:`\ <single: Messages; type; all>`\  All message types.
 
 security
    | 
-   | :index:`\ <single: Messages; type; security>` Security info/warning messages principally from unauthorized connection attempts.
+   | :index:`\ <single: Messages; type; security>`\  Security info/warning messages principally from unauthorized connection attempts.
 
 alert
    | 
-   | :index:`\ <single: Messages; type; alert>` Alert messages. These are messages generated by tape alerts.
+   | :index:`\ <single: Messages; type; alert>`\  Alert messages. These are messages generated by tape alerts.
 
 volmgmt
    | 
-   | :index:`\ <single: Messages; type; volmgmt>` Volume management messages. Currently there are no volume management messages generated.
+   | :index:`\ <single: Messages; type; volmgmt>`\  Volume management messages. Currently there are no volume management messages generated.
 
 audit
    | 
-   | :index:`\ <single: Messages; type; audit>` :index:`\ <single: auditing>` Audit messages. Interacting with the Bareos Director will be audited. Can be configured with in resource :config:option:`dir/director/Auditing`\ .
+   | :index:`\ <single: Messages; type; audit>`\  :index:`\ <single: auditing>`\  Audit messages. Interacting with the Bareos Director will be audited. Can be configured with in resource :config:option:`dir/director/Auditing`\ .
 
 The following is an example of a valid Messages resource definition, where all messages except files explicitly skipped or daemon termination messages are sent by email to backupoperator@example.com. In addition all mount messages are sent to the operator (i.e. emailed to backupoperator@example.com). Finally all messages other than explicitly skipped files and files saved are sent to the console:
 

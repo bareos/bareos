@@ -3,7 +3,7 @@
 Release Notes
 =============
 
-:index:`\ <single: Releases>`
+:index:`\ <single: Releases>`\ 
 
 The technical changelog is automatically generated from the Bareos bug tracking system, see http://bugs.bareos.org/changelog_page.php.
 
@@ -29,7 +29,7 @@ Bareos-17.2
 bareos-17.2.7
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-17.2.7; Release Notes>`
+:index:`\ <single: bareos-17.2.7; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -68,7 +68,7 @@ This release contains several bugfixes and enhancements. Excerpt:
 bareos-17.2.6
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-17.2.6; Release Notes>`
+:index:`\ <single: bareos-17.2.6; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -117,7 +117,7 @@ This release contains several bugfixes and enhancements. Excerpt:
 bareos-17.2.5
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-17.2.5; Release Notes>`
+:index:`\ <single: bareos-17.2.5; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -176,7 +176,7 @@ This release contains several bugfixes and enhancements. Excerpt:
 bareos-17.2.4
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-17.2.4; Release Notes>`
+:index:`\ <single: bareos-17.2.4; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -269,7 +269,7 @@ Bareos-16.2
 bareos-16.2.8
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-16.2.8; Release Notes>`
+:index:`\ <single: bareos-16.2.8; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -318,7 +318,7 @@ This release contains several bugfixes and enhancements. Excerpt:
 bareos-16.2.7
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-16.2.7; Release Notes>`
+:index:`\ <single: bareos-16.2.7; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -383,7 +383,7 @@ This release contains several bugfixes and enhancements. Excerpt:
 bareos-16.2.6
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-16.2.6; Release Notes>`
+:index:`\ <single: bareos-16.2.6; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -468,7 +468,7 @@ This release contains several bugfixes and enhancements. Excerpt:
 bareos-16.2.5
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-16.2.5; Release Notes>`
+:index:`\ <single: bareos-16.2.5; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -507,7 +507,7 @@ This release contains several bugfixes and enhancements. Excerpt:
 bareos-16.2.4
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-16.2.4; Release Notes>`
+:index:`\ <single: bareos-16.2.4; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -575,7 +575,7 @@ Bareos-15.2
 bareos-15.2.4
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-15.2.4; Release Notes>`
+:index:`\ <single: bareos-15.2.4; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -614,7 +614,7 @@ This release contains several bugfixes and enhancements. Excerpt:
 bareos-15.2.3
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-15.2.3; Release Notes>`
+:index:`\ <single: bareos-15.2.3; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -661,7 +661,7 @@ This release contains several bugfixes and enhancements. Excerpt:
 bareos-15.2.2
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-15.2.2; Release Notes>`
+:index:`\ <single: bareos-15.2.2; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -736,7 +736,7 @@ It is known, that :command:`drop_database` scripts will not longer work on Postg
 bareos-14.2.7
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-14.2.7; Release Notes>`
+:index:`\ <single: bareos-14.2.7; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -809,7 +809,7 @@ This release contains several bugfixes. Excerpt:
 bareos-14.2.6
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-14.2.6; Release Notes>`
+:index:`\ <single: bareos-14.2.6; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -838,7 +838,7 @@ This release contains several bugfixes.
 bareos-14.2.5
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-14.2.5; Release Notes>`
+:index:`\ <single: bareos-14.2.5; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -867,7 +867,7 @@ This release contains several bugfixes and added the platforms :os:`Debian 8` an
 bareos-14.2.4
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-14.2.4; Release Notes>`
+:index:`\ <single: bareos-14.2.4; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -914,7 +914,7 @@ If you are affected by the 64k bug, we recommend that you schedule a full backup
 bareos-14.2.3
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-14.2.3; Release Notes>`
+:index:`\ <single: bareos-14.2.3; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -941,7 +941,7 @@ Url              http://download.bareos.com/bareos/release/14.2/
 bareos-14.2.2
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-14.2.2; Release Notes>`
+:index:`\ <single: bareos-14.2.2; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -1002,7 +1002,7 @@ Bareos-13.2
 bareos-13.2.5
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-13.2.5; Release Notes>`
+:index:`\ <single: bareos-13.2.5; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -1029,7 +1029,7 @@ This release contains several bugfixes.
 bareos-13.2.4
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-13.2.4; Release Notes>`
+:index:`\ <single: bareos-13.2.4; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -1054,7 +1054,7 @@ Url              http://download.bareos.com/bareos/release/13.2/
 bareos-13.2.3
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-13.2.3; Release Notes>`
+:index:`\ <single: bareos-13.2.3; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -1083,7 +1083,7 @@ It is known, that :command:`drop_database` scripts will not longer work on Postg
 bareos-13.2.2
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-13.2.2; Release Notes>`
+:index:`\ <single: bareos-13.2.2; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -1113,7 +1113,7 @@ Bareos-12.4
 bareos-12.4.8
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-12.4.8; Release Notes>`
+:index:`\ <single: bareos-12.4.8; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -1140,7 +1140,7 @@ This release contains several bugfixes.
 bareos-12.4.6
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-12.4.6; Release Notes>`
+:index:`\ <single: bareos-12.4.6; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -1167,7 +1167,7 @@ Url              http://download.bareos.org/bareos/release/12.4/
 bareos-12.4.5
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-12.4.5; Release Notes>`
+:index:`\ <single: bareos-12.4.5; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -1192,7 +1192,7 @@ Url              http://download.bareos.com/bareos/release/12.4/
 bareos-12.4.4
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-12.4.4; Release Notes>`
+:index:`\ <single: bareos-12.4.4; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -1219,7 +1219,7 @@ Url              http://download.bareos.org/bareos/release/12.4/
 bareos-12.4.3
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-12.4.3; Release Notes>`
+:index:`\ <single: bareos-12.4.3; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -1246,7 +1246,7 @@ Url              http://download.bareos.org/bareos/release/12.4/
 bareos-12.4.2
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-12.4.2; Release Notes>`
+:index:`\ <single: bareos-12.4.2; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 
@@ -1269,7 +1269,7 @@ Database Version 2001 (unchanged)
 bareos-12.4.1
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-12.4.1; Release Notes>`
+:index:`\ <single: bareos-12.4.1; Release Notes>`\ 
 
 # Tabular in LaTex format (original)
 

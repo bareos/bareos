@@ -2,21 +2,21 @@ The :strong:`Type`\  directive specifies the Job type, which is one of the follo
 
 Backup
    | 
-   | :index:`\ <single: Backup>` Run a backup Job. Normally you will have at least one Backup job for each client you want to save. Normally, unless you turn off cataloging, most all the important statistics and data concerning files backed up will be placed in the catalog.
+   | :index:`\ <single: Backup>`\  Run a backup Job. Normally you will have at least one Backup job for each client you want to save. Normally, unless you turn off cataloging, most all the important statistics and data concerning files backed up will be placed in the catalog.
 
 Restore
    | 
-   | :index:`\ <single: Restore>` Run a restore Job. Normally, you will specify only one Restore job which acts as a sort of prototype that you will modify using the console program in order to perform restores. Although certain basic information from a Restore job is saved in the catalog, it is very minimal compared to the information stored for a Backup job – for example, no File database entries are generated since no Files are saved.
+   | :index:`\ <single: Restore>`\  Run a restore Job. Normally, you will specify only one Restore job which acts as a sort of prototype that you will modify using the console program in order to perform restores. Although certain basic information from a Restore job is saved in the catalog, it is very minimal compared to the information stored for a Backup job – for example, no File database entries are generated since no Files are saved.
 
    Restore jobs cannot be automatically started by the scheduler as is the case for Backup, Verify and Admin jobs. To restore files, you must use the restore command in the console.
 
 Verify
    | 
-   | :index:`\ <single: Verify>` Run a verify Job. In general, verify jobs permit you to compare the contents of the catalog to the file system, or to what was backed up. In addition, to verifying that a tape that was written can be read, you can also use verify as a sort of tripwire intrusion detection.
+   | :index:`\ <single: Verify>`\  Run a verify Job. In general, verify jobs permit you to compare the contents of the catalog to the file system, or to what was backed up. In addition, to verifying that a tape that was written can be read, you can also use verify as a sort of tripwire intrusion detection.
 
 Admin
    | 
-   | :index:`\ <single: Admin>` Run an admin Job. An Admin job can be used to periodically run catalog pruning, if you do not want to do it at the end of each Backup Job. Although an Admin job is recorded in the catalog, very little data is saved.
+   | :index:`\ <single: Admin>`\  Run an admin Job. An Admin job can be used to periodically run catalog pruning, if you do not want to do it at the end of each Backup Job. Although an Admin job is recorded in the catalog, very little data is saved.
 
 Migrate
    defines the job that is run as being a Migration Job. A Migration Job is a sort of control job and does not have any Files associated with it, and in that sense they are more or less like an Admin job. Migration jobs simply check to see if there is anything to Migrate then possibly start and control new Backup jobs to migrate the data from the specified Pool to another Pool. Note, any original JobId that is migrated will be marked as having been migrated, and the original JobId can nolonger

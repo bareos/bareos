@@ -3,7 +3,7 @@
 File Deduplication using Base Jobs
 ==================================
 
-:index:`\ <single: Base Jobs>` :index:`\ <single: File Deduplication>`
+:index:`\ <single: Base Jobs>`\  :index:`\ <single: File Deduplication>`\ 
 
 A base job is sort of like a Full save except that you will want the FileSet to contain only files that are unlikely to change in the future (i.e. a snapshot of most of your system after installing it). After the base job has been run, when you are doing a Full save, you specify one or more Base jobs to be used. All files that have been backed up in the Base job/jobs but not modified will then be excluded from the backup. During a restore, the Base jobs will be automatically pulled in where
 necessary.

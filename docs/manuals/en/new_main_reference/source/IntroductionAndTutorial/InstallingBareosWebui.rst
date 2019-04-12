@@ -7,7 +7,7 @@ Installing Bareos Webui
 
 .. _section-install-webui:
 
- :index:`\ <single: Webui>` :index:`\ <single: Webui; Install>`
+ :index:`\ <single: Webui>`\  :index:`\ <single: Webui; Install>`\ 
 
 This chapter addresses the installation process of the |webui|.
 
@@ -234,7 +234,7 @@ For details, please read :ref:`DirectorResourceProfile`.
 SELinux
 ^^^^^^^
 
-:index:`\ <single: SELinux; bareos-webui>`
+:index:`\ <single: SELinux; bareos-webui>`\ 
 
 To use |dir| on a system with SELinux enabled, permission must be given to HTTPD to make network connections:
 
@@ -245,7 +245,7 @@ To use |dir| on a system with SELinux enabled, permission must be given to HTTPD
 Configure your Apache Webserver
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`\ <single: Apache; bareos-webui>` 
+:index:`\ <single: Apache; bareos-webui>`\  
 
 .. _section-webui-apache:
 
@@ -258,7 +258,7 @@ The required Apache modules, :strong:`setenv`, :strong:`rewrite` and :strong:`ph
 Configure your /etc/bareos-webui/directors.ini
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`\ <single: Configuration; WebUI>` 
+:index:`\ <single: Configuration; WebUI>`\  
 
 .. _section-webui-configuration-files:
 
@@ -452,7 +452,7 @@ Additional information
 NGINX
 ~~~~~
 
-:index:`\ <single: nginx; bareos-webui>`
+:index:`\ <single: nginx; bareos-webui>`\ 
 
 If you prefer to use |webui| on Nginx with php5-fpm instead of Apache, a basic working configuration could look like this:
 

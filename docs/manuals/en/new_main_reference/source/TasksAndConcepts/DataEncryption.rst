@@ -3,7 +3,7 @@
 Data Encryption
 ===============
 
-:index:`\ <single: Data Encryption>` :index:`\ <single: Encryption; Data>`
+:index:`\ <single: Data Encryption>`\  :index:`\ <single: Encryption; Data>`\ 
 
 Bareos permits file data encryption and signing within the File Daemon (or Client) prior to sending data to the Storage Daemon. Upon restoration, file signatures are validated and any mismatches are reported. At no time does the Director or the Storage Daemon have access to unencrypted file contents.
 
@@ -43,7 +43,7 @@ The basic algorithm used for each backup session (Job) is:
 Encryption Technical Details
 ----------------------------
 
-:index:`\ <single: Encryption; Technical Details>`
+:index:`\ <single: Encryption; Technical Details>`\ 
 
 The implementation uses 128bit AES-CBC, with RSA encrypted symmetric session keys. The RSA key is user supplied. If you are running OpenSSL >= 0.9.8, the signed file hash uses SHA-256, otherwise SHA-1 is used.
 
@@ -69,7 +69,7 @@ The various algorithms are exposed via an entirely re-usable, OpenSSL-agnostic A
 Generating Private/Public Encryption Keys
 -----------------------------------------
 
-:index:`\ <single: Encryption; Generating Private/Public Encryption Keypairs>`
+:index:`\ <single: Encryption; Generating Private/Public Encryption Keypairs>`\ 
 
 Generate a Master Key Pair with:
 
@@ -102,7 +102,7 @@ Above we have used the .cert extension to refer to X509 certificate encoding tha
 Example Data Encryption Configurations (bareos-fd.conf)
 -------------------------------------------------------
 
-:index:`\ <single: Example; Data Encryption Configuration File>`
+:index:`\ <single: Example; Data Encryption Configuration File>`\ 
 
 
 
@@ -114,7 +114,7 @@ Example Data Encryption Configurations (bareos-fd.conf)
 Decrypting with a Master Key
 ----------------------------
 
-:index:`\ <single: Decrypting with a Master Key>` :index:`\ <single: Encryption; Decrypting with a Master Key>`
+:index:`\ <single: Decrypting with a Master Key>`\  :index:`\ <single: Encryption; Decrypting with a Master Key>`\ 
 
 It is preferable to retain a secure, non-encrypted copy of the client’s own encryption keypair. However, should you lose the client’s keypair, recovery with the master keypair is possible.
 

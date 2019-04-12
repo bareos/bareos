@@ -7,13 +7,13 @@ Director Configuration
 
 .. _DirectorConfChapter:
 
- :index:`\ <single: Director; Configuration>` :index:`\ <single: Configuration; Director>`
+ :index:`\ <single: Director; Configuration>`\  :index:`\ <single: Configuration; Director>`\ 
 
 Of all the configuration files needed to run Bareos, the Director’s is the most complicated and the one that you will need to modify the most often as you add clients or modify the FileSets.
 
 For a general discussion of configuration files and resources including the recognized data types see :ref:`ConfigureChapter`.
 
-:index:`\ <single: Types; Director Resource>` :index:`\ <single: Director; Resource Types>` :index:`\ <single: Resource Types>`
+:index:`\ <single: Types; Director Resource>`\  :index:`\ <single: Director; Resource Types>`\  :index:`\ <single: Resource Types>`\ 
 
 Everything revolves around a job and is tied to a job in one way or another.
 
@@ -44,7 +44,7 @@ The |dir| knows about following resource types:
 Director Resource
 -----------------
 
-:index:`\ <single: Director Resource>` :index:`\ <single: Resource; Director>`
+:index:`\ <single: Director Resource>`\  :index:`\ <single: Resource; Director>`\ 
 
 The Director resource defines the attributes of the Directors running on the network. Only a single Director resource is allowed.
 
@@ -144,7 +144,7 @@ Job Resource
 
 .. _JobResource:
 
- :index:`\ <single: Resource; Job>` :index:`\ <single: Job; Resource>`
+ :index:`\ <single: Resource; Job>`\  :index:`\ <single: Job; Resource>`\ 
 
 The Job resource defines a Job (Backup, Restore, ...) that Bareos must perform. Each Job resource definition contains the name of a Client and a FileSet to backup, the Schedule for the Job, where the data are to be stored, and what media Pool can be used. In effect, each Job resource must specify What, Where, How, and When or FileSet, Storage, Backup/Restore/Level, and Schedule respectively. Note, the FileSet must be specified for a restore job for historical reasons, but it is no longer used.
 
@@ -345,7 +345,7 @@ The following is an example of a valid Job resource definition:
 JobDefs Resource
 ----------------
 
-:index:`\ <single: Job; JobDefs Resource>` :index:`\ <single: Resource; JobDefs>`
+:index:`\ <single: Job; JobDefs Resource>`\  :index:`\ <single: Resource; JobDefs>`\ 
 
 The JobDefs resource permits all the same directives that can appear in a Job resource. However, a JobDefs resource does not create a Job, rather it can be referenced within a Job to provide defaults for that Job. This permits you to concisely define several nearly identical Jobs, each one referencing a JobDefs resource which contains the defaults. Only the changes from the defaults need to be mentioned in each Job.
 
@@ -354,7 +354,7 @@ The JobDefs resource permits all the same directives that can appear in a Job re
 Schedule Resource
 -----------------
 
-:index:`\ <single: Resource; Schedule>` :index:`\ <single: Schedule; Resource>`
+:index:`\ <single: Resource; Schedule>`\  :index:`\ <single: Schedule; Resource>`\ 
 
 The Schedule resource provides a means of automatically scheduling a Job as well as the ability to override the default Level, Pool, Storage and Messages resources. If a Schedule resource is not referenced in a Job, the Job can only be run manually. In general, you specify an action to be taken and when.
 
@@ -461,7 +461,7 @@ w03/w05.
 Technical Notes on Schedules
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Schedule; Technical Notes on Schedules>`
+:index:`\ <single: Schedule; Technical Notes on Schedules>`\ 
 
 Internally Bareos keeps a schedule as a bit mask. There are six masks and a minute field to each schedule. The masks are hour, day of the month (mday), month, day of the week (wday), week of the month (wom), and week of the year (woy). The schedule is initialized to have the bits of each of these masks set, which means that at the beginning of every hour, the job will run. When you specify a month for the first time, the mask will be cleared and the bit corresponding to your selected month will
 be selected. If you specify a second month, the bit corresponding to it will also be added to the mask. Thus when Bareos checks the masks to see if the bits are set corresponding to the current time, your job will run only in the two months you have set. Likewise, if you set a time (hour), the hour mask will be cleared, and the hour you specify will be set in the bit mask and the minutes will be stored in the minute field.
@@ -477,7 +477,7 @@ FileSet Resource
 
 .. _FileSetResource:
 
- :index:`\ <single: Resource; FileSet>` :index:`\ <single: FileSet; Resource>`
+ :index:`\ <single: Resource; FileSet>`\  :index:`\ <single: FileSet; Resource>`\ 
 
 The FileSet resource defines what files are to be included or excluded in a backup job. A FileSet resource is required for each backup Job. It consists of a list of files or directories to be included, a list of files or directories to be excluded and the various backup options such as compression, encryption, and signatures that are to be applied to each file.
 
@@ -657,7 +657,7 @@ File = filename | dirname | | command | \<includefile-client | <includefile-
            File = "\\</home/xxx/filelist-on-client"
          }
 
-   -  :index:`\ <single: Backup; Partitions>` :index:`\ <single: Backup; Raw Partitions>` If you explicitly specify a block device such as /dev/hda1, then Bareos will assume that this is a raw partition to be backed up. In this case, you are strongly urged to specify a sparse=yes include option, otherwise, you will save the whole partition rather than just the actual data that the partition contains. For example:
+   -  :index:`\ <single: Backup; Partitions>`\  :index:`\ <single: Backup; Raw Partitions>`\  If you explicitly specify a block device such as /dev/hda1, then Bareos will assume that this is a raw partition to be backed up. In this case, you are strongly urged to specify a sparse=yes include option, otherwise, you will save the whole partition rather than just the actual data that the partition contains. For example:
 
       .. code-block:: bareosconfig
          :caption: Backup Raw Partitions
@@ -759,8 +759,8 @@ The directives within an Options resource may be one of the following:
            Since :sinceVersion:`14.2.2: Auto Exclude`.
 
        \item [compression=<GZIP|GZIP1|...|GZIP9|LZO|LZFAST|LZ4|LZ4HC>]  \\
-           :index:`\ <single: compression>`
-           :index:`\ <single: Directive; compression>`
+           :index:`\ <single: compression>`\ 
+           :index:`\ <single: Directive; compression>`\ 
 
            Configures the software compression to be used by the File Daemon.
            The compression is done on a file by file basis.
@@ -856,23 +856,23 @@ The directives within an Options resource may be one of the following:
 
 
     \item [signature=<MD5|SHA1|SHA256|SHA512>]  \\
-           :index:`\ <single: signature>`%
-           :index:`\ <single: Directive; signature>`%
+           :index:`\ <single: signature>`\ %
+           :index:`\ <single: Directive; signature>`\ %
    It is strongly recommend to use signatures for your backups.
    Note, only one type of signature can be computed per file.
 
        \begin{description}
            \item [signature=MD5]  \\
-           :index:`\ <single: MD5>`%
-           :index:`\ <single: signature; MD5>`%
+           :index:`\ <single: MD5>`\ %
+           :index:`\ <single: signature; MD5>`\ %
            An MD5 signature will be computed for each files saved.  Adding this
            option generates about 5\% extra overhead for each file saved.  In
            addition to the additional CPU time, the MD5 signature adds 16 more
            bytes per file to your catalog.
 
            \item [signature=SHA1]  \\
-           :index:`\ <single: SHA1>`%
-           :index:`\ <single: signature; SHA1>`%
+           :index:`\ <single: SHA1>`\ %
+           :index:`\ <single: signature; SHA1>`\ %
            An SHA1 signature will be computed for each files saved.
            The SHA1 algorithm is
            purported to be some what slower than the MD5 algorithm, but at the same
@@ -881,31 +881,31 @@ The directives within an Options resource may be one of the following:
            The SHA1 signature requires adds 20 bytes per file to your catalog.
 
            \item [signature=SHA256]  \\
-           :index:`\ <single: SHA256>`%
-           :index:`\ <single: signature; SHA256>`%
+           :index:`\ <single: SHA256>`\ %
+           :index:`\ <single: signature; SHA256>`\ %
 
            \item [signature=SHA512]  \\
-           :index:`\ <single: SHA512>`%
-           :index:`\ <single: signature; SHA512>`%
+           :index:`\ <single: SHA512>`\ %
+           :index:`\ <single: signature; SHA512>`\ %
        \end{description}
 
 
    \item[basejob=<options>]
-   :index:`\ <single: basejob>`
-   :index:`\ <single: Directive; basejob>`
+   :index:`\ <single: basejob>`\ 
+   :index:`\ <single: Directive; basejob>`\ 
 
    The options letters specified are used when running a :strong:`Backup Level=Full`
    with BaseJobs. The options letters are the same than in the :strong:`verify=`
    option below.
 
-   \item[accurate=<options>] :index:`\ <single: Accurate>`
-     :index:`\ <single: Directive; accurate>` The options letters specified are used when
+   \item[accurate=<options>] :index:`\ <single: Accurate>`\ 
+     :index:`\ <single: Directive; accurate>`\  The options letters specified are used when
      running a :strong:`Backup Level=Incremental/Differential` in Accurate mode. The
      options letters are the same than in the :strong:`verify=` option below.
 
    \item [verify=<options>]  \\
-   :index:`\ <single: verify>`
-   :index:`\ <single: Directive; verify>`
+   :index:`\ <single: verify>`\ 
+   :index:`\ <single: Directive; verify>`\ 
       The options letters specified are used  when running a :strong:`Verify
       Level=Catalog` as well as the  :strong:`DiskToCatalog` level job. The options
       letters may be any  combination of the following:
@@ -958,8 +958,8 @@ The directives within an Options resource may be one of the following:
       inodes, number  of links, size, and MD5 changes.
 
    \item [onefs=yes|no]  \\
-   :index:`\ <single: onefs>`
-   :index:`\ <single: Directive; onefs>`
+   :index:`\ <single: onefs>`\ 
+   :index:`\ <single: Directive; onefs>`\ 
       If set to :strong:`yes` (the default), :strong:`Bareos` will remain on a single
       file system.  That is it will not backup file systems that are mounted
       on a subdirectory.  If you are using a *nix system, you may not even be
@@ -1051,8 +1051,8 @@ The directives within an Options resource may be one of the following:
       that it did not specify :strong:`/var`, then :strong:`/var` will not be backed up.
 
    \item [honor nodump flag=<yes|no>]  \\
-   :index:`\ <single: honornodumpflag>`
-   :index:`\ <single: Directive; honornodumpflag>`
+   :index:`\ <single: honornodumpflag>`\ 
+   :index:`\ <single: Directive; honornodumpflag>`\ 
       If your file system supports the :strong:`nodump` flag (e. g. most
       BSD-derived systems) Bareos will honor the setting of the flag
       when this option is set to :strong:`yes`. Files having this flag set
@@ -1064,8 +1064,8 @@ The directives within an Options resource may be one of the following:
       backup.
 
    \item [portable=yes|no]  \\
-   :index:`\ <single: portable>`
-   :index:`\ <single: Directive; portable>`
+   :index:`\ <single: portable>`\ 
+   :index:`\ <single: Directive; portable>`\ 
    
 
 .. _portable:
@@ -1084,8 +1084,8 @@ The directives within an Options resource may be one of the following:
       is saved.
 
    \item [recurse=yes|no]  \\
-   :index:`\ <single: recurse>`
-   :index:`\ <single: Directive; recurse>`
+   :index:`\ <single: recurse>`\ 
+   :index:`\ <single: Directive; recurse>`\ 
       If set to :strong:`yes` (the default), Bareos will recurse (or descend) into
       all subdirectories found unless the directory is explicitly excluded
       using an :strong:`exclude` definition.  If you set :strong:`recurse=no`, Bareos
@@ -1095,8 +1095,8 @@ The directives within an Options resource may be one of the following:
       (:strong:`yes`).
 
    \item [sparse=yes|no]  \\
-   :index:`\ <single: sparse>`
-   :index:`\ <single: Directive; sparse>`
+   :index:`\ <single: sparse>`\ 
+   :index:`\ <single: Directive; sparse>`\ 
       Enable special code that checks for sparse files such as created by
       ndbm.  The default is :strong:`no`, so no checks are made for sparse files.
       You may specify :strong:`sparse=yes` even on files that are not sparse file.
@@ -1135,8 +1135,8 @@ The directives within an Options resource may be one of the following:
       that are not really sparse files (i.e. have holes in them).
 
    \item [readfifo=yes|no]  \\
-   :index:`\ <single: readfifo>`
-   :index:`\ <single: Directive; readfifo>`
+   :index:`\ <single: readfifo>`\ 
+   :index:`\ <single: Directive; readfifo>`\ 
    
 
 .. _readfifo:
@@ -1190,8 +1190,8 @@ The directives within an Options resource may be one of the following:
 
 
    \item [noatime=yes|no]  \\
-   :index:`\ <single: noatime>`
-   :index:`\ <single: Directive; noatime>`
+   :index:`\ <single: noatime>`\ 
+   :index:`\ <single: Directive; noatime>`\ 
       If enabled, and if your Operating System supports the O\_NOATIME file
       open flag, Bareos will open all files to be backed up with this option.
       It makes it possible to read a file without updating the inode atime
@@ -1210,8 +1210,8 @@ The directives within an Options resource may be one of the following:
 
 
    \item [mtimeonly=yes|no]  \\
-   :index:`\ <single: mtimeonly>`
-   :index:`\ <single: Directive; mtimeonly>`
+   :index:`\ <single: mtimeonly>`\ 
+   :index:`\ <single: Directive; mtimeonly>`\ 
       If enabled, tells the Client that the selection of files during
       Incremental and Differential backups should based only on the st\_mtime
       value in the stat() packet.  The default is :strong:`no` which means that
@@ -1220,8 +1220,8 @@ The directives within an Options resource may be one of the following:
       to use this option.
 
    \item [keepatime=yes|no]  \\
-   :index:`\ <single: keepatime>`
-   :index:`\ <single: Directive; keepatime>`
+   :index:`\ <single: keepatime>`\ 
+   :index:`\ <single: Directive; keepatime>`\ 
       The default is :strong:`no`.  When enabled, Bareos will reset the st\_atime
       (access time) field of files that it backs up to their value prior to
       the backup.  This option is not generally recommended as there are very
@@ -1240,8 +1240,8 @@ The directives within an Options resource may be one of the following:
       Rudolf Cejka for this tip).
 
    \item [checkfilechanges=yes|no]  \\
-   :index:`\ <single: checkfilechanges>`
-   :index:`\ <single: Directive; checkfilechanges>`
+   :index:`\ <single: checkfilechanges>`\ 
+   :index:`\ <single: Directive; checkfilechanges>`\ 
       If enabled, the Client will check size, age of each file after
       their backup to see if they have changed during backup. If time
       or size mismatch, an error will raise.
@@ -1253,8 +1253,8 @@ The directives within an Options resource may be one of the following:
       In general, it is recommended to use this option.
 
    \item [hardlinks=yes|no]  \\
-   :index:`\ <single: hardlinks>`
-   :index:`\ <single: Directive; hardlinks>`
+   :index:`\ <single: hardlinks>`\ 
+   :index:`\ <single: Directive; hardlinks>`\ 
       When enabled (default), this directive will cause hard links to be
       backed up. However, the File daemon keeps track of hard linked files and
       will backup the data only once. The process of keeping track of the
@@ -1268,8 +1268,8 @@ The directives within an Options resource may be one of the following:
       system will not be restored identically to the original.
 
    \item [wild=<string>]  \\
-   :index:`\ <single: wild>`
-   :index:`\ <single: Directive; wild>`
+   :index:`\ <single: wild>`\ 
+   :index:`\ <single: Directive; wild>`\ 
       Specifies a wild-card string to be applied to the filenames and
       directory names.  Note, if :strong:`Exclude` is not enabled, the wild-card
       will select which files are to be included.  If :strong:`Exclude=yes` is
@@ -1285,8 +1285,8 @@ The directives within an Options resource may be one of the following:
       It is recommended to enclose the string in double quotes.
 
    \item [wilddir=<string>]  \\
-   :index:`\ <single: wilddir>`
-   :index:`\ <single: Directive; wilddir>`
+   :index:`\ <single: wilddir>`\ 
+   :index:`\ <single: Directive; wilddir>`\ 
       Specifies a wild-card string to be applied to directory names only.  No
       filenames will be matched by this directive.  Note, if :strong:`Exclude` is
       not enabled, the wild-card will select directories to be
@@ -1304,8 +1304,8 @@ The directives within an Options resource may be one of the following:
       the :ref:`estimate <estimate>` command.
 
    \item [wildfile=<string>]  \\
-   :index:`\ <single: wildfile>`
-   :index:`\ <single: Directive; wildfile>`
+   :index:`\ <single: wildfile>`\ 
+   :index:`\ <single: Directive; wildfile>`\ 
       Specifies a wild-card string to be applied to non-directories. That
       is no directory entries will be matched by this directive.
       However, note that the match is done against the full path and filename,
@@ -1328,8 +1328,8 @@ The directives within an Options resource may be one of the following:
       presented below.
 
    \item [regex=<string>]  \\
-   :index:`\ <single: regex>`
-   :index:`\ <single: Directive; regex>`
+   :index:`\ <single: regex>`\ 
+   :index:`\ <single: Directive; regex>`\ 
 
    
 
@@ -1361,8 +1361,8 @@ The directives within an Options resource may be one of the following:
 
 
    \item [regexfile=<string>]  \\
-   :index:`\ <single: regexfile>`
-   :index:`\ <single: Directive; regexfile>`
+   :index:`\ <single: regexfile>`\ 
+   :index:`\ <single: Directive; regexfile>`\ 
       Specifies a POSIX extended regular expression to be applied to
       non-directories. No directories will be matched by this directive.
       However, note that the match is done against the full path and
@@ -1382,8 +1382,8 @@ The directives within an Options resource may be one of the following:
       backup by using the :ref:`bregex` program.
 
    \item [regexdir=<string>]  \\
-   :index:`\ <single: regexdir>`
-   :index:`\ <single: Directive; regexdir>`
+   :index:`\ <single: regexdir>`\ 
+   :index:`\ <single: Directive; regexdir>`\ 
       Specifies a POSIX extended regular expression to be applied to directory
       names only.  No filenames will be matched by this directive.  Note, if
       :strong:`Exclude` is not enabled, the regex will select directories
@@ -1405,8 +1405,8 @@ The directives within an Options resource may be one of the following:
       Options will be excluded from the backup.
 
    \item [aclsupport=yes|no]  \\
-   :index:`\ <single: aclsupport>`
-   :index:`\ <single: Directive; aclsupport>`
+   :index:`\ <single: aclsupport>`\ 
+   :index:`\ <single: Directive; aclsupport>`\ 
    
 
 .. _ACLSupport:
@@ -1451,8 +1451,8 @@ The directives within an Options resource may be one of the following:
 
 
    \item [xattrsupport=yes|no]  \\
-   :index:`\ <single: xattrsupport>`
-   :index:`\ <single: Directive; xattrsupport>`
+   :index:`\ <single: xattrsupport>`\ 
+   :index:`\ <single: Directive; xattrsupport>`\ 
       The default is :strong:`yes` since Bareos 18.2. If this option is set to yes, and your
       operating system support either so called Extended Attributes or
       Extensible Attributes Bareos will backup the file and directory
@@ -1482,16 +1482,16 @@ The directives within an Options resource may be one of the following:
       \end{enumerate}
 
    \item [ignore case=yes|no]  \\
-   :index:`\ <single: ignore case>`
-   :index:`\ <single: Directive; ignore case>`
+   :index:`\ <single: ignore case>`\ 
+   :index:`\ <single: Directive; ignore case>`\ 
       The default is :strong:`no`.  On Windows systems, you will almost surely
       want to set this to :strong:`yes`.  When this directive is set to :strong:`yes`
       all the case of character will be ignored in wild-card and regex
       comparisons.  That is an uppercase A will match a lowercase a.
 
    \item [fstype=filesystem-type]  \\
-   :index:`\ <single: fstype>`
-   :index:`\ <single: Directive; fstype>`
+   :index:`\ <single: fstype>`\ 
+   :index:`\ <single: Directive; fstype>`\ 
       This option allows you to select files and directories by the
       filesystem type.  The permitted filesystem-type names are:
 
@@ -1509,8 +1509,8 @@ The directives within an Options resource may be one of the following:
       This option is not implemented in Win32 systems.
 
    \item [DriveType=Windows-drive-type]  \\
-   :index:`\ <single: DriveType>`
-   :index:`\ <single: Directive; DriveType>`
+   :index:`\ <single: DriveType>`\ 
+   :index:`\ <single: Directive; DriveType>`\ 
       This option is effective only on Windows machines and is
       somewhat similar to the Unix/Linux :strong:`fstype` described
       above, except that it allows you to select what Windows
@@ -1532,14 +1532,14 @@ The directives within an Options resource may be one of the following:
       This option is not implemented in Unix/Linux systems.
 
    \item [hfsplussupport=yes|no]  \\
-   :index:`\ <single: hfsplussupport>`
-   :index:`\ <single: Directive; hfsplussupport>`
+   :index:`\ <single: hfsplussupport>`\ 
+   :index:`\ <single: Directive; hfsplussupport>`\ 
       This option allows you to turn on support for Mac OSX HFS plus
       finder information.
 
    \item [strippath=<integer>]  \\
-   :index:`\ <single: strippath>`
-   :index:`\ <single: Directive; strippath>`
+   :index:`\ <single: strippath>`\ 
+   :index:`\ <single: Directive; strippath>`\ 
       This option will cause :strong:`integer` paths to be stripped from
       the front of the full path/filename being backed up. This can
       be useful if you are migrating data from another vendor or if
@@ -1548,8 +1548,8 @@ The directives within an Options resource may be one of the following:
       so should be used only by experts and with great care.
 
    \item [size=sizeoption]  \\
-   :index:`\ <single: size>`
-   :index:`\ <single: Directive; size>`
+   :index:`\ <single: size>`\ 
+   :index:`\ <single: Directive; size>`\ 
       This option will allow you to select files by their actual size.
       You can select either files smaller than a certain size or bigger
       then a certain size, files of a size in a certain range or files
@@ -1565,8 +1565,8 @@ The directives within an Options resource may be one of the following:
       \end{enumerate}
 
    \item [shadowing=none|localwarn|localremove|globalwarn|globalremove]  \\
-   :index:`\ <single: shadowing>`
-   :index:`\ <single: Directive; shadowing>`
+   :index:`\ <single: shadowing>`\ 
+   :index:`\ <single: Directive; shadowing>`\ 
       The default is :strong:`none`. This option performs a check within the
       fileset for any file-list entries which are shadowing each other.
       Lets say you specify / and /usr but /usr is not a separate filesystem.
@@ -1607,8 +1607,8 @@ The directives within an Options resource may be one of the following:
 
 
    \item [meta=tag]  \\
-   :index:`\ <single: meta>`
-   :index:`\ <single: Directive; meta>`
+   :index:`\ <single: meta>`\ 
+   :index:`\ <single: Directive; meta>`\ 
       This option will add a meta tag to a fileset. These meta tags are used
       by the Native NDMP protocol to pass NDMP backup or restore environment
       variables via the Data Management Agent (DMA) in Bareos to the remote
@@ -1622,7 +1622,7 @@ The directives within an Options resource may be one of the following:
 FileSet Exclude Ressource
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Excluding Files and Directories>`
+:index:`\ <single: Excluding Files and Directories>`\ 
 
 FileSet Exclude-Ressources very similar to Include-Ressources, except that they only allow following directives:
 
@@ -1660,7 +1660,7 @@ Another way to exclude files and directories is to use the :strong:`Exclude`\  o
 FileSet Examples
 ~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Example; FileSet>` :index:`\ <single: FileSet; Example>`
+:index:`\ <single: Example; FileSet>`\  :index:`\ <single: FileSet; Example>`\ 
 
 The following is an example of a valid FileSet resource definition. Note, the first Include pulls in the contents of the file :file:`/etc/backup.list` when Bareos is started (i.e. the @), and that file must have each filename to be backed up preceded by a File = and on a separate line.
 
@@ -1945,7 +1945,7 @@ The FileSet resource definition below implements this by including specifc direc
 Windows FileSets
 ~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Windows; FileSet>` :index:`\ <single: FileSet; Windows>` 
+:index:`\ <single: Windows; FileSet>`\  :index:`\ <single: FileSet; Windows>`\  
 
 .. _win32:
 
@@ -1984,7 +1984,7 @@ On Win32 systems, if you move a directory or file or rename a file into the set 
 Example Fileset for Windows
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`\ <single: FileSet; Windows Example>` :index:`\ <single: Windows; FileSet; Example>`
+:index:`\ <single: FileSet; Windows Example>`\  :index:`\ <single: Windows; FileSet; Example>`\ 
 
 The following example demostrates a Windows FileSet. It backups all data from all fixed drives and only excludes some Windows temporary data.
 
@@ -2014,7 +2014,7 @@ The following example demostrates a Windows FileSet. It backups all data from al
 Testing Your FileSet
 ~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: FileSet; Testing Your>` :index:`\ <single: Testing Your FileSet>`
+:index:`\ <single: FileSet; Testing Your>`\  :index:`\ <single: Testing Your FileSet>`\ 
 
 If you wish to get an idea of what your FileSet will really backup or if your exclusion rules will work correctly, you can test it by using the :ref:`estimate <estimate>` command.
 
@@ -2047,7 +2047,7 @@ to give you a listing of all files that match. In the above example, it should b
 Client Resource
 ---------------
 
-:index:`\ <single: Resource; Client>` :index:`\ <single: Client Resource>`
+:index:`\ <single: Resource; Client>`\  :index:`\ <single: Client Resource>`\ 
 
 The Client (or FileDaemon) resource defines the attributes of the Clients that are served by this Director; that is the machines that are to be backed up. You will need one Client resource definition for each machine to be backed up.
 
@@ -2165,7 +2165,7 @@ The following is an example of a Quota Configuration in Client resource:
 Storage Resource
 ----------------
 
-:index:`\ <single: Resource; Storage>` :index:`\ <single: Storage Resource>`
+:index:`\ <single: Resource; Storage>`\  :index:`\ <single: Storage Resource>`\ 
 
 The Storage resource defines which Storage daemons are available for use by the Director.
 
@@ -2253,7 +2253,7 @@ The following is an example of a valid Storage resource definition:
 Pool Resource
 -------------
 
-:index:`\ <single: Resource; Pool>` :index:`\ <single: Pool Resource>`
+:index:`\ <single: Resource; Pool>`\  :index:`\ <single: Pool Resource>`\ 
 
 The Pool resource defines the set of storage Volumes (tapes or files) to be used by Bareos to write the data. By configuring different Pools, you can determine which set of Volumes (media) receives the backup data. This permits, for example, to store all full backup data on one set of Volumes and all incremental backups on another set of Volumes. Alternatively, you could assign a different set of Volumes to each machine that you backup. This is most easily done by defining multiple Pools.
 
@@ -2360,7 +2360,7 @@ The following is an example of a valid Pool resource definition:
 Scratch Pool
 ~~~~~~~~~~~~
 
-:index:`\ <single: Scratch Pool>` :index:`\ <single: Pool; Scratch>`
+:index:`\ <single: Scratch Pool>`\  :index:`\ <single: Pool; Scratch>`\ 
 
 In general, you can give your Pools any name you wish, but there is one important restriction: the Pool named Scratch, if it exists behaves like a scratch pool of Volumes in that when Bareos needs a new Volume for writing and it cannot find one, it will look in the Scratch pool, and if it finds an available Volume, it will move it out of the Scratch pool into the Pool currently being used by the job.
 
@@ -2369,7 +2369,7 @@ In general, you can give your Pools any name you wish, but there is one importan
 Catalog Resource
 ----------------
 
-:index:`\ <single: Resource; Catalog>` :index:`\ <single: Catalog Resource>`
+:index:`\ <single: Resource; Catalog>`\  :index:`\ <single: Catalog Resource>`\ 
 
 The Catalog Resource defines what catalog to use for the current job. Currently, Bareos can only handle a single database server (SQLite, MySQL, PostgreSQL) that is defined when configuring Bareos. However, there may be as many Catalogs (databases) defined as you wish. For example, you may want each Client to have its own Catalog database, or you may want backup jobs to use one database and verify or restore jobs to use another database.
 
@@ -2450,7 +2450,7 @@ or for a Catalog on another machine:
 Messages Resource
 -----------------
 
-:index:`\ <single: Resource; Messages>` :index:`\ <single: Messages Resource>`
+:index:`\ <single: Resource; Messages>`\  :index:`\ <single: Messages Resource>`\ 
 
 For the details of the Messages Resource, please see the :ref:`MessagesChapter` of this manual.
 
@@ -2459,15 +2459,15 @@ For the details of the Messages Resource, please see the :ref:`MessagesChapter` 
 Console Resource
 ----------------
 
-:index:`\ <single: Console Resource>` :index:`\ <single: Resource; Console>`
+:index:`\ <single: Console Resource>`\  :index:`\ <single: Resource; Console>`\ 
 
 There are three different kinds of consoles, which the administrator or user can use to interact with the Director. These three kinds of consoles comprise three different security levels.
 
 Default Console
-   :index:`\ <single: Console; Default Console>` the first console type is an "anonymous" or "default" console, which has full privileges. There is no console resource necessary for this type since the password is specified in the Director’s resource and consequently such consoles do not have a name as defined on a :strong:`Name`\  directive. Typically you would use it only for administrators.
+   :index:`\ <single: Console; Default Console>`\  the first console type is an "anonymous" or "default" console, which has full privileges. There is no console resource necessary for this type since the password is specified in the Director’s resource and consequently such consoles do not have a name as defined on a :strong:`Name`\  directive. Typically you would use it only for administrators.
 
 Named Console
-   :index:`\ <single: Named Console>` :index:`\ <single: Console; Named Console>` :index:`\ <single: Console; Restricted Console>` the second type of console, is a "named" console (also called "Restricted Console") defined within a Console resource in both the Director’s configuration file and in the Console’s configuration file. Both the names and the passwords in these two entries must match much as is the case for Client programs.
+   :index:`\ <single: Named Console>`\  :index:`\ <single: Console; Named Console>`\  :index:`\ <single: Console; Restricted Console>`\  the second type of console, is a "named" console (also called "Restricted Console") defined within a Console resource in both the Director’s configuration file and in the Console’s configuration file. Both the names and the passwords in these two entries must match much as is the case for Client programs.
 
    This second type of console begins with absolutely no privileges except those explicitly specified in the Director’s Console resource. Thus you can have multiple Consoles with different names and passwords, sort of like multiple users, each with different privileges. As a default, these consoles can do absolutely nothing – no commands whatsoever. You give them privileges or rather access to commands and resources by specifying access control lists in the Director’s Console resource. The ACLs
    are specified by a directive followed by a list of access names. Examples of this are shown below.
@@ -2536,7 +2536,7 @@ The example at :ref:`section-ConsoleAccessExample` shows how to use a console re
 Profile Resource
 ----------------
 
-:index:`\ <single: Profile Resource>` :index:`\ <single: Resource; Profile>`
+:index:`\ <single: Profile Resource>`\  :index:`\ <single: Resource; Profile>`\ 
 
 The Profile Resource defines a set of ACLs. :ref:`DirectorResourceConsole` can be tight to one or more profiles (:config:option:`dir/console/Profile`\ ), making it easier to use a common set of ACLs.
 
@@ -2571,7 +2571,7 @@ The Profile Resource defines a set of ACLs. :ref:`DirectorResourceConsole` can b
 Counter Resource
 ----------------
 
-:index:`\ <single: Resource; Counter>` :index:`\ <single: Counter Resource>`
+:index:`\ <single: Resource; Counter>`\  :index:`\ <single: Counter Resource>`\ 
 
 The Counter Resource defines a counter variable that can be accessed by variable expansion used for creating Volume labels with the :config:option:`dir/pool/LabelFormat`\  directive.
 

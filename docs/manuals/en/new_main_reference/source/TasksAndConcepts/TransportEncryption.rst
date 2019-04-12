@@ -7,7 +7,7 @@ Transport Encryption
 
 .. _section-TransportEncryption:
 
- :index:`\ <single: Communications Encryption>` :index:`\ <single: Encryption; Communication>` :index:`\ <single: Encryption; Transport>` :index:`\ <single: Transport Encryption>` :index:`\ <single: TLS>` :index:`\ <single: SSL>`
+ :index:`\ <single: Communications Encryption>`\  :index:`\ <single: Encryption; Communication>`\  :index:`\ <single: Encryption; Transport>`\  :index:`\ <single: Transport Encryption>`\  :index:`\ <single: TLS>`\  :index:`\ <single: SSL>`\ 
 
 Bareos TLS (Transport Layer Security) is built-in network encryption code to provide secure network transport similar to that offered by :command:`stunnel` or :command:`ssh`. The data written to Volumes by the Storage daemon is not encrypted by this code. For data encryption, please see the :ref:`DataEncryption` chapter.
 
@@ -93,7 +93,7 @@ You can use programs like `xca <http://xca.sourceforge.net/>`_ or TinyCA to easi
 Example TLS Configuration Files
 -------------------------------
 
-:index:`\ <single: Example; TLS Configuration Files>` :index:`\ <single: TLS Configuration Files>`
+:index:`\ <single: Example; TLS Configuration Files>`\  :index:`\ <single: TLS Configuration Files>`\ 
 
 An example of the TLS portions of the configuration files are listed below.
 

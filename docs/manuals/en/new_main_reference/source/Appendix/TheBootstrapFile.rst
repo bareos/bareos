@@ -3,7 +3,7 @@
 The Bootstrap File
 ==================
 
-:index:`\ <single: File; Bootstrap>` :index:`\ <single: Bootstrap; File>`
+:index:`\ <single: File; Bootstrap>`\  :index:`\ <single: Bootstrap; File>`\ 
 
 .. TODO: This chapter is going to be rewritten (by Philipp).
 
@@ -14,7 +14,7 @@ The bootstrap file contains ASCII information that permits precise specification
 Bootstrap File Format
 ---------------------
 
-:index:`\ <single: Bootstrap; File Format>`
+:index:`\ <single: Bootstrap; File Format>`\ 
 
 The general format of a bootstrap file is:
 
@@ -45,51 +45,51 @@ directs the Storage daemon (or the bextract program) to restore only those files
 The full set of permitted keywords presented in the order in which they are matched against the Volume records are:
 
 Volume
-   :index:`\ <single: Bootstrap; Volume>` The value field specifies what Volume the following commands apply to. Each Volume specification becomes the current Volume, to which all the following commands apply until a new current Volume (if any) is specified. If the Volume name contains spaces, it should be enclosed in quotes. At lease one Volume specification is required.
+   :index:`\ <single: Bootstrap; Volume>`\  The value field specifies what Volume the following commands apply to. Each Volume specification becomes the current Volume, to which all the following commands apply until a new current Volume (if any) is specified. If the Volume name contains spaces, it should be enclosed in quotes. At lease one Volume specification is required.
 
 Count
-   :index:`\ <single: Bootstrap; Count>` The value is the total number of files that will be restored for this Volume. This allows the Storage daemon to know when to stop reading the Volume. This value is optional.
+   :index:`\ <single: Bootstrap; Count>`\  The value is the total number of files that will be restored for this Volume. This allows the Storage daemon to know when to stop reading the Volume. This value is optional.
 
 VolFile
-   :index:`\ <single: Bootstrap; VolFile>` The value is a file number, a list of file numbers, or a range of file numbers to match on the current Volume. The file number represents the physical file on the Volume where the data is stored. For a tape volume, this record is used to position to the correct starting file, and once the tape is past the last specified file, reading will stop.
+   :index:`\ <single: Bootstrap; VolFile>`\  The value is a file number, a list of file numbers, or a range of file numbers to match on the current Volume. The file number represents the physical file on the Volume where the data is stored. For a tape volume, this record is used to position to the correct starting file, and once the tape is past the last specified file, reading will stop.
 
 VolBlock
-   :index:`\ <single: Bootstrap; VolBlock>` The value is a block number, a list of block numbers, or a range of block numbers to match on the current Volume. The block number represents the physical block within the file on the Volume where the data is stored.
+   :index:`\ <single: Bootstrap; VolBlock>`\  The value is a block number, a list of block numbers, or a range of block numbers to match on the current Volume. The block number represents the physical block within the file on the Volume where the data is stored.
 
 VolSessionTime
-   :index:`\ <single: Bootstrap; VolSessionTime>` The value specifies a Volume Session Time to be matched from the current volume.
+   :index:`\ <single: Bootstrap; VolSessionTime>`\  The value specifies a Volume Session Time to be matched from the current volume.
 
 VolSessionId
-   :index:`\ <single: Bootstrap; VolSessionId>` The value specifies a VolSessionId, a list of volume session ids, or a range of volume session ids to be matched from the current Volume. Each VolSessionId and VolSessionTime pair corresponds to a unique Job that is backed up on the Volume.
+   :index:`\ <single: Bootstrap; VolSessionId>`\  The value specifies a VolSessionId, a list of volume session ids, or a range of volume session ids to be matched from the current Volume. Each VolSessionId and VolSessionTime pair corresponds to a unique Job that is backed up on the Volume.
 
 JobId
-   :index:`\ <single: Bootstrap; JobId>` The value specifies a JobId, list of JobIds, or range of JobIds to be selected from the current Volume. Note, the JobId may not be unique if you have multiple Directors, or if you have reinitialized your database. The JobId filter works only if you do not run multiple simultaneous jobs. This value is optional and not used by Bareos to restore files.
+   :index:`\ <single: Bootstrap; JobId>`\  The value specifies a JobId, list of JobIds, or range of JobIds to be selected from the current Volume. Note, the JobId may not be unique if you have multiple Directors, or if you have reinitialized your database. The JobId filter works only if you do not run multiple simultaneous jobs. This value is optional and not used by Bareos to restore files.
 
 Job
-   :index:`\ <single: Bootstrap; Job>` The value specifies a Job name or list of Job names to be matched on the current Volume. The Job corresponds to a unique VolSessionId and VolSessionTime pair. However, the Job is perhaps a bit more readable by humans. Standard regular expressions (wildcards) may be used to match Job names. The Job filter works only if you do not run multiple simultaneous jobs. This value is optional and not used by Bareos to restore files.
+   :index:`\ <single: Bootstrap; Job>`\  The value specifies a Job name or list of Job names to be matched on the current Volume. The Job corresponds to a unique VolSessionId and VolSessionTime pair. However, the Job is perhaps a bit more readable by humans. Standard regular expressions (wildcards) may be used to match Job names. The Job filter works only if you do not run multiple simultaneous jobs. This value is optional and not used by Bareos to restore files.
 
 Client
-   :index:`\ <single: Bootstrap; Client>` The value specifies a Client name or list of Clients to will be matched on the current Volume. Standard regular expressions (wildcards) may be used to match Client names. The Client filter works only if you do not run multiple simultaneous jobs. This value is optional and not used by Bareos to restore files.
+   :index:`\ <single: Bootstrap; Client>`\  The value specifies a Client name or list of Clients to will be matched on the current Volume. Standard regular expressions (wildcards) may be used to match Client names. The Client filter works only if you do not run multiple simultaneous jobs. This value is optional and not used by Bareos to restore files.
 
 FileIndex
-   :index:`\ <single: Bootstrap; FileIndex>` The value specifies a FileIndex, list of FileIndexes, or range of FileIndexes to be selected from the current Volume. Each file (data) stored on a Volume within a Session has a unique FileIndex. For each Session, the first file written is assigned FileIndex equal to one and incremented for each file backed up.
+   :index:`\ <single: Bootstrap; FileIndex>`\  The value specifies a FileIndex, list of FileIndexes, or range of FileIndexes to be selected from the current Volume. Each file (data) stored on a Volume within a Session has a unique FileIndex. For each Session, the first file written is assigned FileIndex equal to one and incremented for each file backed up.
 
    This for a given Volume, the triple VolSessionId, VolSessionTime, and FileIndex uniquely identifies a file stored on the Volume. Multiple copies of the same file may be stored on the same Volume, but for each file, the triple VolSessionId, VolSessionTime, and FileIndex will be unique. This triple is stored in the Catalog database for each file.
 
    To restore a particular file, this value (or a range of FileIndexes) is required.
 
 FileRegex
-   :index:`\ <single: Bootstrap; FileRegex>` The value is a regular expression. When specified, only matching filenames will be restored.
+   :index:`\ <single: Bootstrap; FileRegex>`\  The value is a regular expression. When specified, only matching filenames will be restored.
 
    ::
 
          FileRegex=^/etc/passwd(.old)?
 
 Slot
-   :index:`\ <single: Bootstrap; Slot>` The value specifies the autochanger slot. There may be only a single Slot specification for each Volume.
+   :index:`\ <single: Bootstrap; Slot>`\  The value specifies the autochanger slot. There may be only a single Slot specification for each Volume.
 
 Stream
-   :index:`\ <single: Bootstrap; Stream>` The value specifies a Stream, a list of Streams, or a range of Streams to be selected from the current Volume. Unless you really know what you are doing (the internals of Bareos), you should avoid this specification. This value is optional and not used by Bareos to restore files.
+   :index:`\ <single: Bootstrap; Stream>`\  The value specifies a Stream, a list of Streams, or a range of Streams to be selected from the current Volume. Unless you really know what you are doing (the internals of Bareos), you should avoid this specification. This value is optional and not used by Bareos to restore files.
 
 The Volume record is a bit special in that it must be the first record. The other keyword records may appear in any order and any number following a Volume record.
 
@@ -234,7 +234,7 @@ and the following bootstrap file would restore those files:
 Automatic Generation of Bootstrap Files
 ---------------------------------------
 
-:index:`\ <single: Files; Automatic Generation of Bootstrap>` :index:`\ <single: Bootstrap; Automatic Generation>`
+:index:`\ <single: Files; Automatic Generation of Bootstrap>`\  :index:`\ <single: Bootstrap; Automatic Generation>`\ 
 
 One thing that is probably worth knowing: the bootstrap files that are generated automatically at the end of the job are not as optimized as those generated by the restore command. This is because during Incremental and Differential jobs, the records pertaining to the files written for the Job are appended to the end of the bootstrap file. As consequence, all the files saved to an Incremental or Differential job will be restored first by the Full save, then by any Incremental or Differential
 saves.
@@ -263,7 +263,7 @@ The no answers the Do you want to run this (yes/mod/no) question.
 Bootstrap for bscan
 -------------------
 
-:index:`\ <single: bscan>` :index:`\ <single: bscan; bootstrap>` :index:`\ <single: Bootstrap; bscan>` :index:`\ <single: Command; bscan>` 
+:index:`\ <single: bscan>`\  :index:`\ <single: bscan; bootstrap>`\  :index:`\ <single: Bootstrap; bscan>`\  :index:`\ <single: Command; bscan>`\  
 
 .. _bscanBootstrap:
 
@@ -286,7 +286,7 @@ If you have a very large number of Volumes to scan with bscan, you may exceed th
 Bootstrap Example
 -----------------
 
-:index:`\ <single: Example; Bootstrap>` :index:`\ <single: Bootstrap; Example>`
+:index:`\ <single: Example; Bootstrap>`\  :index:`\ <single: Bootstrap; Example>`\ 
 
 If you want to extract or copy a single Job, you can do it by selecting by JobId (code not tested) or better yet, if you know the VolSessionTime and the VolSessionId (printed on Job report and in Catalog), specifying this is by far the best. Using the VolSessionTime and VolSessionId is the way Bareos does restores. A bsr file might look like the following:
 

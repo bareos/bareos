@@ -3,7 +3,7 @@
 Tutorial
 ========
 
-:index:`\ <single: Tutorial>`
+:index:`\ <single: Tutorial>`\ 
 
 This chapter will guide you through running Bareos. To do so, we assume you have installed Bareos. However, we assume that you have not modified the configuration. The examples in this chapter use the default configuration files and will write the volumes to disk in your :file:`/var/lib/bareos/storage/` directory.
 
@@ -42,7 +42,7 @@ For installing Bareos, follow the instructions from the :ref:`InstallChapter` ch
 Starting the Daemons
 --------------------
 
-:index:`\ <single: Starting the Daemons>` :index:`\ <single: Daemon; Start>`
+:index:`\ <single: Starting the Daemons>`\  :index:`\ <single: Daemon; Start>`\ 
 
 Assuming you have installed the packages, to start the three daemons, from your installation directory, simply enter:
 
@@ -134,7 +134,7 @@ Details of the console program’s commands are explained in the :ref:`section-b
 Running a Job
 -------------
 
-:index:`\ <single: Job; Running a>` :index:`\ <single: Running a Job>`
+:index:`\ <single: Job; Running a>`\  :index:`\ <single: Running a Job>`\ 
 
 At this point, we assume you have done the following:
 
@@ -385,7 +385,7 @@ If you would like to try restoring the files that you just backed up, read the f
 Restoring Your Files
 --------------------
 
-:index:`\ <single: Files; Restoring Your>` :index:`\ <single: Restoring Your Files>`
+:index:`\ <single: Files; Restoring Your>`\  :index:`\ <single: Restoring Your Files>`\ 
 
 If you have run the default configuration and run the job as demonstrated above, you can restore the backed up files in the Console program by entering:
 
@@ -567,7 +567,7 @@ After exiting the Console program, you can examine the files in :file:`/tmp/bare
 Quitting the Console Program
 ----------------------------
 
-:index:`\ <single: Program; Quitting the Console>` :index:`\ <single: Quitting the Console Program>`
+:index:`\ <single: Program; Quitting the Console>`\  :index:`\ <single: Quitting the Console Program>`\ 
 
 Simply enter the command :bcommand:`quit`.
 
@@ -580,7 +580,7 @@ Adding a Client
 
 .. _section-AddAClient:
 
- :index:`\ <single: Client; Adding a Second>` :index:`\ <single: Adding a Client>`
+ :index:`\ <single: Client; Adding a Second>`\  :index:`\ <single: Adding a Client>`\ 
 
 If you have gotten the example shown above to work on your system, you may be ready to add a second Client (|fd|). That is you have a second machine that you would like backed up. Lets assume, following settings about the machine you want to add to your backup environment:
 
@@ -800,7 +800,7 @@ The same considerations apply if you have just mounted a blank tape in a drive. 
 Pools
 -----
 
-:index:`\ <single: Pool; Overview>`
+:index:`\ <single: Pool; Overview>`\ 
 
 Creating the Pool is automatically done when the |dir| starts, so if you understand Pools, you can skip to the next section.
 
@@ -829,7 +829,7 @@ When Bareos starts, it ensures that all Pool resource definitions have been reco
 Other Useful Console Commands
 -----------------------------
 
-:index:`\ <single: Console; Commands; Useful>`
+:index:`\ <single: Console; Commands; Useful>`\ 
 
 help
    Show the list all all available commands.
@@ -838,40 +838,40 @@ help list
    Show detail information about a specific command, in this case the command :bcommand:`list`.
 
 status dir
-   :index:`\ <single: Console; Command; status dir>` Print a status of all running jobs and jobs scheduled in the next 24 hours.
+   :index:`\ <single: Console; Command; status dir>`\  Print a status of all running jobs and jobs scheduled in the next 24 hours.
 
 status
-   :index:`\ <single: Console; Command; status>` The console program will prompt you to select a daemon type, then will request the daemon’s status.
+   :index:`\ <single: Console; Command; status>`\  The console program will prompt you to select a daemon type, then will request the daemon’s status.
 
 status jobid=nn
-   :index:`\ <single: Console; Command; status jobid>` Print a status of JobId nn if it is running. The Storage daemon is contacted and requested to print a current status of the job as well.
+   :index:`\ <single: Console; Command; status jobid>`\  Print a status of JobId nn if it is running. The Storage daemon is contacted and requested to print a current status of the job as well.
 
 list pools
-   :index:`\ <single: Console; Command; list pools>` List the pools defined in the Catalog (normally only Default is used).
+   :index:`\ <single: Console; Command; list pools>`\  List the pools defined in the Catalog (normally only Default is used).
 
 list volumes
-   :index:`\ <single: Console; Command; list volumes>` Lists all the media defined in the Catalog.
+   :index:`\ <single: Console; Command; list volumes>`\  Lists all the media defined in the Catalog.
 
 list jobs
-   :index:`\ <single: Console; Command; list jobs>` Lists all jobs in the Catalog that have run.
+   :index:`\ <single: Console; Command; list jobs>`\  Lists all jobs in the Catalog that have run.
 
 list jobid=nn
-   :index:`\ <single: Console; Command; list jobid>` Lists JobId nn from the Catalog.
+   :index:`\ <single: Console; Command; list jobid>`\  Lists JobId nn from the Catalog.
 
 list jobtotals
-   :index:`\ <single: Console; Command; list jobtotals>` Lists totals for all jobs in the Catalog.
+   :index:`\ <single: Console; Command; list jobtotals>`\  Lists totals for all jobs in the Catalog.
 
 list files jobid=nn
-   :index:`\ <single: Console; Command; list files jobid>` List the files that were saved for JobId nn.
+   :index:`\ <single: Console; Command; list files jobid>`\  List the files that were saved for JobId nn.
 
 list jobmedia
-   :index:`\ <single: Console; Command; list jobmedia>` List the media information for each Job run.
+   :index:`\ <single: Console; Command; list jobmedia>`\  List the media information for each Job run.
 
 messages
-   :index:`\ <single: Console; Command; messages>` Prints any messages that have been directed to the console.
+   :index:`\ <single: Console; Command; messages>`\  Prints any messages that have been directed to the console.
 
 quit
-   :index:`\ <single: Console; Command; quit>` Exit or quit the console program.
+   :index:`\ <single: Console; Command; quit>`\  Exit or quit the console program.
 
 Most of the commands given above, with the exception of list, will prompt you for the necessary arguments if you simply enter the command name.
 

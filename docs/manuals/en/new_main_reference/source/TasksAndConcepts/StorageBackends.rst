@@ -26,7 +26,7 @@ A Bareos Storage Daemon can use various storage backends:
 Droplet Storage Backend
 -----------------------
 
-:index:`\ <single: Backend; Droplet>` :index:`\ <single: Backend; Droplet; S3>` :index:`\ <single: Backend; S3|see {Backend; Droplet}>`
+:index:`\ <single: Backend; Droplet>`\  :index:`\ <single: Backend; Droplet; S3>`\  :index:`\ <single: Backend; S3|see {Backend; Droplet}>`\ 
 
 The **bareos-storage-droplet** backend (:sinceVersion:`17.2.7: Droplet`) can be used to access Object Storage through **libdroplet**. Droplet support a number of backends, most notably S3. For details about Droplet itself see https://github.com/scality/Droplet.
 

@@ -1,7 +1,7 @@
 NDMP Backups with Bareos
 ========================
 
-:index:`\ <single: NDMP; Overview>`
+:index:`\ <single: NDMP; Overview>`\ 
 
 NDMP Basics
 -----------
@@ -239,7 +239,7 @@ On restore, the data is read by the conventional resource, and then recovered as
 Example Setup for NDMP_BAREOS backup
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: NDMP; Example; NDMP\_BAREOS>`
+:index:`\ <single: NDMP; Example; NDMP\_BAREOS>`\ 
 
 This example starts from a clean default Bareos installation.
 
@@ -487,7 +487,7 @@ To specify what files and directories from the storage appliance should be backe
 
 The specified directory needs to be a filesystem or a subdirectory of a filesystem which can be accessed by NDMP. Which filesystems are available is showed in the :bcommand:`status client` output of the NDMP client.
 
-:index:`\ <single: NDMP; Environment variables>` Additionally, NDMP can be configured via NDMP environment variables. These can be specified in the Options Block of the Fileset with the :strong:`Meta`\  keyword. Which variables are available is partly depending on the NDMP implementation of the Storage Appliance.
+:index:`\ <single: NDMP; Environment variables>`\  Additionally, NDMP can be configured via NDMP environment variables. These can be specified in the Options Block of the Fileset with the :strong:`Meta`\  keyword. Which variables are available is partly depending on the NDMP implementation of the Storage Appliance.
 
 .. code-block:: bareosconfig
    :caption: NDMP Fileset
@@ -939,7 +939,7 @@ original file name              where                                 restored f
 NDMP Copy Jobs
 ~~~~~~~~~~~~~~
 
-:index:`\ <single: Copy; NDMP>` :index:`\ <single: NDMP; Copy jobs>`
+:index:`\ <single: Copy; NDMP>`\  :index:`\ <single: NDMP; Copy jobs>`\ 
 
 To be able to do copy jobs, we need to have a second storage resource where we can copy the data to. Depending on your requirements, this resource can be added to the existing |sd| (e.g. :config:option:`Sd/Storage = autochanger-0`\  for tape based backups) or to an additional |sd|.
 
@@ -1140,7 +1140,7 @@ This list the specific limitiations of the NDMP_BAREOS protocol. For limitation 
 NDMP Job limitations when scanning in volumes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`\ <single: NDMP; File History>`
+:index:`\ <single: NDMP; File History>`\ 
 
 For NDMP jobs, all data is stored into a single big file. The file and directory information (File History in NDMP Terms) is stored as hardlinks to this big file.
 
@@ -1178,7 +1178,7 @@ When using NDMP_NATIVE, the Tape Agent must be provided by some other systems. S
 Example Setup for NDMP_NATIVE backup
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: NDMP; Example; NDMP\_NATIVE>`
+:index:`\ <single: NDMP; Example; NDMP\_NATIVE>`\ 
 
 Configure a NDMP Client
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -1931,7 +1931,7 @@ This section contains additional information about the Bareos NDMP implementatio
 NDMP Backup Level
 ~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: NDMP; Level>`
+:index:`\ <single: NDMP; Level>`\ 
 
 The trailing number in the main backup file (after the :file:`%` character) indicates the NDMP backup level:
 

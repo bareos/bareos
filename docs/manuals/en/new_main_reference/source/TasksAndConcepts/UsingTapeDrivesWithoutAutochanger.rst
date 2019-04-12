@@ -3,7 +3,7 @@
 Using Tape Drives without Autochanger
 =====================================
 
-:index:`\ <single: Strategy; Backup>` :index:`\ <single: Backup Strategies>`
+:index:`\ <single: Strategy; Backup>`\  :index:`\ <single: Backup Strategies>`\ 
 
 Although Recycling and Backing Up to Disk Volume have been discussed in previous chapters, this chapter is meant to give you an overall view of possible backup strategies and to explain their advantages and disadvantages. 
 
@@ -14,7 +14,7 @@ Although Recycling and Backing Up to Disk Volume have been discussed in previous
 Simple One Tape Backup
 ----------------------
 
-:index:`\ <single: Backup; One Tape>` :index:`\ <single: One Tape Backup>`
+:index:`\ <single: Backup; One Tape>`\  :index:`\ <single: One Tape Backup>`\ 
 
 Probably the simplest strategy is to back everything up to a single tape and insert a new (or recycled) tape when it fills and Bareos requests a new one.
 
@@ -50,7 +50,7 @@ Using this strategy, one typically does a Full backup once a week followed by da
 Manually Changing Tapes
 -----------------------
 
-:index:`\ <single: Tape; Manually Changing>`
+:index:`\ <single: Tape; Manually Changing>`\ 
 
 If you use the strategy presented above, Bareos will ask you to change the tape, and you will unmount it and then remount it when you have inserted the new tape.
 
@@ -102,7 +102,7 @@ If you do not wish to interact with Bareos to change each tape, there are severa
 Daily Tape Rotation
 -------------------
 
-:index:`\ <single: Rotation; Daily Tape>` :index:`\ <single: Daily Tape Rotation>`
+:index:`\ <single: Rotation; Daily Tape>`\  :index:`\ <single: Daily Tape Rotation>`\ 
 
 This scheme is quite different from the one mentioned above in that a Full backup is done to a different tape every day of the week. Generally, the backup will cycle continuously through five or six tapes each week. Variations are to use a different tape each Friday, and possibly at the beginning of the month. Thus if backups are done Monday through Friday only, you need only five tapes, and by having two Friday tapes, you need a total of six tapes. Many sites run this way, or using
 modifications of it based on two week cycles or longer.
