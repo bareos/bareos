@@ -22,9 +22,9 @@
 */
 
 class ConfigurationParser;
-ConfigurationParser* my_config = nullptr;
 
 namespace filedaemon {
+ConfigurationParser* my_config = nullptr;
 
 bool no_signals = false;
 bool backup_only_mode = false;

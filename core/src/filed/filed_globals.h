@@ -25,14 +25,16 @@
 #define BAREOS_FILED_FILED_GLOBALS_H_ 1
 
 class ConfigurationParser;
-extern ConfigurationParser* my_config;
 
 namespace filedaemon {
+
+extern ConfigurationParser* my_config;
 
 extern bool no_signals;
 extern bool backup_only_mode;
 extern bool restore_only_mode;
 
+class ClientResource;
 extern ClientResource* me;
 extern void* start_heap;
 extern char* configfile;
