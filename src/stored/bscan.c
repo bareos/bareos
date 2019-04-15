@@ -754,8 +754,6 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
                if (!db->update_job_end_record(bjcr, &jr)) {
                   Pmsg1(0, _("Could not update job record. ERR=%s\n"), db->strerror());
                }
-               mjcr->read_dcr = NULL;
-               free_jcr(mjcr);
             }
          }
          mr.VolFiles = rec->File;

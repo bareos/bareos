@@ -147,13 +147,16 @@ static bool clone_record_internally(DCR *dcr, DEV_RECORD *rec)
 
             unser_session_label(label, rec);
 
-            /*
-             * set job info from first SOS label
-             */
+            if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY)) {
+              bstrncpy(jcr->Job, label->Job, sizeof(jcr->Job));
+              pm_strcpy(jcr->job_name, label->JobName);
+              pm_strcpy(jcr->client_name, label->ClientName);
+              pm_strcpy(jcr->fileset_name, label->FileSetName);
+              pm_strcpy(jcr->fileset_md5, label->FileSetMD5);
+            }
             jcr->setJobType(label->JobType);
             jcr->setJobLevel(label->JobLevel);
             Dmsg1(200, "joblevel from SOS_LABEL is now %c\n", label->JobLevel);
-            bstrncpy(jcr->Job, label->Job, sizeof(jcr->Job));
 
             if (label->VerNum >= 11) {
                jcr->sched_time = btime_to_unix(label->write_btime);
@@ -177,15 +180,11 @@ static bool clone_record_internally(DCR *dcr, DEV_RECORD *rec)
             }
          } else {
             Dmsg0(200, "Found additional SOS_LABEL, ignoring! \n");
-            retval = true;
-            goto bail_out;
          }
-
-      } else  {
-         /* Other label than SOS -> skip */
-         retval = true;
-         goto bail_out;
       }
+      /* Other label than SOS -> skip */
+      retval = true;
+      goto bail_out;
    }
 
    /*
