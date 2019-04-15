@@ -34,7 +34,7 @@ enum TlsPolicy : uint32_t
   kBnetTlsRequired = 2,  /*!< TLS with certificates is required */
   kBnetTlsAuto = 4,      /*!< TLS mode will be negotiated by ssl handshake */
   kBnetTlsDeny = 0xFF,   /*!< TLS connection not allowed */
-  kBnetTlsUnknown = 0xFE /*!< TLS connection not allowed */
+  kBnetTlsUnknown = 0xFE /*!< initializer constant */
 };
 
 class TlsResource {
