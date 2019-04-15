@@ -771,8 +771,6 @@ static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec)
                if (!db->UpdateJobEndRecord(bjcr, &jr)) {
                   Pmsg1(0, _("Could not update job record. ERR=%s\n"), db->strerror());
                }
-               mjcr->read_dcr = NULL;
-               FreeJcr(mjcr);
             }
          }
          mr.VolFiles = rec->File;
