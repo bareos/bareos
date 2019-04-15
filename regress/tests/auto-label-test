@@ -2,7 +2,6 @@
 #
 #  Test if Bareos can automatically create a Volume label.
 #
-
 TestName="auto-label-test"
 JobName=AutoLabel
 . scripts/functions

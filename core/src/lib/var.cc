@@ -1745,7 +1745,7 @@ static int lookup_value(var_t* var,
   if (ctx->rel_lookup_flag && rc == VAR_ERR_UNDEFINED_VARIABLE) {
     ctx->rel_lookup_cnt--;
     buf[0] = EOS;
-    *val_ptr = bstrdup(buf);
+    *val_ptr = strdup(buf);
     *val_len = 0;
     *val_size = 0;
     return VAR_OK;
@@ -2090,7 +2090,6 @@ static var_rc_t parse_input(var_t* var,
 {
   const char* p;
   int rc, rc2;
-  tokenbuf_t result;
   int start, step, stop, open_stop;
   int i;
   int output_backup;
@@ -2194,6 +2193,7 @@ static var_rc_t parse_input(var_t* var,
       goto error_return;
 
     /* try to parse a variable construct */
+    tokenbuf_t result;
     tokenbuf_init(&result);
     rc = ParseVariable(var, ctx, p, end, &result);
     if (rc > 0) {

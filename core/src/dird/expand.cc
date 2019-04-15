@@ -75,7 +75,7 @@ static int date_item(JobControlRecord* jcr,
       break;
   }
   Bsnprintf(buf, sizeof(buf), "%d", val);
-  *val_ptr = bstrdup(buf);
+  *val_ptr = strdup(buf);
   *val_len = strlen(buf);
   *val_size = *val_len + 1;
 
@@ -141,7 +141,7 @@ static int job_item(JobControlRecord* jcr,
       break;
   }
 
-  *val_ptr = bstrdup(str);
+  *val_ptr = strdup(str);
   *val_len = strlen(str);
   *val_size = *val_len + 1;
 
@@ -243,12 +243,12 @@ static var_rc_t lookup_counter_var(var_t* ctx,
       if (var_index == -1) {
         Mmsg(buf, "%d", counter->CurrentValue);
         *val_len = Mmsg(buf, "%d", strlen(buf.c_str()));
-        *val_ptr = bstrdup(buf.c_str());
+        *val_ptr = strdup(buf.c_str());
         *val_size = 0; /* don't try to free val_ptr */
         return VAR_OK;
       } else {
         Mmsg(buf, "%d", counter->CurrentValue);
-        *val_ptr = bstrdup(buf.c_str());
+        *val_ptr = strdup(buf.c_str());
         *val_len = strlen(buf.c_str());
         *val_size = *val_len + 1;
       }
@@ -358,7 +358,7 @@ static var_rc_t lookup_var(var_t* ctx,
       len = count; /* else return # array items */
     }
     *val_len = Mmsg(buf, "%d", len);
-    *val_ptr = bstrdup(buf.c_str());
+    *val_ptr = strdup(buf.c_str());
     *val_size = 0; /* don't try to free val_ptr */
     return VAR_OK;
   }
@@ -549,7 +549,7 @@ bail_out:
          var_strerror(var_ctx, status));
   }
 
-  if (outp) { free(outp); }
+  if (outp) { Actuallyfree(outp); }
 
   return rtn_stat;
 }

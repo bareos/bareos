@@ -2,7 +2,6 @@
 #
 #  Test if Bareos can handle big fileset
 #
-
 TestName="big-fileset-test"
 JobName=BigFileSet
 . scripts/functions
