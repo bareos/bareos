@@ -29,6 +29,7 @@
 
 #include "lib/dlist.h"
 
+/* clang-format off */
 class IPADDR {
  public:
   typedef enum
@@ -46,7 +47,7 @@ class IPADDR {
 
  private:
   IPADDR();
-  i_type type;
+  i_type type = R_UNDEFINED;
   union {
     struct sockaddr dontuse;
     struct sockaddr_in dontuse4;
@@ -54,10 +55,10 @@ class IPADDR {
     struct sockaddr_in6 dontuse6;
 #endif
   } saddrbuf;
-  struct sockaddr* saddr;
-  struct sockaddr_in* saddr4;
+  struct sockaddr* saddr = nullptr;
+  struct sockaddr_in* saddr4 = nullptr;
 #ifdef HAVE_IPV6
-  struct sockaddr_in6* saddr6;
+  struct sockaddr_in6* saddr6 = nullptr;
 #endif
  public:
   void SetType(i_type o);
@@ -81,6 +82,7 @@ class IPADDR {
   /* private */
   dlink link;
 };
+/* clang-format on */
 
 void InitDefaultAddresses(dlist** addr, const char* port);
 void FreeAddresses(dlist* addrs);

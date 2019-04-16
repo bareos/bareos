@@ -41,16 +41,16 @@
 #define WIN32_BACKUP_DATA 1
 
 typedef struct _BWIN32_STREAM_ID {
-  int32_t dwStreamId;
-  int32_t dwStreamAttributes;
-  int64_t Size;
-  int32_t dwStreamNameSize;
+  int32_t dwStreamId = 0;
+  int32_t dwStreamAttributes = 0;
+  int64_t Size = 0;
+  int32_t dwStreamNameSize = 0;
 } BWIN32_STREAM_ID, *LPBWIN32_STREAM_ID;
 
 
 typedef struct _PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT {
-  int64_t liNextHeader;
-  bool bIsInData;
+  int64_t liNextHeader = 0;
+  bool bIsInData = false;
   BWIN32_STREAM_ID header_stream;
 } PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT;
 
@@ -73,26 +73,26 @@ enum
 
 /* Basic Win32 low level I/O file packet */
 struct BareosWinFilePacket {
-  bool use_backup_api; /**< set if using BackupRead/Write */
-  bool
-      encrypted; /**< set if using ReadEncryptedFileRaw/WriteEncryptedFileRaw */
-  int mode;      /**< set if file is open */
-  HANDLE fh;     /**< Win32 file handle */
-  int fid;       /**< fd if doing Unix style */
-  LPVOID lpContext;      /**< BackupRead/Write context */
-  PVOID pvContext;       /**< Encryption context */
-  POOLMEM* errmsg;       /**< error message buffer */
-  DWORD rw_bytes;        /**< Bytes read or written */
-  DWORD lerror;          /**< Last error code */
-  int BErrNo;            /**< errno */
-  boffset_t offset;      /**< Delta offset */
-  JobControlRecord* jcr; /**< jcr for editing job codes */
+  bool use_backup_api = false; /**< set if using BackupRead/Write */
+  bool encrypted =
+      false;    /**< set if using ReadEncryptedFileRaw/WriteEncryptedFileRaw */
+  int mode = 0; /**< set if file is open */
+  HANDLE fh = INVALID_HANDLE_VALUE; /**< Win32 file handle */
+  int fid = 0;                      /**< fd if doing Unix style */
+  LPVOID lpContext = nullptr;       /**< BackupRead/Write context */
+  PVOID pvContext = nullptr;        /**< Encryption context */
+  POOLMEM* errmsg = nullptr;        /**< error message buffer */
+  DWORD rw_bytes = 0;               /**< Bytes read or written */
+  DWORD lerror = 0;                 /**< Last error code */
+  int BErrNo = 0;                   /**< errno */
+  boffset_t offset = 0;             /**< Delta offset */
+  JobControlRecord* jcr = nullptr;  /**< jcr for editing job codes */
   PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT
-  win32DecompContext;    /**< context for decomposition of win32 backup streams
-                          */
-  int use_backup_decomp; /**< set if using BackupRead Stream Decomposition */
-  bool reparse_point;    /**< set if reparse point */
-  bool cmd_plugin;       /**< set if we have a command plugin */
+  win32DecompContext; /**< context for decomposition of win32 backup streams */
+  int use_backup_decomp =
+      0; /**< set if using BackupRead Stream Decomposition */
+  bool reparse_point = false; /**< set if reparse point */
+  bool cmd_plugin = false;    /**< set if we have a command plugin */
 };
 
 HANDLE BgetHandle(BareosWinFilePacket* bfd);
@@ -108,18 +108,19 @@ HANDLE BgetHandle(BareosWinFilePacket* bfd);
 
 /* Basic Unix low level I/O file packet */
 struct BareosWinFilePacket {
-  int fid;               /**< file id on Unix */
-  int flags_;            /**< open flags */
-  int BErrNo;            /**< errno */
-  int32_t lerror;        /**< not used - simplies Win32 builds */
-  boffset_t offset;      /**< Delta offset */
-  JobControlRecord* jcr; /**< jcr for editing job codes */
+  int fid = 0;                     /**< file id on Unix */
+  int flags_ = 0;                  /**< open flags */
+  int BErrNo = 0;                  /**< errno */
+  int32_t lerror = 0;              /**< not used - simplies Win32 builds */
+  boffset_t offset{0};             /**< Delta offset */
+  JobControlRecord* jcr = nullptr; /**< jcr for editing job codes */
   PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT
-  win32DecompContext;    /**< context for decomposition of win32 backup streams
-                          */
-  int use_backup_decomp; /**< set if using BackupRead Stream Decomposition */
-  bool reparse_point;    /**< not used in Unix */
-  bool cmd_plugin;       /**< set if we have a command plugin */
+  win32DecompContext; /**< context for decomposition of win32 backup streams
+                       */
+  int use_backup_decomp =
+      0; /**< set if using BackupRead Stream Decomposition */
+  bool reparse_point = false; /**< not used in Unix */
+  bool cmd_plugin = false;    /**< set if we have a command plugin */
 };
 
 #endif

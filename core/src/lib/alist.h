@@ -85,12 +85,12 @@ enum
  *               array of pointers to inserted items
  */
 class alist {
-  void** items;
-  int num_items;
-  int max_items;
-  int num_grow;
-  int cur_item;
-  bool own_items;
+  void** items = nullptr;
+  int num_items = 0;
+  int max_items = 0;
+  int num_grow = 0;
+  int cur_item = 0;
+  bool own_items = false;
   void GrowList(void);
 
  public:

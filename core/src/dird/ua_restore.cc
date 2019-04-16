@@ -473,7 +473,8 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   /* Include current second if using current time */
   utime_t now = time(NULL) + 1;
   JobId_t JobId;
-  JobDbRecord jr = {(JobId_t)-1};
+  JobDbRecord jr;
+  jr.JobId = -1;
   bool done = false;
   int i, j;
   const char* list[] = {

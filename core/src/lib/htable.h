@@ -86,26 +86,26 @@ struct h_mem {
 #endif
 
 class htable {
-  hlink** table;       /* Hash table */
-  int loffset;         /* Link offset in item */
-  hlink* walkptr;      /* Table walk pointer */
-  uint64_t hash;       /* Temp storage */
-  uint64_t total_size; /* Total bytes malloced */
-  uint32_t
-      extend_length;   /* Number of bytes to allocate when extending buffer */
-  uint32_t walk_index; /* Table walk index */
-  uint32_t num_items;  /* Current number of items */
-  uint32_t max_items;  /* Maximum items before growing */
-  uint32_t buckets;    /* Size of hash table */
-  uint32_t index;      /* Temp storage */
-  uint32_t mask;       /* "Remainder" mask */
-  uint32_t rshift;     /* Amount to shift down */
-  uint32_t blocks;     /* Blocks malloced */
-  struct h_mem* mem_block;      /* Malloc'ed memory block chain */
-  void MallocBigBuf(int size);  /* Get a big buffer */
-  void HashIndex(char* key);    /* Produce hash key,index */
-  void HashIndex(uint32_t key); /* Produce hash key,index */
-  void HashIndex(uint64_t key); /* Produce hash key,index */
+  hlink** table = nullptr;  /* Hash table */
+  int loffset = 0;          /* Link offset in item */
+  hlink* walkptr = nullptr; /* Table walk pointer */
+  uint64_t hash = 0;        /* Temp storage */
+  uint64_t total_size = 0;  /* Total bytes malloced */
+  uint32_t extend_length =
+      0; /* Number of bytes to allocate when extending buffer */
+  uint32_t walk_index = 0;           /* Table walk index */
+  uint32_t num_items = 0;            /* Current number of items */
+  uint32_t max_items = 0;            /* Maximum items before growing */
+  uint32_t buckets = 0;              /* Size of hash table */
+  uint32_t index = 0;                /* Temp storage */
+  uint32_t mask = 0;                 /* "Remainder" mask */
+  uint32_t rshift = 0;               /* Amount to shift down */
+  uint32_t blocks = 0;               /* Blocks malloced */
+  struct h_mem* mem_block = nullptr; /* Malloc'ed memory block chain */
+  void MallocBigBuf(int size);       /* Get a big buffer */
+  void HashIndex(char* key);         /* Produce hash key,index */
+  void HashIndex(uint32_t key);      /* Produce hash key,index */
+  void HashIndex(uint64_t key);      /* Produce hash key,index */
   void HashIndex(uint8_t* key, uint32_t key_len); /* Produce hash key,index */
   void grow_table();                              /* Grow the table */
 

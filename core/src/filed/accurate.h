@@ -62,21 +62,13 @@ struct accurate_payload {
  */
 class BareosAccurateFilelist {
  protected:
-  int64_t filenr_;
-  char* seen_bitmap_;
-  JobControlRecord* jcr_;
-  uint32_t number_of_previous_files_;
+  int64_t filenr_ = 0;
+  char* seen_bitmap_ = nullptr;
+  JobControlRecord* jcr_ = nullptr;
+  uint32_t number_of_previous_files_ = 0;
 
  public:
-  /* methods */
-  BareosAccurateFilelist()
-  {
-    filenr_ = 0;
-    seen_bitmap_ = NULL;
-    number_of_previous_files_ = 0;
-    jcr_ = NULL;
-  }
-
+  BareosAccurateFilelist() = default;
   virtual ~BareosAccurateFilelist() {}
 
   virtual bool init() = 0;

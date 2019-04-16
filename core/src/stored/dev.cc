@@ -482,9 +482,6 @@ bool DoubleDevWaitTime(Device* dev)
   return true;
 }
 
-Device::Device() { fd_ = -1; }
-
-
 /**
  * Set the block size of the device.
  * If the volume block size is zero, we set the max block size to what is

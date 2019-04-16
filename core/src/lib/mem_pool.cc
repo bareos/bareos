@@ -131,7 +131,7 @@ static void SmartAllocMsg(const char* file, int line, const char* fmt, ...)
 }
 
 
-#ifdef SMARTALLOC
+#if 0  // Ueb def SMARTALLOC
 POOLMEM* sm_get_pool_memory(const char* fname, int lineno, int pool)
 {
   struct abufhead* buf;

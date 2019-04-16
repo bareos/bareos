@@ -43,11 +43,10 @@
 
 dbid_list::dbid_list()
 {
-  memset(this, 0, sizeof(dbid_list));
   max_ids = 1000;
   DBId = (DBId_t*)malloc(max_ids * sizeof(DBId_t));
   num_ids = num_seen = tot_ids = 0;
-  PurgedFiles = NULL;
+  PurgedFiles = nullptr;
 }
 
 dbid_list::~dbid_list() { free(DBId); }

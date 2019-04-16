@@ -458,7 +458,7 @@ int DeviceControlRecord::CheckVolumeLabel(bool& ask, bool& autochanger)
       Dmsg1(150, "Vol OK name=%s\n", dev->VolHdr.VolumeName);
       dev->VolCatInfo = VolCatInfo; /* structure assignment */
       break;                        /* got a Volume */
-    case VOL_NAME_ERROR:
+    case VOL_NAME_ERROR: {
       VolumeCatalogInfo dcrVolCatInfo, devVolCatInfo;
       char saveVolumeName[MAX_NAME_LENGTH];
 
@@ -532,6 +532,7 @@ int DeviceControlRecord::CheckVolumeLabel(bool& ask, bool& autochanger)
         goto check_next_volume;
       }
       break; /* got a Volume */
+    }
     /*
      * At this point, we assume we have a blank tape mounted.
      */

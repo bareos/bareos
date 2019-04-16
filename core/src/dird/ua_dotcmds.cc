@@ -874,16 +874,6 @@ bool DotAdminCmds(UaContext* ua, const char* cmd)
       jcr->JobId = 1000; /* another ref NULL pointer */
       jcr->JobId = a;
 
-    } else if (strncmp(remote_cmd, "sm_dump", 7) == 0) {
-      sm_dump(false, true);
-      Dsm_check(100);
-    } else if (strncmp(remote_cmd, "sm_check", 8) == 0) {
-      result = sm_check_rtn(__FILE__, __LINE__, true);
-      if (result) {
-        ua->SendMsg("memory: OK\n");
-      } else {
-        ua->ErrorMsg("Memory managing problems detected.\n");
-      }
     } else if (strncmp(remote_cmd, ".exit", 5) == 0) {
       quit_cmd(ua, cmd);
     }
@@ -1463,17 +1453,20 @@ bool DotDefaultsCmd(UaContext* ua, const char* cmd)
        */
       ua->send->ObjectKeyValue("job", "%s=", job->resource_name_, "%s\n");
       ua->send->SendBuffer();
-      ua->send->ObjectKeyValue("pool", "%s=", job->pool->resource_name_, "%s\n");
+      ua->send->ObjectKeyValue("pool", "%s=", job->pool->resource_name_,
+                               "%s\n");
       ua->send->SendBuffer();
       ua->send->ObjectKeyValue("messages", "%s=", job->messages->resource_name_,
                                "%s\n");
       ua->send->SendBuffer();
       ua->send->ObjectKeyValue(
-          "client", "%s=", ((job->client) ? job->client->resource_name_ : _("*None*")),
+          "client",
+          "%s=", ((job->client) ? job->client->resource_name_ : _("*None*")),
           "%s\n");
       ua->send->SendBuffer();
       GetJobStorage(&store, job, NULL);
-      ua->send->ObjectKeyValue("storage", "%s=", store.store->resource_name_, "%s\n");
+      ua->send->ObjectKeyValue("storage", "%s=", store.store->resource_name_,
+                               "%s\n");
       ua->send->SendBuffer();
       ua->send->ObjectKeyValue(
           "where", "%s=", (job->RestoreWhere ? job->RestoreWhere : ""), "%s\n");
@@ -1486,13 +1479,14 @@ bool DotDefaultsCmd(UaContext* ua, const char* cmd)
       ua->send->SendBuffer();
       ua->send->ObjectKeyValue(
           "fileset",
-          "%s=", ((job->fileset) ? job->fileset->resource_name_ : _("*None*")), "%s\n");
+          "%s=", ((job->fileset) ? job->fileset->resource_name_ : _("*None*")),
+          "%s\n");
       ua->send->SendBuffer();
       ua->send->ObjectKeyValue("enabled", "%s=", job->enabled, "%d\n");
       ua->send->SendBuffer();
       ua->send->ObjectKeyValue(
-          "catalog",
-          "%s=", ((job->client) ? job->client->catalog->resource_name_ : _("*None*")),
+          "catalog", "%s=",
+          ((job->client) ? job->client->catalog->resource_name_ : _("*None*")),
           "%s\n");
       ua->send->SendBuffer();
     }
@@ -1515,8 +1509,8 @@ bool DotDefaultsCmd(UaContext* ua, const char* cmd)
                                "%s\n");
       ua->send->ObjectKeyValue("autoprune", "%s=", client->AutoPrune, "%d\n");
       ua->send->ObjectKeyValue("enabled", "%s=", client->enabled, "%d\n");
-      ua->send->ObjectKeyValue("catalog", "%s=", client->catalog->resource_name_,
-                               "%s\n");
+      ua->send->ObjectKeyValue("catalog",
+                               "%s=", client->catalog->resource_name_, "%s\n");
     }
   } else if ((pos = FindArgWithValue(ua, "storage")) >= 0) {
     StorageResource* storage;
@@ -1529,7 +1523,8 @@ bool DotDefaultsCmd(UaContext* ua, const char* cmd)
       DeviceResource* device;
       PoolMem devices;
 
-      ua->send->ObjectKeyValue("storage", "%s=", storage->resource_name_, "%s\n");
+      ua->send->ObjectKeyValue("storage", "%s=", storage->resource_name_,
+                               "%s\n");
       ua->send->ObjectKeyValue("address", "%s=", storage->address, "%s\n");
       ua->send->ObjectKeyValue("port", "%s=", storage->SDport, "%d\n");
       ua->send->ObjectKeyValue("enabled", "%s=", storage->enabled, "%d\n");

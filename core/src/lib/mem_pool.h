@@ -30,7 +30,7 @@
 #ifndef BAREOS_LIB_MEM_POOL_H_
 #define BAREOS_LIB_MEM_POOL_H_
 
-#ifdef SMARTALLOC
+#if 0  // def SMARTALLOC Ueb
 
 #define GetPoolMemory(pool) sm_get_pool_memory(__FILE__, __LINE__, pool)
 POOLMEM* sm_get_pool_memory(const char* file, int line, int pool);

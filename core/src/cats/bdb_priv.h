@@ -32,17 +32,17 @@ class BareosDbPrivateInterface : public BareosDb {
   /*
    * Members
    */
-  int status_;              /**< Status */
-  int num_rows_;            /**< Number of rows returned by last query */
-  int num_fields_;          /**< Number of fields returned by last query */
-  int rows_size_;           /**< Size of malloced rows */
-  int fields_size_;         /**< Size of malloced fields */
-  int row_number_;          /**< Row number from xx_data_seek */
-  int field_number_;        /**< Field number from SqlFieldSeek */
-  SQL_ROW rows_;            /**< Defined rows */
-  SQL_FIELD* fields_;       /**< Defined fields */
-  bool allow_transactions_; /**< Transactions allowed ? */
-  bool transaction_;        /**< Transaction started ? */
+  int status_ = 0;              /**< Status */
+  int num_rows_ = 0;            /**< Number of rows returned by last query */
+  int num_fields_ = 0;          /**< Number of fields returned by last query */
+  int rows_size_ = 0;           /**< Size of malloced rows */
+  int fields_size_ = 0;         /**< Size of malloced fields */
+  int row_number_ = 0;          /**< Row number from xx_data_seek */
+  int field_number_ = 0;        /**< Field number from SqlFieldSeek */
+  SQL_ROW rows_ = nullptr;      /**< Defined rows */
+  SQL_FIELD* fields_ = nullptr; /**< Defined fields */
+  bool allow_transactions_ = false; /**< Transactions allowed ? */
+  bool transaction_ = false;        /**< Transaction started ? */
 
  private:
   /*
@@ -73,10 +73,7 @@ class BareosDbPrivateInterface : public BareosDb {
                               AttributesDbRecord* ar) override = 0;
 
  public:
-  /*
-   * Methods
-   */
-  BareosDbPrivateInterface() { queries = NULL; }
-  virtual ~BareosDbPrivateInterface() {}
+  BareosDbPrivateInterface() = default;
+  virtual ~BareosDbPrivateInterface() = default;
 };
 #endif /* BAREOS_CATS_BDB_PRIV_H_ */

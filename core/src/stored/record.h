@@ -165,38 +165,38 @@ struct Volume_Label {
    * in the Device buffer, but are not actually written
    * to the tape.
    */
-  int32_t LabelType;  /**< This is written in header only */
-  uint32_t LabelSize; /**< length of serialized label */
+  int32_t LabelType = 0;  /**< This is written in header only */
+  uint32_t LabelSize = 0; /**< length of serialized label */
   /*
    * The items below this line are stored on
    * the tape
    */
-  char Id[32]; /**< Bareos Immortal ... */
+  char Id[32]{0}; /**< Bareos Immortal ... */
 
-  uint32_t VerNum; /**< Label version number */
+  uint32_t VerNum = 0; /**< Label version number */
 
   /* VerNum <= 10 */
-  float64_t label_date; /**< Date tape labeled */
-  float64_t label_time; /**< Time tape labeled */
+  float64_t label_date = 0.0; /**< Date tape labeled */
+  float64_t label_time = 0.0; /**< Time tape labeled */
 
   /* VerNum >= 11 */
-  btime_t label_btime; /**< tdate tape labeled */
-  btime_t write_btime; /**< tdate tape written */
+  btime_t label_btime = 0; /**< tdate tape labeled */
+  btime_t write_btime = 0; /**< tdate tape written */
 
   /* Unused with VerNum >= 11 */
-  float64_t write_date; /**< Date this label written */
-  float64_t write_time; /**< Time this label written */
+  float64_t write_date = 0.0; /**< Date this label written */
+  float64_t write_time = 0.0; /**< Time this label written */
 
-  char VolumeName[MAX_NAME_LENGTH];     /**< Volume name */
-  char PrevVolumeName[MAX_NAME_LENGTH]; /**< Previous Volume Name */
-  char PoolName[MAX_NAME_LENGTH];       /**< Pool name */
-  char PoolType[MAX_NAME_LENGTH];       /**< Pool type */
-  char MediaType[MAX_NAME_LENGTH];      /**< Type of this media */
+  char VolumeName[MAX_NAME_LENGTH]{0};     /**< Volume name */
+  char PrevVolumeName[MAX_NAME_LENGTH]{0}; /**< Previous Volume Name */
+  char PoolName[MAX_NAME_LENGTH]{0};       /**< Pool name */
+  char PoolType[MAX_NAME_LENGTH]{0};       /**< Pool type */
+  char MediaType[MAX_NAME_LENGTH]{0};      /**< Type of this media */
 
-  char HostName[MAX_NAME_LENGTH]; /**< Host name of writing computer */
-  char LabelProg[50];             /**< Label program name */
-  char ProgVersion[50];           /**< Program version */
-  char ProgDate[50];              /**< Program build date/time */
+  char HostName[MAX_NAME_LENGTH]{0}; /**< Host name of writing computer */
+  char LabelProg[50]{0};             /**< Label program name */
+  char ProgVersion[50]{0};           /**< Program version */
+  char ProgDate[50]{0};              /**< Program build date/time */
 };
 
 #define SER_LENGTH_Volume_Label \
@@ -211,40 +211,40 @@ typedef struct Volume_Label VOLUME_LABEL;
  *  This record is at the beginning and end of each session
  */
 struct Session_Label {
-  char Id[32]; /**< Bareos Immortal ... */
+  char Id[32]{0}; /**< Bareos Immortal ... */
 
-  uint32_t VerNum; /**< Label version number */
+  uint32_t VerNum = 0; /**< Label version number */
 
-  uint32_t JobId;       /**< Job id */
-  uint32_t VolumeIndex; /**< Sequence no of volume for this job */
+  uint32_t JobId = 0;       /**< Job id */
+  uint32_t VolumeIndex = 0; /**< Sequence no of volume for this job */
 
   /* VerNum >= 11 */
-  btime_t write_btime; /**< Tdate this label written */
+  btime_t write_btime = 0; /**< Tdate this label written */
 
   /* VerNum < 11 */
-  float64_t write_date; /**< Date this label written */
+  float64_t write_date = 0.0; /**< Date this label written */
 
   /* Unused VerNum >= 11 */
-  float64_t write_time; /**< Time this label written */
+  float64_t write_time = 0.0; /**< Time this label written */
 
-  char PoolName[MAX_NAME_LENGTH]; /**< Pool name */
-  char PoolType[MAX_NAME_LENGTH]; /**< Pool type */
-  char JobName[MAX_NAME_LENGTH];  /**< base Job name */
-  char ClientName[MAX_NAME_LENGTH];
-  char Job[MAX_NAME_LENGTH]; /**< Unique name of this Job */
-  char FileSetName[MAX_NAME_LENGTH];
-  char FileSetMD5[MAX_NAME_LENGTH];
-  uint32_t JobType;
-  uint32_t JobLevel;
+  char PoolName[MAX_NAME_LENGTH]{0}; /**< Pool name */
+  char PoolType[MAX_NAME_LENGTH]{0}; /**< Pool type */
+  char JobName[MAX_NAME_LENGTH]{0};  /**< base Job name */
+  char ClientName[MAX_NAME_LENGTH]{0};
+  char Job[MAX_NAME_LENGTH]{0}; /**< Unique name of this Job */
+  char FileSetName[MAX_NAME_LENGTH]{0};
+  char FileSetMD5[MAX_NAME_LENGTH]{0};
+  uint32_t JobType = 0;
+  uint32_t JobLevel = 0;
   /* The remainder are part of EOS label only */
-  uint32_t JobFiles;
-  uint64_t JobBytes;
-  uint32_t StartBlock;
-  uint32_t EndBlock;
-  uint32_t StartFile;
-  uint32_t EndFile;
-  uint32_t JobErrors;
-  uint32_t JobStatus; /**< Job status */
+  uint32_t JobFiles = 0;
+  uint64_t JobBytes = 0;
+  uint32_t StartBlock = 0;
+  uint32_t EndBlock = 0;
+  uint32_t StartFile = 0;
+  uint32_t EndFile = 0;
+  uint32_t JobErrors = 0;
+  uint32_t JobStatus = 0; /**< Job status */
 };
 typedef struct Session_Label SESSION_LABEL;
 
@@ -254,18 +254,18 @@ typedef struct Session_Label SESSION_LABEL;
  * Read context used to keep track of what is processed or not.
  */
 struct Read_Context {
-  DeviceRecord* rec;     /**< Record currently being processed */
-  dlist* recs;           /**< Linked list of record packets open */
-  SESSION_LABEL sessrec; /**< Start Of Session record info */
-  uint32_t
-      records_processed; /**< Number of records processed from this block */
-  int32_t lastFileIndex; /**< Last File Index processed */
+  DeviceRecord* rec = nullptr; /**< Record currently being processed */
+  dlist* recs = nullptr;       /**< Linked list of record packets open */
+  SESSION_LABEL sessrec;       /**< Start Of Session record info */
+  uint32_t records_processed =
+      0;                     /**< Number of records processed from this block */
+  int32_t lastFileIndex = 0; /**< Last File Index processed */
 };
 
 struct DelayedDataStream {
-  int32_t stream;          /**< stream less new bits */
-  char* content;           /**< stream data */
-  uint32_t content_length; /**< stream length */
+  int32_t stream = 0;          /**< stream less new bits */
+  char* content = nullptr;     /**< stream data */
+  uint32_t content_length = 0; /**< stream length */
 };
 
 #define READ_NO_FILEINDEX -999999

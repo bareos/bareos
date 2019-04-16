@@ -51,17 +51,17 @@
 #endif
 
 struct rblink {
-  void* parent;
-  void* left;
-  void* right;
-  bool red;
+  void* parent = nullptr;
+  void* left = nullptr;
+  void* right = nullptr;
+  bool red = false;
 };
 
 class rblist {
-  void* head;
-  int16_t loffset;
-  uint32_t num_items;
-  bool down;
+  void* head = nullptr;
+  int16_t loffset = 0;
+  uint32_t num_items = 0;
+  bool down = false;
   void LeftRotate(void* item);
   void RightRotate(void* item);
 

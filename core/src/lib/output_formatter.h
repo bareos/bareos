@@ -78,21 +78,21 @@ typedef enum of_filter_type
 } of_filter_type;
 
 typedef struct of_limit_filter_tuple {
-  int limit; /* Filter output to a maximum of limit entries */
+  int limit = 0; /* Filter output to a maximum of limit entries */
 } of_limit_filter_tuple;
 
 typedef struct of_offset_filter_tuple {
-  int offset;
+  int offset = 0;
 } of_offset_filter_tuple;
 
 typedef struct of_acl_filter_tuple {
-  int column;  /* Filter resource is located in this column */
-  int acltype; /* Filter resource based on this ACL type */
+  int column = 0;  /* Filter resource is located in this column */
+  int acltype = 0; /* Filter resource based on this ACL type */
 } of_acl_filter_tuple;
 
 typedef struct of_res_filter_tuple {
-  int column;  /* Filter resource is located in this column */
-  int restype; /* Filter resource based on this resource type */
+  int column = 0;  /* Filter resource is located in this column */
+  int restype = 0; /* Filter resource based on this resource type */
 } of_res_filter_tuple;
 
 typedef struct of_filter_tuple {
@@ -122,21 +122,21 @@ class OutputFormatter {
   /*
    * Members
    */
-  int api;
-  bool compact;
-  SEND_HANDLER* send_func;
-  FILTER_HANDLER* filter_func;
-  void* send_ctx;
-  void* filter_ctx;
-  alist* filters;
-  char* hidden_columns;
-  PoolMem* result_message_plain;
+  int api = 0;
+  bool compact = false;
+  SEND_HANDLER* send_func = nullptr;
+  FILTER_HANDLER* filter_func = nullptr;
+  void* send_ctx = nullptr;
+  void* filter_ctx = nullptr;
+  alist* filters = nullptr;
+  char* hidden_columns = nullptr;
+  PoolMem* result_message_plain = nullptr;
   static const unsigned int max_message_length_shown_in_error = 1024;
-  int num_rows_filtered;
+  int num_rows_filtered = 0;
 #if HAVE_JANSSON
-  json_t* result_json;
-  alist* result_stack_json;
-  json_t* message_object_json;
+  json_t* result_json = nullptr;
+  alist* result_stack_json = nullptr;
+  json_t* message_object_json = nullptr;
 #endif
 
  private:

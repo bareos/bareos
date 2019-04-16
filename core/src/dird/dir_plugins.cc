@@ -608,7 +608,7 @@ static bRC bareosGetValue(bpContext* ctx, brDirVariable var, void* value)
         Dmsg1(debuglevel, "dir-plugin: return bDirVarClient=%s\n",
               NPRT(*((char**)value)));
         break;
-      case bDirVarNumVols:
+      case bDirVarNumVols: {
         PoolDbRecord pr;
 
         memset(&pr, 0, sizeof(pr));
@@ -617,6 +617,7 @@ static bRC bareosGetValue(bpContext* ctx, brDirVariable var, void* value)
         *((int*)value) = pr.NumVols;
         Dmsg1(debuglevel, "dir-plugin: return bDirVarNumVols=%d\n", pr.NumVols);
         break;
+      }
       case bDirVarPool:
         *((char**)value) = jcr->res.pool->resource_name_;
         Dmsg1(debuglevel, "dir-plugin: return bDirVarPool=%s\n",

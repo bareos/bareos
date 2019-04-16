@@ -31,15 +31,17 @@
 #define QSIZE 10 /**< # of pointers in the queue */
 
 class CircularBuffer {
-  int size_;
-  int next_in_;
-  int next_out_;
-  int capacity_;
-  bool flush_;
-  pthread_mutex_t lock_;    /**< Lock the structure */
-  pthread_cond_t notfull_;  /**< Full -> not full condition */
-  pthread_cond_t notempty_; /**< Empty -> not empty condition */
-  void** data_;             /**< Circular buffer of pointers */
+  int size_ = 0;
+  int next_in_ = 0;
+  int next_out_ = 0;
+  int capacity_ = 0;
+  bool flush_ = 0;
+  pthread_mutex_t lock_ = PTHREAD_MUTEX_INITIALIZER; /**< Lock the structure */
+  pthread_cond_t notfull_ =
+      PTHREAD_COND_INITIALIZER; /**< Full -> not full condition */
+  pthread_cond_t notempty_ =
+      PTHREAD_COND_INITIALIZER; /**< Empty -> not empty condition */
+  void** data_ = nullptr;       /**< Circular buffer of pointers */
 
  public:
   CircularBuffer(int capacity = QSIZE);
@@ -59,11 +61,7 @@ class CircularBuffer {
 /**
  * Constructor
  */
-inline CircularBuffer::CircularBuffer(int capacity)
-{
-  data_ = NULL;
-  init(capacity);
-}
+inline CircularBuffer::CircularBuffer(int capacity) { init(capacity); }
 
 /**
  * Destructor

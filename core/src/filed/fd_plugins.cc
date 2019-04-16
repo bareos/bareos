@@ -2306,20 +2306,12 @@ static void* bareosMalloc(bpContext* ctx,
                           int line,
                           size_t size)
 {
-#ifdef SMARTALLOC
-  return sm_malloc(fname, line, size);
-#else
   return malloc(size);
-#endif
 }
 
 static void bareosFree(bpContext* ctx, const char* fname, int line, void* mem)
 {
-#ifdef SMARTALLOC
-  sm_free(fname, line, mem);
-#else
   free(mem);
-#endif
 }
 
 /**
