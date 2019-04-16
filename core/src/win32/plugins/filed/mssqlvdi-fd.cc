@@ -394,7 +394,7 @@ static bRC handlePluginEvent(bpContext* ctx, bEvent* event, void* value)
       /*
        * Save that we got a plugin override.
        */
-      p_ctx->plugin_options = bstrdup((char*)value);
+      p_ctx->plugin_options = strdup((char*)value);
       break;
     case bEventEndRestoreJob:
       retval = end_restore_job(ctx, value);
@@ -425,13 +425,13 @@ static bRC startBackupFile(bpContext* ctx, struct save_pkt* sp)
   /*
    * If no explicit instance name given use the DEFAULT_INSTANCE.
    */
-  if (!p_ctx->instance) { p_ctx->instance = bstrdup(DEFAULT_INSTANCE); }
+  if (!p_ctx->instance) { p_ctx->instance = strdup(DEFAULT_INSTANCE); }
 
   /*
    * If no explicit server address given use the DEFAULT_SERVER_ADDRESS.
    */
   if (!p_ctx->server_address) {
-    p_ctx->server_address = bstrdup(DEFAULT_SERVER_ADDRESS);
+    p_ctx->server_address = strdup(DEFAULT_SERVER_ADDRESS);
   }
 
   now = time(NULL);
@@ -458,7 +458,7 @@ static bRC startBackupFile(bpContext* ctx, struct save_pkt* sp)
       return bRC_Error;
   }
 
-  p_ctx->filename = bstrdup(fname.c_str());
+  p_ctx->filename = strdup(fname.c_str());
   Dmsg(ctx, debuglevel, "startBackupFile: Generated filename %s\n",
        p_ctx->filename);
 
@@ -528,7 +528,7 @@ static inline bool ParseBoolean(const char* argument_value)
 static inline void SetStringIfNull(char** destination, char* value)
 {
   if (!*destination) {
-    *destination = bstrdup(value);
+    *destination = strdup(value);
     StripBackSlashes(*destination);
   }
 }
@@ -540,7 +540,7 @@ static inline void SetString(char** destination, char* value)
 {
   if (*destination) { free(*destination); }
 
-  *destination = bstrdup(value);
+  *destination = strdup(value);
   StripBackSlashes(*destination);
 }
 
@@ -566,7 +566,7 @@ static bRC parse_plugin_definition(bpContext* ctx, void* value)
    * Parse the plugin definition.
    * Make a private copy of the whole string.
    */
-  plugin_definition = bstrdup((char*)value);
+  plugin_definition = strdup((char*)value);
 
   bp = strchr(plugin_definition, ':');
   if (!bp) {
@@ -917,7 +917,7 @@ static void adoThreadSetError(bpContext* ctx, _ADOConnection* adoConnection)
    * Keep the errors in a buffer these will be printed by the adoReportError
    * function.
    */
-  p_ctx->ado_errorstr = bstrdup(ado_errorstr.c_str());
+  p_ctx->ado_errorstr = strdup(ado_errorstr.c_str());
 
 bail_out:
   /*
@@ -1073,7 +1073,7 @@ static void SetAdoConnectString(bpContext* ctx)
        ado_connect_string.c_str());
 
   if (p_ctx->ado_connect_string) { free(p_ctx->ado_connect_string); }
-  p_ctx->ado_connect_string = bstrdup(ado_connect_string.c_str());
+  p_ctx->ado_connect_string = strdup(ado_connect_string.c_str());
 }
 
 /**
@@ -1089,7 +1089,7 @@ static inline void PerformAdoBackup(bpContext* ctx)
   /*
    * If no explicit instance name given usedthe DEFAULT_INSTANCE name.
    */
-  if (!p_ctx->instance) { p_ctx->instance = bstrdup(DEFAULT_INSTANCE); }
+  if (!p_ctx->instance) { p_ctx->instance = strdup(DEFAULT_INSTANCE); }
 
   SetAdoConnectString(ctx);
 
@@ -1123,7 +1123,7 @@ static inline void PerformAdoBackup(bpContext* ctx)
   Dmsg(ctx, debuglevel, "PerformAdoBackup: ADO Query '%s'\n",
        ado_query.c_str());
 
-  p_ctx->ado_query = bstrdup(ado_query.c_str());
+  p_ctx->ado_query = strdup(ado_query.c_str());
   FreePoolMemory(vdsname);
 }
 
@@ -1140,7 +1140,7 @@ static inline void perform_aDoRestore(bpContext* ctx)
   /*
    * If no explicit instance name given use the DEFAULT_INSTANCE name.
    */
-  if (!p_ctx->instance) { p_ctx->instance = bstrdup(DEFAULT_INSTANCE); }
+  if (!p_ctx->instance) { p_ctx->instance = strdup(DEFAULT_INSTANCE); }
 
   SetAdoConnectString(ctx);
 
@@ -1196,7 +1196,7 @@ static inline void perform_aDoRestore(bpContext* ctx)
   Dmsg(ctx, debuglevel, "perform_aDoRestore: ADO Query '%s'\n",
        ado_query.c_str());
 
-  p_ctx->ado_query = bstrdup(ado_query.c_str());
+  p_ctx->ado_query = strdup(ado_query.c_str());
   FreePoolMemory(vdsname);
 }
 

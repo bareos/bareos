@@ -296,7 +296,7 @@ char* lookup_crypto_cache_entry(const char* VolumeName)
   foreach_dlist (cce, cached_crypto_keys) {
     if (bstrcmp(cce->VolumeName, VolumeName)) {
       V(crypto_cache_lock);
-      return bstrdup(cce->EncryptionKey);
+      return strdup(cce->EncryptionKey);
     }
   }
 

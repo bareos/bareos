@@ -40,8 +40,8 @@ BareosResource::BareosResource(const BareosResource& other)
   /* do not copy next_ because that is part of the resource chain */
   next_ = nullptr;
   resource_name_ =
-      other.resource_name_ ? bstrdup(other.resource_name_) : nullptr;
-  description_ = other.description_ ? bstrdup(other.description_) : nullptr;
+      other.resource_name_ ? strdup(other.resource_name_) : nullptr;
+  description_ = other.description_ ? strdup(other.description_) : nullptr;
   rcode_ = other.rcode_;
   refcnt_ = other.refcnt_;
   ::memcpy(item_present_, other.item_present_, MAX_RES_ITEMS);

@@ -277,7 +277,7 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
   nis->filehist_size = jcr->res.job->FileHistSize;
 
   ndmp_sess.param->log.ctx = nis;
-  ndmp_sess.param->log_tag = bstrdup("DIR-NDMP");
+  ndmp_sess.param->log_tag = strdup("DIR-NDMP");
   ndmp_sess.dump_media_info = 1;
 
   /*
@@ -318,7 +318,7 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
   }
 
   if (nis->virtual_filename) { free(nis->virtual_filename); }
-  nis->virtual_filename = bstrdup(virtual_filename.c_str());
+  nis->virtual_filename = strdup(virtual_filename.c_str());
 
   // FIXME: disabled because of "missing media entry" error
   // if (!ndmp_validate_job(jcr, &ndmp_sess.control_acb->job)) {

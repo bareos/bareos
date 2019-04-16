@@ -103,19 +103,19 @@ DeviceResource::DeviceResource(const DeviceResource& other)
     , free_space_command(nullptr)
     , temporarily_swapped_numbered_name(nullptr) /* should not copy */
 {
-  if (other.media_type) { media_type = bstrdup(other.media_type); }
-  if (other.device_name) { device_name = bstrdup(other.device_name); }
-  if (other.device_options) { device_options = bstrdup(other.device_options); }
+  if (other.media_type) { media_type = strdup(other.media_type); }
+  if (other.device_name) { device_name = strdup(other.device_name); }
+  if (other.device_options) { device_options = strdup(other.device_options); }
   if (other.diag_device_name) {
-    diag_device_name = bstrdup(other.diag_device_name);
+    diag_device_name = strdup(other.diag_device_name);
   }
-  if (other.changer_name) { changer_name = bstrdup(other.changer_name); }
+  if (other.changer_name) { changer_name = strdup(other.changer_name); }
   if (other.changer_command) {
-    changer_command = bstrdup(other.changer_command);
+    changer_command = strdup(other.changer_command);
   }
-  if (other.alert_command) { alert_command = bstrdup(other.alert_command); }
+  if (other.alert_command) { alert_command = strdup(other.alert_command); }
   if (other.spool_directory) {
-    spool_directory = bstrdup(other.spool_directory);
+    spool_directory = strdup(other.spool_directory);
   }
   dev_type = other.dev_type;
   label_type = other.label_type;
@@ -150,16 +150,16 @@ DeviceResource::DeviceResource(const DeviceResource& other)
   max_job_spool_size = other.max_job_spool_size;
 
   max_part_size = other.max_part_size;
-  if (other.mount_point) { mount_point = bstrdup(other.mount_point); }
-  if (other.mount_command) { mount_command = bstrdup(other.mount_command); }
+  if (other.mount_point) { mount_point = strdup(other.mount_point); }
+  if (other.mount_command) { mount_command = strdup(other.mount_command); }
   if (other.unmount_command) {
-    unmount_command = bstrdup(other.unmount_command);
+    unmount_command = strdup(other.unmount_command);
   }
   if (other.write_part_command) {
-    write_part_command = bstrdup(other.write_part_command);
+    write_part_command = strdup(other.write_part_command);
   }
   if (other.free_space_command) {
-    free_space_command = bstrdup(other.free_space_command);
+    free_space_command = strdup(other.free_space_command);
   }
   count = other.count;
   multiplied_device_resource = other.multiplied_device_resource;
@@ -280,7 +280,7 @@ void DeviceResource::CreateAndAssignSerialNumber(uint16_t number)
   tmp_name += b;
 
   free(resource_name_);
-  resource_name_ = bstrdup(tmp_name.c_str());
+  resource_name_ = strdup(tmp_name.c_str());
 }
 
 

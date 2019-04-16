@@ -291,7 +291,7 @@ typedef struct DeviceStatusTrigger {
  * There is one of these for each physical device. Everything here is "global"
  * to that device and effects all jobs using the device.
  */
-class Device : public SmartAlloc {
+class Device {
  protected:
   int fd_; /**< File descriptor */
  private:
@@ -646,7 +646,7 @@ enum get_vol_info_rw
  * same DeviceControlRecord. Consequently, when creating/attaching/detaching
  * and freeing the DeviceControlRecord we must lock it (mutex_).
  */
-class DeviceControlRecord : public SmartAlloc {
+class DeviceControlRecord {
  private:
   bool dev_locked_;   /**< Set if dev already locked */
   int dev_lock_;      /**< Non-zero if rLock already called */
@@ -661,7 +661,7 @@ class DeviceControlRecord : public SmartAlloc {
   pthread_mutex_t r_mutex;          /**< rLock pre-mutex */
   Device* volatile dev;             /**< Pointer to device */
   DeviceResource* device;           /**< Pointer to device resource */
-  DeviceBlock* block;               /**< Pointer to current block */
+  DeviceBlock* block = nullptr;     /**< Pointer to current block */
   DeviceRecord* rec;                /**< Pointer to record being processed */
   DeviceRecord* before_rec;         /**< Pointer to record before translation */
   DeviceRecord* after_rec;          /**< Pointer to record after translation */

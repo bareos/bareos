@@ -328,7 +328,7 @@ static inline bool is_on_unwanted_volumes_list(const char* VolumeName,
   bool retval = false;
   char *list_item, *bp, *unwanted_volumes_list;
 
-  unwanted_volumes_list = bstrdup(unwanted_volumes);
+  unwanted_volumes_list = strdup(unwanted_volumes);
   list_item = unwanted_volumes_list;
   while (list_item) {
     bp = strchr(list_item, ',');

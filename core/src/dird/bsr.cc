@@ -51,7 +51,7 @@ namespace directordaemon {
 RestoreBootstrapRecordFileIndex* new_findex()
 {
   RestoreBootstrapRecordFileIndex* fi =
-      (RestoreBootstrapRecordFileIndex*)bmalloc(
+      (RestoreBootstrapRecordFileIndex*)malloc(
           sizeof(RestoreBootstrapRecordFileIndex));
   memset(fi, 0, sizeof(RestoreBootstrapRecordFileIndex));
   return fi;
@@ -171,7 +171,7 @@ static inline bool is_volume_selected(RestoreBootstrapRecordFileIndex* fi,
 RestoreBootstrapRecord* new_bsr()
 {
   RestoreBootstrapRecord* bsr =
-      (RestoreBootstrapRecord*)bmalloc(sizeof(RestoreBootstrapRecord));
+      (RestoreBootstrapRecord*)malloc(sizeof(RestoreBootstrapRecord));
 
   memset(bsr, 0, sizeof(RestoreBootstrapRecord));
   return bsr;
@@ -253,7 +253,7 @@ static void MakeUniqueRestoreFilename(UaContext* ua, PoolMem& fname)
     jcr->unlink_bsr = true;
   }
   if (jcr->RestoreBootstrap) { free(jcr->RestoreBootstrap); }
-  jcr->RestoreBootstrap = bstrdup(fname.c_str());
+  jcr->RestoreBootstrap = strdup(fname.c_str());
 }
 
 /**
@@ -676,7 +676,7 @@ void AddFindexAll(RestoreBootstrapRecord* bsr, uint32_t JobId)
       /*
        * If we use regexp to restore, set it for each jobid
        */
-      if (bsr->fileregex) { nbsr->next->fileregex = bstrdup(bsr->fileregex); }
+      if (bsr->fileregex) { nbsr->next->fileregex = strdup(bsr->fileregex); }
 
       nbsr->next->fi = new_findex();
       nbsr->next->fi->findex = 1;
@@ -712,7 +712,8 @@ bool OpenBootstrapFile(JobControlRecord* jcr, bootstrap_info& info)
   info.ua = NULL;
 
   if (!jcr->RestoreBootstrap) { return false; }
-  bstrncpy(info.storage, jcr->res.read_storage->resource_name_, MAX_NAME_LENGTH);
+  bstrncpy(info.storage, jcr->res.read_storage->resource_name_,
+           MAX_NAME_LENGTH);
 
   bs = fopen(jcr->RestoreBootstrap, "rb");
   if (!bs) {

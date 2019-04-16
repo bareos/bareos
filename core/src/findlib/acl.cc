@@ -516,7 +516,7 @@ static bacl_exit_code aix_build_acl_streams(JobControlRecord* jcr,
   if ((acl_text = acl_get(acl_data->last_fname)) != NULL) {
     acl_data->u.build->content_length =
         PmStrcpy(acl_data->u.build->content, acl_text);
-    Actuallyfree(acl_text);
+    free(acl_text);
     return SendAclStream(jcr, acl_data, STREAM_ACL_AIX_TEXT);
   }
   return bacl_exit_error;
@@ -1582,7 +1582,7 @@ static bacl_exit_code hpux_build_acl_streams(JobControlRecord* jcr,
     if ((acl_text = acltostr(n, acls, FORM_SHORT)) != NULL) {
       acl_data->u.build->content_length =
           PmStrcpy(acl_data->u.build->content, acl_text);
-      Actuallyfree(acl_text);
+      free(acl_text);
 
       return SendAclStream(jcr, acl_data, STREAM_ACL_HPUX_ACL_ENTRY);
     }
@@ -1818,7 +1818,7 @@ static bacl_exit_code solaris_build_acl_streams(JobControlRecord* jcr,
   if ((acl_text = acl_totext(aclp, flags)) != NULL) {
     acl_data->u.build->content_length =
         PmStrcpy(acl_data->u.build->content, acl_text);
-    Actuallyfree(acl_text);
+    free(acl_text);
 
     switch (acl_type(aclp)) {
       case ACLENT_T:
@@ -2048,7 +2048,7 @@ static bacl_exit_code solaris_build_acl_streams(JobControlRecord* jcr,
     if ((acl_text = acltotext(acls, n)) != NULL) {
       acl_data->u.build->content_length =
           PmStrcpy(acl_data->u.build->content, acl_text);
-      Actuallyfree(acl_text);
+      free(acl_text);
       free(acls);
       return SendAclStream(jcr, acl_data, STREAM_ACL_SOLARIS_ACLENT);
     }
@@ -2094,18 +2094,18 @@ static bacl_exit_code solaris_parse_acl_streams(JobControlRecord* jcr,
 
     switch (errno) {
       case ENOENT:
-        Actuallyfree(acls);
+        free(acls);
         return bacl_exit_ok;
       default:
         Mmsg2(jcr->errmsg, _("acl(SETACL) error on file \"%s\": ERR=%s\n"),
               acl_data->last_fname, be.bstrerror());
         Dmsg3(100, "acl(SETACL) error acl=%s file=%s ERR=%s\n", content,
               acl_data->last_fname, be.bstrerror());
-        Actuallyfree(acls);
+        free(acls);
         return bacl_exit_error;
     }
   }
-  Actuallyfree(acls);
+  free(acls);
   return bacl_exit_ok;
 }
 #endif /* HAVE_EXTENDED_ACL */

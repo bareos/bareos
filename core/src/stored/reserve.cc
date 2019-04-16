@@ -245,7 +245,7 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
       ok = sscanf(dir->msg, use_device, dev_name.c_str()) == 1;
       if (!ok) { break; }
       UnbashSpaces(dev_name);
-      store->device->append(bstrdup(dev_name.c_str()));
+      store->device->append(strdup(dev_name.c_str()));
     }
   } while (ok && dir->recv() >= 0);
 
@@ -1237,7 +1237,7 @@ static void QueueReserveMessage(JobControlRecord* jcr)
   /*
    * Message unique, so insert it.
    */
-  jcr->reserve_msgs->push(bstrdup(jcr->errmsg));
+  jcr->reserve_msgs->push(strdup(jcr->errmsg));
 
 bail_out:
   jcr->unlock();

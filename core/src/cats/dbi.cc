@@ -124,13 +124,13 @@ BareosDbDBI::BareosDbDBI(JobControlRecord* jcr,
    * Initialize the parent class members.
    */
   db_interface_type_ = SQL_INTERFACE_TYPE_DBI;
-  db_name_ = bstrdup(db_name);
-  db_user_ = bstrdup(db_user);
-  if (db_password) { db_password_ = bstrdup(db_password); }
-  if (db_address) { db_address_ = bstrdup(db_address); }
-  if (db_socket) { db_socket_ = bstrdup(db_socket); }
-  if (db_driverdir) { db_driverdir_ = bstrdup(db_driverdir); }
-  db_driver_ = bstrdup(new_db_driver);
+  db_name_ = strdup(db_name);
+  db_user_ = strdup(db_user);
+  if (db_password) { db_password_ = strdup(db_password); }
+  if (db_address) { db_address_ = strdup(db_address); }
+  if (db_socket) { db_socket_ = strdup(db_socket); }
+  if (db_driverdir) { db_driverdir_ = strdup(db_driverdir); }
+  db_driver_ = strdup(new_db_driver);
   db_port_ = db_port;
   if (disable_batch_insert) {
     disabled_batch_insert_ = true;

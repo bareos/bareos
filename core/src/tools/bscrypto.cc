@@ -94,7 +94,7 @@ int main(int argc, char* const* argv)
 
       case 'D':
         dump_cache = true;
-        cache_file = bstrdup(optarg);
+        cache_file = strdup(optarg);
         break;
 
       case 'd':
@@ -112,7 +112,7 @@ int main(int argc, char* const* argv)
           usage();
           goto bail_out;
         }
-        keyfile = bstrdup(optarg);
+        keyfile = strdup(optarg);
         break;
 
       case 'k':
@@ -121,17 +121,17 @@ int main(int argc, char* const* argv)
           usage();
           goto bail_out;
         }
-        keyfile = bstrdup(optarg);
+        keyfile = strdup(optarg);
         break;
 
       case 'p':
         populate_cache = true;
-        cache_file = bstrdup(optarg);
+        cache_file = strdup(optarg);
         break;
 
       case 'r':
         reset_cache = true;
-        cache_file = bstrdup(optarg);
+        cache_file = strdup(optarg);
         break;
 
       case 's':
@@ -140,7 +140,7 @@ int main(int argc, char* const* argv)
           usage();
           goto bail_out;
         }
-        keyfile = bstrdup(optarg);
+        keyfile = strdup(optarg);
         break;
 
       case 'v':
@@ -149,7 +149,7 @@ int main(int argc, char* const* argv)
 
       case 'w':
         wrapped_keys = true;
-        wrap_keyfile = bstrdup(optarg);
+        wrap_keyfile = strdup(optarg);
         break;
 
       case '?':

@@ -44,9 +44,9 @@ void Reallyfree(const char* file, int line, void* fp);
 #endif
 
 #ifdef SMARTALLOC
-#ifndef bmalloc
-#define bmalloc(s) sm_malloc(__FILE__, __LINE__, (s))
-#define bfree(o) sm_free(__FILE__, __LINE__, (o))
+#ifndef malloc
+#define malloc(s) sm_malloc(__FILE__, __LINE__, (s))
+#define free(o) sm_free(__FILE__, __LINE__, (o))
 #endif
 
 #define SM_CHECK sm_check(__FILE__, __LINE__, false)

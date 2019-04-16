@@ -79,7 +79,7 @@ JobControlRecord* SetupJcr(const char* name,
   jcr->setJobType(JT_CONSOLE);
   jcr->setJobLevel(L_FULL);
   jcr->JobStatus = JS_Terminated;
-  jcr->where = bstrdup("");
+  jcr->where = strdup("");
   jcr->job_name = GetPoolMemory(PM_FNAME);
   PmStrcpy(jcr->job_name, "Dummy.Job.Name");
   jcr->client_name = GetPoolMemory(PM_FNAME);

@@ -1781,7 +1781,7 @@ static BxattrExitCode bsd_build_xattr_streams(JobControlRecord* jcr,
     /*
      * Drop the local copy of the current_attrnamespace.
      */
-    Actuallyfree(current_attrnamespace);
+    free(current_attrnamespace);
     current_attrnamespace = NULL;
 
     /*
@@ -1817,7 +1817,7 @@ static BxattrExitCode bsd_build_xattr_streams(JobControlRecord* jcr,
   }
 
 bail_out:
-  if (current_attrnamespace != NULL) { Actuallyfree(current_attrnamespace); }
+  if (current_attrnamespace != NULL) { free(current_attrnamespace); }
   if (xattr_list != NULL) { free(xattr_list); }
   if (xattr_value_list != NULL) { XattrDropInternalTable(xattr_value_list); }
 
@@ -2100,7 +2100,7 @@ static BxattrExitCode tru64_build_xattr_streams(JobControlRecord* jcr,
     expected_serialize_len += sizeof(current_xattr->magic);
 
     current_xattr->name_length = strlen(xattr_name);
-    current_xattr->name = bstrdup(xattr_name);
+    current_xattr->name = strdup(xattr_name);
 
     expected_serialize_len +=
         sizeof(current_xattr->name_length) + current_xattr->name_length;
@@ -2414,7 +2414,7 @@ static inline void add_xattr_link_cache_entry(xattr_data_t* xattr_data,
   ptr = (xattr_link_cache_entry_t*)malloc(sizeof(xattr_link_cache_entry_t));
   memset(ptr, 0, sizeof(xattr_link_cache_entry_t));
   ptr->inum = inum;
-  ptr->target = bstrdup(target);
+  ptr->target = strdup(target);
 
   if (!xattr_data->u.build->link_cache) {
     xattr_data->u.build->link_cache = New(alist(10, not_owned_by_alist));

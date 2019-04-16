@@ -60,10 +60,10 @@ static inline FindFilesPacket* new_dir_ff_pkt(FindFilesPacket* ff_pkt)
 {
   FindFilesPacket* dir_ff_pkt;
 
-  dir_ff_pkt = (FindFilesPacket*)bmalloc(sizeof(FindFilesPacket));
+  dir_ff_pkt = (FindFilesPacket*)malloc(sizeof(FindFilesPacket));
   memcpy(dir_ff_pkt, ff_pkt, sizeof(FindFilesPacket));
-  dir_ff_pkt->fname = bstrdup(ff_pkt->fname);
-  dir_ff_pkt->link = bstrdup(ff_pkt->link);
+  dir_ff_pkt->fname = strdup(ff_pkt->fname);
+  dir_ff_pkt->link = strdup(ff_pkt->link);
   dir_ff_pkt->sys_fname = GetPoolMemory(PM_FNAME);
   dir_ff_pkt->included_files_list = NULL;
   dir_ff_pkt->excluded_files_list = NULL;
@@ -608,7 +608,7 @@ static inline int process_directory(JobControlRecord* jcr,
    */
   len = strlen(fname);
   link_len = len + 200;
-  link = (char*)bmalloc(link_len + 2);
+  link = (char*)malloc(link_len + 2);
   bstrncpy(link, fname, link_len);
 
   /*
@@ -776,7 +776,7 @@ static inline int process_directory(JobControlRecord* jcr,
      */
     if (name_length + len >= link_len) {
       link_len = len + name_length + 1;
-      link = (char*)brealloc(link, link_len + 1);
+      link = (char*)realloc(link, link_len + 1);
     }
 
     memcpy(link + len, entry->d_name, name_length);
@@ -826,7 +826,7 @@ static inline int process_directory(JobControlRecord* jcr,
      */
     if (name_length + len >= link_len) {
       link_len = len + name_length + 1;
-      link = (char*)brealloc(link, link_len + 1);
+      link = (char*)realloc(link, link_len + 1);
     }
 
     memcpy(link + len, result->d_name, name_length);

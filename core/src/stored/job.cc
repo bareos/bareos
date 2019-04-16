@@ -164,7 +164,7 @@ bool job_cmd(JobControlRecord* jcr)
    */
   Bsnprintf(seed, sizeof(seed), "%p%d", jcr, JobId);
   MakeSessionKey(auth_key, seed, 1);
-  jcr->sd_auth_key = bstrdup(auth_key);
+  jcr->sd_auth_key = strdup(auth_key);
   dir->fsend(OK_job, jcr->VolSessionId, jcr->VolSessionTime, auth_key);
   memset(auth_key, 0, sizeof(auth_key));
   Dmsg2(50, ">dird jid=%u: %s", (uint32_t)jcr->JobId, dir->msg);
@@ -277,7 +277,7 @@ bool nextRunCmd(JobControlRecord* jcr)
       Bsnprintf(seed, sizeof(seed), "%p%d", jcr, jcr->JobId);
       MakeSessionKey(auth_key, seed, 1);
       if (jcr->sd_auth_key) { free(jcr->sd_auth_key); }
-      jcr->sd_auth_key = bstrdup(auth_key);
+      jcr->sd_auth_key = strdup(auth_key);
       dir->fsend(OK_nextrun, auth_key);
       memset(auth_key, 0, sizeof(auth_key));
       Dmsg2(50, ">dird jid=%u: %s", (uint32_t)jcr->JobId, dir->msg);

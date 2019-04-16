@@ -229,7 +229,7 @@ bool DoConsolidate(JobControlRecord* jcr)
         jobids = NULL;
       }
 
-      jobids = bstrdup(jobids_ctx.list);
+      jobids = strdup(jobids_ctx.list);
       p = jobids;
 
       /**

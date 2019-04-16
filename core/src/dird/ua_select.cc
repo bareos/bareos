@@ -992,10 +992,10 @@ void StartPrompt(UaContext* ua, const char* msg)
 {
   if (ua->max_prompts == 0) {
     ua->max_prompts = 10;
-    ua->prompt = (char**)bmalloc(sizeof(char*) * ua->max_prompts);
+    ua->prompt = (char**)malloc(sizeof(char*) * ua->max_prompts);
   }
   ua->num_prompts = 1;
-  ua->prompt[0] = bstrdup(msg);
+  ua->prompt[0] = strdup(msg);
 }
 
 /**
@@ -1005,14 +1005,14 @@ void AddPrompt(UaContext* ua, const char* prompt)
 {
   if (ua->num_prompts == ua->max_prompts) {
     ua->max_prompts *= 2;
-    ua->prompt = (char**)brealloc(ua->prompt, sizeof(char*) * ua->max_prompts);
+    ua->prompt = (char**)realloc(ua->prompt, sizeof(char*) * ua->max_prompts);
   }
 
   for (int i = 1; i < ua->num_prompts; i++) {
     if (bstrcmp(ua->prompt[i], prompt)) { return; }
   }
 
-  ua->prompt[ua->num_prompts++] = bstrdup(prompt);
+  ua->prompt[ua->num_prompts++] = strdup(prompt);
 }
 
 /**

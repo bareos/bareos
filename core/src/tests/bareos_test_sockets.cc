@@ -126,7 +126,7 @@ BareosSocket* create_new_bareos_socket(int fd)
   bs = new BareosSocketTCP;
   bs->sleep_time_after_authentication_error = 0;
   bs->fd_ = fd;
-  bs->SetWho(bstrdup("client"));
+  bs->SetWho(strdup("client"));
   memset(&bs->peer_addr, 0, sizeof(bs->peer_addr));
   return bs;
 }

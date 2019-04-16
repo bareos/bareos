@@ -549,7 +549,7 @@ bail_out:
          var_strerror(var_ctx, status));
   }
 
-  if (outp) { Actuallyfree(outp); }
+  if (outp) { free(outp); }
 
   return rtn_stat;
 }

@@ -367,7 +367,7 @@ static bRC handlePluginEvent(bpContext* ctx, bEvent* event, void* value)
       /*
        * Save that we got a plugin override.
        */
-      p_ctx->plugin_options = bstrdup((char*)value);
+      p_ctx->plugin_options = strdup((char*)value);
       break;
     case bEventRestoreObject: {
       struct restore_object_pkt* rop;
@@ -788,7 +788,7 @@ static inline bool ParseBoolean(const char* argument_value)
 static inline void SetStringIfNull(char** destination, char* value)
 {
   if (!*destination) {
-    *destination = bstrdup(value);
+    *destination = strdup(value);
     StripBackSlashes(*destination);
   }
 }
@@ -800,7 +800,7 @@ static inline void SetString(char** destination, char* value)
 {
   if (*destination) { free(*destination); }
 
-  *destination = bstrdup(value);
+  *destination = strdup(value);
   StripBackSlashes(*destination);
 }
 
@@ -1086,14 +1086,14 @@ static void PyErrorHandler(bpContext* ctx, int msgtype)
     strRetval =
         PyObject_CallMethod(emptyString, (char*)"join", (char*)"O", tbList);
 
-    error_string = bstrdup(PyString_AsString(strRetval));
+    error_string = strdup(PyString_AsString(strRetval));
 
     Py_DECREF(tbList);
     Py_DECREF(emptyString);
     Py_DECREF(strRetval);
     Py_DECREF(tracebackModule);
   } else {
-    error_string = bstrdup("Unable to import traceback module.");
+    error_string = strdup("Unable to import traceback module.");
   }
 
   Py_DECREF(type);
@@ -1495,7 +1495,7 @@ static inline bool PySavePacketToNative(PySavePacket* pSavePkt,
        */
       if (PyString_Check(pSavePkt->fname)) {
         if (p_ctx->fname) { free(p_ctx->fname); }
-        p_ctx->fname = bstrdup(PyString_AsString(pSavePkt->fname));
+        p_ctx->fname = strdup(PyString_AsString(pSavePkt->fname));
         sp->fname = p_ctx->fname;
       }
     } else {
@@ -1512,7 +1512,7 @@ static inline bool PySavePacketToNative(PySavePacket* pSavePkt,
        */
       if (PyString_Check(pSavePkt->link)) {
         if (p_ctx->link) { free(p_ctx->link); }
-        p_ctx->link = bstrdup(PyString_AsString(pSavePkt->link));
+        p_ctx->link = strdup(PyString_AsString(pSavePkt->link));
         sp->link = p_ctx->link;
       }
     }
@@ -1563,7 +1563,7 @@ static inline bool PySavePacketToNative(PySavePacket* pSavePkt,
 
           if (p_ctx->object_name) { free(p_ctx->object_name); }
           p_ctx->object_name =
-              bstrdup(PyString_AsString(pSavePkt->object_name));
+              strdup(PyString_AsString(pSavePkt->object_name));
           sp->object_name = p_ctx->object_name;
 
           sp->object_len = pSavePkt->object_len;

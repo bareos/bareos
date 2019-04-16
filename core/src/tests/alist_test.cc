@@ -55,7 +55,7 @@ void AlistFill(alist* list, int max)
    */
   for (int i = 0; i < max; i++) {
     sprintf(buf, "%d", start + i);
-    list->append(bstrdup(buf));
+    list->append(strdup(buf));
   }
 
   /*

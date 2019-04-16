@@ -382,7 +382,7 @@ static inline void SetString(char** destination, char* value)
 {
   if (*destination) { free(*destination); }
 
-  *destination = bstrdup(value);
+  *destination = strdup(value);
   StripBackSlashes(*destination);
 }
 
@@ -617,14 +617,14 @@ static void PyErrorHandler(bpContext* ctx, int msgtype)
     strRetval =
         PyObject_CallMethod(emptyString, (char*)"join", (char*)"O", tbList);
 
-    error_string = bstrdup(PyString_AsString(strRetval));
+    error_string = strdup(PyString_AsString(strRetval));
 
     Py_DECREF(tbList);
     Py_DECREF(emptyString);
     Py_DECREF(strRetval);
     Py_DECREF(tracebackModule);
   } else {
-    error_string = bstrdup("Unable to import traceback module.");
+    error_string = strdup("Unable to import traceback module.");
   }
 
   Py_DECREF(type);

@@ -270,7 +270,7 @@ static void JmsgVssWriterStatus(JobControlRecord* jcr,
  */
 
 /*
- * bstrdup a wchar_t string.
+ * strdup a wchar_t string.
  */
 static inline wchar_t* wbstrdup(const wchar_t* str)
 {

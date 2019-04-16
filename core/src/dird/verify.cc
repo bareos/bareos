@@ -219,7 +219,7 @@ bool DoVerify(JobControlRecord* jcr)
       }
       break;
     default:
-      jcr->sd_auth_key = bstrdup("dummy"); /* dummy Storage daemon key */
+      jcr->sd_auth_key = strdup("dummy"); /* dummy Storage daemon key */
       break;
   }
 

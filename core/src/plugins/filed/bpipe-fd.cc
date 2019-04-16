@@ -265,7 +265,7 @@ static bRC handlePluginEvent(bpContext* ctx, bEvent* event, void* value)
       /*
        * Save that we got a plugin override.
        */
-      p_ctx->plugin_options = bstrdup((char*)value);
+      p_ctx->plugin_options = strdup((char*)value);
       break;
     default:
       Jmsg(ctx, M_FATAL, "bpipe-fd: unknown event=%d\n", event->eventType);
@@ -597,7 +597,7 @@ static inline void StripBackSlashes(char* value)
 static inline void SetStringIfNull(char** destination, char* value)
 {
   if (!*destination) {
-    *destination = bstrdup(value);
+    *destination = strdup(value);
     StripBackSlashes(*destination);
   }
 }
@@ -609,7 +609,7 @@ static inline void SetString(char** destination, char* value)
 {
   if (*destination) { free(*destination); }
 
-  *destination = bstrdup(value);
+  *destination = strdup(value);
   StripBackSlashes(*destination);
 }
 
@@ -636,7 +636,7 @@ static bRC parse_plugin_definition(bpContext* ctx, void* value)
    * Parse the plugin definition.
    * Make a private copy of the whole string.
    */
-  plugin_definition = bstrdup((char*)value);
+  plugin_definition = strdup((char*)value);
 
   bp = strchr(plugin_definition, ':');
   if (!bp) {

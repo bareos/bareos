@@ -86,8 +86,8 @@ BareosDbSqlite::BareosDbSqlite(JobControlRecord* jcr,
    */
   db_interface_type_ = SQL_INTERFACE_TYPE_SQLITE3;
   db_type_ = SQL_TYPE_SQLITE3;
-  db_driver_ = bstrdup("SQLite3");
-  db_name_ = bstrdup(db_name);
+  db_driver_ = strdup("SQLite3");
+  db_name_ = strdup(db_name);
   if (disable_batch_insert) {
     disabled_batch_insert_ = true;
     have_batch_insert_ = false;

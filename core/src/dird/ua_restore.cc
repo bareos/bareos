@@ -143,7 +143,7 @@ bool RestoreCmd(UaContext* ua, const char* cmd)
 
   if (strip_prefix || add_suffix || add_prefix) {
     int len = BregexpGetBuildWhereSize(strip_prefix, add_prefix, add_suffix);
-    regexp = (char*)bmalloc(len * sizeof(char));
+    regexp = (char*)malloc(len * sizeof(char));
 
     bregexp_build_where(regexp, len, strip_prefix, add_prefix, add_suffix);
     rx.RegexWhere = regexp;
@@ -301,11 +301,11 @@ bool RestoreCmd(UaContext* ua, const char* cmd)
     PmStrcat(ua->cmd, buf);
   }
 
-  if (escaped_bsr_name != NULL) { bfree(escaped_bsr_name); }
+  if (escaped_bsr_name != NULL) { free(escaped_bsr_name); }
 
-  if (escaped_where_name != NULL) { bfree(escaped_where_name); }
+  if (escaped_where_name != NULL) { free(escaped_where_name); }
 
-  if (regexp) { bfree(regexp); }
+  if (regexp) { free(regexp); }
 
   if (FindArg(ua, NT_("yes")) > 0) {
     PmStrcat(ua->cmd, " yes"); /* pass it on to the run command */
@@ -326,11 +326,11 @@ bool RestoreCmd(UaContext* ua, const char* cmd)
   return true;
 
 bail_out:
-  if (escaped_bsr_name != NULL) { bfree(escaped_bsr_name); }
+  if (escaped_bsr_name != NULL) { free(escaped_bsr_name); }
 
-  if (escaped_where_name != NULL) { bfree(escaped_where_name); }
+  if (escaped_where_name != NULL) { free(escaped_where_name); }
 
-  if (regexp) { bfree(regexp); }
+  if (regexp) { free(regexp); }
 
   free_rx(&rx);
   GarbageCollectMemory(); /* release unused memory */
@@ -418,11 +418,11 @@ static bool GetClientName(UaContext* ua, RestoreContext* rx)
         ua->ErrorMsg("invalid %s argument: %s\n", ua->argk[i], ua->argv[i]);
         return false;
       }
-      rx->ClientName = bstrdup(ua->argv[i]);
+      rx->ClientName = strdup(ua->argv[i]);
       return true;
     }
     if (!GetClientDbr(ua, &cr)) { return false; }
-    rx->ClientName = bstrdup(cr.Name);
+    rx->ClientName = strdup(cr.Name);
   }
 
   return true;
@@ -448,11 +448,11 @@ static bool GetRestoreClientName(UaContext* ua, RestoreContext& rx)
       ua->ErrorMsg("invalid %s argument: %s\n", ua->argk[i], ua->argv[i]);
       return false;
     }
-    rx.RestoreClientName = bstrdup(ua->argv[i]);
+    rx.RestoreClientName = strdup(ua->argv[i]);
     return true;
   }
 
-  rx.RestoreClientName = bstrdup(rx.ClientName);
+  rx.RestoreClientName = strdup(rx.ClientName);
   return true;
 }
 
@@ -1060,7 +1060,7 @@ static bool AskForFileregex(UaContext* ua, RestoreContext* rx)
         int rc;
         char errmsg[500] = "";
 
-        fileregex_re = (regex_t*)bmalloc(sizeof(regex_t));
+        fileregex_re = (regex_t*)malloc(sizeof(regex_t));
         rc = regcomp(fileregex_re, ua->cmd, REG_EXTENDED | REG_NOSUB);
         if (rc != 0) { regerror(rc, fileregex_re, errmsg, sizeof(errmsg)); }
         regfree(fileregex_re);
@@ -1068,7 +1068,7 @@ static bool AskForFileregex(UaContext* ua, RestoreContext* rx)
         if (*errmsg) {
           ua->SendMsg(_("Regex compile error: %s\n"), errmsg);
         } else {
-          rx->bsr->fileregex = bstrdup(ua->cmd);
+          rx->bsr->fileregex = strdup(ua->cmd);
           return true;
         }
       }
@@ -1266,7 +1266,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
    */
   memset(&cr, 0, sizeof(cr));
   if (!GetClientDbr(ua, &cr)) { goto bail_out; }
-  rx->ClientName = bstrdup(cr.Name);
+  rx->ClientName = strdup(cr.Name);
 
   /*
    * Get FileSet

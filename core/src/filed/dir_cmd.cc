@@ -704,7 +704,7 @@ bool StartConnectToDirectorThreads()
       } else {
         Dmsg3(120, "Connecting to Director \"%s\", address %s:%d.\n",
               dir_res->resource_name_, dir_res->address, dir_res->port);
-        thread = (pthread_t*)bmalloc(sizeof(pthread_t));
+        thread = (pthread_t*)malloc(sizeof(pthread_t));
         if ((pthread_create_result =
                  pthread_create(thread, nullptr, handle_connection_to_director,
                                 (void*)dir_res)) == 0) {
@@ -734,7 +734,7 @@ bool StopConnectToDirectorThreads(bool wait)
         if (wait) {
           if (pthread_join(*thread, nullptr) != 0) { result = false; }
         }
-        bfree(thread);
+        free(thread);
       }
     }
     delete (client_initiated_connection_threads);
@@ -1241,7 +1241,7 @@ static bool RestoreObjectCmd(JobControlRecord* jcr)
   if (dir->recv() < 0) { goto bail_out; }
   Dmsg2(100, "Recv Oname object: len=%d Oname=%s\n", dir->message_length,
         dir->msg);
-  rop.object_name = bstrdup(dir->msg);
+  rop.object_name = strdup(dir->msg);
 
   /*
    * Read Object
@@ -1612,10 +1612,10 @@ static void SetStorageAuthKeyAndTlsPolicy(JobControlRecord* jcr,
      */
     Dmsg0(5, "set multi_restore=true\n");
     jcr->multi_restore = true;
-    bfree(jcr->sd_auth_key);
+    free(jcr->sd_auth_key);
   }
 
-  jcr->sd_auth_key = bstrdup(key);
+  jcr->sd_auth_key = strdup(key);
   Dmsg0(5, "set sd auth key\n");
 
   jcr->sd_tls_policy = policy;
@@ -2428,7 +2428,7 @@ static bool RestoreCmd(JobControlRecord* jcr)
       return false;
     }
   } else {
-    jcr->where = bstrdup(args);
+    jcr->where = strdup(args);
   }
 
   FreePoolMemory(args);

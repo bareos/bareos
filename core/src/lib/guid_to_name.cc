@@ -101,7 +101,7 @@ static void GetUidname(uid_t uid, guitem* item)
   P(mutex);
   pwbuf = getpwuid(uid);
   if (pwbuf != NULL && !bstrcmp(pwbuf->pw_name, "????????")) {
-    item->name = bstrdup(pwbuf->pw_name);
+    item->name = strdup(pwbuf->pw_name);
   }
   V(mutex);
 #endif
@@ -114,7 +114,7 @@ static void GetGidname(gid_t gid, guitem* item)
   P(mutex);
   grbuf = getgrgid(gid);
   if (grbuf != NULL && !bstrcmp(grbuf->gr_name, "????????")) {
-    item->name = bstrdup(grbuf->gr_name);
+    item->name = strdup(grbuf->gr_name);
   }
   V(mutex);
 #endif
@@ -135,7 +135,7 @@ char* guid_list::uid_to_name(uid_t uid, char* name, int maxlen)
     item->name = NULL;
     GetUidname(uid, item);
     if (!item->name) {
-      item->name = bstrdup(edit_int64(uid, buf));
+      item->name = strdup(edit_int64(uid, buf));
       Dmsg2(900, "set uid=%d name=%s\n", uid, item->name);
     }
     fitem = (guitem*)uid_list->binary_insert(item, UidCompare);
@@ -161,7 +161,7 @@ char* guid_list::gid_to_name(gid_t gid, char* name, int maxlen)
     item->gid = gid;
     item->name = NULL;
     GetGidname(gid, item);
-    if (!item->name) { item->name = bstrdup(edit_int64(gid, buf)); }
+    if (!item->name) { item->name = strdup(edit_int64(gid, buf)); }
     fitem = (guitem*)gid_list->binary_insert(item, GidCompare);
     if (fitem != item) { /* item already there this shouldn't happen */
       free(item->name);

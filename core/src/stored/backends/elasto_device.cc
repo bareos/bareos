@@ -102,7 +102,7 @@ int elasto_device::d_open(const char* pathname, int flags, int mode)
       goto bail_out;
     }
 
-    elasto_configstring_ = bstrdup(dev_options);
+    elasto_configstring_ = strdup(dev_options);
 
     bp = elasto_configstring_;
     while (bp) {

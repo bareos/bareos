@@ -255,7 +255,7 @@ static inline LEX* lex_add(LEX* lf,
 
   lf->fd = fd;
   lf->bpipe = bpipe;
-  lf->fname = bstrdup(filename);
+  lf->fname = strdup(filename);
   lf->line = GetMemory(1024);
   lf->str = GetMemory(256);
   lf->str_max_len = SizeofPoolMemory(lf->str);
@@ -292,7 +292,7 @@ LEX* lex_open_file(LEX* lf,
   char* bpipe_filename = NULL;
 
   if (filename[0] == '|') {
-    bpipe_filename = bstrdup(filename);
+    bpipe_filename = strdup(filename);
     if ((bpipe = OpenBpipe(bpipe_filename + 1, 0, "rb")) == NULL) {
       free(bpipe_filename);
       return NULL;

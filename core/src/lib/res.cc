@@ -144,7 +144,7 @@ bool ConfigurationParser::GetTlsPskByFullyQualifiedResourceName(
     const char* fq_name_in,
     std::string& psk)
 {
-  char* fq_name_buffer = bstrdup(fq_name_in);
+  char* fq_name_buffer = strdup(fq_name_in);
   UnbashSpaces(fq_name_buffer);
   std::string fq_name(fq_name_buffer);
   free(fq_name_buffer);
@@ -425,7 +425,7 @@ void ConfigurationParser::StoreName(LEX* lc,
               *(item->value), lc->str);
     return;
   }
-  *(item->value) = bstrdup(lc->str);
+  *(item->value) = strdup(lc->str);
   ScanToEol(lc);
   SetBit(index, item->static_resource->item_present_);
   ClearBit(index, item->static_resource->inherit_content_);
@@ -445,7 +445,7 @@ void ConfigurationParser::StoreStrname(LEX* lc,
     if (*(item->value)) { /* free old item */
       free(*(item->value));
     }
-    *(item->value) = bstrdup(lc->str);
+    *(item->value) = strdup(lc->str);
   }
   ScanToEol(lc);
   SetBit(index, item->static_resource->item_present_);
@@ -465,7 +465,7 @@ void ConfigurationParser::StoreStr(LEX* lc,
     if (*(item->value)) { /* free old item */
       free(*(item->value));
     }
-    *(item->value) = bstrdup(lc->str);
+    *(item->value) = strdup(lc->str);
   }
   ScanToEol(lc);
   SetBit(index, item->static_resource->item_present_);
@@ -505,7 +505,7 @@ void ConfigurationParser::StoreDir(LEX* lc,
     if (lc->str[0] != '|') {
       DoShellExpansion(lc->str, SizeofPoolMemory(lc->str));
     }
-    *(item->value) = bstrdup(lc->str);
+    *(item->value) = strdup(lc->str);
   }
   ScanToEol(lc);
   SetBit(index, item->static_resource->item_present_);
@@ -548,7 +548,7 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
      */
     if (bstrncmp(lc->str, "[md5]", 5)) {
       pwd->encoding = p_encoding_md5;
-      pwd->value = bstrdup(lc->str + 5);
+      pwd->value = strdup(lc->str + 5);
     } else {
       unsigned int i, j;
       MD5_CTX md5c;
@@ -563,7 +563,7 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
         j += 2;
       }
       pwd->encoding = p_encoding_md5;
-      pwd->value = bstrdup(sig);
+      pwd->value = strdup(sig);
     }
   }
   ScanToEol(lc);
@@ -586,7 +586,7 @@ void ConfigurationParser::StoreClearpassword(LEX* lc,
     if (pwd->value) { free(pwd->value); }
 
     pwd->encoding = p_encoding_clear;
-    pwd->value = bstrdup(lc->str);
+    pwd->value = strdup(lc->str);
   }
   ScanToEol(lc);
   SetBit(index, item->static_resource->item_present_);
@@ -750,7 +750,7 @@ void ConfigurationParser::StoreAlistStr(LEX* lc,
       }
     }
 
-    list->append(bstrdup(lc->str));
+    list->append(strdup(lc->str));
   }
   ScanToEol(lc);
   SetBit(index, item->static_resource->item_present_);
@@ -798,7 +798,7 @@ void ConfigurationParser::StoreAlistDir(LEX* lc,
       }
     }
 
-    list->append(bstrdup(lc->str));
+    list->append(strdup(lc->str));
   }
   ScanToEol(lc);
   SetBit(index, item->static_resource->item_present_);
@@ -822,14 +822,14 @@ void ConfigurationParser::StorePluginNames(LEX* lc,
     }
     alist* list = *(item->alistvalue);
 
-    plugin_names = bstrdup(lc->str);
+    plugin_names = strdup(lc->str);
     plugin_name = plugin_names;
     while (plugin_name) {
       if ((p = strchr(plugin_name, ':'))) { /* split string at ':' */
         *p++ = '\0';
       }
 
-      list->append(bstrdup(plugin_name));
+      list->append(strdup(plugin_name));
       plugin_name = p;
     }
     free(plugin_names);

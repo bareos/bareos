@@ -398,8 +398,8 @@ void BnetThreadServerTcp(
         if (nokeepalive) { bs->ClearKeepalive(); }
 
         bs->fd_ = newsockfd;
-        bs->SetWho(bstrdup("client"));
-        bs->SetHost(bstrdup(buf));
+        bs->SetWho(strdup("client"));
+        bs->SetHost(strdup(buf));
         bs->SetPort(ntohs(fd_ptr->port));
         memset(&bs->peer_addr, 0, sizeof(bs->peer_addr));
         memcpy(&bs->client_addr, &cli_addr, sizeof(bs->client_addr));

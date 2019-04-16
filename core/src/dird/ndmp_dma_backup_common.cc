@@ -191,7 +191,7 @@ bool FillBackupEnvironment(JobControlRecord* jcr,
     } else {
       Mmsg(tape_device, "%s@%s", jcr->sd_auth_key, filesystem);
     }
-    job->tape_device = bstrdup(tape_device.c_str());
+    job->tape_device = strdup(tape_device.c_str());
   }
 
   return true;

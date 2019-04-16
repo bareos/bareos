@@ -72,8 +72,8 @@ static int PamConversationCallback(int num_msg,
     return (PAM_CONV_ERR);
   }
 
-  struct pam_response* resp = static_cast<pam_response*>(
-      actuallycalloc(num_msg, sizeof(struct pam_response)));
+  struct pam_response* resp =
+      static_cast<pam_response*>(calloc(num_msg, sizeof(struct pam_response)));
 
   if (!resp) {
     Dmsg0(debuglevel, "pam_conv_callback memory error\n");
@@ -98,7 +98,7 @@ static int PamConversationCallback(int num_msg,
           break;
         }
         if (pam_data->UA_sock_->recv()) {
-          resp[i].resp = actuallystrdup(pam_data->UA_sock_->msg);
+          resp[i].resp = strdup(pam_data->UA_sock_->msg);
           resp[i].resp_retcode = 0;
         }
         if (pam_data->UA_sock_->IsStop() || pam_data->UA_sock_->IsError()) {
@@ -125,11 +125,11 @@ static int PamConversationCallback(int num_msg,
     for (int i = 0; i < num_msg; ++i) {
       if (resp[i].resp) {
         memset(resp[i].resp, 0, strlen(resp[i].resp));
-        Actuallyfree(resp[i].resp);
+        free(resp[i].resp);
       }
     }
     memset(resp, 0, num_msg * sizeof *resp);
-    Actuallyfree(resp);
+    free(resp);
     *response = nullptr;
     return PAM_CONV_ERR;
   }
@@ -143,13 +143,13 @@ static int PamLocalCallback(int num_msg,
                             struct pam_response** response,
                             void* appdata_ptr)
 {
-  struct pam_response* resp = static_cast<pam_response*>(
-      actuallycalloc(num_msg, sizeof(struct pam_response)));
+  struct pam_response* resp =
+      static_cast<pam_response*>(calloc(num_msg, sizeof(struct pam_response)));
 
   PamData* pam_data = static_cast<PamData*>(appdata_ptr);
 
   if (num_msg == 1) {
-    resp[0].resp = actuallystrdup(pam_data->passwd_.c_str());
+    resp[0].resp = strdup(pam_data->passwd_.c_str());
     resp[0].resp_retcode = 0;
   }
 

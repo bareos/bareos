@@ -34,9 +34,9 @@
 #if HAVE_JANSSON
 static pthread_once_t json_setup = PTHREAD_ONCE_INIT;
 
-static void* json_malloc(size_t size) { return bmalloc(size); }
+static void* json_malloc(size_t size) { return malloc(size); }
 
-static void json_free(void* ptr) { bfree(ptr); }
+static void json_free(void* ptr) { free(ptr); }
 
 static void set_alloc_funcs() { json_set_alloc_funcs(json_malloc, json_free); }
 

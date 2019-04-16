@@ -273,7 +273,7 @@ static bRC handlePluginEvent(bpContext* ctx, bEvent* event, void* value)
 
       Dmsg(ctx, debuglevel, "test-plugin-fd: pluginEvent cmd=%s\n",
            (char*)value);
-      p_ctx->cmd = bstrdup((char*)value);
+      p_ctx->cmd = strdup((char*)value);
       p = strchr(p_ctx->cmd, ':');
       if (!p) {
         Jmsg(ctx, M_FATAL, "Plugin terminator not found: %s\n", (char*)value);

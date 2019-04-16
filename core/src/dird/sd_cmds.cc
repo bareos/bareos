@@ -378,7 +378,7 @@ dlist* native_get_vol_list(UaContext* ua,
       vl->slot_type = kSlotTypeStorage;
       if (strlen(field2) > 0) {
         vl->slot_status = slot_status_full;
-        vl->VolName = bstrdup(field2);
+        vl->VolName = strdup(field2);
       } else {
         vl->slot_status = slot_status_empty;
       }
@@ -407,7 +407,7 @@ dlist* native_get_vol_list(UaContext* ua,
 
       vl->slot_type = kSlotTypeStorage;
       vl->slot_status = slot_status_full;
-      vl->VolName = bstrdup(field2);
+      vl->VolName = strdup(field2);
       vl->element_address = INDEX_SLOT_OFFSET + vl->bareos_slot_number;
     } else {
       /*
@@ -472,14 +472,14 @@ dlist* native_get_vol_list(UaContext* ua,
           switch (vl->slot_status) {
             case kSlotTypeStorage:
             case kSlotTypeImport:
-              if (field4) { vl->VolName = bstrdup(field4); }
+              if (field4) { vl->VolName = strdup(field4); }
               break;
             case kSlotTypeDrive:
               if (field4) {
                 vl->currently_loaded_slot_number =
                     static_cast<slot_number_t>(atoi(field4));
               }
-              if (field5) { vl->VolName = bstrdup(field5); }
+              if (field5) { vl->VolName = strdup(field5); }
               break;
             default:
               break;

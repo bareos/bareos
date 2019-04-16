@@ -228,12 +228,12 @@ int main(int margc, char* margv[])
 
       case 'c': /* specify config file */
         if (configfile != NULL) { free(configfile); }
-        configfile = bstrdup(optarg);
+        configfile = strdup(optarg);
         break;
 
       case 'D': /* specify director name */
         if (DirectorName != NULL) { free(DirectorName); }
-        DirectorName = bstrdup(optarg);
+        DirectorName = strdup(optarg);
         break;
 
       case 'd': /* set debug level */

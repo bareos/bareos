@@ -1,5 +1,4 @@
 #!/bin/sh
-
 . scripts/functions
 
 # Define the Name of the test as "TestName".

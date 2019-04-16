@@ -84,7 +84,7 @@ enum
  * Array list -- much like a simplified STL vector
  *               array of pointers to inserted items
  */
-class alist : public SmartAlloc {
+class alist {
   void** items;
   int num_items;
   int max_items;

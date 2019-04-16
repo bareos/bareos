@@ -86,7 +86,7 @@ static inline char* lookup_fileindex(JobControlRecord* jcr, int32_t FileIndex)
       }
 
       if (bstrncmp(restore_pathname.c_str(), "/@NDMP/", 7)) {
-        return bstrdup(restore_pathname.c_str());
+        return strdup(restore_pathname.c_str());
       }
     }
 
@@ -347,7 +347,7 @@ static inline bool fill_restore_environment(JobControlRecord* jcr,
    */
   if (jcr->store_bsock) {
     Mmsg(tape_device, "%s@%s", jcr->sd_auth_key, restore_pathname + 6);
-    job->tape_device = bstrdup(tape_device.c_str());
+    job->tape_device = strdup(tape_device.c_str());
   }
 
   free(restore_pathname);
@@ -608,7 +608,7 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
             NativeToNdmpLoglevel(NdmpLoglevel, debug_level, nis);
         nis->jcr = jcr;
         ndmp_sess.param->log.ctx = nis;
-        ndmp_sess.param->log_tag = bstrdup("DIR-NDMP");
+        ndmp_sess.param->log_tag = strdup("DIR-NDMP");
 
         /*
          * Initialize the session structure.

@@ -57,7 +57,7 @@ struct rblink {
   bool red;
 };
 
-class rblist : public SmartAlloc {
+class rblist {
   void* head;
   int16_t loffset;
   uint32_t num_items;

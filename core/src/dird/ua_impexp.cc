@@ -559,7 +559,7 @@ static inline slot_number_t get_slot_list_using_volnames(
       /*
        * Parse a volumelist e.g. vol1|vol2 and a single volume e.g. vol1
        */
-      s = bstrdup(ua->argv[i]);
+      s = strdup(ua->argv[i]);
       token = s;
 
       /*

@@ -78,12 +78,12 @@ BareosDbMysql::BareosDbMysql(JobControlRecord* jcr,
    */
   db_interface_type_ = SQL_INTERFACE_TYPE_MYSQL;
   db_type_ = SQL_TYPE_MYSQL;
-  db_driver_ = bstrdup("MySQL");
-  db_name_ = bstrdup(db_name);
-  db_user_ = bstrdup(db_user);
-  if (db_password) { db_password_ = bstrdup(db_password); }
-  if (db_address) { db_address_ = bstrdup(db_address); }
-  if (db_socket) { db_socket_ = bstrdup(db_socket); }
+  db_driver_ = strdup("MySQL");
+  db_name_ = strdup(db_name);
+  db_user_ = strdup(db_user);
+  if (db_password) { db_password_ = strdup(db_password); }
+  if (db_address) { db_address_ = strdup(db_address); }
+  if (db_socket) { db_socket_ = strdup(db_socket); }
   db_port_ = db_port;
 
   if (disable_batch_insert) {

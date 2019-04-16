@@ -495,14 +495,6 @@ int msg_(const char* file, int line, POOLMEM*& pool_buf, const char* fmt, ...);
 /** Use our sscanf, which is safer and works with known sizes */
 #define sscanf bsscanf
 
-#define bstrdup(str) \
-  strcpy((char*)b_malloc(__FILE__, __LINE__, strlen((str)) + 1), (str))
-
-#define actuallystrdup(str) \
-  strcpy((char*)actuallymalloc(strlen((str)) + 1), (str))
-
-#define bmalloc(size) b_malloc(__FILE__, __LINE__, (size))
-
 /** Macro to simplify free/reset pointers */
 #define BfreeAndNull(a) \
   do {                  \

@@ -206,7 +206,7 @@ static int CrlReloaderFileLoad(X509_LOOKUP* lookup, const char* argp)
 
   data = (TlsCrlReloadContext*)lookup->method_data;
   if (data->crl_file_name) { free(data->crl_file_name); }
-  data->crl_file_name = bstrdup(argp);
+  data->crl_file_name = strdup(argp);
 
   ok = CrlReloaderReloadFile(lookup);
   if (!ok) { goto bail_out; }

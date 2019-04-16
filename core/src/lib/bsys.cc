@@ -365,76 +365,6 @@ int cstrlen(const char* str)
   return len;
 }
 
-#ifndef bmalloc
-void* bmalloc(size_t size)
-{
-  void* buf;
-
-#ifdef SMARTALLOC
-  buf = sm_malloc(file, line, size);
-#else
-  buf = malloc(size);
-#endif
-  if (buf == NULL) {
-    BErrNo be;
-    Emsg1(M_ABORT, 0, _("Out of memory: ERR=%s\n"), be.bstrerror());
-  }
-  return buf;
-}
-#endif
-
-void* b_malloc(const char* file, int line, size_t size)
-{
-  void* buf;
-
-#ifdef SMARTALLOC
-  buf = sm_malloc(file, line, size);
-#else
-  buf = malloc(size);
-#endif
-  if (buf == NULL) {
-    BErrNo be;
-    e_msg(file, line, M_ABORT, 0, _("Out of memory: ERR=%s\n"), be.bstrerror());
-  }
-  return buf;
-}
-
-
-void bfree(void* buf)
-{
-#ifdef SMARTALLOC
-  sm_free(__FILE__, __LINE__, buf);
-#else
-  free(buf);
-#endif
-}
-
-void* brealloc(void* buf, size_t size)
-{
-#ifdef SMARTALOC
-  buf = sm_realloc(__FILE__, __LINE__, buf, size);
-#else
-  buf = realloc(buf, size);
-#endif
-  if (buf == NULL) {
-    BErrNo be;
-    Emsg1(M_ABORT, 0, _("Out of memory: ERR=%s\n"), be.bstrerror());
-  }
-  return buf;
-}
-
-void* bcalloc(size_t size1, size_t size2)
-{
-  void* buf;
-
-  buf = calloc(size1, size2);
-  if (buf == NULL) {
-    BErrNo be;
-    Emsg1(M_ABORT, 0, _("Out of memory: ERR=%s\n"), be.bstrerror());
-  }
-  return buf;
-}
-
 #ifndef HAVE_LOCALTIME_R
 struct tm* localtime_r(const time_t* timep, struct tm* tm)
 {
@@ -807,7 +737,7 @@ char* escape_filename(const char* file_path)
 {
   if (file_path == NULL || strpbrk(file_path, "\"\\") == NULL) { return NULL; }
 
-  char* escaped_path = (char*)bmalloc(2 * (strlen(file_path) + 1));
+  char* escaped_path = (char*)malloc(2 * (strlen(file_path) + 1));
   char* cur_char = escaped_path;
 
   while (*file_path) {
@@ -1129,15 +1059,15 @@ static char** backtrace_symbols(void* const* array, int size)
   int i;
 
   bufferlen = size * sizeof(char*);
-  ret_buffer = (char**)actuallymalloc(bufferlen);
+  ret_buffer = (char**)malloc(bufferlen);
   if (ret_buffer) {
     for (i = 0; i < size; i++) {
       (void)Addrtosymstr(array[i], linebuffer, sizeof(linebuffer));
-      ret_buffer[i] = (char*)actuallymalloc(len = strlen(linebuffer) + 1);
+      ret_buffer[i] = (char*)malloc(len = strlen(linebuffer) + 1);
       strcpy(ret_buffer[i], linebuffer);
       bufferlen += len;
     }
-    ret = (char**)actuallymalloc(bufferlen);
+    ret = (char**)malloc(bufferlen);
     if (ret) {
       for (len = i = 0; i < size; i++) {
         ret[i] = (char*)ret + size * sizeof(char*) + len;
@@ -1235,7 +1165,7 @@ void stack_trace()
 
   for (i = 3; i < stack_depth; i++) {
     sz = 200; /* Just a guess, template names will go much wider */
-    function = (char*)actuallymalloc(sz);
+    function = (char*)malloc(sz);
     begin = end = 0;
     /*
      * Find the parentheses and address offset surrounding the mangled name
@@ -1273,9 +1203,9 @@ void stack_trace()
       /* didn't find the mangled name, just print the whole line */
       Pmsg1(000, "    %s\n", stack_strings[i]);
     }
-    Actuallyfree(function);
+    free(function);
   }
-  Actuallyfree(stack_strings); /* malloc()ed by backtrace_symbols */
+  free(stack_strings); /* malloc()ed by backtrace_symbols */
 }
 
 /*
@@ -1309,7 +1239,7 @@ void stack_trace()
   stack_strings = backtrace_symbols(stack_addrs, stack_depth);
 
   for (i = 1; i < stack_depth; i++) {
-    function = (char*)actuallymalloc(sz);
+    function = (char*)malloc(sz);
     begin = end = 0;
     /*
      * Find the single quote and address offset surrounding the mangled name
@@ -1343,9 +1273,9 @@ void stack_trace()
             /*
              * Need more space for demangled function name.
              */
-            Actuallyfree(function);
+            free(function);
             sz = sz * 2;
-            function = (char*)actuallymalloc(sz);
+            function = (char*)malloc(sz);
             continue;
           default:
             demangled_symbol = true;
@@ -1359,9 +1289,9 @@ void stack_trace()
        */
       Pmsg1(000, "    %s\n", stack_strings[i]);
     }
-    Actuallyfree(function);
+    free(function);
   }
-  Actuallyfree(stack_strings); /* malloc()ed by backtrace_symbols */
+  free(stack_strings); /* malloc()ed by backtrace_symbols */
 }
 
 #else

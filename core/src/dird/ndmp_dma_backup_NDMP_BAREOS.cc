@@ -332,7 +332,7 @@ bool DoNdmpBackup(JobControlRecord* jcr)
       nis->filehist_size = jcr->res.job->FileHistSize;
 
       ndmp_sess.param->log.ctx = nis;
-      ndmp_sess.param->log_tag = bstrdup("DIR-NDMP");
+      ndmp_sess.param->log_tag = strdup("DIR-NDMP");
 
       /*
        * Initialize the session structure.
@@ -371,7 +371,7 @@ bool DoNdmpBackup(JobControlRecord* jcr)
       }
 
       if (nis->virtual_filename) { free(nis->virtual_filename); }
-      nis->virtual_filename = bstrdup(virtual_filename.c_str());
+      nis->virtual_filename = strdup(virtual_filename.c_str());
 
       ndma_job_auto_adjust(&ndmp_sess.control_acb->job);
       if (!NdmpValidateJob(jcr, &ndmp_sess.control_acb->job)) { goto cleanup; }

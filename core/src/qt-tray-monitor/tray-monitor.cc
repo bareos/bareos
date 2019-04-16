@@ -76,7 +76,7 @@ static void ParseCommandLine(int argc, char* argv[], cl_opts& cl)
     switch (ch) {
       case 'c': /* configuration file */
         if (cl.configfile_) { free(static_cast<void*>(cl.configfile_)); }
-        cl.configfile_ = bstrdup(optarg);
+        cl.configfile_ = strdup(optarg);
         break;
 
       case 'd':

@@ -478,15 +478,15 @@ static void StoreRegex(LEX* lc, ResourceItem* item, int index, int pass)
         regfree(&preg);
         if (item->code == 1) {
           type = "regexdir";
-          res_incexe.current_opts->regexdir.append(bstrdup(lc->str));
+          res_incexe.current_opts->regexdir.append(strdup(lc->str));
           newsize = res_incexe.current_opts->regexdir.size();
         } else if (item->code == 2) {
           type = "regexfile";
-          res_incexe.current_opts->regexfile.append(bstrdup(lc->str));
+          res_incexe.current_opts->regexfile.append(strdup(lc->str));
           newsize = res_incexe.current_opts->regexfile.size();
         } else {
           type = "regex";
-          res_incexe.current_opts->regex.append(bstrdup(lc->str));
+          res_incexe.current_opts->regex.append(strdup(lc->str));
           newsize = res_incexe.current_opts->regex.size();
         }
         Dmsg4(900, "set %s %p size=%d %s\n", type, res_incexe.current_opts,
@@ -509,7 +509,7 @@ static void StoreBase(LEX* lc, ResourceItem* item, int index, int pass)
     /*
      * Pickup Base Job Name
      */
-    res_incexe.current_opts->base.append(bstrdup(lc->str));
+    res_incexe.current_opts->base.append(strdup(lc->str));
   }
   ScanToEol(lc);
 }
@@ -524,7 +524,7 @@ static void StorePlugin(LEX* lc, ResourceItem* item, int index, int pass)
     /*
      * Pickup plugin command
      */
-    res_incexe.current_opts->plugin = bstrdup(lc->str);
+    res_incexe.current_opts->plugin = strdup(lc->str);
   }
   ScanToEol(lc);
 }
@@ -549,21 +549,21 @@ static void StoreWild(LEX* lc, ResourceItem* item, int index, int pass)
       case BCT_QUOTED_STRING:
         if (item->code == 1) {
           type = "wilddir";
-          res_incexe.current_opts->wilddir.append(bstrdup(lc->str));
+          res_incexe.current_opts->wilddir.append(strdup(lc->str));
           newsize = res_incexe.current_opts->wilddir.size();
         } else if (item->code == 2) {
           if (strpbrk(lc->str, "/\\") != NULL) {
             type = "wildfile";
-            res_incexe.current_opts->wildfile.append(bstrdup(lc->str));
+            res_incexe.current_opts->wildfile.append(strdup(lc->str));
             newsize = res_incexe.current_opts->wildfile.size();
           } else {
             type = "wildbase";
-            res_incexe.current_opts->wildbase.append(bstrdup(lc->str));
+            res_incexe.current_opts->wildbase.append(strdup(lc->str));
             newsize = res_incexe.current_opts->wildbase.size();
           }
         } else {
           type = "wild";
-          res_incexe.current_opts->wild.append(bstrdup(lc->str));
+          res_incexe.current_opts->wild.append(strdup(lc->str));
           newsize = res_incexe.current_opts->wild.size();
         }
         Dmsg4(9, "set %s %p size=%d %s\n", type, res_incexe.current_opts,
@@ -590,7 +590,7 @@ static void StoreFstype(LEX* lc, ResourceItem* item, int index, int pass)
       case BCT_IDENTIFIER:
       case BCT_UNQUOTED_STRING:
       case BCT_QUOTED_STRING:
-        res_incexe.current_opts->fstype.append(bstrdup(lc->str));
+        res_incexe.current_opts->fstype.append(strdup(lc->str));
         Dmsg3(900, "set fstype %p size=%d %s\n", res_incexe.current_opts,
               res_incexe.current_opts->fstype.size(), lc->str);
         break;
@@ -615,7 +615,7 @@ static void StoreDrivetype(LEX* lc, ResourceItem* item, int index, int pass)
       case BCT_IDENTIFIER:
       case BCT_UNQUOTED_STRING:
       case BCT_QUOTED_STRING:
-        res_incexe.current_opts->Drivetype.append(bstrdup(lc->str));
+        res_incexe.current_opts->Drivetype.append(strdup(lc->str));
         Dmsg3(900, "set Drivetype %p size=%d %s\n", res_incexe.current_opts,
               res_incexe.current_opts->Drivetype.size(), lc->str);
         break;
@@ -637,7 +637,7 @@ static void StoreMeta(LEX* lc, ResourceItem* item, int index, int pass)
       case BCT_IDENTIFIER:
       case BCT_UNQUOTED_STRING:
       case BCT_QUOTED_STRING:
-        res_incexe.current_opts->meta.append(bstrdup(lc->str));
+        res_incexe.current_opts->meta.append(strdup(lc->str));
         Dmsg3(900, "set meta %p size=%d %s\n", res_incexe.current_opts,
               res_incexe.current_opts->meta.size(), lc->str);
         break;
@@ -850,7 +850,7 @@ static void StoreFname(LEX* lc,
 
         incexe = &res_incexe;
         if (incexe->name_list.size() == 0) { incexe->name_list.init(10, true); }
-        incexe->name_list.append(bstrdup(lc->str));
+        incexe->name_list.append(strdup(lc->str));
         Dmsg1(900, "Add to name_list %s\n", lc->str);
         break;
       }
@@ -903,7 +903,7 @@ static void StorePluginName(LEX* lc,
         if (incexe->plugin_list.size() == 0) {
           incexe->plugin_list.init(10, true);
         }
-        incexe->plugin_list.append(bstrdup(lc->str));
+        incexe->plugin_list.append(strdup(lc->str));
         Dmsg1(900, "Add to plugin_list %s\n", lc->str);
         break;
       }
@@ -937,7 +937,7 @@ static void StoreExcludedir(LEX* lc,
   if (pass == 1) {
     incexe = &res_incexe;
     if (incexe->ignoredir.size() == 0) { incexe->ignoredir.init(10, true); }
-    incexe->ignoredir.append(bstrdup(lc->str));
+    incexe->ignoredir.append(strdup(lc->str));
     Dmsg1(900, "Add to ignoredir_list %s\n", lc->str);
   }
   ScanToEol(lc);

@@ -87,7 +87,7 @@ void DlistFill(dlist* list, int max)
     // memset not required
     // memset(jcr, 0, sizeof(MYJCR));
     sprintf(buf, "%d", start + i);
-    jcr->buf = bstrdup(buf);
+    jcr->buf = strdup(buf);
     list->append(jcr);
     // printf("%s %s %d %s %s\n", buf, jcr->buf, list->size(), list->first(),
     // list->last()); printf("%s %s %d %x %x\n", buf, jcr->buf, list->size(),
@@ -181,7 +181,7 @@ TEST(dlist, dlist)
   for (int i = 0; i < 20; i++) {
     sprintf(buf, "%d", i);
     jcr = (MYJCR*)malloc(sizeof(MYJCR));
-    jcr->buf = bstrdup(buf);
+    jcr->buf = strdup(buf);
     jcr_chain->prepend(jcr);
     if (i == 10) { save_jcr = jcr; }
   }
@@ -211,7 +211,7 @@ TEST(dlist, dlist)
   for (int i = 0; i < 20; i++) {
     sprintf(buf, "%d", i);
     jcr = (MYJCR*)malloc(sizeof(MYJCR));
-    jcr->buf = bstrdup(buf);
+    jcr->buf = strdup(buf);
     jcr_chain->append(jcr);
     if (i == 10) { save_jcr = jcr; }
   }
@@ -244,7 +244,7 @@ TEST(dlist, dlist)
       for (int k = 0; k < CNT; k++) {
         count++;
         jcr = (MYJCR*)malloc(sizeof(MYJCR));
-        jcr->buf = bstrdup(buf);
+        jcr->buf = strdup(buf);
         jcr1 = (MYJCR*)jcr_chain->binary_insert(jcr, MyCompare);
         EXPECT_EQ(jcr, jcr1);
         buf[1]--;
@@ -258,11 +258,11 @@ TEST(dlist, dlist)
 
   jcr = (MYJCR*)malloc(sizeof(MYJCR));
   strcpy(buf, "a");
-  jcr->buf = bstrdup(buf);
+  jcr->buf = strdup(buf);
   ASSERT_EQ(NULL, (jcr_chain->binary_search(jcr, MyCompare)));
   free(jcr->buf);
   strcpy(buf, "ZZZZZZZZZZZZZZZZ");
-  jcr->buf = bstrdup(buf);
+  jcr->buf = strdup(buf);
   ASSERT_EQ(NULL, (jcr_chain->binary_search(jcr, MyCompare)));
   free(jcr->buf);
   free(jcr);

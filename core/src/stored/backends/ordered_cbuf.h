@@ -47,7 +47,7 @@ struct ocbuf_item {
   void* data;
 };
 
-class ordered_circbuf : public SmartAlloc {
+class ordered_circbuf {
  private:
   int size_;
   int capacity_;
@@ -93,4 +93,4 @@ inline ordered_circbuf::ordered_circbuf(int capacity) { init(capacity); }
  * Destructor
  */
 inline ordered_circbuf::~ordered_circbuf() { destroy(); }
-}
+}  // namespace storagedaemon

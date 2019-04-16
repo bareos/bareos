@@ -1357,10 +1357,10 @@ int regcomp(regex_t* bufp, const char* regex, int cflags)
   new (bufp) regex_t();
   bufp->cflags = cflags;
   if (bufp->cflags & REG_ICASE) {
-    char *p, *lcase = bstrdup(regex);
+    char *p, *lcase = strdup(regex);
     for (p = lcase; *p; p++) { *p = tolower(*p); }
     re_compile_pattern(bufp, (unsigned char*)lcase);
-    bfree(lcase);
+    free(lcase);
   } else {
     re_compile_pattern(bufp, (unsigned char*)regex);
   }

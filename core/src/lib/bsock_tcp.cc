@@ -69,8 +69,8 @@ BareosSocket* BareosSocketTCP::clone()
   clone->errmsg = GetPoolMemory(PM_MESSAGE);
 
   if (src_addr) { src_addr = New(IPADDR(*(src_addr))); }
-  if (who_) { who_ = bstrdup(who_); }
-  if (host_) { host_ = bstrdup(host_); }
+  if (who_) { who_ = strdup(who_); }
+  if (host_) { host_ = strdup(host_); }
 
   /* duplicate file descriptors */
   if (fd_ >= 0) { clone->fd_ = dup(fd_); }
@@ -150,8 +150,8 @@ void BareosSocketTCP::FinInit(JobControlRecord* jcr,
                               struct sockaddr* lclient_addr)
 {
   Dmsg3(100, "who=%s host=%s port=%d\n", who, host, port);
-  SetWho(bstrdup(who));
-  SetHost(bstrdup(host));
+  SetWho(strdup(who));
+  SetHost(strdup(host));
   SetPort(port);
   memcpy(&client_addr, lclient_addr, sizeof(client_addr));
   SetJcr(jcr);

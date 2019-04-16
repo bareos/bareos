@@ -31,7 +31,7 @@
 #define BAREOS_LIB_BERRNO_H_
 
 #include "lib/berrno.h"
-#include "lib/smartall.h"
+#include "include/bareos.h"
 
 /**
  * Extra bits set to interpret errno value differently from errno
@@ -57,7 +57,7 @@
  * If bit 29 in berrno_ is not set, then it is a Unix errno.
  *
  */
-class BErrNo : public SmartAlloc {
+class BErrNo {
   POOLMEM* buf_;
   int berrno_;
   void FormatWin32Message();

@@ -63,7 +63,7 @@ JobControlRecord* new_control_jcr(const char* base_name, int job_type)
   SetJcrDefaults(jcr, jcr->res.job);
   UnlockRes(my_config);
 
-  jcr->sd_auth_key = bstrdup("dummy"); /* dummy Storage daemon key */
+  jcr->sd_auth_key = strdup("dummy"); /* dummy Storage daemon key */
   CreateUniqueJobName(jcr, base_name);
   jcr->sched_time = jcr->start_time;
   jcr->setJobType(job_type);

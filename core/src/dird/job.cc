@@ -1762,7 +1762,7 @@ void SetJcrDefaults(JobControlRecord* jcr, JobResource* job)
   jcr->MaxRunSchedTime = job->MaxRunSchedTime;
 
   if (jcr->backup_format) { free(jcr->backup_format); }
-  jcr->backup_format = bstrdup(job->backup_format);
+  jcr->backup_format = strdup(job->backup_format);
 
   if (jcr->RestoreBootstrap) {
     free(jcr->RestoreBootstrap);
@@ -1773,7 +1773,7 @@ void SetJcrDefaults(JobControlRecord* jcr, JobResource* job)
    * This can be overridden by Console program
    */
   if (job->RestoreBootstrap) {
-    jcr->RestoreBootstrap = bstrdup(job->RestoreBootstrap);
+    jcr->RestoreBootstrap = strdup(job->RestoreBootstrap);
   }
 
   /*

@@ -120,7 +120,7 @@ int main(int argc, char* argv[])
 
       case 'c': /* configuration file */
         if (configfile != NULL) { free(configfile); }
-        configfile = bstrdup(optarg);
+        configfile = strdup(optarg);
         break;
 
       case 'd': /* debug level */
@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
 
   if (argc) {
     if (configfile != NULL) free(configfile);
-    configfile = bstrdup(*argv);
+    configfile = strdup(*argv);
     argc--;
     argv++;
   }

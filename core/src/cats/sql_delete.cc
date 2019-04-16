@@ -126,7 +126,7 @@ static int DeleteHandler(void* ctx, int num_fields, char** row)
   if (del->num_ids == MAX_DEL_LIST_LEN) { return 1; }
   if (del->num_ids == del->max_ids) {
     del->max_ids = (del->max_ids * 3) / 2;
-    del->JobId = (JobId_t*)brealloc(del->JobId, sizeof(JobId_t) * del->max_ids);
+    del->JobId = (JobId_t*)realloc(del->JobId, sizeof(JobId_t) * del->max_ids);
   }
   del->JobId[del->num_ids++] = (JobId_t)str_to_int64(row[0]);
   return 0;

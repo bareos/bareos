@@ -362,7 +362,7 @@ static bRC handlePluginEvent(bpContext* ctx, bEvent* event, void* value)
       /*
        * Save that we got a plugin override.
        */
-      p_ctx->plugin_options = bstrdup((char*)value);
+      p_ctx->plugin_options = strdup((char*)value);
       break;
     case bEventEndRestoreJob:
       retval = end_restore_job(ctx, value);
@@ -827,7 +827,7 @@ static inline void StripBackSlashes(char* value)
 static inline void SetStringIfNull(char** destination, char* value)
 {
   if (!*destination) {
-    *destination = bstrdup(value);
+    *destination = strdup(value);
     StripBackSlashes(*destination);
   }
 }
@@ -839,7 +839,7 @@ static inline void SetString(char** destination, char* value)
 {
   if (*destination) { free(*destination); }
 
-  *destination = bstrdup(value);
+  *destination = strdup(value);
   StripBackSlashes(*destination);
 }
 
@@ -872,7 +872,7 @@ static bRC parse_plugin_definition(bpContext* ctx, void* value)
   /*
    * Keep track of the last processed plugin definition.
    */
-  p_ctx->plugin_definition = bstrdup((char*)value);
+  p_ctx->plugin_definition = strdup((char*)value);
 
   keep_existing = (p_ctx->plugin_options) ? true : false;
 
@@ -880,7 +880,7 @@ static bRC parse_plugin_definition(bpContext* ctx, void* value)
    * Parse the plugin definition.
    * Make a private copy of the whole string.
    */
-  plugin_definition = bstrdup((char*)value);
+  plugin_definition = strdup((char*)value);
 
   bp = strchr(plugin_definition, ':');
   if (!bp) {
@@ -1863,7 +1863,7 @@ static bRC getXattr(bpContext* ctx, xattr_pkt* xp)
   }
 
   if (!skip_xattr) {
-    xp->name = bstrdup(p_ctx->next_xattr_name);
+    xp->name = strdup(p_ctx->next_xattr_name);
     xp->name_length = strlen(xp->name) + 1;
     xp->value = (char*)malloc(xattr_value_length);
     memcpy(xp->value, xattr_value.c_str(), xattr_value_length);

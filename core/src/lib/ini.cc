@@ -99,7 +99,7 @@ static bool IniStoreStr(LEX* lc, ConfigFile* inifile, ini_items* item)
    * If already allocated, free first
    */
   if (item->found && item->val.strval) { free(item->val.strval); }
-  item->val.strval = bstrdup(lc->str);
+  item->val.strval = strdup(lc->str);
   ScanToEol(lc);
   return true;
 }
@@ -135,7 +135,7 @@ static bool IniStoreAlistStr(LEX* lc, ConfigFile* inifile, ini_items* item)
 
   Dmsg4(900, "Append %s to alist %p size=%d %s\n", lc->str, list, list->size(),
         item->name);
-  list->append(bstrdup(lc->str));
+  list->append(strdup(lc->str));
   item->val.alistval = list;
 
   ScanToEol(lc);
@@ -647,7 +647,7 @@ bool ConfigFile::UnSerialize(const char* fname)
       ScanToEol(lc);
       continue;
     } else {
-      items[nb].name = bstrdup(lc->str);
+      items[nb].name = strdup(lc->str);
     }
 
     token = LexGetToken(lc, BCT_ALL);
@@ -664,7 +664,7 @@ bool ConfigFile::UnSerialize(const char* fname)
     if (LexGetToken(lc, BCT_STRING) == BCT_ERROR) { break; }
 
     if (assign) {
-      *assign = bstrdup(lc->str);
+      *assign = strdup(lc->str);
 
     } else {
       if ((items[nb].type = IniGetStoreType(lc->str)) == 0) {

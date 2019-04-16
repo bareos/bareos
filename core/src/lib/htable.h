@@ -85,7 +85,7 @@ struct h_mem {
 #pragma pack(pop)
 #endif
 
-class htable : public SmartAlloc {
+class htable {
   hlink** table;       /* Hash table */
   int loffset;         /* Link offset in item */
   hlink* walkptr;      /* Table walk pointer */

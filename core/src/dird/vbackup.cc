@@ -206,7 +206,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
    */
   if (jcr->vf_jobids) {
     Dmsg1(10, "jobids=%s\n", jcr->vf_jobids);
-    jobids = bstrdup(jcr->vf_jobids);
+    jobids = strdup(jcr->vf_jobids);
 
   } else {
     db_list_ctx jobids_ctx;
@@ -218,7 +218,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
       return false;
     }
 
-    jobids = bstrdup(jobids_ctx.list);
+    jobids = strdup(jobids_ctx.list);
   }
 
   Jmsg(jcr, M_INFO, 0, _("Consolidating JobIds %s\n"), jobids);

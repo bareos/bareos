@@ -213,7 +213,7 @@ extern "C" {
  *  This prevents conflicts between wx-Widgets and Bareos.
  *  In wx-console files that malloc or free() Bareos structures
  *  config/resources and interface to the Bareos libraries,
- *  you must use bmalloc() and bfree().
+ *  you must use malloc() and free().
  */
 #ifdef HAVE_WXCONSOLE
 #undef New
@@ -232,5 +232,10 @@ extern "C" {
 #ifndef HAVE_ZLIB_H
 #undef HAVE_LIBZ /* no good without headers */
 #endif
+
+#define New(x) new x
+#define Dsm_check(x)
+#define sm_dump(x, ...)
+#define sm_check(x, y, z)
 
 #endif

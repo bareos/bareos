@@ -482,45 +482,45 @@ static bool CopyFileset(FindFilesPacket* ff, JobControlRecord* jcr)
 
         for (k = 0; k < fo->regex.size(); k++) {
           // fd->fsend("R %s\n", fo->regex.get(k));
-          current_opts->regex.append(bstrdup((const char*)fo->regex.get(k)));
+          current_opts->regex.append(strdup((const char*)fo->regex.get(k)));
         }
         for (k = 0; k < fo->regexdir.size(); k++) {
           // fd->fsend("RD %s\n", fo->regexdir.get(k));
           current_opts->regexdir.append(
-              bstrdup((const char*)fo->regexdir.get(k)));
+              strdup((const char*)fo->regexdir.get(k)));
         }
         for (k = 0; k < fo->regexfile.size(); k++) {
           // fd->fsend("RF %s\n", fo->regexfile.get(k));
           current_opts->regexfile.append(
-              bstrdup((const char*)fo->regexfile.get(k)));
+              strdup((const char*)fo->regexfile.get(k)));
         }
         for (k = 0; k < fo->wild.size(); k++) {
-          current_opts->wild.append(bstrdup((const char*)fo->wild.get(k)));
+          current_opts->wild.append(strdup((const char*)fo->wild.get(k)));
         }
         for (k = 0; k < fo->wilddir.size(); k++) {
           current_opts->wilddir.append(
-              bstrdup((const char*)fo->wilddir.get(k)));
+              strdup((const char*)fo->wilddir.get(k)));
         }
         for (k = 0; k < fo->wildfile.size(); k++) {
           current_opts->wildfile.append(
-              bstrdup((const char*)fo->wildfile.get(k)));
+              strdup((const char*)fo->wildfile.get(k)));
         }
         for (k = 0; k < fo->wildbase.size(); k++) {
           current_opts->wildbase.append(
-              bstrdup((const char*)fo->wildbase.get(k)));
+              strdup((const char*)fo->wildbase.get(k)));
         }
         for (k = 0; k < fo->fstype.size(); k++) {
-          current_opts->fstype.append(bstrdup((const char*)fo->fstype.get(k)));
+          current_opts->fstype.append(strdup((const char*)fo->fstype.get(k)));
         }
         for (k = 0; k < fo->Drivetype.size(); k++) {
           current_opts->Drivetype.append(
-              bstrdup((const char*)fo->Drivetype.get(k)));
+              strdup((const char*)fo->Drivetype.get(k)));
         }
       }
 
       for (j = 0; j < ie->name_list.size(); j++) {
         fileset->incexe->name_list.append(
-            bstrdup((const char*)ie->name_list.get(j)));
+            strdup((const char*)ie->name_list.get(j)));
       }
     }
 

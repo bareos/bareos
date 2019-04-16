@@ -321,10 +321,10 @@ static int IdListHandler(void* ctx, int num_fields, char** row)
   if (lst->num_ids == lst->max_ids) {
     if (lst->max_ids == 0) {
       lst->max_ids = 10000;
-      lst->Id = (int64_t*)bmalloc(sizeof(int64_t) * lst->max_ids);
+      lst->Id = (int64_t*)malloc(sizeof(int64_t) * lst->max_ids);
     } else {
       lst->max_ids = (lst->max_ids * 3) / 2;
-      lst->Id = (int64_t*)brealloc(lst->Id, sizeof(int64_t) * lst->max_ids);
+      lst->Id = (int64_t*)realloc(lst->Id, sizeof(int64_t) * lst->max_ids);
     }
   }
   lst->Id[lst->num_ids++] = str_to_int64(row[0]);
@@ -373,13 +373,13 @@ static int NameListHandler(void* ctx, int num_fields, char** row)
   if (name->num_ids == name->max_ids) {
     if (name->max_ids == 0) {
       name->max_ids = 10000;
-      name->name = (char**)bmalloc(sizeof(char*) * name->max_ids);
+      name->name = (char**)malloc(sizeof(char*) * name->max_ids);
     } else {
       name->max_ids = (name->max_ids * 3) / 2;
-      name->name = (char**)brealloc(name->name, sizeof(char*) * name->max_ids);
+      name->name = (char**)realloc(name->name, sizeof(char*) * name->max_ids);
     }
   }
-  name->name[name->num_ids++] = bstrdup(row[0]);
+  name->name[name->num_ids++] = strdup(row[0]);
   return 0;
 }
 

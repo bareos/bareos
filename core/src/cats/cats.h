@@ -70,7 +70,7 @@ enum e_list_type
  * Structure used when calling db_get_query_ids()
  *  allows the subroutine to return a list of ids.
  */
-class dbid_list : public SmartAlloc {
+class dbid_list {
  public:
   DBId_t* DBId;      /**< array of DBIds */
   char* PurgedFiles; /**< Array of PurgedFile flags */
@@ -579,9 +579,7 @@ typedef struct sql_field {
 } SQL_FIELD;
 #endif
 
-class BareosDb
-    : public SmartAlloc
-    , public BareosDbQueryEnum {
+class BareosDb : public BareosDbQueryEnum {
  protected:
   /*
    * Members

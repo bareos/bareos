@@ -29,7 +29,7 @@
 
 #include "lib/dlist.h"
 
-class IPADDR : public SmartAlloc {
+class IPADDR {
  public:
   typedef enum
   {

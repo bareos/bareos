@@ -60,7 +60,7 @@ struct accurate_payload {
 /*
  * Accurate payload storage abstraction classes.
  */
-class BareosAccurateFilelist : public SmartAlloc {
+class BareosAccurateFilelist {
  protected:
   int64_t filenr_;
   char* seen_bitmap_;

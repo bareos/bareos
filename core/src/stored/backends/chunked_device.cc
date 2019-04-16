@@ -409,7 +409,7 @@ bool chunked_device::EnqueueChunk(chunk_io_request* request)
 
   new_request = (chunk_io_request*)malloc(sizeof(chunk_io_request));
   memset(new_request, 0, sizeof(chunk_io_request));
-  new_request->volname = bstrdup(request->volname);
+  new_request->volname = strdup(request->volname);
   new_request->chunk = request->chunk;
   new_request->buffer = request->buffer;
   new_request->wbuflen = request->wbuflen;
@@ -727,7 +727,7 @@ int chunked_device::SetupChunk(const char* pathname, int flags, int mode)
    */
   if (current_volname_) { free(current_volname_); }
 
-  current_volname_ = bstrdup(getVolCatName());
+  current_volname_ = strdup(getVolCatName());
 
   /*
    * in principle it is not required to load_chunk(),
@@ -1089,7 +1089,7 @@ bool chunked_device::TruncateChunkedVolume(DeviceControlRecord* dcr)
      */
     if (current_volname_) { free(current_volname_); }
 
-    current_volname_ = bstrdup(getVolCatName());
+    current_volname_ = strdup(getVolCatName());
   }
 
   return true;

@@ -58,7 +58,7 @@
        list ? (*((void**)&(var)) = (void*)((list)->next(var))) : NULL;)
 #endif
 
-class dlist : public SmartAlloc {
+class dlist {
   void* head;
   void* tail;
   int16_t loffset;

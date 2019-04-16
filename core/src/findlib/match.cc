@@ -58,9 +58,6 @@ static const int fnmode = FNM_CASEFOLD;
 static const int fnmode = 0;
 #endif
 
-#undef bmalloc
-#define bmalloc(x) sm_malloc(__FILE__, __LINE__, x)
-
 bool MatchFiles(JobControlRecord* jcr,
                 FindFilesPacket* ff,
                 int FileSave(JobControlRecord*, FindFilesPacket* ff_pkt, bool))
@@ -128,8 +125,8 @@ void AddFnameToIncludeList(FindFilesPacket* ff, int prefixed, const char* fname)
 
   len = strlen(fname);
 
-  inc = (struct s_included_file*)bmalloc(sizeof(struct s_included_file) + len +
-                                         1);
+  inc =
+      (struct s_included_file*)malloc(sizeof(struct s_included_file) + len + 1);
   memset(inc, 0, sizeof(struct s_included_file) + len + 1);
   inc->VerifyOpts[0] = 'V';
   inc->VerifyOpts[1] = ':';
@@ -357,7 +354,7 @@ void AddFnameToIncludeList(FindFilesPacket* ff, int prefixed, const char* fname)
           size[j] = 0;
           if (!inc->size_match) {
             inc->size_match =
-                (struct s_sz_matching*)bmalloc(sizeof(struct s_sz_matching));
+                (struct s_sz_matching*)malloc(sizeof(struct s_sz_matching));
           }
           if (!ParseSizeMatch(size, inc->size_match)) {
             Emsg1(M_ERROR, 0, _("Unparseable size option: %s\n"), size);
@@ -432,8 +429,8 @@ void AddFnameToExcludeList(FindFilesPacket* ff, const char* fname)
 
   len = strlen(fname);
 
-  exc = (struct s_excluded_file*)bmalloc(sizeof(struct s_excluded_file) + len +
-                                         1);
+  exc =
+      (struct s_excluded_file*)malloc(sizeof(struct s_excluded_file) + len + 1);
   memset(exc, 0, sizeof(struct s_excluded_file) + len + 1);
   exc->next = *list;
   exc->len = len;
@@ -565,7 +562,7 @@ bool ParseSizeMatch(const char* size_match_pattern,
    * As we manipulate the input and size_to_uint64
    * eats its input.
    */
-  private_copy = bstrdup(size_match_pattern);
+  private_copy = strdup(size_match_pattern);
 
   /*
    * Empty the matching arguments.

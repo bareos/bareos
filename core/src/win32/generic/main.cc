@@ -137,7 +137,7 @@ int WINAPI WinMain(HINSTANCE Instance,
   /* Don't NULL command_args[0] !!! */
   for (i = 1; i < MAX_COMMAND_ARGS; i++) { command_args[i] = NULL; }
 
-  char* pszArgs = bstrdup(cmdLine);
+  char* pszArgs = strdup(cmdLine);
   wordPtr = pszArgs;
   quote = 0;
   while (*wordPtr && (*wordPtr == ' ' || *wordPtr == '\t')) wordPtr++;

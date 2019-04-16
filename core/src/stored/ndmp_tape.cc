@@ -1154,7 +1154,7 @@ extern "C" void* HandleNdmpConnectionRequest(ConfigurationParser* config,
   nis = (NIS*)malloc(sizeof(NIS));
   sess->param->log.ctx = nis;
   sess->param->log_level = NativeToNdmpLoglevel(debug_level, nis);
-  sess->param->log_tag = bstrdup("SD-NDMP");
+  sess->param->log_tag = strdup("SD-NDMP");
 
   RegisterCallbackHooks(sess);
 
@@ -1468,7 +1468,7 @@ extern "C" void* ndmp_thread_server(void* arg)
             sizeof(struct ndmp_session_handle));
         memset(new_handle, 0, sizeof(struct ndmp_session_handle));
         new_handle->fd = new_sockfd;
-        new_handle->host = bstrdup(buf);
+        new_handle->host = strdup(buf);
         memset(&new_handle->peer_addr, 0, sizeof(new_handle->peer_addr));
         memcpy(&new_handle->client_addr, &cli_addr,
                sizeof(new_handle->client_addr));

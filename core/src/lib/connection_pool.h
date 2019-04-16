@@ -33,7 +33,7 @@
 class alist;
 class BareosSocket;
 
-class Connection : public SmartAlloc {
+class Connection {
  public:
   Connection(const char* name,
              int protocol_version,
@@ -65,7 +65,7 @@ class Connection : public SmartAlloc {
   pthread_mutex_t mutex_;
 };
 
-class ConnectionPool : public SmartAlloc {
+class ConnectionPool {
  public:
   ConnectionPool();
   ~ConnectionPool();

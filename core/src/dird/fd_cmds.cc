@@ -318,7 +318,7 @@ int SendJobInfoToFileDaemon(JobControlRecord* jcr)
 {
   BareosSocket* fd = jcr->file_bsock;
 
-  if (jcr->sd_auth_key == NULL) { jcr->sd_auth_key = bstrdup("dummy"); }
+  if (jcr->sd_auth_key == NULL) { jcr->sd_auth_key = strdup("dummy"); }
 
   if (jcr->res.client->connection_successful_handshake_ ==
       ClientConnectionHandshakeMode::kTlsFirst) {

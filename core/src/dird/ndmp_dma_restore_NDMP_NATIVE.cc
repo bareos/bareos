@@ -317,7 +317,7 @@ static bool DoNdmpNativeRestore(JobControlRecord* jcr)
       NativeToNdmpLoglevel(NdmpLoglevel, debug_level, nis);
   nis->jcr = jcr;
   ndmp_sess.param->log.ctx = nis;
-  ndmp_sess.param->log_tag = bstrdup("DIR-NDMP");
+  ndmp_sess.param->log_tag = strdup("DIR-NDMP");
 
   ndmp_sess.conn_snooping = (me->ndmp_snooping) ? 1 : 0;
   ndmp_sess.control_agent_enabled = 1;

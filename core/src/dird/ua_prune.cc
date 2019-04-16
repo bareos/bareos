@@ -456,14 +456,16 @@ static bool prune_set_filter(UaContext* ua,
 
   DbLock(ua->db);
   if (client) {
-    ua->db->EscapeString(ua->jcr, ed2, client->resource_name_, strlen(client->resource_name_));
+    ua->db->EscapeString(ua->jcr, ed2, client->resource_name_,
+                         strlen(client->resource_name_));
     Mmsg(tmp, " AND Client.Name = '%s' ", ed2);
     PmStrcat(*add_where, tmp.c_str());
     PmStrcat(*add_from, " JOIN Client USING (ClientId) ");
   }
 
   if (pool) {
-    ua->db->EscapeString(ua->jcr, ed2, pool->resource_name_, strlen(pool->resource_name_));
+    ua->db->EscapeString(ua->jcr, ed2, pool->resource_name_,
+                         strlen(pool->resource_name_));
     Mmsg(tmp, " AND Pool.Name = '%s' ", ed2);
     PmStrcat(*add_where, tmp.c_str());
     /* Use ON() instead of USING for some old SQLite */
@@ -591,8 +593,8 @@ static bool GrowDelList(struct del_ctx* del)
 
   if (del->num_ids == del->max_ids) {
     del->max_ids = (del->max_ids * 3) / 2;
-    del->JobId = (JobId_t*)brealloc(del->JobId, sizeof(JobId_t) * del->max_ids);
-    del->PurgedFiles = (char*)brealloc(del->PurgedFiles, del->max_ids);
+    del->JobId = (JobId_t*)realloc(del->JobId, sizeof(JobId_t) * del->max_ids);
+    del->PurgedFiles = (char*)realloc(del->PurgedFiles, del->max_ids);
   }
 
   return true;
@@ -807,7 +809,8 @@ static bool PruneBackupJobs(UaContext* ua,
 
   if (del.num_del > 0) {
     ua->InfoMsg(_("Pruned %d %s for client %s from catalog.\n"), del.num_del,
-                del.num_del == 1 ? _("Job") : _("Jobs"), client->resource_name_);
+                del.num_del == 1 ? _("Job") : _("Jobs"),
+                client->resource_name_);
   } else if (ua->verbose) {
     ua->InfoMsg(_("No Jobs found to prune.\n"));
   }

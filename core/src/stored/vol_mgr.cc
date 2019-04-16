@@ -192,7 +192,7 @@ void RemoveReadVolume(JobControlRecord* jcr, const char* VolumeName)
   LockReadVolumes();
 
   memset(&vol, 0, sizeof(vol));
-  vol.vol_name = bstrdup(VolumeName);
+  vol.vol_name = strdup(VolumeName);
   vol.SetJobid(jcr->JobId);
 
   fvol =
@@ -232,7 +232,7 @@ static VolumeReservationItem* find_read_volume(const char* VolumeName)
   LockReadVolumes();
 
   memset(&vol, 0, sizeof(vol));
-  vol.vol_name = bstrdup(VolumeName);
+  vol.vol_name = strdup(VolumeName);
 
   /*
    * Note, we do want a simple CompareByVolumename on volume name only here
@@ -286,7 +286,7 @@ static VolumeReservationItem* new_vol_item(DeviceControlRecord* dcr,
 
   vol = (VolumeReservationItem*)malloc(sizeof(VolumeReservationItem));
   memset(vol, 0, sizeof(VolumeReservationItem));
-  vol->vol_name = bstrdup(VolumeName);
+  vol->vol_name = strdup(VolumeName);
   if (dcr) {
     vol->dev = dcr->dev;
     Dmsg3(debuglevel, "new Vol=%s at %p dev=%s\n", VolumeName, vol->vol_name,
@@ -721,7 +721,7 @@ static VolumeReservationItem* find_volume(const char* VolumeName)
   if (vol_list->empty()) { return NULL; }
   /* Do not lock reservations here */
   LockVolumes();
-  vol.vol_name = bstrdup(VolumeName);
+  vol.vol_name = strdup(VolumeName);
   fvol = (VolumeReservationItem*)vol_list->binary_search(&vol,
                                                          CompareByVolumename);
   free(vol.vol_name);

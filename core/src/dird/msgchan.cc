@@ -215,7 +215,7 @@ bool StartStorageDaemonJob(JobControlRecord* jcr,
       return false;
     } else {
       BfreeAndNull(jcr->sd_auth_key);
-      jcr->sd_auth_key = bstrdup(auth_key);
+      jcr->sd_auth_key = strdup(auth_key);
       Dmsg1(150, "sd_auth_key=%s\n", jcr->sd_auth_key);
     }
   } else {
@@ -428,7 +428,7 @@ extern "C" void* msg_thread(void* arg)
      */
     if (sscanf(sd->msg, OK_nextrun, &auth_key) == 1) {
       if (jcr->sd_auth_key) { free(jcr->sd_auth_key); }
-      jcr->sd_auth_key = bstrdup(auth_key);
+      jcr->sd_auth_key = strdup(auth_key);
       pthread_cond_broadcast(
           &jcr->nextrun_ready); /* wakeup any waiting threads */
       continue;

@@ -689,7 +689,7 @@ bool droplet_device::initialize()
       return -1;
     }
 
-    configstring_ = bstrdup(dev_options);
+    configstring_ = strdup(dev_options);
 
     bp = configstring_;
     while (bp) {
@@ -884,7 +884,7 @@ bool droplet_device::initialize()
     /*
      * If a bucketname was defined set it in the context.
      */
-    if (bucketname_) { ctx_->cur_bucket = bstrdup(bucketname_); }
+    if (bucketname_) { ctx_->cur_bucket = strdup(bucketname_); }
   }
 
   return true;

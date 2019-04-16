@@ -227,13 +227,13 @@ int AddWildToFileset(JobControlRecord* jcr, const char* item, int type)
   findFOPTS* current_opts = start_options(jcr->ff);
 
   if (type == ' ') {
-    current_opts->wild.append(bstrdup(item));
+    current_opts->wild.append(strdup(item));
   } else if (type == 'D') {
-    current_opts->wilddir.append(bstrdup(item));
+    current_opts->wilddir.append(strdup(item));
   } else if (type == 'F') {
-    current_opts->wildfile.append(bstrdup(item));
+    current_opts->wildfile.append(strdup(item));
   } else if (type == 'B') {
-    current_opts->wildbase.append(bstrdup(item));
+    current_opts->wildbase.append(strdup(item));
   } else {
     return state_error;
   }
@@ -317,16 +317,16 @@ void AddFileset(JobControlRecord* jcr, const char* item)
       break;
     case 'B':
       current_opts = start_options(ff);
-      current_opts->base.append(bstrdup(item));
+      current_opts->base.append(strdup(item));
       state = state_options;
       break;
     case 'X': /* Filetype or Drive type */
       current_opts = start_options(ff);
       state = state_options;
       if (subcode == ' ') {
-        current_opts->fstype.append(bstrdup(item));
+        current_opts->fstype.append(strdup(item));
       } else if (subcode == 'D') {
-        current_opts->Drivetype.append(bstrdup(item));
+        current_opts->Drivetype.append(strdup(item));
       } else {
         state = state_error;
       }
@@ -339,7 +339,7 @@ void AddFileset(JobControlRecord* jcr, const char* item)
       break;
     case 'Z': /* Ignore dir */
       state = state_include;
-      fileset->incexe->ignoredir.append(bstrdup(item));
+      fileset->incexe->ignoredir.append(strdup(item));
       break;
     case 'D':
       current_opts = start_options(ff);
@@ -351,7 +351,7 @@ void AddFileset(JobControlRecord* jcr, const char* item)
       break;
     case 'G': /* Plugin command for this Option block */
       current_opts = start_options(ff);
-      current_opts->plugin = bstrdup(item);
+      current_opts->plugin = strdup(item);
       state = state_options;
       break;
     default:

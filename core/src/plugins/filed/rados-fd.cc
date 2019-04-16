@@ -336,7 +336,7 @@ static bRC handlePluginEvent(bpContext* ctx, bEvent* event, void* value)
       /*
        * Save that we got a plugin override.
        */
-      p_ctx->plugin_options = bstrdup((char*)value);
+      p_ctx->plugin_options = strdup((char*)value);
       break;
     case bEventEndRestoreJob:
       retval = end_restore_job(ctx, value);
@@ -510,7 +510,7 @@ static inline void StripBackSlashes(char* value)
 static inline void SetStringIfNull(char** destination, char* value)
 {
   if (!*destination) {
-    *destination = bstrdup(value);
+    *destination = strdup(value);
     StripBackSlashes(*destination);
   }
 }
@@ -522,7 +522,7 @@ static inline void SetString(char** destination, char* value)
 {
   if (*destination) { free(*destination); }
 
-  *destination = bstrdup(value);
+  *destination = strdup(value);
   StripBackSlashes(*destination);
 }
 
@@ -548,7 +548,7 @@ static bRC parse_plugin_definition(bpContext* ctx, void* value)
    * Parse the plugin definition.
    * Make a private copy of the whole string.
    */
-  plugin_definition = bstrdup((char*)value);
+  plugin_definition = strdup((char*)value);
 
   bp = strchr(plugin_definition, ':');
   if (!bp) {
@@ -687,13 +687,13 @@ static bRC connect_to_rados(bpContext* ctx)
   if (!p_ctx->cluster_initialized) {
 #if LIBRADOS_VERSION_CODE < 17408
     if (!p_ctx->rados_clientid) {
-      p_ctx->rados_clientid = bstrdup(DEFAULT_CLIENTID);
+      p_ctx->rados_clientid = strdup(DEFAULT_CLIENTID);
     }
 
     status = rados_create(&p_ctx->cluster, p_ctx->rados_clientid);
 #else
     if (!p_ctx->rados_clustername) {
-      p_ctx->rados_clustername = bstrdup(DEFAULT_CLUSTERNAME);
+      p_ctx->rados_clustername = strdup(DEFAULT_CLUSTERNAME);
     }
 
     if (!p_ctx->rados_username) {
@@ -704,9 +704,9 @@ static bRC connect_to_rados(bpContext* ctx)
         PoolMem temp;
 
         Mmsg(temp, "client.%s", p_ctx->rados_clientid);
-        p_ctx->rados_username = bstrdup(temp.c_str());
+        p_ctx->rados_username = strdup(temp.c_str());
       } else {
-        p_ctx->rados_username = bstrdup(DEFAULT_USERNAME);
+        p_ctx->rados_username = strdup(DEFAULT_USERNAME);
       }
     }
 
@@ -782,7 +782,7 @@ static bRC setup_backup(bpContext* ctx, void* value)
     PoolMem snapshotname(PM_NAME);
 
     Mmsg(snapshotname, "bareos_backup_%ld", p_ctx->JobId);
-    p_ctx->rados_snapshotname = bstrdup(snapshotname.c_str());
+    p_ctx->rados_snapshotname = strdup(snapshotname.c_str());
   }
 
   status = rados_ioctx_snap_create(p_ctx->ioctx, p_ctx->rados_snapshotname);
@@ -1129,7 +1129,7 @@ static bRC getXattr(bpContext* ctx, xattr_pkt* xp)
    * Create a new xattr and return the data in allocated memory.
    * Caller will free this for us.
    */
-  xp->name = bstrdup(xattr_name);
+  xp->name = strdup(xattr_name);
   xp->name_length = strlen(xattr_name) + 1;
   xp->value = (char*)malloc(xattr_value_length);
   memcpy(xp->value, xattr_value, xattr_value_length);

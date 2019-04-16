@@ -97,7 +97,7 @@ int rados_device::d_open(const char* pathname, int flags, int mode)
       goto bail_out;
     }
 
-    rados_configstring_ = bstrdup(dev_options);
+    rados_configstring_ = strdup(dev_options);
 
     bp = rados_configstring_;
     while (bp) {
@@ -180,16 +180,16 @@ int rados_device::d_open(const char* pathname, int flags, int mode)
     if (!rados_clientid_) {
       Mmsg1(errmsg, _("No client id configured defaulting to %s\n"),
             DEFAULT_CLIENTID);
-      rados_clientid_ = bstrdup(DEFAULT_CLIENTID);
+      rados_clientid_ = strdup(DEFAULT_CLIENTID);
     }
 #else
     if (!rados_clustername_) {
-      rados_clustername_ = bstrdup(DEFAULT_CLUSTERNAME);
+      rados_clustername_ = strdup(DEFAULT_CLUSTERNAME);
     }
     if (!rados_username_) {
       Mmsg1(errmsg, _("No username configured defaulting to %s\n"),
             DEFAULT_USERNAME);
-      rados_username_ = bstrdup(DEFAULT_USERNAME);
+      rados_username_ = strdup(DEFAULT_USERNAME);
     }
 #endif
 

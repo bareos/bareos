@@ -130,7 +130,7 @@ struct _progdata {
 };
 
 /* memory allocation/deallocation */
-#define MALLOC(size) (char*)bmalloc(size);
+#define MALLOC(size) (char*)malloc(size);
 
 #define ASSERT_MEMORY(m)                         \
   if (m == NULL) {                               \
@@ -140,7 +140,7 @@ struct _progdata {
 
 #define FREE(ptr)    \
   if (ptr != NULL) { \
-    bfree(ptr);      \
+    free(ptr);      \
     ptr = NULL;      \
   }
 
@@ -209,7 +209,7 @@ progdata* allocpdata(void)
 {
   progdata* pdata;
 
-  pdata = (progdata*)bmalloc(sizeof(progdata));
+  pdata = (progdata*)malloc(sizeof(progdata));
   ASSERT_MEMORY(pdata);
   memset(pdata, 0, sizeof(progdata));
 
@@ -293,13 +293,13 @@ void ParseArgs(progdata* pdata, int argc, char* argv[])
          * Error in resolving path
          */
         FREE(progdir);
-        progdir = bstrdup(argv[0]);
+        progdir = strdup(argv[0]);
       }
-      pdata->pluginfile = bstrdup(progdir);
+      pdata->pluginfile = strdup(progdir);
       FREE(dirtmp);
       FREE(progdir);
     } else {
-      pdata->pluginfile = bstrdup(argv[0]);
+      pdata->pluginfile = strdup(argv[0]);
     }
   }
 }

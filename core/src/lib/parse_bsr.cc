@@ -558,10 +558,10 @@ static storagedaemon::BootStrapRecord* store_fileregex(
   if (token == BCT_ERROR) { return NULL; }
 
   if (bsr->fileregex) free(bsr->fileregex);
-  bsr->fileregex = bstrdup(lc->str);
+  bsr->fileregex = strdup(lc->str);
 
   if (bsr->fileregex_re == NULL)
-    bsr->fileregex_re = (regex_t*)bmalloc(sizeof(regex_t));
+    bsr->fileregex_re = (regex_t*)malloc(sizeof(regex_t));
 
   rc = regcomp(bsr->fileregex_re, bsr->fileregex, REG_EXTENDED | REG_NOSUB);
   if (rc != 0) {
@@ -1003,7 +1003,7 @@ static inline void RemoveBsr(storagedaemon::BootStrapRecord* bsr)
   FreeBsrItem((storagedaemon::BootStrapRecord*)bsr->FileIndex);
   FreeBsrItem((storagedaemon::BootStrapRecord*)bsr->JobType);
   FreeBsrItem((storagedaemon::BootStrapRecord*)bsr->JobLevel);
-  if (bsr->fileregex) { bfree(bsr->fileregex); }
+  if (bsr->fileregex) { free(bsr->fileregex); }
   if (bsr->fileregex_re) {
     regfree(bsr->fileregex_re);
     free(bsr->fileregex_re);

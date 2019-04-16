@@ -1556,9 +1556,9 @@ static void SetStorageAuthKeyAndTlsPolicy(JobControlRecord* jcr,
 {
   if (!*key) { return; }
 
-  if (jcr->sd_auth_key) { bfree(jcr->sd_auth_key); }
+  if (jcr->sd_auth_key) { free(jcr->sd_auth_key); }
 
-  jcr->sd_auth_key = bstrdup(key);
+  jcr->sd_auth_key = strdup(key);
   Dmsg0(5, "set sd auth key\n");
 
   jcr->sd_tls_policy = policy;
@@ -1815,7 +1815,7 @@ static bool PluginoptionsCmd(JobControlRecord* jcr)
   if (!jcr->plugin_options) {
     jcr->plugin_options = New(alist(10, owned_by_alist));
   }
-  jcr->plugin_options->append(bstrdup(plugin_options));
+  jcr->plugin_options->append(strdup(plugin_options));
 
   /*
    * Send OK to Director

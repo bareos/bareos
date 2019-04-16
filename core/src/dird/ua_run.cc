@@ -653,7 +653,7 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
             free(jcr->backup_format);
             jcr->backup_format = NULL;
           }
-          jcr->backup_format = bstrdup(ua->cmd);
+          jcr->backup_format = strdup(ua->cmd);
           goto try_again;
         }
         break;
@@ -707,7 +707,7 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
             if (ua->cmd[0] != 0) {
               FILE* fd;
 
-              jcr->RestoreBootstrap = bstrdup(ua->cmd);
+              jcr->RestoreBootstrap = strdup(ua->cmd);
               fd = fopen(jcr->RestoreBootstrap, "rb");
               if (!fd) {
                 BErrNo be;
@@ -752,7 +752,7 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
             if (IsPathSeparator(ua->cmd[0]) && ua->cmd[1] == '\0') {
               ua->cmd[0] = 0;
             }
-            jcr->where = bstrdup(ua->cmd);
+            jcr->where = strdup(ua->cmd);
             goto try_again;
           }
         } else { /* Plugin Options */
@@ -761,7 +761,7 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
               free(jcr->plugin_options);
               jcr->plugin_options = NULL;
             }
-            jcr->plugin_options = bstrdup(ua->cmd);
+            jcr->plugin_options = strdup(ua->cmd);
             goto try_again;
           }
         }
@@ -777,7 +777,7 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
               free(jcr->plugin_options);
               jcr->plugin_options = NULL;
             }
-            jcr->plugin_options = bstrdup(ua->cmd);
+            jcr->plugin_options = strdup(ua->cmd);
             goto try_again;
           }
         }
@@ -811,7 +811,7 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
             free(jcr->plugin_options);
             jcr->plugin_options = NULL;
           }
-          jcr->plugin_options = bstrdup(ua->cmd);
+          jcr->plugin_options = strdup(ua->cmd);
           goto try_again;
         }
         break;
@@ -881,13 +881,13 @@ static bool ResetRestoreContext(UaContext* ua,
 
   if (rc.where) {
     if (jcr->where) { free(jcr->where); }
-    jcr->where = bstrdup(rc.where);
+    jcr->where = strdup(rc.where);
     rc.where = NULL;
   }
 
   if (rc.regexwhere) {
     if (jcr->RegexWhere) { free(jcr->RegexWhere); }
-    jcr->RegexWhere = bstrdup(rc.regexwhere);
+    jcr->RegexWhere = strdup(rc.regexwhere);
     rc.regexwhere = NULL;
   }
 
@@ -902,13 +902,13 @@ static bool ResetRestoreContext(UaContext* ua,
 
   if (rc.bootstrap) {
     if (jcr->RestoreBootstrap) { free(jcr->RestoreBootstrap); }
-    jcr->RestoreBootstrap = bstrdup(rc.bootstrap);
+    jcr->RestoreBootstrap = strdup(rc.bootstrap);
     rc.bootstrap = NULL;
   }
 
   if (rc.plugin_options) {
     if (jcr->plugin_options) { free(jcr->plugin_options); }
-    jcr->plugin_options = bstrdup(rc.plugin_options);
+    jcr->plugin_options = strdup(rc.plugin_options);
     rc.plugin_options = NULL;
   }
 
@@ -986,7 +986,7 @@ static bool ResetRestoreContext(UaContext* ua,
 
   if (rc.backup_format) {
     if (jcr->backup_format) { free(jcr->backup_format); }
-    jcr->backup_format = bstrdup(rc.backup_format);
+    jcr->backup_format = strdup(rc.backup_format);
     rc.backup_format = NULL;
   }
 
@@ -1031,8 +1031,8 @@ try_again_reg:
     case 0:
       /* Strip prefix */
       if (GetCmd(ua, _("Please enter the path prefix to strip: "))) {
-        if (strip_prefix) bfree(strip_prefix);
-        strip_prefix = bstrdup(ua->cmd);
+        if (strip_prefix) free(strip_prefix);
+        strip_prefix = strdup(ua->cmd);
       }
       goto try_again_reg;
     case 1:
@@ -1042,22 +1042,22 @@ try_again_reg:
           ua->cmd[0] = 0;
         }
 
-        if (add_prefix) bfree(add_prefix);
-        add_prefix = bstrdup(ua->cmd);
+        if (add_prefix) free(add_prefix);
+        add_prefix = strdup(ua->cmd);
       }
       goto try_again_reg;
     case 2:
       /* Add suffix */
       if (GetCmd(ua, _("Please enter the file suffix to add: "))) {
-        if (add_suffix) bfree(add_suffix);
-        add_suffix = bstrdup(ua->cmd);
+        if (add_suffix) free(add_suffix);
+        add_suffix = strdup(ua->cmd);
       }
       goto try_again_reg;
     case 3:
       /* Add rwhere */
       if (GetCmd(ua, _("Please enter a valid regexp (!from!to!): "))) {
-        if (rwhere) bfree(rwhere);
-        rwhere = bstrdup(ua->cmd);
+        if (rwhere) free(rwhere);
+        rwhere = strdup(ua->cmd);
       }
       goto try_again_reg;
     case 4:
@@ -1071,7 +1071,7 @@ try_again_reg:
       } else {
         int len =
             BregexpGetBuildWhereSize(strip_prefix, add_prefix, add_suffix);
-        regexp = (char*)bmalloc(len * sizeof(char));
+        regexp = (char*)malloc(len * sizeof(char));
         bregexp_build_where(regexp, len, strip_prefix, add_prefix, add_suffix);
         regs = get_bregexps(regexp);
         ua->SendMsg(
@@ -1079,7 +1079,7 @@ try_again_reg:
             NPRT(strip_prefix), NPRT(add_prefix), NPRT(add_suffix),
             NPRT(regexp));
 
-        bfree(regexp);
+        free(regexp);
       }
 
       if (!regs) {
@@ -1105,21 +1105,21 @@ try_again_reg:
 
   /* replace the existing where */
   if (jcr->where) {
-    bfree(jcr->where);
+    free(jcr->where);
     jcr->where = NULL;
   }
 
   /* replace the existing regexwhere */
   if (jcr->RegexWhere) {
-    bfree(jcr->RegexWhere);
+    free(jcr->RegexWhere);
     jcr->RegexWhere = NULL;
   }
 
   if (rwhere) {
-    jcr->RegexWhere = bstrdup(rwhere);
+    jcr->RegexWhere = strdup(rwhere);
   } else if (strip_prefix || add_prefix || add_suffix) {
     int len = BregexpGetBuildWhereSize(strip_prefix, add_prefix, add_suffix);
-    jcr->RegexWhere = (char*)bmalloc(len * sizeof(char));
+    jcr->RegexWhere = (char*)malloc(len * sizeof(char));
     bregexp_build_where(jcr->RegexWhere, len, strip_prefix, add_prefix,
                         add_suffix);
   }
@@ -1130,17 +1130,17 @@ try_again_reg:
     delete regs;
   } else {
     if (jcr->RegexWhere) {
-      bfree(jcr->RegexWhere);
+      free(jcr->RegexWhere);
       jcr->RegexWhere = NULL;
     }
     ua->SendMsg(_("Cannot use your regexp.\n"));
   }
 
 bail_out_reg:
-  if (strip_prefix) { bfree(strip_prefix); }
-  if (add_prefix) { bfree(add_prefix); }
-  if (add_suffix) { bfree(add_suffix); }
-  if (rwhere) { bfree(rwhere); }
+  if (strip_prefix) { free(strip_prefix); }
+  if (add_prefix) { free(add_prefix); }
+  if (add_suffix) { free(add_suffix); }
+  if (rwhere) { free(rwhere); }
 }
 
 static void SelectJobLevel(UaContext* ua, JobControlRecord* jcr)

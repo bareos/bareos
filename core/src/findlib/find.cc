@@ -43,8 +43,6 @@ static const int debuglevel = 450;
 int32_t name_max; /* filename max length */
 int32_t path_max; /* path name max length */
 
-#undef bmalloc
-#define bmalloc(x) sm_malloc(__FILE__, __LINE__, x)
 static int OurCallback(JobControlRecord* jcr,
                        FindFilesPacket* ff,
                        bool top_level);
@@ -58,7 +56,7 @@ FindFilesPacket* init_find_files()
 {
   FindFilesPacket* ff;
 
-  ff = (FindFilesPacket*)bmalloc(sizeof(FindFilesPacket));
+  ff = (FindFilesPacket*)malloc(sizeof(FindFilesPacket));
   memset(ff, 0, sizeof(FindFilesPacket));
 
   ff->sys_fname = GetPoolMemory(PM_FNAME);

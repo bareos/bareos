@@ -155,10 +155,10 @@ static mntent_cache_entry_t* add_mntent_mapping(uint32_t dev,
   mce = (mntent_cache_entry_t*)malloc(sizeof(mntent_cache_entry_t));
   memset(mce, 0, sizeof(mntent_cache_entry_t));
   mce->dev = dev;
-  mce->special = bstrdup(special);
-  mce->mountpoint = bstrdup(mountpoint);
-  mce->fstype = bstrdup(fstype);
-  if (mntopts) { mce->mntopts = bstrdup(mntopts); }
+  mce->special = strdup(special);
+  mce->mountpoint = strdup(mountpoint);
+  mce->fstype = strdup(fstype);
+  if (mntopts) { mce->mntopts = strdup(mntopts); }
 
   mntent_cache_entries->binary_insert(mce, CompareMntentMapping);
 
@@ -186,22 +186,22 @@ static mntent_cache_entry_t* update_mntent_mapping(uint32_t dev,
      */
     if (!bstrcmp(mce->special, special)) {
       free(mce->special);
-      mce->special = bstrdup(special);
+      mce->special = strdup(special);
     }
 
     if (!bstrcmp(mce->mountpoint, mountpoint)) {
       free(mce->mountpoint);
-      mce->mountpoint = bstrdup(mountpoint);
+      mce->mountpoint = strdup(mountpoint);
     }
 
     if (!bstrcmp(mce->fstype, fstype)) {
       free(mce->fstype);
-      mce->fstype = bstrdup(fstype);
+      mce->fstype = strdup(fstype);
     }
 
     if (!bstrcmp(mce->mntopts, mntopts)) {
       free(mce->mntopts);
-      mce->mntopts = bstrdup(mntopts);
+      mce->mntopts = strdup(mntopts);
     }
   } else {
     mce = add_mntent_mapping(dev, special, mountpoint, fstype, mntopts);

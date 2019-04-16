@@ -200,7 +200,7 @@ void MyNameIs(int argc, char* argv[], const char* name)
 void SetDbType(const char* name)
 {
   if (catalog_db != NULL) { free(catalog_db); }
-  catalog_db = bstrdup(name);
+  catalog_db = strdup(name);
 }
 
 /*

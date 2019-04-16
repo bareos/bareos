@@ -65,7 +65,7 @@ void ReservationTest::SetUp()
   OSDependentInit();
 
   /* configfile is a global char* from stored_globals.h */
-  configfile = bstrdup(PROJECT_SOURCE_DIR "/src/tests/configs/sd_reservation/");
+  configfile = strdup(PROJECT_SOURCE_DIR "/src/tests/configs/sd_reservation/");
   my_config = InitSdConfig(configfile, M_ERROR_TERM);
   ParseSdConfig(configfile, M_ERROR_TERM);
   /*
@@ -118,7 +118,7 @@ struct TestJob {
   {
     jcr = new_jcr(sizeof(JobControlRecord), storagedaemon::StoredFreeJcr);
     jcr->JobId = jobid;
-    jcr->sd_auth_key = bstrdup("no key set");
+    jcr->sd_auth_key = strdup("no key set");
   }
 
   ~TestJob()

@@ -51,8 +51,7 @@ AutochangerResource& AutochangerResource::operator=(
 bool AutochangerResource::PrintConfigToBuffer(PoolMem& buf)
 {
   alist* original_alist = device;
-  alist* temp_alist = new (__FILE__, __LINE__)
-      alist(original_alist->size(), not_owned_by_alist);
+  alist* temp_alist = new alist(original_alist->size(), not_owned_by_alist);
   DeviceResource* dev = nullptr;
   foreach_alist (dev, original_alist) {
     if (dev->multiplied_device_resource) {

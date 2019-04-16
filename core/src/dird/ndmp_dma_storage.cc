@@ -291,7 +291,7 @@ static bool NdmpRunStorageJob(JobControlRecord* jcr,
   ndmp_sess->param->log_level =
       NativeToNdmpLoglevel(me->ndmp_loglevel, debug_level, nis);
   ndmp_sess->param->log.ctx = nis;
-  ndmp_sess->param->log_tag = bstrdup("DIR-NDMP");
+  ndmp_sess->param->log_tag = strdup("DIR-NDMP");
   nis->jcr = jcr;
 
   /*
@@ -355,10 +355,10 @@ static bool GetRobotElementStatus(JobControlRecord* jcr,
    * format of a device in the form NAME[,[CNUM,]SID[,LUN]
    */
   ndmp_job.robot_target =
-      (struct ndmscsi_target*)actuallymalloc(sizeof(struct ndmscsi_target));
+      (struct ndmscsi_target*)malloc(sizeof(struct ndmscsi_target));
   if (ndmscsi_target_from_str(ndmp_job.robot_target,
                               store->ndmp_changer_device) != 0) {
-    Actuallyfree(ndmp_job.robot_target);
+    free(ndmp_job.robot_target);
     return false;
   }
   ndmp_job.have_robot = 1;
@@ -384,10 +384,10 @@ static bool GetRobotElementStatus(JobControlRecord* jcr,
 static void FillVolumeName(vol_list_t* vl, struct smc_element_descriptor* edp)
 {
   if (edp->PVolTag) {
-    vl->VolName = bstrdup((char*)edp->primary_vol_tag->volume_id);
+    vl->VolName = strdup((char*)edp->primary_vol_tag->volume_id);
     StripTrailingJunk(vl->VolName);
   } else if (edp->AVolTag) {
-    vl->VolName = bstrdup((char*)edp->alternate_vol_tag->volume_id);
+    vl->VolName = strdup((char*)edp->alternate_vol_tag->volume_id);
     StripTrailingJunk(vl->VolName);
   }
 }
@@ -728,10 +728,10 @@ bool NdmpTransferVolume(UaContext* ua,
    * format of a device in the form NAME[,[CNUM,]SID[,LUN]
    */
   ndmp_job.robot_target =
-      (struct ndmscsi_target*)actuallymalloc(sizeof(struct ndmscsi_target));
+      (struct ndmscsi_target*)malloc(sizeof(struct ndmscsi_target));
   if (ndmscsi_target_from_str(ndmp_job.robot_target,
                               store->ndmp_changer_device) != 0) {
-    Actuallyfree(ndmp_job.robot_target);
+    free(ndmp_job.robot_target);
     return retval;
   }
   ndmp_job.have_robot = 1;
@@ -939,10 +939,10 @@ bool NdmpAutochangerVolumeOperation(UaContext* ua,
    * format of a device in the form NAME[,[CNUM,]SID[,LUN]
    */
   ndmp_job.robot_target =
-      (struct ndmscsi_target*)actuallymalloc(sizeof(struct ndmscsi_target));
+      (struct ndmscsi_target*)malloc(sizeof(struct ndmscsi_target));
   if (ndmscsi_target_from_str(ndmp_job.robot_target,
                               store->ndmp_changer_device) != 0) {
-    Actuallyfree(ndmp_job.robot_target);
+    free(ndmp_job.robot_target);
     return retval;
   }
   ndmp_job.have_robot = 1;
@@ -1005,10 +1005,10 @@ bool NdmpSendLabelRequest(UaContext* ua,
    * format of a device in the form NAME[,[CNUM,]SID[,LUN]
    */
   ndmp_job.robot_target =
-      (struct ndmscsi_target*)actuallymalloc(sizeof(struct ndmscsi_target));
+      (struct ndmscsi_target*)malloc(sizeof(struct ndmscsi_target));
   if (ndmscsi_target_from_str(ndmp_job.robot_target,
                               store->ndmp_changer_device) != 0) {
-    Actuallyfree(ndmp_job.robot_target);
+    free(ndmp_job.robot_target);
     Dmsg0(100, "NdmpSendLabelRequest: no robot to use\n");
     return retval;
   }
@@ -1019,8 +1019,8 @@ bool NdmpSendLabelRequest(UaContext* ua,
    * Set the remote tape drive to use.
    */
   ndmp_job.tape_device =
-      bstrdup(((DeviceResource*)(store->device->first()))->resource_name_);
-  if (!ndmp_job.tape_device) { Actuallyfree(ndmp_job.robot_target); }
+      strdup(((DeviceResource*)(store->device->first()))->resource_name_);
+  if (!ndmp_job.tape_device) { free(ndmp_job.robot_target); }
 
   /*
    * Insert a media entry of the slot to label.
@@ -1094,10 +1094,10 @@ bool ndmp_native_setup_robot_and_tape_for_native_backup_job(
   }
 
   ndmp_job.robot_target =
-      (struct ndmscsi_target*)actuallymalloc(sizeof(struct ndmscsi_target));
+      (struct ndmscsi_target*)malloc(sizeof(struct ndmscsi_target));
   if (ndmscsi_target_from_str(ndmp_job.robot_target,
                               store->ndmp_changer_device) != 0) {
-    Actuallyfree(ndmp_job.robot_target);
+    free(ndmp_job.robot_target);
     Dmsg0(100, "no robot to use\n");
     return retval;
   }

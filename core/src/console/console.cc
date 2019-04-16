@@ -426,7 +426,7 @@ static void match_kw(regex_t* preg, const char* what, int len, POOLMEM*& buf)
     memcpy(buf, what + pmatch[1].rm_so, size);
     buf[size] = '\0';
 
-    items->list.append(bstrdup(buf));
+    items->list.append(strdup(buf));
 
     /* search for next keyword */
     match_kw(preg, what + pmatch[1].rm_eo, len - pmatch[1].rm_eo, buf);
@@ -462,7 +462,7 @@ static void GetItems(const char* what)
   UA_sock->fsend("%s", what);
   while (UA_sock->recv() > 0) {
     StripTrailingJunk(UA_sock->msg);
-    items->list.append(bstrdup(UA_sock->msg));
+    items->list.append(strdup(UA_sock->msg));
   }
 }
 
@@ -498,7 +498,7 @@ static char* item_generator(const char* text,
     list_index++;
 
     if (bstrncmp(name, text, len)) {
-      char* ret = (char*)actuallymalloc(strlen(name) + 1);
+      char* ret = (char*)malloc(strlen(name) + 1);
       strcpy(ret, name);
       return ret;
     }
@@ -659,7 +659,7 @@ int GetCmd(FILE* input, const char* prompt, BareosSocket* sock, int sec)
 
   if (!next) {
     if (do_history) { add_history(line); }
-    Actuallyfree(line); /* allocated by readline() malloc */
+    free(line); /* allocated by readline() malloc */
     line = NULL;
   }
   return 1; /* OK */
@@ -905,7 +905,7 @@ int main(int argc, char* argv[])
     switch (ch) {
       case 'D': /* Director */
         if (director) { free(director); }
-        director = bstrdup(optarg);
+        director = strdup(optarg);
         break;
 
       case 'l':
@@ -915,7 +915,7 @@ int main(int argc, char* argv[])
 
       case 'c': /* configuration file */
         if (configfile != NULL) { free(configfile); }
-        configfile = bstrdup(optarg);
+        configfile = strdup(optarg);
         break;
 
       case 'd':

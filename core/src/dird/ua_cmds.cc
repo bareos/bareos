@@ -1063,7 +1063,7 @@ static bool SetipCmd(UaContext* ua, const char* cmd)
   if (client->address) { free(client->address); }
 
   SockaddrToAscii(&(ua->UA_sock->client_addr), buf, sizeof(buf));
-  client->address = bstrdup(buf);
+  client->address = strdup(buf);
   ua->SendMsg(_("Client \"%s\" address set to %s\n"), client->resource_name_,
               client->address);
 
@@ -2216,7 +2216,7 @@ static void DeleteJob(UaContext* ua)
   i = FindArgWithValue(ua, NT_("jobid"));
   if (i >= 0) {
     if (strchr(ua->argv[i], ',') || strchr(ua->argv[i], '-')) {
-      s = bstrdup(ua->argv[i]);
+      s = strdup(ua->argv[i]);
       tok = s;
 
       /*

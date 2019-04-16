@@ -82,8 +82,6 @@ TEST(htable, htable)
   jcrtbl->destroy();
   EXPECT_EQ(count, NITEMS);
   free(jcrtbl);
-
-  sm_dump(false); /* unit test */
 }
 
 struct RbListJobControlRecord {

@@ -152,7 +152,7 @@ int object_store_device::d_open(const char* pathname, int flags, int mode)
       return -1;
     }
 
-    object_configstring_ = bstrdup(dev_options);
+    object_configstring_ = strdup(dev_options);
 
     bp = object_configstring_;
     while (bp) {

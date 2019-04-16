@@ -78,11 +78,11 @@ bool InitAutochangers()
        * defined, used the one from the Autochanger resource
        */
       if (!device->changer_name && changer->changer_name) {
-        device->changer_name = bstrdup(changer->changer_name);
+        device->changer_name = strdup(changer->changer_name);
       }
 
       if (!device->changer_command && changer->changer_command) {
-        device->changer_command = bstrdup(changer->changer_command);
+        device->changer_command = strdup(changer->changer_command);
       }
 
       if (!device->changer_name) {

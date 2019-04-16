@@ -1060,7 +1060,7 @@ static void PropagateResource(ResourceItem* items,
           def_svalue = (char**)((char*)(source) + offset);
           svalue = (char**)((char*)dest + offset);
           if (*svalue) { free(*svalue); }
-          *svalue = bstrdup(*def_svalue);
+          *svalue = strdup(*def_svalue);
           SetBit(i, dest->item_present_);
           SetBit(i, dest->inherit_content_);
           break;
@@ -1099,7 +1099,7 @@ static void PropagateResource(ResourceItem* items,
             if (!*new_list) { *new_list = New(alist(10, owned_by_alist)); }
 
             foreach_alist (str, orig_list) {
-              (*new_list)->append(bstrdup(str));
+              (*new_list)->append(strdup(str));
             }
 
             SetBit(i, dest->item_present_);
@@ -1151,7 +1151,7 @@ static void PropagateResource(ResourceItem* items,
             if (!*new_list) { *new_list = New(alist(10, owned_by_alist)); }
 
             foreach_alist (str, orig_list) {
-              (*new_list)->append(bstrdup(str));
+              (*new_list)->append(strdup(str));
             }
 
             SetBit(i, dest->item_present_);
@@ -1220,7 +1220,7 @@ static void PropagateResource(ResourceItem* items,
           d_pwd = (s_password*)((char*)(dest) + offset);
 
           d_pwd->encoding = s_pwd->encoding;
-          d_pwd->value = bstrdup(s_pwd->value);
+          d_pwd->value = strdup(s_pwd->value);
           SetBit(i, dest->item_present_);
           SetBit(i, dest->inherit_content_);
           break;
@@ -2493,7 +2493,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
             (p->strip_prefix || p->add_suffix || p->add_prefix)) {
           int len = BregexpGetBuildWhereSize(p->strip_prefix, p->add_prefix,
                                              p->add_suffix);
-          p->RegexWhere = (char*)bmalloc(len * sizeof(char));
+          p->RegexWhere = (char*)malloc(len * sizeof(char));
           bregexp_build_where(p->RegexWhere, len, p->strip_prefix,
                               p->add_prefix, p->add_suffix);
           /*
@@ -2685,7 +2685,7 @@ static void StorePooltype(LEX* lc, ResourceItem* item, int index, int pass)
          * If a default was set free it first.
          */
         if (*(item->value)) { free(*(item->value)); }
-        *(item->value) = bstrdup(PoolTypes[i].name);
+        *(item->value) = strdup(PoolTypes[i].name);
         i = 0;
         break;
       }
@@ -2743,7 +2743,7 @@ static void StoreDevice(LEX* lc, ResourceItem* item, int index, int pass)
     if (!res_head[rindex]) {
       DeviceResource* dev = new DeviceResource;
       dev->rcode_ = R_DEVICE;
-      dev->resource_name_ = bstrdup(lc->str);
+      dev->resource_name_ = strdup(lc->str);
       res_head[rindex] = dev; /* store first entry */
       Dmsg3(900, "Inserting first %s res: %s index=%d\n",
             my_config->ResToStr(R_DEVICE), dev->resource_name_, rindex);
@@ -2758,7 +2758,7 @@ static void StoreDevice(LEX* lc, ResourceItem* item, int index, int pass)
       if (!found) {
         DeviceResource* dev = new DeviceResource;
         dev->rcode_ = R_DEVICE;
-        dev->resource_name_ = bstrdup(lc->str);
+        dev->resource_name_ = strdup(lc->str);
         next->next_ = dev;
         Dmsg4(900, "Inserting %s res: %s index=%d pass=%d\n",
               my_config->ResToStr(R_DEVICE), dev->resource_name_, rindex, pass);
@@ -3046,7 +3046,7 @@ static void StoreAcl(LEX* lc, ResourceItem* item, int index, int pass)
   for (;;) {
     LexGetToken(lc, BCT_STRING);
     if (pass == 1) {
-      list->append(bstrdup(lc->str));
+      list->append(strdup(lc->str));
       Dmsg2(900, "Appended to %d %s\n", item->code, lc->str);
     }
     token = LexGetToken(lc, BCT_ALL);
@@ -3074,7 +3074,7 @@ static void StoreAudit(LEX* lc, ResourceItem* item, int index, int pass)
 
   for (;;) {
     LexGetToken(lc, BCT_STRING);
-    if (pass == 1) { list->append(bstrdup(lc->str)); }
+    if (pass == 1) { list->append(strdup(lc->str)); }
     token = LexGetToken(lc, BCT_ALL);
     if (token == BCT_COMMA) { continue; }
     break;
@@ -3439,7 +3439,7 @@ static void InitResourceCb(ResourceItem* item, int pass)
           }
           break;
         case CFG_TYPE_POOLTYPE:
-          *(item->value) = bstrdup(item->default_value);
+          *(item->value) = strdup(item->default_value);
           break;
         default:
           break;
@@ -3904,10 +3904,10 @@ static void CreateAndAddUserAgentConsoleResource(ConfigurationParser& my_config)
 
   new (&res_con) ConsoleResource();
   res_con.password_.encoding = dir_resource->password_.encoding;
-  res_con.password_.value = bstrdup(dir_resource->password_.value);
+  res_con.password_.value = strdup(dir_resource->password_.value);
   res_con.tls_enable_ = true;
-  res_con.resource_name_ = bstrdup("*UserAgent*");
-  res_con.description_ = bstrdup("root console definition");
+  res_con.resource_name_ = strdup("*UserAgent*");
+  res_con.description_ = strdup("root console definition");
   res_con.rcode_ = 1013;
   res_con.refcnt_ = 1;
 

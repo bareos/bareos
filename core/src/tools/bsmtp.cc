@@ -426,7 +426,7 @@ int main(int argc, char* argv[])
       snprintf(buf, sizeof(buf), "%s@%s", pwd->pw_name, my_hostname);
     }
 #endif
-    from_addr = bstrdup(buf);
+    from_addr = strdup(buf);
   }
   Dmsg1(20, "From addr=%s\n", from_addr);
 

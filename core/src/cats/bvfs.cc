@@ -279,8 +279,8 @@ bool BareosDb::UpdatePathHierarchyCache(JobControlRecord* jcr,
     SQL_ROW row;
     int i = 0;
     while ((row = SqlFetchRow())) {
-      result[i++] = bstrdup(row[0]);
-      result[i++] = bstrdup(row[1]);
+      result[i++] = strdup(row[0]);
+      result[i++] = strdup(row[1]);
     }
 
     i = 0;

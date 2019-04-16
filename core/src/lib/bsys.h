@@ -31,13 +31,6 @@ bool bstrncmp(const char* s1, const char* s2, int n);
 bool Bstrcasecmp(const char* s1, const char* s2);
 bool bstrncasecmp(const char* s1, const char* s2, int n);
 int cstrlen(const char* str);
-void* b_malloc(const char* file, int line, size_t size);
-#ifndef bmalloc
-void* bmalloc(size_t size);
-#endif
-void bfree(void* buf);
-void* brealloc(void* buf, size_t size);
-void* bcalloc(size_t size1, size_t size2);
 int Bsnprintf(char* str, int32_t size, const char* format, ...);
 int Bvsnprintf(char* str, int32_t size, const char* format, va_list ap);
 int PoolSprintf(char* pool_buf, const char* fmt, ...);

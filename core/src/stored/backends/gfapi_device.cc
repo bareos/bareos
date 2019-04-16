@@ -321,7 +321,7 @@ int gfapi_device::d_open(const char* pathname, int flags, int mode)
       goto bail_out;
     }
 
-    gfapi_configstring_ = bstrdup(dev_options);
+    gfapi_configstring_ = strdup(dev_options);
 
     bp = gfapi_configstring_;
     while (bp) {

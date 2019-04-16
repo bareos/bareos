@@ -129,7 +129,7 @@ static bool load_a_plugin(void* binfo,
   Plugin* plugin = NULL;
 
   plugin = new_plugin();
-  plugin->file = bstrdup(plugin_name);
+  plugin->file = strdup(plugin_name);
   plugin->file_len = strstr(plugin->file, type) - plugin->file;
 
   plugin->pHandle = dlopen(plugin_pathname, LT_LAZY_OR_NOW | LT_GLOBAL);

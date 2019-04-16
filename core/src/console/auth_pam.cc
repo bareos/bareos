@@ -108,14 +108,14 @@ bool ConsolePamAuthenticate(FILE* std_in, BareosSocket* UA_sock)
       } break;
       case PamAuthState::SEND_INPUT:
         UA_sock->fsend(userinput);
-        Actuallyfree(userinput);
+        free(userinput);
         state = PamAuthState::INIT;
         break;
       default:
         break;
     }
     if (UA_sock->IsStop() || UA_sock->IsError()) {
-      if (userinput) { Actuallyfree(userinput); }
+      if (userinput) { free(userinput); }
       error = true;
       break;
     }

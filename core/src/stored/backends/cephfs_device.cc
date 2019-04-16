@@ -74,7 +74,7 @@ int cephfs_device::d_open(const char* pathname, int flags, int mode)
       goto bail_out;
     }
 
-    cephfs_configstring_ = bstrdup(dev_options);
+    cephfs_configstring_ = strdup(dev_options);
 
     bp = cephfs_configstring_;
     while (bp) {

@@ -533,7 +533,7 @@ static inline void set_env(const char* key, const char* value)
   PoolMem env_string;
 
   Mmsg(env_string, "%s=%s", key, value);
-  putenv(bstrdup(env_string.c_str()));
+  putenv(strdup(env_string.c_str()));
 }
 #else
 static inline void set_env(const char* key, const char* value) {}
@@ -765,7 +765,7 @@ void ConfigurationParser::InitResource(int type,
               break;
             case CFG_TYPE_STRNAME:
             case CFG_TYPE_STR:
-              *(items[i].value) = bstrdup(items[i].default_value);
+              *(items[i].value) = strdup(items[i].default_value);
               break;
             case CFG_TYPE_STDSTR:
               *(items[i].strValue) = std::string(items[i].default_value);
@@ -784,7 +784,7 @@ void ConfigurationParser::InitResource(int type,
                 pathname.check_size(size);
                 DoShellExpansion(pathname.c_str(), pathname.size());
               }
-              *items[i].value = bstrdup(pathname.c_str());
+              *items[i].value = strdup(pathname.c_str());
               break;
             }
             case CFG_TYPE_STDSTRDIR: {
@@ -857,7 +857,7 @@ void ConfigurationParser::InitResource(int type,
               if (!*items[i].alistvalue) {
                 *(items[i].alistvalue) = New(alist(10, owned_by_alist));
               }
-              (*(items[i].alistvalue))->append(bstrdup(items[i].default_value));
+              (*(items[i].alistvalue))->append(strdup(items[i].default_value));
               break;
             case CFG_TYPE_ALIST_DIR: {
               PoolMem pathname(PM_FNAME);
@@ -877,7 +877,7 @@ void ConfigurationParser::InitResource(int type,
                 pathname.check_size(size);
                 DoShellExpansion(pathname.c_str(), pathname.size());
               }
-              (*(items[i].alistvalue))->append(bstrdup(pathname.c_str()));
+              (*(items[i].alistvalue))->append(strdup(pathname.c_str()));
               break;
             }
             default:

@@ -54,7 +54,7 @@ void FreeBregexp(BareosRegex* self)
 
   if (!self) { return; }
 
-  if (self->expr) { bfree(self->expr); }
+  if (self->expr) { free(self->expr); }
   if (self->result) { FreePoolMemory(self->result); }
   regfree(&self->preg);
   delete self;
@@ -132,7 +132,7 @@ bool BareosRegex::ExtractRegexp(const char* motif)
   bool ok = false;
 
   /* extract 1st part */
-  char* dest = expr = bstrdup(motif);
+  char* dest = expr = strdup(motif);
 
   while (*search && !ok) {
     if (search[0] == '\\' && search[1] == sep) {
@@ -348,9 +348,9 @@ int BregexpGetBuildWhereSize(char* strip_prefix,
  * Usage :
  *
  * int len = BregexpGetBuildWhereSize(a,b,c) ;
- * char *dest = (char *) bmalloc (len * sizeof(char));
+ * char *dest = (char *) malloc (len * sizeof(char));
  * bregexp_build_where(dest, len, a, b, c);
- * bfree(dest);
+ * free(dest);
  *
  */
 char* bregexp_build_where(char* dest,

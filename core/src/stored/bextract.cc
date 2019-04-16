@@ -141,12 +141,12 @@ int main(int argc, char* argv[])
 
       case 'c': /* specify config file */
         if (configfile != NULL) { free(configfile); }
-        configfile = bstrdup(optarg);
+        configfile = strdup(optarg);
         break;
 
       case 'D': /* specify director name */
         if (DirectorName != NULL) { free(DirectorName); }
-        DirectorName = bstrdup(optarg);
+        DirectorName = strdup(optarg);
         break;
 
       case 'd': /* debug level */
@@ -419,7 +419,7 @@ static void DoExtract(char* devname)
   }
 
   free(jcr->where);
-  jcr->where = bstrdup(where);
+  jcr->where = strdup(where);
   attr = new_attr(jcr);
 
   jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE;

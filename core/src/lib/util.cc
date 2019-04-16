@@ -703,7 +703,7 @@ char* encode_mode(mode_t mode, char* buf)
 #if defined(HAVE_WIN32)
 int DoShellExpansion(char* name, int name_len)
 {
-  char* src = bstrdup(name);
+  char* src = strdup(name);
 
   ExpandEnvironmentStrings(src, name, name_len);
 

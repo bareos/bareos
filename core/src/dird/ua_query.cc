@@ -108,7 +108,7 @@ bool QueryCmd(UaContext* ua, const char* cmd)
       } else {
         line[len++] = ' ';
         line[len] = 0;
-        prompt[nprompt++] = bstrdup(line + 1);
+        prompt[nprompt++] = strdup(line + 1);
         continue;
       }
     }
