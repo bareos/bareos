@@ -70,7 +70,6 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
   char dt[MAX_TIME_LENGTH];
   PoolMem cmdline(PM_MESSAGE);
 
-  memset(&jr, 0, sizeof(jr));
   jr.JobId = JobId;
   ua->SendMsg("rerunning jobid %d\n", jr.JobId);
   if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
@@ -1394,7 +1393,6 @@ static bool DisplayJobParameters(UaContext* ua,
           Name = jcr->res.verify_job->resource_name_;
         } else if (jcr->RestoreJobId) { /* Display job name if jobid requested
                                          */
-          memset(&jr, 0, sizeof(jr));
           jr.JobId = jcr->RestoreJobId;
           if (!ua->db->GetJobRecord(jcr, &jr)) {
             ua->ErrorMsg(

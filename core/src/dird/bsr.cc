@@ -209,7 +209,6 @@ bool CompleteBsr(UaContext* ua, RestoreBootstrapRecord* bsr)
 {
   for (; bsr; bsr = bsr->next) {
     JobDbRecord jr;
-    memset(&jr, 0, sizeof(jr));
     jr.JobId = bsr->JobId;
     if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
       ua->ErrorMsg(_("Unable to get Job record. ERR=%s\n"), ua->db->strerror());

@@ -189,7 +189,6 @@ static bool GetBaseJobids(JobControlRecord* jcr, db_list_ctx* jobids)
 
   if (!jcr->res.job->base) { return false; /* no base job, stop accurate */ }
 
-  memset(&jr, 0, sizeof(jr));
   jr.StartTime = jcr->jr.StartTime;
 
   foreach_alist (job, jcr->res.job->base) {

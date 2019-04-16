@@ -330,7 +330,6 @@ static inline bool BvfsValidateJobid(UaContext* ua,
   ClientDbRecord cr;
   bool retval = false;
 
-  memset(&jr, 0, sizeof(jr));
   jr.JobId = str_to_int64(jobid);
 
   if (ua->db->GetJobRecord(ua->jcr, &jr)) {
@@ -615,8 +614,6 @@ bool DotBvfsGetJobidsCmd(UaContext* ua, const char* cmd)
   PoolMem filtered_jobids(PM_FNAME);
 
   if (!OpenClientDb(ua, true)) { return true; }
-
-  memset(&jr, 0, sizeof(jr));
 
   if ((pos = FindArgWithValue(ua, "ujobid")) >= 0) {
     bstrncpy(jr.Job, ua->argv[pos], sizeof(jr.Job));

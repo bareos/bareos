@@ -123,9 +123,6 @@ bool PurgeCmd(UaContext* ua, const char* cmd)
 
   if (!OpenClientDb(ua, true)) { return true; }
 
-  memset(&jr, 0, sizeof(jr));
-  memset(&mr, 0, sizeof(mr));
-
   switch (FindArgKeyword(ua, keywords)) {
     /* Files */
     case 0:
@@ -313,7 +310,8 @@ static bool PurgeJobsFromClient(UaContext* ua, ClientResource* client)
                    client->resource_name_, client->catalog->resource_name_);
   } else {
     ua->InfoMsg(_("Found %d Jobs for client \"%s\" in catalog \"%s\".\n"),
-                del.num_ids, client->resource_name_, client->catalog->resource_name_);
+                del.num_ids, client->resource_name_,
+                client->catalog->resource_name_);
     if (!GetConfirmation(ua, "Purge (yes/no)? ")) {
       ua->InfoMsg(_("Purge canceled.\n"));
     } else {

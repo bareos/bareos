@@ -460,7 +460,6 @@ bool DoNdmpRestoreNdmpNative(JobControlRecord* jcr)
   JobDbRecord rjr; /* restore job record */
   int status;
 
-  memset(&rjr, 0, sizeof(rjr));
   jcr->jr.JobLevel = L_FULL; /* Full restore */
   if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());

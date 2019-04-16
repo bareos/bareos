@@ -191,7 +191,9 @@ FilesetResource* select_fileset_resource(UaContext* ua)
 
   LockRes(my_config);
   foreach_res (fs, R_FILESET) {
-    if (ua->AclAccessOk(FileSet_ACL, fs->resource_name_)) { AddPrompt(ua, fs->resource_name_); }
+    if (ua->AclAccessOk(FileSet_ACL, fs->resource_name_)) {
+      AddPrompt(ua, fs->resource_name_);
+    }
   }
   UnlockRes(my_config);
 
@@ -302,7 +304,9 @@ JobResource* select_job_resource(UaContext* ua)
 
   LockRes(my_config);
   foreach_res (job, R_JOB) {
-    if (ua->AclAccessOk(Job_ACL, job->resource_name_)) { AddPrompt(ua, job->resource_name_); }
+    if (ua->AclAccessOk(Job_ACL, job->resource_name_)) {
+      AddPrompt(ua, job->resource_name_);
+    }
   }
   UnlockRes(my_config);
 
@@ -347,7 +351,8 @@ JobResource* select_restore_job_resource(UaContext* ua)
 
   LockRes(my_config);
   foreach_res (job, R_JOB) {
-    if (job->JobType == JT_RESTORE && ua->AclAccessOk(Job_ACL, job->resource_name_)) {
+    if (job->JobType == JT_RESTORE &&
+        ua->AclAccessOk(Job_ACL, job->resource_name_)) {
       AddPrompt(ua, job->resource_name_);
     }
   }
@@ -560,7 +565,7 @@ bool SelectClientDbr(UaContext* ua, ClientDbRecord* cr)
     return false;
   }
 
-  memset(&ocr, 0, sizeof(ocr));
+  new (&ocr) ClientDbRecord();
   bstrncpy(ocr.Name, name, sizeof(ocr.Name));
 
   if (!ua->db->GetClientRecord(ua->jcr, &ocr)) {
@@ -688,7 +693,7 @@ bool SelectPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk)
     return false;
   }
 
-  memset(&opr, 0, sizeof(opr));
+  new (&opr) PoolDbRecord();  // placement new instead of memset
 
   /*
    * *None* is only returned when selecting a recyclepool, and in that case
@@ -717,7 +722,8 @@ bool SelectPoolAndMediaDbr(UaContext* ua, PoolDbRecord* pr, MediaDbRecord* mr)
 {
   if (!SelectMediaDbr(ua, mr)) { return false; }
 
-  memset(pr, 0, sizeof(PoolDbRecord));
+  new (pr) PoolDbRecord();  // placement new instead of memset
+
   pr->PoolId = mr->PoolId;
   if (!ua->db->GetPoolRecord(ua->jcr, pr)) {
     ua->ErrorMsg("%s", ua->db->strerror());
@@ -787,7 +793,7 @@ bool SelectStorageDbr(UaContext* ua, StorageDbRecord* sr, const char* argk)
     return false;
   }
 
-  memset(&osr, 0, sizeof(osr));
+  new (&osr) StorageDbRecord();  // placement new instead of memset
 
   /*
    * *None* is only returned when selecting a recyclestorage, and in that case
@@ -819,7 +825,7 @@ bool SelectMediaDbr(UaContext* ua, MediaDbRecord* mr)
   POOLMEM* err = GetPoolMemory(PM_FNAME);
 
   *err = 0;
-  memset(mr, 0, sizeof(MediaDbRecord));
+  new (mr) MediaDbRecord();  // placement new instead of memset
   i = FindArgWithValue(ua, NT_("volume"));
   if (i >= 0) {
     if (IsNameValid(ua->argv[i], err)) {
@@ -831,8 +837,6 @@ bool SelectMediaDbr(UaContext* ua, MediaDbRecord* mr)
 
   if (mr->VolumeName[0] == 0) {
     PoolDbRecord pr;
-
-    memset(&pr, 0, sizeof(pr));
     /*
      * Get the pool from pool=<pool-name>
      */
@@ -1224,7 +1228,9 @@ StorageResource* get_storage_resource(UaContext* ua,
     }
   }
 
-  if (store && !ua->AclAccessOk(Storage_ACL, store->resource_name_)) { store = NULL; }
+  if (store && !ua->AclAccessOk(Storage_ACL, store->resource_name_)) {
+    store = NULL;
+  }
 
   if (!store && StoreName && StoreName[0] != 0) {
     store = ua->GetStoreResWithName(StoreName);
@@ -1234,7 +1240,9 @@ StorageResource* get_storage_resource(UaContext* ua,
     }
   }
 
-  if (store && !ua->AclAccessOk(Storage_ACL, store->resource_name_)) { store = NULL; }
+  if (store && !ua->AclAccessOk(Storage_ACL, store->resource_name_)) {
+    store = NULL;
+  }
 
   /*
    * No keywords found, so present a selection list

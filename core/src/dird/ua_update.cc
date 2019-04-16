@@ -952,8 +952,6 @@ static bool UpdateJob(UaContext* ua)
     ua->ErrorMsg(_("Expect JobId keyword, not found.\n"));
     return false;
   }
-  memset(&jr, 0, sizeof(jr));
-  memset(&cr, 0, sizeof(cr));
   jr.JobId = str_to_int64(ua->argv[i]);
   if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
     ua->ErrorMsg("%s", ua->db->strerror());

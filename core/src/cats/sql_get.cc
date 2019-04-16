@@ -1919,7 +1919,6 @@ bool BareosDb::VerifyMediaIdsFromSingleStorage(JobControlRecord* jcr,
   DBId_t storageId = 0;
 
   for (int i = 0; i < mediaIds.size(); i++) {
-    memset(&mr, 0, sizeof(mr));
     mr.MediaId = mediaIds.get(i);
     if (!GetMediaRecord(jcr, &mr)) {
       Mmsg1(errmsg, _("Failed to find MediaId=%lld\n"), (uint64_t)mr.MediaId);

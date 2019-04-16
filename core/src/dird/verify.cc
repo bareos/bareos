@@ -119,7 +119,7 @@ bool DoVerify(JobControlRecord* jcr)
 
   FreeWstorage(jcr); /* we don't write */
 
-  memset(&jcr->previous_jr, 0, sizeof(jcr->previous_jr));
+  new (&jcr->previous_jr) JobDbRecord();  // placement new instead of memset
 
   /*
    * Find JobId of last job that ran. Note, we do this when
@@ -138,7 +138,7 @@ bool DoVerify(JobControlRecord* jcr)
     case L_VERIFY_CATALOG:
     case L_VERIFY_VOLUME_TO_CATALOG:
     case L_VERIFY_DISK_TO_CATALOG:
-      memcpy(&jr, &jcr->jr, sizeof(jr));
+      jr = jcr->jr;  // Ueb
       if (jcr->res.verify_job && (JobLevel == L_VERIFY_VOLUME_TO_CATALOG ||
                                   JobLevel == L_VERIFY_DISK_TO_CATALOG)) {
         Name = jcr->res.verify_job->resource_name_;

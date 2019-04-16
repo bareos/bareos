@@ -209,7 +209,7 @@ bool BareosDb::UpdateClientRecord(JobControlRecord* jcr, ClientDbRecord* cr)
   ClientDbRecord tcr;
 
   DbLock(this);
-  memcpy(&tcr, cr, sizeof(tcr));
+  tcr = *cr;
   if (!CreateClientRecord(jcr, &tcr)) { goto bail_out; }
 
   EscapeString(jcr, esc_clientname, cr->Name, strlen(cr->Name));

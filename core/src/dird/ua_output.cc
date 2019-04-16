@@ -139,7 +139,9 @@ static void ShowDisabledClients(UaContext* ua)
   bool first = true;
 
   foreach_res (client, R_CLIENT) {
-    if (!ua->AclAccessOk(Client_ACL, client->resource_name_, false)) { continue; }
+    if (!ua->AclAccessOk(Client_ACL, client->resource_name_, false)) {
+      continue;
+    }
 
     if (!client->enabled) {
       if (first) {
@@ -162,7 +164,9 @@ static void ShowDisabledSchedules(UaContext* ua)
   bool first = true;
 
   foreach_res (sched, R_SCHEDULE) {
-    if (!ua->AclAccessOk(Schedule_ACL, sched->resource_name_, false)) { continue; }
+    if (!ua->AclAccessOk(Schedule_ACL, sched->resource_name_, false)) {
+      continue;
+    }
 
     if (!sched->enabled) {
       if (first) {
@@ -282,8 +286,7 @@ bool show_cmd(UaContext* ua, const char* cmd)
       for (j = 0; avail_resources[j].res_name; j++) {
         if (bstrncasecmp(res_name, _(avail_resources[j].res_name), len)) {
           type = avail_resources[j].type;
-          res = (BareosResource*)ua->GetResWithName(type, ua->argv[i],
-                                                          true);
+          res = (BareosResource*)ua->GetResWithName(type, ua->argv[i], true);
           if (!res) { type = -3; }
           break;
         }
@@ -541,10 +544,6 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
   PoolMem query_range(PM_MESSAGE);
 
   if (!OpenClientDb(ua, true)) { return true; }
-
-  memset(&jr, 0, sizeof(jr));
-  memset(&pr, 0, sizeof(pr));
-  memset(&mr, 0, sizeof(mr));
 
   Dmsg1(20, "list: %s\n", cmd);
 
@@ -1149,7 +1148,9 @@ static inline bool parse_fileset_selection_param(PoolMem& selection,
 
     LockRes(my_config);
     foreach_res (fs, R_FILESET) {
-      if (!ua->AclAccessOk(FileSet_ACL, fs->resource_name_, false)) { continue; }
+      if (!ua->AclAccessOk(FileSet_ACL, fs->resource_name_, false)) {
+        continue;
+      }
       if (selection.strlen() == 0) {
         temp.bsprintf("AND (FileSet='%s'", fs->resource_name_);
       } else {
@@ -1300,7 +1301,8 @@ get_out:
   }
   FreeJcr(jcr);
   if (!found) {
-    ua->ErrorMsg(_("Could not find next Volume for Job %s.\n"), job->resource_name_);
+    ua->ErrorMsg(_("Could not find next Volume for Job %s.\n"),
+                 job->resource_name_);
     return false;
   }
   return true;

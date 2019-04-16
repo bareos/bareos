@@ -746,7 +746,6 @@ static bool PruneBackupJobs(UaContext* ua,
    * accurate. This will prevent to prune the last full backup used for
    * current backup & restore
    */
-  memset(&jr, 0, sizeof(jr));
 
   /*
    * To find useful jobs, we do like an incremental
