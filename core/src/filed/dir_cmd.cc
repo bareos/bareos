@@ -2106,7 +2106,7 @@ static bool BackupCmd(JobControlRecord* jcr)
           /*
            * Inform user about writer states
            */
-          for (int i = 0; i < (int)jcr->pVSSClient->GetWriterCount(); i++) {
+          for (size_t i = 0; i < jcr->pVSSClient->GetWriterCount(); i++) {
             if (jcr->pVSSClient->GetWriterState(i) < 1) {
               Jmsg(jcr, M_INFO, 0, _("VSS Writer (PrepareForBackup): %s\n"),
                    jcr->pVSSClient->GetWriterInfo(i));
@@ -2510,7 +2510,7 @@ static bool RestoreCmd(JobControlRecord* jcr)
       /*
        * Inform user about writer states
        */
-      for (int i = 0; i < (int)jcr->pVSSClient->GetWriterCount(); i++) {
+      for (size_t i = 0; i < jcr->pVSSClient->GetWriterCount(); i++) {
         int msg_type = M_INFO;
 
         if (jcr->pVSSClient->GetWriterState(i) < 1) {

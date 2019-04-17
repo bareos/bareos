@@ -1579,7 +1579,7 @@ static void CloseVssBackupSession(JobControlRecord* jcr)
       /*
        * Inform user about writer states
        */
-      for (int i = 0; i < (int)jcr->pVSSClient->GetWriterCount(); i++) {
+      for (size_t i = 0; i < jcr->pVSSClient->GetWriterCount(); i++) {
         int msg_type = M_INFO;
         if (jcr->pVSSClient->GetWriterState(i) < 1) {
           msg_type = M_WARNING;
