@@ -30,37 +30,6 @@
 #ifndef BAREOS_LIB_MEM_POOL_H_
 #define BAREOS_LIB_MEM_POOL_H_
 
-#if 0  // def SMARTALLOC Ueb
-
-#define GetPoolMemory(pool) sm_get_pool_memory(__FILE__, __LINE__, pool)
-POOLMEM* sm_get_pool_memory(const char* file, int line, int pool);
-
-#define GetMemory(size) sm_get_memory(__FILE__, __LINE__, size)
-POOLMEM* sm_get_memory(const char* fname, int line, int32_t size);
-
-#define SizeofPoolMemory(buf) sm_sizeof_pool_memory(__FILE__, __LINE__, buf)
-int32_t sm_sizeof_pool_memory(const char* fname, int line, POOLMEM* buf);
-
-#define ReallocPoolMemory(buf, size) \
-  sm_realloc_pool_memory(__FILE__, __LINE__, buf, size)
-POOLMEM* sm_realloc_pool_memory(const char* fname,
-                                int line,
-                                POOLMEM* buf,
-                                int32_t size);
-
-#define CheckPoolMemorySize(buf, size) \
-  sm_check_pool_memory_size(__FILE__, __LINE__, buf, size)
-POOLMEM* sm_check_pool_memory_size(const char* fname,
-                                   int line,
-                                   POOLMEM* buf,
-                                   int32_t size);
-
-#define FreePoolMemory(x) SmFreePoolMemory(__FILE__, __LINE__, x)
-#define FreeMemory(x) SmFreePoolMemory(__FILE__, __LINE__, x)
-void SmFreePoolMemory(const char* fname, int line, POOLMEM* buf);
-
-#else
-
 POOLMEM* GetPoolMemory(int pool);
 POOLMEM* GetMemory(int32_t size);
 int32_t SizeofPoolMemory(POOLMEM* buf);
@@ -68,8 +37,6 @@ POOLMEM* ReallocPoolMemory(POOLMEM* buf, int32_t size);
 POOLMEM* CheckPoolMemorySize(POOLMEM* buf, int32_t size);
 #define FreeMemory(x) FreePoolMemory(x)
 void FreePoolMemory(POOLMEM* buf);
-
-#endif
 
 /**
  * Macro to simplify free/reset pointers
@@ -160,4 +127,5 @@ int PmMemcpy(POOLMEM*& pm, const char* data, int32_t n);
 int PmMemcpy(POOLMEM*& pm, PoolMem& data, int32_t n);
 int PmMemcpy(PoolMem& pm, const char* data, int32_t n);
 int PmMemcpy(PoolMem*& pm, const char* data, int32_t n);
-#endif
+
+#endif  // BAREOS_LIB_MEM_POOL_H_
