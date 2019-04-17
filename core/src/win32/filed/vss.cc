@@ -104,17 +104,6 @@ void VSSInit(JobControlRecord* jcr)
 }
 
 /*
- * Constructor
- */
-VSSClient::VSSClient()
-{
-  memset(this, 0, sizeof(VSSClient));
-  pAlistWriterState_ = New(alist(10, not_owned_by_alist));
-  pAlistWriterInfoText_ = New(alist(10, owned_by_alist));
-  uidCurrentSnapshotSet_ = GUID_NULL;
-}
-
-/*
  * Destructor
  */
 VSSClient::~VSSClient()
@@ -129,8 +118,6 @@ VSSClient::~VSSClient()
   }
 
   DestroyWriterInfo();
-  delete pAlistWriterState_;
-  delete pAlistWriterInfoText_;
 
   /*
    * Call CoUninitialize if the CoInitialize was performed successfully
@@ -221,46 +208,40 @@ bool VSSClient::GetShadowPathW(const wchar_t* szFilePath,
   return false;
 }
 
-const size_t VSSClient::GetWriterCount()
+size_t VSSClient::GetWriterCount() const
 {
-  return pAlistWriterInfoText_->size();
+  return writer_info_.size();
 }
 
-const char* VSSClient::GetWriterInfo(int nIndex)
+const char* VSSClient::GetWriterInfo(size_t nIndex) const
 {
-  return (char*)pAlistWriterInfoText_->get(nIndex);
+  if ( nIndex < writer_info_.size() ) {
+    return writer_info_[nIndex].info_text_.c_str();
+  }
+  return nullptr;
 }
 
-const int VSSClient::GetWriterState(int nIndex)
+int VSSClient::GetWriterState(size_t nIndex) const
 {
-  void* item = pAlistWriterState_->get(nIndex);
-
-  /*
-   * Eliminate compiler warnings
-   */
-#ifdef HAVE_VSS64
-  return (int64_t)(char*)item;
-#else
-  return (int)(char*)item;
-#endif
+  if ( nIndex < writer_info_.size() ) {
+    return writer_info_[nIndex].state_;
+  }
+  return 0;
 }
 
 void VSSClient::AppendWriterInfo(int nState, const char* pszInfo)
 {
-  pAlistWriterInfoText_->push(bstrdup(pszInfo));
-  pAlistWriterState_->push((void*)nState);
+  WriterInfo info;
+  info.state_ = nState;
+  info.info_text_ = pszInfo;
+  writer_info_.push_back(info);
 }
 
 /*
- * Note, this is called at the end of every job, so release all
- * the items in the alists, but do not delete the alist.
+ * Note, this is called at the end of every job, so release all items
  */
 void VSSClient::DestroyWriterInfo()
 {
-  while (!pAlistWriterInfoText_->empty()) {
-    free(pAlistWriterInfoText_->pop());
-  }
-
-  while (!pAlistWriterState_->empty()) { pAlistWriterState_->pop(); }
+  writer_info_.clear();
 }
 #endif

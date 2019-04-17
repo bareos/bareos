@@ -39,8 +39,6 @@
 
 #ifdef WIN32_VSS
 
-class alist;
-
 void VSSInit(JobControlRecord* jcr);
 
 #define VSS_INIT_RESTORE_AFTER_INIT 1
@@ -57,7 +55,11 @@ typedef void(APIENTRY* t_VssFreeSnapshotProperties)(IN _VSS_SNAPSHOT_PROP*);
 
 class VSSClient {
  public:
-  VSSClient();
+  VSSClient() = default;
+  VSSClient(const VSSClient&) = delete;
+  VSSClient& operator=(const VSSClient&) = delete;
+  VSSClient(const VSSClient&&) = delete;
+  VSSClient& operator=(VSSClient&&) = delete;
   virtual ~VSSClient();
 
   // Backup Process
@@ -80,9 +82,9 @@ class VSSClient {
                       wchar_t* szShadowPath,
                       int nBuflen); /* nBuflen in characters */
 
-  const size_t GetWriterCount();
-  const char* GetWriterInfo(int nIndex);
-  const int GetWriterState(int nIndex);
+  size_t GetWriterCount() const;
+  const char* GetWriterInfo(size_t nIndex) const;
+  int GetWriterState(size_t nIndex) const;
   void DestroyWriterInfo();
   void AppendWriterInfo(int nState, const char* pszInfo);
   const bool IsInitialized() { return bBackupIsInitialized_; };
@@ -95,34 +97,34 @@ class VSSClient {
   virtual void QuerySnapshotSet(GUID snapshotSetID) = 0;
 
  protected:
-  HMODULE hLib_;
-  JobControlRecord* jcr_;
+  HMODULE hLib_ = nullptr;
+  JobControlRecord* jcr_ = nullptr;
 
   t_CreateVssBackupComponents CreateVssBackupComponents_;
   t_VssFreeSnapshotProperties VssFreeSnapshotProperties_;
 
-  DWORD dwContext_;
+  DWORD dwContext_ = 0;
 
-  IUnknown* pVssObject_;
-  GUID uidCurrentSnapshotSet_;
+  IUnknown* pVssObject_ = nullptr;
+  GUID uidCurrentSnapshotSet_ = GUID_NULL;
 
   /*
    ! drive A will be stored on position 0, Z on pos. 25
    */
-  wchar_t wszUniqueVolumeName_[26][MAX_PATH];
-  wchar_t szShadowCopyName_[26][MAX_PATH];
-  wchar_t* metadata_;
+  wchar_t wszUniqueVolumeName_[26][MAX_PATH]{0};
+  wchar_t szShadowCopyName_[26][MAX_PATH]{0};
+  wchar_t* metadata_ = nullptr;
 
-  alist* pAlistWriterState_;
-  alist* pAlistWriterInfoText_;
+  struct WriterInfo { int state_ = 0; std::string info_text_; };
+  std::vector<WriterInfo> writer_info_;
 
-  bool bCoInitializeCalled_;
-  bool bDuringRestore_; /* true if we are doing a restore */
-  bool bBackupIsInitialized_;
-  bool bWriterStatusCurrent_;
+  bool bCoInitializeCalled_ = false;
+  bool bDuringRestore_ = false; /* true if we are doing a restore */
+  bool bBackupIsInitialized_ = false;
+  bool bWriterStatusCurrent_ = false;
 
-  int VMPs;          /* volume mount points */
-  int VMP_snapshots; /* volume mount points that are snapshotted */
+  int VMPs = 0;          /* volume mount points */
+  int VMP_snapshots = 0; /* volume mount points that are snapshotted */
 };
 
 class VSSClientXP : public VSSClient {
