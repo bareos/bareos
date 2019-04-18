@@ -79,7 +79,7 @@ JobControlRecord* new_control_jcr(const char* base_name, int job_type)
  */
 void* HandleUserAgentClientRequest(BareosSocket* user_agent_socket)
 {
-  pthread_detach(pthread_self());
+  DetachIfNotDetached(pthread_self());
 
   JobControlRecord* jcr = new_control_jcr("-Console-", JT_CONSOLE);
 

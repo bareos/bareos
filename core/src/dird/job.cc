@@ -452,7 +452,7 @@ static void* job_thread(void* arg)
 {
   JobControlRecord* jcr = (JobControlRecord*)arg;
 
-  pthread_detach(pthread_self());
+  DetachIfNotDetached(pthread_self());
 
   Dmsg0(200, "=====Start Job=========\n");
   jcr->setJobStatus(JS_Running); /* this will be set only if no error */

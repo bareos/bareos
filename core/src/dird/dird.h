@@ -246,6 +246,7 @@ struct runtime_job_status_t {
 #define FD_VERSION_54 54
 
 bool DoReloadConfig();
+void DetachIfNotDetached(pthread_t thr);
 
 } /* namespace directordaemon */
 
