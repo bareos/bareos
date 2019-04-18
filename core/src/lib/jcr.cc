@@ -83,6 +83,7 @@ static pthread_mutex_t jcr_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t job_start_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t last_jobs_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+static bool jcr_initialized = false;
 #ifdef HAVE_WIN32
 static bool tsd_initialized = false;
 static pthread_key_t jcr_key; /* Pointer to jcr for each thread */
@@ -336,6 +337,8 @@ static void create_jcr_key()
     BErrNo be;
     Jmsg1(nullptr, M_ABORT, 0, _("pthread key create failed: ERR=%s\n"),
           be.bstrerror(status));
+  } else {
+    jcr_initialized = true;
   }
 }
 
@@ -696,7 +699,10 @@ void SetJcrInTsd(JobControlRecord* jcr)
  */
 JobControlRecord* get_jcr_from_tsd()
 {
-  JobControlRecord* jcr = (JobControlRecord*)pthread_getspecific(jcr_key);
+  JobControlRecord* jcr = (JobControlRecord*)INVALID_JCR;
+  if (jcr_initialized){
+    jcr = (JobControlRecord*)pthread_getspecific(jcr_key);
+  }
 
   /*
    * Set any INVALID_JCR to nullptr which the rest of BAREOS understands
@@ -711,7 +717,7 @@ JobControlRecord* get_jcr_from_tsd()
  */
 uint32_t GetJobidFromTsd()
 {
-  JobControlRecord* jcr = (JobControlRecord*)pthread_getspecific(jcr_key);
+  JobControlRecord* jcr = get_jcr_from_tsd();
   uint32_t JobId = 0;
 
   if (jcr && jcr != INVALID_JCR) { JobId = (uint32_t)jcr->JobId; }
