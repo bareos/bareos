@@ -35,7 +35,6 @@
 
 #include "include/bareos.h"
 #include "lib/dlink.h"
-#include "lib/smartall.h"
 #include "lib/message.h"
 
 #define M_ABORT 1

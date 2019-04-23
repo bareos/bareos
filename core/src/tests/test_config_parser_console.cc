@@ -22,7 +22,6 @@
 #include "gtest/gtest.h"
 #include "include/bareos.h"
 #include "lib/parse_conf.h"
-#include "lib/smartall.h"
 #include "filed/filed_globals.h"
 #include "filed/filed_conf.h"
 

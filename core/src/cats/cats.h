@@ -35,7 +35,6 @@
 #ifndef BAREOS_CATS_CATS_H_
 #define BAREOS_CATS_CATS_H_ 1
 
-#include "lib/smartall.h"
 #include "lib/output_formatter.h"
 
 

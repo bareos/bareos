@@ -29,7 +29,6 @@
 #ifndef BAREOS_LIB_RBLIST_H_
 #define BAREOS_LIB_RBLIST_H_
 
-#include "lib/smartall.h"
 
 #define M_ABORT 1
 

@@ -27,7 +27,6 @@
 #ifndef BAREOS_PLUGINS_FILED_FD_COMMON_H_
 #define BAREOS_PLUGINS_FILED_FD_COMMON_H_
 
-#include "lib/smartall.h"
 
 #define JT_BACKUP 'B'  /* Backup Job */
 #define JT_RESTORE 'R' /* Restore Job */

@@ -2,8 +2,7 @@
 #
 # Do a whole lot of select commands. This test is one where the
 #   Director should be run under valgrind.  This exercises SQL a bit
-#   and helps detect orphaned buffers (the SQL engine library code is not
-#   protected by smartall.
+#   and helps detect orphaned buffers
 #
 TestName="four-concurrent-jobs-tape"
 JobName=FourConcurrentJobs

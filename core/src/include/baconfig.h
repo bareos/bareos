@@ -514,7 +514,8 @@ int msg_(const char* file, int line, POOLMEM*& pool_buf, const char* fmt, ...);
 #define REPLACE_IFOLDER 'o'
 
 /** This probably should be done on a machine by machine basis, but it works */
-/** This is critical for the smartalloc routines to properly align memory */
+/** This is critical for the memory allocation routines to properly align memory
+ */
 #define ALIGN_SIZE (sizeof(double))
 #define BALIGN(x) (((x) + ALIGN_SIZE - 1) & ~(ALIGN_SIZE - 1))
 

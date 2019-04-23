@@ -25,7 +25,6 @@
 /*
  * Ordered Circular buffer used for producer/consumer problem with pthread.
  */
-#include "lib/smartall.h"
 
 class dlist;
 

@@ -29,7 +29,6 @@
 #ifndef BAREOS_LIB_ALIST_H_
 #define BAREOS_LIB_ALIST_H_
 
-#include "lib/smartall.h"
 
 /**
  * There is a lot of extra casting here to work around the fact

@@ -101,7 +101,6 @@ typedef std::unique_ptr<BareosSocket, std::function<void(BareosSocket*)>>
 
 inline BareosSocketUniquePtr MakeNewBareosSocketUniquePtr()
 {
-  /* this will call the smartalloc deleter */
   BareosSocketUniquePtr p(new BareosSocketTCP,
                           [](BareosSocket* p) { delete p; });
   return p;

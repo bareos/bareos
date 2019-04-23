@@ -45,7 +45,6 @@
 
 
 #include "include/hostconfig.h"
-#include "lib/smartall.h"
 
 #ifdef HAVE_HPUX_OS
 #pragma pack(push, 4)

@@ -169,7 +169,6 @@ include/bareos/scsi_tapealert.h
 include/bareos/sellist.h
 include/bareos/serial.h
 include/bareos/sha1.h
-include/bareos/smartall.h
 include/bareos/sql/cats.h
 include/bareos/sql/protos.h
 include/bareos/status.h

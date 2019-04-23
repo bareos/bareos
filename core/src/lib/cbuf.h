@@ -26,7 +26,6 @@
  * Circular buffer used for producer/consumer problem with pthread.
  */
 
-#include "lib/smartall.h"
 
 #define QSIZE 10 /**< # of pointers in the queue */
 
