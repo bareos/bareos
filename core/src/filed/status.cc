@@ -137,14 +137,6 @@ static void ListStatusHeader(StatusPacket* sp)
 #endif
 
   len = Mmsg(msg,
-             _(" Heap: heap=%s smbytes=%s max_bytes=%s bufs=%s max_bufs=%s\n"),
-             edit_uint64_with_commas((char*)sbrk(0) - (char*)start_heap, b1),
-             edit_uint64_with_commas(sm_bytes, b2),
-             edit_uint64_with_commas(sm_max_bytes, b3),
-             edit_uint64_with_commas(sm_buffers, b4),
-             edit_uint64_with_commas(sm_max_buffers, b5));
-  sendit(msg, len, sp);
-  len = Mmsg(msg,
              _(" Sizeof: boffset_t=%d size_t=%d debug=%d trace=%d "
                "bwlimit=%skB/s\n"),
              sizeof(boffset_t), sizeof(size_t), debug_level, GetTrace(),

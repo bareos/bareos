@@ -32,10 +32,3 @@
 
                   http://www.fourmilab.ch/smartall/
 */
-
-#include "lib/smartall.h"
-
-uint64_t sm_max_bytes = 0;
-uint64_t sm_bytes = 0;
-uint32_t sm_max_buffers = 0;
-uint32_t sm_buffers = 0;

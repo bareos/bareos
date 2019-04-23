@@ -438,7 +438,7 @@ static void ListStatusHeader(StatusPacket* sp)
   int len;
   PoolMem msg(PM_MESSAGE);
   char dt[MAX_TIME_LENGTH];
-  char b1[35], b2[35], b3[35], b4[35], b5[35];
+  char b1[35];
 #if defined(HAVE_WIN32)
   char buf[300];
 #endif
@@ -493,14 +493,6 @@ static void ListStatusHeader(StatusPacket* sp)
   }
 #endif
 
-  len = Mmsg(msg,
-             _(" Heap: heap=%s smbytes=%s max_bytes=%s bufs=%s max_bufs=%s\n"),
-             edit_uint64_with_commas((char*)sbrk(0) - (char*)start_heap, b1),
-             edit_uint64_with_commas(sm_bytes, b2),
-             edit_uint64_with_commas(sm_max_bytes, b3),
-             edit_uint64_with_commas(sm_buffers, b4),
-             edit_uint64_with_commas(sm_max_buffers, b5));
-  sendit(msg, len, sp);
   len = Mmsg(msg,
              " Sizes: boffset_t=%d size_t=%d int32_t=%d int64_t=%d "
              "bwlimit=%skB/s\n",

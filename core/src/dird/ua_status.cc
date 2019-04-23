@@ -359,12 +359,6 @@ void ListDirStatusHeader(UaContext* ua)
   ua->SendMsg(
       _("Daemon started %s. Jobs: run=%d, running=%d db:%s, %s binary\n"), dt,
       num_jobs_run, JobCount(), dbdrivers.c_str(), BAREOS_BINARY_INFO);
-  ua->SendMsg(_(" Heap: heap=%s smbytes=%s max_bytes=%s bufs=%s max_bufs=%s\n"),
-              edit_uint64_with_commas((char*)sbrk(0) - (char*)start_heap, b1),
-              edit_uint64_with_commas(sm_bytes, b2),
-              edit_uint64_with_commas(sm_max_bytes, b3),
-              edit_uint64_with_commas(sm_buffers, b4),
-              edit_uint64_with_commas(sm_max_buffers, b5));
 
   if (me->secure_erase_cmdline) {
     ua->SendMsg(_(" secure erase command='%s'\n"), me->secure_erase_cmdline);

@@ -28,11 +28,4 @@
 #ifndef BAREOS_LIB_SMARTALL_H_
 #define BAREOS_LIB_SMARTALL_H_
 
-#include "include/bareos.h"
-
-extern uint64_t sm_max_bytes;
-extern uint64_t sm_bytes;
-extern uint32_t sm_max_buffers;
-extern uint32_t sm_buffers;
-
 #endif /* !BAREOS_LIB_SMARTALL_H_ */
