@@ -43,6 +43,7 @@
 #include "filed/verify.h"
 #include "findlib/enable_priv.h"
 #include "findlib/shadowing.h"
+#include "include/make_unique.h"
 #include "lib/berrno.h"
 #include "lib/bget_msg.h"
 #include "lib/bnet.h"
@@ -2289,7 +2290,8 @@ static BareosSocket* connect_to_director(JobControlRecord* jcr,
 {
   ASSERT(dir_res != nullptr);
 
-  BareosSocketUniquePtr director_socket = MakeNewBareosSocketUniquePtr();
+  std::unique_ptr<BareosSocket> director_socket =
+      std::make_unique<BareosSocketTCP>();
 
   if (me->nokeepalive) { director_socket->ClearKeepalive(); }
 

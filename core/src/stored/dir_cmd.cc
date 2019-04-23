@@ -59,6 +59,7 @@
 #include "stored/wait.h"
 #include "stored/job.h"
 #include "stored/mac.h"
+#include "include/make_unique.h"
 #include "lib/berrno.h"
 #include "lib/bnet.h"
 #include "lib/bsock.h"
@@ -1617,7 +1618,8 @@ static bool ReplicateCmd(JobControlRecord* jcr)
   uint32_t JobId = 0;
   PoolMem sd_auth_key(PM_MESSAGE);
   BareosSocket* dir = jcr->dir_bsock;
-  BareosSocketUniquePtr storage_daemon_socket = MakeNewBareosSocketUniquePtr();
+  std::unique_ptr<BareosSocket> storage_daemon_socket =
+      std::make_unique<BareosSocketTCP>();
 
   if (me->nokeepalive) { storage_daemon_socket->ClearKeepalive(); }
   Dmsg1(100, "ReplicateCmd: %s", dir->msg);

@@ -96,14 +96,4 @@ class BareosSocketTCP : public BareosSocket {
   int WaitDataIntr(int sec, int usec = 0) override;
 };
 
-typedef std::unique_ptr<BareosSocket, std::function<void(BareosSocket*)>>
-    BareosSocketUniquePtr;
-
-inline BareosSocketUniquePtr MakeNewBareosSocketUniquePtr()
-{
-  BareosSocketUniquePtr p(new BareosSocketTCP,
-                          [](BareosSocket* p) { delete p; });
-  return p;
-}
-
 #endif /* BAREOS_LIB_BSOCK_TCP_H_ */
