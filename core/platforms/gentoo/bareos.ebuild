@@ -124,7 +124,6 @@ src_compile() {
 	fi
 
 	./configure \
-		--enable-smartalloc \
 		--prefix=/usr \
 		--mandir=/usr/share/man \
 		--with-pid-dir=/var/run \

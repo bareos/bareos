@@ -369,21 +369,6 @@ IF(NOT DEFINED lockmgr)
    set(LOCKMGR 0)
 ENDIF()
 
-# smartalloc
-IF(NOT DEFINED smartalloc)
-   SET(smartalloc ON)
-   set(SMARTALLOC 1)
-ENDIF()
-
-# smartalloc
-IF(NOT smartalloc)
-   SET(smartalloc OFF)
-   set(SMARTALLOC 0)
-ELSE()
-   SET(smartalloc ON)
-   set(SMARTALLOC 1)
-ENDIF()
-
 # disable-conio
 IF(NOT DEFINED disable-conio)
    SET(disable-conio ON)

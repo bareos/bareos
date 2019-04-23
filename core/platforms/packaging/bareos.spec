@@ -767,7 +767,6 @@ cmake  .. \
 %if 0%{?python_plugins}
   -Dpython=yes \
 %endif
-  -Dsmartalloc=yes \
   -Ddisable-conio=yes \
   -Dreadline=yes \
   -Dbatch-insert=yes \

@@ -66,7 +66,6 @@ Steps to Take for Porting
          readline support:            yes
          TCP Wrappers support:        no
          ZLIB support:                yes
-         enable-smartalloc:           yes
          enable-gnome:                no
          gmp support:                 yes
 

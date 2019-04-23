@@ -49,7 +49,6 @@ else
     -Dpiddir=${1}/working \
     -Dsubsys-dir=${1}/working \
     -Dplugindir=${1}/bin/plugins \
-    -Dsmartalloc=yes\
     -Dlockmgr=yes \
     -Dconio=no \
     -Dworkingdir=${1}/working \

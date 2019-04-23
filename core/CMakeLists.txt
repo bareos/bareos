@@ -676,7 +676,6 @@ MESSAGE("   JANSSON support:              ${JANSSON_FOUND} ${JANSSON_LIBRARIES} 
 MESSAGE("   LMDB support:                 ${lmdb} ")
 MESSAGE("   NDMP support:                 ${ndmp} ")
 MESSAGE("   Build ndmjob binary:          ${build_ndmjob} ")
-MESSAGE("   enable-smartalloc:            ${smartalloc} ")
 MESSAGE("   enable-lockmgr:               ${lockmgr} ")
 MESSAGE("   bat support:                  ${support_bat} ")
 MESSAGE("   tray-monitor support:         ${HAVE_TRAYMONITOR} ")
