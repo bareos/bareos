@@ -28,6 +28,12 @@
 
 pthread_mutex_t MessagesResource::mutex_ = PTHREAD_MUTEX_INITIALIZER;
 
+MessagesResource::MessagesResource()
+    : BareosResource(), send_msg_types_(NbytesForBits(M_MAX + 1), 0)
+{
+  return;
+}
+
 void MessagesResource::ShallowCopyTo(BareosResource* p) const
 {
   MessagesResource* r = dynamic_cast<MessagesResource*>(p);
@@ -104,7 +110,7 @@ std::vector<MessageDestinationInfo*> MessagesResource::DuplicateDestChain()
 void MessagesResource::DuplicateResourceTo(MessagesResource& other) const
 {
   other.dest_chain_ = DuplicateDestChain();
-  memcpy(other.send_msg_types_, send_msg_types_, sizeof(send_msg_types_));
+  other.send_msg_types_ = send_msg_types_;
 }
 
 /*

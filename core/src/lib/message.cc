@@ -229,15 +229,6 @@ void InitMsg(JobControlRecord* jcr,
 
   message_job_code_callback = job_code_callback;
 
-#if !defined(HAVE_WIN32)
-  int fd = open("/dev/null", O_RDONLY, 0644);
-  if (fd > 2) {
-    close(fd);
-  } else {
-    ASSERT(false);  // Ueb
-  }
-#endif
-
   if (!msg) {
     // initialize default chain for stdout and syslog
     daemon_msgs = new MessagesResource;
