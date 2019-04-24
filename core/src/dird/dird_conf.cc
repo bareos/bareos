@@ -2975,7 +2975,7 @@ static void StoreLevel(LEX* lc, ResourceItem* item, int index, int pass)
  */
 static void StoreAutopassword(LEX* lc, ResourceItem* item, int index, int pass)
 {
-  switch (item->static_resource->rcode_) {  // Ueb --> Initialisierung prüfen
+  switch (item->static_resource->rcode_) {
     case R_DIRECTOR:
       /*
        * As we need to store both clear and MD5 hashed within the same
@@ -3800,7 +3800,6 @@ static void ConfigReadyCallback(ConfigurationParser& my_config)
 
 static bool AddResourceCopyToEndOfChain(int type)
 {
-  int rindex = type - R_FIRST;
   BareosResource* new_resource = nullptr;
 
   switch (type) {
@@ -3970,14 +3969,14 @@ static void DumpResource(int type,
       break;
     case R_FILESET: {
       FilesetResource* p = dynamic_cast<FilesetResource*>(res);
-      ASSERT(p);  // Ueb --> Fehlermeldung
+      ASSERT(p);
       p->PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
     }
     case R_MSGS: {
       MessagesResource* p = dynamic_cast<MessagesResource*>(res);
-      ASSERT(p);  // Ueb --> Fehlermeldung
+      ASSERT(p);
       p->PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;

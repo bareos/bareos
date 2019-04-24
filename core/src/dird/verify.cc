@@ -138,7 +138,7 @@ bool DoVerify(JobControlRecord* jcr)
     case L_VERIFY_CATALOG:
     case L_VERIFY_VOLUME_TO_CATALOG:
     case L_VERIFY_DISK_TO_CATALOG:
-      jr = jcr->jr;  // Ueb
+      jr = jcr->jr;
       if (jcr->res.verify_job && (JobLevel == L_VERIFY_VOLUME_TO_CATALOG ||
                                   JobLevel == L_VERIFY_DISK_TO_CATALOG)) {
         Name = jcr->res.verify_job->resource_name_;

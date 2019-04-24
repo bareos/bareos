@@ -809,8 +809,10 @@ static void StoreOptionsRes(LEX* lc,
 static FilesetResource* GetStaticFilesetResource()
 {
   FilesetResource* res_fs = nullptr;
-  ResourceTable* t = my_config->GetResourceTable("FileSet");  // Ueb
+  ResourceTable* t = my_config->GetResourceTable("FileSet");
+  ASSERT(t);
   if (t) { res_fs = dynamic_cast<FilesetResource*>(t->static_resource_); }
+  ASSERT(res_fs);
   return res_fs;
 }
 
@@ -844,7 +846,7 @@ static void StoreFname(LEX* lc,
         }
       case BCT_QUOTED_STRING: {
         FilesetResource* res_fs = GetStaticFilesetResource();
-        if (res_fs && res_fs->have_MD5) {
+        if (res_fs->have_MD5) {
           MD5_Update(&res_fs->md5c, (unsigned char*)lc->str, lc->str_len);
         }
 
