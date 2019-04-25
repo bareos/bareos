@@ -157,7 +157,6 @@ static bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
   int status, tries, name_max, count;
   BErrNo be;
 
-  Dsm_check(200);
   if (mount) {
     icmd = device->mount_command;
   } else {
@@ -267,7 +266,6 @@ static bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
   get_out:
     FreePoolMemory(results);
     Dmsg0(200, "============ mount=0\n");
-    Dsm_check(200);
     return false;
   }
 

@@ -133,7 +133,7 @@ extern "C" void* connect_thread(void* arg)
   /*
    * Permit MaxConnections connections.
    */
-  sock_fds = New(alist(10, not_owned_by_alist));
+  sock_fds = new alist(10, not_owned_by_alist);
   BnetThreadServerTcp((dlist*)arg, me->MaxConnections, sock_fds, &socket_workq,
                       me->nokeepalive, HandleConnectionRequest, my_config,
                       &server_state);
@@ -151,7 +151,7 @@ bool StartSocketServer(dlist* addrs)
   int status;
 
   if (client_connections == nullptr) {
-    client_connections = New(ConnectionPool());
+    client_connections = new ConnectionPool();
   }
 
   server_state.store(BnetServerState::kUndefined);

@@ -646,7 +646,7 @@ void ConfigurationParser::StoreAlistRes(LEX* lc,
     if (count == 0) { /* always store in item->value */
       i = 0;
       if (!item->alistvalue[i]) {
-        item->alistvalue[i] = New(alist(10, not_owned_by_alist));
+        item->alistvalue[i] = new alist(10, not_owned_by_alist);
       }
     } else {
       /*
@@ -658,7 +658,7 @@ void ConfigurationParser::StoreAlistRes(LEX* lc,
                   lc->str, count, lc->line_no, lc->line);
         return;
       }
-      item->alistvalue[i] = New(alist(10, not_owned_by_alist));
+      item->alistvalue[i] = new alist(10, not_owned_by_alist);
     }
     list = item->alistvalue[i];
 
@@ -726,7 +726,7 @@ void ConfigurationParser::StoreAlistStr(LEX* lc,
 {
   if (pass == 2) {
     if (!*(item->value)) {
-      *(item->alistvalue) = New(alist(10, owned_by_alist));
+      *(item->alistvalue) = new alist(10, owned_by_alist);
     }
     alist* list = *(item->alistvalue);
 
@@ -770,7 +770,7 @@ void ConfigurationParser::StoreAlistDir(LEX* lc,
 {
   if (pass == 2) {
     if (!*(item->alistvalue)) {
-      *(item->alistvalue) = New(alist(10, owned_by_alist));
+      *(item->alistvalue) = new alist(10, owned_by_alist);
     }
     alist* list = *(item->alistvalue);
 
@@ -818,7 +818,7 @@ void ConfigurationParser::StorePluginNames(LEX* lc,
     LexGetToken(lc, BCT_STRING); /* scan next item */
 
     if (!*(item->alistvalue)) {
-      *(item->alistvalue) = New(alist(10, owned_by_alist));
+      *(item->alistvalue) = new alist(10, owned_by_alist);
     }
     alist* list = *(item->alistvalue);
 

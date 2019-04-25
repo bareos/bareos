@@ -553,7 +553,7 @@ static BxattrExitCode aix_build_xattr_streams(JobControlRecord* jcr,
     }
 
     if (xattr_value_list == NULL) {
-      xattr_value_list = New(alist(10, not_owned_by_alist));
+      xattr_value_list = new alist(10, not_owned_by_alist);
     }
 
     xattr_value_list->append(current_xattr);
@@ -615,7 +615,7 @@ static BxattrExitCode aix_parse_xattr_streams(JobControlRecord* jcr,
   alist* xattr_value_list;
   BxattrExitCode retval = BxattrExitCode::kError;
 
-  xattr_value_list = New(alist(10, not_owned_by_alist));
+  xattr_value_list = new alist(10, not_owned_by_alist);
 
   if (UnSerializeXattrStream(jcr, xattr_data, content, content_length,
                              xattr_value_list) != BxattrExitCode::kSuccess) {
@@ -862,7 +862,7 @@ static BxattrExitCode irix_build_xattr_streams(JobControlRecord* jcr,
             sizeof(current_xattr->value_length) + current_xattr->value_length;
 
         if (xattr_value_list == NULL) {
-          xattr_value_list = New(alist(10, not_owned_by_alist));
+          xattr_value_list = new alist(10, not_owned_by_alist);
         }
 
         xattr_value_list->append(current_xattr);
@@ -932,7 +932,7 @@ static BxattrExitCode irix_parse_xattr_streams(JobControlRecord* jcr,
   alist* xattr_value_list;
   BxattrExitCode retval = BxattrExitCode::kError;
 
-  xattr_value_list = New(alist(10, not_owned_by_alist));
+  xattr_value_list = new alist(10, not_owned_by_alist);
 
   if (UnSerializeXattrStream(jcr, xattr_data, content, content_length,
                              xattr_value_list) != BxattrExitCode::kSuccess) {
@@ -1313,7 +1313,7 @@ static BxattrExitCode generic_build_xattr_streams(JobControlRecord* jcr,
     }
 
     if (xattr_value_list == NULL) {
-      xattr_value_list = New(alist(10, not_owned_by_alist));
+      xattr_value_list = new alist(10, not_owned_by_alist);
     }
 
     xattr_value_list->append(current_xattr);
@@ -1375,7 +1375,7 @@ static BxattrExitCode generic_parse_xattr_streams(JobControlRecord* jcr,
   alist* xattr_value_list;
   BxattrExitCode retval = BxattrExitCode::kError;
 
-  xattr_value_list = New(alist(10, not_owned_by_alist));
+  xattr_value_list = new alist(10, not_owned_by_alist);
 
   if (UnSerializeXattrStream(jcr, xattr_data, content, content_length,
                              xattr_value_list) != BxattrExitCode::kSuccess) {
@@ -1760,7 +1760,7 @@ static BxattrExitCode bsd_build_xattr_streams(JobControlRecord* jcr,
       }
 
       if (xattr_value_list == NULL) {
-        xattr_value_list = New(alist(10, not_owned_by_alist));
+        xattr_value_list = new alist(10, not_owned_by_alist);
       }
 
       xattr_value_list->append(current_xattr);
@@ -1836,7 +1836,7 @@ static BxattrExitCode bsd_parse_xattr_streams(JobControlRecord* jcr,
   char *attrnamespace, *attrname;
   BxattrExitCode retval = BxattrExitCode::kError;
 
-  xattr_value_list = New(alist(10, not_owned_by_alist));
+  xattr_value_list = new alist(10, not_owned_by_alist);
 
   if (UnSerializeXattrStream(jcr, xattr_data, content, content_length,
                              xattr_value_list) != BxattrExitCode::kSuccess) {
@@ -2113,7 +2113,7 @@ static BxattrExitCode tru64_build_xattr_streams(JobControlRecord* jcr,
         sizeof(current_xattr->value_length) + current_xattr->value_length;
 
     if (xattr_value_list == NULL) {
-      xattr_value_list = New(alist(10, not_owned_by_alist));
+      xattr_value_list = new alist(10, not_owned_by_alist);
     }
 
     xattr_value_list->append(current_xattr);
@@ -2174,7 +2174,7 @@ static BxattrExitCode tru64_parse_xattr_streams(JobControlRecord* jcr,
   alist* xattr_value_list;
   BxattrExitCode retval = BxattrExitCode::kError;
 
-  xattr_value_list = New(alist(10, not_owned_by_alist));
+  xattr_value_list = new alist(10, not_owned_by_alist);
 
   if (UnSerializeXattrStream(jcr, xattr_data, content, content_length,
                              xattr_value_list) != BxattrExitCode::kSuccess) {
@@ -2417,7 +2417,7 @@ static inline void add_xattr_link_cache_entry(xattr_data_t* xattr_data,
   ptr->target = strdup(target);
 
   if (!xattr_data->u.build->link_cache) {
-    xattr_data->u.build->link_cache = New(alist(10, not_owned_by_alist));
+    xattr_data->u.build->link_cache = new alist(10, not_owned_by_alist);
   }
   xattr_data->u.build->link_cache->append(ptr);
 }

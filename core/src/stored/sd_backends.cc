@@ -204,7 +204,7 @@ Device* init_backend_dev(JobControlRecord* jcr, int device_type)
     backend_shared_library->flush_backend = flush_backend;
 
     if (loaded_backends == NULL) {
-      loaded_backends = New(alist(10, not_owned_by_alist));
+      loaded_backends = new alist(10, not_owned_by_alist);
     }
     loaded_backends->append(backend_shared_library);
 

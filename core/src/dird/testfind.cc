@@ -242,7 +242,6 @@ int main(int argc, char* const* argv)
   TermMsg();
 
   CloseMemoryPool();
-  sm_dump(false);
   exit(0);
 }
 
@@ -498,8 +497,7 @@ static bool CopyFileset(FindFilesPacket* ff, JobControlRecord* jcr)
           current_opts->wild.append(strdup((const char*)fo->wild.get(k)));
         }
         for (k = 0; k < fo->wilddir.size(); k++) {
-          current_opts->wilddir.append(
-              strdup((const char*)fo->wilddir.get(k)));
+          current_opts->wilddir.append(strdup((const char*)fo->wilddir.get(k)));
         }
         for (k = 0; k < fo->wildfile.size(); k++) {
           current_opts->wildfile.append(

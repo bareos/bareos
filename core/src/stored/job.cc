@@ -502,7 +502,6 @@ void StoredFreeJcr(JobControlRecord* jcr)
 
   FreePlugins(jcr); /* release instantiated plugins */
 
-  Dsm_check(200);
 
   if (jcr->JobId != 0) {
     WriteStateFile(me->working_directory, "bareos-sd",

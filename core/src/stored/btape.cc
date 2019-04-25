@@ -304,7 +304,7 @@ int main(int margc, char* margv[])
     exit(1);
   }
 
-  dcr = New(BTAPE_DCR);
+  dcr = new BTAPE_DCR;
   jcr = SetupJcr("btape", margv[0], bsr, director, dcr, NULL,
                  false); /* write device */
   if (!jcr) { exit(1); }
@@ -328,7 +328,6 @@ int main(int margc, char* margv[])
 
 static void TerminateBtape(int status)
 {
-  Dsm_check(200);
   FreeJcr(jcr);
   jcr = NULL;
 
@@ -371,7 +370,6 @@ static void TerminateBtape(int status)
   TermLastJobsList();
   CloseMemoryPool(); /* free memory in pool */
 
-  sm_dump(false, false);
   exit(status);
 }
 
@@ -730,7 +728,6 @@ static void rectestcmd()
     return;
   }
 
-  Dsm_check(200);
   save_block = dcr->block;
   dcr->block = new_block(dev);
   rec = new_record();
@@ -739,7 +736,6 @@ static void rectestcmd()
     rec->data = CheckPoolMemorySize(rec->data, i);
     memset(rec->data, i & 0xFF, i);
     rec->data_len = i;
-    Dsm_check(200);
     if (WriteRecordToBlock(dcr, rec)) {
       EmptyBlock(dcr->block);
       blkno++;
@@ -747,12 +743,10 @@ static void rectestcmd()
     } else {
       break;
     }
-    Dsm_check(200);
   }
   FreeRecord(rec);
   FreeBlock(dcr->block);
   dcr->block = save_block; /* restore block to dcr */
-  Dsm_check(200);
 }
 
 /**
@@ -1830,7 +1824,6 @@ static void wrcmd()
   int i;
 
   if (!dev->IsOpen()) { open_the_device(); }
-  Dsm_check(200);
   EmptyBlock(block);
   if (verbose > 1) { DumpBlock(block, "test"); }
 
@@ -1839,7 +1832,6 @@ static void wrcmd()
   rec->data = CheckPoolMemorySize(rec->data, i);
   memset(rec->data, i & 0xFF, i);
   rec->data_len = i;
-  Dsm_check(200);
   if (!WriteRecordToBlock(dcr, rec)) {
     Pmsg0(0, _("Error writing record to block.\n"));
     goto bail_out;
@@ -1853,7 +1845,7 @@ static void wrcmd()
   Pmsg0(0, _("Wrote block to device.\n"));
 
 bail_out:
-  Dsm_check(200);
+  return;
 }
 
 /**
@@ -2753,7 +2745,6 @@ static void qfillcmd()
   count = atoi(cmd);
   if (count <= 0) { count = 1000; }
 
-  Dsm_check(200);
 
   i = block->buf_len - 100;
   ASSERT(i > 0);
@@ -2786,7 +2777,7 @@ static void qfillcmd()
   scan_blocks();
 
 bail_out:
-  Dsm_check(200);
+  return;
 }
 
 /**
@@ -2878,7 +2869,6 @@ static void do_tape_cmds()
   bool found;
 
   while (!quit && GetCmd("*")) {
-    Dsm_check(200);
     found = false;
     ParseArgs(cmd, args, &argc, argk, argv, MAX_CMD_ARGS);
     /* search for command */
@@ -3027,7 +3017,7 @@ DeviceControlRecord* BTAPE_DCR::get_new_spooling_dcr()
 {
   DeviceControlRecord* dcr;
 
-  dcr = New(BTAPE_DCR);
+  dcr = new BTAPE_DCR;
 
   return dcr;
 }

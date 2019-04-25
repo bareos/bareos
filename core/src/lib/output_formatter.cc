@@ -66,7 +66,7 @@ OutputFormatter::OutputFormatter(SEND_HANDLER* send_func_arg,
   result_message_plain = new PoolMem(PM_MESSAGE);
 #if HAVE_JANSSON
   result_json = json_object();
-  result_stack_json = New(alist(10, false));
+  result_stack_json = new alist(10, false);
   result_stack_json->push(result_json);
   message_object_json = json_object();
 #endif
@@ -454,7 +454,7 @@ void OutputFormatter::CreateNewResFilter(of_filter_type type,
 {
   of_filter_tuple* tuple;
 
-  if (!filters) { filters = New(alist(10, true)); }
+  if (!filters) { filters = new alist(10, true); }
 
   tuple = (of_filter_tuple*)malloc(sizeof(of_filter_tuple));
   tuple->type = type;
@@ -468,7 +468,7 @@ void OutputFormatter::AddLimitFilterTuple(int limit)
 {
   of_filter_tuple* tuple;
 
-  if (!filters) { filters = New(alist(10, true)); }
+  if (!filters) { filters = new alist(10, true); }
 
   tuple = (of_filter_tuple*)malloc(sizeof(of_filter_tuple));
   tuple->type = OF_FILTER_LIMIT;
@@ -481,7 +481,7 @@ void OutputFormatter::AddOffsetFilterTuple(int offset)
 {
   of_filter_tuple* tuple;
 
-  if (!filters) { filters = New(alist(10, true)); }
+  if (!filters) { filters = new alist(10, true); }
 
   tuple = (of_filter_tuple*)malloc(sizeof(of_filter_tuple));
   tuple->type = OF_FILTER_OFFSET;
@@ -494,7 +494,7 @@ void OutputFormatter::AddAclFilterTuple(int column, int acltype)
 {
   of_filter_tuple* tuple;
 
-  if (!filters) { filters = New(alist(10, true)); }
+  if (!filters) { filters = new alist(10, true); }
 
   tuple = (of_filter_tuple*)malloc(sizeof(of_filter_tuple));
   tuple->type = OF_FILTER_ACL;

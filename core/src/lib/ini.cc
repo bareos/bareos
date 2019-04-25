@@ -128,7 +128,7 @@ static bool IniStoreAlistStr(LEX* lc, ConfigFile* inifile, ini_items* item)
   if (LexGetToken(lc, BCT_STRING) == BCT_ERROR) { return false; }
 
   if (item->val.alistval == NULL) {
-    list = New(alist(10, owned_by_alist));
+    list = new alist(10, owned_by_alist);
   } else {
     list = item->val.alistval;
   }

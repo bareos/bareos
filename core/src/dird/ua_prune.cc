@@ -720,7 +720,7 @@ static bool PruneBackupJobs(UaContext* ua,
    * able to restore files. (ie, last full, last diff, last incrs)
    * Note: The DISTINCT could be more useful if we don't get FileSetId
    */
-  jobids_check = New(alist(10, owned_by_alist));
+  jobids_check = new alist(10, owned_by_alist);
   Mmsg(query,
        "SELECT DISTINCT Job.Name, FileSet, Client.Name, Job.FileSetId, "
        "Job.ClientId, Job.Type "

@@ -58,7 +58,7 @@ class pathid_cache {
     max_node = NITEMS;
     nodes = (hlink*)malloc(max_node * sizeof(hlink));
     nb_node = 0;
-    table_node = New(alist(5, owned_by_alist));
+    table_node = new alist(5, owned_by_alist);
     table_node->append(nodes);
   }
 

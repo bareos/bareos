@@ -646,7 +646,7 @@ DeviceControlRecord* StorageDaemonDeviceControlRecord::get_new_spooling_dcr()
 {
   DeviceControlRecord* dcr;
 
-  dcr = New(StorageDaemonDeviceControlRecord);
+  dcr = new StorageDaemonDeviceControlRecord;
 
   return dcr;
 }
@@ -676,7 +676,7 @@ DeviceControlRecord* DeviceControlRecord::get_new_spooling_dcr()
 {
   DeviceControlRecord* dcr;
 
-  dcr = New(StorageDaemonDeviceControlRecord);
+  dcr = new StorageDaemonDeviceControlRecord;
 
   return dcr;
 }

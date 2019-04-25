@@ -339,7 +339,7 @@ int main(int argc, char* argv[])
           working_directory);
   }
 
-  dcr = New(DeviceControlRecord);
+  dcr = new DeviceControlRecord;
   bjcr = SetupJcr("bscan", argv[0], bsr, director, dcr, VolumeName, true);
   if (!bjcr) { exit(1); }
   dev = bjcr->read_dcr->dev;
@@ -354,7 +354,7 @@ int main(int argc, char* argv[])
   }
 
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-  backend_directories = New(alist(10, owned_by_alist));
+  backend_directories = new alist(10, owned_by_alist);
   backend_directories->append((char*)backend_directory);
 
   DbSetBackendDirs(backend_directories);
@@ -1546,7 +1546,7 @@ static JobControlRecord* create_jcr(JobDbRecord* jr,
   jobjcr->VolSessionId = rec->VolSessionId;
   jobjcr->VolSessionTime = rec->VolSessionTime;
   jobjcr->ClientId = jr->ClientId;
-  jobjcr->dcr = jobjcr->read_dcr = New(DeviceControlRecord);
+  jobjcr->dcr = jobjcr->read_dcr = new DeviceControlRecord;
   SetupNewDcrDevice(jobjcr, jobjcr->dcr, dev, NULL);
 
   return jobjcr;

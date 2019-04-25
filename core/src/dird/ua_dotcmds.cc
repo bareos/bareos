@@ -764,7 +764,6 @@ static void DoClientCmd(UaContext* ua, ClientResource* client, const char* cmd)
 
 /**
  * .die (seg fault)
- * .dump (sm_dump)
  * .exit (no arg => .quit)
  */
 bool DotAdminCmds(UaContext* ua, const char* cmd)
@@ -786,10 +785,6 @@ bool DotAdminCmds(UaContext* ua, const char* cmd)
     } else {
       remote_cmd = ".die";
     }
-  } else if (strncmp(ua->argk[0], ".dump", 5) == 0) {
-    remote_cmd = "sm_dump";
-  } else if (strncmp(ua->argk[0], ".memcheck", 8) == 0) {
-    remote_cmd = "sm_check";
   } else if (strncmp(ua->argk[0], ".exit", 5) == 0) {
     remote_cmd = "exit";
   } else {

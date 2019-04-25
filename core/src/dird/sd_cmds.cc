@@ -281,7 +281,7 @@ dlist* native_get_vol_list(UaContext* ua,
     sd->fsend(changerlistcmd, dev_name);
   }
 
-  vol_list = New(dlist(vl, &vl->link));
+  vol_list = new dlist(vl, &vl->link);
 
   /*
    * Read and organize list of Volumes

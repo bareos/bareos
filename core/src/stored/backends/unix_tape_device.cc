@@ -67,7 +67,7 @@ extern "C" Device* backend_instantiate(JobControlRecord* jcr, int device_type)
 
   switch (device_type) {
     case B_TAPE_DEV:
-      dev = New(unix_tape_device);
+      dev = new unix_tape_device;
       break;
     default:
       Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"),

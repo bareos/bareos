@@ -959,8 +959,8 @@ static inline bool setbwlimit_stored(UaContext* ua,
   /*
    * Try to connect for 15 seconds
    */
-  ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d\n"), store->resource_name_,
-              store->address, store->SDport);
+  ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d\n"),
+              store->resource_name_, store->address, store->SDport);
 
   if (!ConnectToStorageDaemon(ua->jcr, 1, 15, false)) {
     ua->ErrorMsg(_("Failed to connect to Storage daemon.\n"));
@@ -1132,7 +1132,8 @@ static void DoEnDisableCmd(UaContext* ua, bool setting)
                 setting ? "en" : "dis");
   } else if (job) {
     job->enabled = setting;
-    ua->SendMsg(_("Job \"%s\" %sabled\n"), job->resource_name_, setting ? "en" : "dis");
+    ua->SendMsg(_("Job \"%s\" %sabled\n"), job->resource_name_,
+                setting ? "en" : "dis");
   }
 
   ua->WarningMsg(
@@ -1178,8 +1179,8 @@ static void do_storage_setdebug(UaContext* ua,
   /*
    * Try connecting for up to 15 seconds
    */
-  ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d\n"), store->resource_name_,
-              store->address, store->SDport);
+  ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d\n"),
+              store->resource_name_, store->address, store->SDport);
 
   if (!ConnectToStorageDaemon(jcr, 1, 15, false)) {
     ua->ErrorMsg(_("Failed to connect to Storage daemon.\n"));
@@ -1804,8 +1805,9 @@ static bool EstimateCmd(UaContext* ua, const char* cmd)
 
   GetLevelSinceTime(jcr);
 
-  ua->SendMsg(_("Connecting to Client %s at %s:%d\n"), jcr->res.client->resource_name_,
-              jcr->res.client->address, jcr->res.client->FDport);
+  ua->SendMsg(_("Connecting to Client %s at %s:%d\n"),
+              jcr->res.client->resource_name_, jcr->res.client->address,
+              jcr->res.client->FDport);
   if (!ConnectToFileDaemon(jcr, 1, 15, false)) {
     ua->ErrorMsg(_("Failed to connect to Client.\n"));
     return false;
@@ -2389,7 +2391,6 @@ static bool MemoryCmd(UaContext* ua, const char* cmd)
 {
   GarbageCollectMemory();
   ListDirStatusHeader(ua);
-  sm_dump(false, true);
   return true;
 }
 

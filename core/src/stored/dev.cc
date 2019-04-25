@@ -186,52 +186,52 @@ static inline Device* init_dev(JobControlRecord* jcr,
 #ifndef HAVE_DYNAMIC_SD_BACKENDS
 #ifdef HAVE_GFAPI
     case B_GFAPI_DEV:
-      dev = New(gfapi_device);
+      dev = new gfapi_device;
       break;
 #endif
 #ifdef HAVE_DROPLET
     case B_DROPLET_DEV:
-      dev = New(droplet_device);
+      dev = new droplet_device;
       break;
 #endif
 #ifdef HAVE_RADOS
     case B_RADOS_DEV:
-      dev = New(rados_device);
+      dev = new rados_device;
       break;
 #endif
 #ifdef HAVE_CEPHFS
     case B_CEPHFS_DEV:
-      dev = New(cephfs_device);
+      dev = new cephfs_device;
       break;
 #endif
 #ifdef HAVE_ELASTO
     case B_ELASTO_DEV:
-      dev = New(elasto_device);
+      dev = new elasto_device;
       break;
 #endif
 #ifdef HAVE_WIN32
     case B_TAPE_DEV:
-      dev = New(win32_tape_device);
+      dev = new win32_tape_device;
       break;
     case B_FIFO_DEV:
-      dev = New(win32_fifo_device);
+      dev = new win32_fifo_device;
       break;
 #else
     case B_TAPE_DEV:
-      dev = New(unix_tape_device);
+      dev = new unix_tape_device;
       break;
     case B_FIFO_DEV:
-      dev = New(unix_fifo_device);
+      dev = new unix_fifo_device;
       break;
 #endif
 #endif /* HAVE_DYNAMIC_SD_BACKENDS */
 #ifdef HAVE_WIN32
     case B_FILE_DEV:
-      dev = New(win32_file_device);
+      dev = new win32_file_device;
       break;
 #else
     case B_FILE_DEV:
-      dev = New(unix_file_device);
+      dev = new unix_file_device;
       break;
 #endif
     default:
@@ -401,7 +401,7 @@ static inline Device* init_dev(JobControlRecord* jcr,
   }
 
   dev->ClearOpened();
-  dev->attached_dcrs = New(dlist(dcr, &dcr->dev_link));
+  dev->attached_dcrs = new dlist(dcr, &dcr->dev_link);
   Dmsg2(100, "InitDev: tape=%d dev_name=%s\n", dev->IsTape(), dev->dev_name);
   dev->initiated = true;
   Dmsg3(100, "dev=%s dev_max_bs=%u max_bs=%u\n", dev->dev_name,

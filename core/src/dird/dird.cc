@@ -506,7 +506,6 @@ static
   TermMsg(); /* Terminate message handler */
   CleanupCrypto();
   CloseMemoryPool(); /* release free memory in pool */
-  sm_dump(false, false);
 
   exit(sig);
 }
@@ -639,7 +638,7 @@ bool DoReloadConfig()
     Dmsg0(10, "Director's configuration file reread.\n");
 
     if (num_running_jobs > 0) {
-      if (!reload_table) { reload_table = New(alist(10, not_owned_by_alist)); }
+      if (!reload_table) { reload_table = new alist(10, not_owned_by_alist); }
       reload_table->push(new_table);
     } else {  // no jobs running
       FreeSavedResources(&prev_config);

@@ -44,7 +44,6 @@ TEST(ConfigParser, test_stored_config)
   TermMsg();         /* Terminate message handler */
   CloseMemoryPool(); /* release free memory in pool */
   debug_level = 200;
-  sm_dump(false, false);
 }
 
 }  // namespace directordaemon

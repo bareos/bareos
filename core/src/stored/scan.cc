@@ -134,7 +134,6 @@ get_out:
     dcr->VolCatInfo = dcrVolCatInfo; /* structure assignment */
     VolCatInfo = devVolCatInfo;      /* structure assignment */
   }
-  Dsm_check(100);
   return found;
 }
 

@@ -131,7 +131,7 @@ void test_dlist_dynamic()
   TestForeachDlist(list);
 
   // create empty list
-  list = New(dlist());
+  list = new dlist();
   EXPECT_EQ(list->size(), 0);
 
   // does foreach work for empty lists?
@@ -207,7 +207,7 @@ TEST(dlist, dlist)
    *  of jcr objects.  Within a jcr object, there is a buf
    *  that points to a malloced string containing data
    */
-  jcr_chain = New(dlist(jcr, &jcr->link));
+  jcr_chain = new dlist(jcr, &jcr->link);
   for (int i = 0; i < 20; i++) {
     sprintf(buf, "%d", i);
     jcr = (MYJCR*)malloc(sizeof(MYJCR));
@@ -235,7 +235,7 @@ TEST(dlist, dlist)
 
 
   /* Now do a binary insert for the list */
-  jcr_chain = New(dlist(jcr, &jcr->link));
+  jcr_chain = new dlist(jcr, &jcr->link);
 #define CNT 6
   strcpy(buf, "ZZZ");
   count = 0;
@@ -308,6 +308,4 @@ TEST(dlist, dlist)
   chain.destroy();
 
   test_dlist_dynamic();
-
-  sm_dump(false); /* unit test */
 }

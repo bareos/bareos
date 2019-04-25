@@ -67,7 +67,6 @@ TEST(sd, sd_plugins)
 
   TermMsg();
   CloseMemoryPool();
-  sm_dump(false);
 }
 
 } /* namespace storagedaemon */

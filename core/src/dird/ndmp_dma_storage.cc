@@ -449,7 +449,7 @@ dlist* ndmp_get_vol_list(UaContext* ua,
   /*
    * Start with an empty dlist().
    */
-  vol_list = New(dlist(vl, &vl->link));
+  vol_list = new dlist(vl, &vl->link);
 
   /*
    * Process the robot element status retrieved.

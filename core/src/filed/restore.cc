@@ -201,7 +201,7 @@ static inline void PushDelayedDataStream(r_ctx& rctx, BareosSocket* sd)
   DelayedDataStream* dds;
 
   if (!rctx.delayed_streams) {
-    rctx.delayed_streams = New(alist(10, owned_by_alist));
+    rctx.delayed_streams = new alist(10, owned_by_alist);
   }
 
   dds = (DelayedDataStream*)malloc(sizeof(DelayedDataStream));

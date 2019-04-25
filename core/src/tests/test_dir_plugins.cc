@@ -79,7 +79,6 @@ TEST(dir, dir_plugins)
 
   TermMsg();
   CloseMemoryPool();
-  sm_dump(false);
 }
 
 } /* namespace directordaemon */

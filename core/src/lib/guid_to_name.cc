@@ -48,8 +48,8 @@ guid_list* new_guid_list()
   guid_list* list;
   guitem* item = NULL;
   list = (guid_list*)malloc(sizeof(guid_list));
-  list->uid_list = New(dlist(item, &item->link));
-  list->gid_list = New(dlist(item, &item->link));
+  list->uid_list = new dlist(item, &item->link);
+  list->gid_list = new dlist(item, &item->link);
   return list;
 }
 

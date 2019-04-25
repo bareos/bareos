@@ -1527,7 +1527,7 @@ BxattrExitCode PluginBuildXattrStreams(JobControlRecord* jcr,
             sizeof(current_xattr->value_length) + current_xattr->value_length;
 
         if (xattr_value_list == NULL) {
-          xattr_value_list = New(alist(10, not_owned_by_alist));
+          xattr_value_list = new alist(10, not_owned_by_alist);
         }
 
         xattr_value_list->append(current_xattr);
@@ -1611,7 +1611,7 @@ BxattrExitCode PluginParseXattrStreams(JobControlRecord* jcr,
     xattr_t* current_xattr = nullptr;
     struct xattr_pkt xp;
 
-    xattr_value_list = New(alist(10, not_owned_by_alist));
+    xattr_value_list = new alist(10, not_owned_by_alist);
 
     if (UnSerializeXattrStream(jcr, xattr_data, content, content_length,
                                xattr_value_list) != BxattrExitCode::kSuccess) {
@@ -1681,7 +1681,7 @@ void LoadFdPlugins(const char* plugin_dir, alist* plugin_names)
     return;
   }
 
-  fd_plugin_list = New(alist(10, not_owned_by_alist));
+  fd_plugin_list = new alist(10, not_owned_by_alist);
   if (!LoadPlugins((void*)&binfo, (void*)&bfuncs, fd_plugin_list, plugin_dir,
                    plugin_names, plugin_type, IsPluginCompatible)) {
     /*
@@ -1821,7 +1821,7 @@ void NewPlugins(JobControlRecord* jcr)
     return;
   }
 
-  jcr->plugin_ctx_list = New(alist(10, owned_by_alist));
+  jcr->plugin_ctx_list = new alist(10, owned_by_alist);
   Dmsg2(debuglevel, "Instantiate plugin_ctx=%p JobId=%d\n",
         jcr->plugin_ctx_list, jcr->JobId);
   foreach_alist_index (i, plugin, fd_plugin_list) {

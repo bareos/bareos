@@ -83,7 +83,7 @@ UaContext* new_ua_context(JobControlRecord* jcr)
   ua->errmsg = GetPoolMemory(PM_FNAME);
   ua->verbose = true;
   ua->automount = true;
-  ua->send = New(OutputFormatter(printit, ua, filterit, ua));
+  ua->send = new OutputFormatter(printit, ua, filterit, ua);
 
   return ua;
 }

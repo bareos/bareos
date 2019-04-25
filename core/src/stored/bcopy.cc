@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
    */
   Dmsg0(100, "About to setup input jcr\n");
 
-  in_dcr = New(DeviceControlRecord);
+  in_dcr = new DeviceControlRecord;
   in_jcr = SetupJcr("bcopy", argv[0], bsr, director, in_dcr, iVolumeName,
                     true); /* read device */
   if (!in_jcr) { exit(1); }
@@ -217,7 +217,7 @@ int main(int argc, char* argv[])
    */
   Dmsg0(100, "About to setup output jcr\n");
 
-  out_dcr = New(DeviceControlRecord);
+  out_dcr = new DeviceControlRecord;
   out_jcr = SetupJcr("bcopy", argv[1], bsr, director, out_dcr, oVolumeName,
                      false); /* write device */
   if (!out_jcr) { exit(1); }

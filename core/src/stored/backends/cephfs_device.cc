@@ -415,7 +415,7 @@ extern "C" Device* backend_instantiate(JobControlRecord* jcr, int device_type)
 
   switch (device_type) {
     case B_CEPHFS_DEV:
-      dev = New(cephfs_device);
+      dev = new cephfs_device;
       break;
     default:
       Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"),

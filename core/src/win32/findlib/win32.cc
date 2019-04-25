@@ -669,7 +669,7 @@ static inline bool SetupCopyThread(JobControlRecord* jcr,
   new_context = (CopyThreadContext*)malloc(sizeof(CopyThreadContext));
   new_context->started = false;
   new_context->flushed = false;
-  new_context->cb = New(CircularBuffer);
+  new_context->cb = new CircularBuffer;
 
   nr_save_elements = new_context->cb->capacity();
   new_context->save_data = (CopyThreadSaveData*)malloc(

@@ -209,14 +209,14 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
    * If there are multiple devices, the director sends us
    * use_device for each device that it wants to use.
    */
-  jcr->reserve_msgs = New(alist(10, not_owned_by_alist));
+  jcr->reserve_msgs = new alist(10, not_owned_by_alist);
   do {
     Dmsg1(debuglevel, "<dird: %s", dir->msg);
     ok = sscanf(dir->msg, use_storage, StoreName.c_str(), media_type.c_str(),
                 pool_name.c_str(), pool_type.c_str(), &append, &Copy,
                 &Stripe) == 7;
     if (!ok) { break; }
-    dirstore = New(alist(10, not_owned_by_alist));
+    dirstore = new alist(10, not_owned_by_alist);
     if (append) {
       jcr->write_store = dirstore;
     } else {
@@ -230,7 +230,7 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
     store = new DirectorStorage;
     dirstore->append(store);
     memset(store, 0, sizeof(DirectorStorage));
-    store->device = New(alist(10));
+    store->device = new alist(10);
     bstrncpy(store->name, StoreName, sizeof(store->name));
     bstrncpy(store->media_type, media_type, sizeof(store->media_type));
     bstrncpy(store->pool_name, pool_name, sizeof(store->pool_name));
@@ -250,7 +250,7 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
   } while (ok && dir->recv() >= 0);
 
   InitJcrDeviceWaitTimers(jcr);
-  jcr->dcr = New(StorageDaemonDeviceControlRecord);
+  jcr->dcr = new StorageDaemonDeviceControlRecord;
   SetupNewDcrDevice(jcr, jcr->dcr, NULL, NULL);
   if (rctx.append) { jcr->dcr->SetWillWrite(); }
 

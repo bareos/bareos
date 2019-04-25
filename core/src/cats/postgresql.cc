@@ -134,7 +134,7 @@ BareosDbPostgresql::BareosDbPostgresql(JobControlRecord* jcr,
   /*
    * Put the db in the list.
    */
-  if (db_list == NULL) { db_list = New(dlist(this, &this->link_)); }
+  if (db_list == NULL) { db_list = new dlist(this, &this->link_); }
   db_list->append(this);
 
   /* make the queries available using the queries variable from the parent class
@@ -1219,10 +1219,10 @@ BareosDb* db_init_database(JobControlRecord* jcr,
     }
   }
   Dmsg0(100, "db_init_database first time\n");
-  mdb = New(BareosDbPostgresql(jcr, db_driver, db_name, db_user, db_password,
+  mdb = new BareosDbPostgresql(jcr, db_driver, db_name, db_user, db_password,
                                db_address, db_port, db_socket,
                                mult_db_connections, disable_batch_insert,
-                               try_reconnect, exit_on_fatal, need_private));
+                               try_reconnect, exit_on_fatal, need_private);
 
 bail_out:
   V(mutex);

@@ -125,7 +125,7 @@ void test_alist_dynamic()
   TestForeachAlist(list);
 
   // create empty list, which is prepared for a number of entires
-  list = New(alist(10));
+  list = new alist(10);
   EXPECT_EQ(list->size(), 0);
 
   // does foreach work for empty lists?
@@ -164,6 +164,4 @@ TEST(alist, alist)
 {
   test_alist_init_destroy();
   test_alist_dynamic();
-
-  sm_dump(false);
 }

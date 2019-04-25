@@ -385,7 +385,7 @@ static inline void InitializeMntentCache(void)
 {
   mntent_cache_entry_t* mce = NULL;
 
-  mntent_cache_entries = New(dlist(mce, &mce->link));
+  mntent_cache_entries = new dlist(mce, &mce->link);
 
   /**
    * Refresh the cache.

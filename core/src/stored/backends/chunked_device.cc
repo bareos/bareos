@@ -184,15 +184,15 @@ bool chunked_device::StartIoThreads()
    * the producer (the storage driver) and multiple consumers (io-threads).
    */
   if (io_slots_) {
-    cb_ = New(storagedaemon::ordered_circbuf(io_threads_ * io_slots_));
+    cb_ = new storagedaemon::ordered_circbuf(io_threads_ * io_slots_);
   } else {
-    cb_ = New(storagedaemon::ordered_circbuf(io_threads_ * OQSIZE));
+    cb_ = new storagedaemon::ordered_circbuf(io_threads_ * OQSIZE);
   }
 
   /*
    * Start all IO threads and keep track of their thread ids in thread_ids_.
    */
-  if (!thread_ids_) { thread_ids_ = New(alist(10, owned_by_alist)); }
+  if (!thread_ids_) { thread_ids_ = new alist(10, owned_by_alist); }
 
   for (thread_nr = 1; thread_nr <= io_threads_; thread_nr++) {
     if (pthread_create(&thread_id, NULL, io_thread, (void*)this)) {

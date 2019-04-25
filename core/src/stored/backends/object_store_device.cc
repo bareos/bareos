@@ -561,7 +561,7 @@ extern "C" Device* backend_instantiate(JobControlRecord* jcr, int device_type)
 
   switch (device_type) {
     case B_OBJECT_STORE_DEV:
-      dev = New(object_store_device);
+      dev = new object_store_device;
       break;
     default:
       Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"),

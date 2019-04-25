@@ -121,7 +121,7 @@ void StartSocketServer(dlist* addrs)
   /*
    * Permit MaxConnections connections.
    */
-  sock_fds = New(alist(10, not_owned_by_alist));
+  sock_fds = new alist(10, not_owned_by_alist);
   BnetThreadServerTcp(addrs, me->MaxConnections, sock_fds, &socket_workq,
                       me->nokeepalive, HandleConnectionRequest, my_config);
 }

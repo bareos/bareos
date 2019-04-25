@@ -407,7 +407,6 @@ int RunProgramFullOutput(char* prog, int wait, POOLMEM*& results)
   const int bufsize = 32000;
 
 
-  Dsm_check(200);
 
   tmp = GetPoolMemory(PM_MESSAGE);
   buf = (char*)malloc(bufsize + 1);
@@ -420,7 +419,6 @@ int RunProgramFullOutput(char* prog, int wait, POOLMEM*& results)
     goto bail_out;
   }
 
-  Dsm_check(200);
   tmp[0] = 0;
   while (1) {
     buf[0] = 0;

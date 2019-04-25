@@ -101,12 +101,9 @@ void ReservationTest::TearDown()
   TermMsg();
   TermReservationsLock();
 
-  // we call closememorypool twice so we don't get a memleak report from
-  // sm_dump() for the memory Pmsg uses if debug_level >= 1
   CloseMemoryPool();
   debug_level = 0;
   CloseMemoryPool();
-  sm_dump(true);
 }
 
 /* wrap JobControlRecord into something we can put into a unique_ptr */

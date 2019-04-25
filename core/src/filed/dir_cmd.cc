@@ -121,7 +121,6 @@ static bool SetauthorizationCmd(JobControlRecord* jcr);
 static bool SetbandwidthCmd(JobControlRecord* jcr);
 static bool SetdebugCmd(JobControlRecord* jcr);
 static bool StorageCmd(JobControlRecord* jcr);
-static bool SmDumpCmd(JobControlRecord* jcr);
 static bool VerifyCmd(JobControlRecord* jcr);
 
 static BareosSocket* connect_to_director(JobControlRecord* jcr,
@@ -180,7 +179,6 @@ static struct s_cmds cmds[] = {
     {"status", StatusCmd, true},
     {".status", QstatusCmd, true},
     {"storage ", StorageCmd, false},
-    {"sm_dump", SmDumpCmd, false},
     {"verify", VerifyCmd, false},
     {nullptr, nullptr, false} /* list terminator */
 };
@@ -416,7 +414,7 @@ JobControlRecord* create_new_director_session(BareosSocket* dir)
   jcr->dir_bsock = dir;
   jcr->ff = init_find_files();
   jcr->start_time = time(nullptr);
-  jcr->RunScripts = New(alist(10, not_owned_by_alist));
+  jcr->RunScripts = new alist(10, not_owned_by_alist);
   jcr->last_fname = GetPoolMemory(PM_FNAME);
   jcr->last_fname[0] = 0;
   jcr->client_name = GetMemory(strlen(my_name) + 1);
@@ -527,7 +525,6 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
 
   FreeJcr(jcr); /* destroy JobControlRecord record */
   Dmsg0(100, "Done with FreeJcr\n");
-  Dsm_check(100);
   GarbageCollectMemoryPool();
 
 #ifdef HAVE_WIN32
@@ -686,7 +683,7 @@ bool StartConnectToDirectorThreads()
   DirectorResource* dir_res = nullptr;
   int pthread_create_result = 0;
   if (!client_initiated_connection_threads) {
-    client_initiated_connection_threads = New(alist());
+    client_initiated_connection_threads = new alist();
   }
   pthread_t* thread;
 
@@ -741,14 +738,6 @@ bool StopConnectToDirectorThreads(bool wait)
     delete (client_initiated_connection_threads);
   }
   return result;
-}
-
-static bool SmDumpCmd(JobControlRecord* jcr)
-{
-  CloseMemoryPool();
-  sm_dump(false, true);
-  jcr->dir_bsock->fsend("2000 sm_dump OK\n");
-  return true;
 }
 
 /**

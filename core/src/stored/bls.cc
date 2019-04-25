@@ -249,7 +249,7 @@ int main(int argc, char* argv[])
 
   for (i = 0; i < argc; i++) {
     if (bsrName) { bsr = libbareos::parse_bsr(NULL, bsrName); }
-    dcr = New(DeviceControlRecord);
+    dcr = new DeviceControlRecord;
     jcr = SetupJcr("bls", argv[i], bsr, director, dcr, VolumeName,
                    true); /* read device */
     if (!jcr) { exit(1); }

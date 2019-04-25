@@ -84,7 +84,7 @@ void CopyRstorage(JobControlRecord* jcr, alist* storage, const char* where)
   if (storage) {
     StorageResource* store = nullptr;
     if (jcr->res.read_storage_list) { delete jcr->res.read_storage_list; }
-    jcr->res.read_storage_list = New(alist(10, not_owned_by_alist));
+    jcr->res.read_storage_list = new alist(10, not_owned_by_alist);
     foreach_alist (store, storage) {
       jcr->res.read_storage_list->append(store);
     }
@@ -110,7 +110,7 @@ void SetRstorage(JobControlRecord* jcr, UnifiedStorageResource* store)
   if (!store->store) { return; }
   if (jcr->res.read_storage_list) { FreeRstorage(jcr); }
   if (!jcr->res.read_storage_list) {
-    jcr->res.read_storage_list = New(alist(10, not_owned_by_alist));
+    jcr->res.read_storage_list = new alist(10, not_owned_by_alist);
   }
   jcr->res.read_storage = store->store;
   if (!jcr->res.rstore_source) {
@@ -141,7 +141,7 @@ void CopyWstorage(JobControlRecord* jcr, alist* storage, const char* where)
   if (storage) {
     StorageResource* st = nullptr;
     if (jcr->res.write_storage_list) { delete jcr->res.write_storage_list; }
-    jcr->res.write_storage_list = New(alist(10, not_owned_by_alist));
+    jcr->res.write_storage_list = new alist(10, not_owned_by_alist);
     foreach_alist (st, storage) {
       Dmsg1(100, "write_storage_list=%s\n", st->resource_name_);
       jcr->res.write_storage_list->append(st);
@@ -170,7 +170,7 @@ void SetWstorage(JobControlRecord* jcr, UnifiedStorageResource* store)
   if (!store->store) { return; }
   if (jcr->res.write_storage_list) { FreeWstorage(jcr); }
   if (!jcr->res.write_storage_list) {
-    jcr->res.write_storage_list = New(alist(10, not_owned_by_alist));
+    jcr->res.write_storage_list = new alist(10, not_owned_by_alist);
   }
   jcr->res.write_storage = store->store;
   if (!jcr->res.wstore_source) {
@@ -221,7 +221,7 @@ void SetPairedStorage(JobControlRecord* jcr)
          * jcr->res.paired_read_write_storage_list.
          */
         jcr->res.paired_read_write_storage_list = jcr->res.write_storage_list;
-        jcr->res.write_storage_list = New(alist(10, not_owned_by_alist));
+        jcr->res.write_storage_list = new alist(10, not_owned_by_alist);
         foreach_alist (store, jcr->res.paired_read_write_storage_list) {
           if (store->paired_storage) {
             Dmsg1(100, "write_storage_list=%s\n",
@@ -256,7 +256,7 @@ void SetPairedStorage(JobControlRecord* jcr)
          * jcr->res.read_storage_list.
          */
         jcr->res.paired_read_write_storage_list =
-            New(alist(10, not_owned_by_alist));
+            new alist(10, not_owned_by_alist);
         foreach_alist (paired_read_write_storage, jcr->res.read_storage_list) {
           store = (StorageResource*)my_config->GetNextRes(R_STORAGE, NULL);
           while (store) {
@@ -301,7 +301,7 @@ void SetPairedStorage(JobControlRecord* jcr)
          * jcr->res.paired_read_write_storage_list.
          */
         jcr->res.paired_read_write_storage_list = jcr->res.read_storage_list;
-        jcr->res.read_storage_list = New(alist(10, not_owned_by_alist));
+        jcr->res.read_storage_list = new alist(10, not_owned_by_alist);
         foreach_alist (store, jcr->res.paired_read_write_storage_list) {
           if (store->paired_storage) {
             Dmsg1(100, "read_storage_list=%s\n", store->paired_storage->resource_name_);

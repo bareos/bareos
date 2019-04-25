@@ -325,8 +325,7 @@ void TerminateFiled(int sig)
   }
   TermMsg();
   CleanupCrypto();
-  CloseMemoryPool();     /* release free memory in pool */
-  sm_dump(false, false); /* dump orphaned buffers */
+  CloseMemoryPool(); /* release free memory in pool */
   exit(sig);
 }
 } /* namespace filedaemon */
@@ -422,7 +421,7 @@ static bool CheckResources()
       /*
        * Trusted Signers. We're always trusted.
        */
-      me->pki_signers = New(alist(10, not_owned_by_alist));
+      me->pki_signers = new alist(10, not_owned_by_alist);
       if (me->pki_keypair) {
         me->pki_signers->append(crypto_keypair_dup(me->pki_keypair));
       }
@@ -466,7 +465,7 @@ static bool CheckResources()
        * Crypto recipients. We're always included as a recipient.
        * The symmetric session key will be encrypted for each of these readers.
        */
-      me->pki_recipients = New(alist(10, not_owned_by_alist));
+      me->pki_recipients = new alist(10, not_owned_by_alist);
       if (me->pki_keypair) {
         me->pki_recipients->append(crypto_keypair_dup(me->pki_keypair));
       }

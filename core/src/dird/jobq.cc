@@ -110,9 +110,9 @@ int JobqInit(jobq_t* jq, int max_workers, void* (*engine)(void* arg))
   /*
    * Initialize the job queues
    */
-  jq->waiting_jobs = New(dlist(item, &item->link));
-  jq->running_jobs = New(dlist(item, &item->link));
-  jq->ready_jobs = New(dlist(item, &item->link));
+  jq->waiting_jobs = new dlist(item, &item->link);
+  jq->running_jobs = new dlist(item, &item->link);
+  jq->ready_jobs = new dlist(item, &item->link);
 
   return 0;
 }

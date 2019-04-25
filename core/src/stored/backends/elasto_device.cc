@@ -381,7 +381,7 @@ extern "C" Device* backend_instantiate(JobControlRecord* jcr, int device_type)
 
   switch (device_type) {
     case B_ELASTO_DEV:
-      dev = New(elasto_device);
+      dev = new elasto_device;
       break;
     default:
       Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"),

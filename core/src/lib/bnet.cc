@@ -276,7 +276,7 @@ const char* resolv_host(int family, const char* host, dlist* addr_list)
   for (rp = ai; rp != NULL; rp = rp->ai_next) {
     switch (rp->ai_addr->sa_family) {
       case AF_INET:
-        addr = New(IPADDR(rp->ai_addr->sa_family));
+        addr = new IPADDR(rp->ai_addr->sa_family);
         addr->SetType(IPADDR::R_MULTIPLE);
         /*
          * Some serious casting to get the struct in_addr *
@@ -290,7 +290,7 @@ const char* resolv_host(int family, const char* host, dlist* addr_list)
         break;
 #ifdef HAVE_IPV6
       case AF_INET6:
-        addr = New(IPADDR(rp->ai_addr->sa_family));
+        addr = new IPADDR(rp->ai_addr->sa_family);
         addr->SetType(IPADDR::R_MULTIPLE);
         /*
          * Some serious casting to get the struct in6_addr *
@@ -365,13 +365,13 @@ static const char* resolv_host(int family, const char* host, dlist* addr_list)
     for (p = hp->h_addr_list; *p != 0; p++) {
       switch (hp->h_addrtype) {
         case AF_INET:
-          addr = New(IPADDR(hp->h_addrtype));
+          addr = new IPADDR(hp->h_addrtype);
           addr->SetType(IPADDR::R_MULTIPLE);
           addr->SetAddr4((struct in_addr*)*p);
           break;
 #ifdef HAVE_IPV6
         case AF_INET6:
-          addr = New(IPADDR(hp->h_addrtype));
+          addr = new IPADDR(hp->h_addrtype);
           addr->SetType(IPADDR::R_MULTIPLE);
           addr->SetAddr6((struct in6_addr*)*p);
           break;
@@ -389,7 +389,7 @@ static const char* resolv_host(int family, const char* host, dlist* addr_list)
 
 static IPADDR* add_any(int family)
 {
-  IPADDR* addr = New(IPADDR(family));
+  IPADDR* addr = new IPADDR(family);
   addr->SetType(IPADDR::R_MULTIPLE);
   addr->SetAddrAny();
   return addr;
@@ -407,7 +407,7 @@ dlist* BnetHost2IpAddrs(const char* host, int family, const char** errstr)
   struct in6_addr inaddr6;
 #endif
 
-  dlist* addr_list = New(dlist(addr, &addr->link));
+  dlist* addr_list = new dlist(addr, &addr->link);
   if (!host || host[0] == '\0') {
     if (family != 0) {
       addr_list->append(add_any(family));
@@ -418,7 +418,7 @@ dlist* BnetHost2IpAddrs(const char* host, int family, const char** errstr)
 #endif
     }
   } else if (inet_aton(host, &inaddr)) { /* MA Bug 4 */
-    addr = New(IPADDR(AF_INET));
+    addr = new IPADDR(AF_INET);
     addr->SetType(IPADDR::R_MULTIPLE);
     addr->SetAddr4(&inaddr);
     addr_list->append(addr);
@@ -428,7 +428,7 @@ dlist* BnetHost2IpAddrs(const char* host, int family, const char** errstr)
 #else
   } else if (p_InetPton && p_InetPton(AF_INET6, host, &inaddr6) == 1) {
 #endif
-    addr = New(IPADDR(AF_INET6));
+    addr = new IPADDR(AF_INET6);
     addr->SetType(IPADDR::R_MULTIPLE);
     addr->SetAddr6(&inaddr6);
     addr_list->append(addr);

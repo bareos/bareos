@@ -99,7 +99,7 @@ JobControlRecord* wait_for_next_job(char* one_shot_job_to_run)
   if (first) {
     first = false;
     /* Create scheduled jobs list */
-    jobs_to_run = New(dlist(next_job, &next_job->link));
+    jobs_to_run = new dlist(next_job, &next_job->link);
     if (one_shot_job_to_run) { /* one shot */
       job = (JobResource*)my_config->GetResWithName(R_JOB, one_shot_job_to_run);
       if (!job) {

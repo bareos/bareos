@@ -105,9 +105,9 @@ void InitLastJobsList()
 {
   JobControlRecord* jcr = nullptr;
   struct s_last_job* job_entry = nullptr;
-  if (!last_jobs) { last_jobs = New(dlist(job_entry, &job_entry->link)); }
+  if (!last_jobs) { last_jobs = new dlist(job_entry, &job_entry->link); }
   if (!job_control_record_chain) {
-    job_control_record_chain = New(dlist(jcr, &jcr->link));
+    job_control_record_chain = new dlist(jcr, &jcr->link);
   }
 }
 
@@ -389,7 +389,7 @@ JobControlRecord* new_jcr(int size, JCR_free_HANDLER* daemon_free_jcr)
   memset(jcr, 0, size);
   jcr = new (jcr) JobControlRecord();
 
-  jcr->msg_queue = New(dlist(item, &item->link_));
+  jcr->msg_queue = new dlist(item, &item->link_);
   if ((status = pthread_mutex_init(&jcr->msg_queue_mutex, nullptr)) != 0) {
     BErrNo be;
     Jmsg(nullptr, M_ABORT, 0, _("Could not init msg_queue mutex. ERR=%s\n"),
@@ -432,7 +432,7 @@ JobControlRecord* new_jcr(int size, JCR_free_HANDLER* daemon_free_jcr)
   LockJobs();
   lock_jcr_chain();
   if (!job_control_record_chain) {
-    job_control_record_chain = New(dlist(jcr, &jcr->link));
+    job_control_record_chain = new dlist(jcr, &jcr->link);
   }
   job_control_record_chain->append(jcr);
   unlock_jcr_chain();

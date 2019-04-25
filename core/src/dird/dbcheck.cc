@@ -1152,7 +1152,7 @@ int main(int argc, char* argv[])
     }
 
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-    backend_directories = New(alist(10, owned_by_alist));
+    backend_directories = new alist(10, owned_by_alist);
     backend_directories->append((char*)backend_directory);
 
     DbSetBackendDirs(backend_directories);

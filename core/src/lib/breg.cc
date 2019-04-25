@@ -96,7 +96,7 @@ bool ApplyBregexps(const char* fname, alist* bregexps, char** result)
 alist* get_bregexps(const char* where)
 {
   char* p = (char*)where;
-  alist* list = New(alist(10, not_owned_by_alist));
+  alist* list = new alist(10, not_owned_by_alist);
   BareosRegex* reg;
 
   reg = NewBregexp(p);

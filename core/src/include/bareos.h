@@ -233,9 +233,4 @@ extern "C" {
 #undef HAVE_LIBZ /* no good without headers */
 #endif
 
-#define New(x) new x
-#define Dsm_check(x)
-#define sm_dump(x, ...)
-#define sm_check(x, y, z)
-
 #endif

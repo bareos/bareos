@@ -171,7 +171,7 @@ bool db_sql_pool_initialize(const char* db_drivername,
   time(&now);
 
   if (db_pooling_descriptors == NULL) {
-    db_pooling_descriptors = New(dlist(spd, &spd->link));
+    db_pooling_descriptors = new dlist(spd, &spd->link);
   }
 
   /*
@@ -179,7 +179,7 @@ bool db_sql_pool_initialize(const char* db_drivername,
    */
   spd = (SqlPoolDescriptor*)malloc(sizeof(SqlPoolDescriptor));
   memset(spd, 0, sizeof(SqlPoolDescriptor));
-  spd->pool_entries = New(dlist(spe, &spe->link));
+  spd->pool_entries = new dlist(spe, &spe->link);
   spd->min_connections = min_connections;
   spd->max_connections = max_connections;
   spd->increment_connections = increment_connections;

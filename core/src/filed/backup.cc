@@ -1519,7 +1519,6 @@ void StripPath(FindFilesPacket* ff_pkt)
     PmStrcpy(ff_pkt->link_save, ff_pkt->link);
     Dmsg2(500, "strcpy link_save=%d link=%d\n", strlen(ff_pkt->link_save),
           strlen(ff_pkt->link));
-    Dsm_check(200);
   }
 
   /**
@@ -1558,7 +1557,6 @@ void UnstripPath(FindFilesPacket* ff_pkt)
     strcpy(ff_pkt->link, ff_pkt->link_save);
     Dmsg2(500, "strcpy link=%d link_save=%d\n", strlen(ff_pkt->link),
           strlen(ff_pkt->link_save));
-    Dsm_check(200);
   }
 }
 

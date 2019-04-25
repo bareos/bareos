@@ -338,7 +338,7 @@ int AddAddress(dlist** out,
   dlist* addrs = (dlist*)(*(out));
   if (!addrs) {
     IPADDR* tmp = 0;
-    addrs = *out = New(dlist(tmp, &tmp->link));
+    addrs = *out = new dlist(tmp, &tmp->link);
   }
 
   type = (type == IPADDR::R_SINGLE_PORT || type == IPADDR::R_SINGLE_ADDR)
@@ -391,7 +391,7 @@ int AddAddress(dlist** out,
     if (addrs->size()) {
       addr = (IPADDR*)addrs->first();
     } else {
-      addr = New(IPADDR(family));
+      addr = new IPADDR(family);
       addr->SetType(type);
       addr->SetPortNet(defaultport);
       addr->SetAddrAny();
@@ -412,7 +412,7 @@ int AddAddress(dlist** out,
           goto skip; /* no price */
         }
       }
-      clone = New(IPADDR(*iaddr));
+      clone = new IPADDR(*iaddr);
       clone->SetType(type);
       clone->SetPortNet(port);
       addrs->append(clone);

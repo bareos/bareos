@@ -155,7 +155,6 @@ static bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
   int status, tries, name_max, count;
   BErrNo be;
 
-  Dsm_check(200);
   if (mount) {
     icmd = device->mount_command;
   } else {
@@ -262,7 +261,6 @@ static bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
   get_out:
     FreePoolMemory(results);
     Dmsg0(200, "============ mount=0\n");
-    Dsm_check(200);
     return false;
   }
 
@@ -347,7 +345,7 @@ extern "C" Device* backend_instantiate(JobControlRecord* jcr, int device_type)
 
   switch (device_type) {
     case B_FIFO_DEV:
-      dev = New(unix_fifo_device);
+      dev = new unix_fifo_device;
       break;
     default:
       Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"),

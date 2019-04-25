@@ -404,7 +404,7 @@ void LoadSdPlugins(const char* plugin_dir, alist* plugin_names)
     Dmsg0(debuglevel, "No sd plugin dir!\n");
     return;
   }
-  sd_plugin_list = New(alist(10, not_owned_by_alist));
+  sd_plugin_list = new alist(10, not_owned_by_alist);
   if (!LoadPlugins((void*)&binfo, (void*)&bfuncs, sd_plugin_list, plugin_dir,
                    plugin_names, plugin_type, IsPluginCompatible)) {
     /*
@@ -636,7 +636,7 @@ void NewPlugins(JobControlRecord* jcr)
   Dmsg1(debuglevel, "sd-plugin-list size=%d\n", num);
   if (num == 0) { return; }
 
-  jcr->plugin_ctx_list = New(alist(10, owned_by_alist));
+  jcr->plugin_ctx_list = new alist(10, owned_by_alist);
   foreach_alist_index (i, plugin, sd_plugin_list) {
     /*
      * Start a new instance of each plugin

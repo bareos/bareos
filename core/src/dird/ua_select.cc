@@ -1441,7 +1441,7 @@ alist* select_jobs(UaContext* ua, const char* reason)
   /*
    * Allocate a list for holding the selected JobIds.
    */
-  selected_jobids = New(alist(10, owned_by_alist));
+  selected_jobids = new alist(10, owned_by_alist);
 
   /*
    * See if "all" is given.

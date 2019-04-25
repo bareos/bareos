@@ -250,7 +250,7 @@ void* HandleDirectorConnection(BareosSocket* dir)
   NewPlugins(jcr);              /* instantiate plugins */
   jcr->dir_bsock = dir;         /* save Director bsock */
   jcr->dir_bsock->SetJcr(jcr);
-  jcr->dcrs = New(alist(10, not_owned_by_alist));
+  jcr->dcrs = new alist(10, not_owned_by_alist);
 
   /*
    * Initialize Start Job condition variable
@@ -928,7 +928,7 @@ static DeviceControlRecord* find_device(JobControlRecord* jcr,
 
   if (found) {
     Dmsg1(100, "Found device %s\n", device->resource_name_);
-    dcr = New(StorageDaemonDeviceControlRecord);
+    dcr = new StorageDaemonDeviceControlRecord;
     SetupNewDcrDevice(jcr, dcr, device->dev, blocksizes);
     dcr->SetWillWrite();
     dcr->device = device;
@@ -1571,7 +1571,6 @@ static void SetStorageAuthKeyAndTlsPolicy(JobControlRecord* jcr,
  */
 static bool ListenCmd(JobControlRecord* jcr)
 {
-  Dsm_check(200);
 
   return DoListenRun(jcr);
 }
@@ -1702,7 +1701,6 @@ static bool ReplicateCmd(JobControlRecord* jcr)
 
 static bool RunCmd(JobControlRecord* jcr)
 {
-  Dsm_check(200);
   Dmsg1(200, "Run_cmd: %s\n", jcr->dir_bsock->msg);
 
   /*
@@ -1815,7 +1813,7 @@ static bool PluginoptionsCmd(JobControlRecord* jcr)
 
   UnbashSpaces(plugin_options);
   if (!jcr->plugin_options) {
-    jcr->plugin_options = New(alist(10, owned_by_alist));
+    jcr->plugin_options = new alist(10, owned_by_alist);
   }
   jcr->plugin_options->append(strdup(plugin_options));
 

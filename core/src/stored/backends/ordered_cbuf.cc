@@ -58,7 +58,7 @@ int ordered_circbuf::init(int capacity)
     data_->destroy();
     delete data_;
   }
-  data_ = New(dlist(item, &item->link));
+  data_ = new dlist(item, &item->link);
 
   return 0;
 }

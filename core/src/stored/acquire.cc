@@ -167,7 +167,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
     memset(&rctx, 0, sizeof(ReserveContext));
     rctx.jcr = jcr;
     jcr->read_dcr = dcr;
-    jcr->reserve_msgs = New(alist(10, not_owned_by_alist));
+    jcr->reserve_msgs = new alist(10, not_owned_by_alist);
     rctx.any_drive = true;
     rctx.device_name = vol->device;
     store = new DirectorStorage;

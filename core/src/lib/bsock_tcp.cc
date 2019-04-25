@@ -68,7 +68,7 @@ BareosSocket* BareosSocketTCP::clone()
   clone->msg = GetPoolMemory(PM_BSOCK);
   clone->errmsg = GetPoolMemory(PM_MESSAGE);
 
-  if (src_addr) { src_addr = New(IPADDR(*(src_addr))); }
+  if (src_addr) { src_addr = new IPADDR(*(src_addr)); }
   if (who_) { who_ = strdup(who_); }
   if (host_) { host_ = strdup(host_); }
 
@@ -664,7 +664,6 @@ int32_t BareosSocketTCP::recv()
    * The following uses *lots* of resources so turn it on only for serious
    * debugging.
    */
-  Dsm_check(300);
 
 get_out:
   if (mutex_) { mutex_->unlock(); }

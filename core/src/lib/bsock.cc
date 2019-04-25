@@ -168,7 +168,7 @@ void BareosSocket::SetSourceAddress(dlist* src_addr_list)
 
   if (src_addr_list) {
     addr = (IPADDR*)src_addr_list->first();
-    src_addr = New(IPADDR(*addr));
+    src_addr = new IPADDR(*addr);
   }
 }
 

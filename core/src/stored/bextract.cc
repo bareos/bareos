@@ -284,7 +284,7 @@ static inline void PushDelayedDataStream(int stream,
 {
   DelayedDataStream* dds;
 
-  if (!delayed_streams) { delayed_streams = New(alist(10, owned_by_alist)); }
+  if (!delayed_streams) { delayed_streams = new alist(10, owned_by_alist); }
 
   dds = (DelayedDataStream*)malloc(sizeof(DelayedDataStream));
   dds->stream = stream;
@@ -398,7 +398,7 @@ static void DoExtract(char* devname)
 
   EnableBackupPrivileges(NULL, 1);
 
-  dcr = New(DeviceControlRecord);
+  dcr = new DeviceControlRecord;
   jcr = SetupJcr("bextract", devname, bsr, director, dcr, VolumeName,
                  true); /* read device */
   if (!jcr) { exit(1); }

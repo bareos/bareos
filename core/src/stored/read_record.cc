@@ -124,7 +124,7 @@ READ_CTX* new_read_context(void)
   rctx = (READ_CTX*)malloc(sizeof(READ_CTX));
   memset(rctx, 0, sizeof(READ_CTX));
 
-  rctx->recs = New(dlist(rec, &rec->link));
+  rctx->recs = new dlist(rec, &rec->link);
   return rctx;
 }
 

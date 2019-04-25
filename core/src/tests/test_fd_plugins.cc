@@ -120,6 +120,5 @@ TEST(fd, fd_plugins)
 
   TermMsg();
   CloseMemoryPool();
-  sm_dump(false);
 }
 } /* namespace filedaemon */

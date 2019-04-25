@@ -841,8 +841,8 @@ bool FreeVolume(Device* dev)
 void CreateVolumeLists()
 {
   VolumeReservationItem* vol = NULL;
-  if (vol_list == NULL) { vol_list = New(dlist(vol, &vol->link)); }
-  if (read_vol_list == NULL) { read_vol_list = New(dlist(vol, &vol->link)); }
+  if (vol_list == NULL) { vol_list = new dlist(vol, &vol->link); }
+  if (read_vol_list == NULL) { read_vol_list = new dlist(vol, &vol->link); }
 }
 
 /**
@@ -963,7 +963,7 @@ dlist* dup_vol_list(JobControlRecord* jcr)
   Dmsg0(debuglevel, "lock volumes\n");
 
   Dmsg0(debuglevel, "duplicate vol list\n");
-  temp_vol_list = New(dlist(vol, &vol->link));
+  temp_vol_list = new dlist(vol, &vol->link);
   foreach_vol (vol) {
     VolumeReservationItem *nvol, *tvol;
 

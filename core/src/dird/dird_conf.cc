@@ -1096,7 +1096,7 @@ static void PropagateResource(ResourceItem* items,
           if (orig_list && orig_list->size()) {
             new_list = (alist**)((char*)(dest) + offset);
 
-            if (!*new_list) { *new_list = New(alist(10, owned_by_alist)); }
+            if (!*new_list) { *new_list = new alist(10, owned_by_alist); }
 
             foreach_alist (str, orig_list) {
               (*new_list)->append(strdup(str));
@@ -1122,7 +1122,7 @@ static void PropagateResource(ResourceItem* items,
           if (orig_list && orig_list->size()) {
             new_list = (alist**)((char*)(dest) + offset);
 
-            if (!*new_list) { *new_list = New(alist(10, not_owned_by_alist)); }
+            if (!*new_list) { *new_list = new alist(10, not_owned_by_alist); }
 
             foreach_alist (res, orig_list) {
               (*new_list)->append(res);
@@ -1148,7 +1148,7 @@ static void PropagateResource(ResourceItem* items,
           if (orig_list && orig_list->size()) {
             new_list = &(((alist**)((char*)(dest) + offset))[items[i].code]);
 
-            if (!*new_list) { *new_list = New(alist(10, owned_by_alist)); }
+            if (!*new_list) { *new_list = new alist(10, owned_by_alist); }
 
             foreach_alist (str, orig_list) {
               (*new_list)->append(strdup(str));
@@ -2617,7 +2617,7 @@ bool PropagateJobdefs(int res_type, JobResource* res)
       RunScript *rs = nullptr, *elt;
 
       if (!res->RunScripts) {
-        res->RunScripts = New(alist(10, not_owned_by_alist));
+        res->RunScripts = new alist(10, not_owned_by_alist);
       }
 
       foreach_alist (rs, jobdefs->RunScripts) {
@@ -3037,7 +3037,7 @@ static void StoreAcl(LEX* lc, ResourceItem* item, int index, int pass)
 
   if (pass == 1) {
     if (!item->alistvalue[item->code]) {
-      item->alistvalue[item->code] = New(alist(10, owned_by_alist));
+      item->alistvalue[item->code] = new alist(10, owned_by_alist);
       Dmsg1(900, "Defined new ACL alist at %d\n", item->code);
     }
   }
@@ -3067,7 +3067,7 @@ static void StoreAudit(LEX* lc, ResourceItem* item, int index, int pass)
 
   if (pass == 1) {
     if (!*item->alistvalue) {
-      *(item->alistvalue) = New(alist(10, owned_by_alist));
+      *(item->alistvalue) = new alist(10, owned_by_alist);
     }
   }
   list = *item->alistvalue;
@@ -3202,7 +3202,7 @@ static void StoreShortRunscript(LEX* lc,
      */
     script->short_form = true;
 
-    if (!*runscripts) { *runscripts = New(alist(10, not_owned_by_alist)); }
+    if (!*runscripts) { *runscripts = new alist(10, not_owned_by_alist); }
 
     (*runscripts)->append(script);
     script->debug();
@@ -3255,7 +3255,7 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
   res_runscript.ResetDefault();
 
   if (pass == 2) {
-    res_runscript.commands = New(alist(10, not_owned_by_alist));
+    res_runscript.commands = new alist(10, not_owned_by_alist);
   }
 
   while ((token = LexGetToken(lc, BCT_SKIP_EOL)) != BCT_EOF) {
@@ -3306,7 +3306,7 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
      * Run on client by default
      */
     if (!res_runscript.target) { res_runscript.SetTarget("%c"); }
-    if (!*runscripts) { *runscripts = New(alist(10, not_owned_by_alist)); }
+    if (!*runscripts) { *runscripts = new alist(10, not_owned_by_alist); }
     /*
      * commands list contains 2 values per command
      * - POOLMEM command string (ex: /bin/true)

@@ -291,7 +291,7 @@ void LoadDirPlugins(const char* plugin_dir, alist* plugin_names)
     return;
   }
 
-  dird_plugin_list = New(alist(10, not_owned_by_alist));
+  dird_plugin_list = new alist(10, not_owned_by_alist);
   if (!LoadPlugins((void*)&binfo, (void*)&bfuncs, dird_plugin_list, plugin_dir,
                    plugin_names, plugin_type, IsPluginCompatible)) {
     /* Either none found, or some error */
@@ -520,7 +520,7 @@ void NewPlugins(JobControlRecord* jcr)
   Dmsg1(debuglevel, "dir-plugin-list size=%d\n", num);
   if (num == 0) { return; }
 
-  jcr->plugin_ctx_list = New(alist(10, owned_by_alist));
+  jcr->plugin_ctx_list = new alist(10, owned_by_alist);
   foreach_alist_index (i, plugin, dird_plugin_list) {
     /*
      * Start a new instance of each plugin

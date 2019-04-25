@@ -563,7 +563,7 @@ extern "C" void* device_initialization(void* arg)
       continue;
     }
 
-    dcr = New(StorageDaemonDeviceControlRecord);
+    dcr = new StorageDaemonDeviceControlRecord;
     jcr->dcr = dcr;
     SetupNewDcrDevice(jcr, dcr, dev, NULL);
     jcr->dcr->SetWillWrite();
@@ -718,7 +718,6 @@ static
   TermReservationsLock();
   CloseMemoryPool();
 
-  sm_dump(false, false); /* dump orphaned buffers */
   exit(sig);
 }
 

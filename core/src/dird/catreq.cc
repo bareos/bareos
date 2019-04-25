@@ -123,7 +123,6 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
   memset(&sdmr, 0, sizeof(sdmr));
   memset(&jm, 0, sizeof(jm));
   memset(&mr, 0, sizeof(mr));
-  Dsm_check(100);
 
   /*
    * Request to find next appendable Volume for this Job

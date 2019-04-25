@@ -186,7 +186,6 @@ int main(int argc, char* const* argv)
   FreeJcr(jcr);
   TermLastJobsList(); /* free jcr chain */
   CloseMemoryPool();
-  sm_dump(false);
   exit(0);
 }
 

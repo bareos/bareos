@@ -174,8 +174,8 @@ BareosDbDBI::BareosDbDBI(JobControlRecord* jcr,
    * Put the db in the list.
    */
   if (db_list == NULL) {
-    db_list = New(dlist(this, &this->link_));
-    dbi_getvalue_list = New(dlist(field, &field->link));
+    db_list = new dlist(this, &this->link_);
+    dbi_getvalue_list = new dlist(field, &field->link);
   }
   db_list->append(this);
 }
@@ -1476,10 +1476,10 @@ BareosDb* db_init_database(JobControlRecord* jcr,
     }
   }
   Dmsg0(100, "db_init_database first time\n");
-  mdb = New(BareosDbDBI(jcr, db_driver, db_name, db_user, db_password,
+  mdb = new BareosDbDBI(jcr, db_driver, db_name, db_user, db_password,
                         db_address, db_port, db_socket, mult_db_connections,
                         disable_batch_insert, try_reconnect, exit_on_fatal,
-                        need_private));
+                        need_private);
 
 bail_out:
   V(mutex);

@@ -855,7 +855,7 @@ void ConfigurationParser::InitResource(int type,
           switch (items[i].type) {
             case CFG_TYPE_ALIST_STR:
               if (!*items[i].alistvalue) {
-                *(items[i].alistvalue) = New(alist(10, owned_by_alist));
+                *(items[i].alistvalue) = new alist(10, owned_by_alist);
               }
               (*(items[i].alistvalue))->append(strdup(items[i].default_value));
               break;
@@ -863,7 +863,7 @@ void ConfigurationParser::InitResource(int type,
               PoolMem pathname(PM_FNAME);
 
               if (!*items[i].alistvalue) {
-                *(items[i].alistvalue) = New(alist(10, owned_by_alist));
+                *(items[i].alistvalue) = new alist(10, owned_by_alist);
               }
 
               PmStrcpy(pathname, items[i].default_value);

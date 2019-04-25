@@ -76,7 +76,7 @@ void ReadCryptoCache(const char* cache_file)
     goto bail_out;
   }
 
-  if (!cached_crypto_keys) { cached_crypto_keys = New(dlist(cce, &cce->link)); }
+  if (!cached_crypto_keys) { cached_crypto_keys = new dlist(cce, &cce->link); }
 
   /*
    * Read as many crypto cache entries as available.
@@ -219,7 +219,7 @@ bool UpdateCryptoCache(const char* VolumeName, const char* EncryptionKey)
    * See if there are any cached encryption keys.
    */
   if (!cached_crypto_keys) {
-    cached_crypto_keys = New(dlist(cce, &cce->link));
+    cached_crypto_keys = new dlist(cce, &cce->link);
 
     cce = (crypto_cache_entry_t*)malloc(sizeof(crypto_cache_entry_t));
     bstrncpy(cce->VolumeName, VolumeName, sizeof(cce->VolumeName));

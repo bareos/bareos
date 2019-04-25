@@ -678,7 +678,7 @@ static bool regex_find_jobids(JobControlRecord* jcr,
   bool ok = false;
   PoolMem query(PM_MESSAGE);
 
-  item_chain = New(dlist(item, &item->link));
+  item_chain = new dlist(item, &item->link);
   if (!jcr->res.job->selection_pattern) {
     Jmsg(jcr, M_FATAL, 0, _("No %s %s selection pattern specified.\n"),
          jcr->get_OperationName(), type);

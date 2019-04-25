@@ -139,7 +139,6 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
   int errstat;
 
   jcr->lock();
-  Dsm_check(100);
 
   /*
    * See if we should suppress all output.
@@ -384,7 +383,6 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
   }
 
   GeneratePluginEvent(jcr, bDirEventJobInit);
-  Dsm_check(100);
   return true;
 
 bail_out:
@@ -455,7 +453,6 @@ static void* job_thread(void* arg)
   JobControlRecord* jcr = (JobControlRecord*)arg;
 
   pthread_detach(pthread_self());
-  Dsm_check(100);
 
   Dmsg0(200, "=====Start Job=========\n");
   jcr->setJobStatus(JS_Running); /* this will be set only if no error */
@@ -486,7 +483,7 @@ static void* job_thread(void* arg)
    */
   if (jcr->res.job->RunScripts == NULL) {
     Dmsg0(200, "Warning, job->RunScripts is empty\n");
-    jcr->res.job->RunScripts = New(alist(10, not_owned_by_alist));
+    jcr->res.job->RunScripts = new alist(10, not_owned_by_alist);
   }
 
   if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->jr)) {
@@ -680,7 +677,6 @@ static void* job_thread(void* arg)
 
   GeneratePluginEvent(jcr, bDirEventJobEnd);
   Dmsg1(50, "======== End Job stat=%c ==========\n", jcr->JobStatus);
-  Dsm_check(100);
 
   return NULL;
 }
@@ -766,7 +762,6 @@ static void JobMonitorWatchdog(watchdog_t* self)
 
   control_jcr = (JobControlRecord*)self->data;
 
-  Dsm_check(100);
   Dmsg1(800, "JobMonitorWatchdog %p called\n", self);
 
   foreach_jcr (jcr) {

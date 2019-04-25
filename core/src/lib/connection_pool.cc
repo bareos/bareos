@@ -112,7 +112,7 @@ bool Connection::take()
  */
 ConnectionPool::ConnectionPool()
 {
-  connections_ = New(alist(10, false));
+  connections_ = new alist(10, false);
   /*
    * Initialize mutex and condition variable objects.
    */
@@ -166,7 +166,7 @@ Connection* ConnectionPool::add_connection(const char* name,
                                            bool authenticated)
 {
   Connection* connection =
-      New(Connection(name, fd_protocol_version, socket, authenticated));
+      new Connection(name, fd_protocol_version, socket, authenticated);
   if (!add(connection)) {
     delete (connection);
     return NULL;

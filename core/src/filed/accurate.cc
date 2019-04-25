@@ -351,14 +351,14 @@ bool AccurateCmd(JobControlRecord* jcr)
   if (me->always_use_lmdb || (me->lmdb_threshold > 0 &&
                               number_of_previous_files >= me->lmdb_threshold)) {
     jcr->file_list =
-        New(BareosAccurateFilelistLmdb)(jcr, number_of_previous_files);
+        new BareosAccurateFilelistLmdb(jcr, number_of_previous_files);
   } else {
     jcr->file_list =
-        New(BareosAccurateFilelistHtable)(jcr, number_of_previous_files);
+        new BareosAccurateFilelistHtable(jcr, number_of_previous_files);
   }
 #else
   jcr->file_list =
-      New(BareosAccurateFilelistHtable)(jcr, number_of_previous_files);
+      new BareosAccurateFilelistHtable(jcr, number_of_previous_files);
 #endif
 
   if (!jcr->file_list->init()) { return false; }
