@@ -22,26 +22,27 @@
 #include "gtest/gtest.h"
 #include "include/bareos.h"
 #include "lib/parse_conf.h"
-#include "filed/filed_globals.h"
-#include "filed/filed_conf.h"
+#include "console/console_globals.h"
+#include "console/console_conf.h"
 
-namespace filedaemon {
+namespace console {
 
 TEST(ConfigParser, test_filed_config)
 {
   InitMsg(NULL, NULL); /* initialize message handler */
 
   std::string path_to_config_file = std::string(
-      PROJECT_SOURCE_DIR "/src/tests/configs/stored_multiplied_device");
-  my_config = InitFdConfig(path_to_config_file.c_str(), M_ERROR_TERM);
+      PROJECT_SOURCE_DIR "/src/tests/configs/bareos-configparser-tests");
+
+  my_config = InitConsConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   my_config->ParseConfig();
+
+  my_config->DumpResources(PrintMessage, NULL);
 
   delete my_config;
 
   TermMsg();         /* Terminate message handler */
   CloseMemoryPool(); /* release free memory in pool */
-  debug_level = 200;
-  sm_dump(false, false);
 }
 
-}  // namespace filedaemon
+}  // namespace console

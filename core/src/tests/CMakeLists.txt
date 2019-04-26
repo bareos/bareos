@@ -223,36 +223,37 @@ gtest_discover_tests(test_config_parser_dir TEST_PREFIX gtest:)
 
 
 ####### test_config_parser_console  #####################################
-#add_executable(test_config_parser_console test_config_parser_console.cc)
+add_executable(test_config_parser_console test_config_parser_console.cc)
 
-#target_link_libraries(test_config_parser_console
-#   bareos
-#   bareosfind
-#   ${GTEST_LIBRARIES}
-#   ${GTEST_MAIN_LIBRARIES}
-#)
+target_link_libraries(test_config_parser_console
+   bareos
+   bareosfind
+   console_objects
+   ${GTEST_LIBRARIES}
+   ${GTEST_MAIN_LIBRARIES}
+)
 
-#add_test(NAME test_config_parser_console
-#    COMMAND test_config_parser_console
-#)
+add_test(NAME test_config_parser_console
+    COMMAND test_config_parser_console
+)
 
-#gtest_discover_tests(test_config_parser_console TEST_PREFIX gtest:)
+gtest_discover_tests(test_config_parser_console TEST_PREFIX gtest:)
 
 
 ####### test_config_parser_fd  #####################################
-#add_executable(test_config_parser_fd test_config_parser_fd.cc ${FDSRCS})
+add_executable(test_config_parser_fd test_config_parser_fd.cc ${FDSRCS})
 
-#target_link_libraries(test_config_parser_fd
-#   bareos
-#   bareosfind
-#   fd_objects
-#   ${GTEST_LIBRARIES}
-#   ${GTEST_MAIN_LIBRARIES}
-#)
+target_link_libraries(test_config_parser_fd
+   bareos
+   bareosfind
+   fd_objects
+   ${GTEST_LIBRARIES}
+   ${GTEST_MAIN_LIBRARIES}
+)
 
-#add_test(NAME test_config_parser_fd
-#    COMMAND test_config_parser_fd
-#)
+add_test(NAME test_config_parser_fd
+    COMMAND test_config_parser_fd
+)
 
-#gtest_discover_tests(test_config_parser_fd TEST_PREFIX gtest:)
+gtest_discover_tests(test_config_parser_fd TEST_PREFIX gtest:)
 

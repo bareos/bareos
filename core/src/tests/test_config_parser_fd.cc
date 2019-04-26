@@ -32,15 +32,17 @@ TEST(ConfigParser, test_filed_config)
   InitMsg(NULL, NULL); /* initialize message handler */
 
   std::string path_to_config_file = std::string(
-      PROJECT_SOURCE_DIR "/src/tests/configs/stored_multiplied_device");
+      PROJECT_SOURCE_DIR "/src/tests/configs/bareos-configparser-tests");
   my_config = InitFdConfig(path_to_config_file.c_str(), M_ERROR_TERM);
-  my_config->ParseConfig();
+
+  ASSERT_TRUE(my_config->ParseConfig());
+
+  my_config->DumpResources(PrintMessage, NULL);
 
   delete my_config;
 
   TermMsg();         /* Terminate message handler */
   CloseMemoryPool(); /* release free memory in pool */
-  debug_level = 200;
 }
 
 }  // namespace filedaemon
