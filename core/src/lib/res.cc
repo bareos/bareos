@@ -1639,14 +1639,11 @@ bool MessagesResource::PrintConfig(PoolMem& buff,
     }
 
     for (int j = 0; j < M_MAX - 1; j++) {
-      if
-        BitIsSet(msg_types[j].token, d->msg_types_)
-        {
-          nr_set++;
-          Mmsg(temp, ",%s", msg_types[j].name);
-          PmStrcat(t, temp.c_str());
-        }
-      else {
+      if (BitIsSet(msg_types[j].token, d->msg_types_)) {
+        nr_set++;
+        Mmsg(temp, ",%s", msg_types[j].name);
+        PmStrcat(t, temp.c_str());
+      } else {
         Mmsg(temp, ",!%s", msg_types[j].name);
         nr_unset++;
         PmStrcat(u, temp.c_str());
