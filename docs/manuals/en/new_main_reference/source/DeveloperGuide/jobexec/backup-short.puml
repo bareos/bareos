@@ -1,0 +1,41 @@
+@startuml
+participant d as "Director"
+participant s as "Storage Daemon"
+participant f as "File Daemon"
+d -> s : authenticate
+d -> s : send plugin options
+alt if reschedulung
+  d -> s : cancel previous job
+end
+d -> s : setup job
+d -> s : reserve device for append
+d -> s : start job
+== Message thread for SD communication spawned ==
+s -> d : job status: waiting for filedaemon
+d -> f : authenticate
+d -> f : setup job
+d -> f : tell fd to connect to sd
+f -> s : authenticate
+f -> d : tell dir that connection to sd is ready
+s -> d : tell dir that fd has connected, job status: running
+d -> f : send runscripts for client
+d -> f : execute run before scripts
+alt if accurate
+d -> f : send accurate file list
+end
+d -> f : start backup
+f -> s : open session
+s -> d : job status: running
+f -> s : data records
+f -> s : BNET_EOD
+f -> s : close session
+s -> f : BNET_EOD
+f -> s : BNET_TERMINATE
+f -> d : tell dir that job has finished
+f -> d : dequeue messages
+d -> f : BNET_TERMINATE
+s -> d : dequeue messages
+s -> d : tell dir that job has finished
+== Message thread for SD communication exits ==
+s -> d : BNET_EOD
+@enduml

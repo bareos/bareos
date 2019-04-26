@@ -22,3 +22,4 @@ Developer Guide
    DeveloperGuide/directorConsole.rst
    DeveloperGuide/smartall.rst
    DeveloperGuide/reservation.rst
+   DeveloperGuide/jobexec.rst

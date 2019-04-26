@@ -1,0 +1,34 @@
+@startuml
+start
+:detach thread;
+:set job status to JS_Running;
+
+if (max start delay exceeded) then (yes)
+  #tomato:cancel job;
+  detach
+endif
+if (max run sched time exceeded) then (yes)
+  #tomato:cancel job;
+  detach
+endif
+:UpdateJobStartRecord()|
+:RunScripts(BeforeJob)|
+:UpdateJobStartRecord()|
+note
+  this happens twice so files created
+  by a runscript are not picked up
+  twice
+end note
+:GeneratePluginEvent(bDirEventJobRun)|
+
+partition "Job-Type specific run" {
+  :this is where the actual job run happens;
+}
+
+:warn if subscriptions exceeded;
+
+:RunScripts(AfterJob)|
+:DequeueMessages()|
+:GeneratePluginEvent(bDirEventJobEnd)|
+end
+@enduml
