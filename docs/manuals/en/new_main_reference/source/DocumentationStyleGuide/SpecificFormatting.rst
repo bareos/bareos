@@ -270,3 +270,49 @@ To display Backus–Naur form (BNF) definitions, use following formatting:
 The output will look like this:
 
 .. include:: /DocumentationStyleGuide/example/code-block-bnf.rst.inc
+
+
+Diagrams
+--------
+
+There are several diagram formats available for you to use.
+
+A block diagram
+~~~~~~~~~~~~~~~
+
+.. literalinclude:: /DocumentationStyleGuide/example/blockdiag.rst.inc
+   :language: none
+
+.. include:: /DocumentationStyleGuide/example/blockdiag.rst.inc
+
+An activity diagram
+~~~~~~~~~~~~~~~~~~~
+
+.. literalinclude:: /DocumentationStyleGuide/example/actdiag.rst.inc
+   :language: none
+
+.. include:: /DocumentationStyleGuide/example/actdiag.rst.inc
+
+A sequence diagram
+~~~~~~~~~~~~~~~~~~
+
+.. literalinclude:: /DocumentationStyleGuide/example/seqdiag.rst.inc
+   :language: none
+
+.. include:: /DocumentationStyleGuide/example/seqdiag.rst.inc
+
+A network diagram
+~~~~~~~~~~~~~~~~~
+
+.. literalinclude:: /DocumentationStyleGuide/example/nwdiag.rst.inc
+   :language: none
+
+.. include:: /DocumentationStyleGuide/example/nwdiag.rst.inc
+
+Any PlantUML diagram
+~~~~~~~~~~~~~~~~~~~~
+
+.. literalinclude:: /DocumentationStyleGuide/example/plantuml.rst.inc
+   :language: none
+
+.. include:: /DocumentationStyleGuide/example/plantuml.rst.inc
