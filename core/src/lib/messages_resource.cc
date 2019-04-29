@@ -166,7 +166,8 @@ void MessagesResource::AddToNewChain(MessageDestinationCode dest_code,
   d->mail_cmd_ = mail_cmd;
   d->timestamp_format_ = timestamp_format;
 
-  dest_chain_.push_back(d);
+  // insert in front for compatibility to the former alist implementation */
+  dest_chain_.insert(dest_chain_.begin(), d);
 
   Dmsg6(850,
         "add new d=%p msgtype=%d destcode=%d where=%s mailcmd=%s "
