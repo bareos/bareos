@@ -1626,14 +1626,14 @@ bool MessagesResource::PrintConfig(PoolMem& buff,
     PoolMem t; /* number of set   types */
     PoolMem u; /* number of unset types */
 
-    std::map<MessageDestinationCode, s_mdestination>::iterator dest =
-        msg_destinations.find(d->dest_code_);
-    if (dest != msg_destinations.end()) {
-      if (dest->second.where) {
-        Mmsg(temp, "   %s = %s = ", dest->second.destination,
+    auto msg_dest_iter = msg_destinations.find(d->dest_code_);
+
+    if (msg_dest_iter != msg_destinations.end()) {
+      if (msg_dest_iter->second.where) {
+        Mmsg(temp, "   %s = %s = ", msg_dest_iter->second.destination,
              d->where_.c_str());
       } else {
-        Mmsg(temp, "   %s = ", dest->second.destination);
+        Mmsg(temp, "   %s = ", msg_dest_iter->second.destination);
       }
       PmStrcat(cfg_str, temp.c_str());
     }
