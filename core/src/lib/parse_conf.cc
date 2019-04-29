@@ -679,6 +679,15 @@ BareosResource** ConfigurationParser::SaveResources()
   return res;
 }
 
+static void MakePathName(PoolMem& pathname, const char* str)
+{
+  PmStrcpy(pathname, str);
+  if (pathname.c_str()[0] != '|') {
+    pathname.check_size(pathname.size() + 1024);
+    DoShellExpansion(pathname.c_str(), pathname.size());
+  }
+}
+
 /*
  * Initialize the static structure to zeros, then apply all the default
  * values.
@@ -776,35 +785,13 @@ void ConfigurationParser::InitResource(int type,
               break;
             case CFG_TYPE_DIR: {
               PoolMem pathname(PM_FNAME);
-
-              PmStrcpy(pathname, items[i].default_value);
-              if (*pathname.c_str() != '|') {
-                int size;
-
-                /*
-                 * Make sure we have enough room
-                 */
-                size = pathname.size() + 1024;
-                pathname.check_size(size);
-                DoShellExpansion(pathname.c_str(), pathname.size());
-              }
+              MakePathName(pathname, items[i].default_value);
               *items[i].value = strdup(pathname.c_str());
               break;
             }
             case CFG_TYPE_STDSTRDIR: {
               PoolMem pathname(PM_FNAME);
-
-              PmStrcpy(pathname, items[i].default_value);
-              if (*pathname.c_str() != '|') {
-                int size;
-
-                /*
-                 * Make sure we have enough room
-                 */
-                size = pathname.size() + 1024;
-                pathname.check_size(size);
-                DoShellExpansion(pathname.c_str(), pathname.size());
-              }
+              MakePathName(pathname, items[i].default_value);
               *(items[i].strValue) = std::string(pathname.c_str());
               break;
             }
