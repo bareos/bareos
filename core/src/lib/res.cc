@@ -1858,12 +1858,14 @@ bool BareosResource::PrintConfig(PoolMem& buff,
         break;
       case CFG_TYPE_STDSTR:
       case CFG_TYPE_STDSTRDIR:
-        if (print_item && *(items[i].value) != NULL) {
-          Dmsg2(200, "%s = \"%s\"\n", items[i].name,
-                (*items[i].strValue).c_str());
-          Mmsg(temp, "%s = \"%s\"\n", items[i].name,
-               (*items[i].strValue).c_str());
-          IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
+        if (print_item && items[i].strValue) {
+          if (!items[i].strValue->empty()) {
+            Dmsg2(200, "%s = \"%s\"\n", items[i].name,
+                  items[i].strValue->c_str());
+            Mmsg(temp, "%s = \"%s\"\n", items[i].name,
+                 items[i].strValue->c_str());
+            IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
+          }
         }
         break;
 
