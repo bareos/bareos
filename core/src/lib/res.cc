@@ -1476,39 +1476,40 @@ void IndentConfigItem(PoolMem& cfg_str,
   PmStrcat(cfg_str, config_item);
 }
 
-static void PrintConfigSize(ResourceItem* item,
-                            PoolMem& cfg_str,
-                            bool inherited)
+static void PrintNumberSiPrefixFormat(ResourceItem *item,
+                                      PoolMem &cfg_str,
+                                      bool inherited,
+                                      uint64_t value_in)
 {
   PoolMem temp;
   PoolMem volspec; /* vol specification string*/
-  int64_t bytes = *(item->ui64value);
+  uint64_t value = value_in;
   int factor;
 
   /*
    * convert default value string to numeric value
    */
-  static const char* modifier[] = {"g", "m", "k", "", NULL};
-  const int64_t multiplier[] = {
+  static const char *modifier[] = {"g", "m", "k", "", NULL};
+  const uint64_t multiplier[]   = {
       1073741824, /* gibi */
       1048576,    /* mebi */
       1024,       /* kibi */
       1           /* byte */
   };
 
-  if (bytes == 0) {
+  if (value == 0) {
     PmStrcat(volspec, "0");
   } else {
     for (int t = 0; modifier[t]; t++) {
-      Dmsg2(200, " %s bytes: %lld\n", item->name, bytes);
-      factor = bytes / multiplier[t];
-      bytes = bytes % multiplier[t];
+      Dmsg2(200, " %s bytes: %lld\n", item->name, value);
+      factor = value / multiplier[t];
+      value  = value % multiplier[t];
       if (factor > 0) {
         Mmsg(temp, "%d %s ", factor, modifier[t]);
         PmStrcat(volspec, temp.c_str());
         Dmsg1(200, " volspec: %s\n", volspec.c_str());
       }
-      if (bytes == 0) { break; }
+      if (value == 0) { break; }
     }
   }
 
@@ -1516,9 +1517,19 @@ static void PrintConfigSize(ResourceItem* item,
   IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
 }
 
-static void PrintConfigTime(ResourceItem* item,
-                            PoolMem& cfg_str,
-                            bool inherited)
+static void Print32BitConfigNumberSiPrefixFormat(ResourceItem *item, PoolMem &cfg_str, bool inherited)
+{
+  uint32_t value_32_bit = *(item->ui32value);
+  PrintNumberSiPrefixFormat(item, cfg_str, inherited, value_32_bit);
+}
+
+static void Print64BitConfigNumberSiPrefixFormat(ResourceItem *item, PoolMem &cfg_str, bool inherited)
+{
+  uint64_t value_64_bit = *(item->ui64value);
+  PrintNumberSiPrefixFormat(item, cfg_str, inherited, value_64_bit);
+}
+
+static void PrintConfigTime(ResourceItem *item, PoolMem &cfg_str, bool inherited)
 {
   PoolMem temp;
   PoolMem timespec;
@@ -1955,8 +1966,16 @@ bool BareosResource::PrintConfig(PoolMem& buff,
         }
         break;
       case CFG_TYPE_SIZE64:
+        if (print_item) { Print64BitConfigNumberSiPrefixFormat(&items[i],
+                          cfg_str,
+                          inherited);
+        }
+        break;
       case CFG_TYPE_SIZE32:
-        if (print_item) { PrintConfigSize(&items[i], cfg_str, inherited); }
+        if (print_item) { Print32BitConfigNumberSiPrefixFormat(&items[i],
+                          cfg_str,
+                          inherited);
+        }
         break;
       case CFG_TYPE_TIME:
         if (print_item) { PrintConfigTime(&items[i], cfg_str, inherited); }
