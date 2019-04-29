@@ -312,8 +312,8 @@ void FindUsedCompressalgos(PoolMem* compressalgos, JobControlRecord* jcr)
   for (std::size_t i = 0; i < fs->include_items.size(); i++) {
     inc = fs->include_items[i];
 
-    for (std::size_t j = 0; j < inc->opts_list.size(); j++) {
-      fopts = inc->opts_list[j];
+    for (std::size_t j = 0; j < inc->file_options_list.size(); j++) {
+      fopts = inc->file_options_list[j];
 
       for (char* k = fopts->opts; *k; k++) { /* Try to find one request */
         switch (*k) {
@@ -713,7 +713,7 @@ static void SetupCurrentOpts(void)
   fo->Drivetype.init(1, true);
   fo->meta.init(1, true);
   res_incexe.current_opts = fo;
-  res_incexe.opts_list.push_back(fo);
+  res_incexe.file_options_list.push_back(fo);
 }
 
 /**

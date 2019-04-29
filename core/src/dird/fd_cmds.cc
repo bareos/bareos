@@ -561,8 +561,8 @@ static bool SendFileset(JobControlRecord* jcr)
         fd->fsend("Z %s\n", ie->ignoredir.get(j));
       }
 
-      for (std::size_t j = 0; j < ie->opts_list.size(); j++) {
-        FileOptions* fo = ie->opts_list[j];
+      for (std::size_t j = 0; j < ie->file_options_list.size(); j++) {
+        FileOptions* fo = ie->file_options_list[j];
         bool enhanced_wild = false;
 
         for (int k = 0; fo->opts[k] != '\0'; k++) {

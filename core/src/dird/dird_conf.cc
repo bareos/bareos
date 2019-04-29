@@ -1933,8 +1933,8 @@ bool FilesetResource::PrintConfig(PoolMem& buff,
     /*
      * Start options block
      */
-    for (std::size_t j = 0; j < incexe->opts_list.size(); j++) {
-      FileOptions* fo = incexe->opts_list[j];
+    for (std::size_t j = 0; j < incexe->file_options_list.size(); j++) {
+      FileOptions* fo = incexe->file_options_list[j];
 
       IndentConfigItem(cfg_str, 2, "Options {\n");
       for (p = &fo->opts[0]; *p; p++) {
@@ -2326,7 +2326,7 @@ static void FreeIncexe(IncludeExcludeItem* incexe)
 {
   incexe->name_list.destroy();
   incexe->plugin_list.destroy();
-  for (FileOptions* fopt : incexe->opts_list) {
+  for (FileOptions* fopt : incexe->file_options_list) {
     fopt->regex.destroy();
     fopt->regexdir.destroy();
     fopt->regexfile.destroy();
@@ -2343,7 +2343,7 @@ static void FreeIncexe(IncludeExcludeItem* incexe)
     if (fopt->writer) { free(fopt->writer); }
     delete fopt;
   }
-  incexe->opts_list.clear();
+  incexe->file_options_list.clear();
   incexe->ignoredir.destroy();
 }
 
@@ -3254,9 +3254,7 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
    */
   res_runscript.ResetDefault();
 
-  if (pass == 2) {
-    res_runscript.commands = new alist(10, not_owned_by_alist);
-  }
+  if (pass == 2) { res_runscript.commands = new alist(10, not_owned_by_alist); }
 
   while ((token = LexGetToken(lc, BCT_SKIP_EOL)) != BCT_EOF) {
     if (token == BCT_EOB) { break; }

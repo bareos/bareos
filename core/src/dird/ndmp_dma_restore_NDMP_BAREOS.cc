@@ -263,7 +263,7 @@ static inline bool fill_restore_environment(JobControlRecord* jcr,
        * See if the original path matches.
        */
       if (Bstrcasecmp(item, ndmp_filesystem)) {
-        for (FileOptions* fo : ie->opts_list) {
+        for (FileOptions* fo : ie->file_options_list) {
           /*
            * Parse all specific META tags for this option block.
            */

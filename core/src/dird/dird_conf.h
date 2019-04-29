@@ -615,7 +615,7 @@ struct IncludeExcludeItem {
   virtual ~IncludeExcludeItem() = default;
 
   FileOptions* current_opts = nullptr;
-  std::vector<FileOptions*> opts_list;
+  std::vector<FileOptions*> file_options_list;
   alist name_list;   /**< Filename list -- holds char * */
   alist plugin_list; /**< Filename list for plugins */
   alist ignoredir;   /**< Ignoredir string */
