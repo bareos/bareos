@@ -188,6 +188,34 @@ bool ConfigurationParser::ParseConfig()
   return success;
 }
 
+void ConfigurationParser::lex_error(const char* cf,
+                                    LEX_ERROR_HANDLER* ScanError,
+                                    LEX_WARNING_HANDLER* scan_warning) const
+{
+  /*
+   * We must create a lex packet to print the error
+   */
+  LEX* lc = (LEX*)malloc(sizeof(LEX));
+  memset(lc, 0, sizeof(LEX));
+
+  if (ScanError) {
+    lc->ScanError = ScanError;
+  } else {
+    LexSetDefaultErrorHandler(lc);
+  }
+
+  if (scan_warning) {
+    lc->scan_warning = scan_warning;
+  } else {
+    LexSetDefaultWarningHandler(lc);
+  }
+
+  LexSetErrorHandlerErrorType(lc, err_type_);
+  BErrNo be;
+  scan_err2(lc, _("Cannot open config file \"%s\": %s\n"), cf, be.bstrerror());
+  free(lc);
+}
+
 bool ConfigurationParser::ParseConfigFile(const char* cf,
                                           void* caller_ctx,
                                           LEX_ERROR_HANDLER* ScanError,
@@ -211,31 +239,7 @@ bool ConfigurationParser::ParseConfigFile(const char* cf,
   for (pass = 1; pass <= 2; pass++) {
     Dmsg1(900, "ParseConfig pass %d\n", pass);
     if ((lc = lex_open_file(lc, cf, ScanError, scan_warning)) == nullptr) {
-      BErrNo be;
-
-      /*
-       * We must create a lex packet to print the error
-       */
-      lc = (LEX*)malloc(sizeof(LEX));
-      memset(lc, 0, sizeof(LEX));
-
-      if (ScanError) {
-        lc->ScanError = ScanError;
-      } else {
-        LexSetDefaultErrorHandler(lc);
-      }
-
-      if (scan_warning) {
-        lc->scan_warning = scan_warning;
-      } else {
-        LexSetDefaultWarningHandler(lc);
-      }
-
-      LexSetErrorHandlerErrorType(lc, err_type_);
-      scan_err2(lc, _("Cannot open config file \"%s\": %s\n"), cf,
-                be.bstrerror());
-      free(lc);
-
+      lex_error(cf, ScanError, scan_warning);
       return false;
     }
     LexSetErrorHandlerErrorType(lc, err_type_);

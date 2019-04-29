@@ -394,6 +394,9 @@ class ConfigurationParser {
                  const std::string& where,
                  const std::string& cmd,
                  const std::string& timestamp_format);
+  void lex_error(const char* cf,
+                 LEX_ERROR_HANDLER* ScanError,
+                 LEX_WARNING_HANDLER* scan_warning) const;
 };
 
 void PrintMessage(void* sock, const char* fmt, ...);
