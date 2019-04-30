@@ -919,7 +919,7 @@ bool VSSClientGeneric::CloseBackup()
   IVssBackupComponents* pVssObj = (IVssBackupComponents*)pVssObject_;
 
   if (!pVssObject_) {
-    Jmsg(jcr_, M_FATAL, 0, "VssOject is NULL.\n");
+    Jmsg(jcr_, M_FATAL, 0, "VssObject is NULL.\n");
     errno = ENOSYS;
     return bRet;
   }
