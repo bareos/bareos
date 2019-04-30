@@ -416,17 +416,19 @@ bool ConfigurationParser::AppendToResourcesChain(BareosResource* new_resource,
     Dmsg3(900, "Inserting first %s res: %s index=%d\n", ResToStr(type),
           new_resource->resource_name_, rindex);
   } else {  // append
-    BareosResource *next, *last;
-    for (last = next = res_head_[rindex]; next; next = next->next_) {
-      last = next;
-      if (bstrcmp(next->resource_name_, new_resource->resource_name_)) {
+    BareosResource* last = nullptr;
+    BareosResource* current = res_head_[rindex];
+    do {
+      if (bstrcmp(current->resource_name_, new_resource->resource_name_)) {
         Emsg2(M_ERROR, 0,
               _("Attempt to define second %s resource named \"%s\" is not "
                 "permitted.\n"),
               resources_[rindex].name, new_resource->resource_name_);
         return false;
       }
-    }
+      last = current;
+      current = last->next_;
+    } while (current);
     last->next_ = new_resource;
     Dmsg3(900, _("Inserting %s res: %s index=%d\n"), ResToStr(type),
           new_resource->resource_name_, rindex);
