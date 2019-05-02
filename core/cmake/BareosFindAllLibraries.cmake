@@ -73,6 +73,7 @@ BareosFindLibrary("acl")
 #BareosFindLibrary("wrap")
 BareosFindLibrary("gtest")
 BareosFindLibrary("gtest_main")
+BareosFindLibrary("gmock")
 
 if (${HAVE_CAP})
    SET(HAVE_LIBCAP 1)
