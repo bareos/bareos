@@ -93,24 +93,6 @@ Bareos Version Numbers and Releases
 
 Bareos version numbers consists of three parts: YY.Q.C
 
-# Tabular in LaTex format (original)
-
-::
-
-   \begin{tabular}{p{0.1\textwidth} p{0.8\textwidth}}
-   YY & year (last two digits) \\
-   Q  & quarter of the year \\
-   YY.Q & year and quarter of the code freeze.
-           After this, as a general rule, no new feature should get introduced to this Bareos branch.
-           Subsequent release are for bugfixing. \\
-   C & Release counter. For every subsequent release, this counter is incremented.
-           Beginning with 16.2, numbers from 1 to 3 represents the month of the quarter during development.
-           After the code freeze, the number is set to 4. So, stable releases get number from 4 onwards.
-           Maintenance releases get numbers starting from 5 onwards. \\
-   \end{tabular}
-
-# Tabular converted from LaTeX to RST (or empty, in case of problems):
-
 ==== ====================================================================================================================================================================================================================================================================================================================================
 YY   year (last two digits)
 Q    quarter of the year
@@ -132,52 +114,6 @@ Bareos Packages
 ---------------
 
 Following Bareos Linux packages are available (release 17.2.4):
-
-# Tabular in LaTex format (original)
-
-::
-
-   \begin{tabular}{ | l | l | }
-   \hline
-   :strong:`Package Name` & :strong:`Description` \\
-   \hline
-   bareos & Backup Archiving REcovery Open Sourced - metapackage \\
-   bareos-bconsole & Bareos administration console (CLI) \\
-   bareos-client & Bareos client Meta-All-In-One package \\
-   bareos-common & Common files, required by multiple Bareos packages \\
-   bareos-database-common & Generic abstraction libs and files to connect to a database \\
-   bareos-database-mysql & Libs and tools for mysql catalog \\
-   bareos-database-postgresql & Libs and tools for postgresql catalog \\
-   bareos-database-sqlite3 & Libs and tools for sqlite3 catalog \\
-   bareos-database-tools & Bareos CLI tools with database dependencies (bareos-dbcheck, bscan) \\
-   bareos-devel & Devel headers \\
-   bareos-director & Bareos Director daemon \\
-   bareos-director-python-plugin & Python plugin for Bareos Director daemon \\
-   bareos-filedaemon & Bareos File daemon (backup and restore client) \\
-   bareos-filedaemon-ceph-plugin & CEPH plugin for Bareos File daemon \\
-   bareos-filedaemon-glusterfs-plugin & GlusterFS plugin for Bareos File daemon \\
-   bareos-filedaemon-ldap-python-plugin & LDAP Python plugin for Bareos File daemon \\
-   bareos-filedaemon-python-plugin & Python plugin for Bareos File daemon \\
-   bareos-regress-config & Required files for bareos-regress \\
-   bareos-storage & Bareos Storage daemon \\
-   bareos-storage-ceph & CEPH support for the Bareos Storage daemon \\
-   bareos-storage-droplet & Object Storage support (through libdroplet) for the Bareos Storage daemon \\
-   bareos-storage-fifo & FIFO support for the Bareos Storage backend \\
-   bareos-storage-glusterfs & GlusterFS support for the Bareos Storage daemon \\
-   bareos-storage-python-plugin & Python plugin for Bareos Storage daemon \\
-   bareos-storage-tape & Tape support for the Bareos Storage daemon \\
-   bareos-tools & Bareos CLI tools (bcopy, bextract, bls, bregex, bwild) \\
-   bareos-traymonitor & Bareos Tray Monitor (QT) \\
-   bareos-vadp-dumper & VADP Dumper - vStorage APIs for Data Protection Dumper program \\
-   bareos-vmware-plugin & Bareos VMware plugin \\
-   bareos-vmware-plugin-compat & Bareos VMware plugin compatibility \\
-   bareos-vmware-vix-disklib & VMware vix disklib distributable libraries \\
-   bareos-webui & Bareos Web User Interface \\
-   python-bareos & Backup Archiving REcovery Open Sourced - Python module \\
-   \hline
-   \end{tabular}
-
-# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
 ==================================== =========================================================================
 **Package Name**                     **Description**

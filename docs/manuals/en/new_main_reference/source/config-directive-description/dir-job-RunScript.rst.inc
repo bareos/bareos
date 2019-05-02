@@ -15,52 +15,24 @@ You can use following console command: ``delete``, ``disable``, ``enable``, ``es
 
 You can specify more than one Command/Console option per RunScript.
 
-| You can use following options may be specified in the body of the runscript:
+You can use following options may be specified in the body of the runscript:
 
-# Tabular in LaTex format (original)
+.. csv-table::
+   :header: Options, Value,          Description                                                                                                                                                                       
 
-::
-
-   \begin{tabular}{|p{0.2\textwidth}|p{0.2\textwidth}|p{0.4\textwidth}|}
-      \hline
-      Options         & Value  & Information   \\
-      \hline
-      \hline
-      Runs On Success & :strong:`Yes` | No & run if JobStatus is successful\\
-      \hline
-      Runs On Failure & Yes | :strong:`No` & run if JobStatus isn't successful\\
-      \hline
-      Runs On Client  & :strong:`Yes` | No & run command on client\\
-      \hline
-      Runs When       & :strong:```Never``\ ` | ``Before``\  | ``After``\  | ``Always``\  | \textsl{\variable{AfterVSS}} & When to run\\
-      \hline
-      Fail Job On Error & :strong:`Yes` | No & Fail job if script returns something different from 0\\
-      \hline
-      Command          &       &   External command\\
-      \hline
-      Console          &       &   Console command\\
-      \hline
-      \end{tabular}
-
-# Tabular converted from LaTeX to RST (or empty, in case of problems):
-
-================= ============================================================================================================================================================================ =====================================================
-Options           Value                                                                                                                                                                        Information
-================= ============================================================================================================================================================================ =====================================================
-Runs On Success   **Yes** \| No                                                                                                                                                                run if JobStatus is successful
-Runs On Failure   Yes \| **No**                                                                                                                                                                run if JobStatus isn’t successful
-Runs On Client    **Yes** \| No                                                                                                                                                                run command on client
-Runs When         **``Never``\ ** \| ``Before``\  \| ``After``\  \| ``Always``\  \| *``AfterVSS``\ * When to run
-Fail Job On Error **Yes** \| No                                                                                                                                                                Fail job if script returns something different from 0
-Command                                                                                                                                                                                        External command
-Console                                                                                                                                                                                        Console command
-================= ============================================================================================================================================================================ =====================================================
+   Runs On Success  , **Yes** \| No, run if JobStatus is successful
+   Runs On Failure  , Yes \| **No**, run if JobStatus isn’t successful
+   Runs On Client   , **Yes** \| No, run command on client
+   Runs When        , **Never** \| ``Before``\  \| ``After``\  \| ``Always``\  \| ``AfterVSS``\ , When to run
+   Fail Job On Error, **Yes** \| No,  Fail job if script returns something different from 0
+   Command          ,              ,  External command
+   Console          ,              ,  Console command
 
 Any output sent by the command to standard output will be included in the Bareos job report. The command string must be a valid program name or name of a shell script.
 
 
 
-   .. warning::
+.. warning::
 
       The command string is parsed then fed to the OS,
       which means that the path will be searched to execute your specified
@@ -75,37 +47,6 @@ Before executing the specified command, Bareos performs character substitution o
 
 
 .. _character substitution:
-
-  # Tabular in LaTex format (original)
-
-::
-
-   \begin{longtable}{ l l }
-          \%\% & \% \\
-          \%b & Job Bytes \\
-          \%B & Job Bytes in human readable format \\
-          \%c & Client's name \\
-          \%d & Daemon's name (Such as host-dir or host-fd) \\
-          \%D & Director's name (Also valid on file daemon) \\
-          \%e & Job Exit Status \\
-          \%f & Job FileSet (Only on director side) \\
-          \%F & Job Files \\
-          \%h & Client address \\
-          \%i & Job Id \\
-          \%j & Unique Job Id \\
-          \%l & Job Level \\
-          \%n & Job name \\
-          \%p & Pool name (Only on director side) \\
-          \%P & Daemon PID \\
-          \%s & Since time \\
-          \%t & Job type (Backup, ...) \\
-          \%v & Read Volume name(s) (Only on director side) \\
-          \%V & Write Volume name(s) (Only on director side) \\
-          \%w & Storage name (Only on director side) \\
-          \%x & Spooling enabled? ("yes" or "no") \\
-      \end{longtable}
-
-# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
 == ============================================
 %% %
@@ -152,39 +93,17 @@ Some character substitutions are not available in all situations. The Job Exit S
 
 Thus if you edit it on a command line, you will need to enclose it within some sort of quotes.
 
-| You can use these following shortcuts:
-| # Tabular in LaTex format (original)
+You can use these following shortcuts:
 
-::
-
-   \begin{tabular}{|l|c|c|c|c|c}
-      \hline
-      Keyword & RunsOnSuccess & RunsOnFailure  & FailJobOnError & Runs On Client & RunsWhen  \\
-      \hline
-      \hline
-      :config:option:`dir/job/RunBeforeJob`\          &        &       & Yes     & No     & Before \\
-      \hline
-      :config:option:`dir/job/RunAfterJob`\           &  Yes   &   No  &         & No     & After  \\
-      \hline
-      :config:option:`dir/job/RunAfterFailedJob`\    &  No    &  Yes  &         & No     & After  \\
-      \hline
-      :config:option:`dir/job/ClientRunBeforeJob`\   &        &       & Yes     & Yes    & Before \\
-      \hline
-      :config:option:`dir/job/ClientRunAfterJob`\    &  Yes   &   No  &         & Yes    & After  \\
-      \hline
-      \end{tabular}
-
-# Tabular converted from LaTeX to RST (or empty, in case of problems):
-
-==================================================================== ============= ============= ============== ============== ========
-Keyword                                                              RunsOnSuccess RunsOnFailure FailJobOnError Runs On Client RunsWhen
-==================================================================== ============= ============= ============== ============== ========
+============================================ ============= ============= ============== ============== ========
+Keyword                                      RunsOnSuccess RunsOnFailure FailJobOnError Runs On Client RunsWhen
+============================================ ============= ============= ============== ============== ========
 :config:option:`dir/job/RunBeforeJob`\                                     Yes            No             Before
 :config:option:`dir/job/RunAfterJob`\          Yes           No                           No             After
 :config:option:`dir/job/RunAfterFailedJob`\   No            Yes                          No             After
 :config:option:`dir/job/ClientRunBeforeJob`\                              Yes            Yes            Before
 :config:option:`dir/job/ClientRunAfterJob`\   Yes           No                           Yes            After
-==================================================================== ============= ============= ============== ============== ========
+============================================ ============= ============= ============== ============== ========
 
 Examples: 
 
@@ -207,13 +126,10 @@ The System %Path% will be searched for the command. (under the environment varia
 
 System environment variables can be referenced with %var% and used as either part of the command name or arguments.
 
-| So if you have a script in the Bareos
-| bin directory then the following lines should work fine:
+So if you have a script in the Bareos bin directory then the following lines should work fine:
 
-
-
-   .. literalinclude:: /include/config/DirJobRunScript3.conf
-      :language: bareosconfig
+.. literalinclude:: /include/config/DirJobRunScript3.conf
+   :language: bareosconfig
 
 
 

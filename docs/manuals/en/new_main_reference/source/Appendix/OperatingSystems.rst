@@ -9,138 +9,42 @@ The Bareos project provides and supports packages that have been released at htt
 
 However, the following tabular gives an overview, what components are expected on which platforms to run:
 
-# Tabular in LaTex format (original)
+.. csv-table::
+   :header: "Operating Systems", "Version", "Client Daemon", "Director Daemon" , "Storage Daemon"
 
-::
+   :strong:`Linux`  :index:`\ <single: Platform; Linux>`\ 
+   Arch Linux :index:`\ <single: Platform; Arch Linux>`\ , `X <https://aur.archlinux.org/pkgbase/bareos/>`_,      `X <https://aur.archlinux.org/pkgbase/bareos/>`_, `X <https://aur.archlinux.org/pkgbase/bareos/>`_
+   CentOS, current, v12.4, v12.4, v12.4
+   Debian, current, v12.4, v12.4, v12.4
+   Fedora, current, v12.4, v12.4, v12.4
+   Gentoo :index:`\ <single: Platform; Gentoo>`\ , `X <https://packages.gentoo.org/package/app-backup/bareos>`_,     `X <https://packages.gentoo.org/package/app-backup/bareos>`_, `X <https://packages.gentoo.org/package/app-backup/bareos>`_
+   openSUSE, current, v12.4, v12.4, v12.4
+   RHEL,     current, v12.4, v12.4, v12.4
+   SLES,     current, v12.4, v12.4, v12.4
+   Ubuntu,   current, v12.4, v12.4, v12.4
+   :ref:`Univention Corporate Linux <section-UniventionCorporateServer>`, App Center, v12.4, v12.4, v12.4
 
-   \begin{tabular}[h]{|l|c|c|c|c|}
-     \hline
-     :strong:`Operating Systems` & :strong:`Version` & :strong:`Client Daemon` & :strong:`Director Daemon` & :strong:`Storage Daemon` \\
-     \hline
-     \hline
-     :strong:`:strong:`Linux``  :index:`\ <single: Platform; Linux>`\  \\
-     \hline
-     Arch Linux
-     :index:`\ <single: Platform; Arch Linux>`\ 
-                     & ~ & `X <https://aur.archlinux.org/pkgbase/bareos/>`_ & `X <https://aur.archlinux.org/pkgbase/bareos/>`_ & `X <https://aur.archlinux.org/pkgbase/bareos/>`_ \\
-     \hline
-     CentOS          & current & v12.4 & v12.4 & v12.4 \\
-     \hline
-     Debian          & current & v12.4 & v12.4 & v12.4 \\
-     \hline
-     Fedora          & current & v12.4 & v12.4 & v12.4 \\
-     \hline
-     Gentoo
-     :index:`\ <single: Platform; Gentoo>`\ 
-                       & ~ & `X <https://packages.gentoo.org/package/app-backup/bareos>`_ & `X <https://packages.gentoo.org/package/app-backup/bareos>`_ & `X <https://packages.gentoo.org/package/app-backup/bareos>`_ \\
-     \hline
-     openSUSE        & current & v12.4 & v12.4 & v12.4 \\
-     \hline
-     RHEL            & current & v12.4 & v12.4 & v12.4 \\
-     \hline
-     SLES            & current & v12.4 & v12.4 & v12.4 \\
-     \hline
-     Ubuntu          & current & v12.4 & v12.4 & v12.4 \\
-     \hline
-     :ref:`Univention Corporate Linux <section-UniventionCorporateServer>` & App Center & v12.4 & v12.4 & v12.4 \\
-     \hline
-     :strong:`:strong:`MS Windows``  \\
-     \hline
-     :ref:`MS Windows <section-windows>` 32bit & 10/8/7       & v12.4 & v15.2 & v15.2 \\
-     ~                & 2008/Vista   &  &  &  \\
-     ~                & 2003/XP      & v12.4--v14.2 &         &  \\
-     \hline
-     :ref:`MS Windows <section-windows>` 64bit & 10/8/2012/7  & v12.4 & v15.2 & v15.2 \\
-     ~                & 2008/Vista   &  &  &  \\
-     \hline
-     :strong:`:strong:`Mac OS``  \\
-     \hline
-     :ref:`Mac OS X/Darwin <section-macosx>`   & ~ & v14.2 &  &  \\
-     \hline
-     :strong:`:strong:`BSD``  \\
-     \hline
-     FreeBSD
-     :index:`\ <single: Platform; FreeBSD>`\ 
-                       & >= 5.0 & `X <http://www.freshports.org/sysutils/bareos-client/>`_ & `X <http://www.freshports.org/sysutils/bareos-server/>`_ & `X <http://www.freshports.org/sysutils/bareos-server/>`_  \\
-     \hline
-     OpenBSD          & ~ & X &  & ~ \\
-     \hline
-     NetBSD           & ~ & X &  & ~ \\
-     \hline
-     :strong:`:strong:`Unix``  \\
-     %\hline
-     %BSDI             & ~ & * & ~ & ~ \\
-     \hline
-     AIX
-     :index:`\ <single: Platform; AIX>`\ 
-                      & >= 4.3 & com-13.2 & * & * \\
-     \hline
-     HP-UX
-     :index:`\ <single: Platform; HP-UX>`\ 
-                      & ~ & com-13.2 & ~ & ~ \\
-     \hline
-     Irix             & ~ & * & ~ & ~ \\
-     %\hline
-     %OpenSolaris      & ~ & X & X & X \\
-     \hline
-     Solaris
-     :index:`\ <single: Platform; Solaris>`\ 
-                      & >= 8 & com-12.4 & com-12.4 & com-12.4 \\
-     \hline
-     True64           & ~ & * & ~ & ~ \\
-     \hline
-   \end{tabular}
+   :strong:`MS Windows`
+   :ref:`MS Windows <section-windows>` 32bit, 10/8/7, v12.4, v15.2, v15.2
+                                           , 2008/Vista/2003/XP, v12.4–v14.2                                                                                                                                                
+   :ref:`MS Windows <section-windows>` 64bit, 10/8/2012/7, v12.4, v15.2, v15.2
+                                            , 2008/Vista, v12.4–v14.2
 
-# Tabular converted from LaTeX to RST (or empty, in case of problems):
+   :strong:`Mac OS`                                                                                                                                                                                                                     
+   :ref:`Mac OS X/Darwin <section-macosx>`, v14.2                                                                                                                                                      
 
-============================================================================================ =========== ============================================================================= ============================================================================= =============================================================================
-**Operating Systems**                                                                        **Version** **Client Daemon**                                                             **Director Daemon**                                                           **Storage Daemon**
-============================================================================================ =========== ============================================================================= ============================================================================= =============================================================================
-:strong:`:strong:`Linux``  :index:`\ <single: Platform; Linux>`\                                                                                                                                                                         
-Arch Linux :index:`\ <single: Platform; Arch Linux>`\                                              `X <https://aur.archlinux.org/pkgbase/bareos/>`_             `X <https://aur.archlinux.org/pkgbase/bareos/>`_             `X <https://aur.archlinux.org/pkgbase/bareos/>`_
-CentOS                                                                                       current     v12.4                                                                         v12.4                                                                         v12.4
-Debian                                                                                       current     v12.4                                                                         v12.4                                                                         v12.4
-Fedora                                                                                       current     v12.4                                                                         v12.4                                                                         v12.4
-Gentoo :index:`\ <single: Platform; Gentoo>`\                                                      `X <https://packages.gentoo.org/package/app-backup/bareos>`_ `X <https://packages.gentoo.org/package/app-backup/bareos>`_ `X <https://packages.gentoo.org/package/app-backup/bareos>`_
-openSUSE                                                                                     current     v12.4                                                                         v12.4                                                                         v12.4
-RHEL                                                                                         current     v12.4                                                                         v12.4                                                                         v12.4
-SLES                                                                                         current     v12.4                                                                         v12.4                                                                         v12.4
-Ubuntu                                                                                       current     v12.4                                                                         v12.4                                                                         v12.4
-:ref:`Univention Corporate Linux <section-UniventionCorporateServer>`           App Center  v12.4                                                                         v12.4                                                                         v12.4
-:strong:`:strong:`MS Windows``                                                                                                                                                                                                                 
-:ref:`MS Windows <section-windows>` 32bit                                       10/8/7      v12.4                                                                         v15.2                                                                         v15.2
-                                                                                             2008/Vista                                                                                                                                                             
-                                                                                             2003/XP     v12.4–v14.2                                                                                                                                                
-:ref:`MS Windows <section-windows>` 64bit                                       10/8/2012/7 v12.4                                                                         v15.2                                                                         v15.2
-                                                                                             2008/Vista                                                                                                                                                             
-:strong:`:strong:`Mac OS``                                                                                                                                                                                                                     
-:ref:`Mac OS X/Darwin <section-macosx>`                                                     v14.2                                                                                                                                                      
-:strong:`:strong:`BSD``                                                                                                                                                                                                                        
-FreeBSD :index:`\ <single: Platform; FreeBSD>`\                                        >= 5.0      `X <http://www.freshports.org/sysutils/bareos-client/>`_     `X <http://www.freshports.org/sysutils/bareos-server/>`_     `X <http://www.freshports.org/sysutils/bareos-server/>`_
-OpenBSD                                                                                                  X                                                                                                                                                            
-NetBSD                                                                                                   X                                                                                                                                                            
-:strong:`:strong:`Unix``                                                                                                                                                                                                                       
-AIX :index:`\ <single: Platform; AIX>`\                                                >= 4.3      com-13.2                                                                      \*                                                                            \*
-HP-UX :index:`\ <single: Platform; HP-UX>`\                                                        com-13.2                                                                                                                                                     
-Irix                                                                                                     \*                                                                                                                                                           
-Solaris :index:`\ <single: Platform; Solaris>`\                                        >= 8        com-12.4                                                                      com-12.4                                                                      com-12.4
-True64                                                                                                   \*                                                                                                                                                           
-============================================================================================ =========== ============================================================================= ============================================================================= =============================================================================
+   :strong:`BSD`                                                                                                                                                                                                                        
+   FreeBSD :index:`\ <single: Platform; FreeBSD>`\ , >= 5.0, `X <http://www.freshports.org/sysutils/bareos-client/>`_, `X <http://www.freshports.org/sysutils/bareos-server/>`_, `X <http://www.freshports.org/sysutils/bareos-server/>`_
+   OpenBSD, , X
+   NetBSD,  , X                                                                                                                                                            
+   :strong:`Unix`                                                                                                                                                                                                                       
+   AIX :index:`\ <single: Platform; AIX>`\ ,         >= 4.3, com-13.2, \*, \*
+   HP-UX :index:`\ <single: Platform; HP-UX>`\ ,           , com-13.2                                                                      
+   Irix,                                                   , \*
+   Solaris :index:`\ <single: Platform; Solaris>`\ , >= 8  , com-12.4, com-12.4, com-12.4
+   True64,                                         ,       , \*
 
-# Tabular in LaTex format (original)
-
-::
-
-   \begin{tabular}[h]{p{0,15\textwidth} p{0,8\textwidth}}
-   :strong:`vVV.V`   & starting with Bareos version VV.V, this platform is official supported by the Bareos.org project \\
-   :strong:`com-VV.V`   & starting with Bareos version VV.V, this platform is supported. However, pre-build packages are only available from  Bareos.com\\
-   :strong:`nightly` & provided by Bareos nightly build. Bug reports are welcome, however it is not official supported \\
-   :strong:`X`       & known to work \\
-   :strong:`*` & has been reported to work by the community\\
-   \end{tabular}
-
-# Tabular converted from LaTeX to RST (or empty, in case of problems):
-
+   
 ============ =============================================================================================================================
 **vVV.V**    starting with Bareos version VV.V, this platform is official supported by the Bareos.org project
 **com-VV.V** starting with Bareos version VV.V, this platform is supported. However, pre-build packages are only available from Bareos.com

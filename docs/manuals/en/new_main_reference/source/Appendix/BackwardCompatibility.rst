@@ -45,27 +45,6 @@ A |dir| can only talk to Bacula file daemons of version 2.0 or higher. Through a
 
 These combinations of Bareos and Bacula are know to work together:
 
-# Tabular in LaTex format (original)
-
-::
-
-   \begin{tabular}[h]{|l|l|l|l|}
-     \hline
-     :strong:`Director` & :strong:`Storage Daemon` & :strong:`File Daemon` & :strong:`Remarks` \\
-     \hline
-     \hline
-     \bareoscolor & \bareoscolor & \bareoscolor & \\
-     \hline
-     \bareoscolor & \bareoscolor & 2.0 <= \baculacolor < 6.0 & \\
-     \hline
-     \baculacolor & \baculacolor & \baculacolor & \\
-     \hline
-     \baculacolor & \baculacolor & \bareoscolor (compatibility mode) & \\
-     \hline
-   \end{tabular}
-
-# Tabular converted from LaTeX to RST (or empty, in case of problems):
-
 ============ ================== =========================== ===========
 **Director** **Storage Daemon** **File Daemon**             **Remarks**
 ============ ================== =========================== ===========
@@ -90,18 +69,19 @@ Upgrade is supported from Bacula version 5.2.x. If you are running any older ver
 
 
 
-   .. warning::
+.. warning::
 
-      Updating from Bacula >= 7.0 to Bareos has not been tested.
+   Updating from Bacula >= 7.0 to Bareos has not been tested.
 
 
 
-   .. warning::
+.. warning::
 
-      As Bareos and Bacula packages bring binaries with identical paths and names,
+   As Bareos and Bacula packages bring binaries with identical paths and names,
    it is on most platforms not possible to install components from both in parallel.
    Your package management tool will warn you about this.
 
+   
 Rename user and group before upgrading
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

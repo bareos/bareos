@@ -660,3 +660,14 @@ Table
 Sphinx offers multiple methods to create tables, see https://www.sphinx-doc.org/en/2.0/usage/restructuredtext/basics.html#tables\ .
 
 Choose whatever sucks least.
+
+For simple tables :rst:dir:`csv-table` is a good choice.
+
+Example:
+
+.. literalinclude:: /DocumentationStyleGuide/example/csv-table.rst.inc
+   :language: none
+   
+This will be displayed as:
+
+.. include:: /DocumentationStyleGuide/example/csv-table.rst.inc

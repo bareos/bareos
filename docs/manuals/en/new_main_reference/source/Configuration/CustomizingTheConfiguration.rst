@@ -95,68 +95,31 @@ When subdirectory configuration is used, all files matching :file:`PATH/COMPONEN
 Relation between Bareos components and configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-# Tabular in LaTex format (original)
+.. csv-table:: Bareos configuration default paths on Unix
+   :header: "Bareos component", "Configuration File", "Subdirectory Configuration Scheme"
+   
+   
+   ,                                    "(default path on Unix)",                "(default path on Unix)"
+   
+   "bareos-dir",                        :file:`bareos-dir.conf`,                 :file:`bareos-dir.d`
+   :ref:`DirectorChapter`,              (:file:`/etc/bareos/bareos-dir.conf`),   (:file:`/etc/bareos/bareos-dir.d/`)
+   
+   bareos-sd,                           :file:`bareos-sd.conf`,                  :file:`bareos-sd.d`
+   :ref:`StoredConfChapter`,            (:file:`/etc/bareos/bareos-sd.conf`),    (:file:`/etc/bareos/bareos-sd.d/`)
+   
+   bareos-fd,                           :file:`bareos-fd.conf`,                  :file:`bareos-fd.d`
+   :ref:`FiledConfChapter`,             (:file:`/etc/bareos/bareos-fd.conf`),    (:file:`/etc/bareos/bareos-fd.d/`)
+   
+   bconsole,                            :file:`bconsole.conf`,                   :file:`bconsole.d`
+   :ref:`ConsoleConfChapter`,           (:file:`/etc/bareos/bconsole.conf`),     :file:`/etc/bareos/bconsole.d/`)
+   
+   bareos-traymonitor,                  :file:`tray-monitor.conf`,               :file:`tray-monitor.d`
+   :ref:`section-MonitorConfig`,        (:file:`/etc/bareos/tray-monitor.conf`), (:file:`/etc/bareos/tray-monitor.d/`)
+   
+   :ref:`section-VolumeUtilityCommands`, :file:`bareos-sd.conf`,                 :file:`bareos-sd.d`
+   (use the bareos-sd configuration),    (:file:`/etc/bareos/bareos-sd.conf`),   (:file:`/etc/bareos/bareos-sd.d/`)
 
-::
 
-   \begin{tabular}{ l || l | l }
-   Bareos component &
-   \shortstack[l]{Configuration File \\ (default path on Unix)} &
-   \shortstack[l]{Subdirectory Configuration Scheme\\ (default path on Unix) \\ since Bareos >= 16.2.2} \\
-   \hline
-   \hline
-
-   bareos-dir                   & :file:`bareos-dir.conf`       & :file:`bareos-dir.d` \\
-   :ref:`DirectorChapter`    & (\configFileDirUnix)         & (\configDirectoryDirUnix) \\
-   \hline
-
-   bareos-sd                    & :file:`bareos-sd.conf`        & :file:`bareos-sd.d` \\
-   :ref:`StoredConfChapter`  & (\configFileSdUnix)          & (\configDirectorySdUnix) \\
-   \hline
-
-   bareos-fd                    & :file:`bareos-fd.conf`        & :file:`bareos-fd.d` \\
-   :ref:`FiledConfChapter`   & (\configFileFdUnix)          & (\configDirectoryFdUnix) \\
-   \hline
-
-   bconsole                     & :file:`bconsole.conf`         & :file:`bconsole.d` \\
-   :ref:`ConsoleConfChapter` & (\configFileBconsoleUnix)    & (\configDirectoryBconsoleUnix) \\
-   \hline
-
-   bareos-traymonitor           & :file:`tray-monitor.conf`     & :file:`tray-monitor.d` \\
-   :ref:`section-MonitorConfig`  & (\configFileTrayMonitorUnix) & (\configDirectoryTrayMonitorUnix) \\
-   \hline
-
-   bat                          & :file:`bat.conf`              & (not supported) \\
-                                & ({\configFileBatUnix})       &  \\
-   \hline
-
-   :ref:`section-VolumeUtilityCommands` & :file:`bareos-sd.conf`        & :file:`bareos-sd.d` \\
-   (use the bareos-sd configuration)   & (\configFileSdUnix)          & (\configDirectorySdUnix) \\
-
-   \end{tabular}
-
-# Tabular converted from LaTeX to RST (or empty, in case of problems):
-
-==================================================== ========================================= ==============================================
-Bareos component                                                                              
-(default path on Unix)                                                                        
-(default path on Unix)                                                                        
-since Bareos >= 16.2.2                                                                        
-bareos-dir                                           :file:`bareos-dir.conf`       :file:`bareos-dir.d`
-:ref:`DirectorChapter`               (:file:`/etc/bareos/bareos-dir.conf`)         (:file:`/etc/bareos/bareos-dir.d/`)
-bareos-sd                                            :file:`bareos-sd.conf`        :file:`bareos-sd.d`
-:ref:`StoredConfChapter`             (:file:`/etc/bareos/bareos-sd.conf`)          (:file:`/etc/bareos/bareos-sd.d/`)
-bareos-fd                                            :file:`bareos-fd.conf`        :file:`bareos-fd.d`
-:ref:`FiledConfChapter`              (:file:`/etc/bareos/bareos-fd.conf`)          (:file:`/etc/bareos/bareos-fd.d/`)
-bconsole                                             :file:`bconsole.conf`         :file:`bconsole.d`
-:ref:`ConsoleConfChapter`            (:file:`/etc/bareos/bconsole.conf`)    (\configDirectoryBconsoleUnix)
-bareos-traymonitor                                   :file:`tray-monitor.conf`     :file:`tray-monitor.d`
-:ref:`section-MonitorConfig`         (:file:`/etc/bareos/tray-monitor.conf`) (:file:`/etc/bareos/tray-monitor.d/`)
-bat                                                  :file:`bat.conf`              (not supported)
-\                                                    (\configFileBatUnix)        
-:ref:`section-VolumeUtilityCommands` :file:`bareos-sd.conf`        :file:`bareos-sd.d`
-(use the bareos-sd configuration)                    (:file:`/etc/bareos/bareos-sd.conf`)          (:file:`/etc/bareos/bareos-sd.d/`)
-==================================================== ========================================= ==============================================
 
 .. _section-SubdirectoryConfigurationScheme:
 
@@ -385,7 +348,7 @@ Resource
 
 :index:`\ <single: Configuration; Resource>`\ 
 
-A resource is defined as the resource type (see :ref:`ResTypes`), followed by an open brace (:file:`{`), a number of :ref:`section-ConfigurationResourceDirective`s, and ended by a closing brace (:file:`}`)
+A resource is defined as the resource type, followed by an open brace (:file:`{`), a number of :ref:`section-ConfigurationResourceDirective`s, and ended by a closing brace (:file:`}`)
 
 Each resource definition MUST contain a :strong:`Name`\  directive. It can contain a :strong:`Description`\  directive. The :strong:`Name`\  directive is used to uniquely identify the resource. The :strong:`Description`\  directive can be used during the display of the Resource to provide easier human recognition. For example:
 
@@ -845,35 +808,6 @@ Variable Expansion on Volume Labels
 
 When labeling a new volume (see :config:option:`dir/pool/LabelFormat`\ ), following Bareos internal variables can be used:
 
-# Tabular in LaTex format (original)
-
-::
-
-   \begin{tabular}{p{2cm}p{7cm}}
-   :strong:`Internal Variable` & :strong:`Description` \\
-   :strong:`\$Year` & Year \\
-   :strong:`\$Month` & Month: 1-12 \\
-   :strong:`\$Day` & Day: 1-31 \\
-   :strong:`\$Hour` & Hour: 0-24 \\
-   :strong:`\$Minute` & Minute: 0-59 \\
-   :strong:`\$Second` & Second: 0-59 \\
-   :strong:`\$WeekDay` & Day of the week: 0-6, using 0 for Sunday\\
-   :strong:`\$Job` & Name of the Job \\
-   :strong:`\$Dir` & Name of the Director \\
-   :strong:`\$Level` & Job Level \\
-   :strong:`\$Type` & Job Type \\
-   :strong:`\$JobId` & JobId \\
-   :strong:`\$JobName` & unique name of a job\\
-   :strong:`\$Storage` & Name of the Storage Daemon\\
-   :strong:`\$Client` &  Name of the Clients \\
-   :strong:`\$NumVols` & Numbers of volumes in the pool\\
-   :strong:`\$Pool` &  Name of the Pool  \\
-   :strong:`\$Catalog` &  Name of the Catalog\\
-   :strong:`\$MediaType` &  Type of the media
-   \end{tabular}
-
-# Tabular converted from LaTeX to RST (or empty, in case of problems):
-
 ===================== ========================================
 **Internal Variable** **Description**
 **$Year**             Year
@@ -906,27 +840,8 @@ Variable Expansion in Autochanger Commands
 
 At the configuration of autochanger commands the following variables can be used:
 
-# Tabular in LaTex format (original)
-
-::
-
-   \begin{tabular}{p{2cm}p{7cm}}
-   :strong:`Variable` & :strong:`Description` \\
-   :strong:`\%a` & Archive Device Name\\
-   :strong:`\%c` & Changer Device Name\\
-   :strong:`\%d` & Changer Drive Index\\
-   :strong:`\%f` & Client's Name\\
-   :strong:`\%j` & Job Name\\
-   :strong:`\%o` & Command\\
-   :strong:`\%s` & Slot Base 0\\
-   :strong:`\%S` & Slot Base 1\\
-   :strong:`\%v` & Volume Name
-   \end{tabular}
-
-# Tabular converted from LaTeX to RST (or empty, in case of problems):
-
-============================ ===================
-**Variable**                 **Description**
+============= ===================
+**Variable**  **Description**
 :strong:`\%a` Archive Device Name
 :strong:`\%c` Changer Device Name
 :strong:`\%d` Changer Drive Index
@@ -936,36 +851,21 @@ At the configuration of autochanger commands the following variables can be used
 :strong:`\%s` Slot Base 0
 :strong:`\%S` Slot Base 1
 :strong:`\%v` Volume Name
-============================ ===================
+============= ===================
 
 Variable Expansion in Mount Commands
 ''''''''''''''''''''''''''''''''''''
 
 At the configuration of mount commands the following variables can be used:
 
-# Tabular in LaTex format (original)
-
-::
-
-   \begin{tabular}{p{2cm}p{7cm}}
-   :strong:`Variable` & :strong:`Description` \\
-   :strong:`\%a` & Archive Device Name\\
-   :strong:`\%e` & Erase\\
-   :strong:`\%n` & Part Number\\
-   :strong:`\%m` & Mount Point\\
-   :strong:`\%v` & Last Part Name
-   \end{tabular}
-
-# Tabular converted from LaTeX to RST (or empty, in case of problems):
-
-============================ ===================
-**Variable**                 **Description**
+============= ===================
+**Variable**  **Description**
 :strong:`\%a` Archive Device Name
 :strong:`\%e` Erase
 :strong:`\%n` Part Number
 :strong:`\%m` Mount Point
 :strong:`\%v` Last Part Name
-============================ ===================
+============= ===================
 
 Variable Expansion on RunScripts
 ''''''''''''''''''''''''''''''''
@@ -977,33 +877,8 @@ Variable Expansion in Mail and Operator Commands
 
 At the configuration of mail and operator commands the following variables can be used:
 
-# Tabular in LaTex format (original)
-
-::
-
-   \begin{tabular}{p{2cm}p{7cm}}
-   :strong:`Variable` & :strong:`Description` \\
-   :strong:`\%c` & Client's Name\\
-   :strong:`\%d` & Director's Name\\
-   :strong:`\%e` & Job Exit Code\\
-   :strong:`\%i` & JobId\\
-   :strong:`\%j` & Unique Job Id\\
-   :strong:`\%l` & Job Level\\
-   :strong:`\%n` & Unadorned Job Name\\
-   :strong:`\%s` & Since Time\\
-   :strong:`\%t` & Job Type (Backup, ...)\\
-   :strong:`\%r` & Recipients\\
-   :strong:`\%v` & Read Volume Name\\
-   :strong:`\%V` & Write Volume Name\\
-   :strong:`\%b` & Job Bytes\\
-   :strong:`\%B` & Job Bytes in human readable format \\
-   :strong:`\%F` & Job Files
-   \end{tabular}
-
-# Tabular converted from LaTeX to RST (or empty, in case of problems):
-
-============================ ==================================
-**Variable**                 **Description**
+============= ==================================
+**Variable**  **Description**
 :strong:`\%c` Client’s Name
 :strong:`\%d` Director’s Name
 :strong:`\%e` Job Exit Code
@@ -1019,87 +894,9 @@ At the configuration of mail and operator commands the following variables can b
 :strong:`\%b` Job Bytes
 :strong:`\%B` Job Bytes in human readable format
 :strong:`\%F` Job Files
-============================ ==================================
-
-Resource Types
-~~~~~~~~~~~~~~
-
-:index:`\ <single: Types; Resource>`\  :index:`\ <single: Resource Types>`\  
-
-.. _ResTypes:
+============= ==================================
 
 
-
-The following table lists all current Bareos resource types. It shows what resources must be defined for each service (daemon). The default configuration files will already contain at least one example of each permitted resource.
-
-
-
-# Tabular in LaTex format (original)
-
-::
-
-   \begin{longtable}{|l||c|c|c|c|}
-    \hline
-   :strong:` Resource `  &
-   :strong:` :ref:`Director <DirectorConfChapter>` `  &
-   :strong:` :ref:`Client <FiledConfChapter>` `  &
-   :strong:` :ref:`Storage <StoredConfChapter>` `  &
-   :strong:` :ref:`Console <ConsoleConfChapter>`  `  \\
-    \hline
-    \hline
-   {Autochanger} &                                 &                                 & :ref:`|checkmark| <StorageResourceAutochanger>` &  \\
-   \hline
-   {Catalog }  & :ref:`|checkmark| <DirectorResourceCatalog>`  &                                 &    &    \\
-    \hline
-   {Client  }  & :ref:`|checkmark| <DirectorResourceClient>`   & :ref:`|checkmark| <ClientResourceClient>`   &    &    \\
-    \hline
-   {Console }  & :ref:`|checkmark| <DirectorResourceConsole>`  &                                 &                                  & :ref:`|checkmark| <ConsoleResourceConsole>` \\
-    \hline
-   {Device  }  &                                   &                                 & :ref:`|checkmark| <StorageResourceDevice>`   &    \\
-    \hline
-   {Director } & :ref:`|checkmark| <DirectorResourceDirector>` & :ref:`|checkmark| <ClientResourceDirector>` & :ref:`|checkmark| <StorageResourceDirector>` & :ref:`|checkmark| <ConsoleResourceDirector>` \\
-    \hline
-   {FileSet }  & :ref:`|checkmark| <DirectorResourceFileSet>`  &                                 &    &    \\
-    \hline
-   {Job}       & :ref:`|checkmark| <DirectorResourceJob>`      &                                 &    &    \\
-    \hline
-   {JobDefs }  & :ref:`|checkmark| <DirectorResourceJobDefs>`  &                                 &    &    \\
-    \hline
-   {Message }  & :ref:`|checkmark| <ResourceMessages>`         & :ref:`|checkmark| <ResourceMessages>`       & :ref:`|checkmark| <ResourceMessages>` &    \\
-    \hline
-   {NDMP }     &                                   &                                 & :ref:`|checkmark| <StorageResourceNDMP>` &    \\
-    \hline
-   {Pool  }    & :ref:`|checkmark| <DirectorResourcePool>`     &                                 &    &    \\
-    \hline
-   {Profile}   & :ref:`|checkmark| <DirectorResourceProfile>`  &                                 &    &    \\
-    \hline
-   {Schedule } & :ref:`|checkmark| <DirectorResourceSchedule>` &                                 &    &    \\
-    \hline
-   {Storage }  & :ref:`|checkmark| <DirectorResourceStorage>`  &                                 & :ref:`|checkmark| <StorageResourceStorage>` & \\
-   \hline
-   \end{longtable}
-
-# Tabular converted from LaTeX to RST (or empty, in case of problems):
-
-================================================== ========================================================================== ===================================================================== ======================================================================= =========================================================================
-:strong:` Resource `  :strong:` :ref:`Director <DirectorConfChapter>` `  :strong:` :ref:`Client <FiledConfChapter>` `  :strong:` :ref:`Storage <StoredConfChapter>` `  :strong:` :ref:`Console <ConsoleConfChapter>`  ` 
-================================================== ========================================================================== ===================================================================== ======================================================================= =========================================================================
-Autochanger                                                                                                                                                                                         :ref:`|checkmark| <StorageResourceAutochanger>`                       
-Catalog                                            :ref:`|checkmark| <DirectorResourceCatalog>`                                                                                                                                                                           
-Client                                             :ref:`|checkmark| <DirectorResourceClient>`                               :ref:`|checkmark| <ClientResourceClient>`                                                                                                   
-Console                                            :ref:`|checkmark| <DirectorResourceConsole>`                                                                                                                                                                            :ref:`|checkmark| <ConsoleResourceConsole>`
-Device                                                                                                                                                                                              :ref:`|checkmark| <StorageResourceDevice>`                            
-Director                                           :ref:`|checkmark| <DirectorResourceDirector>`                             :ref:`|checkmark| <ClientResourceDirector>`                          :ref:`|checkmark| <StorageResourceDirector>`                           :ref:`|checkmark| <ConsoleResourceDirector>`
-FileSet                                            :ref:`|checkmark| <DirectorResourceFileSet>`                                                                                                                                                                           
-Job                                                :ref:`|checkmark| <DirectorResourceJob>`                                                                                                                                                                               
-JobDefs                                            :ref:`|checkmark| <DirectorResourceJobDefs>`                                                                                                                                                                           
-Message                                            :ref:`|checkmark| <ResourceMessages>`                                     :ref:`|checkmark| <ResourceMessages>`                                :ref:`|checkmark| <ResourceMessages>`                                 
-NDMP                                                                                                                                                                                                :ref:`|checkmark| <StorageResourceNDMP>`                              
-Pool                                               :ref:`|checkmark| <DirectorResourcePool>`                                                                                                                                                                              
-Profile                                            :ref:`|checkmark| <DirectorResourceProfile>`                                                                                                                                                                           
-Schedule                                           :ref:`|checkmark| <DirectorResourceSchedule>`                                                                                                                                                                          
-Storage                                            :ref:`|checkmark| <DirectorResourceStorage>`                                                                                                    :ref:`|checkmark| <StorageResourceStorage>`                           
-================================================== ========================================================================== ===================================================================== ======================================================================= =========================================================================
 
 .. _Names:
 

@@ -480,28 +480,6 @@ You can use several expressions separated by a commas.
 Examples
 ^^^^^^^^
 
-# Tabular in LaTex format (original)
-
-::
-
-   \begin{tabular}{|c|c|c|l|}
-   \hline
-   Orignal filename & New filename & RegexWhere & Comments \\
-   \hline
-   \hline
-   \texttt{c:/system.ini} & \texttt{c:/system.old.ini} & \texttt{/.ini\$/.old.ini/} & \$ matches end of name\\
-   \hline
-   \texttt{/prod/u01/pdata/} & \texttt{/rect/u01/rdata}  & \texttt{/prod/rect/,/pdata/rdata/} & uses two regexp\\
-   \hline
-   \texttt{/prod/u01/pdata/} & \texttt{/rect/u01/rdata}  & \texttt{!/prod/!/rect/!,/pdata/rdata/} & use \texttt{!} as separator\\
-   \hline
-   \texttt{C:/WINNT} & \texttt{d:/WINNT}  & \texttt{/c:/d:/i} & case insensitive pattern match \\
-   \hline
-
-   \end{tabular}
-
-# Tabular converted from LaTeX to RST (or empty, in case of problems):
-
 ==================== ===================== ================================= ==============================
 Orignal filename     New filename          RegexWhere                        Comments
 ==================== ===================== ================================= ==============================

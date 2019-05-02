@@ -164,51 +164,24 @@ When using NDMP_BAREOS, the |sd| acts as Tape Agent.
 
 When using NDMP_NATIVE, the Tape Agent must be provided by some other systems. Some storage vendors provide it with there storages, or offer it as an option, e.g. Isilon with their "Isilon Backup Accelerator".
 
-# Tabular in LaTex format (original)
+.. csv-table::
+   :header: "", |ndmpbareos|, |ndmpnative|
+   
+   Data Management Agent,                                   |dir|,       |dir| 
+   Tape Agent,                                              |sd|,        external
+   Requires external Tape Agent,                                       , |checkmark| 
+   Backup to tape (and VTL),                                |checkmark|, |checkmark| 
+   Backup to other :config:option:`sd/device/DeviceType`\ , |checkmark|, 
+   2-way backup,                                                       , |checkmark| 
+   3-way backup,                                            |checkmark|, untested
+   Full Backups,                                            |checkmark|, |checkmark| 
+   Differential Backups,                                    |checkmark|, |checkmark| 
+   Incremental Backups,                                     :ref:`|checkmark| <section-NdmpBackupLevel>` (8), :ref:`|checkmark| <section-NdmpBackupLevel>` (8)
+   Single File Restore,                                     |checkmark|, |checkmark| 
+   DAR,                                                                , |checkmark| 
+   DDAR,                                                               , |checkmark| 
+   :ref:`Copy and Migration jobs <MigrationChapter>`,       |checkmark|, 
 
-::
-
-   \begin{tabular}{l | c | c}
-   \hline
-                                                                   & |ndmpbareos|                          & |ndmpnative| \\
-   \hline
-   Data Management Agent                                            & |dir|                           & |dir|  \\
-   Tape Agent                                                      & |sd|                            & external    \\
-   requires external Tape Agent                                    &                                      & |checkmark| \\
-   backup to tape (and VTL)                                        & |checkmark|                          & |checkmark| \\
-   backup to other :config:option:`sd/device/DeviceType`\  & |checkmark|                          & \\
-   2-way backup                                                    &                                      & |checkmark| \\
-   3-way backup                                                    & |checkmark|                          & untested    \\
-   Full Backups                                                    & |checkmark|                          & |checkmark| \\
-   Differential Backups                                            & |checkmark|                          & |checkmark| \\
-   Incremental Backups                                             & :ref:`|checkmark| <section-NdmpBackupLevel>` (8) & :ref:`|checkmark| <section-NdmpBackupLevel>` (8)\\
-   Single File Restore                                             & |checkmark|                          & |checkmark| \\
-   DAR                                                             &                                      & |checkmark| \\
-   DDAR                                                            &                                      & |checkmark| \\
-   :ref:`Copy and Migration jobs <MigrationChapter>`               & |checkmark|                          & \\
-   \hline
-   \end{tabular}
-
-# Tabular converted from LaTeX to RST (or empty, in case of problems):
-
-============================================================================= ================================================== =================================================
-\                                                                             |ndmpbareos|  |ndmpnative| 
-============================================================================= ================================================== =================================================
-Data Management Agent  |dir|  |dir| 
-Tape Agent  |sd|  external
-requires external Tape Agent                                                     |checkmark| 
-backup to tape (and VTL)                                                      |checkmark|  |checkmark| 
-backup to other :config:option:`sd/device/DeviceType`\   |checkmark| 
-2-way backup                                                                                                                     |checkmark| 
-3-way backup                                                                  |checkmark|  untested
-Full Backups                                                                  |checkmark|  |checkmark| 
-Differential Backups                                                          |checkmark|  |checkmark| 
-Incremental Backups                                                           :ref:`|checkmark| <section-NdmpBackupLevel>` (8)  :ref:`|checkmark| <section-NdmpBackupLevel>` (8)
-Single File Restore                                                           |checkmark|  |checkmark| 
-DAR                                                                                                                              |checkmark| 
-DDAR                                                                                                                             |checkmark| 
-:ref:`Copy and Migration jobs <MigrationChapter>`                |checkmark| 
-============================================================================= ================================================== =================================================
 
 .. _section-NdmpBareos:
 
@@ -914,26 +887,11 @@ data is restored in a different directory, but into the same filesystem. If the 
 
 Example:
 
-# Tabular in LaTex format (original)
-
-::
-
-   \begin{tabular}{l | l | l}
-   \hline
-   original file name &  where &  restored file \\
-   \hline
-   :file:`/ifs/home/admin/.zshrc` & :file:`/bareos-restores`           & :file:`/ifs/home/bareos-restores/admin/.zshrc` \\
-   :file:`/ifs/home/admin/.zshrc` & \textasciicircum\verb|path:/ifs/data/bareos-restores| & :file:`/ifs/data/bareos-restores/admin/.zshrc` \\
-   \hline
-   \end{tabular}
-
-# Tabular converted from LaTeX to RST (or empty, in case of problems):
-
 =============================== ===================================== ===============================================
 original file name              where                                 restored file
 =============================== ===================================== ===============================================
-:file:`/ifs/home/admin/.zshrc` :file:`/bareos-restores`             :file:`/ifs/home/bareos-restores/admin/.zshrc`
-:file:`/ifs/home/admin/.zshrc` ^\ :file:`/ifs/data/bareos-restores` :file:`/ifs/data/bareos-restores/admin/.zshrc`
+:file:`/ifs/home/admin/.zshrc`  :file:`/bareos-restores`               :file:`/ifs/home/bareos-restores/admin/.zshrc`
+:file:`/ifs/home/admin/.zshrc`  :file:`^/ifs/data/bareos-restores`     :file:`/ifs/data/bareos-restores/admin/.zshrc`
 =============================== ===================================== ===============================================
 
 NDMP Copy Jobs
@@ -1935,22 +1893,6 @@ NDMP Backup Level
 
 The trailing number in the main backup file (after the :file:`%` character) indicates the NDMP backup level:
 
-# Tabular in LaTex format (original)
-
-::
-
-   \begin{tabular}{c | l}
-   \hline
-   Level & Description \\
-   \hline
-   0 & Full NDMP backup. \\
-   1 & Differential or first Incremental backup.\\
-   2-9 & second to ninth Incremental backup.\\
-   \hline
-   \end{tabular}
-
-# Tabular converted from LaTeX to RST (or empty, in case of problems):
-
 ===== =========================================
 Level Description
 ===== =========================================
@@ -2048,35 +1990,11 @@ Tested Environments
 
 Bareos NDMP support have been tested against:
 
-# Tabular in LaTex format (original)
+.. csv-table::
+   :header: Vendor, Product, "NDMP Subsystem", "Bareos version", "Tape Agent", Features, Remarks
 
-::
-
-   \begin{tabular}{l | l | l | l | l | l | l}
-   \hline
-   Vendor     & Product                       & NDMP Subsystem       & Bareos version & Tape Agent     & Features & Remarks \\
-   \hline
-   Isilon     & Isilon OneFS v7.2.1.4         & Isilon NDMP 2.2.1    & bareos-17.2.3  & Isilon Backup Accelerator & & Protocol: \NdmpNative\\
-
-   Isilon     & Isilon OneFS v7.2.0.1         & Isilon NDMP 2.2      & bareos-16.2.6  & |sd| &        & \\
-   Isilon     & Isilon OneFS v7.1.1.5         & Isilon NDMP 2.2      & bareos-15.2.2  & |sd| &          & \\
-   NetApp     &                               & Release 8.2.3 7-Mode & bareos-15.2.2  & |sd| &          & \\
-   Oracle/Sun & ZFS Storage Appliance, OS 8.3 &                      & bareos-15.2.2  & |sd| &          & \\
-   \hline
-   \end{tabular}
-
-# Tabular converted from LaTeX to RST (or empty, in case of problems):
-
-========== ============================= ==================== ============== ============================ ======== ==================================
-Vendor     Product                       NDMP Subsystem       Bareos version Tape Agent  Features Remarks
-========== ============================= ==================== ============== ============================ ======== ==================================
-Isilon     Isilon OneFS v7.2.1.4         Isilon NDMP 2.2.1    bareos-17.2.3  Isilon Backup Accelerator             Protocol: |ndmpnative|
-Isilon     Isilon OneFS v7.2.0.1         Isilon NDMP 2.2      bareos-16.2.6  |sd|               
-Isilon     Isilon OneFS v7.1.1.5         Isilon NDMP 2.2      bareos-15.2.2  |sd|               
-NetApp                                   Release 8.2.3 7-Mode bareos-15.2.2  |sd|               
-Oracle/Sun ZFS Storage Appliance, OS 8.3                      bareos-15.2.2  |sd|               
-========== ============================= ==================== ============== ============================ ======== ==================================
-
-
-
-
+   Isilon,     Isilon OneFS v7.2.1.4, Isilon NDMP 2.2.1   , bareos-17.2.3, Isilon Backup Accelerator, ,             Protocol: |ndmpnative|
+   Isilon,     Isilon OneFS v7.2.0.1, Isilon NDMP 2.2     , bareos-16.2.6, |sd|               
+   Isilon,     Isilon OneFS v7.1.1.5, Isilon NDMP 2.2     , bareos-15.2.2, |sd|               
+   NetApp,                          , Release 8.2.3 7-Mode, bareos-15.2.2, |sd|               
+   Oracle/Sun, ZFS Storage Appliance, OS 8.3              , bareos-15.2.2, |sd|               

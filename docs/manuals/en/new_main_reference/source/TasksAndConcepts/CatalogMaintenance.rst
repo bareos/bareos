@@ -69,35 +69,9 @@ Manual Configuration
 
 Bareos comes with a number of scripts to prepare and update the databases. All these scripts are located in the Bareos script directory, normally at :file:`/usr/lib/bareos/scripts/`.
 
-# Tabular in LaTex format (original)
-
-::
-
-   \begin{tabular}{| l | l | l |}
-   \hline
-   :strong:`Script`                & :strong:`Stage` & :strong:`Description` \\
-   \hline
-   \hline
-   :file:`create_bareos_database`  & installation & create Bareos database \\
-   :file:`make_bareos_tables`      & installation & create Bareos tables \\
-   :file:`grant_bareos_privileges` & installation & grant database access privileges \\
-   \hline
-   :file:`update_bareos_tables` [-f]   & update       & update the database schema \\
-   \hline
-   :file:`drop_bareos_tables`      & deinstallation & remove Bareos database tables \\
-   :file:`drop_bareos_database`    & deinstallation & remove Bareos database \\
-   \hline
-   :file:`make_catalog_backup.pl`  & backup         & backup the Bareos database, default on Linux \\
-   :file:`make_catalog_backup`     & backup         & backup the Bareos database for systems without Perl \\
-   :file:`delete_catalog_backup`   & backup helper  & remove the temporary Bareos database backup  file \\
-   \hline
-   \end{tabular}
-
-# Tabular converted from LaTeX to RST (or empty, in case of problems):
-
-============================================= ============== ===================================================
-**Script**                                    **Stage**      **Description**
-============================================= ============== ===================================================
+================================= ============== ===================================================
+**Script**                        **Stage**      **Description**
+================================= ============== ===================================================
 :file:`create_bareos_database`    installation   create Bareos database
 :file:`make_bareos_tables`        installation   create Bareos tables
 :file:`grant_bareos_privileges`   installation   grant database access privileges
@@ -107,7 +81,7 @@ Bareos comes with a number of scripts to prepare and update the databases. All t
 :file:`make_catalog_backup.pl`    backup         backup the Bareos database, default on Linux
 :file:`make_catalog_backup`       backup         backup the Bareos database for systems without Perl
 :file:`delete_catalog_backup`     backup helper  remove the temporary Bareos database backup file
-============================================= ============== ===================================================
+================================= ============== ===================================================
 
 The database preparation scripts have following configuration options:
 
