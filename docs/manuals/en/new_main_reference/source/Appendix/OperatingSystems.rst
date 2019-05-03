@@ -3,7 +3,8 @@
 Operating Systems
 =================
 
-:index:`\ <single: Systems; Supported Operating Systems>`\  :index:`\ <single: Support; Operating Systems>`\ 
+:index:`\ <single: Systems; Supported Operating Systems>`
+:index:`\ <single: Support; Operating Systems>`
 
 The Bareos project provides and supports packages that have been released at http://download.bareos.org/bareos/release/
 

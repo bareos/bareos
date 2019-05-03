@@ -19,8 +19,8 @@ restore job. You must use the restore command.
 Since Bareos is a network backup program, you must be aware that when you restore files, it is up to you to ensure that you or Bareos have selected the correct Client and the correct hard disk location for restoring those files. Bareos will quite willingly backup client A, and restore it by sending the files to a different directory on client B. Normally, you will want to avoid this, but assuming the operating systems are not too different in their file structures, this should work perfectly
 well, if so desired. By default, Bareos will restore data to the same Client that was backed up, and those data will be restored not to the original places but to /tmp/bareos-restores. This is configured in the default restore command resource in bareos-dir.conf. You may modify any of these defaults when the restore command prompts you to run the job by selecting the mod option.
 
-The Restore Command
--------------------
+Restore Command
+---------------
 
 :index:`\ <single: Console; Command; restore>`\ 
 

@@ -82,6 +82,8 @@ Another thing to check is to ensure that the Bareos component you are trying to 
 
 .. _ConcurrentJobs:
 
+.. _section-Interleaving:
+
 Concurrent Jobs
 ---------------
 
@@ -90,49 +92,28 @@ Concurrent Jobs
 Bareos can run multiple concurrent jobs. Using the :strong:`Maximum Concurrent Jobs`\  directives, you can configure how many and which jobs can be run simultaneously:
 
 |dir|
-   | 
 
-   -  
+   - :config:option:`dir/director/MaximumConcurrentJobs`\ 
 
-      :config:option:`dir/director/MaximumConcurrentJobs`\ 
+   - :config:option:`dir/client/MaximumConcurrentJobs`\ 
 
-   -  
+   - :config:option:`dir/job/MaximumConcurrentJobs`\ 
 
-      :config:option:`dir/client/MaximumConcurrentJobs`\ 
-
-   -  
-
-      :config:option:`dir/job/MaximumConcurrentJobs`\ 
-
-   -  
-
-      :config:option:`dir/storage/MaximumConcurrentJobs`\ 
+   - :config:option:`dir/storage/MaximumConcurrentJobs`\ 
 
 |sd|
-   | 
 
-   -  
+   - :config:option:`sd/storage/MaximumConcurrentJobs`\ 
 
-      :config:option:`sd/storage/MaximumConcurrentJobs`\ 
-
-   -  
-
-      :config:option:`sd/device/MaximumConcurrentJobs`\ 
+   - :config:option:`sd/device/MaximumConcurrentJobs`\ 
 
 |fd|
-   | 
 
-   -  
-
-      :config:option:`fd/client/MaximumConcurrentJobs`\ 
+   - :config:option:`fd/client/MaximumConcurrentJobs`\ 
 
 For example, if you want two different jobs to run simultaneously backing up the same Client to the same Storage device, they will run concurrently only if you have set :strong:`Maximum Concurrent Jobs`\  greater than one in the :config:option:`Dir/Director`\  resource, the :config:option:`Dir/Client`\  resource, and the :config:option:`Dir/Storage`\  resource in |dir| configuration.
 
-
-
-.. _section-Interleaving:
-
- When running concurrent jobs without :ref:`section-DataSpooling`, the volume format becomes more complicated, consequently, restores may take longer if Bareos must sort through interleaved volume blocks from multiple simultaneous jobs. This can be avoided by having each simultaneous job write to a different volume or by using data spooling We recommend that you read the :ref:`section-DataSpooling` of this manual first,
+When running concurrent jobs without :ref:`section-DataSpooling`, the volume format becomes more complicated, consequently, restores may take longer if Bareos must sort through interleaved volume blocks from multiple simultaneous jobs. This can be avoided by having each simultaneous job write to a different volume or by using data spooling We recommend that you read the :ref:`section-DataSpooling` of this manual first,
 then test your multiple concurrent backup including restore testing before you put it into production.
 
 When using random access media as backup space (e.g. disk), you should also read the chapter about :ref:`ConcurrentDiskJobs`.

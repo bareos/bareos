@@ -20,14 +20,14 @@ What database will be used, can be configured in the |dir| configuration, see th
 
 The database often runs on the same server as the |dir|. However, it is also possible to run it on a different system. This might require some more manual configuration, a PostgreSQL example can be found in :ref:`catalog-maintenance-remote-psql`.
 
-dbconfig-common (Debian)
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-:index:`\ <single: Platform; Debian; dbconfig-common>`\  :index:`\ <single: Platform; Ubuntu; dbconfig-common>`\  
 
 .. _section-dbconfig:
 
+dbconfig-common (Debian)
+~~~~~~~~~~~~~~~~~~~~~~~~
 
+:index:`\ <single: Platform; Debian; dbconfig-common>`
+:index:`\ <single: Platform; Ubuntu; dbconfig-common>`
 
 Since Bareos :sinceVersion:`14.2.0: dbconfig-common (Debian)` the Debian (and Ubuntu) based packages support the **dbconfig-common** mechanism to create and update the Bareos database, according to the user choices.
 
@@ -52,9 +52,9 @@ The Bareos database backend will get automatically configured in :file:`/etc/bar
 
 
 
-   .. warning::
+.. warning::
 
-      When using the PostgreSQL backend and updating to Bareos < 14.2.3, it is necessary to manually grant database permissions (:command:`grant_bareos_privileges`), normally by
+   When using the PostgreSQL backend and updating to Bareos < 14.2.3, it is necessary to manually grant database permissions (:command:`grant_bareos_privileges`), normally by
 
 .. code-block:: shell-session
 
@@ -547,7 +547,8 @@ Retention Periods
 Database Size
 ~~~~~~~~~~~~~
 
-:index:`\ <single: Size; Database>`\  :index:`\ <single: Database Size>`\ 
+:index:`\ <single: Size; Database>`
+:index:`\ <single: Database Size>`
 
 As mentioned above, if you do not do automatic pruning, your Catalog will grow each time you run a Job. Normally, you should decide how long you want File records to be maintained in the Catalog and set the File Retention period to that time. Then you can either wait and see how big your Catalog gets or make a calculation assuming approximately 154 bytes for each File saved and knowing the number of Files that are saved during each backup and the number of Clients you backup.
 
@@ -658,21 +659,18 @@ You can use the following Job resource in your nightly :config:option:`dir/job =
      }
    }
 
-.. _postgresql-1:
 
 PostgreSQL
 ----------
 
 :index:`\ <single: Database; PostgreSQL>`\  :index:`\ <single: PostgreSQL>`\ 
 
+.. _CompactingPostgres:
+
 Compacting Your PostgreSQL Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :index:`\ <single: Database; PostgreSQL; Compacting>`\  
-
-.. _CompactingPostgres:
-
-
 
 Over time, as noted above, your database will tend to grow until Bareos starts deleting old expired records based on retention periods. After that starts, it is expected that the database size remains constant, provided that the amount of clients and files being backed up is constant.
 
@@ -757,9 +755,9 @@ Note that the statistics views in PostgreSQL are not persistent, their values ar
 
 To setup a scheduled admin job for vacuuming the file table, the following must be done:
 
-#. | Create a file with the SQL statements for example
-   | ``/usr/local/lib/bareos/scripts/postgresql_file_table_maintenance.sql``
-   | with the following content:
+#. Create a file with the SQL statements for example
+   ``/usr/local/lib/bareos/scripts/postgresql_file_table_maintenance.sql``
+   with the following content:
 
    .. code-block:: shell-session
       :caption: SQL Script for vacuuming the file table on PostgreSQL
@@ -780,9 +778,9 @@ To setup a scheduled admin job for vacuuming the file table, the following must 
 
    The SELECT statements are for informational purposes only, the final statement shows the total and index disk usage of the 5 largest tables.
 
-#. | Create a shell script that runs the SQL statements, for example
-   | ``/usr/local/lib/bareos/scripts/postgresql_file_table_maintenance.sh``
-   | with the following content:
+#. Create a shell script that runs the SQL statements, for example
+   ``/usr/local/lib/bareos/scripts/postgresql_file_table_maintenance.sh``
+   with the following content:
 
    .. code-block:: shell-session
       :caption: SQL Script for vacuuming the file table on PostgreSQL
@@ -833,7 +831,8 @@ To setup a scheduled admin job for vacuuming the file table, the following must 
 Repairing Your PostgreSQL Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Database; Repairing Your PostgreSQL>`\  :index:`\ <single: Repairing Your PostgreSQL Database>`\ 
+:index:`\ <single: Database; Repairing Your PostgreSQL>`
+:index:`\ <single: Repairing Your PostgreSQL Database>`
 
 The same considerations apply as for :ref:`RepairingMySQL`. Consult the PostgreSQL documents for how to repair the database.
 
@@ -842,29 +841,26 @@ For Bareos specific problems, consider using :ref:`bareos-dbcheck` program.
 MySQL/MariaDB
 -------------
 
-:index:`\ <single: Database; MySQL>`\  :index:`\ <single: MySQL>`\ 
+:index:`\ <single: Database; MySQL>`
+:index:`\ <single: MySQL>`
+
+
+.. _section-MysqlSupport:
 
 MySQL/MariaDB Support
 ~~~~~~~~~~~~~~~~~~~~~
 
 :index:`\ <single: MariaDB|see{MySQL}>`\  
 
-.. _section-MysqlSupport:
-
-
-
 As MariaDB is a fork of MySQL, we use MySQL as synonym for MariaDB and fully support it. We test our packages against the preferred MySQL fork that a distribution provides.
 
 
+.. _CompactingMySQL:
 
 Compacting Your MySQL Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :index:`\ <single: Database; MySQL; Compacting>`\  
-
-.. _CompactingMySQL:
-
-
 
 Over time, as noted above, your database will tend to grow. Even though Bareos regularly prunes files, MySQL does not automatically reuse the space, and instead continues growing.
 
@@ -883,13 +879,14 @@ You can do this via the mysqlcheck command:
 Please note that the database files are never shrunk by MySQL. If you really need to shrink the database files, you need to recreate the database. This only works if you use per-table tablespaces by setting the innodb_file_per_table configuration option. See `http://dev.mysql.com/doc/refman/5.5/en/innodb-multiple-tablespaces.html <http://dev.mysql.com/doc/refman/5.5/en/innodb-multiple-tablespaces.html>`_ for details.
 
 
+.. _RepairingMySQL:
 
 Repairing Your MySQL Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :index:`\ <single: Database; Repairing Your MySQL>`\  :index:`\ <single: Repairing Your MySQL Database>`\  
 
-.. _RepairingMySQL:
+
 
 
 
@@ -991,16 +988,14 @@ In this case the |mysql| ``innodb_lock_wait_timeout`` must be increased. A value
 
 
 
-
+.. _BackingUpBareos:
 
 Backing Up Your Bareos Database
 -------------------------------
 
-:index:`\ <single: Backup; Bareos database>`\  :index:`\ <single: Backup; Catalog>`\  :index:`\ <single: Database; Backup Bareos database>`\  
-
-.. _BackingUpBareos:
-
-
+:index:`\ <single: Backup; Bareos database>`
+:index:`\ <single: Backup; Catalog>`
+:index:`\ <single: Database; Backup Bareos database>`
 
 If ever the machine on which your Bareos database crashes, and you need to restore from backup tapes, one of your first priorities will probably be to recover the database. Although Bareos will happily backup your catalog database if it is specified in the FileSet, this is not a very good way to do it, because the database will be saved while Bareos is modifying it. Thus the database may be in an instable state. Worse yet, you will backup the database before all the Bareos updates have been
 applied.
@@ -1069,8 +1064,3 @@ Assuming that you start all your nightly backup jobs at 1:05 am (and that they r
    }
 
 It is preferable to write/send the :ref:`bootstrap <BootstrapChapter>` file to another computer. It will allow you to quickly recover the database backup should that be necessary. If you do not have a bootstrap file, it is still possible to recover your database backup, but it will be more work and take longer. 
-
-
-
-
-

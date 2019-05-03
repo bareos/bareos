@@ -174,14 +174,14 @@ The first three records (:config:option:`dir/client/FileRetention`\ , :config:op
 The :config:option:`dir/pool/MaximumVolumes`\  record can also be used in conjunction with the :config:option:`dir/pool/VolumeRetention`\  period to limit the total number of archive Volumes that Bareos will create. By setting an appropriate :config:option:`dir/pool/VolumeRetention`\  period, a Volume will be purged just before it is needed and thus Bareos can cycle through a fixed set of Volumes. Cycling through a fixed set of
 Volumes can also be done by setting :config:option:`dir/pool/PurgeOldestVolume`\  = yes or :config:option:`dir/pool/RecycleCurrentVolume`\  = yes. In this case, when Bareos needs a new Volume, it will prune the specified volume.
 
+.. _ConcurrentDiskJobs:
+
 Concurrent Disk Jobs
 --------------------
 
 :index:`\ <single: Concurrent Disk Jobs>`\  
 
-.. _ConcurrentDiskJobs:
-
- Above, we discussed how you could have a single device named :config:option:`Sd/Device = FileBackup`\  that writes to volumes in :file:`/var/lib/bareos/storage/`. You can, in fact, run multiple concurrent jobs using the Storage definition given with this example, and all the jobs will simultaneously write into the Volume that is being written.
+Above, we discussed how you could have a single device named :config:option:`Sd/Device = FileBackup`\  that writes to volumes in :file:`/var/lib/bareos/storage/`. You can, in fact, run multiple concurrent jobs using the Storage definition given with this example, and all the jobs will simultaneously write into the Volume that is being written.
 
 Now suppose you want to use multiple Pools, which means multiple Volumes, or suppose you want each client to have its own Volume and perhaps its own directory such as /home/bareos/client1 and /home/bareos/client2 ... . With the single Storage and Device definition above, neither of these two is possible. Why? Because Bareos disk storage follows the same rules as tape devices. Only one Volume can be mounted on any Device at any time. If you want to simultaneously write multiple Volumes, you will
 need multiple Device resources in your |sd| configuration and thus multiple Storage resources in your |dir| configuration.
@@ -925,13 +925,9 @@ If you wish to reuse the tape by giving it a new name, use the :bcommand:`relabe
 
 
 
-   .. warning::
+.. warning::
 
-      The :bcommand:`delete` command can be dangerous. Once it is
+   The :bcommand:`delete` command can be dangerous. Once it is
    done, to recover the File records, you must either restore your database as it
    was before the :bcommand:`delete` command or use the :ref:`bscan` utility program to
    scan the tape and recreate the database entries.
-
-
-
-

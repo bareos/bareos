@@ -164,11 +164,14 @@ Following records control how Bareos uses the autochanger:
    Specifies if the current device belongs to an autochanger resource.
 
 :config:option:`sd/autochanger/ChangerCommand`\  (:config:option:`sd/device/ChangerCommand`\ )
+
 :config:option:`sd/autochanger/ChangerDevice`\  (:config:option:`sd/device/ChangerDevice`\ )
+
 :config:option:`sd/device/DriveIndex`\ 
    Individual driver number, starting at 0.
 
 :config:option:`sd/device/MaximumChangerWait`\ 
+
 
 Specifying Slots When Labeling
 ------------------------------
@@ -417,15 +420,13 @@ To "see" how you have labeled your Volumes, simply enter the list volumes comman
    +-------+----------+--------+---------+-------+--------+----------+-------+------+
 
 
+.. _Barcodes:
 
 Barcode Support
 ---------------
 
-:index:`\ <single: Support; Barcode>`\  :index:`\ <single: Barcode Support>`\  
-
-.. _Barcodes:
-
-
+:index:`\ <single: Support; Barcode>`
+:index:`\ <single: Barcode Support>`
 
 Bareos provides barcode support with two Console commands, label barcodes and update slots.
 
@@ -491,18 +492,18 @@ Bareos calls the autochanger script that you specify on the Changer Command stat
 
 Bareos checks the exit status of the program called, and if it is zero, the data is accepted. If the exit status is non-zero, Bareos will print an error message and request the tape be manually mounted on the drive.
 
-Tapespeed and blocksizes
-------------------------
-
-:index:`\ <single: Tuning; Tape>`\  :index:`\ <single: Tuning; blocksize>`\  :index:`\ <single: Tape; speed>`\  :index:`\ <single: Blocksize; optimize>`\  
 
 .. _Tapespeed and blocksizes:
 
- 
-
 .. _setblocksizes:
 
+Tapespeed and blocksizes
+------------------------
 
+:index:`\ <single: Tuning; Tape>`
+:index:`\ <single: Tuning; blocksize>`
+:index:`\ <single: Tape; speed>`
+:index:`\ <single: Blocksize; optimize>`
 
 The `Bareos Whitepaper Tape Speed Tuning <http://www.bareos.org/en/Whitepapers/articles/Speed_Tuning_of_Tape_Drives.html>`_ shows that the two parameters :strong:`Maximum File Size`\  and :strong:`Maximum Block Size`\  of the device have significant influence on the tape speed.
 

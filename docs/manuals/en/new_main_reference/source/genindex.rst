@@ -10,6 +10,7 @@
    However, you can't add an entry for this into the toctree.
    Therefore this fake file is created and included to the toctree.
 
+.. _genindex:
 
 Index
 =====

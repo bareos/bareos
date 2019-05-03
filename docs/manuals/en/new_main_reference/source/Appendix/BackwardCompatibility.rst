@@ -1,20 +1,17 @@
+.. _backward-compatibility:
+
 Backward Compatibility
 ======================
 
 :index:`\ <single: Compatibility; Backward>`\  
 
-.. _backward-compatibility:
 
-
+.. _backward-compatibility-tape-format:
 
 Tape Formats
 ------------
 
 :index:`\ <single: Tape; Format>`\  
-
-.. _backward-compatibility-tape-format:
-
-
 
 One of the major goals of Backup software is to ensure that you can restore tapes (the word tape should also include disk volumes) that you wrote years ago. This means that each new version of the software should be able to read old format tapes. The first problem you will have is to ensure that the hardware is still working some years down the road, and the second problem will be to ensure that the media will still be good, then your OS must be able to interface to the device, and finally
 Bareos must be able to recognize old formats. All the problems except the last are ones that we cannot solve, but by careful planning you can.
@@ -23,14 +20,14 @@ Since the very beginning of Bacula (January 2000) until today (2015), there have
 
 Though the tape format is basically fixed, the kinds of data that we can put on the tapes are extensible, and that is how we added new features such as ACLs, Win32 data, encrypted data, ... Obviously, an older version of Bacula/Bareos would not know how to read these newer data streams, but each newer version of Bareos should know how to read all the older streams.
 
-Compatibility between Bareos and Bacula
----------------------------------------
-
-:index:`\ <single: Compatibility; Bacula>`\  :index:`\ <single: Bacula>`\  
 
 .. _compat-bacula:
 
+Compatibility between Bareos and Bacula
+---------------------------------------
 
+:index:`\ <single: Compatibility; Bacula>`
+:index:`\ <single: Bacula>`
 
 A Director and a Storage Daemon should (must) always run at the same version. This is true for Bareos as well as for Bacula. It is not possible to mix these components. This is because the protocol between Director and Storage Daemon itself is not versioned (also true for Bareos and Bacula). If you want to be able to switch back from Bareos to Bacula after using a Bareos director and storage daemon you have to enable the compatible mode in the Bareos storage daemon to have it write the data in
 the same format as the Bacula storage daemon.
@@ -56,14 +53,13 @@ Bacula       Bacula             Bareos (compatibility mode)
 
 Other combinations like Bacula Director with |sd| will not work. However this wasn’t even possible with different versions of bacula-dir and bacula-sd.
 
+.. _upgrade-from-bacula-to-bareos:
+
 Upgrade from Bacula 5.2 to Bareos
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Upgrade from Bacula to Bareos>`\  :index:`\ <single: Bareos; Upgrading>`\  
-
-.. _upgrade-from-bacula-to-bareos:
-
-
+:index:`\ <single: Upgrade from Bacula to Bareos>`
+:index:`\ <single: Bareos; Upgrading>`
 
 Upgrade is supported from Bacula version 5.2.x. If you are running any older version of Bacula, please update to 5.2 first (see Bacula documentation).
 
@@ -163,7 +159,5 @@ Renaming a postgresql database:
       ALTER DATABASE bacula RENAME TO bareos;
       ALTER USER bacula RENAME TO bareos;
       ALTER USER bareos UNENCRYPTED PASSWORD 'password';
-
-
 
 

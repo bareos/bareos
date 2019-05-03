@@ -1,13 +1,10 @@
-.. _Win32Chapter:
+.. _section-windows:
 
 The Windows Version of Bareos
 =============================
 
-
-
-.. _section-windows:
-
- :index:`\ <single: Platform; Windows>`\  :index:`\ <single: Windows>`\ 
+:index:`\ <single: Platform; Windows>`
+:index:`\ <single: Windows>`
 
 The Windows version of Bareos is a native Win32 port, but there are very few source code changes to the Unix code, which means that the Windows version is for the most part running code that has long proved stable on Unix systems.
 
@@ -19,14 +16,13 @@ Once installed Bareos normally runs as a system service. This means that it is i
 
 .. _Windows:Installation:
 
+.. _Windows:Configuration:Files:
+
 Windows Installation
 --------------------
 
-
-
-.. _Windows:Configuration:Files:
-
- :index:`\ <single: Installation; Windows>`\  :index:`\ <single: Windows; File Daemon; Installation>`\ 
+:index:`\ <single: Installation; Windows>`
+:index:`\ <single: Windows; File Daemon; Installation>`
 
 Normally, you will install the Windows version of Bareos from the binaries. The **winbareos** binary packages are provided under http://download.bareos.org/bareos/release/latest/windows. Additionally, there are `OPSI <http://www.opsi.org>`_ packages available under http://download.bareos.org/bareos/release/latest/windows/opsi.
 
@@ -370,14 +366,14 @@ Support for Windows EFS filesystems
 
 Windows has support for a so called EFS filesystem. This is an encrypted filesystem, to be able to backup the data and to restore it we need to use a special API. With this API you in essence export the data on backup and import it on restore. This way you never have access to the unencrypted data but just import and export the encrypted data. This is the cleanest way of handling encryption by just seeing the data as some opaque data and not try to do anything special with it.
 
-Volume Shadow Copy Service (VSS)
---------------------------------
-
-:index:`\ <single: Windows; Volume Shadow Copy Service>`\  :index:`\ <single: Windows; VSS>`\  
 
 .. _VSS:
 
+Volume Shadow Copy Service (VSS)
+--------------------------------
 
+:index:`\ <single: Windows; Volume Shadow Copy Service>`
+:index:`\ <single: Windows; VSS>`
 
 VSS is available since Windows XP. From the perspective of a backup-solution for Windows, this is an extremely important step. VSS allows Bareos to backup open files and even to interact with applications like RDBMS to produce consistent file copies. VSS aware applications are called VSS Writers, they register with the OS so that when Bareos wants to do a Snapshot, the OS will notify the register Writer programs, which may then create a consistent state in their application, which will be backed
 up. Examples for these writers are "MSDE" (Microsoft database engine), "Event Log Writer", "Registry Writer" plus 3rd party-writers. If you have a non-vss aware application a shadow copy is still generated and the open files can be backed up, but there is no guarantee that the file is consistent.
@@ -388,7 +384,8 @@ Technically Bareos creates a shadow copy as soon as the backup process starts. I
 
 VSS can be turned on by placing an
 
-:index:`\ <single: Enable VSS>`\  :index:`\ <single: VSS; Enable>`\ 
+:index:`\ <single: Enable VSS>`
+:index:`\ <single: VSS; Enable>`
 
 ::
 
@@ -438,7 +435,10 @@ In the above Job Report listing, you see that the VSS snapshot was generated for
 VSS Problems
 ~~~~~~~~~~~~
 
-:index:`\ <single: Windows; Problem; VSS>`\  :index:`\ <single: Windows; VSS; Problem>`\  :index:`\ <single: Windows; Problem; VSS>`\  :index:`\ <single: Problem; Windows; VSS>`\ 
+:index:`\ <single: Windows; Problem; VSS>`
+:index:`\ <single: Windows; VSS; Problem>`
+:index:`\ <single: Windows; Problem; VSS>`
+:index:`\ <single: Problem; Windows; VSS>`
 
 If you are experiencing problems such as VSS hanging on MSDE, first try running vssadmin to check for problems, then try running ntbackup which also uses VSS to see if it has similar problems. If so, you know that the problem is in your Windows machine and not with Bareos.
 
@@ -451,7 +451,8 @@ The FD hang problems were reported with MSDEwriter when:
 Windows Firewalls
 -----------------
 
-:index:`\ <single: Firewall; Windows>`\  :index:`\ <single: Windows; Firewall>`\ 
+:index:`\ <single: Firewall; Windows>`
+:index:`\ <single: Windows; Firewall>`
 
 The Windows buildin Firewall is enabled since Windows version WinXP SP2. The Bareos installer opens the required network ports for Bareos. However, if you are using another Firewall, you might need to manually open the Bareos network ports. The |fd| listens on 9102/TCP.
 
@@ -467,14 +468,16 @@ If you want to see if the File daemon has properly opened the port and is listen
 Windows Restore Problems
 ------------------------
 
-:index:`\ <single: Problem; Windows Restore>`\  :index:`\ <single: Windows; Restore Problem>`\ 
+:index:`\ <single: Problem; Windows Restore>`
+:index:`\ <single: Windows; Restore Problem>`
 
 Please see the :ref:`section-RestoreOnWindows` chapter for problems that you might encounter doing a restore.
 
 Windows Backup Problems
 -----------------------
 
-:index:`\ <single: Problem; Windows Backup>`\  :index:`\ <single: Windows; Backup Problems>`\ 
+:index:`\ <single: Problem; Windows Backup>`
+:index:`\ <single: Windows; Backup Problems>`
 
 If during a Backup, you get the message: ERR=Access is denied and you are using the portable option, you should try both adding both the non-portable (backup API) and the Volume Shadow Copy options to your Director’s conf file.
 
@@ -505,7 +508,8 @@ Thanks to Georger Araujo for the above information.
 Windows Ownership and Permissions Problems
 ------------------------------------------
 
-:index:`\ <single: Problem; Windows Ownership and Permissions>`\  :index:`\ <single: Windows; Ownership and Permissions Problems>`\ 
+:index:`\ <single: Problem; Windows Ownership and Permissions>`
+:index:`\ <single: Windows; Ownership and Permissions Problems>`
 
 If you restore files backed up from Windows to an alternate directory, Bareos may need to create some higher level directories that were not saved (or restored). In this case, the File daemon will create them under the SYSTEM account because that is the account that Bareos runs under as a service and with full access permission. However, there may be cases where you have problems accessing those files even if you run as administrator. In principle, Microsoft supplies you with the way to cease
 the ownership of those files and thus change the permissions. However, a much better solution to working with and changing Win32 permissions is the program SetACL, which can be found at `http://setacl.sourceforge.net/ <http://setacl.sourceforge.net/>`_.

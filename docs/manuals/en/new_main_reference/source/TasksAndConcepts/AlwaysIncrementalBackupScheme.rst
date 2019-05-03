@@ -139,9 +139,9 @@ The always incremental jobs need to be executed during the backup window (usuall
 
 
 
-   .. warning::
+.. warning::
 
-      All Bareos job resources have some required directives, e.g. :config:option:`dir/job/Client`\ .
+   All Bareos job resources have some required directives, e.g. :config:option:`dir/job/Client`\ .
    Even so, none other than the mentioned directives are evaluated by a :config:option:`dir/job/Type = Consolidate`\ ,
    they still have to be defined.
    Normally all required directives are already set in :config:option:`dir/job/JobDefs = DefaultJob`\ .

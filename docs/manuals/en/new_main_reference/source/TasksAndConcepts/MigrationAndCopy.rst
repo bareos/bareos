@@ -200,7 +200,7 @@ The :config:option:`dir/job/SelectionType`\  and :config:option:`dir/job/Selecti
 Another way to accomplish the same is the following Job resource:
 
 .. code-block:: bareosconfig
-   :caption: migrate all jobs named *Save
+   :caption: migrate all jobs named \*Save
 
    Job {
      Name = "migrate"

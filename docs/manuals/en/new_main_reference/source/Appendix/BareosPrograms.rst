@@ -6,6 +6,8 @@ Bareos Programs
 Bareos Daemons
 --------------
 
+.. _section-daemon-command-line-options:
+
 Daemon Command Line Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -97,14 +99,13 @@ bat
 
 The Bacula/Bareos Administration Tool (:command:`bat`) has been a native GUI for Bareos. It has been marked deprecated since :sinceVersion:`15.2.0: bat vs. bareos-webui`. Since Bareos :sinceVersion:`17.2.0: bat: removed from core distribution` it is no longer part of Bareos. We encourage the use of |webui| instead.
 
+.. _section-VolumeUtilityCommands:
+
 Volume Utility Commands
 -----------------------
 
-:index:`\ <single: Volume Utility Tools>`\  :index:`\ <single: Tools; Volume Utility>`\  
-
-.. _section-VolumeUtilityCommands:
-
-
+:index:`\ <single: Volume Utility Tools>`
+:index:`\ <single: Tools; Volume Utility>`
 
 This document describes the utility programs written to aid Bareos users and developers in dealing with Volumes external to Bareos and to perform other useful tasks.
 
@@ -129,9 +130,9 @@ In the case of a tape, this is the physical device name such as /dev/nst0 or /de
 
 
 
-   .. warning::
+.. warning::
 
-      If you have Bareos running and you want to use
+   If you have Bareos running and you want to use
    one of these programs, you will either need to stop the |sd|
    or :bcommand:`unmount` any tape drive you want to use,
    otherwise the drive may get busy because Bareos is using it.
@@ -224,10 +225,13 @@ Specifying Maximum Block Size
 
 If you use Bareos with non-default block sizes defined in the pools (:config:option:`dir/pool/MaximumBlockSize`\ ), it might be necessary to specify the :config:option:`sd/device/MaximumBlockSize`\  also in the storage device resource, see :ref:`Direct access to Volumes with non-default blocksizes <direct-access-to-volumes-with-non-default-blocksizes>`.
 
+.. _bls:
+
 bls
 ~~~
 
-:index:`\ <single: bls>`\  :index:`\ <single: Command; bls>`\ 
+:index:`\ <single: bls>`
+:index:`\ <single: Command; bls>`
 
 :command:`bls` can be used to do an :command:`ls` type listing of a Bareos tape or file. It is called:
 
@@ -456,6 +460,9 @@ If you want to know even more, add a second :strong:`-v` to the command line to 
    bls: block.c:92    Rec: VId=1 VT=1035062102 FI=6 Strm=MD5 len=16 p=8101841
    ...
 
+
+.. _bextract:
+
 bextract
 ~~~~~~~~
 
@@ -497,9 +504,9 @@ where device-name is the Archive Device (raw device name or full filename) of th
 
 
 
-   .. warning::
+.. warning::
 
-      On Windows systems, if you specify a prefix of say d:/tmp, any file that
+   On Windows systems, if you specify a prefix of say d:/tmp, any file that
    would have been restored to :file:`C:/My Documents` will be restored to :file:`D:/tmp/My Documents`.
    That is, the original drive specification will be
    stripped. If no prefix is specified, the file will be restored to the original
@@ -579,6 +586,9 @@ If you want to use exclude or include files you need to write them like you do o
    :caption: Call bextract with exclude list
 
    C:\Program Files\Bareos .\bextract.exe -e exclude.list -c "C:\ProgrammData\Bareos\bareos-sd.conf" -V <Volume> <YourStorage> <YourDestination>
+
+
+.. _bscan:
 
 bscan
 ~~~~~
@@ -780,6 +790,9 @@ After bscan
 If you use bscan to enter the contents of the Volume into an existing catalog, you should be aware that the records you entered may be immediately pruned during the next job, particularly if the Volume is very old or had been previously purged. To avoid this, after running bscan, you can manually set the volume status (VolStatus) to Read-Only by using the update command in the catalog. This will allow you to restore from the volume without having it immediately purged. When you have restored and
 backed up the data, you can reset the VolStatus to Used and the Volume will be purged from the catalog.
 
+
+.. _bcopy:
+
 bcopy
 ~~~~~
 
@@ -809,6 +822,9 @@ By using a bootstrap file, you can copy parts of a Bareos archive file to anothe
 One of the objectives of this program is to be able to recover as much data as possible from a damaged tape. However, the current version does not yet have this feature.
 
 As this is a new program, any feedback on its use would be appreciated. In addition, I only have a single tape drive, so I have never been able to test this program with two tape drives.
+
+
+.. _btape:
 
 btape
 ~~~~~
@@ -910,7 +926,7 @@ This command can have the following arguments:
 
 -  Specify the :config:option:`sd/device/MaximumFileSize`\  for this test. This counter is in GB.
 
--  Specify the number of file to be written. The amount of data should be greater than your memory (file_size :math:`*` nb_file).
+-  Specify the number of file to be written. The amount of data should be greater than your memory (file_size * nb_file).
 
 -  This flag permits to skip tests with constant data.
 
@@ -944,6 +960,9 @@ This command can have the following arguments:
 When using compression, the random test will give your the minimum throughput of your drive . The test using constant string will give you the maximum speed of your hardware chain. (cpu, memory, scsi card, cable, drive, tape).
 
 You can change the block size in the Storage Daemon configuration file.
+
+
+.. _bscrypto:
 
 bscrypto
 ~~~~~~~~
@@ -989,6 +1008,9 @@ Other Programs
 --------------
 
 The following programs are general utility programs and in general do not need a configuration file nor a device name.
+
+
+.. _bsmtp:
 
 bsmtp
 ~~~~~
@@ -1046,14 +1068,17 @@ If you are getting incorrect dates (e.g. 1970) and you are running with a non-En
 In general, :command:`bsmtp` attempts to cleanup email addresses that you specify in the from, copy, mailhost, and recipient fields, by adding the necessary < and > characters around the address part. However, if you include a display-name (see RFC 5332), some SMTP servers such as Exchange may not accept the message if the display-name is also included in < and >. As mentioned above, you must test, and if you run into this situation, you may manually add the < and > to the Bareos
 :config:option:`dir/messages/MailCommand`\  or :config:option:`dir/messages/OperatorCommand`\  and when :command:`bsmtp` is formatting an address if it already contains a < or > character, it will leave the address unchanged.
 
-bareos-dbcheck
-~~~~~~~~~~~~~~
-
-
 
 .. _dbcheck:
 
- :index:`\ <single: bareos-dbcheck>`\  :index:`\ <single: Command; bareos-dbcheck>`\  :index:`\ <single: Catalog; database check>`\ 
+.. _bareos-dbcheck:
+
+bareos-dbcheck
+~~~~~~~~~~~~~~
+
+ :index:`\ <single: bareos-dbcheck>`
+ :index:`\ <single: Command; bareos-dbcheck>`
+ :index:`\ <single: Catalog; database check>`
 
 :command:`bareos-dbcheck` is a simple program that will search for logical inconsistencies in the Bareos tables in your database, and optionally fix them. It is a database maintenance routine, in the sense that it can detect and remove unused rows, but it is not a database repair routine. To repair a database, see the tools furnished by the database vendor. Normally :command:`bareos-dbcheck` should never need to be run, but if Bareos has crashed or you have a lot of
 Clients, Pools, or Jobs that you have removed, it could be useful.
@@ -1169,6 +1194,9 @@ If you are using bvfs (e.g. used by :ref:`bareos-webui <section-webui>`), don’
 
 Normally you should never need to run :command:`bareos-dbcheck` in spite of the recommendations given above, which are given so that users don’t waste their time running :command:`bareos-dbcheck` too often.
 
+
+.. _bregex:
+
 bregex
 ~~~~~~
 
@@ -1192,6 +1220,8 @@ Enter an empty line for a pattern to terminate the program. You can print only l
 
 This program can be useful for testing regex expressions to be applied against a list of filenames.
 
+.. _bwild:
+
 bwild
 ~~~~~
 
@@ -1214,6 +1244,9 @@ The <data-file> is a filename that contains lines of data to be matched (or not)
 Enter an empty line for a pattern to terminate the program. You can print only lines that do not match by using the -n option, and you can suppress printing of line numbers with the -l option.
 
 This program can be useful for testing wild expressions to be applied against a list of filenames.
+
+
+.. _bpluginfo:
 
 bpluginfo
 ~~~~~~~~~

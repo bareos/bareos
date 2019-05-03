@@ -119,9 +119,9 @@ to create the rescue image. If you used the configuration example above, you wil
 
 
 
-   .. warning::
+.. warning::
 
-      This will not create a Bareos backup on your system! You will have to do that by
+   This will not create a Bareos backup on your system! You will have to do that by
    other means, e.g. by a regular Bareos backup schedule.
    Also :command:`rear mkbackup` will not create a backup. 
    In this configuration it will only create the rescue ISO 

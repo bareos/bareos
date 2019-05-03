@@ -26,7 +26,9 @@ A Bareos Storage Daemon can use various storage backends:
 Droplet Storage Backend
 -----------------------
 
-:index:`\ <single: Backend; Droplet>`\  :index:`\ <single: Backend; Droplet; S3>`\  :index:`\ <single: Backend; S3|see {Backend; Droplet}>`\ 
+:index:`\ <single: Backend; Droplet>`
+:index:`\ <single: Backend; Droplet; S3>`
+:index:`\ <single: Backend; S3|see {Backend; Droplet}>`
 
 The **bareos-storage-droplet** backend (:sinceVersion:`17.2.7: Droplet`) can be used to access Object Storage through **libdroplet**. Droplet support a number of backends, most notably S3. For details about Droplet itself see https://github.com/scality/Droplet.
 
@@ -134,10 +136,10 @@ iothreads
    Number of IO-threads to use for uploads (if not set, blocking uploads are used)
 
 ioslots
-   Number of IO-slots per IO-thread (0-255, default 10). Set this to :math:`\ge 1` for cached and to 0 for direct writing.
+   Number of IO-slots per IO-thread (0-255, default 10). Set this to values greater than 1 for cached and to 0 for direct writing.
 
 retries
-   Number of writing tries before discarding the data. Set this to 0 for unlimited retries. Setting anything :math:`\neq 0` here will cause dataloss if the backend is not available, so be very careful (0-255, default = 0, which means unlimited retries).
+   Number of writing tries before discarding the data. Set this to 0 for unlimited retries. Setting anything != 0 here will cause dataloss if the backend is not available, so be very careful (0-255, default = 0, which means unlimited retries).
 
 mmap
    Use mmap to allocate Chunk memory instead of malloc().
@@ -227,10 +229,10 @@ For testing following :config:option:`sd/device/DeviceOptions`\  should be used:
 
 -  :file:`retries=1`
 
-If the S3 backend is or becomes unreachable, the |sd| will behave depending on :strong:`iothreads` and :strong:`retries`. When the |sd| is using cached writing (:strong:`iothreads`\ :math:`>=1`) and :strong:`retries` is set to zero (unlimited tries), the job will continue running until the backend becomes available again. The job cannot be canceled in this case, as the |sd| will
+If the S3 backend is or becomes unreachable, the |sd| will behave depending on :strong:`iothreads` and :strong:`retries`. When the |sd| is using cached writing (:strong:`iothreads >=1`) and :strong:`retries` is set to zero (unlimited tries), the job will continue running until the backend becomes available again. The job cannot be canceled in this case, as the |sd| will
 continuously try to write the cached files.
 
-Great caution should be used when using :strong:`retries` :math:`>=0` combined with cached writing. If the backend becomes unavailable and the |sd| reaches the predefined tries, the job will be discarded silently yet marked as :file:`OK` in the |dir|.
+Great caution should be used when using :strong:`retries>=0` combined with cached writing. If the backend becomes unavailable and the |sd| reaches the predefined tries, the job will be discarded silently yet marked as :file:`OK` in the |dir|.
 
 You can always check the status of the writing process by using :bcommand:`status storage=...`. The current writing status will be displayed then:
 
@@ -252,7 +254,7 @@ You can always check the status of the writing process by using :bcommand:`statu
    Attached Jobs: 175
    ...
 
-:strong:`Pending IO flush requests` means that there is data to be written. :strong:`try`=0 means that this is the first try and no problem has occurred. If :strong:`try` :math:`>0`, problems occurred and the storage daemon will continue trying.
+:strong:`Pending IO flush requests` means that there is data to be written. :strong:`try`=0 means that this is the first try and no problem has occurred. If :strong:`try >0`, problems occurred and the storage daemon will continue trying.
 
 Status without pending IO chunks:
 

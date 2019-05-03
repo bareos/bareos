@@ -573,14 +573,13 @@ Simply enter the command :bcommand:`quit`.
 
 .. _SecondClient:
 
+.. _section-AddAClient:
+
 Adding a Client
 ---------------
 
-
-
-.. _section-AddAClient:
-
- :index:`\ <single: Client; Adding a Second>`\  :index:`\ <single: Adding a Client>`\ 
+:index:`\ <single: Client; Adding a Second>`
+:index:`\ <single: Adding a Client>`
 
 If you have gotten the example shown above to work on your system, you may be ready to add a second Client (|fd|). That is you have a second machine that you would like backed up. Lets assume, following settings about the machine you want to add to your backup environment:
 
@@ -712,7 +711,6 @@ After a restart of the |fd| to reload the configuration this resource allows the
 
    service bareos-fd restart
 
-.. _manual-configuration-1:
 
 Manual configuration
 ^^^^^^^^^^^^^^^^^^^^

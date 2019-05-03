@@ -88,7 +88,7 @@ If for some reason you cannot get the automatic traceback, or if you want to int
    -d nnn
       debug level
 
-   See section :ref:`daemon command line options <daemon-command-line-options>` for a detailed list of options.
+   See section :ref:`daemon command line options <section-daemon-command-line-options>` for a detailed list of options.
 
 #. At this point, Bareos will be fully operational.
 

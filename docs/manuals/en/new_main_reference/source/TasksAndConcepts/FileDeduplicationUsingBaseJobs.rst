@@ -29,7 +29,7 @@ A new Job directive :strong:`Base=JobX,JobY,...`\  permits to specify the list o
 
 In this example, the job ``BackupZog4`` will use the most recent version of all files contained in ``BackupZog4`` and ``BackupLinux`` jobs. Base jobs should have run with :strong:`Level=Base`\  to be used.
 
-By default, Bareos will compare permissions bits, user and group fields, modification time, size and the checksum of the file to choose between the current backup and the BaseJob file list. You can change this behavior with the ``BaseJob`` FileSet option. This option works like the :strong:`Verify`\ , that is described in the :ref:`FileSet <FileSetResource>` chapter.
+By default, Bareos will compare permissions bits, user and group fields, modification time, size and the checksum of the file to choose between the current backup and the BaseJob file list. You can change this behavior with the ``BaseJob`` FileSet option. This option works like the :strong:`Verify`\ , that is described in the :ref:`FileSet <DirectorResourceFileSet>` chapter.
 
 ::
 

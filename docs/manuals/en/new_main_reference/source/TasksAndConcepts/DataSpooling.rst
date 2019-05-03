@@ -1,17 +1,14 @@
 .. _SpoolingChapter:
 
-Data Spooling
-=============
-
-
-
 .. _section-spooling:
-
- 
 
 .. _section-DataSpooling:
 
- :index:`\ <single: Data Spooling>`\  :index:`\ <single: Spooling; Data>`\ 
+Data Spooling
+=============
+
+:index:`\ <single: Data Spooling>`
+:index:`\ <single: Spooling; Data>`
 
 Bareos allows you to specify that you want the Storage daemon to initially write your data to disk and then subsequently to tape. This serves several important purposes.
 
@@ -53,17 +50,13 @@ The following directives can be used to control data spooling.
 Additional Notes
 ~~~~~~~~~~~~~~~~
 
--  
+- .. warning::
 
-   
-
-      .. warning::
-
-         Exclude your the spool directory from any backup,
-      otherwise, your job will write enormous amounts of data to the Volume, and
-      most probably terminate in error. This is because in attempting to backup the
-      spool file, the backup data will be written a second time to the spool file,
-      and so on ad infinitum.
+     Exclude your the spool directory from any backup,
+     otherwise, your job will write enormous amounts of data to the Volume, and
+     most probably terminate in error. This is because in attempting to backup the
+     spool file, the backup data will be written a second time to the spool file,
+     and so on ad infinitum.
 
 -  Another advice is to always specify the :config:option:`sd/device/MaximumSpoolSize`\  so that your disk doesn’t completely fill up. In principle, data spooling will properly detect a full disk, and despool data allowing the job to continue. However, attribute spooling is not so kind to the user. If the disk on which attributes are being spooled fills, the job will be canceled. In addition, if your working directory is on the same partition as the spool directory, then
    Bareos jobs will fail possibly in bizarre ways when the spool fills.
@@ -79,7 +72,3 @@ Additional Notes
 -  It is probably best to provide as large a spool file as possible to avoid repeatedly spooling/despooling. Also, while a job is despooling to tape, the File daemon must wait (i.e. spooling stops for the job while it is despooling).
 
 -  If you are running multiple simultaneous jobs, Bareos will continue spooling other jobs while one is despooling to tape, provided there is sufficient spool file space.
-
-
-
-

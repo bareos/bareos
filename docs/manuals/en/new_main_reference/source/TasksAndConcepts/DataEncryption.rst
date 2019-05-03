@@ -9,9 +9,9 @@ Bareos permits file data encryption and signing within the File Daemon (or Clien
 
 
 
-   .. warning::
+.. warning::
 
-      These feature is only available, if Bareos is build against OpenSSL.
+   These feature is only available, if Bareos is build against OpenSSL.
 
 It is very important to specify what this implementation does NOT do:
 
@@ -27,9 +27,9 @@ While less critical than the Master Keys, File Daemon Keys are also a prime cand
 
 
 
-   .. warning::
+.. warning::
 
-      If you lose your encryption keys, backups will be unrecoverable.
+   If you lose your encryption keys, backups will be unrecoverable.
    :strong:`always` store a copy of your master keys in a secure, off-site location.
 
 The basic algorithm used for each backup session (Job) is:
@@ -43,7 +43,7 @@ The basic algorithm used for each backup session (Job) is:
 Encryption Technical Details
 ----------------------------
 
-:index:`\ <single: Encryption; Technical Details>`\ 
+:index:`\ <single: Encryption; Technical Details>`
 
 The implementation uses 128bit AES-CBC, with RSA encrypted symmetric session keys. The RSA key is user supplied. If you are running OpenSSL >= 0.9.8, the signed file hash uses SHA-256, otherwise SHA-1 is used.
 

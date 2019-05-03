@@ -144,6 +144,7 @@ NDMP 2-way backup:
 
 -  tape drives need to be attached to the NAS System
 
+
 NDMP Backup in Bareos
 ---------------------
 
@@ -498,8 +499,8 @@ FILESYSTEM
    is set to the :config:option:`dir/fileset/Include`\  :strong:`File`\  directive.
 
 HIST
-   | = Y
-   | Specifies the file history format:
+   = Y
+   Specifies the file history format:
 
    Y
       Specifies the default file history format determined by your NDMP backup settings.
@@ -519,6 +520,7 @@ LEVEL
    is set accordingly to :ref:`section-NdmpBackupLevel`.
 
 PREFIX
+
 TYPE
    is set accordingly to BUTYPE. Default "DUMP".
 
@@ -1091,14 +1093,14 @@ After this, a restore from :strong:`bareos-sd2.example.com` directly to the NDMP
 Limitations
 ~~~~~~~~~~~
 
-This list the specific limitiations of the NDMP_BAREOS protocol. For limitation for all Bareos NDMP implementation, see :ref:`section-NdmpCommonLimitations`.
+   This list the specific limitiations of the NDMP_BAREOS protocol. For limitation for all Bareos NDMP implementation, see :ref:`section-NdmpCommonLimitations`.
 
 .. _section-ndmp-filehistory:
 
 NDMP Job limitations when scanning in volumes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`\ <single: NDMP; File History>`\ 
+:index:`\ <single: NDMP; File History>`
 
 For NDMP jobs, all data is stored into a single big file. The file and directory information (File History in NDMP Terms) is stored as hardlinks to this big file.
 
@@ -1867,15 +1869,6 @@ Now we want to restore some files from the backup we just did:
      Files Restored:         1
      Bytes Restored:         5,368,722,944
      Rate:                   23755.4 KB/s
-
-.. _limitations-1:
-
-Limitations
-~~~~~~~~~~~
-
-.. limitation:: NDMP\_NATIVE: Only use the first tape drive will be used.
-
-   A NDMP job only uses a single tape drive. Currently, a Bareos job always uses the first defined tape drive of the \TapeAgent.
 
 
 

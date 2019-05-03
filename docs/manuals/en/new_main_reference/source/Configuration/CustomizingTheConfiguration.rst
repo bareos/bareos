@@ -123,18 +123,12 @@ Relation between Bareos components and configuration
 
 .. _section-SubdirectoryConfigurationScheme:
 
-Subdirectory Configuration Scheme
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-
 .. _section-ConfigurationSubdirectories:
-
- 
 
 .. _ConfigurationIncludeDirectory:
 
-
+Subdirectory Configuration Scheme
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If the subdirectory configuration is used, instead of a single configuration file, all files matching :file:`COMPONENT.d/*/*.conf` are read as a configuration, see :ref:`section-ConfigurationFileOrConfigurationSubDirectories`.
 
@@ -348,7 +342,7 @@ Resource
 
 :index:`\ <single: Configuration; Resource>`\ 
 
-A resource is defined as the resource type, followed by an open brace (:file:`{`), a number of :ref:`section-ConfigurationResourceDirective`s, and ended by a closing brace (:file:`}`)
+A resource is defined as the resource type, followed by an open brace (:file:`{`), a number of :ref:`section-ConfigurationResourceDirective`, and ended by a closing brace (:file:`}`)
 
 Each resource definition MUST contain a :strong:`Name`\  directive. It can contain a :strong:`Description`\  directive. The :strong:`Name`\  directive is used to uniquely identify the resource. The :strong:`Description`\  directive can be used during the display of the Resource to provide easier human recognition. For example:
 
@@ -377,6 +371,7 @@ Director
    names should be postfixed with **-dir**
 
 These conventions helps a lot when reading log messages.
+
 
 .. _section-ConfigurationResourceDirective:
 

@@ -1,13 +1,12 @@
 .. _section-webui:
 
+.. _section-install-webui:
+
 Installing Bareos Webui
 =======================
 
-
-
-.. _section-install-webui:
-
- :index:`\ <single: Webui>`\  :index:`\ <single: Webui; Install>`\ 
+:index:`\ <single: Webui>`
+:index:`\ <single: Webui; Install>`
 
 This chapter addresses the installation process of the |webui|.
 
@@ -242,27 +241,25 @@ To use |dir| on a system with SELinux enabled, permission must be given to HTTPD
 
    setsebool -P httpd_can_network_connect on
 
+
+.. _section-webui-apache:
+   
 Configure your Apache Webserver
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`\ <single: Apache; bareos-webui>`\  
-
-.. _section-webui-apache:
-
-
+:index:`\ <single: Apache; bareos-webui>`
 
 The package **bareos-webui** provides a default configuration for Apache. Depending on your distribution, it is installed at :file:`/etc/apache2/conf.d/bareos-webui.conf`, :file:`/etc/httpd/conf.d/bareos-webui.conf` or :file:`/etc/apache2/available-conf/bareos-webui.conf`.
 
 The required Apache modules, :strong:`setenv`, :strong:`rewrite` and :strong:`php` are enabled via package postinstall script. However, after installing the **bareos-webui** package, you need to restart your Apache webserver manually.
 
-Configure your /etc/bareos-webui/directors.ini
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-:index:`\ <single: Configuration; WebUI>`\  
 
 .. _section-webui-configuration-files:
 
+Configure your /etc/bareos-webui/directors.ini
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+:index:`\ <single: Configuration; WebUI>`
 
 Configure your directors in :file:`/etc/bareos-webui/directors.ini` to match your settings.
 

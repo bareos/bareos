@@ -30,27 +30,25 @@ Obviously, it can not be used to do a restore.
      AlwaysOpen = no
    }
 
+.. _BackupOtherDBs:
+
 Backup Of Third Party Databases
 -------------------------------
 
-:index:`\ <single: Backup; of Third Party Databases>`\  :index:`\ <single: Database; Backup Of Third Party>`\  
-
-.. _BackupOtherDBs:
-
-
+:index:`\ <single: Backup; of Third Party Databases>`
+:index:`\ <single: Database; Backup Of Third Party>`
 
 If you are running a database in production mode on your machine, Bareos will happily backup the files, but if the database is in use while Bareos is reading it, you may back it up in an unstable state.
 
 The best solution is to shutdown your database before backing it up, or use some tool specific to your database to make a valid live copy perhaps by dumping the database in ASCII format.
 
+
+.. _MSSQL:
+
 Backup of MSSQL Databases with Bareos Plugin
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :index:`\ <single: MSSQL Backup>`\  :index:`\ <single: Database; MSSQL>`\  :index:`\ <single: Plugin; MSSQL backup>`\  
-
-.. _MSSQL:
-
-
 
 :sinceVersion:`13.2.0: MSSQL`
 
@@ -630,14 +628,13 @@ Followed is a example for a restore of full, differential and incremental backup
      SD termination status:  OK
      Termination:            Restore OK
 
+
+.. _backup-postgresql:
+
 Backup of a PostgreSQL Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :index:`\ <single: PostgreSQL; Backup>`\  :index:`\ <single: Database; PostgreSQL; Backup>`\  
-
-.. _backup-postgresql:
-
-
 
 In this section, we describe different methods how to do backups of the PostgreSQL databases.
 
@@ -731,14 +728,13 @@ This can also be used, to backup a database that is running on a remote host:
      }
    }
 
+
+.. _backup-postgresql-plugin:
+
 Backup of a PostgreSQL Databases by using the PGSQL-Plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 :index:`\ <single: Plugin; PostgreSQL Backup>`\  
-
-.. _backup-postgresql-plugin:
-
-
 
 The PGSQL-Plugin supports an online (Hot) backup of database files and database transaction logs (WAL) archiving (with pgsql-archlog) and backup. With online database and transaction logs the backup plugin can perform Poin-In-Time-Restore up to a single selected transaction or date/time.
 
@@ -746,25 +742,26 @@ Database recovery is performed fully automatic with dedicated pgsql-restore util
 
 For a full description, see https://github.com/bareos/contrib-pgsql-plugin/wiki.
 
-Backup of a MySQL Database
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-:index:`\ <single: MySQL; Backup>`\  :index:`\ <single: Database; MySQL; Backup>`\  
 
 .. _backup-mysql:
 
+Backup of a MySQL Database
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+:index:`\ <single: MySQL; Backup>`
+:index:`\ <single: Database; MySQL; Backup>`
 
 In this section, we describe different methods to do a full backup of a MySQL database.
+
+
+.. _backup-mysql-xtrabackup:
 
 Backup of MySQL Databases using the Bareos MySQL Percona xtrabackup Plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`\ <single: Plugin; MySQL Backup>`\  :index:`\ <single: Percona xtrabackup>`\  :index:`\ <single: xtrabackup>`\  
-
-.. _backup-mysql-xtrabackup:
-
-
+:index:`\ <single: Plugin; MySQL Backup>`
+:index:`\ <single: Percona xtrabackup>`
+:index:`\ <single: xtrabackup>`
 
 This plugin is available since :sinceVersion:`16.2.4: MySQL Incremental Backup Plugin for using Percona xtrabackup`, it uses the :command:`xtrabackup` tool from Percona to perform full and incremental hot-backups of MySQL / MariaDB tables of type InnoDB. It can also backup MyISAM tables but only as full backups. On restore it requires a preparation using the xtrabackup tools, before the tables can be restored. If you simply want to backup full dumps, then using
 :ref:`backup-mysql-python` is the easier way.
@@ -855,14 +852,13 @@ Next line is the first incremental job with ID 335, starting at LSN 10129154 unt
 
 To further prepare the restored files, use the :command:`xtrabackup --prepare` command. Read https://www.percona.com/doc/percona-xtrabackup/2.4/xtrabackup_bin/incremental_backups.html for more information.
 
+
+.. _backup-mysql-python:
+
 Backup of MySQL Databases using the Python MySQL plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 :index:`\ <single: Plugin; MySQL Backup>`\  
-
-.. _backup-mysql-python:
-
-
 
 The Python plugin from https://github.com/bareos/bareos-contrib/tree/master/fd-plugins/mysql-python makes a backup of all or selected MySQL databases from the |fd| or any other MySQL server. It makes use of the mysqldump command and basically grabs data from mysqldump via pipe. This plugin is suitable to backup database dumps. If you prefer to use mechanisms like incremental hot-backups of InnoDB tables, please use the Bareos MySQL / MariaDB Percona xtrabackup Plugin (see
 :ref:`backup-mysql-xtrabackup`).
@@ -1094,6 +1090,7 @@ Storage Configuration - Device Resource Directives
 
 See chapter :ref:`section-JobStatistics` for additional information.
 
+
 .. _section-RemoveClient:
 
 Removing a Client
@@ -1122,15 +1119,12 @@ Removing the client from the configuration will leave you with catalog records c
 
 
 
-   .. warning::
-
+.. warning::
       
-     After removing the job and file records you will be unable to restore the client's data.
-     The :bcommand:`purge` command ignores retention policies, so please take careful.
+   After removing the job and file records you will be unable to restore the client's data.
+   The :bcommand:`purge` command ignores retention policies, so please take careful.
    
 
 As soon as all jobs for a client have been removed from the catalog that client record becomes orphaned. Orphaned client records usually stay in your database indefinitely, but if you want them removed for cosmetic reasons you can do so using "Check for orphaned Client records" in :command:`bareos-dbcheck`.
 
 By default :command:`bareos-dbcheck` only lists the orphaned clients it finds. You need to enable the modify database flag to make it actually change the database. 
-
-
