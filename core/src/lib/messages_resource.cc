@@ -25,19 +25,13 @@
 #include "lib/message_destination_info.h"
 
 #include <algorithm>
+#include <iostream>
 
 pthread_mutex_t MessagesResource::mutex_ = PTHREAD_MUTEX_INITIALIZER;
 
-MessagesResource::MessagesResource()
-    : BareosResource(), send_msg_types_(NbytesForBits(M_MAX + 1), 0)
+MessagesResource::MessagesResource() : BareosResource(), send_msg_types_(3, 0)
 {
   return;
-}
-
-void MessagesResource::ShallowCopyTo(BareosResource* p) const
-{
-  MessagesResource* r = dynamic_cast<MessagesResource*>(p);
-  if (r) { *r = *this; }
 }
 
 MessagesResource::~MessagesResource()

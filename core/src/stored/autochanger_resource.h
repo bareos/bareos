@@ -37,12 +37,6 @@ class AutochangerResource : public BareosResource {
   AutochangerResource& operator=(const AutochangerResource& rhs);
   bool PrintConfigToBuffer(PoolMem& buf);
 
-  void ShallowCopyTo(BareosResource* p) const override
-  {
-    AutochangerResource* r = dynamic_cast<AutochangerResource*>(p);
-    if (r) { *r = *this; }
-  };
-
   alist* device;          /**< List of DeviceResource device pointers */
   char* changer_name;     /**< Changer device name */
   char* changer_command;  /**< Changer command  -- external program */

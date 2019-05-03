@@ -121,12 +121,6 @@ class DirectorResource
   DirectorResource() = default;
   virtual ~DirectorResource() = default;
 
-  void ShallowCopyTo(BareosResource* p) const override
-  {
-    DirectorResource* r = dynamic_cast<DirectorResource*>(p);
-    if (r) { *r = *this; }
-  };
-
   dlist* DIRaddrs = nullptr;
   dlist* DIRsrc_addr = nullptr;         /* Address to source connections from */
   char* query_file = nullptr;           /* SQL query file */
@@ -183,12 +177,6 @@ class DeviceResource : public BareosResource {
   DeviceResource() = default;
   virtual ~DeviceResource() = default;
 
-  void ShallowCopyTo(BareosResource* p) const override
-  {
-    DeviceResource* r = dynamic_cast<DeviceResource*>(p);
-    if (r) { *r = *this; }
-  };
-
   bool found = false;       /**< found with SD */
   int32_t num_writers = 0;  /**< number of writers */
   int32_t max_writers = 0;  /**< = 1 for files */
@@ -234,12 +222,6 @@ class ProfileResource : public BareosResource {
   ProfileResource() = default;
   virtual ~ProfileResource() = default;
 
-  void ShallowCopyTo(BareosResource* p) const override
-  {
-    ProfileResource* r = dynamic_cast<ProfileResource*>(p);
-    if (r) { *r = *this; }
-  };
-
   alist* ACL_lists[Num_ACL] = {0}; /**< Pointers to ACLs */
 };
 
@@ -253,12 +235,6 @@ class ConsoleResource
   ConsoleResource() = default;
   virtual ~ConsoleResource() = default;
 
-  void ShallowCopyTo(BareosResource* p) const override
-  {
-    ConsoleResource* r = dynamic_cast<ConsoleResource*>(p);
-    if (r) { *r = *this; }
-  };
-
   alist* ACL_lists[Num_ACL] = {0};      /**< Pointers to ACLs */
   alist* profiles = nullptr;            /**< Pointers to profile resources */
   bool use_pam_authentication_ = false; /**< PAM Console */
@@ -271,12 +247,6 @@ class CatalogResource : public BareosResource {
  public:
   CatalogResource() = default;
   virtual ~CatalogResource() = default;
-
-  void ShallowCopyTo(BareosResource* p) const override
-  {
-    CatalogResource* r = dynamic_cast<CatalogResource*>(p);
-    if (r) { *r = *this; }
-  };
 
   uint32_t db_port = 0;       /**< Port */
   char* db_address = nullptr; /**< Hostname for remote access */
@@ -328,12 +298,6 @@ class ClientResource
   ClientResource() = default;
   virtual ~ClientResource() = default;
 
-  void ShallowCopyTo(BareosResource* p) const override
-  {
-    ClientResource* r = dynamic_cast<ClientResource*>(p);
-    if (r) { *r = *this; }
-  };
-
   uint32_t Protocol = 0;       /* Protocol to use to connect */
   uint32_t AuthType = 0;       /* Authentication Type to use for protocol */
   uint32_t ndmp_loglevel = 0;  /* NDMP Protocol specific loglevel to use */
@@ -380,12 +344,6 @@ class StorageResource
  public:
   StorageResource() = default;
   virtual ~StorageResource() = default;
-
-  void ShallowCopyTo(BareosResource* p) const override
-  {
-    StorageResource* r = dynamic_cast<StorageResource*>(p);
-    if (r) { *r = *this; }
-  };
 
   uint32_t Protocol = 0;      /* Protocol to use to connect */
   uint32_t AuthType = 0;      /* Authentication Type to use for protocol */
@@ -446,12 +404,6 @@ class UnifiedStorageResource : public BareosResource {
   }
   ~UnifiedStorageResource() { destroy(); }
 
-  void ShallowCopyTo(BareosResource* p) const override
-  {
-    UnifiedStorageResource* r = dynamic_cast<UnifiedStorageResource*>(p);
-    if (r) { *r = *this; }
-  };
-
   void SetSource(const char* where);
   void destroy();
 };
@@ -478,12 +430,6 @@ class JobResource : public BareosResource {
  public:
   JobResource() = default;
   virtual ~JobResource() = default;
-
-  void ShallowCopyTo(BareosResource* p) const override
-  {
-    JobResource* r = dynamic_cast<JobResource*>(p);
-    if (r) { *r = *this; }
-  };
 
   uint32_t Protocol = 0;       /**< Protocol to use to connect */
   uint32_t JobType = 0;        /**< Job type (backup, verify, restore) */
@@ -610,7 +556,8 @@ struct FileOptions {
 /**
  * This is either an include item or an exclude item
  */
-struct IncludeExcludeItem {
+class IncludeExcludeItem {
+ public:
   IncludeExcludeItem() = default;
   virtual ~IncludeExcludeItem() = default;
 
@@ -628,12 +575,6 @@ class FilesetResource : public BareosResource {
  public:
   FilesetResource() = default;
   virtual ~FilesetResource() = default;
-
-  void ShallowCopyTo(BareosResource* p) const override
-  {
-    FilesetResource* r = dynamic_cast<FilesetResource*>(p);
-    if (r) { *r = *this; }
-  };
 
   bool new_include = false; /**< Set if new include used */
   std::vector<IncludeExcludeItem*> include_items;
@@ -659,12 +600,6 @@ class ScheduleResource : public BareosResource {
   ScheduleResource() = default;
   virtual ~ScheduleResource() = default;
 
-  void ShallowCopyTo(BareosResource* p) const override
-  {
-    ScheduleResource* r = dynamic_cast<ScheduleResource*>(p);
-    if (r) { *r = *this; }
-  };
-
   RunResource* run = nullptr;
   bool enabled = false; /* Set if schedule is enabled */
 };
@@ -676,12 +611,6 @@ class CounterResource : public BareosResource {
  public:
   CounterResource() = default;
   virtual ~CounterResource() = default;
-
-  void ShallowCopyTo(BareosResource* p) const override
-  {
-    CounterResource* r = dynamic_cast<CounterResource*>(p);
-    if (r) { *r = *this; }
-  };
 
   int32_t MinValue = 0;                   /* Minimum value */
   int32_t MaxValue = 0;                   /* Maximum value */
@@ -698,12 +627,6 @@ class PoolResource : public BareosResource {
  public:
   PoolResource() = default;
   virtual ~PoolResource() = default;
-
-  void ShallowCopyTo(BareosResource* p) const override
-  {
-    PoolResource* r = dynamic_cast<PoolResource*>(p);
-    if (r) { *r = *this; }
-  };
 
   char* pool_type = nullptr;        /* Pool type */
   char* label_format = nullptr;     /* Label format string */
@@ -748,12 +671,6 @@ class RunResource : public BareosResource {
  public:
   RunResource() = default;
   virtual ~RunResource() = default;
-
-  void ShallowCopyTo(BareosResource* p) const override
-  {
-    RunResource* r = dynamic_cast<RunResource*>(p);
-    if (r) { *r = *this; }
-  };
 
   RunResource* next = nullptr; /**< points to next run record */
   uint32_t level = 0;          /**< level override */

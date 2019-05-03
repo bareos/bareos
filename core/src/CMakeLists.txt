@@ -32,7 +32,7 @@ ENDIF()
 
 add_subdirectory(console)
 IF(${HAVE_LMDB})
-add_subdirectory(lmdb)
+    add_subdirectory(lmdb)
 ENDIF()
 add_subdirectory(lib)
 add_subdirectory(findlib)

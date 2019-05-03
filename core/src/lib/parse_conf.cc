@@ -246,6 +246,8 @@ bool ConfigurationParser::ParseConfigFile(const char* cf,
     lc->error_counter = 0;
     lc->caller_ctx = caller_ctx;
 
+    BareosResource* static_resource = nullptr;
+
     while ((token = LexGetToken(lc, BCT_ALL)) != BCT_EOF) {
       Dmsg3(900, "parse state=%d pass=%d got token=%s\n", state, pass,
             lex_tok_to_str(token));
@@ -273,6 +275,9 @@ bool ConfigurationParser::ParseConfigFile(const char* cf,
             state = p_resource;
             res_type = res_table->rcode;
             InitResource(res_type, items, pass, res_table->initres);
+            ASSERT(res_table->static_resource_);
+            static_resource = *res_table->static_resource_;
+            ASSERT(static_resource);
           }
           if (state == p_none) {
             scan_err1(lc, _("expected resource name, got: %s"), lc->str);
@@ -347,7 +352,7 @@ bool ConfigurationParser::ParseConfigFile(const char* cf,
               level--;
               state = p_none;
               Dmsg0(900, "BCT_EOB => define new resource\n");
-              if (!item->static_resource->resource_name_) {
+              if (!static_resource->resource_name_) {
                 scan_err0(lc, _("Name not specified for resource"));
                 goto bail_out;
               }
@@ -697,7 +702,7 @@ static void MakePathName(PoolMem& pathname, const char* str)
 void ConfigurationParser::InitResource(int type,
                                        ResourceItem* items,
                                        int pass,
-                                       std::function<void*()> initres)
+                                       std::function<void()> initres)
 {
   if (initres) { initres(); }
 
@@ -713,8 +718,8 @@ void ConfigurationParser::InitResource(int type,
       int i;
 
       for (i = 0; items[i].name; i++) {
-        items[i].static_resource->rcode_ = type;
-        items[i].static_resource->refcnt_ = 1;
+        (*items[i].static_resource)->rcode_ = type;
+        (*items[i].static_resource)->refcnt_ = 1;
 
         Dmsg3(900, "Item=%s def=%s defval=%s\n", items[i].name,
               (items[i].flags & CFG_ITEM_DEFAULT) ? "yes" : "no",
@@ -747,59 +752,70 @@ void ConfigurationParser::InitResource(int type,
           switch (items[i].type) {
             case CFG_TYPE_BIT:
               if (Bstrcasecmp(items[i].default_value, "on")) {
-                SetBit(items[i].code, items[i].bitvalue);
+                char* bitfield = GetItemVariablePointer<char*>(items[i]);
+                SetBit(items[i].code, bitfield);
               } else if (Bstrcasecmp(items[i].default_value, "off")) {
-                ClearBit(items[i].code, items[i].bitvalue);
+                char* bitfield = GetItemVariablePointer<char*>(items[i]);
+                ClearBit(items[i].code, bitfield);
               }
               break;
             case CFG_TYPE_BOOL:
               if (Bstrcasecmp(items[i].default_value, "yes") ||
                   Bstrcasecmp(items[i].default_value, "true")) {
-                *(items[i].boolvalue) = true;
+                SetItemVariable<bool>(items[i], true);
               } else if (Bstrcasecmp(items[i].default_value, "no") ||
                          Bstrcasecmp(items[i].default_value, "false")) {
-                *(items[i].boolvalue) = false;
+                SetItemVariable<bool>(items[i], false);
               }
               break;
             case CFG_TYPE_PINT32:
             case CFG_TYPE_INT32:
             case CFG_TYPE_SIZE32:
-              *(items[i].ui32value) = str_to_int32(items[i].default_value);
+              SetItemVariable<uint32_t>(items[i],
+                                        str_to_uint64(items[i].default_value));
               break;
             case CFG_TYPE_INT64:
-              *(items[i].i64value) = str_to_int64(items[i].default_value);
+              SetItemVariable<uint64_t>(items[i],
+                                        str_to_int64(items[i].default_value));
               break;
             case CFG_TYPE_SIZE64:
-              *(items[i].ui64value) = str_to_uint64(items[i].default_value);
+              SetItemVariable<uint64_t>(items[i],
+                                        str_to_uint64(items[i].default_value));
               break;
             case CFG_TYPE_SPEED:
-              *(items[i].ui64value) = str_to_uint64(items[i].default_value);
+              SetItemVariable<uint64_t>(items[i],
+                                        str_to_uint64(items[i].default_value));
               break;
-            case CFG_TYPE_TIME:
-              *(items[i].utimevalue) = str_to_int64(items[i].default_value);
+            case CFG_TYPE_TIME: {
+              SetItemVariable<utime_t>(items[i],
+                                       str_to_int64(items[i].default_value));
               break;
+            }
             case CFG_TYPE_STRNAME:
             case CFG_TYPE_STR:
-              *(items[i].value) = strdup(items[i].default_value);
+              SetItemVariable<char*>(items[i], strdup(items[i].default_value));
               break;
             case CFG_TYPE_STDSTR:
-              *(items[i].strValue) = std::string(items[i].default_value);
+              SetItemVariable<std::string>(items[i], items[i].default_value);
               break;
             case CFG_TYPE_DIR: {
               PoolMem pathname(PM_FNAME);
               MakePathName(pathname, items[i].default_value);
-              *items[i].value = strdup(pathname.c_str());
+              SetItemVariable<char*>(items[i], strdup(pathname.c_str()));
               break;
             }
             case CFG_TYPE_STDSTRDIR: {
               PoolMem pathname(PM_FNAME);
               MakePathName(pathname, items[i].default_value);
-              *(items[i].strValue) = std::string(pathname.c_str());
+              SetItemVariable<std::string>(items[i],
+                                           std::string(pathname.c_str()));
               break;
             }
-            case CFG_TYPE_ADDRESSES:
-              InitDefaultAddresses(items[i].dlistvalue, items[i].default_value);
+            case CFG_TYPE_ADDRESSES: {
+              dlist** dlistvalue = GetItemVariablePointer<dlist**>(items[i]);
+              InitDefaultAddresses(dlistvalue, items[i].default_value);
               break;
+            }
             default:
               /*
                * None of the generic types fired if there is a registered
@@ -810,7 +826,7 @@ void ConfigurationParser::InitResource(int type,
           }
 
           if (!omit_defaults_) {
-            SetBit(i, items[i].static_resource->inherit_content_);
+            SetBit(i, (*items[i].static_resource)->inherit_content_);
           }
         }
 
@@ -846,18 +862,19 @@ void ConfigurationParser::InitResource(int type,
            * First try to handle the generic types.
            */
           switch (items[i].type) {
-            case CFG_TYPE_ALIST_STR:
-              if (!*items[i].alistvalue) {
-                *(items[i].alistvalue) = new alist(10, owned_by_alist);
+            case CFG_TYPE_ALIST_STR: {
+              alist** alistvalue = GetItemVariablePointer<alist**>(items[i]);
+              if (!alistvalue) {
+                *(alistvalue) = new alist(10, owned_by_alist);
               }
-              (*(items[i].alistvalue))->append(strdup(items[i].default_value));
+              (*alistvalue)->append(strdup(items[i].default_value));
               break;
+            }
             case CFG_TYPE_ALIST_DIR: {
               PoolMem pathname(PM_FNAME);
+              alist** alistvalue = GetItemVariablePointer<alist**>(items[i]);
 
-              if (!*items[i].alistvalue) {
-                *(items[i].alistvalue) = new alist(10, owned_by_alist);
-              }
+              if (!*alistvalue) { *alistvalue = new alist(10, owned_by_alist); }
 
               PmStrcpy(pathname, items[i].default_value);
               if (*items[i].default_value != '|') {
@@ -870,7 +887,7 @@ void ConfigurationParser::InitResource(int type,
                 pathname.check_size(size);
                 DoShellExpansion(pathname.c_str(), pathname.size());
               }
-              (*(items[i].alistvalue))->append(strdup(pathname.c_str()));
+              (*alistvalue)->append(strdup(pathname.c_str()));
               break;
             }
             default:
@@ -883,7 +900,7 @@ void ConfigurationParser::InitResource(int type,
           }
 
           if (!omit_defaults_) {
-            SetBit(i, items[i].static_resource->inherit_content_);
+            SetBit(i, (*items[i].static_resource)->inherit_content_);
           }
         }
 

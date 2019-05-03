@@ -62,13 +62,13 @@ static void DumpResource(int type,
                          bool verbose);
 
 /* the first configuration pass uses this static memory */
-static DirectorResource res_dir;
-static NdmpResource res_ndmp;
-static StorageResource res_store;
-static DeviceResource res_dev;
-static AutochangerResource res_changer;
+static DirectorResource* res_dir;
+static NdmpResource* res_ndmp;
+static StorageResource* res_store;
+static DeviceResource* res_dev;
+static AutochangerResource* res_changer;
 
-static MessagesResource res_msgs;
+static MessagesResource* res_msgs;
 #include "lib/messages_resource_items.h"
 
 /* clang-format off */
@@ -122,7 +122,7 @@ static ResourceItem store_items[] = {
   {"LogTimestampFormat", CFG_TYPE_STR, ITEM(res_store, log_timestamp_format), 0, 0, NULL, "15.2.3-", NULL},
     TLS_COMMON_CONFIG(res_store),
     TLS_CERT_CONFIG(res_store),
-  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 static ResourceItem dir_items[] = {
@@ -134,7 +134,7 @@ static ResourceItem dir_items[] = {
   {"KeyEncryptionKey", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir, keyencrkey), 1, 0, NULL, NULL, NULL},
     TLS_COMMON_CONFIG(res_dir),
     TLS_CERT_CONFIG(res_dir),
-  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 static ResourceItem ndmp_items[] = {
@@ -144,7 +144,7 @@ static ResourceItem ndmp_items[] = {
   {"Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_ndmp, password), 0, CFG_ITEM_REQUIRED, 0, NULL, NULL},
   {"AuthType", CFG_TYPE_AUTHTYPE, ITEM(res_ndmp, AuthType), 0, CFG_ITEM_DEFAULT, "None", NULL, NULL},
   {"LogLevel", CFG_TYPE_PINT32, ITEM(res_ndmp, LogLevel), 0, CFG_ITEM_DEFAULT, "4", NULL, NULL},
-  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 static ResourceItem dev_items[] = {
@@ -224,7 +224,7 @@ static ResourceItem dev_items[] = {
   {"Count", CFG_TYPE_PINT32, ITEM(res_dev, count), 0, CFG_ITEM_DEFAULT, "1", NULL, "If Count is set to (1 < Count < 10000), "
   "this resource will be multiplied Count times. The names of multiplied resources will have a serial number (0001, 0002, ...) attached. "
   "If set to 1 only this single resource will be used and its name will not be altered."},
-  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 static ResourceItem autochanger_items[] = {
@@ -233,22 +233,22 @@ static ResourceItem autochanger_items[] = {
   {"Device", CFG_TYPE_ALIST_RES, ITEM(res_changer, device), R_DEVICE, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"ChangerDevice", CFG_TYPE_STRNAME, ITEM(res_changer, changer_name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"ChangerCommand", CFG_TYPE_STRNAME, ITEM(res_changer, changer_command), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 static ResourceTable resources[] = {
   {"Director", dir_items, R_DIRECTOR, sizeof(DirectorResource),
-      []() { return new (&res_dir) DirectorResource(); }, &res_dir},
+      []() { res_dir = new DirectorResource(); }, reinterpret_cast<BareosResource**>(&res_dir)},
   {"Ndmp", ndmp_items, R_NDMP, sizeof(NdmpResource),
-      []() { return new (&res_ndmp) NdmpResource(); }, &res_ndmp},
+      []() { res_ndmp = new NdmpResource(); }, reinterpret_cast<BareosResource**>(&res_ndmp)},
   {"Storage", store_items, R_STORAGE, sizeof(StorageResource),
-      []() { return new (&res_store) StorageResource(); }, &res_store},
+      []() { res_store = new StorageResource(); }, reinterpret_cast<BareosResource**>(&res_store)},
   {"Device", dev_items, R_DEVICE, sizeof(DeviceResource),
-      []() { return new (&res_dev) DeviceResource(); }, &res_dev},
+      []() { res_dev = new DeviceResource(); }, reinterpret_cast<BareosResource**>(&res_dev)},
   {"Messages", msgs_items, R_MSGS, sizeof(MessagesResource),
-      []() { return new (&res_msgs) MessagesResource(); }, &res_msgs},
+      []() { res_msgs = new MessagesResource(); }, reinterpret_cast<BareosResource**>(&res_msgs)},
   {"Autochanger", autochanger_items, R_AUTOCHANGER, sizeof(AutochangerResource),
-      []() { return new (&res_changer) AutochangerResource(); }, &res_changer},
+      []() { res_changer = new AutochangerResource(); }, reinterpret_cast<BareosResource**>(&res_changer)},
   {nullptr, nullptr, 0, 0, nullptr, nullptr}};
 
 /* clang-format on */
@@ -295,7 +295,7 @@ static void StoreAuthenticationType(LEX* lc,
    */
   for (i = 0; authentication_methods[i].name; i++) {
     if (Bstrcasecmp(lc->str, authentication_methods[i].name)) {
-      *(uint32_t*)(item->value) = authentication_methods[i].token;
+      SetItemVariable<uint32_t>(*item, authentication_methods[i].token);
       i = 0;
       break;
     }
@@ -305,8 +305,8 @@ static void StoreAuthenticationType(LEX* lc,
               lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 /**
@@ -314,7 +314,7 @@ static void StoreAuthenticationType(LEX* lc,
  */
 static void StoreAutopassword(LEX* lc, ResourceItem* item, int index, int pass)
 {
-  switch (item->static_resource->rcode_) {
+  switch ((*item->static_resource)->rcode_) {
     case R_DIRECTOR:
       /*
        * As we need to store both clear and MD5 hashed within the same
@@ -350,7 +350,7 @@ static void StoreDeviceType(LEX* lc, ResourceItem* item, int index, int pass)
    */
   for (i = 0; device_types[i].name; i++) {
     if (Bstrcasecmp(lc->str, device_types[i].name)) {
-      *(uint32_t*)(item->value) = device_types[i].token;
+      SetItemVariable<uint32_t>(*item, device_types[i].token);
       i = 0;
       break;
     }
@@ -359,8 +359,8 @@ static void StoreDeviceType(LEX* lc, ResourceItem* item, int index, int pass)
     scan_err1(lc, _("Expected a Device Type keyword, got: %s"), lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 /**
@@ -369,11 +369,11 @@ static void StoreDeviceType(LEX* lc, ResourceItem* item, int index, int pass)
 static void StoreMaxblocksize(LEX* lc, ResourceItem* item, int index, int pass)
 {
   my_config->StoreResource(CFG_TYPE_SIZE32, lc, item, index, pass);
-  if (*(uint32_t*)(item->value) > MAX_BLOCK_LENGTH) {
+  if (GetItemVariable<uint32_t>(*item) > MAX_BLOCK_LENGTH) {
     scan_err2(lc,
               _("Maximum Block Size configured value %u is greater than "
                 "allowed maximum: %u"),
-              *(uint32_t*)(item->value), MAX_BLOCK_LENGTH);
+              GetItemVariable<uint32_t>(*item), MAX_BLOCK_LENGTH);
   }
 }
 
@@ -387,7 +387,7 @@ static void StoreIoDirection(LEX* lc, ResourceItem* item, int index, int pass)
   LexGetToken(lc, BCT_NAME);
   for (i = 0; io_directions[i].name; i++) {
     if (Bstrcasecmp(lc->str, io_directions[i].name)) {
-      *(uint16_t*)(item->value) = io_directions[i].token & 0xffff;
+      SetItemVariable<uint16_t>(*item, io_directions[i].token & 0xffff);
       i = 0;
       break;
     }
@@ -396,8 +396,8 @@ static void StoreIoDirection(LEX* lc, ResourceItem* item, int index, int pass)
     scan_err1(lc, _("Expected a IO direction keyword, got: %s"), lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 /**
@@ -413,7 +413,8 @@ static void StoreCompressionalgorithm(LEX* lc,
   LexGetToken(lc, BCT_NAME);
   for (i = 0; compression_algorithms[i].name; i++) {
     if (Bstrcasecmp(lc->str, compression_algorithms[i].name)) {
-      *(uint32_t*)(item->value) = compression_algorithms[i].token & 0xffffffff;
+      SetItemVariable<uint32_t>(*item,
+                                compression_algorithms[i].token & 0xffffffff);
       i = 0;
       break;
     }
@@ -423,8 +424,8 @@ static void StoreCompressionalgorithm(LEX* lc,
               lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 /**
@@ -440,7 +441,7 @@ static void InitResourceCb(ResourceItem* item, int pass)
           for (int i = 0; authentication_methods[i].name; i++) {
             if (Bstrcasecmp(item->default_value,
                             authentication_methods[i].name)) {
-              *(uint32_t*)(item->value) = authentication_methods[i].token;
+              SetItemVariable<uint32_t>(*item, authentication_methods[i].token);
             }
           }
           break;
@@ -688,7 +689,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
   // Ensure that all required items are present
   for (i = 0; items[i].name; i++) {
     if (items[i].flags & CFG_ITEM_REQUIRED) {
-      if (!BitIsSet(i, items[i].static_resource->item_present_)) {
+      if (!BitIsSet(i, (*items[i].static_resource)->item_present_)) {
         Emsg2(M_ERROR_TERM, 0,
               _("\"%s\" item is required in \"%s\" resource, but not found.\n"),
               items[i].name, resources[rindex].name);
@@ -711,41 +712,41 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         break;
       case R_DIRECTOR: {
         DirectorResource* p = dynamic_cast<DirectorResource*>(
-            my_config->GetResWithName(R_DIRECTOR, res_dir.resource_name_));
+            my_config->GetResWithName(R_DIRECTOR, res_dir->resource_name_));
         if (!p) {
           Emsg1(M_ERROR_TERM, 0, _("Cannot find Director resource %s\n"),
-                res_dir.resource_name_);
+                res_dir->resource_name_);
         } else {
           p->tls_cert_.allowed_certificate_common_names_ =
-              std::move(res_dir.tls_cert_.allowed_certificate_common_names_);
+              std::move(res_dir->tls_cert_.allowed_certificate_common_names_);
         }
         break;
       }
       case R_STORAGE: {
         StorageResource* p = dynamic_cast<StorageResource*>(
-            my_config->GetResWithName(R_STORAGE, res_store.resource_name_));
+            my_config->GetResWithName(R_STORAGE, res_store->resource_name_));
         if (!p) {
           Emsg1(M_ERROR_TERM, 0, _("Cannot find Storage resource %s\n"),
-                res_store.resource_name_);
+                res_store->resource_name_);
         } else {
-          p->plugin_names = res_store.plugin_names;
-          p->messages = res_store.messages;
-          p->backend_directories = res_store.backend_directories;
+          p->plugin_names = res_store->plugin_names;
+          p->messages = res_store->messages;
+          p->backend_directories = res_store->backend_directories;
           p->tls_cert_.allowed_certificate_common_names_ =
-              std::move(res_store.tls_cert_.allowed_certificate_common_names_);
+              std::move(res_store->tls_cert_.allowed_certificate_common_names_);
         }
         break;
       }
       case R_AUTOCHANGER: {
         AutochangerResource* p =
             dynamic_cast<AutochangerResource*>(my_config->GetResWithName(
-                R_AUTOCHANGER, res_changer.resource_name_));
+                R_AUTOCHANGER, res_changer->resource_name_));
 
         if (!p) {
           Emsg1(M_ERROR_TERM, 0, _("Cannot find AutoChanger resource %s\n"),
-                res_changer.resource_name_);
+                res_changer->resource_name_);
         } else {
-          p->device = res_changer.device;
+          p->device = res_changer->device;
 
           DeviceResource* q = nullptr;
           foreach_alist (q, p->device) {
@@ -773,7 +774,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
      *
      * currently, this is the best place to free that */
 
-    BareosResource* res = items[0].static_resource;
+    BareosResource* res = *items[0].static_resource;
 
     if (res) {
       if (res->resource_name_) {
@@ -791,42 +792,30 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
   if (!error) {
     BareosResource* new_resource = nullptr;
     switch (resources[rindex].rcode) {
-      case R_DIRECTOR: {
-        DirectorResource* p = new DirectorResource();
-        *p = res_dir;
-        new_resource = p;
+      case R_DIRECTOR:
+        new_resource = res_dir;
+        res_dir = nullptr;
         break;
-      }
-      case R_NDMP: {
-        NdmpResource* p = new NdmpResource();
-        *p = res_ndmp;
-        new_resource = p;
+      case R_NDMP:
+        new_resource = res_ndmp;
+        res_ndmp = nullptr;
         break;
-      }
-      case R_STORAGE: {
-        StorageResource* p = new StorageResource();
-        *p = res_store;
-        new_resource = p;
+      case R_STORAGE:
+        new_resource = res_store;
+        res_store = nullptr;
         break;
-      }
-      case R_DEVICE: {
-        DeviceResource* p = new DeviceResource();
-        *p = res_dev;
-        new_resource = p;
+      case R_DEVICE:
+        new_resource = res_dev;
+        res_dev = nullptr;
         break;
-      }
-      case R_MSGS: {
-        MessagesResource* p = new MessagesResource();
-        *p = res_msgs;
-        new_resource = p;
+      case R_MSGS:
+        new_resource = res_msgs;
+        res_msgs = nullptr;
         break;
-      }
-      case R_AUTOCHANGER: {
-        AutochangerResource* p = new AutochangerResource();
-        *p = res_changer;
-        new_resource = p;
+      case R_AUTOCHANGER:
+        new_resource = res_changer;
+        res_changer = nullptr;
         break;
-      }
       default:
         ASSERT(false);
         break;
@@ -834,7 +823,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
     error = my_config->AppendToResourcesChain(new_resource, type) ? 0 : 1;
   }
   return (error == 0);
-}
+}  // namespace storagedaemon
 
 static void FreeResource(BareosResource* res, int type)
 {

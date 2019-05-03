@@ -47,9 +47,7 @@ class MessagesResource : public BareosResource {
   MessagesResource(const MessagesResource& other) = delete;
   MessagesResource(const MessagesResource&& other) = delete;
   MessagesResource& operator=(const MessagesResource& rhs) = default;
-  MessagesResource& operator=(const MessagesResource&& rhs) = delete;
-
-  void ShallowCopyTo(BareosResource* p) const override;
+  MessagesResource& operator=(MessagesResource&& rhs) = delete;
 
   void ClearInUse();
   void SetInUse();

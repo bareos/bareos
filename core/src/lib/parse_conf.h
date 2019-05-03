@@ -50,13 +50,13 @@ enum parse_state
 
 /* For storing name_addr items in res_items table */
 /* clang-format off */
-#define ITEM(c, m) {(char**)&c.m}, &c
-#define ITEMC(c)   {(char**)&c},   &c
+#define ITEM(c, m) ((std::size_t)&c->m), reinterpret_cast<BareosResource**>(&c)
+#define ITEMC(c)   0,   reinterpret_cast<BareosResource**>(&c)
 /* clang-format on */
 /*
  * Master Resource configuration structure definition
- * This is the structure that defines the resources that are available to this
- * daemon.
+ * This is the structure that defines the resources that are available to
+ * this daemon.
  */
 struct ResourceTable {
   const char* name;    /* Resource name */
@@ -64,8 +64,8 @@ struct ResourceTable {
   uint32_t rcode;      /* Code if needed */
   uint32_t size;       /* Size of resource */
 
-  std::function<void*()> initres; /* this shoud call the new replacement*/
-  BareosResource* static_resource_;
+  std::function<void()> initres; /* this shoud call the new replacement*/
+  BareosResource** static_resource_;
 };
 
 /*
@@ -266,7 +266,7 @@ class ConfigurationParser {
   void InitResource(int type,
                     ResourceItem* items,
                     int pass,
-                    std::function<void*()> initres);
+                    std::function<void()> initres);
   bool AppendToResourcesChain(BareosResource* new_resource, int type);
   bool RemoveResource(int type, const char* name);
   void DumpResources(void sendit(void* sock, const char* fmt, ...),

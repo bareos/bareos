@@ -48,13 +48,13 @@ static void DumpResource(int type,
                          bool verbose);
 
 /* the first configuration pass uses this static memory */
-static DirectorResource res_dir;
-static ConsoleResource res_cons;
+static DirectorResource* res_dir;
+static ConsoleResource* res_cons;
 
 /* clang-format off */
 
 static ResourceItem cons_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_cons, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, "The name of this resource." },
+  { "Name", CFG_TYPE_NAME, (std::size_t)&res_cons->resource_name_, reinterpret_cast<BareosResource**>(&res_cons), 0, CFG_ITEM_REQUIRED, NULL, NULL, "The name of this resource." },
   { "Description", CFG_TYPE_STR, ITEM(res_cons, description_), 0, 0, NULL, NULL, NULL },
   { "RcFile", CFG_TYPE_DIR, ITEM(res_cons, rc_file), 0, 0, NULL, NULL, NULL },
   { "HistoryFile", CFG_TYPE_DIR, ITEM(res_cons, history_file), 0, 0, NULL, NULL, NULL },
@@ -64,7 +64,7 @@ static ResourceItem cons_items[] = {
   { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_cons, heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
   TLS_COMMON_CONFIG(res_cons),
   TLS_CERT_CONFIG(res_cons),
-  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 static ResourceItem dir_items[] = {
@@ -76,14 +76,14 @@ static ResourceItem dir_items[] = {
   { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_dir, heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
   TLS_COMMON_CONFIG(res_dir),
   TLS_CERT_CONFIG(res_dir),
-  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 static ResourceTable resources[] = {
   { "Console", cons_items, R_CONSOLE, sizeof(ConsoleResource),
-      [] (){ return new(&res_cons) ConsoleResource(); }, &res_cons },
+      [] (){ res_cons = new ConsoleResource(); }, reinterpret_cast<BareosResource**>(&res_cons) },
   { "Director", dir_items, R_DIRECTOR, sizeof(DirectorResource),
-      [] (){ return new(&res_dir) DirectorResource(); }, &res_dir },
+      [] (){ res_dir = new DirectorResource(); }, reinterpret_cast<BareosResource**>(&res_dir) },
   {nullptr, nullptr, 0, 0, nullptr, nullptr}
 };
 
@@ -167,7 +167,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
   // Ensure that all required items are present
   for (i = 0; items[i].name; i++) {
     if (items[i].flags & CFG_ITEM_REQUIRED) {
-      if (!BitIsSet(i, items[i].static_resource->item_present_)) {
+      if (!BitIsSet(i, (*items[i].static_resource)->item_present_)) {
         Emsg2(M_ABORT, 0,
               _("%s item is required in %s resource, but not found.\n"),
               items[i].name, resources[rindex].name);
@@ -180,22 +180,22 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
     switch (type) {
       case R_CONSOLE: {
         ConsoleResource* p = dynamic_cast<ConsoleResource*>(
-            my_config->GetResWithName(R_CONSOLE, res_cons.resource_name_));
+            my_config->GetResWithName(R_CONSOLE, res_cons->resource_name_));
         if (!p) {
           Emsg1(M_ABORT, 0, _("Cannot find Console resource %s\n"),
-                res_cons.resource_name_);
+                res_cons->resource_name_);
         } else {
           p->tls_cert_.allowed_certificate_common_names_ =
-              std::move(res_cons.tls_cert_.allowed_certificate_common_names_);
+              std::move(res_cons->tls_cert_.allowed_certificate_common_names_);
         }
         break;
       }
       case R_DIRECTOR: {
         DirectorResource* p = dynamic_cast<DirectorResource*>(
-            my_config->GetResWithName(R_DIRECTOR, res_dir.resource_name_));
+            my_config->GetResWithName(R_DIRECTOR, res_dir->resource_name_));
         if (!p) {
           Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"),
-                res_dir.resource_name_);
+                res_dir->resource_name_);
         } else {
           p->tls_cert_.allowed_certificate_common_names_ =
               std::move(p->tls_cert_.allowed_certificate_common_names_);
@@ -214,18 +214,6 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
      *
      * currently, this is the best place to free that */
 
-    BareosResource* res = items[0].static_resource;
-
-    if (res) {
-      if (res->resource_name_) {
-        free(res->resource_name_);
-        res->resource_name_ = nullptr;
-      }
-      if (res->description_) {
-        free(res->description_);
-        res->description_ = nullptr;
-      }
-    }
     return (error == 0);
   }
 
@@ -233,15 +221,13 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
     BareosResource* new_resource = nullptr;
     switch (resources[rindex].rcode) {
       case R_DIRECTOR: {
-        DirectorResource* p = new DirectorResource;
-        *p = res_dir;
-        new_resource = p;
+        new_resource = res_dir;
+        res_dir = nullptr;
         break;
       }
       case R_CONSOLE: {
-        ConsoleResource* p = new ConsoleResource;
-        *p = res_cons;
-        new_resource = p;
+        new_resource = res_cons;
+        res_cons = nullptr;
         break;
       }
       default:

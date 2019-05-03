@@ -68,12 +68,6 @@ class ConsoleResource
   ConsoleResource() = default;
   virtual ~ConsoleResource() = default;
 
-  void ShallowCopyTo(BareosResource* p) const override
-  {
-    ConsoleResource* r = dynamic_cast<ConsoleResource*>(p);
-    if (r) { *r = *this; }
-  };
-
   char* rc_file = nullptr;       /**< startup file */
   char* history_file = nullptr;  /**< command history file */
   s_password password;           /**< UA server password */
@@ -88,12 +82,6 @@ class DirectorResource
  public:
   DirectorResource() = default;
   virtual ~DirectorResource() = default;
-
-  void ShallowCopyTo(BareosResource* p) const override
-  {
-    DirectorResource* r = dynamic_cast<DirectorResource*>(p);
-    if (r) { *r = *this; }
-  };
 
   uint32_t DIRport = 0;          /**< UA server port */
   char* address = nullptr;       /**< UA server address */

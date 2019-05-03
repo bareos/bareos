@@ -101,12 +101,6 @@ class DeviceResource : public BareosResource {
   void MultipliedDeviceRestoreBaseName();
   void MultipliedDeviceRestoreNumberedName();
 
-  void ShallowCopyTo(BareosResource* p) const override
-  {
-    DeviceResource* r = dynamic_cast<DeviceResource*>(p);
-    if (r) { *r = *this; }
-  };
-
  private:
   std::string multiplied_device_resource_base_name; /** < base name without
                                                      appended numbers */

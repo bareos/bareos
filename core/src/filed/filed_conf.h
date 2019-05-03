@@ -82,12 +82,6 @@ class DirectorResource
 
   DirectorResource() = default;
   virtual ~DirectorResource() = default;
-
-  void ShallowCopyTo(BareosResource* p) const override
-  {
-    DirectorResource* r = dynamic_cast<DirectorResource*>(p);
-    if (r) { *r = *this; }
-  }
 };
 
 class ClientResource
@@ -96,12 +90,6 @@ class ClientResource
  public:
   ClientResource() = default;
   virtual ~ClientResource() = default;
-
-  void ShallowCopyTo(BareosResource* p) const override
-  {
-    ClientResource* r = dynamic_cast<ClientResource*>(p);
-    if (r) { *r = *this; }
-  }
 
   dlist* FDaddrs = nullptr;
   dlist* FDsrc_addr = nullptr; /* Address to source connections from */

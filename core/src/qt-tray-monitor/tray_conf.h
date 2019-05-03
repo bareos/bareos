@@ -74,12 +74,6 @@ class DirectorResource
   DirectorResource() = default;
   virtual ~DirectorResource() = default;
 
-  void ShallowCopyTo(BareosResource* p) const override
-  {
-    DirectorResource* r = dynamic_cast<DirectorResource*>(p);
-    if (r) { *r = *this; }
-  };
-
   uint32_t DIRport = 0;    /* UA server port */
   char* address = nullptr; /* UA server address */
 };
@@ -93,12 +87,6 @@ class MonitorResource
  public:
   MonitorResource() = default;
   virtual ~MonitorResource() = default;
-
-  void ShallowCopyTo(BareosResource* p) const override
-  {
-    MonitorResource* r = dynamic_cast<MonitorResource*>(p);
-    if (r) { *r = *this; }
-  };
 
   MessagesResource* messages = nullptr; /* Daemon message handler */
   s_password password;                  /* UA server password */
@@ -118,12 +106,6 @@ class ClientResource
   ClientResource() = default;
   virtual ~ClientResource() = default;
 
-  void ShallowCopyTo(BareosResource* p) const override
-  {
-    ClientResource* r = dynamic_cast<ClientResource*>(p);
-    if (r) { *r = *this; }
-  };
-
   uint32_t FDport = 0; /* Where File daemon listens */
   char* address = nullptr;
   s_password password;
@@ -139,12 +121,6 @@ class StorageResource
   StorageResource() = default;
   virtual ~StorageResource() = default;
 
-  void ShallowCopyTo(BareosResource* p) const override
-  {
-    StorageResource* r = dynamic_cast<StorageResource*>(p);
-    if (r) { *r = *this; }
-  };
-
   uint32_t SDport = 0; /* port where Directors connect */
   char* address = nullptr;
   s_password password;
@@ -156,12 +132,6 @@ class ConsoleFontResource
  public:
   ConsoleFontResource() = default;
   virtual ~ConsoleFontResource() = default;
-
-  void ShallowCopyTo(BareosResource* p) const override
-  {
-    ConsoleFontResource* r = dynamic_cast<ConsoleFontResource*>(p);
-    if (r) { *r = *this; }
-  };
 
   char* fontface = nullptr; /* Console Font specification */
 };

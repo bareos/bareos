@@ -68,11 +68,11 @@ static void DumpResource(int type,
  * then move it to allocated memory when the resource
  * scan is complete.
  */
-static MonitorResource res_monitor;
-static DirectorResource res_dir;
-static ClientResource res_client;
-static StorageResource res_store;
-static ConsoleFontResource res_font;
+static MonitorResource* res_monitor;
+static DirectorResource* res_dir;
+static ClientResource* res_client;
+static StorageResource* res_store;
+static ConsoleFontResource* res_font;
 
 /* clang-format off */
 
@@ -91,7 +91,7 @@ static ResourceItem mon_items[] = {
   {"DirConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor,DIRConnectTimeout), 0, CFG_ITEM_DEFAULT, "10", NULL, NULL},
     TLS_COMMON_CONFIG(res_monitor),
     TLS_CERT_CONFIG(res_monitor),
-  {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}
+  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 /*
@@ -106,7 +106,7 @@ static ResourceItem dir_items[] = {
   {"Address", CFG_TYPE_STR, ITEM(res_dir,address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
     TLS_COMMON_CONFIG(res_dir),
     TLS_CERT_CONFIG(res_dir),
-  {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}
+  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 /*
@@ -122,7 +122,7 @@ static ResourceItem cli_items[] = {
   {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_client,password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
     TLS_COMMON_CONFIG(res_client),
     TLS_CERT_CONFIG(res_client),
-  {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}
+  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 /*
@@ -140,7 +140,7 @@ static ResourceItem store_items[] = {
   {"SdPassword", CFG_TYPE_MD5PASSWORD, ITEM(res_store,password), 0, 0, NULL, NULL, NULL},
     TLS_COMMON_CONFIG(res_store),
     TLS_CERT_CONFIG(res_store),
-  {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}
+  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 /*
@@ -152,7 +152,7 @@ static ResourceItem con_font_items[] = {
   {"Name", CFG_TYPE_NAME, ITEM(res_font,resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"Description", CFG_TYPE_STR, ITEM(res_font,description_), 0, 0, NULL, NULL, NULL},
   {"Font", CFG_TYPE_STR, ITEM(res_font,fontface), 0, 0, NULL, NULL, NULL},
-  {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}
+  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
 /*
@@ -166,16 +166,16 @@ static ResourceItem con_font_items[] = {
  */
 static ResourceTable resources[] = {
   {"Monitor", mon_items, R_MONITOR, sizeof(MonitorResource),
-      []() { return new (&res_monitor) MonitorResource(); }, &res_monitor},
+      []() { res_monitor = new MonitorResource(); }, reinterpret_cast<BareosResource**>(&res_monitor)},
   {"Director", dir_items, R_DIRECTOR, sizeof(DirectorResource),
-      []() { return new (&res_dir) DirectorResource(); }, &res_dir},
+      []() { res_dir = new DirectorResource(); }, reinterpret_cast<BareosResource**>(&res_dir)},
   {"Client", cli_items, R_CLIENT, sizeof(ClientResource),
-      []() { return new (&res_client) ClientResource(); }, &res_client},
+      []() { res_client = new ClientResource(); }, reinterpret_cast<BareosResource**>(&res_client)},
   {"Storage", store_items, R_STORAGE, sizeof(StorageResource),
-      []() { return new (&res_store) StorageResource(); }, &res_store},
+      []() { res_store = new StorageResource(); }, reinterpret_cast<BareosResource**>(&res_store)},
   {"ConsoleFont", con_font_items, R_CONSOLE_FONT, sizeof(ConsoleFontResource),
-      []() { return new (&res_font) ConsoleFontResource(); }, &res_font},
-  {NULL, NULL, 0, 0}
+      []() { res_font = new ConsoleFontResource(); }, reinterpret_cast<BareosResource**>(&res_font)},
+  {nullptr, nullptr, 0, 0}
 };
 
 /* clang-format on */
@@ -273,7 +273,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
    */
   for (i = 0; items[i].name; i++) {
     if (items[i].flags & CFG_ITEM_REQUIRED) {
-      if (!BitIsSet(i, items[i].static_resource->item_present_)) {
+      if (!BitIsSet(i, (*items[i].static_resource)->item_present_)) {
         Emsg2(M_ERROR_TERM, 0,
               _("%s item is required in %s resource, but not found.\n"),
               items[i].name, resources[rindex].name);
@@ -314,7 +314,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
      *
      * currently, this is the best place to free that */
 
-    BareosResource* res = items[0].static_resource;
+    BareosResource* res = *items[0].static_resource;
 
     if (res) {
       if (res->resource_name_) {
@@ -332,36 +332,26 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
   if (!error) {
     BareosResource* new_resource;
     switch (type) {
-      case R_MONITOR: {
-        MonitorResource* p = new MonitorResource;
-        *p = res_monitor;
-        new_resource = p;
+      case R_MONITOR:
+        new_resource = res_monitor;
+        res_monitor = nullptr;
         break;
-      }
-      case R_CLIENT: {
-        ClientResource* p = new ClientResource;
-        *p = res_client;
-        new_resource = p;
+      case R_CLIENT:
+        new_resource = res_client;
+        res_client = nullptr;
         break;
-      }
-      case R_STORAGE: {
-        StorageResource* p = new StorageResource;
-        *p = res_store;
-        new_resource = p;
+      case R_STORAGE:
+        new_resource = res_store;
+        res_store = nullptr;
         break;
-      }
-      case R_DIRECTOR: {
-        DirectorResource* p = new DirectorResource;
-        *p = res_dir;
-        new_resource = p;
+      case R_DIRECTOR:
+        new_resource = res_dir;
+        res_dir = nullptr;
         break;
-      }
-      case R_CONSOLE_FONT: {
-        ConsoleFontResource* p = new ConsoleFontResource;
-        *p = res_font;
-        new_resource = p;
+      case R_CONSOLE_FONT:
+        new_resource = res_font;
+        res_font = nullptr;
         break;
-      }
       default:
         ASSERT(false);
         break;

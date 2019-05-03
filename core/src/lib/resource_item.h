@@ -35,25 +35,26 @@ class dlist;
 struct ResourceItem {
   const char* name; /* Resource name i.e. Director, ... */
   const int type;
-  union {
-    char** value; /* Where to store the item */
-    std::string* strValue;
-    uint16_t* ui16value;
-    uint32_t* ui32value;
-    int16_t* i16value;
-    int32_t* i32value;
-    uint64_t* ui64value;
-    int64_t* i64value;
-    bool* boolvalue;
-    utime_t* utimevalue;
-    s_password* pwdvalue;
-    BareosResource** resvalue;
-    alist** alistvalue;
-    dlist** dlistvalue;
-    char* bitvalue;
-    std::vector<std::string>* std_vector_of_strings;
-  };
-  BareosResource* static_resource;
+  // union {
+  //  char** value; /* Where to store the item */
+  //  std::string* strValue;
+  //  uint16_t* ui16value;
+  //  uint32_t* ui32value;
+  //  int16_t* i16value;
+  //  int32_t* i32value;
+  //  uint64_t* ui64value;
+  //  int64_t* i64value;
+  //  bool* boolvalue;
+  //  utime_t* utimevalue;
+  //  s_password* pwdvalue;
+  //  BareosResource** resvalue;
+  //  alist** alistvalue;
+  //  dlist** dlistvalue;
+  //  char* bitvalue;
+  //  std::vector<std::string>* std_vector_of_strings;
+  //};
+  std::size_t offset;
+  BareosResource** static_resource;
   int32_t code;              /* Item code/additional info */
   uint32_t flags;            /* Flags: See CFG_ITEM_* */
   const char* default_value; /* Default value */
@@ -70,5 +71,41 @@ struct ResourceItem {
    */
   const char* description;
 };
+
+static inline void* CalculateAddressOfMemberVariable(const ResourceItem& item)
+{
+  char* base = reinterpret_cast<char*>(*item.static_resource);
+  return static_cast<void*>(base + item.offset);
+}
+
+template <typename P>
+P GetItemVariable(const ResourceItem& item)
+{
+  void* p = CalculateAddressOfMemberVariable(item);
+  return *(static_cast<typename std::remove_reference<P>::type*>(p));
+}
+
+template <typename P>
+P GetItemVariablePointer(const ResourceItem& item)
+{
+  void* p = CalculateAddressOfMemberVariable(item);
+  return static_cast<P>(p);
+}
+
+template <typename P, typename V>
+void SetItemVariable(const ResourceItem& item, const V& value)
+{
+  P* p = GetItemVariablePointer<P*>(item);
+  *p = value;
+}
+
+template <typename P, typename V>
+void SetItemVariableFreeMemory(const ResourceItem& item, const V& value)
+{
+  void* p = GetItemVariablePointer<void*>(item);
+  P** q = (P**)p;
+  if (*q) free(*q);
+  (*(P**)p) = (P*)value;
+}
 
 #endif /* BAREOS_LIB_RESOURCE_ITEM_H_ */

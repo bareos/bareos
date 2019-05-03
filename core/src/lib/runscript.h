@@ -58,7 +58,8 @@ enum
   SCRIPT_After = (1 << 0),    /* AfterJob */
   SCRIPT_Before = (1 << 1),   /* BeforeJob */
   SCRIPT_AfterVSS = (1 << 2), /* BeforeJob and After VSS */
-  SCRIPT_Any = SCRIPT_Before | SCRIPT_After
+  SCRIPT_Any = SCRIPT_Before | SCRIPT_After,
+  SCRIPT_INVALID = 0xff
 };
 
 enum
@@ -74,12 +75,6 @@ class RunScript : public BareosResource {
  public:
   RunScript() = default;
   virtual ~RunScript() = default;
-
-  void ShallowCopyTo(BareosResource* p) const override
-  {
-    RunScript* r = dynamic_cast<RunScript*>(p);
-    if (r) { *r = *this; }
-  };
 
   POOLMEM* command = nullptr; /* Command string */
   POOLMEM* target = nullptr;  /* Host target */

@@ -251,7 +251,7 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
   Dmsg2(900, "StoreMsgs pass=%d code=%d\n", pass, item->code);
 
   MessagesResource* message_resource =
-      dynamic_cast<MessagesResource*>(item->static_resource);
+      dynamic_cast<MessagesResource*>(*item->static_resource);
 
   if (!message_resource) {
     Dmsg0(900, "Could not dynamic_cast to MessageResource\n");
@@ -420,15 +420,16 @@ void ConfigurationParser::StoreName(LEX* lc,
   /*
    * Store the name both in pass 1 and pass 2
    */
-  if (*(item->value)) {
-    scan_err2(lc, _("Attempt to redefine name \"%s\" to \"%s\"."),
-              *(item->value), lc->str);
+  char** p = GetItemVariablePointer<char**>(*item);
+
+  if (*p) {
+    scan_err2(lc, _("Attempt to redefine name \"%s\" to \"%s\"."), *p, lc->str);
     return;
   }
-  *(item->value) = strdup(lc->str);
+  *p = strdup(lc->str);
   ScanToEol(lc);
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 /*
@@ -442,14 +443,13 @@ void ConfigurationParser::StoreStrname(LEX* lc,
 {
   LexGetToken(lc, BCT_NAME);
   if (pass == 1) {
-    if (*(item->value)) { /* free old item */
-      free(*(item->value));
-    }
-    *(item->value) = strdup(lc->str);
+    char** p = GetItemVariablePointer<char**>(*item);
+    if (*p) { free(*p); }
+    *p = strdup(lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 /*
@@ -461,15 +461,10 @@ void ConfigurationParser::StoreStr(LEX* lc,
                                    int pass)
 {
   LexGetToken(lc, BCT_STRING);
-  if (pass == 1) {
-    if (*(item->value)) { /* free old item */
-      free(*(item->value));
-    }
-    *(item->value) = strdup(lc->str);
-  }
+  if (pass == 1) { SetItemVariableFreeMemory<char*>(*item, strdup(lc->str)); }
   ScanToEol(lc);
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 /*
@@ -481,10 +476,10 @@ void ConfigurationParser::StoreStdstr(LEX* lc,
                                       int pass)
 {
   LexGetToken(lc, BCT_STRING);
-  if (pass == 1) { *(item->strValue) = lc->str; }
+  if (pass == 1) { SetItemVariable<std::string>(*item, lc->str); }
   ScanToEol(lc);
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 /*
@@ -499,17 +494,16 @@ void ConfigurationParser::StoreDir(LEX* lc,
 {
   LexGetToken(lc, BCT_STRING);
   if (pass == 1) {
-    if (*(item->value)) { /* free old item */
-      free(*(item->value));
-    }
+    char** p = GetItemVariablePointer<char**>(*item);
+    if (*p) { free(*p); }
     if (lc->str[0] != '|') {
       DoShellExpansion(lc->str, SizeofPoolMemory(lc->str));
     }
-    *(item->value) = strdup(lc->str);
+    *p = strdup(lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 void ConfigurationParser::StoreStdstrdir(LEX* lc,
@@ -522,11 +516,11 @@ void ConfigurationParser::StoreStdstrdir(LEX* lc,
     if (lc->str[0] != '|') {
       DoShellExpansion(lc->str, SizeofPoolMemory(lc->str));
     }
-    *(item->strValue) = std::string(lc->str);
+    SetItemVariable<std::string>(*item, lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 /*
@@ -539,7 +533,7 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
 {
   LexGetToken(lc, BCT_STRING);
   if (pass == 1) { /* free old item */
-    s_password* pwd = item->pwdvalue;
+    s_password* pwd = GetItemVariablePointer<s_password*>(*item);
 
     if (pwd->value) { free(pwd->value); }
 
@@ -567,8 +561,8 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
     }
   }
   ScanToEol(lc);
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 /*
@@ -581,7 +575,8 @@ void ConfigurationParser::StoreClearpassword(LEX* lc,
 {
   LexGetToken(lc, BCT_STRING);
   if (pass == 1) {
-    s_password* pwd = item->pwdvalue;
+    s_password* pwd = GetItemVariablePointer<s_password*>(*item);
+
 
     if (pwd->value) { free(pwd->value); }
 
@@ -589,8 +584,8 @@ void ConfigurationParser::StoreClearpassword(LEX* lc,
     pwd->value = strdup(lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 /*
@@ -613,18 +608,19 @@ void ConfigurationParser::StoreRes(LEX* lc,
           lc->str, lc->line_no, lc->line);
       return;
     }
-    if (*(item->resvalue)) {
+    BareosResource** p = GetItemVariablePointer<BareosResource**>(*item);
+    if (*p) {
       scan_err3(
           lc,
           _("Attempt to redefine resource \"%s\" referenced on line %d: %s"),
           item->name, lc->line_no, lc->line);
       return;
     }
-    *(item->resvalue) = res;
+    *p = res;
   }
   ScanToEol(lc);
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 /*
@@ -643,24 +639,24 @@ void ConfigurationParser::StoreAlistRes(LEX* lc,
   int count = str_to_int32(item->default_value);
 
   if (pass == 2) {
+    alist** alistvalue = GetItemVariablePointer<alist**>(*item);
+
     if (count == 0) { /* always store in item->value */
       i = 0;
-      if (!item->alistvalue[i]) {
-        item->alistvalue[i] = new alist(10, not_owned_by_alist);
-      }
+      if (!alistvalue[i]) { alistvalue[i] = new alist(10, not_owned_by_alist); }
     } else {
       /*
        * Find empty place to store this directive
        */
-      while ((item->value)[i] != NULL && i++ < count) {}
+      while ((alistvalue)[i] != NULL && i++ < count) {}
       if (i >= count) {
         scan_err4(lc, _("Too many %s directives. Max. is %d. line %d: %s\n"),
                   lc->str, count, lc->line_no, lc->line);
         return;
       }
-      item->alistvalue[i] = new alist(10, not_owned_by_alist);
+      alistvalue[i] = new alist(10, not_owned_by_alist);
     }
-    list = item->alistvalue[i];
+    list = alistvalue[i];
 
     for (;;) {
       LexGetToken(lc, BCT_NAME); /* scan next item */
@@ -682,8 +678,8 @@ void ConfigurationParser::StoreAlistRes(LEX* lc,
     }
   }
   ScanToEol(lc);
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 /*
@@ -695,7 +691,8 @@ void ConfigurationParser::StoreStdVectorStr(LEX* lc,
                                             int pass)
 {
   if (pass == 2) {
-    std::vector<std::string>* list = item->std_vector_of_strings;
+    std::vector<std::string>* list =
+        GetItemVariablePointer<std::vector<std::string>*>(*item);
     LexGetToken(lc, BCT_STRING); /* scan next item */
     Dmsg4(900, "Append %s to vector %p size=%d %s\n", lc->str, list,
           list->size(), item->name);
@@ -712,8 +709,8 @@ void ConfigurationParser::StoreStdVectorStr(LEX* lc,
     list->push_back(lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 /*
@@ -725,10 +722,9 @@ void ConfigurationParser::StoreAlistStr(LEX* lc,
                                         int pass)
 {
   if (pass == 2) {
-    if (!*(item->value)) {
-      *(item->alistvalue) = new alist(10, owned_by_alist);
-    }
-    alist* list = *(item->alistvalue);
+    alist** alistvalue = GetItemVariablePointer<alist**>(*item);
+    if (!*alistvalue) { *alistvalue = new alist(10, owned_by_alist); }
+    alist* list = *alistvalue;
 
     LexGetToken(lc, BCT_STRING); /* scan next item */
     Dmsg4(900, "Append %s to alist %p size=%d %s\n", lc->str, list,
@@ -753,8 +749,8 @@ void ConfigurationParser::StoreAlistStr(LEX* lc,
     list->append(strdup(lc->str));
   }
   ScanToEol(lc);
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 /*
@@ -769,10 +765,9 @@ void ConfigurationParser::StoreAlistDir(LEX* lc,
                                         int pass)
 {
   if (pass == 2) {
-    if (!*(item->alistvalue)) {
-      *(item->alistvalue) = new alist(10, owned_by_alist);
-    }
-    alist* list = *(item->alistvalue);
+    alist** alistvalue = GetItemVariablePointer<alist**>(*item);
+    if (!*alistvalue) { *alistvalue = new alist(10, owned_by_alist); }
+    alist* list = *alistvalue;
 
     LexGetToken(lc, BCT_STRING); /* scan next item */
     Dmsg4(900, "Append %s to alist %p size=%d %s\n", lc->str, list,
@@ -801,8 +796,8 @@ void ConfigurationParser::StoreAlistDir(LEX* lc,
     list->append(strdup(lc->str));
   }
   ScanToEol(lc);
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 /*
@@ -817,10 +812,9 @@ void ConfigurationParser::StorePluginNames(LEX* lc,
     char *p, *plugin_name, *plugin_names;
     LexGetToken(lc, BCT_STRING); /* scan next item */
 
-    if (!*(item->alistvalue)) {
-      *(item->alistvalue) = new alist(10, owned_by_alist);
-    }
-    alist* list = *(item->alistvalue);
+    alist** alistvalue = GetItemVariablePointer<alist**>(*item);
+    if (!*alistvalue) { *alistvalue = new alist(10, owned_by_alist); }
+    alist* list = *alistvalue;
 
     plugin_names = strdup(lc->str);
     plugin_name = plugin_names;
@@ -835,8 +829,8 @@ void ConfigurationParser::StorePluginNames(LEX* lc,
     free(plugin_names);
   }
   ScanToEol(lc);
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 /*
@@ -878,10 +872,10 @@ void ConfigurationParser::store_int16(LEX* lc,
                                       int pass)
 {
   LexGetToken(lc, BCT_INT16);
-  *(item->i16value) = lc->u.int16_val;
+  SetItemVariable<int16_t>(*item, lc->u.int16_val);
   ScanToEol(lc);
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 void ConfigurationParser::store_int32(LEX* lc,
@@ -890,10 +884,10 @@ void ConfigurationParser::store_int32(LEX* lc,
                                       int pass)
 {
   LexGetToken(lc, BCT_INT32);
-  *(item->i32value) = lc->u.int32_val;
+  SetItemVariable<int32_t>(*item, lc->u.int32_val);
   ScanToEol(lc);
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 /*
@@ -905,10 +899,10 @@ void ConfigurationParser::store_pint16(LEX* lc,
                                        int pass)
 {
   LexGetToken(lc, BCT_PINT16);
-  *(item->ui16value) = lc->u.pint16_val;
+  SetItemVariable<uint16_t>(*item, lc->u.pint16_val);
   ScanToEol(lc);
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 void ConfigurationParser::store_pint32(LEX* lc,
@@ -917,10 +911,10 @@ void ConfigurationParser::store_pint32(LEX* lc,
                                        int pass)
 {
   LexGetToken(lc, BCT_PINT32);
-  *(item->ui32value) = lc->u.pint32_val;
+  SetItemVariable<uint32_t>(*item, lc->u.pint32_val);
   ScanToEol(lc);
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 /*
@@ -932,10 +926,10 @@ void ConfigurationParser::store_int64(LEX* lc,
                                       int pass)
 {
   LexGetToken(lc, BCT_INT64);
-  *(item->i64value) = lc->u.int64_val;
+  SetItemVariable<int64_t>(*item, lc->u.int64_val);
   ScanToEol(lc);
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 /*
@@ -992,14 +986,14 @@ void ConfigurationParser::store_int_unit(LEX* lc,
       }
 
       if (size32) {
-        *(item->ui32value) = (uint32_t)uvalue;
+        SetItemVariable<uint32_t>(*item, uvalue);
       } else {
         switch (type) {
           case STORE_SIZE:
-            *(item->i64value) = uvalue;
+            SetItemVariable<int64_t>(*item, uvalue);
             break;
           case STORE_SPEED:
-            *(item->ui64value) = uvalue;
+            SetItemVariable<uint64_t>(*item, uvalue);
             break;
         }
       }
@@ -1010,8 +1004,8 @@ void ConfigurationParser::store_int_unit(LEX* lc,
       return;
   }
   if (token != BCT_EOL) { ScanToEol(lc); }
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
   Dmsg0(900, "Leave store_unit\n");
 }
 
@@ -1083,15 +1077,15 @@ void ConfigurationParser::StoreTime(LEX* lc,
         scan_err1(lc, _("expected a time period, got: %s"), period);
         return;
       }
-      *(item->utimevalue) = utime;
+      SetItemVariable<utime_t>(*item, utime);
       break;
     default:
       scan_err1(lc, _("expected a time period, got: %s"), lc->str);
       return;
   }
   if (token != BCT_EOL) { ScanToEol(lc); }
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 /*
@@ -1103,18 +1097,19 @@ void ConfigurationParser::StoreBit(LEX* lc,
                                    int pass)
 {
   LexGetToken(lc, BCT_NAME);
+  char* bitvalue = GetItemVariablePointer<char*>(*item);
   if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
-    SetBit(item->code, item->bitvalue);
+    SetBit(item->code, bitvalue);
   } else if (Bstrcasecmp(lc->str, "no") || Bstrcasecmp(lc->str, "false")) {
-    ClearBit(item->code, item->bitvalue);
+    ClearBit(item->code, bitvalue);
   } else {
     scan_err2(lc, _("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
               lc->str); /* YES and NO must not be translated */
     return;
   }
   ScanToEol(lc);
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 /*
@@ -1127,17 +1122,17 @@ void ConfigurationParser::StoreBool(LEX* lc,
 {
   LexGetToken(lc, BCT_NAME);
   if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
-    *item->boolvalue = true;
+    SetItemVariable<bool>(*item, true);
   } else if (Bstrcasecmp(lc->str, "no") || Bstrcasecmp(lc->str, "false")) {
-    *(item->boolvalue) = false;
+    SetItemVariable<bool>(*item, false);
   } else {
     scan_err2(lc, _("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
               lc->str); /* YES and NO must not be translated */
     return;
   }
   ScanToEol(lc);
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 /*
@@ -1155,7 +1150,7 @@ void ConfigurationParser::StoreLabel(LEX* lc,
   int i;
   for (i = 0; tapelabels[i].name; i++) {
     if (Bstrcasecmp(lc->str, tapelabels[i].name)) {
-      *(item->ui32value) = tapelabels[i].token;
+      SetItemVariable<uint32_t>(*item, tapelabels[i].token);
       i = 0;
       break;
     }
@@ -1165,8 +1160,8 @@ void ConfigurationParser::StoreLabel(LEX* lc,
     return;
   }
   ScanToEol(lc);
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 /*
@@ -1299,8 +1294,9 @@ void ConfigurationParser::StoreAddresses(LEX* lc,
       scan_err1(lc, _("Expected a end of block }, got: %s"), lc->str);
     }
     if (pass == 1 &&
-        !AddAddress(item->dlistvalue, IPADDR::R_MULTIPLE, htons(port), family,
-                    hostname_str, port_str, errmsg, sizeof(errmsg))) {
+        !AddAddress(GetItemVariablePointer<dlist**>(*item), IPADDR::R_MULTIPLE,
+                    htons(port), family, hostname_str, port_str, errmsg,
+                    sizeof(errmsg))) {
       scan_err3(lc, _("Can't add hostname(%s) and port(%s) to addrlist (%s)"),
                 hostname_str, port_str, errmsg);
     }
@@ -1326,8 +1322,8 @@ void ConfigurationParser::StoreAddressesAddress(LEX* lc,
     scan_err1(lc, _("Expected an IP number or a hostname, got: %s"), lc->str);
   }
   if (pass == 1 &&
-      !AddAddress(item->dlistvalue, IPADDR::R_SINGLE_ADDR, htons(port), AF_INET,
-                  lc->str, 0, errmsg, sizeof(errmsg))) {
+      !AddAddress(GetItemVariablePointer<dlist**>(*item), IPADDR::R_SINGLE_ADDR,
+                  htons(port), AF_INET, lc->str, 0, errmsg, sizeof(errmsg))) {
     scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
   }
 }
@@ -1347,8 +1343,8 @@ void ConfigurationParser::StoreAddressesPort(LEX* lc,
     scan_err1(lc, _("Expected a port number or string, got: %s"), lc->str);
   }
   if (pass == 1 &&
-      !AddAddress(item->dlistvalue, IPADDR::R_SINGLE_PORT, htons(port), AF_INET,
-                  0, lc->str, errmsg, sizeof(errmsg))) {
+      !AddAddress(GetItemVariablePointer<dlist**>(*item), IPADDR::R_SINGLE_PORT,
+                  htons(port), AF_INET, 0, lc->str, errmsg, sizeof(errmsg))) {
     scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
   }
 }
@@ -1476,8 +1472,8 @@ void IndentConfigItem(PoolMem& cfg_str,
   PmStrcat(cfg_str, config_item);
 }
 
-static void PrintNumberSiPrefixFormat(ResourceItem *item,
-                                      PoolMem &cfg_str,
+static void PrintNumberSiPrefixFormat(ResourceItem* item,
+                                      PoolMem& cfg_str,
                                       bool inherited,
                                       uint64_t value_in)
 {
@@ -1489,8 +1485,8 @@ static void PrintNumberSiPrefixFormat(ResourceItem *item,
   /*
    * convert default value string to numeric value
    */
-  static const char *modifier[] = {"g", "m", "k", "", NULL};
-  const uint64_t multiplier[]   = {
+  static const char* modifier[] = {"g", "m", "k", "", NULL};
+  const uint64_t multiplier[] = {
       1073741824, /* gibi */
       1048576,    /* mebi */
       1024,       /* kibi */
@@ -1503,7 +1499,7 @@ static void PrintNumberSiPrefixFormat(ResourceItem *item,
     for (int t = 0; modifier[t]; t++) {
       Dmsg2(200, " %s bytes: %lld\n", item->name, value);
       factor = value / multiplier[t];
-      value  = value % multiplier[t];
+      value = value % multiplier[t];
       if (factor > 0) {
         Mmsg(temp, "%d %s ", factor, modifier[t]);
         PmStrcat(volspec, temp.c_str());
@@ -1517,23 +1513,29 @@ static void PrintNumberSiPrefixFormat(ResourceItem *item,
   IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
 }
 
-static void Print32BitConfigNumberSiPrefixFormat(ResourceItem *item, PoolMem &cfg_str, bool inherited)
+static void Print32BitConfigNumberSiPrefixFormat(ResourceItem* item,
+                                                 PoolMem& cfg_str,
+                                                 bool inherited)
 {
-  uint32_t value_32_bit = *(item->ui32value);
+  uint32_t value_32_bit = GetItemVariable<uint32_t>(*item);
   PrintNumberSiPrefixFormat(item, cfg_str, inherited, value_32_bit);
 }
 
-static void Print64BitConfigNumberSiPrefixFormat(ResourceItem *item, PoolMem &cfg_str, bool inherited)
+static void Print64BitConfigNumberSiPrefixFormat(ResourceItem* item,
+                                                 PoolMem& cfg_str,
+                                                 bool inherited)
 {
-  uint64_t value_64_bit = *(item->ui64value);
+  uint64_t value_64_bit = GetItemVariable<uint64_t>(*item);
   PrintNumberSiPrefixFormat(item, cfg_str, inherited, value_64_bit);
 }
 
-static void PrintConfigTime(ResourceItem *item, PoolMem &cfg_str, bool inherited)
+static void PrintConfigTime(ResourceItem* item,
+                            PoolMem& cfg_str,
+                            bool inherited)
 {
   PoolMem temp;
   PoolMem timespec;
-  utime_t secs = *(item->utimevalue);
+  utime_t secs = GetItemVariable<utime_t>(*item);
   int factor;
 
   /*
@@ -1689,51 +1691,55 @@ static bool HasDefaultValue(ResourceItem* item)
       case CFG_TYPE_DIR:
       case CFG_TYPE_NAME:
       case CFG_TYPE_STRNAME:
-        is_default = bstrcmp(*(item->value), item->default_value);
+        is_default =
+            bstrcmp(GetItemVariable<char*>(*item), item->default_value);
         break;
       case CFG_TYPE_STDSTR:
       case CFG_TYPE_STDSTRDIR:
-        is_default = bstrcmp((*item->strValue).c_str(), item->default_value);
+        is_default = bstrcmp(GetItemVariable<std::string&>(*item).c_str(),
+                             item->default_value);
         break;
       case CFG_TYPE_INT16:
-        is_default =
-            (*(item->i16value) == (int16_t)str_to_int32(item->default_value));
+        is_default = (GetItemVariable<int16_t>(*item) ==
+                      (int16_t)str_to_int32(item->default_value));
         break;
       case CFG_TYPE_PINT16:
-        is_default =
-            (*(item->ui16value) == (uint16_t)str_to_int32(item->default_value));
+        is_default = (GetItemVariable<uint16_t>(*item) ==
+                      (uint16_t)str_to_int32(item->default_value));
         break;
       case CFG_TYPE_INT32:
-        is_default = (*(item->i32value) == str_to_int32(item->default_value));
+        is_default = (GetItemVariable<int32_t>(*item) ==
+                      str_to_int32(item->default_value));
         break;
       case CFG_TYPE_PINT32:
-        is_default =
-            (*(item->ui32value) == (uint32_t)str_to_int32(item->default_value));
+        is_default = (GetItemVariable<uint32_t>(*item) ==
+                      (uint32_t)str_to_int32(item->default_value));
         break;
       case CFG_TYPE_INT64:
-        is_default = (*(item->i64value) == str_to_int64(item->default_value));
+        is_default = (GetItemVariable<int64_t>(*item) ==
+                      str_to_int64(item->default_value));
         break;
       case CFG_TYPE_SPEED:
-        is_default =
-            (*(item->ui64value) == (uint64_t)str_to_int64(item->default_value));
+        is_default = (GetItemVariable<uint64_t>(*item) ==
+                      (uint64_t)str_to_int64(item->default_value));
         break;
       case CFG_TYPE_SIZE64:
-        is_default =
-            (*(item->ui64value) == (uint64_t)str_to_int64(item->default_value));
+        is_default = (GetItemVariable<uint64_t>(*item) ==
+                      (uint64_t)str_to_int64(item->default_value));
         break;
       case CFG_TYPE_SIZE32:
-        is_default =
-            (*(item->ui32value) == (uint32_t)str_to_int32(item->default_value));
+        is_default = (GetItemVariable<uint32_t>(*item) ==
+                      (uint32_t)str_to_int32(item->default_value));
         break;
       case CFG_TYPE_TIME:
-        is_default =
-            (*(item->ui64value) == (uint64_t)str_to_int64(item->default_value));
+        is_default = (GetItemVariable<uint64_t>(*item) ==
+                      (uint64_t)str_to_int64(item->default_value));
         break;
       case CFG_TYPE_BOOL: {
         bool default_value = Bstrcasecmp(item->default_value, "true") ||
                              Bstrcasecmp(item->default_value, "yes");
 
-        is_default = (*item->boolvalue == default_value);
+        is_default = (GetItemVariable<bool>(*item) == default_value);
         break;
       }
       default:
@@ -1745,41 +1751,41 @@ static bool HasDefaultValue(ResourceItem* item)
       case CFG_TYPE_DIR:
       case CFG_TYPE_NAME:
       case CFG_TYPE_STRNAME:
-        is_default = (*(item->value) == NULL);
+        is_default = (GetItemVariable<char*>(*item) == nullptr);
         break;
       case CFG_TYPE_STDSTR:
       case CFG_TYPE_STDSTRDIR:
-        is_default = (*(item->strValue)).empty();
+        is_default = GetItemVariable<std::string&>(*item).empty();
         break;
       case CFG_TYPE_INT16:
-        is_default = (*(item->i16value) == 0);
+        is_default = (GetItemVariable<int16_t>(*item) == 0);
         break;
       case CFG_TYPE_PINT16:
-        is_default = (*(item->ui16value) == 0);
+        is_default = (GetItemVariable<uint16_t>(*item) == 0);
         break;
       case CFG_TYPE_INT32:
-        is_default = (*(item->i32value) == 0);
+        is_default = (GetItemVariable<int32_t>(*item) == 0);
         break;
       case CFG_TYPE_PINT32:
-        is_default = (*(item->ui32value) == 0);
+        is_default = (GetItemVariable<uint32_t>(*item) == 0);
         break;
       case CFG_TYPE_INT64:
-        is_default = (*(item->i64value) == 0);
+        is_default = (GetItemVariable<int64_t>(*item) == 0);
         break;
       case CFG_TYPE_SPEED:
-        is_default = (*(item->ui64value) == 0);
+        is_default = (GetItemVariable<uint64_t>(*item) == 0);
         break;
       case CFG_TYPE_SIZE64:
-        is_default = (*(item->ui64value) == 0);
+        is_default = (GetItemVariable<uint64_t>(*item) == 0);
         break;
       case CFG_TYPE_SIZE32:
-        is_default = (*(item->ui32value) == 0);
+        is_default = (GetItemVariable<uint32_t>(*item) == 0);
         break;
       case CFG_TYPE_TIME:
-        is_default = (*(item->ui64value) == 0);
+        is_default = (GetItemVariable<uint64_t>(*item) == 0);
         break;
       case CFG_TYPE_BOOL:
-        is_default = (*item->boolvalue == false);
+        is_default = (GetItemVariable<bool>(*item) == false);
         break;
       default:
         break;
@@ -1813,7 +1819,7 @@ bool BareosResource::PrintConfig(PoolMem& buff,
    */
   if (!my_config.resources_[rindex].items) { return true; }
 
-  ShallowCopyTo(my_config.resources_[rindex].static_resource_);
+  *my_config.resources_[rindex].static_resource_ = this;
 
   PmStrcat(cfg_str, my_config.ResToStr(rcode_));
   PmStrcat(cfg_str, " {\n");
@@ -1860,33 +1866,34 @@ bool BareosResource::PrintConfig(PoolMem& buff,
       case CFG_TYPE_STR:
       case CFG_TYPE_DIR:
       case CFG_TYPE_NAME:
-      case CFG_TYPE_STRNAME:
-        if (print_item && *(items[i].value) != NULL) {
-          Dmsg2(200, "%s = \"%s\"\n", items[i].name, *(items[i].value));
-          Mmsg(temp, "%s = \"%s\"\n", items[i].name, *(items[i].value));
+      case CFG_TYPE_STRNAME: {
+        char* p = GetItemVariable<char*>(items[i]);
+        if (print_item && p != NULL) {
+          Dmsg2(200, "%s = \"%s\"\n", items[i].name, p);
+          Mmsg(temp, "%s = \"%s\"\n", items[i].name, p);
           IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
         }
         break;
+      }
       case CFG_TYPE_STDSTR:
-      case CFG_TYPE_STDSTRDIR:
-        if (print_item && items[i].strValue) {
-          if (!items[i].strValue->empty()) {
-            Dmsg2(200, "%s = \"%s\"\n", items[i].name,
-                  items[i].strValue->c_str());
-            Mmsg(temp, "%s = \"%s\"\n", items[i].name,
-                 items[i].strValue->c_str());
+      case CFG_TYPE_STDSTRDIR: {
+        const std::string& p = GetItemVariable<std::string&>(items[i]);
+        if (print_item) {
+          if (!p.empty()) {
+            Dmsg2(200, "%s = \"%s\"\n", items[i].name, p.c_str());
+            Mmsg(temp, "%s = \"%s\"\n", items[i].name, p.c_str());
             IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
           }
         }
         break;
+      }
 
       case CFG_TYPE_MD5PASSWORD:
       case CFG_TYPE_CLEARPASSWORD:
       case CFG_TYPE_AUTOPASSWORD:
         if (print_item) {
-          s_password* password;
+          s_password* password = GetItemVariablePointer<s_password*>(items[i]);
 
-          password = items[i].pwdvalue;
           if (password && password->value != NULL) {
             if (hide_sensitive_data) {
               Dmsg1(200, "%s = \"****************\"\n", items[i].name);
@@ -1913,7 +1920,7 @@ bool BareosResource::PrintConfig(PoolMem& buff,
         break;
       case CFG_TYPE_LABEL:
         for (int j = 0; tapelabels[j].name; j++) {
-          if (*(items[i].ui32value) == tapelabels[j].token) {
+          if (GetItemVariable<uint32_t>(items[i]) == tapelabels[j].token) {
             /*
              * Supress printing default value.
              */
@@ -1931,50 +1938,54 @@ bool BareosResource::PrintConfig(PoolMem& buff,
         break;
       case CFG_TYPE_INT16:
         if (print_item) {
-          Mmsg(temp, "%s = %hd\n", items[i].name, *(items[i].i16value));
+          Mmsg(temp, "%s = %hd\n", items[i].name,
+               GetItemVariable<int16_t>(items[i]));
           IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
         }
         break;
       case CFG_TYPE_PINT16:
         if (print_item) {
-          Mmsg(temp, "%s = %hu\n", items[i].name, *(items[i].ui16value));
+          Mmsg(temp, "%s = %hu\n", items[i].name,
+               GetItemVariable<uint16_t>(items[i]));
           IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
         }
         break;
       case CFG_TYPE_INT32:
         if (print_item) {
-          Mmsg(temp, "%s = %d\n", items[i].name, *(items[i].i32value));
+          Mmsg(temp, "%s = %d\n", items[i].name,
+               GetItemVariable<int32_t>(items[i]));
           IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
         }
         break;
       case CFG_TYPE_PINT32:
         if (print_item) {
-          Mmsg(temp, "%s = %u\n", items[i].name, *(items[i].ui32value));
+          Mmsg(temp, "%s = %u\n", items[i].name,
+               GetItemVariable<uint32_t>(items[i]));
           IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
         }
         break;
       case CFG_TYPE_INT64:
         if (print_item) {
-          Mmsg(temp, "%s = %d\n", items[i].name, *(items[i].i64value));
+          Mmsg(temp, "%s = %d\n", items[i].name,
+               GetItemVariable<int64_t>(items[i]));
           IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
         }
         break;
       case CFG_TYPE_SPEED:
         if (print_item) {
-          Mmsg(temp, "%s = %u\n", items[i].name, *(items[i].ui64value));
+          Mmsg(temp, "%s = %u\n", items[i].name,
+               GetItemVariable<uint64_t>(items[i]));
           IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
         }
         break;
       case CFG_TYPE_SIZE64:
-        if (print_item) { Print64BitConfigNumberSiPrefixFormat(&items[i],
-                          cfg_str,
-                          inherited);
+        if (print_item) {
+          Print64BitConfigNumberSiPrefixFormat(&items[i], cfg_str, inherited);
         }
         break;
       case CFG_TYPE_SIZE32:
-        if (print_item) { Print32BitConfigNumberSiPrefixFormat(&items[i],
-                          cfg_str,
-                          inherited);
+        if (print_item) {
+          Print32BitConfigNumberSiPrefixFormat(&items[i], cfg_str, inherited);
         }
         break;
       case CFG_TYPE_TIME:
@@ -1982,7 +1993,7 @@ bool BareosResource::PrintConfig(PoolMem& buff,
         break;
       case CFG_TYPE_BOOL:
         if (print_item) {
-          if (*items[i].boolvalue) {
+          if (GetItemVariable<bool>(items[i])) {
             Mmsg(temp, "%s = %s\n", items[i].name, NT_("yes"));
           } else {
             Mmsg(temp, "%s = %s\n", items[i].name, NT_("no"));
@@ -1994,7 +2005,8 @@ bool BareosResource::PrintConfig(PoolMem& buff,
         /*
          * One line for each member of the list
          */
-        const std::vector<std::string>& list = *items[i].std_vector_of_strings;
+        const std::vector<std::string>& list =
+            GetItemVariable<std::vector<std::string>&>(items[i]);
 
         for (const std::string& s : list) {
           if (items[i].flags & CFG_ITEM_DEFAULT) {
@@ -2012,8 +2024,7 @@ bool BareosResource::PrintConfig(PoolMem& buff,
          * One line for each member of the list
          */
         char* value = nullptr;
-        alist* list;
-        list = *(items[i].alistvalue);
+        alist* list = GetItemVariable<alist*>(items[i]);
 
         if (list != NULL) {
           foreach_alist (value, list) {
@@ -2038,7 +2049,7 @@ bool BareosResource::PrintConfig(PoolMem& buff,
         alist* list;
         PoolMem res_names;
 
-        list = *(items[i].alistvalue);
+        list = GetItemVariable<alist*>(items[i]);
         if (list != NULL) {
           Mmsg(temp, "%s = ", items[i].name);
           IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
@@ -2062,7 +2073,7 @@ bool BareosResource::PrintConfig(PoolMem& buff,
       case CFG_TYPE_RES: {
         BareosResource* res;
 
-        res = *(items[i].resvalue);
+        res = GetItemVariable<BareosResource*>(items[i]);
         if (res != NULL && res->resource_name_ != NULL) {
           Mmsg(temp, "%s = \"%s\"\n", items[i].name, res->resource_name_);
           IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
@@ -2070,7 +2081,7 @@ bool BareosResource::PrintConfig(PoolMem& buff,
         break;
       }
       case CFG_TYPE_BIT:
-        if (BitIsSet(items[i].code, items[i].bitvalue)) {
+        if (BitIsSet(items[i].code, GetItemVariablePointer<char*>(items[i]))) {
           Mmsg(temp, "%s = %s\n", items[i].name, NT_("yes"));
         } else {
           Mmsg(temp, "%s = %s\n", items[i].name, NT_("no"));
@@ -2084,7 +2095,7 @@ bool BareosResource::PrintConfig(PoolMem& buff,
          */
         break;
       case CFG_TYPE_ADDRESSES: {
-        dlist* addrs = *items[i].dlistvalue;
+        dlist* addrs = GetItemVariable<dlist*>(items[i]);
         IPADDR* adr;
 
         Mmsg(temp, "%s = {\n", items[i].name);

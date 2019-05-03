@@ -51,7 +51,7 @@ static ResourceItem msgs_items[] = {
    { "Console", CFG_TYPE_MSGS, ITEMC(res_msgs), static_cast<int>(MessageDestinationCode::kConsole), 0, NULL, NULL, NULL },
    { "Operator", CFG_TYPE_MSGS, ITEMC(res_msgs), static_cast<int>(MessageDestinationCode::kOperator), 0, NULL, NULL, NULL },
    { "Catalog", CFG_TYPE_MSGS, ITEMC(res_msgs), static_cast<int>(MessageDestinationCode::kCatalog), 0, NULL, NULL, NULL },
-   {nullptr, 0, {nullptr}, nullptr, static_cast<int>(MessageDestinationCode::kUndefined), 0, nullptr, nullptr, nullptr}
+   {nullptr, 0, 0, nullptr, static_cast<int>(MessageDestinationCode::kUndefined), 0, nullptr, nullptr, nullptr}
 };
 
 /* clang-format on */

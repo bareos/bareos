@@ -74,9 +74,9 @@ static void DumpResource(int type,
  * then move it to allocated memory when the resource
  * scan is complete.
  */
-static DirectorResource res_dir;
-static ClientResource res_client;
-static MessagesResource res_msgs;
+static DirectorResource* res_dir;
+static ClientResource* res_client;
+static MessagesResource* res_msgs;
 
 /* clang-format off */
 
@@ -129,7 +129,7 @@ static ResourceItem cli_items[] = {
   {"LogTimestampFormat", CFG_TYPE_STR, ITEM(res_client, log_timestamp_format), 0, 0, NULL, "15.2.3-", NULL},
     TLS_COMMON_CONFIG(res_client),
     TLS_CERT_CONFIG(res_client),
-  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 /**
  * Directors that can use our services
@@ -152,7 +152,7 @@ static ResourceItem dir_items[] = {
   {"AllowedJobCommand", CFG_TYPE_ALIST_STR, ITEM(res_dir, allowed_job_cmds), 0, 0, NULL, NULL, NULL},
     TLS_COMMON_CONFIG(res_dir),
     TLS_CERT_CONFIG(res_dir),
-  {nullptr, 0, {nullptr}, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 /**
  * Message resource
@@ -161,13 +161,13 @@ static ResourceItem dir_items[] = {
 
 static ResourceTable resources[] = {
   {"Director", dir_items, R_DIRECTOR, sizeof(DirectorResource),
-      []() { return new (&res_dir) DirectorResource(); }, &res_dir},
+      []() { res_dir = new  DirectorResource(); }, reinterpret_cast<BareosResource**>(&res_dir)},
   {"FileDaemon", cli_items, R_CLIENT, sizeof(ClientResource),
-      []() { return new (&res_client) ClientResource(); }, &res_client},
+      []() { res_client = new ClientResource(); }, reinterpret_cast<BareosResource**>(&res_client)},
   {"Client", cli_items, R_CLIENT, sizeof(ClientResource),
-      []() { return new (&res_client) ClientResource(); }, &res_client}, /* alias for filedaemon */
+      []() { res_client = new ClientResource(); }, reinterpret_cast<BareosResource**>(&res_client)}, /* alias for filedaemon */
   {"Messages", msgs_items, R_MSGS, sizeof(MessagesResource),
-      []() { return new (&res_msgs) MessagesResource(); }, &res_msgs},
+      []() { res_msgs = new MessagesResource(); }, reinterpret_cast<BareosResource**>(&res_msgs)},
   {nullptr, nullptr, 0, 0, nullptr, nullptr}
 };
 
@@ -196,7 +196,7 @@ static void StoreCipher(LEX* lc, ResourceItem* item, int index, int pass)
    */
   for (i = 0; CryptoCiphers[i].name; i++) {
     if (Bstrcasecmp(lc->str, CryptoCiphers[i].name)) {
-      *(uint32_t*)(item->value) = CryptoCiphers[i].token;
+      SetItemVariable<uint32_t>(*item, CryptoCiphers[i].token);
       i = 0;
       break;
     }
@@ -205,8 +205,8 @@ static void StoreCipher(LEX* lc, ResourceItem* item, int index, int pass)
     scan_err1(lc, _("Expected a Crypto Cipher option, got: %s"), lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
 /**
@@ -221,7 +221,7 @@ static void InitResourceCb(ResourceItem* item, int pass)
         case CFG_TYPE_CIPHER:
           for (int i = 0; CryptoCiphers[i].name; i++) {
             if (Bstrcasecmp(item->default_value, CryptoCiphers[i].name)) {
-              *(uint32_t*)(item->value) = CryptoCiphers[i].token;
+              SetItemVariable<uint32_t>(*item, CryptoCiphers[i].token);
             }
           }
           break;
@@ -437,7 +437,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
    */
   for (i = 0; items[i].name; i++) {
     if (items[i].flags & CFG_ITEM_REQUIRED) {
-      if (!BitIsSet(i, items[i].static_resource->item_present_)) {
+      if (!BitIsSet(i, (*items[i].static_resource)->item_present_)) {
         Emsg2(M_ABORT, 0,
               _("%s item is required in %s resource, but not found.\n"),
               items[i].name, resources[rindex].name);
@@ -453,35 +453,35 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         break;
       case R_DIRECTOR: {
         DirectorResource* p = dynamic_cast<DirectorResource*>(
-            my_config->GetResWithName(R_DIRECTOR, res_dir.resource_name_));
+            my_config->GetResWithName(R_DIRECTOR, res_dir->resource_name_));
         if (!p) {
           Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"),
-                res_dir.resource_name_);
+                res_dir->resource_name_);
         } else {
           p->tls_cert_.allowed_certificate_common_names_ =
-              std::move(res_dir.tls_cert_.allowed_certificate_common_names_);
-          p->allowed_script_dirs = res_dir.allowed_script_dirs;
-          p->allowed_job_cmds = res_dir.allowed_job_cmds;
+              std::move(res_dir->tls_cert_.allowed_certificate_common_names_);
+          p->allowed_script_dirs = res_dir->allowed_script_dirs;
+          p->allowed_job_cmds = res_dir->allowed_job_cmds;
         }
         break;
       }
       case R_CLIENT: {
         ClientResource* p = dynamic_cast<ClientResource*>(
-            my_config->GetResWithName(R_CLIENT, res_client.resource_name_));
+            my_config->GetResWithName(R_CLIENT, res_client->resource_name_));
         if (!p) {
           Emsg1(M_ABORT, 0, _("Cannot find Client resource %s\n"),
-                res_client.resource_name_);
+                res_client->resource_name_);
         } else {
-          p->plugin_names = res_client.plugin_names;
-          p->pki_signing_key_files = res_client.pki_signing_key_files;
-          p->pki_master_key_files = res_client.pki_master_key_files;
-          p->pki_signers = res_client.pki_signers;
-          p->pki_recipients = res_client.pki_recipients;
-          p->messages = res_client.messages;
-          p->tls_cert_.allowed_certificate_common_names_ =
-              std::move(res_client.tls_cert_.allowed_certificate_common_names_);
-          p->allowed_script_dirs = res_client.allowed_script_dirs;
-          p->allowed_job_cmds = res_client.allowed_job_cmds;
+          p->plugin_names = res_client->plugin_names;
+          p->pki_signing_key_files = res_client->pki_signing_key_files;
+          p->pki_master_key_files = res_client->pki_master_key_files;
+          p->pki_signers = res_client->pki_signers;
+          p->pki_recipients = res_client->pki_recipients;
+          p->messages = res_client->messages;
+          p->tls_cert_.allowed_certificate_common_names_ = std::move(
+              res_client->tls_cert_.allowed_certificate_common_names_);
+          p->allowed_script_dirs = res_client->allowed_script_dirs;
+          p->allowed_job_cmds = res_client->allowed_job_cmds;
         }
         break;
       }
@@ -497,18 +497,6 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
      *
      * currently, this is the best place to free that */
 
-    BareosResource* res = items[0].static_resource;
-
-    if (res) {
-      if (res->resource_name_) {
-        free(res->resource_name_);
-        res->resource_name_ = nullptr;
-      }
-      if (res->description_) {
-        free(res->description_);
-        res->description_ = nullptr;
-      }
-    }
     return (error == 0);
   }
 
@@ -516,21 +504,18 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
     BareosResource* new_resource = nullptr;
     switch (type) {
       case R_DIRECTOR: {
-        DirectorResource* p = new DirectorResource();
-        *p = res_dir;
-        new_resource = p;
+        new_resource = res_dir;
+        res_dir = nullptr;
         break;
       }
       case R_CLIENT: {
-        ClientResource* p = new ClientResource();
-        *p = res_client;
-        new_resource = p;
+        new_resource = res_client;
+        res_client = nullptr;
         break;
       }
       case R_MSGS: {
-        MessagesResource* p = new MessagesResource();
-        *p = res_msgs;
-        new_resource = p;
+        new_resource = res_msgs;
+        res_msgs = nullptr;
         break;
       }
       default:

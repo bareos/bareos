@@ -451,9 +451,8 @@ int main(int argc, char* argv[])
     }
   }
 
-  TerminateDird(0);
-
 bail_out:
+  TerminateDird(0);
   return 0;
 }
 
@@ -462,7 +461,6 @@ bail_out:
  *
  */
 namespace directordaemon {
-
 #if !defined(HAVE_WIN32)
 static
 #endif
@@ -485,7 +483,7 @@ static
   DbSqlPoolDestroy();
   DbFlushBackends();
   UnloadDirPlugins();
-  if (!test_config) { /* we don't need to do this block in test mode */
+  if (!test_config && me) { /* we don't need to do this block in test mode */
     WriteStateFile(me->working_directory, "bareos-dir",
                    GetFirstPortHostOrder(me->DIRaddrs));
     DeletePidFile(me->pid_directory, "bareos-dir",

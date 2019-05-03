@@ -27,7 +27,7 @@
 
 namespace directordaemon {
 
-TEST(ConfigParser, test_stored_config)
+TEST(ConfigParser, test_director_config)
 {
   InitMsg(NULL, NULL); /* initialize message handler */
 

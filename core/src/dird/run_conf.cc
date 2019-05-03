@@ -183,7 +183,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
   bool found;
   utime_t utime;
   BareosResource* res;
-  RunResource** run = (RunResource**)(item->value);
+  RunResource** run = GetItemVariablePointer<RunResource**>(*item);
 
   lc->options |= LOPT_NO_IDENT; /* Want only "strings" */
 
@@ -741,7 +741,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
   }
 
   lc->options = options; /* Restore scanner options */
-  SetBit(index, item->static_resource->item_present_);
-  ClearBit(index, item->static_resource->inherit_content_);
+  SetBit(index, (*item->static_resource)->item_present_);
+  ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 } /* namespace directordaemon */
