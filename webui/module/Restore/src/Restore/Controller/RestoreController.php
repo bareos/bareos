@@ -238,7 +238,170 @@ class RestoreController extends AbstractActionController
 
    }
 
-   /**
+    public function versionsAction()
+    {
+        $this->RequestURIPlugin()->setRequestURI();
+
+        if (!$this->SessionTimeoutPlugin()->isValid()) {
+            return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
+        }
+
+        if (!$this->CommandACLPlugin()->validate($_SESSION['bareos']['commands'], $this->required_commands)) {
+            $this->acl_alert = true;
+            return new ViewModel(
+                array(
+                    'acl_alert' => $this->acl_alert,
+                    'required_commands' => $this->required_commands,
+                )
+            );
+        }
+
+        $this->bsock = $this->getServiceLocator()->get('director');
+
+        $this->setRestoreParams();
+        $errors = null;
+        $result = null;
+
+        if ($this->restore_params['client'] == null) {
+            try {
+                $clients = $this->getClientModel()->getClients($this->bsock);
+                $client = array_pop($clients);
+                $this->restore_params['client'] = $client['name'];
+            } catch (Exception $e) {
+                echo $e->getMessage();
+            }
+        }
+
+        if ($this->restore_params['type'] == "client" && $this->restore_params['jobid'] == null) {
+            try {
+                $latestbackup = $this->getClientModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", 1);
+                if (empty($latestbackup)) {
+                    $this->restore_params['jobid'] = null;
+                } else {
+                    $this->restore_params['jobid'] = $latestbackup[0]['jobid'];
+                }
+            } catch (Exception $e) {
+                echo $e->getMessage();
+            }
+        }
+
+        if (isset($this->restore_params['mergejobs']) && $this->restore_params['mergejobs'] == 1) {
+            $jobids = $this->restore_params['jobid'];
+        } else {
+            try {
+                $jobids = $this->getRestoreModel()->getJobIds($this->bsock, $this->restore_params['jobid'], $this->restore_params['mergefilesets']);
+                $this->restore_params['jobids'] = $jobids;
+            } catch (Exception $e) {
+                echo $e->getMessage();
+            }
+        }
+
+        if ($this->restore_params['type'] == "client") {
+            try {
+                $backups = $this->getClientModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", null);
+            } catch (Exception $e) {
+                echo $e->getMessage();
+            }
+        }
+
+        try {
+            //$jobs = $this->getJobModel()->getJobs();
+            $clients = $this->getClientModel()->getClients($this->bsock);
+            $filesets = $this->getFilesetModel()->getDotFilesets($this->bsock);
+            $restorejobs = $this->getJobModel()->getRestoreJobs($this->bsock);
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+
+        if (empty($backups)) {
+            $errors = 'No backups of client <strong>' . $this->restore_params['client'] . '</strong> found.';
+        }
+
+        // Create the form
+        $form = new RestoreForm(
+            $this->restore_params,
+            //$jobs,
+            $clients,
+            $filesets,
+            $restorejobs,
+            $jobids,
+            $backups
+        );
+
+        // Set the method attribute for the form
+        $form->setAttribute('method', 'post');
+        $form->setAttribute('onsubmit', 'return getFiles()');
+
+        $request = $this->getRequest();
+
+        if ($request->isPost()) {
+
+            $restore = new Restore();
+            $form->setInputFilter($restore->getInputFilter());
+            $form->setData($request->getPost());
+
+            if ($form->isValid()) {
+
+                if ($this->restore_params['type'] == "client") {
+
+                    $type = $this->restore_params['type'];
+                    $jobid = $form->getInputFilter()->getValue('jobid');
+                    $client = $form->getInputFilter()->getValue('client');
+                    $restoreclient = $form->getInputFilter()->getValue('restoreclient');
+                    $restorejob = $form->getInputFilter()->getValue('restorejob');
+                    $where = $form->getInputFilter()->getValue('where');
+                    $fileid = $form->getInputFilter()->getValue('checked_files');
+                    $dirid = $form->getInputFilter()->getValue('checked_directories');
+                    $jobids = $form->getInputFilter()->getValue('jobids_hidden');
+                    $replace = $form->getInputFilter()->getValue('replace');
+
+                    try {
+                        $result = $this->getRestoreModel()->restore($this->bsock, $type, $jobid, $client, $restoreclient, $restorejob, $where, $fileid, $dirid, $jobids, $replace);
+                    } catch (Exception $e) {
+                        echo $e->getMessage();
+                    }
+
+                }
+
+                $this->bsock->disconnect();
+
+                return new ViewModel(array(
+                    'restore_params' => $this->restore_params,
+                    'form' => $form,
+                    'result' => $result,
+                    'errors' => $errors
+                ));
+
+            } else {
+
+                $this->bsock->disconnect();
+
+                return new ViewModel(array(
+                    'restore_params' => $this->restore_params,
+                    'form' => $form,
+                    'result' => $result,
+                    'errors' => $errors
+                ));
+
+            }
+
+        } else {
+
+            $this->bsock->disconnect();
+
+            return new ViewModel(array(
+                'restore_params' => $this->restore_params,
+                'form' => $form,
+                'result' => $result,
+                'errors' => $errors
+            ));
+
+        }
+
+    }
+
+
+    /**
     * Delivers a subtree as Json for JStree
     */
    public function filebrowserAction()
