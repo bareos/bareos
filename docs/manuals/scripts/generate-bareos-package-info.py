@@ -9,9 +9,9 @@ Use obs-project-binary-packages-to-json.py to create the json files.
 """
 
 __author__ = "Joerg Steffens"
-__copyright__ = "2015-2017"
+__copyright__ = "2015-2019"
 __license__ = "AGPL"
-__version__ = "0.2"
+__version__ = "0.3"
 __email__ = "joerg.steffens@bareos.com"
 
 import argparse
@@ -31,6 +31,9 @@ class Dist:
         if self.dist == 'Debian':
             self.version = self.version.replace('.0', '')
 
+    def __str__(self):
+        return '{} {}'.format(self.dist, self.version)
+
     def dist(self):
         return self.dist
     
@@ -41,29 +44,55 @@ class Dist:
         return [ self.dist, self.version ]
 
 
-class LatexTable:
+class BaseTable(object):
     def __init__(self, columns, rows):
         self.columns = columns
         self.rows = rows
 
-    def __getIndexes(self):
+    def getIndexes(self):
+        result = ''
+        return result
+
+    def getHeader(self):
+        result = ''
+        return result
+    
+    def getRows(self):
+        result = ''
+        return result
+    
+    def getFooter(self):
+        result = ''
+        return result
+
+    def get(self):
+        result  = self.getIndexes()
+        result += self.getHeader()
+        result += self.getRows()
+        result += self.getFooter()
+        return result
+
+
+class LatexTable(BaseTable):
+
+    def getIndexes(self):
         result = ''
         for i in self.columns:
             result += '\\index[general]{{Platform!{0}!{1}}}'.format(Dist(i).dist, Dist(i).version)
         return result
 
-    def __getHeader(self):
+    def getHeader(self):
         result="\\begin{center}\n"
         result+="\\begin{longtable}{ l "
         result+="| c " * len(self.columns)
         result+="}\n"
         result+="\\hline \n"
-        result+=self.__getHeaderColumns()
+        result+=self.getHeaderColumns()
         result+="\\hline \n"
         result+="\\hline \n"
         return result
     
-    def __getHeaderColumns(self):
+    def getHeaderColumns(self):
         result=' & \n'
         version_header=''
         prefix=None
@@ -84,7 +113,7 @@ class LatexTable:
         result+=version_header + "\\\\ \n"
         return result
     
-    def __getRows(self):
+    def getRows(self):
         result=''
         for desc in sorted(self.rows.keys()):
             result+='\\package{{{:s}}} & '.format(desc)
@@ -92,18 +121,47 @@ class LatexTable:
             result+=' \\\\ \n'
         return result
     
-    def __getFooter(self):
+    def getFooter(self):
         result ="\\hline \n"
         result+='\\end{longtable} \n'
         result+='\\end{center} \n'
         return result 
-    
-    def get(self):
-        result  = self.__getIndexes()
-        result += self.__getHeader()
-        result += self.__getRows()
-        result += self.__getFooter()
+
+
+class SphinxTable(BaseTable):
+
+    def getIndexes(self):
+        result  = '.. index::\n'
+        for i in self.columns:
+            result += '   single: Platform; {0}; {1}\n'.format(Dist(i).dist, Dist(i).version)
+        result += '\n'
         return result
+
+    def getHeader(self):
+        result  = '.. csv-table::\n'
+        result += '   :header: ""'
+        result += self.getHeaderColumns()
+        result += '\n\n'
+        return result
+    
+    def getHeaderColumns(self):
+        result = ''
+        for i in self.columns:
+            result += ', "{}"'.format(Dist(i))
+        return result
+    
+    def getRows(self):
+        result=''
+        for desc in sorted(self.rows.keys()):
+            result+= '   {}, '.format(desc)
+            result+=", ".join(self.rows[desc])
+            result+='\n'
+        return result
+    
+    def getFooter(self):
+        result = "\n"
+        return result 
+
 
 class PackageDistReleaseData:
     def __init__(self):
@@ -197,7 +255,8 @@ def get_matches(inputdata, refilter):
             result.append(i)
     return result
 
-def generate_overview_table(packageDistReleaseData, dist_include):
+def generate_overview_table(packageDistReleaseData, dist_include, latex):
+    logger = logging.getLogger()
     rows = {}
     distributions = sorted(get_matches(packageDistReleaseData.distributions, dist_include))
     data = packageDistReleaseData.get_packages_of_distributions(distributions)
@@ -208,31 +267,48 @@ def generate_overview_table(packageDistReleaseData, dist_include):
                 rows[package].append(data[package][dist])
             else:
                 rows[package].append(' ')
-    latexTable = LatexTable(distributions, rows)
-    return latexTable.get()
 
-def create_file(filename, data, filterregex):
+    if latex:
+        logger.info("Create Latex table ...")
+        table = LatexTable(distributions, rows)
+    else:
+        logger.info("Create Sphinx table ...")
+        table = SphinxTable(distributions, rows)
+        
+    return table.get()
+    
+    
+
+def create_file(filename, data, filterregex, latex = False):
     with open(filename, "w") as file:
-        file.write(generate_overview_table(data, re.compile(filterregex)))
+        file.write(generate_overview_table(data, re.compile(filterregex), latex))
         file.close()
     
 
 if __name__ == '__main__':
     
     logging.basicConfig(format='%(message)s')
-    logger = logging.getLogger(__name__)
+    #logger = logging.getLogger(__name__)
+    logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
     parser = argparse.ArgumentParser(description='Generate information about packages in distributions.')
 
     parser.add_argument('--debug', '-d', action='store_true', help="enable debugging output")
-    parser.add_argument('--out', '-o', help="output directory", default=".")    
+    parser.add_argument('--out', '-o', help="output directory", default=".") 
+    parser.add_argument('--latex', action='store_true', help="Create only LaTex files." )
+    parser.add_argument('--sphinx', action='store_true', help="Create only RST files for Sphinx." )    
     parser.add_argument('filename', nargs="+", help="JSON files containing package information")
 
     args = parser.parse_args()
 
     if args.debug:
         logger.setLevel(logging.DEBUG)
+        logger.debug('debug')
+        
+    if not args.latex:
+        # default is sphinx
+        args.sphinx = True        
 
     data = PackageDistReleaseData()
 
@@ -246,10 +322,16 @@ if __name__ == '__main__':
 
     basename = 'bareos-packages'
     dest = args.out + '/' + basename
-    filenametemplate = dest + '-table-{0}.tex'
-    create_file(filenametemplate.format('redhat'), data, 'CentOS.*|RHEL.*')
-    create_file(filenametemplate.format('fedora'), data, 'Fedora_2.')
-    create_file(filenametemplate.format('opensuse'), data, 'openSUSE_13..|openSUSE_Leap_.*')
-    create_file(filenametemplate.format('suse'), data, 'SLE_10_SP4|SLE_11_SP4|SLE_12_.*')
-    create_file(filenametemplate.format('debian'), data, 'Debian.*|Univention_4.*')
-    create_file(filenametemplate.format('ubuntu'), data, 'xUbuntu.*')
+    
+    if args.latex:
+        filenametemplate = dest + '-table-{0}.tex'
+    else:
+        filenametemplate = dest + '-table-{0}.rst.inc'
+
+    create_file(filenametemplate.format('redhat'), data, 'CentOS.*|RHEL.*', args.latex)
+    create_file(filenametemplate.format('fedora'), data, 'Fedora_2.', args.latex)
+    create_file(filenametemplate.format('opensuse'), data, 'openSUSE_13..|openSUSE_Leap_.*', args.latex)
+    create_file(filenametemplate.format('suse'), data, 'SLE_10_SP4|SLE_11_SP4|SLE_12_.*|SLE_15_.*', args.latex)
+    create_file(filenametemplate.format('debian'), data, 'Debian.*', args.latex)
+    create_file(filenametemplate.format('ubuntu'), data, 'xUbuntu.*', args.latex)
+    create_file(filenametemplate.format('univention'), data, 'Univention_4.*', args.latex)    
