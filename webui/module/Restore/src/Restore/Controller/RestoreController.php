@@ -370,7 +370,9 @@ class RestoreController extends AbstractActionController
                     'restore_params' => $this->restore_params,
                     'form' => $form,
                     'result' => $result,
-                    'errors' => $errors
+                    'errors' => $errors,
+                    'checked_files' => '',
+                    'checked_directories' => ''
                 ));
 
             } else {

@@ -84,3 +84,7 @@ body {
    background: url(spinner.gif) center no-repeat #fff;
    opacity: 0.5;
 }
+
+.code {
+    font-family: monospace;
+}

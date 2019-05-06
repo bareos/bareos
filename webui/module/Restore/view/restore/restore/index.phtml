@@ -181,17 +181,15 @@ $this->headTitle($title);
 
 <script type="text/javascript">
 
-   function format_bytes(v) {
-      if(v == 0) {
-         return "0.00 B";
-      }
-      else {
-         var k = 1000;
-         var units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"];
-         var i = Math.floor(Math.log(v) / Math.log(k));
-         return parseFloat((v / Math.pow(k, i)).toFixed(2)) + " " + units[i];
-      }
-   }
+    function format_bibytes(v) {
+        if (v == 0) {
+            return "0.00 B";
+        } else {
+            const units = ["B", "kiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB"];
+            const i = Math.floor(Math.log2(v) / 10);
+            return parseFloat((v / (1 << (i * 10))).toFixed(2)) + " " + units[i];
+        }
+    }
 
    function getFiles() {
 
@@ -319,7 +317,7 @@ $this->headTitle($title);
                      return null;
                   }
                   else {
-                     return(format_bytes(node.data.stat.size));
+                     return(format_bibytes(node.data.stat.size));
                   }
                }
             },

@@ -129,7 +129,7 @@ $this->headTitle($title);
 
                     </div>
 
-                    <div class="col-md-6">
+                    <div class="col-md-5">
                         <?php
                         if ($this->restore_params['type'] == "client") {
                             //echo $this->formRow($form->get('jobids_display')->setAttribute('class','form-control')); // for debugging
@@ -149,8 +149,7 @@ $this->headTitle($title);
                             ?>
 <!--                            style="margin: auto; max-height: 75vh; height: 75vh; overflow: hidden; overflow-x: scroll; overflow-y: scroll; resize: vertical;"-->
 
-                            <div class="panel panel-default"
-                            >
+                            <div class="panel panel-default">
                                 <div id="filebrowser"></div>
                             </div>
                             <?php
@@ -165,43 +164,29 @@ $this->headTitle($title);
                         }
                         ?>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
+                        <strong><?php echo $this->translate('Available file versions:'); ?></strong> <span id="selectedfile-name"></span>
                         <div class="panel panel-default">
-
-                            <div class="panel-heading">
-                                <h3 class="panel-title"><?php echo $this->translate('Available file versions'); ?></h3>
-                            </div>
-
-                            <div class="panel-body">
-                                <p>Datainame Bessa</p>
-                                <table class="table table-no-bordered table-striped" id="job-totals">
-                                    <thead class="bg-primary">
-                                        <th><span class="glyphicon glyphicon-check"></span></th>
-                                        <th><?php echo $this->translate("Modified"); ?></th>
-                                        <th><?php echo $this->translate("Size"); ?></th>
-                                        <th><?php echo $this->translate("Checksum"); ?></th>
-                                    </thead>
-                                    <tbody id="file-versions-list">
-                                        <tr>
-                                            <td>( )</td>
-                                            <td>2019-01-01</td>
-                                            <td>13 kB</td>
-                                            <td>#affed00f</td>
-                                        </tr>
-                                        <tr>
-                                            <td>( )</td>
-                                            <td>2019-01-02</td>
-                                            <td>17 kB</td>
-                                            <td>#affed11f</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                            <div class="panel-body" style="padding: 0">
+                                <div class="table-responsive">
+                                    <table class="table table-no-bordered table-striped" id="job-totals">
+                                        <col width="10">
+                                        <col>
+                                        <col>
+                                        <col width="1*">
+                                        <thead class="bg-primary">
+                                            <th><span class="glyphicon glyphicon-check"></span></th>
+                                            <th><?php echo $this->translate("Modified"); ?></th>
+                                            <th><?php echo $this->translate("Size"); ?> </th>
+                                            <th><?php echo $this->translate("Checksum"); ?></th>
+                                        </thead>
+                                        <tbody id="file-versions-list"></tbody>
+                                    </table>
                             </div>
                         </div>
-
                     </div>
                 </div>
-
+                </div>
                 <?php
                 echo $this->form()->closeTag($form);
                 ?>
@@ -219,77 +204,106 @@ $this->headTitle($title);
     ?>
 
     <style>
-
         .jsTreeGridHeader {
             background-color: #eeeeee;
             color: #000000;
         }
-
     </style>
 
     <script type="text/javascript">
-        function get_fileversions() {
-            let versions = [];
-
-            // get versions
-
-            show_fileversions(versions)
+        function clearRevisions() {
+            $('#selectedfile-name').text('');
+            $('#file-versions-list').empty()
         }
 
-        function show_fileversions(listof_fileversions) {
-            $('file-versions-list').empty()
+        function getRevisions(pathid, filename) {
+            $.ajax({
+                url: '<?php echo $this->url('restore', array('action' => 'getData'), null) . '?data=revisions&clientname=' . $this->restore_params['client']; ?>&pathid=' + pathid  + '&filename=' + filename,
+                dataType: 'json',
+                timeout: 10000,
+                success: function(data) {
+                    $('#selectedfile-name').text(filename);
 
-            if (Array.isArray(listof_fileversions)) {
+                    $('#file-versions-list').empty();
+                    $(Object.keys(data)).each(function(key, id) {
+                        const fileId = data[id].fileid;
+                        const rowId = `fileVersion_${fileId}`;
+                        const row = $("<tr>");
+                        const col1 = $("<td>").append(`<input type="radio" id="${rowId}" name="fileVersion" value="${fileId}">`);
+                        const col2 = $("<td>").append(
+                            $(`<label for="${rowId}">`).text(moment.unix(data[id].stat.mtime).format("YYYY-MM-DD HH:mm:ss")));
+                        const col3 = $("<td>").append(
+                            $('<span>').text(format_bibytes(data[id].stat.size)));
+                        const col4 = $("<td>").append(
+                            $('<span>').addClass('code').text(data[id].md5));
 
+                        row.append(col1, col2, col3, col4);
+                        $('#file-versions-list').append(row)
+                    });
+                },
+                error: function() {
+                    $('.revisions-container').empty();
+                    $('.revisions-container').append('Error fetching data.');
+                },
+                timeout: function() {
+                    $('.revisions-container').empty();
+                    $('.revisions-container').append('Timeout fetching data.');
+                },
+                parsererror: function() {
+                    $('.revisions-container').empty();
+                    $('.revisions-container').append('Error parsing data.');
+                }
+            });
+        }
+
+
+        function treeItemSelectedHandler(event, _data) {
+            if (!_data.node.id || _data.node.id < 0) {
+                _data.instance.deselect_node(_data.node);
+                clearRevisions()
+            } else {
+                const node = _data.node;
+                getRevisions(node.data.pathid, node.data.name)
             }
-
-
-
         }
+
+        function initTreeHandler() {
+            registerClickHandler(treeItemSelectedHandler)
+        }
+
     </script>
 
     <script type="text/javascript">
-
-        function format_bytes(v) {
+        function format_bibytes(v) {
             if (v == 0) {
                 return "0.00 B";
             } else {
-                var k = 1000;
-                var units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"];
-                var i = Math.floor(Math.log(v) / Math.log(k));
-                return parseFloat((v / Math.pow(k, i)).toFixed(2)) + " " + units[i];
+                const units = ["B", "kiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB"];
+                const i = Math.floor(Math.log2(v) / 10);
+                return parseFloat((v / (1 << (i * 10))).toFixed(2)) + " " + units[i];
             }
         }
 
         function getFiles() {
+            const checked_files = [];
+            const fileId = $("input[name='fileVersion']:checked").val();
 
-            var checked_files = [];
-            var checked_directories = [];
-
-            var checked_ids = $('#filebrowser').jstree('get_checked', 'full', true);
-
-            $(checked_ids).each(function () {
-                if (this.data.type == 'F') {
-                    checked_files.push(this.id);
-                } else if (this.data.type == 'D') {
-                    checked_directories.push(Math.abs(this.id));
-                }
-            });
-
-            document.getElementById('checked_files').value = checked_files.join(",");
-            document.getElementById('checked_directories').value = checked_directories.join(",");
-
-            if (checked_ids.length == 0) {
-                alert("No files or directories selected!");
-                return false;
+            if (fileId) {
+                checked_files.push(fileId);
+                document.getElementById('checked_files').value = checked_files.join(",");
+                return confirm("<?php echo $this->translate("Confirm restore"); ?>")
+            } else {
+                alert("<?php echo $this->translate("Please select a file version"); ?>")
             }
 
-            return confirm("Are you sure?");
+            return false
+        }
 
+        function registerClickHandler(handler) {
+            $('#filebrowser').on('select_node.jstree', handler)
         }
 
         function updateRestoreParams(k, v) {
-
             var p = [];
             var params = [];
 
@@ -336,7 +350,6 @@ $this->headTitle($title);
             }
 
             return params.join('&');
-
         }
 
         $(".search-input").keyup(function () {
@@ -347,17 +360,24 @@ $this->headTitle($title);
 
         $('#filebrowser').jstree({
             'plugins': ["grid", "checkbox", "state", "sort", "search", "types"],
+            'checkbox': {
+                'three_state': false
+            },
             'core': {
                 'animation': false,
                 'force_text': true,
                 'error': function () {
                     alert('Oops, something went wrong, probably too many files.')
                 },
+                'multiple': false,
                 'data': {
                     'url': '<?php echo $this->basePath() . "/restore/filebrowser?type=" . $this->restore_params['type'] . "&jobid=" . $this->restore_params['jobid'] . "&mergefilesets=" . $this->restore_params['mergefilesets'] . "&mergejobs=" . $this->restore_params['mergejobs'] . "&limit=" . $this->restore_params['limit']; ?>',
                     'dataType': 'json',
                     'data': function (node) {
-                        return {'id': node.id};
+                        return {
+                            'id': node.id,
+                            'state': {'checkbox_disabled': true}
+                        };
                     },
                 },
             },
@@ -382,7 +402,7 @@ $this->headTitle($title);
                             if (node.data.stat.size == 0) {
                                 return null;
                             } else {
-                                return (format_bytes(node.data.stat.size));
+                                return (format_bibytes(node.data.stat.size));
                             }
                         }
                     },
@@ -426,6 +446,8 @@ $this->headTitle($title);
             window.location.href = window.location.pathname + '?' + updateRestoreParams('limit', this.value);
         });
 
+        initTreeHandler();
+
         $(document).ready(function () {
 
             var errors = '<?php echo str_replace(array("\n", "\r"), "", $this->errors); ?>';
@@ -440,6 +462,8 @@ $this->headTitle($title);
                 $("#modal-002").modal();
             }
 
+            $('#checked_files').val('');
+            $('#checked_directories').val('')
         });
 
     </script>
