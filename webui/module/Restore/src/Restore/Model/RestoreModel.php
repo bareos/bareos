@@ -154,6 +154,28 @@ class RestoreModel
    }
 
    /**
+    * Get Versions via .bvfs_versions
+    *
+    * @param $bsock
+    * @param $clientname
+    * @param $pathid
+    * @param $filename
+    *
+    * @return array
+    */
+   public function getRevisions(&$bsock=null, $clientname=null, $pathid=null, $filename=null) {
+      if(isset($bsock)) {
+         $cmd = '.bvfs_versions jobid=0 client='.$clientname.' pathid='.$pathid.' fname='.$filename;
+         $result = $bsock->send_command($cmd, 2, null);
+         $versions = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $versions['result']['versions'];
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
+   }
+
+   /**
     * Get JobIds via .bvfs_get_jodids
     *
     * @param $bsock
