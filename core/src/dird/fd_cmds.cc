@@ -834,7 +834,7 @@ int SendRunscriptsCommands(JobControlRecord* jcr)
   msg = GetPoolMemory(PM_FNAME);
   ehost = GetPoolMemory(PM_FNAME);
   foreach_alist (cmd, jcr->res.job->RunScripts) {
-    if (cmd->CanRunAtLevel(jcr->getJobLevel()) && !cmd->target.empty()) {
+    if (!cmd->target.empty()) {
       ehost = edit_job_codes(jcr, ehost, cmd->target.c_str(), "");
       Dmsg2(200, "dird: runscript %s -> %s\n", cmd->target.c_str(), ehost);
 

@@ -41,14 +41,13 @@ RunScript* DuplicateRunscript(RunScript* src)
 {
   Dmsg0(500, "runscript: creating new RunScript object from other\n");
 
-  RunScript* dst = new RunScript(*src);
+  RunScript* copy = new RunScript(*src);
 
-  dst->command.clear();
+  copy->command.clear();
+  copy->SetCommand(src->command, src->cmd_type);
+  copy->SetTarget(src->target);
 
-  dst->SetCommand(src->command, src->cmd_type);
-  dst->SetTarget(src->target);
-
-  return dst;
+  return copy;
 }
 
 void FreeRunscript(RunScript* script)
@@ -57,9 +56,9 @@ void FreeRunscript(RunScript* script)
   delete script;
 }
 
-static inline bool ScriptDirAllowed(JobControlRecord* jcr,
-                                    RunScript* script,
-                                    alist* allowed_script_dirs)
+static bool ScriptDirAllowed(JobControlRecord* jcr,
+                             RunScript* script,
+                             alist* allowed_script_dirs)
 {
   char *bp, *allowed_script_dir = nullptr;
   bool allowed = false;
@@ -187,7 +186,7 @@ int RunScripts(JobControlRecord* jcr,
         goto bail_out;
       }
 
-      script->run(jcr, label);
+      script->Run(jcr, label);
     }
   }
 
@@ -195,16 +194,6 @@ bail_out:
   return 1;
 }
 
-bool RunScript::IsLocal()
-{
-  if (target.empty()) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-/* set this->command to cmd */
 void RunScript::SetCommand(const std::string& cmd, int acmd_type)
 {
   Dmsg1(500, "runscript: setting command = %s\n", NSTDPRNT(cmd));
@@ -215,7 +204,6 @@ void RunScript::SetCommand(const std::string& cmd, int acmd_type)
   cmd_type = acmd_type;
 }
 
-/* set this->target to client_name */
 void RunScript::SetTarget(const std::string& client_name)
 {
   Dmsg1(500, "runscript: setting target = %s\n", NSTDPRNT(client_name));
@@ -225,7 +213,7 @@ void RunScript::SetTarget(const std::string& client_name)
   target = client_name;
 }
 
-bool RunScript::run(JobControlRecord* jcr, const char* name)
+bool RunScript::Run(JobControlRecord* jcr, const char* name)
 {
   Dmsg1(100, "runscript: running a RunScript object type=%d\n", cmd_type);
   POOLMEM* ecmd = GetPoolMemory(PM_FNAME);
@@ -295,7 +283,7 @@ void FreeRunscripts(alist* runscripts)
   }
 }
 
-void RunScript::debug()
+void RunScript::Debug() const
 {
   Dmsg0(200, "runscript: debug\n");
   Dmsg0(200, _(" --> RunScript\n"));

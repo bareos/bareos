@@ -1028,6 +1028,7 @@ static bool RunbeforeCmd(JobControlRecord* jcr)
   /*
    * Run the command now
    */
+
   Dmsg0(500, "runscript: creating new RunScript object\n");
   script = new RunScript;
   script->SetJobCodeCallback(job_code_callback_filed);
@@ -1035,7 +1036,7 @@ static bool RunbeforeCmd(JobControlRecord* jcr)
   script->when = SCRIPT_Before;
   FreeMemory(cmd);
 
-  ok = script->run(jcr, "ClientRunBeforeJob");
+  ok = script->Run(jcr, "ClientRunBeforeJob");
   FreeRunscript(script);
 
   if (ok) {
@@ -1147,7 +1148,7 @@ static bool RunscriptCmd(JobControlRecord* jcr)
   UnbashSpaces(msg);
 
   cmd->SetCommand(msg);
-  cmd->debug();
+  cmd->Debug();
   jcr->RunScripts->append(cmd);
 
   FreePoolMemory(msg);

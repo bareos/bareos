@@ -276,7 +276,7 @@ static struct ua_cmdstruct commands[] = {
          "ujobid=<unique-jobid> | state=<job_state> | all yes"),
      false, true},
     {NT_("configure"), ConfigureCmd, _("Configure director resources"),
-     NT_(get_configure_usage_string()), false, true},
+     NT_(GetUsageStringForConsoleConfigureCommand()), false, true},
     {NT_("create"), CreateCmd, _("Create DB Pool from resource"),
      NT_("pool=<pool-name>"), false, true},
     {NT_("delete"), DeleteCmd, _("Delete volume, pool or job"),

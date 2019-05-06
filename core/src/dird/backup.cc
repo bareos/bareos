@@ -79,7 +79,7 @@ static inline bool ValidateClient(JobControlRecord* jcr)
       Jmsg(jcr, M_FATAL, 0,
            _("Client %s has illegal backup protocol %s for Native backup\n"),
            jcr->res.client->resource_name_,
-           auth_protocol_to_str(jcr->res.client->Protocol));
+           AuthenticationProtocolTypeToString(jcr->res.client->Protocol));
       return false;
   }
 }
@@ -137,7 +137,7 @@ static inline bool ValidateStorage(JobControlRecord* jcr)
       default:
         Jmsg(jcr, M_FATAL, 0,
              _("Storage %s has illegal backup protocol %s for Native backup\n"),
-             store->resource_name_, auth_protocol_to_str(store->Protocol));
+             store->resource_name_, AuthenticationProtocolTypeToString(store->Protocol));
         return false;
     }
   }
@@ -879,7 +879,7 @@ void UpdateBootstrapFile(JobControlRecord* jcr)
       /* Start output with when and who wrote it */
       bstrftimes(edt, sizeof(edt), time(NULL));
       fprintf(fd, "# %s - %s - %s%s\n", edt, jcr->jr.Job,
-              level_to_str(jcr->getJobLevel()), jcr->since);
+              JobLevelToString(jcr->getJobLevel()), jcr->since);
       for (int i = 0; i < VolCount; i++) {
         /* Write the record */
         fprintf(fd, "Volume=\"%s\"\n", VolParams[i].VolumeName);
@@ -1003,7 +1003,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
    case PT_NDMP_BAREOS:
       Mmsg(level_info, _(
            "  Backup Level:           %s%s\n"),
-           level_to_str(jcr->getJobLevel()), jcr->since);
+           JobLevelToString(jcr->getJobLevel()), jcr->since);
       Mmsg(statistics, _(
            "  NDMP Files Written:     %s\n"
            "  SD Files Written:       %s\n"
@@ -1019,7 +1019,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
    case PT_NDMP_NATIVE:
       Mmsg(level_info, _(
            "  Backup Level:           %s%s\n"),
-           level_to_str(jcr->getJobLevel()), jcr->since);
+           JobLevelToString(jcr->getJobLevel()), jcr->since);
       Mmsg(statistics, _(
            "  NDMP Files Written:     %s\n"
            "  NDMP Bytes Written:     %s (%sB)\n"),
@@ -1040,7 +1040,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
       } else {
          Mmsg(level_info, _(
               "  Backup Level:           %s%s\n"),
-              level_to_str(jcr->getJobLevel()), jcr->since);
+              JobLevelToString(jcr->getJobLevel()), jcr->since);
          Mmsg(statistics, _(
               "  FD Files Written:       %s\n"
               "  SD Files Written:       %s\n"

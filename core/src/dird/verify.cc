@@ -234,7 +234,7 @@ bool DoVerify(JobControlRecord* jcr)
    * Print Job Start message
    */
   Jmsg(jcr, M_INFO, 0, _("Start Verify JobId=%s Level=%s Job=%s\n"),
-       edit_uint64(jcr->JobId, ed1), level_to_str(JobLevel), jcr->Job);
+       edit_uint64(jcr->JobId, ed1), JobLevelToString(JobLevel), jcr->Job);
 
   switch (JobLevel) {
     case L_VERIFY_VOLUME_TO_CATALOG:
@@ -563,7 +563,7 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
              "  Termination:            %s\n\n"),
            BAREOS, my_name, VERSION, LSMDATE, HOST_OS, DISTNAME, DISTVER,
            jcr->jr.JobId, jcr->jr.Job, jcr->res.fileset->resource_name_,
-           level_to_str(JobLevel), jcr->res.client->resource_name_,
+           JobLevelToString(JobLevel), jcr->res.client->resource_name_,
            jcr->previous_jr.JobId, Name, sdt, edt,
            edit_uint64_with_commas(jcr->ExpectedFiles, ec1),
            edit_uint64_with_commas(jcr->JobFiles, ec2), jcr->JobErrors,
@@ -589,7 +589,7 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
              "  Termination:            %s\n\n"),
            BAREOS, my_name, VERSION, LSMDATE, HOST_OS, DISTNAME, DISTVER,
            jcr->jr.JobId, jcr->jr.Job, jcr->res.fileset->resource_name_,
-           level_to_str(JobLevel), jcr->res.client->resource_name_,
+           JobLevelToString(JobLevel), jcr->res.client->resource_name_,
            jcr->previous_jr.JobId, Name, sdt, edt,
            edit_uint64_with_commas(jcr->JobFiles, ec1), jcr->JobErrors,
            fd_term_msg, BAREOS_JOBLOG_MESSAGE, TermMsg);

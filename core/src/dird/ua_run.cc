@@ -95,7 +95,7 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
     Mmsg(cmdline, "run job=\"%s\"", jr.Name);
   } else {
     Mmsg(cmdline, "run job=\"%s\" level=\"%s\"", jr.Name,
-         level_to_str(jr.JobLevel));
+         JobLevelToString(jr.JobLevel));
   }
   PmStrcpy(ua->cmd, cmdline);
 
@@ -1341,7 +1341,7 @@ static bool DisplayJobParameters(UaContext* ua,
               "When:     %s\n"
               "Priority: %d\n"
               "%s%s%s",
-              job->resource_name_, level_to_str(jcr->getJobLevel()),
+              job->resource_name_, JobLevelToString(jcr->getJobLevel()),
               jcr->res.client->resource_name_, jcr->backup_format,
               jcr->res.fileset->resource_name_, NPRT(jcr->res.pool->resource_name_),
               is_virtual ? "NextPool: " : "",
@@ -1369,7 +1369,7 @@ static bool DisplayJobParameters(UaContext* ua,
                 "When:     %s\n"
                 "Priority: %d\n"
                 "%s%s%s"),
-              job->resource_name_, level_to_str(jcr->getJobLevel()),
+              job->resource_name_, JobLevelToString(jcr->getJobLevel()),
               jcr->res.client->resource_name_, jcr->backup_format,
               jcr->res.fileset->resource_name_, NPRT(jcr->res.pool->resource_name_),
               jcr->res.pool_source, is_virtual ? "NextPool: " : "",
@@ -1421,7 +1421,7 @@ static bool DisplayJobParameters(UaContext* ua,
               "Verify List: %s\n"
               "When:        %s\n"
               "Priority:    %d\n",
-              job->resource_name_, level_to_str(jcr->getJobLevel()),
+              job->resource_name_, JobLevelToString(jcr->getJobLevel()),
               jcr->res.client->resource_name_, jcr->res.fileset->resource_name_,
               NPRT(jcr->res.pool->resource_name_), jcr->res.pool_source,
               jcr->res.read_storage->resource_name_, jcr->res.rstore_source, Name,
@@ -1439,7 +1439,7 @@ static bool DisplayJobParameters(UaContext* ua,
                         "Verify List: %s\n"
                         "When:        %s\n"
                         "Priority:    %d\n"),
-                      job->resource_name_, level_to_str(jcr->getJobLevel()),
+                      job->resource_name_, JobLevelToString(jcr->getJobLevel()),
                       jcr->res.client->resource_name_, jcr->res.fileset->resource_name_,
                       NPRT(jcr->res.pool->resource_name_), jcr->res.pool_source,
                       jcr->res.read_storage->resource_name_, jcr->res.rstore_source,

@@ -47,7 +47,7 @@ static void ListTerminatedJobs(StatusPacket* sp);
 static void ListRunningJobs(StatusPacket* sp);
 static void ListStatusHeader(StatusPacket* sp);
 static void sendit(PoolMem& msg, int len, StatusPacket* sp);
-static const char* level_to_str(int level);
+static const char* JobLevelToString(int level);
 
 /* Static variables */
 static char qstatus[] = ".status %s\n";
@@ -178,11 +178,11 @@ static void ListRunningJobsPlain(StatusPacket* sp)
       len = Mmsg(
           msg, _("    %s%s %s Job started: %s\n"),
           (njcr->pVSSClient && njcr->pVSSClient->IsInitialized()) ? "VSS " : "",
-          level_to_str(njcr->getJobLevel()),
+          JobLevelToString(njcr->getJobLevel()),
           job_type_to_str(njcr->getJobType()), dt);
 #else
       len = Mmsg(msg, _("    %s %s Job started: %s\n"),
-                 level_to_str(njcr->getJobLevel()),
+                 JobLevelToString(njcr->getJobLevel()),
                  job_type_to_str(njcr->getJobType()), dt);
 #endif
     } else if ((njcr->JobId == 0) && (njcr->director)) {
@@ -353,7 +353,7 @@ static void ListTerminatedJobs(StatusPacket* sp)
         bstrncpy(level, "    ", sizeof(level));
         break;
       default:
-        bstrncpy(level, level_to_str(je->JobLevel), sizeof(level));
+        bstrncpy(level, JobLevelToString(je->JobLevel), sizeof(level));
         level[4] = 0;
         break;
     }
@@ -507,7 +507,7 @@ bool QstatusCmd(JobControlRecord* jcr)
 /**
  * Convert Job Level into a string
  */
-static const char* level_to_str(int level)
+static const char* JobLevelToString(int level)
 {
   const char* str;
 

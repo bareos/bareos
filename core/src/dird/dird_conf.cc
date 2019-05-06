@@ -985,7 +985,7 @@ static bool CmdlineItems(PoolMem* buffer, ResourceItem items[])
  * This will be all available resource directives.
  * They are formated in a way to be usable for command line completion.
  */
-const char* get_configure_usage_string()
+const char* GetUsageStringForConsoleConfigureCommand()
 {
   PoolMem resourcename;
 
@@ -1243,7 +1243,7 @@ bool ValidateResource(int res_type, ResourceItem* items, BareosResource* res)
      */
     return true;
   } else if (res_type == R_JOB) {
-    if (!((JobResource*)res)->validate()) { return false; }
+    if (!((JobResource*)res)->Validate()) { return false; }
   }
 
   for (int i = 0; items[i].name; i++) {
@@ -1270,7 +1270,7 @@ bool ValidateResource(int res_type, ResourceItem* items, BareosResource* res)
   return true;
 }
 
-bool JobResource::validate()
+bool JobResource::Validate()
 {
   /*
    * For Copy and Migrate we can have Jobs without a client or fileset.
@@ -2275,7 +2275,7 @@ bool FilesetResource::PrintConfig(PoolMem& buff,
   return true;
 }
 
-const char* auth_protocol_to_str(uint32_t auth_protocol)
+const char* AuthenticationProtocolTypeToString(uint32_t auth_protocol)
 {
   for (int i = 0; authprotocols[i].name; i++) {
     if (authprotocols[i].token == auth_protocol) {
@@ -2286,7 +2286,7 @@ const char* auth_protocol_to_str(uint32_t auth_protocol)
   return "Unknown";
 }
 
-const char* level_to_str(int level)
+const char* JobLevelToString(int level)
 {
   static char level_no[30];
   const char* str = level_no;
@@ -2303,10 +2303,7 @@ const char* level_to_str(int level)
   return str;
 }
 
-/**
- * Free all the members of an IncludeExcludeItem structure
- */
-static void FreeIncexe(IncludeExcludeItem* incexe)
+static void FreeIncludeExcludeItem(IncludeExcludeItem* incexe)
 {
   incexe->name_list.destroy();
   incexe->plugin_list.destroy();
@@ -2600,10 +2597,7 @@ bool PropagateJobdefs(int res_type, JobResource* res)
   return true;
 }
 
-/**
- * Populate Job Defaults (e.g. JobDefs)
- */
-static bool populate_jobdefs()
+static bool PopulateJobdefaults()
 {
   JobResource *job, *jobdefs;
   bool retval = true;
@@ -2635,7 +2629,7 @@ bail_out:
   return retval;
 }
 
-bool PopulateDefs() { return populate_jobdefs(); }
+bool PopulateDefs() { return PopulateJobdefaults(); }
 
 static void StorePooltype(LEX* lc, ResourceItem* item, int index, int pass)
 {
@@ -2906,21 +2900,19 @@ static void StoreAuthtype(LEX* lc, ResourceItem* item, int index, int pass)
  */
 static void StoreLevel(LEX* lc, ResourceItem* item, int index, int pass)
 {
-  int i;
-
   LexGetToken(lc, BCT_NAME);
-  /*
-   * Store the level pass 2 so that type is defined
-   */
-  for (i = 0; joblevels[i].level_name; i++) {
+
+  // Store the level in pass 2 so that type is defined
+  bool keyword_found = false;
+  for (int i = 0; joblevels[i].level_name; i++) {
     if (Bstrcasecmp(lc->str, joblevels[i].level_name)) {
       SetItemVariable<uint32_t>(*item, joblevels[i].level);
-      i = 0;
+      keyword_found = true;
       break;
     }
   }
 
-  if (i != 0) {
+  if (!keyword_found) {
     scan_err1(lc, _("Expected a Job Level keyword, got: %s"), lc->str);
   }
 
@@ -2987,9 +2979,6 @@ static void StoreAutopassword(LEX* lc, ResourceItem* item, int index, int pass)
   }
 }
 
-/**
- * Store ACL (access control list)
- */
 static void StoreAcl(LEX* lc, ResourceItem* item, int index, int pass)
 {
   int token;
@@ -3019,9 +3008,6 @@ static void StoreAcl(LEX* lc, ResourceItem* item, int index, int pass)
   ClearBit(index, (*item->static_resource)->inherit_content_);
 }
 
-/**
- * Store Audit event.
- */
 static void StoreAudit(LEX* lc, ResourceItem* item, int index, int pass)
 {
   int token;
@@ -3044,9 +3030,7 @@ static void StoreAudit(LEX* lc, ResourceItem* item, int index, int pass)
   SetBit(index, (*item->static_resource)->item_present_);
   ClearBit(index, (*item->static_resource)->inherit_content_);
 }
-/**
- * Store a runscript->when in a bit field
- */
+
 static void StoreRunscriptWhen(LEX* lc, ResourceItem* item, int index, int pass)
 {
   LexGetToken(lc, BCT_NAME);
@@ -3068,9 +3052,6 @@ static void StoreRunscriptWhen(LEX* lc, ResourceItem* item, int index, int pass)
   ScanToEol(lc);
 }
 
-/**
- * Store a runscript->target
- */
 static void StoreRunscriptTarget(LEX* lc,
                                  ResourceItem* item,
                                  int index,
@@ -3163,7 +3144,7 @@ static void StoreShortRunscript(LEX* lc,
     if (!*runscripts) { *runscripts = new alist(10, not_owned_by_alist); }
 
     (*runscripts)->append(script);
-    script->debug();
+    script->Debug();
   }
 
   ScanToEol(lc);
@@ -3196,8 +3177,6 @@ static void StoreRunscriptBool(LEX* lc, ResourceItem* item, int index, int pass)
  */
 static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
 {
-  alist** runscripts = GetItemVariablePointer<alist**>(*item);
-
   Dmsg1(200, "StoreRunscript: begin StoreRunscript pass=%i\n", pass);
 
   int token = LexGetToken(lc, BCT_SKIP_EOL);
@@ -3251,10 +3230,10 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
   }
 
   if (pass == 2) {
-    /*
-     * Run on client by default
-     */
+    // Run on client by default
     if (res_runscript->target.empty()) { res_runscript->SetTarget("%c"); }
+
+    alist** runscripts = GetItemVariablePointer<alist**>(*item);
     if (!*runscripts) { *runscripts = new alist(10, not_owned_by_alist); }
 
     res_runscript->SetJobCodeCallback(job_code_callback_director);
@@ -3271,7 +3250,7 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
       script->short_form = false;
 
       (*runscripts)->append(script);
-      script->debug();
+      script->Debug();
     }
     res_runscript->temp_parser_command_container.clear();
     delete res_runscript;
@@ -4029,9 +4008,9 @@ static void FreeResource(BareosResource* res, int type)
     }
     case R_FILESET: {
       FilesetResource* p = dynamic_cast<FilesetResource*>(res);
-      for (auto q : p->include_items) { FreeIncexe(q); }
+      for (auto q : p->include_items) { FreeIncludeExcludeItem(q); }
       p->include_items.clear();
-      for (auto q : p->exclude_items) { FreeIncexe(q); }
+      for (auto q : p->exclude_items) { FreeIncludeExcludeItem(q); }
       p->exclude_items.clear();
       delete p;
       break;

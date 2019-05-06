@@ -92,14 +92,13 @@ class RunScript : public BareosResource {
   bool fail_on_error = true; /* Abort job on error (Before) */
   job_code_callback_t job_code_callback = nullptr;
   std::vector<TempParserCommand> temp_parser_command_container;
-  bool run(JobControlRecord* job,
+  bool Run(JobControlRecord* job,
            const char* name =
                ""); /* name must contain "Before" or "After" keyword */
-  bool CanRunAtLevel(int JobLevel) { return true; } /* TODO */
   void SetCommand(const std::string& cmd, int cmd_type = SHELL_CMD);
   void SetTarget(const std::string& client_name);
-  bool IsLocal(); /* True if running on local host */
-  void debug();
+  bool IsLocal() const { return target.empty(); } /* true if no target host */
+  void Debug() const;
 
   void SetJobCodeCallback(job_code_callback_t job_code_callback);
 };

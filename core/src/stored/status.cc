@@ -70,7 +70,7 @@ static void ListDevices(JobControlRecord* jcr,
                         const char* devicenames);
 static void ListVolumes(StatusPacket* sp, const char* devicenames);
 
-static const char* level_to_str(int level);
+static const char* JobLevelToString(int level);
 
 /**
  * Status command from Director
@@ -857,7 +857,7 @@ static void ListTerminatedJobs(StatusPacket* sp)
         bstrncpy(level, "    ", sizeof(level));
         break;
       default:
-        bstrncpy(level, level_to_str(je->JobLevel), sizeof(level));
+        bstrncpy(level, JobLevelToString(je->JobLevel), sizeof(level));
         level[4] = 0;
         break;
     }
@@ -916,7 +916,7 @@ static void ListTerminatedJobs(StatusPacket* sp)
 /**
  * Convert Job Level into a string
  */
-static const char* level_to_str(int level)
+static const char* JobLevelToString(int level)
 {
   const char* str;
 

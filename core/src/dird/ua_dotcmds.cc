@@ -1463,7 +1463,7 @@ bool DotDefaultsCmd(UaContext* ua, const char* cmd)
       ua->send->ObjectKeyValue(
           "where", "%s=", (job->RestoreWhere ? job->RestoreWhere : ""), "%s\n");
       ua->send->SendBuffer();
-      ua->send->ObjectKeyValue("level", "%s=", level_to_str(job->JobLevel),
+      ua->send->ObjectKeyValue("level", "%s=", JobLevelToString(job->JobLevel),
                                "%s\n");
       ua->send->SendBuffer();
       ua->send->ObjectKeyValue("type", "%s=", job_type_to_str(job->JobType),

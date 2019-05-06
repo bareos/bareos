@@ -1284,11 +1284,11 @@ static bool ListNextvol(UaContext* ua, int ndays)
                                  fnv_prune)) {
       ua->ErrorMsg(
           _("Could not find next Volume for Job %s (Pool=%s, Level=%s).\n"),
-          job->resource_name_, pr.Name, level_to_str(run->level));
+          job->resource_name_, pr.Name, JobLevelToString(run->level));
     } else {
       ua->SendMsg(_("The next Volume to be used by Job \"%s\" (Pool=%s, "
                     "Level=%s) will be %s\n"),
-                  job->resource_name_, pr.Name, level_to_str(run->level),
+                  job->resource_name_, pr.Name, JobLevelToString(run->level),
                   mr.VolumeName);
       found = true;
     }

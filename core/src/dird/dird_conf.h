@@ -522,7 +522,7 @@ class JobResource : public BareosResource {
   runtime_job_status_t* rjs = nullptr; /**< Runtime Job Status */
 
   /* Methods */
-  bool validate();
+  bool Validate();
 };
 /* clang-format on */
 
@@ -717,10 +717,10 @@ bool print_datatype_schema_json(PoolMem& buffer,
 #ifdef HAVE_JANSSON
 json_t* json_datatype(const int type, ResourceItem items[]);
 #endif
-const char* auth_protocol_to_str(uint32_t auth_protocol);
-const char* level_to_str(int level);
+const char* AuthenticationProtocolTypeToString(uint32_t auth_protocol);
+const char* JobLevelToString(int level);
 extern "C" char* job_code_callback_director(JobControlRecord* jcr, const char*);
-const char* get_configure_usage_string();
+const char* GetUsageStringForConsoleConfigureCommand();
 void DestroyConfigureUsageString();
 bool PopulateDefs();
 

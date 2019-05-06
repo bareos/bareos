@@ -442,7 +442,7 @@ static bool show_scheduled_preview(UaContext* ua,
 
       if (run->level) {
         if (cnt++ > 0) { PmStrcat(overview, " "); }
-        Mmsg(temp, "Level=%s", level_to_str(run->level));
+        Mmsg(temp, "Level=%s", JobLevelToString(run->level));
         PmStrcat(overview, temp.c_str());
       }
 
@@ -801,7 +801,7 @@ static void PrtRuntime(UaContext* ua, sched_pkt* sp)
       level_ptr = " ";
       break;
     default:
-      level_ptr = level_to_str(sp->level);
+      level_ptr = JobLevelToString(sp->level);
       break;
   }
   if (ua->api) {
@@ -1121,7 +1121,7 @@ static void ListRunningJobs(UaContext* ua)
         bstrncpy(level, "      ", sizeof(level));
         break;
       default:
-        bstrncpy(level, level_to_str(jcr->getJobLevel()), sizeof(level));
+        bstrncpy(level, JobLevelToString(jcr->getJobLevel()), sizeof(level));
         level[7] = 0;
         break;
     }
@@ -1190,7 +1190,7 @@ static void ListTerminatedJobs(UaContext* ua)
         bstrncpy(level, "    ", sizeof(level));
         break;
       default:
-        bstrncpy(level, level_to_str(je->JobLevel), sizeof(level));
+        bstrncpy(level, JobLevelToString(je->JobLevel), sizeof(level));
         level[4] = 0;
         break;
     }

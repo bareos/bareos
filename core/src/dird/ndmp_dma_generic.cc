@@ -107,7 +107,7 @@ bool NdmpValidateClient(JobControlRecord* jcr)
            _("Client %s, with backup protocol %s  not compatible for running "
              "NDMP backup.\n"),
            jcr->res.client->resource_name_,
-           auth_protocol_to_str(jcr->res.client->Protocol));
+           AuthenticationProtocolTypeToString(jcr->res.client->Protocol));
       return false;
   }
 
@@ -132,7 +132,7 @@ static inline bool NdmpValidateStorage(JobControlRecord* jcr,
     default:
       Jmsg(jcr, M_FATAL, 0,
            _("Storage %s has illegal backup protocol %s for NDMP backup\n"),
-           store->resource_name_, auth_protocol_to_str(store->Protocol));
+           store->resource_name_, AuthenticationProtocolTypeToString(store->Protocol));
       return false;
   }
 

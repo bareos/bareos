@@ -1165,7 +1165,7 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
              _("No prior or suitable Full backup found in catalog. Doing FULL "
                "backup.\n"));
         Bsnprintf(jcr->since, sizeof(jcr->since), _(" (upgraded from %s)"),
-                  level_to_str(JobLevel));
+                  JobLevelToString(JobLevel));
         jcr->setJobLevel(jcr->jr.JobLevel = L_FULL);
         pool_updated = true;
       } else if (do_vfull) {
@@ -1178,7 +1178,7 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
              _("No prior or suitable Full backup found in catalog. Doing "
                "Virtual FULL backup.\n"));
         Bsnprintf(jcr->since, sizeof(jcr->since), _(" (upgraded from %s)"),
-                  level_to_str(jcr->getJobLevel()));
+                  JobLevelToString(jcr->getJobLevel()));
         jcr->setJobLevel(jcr->jr.JobLevel = L_VIRTUAL_FULL);
         pool_updated = true;
 
@@ -1198,7 +1198,7 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
              _("No prior or suitable Differential backup found in catalog. "
                "Doing Differential backup.\n"));
         Bsnprintf(jcr->since, sizeof(jcr->since), _(" (upgraded from %s)"),
-                  level_to_str(JobLevel));
+                  JobLevelToString(JobLevel));
         jcr->setJobLevel(jcr->jr.JobLevel = L_DIFFERENTIAL);
         pool_updated = true;
       } else {
@@ -1207,9 +1207,9 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
                                           JobLevel)) {
             Jmsg(jcr, M_INFO, 0,
                  _("Prior failed job found in catalog. Upgrading to %s.\n"),
-                 level_to_str(JobLevel));
+                 JobLevelToString(JobLevel));
             Bsnprintf(jcr->since, sizeof(jcr->since), _(" (upgraded from %s)"),
-                      level_to_str(JobLevel));
+                      JobLevelToString(JobLevel));
             jcr->setJobLevel(jcr->jr.JobLevel = JobLevel);
             jcr->jr.JobId = jcr->JobId;
             pool_updated = true;
