@@ -1,0 +1,181 @@
+@startuml
+participant d as "Director"
+participant r as "Read SD"
+participant w as "Write SD"
+group Initiate dir to read sd connection
+  d -> r : Hello
+  r -> d : CRAM-MD5 Challenge
+  d -> r : CRAM-MD5 Response
+  alt success
+    r -> d : 1000 OK auth
+  else failure
+    r -> d : 1999 Authorization failed.
+  end
+  d -> r : CRAM-MD5 Challenge
+  r -> d : CRAM-MD5 Response
+  alt success
+    d -> r : 1000 OK auth
+  else failure
+    d -> r : 1999 Authorization failed.
+  end
+end
+group Initiate dir to write sd connection
+  d -> w : Hello
+  w -> d : CRAM-MD5 Challenge
+  d -> w : CRAM-MD5 Response
+  alt success
+    w -> d : 1000 OK auth
+  else failure
+    w -> d : 1999 Authorization failed.
+  end
+  d -> w : CRAM-MD5 Challenge
+  w -> d : CRAM-MD5 Response
+  alt success
+    d -> w : 1000 OK auth
+  else failure
+    d -> w : 1999 Authorization failed.
+  end
+end
+
+loop each option
+  d -> r : pluginoptions %s
+  r -> d : 2000 OK plugin options
+end
+alt if reschedulung
+  d -> r : cancel Job=%s
+  r -> d : 3000 JobId=%ld Job="%s" marked to be %s.
+end
+d -> r : JobId=%s [...]
+r -> d : 3000 OK Job SDid=%d SDtime=%d Authorization=%100s
+d -> r : bootstrap
+d -> r : <bootstrap content>
+d -> r : BNET_EOD
+r -> d : 2000 OK bootstrap
+d -> r : getSecureEraseCmd
+r -> d : 2000 OK SDSecureEraseCmd %s
+loop each read_storage
+  d -> r : use storage=%s media_type=%s pool_name=%s pool_type=%s append=0 copy=%d stripe=%d
+  loop each device
+    d -> r : use device=%s
+  end
+  d -> r : BNET_EOD
+end
+d -> r : BNET_EOD
+r -> d : 3000 OK use device device=%s
+
+
+loop each option
+  d -> w : pluginoptions %s
+  w -> d : 2000 OK plugin options
+end
+alt if reschedulung
+  d -> w : cancel Job=%s
+  w -> d : 3000 JobId=%ld Job="%s" marked to be %s.
+end
+d -> w : JobId=%s [...]
+w -> d : 3000 OK Job SDid=%d SDtime=%d Authorization=%100s
+d -> w : getSecureEraseCmd
+w -> d : 2000 OK SDSecureEraseCmd %s
+loop each write_storage
+  d -> w : use storage=%s media_type=%s pool_name=%s pool_type=%s append=1 copy=%d stripe=%d
+  loop each device
+    d -> w : use device=%s
+  end
+  d -> w : BNET_EOD
+end
+d -> w : BNET_EOD
+w -> d : 3000 OK use device device=%s
+
+d -> r : setbandwidth=%d Job=%s
+r -> d : 2000 OK Bandwidth
+d -> w : listen
+== Message thread for Write SD communication spawned ==
+w -> d : Status Job=%s JobStatus=83
+note right
+  83 is numeric for 'S' which
+  means waiting for storage daemon
+end note
+d -> r : replicate JobId=%d Job=%s address=<write sd> port=%d ssl=%d Authorization=%s
+
+group Initiate read sd to write sd connection
+  r -> w : Hello Start Storage Job %s
+  w -> r : CRAM-MD5 Challenge
+  r -> w : CRAM-MD5 Response
+  alt success
+    w -> r : 1000 OK auth
+  else failure
+    w -> r : 1999 Authorization failed.
+  end
+  r -> w : CRAM-MD5 Challenge
+  w -> r : CRAM-MD5 Response
+  alt success
+    r -> w : 1000 OK auth
+  else failure
+    r -> w : 1999 Authorization failed.
+  end
+end
+r -> d : 3000 OK replicate
+
+w -> d : 3010 Job %s start
+w -> d : Status Job=%s JobStatus=82
+note right
+  82 is numeric for 'R' which
+  means running
+end note
+
+d -> r : run
+== Message thread for Read SD communication spawned ==
+r -> d : Status Job=%s JobStatus=82
+note right
+  82 is numeric for 'R' which
+  means running
+end note
+
+r -> w : start replicate
+w -> r : 3000 OK start replicate
+r -> w : replicate data %d
+w -> d : Status Job=%s JobStatus=82
+note right
+  82 is numeric for 'R' which
+  means running
+end note
+w -> r : 3000 OK data
+
+r -> w : DataRecords
+
+r -> w : BNET_EOD
+r -> w : BNET_EOD
+r -> w : end replicate
+w -> r : 3000 OK end replicate
+
+
+
+r -> d : Status Job=%s JobStatus=%d
+note right
+  send current job status
+end note
+loop each queued message
+  r -> d : Jmsg Job=%s type=%d level=%lld %s
+end
+r -> d : Status Job=%s JobStatus=84
+note right
+  84 is numeric for 'T' which
+  means terminated
+end note
+r -> d : 3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u
+== Message thread for Read SD communication exits ==
+r -> d : BNET_EOD
+
+
+loop each queued message
+  w -> d : Jmsg Job=%s type=%d level=%lld %s
+end
+w -> d : Status Job=%s JobStatus=84
+note right
+  84 is numeric for 'T' which
+  means terminated
+end note
+w -> d : 3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u
+== Message thread for Write SD communication exits ==
+w -> d : BNET_EOD
+@enduml

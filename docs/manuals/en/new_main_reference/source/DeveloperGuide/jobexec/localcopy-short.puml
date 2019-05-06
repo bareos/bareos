@@ -1,0 +1,20 @@
+@startuml
+participant d as "Director"
+participant s as "Storage Daemon"
+d -> s : authenticate
+d -> s : send plugin options
+alt if reschedulung
+  d -> s : cancel previous job
+end
+d -> s : setup job
+d -> s : reserve device for read
+d -> s : reserve device for write
+d -> s : start job
+== Message thread for SD communication spawned ==
+s -> d : jobstatus: running
+s -> d : dequeue messages
+s -> d : send current jobstatus
+s -> d : tell dir that job has finished
+== Message thread for SD communication exits ==
+s -> d : BNET_EOD
+@enduml
