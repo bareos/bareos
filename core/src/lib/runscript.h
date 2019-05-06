@@ -105,7 +105,7 @@ class RunScript : public BareosResource {
 };
 
 /* create new RunScript from another */
-RunScript* CopyRunscript(RunScript* src);
+RunScript* DuplicateRunscript(RunScript* src);
 
 /* launch each script from runscripts*/
 int RunScripts(JobControlRecord* jcr,
@@ -113,7 +113,6 @@ int RunScripts(JobControlRecord* jcr,
                const char* name,
                alist* allowed_script_dirs = NULL);
 
-/* free RunScript (and all POOLMEM) */
 void FreeRunscript(RunScript* script);
 
 /* foreach_alist free RunScript */

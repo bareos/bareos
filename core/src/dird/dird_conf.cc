@@ -2579,16 +2579,15 @@ bool PropagateJobdefs(int res_type, JobResource* res)
      * Handle RunScripts alists specifically
      */
     if (jobdefs->RunScripts) {
-      RunScript *rs = nullptr, *elt;
-
       if (!res->RunScripts) {
         res->RunScripts = new alist(10, not_owned_by_alist);
       }
 
+      RunScript* rs = nullptr;
       foreach_alist (rs, jobdefs->RunScripts) {
-        elt = CopyRunscript(rs);
-        elt->from_jobdef = true;
-        res->RunScripts->append(elt); /* we have to free it */
+        RunScript* r = DuplicateRunscript(rs);
+        r->from_jobdef = true;
+        res->RunScripts->append(r); /* free it at FreeResource */
       }
     }
   }

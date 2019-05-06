@@ -37,7 +37,7 @@
  */
 bool (*console_command)(JobControlRecord* jcr, const char* cmd) = NULL;
 
-RunScript* CopyRunscript(RunScript* src)
+RunScript* DuplicateRunscript(RunScript* src)
 {
   Dmsg0(500, "runscript: creating new RunScript object from other\n");
 
@@ -289,9 +289,9 @@ void FreeRunscripts(alist* runscripts)
 {
   Dmsg0(500, "runscript: freeing all RUNSCRIPTS object\n");
 
-  RunScript* elt = nullptr;
-  foreach_alist (elt, runscripts) {
-    FreeRunscript(elt);
+  RunScript* r = nullptr;
+  foreach_alist (r, runscripts) {
+    FreeRunscript(r);
   }
 }
 
