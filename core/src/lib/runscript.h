@@ -68,9 +68,12 @@ enum
   CONSOLE_CMD = '@'
 };
 
-/**
- * Structure for RunScript ressource
- */
+struct TempParserCommand {
+  TempParserCommand(POOLMEM* p, int32_t c) : command_(p), code_(c) {}
+  POOLMEM* command_ = nullptr;
+  int32_t code_ = 0;
+};
+
 class RunScript : public BareosResource {
  public:
   RunScript() = default;
@@ -88,8 +91,7 @@ class RunScript : public BareosResource {
   bool on_failure = false;    /* Execute command on job failure (After) */
   bool fail_on_error = true;  /* Abort job on error (Before) */
   job_code_callback_t job_code_callback = nullptr;
-  /* Optional callback function passed to edit_job_code */
-  alist* commands = nullptr; /* Use during parsing */
+  std::vector<TempParserCommand> temp_parser_command_container;
   bool run(JobControlRecord* job,
            const char* name =
                ""); /* name must contain "Before" or "After" keyword */

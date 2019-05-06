@@ -3103,9 +3103,6 @@ static void StoreRunscriptTarget(LEX* lc,
   ScanToEol(lc);
 }
 
-/**
- * Store a runscript->command as a string and runscript->cmd_type as a pointer
- */
 static void StoreRunscriptCmd(LEX* lc, ResourceItem* item, int index, int pass)
 {
   LexGetToken(lc, BCT_STRING);
@@ -3118,8 +3115,7 @@ static void StoreRunscriptCmd(LEX* lc, ResourceItem* item, int index, int pass)
      */
     PmStrcpy(c, lc->str);
     RunScript* r = GetItemVariablePointer<RunScript*>(*item);
-    r->commands->prepend(c);                           /* command line */
-    r->commands->prepend((void*)(intptr_t)item->code); /* command type */
+    r->temp_parser_command_container.emplace_back(c, item->code);
   }
   ScanToEol(lc);
 }
@@ -3206,13 +3202,11 @@ static void StoreRunscriptBool(LEX* lc, ResourceItem* item, int index, int pass)
  */
 static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
 {
-  char* c;
-  int token, i, t;
   alist** runscripts = GetItemVariablePointer<alist**>(*item);
 
   Dmsg1(200, "StoreRunscript: begin StoreRunscript pass=%i\n", pass);
 
-  token = LexGetToken(lc, BCT_SKIP_EOL);
+  int token = LexGetToken(lc, BCT_SKIP_EOL);
 
   if (token != BCT_BOB) {
     scan_err1(lc, _("Expecting open brace. Got %s"), lc->str);
@@ -3220,9 +3214,7 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
 
   res_runscript = new RunScript();
 
-  if (pass == 2) {
-    res_runscript->commands = new alist(10, not_owned_by_alist);
-  }
+  if (pass == 2) { res_runscript->temp_parser_command_container.clear(); }
 
   while ((token = LexGetToken(lc, BCT_SKIP_EOL)) != BCT_EOF) {
     if (token == BCT_EOB) { break; }
@@ -3231,16 +3223,13 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
       scan_err1(lc, _("Expecting keyword, got: %s\n"), lc->str);
     }
 
-    for (i = 0; runscript_items[i].name; i++) {
+    bool keyword_ok = false;
+    for (int i = 0; runscript_items[i].name; i++) {
       if (Bstrcasecmp(runscript_items[i].name, lc->str)) {
         token = LexGetToken(lc, BCT_SKIP_EOL);
         if (token != BCT_EQUALS) {
           scan_err1(lc, _("Expected an equals, got: %s"), lc->str);
         }
-
-        /*
-         * Call item handler
-         */
         switch (runscript_items[i].type) {
           case CFG_TYPE_RUNSCRIPT_CMD:
             StoreRunscriptCmd(lc, &runscript_items[i], i, pass);
@@ -3257,12 +3246,12 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
           default:
             break;
         }
-        i = -1;
+        keyword_ok = true;
         break;
       }
     }
 
-    if (i >= 0) {
+    if (!keyword_ok) {
       scan_err1(lc, _("Keyword %s not permitted in this resource"), lc->str);
     }
   }
@@ -3273,21 +3262,15 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
      */
     if (!res_runscript->target) { res_runscript->SetTarget("%c"); }
     if (!*runscripts) { *runscripts = new alist(10, not_owned_by_alist); }
-    /*
-     * commands list contains 2 values per command
-     * - POOLMEM command string (ex: /bin/true)
-     * - int command type (ex: SHELL_CMD)
-     */
+
     res_runscript->SetJobCodeCallback(job_code_callback_director);
-    while ((c = (char*)res_runscript->commands->pop()) != NULL) {
-      t = (intptr_t)res_runscript->commands->pop();
+
+    for (TempParserCommand cmd : res_runscript->temp_parser_command_container) {
       RunScript* script = new RunScript(*res_runscript);
-      script->command = c;
-      script->cmd_type = t;
-      /*
-       * target is taken from res_runscript,
-       * each runscript object have a copy
-       */
+      script->command = cmd.command_;
+      script->cmd_type = cmd.code_;
+
+      // each runscript object have a copy of target
       script->target = NULL;
       script->SetTarget(res_runscript->target);
 
@@ -3296,7 +3279,6 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
       (*runscripts)->append(script);
       script->debug();
     }
-    delete res_runscript->commands;
     delete res_runscript;
     res_runscript = nullptr;
   }
