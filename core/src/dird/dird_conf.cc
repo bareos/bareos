@@ -1332,135 +1332,123 @@ char* CatalogResource::display(POOLMEM* dst)
 
 static void PrintConfigRunscript(ResourceItem* item, PoolMem& cfg_str)
 {
-  PoolMem temp;
+  if (!Bstrcasecmp(item->name, "runscript")) { return; }
+
+  alist* list = GetItemVariable<alist*>(*item);
+  if (!list) { return; }
+
   RunScript* runscript = nullptr;
-  alist* list;
 
-  list = GetItemVariable<alist*>(*item);
-  if (Bstrcasecmp(item->name, "runscript")) {
-    if (list != NULL) {
-      foreach_alist (runscript, list) {
-        PoolMem esc;
+  foreach_alist (runscript, list) {
+    PoolMem esc;
 
-        EscapeString(esc, runscript->command, strlen(runscript->command));
+    EscapeString(esc, runscript->command, strlen(runscript->command));
 
-        /*
-         * Don't print runscript when its inherited from a JobDef.
-         */
-        if (runscript->from_jobdef) { continue; }
+    // do not print if inherited by a JobDef
+    if (runscript->from_jobdef) { continue; }
 
-        /*
-         * Check if runscript must be written as short runscript
-         */
-        if (runscript->short_form) {
-          if (runscript->when == SCRIPT_Before && /* runbeforejob */
-              (bstrcmp(runscript->target, ""))) {
-            Mmsg(temp, "run before job = \"%s\"\n", esc.c_str());
-          } else if (runscript->when == SCRIPT_After && /* runafterjob */
-                     runscript->on_success && !runscript->on_failure &&
-                     !runscript->fail_on_error &&
-                     bstrcmp(runscript->target, "")) {
-            Mmsg(temp, "run after job = \"%s\"\n", esc.c_str());
-          } else if (runscript->when ==
-                         SCRIPT_After && /* client run after job */
-                     runscript->on_success &&
-                     !runscript->on_failure && !runscript->fail_on_error &&
-                     !bstrcmp(runscript->target, "")) {
-            Mmsg(temp, "client run after job = \"%s\"\n", esc.c_str());
-          } else if (runscript->when ==
-                         SCRIPT_Before && /* client run before job */
-                     !bstrcmp(runscript->target, "")) {
-            Mmsg(temp, "client run before job = \"%s\"\n", esc.c_str());
-          } else if (runscript->when ==
-                         SCRIPT_After && /* run after failed job */
-                     runscript->on_failure &&
-                     !runscript->on_success && !runscript->fail_on_error &&
-                     bstrcmp(runscript->target, "")) {
-            Mmsg(temp, "run after failed job = \"%s\"\n", esc.c_str());
-          }
-          IndentConfigItem(cfg_str, 1, temp.c_str());
-        } else {
-          Mmsg(temp, "runscript {\n");
-          IndentConfigItem(cfg_str, 1, temp.c_str());
-
-          char* cmdstring = (char*)"command"; /* '|' */
-          if (runscript->cmd_type == '@') { cmdstring = (char*)"console"; }
-
-          Mmsg(temp, "%s = \"%s\"\n", cmdstring, esc.c_str());
-          IndentConfigItem(cfg_str, 2, temp.c_str());
-
-          /*
-           * Default: never
-           */
-          char* when = (char*)"never";
-          switch (runscript->when) {
-            case SCRIPT_Before:
-              when = (char*)"before";
-              break;
-            case SCRIPT_After:
-              when = (char*)"after";
-              break;
-            case SCRIPT_AfterVSS:
-              when = (char*)"aftervss";
-              break;
-            case SCRIPT_Any:
-              when = (char*)"always";
-              break;
-          }
-
-          if (!Bstrcasecmp(when, "never")) { /* suppress default value */
-            Mmsg(temp, "runswhen = %s\n", when);
-            IndentConfigItem(cfg_str, 2, temp.c_str());
-          }
-
-          /*
-           * Default: fail_on_error = true
-           */
-          char* fail_on_error = (char*)"Yes";
-          if (!runscript->fail_on_error) {
-            fail_on_error = (char*)"No";
-            Mmsg(temp, "failonerror = %s\n", fail_on_error);
-            IndentConfigItem(cfg_str, 2, temp.c_str());
-          }
-
-          /*
-           * Default: on_success = true
-           */
-          char* run_on_success = (char*)"Yes";
-          if (!runscript->on_success) {
-            run_on_success = (char*)"No";
-            Mmsg(temp, "runsonsuccess = %s\n", run_on_success);
-            IndentConfigItem(cfg_str, 2, temp.c_str());
-          }
-
-          /*
-           * Default: on_failure = false
-           */
-          char* run_on_failure = (char*)"No";
-          if (runscript->on_failure) {
-            run_on_failure = (char*)"Yes";
-            Mmsg(temp, "runsonfailure = %s\n", run_on_failure);
-            IndentConfigItem(cfg_str, 2, temp.c_str());
-          }
-
-          /* level is not implemented
-          Dmsg1(200, "   level = %d\n", runscript->level);
-          */
-
-          /*
-           * Default: runsonclient = yes
-           */
-          char* runsonclient = (char*)"Yes";
-          if (bstrcmp(runscript->target, "")) {
-            runsonclient = (char*)"No";
-            Mmsg(temp, "runsonclient = %s\n", runsonclient);
-            IndentConfigItem(cfg_str, 2, temp.c_str());
-          }
-
-          IndentConfigItem(cfg_str, 1, "}\n");
-        }
+    PoolMem temp;
+    if (runscript->short_form) {
+      if (runscript->when == SCRIPT_Before && /* runbeforejob */
+          (bstrcmp(runscript->target, ""))) {
+        Mmsg(temp, "run before job = \"%s\"\n", esc.c_str());
+      } else if (runscript->when == SCRIPT_After && /* runafterjob */
+                 runscript->on_success && !runscript->on_failure &&
+                 !runscript->fail_on_error && bstrcmp(runscript->target, "")) {
+        Mmsg(temp, "run after job = \"%s\"\n", esc.c_str());
+      } else if (runscript->when == SCRIPT_After && /* client run after job */
+                 runscript->on_success && !runscript->on_failure &&
+                 !runscript->fail_on_error && !bstrcmp(runscript->target, "")) {
+        Mmsg(temp, "client run after job = \"%s\"\n", esc.c_str());
+      } else if (runscript->when == SCRIPT_Before && /* client run before job */
+                 !bstrcmp(runscript->target, "")) {
+        Mmsg(temp, "client run before job = \"%s\"\n", esc.c_str());
+      } else if (runscript->when == SCRIPT_After && /* run after failed job */
+                 runscript->on_failure && !runscript->on_success &&
+                 !runscript->fail_on_error && bstrcmp(runscript->target, "")) {
+        Mmsg(temp, "run after failed job = \"%s\"\n", esc.c_str());
       }
-    } /* foreach runscript */
+      IndentConfigItem(cfg_str, 1, temp.c_str());
+    } else {
+      Mmsg(temp, "runscript {\n");
+      IndentConfigItem(cfg_str, 1, temp.c_str());
+
+      char* cmdstring = (char*)"command"; /* '|' */
+      if (runscript->cmd_type == '@') { cmdstring = (char*)"console"; }
+
+      Mmsg(temp, "%s = \"%s\"\n", cmdstring, esc.c_str());
+      IndentConfigItem(cfg_str, 2, temp.c_str());
+
+      /*
+       * Default: never
+       */
+      char* when = (char*)"never";
+      switch (runscript->when) {
+        case SCRIPT_Before:
+          when = (char*)"before";
+          break;
+        case SCRIPT_After:
+          when = (char*)"after";
+          break;
+        case SCRIPT_AfterVSS:
+          when = (char*)"aftervss";
+          break;
+        case SCRIPT_Any:
+          when = (char*)"always";
+          break;
+      }
+
+      if (!Bstrcasecmp(when, "never")) { /* suppress default value */
+        Mmsg(temp, "runswhen = %s\n", when);
+        IndentConfigItem(cfg_str, 2, temp.c_str());
+      }
+
+      /*
+       * Default: fail_on_error = true
+       */
+      char* fail_on_error = (char*)"Yes";
+      if (!runscript->fail_on_error) {
+        fail_on_error = (char*)"No";
+        Mmsg(temp, "failonerror = %s\n", fail_on_error);
+        IndentConfigItem(cfg_str, 2, temp.c_str());
+      }
+
+      /*
+       * Default: on_success = true
+       */
+      char* run_on_success = (char*)"Yes";
+      if (!runscript->on_success) {
+        run_on_success = (char*)"No";
+        Mmsg(temp, "runsonsuccess = %s\n", run_on_success);
+        IndentConfigItem(cfg_str, 2, temp.c_str());
+      }
+
+      /*
+       * Default: on_failure = false
+       */
+      char* run_on_failure = (char*)"No";
+      if (runscript->on_failure) {
+        run_on_failure = (char*)"Yes";
+        Mmsg(temp, "runsonfailure = %s\n", run_on_failure);
+        IndentConfigItem(cfg_str, 2, temp.c_str());
+      }
+
+      /* level is not implemented
+      Dmsg1(200, "   level = %d\n", runscript->level);
+      */
+
+      /*
+       * Default: runsonclient = yes
+       */
+      char* runsonclient = (char*)"Yes";
+      if (bstrcmp(runscript->target, "")) {
+        runsonclient = (char*)"No";
+        Mmsg(temp, "runsonclient = %s\n", runsonclient);
+        IndentConfigItem(cfg_str, 2, temp.c_str());
+      }
+
+      IndentConfigItem(cfg_str, 1, "}\n");
+    }
   }
 }
 
