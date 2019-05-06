@@ -1,0 +1,48 @@
+@startuml
+participant d as "Director"
+participant r as "Read SD"
+participant w as "Write SD"
+d -> r : authenticate read sd
+d -> w : authenticate write sd
+
+d -> r : send plugin options
+alt if reschedulung
+  d -> r : cancel previous job
+end
+
+d -> r : setup job
+d -> r : send bootstrap
+d -> r : reserve device for read
+
+d -> w : send plugin options
+alt if reschedulung
+  d -> w : cancel previous job
+end
+d -> w : setup job
+d -> w : reserve device for write
+
+d -> w : switch to listen mode
+== Message thread for Write SD communication spawned ==
+w -> d : jobstatus: waiting for storage daemon
+
+d -> r : replicate command
+r -> w : authenticate sd to sd
+
+w -> d : jobstatus : running
+
+d -> r : start job
+== Message thread for Read SD communication spawned ==
+r -> d : jobstatus: running
+
+w -> d : jobstatus: running
+r -> w : replicate data
+
+r -> d : send jobstatus
+r -> d : dequeue messages
+r -> d : tell dir that job has finished
+== Message thread for Read SD communication exits ==
+
+w -> d : dequeue messages
+w -> d : tell dir that job has finished
+== Message thread for Write SD communication exits ==
+@enduml

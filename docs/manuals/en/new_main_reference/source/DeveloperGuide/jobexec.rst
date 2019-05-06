@@ -35,3 +35,37 @@ Overview
 Detailed View
 ~~~~~~~~~~~~~
 .. uml:: /DeveloperGuide/jobexec/backup-long.puml
+
+
+Local copy or migrate job
+-------------------------
+The local copy reads records from one volume and writes them to another volume on the same |sd|.
+None of the data is transferred over the network.
+
+When such a job is run, the |dir| connects to the |sd| and tells is what data to read from which volume and what volume the records should be written to.
+
+Overview
+~~~~~~~~
+.. uml:: /DeveloperGuide/jobexec/localcopy-short.puml
+
+Detailed View
+~~~~~~~~~~~~~
+.. uml:: /DeveloperGuide/jobexec/localcopy-long.puml
+
+
+Remote copy or migrate job
+--------------------------
+The remote copy or migrate basically reads records from one volume and writes them to another one on a different |sd|.
+From a networking perspective copy and migrate are not really distinguishable.
+The main difference is what the director writes to the catalog after the job is finished.
+
+When such a remote copy or migrate job is run, the |dir| connects to the reading |sd| and then to the writing |sd|.
+The writing |sd| is put into listen-mode while the writing |sd| will essentially run a restore where the data is sent to the writing |sd|.
+
+Overview
+~~~~~~~~
+.. uml:: /DeveloperGuide/jobexec/remotecopy-short.puml
+
+Detailed View
+~~~~~~~~~~~~~
+.. uml:: /DeveloperGuide/jobexec/remotecopy-long.puml
