@@ -37,36 +37,11 @@
  */
 bool (*console_command)(JobControlRecord* jcr, const char* cmd) = NULL;
 
-
-RunScript* NewRunscript()
-{
-  Dmsg0(500, "runscript: creating new RunScript object\n");
-  RunScript* cmd = new RunScript;
-  cmd->ResetDefault();
-
-  return cmd;
-}
-
-void RunScript::ResetDefault(bool free_strings)
-{
-  if (free_strings && command) { FreePoolMemory(command); }
-  if (free_strings && target) { FreePoolMemory(target); }
-
-  target = NULL;
-  command = NULL;
-  on_success = true;
-  on_failure = false;
-  fail_on_error = true;
-  when = SCRIPT_Never;
-  job_code_callback = NULL;
-}
-
-RunScript* copy_runscript(RunScript* src)
+RunScript* CopyRunscript(RunScript* src)
 {
   Dmsg0(500, "runscript: creating new RunScript object from other\n");
 
-  RunScript* dst = (RunScript*)malloc(sizeof(RunScript));
-  memcpy(dst, src, sizeof(RunScript));
+  RunScript* dst = new RunScript(*src);
 
   dst->command = NULL;
   dst->target = NULL;

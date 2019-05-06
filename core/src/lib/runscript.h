@@ -40,7 +40,7 @@ class alist;
  * #define USE_RUNSCRIPT
  * #include "lib/runscript.h"
  *
- * RunScript *script = NewRunscript();
+ * RunScript *script = new RunScript;
  * script->SetCommand("/bin/sleep 20");
  * script->on_failure = true;
  * script->when = SCRIPT_After;
@@ -75,17 +75,18 @@ class RunScript : public BareosResource {
  public:
   RunScript() = default;
   virtual ~RunScript() = default;
+  RunScript(const RunScript& other) = default;
 
   POOLMEM* command = nullptr; /* Command string */
   POOLMEM* target = nullptr;  /* Host target */
-  int when = 0;               /* SCRIPT_Before|Script_After BEFORE/AFTER JOB*/
+  int when = SCRIPT_Never;    /* SCRIPT_Before|Script_After BEFORE/AFTER JOB*/
   int cmd_type = 0;           /* Command type -- Shell, Console */
   char level = 0;             /* Base|Full|Incr...|All (NYI) */
   bool short_form = false;    /* Run Script in short form */
   bool from_jobdef = false;   /* This RUN script comes from JobDef */
-  bool on_success = false;    /* Execute command on job success (After) */
+  bool on_success = true;     /* Execute command on job success (After) */
   bool on_failure = false;    /* Execute command on job failure (After) */
-  bool fail_on_error = false; /* Abort job on error (Before) */
+  bool fail_on_error = true;  /* Abort job on error (Before) */
   job_code_callback_t job_code_callback = nullptr;
   /* Optional callback function passed to edit_job_code */
   alist* commands = nullptr; /* Use during parsing */
@@ -95,18 +96,14 @@ class RunScript : public BareosResource {
   bool CanRunAtLevel(int JobLevel) { return true; } /* TODO */
   void SetCommand(const char* cmd, int cmd_type = SHELL_CMD);
   void SetTarget(const char* client_name);
-  void ResetDefault(bool free_string = false);
   bool IsLocal(); /* True if running on local host */
   void debug();
 
   void SetJobCodeCallback(job_code_callback_t job_code_callback);
 };
 
-/* create new RunScript (set all value to 0) */
-RunScript* NewRunscript();
-
 /* create new RunScript from another */
-RunScript* copy_runscript(RunScript* src);
+RunScript* CopyRunscript(RunScript* src);
 
 /* launch each script from runscripts*/
 int RunScripts(JobControlRecord* jcr,

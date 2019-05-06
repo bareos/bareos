@@ -1028,7 +1028,8 @@ static bool RunbeforeCmd(JobControlRecord* jcr)
   /*
    * Run the command now
    */
-  script = NewRunscript();
+  Dmsg0(500, "runscript: creating new RunScript object\n");
+  script = new RunScript;
   script->SetJobCodeCallback(job_code_callback_filed);
   script->SetCommand(cmd);
   script->when = SCRIPT_Before;
@@ -1088,7 +1089,8 @@ static bool RunafterCmd(JobControlRecord* jcr)
   }
   UnbashSpaces(cmd);
 
-  script = NewRunscript();
+  Dmsg0(500, "runscript: creating new RunScript object\n");
+  script = new RunScript;
   script->SetJobCodeCallback(job_code_callback_filed);
   script->SetCommand(cmd);
   script->on_success = true;
@@ -1120,7 +1122,8 @@ static bool RunscriptCmd(JobControlRecord* jcr)
   }
 
   msg = GetMemory(dir->message_length + 1);
-  cmd = NewRunscript();
+  Dmsg0(500, "runscript: creating new RunScript object\n");
+  cmd = new RunScript;
   cmd->SetJobCodeCallback(job_code_callback_filed);
 
   Dmsg1(100, "RunscriptCmd: '%s'\n", dir->msg);

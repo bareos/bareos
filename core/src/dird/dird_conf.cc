@@ -556,11 +556,7 @@ static ResourceTable resources[] = {
 /**
  * Note, when this resource is used, we are inside a Job
  * resource. We treat the RunScript like a sort of
- * mini-resource within the Job resource. As such we
- * don't use the UnionOfResources union because that contains
- * a Job resource (and it would corrupt the Job resource)
- * but use a global separate resource for holding the
- * runscript data.
+ * mini-resource within the Job resource.
  */
 static RunScript *res_runscript;
 
@@ -2590,7 +2586,7 @@ bool PropagateJobdefs(int res_type, JobResource* res)
       }
 
       foreach_alist (rs, jobdefs->RunScripts) {
-        elt = copy_runscript(rs);
+        elt = CopyRunscript(rs);
         elt->from_jobdef = true;
         res->RunScripts->append(elt); /* we have to free it */
       }
@@ -3137,7 +3133,9 @@ static void StoreShortRunscript(LEX* lc,
   alist** runscripts = GetItemVariablePointer<alist**>(*item);
 
   if (pass == 2) {
-    RunScript* script = NewRunscript();
+    Dmsg0(500, "runscript: creating new RunScript object\n");
+    RunScript* script = new RunScript;
+
     script->SetJobCodeCallback(job_code_callback_director);
 
     script->SetCommand(lc->str);
@@ -3219,10 +3217,8 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
   if (token != BCT_BOB) {
     scan_err1(lc, _("Expecting open brace. Got %s"), lc->str);
   }
-  /*
-   * Setting on_success, on_failure, fail_on_error
-   */
-  res_runscript->ResetDefault();  // Ueb --> Destruktor
+
+  res_runscript = new RunScript();
 
   if (pass == 2) {
     res_runscript->commands = new alist(10, not_owned_by_alist);
@@ -3285,8 +3281,7 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
     res_runscript->SetJobCodeCallback(job_code_callback_director);
     while ((c = (char*)res_runscript->commands->pop()) != NULL) {
       t = (intptr_t)res_runscript->commands->pop();
-      RunScript* script = new RunScript;
-      *script = *res_runscript;
+      RunScript* script = new RunScript(*res_runscript);
       script->command = c;
       script->cmd_type = t;
       /*
@@ -3302,7 +3297,8 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
       script->debug();
     }
     delete res_runscript->commands;
-    res_runscript->ResetDefault(true);
+    delete res_runscript;
+    res_runscript = nullptr;
   }
 
   ScanToEol(lc);
