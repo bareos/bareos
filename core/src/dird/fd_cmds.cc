@@ -834,15 +834,16 @@ int SendRunscriptsCommands(JobControlRecord* jcr)
   msg = GetPoolMemory(PM_FNAME);
   ehost = GetPoolMemory(PM_FNAME);
   foreach_alist (cmd, jcr->res.job->RunScripts) {
-    if (cmd->CanRunAtLevel(jcr->getJobLevel()) && cmd->target) {
-      ehost = edit_job_codes(jcr, ehost, cmd->target, "");
-      Dmsg2(200, "dird: runscript %s -> %s\n", cmd->target, ehost);
+    if (cmd->CanRunAtLevel(jcr->getJobLevel()) && !cmd->target.empty()) {
+      ehost = edit_job_codes(jcr, ehost, cmd->target.c_str(), "");
+      Dmsg2(200, "dird: runscript %s -> %s\n", cmd->target.c_str(), ehost);
 
       if (bstrcmp(ehost, jcr->res.client->resource_name_)) {
-        PmStrcpy(msg, cmd->command);
+        PmStrcpy(msg, cmd->command.c_str());
         BashSpaces(msg);
 
-        Dmsg1(120, "dird: sending runscripts to fd '%s'\n", cmd->command);
+        Dmsg1(120, "dird: sending runscripts to fd '%s'\n",
+              cmd->command.c_str());
 
         fd->fsend(runscriptcmd, cmd->on_success, cmd->on_failure,
                   cmd->fail_on_error, cmd->when, msg);

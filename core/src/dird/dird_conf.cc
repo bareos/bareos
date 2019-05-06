@@ -1338,7 +1338,7 @@ static void PrintConfigRunscript(ResourceItem* item, PoolMem& cfg_str)
   foreach_alist (runscript, list) {
     PoolMem esc;
 
-    EscapeString(esc, runscript->command, strlen(runscript->command));
+    EscapeString(esc, runscript->command.c_str(), runscript->command.size());
 
     // do not print if inherited by a JobDef
     if (runscript->from_jobdef) { continue; }
@@ -1346,22 +1346,22 @@ static void PrintConfigRunscript(ResourceItem* item, PoolMem& cfg_str)
     PoolMem temp;
     if (runscript->short_form) {
       if (runscript->when == SCRIPT_Before && /* runbeforejob */
-          (bstrcmp(runscript->target, ""))) {
+          runscript->target.empty()) {
         Mmsg(temp, "run before job = \"%s\"\n", esc.c_str());
       } else if (runscript->when == SCRIPT_After && /* runafterjob */
                  runscript->on_success && !runscript->on_failure &&
-                 !runscript->fail_on_error && bstrcmp(runscript->target, "")) {
+                 !runscript->fail_on_error && runscript->target.empty()) {
         Mmsg(temp, "run after job = \"%s\"\n", esc.c_str());
       } else if (runscript->when == SCRIPT_After && /* client run after job */
                  runscript->on_success && !runscript->on_failure &&
-                 !runscript->fail_on_error && !bstrcmp(runscript->target, "")) {
+                 !runscript->fail_on_error && !runscript->target.empty()) {
         Mmsg(temp, "client run after job = \"%s\"\n", esc.c_str());
       } else if (runscript->when == SCRIPT_Before && /* client run before job */
-                 !bstrcmp(runscript->target, "")) {
+                 !runscript->target.empty()) {
         Mmsg(temp, "client run before job = \"%s\"\n", esc.c_str());
       } else if (runscript->when == SCRIPT_After && /* run after failed job */
                  runscript->on_failure && !runscript->on_success &&
-                 !runscript->fail_on_error && bstrcmp(runscript->target, "")) {
+                 !runscript->fail_on_error && runscript->target.empty()) {
         Mmsg(temp, "run after failed job = \"%s\"\n", esc.c_str());
       }
       IndentConfigItem(cfg_str, 1, temp.c_str());
@@ -1437,7 +1437,7 @@ static void PrintConfigRunscript(ResourceItem* item, PoolMem& cfg_str)
        * Default: runsonclient = yes
        */
       char* runsonclient = (char*)"Yes";
-      if (bstrcmp(runscript->target, "")) {
+      if (runscript->target.empty()) {
         runsonclient = (char*)"No";
         Mmsg(temp, "runsonclient = %s\n", runsonclient);
         IndentConfigItem(cfg_str, 2, temp.c_str());
@@ -3109,13 +3109,8 @@ static void StoreRunscriptCmd(LEX* lc, ResourceItem* item, int index, int pass)
 
   if (pass == 2) {
     Dmsg2(1, "runscript cmd=%s type=%c\n", lc->str, item->code);
-    POOLMEM* c = GetPoolMemory(PM_FNAME);
-    /*
-     * Each runscript command takes 2 entries in commands list
-     */
-    PmStrcpy(c, lc->str);
     RunScript* r = GetItemVariablePointer<RunScript*>(*item);
-    r->temp_parser_command_container.emplace_back(c, item->code);
+    r->temp_parser_command_container.emplace_back(lc->str, item->code);
   }
   ScanToEol(lc);
 }
@@ -3260,7 +3255,7 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
     /*
      * Run on client by default
      */
-    if (!res_runscript->target) { res_runscript->SetTarget("%c"); }
+    if (res_runscript->target.empty()) { res_runscript->SetTarget("%c"); }
     if (!*runscripts) { *runscripts = new alist(10, not_owned_by_alist); }
 
     res_runscript->SetJobCodeCallback(job_code_callback_director);
@@ -3271,7 +3266,7 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
       script->cmd_type = cmd.code_;
 
       // each runscript object have a copy of target
-      script->target = NULL;
+      script->target.clear();
       script->SetTarget(res_runscript->target);
 
       script->short_form = false;
@@ -3279,6 +3274,7 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
       (*runscripts)->append(script);
       script->debug();
     }
+    res_runscript->temp_parser_command_container.clear();
     delete res_runscript;
     res_runscript = nullptr;
   }

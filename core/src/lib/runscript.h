@@ -70,7 +70,7 @@ enum
 
 struct TempParserCommand {
   TempParserCommand(POOLMEM* p, int32_t c) : command_(p), code_(c) {}
-  POOLMEM* command_ = nullptr;
+  std::string command_;
   int32_t code_ = 0;
 };
 
@@ -80,24 +80,24 @@ class RunScript : public BareosResource {
   virtual ~RunScript() = default;
   RunScript(const RunScript& other) = default;
 
-  POOLMEM* command = nullptr; /* Command string */
-  POOLMEM* target = nullptr;  /* Host target */
-  int when = SCRIPT_Never;    /* SCRIPT_Before|Script_After BEFORE/AFTER JOB*/
-  int cmd_type = 0;           /* Command type -- Shell, Console */
-  char level = 0;             /* Base|Full|Incr...|All (NYI) */
-  bool short_form = false;    /* Run Script in short form */
-  bool from_jobdef = false;   /* This RUN script comes from JobDef */
-  bool on_success = true;     /* Execute command on job success (After) */
-  bool on_failure = false;    /* Execute command on job failure (After) */
-  bool fail_on_error = true;  /* Abort job on error (Before) */
+  std::string command;       /* Command string */
+  std::string target;        /* Host target */
+  int when = SCRIPT_Never;   /* SCRIPT_Before|Script_After BEFORE/AFTER JOB*/
+  int cmd_type = 0;          /* Command type -- Shell, Console */
+  char level = 0;            /* Base|Full|Incr...|All (NYI) */
+  bool short_form = false;   /* Run Script in short form */
+  bool from_jobdef = false;  /* This RUN script comes from JobDef */
+  bool on_success = true;    /* Execute command on job success (After) */
+  bool on_failure = false;   /* Execute command on job failure (After) */
+  bool fail_on_error = true; /* Abort job on error (Before) */
   job_code_callback_t job_code_callback = nullptr;
   std::vector<TempParserCommand> temp_parser_command_container;
   bool run(JobControlRecord* job,
            const char* name =
                ""); /* name must contain "Before" or "After" keyword */
   bool CanRunAtLevel(int JobLevel) { return true; } /* TODO */
-  void SetCommand(const char* cmd, int cmd_type = SHELL_CMD);
-  void SetTarget(const char* client_name);
+  void SetCommand(const std::string& cmd, int cmd_type = SHELL_CMD);
+  void SetTarget(const std::string& client_name);
   bool IsLocal(); /* True if running on local host */
   void debug();
 
