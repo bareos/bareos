@@ -93,7 +93,6 @@ $this->headTitle($title);
         </div>
         <div class="panel-body">
             <div class="container-fluid">
-
                 <?php
                 $form->prepare();
                 $form->setAttribute('class', 'form-horizontal');
@@ -237,6 +236,40 @@ $this->headTitle($title);
                         const col4 = $("<td>").append(
                             $('<span>').addClass('code').text(data[id].md5));
 
+                        row.tooltip({
+                            title: "<table>" +
+                                    "<col width='1*'>" +
+                                    "<col width='5'>" +
+                                    "<col width='1*'>" +
+                                    "<tr>" +
+                                        "<td class='text-left'>Job ID </td>" +
+                                        "<td></td>" +
+                                        `<td class='text-left'>${data[id].jobid}</td>` +
+                                    "</tr>" +
+                                    "<tr>" +
+                                        "<td class='text-left'>Volume </td>" +
+                                        "<td></td>" +
+                                        `<td class='text-left'>${data[id].volumename}</td>` +
+                                    "</tr>" +
+                                    "<tr>" +
+                                        "<td class='text-left'>User:Group </td>" +
+                                        "<td></td>" +
+                                        `<td class='text-left'>${data[id].stat.user}:${data[id].stat.group}</td>` +
+                                    "</tr>" +
+                                    "<tr>" +
+                                        "<td class='text-left'>Last access</td>" +
+                                        "<td></td>" +
+                                        `<td class='text-left'>${moment.unix(data[id].stat.atime).format("YYYY-MM-DD HH:mm:ss")}</td>` +
+                                    "</tr>" +
+                                    "<tr>" +
+                                        "<td class='text-left'>Last status change</td>" +
+                                        "<td></td>" +
+                                        `<td class='text-left'>${moment.unix(data[id].stat.ctime).format("YYYY-MM-DD HH:mm:ss")}</td>` +
+                                    "</tr>" +
+                                "</table>",
+                            html: true,
+                            trigger: 'hover'
+                        });
                         row.append(col1, col2, col3, col4);
                         $('#file-versions-list').append(row)
                     });
