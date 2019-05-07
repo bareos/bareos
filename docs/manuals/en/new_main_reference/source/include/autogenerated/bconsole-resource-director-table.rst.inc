@@ -1,0 +1,22 @@
+.. csv-table::
+   :header: "configuration directive name", "type of data", "default value", "remark"
+
+   :config:option:`console/director/Address`\                  , "= STRING", "", ""
+   :config:option:`console/director/Description`\              , "= STRING", "", ""
+   :config:option:`console/director/DirPort`\                  , "= PINT32", "9101", ""
+   :config:option:`console/director/HeartbeatInterval`\        , "= TIME", "0", ""
+   :config:option:`console/director/Name`\                     , "**= NAME** ", "", "**required** "
+   :config:option:`console/director/Password`\                 , "**= MD5PASSWORD** ", "", "**required** "
+   :config:option:`console/director/TlsAllowedCn`\             , "= STRING_LIST", "", ""
+   :config:option:`console/director/TlsAuthenticate`\          , "= BOOLEAN", "no", ""
+   :config:option:`console/director/TlsCaCertificateDir`\      , "= DIRECTORY", "", ""
+   :config:option:`console/director/TlsCaCertificateFile`\     , "= DIRECTORY", "", ""
+   :config:option:`console/director/TlsCertificate`\           , "= DIRECTORY", "", ""
+   :config:option:`console/director/TlsCertificateRevocationList`\ , "= DIRECTORY", "", ""
+   :config:option:`console/director/TlsCipherList`\            , "= DIRECTORY", "", ""
+   :config:option:`console/director/TlsDhFile`\                , "= DIRECTORY", "", ""
+   :config:option:`console/director/TlsEnable`\                , "= BOOLEAN", "yes", ""
+   :config:option:`console/director/TlsKey`\                   , "= DIRECTORY", "", ""
+   :config:option:`console/director/TlsRequire`\               , "= BOOLEAN", "no", ""
+   :config:option:`console/director/TlsVerifyPeer`\            , "= BOOLEAN", "no", ""
+

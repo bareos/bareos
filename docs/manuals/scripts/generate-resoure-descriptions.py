@@ -98,6 +98,14 @@ class BareosConfigurationSchema:
     def getResource(self, daemon, resourcename):
         return self.json["resource"][daemon][resourcename]
 
+    def getDefaultValue(self, data):
+        default=""
+        if data.get('default_value'):
+            default=data.get('default_value')
+            if data.get('platform_specific'):
+                default+=" (platform specific)"
+        return default
+
     def getConvertedResources(self, daemon):
         result = ""
         for i in self.getResources(daemon):
@@ -123,6 +131,17 @@ class BareosConfigurationSchema:
         self.open(filename, "w")
         self.out.write(self.getConvertedResourceDirectives(daemon, resourcename))
         self.close()
+
+    def getStringsWithModifiers(self, text, strings):
+        strings['text']=strings[text]
+        if strings[text]:
+            if strings.get('mo'):
+                return "%(mo)s%(text)s%(mc)s" % ( strings )
+            else:
+                return "%(text)s" % ( strings )
+        else:
+            return ""
+
     
 class BareosConfigurationSchemaDirective(dict):
 
@@ -188,16 +207,6 @@ class BareosConfigurationSchema2Latex(BareosConfigurationSchema):
         if data.get('description'):
             description = data.get('description').replace('_','\_')
         return description
-
-    def getStringsWithModifiers(self, text, strings):
-        strings['text']=strings[text]
-        if text:
-            if strings.get('mo'):
-                return "%(mo)s%(text)s%(mc)s" % ( strings )
-            else:
-                return "%(text)s" % ( strings )
-        else:
-            return ""
 
     def getLatexTable(self, subtree, latexDefine="define%(key)s", latexLink="\\hyperlink{key%(key)s}{%(key)s}" ):
         result="\\begin{center}\n"
@@ -415,6 +424,90 @@ class BareosConfigurationSchema2Sphinx(BareosConfigurationSchema):
         return result
 
 
+    def getHeader(self):
+        result  = '.. csv-table::\n'
+        result += '   :header: '
+        result += self.getHeaderColumns()
+        result += '\n\n'
+        return result
+    
+    def getHeaderColumns(self):
+        columns = [ 
+            "configuration directive name", 
+            "type of data",
+            "default value",
+            "remark"
+        ]
+
+        return '"{}"'.format('", "'.join(columns))
+
+
+    def getRows(self, daemon, resourcename, subtree, link):
+        result =''
+        for key in sorted(filter( None, subtree.keys() ) ):
+            data=BareosConfigurationSchemaDirective(subtree[key])
+
+            strings={
+                'key': self.convertCamelCase2Spaces( key ),
+                'extra': [],
+                'mc': '* ',
+                'default': self.getDefaultValue( data ),
+
+                'program': daemon,
+                'daemon': daemonName.getLowShort(daemon),
+                'resource': resourcename.lower(),
+                'directive': key,
+            }
+
+            strings['directive_link'] = link % strings
+
+            if data.get( 'equals' ):
+                strings["datatype"]="= %(datatype)s" % { 'datatype': data["datatype"] }
+            else:
+                strings["datatype"]="\{ %(datatype)s \}" % { 'datatype': data["datatype"] }
+
+            extra=[]
+            if data.get( 'alias' ):
+                extra.append("alias")
+                strings["mo"]="*"
+            if data.get( 'deprecated' ):
+                extra.append("deprecated")
+                strings["mo"]="*"
+            if data.get( 'required' ):
+                extra.append("required")
+                strings["mo"]="**"
+                strings["mc"]="** "
+            strings["extra"]=', '.join(extra)
+
+            strings["t_datatype"] = '"{}"'.format(self.getStringsWithModifiers( "datatype", strings ))
+            strings["t_default"] = '"{}"'.format(self.getStringsWithModifiers( "default", strings ))
+            strings["t_extra"] = '"{}"'.format(self.getStringsWithModifiers( "extra", strings ))
+
+            #result+='   %(directive_link)-60s, %(t_datatype)-20s, %(t_default)-20s, %(t_extra)s\n' % ( strings )
+            result+='   %(directive_link)-60s, %(t_datatype)s, %(t_default)s, %(t_extra)s\n' % ( strings )
+
+        return result
+
+
+    def getFooter(self):
+        result = "\n"
+        return result 
+
+
+    def getTable(self, daemon, resourcename, subtree, link=':config:option:`%(daemon)s/%(resource)s/%(directive)s`\ ' ):
+        result  = self.getHeader()
+        result += self.getRows(daemon, resourcename, subtree, link)
+        result += self.getFooter() 
+
+        return result
+
+    def writeResourceDirectivesTable(self, daemon, resourcename, filename=None):
+        ds=daemonName.getShort(daemon)
+        self.open(filename, "w")
+        self.out.write( self.getTable(daemon, resourcename, self.json["resource"][daemon][resourcename] ) )
+        self.close()
+
+
 
 def createLatex(data):
     logger = logging.getLogger()
@@ -457,6 +550,8 @@ def createSphinx(data):
 
             sphinx.writeResourceDirectives(daemon, resource, "autogenerated/" + daemon.lower()+ "-resource-"+resource.lower()+"-description.rst.inc")
 
+            sphinx.writeResourceDirectivesTable(daemon, resource, "autogenerated/" + daemon.lower()+ "-resource-"+resource.lower()+"-table.rst.inc")
+
 
     #if sphinx.getDatatypes():
     #    print sphinx.getDatatypes()
@@ -469,9 +564,9 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--debug', action='store_true', help="enable debugging output" )
-    parser.add_argument('--latex', action='store_true', help="Create only LaTex files." )
-    parser.add_argument('--sphinx', action='store_true', help="Create only RST files for Sphinx." )
-    parser.add_argument("filename", help="load json file")
+    parser.add_argument('--latex', action='store_true', help="Create LaTex files." )
+    parser.add_argument('--sphinx', action='store_true', help="Create RST files for Sphinx." )
+    parser.add_argument("filename", help="json data file")
     args = parser.parse_args()
     if args.debug:
         logger.setLevel(logging.DEBUG)
@@ -480,10 +575,9 @@ if __name__ == '__main__':
         data = json.load(data_file)
     #pprint(data)
     
-    if not args.latex and not args.sphinx:
-        # if none is specified, create both files
-        args.latex = True
-        args.sphinx = True
+    if not args.latex:
+        # default is sphinx
+        args.sphinx = True      
         
     if args.latex:
         createLatex(data)

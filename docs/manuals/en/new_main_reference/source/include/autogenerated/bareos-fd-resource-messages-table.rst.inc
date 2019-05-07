@@ -1,0 +1,21 @@
+.. csv-table::
+   :header: "configuration directive name", "type of data", "default value", "remark"
+
+   :config:option:`fd/messages/Append`\                        , "= MESSAGES", "", ""
+   :config:option:`fd/messages/Catalog`\                       , "= MESSAGES", "", ""
+   :config:option:`fd/messages/Console`\                       , "= MESSAGES", "", ""
+   :config:option:`fd/messages/Description`\                   , "= STRING", "", ""
+   :config:option:`fd/messages/Director`\                      , "= MESSAGES", "", ""
+   :config:option:`fd/messages/File`\                          , "= MESSAGES", "", ""
+   :config:option:`fd/messages/Mail`\                          , "= MESSAGES", "", ""
+   :config:option:`fd/messages/MailCommand`\                   , "= STRING", "", ""
+   :config:option:`fd/messages/MailOnError`\                   , "= MESSAGES", "", ""
+   :config:option:`fd/messages/MailOnSuccess`\                 , "= MESSAGES", "", ""
+   :config:option:`fd/messages/Name`\                          , "= NAME", "", ""
+   :config:option:`fd/messages/Operator`\                      , "= MESSAGES", "", ""
+   :config:option:`fd/messages/OperatorCommand`\               , "= STRING", "", ""
+   :config:option:`fd/messages/Stderr`\                        , "= MESSAGES", "", ""
+   :config:option:`fd/messages/Stdout`\                        , "= MESSAGES", "", ""
+   :config:option:`fd/messages/Syslog`\                        , "= MESSAGES", "", ""
+   :config:option:`fd/messages/TimestampFormat`\               , "= STRING", "", ""
+
