@@ -268,7 +268,8 @@ $this->headTitle($title);
                                     "</tr>" +
                                 "</table>",
                             html: true,
-                            trigger: 'hover'
+                            trigger: 'hover',
+                            delay: { "show": 200, "hide": 0 }
                         });
                         row.append(col1, col2, col3, col4);
                         $('#file-versions-list').append(row)
