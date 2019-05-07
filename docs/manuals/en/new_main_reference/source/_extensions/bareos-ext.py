@@ -40,14 +40,25 @@ import re
 # TODO
 # currently only adapted option. section must still be adapted.
 
+
+def uppercaseFirstLetter(text):
+    # Make sure, string starts with an upppercase letter.
+    if len(text) >= 1:
+        if text[0] != text[0].upper():
+            resulttext = text[0].upper() + text[1:]
+            return resulttext
+    return text
+
+
 def convertCamelCase2Spaces(valueCC):
     s1 = re.sub('([a-z0-9])([A-Z])', r'\1 \2', valueCC)
     result=[]
     for token in s1.split(' '):
         u = token.upper()
-        if u in [ "ACL", "CA", "CN", "DB", "DH", "FD", "LMDB", "NDMP", "PSK", "SD", "SSL", "TLS", "VSS" ]:
+        if u in [ "ACL", "CA", "CN", "DB", "DH", "FD", "FS", "LMDB", "NDMP", "PSK", "SD", "SSL", "TLS", "VSS" ]:
             token=u
         result.append(token)
+
     return " ".join(result)
 
 
@@ -78,19 +89,50 @@ def get_config_directive(text):
     '''
 
     logger = logging.getLogger(__name__)
-    displayTemplateDaemon = u'{Daemon}'
-    displayTemplateResourceType = u'{Resource} ({Dmn})'
-    displayTemplateResourceName = u'{value} ({Dmn}->{Resource})'
-    displayTemplateResourceDirective = u'{Directive} ({Dmn}->{Resource})'
-    displayTemplateResourceDirectiveWithValue = u'{Directive} ({Dmn}->{Resource}) = {value}'
-    indextemplate  = u'Configuration Directive; ' + displayTemplateResourceDirective
-    internaltargettemplate = u'{dmn}/{resource}/{CamelCaseDirective}'
 
-    # Latex: directiveDirJobCancel%20Lower%20Level%20Duplicates
-    # The follow targettemplate will create identical anchors as Latex,
-    # but as the base URL is likly it be different, it does not help (and still looks ugly).
-    # targettemplate = u'directive{dmn}{resource}{directive}'
-    targettemplate = u'config-{Dmn}_{Resource}_{CamelCaseDirective}'
+    templates = {
+        1: {
+            'shortid': u'{Daemon}',
+            'display': u'{Daemon}',
+        },
+        2: {
+            'shortid': u'{Resource}',
+            # Resource-Type
+            'display': u'{Resource} ({Dmn})',
+            # Resource-Name
+            'displayWithValue': u'{value} ({Dmn}->{Resource})',
+        },
+        3: {
+            'shortid': u'{Directive}',
+            'display': u'{Directive} ({Dmn}->{Resource})',
+            'displayWithValue': u'{Directive} ({Dmn}->{Resource}) = {value}',
+            'indextemplate': u'Configuration Directive; {Directive} ({Dmn}->{Resource})',
+            'internaltargettemplate': u'{dmn}/{resource}/{CamelCaseDirective}',
+
+            # Latex: directiveDirJobCancel%20Lower%20Level%20Duplicates
+            # The follow targettemplate will create identical anchors as Latex,
+            # but as the base URL is likly it be different, it does not help (and still looks ugly).
+            # targettemplate = u'directive{dmn}{resource}{directive}'
+            'targettemplate': u'config-{Dmn}_{Resource}_{CamelCaseDirective}',
+        },
+        4: {
+            'shortid': u'{Sub1}',
+            'display': u'{Sub1} ({Dmn}->{Resource}->{Directive})',
+            'displayWithValue': u'{Sub1} ({Dmn}->{Resource}->{Directive}) = {value}',
+            'indextemplate': u'Configuration Directive; {Sub1} ({Dmn}->{Resource}->{Directive})',
+            'internaltargettemplate': u'{dmn}/{resource}/{CamelCaseDirective}/{CamelCaseSub1}',
+            'targettemplate': u'config-{Dmn}_{Resource}_{CamelCaseDirective}_{CamelCaseSub1}',
+        },
+        5: {
+            'shortid': u'{Sub2}',
+            'display': u'{Sub2} ({Dmn}->{Resource}->{Directive}->{Sub1})',
+            'displayWithValue': u'{Sub2} ({Dmn}->{Resource}->{Directive}->{Sub1}) = {value}',
+            'indextemplate': u'Configuration Directive; {Sub2} ({Dmn}->{Resource}->{Directive}->{Sub1})',
+            'internaltargettemplate': u'{dmn}/{resource}/{CamelCaseDirective}/{CamelCaseSub1}/{CamelCaseSub2}',
+            'targettemplate': u'config-{Dmn}_{Resource}_{CamelCaseDirective}_{CamelCaseSub1}_{CamelCaseSub2}',
+        },
+    }
+
 
     result = {
         'signature': text,
@@ -103,7 +145,7 @@ def get_config_directive(text):
         # fall back
         key = text
 
-    inputComponent = key.strip().split('/', 2)
+    inputComponent = key.strip().split('/', 4)
     components = len(inputComponent)
 
     if components >= 1:
@@ -129,29 +171,38 @@ def get_config_directive(text):
             result['Daemon'] = 'UNKNOWN'
             result['dmn'] = 'UNKNOWN'
             result['Dmn'] = 'UNKNOWN'
-        result['displayname'] = displayTemplateDaemon.format(**result)
 
     if components >= 2:
         result['resource'] = inputComponent[1].replace(' ', '').lower()
         result['Resource'] = inputComponent[1].replace(' ', '').capitalize()
-        if 'value' in result:
-            result['displayname'] = displayTemplateResourceName.format(**result)
-        else:
-            result['displayname'] = displayTemplateResourceType.format(**result)
 
     if components >= 3:
         # input_directive should be without spaces.
         # However, we make sure, by removing all spaces.
-        result['CamelCaseDirective'] = inputComponent[2].replace(' ', '')
+        result['CamelCaseDirective'] = uppercaseFirstLetter(inputComponent[2].replace(' ', ''))
         result['Directive'] = convertCamelCase2Spaces(result['CamelCaseDirective'])
-        if 'value' in result:
-            result['displayname'] = displayTemplateResourceDirectiveWithValue.format(**result)
-        else:
-            result['displayname'] = displayTemplateResourceDirective.format(**result)
 
-        result['indexentry'] = indextemplate.format(**result)
-        result['target'] = targettemplate.format(**result)
-        result['internaltarget'] = internaltargettemplate.format(**result)
+        if components >= 4:
+            # e.g. fileset include/exclude directive
+            # dir/fileset/include/File
+            result['CamelCaseSub1'] = uppercaseFirstLetter(inputComponent[3].replace(' ', ''))
+            result['Sub1'] = convertCamelCase2Spaces(result['CamelCaseSub1'])
+
+        if components >= 5:
+            # e.g. fileset include options
+            # dir/fileset/include/options/basejob
+            result['CamelCaseSub2'] = uppercaseFirstLetter(inputComponent[4].replace(' ', ''))
+            result['Sub2'] = convertCamelCase2Spaces(result['CamelCaseSub2'])
+
+        result['indexentry'] = templates[components]['indextemplate'].format(**result)
+        result['target'] = templates[components]['targettemplate'].format(**result)
+        result['internaltarget'] = templates[components]['internaltargettemplate'].format(**result)
+
+    result['shortid'] = templates[components]['shortid'].format(**result)
+    if 'value' in result:
+        result['displayname'] = templates[components]['displayWithValue'].format(**result)
+    else:
+        result['displayname'] = templates[components]['display'].format(**result)
 
     #logger.debug('[bareos] ' + pformat(result))
 
@@ -184,7 +235,7 @@ class ConfigOption(ObjectDescription):
         directive = get_config_directive(sig)
         signode.clear()
         # only show the directive (not daemon and resource type)
-        signode += addnodes.desc_name(sig, directive['Directive'])
+        signode += addnodes.desc_name(sig, directive['shortid'])
         # normalize whitespace like XRefRole does
         name = ws_re.sub('', sig)
         return name

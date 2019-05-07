@@ -4,8 +4,8 @@ When using NDMP and :config:option:`dir/job/SaveFileHistory`\  is enabled, this 
 
 
 
-   .. warning::
+.. warning::
 
-      This uses a large memory mapped file (:strong:`File History Size`\  $* 256 \Longrightarrow$ around 2,3 GB for the :strong:`File History Size = 10000000`\ ).
-      On 32-bit systems or if a memory limit for the user running the |dir| (normally **bareos**) exists
-      (verify by :command:`su - bareos -s /bin/sh -c "ulimit -a"`), this may fail.
+   This uses a large memory mapped file (:strong:`File History Size` \* 256 => around 2,3 GB for the :strong:`File History Size = 10000000`\ ).
+   On 32-bit systems or if a memory limit for the user running the |dir| (normally **bareos**) exists
+   (verify by :command:`su - bareos -s /bin/sh -c "ulimit -a"`), this may fail.
