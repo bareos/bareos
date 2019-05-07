@@ -29,8 +29,7 @@ $this->headTitle($title);
 ?>
 
 <ul class="nav nav-tabs">
-    <li><a
-                href="<?php echo $this->url('restore', array('action' => 'index')); ?>"><?php echo $this->translate('Restore'); ?></a>
+    <li><a href="<?php echo $this->url('restore', array('action' => 'index')); ?>"><?php echo $this->translate('Restore multiple files'); ?></a>
     </li>
     <li class="active">
         <a href="<?php echo $this->url('restore', array('action' => 'versions')); ?>"><?php echo $this->translate('Restore specific file version'); ?></a>
@@ -146,8 +145,6 @@ $this->headTitle($title);
                                            echo '</div>';
                             */
                             ?>
-<!--                            style="margin: auto; max-height: 75vh; height: 75vh; overflow: hidden; overflow-x: scroll; overflow-y: scroll; resize: vertical;"-->
-
                             <div class="panel panel-default">
                                 <div id="filebrowser"></div>
                             </div>
@@ -414,7 +411,7 @@ $this->headTitle($title);
             },
             'grid': {
                 width: '100%',
-                height: '75vh',
+                height: '60vh',
                 fixedHeader: true,
                 resizable: false,
                 columns: [
