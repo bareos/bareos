@@ -98,6 +98,7 @@ $this->headTitle($title);
                 echo $this->form()->openTag($form);
                 ?>
 
+
                 <div class="row">
 
                     <div class="col-md-3">
@@ -130,58 +131,42 @@ $this->headTitle($title);
                     <div class="col-md-5">
                         <?php
                         if ($this->restore_params['type'] == "client") {
-                            //echo $this->formRow($form->get('jobids_display')->setAttribute('class','form-control')); // for debugging
                             echo '<strong>';
                             echo $this->translate("File selection");
                             echo '</strong>';
-                            /*
-                                           echo '<div class="form-group">';
-                                           echo '<label class="control-label col-md-1">';
-                                           echo $this->formLabel($form->get('limit'));
-                                           echo '</label>';
-                                           echo '<div class="control-input col-md-3">';
-                                           echo $this->formText($form->get('limit'));
-                                           echo '</div>';
-                                           echo '</div>';
-                            */
                             ?>
                             <div class="panel panel-default">
                                 <div id="filebrowser"></div>
                             </div>
                             <?php
-
-                            /*
-                            echo '<div class="input-group">';
-                            echo '<div class="input-group-addon"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></div>';
-                            echo '<div><input class="search-input form-control" placeholder="Search for files and directories"></input></div>';
-                            echo '</div>';
-                            */
-                        } elseif ($this->restore_params['type'] == "job") {
                         }
                         ?>
                     </div>
                     <div class="col-md-4">
-                        <strong><?php echo $this->translate('Available file versions:'); ?></strong> <span id="selectedfile-name"></span>
+                        <strong><?php echo $this->translate('Available file versions:'); ?></strong> <span
+                                id="selectedfile-name"></span>
                         <div class="panel panel-default">
                             <div class="panel-body" style="padding: 0">
-                                <div class="table-responsive">
+                                <div class="scrollpane">
                                     <table class="table table-no-bordered table-striped" id="job-totals">
                                         <col width="10">
                                         <col>
                                         <col>
                                         <col width="1*">
                                         <thead class="bg-primary">
+                                        <tr>
                                             <th><span class="glyphicon glyphicon-check"></span></th>
-                                            <th><?php echo $this->translate("Modified"); ?></th>
+                                            <th><?php echo $this->translate("Last modification"); ?></th>
                                             <th><?php echo $this->translate("Size"); ?> </th>
                                             <th><?php echo $this->translate("Checksum"); ?></th>
+                                        </tr>
                                         </thead>
                                         <tbody id="file-versions-list"></tbody>
                                     </table>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
                 </div>
                 <?php
                 echo $this->form()->closeTag($form);
@@ -204,6 +189,23 @@ $this->headTitle($title);
             background-color: #eeeeee;
             color: #000000;
         }
+
+        .fixed_header tbody {
+            display: block;
+            overflow: auto;
+            height: 200px;
+            width: 100%;
+        }
+
+        .fixed_header thead tr {
+            display: block;
+        }
+
+        .scrollpane {
+            max-height: 60vh;
+            overflow: auto;
+            overflow-y: scroll;
+        }
     </style>
 
     <script type="text/javascript">
@@ -221,6 +223,7 @@ $this->headTitle($title);
                     $('#selectedfile-name').text(filename);
 
                     $('#file-versions-list').empty();
+
                     $(Object.keys(data)).each(function(key, id) {
                         const fileId = data[id].fileid;
                         const rowId = `fileVersion_${fileId}`;
@@ -287,7 +290,6 @@ $this->headTitle($title);
             });
         }
 
-
         function treeItemSelectedHandler(event, _data) {
             if (!_data.node.id || _data.node.id < 0) {
                 _data.instance.deselect_node(_data.node);
@@ -301,12 +303,11 @@ $this->headTitle($title);
         function initTreeHandler() {
             registerClickHandler(treeItemSelectedHandler)
         }
-
     </script>
 
     <script type="text/javascript">
         function format_bibytes(v) {
-            if (v == 0) {
+            if (v === 0) {
                 return "0.00 B";
             } else {
                 const units = ["B", "kiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB"];
@@ -340,7 +341,7 @@ $this->headTitle($title);
 
             p['type'] = '<?php echo $this->restore_params['type']; ?>';
 
-            if (k == 'client') {
+            if (k === 'client') {
                 p['jobid'] = '';
             } else {
                 p['jobid'] = '<?php echo $this->restore_params['jobid']; ?>';
@@ -348,7 +349,7 @@ $this->headTitle($title);
 
             p['client'] = '<?php echo $this->restore_params['client']; ?>';
 
-            if (k == 'client') {
+            if (k === 'client') {
                 p['restoreclient'] = '';
             } else {
                 p['restoreclient'] = '<?php echo $this->restore_params['restoreclient']; ?>';
@@ -358,13 +359,13 @@ $this->headTitle($title);
             p['where'] = '<?php echo $this->restore_params['where']; ?>';
             p['fileset'] = '<?php echo $this->restore_params['fileset']; ?>';
 
-            if (k == 'mergejobs' && v == '1') {
+            if (k === 'mergejobs' && v === '1') {
                 p['mergefilesets'] = '1';
             } else {
                 p['mergefilesets'] = '<?php echo $this->restore_params['mergefilesets']; ?>';
             }
 
-            if (k == 'mergefilesets' && v == '0') {
+            if (k === 'mergefilesets' && v === '0') {
                 p['mergejobs'] = '0';
             } else {
                 p['mergejobs'] = '<?php echo $this->restore_params['mergejobs']; ?>';
@@ -409,6 +410,9 @@ $this->headTitle($title);
                     },
                 },
             },
+            'state' : {
+                'key': 'versions'
+            },
             'grid': {
                 width: '100%',
                 height: '60vh',
@@ -427,7 +431,7 @@ $this->headTitle($title);
                         header: '<?php echo $this->translate("Size"); ?>',
                         headerClass: 'jsTreeGridHeader',
                         value: function (node) {
-                            if (node.data.stat.size == 0) {
+                            if (node.data.stat.size === 0) {
                                 return null;
                             } else {
                                 return (format_bibytes(node.data.stat.size));
@@ -436,10 +440,10 @@ $this->headTitle($title);
                     },
                     {
                         width: 150,
-                        header: '<?php echo $this->translate("Date"); ?>',
+                        header: '<?php echo $this->translate("Last modification"); ?>',
                         headerClass: 'jsTreeGridHeader',
                         value: function (node) {
-                            if (node.data.stat.mtime == 0) {
+                            if (node.data.stat.mtime === 0) {
                                 return null;
                             } else {
                                 return (moment.unix(node.data.stat.mtime).format("YYYY-MM-DD HH:mm:ss"));
