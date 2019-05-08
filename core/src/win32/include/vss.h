@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -115,7 +116,10 @@ class VSSClient {
   wchar_t szShadowCopyName_[26][MAX_PATH]{0};
   wchar_t* metadata_ = nullptr;
 
-  struct WriterInfo { int state_ = 0; std::string info_text_; };
+  struct WriterInfo {
+    int state_ = 0;
+    std::string info_text_;
+  };
   std::vector<WriterInfo> writer_info_;
 
   bool bCoInitializeCalled_ = false;
@@ -133,24 +137,25 @@ class VSSClientXP : public VSSClient {
   virtual ~VSSClientXP();
   virtual void AddDriveSnapshots(IVssBackupComponents* pVssObj,
                                  char* szDriveLetters,
-                                 bool onefs_disabled);
+                                 bool onefs_disabled) override;
   virtual void AddVolumeMountPointSnapshots(IVssBackupComponents* pVssObj,
-                                            LPWSTR volume);
-  virtual void ShowVolumeMountPointStats(JobControlRecord* jcr);
-  virtual bool CreateSnapshots(char* szDriveLetters, bool onefs_disabled);
-  virtual bool CloseBackup();
-  virtual bool CloseRestore();
-  virtual WCHAR* GetMetadata();
+                                            LPWSTR volume) override;
+  virtual void ShowVolumeMountPointStats(JobControlRecord* jcr) override;
+  virtual bool CreateSnapshots(char* szDriveLetters,
+                               bool onefs_disabled) override;
+  virtual bool CloseBackup() override;
+  virtual bool CloseRestore() override;
+  virtual WCHAR* GetMetadata() override;
 #ifdef _WIN64
-  virtual const char* GetDriverName() { return "Win64 VSS"; };
+  virtual const char* GetDriverName() override { return "Win64 VSS"; };
 #else
-  virtual const char* GetDriverName() { return "Win32 VSS"; };
+  virtual const char* GetDriverName() override { return "Win32 VSS"; };
 #endif
 
  private:
-  virtual bool Initialize(DWORD dwContext, bool bDuringRestore);
-  virtual bool WaitAndCheckForAsyncOperation(IVssAsync* pAsync);
-  virtual void QuerySnapshotSet(GUID snapshotSetID);
+  virtual bool Initialize(DWORD dwContext, bool bDuringRestore) override;
+  virtual bool WaitAndCheckForAsyncOperation(IVssAsync* pAsync) override;
+  virtual void QuerySnapshotSet(GUID snapshotSetID) override;
   bool CheckWriterStatus();
 };
 
@@ -160,51 +165,53 @@ class VSSClient2003 : public VSSClient {
   virtual ~VSSClient2003();
   virtual void AddDriveSnapshots(IVssBackupComponents* pVssObj,
                                  char* szDriveLetters,
-                                 bool onefs_disabled);
+                                 bool onefs_disabled) override;
   virtual void AddVolumeMountPointSnapshots(IVssBackupComponents* pVssObj,
-                                            LPWSTR volume);
-  virtual void ShowVolumeMountPointStats(JobControlRecord* jcr);
-  virtual bool CreateSnapshots(char* szDriveLetters, bool onefs_disabled);
-  virtual bool CloseBackup();
-  virtual bool CloseRestore();
-  virtual WCHAR* GetMetadata();
+                                            LPWSTR volume) override;
+  virtual void ShowVolumeMountPointStats(JobControlRecord* jcr) override;
+  virtual bool CreateSnapshots(char* szDriveLetters,
+                               bool onefs_disabled) override;
+  virtual bool CloseBackup() override;
+  virtual bool CloseRestore() override;
+  virtual WCHAR* GetMetadata() override;
 #ifdef _WIN64
-  virtual const char* GetDriverName() { return "Win64 VSS"; };
+  virtual const char* GetDriverName() override { return "Win64 VSS"; };
 #else
-  virtual const char* GetDriverName() { return "Win32 VSS"; };
+  virtual const char* GetDriverName() override { return "Win32 VSS"; };
 #endif
 
  private:
-  virtual bool Initialize(DWORD dwContext, bool bDuringRestore);
-  virtual bool WaitAndCheckForAsyncOperation(IVssAsync* pAsync);
-  virtual void QuerySnapshotSet(GUID snapshotSetID);
+  virtual bool Initialize(DWORD dwContext, bool bDuringRestore) override;
+  virtual bool WaitAndCheckForAsyncOperation(IVssAsync* pAsync) override;
+  virtual void QuerySnapshotSet(GUID snapshotSetID) override;
   bool CheckWriterStatus();
 };
 
 class VSSClientVista : public VSSClient {
  public:
   VSSClientVista();
-  virtual ~VSSClientVista();
+  virtual ~VSSClientVista() override;
   virtual void AddDriveSnapshots(IVssBackupComponents* pVssObj,
                                  char* szDriveLetters,
-                                 bool onefs_disabled);
+                                 bool onefs_disabled) override;
   virtual void AddVolumeMountPointSnapshots(IVssBackupComponents* pVssObj,
-                                            LPWSTR volume);
-  virtual void ShowVolumeMountPointStats(JobControlRecord* jcr);
-  virtual bool CreateSnapshots(char* szDriveLetters, bool onefs_disabled);
-  virtual bool CloseBackup();
-  virtual bool CloseRestore();
-  virtual WCHAR* GetMetadata();
+                                            LPWSTR volume) override;
+  virtual void ShowVolumeMountPointStats(JobControlRecord* jcr) override;
+  virtual bool CreateSnapshots(char* szDriveLetters,
+                               bool onefs_disabled) override;
+  virtual bool CloseBackup() override;
+  virtual bool CloseRestore() override;
+  virtual WCHAR* GetMetadata() override;
 #ifdef _WIN64
-  virtual const char* GetDriverName() { return "Win64 VSS"; };
+  virtual const char* GetDriverName() override { return "Win64 VSS"; };
 #else
-  virtual const char* GetDriverName() { return "Win32 VSS"; };
+  virtual const char* GetDriverName() override { return "Win32 VSS"; };
 #endif
 
  private:
-  virtual bool Initialize(DWORD dwContext, bool bDuringRestore);
-  virtual bool WaitAndCheckForAsyncOperation(IVssAsync* pAsync);
-  virtual void QuerySnapshotSet(GUID snapshotSetID);
+  virtual bool Initialize(DWORD dwContext, bool bDuringRestore) override;
+  virtual bool WaitAndCheckForAsyncOperation(IVssAsync* pAsync) override;
+  virtual void QuerySnapshotSet(GUID snapshotSetID) override;
   bool CheckWriterStatus();
 };
 

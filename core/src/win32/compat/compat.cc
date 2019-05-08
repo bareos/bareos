@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -926,7 +926,7 @@ void srandom(unsigned int seed) { srand(seed); }
 /**
  * Convert from Windows concept of time to Unix concept of time
  */
-static void CvtUtimeToFtime(const time_t& time, FILETIME& wintime)
+/*static void CvtUtimeToFtime(const time_t& time, FILETIME& wintime)
 {
   uint64_t mstime = time;
   mstime *= WIN32_FILETIME_SCALE;
@@ -939,7 +939,7 @@ static void CvtUtimeToFtime(const time_t& time, FILETIME& wintime)
 #endif
   wintime.dwHighDateTime = (DWORD)((mstime >> 32) & 0xffffffffUL);
 }
-
+*/
 static time_t CvtFtimeToUtime(const FILETIME& time)
 {
   uint64_t mstime;
@@ -1957,7 +1957,7 @@ void sleep(int sec) { Sleep(sec * 1000); }
 
 int geteuid(void) { return 0; }
 
-int execvp(const char*, char* [])
+int execvp(const char*, char*[])
 {
   errno = ENOSYS;
   return -1;

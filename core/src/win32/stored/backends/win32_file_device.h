@@ -39,15 +39,17 @@ class win32_file_device : public Device {
   /*
    * Interface from Device
    */
-  bool MountBackend(DeviceControlRecord* dcr, int timeout);
-  bool UnmountBackend(DeviceControlRecord* dcr, int timeout);
-  int d_close(int);
-  int d_open(const char* pathname, int flags, int mode);
-  int d_ioctl(int fd, ioctl_req_t request, char* mt = NULL);
-  ssize_t d_read(int fd, void* buffer, size_t count);
-  ssize_t d_write(int fd, const void* buffer, size_t count);
-  boffset_t d_lseek(DeviceControlRecord* dcr, boffset_t offset, int whence);
-  bool d_truncate(DeviceControlRecord* dcr);
+  bool MountBackend(DeviceControlRecord* dcr, int timeout) override;
+  bool UnmountBackend(DeviceControlRecord* dcr, int timeout) override;
+  int d_close(int) override;
+  int d_open(const char* pathname, int flags, int mode) override;
+  int d_ioctl(int fd, ioctl_req_t request, char* mt = NULL) override;
+  ssize_t d_read(int fd, void* buffer, size_t count) override;
+  ssize_t d_write(int fd, const void* buffer, size_t count) override;
+  boffset_t d_lseek(DeviceControlRecord* dcr,
+                    boffset_t offset,
+                    int whence) override;
+  bool d_truncate(DeviceControlRecord* dcr) override;
 };
 
 } /* namespace storagedaemon */
