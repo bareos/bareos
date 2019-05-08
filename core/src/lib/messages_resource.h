@@ -26,7 +26,7 @@
 
 #include "lib/bareos_resource.h"
 
-class MessageDestinationInfo;
+struct MessageDestinationInfo;
 
 class MessagesResource : public BareosResource {
  public:

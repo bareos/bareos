@@ -92,7 +92,7 @@ struct s_jl {
  */
 struct s_jt {
   const char* type_name;
-  int32_t job_type;
+  uint32_t job_type;
 };
 
 /**

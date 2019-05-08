@@ -3513,7 +3513,7 @@ static void PrintConfigCb(ResourceItem* items,
       PrintConfigRun(&items[i], cfg_str);
       break;
     case CFG_TYPE_JOBTYPE: {
-      int32_t jobtype = GetItemVariable<int32_t>(items[i]);
+      uint32_t jobtype = GetItemVariable<uint32_t>(items[i]);
 
       if (jobtype) {
         for (int j = 0; jobtypes[j].type_name; j++) {
