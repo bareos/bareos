@@ -27,7 +27,7 @@
 #include <algorithm>
 #include <iostream>
 
-pthread_mutex_t MessagesResource::mutex_ = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t mutex_ = PTHREAD_MUTEX_INITIALIZER;
 
 MessagesResource::MessagesResource() : BareosResource(), send_msg_types_(3, 0)
 {
@@ -39,50 +39,50 @@ MessagesResource::~MessagesResource()
   for (MessageDestinationInfo* d : dest_chain_) { delete d; }
 }
 
-void MessagesResource::lock() { P(mutex_); }
+void MessagesResource::Lock() const { P(mutex_); }
 
-void MessagesResource::unlock() { V(mutex_); }
+void MessagesResource::Unlock() const { V(mutex_); }
 
-void MessagesResource::WaitNotInUse()
+void MessagesResource::WaitNotInUse() const
 {
-  /* leaves fides_mutex set */
-  lock();
+  // leaves mutex_ locked
+  Lock();
   while (in_use_ || closing_) {
-    unlock();
+    Unlock();
     Bmicrosleep(0, 200);
-    lock();
+    Lock();
   }
 }
 
 void MessagesResource::ClearInUse()
 {
-  lock();
+  Lock();
   in_use_ = false;
-  unlock();
+  Unlock();
 }
 void MessagesResource::SetInUse()
 {
   WaitNotInUse();
   in_use_ = true;
-  unlock();
+  Unlock();
 }
 
 void MessagesResource::SetClosing() { closing_ = true; }
 
-bool MessagesResource::GetClosing() { return closing_; }
+bool MessagesResource::GetClosing() const { return closing_; }
 
 void MessagesResource::ClearClosing()
 {
-  lock();
+  Lock();
   closing_ = false;
-  unlock();
+  Unlock();
 }
 
-bool MessagesResource::IsClosing()
+bool MessagesResource::IsClosing() const
 {
-  lock();
+  Lock();
   bool rtn = closing_;
-  unlock();
+  Unlock();
   return rtn;
 }
 

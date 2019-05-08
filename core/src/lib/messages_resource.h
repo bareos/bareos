@@ -37,7 +37,6 @@ class MessagesResource : public BareosResource {
   std::vector<char> send_msg_types_;
 
  private:
-  static pthread_mutex_t mutex_;
   bool in_use_ = false;  /* Set when using to send a message */
   bool closing_ = false; /* Set when closing message resource */
 
@@ -52,12 +51,12 @@ class MessagesResource : public BareosResource {
   void ClearInUse();
   void SetInUse();
   void SetClosing();
-  bool GetClosing();
+  bool GetClosing() const;
   void ClearClosing();
-  bool IsClosing();
-  void WaitNotInUse();
-  void lock();
-  void unlock();
+  bool IsClosing() const;
+  void WaitNotInUse() const;
+  void Lock() const;
+  void Unlock() const;
   bool PrintConfig(PoolMem& buff,
                    const ConfigurationParser& /* unused */,
                    bool hide_sensitive_data = false,

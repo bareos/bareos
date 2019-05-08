@@ -359,11 +359,11 @@ void CloseMsg(JobControlRecord* jcr)
    * Note GetClosing() does not lock because we are already locked
    */
   if (msgs->GetClosing()) {
-    msgs->unlock();
+    msgs->Unlock();
     return;
   }
   msgs->SetClosing();
-  msgs->unlock();
+  msgs->Unlock();
 
   Dmsg1(850, "===Begin close msg resource at %p\n", msgs);
   cmd = GetPoolMemory(PM_MESSAGE);
