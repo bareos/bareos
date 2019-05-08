@@ -46,6 +46,7 @@
  *
  */
 
+#include <iostream>
 #define NEED_JANSSON_NAMESPACE 1
 #include "include/bareos.h"
 #include "dird.h"
@@ -2326,6 +2327,7 @@ static void FreeIncludeExcludeItem(IncludeExcludeItem* incexe)
   }
   incexe->file_options_list.clear();
   incexe->ignoredir.destroy();
+  delete incexe;
 }
 
 static bool UpdateResourcePointer(int type, ResourceItem* items)
