@@ -2633,19 +2633,18 @@ bool PopulateDefs() { return PopulateJobdefaults(); }
 
 static void StorePooltype(LEX* lc, ResourceItem* item, int index, int pass)
 {
-  int i;
-
   LexGetToken(lc, BCT_NAME);
   if (pass == 1) {
-    for (i = 0; PoolTypes[i].name; i++) {
+    bool found = false;
+    for (int i = 0; PoolTypes[i].name; i++) {
       if (Bstrcasecmp(lc->str, PoolTypes[i].name)) {
         SetItemVariableFreeMemory<char*>(*item, strdup(PoolTypes[i].name));
-        i = 0;
+        found = true;
         break;
       }
     }
 
-    if (i != 0) {
+    if (!found) {
       scan_err1(lc, _("Expected a Pool Type option, got: %s"), lc->str);
     }
   }
@@ -2657,7 +2656,6 @@ static void StorePooltype(LEX* lc, ResourceItem* item, int index, int pass)
 
 static void StoreActiononpurge(LEX* lc, ResourceItem* item, int index, int pass)
 {
-  int i;
   uint32_t* destination = GetItemVariablePointer<uint32_t*>(*item);
 
   LexGetToken(lc, BCT_NAME);
@@ -2665,15 +2663,16 @@ static void StoreActiononpurge(LEX* lc, ResourceItem* item, int index, int pass)
    * Store the type both in pass 1 and pass 2
    * Scan ActionOnPurge options
    */
-  for (i = 0; ActionOnPurgeOptions[i].name; i++) {
+  bool found = false;
+  for (int i = 0; ActionOnPurgeOptions[i].name; i++) {
     if (Bstrcasecmp(lc->str, ActionOnPurgeOptions[i].name)) {
       *destination = (*destination) | ActionOnPurgeOptions[i].token;
-      i = 0;
+      found = true;
       break;
     }
   }
 
-  if (i != 0) {
+  if (!found) {
     scan_err1(lc, _("Expected an Action On Purge option, got: %s"), lc->str);
   }
 
@@ -2690,7 +2689,6 @@ static void StoreActiononpurge(LEX* lc, ResourceItem* item, int index, int pass)
 static void StoreDevice(LEX* lc, ResourceItem* item, int index, int pass)
 {
   int rindex = R_DEVICE - R_FIRST;
-  bool found = false;
 
   if (pass == 1) {
     LexGetToken(lc, BCT_NAME);
@@ -2702,6 +2700,7 @@ static void StoreDevice(LEX* lc, ResourceItem* item, int index, int pass)
       Dmsg3(900, "Inserting first %s res: %s index=%d\n",
             my_config->ResToStr(R_DEVICE), dev->resource_name_, rindex);
     } else {
+      bool found = false;
       BareosResource* next;
       for (next = res_head[rindex]; next->next_; next = next->next_) {
         if (bstrcmp(next->resource_name_, lc->str)) {
@@ -2732,21 +2731,20 @@ static void StoreDevice(LEX* lc, ResourceItem* item, int index, int pass)
  */
 static void StoreMigtype(LEX* lc, ResourceItem* item, int index, int pass)
 {
-  int i;
-
   LexGetToken(lc, BCT_NAME);
   /*
    * Store the type both in pass 1 and pass 2
    */
-  for (i = 0; migtypes[i].type_name; i++) {
+  bool found = false;
+  for (int i = 0; migtypes[i].type_name; i++) {
     if (Bstrcasecmp(lc->str, migtypes[i].type_name)) {
       SetItemVariable<uint32_t>(*item, migtypes[i].job_type);
-      i = 0;
+      found = true;
       break;
     }
   }
 
-  if (i != 0) {
+  if (!found) {
     scan_err1(lc, _("Expected a Migration Job Type keyword, got: %s"), lc->str);
   }
 
@@ -2760,21 +2758,20 @@ static void StoreMigtype(LEX* lc, ResourceItem* item, int index, int pass)
  */
 static void StoreJobtype(LEX* lc, ResourceItem* item, int index, int pass)
 {
-  int i;
-
   LexGetToken(lc, BCT_NAME);
   /*
    * Store the type both in pass 1 and pass 2
    */
-  for (i = 0; jobtypes[i].type_name; i++) {
+  bool found = false;
+  for (int i = 0; jobtypes[i].type_name; i++) {
     if (Bstrcasecmp(lc->str, jobtypes[i].type_name)) {
       SetItemVariable<uint32_t>(*item, jobtypes[i].job_type);
-      i = 0;
+      found = true;
       break;
     }
   }
 
-  if (i != 0) {
+  if (!found) {
     scan_err1(lc, _("Expected a Job Type keyword, got: %s"), lc->str);
   }
 
@@ -2788,21 +2785,20 @@ static void StoreJobtype(LEX* lc, ResourceItem* item, int index, int pass)
  */
 static void StoreProtocoltype(LEX* lc, ResourceItem* item, int index, int pass)
 {
-  int i;
-
   LexGetToken(lc, BCT_NAME);
   /*
    * Store the type both in pass 1 and pass 2
    */
-  for (i = 0; backupprotocols[i].name; i++) {
+  bool found = false;
+  for (int i = 0; backupprotocols[i].name; i++) {
     if (Bstrcasecmp(lc->str, backupprotocols[i].name)) {
       SetItemVariable<uint32_t>(*item, backupprotocols[i].token);
-      i = 0;
+      found = true;
       break;
     }
   }
 
-  if (i != 0) {
+  if (!found) {
     scan_err1(lc, _("Expected a Protocol Type keyword, got: %s"), lc->str);
   }
 
@@ -2813,21 +2809,20 @@ static void StoreProtocoltype(LEX* lc, ResourceItem* item, int index, int pass)
 
 static void StoreReplace(LEX* lc, ResourceItem* item, int index, int pass)
 {
-  int i;
-
   LexGetToken(lc, BCT_NAME);
   /*
    * Scan Replacement options
    */
-  for (i = 0; ReplaceOptions[i].name; i++) {
+  bool found = false;
+  for (int i = 0; ReplaceOptions[i].name; i++) {
     if (Bstrcasecmp(lc->str, ReplaceOptions[i].name)) {
       SetItemVariable<uint32_t>(*item, ReplaceOptions[i].token);
-      i = 0;
+      found = true;
       break;
     }
   }
 
-  if (i != 0) {
+  if (!found) {
     scan_err1(lc, _("Expected a Restore replacement option, got: %s"), lc->str);
   }
 
@@ -2844,21 +2839,20 @@ static void StoreAuthprotocoltype(LEX* lc,
                                   int index,
                                   int pass)
 {
-  int i;
-
   LexGetToken(lc, BCT_NAME);
   /*
    * Store the type both in pass 1 and pass 2
    */
-  for (i = 0; authprotocols[i].name; i++) {
+  bool found = false;
+  for (int i = 0; authprotocols[i].name; i++) {
     if (Bstrcasecmp(lc->str, authprotocols[i].name)) {
       SetItemVariable<uint32_t>(*item, authprotocols[i].token);
-      i = 0;
+      found = true;
       break;
     }
   }
 
-  if (i != 0) {
+  if (!found) {
     scan_err1(lc, _("Expected a Auth Protocol Type keyword, got: %s"), lc->str);
   }
   ScanToEol(lc);
@@ -2871,21 +2865,20 @@ static void StoreAuthprotocoltype(LEX* lc,
  */
 static void StoreAuthtype(LEX* lc, ResourceItem* item, int index, int pass)
 {
-  int i;
-
   LexGetToken(lc, BCT_NAME);
   /*
    * Store the type both in pass 1 and pass 2
    */
-  for (i = 0; authmethods[i].name; i++) {
+  bool found = false;
+  for (int i = 0; authmethods[i].name; i++) {
     if (Bstrcasecmp(lc->str, authmethods[i].name)) {
       SetItemVariable<uint32_t>(*item, authmethods[i].token);
-      i = 0;
+      found = true;
       break;
     }
   }
 
-  if (i != 0) {
+  if (!found) {
     scan_err1(lc, _("Expected a Authentication Type keyword, got: %s"),
               lc->str);
   }
@@ -2903,16 +2896,16 @@ static void StoreLevel(LEX* lc, ResourceItem* item, int index, int pass)
   LexGetToken(lc, BCT_NAME);
 
   // Store the level in pass 2 so that type is defined
-  bool keyword_found = false;
+  bool found = false;
   for (int i = 0; joblevels[i].level_name; i++) {
     if (Bstrcasecmp(lc->str, joblevels[i].level_name)) {
       SetItemVariable<uint32_t>(*item, joblevels[i].level);
-      keyword_found = true;
+      found = true;
       break;
     }
   }
 
-  if (!keyword_found) {
+  if (!found) {
     scan_err1(lc, _("Expected a Job Level keyword, got: %s"), lc->str);
   }
 
