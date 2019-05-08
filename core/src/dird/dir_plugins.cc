@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -471,29 +471,31 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
        * See if this plugin options are for an already instantiated plugin
        * instance.
        */
-      foreach_alist (ctx, jcr->plugin_ctx_list) {
-        if (ctx->instance == instance && ctx->plugin->file_len == len &&
-            bstrncasecmp(ctx->plugin->file, plugin_name, len)) {
-          break;
-        }
-      }
-
-      /*
-       * Found a context in the previous loop ?
-       */
-      if (!ctx) {
-        foreach_alist_index (j, plugin, dird_plugin_list) {
-          if (plugin->file_len == len &&
-              bstrncasecmp(plugin->file, plugin_name, len)) {
-            ctx = instantiate_plugin(jcr, plugin, instance);
+      if (jcr->plugin_ctx_list) {
+        foreach_alist (ctx, jcr->plugin_ctx_list) {
+          if (ctx->instance == instance && ctx->plugin->file_len == len &&
+              bstrncasecmp(ctx->plugin->file, plugin_name, len)) {
             break;
           }
         }
-      }
 
-      if (ctx) {
-        trigger_plugin_event(jcr, eventType, &event, ctx, (void*)plugin_options,
-                             NULL, NULL, NULL);
+        /*
+         * Found a context in the previous loop ?
+         */
+        if (!ctx) {
+          foreach_alist_index (j, plugin, dird_plugin_list) {
+            if (plugin->file_len == len &&
+                bstrncasecmp(plugin->file, plugin_name, len)) {
+              ctx = instantiate_plugin(jcr, plugin, instance);
+              break;
+            }
+          }
+        }
+
+        if (ctx) {
+          trigger_plugin_event(jcr, eventType, &event, ctx,
+                               (void*)plugin_options, NULL, NULL, NULL);
+        }
       }
     }
   }

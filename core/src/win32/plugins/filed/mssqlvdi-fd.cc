@@ -3,7 +3,7 @@
 
    Copyright (C) 2010 Zilvinas Krapavickas <zkrapavickas@gmail.com>
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1201,7 +1201,6 @@ static inline void perform_aDoRestore(bpContext* ctx)
 }
 
 /**
-/*
  * Run a query not in a separate thread.
  */
 static inline bool RunAdoQuery(bpContext* ctx, const char* query)

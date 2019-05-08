@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -116,7 +116,6 @@ BareosDb* db_init_database(JobControlRecord* jcr,
                            bool exit_on_fatal,
                            bool need_private)
 {
-  struct stat st;
   char* backend_dir = nullptr;
   void* dl_handle = NULL;
   PoolMem shared_library_name(PM_FNAME);
@@ -182,6 +181,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
     /*
      * Make sure the shared library with this name exists.
      */
+    struct stat st;
     if (stat(shared_library_name.c_str(), &st) == 0) {
 #else
     Mmsg(shared_library_name, "libbareoscats-%s%s",

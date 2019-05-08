@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -323,11 +323,7 @@ extern DWORD g_MinorVersion;
 /**
  * From Microsoft SDK (KES) is the diff between Jan 1 1601 and Jan 1 1970
  */
-#ifdef HAVE_MINGW
 #define WIN32_FILETIME_ADJUST 0x19DB1DED53E8000ULL
-#else
-#define WIN32_FILETIME_ADJUST 0x19DB1DED53E8000I64
-#endif
 
 #define WIN32_FILETIME_SCALE 10000000  // 100ns/second
 
@@ -922,23 +918,6 @@ int lchown(const char* k, uid_t, gid_t) { return 0; }
 long int random(void) { return rand(); }
 
 void srandom(unsigned int seed) { srand(seed); }
-
-/**
- * Convert from Windows concept of time to Unix concept of time
- */
-static void CvtUtimeToFtime(const time_t& time, FILETIME& wintime)
-{
-  uint64_t mstime = time;
-  mstime *= WIN32_FILETIME_SCALE;
-  mstime += WIN32_FILETIME_ADJUST;
-
-#if defined(_MSC_VER)
-  wintime.dwLowDateTime = (DWORD)(mstime & 0xffffffffI64);
-#else
-  wintime.dwLowDateTime = (DWORD)(mstime & 0xffffffffUL);
-#endif
-  wintime.dwHighDateTime = (DWORD)((mstime >> 32) & 0xffffffffUL);
-}
 
 static time_t CvtFtimeToUtime(const FILETIME& time)
 {
@@ -1957,7 +1936,7 @@ void sleep(int sec) { Sleep(sec * 1000); }
 
 int geteuid(void) { return 0; }
 
-int execvp(const char*, char* [])
+int execvp(const char*, char*[])
 {
   errno = ENOSYS;
   return -1;
@@ -2086,83 +2065,10 @@ int link(const char* existing, const char* newfile)
   return -1;
 }
 
-#ifndef HAVE_MINGW
-int strcasecmp(const char* s1, const char* s2)
-{
-  register int ch1, ch2;
-
-  if (s1 == s2) {
-    return 0; /* strings are equal if same object. */
-  } else if (!s1) {
-    return -1;
-  } else if (!s2) {
-    return 1;
-  }
-
-  do {
-    ch1 = *s1;
-    ch2 = *s2;
-    s1++;
-    s2++;
-  } while (ch1 != 0 && tolower(ch1) == tolower(ch2));
-
-  return ch1 - ch2;
-}
-
-int strncasecmp(const char* s1, const char* s2, int len)
-{
-  register int ch1 = 0, ch2 = 0;
-
-  if (s1 == s2) {
-    return 0; /* strings are equal if same object. */
-  } else if (!s1) {
-    return -1;
-  } else if (!s2) {
-    return 1;
-  }
-
-  while (len--) {
-    ch1 = *s1;
-    ch2 = *s2;
-    s1++;
-    s2++;
-    if (ch1 == 0 || tolower(ch1) != tolower(ch2)) { break; }
-  }
-
-  return ch1 - ch2;
-}
-
-int gettimeofday(struct timeval* tv, struct timezone* tz)
-{
-  SYSTEMTIME now;
-  FILETIME tmp;
-
-  GetSystemTime(&now);
-
-  if (tv == NULL) {
-    errno = EINVAL;
-    return -1;
-  }
-  if (!SystemTimeToFileTime(&now, &tmp)) {
-    errno = b_errno_win32;
-    return -1;
-  }
-
-  int64_t _100nsec = tmp.dwHighDateTime;
-  _100nsec <<= 32;
-  _100nsec |= tmp.dwLowDateTime;
-  _100nsec -= WIN32_FILETIME_ADJUST;
-
-  tv->tv_sec = (long)(_100nsec / 10000000);
-  tv->tv_usec = (long)((_100nsec % 10000000) / 10);
-  return 0;
-}
-#else
 int gettimeofday(struct timeval* tv, struct timezone* tz)
 {
   return mingw_gettimeofday(tv, tz);
 }
-#endif  // HAVE_MINGW
 
 /**
  * Write in Windows System log
@@ -3588,70 +3494,10 @@ int CloseWpipe(Bpipe* bpipe)
   return result;
 }
 
-#ifndef HAVE_MINGW
-int utime(const char* filename, struct utimbuf* times)
-{
-  int rval = -1;
-  FILETIME acc, mod;
-  HANDLE h = INVALID_HANDLE_VALUE;
-
-  CvtUtimeToFtime(times->actime, acc);
-  CvtUtimeToFtime(times->modtime, mod);
-
-  if (p_CreateFileW) {
-    POOLMEM* pwszBuf;
-
-    pwszBuf = GetPoolMemory(PM_FNAME);
-    make_win32_path_UTF8_2_wchar(pwszBuf, filename);
-
-    h = p_CreateFileW((LPCWSTR)pwszBuf, FILE_WRITE_ATTRIBUTES,
-                      FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE,
-                      NULL, OPEN_EXISTING,
-                      FILE_FLAG_BACKUP_SEMANTICS, /* Required for directories */
-                      NULL);
-
-    FreePoolMemory(pwszBuf);
-  } else if (p_CreateFileA) {
-    POOLMEM* win32_fname;
-
-    win32_fname = GetPoolMemory(PM_FNAME);
-    unix_name_to_win32(win32_fname, filename);
-
-    h = p_CreateFileA(win32_fname, FILE_WRITE_ATTRIBUTES,
-                      FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE,
-                      NULL, OPEN_EXISTING,
-                      FILE_FLAG_BACKUP_SEMANTICS, /* Required for directories */
-                      NULL);
-
-    FreePoolMemory(win32_fname);
-  }
-
-  if (h == INVALID_HANDLE_VALUE) {
-    const char* err = errorString();
-
-    Dmsg2(debuglevel, "Cannot open file \"%s\" for utime(): ERR=%s", filename,
-          err);
-    LocalFree((void*)err);
-    errno = b_errno_win32;
-
-    goto bail_out;
-  }
-
-  rval = SetFileTime(h, NULL, &acc, &mod) ? 0 : -1;
-  CloseHandle(h);
-  if (rval == -1) { errno = b_errno_win32; }
-
-bail_out:
-  return rval;
-}
-#endif
-
-#ifdef HAVE_MINGW
 /**
  * Syslog function, added by Nicolas Boichat
  */
 extern "C" void openlog(const char* ident, int option, int facility) {}
-#endif  // HAVE_MINGW
 
 /**
  * Log an error message

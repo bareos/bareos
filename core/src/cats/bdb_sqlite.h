@@ -3,7 +3,7 @@
 
    Copyright (C) 2009-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -42,28 +42,29 @@ class BareosDbSqlite : public BareosDbPrivateInterface {
   /*
    * Methods.
    */
-  bool OpenDatabase(JobControlRecord* jcr);
-  void CloseDatabase(JobControlRecord* jcr);
-  bool ValidateConnection(void);
-  void ThreadCleanup(void);
-  void StartTransaction(JobControlRecord* jcr);
-  void EndTransaction(JobControlRecord* jcr);
+  bool OpenDatabase(JobControlRecord* jcr) override;
+  void CloseDatabase(JobControlRecord* jcr) override;
+  bool ValidateConnection(void) override;
+  void ThreadCleanup(void) override;
+  void StartTransaction(JobControlRecord* jcr) override;
+  void EndTransaction(JobControlRecord* jcr) override;
   bool SqlQueryWithHandler(const char* query,
                            DB_RESULT_HANDLER* ResultHandler,
-                           void* ctx);
-  bool SqlQueryWithoutHandler(const char* query, int flags = 0);
-  void SqlFreeResult(void);
-  SQL_ROW SqlFetchRow(void);
-  const char* sql_strerror(void);
-  void SqlDataSeek(int row);
-  int SqlAffectedRows(void);
-  uint64_t SqlInsertAutokeyRecord(const char* query, const char* table_name);
-  SQL_FIELD* SqlFetchField(void);
-  bool SqlFieldIsNotNull(int field_type);
-  bool SqlFieldIsNumeric(int field_type);
-  bool SqlBatchStart(JobControlRecord* jcr);
-  bool SqlBatchEnd(JobControlRecord* jcr, const char* error);
-  bool SqlBatchInsert(JobControlRecord* jcr, AttributesDbRecord* ar);
+                           void* ctx) override;
+  bool SqlQueryWithoutHandler(const char* query, int flags = 0) override;
+  void SqlFreeResult(void) override;
+  SQL_ROW SqlFetchRow(void) override;
+  const char* sql_strerror(void) override;
+  void SqlDataSeek(int row) override;
+  int SqlAffectedRows(void) override;
+  uint64_t SqlInsertAutokeyRecord(const char* query,
+                                  const char* table_name) override;
+  SQL_FIELD* SqlFetchField(void) override;
+  bool SqlFieldIsNotNull(int field_type) override;
+  bool SqlFieldIsNumeric(int field_type) override;
+  bool SqlBatchStart(JobControlRecord* jcr) override;
+  bool SqlBatchEnd(JobControlRecord* jcr, const char* error) override;
+  bool SqlBatchInsert(JobControlRecord* jcr, AttributesDbRecord* ar) override;
 
  public:
   /*
