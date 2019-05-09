@@ -49,7 +49,9 @@ bool DoReloadConfig() { return false; }
 static void InitSignalHandler()
 {
   struct sigaction sig {
-    0
+    {
+      0
+    }
   };
   sig.sa_handler = signal_handler;
   sigaction(SIGUSR2, &sig, nullptr);

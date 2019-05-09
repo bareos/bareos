@@ -29,7 +29,7 @@
 class PoolMem;
 class ConfigurationParser;
 
-#define MAX_RES_ITEMS 90 /* maximum resource items per BareosResource */
+#define MAX_RES_ITEMS 95 /* maximum resource items per BareosResource */
 
 class BareosResource {
  public:

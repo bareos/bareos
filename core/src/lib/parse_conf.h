@@ -64,7 +64,7 @@ struct ResourceTable {
   uint32_t rcode;      /* Code if needed */
   uint32_t size;       /* Size of resource */
 
-  std::function<void()> initres; /* this shoud call the new replacement*/
+  std::function<void()> ResourceSpecificInitializer; /* this allocates memory */
   BareosResource** static_resource_;
 };
 
@@ -263,12 +263,12 @@ class ConfigurationParser {
   const std::string& get_base_config_path() const { return used_config_path_; }
   void FreeResources();
   BareosResource** SaveResources();
-  void InitResource(int type,
-                    ResourceItem* items,
+  void InitResource(int rcode,
+                    ResourceItem items[],
                     int pass,
-                    std::function<void()> initres);
-  bool AppendToResourcesChain(BareosResource* new_resource, int type);
-  bool RemoveResource(int type, const char* name);
+                    std::function<void()> ResourceSpecificInitializer);
+  bool AppendToResourcesChain(BareosResource* new_resource, int rcode);
+  bool RemoveResource(int rcode, const char* name);
   void DumpResources(void sendit(void* sock, const char* fmt, ...),
                      void* sock,
                      bool hide_sensitive_data = false);
@@ -296,7 +296,7 @@ class ConfigurationParser {
   void b_LockRes(const char* file, int line) const;
   void b_UnlockRes(const char* file, int line) const;
   const char* ResToStr(int rcode) const;
-  bool StoreResource(int type,
+  bool StoreResource(int rcode,
                      LEX* lc,
                      ResourceItem* item,
                      int index,
@@ -397,6 +397,15 @@ class ConfigurationParser {
   void lex_error(const char* cf,
                  LEX_ERROR_HANDLER* ScanError,
                  LEX_WARNING_HANDLER* scan_warning) const;
+  void SetAllResourceDefaultsByParserPass(int rcode,
+                                          ResourceItem items[],
+                                          int pass);
+  void SetAllResourceDefaultsIterateOverItems(
+      int rcode,
+      ResourceItem items[],
+      std::function<void(ConfigurationParser&, ResourceItem*)> SetDefaults);
+  void SetResourceDefaultsParserPass1(ResourceItem* item);
+  void SetResourceDefaultsParserPass2(ResourceItem* item);
 };
 
 void PrintMessage(void* sock, const char* fmt, ...);
@@ -416,7 +425,6 @@ void IndentConfigItem(PoolMem& cfg_str,
                       int level,
                       const char* config_item,
                       bool inherited = false);
-void InitResource(int type, ResourceItem* item);
 
 /*
  * Loop through each resource of type, returning in var

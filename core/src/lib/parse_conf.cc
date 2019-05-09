@@ -274,7 +274,8 @@ bool ConfigurationParser::ParseConfigFile(const char* cf,
             items = res_table->items;
             state = p_resource;
             res_type = res_table->rcode;
-            InitResource(res_type, items, pass, res_table->initres);
+            InitResource(res_type, items, pass,
+                         res_table->ResourceSpecificInitializer);
             ASSERT(res_table->static_resource_);
             static_resource = *res_table->static_resource_;
             ASSERT(static_resource);
@@ -405,9 +406,9 @@ bail_out:
 }
 
 bool ConfigurationParser::AppendToResourcesChain(BareosResource* new_resource,
-                                                 int type)
+                                                 int rcode)
 {
-  int rindex = type - r_first_;
+  int rindex = rcode - r_first_;
 
   if (!new_resource->resource_name_) {
     Emsg1(M_ERROR, 0,
@@ -418,7 +419,7 @@ bool ConfigurationParser::AppendToResourcesChain(BareosResource* new_resource,
 
   if (!res_head_[rindex]) {
     res_head_[rindex] = new_resource;
-    Dmsg3(900, "Inserting first %s res: %s index=%d\n", ResToStr(type),
+    Dmsg3(900, "Inserting first %s res: %s index=%d\n", ResToStr(rcode),
           new_resource->resource_name_, rindex);
   } else {  // append
     BareosResource* last = nullptr;
@@ -435,7 +436,7 @@ bool ConfigurationParser::AppendToResourcesChain(BareosResource* new_resource,
       current = last->next_;
     } while (current);
     last->next_ = new_resource;
-    Dmsg3(900, _("Inserting %s res: %s index=%d\n"), ResToStr(type),
+    Dmsg3(900, _("Inserting %s res: %s index=%d\n"), ResToStr(rcode),
           new_resource->resource_name_, rindex);
   }
   return true;
@@ -686,242 +687,9 @@ BareosResource** ConfigurationParser::SaveResources()
   return res;
 }
 
-static void MakePathName(PoolMem& pathname, const char* str)
+bool ConfigurationParser::RemoveResource(int rcode, const char* name)
 {
-  PmStrcpy(pathname, str);
-  if (pathname.c_str()[0] != '|') {
-    pathname.check_size(pathname.size() + 1024);
-    DoShellExpansion(pathname.c_str(), pathname.size());
-  }
-}
-
-/*
- * Initialize the static structure to zeros, then apply all the default
- * values.
- */
-void ConfigurationParser::InitResource(int type,
-                                       ResourceItem* items,
-                                       int pass,
-                                       std::function<void()> initres)
-{
-  if (initres) { initres(); }
-
-  /*
-   * See what pass of the config parsing this is.
-   */
-  switch (pass) {
-    case 1: {
-      /*
-       * Set all defaults for types that are filled in pass 1 of the config
-       * parser.
-       */
-      int i;
-
-      for (i = 0; items[i].name; i++) {
-        (*items[i].static_resource)->rcode_ = type;
-        (*items[i].static_resource)->refcnt_ = 1;
-
-        Dmsg3(900, "Item=%s def=%s defval=%s\n", items[i].name,
-              (items[i].flags & CFG_ITEM_DEFAULT) ? "yes" : "no",
-              (items[i].default_value) ? items[i].default_value : "None");
-
-        /*
-         * Sanity check.
-         *
-         * Items with a default value but without the CFG_ITEM_DEFAULT flag
-         * set are most of the time an indication of a programmers error.
-         */
-        if (items[i].default_value != nullptr &&
-            !(items[i].flags & CFG_ITEM_DEFAULT)) {
-          Pmsg1(000,
-                _("Found config item %s which has default value but no "
-                  "CFG_ITEM_DEFAULT flag set\n"),
-                items[i].name);
-          items[i].flags |= CFG_ITEM_DEFAULT;
-        }
-
-        /*
-         * See if the CFG_ITEM_DEFAULT flag is set and a default value is
-         * available.
-         */
-        if (items[i].flags & CFG_ITEM_DEFAULT &&
-            items[i].default_value != nullptr) {
-          /*
-           * First try to handle the generic types.
-           */
-          switch (items[i].type) {
-            case CFG_TYPE_BIT:
-              if (Bstrcasecmp(items[i].default_value, "on")) {
-                char* bitfield = GetItemVariablePointer<char*>(items[i]);
-                SetBit(items[i].code, bitfield);
-              } else if (Bstrcasecmp(items[i].default_value, "off")) {
-                char* bitfield = GetItemVariablePointer<char*>(items[i]);
-                ClearBit(items[i].code, bitfield);
-              }
-              break;
-            case CFG_TYPE_BOOL:
-              if (Bstrcasecmp(items[i].default_value, "yes") ||
-                  Bstrcasecmp(items[i].default_value, "true")) {
-                SetItemVariable<bool>(items[i], true);
-              } else if (Bstrcasecmp(items[i].default_value, "no") ||
-                         Bstrcasecmp(items[i].default_value, "false")) {
-                SetItemVariable<bool>(items[i], false);
-              }
-              break;
-            case CFG_TYPE_PINT32:
-            case CFG_TYPE_INT32:
-            case CFG_TYPE_SIZE32:
-              SetItemVariable<uint32_t>(items[i],
-                                        str_to_uint64(items[i].default_value));
-              break;
-            case CFG_TYPE_INT64:
-              SetItemVariable<uint64_t>(items[i],
-                                        str_to_int64(items[i].default_value));
-              break;
-            case CFG_TYPE_SIZE64:
-              SetItemVariable<uint64_t>(items[i],
-                                        str_to_uint64(items[i].default_value));
-              break;
-            case CFG_TYPE_SPEED:
-              SetItemVariable<uint64_t>(items[i],
-                                        str_to_uint64(items[i].default_value));
-              break;
-            case CFG_TYPE_TIME: {
-              SetItemVariable<utime_t>(items[i],
-                                       str_to_int64(items[i].default_value));
-              break;
-            }
-            case CFG_TYPE_STRNAME:
-            case CFG_TYPE_STR:
-              SetItemVariable<char*>(items[i], strdup(items[i].default_value));
-              break;
-            case CFG_TYPE_STDSTR:
-              SetItemVariable<std::string>(items[i], items[i].default_value);
-              break;
-            case CFG_TYPE_DIR: {
-              PoolMem pathname(PM_FNAME);
-              MakePathName(pathname, items[i].default_value);
-              SetItemVariable<char*>(items[i], strdup(pathname.c_str()));
-              break;
-            }
-            case CFG_TYPE_STDSTRDIR: {
-              PoolMem pathname(PM_FNAME);
-              MakePathName(pathname, items[i].default_value);
-              SetItemVariable<std::string>(items[i],
-                                           std::string(pathname.c_str()));
-              break;
-            }
-            case CFG_TYPE_ADDRESSES: {
-              dlist** dlistvalue = GetItemVariablePointer<dlist**>(items[i]);
-              InitDefaultAddresses(dlistvalue, items[i].default_value);
-              break;
-            }
-            default:
-              /*
-               * None of the generic types fired if there is a registered
-               * callback call that now.
-               */
-              if (init_res_) { init_res_(&items[i], pass); }
-              break;
-          }
-
-          if (!omit_defaults_) {
-            SetBit(i, (*items[i].static_resource)->inherit_content_);
-          }
-        }
-
-        /*
-         * If this triggers, take a look at lib/parse_conf.h
-         */
-        if (i >= MAX_RES_ITEMS) {
-          Emsg1(M_ERROR_TERM, 0, _("Too many items in %s resource\n"),
-                resources_[type - r_first_].name);
-        }
-      }
-      break;
-    }
-    case 2: {
-      /*
-       * Set all defaults for types that are filled in pass 2 of the config
-       * parser.
-       */
-      int i;
-
-      for (i = 0; items[i].name; i++) {
-        Dmsg3(900, "Item=%s def=%s defval=%s\n", items[i].name,
-              (items[i].flags & CFG_ITEM_DEFAULT) ? "yes" : "no",
-              (items[i].default_value) ? items[i].default_value : "None");
-
-        /*
-         * See if the CFG_ITEM_DEFAULT flag is set and a default value is
-         * available.
-         */
-        if (items[i].flags & CFG_ITEM_DEFAULT &&
-            items[i].default_value != nullptr) {
-          /*
-           * First try to handle the generic types.
-           */
-          switch (items[i].type) {
-            case CFG_TYPE_ALIST_STR: {
-              alist** alistvalue = GetItemVariablePointer<alist**>(items[i]);
-              if (!alistvalue) {
-                *(alistvalue) = new alist(10, owned_by_alist);
-              }
-              (*alistvalue)->append(strdup(items[i].default_value));
-              break;
-            }
-            case CFG_TYPE_ALIST_DIR: {
-              PoolMem pathname(PM_FNAME);
-              alist** alistvalue = GetItemVariablePointer<alist**>(items[i]);
-
-              if (!*alistvalue) { *alistvalue = new alist(10, owned_by_alist); }
-
-              PmStrcpy(pathname, items[i].default_value);
-              if (*items[i].default_value != '|') {
-                int size;
-
-                /*
-                 * Make sure we have enough room
-                 */
-                size = pathname.size() + 1024;
-                pathname.check_size(size);
-                DoShellExpansion(pathname.c_str(), pathname.size());
-              }
-              (*alistvalue)->append(strdup(pathname.c_str()));
-              break;
-            }
-            default:
-              /*
-               * None of the generic types fired if there is a registered
-               * callback call that now.
-               */
-              if (init_res_) { init_res_(&items[i], pass); }
-              break;
-          }
-
-          if (!omit_defaults_) {
-            SetBit(i, (*items[i].static_resource)->inherit_content_);
-          }
-        }
-
-        /*
-         * If this triggers, take a look at lib/parse_conf.h
-         */
-        if (i >= MAX_RES_ITEMS) {
-          Emsg1(M_ERROR_TERM, 0, _("Too many items in %s resource\n"),
-                resources_[type - r_first_].name);
-        }
-      }
-      break;
-    }
-    default:
-      break;
-  }
-}
-
-bool ConfigurationParser::RemoveResource(int type, const char* name)
-{
-  int rindex = type - r_first_;
+  int rindex = rcode - r_first_;
   BareosResource* last;
 
   /*
@@ -938,14 +706,14 @@ bool ConfigurationParser::RemoveResource(int type, const char* name)
       if (!last) {
         Dmsg2(900,
               _("removing resource %s, name=%s (first resource in list)\n"),
-              ResToStr(type), name);
+              ResToStr(rcode), name);
         res_head_[rindex] = res->next_;
       } else {
-        Dmsg2(900, _("removing resource %s, name=%s\n"), ResToStr(type), name);
+        Dmsg2(900, _("removing resource %s, name=%s\n"), ResToStr(rcode), name);
         last->next_ = res->next_;
       }
       res->next_ = nullptr;
-      FreeResourceCb_(res, type);
+      FreeResourceCb_(res, rcode);
       return true;
     }
     last = res;

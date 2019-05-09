@@ -46,7 +46,6 @@
  *
  */
 
-#include <iostream>
 #define NEED_JANSSON_NAMESPACE 1
 #include "include/bareos.h"
 #include "dird.h"
