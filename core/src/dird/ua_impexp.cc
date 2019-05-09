@@ -1010,7 +1010,7 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
   char *src_slot_list = NULL, *dst_slot_list = NULL, *tmp_slot_list = NULL,
        *visited_slot_list = NULL;
   slot_number_t nr_enabled_src_slots = 0, nr_enabled_dst_slots = 0;
-  drive_number_t drive = -1;
+  drive_number_t drive = kInvalidDriveNumber;
   slot_number_t i, max_slots;
   bool retval = false;
 

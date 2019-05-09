@@ -1123,7 +1123,7 @@ static bool UnmountCmd(JobControlRecord* jcr)
       dev = dcr->dev;
       dev->Lock(); /* Use P to avoid indefinite block */
       if (!dev->IsOpen()) {
-        if (!dev->IsBusy()) { UnloadAutochanger(dcr, -1); }
+        if (!dev->IsBusy()) { UnloadAutochanger(dcr, kInvalidSlotNumber); }
         if (dev->IsUnmountable()) {
           if (dev->unmount(dcr, 0)) {
             dir->fsend(_("3002 Device \"%s\" unmounted.\n"), dev->print_name());
@@ -1138,7 +1138,7 @@ static bool UnmountCmd(JobControlRecord* jcr)
       } else if (dev->blocked() == BST_WAITING_FOR_SYSOP) {
         Dmsg2(90, "%d waiter dev_block=%d. doing unmount\n", dev->num_waiting,
               dev->blocked());
-        if (!UnloadAutochanger(dcr, -1)) {
+        if (!UnloadAutochanger(dcr, kInvalidSlotNumber)) {
           /* ***FIXME**** what is this ????  */
           dev->close(dcr);
           FreeVolume(dev);
@@ -1170,7 +1170,7 @@ static bool UnmountCmd(JobControlRecord* jcr)
         /*  BlockDevice(dev, BST_UNMOUNTED); replace with 2 lines below */
         dev->SetBlocked(BST_UNMOUNTED);
         ClearThreadId(dev->no_wait_id);
-        if (!UnloadAutochanger(dcr, -1)) {
+        if (!UnloadAutochanger(dcr, kInvalidSlotNumber)) {
           dev->close(dcr);
           FreeVolume(dev);
         }
@@ -1216,7 +1216,7 @@ static bool ReleaseCmd(JobControlRecord* jcr)
       dev = dcr->dev;
       dev->Lock(); /* Use P to avoid indefinite block */
       if (!dev->IsOpen()) {
-        if (!dev->IsBusy()) { UnloadAutochanger(dcr, -1); }
+        if (!dev->IsBusy()) { UnloadAutochanger(dcr, kInvalidSlotNumber); }
         Dmsg0(90, "Device already released\n");
         dir->fsend(_("3921 Device \"%s\" already released.\n"),
                    dev->print_name());
@@ -1224,7 +1224,7 @@ static bool ReleaseCmd(JobControlRecord* jcr)
       } else if (dev->blocked() == BST_WAITING_FOR_SYSOP) {
         Dmsg2(90, "%d waiter dev_block=%d.\n", dev->num_waiting,
               dev->blocked());
-        UnloadAutochanger(dcr, -1);
+        UnloadAutochanger(dcr, kInvalidSlotNumber);
         dir->fsend(_("3922 Device \"%s\" waiting for sysop.\n"),
                    dev->print_name());
 
@@ -1364,7 +1364,7 @@ static bool ChangerCmd(JobControlRecord* jcr)
     is_transfer = true;
   }
   if (ok) {
-    dcr = find_device(jcr, devname, -1, NULL);
+    dcr = find_device(jcr, devname, kInvalidDriveNumber, NULL);
     if (dcr) {
       dev = dcr->dev;
       dev->Lock(); /* Use P to avoid indefinite block */

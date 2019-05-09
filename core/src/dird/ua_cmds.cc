@@ -743,7 +743,7 @@ static bool add_cmd(UaContext* ua, const char* cmd)
 
   if (store && store->autochanger) {
     if (!GetPint(ua, _("Enter slot (0 for none): "))) { return true; }
-    Slot = (slot_number_t)ua->pint32_val;
+    Slot = static_cast<slot_number_t>(ua->pint32_val);
     if (!GetYesno(ua, _("InChanger? yes/no: "))) { return true; }
     InChanger = ua->pint32_val;
   }
@@ -2397,8 +2397,8 @@ static void DoMountCmd(UaContext* ua, const char* cmd)
 {
   UnifiedStorageResource store;
   drive_number_t nr_drives;
-  drive_number_t drive = -1;
-  slot_number_t slot = -1;
+  drive_number_t drive = kInvalidDriveNumber;
+  slot_number_t slot = kInvalidSlotNumber;
   bool do_alldrives = false;
 
   if ((bstrcmp(cmd, "release") || bstrcmp(cmd, "unmount")) &&
@@ -2416,7 +2416,7 @@ static void DoMountCmd(UaContext* ua, const char* cmd)
   SetWstorage(ua->jcr, &store);
   if (!do_alldrives) {
     drive = GetStorageDrive(ua, store.store);
-    if (drive == -1) { return; }
+    if (drive == kInvalidDriveNumber) { return; }
   }
   if (bstrcmp(cmd, "mount")) { slot = GetStorageSlot(ua, store.store); }
 

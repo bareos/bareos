@@ -1251,14 +1251,14 @@ drive_number_t GetStorageDrive(UaContext* ua, StorageResource* store)
 {
   int i;
   char drivename[10];
-  drive_number_t drive = -1;
+  drive_number_t drive = kInvalidDriveNumber;
 
   /*
    * Get drive for autochanger if possible
    */
   i = FindArgWithValue(ua, NT_("drive"));
   if (i >= 0) {
-    drive = atoi(ua->argv[i]);
+    drive = static_cast<drive_number_t>(atoi(ua->argv[i]));
   } else if (store && store->autochanger) {
     drive_number_t drives;
 
@@ -1280,7 +1280,7 @@ drive_number_t GetStorageDrive(UaContext* ua, StorageResource* store)
       }
       if (DoPrompt(ua, _("Drive"), _("Select drive"), drivename,
                    sizeof(drivename)) < 0) {
-        drive = -1; /* None */
+        drive = kInvalidDriveNumber; /* None */
       } else {
         sscanf(drivename, "Drive %hd", &drive);
       }

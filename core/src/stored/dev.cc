@@ -246,7 +246,7 @@ static inline Device* init_dev(JobControlRecord* jcr,
           device->device_name, device->dev_type);
     return NULL;
   }
-  dev->ClearSlot(); /* unknown */
+  dev->InvalidateSlotNumber(); /* unknown */
 
   /*
    * Copy user supplied device parameters from Resource
@@ -939,16 +939,16 @@ bool Device::OfflineOrRewind()
   }
 }
 
-void Device::SetSlot(slot_number_t slot)
+void Device::SetSlotNumber(slot_number_t slot)
 {
   slot_ = slot;
-  if (vol) { vol->ClearSlot(); }
+  if (vol) { vol->InvalidateSlotNumber(); }
 }
 
-void Device::ClearSlot()
+void Device::InvalidateSlotNumber()
 {
-  slot_ = -1;
-  if (vol) { vol->SetSlot(-1); }
+  slot_ = kInvalidSlotNumber;
+  if (vol) { vol->SetSlotNumber(kInvalidSlotNumber); }
 }
 
 /**

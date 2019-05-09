@@ -529,7 +529,7 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
         dcr->SetDev(vol->dev); /* temp point to other dev */
         slot = GetAutochangerLoadedSlot(dcr); /* get slot on other drive */
         dcr->SetDev(dev);                     /* restore dev */
-        vol->SetSlot(slot);                   /* save slot */
+        vol->SetSlotNumber(slot);                   /* save slot */
         vol->dev->SetUnload();                /* unload the other drive */
         vol->SetSwapping();                   /* swap from other drive */
         dev->swap_dev = vol->dev;             /* remember to get this vol */

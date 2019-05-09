@@ -637,7 +637,7 @@ void DeviceControlRecord::DoSwapping(bool IsWriting)
    */
   if (dev->swap_dev) {
     if (dev->swap_dev->MustUnload()) {
-      if (dev->vol) { dev->swap_dev->SetSlot(dev->vol->GetSlot()); }
+      if (dev->vol) { dev->swap_dev->SetSlotNumber(dev->vol->GetSlot()); }
       Dmsg2(100, "Swap unloading slot=%d %s\n", dev->swap_dev->GetSlot(),
             dev->swap_dev->print_name());
       UnloadDev(dcr, dev->swap_dev);

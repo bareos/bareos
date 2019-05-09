@@ -291,12 +291,21 @@ typedef int64_t boffset_t;
 typedef off_t boffset_t;
 #endif
 
-/**
- * Create some simple types for now int16_t e.g. 65 K should be enough.
- */
-typedef int16_t slot_number_t;
-typedef int16_t drive_number_t;
-typedef int16_t slot_flags_t;
+typedef uint16_t slot_number_t;
+typedef uint16_t drive_number_t;
+typedef uint16_t slot_flags_t;
+
+#include <limits>
+
+constexpr slot_number_t kInvalidSlotNumber =
+    std::numeric_limits<slot_number_t>::max();
+constexpr slot_number_t kInvalidDriveNumber =
+    std::numeric_limits<drive_number_t>::max();
+
+inline bool IsSlotNumberValid(slot_number_t slot)
+{
+  return slot && slot != kInvalidSlotNumber;
+}
 
 /* These probably should be subroutines */
 #define Pw(x)                                                        \

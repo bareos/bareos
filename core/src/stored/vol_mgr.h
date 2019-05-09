@@ -101,8 +101,8 @@ class VolumeReservationItem {
   bool IsInUse() const { return in_use_; }
   void SetInUse() { in_use_ = true; }
   void ClearInUse() { in_use_ = false; }
-  void SetSlot(slot_number_t slot) { slot_ = slot; }
-  void ClearSlot() { slot_ = -1; }
+  void SetSlotNumber(slot_number_t slot) { slot_ = slot; }
+  void InvalidateSlotNumber() { slot_ = kInvalidSlotNumber; }
   slot_number_t GetSlot() const { return slot_; }
   uint32_t GetJobid() const { return JobId_; }
   void SetJobid(uint32_t JobId) { JobId_ = JobId; }

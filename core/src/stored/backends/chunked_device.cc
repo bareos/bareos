@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2017 Planets Communications B.V.
-   Copyright (C) 2017-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1127,8 +1127,8 @@ ssize_t chunked_device::ChunkedVolumeSize()
          * there is still data inflight and as such we need to look at the last
          * chunk that is still not uploaded of the volume.
          */
-        request = (chunk_io_request*)cb_->peek(storagedaemon::PEEK_LAST, current_volname_,
-                                               CompareVolumeName);
+        request = (chunk_io_request*)cb_->peek(
+            storagedaemon::PEEK_LAST, current_volname_, CompareVolumeName);
         if (request) {
           ssize_t retval;
 
@@ -1237,8 +1237,8 @@ bool chunked_device::is_written()
        * inflight and as such we need to look at the last chunk that is still
        * not uploaded of the volume.
        */
-      request = (chunk_io_request*)cb_->peek(storagedaemon::PEEK_FIRST, current_volname_,
-                                             CompareVolumeName);
+      request = (chunk_io_request*)cb_->peek(
+          storagedaemon::PEEK_FIRST, current_volname_, CompareVolumeName);
       if (request) {
         free(request);
         Dmsg1(100, "volume %s is pending, as there are queued write requests\n",
@@ -1255,7 +1255,7 @@ bool chunked_device::is_written()
         "= %lld\n",
         current_volname_, remote_volume_size, VolCatInfo.VolCatBytes);
 
-  if (remote_volume_size < VolCatInfo.VolCatBytes) {
+  if (remote_volume_size < static_cast<ssize_t>(VolCatInfo.VolCatBytes)) {
     Dmsg3(100,
           "volume %s is pending, as 'remote volume size' = %lld < 'catalog "
           "volume size' = %lld\n",
@@ -1359,7 +1359,8 @@ bool chunked_device::LoadChunk()
            * to read the data from the backing store as that will not have the
            * latest data anyway.
            */
-          if (cb_->peek(storagedaemon::PEEK_CLONE, &request, CloneIoRequest) == &request) {
+          if (cb_->peek(storagedaemon::PEEK_CLONE, &request, CloneIoRequest) ==
+              &request) {
             goto bail_out;
           }
         }

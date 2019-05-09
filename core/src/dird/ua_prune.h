@@ -26,6 +26,8 @@
 
 namespace directordaemon {
 
+struct del_ctx;
+
 bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool);
 bool PruneJobs(UaContext* ua,
                ClientResource* client,

@@ -227,7 +227,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
   dev->ClearUnload();
 
   if (dev->vol && dev->vol->IsSwapping()) {
-    dev->vol->SetSlot(vol->Slot);
+    dev->vol->SetSlotNumber(vol->Slot);
     Dmsg3(rdebuglevel, "swapping: slot=%d Vol=%s dev=%s\n", dev->vol->GetSlot(),
           dev->vol->vol_name, dev->print_name());
   }

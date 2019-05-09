@@ -907,7 +907,7 @@ bool NdmpAutochangerVolumeOperation(UaContext* ua,
    */
   if (!NdmpUpdateStorageMappings(ua, store)) { return false; }
 
-  if (slot >= 0) {
+  if (slot != kInvalidSlotNumber) {
     slot_number_t slot_mapping;
 
     /*
@@ -915,7 +915,7 @@ bool NdmpAutochangerVolumeOperation(UaContext* ua,
      */
     slot_mapping = GetElementAddressByBareosSlotNumber(
         &store->rss->storage_mapping, slot_type_storage, slot);
-    if (slot_mapping == -1) {
+    if (slot_mapping == kInvalidSlotNumber) {
       ua->ErrorMsg("No slot mapping for slot %hd\n", slot);
       return retval;
     }
@@ -1027,12 +1027,12 @@ bool NdmpSendLabelRequest(UaContext* ua,
   /*
    * Insert a media entry of the slot to label.
    */
-  if (slot > 0) {
+  if (IsSlotNumberValid(slot)) {
     slot_number_t slot_mapping;
 
     slot_mapping = GetElementAddressByBareosSlotNumber(
         &store->rss->storage_mapping, slot_type_storage, slot);
-    if (slot_mapping == -1) {
+    if (slot_mapping == kInvalidSlotNumber) {
       ua->ErrorMsg("No slot mapping for slot %hd\n", slot);
       return retval;
     }

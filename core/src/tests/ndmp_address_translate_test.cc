@@ -82,6 +82,7 @@ SLOT   ADDR
 TEST(ndmp, slot_to_element_addr)
 {
   directordaemon::smc_element_address_assignment smc_elem_aa;
+
   init_smc_aa(smc_elem_aa);
   print_smc_aa(smc_elem_aa);
 
@@ -89,30 +90,36 @@ TEST(ndmp, slot_to_element_addr)
                       &smc_elem_aa, directordaemon::slot_type_drive, 0));
   EXPECT_EQ(1009, directordaemon::GetElementAddressByBareosSlotNumber(
                       &smc_elem_aa, directordaemon::slot_type_drive, 9));
-  EXPECT_EQ(-1, directordaemon::GetElementAddressByBareosSlotNumber(
+  EXPECT_EQ(kInvalidSlotNumber,
+            directordaemon::GetElementAddressByBareosSlotNumber(
                     &smc_elem_aa, directordaemon::slot_type_drive, 10));
 
   EXPECT_EQ(2000, directordaemon::GetElementAddressByBareosSlotNumber(
                       &smc_elem_aa, directordaemon::slot_type_picker, 0));
-  EXPECT_EQ(-1, directordaemon::GetElementAddressByBareosSlotNumber(
+  EXPECT_EQ(kInvalidSlotNumber,
+            directordaemon::GetElementAddressByBareosSlotNumber(
                     &smc_elem_aa, directordaemon::slot_type_picker, 1));
 
 
-  EXPECT_EQ(-1, directordaemon::GetElementAddressByBareosSlotNumber(
+  EXPECT_EQ(kInvalidSlotNumber,
+            directordaemon::GetElementAddressByBareosSlotNumber(
                     &smc_elem_aa, directordaemon::slot_type_import, 10));
   EXPECT_EQ(3000, directordaemon::GetElementAddressByBareosSlotNumber(
                       &smc_elem_aa, directordaemon::slot_type_import, 11));
   EXPECT_EQ(3005, directordaemon::GetElementAddressByBareosSlotNumber(
                       &smc_elem_aa, directordaemon::slot_type_import, 16));
-  EXPECT_EQ(-1, directordaemon::GetElementAddressByBareosSlotNumber(
+  EXPECT_EQ(kInvalidSlotNumber,
+            directordaemon::GetElementAddressByBareosSlotNumber(
                     &smc_elem_aa, directordaemon::slot_type_import, 17));
 
 
-  EXPECT_EQ(-1, directordaemon::GetElementAddressByBareosSlotNumber(
+  EXPECT_EQ(kInvalidSlotNumber,
+            directordaemon::GetElementAddressByBareosSlotNumber(
                     &smc_elem_aa, directordaemon::slot_type_storage, 0));
   EXPECT_EQ(4000, directordaemon::GetElementAddressByBareosSlotNumber(
                       &smc_elem_aa, directordaemon::slot_type_storage, 1));
-  EXPECT_EQ(-1, directordaemon::GetElementAddressByBareosSlotNumber(
+  EXPECT_EQ(kInvalidSlotNumber,
+            directordaemon::GetElementAddressByBareosSlotNumber(
                     &smc_elem_aa, directordaemon::slot_type_storage, 11));
 }
 
@@ -120,6 +127,7 @@ TEST(ndmp, slot_to_element_addr)
 TEST(ndmp, element_addr_to_slot)
 {
   directordaemon::smc_element_address_assignment smc_elem_aa;
+
   init_smc_aa(smc_elem_aa);
   print_smc_aa(smc_elem_aa);
 
@@ -133,22 +141,30 @@ TEST(ndmp, element_addr_to_slot)
                    &smc_elem_aa, directordaemon::slot_type_storage, 4000));
 
   // one too low
-  EXPECT_EQ(-1, directordaemon::GetBareosSlotNumberByElementAddress(
+  EXPECT_EQ(kInvalidSlotNumber,
+            directordaemon::GetBareosSlotNumberByElementAddress(
                     &smc_elem_aa, directordaemon::slot_type_drive, 999));
-  EXPECT_EQ(-1, directordaemon::GetBareosSlotNumberByElementAddress(
+  EXPECT_EQ(kInvalidSlotNumber,
+            directordaemon::GetBareosSlotNumberByElementAddress(
                     &smc_elem_aa, directordaemon::slot_type_drive, 1999));
-  EXPECT_EQ(-1, directordaemon::GetBareosSlotNumberByElementAddress(
-                    &smc_elem_aa, directordaemon::slot_type_import, 2999));
-  EXPECT_EQ(-1, directordaemon::GetBareosSlotNumberByElementAddress(
+  EXPECT_EQ(kInvalidSlotNumber,
+            directordaemon::GetBareosSlotNumberByElementAddress(
+                         &smc_elem_aa, directordaemon::slot_type_import, 2999));
+  EXPECT_EQ(kInvalidSlotNumber,
+            directordaemon::GetBareosSlotNumberByElementAddress(
                     &smc_elem_aa, directordaemon::slot_type_storage, 3999));
 
   // one too high
-  EXPECT_EQ(-1, directordaemon::GetBareosSlotNumberByElementAddress(
+  EXPECT_EQ(kInvalidSlotNumber,
+            directordaemon::GetBareosSlotNumberByElementAddress(
                     &smc_elem_aa, directordaemon::slot_type_drive, 1010));
-  EXPECT_EQ(-1, directordaemon::GetBareosSlotNumberByElementAddress(
+  EXPECT_EQ(kInvalidSlotNumber,
+            directordaemon::GetBareosSlotNumberByElementAddress(
                     &smc_elem_aa, directordaemon::slot_type_drive, 2001));
-  EXPECT_EQ(-1, directordaemon::GetBareosSlotNumberByElementAddress(
-                    &smc_elem_aa, directordaemon::slot_type_import, 3006));
-  EXPECT_EQ(-1, directordaemon::GetBareosSlotNumberByElementAddress(
+  EXPECT_EQ(kInvalidSlotNumber,
+            directordaemon::GetBareosSlotNumberByElementAddress(
+                         &smc_elem_aa, directordaemon::slot_type_import, 3006));
+  EXPECT_EQ(kInvalidSlotNumber,
+            directordaemon::GetBareosSlotNumberByElementAddress(
                     &smc_elem_aa, directordaemon::slot_type_storage, 4010));
 }

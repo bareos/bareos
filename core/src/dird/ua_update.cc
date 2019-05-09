@@ -1039,7 +1039,7 @@ static void UpdateSlots(UaContext* ua)
   char* slot_list;
   bool scan;
   slot_number_t max_slots;
-  drive_number_t drive = -1;
+  drive_number_t drive = kInvalidDriveNumber;
   int Enabled = VOL_ENABLED;
   bool have_enabled;
   int i;

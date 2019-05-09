@@ -475,7 +475,10 @@ dlist* native_get_vol_list(UaContext* ua,
               if (field4) { vl->VolName = bstrdup(field4); }
               break;
             case slot_type_drive:
-              if (field4) { vl->currently_loaded_slot_number = atoi(field4); }
+              if (field4) {
+                vl->currently_loaded_slot_number =
+                    static_cast<slot_number_t>(atoi(field4));
+              }
               if (field5) { vl->VolName = bstrdup(field5); }
               break;
             default:
@@ -823,7 +826,7 @@ bool NativeAutochangerVolumeOperation(UaContext* ua,
   bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
   BashSpaces(dev_name);
 
-  if (slot > 0) {
+  if (IsSlotNumberValid(slot)) {
     sd->fsend(changervolopslotcmd, operation, dev_name, drive, slot);
   } else {
     sd->fsend(changervolopcmd, operation, dev_name, drive);

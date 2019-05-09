@@ -718,7 +718,7 @@ static void do_truncate_on_purge(UaContext* ua,
 static bool ActionOnPurgeCmd(UaContext* ua, const char* cmd)
 {
   bool allpools = false;
-  drive_number_t drive = -1;
+  drive_number_t drive = kInvalidSlotNumber;
   int nb = 0;
   uint32_t* results = NULL;
   const char* action = "all";
@@ -753,7 +753,7 @@ static bool ActionOnPurgeCmd(UaContext* ua, const char* cmd)
       bstrncpy(mr.MediaType, ua->argv[i], sizeof(mr.MediaType));
 
     } else if (Bstrcasecmp(ua->argk[i], NT_("drive")) && ua->argv[i]) {
-      drive = atoi(ua->argv[i]);
+      drive = static_cast<drive_number_t>(atoi(ua->argv[i]));
 
     } else if (Bstrcasecmp(ua->argk[i], NT_("action")) &&
                IsNameValid(ua->argv[i])) {

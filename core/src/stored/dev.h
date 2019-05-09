@@ -295,13 +295,14 @@ class Device : public SmartAlloc {
  protected:
   int fd_; /**< File descriptor */
  private:
-  int blocked_;        /**< Set if we must wait (i.e. change tape) */
-  int count_;          /**< Mutex use count -- DEBUG only */
-  int num_reserved_;   /**< Counter of device reservations */
-  slot_number_t slot_; /**< Slot loaded in drive or -1 if none */
-  pthread_t pid_;      /**< Thread that locked -- DEBUG only */
-  bool unload_;        /**< Set when Volume must be unloaded */
-  bool load_;          /**< Set when Volume must be loaded */
+  int blocked_;      /**< Set if we must wait (i.e. change tape) */
+  int count_;        /**< Mutex use count -- DEBUG only */
+  int num_reserved_; /**< Counter of device reservations */
+  slot_number_t
+      slot_;      /**< Slot loaded in drive or kInvalidSlotNumber if none */
+  pthread_t pid_; /**< Thread that locked -- DEBUG only */
+  bool unload_;   /**< Set when Volume must be unloaded */
+  bool load_;     /**< Set when Volume must be loaded */
 
  public:
   Device();
@@ -508,8 +509,8 @@ class Device : public SmartAlloc {
   void EditMountCodes(PoolMem& omsg, const char* imsg);
   bool OfflineOrRewind();
   bool ScanDirForVolume(DeviceControlRecord* dcr);
-  void SetSlot(slot_number_t slot);
-  void ClearSlot();
+  void SetSlotNumber(slot_number_t slot);
+  void InvalidateSlotNumber();
 
   void SetBlocksizes(DeviceControlRecord* dcr);
   void SetLabelBlocksize(DeviceControlRecord* dcr);

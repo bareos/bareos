@@ -144,7 +144,7 @@ int NdmpLoadNext(struct ndm_session* sess)
     slot_number_t slotnumber = GetElementAddressByBareosSlotNumber(
         &store->rss->storage_mapping, slot_type_storage, mr.Slot);
     /* check for success */
-    if (slotnumber < 0) {
+    if (!IsSlotNumberValid(slotnumber)) {
       Jmsg(jcr, M_FATAL, 0, _("GetElementAddressByBareosSlotNumber failed\n"));
       goto bail_out;
     }
@@ -176,13 +176,12 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
   struct ndm_session ndmp_sess;
   bool session_initialized = false;
   bool retval = false;
-  int NdmpLoglevel;
+  uint32_t ndmp_log_level;
 
   int driveindex;
-  slot_number_t driveaddress;
   char* item;
 
-  NdmpLoglevel = std::max(jcr->res.client->ndmp_loglevel, me->ndmp_loglevel);
+  ndmp_log_level = std::max(jcr->res.client->ndmp_loglevel, me->ndmp_loglevel);
 
   struct ndmca_media_callbacks media_callbacks;
 
@@ -270,7 +269,7 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
   memset(ndmp_sess.param, 0, sizeof(struct ndm_session_param));
   ndmp_sess.param->log.deliver = NdmpLoghandler;
   ndmp_sess.param->log_level =
-      NativeToNdmpLoglevel(NdmpLoglevel, debug_level, nis);
+      NativeToNdmpLoglevel(ndmp_log_level, debug_level, nis);
   nis->filesystem = item;
   nis->FileIndex = 1;
   nis->jcr = jcr;
