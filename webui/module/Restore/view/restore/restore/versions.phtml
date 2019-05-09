@@ -143,8 +143,17 @@ $this->headTitle($title);
                         ?>
                     </div>
                     <div class="col-md-4">
-                        <strong><?php echo $this->translate('Available file versions:'); ?></strong> <span
-                                id="selectedfile-name"></span>
+                        <strong>
+                           <?php echo $this->translate('Selected file'); ?>
+                        </strong>
+                           <div class="panel panel-default">
+                              <div class="panel-body">
+                                 <span id="selectedfile-name">&nbsp;</span>
+                              </div>
+                           </div>
+                        <strong>
+                           <?php echo $this->translate('Available versions'); ?>
+                        </strong>
                         <div class="panel panel-default">
                             <div class="panel-body" style="padding: 0">
                                 <div class="scrollpane">
@@ -202,7 +211,7 @@ $this->headTitle($title);
         }
 
         .scrollpane {
-            max-height: 60vh;
+            max-height: 53vh;
             overflow: auto;
             overflow-y: scroll;
         }
@@ -269,6 +278,7 @@ $this->headTitle($title);
                                 "</table>",
                             html: true,
                             trigger: 'hover',
+                            placement: 'left',
                             delay: { "show": 200, "hide": 0 }
                         });
                         row.append(col1, col2, col3, col4);
