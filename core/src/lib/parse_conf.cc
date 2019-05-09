@@ -232,7 +232,7 @@ struct ParserMemory {
   LEX* lc = nullptr;
   ResourceTable* res_table = nullptr;
   ResourceItem* items = nullptr;
-  enum parse_state state = p_none;
+  ParseState state = ParseState::kInit;
   int res_type = 0;
   int pass = 0;
   BareosResource* static_resource = nullptr;
@@ -247,22 +247,25 @@ int ConfigurationParser::ParseAllTokens(ParserMemory& mem)
     Dmsg3(900, "parse state=%d pass=%d got token=%s\n", mem.state, mem.pass,
           lex_tok_to_str(token));
     switch (mem.state) {
-      case p_none:
+      case ParseState::kInit:
         switch (ParserStateNone(token, mem)) {
           case GET_NEXT_TOKEN:
           case NEXT_STATE:
-          default:
-            break;
+            continue;
           case ERROR:
             return ERROR;
+          default:
+            ASSERT(false);
         }
         break;
-      case p_resource:
+      case ParseState::kResource:
         switch (ScanResource(token, mem)) {
+          case GET_NEXT_TOKEN:
+            continue;
           case ERROR:
             return ERROR;
-          case GET_NEXT_TOKEN:
-            break;
+          default:
+            ASSERT(false);
         }
         break;
       default:
@@ -327,7 +330,7 @@ int ConfigurationParser::ScanResource(int token, ParserMemory& mem)
     }
     case BCT_EOB:
       mem.level--;
-      mem.state = p_none;
+      mem.state = ParseState::kInit;
       Dmsg0(900, "BCT_EOB => define new resource\n");
       if (!mem.static_resource->resource_name_) {
         scan_err0(mem.lc, _("Name not specified for resource"));
@@ -375,7 +378,7 @@ int ConfigurationParser::ParserStateNone(int token, ParserMemory& mem)
 
   if (mem.res_table && mem.res_table->items) {
     mem.items = mem.res_table->items;
-    mem.state = p_resource;
+    mem.state = ParseState::kResource;
     mem.res_type = mem.res_table->rcode;
     InitResource(mem.res_type, mem.items, mem.pass,
                  mem.res_table->ResourceSpecificInitializer);
@@ -384,7 +387,7 @@ int ConfigurationParser::ParserStateNone(int token, ParserMemory& mem)
     ASSERT(mem.static_resource);
   }
 
-  if (mem.state == p_none) {
+  if (mem.state == ParseState::kInit) {
     scan_err1(mem.lc, _("expected resource name, got: %s"), mem.lc->str);
     return ERROR;
   }
@@ -436,7 +439,7 @@ bool ConfigurationParser::ParseConfigFile(const char* config_file_name,
 
     ParseAllTokens(mem);
 
-    if (mem.state != p_none) {
+    if (mem.state != ParseState::kInit) {
       scan_err0(mem.lc, _("End of conf file reached with unclosed resource."));
       return false;
     }

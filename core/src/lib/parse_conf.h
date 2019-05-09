@@ -43,10 +43,10 @@ struct ResourceItem;
 struct ParserMemory;
 class ConfigurationParser;
 
-enum parse_state
+enum class ParseState
 {
-  p_none,
-  p_resource
+  kInit,
+  kResource
 };
 
 /* For storing name_addr items in res_items table */
