@@ -216,193 +216,240 @@ void ConfigurationParser::lex_error(const char* cf,
   free(lc);
 }
 
-bool ConfigurationParser::ParseConfigFile(const char* cf,
+enum
+{
+  GET_NEXT_TOKEN,
+  ERROR,
+  NEXT_STATE
+};
+
+struct ParserMemory {
+  ParserMemory() = default;
+  ~ParserMemory()
+  {
+    while (lc) { lc = lex_close_file(lc); }
+  }
+  LEX* lc = nullptr;
+  ResourceTable* res_table = nullptr;
+  ResourceItem* items = nullptr;
+  enum parse_state state = p_none;
+  int res_type = 0;
+  int pass = 0;
+  BareosResource* static_resource = nullptr;
+  int level = 0;
+};
+
+int ConfigurationParser::ParseAllTokens(ParserMemory& mem)
+{
+  int token;
+
+  while ((token = LexGetToken(mem.lc, BCT_ALL)) != BCT_EOF) {
+    Dmsg3(900, "parse state=%d pass=%d got token=%s\n", mem.state, mem.pass,
+          lex_tok_to_str(token));
+    switch (mem.state) {
+      case p_none:
+        switch (ParserStateNone(token, mem)) {
+          case GET_NEXT_TOKEN:
+          case NEXT_STATE:
+          default:
+            break;
+          case ERROR:
+            return ERROR;
+        }
+        break;
+      case p_resource:
+        switch (ScanResource(token, mem)) {
+          case ERROR:
+            return ERROR;
+          case GET_NEXT_TOKEN:
+            break;
+        }
+        break;
+      default:
+        scan_err1(mem.lc, _("Unknown parser state %d\n"), mem.state);
+        return ERROR;
+    }
+  }
+  return NEXT_STATE;
+}
+
+int ConfigurationParser::ScanResource(int token, ParserMemory& mem)
+{
+  switch (token) {
+    case BCT_BOB:
+      mem.level++;
+      return GET_NEXT_TOKEN;
+    case BCT_IDENTIFIER: {
+      if (mem.level != 1) {
+        scan_err1(mem.lc, _("not in resource definition: %s"), mem.lc->str);
+        return ERROR;
+      }
+
+      int resource_item_index = GetResourceItemIndex(mem.items, mem.lc->str);
+
+      if (resource_item_index >= 0) {
+        ResourceItem* item = nullptr;
+        item = &mem.items[resource_item_index];
+        if (!(item->flags & CFG_ITEM_NO_EQUALS)) {
+          token = LexGetToken(mem.lc, BCT_SKIP_EOL);
+          Dmsg1(900, "in BCT_IDENT got token=%s\n", lex_tok_to_str(token));
+          if (token != BCT_EQUALS) {
+            scan_err1(mem.lc, _("expected an equals, got: %s"), mem.lc->str);
+            return ERROR;
+          }
+        }
+
+        if (item->flags & CFG_ITEM_DEPRECATED) {
+          scan_warn2(mem.lc, _("using deprecated keyword %s on line %d"),
+                     item->name, mem.lc->line_no);
+          // only warning
+        }
+
+        Dmsg1(800, "calling handler for %s\n", item->name);
+
+        if (!StoreResource(item->type, mem.lc, item, resource_item_index,
+                           mem.pass)) {
+          if (store_res_) {
+            store_res_(mem.lc, item, resource_item_index, mem.pass);
+          }
+        }
+      } else {
+        Dmsg2(900, "level=%d id=%s\n", mem.level, mem.lc->str);
+        Dmsg1(900, "Keyword = %s\n", mem.lc->str);
+        scan_err1(mem.lc,
+                  _("Keyword \"%s\" not permitted in this resource.\n"
+                    "Perhaps you left the trailing brace off of the "
+                    "previous resource."),
+                  mem.lc->str);
+        return ERROR;
+      }
+      return GET_NEXT_TOKEN;
+    }
+    case BCT_EOB:
+      mem.level--;
+      mem.state = p_none;
+      Dmsg0(900, "BCT_EOB => define new resource\n");
+      if (!mem.static_resource->resource_name_) {
+        scan_err0(mem.lc, _("Name not specified for resource"));
+        return ERROR;
+      }
+      /* save resource */
+      if (!SaveResourceCb_(mem.res_type, mem.items, mem.pass)) {
+        scan_err0(mem.lc, _("SaveResource failed"));
+        return ERROR;
+      }
+      return GET_NEXT_TOKEN;
+
+    case BCT_EOL:
+      return GET_NEXT_TOKEN;
+
+    default:
+      scan_err2(mem.lc, _("unexpected token %d %s in resource definition"),
+                token, lex_tok_to_str(token));
+      return ERROR;
+  }
+  return GET_NEXT_TOKEN;
+}
+
+int ConfigurationParser::ParserStateNone(int token, ParserMemory& mem)
+{
+  switch (token) {
+    case BCT_EOL:
+    case BCT_UTF8_BOM:
+      return GET_NEXT_TOKEN;
+    case BCT_UTF16_BOM:
+      scan_err0(mem.lc, _("Currently we cannot handle UTF-16 source files. "
+                          "Please convert the conf file to UTF-8\n"));
+      return ERROR;
+    default:
+      if (token != BCT_IDENTIFIER) {
+        scan_err1(mem.lc, _("Expected a Resource name identifier, got: %s"),
+                  mem.lc->str);
+        return ERROR;
+      } else {
+        break;
+      }
+  }
+
+  mem.res_table = GetResourceTable(mem.lc->str);
+
+  if (mem.res_table && mem.res_table->items) {
+    mem.items = mem.res_table->items;
+    mem.state = p_resource;
+    mem.res_type = mem.res_table->rcode;
+    InitResource(mem.res_type, mem.items, mem.pass,
+                 mem.res_table->ResourceSpecificInitializer);
+    ASSERT(mem.res_table->static_resource_);
+    mem.static_resource = *mem.res_table->static_resource_;
+    ASSERT(mem.static_resource);
+  }
+
+  if (mem.state == p_none) {
+    scan_err1(mem.lc, _("expected resource name, got: %s"), mem.lc->str);
+    return ERROR;
+  }
+  return NEXT_STATE;
+}
+
+bool ConfigurationParser::InitParserPass(const char* cf,
+                                         void* caller_ctx,
+                                         LEX*& lc,
+                                         LEX_ERROR_HANDLER* ScanError,
+                                         LEX_WARNING_HANDLER* scan_warning,
+                                         int pass)
+{
+  Dmsg1(900, "ParseConfig pass %d\n", pass);
+  if ((lc = lex_open_file(lc, cf, ScanError, scan_warning)) == nullptr) {
+    lex_error(cf, ScanError, scan_warning);
+    return false;
+  }
+  LexSetErrorHandlerErrorType(lc, err_type_);
+  lc->error_counter = 0;
+  lc->caller_ctx = caller_ctx;
+  return true;
+}
+
+void ConfigurationParser::DumpResourcesAfterSecondPass(ParserMemory& mem)
+{
+  if (debug_level >= 900 && mem.pass == 2) {
+    for (int i = r_first_; i <= r_last_; i++) {
+      DumpResourceCb_(i, res_head_[i - r_first_], PrintMessage, nullptr, false,
+                      false);
+    }
+  }
+}
+
+bool ConfigurationParser::ParseConfigFile(const char* config_file_name,
                                           void* caller_ctx,
                                           LEX_ERROR_HANDLER* ScanError,
                                           LEX_WARNING_HANDLER* scan_warning)
 {
-  bool result = true;
-  LEX* lc = nullptr;
-  int token, i, pass;
-  int res_type = 0;
-  enum parse_state state = p_none;
-  ResourceTable* res_table = nullptr;
-  ResourceItem* items = nullptr;
-  ResourceItem* item = nullptr;
-  int level = 0;
+  ParserMemory mem;
 
-  /*
-   * Make two passes. The first builds the name symbol table,
-   * and the second picks up the items.
-   */
-  Dmsg1(900, "Enter ParseConfigFile(%s)\n", cf);
-  for (pass = 1; pass <= 2; pass++) {
-    Dmsg1(900, "ParseConfig pass %d\n", pass);
-    if ((lc = lex_open_file(lc, cf, ScanError, scan_warning)) == nullptr) {
-      lex_error(cf, ScanError, scan_warning);
+  Dmsg1(900, "Enter ParseConfigFile(%s)\n", config_file_name);
+
+  for (mem.pass = 1; mem.pass <= 2; mem.pass++) {
+    if (!InitParserPass(config_file_name, caller_ctx, mem.lc, ScanError,
+                        scan_warning, mem.pass)) {
       return false;
     }
-    LexSetErrorHandlerErrorType(lc, err_type_);
-    lc->error_counter = 0;
-    lc->caller_ctx = caller_ctx;
 
-    BareosResource* static_resource = nullptr;
+    ParseAllTokens(mem);
 
-    while ((token = LexGetToken(lc, BCT_ALL)) != BCT_EOF) {
-      Dmsg3(900, "parse state=%d pass=%d got token=%s\n", state, pass,
-            lex_tok_to_str(token));
-      switch (state) {
-        case p_none:
-          if (token == BCT_EOL) {
-            break;
-          } else if (token == BCT_UTF8_BOM) {
-            /*
-             * We can assume the file is UTF-8 as we have seen a UTF-8 BOM
-             */
-            break;
-          } else if (token == BCT_UTF16_BOM) {
-            scan_err0(lc, _("Currently we cannot handle UTF-16 source files. "
-                            "Please convert the conf file to UTF-8\n"));
-            goto bail_out;
-          } else if (token != BCT_IDENTIFIER) {
-            scan_err1(lc, _("Expected a Resource name identifier, got: %s"),
-                      lc->str);
-            goto bail_out;
-          }
-          res_table = GetResourceTable(lc->str);
-          if (res_table && res_table->items) {
-            items = res_table->items;
-            state = p_resource;
-            res_type = res_table->rcode;
-            InitResource(res_type, items, pass,
-                         res_table->ResourceSpecificInitializer);
-            ASSERT(res_table->static_resource_);
-            static_resource = *res_table->static_resource_;
-            ASSERT(static_resource);
-          }
-          if (state == p_none) {
-            scan_err1(lc, _("expected resource name, got: %s"), lc->str);
-            goto bail_out;
-          }
-          break;
-        case p_resource:
-          switch (token) {
-            case BCT_BOB:
-              level++;
-              break;
-            case BCT_IDENTIFIER:
-              if (level != 1) {
-                scan_err1(lc, _("not in resource definition: %s"), lc->str);
-                goto bail_out;
-              }
-              i = GetResourceItemIndex(items, lc->str);
-              if (i >= 0) {
-                item = &items[i];
-                /*
-                 * If the CFG_ITEM_NO_EQUALS flag is set we do NOT
-                 *   scan for = after the keyword
-                 */
-                if (!(item->flags & CFG_ITEM_NO_EQUALS)) {
-                  token = LexGetToken(lc, BCT_SKIP_EOL);
-                  Dmsg1(900, "in BCT_IDENT got token=%s\n",
-                        lex_tok_to_str(token));
-                  if (token != BCT_EQUALS) {
-                    scan_err1(lc, _("expected an equals, got: %s"), lc->str);
-                    goto bail_out;
-                  }
-                }
-
-                /*
-                 * See if we are processing a deprecated keyword if so warn the
-                 * user about it.
-                 */
-                if (item->flags & CFG_ITEM_DEPRECATED) {
-                  scan_warn2(lc, _("using deprecated keyword %s on line %d"),
-                             item->name, lc->line_no);
-                  /*
-                   * As we only want to warn we continue parsing the config. So
-                   * no goto bail_out here.
-                   */
-                }
-
-                Dmsg1(800, "calling handler for %s\n", item->name);
-
-                /*
-                 * Call item handler
-                 */
-                if (!StoreResource(item->type, lc, item, i, pass)) {
-                  /*
-                   * None of the generic types fired if there is a registered
-                   * callback call that now.
-                   */
-                  if (store_res_) { store_res_(lc, item, i, pass); }
-                }
-              } else {
-                Dmsg2(900, "level=%d id=%s\n", level, lc->str);
-                Dmsg1(900, "Keyword = %s\n", lc->str);
-                scan_err1(lc,
-                          _("Keyword \"%s\" not permitted in this resource.\n"
-                            "Perhaps you left the trailing brace off of the "
-                            "previous resource."),
-                          lc->str);
-                goto bail_out;
-              }
-              break;
-
-            case BCT_EOB:
-              level--;
-              state = p_none;
-              Dmsg0(900, "BCT_EOB => define new resource\n");
-              if (!static_resource->resource_name_) {
-                scan_err0(lc, _("Name not specified for resource"));
-                goto bail_out;
-              }
-              /* save resource */
-              if (!SaveResourceCb_(res_type, items, pass)) {
-                scan_err0(lc, _("SaveResource failed"));
-                goto bail_out;
-              }
-              break;
-
-            case BCT_EOL:
-              break;
-
-            default:
-              scan_err2(lc, _("unexpected token %d %s in resource definition"),
-                        token, lex_tok_to_str(token));
-              goto bail_out;
-          }
-          break;
-        default:
-          scan_err1(lc, _("Unknown parser state %d\n"), state);
-          goto bail_out;
-      }
-    }
-    if (state != p_none) {
-      scan_err0(lc, _("End of conf file reached with unclosed resource."));
-      goto bail_out;
-    }
-    if (debug_level >= 900 && pass == 2) {
-      int i;
-      for (i = r_first_; i <= r_last_; i++) {
-        DumpResourceCb_(i, res_head_[i - r_first_], PrintMessage, nullptr,
-                        false, false);
-      }
+    if (mem.state != p_none) {
+      scan_err0(mem.lc, _("End of conf file reached with unclosed resource."));
+      return false;
     }
 
-    if (lc->error_counter > 0) { result = false; }
+    DumpResourcesAfterSecondPass(mem);
 
-    lc = lex_close_file(lc);
-  }
+    if (mem.lc->error_counter > 0) { return false; }
+
+    mem.lc = lex_close_file(mem.lc);
+  }  // for (mem.pass..
+
   Dmsg0(900, "Leave ParseConfigFile()\n");
-
-  return result;
-
-bail_out:
-  /* close all open configuration files */
-  while (lc) { lc = lex_close_file(lc); }
-
-  return false;
+  return true;
 }
 
 bool ConfigurationParser::AppendToResourcesChain(BareosResource* new_resource,
