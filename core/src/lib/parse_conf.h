@@ -40,7 +40,7 @@
 #include <memory>
 
 struct ResourceItem;
-struct ParserMemory;
+struct ConfigParserStateMachine;
 class ConfigurationParser;
 
 enum class ParseState
@@ -205,6 +205,7 @@ class QualifiedResourceNameTypeConverter;
 
 class ConfigurationParser {
   friend class ConfiguredTlsPolicyGetterPrivate;
+  friend class ConfigParserStateMachine;
 
  public:
   std::string cf_;                    /* Config file parameter */
@@ -407,16 +408,6 @@ class ConfigurationParser {
       std::function<void(ConfigurationParser&, ResourceItem*)> SetDefaults);
   void SetResourceDefaultsParserPass1(ResourceItem* item);
   void SetResourceDefaultsParserPass2(ResourceItem* item);
-  bool InitParserPass(const char* cf,
-                      void* caller_ctx,
-                      LEX*& lc,
-                      LEX_ERROR_HANDLER* ScanError,
-                      LEX_WARNING_HANDLER* scan_warning,
-                      int pass);
-  int ParserStateNone(int token, ParserMemory& mem);
-  int ScanResource(int token, ParserMemory& mem);
-  int ParseAllTokens(ParserMemory& mem);
-  void DumpResourcesAfterSecondPass(ParserMemory& mem);
 };
 
 void PrintMessage(void* sock, const char* fmt, ...);

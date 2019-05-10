@@ -147,7 +147,7 @@ class ConfigFile {
 
   ~ConfigFile()
   {
-    if (lc) { lex_close_file(lc); }
+    if (lc) { LexCloseFile(lc); }
     if (edit) { FreePoolMemory(edit); }
     if (out_fname) {
       unlink(out_fname);

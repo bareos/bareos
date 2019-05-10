@@ -195,25 +195,26 @@ void ConfigurationParser::lex_error(const char* cf,
   /*
    * We must create a lex packet to print the error
    */
-  LEX* lc = (LEX*)malloc(sizeof(LEX));
-  memset(lc, 0, sizeof(LEX));
+  LEX* lexical_parser_ = (LEX*)malloc(sizeof(LEX));
+  memset(lexical_parser_, 0, sizeof(LEX));
 
   if (ScanError) {
-    lc->ScanError = ScanError;
+    lexical_parser_->ScanError = ScanError;
   } else {
-    LexSetDefaultErrorHandler(lc);
+    LexSetDefaultErrorHandler(lexical_parser_);
   }
 
   if (scan_warning) {
-    lc->scan_warning = scan_warning;
+    lexical_parser_->scan_warning = scan_warning;
   } else {
-    LexSetDefaultWarningHandler(lc);
+    LexSetDefaultWarningHandler(lexical_parser_);
   }
 
-  LexSetErrorHandlerErrorType(lc, err_type_);
+  LexSetErrorHandlerErrorType(lexical_parser_, err_type_);
   BErrNo be;
-  scan_err2(lc, _("Cannot open config file \"%s\": %s\n"), cf, be.bstrerror());
-  free(lc);
+  scan_err2(lexical_parser_, _("Cannot open config file \"%s\": %s\n"), cf,
+            be.bstrerror());
+  free(lexical_parser_);
 }
 
 enum
@@ -223,32 +224,47 @@ enum
   NEXT_STATE
 };
 
-struct ParserMemory {
-  ParserMemory() = default;
-  ~ParserMemory()
+struct ConfigParserStateMachine {
+  ConfigParserStateMachine(ConfigurationParser& my_config)
+      : my_config_(my_config){};
+  ~ConfigParserStateMachine()
   {
-    while (lc) { lc = lex_close_file(lc); }
+    while (lexical_parser_) { lexical_parser_ = LexCloseFile(lexical_parser_); }
   }
-  LEX* lc = nullptr;
-  ResourceTable* res_table = nullptr;
-  ResourceItem* items = nullptr;
+  ConfigParserStateMachine(ConfigParserStateMachine&& ohter) = delete;
+  ConfigParserStateMachine(ConfigParserStateMachine& ohter) = delete;
+  ConfigParserStateMachine& operator=(ConfigParserStateMachine& ohter) = delete;
+  bool InitParserPass(const char* cf,
+                      void* caller_ctx,
+                      LEX*& lexical_parser_,
+                      LEX_ERROR_HANDLER* ScanError,
+                      LEX_WARNING_HANDLER* scan_warning,
+                      int pass);
+  int ParserStateNone(int token);
+  int ScanResource(int token);
+  int ParseAllTokens();
+  void DumpResourcesAfterSecondPass();
+  LEX* lexical_parser_ = nullptr;
+  ResourceTable* resource_table_ = nullptr;
+  ResourceItem* resource_items_ = nullptr;
   ParseState state = ParseState::kInit;
-  int res_type = 0;
-  int pass = 0;
-  BareosResource* static_resource = nullptr;
-  int level = 0;
+  int rcode_ = 0;
+  int parser_pass_number_ = 0;
+  BareosResource* static_resource_ = nullptr;
+  int config_level_ = 0;
+  ConfigurationParser& my_config_;
 };
 
-int ConfigurationParser::ParseAllTokens(ParserMemory& mem)
+int ConfigParserStateMachine::ParseAllTokens()
 {
   int token;
 
-  while ((token = LexGetToken(mem.lc, BCT_ALL)) != BCT_EOF) {
-    Dmsg3(900, "parse state=%d pass=%d got token=%s\n", mem.state, mem.pass,
-          lex_tok_to_str(token));
-    switch (mem.state) {
+  while ((token = LexGetToken(lexical_parser_, BCT_ALL)) != BCT_EOF) {
+    Dmsg3(900, "parse state=%d parser_pass_number_=%d got token=%s\n", state,
+          parser_pass_number_, lex_tok_to_str(token));
+    switch (state) {
       case ParseState::kInit:
-        switch (ParserStateNone(token, mem)) {
+        switch (ParserStateNone(token)) {
           case GET_NEXT_TOKEN:
           case NEXT_STATE:
             continue;
@@ -259,7 +275,7 @@ int ConfigurationParser::ParseAllTokens(ParserMemory& mem)
         }
         break;
       case ParseState::kResource:
-        switch (ScanResource(token, mem)) {
+        switch (ScanResource(token)) {
           case GET_NEXT_TOKEN:
             continue;
           case ERROR:
@@ -269,76 +285,84 @@ int ConfigurationParser::ParseAllTokens(ParserMemory& mem)
         }
         break;
       default:
-        scan_err1(mem.lc, _("Unknown parser state %d\n"), mem.state);
+        scan_err1(lexical_parser_, _("Unknown parser state %d\n"), state);
         return ERROR;
     }
   }
   return NEXT_STATE;
 }
 
-int ConfigurationParser::ScanResource(int token, ParserMemory& mem)
+int ConfigParserStateMachine::ScanResource(int token)
 {
   switch (token) {
     case BCT_BOB:
-      mem.level++;
+      config_level_++;
       return GET_NEXT_TOKEN;
     case BCT_IDENTIFIER: {
-      if (mem.level != 1) {
-        scan_err1(mem.lc, _("not in resource definition: %s"), mem.lc->str);
+      if (config_level_ != 1) {
+        scan_err1(lexical_parser_, _("not in resource definition: %s"),
+                  lexical_parser_->str);
         return ERROR;
       }
 
-      int resource_item_index = GetResourceItemIndex(mem.items, mem.lc->str);
+      int resource_item_index = my_config_.GetResourceItemIndex(
+          resource_items_, lexical_parser_->str);
 
       if (resource_item_index >= 0) {
         ResourceItem* item = nullptr;
-        item = &mem.items[resource_item_index];
+        item = &resource_items_[resource_item_index];
         if (!(item->flags & CFG_ITEM_NO_EQUALS)) {
-          token = LexGetToken(mem.lc, BCT_SKIP_EOL);
+          token = LexGetToken(lexical_parser_, BCT_SKIP_EOL);
           Dmsg1(900, "in BCT_IDENT got token=%s\n", lex_tok_to_str(token));
           if (token != BCT_EQUALS) {
-            scan_err1(mem.lc, _("expected an equals, got: %s"), mem.lc->str);
+            scan_err1(lexical_parser_, _("expected an equals, got: %s"),
+                      lexical_parser_->str);
             return ERROR;
           }
         }
 
         if (item->flags & CFG_ITEM_DEPRECATED) {
-          scan_warn2(mem.lc, _("using deprecated keyword %s on line %d"),
-                     item->name, mem.lc->line_no);
+          scan_warn2(lexical_parser_,
+                     _("using deprecated keyword %s on line %d"), item->name,
+                     lexical_parser_->line_no);
           // only warning
         }
 
         Dmsg1(800, "calling handler for %s\n", item->name);
 
-        if (!StoreResource(item->type, mem.lc, item, resource_item_index,
-                           mem.pass)) {
-          if (store_res_) {
-            store_res_(mem.lc, item, resource_item_index, mem.pass);
+        if (!my_config_.StoreResource(item->type, lexical_parser_, item,
+                                      resource_item_index,
+                                      parser_pass_number_)) {
+          if (my_config_.store_res_) {
+            my_config_.store_res_(lexical_parser_, item, resource_item_index,
+                                  parser_pass_number_);
           }
         }
       } else {
-        Dmsg2(900, "level=%d id=%s\n", mem.level, mem.lc->str);
-        Dmsg1(900, "Keyword = %s\n", mem.lc->str);
-        scan_err1(mem.lc,
+        Dmsg2(900, "config_level_=%d id=%s\n", config_level_,
+              lexical_parser_->str);
+        Dmsg1(900, "Keyword = %s\n", lexical_parser_->str);
+        scan_err1(lexical_parser_,
                   _("Keyword \"%s\" not permitted in this resource.\n"
                     "Perhaps you left the trailing brace off of the "
                     "previous resource."),
-                  mem.lc->str);
+                  lexical_parser_->str);
         return ERROR;
       }
       return GET_NEXT_TOKEN;
     }
     case BCT_EOB:
-      mem.level--;
-      mem.state = ParseState::kInit;
+      config_level_--;
+      state = ParseState::kInit;
       Dmsg0(900, "BCT_EOB => define new resource\n");
-      if (!mem.static_resource->resource_name_) {
-        scan_err0(mem.lc, _("Name not specified for resource"));
+      if (!static_resource_->resource_name_) {
+        scan_err0(lexical_parser_, _("Name not specified for resource"));
         return ERROR;
       }
       /* save resource */
-      if (!SaveResourceCb_(mem.res_type, mem.items, mem.pass)) {
-        scan_err0(mem.lc, _("SaveResource failed"));
+      if (!my_config_.SaveResourceCb_(rcode_, resource_items_,
+                                      parser_pass_number_)) {
+        scan_err0(lexical_parser_, _("SaveResource failed"));
         return ERROR;
       }
       return GET_NEXT_TOKEN;
@@ -347,77 +371,82 @@ int ConfigurationParser::ScanResource(int token, ParserMemory& mem)
       return GET_NEXT_TOKEN;
 
     default:
-      scan_err2(mem.lc, _("unexpected token %d %s in resource definition"),
-                token, lex_tok_to_str(token));
+      scan_err2(lexical_parser_,
+                _("unexpected token %d %s in resource definition"), token,
+                lex_tok_to_str(token));
       return ERROR;
   }
   return GET_NEXT_TOKEN;
 }
 
-int ConfigurationParser::ParserStateNone(int token, ParserMemory& mem)
+int ConfigParserStateMachine::ParserStateNone(int token)
 {
   switch (token) {
     case BCT_EOL:
     case BCT_UTF8_BOM:
       return GET_NEXT_TOKEN;
     case BCT_UTF16_BOM:
-      scan_err0(mem.lc, _("Currently we cannot handle UTF-16 source files. "
-                          "Please convert the conf file to UTF-8\n"));
+      scan_err0(lexical_parser_,
+                _("Currently we cannot handle UTF-16 source files. "
+                  "Please convert the conf file to UTF-8\n"));
       return ERROR;
     default:
       if (token != BCT_IDENTIFIER) {
-        scan_err1(mem.lc, _("Expected a Resource name identifier, got: %s"),
-                  mem.lc->str);
+        scan_err1(lexical_parser_,
+                  _("Expected a Resource name identifier, got: %s"),
+                  lexical_parser_->str);
         return ERROR;
-      } else {
-        break;
       }
+      break;
   }
 
-  mem.res_table = GetResourceTable(mem.lc->str);
+  resource_table_ = my_config_.GetResourceTable(lexical_parser_->str);
 
-  if (mem.res_table && mem.res_table->items) {
-    mem.items = mem.res_table->items;
-    mem.state = ParseState::kResource;
-    mem.res_type = mem.res_table->rcode;
-    InitResource(mem.res_type, mem.items, mem.pass,
-                 mem.res_table->ResourceSpecificInitializer);
-    ASSERT(mem.res_table->static_resource_);
-    mem.static_resource = *mem.res_table->static_resource_;
-    ASSERT(mem.static_resource);
+  if (resource_table_ && resource_table_->items) {
+    resource_items_ = resource_table_->items;
+    state = ParseState::kResource;
+    rcode_ = resource_table_->rcode;
+    my_config_.InitResource(rcode_, resource_items_, parser_pass_number_,
+                            resource_table_->ResourceSpecificInitializer);
+    ASSERT(resource_table_->static_resource_);
+    static_resource_ = *resource_table_->static_resource_;
+    ASSERT(static_resource_);
   }
 
-  if (mem.state == ParseState::kInit) {
-    scan_err1(mem.lc, _("expected resource name, got: %s"), mem.lc->str);
+  if (state == ParseState::kInit) {
+    scan_err1(lexical_parser_, _("expected resource name, got: %s"),
+              lexical_parser_->str);
     return ERROR;
   }
   return NEXT_STATE;
 }
 
-bool ConfigurationParser::InitParserPass(const char* cf,
-                                         void* caller_ctx,
-                                         LEX*& lc,
-                                         LEX_ERROR_HANDLER* ScanError,
-                                         LEX_WARNING_HANDLER* scan_warning,
-                                         int pass)
+bool ConfigParserStateMachine::InitParserPass(const char* cf,
+                                              void* caller_ctx,
+                                              LEX*& lexical_parser_,
+                                              LEX_ERROR_HANDLER* ScanError,
+                                              LEX_WARNING_HANDLER* scan_warning,
+                                              int parser_pass_number_)
 {
-  Dmsg1(900, "ParseConfig pass %d\n", pass);
-  if ((lc = lex_open_file(lc, cf, ScanError, scan_warning)) == nullptr) {
-    lex_error(cf, ScanError, scan_warning);
+  Dmsg1(900, "ParseConfig parser_pass_number_ %d\n", parser_pass_number_);
+  if ((lexical_parser_ = lex_open_file(lexical_parser_, cf, ScanError,
+                                       scan_warning)) == nullptr) {
+    my_config_.lex_error(cf, ScanError, scan_warning);
     return false;
   }
-  LexSetErrorHandlerErrorType(lc, err_type_);
-  lc->error_counter = 0;
-  lc->caller_ctx = caller_ctx;
+  LexSetErrorHandlerErrorType(lexical_parser_, my_config_.err_type_);
+  lexical_parser_->error_counter = 0;
+  lexical_parser_->caller_ctx = caller_ctx;
   return true;
 }
 
-void ConfigurationParser::DumpResourcesAfterSecondPass(ParserMemory& mem)
+void ConfigParserStateMachine::DumpResourcesAfterSecondPass()
 {
-  if (debug_level >= 900 && mem.pass == 2) {
-    for (int i = r_first_; i <= r_last_; i++) {
-      DumpResourceCb_(i, res_head_[i - r_first_], PrintMessage, nullptr, false,
-                      false);
+  if (debug_level >= 900 && parser_pass_number_ == 2) {
+    for (int i = my_config_.r_first_; i <= my_config_.r_last_; i++) {
+      my_config_.DumpResourceCb_(i,
+                                 my_config_.res_head_[i - my_config_.r_first_],
+                                 PrintMessage, nullptr, false, false);
     }
   }
 }
@@ -427,29 +456,33 @@ bool ConfigurationParser::ParseConfigFile(const char* config_file_name,
                                           LEX_ERROR_HANDLER* ScanError,
                                           LEX_WARNING_HANDLER* scan_warning)
 {
-  ParserMemory mem;
+  ConfigParserStateMachine state_machine(*this);
 
   Dmsg1(900, "Enter ParseConfigFile(%s)\n", config_file_name);
 
-  for (mem.pass = 1; mem.pass <= 2; mem.pass++) {
-    if (!InitParserPass(config_file_name, caller_ctx, mem.lc, ScanError,
-                        scan_warning, mem.pass)) {
+  for (state_machine.parser_pass_number_ = 1;
+       state_machine.parser_pass_number_ <= 2;
+       state_machine.parser_pass_number_++) {
+    if (!state_machine.InitParserPass(
+            config_file_name, caller_ctx, state_machine.lexical_parser_,
+            ScanError, scan_warning, state_machine.parser_pass_number_)) {
       return false;
     }
 
-    ParseAllTokens(mem);
+    state_machine.ParseAllTokens();
 
-    if (mem.state != ParseState::kInit) {
-      scan_err0(mem.lc, _("End of conf file reached with unclosed resource."));
+    if (state_machine.state != ParseState::kInit) {
+      scan_err0(state_machine.lexical_parser_,
+                _("End of conf file reached with unclosed resource."));
       return false;
     }
 
-    DumpResourcesAfterSecondPass(mem);
+    state_machine.DumpResourcesAfterSecondPass();
 
-    if (mem.lc->error_counter > 0) { return false; }
+    if (state_machine.lexical_parser_->error_counter > 0) { return false; }
 
-    mem.lc = lex_close_file(mem.lc);
-  }  // for (mem.pass..
+    state_machine.lexical_parser_ = LexCloseFile(state_machine.lexical_parser_);
+  }  // for (state_machine.parser_pass_number_..
 
   Dmsg0(900, "Leave ParseConfigFile()\n");
   return true;
@@ -528,14 +561,14 @@ ResourceTable* ConfigurationParser::GetResourceTable(
   return result;
 }
 
-int ConfigurationParser::GetResourceItemIndex(ResourceItem* items,
+int ConfigurationParser::GetResourceItemIndex(ResourceItem* resource_items_,
                                               const char* item)
 {
   int result = -1;
   int i;
 
-  for (i = 0; items[i].name; i++) {
-    if (Bstrcasecmp(items[i].name, item)) {
+  for (i = 0; resource_items_[i].name; i++) {
+    if (Bstrcasecmp(resource_items_[i].name, item)) {
       result = i;
       break;
     }
@@ -544,14 +577,15 @@ int ConfigurationParser::GetResourceItemIndex(ResourceItem* items,
   return result;
 }
 
-ResourceItem* ConfigurationParser::GetResourceItem(ResourceItem* items,
-                                                   const char* item)
+ResourceItem* ConfigurationParser::GetResourceItem(
+    ResourceItem* resource_items_,
+    const char* item)
 {
   ResourceItem* result = nullptr;
   int i = -1;
 
-  i = GetResourceItemIndex(items, item);
-  if (i >= 0) { result = &items[i]; }
+  i = GetResourceItemIndex(resource_items_, item);
+  if (i >= 0) { result = &resource_items_[i]; }
 
   return result;
 }

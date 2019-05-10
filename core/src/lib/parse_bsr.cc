@@ -289,7 +289,7 @@ storagedaemon::BootStrapRecord* parse_bsr(JobControlRecord* jcr, char* fname)
     }
     if (!bsr) { break; }
   }
-  lc = lex_close_file(lc);
+  lc = LexCloseFile(lc);
   Dmsg0(300, "Leave parse_bsf()\n");
   if (!bsr) {
     FreeBsr(root_bsr);

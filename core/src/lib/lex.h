@@ -187,7 +187,7 @@ typedef void(LEX_WARNING_HANDLER)(const char* file,
 void ScanToEol(LEX* lc);
 int ScanToNextNotEol(LEX* lc);
 
-LEX* lex_close_file(LEX* lf);
+LEX* LexCloseFile(LEX* lf);
 LEX* lex_open_file(LEX* lf,
                    const char* fname,
                    LEX_ERROR_HANDLER* ScanError,

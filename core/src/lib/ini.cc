@@ -586,7 +586,7 @@ bool ConfigFile::parse(const char* fname)
     }
   }
 
-  lc = lex_close_file(lc);
+  lc = LexCloseFile(lc);
 
   return ret;
 }
@@ -687,6 +687,6 @@ bool ConfigFile::UnSerialize(const char* fname)
     }
   }
 
-  lc = lex_close_file(lc);
+  lc = LexCloseFile(lc);
   return ret;
 }

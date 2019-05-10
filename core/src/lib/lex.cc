@@ -179,7 +179,7 @@ void LexSetErrorHandlerErrorType(LEX* lf, int err_type)
  * Free the current file, and retrieve the contents of the previous packet if
  * any.
  */
-LEX* lex_close_file(LEX* lf)
+LEX* LexCloseFile(LEX* lf)
 {
   LEX* of;
 
@@ -380,7 +380,7 @@ int LexGetChar(LEX* lf)
     if (!lf->fd || bfgets(lf->line, lf->fd) == NULL) {
       lf->ch = L_EOF;
       if (lf->next) {
-        if (lf->fd) { lex_close_file(lf); }
+        if (lf->fd) { LexCloseFile(lf); }
       }
       return lf->ch;
     }
