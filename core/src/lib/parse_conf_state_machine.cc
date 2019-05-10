@@ -158,6 +158,15 @@ ConfigParserStateMachine::ScanResource(int token)
         scan_err0(lexical_parser_, _("SaveResource failed"));
         return ParseInternalReturnCode::kError;
       }
+      if (parser_pass_number_ == 2) {
+        // free all resource memory from second pass
+        if (resource_memory_.static_resource_) {
+          if (resource_memory_.static_resource_->resource_name_) {
+            delete resource_memory_.static_resource_->resource_name_;
+          }
+          delete resource_memory_.static_resource_;
+        }
+      }
       return ParseInternalReturnCode::kGetNextToken;
 
     case BCT_EOL:

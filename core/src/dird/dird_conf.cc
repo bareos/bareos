@@ -3181,8 +3181,6 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
 
   res_runscript = new RunScript();
 
-  if (pass == 2) { res_runscript->temp_parser_command_container.clear(); }
-
   while ((token = LexGetToken(lc, BCT_SKIP_EOL)) != BCT_EOF) {
     if (token == BCT_EOB) { break; }
 
@@ -3246,10 +3244,11 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
       (*runscripts)->append(script);
       script->Debug();
     }
-    res_runscript->temp_parser_command_container.clear();
-    delete res_runscript;
-    res_runscript = nullptr;
   }
+  /* for pass == 1 only delete the memory
+     because it is only used while parsing */
+  delete res_runscript;
+  res_runscript = nullptr;
 
   ScanToEol(lc);
   SetBit(index, (*item->static_resource)->item_present_);
