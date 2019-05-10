@@ -43,12 +43,6 @@ struct ResourceItem;
 struct ConfigParserStateMachine;
 class ConfigurationParser;
 
-enum class ParseState
-{
-  kInit,
-  kResource
-};
-
 /* For storing name_addr items in res_items table */
 /* clang-format off */
 #define ITEM(c, m) ((std::size_t)&c->m), reinterpret_cast<BareosResource**>(&c)

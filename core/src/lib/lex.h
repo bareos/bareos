@@ -30,6 +30,8 @@
 #ifndef BAREOS_LIB_LEX_H_
 #define BAREOS_LIB_LEX_H_
 
+#include "include/bareos.h"
+
 /* Lex get_char() return values */
 #define L_EOF (-1)
 #define L_EOL (-2)
