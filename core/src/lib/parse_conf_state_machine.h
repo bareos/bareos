@@ -31,41 +31,61 @@ class BareosResource;
 struct ResourceTable;
 struct ResourceItem;
 
-struct ConfigParserStateMachine {
-  ConfigParserStateMachine(ConfigurationParser& my_config);
+class ConfigParserStateMachine {
+ public:
+  ConfigParserStateMachine(const char* config_file_name,
+                           void* caller_ctx,
+                           LEX_ERROR_HANDLER* ScanError,
+                           LEX_WARNING_HANDLER* scan_warning,
+                           ConfigurationParser& my_config);
   ~ConfigParserStateMachine();
-  ConfigParserStateMachine(ConfigParserStateMachine&& ohter) = delete;
   ConfigParserStateMachine(ConfigParserStateMachine& ohter) = delete;
-  ConfigParserStateMachine& operator=(ConfigParserStateMachine& ohter) = delete;
-  bool InitParserPass(const char* cf,
-                      void* caller_ctx,
-                      LEX*& lexical_parser_,
-                      LEX_ERROR_HANDLER* ScanError,
-                      LEX_WARNING_HANDLER* scan_warning,
-                      int pass);
+  ConfigParserStateMachine(ConfigParserStateMachine&& ohter) = delete;
+  ConfigParserStateMachine& operator=(ConfigParserStateMachine& rhs) = delete;
+  ConfigParserStateMachine& operator=(ConfigParserStateMachine&& rhs) = delete;
+
+  enum class ParserError
+  {
+    kNoError,
+    kResourceIncomplete,
+    kParserError
+  };
+
+  ParserError GetParseError() const;
+
+  bool InitParserPass();
+  bool Finished() const { return parser_pass_number_ == 2; }
+
+  bool ParseAllTokens();
   void DumpResourcesAfterSecondPass();
-  bool ParseSuccess() const { return state == ParseState::kInit; }
-  int ParseAllTokens();
 
  public:
   LEX* lexical_parser_ = nullptr;
-  ResourceTable* resource_table_ = nullptr;
-  ResourceItem* resource_items_ = nullptr;
-  int rcode_ = 0;
-  int parser_pass_number_ = 1;
-  BareosResource* static_resource_ = nullptr;
-  int config_level_ = 0;
-  ConfigurationParser& my_config_;
 
  private:
-  int ParserStateNone(int token);
-  int ScanResource(int token);
-  enum
+  enum class ParseInternalReturnCode
   {
-    GET_NEXT_TOKEN,
-    ERROR,
-    NEXT_STATE
+    kGetNextToken,
+    kNextState,
+    kError
   };
+
+  ParseInternalReturnCode ParserInitResource(int token);
+  ParseInternalReturnCode ScanResource(int token);
+
+  int config_level_ = 0;
+  int parser_pass_number_ = 0;
+  std::string config_file_name_;
+  void* caller_ctx_ = nullptr;
+  LEX_ERROR_HANDLER* scan_error_ = nullptr;
+  LEX_WARNING_HANDLER* scan_warning_ = nullptr;
+  ConfigurationParser& my_config_;
+
+  struct {
+    int rcode_ = 0;
+    ResourceItem* resource_items_ = nullptr;
+    BareosResource* static_resource_ = nullptr;
+  } resource_memory_;
 
   enum class ParseState
   {

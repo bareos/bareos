@@ -40,7 +40,7 @@
 #include <memory>
 
 struct ResourceItem;
-struct ConfigParserStateMachine;
+class ConfigParserStateMachine;
 class ConfigurationParser;
 
 /* For storing name_addr items in res_items table */
@@ -252,10 +252,10 @@ class ConfigurationParser {
 
   bool IsUsingConfigIncludeDir() const { return use_config_include_dir_; }
   bool ParseConfig();
-  bool ParseConfigFile(const char* cf,
+  bool ParseConfigFile(const char* config_file_name,
                        void* caller_ctx,
-                       LEX_ERROR_HANDLER* ScanError = NULL,
-                       LEX_WARNING_HANDLER* scan_warning = NULL);
+                       LEX_ERROR_HANDLER* scan_error = nullptr,
+                       LEX_WARNING_HANDLER* scan_warning = nullptr);
   const std::string& get_base_config_path() const { return used_config_path_; }
   void FreeResources();
   BareosResource** SaveResources();

@@ -220,36 +220,37 @@ void ConfigurationParser::lex_error(const char* cf,
 
 bool ConfigurationParser::ParseConfigFile(const char* config_file_name,
                                           void* caller_ctx,
-                                          LEX_ERROR_HANDLER* ScanError,
+                                          LEX_ERROR_HANDLER* scan_error,
                                           LEX_WARNING_HANDLER* scan_warning)
 {
-  ConfigParserStateMachine state_machine(*this);
+  ConfigParserStateMachine state_machine(config_file_name, caller_ctx,
+                                         scan_error, scan_warning, *this);
 
   Dmsg1(900, "Enter ParseConfigFile(%s)\n", config_file_name);
 
-  for (state_machine.parser_pass_number_ = 1;
-       state_machine.parser_pass_number_ <= 2;
-       state_machine.parser_pass_number_++) {
-    if (!state_machine.InitParserPass(
-            config_file_name, caller_ctx, state_machine.lexical_parser_,
-            ScanError, scan_warning, state_machine.parser_pass_number_)) {
+  do {
+    if (!state_machine.InitParserPass()) { return false; }
+
+    if (!state_machine.ParseAllTokens()) {
+      scan_err0(state_machine.lexical_parser_, _("ParseAllTokens failed."));
       return false;
     }
 
-    state_machine.ParseAllTokens();
-
-    if (!state_machine.ParseSuccess()) {
-      scan_err0(state_machine.lexical_parser_,
-                _("End of conf file reached with unclosed resource."));
-      return false;
+    switch (state_machine.GetParseError()) {
+      case ConfigParserStateMachine::ParserError::kResourceIncomplete:
+        scan_err0(state_machine.lexical_parser_,
+                  _("End of conf file reached with unclosed resource."));
+        return false;
+      case ConfigParserStateMachine::ParserError::kParserError:
+        scan_err0(state_machine.lexical_parser_, _("Parser Error occurred."));
+        return false;
+      case ConfigParserStateMachine::ParserError::kNoError:
+        break;
     }
 
-    state_machine.DumpResourcesAfterSecondPass();
+  } while (!state_machine.Finished());
 
-    if (state_machine.lexical_parser_->error_counter > 0) { return false; }
-
-    state_machine.lexical_parser_ = LexCloseFile(state_machine.lexical_parser_);
-  }  // for (state_machine.parser_pass_number_..
+  state_machine.DumpResourcesAfterSecondPass();
 
   Dmsg0(900, "Leave ParseConfigFile()\n");
   return true;
