@@ -256,13 +256,16 @@ bool ConfigParserStateMachine::InitParserPass()
   while (lexical_parser_) { lexical_parser_ = LexCloseFile(lexical_parser_); }
 
   Dmsg1(900, "ParseConfig parser_pass_number_ %d\n", parser_pass_number_);
-  if ((lexical_parser_ =
-           lex_open_file(lexical_parser_, config_file_name_.c_str(),
-                         scan_error_, scan_warning_)) == nullptr) {
+
+  lexical_parser_ = lex_open_file(lexical_parser_, config_file_name_.c_str(),
+                                  scan_error_, scan_warning_);
+  if (!lexical_parser_) {
     my_config_.lex_error(config_file_name_.c_str(), scan_error_, scan_warning_);
     return false;
   }
+
   LexSetErrorHandlerErrorType(lexical_parser_, my_config_.err_type_);
+
   lexical_parser_->error_counter = 0;
   lexical_parser_->caller_ctx = caller_ctx_;
   return true;
@@ -282,6 +285,7 @@ void ConfigParserStateMachine::DumpResourcesAfterSecondPass()
 ConfigParserStateMachine::ParserError ConfigParserStateMachine::GetParseError()
     const
 {
+  // in this order
   if (state != ParseState::kInit) {
     return ParserError::kResourceIncomplete;
   } else if (lexical_parser_->error_counter > 0) {
