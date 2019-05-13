@@ -83,6 +83,22 @@ bool ConfigParserStateMachine::ParseAllTokens()
   return true;
 }
 
+void ConfigParserStateMachine::FreeUnusedMemoryFromPass2()
+{
+  if (parser_pass_number_ == 2) {
+    // free all resource memory from second pass
+    if (currently_parsed_resource_.static_resource_) {
+      if (currently_parsed_resource_.static_resource_->resource_name_) {
+        free(currently_parsed_resource_.static_resource_->resource_name_);
+      }
+      delete currently_parsed_resource_.static_resource_;
+    }
+    currently_parsed_resource_.rcode_ = 0;
+    currently_parsed_resource_.resource_items_ = nullptr;
+    currently_parsed_resource_.static_resource_ = nullptr;
+  }
+}
+
 ConfigParserStateMachine::ParseInternalReturnCode
 ConfigParserStateMachine::ScanResource(int token)
 {
@@ -98,11 +114,11 @@ ConfigParserStateMachine::ScanResource(int token)
       }
 
       int resource_item_index = my_config_.GetResourceItemIndex(
-          resource_memory_.resource_items_, lexical_parser_->str);
+          currently_parsed_resource_.resource_items_, lexical_parser_->str);
 
       if (resource_item_index >= 0) {
         ResourceItem* item = nullptr;
-        item = &resource_memory_.resource_items_[resource_item_index];
+        item = &currently_parsed_resource_.resource_items_[resource_item_index];
         if (!(item->flags & CFG_ITEM_NO_EQUALS)) {
           token = LexGetToken(lexical_parser_, BCT_SKIP_EOL);
           Dmsg1(900, "in BCT_IDENT got token=%s\n", lex_tok_to_str(token));
@@ -147,26 +163,20 @@ ConfigParserStateMachine::ScanResource(int token)
       config_level_--;
       state = ParseState::kInit;
       Dmsg0(900, "BCT_EOB => define new resource\n");
-      if (!resource_memory_.static_resource_->resource_name_) {
+      if (!currently_parsed_resource_.static_resource_->resource_name_) {
         scan_err0(lexical_parser_, _("Name not specified for resource"));
         return ParseInternalReturnCode::kError;
       }
       /* save resource */
-      if (!my_config_.SaveResourceCb_(resource_memory_.rcode_,
-                                      resource_memory_.resource_items_,
-                                      parser_pass_number_)) {
+      if (!my_config_.SaveResourceCb_(
+              currently_parsed_resource_.rcode_,
+              currently_parsed_resource_.resource_items_,
+              parser_pass_number_)) {
         scan_err0(lexical_parser_, _("SaveResource failed"));
         return ParseInternalReturnCode::kError;
       }
-      if (parser_pass_number_ == 2) {
-        // free all resource memory from second pass
-        if (resource_memory_.static_resource_) {
-          if (resource_memory_.static_resource_->resource_name_) {
-            delete resource_memory_.static_resource_->resource_name_;
-          }
-          delete resource_memory_.static_resource_;
-        }
-      }
+
+      FreeUnusedMemoryFromPass2();
       return ParseInternalReturnCode::kGetNextToken;
 
     case BCT_EOL:
@@ -211,16 +221,18 @@ ConfigParserStateMachine::ParserInitResource(int token)
   bool init_resource_memory_ok = false;
 
   if (resource_table && resource_table->items) {
-    resource_memory_.resource_items_ = resource_table->items;
-    resource_memory_.rcode_ = resource_table->rcode;
+    currently_parsed_resource_.resource_items_ = resource_table->items;
+    currently_parsed_resource_.rcode_ = resource_table->rcode;
 
-    my_config_.InitResource(
-        resource_memory_.rcode_, resource_memory_.resource_items_,
-        parser_pass_number_, resource_table->ResourceSpecificInitializer);
+    my_config_.InitResource(currently_parsed_resource_.rcode_,
+                            currently_parsed_resource_.resource_items_,
+                            parser_pass_number_,
+                            resource_table->ResourceSpecificInitializer);
 
     ASSERT(resource_table->static_resource_);
-    resource_memory_.static_resource_ = *resource_table->static_resource_;
-    ASSERT(resource_memory_.static_resource_);
+    currently_parsed_resource_.static_resource_ =
+        *resource_table->static_resource_;
+    ASSERT(currently_parsed_resource_.static_resource_);
 
     state = ParseState::kResource;
 

@@ -72,6 +72,7 @@ class ConfigParserStateMachine {
 
   ParseInternalReturnCode ParserInitResource(int token);
   ParseInternalReturnCode ScanResource(int token);
+  void FreeUnusedMemoryFromPass2();
 
   int config_level_ = 0;
   int parser_pass_number_ = 0;
@@ -85,7 +86,7 @@ class ConfigParserStateMachine {
     int rcode_ = 0;
     ResourceItem* resource_items_ = nullptr;
     BareosResource* static_resource_ = nullptr;
-  } resource_memory_;
+  } currently_parsed_resource_;
 
   enum class ParseState
   {

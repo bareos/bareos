@@ -142,12 +142,14 @@ static void FreeResource(BareosResource* res, int type)
       ConsoleResource* p = dynamic_cast<ConsoleResource*>(res);
       if (p->rc_file) { free(p->rc_file); }
       if (p->history_file) { free(p->history_file); }
+      if (p->password_.value) { free(p->password_.value); }
       delete p;
       break;
     }
     case R_DIRECTOR: {
       DirectorResource* p = dynamic_cast<DirectorResource*>(res);
       if (p->address) { free(p->address); }
+      if (p->password_.value) { free(p->password_.value); }
       delete p;
       break;
     }
