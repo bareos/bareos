@@ -50,7 +50,7 @@ CREATE TABLE RestoreObject (
 CREATE INDEX restore_jobid_idx ON RestoreObject (JobId);
 
 CREATE TABLE Job (
-   JobId INTEGER,
+   JobId INTEGER PRIMARY KEY AUTOINCREMENT,
    Job VARCHAR(128) NOT NULL,
    Name VARCHAR(128) NOT NULL,
    Type CHAR(1) NOT NULL,
@@ -76,8 +76,7 @@ CREATE TABLE Job (
    HasBase TINYINT DEFAULT 0,
    HasCache TINYINT DEFAULT 0,
    Reviewed TINYINT DEFAULT 0,
-   Comment TEXT,
-   PRIMARY KEY(JobId)
+   Comment TEXT
 );
 CREATE INDEX inx6 ON Job (Name);
 
