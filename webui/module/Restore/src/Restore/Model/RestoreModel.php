@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -147,6 +147,28 @@ class RestoreModel
 
          }
 
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
+   }
+
+   /**
+    * Get Versions via .bvfs_versions
+    *
+    * @param $bsock
+    * @param $clientname
+    * @param $pathid
+    * @param $filename
+    *
+    * @return array
+    */
+   public function getFileVersions(&$bsock=null, $clientname=null, $pathid=null, $filename=null) {
+      if(isset($bsock)) {
+         $cmd = '.bvfs_versions jobid=0 client='.$clientname.' pathid='.$pathid.' fname='.$filename;
+         $result = $bsock->send_command($cmd, 2, null);
+         $versions = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $versions['result']['versions'];
       }
       else {
          throw new \Exception('Missing argument.');

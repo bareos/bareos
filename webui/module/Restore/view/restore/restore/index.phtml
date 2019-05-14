@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,6 +27,13 @@ $title = _('Restore');
 $this->headTitle($title);
 
 ?>
+
+<ul class="nav nav-tabs">
+   <li class="active"><a href="<?php echo $this->url('restore', array('action'=>'index')); ?>"><?php echo $this->translate('Restore multiple files'); ?></a></li>
+   <li><a href="<?php echo $this->url('restore', array('action'=>'versions')); ?>"><?php echo $this->translate('Restore specific file version'); ?></a></li>
+</ul>
+
+<br />
 
 <?php if($this->acl_alert) : echo $this->ACLAlert($this->required_commands); elseif(!$this->acl_alert) : ?>
 
@@ -117,30 +124,14 @@ $this->headTitle($title);
    <div class="col-md-9">
       <?php
          if($this->restore_params['type'] == "client") {
-               //echo $this->formRow($form->get('jobids_display')->setAttribute('class','form-control')); // for debugging
                echo '<strong>';
                echo $this->translate("File selection");
                echo '</strong>';
-/*
-               echo '<div class="form-group">';
-               echo '<label class="control-label col-md-1">';
-               echo $this->formLabel($form->get('limit'));
-               echo '</label>';
-               echo '<div class="control-input col-md-3">';
-               echo $this->formText($form->get('limit'));
-               echo '</div>';
-               echo '</div>';
-*/
-               echo '<div class="panel panel-default" style="height: 550px; overflow: auto; resize: both;"><div id="filebrowser"></div></div>';
-
-               /*
-               echo '<div class="input-group">';
-               echo '<div class="input-group-addon"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></div>';
-               echo '<div><input class="search-input form-control" placeholder="Search for files and directories"></input></div>';
-               echo '</div>';
-               */
-         }
-         elseif($this->restore_params['type'] == "job") {
+             ?>
+             <div class="panel panel-default">
+                 <div id="filebrowser"></div>
+             </div>
+             <?php
          }
       ?>
    </div>
@@ -174,17 +165,15 @@ $this->headTitle($title);
 
 <script type="text/javascript">
 
-   function format_bytes(v) {
-      if(v == 0) {
-         return "0.00 B";
-      }
-      else {
-         var k = 1000;
-         var units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"];
-         var i = Math.floor(Math.log(v) / Math.log(k));
-         return parseFloat((v / Math.pow(k, i)).toFixed(2)) + " " + units[i];
-      }
-   }
+    function format_bibytes(v) {
+        if (v === 0) {
+            return "0.00 B";
+        } else {
+            const units = ["B", "kiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB"];
+            const i = Math.floor(Math.log2(v) / 10);
+            return parseFloat((v / (1 << (i * 10))).toFixed(2)) + " " + units[i];
+        }
+    }
 
    function getFiles() {
 
@@ -194,10 +183,10 @@ $this->headTitle($title);
       var checked_ids = $('#filebrowser').jstree('get_checked','full',true);
 
       $(checked_ids).each(function () {
-         if(this.data.type == 'F') {
+         if(this.data.type === 'F') {
             checked_files.push(this.id);
          }
-         else if(this.data.type == 'D') {
+         else if(this.data.type === 'D') {
             checked_directories.push(Math.abs(this.id));
          }
       });
@@ -205,7 +194,7 @@ $this->headTitle($title);
       document.getElementById('checked_files').value = checked_files.join(",");
       document.getElementById('checked_directories').value = checked_directories.join(",");
 
-      if(checked_ids.length == 0) {
+      if(checked_ids.length === 0) {
          alert("No files or directories selected!");
          return false;
       }
@@ -221,7 +210,7 @@ $this->headTitle($title);
 
       p['type'] = '<?php echo $this->restore_params['type']; ?>';
 
-      if(k == 'client') {
+      if(k === 'client') {
          p['jobid'] = '';
       }
       else {
@@ -230,7 +219,7 @@ $this->headTitle($title);
 
       p['client'] = '<?php echo $this->restore_params['client']; ?>';
 
-      if(k == 'client') {
+      if(k === 'client') {
          p['restoreclient'] = '';
       }
       else {
@@ -241,14 +230,14 @@ $this->headTitle($title);
       p['where'] = '<?php echo $this->restore_params['where']; ?>';
       p['fileset'] = '<?php echo $this->restore_params['fileset']; ?>';
 
-      if(k == 'mergejobs' && v == '1') {
+      if(k === 'mergejobs' && v === '1') {
          p['mergefilesets'] = '1';
       }
       else {
          p['mergefilesets'] = '<?php echo $this->restore_params['mergefilesets']; ?>';
       }
 
-      if(k == 'mergefilesets' && v == '0') {
+      if(k === 'mergefilesets' && v === '0') {
          p['mergejobs'] = '0';
       }
       else {
@@ -291,8 +280,12 @@ $this->headTitle($title);
             },
          },
       },
+       'state' : {
+           'key': 'restore'
+       },
       'grid' : {
          width: '100%',
+         height: '60vh',
          fixedHeader: true,
          resizable: false,
          columns: [
@@ -308,20 +301,20 @@ $this->headTitle($title);
                header: '<?php echo $this->translate("Size"); ?>',
                headerClass: 'jsTreeGridHeader',
                value: function(node) {
-                  if(node.data.stat.size == 0) {
+                  if(node.data.stat.size === 0) {
                      return null;
                   }
                   else {
-                     return(format_bytes(node.data.stat.size));
+                     return(format_bibytes(node.data.stat.size));
                   }
                }
             },
             {
                width: 150,
-               header: '<?php echo $this->translate("Date"); ?>',
+               header: '<?php echo $this->translate("Last modification"); ?>',
                headerClass: 'jsTreeGridHeader',
                value: function(node) {
-                  if(node.data.stat.mtime == 0) {
+                  if(node.data.stat.mtime === 0) {
                      return null;
                   }
                   else {
