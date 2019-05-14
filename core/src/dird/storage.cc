@@ -789,7 +789,7 @@ vol_list_t* vol_is_loaded_in_drive(StorageResource* store,
   vl = (vol_list_t*)vol_list->contents->first();
   while (vl) {
     switch (vl->slot_type) {
-      case slot_type_drive:
+      case kSlotTypeDrive:
         Dmsg2(100, "Checking drive %hd for loaded volume == %hd\n",
               vl->bareos_slot_number, vl->currently_loaded_slot_number);
         if (vl->currently_loaded_slot_number == slot) { return vl; }

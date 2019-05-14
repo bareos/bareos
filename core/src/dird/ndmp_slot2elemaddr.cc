@@ -23,52 +23,63 @@
 #include "ndmp/smc.h"
 
 namespace directordaemon {
-
 /**
  * calculate the element address for given slotnumber and slot_type
  */
+/* clang-format off */
 slot_number_t GetElementAddressByBareosSlotNumber(
     smc_element_address_assignment* smc_elem_aa,
     slot_type_t slot_type,
     slot_number_t slotnumber)
 {
-  if (slot_type == slot_type_storage) {
-    if ((slotnumber > smc_elem_aa->se_count) ||
-        !IsSlotNumberValid(slotnumber)) {
-      return kInvalidSlotNumber;
-    } else {
-      return (slotnumber + smc_elem_aa->se_addr -
-              1);  // normal slots count start from 1
-    }
-  } else if (slot_type == slot_type_import) {
-    if ((slotnumber < (smc_elem_aa->se_count + 1)) ||
-        (slotnumber > (smc_elem_aa->se_count + smc_elem_aa->iee_count + 1))) {
-      return kInvalidSlotNumber;
-    } else {
-      return (slotnumber -
-              smc_elem_aa->se_count  // i/e slots follow after normal slots
-              - 1                    // normal slots count start from 1
-              + smc_elem_aa->iee_addr);
-    }
-  } else if (slot_type == slot_type_picker) {
-    if ((slotnumber == kInvalidSlotNumber) ||
-        slotnumber > (smc_elem_aa->mte_count - 1)) {
-      return kInvalidSlotNumber;
-    } else {
-      return (slotnumber + smc_elem_aa->mte_addr);
-    }
-  } else if (slot_type == slot_type_drive) {
-    if ((slotnumber > (smc_elem_aa->dte_count) - 1) ||
-        (slotnumber == kInvalidSlotNumber)) {
-      return kInvalidSlotNumber;
-    } else {
-      return (slotnumber + smc_elem_aa->dte_addr);
-    }
-  } else if (slot_type == slot_type_unknown) {
-    return kInvalidSlotNumber;
-  } else {
-    return kInvalidSlotNumber;
+  slot_number_t calculated_slot;
+
+  switch (slot_type) {
+    case kSlotTypeStorage:
+      if ((slotnumber > smc_elem_aa->se_count) ||
+          !IsSlotNumberValid(slotnumber)) {
+        calculated_slot = kInvalidSlotNumber;
+      } else {
+        calculated_slot = slotnumber
+                        + smc_elem_aa->se_addr
+                        - 1;  // normal slots count start from 1
+      }
+      break;
+    case kSlotTypeImport:
+      if ((slotnumber < (smc_elem_aa->se_count + 1)) ||
+          (slotnumber > (smc_elem_aa->se_count + smc_elem_aa->iee_count + 1))) {
+        calculated_slot = kInvalidSlotNumber;
+      } else {
+        calculated_slot = slotnumber
+                        - smc_elem_aa->se_count // i/e slots follow after normal slots
+                        + smc_elem_aa->iee_addr
+                        - 1;                    // normal slots count start from 1
+      }
+      break;
+    case kSlotTypePicker:
+      if ((slotnumber == kInvalidSlotNumber) ||
+          slotnumber > (smc_elem_aa->mte_count - 1)) {
+        calculated_slot = kInvalidSlotNumber;
+      } else {
+        calculated_slot = slotnumber
+                        + smc_elem_aa->mte_addr;
+      }
+      break;
+    case kSlotTypeDrive:
+      if ((slotnumber > (smc_elem_aa->dte_count) - 1) ||
+          (slotnumber == kInvalidSlotNumber)) {
+        calculated_slot = kInvalidSlotNumber;
+      } else {
+        calculated_slot = slotnumber
+                        + smc_elem_aa->dte_addr;
+      }
+      break;
+    default:
+    case kSlotTypeUnknown:
+      calculated_slot = kInvalidSlotNumber;
+      break;
   }
+  return calculated_slot;
 }
 
 /**
@@ -79,37 +90,50 @@ slot_number_t GetBareosSlotNumberByElementAddress(
     slot_type_t slot_type,
     slot_number_t element_addr)
 {
-  if (slot_type == slot_type_storage) {
-    if (element_addr < smc_elem_aa->se_addr ||
-        (element_addr > smc_elem_aa->se_addr + smc_elem_aa->se_count - 1)) {
-      return kInvalidSlotNumber;
-    } else {
-      return (element_addr - smc_elem_aa->se_addr +
-              1);  // slots count start from 1
-    }
-  } else if (slot_type == slot_type_import) {
-    if ((element_addr < smc_elem_aa->iee_addr) ||
-        (element_addr > smc_elem_aa->iee_addr + smc_elem_aa->iee_count - 1)) {
-      return kInvalidSlotNumber;
-    } else {
-      return (element_addr +
-              smc_elem_aa->se_count  // i/e slots follow after normal slots
-              - smc_elem_aa->iee_addr + 1);  // slots count start from 1
-    }
-  } else if (slot_type == slot_type_drive) {
-    if ((element_addr < smc_elem_aa->dte_addr) ||
-        (element_addr > smc_elem_aa->dte_addr + smc_elem_aa->dte_count - 1)) {
-      return kInvalidSlotNumber;
-    } else {
-      return (element_addr - smc_elem_aa->dte_addr);
-    }
-  } else if (slot_type == slot_type_picker) {
-    return (element_addr - smc_elem_aa->mte_addr);
-  } else if (slot_type == slot_type_unknown) {
-    return kInvalidSlotNumber;
+  slot_number_t calculated_slot;
 
-  } else {
-    return kInvalidSlotNumber;
+  switch (slot_type) {
+    case kSlotTypeStorage:
+      if (element_addr < smc_elem_aa->se_addr ||
+          (element_addr > smc_elem_aa->se_addr + smc_elem_aa->se_count - 1)) {
+        calculated_slot = kInvalidSlotNumber;
+      } else {
+        calculated_slot = element_addr
+                        - smc_elem_aa->se_addr
+                        + 1;  // slots count start from 1
+      }
+      break;
+    case kSlotTypeImport:
+      if ((element_addr < smc_elem_aa->iee_addr) ||
+          (element_addr > smc_elem_aa->iee_addr + smc_elem_aa->iee_count - 1)) {
+        calculated_slot = kInvalidSlotNumber;
+      } else {
+        calculated_slot = element_addr
+                        + smc_elem_aa->se_count  // i/e slots follow after normal slots
+                        - smc_elem_aa->iee_addr
+                        + 1;                     // slots count start from 1
+      }
+      break;
+    case kSlotTypeDrive:
+      if ((element_addr < smc_elem_aa->dte_addr) ||
+          (element_addr > smc_elem_aa->dte_addr + smc_elem_aa->dte_count - 1)) {
+        calculated_slot = kInvalidSlotNumber;
+      } else {
+        calculated_slot = element_addr
+                        - smc_elem_aa->dte_addr;
+      }
+      break;
+    case kSlotTypePicker:
+      calculated_slot = element_addr
+                      - smc_elem_aa->mte_addr;
+      break;
+    default:
+    case kSlotTypeUnknown:
+      calculated_slot = kInvalidSlotNumber;
+      break;
   }
+  return calculated_slot;
 }
+/* clang-format on */
+
 } /* namespace directordaemon */

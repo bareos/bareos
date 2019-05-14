@@ -375,7 +375,7 @@ dlist* native_get_vol_list(UaContext* ua,
         continue;
       }
 
-      vl->slot_type = slot_type_storage;
+      vl->slot_type = kSlotTypeStorage;
       if (strlen(field2) > 0) {
         vl->slot_status = slot_status_full;
         vl->VolName = bstrdup(field2);
@@ -405,7 +405,7 @@ dlist* native_get_vol_list(UaContext* ua,
         continue;
       }
 
-      vl->slot_type = slot_type_storage;
+      vl->slot_type = kSlotTypeStorage;
       vl->slot_status = slot_status_full;
       vl->VolName = bstrdup(field2);
       vl->element_address = INDEX_SLOT_OFFSET + vl->bareos_slot_number;
@@ -417,17 +417,17 @@ dlist* native_get_vol_list(UaContext* ua,
 
       switch (*field1) {
         case 'D':
-          vl->slot_type = slot_type_drive;
+          vl->slot_type = kSlotTypeDrive;
           break;
         case 'S':
-          vl->slot_type = slot_type_storage;
+          vl->slot_type = kSlotTypeStorage;
           break;
         case 'I':
-          vl->slot_type = slot_type_import;
+          vl->slot_type = kSlotTypeImport;
           vl->flags |= (can_import | can_export | by_oper);
           break;
         default:
-          vl->slot_type = slot_type_unknown;
+          vl->slot_type = kSlotTypeUnknown;
           break;
       }
 
@@ -436,7 +436,7 @@ dlist* native_get_vol_list(UaContext* ua,
        * For any other type its the actual slot number.
        */
       switch (vl->slot_type) {
-        case slot_type_drive:
+        case kSlotTypeDrive:
           if (!IsAnInteger(field2) ||
               (vl->bareos_slot_number = atoi(field2)) < 0) {
             ua->ErrorMsg(_("Invalid Drive number: %s\n"), field2);
@@ -470,11 +470,11 @@ dlist* native_get_vol_list(UaContext* ua,
         case 'F':
           vl->slot_status = slot_status_full;
           switch (vl->slot_status) {
-            case slot_type_storage:
-            case slot_type_import:
+            case kSlotTypeStorage:
+            case kSlotTypeImport:
               if (field4) { vl->VolName = bstrdup(field4); }
               break;
-            case slot_type_drive:
+            case kSlotTypeDrive:
               if (field4) {
                 vl->currently_loaded_slot_number =
                     static_cast<slot_number_t>(atoi(field4));

@@ -117,11 +117,11 @@ typedef enum
 
 typedef enum
 {
-  slot_type_unknown, /**< Unknown slot type */
-  slot_type_drive,   /**< Drive slot */
-  slot_type_storage, /**< Storage slot */
-  slot_type_import,  /**< Import/export slot */
-  slot_type_picker   /**< Robotics */
+  kSlotTypeUnknown, /**< Unknown slot type */
+  kSlotTypeDrive,   /**< Drive slot */
+  kSlotTypeStorage, /**< Storage slot */
+  kSlotTypeImport,  /**< Import/export slot */
+  kSlotTypePicker   /**< Robotics */
 } slot_type_t;
 
 typedef enum
@@ -145,12 +145,12 @@ struct vol_list_t {
   dlink link;                                            /**< Link for list */
   slot_number_t element_address = kInvalidSlotNumber;    /**< scsi element address */
   slot_flags_t flags = 0;                                /**< Slot specific flags see e_slot_flag enum */
-  slot_type_t slot_type = slot_type_unknown;             /**< See slot_type_* */
+  slot_type_t slot_type = kSlotTypeUnknown;              /**< See slot_type_* */
   slot_status_t slot_status = slot_status_unknown;       /**< See slot_status_* */
   slot_number_t bareos_slot_number = kInvalidSlotNumber; /**< Drive number when
-                                                              slot_type_drive or actual slot number */
+                                                              kSlotTypeDrive or actual slot number */
   slot_number_t currently_loaded_slot_number = kInvalidSlotNumber;  /**< Volume loaded in drive when
-                                                                         slot_type_drive */
+                                                                         kSlotTypeDrive */
   char* VolName = nullptr; /**< Actual Volume Name */
 };
 /* clang-format on */
@@ -170,7 +170,7 @@ struct storage_mapping_t {
   slot_type_t slot_type;         /**< See slot_type_* */
   slot_number_t element_address; /**< scsi element address */
   slot_number_t
-      Slot; /**< Drive number when slot_type_drive or actual slot number */
+      Slot; /**< Drive number when kSlotTypeDrive or actual slot number */
 };
 
 
