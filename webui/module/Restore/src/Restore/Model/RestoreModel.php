@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -163,7 +163,7 @@ class RestoreModel
     *
     * @return array
     */
-   public function getRevisions(&$bsock=null, $clientname=null, $pathid=null, $filename=null) {
+   public function getFileVersions(&$bsock=null, $clientname=null, $pathid=null, $filename=null) {
       if(isset($bsock)) {
          $cmd = '.bvfs_versions jobid=0 client='.$clientname.' pathid='.$pathid.' fname='.$filename;
          $result = $bsock->send_command($cmd, 2, null);

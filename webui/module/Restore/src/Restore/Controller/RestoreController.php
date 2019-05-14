@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -707,10 +707,10 @@ class RestoreController extends AbstractActionController
       $pathid = $this->params()->fromQuery('pathid');
       $filename = $this->params()->fromQuery('filename');
 
-      if($data == "revisions") {
+      if($data == "fileversions") {
          try {
             $this->bsock = $this->getServiceLocator()->get('director');
-            $result = $this->getRestoreModel()->getRevisions($this->bsock, $clientname, $pathid, $filename);
+            $result = $this->getRestoreModel()->getFileVersions($this->bsock, $clientname, $pathid, $filename);
             $this->bsock->disconnect();
          }
          catch(Exception $e) {
