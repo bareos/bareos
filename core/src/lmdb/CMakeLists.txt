@@ -17,6 +17,9 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+IF(HAVE_FREEBSD_OS)
+  add_definitions(-D_WANT_SEMUN=1)
+ENDIF()
 
 add_library(bareoslmdb SHARED mdb.c midl.c)
 
