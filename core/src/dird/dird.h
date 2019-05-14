@@ -140,18 +140,20 @@ enum s_mapping_type
 /*
  * Slot list definition
  */
+/* clang-format off */
 struct vol_list_t {
-  dlink link;                    /**< Link for list */
-  slot_number_t element_address; /**< scsi element address */
-  slot_flags_t flags;        /**< Slot specific flags see e_slot_flag enum */
-  slot_type_t slot_type;     /**< See slot_type_* */
-  slot_status_t slot_status; /**< See slot_status_* */
-  slot_number_t bareos_slot_number; /**< Drive number when slot_type_drive or
-                                       actual slot number */
-  slot_number_t currently_loaded_slot_number; /**< Volume loaded in drive when
-                                                 slot_type_drive */
-  char* VolName;                              /**< Actual Volume Name */
+  dlink link;                                            /**< Link for list */
+  slot_number_t element_address = kInvalidSlotNumber;    /**< scsi element address */
+  slot_flags_t flags = 0;                                /**< Slot specific flags see e_slot_flag enum */
+  slot_type_t slot_type = slot_type_unknown;             /**< See slot_type_* */
+  slot_status_t slot_status = slot_status_unknown;       /**< See slot_status_* */
+  slot_number_t bareos_slot_number = kInvalidSlotNumber; /**< Drive number when
+                                                              slot_type_drive or actual slot number */
+  slot_number_t currently_loaded_slot_number = kInvalidSlotNumber;  /**< Volume loaded in drive when
+                                                                         slot_type_drive */
+  char* VolName = nullptr; /**< Actual Volume Name */
 };
+/* clang-format on */
 
 struct changer_vol_list_t {
   int16_t reference_count; /**< Number of references to this vol_list */

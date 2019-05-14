@@ -545,9 +545,9 @@ static int UniqueNameHandler(void* ctx, int num_fields, char** row)
   dlist* list = (dlist*)ctx;
 
   uitem* new_item = (uitem*)malloc(sizeof(uitem));
-  uitem* item;
+  new (new_item) uitem();
 
-  memset(new_item, 0, sizeof(uitem));
+  uitem* item;
   new_item->item = bstrdup(row[0]);
   Dmsg1(dbglevel, "Unique_name_hdlr Item=%s\n", row[0]);
 
