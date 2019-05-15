@@ -5,17 +5,8 @@ SUBDIRS = manuals/main/
 all:   TARGET=
 all:   $(SUBDIRS)
 
-check: TARGET=check
-check: $(SUBDIRS)
-
 clean: TARGET=clean
 clean: $(SUBDIRS)
-
-html:  TARGET=html
-html:  $(SUBDIRS)
-
-pdf:   TARGET=pdf
-pdf:   $(SUBDIRS)
 
 $(SUBDIRS):
 	$(MAKE) -C $@ $(TARGET)
