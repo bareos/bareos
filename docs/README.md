@@ -2,12 +2,11 @@ bareos-docs
 ===========
 
 
-This repository contains the main documentation for the Bareos project http://www.bareos.org/.
+This repository contains the main documentation for the Bareos project https://www.bareos.org/.
 
-The documentation is published as PDF and HTML at http://www.bareos.org/en/manual.html
+The documentation is published as HTML at https://docs.bareos.org.
 
-The documentation source is done using LaTeX.
+The documentation source is done using RST.
 
-If you like to contribute, please have a look at http://www.bareos.org/en/howto-contribute.html
+If you like to contribute, please have a look at https://www.bareos.org/en/howto-contribute.html
 
-[![Build Status](https://travis-ci.org/bareos/bareos-docs.png?branch=master)](https://travis-ci.org/bareos/bareos-docs)
