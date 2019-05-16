@@ -230,6 +230,326 @@ In that case, the initiating daemon is ordered to connect to the :strong:`Lan Ad
 
 If only one or none of the involved |fd| and |sd| have a :strong:`Lan Address`\  configured, the :strong:`Address`\  is used as connection target for the initiating daemon.
 
+.. _ConnectionOverviewReference:
 
+Network Connections Overview
+============================
+The following diagrams show Bareos components with any possible
+network connections between them. Arrows point always from the TCP
+Client to the respective TCP Server, thus the direction of the connection
+initiation. This is not neccessarily the direction of the data flow. 
+
+Full connection overview
+------------------------
+This diagram contains all possible connections between Bareos components
+that are virtually usable. See the chapters :ref:`below for specific diagrams <ConnecionOverviewNamedConsoleAndDefaultConsole>` of the Bareos operating modes.
+
+.. uml::
+  :caption: Sequence diagram of a Bareos File Daemon connection
+
+  left to right direction
+  skinparam shadowing false
+
+  (Console\nPython\nWebUI) as Con
+  (Tray Monitor) as Tray
+
+  [Filedaemon] as FD
+  [Directordaemon] as Dir
+  [Storagedaemon] as SD
+  [Storagedaemon2] as SD2
+
+  database Catalog
+
+  !define arrow_hidden(from,direction,to,comment) from -[#white]direction->to : <color white>comment</color>
+
+  !define arrow(from,direction,to,comment) from -direction->to : comment
+
+  arrow(Con, right, Dir, 1)
+  arrow(Con, right, Dir, 2)
+
+  arrow(Dir, up, FD, 3)
+  arrow(FD, down, Dir, 4)
+
+  arrow(Dir, right, SD, 5a)
+
+  arrow(FD, down, SD, 6)
+  arrow(SD, down, FD, 7)
+
+  arrow(SD, down, SD2, 8)
+  arrow(Dir, down, SD2, 5b)
+
+  arrow(Tray, down, Dir, 9)
+  arrow(Tray, down, FD, 10)
+  arrow(Tray, down, SD, 11)
+
+  arrow(Dir, down, Catalog, 12)
+
+.. _LegendForFullConnectionOverviewReference:
+
+.. csv-table:: Legend for full connection overview
+   :header: "Connection Number", "Description", "Type"
+   :widths: auto
+
+    1, "Named Console", "control channel"
+    2, "Default Console", "control channel"
+    3, "**Director to File Daemon (default)**", "control channel"
+    4, ":ref:`Client initiated <section-ClientInitiatedConnection>` File Daemon to Director", "control channel"
+   5a, "**Director to Storage (default)**", "control channel"
+   5b, "Director to 2nd Storage doing SD-SD copy or migrate", "control channel"
+    6, "**File Daemon to Storage Daemon (default)**", "data channel"
+    7, ":ref:`Passive Client <PassiveClient>` Storage Daemon to File Daemon", "data channel"
+    8, "Storage Daemon to Storage Daemon", "data channel"
+    9, "Tray Monitor to Director Daemon", "monitor channel"
+   10, "Tray Monitor to File Daemon", "monitor channel"
+   11, "Tray Monitor to Storage Daemon", "monitor channel"
+   12, "Director to catalog database", "database channel"
+
+.. _ConnecionOverviewNamedConsoleAndDefaultConsole:
+
+Named Console and Default Console
+---------------------------------
+
+.. _ConnectionDiagramNamedAndDefaultConsole:
+
+.. uml::
+  :caption: Diagram of Console to Director connection
+
+  left to right direction
+  skinparam shadowing false
+
+  (Console\nPython\nWebUI) as Con
+  (Tray Monitor) as Tray
+
+  [Filedaemon] as FD
+  [Directordaemon] as Dir
+  [Storagedaemon] as SD
+  [Storagedaemon2] as SD2
+
+  !define arrow_hidden(from,direction,to,comment) from -[#white]direction->to : <color white>comment</color>
+
+  !define arrow(from,direction,to,comment) from -direction->to : comment
+
+  arrow(Con, right, Dir, 1)
+  arrow(Con, right, Dir, 2)
+
+  arrow_hidden(Dir, up, FD, 3)
+  arrow_hidden(FD, down, Dir, 4)
+
+  arrow_hidden(Dir, right, SD, 5a)
+
+  arrow_hidden(FD, down, SD, 6)
+  arrow_hidden(SD, down, FD, 7)
+
+  arrow_hidden(SD, down, SD2, 8)
+  arrow_hidden(Dir, down, SD2, 5b)
+
+  arrow_hidden(Tray, down, Dir, 9)
+  arrow_hidden(Tray, down, FD, 10)
+  arrow_hidden(Tray, down, SD, 11)
+
+Default Backup/Restore
+----------------------
+
+.. _ConnectionDiagramDefaultBackupOrRestoreOperation:
+
+.. uml::
+  :caption: Diagram of a default Backup or Restore operation
+
+  left to right direction
+  skinparam shadowing false
+
+  (Console\nPython\nWebUI) as Con
+  (Tray Monitor) as Tray
+
+  [Filedaemon] as FD
+  [Directordaemon] as Dir
+  [Storagedaemon] as SD
+  [Storagedaemon2] as SD2
+
+  !define arrow_hidden(from,direction,to,comment) from -[#white]direction->to : <color white>comment</color>
+
+  !define arrow(from,direction,to,comment) from -direction->to : comment
+
+  arrow_hidden(Con, right, Dir, 1)
+  arrow_hidden(Con, right, Dir, 2)
+
+  arrow(Dir, up, FD, 3)
+  arrow_hidden(FD, down, Dir, 4)
+
+  arrow(Dir, right, SD, 5a)
+
+  arrow(FD, down, SD, 6)
+  arrow_hidden(SD, down, FD, 7)
+
+  arrow_hidden(SD, down, SD2, 8)
+  arrow_hidden(Dir, down, SD2, 5b)
+
+  arrow_hidden(Tray, down, Dir, 9)
+  arrow_hidden(Tray, down, FD, 10)
+  arrow_hidden(Tray, down, SD, 11)
+
+Client Initiated Backup/Restore
+-------------------------------
+
+.. _ConnectionDiagramClientInitiatedBackupOrRestoreOperation:
+
+.. uml::
+  :caption: Diagram of a **client initiated** Backup or Restore operation
+
+  left to right direction
+  skinparam shadowing false
+
+  (Console\nPython\nWebUI) as Con
+  (Tray Monitor) as Tray
+
+  [Filedaemon] as FD
+  [Directordaemon] as Dir
+  [Storagedaemon] as SD
+  [Storagedaemon2] as SD2
+
+  !define arrow_hidden(from,direction,to,comment) from -[#white]direction->to : <color white>comment</color>
+
+  !define arrow(from,direction,to,comment) from -direction->to : comment
+
+  arrow_hidden(Con, right, Dir, 1)
+  arrow_hidden(Con, right, Dir, 2)
+
+  arrow_hidden(Dir, up, FD, 3)
+  arrow(FD, down, Dir, 4)
+
+  arrow(Dir, right, SD, 5a)
+
+  arrow(FD, down, SD, 6)
+  arrow_hidden(SD, down, FD, 7)
+
+  arrow_hidden(SD, down, SD2, 8)
+  arrow_hidden(Dir, down, SD2, 5b)
+
+  arrow_hidden(Tray, down, Dir, 9)
+  arrow_hidden(Tray, down, FD, 10)
+  arrow_hidden(Tray, down, SD, 11)
+
+Passive Client Backup/Restore
+-----------------------------
+
+.. _ConnectionDiagramPassiveClientBackupOrRestoreOperation:
+
+.. uml::
+  :caption: Diagram of a **passive client** Backup or Restore operation
+
+  left to right direction
+  skinparam shadowing false
+
+  (Console\nPython\nWebUI) as Con
+  (Tray Monitor) as Tray
+
+  [Filedaemon] as FD
+  [Directordaemon] as Dir
+  [Storagedaemon] as SD
+  [Storagedaemon2] as SD2
+
+  !define arrow_hidden(from,direction,to,comment) from -[#white]direction->to : <color white>comment</color>
+
+  !define arrow(from,direction,to,comment) from -direction->to : comment
+
+  arrow_hidden(Con, right, Dir, 1)
+  arrow_hidden(Con, right, Dir, 2)
+
+  arrow(Dir, up, FD, 3)
+  arrow_hidden(FD, down, Dir, 4)
+
+  arrow(Dir, right, SD, 5a)
+
+  arrow_hidden(FD, down, SD, 6)
+  arrow(SD, down, FD, 7)
+
+  arrow_hidden(SD, down, SD2, 8)
+  arrow_hidden(Dir, down, SD2, 5b)
+
+  arrow_hidden(Tray, down, Dir, 9)
+  arrow_hidden(Tray, down, FD, 10)
+  arrow_hidden(Tray, down, SD, 11)
+
+Storage-Storage Migration
+-------------------------
+
+.. _ConnectionDiagramStorageToStorageCopyOrMigrateOperation:
+
+.. uml::
+  :caption: Diagram of a Storage to Storage copy or migrate operation
+
+  left to right direction
+  skinparam shadowing false
+
+  (Console\nPython\nWebUI) as Con
+  (Tray Monitor) as Tray
+
+  [Filedaemon] as FD
+  [Directordaemon] as Dir
+  [Storagedaemon] as SD
+  [Storagedaemon2] as SD2
+
+  !define arrow_hidden(from,direction,to,comment) from -[#white]direction->to : <color white>comment</color>
+
+  !define arrow(from,direction,to,comment) from -direction->to : comment
+
+  arrow_hidden(Con, right, Dir, 1)
+  arrow_hidden(Con, right, Dir, 2)
+
+  arrow_hidden(Dir, up, FD, 3)
+  arrow_hidden(FD, down, Dir, 4)
+
+  arrow(Dir, right, SD, 5a)
+
+  arrow_hidden(FD, down, SD, 6)
+  arrow_hidden(SD, down, FD, 7)
+
+  arrow(SD, down, SD2, 8)
+  arrow(Dir, down, SD2, 5b)
+
+  arrow_hidden(Tray, down, Dir, 9)
+  arrow_hidden(Tray, down, FD, 10)
+  arrow_hidden(Tray, down, SD, 11)
+
+Tray-Monitor
+------------
+
+.. _ConnectionDiagramAllTrayMonitorConnections:
+
+.. uml::
+  :caption: Diagram of all Tray Monitor Connections
+
+  left to right direction
+  skinparam shadowing false
+
+  (Console\nPython\nWebUI) as Con
+  (Tray Monitor) as Tray
+
+  [Filedaemon] as FD
+  [Directordaemon] as Dir
+  [Storagedaemon] as SD
+  [Storagedaemon2] as SD2
+
+  !define arrow_hidden(from,direction,to,comment) from -[#white]direction->to : <color white>comment</color>
+
+  !define arrow(from,direction,to,comment) from -direction->to : comment
+
+  arrow_hidden(Con, right, Dir, 1)
+  arrow_hidden(Con, right, Dir, 2)
+
+  arrow_hidden(Dir, up, FD, 3)
+  arrow_hidden(FD, down, Dir, 4)
+
+  arrow_hidden(Dir, right, SD, 5a)
+
+  arrow_hidden(FD, down, SD, 6)
+  arrow_hidden(SD, down, FD, 7)
+
+  arrow_hidden(SD, down, SD2, 8)
+  arrow_hidden(Dir, down, SD2, 5b)
+
+  arrow(Tray, down, Dir, 9)
+  arrow(Tray, down, FD, 10)
+  arrow(Tray, down, SD, 11)
 
 

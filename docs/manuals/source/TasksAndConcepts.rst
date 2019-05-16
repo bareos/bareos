@@ -26,4 +26,5 @@ Tasks and Concepts
       /TasksAndConcepts/NdmpBackupsWithBareos.rst
       /TasksAndConcepts/CatalogMaintenance.rst
       /TasksAndConcepts/BareosSecurityIssues.rst
+      /TasksAndConcepts/PAM.rst
 

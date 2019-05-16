@@ -18,5 +18,6 @@ Appendix
       /Appendix/Troubleshooting.rst
       /Appendix/Debugging.rst
       /Appendix/ReleaseNotes.rst
+      /Appendix/FAQ.rst
       /Appendix/BareosCopyrightTrademarkAndLicenses.rst
 
