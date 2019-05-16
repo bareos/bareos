@@ -7,7 +7,7 @@ Transport Encryption
 
 .. _section-TransportEncryption:
 
- :index:`\ <single: Communications Encryption>`\  :index:`\ <single: Encryption; Communication>`\  :index:`\ <single: Encryption; Transport>`\  :index:`\ <single: Transport Encryption>`\  :index:`\ <single: TLS>`\  :index:`\ <single: SSL>`\ 
+ :index:`\ <single: Communications Encryption>`\  :index:`\ <single: Encryption; Communication>`\  :index:`\ <single: Encryption; Transport>`\  :index:`\ <single: Transport Encryption>`\  :index:`\ <single: TLS>`\  :index:`\ <single: SSL>`\
 
 Bareos TLS (Transport Layer Security) is built-in network encryption code to provide secure network transport similar to that offered by :command:`stunnel` or :command:`ssh`. The data written to Volumes by the Storage daemon is not encrypted by this code. For data encryption, please see the :ref:`DataEncryption` chapter.
 
@@ -32,45 +32,45 @@ TLS Configuration Directives
 
 Additional configuration directives have been added to all the daemons (Director, File daemon, and Storage daemon) as well as the various different Console programs. These directives are defined as follows:
 
-:config:option:`dir/director/TlsEnable`\ 
-   Enable TLS support. Without setting :strong:`TLS Require`\ =yes, the connection can fall back to unencrypted connection, if the other side does not support TLS.
+:config:option:`dir/director/TlsEnable`\
+   Enable TLS support. This is by default enabled. If no certificates are configured PSK (Pre Shared Keys) ciphers will be used. If the other side does not support TLS or cleartext is configured the connection will be aborted. However, for downward compatibility with clients before Bareos-18.2 the daemons can omit transport encryption and cleartext will be sent.
 
-:config:option:`dir/director/TlsRequire`\ 
-   Require TLS connections. If TLS is not required, then Bareos will connect with other daemons either with or without TLS depending on what the other daemon requests. If TLS is required, then Bareos will refuse any connection that does not use TLS. :strong:`TLS Require`\ =yes implicitly sets :strong:`TLS Enable`\ =yes.
+:config:option:`dir/director/TlsRequire`\
+   Require TLS connection, for downward compatibility. This is by default disabled. However, if :strong:`TlsRequire`\ =yes, clients with a version before Bareos-18.2 will be denied if configured to use cleartext.
 
-:config:option:`dir/director/TlsCertificate`\ 
+:config:option:`dir/director/TlsCertificate`\
    The full path and filename of a PEM encoded TLS certificate. It can be used as either a client or server certificate. It is used because PEM files are base64 encoded and hence ASCII text based rather than binary. They may also contain encrypted information.
 
-:config:option:`dir/director/TlsKey`\ 
+:config:option:`dir/director/TlsKey`\
    The full path and filename of a PEM encoded TLS private key. It must correspond to the certificate specified in the :strong:`TLS Certificate`\  configuration directive.
 
-:config:option:`dir/director/TlsVerifyPeer`\ 
+:config:option:`dir/director/TlsVerifyPeer`\
    Request and verify the peers certificate.
 
    In server context, unless the :strong:`TLS Allowed CN`\  configuration directive is specified, any client certificate signed by a known-CA will be accepted.
 
    In client context, the server certificate CommonName attribute is checked against the :strong:`Address`\  and :strong:`TLS Allowed CN`\  configuration directives.
 
-:config:option:`dir/director/TlsAllowedCn`\ 
+:config:option:`dir/director/TlsAllowedCn`\
    Common name attribute of allowed peer certificates. If :strong:`TLS Verify Peer`\ =yes, all connection request certificates will be checked against this list.
 
    This directive may be specified more than once.
 
-:config:option:`dir/director/TlsCaCertificateFile`\ 
+:config:option:`dir/director/TlsCaCertificateFile`\
    The full path and filename specifying a PEM encoded TLS CA certificate(s). Multiple certificates are permitted in the file.
 
    In a client context, one of :strong:`TLS CA Certificate File`\  or :strong:`TLS CA Certificate Dir`\  is required.
 
    In a server context, it is only required if :strong:`TLS Verify Peer`\  is used.
 
-:config:option:`dir/director/TlsCaCertificateDir`\ 
+:config:option:`dir/director/TlsCaCertificateDir`\
    Full path to TLS CA certificate directory. In the current implementation, certificates must be stored PEM encoded with OpenSSL-compatible hashes, which is the subject name’s hash and an extension of .0.
 
    In a client context, one of :strong:`TLS CA Certificate File`\  or :strong:`TLS CA Certificate Dir`\  is required.
 
    In a server context, it is only required if :strong:`TLS Verify Peer`\  is used.
 
-:config:option:`dir/director/TlsDhFile`\ 
+:config:option:`dir/director/TlsDhFile`\
    Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications. DH key exchange adds an additional level of security because the key used for encryption/decryption by the server and the client is computed on each end and thus is never passed over the network if Diffie-Hellman key exchange is used. Even if DH key exchange is not used, the encryption/decryption key is always
    passed encrypted. This directive is only valid within a server context.
 
@@ -93,7 +93,7 @@ You can use programs like `xca <http://xca.sourceforge.net/>`_ or TinyCA to easi
 Example TLS Configuration Files
 -------------------------------
 
-:index:`\ <single: Example; TLS Configuration Files>`\  :index:`\ <single: TLS Configuration Files>`\ 
+:index:`\ <single: Example; TLS Configuration Files>`\  :index:`\ <single: TLS Configuration Files>`\
 
 An example of the TLS portions of the configuration files are listed below.
 

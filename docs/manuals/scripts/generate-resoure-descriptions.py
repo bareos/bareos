@@ -91,7 +91,7 @@ class BareosConfigurationSchema:
 
     def getDatatype(self, name):
         return self.json["datatype"][name]
-    
+
     def getResources(self, daemon):
         return sorted(filter( None, self.json["resource"][daemon].keys()) )
 
@@ -122,11 +122,11 @@ class BareosConfigurationSchema:
         #   False: exclude deprecated
         #   True:  only deprecated
         return BareosConfigurationSchemaDirective( self.json["resource"][daemon][resourcename][directive] )
-    
+
     def getConvertedResourceDirectives(self, daemon, resourcename):
         # OVERWRITE
         return None
-    
+
     def writeResourceDirectives(self, daemon, resourcename, filename=None):
         self.open(filename, "w")
         self.out.write(self.getConvertedResourceDirectives(daemon, resourcename))
@@ -142,7 +142,7 @@ class BareosConfigurationSchema:
         else:
             return ""
 
-    
+
 class BareosConfigurationSchemaDirective(dict):
 
     def getDefaultValue( self ):
@@ -363,7 +363,7 @@ class BareosConfigurationSchema2Sphinx(BareosConfigurationSchema):
 
     def getConvertedResourceDirectives(self, daemon, resourcename):
         logger = logging.getLogger()
-        
+
         result = ''
         # only useful, when file is included by toctree.
         #result='{}\n{}\n\n'.format(resourcename, len(resourcename) * '-')
@@ -394,21 +394,21 @@ class BareosConfigurationSchema2Sphinx(BareosConfigurationSchema):
 
 
             result += '.. config:option:: {daemon}/{resource}/{directive}\n\n'.format(**strings)
-            
+
             if data.get( 'required' ):
                 strings['required']="True"
                 result += '   :required: {required}\n'.format(**strings)
-                
+
             result += '   :type: {datatype}\n'.format(**strings)
-                
+
             if data.get( 'default_value' ):
                 result += '   :default: {default}\n'.format(**strings)
-            
+
             if strings.get('version'):
                 result += '   :version: {version}\n'.format(**strings)
 
             result += '\n'
-            
+
             if strings['description']:
                 result += strings['description'] + '\n\n'
 
@@ -416,7 +416,7 @@ class BareosConfigurationSchema2Sphinx(BareosConfigurationSchema):
             checkincludefilename = 'source/{}'.format(includefilename)
             if not os.path.exists(checkincludefilename):
                 touch(checkincludefilename)
-                
+
             result += '   .. include:: {}\n\n'.format(includefilename)
 
             result += '\n\n'
@@ -430,10 +430,10 @@ class BareosConfigurationSchema2Sphinx(BareosConfigurationSchema):
         result += self.getHeaderColumns()
         result += '\n\n'
         return result
-    
+
     def getHeaderColumns(self):
-        columns = [ 
-            "configuration directive name", 
+        columns = [
+            "configuration directive name",
             "type of data",
             "default value",
             "remark"
@@ -537,7 +537,7 @@ def createLatex(data):
 
 def createSphinx(data):
     logger = logging.getLogger()
-    
+
     logger.info("Create RST/Sphinx files ...")
 
     sphinx = BareosConfigurationSchema2Sphinx(data)
@@ -574,13 +574,13 @@ if __name__ == '__main__':
     with open(args.filename) as data_file:
         data = json.load(data_file)
     #pprint(data)
-    
+
     if not args.latex:
         # default is sphinx
-        args.sphinx = True      
-        
+        args.sphinx = True
+
     if args.latex:
         createLatex(data)
-        
+
     if args.sphinx:
         createSphinx(data)
