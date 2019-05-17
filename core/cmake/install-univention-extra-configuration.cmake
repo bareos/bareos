@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -17,26 +17,8 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-IF(NOT HAVE_WIN32)
+MESSAGE( STATUS "${PROJECT_SOURCE_DIR}/platform/univention/create_ucs_template_scripts.sh ${PROJECT_SOURCE_DIR} $ENV{DESTDIR}/etc/univention/templates/scripts/" )
 
-   MESSAGE( STATUS "UNITDIR: " ${UNITDIR} )
-   MESSAGE( STATUS "DISTNAME: " ${DISTNAME} )
-
-   set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
-   if (${DISTNAME} STREQUAL ubuntu)
-      add_subdirectory(debian)
-   elseif (${DISTNAME} STREQUAL univention)
-      MESSAGE( STATUS "adding subdirectories debian and univention" )
-      add_subdirectory(debian)
-      add_subdirectory(univention)
-   elseif (${DISTNAME} STREQUAL hpux)
-      MESSAGE( STATUS "DISTNAME: " ${DISTNAME} )
-   else()
-      add_subdirectory(${DISTNAME})
-   endif()
-
-   if (${systemd})
-      add_subdirectory(systemd)
-   endif()
-
-ENDIF()
+execute_process(
+  COMMAND ${PROJECT_SOURCE_DIR}/platforms/univention/create_ucs_template_scripts.sh ${PROJECT_SOURCE_DIR} $ENV{DESTDIR}/etc/univention/templates/scripts/
+)
