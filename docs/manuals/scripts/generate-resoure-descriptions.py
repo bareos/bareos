@@ -390,7 +390,7 @@ class BareosConfigurationSchema2Sphinx(BareosConfigurationSchema):
                 # overwrites start_version
                 strings['version']="deprecated"
 
-            includefilename = '/config-directive-description/{daemon}-{resource}-{directive}.rst.inc'.format(**strings)
+            includefilename = '/manually_added_config_directive_descriptions/{daemon}-{resource}-{directive}.rst.inc'.format(**strings)
 
 
             result += '.. config:option:: {daemon}/{resource}/{directive}\n\n'.format(**strings)

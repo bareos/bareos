@@ -103,15 +103,15 @@ From extern, the URL to access them is
 
 While the automatically generated may contain a short description (if available in the source code),
 the description can be extended by creating of modifying
-the corresponding file in the :file:`config-directive-description/` subdirectory.
+the corresponding file in the :file:`manually_added_config_directive_descriptions/` subdirectory.
 
    * :config:option:`dir/job/AlwaysIncrementalJobRetention`
   
-      * :file:`config-directive-description/dir-job-AlwaysIncrementalJobRetention.rst.inc`
+      * :file:`manually_added_config_directive_descriptions/dir-job-AlwaysIncrementalJobRetention.rst.inc`
      
    * :config:option:`fd/client/AllowBandwidthBursting`
    
-      * :file:`config-directive-description/fd-client-AllowBandwidthBursting.rst.inc`
+      * :file:`manually_added_config_directive_descriptions/fd-client-AllowBandwidthBursting.rst.inc`
 
 
 
