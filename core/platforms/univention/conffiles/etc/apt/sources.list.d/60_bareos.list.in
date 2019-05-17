@@ -10,7 +10,7 @@ password = configRegistry.get('bareos/subscription/password', '')
 
 if username and password:
 
-    bareos_major_version  = @MAJOR_VERSION@
+    bareos_major_version  = @BAREOS_MAJOR_VERSION@
     #bareos_sign_key_id = 'F93C028C093BFBA2'
 
     ucs_version = configRegistry.get('version/version')
