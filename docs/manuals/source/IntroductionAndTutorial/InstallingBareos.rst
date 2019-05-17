@@ -78,7 +78,11 @@ If you do not explicitly choose a database backend, your operating system instal
 Install the Bareos Software Packages
 ------------------------------------
 
-The package **bareos** is only a meta package, that contains dependencies to the main components of Bareos, see :ref:`section-BareosPackages`. If you want to setup a distributed environment (like one Director, separate database server, multiple Storage daemons) you have to choose the corresponding Bareos packages to install on each hosts instead of just installing the **bareos** package.
+The package **bareos** is only a meta package which contains dependencies on the main components of Bareos, see :ref:`section-BareosPackages`. If you want to setup a distributed environment (like one Director, separate database server, multiple Storage daemons) you have to choose the regarding Bareos packages to install on each of the hosts instead of just installing the **bareos** package.
+
+The following code snippets are shell scripts that can be used as orientation how to download the package repositories and install bareos. The release version number for **bareos** and the corresponding Linux distribution have to be updated for your needs, respectively.
+
+**See** http://download.bareos.org/bareos/release/ **for applicable releases and distributions.**
 
 Install on RedHat based Linux Distributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -86,16 +90,17 @@ Install on RedHat based Linux Distributions
 RHEL>7, CentOS>7, Fedora
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`\ <single: Platform; RHEL>`\  :index:`\ <single: Platform; CentOS>`\  :index:`\ <single: Platform; Fedora>`\ 
+:index:`\ <single: Platform; RHEL>`\  :index:`\ <single: Platform; CentOS>`\  :index:`\ <single: Platform; Fedora>`\
 
 Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson library <jansson>` package. On RHEL 7 it is available through the RHEL Server Optional channel. On CentOS 7 and Fedora is it included on the main repository.
 
 .. code-block:: shell-session
-   :caption: Bareos installation on RHEL > 7 / CentOS > 7 / Fedora
+   :caption: Shell example script for Bareos installation on RHEL > 7 / CentOS > 7 / Fedora
 
-   #
-   # define parameter
-   #
+   #!/bin/sh
+
+   # See http://download.bareos.org/bareos/release/
+   # for applicable releases and distributions
 
    DIST=RHEL_7
    # or
@@ -123,17 +128,18 @@ RHEL 6, CentOS 6
 Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson library <jansson>` package. This package is available on `EPEL <https://fedoraproject.org/wiki/EPEL>`_ 6. Make sure, it is available on your system.
 
 .. code-block:: shell-session
-   :caption: Bareos installation on RHEL > 6 / CentOS > 6
+   :caption: Shell example script for Bareos installation on RHEL > 6 / CentOS > 6
+
+   #!/bin/sh
+
+   # See http://download.bareos.org/bareos/release/
+   # for applicable releases and distributions
 
    #
    # add EPEL repository, if not already present.
    # Required for the jansson package.
    #
    rpm -Uhv https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
-
-   #
-   # define parameter
-   #
 
    DIST=RHEL_6
    # DIST=CentOS_6
@@ -158,11 +164,12 @@ RHEL 5
 yum in RHEL 5/CentOS 5 has slightly different behaviour as far as dependency resolving is concerned: it sometimes install a dependent package after the one that has the dependency defined. To make sure that it works, install the desired Bareos database backend package first in a separate step:
 
 .. code-block:: shell-session
-   :caption: Bareos installation on RHEL 5 / CentOS 5
+   :caption: Shell example script for Bareos installation on RHEL 5 / CentOS 5
 
-   #
-   # define parameter
-   #
+   #!/bin/sh
+
+   # See http://download.bareos.org/bareos/release/
+   # for applicable releases and distributions
 
    DIST=RHEL_5
 
@@ -188,11 +195,12 @@ SUSE Linux Enterprise Server (SLES), openSUSE
 :index:`\ <single: Platform; SLES>`\  :index:`\ <single: Platform; openSUSE>`\ 
 
 .. code-block:: shell-session
-   :caption: Bareos installation on SLES / openSUSE
+   :caption: Shell example script for Bareos installation on SLES / openSUSE
 
-   #
-   # define parameter
-   #
+   #!/bin/sh
+
+   # See http://download.bareos.org/bareos/release/
+   # for applicable releases and distributions
 
    DIST=SLE_12_SP3
    # or
@@ -227,11 +235,12 @@ Debian / Ubuntu
 Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson library <jansson>` package. On Ubuntu is it available in Ubuntu Universe. In Debian, is it included in the main repository.
 
 .. code-block:: shell-session
-   :caption: Bareos installation on Debian / Ubuntu
+   :caption: Shell example script for Bareos installation on Debian / Ubuntu
 
-   #
-   # define parameter
-   #
+   #!/bin/sh
+
+   # See http://download.bareos.org/bareos/release/
+   # for applicable releases and distributions
 
    DIST=Debian_9.0
    # or
