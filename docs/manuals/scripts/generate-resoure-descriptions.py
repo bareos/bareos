@@ -563,6 +563,7 @@ if __name__ == '__main__':
     logger = logging.getLogger()
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('-q', '--quiet', action='store_true', help="suppress logging output" )
     parser.add_argument('-d', '--debug', action='store_true', help="enable debugging output" )
     parser.add_argument('--latex', action='store_true', help="Create LaTex files." )
     parser.add_argument('--sphinx', action='store_true', help="Create RST files for Sphinx." )
@@ -570,6 +571,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if args.debug:
         logger.setLevel(logging.DEBUG)
+
+    if args.quiet:
+        logger.setLevel(logging.CRITICAL)
 
     with open(args.filename) as data_file:
         data = json.load(data_file)
