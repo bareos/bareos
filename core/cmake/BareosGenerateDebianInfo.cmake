@@ -40,4 +40,9 @@ IF(GENERATE_DEBIAN_CONTROL)
       FILE(READ ./debian/control.bareos-director-python-plugin DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN)
    ENDIF()
 
+   IF (${DISTNAME} MATCHES "univention")
+       # only required for univention
+       FILE(READ ./debian/control.univention-bareos DEBIAN_CONTROL_UNIVENTION_BAREOS)
+   ENDIF()
+
 ENDIF()
