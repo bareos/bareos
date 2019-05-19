@@ -18,7 +18,7 @@
 #   02110-1301, USA.
 
 cmake_minimum_required(VERSION 3.0)
-project(bareos)
+project(bareos C CXX)
 
 INCLUDE(GNUInstallDirs)
 
@@ -223,7 +223,7 @@ mark_as_advanced(INSTALL_LIB_DIR)
 # RPATH settings (from https://cmake.org/Wiki/CMake_RPATH_handling)
 SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
 
-SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 
 SET(CMAKE_INSTALL_RPATH "${libdir}")
 

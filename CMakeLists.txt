@@ -16,6 +16,33 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
+
 cmake_minimum_required(VERSION 3.0)
-add_subdirectory(core)
-add_subdirectory(webui)
+
+project(bareos NONE)
+
+IF(docs-build-json)
+# check for wrong combinations of build flags
+  IF(docs-only)
+    MESSAGE(FATAL_ERROR "\n\"docs-build-json\" needs bareos-executables and cannot be combined with \"docs-only\"")
+  ENDIF()
+  IF(NOT traymonitor)
+    MESSAGE(FATAL_ERROR "\n\"docs-build-json\" needs the traymonitor executable: add \"-Dtraymonitor=yes\"")
+  ENDIF()
+ENDIF()
+
+IF(docs-only)
+  set(BUILD_BAREOS_BINARIES no)
+ELSE()
+  set(BUILD_BAREOS_BINARIES yes)
+ENDIF()
+
+IF(BUILD_BAREOS_BINARIES)
+  add_subdirectory(core)
+  add_subdirectory(webui)
+ENDIF()
+
+IF(docs OR docs-only OR docs-build-json)
+   add_subdirectory(docs/manuals)
+ENDIF()
+
