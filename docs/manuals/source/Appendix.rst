@@ -20,4 +20,5 @@ Appendix
       /Appendix/ReleaseNotes.rst
       /Appendix/FAQ.rst
       /Appendix/BareosCopyrightTrademarkAndLicenses.rst
+      copyright.rst
 
