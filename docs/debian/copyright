@@ -1,9 +1,0 @@
-Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: bareos-docs
-Upstream-Contact: Jörg Steffens <joerg.steffens@bareos.com>
-Source: https://github.com/bareos/bareos-docs
-
-Files: *
-Copyright: see documents
-License: GFDL
-
