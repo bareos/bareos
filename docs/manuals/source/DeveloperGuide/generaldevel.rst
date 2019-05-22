@@ -62,7 +62,7 @@ However, this is by no means enforced.
   Fixes #12345: Really nasty library needs a sample commit.
 
   This patch fixes a bug in one of the libraries.
-  Before we applied this specific change, the 
+  Before we applied this specific change, the
   library was completely okay, but in desperate
   need of a sample commit.
 
@@ -114,220 +114,47 @@ The same applies to a support request (we answer only bugs), you might give the 
 Developing Bareos
 -----------------
 
-Compiling
-~~~~~~~~~
+Building the testenvironment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There are several ways to locally compile (and install) Bareos
+This following shell script will show how to build the **Bareos test-environment** from source.
 
-Option one: Local creation of Debian-packages from the cloned sourcecode
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. code-block:: bash
+  :caption: Example shell script
 
-Cloning and initial steps
-'''''''''''''''''''''''''
+  #!/bin/sh
 
-::
+  mkdir bareos-local-tests
+  cd bareos-local-tests
+  git clone https://github.com/bareos/bareos.git
 
-    sudo apt-get install git dpkg-dev devscripts fakeroot
-    git clone https://github.com/bareos/bareos
-    cd bareos/core
-    dpkg-checkbuilddeps
+  mkdir build
+  cd build
 
-You then need to install all packages that dpkg-checkbuilddeps lists as
-required
+  cmake -Dsqlite3=yes -Dtraymonitor=yes ../bareos
+  make -j
+  make test
 
-Changelog preparation
-'''''''''''''''''''''
+Building the documentation
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-::
+This following shell script will show how to build the **Bareos documentation** from source.
 
-    # prepares the changelog for Debian, only neccesary on initial install
-    cp -a platforms/packaging/bareos.changes debian/changelog
-    # You need to manually change the version number in debian/changelog.
-    # gets current version number from src/include/version.h and includes it
-    VERSION=$(sed -n -r 's/#define VERSION "(.*)"/\1/p'  src/include/version.h)
-    dch -v $VERSION "Switch version number"
+.. code-block:: bash
+  :caption: Example shell script
 
-Creation of Debian-packages
-'''''''''''''''''''''''''''
+  #!/bin/sh
 
-::
+  mkdir bareos-local-tests
+  cd bareos-local-tests
+  git clone https://github.com/bareos/bareos.git
 
-    # creates Debian-packages and stores them in ..
-    fakeroot debian/rules binary
+  mkdir build-docs
+  cd build-docs
 
-Option two: Compiling and installing Bareos locally on Debian
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  cmake -Ddocs-only=yes ../bareos
+  make
 
-**Disclaimer: This process makes use of development-oriented compiler
-flags. If you want to compile Bareos to be similar to a Bareos compiled
-with production intent, please refer to section “Using the same flags as
-in production”.**
-
-.. _cloning-and-initial-steps-1:
-
-Cloning and initial steps
-'''''''''''''''''''''''''
-
-::
-
-    git clone https://github.com/bareos/bareos
-    cd bareos/core
-
-Compiling and locally installing Bareos
-'''''''''''''''''''''''''''''''''''''''
-
-::
-
-    #!/bin/bash
-    export CFLAGS="-g -Wall"
-    export CXXFLAGS="-g -Wall"
-
-    # specifies the directory in which bareos will be installed
-    DESTDIR=~/bareos
-
-    mkdir $DESTDIR
-
-    CMAKE_BUILDDIR=cmake-build
-
-    mkdir ${CMAKE_BUILDDIR}
-    pushd ${CMAKE_BUILDDIR}
-
-    # In a normal installation, Dbaseport=9101 is used. However, for testing purposes, we make use of port 8001.
-    cmake  .. \
-      -DCMAKE_VERBOSE_MAKEFILE=ON \
-      -DBUILD_SHARED_LIBS:BOOL=ON \
-      -Dbaseport=8001 \
-      -DCMAKE_INSTALL_PREFIX:PATH=$DESTDIR \
-      -Dprefix=$DESTDIR \
-      -Dworkingdir=$DESTDIR/var/ \
-      -Dpiddir=$DESTDIR/var/ \
-      -Dconfigtemplatedir=$DESTDIR/lib/defaultconfigs \
-      -Dsbin-perm=755 \
-      -Dpython=yes \
-      -Dsmartalloc=yes \
-      -Ddisable-conio=yes \
-      -Dreadline=yes \
-      -Dbatch-insert=yes \
-      -Ddynamic-cats-backends=yes \
-      -Ddynamic-storage-backends=yes \
-      -Dscsi-crypto=yes \
-      -Dlmdb=yes \
-      -Dndmp=yes \
-      -Dipv6=yes \
-      -Dacl=yes \
-      -Dxattr=yes \
-      -Dpostgresql=yes \
-      -Dmysql=yes \
-      -Dsqlite3=yes \
-      -Dtcp-wrappers=yes \
-      -Dopenssl=yes \
-      -Dincludes=yes
-
-    popd
-
-You will now have to do the following:
-
-::
-
-    # This path corresponds to the $CMAKE_BUILDDIR variable. If you used a directory other than the default ```cmake-build```, you will have to alter the path accordingly.
-    cd cmake-build
-    make
-    make install
-
-Configuring Bareos
-''''''''''''''''''
-
-Before you can successfully use your local installation, it requires
-additional configuration.
-
-::
-
-    # You have to move to the local installation directory. This path corresponds to the $DESTDIR variable. If you used a directory other than the default ```~/baroes```, you will have to alter the path accordingly.
-    cd ~/bareos
-    # copy configuration files, only neccesary on initial install
-    cp -a lib/defaultconfigs/* etc/bareos/
-
-You will have to replace
-``dbdriver = "XXX_REPLACE_WITH_DATABASE_DRIVER_XXX"`` with ``sqlite3``
-or other. The file can be found at
-``etc/bareos/bareos-dir.d/catalog/MyCatalog.conf``
-
-::
-
-    # sets up server
-    # creates bareos database (requires sqlite3 package in case of sqlite3 installation)
-    lib/bareos/scripts/create_bareos_database
-    lib/bareos/scripts/make_bareos_tables
-    lib/bareos/scripts/grant_bareos_privileges
-
-Launching your local Bareos installation
-''''''''''''''''''''''''''''''''''''''''
-
-::
-
-    # launches director in debug mode in foreground
-    sbin/bareos-dir -f -d100
-    # displays status of bareos daemons
-    lib/bareos/scripts/bareos status
-    # The start command launches both the daemons and the director, if not already launched. We launched the director seperately for debugging purposes.
-    lib/bareos/scripts/bareos start '
-    # launches bconsole to connect to director
-    bin/bconsole
-
-Using the same flags as in production
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-You can find the compilation flags that are used in production in the
-following locations:
-
-Debian-packages
-'''''''''''''''
-
-You can find the flags used for compiling for Debian in
-`debian/rules <https://github.com/bareos/bareos/blob/master/core/debian/rules>`__.
-
-RPM-packages
-''''''''''''
-
-You can find the flags used for compiling rpm-packages in
-`core/platforms/packaging/bareos.spec <https://github.com/bareos/bareos/blob/master/core/platforms/packaging/bareos.spec>`__.
-
-Debugging
-~~~~~~~~~
-
-Probably the first thing to do is to turn on debug output.
-
-A good place to start is with a debug level of 20 as in **./startit
--d20**. The startit command starts all the daemons with the same debug
-level. Alternatively, you can start the appropriate daemon with the
-debug level you want. If you really need more info, a debug level of 60
-is not bad, and for just about everything a level of 200.
-
-Using a Debugger
-~~~~~~~~~~~~~~~~
-
-If you have a serious problem such as a segmentation fault, it can
-usually be found quickly using a good multiple thread debugger such as
-**gdb**. For example, suppose you get a segmentation violation in
-**bareos-dir**. You might use the following to find the problem:
-
-::
-
-  <start the Storage and File daemons>
-  cd dird
-  gdb ./bareos-dir
-  run -f -s -c ./dird.conf
-  <it dies with a segmentation fault>
-
-The **-f** option is specified on the **run** command to inhibit **dird** from going into the background.
-You may also want to add the **-s** option to the run command to disable signals which can potentially interfere with the debugging.
-
-As an alternative to using the debugger, each **Bareos** daemon has a
-built in back trace feature when a serious error is encountered. It
-calls the debugger on itself, produces a back trace, and emails the
-report to the developer. For more details on this, please see the
-chapter in the main Bareos manual entitled “What To Do When Bareos
-Crashes (Kaboom)”.
 
 Memory Leaks
 ~~~~~~~~~~~~
@@ -414,4 +241,4 @@ don't subclass ``SmartAlloc``
 avoid smart allocation
   The whole smart allocation library with ``get_pool_memory()``, ``sm_free()`` and friends do not mix with RAII, so we will try to remove them step by step in the future.
   Avoid in new code if possible.
-  
+

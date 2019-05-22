@@ -5,3 +5,4 @@ This is a complete guide to the language and style conventions used for Bareos D
 
 The primary output format is HTML.
 It is doubtfull, is PDFs can be created easily (internally, Sphinx would convert to Latex first, and than use Latex to create the PDF).
+
