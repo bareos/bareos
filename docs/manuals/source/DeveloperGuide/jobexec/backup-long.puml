@@ -1,0 +1,243 @@
+@startuml
+participant d as "Director"
+participant s as "Storage Daemon"
+participant f as "File Daemon"
+group Initiate dir to sd connection
+  d -> s : Hello
+  s -> d : CRAM-MD5 Challenge
+  d -> s : CRAM-MD5 Response
+  alt success
+    s -> d : 1000 OK auth
+  else failure
+    s -> d : 1999 Authorization failed.
+  end
+  d -> s : CRAM-MD5 Challenge
+  s -> d : CRAM-MD5 Response
+  alt success
+    d -> s : 1000 OK auth
+  else failure
+    d -> s : 1999 Authorization failed.
+  end
+end
+loop each option
+  d -> s : pluginoptions %s
+  s -> d : 2000 OK plugin options
+end
+alt if reschedulung
+  d -> s : cancel Job=%s
+  s -> d : 3000 JobId=%ld Job="%s" marked to be %s.
+end
+d -> s : JobId=%s [...]
+s -> d : 3000 OK Job SDid=%d SDtime=%d Authorization=%100s
+d -> s : getSecureEraseCmd
+s -> d : 2000 OK SDSecureEraseCmd %s
+loop each write_storage
+  d -> s : use storage=%s media_type=%s pool_name=%s pool_type=%s append=1 copy=%d stripe=%d
+  loop each device
+    d -> s : use device=%s
+  end
+  d -> s : BNET_EOD
+end
+d -> s : BNET_EOD
+s -> d : 3000 OK use device device=%s
+d -> s : run
+== Message thread for SD communication spawned ==
+s -> d : Status Job=%s JobStatus=70
+note right
+  70 is numeric for 'F' which
+  means waiting for filedaemon
+end note
+group Initiate dir to fd connection
+  d -> f : Hello Director %s calling
+  f -> d : CRAM-MD5 Challenge
+  d -> f : CRAM-MD5 Response
+  alt success
+    f -> d : 1000 OK auth
+  else failure
+    f -> d : 1999 Authorization failed.
+  end
+  d -> f : CRAM-MD5 Challenge
+  f -> d : CRAM-MD5 Response
+  alt success
+    d -> f : 1000 OK auth
+  else failure
+    d -> f : 1999 Authorization failed.
+  end
+
+end
+' == SendJobInfoToFileDaemon() ==
+d -> f : JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s [ssl=%d]
+f -> d : 2000 OK Job %s (%s) %s,%s,%s,%s,%s
+' == SendLevelCommand() ==
+d -> f : level = [accurate_]<base|full|differential|incremental>[ rerunning ] mtimeonly=0
+alt if differential or incremental
+  d -> f : level = since_utime=<stime> mtimeonly=0 prev_job=<PrevJob>
+end
+f -> d : 2000 OK level
+' == SendIncludeList() ==
+group send fileset to fd
+  d -> f : fileset[ vss=1]
+  loop each include item, then each exclude item
+    d -> f : I/E
+    note right
+      I for include, E for exclude
+    end note
+    loop each ignoredir
+      d -> f : Z <ignoredir>
+    end
+    loop each option-block
+      d -> f : O <options>
+      loop each regex
+        d -> f : R <regex>
+      end
+      loop each regexdir
+        d -> f : RD <regex>
+      end
+      loop each regexfile
+        d -> f : RF <regex>
+      end
+      loop each wild
+        d -> f : W <wild>
+      end
+      loop each wilddir
+        d -> f : WD <wild>
+      end
+      loop each wildfile
+        d -> f : WF <wild>
+      end
+      loop each wildbase
+        d -> f : WB <wild>
+      end
+      loop each base
+        d -> f : B <base>
+      end
+      loop each fstype
+        d -> f : X <fstype>
+      end
+      loop each drivetype
+        d -> f : XD <drivetype>
+      end
+      alt if plugin
+        d -> f : G <plugin>
+      end
+      alt if reader
+        d -> f : D <reader>
+      end
+      alt if writer
+        d -> f : T <writer>
+      end
+      d -> f : N
+    end
+    loop name_list
+      d -> f : F <item>
+    end
+    d -> f : N
+    loop plugin_list
+      d -> f : F <plugin>
+    end
+    d -> f : N
+  end
+  d -> f : BNET_EOD
+  f -> d : 2000 OK include
+end
+'== SendExcludeList() ==
+' this function does nothing
+'== SendPreviousRestoreObjects() ==
+alt if (incr or diff) and restore objects exist
+  loop each restore object
+    d -> f : restoreobject JobId=%s %s,%s,[...]
+    d -> f : <object-name>
+    d -> f : <object-value>
+  end
+  d -> f : restoreobject end
+  f -> d : 2000 OK ObjectRestored
+end
+' == SendSecureEraseReqToFd() ==
+d -> f : getSecureEraseCmd
+f -> d : 2000 OK FDSecureEraseCmd <erase-cmd>
+'== SendBwLimitToFd() ==
+d -> f : setbandwidth=%d Job=%s
+f -> d : 2000 OK Bandwidth
+
+d -> f : storage address=%s port=%d ssl=%d
+group Initiate fd to sd connection
+  f -> s : Hello Start Job %s
+  s -> f : CRAM-MD5 Challenge
+  f -> s : CRAM-MD5 Response
+  alt success
+    s -> f : 1000 OK auth
+  else failure
+    s -> f : 1999 Authorization failed.
+  end
+  f -> s : CRAM-MD5 Challenge
+  s -> f : CRAM-MD5 Response
+  alt success
+    f -> s : 1000 OK auth
+  else failure
+    f -> s : 1999 Authorization failed.
+  end
+end
+f -> d : 2000 OK storage
+s -> d : 3010 Job %s start
+s -> d : Status Job=%s JobStatus=82
+note right
+  82 is numeric for 'R' which
+  means running
+end note
+'== SendRunscriptsCommands() ==
+alt if runscripts for client
+  loop each runscript for this level
+    d -> f : Run OnSuccess=%u OnFailure=%u AbortOnError=%u When=%u Command=%s
+    f -> d : 2000 OK RunScript
+  end
+  alt if before script
+    d -> f : RunBeforeNow
+    f -> d : 2000 OK RunBeforeNow
+  end
+end
+'== SendAccurateCurrentFiles() ==
+alt if accurate enabled
+  d -> f : accurate files=<approx-number-of-files>
+  loop each accurate file
+    d -> f : /path/to/file\0LStat\0MD5\0DeltaSeq
+  end
+  d -> f : BNET_EOD
+end
+d -> f : backup FileIndex=%ld
+f -> d : 2000 OK backup
+f -> s : append open session
+s -> f : 3000 OK open ticket = <ticket-no>
+f -> s : append data <ticket-no>
+s -> d : Status Job=%s JobStatus=82
+note right
+  82 is numeric for 'R' which
+  means running
+end note
+s -> f : 3000 OK data
+f -> s : Data Records
+f -> s : BNET_EOD
+s -> f : 3000 OK append data
+f -> s : append end session <ticket-no>
+s -> f : 3000 OK end
+f -> s : append close session <ticket-no>
+s -> f : 3000 OK close Status = %d
+s -> f : BNET_EOD
+f -> s : BNET_TERMINATE
+f -> d : 2800 End Job TermCode=%d JobFiles=%u ReadBytes=%s JobBytes=%s Errors=%u VSS=%d Encrypt=%d
+loop each queued message
+  f -> d : Jmsg Job=%s type=%d level=%lld %s
+end
+d -> f : BNET_TERMINATE
+
+loop each queued message
+  s -> d : Jmsg Job=%s type=%d level=%lld %s
+end
+s -> d : Status Job=%s JobStatus=84
+note right
+  82 is numeric for 'T' which
+  means terminated normally
+end note
+s -> d : 3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u
+== Message thread for SD communication exits ==
+s -> d : BNET_EOD
+@enduml

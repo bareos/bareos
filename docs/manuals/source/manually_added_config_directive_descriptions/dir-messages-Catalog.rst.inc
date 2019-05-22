@@ -1,0 +1,2 @@
+Send the message to the Catalog database. The message will be written to the table named Log and a timestamp field will also be added. This permits Job Reports and other messages to be recorded in the Catalog so that they can be accessed by reporting software. Bareos will prune the Log records associated with a Job when the Job records are pruned. Otherwise, Bareos never uses these records internally, so this destination is only used for special purpose programs (e.g. frontend programs).
+

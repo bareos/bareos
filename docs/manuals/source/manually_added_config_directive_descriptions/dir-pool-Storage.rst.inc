@@ -1,0 +1,3 @@
+The Storage directive defines the name of the storage services where you want to backup the FileSet data. For additional details, see the :ref:`DirectorResourceStorage` of this manual. The Storage resource may also be specified in the Job resource, but the value, if any, in the Pool resource overrides any value in the Job. This Storage resource definition is not required by either the Job resource or in the Pool, but it must be specified in one or the other. If not configuration
+error will result. We highly recommend that you define the Storage resource to be used in the Pool rather than elsewhere (job, schedule run, ...). Be aware that you theoretically can give a list of storages here but only the first item from the list is actually used for backup and restore jobs.
+

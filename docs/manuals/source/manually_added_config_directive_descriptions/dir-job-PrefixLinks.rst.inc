@@ -1,0 +1,2 @@
+If a Where path prefix is specified for a recovery job, apply it to absolute links as well. The default is No. When set to Yes then while restoring files to an alternate directory, any absolute soft links will also be modified to point to the new alternate directory. Normally this is what is desired – i.e. everything is self consistent. However, if you wish to later move the files to their original locations, all files linked with absolute names will be broken.
+

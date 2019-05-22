@@ -1,0 +1,24 @@
+.. uml::
+  :caption: Diagram legend
+  
+  @startuml
+  #aqua:reservation context is read or set;
+  detach
+  #limegreen:Decision based on configuration directive;
+  detach
+  #tomato:Control flow broken;
+  detach
+  (M)
+  note right
+    goto or jump-mark
+  end note
+  detach
+  :Read read data from the network<
+  detach
+  :Send data to the network>
+  detach
+  :Call another function|
+  detach
+  :Remote procedure call/
+
+  @enduml

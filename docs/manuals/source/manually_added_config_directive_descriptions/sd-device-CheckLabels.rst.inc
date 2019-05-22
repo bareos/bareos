@@ -1,0 +1,2 @@
+If you intend to read ANSI or IBM labels, this **must** be set. Even if the volume is not ANSI labeled, you can set this to yes, and Bareos will check the label type. Without this directive set to yes, Bareos will assume that labels are of Bareos type and will not check for ANSI or IBM labels. In other words, if there is a possibility of Bareos encountering an ANSI/IBM label, you must set this to yes.
+

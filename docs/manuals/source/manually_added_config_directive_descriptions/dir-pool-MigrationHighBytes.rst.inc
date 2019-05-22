@@ -1,0 +1,3 @@
+This directive specifies the number of bytes in the Pool which will trigger a migration if :config:option:`dir/job/SelectionType`\  = PoolOccupancy has been specified. The fact that the Pool usage goes above this level does not automatically trigger a migration job. However, if a migration job runs and has the PoolOccupancy selection type set, the Migration High Bytes will be applied. Bareos does not currently restrict a pool to have only a single
+:config:option:`dir/storage/MediaType`\ , so you must keep in mind that if you mix Media Types in a Pool, the results may not be what you want, as the Pool count of all bytes will be for all Media Types combined.
+

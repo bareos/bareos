@@ -1,0 +1,2 @@
+If No, the operating system is not required to support keeping track of the file number and reporting it in the (MTIOCGET ioctl). If you must set this to No, Bareos will do the proper file position determination, but it is very unfortunate because it means that tape movement is very inefficient. Fortunately, this operation system deficiency seems to be the case only on a few \*BSD systems. Operating systems known to work correctly are Solaris, Linux and FreeBSD.
+

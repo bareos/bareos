@@ -1,0 +1,2 @@
+If Yes, Bareos close the device (equivalent to an unmount except no mount is required) and reopen it at each poll. Normally this is not too useful unless you have the Offline on Unmount directive set, in which case the drive will be taken offline preventing wear on the tape during any future polling. Once the operator inserts a new tape, Bareos will recognize the drive on the next poll and automatically continue with the backup. Please see above for more details.
+

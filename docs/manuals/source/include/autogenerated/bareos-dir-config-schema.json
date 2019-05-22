@@ -1,0 +1,3546 @@
+{
+  "format-version": 2,
+  "component": "bareos-dir",
+  "version": "19.1.2",
+  "resource": {
+    "bareos-dir": {
+      "Director": {
+        "Name": {
+          "datatype": "NAME",
+          "code": 0,
+          "equals": true,
+          "required": true,
+          "description": "The name of the resource."
+        },
+        "Description": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "Messages": {
+          "datatype": "RES",
+          "code": 1010,
+          "equals": true
+        },
+        "DirPort": {
+          "datatype": "PORT",
+          "code": 0,
+          "default_value": "9101",
+          "equals": true
+        },
+        "DirAddress": {
+          "datatype": "ADDRESS",
+          "code": 0,
+          "default_value": "9101",
+          "equals": true
+        },
+        "DirAddresses": {
+          "datatype": "ADDRESSES",
+          "code": 0,
+          "default_value": "9101",
+          "equals": true
+        },
+        "DirSourceAddress": {
+          "datatype": "ADDRESS",
+          "code": 0,
+          "default_value": "0",
+          "equals": true
+        },
+        "QueryFile": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "required": true
+        },
+        "WorkingDirectory": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "default_value": "/var/lib/bareos",
+          "platform_specific": true,
+          "equals": true
+        },
+        "PidDirectory": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "default_value": "/var/lib/bareos",
+          "platform_specific": true,
+          "equals": true
+        },
+        "PluginDirectory": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "versions": "14.2.0-",
+          "description": "Plugins are loaded from this directory. To load only specific plugins, use 'Plugin Names'."
+        },
+        "PluginNames": {
+          "datatype": "PLUGIN_NAMES",
+          "code": 0,
+          "equals": true,
+          "versions": "14.2.0-",
+          "description": "List of plugins, that should get loaded from 'Plugin Directory' (only basenames, '-dir.so' is added automatically). If empty, all plugins will get loaded."
+        },
+        "ScriptsDirectory": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "This directive is currently unused."
+        },
+        "BackendDirectory": {
+          "datatype": "DIRECTORY_LIST",
+          "code": 0,
+          "default_value": "/usr/local/lib64/bareos/backends",
+          "platform_specific": true,
+          "equals": true
+        },
+        "Subscriptions": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "0",
+          "equals": true,
+          "versions": "12.4.4-"
+        },
+        "SubSysDirectory": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "deprecated": true,
+          "equals": true,
+          "versions": "-12.4.0"
+        },
+        "MaximumConcurrentJobs": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "1",
+          "equals": true
+        },
+        "MaximumConnections": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "30",
+          "equals": true
+        },
+        "MaximumConsoleConnections": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "20",
+          "equals": true
+        },
+        "Password": {
+          "datatype": "AUTOPASSWORD",
+          "code": 0,
+          "equals": true,
+          "required": true
+        },
+        "FdConnectTimeout": {
+          "datatype": "TIME",
+          "code": 0,
+          "default_value": "180",
+          "equals": true
+        },
+        "SdConnectTimeout": {
+          "datatype": "TIME",
+          "code": 0,
+          "default_value": "1800",
+          "equals": true
+        },
+        "HeartbeatInterval": {
+          "datatype": "TIME",
+          "code": 0,
+          "default_value": "0",
+          "equals": true
+        },
+        "StatisticsRetention": {
+          "datatype": "TIME",
+          "code": 0,
+          "default_value": "160704000",
+          "equals": true
+        },
+        "StatisticsCollectInterval": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "150",
+          "equals": true,
+          "versions": "14.2.0-"
+        },
+        "VerId": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "OptimizeForSize": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "OptimizeForSpeed": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "OmitDefaults": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "deprecated": true,
+          "equals": true,
+          "description": "Omit config variables with default values when dumping the config."
+        },
+        "KeyEncryptionKey": {
+          "datatype": "AUTOPASSWORD",
+          "code": 1,
+          "equals": true
+        },
+        "NdmpSnooping": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "equals": true,
+          "versions": "13.2.0-"
+        },
+        "NdmpLogLevel": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "4",
+          "equals": true,
+          "versions": "13.2.0-"
+        },
+        "AbsoluteJobTimeout": {
+          "datatype": "PINT32",
+          "code": 0,
+          "equals": true,
+          "versions": "14.2.0-"
+        },
+        "Auditing": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "versions": "14.2.0-"
+        },
+        "AuditEvents": {
+          "datatype": "AUDIT_COMMAND_LIST",
+          "code": 0,
+          "equals": true,
+          "versions": "14.2.0-"
+        },
+        "SecureEraseCommand": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true,
+          "versions": "15.2.1-",
+          "description": "Specify command that will be called when bareos unlinks files."
+        },
+        "LogTimestampFormat": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true,
+          "versions": "15.2.3-"
+        },
+        "TlsAuthenticate": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "description": "Use TLS only to authenticate, not for encryption."
+        },
+        "TlsEnable": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "equals": true,
+          "description": "Enable TLS support."
+        },
+        "TlsRequire": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "description": "Without setting this to yes, Bareos can fall back to use unencrypted connections. Enabling this implicitly sets \"TLS Enable = yes\"."
+        },
+        "TlsCipherList": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "platform_specific": true,
+          "equals": true,
+          "description": "List of valid TLS Ciphers."
+        },
+        "TlsDhFile": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications."
+        },
+        "TlsVerifyPeer": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "description": "If disabled, all certificates signed by a known CA will be accepted. If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list."
+        },
+        "TlsCaCertificateFile": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path of a PEM encoded TLS CA certificate(s) file."
+        },
+        "TlsCaCertificateDir": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path of a TLS CA certificate directory."
+        },
+        "TlsCertificateRevocationList": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path of a Certificate Revocation List file."
+        },
+        "TlsCertificate": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path of a PEM encoded TLS certificate."
+        },
+        "TlsKey": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path of a PEM encoded private key. It must correspond to the specified \"TLS Certificate\"."
+        },
+        "TlsAllowedCn": {
+          "datatype": "STRING_LIST",
+          "code": 0,
+          "equals": true,
+          "description": "\"Common Name\"s (CNs) of the allowed peer certificates."
+        }
+      },
+      "Client": {
+        "Name": {
+          "datatype": "NAME",
+          "code": 0,
+          "equals": true,
+          "required": true,
+          "description": "The name of the resource."
+        },
+        "Description": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "Protocol": {
+          "datatype": "AUTH_PROTOCOL_TYPE",
+          "code": 0,
+          "default_value": "Native",
+          "equals": true,
+          "versions": "13.2.0-"
+        },
+        "AuthType": {
+          "datatype": "AUTH_TYPE",
+          "code": 0,
+          "default_value": "None",
+          "equals": true
+        },
+        "Address": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true,
+          "required": true
+        },
+        "LanAddress": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true,
+          "versions": "16.2.6-",
+          "description": "Sets additional address used for connections between Client and Storage Daemon inside separate network."
+        },
+        "FdAddress": {
+          "datatype": "STRING",
+          "code": 0,
+          "alias": true,
+          "equals": true,
+          "description": "Alias for Address."
+        },
+        "Port": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "9102",
+          "equals": true
+        },
+        "FdPort": {
+          "datatype": "PINT32",
+          "code": 0,
+          "alias": true,
+          "default_value": "9102",
+          "equals": true
+        },
+        "Username": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "Password": {
+          "datatype": "AUTOPASSWORD",
+          "code": 0,
+          "equals": true,
+          "required": true
+        },
+        "FdPassword": {
+          "datatype": "AUTOPASSWORD",
+          "code": 0,
+          "alias": true,
+          "equals": true
+        },
+        "Catalog": {
+          "datatype": "RES",
+          "code": 1006,
+          "equals": true
+        },
+        "Passive": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "versions": "13.2.0-",
+          "description": "If enabled, the Storage Daemon will initiate the network connection to the Client. If disabled, the Client will initiate the network connection to the Storage Daemon."
+        },
+        "ConnectionFromDirectorToClient": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "equals": true,
+          "versions": "16.2.2",
+          "description": "Let the Director initiate the network connection to the Client."
+        },
+        "AllowClientConnect": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "alias": true,
+          "deprecated": true,
+          "equals": true,
+          "description": "Alias of \"Connection From Client To Director\"."
+        },
+        "ConnectionFromClientToDirector": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "versions": "16.2.2",
+          "description": "The Director will accept incoming network connection from this Client."
+        },
+        "Enabled": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "equals": true,
+          "description": "En- or disable this resource."
+        },
+        "HardQuota": {
+          "datatype": "SIZE64",
+          "code": 0,
+          "default_value": "0",
+          "equals": true
+        },
+        "SoftQuota": {
+          "datatype": "SIZE64",
+          "code": 0,
+          "default_value": "0",
+          "equals": true
+        },
+        "SoftQuotaGracePeriod": {
+          "datatype": "TIME",
+          "code": 0,
+          "default_value": "0",
+          "equals": true
+        },
+        "StrictQuotas": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "QuotaIncludeFailedJobs": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "equals": true
+        },
+        "FileRetention": {
+          "datatype": "TIME",
+          "code": 0,
+          "default_value": "5184000",
+          "equals": true
+        },
+        "JobRetention": {
+          "datatype": "TIME",
+          "code": 0,
+          "default_value": "15552000",
+          "equals": true
+        },
+        "HeartbeatInterval": {
+          "datatype": "TIME",
+          "code": 0,
+          "default_value": "0",
+          "equals": true
+        },
+        "AutoPrune": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "MaximumConcurrentJobs": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "1",
+          "equals": true
+        },
+        "MaximumBandwidthPerJob": {
+          "datatype": "SPEED",
+          "code": 0,
+          "equals": true
+        },
+        "NdmpLogLevel": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "4",
+          "equals": true
+        },
+        "NdmpBlockSize": {
+          "datatype": "SIZE32",
+          "code": 0,
+          "default_value": "64512",
+          "equals": true
+        },
+        "NdmpUseLmdb": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "equals": true
+        },
+        "TlsAuthenticate": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "description": "Use TLS only to authenticate, not for encryption."
+        },
+        "TlsEnable": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "equals": true,
+          "description": "Enable TLS support."
+        },
+        "TlsRequire": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "description": "Without setting this to yes, Bareos can fall back to use unencrypted connections. Enabling this implicitly sets \"TLS Enable = yes\"."
+        },
+        "TlsCipherList": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "platform_specific": true,
+          "equals": true,
+          "description": "List of valid TLS Ciphers."
+        },
+        "TlsDhFile": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications."
+        },
+        "TlsVerifyPeer": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "description": "If disabled, all certificates signed by a known CA will be accepted. If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list."
+        },
+        "TlsCaCertificateFile": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path of a PEM encoded TLS CA certificate(s) file."
+        },
+        "TlsCaCertificateDir": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path of a TLS CA certificate directory."
+        },
+        "TlsCertificateRevocationList": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path of a Certificate Revocation List file."
+        },
+        "TlsCertificate": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path of a PEM encoded TLS certificate."
+        },
+        "TlsKey": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path of a PEM encoded private key. It must correspond to the specified \"TLS Certificate\"."
+        },
+        "TlsAllowedCn": {
+          "datatype": "STRING_LIST",
+          "code": 0,
+          "equals": true,
+          "description": "\"Common Name\"s (CNs) of the allowed peer certificates."
+        }
+      },
+      "JobDefs": {
+        "Name": {
+          "datatype": "NAME",
+          "code": 0,
+          "equals": true,
+          "required": true,
+          "description": "The name of the resource."
+        },
+        "Description": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "Type": {
+          "datatype": "JOB_TYPE",
+          "code": 0,
+          "equals": true,
+          "required": true
+        },
+        "Protocol": {
+          "datatype": "PROTOCOL_TYPE",
+          "code": 0,
+          "default_value": "Native",
+          "equals": true
+        },
+        "BackupFormat": {
+          "datatype": "STRING",
+          "code": 0,
+          "default_value": "Native",
+          "equals": true
+        },
+        "Level": {
+          "datatype": "BACKUP_LEVEL",
+          "code": 0,
+          "equals": true
+        },
+        "Messages": {
+          "datatype": "RES",
+          "code": 1010,
+          "equals": true,
+          "required": true
+        },
+        "Storage": {
+          "datatype": "RESOURCE_LIST",
+          "code": 1005,
+          "equals": true
+        },
+        "Pool": {
+          "datatype": "RES",
+          "code": 1009,
+          "equals": true,
+          "required": true
+        },
+        "FullBackupPool": {
+          "datatype": "RES",
+          "code": 1009,
+          "equals": true
+        },
+        "VirtualFullBackupPool": {
+          "datatype": "RES",
+          "code": 1009,
+          "equals": true
+        },
+        "IncrementalBackupPool": {
+          "datatype": "RES",
+          "code": 1009,
+          "equals": true
+        },
+        "DifferentialBackupPool": {
+          "datatype": "RES",
+          "code": 1009,
+          "equals": true
+        },
+        "NextPool": {
+          "datatype": "RES",
+          "code": 1009,
+          "equals": true
+        },
+        "Client": {
+          "datatype": "RES",
+          "code": 1002,
+          "equals": true
+        },
+        "FileSet": {
+          "datatype": "RES",
+          "code": 1008,
+          "equals": true
+        },
+        "Schedule": {
+          "datatype": "RES",
+          "code": 1007,
+          "equals": true
+        },
+        "VerifyJob": {
+          "datatype": "RES",
+          "code": 1004,
+          "alias": true,
+          "equals": true
+        },
+        "JobToVerify": {
+          "datatype": "RES",
+          "code": 1004,
+          "equals": true
+        },
+        "Catalog": {
+          "datatype": "RES",
+          "code": 1006,
+          "equals": true,
+          "versions": "13.4.0-"
+        },
+        "JobDefs": {
+          "datatype": "RES",
+          "code": 1003,
+          "equals": true
+        },
+        "Run": {
+          "datatype": "STRING_LIST",
+          "code": 0,
+          "equals": true
+        },
+        "Where": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true
+        },
+        "RegexWhere": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "StripPrefix": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "AddPrefix": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "AddSuffix": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "Bootstrap": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true
+        },
+        "WriteBootstrap": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true
+        },
+        "WriteVerifyList": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true
+        },
+        "Replace": {
+          "datatype": "REPLACE_OPTION",
+          "code": 0,
+          "default_value": "Always",
+          "equals": true
+        },
+        "MaximumBandwidth": {
+          "datatype": "SPEED",
+          "code": 0,
+          "equals": true
+        },
+        "MaxRunSchedTime": {
+          "datatype": "TIME",
+          "code": 0,
+          "equals": true
+        },
+        "MaxRunTime": {
+          "datatype": "TIME",
+          "code": 0,
+          "equals": true
+        },
+        "FullMaxWaitTime": {
+          "datatype": "TIME",
+          "code": 0,
+          "deprecated": true,
+          "equals": true,
+          "versions": "-12.4.0"
+        },
+        "IncrementalMaxWaitTime": {
+          "datatype": "TIME",
+          "code": 0,
+          "deprecated": true,
+          "equals": true,
+          "versions": "-12.4.0"
+        },
+        "DifferentialMaxWaitTime": {
+          "datatype": "TIME",
+          "code": 0,
+          "deprecated": true,
+          "equals": true,
+          "versions": "-12.4.0"
+        },
+        "FullMaxRuntime": {
+          "datatype": "TIME",
+          "code": 0,
+          "equals": true
+        },
+        "IncrementalMaxRuntime": {
+          "datatype": "TIME",
+          "code": 0,
+          "equals": true
+        },
+        "DifferentialMaxRuntime": {
+          "datatype": "TIME",
+          "code": 0,
+          "equals": true
+        },
+        "MaxWaitTime": {
+          "datatype": "TIME",
+          "code": 0,
+          "equals": true
+        },
+        "MaxStartDelay": {
+          "datatype": "TIME",
+          "code": 0,
+          "equals": true
+        },
+        "MaxFullInterval": {
+          "datatype": "TIME",
+          "code": 0,
+          "equals": true
+        },
+        "MaxVirtualFullInterval": {
+          "datatype": "TIME",
+          "code": 0,
+          "equals": true,
+          "versions": "14.4.0-"
+        },
+        "MaxDiffInterval": {
+          "datatype": "TIME",
+          "code": 0,
+          "equals": true
+        },
+        "PrefixLinks": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "PruneJobs": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "PruneFiles": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "PruneVolumes": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "PurgeMigrationJob": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "Enabled": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "equals": true,
+          "description": "En- or disable this resource."
+        },
+        "SpoolAttributes": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "SpoolData": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "SpoolSize": {
+          "datatype": "SIZE64",
+          "code": 0,
+          "equals": true
+        },
+        "RerunFailedLevels": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "PreferMountedVolumes": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "equals": true
+        },
+        "RunBeforeJob": {
+          "datatype": "RUNSCRIPT_SHORT",
+          "code": 0,
+          "equals": true
+        },
+        "RunAfterJob": {
+          "datatype": "RUNSCRIPT_SHORT",
+          "code": 0,
+          "equals": true
+        },
+        "RunAfterFailedJob": {
+          "datatype": "RUNSCRIPT_SHORT",
+          "code": 0,
+          "equals": true
+        },
+        "ClientRunBeforeJob": {
+          "datatype": "RUNSCRIPT_SHORT",
+          "code": 0,
+          "equals": true
+        },
+        "ClientRunAfterJob": {
+          "datatype": "RUNSCRIPT_SHORT",
+          "code": 0,
+          "equals": true
+        },
+        "MaximumConcurrentJobs": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "1",
+          "equals": true
+        },
+        "RescheduleOnError": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "RescheduleInterval": {
+          "datatype": "TIME",
+          "code": 0,
+          "default_value": "1800",
+          "equals": true
+        },
+        "RescheduleTimes": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "5",
+          "equals": true
+        },
+        "Priority": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "10",
+          "equals": true
+        },
+        "AllowMixedPriority": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "WritePartAfterJob": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "deprecated": true,
+          "equals": true,
+          "versions": "-12.4.0"
+        },
+        "SelectionPattern": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "RunScript": {
+          "datatype": "RUNSCRIPT",
+          "code": 0,
+          "equals": false
+        },
+        "SelectionType": {
+          "datatype": "MIGRATION_TYPE",
+          "code": 0,
+          "equals": true
+        },
+        "Accurate": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "AllowDuplicateJobs": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "equals": true
+        },
+        "AllowHigherDuplicates": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "equals": true
+        },
+        "CancelLowerLevelDuplicates": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "CancelQueuedDuplicates": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "CancelRunningDuplicates": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "SaveFileHistory": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "equals": true,
+          "versions": "14.2.0-"
+        },
+        "FileHistorySize": {
+          "datatype": "SIZE64",
+          "code": 0,
+          "default_value": "10000000",
+          "equals": true,
+          "versions": "15.2.4-"
+        },
+        "PluginOptions": {
+          "datatype": "STRING_LIST",
+          "code": 0,
+          "alias": true,
+          "deprecated": true,
+          "equals": true,
+          "versions": "-12.4.0"
+        },
+        "FdPluginOptions": {
+          "datatype": "STRING_LIST",
+          "code": 0,
+          "equals": true
+        },
+        "SdPluginOptions": {
+          "datatype": "STRING_LIST",
+          "code": 0,
+          "equals": true
+        },
+        "DirPluginOptions": {
+          "datatype": "STRING_LIST",
+          "code": 0,
+          "equals": true
+        },
+        "Base": {
+          "datatype": "RESOURCE_LIST",
+          "code": 1004,
+          "equals": true
+        },
+        "MaxConcurrentCopies": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "100",
+          "equals": true
+        },
+        "AlwaysIncremental": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "versions": "16.2.4-",
+          "description": "Enable/disable always incremental backup scheme."
+        },
+        "AlwaysIncrementalJobRetention": {
+          "datatype": "TIME",
+          "code": 0,
+          "default_value": "0",
+          "equals": true,
+          "versions": "16.2.4-",
+          "description": "Backup Jobs older than the specified time duration will be merged into a new Virtual backup."
+        },
+        "AlwaysIncrementalKeepNumber": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "0",
+          "equals": true,
+          "versions": "16.2.4-",
+          "description": "Guarantee that at least the specified number of Backup Jobs will persist, even if they are older than \"Always Incremental Job Retention\"."
+        },
+        "AlwaysIncrementalMaxFullAge": {
+          "datatype": "TIME",
+          "code": 0,
+          "equals": true,
+          "versions": "16.2.4-",
+          "description": "If \"AlwaysIncrementalMaxFullAge\" is set, during consolidations only incremental backups will be considered while the Full Backup remains to reduce the amount of data being consolidated. Only if the Full Backup is older than \"AlwaysIncrementalMaxFullAge\", the Full Backup will be part of the consolidation to avoid the Full Backup becoming too old ."
+        },
+        "MaxFullConsolidations": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "0",
+          "equals": true,
+          "versions": "16.2.4-",
+          "description": "If \"AlwaysIncrementalMaxFullAge\" is configured, do not run more than \"MaxFullConsolidations\" consolidation jobs that include the Full backup."
+        }
+      },
+      "Job": {
+        "Name": {
+          "datatype": "NAME",
+          "code": 0,
+          "equals": true,
+          "required": true,
+          "description": "The name of the resource."
+        },
+        "Description": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "Type": {
+          "datatype": "JOB_TYPE",
+          "code": 0,
+          "equals": true,
+          "required": true
+        },
+        "Protocol": {
+          "datatype": "PROTOCOL_TYPE",
+          "code": 0,
+          "default_value": "Native",
+          "equals": true
+        },
+        "BackupFormat": {
+          "datatype": "STRING",
+          "code": 0,
+          "default_value": "Native",
+          "equals": true
+        },
+        "Level": {
+          "datatype": "BACKUP_LEVEL",
+          "code": 0,
+          "equals": true
+        },
+        "Messages": {
+          "datatype": "RES",
+          "code": 1010,
+          "equals": true,
+          "required": true
+        },
+        "Storage": {
+          "datatype": "RESOURCE_LIST",
+          "code": 1005,
+          "equals": true
+        },
+        "Pool": {
+          "datatype": "RES",
+          "code": 1009,
+          "equals": true,
+          "required": true
+        },
+        "FullBackupPool": {
+          "datatype": "RES",
+          "code": 1009,
+          "equals": true
+        },
+        "VirtualFullBackupPool": {
+          "datatype": "RES",
+          "code": 1009,
+          "equals": true
+        },
+        "IncrementalBackupPool": {
+          "datatype": "RES",
+          "code": 1009,
+          "equals": true
+        },
+        "DifferentialBackupPool": {
+          "datatype": "RES",
+          "code": 1009,
+          "equals": true
+        },
+        "NextPool": {
+          "datatype": "RES",
+          "code": 1009,
+          "equals": true
+        },
+        "Client": {
+          "datatype": "RES",
+          "code": 1002,
+          "equals": true
+        },
+        "FileSet": {
+          "datatype": "RES",
+          "code": 1008,
+          "equals": true
+        },
+        "Schedule": {
+          "datatype": "RES",
+          "code": 1007,
+          "equals": true
+        },
+        "VerifyJob": {
+          "datatype": "RES",
+          "code": 1004,
+          "alias": true,
+          "equals": true
+        },
+        "JobToVerify": {
+          "datatype": "RES",
+          "code": 1004,
+          "equals": true
+        },
+        "Catalog": {
+          "datatype": "RES",
+          "code": 1006,
+          "equals": true,
+          "versions": "13.4.0-"
+        },
+        "JobDefs": {
+          "datatype": "RES",
+          "code": 1003,
+          "equals": true
+        },
+        "Run": {
+          "datatype": "STRING_LIST",
+          "code": 0,
+          "equals": true
+        },
+        "Where": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true
+        },
+        "RegexWhere": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "StripPrefix": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "AddPrefix": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "AddSuffix": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "Bootstrap": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true
+        },
+        "WriteBootstrap": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true
+        },
+        "WriteVerifyList": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true
+        },
+        "Replace": {
+          "datatype": "REPLACE_OPTION",
+          "code": 0,
+          "default_value": "Always",
+          "equals": true
+        },
+        "MaximumBandwidth": {
+          "datatype": "SPEED",
+          "code": 0,
+          "equals": true
+        },
+        "MaxRunSchedTime": {
+          "datatype": "TIME",
+          "code": 0,
+          "equals": true
+        },
+        "MaxRunTime": {
+          "datatype": "TIME",
+          "code": 0,
+          "equals": true
+        },
+        "FullMaxWaitTime": {
+          "datatype": "TIME",
+          "code": 0,
+          "deprecated": true,
+          "equals": true,
+          "versions": "-12.4.0"
+        },
+        "IncrementalMaxWaitTime": {
+          "datatype": "TIME",
+          "code": 0,
+          "deprecated": true,
+          "equals": true,
+          "versions": "-12.4.0"
+        },
+        "DifferentialMaxWaitTime": {
+          "datatype": "TIME",
+          "code": 0,
+          "deprecated": true,
+          "equals": true,
+          "versions": "-12.4.0"
+        },
+        "FullMaxRuntime": {
+          "datatype": "TIME",
+          "code": 0,
+          "equals": true
+        },
+        "IncrementalMaxRuntime": {
+          "datatype": "TIME",
+          "code": 0,
+          "equals": true
+        },
+        "DifferentialMaxRuntime": {
+          "datatype": "TIME",
+          "code": 0,
+          "equals": true
+        },
+        "MaxWaitTime": {
+          "datatype": "TIME",
+          "code": 0,
+          "equals": true
+        },
+        "MaxStartDelay": {
+          "datatype": "TIME",
+          "code": 0,
+          "equals": true
+        },
+        "MaxFullInterval": {
+          "datatype": "TIME",
+          "code": 0,
+          "equals": true
+        },
+        "MaxVirtualFullInterval": {
+          "datatype": "TIME",
+          "code": 0,
+          "equals": true,
+          "versions": "14.4.0-"
+        },
+        "MaxDiffInterval": {
+          "datatype": "TIME",
+          "code": 0,
+          "equals": true
+        },
+        "PrefixLinks": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "PruneJobs": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "PruneFiles": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "PruneVolumes": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "PurgeMigrationJob": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "Enabled": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "equals": true,
+          "description": "En- or disable this resource."
+        },
+        "SpoolAttributes": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "SpoolData": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "SpoolSize": {
+          "datatype": "SIZE64",
+          "code": 0,
+          "equals": true
+        },
+        "RerunFailedLevels": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "PreferMountedVolumes": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "equals": true
+        },
+        "RunBeforeJob": {
+          "datatype": "RUNSCRIPT_SHORT",
+          "code": 0,
+          "equals": true
+        },
+        "RunAfterJob": {
+          "datatype": "RUNSCRIPT_SHORT",
+          "code": 0,
+          "equals": true
+        },
+        "RunAfterFailedJob": {
+          "datatype": "RUNSCRIPT_SHORT",
+          "code": 0,
+          "equals": true
+        },
+        "ClientRunBeforeJob": {
+          "datatype": "RUNSCRIPT_SHORT",
+          "code": 0,
+          "equals": true
+        },
+        "ClientRunAfterJob": {
+          "datatype": "RUNSCRIPT_SHORT",
+          "code": 0,
+          "equals": true
+        },
+        "MaximumConcurrentJobs": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "1",
+          "equals": true
+        },
+        "RescheduleOnError": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "RescheduleInterval": {
+          "datatype": "TIME",
+          "code": 0,
+          "default_value": "1800",
+          "equals": true
+        },
+        "RescheduleTimes": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "5",
+          "equals": true
+        },
+        "Priority": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "10",
+          "equals": true
+        },
+        "AllowMixedPriority": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "WritePartAfterJob": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "deprecated": true,
+          "equals": true,
+          "versions": "-12.4.0"
+        },
+        "SelectionPattern": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "RunScript": {
+          "datatype": "RUNSCRIPT",
+          "code": 0,
+          "equals": false
+        },
+        "SelectionType": {
+          "datatype": "MIGRATION_TYPE",
+          "code": 0,
+          "equals": true
+        },
+        "Accurate": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "AllowDuplicateJobs": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "equals": true
+        },
+        "AllowHigherDuplicates": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "equals": true
+        },
+        "CancelLowerLevelDuplicates": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "CancelQueuedDuplicates": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "CancelRunningDuplicates": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "SaveFileHistory": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "equals": true,
+          "versions": "14.2.0-"
+        },
+        "FileHistorySize": {
+          "datatype": "SIZE64",
+          "code": 0,
+          "default_value": "10000000",
+          "equals": true,
+          "versions": "15.2.4-"
+        },
+        "PluginOptions": {
+          "datatype": "STRING_LIST",
+          "code": 0,
+          "alias": true,
+          "deprecated": true,
+          "equals": true,
+          "versions": "-12.4.0"
+        },
+        "FdPluginOptions": {
+          "datatype": "STRING_LIST",
+          "code": 0,
+          "equals": true
+        },
+        "SdPluginOptions": {
+          "datatype": "STRING_LIST",
+          "code": 0,
+          "equals": true
+        },
+        "DirPluginOptions": {
+          "datatype": "STRING_LIST",
+          "code": 0,
+          "equals": true
+        },
+        "Base": {
+          "datatype": "RESOURCE_LIST",
+          "code": 1004,
+          "equals": true
+        },
+        "MaxConcurrentCopies": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "100",
+          "equals": true
+        },
+        "AlwaysIncremental": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "versions": "16.2.4-",
+          "description": "Enable/disable always incremental backup scheme."
+        },
+        "AlwaysIncrementalJobRetention": {
+          "datatype": "TIME",
+          "code": 0,
+          "default_value": "0",
+          "equals": true,
+          "versions": "16.2.4-",
+          "description": "Backup Jobs older than the specified time duration will be merged into a new Virtual backup."
+        },
+        "AlwaysIncrementalKeepNumber": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "0",
+          "equals": true,
+          "versions": "16.2.4-",
+          "description": "Guarantee that at least the specified number of Backup Jobs will persist, even if they are older than \"Always Incremental Job Retention\"."
+        },
+        "AlwaysIncrementalMaxFullAge": {
+          "datatype": "TIME",
+          "code": 0,
+          "equals": true,
+          "versions": "16.2.4-",
+          "description": "If \"AlwaysIncrementalMaxFullAge\" is set, during consolidations only incremental backups will be considered while the Full Backup remains to reduce the amount of data being consolidated. Only if the Full Backup is older than \"AlwaysIncrementalMaxFullAge\", the Full Backup will be part of the consolidation to avoid the Full Backup becoming too old ."
+        },
+        "MaxFullConsolidations": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "0",
+          "equals": true,
+          "versions": "16.2.4-",
+          "description": "If \"AlwaysIncrementalMaxFullAge\" is configured, do not run more than \"MaxFullConsolidations\" consolidation jobs that include the Full backup."
+        }
+      },
+      "Storage": {
+        "Name": {
+          "datatype": "NAME",
+          "code": 0,
+          "equals": true,
+          "required": true,
+          "description": "The name of the resource."
+        },
+        "Description": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "Protocol": {
+          "datatype": "AUTH_PROTOCOL_TYPE",
+          "code": 0,
+          "default_value": "Native",
+          "equals": true
+        },
+        "AuthType": {
+          "datatype": "AUTH_TYPE",
+          "code": 0,
+          "default_value": "None",
+          "equals": true
+        },
+        "Address": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true,
+          "required": true
+        },
+        "LanAddress": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true,
+          "versions": "16.2.6-",
+          "description": "Sets additional address used for connections between Client and Storage Daemon inside separate network."
+        },
+        "SdAddress": {
+          "datatype": "STRING",
+          "code": 0,
+          "alias": true,
+          "equals": true,
+          "description": "Alias for Address."
+        },
+        "Port": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "9103",
+          "equals": true
+        },
+        "SdPort": {
+          "datatype": "PINT32",
+          "code": 0,
+          "alias": true,
+          "default_value": "9103",
+          "equals": true,
+          "description": "Alias for Port."
+        },
+        "Username": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "Password": {
+          "datatype": "AUTOPASSWORD",
+          "code": 0,
+          "equals": true,
+          "required": true
+        },
+        "SdPassword": {
+          "datatype": "AUTOPASSWORD",
+          "code": 0,
+          "alias": true,
+          "equals": true,
+          "description": "Alias for Password."
+        },
+        "Device": {
+          "datatype": "DEVICE",
+          "code": 1014,
+          "equals": true,
+          "required": true
+        },
+        "MediaType": {
+          "datatype": "STRNAME",
+          "code": 0,
+          "equals": true,
+          "required": true
+        },
+        "AutoChanger": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "Enabled": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "equals": true,
+          "description": "En- or disable this resource."
+        },
+        "AllowCompression": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "equals": true
+        },
+        "HeartbeatInterval": {
+          "datatype": "TIME",
+          "code": 0,
+          "default_value": "0",
+          "equals": true
+        },
+        "CacheStatusInterval": {
+          "datatype": "TIME",
+          "code": 0,
+          "default_value": "30",
+          "equals": true
+        },
+        "MaximumConcurrentJobs": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "1",
+          "equals": true
+        },
+        "MaximumConcurrentReadJobs": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "0",
+          "equals": true
+        },
+        "SddPort": {
+          "datatype": "PINT32",
+          "code": 0,
+          "deprecated": true,
+          "equals": true,
+          "versions": "-12.4.0"
+        },
+        "PairedStorage": {
+          "datatype": "RES",
+          "code": 1005,
+          "equals": true
+        },
+        "MaximumBandwidthPerJob": {
+          "datatype": "SPEED",
+          "code": 0,
+          "equals": true
+        },
+        "CollectStatistics": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "NdmpChangerDevice": {
+          "datatype": "STRNAME",
+          "code": 0,
+          "equals": true,
+          "versions": "16.2.4-",
+          "description": "Allows direct control of a Storage Daemon Auto Changer device by the Director. Only used in NDMP_NATIVE environments."
+        },
+        "TlsAuthenticate": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "description": "Use TLS only to authenticate, not for encryption."
+        },
+        "TlsEnable": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "equals": true,
+          "description": "Enable TLS support."
+        },
+        "TlsRequire": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "description": "Without setting this to yes, Bareos can fall back to use unencrypted connections. Enabling this implicitly sets \"TLS Enable = yes\"."
+        },
+        "TlsCipherList": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "platform_specific": true,
+          "equals": true,
+          "description": "List of valid TLS Ciphers."
+        },
+        "TlsDhFile": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications."
+        },
+        "TlsVerifyPeer": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "description": "If disabled, all certificates signed by a known CA will be accepted. If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list."
+        },
+        "TlsCaCertificateFile": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path of a PEM encoded TLS CA certificate(s) file."
+        },
+        "TlsCaCertificateDir": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path of a TLS CA certificate directory."
+        },
+        "TlsCertificateRevocationList": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path of a Certificate Revocation List file."
+        },
+        "TlsCertificate": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path of a PEM encoded TLS certificate."
+        },
+        "TlsKey": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path of a PEM encoded private key. It must correspond to the specified \"TLS Certificate\"."
+        },
+        "TlsAllowedCn": {
+          "datatype": "STRING_LIST",
+          "code": 0,
+          "equals": true,
+          "description": "\"Common Name\"s (CNs) of the allowed peer certificates."
+        }
+      },
+      "Catalog": {
+        "Name": {
+          "datatype": "NAME",
+          "code": 0,
+          "equals": true,
+          "required": true,
+          "description": "The name of the resource."
+        },
+        "Description": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "Address": {
+          "datatype": "STRING",
+          "code": 0,
+          "alias": true,
+          "equals": true
+        },
+        "DbAddress": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "DbPort": {
+          "datatype": "PINT32",
+          "code": 0,
+          "equals": true
+        },
+        "Password": {
+          "datatype": "AUTOPASSWORD",
+          "code": 0,
+          "alias": true,
+          "equals": true
+        },
+        "DbPassword": {
+          "datatype": "AUTOPASSWORD",
+          "code": 0,
+          "equals": true
+        },
+        "DbUser": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "User": {
+          "datatype": "STRING",
+          "code": 0,
+          "alias": true,
+          "equals": true
+        },
+        "DbName": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true,
+          "required": true
+        },
+        "DbDriver": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true,
+          "required": true
+        },
+        "DbSocket": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "MultipleConnections": {
+          "datatype": "BIT",
+          "code": 0,
+          "equals": true
+        },
+        "DisableBatchInsert": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "Reconnect": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "versions": "15.1.0-",
+          "description": "Try to reconnect a database connection when its dropped"
+        },
+        "ExitOnFatal": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "versions": "15.1.0-",
+          "description": "Make any fatal error in the connection to the database exit the program"
+        },
+        "MinConnections": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "1",
+          "equals": true,
+          "description": "This directive is used by the experimental database pooling functionality. Only use this for non production sites. This sets the minimum number of connections to a database to keep in this database pool."
+        },
+        "MaxConnections": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "5",
+          "equals": true,
+          "description": "This directive is used by the experimental database pooling functionality. Only use this for non production sites. This sets the maximum number of connections to a database to keep in this database pool."
+        },
+        "IncConnections": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "1",
+          "equals": true,
+          "description": "This directive is used by the experimental database pooling functionality. Only use this for non production sites. This sets the number of connections to add to a database pool when not enough connections are available on the pool anymore."
+        },
+        "IdleTimeout": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "30",
+          "equals": true,
+          "description": "This directive is used by the experimental database pooling functionality. Only use this for non production sites.  This sets the idle time after which a database pool should be shrinked."
+        },
+        "ValidateTimeout": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "120",
+          "equals": true,
+          "description": "This directive is used by the experimental database pooling functionality. Only use this for non production sites. This sets the validation timeout after which the database connection is polled to see if its still alive."
+        }
+      },
+      "Schedule": {
+        "Name": {
+          "datatype": "NAME",
+          "code": 0,
+          "equals": true,
+          "required": true,
+          "description": "The name of the resource."
+        },
+        "Description": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "Run": {
+          "datatype": "SCHEDULE_RUN_COMMAND",
+          "code": 0,
+          "equals": true
+        },
+        "Enabled": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "equals": true,
+          "description": "En- or disable this resource."
+        }
+      },
+      "FileSet": {
+        "Name": {
+          "datatype": "NAME",
+          "code": 0,
+          "equals": true,
+          "required": true,
+          "description": "The name of the resource."
+        },
+        "Description": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "Include": {
+          "datatype": "INCLUDE_EXCLUDE_ITEM",
+          "code": 0,
+          "equals": false
+        },
+        "Exclude": {
+          "datatype": "INCLUDE_EXCLUDE_ITEM",
+          "code": 1,
+          "equals": false
+        },
+        "IgnoreFileSetChanges": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "EnableVSS": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "equals": true
+        }
+      },
+      "Pool": {
+        "Name": {
+          "datatype": "NAME",
+          "code": 0,
+          "equals": true,
+          "required": true,
+          "description": "The name of the resource."
+        },
+        "Description": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "PoolType": {
+          "datatype": "POOLTYPE",
+          "code": 0,
+          "default_value": "Backup",
+          "equals": true
+        },
+        "LabelFormat": {
+          "datatype": "STRNAME",
+          "code": 0,
+          "equals": true
+        },
+        "LabelType": {
+          "datatype": "LABEL",
+          "code": 0,
+          "equals": true
+        },
+        "CleaningPrefix": {
+          "datatype": "STRNAME",
+          "code": 0,
+          "default_value": "CLN",
+          "equals": true
+        },
+        "UseCatalog": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "equals": true
+        },
+        "UseVolumeOnce": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "deprecated": true,
+          "equals": true,
+          "versions": "-12.4.0"
+        },
+        "PurgeOldestVolume": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "ActionOnPurge": {
+          "datatype": "ACTION_ON_PURGE",
+          "code": 0,
+          "equals": true
+        },
+        "RecycleOldestVolume": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "RecycleCurrentVolume": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true
+        },
+        "MaximumVolumes": {
+          "datatype": "PINT32",
+          "code": 0,
+          "equals": true
+        },
+        "MaximumVolumeJobs": {
+          "datatype": "PINT32",
+          "code": 0,
+          "equals": true
+        },
+        "MaximumVolumeFiles": {
+          "datatype": "PINT32",
+          "code": 0,
+          "equals": true
+        },
+        "MaximumVolumeBytes": {
+          "datatype": "SIZE64",
+          "code": 0,
+          "equals": true
+        },
+        "CatalogFiles": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "equals": true
+        },
+        "VolumeRetention": {
+          "datatype": "TIME",
+          "code": 0,
+          "default_value": "31536000",
+          "equals": true
+        },
+        "VolumeUseDuration": {
+          "datatype": "TIME",
+          "code": 0,
+          "equals": true
+        },
+        "MigrationTime": {
+          "datatype": "TIME",
+          "code": 0,
+          "equals": true
+        },
+        "MigrationHighBytes": {
+          "datatype": "SIZE64",
+          "code": 0,
+          "equals": true
+        },
+        "MigrationLowBytes": {
+          "datatype": "SIZE64",
+          "code": 0,
+          "equals": true
+        },
+        "NextPool": {
+          "datatype": "RES",
+          "code": 1009,
+          "equals": true
+        },
+        "Storage": {
+          "datatype": "RESOURCE_LIST",
+          "code": 1005,
+          "equals": true
+        },
+        "AutoPrune": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "equals": true
+        },
+        "Recycle": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "equals": true
+        },
+        "RecyclePool": {
+          "datatype": "RES",
+          "code": 1009,
+          "equals": true
+        },
+        "ScratchPool": {
+          "datatype": "RES",
+          "code": 1009,
+          "equals": true
+        },
+        "Catalog": {
+          "datatype": "RES",
+          "code": 1006,
+          "equals": true
+        },
+        "FileRetention": {
+          "datatype": "TIME",
+          "code": 0,
+          "equals": true
+        },
+        "JobRetention": {
+          "datatype": "TIME",
+          "code": 0,
+          "equals": true
+        },
+        "MinimumBlockSize": {
+          "datatype": "SIZE32",
+          "code": 0,
+          "equals": true
+        },
+        "MaximumBlockSize": {
+          "datatype": "SIZE32",
+          "code": 0,
+          "equals": true,
+          "versions": "14.2.0-"
+        }
+      },
+      "Messages": {
+        "Name": {
+          "datatype": "NAME",
+          "code": 0,
+          "equals": true
+        },
+        "Description": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "MailCommand": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "OperatorCommand": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "TimestampFormat": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "Syslog": {
+          "datatype": "MESSAGES",
+          "code": 1,
+          "equals": true
+        },
+        "Mail": {
+          "datatype": "MESSAGES",
+          "code": 2,
+          "equals": true
+        },
+        "MailOnError": {
+          "datatype": "MESSAGES",
+          "code": 10,
+          "equals": true
+        },
+        "MailOnSuccess": {
+          "datatype": "MESSAGES",
+          "code": 11,
+          "equals": true
+        },
+        "File": {
+          "datatype": "MESSAGES",
+          "code": 3,
+          "equals": true
+        },
+        "Append": {
+          "datatype": "MESSAGES",
+          "code": 4,
+          "equals": true
+        },
+        "Stdout": {
+          "datatype": "MESSAGES",
+          "code": 5,
+          "equals": true
+        },
+        "Stderr": {
+          "datatype": "MESSAGES",
+          "code": 6,
+          "equals": true
+        },
+        "Director": {
+          "datatype": "MESSAGES",
+          "code": 7,
+          "equals": true
+        },
+        "Console": {
+          "datatype": "MESSAGES",
+          "code": 9,
+          "equals": true
+        },
+        "Operator": {
+          "datatype": "MESSAGES",
+          "code": 8,
+          "equals": true
+        },
+        "Catalog": {
+          "datatype": "MESSAGES",
+          "code": 12,
+          "equals": true
+        }
+      },
+      "Counter": {
+        "Name": {
+          "datatype": "NAME",
+          "code": 0,
+          "equals": true,
+          "required": true,
+          "description": "The name of the resource."
+        },
+        "Description": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "Minimum": {
+          "datatype": "INT32",
+          "code": 0,
+          "default_value": "0",
+          "equals": true
+        },
+        "Maximum": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "2147483647",
+          "equals": true
+        },
+        "WrapCounter": {
+          "datatype": "RES",
+          "code": 1011,
+          "equals": true
+        },
+        "Catalog": {
+          "datatype": "RES",
+          "code": 1006,
+          "equals": true
+        }
+      },
+      "Profile": {
+        "Name": {
+          "datatype": "NAME",
+          "code": 0,
+          "equals": true,
+          "required": true,
+          "description": "The name of the resource."
+        },
+        "Description": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true,
+          "description": "Additional information about the resource. Only used for UIs."
+        },
+        "JobACL": {
+          "datatype": "ACL",
+          "code": 0,
+          "equals": true,
+          "description": "Lists the Job resources, this resource has access to. The special keyword *all* allows access to all Job resources."
+        },
+        "ClientACL": {
+          "datatype": "ACL",
+          "code": 1,
+          "equals": true,
+          "description": "Lists the Client resources, this resource has access to. The special keyword *all* allows access to all Client resources."
+        },
+        "StorageACL": {
+          "datatype": "ACL",
+          "code": 2,
+          "equals": true,
+          "description": "Lists the Storage resources, this resource has access to. The special keyword *all* allows access to all Storage resources."
+        },
+        "ScheduleACL": {
+          "datatype": "ACL",
+          "code": 3,
+          "equals": true,
+          "description": "Lists the Schedule resources, this resource has access to. The special keyword *all* allows access to all Schedule resources."
+        },
+        "PoolACL": {
+          "datatype": "ACL",
+          "code": 5,
+          "equals": true,
+          "description": "Lists the Pool resources, this resource has access to. The special keyword *all* allows access to all Pool resources."
+        },
+        "CommandACL": {
+          "datatype": "ACL",
+          "code": 6,
+          "equals": true,
+          "description": "Lists the commands, this resource has access to. The special keyword *all* allows using commands."
+        },
+        "FileSetACL": {
+          "datatype": "ACL",
+          "code": 7,
+          "equals": true,
+          "description": "Lists the File Set resources, this resource has access to. The special keyword *all* allows access to all File Set resources."
+        },
+        "CatalogACL": {
+          "datatype": "ACL",
+          "code": 8,
+          "equals": true,
+          "description": "Lists the Catalog resources, this resource has access to. The special keyword *all* allows access to all Catalog resources."
+        },
+        "WhereACL": {
+          "datatype": "ACL",
+          "code": 9,
+          "equals": true,
+          "description": "Specifies the base directories, where files could be restored. An empty string allows restores to all directories."
+        },
+        "PluginOptionsACL": {
+          "datatype": "ACL",
+          "code": 10,
+          "equals": true,
+          "description": "Specifies the allowed plugin options. An empty strings allows all Plugin Options."
+        }
+      },
+      "Console": {
+        "Name": {
+          "datatype": "NAME",
+          "code": 0,
+          "equals": true,
+          "required": true
+        },
+        "Description": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "Password": {
+          "datatype": "AUTOPASSWORD",
+          "code": 0,
+          "equals": true,
+          "required": true
+        },
+        "JobACL": {
+          "datatype": "ACL",
+          "code": 0,
+          "equals": true
+        },
+        "ClientACL": {
+          "datatype": "ACL",
+          "code": 1,
+          "equals": true
+        },
+        "StorageACL": {
+          "datatype": "ACL",
+          "code": 2,
+          "equals": true
+        },
+        "ScheduleACL": {
+          "datatype": "ACL",
+          "code": 3,
+          "equals": true
+        },
+        "RunACL": {
+          "datatype": "ACL",
+          "code": 4,
+          "equals": true
+        },
+        "PoolACL": {
+          "datatype": "ACL",
+          "code": 5,
+          "equals": true
+        },
+        "CommandACL": {
+          "datatype": "ACL",
+          "code": 6,
+          "equals": true
+        },
+        "FileSetACL": {
+          "datatype": "ACL",
+          "code": 7,
+          "equals": true
+        },
+        "CatalogACL": {
+          "datatype": "ACL",
+          "code": 8,
+          "equals": true
+        },
+        "WhereACL": {
+          "datatype": "ACL",
+          "code": 9,
+          "equals": true
+        },
+        "PluginOptionsACL": {
+          "datatype": "ACL",
+          "code": 10,
+          "equals": true
+        },
+        "Profile": {
+          "datatype": "RESOURCE_LIST",
+          "code": 1012,
+          "equals": true,
+          "versions": "14.2.3-",
+          "description": "Profiles can be assigned to a Console. ACL are checked until either a deny ACL is found or an allow ACL. First the console ACL is checked then any profile the console is linked to."
+        },
+        "UsePamAuthentication": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "versions": "18.2.4-"
+        },
+        "TlsAuthenticate": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "description": "Use TLS only to authenticate, not for encryption."
+        },
+        "TlsEnable": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "equals": true,
+          "description": "Enable TLS support."
+        },
+        "TlsRequire": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "description": "Without setting this to yes, Bareos can fall back to use unencrypted connections. Enabling this implicitly sets \"TLS Enable = yes\"."
+        },
+        "TlsCipherList": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "platform_specific": true,
+          "equals": true,
+          "description": "List of valid TLS Ciphers."
+        },
+        "TlsDhFile": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications."
+        },
+        "TlsVerifyPeer": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "description": "If disabled, all certificates signed by a known CA will be accepted. If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list."
+        },
+        "TlsCaCertificateFile": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path of a PEM encoded TLS CA certificate(s) file."
+        },
+        "TlsCaCertificateDir": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path of a TLS CA certificate directory."
+        },
+        "TlsCertificateRevocationList": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path of a Certificate Revocation List file."
+        },
+        "TlsCertificate": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path of a PEM encoded TLS certificate."
+        },
+        "TlsKey": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path of a PEM encoded private key. It must correspond to the specified \"TLS Certificate\"."
+        },
+        "TlsAllowedCn": {
+          "datatype": "STRING_LIST",
+          "code": 0,
+          "equals": true,
+          "description": "\"Common Name\"s (CNs) of the allowed peer certificates."
+        }
+      },
+      "User": {
+        "Name": {
+          "datatype": "NAME",
+          "code": 0,
+          "equals": true,
+          "required": true
+        },
+        "Description": {
+          "datatype": "STRING",
+          "code": 0,
+          "equals": true
+        },
+        "Password": {
+          "datatype": "AUTOPASSWORD",
+          "code": 0,
+          "equals": true,
+          "required": true
+        },
+        "JobACL": {
+          "datatype": "ACL",
+          "code": 0,
+          "equals": true
+        },
+        "ClientACL": {
+          "datatype": "ACL",
+          "code": 1,
+          "equals": true
+        },
+        "StorageACL": {
+          "datatype": "ACL",
+          "code": 2,
+          "equals": true
+        },
+        "ScheduleACL": {
+          "datatype": "ACL",
+          "code": 3,
+          "equals": true
+        },
+        "RunACL": {
+          "datatype": "ACL",
+          "code": 4,
+          "equals": true
+        },
+        "PoolACL": {
+          "datatype": "ACL",
+          "code": 5,
+          "equals": true
+        },
+        "CommandACL": {
+          "datatype": "ACL",
+          "code": 6,
+          "equals": true
+        },
+        "FileSetACL": {
+          "datatype": "ACL",
+          "code": 7,
+          "equals": true
+        },
+        "CatalogACL": {
+          "datatype": "ACL",
+          "code": 8,
+          "equals": true
+        },
+        "WhereACL": {
+          "datatype": "ACL",
+          "code": 9,
+          "equals": true
+        },
+        "PluginOptionsACL": {
+          "datatype": "ACL",
+          "code": 10,
+          "equals": true
+        },
+        "Profile": {
+          "datatype": "RESOURCE_LIST",
+          "code": 1012,
+          "equals": true,
+          "versions": "14.2.3-",
+          "description": "Profiles can be assigned to a Console. ACL are checked until either a deny ACL is found or an allow ACL. First the console ACL is checked then any profile the console is linked to."
+        },
+        "UsePamAuthentication": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "versions": "18.2.4-"
+        },
+        "TlsAuthenticate": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "description": "Use TLS only to authenticate, not for encryption."
+        },
+        "TlsEnable": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "true",
+          "equals": true,
+          "description": "Enable TLS support."
+        },
+        "TlsRequire": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "description": "Without setting this to yes, Bareos can fall back to use unencrypted connections. Enabling this implicitly sets \"TLS Enable = yes\"."
+        },
+        "TlsCipherList": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "platform_specific": true,
+          "equals": true,
+          "description": "List of valid TLS Ciphers."
+        },
+        "TlsDhFile": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications."
+        },
+        "TlsVerifyPeer": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "description": "If disabled, all certificates signed by a known CA will be accepted. If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list."
+        },
+        "TlsCaCertificateFile": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path of a PEM encoded TLS CA certificate(s) file."
+        },
+        "TlsCaCertificateDir": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path of a TLS CA certificate directory."
+        },
+        "TlsCertificateRevocationList": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path of a Certificate Revocation List file."
+        },
+        "TlsCertificate": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path of a PEM encoded TLS certificate."
+        },
+        "TlsKey": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "equals": true,
+          "description": "Path of a PEM encoded private key. It must correspond to the specified \"TLS Certificate\"."
+        },
+        "TlsAllowedCn": {
+          "datatype": "STRING_LIST",
+          "code": 0,
+          "equals": true,
+          "description": "\"Common Name\"s (CNs) of the allowed peer certificates."
+        }
+      },
+      "Device": {}
+    }
+  },
+  "datatype": {
+    "STRING": {
+      "number": 30,
+      "description": "String"
+    },
+    "DIRECTORY": {
+      "number": 31,
+      "description": "directory"
+    },
+    "MD5PASSWORD": {
+      "number": 3,
+      "description": "Password in MD5 format"
+    },
+    "CLEARPASSWORD": {
+      "number": 4,
+      "description": "Password as cleartext"
+    },
+    "AUTOPASSWORD": {
+      "number": 5,
+      "description": "Password stored in clear when needed otherwise hashed"
+    },
+    "NAME": {
+      "number": 6,
+      "description": "Name"
+    },
+    "STRNAME": {
+      "number": 7,
+      "description": "String name"
+    },
+    "RES": {
+      "number": 8,
+      "description": "Resource"
+    },
+    "RESOURCE_LIST": {
+      "number": 9,
+      "description": "Resource list"
+    },
+    "STRING_LIST": {
+      "number": 10,
+      "description": "string list"
+    },
+    "DIRECTORY_LIST": {
+      "number": 11,
+      "description": "directory list"
+    },
+    "INT16": {
+      "number": 12,
+      "description": "Integer 16 bits"
+    },
+    "PINT16": {
+      "number": 13,
+      "description": "Positive 16 bits Integer (unsigned)"
+    },
+    "INT32": {
+      "number": 14,
+      "description": "Integer 32 bits"
+    },
+    "PINT32": {
+      "number": 15,
+      "description": "Positive 32 bits Integer (unsigned)"
+    },
+    "MESSAGES": {
+      "number": 16,
+      "description": "Message resource"
+    },
+    "INT64": {
+      "number": 17,
+      "description": "Integer 64 bits"
+    },
+    "BIT": {
+      "number": 18,
+      "description": "Bitfield"
+    },
+    "BOOLEAN": {
+      "number": 19,
+      "description": "boolean"
+    },
+    "TIME": {
+      "number": 20,
+      "description": "time"
+    },
+    "SIZE64": {
+      "number": 21,
+      "description": "64 bits file size"
+    },
+    "SIZE32": {
+      "number": 22,
+      "description": "32 bits file size"
+    },
+    "SPEED": {
+      "number": 23,
+      "description": "speed"
+    },
+    "DEFS": {
+      "number": 24,
+      "description": "definition"
+    },
+    "LABEL": {
+      "number": 25,
+      "description": "label"
+    },
+    "ADDRESSES": {
+      "number": 26,
+      "description": "ip addresses list"
+    },
+    "ADDRESS": {
+      "number": 27,
+      "description": "ip address"
+    },
+    "PORT": {
+      "number": 28,
+      "description": "network port"
+    },
+    "PLUGIN_NAMES": {
+      "number": 29,
+      "description": "Plugin Name(s)"
+    },
+    "ACL": {
+      "number": 50,
+      "description": "User Access Control List"
+    },
+    "AUDIT_COMMAND_LIST": {
+      "number": 51,
+      "description": "Auditing Command List"
+    },
+    "AUTH_PROTOCOL_TYPE": {
+      "number": 52,
+      "description": "Authentication Protocol",
+      "class": "keyword",
+      "values": {
+        "Native": {
+          "token": 0
+        },
+        "NDMPV2": {
+          "token": 1
+        },
+        "NDMPV3": {
+          "token": 2
+        },
+        "NDMPV4": {
+          "token": 3
+        }
+      }
+    },
+    "AUTH_TYPE": {
+      "number": 53,
+      "description": "Authentication Type",
+      "class": "keyword",
+      "values": {
+        "None": {
+          "token": 0
+        },
+        "Clear": {
+          "token": 1
+        },
+        "MD5": {
+          "token": 2
+        }
+      }
+    },
+    "DEVICE": {
+      "number": 54,
+      "description": "Device resource"
+    },
+    "JOB_TYPE": {
+      "number": 55,
+      "description": "Type of Job",
+      "class": "keyword",
+      "values": {
+        "Backup": {
+          "type": 66
+        },
+        "Admin": {
+          "type": 68
+        },
+        "Archive": {
+          "type": 65
+        },
+        "Verify": {
+          "type": 86
+        },
+        "Restore": {
+          "type": 82
+        },
+        "Migrate": {
+          "type": 103
+        },
+        "Copy": {
+          "type": 99
+        },
+        "Consolidate": {
+          "type": 79
+        }
+      }
+    },
+    "PROTOCOL_TYPE": {
+      "number": 56,
+      "description": "Protocol",
+      "class": "keyword",
+      "values": {
+        "Native": {
+          "token": 0
+        },
+        "NDMP_BAREOS": {
+          "token": 1
+        },
+        "NDMP": {
+          "token": 1
+        },
+        "NDMP_NATIVE": {
+          "token": 2
+        }
+      }
+    },
+    "BACKUP_LEVEL": {
+      "number": 57,
+      "description": "Backup Level",
+      "class": "keyword",
+      "values": {
+        "Full": {
+          "level": 70,
+          "type": 103
+        },
+        "Base": {
+          "level": 66,
+          "type": 66
+        },
+        "Incremental": {
+          "level": 73,
+          "type": 103
+        },
+        "Differential": {
+          "level": 68,
+          "type": 103
+        },
+        "Since": {
+          "level": 83,
+          "type": 66
+        },
+        "VirtualFull": {
+          "level": 102,
+          "type": 66
+        },
+        "Catalog": {
+          "level": 67,
+          "type": 86
+        },
+        "InitCatalog": {
+          "level": 86,
+          "type": 86
+        },
+        "VolumeToCatalog": {
+          "level": 79,
+          "type": 86
+        },
+        "DiskToCatalog": {
+          "level": 100,
+          "type": 86
+        },
+        "Data": {
+          "level": 65,
+          "type": 86
+        },
+        " ": {
+          "level": 32,
+          "type": 79
+        }
+      }
+    },
+    "REPLACE_OPTION": {
+      "number": 58,
+      "description": "Replace option",
+      "class": "keyword",
+      "values": {
+        "Always": {
+          "token": 97
+        },
+        "IfNewer": {
+          "token": 119
+        },
+        "IfOlder": {
+          "token": 111
+        },
+        "Never": {
+          "token": 110
+        }
+      }
+    },
+    "RUNSCRIPT_SHORT": {
+      "number": 59,
+      "description": "Short Runscript definition"
+    },
+    "RUNSCRIPT": {
+      "number": 60,
+      "description": "Runscript",
+      "class": "sub",
+      "values": {
+        "Command": {
+          "datatype": "RUNSCRIPT_COMMAND",
+          "code": 124,
+          "equals": true
+        },
+        "Console": {
+          "datatype": "RUNSCRIPT_COMMAND",
+          "code": 64,
+          "equals": true
+        },
+        "Target": {
+          "datatype": "RUNSCRIPT_TARGET",
+          "code": 0,
+          "equals": true
+        },
+        "RunsOnSuccess": {
+          "datatype": "RUNSCRIPT_BOOLEAN",
+          "code": 0,
+          "equals": true
+        },
+        "RunsOnFailure": {
+          "datatype": "RUNSCRIPT_BOOLEAN",
+          "code": 0,
+          "equals": true
+        },
+        "FailJobOnError": {
+          "datatype": "RUNSCRIPT_BOOLEAN",
+          "code": 0,
+          "equals": true
+        },
+        "AbortJobOnError": {
+          "datatype": "RUNSCRIPT_BOOLEAN",
+          "code": 0,
+          "equals": true
+        },
+        "RunsWhen": {
+          "datatype": "RUNSCRIPT_WHEN",
+          "code": 0,
+          "equals": true
+        },
+        "RunsOnClient": {
+          "datatype": "RUNSCRIPT_TARGET",
+          "code": 0,
+          "equals": true
+        }
+      }
+    },
+    "RUNSCRIPT_COMMAND": {
+      "number": 61,
+      "description": "Runscript Command"
+    },
+    "RUNSCRIPT_TARGET": {
+      "number": 62,
+      "description": "Runscript Target (Host)"
+    },
+    "RUNSCRIPT_BOOLEAN": {
+      "number": 63,
+      "description": "Runscript Boolean"
+    },
+    "RUNSCRIPT_WHEN": {
+      "number": 64,
+      "description": "Runscript When expression"
+    },
+    "MIGRATION_TYPE": {
+      "number": 65,
+      "description": "Migration Type",
+      "class": "keyword",
+      "values": {
+        "SmallestVolume": {
+          "type": 1
+        },
+        "OldestVolume": {
+          "type": 2
+        },
+        "PoolOccupancy": {
+          "type": 3
+        },
+        "PoolTime": {
+          "type": 4
+        },
+        "PoolUncopiedJobs": {
+          "type": 5
+        },
+        "Client": {
+          "type": 6
+        },
+        "Volume": {
+          "type": 7
+        },
+        "Job": {
+          "type": 8
+        },
+        "SqlQuery": {
+          "type": 9
+        }
+      }
+    },
+    "INCLUDE_EXCLUDE_ITEM": {
+      "number": 66,
+      "description": "Include/Exclude item",
+      "class": "sub",
+      "values": {
+        "File": {
+          "datatype": "FILENAME",
+          "code": 0,
+          "equals": true
+        },
+        "Plugin": {
+          "datatype": "PLUGIN_NAME",
+          "code": 0,
+          "equals": true
+        },
+        "ExcludeDirContaining": {
+          "datatype": "EXCLUDE_DIRECTORY",
+          "code": 0,
+          "equals": true
+        },
+        "Options": {
+          "datatype": "OPTIONS",
+          "code": 0,
+          "equals": true
+        }
+      }
+    },
+    "SCHEDULE_RUN_COMMAND": {
+      "number": 67,
+      "description": "Schedule Run Command",
+      "class": "keyword",
+      "values": {
+        "pool": {
+          "token": 80
+        },
+        "fullpool": {
+          "token": 102
+        },
+        "incrementalpool": {
+          "token": 105
+        },
+        "differentialpool": {
+          "token": 100
+        },
+        "nextpool": {
+          "token": 110
+        },
+        "level": {
+          "token": 76
+        },
+        "storage": {
+          "token": 83
+        },
+        "messages": {
+          "token": 77
+        },
+        "priority": {
+          "token": 112
+        },
+        "spooldata": {
+          "token": 115
+        },
+        "maxrunschedtime": {
+          "token": 109
+        },
+        "accurate": {
+          "token": 97
+        }
+      }
+    },
+    "ACTION_ON_PURGE": {
+      "number": 68,
+      "description": "Action to perform on Purge",
+      "class": "keyword",
+      "values": {
+        "None": {
+          "token": 0
+        },
+        "Truncate": {
+          "token": 1
+        }
+      }
+    },
+    "POOLTYPE": {
+      "number": 69,
+      "description": "Pool Type",
+      "class": "keyword",
+      "values": {
+        "Backup": {
+          "token": 0
+        },
+        "Copy": {
+          "token": 0
+        },
+        "Cloned": {
+          "token": 0
+        },
+        "Archive": {
+          "token": 0
+        },
+        "Migration": {
+          "token": 0
+        },
+        "Scratch": {
+          "token": 0
+        }
+      }
+    },
+    "FILENAME": {
+      "number": 80,
+      "description": "Filename"
+    },
+    "PLUGIN_NAME": {
+      "number": 81,
+      "description": "Pluginname"
+    },
+    "EXCLUDE_DIRECTORY": {
+      "number": 82,
+      "description": "Exclude directory"
+    },
+    "OPTIONS": {
+      "number": 83,
+      "description": "Options block",
+      "class": "sub",
+      "values": {
+        "Compression": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "Signature": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "BaseJob": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "Accurate": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "Verify": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "OneFs": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "Recurse": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "Sparse": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "HardLinks": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "ReadFifo": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "Replace": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "Portable": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "MtimeOnly": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "KeepAtime": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "Regex": {
+          "datatype": "REGEX",
+          "code": 0,
+          "equals": true
+        },
+        "RegexDir": {
+          "datatype": "REGEX",
+          "code": 1,
+          "equals": true
+        },
+        "RegexFile": {
+          "datatype": "REGEX",
+          "code": 2,
+          "equals": true
+        },
+        "Base": {
+          "datatype": "BASEJOB",
+          "code": 0,
+          "equals": true
+        },
+        "Wild": {
+          "datatype": "WILDCARD",
+          "code": 0,
+          "equals": true
+        },
+        "WildDir": {
+          "datatype": "WILDCARD",
+          "code": 1,
+          "equals": true
+        },
+        "WildFile": {
+          "datatype": "WILDCARD",
+          "code": 2,
+          "equals": true
+        },
+        "Exclude": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "AclSupport": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "Plugin": {
+          "datatype": "PLUGIN",
+          "code": 0,
+          "equals": true
+        },
+        "IgnoreCase": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "FsType": {
+          "datatype": "FILESYSTEM_TYPE",
+          "code": 0,
+          "equals": true
+        },
+        "HfsPlusSupport": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "NoAtime": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "EnhancedWild": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "DriveType": {
+          "datatype": "DRIVE_TYPE",
+          "code": 0,
+          "equals": true
+        },
+        "CheckFileChanges": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "StripPath": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "HonornoDumpFlag": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "XAttrSupport": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "Size": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "Shadowing": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "AutoExclude": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "ForceEncryption": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
+        "Meta": {
+          "datatype": "META_TAG",
+          "code": 0,
+          "equals": true
+        }
+      }
+    },
+    "OPTION": {
+      "number": 84,
+      "description": "Option of Options block"
+    },
+    "REGEX": {
+      "number": 85,
+      "description": "Regular Expression"
+    },
+    "BASEJOB": {
+      "number": 86,
+      "description": "Basejob Expression"
+    },
+    "WILDCARD": {
+      "number": 87,
+      "description": "Wildcard Expression"
+    },
+    "PLUGIN": {
+      "number": 88,
+      "description": "Plugin definition"
+    },
+    "FILESYSTEM_TYPE": {
+      "number": 89,
+      "description": "FileSystem match criterium (UNIX)"
+    },
+    "DRIVE_TYPE": {
+      "number": 90,
+      "description": "DriveType match criterium (Windows)"
+    },
+    "META_TAG": {
+      "number": 91,
+      "description": "Meta tag"
+    },
+    "DEVICE_TYPE": {
+      "number": 201,
+      "description": "Device Type"
+    },
+    "MAX_BLOCKSIZE": {
+      "number": 202,
+      "description": "Maximum Blocksize"
+    },
+    "IO_DIRECTION": {
+      "number": 203,
+      "description": "IO Direction"
+    },
+    "COMPRESSION_ALGORITHM": {
+      "number": 204,
+      "description": "Compression Algorithm"
+    },
+    "ENCRYPTION_CIPHER": {
+      "number": 301,
+      "description": "Encryption Cipher"
+    }
+  }
+}

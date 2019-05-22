@@ -1,0 +1,3 @@
+This directive controls the :ref:`autoxflate-sd plugin <plugin-autoxflate-sd>` plugin when replicating data inside one or between two storage daemons (Migration/Copy Jobs). Normally the storage daemon will use the autoinflate/autodeflate setting of the device when reading and writing data to it which could mean that while reading it inflates the compressed data and the while writing the other deflates it again. If you just want the data to be exactly the same e.g. don’t perform any
+on the fly uncompression and compression while doing the replication of data you can set this option to no and it will override any setting on the device for doing auto inflation/deflation when doing data replication. This will not have any impact on any normal backup or restore jobs.
+

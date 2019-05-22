@@ -1,0 +1,60 @@
+@startuml
+|RunJob|
+start
+|SetupJob|
+:InitMsg();
+#aqua:initialize term_wait condition]
+#aqua:initialize nextrun_ready condition]
+:CreateUniqueJobName()|
+:set job status to JS_Created;
+:get db connection from pool;
+:InitJcrJobRecord()|
+if (job has client) then (yes)
+  :GetOrCreateClientRecord()|
+endif
+:CreateJobRecord()|
+:set jcr->jobid from jcr->jr.jobid]
+:NewPlugins()|
+:DispatchNewPluginOptions()|
+:GeneratePluginEvent(bDirEventJobStart)|
+if (JobReads && !jcr->res.read_storage_list) then (yes)
+  :CopyRwstorage()|
+endif
+partition "Type Specific Setup" {
+  :lots of magic omitted here;
+}
+:GeneratePluginEvent(bDirEventJobInit)|
+|RunJob|
+if (success) then (yes)
+  |JobqAdd|
+  :increment jcr's use counter]
+  if (scheduled in the future) then (yes)
+    :spawn waiter thread;
+  else (no)
+    if (job canceled) then (yes)
+      :put on top of ready_jobs;
+    else (no)
+      :priority-aware insert to waiting_jobs;
+    endif
+    :StartServer()|
+    note
+      this will spawn a new jobq_server
+      thread each time it is called until
+      the jobq's thread limit is reached.
+    end note
+  endif
+  |RunJob|
+  if (success) then (yes)
+    #tomato:return jobid;
+    note
+      at this point the jcr is either
+      somewhere in the job-queue or there
+      is a thread running that will inject
+      it at some point in the future.
+    end note
+    detach
+  endif
+endif
+#tomato:return 0;
+detach
+@enduml

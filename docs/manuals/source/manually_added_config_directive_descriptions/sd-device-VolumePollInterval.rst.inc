@@ -1,0 +1,3 @@
+If the time specified on this directive is non-zero, Bareos will periodically poll (or read) the drive at the specified interval to see if a new volume has been mounted. If the time interval is zero, no polling will occur. This directive can be useful if you want to avoid operator intervention via the console. Instead, the operator can simply remove the old volume and insert the requested one, and Bareos on the next poll will recognize the new tape and continue. Please be aware that if you set
+this interval too small, you may excessively wear your tape drive if the old tape remains in the drive, since Bareos will read it on each poll.
+

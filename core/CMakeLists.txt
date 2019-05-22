@@ -18,7 +18,7 @@
 #   02110-1301, USA.
 
 cmake_minimum_required(VERSION 3.0)
-project(bareos)
+project(bareos C CXX)
 
 INCLUDE(GNUInstallDirs)
 

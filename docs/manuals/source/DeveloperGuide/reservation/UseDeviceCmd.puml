@@ -1,0 +1,191 @@
+.. uml::
+  :caption: Control flow of UseDeviceCmd()
+
+  @startuml
+  'BEGIN macros
+  !definelong RESERVE_DEVICE()
+  :ReserveDevice()|
+  !enddefinelong
+
+  !definelong AUTOCHANGER()
+  partition autochanger {
+    while (with each device in autochanger device)
+      #limegreen:if (device autoselect?) then (yes)
+        RESERVE_DEVICE()
+        if (have_device?) then (yes)
+          #tomato:return;
+          detach
+        endif
+      endif
+    endwhile
+  }
+  !enddefinelong
+
+  !definelong PLAIN_DEVICE()
+  partition plain_device {
+  RESERVE_DEVICE()
+  note right
+    try to reserve the named device
+  end note
+  if (have_device?) then (yes)
+    #tomato:return;
+    detach
+  endif
+  #limegreen:if (DeviceReserveByMediatype) then(yes)
+    while (each device with matching media_type)
+      RESERVE_DEVICE()
+      if (have_device?) then (yes)
+        #tomato:return;
+        detach
+      endif
+    endwhile
+  endif
+  }
+  !enddefinelong
+
+  !definelong MOUNTED_VOLUMES()
+  partition mounted_volumes {
+  if (append?) then(yes)
+    while(with each mounted volume)
+      :ask director if volume is ok/
+      if (volume ok?) then(yes)
+        :find device for volume;
+        RESERVE_DEVICE()
+        if (have_device?) then (yes)
+          #tomato:return;
+          detach
+        endif
+      endif
+    endwhile
+  endif
+  }
+  !enddefinelong
+  'END macros
+  |UseDeviceCmd|
+  start
+  partition read_data_from_director {
+    repeat
+      :storage specification<
+      repeat
+        :device specification<
+      repeat while (more devices?)
+    repeat while (more storages?)
+  }
+
+    repeat
+    #aqua:clear suitable_device]
+    #aqua:clear have_volume]
+    #aqua:clear VolumeName]
+    #aqua:clear any_drive]
+    #limegreen:if (PreferMountedVols) then (no)
+        #aqua:clear low_use_drive]
+        #aqua:clear PreferMountedVols]
+        #aqua:clear exact_match]
+        #aqua:set autochanger_only]
+        |FindSuitableDeviceForJob|
+        while (with every device)
+          |SearchResForDevice|
+          AUTOCHANGER()
+          |FindSuitableDeviceForJob|
+        endwhile
+        |UseDeviceCmd|
+        if (have_device) then (yes)
+          stop
+        else (no)
+          #aqua:if (low_use_drive set?) then (yes)
+            #aqua:set try_low_use_drive]
+            |FindSuitableDeviceForJob|
+            while (with every device)
+              |SearchResForDevice|
+              AUTOCHANGER()
+              |FindSuitableDeviceForJob|
+            endwhile
+            |UseDeviceCmd|
+            if (have_device) then (yes)
+              stop
+            endif
+            #aqua:clear try_low_use_drive]
+          endif
+          #aqua:clear autochanger_only]
+          |FindSuitableDeviceForJob|
+          while (with every device)
+            |SearchResForDevice|
+            AUTOCHANGER()
+            PLAIN_DEVICE()
+            |FindSuitableDeviceForJob|
+          endwhile
+          |UseDeviceCmd|
+          if (have_device) then (yes)
+            stop
+          endif
+        endif 
+      else (yes)
+      endif  
+      #aqua:set PreferMountedVols]
+      #aqua:set exact_match]
+      #aqua:clear autochanger_only]
+      |FindSuitableDeviceForJob|
+      MOUNTED_VOLUMES()
+          while (with every device)
+            |SearchResForDevice|
+            AUTOCHANGER()
+            PLAIN_DEVICE()
+            |FindSuitableDeviceForJob|
+          endwhile
+      |UseDeviceCmd|
+      if (have_device) then (yes)
+        stop
+      else (no)
+        #aqua:clear exact_match]
+        |FindSuitableDeviceForJob|
+      MOUNTED_VOLUMES()
+          while (with every device)
+            |SearchResForDevice|
+            AUTOCHANGER()
+            PLAIN_DEVICE()
+            |FindSuitableDeviceForJob|
+          endwhile
+        |UseDeviceCmd|
+        if (have_device) then (yes)
+          stop
+        else (no)
+          #aqua:set any_drive]
+          |FindSuitableDeviceForJob|
+      MOUNTED_VOLUMES()
+          while (with every device)
+            |SearchResForDevice|
+            AUTOCHANGER()
+            PLAIN_DEVICE()
+            |FindSuitableDeviceForJob|
+          endwhile
+          |UseDeviceCmd|
+          if (have_device) then (yes)
+            stop
+          else (no)
+            if (attempt 3+?) then (yes)
+              :wait 30 seconds;
+            else (no)
+              #aqua:if (suitable_device set?) then (yes)
+                :WaitForDevice()|
+                note right
+                  This will acquire a mutex to queue up
+                  multiple jobs waiting for a device.
+                  Then it waits up to 60 seconds for some
+                  other thread to call ReleaseDeviceCond()
+                end note
+              else (no)
+                (F)
+                detach
+              endif
+            endif
+          endif
+        endif
+      endif
+    repeat while (repeat forever)
+    detach
+  partition failed_to_reserve {
+    (F)
+    :no device message>
+    stop
+  }
+  @enduml
