@@ -59,11 +59,7 @@ It is recommended to use this kind of memory only when you are sure that
 you know the memory size needed and the memory will be used for short
 periods of time – that is it would not be appropriate to use statically
 allocated memory. An example might be to obtain a large memory buffer
-for reading and writing files. When **SmartAlloc** is enabled, the
-memory obtained by malloc() will automatically be checked for buffer
-overwrite (overflow) during the free() call, and all malloc’ed memory
-that is not released prior to termination of the program will be
-reported as Orphaned memory.
+for reading and writing files.
 
 Pooled and Non-pooled Memory
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -110,7 +110,10 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
  * the normal error reporting which uses dynamic memory e.g. recursivly calls
  * these routines again leading to deadlocks.
  */
-static void SmartAllocMsg(const char* file, int line, const char* fmt, ...)
+static void MemPoolErrorMessage(const char* file,
+                                int line,
+                                const char* fmt,
+                                ...)
 {
   char buf[256];
   va_list arg_ptr;
@@ -144,8 +147,9 @@ POOLMEM* GetPoolMemory(int pool)
   if ((buf = (struct abufhead*)malloc(pool_ctl[pool].size + HEAD_SIZE)) ==
       NULL) {
     V(mutex);
-    SmartAllocMsg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"),
-                  pool_ctl[pool].size);
+    MemPoolErrorMessage(__FILE__, __LINE__,
+                        _("Out of memory requesting %d bytes\n"),
+                        pool_ctl[pool].size);
     return NULL;
   }
 
@@ -167,8 +171,8 @@ POOLMEM* GetMemory(int32_t size)
   int pool = 0;
 
   if ((buf = (struct abufhead*)malloc(size + HEAD_SIZE)) == NULL) {
-    SmartAllocMsg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"),
-                  size);
+    MemPoolErrorMessage(__FILE__, __LINE__,
+                        _("Out of memory requesting %d bytes\n"), size);
     return NULL;
   }
 
@@ -205,8 +209,8 @@ POOLMEM* ReallocPoolMemory(POOLMEM* obuf, int32_t size)
   buf = realloc(cp, size + HEAD_SIZE);
   if (buf == NULL) {
     V(mutex);
-    SmartAllocMsg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"),
-                  size);
+    MemPoolErrorMessage(__FILE__, __LINE__,
+                        _("Out of memory requesting %d bytes\n"), size);
     return NULL;
   }
 
@@ -506,8 +510,8 @@ void PoolMem::ReallocPm(int32_t size)
   buf = (char*)realloc(cp, size + HEAD_SIZE);
   if (buf == NULL) {
     V(mutex);
-    SmartAllocMsg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"),
-                  size);
+    MemPoolErrorMessage(__FILE__, __LINE__,
+                        _("Out of memory requesting %d bytes\n"), size);
     return;
   }
 

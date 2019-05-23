@@ -5,9 +5,6 @@
 #ifndef __MINGWCONFIG_H
 #define __MINGWCONFIG_H
 
-/* Define if you want SmartAlloc debug code enabled */
-#define SMARTALLOC 0
-
 /* Define if you want to use Batch Mode */
 /* #define HAVE_BATCH_FILE_INSERT 1 */
 

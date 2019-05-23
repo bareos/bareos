@@ -158,10 +158,7 @@ This following shell script will show how to build the **Bareos documentation** 
 
 Memory Leaks
 ~~~~~~~~~~~~
-Most of Bareos still uses SmartAlloc.
-This tracks memory allocation and allows you to detect memory leaks.
-However, newer code should not use SmartAlloc, but use standard C++11 resource management (RAII and smart pointers).
-If you need to detect memory leaks, you can just use ``valgrind`` to do so.
+Use standard C++11 resource management (RAII and smart pointers) to prevent memory leaks in general. If you need to detect memory leaks, you can just use ``valgrind`` to do so.
 
 Guiding Principles
 ~~~~~~~~~~~~~~~~~~
@@ -234,9 +231,6 @@ don't use the bareos replacements for C string functions.
 avoid the ``edit_*()`` functions from ``edit.cc``
   Just use the appropriate format string.
   This will also avoid the temporary buffer that is required otherwise.
-
-don't subclass ``SmartAlloc``
-  It forces the use of ancient memory management methods and severely limits the capabilities of your class
 
 avoid smart allocation
   The whole smart allocation library with ``get_pool_memory()``, ``sm_free()`` and friends do not mix with RAII, so we will try to remove them step by step in the future.
