@@ -2258,7 +2258,9 @@ static DatatypeName datatype_names[] = {
     {CFG_TYPE_ADDRESSES_ADDRESS, "ADDRESS", "ip address"},
     {CFG_TYPE_ADDRESSES_PORT, "PORT", "network port"},
     {CFG_TYPE_PLUGIN_NAMES, "PLUGIN_NAMES", "Plugin Name(s)"},
-    {CFG_TYPE_STR_VECTOR, "STD_VECTOR_OF_STRINGS", "std string vector"},
+    {CFG_TYPE_STR_VECTOR, "STRING_LIST",
+     "string list"}, /* values are stored internally in
+                      * std::vector<std::string>> */
     /*
      * Director resource types. handlers in dird_conf.
      */

@@ -2812,7 +2812,7 @@
       "description": "Resource list"
     },
     "STRING_LIST": {
-      "number": 10,
+      "number": 32,
       "description": "string list"
     },
     "DIRECTORY_LIST": {
