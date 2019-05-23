@@ -261,7 +261,7 @@ struct VolumeCatalogInfo {
   char VolCatName[MAX_NAME_LENGTH]{0}; /**< Desired volume to mount */
   char VolEncrKey[MAX_NAME_LENGTH]{
       0};                       /**< Encryption Key needed to read the media
-                                     */
+                                 */
   uint32_t VolMinBlocksize = 0; /**< Volume Minimum Blocksize */
   uint32_t VolMaxBlocksize = 0; /**< Volume Maximum Blocksize */
 };
@@ -329,7 +329,7 @@ class Device {
   int oflags = 0;                  /**< Read/write flags */
   int open_mode =
       0; /**< Parameter passed to open_dev (useful to reopen the device)
-                  */
+          */
   int dev_type = 0;             /**< Device type */
   bool autoselect = false;      /**< Autoselect in autochanger */
   bool norewindonclose = false; /**< Don't rewind tape drive on close */
@@ -367,8 +367,8 @@ class Device {
       nullptr;             /**< Pointer to Volume reservation item */
   btimer_t* tid = nullptr; /**< Timer id */
 
-  VolumeCatalogInfo VolCatInfo;    /**< Volume Catalog Information */
-  VOLUME_LABEL VolHdr;             /**< Actual volume label */
+  VolumeCatalogInfo VolCatInfo;       /**< Volume Catalog Information */
+  VOLUME_LABEL VolHdr;                /**< Actual volume label */
   char pool_name[MAX_NAME_LENGTH]{0}; /**< Pool name */
   char pool_type[MAX_NAME_LENGTH]{0}; /**< Pool type */
 
@@ -516,8 +516,8 @@ class Device {
   void EditMountCodes(PoolMem& omsg, const char* imsg);
   bool OfflineOrRewind();
   bool ScanDirForVolume(DeviceControlRecord* dcr);
-  void SetSlot(slot_number_t slot);
-  void ClearSlot();
+  void SetSlotNumber(slot_number_t slot);
+  void InvalidateSlotNumber();
 
   void SetBlocksizes(DeviceControlRecord* dcr);
   void SetLabelBlocksize(DeviceControlRecord* dcr);
@@ -663,7 +663,7 @@ class DeviceControlRecord {
       false; /**< Set if DeviceControlRecord will be used for writing */
 
  public:
-  dlink dev_link;                   /**< Link to attach to dev */
+  dlink dev_link;                  /**< Link to attach to dev */
   JobControlRecord* jcr = nullptr; /**< Pointer to JobControlRecord */
   pthread_mutex_t mutex_ = PTHREAD_MUTEX_INITIALIZER;  /**< Access control */
   pthread_mutex_t r_mutex = PTHREAD_MUTEX_INITIALIZER; /**< rLock pre-mutex */
@@ -708,7 +708,7 @@ class DeviceControlRecord {
   char dev_name[MAX_NAME_LENGTH]{0};   /**< Dev name */
   int Copy = 0;                        /**< Identical copy number */
   int Stripe = 0;                      /**< RAIT stripe */
-  VolumeCatalogInfo VolCatInfo;     /**< Catalog info for desired volume */
+  VolumeCatalogInfo VolCatInfo;        /**< Catalog info for desired volume */
 
   /*
    * Constructor/Destructor.

@@ -84,7 +84,7 @@ static inline bool fill_restore_environment_ndmp_native(
   }
 
   /* try to extract ndmp_filesystem from environment */
-  char *ndmp_filesystem = nullptr;
+  char* ndmp_filesystem = nullptr;
   for (struct ndm_env_entry* entry = job->env_tab.head; entry;
        entry = entry->next) {
     if (bstrcmp(entry->pval.name, ndmp_env_keywords[NDMP_ENV_KW_FILESYSTEM])) {
@@ -292,7 +292,8 @@ static bool DoNdmpNativeRestore(JobControlRecord* jcr)
     Jmsg(jcr, M_INFO, 0, _("Logical slot for volume %s is %d\n"), media->label,
          media->slot_addr);
     ndmp_slot = GetElementAddressByBareosSlotNumber(
-        &store->rss->storage_mapping, kSlotTypeStorage, media->slot_addr);
+        &store->runtime_storage_status->storage_mapping, kSlotTypeStorage,
+        media->slot_addr);
     media->slot_addr = ndmp_slot;
     Jmsg(jcr, M_INFO, 0, _("Physical(NDMP) slot for volume %s is %d\n"),
          media->label, media->slot_addr);
