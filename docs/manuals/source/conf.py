@@ -194,7 +194,7 @@ html_context = {
     'github_user': 'bareos',
     'github_repo': 'bareos',
     'github_version': branch,
-    'conf_py_path': '/docs/manuals/main/source/'
+    'conf_py_path': '/docs/manuals/source/'
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
