@@ -140,20 +140,20 @@ static bool SetbandwidthCmd(JobControlRecord* jcr);
 static bool SetdebugCmd(JobControlRecord* jcr);
 static bool UnmountCmd(JobControlRecord* jcr);
 
-static DeviceControlRecord* find_device(JobControlRecord* jcr,
-                                        PoolMem& dev_name,
-                                        drive_number_t drive,
-                                        BlockSizes* blocksizes);
+static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
+                                       PoolMem& dev_name,
+                                       drive_number_t drive,
+                                       BlockSizes* blocksizes);
 static void ReadVolumeLabel(JobControlRecord* jcr,
                             DeviceControlRecord* dcr,
                             Device* dev,
                             slot_number_t slot);
-static void label_volume_if_ok(DeviceControlRecord* dcr,
-                               char* oldname,
-                               char* newname,
-                               char* poolname,
-                               slot_number_t Slot,
-                               bool relabel);
+static void LabelVolumeIfOk(DeviceControlRecord* dcr,
+                            char* oldname,
+                            char* newname,
+                            char* poolname,
+                            slot_number_t Slot,
+                            bool relabel);
 static int TryAutoloadDevice(JobControlRecord* jcr,
                              DeviceControlRecord* dcr,
                              slot_number_t slot,
@@ -591,7 +591,13 @@ bail_out:
   return true;
 }
 
-static bool do_label(JobControlRecord* jcr, bool relabel)
+static drive_number_t IntToDriveNumber(int drive_input)
+{
+  return (drive_input == -1) ? kInvalidDriveNumber
+                             : static_cast<drive_number_t>(drive_input);
+}
+
+static bool DoLabel(JobControlRecord* jcr, bool relabel)
 {
   int len;
   POOLMEM *newname, *oldname, *poolname, *mediatype;
@@ -602,7 +608,6 @@ static bool do_label(JobControlRecord* jcr, bool relabel)
   BlockSizes blocksizes;
   bool ok = false;
   slot_number_t slot;
-  drive_number_t drive;
 
   /*
    * Determine the length of the temporary buffers.
@@ -619,16 +624,19 @@ static bool do_label(JobControlRecord* jcr, bool relabel)
   oldname = GetMemory(len);
   poolname = GetMemory(len);
   mediatype = GetMemory(len);
+
+  int drive_input = -1;
+
   if (relabel) {
     if (sscanf(dir->msg, relabelcmd, dev_name.c_str(), oldname, newname,
-               poolname, mediatype, &slot, &drive, &blocksizes.min_block_size,
-               &blocksizes.max_block_size) == 9) {
+               poolname, mediatype, &slot, &drive_input,
+               &blocksizes.min_block_size, &blocksizes.max_block_size) == 9) {
       ok = true;
     }
   } else {
     *oldname = 0;
     if (sscanf(dir->msg, labelcmd, dev_name.c_str(), newname, poolname,
-               mediatype, &slot, &drive, &blocksizes.min_block_size,
+               mediatype, &slot, &drive_input, &blocksizes.min_block_size,
                &blocksizes.max_block_size) == 8) {
       ok = true;
     }
@@ -640,7 +648,9 @@ static bool do_label(JobControlRecord* jcr, bool relabel)
     UnbashSpaces(poolname);
     UnbashSpaces(mediatype);
 
-    dcr = find_device(jcr, dev_name, drive, &blocksizes);
+    drive_number_t drive = IntToDriveNumber(drive_input);
+
+    dcr = FindDevice(jcr, dev_name, drive, &blocksizes);
     if (dcr) {
       dev = dcr->dev;
 
@@ -652,17 +662,17 @@ static bool do_label(JobControlRecord* jcr, bool relabel)
 
       if (!dev->IsOpen() && !dev->IsBusy()) {
         Dmsg1(400, "Can %slabel. Device is not open\n", relabel ? "re" : "");
-        label_volume_if_ok(dcr, oldname, newname, poolname, slot, relabel);
+        LabelVolumeIfOk(dcr, oldname, newname, poolname, slot, relabel);
         dev->close(dcr);
         /* Under certain "safe" conditions, we can steal the lock */
       } else if (dev->CanStealLock()) {
         Dmsg0(400, "Can relabel. CanStealLock\n");
-        label_volume_if_ok(dcr, oldname, newname, poolname, slot, relabel);
+        LabelVolumeIfOk(dcr, oldname, newname, poolname, slot, relabel);
       } else if (dev->IsBusy() || dev->IsBlocked()) {
         SendDirBusyMessage(dir, dev);
       } else { /* device not being used */
         Dmsg0(400, "Can relabel. device not used\n");
-        label_volume_if_ok(dcr, oldname, newname, poolname, slot, relabel);
+        LabelVolumeIfOk(dcr, oldname, newname, poolname, slot, relabel);
       }
       dev->Unlock();
       FreeDeviceControlRecord(dcr);
@@ -686,9 +696,9 @@ static bool do_label(JobControlRecord* jcr, bool relabel)
 /**
  * Label a Volume
  */
-static bool LabelCmd(JobControlRecord* jcr) { return do_label(jcr, false); }
+static bool LabelCmd(JobControlRecord* jcr) { return DoLabel(jcr, false); }
 
-static bool RelabelCmd(JobControlRecord* jcr) { return do_label(jcr, true); }
+static bool RelabelCmd(JobControlRecord* jcr) { return DoLabel(jcr, true); }
 
 /**
  * Read the tape label and determine if we can safely
@@ -696,12 +706,12 @@ static bool RelabelCmd(JobControlRecord* jcr) { return do_label(jcr, true); }
  *
  *  Enter with the mutex set
  */
-static void label_volume_if_ok(DeviceControlRecord* dcr,
-                               char* oldname,
-                               char* newname,
-                               char* poolname,
-                               slot_number_t slot,
-                               bool relabel)
+static void LabelVolumeIfOk(DeviceControlRecord* dcr,
+                            char* oldname,
+                            char* newname,
+                            char* poolname,
+                            slot_number_t slot,
+                            bool relabel)
 {
   BareosSocket* dir = dcr->jcr->dir_bsock;
   bsteal_lock_t hold;
@@ -856,10 +866,10 @@ static bool ReadLabel(DeviceControlRecord* dcr)
 /**
  * Searches for device by name, and if found, creates a dcr and returns it.
  */
-static DeviceControlRecord* find_device(JobControlRecord* jcr,
-                                        PoolMem& devname,
-                                        drive_number_t drive,
-                                        BlockSizes* blocksizes)
+static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
+                                       PoolMem& devname,
+                                       drive_number_t drive,
+                                       BlockSizes* blocksizes)
 {
   DeviceResource* device;
   AutochangerResource* changer;
@@ -913,7 +923,7 @@ static DeviceControlRecord* find_device(JobControlRecord* jcr,
             Dmsg1(100, "Device %s not autoselect skipped.\n", devname.c_str());
             continue; /* device is not available */
           }
-          if (drive < 0 || drive == device->dev->drive) {
+          if (drive == kInvalidDriveNumber || drive == device->dev->drive) {
             Dmsg1(20, "Found changer device %s\n", device->resource_name_);
             found = true;
             break;
@@ -945,16 +955,20 @@ static bool MountCmd(JobControlRecord* jcr)
   BareosSocket* dir = jcr->dir_bsock;
   Device* dev;
   DeviceControlRecord* dcr;
-  drive_number_t drive;
   slot_number_t slot = 0;
-  bool ok;
 
-  ok = sscanf(dir->msg, mountslotcmd, devname.c_str(), &drive, &slot) == 3;
-  if (!ok) { ok = sscanf(dir->msg, mountcmd, devname.c_str(), &drive) == 2; }
+  int drive_input = -1;
+  bool ok =
+      sscanf(dir->msg, mountslotcmd, devname.c_str(), &drive_input, &slot) == 3;
 
-  Dmsg3(100, "ok=%d drive=%hd slot=%hd\n", ok, drive, slot);
+  if (!ok) {
+    ok = sscanf(dir->msg, mountcmd, devname.c_str(), &drive_input) == 2;
+  }
+
+  Dmsg3(100, "ok=%d drive=%hd slot=%hd\n", ok, drive_input, slot);
   if (ok) {
-    dcr = find_device(jcr, devname, drive, NULL);
+    drive_number_t drive = IntToDriveNumber(drive_input);
+    dcr = FindDevice(jcr, devname, drive, NULL);
     if (dcr) {
       dev = dcr->dev;
       dev->Lock(); /* Use P to avoid indefinite block */
@@ -1116,10 +1130,11 @@ static bool UnmountCmd(JobControlRecord* jcr)
   BareosSocket* dir = jcr->dir_bsock;
   Device* dev;
   DeviceControlRecord* dcr;
-  drive_number_t drive;
 
-  if (sscanf(dir->msg, unmountcmd, devname.c_str(), &drive) == 2) {
-    dcr = find_device(jcr, devname, drive, NULL);
+  int drive_input = -1;
+  if (sscanf(dir->msg, unmountcmd, devname.c_str(), &drive_input) == 2) {
+    drive_number_t drive = IntToDriveNumber(drive_input);
+    dcr = FindDevice(jcr, devname, drive, NULL);
     if (dcr) {
       dev = dcr->dev;
       dev->Lock(); /* Use P to avoid indefinite block */
@@ -1209,10 +1224,11 @@ static bool ReleaseCmd(JobControlRecord* jcr)
   BareosSocket* dir = jcr->dir_bsock;
   Device* dev;
   DeviceControlRecord* dcr;
-  drive_number_t drive;
+  int drive_input = -1;
 
-  if (sscanf(dir->msg, releasecmd, devname.c_str(), &drive) == 2) {
-    dcr = find_device(jcr, devname, drive, NULL);
+  if (sscanf(dir->msg, releasecmd, devname.c_str(), &drive_input) == 2) {
+    drive_number_t drive = IntToDriveNumber(drive_input);
+    dcr = FindDevice(jcr, devname, drive, NULL);
     if (dcr) {
       dev = dcr->dev;
       dev->Lock(); /* Use P to avoid indefinite block */
@@ -1365,7 +1381,7 @@ static bool ChangerCmd(JobControlRecord* jcr)
     is_transfer = true;
   }
   if (ok) {
-    dcr = find_device(jcr, devname, kInvalidDriveNumber, NULL);
+    dcr = FindDevice(jcr, devname, kInvalidDriveNumber, NULL);
     if (dcr) {
       dev = dcr->dev;
       dev->Lock(); /* Use P to avoid indefinite block */
@@ -1414,10 +1430,12 @@ static bool ReadlabelCmd(JobControlRecord* jcr)
   Device* dev;
   DeviceControlRecord* dcr;
   slot_number_t slot;
-  drive_number_t drive;
+  int drive_input = -1;
 
-  if (sscanf(dir->msg, readlabelcmd, devname.c_str(), &slot, &drive) == 3) {
-    dcr = find_device(jcr, devname, drive, NULL);
+  if (sscanf(dir->msg, readlabelcmd, devname.c_str(), &slot, &drive_input) ==
+      3) {
+    drive_number_t drive = IntToDriveNumber(drive_input);
+    dcr = FindDevice(jcr, devname, drive, NULL);
     if (dcr) {
       dev = dcr->dev;
       dev->Lock(); /* Use P to avoid indefinite block */
@@ -1569,11 +1587,7 @@ static void SetStorageAuthKeyAndTlsPolicy(JobControlRecord* jcr,
 /**
  * Listen for incoming replication session from other SD.
  */
-static bool ListenCmd(JobControlRecord* jcr)
-{
-
-  return DoListenRun(jcr);
-}
+static bool ListenCmd(JobControlRecord* jcr) { return DoListenRun(jcr); }
 
 enum class ReplicateCmdState
 {
