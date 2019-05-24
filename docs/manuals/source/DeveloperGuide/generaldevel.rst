@@ -232,7 +232,7 @@ avoid the ``edit_*()`` functions from ``edit.cc``
   Just use the appropriate format string.
   This will also avoid the temporary buffer that is required otherwise.
 
-avoid smart allocation
-  The whole smart allocation library with ``get_pool_memory()``, ``sm_free()`` and friends do not mix with RAII, so we will try to remove them step by step in the future.
+avoid pool memory allocation
+  The whole allocation library with ``get_pool_memory()`` and friends do not mix with RAII, so we will try to remove them step by step in the future.
   Avoid in new code if possible.
 

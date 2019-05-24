@@ -20,6 +20,5 @@ Developer Guide
    DeveloperGuide/mempool.rst
    DeveloperGuide/netprotocol.rst
    DeveloperGuide/directorConsole.rst
-   DeveloperGuide/smartall.rst
    DeveloperGuide/reservation.rst
    DeveloperGuide/jobexec.rst
