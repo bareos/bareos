@@ -438,7 +438,8 @@ dlist* native_get_vol_list(UaContext* ua,
       switch (vl->slot_type) {
         case kSlotTypeDrive:
           if (!IsAnInteger(field2) ||
-              (vl->bareos_slot_number = atoi(field2)) < 0) {
+              (vl->bareos_slot_number = static_cast<slot_number_t>(
+                   atoi(field2))) == kInvalidSlotNumber) {
             ua->ErrorMsg(_("Invalid Drive number: %s\n"), field2);
             free(vl);
             continue;

@@ -708,7 +708,7 @@ bool NdmpTransferVolume(UaContext* ua,
   from_addr = GetBareosSlotNumberByElementAddress(
       &store->runtime_storage_status->storage_mapping, kSlotTypeStorage,
       src_slot);
-  if (from_addr == -1) {
+  if (from_addr == kInvalidSlotNumber) {
     ua->ErrorMsg("No slot mapping for slot %hd\n", src_slot);
     return retval;
   }
@@ -718,7 +718,7 @@ bool NdmpTransferVolume(UaContext* ua,
   to_addr = GetElementAddressByBareosSlotNumber(
       &store->runtime_storage_status->storage_mapping, kSlotTypeStorage,
       dst_slot);
-  if (to_addr == -1) {
+  if (to_addr == kInvalidSlotNumber) {
     ua->ErrorMsg("No slot mapping for slot %hd\n", dst_slot);
     return retval;
   }
@@ -936,7 +936,7 @@ bool NdmpAutochangerVolumeOperation(UaContext* ua,
    */
   drive_mapping = GetElementAddressByBareosSlotNumber(
       &store->runtime_storage_status->storage_mapping, kSlotTypeDrive, slot);
-  if (drive_mapping == -1) {
+  if (drive_mapping == kInvalidSlotNumber) {
     ua->ErrorMsg("No slot mapping for drive %hd\n", drive);
     return retval;
   }
@@ -1095,7 +1095,7 @@ bool ndmp_native_setup_robot_and_tape_for_native_backup_job(
     StorageResource* store,
     ndm_job_param& ndmp_job)
 {
-  int driveaddress, driveindex;
+  slot_number_t driveaddress;
   std::string tapedevice;
   bool retval = false;
   if (!ndmp_native_update_runtime_storage_status(jcr, store)) {
@@ -1116,7 +1116,7 @@ bool ndmp_native_setup_robot_and_tape_for_native_backup_job(
   tapedevice = reserve_ndmp_tapedevice_for_job(store, jcr);
   ndmp_job.tape_device = (char*)tapedevice.c_str();
 
-  driveindex = lookup_ndmp_driveindex_by_name(store, ndmp_job.tape_device);
+  int driveindex = lookup_ndmp_driveindex_by_name(store, ndmp_job.tape_device);
 
   if (driveindex == -1) {
     Jmsg(jcr, M_ERROR, 0, _("Could not find driveindex of drive %s\n"),
@@ -1127,7 +1127,7 @@ bool ndmp_native_setup_robot_and_tape_for_native_backup_job(
   driveaddress = GetElementAddressByBareosSlotNumber(
       &store->runtime_storage_status->storage_mapping, kSlotTypeDrive,
       driveindex);
-  if (driveaddress == -1) {
+  if (driveaddress == kInvalidSlotNumber) {
     Jmsg(jcr, M_ERROR, 0,
          _("Could not lookup driveaddress for driveindex %d\n"), driveaddress);
     return retval;
