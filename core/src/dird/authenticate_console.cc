@@ -121,12 +121,14 @@ class ConsoleAuthenticatorBefore_18_2 : public ConsoleAuthenticator {
  private:
   bool SendOkMessageWithSpaceSeparators()
   {
-    std::string cipher;
-    ua_->UA_sock->GetCipherMessageString(cipher);
-    if (ua_ && ua_->UA_sock) {
-      return ua_->UA_sock->fsend(_("1000 OK: %s Version: %s (%s) "
-                                   "-- %s\n"),
-                                 my_name, VERSION, BDATE, cipher.c_str());
+    if (ua_) {
+      std::string cipher;
+      ua_->UA_sock->GetCipherMessageString(cipher);
+      if (ua_->UA_sock) {
+        return ua_->UA_sock->fsend(_("1000 OK: %s Version: %s (%s) "
+                                     "-- %s\n"),
+                                   my_name, VERSION, BDATE, cipher.c_str());
+      }
     }
     return false;
   }
