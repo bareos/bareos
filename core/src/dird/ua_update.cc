@@ -1233,7 +1233,7 @@ void UpdateSlotsFromVolList(UaContext* ua,
      * We are only interested in normal slots.
      */
     switch (vl->slot_type) {
-      case kSlotTypeStorage:
+      case slot_type_t::kSlotTypeStorage:
         break;
       default:
         continue;
@@ -1275,7 +1275,7 @@ void UpdateSlotsFromVolList(UaContext* ua,
      * See if there is anything in the slot.
      */
     switch (vl->slot_status) {
-      case slot_status_full:
+      case slot_status_t::kSlotStatusFull:
         if (!vl->VolName) {
           Dmsg1(100, "No VolName for Slot=%d setting InChanger to zero.\n",
                 vl->bareos_slot_number);
@@ -1341,7 +1341,7 @@ void UpdateInchangerForExport(UaContext* ua,
      * We are only interested in normal slots.
      */
     switch (vl->slot_type) {
-      case kSlotTypeStorage:
+      case slot_type_t::kSlotTypeStorage:
         break;
       default:
         continue;

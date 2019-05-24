@@ -35,7 +35,7 @@ slot_number_t GetElementAddressByBareosSlotNumber(
   slot_number_t calculated_slot;
 
   switch (slot_type) {
-    case kSlotTypeStorage:
+    case slot_type_t::kSlotTypeStorage:
       if ((slotnumber > smc_elem_aa->se_count) ||
           !IsSlotNumberValid(slotnumber)) {
         calculated_slot = kInvalidSlotNumber;
@@ -45,7 +45,7 @@ slot_number_t GetElementAddressByBareosSlotNumber(
                         - 1;  // normal slots count start from 1
       }
       break;
-    case kSlotTypeImport:
+    case slot_type_t::kSlotTypeImport:
       if ((slotnumber < (smc_elem_aa->se_count + 1)) ||
           (slotnumber > (smc_elem_aa->se_count + smc_elem_aa->iee_count + 1))) {
         calculated_slot = kInvalidSlotNumber;
@@ -56,7 +56,7 @@ slot_number_t GetElementAddressByBareosSlotNumber(
                         - 1;                    // normal slots count start from 1
       }
       break;
-    case kSlotTypePicker:
+    case slot_type_t::kSlotTypePicker:
       if ((slotnumber == kInvalidSlotNumber) ||
           slotnumber > (smc_elem_aa->mte_count - 1)) {
         calculated_slot = kInvalidSlotNumber;
@@ -65,7 +65,7 @@ slot_number_t GetElementAddressByBareosSlotNumber(
                         + smc_elem_aa->mte_addr;
       }
       break;
-    case kSlotTypeDrive:
+    case slot_type_t::kSlotTypeDrive:
       if ((slotnumber > (smc_elem_aa->dte_count) - 1) ||
           (slotnumber == kInvalidSlotNumber)) {
         calculated_slot = kInvalidSlotNumber;
@@ -75,7 +75,7 @@ slot_number_t GetElementAddressByBareosSlotNumber(
       }
       break;
     default:
-    case kSlotTypeUnknown:
+    case slot_type_t::kSlotTypeUnknown:
       calculated_slot = kInvalidSlotNumber;
       break;
   }
@@ -93,7 +93,7 @@ slot_number_t GetBareosSlotNumberByElementAddress(
   slot_number_t calculated_slot;
 
   switch (slot_type) {
-    case kSlotTypeStorage:
+    case slot_type_t::kSlotTypeStorage:
       if (element_addr < smc_elem_aa->se_addr ||
           (element_addr > smc_elem_aa->se_addr + smc_elem_aa->se_count - 1)) {
         calculated_slot = kInvalidSlotNumber;
@@ -103,7 +103,7 @@ slot_number_t GetBareosSlotNumberByElementAddress(
                         + 1;  // slots count start from 1
       }
       break;
-    case kSlotTypeImport:
+    case slot_type_t::kSlotTypeImport:
       if ((element_addr < smc_elem_aa->iee_addr) ||
           (element_addr > smc_elem_aa->iee_addr + smc_elem_aa->iee_count - 1)) {
         calculated_slot = kInvalidSlotNumber;
@@ -114,7 +114,7 @@ slot_number_t GetBareosSlotNumberByElementAddress(
                         + 1;                     // slots count start from 1
       }
       break;
-    case kSlotTypeDrive:
+    case slot_type_t::kSlotTypeDrive:
       if ((element_addr < smc_elem_aa->dte_addr) ||
           (element_addr > smc_elem_aa->dte_addr + smc_elem_aa->dte_count - 1)) {
         calculated_slot = kInvalidSlotNumber;
@@ -123,12 +123,12 @@ slot_number_t GetBareosSlotNumberByElementAddress(
                         - smc_elem_aa->dte_addr;
       }
       break;
-    case kSlotTypePicker:
+    case slot_type_t::kSlotTypePicker:
       calculated_slot = element_addr
                       - smc_elem_aa->mte_addr;
       break;
     default:
-    case kSlotTypeUnknown:
+    case slot_type_t::kSlotTypeUnknown:
       calculated_slot = kInvalidSlotNumber;
       break;
   }

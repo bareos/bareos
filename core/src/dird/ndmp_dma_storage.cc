@@ -471,12 +471,12 @@ dlist* ndmp_get_vol_list(UaContext* ua,
           /*
            * Normal slot
            */
-          vl->slot_type = kSlotTypeStorage;
+          vl->slot_type = slot_type_t::kSlotTypeStorage;
           if (edp->Full) {
-            vl->slot_status = slot_status_full;
+            vl->slot_status = slot_status_t::kSlotStatusFull;
             FillVolumeName(vl, edp);
           } else {
-            vl->slot_status = slot_status_empty;
+            vl->slot_status = slot_status_t::kSlotStatusEmpty;
           }
           vl->element_address = edp->element_address;
           break;
@@ -493,13 +493,13 @@ dlist* ndmp_get_vol_list(UaContext* ua,
           /*
            * Normal slot
            */
-          vl->slot_type = kSlotTypeStorage;
+          vl->slot_type = slot_type_t::kSlotTypeStorage;
           vl->element_address = edp->element_address;
           if (!edp->Full) {
             free(vl);
             continue;
           } else {
-            vl->slot_status = slot_status_full;
+            vl->slot_status = slot_status_t::kSlotStatusFull;
             FillVolumeName(vl, edp);
           }
           break;
@@ -522,26 +522,26 @@ dlist* ndmp_get_vol_list(UaContext* ua,
           /*
            * Normal slot
            */
-          vl->slot_type = kSlotTypeStorage;
+          vl->slot_type = slot_type_t::kSlotTypeStorage;
           vl->element_address = edp->element_address;
           if (edp->Full) {
-            vl->slot_status = slot_status_full;
+            vl->slot_status = slot_status_t::kSlotStatusFull;
             FillVolumeName(vl, edp);
           } else {
-            vl->slot_status = slot_status_empty;
+            vl->slot_status = slot_status_t::kSlotStatusEmpty;
           }
           break;
         case SMC_ELEM_TYPE_IEE:
           /*
            * Import/Export bareos_slot_number
            */
-          vl->slot_type = kSlotTypeImport;
+          vl->slot_type = slot_type_t::kSlotTypeImport;
           vl->element_address = edp->element_address;
           if (edp->Full) {
-            vl->slot_status = slot_status_full;
+            vl->slot_status = slot_status_t::kSlotStatusFull;
             FillVolumeName(vl, edp);
           } else {
-            vl->slot_status = slot_status_empty;
+            vl->slot_status = slot_status_t::kSlotStatusEmpty;
           }
           if (edp->InEnab) { vl->flags |= can_import; }
           if (edp->ExEnab) { vl->flags |= can_export; }
@@ -555,22 +555,22 @@ dlist* ndmp_get_vol_list(UaContext* ua,
           /*
            * Drive
            */
-          vl->slot_type = kSlotTypeDrive;
+          vl->slot_type = slot_type_t::kSlotTypeDrive;
           vl->element_address = edp->element_address;
           if (edp->Full) {
             slot_number_t slot_mapping;
-            vl->slot_status = slot_status_full;
+            vl->slot_status = slot_status_t::kSlotStatusFull;
             slot_mapping = GetBareosSlotNumberByElementAddress(
                 &store->runtime_storage_status->storage_mapping,
-                kSlotTypeStorage, edp->src_se_addr);
+                slot_type_t::kSlotTypeStorage, edp->src_se_addr);
             vl->currently_loaded_slot_number = slot_mapping;
             FillVolumeName(vl, edp);
           } else {
-            vl->slot_status = slot_status_empty;
+            vl->slot_status = slot_status_t::kSlotStatusEmpty;
           }
           break;
         default:
-          vl->slot_type = kSlotTypeUnknown;
+          vl->slot_type = slot_type_t::kSlotTypeUnknown;
           vl->element_address = edp->element_address;
           break;
       }
@@ -706,8 +706,8 @@ bool NdmpTransferVolume(UaContext* ua,
    * to physical slot numbers for the actual NDMP operation.
    */
   from_addr = GetBareosSlotNumberByElementAddress(
-      &store->runtime_storage_status->storage_mapping, kSlotTypeStorage,
-      src_slot);
+      &store->runtime_storage_status->storage_mapping,
+      slot_type_t::kSlotTypeStorage, src_slot);
   if (from_addr == kInvalidSlotNumber) {
     ua->ErrorMsg("No slot mapping for slot %hd\n", src_slot);
     return retval;
@@ -716,8 +716,8 @@ bool NdmpTransferVolume(UaContext* ua,
   ndmp_job.from_addr_given = 1;
 
   to_addr = GetElementAddressByBareosSlotNumber(
-      &store->runtime_storage_status->storage_mapping, kSlotTypeStorage,
-      dst_slot);
+      &store->runtime_storage_status->storage_mapping,
+      slot_type_t::kSlotTypeStorage, dst_slot);
   if (to_addr == kInvalidSlotNumber) {
     ua->ErrorMsg("No slot mapping for slot %hd\n", dst_slot);
     return retval;
@@ -921,8 +921,8 @@ bool NdmpAutochangerVolumeOperation(UaContext* ua,
      * Map the logical address to a physical one.
      */
     slot_mapping = GetElementAddressByBareosSlotNumber(
-        &store->runtime_storage_status->storage_mapping, kSlotTypeStorage,
-        slot);
+        &store->runtime_storage_status->storage_mapping,
+        slot_type_t::kSlotTypeStorage, slot);
     if (slot_mapping == kInvalidSlotNumber) {
       ua->ErrorMsg("No slot mapping for slot %hd\n", slot);
       return retval;
@@ -935,7 +935,8 @@ bool NdmpAutochangerVolumeOperation(UaContext* ua,
    * Map the logical address to a physical one.
    */
   drive_mapping = GetElementAddressByBareosSlotNumber(
-      &store->runtime_storage_status->storage_mapping, kSlotTypeDrive, slot);
+      &store->runtime_storage_status->storage_mapping,
+      slot_type_t::kSlotTypeDrive, slot);
   if (drive_mapping == kInvalidSlotNumber) {
     ua->ErrorMsg("No slot mapping for drive %hd\n", drive);
     return retval;
@@ -1039,8 +1040,8 @@ bool NdmpSendLabelRequest(UaContext* ua,
     slot_number_t slot_mapping;
 
     slot_mapping = GetElementAddressByBareosSlotNumber(
-        &store->runtime_storage_status->storage_mapping, kSlotTypeStorage,
-        slot);
+        &store->runtime_storage_status->storage_mapping,
+        slot_type_t::kSlotTypeStorage, slot);
     if (slot_mapping == kInvalidSlotNumber) {
       ua->ErrorMsg("No slot mapping for slot %hd\n", slot);
       return retval;
@@ -1125,8 +1126,8 @@ bool ndmp_native_setup_robot_and_tape_for_native_backup_job(
   }
 
   driveaddress = GetElementAddressByBareosSlotNumber(
-      &store->runtime_storage_status->storage_mapping, kSlotTypeDrive,
-      driveindex);
+      &store->runtime_storage_status->storage_mapping,
+      slot_type_t::kSlotTypeDrive, driveindex);
   if (driveaddress == kInvalidSlotNumber) {
     Jmsg(jcr, M_ERROR, 0,
          _("Could not lookup driveaddress for driveindex %d\n"), driveaddress);

@@ -115,21 +115,21 @@ typedef enum
   VOL_LIST_PARTIAL
 } vol_list_type;
 
-typedef enum
+enum class slot_type_t
 {
-  kSlotTypeUnknown, /**< Unknown slot type */
-  kSlotTypeDrive,   /**< Drive slot */
-  kSlotTypeStorage, /**< Storage slot */
-  kSlotTypeImport,  /**< Import/export slot */
-  kSlotTypePicker   /**< Robotics */
-} slot_type_t;
+  kSlotTypeUnknown,
+  kSlotTypeDrive,
+  kSlotTypeStorage,
+  kSlotTypeImport, /**< Import/export slot */
+  kSlotTypePicker  /**< Robotics */
+};
 
-typedef enum
+enum class slot_status_t
 {
-  slot_status_unknown, /**< Slot content is unknown */
-  slot_status_empty,   /**< Slot is empty */
-  slot_status_full     /**< Slot is full */
-} slot_status_t;
+  kSlotStatusUnknown,
+  kSlotStatusEmpty,
+  kSlotStatusFull
+};
 
 enum s_mapping_type
 {
@@ -145,8 +145,8 @@ struct vol_list_t {
   dlink link;                                            /**< Link for list */
   slot_number_t element_address = kInvalidSlotNumber;    /**< scsi element address */
   slot_flags_t flags = 0;                                /**< Slot specific flags see e_slot_flag enum */
-  slot_type_t slot_type = kSlotTypeUnknown;              /**< See slot_type_* */
-  slot_status_t slot_status = slot_status_unknown;       /**< See slot_status_* */
+  slot_type_t slot_type = slot_type_t::kSlotTypeUnknown;
+  slot_status_t slot_status = slot_status_t::kSlotStatusUnknown;
   slot_number_t bareos_slot_number = kInvalidSlotNumber; /**< Drive number when
                                                               kSlotTypeDrive or actual slot number */
   slot_number_t currently_loaded_slot_number = kInvalidSlotNumber;  /**< Volume loaded in drive when

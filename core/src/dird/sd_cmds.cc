@@ -375,12 +375,12 @@ dlist* native_get_vol_list(UaContext* ua,
         continue;
       }
 
-      vl->slot_type = kSlotTypeStorage;
+      vl->slot_type = slot_type_t::kSlotTypeStorage;
       if (strlen(field2) > 0) {
-        vl->slot_status = slot_status_full;
+        vl->slot_status = slot_status_t::kSlotStatusFull;
         vl->VolName = strdup(field2);
       } else {
-        vl->slot_status = slot_status_empty;
+        vl->slot_status = slot_status_t::kSlotStatusEmpty;
       }
       vl->element_address = INDEX_SLOT_OFFSET + vl->bareos_slot_number;
     } else if (!listall) {
@@ -405,8 +405,8 @@ dlist* native_get_vol_list(UaContext* ua,
         continue;
       }
 
-      vl->slot_type = kSlotTypeStorage;
-      vl->slot_status = slot_status_full;
+      vl->slot_type = slot_type_t::kSlotTypeStorage;
+      vl->slot_status = slot_status_t::kSlotStatusFull;
       vl->VolName = strdup(field2);
       vl->element_address = INDEX_SLOT_OFFSET + vl->bareos_slot_number;
     } else {
@@ -417,17 +417,17 @@ dlist* native_get_vol_list(UaContext* ua,
 
       switch (*field1) {
         case 'D':
-          vl->slot_type = kSlotTypeDrive;
+          vl->slot_type = slot_type_t::kSlotTypeDrive;
           break;
         case 'S':
-          vl->slot_type = kSlotTypeStorage;
+          vl->slot_type = slot_type_t::kSlotTypeStorage;
           break;
         case 'I':
-          vl->slot_type = kSlotTypeImport;
+          vl->slot_type = slot_type_t::kSlotTypeImport;
           vl->flags |= (can_import | can_export | by_oper);
           break;
         default:
-          vl->slot_type = kSlotTypeUnknown;
+          vl->slot_type = slot_type_t::kSlotTypeUnknown;
           break;
       }
 
@@ -436,7 +436,7 @@ dlist* native_get_vol_list(UaContext* ua,
        * For any other type its the actual slot number.
        */
       switch (vl->slot_type) {
-        case kSlotTypeDrive:
+        case slot_type_t::kSlotTypeDrive:
           if (!IsAnInteger(field2) ||
               (vl->bareos_slot_number = static_cast<slot_number_t>(
                    atoi(field2))) == kInvalidSlotNumber) {
@@ -466,16 +466,16 @@ dlist* native_get_vol_list(UaContext* ua,
 
       switch (*field3) {
         case 'E':
-          vl->slot_status = slot_status_empty;
+          vl->slot_status = slot_status_t::kSlotStatusEmpty;
           break;
         case 'F':
-          vl->slot_status = slot_status_full;
-          switch (vl->slot_status) {
-            case kSlotTypeStorage:
-            case kSlotTypeImport:
+          vl->slot_status = slot_status_t::kSlotStatusFull;
+          switch (vl->slot_type) {
+            case slot_type_t::kSlotTypeStorage:
+            case slot_type_t::kSlotTypeImport:
               if (field4) { vl->VolName = strdup(field4); }
               break;
-            case kSlotTypeDrive:
+            case slot_type_t::kSlotTypeDrive:
               if (field4) {
                 vl->currently_loaded_slot_number =
                     static_cast<slot_number_t>(atoi(field4));
@@ -487,7 +487,7 @@ dlist* native_get_vol_list(UaContext* ua,
           }
           break;
         default:
-          vl->slot_status = slot_status_unknown;
+          vl->slot_status = slot_status_t::kSlotStatusUnknown;
           break;
       }
     }

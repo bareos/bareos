@@ -292,8 +292,8 @@ static bool DoNdmpNativeRestore(JobControlRecord* jcr)
     Jmsg(jcr, M_INFO, 0, _("Logical slot for volume %s is %d\n"), media->label,
          media->slot_addr);
     ndmp_slot = GetElementAddressByBareosSlotNumber(
-        &store->runtime_storage_status->storage_mapping, kSlotTypeStorage,
-        media->slot_addr);
+        &store->runtime_storage_status->storage_mapping,
+        slot_type_t::kSlotTypeStorage, media->slot_addr);
     media->slot_addr = ndmp_slot;
     Jmsg(jcr, M_INFO, 0, _("Physical(NDMP) slot for volume %s is %d\n"),
          media->label, media->slot_addr);

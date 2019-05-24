@@ -153,8 +153,8 @@ void CopyWstorage(JobControlRecord* jcr, alist* storage, const char* where)
     if (jcr->res.write_storage_list) {
       jcr->res.write_storage =
           (StorageResource*)jcr->res.write_storage_list->first();
-      Dmsg2(100, "write_storage=%s where=%s\n", jcr->res.write_storage->resource_name_,
-            jcr->res.wstore_source);
+      Dmsg2(100, "write_storage=%s where=%s\n",
+            jcr->res.write_storage->resource_name_, jcr->res.wstore_source);
     }
   }
 }
@@ -177,8 +177,8 @@ void SetWstorage(JobControlRecord* jcr, UnifiedStorageResource* store)
     jcr->res.wstore_source = GetPoolMemory(PM_MESSAGE);
   }
   PmStrcpy(jcr->res.wstore_source, store->store_source);
-  Dmsg2(50, "write_storage=%s where=%s\n", jcr->res.write_storage->resource_name_,
-        jcr->res.wstore_source);
+  Dmsg2(50, "write_storage=%s where=%s\n",
+        jcr->res.write_storage->resource_name_, jcr->res.wstore_source);
   foreach_alist (storage, jcr->res.write_storage_list) {
     if (store->store == storage) { return; }
   }
@@ -304,7 +304,8 @@ void SetPairedStorage(JobControlRecord* jcr)
         jcr->res.read_storage_list = new alist(10, not_owned_by_alist);
         foreach_alist (store, jcr->res.paired_read_write_storage_list) {
           if (store->paired_storage) {
-            Dmsg1(100, "read_storage_list=%s\n", store->paired_storage->resource_name_);
+            Dmsg1(100, "read_storage_list=%s\n",
+                  store->paired_storage->resource_name_);
             jcr->res.read_storage_list->append(store->paired_storage);
           }
         }
@@ -616,7 +617,8 @@ changer_vol_list_t* get_vol_list_from_storage(UaContext* ua,
       Dmsg0(100, "Need to free still referenced vol_list\n");
       store->runtime_storage_status->vol_list =
           (changer_vol_list_t*)malloc(sizeof(changer_vol_list_t));
-      memset(store->runtime_storage_status->vol_list, 0, sizeof(changer_vol_list_t));
+      memset(store->runtime_storage_status->vol_list, 0,
+             sizeof(changer_vol_list_t));
     }
   }
 
@@ -643,7 +645,8 @@ changer_vol_list_t* get_vol_list_from_storage(UaContext* ua,
     if (!store->runtime_storage_status->vol_list) {
       store->runtime_storage_status->vol_list =
           (changer_vol_list_t*)malloc(sizeof(changer_vol_list_t));
-      memset(store->runtime_storage_status->vol_list, 0, sizeof(changer_vol_list_t));
+      memset(store->runtime_storage_status->vol_list, 0,
+             sizeof(changer_vol_list_t));
     }
     vol_list = store->runtime_storage_status->vol_list;
     vol_list->reference_count++;
@@ -665,7 +668,9 @@ slot_number_t GetNumSlots(UaContext* ua, StorageResource* store)
   /*
    * See if we can use the cached number of slots.
    */
-  if (store->runtime_storage_status->slots > 0) { return store->runtime_storage_status->slots; }
+  if (store->runtime_storage_status->slots > 0) {
+    return store->runtime_storage_status->slots;
+  }
 
   P(store->runtime_storage_status->changer_lock);
 
@@ -696,7 +701,9 @@ slot_number_t GetNumDrives(UaContext* ua, StorageResource* store)
   /*
    * See if we can use the cached number of drives.
    */
-  if (store->runtime_storage_status->drives > 0) { return store->runtime_storage_status->drives; }
+  if (store->runtime_storage_status->drives > 0) {
+    return store->runtime_storage_status->drives;
+  }
 
   P(store->runtime_storage_status->changer_lock);
 
@@ -789,7 +796,7 @@ vol_list_t* vol_is_loaded_in_drive(StorageResource* store,
   vl = (vol_list_t*)vol_list->contents->first();
   while (vl) {
     switch (vl->slot_type) {
-      case kSlotTypeDrive:
+      case slot_type_t::kSlotTypeDrive:
         Dmsg2(100, "Checking drive %hd for loaded volume == %hd\n",
               vl->bareos_slot_number, vl->currently_loaded_slot_number);
         if (vl->currently_loaded_slot_number == slot) { return vl; }
@@ -847,7 +854,9 @@ void StorageFreeVolList(StorageResource* store, changer_vol_list_t* vol_list)
   /*
    * Clear the cached vol_list if needed.
    */
-  if (store->runtime_storage_status->vol_list == vol_list) { store->runtime_storage_status->vol_list = NULL; }
+  if (store->runtime_storage_status->vol_list == vol_list) {
+    store->runtime_storage_status->vol_list = NULL;
+  }
 
   V(store->runtime_storage_status->changer_lock);
 }
@@ -862,7 +871,8 @@ void InvalidateVolList(StorageResource* store)
   P(store->runtime_storage_status->changer_lock);
 
   if (store->runtime_storage_status->vol_list) {
-    Dmsg1(100, "Invalidating volume list at %p\n", store->runtime_storage_status->vol_list);
+    Dmsg1(100, "Invalidating volume list at %p\n",
+          store->runtime_storage_status->vol_list);
 
     /*
      * If the volume list is unreferenced we can destroy it otherwise we just

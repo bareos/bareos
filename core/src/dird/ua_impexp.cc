@@ -99,11 +99,11 @@ static inline void validate_slot_list(UaContext* ua,
    */
   foreach_dlist (vl, vol_list->contents) {
     switch (vl->slot_type) {
-      case kSlotTypeStorage:
-      case kSlotTypeImport:
+      case slot_type_t::kSlotTypeStorage:
+      case slot_type_t::kSlotTypeImport:
         if (BitIsSet(vl->bareos_slot_number - 1, slot_list)) {
           switch (status) {
-            case slot_status_full:
+            case slot_status_t::kSlotStatusFull:
               /*
                * If it has the correct status we are done.
                */
@@ -115,8 +115,8 @@ static inline void validate_slot_list(UaContext* ua,
                * that it has status. We just unload the drive
                * on the export move operation.
                */
-              if (vl->slot_type == kSlotTypeStorage &&
-                  vl->slot_status == slot_status_empty &&
+              if (vl->slot_type == slot_type_t::kSlotTypeStorage &&
+                  vl->slot_status == slot_status_t::kSlotStatusEmpty &&
                   vol_is_loaded_in_drive(store, vol_list,
                                          vl->bareos_slot_number) != NULL) {
                 continue;
@@ -128,7 +128,7 @@ static inline void validate_slot_list(UaContext* ua,
                   vl->bareos_slot_number);
               ClearBit(vl->bareos_slot_number - 1, slot_list);
               break;
-            case slot_status_empty:
+            case slot_status_t::kSlotStatusEmpty:
               /*
                * If it has the correct status we are done.
                */
@@ -138,8 +138,8 @@ static inline void validate_slot_list(UaContext* ua,
                * make sure its not loaded in a drive because
                * then the slot is not really empty.
                */
-              if (vl->slot_type == kSlotTypeStorage &&
-                  vl->slot_status == slot_status_empty &&
+              if (vl->slot_type == slot_type_t::kSlotTypeStorage &&
+                  vl->slot_status == slot_status_t::kSlotStatusEmpty &&
                   vol_is_loaded_in_drive(store, vol_list,
                                          vl->bareos_slot_number) == NULL) {
                 continue;
@@ -175,9 +175,9 @@ static inline vol_list_t* find_slot_in_list(changer_vol_list_t* vol_list,
 
   foreach_dlist (vl, vol_list->contents) {
     switch (vl->slot_status) {
-      case slot_status_full:
+      case slot_status_t::kSlotStatusFull:
         switch (vl->slot_type) {
-          case kSlotTypeDrive:
+          case slot_type_t::kSlotTypeDrive:
             if (vl->currently_loaded_slot_number == slotnr) { return vl; }
             break;
           default:
@@ -261,7 +261,7 @@ static inline changer_vol_list_t* scan_slots_for_volnames(
    */
   foreach_dlist (vl1, vol_list->contents) {
     switch (vl1->slot_type) {
-      case kSlotTypeDrive:
+      case slot_type_t::kSlotTypeDrive:
         continue;
       default:
         /*
@@ -275,7 +275,7 @@ static inline changer_vol_list_t* scan_slots_for_volnames(
         }
 
         switch (vl1->slot_status) {
-          case slot_status_full:
+          case slot_status_t::kSlotStatusFull:
             if (vl1->VolName) {
               free(vl1->VolName);
               vl1->VolName = NULL;
@@ -285,12 +285,12 @@ static inline changer_vol_list_t* scan_slots_for_volnames(
             Dmsg2(100, "Got Vol=%s from SD for Slot=%hd\n", vl1->VolName,
                   vl1->bareos_slot_number);
             break;
-          case slot_status_empty:
+          case slot_status_t::kSlotStatusEmpty:
             /*
              * See if the slot is empty because the volume is
              * loaded in a drive.
              */
-            if (vl1->slot_type == kSlotTypeStorage &&
+            if (vl1->slot_type == slot_type_t::kSlotTypeStorage &&
                 (vl2 = vol_is_loaded_in_drive(
                      store, vol_list, vl1->bareos_slot_number)) != NULL) {
               if (vl2->VolName) {
@@ -336,16 +336,16 @@ static inline changer_vol_list_t* scan_slots_for_volnames(
    */
   foreach_dlist (vl1, new_vol_list->contents) {
     switch (vl1->slot_type) {
-      case kSlotTypeDrive:
+      case slot_type_t::kSlotTypeDrive:
         switch (vl1->slot_status) {
-          case slot_status_full:
+          case slot_status_t::kSlotStatusFull:
             /*
              * Lookup the drive in the old list.
              */
             vls.element_address = vl1->element_address;
             vl2 = (vol_list_t*)vol_list->contents->binary_search(
                 (void*)&vls, StorageCompareVolListEntry);
-            if (vl2 && vl2->slot_status == slot_status_full &&
+            if (vl2 && vl2->slot_status == slot_status_t::kSlotStatusFull &&
                 vl2->currently_loaded_slot_number ==
                     vl1->currently_loaded_slot_number) {
               /*
@@ -373,8 +373,8 @@ static inline changer_vol_list_t* scan_slots_for_volnames(
             continue;
         }
         break;
-      case kSlotTypeStorage:
-      case kSlotTypeImport:
+      case slot_type_t::kSlotTypeStorage:
+      case slot_type_t::kSlotTypeImport:
         /*
          * See if a slot list selection was done and
          * if so only get the content for this slot when
@@ -385,14 +385,14 @@ static inline changer_vol_list_t* scan_slots_for_volnames(
           continue;
         }
         switch (vl1->slot_status) {
-          case slot_status_full:
+          case slot_status_t::kSlotStatusFull:
             /*
              * Lookup the slot in the old list.
              */
             vls.element_address = vl1->element_address;
             vl2 = (vol_list_t*)vol_list->contents->binary_search(
                 (void*)&vls, StorageCompareVolListEntry);
-            if (vl2 && vl2->slot_status == slot_status_full &&
+            if (vl2 && vl2->slot_status == slot_status_t::kSlotStatusFull &&
                 vl2->bareos_slot_number == vl1->bareos_slot_number) {
               /*
                * Volume in slot is the same copy the volume name.
@@ -450,8 +450,8 @@ static inline bool get_slot_list_using_volname(UaContext* ua,
        * We only select normal and import/export slots.
        */
       switch (vl1->slot_type) {
-        case kSlotTypeStorage:
-        case kSlotTypeImport:
+        case slot_type_t::kSlotTypeStorage:
+        case slot_type_t::kSlotTypeImport:
           /*
            * When the source slot list is limited we check to
            * see if this slot should be taken into consideration.
@@ -462,7 +462,7 @@ static inline bool get_slot_list_using_volname(UaContext* ua,
           }
 
           switch (vl1->slot_status) {
-            case slot_status_full:
+            case slot_status_t::kSlotStatusFull:
               /*
                * See if the wanted volume is loaded in this slot.
                */
@@ -475,7 +475,7 @@ static inline bool get_slot_list_using_volname(UaContext* ua,
                 found = true;
               }
               break;
-            case slot_status_empty:
+            case slot_status_t::kSlotStatusEmpty:
               /*
                * See if this slot is loaded in drive and drive contains wanted
                * volume
@@ -631,7 +631,8 @@ static inline slot_number_t auto_fill_slot_selection(
      * make sure its not loaded in a drive because
      * then the slot is not really empty.
      */
-    if (type == kSlotTypeStorage && content == slot_status_empty &&
+    if (type == slot_type_t::kSlotTypeStorage &&
+        content == slot_status_t::kSlotStatusEmpty &&
         vol_is_loaded_in_drive(store, vol_list, vl->bareos_slot_number) !=
             NULL) {
       Dmsg3(100,
@@ -676,8 +677,8 @@ static inline bool verify_slot_list(StorageResource* store,
      * don't consider any other slot type.
      */
     switch (vl->slot_type) {
-      case kSlotTypeStorage:
-      case kSlotTypeImport:
+      case slot_type_t::kSlotTypeStorage:
+      case slot_type_t::kSlotTypeImport:
         if (BitIsSet(vl->bareos_slot_number - 1, slot_list)) {
           /*
            * If the type and content is ok we can continue with the next one.
@@ -693,9 +694,9 @@ static inline bool verify_slot_list(StorageResource* store,
            * we can just release the drive so that its put back into
            * the slot and then moved.
            */
-          if (vl->slot_type == kSlotTypeStorage) {
+          if (vl->slot_type == slot_type_t::kSlotTypeStorage) {
             switch (content) {
-              case slot_status_empty:
+              case slot_status_t::kSlotStatusEmpty:
                 if (vol_is_loaded_in_drive(store, vol_list,
                                            vl->bareos_slot_number) != NULL) {
                   Dmsg3(100,
@@ -705,7 +706,7 @@ static inline bool verify_slot_list(StorageResource* store,
                   return false;
                 }
                 break;
-              case slot_status_full:
+              case slot_status_t::kSlotStatusFull:
                 if (vol_is_loaded_in_drive(store, vol_list,
                                            vl->bareos_slot_number) != NULL) {
                   continue;
@@ -748,7 +749,7 @@ static inline bool update_internal_slot_list(changer_vol_list_t* vol_list,
   found = false;
   foreach_dlist (vl1, vol_list->contents) {
     switch (vl1->slot_type) {
-      case kSlotTypeDrive:
+      case slot_type_t::kSlotTypeDrive:
         continue;
       default:
         if (vl1->bareos_slot_number == source) { found = true; }
@@ -760,7 +761,7 @@ static inline bool update_internal_slot_list(changer_vol_list_t* vol_list,
   found = false;
   foreach_dlist (vl2, vol_list->contents) {
     switch (vl2->slot_type) {
-      case kSlotTypeDrive:
+      case slot_type_t::kSlotTypeDrive:
         continue;
       default:
         if (vl2->bareos_slot_number == destination) { found = true; }
@@ -774,9 +775,9 @@ static inline bool update_internal_slot_list(changer_vol_list_t* vol_list,
      * Swap the data.
      */
     vl2->VolName = vl1->VolName;
-    vl2->slot_status = slot_status_full;
+    vl2->slot_status = slot_status_t::kSlotStatusFull;
     vl1->VolName = NULL;
-    vl1->slot_status = slot_status_empty;
+    vl1->slot_status = slot_status_t::kSlotStatusEmpty;
     Dmsg5(100,
           "Update internal slotlist slot %hd with volname %s, content %hd and "
           "slot %hd with content %hd and volname NULL\n",
@@ -808,7 +809,7 @@ static bool release_loaded_volume(UaContext* ua,
   found = false;
   foreach_dlist (vl1, vol_list->contents) {
     switch (vl1->slot_type) {
-      case kSlotTypeDrive:
+      case slot_type_t::kSlotTypeDrive:
         if (vl1->bareos_slot_number == drive) { found = true; }
         break;
       default:
@@ -818,7 +819,7 @@ static bool release_loaded_volume(UaContext* ua,
      * As drives are at the front of the list
      * when we see the first non drive we are done.
      */
-    if (found || vl1->slot_type != kSlotTypeDrive) { break; }
+    if (found || vl1->slot_type != slot_type_t::kSlotTypeDrive) { break; }
   }
 
   /*
@@ -828,7 +829,7 @@ static bool release_loaded_volume(UaContext* ua,
   found = false;
   foreach_dlist (vl2, vol_list->contents) {
     switch (vl2->slot_type) {
-      case kSlotTypeDrive:
+      case slot_type_t::kSlotTypeDrive:
         continue;
       default:
         if (vl2->bareos_slot_number == vl1->currently_loaded_slot_number) {
@@ -844,9 +845,9 @@ static bool release_loaded_volume(UaContext* ua,
      * Swap the data.
      */
     vl2->VolName = vl1->VolName;
-    vl2->slot_status = slot_status_full;
+    vl2->slot_status = slot_status_t::kSlotStatusFull;
     vl1->VolName = NULL;
-    vl1->slot_status = slot_status_empty;
+    vl1->slot_status = slot_status_t::kSlotStatusEmpty;
     vl1->currently_loaded_slot_number = 0;
     Dmsg5(100,
           "Update internal slotlist slot %hd with volname %s, content %hd and "
@@ -1077,7 +1078,7 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
        * Clear any slot that has no content in the source selection.
        */
       validate_slot_list(ua, store.store, vol_list, src_slot_list,
-                         slot_status_full);
+                         slot_status_t::kSlotStatusFull);
       nr_enabled_src_slots = count_enabled_slots(src_slot_list, max_slots);
     }
   } else {
@@ -1111,7 +1112,7 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
         case VOLUME_IMPORT:
         case VOLUME_EXPORT:
           validate_slot_list(ua, store.store, vol_list, dst_slot_list,
-                             slot_status_empty);
+                             slot_status_t::kSlotStatusEmpty);
           break;
         default:
           break;
@@ -1206,16 +1207,17 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
       if (nr_enabled_src_slots == 0) {
         src_slot_list = (char*)malloc(NbytesForBits(max_slots));
         ClearAllBits(max_slots, src_slot_list);
-        nr_enabled_src_slots =
-            auto_fill_slot_selection(store.store, vol_list, src_slot_list,
-                                     kSlotTypeImport, slot_status_full);
+        nr_enabled_src_slots = auto_fill_slot_selection(
+            store.store, vol_list, src_slot_list, slot_type_t::kSlotTypeImport,
+            slot_status_t::kSlotStatusFull);
       } else {
         /*
          * All slots in the source selection need to be import/export slots and
          * filled.
          */
         if (!verify_slot_list(store.store, vol_list, src_slot_list,
-                              kSlotTypeImport, slot_status_full)) {
+                              slot_type_t::kSlotTypeImport,
+                              slot_status_t::kSlotStatusFull)) {
           ua->WarningMsg(
               _("Not all slots in source selection are import slots and "
                 "filled.\n"));
@@ -1228,9 +1230,9 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
       if (nr_enabled_dst_slots == 0) {
         dst_slot_list = (char*)malloc(NbytesForBits(max_slots));
         ClearAllBits(max_slots, dst_slot_list);
-        nr_enabled_dst_slots =
-            auto_fill_slot_selection(store.store, vol_list, dst_slot_list,
-                                     kSlotTypeStorage, slot_status_empty);
+        nr_enabled_dst_slots = auto_fill_slot_selection(
+            store.store, vol_list, dst_slot_list, slot_type_t::kSlotTypeStorage,
+            slot_status_t::kSlotStatusEmpty);
         if (nr_enabled_src_slots > nr_enabled_dst_slots) {
           ua->WarningMsg(
               _("Not enough free slots available to import %hd volumes\n"),
@@ -1243,7 +1245,8 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
          * empty.
          */
         if (!verify_slot_list(store.store, vol_list, dst_slot_list,
-                              kSlotTypeStorage, slot_status_empty)) {
+                              slot_type_t::kSlotTypeStorage,
+                              slot_status_t::kSlotStatusEmpty)) {
           ua->WarningMsg(
               _("Not all slots in destination selection are normal slots and "
                 "empty.\n"));
@@ -1259,7 +1262,8 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
        * All slots in the source selection need to be normal slots.
        */
       if (!verify_slot_list(store.store, vol_list, src_slot_list,
-                            kSlotTypeStorage, slot_status_full)) {
+                            slot_type_t::kSlotTypeStorage,
+                            slot_status_t::kSlotStatusFull)) {
         ua->WarningMsg(
             _("Not all slots in source selection are normal slots and "
               "filled.\n"));
@@ -1271,9 +1275,9 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
       if (nr_enabled_dst_slots == 0) {
         dst_slot_list = (char*)malloc(NbytesForBits(max_slots));
         ClearAllBits(max_slots, dst_slot_list);
-        nr_enabled_dst_slots =
-            auto_fill_slot_selection(store.store, vol_list, dst_slot_list,
-                                     kSlotTypeImport, slot_status_empty);
+        nr_enabled_dst_slots = auto_fill_slot_selection(
+            store.store, vol_list, dst_slot_list, slot_type_t::kSlotTypeImport,
+            slot_status_t::kSlotStatusEmpty);
         if (nr_enabled_src_slots > nr_enabled_dst_slots) {
           ua->WarningMsg(_("Not enough free export slots available to export "
                            "%hd volume%s\n"),
@@ -1287,7 +1291,8 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
          * and empty.
          */
         if (!verify_slot_list(store.store, vol_list, dst_slot_list,
-                              kSlotTypeImport, slot_status_empty)) {
+                              slot_type_t::kSlotTypeImport,
+                              slot_status_t::kSlotStatusEmpty)) {
           ua->WarningMsg(
               _("Not all slots in destination selection are export slots and "
                 "empty.\n"));
