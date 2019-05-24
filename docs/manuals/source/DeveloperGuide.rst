@@ -11,6 +11,7 @@ Developer Guide
    DeveloperGuide/file.rst
    DeveloperGuide/storage.rst
    DeveloperGuide/catalog.rst
+   DeveloperGuide/configparser.rst
    DeveloperGuide/mediaformat.rst
    DeveloperGuide/porting.rst
    DeveloperGuide/api.rst
