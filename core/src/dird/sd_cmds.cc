@@ -482,7 +482,7 @@ dlist *native_get_vol_list(UaContext *ua, StorageResource *store, bool listall, 
             break;
          case 'F':
             vl->slot_status = slot_status_full;
-            switch (vl->slot_status) {
+            switch (vl->slot_type) {
             case slot_type_storage:
             case slot_type_import:
                if (field4) {
