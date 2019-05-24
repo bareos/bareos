@@ -36,10 +36,10 @@ class CramMd5Handshake {
  private:
   static constexpr int debuglevel_ = 50;
   bool compatible_ = true;
-  BareosSocket* bs_;
-  const char* password_;
-  TlsPolicy local_tls_policy_;
-  TlsPolicy remote_tls_policy_;
+  BareosSocket* bs_ = nullptr;
+  const char* password_ = nullptr;
+  TlsPolicy local_tls_policy_ = kBnetTlsUnknown;
+  TlsPolicy remote_tls_policy_ = kBnetTlsUnknown;
   bool CramMd5Challenge();
   bool CramMd5Response();
   void InitRandom() const;
