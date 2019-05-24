@@ -142,32 +142,34 @@ def createClientSecret(client_name):
 
     char_set = string.ascii_uppercase + string.digits + string.ascii_lowercase
     password=''.join(random.sample(char_set*40,40))
-    os.umask(077)
+    oldumask = os.umask(0o077)
     with open(path,'w') as f:
         f.write(password)
     os.chown(path,-1,0)
+    os.umask(oldumask)
 
     return password
 
 
 
 def removeClientJob(client_name):
-        path=JOBS_PATH+'/'+client_name+'.include'
-        os.remove(path)
+    path=JOBS_PATH+'/'+client_name+'.include'
+    os.remove(path)
 
 def createClientJob(client_name,client_type,enable='Yes'):
-        password=getClientSecret(client_name)
-        path=JOBS_PATH+'/'+client_name+'.include'
-        templatefile=JOBS_PATH+'/'+client_type+'.template'
-        os.umask(077)
-        with open(templatefile,'r') as f:
-                content=f.read()
+    password=getClientSecret(client_name)
+    path=JOBS_PATH+'/'+client_name+'.include'
+    templatefile=JOBS_PATH+'/'+client_type+'.template'
+    with open(templatefile,'r') as f:
+        content=f.read()
 
-        t=string.Template(content)
-        with open(path,"w") as f:
-                f.write(t.substitute(enable=enable, password=password, client_name=client_name))
-        os.chown(path,-1,bareos_gid)
-        os.chmod(path,stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP)
+    t=string.Template(content)
+    oldumask = os.umask(0o077)
+    with open(path,"w") as f:
+        f.write(t.substitute(enable=enable, password=password, client_name=client_name))
+    os.chown(path,-1,bareos_gid)
+    os.chmod(path,stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP)
+    os.umask(oldumask)
 
 def disableClientJob(client_name,client_type):
         createClientJob(client_name,client_type,'No')
