@@ -741,7 +741,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
   }
 
   lc->options = options; /* Restore scanner options */
-  SetBit(index, (*item->static_resource)->item_present_);
-  ClearBit(index, (*item->static_resource)->inherit_content_);
+  SetBit(index, (*item->allocated_resource)->item_present_);
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 } /* namespace directordaemon */

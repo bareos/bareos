@@ -183,7 +183,7 @@ void ConfigurationParser::SetAllResourceDefaultsIterateOverItems(
 
     if (!omit_defaults_) {
       SetBit(res_item_index,
-             (*items[res_item_index].static_resource)->inherit_content_);
+             (*items[res_item_index].allocated_resource)->inherit_content_);
     }
 
     res_item_index++;
@@ -205,8 +205,8 @@ void ConfigurationParser::SetAllResourceDefaultsByParserPass(
   switch (pass) {
     case 1:
       SetDefaults = [rcode](ConfigurationParser& c, ResourceItem* item) {
-        (*item->static_resource)->rcode_ = rcode;
-        (*item->static_resource)->refcnt_ = 1;
+        (*item->allocated_resource)->rcode_ = rcode;
+        (*item->allocated_resource)->refcnt_ = 1;
         c.SetResourceDefaultsParserPass1(item);
       };
       break;

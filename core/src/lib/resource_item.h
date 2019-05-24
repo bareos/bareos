@@ -54,7 +54,7 @@ struct ResourceItem {
   //  std::vector<std::string>* std_vector_of_strings;
   //};
   std::size_t offset;
-  BareosResource** static_resource;
+  BareosResource** allocated_resource;
   int32_t code;              /* Item code/additional info */
   uint32_t flags;            /* Flags: See CFG_ITEM_* */
   const char* default_value; /* Default value */
@@ -74,7 +74,7 @@ struct ResourceItem {
 
 static inline void* CalculateAddressOfMemberVariable(const ResourceItem& item)
 {
-  char* base = reinterpret_cast<char*>(*item.static_resource);
+  char* base = reinterpret_cast<char*>(*item.allocated_resource);
   return static_cast<void*>(base + item.offset);
 }
 

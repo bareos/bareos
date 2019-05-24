@@ -205,8 +205,8 @@ static void StoreCipher(LEX* lc, ResourceItem* item, int index, int pass)
     scan_err1(lc, _("Expected a Crypto Cipher option, got: %s"), lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, (*item->static_resource)->item_present_);
-  ClearBit(index, (*item->static_resource)->inherit_content_);
+  SetBit(index, (*item->allocated_resource)->item_present_);
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 /**
@@ -437,7 +437,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
    */
   for (i = 0; items[i].name; i++) {
     if (items[i].flags & CFG_ITEM_REQUIRED) {
-      if (!BitIsSet(i, (*items[i].static_resource)->item_present_)) {
+      if (!BitIsSet(i, (*items[i].allocated_resource)->item_present_)) {
         Emsg2(M_ABORT, 0,
               _("%s item is required in %s resource, but not found.\n"),
               items[i].name, resources[rindex].name);

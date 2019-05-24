@@ -812,7 +812,7 @@ static FilesetResource* GetStaticFilesetResource()
   FilesetResource* res_fs = nullptr;
   ResourceTable* t = my_config->GetResourceTable("FileSet");
   ASSERT(t);
-  if (t) { res_fs = dynamic_cast<FilesetResource*>(*t->static_resource_); }
+  if (t) { res_fs = dynamic_cast<FilesetResource*>(*t->allocated_resource_); }
   ASSERT(res_fs);
   return res_fs;
 }
@@ -1019,8 +1019,8 @@ static void StoreNewinc(LEX* lc, ResourceItem* item, int index, int pass)
   ASSERT(!res_incexe);
 
   ScanToEol(lc);
-  SetBit(index, (*item->static_resource)->item_present_);
-  ClearBit(index, (*item->static_resource)->inherit_content_);
+  SetBit(index, (*item->allocated_resource)->item_present_);
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 /**

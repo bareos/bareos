@@ -305,8 +305,8 @@ static void StoreAuthenticationType(LEX* lc,
               lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, (*item->static_resource)->item_present_);
-  ClearBit(index, (*item->static_resource)->inherit_content_);
+  SetBit(index, (*item->allocated_resource)->item_present_);
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 /**
@@ -314,7 +314,7 @@ static void StoreAuthenticationType(LEX* lc,
  */
 static void StoreAutopassword(LEX* lc, ResourceItem* item, int index, int pass)
 {
-  switch ((*item->static_resource)->rcode_) {
+  switch ((*item->allocated_resource)->rcode_) {
     case R_DIRECTOR:
       /*
        * As we need to store both clear and MD5 hashed within the same
@@ -359,8 +359,8 @@ static void StoreDeviceType(LEX* lc, ResourceItem* item, int index, int pass)
     scan_err1(lc, _("Expected a Device Type keyword, got: %s"), lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, (*item->static_resource)->item_present_);
-  ClearBit(index, (*item->static_resource)->inherit_content_);
+  SetBit(index, (*item->allocated_resource)->item_present_);
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 /**
@@ -396,8 +396,8 @@ static void StoreIoDirection(LEX* lc, ResourceItem* item, int index, int pass)
     scan_err1(lc, _("Expected a IO direction keyword, got: %s"), lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, (*item->static_resource)->item_present_);
-  ClearBit(index, (*item->static_resource)->inherit_content_);
+  SetBit(index, (*item->allocated_resource)->item_present_);
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 /**
@@ -424,8 +424,8 @@ static void StoreCompressionalgorithm(LEX* lc,
               lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, (*item->static_resource)->item_present_);
-  ClearBit(index, (*item->static_resource)->inherit_content_);
+  SetBit(index, (*item->allocated_resource)->item_present_);
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 /**
@@ -689,7 +689,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
   // Ensure that all required items are present
   for (i = 0; items[i].name; i++) {
     if (items[i].flags & CFG_ITEM_REQUIRED) {
-      if (!BitIsSet(i, (*items[i].static_resource)->item_present_)) {
+      if (!BitIsSet(i, (*items[i].allocated_resource)->item_present_)) {
         Emsg2(M_ERROR_TERM, 0,
               _("\"%s\" item is required in \"%s\" resource, but not found.\n"),
               items[i].name, resources[rindex].name);
@@ -774,7 +774,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
      *
      * currently, this is the best place to free that */
 
-    BareosResource* res = *items[0].static_resource;
+    BareosResource* res = *items[0].allocated_resource;
 
     if (res) {
       if (res->resource_name_) {

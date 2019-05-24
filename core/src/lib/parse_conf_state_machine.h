@@ -85,7 +85,7 @@ class ConfigParserStateMachine {
   struct {
     int rcode_ = 0;
     ResourceItem* resource_items_ = nullptr;
-    BareosResource* static_resource_ = nullptr;
+    BareosResource* allocated_resource_ = nullptr;
   } currently_parsed_resource_;
 
   enum class ParseState

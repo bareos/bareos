@@ -2651,8 +2651,8 @@ static void StorePooltype(LEX* lc, ResourceItem* item, int index, int pass)
   }
 
   ScanToEol(lc);
-  SetBit(index, (*item->static_resource)->item_present_);
-  ClearBit(index, (*item->static_resource)->inherit_content_);
+  SetBit(index, (*item->allocated_resource)->item_present_);
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 static void StoreActiononpurge(LEX* lc, ResourceItem* item, int index, int pass)
@@ -2678,8 +2678,8 @@ static void StoreActiononpurge(LEX* lc, ResourceItem* item, int index, int pass)
   }
 
   ScanToEol(lc);
-  SetBit(index, (*item->static_resource)->item_present_);
-  ClearBit(index, (*item->static_resource)->inherit_content_);
+  SetBit(index, (*item->allocated_resource)->item_present_);
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 /**
@@ -2720,8 +2720,8 @@ static void StoreDevice(LEX* lc, ResourceItem* item, int index, int pass)
     }
 
     ScanToEol(lc);
-    SetBit(index, (*item->static_resource)->item_present_);
-    ClearBit(index, (*item->static_resource)->inherit_content_);
+    SetBit(index, (*item->allocated_resource)->item_present_);
+    ClearBit(index, (*item->allocated_resource)->inherit_content_);
   } else {
     my_config->StoreResource(CFG_TYPE_ALIST_RES, lc, item, index, pass);
   }
@@ -2750,8 +2750,8 @@ static void StoreMigtype(LEX* lc, ResourceItem* item, int index, int pass)
   }
 
   ScanToEol(lc);
-  SetBit(index, (*item->static_resource)->item_present_);
-  ClearBit(index, (*item->static_resource)->inherit_content_);
+  SetBit(index, (*item->allocated_resource)->item_present_);
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 /**
@@ -2777,8 +2777,8 @@ static void StoreJobtype(LEX* lc, ResourceItem* item, int index, int pass)
   }
 
   ScanToEol(lc);
-  SetBit(index, (*item->static_resource)->item_present_);
-  ClearBit(index, (*item->static_resource)->inherit_content_);
+  SetBit(index, (*item->allocated_resource)->item_present_);
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 /**
@@ -2804,8 +2804,8 @@ static void StoreProtocoltype(LEX* lc, ResourceItem* item, int index, int pass)
   }
 
   ScanToEol(lc);
-  SetBit(index, (*item->static_resource)->item_present_);
-  ClearBit(index, (*item->static_resource)->inherit_content_);
+  SetBit(index, (*item->allocated_resource)->item_present_);
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 static void StoreReplace(LEX* lc, ResourceItem* item, int index, int pass)
@@ -2828,8 +2828,8 @@ static void StoreReplace(LEX* lc, ResourceItem* item, int index, int pass)
   }
 
   ScanToEol(lc);
-  SetBit(index, (*item->static_resource)->item_present_);
-  ClearBit(index, (*item->static_resource)->inherit_content_);
+  SetBit(index, (*item->allocated_resource)->item_present_);
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 /**
@@ -2857,8 +2857,8 @@ static void StoreAuthprotocoltype(LEX* lc,
     scan_err1(lc, _("Expected a Auth Protocol Type keyword, got: %s"), lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, (*item->static_resource)->item_present_);
-  ClearBit(index, (*item->static_resource)->inherit_content_);
+  SetBit(index, (*item->allocated_resource)->item_present_);
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 /**
@@ -2885,8 +2885,8 @@ static void StoreAuthtype(LEX* lc, ResourceItem* item, int index, int pass)
   }
 
   ScanToEol(lc);
-  SetBit(index, (*item->static_resource)->item_present_);
-  ClearBit(index, (*item->static_resource)->inherit_content_);
+  SetBit(index, (*item->allocated_resource)->item_present_);
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 /**
@@ -2911,8 +2911,8 @@ static void StoreLevel(LEX* lc, ResourceItem* item, int index, int pass)
   }
 
   ScanToEol(lc);
-  SetBit(index, (*item->static_resource)->item_present_);
-  ClearBit(index, (*item->static_resource)->inherit_content_);
+  SetBit(index, (*item->allocated_resource)->item_present_);
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 /**
@@ -2921,7 +2921,7 @@ static void StoreLevel(LEX* lc, ResourceItem* item, int index, int pass)
  */
 static void StoreAutopassword(LEX* lc, ResourceItem* item, int index, int pass)
 {
-  switch ((*item->static_resource)->rcode_) {
+  switch ((*item->allocated_resource)->rcode_) {
     case R_DIRECTOR:
       /*
        * As we need to store both clear and MD5 hashed within the same
@@ -2998,8 +2998,8 @@ static void StoreAcl(LEX* lc, ResourceItem* item, int index, int pass)
     if (token == BCT_COMMA) { continue; /* get another ACL */ }
     break;
   }
-  SetBit(index, (*item->static_resource)->item_present_);
-  ClearBit(index, (*item->static_resource)->inherit_content_);
+  SetBit(index, (*item->allocated_resource)->item_present_);
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 static void StoreAudit(LEX* lc, ResourceItem* item, int index, int pass)
@@ -3021,8 +3021,8 @@ static void StoreAudit(LEX* lc, ResourceItem* item, int index, int pass)
     if (token == BCT_COMMA) { continue; }
     break;
   }
-  SetBit(index, (*item->static_resource)->item_present_);
-  ClearBit(index, (*item->static_resource)->inherit_content_);
+  SetBit(index, (*item->allocated_resource)->item_present_);
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 static void StoreRunscriptWhen(LEX* lc, ResourceItem* item, int index, int pass)
@@ -3251,8 +3251,8 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
   res_runscript = nullptr;
 
   ScanToEol(lc);
-  SetBit(index, (*item->static_resource)->item_present_);
-  ClearBit(index, (*item->static_resource)->inherit_content_);
+  SetBit(index, (*item->allocated_resource)->item_present_);
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 /**
@@ -4079,7 +4079,7 @@ static void FreeResource(BareosResource* res, int type)
 static bool SaveResource(int type, ResourceItem* items, int pass)
 {
   int rindex = type - R_FIRST;
-  BareosResource* static_resource = *resources[rindex].static_resource_;
+  BareosResource* allocated_resource = *resources[rindex].allocated_resource_;
 
   switch (type) {
     case R_JOBDEFS:
@@ -4090,7 +4090,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
        * Ensure that the name item is present however.
        */
       if (items[0].flags & CFG_ITEM_REQUIRED) {
-        if (!BitIsSet(0, static_resource->item_present_)) {
+        if (!BitIsSet(0, allocated_resource->item_present_)) {
           Emsg2(M_ERROR, 0,
                 _("%s item is required in %s resource, but not found.\n"),
                 items[0].name, resources[rindex].name);
@@ -4102,7 +4102,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
       /*
        * Ensure that all required items are present
        */
-      if (!ValidateResource(type, items, static_resource)) { return false; }
+      if (!ValidateResource(type, items, allocated_resource)) { return false; }
       break;
   }
 

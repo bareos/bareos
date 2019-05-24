@@ -273,7 +273,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
    */
   for (i = 0; items[i].name; i++) {
     if (items[i].flags & CFG_ITEM_REQUIRED) {
-      if (!BitIsSet(i, (*items[i].static_resource)->item_present_)) {
+      if (!BitIsSet(i, (*items[i].allocated_resource)->item_present_)) {
         Emsg2(M_ERROR_TERM, 0,
               _("%s item is required in %s resource, but not found.\n"),
               items[i].name, resources[rindex].name);
@@ -314,7 +314,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
      *
      * currently, this is the best place to free that */
 
-    BareosResource* res = *items[0].static_resource;
+    BareosResource* res = *items[0].allocated_resource;
 
     if (res) {
       if (res->resource_name_) {

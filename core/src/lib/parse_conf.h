@@ -60,7 +60,7 @@ struct ResourceTable {
   uint32_t size;       /* Size of resource */
 
   std::function<void()> ResourceSpecificInitializer; /* this allocates memory */
-  BareosResource** static_resource_;
+  BareosResource** allocated_resource_;
 };
 
 /*
