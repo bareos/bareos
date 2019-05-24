@@ -1011,7 +1011,8 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
        *visited_slot_list = NULL;
   slot_number_t nr_enabled_src_slots = 0, nr_enabled_dst_slots = 0;
   drive_number_t drive = kInvalidDriveNumber;
-  slot_number_t i, max_slots;
+  slot_number_t max_slots;
+  int list_index;
   bool retval = false;
 
   store.store = get_storage_resource(ua, false, true);
@@ -1052,9 +1053,9 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
   /*
    * See if there are any source slot selections.
    */
-  i = FindArgWithValue(ua, "srcslots");
-  if (i < 0) { i = FindArgWithValue(ua, "srcslot"); }
-  if (i >= 0) {
+  list_index = FindArgWithValue(ua, "srcslots");
+  if (list_index < 0) { list_index = FindArgWithValue(ua, "srcslot"); }
+  if (list_index >= 0) {
     src_slot_list = (char*)malloc(NbytesForBits(max_slots));
     ClearAllBits(max_slots, src_slot_list);
     if (!GetUserSlotList(ua, src_slot_list, "srcslots", max_slots)) {
@@ -1094,9 +1095,9 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
   /*
    * See if there are any destination slot selections.
    */
-  i = FindArgWithValue(ua, "dstslots");
-  if (i < 0) { i = FindArgWithValue(ua, "dstslot"); }
-  if (i >= 0) {
+  list_index = FindArgWithValue(ua, "dstslots");
+  if (list_index < 0) { list_index = FindArgWithValue(ua, "dstslot"); }
+  if (list_index >= 0) {
     dst_slot_list = (char*)malloc(NbytesForBits(max_slots));
     ClearAllBits(max_slots, dst_slot_list);
     if (!GetUserSlotList(ua, dst_slot_list, "dstslots", max_slots)) {
@@ -1127,8 +1128,8 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
   switch (operation) {
     case VOLUME_IMPORT:
     case VOLUME_EXPORT:
-      i = FindArgWithValue(ua, "volume");
-      if (i > 0) {
+      list_index = FindArgWithValue(ua, "volume");
+      if (list_index > 0) {
         /*
          * Create a new temporary slot list with gets filled
          * by the selection criteria on the cmdline. We provide
@@ -1137,7 +1138,7 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
         tmp_slot_list = (char*)malloc(NbytesForBits(max_slots));
         ClearAllBits(max_slots, tmp_slot_list);
         nr_enabled_src_slots = get_slot_list_using_volnames(
-            ua, store.store, i, vol_list, src_slot_list, tmp_slot_list,
+            ua, store.store, list_index, vol_list, src_slot_list, tmp_slot_list,
             max_slots);
         if (src_slot_list) { free(src_slot_list); }
         src_slot_list = tmp_slot_list;
