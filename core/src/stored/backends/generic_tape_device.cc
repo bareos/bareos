@@ -1254,6 +1254,7 @@ char* generic_tape_device::StatusDev()
     dev_errno = errno;
     Mmsg2(errmsg, _("ioctl MTIOCGET error on %s. ERR=%s.\n"), print_name(),
           be.bstrerror());
+    free(status);
     return 0;
   }
   Pmsg0(-20, _(" Device status:"));
