@@ -540,12 +540,14 @@ bool SelectClientDbr(UaContext* ua, ClientDbRecord* cr)
   cr->ClientId = 0;
   if (!ua->db->GetClientIds(ua->jcr, &num_clients, &ids)) {
     ua->ErrorMsg(_("Error obtaining client ids. ERR=%s\n"), ua->db->strerror());
+    free(ids);
     return false;
   }
 
   if (num_clients <= 0) {
     ua->ErrorMsg(_(
         "No clients defined. You must run a job before using this command.\n"));
+    free(ids);
     return false;
   }
 
