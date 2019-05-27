@@ -555,6 +555,8 @@ void NdmpFhdbLmdbRegister(struct ndmlog* ixlog)
     FreePoolMemory(fhdb_state->pay_load);
     FreePoolMemory(fhdb_state->path);
 
+    free(fhdb_state);
+
     return;
   }
 }
