@@ -53,6 +53,7 @@
 #include "lib/address_conf.h"
 #include "lib/tls_resource_items.h"
 
+#include <cassert>
 
 namespace filedaemon {
 
@@ -334,6 +335,7 @@ static void DumpResource(int type,
   switch (type) {
     case R_MSGS: {
       MessagesResource* resclass = dynamic_cast<MessagesResource*>(res);
+      assert(resclass);
       resclass->PrintConfig(buf, *my_config);
       break;
     }
@@ -366,6 +368,7 @@ static void FreeResource(BareosResource* res, int type)
   switch (type) {
     case R_DIRECTOR: {
       DirectorResource* p = dynamic_cast<DirectorResource*>(res);
+      assert(p);
       if (p->password_.value) { free(p->password_.value); }
       if (p->address) { free(p->address); }
       if (p->allowed_script_dirs) { delete p->allowed_script_dirs; }
@@ -375,6 +378,7 @@ static void FreeResource(BareosResource* res, int type)
     }
     case R_CLIENT: {
       ClientResource* p = dynamic_cast<ClientResource*>(res);
+      assert(p);
       if (p->working_directory) { free(p->working_directory); }
       if (p->pid_directory) { free(p->pid_directory); }
       if (p->subsys_directory) { free(p->subsys_directory); }
@@ -411,6 +415,7 @@ static void FreeResource(BareosResource* res, int type)
     }
     case R_MSGS: {
       MessagesResource* p = dynamic_cast<MessagesResource*>(res);
+      assert(p);
       delete p;
       break;
     }

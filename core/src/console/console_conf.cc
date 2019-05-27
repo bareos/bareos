@@ -33,6 +33,8 @@
 #include "lib/output_formatter.h"
 #include "lib/tls_resource_items.h"
 
+#include <cassert>
+
 namespace console {
 
 static BareosResource* sres_head[R_LAST - R_FIRST + 1];
@@ -140,6 +142,7 @@ static void FreeResource(BareosResource* res, int type)
   switch (type) {
     case R_CONSOLE: {
       ConsoleResource* p = dynamic_cast<ConsoleResource*>(res);
+      assert(p);
       if (p->rc_file) { free(p->rc_file); }
       if (p->history_file) { free(p->history_file); }
       if (p->password_.value) { free(p->password_.value); }
@@ -148,6 +151,7 @@ static void FreeResource(BareosResource* res, int type)
     }
     case R_DIRECTOR: {
       DirectorResource* p = dynamic_cast<DirectorResource*>(res);
+      assert(p);
       if (p->address) { free(p->address); }
       if (p->password_.value) { free(p->password_.value); }
       delete p;

@@ -612,6 +612,8 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
 }
 #endif
 
+#include <cassert>
+
 static bool DumpResource_(int type,
                           BareosResource* res,
                           void sendit(void* sock, const char* fmt, ...),
@@ -638,22 +640,26 @@ static bool DumpResource_(int type,
   switch (type) {
     case R_MSGS: {
       MessagesResource* resclass = dynamic_cast<MessagesResource*>(res);
+      assert(resclass);
       resclass->PrintConfig(buf, *my_config);
       break;
     }
     case R_DEVICE: {
       DeviceResource* dev = dynamic_cast<DeviceResource*>(res);
+      assert(dev);
       buffer_is_valid = dev->PrintConfig(buf, *my_config);
       break;
     }
     case R_AUTOCHANGER: {
       AutochangerResource* autochanger =
           dynamic_cast<AutochangerResource*>(res);
+      assert(autochanger);
       autochanger->PrintConfigToBuffer(buf);
       break;
     }
     default:
       BareosResource* p = dynamic_cast<BareosResource*>(res);
+      assert(p);
       p->PrintConfig(buf, *my_config);
       break;
   }
@@ -843,6 +849,7 @@ static void FreeResource(BareosResource* res, int type)
   switch (type) {
     case R_DIRECTOR: {
       DirectorResource* p = dynamic_cast<DirectorResource*>(res);
+      assert(p);
       if (p->password_.value) { free(p->password_.value); }
       if (p->address) { free(p->address); }
       if (p->keyencrkey.value) { free(p->keyencrkey.value); }
@@ -851,6 +858,7 @@ static void FreeResource(BareosResource* res, int type)
     }
     case R_NDMP: {
       NdmpResource* p = dynamic_cast<NdmpResource*>(res);
+      assert(p);
       if (p->username) { free(p->username); }
       if (p->password.value) { free(p->password.value); }
       delete p;
@@ -858,6 +866,7 @@ static void FreeResource(BareosResource* res, int type)
     }
     case R_AUTOCHANGER: {
       AutochangerResource* p = dynamic_cast<AutochangerResource*>(res);
+      assert(p);
       if (p->changer_name) { free(p->changer_name); }
       if (p->changer_command) { free(p->changer_command); }
       if (p->device) { delete p->device; }
@@ -867,6 +876,7 @@ static void FreeResource(BareosResource* res, int type)
     }
     case R_STORAGE: {
       StorageResource* p = dynamic_cast<StorageResource*>(res);
+      assert(p);
       if (p->SDaddrs) { FreeAddresses(p->SDaddrs); }
       if (p->SDsrc_addr) { FreeAddresses(p->SDsrc_addr); }
       if (p->NDMPaddrs) { FreeAddresses(p->NDMPaddrs); }
@@ -885,6 +895,7 @@ static void FreeResource(BareosResource* res, int type)
     }
     case R_DEVICE: {
       DeviceResource* p = dynamic_cast<DeviceResource*>(res);
+      assert(p);
       if (p->media_type) { free(p->media_type); }
       if (p->device_name) { free(p->device_name); }
       if (p->device_options) { free(p->device_options); }
@@ -903,6 +914,7 @@ static void FreeResource(BareosResource* res, int type)
     }
     case R_MSGS: {
       MessagesResource* p = dynamic_cast<MessagesResource*>(res);
+      assert(p);
       delete p;
       break;
     }

@@ -111,6 +111,7 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
 
   monitor = dynamic_cast<MonitorResource*>(
       my_config->GetNextRes(R_MONITOR, (BareosResource*)NULL));
+  assert(monitor);
 
   int nitems = 0;
 

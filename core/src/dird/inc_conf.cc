@@ -45,6 +45,8 @@
 #include "inc_conf.h"
 #include "lib/edit.h"
 
+#include <cassert>
+
 namespace directordaemon {
 
 #define PERMITTED_VERIFY_OPTIONS (const char*)"ipnugsamcd51"
@@ -811,9 +813,9 @@ static FilesetResource* GetStaticFilesetResource()
 {
   FilesetResource* res_fs = nullptr;
   ResourceTable* t = my_config->GetResourceTable("FileSet");
-  ASSERT(t);
+  assert(t);
   if (t) { res_fs = dynamic_cast<FilesetResource*>(*t->allocated_resource_); }
-  ASSERT(res_fs);
+  assert(res_fs);
   return res_fs;
 }
 

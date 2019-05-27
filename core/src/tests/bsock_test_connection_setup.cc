@@ -87,8 +87,10 @@ static PConfigParser ConsolePrepareResources(const std::string& path_to_config)
 
   console::director_resource = dynamic_cast<console::DirectorResource*>(
       console_config->GetNextRes(console::R_DIRECTOR, NULL));
+  EXPECT_NE(console::director_resource, nullptr);
   console::console_resource = dynamic_cast<console::ConsoleResource*>(
       console_config->GetNextRes(console::R_CONSOLE, NULL));
+  EXPECT_EQ(console::console_resource, nullptr);  // no console resource present
 
   return console_config;
 }

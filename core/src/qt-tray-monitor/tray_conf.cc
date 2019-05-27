@@ -49,6 +49,8 @@
 #include "lib/resource_item.h"
 #include "lib/tls_resource_items.h"
 
+#include <cassert>
+
 static const std::string default_config_filename("tray-monitor.conf");
 
 static BareosResource* sres_head[R_LAST - R_FIRST + 1];
@@ -228,23 +230,27 @@ static void FreeResource(BareosResource* res, int type)
       break;
     case R_DIRECTOR: {
       DirectorResource* p = dynamic_cast<DirectorResource*>(res);
+      assert(p);
       if (p->address) { free(p->address); }
       break;
     }
     case R_CLIENT: {
       ClientResource* p = dynamic_cast<ClientResource*>(res);
+      assert(p);
       if (p->address) { free(p->address); }
       if (p->password.value) { free(p->password.value); }
       break;
     }
     case R_STORAGE: {
       StorageResource* p = dynamic_cast<StorageResource*>(res);
+      assert(p);
       if (p->address) { free(p->address); }
       if (p->password.value) { free(p->password.value); }
       break;
     }
     case R_CONSOLE_FONT: {
       ConsoleFontResource* p = dynamic_cast<ConsoleFontResource*>(res);
+      assert(p);
       if (p->fontface) { free(p->fontface); }
       break;
     }

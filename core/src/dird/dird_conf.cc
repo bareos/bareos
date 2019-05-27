@@ -59,6 +59,8 @@
 #include "lib/util.h"
 #include "lib/tls_resource_items.h"
 
+#include <cassert>
+
 namespace directordaemon {
 
 /**
@@ -3855,14 +3857,14 @@ static void DumpResource(int type,
       break;
     case R_FILESET: {
       FilesetResource* p = dynamic_cast<FilesetResource*>(res);
-      ASSERT(p);
+      assert(p);
       p->PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
     }
     case R_MSGS: {
       MessagesResource* p = dynamic_cast<MessagesResource*>(res);
-      ASSERT(p);
+      assert(p);
       p->PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
@@ -3896,6 +3898,7 @@ static void FreeResource(BareosResource* res, int type)
   switch (type) {
     case R_DIRECTOR: {
       DirectorResource* p = dynamic_cast<DirectorResource*>(res);
+      assert(p);
       if (p->working_directory) { free(p->working_directory); }
       if (p->scripts_directory) { free(p->scripts_directory); }
       if (p->plugin_directory) { free(p->plugin_directory); }
@@ -3917,16 +3920,19 @@ static void FreeResource(BareosResource* res, int type)
     }
     case R_DEVICE: {
       DeviceResource* p = dynamic_cast<DeviceResource*>(res);
+      assert(p);
       delete p;
       break;
     }
     case R_COUNTER: {
       CounterResource* p = dynamic_cast<CounterResource*>(res);
+      assert(p);
       delete p;
       break;
     }
     case R_PROFILE: {
       ProfileResource* p = dynamic_cast<ProfileResource*>(res);
+      assert(p);
       for (int i = 0; i < Num_ACL; i++) {
         if (p->ACL_lists[i]) {
           delete p->ACL_lists[i];
@@ -3938,6 +3944,7 @@ static void FreeResource(BareosResource* res, int type)
     }
     case R_CONSOLE: {
       ConsoleResource* p = dynamic_cast<ConsoleResource*>(res);
+      assert(p);
       if (p->password_.value) { free(p->password_.value); }
       if (p->profiles) { delete p->profiles; }
       for (int i = 0; i < Num_ACL; i++) {
@@ -3951,6 +3958,7 @@ static void FreeResource(BareosResource* res, int type)
     }
     case R_CLIENT: {
       ClientResource* p = dynamic_cast<ClientResource*>(res);
+      assert(p);
       if (p->address) { free(p->address); }
       if (p->lanaddress) { free(p->lanaddress); }
       if (p->username) { free(p->username); }
@@ -3961,6 +3969,7 @@ static void FreeResource(BareosResource* res, int type)
     }
     case R_STORAGE: {
       StorageResource* p = dynamic_cast<StorageResource*>(res);
+      assert(p);
       if (p->address) { free(p->address); }
       if (p->lanaddress) { free(p->lanaddress); }
       if (p->username) { free(p->username); }
@@ -3990,6 +3999,7 @@ static void FreeResource(BareosResource* res, int type)
     }
     case R_CATALOG: {
       CatalogResource* p = dynamic_cast<CatalogResource*>(res);
+      assert(p);
       if (p->db_address) { free(p->db_address); }
       if (p->db_socket) { free(p->db_socket); }
       if (p->db_user) { free(p->db_user); }
@@ -4001,6 +4011,7 @@ static void FreeResource(BareosResource* res, int type)
     }
     case R_FILESET: {
       FilesetResource* p = dynamic_cast<FilesetResource*>(res);
+      assert(p);
       for (auto q : p->include_items) { FreeIncludeExcludeItem(q); }
       p->include_items.clear();
       for (auto q : p->exclude_items) { FreeIncludeExcludeItem(q); }
@@ -4010,6 +4021,7 @@ static void FreeResource(BareosResource* res, int type)
     }
     case R_POOL: {
       PoolResource* p = dynamic_cast<PoolResource*>(res);
+      assert(p);
       if (p->pool_type) { free(p->pool_type); }
       if (p->label_format) { free(p->label_format); }
       if (p->cleaning_prefix) { free(p->cleaning_prefix); }
@@ -4019,6 +4031,7 @@ static void FreeResource(BareosResource* res, int type)
     }
     case R_SCHEDULE: {
       ScheduleResource* p = dynamic_cast<ScheduleResource*>(res);
+      assert(p);
       if (p->run) {
         RunResource *nrun, *next;
         nrun = p->run;
@@ -4034,6 +4047,7 @@ static void FreeResource(BareosResource* res, int type)
     case R_JOBDEFS:
     case R_JOB: {
       JobResource* p = dynamic_cast<JobResource*>(res);
+      assert(p);
       if (p->backup_format) { free(p->backup_format); }
       if (p->RestoreWhere) { free(p->RestoreWhere); }
       if (p->RegexWhere) { free(p->RegexWhere); }
@@ -4060,6 +4074,7 @@ static void FreeResource(BareosResource* res, int type)
     }
     case R_MSGS: {
       MessagesResource* p = dynamic_cast<MessagesResource*>(res);
+      assert(p);
       delete p;
       break;
     }
