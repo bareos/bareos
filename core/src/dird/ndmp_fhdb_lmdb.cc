@@ -511,7 +511,7 @@ void NdmpFhdbLmdbRegister(struct ndmlog* ixlog)
          nis->jcr->JobId);
     result = mdb_env_open(fhdb_state->db_env, fhdb_state->lmdb_name,
                           MDB_NOSUBDIR | MDB_NOLOCK | MDB_NOSYNC, 0600);
-    if (result) {
+    if (result != MDB_SUCCESS) {
       Dmsg2(debuglevel,
             _("Unable to create LMDB database %s: %s. Check OS ulimit settings "
               "or adapt FileHistorySize\n"),
@@ -524,7 +524,7 @@ void NdmpFhdbLmdbRegister(struct ndmlog* ixlog)
     }
 
     result = mdb_txn_begin(fhdb_state->db_env, NULL, 0, &fhdb_state->db_rw_txn);
-    if (result) {
+    if (result != MDB_SUCCESS) {
       Dmsg1(debuglevel, _("Unable to start a write transaction: %s\n"),
             mdb_strerror(result));
       Jmsg1(nis->jcr, M_FATAL, 0,
@@ -719,7 +719,6 @@ static inline void ProcessLmdb(NIS* nis, struct fhdb_state* fhdb_state)
 
 void NdmpFhdbLmdbProcessDb(struct ndmlog* ixlog)
 {
-  int result;
   NIS* nis = (NIS*)ixlog->ctx;
   struct fhdb_state* fhdb_state = (struct fhdb_state*)nis->fhdb_state;
 
@@ -731,14 +730,14 @@ void NdmpFhdbLmdbProcessDb(struct ndmlog* ixlog)
    * Commit any pending write transactions.
    */
   if (fhdb_state->db_rw_txn) {
-    result = mdb_txn_commit(fhdb_state->db_rw_txn);
-    if (result != 0) {
+    int result = mdb_txn_commit(fhdb_state->db_rw_txn);
+    if (result != MDB_SUCCESS) {
       Jmsg1(nis->jcr, M_FATAL, 0, _("Unable close write transaction: %s\n"),
             mdb_strerror(result));
       return;
     }
     result = mdb_txn_begin(fhdb_state->db_env, NULL, 0, &fhdb_state->db_rw_txn);
-    if (result != 0) {
+    if (result != MDB_SUCCESS) {
       Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to create write transaction: %s\n"),
             mdb_strerror(result));
       return;
@@ -749,9 +748,9 @@ void NdmpFhdbLmdbProcessDb(struct ndmlog* ixlog)
    * From now on we also will be doing read transactions so create a read
    * transaction context.
    */
-  result = mdb_txn_begin(fhdb_state->db_env, NULL, MDB_RDONLY,
-                         &fhdb_state->db_ro_txn);
-  if (result != 0) {
+  int result = mdb_txn_begin(fhdb_state->db_env, NULL, MDB_RDONLY,
+                             &fhdb_state->db_ro_txn);
+  if (result != MDB_SUCCESS) {
     Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to create read transaction: %s\n"),
           mdb_strerror(result));
     return;
