@@ -532,7 +532,7 @@ bool GetClientDbr(UaContext* ua, ClientDbRecord* cr)
  */
 bool SelectClientDbr(UaContext* ua, ClientDbRecord* cr)
 {
-  DBId_t* ids;
+  DBId_t* ids = nullptr;
   ClientDbRecord ocr;
   int num_clients;
   char name[MAX_NAME_LENGTH];
@@ -540,14 +540,14 @@ bool SelectClientDbr(UaContext* ua, ClientDbRecord* cr)
   cr->ClientId = 0;
   if (!ua->db->GetClientIds(ua->jcr, &num_clients, &ids)) {
     ua->ErrorMsg(_("Error obtaining client ids. ERR=%s\n"), ua->db->strerror());
-    free(ids);
+    if (ids) { free(ids); }
     return false;
   }
 
   if (num_clients <= 0) {
     ua->ErrorMsg(_(
         "No clients defined. You must run a job before using this command.\n"));
-    free(ids);
+    if (ids) { free(ids); }
     return false;
   }
 
@@ -560,7 +560,7 @@ bool SelectClientDbr(UaContext* ua, ClientDbRecord* cr)
     }
     AddPrompt(ua, ocr.Name);
   }
-  free(ids);
+  if (ids) { free(ids); }
 
   if (DoPrompt(ua, _("Client"), _("Select the Client"), name, sizeof(name)) <
       0) {
@@ -648,7 +648,7 @@ bool GetPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk)
 bool SelectPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk)
 {
   PoolDbRecord opr;
-  DBId_t* ids;
+  DBId_t* ids = nullptr;
   int num_pools;
   char name[MAX_NAME_LENGTH];
 
@@ -669,12 +669,14 @@ bool SelectPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk)
   pr->PoolId = 0;
   if (!ua->db->GetPoolIds(ua->jcr, &num_pools, &ids)) {
     ua->ErrorMsg(_("Error obtaining pool ids. ERR=%s\n"), ua->db->strerror());
+    if (ids) { free(ids); }
     return 0;
   }
 
   if (num_pools <= 0) {
     ua->ErrorMsg(
         _("No pools defined. Use the \"create\" command to create one.\n"));
+    if (ids) { free(ids); }
     return false;
   }
 
@@ -689,7 +691,7 @@ bool SelectPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk)
     }
     AddPrompt(ua, opr.Name);
   }
-  free(ids);
+  if (ids) { free(ids); }
 
   if (DoPrompt(ua, _("Pool"), _("Select the Pool"), name, sizeof(name)) < 0) {
     return false;
@@ -747,7 +749,7 @@ bool SelectPoolAndMediaDbr(UaContext* ua, PoolDbRecord* pr, MediaDbRecord* mr)
 bool SelectStorageDbr(UaContext* ua, StorageDbRecord* sr, const char* argk)
 {
   StorageDbRecord osr;
-  DBId_t* ids;
+  DBId_t* ids = nullptr;
   int num_storages;
   char name[MAX_NAME_LENGTH];
 
@@ -769,11 +771,13 @@ bool SelectStorageDbr(UaContext* ua, StorageDbRecord* sr, const char* argk)
   if (!ua->db->GetStorageIds(ua->jcr, &num_storages, &ids)) {
     ua->ErrorMsg(_("Error obtaining storage ids. ERR=%s\n"),
                  ua->db->strerror());
+    if (ids) { free(ids); }
     return 0;
   }
 
   if (num_storages <= 0) {
     ua->ErrorMsg(_("No storages defined.\n"));
+    if (ids) { free(ids); }
     return false;
   }
 
@@ -788,7 +792,7 @@ bool SelectStorageDbr(UaContext* ua, StorageDbRecord* sr, const char* argk)
     }
     AddPrompt(ua, osr.Name);
   }
-  free(ids);
+  if (ids) { free(ids); }
 
   if (DoPrompt(ua, _("Storage"), _("Select the Storage"), name, sizeof(name)) <
       0) {
