@@ -901,7 +901,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
           return true;
         } else {
           int num_pools;
-          uint32_t* ids;
+          uint32_t* ids = nullptr;
 
           /*
            * List all volumes, flat
@@ -923,7 +923,10 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
               return true;
             }
 
-            if (num_pools <= 0) { return true; }
+            if (num_pools <= 0) {
+              if (ids) { free(ids); }
+              return true;
+            }
 
             ua->send->ObjectStart("volumes");
             for (i = 0; i < num_pools; i++) {
