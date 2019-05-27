@@ -1634,10 +1634,9 @@ static bool TraceCmd(UaContext* ua, const char* cmd)
 
 static bool var_cmd(UaContext* ua, const char* cmd)
 {
-  POOLMEM* val = GetPoolMemory(PM_FNAME);
-  char* var;
-
   if (!OpenClientDb(ua)) { return true; }
+
+  char* var;
   for (var = ua->cmd; *var != ' ';) { /* skip command */
     var++;
   }
@@ -1645,6 +1644,7 @@ static bool var_cmd(UaContext* ua, const char* cmd)
     var++;
   }
   Dmsg1(100, "Var=%s:\n", var);
+  POOLMEM* val = GetPoolMemory(PM_FNAME);
   VariableExpansion(ua->jcr, var, val);
   ua->SendMsg("%s\n", val);
   FreePoolMemory(val);
