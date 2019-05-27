@@ -24,8 +24,29 @@
 
 namespace directordaemon {
 
+class ClientResource;
+class UaContext;
+
 bool Do_a_command(UaContext* ua);
 bool DotMessagesCmd(UaContext* ua, const char* cmd);
 
+void SetDoClientSetdebugFunction(std::function<void(UaContext* ua,
+                                                    ClientResource* client,
+                                                    int level,
+                                                    int trace_flag,
+                                                    int hangup_flag,
+                                                    int timestamp_flag)> f);
+
+void SetDoStorageSetdebugFunction(std::function<void(UaContext* ua,
+                                                     StorageResource* store,
+                                                     int level,
+                                                     int trace_flag,
+                                                     int timestamp_flag)> f);
+
+void DoAllSetDebug(UaContext* ua,
+                   int level,
+                   int trace_flag,
+                   int hangup_flag,
+                   int timestamp_flag);
 } /* namespace directordaemon */
 #endif  // BAREOS_DIRD_UA_CMDS_H_

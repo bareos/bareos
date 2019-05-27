@@ -257,3 +257,25 @@ add_test(NAME test_config_parser_fd
 
 gtest_discover_tests(test_config_parser_fd TEST_PREFIX gtest:)
 
+####### test_setdebug #####################################
+add_executable(test_setdebug test_setdebug.cc)
+
+target_link_libraries(test_setdebug
+   dird_objects
+   bareos
+   bareosfind
+   bareoscats
+   bareossql
+   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}>
+   ${LMDB_LIBS}
+   ${NDMP_LIBS}
+   ${GTEST_LIBRARIES}
+   ${GTEST_MAIN_LIBRARIES}
+)
+
+add_test(NAME test_setdebug
+    COMMAND test_setdebug
+)
+
+gtest_discover_tests(test_setdebug TEST_PREFIX gtest:)
+

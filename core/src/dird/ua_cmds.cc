@@ -1153,11 +1153,11 @@ static bool DisableCmd(UaContext* ua, const char* cmd)
   return true;
 }
 
-static void do_storage_setdebug(UaContext* ua,
-                                StorageResource* store,
-                                int level,
-                                int trace_flag,
-                                int timestamp_flag)
+static void DoStorageSetdebug(UaContext* ua,
+                              StorageResource* store,
+                              int level,
+                              int trace_flag,
+                              int timestamp_flag)
 {
   BareosSocket* sd;
   JobControlRecord* jcr = ua->jcr;
@@ -1211,12 +1211,12 @@ static void do_storage_setdebug(UaContext* ua,
  *          failed jobs.
  * timestamp = set debug msg timestamping
  */
-static void do_client_setdebug(UaContext* ua,
-                               ClientResource* client,
-                               int level,
-                               int trace_flag,
-                               int hangup_flag,
-                               int timestamp_flag)
+static void DoClientSetdebug(UaContext* ua,
+                             ClientResource* client,
+                             int level,
+                             int trace_flag,
+                             int hangup_flag,
+                             int timestamp_flag)
 {
   BareosSocket* fd;
 
@@ -1265,6 +1265,116 @@ static void do_client_setdebug(UaContext* ua,
   return;
 }
 
+static std::function<void(UaContext* ua,
+                          StorageResource* store,
+                          int level,
+                          int trace_flag,
+                          int timestamp_flag)>
+    DoStorageSetdebugFunction = DoStorageSetdebug;
+
+void SetDoStorageSetdebugFunction(std::function<void(UaContext* ua,
+                                                     StorageResource* store,
+                                                     int level,
+                                                     int trace_flag,
+                                                     int timestamp_flag)> f)
+{
+  // dependency injection for testing
+  DoStorageSetdebugFunction = f;
+}
+
+static void AllStorageSetdebug(UaContext* ua,
+                               int level,
+                               int trace_flag,
+                               int timestamp_flag)
+{
+  std::vector<StorageResource*> storages_with_unique_address;
+  StorageResource* storage_in_config = nullptr;
+
+  LockRes(my_config);
+  do {
+    storage_in_config = static_cast<StorageResource*>(
+        my_config->GetNextRes(R_STORAGE, storage_in_config));
+
+    if (storage_in_config) {
+      bool is_duplicate_address = false;
+      for (StorageResource* compared_store : storages_with_unique_address) {
+        if (bstrcmp(compared_store->address, storage_in_config->address) &&
+            compared_store->SDport == storage_in_config->SDport) {
+          is_duplicate_address = true;
+          break;
+        }
+      }
+      if (!is_duplicate_address) {
+        storages_with_unique_address.push_back(storage_in_config);
+        Dmsg2(140, "Stuffing: %s:%d\n", storage_in_config->address,
+              storage_in_config->SDport);
+      }
+    }
+  } while (storage_in_config);
+  UnlockRes(my_config);
+
+  for (StorageResource* store : storages_with_unique_address) {
+    DoStorageSetdebugFunction(ua, store, level, trace_flag, timestamp_flag);
+  }
+}
+
+static std::function<void(UaContext* ua,
+                          ClientResource* client,
+                          int level,
+                          int trace_flag,
+                          int hangup_flag,
+                          int timestamp_flag)>
+    DoClientSetdebugFunction = DoClientSetdebug;
+
+void SetDoClientSetdebugFunction(std::function<void(UaContext* ua,
+                                                    ClientResource* client,
+                                                    int level,
+                                                    int trace_flag,
+                                                    int hangup_flag,
+                                                    int timestamp_flag)> f)
+{
+  // dependency injection for testing
+  DoClientSetdebugFunction = f;
+}
+
+static void AllClientSetdebug(UaContext* ua,
+                              int level,
+                              int trace_flag,
+                              int hangup_flag,
+                              int timestamp_flag)
+{
+  std::vector<ClientResource*> clients_with_unique_address;
+  ClientResource* client_in_config = nullptr;
+
+  LockRes(my_config);
+  do {
+    client_in_config = static_cast<ClientResource*>(
+        my_config->GetNextRes(R_CLIENT, client_in_config));
+
+    if (client_in_config) {
+      bool is_duplicate_address = false;
+      for (ClientResource* compared_client : clients_with_unique_address) {
+        if (bstrcmp(compared_client->address, client_in_config->address) &&
+            compared_client->FDport == client_in_config->FDport) {
+          is_duplicate_address = true;
+          break;
+        }
+      }
+      if (!is_duplicate_address) {
+        clients_with_unique_address.push_back(client_in_config);
+        Dmsg2(140, "Stuffing: %s:%d\n", client_in_config->address,
+              client_in_config->FDport);
+      }
+    }
+  } while (client_in_config);
+  UnlockRes(my_config);
+
+  for (ClientResource* client : clients_with_unique_address) {
+    DoClientSetdebugFunction(ua, client, level, trace_flag, hangup_flag,
+                             timestamp_flag);
+  }
+}  // namespace directordaemon
+
 static void DoDirectorSetdebug(UaContext* ua,
                                int level,
                                int trace_flag,
@@ -1276,110 +1386,22 @@ static void DoDirectorSetdebug(UaContext* ua,
   SetTrace(trace_flag);
   SetTimestamp(timestamp_flag);
   Mmsg(tracefilename, "%s/%s.trace", TRACEFILEDIRECTORY, my_name);
-  ua->SendMsg("level=%d trace=%d hangup=%d timestamp=%d tracefilename=%s\n",
-              level, GetTrace(), GetHangup(), GetTimestamp(),
-              tracefilename.c_str());
+  if (ua) {
+    ua->SendMsg("level=%d trace=%d hangup=%d timestamp=%d tracefilename=%s\n",
+                level, GetTrace(), GetHangup(), GetTimestamp(),
+                tracefilename.c_str());
+  }
 }
 
-static void do_all_setdebug(UaContext* ua,
-                            int level,
-                            int trace_flag,
-                            int hangup_flag,
-                            int timestamp_flag)
+void DoAllSetDebug(UaContext* ua,
+                   int level,
+                   int trace_flag,
+                   int hangup_flag,
+                   int timestamp_flag)
 {
-  StorageResource *store, **unique_store;
-  ClientResource *client, **unique_client;
-  int i, j, found;
-
-  /*
-   * Director
-   */
   DoDirectorSetdebug(ua, level, trace_flag, timestamp_flag);
-
-  /*
-   * Count Storage items
-   */
-  LockRes(my_config);
-  store = NULL;
-  i = 0;
-  foreach_res (store, R_STORAGE) {
-    i++;
-  }
-  unique_store = (StorageResource**)malloc(i * sizeof(StorageResource));
-
-  /*
-   * Find Unique Storage address/port
-   */
-  store = (StorageResource*)my_config->GetNextRes(R_STORAGE, NULL);
-  i = 0;
-  unique_store[i++] = store;
-  while ((store = (StorageResource*)my_config->GetNextRes(
-              R_STORAGE, (BareosResource*)store))) {
-    found = 0;
-    for (j = 0; j < i; j++) {
-      if (bstrcmp(unique_store[j]->address, store->address) &&
-          unique_store[j]->SDport == store->SDport) {
-        found = 1;
-        break;
-      }
-    }
-    if (!found) {
-      unique_store[i++] = store;
-      Dmsg2(140, "Stuffing: %s:%d\n", store->address, store->SDport);
-    }
-  }
-  UnlockRes(my_config);
-
-  /*
-   * Call each unique Storage daemon
-   */
-  for (j = 0; j < i; j++) {
-    do_storage_setdebug(ua, unique_store[j], level, trace_flag, timestamp_flag);
-  }
-  free(unique_store);
-
-  /*
-   * Count Client items
-   */
-  LockRes(my_config);
-  client = NULL;
-  i = 0;
-  foreach_res (client, R_CLIENT) {
-    i++;
-  }
-  unique_client = (ClientResource**)malloc(i * sizeof(ClientResource));
-
-  /*
-   * Find Unique Client address/port
-   */
-  client = (ClientResource*)my_config->GetNextRes(R_CLIENT, NULL);
-  i = 0;
-  unique_client[i++] = client;
-  while ((client = (ClientResource*)my_config->GetNextRes(
-              R_CLIENT, (BareosResource*)client))) {
-    found = 0;
-    for (j = 0; j < i; j++) {
-      if (bstrcmp(unique_client[j]->address, client->address) &&
-          unique_client[j]->FDport == client->FDport) {
-        found = 1;
-        break;
-      }
-    }
-    if (!found) {
-      unique_client[i++] = client;
-      Dmsg2(140, "Stuffing: %s:%d\n", client->address, client->FDport);
-    }
-  }
-  UnlockRes(my_config);
-
-  /*
-   * Call each unique File daemon
-   */
-  for (j = 0; j < i; j++) {
-    do_client_setdebug(ua, unique_client[j], level, trace_flag, hangup_flag,
-                       timestamp_flag);
-  }
-  free(unique_client);
+  AllStorageSetdebug(ua, level, trace_flag, timestamp_flag);
+  AllClientSetdebug(ua, level, trace_flag, hangup_flag, timestamp_flag);
 }
 
 /**
@@ -1442,7 +1464,7 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
    */
   for (i = 1; i < ua->argc; i++) {
     if (Bstrcasecmp(ua->argk[i], "all")) {
-      do_all_setdebug(ua, level, trace_flag, hangup_flag, timestamp_flag);
+      DoAllSetDebug(ua, level, trace_flag, hangup_flag, timestamp_flag);
       return true;
     }
     if (Bstrcasecmp(ua->argk[i], "dir") ||
@@ -1455,15 +1477,15 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
       if (ua->argv[i]) {
         client = ua->GetClientResWithName(ua->argv[i]);
         if (client) {
-          do_client_setdebug(ua, client, level, trace_flag, hangup_flag,
-                             timestamp_flag);
+          DoClientSetdebug(ua, client, level, trace_flag, hangup_flag,
+                           timestamp_flag);
           return true;
         }
       }
       client = select_client_resource(ua);
       if (client) {
-        do_client_setdebug(ua, client, level, trace_flag, hangup_flag,
-                           timestamp_flag);
+        DoClientSetdebug(ua, client, level, trace_flag, hangup_flag,
+                         timestamp_flag);
         return true;
       }
     }
@@ -1475,7 +1497,7 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
       if (ua->argv[i]) {
         store = ua->GetStoreResWithName(ua->argv[i]);
         if (store) {
-          do_storage_setdebug(ua, store, level, trace_flag, timestamp_flag);
+          DoStorageSetdebug(ua, store, level, trace_flag, timestamp_flag);
           return true;
         }
       }
@@ -1491,7 +1513,7 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
             break;
         }
 
-        do_storage_setdebug(ua, store, level, trace_flag, timestamp_flag);
+        DoStorageSetdebug(ua, store, level, trace_flag, timestamp_flag);
         return true;
       }
     }
@@ -1526,18 +1548,18 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
           default:
             break;
         }
-        do_storage_setdebug(ua, store, level, trace_flag, timestamp_flag);
+        DoStorageSetdebug(ua, store, level, trace_flag, timestamp_flag);
       }
       break;
     case 2:
       client = select_client_resource(ua);
       if (client) {
-        do_client_setdebug(ua, client, level, trace_flag, hangup_flag,
-                           timestamp_flag);
+        DoClientSetdebug(ua, client, level, trace_flag, hangup_flag,
+                         timestamp_flag);
       }
       break;
     case 3:
-      do_all_setdebug(ua, level, trace_flag, hangup_flag, timestamp_flag);
+      DoAllSetDebug(ua, level, trace_flag, hangup_flag, timestamp_flag);
       break;
     default:
       break;
@@ -1896,8 +1918,8 @@ static bool time_cmd(UaContext* ua, const char* cmd)
  * truncate command. Truncates volumes (volume files) on the storage daemon.
  *
  * usage:
- * truncate volstatus=Purged [storage=<storage>] [pool=<pool>] [volume=<volume>]
- * [yes]
+ * truncate volstatus=Purged [storage=<storage>] [pool=<pool>]
+ * [volume=<volume>] [yes]
  */
 static bool TruncateCmd(UaContext* ua, const char* cmd)
 {
