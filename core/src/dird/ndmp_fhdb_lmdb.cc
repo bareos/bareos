@@ -536,7 +536,7 @@ void NdmpFhdbLmdbRegister(struct ndmlog* ixlog)
     result = mdb_dbi_open(fhdb_state->db_rw_txn, NULL,
                           MDB_CREATE | MDB_INTEGERKEY | MDB_DUPSORT,
                           &fhdb_state->db_dbi);
-    if (result) {
+    if (result != MDB_SUCCESS) {
       Dmsg1(debuglevel, _("Unable to open LMDB internal database: %s\n"),
             mdb_strerror(result));
       Jmsg1(nis->jcr, M_FATAL, 0,
