@@ -926,22 +926,34 @@ POOLMEM* edit_job_codes(JobControlRecord* jcr,
           str = "%";
           break;
         case 'B': /* Job Bytes in human readable format */
-          Bsnprintf(add, sizeof(add), "%sB",
-                    edit_uint64_with_suffix(jcr->JobBytes, ed1));
-          str = add;
+          if (jcr) {
+            Bsnprintf(add, sizeof(add), "%sB",
+                      edit_uint64_with_suffix(jcr->JobBytes, ed1));
+            str = add;
+          } else {
+            str = _("*None*");
+          }
           break;
         case 'F': /* Job Files */
-          str = edit_uint64(jcr->JobFiles, add);
+          if (jcr) {
+            str = edit_uint64(jcr->JobFiles, add);
+          } else {
+            str = _("*None*");
+          }
           break;
         case 'P': /* Process Id */
           Bsnprintf(add, sizeof(add), "%lu", (uint32_t)getpid());
           str = add;
           break;
         case 'b': /* Job Bytes */
-          str = edit_uint64(jcr->JobBytes, add);
+          if (jcr) {
+            str = edit_uint64(jcr->JobBytes, add);
+          } else {
+            str = _("*None*");
+          }
           break;
         case 'c': /* Client's name */
-          if (jcr) {
+          if (jcr && jcr->client_name) {
             str = jcr->client_name;
           } else {
             str = _("*None*");
