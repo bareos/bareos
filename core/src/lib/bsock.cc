@@ -591,7 +591,7 @@ bool BareosSocket::DoTlsHandshakeWithServer(TlsConfigCert* local_tls_cert,
   int message_type = 0;
   std::string message;
 
-  if (jcr->is_passive_client_connection_probing) {
+  if (jcr && jcr->is_passive_client_connection_probing) {
     /* connection try */
     message_type = M_INFO;
     message = _("TLS negotiation failed (while probing client protocol)\n");
