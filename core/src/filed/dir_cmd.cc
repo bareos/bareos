@@ -2386,6 +2386,7 @@ static bool RestoreCmd(JobControlRecord* jcr)
       if (sscanf(dir->msg, restorecmd1, &replace, &prefix_links) != 2) {
         PmStrcpy(jcr->errmsg, dir->msg);
         Jmsg(jcr, M_FATAL, 0, _("Bad replace command. CMD=%s\n"), jcr->errmsg);
+        FreePoolMemory(args);
         return false;
       }
       *args = 0;
