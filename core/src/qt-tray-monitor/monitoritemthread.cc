@@ -28,6 +28,8 @@
 #include "tray_conf.h"
 #include "lib/parse_conf.h"
 
+#include <cassert>
+
 MonitorItemThread* MonitorItemThread::monitorItemThreadSingleton;
 bool MonitorItemThread::already_destroyed = false;
 
