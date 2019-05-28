@@ -9,21 +9,9 @@ Transport Encryption
 
  :index:`\ <single: Communications Encryption>`\  :index:`\ <single: Encryption; Communication>`\  :index:`\ <single: Encryption; Transport>`\  :index:`\ <single: Transport Encryption>`\  :index:`\ <single: TLS>`\  :index:`\ <single: SSL>`\
 
-Bareos TLS (Transport Layer Security) is built-in network encryption code to provide secure network transport similar to that offered by :command:`stunnel` or :command:`ssh`. The data written to Volumes by the Storage daemon is not encrypted by this code. For data encryption, please see the :ref:`DataEncryption` chapter.
+Bareos uses TLS (Transport Layer Security) to provide secure network transport. For data encryption in contrast, please see the :ref:`DataEncryption` chapter. The initial Bacula encryption implementation has been written by Landon Fuller.
 
-The initial Bacula encryption implementation has been written by Landon Fuller.
-
-Supported features of this code include:
-
--  Client/Server TLS Requirement Negotiation
-
--  TLSv1 Connections with Server and Client Certificate Validation
-
--  Forward Secrecy Support via Diffie-Hellman Ephemeral Keying
-
-This document will refer to both "server" and "client" contexts. These terms refer to the accepting and initiating peer, respectively.
-
-Diffie-Hellman anonymous ciphers are not supported by this code. The use of DH anonymous ciphers increases the code complexity and places explicit trust upon the two-way CRAM-MD5 implementation. CRAM-MD5 is subject to known plaintext attacks, and it should be considered considerably less secure than PKI certificate-based authentication.
+With :sinceVersion:`18.2:""` the TLS code has been enhanced by the TLS PSK (Pre Shared Keys) feature which allows the daemons to setup an encrypted connection directly without using certificates. The library used for TLS is openSSL.
 
 .. _TlsDirectives:
 
@@ -33,7 +21,7 @@ TLS Configuration Directives
 Additional configuration directives have been added to all the daemons (Director, File daemon, and Storage daemon) as well as the various different Console programs. These directives are defined as follows:
 
 :config:option:`dir/director/TlsEnable`\
-   Enable TLS support. This is by default enabled. If no certificates are configured PSK (Pre Shared Keys) ciphers will be used. If the other side does not support TLS or cleartext is configured the connection will be aborted. However, for downward compatibility with clients before Bareos-18.2 the daemons can omit transport encryption and cleartext will be sent.
+   Enable TLS support. This is by default enabled. If no certificates are configured PSK (Pre Shared Keys) ciphers will be used. If the other side does not support TLS, or cleartext is configured the connection will be aborted. However, for downward compatibility with clients before Bareos-18.2 the daemons can omit transport encryption and cleartext will be sent.
 
 :config:option:`dir/director/TlsRequire`\
    Require TLS connection, for downward compatibility. This is by default disabled. However, if :strong:`TlsRequire`\ =yes, clients with a version before Bareos-18.2 will be denied if configured to use cleartext.
@@ -54,7 +42,7 @@ Additional configuration directives have been added to all the daemons (Director
 :config:option:`dir/director/TlsAllowedCn`\
    Common name attribute of allowed peer certificates. If :strong:`TLS Verify Peer`\ =yes, all connection request certificates will be checked against this list.
 
-   This directive may be specified more than once.
+   This directive may be specified more than once as all parameters will we concatenated.
 
 :config:option:`dir/director/TlsCaCertificateFile`\
    The full path and filename specifying a PEM encoded TLS CA certificate(s). Multiple certificates are permitted in the file.
@@ -71,8 +59,7 @@ Additional configuration directives have been added to all the daemons (Director
    In a server context, it is only required if :strong:`TLS Verify Peer`\  is used.
 
 :config:option:`dir/director/TlsDhFile`\
-   Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications. DH key exchange adds an additional level of security because the key used for encryption/decryption by the server and the client is computed on each end and thus is never passed over the network if Diffie-Hellman key exchange is used. Even if DH key exchange is not used, the encryption/decryption key is always
-   passed encrypted. This directive is only valid within a server context.
+   Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications. DH key exchange adds an additional level of security because the key used for encryption/decryption by the server and the client is computed on each end and thus is never passed over the network if Diffie-Hellman key exchange is used. Even if DH key exchange is not used, the encryption/decryption key is always passed encrypted. This directive is only valid within a server context.
 
    To generate the parameter file, you may use openssl:
 
@@ -95,7 +82,7 @@ Example TLS Configuration Files
 
 :index:`\ <single: Example; TLS Configuration Files>`\  :index:`\ <single: TLS Configuration Files>`\
 
-An example of the TLS portions of the configuration files are listed below.
+Examples of the TLS portions of the configuration files are listed below.
 
 Another example can be found at `Bareos Regression Testing Base Configuration <https://github.com/bareos/bareos/tree/master/regress/configs/BASE/>`_.
 
@@ -108,8 +95,7 @@ Bareos Director
    Director {                            # define myself
        Name = bareos-dir
        ...
-       TLS Enable = yes
-       TLS Require = yes
+       TLS Enable = yes     #yes by default
        TLS CA Certificate File = /etc/bareos/tls/ca.pem
        # This is a server certificate, used for incoming
        # (console) connections.
@@ -127,7 +113,7 @@ Bareos Director
        Name = File
        Address = bareos-sd1.example.com
        ...
-       TLS Require = yes
+       TLS Enable = yes     #yes by default
        TLS CA Certificate File = /etc/bareos/tls/ca.pem
        # This is a client certificate, used by the director to
        # connect to the storage daemon
@@ -143,8 +129,7 @@ Bareos Director
        Name = client1-fd
        Address = client1.example.com
        ...
-       TLS Enable = yes
-       TLS Require = yes
+       TLS Enable = yes     #yes by default
        TLS CA Certificate File = /etc/bareos/tls/ca.pem
        TLS Certificate = "/etc/bareos/tls/bareos-dir.example.com-cert.pem"
        TLS Key = "/etc/bareos/tls/bareos-dir.example.com-key.pem"
@@ -163,8 +148,7 @@ Bareos Storage Daemon
        # These TLS configuration options are used for incoming
        # file daemon connections. Director TLS settings are handled
        # in Director resources.
-       TLS Enable = yes
-       TLS Require = yes
+       TLS Enable = yes     #yes by default
        TLS CA Certificate File = /etc/bareos/tls/ca.pem
        # This is a server certificate. It is used by connecting
        # file daemons to verify the authenticity of this storage daemon
@@ -183,8 +167,7 @@ Bareos Storage Daemon
    Director {
        Name = bareos-dir
        ...
-       TLS Enable = yes
-       TLS Require = yes
+       TLS Enable = yes     #yes by default
        TLS CA Certificate File = /etc/bareos/tls/ca.pem
        # This is a server certificate. It is used by the connecting
        # director to verify the authenticity of this storage daemon
@@ -207,8 +190,7 @@ Bareos File Daemon
        ...
        # you need these TLS entries so the SD and FD can
        # communicate
-       TLS Enable = yes
-       TLS Require = yes
+       TLS Enable = yes     #yes by default
 
        TLS CA Certificate File = /etc/bareos/tls/ca.pem
        TLS Certificate = /etc/bareos/tls/client1.example.com-cert.pem
@@ -223,8 +205,7 @@ Bareos File Daemon
    Director {
        Name = bareos-dir
        ...
-       TLS Enable = yes
-       TLS Require = yes
+       TLS Enable = yes     #yes by default
        TLS CA Certificate File = /etc/bareos/tls/ca.pem
        # This is a server certificate. It is used by connecting
        # directors to verify the authenticity of this file daemon
@@ -321,9 +302,9 @@ The following sequence is used to figure out the right protocol version and to s
 |bareosFD| 18.2 with Bareos before 18.2
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-|bareosFD| 18.2 *onwards* can be used on a Bareos system *before* 18.2.
+|bareosFD| :sinceVersion:`18.2:""` can be used on a Bareos system before Bareos-18.2.
 
-The older |bareosDir| and |bareosSD| connect to |bareosFD| using the cleartext Bareos handshake before they can switch to TLS. If you want transport encryption only TLS with certificates can be used, not PSK as it is possible with Bareos 18.2.
+The *older* |bareosDir| and |bareosSD| connect to |bareosFD| using the cleartext Bareos handshake before they can switch to TLS. If you want transport encryption then only TLS with certificates can be used. TLS PSK is not possible with |bareosDir| and |bareosSd| before Bareos-18.2.
 
 However, it is also possible to disable transport encryption and use cleartext transport using the following configuration changes:
 
