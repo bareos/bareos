@@ -188,7 +188,7 @@ Configure restricted named consoles as well as profiles and reload your director
 Those consoles are like user accounts and used by the webui.
 
 For more details about console and profile resource configuration in bareos, please have a look at
-http://doc.bareos.org/ .
+https://docs.bareos.org/ .
 
 ```
 Console {
