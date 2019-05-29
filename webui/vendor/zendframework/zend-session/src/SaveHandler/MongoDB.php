@@ -186,7 +186,7 @@ class MongoDB implements SaveHandlerInterface
      * used, consider indexing this field to make the remove query more
      * efficient.
      *
-     * @see http://docs.mongodb.org/manual/tutorial/expire-data/
+     * @see https://docs.mongodb.org/manual/tutorial/expire-data/
      * @param int $maxlifetime
      * @return bool
      */
