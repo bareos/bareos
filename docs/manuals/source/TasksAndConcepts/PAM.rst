@@ -84,8 +84,10 @@ For PAM authentication a dedicated named console is used. Set the directive UseP
      UsePamAuthentication = yes
   }
 
+In the dedicated |bconsole| config use name and password according as to the |dir|:
+
 .. code-block:: ini
-  :caption: :file:`bconsole/pam-console.conf`
+  :caption: :file:`bconsole.conf`
 
   Console {
      Name = "PamConsole"
@@ -94,14 +96,15 @@ For PAM authentication a dedicated named console is used. Set the directive UseP
 
 PAM User
 ^^^^^^^^
-Example of a User resource (Bareos Director Configuration)
+Users have limited access to commands and jobs. Therefore the appropriate rights should also be granted to PAM users. This is an example of a User resource (Bareos Director Configuration):
 
 .. code-block:: ini
   :caption: :file:`bareos-dir.d/console/pam-user.conf`
 
   User {
-     Name = "Bareos"
-     Password = ""
+     Name = "a-pam-user"
+     Password = "" #unsed because authenticated by PAM
      CommandACL = status, .status
      JobACL = *all*
   }
+
