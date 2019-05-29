@@ -255,7 +255,7 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
 
   if (!message_resource) {
     Dmsg0(900, "Could not dynamic_cast to MessageResource\n");
-    std::abort();
+    abort();
     return;
   }
 
