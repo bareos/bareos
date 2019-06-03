@@ -1,0 +1,51 @@
+@startuml
+participant d as "Director"
+participant s as "Storage Daemon"
+participant f as "File Daemon"
+
+d -> d : Build restore command and open bootstrap file
+
+loop bootstrap file
+  d -> d : Select next read storage
+  d -> d : Set job status to "JS_WaitSD"
+
+  d -> s: Initiate connection
+  d -> s : Start storage daemon job
+
+  alt first_time
+    d -> d : Set job status to "JS_WaitFD"
+    d -> f : Initiate connection
+    d -> f : Send secure erase request to fd
+  end
+
+  d -> d : Set job status to "JS_Running"
+  d -> s : Send bootstrap file to sd
+
+  alt is passive client
+    d -> f : tell fd to connect sd
+    s <- f : authenticate
+  end
+
+  alt is NOT passive client
+    d -> s : tell sd to connect fd
+  end
+
+== Storage Daemon Messages thread is spawned once ==
+
+  d -> d :   set job started
+
+  alt first_time
+    d -> f : Send runscripts commands to fd
+    d -> f : Send restore objects to fd
+  end
+
+  d -> f : Send restore command
+  d -> d : Wait for storage daemon termination
+
+end 'loop while not end of Bootstrapfile
+
+== Storage Daemon Messages thread is killed ==
+
+d -> d : Close bootstrap file
+
+@enduml
