@@ -45,11 +45,8 @@ By default, Bareos will compare permissions bits, user and group fields, modific
      }
    }
 
+.. warning::
 
-
-   .. warning::
-
-      The current implementation doesn't permit to scan
+   The current implementation doesn't permit to scan
    volume with :command:`bscan`. The result wouldn't permit to restore files easily.
-
 
