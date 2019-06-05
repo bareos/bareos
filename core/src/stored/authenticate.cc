@@ -28,11 +28,13 @@
  */
 
 #include "include/bareos.h"
+#include "include/make_unique.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "include/jcr.h"
 #include "lib/parse_conf.h"
 #include "lib/bsock.h"
+#include "lib/bsock_network_dump.h"
 #include "lib/util.h"
 
 namespace storagedaemon {
@@ -183,6 +185,10 @@ bool AuthenticateFiledaemon(JobControlRecord* jcr)
 
   password.encoding = p_encoding_md5;
   password.value = jcr->sd_auth_key;
+
+  fd->SetNwdump(BareosSocketNetworkDump::Create(
+      my_config->own_resource_, R_CLIENT,
+      *my_config->GetQualifiedResourceNameTypeConverter()));
 
   if (!fd->AuthenticateInboundConnection(jcr, "File daemon", jcr->client_name,
                                          password, me)) {

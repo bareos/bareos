@@ -61,8 +61,6 @@ BareosSocket::BareosSocket()
     , client_addr{0}
     , peer_addr{0}
     , connected_daemon_version_(BareosVersionNumber::kUndefined)
-    , connected_daemon_resource_(nullptr)
-    , own_resource_(nullptr)
 
     /* protected: */
     , jcr_(nullptr)
@@ -110,8 +108,6 @@ BareosSocket::BareosSocket(const BareosSocket& other)
   peer_addr = other.peer_addr;
   tls_conn = other.tls_conn;
   connected_daemon_version_ = other.connected_daemon_version_;
-  connected_daemon_resource_ = other.connected_daemon_resource_;
-  own_resource_ = other.own_resource_;
 
   /* protected: */
   jcr_ = other.jcr_;

@@ -20,6 +20,7 @@
 */
 
 #include "include/bareos.h"
+#include "include/make_unique.h"
 #include "console/console_conf.h"
 #include "console/console_globals.h"
 #include "console/console_output.h"
@@ -42,23 +43,35 @@ BareosSocket* ConnectToDirector(JobControlRecord& jcr,
     delete UA_sock;
     return nullptr;
   }
+
   jcr.dir_bsock = UA_sock;
 
   const char* name;
   s_password* password = NULL;
 
   TlsResource* local_tls_resource;
+  BareosResource* own_resource;
   if (console_resource) {
+    own_resource = console_resource;
     name = console_resource->resource_name_;
     ASSERT(console_resource->password.encoding == p_encoding_md5);
     password = &console_resource->password;
     local_tls_resource = console_resource;
   } else { /* default console */
+    static ConsoleResource consoleresource_for_bsock_debugging;
+    consoleresource_for_bsock_debugging.resource_name_ =
+        const_cast<char*>("*UserAgent*");
+    consoleresource_for_bsock_debugging.rcode_ = R_CONSOLE;
+    consoleresource_for_bsock_debugging.rcode_str_ = "R_CONSOLE";
+    own_resource = &consoleresource_for_bsock_debugging;
     name = "*UserAgent*";
     ASSERT(director_resource->password_.encoding == p_encoding_md5);
     password = &director_resource->password_;
     local_tls_resource = director_resource;
   }
+
+  UA_sock->SetNwdump(
+      BareosSocketNetworkDump::Create(own_resource, director_resource));
 
   if (local_tls_resource->IsTlsConfigured()) {
     std::string qualified_resource_name;
@@ -83,6 +96,6 @@ BareosSocket* ConnectToDirector(JobControlRecord& jcr,
     return nullptr;
   }
   return UA_sock;
-}
+}  // namespace console
 
 } /* namespace console */

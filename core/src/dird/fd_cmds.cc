@@ -35,6 +35,7 @@
 
 #include <algorithm>
 #include "include/bareos.h"
+#include "include/make_unique.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
 #include "findlib/find.h"
@@ -267,6 +268,8 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
 
     if (jcr->file_bsock) {
       jcr->setJobStatus(JS_Running);
+      jcr->file_bsock->SetNwdump(
+          BareosSocketNetworkDump::Create(me, jcr->res.client));
       if (AuthenticateWithFileDaemon(jcr)) {
         success = true;
         SendInfoSuccess(jcr, ua);

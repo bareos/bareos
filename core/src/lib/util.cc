@@ -27,11 +27,15 @@
 
 #include "include/bareos.h"
 #include "include/jcr.h"
+#include "include/make_unique.h"
+#include "lib/bsock.h"
 #include "lib/edit.h"
 #include "lib/ascii_control_characters.h"
 #include "lib/bstringlist.h"
 #include "lib/qualified_resource_name_type_converter.h"
 #include "include/version_numbers.h"
+#include "lib/parse_conf.h"
+#include "lib/qualified_resource_name_type_converter.h"
 
 #include <algorithm>
 
@@ -258,6 +262,20 @@ bool GetNameAndResourceTypeAndVersionFromHello(
   }
 
   return ok;
+}
+
+void FillBSockWithConnectedDaemonInformation(
+    const ConfigurationParser& my_config,
+    BareosSocket* bs)
+{
+  std::string n, c;
+  BareosVersionNumber v;
+  GetNameAndResourceTypeAndVersionFromHello(bs->msg, n, c, v);
+  int rcode =
+      my_config.GetQualifiedResourceNameTypeConverter()->StringToResourceType(
+          c);
+  BareosResource* r = my_config.GetResWithName(rcode, n.c_str());
+  bs->SetNwdump(BareosSocketNetworkDump::Create(my_config.own_resource_, r));
 }
 
 /*

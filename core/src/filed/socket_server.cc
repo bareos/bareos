@@ -36,6 +36,7 @@
 #include "lib/bsock.h"
 #include "lib/bnet_server_tcp.h"
 #include "lib/try_tls_handshake_as_a_server.h"
+#include "lib/util.h"
 
 namespace filedaemon {
 
@@ -79,6 +80,8 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
   }
 
   Dmsg1(110, "Conn: %s\n", bs->msg);
+
+  FillBSockWithConnectedDaemonInformation(*my_config, bs);
 
   /*
    * See if its a director making a connection.

@@ -54,7 +54,8 @@ enum
   R_AUTOCHANGER,
   R_JOB, /* needed for Job name conversion */
   R_FIRST = R_DIRECTOR,
-  R_LAST = R_JOB /* keep this updated */
+  R_LAST = R_JOB,  /* keep this updated */
+  R_CLIENT = 0xff  // dummy for bsock printing
 };
 
 enum

@@ -42,6 +42,7 @@
 #include <mutex>
 #include <functional>
 #include "lib/address_conf.h"
+#include "lib/bsock_network_dump.h"
 #include "lib/tls.h"
 #include "lib/s_password.h"
 #include "lib/tls_conf.h"
@@ -82,11 +83,13 @@ class BareosSocket {
   struct sockaddr_in peer_addr; /* Peer's IP address */
   void SetTlsEstablished() { tls_established_ = true; }
   bool TlsEstablished() const { return tls_established_; }
+  void SetNwdump(std::unique_ptr<BareosSocketNetworkDump>&& nwdump)
+  {
+    nwdump_ = std::move(nwdump);
+  }
   std::shared_ptr<Tls> tls_conn;      /* Associated tls connection */
   std::unique_ptr<Tls> tls_conn_init; /* during initialization */
   BareosVersionNumber connected_daemon_version_;
-  BareosResource* connected_daemon_resource_;
-  BareosResource* own_resource_;
 
  protected:
   JobControlRecord* jcr_; /* JobControlRecord or NULL for error msgs */
@@ -107,6 +110,7 @@ class BareosSocket {
   int64_t nb_bytes_;     /* Bytes sent/recv since the last tick */
   btime_t last_tick_;    /* Last tick used by bwlimit */
   bool tls_established_; /* is true when tls connection is established */
+  std::unique_ptr<BareosSocketNetworkDump> nwdump_;
 
   virtual void FinInit(JobControlRecord* jcr,
                        int sockfd,

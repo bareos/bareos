@@ -36,6 +36,7 @@
 #include "lib/berrno.h"
 #include "lib/bnet_server_tcp.h"
 #include "lib/try_tls_handshake_as_a_server.h"
+#include "lib/util.h"
 
 #include <atomic>
 
@@ -110,6 +111,8 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
   }
 
   Dmsg1(110, "Conn: %s", bs->msg);
+
+  FillBSockWithConnectedDaemonInformation(*my_config, bs);
 
   /*
    * See if this is a File daemon connection. If so call FD handler.

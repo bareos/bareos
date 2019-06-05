@@ -39,6 +39,7 @@
 #include "dird/storage.h"
 #include "dird/ua_label.h"
 #include "dird/ua_server.h"
+#include "include/make_unique.h"
 #include "lib/bsock_tcp.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
@@ -141,6 +142,8 @@ bool ConnectToStorageDaemon(JobControlRecord* jcr,
       return false;
     }
   }
+
+  sd->SetNwdump(BareosSocketNetworkDump::Create(me, store));
 
   if (!AuthenticateWithStorageDaemon(sd.get(), jcr, store)) {
     sd->close();

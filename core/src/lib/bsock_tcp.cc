@@ -38,6 +38,8 @@
 #include "lib/bsock_tcp.h"
 #include "lib/berrno.h"
 
+#include <algorithm>
+
 #ifndef ENODATA /* not defined on BSD systems */
 #define ENODATA EPIPE
 #endif
@@ -1050,6 +1052,8 @@ int32_t BareosSocketTCP::write_nbytes(char* ptr, int32_t nbytes)
     }
     return nbytes;
   }
+
+  if (nwdump_) { nwdump_->DumpMessageToFile(ptr, nbytes); }
 
 #ifdef HAVE_TLS
   if (tls_conn) { return (tls_conn->TlsBsockWriten(this, ptr, nbytes)); }

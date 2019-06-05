@@ -24,6 +24,8 @@
 #include "lib/ascii_control_characters.h"
 #include "lib/message.h"
 
+class BareosSocket;
+class ConfigurationParser;
 class QualifiedResourceNameTypeConverter;
 enum class BareosVersionNumber : uint32_t;
 
@@ -38,6 +40,9 @@ bool GetNameAndResourceTypeAndVersionFromHello(const std::string& input,
                                                std::string& name,
                                                std::string& r_type_str,
                                                BareosVersionNumber& version);
+void FillBSockWithConnectedDaemonInformation(
+    const ConfigurationParser& my_config,
+    BareosSocket* bs);
 const char* IndentMultilineString(PoolMem& resultbuffer,
                                   const char* multilinestring,
                                   const char* separator);
