@@ -523,7 +523,7 @@ static void MultiplyConfiguredDevices(ConfigurationParser& my_config)
   }
 }
 
-static void ConfigReadyCallback(ConfigurationParser& my_config)
+static void ConfigBeforeCallback(ConfigurationParser& my_config)
 {
   std::map<int, std::string> map{
       {R_DIRECTOR, "R_DIRECTOR"},
@@ -534,6 +534,10 @@ static void ConfigReadyCallback(ConfigurationParser& my_config)
       {R_DEVICE, "R_DEVICE"},
       {R_AUTOCHANGER, "R_AUTOCHANGER"}};
   my_config.InitializeQualifiedResourceNameTypeConverter(map);
+}
+
+static void ConfigReadyCallback(ConfigurationParser& my_config)
+{
   MultiplyConfiguredDevices(my_config);
 }
 
@@ -542,8 +546,8 @@ ConfigurationParser* InitSdConfig(const char* configfile, int exit_code)
   ConfigurationParser* config = new ConfigurationParser(
       configfile, nullptr, nullptr, InitResourceCb, ParseConfigCb, nullptr,
       exit_code, R_FIRST, R_LAST, resources, res_head,
-      default_config_filename.c_str(), "bareos-sd.d", ConfigReadyCallback,
-      SaveResource, DumpResource, FreeResource);
+      default_config_filename.c_str(), "bareos-sd.d", ConfigBeforeCallback,
+      ConfigReadyCallback, SaveResource, DumpResource, FreeResource);
   if (config) { config->r_own_ = R_STORAGE; }
   return config;
 }

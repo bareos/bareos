@@ -243,6 +243,7 @@ class ConfigurationParser {
                       BareosResource** res_head,
                       const char* config_default_filename,
                       const char* config_include_dir,
+                      void (*ParseConfigBeforeCb)(ConfigurationParser&),
                       void (*ParseConfigReadyCb)(ConfigurationParser&),
                       SaveResourceCb_t SaveResourceCb,
                       DumpResourceCb_t DumpResourceCb,
@@ -336,6 +337,7 @@ class ConfigurationParser {
   std::string used_config_path_;             /* Config file that is used. */
   std::unique_ptr<QualifiedResourceNameTypeConverter>
       qualified_resource_name_type_converter_;
+  ParseConfigBeforeCb_t ParseConfigBeforeCb_;
   ParseConfigReadyCb_t ParseConfigReadyCb_;
   bool parser_first_run_;
 

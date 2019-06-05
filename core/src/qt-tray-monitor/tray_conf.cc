@@ -367,7 +367,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
   return (error == 0);
 }
 
-static void ConfigReadyCallback(ConfigurationParser& my_config)
+static void ConfigBeforeCallback(ConfigurationParser& my_config)
 {
   std::map<int, std::string> map{
       {R_MONITOR, "R_MONITOR"}, {R_DIRECTOR, "R_DIRECTOR"},
@@ -376,13 +376,15 @@ static void ConfigReadyCallback(ConfigurationParser& my_config)
   my_config.InitializeQualifiedResourceNameTypeConverter(map);
 }
 
+static void ConfigReadyCallback(ConfigurationParser& my_config) {}
+
 ConfigurationParser* InitTmonConfig(const char* configfile, int exit_code)
 {
   ConfigurationParser* config = new ConfigurationParser(
       configfile, nullptr, nullptr, nullptr, nullptr, nullptr, exit_code,
       R_FIRST, R_LAST, resources, res_head, default_config_filename.c_str(),
-      "tray-monitor.d", ConfigReadyCallback, SaveResource, DumpResource,
-      FreeResource);
+      "tray-monitor.d", ConfigBeforeCallback, ConfigReadyCallback, SaveResource,
+      DumpResource, FreeResource);
   if (config) { config->r_own_ = R_MONITOR; }
   return config;
 }
