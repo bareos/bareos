@@ -85,6 +85,8 @@ class BareosSocket {
   std::shared_ptr<Tls> tls_conn;      /* Associated tls connection */
   std::unique_ptr<Tls> tls_conn_init; /* during initialization */
   BareosVersionNumber connected_daemon_version_;
+  BareosResource* connected_daemon_resource_;
+  BareosResource* own_resource_;
 
  protected:
   JobControlRecord* jcr_; /* JobControlRecord or NULL for error msgs */
