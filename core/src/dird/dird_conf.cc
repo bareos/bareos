@@ -3809,6 +3809,7 @@ static void CreateAndAddUserAgentConsoleResource(ConfigurationParser& my_config)
   c->resource_name_ = strdup("*UserAgent*");
   c->description_ = strdup("root console definition");
   c->rcode_ = 1013;
+  c->rcode_str_ = "R_CONSOLE";
   c->refcnt_ = 1;
 
   AddResourceCopyToEndOfChain(R_CONSOLE, c);

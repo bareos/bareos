@@ -33,11 +33,12 @@ class ConfigurationParser;
 
 class BareosResource {
  public:
-  BareosResource* next_;             /* Pointer to next resource of this type */
-  char* resource_name_;              /* Resource name */
-  char* description_;                /* Resource description */
-  uint32_t rcode_;                   /* Resource id or type */
-  int32_t refcnt_;                   /* Reference count for releasing */
+  BareosResource* next_; /* Pointer to next resource of this type */
+  char* resource_name_;  /* Resource name */
+  char* description_;    /* Resource description */
+  uint32_t rcode_;       /* Resource id or type */
+  int32_t refcnt_;       /* Reference count for releasing */
+  std::string rcode_str_;
   char item_present_[MAX_RES_ITEMS]; /* Set if item is present in conf file */
   char inherit_content_[MAX_RES_ITEMS]; /* Set if item has inherited content */
 
