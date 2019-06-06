@@ -39,6 +39,8 @@ int BnetGetPeer(BareosSocket* bs, char* buf, socklen_t buflen);
 BareosSocket* dup_bsock(BareosSocket* bsock);
 const char* BnetStrerror(BareosSocket* bsock);
 const char* BnetSigToAscii(BareosSocket* bsock);
+std::string BnetSignalToString(int signal);
+std::string BnetSignalToDescription(int signal);
 int BnetWaitData(BareosSocket* bsock, int sec);
 int BnetWaitDataIntr(BareosSocket* bsock, int sec);
 bool IsBnetStop(BareosSocket* bsock);

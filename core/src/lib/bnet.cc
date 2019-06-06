@@ -531,45 +531,65 @@ void BnetRestoreBlocking(BareosSocket* bsock, int flags)
   bsock->RestoreBlocking(flags);
 }
 
-/**
- * Send a network "signal" to the other end
- *  This consists of sending a negative packet length
- *
- *  Returns: false on failure
- *           true  on success
- */
 bool BnetSig(BareosSocket* bs, int signal) { return bs->signal(signal); }
 
 /**
  * Convert a network "signal" code into
  * human readable ASCII.
  */
+
+/* clang-format off */
+std::map<int, std::pair<std::string, std::string>> bnet_signal_to_text {
+    {BNET_EOD, {"BNET_EOD", "End of data stream, new data may follow"}},
+    {BNET_EOD_POLL, {"BNET_EOD_POLL", "End of data and poll all in one "}},
+    {BNET_STATUS, {"BNET_STATUS", "Send full status"}},
+    {BNET_TERMINATE, {"BNET_TERMINATE", "Conversation terminated, doing close() "}},
+    {BNET_POLL, {"BNET_POLL", "Poll request, I'm hanging on a read "}},
+    {BNET_HEARTBEAT, {"BNET_HEARTBEAT", "Heartbeat Response requested "}},
+    {BNET_HB_RESPONSE, {"BNET_HB_RESPONSE", "Only response permited to HB "}},
+    {BNET_xxxxxxPROMPT, {"BNET_xxxxxxPROMPT", "No longer used -- Prompt for subcommand "}},
+    {BNET_BTIME, {"BNET_BTIME", "Send UTC btime "}},
+    {BNET_BREAK, {"BNET_BREAK", "Stop current command -- ctl-c "}},
+    {BNET_START_SELECT, {"BNET_START_SELECT", "Start of a selection list "}},
+    {BNET_END_SELECT, {"BNET_END_SELECT", "End of a select list "}},
+    {BNET_INVALID_CMD, {"BNET_INVALID_CMD", "Invalid command sent "}},
+    {BNET_CMD_FAILED, {"BNET_CMD_FAILED", "Command failed "}},
+    {BNET_CMD_OK, {"BNET_CMD_OK", "Command succeeded "}},
+    {BNET_CMD_BEGIN, {"BNET_CMD_BEGIN", "Start command execution "}},
+    {BNET_MSGS_PENDING, {"BNET_MSGS_PENDING", "Messages pending "}},
+    {BNET_MAIN_PROMPT, {"BNET_MAIN_PROMPT", "Server ready and waiting "}},
+    {BNET_SELECT_INPUT, {"BNET_SELECT_INPUT", "Return selection input "}},
+    {BNET_WARNING_MSG, {"BNET_WARNING_MSG", "Warning message "}},
+    {BNET_ERROR_MSG, {"BNET_ERROR_MSG", "Error message -- command failed "}},
+    {BNET_INFO_MSG, {"BNET_INFO_MSG", "Info message -- status line "}},
+    {BNET_RUN_CMD, {"BNET_RUN_CMD", "Run command follows "}},
+    {BNET_YESNO, {"BNET_YESNO", "Request yes no response "}},
+    {BNET_START_RTREE, {"BNET_START_RTREE", "Start restore tree mode "}},
+    {BNET_END_RTREE, {"BNET_END_RTREE", "End restore tree mode "}},
+    {BNET_SUB_PROMPT, {"BNET_SUB_PROMPT", "Indicate we are at a subprompt "}},
+    {BNET_TEXT_INPUT, {"BNET_TEXT_INPUT", "Get text input from user "}},
+};
+/* clang-format on */
+
 const char* BnetSigToAscii(BareosSocket* bs)
 {
-  static char buf[30];
-  switch (bs->message_length) {
-    case BNET_EOD:
-      return "BNET_EOD"; /* end of data stream */
-    case BNET_EOD_POLL:
-      return "BNET_EOD_POLL";
-    case BNET_STATUS:
-      return "BNET_STATUS";
-    case BNET_TERMINATE:
-      return "BNET_TERMINATE"; /* Terminate connection */
-    case BNET_POLL:
-      return "BNET_POLL";
-    case BNET_HEARTBEAT:
-      return "BNET_HEARTBEAT";
-    case BNET_HB_RESPONSE:
-      return "BNET_HB_RESPONSE";
-    case BNET_SUB_PROMPT:
-      return "BNET_SUB_PROMPT";
-    case BNET_TEXT_INPUT:
-      return "BNET_TEXT_INPUT";
-    default:
-      sprintf(buf, _("Unknown sig %d"), (int)bs->message_length);
-      return buf;
+  return BnetSignalToString(bs->message_length).c_str();
+}
+
+std::string BnetSignalToString(int signal)
+{
+  if (bnet_signal_to_text.find(signal) != bnet_signal_to_text.end()) {
+    return bnet_signal_to_text[signal].first;
   }
+  return std::string("Unknown sig ") + std::to_string(signal);
+}
+
+std::string BnetSignalToDescription(int signal)
+{
+  if (bnet_signal_to_text.find(signal) != bnet_signal_to_text.end()) {
+    return bnet_signal_to_text[signal].second;
+  }
+  return std::string("Unknown sig ") + std::to_string(signal);
 }
 
 bool ReadoutCommandIdFromMessage(const BStringList& list_of_arguments,
