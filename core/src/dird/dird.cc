@@ -606,6 +606,7 @@ bool DoReloadConfig()
 
     // me is changed above by CheckResources()
     me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, NULL);
+    my_config->own_resource_ = me;
 
     FreeSavedResources(&temp_config);
     goto bail_out;
@@ -685,6 +686,7 @@ static bool CheckResources()
 
   job = (JobResource*)my_config->GetNextRes(R_JOB, NULL);
   me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, NULL);
+  my_config->own_resource_ = me;
   if (!me) {
     Jmsg(NULL, M_FATAL, 0,
          _("No Director resource defined in %s\n"

@@ -1204,6 +1204,7 @@ static int CheckResources()
   }
 
   me = (ConsoleResource*)my_config->GetNextRes(R_CONSOLE, NULL);
+  my_config->own_resource_ = me;
 
   UnlockRes(my_config);
 

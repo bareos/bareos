@@ -560,6 +560,7 @@ bool ParseSdConfig(const char* configfile, int exit_code)
 
   if (retval) {
     me = (StorageResource*)my_config->GetNextRes(R_STORAGE, NULL);
+    my_config->own_resource_ = me;
     if (!me) {
       Emsg1(exit_code, 0,
             _("No Storage resource defined in %s. Cannot continue.\n"),

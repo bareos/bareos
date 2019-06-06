@@ -343,6 +343,7 @@ static bool CheckResources()
   LockRes(my_config);
 
   me = (ClientResource*)my_config->GetNextRes(R_CLIENT, NULL);
+  my_config->own_resource_ = me;
   if (!me) {
     Emsg1(M_FATAL, 0,
           _("No File daemon resource defined in %s\n"

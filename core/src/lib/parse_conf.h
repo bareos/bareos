@@ -218,12 +218,13 @@ class ConfigurationParser {
   bool omit_defaults_; /* Omit config variables with default values when dumping
                           the config */
 
-  int32_t r_first_;            /* First daemon resource type */
-  int32_t r_last_;             /* Last daemon resource type */
-  int32_t r_own_;              /* own resource type */
-  ResourceTable* resources_;   /* Pointer to table of permitted resources */
-  BareosResource** res_head_;  /* Pointer to defined resources */
-  mutable brwlock_t res_lock_; /* Resource lock */
+  int32_t r_first_;              /* First daemon resource type */
+  int32_t r_last_;               /* Last daemon resource type */
+  int32_t r_own_;                /* own resource type */
+  BareosResource* own_resource_; /* Pointer to own resource */
+  ResourceTable* resources_;     /* Pointer to table of permitted resources */
+  BareosResource** res_head_;    /* Pointer to defined resources */
+  mutable brwlock_t res_lock_;   /* Resource lock */
 
   SaveResourceCb_t SaveResourceCb_;
   DumpResourceCb_t DumpResourceCb_;
