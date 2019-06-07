@@ -100,6 +100,10 @@ IF (NOT ${OPENSSL_FOUND})
   MESSAGE(FATAL_ERROR "FATAL ERROR: OpenSSL is required but was not found.")
 ENDIF()
 
+IF (${HAVE_EXECINFO_H})
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -ldl")
+ENDIF()
+
 IF (coverage)
    set(COVERAGE_COMPILER_FLAGS "-g -O0 --coverage -fprofile-arcs -ftest-coverage" CACHE INTERNAL "")
    MESSAGE(STATUS "coverage requested, adding COVERAGE_COMPILER_FLAGS : ${COVERAGE_COMPILER_FLAGS}")
