@@ -6,7 +6,7 @@ ADD_TEST(disk:python-bareos-connection-test "@regressdir@/tests/python-bareos-co
 ADD_TEST(disk:lan-addr-test "@regressdir@/tests/lan-addr-test")
 ADD_TEST(disk:lan-addr-test-passive "@regressdir@/tests/lan-addr-test-passive")
 ADD_TEST(disk:reload-test "@regressdir@/tests/reload-test")
-ADD_TEST(disk:always-incremental-test "@regressdir@/tests/always-incremental-test")
+#ADD_TEST(disk:always-incremental-test "@regressdir@/tests/always-incremental-test")
 ADD_TEST(disk:secure-erase-test "@regressdir@/tests/secure-erase-test")
 ADD_TEST(disk:migrate-sd-sd-test "@regressdir@/tests/migration-volume-sd-sd-test")
 ADD_TEST(disk:acl-xattr-test "@regressdir@/tests/acl-xattr-test")
