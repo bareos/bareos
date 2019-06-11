@@ -35,6 +35,7 @@
 #include "filed/socket_server.h"
 #include "lib/mntent_cache.h"
 #include "lib/daemon.h"
+#include "lib/bsock_network_dump.h"
 #include "lib/bsignal.h"
 #include "lib/parse_conf.h"
 #include "lib/watchdog.h"
@@ -112,7 +113,7 @@ int main(int argc, char* argv[])
   InitMsg(NULL, NULL);
   daemon_start_time = time(NULL);
 
-  while ((ch = getopt(argc, argv, "bc:d:fg:kmrstu:vx:?")) != -1) {
+  while ((ch = getopt(argc, argv, "bc:d:fg:kmrstu:vx:z:?")) != -1) {
     switch (ch) {
       case 'b':
         backup_only_mode = true;
@@ -176,6 +177,10 @@ int main(int argc, char* argv[])
         } else {
           usage();
         }
+        break;
+
+      case 'z': /* switch network debugging on */
+        if (!BareosSocketNetworkDump::SetFilename(optarg)) { exit(1); }
         break;
 
       case '?':

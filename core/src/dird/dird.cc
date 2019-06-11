@@ -195,6 +195,7 @@ static void usage()
         "        -f          run in foreground (for debugging)\n"
         "        -g <group>  run as group <group>\n"
         "        -m          print kaboom output (for debugging)\n"
+        //        "        -n <file>   switch network debugging on\n"
         "        -r <job>    run <job> now\n"
         "        -s          no signals (for debugging)\n"
         "        -t          test - read configuration and exit\n"
@@ -243,7 +244,7 @@ int main(int argc, char* argv[])
 
   console_command = RunConsoleCommand;
 
-  while ((ch = getopt(argc, argv, "c:d:fg:mr:stu:vx:?")) != -1) {
+  while ((ch = getopt(argc, argv, "c:d:fg:mr:stu:vx:z:?")) != -1) {
     switch (ch) {
       case 'c': /* specify config file */
         if (configfile != NULL) { free(configfile); }
@@ -301,6 +302,10 @@ int main(int argc, char* argv[])
         } else {
           usage();
         }
+        break;
+
+      case 'z': /* switch network debugging on */
+        if (!BareosSocketNetworkDump::SetFilename(optarg)) { exit(1); }
         break;
 
       case '?':

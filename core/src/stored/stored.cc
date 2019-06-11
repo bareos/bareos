@@ -155,7 +155,7 @@ int main(int argc, char* argv[])
           TAPE_BSIZE);
   }
 
-  while ((ch = getopt(argc, argv, "c:d:fg:mpstu:vx:?")) != -1) {
+  while ((ch = getopt(argc, argv, "c:d:fg:mpstu:vx:z:?")) != -1) {
     switch (ch) {
       case 'c': /* configuration file */
         if (configfile != NULL) { free(configfile); }
@@ -211,6 +211,10 @@ int main(int argc, char* argv[])
         } else {
           usage();
         }
+        break;
+
+      case 'z': /* switch network debugging on */
+        if (!BareosSocketNetworkDump::SetFilename(optarg)) { exit(1); }
         break;
 
       case '?':
