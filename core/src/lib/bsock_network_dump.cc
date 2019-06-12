@@ -24,6 +24,7 @@
 #include "lib/backtrace.h"
 #include "lib/bareos_resource.h"
 #include "lib/bnet.h"
+#include "lib/bstringlist.h"
 #include "lib/bsock.h"
 #include "lib/bsock_tcp.h"
 #include "lib/qualified_resource_name_type_converter.h"
@@ -38,7 +39,7 @@ class BareosSocketNetworkDumpPrivate {
   friend class BareosSocketNetworkDump;
 
   static std::string filename_;
-  int max_data_dump_bytes_ = 64;
+  std::size_t max_data_dump_bytes_ = 64;
   FILE* fp_ = nullptr;
   std::unique_ptr<BareosResource> dummy_resource_;
   const BareosResource* own_resource_ = nullptr;
@@ -50,13 +51,17 @@ class BareosSocketNetworkDumpPrivate {
       int destination_rcode_for_dummy_resource,
       const QualifiedResourceNameTypeConverter& conv);
   std::string CreateDataString(int signal, const char* ptr, int nbytes) const;
+  void DumpStacktrace() const;
 };
 
 std::string BareosSocketNetworkDumpPrivate::filename_;
 
 void BareosSocketNetworkDumpPrivate::OpenFile()
 {
-  if (!filename_.empty()) { fp_ = fopen(filename_.c_str(), "a"); }
+  if (!filename_.empty()) {
+    fp_ = fopen(filename_.c_str(), "a");
+    assert(fp_);
+  }
 }
 
 void BareosSocketNetworkDumpPrivate::CloseFile()
@@ -82,7 +87,7 @@ std::string BareosSocketNetworkDumpPrivate::CreateDataString(int signal,
                                                              const char* ptr,
                                                              int nbytes) const
 {
-  int string_length = nbytes - BareosSocketTCP::header_length;
+  std::size_t string_length = nbytes - BareosSocketTCP::header_length;
   string_length = string_length > max_data_dump_bytes_ ? max_data_dump_bytes_
                                                        : string_length;
 
@@ -100,6 +105,23 @@ std::string BareosSocketNetworkDumpPrivate::CreateDataString(int signal,
       string_data.end());
 
   return string_data;
+}
+
+void BareosSocketNetworkDumpPrivate::DumpStacktrace() const
+{
+  BStringList trace(Backtrace(6), '\n');
+  for (std::string s : trace) {
+    char buffer[1024];
+    std::string p(s.c_str(), s.size() < max_data_dump_bytes_
+                                 ? s.size()
+                                 : max_data_dump_bytes_);
+    p += "\\n";
+    int amount = snprintf(buffer, sizeof(buffer) / sizeof(buffer[0]),
+                          "%28s %s\n", "", p.c_str());
+    std::cout << buffer;
+    fwrite(buffer, 1, amount, fp_);
+    fflush(fp_);
+  }
 }
 
 std::unique_ptr<BareosSocketNetworkDump> BareosSocketNetworkDump::Create(
@@ -166,7 +188,7 @@ bool BareosSocketNetworkDump::SetFilename(const char* filename)
   return true;
 }
 
-static std::string CreateFormatString(int signal)
+static std::string CreateFormatStringForNetworkMessage(int signal)
 {
   if (signal > 998) {  // if text too long, signal set to 999
     return "%12s -> %-12s: (>%3d) %s\n";
@@ -176,8 +198,6 @@ static std::string CreateFormatString(int signal)
     return "%12s -> %-12s: (%4d) %s\n";
   }
 }
-
-static void PrintStackFrames(void) { std::cout << Backtrace() << std::endl; }
 
 void BareosSocketNetworkDump::DumpMessageToFile(const char* ptr,
                                                 int nbytes) const
@@ -196,11 +216,13 @@ void BareosSocketNetworkDump::DumpMessageToFile(const char* ptr,
                                : "???";
 
   char buffer[1024];
-  int amount = snprintf(buffer, 1024, CreateFormatString(signal).c_str(),
+  int amount = snprintf(buffer, sizeof(buffer) / sizeof(buffer[0]),
+                        CreateFormatStringForNetworkMessage(signal).c_str(),
                         own_rcode_str, connected_rcode_str, signal,
                         impl_->CreateDataString(signal, ptr, nbytes).c_str());
+  std::cout << buffer;
   fwrite(buffer, 1, amount, impl_->fp_);
   fflush(impl_->fp_);
 
-  PrintStackFrames();
+  impl_->DumpStacktrace();
 }
