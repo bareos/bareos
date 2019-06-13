@@ -305,7 +305,9 @@ int main(int argc, char* argv[])
         break;
 
       case 'z': /* switch network debugging on */
-        if (!BareosSocketNetworkDump::SetFilename(optarg)) { exit(1); }
+        if (!BareosSocketNetworkDump::EvaluateCommandLineArgs(optarg)) {
+          exit(1);
+        }
         break;
 
       case '?':

@@ -40,7 +40,10 @@ class BareosSocketNetworkDumpPrivate {
 
   static std::string filename_;
   static bool plantuml_mode_;
-  std::size_t max_data_dump_bytes_ = 64;
+  static std::size_t max_data_dump_bytes_;
+
+  static bool SetFilename(const char* filename);
+
   FILE* fp_ = nullptr;
   std::unique_ptr<BareosResource> dummy_resource_;
   const BareosResource* own_resource_ = nullptr;
@@ -58,6 +61,7 @@ class BareosSocketNetworkDumpPrivate {
 
 std::string BareosSocketNetworkDumpPrivate::filename_;
 bool BareosSocketNetworkDumpPrivate::plantuml_mode_ = false;
+std::size_t BareosSocketNetworkDumpPrivate::max_data_dump_bytes_ = 64;
 
 void BareosSocketNetworkDumpPrivate::OpenFile()
 {
@@ -191,9 +195,22 @@ BareosSocketNetworkDump::BareosSocketNetworkDump(
 
 BareosSocketNetworkDump::~BareosSocketNetworkDump() { impl_->CloseFile(); }
 
-bool BareosSocketNetworkDump::SetFilename(const char* filename)
+bool BareosSocketNetworkDumpPrivate::SetFilename(const char* filename)
 {
   BareosSocketNetworkDumpPrivate::filename_ = filename;
+  return true;
+}
+
+bool BareosSocketNetworkDump::EvaluateCommandLineArgs(
+    const char* cmdline_optarg)
+{
+  if (strlen(optarg) == 1) {
+    if (*optarg == 'p') {
+      BareosSocketNetworkDumpPrivate::plantuml_mode_ = true;
+    }
+  } else if (!BareosSocketNetworkDumpPrivate::SetFilename(optarg)) {
+    return false;
+  }
   return true;
 }
 

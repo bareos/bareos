@@ -31,8 +31,6 @@ class BareosSocketNetworkDumpPrivate;
 
 class BareosSocketNetworkDump {
  public:
-  static bool SetFilename(const char* filename);
-
   static std::unique_ptr<BareosSocketNetworkDump> Create(
       const BareosResource* own_resource,
       const BareosResource* distant_resource);
@@ -40,8 +38,11 @@ class BareosSocketNetworkDump {
       const BareosResource* own_resource,
       int destination_rcode_for_dummy_resource,
       const QualifiedResourceNameTypeConverter& conv);
+  static bool EvaluateCommandLineArgs(const char* cmdline_optarg);
+
   void DumpMessageToFile(const char* ptr, int nbytes) const;
 
+ public:
   BareosSocketNetworkDump(const BareosResource* own_resource,
                           const BareosResource* distant_resource);
   BareosSocketNetworkDump(const BareosResource* own_resource,
