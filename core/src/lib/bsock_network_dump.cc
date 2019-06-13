@@ -39,6 +39,7 @@ class BareosSocketNetworkDumpPrivate {
   friend class BareosSocketNetworkDump;
 
   static std::string filename_;
+  static bool plantuml_mode_;
   std::size_t max_data_dump_bytes_ = 64;
   FILE* fp_ = nullptr;
   std::unique_ptr<BareosResource> dummy_resource_;
@@ -51,10 +52,12 @@ class BareosSocketNetworkDumpPrivate {
       int destination_rcode_for_dummy_resource,
       const QualifiedResourceNameTypeConverter& conv);
   std::string CreateDataString(int signal, const char* ptr, int nbytes) const;
+  std::string CreateFormatStringForNetworkMessage(int signal) const;
   void DumpStacktrace() const;
 };
 
 std::string BareosSocketNetworkDumpPrivate::filename_;
+bool BareosSocketNetworkDumpPrivate::plantuml_mode_ = false;
 
 void BareosSocketNetworkDumpPrivate::OpenFile()
 {
@@ -109,17 +112,21 @@ std::string BareosSocketNetworkDumpPrivate::CreateDataString(int signal,
 
 void BareosSocketNetworkDumpPrivate::DumpStacktrace() const
 {
-  BStringList trace(Backtrace(6), '\n');
-  for (std::string s : trace) {
+  BStringList trace_lines(Backtrace(6), '\n');
+
+  for (std::string s : trace_lines) {
     char buffer[1024];
     std::string p(s.c_str(), s.size() < max_data_dump_bytes_
                                  ? s.size()
                                  : max_data_dump_bytes_);
-    p += "\\n";
-    int amount = snprintf(buffer, sizeof(buffer) / sizeof(buffer[0]),
-                          "%28s %s\n", "", p.c_str());
-    std::cout << buffer;
+    const char* fmt = plantuml_mode_ ? "%6s %s\\n" : "%6s %s\n";
+    int amount = snprintf(buffer, sizeof(buffer) / sizeof(buffer[0]), fmt, "",
+                          p.c_str());
     fwrite(buffer, 1, amount, fp_);
+    fflush(fp_);
+  }
+  if (plantuml_mode_) {
+    fwrite("\n", 1, 1, fp_);
     fflush(fp_);
   }
 }
@@ -143,12 +150,13 @@ std::unique_ptr<BareosSocketNetworkDump> BareosSocketNetworkDump::Create(
     int destination_rcode_for_dummy_resource,
     const QualifiedResourceNameTypeConverter& conv)
 {
-  std::unique_ptr<BareosSocketNetworkDump> p;
   if (BareosSocketNetworkDumpPrivate::filename_.empty()) {
+    std::unique_ptr<BareosSocketNetworkDump> p;
     return p;
   } else {
-    p = std::move(std::make_unique<BareosSocketNetworkDump>(
-        own_resource, destination_rcode_for_dummy_resource, conv));
+    std::unique_ptr<BareosSocketNetworkDump> p(
+        std::make_unique<BareosSocketNetworkDump>(
+            own_resource, destination_rcode_for_dummy_resource, conv));
     return p;
   }
 }
@@ -156,6 +164,7 @@ std::unique_ptr<BareosSocketNetworkDump> BareosSocketNetworkDump::Create(
 BareosSocketNetworkDump::BareosSocketNetworkDump()
     : impl_(std::make_unique<BareosSocketNetworkDumpPrivate>())
 {
+  // standard constructor just creates private data object
 }
 
 BareosSocketNetworkDump::BareosSocketNetworkDump(
@@ -188,15 +197,19 @@ bool BareosSocketNetworkDump::SetFilename(const char* filename)
   return true;
 }
 
-static std::string CreateFormatStringForNetworkMessage(int signal)
+std::string BareosSocketNetworkDumpPrivate::CreateFormatStringForNetworkMessage(
+    int signal) const
 {
+  std::string s;
   if (signal > 998) {  // if text too long, signal set to 999
-    return "%12s -> %-12s: (>%3d) %s\n";
+    s = "%12s -> %-12s: (>%3d) %s";
   } else if (signal < 0) {  // bnet signal
-    return "%12s -> %-12s: (%4d) %s\n";
+    s = "%12s -> %-12s: (%4d) %s";
   } else {
-    return "%12s -> %-12s: (%4d) %s\n";
+    s = "%12s -> %-12s: (%4d) %s";
   }
+  s += plantuml_mode_ ? "\\n" : "\n";
+  return s;
 }
 
 void BareosSocketNetworkDump::DumpMessageToFile(const char* ptr,
@@ -205,7 +218,6 @@ void BareosSocketNetworkDump::DumpMessageToFile(const char* ptr,
   if (!impl_->fp_) { return; }
 
   int signal = ntohl(*((int32_t*)&ptr[0]));
-
   if (signal > 999) { signal = 999; }
 
   const char* own_rcode_str =
@@ -216,11 +228,11 @@ void BareosSocketNetworkDump::DumpMessageToFile(const char* ptr,
                                : "???";
 
   char buffer[1024];
-  int amount = snprintf(buffer, sizeof(buffer) / sizeof(buffer[0]),
-                        CreateFormatStringForNetworkMessage(signal).c_str(),
-                        own_rcode_str, connected_rcode_str, signal,
-                        impl_->CreateDataString(signal, ptr, nbytes).c_str());
-  std::cout << buffer;
+  int amount =
+      snprintf(buffer, sizeof(buffer) / sizeof(buffer[0]),
+               impl_->CreateFormatStringForNetworkMessage(signal).c_str(),
+               own_rcode_str, connected_rcode_str, signal,
+               impl_->CreateDataString(signal, ptr, nbytes).c_str());
   fwrite(buffer, 1, amount, impl_->fp_);
   fflush(impl_->fp_);
 

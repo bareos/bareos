@@ -40,14 +40,13 @@ class BareosSocketNetworkDump {
       const BareosResource* own_resource,
       int destination_rcode_for_dummy_resource,
       const QualifiedResourceNameTypeConverter& conv);
+  void DumpMessageToFile(const char* ptr, int nbytes) const;
+
   BareosSocketNetworkDump(const BareosResource* own_resource,
                           const BareosResource* distant_resource);
   BareosSocketNetworkDump(const BareosResource* own_resource,
                           int destination_rcode_for_dummy_resource,
                           const QualifiedResourceNameTypeConverter& conv);
-
-  void DumpMessageToFile(const char* ptr, int nbytes) const;
-
   BareosSocketNetworkDump(const BareosSocketNetworkDump& other) = delete;
   BareosSocketNetworkDump(const BareosSocketNetworkDump&& other) = delete;
   BareosSocketNetworkDump& operator=(const BareosSocketNetworkDump& rhs) =
