@@ -6,6 +6,12 @@ body {
 	margin-bottom: 25px;
 }
 
+@media screen and (max-width: 1335px) and (min-width: 768px){
+        body{
+            padding-top: 107px;
+        }
+}
+
 /* Sticky footer styles */
 .footer {
 	position: fixed;
