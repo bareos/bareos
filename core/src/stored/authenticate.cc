@@ -186,7 +186,7 @@ bool AuthenticateFiledaemon(JobControlRecord* jcr)
   password.encoding = p_encoding_md5;
   password.value = jcr->sd_auth_key;
 
-  fd->SetNwdump(BareosSocketNetworkDump::Create(
+  fd->SetNwdump(BnetDump::Create(
       my_config->own_resource_, R_CLIENT,
       *my_config->GetQualifiedResourceNameTypeConverter()));
 

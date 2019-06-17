@@ -214,7 +214,7 @@ int main(int argc, char* argv[])
         break;
 
       case 'z': /* switch network debugging on */
-        if (!BareosSocketNetworkDump::EvaluateCommandLineArgs(optarg)) {
+        if (!BnetDump::EvaluateCommandLineArgs(optarg)) {
           exit(1);
         }
         break;

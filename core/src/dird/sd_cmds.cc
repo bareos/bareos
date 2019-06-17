@@ -143,7 +143,7 @@ bool ConnectToStorageDaemon(JobControlRecord* jcr,
     }
   }
 
-  sd->SetNwdump(BareosSocketNetworkDump::Create(me, store));
+  sd->SetNwdump(BnetDump::Create(me, store));
 
   if (!AuthenticateWithStorageDaemon(sd.get(), jcr, store)) {
     sd->close();

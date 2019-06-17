@@ -83,9 +83,9 @@ class BareosSocket {
   struct sockaddr_in peer_addr; /* Peer's IP address */
   void SetTlsEstablished() { tls_established_ = true; }
   bool TlsEstablished() const { return tls_established_; }
-  void SetNwdump(std::unique_ptr<BareosSocketNetworkDump>&& nwdump)
+  void SetNwdump(std::unique_ptr<BnetDump>&& nwdump)
   {
-    nwdump_ = std::move(nwdump);
+    bnet_dump_ = std::move(nwdump);
   }
   std::shared_ptr<Tls> tls_conn;      /* Associated tls connection */
   std::unique_ptr<Tls> tls_conn_init; /* during initialization */
@@ -110,7 +110,7 @@ class BareosSocket {
   int64_t nb_bytes_;     /* Bytes sent/recv since the last tick */
   btime_t last_tick_;    /* Last tick used by bwlimit */
   bool tls_established_; /* is true when tls connection is established */
-  std::unique_ptr<BareosSocketNetworkDump> nwdump_;
+  std::unique_ptr<BnetDump> bnet_dump_;
 
   virtual void FinInit(JobControlRecord* jcr,
                        int sockfd,

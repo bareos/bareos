@@ -71,7 +71,7 @@ BareosSocket* ConnectToDirector(JobControlRecord& jcr,
   }
 
   UA_sock->SetNwdump(
-      BareosSocketNetworkDump::Create(own_resource, director_resource));
+      BnetDump::Create(own_resource, director_resource));
 
   if (local_tls_resource->IsTlsConfigured()) {
     std::string qualified_resource_name;

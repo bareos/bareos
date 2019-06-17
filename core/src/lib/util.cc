@@ -275,7 +275,7 @@ void FillBSockWithConnectedDaemonInformation(
       my_config.GetQualifiedResourceNameTypeConverter()->StringToResourceType(
           c);
   BareosResource* r = my_config.GetResWithName(rcode, n.c_str());
-  bs->SetNwdump(BareosSocketNetworkDump::Create(my_config.own_resource_, r));
+  bs->SetNwdump(BnetDump::Create(my_config.own_resource_, r));
 }
 
 /*
