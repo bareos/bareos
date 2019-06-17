@@ -166,7 +166,6 @@ class RestoreController extends AbstractActionController
 
       // Set the method attribute for the form
       $form->setAttribute('method', 'post');
-      $form->setAttribute('onsubmit','return getFiles()');
 
       $request = $this->getRequest();
 
@@ -331,7 +330,6 @@ class RestoreController extends AbstractActionController
 
         // Set the method attribute for the form
         $form->setAttribute('method', 'post');
-        $form->setAttribute('onsubmit', 'return getFiles()');
 
         $request = $this->getRequest();
 
