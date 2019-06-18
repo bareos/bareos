@@ -1,13 +1,11 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: bareos-webui\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-01-08 14:59+0100\n"
-"Language: zh-CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: POEditor.com\n"
+"Project-Id-Version: bareos-webui\n"
+"Language: zh-CN\n"
 
 #: ../../../module/Application/config/module.config.php:125
 #: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:26
@@ -103,25 +101,12 @@ msgid "Director"
 msgstr "主控端"
 
 #: ../../../module/Application/src/Application/View/Helper/ACLAlert.php:37
-msgid ""
-"Sorry, it seems you are not authorized to run this module. If you think this "
-"is an error, please contact your local administrator."
-msgstr ""
-"很抱歉，您似乎无权运行此模块。 如果您认为这是一个错误，请与当地管理员联系。"
+msgid "Sorry, it seems you are not authorized to run this module. If you think this is an error, please contact your local administrator."
+msgstr "很抱歉，您似乎无权运行此模块。 如果您认为这是一个错误，请与当地管理员联系。"
 
 #: ../../../module/Application/src/Application/View/Helper/ACLAlert.php:38
-msgid ""
-"Please read the <a href=\"http://doc.bareos.org/master/html/bareos-manual-"
-"main-reference.html#sec:webui-console\" target=\"_blank\">Bareos "
-"documentation</a> for any additional information on how to configure the "
-"Command ACL directive of your Console/Profile resources. Following is a list "
-"of required commands which need to be in your Command ACL to run this module "
-"properly:"
-msgstr ""
-"请读 <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-"
-"reference.html#sec:webui-console\" target=\"_blank\">Bareos文档</a>有关如何配"
-"置控制台/配置文件资源的Command ACL指令的任何其他信息。 以下是需要在您的命令"
-"ACL中正确运行此模块的必需命令的列表："
+msgid "Please read the <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#sec:webui-console\" target=\"_blank\">Bareos documentation</a> for any additional information on how to configure the Command ACL directive of your Console/Profile resources. Following is a list of required commands which need to be in your Command ACL to run this module properly:"
+msgstr "请读 <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#sec:webui-console\" target=\"_blank\">Bareos文档</a>有关如何配置控制台/配置文件资源的Command ACL指令的任何其他信息。 以下是需要在您的命令ACL中正确运行此模块的必需命令的列表："
 
 #: ../../../module/Application/view/error/404.phtml:3
 msgid "A 404 error occurred"
@@ -132,8 +117,7 @@ msgid "The requested controller was unable to dispatch the request."
 msgstr "请求的控制器无法分派请求。"
 
 #: ../../../module/Application/view/error/404.phtml:15
-msgid ""
-"The requested controller could not be mapped to an existing controller class."
+msgid "The requested controller could not be mapped to an existing controller class."
 msgstr "请求的控制器无法映射到现有的控制器类。"
 
 #: ../../../module/Application/view/error/404.phtml:18
@@ -153,7 +137,6 @@ msgid "Controller"
 msgstr "控制器"
 
 #: ../../../module/Application/view/error/404.phtml:43
-#, php-format
 msgid "resolves to %s"
 msgstr "解析为%s"
 
@@ -203,30 +186,14 @@ msgstr "发生错误"
 msgid "Documentation"
 msgstr "卷保留"
 
-#: ../../../module/Application/view/layout/layout.phtml:98
-msgid "Mailinglists"
-msgstr ""
-
-#: ../../../module/Application/view/layout/layout.phtml:99
-msgid "Bugtracker"
-msgstr ""
-
 #: ../../../module/Application/view/layout/layout.phtml:100
 #, fuzzy
 msgid "Support"
 msgstr "导出"
 
-#: ../../../module/Application/view/layout/layout.phtml:101
-msgid "Subscription"
-msgstr ""
-
 #: ../../../module/Application/view/layout/layout.phtml:103
 msgid "Logout"
 msgstr "登出"
-
-#: ../../../module/Client/view/client/client/details.phtml:26
-msgid "Client details"
-msgstr "客户端详情"
 
 #: ../../../module/Client/view/client/client/details.phtml:32
 #: ../../../module/Client/view/client/client/index.phtml:32
@@ -241,6 +208,14 @@ msgstr "客户端详情"
 #: ../../../module/Schedule/view/schedule/schedule/status.phtml:31
 msgid "Show"
 msgstr "显示"
+
+#: ../../../module/Client/view/client/client/status.phtml:20
+msgid "Client Status"
+msgstr "客户端状态"
+
+#: ../../../module/Client/view/client/client/details.phtml:26
+msgid "Client details"
+msgstr "客户端详情"
 
 #: ../../../module/Client/view/client/client/details.phtml:43
 #: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:43
@@ -394,20 +369,6 @@ msgstr "字节"
 msgid "Status"
 msgstr "状态"
 
-#: ../../../module/Client/view/client/client/details.phtml:172
-#: ../../../module/Client/view/client/client/details.phtml:221
-#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:184
-#: ../../../module/Job/view/job/job/index.phtml:201
-#: ../../../module/Job/view/job/job/index.phtml:262
-#: ../../../module/Job/view/job/job/index.phtml:264
-#: ../../../module/Job/view/job/job/index.phtml:272
-#: ../../../module/Job/view/job/job/index.phtml:293
-#: ../../../module/Job/view/job/job/index.phtml:295
-#: ../../../module/Job/view/job/job/index.phtml:299
-#: ../../../module/Job/view/job/job/index.phtml:301
-msgid "View Job Details"
-msgstr "查看作业细节"
-
 #: ../../../module/Client/view/client/client/details.phtml:221
 msgid "Show Files"
 msgstr "显示文件"
@@ -452,13 +413,8 @@ msgstr "禁用"
 msgid "Enable"
 msgstr "使能"
 
-#: ../../../module/Client/view/client/client/status.phtml:20
-msgid "Client Status"
-msgstr "客户端状态"
-
 #: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:255
-msgid ""
-"Not enough data to estimate progress or statistics collection is disabled."
+msgid "Not enough data to estimate progress or statistics collection is disabled."
 msgstr "数据不足或数据收集被禁用"
 
 #: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:263
@@ -514,11 +470,6 @@ msgstr "等待"
 msgid "Successful"
 msgstr "成功"
 
-#: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:79
-#: ../../../public/js/custom-functions.js:444
-msgid "Warning"
-msgstr "警告"
-
 #: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:90
 msgid "Failed"
 msgstr "失败"
@@ -569,6 +520,10 @@ msgstr "刷新"
 msgid "Director messages"
 msgstr "主控端信息"
 
+#: ../../../module/Fileset/view/fileset/fileset/index.phtml:26
+msgid "Filesets"
+msgstr "文件集"
+
 #: ../../../module/Fileset/view/fileset/fileset/details.phtml:26
 msgid "Fileset details"
 msgstr "文件详情"
@@ -584,10 +539,6 @@ msgstr "MD5校验和"
 #: ../../../module/Fileset/view/fileset/fileset/details.phtml:48
 msgid "Creation time"
 msgstr "创建时间"
-
-#: ../../../module/Fileset/view/fileset/fileset/index.phtml:26
-msgid "Filesets"
-msgstr "文件集"
 
 #: ../../../module/Job/src/Job/Form/JobForm.php:60
 #, fuzzy
@@ -646,10 +597,6 @@ msgstr "终止失败"
 msgid "terminated successfully"
 msgstr "已成功终止"
 
-#: ../../../module/Job/src/Job/Form/JobForm.php:102
-msgid "warning"
-msgstr "警告"
-
 #: ../../../module/Job/src/Job/Form/RunJobForm.php:92
 #: ../../../module/Job/src/Job/Form/RunJobForm.php:108
 #: ../../../module/Job/view/job/job/details.phtml:49
@@ -668,19 +615,6 @@ msgstr "存储"
 msgid "Priority"
 msgstr "优先级"
 
-#: ../../../module/Job/src/Job/Form/RunJobForm.php:281
-#: ../../../module/Job/src/Job/Form/RunJobForm.php:297
-#: ../../../module/Job/view/job/job/details.phtml:60
-#: ../../../module/Job/view/job/job/index.phtml:77
-#: ../../../module/Media/view/media/media/details.phtml:57
-#: ../../../module/Media/view/media/media/details.phtml:89
-#: ../../../module/Media/view/media/media/index.phtml:57
-#: ../../../module/Pool/view/pool/pool/details.phtml:57
-#: ../../../module/Pool/view/pool/pool/details.phtml:89
-#: ../../../module/Pool/view/pool/pool/index.phtml:56
-msgid "Type"
-msgstr "类型"
-
 #: ../../../module/Job/src/Job/Form/RunJobForm.php:330
 #, fuzzy
 msgid "When"
@@ -694,6 +628,19 @@ msgstr "提交"
 #: ../../../module/Job/view/job/job/actions.phtml:69
 msgid "Job Actions"
 msgstr "作业操作"
+
+#: ../../../module/Job/src/Job/Form/RunJobForm.php:281
+#: ../../../module/Job/src/Job/Form/RunJobForm.php:297
+#: ../../../module/Job/view/job/job/details.phtml:60
+#: ../../../module/Job/view/job/job/index.phtml:77
+#: ../../../module/Media/view/media/media/details.phtml:57
+#: ../../../module/Media/view/media/media/details.phtml:89
+#: ../../../module/Media/view/media/media/index.phtml:57
+#: ../../../module/Pool/view/pool/pool/details.phtml:57
+#: ../../../module/Pool/view/pool/pool/details.phtml:89
+#: ../../../module/Pool/view/pool/pool/index.phtml:56
+msgid "Type"
+msgstr "类型"
 
 #: ../../../module/Job/view/job/job/details.phtml:64
 #: ../../../module/Job/view/job/job/index.phtml:81
@@ -779,8 +726,7 @@ msgid "Job list"
 msgstr "作业列表"
 
 #: ../../../module/Job/view/job/job/index.phtml:110
-msgid ""
-"Please try to reduce the amount of data to display, e.g. reduce time period."
+msgid "Please try to reduce the amount of data to display, e.g. reduce time period."
 msgstr "请尝试减少要显示的数据量，例如 减少时间。"
 
 #: ../../../module/Media/view/media/media/details.phtml:26
@@ -1121,27 +1067,14 @@ msgstr "大小"
 msgid "Date"
 msgstr "日期"
 
-#: ../../../module/Schedule/view/schedule/schedule/details.phtml:26
-#: ../../../module/Schedule/view/schedule/schedule/details.phtml:47
-msgid "Schedule Details"
-msgstr "时间调度详细信息"
-
-#: ../../../module/Schedule/view/schedule/schedule/details.phtml:34
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:34
-#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:34
-#: ../../../module/Schedule/view/schedule/schedule/status.phtml:33
-msgid "Scheduler status"
-msgstr "调度程序状态"
-
-#: ../../../module/Schedule/view/schedule/schedule/status.phtml:26
-#: ../../../module/Schedule/view/schedule/schedule/status.phtml:46
-msgid "Status Scheduler"
-msgstr "时间调度状态"
-
 #: ../../../module/Storage/src/Storage/Form/StorageForm.php:77
 #: ../../../module/Storage/view/storage/storage/details.phtml:126
 msgid "Drive"
 msgstr "驱动"
+
+#: ../../../module/Storage/view/storage/storage/status.phtml:24
+msgid "Storage Status"
+msgstr "存储状态"
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:26
 msgid "Storage details"
@@ -1220,9 +1153,22 @@ msgstr "自动转换"
 msgid "Manage autochanger"
 msgstr "管理自动转换"
 
-#: ../../../module/Storage/view/storage/storage/status.phtml:24
-msgid "Storage Status"
-msgstr "存储状态"
+#: ../../../module/Schedule/view/schedule/schedule/details.phtml:26
+#: ../../../module/Schedule/view/schedule/schedule/details.phtml:47
+msgid "Schedule Details"
+msgstr "时间调度详细信息"
+
+#: ../../../module/Schedule/view/schedule/schedule/details.phtml:34
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:34
+#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:34
+#: ../../../module/Schedule/view/schedule/schedule/status.phtml:33
+msgid "Scheduler status"
+msgstr "调度程序状态"
+
+#: ../../../module/Schedule/view/schedule/schedule/status.phtml:26
+#: ../../../module/Schedule/view/schedule/schedule/status.phtml:46
+msgid "Status Scheduler"
+msgstr "时间调度状态"
 
 #: ../../../public/js/custom-functions.js:101
 msgid "Backup"
@@ -1386,15 +1332,87 @@ msgstr "已启用"
 msgid "disabled"
 msgstr "已禁用"
 
-#: ../../../public/js/custom-functions.js:328
-msgid "Non-fatal error"
-msgstr "无致命错误"
-
 #: ../../../public/js/custom-functions.js:329
 #: ../../../public/js/custom-functions.js:334
 #: ../../../public/js/custom-functions.js:339
 msgid "Failure"
 msgstr "失败"
+
+#: ../../../public/js/custom-functions.js:344
+msgid "Success"
+msgstr "成功"
+
+#: ../../../public/js/custom-functions.js:354
+msgid "Queued"
+msgstr "排队"
+
+#: ../../../public/js/custom-functions.js:358
+#: ../../../public/js/custom-functions.js:359
+msgid "Blocked"
+msgstr "已阻止"
+
+#: ../../../public/js/custom-functions.js:364
+msgid "Verify found differences"
+msgstr "验证发现的差异"
+
+#: ../../../public/js/custom-functions.js:369
+msgid "Canceled"
+msgstr "已取消"
+
+#: ../../../public/js/custom-functions.js:423
+#: ../../../public/js/custom-functions.js:424
+msgid "SD despooling attributes"
+msgstr "SD去除连接属性"
+
+#: ../../../public/js/custom-functions.js:428
+#: ../../../public/js/custom-functions.js:429
+msgid "Doing batch insert file records"
+msgstr "执行批处理插入文件记录"
+
+#: ../../../public/js/custom-functions.js:434
+msgid "Incomplete"
+msgstr "不完整"
+
+#: ../../../public/js/custom-functions.js:439
+msgid "Committing data"
+msgstr "提交数据"
+
+#: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:79
+#: ../../../public/js/custom-functions.js:444
+msgid "Warning"
+msgstr "警告"
+
+#: ../../../public/js/custom-functions.js:448
+#: ../../../public/js/custom-functions.js:449
+msgid "Doing data despooling"
+msgstr "执行数据去除连接"
+
+#: ../../../public/js/custom-functions.js:453
+#: ../../../public/js/custom-functions.js:454
+msgid "Queued waiting for device"
+msgstr "排队等待设备"
+
+#: ../../../module/Client/view/client/client/details.phtml:172
+#: ../../../module/Client/view/client/client/details.phtml:221
+#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:184
+#: ../../../module/Job/view/job/job/index.phtml:201
+#: ../../../module/Job/view/job/job/index.phtml:262
+#: ../../../module/Job/view/job/job/index.phtml:264
+#: ../../../module/Job/view/job/job/index.phtml:272
+#: ../../../module/Job/view/job/job/index.phtml:293
+#: ../../../module/Job/view/job/job/index.phtml:295
+#: ../../../module/Job/view/job/job/index.phtml:299
+#: ../../../module/Job/view/job/job/index.phtml:301
+msgid "View Job Details"
+msgstr "查看作业细节"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:102
+msgid "warning"
+msgstr "警告"
+
+#: ../../../public/js/custom-functions.js:328
+msgid "Non-fatal error"
+msgstr "无致命错误"
 
 #: ../../../public/js/custom-functions.js:333
 msgid "Job terminated in error"
@@ -1408,38 +1426,17 @@ msgstr "致命错误"
 msgid "Terminated normally"
 msgstr "正常终止"
 
-#: ../../../public/js/custom-functions.js:344
-msgid "Success"
-msgstr "成功"
-
 #: ../../../public/js/custom-functions.js:353
 msgid "Created but not yet running"
 msgstr "新建尚未执行"
-
-#: ../../../public/js/custom-functions.js:354
-msgid "Queued"
-msgstr "排队"
-
-#: ../../../public/js/custom-functions.js:358
-#: ../../../public/js/custom-functions.js:359
-msgid "Blocked"
-msgstr "已阻止"
 
 #: ../../../public/js/custom-functions.js:363
 msgid "Verify differences"
 msgstr "验证差异"
 
-#: ../../../public/js/custom-functions.js:364
-msgid "Verify found differences"
-msgstr "验证发现的差异"
-
 #: ../../../public/js/custom-functions.js:368
 msgid "Canceled by user"
 msgstr "用户取消"
-
-#: ../../../public/js/custom-functions.js:369
-msgid "Canceled"
-msgstr "已取消"
 
 #: ../../../public/js/custom-functions.js:373
 msgid "Waiting on File daemon"
@@ -1469,59 +1466,3 @@ msgstr "正在等待作业资源"
 msgid "Waiting for Client resource"
 msgstr "正在等待客户资源"
 
-#: ../../../public/js/custom-functions.js:408
-#, fuzzy
-msgid "Waiting for maximum jobs"
-msgstr "正在等待作业资源"
-
-#: ../../../public/js/custom-functions.js:413
-#, fuzzy
-msgid "Waiting for start time"
-msgstr "正在等待存储媒介"
-
-#: ../../../public/js/custom-functions.js:418
-msgid "Waiting for higher priority jobs to finish"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:423
-#: ../../../public/js/custom-functions.js:424
-msgid "SD despooling attributes"
-msgstr "SD去除连接属性"
-
-#: ../../../public/js/custom-functions.js:428
-#: ../../../public/js/custom-functions.js:429
-msgid "Doing batch insert file records"
-msgstr "执行批处理插入文件记录"
-
-#: ../../../public/js/custom-functions.js:433
-#, fuzzy
-msgid "Incomplete Job"
-msgstr "不完整"
-
-#: ../../../public/js/custom-functions.js:434
-msgid "Incomplete"
-msgstr "不完整"
-
-#: ../../../public/js/custom-functions.js:438
-#, fuzzy
-msgid "Committing data (last despool)"
-msgstr "提交数据"
-
-#: ../../../public/js/custom-functions.js:439
-msgid "Committing data"
-msgstr "提交数据"
-
-#: ../../../public/js/custom-functions.js:443
-#, fuzzy
-msgid "Terminated normally with warnings"
-msgstr "正常终止"
-
-#: ../../../public/js/custom-functions.js:448
-#: ../../../public/js/custom-functions.js:449
-msgid "Doing data despooling"
-msgstr "执行数据去除连接"
-
-#: ../../../public/js/custom-functions.js:453
-#: ../../../public/js/custom-functions.js:454
-msgid "Queued waiting for device"
-msgstr "排队等待设备"
