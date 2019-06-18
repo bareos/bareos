@@ -19,6 +19,7 @@
    02110-1301, USA.
 */
 
+#include "include/bareos.h"
 #include "bsock_network_dump.h"
 #include "include/make_unique.h"
 #include "lib/backtrace.h"

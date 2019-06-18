@@ -23,15 +23,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "include/bareos.h"
 #include "backtrace.h"
 
+#include <vector>
+
+#if defined HAVE_EXECINFO_H
+
+#include <stdlib.h>
 #include <execinfo.h>  // for backtrace
 #include <dlfcn.h>     // for dladdr
 #include <cxxabi.h>    // for __cxa_demangle
-
 #include <string>
-#include <sstream>
-#include <vector>
 
 std::vector<BacktraceInfo> Backtrace(int skip, int amount)
 {
@@ -75,3 +78,9 @@ std::vector<BacktraceInfo> Backtrace(int skip, int amount)
   }
   return trace_buf;
 }
+#else   // not HAVE_EXECINFO_H
+std::vector<BacktraceInfo> Backtrace(int skip, int amount)
+{
+  return std::vector<BacktraceInfo>();
+}
+#endif  // HAVE_EXECINFO_H
