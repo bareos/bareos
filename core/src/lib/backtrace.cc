@@ -23,37 +23,55 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "backtrace.h"
+
 #include <execinfo.h>  // for backtrace
 #include <dlfcn.h>     // for dladdr
 #include <cxxabi.h>    // for __cxa_demangle
 
 #include <string>
 #include <sstream>
+#include <vector>
 
-std::string Backtrace(int skip = 1)
+std::vector<BacktraceInfo> Backtrace(int skip, int amount)
 {
   void* callstack[128];
   const int nMaxFrames = sizeof(callstack) / sizeof(callstack[0]);
-  char buf[1024];
+
+  std::vector<BacktraceInfo> trace_buf;
+
   int nFrames = backtrace(callstack, nMaxFrames);
+
+  if (amount == 0) {
+    return trace_buf;
+  } else if (amount > 0) {
+    // limit the number of frames
+    nFrames = (skip + amount) < nFrames ? skip + amount : nFrames;
+  }
+
   char** symbols = backtrace_symbols(callstack, nFrames);
 
-  std::ostringstream trace_buf;
   for (int i = skip; i < nFrames; i++) {
     Dl_info info;
     if (dladdr(callstack[i], &info)) {
-      char* demangled = NULL;
       int status;
-      demangled = abi::__cxa_demangle(info.dli_sname, NULL, 0, &status);
-      snprintf(buf, sizeof(buf), "%-3d %s\n", i,
-               status == 0 ? demangled : info.dli_sname);
+      char* demangled = nullptr;
+      demangled = abi::__cxa_demangle(info.dli_sname, nullptr, 0, &status);
+      const char* name;
+      if (status == 0) {
+        name = demangled ? demangled : "(no demangeled name)";
+      } else {
+        name = info.dli_sname ? info.dli_sname : "(no dli_sname)";
+      }
+      trace_buf.emplace_back(i, name);
       free(demangled);
     } else {
-      snprintf(buf, sizeof(buf), "%-3d\n", i);
+      trace_buf.emplace_back(i, "unknown");
     }
-    trace_buf << buf;
   }
   free(symbols);
-  if (nFrames == nMaxFrames) trace_buf << "[truncated]\n";
-  return trace_buf.str();
+  if (nFrames == nMaxFrames) {
+    trace_buf.emplace_back(nMaxFrames + 1, "[truncated]");
+  }
+  return trace_buf;
 }

@@ -22,6 +22,17 @@
 #ifndef BAREOS_LIB_BACKTRACE_H_
 #define BAREOS_LIB_BACKTRACE_H_
 
-std::string Backtrace(int skip = 1);
+#include <cstddef>
+#include <string>
+#include <vector>
+
+struct BacktraceInfo {
+  BacktraceInfo(const std::size_t& fn, const std::string& fc)
+      : frame_number_(fn), function_call_(fc){};
+  std::size_t frame_number_;
+  std::string function_call_;
+};
+
+std::vector<BacktraceInfo> Backtrace(int skip = 1, int amount = -1);
 
 #endif  // BAREOS_LIB_BACKTRACE_H_

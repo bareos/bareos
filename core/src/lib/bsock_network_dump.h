@@ -42,6 +42,8 @@ class BnetDump {
 
   void DumpMessageAndStacktraceToFile(const char* ptr, int nbytes) const;
   bool IsInitialized() const;
+  void DisableLogging();
+  void EnableLogging();
 
  public:
   BnetDump(const BareosResource* own_resource,
