@@ -32,7 +32,6 @@
 
 #include <cassert>
 #include <algorithm>
-#include <execinfo.h>
 #include <iostream>
 #include <fstream>
 #include <set>

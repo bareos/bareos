@@ -28,7 +28,8 @@
 
 #include <vector>
 
-#if defined HAVE_EXECINFO_H
+#if defined HAVE_EXECINFO_H && defined HAVE_BACKTRACE && \
+    defined HAVE_BACKTRACE_SYMBOLS
 
 #include <stdlib.h>
 #include <execinfo.h>  // for backtrace
@@ -78,9 +79,10 @@ std::vector<BacktraceInfo> Backtrace(int skip, int amount)
   }
   return trace_buf;
 }
-#else   // not HAVE_EXECINFO_H
+#else
 std::vector<BacktraceInfo> Backtrace(int skip, int amount)
 {
   return std::vector<BacktraceInfo>();
 }
-#endif  // HAVE_EXECINFO_H
+#endif /* defined HAVE_EXECINFO_H && defined HAVE_BACKTRACE && \
+   defined HAVE_BACKTRACE_SYMBOLS */
