@@ -1,1136 +1,1083 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: bareos-webui\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-01-08 14:59+0100\n"
-"PO-Revision-Date: 2016-04-26 16:46+0200\n"
-"Last-Translator: Bruno Friedmann\n"
-"Language-Team: \n"
-"Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 1.8.5\n"
-"X-Poedit-Basepath: ../..\n"
-"Plural-Forms: nplurals=2; plural=(n > 1);\n"
-"X-Poedit-SourceCharset: UTF-8\n"
-"X-Poedit-KeywordsList: translate;_;setLabel;setValue;setLegend\n"
-"X-Poedit-SearchPath-0: .\n"
+"X-Generator: POEditor.com\n"
+"Project-Id-Version: bareos-webui\n"
+"Language: fr\n"
 
-#: ../../../module/Application/config/module.config.php:125
-#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:26
+#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:26
+#: ../module/Application/config/module.config.php:125
 msgid "Dashboard"
 msgstr "Tableau de bord"
 
-#: ../../../module/Application/config/module.config.php:130
-#: ../../../module/Dashboard/view/partial/JobTotals.phtml:40
+#: ../module/Dashboard/view/partial/JobTotals.phtml:40
+#: ../module/Application/config/module.config.php:130
 msgid "Jobs"
 msgstr "Jobs"
 
-#: ../../../module/Application/config/module.config.php:135
-#: ../../../module/Schedule/view/schedule/schedule/details.phtml:33
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:33
-#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:33
-#: ../../../module/Schedule/view/schedule/schedule/status.phtml:32
+#: ../module/Schedule/view/schedule/schedule/index.phtml:33
+#: ../module/Schedule/view/schedule/schedule/details.phtml:33
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:33
+#: ../module/Schedule/view/schedule/schedule/status.phtml:32
+#: ../module/Application/config/module.config.php:135
 msgid "Overview"
 msgstr "Vue d'ensemble"
 
-#: ../../../module/Application/config/module.config.php:140
-#: ../../../module/Job/view/job/job/actions.phtml:34
-#: ../../../module/Job/view/job/job/actions.phtml:138
-#: ../../../module/Job/view/job/job/actions.phtml:141
-#: ../../../module/Job/view/job/job/details.phtml:34
-#: ../../../module/Job/view/job/job/index.phtml:34
-#: ../../../module/Job/view/job/job/run.phtml:34
+#: ../module/Job/view/job/job/run.phtml:34
+#: ../module/Job/view/job/job/index.phtml:34
+#: ../module/Job/view/job/job/details.phtml:34
+#: ../module/Job/view/job/job/actions.phtml:34
+#: ../module/Job/view/job/job/actions.phtml:138
+#: ../module/Job/view/job/job/actions.phtml:141
+#: ../module/Application/config/module.config.php:140
 msgid "Run"
 msgstr "Lancer"
 
-#: ../../../module/Application/config/module.config.php:147
-#: ../../../module/Client/view/client/client/details.phtml:142
-#: ../../../module/Client/view/client/client/index.phtml:217
-#: ../../../module/Job/view/job/job/index.phtml:262
-#: ../../../module/Job/view/job/job/index.phtml:264
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:594
-#: ../../../module/Restore/view/restore/restore/index.phtml:26
-#: ../../../public/js/custom-functions.js:110
+#: ../module/Job/view/job/job/index.phtml:262
+#: ../module/Job/view/job/job/index.phtml:264
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:594
+#: ../module/Restore/view/restore/restore/index.phtml:26
+#: ../module/Restore/view/restore/restore/versions.phtml:26
+#: ../module/Application/config/module.config.php:147
+#: ../module/Client/view/client/client/index.phtml:217
+#: ../module/Client/view/client/client/details.phtml:142
+#: ../public/js/custom-functions.js:114
 msgid "Restore"
 msgstr "Restauration"
 
-#: ../../../module/Application/config/module.config.php:152
-#: ../../../module/Client/view/client/client/index.phtml:26
-#: ../../../module/Client/view/client/client/index.phtml:45
+#: ../module/Application/config/module.config.php:152
+#: ../module/Client/view/client/client/index.phtml:26
+#: ../module/Client/view/client/client/index.phtml:45
 msgid "Clients"
 msgstr "Clients"
 
-#: ../../../module/Application/config/module.config.php:157
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:26
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:68
-#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:26
-#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:47
+#: ../module/Schedule/view/schedule/schedule/index.phtml:26
+#: ../module/Schedule/view/schedule/schedule/index.phtml:68
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:26
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:47
+#: ../module/Application/config/module.config.php:157
 msgid "Schedules"
 msgstr "Plans d'éxécution"
 
-#: ../../../module/Application/config/module.config.php:162
-#: ../../../module/Storage/view/storage/storage/index.phtml:26
+#: ../module/Application/config/module.config.php:162
+#: ../module/Storage/view/storage/storage/index.phtml:26
 msgid "Storages"
 msgstr "Stockages"
 
-#: ../../../module/Application/config/module.config.php:167
-#: ../../../module/Application/config/module.config.php:172
-#: ../../../module/Job/src/Job/Form/RunJobForm.php:197
-#: ../../../module/Job/src/Job/Form/RunJobForm.php:213
-#: ../../../module/Job/view/job/job/details.phtml:155
-#: ../../../module/Job/view/job/job/index.phtml:156
-#: ../../../module/Pool/view/pool/pool/details.phtml:48
-#: ../../../module/Storage/src/Storage/Form/StorageForm.php:61
-#: ../../../module/Storage/view/storage/storage/details.phtml:159
+#: ../module/Job/src/Job/Form/RunJobForm.php:197
+#: ../module/Job/src/Job/Form/RunJobForm.php:213
+#: ../module/Job/view/job/job/index.phtml:156
+#: ../module/Job/view/job/job/details.phtml:155
+#: ../module/Application/config/module.config.php:167
+#: ../module/Application/config/module.config.php:172
+#: ../module/Storage/src/Storage/Form/StorageForm.php:61
+#: ../module/Storage/view/storage/storage/details.phtml:159
+#: ../module/Pool/view/pool/pool/details.phtml:48
 msgid "Pool"
-msgstr ""
+msgstr "Pool"
 
-#: ../../../module/Application/config/module.config.php:177
-#: ../../../module/Application/config/module.config.php:182
-#: ../../../module/Media/view/media/media/details.phtml:34
-#: ../../../module/Media/view/media/media/index.phtml:26
-#: ../../../module/Media/view/media/media/index.phtml:34
-#: ../../../module/Media/view/media/media/index.phtml:47
-#: ../../../module/Pool/view/pool/pool/details.phtml:34
-#: ../../../module/Pool/view/pool/pool/details.phtml:58
-#: ../../../module/Pool/view/pool/pool/details.phtml:79
-#: ../../../module/Pool/view/pool/pool/index.phtml:34
-#: ../../../module/Pool/view/pool/pool/index.phtml:57
-#: ../../../module/Storage/view/storage/storage/details.phtml:34
-#: ../../../module/Storage/view/storage/storage/index.phtml:34
-#: ../../../module/Storage/view/storage/storage/status.phtml:11
+#: ../module/Media/view/media/media/index.phtml:26
+#: ../module/Media/view/media/media/index.phtml:34
+#: ../module/Media/view/media/media/index.phtml:47
+#: ../module/Media/view/media/media/details.phtml:34
+#: ../module/Application/config/module.config.php:177
+#: ../module/Application/config/module.config.php:182
+#: ../module/Storage/view/storage/storage/index.phtml:34
+#: ../module/Storage/view/storage/storage/details.phtml:34
+#: ../module/Storage/view/storage/storage/status.phtml:11
+#: ../module/Pool/view/pool/pool/index.phtml:34
+#: ../module/Pool/view/pool/pool/index.phtml:57
+#: ../module/Pool/view/pool/pool/details.phtml:34
+#: ../module/Pool/view/pool/pool/details.phtml:58
+#: ../module/Pool/view/pool/pool/details.phtml:79
 msgid "Volumes"
-msgstr ""
+msgstr "Volumes"
 
-#: ../../../module/Application/config/module.config.php:189
-#: ../../../module/Director/view/director/director/index.phtml:27
-#: ../../../module/Director/view/director/director/messages.phtml:26
+#: ../module/Application/config/module.config.php:189
+#: ../module/Director/view/director/director/index.phtml:27
+#: ../module/Director/view/director/director/messages.phtml:26
 msgid "Director"
 msgstr "Directeur"
 
-#: ../../../module/Application/src/Application/View/Helper/ACLAlert.php:37
-msgid ""
-"Sorry, it seems you are not authorized to run this module. If you think this "
-"is an error, please contact your local administrator."
-msgstr ""
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:37
+msgid "Sorry, it seems you are not authorized to run this module. If you think this is an error, please contact your local administrator."
+msgstr "Désolé, il semblerait que vous ne soyez pas autorisé à lancer ce module. En cas d'erreur veuillez contacter votre administrateur."
 
-#: ../../../module/Application/src/Application/View/Helper/ACLAlert.php:38
-msgid ""
-"Please read the <a href=\"http://doc.bareos.org/master/html/bareos-manual-"
-"main-reference.html#sec:webui-console\" target=\"_blank\">Bareos "
-"documentation</a> for any additional information on how to configure the "
-"Command ACL directive of your Console/Profile resources. Following is a list "
-"of required commands which need to be in your Command ACL to run this module "
-"properly:"
-msgstr ""
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:38
+msgid "Please read the <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#sec:webui-console\" target=\"_blank\">Bareos documentation</a> for any additional information on how to configure the Command ACL directive of your Console/Profile resources. Following is a list of required commands which need to be in your Command ACL to run this module properly:"
+msgstr "Veuillez lire la <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#sec:webui-console\" target=\"_blank\">documentation Bareos</a> pour plus de détails concernant la configuration des ACL. Voici la liste des commandes nécessaires dans les ACL pour lancer ce module correctement :"
 
-#: ../../../module/Application/view/error/404.phtml:3
+#: ../module/Application/view/error/404.phtml:3
 msgid "A 404 error occurred"
 msgstr "Une erreur 404 a été rencontrée"
 
-#: ../../../module/Application/view/error/404.phtml:12
+#: ../module/Application/view/error/404.phtml:12
 msgid "The requested controller was unable to dispatch the request."
 msgstr "Le contrôleur demandé n'a pas peu transmettre la requête."
 
-#: ../../../module/Application/view/error/404.phtml:15
-msgid ""
-"The requested controller could not be mapped to an existing controller class."
-msgstr ""
-"Le contrôleur demandé ne peut être mappé avec une classe contrôleur "
-"existante."
+#: ../module/Application/view/error/404.phtml:15
+msgid "The requested controller could not be mapped to an existing controller class."
+msgstr "Le contrôleur demandé ne peut être mappé avec une classe contrôleur existante."
 
-#: ../../../module/Application/view/error/404.phtml:18
+#: ../module/Application/view/error/404.phtml:18
 msgid "The requested controller was not dispatchable."
 msgstr "Le contrôleur demandé ne peut être lancé"
 
-#: ../../../module/Application/view/error/404.phtml:21
+#: ../module/Application/view/error/404.phtml:21
 msgid "The requested URL could not be matched by routing."
 msgstr "l'url demandée ne peut être routée"
 
-#: ../../../module/Application/view/error/404.phtml:24
+#: ../module/Application/view/error/404.phtml:24
 msgid "We cannot determine at this time why a 404 was generated."
-msgstr ""
-"Nous ne pouvons déterminé actuellement pourquoi une erreur 404 a été levée"
+msgstr "Nous ne pouvons déterminé actuellement pourquoi une erreur 404 a été levée"
 
-#: ../../../module/Application/view/error/404.phtml:36
+#: ../module/Application/view/error/404.phtml:36
 msgid "Controller"
 msgstr "Contrôleur"
 
-#: ../../../module/Application/view/error/404.phtml:43
-#, php-format
+#: ../module/Application/view/error/404.phtml:43
 msgid "resolves to %s"
 msgstr "résolu en %s"
 
-#: ../../../module/Application/view/error/404.phtml:55
-#: ../../../module/Application/view/error/index.phtml:11
+#: ../module/Application/view/error/index.phtml:11
+#: ../module/Application/view/error/404.phtml:55
 msgid "Additional information"
 msgstr "Information additionnelle"
 
-#: ../../../module/Application/view/error/404.phtml:58
-#: ../../../module/Application/view/error/404.phtml:82
-#: ../../../module/Application/view/error/index.phtml:14
-#: ../../../module/Application/view/error/index.phtml:38
+#: ../module/Application/view/error/index.phtml:14
+#: ../module/Application/view/error/index.phtml:38
+#: ../module/Application/view/error/404.phtml:58
+#: ../module/Application/view/error/404.phtml:82
 msgid "File"
 msgstr "Fichier"
 
-#: ../../../module/Application/view/error/404.phtml:62
-#: ../../../module/Application/view/error/404.phtml:86
-#: ../../../module/Application/view/error/index.phtml:18
-#: ../../../module/Application/view/error/index.phtml:42
-#: ../../../module/Job/view/job/job/details.phtml:87
+#: ../module/Job/view/job/job/details.phtml:87
+#: ../module/Application/view/error/index.phtml:18
+#: ../module/Application/view/error/index.phtml:42
+#: ../module/Application/view/error/404.phtml:62
+#: ../module/Application/view/error/404.phtml:86
 msgid "Message"
-msgstr ""
+msgstr "Message"
 
-#: ../../../module/Application/view/error/404.phtml:66
-#: ../../../module/Application/view/error/404.phtml:90
-#: ../../../module/Application/view/error/index.phtml:22
-#: ../../../module/Application/view/error/index.phtml:46
+#: ../module/Application/view/error/index.phtml:22
+#: ../module/Application/view/error/index.phtml:46
+#: ../module/Application/view/error/404.phtml:66
+#: ../module/Application/view/error/404.phtml:90
 msgid "Stack trace"
 msgstr "Trace de débogage"
 
-#: ../../../module/Application/view/error/404.phtml:76
-#: ../../../module/Application/view/error/index.phtml:32
+#: ../module/Application/view/error/index.phtml:32
+#: ../module/Application/view/error/404.phtml:76
 msgid "Previous exceptions"
 msgstr "Précédentes exceptions"
 
-#: ../../../module/Application/view/error/404.phtml:105
-#: ../../../module/Application/view/error/index.phtml:61
+#: ../module/Application/view/error/index.phtml:61
+#: ../module/Application/view/error/404.phtml:105
 msgid "No Exception available"
 msgstr "Pas d'exception disponible"
 
-#: ../../../module/Application/view/error/index.phtml:4
+#: ../module/Application/view/error/index.phtml:4
 msgid "An error occurred"
 msgstr "Une erreur est survenue"
 
-#: ../../../module/Application/view/layout/layout.phtml:97
+#: ../module/Application/view/layout/layout.phtml:145
 #, fuzzy
 msgid "Documentation"
 msgstr "Durée de rétention du volume"
 
-#: ../../../module/Application/view/layout/layout.phtml:98
+#: ../module/Application/view/layout/layout.phtml:146
 msgid "Mailinglists"
-msgstr ""
+msgstr "Listes de diffusion"
 
-#: ../../../module/Application/view/layout/layout.phtml:99
+#: ../module/Application/view/layout/layout.phtml:147
 msgid "Bugtracker"
-msgstr ""
+msgstr "Traqueur de bug"
 
-#: ../../../module/Application/view/layout/layout.phtml:100
+#: ../module/Application/view/layout/layout.phtml:148
 #, fuzzy
 msgid "Support"
 msgstr "Exporter"
 
-#: ../../../module/Application/view/layout/layout.phtml:101
+#: ../module/Application/view/layout/layout.phtml:149
 msgid "Subscription"
-msgstr ""
+msgstr "Souscription"
 
-#: ../../../module/Application/view/layout/layout.phtml:103
+#: ../module/Application/view/layout/layout.phtml:151
 msgid "Logout"
 msgstr "Déconnexion"
 
-#: ../../../module/Client/view/client/client/details.phtml:26
-msgid "Client details"
-msgstr "Détails du client"
-
-#: ../../../module/Client/view/client/client/details.phtml:32
-#: ../../../module/Client/view/client/client/index.phtml:32
-#: ../../../module/Client/view/client/client/status.phtml:9
-#: ../../../module/Job/view/job/job/actions.phtml:32
-#: ../../../module/Job/view/job/job/details.phtml:32
-#: ../../../module/Job/view/job/job/index.phtml:32
-#: ../../../module/Job/view/job/job/run.phtml:32
-#: ../../../module/Schedule/view/schedule/schedule/details.phtml:32
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:32
-#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:32
-#: ../../../module/Schedule/view/schedule/schedule/status.phtml:31
+#: ../module/Job/view/job/job/run.phtml:32
+#: ../module/Job/view/job/job/index.phtml:32
+#: ../module/Job/view/job/job/details.phtml:32
+#: ../module/Job/view/job/job/actions.phtml:32
+#: ../module/Schedule/view/schedule/schedule/index.phtml:32
+#: ../module/Schedule/view/schedule/schedule/details.phtml:32
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:32
+#: ../module/Schedule/view/schedule/schedule/status.phtml:31
+#: ../module/Client/view/client/client/index.phtml:32
+#: ../module/Client/view/client/client/details.phtml:32
+#: ../module/Client/view/client/client/status.phtml:9
 msgid "Show"
 msgstr "Montrer"
 
-#: ../../../module/Client/view/client/client/details.phtml:43
-#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:43
-#: ../../../module/Job/src/Job/Form/RunJobForm.php:56
-#: ../../../module/Job/src/Job/Form/RunJobForm.php:73
-#: ../../../module/Job/view/job/job/details.phtml:59
-#: ../../../module/Job/view/job/job/index.phtml:76
-#: ../../../module/Media/view/media/media/details.phtml:88
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:130
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:147
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:165
+#: ../module/Client/view/client/client/status.phtml:20
+msgid "Client Status"
+msgstr "Status du client"
+
+#: ../module/Client/view/client/client/details.phtml:26
+msgid "Client details"
+msgstr "Détails du client"
+
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:43
+#: ../module/Job/src/Job/Form/RunJobForm.php:56
+#: ../module/Job/src/Job/Form/RunJobForm.php:73
+#: ../module/Job/view/job/job/index.phtml:76
+#: ../module/Job/view/job/job/details.phtml:59
+#: ../module/Media/view/media/media/details.phtml:88
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:130
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:147
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:165
+#: ../module/Client/view/client/client/details.phtml:43
 msgid "Client"
 msgstr "Client"
 
-#: ../../../module/Client/view/client/client/details.phtml:50
-#: ../../../module/Client/view/client/client/index.phtml:53
-#: ../../../module/Fileset/view/fileset/fileset/details.phtml:46
-#: ../../../module/Media/view/media/media/details.phtml:55
-#: ../../../module/Media/view/media/media/index.phtml:55
-#: ../../../module/Pool/view/pool/pool/details.phtml:56
-#: ../../../module/Pool/view/pool/pool/details.phtml:87
-#: ../../../module/Pool/view/pool/pool/index.phtml:55
-#: ../../../module/Restore/view/restore/restore/index.phtml:302
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:76
-#: ../../../module/Storage/view/storage/storage/index.phtml:55
+#: ../module/Media/view/media/media/index.phtml:55
+#: ../module/Media/view/media/media/details.phtml:55
+#: ../module/Schedule/view/schedule/schedule/index.phtml:76
+#: ../module/Restore/view/restore/restore/index.phtml:380
+#: ../module/Restore/view/restore/restore/versions.phtml:507
+#: ../module/Storage/view/storage/storage/index.phtml:55
+#: ../module/Client/view/client/client/index.phtml:53
+#: ../module/Client/view/client/client/details.phtml:50
+#: ../module/Fileset/view/fileset/fileset/details.phtml:46
+#: ../module/Pool/view/pool/pool/index.phtml:55
+#: ../module/Pool/view/pool/pool/details.phtml:56
+#: ../module/Pool/view/pool/pool/details.phtml:87
 msgid "Name"
 msgstr "Nom"
 
-#: ../../../module/Client/view/client/client/details.phtml:51
-#: ../../../module/Client/view/client/client/index.phtml:54
+#: ../module/Client/view/client/client/index.phtml:54
+#: ../module/Client/view/client/client/details.phtml:51
 msgid "Version"
 msgstr "Version"
 
-#: ../../../module/Client/view/client/client/details.phtml:52
+#: ../module/Client/view/client/client/details.phtml:52
 msgid "Autoprune"
 msgstr "Auto Nettoyage"
 
-#: ../../../module/Client/view/client/client/details.phtml:53
+#: ../module/Client/view/client/client/details.phtml:53
 msgid "Fileretention"
 msgstr "Durée de rétention des fichiers"
 
-#: ../../../module/Client/view/client/client/details.phtml:54
+#: ../module/Client/view/client/client/details.phtml:54
 msgid "Jobretention"
 msgstr "Durée de rétention des jobs"
 
-#: ../../../module/Client/view/client/client/details.phtml:55
-#: ../../../module/Client/view/client/client/details.phtml:84
-#: ../../../module/Client/view/client/client/index.phtml:57
-#: ../../../module/Job/view/job/job/actions.phtml:33
-#: ../../../module/Job/view/job/job/actions.phtml:78
-#: ../../../module/Job/view/job/job/details.phtml:33
-#: ../../../module/Job/view/job/job/details.phtml:66
-#: ../../../module/Job/view/job/job/index.phtml:33
-#: ../../../module/Job/view/job/job/index.phtml:83
-#: ../../../module/Job/view/job/job/run.phtml:33
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:78
-#: ../../../module/Storage/view/storage/storage/details.phtml:113
-#: ../../../module/Storage/view/storage/storage/details.phtml:129
-#: ../../../module/Storage/view/storage/storage/details.phtml:162
-#: ../../../module/Storage/view/storage/storage/index.phtml:57
+#: ../module/Job/view/job/job/run.phtml:33
+#: ../module/Job/view/job/job/index.phtml:33
+#: ../module/Job/view/job/job/index.phtml:83
+#: ../module/Job/view/job/job/details.phtml:33
+#: ../module/Job/view/job/job/details.phtml:66
+#: ../module/Job/view/job/job/actions.phtml:33
+#: ../module/Job/view/job/job/actions.phtml:78
+#: ../module/Schedule/view/schedule/schedule/index.phtml:78
+#: ../module/Storage/view/storage/storage/index.phtml:57
+#: ../module/Storage/view/storage/storage/details.phtml:113
+#: ../module/Storage/view/storage/storage/details.phtml:129
+#: ../module/Storage/view/storage/storage/details.phtml:162
+#: ../module/Client/view/client/client/index.phtml:57
+#: ../module/Client/view/client/client/details.phtml:55
+#: ../module/Client/view/client/client/details.phtml:84
 msgid "Actions"
 msgstr "Actions"
 
-#: ../../../module/Client/view/client/client/details.phtml:69
+#: ../module/Client/view/client/client/details.phtml:69
 #, fuzzy
 msgid "Last successful backups"
 msgstr "Dernières sauvegardes"
 
-#: ../../../module/Client/view/client/client/details.phtml:76
-#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:42
-#: ../../../module/Job/view/job/job/details.phtml:57
-#: ../../../module/Job/view/job/job/index.phtml:74
-#: ../../../module/Media/view/media/media/details.phtml:86
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:42
+#: ../module/Job/view/job/job/index.phtml:74
+#: ../module/Job/view/job/job/details.phtml:57
+#: ../module/Media/view/media/media/details.phtml:86
+#: ../module/Client/view/client/client/details.phtml:76
 msgid "Job ID"
 msgstr "Job ID"
 
-#: ../../../module/Client/view/client/client/details.phtml:77
-#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:39
-#: ../../../module/Job/src/Job/Form/JobForm.php:53
-#: ../../../module/Job/view/job/job/actions.phtml:76
-#: ../../../module/Job/view/job/job/details.phtml:58
-#: ../../../module/Job/view/job/job/index.phtml:75
-#: ../../../module/Media/view/media/media/details.phtml:87
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:39
+#: ../module/Job/src/Job/Form/JobForm.php:53
+#: ../module/Job/view/job/job/index.phtml:75
+#: ../module/Job/view/job/job/details.phtml:58
+#: ../module/Job/view/job/job/actions.phtml:76
+#: ../module/Media/view/media/media/details.phtml:87
+#: ../module/Client/view/client/client/details.phtml:77
 msgid "Job name"
 msgstr "Nom du job"
 
-#: ../../../module/Client/view/client/client/details.phtml:78
-#: ../../../module/Job/view/job/job/details.phtml:86
+#: ../module/Job/view/job/job/details.phtml:86
+#: ../module/Client/view/client/client/details.phtml:78
 msgid "Timestamp"
 msgstr "Horodatage"
 
-#: ../../../module/Client/view/client/client/details.phtml:79
-#: ../../../module/Fileset/view/fileset/fileset/details.phtml:37
-#: ../../../module/Job/src/Job/Form/RunJobForm.php:127
-#: ../../../module/Job/src/Job/Form/RunJobForm.php:143
-#: ../../../module/Job/view/job/job/details.phtml:151
-#: ../../../module/Job/view/job/job/index.phtml:152
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:236
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:251
+#: ../module/Job/src/Job/Form/RunJobForm.php:127
+#: ../module/Job/src/Job/Form/RunJobForm.php:143
+#: ../module/Job/view/job/job/index.phtml:152
+#: ../module/Job/view/job/job/details.phtml:151
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:236
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:251
+#: ../module/Client/view/client/client/details.phtml:79
+#: ../module/Fileset/view/fileset/fileset/details.phtml:37
 msgid "Fileset"
 msgstr "Jeu de données"
 
-#: ../../../module/Client/view/client/client/details.phtml:80
-#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:44
-#: ../../../module/Job/src/Job/Form/RunJobForm.php:232
-#: ../../../module/Job/src/Job/Form/RunJobForm.php:248
-#: ../../../module/Job/view/job/job/details.phtml:61
-#: ../../../module/Job/view/job/job/index.phtml:78
-#: ../../../module/Media/view/media/media/details.phtml:90
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:44
+#: ../module/Job/src/Job/Form/RunJobForm.php:232
+#: ../module/Job/src/Job/Form/RunJobForm.php:248
+#: ../module/Job/view/job/job/index.phtml:78
+#: ../module/Job/view/job/job/details.phtml:61
+#: ../module/Media/view/media/media/details.phtml:90
+#: ../module/Client/view/client/client/details.phtml:80
 msgid "Level"
 msgstr "Niveau"
 
-#: ../../../module/Client/view/client/client/details.phtml:81
-#: ../../../module/Dashboard/view/partial/JobTotals.phtml:41
-#: ../../../module/Job/view/job/job/details.phtml:62
-#: ../../../module/Job/view/job/job/index.phtml:79
-#: ../../../module/Media/view/media/media/details.phtml:91
+#: ../module/Dashboard/view/partial/JobTotals.phtml:41
+#: ../module/Job/view/job/job/index.phtml:79
+#: ../module/Job/view/job/job/details.phtml:62
+#: ../module/Media/view/media/media/details.phtml:91
+#: ../module/Client/view/client/client/details.phtml:81
 msgid "Files"
 msgstr "Fichiers"
 
-#: ../../../module/Client/view/client/client/details.phtml:82
-#: ../../../module/Dashboard/view/partial/JobTotals.phtml:42
-#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:47
-#: ../../../module/Job/view/job/job/details.phtml:63
-#: ../../../module/Job/view/job/job/index.phtml:80
-#: ../../../module/Media/view/media/media/details.phtml:92
-#: ../../../module/Storage/view/storage/storage/details.phtml:154
+#: ../module/Dashboard/view/partial/JobTotals.phtml:42
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:47
+#: ../module/Job/view/job/job/index.phtml:80
+#: ../module/Job/view/job/job/details.phtml:63
+#: ../module/Media/view/media/media/details.phtml:92
+#: ../module/Storage/view/storage/storage/details.phtml:154
+#: ../module/Client/view/client/client/details.phtml:82
 msgid "Bytes"
 msgstr "Octets"
 
-#: ../../../module/Client/view/client/client/details.phtml:83
-#: ../../../module/Client/view/client/client/details.phtml:142
-#: ../../../module/Client/view/client/client/index.phtml:56
-#: ../../../module/Client/view/client/client/index.phtml:217
-#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:40
-#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:41
-#: ../../../module/Director/view/director/director/console.phtml:32
-#: ../../../module/Director/view/director/director/index.phtml:33
-#: ../../../module/Director/view/director/director/messages.phtml:32
-#: ../../../module/Job/src/Job/Form/JobForm.php:95
-#: ../../../module/Job/view/job/job/actions.phtml:77
-#: ../../../module/Job/view/job/job/details.phtml:65
-#: ../../../module/Job/view/job/job/index.phtml:82
-#: ../../../module/Media/view/media/media/details.phtml:59
-#: ../../../module/Media/view/media/media/index.phtml:59
-#: ../../../module/Pool/view/pool/pool/details.phtml:91
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:77
-#: ../../../module/Storage/view/storage/storage/details.phtml:157
-#: ../../../module/Storage/view/storage/storage/index.phtml:116
-#: ../../../module/Storage/view/storage/storage/index.phtml:119
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:40
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:41
+#: ../module/Job/src/Job/Form/JobForm.php:95
+#: ../module/Job/view/job/job/index.phtml:82
+#: ../module/Job/view/job/job/details.phtml:65
+#: ../module/Job/view/job/job/actions.phtml:77
+#: ../module/Media/view/media/media/index.phtml:59
+#: ../module/Media/view/media/media/details.phtml:59
+#: ../module/Schedule/view/schedule/schedule/index.phtml:77
+#: ../module/Storage/view/storage/storage/index.phtml:116
+#: ../module/Storage/view/storage/storage/index.phtml:119
+#: ../module/Storage/view/storage/storage/details.phtml:157
+#: ../module/Client/view/client/client/index.phtml:56
+#: ../module/Client/view/client/client/index.phtml:217
+#: ../module/Client/view/client/client/details.phtml:83
+#: ../module/Client/view/client/client/details.phtml:142
+#: ../module/Director/view/director/director/index.phtml:33
+#: ../module/Director/view/director/director/messages.phtml:32
+#: ../module/Director/view/director/director/console.phtml:32
+#: ../module/Pool/view/pool/pool/details.phtml:91
 msgid "Status"
-msgstr ""
+msgstr "Statut"
 
-#: ../../../module/Client/view/client/client/details.phtml:172
-#: ../../../module/Client/view/client/client/details.phtml:221
-#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:184
-#: ../../../module/Job/view/job/job/index.phtml:201
-#: ../../../module/Job/view/job/job/index.phtml:262
-#: ../../../module/Job/view/job/job/index.phtml:264
-#: ../../../module/Job/view/job/job/index.phtml:272
-#: ../../../module/Job/view/job/job/index.phtml:293
-#: ../../../module/Job/view/job/job/index.phtml:295
-#: ../../../module/Job/view/job/job/index.phtml:299
-#: ../../../module/Job/view/job/job/index.phtml:301
-#, fuzzy
-msgid "View Job Details"
-msgstr "Liste des jobs"
-
-#: ../../../module/Client/view/client/client/details.phtml:221
+#: ../module/Client/view/client/client/details.phtml:221
 msgid "Show Files"
 msgstr "Montrer les fichiers"
 
-#: ../../../module/Client/view/client/client/index.phtml:91
-#: ../../../module/Job/view/job/job/actions.phtml:55
-#: ../../../module/Job/view/job/job/details.phtml:133
-#: ../../../module/Job/view/job/job/index.phtml:115
-#: ../../../module/Job/view/job/job/index.phtml:136
-#: ../../../module/Media/view/media/media/details.phtml:126
-#: ../../../module/Media/view/media/media/index.phtml:93
-#: ../../../module/Pool/view/pool/pool/details.phtml:125
-#: ../../../module/Restore/view/restore/restore/index.phtml:46
-#: ../../../module/Restore/view/restore/restore/index.phtml:67
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:55
-#: ../../../module/Storage/view/storage/storage/details.phtml:57
+#: ../module/Job/view/job/job/index.phtml:115
+#: ../module/Job/view/job/job/index.phtml:136
+#: ../module/Job/view/job/job/details.phtml:133
+#: ../module/Job/view/job/job/actions.phtml:55
+#: ../module/Media/view/media/media/index.phtml:93
+#: ../module/Media/view/media/media/details.phtml:126
+#: ../module/Schedule/view/schedule/schedule/index.phtml:55
+#: ../module/Restore/view/restore/restore/index.phtml:53
+#: ../module/Restore/view/restore/restore/index.phtml:76
+#: ../module/Restore/view/restore/restore/versions.phtml:53
+#: ../module/Restore/view/restore/restore/versions.phtml:77
+#: ../module/Storage/view/storage/storage/details.phtml:57
+#: ../module/Client/view/client/client/index.phtml:91
+#: ../module/Pool/view/pool/pool/details.phtml:125
 msgid "Close"
 msgstr "Fermer"
 
-#: ../../../module/Client/view/client/client/index.phtml:206
-#: ../../../module/Job/view/job/job/actions.phtml:127
-#: ../../../module/Media/view/media/media/details.phtml:342
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:131
+#: ../module/Job/view/job/job/actions.phtml:127
+#: ../module/Media/view/media/media/details.phtml:342
+#: ../module/Schedule/view/schedule/schedule/index.phtml:131
+#: ../module/Client/view/client/client/index.phtml:206
 msgid "Enabled"
 msgstr "Actif"
 
-#: ../../../module/Client/view/client/client/index.phtml:209
-#: ../../../module/Job/view/job/job/actions.phtml:130
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:134
+#: ../module/Job/view/job/job/actions.phtml:130
+#: ../module/Schedule/view/schedule/schedule/index.phtml:134
+#: ../module/Client/view/client/client/index.phtml:209
 #, fuzzy
 msgid "Disabled"
 msgstr "Inactif"
 
-#: ../../../module/Client/view/client/client/index.phtml:220
-#: ../../../module/Job/view/job/job/actions.phtml:138
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:142
+#: ../module/Job/view/job/job/actions.phtml:138
+#: ../module/Schedule/view/schedule/schedule/index.phtml:142
+#: ../module/Client/view/client/client/index.phtml:220
 msgid "Disable"
 msgstr "Inactif"
 
-#: ../../../module/Client/view/client/client/index.phtml:223
-#: ../../../module/Job/view/job/job/actions.phtml:141
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:145
+#: ../module/Job/view/job/job/actions.phtml:141
+#: ../module/Schedule/view/schedule/schedule/index.phtml:145
+#: ../module/Client/view/client/client/index.phtml:223
 msgid "Enable"
 msgstr "Actif"
 
-#: ../../../module/Client/view/client/client/status.phtml:20
-msgid "Client Status"
-msgstr "Status du client"
+#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:256
+msgid "Not enough data to estimate progress or statistics collection is disabled."
+msgstr "Pas assez de données pour estimer la progression ou la collecte de statistique est désactivée."
 
-#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:255
-msgid ""
-"Not enough data to estimate progress or statistics collection is disabled."
-msgstr ""
-
-#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:263
+#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:264
 msgid "There are no jobs running."
-msgstr ""
+msgstr "Aucun job en cours."
 
-#: ../../../module/Dashboard/view/partial/JobTotals.phtml:31
+#: ../module/Dashboard/view/partial/JobTotals.phtml:31
 #, fuzzy
 msgid "Job Totals"
 msgstr "Liste des jobs"
 
-#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:31
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:31
 msgid "Most recent job status per job name"
 msgstr "Status du job le plus récent par nom de job"
 
-#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:45
-#: ../../../module/Job/view/job/job/details.phtml:163
-#: ../../../module/Job/view/job/job/index.phtml:164
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:45
+#: ../module/Job/view/job/job/index.phtml:164
+#: ../module/Job/view/job/job/details.phtml:163
 msgid "Start"
 msgstr "Début"
 
-#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:46
-#: ../../../module/Job/view/job/job/details.phtml:167
-#: ../../../module/Job/view/job/job/index.phtml:168
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:46
+#: ../module/Job/view/job/job/index.phtml:168
+#: ../module/Job/view/job/job/details.phtml:167
 msgid "End"
 msgstr "Fin"
 
-#: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:31
+#: ../module/Dashboard/view/partial/JobsPast24h.phtml:31
 msgid "Jobs started during the past 24 hours"
 msgstr "Jobs démarrés durant les dernières 24 heures"
 
-#: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:46
-#: ../../../public/js/custom-functions.js:348
-#: ../../../public/js/custom-functions.js:349
+#: ../module/Dashboard/view/partial/JobsPast24h.phtml:46
+#: ../public/js/custom-functions.js:352 ../public/js/custom-functions.js:353
 msgid "Running"
 msgstr "En cours"
 
-#: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:57
-#: ../../../public/js/custom-functions.js:374
-#: ../../../public/js/custom-functions.js:379
-#: ../../../public/js/custom-functions.js:384
-#: ../../../public/js/custom-functions.js:389
-#: ../../../public/js/custom-functions.js:394
-#: ../../../public/js/custom-functions.js:399
-#: ../../../public/js/custom-functions.js:404
-#: ../../../public/js/custom-functions.js:409
-#: ../../../public/js/custom-functions.js:414
-#: ../../../public/js/custom-functions.js:419
+#: ../module/Dashboard/view/partial/JobsPast24h.phtml:57
+#: ../public/js/custom-functions.js:378 ../public/js/custom-functions.js:383
+#: ../public/js/custom-functions.js:388 ../public/js/custom-functions.js:393
+#: ../public/js/custom-functions.js:398 ../public/js/custom-functions.js:403
+#: ../public/js/custom-functions.js:408 ../public/js/custom-functions.js:413
+#: ../public/js/custom-functions.js:418 ../public/js/custom-functions.js:423
 msgid "Waiting"
 msgstr "En attente"
 
-#: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:68
+#: ../module/Dashboard/view/partial/JobsPast24h.phtml:68
 msgid "Successful"
-msgstr ""
+msgstr "Avec succès"
 
-#: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:79
-#: ../../../public/js/custom-functions.js:444
-#, fuzzy
-msgid "Warning"
-msgstr "en cours"
-
-#: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:90
+#: ../module/Dashboard/view/partial/JobsPast24h.phtml:90
 msgid "Failed"
-msgstr ""
+msgstr "En échec"
 
-#: ../../../module/Dashboard/view/partial/LastDirectorMessages.phtml:32
+#: ../module/Dashboard/view/partial/LastDirectorMessages.phtml:32
 msgid "Current Director messages"
 msgstr "Messages actuels du directeur"
 
-#: ../../../module/Dashboard/view/partial/RunningJobs.phtml:31
+#: ../module/Dashboard/view/partial/RunningJobs.phtml:31
 #, fuzzy
 msgid "Running Jobs"
 msgstr "En cours"
 
-#: ../../../module/Director/view/director/director/console.phtml:33
-#: ../../../module/Director/view/director/director/index.phtml:34
-#: ../../../module/Director/view/director/director/messages.phtml:33
-#: ../../../module/Job/view/job/job/details.phtml:81
+#: ../module/Job/view/job/job/details.phtml:81
+#: ../module/Director/view/director/director/index.phtml:34
+#: ../module/Director/view/director/director/messages.phtml:33
+#: ../module/Director/view/director/director/console.phtml:33
 msgid "Messages"
-msgstr ""
+msgstr "Messages"
 
-#: ../../../module/Director/view/director/director/console.phtml:34
-#: ../../../module/Director/view/director/director/index.phtml:35
-#: ../../../module/Director/view/director/director/messages.phtml:34
+#: ../module/Director/view/director/director/index.phtml:35
+#: ../module/Director/view/director/director/messages.phtml:34
+#: ../module/Director/view/director/director/console.phtml:34
 msgid "Console"
-msgstr ""
+msgstr "Console"
 
-#: ../../../module/Director/view/director/director/console.phtml:42
+#: ../module/Director/view/director/director/console.phtml:42
 msgid "bconsole (batch-mode), please handle with care."
 msgstr "bconsole (mode lot), à utiliser avec prudence."
 
-#: ../../../module/Director/view/director/director/console.phtml:42
+#: ../module/Director/view/director/director/console.phtml:42
 msgid "All commands have to be a one liner, dialogs are not working."
-msgstr ""
-"Toutes les commandes doivent être en une ligne, les dialogues ne sont pas "
-"supportés."
+msgstr "Toutes les commandes doivent être en une ligne, les dialogues ne sont pas supportés."
 
-#: ../../../module/Director/view/director/director/console.phtml:42
+#: ../module/Director/view/director/director/console.phtml:42
 msgid "Type help for a list of commands."
 msgstr "Tapez help pour la liste des commandes"
 
-#: ../../../module/Director/view/director/director/index.phtml:48
+#: ../module/Director/view/director/director/index.phtml:48
 msgid "Director Status"
 msgstr "Status du directeur"
 
-#: ../../../module/Director/view/director/director/messages.phtml:44
+#: ../module/Director/view/director/director/messages.phtml:44
 msgid "Refresh"
 msgstr "Rafraîchir"
 
-#: ../../../module/Director/view/director/director/messages.phtml:51
+#: ../module/Director/view/director/director/messages.phtml:51
 msgid "Director messages"
 msgstr "Messages du directeur"
 
-#: ../../../module/Fileset/view/fileset/fileset/details.phtml:26
-msgid "Fileset details"
-msgstr "Détails du Fileset"
-
-#: ../../../module/Fileset/view/fileset/fileset/details.phtml:45
-msgid "Id"
-msgstr ""
-
-#: ../../../module/Fileset/view/fileset/fileset/details.phtml:47
-msgid "MD5 checksum"
-msgstr "empreinte MD5"
-
-#: ../../../module/Fileset/view/fileset/fileset/details.phtml:48
-msgid "Creation time"
-msgstr "Date de création"
-
-#: ../../../module/Fileset/view/fileset/fileset/index.phtml:26
+#: ../module/Fileset/view/fileset/fileset/index.phtml:26
 msgid "Filesets"
 msgstr "Jeux de données"
 
-#: ../../../module/Job/src/Job/Form/JobForm.php:60
+#: ../module/Fileset/view/fileset/fileset/details.phtml:26
+msgid "Fileset details"
+msgstr "Détails du Fileset"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:45
+msgid "Id"
+msgstr "Id"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:47
+msgid "MD5 checksum"
+msgstr "empreinte MD5"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:48
+msgid "Creation time"
+msgstr "Date de création"
+
+#: ../module/Job/src/Job/Form/JobForm.php:60
 #, fuzzy
 msgid "jobname"
 msgstr "Nom du job"
 
-#: ../../../module/Job/src/Job/Form/JobForm.php:71
+#: ../module/Job/src/Job/Form/JobForm.php:71
 msgid "Time period"
 msgstr "Période de temps"
 
-#: ../../../module/Job/src/Job/Form/JobForm.php:73
+#: ../module/Job/src/Job/Form/JobForm.php:73
 msgid "last 24 hours"
 msgstr "Les 24 dernières heures"
 
-#: ../../../module/Job/src/Job/Form/JobForm.php:74
+#: ../module/Job/src/Job/Form/JobForm.php:74
 msgid "last 3 days"
 msgstr "Les 3 derniers jours"
 
-#: ../../../module/Job/src/Job/Form/JobForm.php:75
+#: ../module/Job/src/Job/Form/JobForm.php:75
 msgid "last week"
 msgstr "La semaine passée"
 
-#: ../../../module/Job/src/Job/Form/JobForm.php:76
+#: ../module/Job/src/Job/Form/JobForm.php:76
 msgid "last month"
 msgstr "Le mois passé"
 
-#: ../../../module/Job/src/Job/Form/JobForm.php:77
+#: ../module/Job/src/Job/Form/JobForm.php:77
 msgid "last year"
 msgstr "L'année passée"
 
-#: ../../../module/Job/src/Job/Form/JobForm.php:78
+#: ../module/Job/src/Job/Form/JobForm.php:78
 msgid "unlimited"
 msgstr "Sans limite"
 
-#: ../../../module/Job/src/Job/Form/JobForm.php:84
+#: ../module/Job/src/Job/Form/JobForm.php:84
 msgid "period"
 msgstr "période"
 
-#: ../../../module/Job/src/Job/Form/JobForm.php:97
+#: ../module/Job/src/Job/Form/JobForm.php:97
 msgid "all"
 msgstr "Tous"
 
-#: ../../../module/Job/src/Job/Form/JobForm.php:98
+#: ../module/Job/src/Job/Form/JobForm.php:98
 msgid "running"
 msgstr "en cours"
 
-#: ../../../module/Job/src/Job/Form/JobForm.php:99
+#: ../module/Job/src/Job/Form/JobForm.php:99
 msgid "waiting"
 msgstr "en attente"
 
-#: ../../../module/Job/src/Job/Form/JobForm.php:100
+#: ../module/Job/src/Job/Form/JobForm.php:100
 msgid "terminated unsuccessfully"
 msgstr "terminé en erreur"
 
-#: ../../../module/Job/src/Job/Form/JobForm.php:101
+#: ../module/Job/src/Job/Form/JobForm.php:101
 msgid "terminated successfully"
 msgstr "terminé avec succès"
 
-#: ../../../module/Job/src/Job/Form/JobForm.php:102
-#, fuzzy
-msgid "warning"
-msgstr "en cours"
-
-#: ../../../module/Job/src/Job/Form/RunJobForm.php:92
-#: ../../../module/Job/src/Job/Form/RunJobForm.php:108
-#: ../../../module/Job/view/job/job/details.phtml:49
+#: ../module/Job/src/Job/Form/RunJobForm.php:92
+#: ../module/Job/src/Job/Form/RunJobForm.php:108
+#: ../module/Job/view/job/job/details.phtml:49
 msgid "Job"
 msgstr "Job"
 
-#: ../../../module/Job/src/Job/Form/RunJobForm.php:162
-#: ../../../module/Job/src/Job/Form/RunJobForm.php:178
-#: ../../../module/Media/view/media/media/details.phtml:56
-#: ../../../module/Media/view/media/media/index.phtml:56
-#: ../../../module/Pool/view/pool/pool/details.phtml:88
+#: ../module/Job/src/Job/Form/RunJobForm.php:162
+#: ../module/Job/src/Job/Form/RunJobForm.php:178
+#: ../module/Media/view/media/media/index.phtml:56
+#: ../module/Media/view/media/media/details.phtml:56
+#: ../module/Pool/view/pool/pool/details.phtml:88
 msgid "Storage"
 msgstr "Stockage"
 
-#: ../../../module/Job/src/Job/Form/RunJobForm.php:266
+#: ../module/Job/src/Job/Form/RunJobForm.php:266
 msgid "Priority"
-msgstr ""
+msgstr "Priorité"
 
-#: ../../../module/Job/src/Job/Form/RunJobForm.php:281
-#: ../../../module/Job/src/Job/Form/RunJobForm.php:297
-#: ../../../module/Job/view/job/job/details.phtml:60
-#: ../../../module/Job/view/job/job/index.phtml:77
-#: ../../../module/Media/view/media/media/details.phtml:57
-#: ../../../module/Media/view/media/media/details.phtml:89
-#: ../../../module/Media/view/media/media/index.phtml:57
-#: ../../../module/Pool/view/pool/pool/details.phtml:57
-#: ../../../module/Pool/view/pool/pool/details.phtml:89
-#: ../../../module/Pool/view/pool/pool/index.phtml:56
-msgid "Type"
-msgstr "Type"
-
-#: ../../../module/Job/src/Job/Form/RunJobForm.php:330
+#: ../module/Job/src/Job/Form/RunJobForm.php:330
 msgid "When"
-msgstr ""
+msgstr "Quand"
 
-#: ../../../module/Job/src/Job/Form/RunJobForm.php:345
-#: ../../../module/Storage/src/Storage/Form/StorageForm.php:93
+#: ../module/Job/src/Job/Form/RunJobForm.php:345
+#: ../module/Storage/src/Storage/Form/StorageForm.php:93
 msgid "Submit"
 msgstr "Envoyé"
 
-#: ../../../module/Job/view/job/job/actions.phtml:69
+#: ../module/Job/view/job/job/actions.phtml:69
 msgid "Job Actions"
 msgstr "Actions pour les jobs"
 
-#: ../../../module/Job/view/job/job/details.phtml:64
-#: ../../../module/Job/view/job/job/index.phtml:81
+#: ../module/Job/src/Job/Form/RunJobForm.php:281
+#: ../module/Job/src/Job/Form/RunJobForm.php:297
+#: ../module/Job/view/job/job/index.phtml:77
+#: ../module/Job/view/job/job/details.phtml:60
+#: ../module/Media/view/media/media/index.phtml:57
+#: ../module/Media/view/media/media/details.phtml:57
+#: ../module/Media/view/media/media/details.phtml:89
+#: ../module/Pool/view/pool/pool/index.phtml:56
+#: ../module/Pool/view/pool/pool/details.phtml:57
+#: ../module/Pool/view/pool/pool/details.phtml:89
+msgid "Type"
+msgstr "Type"
+
+#: ../module/Job/view/job/job/index.phtml:81
+#: ../module/Job/view/job/job/details.phtml:64
 msgid "Errors"
 msgstr "Erreurs"
 
-#: ../../../module/Job/view/job/job/details.phtml:97
+#: ../module/Job/view/job/job/details.phtml:97
 #, fuzzy
 msgid "Used Volumes"
 msgstr "Volume"
 
-#: ../../../module/Job/view/job/job/details.phtml:102
-#: ../../../module/Storage/view/storage/storage/details.phtml:112
-#: ../../../module/Storage/view/storage/storage/details.phtml:128
-#: ../../../module/Storage/view/storage/storage/details.phtml:153
+#: ../module/Job/view/job/job/details.phtml:102
+#: ../module/Storage/view/storage/storage/details.phtml:112
+#: ../module/Storage/view/storage/storage/details.phtml:128
+#: ../module/Storage/view/storage/storage/details.phtml:153
 msgid "Volume"
 msgstr "Volume"
 
-#: ../../../module/Job/view/job/job/details.phtml:126
-#: ../../../module/Job/view/job/job/index.phtml:107
-#: ../../../module/Media/view/media/media/details.phtml:119
-#: ../../../module/Media/view/media/media/index.phtml:86
-#: ../../../module/Pool/view/pool/pool/details.phtml:118
-#: ../../../module/Restore/view/restore/restore/index.phtml:39
+#: ../module/Job/view/job/job/index.phtml:107
+#: ../module/Job/view/job/job/details.phtml:126
+#: ../module/Media/view/media/media/index.phtml:86
+#: ../module/Media/view/media/media/details.phtml:119
+#: ../module/Restore/view/restore/restore/index.phtml:46
+#: ../module/Restore/view/restore/restore/versions.phtml:46
+#: ../module/Pool/view/pool/pool/details.phtml:118
 msgid "Failed to retrieve data from Bareos director"
 msgstr "Echec durant la récupération des données du directeur Bareos"
 
-#: ../../../module/Job/view/job/job/details.phtml:129
-#: ../../../module/Job/view/job/job/index.phtml:111
-#: ../../../module/Media/view/media/media/details.phtml:122
-#: ../../../module/Media/view/media/media/index.phtml:89
-#: ../../../module/Pool/view/pool/pool/details.phtml:121
+#: ../module/Job/view/job/job/index.phtml:111
+#: ../module/Job/view/job/job/details.phtml:129
+#: ../module/Media/view/media/media/index.phtml:89
+#: ../module/Media/view/media/media/details.phtml:122
+#: ../module/Pool/view/pool/pool/details.phtml:121
 msgid "Error message received from director:"
 msgstr "Un message d'erreur a été reçu du directeur:"
 
-#: ../../../module/Job/view/job/job/details.phtml:130
-#: ../../../module/Job/view/job/job/index.phtml:112
-#: ../../../module/Media/view/media/media/details.phtml:123
-#: ../../../module/Media/view/media/media/index.phtml:90
-#: ../../../module/Pool/view/pool/pool/details.phtml:122
+#: ../module/Job/view/job/job/index.phtml:112
+#: ../module/Job/view/job/job/details.phtml:130
+#: ../module/Media/view/media/media/index.phtml:90
+#: ../module/Media/view/media/media/details.phtml:123
+#: ../module/Pool/view/pool/pool/details.phtml:122
 #, fuzzy
 msgid "Failed to send result as json. Maybe the result message is too long?"
-msgstr ""
-"Echec de l'envoi des résultats en json. Peut-être que le message est trop "
-"long ?"
+msgstr "Echec de l'envoi des résultats en json. Peut-être que le message est trop long ?"
 
-#: ../../../module/Job/view/job/job/details.phtml:159
-#: ../../../module/Job/view/job/job/index.phtml:160
+#: ../module/Job/view/job/job/index.phtml:160
+#: ../module/Job/view/job/job/details.phtml:159
 msgid "Scheduled"
 msgstr "Planifié"
 
-#: ../../../module/Job/view/job/job/details.phtml:180
+#: ../module/Job/view/job/job/details.phtml:180
 msgid "First Index"
-msgstr ""
+msgstr "Premier index"
 
-#: ../../../module/Job/view/job/job/details.phtml:184
+#: ../module/Job/view/job/job/details.phtml:184
 msgid "Last Index"
-msgstr ""
+msgstr "Dernier index"
 
-#: ../../../module/Job/view/job/job/details.phtml:188
+#: ../module/Job/view/job/job/details.phtml:188
 #, fuzzy
 msgid "Start Block"
 msgstr "Début"
 
-#: ../../../module/Job/view/job/job/details.phtml:192
+#: ../module/Job/view/job/job/details.phtml:192
 #, fuzzy
 msgid "End Block"
 msgstr "Fin de bloc"
 
-#: ../../../module/Job/view/job/job/details.phtml:265
-#: ../../../module/Job/view/job/job/index.phtml:262
-#: ../../../module/Job/view/job/job/index.phtml:272
+#: ../module/Job/view/job/job/index.phtml:262
+#: ../module/Job/view/job/job/index.phtml:272
+#: ../module/Job/view/job/job/details.phtml:265
 msgid "Rerun"
 msgstr "Relancer"
 
-#: ../../../module/Job/view/job/job/details.phtml:280
-#: ../../../module/Job/view/job/job/index.phtml:293
-#: ../../../module/Job/view/job/job/index.phtml:299
-#: ../../../module/Storage/view/storage/storage/details.phtml:88
+#: ../module/Job/view/job/job/index.phtml:293
+#: ../module/Job/view/job/job/index.phtml:299
+#: ../module/Job/view/job/job/details.phtml:280
+#: ../module/Restore/view/restore/restore/index.phtml:97
+#: ../module/Restore/view/restore/restore/versions.phtml:98
+#: ../module/Storage/view/storage/storage/details.phtml:88
 msgid "Cancel"
 msgstr "Annuler"
 
-#: ../../../module/Job/view/job/job/index.phtml:66
+#: ../module/Job/view/job/job/index.phtml:66
 msgid "Job list"
 msgstr "Liste des jobs"
 
-#: ../../../module/Job/view/job/job/index.phtml:110
-msgid ""
-"Please try to reduce the amount of data to display, e.g. reduce time period."
-msgstr ""
-"Essayez de réduire la quantité de données à afficher. Par exemple, réduisez "
-"la période désirée"
+#: ../module/Job/view/job/job/index.phtml:110
+msgid "Please try to reduce the amount of data to display, e.g. reduce time period."
+msgstr "Essayez de réduire la quantité de données à afficher. Par exemple, réduisez la période désirée"
 
-#: ../../../module/Media/view/media/media/details.phtml:26
+#: ../module/Media/view/media/media/details.phtml:26
 msgid "Volume details"
 msgstr "Détails du volume"
 
-#: ../../../module/Media/view/media/media/details.phtml:32
-#: ../../../module/Media/view/media/media/index.phtml:32
-#: ../../../module/Pool/view/pool/pool/details.phtml:32
-#: ../../../module/Pool/view/pool/pool/index.phtml:32
-#: ../../../module/Storage/view/storage/storage/details.phtml:32
-#: ../../../module/Storage/view/storage/storage/index.phtml:32
-#: ../../../module/Storage/view/storage/storage/status.phtml:9
+#: ../module/Media/view/media/media/index.phtml:32
+#: ../module/Media/view/media/media/details.phtml:32
+#: ../module/Storage/view/storage/storage/index.phtml:32
+#: ../module/Storage/view/storage/storage/details.phtml:32
+#: ../module/Storage/view/storage/storage/status.phtml:9
+#: ../module/Pool/view/pool/pool/index.phtml:32
+#: ../module/Pool/view/pool/pool/details.phtml:32
 msgid "Devices"
 msgstr "Périphériques"
 
-#: ../../../module/Media/view/media/media/details.phtml:33
-#: ../../../module/Media/view/media/media/index.phtml:33
-#: ../../../module/Pool/view/pool/pool/details.phtml:33
-#: ../../../module/Pool/view/pool/pool/index.phtml:26
-#: ../../../module/Pool/view/pool/pool/index.phtml:33
-#: ../../../module/Pool/view/pool/pool/index.phtml:47
-#: ../../../module/Storage/view/storage/storage/details.phtml:33
-#: ../../../module/Storage/view/storage/storage/index.phtml:33
-#: ../../../module/Storage/view/storage/storage/status.phtml:10
+#: ../module/Media/view/media/media/index.phtml:33
+#: ../module/Media/view/media/media/details.phtml:33
+#: ../module/Storage/view/storage/storage/index.phtml:33
+#: ../module/Storage/view/storage/storage/details.phtml:33
+#: ../module/Storage/view/storage/storage/status.phtml:10
+#: ../module/Pool/view/pool/pool/index.phtml:26
+#: ../module/Pool/view/pool/pool/index.phtml:33
+#: ../module/Pool/view/pool/pool/index.phtml:47
+#: ../module/Pool/view/pool/pool/details.phtml:33
 msgid "Pools"
-msgstr ""
+msgstr "Pools"
 
-#: ../../../module/Media/view/media/media/details.phtml:58
-#: ../../../module/Media/view/media/media/details.phtml:282
-#: ../../../module/Media/view/media/media/index.phtml:58
-#: ../../../module/Media/view/media/media/index.phtml:196
-#: ../../../module/Pool/view/pool/pool/details.phtml:90
-#: ../../../module/Pool/view/pool/pool/details.phtml:261
-#: ../../../module/Storage/view/storage/storage/details.phtml:155
+#: ../module/Media/view/media/media/index.phtml:58
+#: ../module/Media/view/media/media/index.phtml:196
+#: ../module/Media/view/media/media/details.phtml:58
+#: ../module/Media/view/media/media/details.phtml:282
+#: ../module/Storage/view/storage/storage/details.phtml:155
+#: ../module/Pool/view/pool/pool/details.phtml:90
+#: ../module/Pool/view/pool/pool/details.phtml:261
 msgid "Last written"
 msgstr "Dernière écriture"
 
-#: ../../../module/Media/view/media/media/details.phtml:60
-#: ../../../module/Media/view/media/media/index.phtml:60
-#: ../../../module/Pool/view/pool/pool/details.phtml:92
+#: ../module/Media/view/media/media/index.phtml:60
+#: ../module/Media/view/media/media/details.phtml:60
+#: ../module/Pool/view/pool/pool/details.phtml:92
 msgid "Retention/Expiration"
 msgstr "Rétention / Expiration"
 
-#: ../../../module/Media/view/media/media/details.phtml:61
-#: ../../../module/Media/view/media/media/index.phtml:61
-#: ../../../module/Pool/view/pool/pool/details.phtml:93
+#: ../module/Media/view/media/media/index.phtml:61
+#: ../module/Media/view/media/media/details.phtml:61
+#: ../module/Pool/view/pool/pool/details.phtml:93
 msgid "Maximum bytes"
 msgstr "Maximun octets"
 
-#: ../../../module/Media/view/media/media/details.phtml:62
-#: ../../../module/Media/view/media/media/index.phtml:62
-#: ../../../module/Pool/view/pool/pool/details.phtml:94
+#: ../module/Media/view/media/media/index.phtml:62
+#: ../module/Media/view/media/media/details.phtml:62
+#: ../module/Pool/view/pool/pool/details.phtml:94
 msgid "Current bytes"
 msgstr "Taille actuelle (octects)"
 
-#: ../../../module/Media/view/media/media/details.phtml:78
+#: ../module/Media/view/media/media/details.phtml:78
 msgid "Jobs on volume"
 msgstr "Jobs présents sur le volume"
 
-#: ../../../module/Media/view/media/media/details.phtml:93
+#: ../module/Media/view/media/media/details.phtml:93
 msgid "Starttime"
 msgstr "Date de début"
 
-#: ../../../module/Media/view/media/media/details.phtml:94
+#: ../module/Media/view/media/media/details.phtml:94
 msgid "Endtime"
 msgstr "Date de fin"
 
-#: ../../../module/Media/view/media/media/details.phtml:274
-#: ../../../module/Media/view/media/media/index.phtml:188
-#: ../../../module/Pool/view/pool/pool/details.phtml:253
+#: ../module/Media/view/media/media/index.phtml:188
+#: ../module/Media/view/media/media/details.phtml:274
+#: ../module/Pool/view/pool/pool/details.phtml:253
 msgid "Label date"
 msgstr "Date du label"
 
-#: ../../../module/Media/view/media/media/details.phtml:278
-#: ../../../module/Media/view/media/media/index.phtml:192
-#: ../../../module/Pool/view/pool/pool/details.phtml:257
+#: ../module/Media/view/media/media/index.phtml:192
+#: ../module/Media/view/media/media/details.phtml:278
+#: ../module/Pool/view/pool/pool/details.phtml:257
 msgid "First written"
 msgstr "Première écriture"
 
-#: ../../../module/Media/view/media/media/details.phtml:286
-#: ../../../module/Media/view/media/media/index.phtml:200
-#: ../../../module/Pool/view/pool/pool/details.phtml:265
+#: ../module/Media/view/media/media/index.phtml:200
+#: ../module/Media/view/media/media/details.phtml:286
+#: ../module/Pool/view/pool/pool/details.phtml:265
 msgid "Volume jobs"
-msgstr ""
+msgstr "Jobs du volume"
 
-#: ../../../module/Media/view/media/media/details.phtml:290
-#: ../../../module/Media/view/media/media/index.phtml:204
-#: ../../../module/Pool/view/pool/pool/details.phtml:269
+#: ../module/Media/view/media/media/index.phtml:204
+#: ../module/Media/view/media/media/details.phtml:290
+#: ../module/Pool/view/pool/pool/details.phtml:269
 msgid "Recycle"
 msgstr "Recycler"
 
-#: ../../../module/Media/view/media/media/details.phtml:294
+#: ../module/Media/view/media/media/details.phtml:294
 msgid "Volume writes"
 msgstr "Nombre d'écritures du volume"
 
-#: ../../../module/Media/view/media/media/details.phtml:298
-#: ../../../module/Storage/view/storage/storage/details.phtml:111
-#: ../../../module/Storage/view/storage/storage/details.phtml:152
+#: ../module/Media/view/media/media/details.phtml:298
+#: ../module/Storage/view/storage/storage/details.phtml:111
+#: ../module/Storage/view/storage/storage/details.phtml:152
 msgid "Slot"
 msgstr "Emplacement"
 
-#: ../../../module/Media/view/media/media/details.phtml:302
+#: ../module/Media/view/media/media/details.phtml:302
 msgid "Media Id"
 msgstr "id du média"
 
-#: ../../../module/Media/view/media/media/details.phtml:306
+#: ../module/Media/view/media/media/details.phtml:306
 msgid "Volume Blocks"
 msgstr "Nombre de blocs pour le volume"
 
-#: ../../../module/Media/view/media/media/details.phtml:310
+#: ../module/Media/view/media/media/details.phtml:310
 msgid "Volume use duration"
 msgstr "Durée d'utilisation"
 
-#: ../../../module/Media/view/media/media/details.phtml:314
+#: ../module/Media/view/media/media/details.phtml:314
 msgid "Volume Pool Id"
-msgstr ""
+msgstr "Volume Pool Id"
 
-#: ../../../module/Media/view/media/media/details.phtml:318
+#: ../module/Media/view/media/media/details.phtml:318
 msgid "In changer"
 msgstr "Présent dans l'auto-changeur"
 
-#: ../../../module/Media/view/media/media/details.phtml:322
+#: ../module/Media/view/media/media/details.phtml:322
 msgid "Volume Files"
 msgstr "Nombre de fichiers sur le volume"
 
-#: ../../../module/Media/view/media/media/details.phtml:326
+#: ../module/Media/view/media/media/details.phtml:326
 msgid "Max. volume jobs"
 msgstr "Nombre maximum de jobs sur le volume"
 
-#: ../../../module/Media/view/media/media/details.phtml:330
+#: ../module/Media/view/media/media/details.phtml:330
 msgid "Volume mounts"
 msgstr "Nombre de montage du volume"
 
-#: ../../../module/Media/view/media/media/details.phtml:334
+#: ../module/Media/view/media/media/details.phtml:334
 msgid "Volume capacity bytes"
 msgstr "Capacité du volume en octets"
 
-#: ../../../module/Media/view/media/media/details.phtml:338
+#: ../module/Media/view/media/media/details.phtml:338
 msgid "Volume errors"
 msgstr "Erreurs du volume"
 
-#: ../../../module/Media/view/media/media/details.phtml:346
+#: ../module/Media/view/media/media/details.phtml:346
 msgid "Max. volume files"
 msgstr "Max. de fichiers du volume"
 
-#: ../../../module/Media/view/media/media/details.phtml:350
+#: ../module/Media/view/media/media/details.phtml:350
 msgid "Endfile"
 msgstr "Fin de fichier"
 
-#: ../../../module/Media/view/media/media/details.phtml:354
+#: ../module/Media/view/media/media/details.phtml:354
 msgid "Endblock"
 msgstr "Fin de bloc"
 
-#: ../../../module/Media/view/media/media/details.phtml:358
+#: ../module/Media/view/media/media/details.phtml:358
 msgid "Labeltype"
 msgstr "Type de label"
 
-#: ../../../module/Media/view/media/media/details.phtml:362
+#: ../module/Media/view/media/media/details.phtml:362
 msgid "Device Id"
 msgstr "id du périphérique"
 
-#: ../../../module/Media/view/media/media/details.phtml:366
+#: ../module/Media/view/media/media/details.phtml:366
 msgid "Location Id"
 msgstr "id de localisation"
 
-#: ../../../module/Media/view/media/media/details.phtml:370
+#: ../module/Media/view/media/media/details.phtml:370
 msgid "Recycle count"
 msgstr "Nb de recyclage"
 
-#: ../../../module/Media/view/media/media/details.phtml:374
+#: ../module/Media/view/media/media/details.phtml:374
 msgid "Initial write"
 msgstr "Ecriture initiale"
 
-#: ../../../module/Media/view/media/media/details.phtml:378
+#: ../module/Media/view/media/media/details.phtml:378
 msgid "Scratch Pool Id"
 msgstr "id du pool scratch"
 
-#: ../../../module/Media/view/media/media/details.phtml:382
+#: ../module/Media/view/media/media/details.phtml:382
 #, fuzzy
 msgid "Recycle Pool Id"
 msgstr "id du pool recycle"
 
-#: ../../../module/Media/view/media/media/details.phtml:386
+#: ../module/Media/view/media/media/details.phtml:386
 msgid "Comment"
 msgstr "Commentaire"
 
-#: ../../../module/Pool/view/pool/pool/details.phtml:26
+#: ../module/Pool/view/pool/pool/details.phtml:26
 msgid "Pool details"
 msgstr "Détails du pool"
 
-#: ../../../module/Pool/view/pool/pool/details.phtml:59
-#: ../../../module/Pool/view/pool/pool/index.phtml:58
+#: ../module/Pool/view/pool/pool/index.phtml:58
+#: ../module/Pool/view/pool/pool/details.phtml:59
 msgid "Maximum volumes"
 msgstr "Nombre maximum de volumes"
 
-#: ../../../module/Pool/view/pool/pool/details.phtml:60
-#: ../../../module/Pool/view/pool/pool/index.phtml:59
+#: ../module/Pool/view/pool/pool/index.phtml:59
+#: ../module/Pool/view/pool/pool/details.phtml:60
 msgid "Volume retention"
 msgstr "Durée de rétention du volume"
 
-#: ../../../module/Pool/view/pool/pool/details.phtml:61
-#: ../../../module/Pool/view/pool/pool/index.phtml:60
+#: ../module/Pool/view/pool/pool/index.phtml:60
+#: ../module/Pool/view/pool/pool/details.phtml:61
 msgid "Maximum volume jobs"
 msgstr "Nombre maximum de jobs du volume"
 
-#: ../../../module/Pool/view/pool/pool/details.phtml:62
-#: ../../../module/Pool/view/pool/pool/index.phtml:61
+#: ../module/Pool/view/pool/pool/index.phtml:61
+#: ../module/Pool/view/pool/pool/details.phtml:62
 msgid "Maximum volume bytes"
 msgstr "Taille maximum en octets du volume"
 
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:94
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:94
 msgid "Backup jobs"
 msgstr "jobs de sauvegarde"
 
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:111
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:111
 msgid "Backups"
 msgstr "Sauvegardes"
 
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:184
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:201
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:184
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:201
 msgid "Restore to client"
 msgstr "Restaurer vers client"
 
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:218
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:218
 msgid "Restore to (another) client"
 msgstr "Restaurer vers (un autre) client"
 
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:237
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:252
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:237
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:252
 msgid "Please choose a fileset"
 msgstr "Choisissez un jeu de données"
 
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:267
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:285
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:302
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:267
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:285
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:302
 msgid "Restore job"
 msgstr "Job de restauration"
 
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:321
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:340
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:321
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:340
 msgid "Merge all client filesets"
 msgstr "Fusionner tous les filesets du client"
 
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:323
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:342
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:363
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:382
-#: ../../../module/Storage/view/storage/storage/index.phtml:107
-#: ../../../public/js/custom-functions.js:315
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:323
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:342
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:363
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:382
+#: ../module/Storage/view/storage/storage/index.phtml:107
+#: ../public/js/custom-functions.js:319
 msgid "Yes"
 msgstr "Oui"
 
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:324
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:343
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:364
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:383
-#: ../../../module/Storage/view/storage/storage/index.phtml:105
-#: ../../../public/js/custom-functions.js:318
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:324
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:343
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:364
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:383
+#: ../module/Storage/view/storage/storage/index.phtml:105
+#: ../public/js/custom-functions.js:322
 msgid "No"
 msgstr "Non"
 
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:361
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:361
 msgid "Merge all related jobs to last full backup of selected backup job"
-msgstr ""
-"Fusionner tous les jobs relatifs à la dernière sauvegarde complète pour le "
-"job sélectionné"
+msgstr "Fusionner tous les jobs relatifs à la dernière sauvegarde complète pour le job sélectionné"
 
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:380
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:380
 msgid "Merge jobs"
 msgstr "Fusionner les jobs"
 
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:400
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:400
 msgid "Replace files on client"
 msgstr "Remplacer les fichiers sur la destination"
 
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:402
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:402
 msgid "always"
 msgstr "toujours"
 
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:403
-#: ../../../public/js/custom-functions.js:253
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:403
+#: ../public/js/custom-functions.js:257
 msgid "never"
 msgstr "jamais"
 
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:404
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:404
 msgid "if file being restored is older than existing file"
 msgstr "si le fichier restauré est plus ancien que l'existant"
 
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:405
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:405
 msgid "if file being restored is newer than existing file"
 msgstr "si le fichier restauré est plus récent que l'existant"
 
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:421
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:421
 msgid "Restore location on client"
 msgstr "Emplacement de la restauration sur le client"
 
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:428
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:428
 msgid "e.g. / or /tmp/bareos-restores/"
 msgstr "Par exp. / ou /tmp/bareos-restores"
 
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:439
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:456
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:439
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:456
 msgid "Path"
-msgstr ""
+msgstr "Chemin"
 
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:475
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:492
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:475
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:492
 msgid "Limit"
-msgstr ""
+msgstr "Limite"
 
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:511
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:528
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:511
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:528
 msgid "Offset"
-msgstr ""
+msgstr "Décalage"
 
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:557
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:557
 msgid "Related jobs for a most recent full restore"
 msgstr "Jobs relatifs pour une restauration complète la plus récente"
 
-#: ../../../module/Restore/view/restore/restore/index.phtml:42
+#: ../module/Restore/view/restore/restore/index.phtml:49
+#: ../module/Restore/view/restore/restore/versions.phtml:49
 #, fuzzy
 msgid "Error message received:"
 msgstr "Un message d'erreur a été reçu du directeur:"
 
-#: ../../../module/Restore/view/restore/restore/index.phtml:59
-#: ../../../module/Storage/view/storage/storage/details.phtml:51
+#: ../module/Restore/view/restore/restore/index.phtml:66
+#: ../module/Restore/view/restore/restore/versions.phtml:67
+#: ../module/Storage/view/storage/storage/details.phtml:51
 msgid "Director message"
 msgstr "Message du directeur"
 
-#: ../../../module/Restore/view/restore/restore/index.phtml:122
+#: ../module/Restore/view/restore/restore/index.phtml:171
+#: ../module/Restore/view/restore/restore/versions.phtml:167
 msgid "File selection"
 msgstr "Sélection de fichier"
 
-#: ../../../module/Restore/view/restore/restore/index.phtml:308
+#: ../module/Restore/view/restore/restore/index.phtml:386
+#: ../module/Restore/view/restore/restore/versions.phtml:202
+#: ../module/Restore/view/restore/restore/versions.phtml:513
 msgid "Size"
 msgstr "Taille"
 
@@ -1138,415 +1085,430 @@ msgstr "Taille"
 msgid "Date"
 msgstr "Date"
 
-#: ../../../module/Schedule/view/schedule/schedule/details.phtml:26
-#: ../../../module/Schedule/view/schedule/schedule/details.phtml:47
-msgid "Schedule Details"
-msgstr "Détails de planification"
-
-#: ../../../module/Schedule/view/schedule/schedule/details.phtml:34
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:34
-#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:34
-#: ../../../module/Schedule/view/schedule/schedule/status.phtml:33
-msgid "Scheduler status"
-msgstr "Status de planification"
-
-#: ../../../module/Schedule/view/schedule/schedule/status.phtml:26
-#: ../../../module/Schedule/view/schedule/schedule/status.phtml:46
-msgid "Status Scheduler"
-msgstr "Status de planification"
-
-#: ../../../module/Storage/src/Storage/Form/StorageForm.php:77
-#: ../../../module/Storage/view/storage/storage/details.phtml:126
+#: ../module/Storage/src/Storage/Form/StorageForm.php:77
+#: ../module/Storage/view/storage/storage/details.phtml:126
 msgid "Drive"
 msgstr "Lecteur"
 
-#: ../../../module/Storage/view/storage/storage/details.phtml:26
-msgid "Storage details"
-msgstr "Détails du stockage"
-
-#: ../../../module/Storage/view/storage/storage/details.phtml:72
-#: ../../../module/Storage/view/storage/storage/details.phtml:147
-msgid "Label barcodes"
-msgstr "Labéliser les codes barres"
-
-#: ../../../module/Storage/view/storage/storage/details.phtml:82
-msgid "Assign media to this pool."
-msgstr "Affecter le média à ce pool"
-
-#: ../../../module/Storage/view/storage/storage/details.phtml:84
-msgid "Use this drive for labeling."
-msgstr "Utiliser ce lecteur pour les labels"
-
-#: ../../../module/Storage/view/storage/storage/details.phtml:103
-msgid "Import/Export Slots"
-msgstr "Importer / Exporter les emplacements"
-
-#: ../../../module/Storage/view/storage/storage/details.phtml:107
-msgid "Import all"
-msgstr "Tout importer"
-
-#: ../../../module/Storage/view/storage/storage/details.phtml:121
-msgid "Drives"
-msgstr "Lecteurs"
-
-#: ../../../module/Storage/view/storage/storage/details.phtml:127
-msgid "Loaded"
-msgstr "Chargé"
-
-#: ../../../module/Storage/view/storage/storage/details.phtml:141
-msgid "Slots"
-msgstr "Emplacements"
-
-#: ../../../module/Storage/view/storage/storage/details.phtml:145
-msgid "Update slots"
-msgstr "Mise à jour des emplacements"
-
-#: ../../../module/Storage/view/storage/storage/details.phtml:156
-msgid "Expiration"
-msgstr "Expiration"
-
-#: ../../../module/Storage/view/storage/storage/details.phtml:158
-msgid "Media Type"
-msgstr "Type de média"
-
-#: ../../../module/Storage/view/storage/storage/details.phtml:226
-msgid "Import"
-msgstr "Importer"
-
-#: ../../../module/Storage/view/storage/storage/details.phtml:273
-msgid "Release"
-msgstr "Relâcher"
-
-#: ../../../module/Storage/view/storage/storage/details.phtml:363
-msgid "not in catalog"
-msgstr "absent du catalogue"
-
-#: ../../../module/Storage/view/storage/storage/details.phtml:401
-msgid "Export"
-msgstr "Exporter"
-
-#: ../../../module/Storage/view/storage/storage/index.phtml:47
-msgid "Storage Devices"
-msgstr "Périphériques de stockage"
-
-#: ../../../module/Storage/view/storage/storage/index.phtml:56
-msgid "Autochanger"
-msgstr "Auto-changeur"
-
-#: ../../../module/Storage/view/storage/storage/index.phtml:116
-msgid "Manage autochanger"
-msgstr "Gérer auto-changeur"
-
-#: ../../../module/Storage/view/storage/storage/status.phtml:24
+#: ../module/Storage/view/storage/storage/status.phtml:24
 msgid "Storage Status"
 msgstr "Status du stockage"
 
-#: ../../../public/js/custom-functions.js:101
+#: ../module/Storage/view/storage/storage/details.phtml:26
+msgid "Storage details"
+msgstr "Détails du stockage"
+
+#: ../module/Storage/view/storage/storage/details.phtml:72
+#: ../module/Storage/view/storage/storage/details.phtml:147
+msgid "Label barcodes"
+msgstr "Labéliser les codes barres"
+
+#: ../module/Storage/view/storage/storage/details.phtml:82
+msgid "Assign media to this pool."
+msgstr "Affecter le média à ce pool"
+
+#: ../module/Storage/view/storage/storage/details.phtml:84
+msgid "Use this drive for labeling."
+msgstr "Utiliser ce lecteur pour les labels"
+
+#: ../module/Storage/view/storage/storage/details.phtml:103
+msgid "Import/Export Slots"
+msgstr "Importer / Exporter les emplacements"
+
+#: ../module/Storage/view/storage/storage/details.phtml:107
+msgid "Import all"
+msgstr "Tout importer"
+
+#: ../module/Storage/view/storage/storage/details.phtml:121
+msgid "Drives"
+msgstr "Lecteurs"
+
+#: ../module/Storage/view/storage/storage/details.phtml:127
+msgid "Loaded"
+msgstr "Chargé"
+
+#: ../module/Storage/view/storage/storage/details.phtml:141
+msgid "Slots"
+msgstr "Emplacements"
+
+#: ../module/Storage/view/storage/storage/details.phtml:145
+msgid "Update slots"
+msgstr "Mise à jour des emplacements"
+
+#: ../module/Storage/view/storage/storage/details.phtml:156
+msgid "Expiration"
+msgstr "Expiration"
+
+#: ../module/Storage/view/storage/storage/details.phtml:158
+msgid "Media Type"
+msgstr "Type de média"
+
+#: ../module/Storage/view/storage/storage/details.phtml:226
+msgid "Import"
+msgstr "Importer"
+
+#: ../module/Storage/view/storage/storage/details.phtml:273
+msgid "Release"
+msgstr "Relâcher"
+
+#: ../module/Storage/view/storage/storage/details.phtml:363
+msgid "not in catalog"
+msgstr "absent du catalogue"
+
+#: ../module/Storage/view/storage/storage/details.phtml:401
+msgid "Export"
+msgstr "Exporter"
+
+#: ../module/Storage/view/storage/storage/index.phtml:47
+msgid "Storage Devices"
+msgstr "Périphériques de stockage"
+
+#: ../module/Storage/view/storage/storage/index.phtml:56
+msgid "Autochanger"
+msgstr "Auto-changeur"
+
+#: ../module/Storage/view/storage/storage/index.phtml:116
+msgid "Manage autochanger"
+msgstr "Gérer auto-changeur"
+
+#: ../module/Schedule/view/schedule/schedule/details.phtml:26
+#: ../module/Schedule/view/schedule/schedule/details.phtml:47
+msgid "Schedule Details"
+msgstr "Détails de planification"
+
+#: ../module/Schedule/view/schedule/schedule/index.phtml:34
+#: ../module/Schedule/view/schedule/schedule/details.phtml:34
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:34
+#: ../module/Schedule/view/schedule/schedule/status.phtml:33
+msgid "Scheduler status"
+msgstr "Status de planification"
+
+#: ../module/Schedule/view/schedule/schedule/status.phtml:26
+#: ../module/Schedule/view/schedule/schedule/status.phtml:46
+msgid "Status Scheduler"
+msgstr "Status de planification"
+
+#: ../public/js/custom-functions.js:105
 #, fuzzy
 msgid "Backup"
 msgstr "Sauvegardes"
 
-#: ../../../public/js/custom-functions.js:104
+#: ../public/js/custom-functions.js:108
 msgid "Migrated"
-msgstr ""
+msgstr "Migré"
 
-#: ../../../public/js/custom-functions.js:107
+#: ../public/js/custom-functions.js:111
 msgid "Verify"
-msgstr ""
+msgstr "Vérification"
 
-#: ../../../public/js/custom-functions.js:113
+#: ../public/js/custom-functions.js:117
 msgid "Console program"
-msgstr ""
+msgstr "Program console"
 
-#: ../../../public/js/custom-functions.js:116
+#: ../public/js/custom-functions.js:120
 msgid "Internal system job"
-msgstr ""
+msgstr "job système interne"
 
-#: ../../../public/js/custom-functions.js:119
+#: ../public/js/custom-functions.js:123
 msgid "Admin"
-msgstr ""
+msgstr "Admin"
 
-#: ../../../public/js/custom-functions.js:122
+#: ../public/js/custom-functions.js:126
 msgid "Archive"
-msgstr ""
+msgstr "Archive"
 
-#: ../../../public/js/custom-functions.js:125
+#: ../public/js/custom-functions.js:129
 msgid "Copy of a job"
-msgstr ""
+msgstr "Copie d'un job"
 
-#: ../../../public/js/custom-functions.js:128
+#: ../public/js/custom-functions.js:132
 msgid "Copy job"
-msgstr ""
+msgstr "Job de copie"
 
-#: ../../../public/js/custom-functions.js:131
+#: ../public/js/custom-functions.js:135
 #, fuzzy
 msgid "Migration job"
 msgstr "Expiration"
 
-#: ../../../public/js/custom-functions.js:134
+#: ../public/js/custom-functions.js:138
 msgid "Scan"
-msgstr ""
+msgstr "Scan"
 
-#: ../../../public/js/custom-functions.js:137
+#: ../public/js/custom-functions.js:141
 msgid "Consolidate"
-msgstr ""
+msgstr "Consolider"
 
-#: ../../../public/js/custom-functions.js:149
-#: ../../../public/js/custom-functions.js:197
-#: ../../../public/js/custom-functions.js:227
+#: ../public/js/custom-functions.js:153 ../public/js/custom-functions.js:201
+#: ../public/js/custom-functions.js:231
 msgid "Full"
-msgstr ""
+msgstr "Complet"
 
-#: ../../../public/js/custom-functions.js:151
+#: ../public/js/custom-functions.js:155
 msgid "Differential"
-msgstr ""
+msgstr "Différentiel"
 
-#: ../../../public/js/custom-functions.js:153
+#: ../public/js/custom-functions.js:157
 msgid "Incremental"
-msgstr ""
+msgstr "Incrémentiel"
 
-#: ../../../public/js/custom-functions.js:155
+#: ../public/js/custom-functions.js:159
 msgid "VirtualFull"
-msgstr ""
+msgstr "Virtuel complet"
 
-#: ../../../public/js/custom-functions.js:157
+#: ../public/js/custom-functions.js:161
 msgid "Base"
-msgstr ""
+msgstr "Base"
 
-#: ../../../public/js/custom-functions.js:159
+#: ../public/js/custom-functions.js:163
 msgid "Catalog"
-msgstr ""
+msgstr "Catalogue"
 
-#: ../../../public/js/custom-functions.js:161
+#: ../public/js/custom-functions.js:165
 #, fuzzy
 msgid "InitCatalog"
 msgstr "absent du catalogue"
 
-#: ../../../public/js/custom-functions.js:163
+#: ../public/js/custom-functions.js:167
 #, fuzzy
 msgid "VolumeToCatalog"
 msgstr "Détails du volume"
 
-#: ../../../public/js/custom-functions.js:165
+#: ../public/js/custom-functions.js:169
 msgid "DiskToCatalog"
-msgstr ""
+msgstr "Disque et catalogue"
 
-#: ../../../public/js/custom-functions.js:167
+#: ../public/js/custom-functions.js:171
 msgid "Data"
-msgstr ""
+msgstr "Données"
 
-#: ../../../public/js/custom-functions.js:169
+#: ../public/js/custom-functions.js:173
 msgid "None"
-msgstr ""
+msgstr "Aucun"
 
-#: ../../../public/js/custom-functions.js:177
+#: ../public/js/custom-functions.js:181
+#, fuzzy
 msgid "year(s)"
-msgstr ""
+msgstr "années en arrières"
 
-#: ../../../public/js/custom-functions.js:180
+#: ../public/js/custom-functions.js:184
+#, fuzzy
 msgid "month(s)"
-msgstr ""
+msgstr "mois en arrière"
 
-#: ../../../public/js/custom-functions.js:183
+#: ../public/js/custom-functions.js:187
 msgid "day(s)"
-msgstr ""
+msgstr "jour(s)"
 
-#: ../../../public/js/custom-functions.js:186
+#: ../public/js/custom-functions.js:190
 msgid "hour(s)"
-msgstr ""
+msgstr "heure(s)"
 
-#: ../../../public/js/custom-functions.js:189
+#: ../public/js/custom-functions.js:193
 msgid "second(s)"
-msgstr ""
+msgstr "seconde(s)"
 
-#: ../../../public/js/custom-functions.js:197
-#: ../../../public/js/custom-functions.js:227
+#: ../public/js/custom-functions.js:201 ../public/js/custom-functions.js:231
 msgid "Used"
-msgstr ""
+msgstr "Utilisé"
 
-#: ../../../public/js/custom-functions.js:209
+#: ../public/js/custom-functions.js:213
 msgid "expired"
-msgstr ""
+msgstr "expiré"
 
-#: ../../../public/js/custom-functions.js:213
+#: ../public/js/custom-functions.js:217
 msgid "expires in 1 day"
-msgstr ""
+msgstr "expire dans 1 jour"
 
-#: ../../../public/js/custom-functions.js:217
+#: ../public/js/custom-functions.js:221
 #, fuzzy
 msgid "expires in"
 msgstr "Expiration"
 
-#: ../../../public/js/custom-functions.js:217
+#: ../public/js/custom-functions.js:221
 msgid "days"
-msgstr ""
+msgstr "jours"
 
-#: ../../../public/js/custom-functions.js:262
+#: ../public/js/custom-functions.js:266
 msgid "today"
-msgstr ""
+msgstr "aujourd'hui"
 
-#: ../../../public/js/custom-functions.js:265
+#: ../public/js/custom-functions.js:269
 msgid "day(s) ago"
-msgstr ""
+msgstr "jour(s) en arrière"
 
-#: ../../../public/js/custom-functions.js:268
+#: ../public/js/custom-functions.js:272
 msgid "month(s) ago"
-msgstr ""
+msgstr "mois en arrière"
 
-#: ../../../public/js/custom-functions.js:271
+#: ../public/js/custom-functions.js:275
 msgid "year(s) ago"
-msgstr ""
+msgstr "année(s) en arrière"
 
-#: ../../../public/js/custom-functions.js:304
+#: ../public/js/custom-functions.js:308
 #, fuzzy
 msgid "enabled"
 msgstr "Actif"
 
-#: ../../../public/js/custom-functions.js:307
+#: ../public/js/custom-functions.js:311
 #, fuzzy
 msgid "disabled"
 msgstr "Inactif"
 
-#: ../../../public/js/custom-functions.js:328
-msgid "Non-fatal error"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:329
-#: ../../../public/js/custom-functions.js:334
-#: ../../../public/js/custom-functions.js:339
+#: ../public/js/custom-functions.js:333 ../public/js/custom-functions.js:338
+#: ../public/js/custom-functions.js:343
 msgid "Failure"
-msgstr ""
+msgstr "Erreur"
 
-#: ../../../public/js/custom-functions.js:333
-msgid "Job terminated in error"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:338
-msgid "Fatal error"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:343
-#, fuzzy
-msgid "Terminated normally"
-msgstr "Terminé en erreur"
-
-#: ../../../public/js/custom-functions.js:344
+#: ../public/js/custom-functions.js:348
 msgid "Success"
-msgstr ""
+msgstr "Succès"
 
-#: ../../../public/js/custom-functions.js:353
-msgid "Created but not yet running"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:354
+#: ../public/js/custom-functions.js:358
 msgid "Queued"
-msgstr ""
+msgstr "En file d'attente"
 
-#: ../../../public/js/custom-functions.js:358
-#: ../../../public/js/custom-functions.js:359
+#: ../public/js/custom-functions.js:362 ../public/js/custom-functions.js:363
 #, fuzzy
 msgid "Blocked"
 msgstr "Fin de bloc"
 
-#: ../../../public/js/custom-functions.js:363
-msgid "Verify differences"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:364
+#: ../public/js/custom-functions.js:368
 msgid "Verify found differences"
-msgstr ""
+msgstr "La vérification a trouvé des différences"
 
-#: ../../../public/js/custom-functions.js:368
-msgid "Canceled by user"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:369
+#: ../public/js/custom-functions.js:373
 #, fuzzy
 msgid "Canceled"
 msgstr "Annuler"
 
-#: ../../../public/js/custom-functions.js:373
-msgid "Waiting on File daemon"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:378
-msgid "Waiting on the Storage daemon"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:383
-msgid "Waiting for new media"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:388
-msgid "Waiting for Mount"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:393
-msgid "Waiting for storage resource"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:398
-msgid "Waiting for job resource"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:403
-msgid "Waiting for Client resource"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:408
-msgid "Waiting for maximum jobs"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:413
-msgid "Waiting for start time"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:418
-msgid "Waiting for higher priority jobs to finish"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:423
-#: ../../../public/js/custom-functions.js:424
+#: ../public/js/custom-functions.js:427 ../public/js/custom-functions.js:428
 msgid "SD despooling attributes"
-msgstr ""
+msgstr "SD envoi des attributs"
 
-#: ../../../public/js/custom-functions.js:428
-#: ../../../public/js/custom-functions.js:429
+#: ../public/js/custom-functions.js:432 ../public/js/custom-functions.js:433
 msgid "Doing batch insert file records"
-msgstr ""
+msgstr "Insertion par lot des enregistrements de fichiers"
 
-#: ../../../public/js/custom-functions.js:433
-msgid "Incomplete Job"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:434
+#: ../public/js/custom-functions.js:438
 msgid "Incomplete"
-msgstr ""
+msgstr "Incomplet"
 
-#: ../../../public/js/custom-functions.js:438
-msgid "Committing data (last despool)"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:439
+#: ../public/js/custom-functions.js:443
 msgid "Committing data"
-msgstr ""
+msgstr "Insertion des données"
 
-#: ../../../public/js/custom-functions.js:443
-msgid "Terminated normally with warnings"
-msgstr ""
+#: ../module/Dashboard/view/partial/JobsPast24h.phtml:79
+#: ../public/js/custom-functions.js:448
+#, fuzzy
+msgid "Warning"
+msgstr "en cours"
 
-#: ../../../public/js/custom-functions.js:448
-#: ../../../public/js/custom-functions.js:449
+#: ../public/js/custom-functions.js:452 ../public/js/custom-functions.js:453
 msgid "Doing data despooling"
-msgstr ""
+msgstr "Déspoulage des données en cours"
 
-#: ../../../public/js/custom-functions.js:453
-#: ../../../public/js/custom-functions.js:454
+#: ../public/js/custom-functions.js:457 ../public/js/custom-functions.js:458
 msgid "Queued waiting for device"
-msgstr ""
+msgstr "En attente de périphérique"
 
-#~ msgid "Terminated successfully"
-#~ msgstr "Terminé avec succés"
+#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:184
+#: ../module/Job/view/job/job/index.phtml:201
+#: ../module/Job/view/job/job/index.phtml:262
+#: ../module/Job/view/job/job/index.phtml:264
+#: ../module/Job/view/job/job/index.phtml:272
+#: ../module/Job/view/job/job/index.phtml:293
+#: ../module/Job/view/job/job/index.phtml:295
+#: ../module/Job/view/job/job/index.phtml:299
+#: ../module/Job/view/job/job/index.phtml:301
+#: ../module/Client/view/client/client/details.phtml:172
+#: ../module/Client/view/client/client/details.phtml:221
+#, fuzzy
+msgid "View Job Details"
+msgstr "Liste des jobs"
 
-#~ msgid "Help"
-#~ msgstr "Aide"
+#: ../module/Job/src/Job/Form/JobForm.php:102
+#, fuzzy
+msgid "warning"
+msgstr "en cours"
+
+#: ../public/js/custom-functions.js:332
+msgid "Non-fatal error"
+msgstr "erreur non fatale"
+
+#: ../public/js/custom-functions.js:337
+msgid "Job terminated in error"
+msgstr "job terminé en erreur"
+
+#: ../public/js/custom-functions.js:342
+msgid "Fatal error"
+msgstr "erreur fatale"
+
+#: ../public/js/custom-functions.js:347
+#, fuzzy
+msgid "Terminated normally"
+msgstr "Terminé en erreur"
+
+#: ../public/js/custom-functions.js:357
+msgid "Created but not yet running"
+msgstr "Créé mais pas encore lancé"
+
+#: ../public/js/custom-functions.js:367
+msgid "Verify differences"
+msgstr "Vérifier les différences"
+
+#: ../public/js/custom-functions.js:372
+msgid "Canceled by user"
+msgstr "Annulé par l'utilisateur"
+
+#: ../public/js/custom-functions.js:377
+msgid "Waiting on File daemon"
+msgstr "En attente du démon de fichier"
+
+#: ../public/js/custom-functions.js:382
+msgid "Waiting on the Storage daemon"
+msgstr "En attente du démon de stockage"
+
+#: ../public/js/custom-functions.js:387
+msgid "Waiting for new media"
+msgstr "En attente d'un média"
+
+#: ../public/js/custom-functions.js:392
+msgid "Waiting for Mount"
+msgstr "En attente de montage"
+
+#: ../public/js/custom-functions.js:397
+msgid "Waiting for storage resource"
+msgstr "En attente d'une ressource de stockage"
+
+#: ../public/js/custom-functions.js:402
+msgid "Waiting for job resource"
+msgstr "En attente d'une ressource d'un job"
+
+#: ../public/js/custom-functions.js:407
+msgid "Waiting for Client resource"
+msgstr "En attente d'une ressource d'un client"
+
+#: ../public/js/custom-functions.js:412
+msgid "Waiting for maximum jobs"
+msgstr "En attente du max. des jobs"
+
+#: ../public/js/custom-functions.js:417
+msgid "Waiting for start time"
+msgstr "En attente de l'heure de démarrage"
+
+#: ../public/js/custom-functions.js:422
+msgid "Waiting for higher priority jobs to finish"
+msgstr "En attente des jobs de plus haute priorité"
+
+#: ../public/js/custom-functions.js:437
+msgid "Incomplete Job"
+msgstr "Job incomplet"
+
+#: ../public/js/custom-functions.js:442
+msgid "Committing data (last despool)"
+msgstr "Application des données (dernier despoulage)"
+
+#: ../public/js/custom-functions.js:447
+msgid "Terminated normally with warnings"
+msgstr "Fin normale avec avertissement"
+
