@@ -477,8 +477,15 @@ $('#filebrowser').jstree({
    'core': {
       'animation': false,
       'force_text': true,
-      'error': function () {
-         alert('Oops, something went wrong, probably too many files.')
+      'error': function (e) {
+         $('#filebrowser').html(
+            "<h4>There was an error while loading data for this tree.</h4>" +
+            "<p><b>Error: </b>" + e.error + "</p>" +
+            "<p><b>Plugin: </b>" + e.plugin + "</p>" +
+            "<p><b>Reason: </b> " + e.reason + "</p>" +
+            "<p><b>Data:</b></p>" +
+            "<pre><code>" + e.data + "</code></pre>"
+         );
       },
       'multiple': false,
       'data': {
