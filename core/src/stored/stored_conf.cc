@@ -532,7 +532,8 @@ static void ConfigBeforeCallback(ConfigurationParser& my_config)
       {R_STORAGE, "R_STORAGE"},
       {R_MSGS, "R_MSGS"},
       {R_DEVICE, "R_DEVICE"},
-      {R_AUTOCHANGER, "R_AUTOCHANGER"}};
+      {R_AUTOCHANGER, "R_AUTOCHANGER"},
+      {R_CLIENT, "R_CLIENT"}}; /* needed for network dump */
   my_config.InitializeQualifiedResourceNameTypeConverter(map);
 }
 
