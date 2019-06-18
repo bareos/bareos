@@ -801,3 +801,19 @@ void BareosSocket::ControlBwlimit(int bytes)
     }
   }
 }
+
+void BareosSocket::FillBSockWithConnectedDaemonInformation(
+    const ConfigurationParser& my_config,
+    int destination_rcode)
+{
+  SetNwdump(
+      BnetDump::Create(my_config.own_resource_, destination_rcode,
+                       *my_config.GetQualifiedResourceNameTypeConverter()));
+}
+
+void BareosSocket::FillBSockWithConnectedDaemonInformation(
+    const BareosResource* me,
+    const BareosResource* destination)
+{
+  SetNwdump(BnetDump::Create(me, destination));
+}

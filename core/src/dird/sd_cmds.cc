@@ -143,7 +143,7 @@ bool ConnectToStorageDaemon(JobControlRecord* jcr,
     }
   }
 
-  sd->SetNwdump(BnetDump::Create(me, store));
+  sd->FillBSockWithConnectedDaemonInformation(me, store);
 
   if (!AuthenticateWithStorageDaemon(sd.get(), jcr, store)) {
     sd->close();

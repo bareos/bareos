@@ -264,20 +264,6 @@ bool GetNameAndResourceTypeAndVersionFromHello(
   return ok;
 }
 
-void FillBSockWithConnectedDaemonInformation(
-    const ConfigurationParser& my_config,
-    BareosSocket* bs)
-{
-  std::string n, c;
-  BareosVersionNumber v;
-  GetNameAndResourceTypeAndVersionFromHello(bs->msg, n, c, v);
-  int rcode =
-      my_config.GetQualifiedResourceNameTypeConverter()->StringToResourceType(
-          c);
-  BareosResource* r = my_config.GetResWithName(rcode, n.c_str());
-  bs->SetNwdump(BnetDump::Create(my_config.own_resource_, r));
-}
-
 /*
  * Parameter:
  *   resultbuffer: one line string

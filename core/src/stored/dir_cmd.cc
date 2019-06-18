@@ -1784,6 +1784,8 @@ static bool PassiveCmd(JobControlRecord* jcr)
     }
   }
 
+  fd->FillBSockWithConnectedDaemonInformation(*my_config, R_CLIENT);
+
   jcr->file_bsock = fd;
   fd->fsend("Hello Storage calling Start Job %s\n", jcr->Job);
   if (!AuthenticateWithFiledaemon(jcr)) {

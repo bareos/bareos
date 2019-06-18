@@ -186,10 +186,6 @@ bool AuthenticateFiledaemon(JobControlRecord* jcr)
   password.encoding = p_encoding_md5;
   password.value = jcr->sd_auth_key;
 
-  fd->SetNwdump(BnetDump::Create(
-      my_config->own_resource_, R_CLIENT,
-      *my_config->GetQualifiedResourceNameTypeConverter()));
-
   if (!fd->AuthenticateInboundConnection(jcr, "File daemon", jcr->client_name,
                                          password, me)) {
     Jmsg1(jcr, M_FATAL, 0,

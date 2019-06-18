@@ -1694,8 +1694,8 @@ static bool StorageCmd(JobControlRecord* jcr)
     }
   }
 
-  storage_daemon_socket->SetNwdump(BnetDump::Create(
-      me, R_STORAGE, *my_config->GetQualifiedResourceNameTypeConverter()));
+  storage_daemon_socket->FillBSockWithConnectedDaemonInformation(*my_config,
+                                                                 R_STORAGE);
 
   storage_daemon_socket->fsend("Hello Start Job %s\n", jcr->Job);
   if (!AuthenticateWithStoragedaemon(jcr)) {
@@ -2321,7 +2321,7 @@ static BareosSocket* connect_to_director(JobControlRecord* jcr,
     }
   }
 
-  director_socket->SetNwdump(BnetDump::Create(me, dir_res));
+  director_socket->FillBSockWithConnectedDaemonInformation(me, dir_res);
 
   Dmsg1(10, "Opened connection with Director %s\n", dir_res->resource_name_);
   jcr->dir_bsock = director_socket.get();

@@ -41,6 +41,7 @@
 #include <include/bareos.h>
 #include <mutex>
 #include <functional>
+#include <cassert>
 #include "lib/address_conf.h"
 #include "lib/bsock_network_dump.h"
 #include "lib/tls.h"
@@ -85,6 +86,7 @@ class BareosSocket {
   bool TlsEstablished() const { return tls_established_; }
   void SetNwdump(std::unique_ptr<BnetDump>&& nwdump)
   {
+    assert(!bnet_dump_);
     bnet_dump_ = std::move(nwdump);
   }
   std::shared_ptr<Tls> tls_conn;      /* Associated tls connection */
@@ -271,6 +273,12 @@ class BareosSocket {
   void StopTimer() { StopBsockTimer(tid_); }
   void LockMutex();
   void UnlockMutex();
+  void FillBSockWithConnectedDaemonInformation(
+      const ConfigurationParser& my_config,
+      int destination_rcode);
+  void FillBSockWithConnectedDaemonInformation(
+      const BareosResource* me,
+      const BareosResource* destination);
 };
 
 /**
