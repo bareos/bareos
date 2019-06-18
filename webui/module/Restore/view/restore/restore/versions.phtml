@@ -29,485 +29,562 @@ $this->headTitle($title);
 ?>
 
 <ul class="nav nav-tabs">
-    <li><a href="<?php echo $this->url('restore', array('action' => 'index')); ?>"><?php echo $this->translate('Restore multiple files'); ?></a>
-    </li>
-    <li class="active">
-        <a href="<?php echo $this->url('restore', array('action' => 'versions')); ?>"><?php echo $this->translate('Restore specific file version'); ?></a>
-    </li>
+   <li><a href="<?php echo $this->url('restore', array('action' => 'index')); ?>"><?php echo $this->translate('Restore multiple files'); ?></a></li>
+   <li class="active"><a href="<?php echo $this->url('restore', array('action' => 'versions')); ?>"><?php echo $this->translate('Restore specific file version'); ?></a></li>
 </ul>
 
 <br/>
 
 <?php if ($this->acl_alert) : echo $this->ACLAlert($this->required_commands); elseif (!$this->acl_alert) : ?>
 
-    <!-- modal-001 start -->
-    <div id="modal-001" class="modal fade modal-001" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel1">
-        <div class="modal-dialog modal-md">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
-                                aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title"
-                        id="myModalLabel"><?php echo $this->translate("Failed to retrieve data from Bareos director"); ?></h4>
-                </div>
-                <div class="modal-body">
-                    <p><?php echo $this->translate("Error message received:"); ?></p>
-                    <p class="text-danger"><?php echo $this->errors; ?></p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default"
-                            data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- modal-001 end -->
+<!-- modal-001 start -->
+<div id="modal-001" class="modal fade modal-001" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel1">
+   <div class="modal-dialog modal-md">
+      <div class="modal-content">
+         <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="myModalLabel"><?php echo $this->translate("Failed to retrieve data from Bareos director"); ?></h4>
+         </div>
+         <div class="modal-body">
+            <p><?php echo $this->translate("Error message received:"); ?></p>
+            <p class="text-danger"><?php echo $this->errors; ?></p>
+         </div>
+         <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
+         </div>
+      </div>
+   </div>
+</div>
 
-    <!-- modal-002 start -->
-    <div id="modal-002" class="modal fade modal-002" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel2">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
-                                aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title" id="myModalLabel"><?php echo $this->translate("Director message"); ?></h4>
-                </div>
-                <div class="modal-body">
-         <pre><code>
+<!-- modal-001 end -->
+
+<!-- modal-002 start -->
+<div id="modal-002" class="modal fade modal-002" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel2">
+   <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+         <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="myModalLabel"><?php echo $this->translate("Director message"); ?></h4>
+         </div>
+         <div class="modal-body">
+            <pre><code>
 <?php echo $this->result; ?>
-         </code></pre>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default"
-                            data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
-                </div>
+            </code></pre>
+         </div>
+         <div class="modal-footer">
+            <?php $jobid = substr($this->result, stripos($this->result, 'JobId=') + 6 ); ?>
+            <a class="btn btn-primary" href="<?php echo $this->basePath() . '/job/details/' . $jobid; ?>"><?php echo $this->translate("Job report"); ?></a>
+            <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
+         </div>
+      </div>
+   </div>
+</div>
+<!-- modal-002 end -->
+
+<!-- modal-003 start -->
+<div id="modal-003" class="modal fade modal-002" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel2">
+   <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+         <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="myModalLabel"><?php echo $this->translate("Confirm restore job submit"); ?></h4>
+         </div>
+         <div class="modal-body">
+            <p>A restore job with the parameters given below will be scheduled.</p>
+            <table id="restore-params-table" style="border-collapse: separate; border-spacing: 10px;">
+            </table>
+         </div>
+         <div class="modal-footer">
+            <button id="modal-003-btn-cancel" type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Cancel"); ?></button>
+            <button id="modal-003-btn-ok" type="button" class="btn btn-primary"><?php echo $this->translate("OK"); ?></button>
+         </div>
+      </div>
+   </div>
+</div>
+<!-- modal-003 end -->
+
+<!-- modal-004 start -->
+<div id="modal-004" class="modal fade modal-002" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel2">
+   <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+         <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="myModalLabel"></h4>
+         </div>
+         <div class="modal-body">
+            <p><?php echo $this->translate("No file selected to restore!"); ?></p>
+         </div>
+         <div class="modal-footer">
+            <button id="modal-004-btn-ok" type="button" class="btn btn-primary" data-dismiss="modal"><?php echo $this->translate("OK"); ?></button>
+         </div>
+      </div>
+   </div>
+</div>
+<!-- modal-004 end -->
+
+<div class="panel panel-default">
+   <div class="panel-heading">
+      <h3 class="panel-title">Restore</h3>
+   </div>
+   <div class="panel-body">
+      <div class="container-fluid">
+         <?php
+            $form->prepare();
+            $form->setAttribute('class', 'form-horizontal');
+            echo $this->form()->openTag($form);
+         ?>
+      <div class="row">
+
+         <div class="col-md-3">
+            <?php
+               if ($this->restore_params['type'] == "client") {
+                  echo '<p>' . $this->formRow($form->get('client')) . '</p>';
+                  echo '<p>' . $this->formRow($form->get('backups')) . '</p>';
+                  echo '<p>' . $this->formRow($form->get('mergefilesets')) . '</p>';
+                  echo '<p>' . $this->formRow($form->get('mergejobs')) . '</p>';
+                  echo '<p>' . $this->formRow($form->get('restoreclient')) . '</p>';
+                  echo '<p>' . $this->formRow($form->get('restorejob')) . '</p>';
+                  echo '<p>' . $this->formRow($form->get('replace')) . '</p>';
+                  echo '<p>' . $this->formRow($form->get('where')) . '</p>';
+                  echo '<p><button id="btn-form-submit" class="btn btn-primary" type="button">Restore</button></p>';
+                  // Hidden fields
+                  echo $this->formRow($form->get('checked_files'));
+                  echo $this->formRow($form->get('checked_directories'));
+                  echo $this->formRow($form->get('jobids_hidden'));
+               } elseif ($this->restore_params['type'] == "job") {
+                  echo $this->formRow($form->get('jobid')->setAttribute('class', 'form-control'));
+                  echo $this->formRow($form->get('restoreclient')->setAttribute('class', 'form-control'));
+                  echo $this->formRow($form->get('restorejob')->setAttribute('class', 'form-control'));
+                  echo $this->formRow($form->get('where')->setAttribute('class', 'form-control'));
+               }
+            ?>
+         </div>
+
+         <div class="col-md-5">
+            <?php
+               if ($this->restore_params['type'] == "client") {
+                  echo '<strong>';
+                  echo $this->translate("File selection");
+                  echo '</strong>';
+            ?>
+               <div class="panel panel-default">
+               <div id="filebrowser"></div>
+               </div>
+            <?php
+               }
+            ?>
+         </div>
+
+         <div class="col-md-4">
+            <strong>
+               <?php echo $this->translate('Selected file'); ?>
+            </strong>
+            <div class="panel panel-default">
+               <div class="panel-body">
+                  <span id="selectedfile-name">&nbsp;</span>
+               </div>
             </div>
-        </div>
-    </div>
-    <!-- modal-002 end -->
-
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h3 class="panel-title">Restore</h3>
-        </div>
-        <div class="panel-body">
-            <div class="container-fluid">
-                <?php
-                $form->prepare();
-                $form->setAttribute('class', 'form-horizontal');
-                echo $this->form()->openTag($form);
-                ?>
-
-
-                <div class="row">
-
-                    <div class="col-md-3">
-
-                        <?php
-                        if ($this->restore_params['type'] == "client") {
-                            echo '<p>' . $this->formRow($form->get('client')) . '</p>';
-                            echo '<p>' . $this->formRow($form->get('backups')) . '</p>';
-                            echo '<p>' . $this->formRow($form->get('mergefilesets')) . '</p>';
-                            echo '<p>' . $this->formRow($form->get('mergejobs')) . '</p>';
-                            echo '<p>' . $this->formRow($form->get('restoreclient')) . '</p>';
-                            echo '<p>' . $this->formRow($form->get('restorejob')) . '</p>';
-                            echo '<p>' . $this->formRow($form->get('replace')) . '</p>';
-                            echo '<p>' . $this->formRow($form->get('where')) . '</p>';
-                            echo '<p><br />' . $this->formSubmit($form->get('submit')->setAttribute('class', 'btn btn-primary')) . '</p>';
-                            // Hidden fields
-                            echo $this->formRow($form->get('checked_files'));
-                            echo $this->formRow($form->get('checked_directories'));
-                            echo $this->formRow($form->get('jobids_hidden'));
-                        } elseif ($this->restore_params['type'] == "job") {
-                            echo $this->formRow($form->get('jobid')->setAttribute('class', 'form-control'));
-                            echo $this->formRow($form->get('restoreclient')->setAttribute('class', 'form-control'));
-                            echo $this->formRow($form->get('restorejob')->setAttribute('class', 'form-control'));
-                            echo $this->formRow($form->get('where')->setAttribute('class', 'form-control'));
-                        }
-                        ?>
-
-                    </div>
-
-                    <div class="col-md-5">
-                        <?php
-                        if ($this->restore_params['type'] == "client") {
-                            echo '<strong>';
-                            echo $this->translate("File selection");
-                            echo '</strong>';
-                            ?>
-                            <div class="panel panel-default">
-                                <div id="filebrowser"></div>
-                            </div>
-                            <?php
-                        }
-                        ?>
-                    </div>
-                    <div class="col-md-4">
-                        <strong>
-                           <?php echo $this->translate('Selected file'); ?>
-                        </strong>
-                           <div class="panel panel-default">
-                              <div class="panel-body">
-                                 <span id="selectedfile-name">&nbsp;</span>
-                              </div>
-                           </div>
-                        <strong>
-                           <?php echo $this->translate('Available versions'); ?>
-                        </strong>
-                        <div class="panel panel-default">
-                            <div class="panel-body" style="padding: 0">
-                                <div class="scrollpane">
-                                    <table class="table table-no-bordered table-striped" id="job-totals">
-                                        <col width="10">
-                                        <col>
-                                        <col>
-                                        <col width="1*">
-                                        <thead class="bg-primary">
-                                        <tr>
-                                            <th><span class="glyphicon glyphicon-check"></span></th>
-                                            <th><?php echo $this->translate("Last modification"); ?></th>
-                                            <th><?php echo $this->translate("Size"); ?> </th>
-                                            <th><?php echo $this->translate("Checksum"); ?></th>
-                                        </tr>
-                                        </thead>
-                                        <tbody id="file-versions-list"></tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <?php
-                echo $this->form()->closeTag($form);
-                ?>
-
+            <strong>
+               <?php echo $this->translate('Available versions'); ?>
+            </strong>
+            <div class="panel panel-default">
+               <div class="panel-body" style="padding: 0">
+                  <div class="scrollpane">
+                     <table class="table table-no-bordered table-striped" id="job-totals">
+                     <col width="10">
+                     <col>
+                     <col>
+                     <col width="1*">
+                     <thead class="bg-primary">
+                        <tr>
+                           <th><span class="glyphicon glyphicon-check"></span></th>
+                           <th><?php echo $this->translate("Last modification"); ?></th>
+                           <th><?php echo $this->translate("Size"); ?> </th>
+                           <th><?php echo $this->translate("Checksum"); ?></th>
+                        </tr>
+                     </thead>
+                     <tbody id="file-versions-list"></tbody>
+                     </table>
+                  </div>
+               </div>
             </div>
-        </div>
-    </div>
+         </div>
 
-    <?php
-    echo $this->headScript()->prependFile($this->basePath() . '/js/jstreegrid.js');
-    echo $this->headScript()->prependFile($this->basePath() . '/js/jstree.min.js');
-    echo $this->headScript()->prependFile($this->basePath() . '/js/moment.min.js');
-    echo $this->headScript()->prependFile($this->basePath() . '/js/moment-with-locales.min.js');
-    echo $this->headLink()->prependStylesheet($this->basePath() . '/css/jstree.min.css');
-    ?>
+      </div>
 
-    <style>
-        .jsTreeGridHeader {
-            background-color: #eeeeee;
-            color: #000000;
-        }
+      <?php
+         echo $this->form()->closeTag($form);
+      ?>
 
-        .fixed_header tbody {
-            display: block;
-            overflow: auto;
-            height: 200px;
-            width: 100%;
-        }
+      </div>
+   </div>
+</div>
 
-        .fixed_header thead tr {
-            display: block;
-        }
+<?php
+echo $this->headScript()->prependFile($this->basePath() . '/js/jstreegrid.js');
+echo $this->headScript()->prependFile($this->basePath() . '/js/jstree.min.js');
+echo $this->headScript()->prependFile($this->basePath() . '/js/moment.min.js');
+echo $this->headScript()->prependFile($this->basePath() . '/js/moment-with-locales.min.js');
+echo $this->headLink()->prependStylesheet($this->basePath() . '/css/jstree.min.css');
+?>
 
-        .scrollpane {
-            max-height: 53vh;
-            overflow: auto;
-            overflow-y: scroll;
-        }
-    </style>
+<style>
 
-    <script type="text/javascript">
-        function clearFileVersions() {
-            $('#selectedfile-name').text('');
-            $('#file-versions-list').empty()
-        }
+.jsTreeGridHeader {
+   background-color: #eeeeee;
+   color: #000000;
+}
 
-        function getFileVersions(pathid, filename) {
-            $.ajax({
-                url: '<?php echo $this->url('restore', array('action' => 'getData'), null) . '?data=fileversions&clientname=' . $this->restore_params['client']; ?>&pathid=' + pathid  + '&filename=' + filename,
-                dataType: 'json',
-                timeout: 10000,
-                success: function(data) {
-                    $('#selectedfile-name').text(filename);
+.fixed_header tbody {
+   display: block;
+   overflow: auto;
+   height: 200px;
+   width: 100%;
+}
 
-                    $('#file-versions-list').empty();
+.fixed_header thead tr {
+   display: block;
+}
 
-                    $(Object.keys(data)).each(function(key, id) {
-                        const fileId = data[id].fileid;
-                        const rowId = `fileVersion_${fileId}`;
-                        const row = $("<tr>");
-                        const col1 = $("<td>").append(`<input type="radio" id="${rowId}" name="fileVersion" value="${fileId}">`);
-                        const col2 = $("<td>").append(
-                            $(`<label for="${rowId}">`).text(moment.unix(data[id].stat.mtime).format("YYYY-MM-DD HH:mm:ss")));
-                        const col3 = $("<td>").append(
-                            $('<span>').text(format_bibytes(data[id].stat.size)));
-                        const col4 = $("<td>").append(
-                            $('<span>').addClass('code').text(data[id].md5));
+.scrollpane {
+   max-height: 53vh;
+   overflow: auto;
+   overflow-y: scroll;
+}
 
-                        row.tooltip({
-                            title: "<table>" +
-                                    "<col width='1*'>" +
-                                    "<col width='5'>" +
-                                    "<col width='1*'>" +
-                                    "<tr>" +
-                                        "<td class='text-left'>Job ID </td>" +
-                                        "<td></td>" +
-                                        `<td class='text-left'>${data[id].jobid}</td>` +
-                                    "</tr>" +
-                                    "<tr>" +
-                                        "<td class='text-left'>Volume </td>" +
-                                        "<td></td>" +
-                                        `<td class='text-left'>${data[id].volumename}</td>` +
-                                    "</tr>" +
-                                    "<tr>" +
-                                        "<td class='text-left'>User:Group </td>" +
-                                        "<td></td>" +
-                                        `<td class='text-left'>${data[id].stat.user}:${data[id].stat.group}</td>` +
-                                    "</tr>" +
-                                    "<tr>" +
-                                        "<td class='text-left'>Last access</td>" +
-                                        "<td></td>" +
-                                        `<td class='text-left'>${moment.unix(data[id].stat.atime).format("YYYY-MM-DD HH:mm:ss")}</td>` +
-                                    "</tr>" +
-                                    "<tr>" +
-                                        "<td class='text-left'>Last status change</td>" +
-                                        "<td></td>" +
-                                        `<td class='text-left'>${moment.unix(data[id].stat.ctime).format("YYYY-MM-DD HH:mm:ss")}</td>` +
-                                    "</tr>" +
-                                "</table>",
-                            html: true,
-                            trigger: 'hover',
-                            placement: 'left',
-                            delay: { "show": 200, "hide": 0 }
-                        });
-                        row.append(col1, col2, col3, col4);
-                        $('#file-versions-list').append(row)
-                    });
-                },
-                error: function() {
-                    $('.revisions-container').empty();
-                    $('.revisions-container').append('Error fetching data.');
-                },
-                timeout: function() {
-                    $('.revisions-container').empty();
-                    $('.revisions-container').append('Timeout fetching data.');
-                },
-                parsererror: function() {
-                    $('.revisions-container').empty();
-                    $('.revisions-container').append('Error parsing data.');
-                }
+</style>
+
+<script type="text/javascript">
+
+function clearFileVersions() {
+   $('#selectedfile-name').text('');
+   $('#file-versions-list').empty()
+}
+
+function getFileVersions(pathid, filename) {
+   $.ajax({
+      url: '<?php echo $this->url('restore', array('action' => 'getData'), null) . '?data=fileversions&clientname=' . $this->restore_params['client']; ?>&pathid=' + pathid  + '&filename=' + filename,
+      dataType: 'json',
+      timeout: 10000,
+      success: function(data) {
+         $('#selectedfile-name').text(filename);
+         $('#file-versions-list').empty();
+         $(Object.keys(data)).each(function(key, id) {
+            const fileId = data[id].fileid;
+            const rowId = `fileVersion_${fileId}`;
+            const row = $("<tr>");
+            const col1 = $("<td>").append(`<input type="radio" id="${rowId}" name="fileVersion" value="${fileId}">`);
+            const col2 = $("<td>").append(
+            $(`<label for="${rowId}">`).text(moment.unix(data[id].stat.mtime).format("YYYY-MM-DD HH:mm:ss")));
+            const col3 = $("<td>").append(
+            $('<span>').text(format_bibytes(data[id].stat.size)));
+            const col4 = $("<td>").append(
+            $('<span>').addClass('code').text(data[id].md5));
+            row.tooltip({
+               title: "<table>" +
+               "<col width='1*'>" +
+               "<col width='5'>" +
+               "<col width='1*'>" +
+               "<tr>" +
+               "<td class='text-left'>Job ID </td>" +
+               "<td></td>" +
+               `<td class='text-left'>${data[id].jobid}</td>` +
+               "</tr>" +
+               "<tr>" +
+               "<td class='text-left'>Volume </td>" +
+               "<td></td>" +
+               `<td class='text-left'>${data[id].volumename}</td>` +
+               "</tr>" +
+               "<tr>" +
+               "<td class='text-left'>User:Group </td>" +
+               "<td></td>" +
+               `<td class='text-left'>${data[id].stat.user}:${data[id].stat.group}</td>` +
+               "</tr>" +
+               "<tr>" +
+               "<td class='text-left'>Last access</td>" +
+               "<td></td>" +
+               `<td class='text-left'>${moment.unix(data[id].stat.atime).format("YYYY-MM-DD HH:mm:ss")}</td>` +
+               "</tr>" +
+               "<tr>" +
+               "<td class='text-left'>Last status change</td>" +
+               "<td></td>" +
+               `<td class='text-left'>${moment.unix(data[id].stat.ctime).format("YYYY-MM-DD HH:mm:ss")}</td>` +
+               "</tr>" +
+               "</table>",
+               html: true,
+               trigger: 'hover',
+               placement: 'left',
+               delay: { "show": 200, "hide": 0 }
             });
-        }
+            row.append(col1, col2, col3, col4);
+            $('#file-versions-list').append(row)
+         });
+      },
+      error: function() {
+         $('.revisions-container').empty();
+         $('.revisions-container').append('Error fetching data.');
+      },
+      timeout: function() {
+         $('.revisions-container').empty();
+         $('.revisions-container').append('Timeout fetching data.');
+      },
+      parsererror: function() {
+         $('.revisions-container').empty();
+         $('.revisions-container').append('Error parsing data.');
+      }
+   });
+}
 
-        function treeItemSelectedHandler(event, _data) {
-            if (!_data.node.id || _data.node.id < 0) {
-                _data.instance.deselect_node(_data.node);
-                clearFileVersions()
-            } else {
-                const node = _data.node;
-                getFileVersions(node.data.pathid, node.data.name)
+function treeItemSelectedHandler(event, _data) {
+   if (!_data.node.id || _data.node.id < 0) {
+      _data.instance.deselect_node(_data.node);
+      clearFileVersions()
+   } else {
+      const node = _data.node;
+      getFileVersions(node.data.pathid, node.data.name)
+   }
+}
+
+function initTreeHandler() {
+   registerClickHandler(treeItemSelectedHandler)
+}
+
+function format_bibytes(v) {
+   if (v === 0) {
+      return "0.00 B";
+   } else {
+      const units = ["B", "kiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB"];
+      const i = Math.floor(Math.log2(v) / 10);
+      return parseFloat((v / (1 << (i * 10))).toFixed(2)) + " " + units[i];
+   }
+}
+
+var modalConfirm = function(callback) {
+   $("#modal-003-btn-ok").on("click", function() {
+      callback(true);
+      $("#modal-003").modal('hide');
+   });
+
+   $("#modal-003-btn-cancel").on("click", function() {
+      callback(false);
+      $("#modal-003").modal('hide');
+   });
+}
+
+modalConfirm(function(confirm) {
+   if(confirm) {
+      submitRestoreFormData();
+   } else {
+      return false;
+   }
+});
+
+function verifyRestoreFormDataFileSelection() {
+   const checked_files = [];
+   const fileId = $("input[name='fileVersion']:checked").val();
+
+   if (fileId) {
+      checked_files.push(fileId);
+      document.getElementById('checked_files').value = checked_files.join(",");
+      let client = document.getElementById('client').value;
+      let restoreclient = document.getElementById('restoreclient').value;
+      let replace = document.getElementById('replace').value;
+      let where = document.getElementById('where').value;
+      let selectedFile = document.getElementById('selectedfile-name').innerHTML;
+      updateModalRestoreParamsTable(client, restoreclient, replace, where, selectedFile);
+      $("#modal-003").modal();
+   } else {
+      $("#modal-004").modal();
+   }
+
+   return false
+}
+
+function submitRestoreFormData() {
+   document.getElementById('restore').submit();
+}
+
+function updateModalRestoreParamsTable(client, restoreclient, replace, where, selectedFile) {
+   $('#restore-params-table').empty();
+   $('#restore-params-table').append("<tr><td><b>Client:</b></td><td>" + client + "</td></tr>");
+   $('#restore-params-table').append("<tr><td><b>Restore to client:</b></td><td>" + restoreclient + "</td></tr>");
+   $('#restore-params-table').append("<tr><td><b>Replace files on client:</b></td><td>" + replace + "</td></tr>");
+   $('#restore-params-table').append("<tr><td><b>Restore location on client:</b></td><td>" + where + "</td></tr>");
+   $('#restore-params-table').append("<tr><td><b>Selected file:</b></td><td>" + selectedFile + "</td></tr>");
+}
+
+function registerClickHandler(handler) {
+   $('#filebrowser').on('select_node.jstree', handler)
+}
+
+function updateRestoreParams(k, v) {
+   var p = [];
+   var params = [];
+
+   p['type'] = '<?php echo $this->restore_params['type']; ?>';
+
+   if (k === 'client') {
+      p['jobid'] = '';
+   } else {
+      p['jobid'] = '<?php echo $this->restore_params['jobid']; ?>';
+   }
+
+   p['client'] = '<?php echo $this->restore_params['client']; ?>';
+
+   if (k === 'client') {
+      p['restoreclient'] = '';
+   } else {
+      p['restoreclient'] = '<?php echo $this->restore_params['restoreclient']; ?>';
+   }
+
+   p['restorejob'] = '<?php echo $this->restore_params['restorejob']; ?>';
+   p['where'] = '<?php echo $this->restore_params['where']; ?>';
+   p['fileset'] = '<?php echo $this->restore_params['fileset']; ?>';
+
+   if (k === 'mergejobs' && v === '1') {
+      p['mergefilesets'] = '1';
+   } else {
+      p['mergefilesets'] = '<?php echo $this->restore_params['mergefilesets']; ?>';
+   }
+
+   if (k === 'mergefilesets' && v === '0') {
+      p['mergejobs'] = '0';
+   } else {
+      p['mergejobs'] = '<?php echo $this->restore_params['mergejobs']; ?>';
+   }
+
+   p['limit'] = '<?php echo $this->restore_params['limit']; ?>';
+
+   p[k] = v;
+
+   var key;
+
+   for (key in p) {
+      params.push(key + "=" + p[key]);
+   }
+
+   return params.join('&');
+}
+
+$(".search-input").keyup(function () {
+   var searchString = $(this).val();
+   console.log(searchString);
+   $('#filebrowser').jstree('search', searchString);
+});
+
+$('#filebrowser').jstree({
+   'plugins': ["grid", "state", "sort", "search", "types"],
+   'core': {
+      'animation': false,
+      'force_text': true,
+      'error': function () {
+         alert('Oops, something went wrong, probably too many files.')
+      },
+      'multiple': false,
+      'data': {
+         'url': '<?php echo $this->basePath() . "/restore/filebrowser?type=" . $this->restore_params['type'] . "&jobid=" . $this->restore_params['jobid'] . "&mergefilesets=" . $this->restore_params['mergefilesets'] . "&mergejobs=" . $this->restore_params['mergejobs'] . "&limit=" . $this->restore_params['limit']; ?>',
+         'dataType': 'json',
+         'data': function (node) {
+            return {
+               'id': node.id,
+               'state': {'checkbox_disabled': true}
+            };
+         },
+      },
+   },
+   'state' : {
+      'key': 'versions'
+   },
+   'grid': {
+      width: '100%',
+      height: '60vh',
+      fixedHeader: true,
+      resizable: false,
+      columns: [
+         {
+            width: '100%',
+            height: '100%',
+            header: '<?php echo $this->translate("Name"); ?>',
+            headerClass: 'jsTreeGridHeader',
+            title: "_DATA_"
+         },
+         {
+            width: 150,
+            header: '<?php echo $this->translate("Size"); ?>',
+            headerClass: 'jsTreeGridHeader',
+            value: function (node) {
+               if (node.data.stat.size === 0) {
+                  return null;
+               } else {
+                  return (format_bibytes(node.data.stat.size));
+               }
             }
-        }
-
-        function initTreeHandler() {
-            registerClickHandler(treeItemSelectedHandler)
-        }
-    </script>
-
-    <script type="text/javascript">
-        function format_bibytes(v) {
-            if (v === 0) {
-                return "0.00 B";
-            } else {
-                const units = ["B", "kiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB"];
-                const i = Math.floor(Math.log2(v) / 10);
-                return parseFloat((v / (1 << (i * 10))).toFixed(2)) + " " + units[i];
+         },
+         {
+            width: 150,
+            header: '<?php echo $this->translate("Last modification"); ?>',
+            headerClass: 'jsTreeGridHeader',
+            value: function (node) {
+               if (node.data.stat.mtime === 0) {
+                  return null;
+               } else {
+                  return (moment.unix(node.data.stat.mtime).format("YYYY-MM-DD HH:mm:ss"));
+               }
             }
-        }
+         }
+      ],
+   },
+   'search': {
+      "case_sensitive": false,
+      "show_only_matches": false
+   }
+});
 
-        function getFiles() {
-            const checked_files = [];
-            const fileId = $("input[name='fileVersion']:checked").val();
+$('#jobid').change(function (event) {
+   window.location.href = window.location.pathname + '?' + updateRestoreParams('jobid', this.value);
+});
 
-            if (fileId) {
-                checked_files.push(fileId);
-                document.getElementById('checked_files').value = checked_files.join(",");
-                return confirm("<?php echo $this->translate("Confirm restore"); ?>")
-            } else {
-                alert("<?php echo $this->translate("Please select a file version"); ?>")
-            }
+$('#client').change(function (event) {
+   window.location.href = window.location.pathname + '?' + updateRestoreParams('client', this.value);
+});
 
-            return false
-        }
+$('#mergefilesets').change(function (event) {
+   window.location.href = window.location.pathname + '?' + updateRestoreParams('mergefilesets', this.value);
+});
 
-        function registerClickHandler(handler) {
-            $('#filebrowser').on('select_node.jstree', handler)
-        }
+$('#mergejobs').change(function (event) {
+   window.location.href = window.location.pathname + '?' + updateRestoreParams('mergejobs', this.value);
+});
 
-        function updateRestoreParams(k, v) {
-            var p = [];
-            var params = [];
+$('#limit').change(function (event) {
+   window.location.href = window.location.pathname + '?' + updateRestoreParams('limit', this.value);
+});
 
-            p['type'] = '<?php echo $this->restore_params['type']; ?>';
+$("#btn-form-submit").on("click", function() {
+   verifyRestoreFormDataFileSelection();
+});
 
-            if (k === 'client') {
-                p['jobid'] = '';
-            } else {
-                p['jobid'] = '<?php echo $this->restore_params['jobid']; ?>';
-            }
+initTreeHandler();
 
-            p['client'] = '<?php echo $this->restore_params['client']; ?>';
+$(document).ready(function () {
 
-            if (k === 'client') {
-                p['restoreclient'] = '';
-            } else {
-                p['restoreclient'] = '<?php echo $this->restore_params['restoreclient']; ?>';
-            }
+   var errors = '<?php echo str_replace(array("\n", "\r"), "", $this->errors); ?>';
 
-            p['restorejob'] = '<?php echo $this->restore_params['restorejob']; ?>';
-            p['where'] = '<?php echo $this->restore_params['where']; ?>';
-            p['fileset'] = '<?php echo $this->restore_params['fileset']; ?>';
+   if (errors.length > 0) {
+      $("#modal-001").modal();
+   }
 
-            if (k === 'mergejobs' && v === '1') {
-                p['mergefilesets'] = '1';
-            } else {
-                p['mergefilesets'] = '<?php echo $this->restore_params['mergefilesets']; ?>';
-            }
+   var result = '<?php echo str_replace(array("\n", "\r"), "", $this->result); ?>';
 
-            if (k === 'mergefilesets' && v === '0') {
-                p['mergejobs'] = '0';
-            } else {
-                p['mergejobs'] = '<?php echo $this->restore_params['mergejobs']; ?>';
-            }
+   if (result.length > 0) {
+      $("#modal-002").modal();
+   }
 
-            p['limit'] = '<?php echo $this->restore_params['limit']; ?>';
+   $('#checked_files').val('');
+   $('#checked_directories').val('')
 
-            p[k] = v;
+});
 
-            var key;
-
-            for (key in p) {
-                params.push(key + "=" + p[key]);
-            }
-
-            return params.join('&');
-        }
-
-        $(".search-input").keyup(function () {
-            var searchString = $(this).val();
-            console.log(searchString);
-            $('#filebrowser').jstree('search', searchString);
-        });
-
-        $('#filebrowser').jstree({
-            'plugins': ["grid", "state", "sort", "search", "types"],
-            'core': {
-                'animation': false,
-                'force_text': true,
-                'error': function () {
-                    alert('Oops, something went wrong, probably too many files.')
-                },
-                'multiple': false,
-                'data': {
-                    'url': '<?php echo $this->basePath() . "/restore/filebrowser?type=" . $this->restore_params['type'] . "&jobid=" . $this->restore_params['jobid'] . "&mergefilesets=" . $this->restore_params['mergefilesets'] . "&mergejobs=" . $this->restore_params['mergejobs'] . "&limit=" . $this->restore_params['limit']; ?>',
-                    'dataType': 'json',
-                    'data': function (node) {
-                        return {
-                            'id': node.id,
-                            'state': {'checkbox_disabled': true}
-                        };
-                    },
-                },
-            },
-            'state' : {
-                'key': 'versions'
-            },
-            'grid': {
-                width: '100%',
-                height: '60vh',
-                fixedHeader: true,
-                resizable: false,
-                columns: [
-                    {
-                        width: '100%',
-                        height: '100%',
-                        header: '<?php echo $this->translate("Name"); ?>',
-                        headerClass: 'jsTreeGridHeader',
-                        title: "_DATA_"
-                    },
-                    {
-                        width: 150,
-                        header: '<?php echo $this->translate("Size"); ?>',
-                        headerClass: 'jsTreeGridHeader',
-                        value: function (node) {
-                            if (node.data.stat.size === 0) {
-                                return null;
-                            } else {
-                                return (format_bibytes(node.data.stat.size));
-                            }
-                        }
-                    },
-                    {
-                        width: 150,
-                        header: '<?php echo $this->translate("Last modification"); ?>',
-                        headerClass: 'jsTreeGridHeader',
-                        value: function (node) {
-                            if (node.data.stat.mtime === 0) {
-                                return null;
-                            } else {
-                                return (moment.unix(node.data.stat.mtime).format("YYYY-MM-DD HH:mm:ss"));
-                            }
-                        }
-                    }
-                ],
-            },
-            'search': {
-                "case_sensitive": false,
-                "show_only_matches": false
-            }
-        });
-
-        $('#jobid').change(function (event) {
-            window.location.href = window.location.pathname + '?' + updateRestoreParams('jobid', this.value);
-        });
-
-        $('#client').change(function (event) {
-            window.location.href = window.location.pathname + '?' + updateRestoreParams('client', this.value);
-        });
-
-        $('#mergefilesets').change(function (event) {
-            window.location.href = window.location.pathname + '?' + updateRestoreParams('mergefilesets', this.value);
-        });
-
-        $('#mergejobs').change(function (event) {
-            window.location.href = window.location.pathname + '?' + updateRestoreParams('mergejobs', this.value);
-        });
-
-        $('#limit').change(function (event) {
-            window.location.href = window.location.pathname + '?' + updateRestoreParams('limit', this.value);
-        });
-
-        initTreeHandler();
-
-        $(document).ready(function () {
-
-            var errors = '<?php echo str_replace(array("\n", "\r"), "", $this->errors); ?>';
-
-            if (errors.length > 0) {
-                $("#modal-001").modal();
-            }
-
-            var result = '<?php echo str_replace(array("\n", "\r"), "", $this->result); ?>';
-
-            if (result.length > 0) {
-                $("#modal-002").modal();
-            }
-
-            $('#checked_files').val('');
-            $('#checked_directories').val('')
-        });
-
-    </script>
+</script>
 
 <?php endif; ?>

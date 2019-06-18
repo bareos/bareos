@@ -50,7 +50,7 @@ $this->headTitle($title);
          <p class="text-danger"><?php echo $this->errors; ?></p>
       </div>
       <div class="modal-footer">
-         <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
+         <button type="button" class="btn btn-primary" data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
       </div>
     </div>
   </div>
@@ -71,12 +71,55 @@ $this->headTitle($title);
          </code></pre>
       </div>
       <div class="modal-footer">
-         <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
+         <?php $jobid = substr($this->result, stripos($this->result, 'JobId=') + 6 ); ?>
+         <a class="btn btn-primary" href="<?php echo $this->basePath() . '/job/details/' . $jobid; ?>"><?php echo $this->translate("Job report"); ?></a>
+         <button type="button" class="btn btn-primary" data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
       </div>
     </div>
   </div>
 </div>
 <!-- modal-002 end -->
+
+<!-- modal-003 start -->
+<div id="modal-003" class="modal fade modal-002" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel2">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+   <div class="modal-header">
+   <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+   <h4 class="modal-title" id="myModalLabel"><?php echo $this->translate("Confirm restore job submit"); ?></h4>
+      </div>
+      <div class="modal-body">
+         <p>A restore job with the parameters given below will be scheduled.</p>
+         <table id="restore-params-table" style="border-collapse: separate; border-spacing: 10px;">
+         </table>
+      </div>
+      <div class="modal-footer">
+         <button id="modal-003-btn-cancel" type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Cancel"); ?></button>
+         <button id="modal-003-btn-ok" type="button" class="btn btn-primary"><?php echo $this->translate("OK"); ?></button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- modal-003 end -->
+
+<!-- modal-004 start -->
+<div id="modal-004" class="modal fade modal-002" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel2">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+   <div class="modal-header">
+   <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+   <h4 class="modal-title" id="myModalLabel"></h4>
+      </div>
+      <div class="modal-body">
+         <p><?php echo $this->translate("No files or directories selected to restore!"); ?></p>
+      </div>
+      <div class="modal-footer">
+         <button id="modal-004-btn-ok" type="button" class="btn btn-primary" data-dismiss="modal"><?php echo $this->translate("OK"); ?></button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- modal-004 end -->
 
 <div class="panel panel-default">
    <div class="panel-heading">
@@ -105,7 +148,7 @@ $this->headTitle($title);
          echo '<p>'.$this->formRow($form->get('restorejob')).'</p>';
          echo '<p>'.$this->formRow($form->get('replace')).'</p>';
          echo '<p>'.$this->formRow($form->get('where')).'</p>';
-         echo '<p><br />'.$this->formSubmit($form->get('submit')->setAttribute('class','btn btn-primary')).'</p>';
+         echo '<p><button id="btn-form-submit" class="btn btn-primary" type="button">Restore</button></p>';
          // Hidden fields
          echo $this->formRow($form->get('checked_files'));
          echo $this->formRow($form->get('checked_directories'));
@@ -165,21 +208,42 @@ $this->headTitle($title);
 
 <script type="text/javascript">
 
-    function format_bibytes(v) {
-        if (v === 0) {
-            return "0.00 B";
-        } else {
-            const units = ["B", "kiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB"];
-            const i = Math.floor(Math.log2(v) / 10);
-            return parseFloat((v / (1 << (i * 10))).toFixed(2)) + " " + units[i];
-        }
-    }
+   function format_bibytes(v) {
+     if (v === 0) {
+         return "0.00 B";
+     } else {
+         const units = ["B", "kiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB"];
+         const i = Math.floor(Math.log2(v) / 10);
+         return parseFloat((v / (1 << (i * 10))).toFixed(2)) + " " + units[i];
+     }
+   }
 
-   function getFiles() {
+   var modalConfirm = function(callback) {
+
+      $("#modal-003-btn-ok").on("click", function() {
+         callback(true);
+         $("#modal-003").modal('hide');
+      });
+
+      $("#modal-003-btn-cancel").on("click", function() {
+         callback(false);
+         $("#modal-003").modal('hide');
+      });
+
+   }
+
+   modalConfirm(function(confirm) {
+      if(confirm){
+         submitRestoreFormData();
+      } else{
+         return false;
+      }
+   });
+
+   function verifyRestoreFormDataFileSelection() {
 
       var checked_files = [];
       var checked_directories = [];
-
       var checked_ids = $('#filebrowser').jstree('get_checked','full',true);
 
       $(checked_ids).each(function () {
@@ -195,12 +259,33 @@ $this->headTitle($title);
       document.getElementById('checked_directories').value = checked_directories.join(",");
 
       if(checked_ids.length === 0) {
-         alert("No files or directories selected!");
-         return false;
+         $("#modal-004").modal();
+      } else {
+         let client = document.getElementById('client').value;
+         let restoreclient = document.getElementById('restoreclient').value;
+         let replace = document.getElementById('replace').value;
+         let where = document.getElementById('where').value;
+         let selectedNumberOfDirectories = checked_directories.length;
+         let selectedNumberOfFiles = checked_files.length;
+
+         updateModalRestoreParamsTable(client, restoreclient, replace, where, selectedNumberOfDirectories, selectedNumberOfFiles);
+         $("#modal-003").modal();
       }
 
-      return confirm("Are you sure?");
+   }
 
+   function submitRestoreFormData() {
+      document.getElementById('restore').submit();
+   }
+
+   function updateModalRestoreParamsTable(client, restoreclient, replace, where, selectedNumberOfDirectories, selectedNumberOfFiles) {
+      $('#restore-params-table').empty();
+      $('#restore-params-table').append("<tr><td><b>Client:</b></td><td>" + client + "</td></tr>");
+      $('#restore-params-table').append("<tr><td><b>Restore to client:</b></td><td>" + restoreclient + "</td></tr>");
+      $('#restore-params-table').append("<tr><td><b>Replace files on client:</b></td><td>" + replace + "</td></tr>");
+      $('#restore-params-table').append("<tr><td><b>Restore location on client:</b></td><td>" + where + "</td></tr>");
+      $('#restore-params-table').append("<tr><td><b>Directories selected:</b></td><td>" + selectedNumberOfDirectories + "</td></tr>");
+      $('#restore-params-table').append("<tr><td><b>Files selected:</b></td><td>" + selectedNumberOfFiles + "</td></tr>");
    }
 
    function updateRestoreParams(k, v) {
@@ -348,6 +433,10 @@ $this->headTitle($title);
 
    $('#limit').change(function(event) {
       window.location.href = window.location.pathname + '?' + updateRestoreParams('limit', this.value);
+   });
+
+   $("#btn-form-submit").on("click", function() {
+      verifyRestoreFormDataFileSelection();
    });
 
    $(document).ready(function(){
