@@ -1,5 +1,3 @@
-msgid ""
-msgstr ""
 "Project-Id-Version: bareos-webui\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2019-06-18 12:43+0200\n"
