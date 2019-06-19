@@ -354,8 +354,15 @@ $this->headTitle($title);
       'core' : {
          'animation': false,
          'force_text': true,
-         'error': function () {
-            alert('Oops, something went wrong, probably too many files.')
+         'error': function (e) {
+            $('#filebrowser').html(
+               "<h4>There was an error while loading data for this tree.</h4>" +
+               "<p><b>Error: </b>" + e.error + "</p>" +
+               "<p><b>Plugin: </b>" + e.plugin + "</p>" +
+               "<p><b>Reason: </b> " + e.reason + "</p>" +
+               "<p><b>Data:</b></p>" +
+               "<pre><code>" + e.data + "</code></pre>"
+            );
          },
          'data' :{
             'url' : '<?php echo $this->basePath() . "/restore/filebrowser?type=" . $this->restore_params['type'] . "&jobid=" . $this->restore_params['jobid'] . "&mergefilesets=" . $this->restore_params['mergefilesets'] . "&mergejobs=" . $this->restore_params['mergejobs'] . "&limit=" . $this->restore_params['limit']; ?>',
