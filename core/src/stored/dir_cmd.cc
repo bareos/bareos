@@ -1695,6 +1695,8 @@ static bool ReplicateCmd(JobControlRecord* jcr)
   }
 
   jcr->store_bsock = storage_daemon_socket.get();
+  jcr->store_bsock->SetNwdump(BnetDump::Create(
+      me, R_STORAGE, *my_config->GetQualifiedResourceNameTypeConverter()));
 
   storage_daemon_socket->fsend("Hello Start Storage Job %s\n", JobName);
 

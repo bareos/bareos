@@ -25,7 +25,6 @@
 #include "lib/backtrace.h"
 #include "lib/bareos_resource.h"
 #include "lib/bnet.h"
-#include "lib/bstringlist.h"
 #include "lib/bsock.h"
 #include "lib/bsock_tcp.h"
 #include "lib/qualified_resource_name_type_converter.h"
