@@ -35,6 +35,8 @@
 
 #include "dird/ua.h"
 
+struct VolumeParameters;
+
 namespace directordaemon {
 
 /**
