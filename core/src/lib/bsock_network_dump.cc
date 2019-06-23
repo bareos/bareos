@@ -68,8 +68,8 @@ class BnetDumpPrivate {
 };
 
 std::string BnetDumpPrivate::filename_;
-bool BnetDumpPrivate::plantuml_mode_ = true;
-std::size_t BnetDumpPrivate::max_data_dump_bytes_ = 64;
+bool BnetDumpPrivate::plantuml_mode_ = false;
+std::size_t BnetDumpPrivate::max_data_dump_bytes_ = 100;
 int BnetDumpPrivate::stack_level_start_ = 6;
 int BnetDumpPrivate::stack_level_amount_ = 0;
 std::set<std::string> BnetDumpPrivate::exclude_rcodes_;  // = {"R_CONSOLE"};
