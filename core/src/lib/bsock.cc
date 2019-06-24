@@ -801,6 +801,15 @@ void BareosSocket::ControlBwlimit(int bytes)
     }
   }
 }
+void BareosSocket::EnableNetworkMessagesDump(
+    const ConfigurationParser& my_config,
+    int own_rcode,
+    int destination_rcode)
+{
+  SetNwdump(
+      BnetDump::Create(own_rcode, destination_rcode,
+                       *my_config.GetQualifiedResourceNameTypeConverter()));
+}
 
 void BareosSocket::EnableNetworkMessagesDump(
     const ConfigurationParser& my_config,

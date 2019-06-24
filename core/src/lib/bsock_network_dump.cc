@@ -51,15 +51,19 @@ class BnetDumpPrivate {
   mutable std::string output_buffer_;
   std::ofstream output_file_;
 
-  std::unique_ptr<BareosResource> dummy_resource_;
+  std::unique_ptr<BareosResource> own_dummy_resource_;
+  std::unique_ptr<BareosResource> destination_dummy_resource_;
   const BareosResource* own_resource_ = nullptr;
-  const BareosResource* distant_resource_ = nullptr;
+  const BareosResource* destination_resource_ = nullptr;
   bool logging_disabled_ = false;
 
   void OpenFile();
   void CloseFile();
-  void CreateAndAssignDummyResource(
+  void CreateAndAssignOwnDummyResource(
       int destination_rcode_for_dummy_resource,
+      const QualifiedResourceNameTypeConverter& conv);
+  void CreateAndAssignDestinationDummyResource(
+      int own_rcode_for_dummy_resource,
       const QualifiedResourceNameTypeConverter& conv);
   std::string CreateDataString(int signal, const char* ptr, int nbytes) const;
   std::string CreateFormatStringForNetworkMessage(int signal) const;
@@ -90,15 +94,26 @@ bool BnetDumpPrivate::SetFilename(const char* filename)
   return true;
 }
 
-void BnetDumpPrivate::CreateAndAssignDummyResource(
+void BnetDumpPrivate::CreateAndAssignOwnDummyResource(
+    int own_rcode_for_dummy_resource,
+    const QualifiedResourceNameTypeConverter& conv)
+{
+  own_dummy_resource_ = std::move(std::make_unique<BareosResource>());
+  own_dummy_resource_->rcode_ = own_rcode_for_dummy_resource;
+  own_dummy_resource_->rcode_str_ =
+      conv.ResourceTypeToString(own_rcode_for_dummy_resource);
+  own_resource_ = own_dummy_resource_.get();
+}
+
+void BnetDumpPrivate::CreateAndAssignDestinationDummyResource(
     int destination_rcode_for_dummy_resource,
     const QualifiedResourceNameTypeConverter& conv)
 {
-  dummy_resource_ = std::move(std::make_unique<BareosResource>());
-  dummy_resource_->rcode_ = destination_rcode_for_dummy_resource;
-  dummy_resource_->rcode_str_ =
+  destination_dummy_resource_ = std::move(std::make_unique<BareosResource>());
+  destination_dummy_resource_->rcode_ = destination_rcode_for_dummy_resource;
+  destination_dummy_resource_->rcode_str_ =
       conv.ResourceTypeToString(destination_rcode_for_dummy_resource);
-  distant_resource_ = dummy_resource_.get();
+  destination_resource_ = destination_dummy_resource_.get();
 }
 
 std::string BnetDumpPrivate::CreateDataString(int signal,
@@ -161,8 +176,8 @@ bool BnetDumpPrivate::CreateAndWriteMessageToBuffer(const char* ptr,
   }
 
   const char* connected_rcode_str = "UNKNOWN";
-  if (distant_resource_ && !distant_resource_->rcode_str_.empty()) {
-    connected_rcode_str = distant_resource_->rcode_str_.c_str();
+  if (destination_resource_ && !destination_resource_->rcode_str_.empty()) {
+    connected_rcode_str = destination_resource_->rcode_str_.c_str();
   }
 
   if (exclude_rcodes_.find(own_rcode_str) != exclude_rcodes_.end() ||
@@ -202,13 +217,14 @@ void BnetDumpPrivate::CreateAndWriteStacktraceToBuffer() const
 
 std::unique_ptr<BnetDump> BnetDump::Create(
     const BareosResource* own_resource,
-    const BareosResource* distant_resource)
+    const BareosResource* destination_resource)
 {
   std::unique_ptr<BnetDump> p;
   if (BnetDumpPrivate::filename_.empty()) {
     return p;
   } else {
-    p = std::move(std::make_unique<BnetDump>(own_resource, distant_resource));
+    p = std::move(
+        std::make_unique<BnetDump>(own_resource, destination_resource));
     return p;
   }
 }
@@ -228,17 +244,33 @@ std::unique_ptr<BnetDump> BnetDump::Create(
   }
 }
 
+std::unique_ptr<BnetDump> BnetDump::Create(
+    int own_rcode_for_dummy_resource,
+    int destination_rcode_for_dummy_resource,
+    const QualifiedResourceNameTypeConverter& conv)
+{
+  if (BnetDumpPrivate::filename_.empty()) {
+    std::unique_ptr<BnetDump> p;
+    return p;
+  } else {
+    std::unique_ptr<BnetDump> p(
+        std::make_unique<BnetDump>(own_rcode_for_dummy_resource,
+                                   destination_rcode_for_dummy_resource, conv));
+    return p;
+  }
+}
+
 BnetDump::BnetDump() : impl_(std::make_unique<BnetDumpPrivate>())
 {
   // standard constructor just creates private data object
 }
 
 BnetDump::BnetDump(const BareosResource* own_resource,
-                   const BareosResource* distant_resource)
+                   const BareosResource* destination_resource)
     : BnetDump()
 {
   impl_->own_resource_ = own_resource;
-  impl_->distant_resource_ = distant_resource;
+  impl_->destination_resource_ = destination_resource;
   impl_->OpenFile();
 }
 
@@ -248,8 +280,19 @@ BnetDump::BnetDump(const BareosResource* own_resource,
     : BnetDump()
 {
   impl_->own_resource_ = own_resource;
-  impl_->CreateAndAssignDummyResource(destination_rcode_for_dummy_resource,
-                                      conv);
+  impl_->CreateAndAssignDestinationDummyResource(
+      destination_rcode_for_dummy_resource, conv);
+  impl_->OpenFile();
+}
+
+BnetDump::BnetDump(int own_rcode_for_dummy_resource,
+                   int destination_rcode_for_dummy_resource,
+                   const QualifiedResourceNameTypeConverter& conv)
+    : BnetDump()
+{
+  impl_->CreateAndAssignOwnDummyResource(own_rcode_for_dummy_resource, conv);
+  impl_->CreateAndAssignDestinationDummyResource(
+      destination_rcode_for_dummy_resource, conv);
   impl_->OpenFile();
 }
 

@@ -275,6 +275,9 @@ class BareosSocket {
   void UnlockMutex();
   void EnableNetworkMessagesDump(const ConfigurationParser& my_config,
                                  int destination_rcode);
+  void EnableNetworkMessagesDump(const ConfigurationParser& my_config,
+                                 int own_rcode,
+                                 int destination_rcode);
   void EnableNetworkMessagesDump(const BareosResource* me,
                                  const BareosResource* destination);
 };

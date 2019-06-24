@@ -38,6 +38,10 @@ class BnetDump {
       const BareosResource* own_resource,
       int destination_rcode_for_dummy_resource,
       const QualifiedResourceNameTypeConverter& conv);
+  static std::unique_ptr<BnetDump> Create(
+      int own_rcode_for_dummy_resource,
+      int destination_rcode_for_dummy_resource,
+      const QualifiedResourceNameTypeConverter& conv);
   static bool EvaluateCommandLineArgs(const char* cmdline_optarg);
 
   void DumpMessageAndStacktraceToFile(const char* ptr, int nbytes) const;
@@ -49,6 +53,9 @@ class BnetDump {
   BnetDump(const BareosResource* own_resource,
            const BareosResource* distant_resource);
   BnetDump(const BareosResource* own_resource,
+           int destination_rcode_for_dummy_resource,
+           const QualifiedResourceNameTypeConverter& conv);
+  BnetDump(int own_rcode_for_dummy_resource,
            int destination_rcode_for_dummy_resource,
            const QualifiedResourceNameTypeConverter& conv);
   BnetDump(const BnetDump& other) = delete;
