@@ -1464,7 +1464,7 @@ Special dot (.) Commands
 
 :index:`\ <single: Console; Command; . commands>`\ 
 
-There is a list of commands that are prefixed with a period (.). These commands are intended to be used either by batch programs or graphical user interface front-ends. They are not normally used by interactive users. For details, see `Bareos Developer Guide (dot-commands) <http://doc.bareos.org/master/html/bareos-developer-guide.html#dot-commands>`_.
+There is a list of commands that are prefixed with a period (.). These commands are intended to be used either by batch programs or graphical user interface front-ends. They are not normally used by interactive users. For details, see `Bareos Developer Guide (dot-commands) <../DeveloperGuide/api.html#dot-commands>`_.
 
 .. _atcommands:
 
