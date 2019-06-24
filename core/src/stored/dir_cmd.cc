@@ -1695,8 +1695,8 @@ static bool ReplicateCmd(JobControlRecord* jcr)
   }
 
   jcr->store_bsock = storage_daemon_socket.get();
-  jcr->store_bsock->SetNwdump(BnetDump::Create(
-      me, R_STORAGE, *my_config->GetQualifiedResourceNameTypeConverter()));
+  jcr->store_bsock->EnableNetworkMessagesDump(*my_config,
+                                                            R_STORAGE);
 
   storage_daemon_socket->fsend("Hello Start Storage Job %s\n", JobName);
 
@@ -1786,7 +1786,7 @@ static bool PassiveCmd(JobControlRecord* jcr)
     }
   }
 
-  fd->FillBSockWithConnectedDaemonInformation(*my_config, R_CLIENT);
+  fd->EnableNetworkMessagesDump(*my_config, R_CLIENT);
 
   jcr->file_bsock = fd;
   fd->fsend("Hello Storage calling Start Job %s\n", jcr->Job);

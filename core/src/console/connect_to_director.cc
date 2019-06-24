@@ -70,7 +70,7 @@ BareosSocket* ConnectToDirector(JobControlRecord& jcr,
     local_tls_resource = director_resource;
   }
 
-  UA_sock->FillBSockWithConnectedDaemonInformation(own_resource,
+  UA_sock->EnableNetworkMessagesDump(own_resource,
                                                    director_resource);
 
   if (local_tls_resource->IsTlsConfigured()) {

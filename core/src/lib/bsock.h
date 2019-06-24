@@ -84,11 +84,6 @@ class BareosSocket {
   struct sockaddr_in peer_addr; /* Peer's IP address */
   void SetTlsEstablished() { tls_established_ = true; }
   bool TlsEstablished() const { return tls_established_; }
-  void SetNwdump(std::unique_ptr<BnetDump>&& nwdump)
-  {
-    assert(!bnet_dump_);
-    bnet_dump_ = std::move(nwdump);
-  }
   std::shared_ptr<Tls> tls_conn;      /* Associated tls connection */
   std::unique_ptr<Tls> tls_conn_init; /* during initialization */
   BareosVersionNumber connected_daemon_version_;
@@ -142,6 +137,11 @@ class BareosSocket {
                                 const char* password,
                                 JobControlRecord* jcr);
   void ParameterizeTlsCert(Tls* tls_conn, TlsResource* tls_resource);
+  void SetNwdump(std::unique_ptr<BnetDump>&& nwdump)
+  {
+    assert(!bnet_dump_);
+    bnet_dump_ = std::move(nwdump);
+  }
 
  public:
   BareosSocket();
@@ -273,12 +273,10 @@ class BareosSocket {
   void StopTimer() { StopBsockTimer(tid_); }
   void LockMutex();
   void UnlockMutex();
-  void FillBSockWithConnectedDaemonInformation(
-      const ConfigurationParser& my_config,
-      int destination_rcode);
-  void FillBSockWithConnectedDaemonInformation(
-      const BareosResource* me,
-      const BareosResource* destination);
+  void EnableNetworkMessagesDump(const ConfigurationParser& my_config,
+                                 int destination_rcode);
+  void EnableNetworkMessagesDump(const BareosResource* me,
+                                 const BareosResource* destination);
 };
 
 /**

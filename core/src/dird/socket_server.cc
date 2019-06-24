@@ -121,11 +121,11 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
       (sscanf(bs->msg, hello_client, name) == 1)) {
     Dmsg1(110, "Got a FD connection at %s\n",
           bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
-    bs->FillBSockWithConnectedDaemonInformation(*my_config, R_CLIENT);
+    bs->EnableNetworkMessagesDump(*my_config, R_CLIENT);
     return HandleFiledConnection(client_connections, bs, name,
                                  fd_protocol_version);
   }
-  bs->FillBSockWithConnectedDaemonInformation(*my_config, R_CONSOLE);
+  bs->EnableNetworkMessagesDump(*my_config, R_CONSOLE);
   return HandleUserAgentClientRequest(bs);
 }
 
