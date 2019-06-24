@@ -69,7 +69,7 @@ include 'version.php';
 <body>
 
 <style>
-@media (max-width: 1330px) {
+@media (max-width: 1480px) {
     .navbar-header {
         float: none;
     }
