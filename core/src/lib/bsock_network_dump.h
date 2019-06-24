@@ -22,9 +22,6 @@
 #ifndef BAREOS_LIB_BSOCK_NETWORK_DUMP_H_
 #define BAREOS_LIB_BSOCK_NETWORK_DUMP_H_
 
-#include <string>
-#include <memory>
-
 class BareosResource;
 class QualifiedResourceNameTypeConverter;
 class BnetDumpPrivate;
@@ -42,6 +39,7 @@ class BnetDump {
       int own_rcode_for_dummy_resource,
       int destination_rcode_for_dummy_resource,
       const QualifiedResourceNameTypeConverter& conv);
+
   static bool EvaluateCommandLineArgs(const char* cmdline_optarg);
 
   void DumpMessageAndStacktraceToFile(const char* ptr, int nbytes) const;

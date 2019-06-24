@@ -48,7 +48,8 @@ include_directories(
 
 set (BAREOS_SRCS  address_conf.cc alist.cc attr.cc attribs.cc backtrace.cc base64.cc
    berrno.cc bget_msg.cc binflate.cc bnet_server_tcp.cc bnet.cc  bpipe.cc
-   breg.cc bregex.cc bsnprintf.cc bsock.cc bsock_network_dump.cc bsock_tcp.cc bstringlist.cc
+   breg.cc bregex.cc bsnprintf.cc bsock.cc bsock_network_dump.cc bsock_network_dump_private.cc
+   bsock_tcp.cc bstringlist.cc
    bsys.cc btime.cc btimers.cc  cbuf.cc
    connection_pool.cc cram_md5.cc crypto.cc  crypto_cache.cc
    crypto_none.cc crypto_nss.cc  crypto_openssl.cc crypto_wrap.cc daemon.cc
