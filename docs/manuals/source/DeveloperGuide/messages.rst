@@ -117,9 +117,7 @@ debug from user’s output.
     Jmsg1(jcr, M_ERROR, 0, "%s exists but is not a directory.\n", path);
     Jmsg0(NULL, M_ERROR_TERM, 0, "Failed to find config filename.\n");
 
-The `Message
-Ressource <http://doc.bareos.org/master/html/bareos-manual-main-reference.html#MessagesChapter>`__
-configuration defines how and to what destinations will be sent.
+The `Message Ressource <../Configuration/Messages.html>`__ configuration defines how and to what destinations will be sent.
 
 Special Cases
 ^^^^^^^^^^^^^
