@@ -106,8 +106,8 @@ msgid "Sorry, it seems you are not authorized to run this module. If you think t
 msgstr "Elnézést, de úgy tűnik, hogy nincs jogosultsága ehhez a modulhoz. Ha Ön szerint ez hiba, lépjen kapcsolatba a helyi adminisztrátorral."
 
 #: ../module/Application/src/Application/View/Helper/ACLAlert.php:38
-msgid "Please read the <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#sec:webui-console\" target=\"_blank\">Bareos documentation</a> for any additional information on how to configure the Command ACL directive of your Console/Profile resources. Following is a list of required commands which need to be in your Command ACL to run this module properly:"
-msgstr "Legyen szíves olvassa el a <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#sec:webui-console\" target=\"_blank\">Bareos dokumentációt</a> a konzol/profil parancs ACL direktívák beállításával kapcsolatos további információkért. Az alábbi parancsoknak szerepelniük kell a parancs ACL-ben ezen modul megfelelő futtatásához:"
+msgid "Please read the <a href=\"%s\" target=\"_blank\">Bareos documentation</a> for any additional information on how to configure the Command ACL directive of your Console/Profile resources. Following is a list of required commands which need to be in your Command ACL to run this module properly:"
+msgstr "Legyen szíves olvassa el a <a href=\"%s\" target=\"_blank\">Bareos dokumentációt</a> a konzol/profil parancs ACL direktívák beállításával kapcsolatos további információkért. Az alábbi parancsoknak szerepelniük kell a parancs ACL-ben ezen modul megfelelő futtatásához:"
 
 #: ../module/Application/view/error/404.phtml:3
 msgid "A 404 error occurred"

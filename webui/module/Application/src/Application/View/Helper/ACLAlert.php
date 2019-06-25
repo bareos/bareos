@@ -35,7 +35,8 @@ class ACLAlert extends AbstractHelper
    public function __invoke($required_commands)
    {
       $msg_part_a = _('Sorry, it seems you are not authorized to run this module. If you think this is an error, please contact your local administrator.');
-      $msg_part_b = _('Please read the <a href="http://doc.bareos.org/master/html/bareos-manual-main-reference.html#sec:webui-console" target="_blank">Bareos documentation</a> for any additional information on how to configure the Command ACL directive of your Console/Profile resources. Following is a list of required commands which need to be in your Command ACL to run this module properly:');
+      $msg_part_b = _('Please read the <a href="%s" target="_blank">Bareos documentation</a> for any additional information on how to configure the Command ACL directive of your Console/Profile resources. Following is a list of required commands which need to be in your Command ACL to run this module properly:');
+      $msg_url = 'https://docs.bareos.org/IntroductionAndTutorial/InstallingBareosWebui.html#configuration-details';
 
       $this->required_commands = $required_commands;
 
@@ -43,7 +44,7 @@ class ACLAlert extends AbstractHelper
       $this->alert .= '<div class="row">';
       $this->alert .= '<div class="col-md-6">';
       $this->alert .= '<div class="alert alert-danger"><b>'.$msg_part_a.'</b></div>';
-      $this->alert .= $msg_part_b;
+      $this->alert .= sprintf($msg_part_b, $msg_url);
 
       $this->alert .= '</br></br>';
       $this->alert .= '<ul>';

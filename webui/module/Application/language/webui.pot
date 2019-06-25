@@ -952,8 +952,7 @@ msgstr ""
 
 #: ../module/Application/src/Application/View/Helper/ACLAlert.php:38
 msgid ""
-"Please read the <a href=\"http://doc.bareos.org/master/html/bareos-manual-"
-"main-reference.html#sec:webui-console\" target=\"_blank\">Bareos "
+"Please read the <a href=\"%s\" target=\"_blank\">Bareos "
 "documentation</a> for any additional information on how to configure the "
 "Command ACL directive of your Console/Profile resources. Following is a list "
 "of required commands which need to be in your Command ACL to run this module "

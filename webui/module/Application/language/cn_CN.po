@@ -106,8 +106,8 @@ msgid "Sorry, it seems you are not authorized to run this module. If you think t
 msgstr "很抱歉，您似乎无权运行此模块。 如果您认为这是一个错误，请与当地管理员联系。"
 
 #: ../module/Application/src/Application/View/Helper/ACLAlert.php:38
-msgid "Please read the <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#sec:webui-console\" target=\"_blank\">Bareos documentation</a> for any additional information on how to configure the Command ACL directive of your Console/Profile resources. Following is a list of required commands which need to be in your Command ACL to run this module properly:"
-msgstr "请读 <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#sec:webui-console\" target=\"_blank\">Bareos文档</a>有关如何配置控制台/配置文件资源的Command ACL指令的任何其他信息。 以下是需要在您的命令ACL中正确运行此模块的必需命令的列表："
+msgid "Please read the <a href=\"%s\" target=\"_blank\">Bareos documentation</a> for any additional information on how to configure the Command ACL directive of your Console/Profile resources. Following is a list of required commands which need to be in your Command ACL to run this module properly:"
+msgstr "请读 <a href=\"%s\" target=\"_blank\">Bareos文档</a>有关如何配置控制台/配置文件资源的Command ACL指令的任何其他信息。 以下是需要在您的命令ACL中正确运行此模块的必需命令的列表："
 
 #: ../module/Application/view/error/404.phtml:3
 msgid "A 404 error occurred"
