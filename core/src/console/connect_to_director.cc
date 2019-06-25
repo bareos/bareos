@@ -70,9 +70,6 @@ BareosSocket* ConnectToDirector(JobControlRecord& jcr,
     local_tls_resource = director_resource;
   }
 
-  UA_sock->EnableNetworkMessagesDump(own_resource,
-                                                   director_resource);
-
   if (local_tls_resource->IsTlsConfigured()) {
     std::string qualified_resource_name;
     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(

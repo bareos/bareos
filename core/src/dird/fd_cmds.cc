@@ -268,8 +268,6 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
 
     if (jcr->file_bsock) {
       jcr->setJobStatus(JS_Running);
-      jcr->file_bsock->EnableNetworkMessagesDump(me,
-                                                               jcr->res.client);
       if (AuthenticateWithFileDaemon(jcr)) {
         success = true;
         SendInfoSuccess(jcr, ua);

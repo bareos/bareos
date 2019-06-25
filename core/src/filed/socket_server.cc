@@ -88,7 +88,6 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
   if (bstrncmp(bs->msg, "Hello Director", 14)) {
     Dmsg1(110, "Got a DIR connection at %s\n",
           bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
-    bs->EnableNetworkMessagesDump(*my_config, R_DIRECTOR);
     return handle_director_connection(bs);
   }
 
@@ -98,7 +97,6 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
   if (bstrncmp(bs->msg, "Hello Storage", 13)) {
     Dmsg1(110, "Got a SD connection at %s\n",
           bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
-    bs->EnableNetworkMessagesDump(*my_config, R_STORAGE);
     return handle_stored_connection(bs);
   }
 

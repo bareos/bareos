@@ -143,8 +143,6 @@ bool ConnectToStorageDaemon(JobControlRecord* jcr,
     }
   }
 
-  sd->EnableNetworkMessagesDump(me, store);
-
   if (!AuthenticateWithStorageDaemon(sd.get(), jcr, store)) {
     sd->close();
     return false;

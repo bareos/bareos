@@ -107,7 +107,6 @@ void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
   if (sscanf(bs->msg, "Hello Start Job %127s", name) == 1) {
     Dmsg1(110, "Got a FD connection at %s\n",
           bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
-    bs->EnableNetworkMessagesDump(*my_config, R_CLIENT);
     return HandleFiledConnection(bs, name);
   }
 
@@ -117,14 +116,11 @@ void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
   if (sscanf(bs->msg, "Hello Start Storage Job %127s", name) == 1) {
     Dmsg1(110, "Got a SD connection at %s\n",
           bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
-    bs->EnableNetworkMessagesDump(*my_config, R_STORAGE);
     return handle_stored_connection(bs, name);
   }
 
   Dmsg1(110, "Got a DIR connection at %s\n",
         bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
-
-  bs->EnableNetworkMessagesDump(*my_config, R_DIRECTOR);
 
   return HandleDirectorConnection(bs);
 }

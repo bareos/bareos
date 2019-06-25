@@ -1694,9 +1694,6 @@ static bool StorageCmd(JobControlRecord* jcr)
     }
   }
 
-  storage_daemon_socket->EnableNetworkMessagesDump(*my_config,
-                                                                 R_STORAGE);
-
   storage_daemon_socket->fsend("Hello Start Job %s\n", jcr->Job);
   if (!AuthenticateWithStoragedaemon(jcr)) {
     Jmsg(jcr, M_FATAL, 0, _("Failed to authenticate Storage daemon.\n"));
@@ -2320,8 +2317,6 @@ static BareosSocket* connect_to_director(JobControlRecord* jcr,
       return nullptr;
     }
   }
-
-  director_socket->EnableNetworkMessagesDump(me, dir_res);
 
   Dmsg1(10, "Opened connection with Director %s\n", dir_res->resource_name_);
   jcr->dir_bsock = director_socket.get();
