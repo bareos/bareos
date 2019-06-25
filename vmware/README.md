@@ -11,7 +11,7 @@ and the [VMware Virtual Disk Development Kit (VDDK)](https://developercenter.vmw
 
 ### INSTALLATION
 
-Please see [Bareos VMware Plugin Documentation](http://doc.bareos.org/master/html/bareos-manual-main-reference.html#VMwarePlugin).
+Please see [Bareos VMware Plugin Documentation](https://docs.bareos.org/TasksAndConcepts/Plugins.html#vmware-plugin).
 
 ### FAQ
 
