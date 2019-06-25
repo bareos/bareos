@@ -155,9 +155,13 @@ ConfigurationParser::ConfigurationParser(
 
 ConfigurationParser::~ConfigurationParser()
 {
-  for (int i = r_first_; i <= r_last_; i++) {
-    FreeResourceCb_(res_head_[i - r_first_], i);
-    res_head_[i - r_first_] = nullptr;
+  if (res_head_) {
+    for (int i = r_first_; i <= r_last_; i++) {
+      if (res_head_[i - r_first_]) {
+        FreeResourceCb_(res_head_[i - r_first_], i);
+      }
+      res_head_[i - r_first_] = nullptr;
+    }
   }
 }
 
