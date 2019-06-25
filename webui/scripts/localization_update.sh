@@ -1,7 +1,7 @@
+#!/bin/sh
 #
 # This script serves as a helper to keep our POT and PO files up to date after source code changes.
 #
-#!/bin/sh
 
 POTFILE='../module/Application/language/webui.pot'
 LOCDIR='../module/Application/language/'
