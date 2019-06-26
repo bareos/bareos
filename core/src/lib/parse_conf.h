@@ -314,6 +314,7 @@ class ConfigurationParser {
       const std::string& r_code,
       const std::string& name,
       TlsPolicy& tls_policy_out) const;
+  std::string CreateOwnQualifiedNameForNetworkDump() const;
 
  private:
   ConfigurationParser(const ConfigurationParser&) = delete;

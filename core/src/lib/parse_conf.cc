@@ -172,6 +172,20 @@ void ConfigurationParser::InitializeQualifiedResourceNameTypeConverter(
       new QualifiedResourceNameTypeConverter(map));
 }
 
+std::string ConfigurationParser::CreateOwnQualifiedNameForNetworkDump() const
+{
+  std::string qualified_name;
+
+  if (own_resource_ && qualified_resource_name_type_converter_) {
+    if (qualified_resource_name_type_converter_->ResourceToString(
+            own_resource_->resource_name_, own_resource_->rcode_,
+            "::", qualified_name)) {
+      return qualified_name;
+    }
+  }
+  return qualified_name;
+}
+
 bool ConfigurationParser::ParseConfig()
 {
   int errstat;
