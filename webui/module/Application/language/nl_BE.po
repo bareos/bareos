@@ -106,8 +106,8 @@ msgid "Sorry, it seems you are not authorized to run this module. If you think t
 msgstr "Helaas, het lijkt er op dat je niet geautoriseerd bent om deze module uit te voeren. Als je denkt dat dit een fout is, contacteer dan jouw beheerder."
 
 #: ../module/Application/src/Application/View/Helper/ACLAlert.php:38
-msgid "Please read the <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#sec:webui-console\" target=\"_blank\">Bareos documentation</a> for any additional information on how to configure the Command ACL directive of your Console/Profile resources. Following is a list of required commands which need to be in your Command ACL to run this module properly:"
-msgstr "Gelieve de <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#sec:webui-console\" target=\"_blank\">Bareos documentatie</a> te lezen om bijkomende informatie over hoe de Command ACL instructie van jouw Console/Profiel bronnen te configureren. Hierna volgt een lijst met verplichte commando's die in jouw Command ACL nodig zijn om correct te lopen:"
+msgid "Please read the <a href=\"%s\" target=\"_blank\">Bareos documentation</a> for any additional information on how to configure the Command ACL directive of your Console/Profile resources. Following is a list of required commands which need to be in your Command ACL to run this module properly:"
+msgstr "Gelieve de <a href=\"%s\" target=\"_blank\">Bareos documentatie</a> te lezen om bijkomende informatie over hoe de Command ACL instructie van jouw Console/Profiel bronnen te configureren. Hierna volgt een lijst met verplichte commando's die in jouw Command ACL nodig zijn om correct te lopen:"
 
 #: ../module/Application/view/error/404.phtml:3
 msgid "A 404 error occurred"

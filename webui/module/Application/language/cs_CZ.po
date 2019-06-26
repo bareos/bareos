@@ -106,8 +106,8 @@ msgid "Sorry, it seems you are not authorized to run this module. If you think t
 msgstr "Je nám líto, ale zdá se, že nejste oprávněni ke spouštění tohoto modulu. Pokud se domníváte, že se jedná o chybu, obraťte se na svého správce systémů."
 
 #: ../module/Application/src/Application/View/Helper/ACLAlert.php:38
-msgid "Please read the <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#sec:webui-console\" target=\"_blank\">Bareos documentation</a> for any additional information on how to configure the Command ACL directive of your Console/Profile resources. Following is a list of required commands which need to be in your Command ACL to run this module properly:"
-msgstr "Přečtěte si <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#sec:webui-console\" target=\"_blank\">dokumentaci k Bareos</a>, ze které získáte informace o tom jak nastavit direktivu ACL příkazu zdrojů své konzole/profilu. Následující je seznam potřebných příkazů, které je třeba mít ve svém ACL příkazu aby tento modul fungoval správně:"
+msgid "Please read the <a href=\"%s\" target=\"_blank\">Bareos documentation</a> for any additional information on how to configure the Command ACL directive of your Console/Profile resources. Following is a list of required commands which need to be in your Command ACL to run this module properly:"
+msgstr "Přečtěte si <a href=\"%s\" target=\"_blank\">dokumentaci k Bareos</a>, ze které získáte informace o tom jak nastavit direktivu ACL příkazu zdrojů své konzole/profilu. Následující je seznam potřebných příkazů, které je třeba mít ve svém ACL příkazu aby tento modul fungoval správně:"
 
 #: ../module/Application/view/error/404.phtml:3
 msgid "A 404 error occurred"
