@@ -1694,7 +1694,7 @@ static bool StorageCmd(JobControlRecord* jcr)
     }
   }
 
-  storage_daemon_socket->InitNetworkMessagesDump(
+  storage_daemon_socket->InitBnetDump(
       my_config->CreateOwnQualifiedNameForNetworkDump());
   storage_daemon_socket->fsend("Hello Start Job %s\n", jcr->Job);
   if (!AuthenticateWithStoragedaemon(jcr)) {
@@ -2323,7 +2323,7 @@ static BareosSocket* connect_to_director(JobControlRecord* jcr,
   Dmsg1(10, "Opened connection with Director %s\n", dir_res->resource_name_);
   jcr->dir_bsock = director_socket.get();
 
-  director_socket->InitNetworkMessagesDump(my_config->CreateOwnQualifiedNameForNetworkDump());
+  director_socket->InitBnetDump(my_config->CreateOwnQualifiedNameForNetworkDump());
   director_socket->fsend(hello_client, my_name, FD_PROTOCOL_VERSION);
   if (!AuthenticateWithDirector(jcr, dir_res)) {
     jcr->dir_bsock = nullptr;

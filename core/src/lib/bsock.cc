@@ -130,7 +130,11 @@ BareosSocket::BareosSocket(const BareosSocket& other)
   tls_established_ = other.tls_established_;
 }
 
-BareosSocket::~BareosSocket() { Dmsg0(100, "Destruct BareosSocket\n"); }
+BareosSocket::~BareosSocket()
+{
+  //
+  Dmsg0(100, "Destruct BareosSocket\n");
+}
 
 void BareosSocket::CloseTlsConnectionAndFreeMemory()
 {
@@ -338,7 +342,7 @@ bool BareosSocket::ConsoleAuthenticateWithDirector(
   BashSpaces(bashed_name);
 
   dir->StartTimer(60 * 5); /* 5 minutes */
-  dir->InitNetworkMessagesDump(own_qualified_name);
+  dir->InitBnetDump(own_qualified_name);
   dir->fsend("Hello %s calling version %s\n", bashed_name, VERSION);
 
   if (!AuthenticateOutboundConnection(jcr, own_qualified_name, identity,
@@ -626,13 +630,16 @@ bool BareosSocket::AuthenticateInboundConnection(JobControlRecord* jcr,
                                                  s_password& password,
                                                  TlsResource* tls_resource)
 {
+  std::string own_qualified_name_for_network_dump;
+
   if (my_config) {
-    InitNetworkMessagesDump(my_config->CreateOwnQualifiedNameForNetworkDump());
+    InitBnetDump(my_config->CreateOwnQualifiedNameForNetworkDump());
+    own_qualified_name_for_network_dump =
+        my_config->CreateOwnQualifiedNameForNetworkDump();
   }
 
-  return TwoWayAuthenticate(
-      jcr, my_config ? my_config->CreateOwnQualifiedNameForNetworkDump() : std::string(),
-      identity, password, tls_resource, true);
+  return TwoWayAuthenticate(jcr, own_qualified_name_for_network_dump, identity,
+                            password, tls_resource, true);
 }
 
 bool BareosSocket::EvaluateCleartextBareosHello(
@@ -813,12 +820,12 @@ void BareosSocket::ControlBwlimit(int bytes)
   }
 }
 
-void BareosSocket::InitNetworkMessagesDump(std::string own_qualified_name)
+void BareosSocket::InitBnetDump(std::string own_qualified_name)
 {
-  SetNwdump(BnetDump::Create(own_qualified_name));
+  SetBnetDump(BnetDump::Create(own_qualified_name));
 }
 
-void BareosSocket::EnableNetworkMessagesDump(
+void BareosSocket::SetBnetDumpDestinationQualifiedName(
     std::string destination_qualified_name)
 {
   if (bnet_dump_) {

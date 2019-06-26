@@ -1696,7 +1696,7 @@ static bool ReplicateCmd(JobControlRecord* jcr)
 
   jcr->store_bsock = storage_daemon_socket.get();
 
-  storage_daemon_socket->InitNetworkMessagesDump(
+  storage_daemon_socket->InitBnetDump(
       my_config->CreateOwnQualifiedNameForNetworkDump());
   storage_daemon_socket->fsend("Hello Start Storage Job %s\n", JobName);
 
@@ -1787,7 +1787,7 @@ static bool PassiveCmd(JobControlRecord* jcr)
   }
 
   jcr->file_bsock = fd;
-  fd->InitNetworkMessagesDump(my_config->CreateOwnQualifiedNameForNetworkDump());
+  fd->InitBnetDump(my_config->CreateOwnQualifiedNameForNetworkDump());
   fd->fsend("Hello Storage calling Start Job %s\n", jcr->Job);
   if (!AuthenticateWithFiledaemon(jcr)) {
     Jmsg(jcr, M_FATAL, 0, _("Failed to authenticate File daemon.\n"));

@@ -139,7 +139,7 @@ bool AuthenticateDirector(JobControlRecord* jcr)
     return false;
   }
 
-  if (!dir->AuthenticateInboundConnection(jcr, nullptr, dirname.c_str(),
+  if (!dir->AuthenticateInboundConnection(jcr, my_config, dirname.c_str(),
                                           director->password_, director)) {
     dir->fsend("%s", Dir_sorry);
     errormsg.bsprintf(_("Unable to authenticate Director %s.\n"),
@@ -159,8 +159,8 @@ bool AuthenticateDirector(JobControlRecord* jcr)
 bool AuthenticateWithDirector(JobControlRecord* jcr, DirectorResource* director)
 {
   return jcr->dir_bsock->AuthenticateOutboundConnection(
-      jcr, my_config->CreateOwnQualifiedNameForNetworkDump(), me->resource_name_,
-      director->password_, director);
+      jcr, my_config->CreateOwnQualifiedNameForNetworkDump(),
+      me->resource_name_, director->password_, director);
 }
 
 /**
@@ -198,8 +198,8 @@ bool AuthenticateWithStoragedaemon(JobControlRecord* jcr)
   password.encoding = p_encoding_md5;
   password.value = jcr->sd_auth_key;
   result = sd->AuthenticateOutboundConnection(
-      jcr, my_config->CreateOwnQualifiedNameForNetworkDump(), (char*)jcr->client_name,
-      password, me);
+      jcr, my_config->CreateOwnQualifiedNameForNetworkDump(),
+      (char*)jcr->client_name, password, me);
 
   /*
    * Destroy session key

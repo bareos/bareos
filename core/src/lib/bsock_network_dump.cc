@@ -45,7 +45,11 @@ BnetDump::BnetDump() : impl_(std::make_unique<BnetDumpPrivate>())
   impl_->OpenFile();
 }
 
-BnetDump::~BnetDump() { impl_->CloseFile(); }
+BnetDump::~BnetDump()
+{
+  //
+  impl_->CloseFile();
+}
 
 bool BnetDump::IsInitialized() const { return impl_->output_file_.is_open(); }
 
@@ -81,6 +85,6 @@ void BnetDump::DumpMessageAndStacktraceToFile(const char* ptr, int nbytes) const
 {
   if (!IsInitialized() || impl_->logging_disabled_) { return; }
 
-  impl_->SaveMessageIfNoDestinationDefined(ptr, nbytes);
+  impl_->SaveAndSendMessageIfNoDestinationDefined(ptr, nbytes);
   impl_->DumpToFile(ptr, nbytes);
 }

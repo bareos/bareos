@@ -137,10 +137,11 @@ class BareosSocket {
                                 const char* password,
                                 JobControlRecord* jcr);
   void ParameterizeTlsCert(Tls* tls_conn, TlsResource* tls_resource);
-  void SetNwdump(std::unique_ptr<BnetDump>&& nwdump)
+  void SetBnetDump(std::unique_ptr<BnetDump>&& bnet_dump)
   {
+    // do not set twice
     assert(!bnet_dump_);
-    bnet_dump_ = std::move(nwdump);
+    bnet_dump_ = std::move(bnet_dump);
   }
 
  public:
@@ -274,9 +275,10 @@ class BareosSocket {
   void StopTimer() { StopBsockTimer(tid_); }
   void LockMutex();
   void UnlockMutex();
-  void InitNetworkMessagesDump(std::string own_qualified_name);
-  void EnableNetworkMessagesDump(std::string destination_qualified_name);
-  bool NwDumpEnabled() const { return bnet_dump_ ? true : false; }
+  void InitBnetDump(std::string own_qualified_name);
+  void SetBnetDumpDestinationQualifiedName(
+      std::string destination_qualified_name);
+  bool IsBnetDumpEnabled() const { return bnet_dump_ ? true : false; }
 };
 
 /**

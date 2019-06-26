@@ -67,7 +67,7 @@ bool CramMd5Handshake::CramMd5Challenge()
   Mmsg(chal, "<%u.%u@%s>", (uint32_t)random(), (uint32_t)time(NULL),
        host.c_str());
 
-  if (!bs_->NwDumpEnabled()) {
+  if (!bs_->IsBnetDumpEnabled()) {
     Dmsg2(debuglevel_, "send: auth cram-md5 %s ssl=%d\n", chal.c_str(),
           local_tls_policy_);
 
@@ -135,7 +135,7 @@ bool CramMd5Handshake::CramMd5Response()
 
   Dmsg1(100, "cram-get received: %s", bs_->msg);
   chal.check_size(bs_->message_length);
-  if (!bs_->NwDumpEnabled()) {
+  if (!bs_->IsBnetDumpEnabled()) {
     if (sscanf(bs_->msg, "auth cram-md5c %s ssl=%d", chal.c_str(),
                &remote_tls_policy_) == 2) {
       compatible_ = true;
@@ -164,7 +164,8 @@ bool CramMd5Handshake::CramMd5Response()
         return false;
       }
     }
-    bs_->EnableNetworkMessagesDump(destination_qualified_name.data());
+    bs_->SetBnetDumpDestinationQualifiedName(
+        destination_qualified_name.data());
   }
 
   hmac_md5((uint8_t*)chal.c_str(), strlen(chal.c_str()), (uint8_t*)password_,

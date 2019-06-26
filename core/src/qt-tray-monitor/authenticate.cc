@@ -105,7 +105,8 @@ static AuthenticationResult AuthenticateWithDirector(JobControlRecord* jcr,
   BStringList response_args;
   if (!dir->ConsoleAuthenticateWithDirector(
           jcr, monitor->resource_name_, monitor->password, dir_res,
-          my_config->CreateOwnQualifiedNameForNetworkDump(), response_args, response_id)) {
+          my_config->CreateOwnQualifiedNameForNetworkDump(), response_args,
+          response_id)) {
     Jmsg(jcr, M_FATAL, 0,
          _("Director authorization problem.\n"
            "Most likely the passwords do not agree.\n"));
@@ -146,7 +147,8 @@ static AuthenticationResult AuthenticateWithStorageDaemon(
   bstrncpy(dirname, monitor->resource_name_, sizeof(dirname));
   BashSpaces(dirname);
 
-  sd->InitNetworkMessagesDump(my_config->CreateOwnQualifiedNameForNetworkDump());
+  sd->InitBnetDump(
+      my_config->CreateOwnQualifiedNameForNetworkDump());
 
   if (!sd->fsend(SDFDhello, dirname)) {
     Dmsg1(debuglevel, _("Error sending Hello to Storage daemon. ERR=%s\n"),
@@ -157,8 +159,8 @@ static AuthenticationResult AuthenticateWithStorageDaemon(
   }
 
   bool auth_success = sd->AuthenticateOutboundConnection(
-      jcr, my_config->CreateOwnQualifiedNameForNetworkDump(), dirname, store->password,
-      store);
+      jcr, my_config->CreateOwnQualifiedNameForNetworkDump(), dirname,
+      store->password, store);
   if (!auth_success) {
     Dmsg2(debuglevel,
           "Director unable to authenticate with Storage daemon at \"%s:%d\"\n",
@@ -224,6 +226,9 @@ static AuthenticationResult AuthenticateWithFileDaemon(JobControlRecord* jcr,
   bstrncpy(dirname, monitor->resource_name_, sizeof(dirname));
   BashSpaces(dirname);
 
+  fd->InitBnetDump(
+      my_config->CreateOwnQualifiedNameForNetworkDump());
+
   if (!fd->fsend(SDFDhello, dirname)) {
     Jmsg(jcr, M_FATAL, 0,
          _("Error sending Hello to File daemon at \"%s:%d\". ERR=%s\n"),
@@ -233,7 +238,8 @@ static AuthenticationResult AuthenticateWithFileDaemon(JobControlRecord* jcr,
   Dmsg1(debuglevel, "Sent: %s", fd->msg);
 
   bool auth_success = fd->AuthenticateOutboundConnection(
-      jcr, "File Daemon", dirname, client->password, client);
+      jcr, my_config->CreateOwnQualifiedNameForNetworkDump(), dirname,
+      client->password, client);
 
   if (!auth_success) {
     Dmsg2(debuglevel, "Unable to authenticate with File daemon at \"%s:%d\"\n",

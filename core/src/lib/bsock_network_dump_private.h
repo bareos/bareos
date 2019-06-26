@@ -30,13 +30,17 @@
 #include <fstream>
 
 class QualifiedResourceNameTypeConverter;
+class BStringList;
 
 class BnetDumpPrivate {
  public:
+  BnetDumpPrivate() = default;
+  ~BnetDumpPrivate() = default;
+
   static bool SetFilename(const char* filename);
 
   void DumpToFile(const char* ptr, int nbytes);
-  void SaveMessageIfNoDestinationDefined(const char* ptr, int nbytes);
+  void SaveAndSendMessageIfNoDestinationDefined(const char* ptr, int nbytes);
   void OpenFile();
   void CloseFile();
 
@@ -52,9 +56,11 @@ class BnetDumpPrivate {
 
  private:
   void CreateAndWriteStacktraceToBuffer();
-  bool CreateAndWriteMessageToBuffer(const char* ptr, int nbytes);
+  void CreateAndWriteMessageToBuffer(const char* ptr, int nbytes);
   std::string CreateDataString(int signal, const char* ptr, int nbytes) const;
   std::string CreateFormatStringForNetworkMessage(int signal) const;
+  bool SuppressMessageIfRcodeIsInExcludeList() const;
+  bool IsExcludedRcode(const BStringList& l) const;
 
   static int stack_level_start_;
   static std::size_t max_data_dump_bytes_;
@@ -67,7 +73,6 @@ class BnetDumpPrivate {
   enum class State
   {
     kWaitForDestinationName,
-    kSendBufferedMessages,
     kRunNormal
   };
   State state = State::kWaitForDestinationName;
