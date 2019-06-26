@@ -96,6 +96,19 @@ TEST(BStringList, SplitStringTest)
   EXPECT_STREQ("String", list1.front().c_str());
 }
 
+TEST(BStringList, SplitStringTestStringSeparator)
+{
+  std::string test{"Test::123::String::::"};
+  BStringList list1(test, "::");
+  EXPECT_EQ(5, list1.size());
+
+  EXPECT_STREQ("Test", list1.front().c_str());
+  list1.erase(list1.begin());
+  EXPECT_STREQ("123", list1.front().c_str());
+  list1.erase(list1.begin());
+  EXPECT_STREQ("String", list1.front().c_str());
+}
+
 TEST(BNet, ReadoutCommandIdFromStringTest)
 {
   bool ok;

@@ -27,7 +27,8 @@
 class BStringList : public std::vector<std::string> {
  public:
   BStringList();
-  BStringList(const std::string& string_to_convert, char separator);
+  BStringList(const std::string& string_to_split, char separator);
+  BStringList(const std::string& string_to_split, std::string string_separator);
   BStringList& operator=(const BStringList& rhs);
   BStringList(const BStringList& other);
   BStringList& operator<<(const std::string& rhs);

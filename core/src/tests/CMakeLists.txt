@@ -287,10 +287,6 @@ IF(HAVE_EXECINFO_H AND HAVE_BACKTRACE AND HAVE_BACKTRACE_SYMBOLS)
      ${GTEST_MAIN_LIBRARIES}
   )
 
-  add_test(NAME test_backtrace
-      COMMAND test_backtrace
-  )
-
   gtest_discover_tests(test_backtrace TEST_PREFIX gtest:)
 ENDIF()
 
