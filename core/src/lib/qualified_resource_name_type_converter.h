@@ -29,7 +29,11 @@ class QualifiedResourceNameTypeConverter {
   QualifiedResourceNameTypeConverter(const std::map<int, std::string>& map);
   bool ResourceToString(const std::string& name_of_resource,
                         const int& r_type,
-                        std::string& out) const;
+                        std::string& str_out) const;
+  bool ResourceToString(const std::string& name_of_resource,
+                        const int& r_type,
+                        const std::string separator,
+                        std::string& str_out) const;
   bool StringToResource(std::string& name_of_resource,
                         int& r_type,
                         const std::string& in) const;
