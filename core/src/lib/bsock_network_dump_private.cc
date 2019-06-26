@@ -23,11 +23,13 @@
 #include "bsock_network_dump_private.h"
 
 #include "include/make_unique.h"
+#include "lib/ascii_control_characters.h"
 #include "lib/backtrace.h"
 #include "lib/bareos_resource.h"
 #include "lib/bnet.h"
 #include "lib/bsock.h"
 #include "lib/bsock_tcp.h"
+#include "lib/bstringlist.h"
 #include "lib/qualified_resource_name_type_converter.h"
 
 #include <cassert>
@@ -59,28 +61,6 @@ bool BnetDumpPrivate::SetFilename(const char* filename)
   return true;
 }
 
-void BnetDumpPrivate::CreateAndAssignOwnDummyResource(
-    int own_rcode_for_dummy_resource,
-    const QualifiedResourceNameTypeConverter& conv)
-{
-  own_dummy_resource_ = std::move(std::make_unique<BareosResource>());
-  own_dummy_resource_->rcode_ = own_rcode_for_dummy_resource;
-  own_dummy_resource_->rcode_str_ =
-      conv.ResourceTypeToString(own_rcode_for_dummy_resource);
-  own_resource_ = own_dummy_resource_.get();
-}
-
-void BnetDumpPrivate::CreateAndAssignDestinationDummyResource(
-    int destination_rcode_for_dummy_resource,
-    const QualifiedResourceNameTypeConverter& conv)
-{
-  destination_dummy_resource_ = std::move(std::make_unique<BareosResource>());
-  destination_dummy_resource_->rcode_ = destination_rcode_for_dummy_resource;
-  destination_dummy_resource_->rcode_str_ =
-      conv.ResourceTypeToString(destination_rcode_for_dummy_resource);
-  destination_resource_ = destination_dummy_resource_.get();
-}
-
 std::string BnetDumpPrivate::CreateDataString(int signal,
                                               const char* ptr,
                                               int nbytes) const
@@ -89,20 +69,20 @@ std::string BnetDumpPrivate::CreateDataString(int signal,
   string_length = string_length > max_data_dump_bytes_ ? max_data_dump_bytes_
                                                        : string_length;
 
-  std::string string_data(&ptr[BareosSocketTCP::header_length], string_length);
+  std::string data_string(&ptr[BareosSocketTCP::header_length], string_length);
 
   if (signal < 0) {
-    string_data =
+    data_string =
         BnetSignalToString(signal) + " - " + BnetSignalToDescription(signal);
   }
-  std::replace(string_data.begin(), string_data.end(), '\n', ' ');
-  std::replace(string_data.begin(), string_data.end(), '\t', ' ');
-  string_data.erase(
-      std::remove_if(string_data.begin(), string_data.end(),
+  std::replace(data_string.begin(), data_string.end(), '\n', ' ');
+  std::replace(data_string.begin(), data_string.end(), '\t', ' ');
+  data_string.erase(
+      std::remove_if(data_string.begin(), data_string.end(),
                      [](char c) { return !isprint(c) || c == '\r'; }),
-      string_data.end());
+      data_string.end());
 
-  return string_data;
+  return data_string;
 }
 
 std::string BnetDumpPrivate::CreateFormatStringForNetworkMessage(
@@ -111,11 +91,11 @@ std::string BnetDumpPrivate::CreateFormatStringForNetworkMessage(
   std::string s;
   if (plantuml_mode_) {
     if (signal > 998) {  // signal set to 999
-      s = "%s -> %s: (>%3d) %s\\n";
+      s = "\"%s\" -> \"%s\": (>%3d) %s\\n";
     } else if (signal < 0) {  // bnet signal
-      s = "%s -> %s: (%4d) %s\\n";
+      s = "\"%s\" -> \"%s\": (%4d) %s\\n";
     } else {
-      s = "%s -> %s: (%4d) %s\\n";
+      s = "\"%s\" -> \"%s\": (%4d) %s\\n";
     }
   } else {
     if (signal > 998) {  // signal set to 999
@@ -129,38 +109,37 @@ std::string BnetDumpPrivate::CreateFormatStringForNetworkMessage(
   return s;
 }
 
-bool BnetDumpPrivate::CreateAndWriteMessageToBuffer(const char* ptr,
-                                                    int nbytes) const
+bool BnetDumpPrivate::CreateAndWriteMessageToBuffer(const char* ptr, int nbytes)
 {
   int signal = ntohl(*((int32_t*)&ptr[0]));
   if (signal > 999) { signal = 999; }
 
-  const char* own_rcode_str = "UNKNOWN";
-  if (own_resource_ && !own_resource_->rcode_str_.empty()) {
-    own_rcode_str = own_resource_->rcode_str_.c_str();
-  }
+  BStringList own_name(own_qualified_name_,
+                       AsciiControlCharacters::RecordSeparator());
 
-  const char* connected_rcode_str = "UNKNOWN";
-  if (destination_resource_ && !destination_resource_->rcode_str_.empty()) {
-    connected_rcode_str = destination_resource_->rcode_str_.c_str();
-  }
+  BStringList destination_name(destination_qualified_name_,
+                               AsciiControlCharacters::RecordSeparator());
 
-  if (exclude_rcodes_.find(own_rcode_str) != exclude_rcodes_.end() ||
-      exclude_rcodes_.find(connected_rcode_str) != exclude_rcodes_.end()) {
-    return false;
+  if (own_name.size() > 1 && destination_name.size() > 1) {
+    const std::string& own_rcode_str = own_name[0];
+    const std::string& destination_rcode_str = destination_name[0];
+    if (exclude_rcodes_.find(own_rcode_str) != exclude_rcodes_.end() ||
+        exclude_rcodes_.find(destination_rcode_str) != exclude_rcodes_.end()) {
+      return false;
+    }
   }
 
   std::vector<char> buffer(1024);
 
   snprintf(buffer.data(), buffer.size(),
-           CreateFormatStringForNetworkMessage(signal).c_str(), own_rcode_str,
-           connected_rcode_str, signal,
-           CreateDataString(signal, ptr, nbytes).c_str());
+           CreateFormatStringForNetworkMessage(signal).c_str(),
+           own_qualified_name_.c_str(), destination_qualified_name_.c_str(),
+           signal, CreateDataString(signal, ptr, nbytes).c_str());
   output_buffer_ = buffer.data();
   return true;
 }
 
-void BnetDumpPrivate::CreateAndWriteStacktraceToBuffer() const
+void BnetDumpPrivate::CreateAndWriteStacktraceToBuffer()
 {
   std::vector<BacktraceInfo> trace_lines(
       Backtrace(stack_level_start_, stack_level_amount_));
@@ -178,4 +157,44 @@ void BnetDumpPrivate::CreateAndWriteStacktraceToBuffer() const
   }
 
   if (plantuml_mode_) { output_buffer_ += "\n"; }
+}
+
+void BnetDumpPrivate::DumpToFile(const char* ptr, int nbytes)
+{
+  if (state == State::kRunNormal) {
+    // do not dump ignored resources
+    if (!CreateAndWriteMessageToBuffer(ptr, nbytes)) { return; }
+
+    CreateAndWriteStacktraceToBuffer();
+
+    output_file_ << output_buffer_;
+    output_file_.flush();
+
+  } else if (state == State::kSendBufferedMessages) {
+    state = State::kRunNormal;
+    std::vector<std::vector<char>> temp =
+        std::move(temporary_buffer_for_initial_messages_);
+    for (const std::vector<char>& v : temp) { DumpToFile(v.data(), v.size()); }
+
+  } else if (state == State::kWaitForDestinationName) {
+    return;
+  }
+}
+
+void BnetDumpPrivate::SaveMessageIfNoDestinationDefined(const char* ptr,
+                                                        int nbytes)
+{
+  if (state == State::kWaitForDestinationName) {
+    std::size_t amount = nbytes;
+    amount = amount > max_data_dump_bytes_ ? max_data_dump_bytes_ : amount;
+
+    std::vector<char> temp_data;
+    std::copy(ptr, ptr + amount, std::back_inserter(temp_data));
+
+    temporary_buffer_for_initial_messages_.push_back(temp_data);
+
+    if (!destination_qualified_name_.empty()) {
+      state = State::kSendBufferedMessages;
+    }
+  }
 }

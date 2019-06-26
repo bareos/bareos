@@ -28,19 +28,9 @@ class BnetDumpPrivate;
 
 class BnetDump {
  public:
-  static std::unique_ptr<BnetDump> Create(
-      const BareosResource* own_resource,
-      const BareosResource* distant_resource);
-  static std::unique_ptr<BnetDump> Create(
-      const BareosResource* own_resource,
-      int destination_rcode_for_dummy_resource,
-      const QualifiedResourceNameTypeConverter& conv);
-  static std::unique_ptr<BnetDump> Create(
-      int own_rcode_for_dummy_resource,
-      int destination_rcode_for_dummy_resource,
-      const QualifiedResourceNameTypeConverter& conv);
-
+  static std::unique_ptr<BnetDump> Create(std::string own_qualified_name);
   static bool EvaluateCommandLineArgs(const char* cmdline_optarg);
+  void SetDestinationQualifiedName(std::string destination_qualified_name);
 
   void DumpMessageAndStacktraceToFile(const char* ptr, int nbytes) const;
   bool IsInitialized() const;
@@ -48,14 +38,7 @@ class BnetDump {
   void EnableLogging();
 
  public:
-  BnetDump(const BareosResource* own_resource,
-           const BareosResource* distant_resource);
-  BnetDump(const BareosResource* own_resource,
-           int destination_rcode_for_dummy_resource,
-           const QualifiedResourceNameTypeConverter& conv);
-  BnetDump(int own_rcode_for_dummy_resource,
-           int destination_rcode_for_dummy_resource,
-           const QualifiedResourceNameTypeConverter& conv);
+  BnetDump(const std::string& own_qualified_name);
   BnetDump(const BnetDump& other) = delete;
   BnetDump(const BnetDump&& other) = delete;
   BnetDump& operator=(const BnetDump& rhs) = delete;

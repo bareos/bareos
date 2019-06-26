@@ -86,9 +86,12 @@ BareosSocket* ConnectToDirector(JobControlRecord& jcr,
     }
   } /* IsTlsConfigured */
 
-  if (!UA_sock->ConsoleAuthenticateWithDirector(&jcr, name, *password,
-                                                director_resource,
-                                                response_args, response_id)) {
+  std::string own_qualified_name = "R_CONSOLE::";
+  own_qualified_name += name;
+
+  if (!UA_sock->ConsoleAuthenticateWithDirector(
+          &jcr, name, *password, director_resource, own_qualified_name,
+          response_args, response_id)) {
     delete UA_sock;
     return nullptr;
   }

@@ -29,9 +29,11 @@ class CramMd5Handshake {
  public:
   CramMd5Handshake(BareosSocket* bs,
                    const char* passwort,
-                   TlsPolicy local_tls_policy);
+                   TlsPolicy local_tls_policy,
+                   const std::string& own_qualified_name);
   bool DoHandshake(bool initiated_by_remote);
   TlsPolicy RemoteTlsPolicy() const { return remote_tls_policy_; }
+  std::string destination_qualified_name_;
 
  private:
   static constexpr int debuglevel_ = 50;
@@ -40,6 +42,7 @@ class CramMd5Handshake {
   const char* password_ = nullptr;
   TlsPolicy local_tls_policy_ = kBnetTlsUnknown;
   TlsPolicy remote_tls_policy_ = kBnetTlsUnknown;
+  const std::string own_qualified_name_;
   bool CramMd5Challenge();
   bool CramMd5Response();
   void InitRandom() const;

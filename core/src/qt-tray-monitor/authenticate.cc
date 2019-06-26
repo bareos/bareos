@@ -103,9 +103,9 @@ static AuthenticationResult AuthenticateWithDirector(JobControlRecord* jcr,
 
   uint32_t response_id;
   BStringList response_args;
-  if (!dir->ConsoleAuthenticateWithDirector(jcr, monitor->resource_name_,
-                                            monitor->password, dir_res,
-                                            response_args, response_id)) {
+  if (!dir->ConsoleAuthenticateWithDirector(
+          jcr, monitor->resource_name_, monitor->password, dir_res,
+          my_config->CreateOwnQualifiedNameForNetworkDump(), response_args, response_id)) {
     Jmsg(jcr, M_FATAL, 0,
          _("Director authorization problem.\n"
            "Most likely the passwords do not agree.\n"));
@@ -146,6 +146,8 @@ static AuthenticationResult AuthenticateWithStorageDaemon(
   bstrncpy(dirname, monitor->resource_name_, sizeof(dirname));
   BashSpaces(dirname);
 
+  sd->InitNetworkMessagesDump(my_config->CreateOwnQualifiedNameForNetworkDump());
+
   if (!sd->fsend(SDFDhello, dirname)) {
     Dmsg1(debuglevel, _("Error sending Hello to Storage daemon. ERR=%s\n"),
           BnetStrerror(sd));
@@ -155,7 +157,8 @@ static AuthenticationResult AuthenticateWithStorageDaemon(
   }
 
   bool auth_success = sd->AuthenticateOutboundConnection(
-      jcr, "Storage daemon", dirname, store->password, store);
+      jcr, my_config->CreateOwnQualifiedNameForNetworkDump(), dirname, store->password,
+      store);
   if (!auth_success) {
     Dmsg2(debuglevel,
           "Director unable to authenticate with Storage daemon at \"%s:%d\"\n",

@@ -102,7 +102,7 @@ bool AuthenticateDirector(JobControlRecord* jcr)
     return false;
   }
 
-  if (!dir->AuthenticateInboundConnection(jcr, "Director",
+  if (!dir->AuthenticateInboundConnection(jcr, my_config,
                                           director->resource_name_,
                                           director->password_, director)) {
     dir->fsend("%s", Dir_sorry);
@@ -135,8 +135,8 @@ bool AuthenticateStoragedaemon(JobControlRecord* jcr)
 
   Dmsg2(debuglevel, "AuthenticateStoragedaemon %s %s\n", identity,
         (unsigned char*)password.value);
-  if (!sd->AuthenticateInboundConnection(jcr, "Storage daemon", identity,
-                                         password, me)) {
+  if (!sd->AuthenticateInboundConnection(jcr, my_config, identity, password,
+                                         me)) {
     Jmsg1(jcr, M_FATAL, 0,
           _("Authorization problem: Two way security handshake failed with "
             "Storage daemon at %s\n"),
@@ -161,8 +161,8 @@ bool AuthenticateWithStoragedaemon(JobControlRecord* jcr)
   password.encoding = p_encoding_md5;
   password.value = jcr->sd_auth_key;
 
-  if (!sd->AuthenticateOutboundConnection(jcr, "Storage daemon", identity,
-                                          password, me)) {
+  if (!sd->AuthenticateOutboundConnection(
+          jcr, my_config->CreateOwnQualifiedNameForNetworkDump(), identity, password, me)) {
     Jmsg1(jcr, M_FATAL, 0,
           _("Authorization problem: Two way security handshake failed with "
             "Storage daemon at %s\n"),
@@ -186,7 +186,7 @@ bool AuthenticateFiledaemon(JobControlRecord* jcr)
   password.encoding = p_encoding_md5;
   password.value = jcr->sd_auth_key;
 
-  if (!fd->AuthenticateInboundConnection(jcr, "File daemon", jcr->client_name,
+  if (!fd->AuthenticateInboundConnection(jcr, my_config, jcr->client_name,
                                          password, me)) {
     Jmsg1(jcr, M_FATAL, 0,
           _("Authorization problem: Two way security handshake failed with "

@@ -24,84 +24,24 @@
 #include "bsock_network_dump_private.h"
 #include "include/make_unique.h"
 
-std::unique_ptr<BnetDump> BnetDump::Create(
-    const BareosResource* own_resource,
-    const BareosResource* destination_resource)
-{
-  std::unique_ptr<BnetDump> p;
-  if (BnetDumpPrivate::filename_.empty()) {
-    return p;
-  } else {
-    p = std::move(
-        std::make_unique<BnetDump>(own_resource, destination_resource));
-    return p;
-  }
-}
-
-std::unique_ptr<BnetDump> BnetDump::Create(
-    const BareosResource* own_resource,
-    int destination_rcode_for_dummy_resource,
-    const QualifiedResourceNameTypeConverter& conv)
+std::unique_ptr<BnetDump> BnetDump::Create(std::string own_qualified_name)
 {
   if (BnetDumpPrivate::filename_.empty()) {
     std::unique_ptr<BnetDump> p;
     return p;
   } else {
-    std::unique_ptr<BnetDump> p(std::make_unique<BnetDump>(
-        own_resource, destination_rcode_for_dummy_resource, conv));
+    std::unique_ptr<BnetDump> p(std::make_unique<BnetDump>(own_qualified_name));
     return p;
   }
 }
 
-std::unique_ptr<BnetDump> BnetDump::Create(
-    int own_rcode_for_dummy_resource,
-    int destination_rcode_for_dummy_resource,
-    const QualifiedResourceNameTypeConverter& conv)
+BnetDump::BnetDump(const std::string& own_qualified_name) : BnetDump()
 {
-  if (BnetDumpPrivate::filename_.empty()) {
-    std::unique_ptr<BnetDump> p;
-    return p;
-  } else {
-    std::unique_ptr<BnetDump> p(
-        std::make_unique<BnetDump>(own_rcode_for_dummy_resource,
-                                   destination_rcode_for_dummy_resource, conv));
-    return p;
-  }
+  impl_->own_qualified_name_ = own_qualified_name;
 }
 
 BnetDump::BnetDump() : impl_(std::make_unique<BnetDumpPrivate>())
 {
-  // standard constructor just creates private data object
-}
-
-BnetDump::BnetDump(const BareosResource* own_resource,
-                   const BareosResource* destination_resource)
-    : BnetDump()
-{
-  impl_->own_resource_ = own_resource;
-  impl_->destination_resource_ = destination_resource;
-  impl_->OpenFile();
-}
-
-BnetDump::BnetDump(const BareosResource* own_resource,
-                   int destination_rcode_for_dummy_resource,
-                   const QualifiedResourceNameTypeConverter& conv)
-    : BnetDump()
-{
-  impl_->own_resource_ = own_resource;
-  impl_->CreateAndAssignDestinationDummyResource(
-      destination_rcode_for_dummy_resource, conv);
-  impl_->OpenFile();
-}
-
-BnetDump::BnetDump(int own_rcode_for_dummy_resource,
-                   int destination_rcode_for_dummy_resource,
-                   const QualifiedResourceNameTypeConverter& conv)
-    : BnetDump()
-{
-  impl_->CreateAndAssignOwnDummyResource(own_rcode_for_dummy_resource, conv);
-  impl_->CreateAndAssignDestinationDummyResource(
-      destination_rcode_for_dummy_resource, conv);
   impl_->OpenFile();
 }
 
@@ -112,6 +52,12 @@ bool BnetDump::IsInitialized() const { return impl_->output_file_.is_open(); }
 void BnetDump::DisableLogging() { impl_->logging_disabled_ = true; }
 
 void BnetDump::EnableLogging() { impl_->logging_disabled_ = false; }
+
+void BnetDump::SetDestinationQualifiedName(
+    std::string destination_qualified_name)
+{
+  impl_->destination_qualified_name_ = destination_qualified_name;
+}
 
 bool BnetDump::EvaluateCommandLineArgs(const char* cmdline_optarg)
 {
@@ -135,9 +81,6 @@ void BnetDump::DumpMessageAndStacktraceToFile(const char* ptr, int nbytes) const
 {
   if (!IsInitialized() || impl_->logging_disabled_) { return; }
 
-  if (!impl_->CreateAndWriteMessageToBuffer(ptr, nbytes)) { return; }
-  impl_->CreateAndWriteStacktraceToBuffer();
-
-  impl_->output_file_ << impl_->output_buffer_;
-  impl_->output_file_.flush();
+  impl_->SaveMessageIfNoDestinationDefined(ptr, nbytes);
+  impl_->DumpToFile(ptr, nbytes);
 }

@@ -125,7 +125,7 @@ class BareosSocket {
 
  private:
   bool TwoWayAuthenticate(JobControlRecord* jcr,
-                          const char* what,
+                          const std::string own_qualified_name,
                           const char* identity,
                           s_password& password,
                           TlsResource* tls_resource,
@@ -188,6 +188,7 @@ class BareosSocket {
                                        const char* name,
                                        s_password& password,
                                        TlsResource* tls_resource,
+                                       const std::string& own_qualified_name,
                                        BStringList& response_args,
                                        uint32_t& response_id);
   bool ParameterizeAndInitTlsConnection(TlsResource* tls_resource,
@@ -220,13 +221,13 @@ class BareosSocket {
   bool FormatAndSendResponseMessage(uint32_t id, const std::string& str);
 
   bool AuthenticateOutboundConnection(JobControlRecord* jcr,
-                                      const char* what,
+                                      const std::string own_qualified_name,
                                       const char* identity,
                                       s_password& password,
                                       TlsResource* tls_resource);
 
   bool AuthenticateInboundConnection(JobControlRecord* jcr,
-                                     const char* what,
+                                     ConfigurationParser* my_config,
                                      const char* name,
                                      s_password& password,
                                      TlsResource* tls_resource);
@@ -273,13 +274,9 @@ class BareosSocket {
   void StopTimer() { StopBsockTimer(tid_); }
   void LockMutex();
   void UnlockMutex();
-  void EnableNetworkMessagesDump(const ConfigurationParser& my_config,
-                                 int destination_rcode);
-  void EnableNetworkMessagesDump(const ConfigurationParser& my_config,
-                                 int own_rcode,
-                                 int destination_rcode);
-  void EnableNetworkMessagesDump(const BareosResource* me,
-                                 const BareosResource* destination);
+  void InitNetworkMessagesDump(std::string own_qualified_name);
+  void EnableNetworkMessagesDump(std::string destination_qualified_name);
+  bool NwDumpEnabled() const { return bnet_dump_ ? true : false; }
 };
 
 /**

@@ -972,9 +972,7 @@ int main(int argc, char* argv[])
         break;
 
       case 'z': /* switch network debugging on */
-        if (!BnetDump::EvaluateCommandLineArgs(optarg)) {
-          exit(1);
-        }
+        if (!BnetDump::EvaluateCommandLineArgs(optarg)) { exit(1); }
         break;
 
       case '?':

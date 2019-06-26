@@ -126,7 +126,7 @@ static void start_bareos_server(std::promise<bool>* promise,
           bs->message_length);
   } else {
     Dmsg1(10, "Cons->Dir: %s", bs->msg);
-    if (!bs->AuthenticateInboundConnection(NULL, "Console", name, *password,
+    if (!bs->AuthenticateInboundConnection(NULL, nullptr, name, *password,
                                            dir_cons_config.get())) {
       Dmsg0(10, "Server: inbound auth failed\n");
     } else {
@@ -209,9 +209,9 @@ static bool connect_to_server(std::string console_name,
     Dmsg0(10, "socket connect OK\n");
     uint32_t response_id = kMessageIdUnknown;
     BStringList response_args;
-    if (!UA_sock->ConsoleAuthenticateWithDirector(&jcr, name, *password,
-                                                  cons_dir_config.get(),
-                                                  response_args, response_id)) {
+    if (!UA_sock->ConsoleAuthenticateWithDirector(
+            &jcr, name, *password, cons_dir_config.get(), console_name,
+            response_args, response_id)) {
       Emsg0(M_ERROR, 0, "Authenticate Failed\n");
     } else {
       EXPECT_EQ(response_id, kMessageIdOk) << "Received the wrong message id.";
