@@ -11,19 +11,7 @@ Transport Encryption
 
 Bareos TLS (Transport Layer Security) is built-in network encryption code to provide secure network transport similar to that offered by :command:`stunnel` or :command:`ssh`. The data written to Volumes by the Storage daemon is not encrypted by this code. For data encryption, please see the :ref:`DataEncryption` chapter.
 
-The initial Bacula encryption implementation has been written by Landon Fuller.
-
-Supported features of this code include:
-
--  Client/Server TLS Requirement Negotiation
-
--  TLSv1 Connections with Server and Client Certificate Validation
-
--  Forward Secrecy Support via Diffie-Hellman Ephemeral Keying
-
-This document will refer to both "server" and "client" contexts. These terms refer to the accepting and initiating peer, respectively.
-
-Diffie-Hellman anonymous ciphers are not supported by this code. The use of DH anonymous ciphers increases the code complexity and places explicit trust upon the two-way CRAM-MD5 implementation. CRAM-MD5 is subject to known plaintext attacks, and it should be considered considerably less secure than PKI certificate-based authentication.
+With :sinceVersion:`18.2:""` the TLS code has been enhanced by the TLS-PSK (Pre Shared Keys) feature which allows the daemons to setup an encrypted connection directly without using certificates. The library used for TLS is openSSL.
 
 .. _TlsDirectives:
 
@@ -243,7 +231,7 @@ Compatibility with |bareosFD|
 |bareosFD| connection handshake probing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-As from Bareos 18.2 all components by default establish a secure connection with encryption first, followed by the proprietary Bareos protocol. This is accomplished using TLS PSK. Older components of Bareos than version 18.2 start a connection with a cleartext handshake without encryption.
+As from Bareos 18.2 all components by default establish a secure connection with encryption first, followed by the proprietary Bareos protocol. This is accomplished using TLS-PSK. Older components of Bareos than version 18.2 start a connection with a cleartext handshake without encryption.
 
 For downward compatibility Bareos Director Daemons and Bareos Storage Daemons are able to connect to Bareos File Daemons older than version 18.2. In this case Director and Storage switch to the old protocol.
 
@@ -323,7 +311,7 @@ The following sequence is used to figure out the right protocol version and to s
 
 |bareosFD| 18.2 *onwards* can be used on a Bareos system *before* 18.2.
 
-The older |bareosDir| and |bareosSD| connect to |bareosFD| using the cleartext Bareos handshake before they can switch to TLS. If you want transport encryption only TLS with certificates can be used, not PSK as it is possible with Bareos 18.2.
+The *older* |bareosDir| and |bareosSD| connect to |bareosFD| using the cleartext Bareos handshake before they can switch to TLS. If you want transport encryption then only TLS with certificates can be used. TLS-PSK is not possible with |bareosDir| and |bareosSd| before Bareos-18.2.
 
 However, it is also possible to disable transport encryption and use cleartext transport using the following configuration changes:
 
