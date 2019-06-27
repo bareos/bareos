@@ -196,10 +196,6 @@ target_link_libraries(test_config_parser_sd
    ${GTEST_MAIN_LIBRARIES}
 )
 
-add_test(NAME test_config_parser_sd
-    COMMAND test_config_parser_sd
-)
-
 gtest_discover_tests(test_config_parser_sd TEST_PREFIX gtest:)
 
 ####### test_config_parser_dir  #####################################
@@ -213,10 +209,6 @@ target_link_libraries(test_config_parser_dir
    bareossql
    ${GTEST_LIBRARIES}
    ${GTEST_MAIN_LIBRARIES}
-)
-
-add_test(NAME test_config_parser_dir
-    COMMAND test_config_parser_dir
 )
 
 gtest_discover_tests(test_config_parser_dir TEST_PREFIX gtest:)
@@ -233,10 +225,6 @@ target_link_libraries(test_config_parser_console
    ${GTEST_MAIN_LIBRARIES}
 )
 
-add_test(NAME test_config_parser_console
-    COMMAND test_config_parser_console
-)
-
 gtest_discover_tests(test_config_parser_console TEST_PREFIX gtest:)
 
 
@@ -249,10 +237,6 @@ target_link_libraries(test_config_parser_fd
    fd_objects
    ${GTEST_LIBRARIES}
    ${GTEST_MAIN_LIBRARIES}
-)
-
-add_test(NAME test_config_parser_fd
-    COMMAND test_config_parser_fd
 )
 
 gtest_discover_tests(test_config_parser_fd TEST_PREFIX gtest:)
@@ -271,10 +255,6 @@ target_link_libraries(test_setdebug
    ${NDMP_LIBS}
    ${GTEST_LIBRARIES}
    ${GTEST_MAIN_LIBRARIES}
-)
-
-add_test(NAME test_setdebug
-    COMMAND test_setdebug
 )
 
 gtest_discover_tests(test_setdebug TEST_PREFIX gtest:)
