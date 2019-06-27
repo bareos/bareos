@@ -11,7 +11,7 @@ Transport Encryption
 
 Bareos uses TLS (Transport Layer Security) to provide secure network transport. For data encryption in contrast, please see the :ref:`DataEncryption` chapter. The initial Bacula encryption implementation has been written by Landon Fuller.
 
-With :sinceVersion:`18.2:""` the TLS code has been enhanced by the TLS PSK (Pre Shared Keys) feature which allows the daemons to setup an encrypted connection directly without using certificates. The library used for TLS is openSSL.
+With :sinceVersion:`18.2:""` the TLS code has been enhanced by the TLS-PSK (Pre Shared Keys) feature which allows the daemons to setup an encrypted connection directly without using certificates. The library used for TLS is openSSL.
 
 .. _TlsDirectives:
 
@@ -224,7 +224,7 @@ Compatibility with |bareosFD|
 |bareosFD| connection handshake probing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-As from Bareos 18.2 all components by default establish a secure connection with encryption first, followed by the proprietary Bareos protocol. This is accomplished using TLS PSK. Older components of Bareos than version 18.2 start a connection with a cleartext handshake without encryption.
+As from Bareos 18.2 all components by default establish a secure connection with encryption first, followed by the proprietary Bareos protocol. This is accomplished using TLS-PSK. Older components of Bareos than version 18.2 start a connection with a cleartext handshake without encryption.
 
 For downward compatibility Bareos Director Daemons and Bareos Storage Daemons are able to connect to Bareos File Daemons older than version 18.2. In this case Director and Storage switch to the old protocol.
 
@@ -304,7 +304,7 @@ The following sequence is used to figure out the right protocol version and to s
 
 |bareosFD| :sinceVersion:`18.2:""` can be used on a Bareos system before Bareos-18.2.
 
-The *older* |bareosDir| and |bareosSD| connect to |bareosFD| using the cleartext Bareos handshake before they can switch to TLS. If you want transport encryption then only TLS with certificates can be used. TLS PSK is not possible with |bareosDir| and |bareosSd| before Bareos-18.2.
+The *older* |bareosDir| and |bareosSD| connect to |bareosFD| using the cleartext Bareos handshake before they can switch to TLS. If you want transport encryption then only TLS with certificates can be used. TLS-PSK is not possible with |bareosDir| and |bareosSd| before Bareos-18.2.
 
 However, it is also possible to disable transport encryption and use cleartext transport using the following configuration changes:
 
@@ -405,6 +405,8 @@ However, it is also possible to disable transport encryption and use cleartext t
 -------------
 
 Transport encryption between |bareosWebui| and a |bareosDir| can be configured on a per restricted named console basis.
+
+TLS-PSK is not available between the Bareos WebUI and the Bareos Director, in the following you will set up TLS with certificates.
 
 
 Please check the following configuration examples.  A complete table of the directives in the :file:`directors.ini` file see: :ref:`directors-ini-directives`
@@ -534,8 +536,8 @@ Overview of the settings in the |bareosWebui| :file:`directors.ini` file
 
    Directive            , Type    ,  Default value , Remark   , Description
    tls_verify_peer      , boolean ,  false         , Optional , TLS verif peer
-   server_can_do_tls    , boolean ,  false         , Required , Server can do TLS
-   server_requires_tls  , boolean ,  false         , Required , Server requires TLS
+   server_can_do_tls    , boolean ,  false         , Required , Server (|dir|) can do TLS
+   server_requires_tls  , boolean ,  false         , Required , Server (|dir|) requires TLS
    client_can_do_tls    , boolean ,  false         , Required , Client can do TLS
    client_requires_tls  , boolean ,  false         , Required , Client requires TLS
    ca_file              , string  ,                , Required , Certificate authority file
