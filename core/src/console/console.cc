@@ -37,7 +37,7 @@
 #include "include/jcr.h"
 #include "lib/berrno.h"
 #include "lib/bnet.h"
-#include "lib/bsock_network_dump.h"
+#include "lib/bnet_network_dump.h"
 #include "lib/bsock_tcp.h"
 #include "lib/bstringlist.h"
 #include "lib/qualified_resource_name_type_converter.h"

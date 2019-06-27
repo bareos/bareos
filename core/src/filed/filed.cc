@@ -35,7 +35,7 @@
 #include "filed/socket_server.h"
 #include "lib/mntent_cache.h"
 #include "lib/daemon.h"
-#include "lib/bsock_network_dump.h"
+#include "lib/bnet_network_dump.h"
 #include "lib/bsignal.h"
 #include "lib/parse_conf.h"
 #include "lib/watchdog.h"

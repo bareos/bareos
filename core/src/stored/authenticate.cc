@@ -34,7 +34,7 @@
 #include "include/jcr.h"
 #include "lib/parse_conf.h"
 #include "lib/bsock.h"
-#include "lib/bsock_network_dump.h"
+#include "lib/bnet_network_dump.h"
 #include "lib/util.h"
 
 namespace storagedaemon {

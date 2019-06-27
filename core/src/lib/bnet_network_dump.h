@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_LIB_BSOCK_NETWORK_DUMP_H_
-#define BAREOS_LIB_BSOCK_NETWORK_DUMP_H_
+#ifndef BAREOS_LIB_BNET_NETWORK_DUMP_H_
+#define BAREOS_LIB_BNET_NETWORK_DUMP_H_
 
 class BareosResource;
 class QualifiedResourceNameTypeConverter;
@@ -50,4 +50,4 @@ class BnetDump {
   std::unique_ptr<BnetDumpPrivate> impl_;
 };
 
-#endif  // BAREOS_LIB_BSOCK_NETWORK_DUMP_H_
+#endif  // BAREOS_LIB_BNET_NETWORK_DUMP_H_

@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_LIB_BSOCK_NETWORK_DUMP_PRIVATE_H_
-#define BAREOS_LIB_BSOCK_NETWORK_DUMP_PRIVATE_H_
+#ifndef BAREOS_LIB_BNET_NETWORK_DUMP_PRIVATE_H_
+#define BAREOS_LIB_BNET_NETWORK_DUMP_PRIVATE_H_
 
 #include "lib/bareos_resource.h"
 
@@ -78,4 +78,4 @@ class BnetDumpPrivate {
   State state = State::kWaitForDestinationName;
 };
 
-#endif  // BAREOS_LIB_BSOCK_NETWORK_DUMP_PRIVATE_H_
+#endif  // BAREOS_LIB_BNET_NETWORK_DUMP_PRIVATE_H_

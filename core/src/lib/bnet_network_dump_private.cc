@@ -20,7 +20,7 @@
 */
 
 #include "include/bareos.h"
-#include "bsock_network_dump_private.h"
+#include "bnet_network_dump_private.h"
 
 #include "include/make_unique.h"
 #include "lib/ascii_control_characters.h"

@@ -50,7 +50,7 @@
 #include "stored/wait.h"
 #include "lib/berrno.h"
 #include "lib/bsock.h"
-#include "lib/bsock_network_dump.h"
+#include "lib/bnet_network_dump.h"
 #include "lib/daemon.h"
 #include "lib/bsignal.h"
 #include "lib/parse_conf.h"

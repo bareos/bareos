@@ -43,7 +43,7 @@
 #include <functional>
 #include <cassert>
 #include "lib/address_conf.h"
-#include "lib/bsock_network_dump.h"
+#include "lib/bnet_network_dump.h"
 #include "lib/tls.h"
 #include "lib/s_password.h"
 #include "lib/tls_conf.h"

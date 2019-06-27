@@ -53,7 +53,7 @@
 #include "lib/tls_conf.h"
 #include "lib/parse_conf.h"
 #include "lib/bsock_tcp.h"
-#include "lib/bsock_network_dump.h"
+#include "lib/bnet_network_dump.h"
 #include "lib/watchdog.h"
 #include "lib/util.h"
 
