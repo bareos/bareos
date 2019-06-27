@@ -406,6 +406,8 @@ However, it is also possible to disable transport encryption and use cleartext t
 
 Transport encryption between |bareosWebui| and a |bareosDir| can be configured on a per restricted named console basis.
 
+TLS-PSK is not available between the Bareos WebUI and the Bareos Director, in the following you will set up TLS with certificates.
+
 
 Please check the following configuration examples.  A complete table of the directives in the :file:`directors.ini` file see: :ref:`directors-ini-directives`
 
@@ -534,8 +536,8 @@ Overview of the settings in the |bareosWebui| :file:`directors.ini` file
 
    Directive            , Type    ,  Default value , Remark   , Description
    tls_verify_peer      , boolean ,  false         , Optional , TLS verif peer
-   server_can_do_tls    , boolean ,  false         , Required , Server can do TLS
-   server_requires_tls  , boolean ,  false         , Required , Server requires TLS
+   server_can_do_tls    , boolean ,  false         , Required , Server (|dir|) can do TLS
+   server_requires_tls  , boolean ,  false         , Required , Server (|dir|) requires TLS
    client_can_do_tls    , boolean ,  false         , Required , Client can do TLS
    client_requires_tls  , boolean ,  false         , Required , Client requires TLS
    ca_file              , string  ,                , Required , Certificate authority file
