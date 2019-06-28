@@ -74,3 +74,36 @@ TEST(fileindex_list, add_filendexes)
   EXPECT_EQ(bsr.next->fi->next->findex, 4);
   EXPECT_EQ(bsr.next->fi->next->findex2, 4);
 }
+
+/* 
+ * Work in progress. Compiles, but fails.
+ */
+TEST(fileindex_list, gen_ops)
+{
+  RestoreBootstrapRecord bsr;
+  bsr.VolCount = 1;
+
+  AddFindex(&bsr, kJobId_1, 1);
+  AddFindex(&bsr, kJobId_1, 2);
+  AddFindex(&bsr, kJobId_1, 5);
+  AddFindex(&bsr, kJobId_1, 12);
+  AddFindex(&bsr, kJobId_1, 13);
+  AddFindex(&bsr, kJobId_1, 14);
+  AddFindex(&bsr, kJobId_2, 75);
+  AddFindex(&bsr, kJobId_2, 76);
+  AddFindex(&bsr, kJobId_2, 79);
+
+  RestoreContext rx;
+  rx.bsr = &bsr;
+
+  PoolMem buffer{PM_MESSAGE};
+  POOLMEM *JobIds = GetPoolMemory(PM_MESSAGE);
+  Bsnprintf(JobIds, 100, "%d, %d", kJobId_1, kJobId_2);
+  rx.JobIds = JobIds;
+
+  // this will probably not be used, but it must not be a nullpointer
+  rx.store = (StorageResource*)7;
+
+  WriteBsr(nullptr, rx, &buffer);
+  std::cout << "[[" << buffer.c_str() << "]]\n";
+}
