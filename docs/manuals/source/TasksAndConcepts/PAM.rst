@@ -61,50 +61,56 @@ To enable PAM authentication two systems have to be configured. The PAM module i
 
 PAM Module
 ^^^^^^^^^^
-This is depending on the operating system and on the used pam module. For details read the manuals. The name of the service that has to be registered is "bareos".
+This is depending on the operating system and on the used pam module. For details read the manuals. The name of the service that has to be registered is **bareos**.
 
 Fedora 28 example: :
 
-.. code-block:: ini
+.. code-block:: bareosconfig
   :caption: :file:`/etc/pam.d/bareos`
 
-  # check authorization
   auth       required     pam_unix.so
+
+.. warning::
+
+   The |dir| runs as user **bareos**. However, some PAM modules require more priviliges. E.g. **pam_unix** requires access to the file :file:`/etc/shadow`, which is normally not permitted. Make sure you verify your system accordingly.
 
 Bareos Console
 ^^^^^^^^^^^^^^
 For PAM authentication a dedicated named console is used. Set the directive UsePamAuthentication=yes in the regarding Director-Console resource:
 
-.. code-block:: ini
+.. code-block:: bareosconfig
   :caption: :file:`bareos-dir.d/console/pam-console.conf`
 
   Console {
-     Name = "PamConsole"
-     Password = "Secretpassword"
-     UsePamAuthentication = yes
+    Name = "PamConsole"
+    Password = "Secretpassword"
+    UsePamAuthentication = yes
   }
 
 In the dedicated |bconsole| config use name and password according as to the |dir|:
 
-.. code-block:: ini
+.. code-block:: bareosconfig
   :caption: :file:`bconsole.conf`
 
+  Director {
+    ...
+  }
+
   Console {
-     Name = "PamConsole"
-     Password = "Secretpassword"
+    Name = "PamConsole"
+    Password = "Secretpassword"
   }
 
 PAM User
 ^^^^^^^^
 Users have limited access to commands and jobs. Therefore the appropriate rights should also be granted to PAM users. This is an example of a User resource (Bareos Director Configuration):
 
-.. code-block:: ini
-  :caption: :file:`bareos-dir.d/console/pam-user.conf`
+.. code-block:: bareosconfig
+  :caption: :file:`bareos-dir.d/user/a-pam-user.conf`
 
   User {
      Name = "a-pam-user"
-     Password = "" #unsed because authenticated by PAM
+     Password = "" # unsed because authenticated by PAM
      CommandACL = status, .status
      JobACL = *all*
   }
-
