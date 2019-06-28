@@ -19,23 +19,22 @@ def get_connected_clients(director):
     return clients
 
 
-def trigger(director, jobnames, clients):
+def trigger(director, jobnames, clients, hours):
     for client in clients:
         jobname = 'backup-{}'.format(client)
         if not jobname in jobnames:
             print('{} skipped, no matching job ({}) found'.format(client, jobname))
         else:
             jobs = director.call(
-                'list jobs client={} hours=24'.format(client))['jobs']
+                ('list jobs client={} hours={}').format(client, hours))['jobs']
             if jobs:
-                job = director.call('list jobs client={} hours=24 last'.format(client))[
-                    'jobs'][0]
+                job = director.call(
+                    ('list jobs client={} hours={} last').format(client, hours))['jobs'][0]
                 jobinfo = '{starttime}: jobid={jobid}, level={level}, status={jobstatus}'.format(
                     **job)
                 print('{}: skipped, recent backups available ({})'.format(
                     jobname, jobinfo))
             else:
-                # TODO: check type=backup and failed
                 jobid = director.call('run {} yes'.format(jobname))[
                     'run']['jobid']
                 print('{}: backup triggered, jobid={}'.format(jobname, jobid))
@@ -52,6 +51,8 @@ def getArguments():
     parser.add_argument('--port', default=9101,
                         help="Bareos Director network port")
     parser.add_argument('--dirname', help="Bareos Director name")
+    parser.add_argument('--hours', default=24,
+                        help="Minimum time since last backup in hours")
     parser.add_argument('address', nargs='?', default="localhost",
                         help="Bareos Director network address")
     args = parser.parse_args()
@@ -84,8 +85,9 @@ if __name__ == '__main__':
         print(str(e))
         sys.exit(1)
     logger.debug("authentication successful")
+
+    hours = str(args.hours)
+
     jobs = get_job_names(director)
     clients = get_connected_clients(director)
-    trigger(director, jobs, clients)
-
-    # director.interactive()
+    trigger(director, jobs, clients, hours)
