@@ -194,6 +194,10 @@ void BnetDumpPrivate::SaveAndSendMessageIfNoDestinationDefined(const char* ptr,
 
     temporary_buffer_for_initial_messages_.push_back(temp_data);
 
+    if (temporary_buffer_for_initial_messages_.size() > 3) {
+      Dmsg0(100, "BnetDumpPrivate: destination_qualified_name_ not set\n");
+    }
+
   } else {  // !empty() -> send all buffered messages
     state = State::kRunNormal;
     std::vector<std::vector<char>> temp =

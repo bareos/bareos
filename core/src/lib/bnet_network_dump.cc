@@ -58,14 +58,12 @@ void BnetDump::SetDestinationQualifiedName(
 bool BnetDump::EvaluateCommandLineArgs(const char* cmdline_optarg)
 {
   if (strlen(optarg) == 1) {
-    if (*optarg == 'p') {
-      BnetDumpPrivate::plantuml_mode_ = true;
-    } else if (std::isdigit(optarg[0]) || optarg[0] == '-') {
-      try {
-        BnetDumpPrivate::stack_level_amount_ = std::stoi(optarg);
-      } catch (const std::exception& e) {
-        return false;
-      }
+    if (*optarg == 'p') { BnetDumpPrivate::plantuml_mode_ = true; }
+  } else if (std::isdigit(optarg[0]) || optarg[0] == '-') {
+    try {
+      BnetDumpPrivate::stack_level_amount_ = std::stoi(optarg);
+    } catch (const std::exception& e) {
+      return false;
     }
   } else if (!BnetDumpPrivate::SetFilename(optarg)) {
     return false;
