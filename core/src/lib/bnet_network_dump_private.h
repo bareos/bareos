@@ -52,7 +52,6 @@ class BnetDumpPrivate {
   std::string destination_qualified_name_;
 
   std::ofstream output_file_;
-  bool logging_disabled_ = false;
 
  private:
   void CreateAndWriteStacktraceToBuffer();

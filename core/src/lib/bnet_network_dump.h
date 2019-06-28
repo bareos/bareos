@@ -30,23 +30,21 @@ class BnetDump {
  public:
   static std::unique_ptr<BnetDump> Create(std::string own_qualified_name);
   static bool EvaluateCommandLineArgs(const char* cmdline_optarg);
-  void SetDestinationQualifiedName(std::string destination_qualified_name);
 
+  void SetDestinationQualifiedName(std::string destination_qualified_name);
   void DumpMessageAndStacktraceToFile(const char* ptr, int nbytes) const;
-  bool IsInitialized() const;
-  void DisableLogging();
-  void EnableLogging();
 
  public:
-  BnetDump(const std::string& own_qualified_name);
+  ~BnetDump();
+
   BnetDump(const BnetDump& other) = delete;
   BnetDump(const BnetDump&& other) = delete;
   BnetDump& operator=(const BnetDump& rhs) = delete;
   BnetDump& operator=(const BnetDump&& rhs) = delete;
-  ~BnetDump();
+  BnetDump() = delete;
 
  private:
-  BnetDump();
+  BnetDump(const std::string& own_qualified_name);
   std::unique_ptr<BnetDumpPrivate> impl_;
 };
 

@@ -30,18 +30,16 @@ std::unique_ptr<BnetDump> BnetDump::Create(std::string own_qualified_name)
     std::unique_ptr<BnetDump> p;
     return p;
   } else {
-    std::unique_ptr<BnetDump> p(std::make_unique<BnetDump>(own_qualified_name));
+    // BnetDump constructor should be private
+    std::unique_ptr<BnetDump> p(new BnetDump(own_qualified_name));
     return p;
   }
 }
 
-BnetDump::BnetDump(const std::string& own_qualified_name) : BnetDump()
+BnetDump::BnetDump(const std::string& own_qualified_name)
+    : impl_(std::make_unique<BnetDumpPrivate>())
 {
   impl_->own_qualified_name_ = own_qualified_name;
-}
-
-BnetDump::BnetDump() : impl_(std::make_unique<BnetDumpPrivate>())
-{
   impl_->OpenFile();
 }
 
@@ -50,12 +48,6 @@ BnetDump::~BnetDump()
   //
   impl_->CloseFile();
 }
-
-bool BnetDump::IsInitialized() const { return impl_->output_file_.is_open(); }
-
-void BnetDump::DisableLogging() { impl_->logging_disabled_ = true; }
-
-void BnetDump::EnableLogging() { impl_->logging_disabled_ = false; }
 
 void BnetDump::SetDestinationQualifiedName(
     std::string destination_qualified_name)
@@ -83,7 +75,7 @@ bool BnetDump::EvaluateCommandLineArgs(const char* cmdline_optarg)
 
 void BnetDump::DumpMessageAndStacktraceToFile(const char* ptr, int nbytes) const
 {
-  if (!IsInitialized() || impl_->logging_disabled_) { return; }
+  if (!impl_->output_file_.is_open()) { return; }
 
   impl_->SaveAndSendMessageIfNoDestinationDefined(ptr, nbytes);
   impl_->DumpToFile(ptr, nbytes);
