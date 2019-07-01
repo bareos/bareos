@@ -198,3 +198,50 @@ The client will perform the following:
 
 Thus the client will send multiple packets and signal to the server when
 all the packets have been sent by sending a zero length record.
+
+Network startup activity
+------------------------
+
+The following diagram shows the activity on a Bareos TCP server (i.e. a |dir| or a |sd|) when a TCP client initiates a network connection. The connection protocol has two possible handshake modes. Cleartext first or TLS first. Depending on the configuration, the Bareos version and the type of client (i.e. |fd| or |bconsole|) the handshake mode will be chosen. See chapter :ref:`section-TlsTechnicalDocumentation` for detailed information. 
+
+.. uml::
+  :caption: Network startup activity (Bareos TCP-Server)
+
+  start
+
+  :accept TCP socket;
+
+  if (evaluation of cleartext hello \nis successfus) then (yes)
+    if (is cleartext hello ?) then (yes)
+      if (is R_CLIENT ?) then (yes)
+        if (TLS required) then (yes)
+          :Close connection;
+          stop
+        else (no)
+          :Do cleartext \nhandshake;
+        endif
+      elseif (is R_CONSOLE AND \nconsole version < 18.2 ?) then (yes)
+          :Do cleartext \nhandshake;
+      elseif (TLS not configured) then (yes)
+        :Do cleartext \nhandshake;
+      else
+        :Close connection;
+        stop
+      endif
+      :Do cleartext handshake;
+    else (no)
+      :Do TLS handshake \nas a server;
+      if (TLS handshake successful ?) then (no)
+        :Close connection;
+        stop
+      else (yes)
+      endif
+    endif
+  else (no)
+    :Close connection;
+    stop
+  endif
+
+  :Handle client message;
+  end
+
