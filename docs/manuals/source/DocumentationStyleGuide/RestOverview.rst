@@ -272,14 +272,9 @@ markup, :ref:`doc-ref-role`.
 Cross-linking markup
 --------------------
 
-To support cross-referencing to arbitrary sections in the documentation, the
-standard reST labels are "abused" a bit: Every label must precede a section
-title; and every label name must be unique throughout the entire documentation
-source.
+To support cross-referencing to arbitrary sections in the documentation, the standard reST labels are used in a specific way. Every label must precede a section title and every label name must be unique throughout the entire documentation source.
 
-You can then reference to these sections using the ``:ref:`label-name``` role.
-
-Example::
+The label must begin with an underscore. Example::
 
    .. _my-reference-label:
 
@@ -288,12 +283,11 @@ Example::
 
    This is the text of the section.
 
-   It refers to the section itself, see :ref:`my-reference-label`.
+You can reference this section using the ``:ref:`label-name``` role. Remark that the preceding underscore from the label must not be used in the role: ``:ref:`my-reference-label```.
 
-The ``:ref:`` invocation is replaced with the section title.
+The ``:ref:`` invocation is then replaced with a link to the referred section. The text of the link is the same as the section title.
 
-Alternatively, you can reference any label (not just section titles)
-if you provide the link text ``:ref:`link text <reference-label>```.
+Alternatively, you can reference any label (not just section titles) if you provide the link text in the role like this: ``:ref:`link text <my-reference-label>``` (`<` and `>` are mandatory).
 
 Manual defined labels should use following naming rules:
 
