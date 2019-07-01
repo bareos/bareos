@@ -24,8 +24,11 @@
 
 #include "dird/bsr.h"
 
+#include <algorithm>
+#include <numeric>
 #include <chrono>
 #include <iostream>
+#include <random>
 
 using namespace std::chrono;
 using namespace directordaemon;
@@ -40,6 +43,9 @@ enum
   kJobId_1 = 1,
   kJobId_2 = 2
 };
+
+// here you can set the size of the fileid vector generated
+static const auto kFidCount = 40000;
 
 TEST(fileindex_list, add_filendexes)
 {
@@ -75,35 +81,147 @@ TEST(fileindex_list, add_filendexes)
   EXPECT_EQ(bsr.next->fi->next->findex2, 4);
 }
 
-/* 
- * Work in progress. Compiles, but fails.
- */
-TEST(fileindex_list, gen_ops)
+template <typename F>
+static void timedLambda(const char* name, F func)
+{
+  auto start_time = std::chrono::high_resolution_clock::now();
+  func();
+  auto end_time = std::chrono::high_resolution_clock::now();
+  auto elapsed_time = std::chrono::duration<double>{end_time - start_time};
+  cout << name << " exec time: " << elapsed_time.count() << "\n";
+}
+
+static const std::string rangeStr(int begin, int end)
+{
+  return begin == end ? to_string(begin)
+                      : to_string(begin) + "-" + to_string(end);
+}
+
+
+template <typename itBegin, typename itEnd>
+static std::string toBsrStringLocal(const itBegin& t_begin, const itEnd& t_end)
+{
+  auto bsr = std::string{""};
+  timedLambda("toBsrStringLocal", [&]() {
+    std::set<int> fileIds{t_begin, t_end};
+    int begin{0};
+    int end{0};
+
+    for (auto fileId : fileIds) {
+      if (begin == 0) { begin = end = fileId; }
+
+      if (fileId > end + 1) {
+        bsr += "FileIndex=" + rangeStr(begin, end) + "\n";
+        begin = end = fileId;
+      } else {
+        end = fileId;
+      }
+    }
+    bsr += "FileIndex=" + rangeStr(begin, end) + "\n";
+  });
+  return bsr;
+}
+
+static std::string toBsrStringLocal(const std::vector<int>& t_fileIds)
+{
+  return toBsrStringLocal(t_fileIds.begin(), t_fileIds.end());
+}
+
+template <typename itBegin, typename itEnd>
+static std::string toBsrStringBareos(const itBegin& t_begin, const itEnd& t_end)
 {
   RestoreBootstrapRecord bsr;
-  bsr.VolCount = 1;
+  timedLambda("AddFindex total", [&]() {
+    std::for_each(t_begin, t_end,
+                  [&](int fid) { AddFindex(&bsr, kJobId_1, fid); });
+  });
+  auto maxId = *std::max_element(t_begin, t_end);
+  auto buffer = PoolMem{PM_MESSAGE};
+  timedLambda("write_findex total",
+              [&]() { write_findex(bsr.fi, 1, maxId, &buffer); });
+  return std::string{buffer.c_str()};
+}
 
-  AddFindex(&bsr, kJobId_1, 1);
-  AddFindex(&bsr, kJobId_1, 2);
-  AddFindex(&bsr, kJobId_1, 5);
-  AddFindex(&bsr, kJobId_1, 12);
-  AddFindex(&bsr, kJobId_1, 13);
-  AddFindex(&bsr, kJobId_1, 14);
-  AddFindex(&bsr, kJobId_2, 75);
-  AddFindex(&bsr, kJobId_2, 76);
-  AddFindex(&bsr, kJobId_2, 79);
+static std::string toBsrStringBareos(const std::vector<int>& t_fileIds)
+{
+  return toBsrStringBareos(t_fileIds.begin(), t_fileIds.end());
+}
 
-  RestoreContext rx;
-  rx.bsr = &bsr;
 
-  PoolMem buffer{PM_MESSAGE};
-  POOLMEM *JobIds = GetPoolMemory(PM_MESSAGE);
-  Bsnprintf(JobIds, 100, "%d, %d", kJobId_1, kJobId_2);
-  rx.JobIds = JobIds;
+TEST(fileindex_list, continous_list)
+{
+  auto fileIds = std::vector<int>(kFidCount);
+  std::iota(fileIds.begin(), fileIds.end(), 1);
+  ASSERT_EQ(toBsrStringLocal(fileIds), toBsrStringBareos(fileIds));
+}
 
-  // this will probably not be used, but it must not be a nullpointer
-  rx.store = (StorageResource*)7;
+TEST(fileindex_list, continous_list_reverse)
+{
+  auto fileIds = std::vector<int>(kFidCount);
+  std::iota(fileIds.begin(), fileIds.end(), 1);
+  std::reverse(fileIds.begin(), fileIds.end());
+  ASSERT_EQ(toBsrStringLocal(fileIds), toBsrStringBareos(fileIds));
+}
 
-  WriteBsr(nullptr, rx, &buffer);
-  std::cout << "[[" << buffer.c_str() << "]]\n";
+TEST(fileindex_list, gap_list)
+{
+  auto fileIds = std::vector<int>(kFidCount);
+  std::generate(fileIds.begin(), fileIds.end(), []() {
+    static auto i = 1;
+    return i += 2;
+  });
+
+  ASSERT_EQ(toBsrStringLocal(fileIds), toBsrStringBareos(fileIds));
+}
+
+TEST(fileindex_list, gap_list_reverse)
+{
+  auto fileIds = std::vector<int>(kFidCount);
+  std::generate(fileIds.begin(), fileIds.end(), []() {
+    static auto i = 0;
+    return i += 2;
+  });
+
+  std::reverse(fileIds.begin(), fileIds.end());
+  ASSERT_EQ(toBsrStringLocal(fileIds), toBsrStringBareos(fileIds));
+}
+
+TEST(fileindex_list, few_gap_list)
+{
+  auto fileIds = std::vector<int>(kFidCount);
+  std::generate(fileIds.begin(), fileIds.end(), []() {
+    static auto i = 0;
+    ++i;
+    if (i % 100 == 0) ++i;
+    return i;
+  });
+
+  ASSERT_EQ(toBsrStringLocal(fileIds), toBsrStringBareos(fileIds));
+}
+
+TEST(fileindex_list, few_gap_list_random_order)
+{
+  auto fileIds = std::vector<int>(kFidCount);
+  std::generate(fileIds.begin(), fileIds.end(), []() {
+    static auto i = 0;
+    ++i;
+    if (i % 100 == 0) ++i;
+    return i;
+  });
+
+  std::shuffle(fileIds.begin(), fileIds.end(), std::default_random_engine{});
+  ASSERT_EQ(toBsrStringLocal(fileIds), toBsrStringBareos(fileIds));
+}
+
+TEST(fileindex_list, gap_list_duplicates_random_order)
+{
+  auto fileIds = std::vector<int>(kFidCount);
+  std::generate(fileIds.begin(), fileIds.end(), []() {
+    static auto i = 0;
+    return i += 2;
+  });
+  std::fill(fileIds.begin() + 10, fileIds.begin() + 20, 55);
+
+  std::shuffle(fileIds.begin(), fileIds.end(), std::default_random_engine{});
+  ASSERT_EQ(toBsrStringLocal(fileIds), toBsrStringBareos(fileIds));
 }
