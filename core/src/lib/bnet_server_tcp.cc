@@ -154,7 +154,7 @@ void BnetThreadServerTcp(
 {
   int newsockfd, status;
   socklen_t clilen;
-  struct sockaddr cli_addr; /* client's address */
+  struct sockaddr_storage cli_addr; /* client's address */
   int tlog;
   int value;
 #ifdef HAVE_LIBWRAP
@@ -357,7 +357,7 @@ void BnetThreadServerTcp(
          */
         do {
           clilen = sizeof(cli_addr);
-          newsockfd = accept(fd_ptr->fd, &cli_addr, &clilen);
+          newsockfd = accept(fd_ptr->fd, reinterpret_cast<sockaddr*>(&cli_addr), &clilen);
         } while (newsockfd < 0 && errno == EINTR);
         if (newsockfd < 0) { continue; }
 #ifdef HAVE_LIBWRAP
@@ -368,8 +368,8 @@ void BnetThreadServerTcp(
           V(mutex);
           Jmsg2(NULL, M_SECURITY, 0,
                 _("Connection from %s:%d refused by hosts.access\n"),
-                SockaddrToAscii(&cli_addr, buf, sizeof(buf)),
-                SockaddrGetPort(&cli_addr));
+                SockaddrToAscii(reinterpret_cast<sockaddr*>(&cli_addr), buf, sizeof(buf)),
+                SockaddrGetPort(reinterpret_cast<sockaddr*>(&cli_addr)));
           close(newsockfd);
           continue;
         }
@@ -390,7 +390,7 @@ void BnetThreadServerTcp(
          * See who client is. i.e. who connected to us.
          */
         P(mutex);
-        SockaddrToAscii(&cli_addr, buf, sizeof(buf));
+        SockaddrToAscii(reinterpret_cast<sockaddr*>(&cli_addr), buf, sizeof(buf));
         V(mutex);
 
         BareosSocket* bs;
