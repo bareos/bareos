@@ -1053,7 +1053,7 @@ int32_t BareosSocketTCP::write_nbytes(char* ptr, int32_t nbytes)
     return nbytes;
   }
 
-  if (bnet_dump_) { bnet_dump_->DumpMessageAndStacktraceToFile(ptr, nbytes); }
+  if (IsBnetDumpEnabled()) { bnet_dump_->DumpMessageAndStacktraceToFile(ptr, nbytes); }
 
 #ifdef HAVE_TLS
   if (tls_conn) { return (tls_conn->TlsBsockWriten(this, ptr, nbytes)); }

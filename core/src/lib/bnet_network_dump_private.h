@@ -74,7 +74,7 @@ class BnetDumpPrivate {
     kWaitForDestinationName,
     kRunNormal
   };
-  State state = State::kWaitForDestinationName;
+  State state_ = State::kWaitForDestinationName;
 };
 
 #endif  // BAREOS_LIB_BNET_NETWORK_DUMP_PRIVATE_H_

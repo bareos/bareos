@@ -27,15 +27,11 @@
 
 #include "include/bareos.h"
 #include "include/jcr.h"
-#include "include/make_unique.h"
-#include "lib/bsock.h"
 #include "lib/edit.h"
 #include "lib/ascii_control_characters.h"
 #include "lib/bstringlist.h"
 #include "lib/qualified_resource_name_type_converter.h"
 #include "include/version_numbers.h"
-#include "lib/parse_conf.h"
-#include "lib/qualified_resource_name_type_converter.h"
 
 #include <algorithm>
 

@@ -195,7 +195,6 @@ static void usage()
         "        -f          run in foreground (for debugging)\n"
         "        -g <group>  run as group <group>\n"
         "        -m          print kaboom output (for debugging)\n"
-        //        "        -n <file>   switch network debugging on\n"
         "        -r <job>    run <job> now\n"
         "        -s          no signals (for debugging)\n"
         "        -t          test - read configuration and exit\n"

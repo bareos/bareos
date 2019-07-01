@@ -111,7 +111,7 @@ std::string BnetDumpPrivate::CreateFormatStringForNetworkMessage(
 
 bool BnetDumpPrivate::IsExcludedRcode(const BStringList& l) const
 {
-  if (l.size() > 1) {
+  if (l.size() > 0) {
     const std::string& probe = l[0];
     if (exclude_rcodes_.find(probe) != exclude_rcodes_.end()) { return true; }
   }
@@ -123,10 +123,7 @@ bool BnetDumpPrivate::SuppressMessageIfRcodeIsInExcludeList() const
   BStringList own_name(own_qualified_name_, "::");
   BStringList destination_name(destination_qualified_name_, "::");
 
-  if (IsExcludedRcode(own_name) || IsExcludedRcode(destination_name)) {
-    return true;
-  }
-  return false;
+  return IsExcludedRcode(own_name) || IsExcludedRcode(destination_name);
 }
 
 void BnetDumpPrivate::CreateAndWriteMessageToBuffer(const char* ptr, int nbytes)
@@ -169,13 +166,13 @@ void BnetDumpPrivate::DumpToFile(const char* ptr, int nbytes)
 {
   if (SuppressMessageIfRcodeIsInExcludeList()) { return; }
 
-  if (state == State::kRunNormal) {
+  if (state_ == State::kRunNormal) {
     CreateAndWriteMessageToBuffer(ptr, nbytes);
     CreateAndWriteStacktraceToBuffer();
     output_file_ << output_buffer_;
     output_file_.flush();
 
-  } else if (state == State::kWaitForDestinationName) {
+  } else if (state_ == State::kWaitForDestinationName) {
     return;
   }
 }
@@ -183,11 +180,11 @@ void BnetDumpPrivate::DumpToFile(const char* ptr, int nbytes)
 void BnetDumpPrivate::SaveAndSendMessageIfNoDestinationDefined(const char* ptr,
                                                                int nbytes)
 {
-  if (state != State::kWaitForDestinationName) { return; }
+  if (state_ != State::kWaitForDestinationName) { return; }
 
   if (destination_qualified_name_.empty()) {
     std::size_t amount = nbytes;
-    amount = amount > max_data_dump_bytes_ ? max_data_dump_bytes_ : amount;
+    amount = std::min(amount, max_data_dump_bytes_);
 
     std::vector<char> temp_data;
     std::copy(ptr, ptr + amount, std::back_inserter(temp_data));
@@ -199,10 +196,10 @@ void BnetDumpPrivate::SaveAndSendMessageIfNoDestinationDefined(const char* ptr,
     }
 
   } else {  // !empty() -> send all buffered messages
-    state = State::kRunNormal;
-    std::vector<std::vector<char>> temp =
-        std::move(temporary_buffer_for_initial_messages_);
-    for (const std::vector<char>& v : temp) { DumpToFile(v.data(), v.size()); }
-
+    state_ = State::kRunNormal;
+    for (auto& v : temporary_buffer_for_initial_messages_) {
+      DumpToFile(v.data(), v.size());
+    }
+    temporary_buffer_for_initial_messages_.clear();
   }  // destination_qualified_name_.empty()
 }

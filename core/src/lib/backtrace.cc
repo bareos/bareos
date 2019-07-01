@@ -59,8 +59,8 @@ std::vector<BacktraceInfo> Backtrace(int skip, int amount)
     Dl_info info;
     if (dladdr(callstack[i], &info)) {
       int status;
-      char* demangled = nullptr;
-      demangled = abi::__cxa_demangle(info.dli_sname, nullptr, 0, &status);
+      char* demangled =
+          abi::__cxa_demangle(info.dli_sname, nullptr, 0, &status);
       const char* name;
       if (status == 0) {
         name = demangled ? demangled : "(no demangeled name)";
@@ -68,12 +68,12 @@ std::vector<BacktraceInfo> Backtrace(int skip, int amount)
         name = info.dli_sname ? info.dli_sname : "(no dli_sname)";
       }
       trace_buf.emplace_back(i, name);
-      free(demangled);
+      if (demangled) { free(demangled); }
     } else {
       trace_buf.emplace_back(i, "unknown");
     }
   }
-  free(symbols);
+  if (symbols) { free(symbols); }
   if (nFrames == nMaxFrames) {
     trace_buf.emplace_back(nMaxFrames + 1, "[truncated]");
   }
