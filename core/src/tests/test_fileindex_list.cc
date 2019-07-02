@@ -82,7 +82,7 @@ TEST(fileindex_list, add_filendexes)
 }
 
 template <typename F>
-static void timedLambda(const char* name, F func)
+static void TimedLambda(const char* name, F func)
 {
   auto start_time = std::chrono::high_resolution_clock::now();
   func();
@@ -91,7 +91,7 @@ static void timedLambda(const char* name, F func)
   cout << name << " exec time: " << elapsed_time.count() << "\n";
 }
 
-static const std::string rangeStr(int begin, int end)
+static const std::string RangeStr(int begin, int end)
 {
   return begin == end ? to_string(begin)
                       : to_string(begin) + "-" + to_string(end);
@@ -99,10 +99,10 @@ static const std::string rangeStr(int begin, int end)
 
 
 template <typename itBegin, typename itEnd>
-static std::string toBsrStringLocal(const itBegin& t_begin, const itEnd& t_end)
+static std::string ToBsrStringLocal(const itBegin& t_begin, const itEnd& t_end)
 {
   auto bsr = std::string{""};
-  timedLambda("toBsrStringLocal", [&]() {
+  TimedLambda("ToBsrStringLocal", [&]() {
     std::set<int> fileIds{t_begin, t_end};
     int begin{0};
     int end{0};
@@ -111,40 +111,40 @@ static std::string toBsrStringLocal(const itBegin& t_begin, const itEnd& t_end)
       if (begin == 0) { begin = end = fileId; }
 
       if (fileId > end + 1) {
-        bsr += "FileIndex=" + rangeStr(begin, end) + "\n";
+        bsr += "FileIndex=" + RangeStr(begin, end) + "\n";
         begin = end = fileId;
       } else {
         end = fileId;
       }
     }
-    bsr += "FileIndex=" + rangeStr(begin, end) + "\n";
+    bsr += "FileIndex=" + RangeStr(begin, end) + "\n";
   });
   return bsr;
 }
 
-static std::string toBsrStringLocal(const std::vector<int>& t_fileIds)
+static std::string ToBsrStringLocal(const std::vector<int>& t_fileIds)
 {
-  return toBsrStringLocal(t_fileIds.begin(), t_fileIds.end());
+  return ToBsrStringLocal(t_fileIds.begin(), t_fileIds.end());
 }
 
 template <typename itBegin, typename itEnd>
-static std::string toBsrStringBareos(const itBegin& t_begin, const itEnd& t_end)
+static std::string ToBsrStringBareos(const itBegin& t_begin, const itEnd& t_end)
 {
   RestoreBootstrapRecord bsr;
-  timedLambda("AddFindex total", [&]() {
+  TimedLambda("AddFindex total", [&]() {
     std::for_each(t_begin, t_end,
                   [&](int fid) { AddFindex(&bsr, kJobId_1, fid); });
   });
   auto maxId = *std::max_element(t_begin, t_end);
   auto buffer = PoolMem{PM_MESSAGE};
-  timedLambda("write_findex total",
+  TimedLambda("write_findex total",
               [&]() { write_findex(bsr.fi, 1, maxId, &buffer); });
   return std::string{buffer.c_str()};
 }
 
-static std::string toBsrStringBareos(const std::vector<int>& t_fileIds)
+static std::string ToBsrStringBareos(const std::vector<int>& t_fileIds)
 {
-  return toBsrStringBareos(t_fileIds.begin(), t_fileIds.end());
+  return ToBsrStringBareos(t_fileIds.begin(), t_fileIds.end());
 }
 
 
@@ -152,7 +152,7 @@ TEST(fileindex_list, continous_list)
 {
   auto fileIds = std::vector<int>(kFidCount);
   std::iota(fileIds.begin(), fileIds.end(), 1);
-  ASSERT_EQ(toBsrStringLocal(fileIds), toBsrStringBareos(fileIds));
+  EXPECT_EQ(ToBsrStringLocal(fileIds), ToBsrStringBareos(fileIds));
 }
 
 TEST(fileindex_list, continous_list_reverse)
@@ -160,7 +160,7 @@ TEST(fileindex_list, continous_list_reverse)
   auto fileIds = std::vector<int>(kFidCount);
   std::iota(fileIds.begin(), fileIds.end(), 1);
   std::reverse(fileIds.begin(), fileIds.end());
-  ASSERT_EQ(toBsrStringLocal(fileIds), toBsrStringBareos(fileIds));
+  EXPECT_EQ(ToBsrStringLocal(fileIds), ToBsrStringBareos(fileIds));
 }
 
 TEST(fileindex_list, gap_list)
@@ -171,7 +171,7 @@ TEST(fileindex_list, gap_list)
     return i += 2;
   });
 
-  ASSERT_EQ(toBsrStringLocal(fileIds), toBsrStringBareos(fileIds));
+  EXPECT_EQ(ToBsrStringLocal(fileIds), ToBsrStringBareos(fileIds));
 }
 
 TEST(fileindex_list, gap_list_reverse)
@@ -183,7 +183,7 @@ TEST(fileindex_list, gap_list_reverse)
   });
 
   std::reverse(fileIds.begin(), fileIds.end());
-  ASSERT_EQ(toBsrStringLocal(fileIds), toBsrStringBareos(fileIds));
+  EXPECT_EQ(ToBsrStringLocal(fileIds), ToBsrStringBareos(fileIds));
 }
 
 TEST(fileindex_list, few_gap_list)
@@ -196,7 +196,7 @@ TEST(fileindex_list, few_gap_list)
     return i;
   });
 
-  ASSERT_EQ(toBsrStringLocal(fileIds), toBsrStringBareos(fileIds));
+  EXPECT_EQ(ToBsrStringLocal(fileIds), ToBsrStringBareos(fileIds));
 }
 
 TEST(fileindex_list, few_gap_list_random_order)
@@ -210,7 +210,7 @@ TEST(fileindex_list, few_gap_list_random_order)
   });
 
   std::shuffle(fileIds.begin(), fileIds.end(), std::default_random_engine{});
-  ASSERT_EQ(toBsrStringLocal(fileIds), toBsrStringBareos(fileIds));
+  EXPECT_EQ(ToBsrStringLocal(fileIds), ToBsrStringBareos(fileIds));
 }
 
 TEST(fileindex_list, gap_list_duplicates_random_order)
@@ -223,5 +223,5 @@ TEST(fileindex_list, gap_list_duplicates_random_order)
   std::fill(fileIds.begin() + 10, fileIds.begin() + 20, 55);
 
   std::shuffle(fileIds.begin(), fileIds.end(), std::default_random_engine{});
-  ASSERT_EQ(toBsrStringLocal(fileIds), toBsrStringBareos(fileIds));
+  EXPECT_EQ(ToBsrStringLocal(fileIds), ToBsrStringBareos(fileIds));
 }
