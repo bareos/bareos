@@ -854,7 +854,7 @@ const char *BareosDbPostgresql::query_definitions[] = {
 "LEFT JOIN File USING (PathId) "
 "LEFT JOIN PathHierarchy ON (Path.Pathid = PathHierarchy.PPathId) "
 "WHERE File.PathId IS NULL "
-  "AND PathHierarchy.PPathId IS NULL "
+  "AND NOT EXISTS (SELECT 1 FROM Path WHERE Path LIKE CONCAT(ParentPath.Path,'_%%')) "
 "LIMIT 300000 "
 ,
 
