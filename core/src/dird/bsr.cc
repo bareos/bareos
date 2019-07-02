@@ -118,10 +118,10 @@ static void PrintBsrItem(PoolMem* pool_buf, const char* fmt, ...)
  * We are called here once for each JobMedia record
  * for each Volume.
  */
-static inline uint32_t write_findex(RestoreBootstrapRecordFileIndex* fi,
-                                    int32_t FirstIndex,
-                                    int32_t LastIndex,
-                                    PoolMem* buffer)
+uint32_t write_findex(RestoreBootstrapRecordFileIndex* fi,
+                      int32_t FirstIndex,
+                      int32_t LastIndex,
+                      PoolMem* buffer)
 {
   int32_t findex, findex2;
   uint32_t count = 0;

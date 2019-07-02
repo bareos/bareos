@@ -96,6 +96,10 @@ bool SendBootstrapFile(JobControlRecord* jcr,
                        BareosSocket* sock,
                        bootstrap_info& info);
 void CloseBootstrapFile(bootstrap_info& info);
+uint32_t write_findex(RestoreBootstrapRecordFileIndex* fi,
+                      int32_t FirstIndex,
+                      int32_t LastIndex,
+                      PoolMem* buffer);
 
 } /* namespace directordaemon */
 #endif  // BAREOS_DIRD_BSR_H_
