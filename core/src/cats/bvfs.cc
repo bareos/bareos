@@ -428,7 +428,7 @@ static int ResultHandler(void* ctx, int fields, char** row)
 }
 
 /*
- * BVFS class methods.
+ e* BVFS class methods.
  */
 Bvfs::Bvfs(JobControlRecord* j, BareosDb* mdb)
 {
@@ -438,7 +438,8 @@ Bvfs::Bvfs(JobControlRecord* j, BareosDb* mdb)
   jobids = GetPoolMemory(PM_NAME);
   prev_dir = GetPoolMemory(PM_NAME);
   pattern = GetPoolMemory(PM_NAME);
-  *jobids = *prev_dir = *pattern = 0;
+  clientname = GetPoolMemory(PM_NAME);
+  *jobids = *prev_dir = *pattern = *clientname = 0;
   pwd_id = 0;
   see_copies = false;
   see_all_versions = false;
@@ -454,6 +455,7 @@ Bvfs::~Bvfs()
   FreePoolMemory(jobids);
   FreePoolMemory(pattern);
   FreePoolMemory(prev_dir);
+  FreePoolMemory(clientname);
   FreeAttr(attr);
   jcr->DecUseCount();
 }

@@ -858,9 +858,9 @@ bool BareosDb::WriteBatchFileRecords(JobControlRecord* jcr)
 
   /* clang-format off */
   if (!jcr->db_batch->SqlQuery(
-        "INSERT INTO File (FileIndex, JobId, PathId, Name, LStat, MD5, DeltaSeq, Fhinfo, Fhnode) "
+        "INSERT INTO File (FileIndex, JobId, PathId, Name, LStat, MD5, DeltaSeq, Fhinfo, Fhnode, ClientId) "
         "SELECT batch.FileIndex, batch.JobId, Path.PathId, "
-        "batch.Name, batch.LStat, batch.MD5, batch.DeltaSeq, batch.Fhinfo, batch.Fhnode "
+        "batch.Name, batch.LStat, batch.MD5, batch.DeltaSeq, batch.Fhinfo, batch.Fhnode, client_of_job(batch.JobId) "
         "FROM batch "
         "JOIN Path ON (batch.Path = Path.Path) ")) {
      Jmsg1(jcr, M_FATAL, 0, "Fill File table %s\n", errmsg);
