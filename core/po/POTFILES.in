@@ -388,7 +388,6 @@
 ./src/ndmp/ndmp9_xmt.c
 ./src/ndmp/ndmjob_main_util.c
 ./src/console/console_conf.c
-./src/console/conio.c
 ./src/console/console.c
 ./src/plugins/stored/python-sd.h
 ./src/plugins/dird/python-dir.h
@@ -624,7 +623,6 @@
 ./src/ndmp/scsiconst.h
 ./src/ndmp/smc_priv.h
 ./src/ndmp/ndmp2_enum_strs.h
-./src/console/conio.h
 ./src/console/console_conf.h
 ./src/console/func.h
 ./src/qt-tray-monitor/monitortab.h

@@ -100,7 +100,6 @@ CMAKE_ARGS+= -DCMAKE_VERBOSE_MAKEFILE=ON \
   -Dlogdir=/var/log/bareos \
   -Dsubsys-dir=/var/lock \
   -Dpython=yes\
-  -Dconio=no \
   -Dreadline=yes\
   -Dreadline=${LOCALBASE} \
   -Dbatch-insert=yes\

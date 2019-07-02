@@ -369,11 +369,6 @@ IF(NOT DEFINED lockmgr)
    set(LOCKMGR 0)
 ENDIF()
 
-# disable-conio
-IF(NOT DEFINED disable-conio)
-   SET(disable-conio ON)
-ENDIF()
-
 # readline
 IF(NOT DEFINED readline)
    SET(readline ON)

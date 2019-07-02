@@ -45,7 +45,6 @@ define CONFIGURE_COMMON
   -Dbsrdir=/var/lib/bareos \
   -Dlogdir=/var/log/bareos \
   -Dsubsysdir=/var/lock \
-  -Ddisable-conio=yes \
   -Dreadline=yes \
   -Dbatch-insert=yes \
   -Ddynamic-debian-package-list=yes\
