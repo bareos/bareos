@@ -428,7 +428,7 @@ static int ResultHandler(void* ctx, int fields, char** row)
 }
 
 /*
- e* BVFS class methods.
+ * BVFS class methods.
  */
 Bvfs::Bvfs(JobControlRecord* j, BareosDb* mdb)
 {
