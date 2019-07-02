@@ -994,11 +994,11 @@ const char *BareosDbSqlite::query_definitions[] = {
 ,
 
 /* 0078_batch_insert_file_table_1 */
-"INSERT INTO File (FileIndex, JobId, PathId, Name, LStat, MD5, DeltaSeq, Fhinfo, Fhnode, ClientId) "
-                     "SELECT batch.FileIndex, batch.JobId, Path.PathId, "
-                     "batch.Name, batch.LStat, batch.MD5, batch.DeltaSeq, batch.Fhinfo, batch.Fhnode, %u "
-                     "FROM batch "
-                     "JOIN Path ON (batch.Path = Path.Path) "
+ "INSERT INTO File (FileIndex, JobId, PathId, Name, LStat, MD5, DeltaSeq, Fhinfo, Fhnode, ClientId) "
+                      "SELECT batch.FileIndex, batch.JobId, Path.PathId, "
+                      "batch.Name, batch.LStat, batch.MD5, batch.DeltaSeq, batch.Fhinfo, batch.Fhnode, %u "
+                      "FROM batch "
+                      "JOIN Path ON (batch.Path = Path.Path) "
 ,
 
 NULL
