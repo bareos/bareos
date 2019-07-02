@@ -838,11 +838,6 @@ bool BareosDb::WriteBatchFileRecords(JobControlRecord* jcr)
 
   if (JobCanceled(jcr)) { goto bail_out; }
 
-  if (!jcr->db_batch->SqlQuery(SQL_QUERY_batch_lock_path_query)) {
-    Jmsg1(jcr, M_FATAL, 0, "Lock Path table %s\n", errmsg);
-    goto bail_out;
-  }
-
   /*
    * We have to lock tables
    */
@@ -851,10 +846,17 @@ bool BareosDb::WriteBatchFileRecords(JobControlRecord* jcr)
     goto bail_out;
   }
 
+  if (!jcr->db_batch->SqlQuery(SQL_QUERY_batch_fill_path_query)) {
+    Jmsg1(jcr, M_FATAL, 0, "Fill Path table %s\n", errmsg);
+    jcr->db_batch->SqlQuery(SQL_QUERY_batch_unlock_tables_query);
+    goto bail_out;
+  }
+
   if (!jcr->db_batch->SqlQuery(SQL_QUERY_batch_unlock_tables_query)) {
     Jmsg1(jcr, M_FATAL, 0, "Unlock Path table %s\n", errmsg);
     goto bail_out;
   }
+
 
   /* clang-format off */
   if (!jcr->db_batch->SqlQuery(
