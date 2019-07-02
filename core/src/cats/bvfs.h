@@ -65,10 +65,6 @@ class Bvfs {
   Bvfs(JobControlRecord* j, BareosDb* mdb);
   virtual ~Bvfs();
 
- public:
-  Bvfs(JobControlRecord* j, BareosDb* mdb);
-  virtual ~Bvfs();
-
   void SetJobid(JobId_t id);
   void SetJobids(char* ids);
 
