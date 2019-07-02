@@ -148,9 +148,6 @@
 /* Define to 1 if you have compressBound */
 #cmakedefine HAVE_COMPRESS_BOUND @HAVE_COMPRESS_BOUND@
 
-/* Define to 1 if Bareos conio support enabled */
-#cmakedefine HAVE_CONIO @HAVE_CONIO@
-
 /* Define to 1 if cplus_demangle exists in libdemangle */
 #cmakedefine HAVE_CPLUS_DEMANGLE @HAVE_CPLUS_DEMANGLE@
 

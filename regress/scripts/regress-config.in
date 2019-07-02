@@ -51,7 +51,6 @@ else
     -Dplugindir=${1}/bin/plugins \
     -Dsmartalloc=yes\
     -Dlockmgr=yes \
-    -Dconio=no \
     -Dworkingdir=${1}/working \
     -Darchivedir=${1}/tmp \
     -Ddump_email=${EMAIL} \

@@ -454,7 +454,6 @@ IF(NOT openssl)
 ENDIF()
 
 set(largefile_support "" )
-set(got_conio "" )
 
 set(got_readline "${READLINE_FOUND}" )
 if ("${READLINE_FOUND}")
@@ -647,7 +646,6 @@ MESSAGE("   File Daemon User:             ${fd_user} ")
 MESSAGE("   File Daemon Group:            ${fd_group} ")
 MESSAGE(" ")
 MESSAGE("   Large file support:           ${largefile_support}")
-MESSAGE("   Bareos conio support:         ${got_conio} ${CONS_LIBS} ")
 MESSAGE("   readline support:             ${got_readline} ROOT_DIR:${Readline_ROOT_DIR} INCLUDE_DIR:${Readline_INCLUDE_DIR} LIBRARY:${Readline_LIBRARY}
  ")
 MESSAGE("   TCP Wrappers support:         ${WRAP_FOUND} ${WRAP_LIBRARIES} ${WRAP_INCLUDE_DIRS} ")

@@ -768,7 +768,6 @@ cmake  .. \
   -Dpython=yes \
 %endif
   -Dsmartalloc=yes \
-  -Ddisable-conio=yes \
   -Dreadline=yes \
   -Dbatch-insert=yes \
   -Ddynamic-cats-backends=yes \
