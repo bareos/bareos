@@ -275,9 +275,5 @@ target_link_libraries(test_fileindex_list
  ${GTEST_MAIN_LIBRARIES}
 )
 
-add_test(NAME test_fileindex_list
-    COMMAND test_fileindex_list
-)
-
 gtest_discover_tests(test_fileindex_list TEST_PREFIX gtest:)
 
