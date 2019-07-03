@@ -30,4 +30,3 @@ LEFT JOIN (
       AND File.JobId IN (%s)
 ) AS DirAttribute
 ON (SpecialDir.PathId = DirAttribute.PathId)
-
