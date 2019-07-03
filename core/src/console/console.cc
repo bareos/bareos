@@ -1071,7 +1071,11 @@ int main(int argc, char* argv[])
   BStringList response_args;
 
   UA_sock = ConnectToDirector(jcr, heart_beat, response_args, response_id);
-  if (!UA_sock) { return 1; }
+  if (!UA_sock) {
+    ConsoleOutput(_("Failed to connect to Director. Giving up.\n"));
+    TerminateConsole(0);
+    return 1;
+  }
 
   UA_sock->OutputCipherMessageString(ConsoleOutput);
 
@@ -1079,17 +1083,21 @@ int main(int argc, char* argv[])
 #if defined(HAVE_PAM)
     if (!ExaminePamAuthentication(use_pam_credentials_file,
                                   pam_credentials_filename)) {
+      ConsoleOutput(_("PAM authentication failed. Giving up.\n"));
       TerminateConsole(0);
       return 1;
     }
     response_args.clear();
     if (!UA_sock->ReceiveAndEvaluateResponseMessage(response_id,
                                                     response_args)) {
+      ConsoleOutput(_("PAM authentication failed. Giving up.\n"));
       TerminateConsole(0);
       return 1;
     }
 #else
-    Dmsg0(200, "This console does not have the pam feature\n");
+    ConsoleOutput(
+        _("PAM authentication requested by Director, however this console "
+          "does not have this feature. Giving up.\n"));
     TerminateConsole(0);
     return 1;
 #endif /* HAVE_PAM */
