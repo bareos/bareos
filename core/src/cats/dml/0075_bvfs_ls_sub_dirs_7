@@ -61,4 +61,3 @@ FROM (
    ) AS listfile1
    ON (listpath3.PathId = listfile1.PathId)
 ) AS A
-
