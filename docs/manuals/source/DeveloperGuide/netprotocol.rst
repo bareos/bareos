@@ -1,8 +1,8 @@
 TCP/IP Network Protocol
 =======================
 
-General
--------
+Introduction
+------------
 
 This document describes the TCP/IP protocol used by Bareos to
 communicate between the various daemons and services. The definitive
@@ -15,6 +15,9 @@ transfers are done with read() and write() requests on system sockets.
 Pipes are not used as they are considered unreliable for large serial
 data transfers between various hosts.
 
+Network Routines
+----------------
+
 Using the routines described below (bnet_open, bnet_write, bnet_recv,
 and bnet_close) guarantees that the number of bytes you write into the
 socket will be received as a single record on the other end regardless
@@ -22,7 +25,7 @@ of how many low level write() and read() calls are needed. All data
 transferred are considered to be binary data.
 
 bnet and Threads
-----------------
+~~~~~~~~~~~~~~~~
 
 These bnet routines work fine in a threaded environment. However, they
 assume that there is only one reader or writer on the socket at any
@@ -38,7 +41,7 @@ would not be appropriate to put locks inside the bnet subroutines for
 efficiency reasons.
 
 bnet_open
----------
+~~~~~~~~~
 
 To establish a connection to a server, use the subroutine:
 
@@ -51,7 +54,7 @@ repeatedly call bnet_open(). Any error message will generally be sent to
 the JCR.
 
 bnet_send
----------
+~~~~~~~~~
 
 To send a packet, one uses the subroutine:
 
@@ -70,7 +73,7 @@ In the case of a failure, an error message will be sent to the JCR
 contained within the bsock packet.
 
 bnet_fsend
-----------
+~~~~~~~~~~
 
 This form uses:
 
@@ -79,21 +82,21 @@ a formatted messages somewhat like fprintf(). The return status is the
 same as bnet_send.
 
 is_bnet_error
--------------
+~~~~~~~~~~~~~
 
 Fro additional error information, you can call **is_bnet_error(BSOCK
 \*bsock)** which will return 0 if there is no error or non-zero if there
 is an error on the last transmission.
 
 is_bnet_stop
-------------
+~~~~~~~~~~~~
 
 The **is_bnet_stop(BSOCK \*bsock)** function will return 0 if there no
 errors and you can continue sending. It will return non-zero if there
 are errors or the line is closed (no more transmissions should be sent).
 
 bnet_recv
----------
+~~~~~~~~~
 
 To read a packet, one uses the subroutine:
 
@@ -116,7 +119,7 @@ It should be noted that bnet_recv() is a blocking read.
 .. _sec:bnet_sig:
 
 bnet_sig
---------
+~~~~~~~~
 
 To send a “signal” from one daemon to another, one uses the subroutine:
 
@@ -133,12 +136,12 @@ int bnet_sig(BSOCK \*sock, SIGNAL) where SIGNAL is one of the following:
 -  BNET_PROMPT - Prompt for UA
 
 bnet_strerror
--------------
+~~~~~~~~~~~~~
 
 Returns a formated string corresponding to the last error that occurred.
 
 bnet_close
-----------
+~~~~~~~~~~
 
 The connection with the server remains open until closed by the
 subroutine:
@@ -146,7 +149,7 @@ subroutine:
 void bnet_close(BSOCK \*sock)
 
 Becoming a Server
------------------
+~~~~~~~~~~~~~~~~~
 
 The bnet_open() and bnet_close() routines described above are used on
 the client side to establish a connection and terminate a connection
