@@ -1851,20 +1851,22 @@ int CreateRestoreBootstrapFile(JobControlRecord* jcr)
     files = -1;
     goto bail_out;
   }
-  rx.bsr->fi->addAll();
+  for (auto fi = 1; fi <= jcr->previous_jr.JobFiles; fi++) {
+    rx.bsr->fi->add(fi);
+  }
   jcr->ExpectedFiles = WriteBsrFile(ua, rx);
   if (jcr->ExpectedFiles == 0) {
     files = 0;
     goto bail_out;
   }
   FreeUaContext(ua);
-  rx.bsr.reset(nullptr); 
+  rx.bsr.reset(nullptr);
   jcr->needs_sd = true;
   return jcr->ExpectedFiles;
 
 bail_out:
   FreeUaContext(ua);
-  rx.bsr.reset(nullptr); 
+  rx.bsr.reset(nullptr);
   return files;
 }
 
