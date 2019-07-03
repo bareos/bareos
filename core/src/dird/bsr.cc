@@ -157,7 +157,8 @@ uint32_t write_findex(RestoreBootstrapRecordFileIndex* fi,
                       int32_t LastIndex,
                       PoolMem* buffer)
 {
-  uint32_t count = 0;
+  auto count = uint32_t{0};
+  auto bsrItems = std::string{};
 
   for (auto& range : fi->getRanges()) {
     auto first = std::get<0>(range);
@@ -169,14 +170,16 @@ uint32_t write_findex(RestoreBootstrapRecordFileIndex* fi,
       last = std::min(last, LastIndex);
 
       if (first == last) {
-        PrintBsrItem(buffer, "FileIndex=%d\n", first);
+        bsrItems += "FileIndex=" + std::to_string(first) + "\n";
         count++;
       } else {
-        PrintBsrItem(buffer, "FileIndex=%d-%d\n", first, last);
+        bsrItems += "FileIndex=" + std::to_string(first) + "-" +
+                    std::to_string(last) + "\n";
         count += last - first + 1;
       }
     }
   }
+  buffer->strcat(bsrItems.c_str());
   return count;
 }
 
