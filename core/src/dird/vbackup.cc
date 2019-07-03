@@ -51,6 +51,7 @@
 #include "dird/vbackup.h"
 #include "lib/edit.h"
 #include "lib/util.h"
+#include "include/make_unique.h"
 
 namespace directordaemon {
 
@@ -507,7 +508,7 @@ static bool CreateBootstrapFile(JobControlRecord* jcr, char* jobids)
   RestoreContext rx;
   UaContext* ua;
 
-  rx.bsr = new_bsr();
+  rx.bsr = std::make_unique<RestoreBootstrapRecord>();
   ua = new_ua_context(jcr);
   rx.JobIds = jobids;
 
@@ -518,22 +519,17 @@ static bool CreateBootstrapFile(JobControlRecord* jcr, char* jobids)
 
   if (!jcr->db_batch->GetFileList(jcr, jobids, false /* don't use md5 */,
                                   true /* use delta */, InsertBootstrapHandler,
-                                  (void*)rx.bsr)) {
+                                  (void*)rx.bsr.get())) {
     Jmsg(jcr, M_ERROR, 0, "%s", jcr->db_batch->strerror());
   }
 
-  CompleteBsr(ua, rx.bsr);
+  CompleteBsr(ua, rx.bsr.get());
   jcr->ExpectedFiles = WriteBsrFile(ua, rx);
   if (debug_level >= 10) {
     Dmsg1(000, "Found %d files to consolidate.\n", jcr->ExpectedFiles);
   }
-  if (jcr->ExpectedFiles == 0) {
-    FreeUaContext(ua);
-    directordaemon::FreeBsr(rx.bsr);
-    return false;
-  }
   FreeUaContext(ua);
-  directordaemon::FreeBsr(rx.bsr);
-  return true;
+  rx.bsr.reset(nullptr);
+  return jcr->ExpectedFiles != 0;
 }
 } /* namespace directordaemon */

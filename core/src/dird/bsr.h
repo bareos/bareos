@@ -42,10 +42,18 @@ namespace directordaemon {
 /**
  * FileIndex entry in restore bootstrap record
  */
-struct RestoreBootstrapRecordFileIndex {
-  RestoreBootstrapRecordFileIndex* next;
-  int32_t findex;
-  int32_t findex2;
+class RestoreBootstrapRecordFileIndex {
+ private:
+  std::vector<int32_t> fileIds_;
+  bool allFiles_ = false;
+  bool sorted_ = false;
+  void sort();
+
+ public:
+  void add(int32_t findex);
+  void addAll();
+  std::vector<std::pair<int32_t, int32_t>> getRanges();
+  bool empty() const { return !allFiles_ && fileIds_.empty(); }
 };
 
 /**
@@ -57,14 +65,23 @@ struct RestoreBootstrapRecordFileIndex {
  *    on which the Job is stored to the BootStrapRecord.
  */
 struct RestoreBootstrapRecord {
-  RestoreBootstrapRecord* next = nullptr; /**< next JobId */
-  JobId_t JobId = 0;                      /**< JobId this bsr */
+  std::unique_ptr<RestoreBootstrapRecord> next; /**< next JobId */
+  JobId_t JobId = 0;                            /**< JobId this bsr */
   uint32_t VolSessionId = 0;
   uint32_t VolSessionTime = 0;
   int VolCount = 0;                      /**< Volume parameter count */
   VolumeParameters* VolParams = nullptr; /**< Volume, start/end file/blocks */
-  RestoreBootstrapRecordFileIndex* fi = nullptr; /**< File indexes this JobId */
+  std::unique_ptr<RestoreBootstrapRecordFileIndex>
+      fi;                    /**< File indexes this JobId */
   char* fileregex = nullptr; /**< Only restore files matching regex */
+
+  RestoreBootstrapRecord() : RestoreBootstrapRecord(0) {}
+  RestoreBootstrapRecord(JobId_t JobId);
+  virtual ~RestoreBootstrapRecord();
+  RestoreBootstrapRecord(const RestoreBootstrapRecord&) = delete;
+  RestoreBootstrapRecord& operator=(const RestoreBootstrapRecord&) = delete;
+  RestoreBootstrapRecord(RestoreBootstrapRecord&&) = delete;
+  RestoreBootstrapRecord& operator=(RestoreBootstrapRecord&&) = delete;
 };
 
 class UaContext;
@@ -78,10 +95,6 @@ struct bootstrap_info {
   char storage[MAX_NAME_LENGTH + 1];
 };
 
-RestoreBootstrapRecord* new_bsr();
-namespace directordaemon {
-void FreeBsr(RestoreBootstrapRecord* bsr);
-}  // namespace directordaemon
 bool CompleteBsr(UaContext* ua, RestoreBootstrapRecord* bsr);
 uint32_t WriteBsrFile(UaContext* ua, RestoreContext& rx);
 void DisplayBsrInfo(UaContext* ua, RestoreContext& rx);

@@ -18,7 +18,6 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-
 #include "gtest/gtest.h"
 #include "include/bareos.h"
 
@@ -52,33 +51,15 @@ TEST(fileindex_list, add_filendexes)
   RestoreBootstrapRecord bsr;
   AddFindex(&bsr, kJobId_1, 1);
   ASSERT_NE(bsr.fi, nullptr);
-  EXPECT_EQ(bsr.fi->findex, 1);
-  EXPECT_EQ(bsr.fi->findex2, 1);
   EXPECT_EQ(bsr.JobId, kJobId_1);
+  EXPECT_EQ(bsr.fi->getRanges().size(), 1);
 
-  AddFindex(&bsr, kJobId_2, 2);
+  AddFindex(&bsr, kJobId_2, 1);
+  AddFindex(&bsr, kJobId_2, 3);
   ASSERT_NE(bsr.next, nullptr);
   EXPECT_EQ(bsr.next->JobId, kJobId_2);
   ASSERT_NE(bsr.next->fi, nullptr);
-  EXPECT_EQ(bsr.next->fi->findex, 2);
-  EXPECT_EQ(bsr.next->fi->findex2, 2);
-
-  AddFindex(&bsr, kJobId_1, 3);
-  EXPECT_EQ(bsr.JobId, kJobId_1);
-  ASSERT_NE(bsr.fi, nullptr);
-  ASSERT_NE(bsr.fi->next, nullptr);
-  EXPECT_EQ(bsr.fi->next->findex, 3);
-  EXPECT_EQ(bsr.fi->next->findex2, 3);
-
-  AddFindex(&bsr, kJobId_2, 4);
-  ASSERT_NE(bsr.next, nullptr);
-  EXPECT_EQ(bsr.next->JobId, kJobId_2);
-  ASSERT_NE(bsr.next->fi, nullptr);
-  EXPECT_EQ(bsr.next->fi->findex, 2);
-  EXPECT_EQ(bsr.next->fi->findex2, 2);
-  ASSERT_NE(bsr.next->fi->next, nullptr);
-  EXPECT_EQ(bsr.next->fi->next->findex, 4);
-  EXPECT_EQ(bsr.next->fi->next->findex2, 4);
+  EXPECT_EQ(bsr.next->fi->getRanges().size(), 2);
 }
 
 template <typename F>
@@ -138,7 +119,7 @@ static std::string ToBsrStringBareos(const itBegin& t_begin, const itEnd& t_end)
   auto maxId = *std::max_element(t_begin, t_end);
   auto buffer = PoolMem{PM_MESSAGE};
   TimedLambda("write_findex total",
-              [&]() { write_findex(bsr.fi, 1, maxId, &buffer); });
+              [&]() { write_findex(bsr.fi.get(), 1, maxId, &buffer); });
   return std::string{buffer.c_str()};
 }
 
@@ -146,7 +127,6 @@ static std::string ToBsrStringBareos(const std::vector<int>& t_fileIds)
 {
   return ToBsrStringBareos(t_fileIds.begin(), t_fileIds.end());
 }
-
 
 TEST(fileindex_list, continous_list)
 {
