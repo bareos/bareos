@@ -35,6 +35,8 @@
 
 #include "dird/ua.h"
 
+struct VolumeParameters;
+
 namespace directordaemon {
 
 /**
@@ -55,14 +57,14 @@ struct RestoreBootstrapRecordFileIndex {
  *    on which the Job is stored to the BootStrapRecord.
  */
 struct RestoreBootstrapRecord {
-  RestoreBootstrapRecord* next; /**< next JobId */
-  JobId_t JobId;                /**< JobId this bsr */
-  uint32_t VolSessionId;
-  uint32_t VolSessionTime;
-  int VolCount;                        /**< Volume parameter count */
-  VolumeParameters* VolParams;         /**< Volume, start/end file/blocks */
-  RestoreBootstrapRecordFileIndex* fi; /**< File indexes this JobId */
-  char* fileregex;                     /**< Only restore files matching regex */
+  RestoreBootstrapRecord* next = nullptr; /**< next JobId */
+  JobId_t JobId = 0;                      /**< JobId this bsr */
+  uint32_t VolSessionId = 0;
+  uint32_t VolSessionTime = 0;
+  int VolCount = 0;                      /**< Volume parameter count */
+  VolumeParameters* VolParams = nullptr; /**< Volume, start/end file/blocks */
+  RestoreBootstrapRecordFileIndex* fi = nullptr; /**< File indexes this JobId */
+  char* fileregex = nullptr; /**< Only restore files matching regex */
 };
 
 class UaContext;
@@ -94,6 +96,10 @@ bool SendBootstrapFile(JobControlRecord* jcr,
                        BareosSocket* sock,
                        bootstrap_info& info);
 void CloseBootstrapFile(bootstrap_info& info);
+uint32_t write_findex(RestoreBootstrapRecordFileIndex* fi,
+                      int32_t FirstIndex,
+                      int32_t LastIndex,
+                      PoolMem* buffer);
 
 } /* namespace directordaemon */
 #endif  // BAREOS_DIRD_BSR_H_

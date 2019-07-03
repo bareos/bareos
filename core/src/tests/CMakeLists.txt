@@ -259,3 +259,25 @@ target_link_libraries(test_setdebug
 
 gtest_discover_tests(test_setdebug TEST_PREFIX gtest:)
 
+####### test_fileindex_list #####################################
+add_executable(test_fileindex_list test_fileindex_list.cc)
+
+target_link_libraries(test_fileindex_list
+ dird_objects
+ bareos
+ bareosfind
+ bareoscats
+ bareossql
+ $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}>
+ ${LMDB_LIBS}
+ ${NDMP_LIBS}
+ ${GTEST_LIBRARIES}
+ ${GTEST_MAIN_LIBRARIES}
+)
+
+add_test(NAME test_fileindex_list
+    COMMAND test_fileindex_list
+)
+
+gtest_discover_tests(test_fileindex_list TEST_PREFIX gtest:)
+
