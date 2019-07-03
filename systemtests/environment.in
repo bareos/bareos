@@ -54,3 +54,5 @@ export tmp
 export db_name=@db_name@
 export db_password=@db_password@
 export db_user=@db_user@
+
+export PAM_WRAPPER_LIBRARIES=@PAM_WRAPPER_LIBRARIES@
