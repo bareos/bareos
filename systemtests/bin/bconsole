@@ -1,4 +1,5 @@
 #!/bin/bash
 # wrapper script to start/stop bconsole for each individual test
 . ./environment
-${bin}/bconsole -c ${conf}
+${bin}/bconsole -c ${conf} $*
+
