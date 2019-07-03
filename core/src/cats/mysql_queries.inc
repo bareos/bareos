@@ -889,7 +889,7 @@ const char *BareosDbMysql::query_definitions[] = {
   "AND  Path NOT LIKE '%%/' "
 ,
 
-/* 0074_bvfs_ls_special_dirs_3 */
+/* 0074_bvfs_ls_special_dirs_4 */
 "SELECT 'D', SpecialDir.PathId, SpecialDir.Path, JobId, LStat, FileId "
 "FROM ( "
     "SELECT %s AS PathId, '.' AS Path "
@@ -904,12 +904,13 @@ const char *BareosDbMysql::query_definitions[] = {
     "SELECT PathId, JobId, LStat, FileId "
     "FROM File "
     "WHERE File.Name = '' "
+      "AND ClientId = clientid_of_clientname ('%s') "
       "AND File.JobId IN (%s) "
 ") AS DirAttribute "
 "ON (SpecialDir.PathId = DirAttribute.PathId) "
 ,
 
-/* 0075_bvfs_ls_sub_dirs_5 */
+/* 0075_bvfs_ls_sub_dirs_7 */
 "SELECT 'D', PathId, Path, JobId, LStat, FileId "
 "FROM ( "
    "SELECT "
@@ -938,7 +939,7 @@ const char *BareosDbMysql::query_definitions[] = {
              "FROM PathVisibility AS PV1 WHERE JobId IN (%s) GROUP BY PathId "
              ") AS PVD1 "
              "INNER JOIN File AS F2 "
-             "ON (F2.PathId = PVD1.PathId AND F2.JobId = PVD1.MaxJobId AND F2.FileIndex = 0 AND F2.Name = '') "
+             "ON (F2.ClientId = clientid_of_clientname ('%s') AND F2.PathId = PVD1.PathId AND F2.JobId = PVD1.MaxJobId AND F2.FileIndex = 0 AND F2.Name = '') "
       ") AS listpath2 "
       "ON (listpath1.PathId = listpath2.PathId) "
       "WHERE listpath2.PathId IS NULL "
@@ -949,6 +950,7 @@ const char *BareosDbMysql::query_definitions[] = {
       "SELECT File1.PathId AS PathId, File1.JobId AS JobId, File1.LStat AS LStat, File1.FileId AS FileId "
       "FROM File AS File1 "
       "WHERE File1.Name = '' "
+        "AND ClientId = clientid_of_clientname ('%s') "
         "AND File1.JobId IN (%s) "
    ") AS listfile1 "
    "ON (listpath3.PathId = listfile1.PathId) "

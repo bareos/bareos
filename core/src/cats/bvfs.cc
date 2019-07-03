@@ -650,14 +650,15 @@ bool Bvfs::ls_dirs()
    */
   *prev_dir = 0;
 
-  db->FillQuery(special_dirs_query, BareosDb::SQL_QUERY_bvfs_ls_special_dirs_3,
-                pathid, pathid, jobids);
+  // TODO: mysql table
+  db->FillQuery(special_dirs_query, BareosDb::SQL_QUERY_bvfs_ls_special_dirs_4,
+                pathid, pathid, jcr->client_name, jobids);
 
   if (*pattern) {
     db->FillQuery(filter, BareosDb::SQL_QUERY_match_query, pattern);
   }
-  db->FillQuery(sub_dirs_query, BareosDb::SQL_QUERY_bvfs_ls_sub_dirs_5, pathid,
-                jobids, jobids, filter.c_str(), jobids);
+  db->FillQuery(sub_dirs_query, BareosDb::SQL_QUERY_bvfs_ls_sub_dirs_7, pathid,
+                jobids, jobids, filter.c_str(), jcr->client_name, jcr->client_name, jobids);
 
   db->FillQuery(union_query, BareosDb::SQL_QUERY_bvfs_lsdirs_4,
                 special_dirs_query.c_str(), sub_dirs_query.c_str(), limit,
@@ -679,11 +680,11 @@ static void build_ls_files_query(JobControlRecord* jcr,
                                  int64_t offset)
 {
   if (db->GetTypeIndex() == SQL_TYPE_POSTGRESQL) {
-    // maik: query kopieren und mit clientname/id neu machen
-    db->FillQuery(query, BareosDb::SQL_QUERY_bvfs_list_files, JobId, PathId,
-                  JobId, PathId, filter, limit, offset);
+    // maik: query kopieren und mit clientname/id neu machen // verify!
+    db->FillQuery(query, BareosDb::SQL_QUERY_bvfs_list_files, JobId, PathId, jcr->client_name,
+                  JobId, PathId, jcr->client_name, filter, limit, offset);
   } else {
-    db->FillQuery(query, BareosDb::SQL_QUERY_bvfs_list_files, JobId, PathId,
+    db->FillQuery(query, BareosDb::SQL_QUERY_bvfs_list_files, JobId, PathId, jcr->client_name,
                   JobId, PathId, limit, offset, filter, JobId, JobId);
   }
 }
