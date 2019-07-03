@@ -28,6 +28,7 @@
  * BAREOS Catalog Database Create record interface routines
  */
 
+
 #include "include/bareos.h"
 
 static const int dbglevel = 100;

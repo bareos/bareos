@@ -12,11 +12,13 @@
 #   %s JobIds ("1,2,...")
 #   %s extra filter
 #   %s JobIds ("1,2,...")
+#   %s ClientName
+#   %s ClientName
 #   %s JobIds ("1,2,...")
 #
 # row                     0    1       2     3      4      5
 (
-SELECT DISTINCT ON (Path) 'D', PathId, Path, JobId, LStat, FileId 
+SELECT DISTINCT ON (Path) 'D', PathId, Path, JobId, LStat, FileId
 FROM (
    SELECT
       Path1.PathId AS PathId,
@@ -44,7 +46,7 @@ FROM (
              FROM PathVisibility AS PV1 WHERE JobId IN (%s) GROUP BY PathId
              ) AS PVD1
              INNER JOIN File AS F2
-             ON (F2.PathId = PVD1.PathId AND F2.JobId = PVD1.MaxJobId AND F2.FileIndex = 0 AND F2.Name = '')
+             ON (F2.ClientId = clientid_of_clientname ('%s') AND F2.PathId = PVD1.PathId AND F2.JobId = PVD1.MaxJobId AND F2.FileIndex = 0 AND F2.Name = '')
       ) AS listpath2
       ON (listpath1.PathId = listpath2.PathId)
       WHERE listpath2.PathId IS NULL
@@ -55,11 +57,10 @@ FROM (
       SELECT File1.PathId AS PathId, File1.JobId AS JobId, File1.LStat AS LStat, File1.FileId AS FileId
       FROM File AS File1
       WHERE File1.Name = ''
+        AND ClientId = clientid_of_clientname ('%s')
         AND File1.JobId IN (%s)
    ) AS listfile1
    ON (listpath3.PathId = listfile1.PathId)
 ) AS A
 ORDER BY Path ASC, JobId DESC
 )
-
-

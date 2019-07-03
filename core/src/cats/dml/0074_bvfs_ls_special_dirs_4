@@ -8,6 +8,7 @@
 # parameter:
 #   %s PathId
 #   %s PathId
+#   %s ClientName
 #   %s JobIds ("1,2,...")
 #
 # row  0    1                  2                3      4      5
@@ -25,6 +26,8 @@ LEFT JOIN (
     SELECT PathId, JobId, LStat, FileId
     FROM File
     WHERE File.Name = ''
+      AND ClientId = clientid_of_clientname ('%s')
       AND File.JobId IN (%s)
 ) AS DirAttribute
 ON (SpecialDir.PathId = DirAttribute.PathId)
+
