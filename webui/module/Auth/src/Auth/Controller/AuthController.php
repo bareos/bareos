@@ -178,7 +178,7 @@ class AuthController extends AbstractActionController
                if($_SESSION['bareos']['commands']['.help']['permission'] == 0) {
                   $this->bsock->disconnect();
                   session_destroy();
-                  $err_msg = 'Sorry, your Command ACL does not fit the minimal requirements. For further information, please read the <a href="http://doc.bareos.org/master/html/bareos-manual-main-reference.html" target="_blank">Bareos documentation</a>.';
+                  $err_msg = 'Sorry, your Command ACL does not fit the minimal requirements. For further information, please read the <a href="https://docs.bareos.org/" target="_blank">Bareos documentation</a>.';
                   return new ViewModel(
                      array(
                         'form' => $form,

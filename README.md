@@ -28,7 +28,7 @@ The source code of Bareos is available on https://github.com/bareos/ under the A
 
 ### Documentation
 
-  * [http://doc.bareos.org](http://doc.bareos.org)
+  * [https://docs.bareos.org](https://docs.bareos.org)
 
 ### Contribute
 

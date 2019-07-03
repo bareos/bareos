@@ -19,11 +19,11 @@ System Requirements
 
 -  The source code has been written with portability in mind and is mostly POSIX compatible. Thus porting to any POSIX compatible operating system should be relatively easy.
 
--  Jansson library: 
+-  Jansson library:
 
 .. _jansson:
 
- :index:`\ <single: JSON>`\  :index:`\ <single: Jansson; \see{JSON}>`\  Bareos :sinceVersion:`15.2.0: requires: jansson` offers a JSON API mode, see `Bareos Developer Guide (api-mode-2-json) <http://doc.bareos.org/master/html/bareos-developer-guide.html#api-mode-2-json>`_. On some platform, the Jansson library is directory available. On others it can easly be added. For some older platforms, we compile Bareos without JSON API mode.
+ :index:`\ <single: JSON>`\  :index:`\ <single: Jansson; \see{JSON}>`\  Bareos :sinceVersion:`15.2.0: requires: jansson` offers a JSON API mode, see `Bareos Developer Guide (api-mode-2-json) <https://docs.bareos.org/DeveloperGuide/api.html#api-mode-2-json>`_. On some platform, the Jansson library is directory available. On others it can easly be added. For some older platforms, we compile Bareos without JSON API mode.
 
 
 
