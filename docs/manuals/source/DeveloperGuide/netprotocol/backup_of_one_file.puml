@@ -1,0 +1,117 @@
+.. uml::
+  :caption: Network Sequence of a Backup of a Single File
+
+  @startuml
+
+  "Director" -> "Storage Daemon": (  34) Hello Director bareos-dir calling \n
+  "Storage Daemon" -> "Director": (  90) auth cram-md5 <1522876701.1562050758@bareos-sd> ssl=1 qualified-name=Storage Daemon \n
+  "Director" -> "Storage Daemon": (  23) 4+Y5OExKbD/f+z+gP/+apB\n
+  "Storage Daemon" -> "Director": (  13) 1000 OK auth \n
+  "Director" -> "Storage Daemon": (  93) auth cram-md5 <1845913316.1562050758@bareos-dir> ssl=1 qualified-name=Director \n
+  "Storage Daemon" -> "Director": (  23) 88+dN95q+5ZWh2+CO9AXZC\n
+  "Director" -> "Storage Daemon": (  13) 1000 OK auth \n
+  "Storage Daemon" -> "Director": (  14) 3000 OK Hello \n
+  "Director" -> "Storage Daemon": ( 316) JobId=1 job=backup-bareos-fd.2019-07-02_08.59.16_06 job_name=backup-bareos-fd client_name=bareos-fd \n
+  "Storage Daemon" -> "Director": (  91) 3000 OK Job SDid=1 SDtime=1562050726 Authorization=JMJH-ANIF-HAJM-FDCA-HFHN-BHNF-HLHD-AGLF \n
+  "Director" -> "Storage Daemon": (  18) getSecureEraseCmd \n
+  "Storage Daemon" -> "Director": (  33) 2000 OK SDSecureEraseCmd *None*  \n
+  "Director" -> "Storage Daemon": (  90) use storage=File media_type=File pool_name=Full pool_type=Backup append=1 copy=0 stripe=0 \n
+  "Director" -> "Storage Daemon": (  23) use device=FileStorage \n
+  "Director" -> "Storage Daemon": (  -1) BNET_EOD - End of data stream, new data may follow\n
+  "Director" -> "Storage Daemon": (  -1) BNET_EOD - End of data stream, new data may follow\n
+  "Storage Daemon" -> "Director": ( 112) CatReq Job=backup-bareos-fd.2019-07-02_08.59.16_06 FindMedia=1 pool_name=Full media_type=File unwant\n
+  "Director" -> "Storage Daemon": ( 329) 1000 OK VolName=Full-0001 VolJobs=0 VolFiles=0 VolBlocks=0 VolBytes=0 VolMounts=0 VolErrors=0 VolWri\n
+  "Storage Daemon" -> "Director": (  38) 3000 OK use device device=FileStorage \n
+  "Director" -> "Storage Daemon": (   3) run\n
+  "Storage Daemon" -> "Director": (  64) Status Job=backup-bareos-fd.2019-07-02_08.59.16_06 JobStatus=70 \n
+  "Director" -> "File Daemon": (  34) Hello Director bareos-dir calling \n
+  "File Daemon" -> "Director": (  94) auth cram-md5 <980541858.1562050758@localhost-fd> ssl=1 qualified-name=File Daemon \n
+  "Director" -> "File Daemon": (  23) f/t9mT/wu8+Xp7wdOB/OyC\n
+  "File Daemon" -> "Director": (  13) 1000 OK auth \n
+  "Director" -> "File Daemon": (  93) auth cram-md5 <2036271438.1562050758@bareos-dir> ssl=1 qualified-name=Director \n
+  "File Daemon" -> "Director": (  23) LC/Df5dYqR/gD/+Sc/N1WD\n
+  "Director" -> "File Daemon": (  13) 1000 OK auth \n
+  "File Daemon" -> "Director": (  17) 2000 OK Hello 54 \n
+  "Director" -> "File Daemon": ( 137) JobId=1 Job=backup-bareos-fd.2019-07-02_08.59.16_06 SDid=1 SDtime=1562050726 Authorization=JMJH-ANIF\n
+  "File Daemon" -> "Director": (  95) 2000 OK Job 19.1.2 (01Feb19) Linux-5.0.3-200.fc29.x86_64,redhat,Fedora release 29 (Twenty Nine)\n
+  "Director" -> "File Daemon": (  28) level = full  mtime_only=0  \n
+  "File Daemon" -> "Director": (  14) 2000 OK level \n
+  "Director" -> "File Daemon": (  14) fileset vss=1 \n
+  "Director" -> "File Daemon": (   2) I \n
+  "Director" -> "File Daemon": (   6) O MAX \n
+  "Director" -> "File Daemon": (   2) N \n
+  "Director" -> "File Daemon": (  57) F /home/user/tape_options\n
+  "Director" -> "File Daemon": (   2) N \n
+  "Director" -> "File Daemon": (   2) N \n
+  "Director" -> "File Daemon": (  -1) BNET_EOD - End of data stream, new data may follow\n
+  "File Daemon" -> "Director": (  16) 2000 OK include \n
+  "Director" -> "File Daemon": (  18) getSecureEraseCmd \n
+  "File Daemon" -> "Director": (  32) 2000 OK FDSecureEraseCmd *None* \n
+  "Director" -> "File Daemon": (  42) storage address=localhost port=8103 ssl=4 \n
+  "File Daemon" -> "Storage Daemon": (  56) Hello Start Job backup-bareos-fd.2019-07-02_08.59.16_06 \n
+  "Storage Daemon" -> "File Daemon": (  89) auth cram-md5 <753187102.1562050758@bareos-sd> ssl=1 qualified-name=Storage Daemon \n
+  "File Daemon" -> "Storage Daemon": (  23) MhI5y8+sX6+X8k/Tm81jmA\n
+  "Storage Daemon" -> "File Daemon": (  13) 1000 OK auth \n
+  "File Daemon" -> "Storage Daemon": (  95) auth cram-md5 <1949048950.1562050758@localhost-fd> ssl=1 qualified-name=File Daemon \n
+  "Storage Daemon" -> "File Daemon": (  23) U75An+I2W//UF8/NX4QD3B\n
+  "File Daemon" -> "Storage Daemon": (  13) 1000 OK auth \n
+  "File Daemon" -> "Director": (  16) 2000 OK storage \n
+  "Storage Daemon" -> "Director": (  55) 3010 Job backup-bareos-fd.2019-07-02_08.59.16_06 start \n
+  "Storage Daemon" -> "Director": (  64) Status Job=backup-bareos-fd.2019-07-02_08.59.16_06 JobStatus=82 \n
+  "Director" -> "File Daemon": (  19) backup FileIndex=0 \n
+  "File Daemon" -> "Director": ( 180) Jmsg Job=backup-bareos-fd.2019-07-02_08.59.16_06 type=6 level=1562050758 localhost-fd JobId 1: Conne\n
+  "File Daemon" -> "Director": ( 133) Jmsg Job=backup-bareos-fd.2019-07-02_08.59.16_06 type=6 level=1562050758 localhost-fd JobId 1: Exten\n
+  "File Daemon" -> "Director": ( 118) Jmsg Job=backup-bareos-fd.2019-07-02_08.59.16_06 type=6 level=1562050758 localhost-fd JobId 1: ACL s\n
+  "File Daemon" -> "Director": (  15) 2000 OK backup \n
+  "File Daemon" -> "Storage Daemon": (  20) append open session \n
+  "Storage Daemon" -> "File Daemon": (  24) 3000 OK open ticket = 1 \n
+  "File Daemon" -> "Storage Daemon": (  14) append data 1 \n
+  "Storage Daemon" -> "Director": (  88) CatReq Job=backup-bareos-fd.2019-07-02_08.59.16_06 GetVolInfo VolName=Full-0001 write=1 \n
+  "Director" -> "Storage Daemon": ( 329) 1000 OK VolName=Full-0001 VolJobs=0 VolFiles=0 VolBlocks=0 VolBytes=0 VolMounts=0 VolErrors=0 VolWri\n
+  "Storage Daemon" -> "Director": ( 297) CatReq Job=backup-bareos-fd.2019-07-02_08.59.16_06 UpdateMedia VolName=Full-0001 VolJobs=0 VolFiles=\n
+  "Director" -> "Storage Daemon": ( 329) 1000 OK VolName=Full-0001 VolJobs=0 VolFiles=0 VolBlocks=0 VolBytes=0 VolMounts=0 VolErrors=0 VolWri\n
+  "Storage Daemon" -> "Director": ( 193) Jmsg Job=backup-bareos-fd.2019-07-02_08.59.16_06 type=6 level=1562050758 bareos-sd JobId 1: Labeled \n
+  "Storage Daemon" -> "Director": (  88) CatReq Job=backup-bareos-fd.2019-07-02_08.59.16_06 GetVolInfo VolName=Full-0001 write=1 \n
+  "Director" -> "Storage Daemon": ( 329) 1000 OK VolName=Full-0001 VolJobs=0 VolFiles=0 VolBlocks=0 VolBytes=0 VolMounts=0 VolErrors=0 VolWri\n
+  "Storage Daemon" -> "Director": ( 309) CatReq Job=backup-bareos-fd.2019-07-02_08.59.16_06 UpdateMedia VolName=Full-0001 VolJobs=0 VolFiles=\n
+  "Director" -> "Storage Daemon": ( 332) 1000 OK VolName=Full-0001 VolJobs=0 VolFiles=0 VolBlocks=0 VolBytes=209 VolMounts=1 VolErrors=0 VolW\n
+  "Storage Daemon" -> "Director": ( 206) Jmsg Job=backup-bareos-fd.2019-07-02_08.59.16_06 type=6 level=1562050758 bareos-sd JobId 1: Wrote la\n
+  "Storage Daemon" -> "Director": ( 300) CatReq Job=backup-bareos-fd.2019-07-02_08.59.16_06 UpdateMedia VolName=Full-0001 VolJobs=1 VolFiles=\n
+  "Director" -> "Storage Daemon": ( 332) 1000 OK VolName=Full-0001 VolJobs=1 VolFiles=0 VolBlocks=0 VolBytes=209 VolMounts=1 VolErrors=0 VolW\n
+  "Storage Daemon" -> "File Daemon": (  13) 3000 OK data \n
+  "File Daemon" -> "Storage Daemon": (   5) 1 1 0\n
+  "File Daemon" -> "Storage Daemon": ( 123) 1 3 /home/user/tape_optionsP0D BJAEy IG0 B Po Po A b BAA I BdGwCZ B\n
+  "File Daemon" -> "Storage Daemon": (  -1) BNET_EOD - End of data stream, new data may follow\n
+  "Storage Daemon" -> "Director": ( 209) UpdCat Job=backup-bareos-fd.2019-07-02_08.59.16_06 FileAttributes ]{1 3 /home/user\n
+  "File Daemon" -> "Storage Daemon": (   5) 1 2 0\n
+  "File Daemon" -> "Storage Daemon": (  27) # nothing needed for Linux \n
+  "File Daemon" -> "Storage Daemon": (  -1) BNET_EOD - End of data stream, new data may follow\n
+  "File Daemon" -> "Storage Daemon": (   5) 1 3 0\n
+  "File Daemon" -> "Storage Daemon": (  16) CC 9g=\n
+  "File Daemon" -> "Storage Daemon": (  -1) BNET_EOD - End of data stream, new data may follow\n
+  "Storage Daemon" -> "Director": ( 102) UpdCat Job=backup-bareos-fd.2019-07-02_08.59.16_06 FileAttributes ]CC 9g=\n
+  "File Daemon" -> "Storage Daemon": (  -1) BNET_EOD - End of data stream, new data may follow\n
+  "Storage Daemon" -> "File Daemon": (  20) 3000 OK append data \n
+  "File Daemon" -> "Storage Daemon": (  21) append end session 1 \n
+  "Storage Daemon" -> "File Daemon": (  12) 3000 OK end \n
+  "File Daemon" -> "Storage Daemon": (  23) append close session 1 \n
+  "Storage Daemon" -> "File Daemon": (  26) 3000 OK close Status = 84 \n
+  "Storage Daemon" -> "File Daemon": (  -1) BNET_EOD - End of data stream, new data may follow\n
+  "File Daemon" -> "Storage Daemon": (  -4) BNET_TERMINATE - Conversation terminated, doing close() \n
+  "File Daemon" -> "Director": (  86) 2800 End Job TermCode=84 JobFiles=1 ReadBytes=27 JobBytes=27 Errors=0 VSS=0 Encrypt=0 \n
+  "Storage Daemon" -> "Director": ( 169) Jmsg Job=backup-bareos-fd.2019-07-02_08.59.16_06 type=6 level=1562050758 bareos-sd JobId 1: Releasin\n
+  "File Daemon" -> "Director": (  -4) BNET_TERMINATE - Conversation terminated, doing close() \n
+  "Storage Daemon" -> "Director": ( 166) CatReq Job=backup-bareos-fd.2019-07-02_08.59.16_06 CreateJobMedia FirstIndex=1 LastIndex=1 StartFile\n
+  "Director" -> "Storage Daemon": (  23) 1000 OK CreateJobMedia \n
+  "Storage Daemon" -> "Director": ( 300) CatReq Job=backup-bareos-fd.2019-07-02_08.59.16_06 UpdateMedia VolName=Full-0001 VolJobs=1 VolFiles=\n
+  "Director" -> "Storage Daemon": ( 334) 1000 OK VolName=Full-0001 VolJobs=1 VolFiles=0 VolBlocks=1 VolBytes=823 VolMounts=1 VolErrors=0 VolW\n
+  "Storage Daemon" -> "Director": ( 147) Jmsg Job=backup-bareos-fd.2019-07-02_08.59.16_06 type=6 level=1562050758 bareos-sd JobId 1: Elapsed \n
+  "Storage Daemon" -> "Director": (  64) Status Job=backup-bareos-fd.2019-07-02_08.59.16_06 JobStatus=84 \n
+  "Storage Daemon" -> "Director": ( 102) 3099 Job backup-bareos-fd.2019-07-02_08.59.16_06 end JobStatus=84 JobFiles=1 JobBytes=166 JobErrors=\n
+  "Storage Daemon" -> "Director": (  -1) BNET_EOD - End of data stream, new data may follow\n
+  "Storage Daemon" -> "Director": (  -4) BNET_TERMINATE - Conversation terminated, doing close() \n
+  "Storage Daemon" -> "Director": (  -1) BNET_EOD - End of data stream, new data may follow\n
+  "Storage Daemon" -> "Director": (  -4) BNET_TERMINATE - Conversation terminated, doing close() \n
+
+  @enduml
+

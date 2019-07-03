@@ -1,3 +1,5 @@
+.. _DeveloperGuideJobExecution:
+
 Job Execution
 =============
 
@@ -5,6 +7,8 @@ Introduction
 ------------
 The different job types are executed differently and also the protocol and information exchange between the daemons differ depending on job options.
 Based on a few example jobs the following documentation will try to describe the information exchange.
+
+For the relevant network diagrams see chapter :ref:`DeveloperGuideNetworkSequenceDiagrams`.
 
 Job setup and start
 -------------------

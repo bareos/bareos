@@ -15,6 +15,8 @@ transfers are done with read() and write() requests on system sockets.
 Pipes are not used as they are considered unreliable for large serial
 data transfers between various hosts.
 
+The chapter :ref:`DeveloperGuideNetworkSequenceDiagrams` contains message sequences of backup, restore and copy jobs as examples, respectively.
+
 Network Routines
 ----------------
 
@@ -247,4 +249,24 @@ The following diagram shows the activity on a Bareos TCP server (i.e. a |dir| or
 
   :Handle client message;
   end
+
+.. _DeveloperGuideNetworkSequenceDiagrams:
+
+Network Sequence Diagrams
+-------------------------
+
+This chapter contains diagrams of the network traffic for the most common jobs. The jobs are simplified as much as possible to show the essence of the network traffic. Refer to chapter :ref:`DeveloperGuideJobExecution` for sequence diagrams with the internal program flow.
+
+Backup of a Single File
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Comprehensive Diagram
+^^^^^^^^^^^^^^^^^^^^^
+
+.. include:: netprotocol/backup_of_one_file_comprehensive.puml
+
+Detailed Diagram
+^^^^^^^^^^^^^^^^
+
+.. include:: netprotocol/backup_of_one_file.puml
 
