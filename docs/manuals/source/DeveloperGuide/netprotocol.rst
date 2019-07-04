@@ -263,10 +263,10 @@ Backup of a Single File
 Comprehensive Diagram
 ^^^^^^^^^^^^^^^^^^^^^
 
-.. include:: netprotocol/backup_of_one_file_comprehensive.puml
+.. uml:: netprotocol/backup_of_one_file_comprehensive.puml
 
 Detailed Diagram
 ^^^^^^^^^^^^^^^^
 
-.. include:: netprotocol/backup_of_one_file.puml
+.. uml:: netprotocol/backup_of_one_file.puml
 
