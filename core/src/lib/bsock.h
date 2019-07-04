@@ -278,7 +278,7 @@ class BareosSocket {
   void InitBnetDump(std::string own_qualified_name);
   void SetBnetDumpDestinationQualifiedName(
       std::string destination_qualified_name);
-  bool IsBnetDumpEnabled() const { return bnet_dump_ ? true : false; }
+  bool IsBnetDumpEnabled() const { return bnet_dump_.get() != nullptr; }
 };
 
 /**

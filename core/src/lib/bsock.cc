@@ -132,7 +132,7 @@ BareosSocket::BareosSocket(const BareosSocket& other)
 
 BareosSocket::~BareosSocket()
 {
-  //
+  // this line left intentionally blank
   Dmsg0(100, "Destruct BareosSocket\n");
 }
 
