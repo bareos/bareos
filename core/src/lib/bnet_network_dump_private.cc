@@ -66,8 +66,7 @@ std::string BnetDumpPrivate::CreateDataString(int signal,
                                               int nbytes) const
 {
   std::size_t string_length = nbytes - BareosSocketTCP::header_length;
-  string_length = string_length > max_data_dump_bytes_ ? max_data_dump_bytes_
-                                                       : string_length;
+  string_length = std::min(string_length, max_data_dump_bytes_);
 
   std::string data_string(&ptr[BareosSocketTCP::header_length], string_length);
 
@@ -152,9 +151,7 @@ void BnetDumpPrivate::CreateAndWriteStacktraceToBuffer()
 
   for (const BacktraceInfo& bt : trace_lines) {
     std::string s(bt.function_call_.c_str(),
-                  bt.function_call_.size() < max_data_dump_bytes_
-                      ? bt.function_call_.size()
-                      : max_data_dump_bytes_);
+                  std::min(bt.function_call_.size(), max_data_dump_bytes_));
     snprintf(buffer.data(), buffer.size(), fmt, bt.frame_number_, s.c_str());
     output_buffer_ += buffer.data();
   }
