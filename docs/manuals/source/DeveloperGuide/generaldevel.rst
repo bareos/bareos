@@ -171,9 +171,9 @@ Currently there is still a lot of old C++ and C code in the code base and a lot 
 Automatic Sourcecode Formatting
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-All C/C++ code should be formatted properly based on the principles mentioned above. Therefore we provide a configuration file for **clang-format** that contains all formatting rules. The filename is ".clang-format" and it is located in the root directory of the bareos repo. 
+All C/C++ code should be formatted properly based on the principles mentioned above. Therefore we provide a configuration file for **clang-format** that contains all formatting rules. The filename is ".clang-format" and it is located in the root directory of the bareos repo.
 
-The configuration file will be invoked by clang-format automatically. The usage is as easy as this:
+The configuration file will be automatically found and used by clang-format:
 
 .. code-block:: bash
   :caption: Example shell script
