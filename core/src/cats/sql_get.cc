@@ -122,16 +122,17 @@ bool BareosDb::GetFileRecord(JobControlRecord* jcr,
   } else if (jcr->getJobLevel() == L_VERIFY_VOLUME_TO_CATALOG) {
     Mmsg(cmd,
          "SELECT FileId, LStat, MD5, Fhinfo, Fhnode FROM File WHERE "
+         "File.ClientId=%s AND" 
          "File.JobId=%s AND File.PathId=%s AND "
          "File.Name='%s' AND File.FileIndex=%u",
-         edit_int64(fdbr->JobId, ed1), edit_int64(fdbr->PathId, ed2), esc_name,
+         edit_int64(jr->ClientId, ed3), edit_int64(fdbr->JobId, ed1), edit_int64(fdbr->PathId, ed2), esc_name,
          jr->FileIndex);
   } else {
     Mmsg(cmd,
          "SELECT FileId, LStat, MD5, Fhinfo, Fhnode FROM File WHERE "
          "File.JobId=%s AND File.PathId=%s AND "
-         "File.Name='%s'",
-         edit_int64(fdbr->JobId, ed1), edit_int64(fdbr->PathId, ed2), esc_name);
+         "File.Name='%s' AND ClientId=%s",
+         edit_int64(fdbr->JobId, ed1), edit_int64(fdbr->PathId, ed2), esc_name, edit_int64(jr->ClientId, ed3));
   }
   Dmsg3(450, "Get_file_record JobId=%u Filename=%s PathId=%u\n", fdbr->JobId,
         esc_name, fdbr->PathId);
