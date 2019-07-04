@@ -40,6 +40,19 @@ Detailed View
 ~~~~~~~~~~~~~
 .. uml:: /DeveloperGuide/jobexec/backup-long.puml
 
+Simple restore job
+------------------
+
+Overview
+~~~~~~~~
+
+.. uml:: /DeveloperGuide/jobexec/restore-short.puml
+
+
+Detailed View
+~~~~~~~~~~~~~
+.. uml:: /DeveloperGuide/jobexec/restore-long.puml
+
 
 Local copy or migrate job
 -------------------------

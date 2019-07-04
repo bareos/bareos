@@ -1,0 +1,175 @@
+@startuml
+participant d as "Director"
+participant s as "Storage Daemon"
+participant f as "File Daemon"
+d -> d : BuildRestoreCommand(PoolMem RestoreCmd)
+d -> d : OpenBootstrapFile()
+loop dird: while not end of Bootstrapfile
+  d -> d : SelectNextRstore()
+  d -> d : setJobStatus(JS_WaitSD)
+
+  group Initiate dir to sd connection
+    d -> s : Hello
+    s -> d : CRAM-MD5 Challenge
+    d -> s : CRAM-MD5 Response
+    alt success
+      s -> d : 1000 OK auth
+    else failure
+      s -> d : 1999 Authorization failed.
+    end
+    d -> s : CRAM-MD5 Challenge
+    s -> d : CRAM-MD5 Response
+    alt success
+      d -> s : 1000 OK auth
+    else failure
+      d -> s : 1999 Authorization failed.
+    end
+  end
+
+  == StartStorageDaemonJob() ==
+  d -> s : pluginoptions %s
+  d <- s : 2000 OK plugin options
+  alt reschedule_count
+    d -> s : cancel Job=%s
+    loop dird: wait for message with no timeout
+      alt message scanning error
+        d <- s : 3903 Error scanning cancel command
+      end
+      alt job unknown
+        d <- s : 3904 Job %s not found
+      end
+      alt ok
+        d <- s : 3000 JobId=%ld Job=\"%s\" marked to be %s
+      end
+      break if any message arrives
+      end
+    end
+  end
+
+  == Start conversation with File daemon ==
+
+  alt first_time
+    d -> d : setJobStatus(JS_WaitFD)
+
+    group Initiate dir to fd connection
+      d -> f : Hello Director %s calling
+      f -> d : CRAM-MD5 Challenge
+      d -> f : CRAM-MD5 Response
+      alt success
+        f -> d : 1000 OK auth
+      else failure
+        f -> d : 1999 Authorization failed.
+      end
+      d -> f : CRAM-MD5 Challenge
+      f -> d : CRAM-MD5 Response
+      alt success
+        d -> f : 1000 OK auth
+      else failure
+        d -> f : 1999 Authorization failed.
+      end
+    end
+    d -> f : SendSecureEraseReqToFd()
+  end
+
+  == Send bootstrap to sd and run restore ==
+
+  d -> d : setJobStatus(JS_Running)
+  d -> s : SendBootstrapFile()
+  s -> s : Parse bootstrap file
+  d <- s : 3000 OK bootstrap
+
+  alt is NOT passive client (default)
+    d -> s : run
+    d -> d : StartStorageDaemonMessageThread()
+    s -> s : pthread_cond_timedwait(&jcr->job_start_wait ..)
+    d -> f : storage address=%s port=%d ssl=%d Authorization=%s
+    f -> f : SetStorageAuthKeyAndTlsPolicy()
+    group HandleFiledConnection()
+      s -> f : Hello Start Job %s
+      f -> s : CRAM-MD5 Challenge
+      s -> f : CRAM-MD5 Response
+      alt success
+        f -> s : 1000 OK auth
+      else failure
+        f -> s : 1999 Authorization failed.
+      end
+      s -> f : CRAM-MD5 Challenge
+      f -> s : CRAM-MD5 Response
+      alt success
+        s -> f : 1000 OK auth
+      else failure
+        s -> f : 1999 Authorization failed.
+      end
+    end
+    s -> s : pthread_cond_signal(&jcr->job_start_wait)
+    alt success
+      d <- f : 2000 OK storage
+    else failure
+      d <- f : 2902 Bad storage
+    end
+
+  else is passive client
+    d -> f : setauthorization Authorization=%s
+    d <- f : 2000 OK Authorization
+    d -> s : passive client address=%s port=%d ssl=%d
+    group Initiate sd to fd connection
+      s -> f : Hello Storage calling Start Job %s
+      s -> f : CRAM-MD5 Challenge
+      f -> s : CRAM-MD5 Response
+      alt success
+        s -> f : 1000 OK auth
+      else failure
+        s -> f : 1999 Authorization failed.
+      end
+      f -> s : CRAM-MD5 Challenge
+      s -> f : CRAM-MD5 Response
+      alt success
+        f -> s : 1000 OK auth
+      else failure
+        f -> s : 1999 Authorization failed.
+      end
+    end
+    d <- s : 2000 OK passive client
+    d -> s : run
+    d -> d : StartStorageDaemonMessageThread()
+  end
+
+  d -> d :   setJobStarted()
+
+  alt first_time
+    d -> f : SendRunscriptsCommands()
+    alt FDVersion >= FD_VERSION_52
+      d -> f : pluginoptions %s
+      d <- f : 2000 OK PluginOptions
+    end
+    alt FDVersion < FD_VERSION_52
+      alt plugin_options present
+        d -> d : Not Supported, Exit
+      end
+    end
+    d -> f : SendRestoreObjects()
+  end
+
+  d -> f : RestoreCmd.c_str()
+  d <- f : 2000 OK restore
+
+  alt FDVersion < FD_VERSION_2
+    break "while not end of Bootstrapfile"
+    end
+  end
+  alt FDVersion >= FD_VERSION_2
+    alt 2000 OK storage end:
+      d -> d :
+    end
+  d -> d : WaitForStorageDaemonTermination()
+  end
+
+end 'loop while not end of Bootstrapfile
+
+alt FDVersion >= FD_VERSION_2
+  d -> f : endrestore
+end
+
+d -> d : CloseBootstrapFile()
+
+@enduml
