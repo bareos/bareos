@@ -13,7 +13,7 @@
   d  -> s: Use storage, media, pool and device
   d <-  s: Request catalog: Find media for job
   d  -> s: Volume information
-  d <-  s: Status: 70
+  d <-  s: Status: 'F' (JS_WaitFD: Waiting on File daemon)
 
   d <-> c: Handshake
   d  -> c: Job information
@@ -24,7 +24,7 @@
 
   c <-> s: Handshake
   d <-  c: Ok
-  d <-  s: Jobinformation start and status
+  d <-  s: Jobinformation start and status 'R' (JS_Running: Job Running)
   d  -> c: Fileindex
   d <-  c: 3 Jobmessages: Connected, Extended Attributes, ACLs
   d <-  c: Ok backup
@@ -49,7 +49,7 @@
   d <-  s: Catalog update: file attributes
 
   c  -> s: end session 1
-  c <-  s: status: 84
+  c <-  s: status: 'T' (JS_Terminated: Job terminated normally)
   c  -> s: close connection
 
   d <-  c: End Job
