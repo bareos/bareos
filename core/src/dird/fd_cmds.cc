@@ -35,7 +35,6 @@
 
 #include <algorithm>
 #include "include/bareos.h"
-#include "include/make_unique.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
 #include "findlib/find.h"

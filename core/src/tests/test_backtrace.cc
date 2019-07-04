@@ -21,10 +21,10 @@
 
 #include "gtest/gtest.h"
 #include "include/bareos.h"
-#include "lib/backtrace.cc"
+#include "lib/backtrace.h"
 
 #include <string>
-#include <iostream>
+#include <vector>
 
 TEST(Backtrace, test_backtrace)
 {

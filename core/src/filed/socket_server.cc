@@ -36,7 +36,6 @@
 #include "lib/bsock.h"
 #include "lib/bnet_server_tcp.h"
 #include "lib/try_tls_handshake_as_a_server.h"
-#include "lib/util.h"
 
 namespace filedaemon {
 

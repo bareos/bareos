@@ -253,9 +253,7 @@ The following diagram shows the activity on a Bareos TCP server (i.e. a |dir| or
 Debugging
 ---------
 
-Developers who want to debug the message flow can use the network dump feature. This feature is only for specialists and is **not intended for use in a production system**.
-
-This feature is only for developers and therefore no help will be provided on the command line. The arguments however can be mixed with the standard arguments.
+Developers who want to debug the message flow can use the network dump feature. This feature is only for experts and developers and is **not intended for use in a production system**. Therefore no help will be provided on the command line. The arguments however can be mixed with the standard arguments.
 
 .. code-block:: shell-session
    :caption: Network Dump Command Line Options
