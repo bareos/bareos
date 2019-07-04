@@ -38,7 +38,7 @@ Patches should be sent as a pull-request to the master branch of the GitHub repo
 To do so, you will need an account on GitHub.
 If you don't want to sign up to GitHub, you can also send us your patches via E-Mail in **git format-patch** format to the `bareos-devel`_ mailing list.
 
-Please make sure to use the Bareos `formatting standards`_. 
+Please make sure to use the Bareos `Automatic Sourcecode Formatting`_
 Don’t forget any Copyrights and acknowledgments if it isn’t 100% your code.
 Also, include the Bareos copyright notice that can be found in every source file.
 
@@ -166,20 +166,30 @@ All new code should be written in modern C++11 following the `Google C++ Style G
 
 We like simple rather than complex code, but complex code is still better than complicated code.
 
-Currently there is still a lot of old C++ and C code in the code base and a lot of existing code violates our `do's`_ and `don'ts`_.
-Our long-term goal is to modernize the code-base to make it easier to understand, easier to maintain and better approachable for new developers.
+Currently there is still a lot of old C++ and C code in the code base and a lot of existing code violates our `do's`_ and `don'ts`_. Therefore our long-term goal is to modernize the code-base to make it easier to understand, easier to maintain and better approachable for new developers.
 
-Formatting Standards
-~~~~~~~~~~~~~~~~~~~~
+Automatic Sourcecode Formatting
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We find it very hard to adapt to different styles of code formatting, so we agreed on a set of rules.
-Instead of describing these in a lenghty set of rules, we provide a configuration file for **clang-format** in our repository that we use to format the code.
-All code should be reformatted using **clang-format** before committing.
+All C/C++ code should be formatted properly based on the principles mentioned above. Therefore we provide a configuration file for **clang-format** that contains all formatting rules. The filename is ".clang-format" and it is located in the root directory of the bareos repo.
 
-For some parts of code it works best to hand-optimize the formatting.
-We sometimes do this for larger tables and deeply nested brace initialization.
-If you need to hand-optimize make sure you add **clang-format off** and **clang-format on** comments so applying **clang-format** on your source will not undo your manual optimization.
-Please apply common sense and use this exception sparingly.
+The configuration file will be automatically found and used by clang-format:
+
+.. code-block:: bash
+  :caption: Example shell script
+
+  #!/bin/sh
+
+  #format one sourcecode file in-place
+  clang-format -i ./core/src/dird/dird_conf.cc
+
+
+Formatting exceptions
+~~~~~~~~~~~~~~~~~~~~~
+For some parts of code it works best to hand-optimize the formatting. We sometimes do this for larger tables and deeply nested brace initialization. If you need to hand-optimize make sure you add **clang-format off** and **clang-format on** comments so applying **clang-format** on your source will not undo your manual optimization. Please apply common sense and use this exception sparingly.
+
+Sourcecode Comments
+~~~~~~~~~~~~~~~~~~~
 
 Use ``/* */`` for multi-line comments.
 Use ``//`` for single-line comments.
