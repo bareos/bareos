@@ -1,0 +1,66 @@
+.. uml::
+  :caption: Comprehensive Network Sequence of a Backup of a Single File
+
+  @startuml
+
+  participant d as "Director"
+  participant s as "Storage Daemon"
+  participant c as "File Daemon"
+
+  d <-> s: Handshake
+  d  -> s: Send job information
+  d  -> s: Request secure erase command
+  d  -> s: Use storage, media, pool and device
+  d <-  s: Request catalog: Find media for job
+  d  -> s: Volume information
+  d <-  s: Status: 'F' (JS_WaitFD: Waiting on File daemon)
+
+  d <-> c: Handshake
+  d  -> c: Job information
+  d  -> c: Level information
+  d  -> c: File information
+  d  -> c: Request sequre erase command
+  d  -> c: Send storage address, port and tls require
+
+  c <-> s: Handshake
+  d <-  c: Ok
+  d <-  s: Jobinformation start and status 'R' (JS_Running: Job Running)
+  d  -> c: Fileindex
+  d <-  c: 3 Jobmessages: Connected, Extended Attributes, ACLs
+  d <-  c: Ok backup
+
+  c  -> s: append open session
+  c <-  s: ticket number
+  c  -> s: append data ticket number
+
+  d <-  s: Request catalog: get volume info
+  d <-  s: Request catalog: update media
+  d <-  s: Jobmessage: Labeled
+  d <-  s: Request catalog: get volume info
+  d <-  s: Request catalog: update media
+  d <-  s: Jobmessage: Wrote label
+  d <-  s: Request catalog: update media
+
+  c <-  s: Ok data
+  c  -> s: Send filename and metadata
+
+  d <-  s: Catalog update: file attributes
+  c  -> s: Send file, metadata and checksum
+  d <-  s: Catalog update: file attributes
+
+  c  -> s: end session 1
+  c <-  s: status: 'T' (JS_Terminated: Job terminated normally)
+  c  -> s: close connection
+
+  d <-  c: End Job
+  d <-  s: Jobmessage: releasing device
+  d <-  c: close connection
+  d <-  s: Request catalog: create job media
+  d <-  s: Request catalog: update media
+  d <-  s: Jobmessage: elapsed
+  d <-  s: Status: end
+
+  d <-  s: close connection
+
+  @enduml
+

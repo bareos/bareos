@@ -16,7 +16,7 @@ Diagram Conventions
 ~~~~~~~~~~~~~~~~~~~
 Each swimlane denotes a separate function.
 
-.. include:: reservation/legend.puml
+.. uml:: reservation/legend.puml
 
 UseDeviceCmd
 ~~~~~~~~~~~~
@@ -24,7 +24,7 @@ This function reads the list of storages and devices the director is willing to 
 Afterwards several different methods of finding a device to reseve are used.
 If no device could be reserved the function waits for up to a minute or until ReleaseDeviceCond() is called and then tries again.
 
-.. include:: reservation/UseDeviceCmd.puml
+.. uml:: reservation/UseDeviceCmd.puml
 
 ReserveDevice
 ~~~~~~~~~~~~~
@@ -32,4 +32,4 @@ Here we see wether the media type matches and actually try to open the device.
 The actual reservation is delegated to ReserveDeviceForRead() or ReserveDeviceForAppend().
 While the first one is more or less trivial, the latter one is really complicated.
 
-.. include:: reservation/ReserveDevice.puml
+.. uml:: reservation/ReserveDevice.puml
