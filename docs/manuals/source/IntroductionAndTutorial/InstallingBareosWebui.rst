@@ -145,20 +145,17 @@ This assumes, |dir| and |webui| are installed on the same host.
 
 #. Restart Apache (to load configuration provided by bareos-webui, see :ref:`section-webui-apache`)
 
-#. 
-
-.. _item:webui-create-user:
-
- Use :command:`bconsole` to create a user with name **admin** and password **secret** and permissions defined in :config:option:`Dir/Profile = webui-admin`\ :
+#. Use :command:`bconsole` to create a user with name **admin** and password **secret** and permissions defined in :config:option:`Dir/Profile = webui-admin`\ :
 
    .. code-block:: bconsole
-      :caption: add a named console
 
-      *<input>configure add console name=admin password=secret profile=webui-admin</input>
+      *<input>reload</input>
+      reloaded
+      *<input>configure add console name=admin password=secret profile=webui-admin tlsenable=false</input>
 
    Of course, you can choose other names and passwords. For details, see :ref:`section-webui-console`.
 
-#. Login to http://HOSTNAME/bareos-webui with username and password as created in \ref{item:webui-create-user}.
+#. Login to http://HOSTNAME/bareos-webui with username and password as created.
 
 Configuration Details
 ~~~~~~~~~~~~~~~~~~~~~
@@ -183,6 +180,7 @@ To allow a user with name **admin** and password **secret** to access the |dir| 
         Name = "admin"
         Password = "secret"
         Profile = "webui-admin"
+        TlsEnable = false
       }
 
    To enable this, reload or restart your |dir|.
@@ -190,9 +188,12 @@ To allow a user with name **admin** and password **secret** to access the |dir| 
 -  or use the :command:`bconsole`:
 
    .. code-block:: bconsole
-      :caption: add console
 
-      *<input>configure add console name=admin password=secret profile=webui-admin</input>
+      *<input>configure add console name=admin password=secret profile=webui-admin tlsenable=false</input>
+
+   If the profile could not be found, reload or restart your |dir|.
+
+   TLS-PSK is not available between the |webui| and the |dir|. To enable TLS with certificates, see :ref:`TransportEncryptionWebuiBareosDirChapter`.
 
 For details, please read :ref:`DirectorResourceConsole`.
 
