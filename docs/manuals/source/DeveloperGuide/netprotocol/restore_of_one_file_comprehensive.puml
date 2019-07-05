@@ -1,0 +1,57 @@
+.. uml::
+  :caption: Comprehensive Network Sequence of a Restore of a Single File
+
+  @startuml
+
+  participant d as "Director"
+  participant s as "Storage Daemon"
+  participant c as "File Daemon"
+
+  d <-> s: Handshake
+  d  -> s: Send job information
+  d  -> s: Request secure erase command
+  d  -> s: Use storage, media, pool and device
+
+  d <-> c: Handshake
+  d  -> c: Job information
+  d  -> c: Level information
+  d  -> c: File information
+  d  -> c: Request secure erase command
+
+  d  -> s: Bootstrap information
+  d <-  s: Status: 'F' (JS_WaitFD: Waiting on File daemon)
+
+  d  -> c: Send storage address, port and tls
+
+  c <-> s: Handshake
+  d <-  c: Ok
+  d <-  s: Jobinformation start and status 'R' (JS_Running: Job Running)
+  d  -> c: Restore
+
+  c  -> s: Open Read session and read data
+  d <-  s: Request catalog: get volume info
+  d <-  s: 2 Jobmessages
+
+  c <-  s: Filename, metadata and file contents
+
+  d <-  s: 3 Jobmessages: "End of volume", "End of all volumes", "Releasing device"
+  d <-  s: Request catalog: update media
+  d <-  c: Jobmessage: "Connected"
+
+  c  -> s: Read close connection
+  c <-  s: Close status = 'R' (JS_Running: Running)
+  c  -> s: Termination message
+  d <-  c: Storage end
+
+  d <-  s: Status: 'T' (JS_Terminated: Job terminated normally)
+  d <-  s: Terminate connection
+
+  d  -> c: End restore
+  d <-  s: Termination message
+  c  -> s: Termination message
+
+  d <-  c: Status message: 'T' (JS_Terminated: Job terminated normally)
+  d <-  c: Termination message
+
+
+  @enduml

@@ -285,3 +285,16 @@ Detailed Diagram
 
 .. uml:: netprotocol/backup_of_one_file.puml
 
+Restore of a Single File
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Comprehensive Diagram
+^^^^^^^^^^^^^^^^^^^^^
+
+.. uml:: netprotocol/restore_of_one_file_comprehensive.puml
+
+Detailed Diagram
+^^^^^^^^^^^^^^^^
+
+.. uml:: netprotocol/restore_of_one_file.puml
+
