@@ -121,7 +121,7 @@ static bool GetStorageDevice(char* device, char* storage)
 /**
  * Print a BootStrapRecord entry into a memory buffer.
  */
-static void PrintBsrItem(PoolMem* pool_buf, const char* fmt, ...)
+static void PrintBsrItem(std::string& buffer, const char* fmt, ...)
 {
   va_list arg_ptr;
   int len, maxlen;
@@ -139,7 +139,7 @@ static void PrintBsrItem(PoolMem* pool_buf, const char* fmt, ...)
     break;
   }
 
-  pool_buf->strcat(item.c_str());
+  buffer += item.c_str();
 }
 
 /**
@@ -155,7 +155,7 @@ static void PrintBsrItem(PoolMem* pool_buf, const char* fmt, ...)
 uint32_t write_findex(RestoreBootstrapRecordFileIndex* fi,
                       int32_t FirstIndex,
                       int32_t LastIndex,
-                      PoolMem* buffer)
+                      std::string& buffer)
 {
   auto count = uint32_t{0};
   auto bsrItems = std::string{};
@@ -179,7 +179,7 @@ uint32_t write_findex(RestoreBootstrapRecordFileIndex* fi,
       }
     }
   }
-  buffer->strcat(bsrItems.c_str());
+  buffer += bsrItems.c_str();
   return count;
 }
 
@@ -268,7 +268,7 @@ uint32_t WriteBsrFile(UaContext* ua, RestoreContext& rx)
   bool err;
   uint32_t count = 0;
   PoolMem fname(PM_MESSAGE);
-  PoolMem buffer(PM_MESSAGE);
+  std::string buffer;
 
   MakeUniqueRestoreFilename(ua, fname);
   fd = fopen(fname.c_str(), "w+b");
@@ -282,7 +282,7 @@ uint32_t WriteBsrFile(UaContext* ua, RestoreContext& rx)
   /*
    * Write them to a buffer.
    */
-  count = WriteBsr(ua, rx, &buffer);
+  count = WriteBsr(ua, rx, buffer);
 
   /*
    * Write the buffer to file
@@ -395,7 +395,7 @@ void DisplayBsrInfo(UaContext* ua, RestoreContext& rx)
 static uint32_t write_bsr_item(RestoreBootstrapRecord* bsr,
                                UaContext* ua,
                                RestoreContext& rx,
-                               PoolMem* buffer,
+                               std::string& buffer,
                                bool& first,
                                uint32_t& LastIndex)
 {
@@ -471,7 +471,7 @@ static uint32_t write_bsr_item(RestoreBootstrapRecord* bsr,
  * The bsrs must be written out in the order the JobIds
  * are found in the jobid list.
  */
-uint32_t WriteBsr(UaContext* ua, RestoreContext& rx, PoolMem* buffer)
+uint32_t WriteBsr(UaContext* ua, RestoreContext& rx, std::string& buffer)
 {
   bool first = true;
   uint32_t LastIndex = 0;
@@ -500,9 +500,9 @@ uint32_t WriteBsr(UaContext* ua, RestoreContext& rx, PoolMem* buffer)
 
 void PrintBsr(UaContext* ua, RestoreContext& rx)
 {
-  PoolMem buffer(PM_MESSAGE);
+  std::string buffer;
 
-  WriteBsr(ua, rx, &buffer);
+  WriteBsr(ua, rx, buffer);
   fprintf(stdout, "%s", buffer.c_str());
 }
 

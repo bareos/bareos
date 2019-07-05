@@ -98,7 +98,7 @@ struct bootstrap_info {
 bool CompleteBsr(UaContext* ua, RestoreBootstrapRecord* bsr);
 uint32_t WriteBsrFile(UaContext* ua, RestoreContext& rx);
 void DisplayBsrInfo(UaContext* ua, RestoreContext& rx);
-uint32_t WriteBsr(UaContext* ua, RestoreContext& rx, PoolMem* buffer);
+uint32_t WriteBsr(UaContext* ua, RestoreContext& rx, std::string& buffer);
 void AddFindex(RestoreBootstrapRecord* bsr, uint32_t JobId, int32_t findex);
 void AddFindexAll(RestoreBootstrapRecord* bsr, uint32_t JobId);
 RestoreBootstrapRecordFileIndex* new_findex();
@@ -112,7 +112,7 @@ void CloseBootstrapFile(bootstrap_info& info);
 uint32_t write_findex(RestoreBootstrapRecordFileIndex* fi,
                       int32_t FirstIndex,
                       int32_t LastIndex,
-                      PoolMem* buffer);
+                      std::string& buffer);
 
 } /* namespace directordaemon */
 #endif  // BAREOS_DIRD_BSR_H_

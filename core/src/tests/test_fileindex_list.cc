@@ -117,9 +117,9 @@ static std::string ToBsrStringBareos(const itBegin& t_begin, const itEnd& t_end)
                   [&](int fid) { AddFindex(&bsr, kJobId_1, fid); });
   });
   auto maxId = *std::max_element(t_begin, t_end);
-  auto buffer = PoolMem{PM_MESSAGE};
+  auto buffer = std::string{};
   TimedLambda("write_findex total",
-              [&]() { write_findex(bsr.fi.get(), 1, maxId, &buffer); });
+              [&]() { write_findex(bsr.fi.get(), 1, maxId, buffer); });
   return std::string{buffer.c_str()};
 }
 
