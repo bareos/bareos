@@ -130,7 +130,11 @@ BareosSocket::BareosSocket(const BareosSocket& other)
   tls_established_ = other.tls_established_;
 }
 
-BareosSocket::~BareosSocket() { Dmsg0(100, "Destruct BareosSocket\n"); }
+BareosSocket::~BareosSocket()
+{
+  // this line left intentionally blank
+  Dmsg0(100, "Destruct BareosSocket\n");
+}
 
 void BareosSocket::CloseTlsConnectionAndFreeMemory()
 {
@@ -322,12 +326,14 @@ void BareosSocket::SetKillable(bool killable)
   if (jcr_) { jcr_->SetKillable(killable); }
 }
 
-bool BareosSocket::ConsoleAuthenticateWithDirector(JobControlRecord* jcr,
-                                                   const char* identity,
-                                                   s_password& password,
-                                                   TlsResource* tls_resource,
-                                                   BStringList& response_args,
-                                                   uint32_t& response_id)
+bool BareosSocket::ConsoleAuthenticateWithDirector(
+    JobControlRecord* jcr,
+    const char* identity,
+    s_password& password,
+    TlsResource* tls_resource,
+    const std::string& own_qualified_name,
+    BStringList& response_args,
+    uint32_t& response_id)
 {
   char bashed_name[MAX_NAME_LENGTH];
   BareosSocket* dir = this; /* for readability */
@@ -336,10 +342,11 @@ bool BareosSocket::ConsoleAuthenticateWithDirector(JobControlRecord* jcr,
   BashSpaces(bashed_name);
 
   dir->StartTimer(60 * 5); /* 5 minutes */
+  dir->InitBnetDump(own_qualified_name);
   dir->fsend("Hello %s calling version %s\n", bashed_name, VERSION);
 
-  if (!AuthenticateOutboundConnection(jcr, "Director", identity, password,
-                                      tls_resource)) {
+  if (!AuthenticateOutboundConnection(jcr, own_qualified_name, identity,
+                                      password, tls_resource)) {
     Dmsg0(100, "Authenticate outbound connection failed\n");
     dir->StopTimer();
     return false;
@@ -367,7 +374,7 @@ bool BareosSocket::ConsoleAuthenticateWithDirector(JobControlRecord* jcr,
  * identity.
  */
 bool BareosSocket::TwoWayAuthenticate(JobControlRecord* jcr,
-                                      const char* what,
+                                      const std::string own_qualified_name,
                                       const char* identity,
                                       s_password& password,
                                       TlsResource* tls_resource,
@@ -384,7 +391,8 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord* jcr,
            "with a restore job not configured for NDMP protocol.\n"));
   } else {
     TlsPolicy local_tls_policy = tls_resource->GetPolicy();
-    CramMd5Handshake cram_md5_handshake(this, password.value, local_tls_policy);
+    CramMd5Handshake cram_md5_handshake(this, password.value, local_tls_policy,
+                                        own_qualified_name);
 
     btimer_t* tid = StartBsockTimer(this, AUTH_TIMEOUT);
 
@@ -392,8 +400,7 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord* jcr,
 
     auth_success = cram_md5_handshake.DoHandshake(initiated_by_remote);
     if (!auth_success) {
-      Jmsg(jcr, M_FATAL, 0, _("Authorization key rejected by %s %s.\n"), what,
-           identity);
+      Jmsg(jcr, M_FATAL, 0, _("Authorization key rejected %s.\n"), identity);
     } else if (jcr && JobCanceled(jcr)) {
       Dmsg0(debuglevel, "Failed, because job is canceled.\n");
       auth_success = false;
@@ -606,22 +613,33 @@ bool BareosSocket::DoTlsHandshakeWithServer(TlsConfigCert* local_tls_cert,
   return false;
 }
 
-bool BareosSocket::AuthenticateOutboundConnection(JobControlRecord* jcr,
-                                                  const char* what,
-                                                  const char* identity,
-                                                  s_password& password,
-                                                  TlsResource* tls_resource)
+bool BareosSocket::AuthenticateOutboundConnection(
+    JobControlRecord* jcr,
+    const std::string own_qualified_name,
+    const char* identity,
+    s_password& password,
+    TlsResource* tls_resource)
 {
-  return TwoWayAuthenticate(jcr, what, identity, password, tls_resource, false);
+  return TwoWayAuthenticate(jcr, own_qualified_name, identity, password,
+                            tls_resource, false);
 }
 
 bool BareosSocket::AuthenticateInboundConnection(JobControlRecord* jcr,
-                                                 const char* what,
+                                                 ConfigurationParser* my_config,
                                                  const char* identity,
                                                  s_password& password,
                                                  TlsResource* tls_resource)
 {
-  return TwoWayAuthenticate(jcr, what, identity, password, tls_resource, true);
+  std::string own_qualified_name_for_network_dump;
+
+  if (my_config) {
+    InitBnetDump(my_config->CreateOwnQualifiedNameForNetworkDump());
+    own_qualified_name_for_network_dump =
+        my_config->CreateOwnQualifiedNameForNetworkDump();
+  }
+
+  return TwoWayAuthenticate(jcr, own_qualified_name_for_network_dump, identity,
+                            password, tls_resource, true);
 }
 
 bool BareosSocket::EvaluateCleartextBareosHello(
@@ -799,5 +817,18 @@ void BareosSocket::ControlBwlimit(int bytes)
     } else {
       nb_bytes_ = 0;
     }
+  }
+}
+
+void BareosSocket::InitBnetDump(std::string own_qualified_name)
+{
+  SetBnetDump(BnetDump::Create(own_qualified_name));
+}
+
+void BareosSocket::SetBnetDumpDestinationQualifiedName(
+    std::string destination_qualified_name)
+{
+  if (bnet_dump_) {
+    bnet_dump_->SetDestinationQualifiedName(destination_qualified_name);
   }
 }

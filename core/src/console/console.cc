@@ -37,6 +37,7 @@
 #include "include/jcr.h"
 #include "lib/berrno.h"
 #include "lib/bnet.h"
+#include "lib/bnet_network_dump.h"
 #include "lib/bsock_tcp.h"
 #include "lib/bstringlist.h"
 #include "lib/qualified_resource_name_type_converter.h"
@@ -83,9 +84,9 @@ static bool file_selection = false;
 static bool force_send_pam_credentials_unencrypted = false;
 static bool use_pam_credentials_file = false;
 static std::string pam_credentials_filename;
-static const std::string program_arguments{"D:lc:d:np:ostu:x:?"};
+static const std::string program_arguments{"D:lc:d:np:ostu:x:z:?"};
 #else
-static const std::string program_arguments{"D:lc:d:nstu:x:?"};
+static const std::string program_arguments{"D:lc:d:nstu:x:z:?"};
 #endif
 
 /* Command prototypes */
@@ -970,6 +971,10 @@ int main(int argc, char* argv[])
         }
         break;
 
+      case 'z': /* switch network debugging on */
+        if (!BnetDump::EvaluateCommandLineArgs(optarg)) { exit(1); }
+        break;
+
       case '?':
       default:
         usage();
@@ -1204,6 +1209,7 @@ static int CheckResources()
   }
 
   me = (ConsoleResource*)my_config->GetNextRes(R_CONSOLE, NULL);
+  my_config->own_resource_ = me;
 
   UnlockRes(my_config);
 

@@ -93,6 +93,7 @@ ConfigurationParser::ConfigurationParser()
     , r_first_(0)
     , r_last_(0)
     , r_own_(0)
+    , own_resource_(nullptr)
     , resources_(0)
     , res_head_(nullptr)
     , SaveResourceCb_(nullptr)
@@ -119,6 +120,7 @@ ConfigurationParser::ConfigurationParser(
     BareosResource** res_head,
     const char* config_default_filename,
     const char* config_include_dir,
+    void (*ParseConfigBeforeCb)(ConfigurationParser&),
     void (*ParseConfigReadyCb)(ConfigurationParser&),
     SaveResourceCb_t SaveResourceCb,
     DumpResourceCb_t DumpResourceCb,
@@ -141,6 +143,7 @@ ConfigurationParser::ConfigurationParser(
   config_default_filename_ =
       config_default_filename == nullptr ? "" : config_default_filename;
   config_include_dir_ = config_include_dir == nullptr ? "" : config_include_dir;
+  ParseConfigBeforeCb_ = ParseConfigBeforeCb;
   ParseConfigReadyCb_ = ParseConfigReadyCb;
   ASSERT(SaveResourceCb);
   ASSERT(DumpResourceCb);
@@ -152,9 +155,13 @@ ConfigurationParser::ConfigurationParser(
 
 ConfigurationParser::~ConfigurationParser()
 {
-  for (int i = r_first_; i <= r_last_; i++) {
-    FreeResourceCb_(res_head_[i - r_first_], i);
-    res_head_[i - r_first_] = nullptr;
+  if (res_head_) {
+    for (int i = r_first_; i <= r_last_; i++) {
+      if (res_head_[i - r_first_]) {
+        FreeResourceCb_(res_head_[i - r_first_], i);
+      }
+      res_head_[i - r_first_] = nullptr;
+    }
   }
 }
 
@@ -165,10 +172,26 @@ void ConfigurationParser::InitializeQualifiedResourceNameTypeConverter(
       new QualifiedResourceNameTypeConverter(map));
 }
 
+std::string ConfigurationParser::CreateOwnQualifiedNameForNetworkDump() const
+{
+  std::string qualified_name;
+
+  if (own_resource_ && qualified_resource_name_type_converter_) {
+    if (qualified_resource_name_type_converter_->ResourceToString(
+            own_resource_->resource_name_, own_resource_->rcode_,
+            "::", qualified_name)) {
+      return qualified_name;
+    }
+  }
+  return qualified_name;
+}
+
 bool ConfigurationParser::ParseConfig()
 {
   int errstat;
   PoolMem config_path;
+
+  if (ParseConfigBeforeCb_) ParseConfigBeforeCb_(*this);
 
   if (parser_first_run_ && (errstat = RwlInit(&res_lock_)) != 0) {
     BErrNo be;

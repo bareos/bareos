@@ -53,6 +53,7 @@
 #include "lib/tls_conf.h"
 #include "lib/parse_conf.h"
 #include "lib/bsock_tcp.h"
+#include "lib/bnet_network_dump.h"
 #include "lib/watchdog.h"
 #include "lib/util.h"
 
@@ -1693,6 +1694,8 @@ static bool StorageCmd(JobControlRecord* jcr)
     }
   }
 
+  storage_daemon_socket->InitBnetDump(
+      my_config->CreateOwnQualifiedNameForNetworkDump());
   storage_daemon_socket->fsend("Hello Start Job %s\n", jcr->Job);
   if (!AuthenticateWithStoragedaemon(jcr)) {
     Jmsg(jcr, M_FATAL, 0, _("Failed to authenticate Storage daemon.\n"));
@@ -2320,6 +2323,7 @@ static BareosSocket* connect_to_director(JobControlRecord* jcr,
   Dmsg1(10, "Opened connection with Director %s\n", dir_res->resource_name_);
   jcr->dir_bsock = director_socket.get();
 
+  director_socket->InitBnetDump(my_config->CreateOwnQualifiedNameForNetworkDump());
   director_socket->fsend(hello_client, my_name, FD_PROTOCOL_VERSION);
   if (!AuthenticateWithDirector(jcr, dir_res)) {
     jcr->dir_bsock = nullptr;

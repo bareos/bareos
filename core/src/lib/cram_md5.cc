@@ -33,8 +33,12 @@
 
 CramMd5Handshake::CramMd5Handshake(BareosSocket* bs,
                                    const char* password,
-                                   TlsPolicy local_tls_policy)
-    : bs_(bs), password_(password), local_tls_policy_(local_tls_policy)
+                                   TlsPolicy local_tls_policy,
+                                   const std::string& own_qualified_name)
+    : bs_(bs)
+    , password_(password)
+    , local_tls_policy_(local_tls_policy)
+    , own_qualified_name_(own_qualified_name)
 {
   return;
 }
@@ -63,13 +67,26 @@ bool CramMd5Handshake::CramMd5Challenge()
   Mmsg(chal, "<%u.%u@%s>", (uint32_t)random(), (uint32_t)time(NULL),
        host.c_str());
 
-  Dmsg2(debuglevel_, "send: auth cram-md5 %s ssl=%d\n", chal.c_str(),
-        local_tls_policy_);
-  if (!bs_->fsend("auth cram-md5 %s ssl=%d\n", chal.c_str(),
-                  local_tls_policy_)) {
-    Dmsg1(debuglevel_, "Bnet send challenge comm error. ERR=%s\n",
-          bs_->bstrerror());
-    return false;
+  if (bs_->IsBnetDumpEnabled()) {
+    Dmsg2(debuglevel_, "send: auth cram-md5 %s ssl=%d qualified-name=%s\n",
+          chal.c_str(), local_tls_policy_, own_qualified_name_.c_str());
+
+    if (!bs_->fsend("auth cram-md5 %s ssl=%d qualified-name=%s\n", chal.c_str(),
+                    local_tls_policy_, own_qualified_name_.c_str())) {
+      Dmsg1(debuglevel_, "Bnet send challenge comm error. ERR=%s\n",
+            bs_->bstrerror());
+      return false;
+    }
+  } else {  // network dump disabled
+    Dmsg2(debuglevel_, "send: auth cram-md5 %s ssl=%d\n", chal.c_str(),
+          local_tls_policy_);
+
+    if (!bs_->fsend("auth cram-md5 %s ssl=%d\n", chal.c_str(),
+                    local_tls_policy_)) {
+      Dmsg1(debuglevel_, "Bnet send challenge comm error. ERR=%s\n",
+            bs_->bstrerror());
+      return false;
+    }
   }
 
   /* Read hashed response to challenge */
@@ -118,16 +135,35 @@ bool CramMd5Handshake::CramMd5Response()
 
   Dmsg1(100, "cram-get received: %s", bs_->msg);
   chal.check_size(bs_->message_length);
-  if (sscanf(bs_->msg, "auth cram-md5c %s ssl=%d", chal.c_str(),
-             &remote_tls_policy_) == 2) {
-    compatible_ = true;
-  } else if (sscanf(bs_->msg, "auth cram-md5 %s ssl=%d", chal.c_str(),
-                    &remote_tls_policy_) != 2) {
-    if (sscanf(bs_->msg, "auth cram-md5 %s\n", chal.c_str()) != 1) {
-      Dmsg1(debuglevel_, "Cannot scan challenge: %s", bs_->msg);
-      bs_->fsend(_("1999 Authorization failed.\n"));
-      Bmicrosleep(bs_->sleep_time_after_authentication_error, 0);
-      return false;
+  if (bs_->IsBnetDumpEnabled()) {
+    std::vector<char> destination_qualified_name(256);
+    if (sscanf(bs_->msg, "auth cram-md5c %s ssl=%d qualified-name=%s",
+               chal.c_str(), &remote_tls_policy_,
+               destination_qualified_name.data()) >= 2) {
+      compatible_ = true;
+    } else if (sscanf(bs_->msg, "auth cram-md5 %s ssl=%d qualified-name=%s",
+                      chal.c_str(), &remote_tls_policy_,
+                      destination_qualified_name.data()) < 2) {  // minimum 2
+      if (sscanf(bs_->msg, "auth cram-md5 %s\n", chal.c_str()) != 1) {
+        Dmsg1(debuglevel_, "Cannot scan challenge: %s", bs_->msg);
+        bs_->fsend(_("1999 Authorization failed.\n"));
+        Bmicrosleep(bs_->sleep_time_after_authentication_error, 0);
+        return false;
+      }
+    }
+    bs_->SetBnetDumpDestinationQualifiedName(destination_qualified_name.data());
+  } else {  // network dump disabled
+    if (sscanf(bs_->msg, "auth cram-md5c %s ssl=%d", chal.c_str(),
+               &remote_tls_policy_) == 2) {
+      compatible_ = true;
+    } else if (sscanf(bs_->msg, "auth cram-md5 %s ssl=%d", chal.c_str(),
+                      &remote_tls_policy_) != 2) {
+      if (sscanf(bs_->msg, "auth cram-md5 %s\n", chal.c_str()) != 1) {
+        Dmsg1(debuglevel_, "Cannot scan challenge: %s", bs_->msg);
+        bs_->fsend(_("1999 Authorization failed.\n"));
+        Bmicrosleep(bs_->sleep_time_after_authentication_error, 0);
+        return false;
+      }
     }
   }
 

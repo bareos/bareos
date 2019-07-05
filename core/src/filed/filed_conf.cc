@@ -250,7 +250,7 @@ static void ParseConfigCb(LEX* lc, ResourceItem* item, int index, int pass)
   }
 }
 
-static void ConfigReadyCallback(ConfigurationParser& my_config)
+static void ConfigBeforeCallback(ConfigurationParser& my_config)
 {
   std::map<int, std::string> map{{R_DIRECTOR, "R_DIRECTOR"},
                                  {R_CLIENT, "R_CLIENT"},
@@ -260,13 +260,15 @@ static void ConfigReadyCallback(ConfigurationParser& my_config)
   my_config.InitializeQualifiedResourceNameTypeConverter(map);
 }
 
+static void ConfigReadyCallback(ConfigurationParser& my_config) {}
+
 ConfigurationParser* InitFdConfig(const char* configfile, int exit_code)
 {
   ConfigurationParser* config = new ConfigurationParser(
       configfile, nullptr, nullptr, InitResourceCb, ParseConfigCb, nullptr,
       exit_code, R_FIRST, R_LAST, resources, res_head,
-      default_config_filename.c_str(), "bareos-fd.d", ConfigReadyCallback,
-      SaveResource, DumpResource, FreeResource);
+      default_config_filename.c_str(), "bareos-fd.d", ConfigBeforeCallback,
+      ConfigReadyCallback, SaveResource, DumpResource, FreeResource);
   if (config) { config->r_own_ = R_CLIENT; }
   return config;
 }

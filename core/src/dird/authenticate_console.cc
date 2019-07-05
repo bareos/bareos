@@ -82,7 +82,7 @@ OptionResult ConsoleAuthenticator::DoDefaultAuthentication()
   if (console_name_ != default_console_name) { return OptionResult::Skipped; }
 
   auth_success_ = ua_->UA_sock->AuthenticateInboundConnection(
-      NULL, "Console", default_console_name.c_str(), me->password_, me);
+      NULL, my_config, default_console_name.c_str(), me->password_, me);
   ua_->cons = nullptr;
   return OptionResult::Completed;
 }
@@ -97,7 +97,7 @@ void ConsoleAuthenticator::DoNamedAuthentication()
   }
 
   auth_success_ = ua_->UA_sock->AuthenticateInboundConnection(
-      NULL, "Console", console_name_.c_str(),
+      NULL, my_config, console_name_.c_str(),
       optional_console_resource_->password_, optional_console_resource_);
   if (auth_success_) {
     ua_->cons = optional_console_resource_;

@@ -122,7 +122,6 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
     return HandleFiledConnection(client_connections, bs, name,
                                  fd_protocol_version);
   }
-
   return HandleUserAgentClientRequest(bs);
 }
 

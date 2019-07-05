@@ -35,6 +35,7 @@ typedef void (*DumpResourceCb_t)(int type,
                                  bool verbose);
 
 typedef void (*FreeResourceCb_t)(BareosResource* res, int type);
+typedef void (*ParseConfigBeforeCb_t)(ConfigurationParser&);
 typedef void (*ParseConfigReadyCb_t)(ConfigurationParser&);
 
 #endif /* BAREOS_LIB_PARSE_CONF_CALLBACKS_H_ */

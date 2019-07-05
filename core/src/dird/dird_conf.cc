@@ -3694,10 +3694,8 @@ static void ResetAllClientConnectionHandshakeModes(
   };
 }
 
-static void ConfigReadyCallback(ConfigurationParser& my_config)
+static void ConfigBeforeCallback(ConfigurationParser& my_config)
 {
-  CreateAndAddUserAgentConsoleResource(my_config);
-
   std::map<int, std::string> map{
       {R_DIRECTOR, "R_DIRECTOR"}, {R_CLIENT, "R_CLIENT"},
       {R_JOBDEFS, "R_JOBDEFS"},   {R_JOB, "R_JOB"},
@@ -3707,6 +3705,11 @@ static void ConfigReadyCallback(ConfigurationParser& my_config)
       {R_COUNTER, "R_COUNTER"},   {R_PROFILE, "R_PROFILE"},
       {R_CONSOLE, "R_CONSOLE"},   {R_DEVICE, "R_DEVICE"}};
   my_config.InitializeQualifiedResourceNameTypeConverter(map);
+}
+
+static void ConfigReadyCallback(ConfigurationParser& my_config)
+{
+  CreateAndAddUserAgentConsoleResource(my_config);
 
   ResetAllClientConnectionHandshakeModes(my_config);
 }
@@ -3796,6 +3799,7 @@ static void CreateAndAddUserAgentConsoleResource(ConfigurationParser& my_config)
   c->resource_name_ = strdup("*UserAgent*");
   c->description_ = strdup("root console definition");
   c->rcode_ = 1013;
+  c->rcode_str_ = "R_CONSOLE";
   c->refcnt_ = 1;
 
   AddResourceCopyToEndOfChain(R_CONSOLE, c);
@@ -3806,8 +3810,8 @@ ConfigurationParser* InitDirConfig(const char* configfile, int exit_code)
   ConfigurationParser* config = new ConfigurationParser(
       configfile, nullptr, nullptr, InitResourceCb, ParseConfigCb,
       PrintConfigCb, exit_code, R_FIRST, R_LAST, resources, res_head,
-      default_config_filename.c_str(), "bareos-dir.d", ConfigReadyCallback,
-      SaveResource, DumpResource, FreeResource);
+      default_config_filename.c_str(), "bareos-dir.d", ConfigBeforeCallback,
+      ConfigReadyCallback, SaveResource, DumpResource, FreeResource);
   if (config) { config->r_own_ = R_DIRECTOR; }
   return config;
 }

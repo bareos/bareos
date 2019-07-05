@@ -72,6 +72,8 @@ bool AuthenticateWithStorageDaemon(BareosSocket* sd,
   bstrncpy(dirname, me->resource_name_, sizeof(dirname));
   BashSpaces(dirname);
 
+  sd->InitBnetDump(
+      my_config->CreateOwnQualifiedNameForNetworkDump());
   if (!sd->fsend(hello, dirname)) {
     Dmsg1(debuglevel, _("Error sending Hello to Storage daemon. ERR=%s\n"),
           BnetStrerror(sd));
@@ -82,7 +84,8 @@ bool AuthenticateWithStorageDaemon(BareosSocket* sd,
 
   bool auth_success = false;
   auth_success = sd->AuthenticateOutboundConnection(
-      jcr, "Storage daemon", dirname, store->password_, store);
+      jcr, my_config->CreateOwnQualifiedNameForNetworkDump(), dirname,
+      store->password_, store);
   if (!auth_success) {
     Dmsg2(debuglevel,
           "Director unable to authenticate with Storage daemon at \"%s:%d\"\n",
@@ -148,6 +151,8 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
   bstrncpy(dirname, me->resource_name_, sizeof(dirname));
   BashSpaces(dirname);
 
+  fd->InitBnetDump(
+      my_config->CreateOwnQualifiedNameForNetworkDump());
   if (!fd->fsend(hello, dirname)) {
     Jmsg(jcr, M_FATAL, 0,
          _("Error sending Hello to File daemon at \"%s:%d\". ERR=%s\n"),
@@ -157,8 +162,9 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
   Dmsg1(debuglevel, "Sent: %s", fd->msg);
 
   bool auth_success;
-  auth_success = fd->AuthenticateOutboundConnection(jcr, "File Daemon", dirname,
-                                                    client->password_, client);
+  auth_success = fd->AuthenticateOutboundConnection(
+      jcr, my_config->CreateOwnQualifiedNameForNetworkDump(), dirname,
+      client->password_, client);
 
   if (!auth_success) {
     Dmsg2(debuglevel, "Unable to authenticate with File daemon at \"%s:%d\"\n",
@@ -210,7 +216,7 @@ bool AuthenticateFileDaemon(BareosSocket* fd, char* client_name)
   if (client) {
     if (IsConnectFromClientAllowed(client)) {
       auth_success = fd->AuthenticateInboundConnection(
-          NULL, "File Daemon", client_name, client->password_, client);
+          NULL, my_config, client_name, client->password_, client);
     }
   }
 

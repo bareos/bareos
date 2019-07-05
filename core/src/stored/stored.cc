@@ -50,6 +50,7 @@
 #include "stored/wait.h"
 #include "lib/berrno.h"
 #include "lib/bsock.h"
+#include "lib/bnet_network_dump.h"
 #include "lib/daemon.h"
 #include "lib/bsignal.h"
 #include "lib/parse_conf.h"
@@ -154,7 +155,7 @@ int main(int argc, char* argv[])
           TAPE_BSIZE);
   }
 
-  while ((ch = getopt(argc, argv, "c:d:fg:mpstu:vx:?")) != -1) {
+  while ((ch = getopt(argc, argv, "c:d:fg:mpstu:vx:z:?")) != -1) {
     switch (ch) {
       case 'c': /* configuration file */
         if (configfile != NULL) { free(configfile); }
@@ -209,6 +210,12 @@ int main(int argc, char* argv[])
           export_config = true;
         } else {
           usage();
+        }
+        break;
+
+      case 'z': /* switch network debugging on */
+        if (!BnetDump::EvaluateCommandLineArgs(optarg)) {
+          exit(1);
         }
         break;
 

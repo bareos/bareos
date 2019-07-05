@@ -35,6 +35,7 @@
 #include "filed/socket_server.h"
 #include "lib/mntent_cache.h"
 #include "lib/daemon.h"
+#include "lib/bnet_network_dump.h"
 #include "lib/bsignal.h"
 #include "lib/parse_conf.h"
 #include "lib/watchdog.h"
@@ -112,7 +113,7 @@ int main(int argc, char* argv[])
   InitMsg(NULL, NULL);
   daemon_start_time = time(NULL);
 
-  while ((ch = getopt(argc, argv, "bc:d:fg:kmrstu:vx:?")) != -1) {
+  while ((ch = getopt(argc, argv, "bc:d:fg:kmrstu:vx:z:?")) != -1) {
     switch (ch) {
       case 'b':
         backup_only_mode = true;
@@ -175,6 +176,12 @@ int main(int argc, char* argv[])
           export_config = true;
         } else {
           usage();
+        }
+        break;
+
+      case 'z': /* switch network debugging on */
+        if (!BnetDump::EvaluateCommandLineArgs(optarg)) {
+          exit(1);
         }
         break;
 
@@ -343,6 +350,7 @@ static bool CheckResources()
   LockRes(my_config);
 
   me = (ClientResource*)my_config->GetNextRes(R_CLIENT, NULL);
+  my_config->own_resource_ = me;
   if (!me) {
     Emsg1(M_FATAL, 0,
           _("No File daemon resource defined in %s\n"

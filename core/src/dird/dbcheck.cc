@@ -1078,6 +1078,7 @@ int main(int argc, char* argv[])
     } else {
       LockRes(my_config);
       me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, NULL);
+      my_config->own_resource_ = me;
       UnlockRes(my_config);
       if (!me) {
         Pmsg0(0, _("Error no Director resource defined.\n"));

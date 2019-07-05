@@ -243,7 +243,7 @@ int main(int argc, char* argv[])
 
   console_command = RunConsoleCommand;
 
-  while ((ch = getopt(argc, argv, "c:d:fg:mr:stu:vx:?")) != -1) {
+  while ((ch = getopt(argc, argv, "c:d:fg:mr:stu:vx:z:?")) != -1) {
     switch (ch) {
       case 'c': /* specify config file */
         if (configfile != NULL) { free(configfile); }
@@ -300,6 +300,12 @@ int main(int argc, char* argv[])
           export_config = true;
         } else {
           usage();
+        }
+        break;
+
+      case 'z': /* switch network debugging on */
+        if (!BnetDump::EvaluateCommandLineArgs(optarg)) {
+          exit(1);
         }
         break;
 
@@ -606,6 +612,7 @@ bool DoReloadConfig()
 
     // me is changed above by CheckResources()
     me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, NULL);
+    my_config->own_resource_ = me;
 
     FreeSavedResources(&temp_config);
     goto bail_out;
@@ -685,6 +692,7 @@ static bool CheckResources()
 
   job = (JobResource*)my_config->GetNextRes(R_JOB, NULL);
   me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, NULL);
+  my_config->own_resource_ = me;
   if (!me) {
     Jmsg(NULL, M_FATAL, 0,
          _("No Director resource defined in %s\n"

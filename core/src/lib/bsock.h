@@ -41,7 +41,9 @@
 #include <include/bareos.h>
 #include <mutex>
 #include <functional>
+#include <cassert>
 #include "lib/address_conf.h"
+#include "lib/bnet_network_dump.h"
 #include "lib/tls.h"
 #include "lib/s_password.h"
 #include "lib/tls_conf.h"
@@ -105,6 +107,7 @@ class BareosSocket {
   int64_t nb_bytes_;     /* Bytes sent/recv since the last tick */
   btime_t last_tick_;    /* Last tick used by bwlimit */
   bool tls_established_; /* is true when tls connection is established */
+  std::unique_ptr<BnetDump> bnet_dump_;
 
   virtual void FinInit(JobControlRecord* jcr,
                        int sockfd,
@@ -122,7 +125,7 @@ class BareosSocket {
 
  private:
   bool TwoWayAuthenticate(JobControlRecord* jcr,
-                          const char* what,
+                          const std::string own_qualified_name,
                           const char* identity,
                           s_password& password,
                           TlsResource* tls_resource,
@@ -134,6 +137,12 @@ class BareosSocket {
                                 const char* password,
                                 JobControlRecord* jcr);
   void ParameterizeTlsCert(Tls* tls_conn, TlsResource* tls_resource);
+  void SetBnetDump(std::unique_ptr<BnetDump>&& bnet_dump)
+  {
+    // do not set twice
+    assert(!bnet_dump_);
+    bnet_dump_ = std::move(bnet_dump);
+  }
 
  public:
   BareosSocket();
@@ -180,6 +189,7 @@ class BareosSocket {
                                        const char* name,
                                        s_password& password,
                                        TlsResource* tls_resource,
+                                       const std::string& own_qualified_name,
                                        BStringList& response_args,
                                        uint32_t& response_id);
   bool ParameterizeAndInitTlsConnection(TlsResource* tls_resource,
@@ -212,13 +222,13 @@ class BareosSocket {
   bool FormatAndSendResponseMessage(uint32_t id, const std::string& str);
 
   bool AuthenticateOutboundConnection(JobControlRecord* jcr,
-                                      const char* what,
+                                      const std::string own_qualified_name,
                                       const char* identity,
                                       s_password& password,
                                       TlsResource* tls_resource);
 
   bool AuthenticateInboundConnection(JobControlRecord* jcr,
-                                     const char* what,
+                                     ConfigurationParser* my_config,
                                      const char* name,
                                      s_password& password,
                                      TlsResource* tls_resource);
@@ -265,6 +275,10 @@ class BareosSocket {
   void StopTimer() { StopBsockTimer(tid_); }
   void LockMutex();
   void UnlockMutex();
+  void InitBnetDump(std::string own_qualified_name);
+  void SetBnetDumpDestinationQualifiedName(
+      std::string destination_qualified_name);
+  bool IsBnetDumpEnabled() const { return bnet_dump_.get() != nullptr; }
 };
 
 /**

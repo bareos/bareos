@@ -218,12 +218,13 @@ class ConfigurationParser {
   bool omit_defaults_; /* Omit config variables with default values when dumping
                           the config */
 
-  int32_t r_first_;            /* First daemon resource type */
-  int32_t r_last_;             /* Last daemon resource type */
-  int32_t r_own_;              /* own resource type */
-  ResourceTable* resources_;   /* Pointer to table of permitted resources */
-  BareosResource** res_head_;  /* Pointer to defined resources */
-  mutable brwlock_t res_lock_; /* Resource lock */
+  int32_t r_first_;              /* First daemon resource type */
+  int32_t r_last_;               /* Last daemon resource type */
+  int32_t r_own_;                /* own resource type */
+  BareosResource* own_resource_; /* Pointer to own resource */
+  ResourceTable* resources_;     /* Pointer to table of permitted resources */
+  BareosResource** res_head_;    /* Pointer to defined resources */
+  mutable brwlock_t res_lock_;   /* Resource lock */
 
   SaveResourceCb_t SaveResourceCb_;
   DumpResourceCb_t DumpResourceCb_;
@@ -243,6 +244,7 @@ class ConfigurationParser {
                       BareosResource** res_head,
                       const char* config_default_filename,
                       const char* config_include_dir,
+                      void (*ParseConfigBeforeCb)(ConfigurationParser&),
                       void (*ParseConfigReadyCb)(ConfigurationParser&),
                       SaveResourceCb_t SaveResourceCb,
                       DumpResourceCb_t DumpResourceCb,
@@ -312,6 +314,7 @@ class ConfigurationParser {
       const std::string& r_code,
       const std::string& name,
       TlsPolicy& tls_policy_out) const;
+  std::string CreateOwnQualifiedNameForNetworkDump() const;
 
  private:
   ConfigurationParser(const ConfigurationParser&) = delete;
@@ -336,6 +339,7 @@ class ConfigurationParser {
   std::string used_config_path_;             /* Config file that is used. */
   std::unique_ptr<QualifiedResourceNameTypeConverter>
       qualified_resource_name_type_converter_;
+  ParseConfigBeforeCb_t ParseConfigBeforeCb_;
   ParseConfigReadyCb_t ParseConfigReadyCb_;
   bool parser_first_run_;
 

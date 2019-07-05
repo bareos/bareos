@@ -67,13 +67,23 @@ int QualifiedResourceNameTypeConverter::StringToResourceType(
 bool QualifiedResourceNameTypeConverter::ResourceToString(
     const std::string& name_of_resource,
     const int& r_type,
+    const std::string separator,
     std::string& str_out) const
 {
   std::string r_name = ResourceTypeToString(r_type);
   if (r_name.empty()) { return false; }
-  str_out =
-      r_name + AsciiControlCharacters::RecordSeparator() + name_of_resource;
+  str_out = r_name + separator + name_of_resource;
   return true;
+}
+
+
+bool QualifiedResourceNameTypeConverter::ResourceToString(
+    const std::string& name_of_resource,
+    const int& r_type,
+    std::string& str_out) const
+{
+  std::string separator(1, AsciiControlCharacters::RecordSeparator());
+  return ResourceToString(name_of_resource, r_type, separator, str_out);
 }
 
 bool QualifiedResourceNameTypeConverter::StringToResource(

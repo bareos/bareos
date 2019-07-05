@@ -523,7 +523,7 @@ static void MultiplyConfiguredDevices(ConfigurationParser& my_config)
   }
 }
 
-static void ConfigReadyCallback(ConfigurationParser& my_config)
+static void ConfigBeforeCallback(ConfigurationParser& my_config)
 {
   std::map<int, std::string> map{
       {R_DIRECTOR, "R_DIRECTOR"},
@@ -532,8 +532,13 @@ static void ConfigReadyCallback(ConfigurationParser& my_config)
       {R_STORAGE, "R_STORAGE"},
       {R_MSGS, "R_MSGS"},
       {R_DEVICE, "R_DEVICE"},
-      {R_AUTOCHANGER, "R_AUTOCHANGER"}};
+      {R_AUTOCHANGER, "R_AUTOCHANGER"},
+      {R_CLIENT, "R_CLIENT"}}; /* needed for network dump */
   my_config.InitializeQualifiedResourceNameTypeConverter(map);
+}
+
+static void ConfigReadyCallback(ConfigurationParser& my_config)
+{
   MultiplyConfiguredDevices(my_config);
 }
 
@@ -542,8 +547,8 @@ ConfigurationParser* InitSdConfig(const char* configfile, int exit_code)
   ConfigurationParser* config = new ConfigurationParser(
       configfile, nullptr, nullptr, InitResourceCb, ParseConfigCb, nullptr,
       exit_code, R_FIRST, R_LAST, resources, res_head,
-      default_config_filename.c_str(), "bareos-sd.d", ConfigReadyCallback,
-      SaveResource, DumpResource, FreeResource);
+      default_config_filename.c_str(), "bareos-sd.d", ConfigBeforeCallback,
+      ConfigReadyCallback, SaveResource, DumpResource, FreeResource);
   if (config) { config->r_own_ = R_STORAGE; }
   return config;
 }
@@ -556,6 +561,7 @@ bool ParseSdConfig(const char* configfile, int exit_code)
 
   if (retval) {
     me = (StorageResource*)my_config->GetNextRes(R_STORAGE, NULL);
+    my_config->own_resource_ = me;
     if (!me) {
       Emsg1(exit_code, 0,
             _("No Storage resource defined in %s. Cannot continue.\n"),

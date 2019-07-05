@@ -250,6 +250,21 @@ The following diagram shows the activity on a Bareos TCP server (i.e. a |dir| or
   :Handle client message;
   end
 
+Debugging
+---------
+
+Developers who want to debug the message flow can use the network dump feature. This feature is only for experts and developers and is **not intended for use in a production system**. Therefore no help will be provided on the command line. The arguments however can be mixed with the standard arguments.
+
+.. code-block:: shell-session
+   :caption: Network Dump Command Line Options
+
+   Usage: [bconsole|bareos-dir|bareos-fd|bareos-sd]
+          -z <filename>    name and path of the dumpfile
+                           (setting this switches on the network dump)
+          -zp              use the plantuml notation
+          -z <stackdepth>  for additional stacktrace, stackdepth=-1: print all frames,
+                                                      stackdepth=n:  print up to n frames
+
 .. _DeveloperGuideNetworkSequenceDiagrams:
 
 Network Sequence Diagrams

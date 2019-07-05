@@ -25,6 +25,7 @@
 #include "lib/parse_conf.h"
 #include "lib/resource_item.h"
 #include "lib/lex.h"
+#include "lib/qualified_resource_name_type_converter.h"
 
 ConfigParserStateMachine::ConfigParserStateMachine(
     const char* config_file_name,
@@ -233,6 +234,10 @@ ConfigParserStateMachine::ParserInitResource(int token)
     currently_parsed_resource_.allocated_resource_ =
         *resource_table->allocated_resource_;
     ASSERT(currently_parsed_resource_.allocated_resource_);
+
+    currently_parsed_resource_.allocated_resource_->rcode_str_ =
+        my_config_.GetQualifiedResourceNameTypeConverter()
+            ->ResourceTypeToString(resource_table->rcode);
 
     state = ParseState::kResource;
 

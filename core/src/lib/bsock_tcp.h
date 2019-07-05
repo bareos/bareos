@@ -25,7 +25,7 @@
 #include "lib/bsock.h"
 
 class BareosSocketTCP : public BareosSocket {
- private:
+ public:
   /*
    * the header of a Bareos packet is 32 bit long.
    * A value
@@ -34,6 +34,7 @@ class BareosSocketTCP : public BareosSocket {
    */
   static const int32_t header_length = sizeof(int32_t);
 
+ private:
   /*
    * max size of each single packet.
    * 1000000 is used by older version of Bareos/Bacula,
@@ -62,6 +63,7 @@ class BareosSocketTCP : public BareosSocket {
                     int keepalive_start,
                     int keepalive_interval);
   bool SendPacket(int32_t* hdr, int32_t pktsiz);
+  void DumpNetworkMessageToFile(const char* ptr, int nbytes);
 
  public:
   BareosSocketTCP();

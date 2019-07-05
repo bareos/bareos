@@ -27,6 +27,22 @@
 
 BStringList::BStringList() : std::vector<std::string>() { return; }
 
+BStringList::BStringList(const std::string& string_to_split,
+                         std::string string_separator)
+    : std::vector<std::string>()
+{
+  std::size_t find_pos = 0;
+  std::size_t start_pos = 0;
+
+  do {
+    find_pos = string_to_split.find(string_separator, start_pos);
+    std::string temp;
+    temp.assign(string_to_split, start_pos, find_pos - start_pos);
+    push_back(temp);
+    start_pos = find_pos + string_separator.size();
+  } while (find_pos != std::string::npos);
+}
+
 BStringList::BStringList(const std::string& string_to_split, char separator)
     : std::vector<std::string>()
 {
