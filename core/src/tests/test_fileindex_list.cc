@@ -52,14 +52,14 @@ TEST(fileindex_list, add_filendexes)
   AddFindex(&bsr, kJobId_1, 1);
   ASSERT_NE(bsr.fi, nullptr);
   EXPECT_EQ(bsr.JobId, kJobId_1);
-  EXPECT_EQ(bsr.fi->getRanges().size(), 1);
+  EXPECT_EQ(bsr.fi->GetRanges().size(), 1);
 
   AddFindex(&bsr, kJobId_2, 1);
   AddFindex(&bsr, kJobId_2, 3);
   ASSERT_NE(bsr.next, nullptr);
   EXPECT_EQ(bsr.next->JobId, kJobId_2);
   ASSERT_NE(bsr.next->fi, nullptr);
-  EXPECT_EQ(bsr.next->fi->getRanges().size(), 2);
+  EXPECT_EQ(bsr.next->fi->GetRanges().size(), 2);
 }
 
 template <typename F>

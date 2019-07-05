@@ -47,13 +47,13 @@ class RestoreBootstrapRecordFileIndex {
   std::vector<int32_t> fileIds_;
   bool allFiles_ = false;
   bool sorted_ = false;
-  void sort();
+  void Sort();
 
  public:
-  void add(int32_t findex);
-  void addAll();
-  std::vector<std::pair<int32_t, int32_t>> getRanges();
-  bool empty() const { return !allFiles_ && fileIds_.empty(); }
+  void Add(int32_t findex);
+  void AddAll();
+  std::vector<std::pair<int32_t, int32_t>> GetRanges();
+  bool Empty() const { return !allFiles_ && fileIds_.empty(); }
 };
 
 /**
@@ -61,7 +61,7 @@ class RestoreBootstrapRecordFileIndex {
  *  The restore bsr is a chain of BootStrapRecord records (linked by next).
  *  Each BootStrapRecord represents a single JobId, and within it, it
  *    contains a linked list of file indexes for that JobId.
- *    The CompleteBsr() routine, will then add all the volumes
+ *    The AddVolumeInformationToBsr() routine, will then add all the volumes
  *    on which the Job is stored to the BootStrapRecord.
  */
 struct RestoreBootstrapRecord {
@@ -75,8 +75,8 @@ struct RestoreBootstrapRecord {
       fi;                    /**< File indexes this JobId */
   char* fileregex = nullptr; /**< Only restore files matching regex */
 
-  RestoreBootstrapRecord() : RestoreBootstrapRecord(0) {}
-  RestoreBootstrapRecord(JobId_t JobId);
+  RestoreBootstrapRecord();
+  RestoreBootstrapRecord(JobId_t t_JobId);
   virtual ~RestoreBootstrapRecord();
   RestoreBootstrapRecord(const RestoreBootstrapRecord&) = delete;
   RestoreBootstrapRecord& operator=(const RestoreBootstrapRecord&) = delete;
@@ -95,7 +95,7 @@ struct bootstrap_info {
   char storage[MAX_NAME_LENGTH + 1];
 };
 
-bool CompleteBsr(UaContext* ua, RestoreBootstrapRecord* bsr);
+bool AddVolumeInformationToBsr(UaContext* ua, RestoreBootstrapRecord* bsr);
 uint32_t WriteBsrFile(UaContext* ua, RestoreContext& rx);
 void DisplayBsrInfo(UaContext* ua, RestoreContext& rx);
 uint32_t WriteBsr(UaContext* ua, RestoreContext& rx, std::string& buffer);

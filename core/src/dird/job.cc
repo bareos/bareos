@@ -1847,12 +1847,12 @@ int CreateRestoreBootstrapFile(JobControlRecord* jcr)
   rx.JobIds = (char*)"";
   rx.bsr->JobId = jcr->previous_jr.JobId;
   ua = new_ua_context(jcr);
-  if (!CompleteBsr(ua, rx.bsr.get())) {
+  if (!AddVolumeInformationToBsr(ua, rx.bsr.get())) {
     files = -1;
     goto bail_out;
   }
-  for (auto fi = 1; fi <= jcr->previous_jr.JobFiles; fi++) {
-    rx.bsr->fi->add(fi);
+  for (uint32_t fi = 1; fi <= jcr->previous_jr.JobFiles; fi++) {
+    rx.bsr->fi->Add(fi);
   }
   jcr->ExpectedFiles = WriteBsrFile(ua, rx);
   if (jcr->ExpectedFiles == 0) {

@@ -523,7 +523,7 @@ static bool CreateBootstrapFile(JobControlRecord* jcr, char* jobids)
     Jmsg(jcr, M_ERROR, 0, "%s", jcr->db_batch->strerror());
   }
 
-  CompleteBsr(ua, rx.bsr.get());
+  AddVolumeInformationToBsr(ua, rx.bsr.get());
   jcr->ExpectedFiles = WriteBsrFile(ua, rx);
   if (debug_level >= 10) {
     Dmsg1(000, "Found %d files to consolidate.\n", jcr->ExpectedFiles);

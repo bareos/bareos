@@ -225,8 +225,7 @@ bool RestoreCmd(UaContext* ua, const char* cmd)
   } else {
     if (rx.bsr->JobId) {
       char ed1[50];
-      if (!CompleteBsr(ua,
-                       rx.bsr.get())) { /* find Vol, SessId, SessTime from JobIds */
+      if (!AddVolumeInformationToBsr(ua, rx.bsr.get())) {
         ua->ErrorMsg(_(
             "Unable to construct a valid BootStrapRecord. Cannot continue.\n"));
         goto bail_out;
