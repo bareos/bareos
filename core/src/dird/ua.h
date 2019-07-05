@@ -215,7 +215,7 @@ struct RestoreContext {
   char* RegexWhere = nullptr;
   char* replace = nullptr;
   char* plugin_options = nullptr;
-  RestoreBootstrapRecord* bsr = nullptr;
+  std::unique_ptr<RestoreBootstrapRecord> bsr;
   POOLMEM* fname = nullptr; /**< Filename only */
   POOLMEM* path = nullptr;  /**< Path only */
   POOLMEM* query = nullptr;

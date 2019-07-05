@@ -42,10 +42,18 @@ namespace directordaemon {
 /**
  * FileIndex entry in restore bootstrap record
  */
-struct RestoreBootstrapRecordFileIndex {
-  RestoreBootstrapRecordFileIndex* next;
-  int32_t findex;
-  int32_t findex2;
+class RestoreBootstrapRecordFileIndex {
+ private:
+  std::vector<int32_t> fileIds_;
+  bool allFiles_ = false;
+  bool sorted_ = false;
+  void Sort();
+
+ public:
+  void Add(int32_t findex);
+  void AddAll();
+  std::vector<std::pair<int32_t, int32_t>> GetRanges();
+  bool Empty() const { return !allFiles_ && fileIds_.empty(); }
 };
 
 /**
@@ -53,18 +61,27 @@ struct RestoreBootstrapRecordFileIndex {
  *  The restore bsr is a chain of BootStrapRecord records (linked by next).
  *  Each BootStrapRecord represents a single JobId, and within it, it
  *    contains a linked list of file indexes for that JobId.
- *    The CompleteBsr() routine, will then add all the volumes
+ *    The AddVolumeInformationToBsr() routine, will then add all the volumes
  *    on which the Job is stored to the BootStrapRecord.
  */
 struct RestoreBootstrapRecord {
-  RestoreBootstrapRecord* next = nullptr; /**< next JobId */
-  JobId_t JobId = 0;                      /**< JobId this bsr */
+  std::unique_ptr<RestoreBootstrapRecord> next; /**< next JobId */
+  JobId_t JobId = 0;                            /**< JobId this bsr */
   uint32_t VolSessionId = 0;
   uint32_t VolSessionTime = 0;
   int VolCount = 0;                      /**< Volume parameter count */
   VolumeParameters* VolParams = nullptr; /**< Volume, start/end file/blocks */
-  RestoreBootstrapRecordFileIndex* fi = nullptr; /**< File indexes this JobId */
+  std::unique_ptr<RestoreBootstrapRecordFileIndex>
+      fi;                    /**< File indexes this JobId */
   char* fileregex = nullptr; /**< Only restore files matching regex */
+
+  RestoreBootstrapRecord();
+  RestoreBootstrapRecord(JobId_t t_JobId);
+  virtual ~RestoreBootstrapRecord();
+  RestoreBootstrapRecord(const RestoreBootstrapRecord&) = delete;
+  RestoreBootstrapRecord& operator=(const RestoreBootstrapRecord&) = delete;
+  RestoreBootstrapRecord(RestoreBootstrapRecord&&) = delete;
+  RestoreBootstrapRecord& operator=(RestoreBootstrapRecord&&) = delete;
 };
 
 class UaContext;
@@ -78,14 +95,10 @@ struct bootstrap_info {
   char storage[MAX_NAME_LENGTH + 1];
 };
 
-RestoreBootstrapRecord* new_bsr();
-namespace directordaemon {
-void FreeBsr(RestoreBootstrapRecord* bsr);
-}  // namespace directordaemon
-bool CompleteBsr(UaContext* ua, RestoreBootstrapRecord* bsr);
+bool AddVolumeInformationToBsr(UaContext* ua, RestoreBootstrapRecord* bsr);
 uint32_t WriteBsrFile(UaContext* ua, RestoreContext& rx);
 void DisplayBsrInfo(UaContext* ua, RestoreContext& rx);
-uint32_t WriteBsr(UaContext* ua, RestoreContext& rx, PoolMem* buffer);
+uint32_t WriteBsr(UaContext* ua, RestoreContext& rx, std::string& buffer);
 void AddFindex(RestoreBootstrapRecord* bsr, uint32_t JobId, int32_t findex);
 void AddFindexAll(RestoreBootstrapRecord* bsr, uint32_t JobId);
 RestoreBootstrapRecordFileIndex* new_findex();
@@ -99,7 +112,7 @@ void CloseBootstrapFile(bootstrap_info& info);
 uint32_t write_findex(RestoreBootstrapRecordFileIndex* fi,
                       int32_t FirstIndex,
                       int32_t LastIndex,
-                      PoolMem* buffer);
+                      std::string& buffer);
 
 } /* namespace directordaemon */
 #endif  // BAREOS_DIRD_BSR_H_

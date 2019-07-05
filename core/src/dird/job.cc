@@ -67,7 +67,7 @@
 #include "lib/tree.h"
 #include "lib/util.h"
 #include "lib/watchdog.h"
-
+#include "include/make_unique.h"
 
 namespace directordaemon {
 
@@ -1843,30 +1843,30 @@ int CreateRestoreBootstrapFile(JobControlRecord* jcr)
   UaContext* ua;
   int files;
 
-  rx.bsr = new_bsr();
+  rx.bsr = std::make_unique<RestoreBootstrapRecord>();
   rx.JobIds = (char*)"";
   rx.bsr->JobId = jcr->previous_jr.JobId;
   ua = new_ua_context(jcr);
-  if (!CompleteBsr(ua, rx.bsr)) {
+  if (!AddVolumeInformationToBsr(ua, rx.bsr.get())) {
     files = -1;
     goto bail_out;
   }
-  rx.bsr->fi = new_findex();
-  rx.bsr->fi->findex = 1;
-  rx.bsr->fi->findex2 = jcr->previous_jr.JobFiles;
+  for (uint32_t fi = 1; fi <= jcr->previous_jr.JobFiles; fi++) {
+    rx.bsr->fi->Add(fi);
+  }
   jcr->ExpectedFiles = WriteBsrFile(ua, rx);
   if (jcr->ExpectedFiles == 0) {
     files = 0;
     goto bail_out;
   }
   FreeUaContext(ua);
-  directordaemon::FreeBsr(rx.bsr);
+  rx.bsr.reset(nullptr);
   jcr->needs_sd = true;
   return jcr->ExpectedFiles;
 
 bail_out:
   FreeUaContext(ua);
-  directordaemon::FreeBsr(rx.bsr);
+  rx.bsr.reset(nullptr);
   return files;
 }
 

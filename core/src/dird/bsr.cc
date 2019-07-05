@@ -38,34 +38,74 @@
 #include "lib/berrno.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
+#include "include/make_unique.h"
+
+#include <algorithm>
 
 namespace directordaemon {
 
 #define UA_CMD_SIZE 1000
 
-/* Forward referenced functions */
-
-/**
- * Create new FileIndex entry for BootStrapRecord
- */
-RestoreBootstrapRecordFileIndex* new_findex()
+RestoreBootstrapRecord::RestoreBootstrapRecord()
 {
-  RestoreBootstrapRecordFileIndex* fi =
-      (RestoreBootstrapRecordFileIndex*)malloc(
-          sizeof(RestoreBootstrapRecordFileIndex));
-  memset(fi, 0, sizeof(RestoreBootstrapRecordFileIndex));
-  return fi;
+  fi = std::make_unique<RestoreBootstrapRecordFileIndex>();
 }
 
-/**
- * Free all BootStrapRecord FileIndex entries
- */
-static inline void FreeFindex(RestoreBootstrapRecordFileIndex* fi)
+RestoreBootstrapRecord::RestoreBootstrapRecord(JobId_t t_JobId)
+    : RestoreBootstrapRecord::RestoreBootstrapRecord()
 {
-  RestoreBootstrapRecordFileIndex* next;
-  for (; fi; fi = next) {
-    next = fi->next;
-    free(fi);
+  JobId = t_JobId;
+}
+
+RestoreBootstrapRecord::~RestoreBootstrapRecord()
+{
+  if (VolParams) { free(VolParams); }
+  if (fileregex) { free(fileregex); }
+}
+
+void RestoreBootstrapRecordFileIndex::Add(int32_t findex)
+{
+  if (findex == 0) { return; /* probably a dummy directory */ }
+  fileIds_.push_back(findex);
+  sorted_ = false;
+}
+
+void RestoreBootstrapRecordFileIndex::AddAll() { allFiles_ = true; }
+void RestoreBootstrapRecordFileIndex::Sort()
+{
+  if (sorted_) return;
+
+  if (!std::is_sorted(fileIds_.begin(), fileIds_.end())) {
+    std::sort(fileIds_.begin(), fileIds_.end());
+  }
+  sorted_ = true;
+}
+
+std::vector<std::pair<int32_t, int32_t>>
+RestoreBootstrapRecordFileIndex::GetRanges()
+{
+  if (allFiles_) {
+    return std::vector<std::pair<int32_t, int32_t>>{
+        std::make_pair(1, INT32_MAX)};
+  } else {
+    Sort();
+
+    auto ranges = std::vector<std::pair<int32_t, int32_t>>{};
+    auto begin = int32_t{0};
+    auto end = int32_t{0};
+
+    for (auto fileId : fileIds_) {
+      if (begin == 0) {
+        begin = end = fileId;
+      } else if (fileId > end + 1) {
+        ranges.push_back(std::make_pair(begin, end));
+        begin = end = fileId;
+      } else {
+        end = fileId;
+      }
+    }
+    ranges.push_back(std::make_pair(begin, end));
+    return ranges;
   }
 }
 
@@ -87,7 +127,7 @@ static bool GetStorageDevice(char* device, char* storage)
 /**
  * Print a BootStrapRecord entry into a memory buffer.
  */
-static void PrintBsrItem(PoolMem* pool_buf, const char* fmt, ...)
+static void PrintBsrItem(std::string& buffer, const char* fmt, ...)
 {
   va_list arg_ptr;
   int len, maxlen;
@@ -105,7 +145,7 @@ static void PrintBsrItem(PoolMem* pool_buf, const char* fmt, ...)
     break;
   }
 
-  pool_buf->strcat(item.c_str());
+  buffer += item.c_str();
 }
 
 /**
@@ -121,28 +161,31 @@ static void PrintBsrItem(PoolMem* pool_buf, const char* fmt, ...)
 uint32_t write_findex(RestoreBootstrapRecordFileIndex* fi,
                       int32_t FirstIndex,
                       int32_t LastIndex,
-                      PoolMem* buffer)
+                      std::string& buffer)
 {
-  int32_t findex, findex2;
-  uint32_t count = 0;
+  auto count = uint32_t{0};
+  auto bsrItems = std::string{};
 
-  while (fi) {
-    if ((fi->findex >= FirstIndex && fi->findex <= LastIndex) ||
-        (fi->findex2 >= FirstIndex && fi->findex2 <= LastIndex) ||
-        (fi->findex < FirstIndex && fi->findex2 > LastIndex)) {
-      findex = fi->findex < FirstIndex ? FirstIndex : fi->findex;
-      findex2 = fi->findex2 > LastIndex ? LastIndex : fi->findex2;
-      if (findex == findex2) {
-        PrintBsrItem(buffer, "FileIndex=%d\n", findex);
+  for (auto& range : fi->GetRanges()) {
+    auto first = range.first;
+    auto last = range.second;
+    if ((first >= FirstIndex && first <= LastIndex) ||
+        (last >= FirstIndex && last <= LastIndex) ||
+        (first < FirstIndex && last > LastIndex)) {
+      first = std::max(first, FirstIndex);
+      last = std::min(last, LastIndex);
+
+      if (first == last) {
+        bsrItems += "FileIndex=" + std::to_string(first) + "\n";
         count++;
       } else {
-        PrintBsrItem(buffer, "FileIndex=%d-%d\n", findex, findex2);
-        count += findex2 - findex + 1;
+        bsrItems += "FileIndex=" + std::to_string(first) + "-" +
+                    std::to_string(last) + "\n";
+        count += last - first + 1;
       }
     }
-    fi = fi->next;
   }
-
+  buffer += bsrItems.c_str();
   return count;
 }
 
@@ -154,60 +197,26 @@ static inline bool is_volume_selected(RestoreBootstrapRecordFileIndex* fi,
                                       int32_t FirstIndex,
                                       int32_t LastIndex)
 {
-  while (fi) {
-    if ((fi->findex >= FirstIndex && fi->findex <= LastIndex) ||
-        (fi->findex2 >= FirstIndex && fi->findex2 <= LastIndex) ||
-        (fi->findex < FirstIndex && fi->findex2 > LastIndex)) {
+  for (auto range : fi->GetRanges()) {
+    auto first = range.first;
+    auto last = range.second;
+    if ((first >= FirstIndex && first <= LastIndex) ||
+        (last >= FirstIndex && last <= LastIndex) ||
+        (first < FirstIndex && last > LastIndex)) {
       return true;
     }
-    fi = fi->next;
   }
   return false;
 }
 
-/**
- * Create a new bootstrap record
- */
-RestoreBootstrapRecord* new_bsr()
-{
-  RestoreBootstrapRecord* bsr =
-      (RestoreBootstrapRecord*)malloc(sizeof(RestoreBootstrapRecord));
-
-  memset(bsr, 0, sizeof(RestoreBootstrapRecord));
-  return bsr;
-}
-
-namespace directordaemon {
-
-/**
- * Free the entire BootStrapRecord
- */
-void FreeBsr(RestoreBootstrapRecord* bsr)
-{
-  RestoreBootstrapRecord* next;
-
-  while (bsr) {
-    FreeFindex(bsr->fi);
-
-    if (bsr->VolParams) { free(bsr->VolParams); }
-
-    if (bsr->fileregex) { free(bsr->fileregex); }
-
-    next = bsr->next;
-    free(bsr);
-    bsr = next;
-  }
-}
-
-}  // namespace directordaemon
 
 /**
  * Complete the BootStrapRecord by filling in the VolumeName and
  * VolSessionId and VolSessionTime using the JobId
  */
-bool CompleteBsr(UaContext* ua, RestoreBootstrapRecord* bsr)
+bool AddVolumeInformationToBsr(UaContext* ua, RestoreBootstrapRecord* bsr)
 {
-  for (; bsr; bsr = bsr->next) {
+  for (; bsr; bsr = bsr->next.get()) {
     JobDbRecord jr;
     jr.JobId = bsr->JobId;
     if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
@@ -264,7 +273,7 @@ uint32_t WriteBsrFile(UaContext* ua, RestoreContext& rx)
   bool err;
   uint32_t count = 0;
   PoolMem fname(PM_MESSAGE);
-  PoolMem buffer(PM_MESSAGE);
+  std::string buffer;
 
   MakeUniqueRestoreFilename(ua, fname);
   fd = fopen(fname.c_str(), "w+b");
@@ -278,7 +287,7 @@ uint32_t WriteBsrFile(UaContext* ua, RestoreContext& rx)
   /*
    * Write them to a buffer.
    */
-  count = WriteBsr(ua, rx, &buffer);
+  count = WriteBsr(ua, rx, buffer);
 
   /*
    * Write the buffer to file
@@ -313,7 +322,7 @@ static void DisplayVolInfo(UaContext* ua, RestoreContext& rx, JobId_t JobId)
   PoolMem volmsg(PM_MESSAGE);
   char Device[MAX_NAME_LENGTH];
 
-  for (bsr = rx.bsr; bsr; bsr = bsr->next) {
+  for (bsr = rx.bsr.get(); bsr; bsr = bsr->next.get()) {
     if (JobId && JobId != bsr->JobId) { continue; }
 
     for (i = 0; i < bsr->VolCount; i++) {
@@ -391,7 +400,7 @@ void DisplayBsrInfo(UaContext* ua, RestoreContext& rx)
 static uint32_t write_bsr_item(RestoreBootstrapRecord* bsr,
                                UaContext* ua,
                                RestoreContext& rx,
-                               PoolMem* buffer,
+                               std::string& buffer,
                                bool& first,
                                uint32_t& LastIndex)
 {
@@ -406,7 +415,7 @@ static uint32_t write_bsr_item(RestoreBootstrapRecord* bsr,
    * VolCount is the number of JobMedia records.
    */
   for (i = 0; i < bsr->VolCount; i++) {
-    if (!is_volume_selected(bsr->fi, bsr->VolParams[i].FirstIndex,
+    if (!is_volume_selected(bsr->fi.get(), bsr->VolParams[i].FirstIndex,
                             bsr->VolParams[i].LastIndex)) {
       bsr->VolParams[i].VolumeName[0] = 0; /* zap VolumeName */
       continue;
@@ -438,10 +447,8 @@ static uint32_t write_bsr_item(RestoreBootstrapRecord* bsr,
     PrintBsrItem(buffer, "VolAddr=%s-%s\n",
                  edit_uint64(bsr->VolParams[i].StartAddr, ed1),
                  edit_uint64(bsr->VolParams[i].EndAddr, ed2));
-    //    Dmsg2(100, "bsr VolParam FI=%u LI=%u\n",
-    //          bsr->VolParams[i].FirstIndex, bsr->VolParams[i].LastIndex);
 
-    count = write_findex(bsr->fi, bsr->VolParams[i].FirstIndex,
+    count = write_findex(bsr->fi.get(), bsr->VolParams[i].FirstIndex,
                          bsr->VolParams[i].LastIndex, buffer);
     if (count) { PrintBsrItem(buffer, "Count=%u\n", count); }
 
@@ -469,7 +476,7 @@ static uint32_t write_bsr_item(RestoreBootstrapRecord* bsr,
  * The bsrs must be written out in the order the JobIds
  * are found in the jobid list.
  */
-uint32_t WriteBsr(UaContext* ua, RestoreContext& rx, PoolMem* buffer)
+uint32_t WriteBsr(UaContext* ua, RestoreContext& rx, std::string& buffer)
 {
   bool first = true;
   uint32_t LastIndex = 0;
@@ -479,14 +486,14 @@ uint32_t WriteBsr(UaContext* ua, RestoreContext& rx, PoolMem* buffer)
   RestoreBootstrapRecord* bsr;
 
   if (*rx.JobIds == 0) {
-    for (bsr = rx.bsr; bsr; bsr = bsr->next) {
+    for (bsr = rx.bsr.get(); bsr; bsr = bsr->next.get()) {
       total_count += write_bsr_item(bsr, ua, rx, buffer, first, LastIndex);
     }
     return total_count;
   }
 
   for (p = rx.JobIds; GetNextJobidFromList(&p, &JobId) > 0;) {
-    for (bsr = rx.bsr; bsr; bsr = bsr->next) {
+    for (bsr = rx.bsr.get(); bsr; bsr = bsr->next.get()) {
       if (JobId == bsr->JobId) {
         total_count += write_bsr_item(bsr, ua, rx, buffer, first, LastIndex);
       }
@@ -498,137 +505,47 @@ uint32_t WriteBsr(UaContext* ua, RestoreContext& rx, PoolMem* buffer)
 
 void PrintBsr(UaContext* ua, RestoreContext& rx)
 {
-  PoolMem buffer(PM_MESSAGE);
+  std::string buffer;
 
-  WriteBsr(ua, rx, &buffer);
+  WriteBsr(ua, rx, buffer);
   fprintf(stdout, "%s", buffer.c_str());
+}
+
+/**
+ * Find the right bsr for the supplied jobid, creating it if it doesn't yet
+ * exist.
+ */
+static RestoreBootstrapRecord* GetBsrForJobId(RestoreBootstrapRecord* bsr,
+                                              JobId_t t_JobId)
+{
+  if (bsr->fi->Empty()) { /* if no FI yet, jobid is not yet set */
+    bsr->JobId = t_JobId;
+    return bsr;
+  }
+  if (bsr->JobId != t_JobId) {
+    auto found = false;
+    do {
+      if (!bsr->next.get()) {
+        bsr->next = std::make_unique<RestoreBootstrapRecord>(t_JobId);
+        found = true;
+      } else if (bsr->next.get()->JobId == t_JobId) {
+        found = true;
+      }
+      bsr = bsr->next.get();
+    } while (!found);
+  }
+  return bsr;
 }
 
 /**
  * Add a FileIndex to the list of BootStrap records.
  * Here we are only dealing with JobId's and the FileIndexes
  * associated with those JobIds.
- *
- * We expect that JobId, FileIndex are sorted ascending.
  */
 void AddFindex(RestoreBootstrapRecord* bsr, uint32_t JobId, int32_t findex)
 {
-  RestoreBootstrapRecord* nbsr;
-  RestoreBootstrapRecordFileIndex *fi, *lfi;
-
   if (findex == 0) { return; /* probably a dummy directory */ }
-
-  if (bsr->fi == NULL) { /* if no FI add one */
-    /*
-     * This is the first FileIndex item in the chain
-     */
-    bsr->fi = new_findex();
-    bsr->JobId = JobId;
-    bsr->fi->findex = findex;
-    bsr->fi->findex2 = findex;
-    return;
-  }
-
-  /*
-   * Walk down list of bsrs until we find the JobId
-   */
-  if (bsr->JobId != JobId) {
-    for (nbsr = bsr->next; nbsr; nbsr = nbsr->next) {
-      if (nbsr->JobId == JobId) {
-        bsr = nbsr;
-        break;
-      }
-    }
-
-    if (!nbsr) { /* Must add new JobId */
-      /*
-       * Add new JobId at end of chain
-       */
-      for (nbsr = bsr; nbsr->next; nbsr = nbsr->next) {}
-      nbsr->next = new_bsr();
-      nbsr->next->JobId = JobId;
-      nbsr->next->fi = new_findex();
-      nbsr->next->fi->findex = findex;
-      nbsr->next->fi->findex2 = findex;
-      return;
-    }
-  }
-
-  /*
-   * At this point, bsr points to bsr containing this JobId,
-   *  and we are sure that there is at least one fi record.
-   */
-  lfi = fi = bsr->fi;
-
-  /*
-   * Check if this findex is a duplicate.
-   */
-  if (findex >= fi->findex && findex <= fi->findex2) { return; }
-
-  /*
-   * Check if this findex is smaller than first item
-   */
-  if (findex < fi->findex) {
-    if ((findex + 1) == fi->findex) {
-      fi->findex = findex; /* extend down */
-      return;
-    }
-    fi = new_findex(); /* yes, insert before first item */
-    fi->findex = findex;
-    fi->findex2 = findex;
-    fi->next = lfi;
-    bsr->fi = fi;
-    return;
-  }
-
-  /*
-   * Walk down fi chain and find where to insert insert new FileIndex
-   */
-  while (fi) {
-    /*
-     * Check if this findex is a duplicate.
-     */
-    if (findex >= fi->findex && findex <= fi->findex2) { return; }
-
-    if (findex == (fi->findex2 + 1)) { /* extend up */
-      RestoreBootstrapRecordFileIndex* nfi;
-      fi->findex2 = findex;
-
-      /*
-       * If the following record contains one higher, merge its
-       * file index by extending it up.
-       */
-      if (fi->next && ((findex + 1) == fi->next->findex)) {
-        nfi = fi->next;
-        fi->findex2 = nfi->findex2;
-        fi->next = nfi->next;
-        free(nfi);
-      }
-      return;
-    }
-
-    if (findex < fi->findex) { /* add before */
-      if ((findex + 1) == fi->findex) {
-        fi->findex = findex;
-        return;
-      }
-      break;
-    }
-
-    lfi = fi;
-    fi = fi->next;
-  }
-
-  /*
-   * Add to last place found
-   */
-  fi = new_findex();
-  fi->findex = findex;
-  fi->findex2 = findex;
-  fi->next = lfi->next;
-  lfi->next = fi;
-
-  return;
+  GetBsrForJobId(bsr, JobId)->fi->Add(findex);
 }
 
 /**
@@ -638,60 +555,7 @@ void AddFindex(RestoreBootstrapRecord* bsr, uint32_t JobId, int32_t findex)
  */
 void AddFindexAll(RestoreBootstrapRecord* bsr, uint32_t JobId)
 {
-  RestoreBootstrapRecord* nbsr;
-  RestoreBootstrapRecordFileIndex* fi;
-
-  if (bsr->fi == NULL) { /* if no FI add one */
-    /*
-     * This is the first FileIndex item in the chain
-     */
-    bsr->fi = new_findex();
-    bsr->JobId = JobId;
-    bsr->fi->findex = 1;
-    bsr->fi->findex2 = INT32_MAX;
-    return;
-  }
-
-  /*
-   * Walk down list of bsrs until we find the JobId
-   */
-  if (bsr->JobId != JobId) {
-    for (nbsr = bsr->next; nbsr; nbsr = nbsr->next) {
-      if (nbsr->JobId == JobId) {
-        bsr = nbsr;
-        break;
-      }
-    }
-
-    if (!nbsr) { /* Must add new JobId */
-      /*
-       * Add new JobId at end of chain
-       */
-      for (nbsr = bsr; nbsr->next; nbsr = nbsr->next) {}
-
-      nbsr->next = new_bsr();
-      nbsr->next->JobId = JobId;
-
-      /*
-       * If we use regexp to restore, set it for each jobid
-       */
-      if (bsr->fileregex) { nbsr->next->fileregex = strdup(bsr->fileregex); }
-
-      nbsr->next->fi = new_findex();
-      nbsr->next->fi->findex = 1;
-      nbsr->next->fi->findex2 = INT32_MAX;
-      return;
-    }
-  }
-
-  /*
-   * At this point, bsr points to bsr containing this JobId,
-   * and we are sure that there is at least one fi record.
-   */
-  fi = bsr->fi;
-  fi->findex = 1;
-  fi->findex2 = INT32_MAX;
-  return;
+  GetBsrForJobId(bsr, JobId)->fi->AddAll();
 }
 
 /**

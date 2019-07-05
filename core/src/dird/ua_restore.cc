@@ -45,6 +45,7 @@
 #include "lib/edit.h"
 #include "lib/berrno.h"
 #include "lib/parse_conf.h"
+#include "include/make_unique.h"
 
 namespace directordaemon {
 
@@ -109,7 +110,7 @@ bool RestoreCmd(UaContext* ua, const char* cmd)
   rx.JobIds[0] = 0;
   rx.BaseJobIds = GetPoolMemory(PM_FNAME);
   rx.query = GetPoolMemory(PM_FNAME);
-  rx.bsr = new_bsr();
+  rx.bsr = std::make_unique<RestoreBootstrapRecord>();
 
   i = FindArgWithValue(ua, "comment");
   if (i >= 0) {
@@ -224,8 +225,7 @@ bool RestoreCmd(UaContext* ua, const char* cmd)
   } else {
     if (rx.bsr->JobId) {
       char ed1[50];
-      if (!CompleteBsr(ua,
-                       rx.bsr)) { /* find Vol, SessId, SessTime from JobIds */
+      if (!AddVolumeInformationToBsr(ua, rx.bsr.get())) {
         ua->ErrorMsg(_(
             "Unable to construct a valid BootStrapRecord. Cannot continue.\n"));
         goto bail_out;
@@ -360,8 +360,7 @@ static void GetAndDisplayBasejobs(UaContext* ua, RestoreContext* rx)
 
 static void free_rx(RestoreContext* rx)
 {
-  directordaemon::FreeBsr(rx->bsr);
-  rx->bsr = NULL;
+  rx->bsr.reset(nullptr);
 
   if (rx->ClientName) {
     free(rx->ClientName);
@@ -1089,7 +1088,7 @@ static void AddDeltaListFindex(RestoreContext* rx, struct delta_list* lst)
 {
   if (lst == NULL) { return; }
   if (lst->next) { AddDeltaListFindex(rx, lst->next); }
-  AddFindex(rx->bsr, lst->JobId, lst->FileIndex);
+  AddFindex(rx->bsr.get(), lst->JobId, lst->FileIndex);
 }
 
 static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
@@ -1181,7 +1180,7 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
       last_JobId = 0;
       for (p = rx->JobIds; GetNextJobidFromList(&p, &JobId) > 0;) {
         if (JobId == last_JobId) { continue; /* eliminate duplicate JobIds */ }
-        AddFindexAll(rx->bsr, JobId);
+        AddFindexAll(rx->bsr.get(), JobId);
       }
     }
   } else {
@@ -1215,7 +1214,7 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
                 node->type, node->FileIndex);
           /* TODO: optimize bsr insertion when jobid are non sorted */
           AddDeltaListFindex(rx, node->delta_list);
-          AddFindex(rx->bsr, node->JobId, node->FileIndex);
+          AddFindex(rx->bsr.get(), node->JobId, node->FileIndex);
           if (node->extract && node->type != TN_NEWDIR) {
             rx->selected_files++; /* count only saved files */
           }
@@ -1482,7 +1481,7 @@ static int JobidFileindexHandler(void* ctx, int num_fields, char** row)
 
   Dmsg2(200, "JobId=%s FileIndex=%s\n", row[0], row[1]);
   rx->JobId = str_to_int64(row[0]);
-  AddFindex(rx->bsr, rx->JobId, str_to_int64(row[1]));
+  AddFindex(rx->bsr.get(), rx->JobId, str_to_int64(row[1]));
   rx->found = true;
   rx->selected_files++;
 
