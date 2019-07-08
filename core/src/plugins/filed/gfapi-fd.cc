@@ -163,7 +163,6 @@ enum plugin_argument_type
   argument_none,
   argument_volume_spec,
   argument_snapdir,
-  argument_basedir,
   argument_gf_file_list
 };
 
@@ -175,7 +174,6 @@ struct plugin_argument {
 static plugin_argument plugin_arguments[] = {
     {"volume", argument_volume_spec},
     {"snapdir", argument_snapdir},
-    {"basedir", argument_basedir},
     {"gffilelist", argument_gf_file_list},
     {NULL, argument_none}};
 
@@ -417,8 +415,6 @@ static bRC freePlugin(bpContext* ctx)
   FreePoolMemory(p_ctx->xattr_list);
   FreePoolMemory(p_ctx->link_target);
   FreePoolMemory(p_ctx->next_filename);
-
-  if (p_ctx->basedir) { free(p_ctx->basedir); }
 
   if (p_ctx->snapdir) { free(p_ctx->snapdir); }
 
@@ -1194,9 +1190,6 @@ static bRC parse_plugin_definition(bpContext* ctx, void* value)
           case argument_snapdir:
             str_destination = &p_ctx->snapdir;
             break;
-          case argument_basedir:
-            str_destination = &p_ctx->basedir;
-            break;
           case argument_gf_file_list:
             str_destination = &p_ctx->gf_file_list;
             break;
@@ -1439,11 +1432,19 @@ static inline bool parse_gfapi_devicename(char* devicename,
 
       /*
        * See if there is a dir specified.
+       * As we use an unix socket, we need to check if we are not using the
+       * path specified for the unix socket.
+       * It can happen if there is no subdirectory in the URI
        */
-      bp = strchr(bp, '/');
-      if (bp) {
+      char *before_parameter = strchr(bp, '?');
+      char *before_dir = strchr(bp, '/');
+
+      if (before_dir && (!before_parameter || before_parameter > before_dir)) {
+        bp = before_dir;
         *bp++ = '\0';
         *dir = bp;
+      } else {
+        *dir = nullptr;
       }
     }
   } else {
