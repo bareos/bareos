@@ -1,0 +1,66 @@
+.. uml::
+  :caption: Network Sequence of Migration of a Volume (overview)
+
+  @startuml
+
+  participant dir as "Director"
+  participant sd as "Read Storage Daemon"
+  participant sd2 as "Write Storage Daemon"
+
+  dir <-> sd: Handshake
+  dir <-> sd2: Handshake
+
+  dir  -> sd: Job information
+  dir  -> sd: Bootstrap information
+  dir  -> sd: Request secure erase command
+
+  dir  -> sd2: Job information
+  dir  -> sd2: Bootstrap information
+  dir  -> sd2: Request secure erase command
+  dir  -> sd2: Storage and device commands
+  dir <-  sd2: Request catalog: Find media
+
+  dir  -> sd: Replicate command
+
+  sd  <-> sd2: Handshake
+  dir  -> sd: run
+  dir <-  sd2: Job backup start and status: 'R' (JS_RUNNING, "Running")
+
+  dir <-  sd: Request catalog: Get volume info
+  dir <-  sd: Status: 'R' (JS_RUNNING, "Running")
+
+  dir <-  sd: 2 Jobmessage: "Connected" and "Ready"
+
+  sd   -> sd2: start replicate
+  sd  <-  sd2: replicate ticket
+
+  dir <-  sd2: Request catalog "Get volume info" and "Update media"
+
+  dir <-  sd: Jobmessage: "Forward spacing volume"
+
+  sd   -> sd2: Filename and metadata
+  dir <-  sd2: Catalog update: File attributes
+  sd   -> sd2: File and metadata
+
+  dir <-  sd: 2 Jobmessages: "End of volume", "End of all volumes"
+  dir <-  sd2: Catalog update: File attributes
+
+  dir <-  sd2: Releasing device
+  dir <-  sd2: Catalog requests: "Create job media", "Update media"
+  dir <-  sd2: Status: 'T' (Job terminated normally)
+
+  sd  <-  sd2: Termination message
+  dir <-  sd: Jobmessage: "Releasing"
+  dir <-  sd2: Catalog request: Update media
+
+  dir <-  sd2: Termination message
+  dir <-  sd2: Termination message
+
+  dir <-  sd: Status: 'R' (JS_RUNNING, "Running")
+  dir <-  sd: Status: 'T' (Job terminated normally)
+
+  dir <-  sd: Termination message
+  dir <-  sd: Termination message
+
+  @enduml
+

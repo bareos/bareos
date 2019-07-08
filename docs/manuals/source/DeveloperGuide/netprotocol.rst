@@ -275,10 +275,10 @@ This chapter contains diagrams of the network traffic for the most common jobs. 
 Backup of a Single File
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Comprehensive Diagram
-^^^^^^^^^^^^^^^^^^^^^
+Overview
+^^^^^^^^
 
-.. uml:: netprotocol/backup_of_one_file_comprehensive.puml
+.. uml:: netprotocol/backup_of_one_file_overview.puml
 
 Detailed Diagram
 ^^^^^^^^^^^^^^^^
@@ -288,13 +288,26 @@ Detailed Diagram
 Restore of a Single File
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Comprehensive Diagram
-^^^^^^^^^^^^^^^^^^^^^
+Overview
+^^^^^^^^
 
-.. uml:: netprotocol/restore_of_one_file_comprehensive.puml
+.. uml:: netprotocol/restore_of_one_file_overview.puml
 
 Detailed Diagram
 ^^^^^^^^^^^^^^^^
 
 .. uml:: netprotocol/restore_of_one_file.puml
+
+Migration of a Single Volume
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Overview
+^^^^^^^^
+
+.. uml:: netprotocol/migration_of_one_volume_overview.puml
+
+Detailed Diagram
+^^^^^^^^^^^^^^^^
+
+.. uml:: netprotocol/migration_of_one_volume.puml
 

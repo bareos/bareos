@@ -1,0 +1,132 @@
+.. uml::
+  :caption: Network Sequence of a Migration of a Single Volume
+
+  @startuml
+
+  participant dir as "Director"
+  participant sd as "Storage Daemon"
+  participant fd as "File Daemon"
+
+dir -> sd: (  37) Hello Director 127.0.0.1-dir calling \n
+sd -> dir: (  95) auth cram-md5 <313919589.1561639169@127.0.0.1-sd> ssl=1 qualified-name=R_STORAGE::127.0.0.1-sd \n
+dir -> sd: (  23) jBE6c4taR7Ap++/m5/ARfD\n
+sd -> dir: (  13) 1000 OK auth \n
+dir -> sd: (  98) auth cram-md5 <367075617.1561639169@127.0.0.1-dir> ssl=1 qualified-name=R_DIRECTOR::127.0.0.1-dir \n
+sd -> dir: (  23) N1/Vd8Bv68BBD7/Eq6/+1A\n
+dir -> sd: (  13) 1000 OK auth \n
+sd -> dir: (  14) 3000 OK Hello \n
+dir -> sd2: (  37) Hello Director 127.0.0.1-dir calling \n
+sd2 -> dir: (  98) auth cram-md5 <1212840149.1561639169@127.0.0.1-sd2> ssl=1 qualified-name=R_STORAGE::127.0.0.1-sd\n
+dir -> sd2: (  23) d/+a09+H964iJQcJV9+gcD\n
+sd2 -> dir: (  13) 1000 OK auth \n
+dir -> sd2: (  99) auth cram-md5 <1112228786.1561639169@127.0.0.1-dir> ssl=1 qualified-name=R_DIRECTOR::127.0.0.1-dir \n
+sd2 -> dir: (  23) Hyxil9Q8L//9T6EtK1/zSD\n
+dir -> sd2: (  13) 1000 OK auth \n
+sd2 -> dir: (  14) 3000 OK Hello \n
+dir -> sd: ( 316) JobId=3 job=CopyToRemote.2019-06-27_14.39.27_06 job_name=CopyToRemote client_name=127.0.0.1-fd type=\n
+sd -> dir: (  91) 3000 OK Job SDid=2 SDtime=1561639130 Authorization=OBGM-NHFF-EPHK-MHPG-CPGP-NHFJ-DOCE-MLMI \n
+dir -> sd: (  10) bootstrap \n
+dir -> sd: (  15) Storage="File" \n
+dir -> sd: (  19) Volume="Full-0001" \n
+dir -> sd: (  17) MediaType="File" \n
+dir -> sd: (  21) Device="FileStorage" \n
+dir -> sd: (  15) VolSessionId=1 \n
+dir -> sd: (  26) VolSessionTime=1561639130 \n
+dir -> sd: (  16) VolAddr=197-793 \n
+dir -> sd: (  12) FileIndex=1 \n
+dir -> sd: (   8) Count=1 \n
+dir -> sd: (  -1) BNET_EOD - End of data stream, new data may follow\n
+sd -> dir: (  18) 3000 OK bootstrap \n
+dir -> sd: (  18) getSecureEraseCmd \n
+sd -> dir: (  33) 2000 OK SDSecureEraseCmd *None*  \n
+dir -> sd: (  90) use storage=File media_type=File pool_name=Full pool_type=Backup append=0 copy=0 stripe=0 \n
+dir -> sd: (  23) use device=FileStorage \n
+dir -> sd: (  -1) BNET_EOD - End of data stream, new data may follow\n
+dir -> sd: (  -1) BNET_EOD - End of data stream, new data may follow\n
+sd -> dir: (  38) 3000 OK use device device=FileStorage \n
+dir -> sd2: ( 304) JobId=4 job=backup.2019-06-27_14.39.27_07 job_name=backup client_name=127.0.0.1-fd type=66 level=70 \n
+sd2 -> dir: (  91) 3000 OK Job SDid=1 SDtime=1561639139 Authorization=NNOL-AHHC-DDNB-MNBL-OLDG-IAMP-MKHC-FPDD \n
+dir -> sd2: (  18) getSecureEraseCmd \n
+sd2 -> dir: (  33) 2000 OK SDSecureEraseCmd *None*  \n
+dir -> sd2: (  99) use storage=File2 media_type=File2 pool_name=MigrationPool pool_type=Copy append=1 copy=0 stripe=0 \n
+dir -> sd2: (  30) use device=MigrateFileStorage \n
+dir -> sd2: (  -1) BNET_EOD - End of data stream, new data may follow\n
+dir -> sd2: (  -1) BNET_EOD - End of data stream, new data may follow\n
+sd2 -> dir: ( 112) CatReq Job=backup.2019-06-27_14.39.27_07 FindMedia=1 pool_name=MigrationPool media_type=File2 unwant\n
+dir -> sd2: ( 330) 1000 OK VolName=Full2-0002 VolJobs=0 VolFiles=0 VolBlocks=0 VolBytes=0 VolMounts=0 VolErrors=0 VolWr\n
+sd2 -> dir: (  45) 3000 OK use device device=MigrateFileStorage \n
+dir -> sd2: (   6) listen\n
+sd2 -> dir: (  54) Status Job=backup.2019-06-27_14.39.27_07 JobStatus=83 \n
+dir -> sd: ( 140) replicate JobId=4 Job=backup.2019-06-27_14.39.27_07 address=127.0.0.1 port=8104 ssl=4 Authorization=\n
+sd -> sd2: (  54) Hello Start Storage Job backup.2019-06-27_14.39.27_07 \n
+sd2 -> sd: (  98) auth cram-md5 <1580233842.1561639169@127.0.0.1-sd2> ssl=1 qualified-name=R_STORAGE::127.0.0.1-sd\n
+sd -> sd2: (  23) Pl0vhA8lUEM5vl/nPR/YpD\n
+sd2 -> sd: (  13) 1000 OK auth \n
+sd -> sd2: (  95) auth cram-md5 <548480578.1561639169@127.0.0.1-sd> ssl=1 qualified-name=R_STORAGE::127.0.0.1-sd \n
+sd2 -> sd: (  23) +hxgc31wUBtPuR5zM6MIpC\n
+sd -> sd2: (  13) 1000 OK auth \n
+sd -> dir: (  18) 3000 OK replicate \n
+dir -> sd: (   3) run\n
+sd2 -> dir: (  45) 3010 Job backup.2019-06-27_14.39.27_07 start \n
+sd2 -> dir: (  54) Status Job=backup.2019-06-27_14.39.27_07 JobStatus=82 \n
+sd -> dir: (  84) CatReq Job=CopyToRemote.2019-06-27_14.39.27_06 GetVolInfo VolName=Full-0001 write=0 \n
+dir -> sd: ( 334) 1000 OK VolName=Full-0001 VolJobs=1 VolFiles=0 VolBlocks=1 VolBytes=794 VolMounts=1 VolErrors=0 VolW\n
+sd -> dir: (  60) Status Job=CopyToRemote.2019-06-27_14.39.27_06 JobStatus=82 \n
+sd -> dir: ( 176) Jmsg Job=CopyToRemote.2019-06-27_14.39.27_06 type=6 level=1561639169 127.0.0.1-sd JobId 3: Connected\n
+sd -> dir: ( 206) Jmsg Job=CopyToRemote.2019-06-27_14.39.27_06 type=6 level=1561639169 127.0.0.1-sd JobId 3: Ready to \n
+sd -> sd2: (  16) start replicate \n
+sd2 -> sd: (  35) 3000 OK start replicate ticket = 1 \n
+sd -> sd2: (  17) replicate data 1 \n
+sd2 -> dir: (  79) CatReq Job=backup.2019-06-27_14.39.27_07 GetVolInfo VolName=Full2-0002 write=1 \n
+dir -> sd2: ( 330) 1000 OK VolName=Full2-0002 VolJobs=0 VolFiles=0 VolBlocks=0 VolBytes=0 VolMounts=0 VolErrors=0 VolWr\n
+sd2 -> dir: ( 288) CatReq Job=backup.2019-06-27_14.39.27_07 UpdateMedia VolName=Full2-0002 VolJobs=0 VolFiles=0 VolBloc\n
+dir -> sd2: ( 330) 1000 OK VolName=Full2-0002 VolJobs=0 VolFiles=0 VolBlocks=0 VolBytes=0 VolMounts=0 VolErrors=0 VolWr\n
+sd2 -> dir: ( 202) Jmsg Job=backup.2019-06-27_14.39.27_07 type=6 level=1561639169 127.0.0.1-sd2 JobId 4: Labeled new Vo\n
+sd2 -> dir: (  79) CatReq Job=backup.2019-06-27_14.39.27_07 GetVolInfo VolName=Full2-0002 write=1 \n
+dir -> sd2: ( 330) 1000 OK VolName=Full2-0002 VolJobs=0 VolFiles=0 VolBlocks=0 VolBytes=0 VolMounts=0 VolErrors=0 VolWr\n
+sd2 -> dir: ( 300) CatReq Job=backup.2019-06-27_14.39.27_07 UpdateMedia VolName=Full2-0002 VolJobs=0 VolFiles=0 VolBloc\n
+dir -> sd2: ( 333) 1000 OK VolName=Full2-0002 VolJobs=0 VolFiles=0 VolBlocks=0 VolBytes=209 VolMounts=1 VolErrors=0 Vol\n
+sd2 -> dir: ( 215) Jmsg Job=backup.2019-06-27_14.39.27_07 type=6 level=1561639169 127.0.0.1-sd2 JobId 4: Wrote label to\n
+sd2 -> dir: ( 291) CatReq Job=backup.2019-06-27_14.39.27_07 UpdateMedia VolName=Full2-0002 VolJobs=1 VolFiles=0 VolBloc\n
+dir -> sd2: ( 333) 1000 OK VolName=Full2-0002 VolJobs=1 VolFiles=0 VolBlocks=0 VolBytes=209 VolMounts=1 VolErrors=0 Vol\n
+sd2 -> sd: (  13) 3000 OK data \n
+sd -> dir: ( 147) Jmsg Job=CopyToRemote.2019-06-27_14.39.27_06 type=6 level=1561639169 127.0.0.1-sd JobId 3: Forward s\n
+sd -> sd2: (   5) 1 1 0\n
+sd -> sd2: ( 130) 1 3 /home/franku/01-prj/git/bareos-master/regress/bin/tape_optionsP0D BFAYW IG0 B Po Po A b BAA I B\n
+sd -> sd2: (  -1) BNET_EOD - End of data stream, new data may follow\n
+sd2 -> dir: ( 206) UpdCat Job=backup.2019-06-27_14.39.27_07 FileAttributes ]1 3 /home/franku/01-prj/\n
+sd -> sd2: (   5) 1 2 0\n
+sd -> sd2: (  27) # nothing needed for Linux \n
+sd -> sd2: (  -1) BNET_EOD - End of data stream, new data may follow\n
+sd -> sd2: (   5) 1 3 0\n
+sd -> sd2: (  16) CC 9g=\n
+sd -> dir: ( 211) Jmsg Job=CopyToRemote.2019-06-27_14.39.27_06 type=6 level=1561639169 127.0.0.1-sd JobId 3: End of Vo\n
+sd2 -> dir: (  92) UpdCat Job=backup.2019-06-27_14.39.27_07 FileAttributes ]CC 9g=\n
+sd -> dir: ( 111) Jmsg Job=CopyToRemote.2019-06-27_14.39.27_06 type=6 level=1561639169 127.0.0.1-sd JobId 3: End of al\n
+sd -> sd2: (  -1) BNET_EOD - End of data stream, new data may follow\n
+sd -> sd2: (  -1) BNET_EOD - End of data stream, new data may follow\n
+sd2 -> sd: (  23) 3000 OK replicate data \n
+sd2 -> dir: ( 177) Jmsg Job=backup.2019-06-27_14.39.27_07 type=6 level=1561639169 127.0.0.1-sd2 JobId 4: Releasing devi\n
+sd -> sd2: (  14) end replicate \n
+sd2 -> dir: ( 156) CatReq Job=backup.2019-06-27_14.39.27_07 CreateJobMedia FirstIndex=1 LastIndex=1 StartFile=0 EndFile\n
+dir -> sd2: (  23) 1000 OK CreateJobMedia \n
+sd2 -> dir: ( 291) CatReq Job=backup.2019-06-27_14.39.27_07 UpdateMedia VolName=Full2-0002 VolJobs=1 VolFiles=0 VolBloc\n
+dir -> sd2: ( 335) 1000 OK VolName=Full2-0002 VolJobs=1 VolFiles=0 VolBlocks=1 VolBytes=820 VolMounts=1 VolErrors=0 Vol\n
+sd2 -> dir: ( 141) Jmsg Job=backup.2019-06-27_14.39.27_07 type=6 level=1561639169 127.0.0.1-sd2 JobId 4: Elapsed time=0\n
+sd2 -> dir: (  54) Status Job=backup.2019-06-27_14.39.27_07 JobStatus=84 \n
+sd2 -> sd: (  22) 3000 OK end replicate \n
+sd -> sd2: (  -4) BNET_TERMINATE - Conversation terminated, doing close() \n
+sd -> dir: ( 175) Jmsg Job=CopyToRemote.2019-06-27_14.39.27_06 type=6 level=1561639169 127.0.0.1-sd JobId 3: Releasing\n
+sd2 -> dir: (  92) 3099 Job backup.2019-06-27_14.39.27_07 end JobStatus=84 JobFiles=1 JobBytes=173 JobErrors=0 \n
+sd -> dir: ( 297) CatReq Job=CopyToRemote.2019-06-27_14.39.27_06 UpdateMedia VolName=Full-0001 VolJobs=1 VolFiles=0 Vo\n
+sd2 -> dir: (  -1) BNET_EOD - End of data stream, new data may follow\n
+sd2 -> dir: (  -4) BNET_TERMINATE - Conversation terminated, doing close() \n
+sd2 -> dir: (  -1) BNET_EOD - End of data stream, new data may follow\n
+sd2 -> dir: (  -4) BNET_TERMINATE - Conversation terminated, doing close() \n
+dir -> sd: ( 335) 1000 OK VolName=Full-0001 VolJobs=1 VolFiles=0 VolBlocks=1 VolBytes=794 VolMounts=1 VolErrors=0 VolW\n
+sd -> dir: (  60) Status Job=CopyToRemote.2019-06-27_14.39.27_06 JobStatus=82 \n
+sd -> dir: (  98) 3099 Job CopyToRemote.2019-06-27_14.39.27_06 end JobStatus=84 JobFiles=1 JobBytes=173 JobErrors=0 \n
+sd -> dir: (  -1) BNET_EOD - End of data stream, new data may follow\n
+sd -> dir: (  -4) BNET_TERMINATE - Conversation terminated, doing close() \n
+sd -> dir: (  -1) BNET_EOD - End of data stream, new data may follow\n
+sd -> dir: (  -4) BNET_TERMINATE - Conversation terminated, doing close() \n
