@@ -23,13 +23,13 @@ Features
 
 -  Intuitive web interface
 
--  Multilinugual
+-  Multilingual
 
 -  Can access multiple directors and catalogs
 
 -  Individual accounts and ACL support via Bareos restricted named consoles
 
--  Tape Autochanger management, with the possibility to label, import/export media and update your autochanger slot status
+-  Tape Autochanger management with the possibility to label, import/export media and update your autochanger slot status
 
 -  Temporarly enable or disable jobs, clients and schedules and also see their current state
 
@@ -43,13 +43,13 @@ Features
 
 -  Backup Jobs
 
-   -  Start, cancel, rerun and restore from.
+   -  Start, cancel, rerun and restore from
 
    -  Show the file list of backup jobs
 
--  Restore files by browsing through a filetree of your backup jobs.
+-  Restore files by browsing through a filetree of your backup jobs
 
-   -  Merge your backup jobs history and filesets of a client or use a single backup job for restore.
+   -  Merge your backup jobs history and filesets of a client or use a single backup job for restore
 
    -  Restore files to a different client instead of the origin
 
@@ -58,11 +58,11 @@ Features
 System Requirements
 -------------------
 
--  A platform, for which the **bareos-webui** package is available, see :ref:`section-BareosPackages`.
+-  A platform for which the **bareos-webui** package is available, see :ref:`section-BareosPackages`
 
--  A working Bareos environment.
+-  A working Bareos environment
 
--  |dir| version >= |webui| version.
+-  |dir| version >= |webui| version
 
 -  The |webui| can be installed on any host. It does not have to be installed on the same as the |dir|.
 
