@@ -37,7 +37,7 @@ set(DIRD_OBJECTS_SRCS admin.cc archive.cc authenticate.cc authenticate_console.c
    ua_cmds.cc ua_configure.cc ua_db.cc ua_dotcmds.cc ua_input.cc ua_impexp.cc
    ua_label.cc ua_output.cc ua_prune.cc ua_purge.cc ua_query.cc ua_restore.cc
    ua_run.cc ua_select.cc ua_server.cc ua_status.cc ua_tree.cc ua_update.cc
-   vbackup.cc verify.cc)
+   vbackup.cc verify.cc thread.cc)
 IF(HAVE_WIN32)
    LIST(APPEND DIRD_OBJECTS_SRCS ../win32/dird/dirdres.rc)
 ENDIF()

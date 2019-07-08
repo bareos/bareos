@@ -658,17 +658,6 @@ bail_out:
   return reloaded;
 }
 
-void DetachIfNotDetached(pthread_t thr) {
-   /* only detach if not yet detached */
-   int _detachstate;
-   pthread_attr_t _gattr;
-   pthread_getattr_np(thr, &_gattr);
-   pthread_attr_getdetachstate(&_gattr, &_detachstate);
-   pthread_attr_destroy(&_gattr);
-   if(_detachstate != PTHREAD_CREATE_DETACHED) {
-      pthread_detach(thr);
-   }
-}
 } /* namespace directordaemon */
 
 /*
