@@ -1,5 +1,5 @@
 .. uml::
-  :caption: Comprehensive Network Sequence of a Backup of a Single File
+  :caption: Network Sequence of a Backup of a Single File (overview)
 
   @startuml
 
