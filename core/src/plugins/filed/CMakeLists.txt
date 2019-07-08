@@ -90,6 +90,7 @@ if(${HAVE_GLUSTERFS})
    add_library(gfapi-fd MODULE gfapi-fd.cc)
    set_target_properties(gfapi-fd PROPERTIES PREFIX "")
    INSTALL(TARGETS gfapi-fd DESTINATION ${plugindir})
+   target_link_libraries(gfapi-fd gfapi)
 endif()
 
 if (${HAVE_TEST_PLUGIN})
