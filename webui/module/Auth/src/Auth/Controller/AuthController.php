@@ -88,7 +88,7 @@ class AuthController extends AbstractActionController
             $this->bsock = $this->getServiceLocator()->get('director');
             $this->bsock->set_config($config['directors'][$director]);
             $this->bsock->set_user_credentials($username, $password);
-            error_log($username);
+            //error_log($username);
 
             if($this->bsock->connect_and_authenticate()) {
                $_SESSION['bareos']['director'] = $director;

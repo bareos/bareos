@@ -460,7 +460,9 @@ class BareosBSock implements BareosBSockInterface
          return false;
       }
 
-      error_log("console_name: ".$this->config['console_name']);
+      if($this->config['debug']) {
+         error_log("console_name: ".$this->config['console_name']);
+      }
 
       $port = $this->config['port'];
       $remote = "tcp://" . $this->config['host'] . ":" . $port;
@@ -581,13 +583,17 @@ class BareosBSock implements BareosBSockInterface
             return false;
           }
           $recv = self::receive();
-          error_log($recv);
+          if($this->config['debug']) {
+             error_log($recv);
+          }
       }
 
       if (!strncasecmp($recv, "1000", 4)) {
-        $recv = self::receive();
-        error_log($recv);
-        return true;
+         $recv = self::receive();
+         if($this->config['debug']) {
+            error_log($recv);
+         }
+         return true;
       }
 
       return false;
