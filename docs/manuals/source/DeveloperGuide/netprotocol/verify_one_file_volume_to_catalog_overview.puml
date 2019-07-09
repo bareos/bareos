@@ -1,0 +1,47 @@
+.. uml::
+  :caption: Network Sequence of a Verify of a Single File (Overview, Mode: Volume to Catalog)
+
+  @startuml
+
+  participant dir as "Director"
+  participant sd as "Storage Daemon"
+  participant fd as "File Daemon"
+
+  dir <-> sd: Handshake
+  dir  -> sd: Job information
+  dir  -> sd: Bootstrap information
+  dir  -> sd: Use storage
+  dir  -> sd: Use device
+
+  dir <-> fd: Handshake
+  dir  -> fd: Job information
+  dir  -> fd: Bootstrap information
+  dir  -> fd: Filename and metadata
+
+  sd  <-> fd: Handshake
+  dir <-  sd: Job start
+  dir  -> fd: Level = volume
+  dir <-  sd: Job status: 'R' (JS_RUNNING, "Running")
+
+  sd  <-  fd: Open read session
+  sd   -> fd: Ticket number
+
+  dir <-  sd: Request catalog: Get volume info
+  dir <-  sd: 2 Jobmessages
+
+  sd   -> fd: File and metadata
+  dir <-  sd: 3 Jobmessages
+  dir <-  sd: Request catalog: Update media
+
+  dir <-  fd: Filename and checksum
+  dir  -> fd: Status Ok
+  sd  <-  fd: Termintation message
+
+  dir <-  sd: Job status: 'T' (JS_TERMINATED, "Job terminated normally")
+  sd  <-  fd: Termintation message
+  dir <-  fd: Job status: 'T' (JS_TERMINATED, "Job terminated normally")
+  dir <-  sd: Termination message
+  dir <-  fd: Termination message
+
+  @enduml
+

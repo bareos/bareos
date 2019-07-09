@@ -1,0 +1,111 @@
+.. uml::
+  :caption: Network Sequence of a Verify of a Single File (Mode: Volume to Catalog)
+
+  @startuml
+
+  participant dir as "Director"
+  participant sd as "Storage Daemon"
+  participant fd as "File Daemon"
+
+  dir -> sd: (  34) Hello Director bareos-dir calling \n
+  sd -> dir: (  89) auth cram-md5 <227896875.1562596730@bareos-sd> ssl=1 qualified-name=R_STORAGE::bareos-sd \n
+  dir -> sd: (  23) K+YOkE/iz//+Lj/Wai9z8A\n
+  sd -> dir: (  13) 1000 OK auth \n
+  dir -> sd: (  93) auth cram-md5 <2000591880.1562596730@bareos-dir> ssl=1 qualified-name=R_DIRECTOR::bareos-dir \n
+  sd -> dir: (  23) aA/qz5/CPAx/e0+vx+s78C\n
+  dir -> sd: (  13) 1000 OK auth \n
+  sd -> dir: (  14) 3000 OK Hello \n
+  dir -> sd: ( 331) JobId=22 job=verify_backup-bareos-fd.2019-07-08_16.38.48_20 job_name=verifybackup-bareos-fd client_\n
+  sd -> dir: (  91) 3000 OK Job SDid=5 SDtime=1562596174 Authorization=GIJK-IAFL-MFOD-NIGM-FFDB-GLKB-CGAD-LKKH \n
+  dir -> sd: (  10) bootstrap \n
+  dir -> sd: (  15) Storage="File" \n
+  dir -> sd: (  19) Volume="Full-0001" \n
+  dir -> sd: (  17) MediaType="File" \n
+  dir -> sd: (  21) Device="FileStorage" \n
+  dir -> sd: (  15) VolSessionId=4 \n
+  dir -> sd: (  26) VolSessionTime=1562596174 \n
+  dir -> sd: (  26) VolAddr=58310542-58311155 \n
+  dir -> sd: (  12) FileIndex=1 \n
+  dir -> sd: (   8) Count=1 \n
+  dir -> sd: (  -1) BNET_EOD - End of data stream, new data may follow\n
+  sd -> dir: (  18) 3000 OK bootstrap \n
+  dir -> sd: (  18) getSecureEraseCmd \n
+  sd -> dir: (  33) 2000 OK SDSecureEraseCmd *None*  \n
+  dir -> sd: (  90) use storage=File media_type=File pool_name=Full pool_type=Backup append=0 copy=0 stripe=0 \n
+  dir -> sd: (  23) use device=FileStorage \n
+  dir -> sd: (  -1) BNET_EOD - End of data stream, new data may follow\n
+  dir -> sd: (  -1) BNET_EOD - End of data stream, new data may follow\n
+  sd -> dir: (  38) 3000 OK use device device=FileStorage \n
+  dir -> sd: (   3) run\n
+  sd -> dir: (  71) Status Job=verify_backup-bareos-fd.2019-07-08_16.38.48_20 JobStatus=70 \n
+  dir -> fd: (  34) Hello Director bareos-dir calling \n
+  fd -> dir: (  95) auth cram-md5 <1035931654.1562596730@localhost-fd> ssl=1 qualified-name=R_CLIENT::localhost-fd \n
+  dir -> fd: (  23) G//GCjJXb5p8d7gtx/46xD\n
+  fd -> dir: (  13) 1000 OK auth \n
+  dir -> fd: (  92) auth cram-md5 <135291880.1562596730@bareos-dir> ssl=1 qualified-name=R_DIRECTOR::bareos-dir \n
+  fd -> dir: (  23) L9YY5i/A5F/119RJM5xFTA\n
+  dir -> fd: (  13) 1000 OK auth \n
+  fd -> dir: (  17) 2000 OK Hello 54 \n
+  dir -> fd: ( 145) JobId=22 Job=verify_backup-bareos-fd.2019-07-08_16.38.48_20 SDid=5 SDtime=1562596174 Authorization=G\n
+  fd -> dir: (  95) 2000 OK Job 19.1.2 (01Feb19) Linux-5.0.3-200.fc29.x86_64,redhat,Fedora release 29 (Twenty Nine)\n
+  dir -> fd: (  14) fileset vss=1 \n
+  dir -> fd: (   2) I \n
+  dir -> fd: (   6) O MAX \n
+  dir -> fd: (   2) N \n
+  dir -> fd: (  57) F /home/franku/01-prj/git/bareos/regress/bin/tape_options\n
+  dir -> fd: (   2) N \n
+  dir -> fd: (   2) N \n
+  dir -> fd: (  -1) BNET_EOD - End of data stream, new data may follow\n
+  fd -> dir: (  16) 2000 OK include \n
+  dir -> fd: (  57) storage address=localhost port=8103 ssl=4 Authorization= \n
+  fd -> sd: (  63) Hello Start Job verify_backup-bareos-fd.2019-07-08_16.38.48_20 \n
+  sd -> fd: (  89) auth cram-md5 <378269507.1562596730@bareos-sd> ssl=1 qualified-name=R_STORAGE::bareos-sd \n
+  fd -> sd: (  23) gD/Ini0F0/M7K4hqt8/gvC\n
+  sd -> fd: (  13) 1000 OK auth \n
+  fd -> sd: (  94) auth cram-md5 <640034303.1562596730@localhost-fd> ssl=1 qualified-name=R_CLIENT::localhost-fd \n
+  sd -> fd: (  23) q0/U7S+Hy5snO+IoR7VUNA\n
+  fd -> sd: (  13) 1000 OK auth \n
+  fd -> dir: (  16) 2000 OK storage \n
+  sd -> dir: (  62) 3010 Job verify_backup-bareos-fd.2019-07-08_16.38.48_20 start \n
+  dir -> fd: (  20) verify level=volume \n
+  sd -> dir: (  71) Status Job=verify_backup-bareos-fd.2019-07-08_16.38.48_20 JobStatus=82 \n
+  fd -> dir: (  15) 2000 OK verify \n
+  fd -> sd: (  53) read open session = DummyVolume 5 1562596174 0 0 0 0 \n
+  sd -> fd: (  24) 3000 OK open ticket = 5 \n
+  fd -> sd: (  12) read data 5 \n
+  sd -> dir: (  95) CatReq Job=verify_backup-bareos-fd.2019-07-08_16.38.48_20 GetVolInfo VolName=Full-0001 write=0 \n
+  dir -> sd: ( 355) 1000 OK VolName=Full-0001 VolJobs=3 VolFiles=0 VolBlocks=905 VolBytes=58311156 VolMounts=3 VolErrors\n
+  sd -> dir: ( 208) Jmsg Job=verify_backup-bareos-fd.2019-07-08_16.38.48_20 type=6 level=1562596730 bareos-sd JobId 22: \n
+  sd -> fd: (  13) 3000 OK data \n
+  sd -> dir: ( 161) Jmsg Job=verify_backup-bareos-fd.2019-07-08_16.38.48_20 type=6 level=1562596730 bareos-sd JobId 22: \n
+  sd -> fd: (  27) rechdr 4 1562596174 1 1 123\n
+  sd -> fd: ( 123) 1 3 /home/franku/01-prj/git/bareos/regress/bin/tape_optionsP0D BIBFz IG0 B Po Po A b BAA I BdI0hf B\n
+  sd -> fd: (  26) rechdr 4 1562596174 1 2 27\n
+  sd -> fd: (  27) # nothing needed for Linux \n
+  sd -> fd: (  26) rechdr 4 1562596174 1 3 16\n
+  sd -> fd: (  16) CC 9g=\n
+  sd -> dir: ( 213) Jmsg Job=verify_backup-bareos-fd.2019-07-08_16.38.48_20 type=6 level=1562596730 bareos-sd JobId 22: \n
+  sd -> dir: ( 120) Jmsg Job=verify_backup-bareos-fd.2019-07-08_16.38.48_20 type=6 level=1562596730 bareos-sd JobId 22: \n
+  sd -> fd: (  -1) BNET_EOD - End of data stream, new data may follow\n
+  sd -> dir: ( 177) Jmsg Job=verify_backup-bareos-fd.2019-07-08_16.38.48_20 type=6 level=1562596730 bareos-sd JobId 22: \n
+  sd -> dir: ( 323) CatReq Job=verify_backup-bareos-fd.2019-07-08_16.38.48_20 UpdateMedia VolName=Full-0001 VolJobs=3 Vo\n
+  fd -> dir: ( 128) 1 1 pinsug5 /home/franku/01-prj/git/bareos/regress/bin/tape_optionsP0D BIBFz IG0 B Po Po A b BAA I \n
+  fd -> dir: (  34) 1 3 G0NDCR0AijmDiLdn0D336A *MD5-1*\n
+  fd -> sd: (  21) read close session 5 \n
+  dir -> sd: ( 355) 1000 OK VolName=Full-0001 VolJobs=3 VolFiles=0 VolBlocks=905 VolBytes=58311156 VolMounts=3 VolErrors\n
+  sd -> fd: (  26) 3000 OK close Status = 82 \n
+  sd -> fd: (  -1) BNET_EOD - End of data stream, new data may follow\n
+  fd -> sd: (  -4) BNET_TERMINATE - Conversation terminated, doing close() \n
+  fd -> dir: (  -1) BNET_EOD - End of data stream, new data may follow\n
+  sd -> dir: ( 107) 3099 Job verify_backup-bareos-fd.2019-07-08_16.38.48_20 end JobStatus=84 JobFiles=0 JobBytes=0 JobEr\n
+  fd -> sd: (  -4) BNET_TERMINATE - Conversation terminated, doing close() \n
+  fd -> dir: (  84) 2800 End Job TermCode=84 JobFiles=1 ReadBytes=0 JobBytes=0 Errors=0 VSS=0 Encrypt=0 \n
+  sd -> dir: (  -1) BNET_EOD - End of data stream, new data may follow\n
+  sd -> dir: (  -4) BNET_TERMINATE - Conversation terminated, doing close() \n
+  fd -> dir: ( 188) Jmsg Job=verify_backup-bareos-fd.2019-07-08_16.38.48_20 type=6 level=1562596730 localhost-fd JobId 2\n
+  sd -> dir: (  -1) BNET_EOD - End of data stream, new data may follow\n
+  sd -> dir: (  -4) BNET_TERMINATE - Conversation terminated, doing close() \n
+  fd -> dir: (  -4) BNET_TERMINATE - Conversation terminated, doing close() \n
+
+  @enduml
+
