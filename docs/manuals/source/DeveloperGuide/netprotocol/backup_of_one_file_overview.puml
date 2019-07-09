@@ -1,5 +1,5 @@
 .. uml::
-  :caption: Comprehensive Network Sequence of a Backup of a Single File
+  :caption: Network Sequence of a Backup of a Single File (overview)
 
   @startuml
 
@@ -19,7 +19,7 @@
   d  -> c: Job information
   d  -> c: Level information
   d  -> c: File information
-  d  -> c: Request sequre erase command
+  d  -> c: Request secure erase command
   d  -> c: Send storage address, port and tls require
 
   c <-> s: Handshake
@@ -29,9 +29,9 @@
   d <-  c: 3 Jobmessages: Connected, Extended Attributes, ACLs
   d <-  c: Ok backup
 
-  c  -> s: append open session
-  c <-  s: ticket number
-  c  -> s: append data ticket number
+  c  -> s: Append open session
+  c <-  s: Ticket number
+  c  -> s: Append data ticket number
 
   d <-  s: Request catalog: get volume info
   d <-  s: Request catalog: update media
@@ -48,19 +48,19 @@
   c  -> s: Send file, metadata and checksum
   d <-  s: Catalog update: file attributes
 
-  c  -> s: end session 1
-  c <-  s: status: 'T' (JS_Terminated: Job terminated normally)
-  c  -> s: close connection
+  c  -> s: End session 1
+  c <-  s: Status: 'T' (JS_Terminated: Job terminated normally)
+  c  -> s: Termination message
 
   d <-  c: End Job
   d <-  s: Jobmessage: releasing device
-  d <-  c: close connection
+  d <-  c: Termination message
   d <-  s: Request catalog: create job media
   d <-  s: Request catalog: update media
   d <-  s: Jobmessage: elapsed
   d <-  s: Status: end
 
-  d <-  s: close connection
+  d <-  s: Termination message
 
   @enduml
 

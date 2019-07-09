@@ -1,0 +1,102 @@
+.. uml::
+  :caption: Network Sequence of a Restore of a Single File
+
+  @startuml
+
+  participant dir as "Director"
+  participant sd as "Storage Daemon"
+  participant fd as "File Daemon"
+
+  dir -> sd: (  34) Hello Director bareos-dir calling \n
+  sd -> dir: (  90) auth cram-md5 <1043480599.1562050929@bareos-sd> ssl=1 qualified-name=R_STORAGE::bareos-sd \n
+  dir -> sd: (  23) o6+/u9Jtuy/cO4o5Aw/TkC\n
+  sd -> dir: (  13) 1000 OK auth \n
+  dir -> sd: (  93) auth cram-md5 <1818293267.1562050929@bareos-dir> ssl=1 qualified-name=R_DIRECTOR::bareos-dir \n
+  sd -> dir: (  23) jn+XJ59ej9+wo9Ys38+TTC\n
+  dir -> sd: (  13) 1000 OK auth \n
+  sd -> dir: (  14) 3000 OK Hello \n
+  dir -> sd: ( 295) JobId=3 job=RestoreFiles.2019-07-02_09.02.07_10 job_name=RestoreFiles client_name=bareos-fd type=82 \n
+  sd -> dir: (  91) 3000 OK Job SDid=3 SDtime=1562050726 Authorization=DCHL-DBLN-DPFH-KPEE-BKCO-ADNL-NGIK-KEDM \n
+  dir -> sd: (  18) getSecureEraseCmd \n
+  sd -> dir: (  33) 2000 OK SDSecureEraseCmd *None*  \n
+  dir -> sd: (  97) use storage=File media_type=File pool_name=Incremental pool_type=Backup append=0 copy=0 stripe=0 \n
+  dir -> sd: (  23) use device=FileStorage \n
+  dir -> sd: (  -1) BNET_EOD - End of data stream, new data may follow\n
+  dir -> sd: (  -1) BNET_EOD - End of data stream, new data may follow\n
+  sd -> dir: (  38) 3000 OK use device device=FileStorage \n
+  dir -> fd: (  34) Hello Director bareos-dir calling \n
+  fd -> dir: (  94) auth cram-md5 <726584478.1562050929@localhost-fd> ssl=1 qualified-name=R_CLIENT::localhost-fd \n
+  dir -> fd: (  23) w7wc4+dN5R/iD8/Wc5dJUA\n
+  fd -> dir: (  13) 1000 OK auth \n
+  dir -> fd: (  93) auth cram-md5 <1703515648.1562050929@bareos-dir> ssl=1 qualified-name=R_DIRECTOR::bareos-dir \n
+  fd -> dir: (  23) Y9+K8//xa7/Cvl/jsgEdXB\n
+  dir -> fd: (  13) 1000 OK auth \n
+  fd -> dir: (  17) 2000 OK Hello 54 \n
+  dir -> fd: ( 133) JobId=3 Job=RestoreFiles.2019-07-02_09.02.07_10 SDid=3 SDtime=1562050726 Authorization=DCHL-DBLN-DPF\n
+  fd -> dir: (  95) 2000 OK Job 19.1.2 (01Feb19) Linux-5.0.3-200.fc29.x86_64,redhat,Fedora release 29 (Twenty Nine)\n
+  dir -> fd: (  18) getSecureEraseCmd \n
+  fd -> dir: (  32) 2000 OK FDSecureEraseCmd *None* \n
+  dir -> sd: (  10) bootstrap \n
+  dir -> sd: (  15) Storage="File" \n
+  dir -> sd: (  19) Volume="Full-0001" \n
+  dir -> sd: (  17) MediaType="File" \n
+  dir -> sd: (  21) Device="FileStorage" \n
+  dir -> sd: (  15) VolSessionId=1 \n
+  dir -> sd: (  26) VolSessionTime=1562050726 \n
+  dir -> sd: (  16) VolAddr=209-822 \n
+  dir -> sd: (  12) FileIndex=1 \n
+  dir -> sd: (   8) Count=1 \n
+  dir -> sd: (  -1) BNET_EOD - End of data stream, new data may follow\n
+  sd -> dir: (  18) 3000 OK bootstrap \n
+  dir -> sd: (   3) run\n
+  sd -> dir: (  60) Status Job=RestoreFiles.2019-07-02_09.02.07_10 JobStatus=70 \n
+  dir -> fd: (  96) storage address=localhost port=8103 ssl=4 Authorization=DCHL-DBLN-DPFH-KPEE-BKCO-ADNL-NGIK-KEDM \n
+  fd -> sd: (  52) Hello Start Job RestoreFiles.2019-07-02_09.02.07_10 \n
+  sd -> fd: (  90) auth cram-md5 <1895001168.1562050931@bareos-sd> ssl=1 qualified-name=R_STORAGE::bareos-sd \n
+  fd -> sd: (  23) 39Yae9gJW5l/iz/7c++s5B\n
+  sd -> fd: (  13) 1000 OK auth \n
+  fd -> sd: (  94) auth cram-md5 <525062249.1562050931@localhost-fd> ssl=1 qualified-name=R_CLIENT::localhost-fd \n
+  sd -> fd: (  23) n49F5gkU+4/fhW8sVXFc3B\n
+  fd -> sd: (  13) 1000 OK auth \n
+  fd -> dir: (  16) 2000 OK storage \n
+  sd -> dir: (  51) 3010 Job RestoreFiles.2019-07-02_09.02.07_10 start \n
+  sd -> dir: (  60) Status Job=RestoreFiles.2019-07-02_09.02.07_10 JobStatus=82 \n
+  dir -> fd: (  56) restore replace=a prelinks=0 where=/tmp/bareos-restores \n
+  fd -> dir: (  16) 2000 OK restore \n
+  fd -> sd: (  53) read open session = DummyVolume 3 1562050726 0 0 0 0 \n
+  sd -> fd: (  24) 3000 OK open ticket = 3 \n
+  fd -> sd: (  12) read data 3 \n
+  sd -> dir: (  84) CatReq Job=RestoreFiles.2019-07-02_09.02.07_10 GetVolInfo VolName=Full-0001 write=0 \n
+  dir -> sd: ( 334) 1000 OK VolName=Full-0001 VolJobs=1 VolFiles=0 VolBlocks=1 VolBytes=823 VolMounts=1 VolErrors=0 VolW\n
+  sd -> dir: ( 196) Jmsg Job=RestoreFiles.2019-07-02_09.02.07_10 type=6 level=1562050931 bareos-sd JobId 3: Ready to rea\n
+  sd -> fd: (  13) 3000 OK data \n
+  sd -> dir: ( 144) Jmsg Job=RestoreFiles.2019-07-02_09.02.07_10 type=6 level=1562050931 bareos-sd JobId 3: Forward spac\n
+  sd -> fd: (  27) rechdr 1 1562050726 1 1 123\n
+  sd -> fd: ( 123) 1 3 /home/franku/01-prj/git/bareos/regress/bin/tape_optionsP0D BJAEy IG0 B Po Po A b BAA I BdGwCZ B\n
+  sd -> fd: (  26) rechdr 1 1562050726 1 2 27\n
+  sd -> fd: (  27) # nothing needed for Linux \n
+  sd -> fd: (  26) rechdr 1 1562050726 1 3 16\n
+  sd -> fd: (  16) CC 9g=\n
+  sd -> dir: ( 201) Jmsg Job=RestoreFiles.2019-07-02_09.02.07_10 type=6 level=1562050931 bareos-sd JobId 3: End of Volum\n
+  sd -> dir: ( 108) Jmsg Job=RestoreFiles.2019-07-02_09.02.07_10 type=6 level=1562050931 bareos-sd JobId 3: End of all v\n
+  sd -> fd: (  -1) BNET_EOD - End of data stream, new data may follow\n
+  sd -> dir: ( 165) Jmsg Job=RestoreFiles.2019-07-02_09.02.07_10 type=6 level=1562050931 bareos-sd JobId 3: Releasing de\n
+  sd -> dir: ( 297) CatReq Job=RestoreFiles.2019-07-02_09.02.07_10 UpdateMedia VolName=Full-0001 VolJobs=1 VolFiles=0 Vo\n
+  fd -> dir: ( 176) Jmsg Job=RestoreFiles.2019-07-02_09.02.07_10 type=6 level=1562050931 localhost-fd JobId 3: Connected\n
+  fd -> sd: (  21) read close session 3 \n
+  dir -> sd: ( 335) 1000 OK VolName=Full-0001 VolJobs=1 VolFiles=0 VolBlocks=1 VolBytes=823 VolMounts=1 VolErrors=0 VolW\n
+  sd -> fd: (  26) 3000 OK close Status = 82 \n
+  sd -> fd: (  -1) BNET_EOD - End of data stream, new data may follow\n
+  fd -> sd: (  -4) BNET_TERMINATE - Conversation terminated, doing close() \n
+  fd -> dir: (  20) 2000 OK storage end \n
+  sd -> dir: (  96) 3099 Job RestoreFiles.2019-07-02_09.02.07_10 end JobStatus=84 JobFiles=0 JobBytes=0 JobErrors=0 \n
+  sd -> dir: (  -1) BNET_EOD - End of data stream, new data may follow\n
+  sd -> dir: (  -4) BNET_TERMINATE - Conversation terminated, doing close() \n
+  sd -> dir: (  -1) BNET_EOD - End of data stream, new data may follow\n
+  dir -> fd: (  10) endrestore\n
+  sd -> dir: (  -4) BNET_TERMINATE - Conversation terminated, doing close() \n
+  fd -> sd: (  -4) BNET_TERMINATE - Conversation terminated, doing close() \n
+  fd -> dir: (  86) 2800 End Job TermCode=84 JobFiles=1 ReadBytes=27 JobBytes=27 Errors=0 VSS=0 Encrypt=0 \n
+  fd -> dir: (  -4) BNET_TERMINATE - Conversation terminated, doing close() \n
+
+  @enduml

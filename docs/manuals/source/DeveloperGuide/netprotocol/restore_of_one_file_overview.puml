@@ -1,0 +1,57 @@
+.. uml::
+  :caption: Network Sequence of a Restore of a Single File (overview)
+
+  @startuml
+
+  participant dir as "Director"
+  participant sd as "Storage Daemon"
+  participant fd as "File Daemon"
+
+  dir <-> sd: Handshake
+  dir  -> sd: Send job information
+  dir  -> sd: Request secure erase command
+  dir  -> sd: Use storage, media, pool and device
+
+  dir <-> fd: Handshake
+  dir  -> fd: Job information
+  dir  -> fd: Level information
+  dir  -> fd: File information
+  dir  -> fd: Request secure erase command
+
+  dir  -> sd: Bootstrap information
+  dir <-  sd: Status: 'F' (JS_WaitFD: Waiting on File daemon)
+
+  dir  -> fd: Send storage address, port and tls
+
+  fd  <-> sd: Handshake
+  dir <-  fd: Ok
+  dir <-  sd: Jobinformation start and status 'R' (JS_Running: Job Running)
+  dir  -> fd: Restore
+
+  fd   -> sd: Open Read session and read data
+  dir <-  sd: Request catalog: get volume info
+  dir <-  sd: 2 Jobmessages
+
+  fd  <-  sd: Filename, metadata and file contents
+
+  dir <-  sd: 3 Jobmessages: "End of volume", "End of all volumes", "Releasing device"
+  dir <-  sd: Request catalog: update media
+  dir <-  fd: Jobmessage: "Connected"
+
+  fd   -> sd: Read close connection
+  fd  <-  sd: Close status = 'R' (JS_Running: Running)
+  fd   -> sd: Termination message
+  dir <-  fd: Storage end
+
+  dir <-  sd: Status: 'T' (JS_Terminated: Job terminated normally)
+  dir <-  sd: Terminate connection
+
+  dir  -> fd: End restore
+  dir <-  sd: Termination message
+  fd   -> sd: Termination message
+
+  dir <-  fd: Status message: 'T' (JS_Terminated: Job terminated normally)
+  dir <-  fd: Termination message
+
+
+  @enduml
