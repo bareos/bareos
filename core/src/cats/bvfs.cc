@@ -655,7 +655,7 @@ bool Bvfs::ls_dirs()
     db->FillQuery(filter, BareosDb::SQL_QUERY_match_query, pattern);
   }
   db->FillQuery(sub_dirs_query, BareosDb::SQL_QUERY_bvfs_ls_sub_dirs_5, pathid,
-                jobids, filter.c_str(), jobids, jobids);
+                jobids, jobids, filter.c_str(), jobids);
 
   db->FillQuery(union_query, BareosDb::SQL_QUERY_bvfs_lsdirs_4,
                 special_dirs_query.c_str(), sub_dirs_query.c_str(), limit,
