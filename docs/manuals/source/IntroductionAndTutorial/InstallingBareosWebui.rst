@@ -35,7 +35,7 @@ Features
 
 -  Show
 
-   -  Detailed information about Jobs, Clients, Filesets, Pools, Volumes, Storages, Schedules, Logs, and Director messages
+   -  Detailed information about Jobs, Clients, Filesets, Pools, Volumes, Storages, Schedules, Logs and Director messages
 
    -  Filedaemon, Storage-, and Director updates
 
