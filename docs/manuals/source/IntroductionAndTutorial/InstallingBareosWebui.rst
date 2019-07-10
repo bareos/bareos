@@ -29,7 +29,7 @@ Features
 
 -  Individual accounts and ACL support via Bareos restricted named consoles
 
--  Tape Autochanger management with the possibility to label, import/export media, and update your autochanger slot status
+-  Tape Autochanger management with the possibility to label, import/export media and update your autochanger slot status
 
 -  Temporarly enable or disable jobs, clients and schedules and also see their current state
 
