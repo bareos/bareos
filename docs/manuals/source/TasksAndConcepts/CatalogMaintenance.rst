@@ -46,7 +46,7 @@ If you decided to use **dbconfig-common**, the next question will only be asked,
 
 Depending on the selected database backend, more questions about how to access the database will be asked. Often, the default values are suitable.
 
-The **dbconfig-common** configuration (and credentials) is done by the **bareos-database-common** package. Settings are stored in the file :file:`/etc/dbconfig-common/bareos-database-common.conf`.
+The **dbconfig-common** configuration (and credentials) is done by the **bareos-database-common** package. Settings are stored in the file :file:`/etc/dbconfig-common/bareos-database-common.conf`. If you need to repeat this step, you can use the :command:`dpkg-reconfigure bareos-database-common` command.
 
 The Bareos database backend will get automatically configured in :file:`/etc/bareos/bareos-dir.d/catalog/MyCatalog.conf`. If the Server is not running locally you need to specify :config:option:`dir/catalog/DbAddress`\  in the catalog ressource. A later reconfiguration might require manual adapt changes.
 
@@ -58,7 +58,7 @@ The Bareos database backend will get automatically configured in :file:`/etc/bar
 
 .. code-block:: shell-session
 
-   <command> </command><parameter>su - postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges</parameter>
+   su - postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges
 
 For details see chapter :ref:`CatMaintenanceManualConfiguration`.
 
@@ -75,7 +75,7 @@ Bareos comes with a number of scripts to prepare and update the databases. All t
 :file:`create_bareos_database`    installation   create Bareos database
 :file:`make_bareos_tables`        installation   create Bareos tables
 :file:`grant_bareos_privileges`   installation   grant database access privileges
-:file:`update_bareos_tables` [-f] update         update the database schema
+:file:`update_bareos_tables [-f]` update         update the database schema
 :file:`drop_bareos_tables`        deinstallation remove Bareos database tables
 :file:`drop_bareos_database`      deinstallation remove Bareos database
 :file:`make_catalog_backup.pl`    backup         backup the Bareos database, default on Linux
@@ -115,16 +115,16 @@ db_password
 
    -  default: *none*
 
-Reading the settings from the configuration require read permission for the current user. The normal PostgreSQL administrator user (**postgres**) don’t have these permissions. So if you plan to use non-default database settings, you might add the user **postgres** to the group :strong:`bareos`.
+Reading the settings from the configuration require read permission for the current user. The normal PostgreSQL administrator user (**postgres**) doesn’t have these permissions. So if you plan to use non-default database settings, you might add the user **postgres** to the group :strong:`bareos`.
 
-The database preparation scripts need to have password-less administrator access to the database. Depending on the distribution you’re using, this require additional configuration. See the following section about howto achieve this for the different database systems.
+The database preparation scripts need to have password-less administrator access to the database. Depending on the distribution you’re using, this requires additional configuration. See the following section about howto achieve this for the different database systems.
 
 To view and test the currently configured settings, use following commands:
 
 .. code-block:: shell-session
    :caption: Show current database configuration
 
-   <command> </command><parameter>/usr/sbin/bareos-dbcheck -B</parameter>
+   /usr/sbin/bareos-dbcheck -B
    catalog=MyCatalog
    db_name=bareos
    db_driver=mysql
@@ -139,7 +139,7 @@ To view and test the currently configured settings, use following commands:
 .. code-block:: shell-session
    :caption: Test the database connection. Example: wrong password
 
-   <command> </command><parameter>/usr/sbin/bareos-dir -t -f -d 500</parameter>
+   /usr/sbin/bareos-dir -t -f -d 500
    [...]
    bareos-dir: mysql.c:204-0 Error 1045 (28000): Access denied for user 'bareos'@'localhost' (using password: YES)
    bareos-dir: dird.c:1114-0 Could not open Catalog "MyCatalog", database "bareos".
@@ -187,7 +187,7 @@ The encoding of the bareos database must be :strong:`SQL_ASCII`. The command :co
 .. code-block:: shell-session
    :caption: List existing databases
 
-   <command>psql</command><parameter> -l</parameter>
+   psql -l
            List of databases
       Name    |  Owner   | Encoding
    -----------+----------+-----------
@@ -204,8 +204,8 @@ By default, using PostgreSQL ident, a Unix user can access a database of the sam
 .. code-block:: shell-session
    :caption: Verify Bareos database on PostgreSQL as Unix user bareos (bareos-13.2.3)
 
-   root@linux:~# <input>su - bareos -s /bin/sh</input>
-   bareos@linux:~# <input>psql</input>
+   root@linux:~# su - bareos -s /bin/sh
+   bareos@linux:~# psql
    Welcome to psql 8.3.23, the PostgreSQL interactive terminal.
 
    Type:  \copyright for distribution terms
@@ -214,7 +214,7 @@ By default, using PostgreSQL ident, a Unix user can access a database of the sam
           \g or terminate with semicolon to execute query
           \q to quit
 
-   bareos=> <input>\dt</input>
+   bareos=> \dt
                     List of relations
     Schema |          Name          | Type  |  Owner
    --------+------------------------+-------+----------
@@ -250,13 +250,13 @@ By default, using PostgreSQL ident, a Unix user can access a database of the sam
     public | version                | table | postgres
    (30 rows)
 
-   bareos=> <input>select * from Version;</input>
+   bareos=> select * from Version;
     versionid
    -----------
          2002
    (1 row)
 
-   bareos=> <input>\du</input>
+   bareos=> \du
                                     List of roles
       Role name   | Superuser | Create role | Create DB | Connections | Member of
    ---------------+-----------+-------------+-----------+-------------+-----------
@@ -264,7 +264,7 @@ By default, using PostgreSQL ident, a Unix user can access a database of the sam
     postgres      | yes       | yes         | yes       | no limit    | {}
    (2 rows)
 
-   bareos=> <input>\dp</input>
+   bareos=> \dp
                     Access privileges for database "bareos"
     Schema |               Name                |   Type   |  Access privileges
    --------+-----------------------------------+----------+--------------------------------------
@@ -287,9 +287,9 @@ When configuring bareos with a remote database, your first step is to check the 
    su - postgres
    psql --host bareos-database.example.com
 
-With a correct configuration you can access the database, if it fails you need to correct the PostgreSQL servers configuration files.
+With a correct configuration you can access the database. If it fails, you need to correct the PostgreSQL servers' configuration files.
 
-One way to manually create the database would be calling the bareos database preparation scripts with the :strong:`--host` option, explained later. How ever, it is advised to use the **dbconfig-common**. Both methods require you to add the database hostname/address as :config:option:`dir/catalog/DbAddress`\ .
+One way to manually create the database is to execute the bareos database preparation scripts with the :strong:`--host` option, explained later. However, it is advised to use the **dbconfig-common**. Both methods require you to add the database hostname/address as :config:option:`dir/catalog/DbAddress`\ .
 
 If you’re using **dbconfig-common** you should choose :strong:`New Host`, enter the hostname or the local address followed by the password. As **dbconfig-common** uses the :strong:`ident` authentication by default the first try to connect will fail. Don’t be bothered by that. Choose :strong:`Retry` when prompted. From there, read carefully and configure the database to your needs. The authentication should be set
 to password, as the ident method will not work with a remote server. Set the user and administrator according to your PostgreSQL servers settings.
@@ -299,7 +299,7 @@ Set the PostgreSQL server IP as :config:option:`dir/catalog/DbAddress`\  in :ref
 .. code-block:: shell-session
    :caption: Show current database configuration
 
-   <command> </command><parameter>/usr/sbin/bareos-dbcheck -B</parameter>
+   /usr/sbin/bareos-dbcheck -B
    catalog=MyCatalog
    db_name=bareos
    db_driver=postgresql
@@ -338,7 +338,7 @@ The bareos database preparation scripts require password-less access to the data
    [client]
    host=localhost
    user=root
-   password=<input>YourPasswordForAccessingMysqlAsRoot</input>
+   password=YourPasswordForAccessingMysqlAsRoot
 
 Alternatively you can specifiy your database password by adding it to the file :file:`/etc/my.cnf`.
 
@@ -367,7 +367,7 @@ After this, run the Bareos database preparation scripts. For Bareos <= 13.2.2, t
 .. code-block:: shell-session
    :caption: Setup Bareos catalog database
 
-   export db_password=<input>YourSecretPassword</input>
+   export db_password=YourSecretPassword
    /usr/lib/bareos/scripts/create_bareos_database
    /usr/lib/bareos/scripts/make_bareos_tables
    /usr/lib/bareos/scripts/grant_bareos_privileges
@@ -377,7 +377,7 @@ After this, you can use the :command:`mysql` command to verify that your databas
 .. code-block:: shell-session
    :caption: Verify Bareos database on MySQL
 
-   root@linux:~# <input>mysql --user=bareos --password=YourSecretPassword bareos</input>
+   root@linux:~# mysql --user=bareos --password=YourSecretPassword bareos
    Welcome to the MySQL monitor.  Commands end with ; or \g.
    Your MySQL connection id is 162
    Server version: 5.5.32 SUSE MySQL package
@@ -390,7 +390,7 @@ After this, you can use the :command:`mysql` command to verify that your databas
 
    Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
 
-   mysql> <input>show tables;</input>
+   mysql> show tables;
    +--------------------+
    | Tables_in_bareos   |
    +--------------------+
@@ -427,7 +427,7 @@ After this, you can use the :command:`mysql` command to verify that your databas
    +--------------------+
    30 rows in set (0.00 sec)
 
-   mysql> <input>describe Job;</input>
+   mysql> describe Job;
    +-----------------+---------------------+------+-----+---------+----------------+
    | Field           | Type                | Null | Key | Default | Extra          |
    +-----------------+---------------------+------+-----+---------+----------------+
@@ -461,7 +461,7 @@ After this, you can use the :command:`mysql` command to verify that your databas
    +-----------------+---------------------+------+-----+---------+----------------+
    27 rows in set (0,00 sec)
 
-   mysql> <input>select * from Version;</input>
+   mysql> select * from Version;
    +-----------+
    | VersionId |
    +-----------+
@@ -469,7 +469,7 @@ After this, you can use the :command:`mysql` command to verify that your databas
    +-----------+
    1 row in set (0.00 sec)
 
-   mysql> <input>exit</input>
+   mysql> exit
    Bye
 
 Modify database credentials
@@ -488,7 +488,7 @@ If you want to change the Bareos database credentials, do the following:
 Modify the configuration, set a new password:
 
 .. code-block:: bareosconfig
-   :caption: bareos-dir.d/Catalog/MyCatalog.conf
+   :caption: bareos-dir.d/catalog/MyCatalog.conf
 
    Catalog {
      Name = MyCatalog
@@ -503,7 +503,7 @@ Rerun the Bareos grant script :command:`grant_bareos_privileges` ...
 .. code-block:: shell-session
    :caption: Modify database privileges
 
-   export db_password=<input>MyNewSecretPassword</input>
+   export db_password=MyNewSecretPassword
    /usr/lib/bareos/scripts/grant_bareos_privileges
 
 
@@ -513,22 +513,22 @@ Sqlite
 
 There are different versions of Sqlite available. When we use the term Sqlite, we will always refer to Sqlite3.
 
-Sqlite is a file based database. Access via network connection is not supported. Because its setup is easy, it is a good database for testing. However please don’t use it in a production environment.
+Sqlite is a file based database. Access via network connection is not supported. Because its setup is easy, it is a good database for testing. However, please don’t use it in a production environment.
 
 Sqlite stores a database in a single file. Bareos creates this file at :file:`/var/lib/bareos/bareos.db`.
 
 Sqlite does not offer access permissions. The only permissions that do apply are the Unix file permissions.
 
-The database is accessable by following command:
+The database is accessable by the following command:
 
 .. code-block:: shell-session
    :caption: Verify Bareos database on Sqlite3 (bareos-13.2.3)
 
-   <command>sqlite3</command><input> /var/lib/bareos/bareos.db</input>
+   sqlite3 /var/lib/bareos/bareos.db
    SQLite version 3.7.6.3
    Enter ".help" for instructions
    Enter SQL statements terminated with a ";"
-   sqlite> <input>.tables</input>
+   sqlite> .tables
    BaseFiles           Filename            Media               Pool
    CDImages            Job                 MediaType           Quota
    Client              JobHisto            NDMPJobEnvironment  RestoreObject
@@ -537,7 +537,7 @@ The database is accessable by following command:
    DeviceStats         Location            Path                UnsavedFiles
    File                LocationLog         PathHierarchy       Version
    FileSet             Log                 PathVisibility
-   sqlite> <input>select * from Version;</input>
+   sqlite> select * from Version;
    2002
    sqlite>
 
@@ -646,7 +646,7 @@ The :config:option:`dir/director/StatisticsRetention`\  defines the length of ti
 You can use the following Job resource in your nightly :config:option:`dir/job = BackupCatalog`\  job to maintain statistics.
 
 .. code-block:: bareosconfig
-   :caption: bareos-dir.d/Job/BackupCatalog.conf
+   :caption: bareos-dir.d/job/BackupCatalog.conf
 
    Job {
      Name = BackupCatalog
@@ -864,7 +864,7 @@ Compacting Your MySQL Database
 
 Over time, as noted above, your database will tend to grow. Even though Bareos regularly prunes files, MySQL does not automatically reuse the space, and instead continues growing.
 
-It is assumed that you are using the InnoDB database engine (which is the default since MySQL Version 5.5).
+Let's assume that you are using the InnoDB database engine (which is the default since MySQL Version 5.5).
 
 It is recommended that you use the OPTIMIZE TABLE and ANALYZE TABLE statements regularly. This is to make sure that all indices are up to date and to recycle space inside the database files.
 
@@ -1016,7 +1016,7 @@ The basic sequence of events to make this work correctly is as follows:
 Assuming that you start all your nightly backup jobs at 1:05 am (and that they run one after another), you can do the catalog backup with the following additional Director configuration statements:
 
 .. code-block:: bareosconfig
-   :caption: bareos-dir.d/Job/BackupCatalog.conf
+   :caption: bareos-dir.d/job/BackupCatalog.conf
 
    # Backup the catalog database (after the nightly save)
    Job {
@@ -1040,7 +1040,7 @@ Assuming that you start all your nightly backup jobs at 1:05 am (and that they r
    }
 
 .. code-block:: bareosconfig
-   :caption: bareos-dir.d/Schedule/WeeklyCycleAfterBackup.conf
+   :caption: bareos-dir.d/schedule/WeeklyCycleAfterBackup.conf
 
    # This schedule does the catalog. It starts after the WeeklyCycle
    Schedule {
@@ -1049,7 +1049,7 @@ Assuming that you start all your nightly backup jobs at 1:05 am (and that they r
    }
 
 .. code-block:: bareosconfig
-   :caption: bareos-dir.d/FileSet/Catalog.conf
+   :caption: bareos-dir.d/fileset/Catalog.conf
 
    # This is the backup of the catalog
    FileSet {
