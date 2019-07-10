@@ -311,3 +311,16 @@ Detailed Diagram
 
 .. uml:: netprotocol/migration_of_one_volume.puml
 
+Verify of a Single File (Mode: Volume to Catalog)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Overview
+^^^^^^^^
+
+.. uml:: netprotocol/verify_one_file_volume_to_catalog_overview.puml
+
+Detailed Diagram
+^^^^^^^^^^^^^^^^
+
+.. uml:: netprotocol/verify_one_file_volume_to_catalog.puml
+
