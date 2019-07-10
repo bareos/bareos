@@ -39,7 +39,7 @@ Features
 
    -  Filedaemon, Storage- and Director updates
 
-   -  Client, Director, Storage, and Scheduler status
+   -  Client, Director, Storage and Scheduler status
 
 -  Backup Jobs
 
