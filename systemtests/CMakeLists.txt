@@ -157,7 +157,6 @@ foreach(CURRENT_FILE ${ALL_FILES})
   # MESSAGE(STATUS "moved  ${scripts}/${TARGET_FILE}")
 endforeach()
 
-
 set(tests_dir ${PROJECT_BINARY_DIR}/tests)
 set(SYSTEM_TESTS
   backup-bareos-test
@@ -169,6 +168,26 @@ set(SYSTEM_TESTS
   copy-bscan
   copy-remote-bscan
 )
+
+IF(PAM_WRAPPER_LIBRARIES)
+    find_program(PAMTESTER pamtester)
+    IF(PAMTESTER)
+        set(ENV{PAM_WRAPPER_LIBRARIES} "${PAM_WRAPPER_LIBRARIES}")
+        execute_process(
+            COMMAND           "${CMAKE_BINARY_DIR}/systemtests/tests/bconsole-pam/bin/check_pam_exec_available.sh"
+            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/systemtests/tests/bconsole-pam/"
+            RESULT_VARIABLE   PAM_EXEC_AVAILABLE_RC
+        )
+        IF(${PAM_EXEC_AVAILABLE_RC} EQUAL "0")
+            set(PAM_EXEC_FOUND TRUE)
+            list(APPEND SYSTEM_TESTS "bconsole-pam")
+        ENDIF()
+        
+        MESSAGE( STATUS "PAM_EXEC_FOUND:     " ${PAM_EXEC_FOUND} )
+
+    ENDIF()
+ENDIF()
+
 
 set(BASEPORT 42001)
 

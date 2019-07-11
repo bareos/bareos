@@ -75,6 +75,8 @@ BareosFindLibrary("gtest")
 BareosFindLibrary("gtest_main")
 BareosFindLibrary("gmock")
 
+BareosFindLibrary("pam_wrapper")
+
 if (${HAVE_CAP})
    SET(HAVE_LIBCAP 1)
 endif()
