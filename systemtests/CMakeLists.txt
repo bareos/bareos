@@ -29,12 +29,23 @@ function(ConfigureFilesToSystemtest srcdir subdirectory globexpression configure
   foreach(CURRENT_FILE ${ALL_FILES})
     MATH(EXPR COUNT "${COUNT}+1")
     string(REPLACE "${CMAKE_SOURCE_DIR}/" "" TARGET_FILE ${CURRENT_FILE})
-    string(REPLACE ".in" "" TARGET_FILE ${TARGET_FILE})
+    string(REGEX REPLACE ".in$" "" TARGET_FILE ${TARGET_FILE}) # do not mess with .ini files
     #MESSAGE(STATUS "configuring  ${TARGET_FILE}" )
     string(REPLACE "${srcdir}/${subdirectory}" "" TARGET_FILE ${TARGET_FILE})
     configure_file(${CURRENT_FILE} ${PROJECT_BINARY_DIR}/${subdirectory}/${TARGET_FILE} ${configure_option})
   endforeach()
   MESSAGE(STATUS "Configured ${COUNT} files from ${srcdir} to ${subdirectory} with glob ${globexpression} ${configure_option}" )
+endfunction()
+
+# generic function to probe for a python module
+function(PythonModuleStatus module)
+  EXECUTE_PROCESS(COMMAND "${PYTHON}" "-c" "import ${module}" RESULT_VARIABLE ${module}_status ERROR_QUIET)
+  STRING(TOUPPER ${module} module_uppercase)
+  IF(${module}_status EQUAL 0)
+    SET("PYTHON_${module_uppercase}_FOUND" TRUE PARENT_SCOPE)
+  ELSE()
+    SET("PYTHON_${module_uppercase}_FOUND" FALSE PARENT_SCOPE)
+  ENDIF()
 endfunction()
 
 macro(CheckForEnabledAndDisabledListEntry TEST_NAME_TO_CHECK)
@@ -48,8 +59,8 @@ file(STRINGS ${CMAKE_SOURCE_DIR}/core/src/cats/cats.h DB_VERSION_STRING REGEX .*
 string(REGEX MATCH [0-9]+ BDB_VERSION ${DB_VERSION_STRING})
 
 find_program(PERL perl)
-
-
+find_program(PYTHON python)
+find_program(PHP php)
 
 # set variable values to be replaced by configure_file
 #set(DEFAULT_DB_TYPE  ${default_db_backend})
@@ -107,7 +118,6 @@ set(working_dir ${PROJECT_BINARY_DIR}/working)
 set(piddir ${PROJECT_BINARY_DIR}/piddir)
 file(MAKE_DIRECTORY ${piddir})
 
-
 #set(BASEPORT ${dir_port})
 
 # for config-lib.sh: do not remove @DB___@ but replace them with the original
@@ -115,10 +125,6 @@ set(DB_NAME @DB_NAME@)
 set(DB_USER @DB_USER@)
 set(DB_PASS @DB_PASS@)
 set(DB_VERSION @DB_VERSION@)
-
-
-
-
 
 ConfigureFilesToSystemtest("systemtests"  "data" "*.tgz" COPYONLY)
 
@@ -194,12 +200,46 @@ IF(PAM_WRAPPER_LIBRARIES) # BareosFindLibrary(pam_wrapper)
   ENDIF()
 ENDIF()
 
+
 MESSAGE( STATUS "PAM_EXEC_FOUND:               " ${PAM_EXEC_FOUND} )
 
 IF(ENABLE_BCONSOLE_PAM_TEST)
   list(APPEND SYSTEM_TESTS "bconsole-pam")
 ELSE()
   list(APPEND SYSTEM_TESTS_DISABLED "bconsole-pam")
+ENDIF()
+
+SET(PHP_FOUND FALSE)
+SET(PYTHON_FOUND FALSE)
+SET(PYTHON_SELENIUM_FOUND "NOT SEARCHED")
+SET(CHROMEDRIVER_FOUND "NOT SEARCHED")
+
+IF(PHP)
+  SET(PHP_FOUND TRUE)
+  IF(PYTHON)
+    SET(PYTHON_FOUND TRUE)
+    PythonModuleStatus("selenium") # sets PYTHON_SELENIUM_FOUND to TRUE or FALSE
+    IF(${PYTHON_SELENIUM_FOUND})
+      find_program(CHROMEDRIVER chromedriver)
+      IF(CHROMEDRIVER)
+        SET(CHROMEDRIVER_FOUND TRUE)
+        SET(ENABLE_WEBUI_SELENIUM_TEST TRUE)
+      ELSE()
+        SET(CHROMEDRIVER_FOUND FALSE)
+      ENDIF()
+    ENDIF()
+  ENDIF()
+ENDIF()
+
+MESSAGE(STATUS "PHP_FOUND:                    " ${PHP_FOUND})
+MESSAGE(STATUS "PYTHON_FOUND:                 " ${PYTHON_FOUND})
+MESSAGE(STATUS "PYTHON_SELENIUM_FOUND:        " ${PYTHON_SELENIUM_FOUND})
+MESSAGE(STATUS "CHROMEDRIVER_FOUND:           " ${CHROMEDRIVER_FOUND})
+
+IF(ENABLE_WEBUI_SELENIUM_TEST)
+  list(APPEND SYSTEM_TESTS "webui-selenium")
+ELSE()
+  list(APPEND SYSTEM_TESTS_DISABLED "webui-selenium")
 ENDIF()
 
 set(BASEPORT 42001)
@@ -229,7 +269,7 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   math(EXPR  fd_port "${BASEPORT} + 1")
   math(EXPR  sd_port "${BASEPORT} + 2")
   math(EXPR sd2_port "${BASEPORT} + 3")
-
+  math(EXPR php_port "${BASEPORT} + 4")
 
   # set(DEFAULT_DB_TYPE )
   set(archivedir ${current_test_directory}/storage)
@@ -245,6 +285,15 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   file(MAKE_DIRECTORY ${logdir})
   file(MAKE_DIRECTORY ${tmpdir})
   file(MAKE_DIRECTORY ${working_dir})
+
+  # webui-selenium
+  IF(${TEST_NAME} STREQUAL "webui-selenium")
+    set(WEBUICONFDIR ${current_test_directory}/etc/bareos-webui) #used for testenvironment settings
+    file(MAKE_DIRECTORY ${WEBUICONFDIR})
+    configure_file("${CMAKE_SOURCE_DIR}/webui/config/autoload/global.php.in" "${current_test_directory}/webui/config/autoload/global.php" @ONLY)
+    configure_file("${CMAKE_SOURCE_DIR}/systemtests/tests/webui-selenium/directors.ini.in" "${current_test_directory}/etc/bareos-webui/directors.ini" @ONLY)
+    file(COPY "${CMAKE_SOURCE_DIR}/webui/install/configuration.ini" DESTINATION "${current_test_directory}/etc/bareos-webui/configuration.ini")
+  ENDIF()
 
   ConfigureFilesToSystemtest("systemtests"  "tests/${TEST_NAME}" "*" @ONLY)
 
@@ -318,3 +367,4 @@ execute_process(COMMAND
 
 execute_process(COMMAND
   ${CMAKE_COMMAND} -E create_symlink ${scriptdir}/bareos ${bindir}/bareos)
+

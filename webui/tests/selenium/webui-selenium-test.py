@@ -98,7 +98,8 @@ class WrongCredentialsException(Exception):
 
 class SeleniumTest(unittest.TestCase):
 
-    browser = 'firefox'
+    browser = 'chrome'
+    chromdriverpath = None
     base_url = 'http://127.0.0.1/bareos-webui'
     username = 'admin'
     password = 'secret'
@@ -179,8 +180,14 @@ class SeleniumTest(unittest.TestCase):
             self.__setUpTravis()
         else:
             if self.browser == 'chrome':
-                chromedriverpath = self.getChromedriverpath()
-                self.driver = webdriver.Chrome(chromedriverpath)
+                self.chromedriverpath = self.getChromedriverpath()
+                self.driver = webdriver.Chrome(self.chromedriverpath)
+                # disable experimental feature
+                opt = webdriver.ChromeOptions()
+                opt.add_experimental_option('w3c',False)
+                self.driver = webdriver.Chrome(chrome_options=opt)
+                # set explicit window size
+                self.driver.set_window_size(1920,1080)
             elif self.browser == "firefox":
                 d = DesiredCapabilities.FIREFOX
                 d['loggingPrefs'] = {'browser': 'ALL'}
@@ -304,12 +311,10 @@ class SeleniumTest(unittest.TestCase):
             self.wait_for_element(By.XPATH, '//a[contains(text(),"%s/")]' % i).send_keys(Keys.ARROW_RIGHT)
         self.wait_for_element(By.XPATH, '//a[contains(text(),"%s")]' % pathlist[-1]).click()
         # Submit restore
-        self.wait_and_click(By.XPATH, '//input[@id="submit"]')
-        # Confirms alert
-        self.assertRegexpMatches(self.close_alert_and_get_its_text(), r'^Are you sure[\s\S]$')
-        # switch to dashboard to prevent that modals are open before logout
-        self.wait_and_click(By.XPATH, '//a[contains(@href, "/dashboard/")]', By.XPATH, '//div[@id="modal-002"]//button[.="Close"]')
-        self.close_alert_and_get_its_text()
+        self.wait_and_click(By.XPATH, '//button[@id="btn-form-submit"]')
+        # Confirm modals
+        self.wait_and_click(By.XPATH, '//div[@id="modal-003"]//button[.="OK"]')
+        self.wait_and_click(By.XPATH, '//div[@id="modal-002"]//button[.="Close"]')
         # Logout
         self.logout()
 
@@ -401,10 +406,12 @@ class SeleniumTest(unittest.TestCase):
     #
 
     def getChromedriverpath(self):
-        # On OS X: Chromedriver path is 'usr/local/lib/chromium-browser/chromedriver'
-        for chromedriverpath in ['/usr/lib/chromium-browser/chromedriver', '/usr/local/lib/chromium-browser/chromedriver']:
-            if os.path.isfile(chromedriverpath):
-                return chromedriverpath
+        if SeleniumTest.chromedriverpath is None:
+            for chromedriverpath in ['/usr/local/sbin/chromedriver', '/usr/local/bin/chromedriver']:
+                if os.path.isfile(chromedriverpath):
+                    return chromedriverpath
+        else:
+            return SeleniumTest.chromedriverpath
         raise IOError('Chrome Driver file not found.')
 
     def wait_and_click(self, by, value, modal_by=None, modal_value=None):
@@ -503,31 +510,31 @@ def get_env():
     if not available or set use defaults.
     '''
 
-    chromedriverpath = os.environ.get('BAREOS_CHROMEDRIVER_PATH')
+    chromedriverpath = os.environ.get('BAREOS_WEBUI_CHROMEDRIVER_PATH')
     if chromedriverpath:
         SeleniumTest.chromedriverpath = chromedriverpath
-    browser = os.environ.get('BAREOS_BROWSER')
+    browser = os.environ.get('BAREOS_WEBUI_BROWSER')
     if browser:
         SeleniumTest.browser = browser
-    base_url = os.environ.get('BAREOS_BASE_URL')
+    base_url = os.environ.get('BAREOS_WEBUI_BASE_URL')
     if base_url:
         SeleniumTest.base_url = base_url.rstrip('/')
-    username = os.environ.get('BAREOS_USERNAME')
+    username = os.environ.get('BAREOS_WEBUI_USERNAME')
     if username:
         SeleniumTest.username = username
-    password = os.environ.get('BAREOS_PASSWORD')
+    password = os.environ.get('BAREOS_WEBUI_PASSWORD')
     if password:
         SeleniumTest.password = password
-    client = os.environ.get('BAREOS_CLIENT_NAME')
+    client = os.environ.get('BAREOS_WEBUI_CLIENT_NAME')
     if client:
         SeleniumTest.client = client
-    restorefile = os.environ.get('BAREOS_RESTOREFILE')
+    restorefile = os.environ.get('BAREOS_WEBUI_RESTOREFILE')
     if restorefile:
         SeleniumTest.restorefile = restorefile
-    logpath = os.environ.get('BAREOS_LOG_PATH')
+    logpath = os.environ.get('BAREOS_WEBUI_LOG_PATH')
     if logpath:
         SeleniumTest.logpath = logpath
-    sleeptime = os.environ.get('BAREOS_DELAY')
+    sleeptime = os.environ.get('BAREOS_WEBUI_DELAY')
     if sleeptime:
         SeleniumTest.sleeptime = float(sleeptime)
     if os.environ.get('TRAVIS_COMMIT'):
@@ -540,3 +547,4 @@ def get_env():
 if __name__ == '__main__':
     get_env()
     unittest.main()
+
