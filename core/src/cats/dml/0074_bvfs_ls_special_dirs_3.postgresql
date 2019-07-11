@@ -1,0 +1,31 @@
+#
+# for .bvfs_lsdir
+#
+# Retrieve special directors "." and "..".
+# If attributes of this paths are known, include them,
+# otherwise result for extra columns will be empty.
+#
+# parameter:
+#   %s PathId
+#   %s PathId
+#   %s JobIds ("1,2,...")
+#
+# row                       0    1                  2                3      4      5
+SELECT DISTINCT ON (PathId) 'D', SpecialDir.PathId, SpecialDir.Path, JobId, LStat, FileId 
+FROM ( 
+    SELECT %s AS PathId, '.' AS Path
+    
+    UNION 
+    
+    SELECT PPathId AS PathId, '..' AS Path 
+    FROM   PathHierarchy 
+    WHERE  PathId = %s 
+) AS SpecialDir 
+LEFT JOIN ( 
+    SELECT PathId, JobId, LStat, FileId 
+    FROM File 
+    WHERE File.Name = '' 
+      AND File.JobId IN (%s) 
+    ORDER BY PathId ASC, JobId DESC 
+) AS DirAttribute
+ON (SpecialDir.PathId = DirAttribute.PathId) 

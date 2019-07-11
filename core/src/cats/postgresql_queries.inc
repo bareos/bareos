@@ -864,8 +864,8 @@ const char *BareosDbPostgresql::query_definitions[] = {
   "AND  Path NOT LIKE '%%/' "
 ,
 
-/* 0074_bvfs_ls_special_dirs_3 */
-"SELECT 'D', SpecialDir.PathId, SpecialDir.Path, JobId, LStat, FileId "
+/* 0074_bvfs_ls_special_dirs_3.postgresql */
+"SELECT DISTINCT ON (PathId) 'D', SpecialDir.PathId, SpecialDir.Path, JobId, LStat, FileId "
 "FROM ( "
     "SELECT %s AS PathId, '.' AS Path "
     " "
@@ -880,12 +880,14 @@ const char *BareosDbPostgresql::query_definitions[] = {
     "FROM File "
     "WHERE File.Name = '' "
       "AND File.JobId IN (%s) "
+    "ORDER BY PathId ASC, JobId DESC "
 ") AS DirAttribute "
 "ON (SpecialDir.PathId = DirAttribute.PathId) "
 ,
 
-/* 0075_bvfs_ls_sub_dirs_5 */
-"SELECT 'D', PathId, Path, JobId, LStat, FileId "
+/* 0075_bvfs_ls_sub_dirs_5.postgresql */
+"( "
+"SELECT DISTINCT ON (Path) 'D', PathId, Path, JobId, LStat, FileId "
 "FROM ( "
    "SELECT "
       "Path1.PathId AS PathId, "
@@ -905,7 +907,6 @@ const char *BareosDbPostgresql::query_definitions[] = {
          "ON (PathHierarchy1.PathId = PathVisibility1.PathId) "
          "WHERE PathHierarchy1.PPathId = %s "
          "AND PathVisibility1.JobId IN (%s) "
-         "%s "
          ") AS listpath1 "
       "LEFT JOIN ( "
           "SELECT PVD1.PathId AS PathId "
@@ -918,6 +919,7 @@ const char *BareosDbPostgresql::query_definitions[] = {
       ") AS listpath2 "
       "ON (listpath1.PathId = listpath2.PathId) "
       "WHERE listpath2.PathId IS NULL "
+      "%s "
    ") AS listpath3 "
    "INNER JOIN Path AS Path1 ON (listpath3.PathId = Path1.PathId) "
    "LEFT JOIN ( "
@@ -928,6 +930,8 @@ const char *BareosDbPostgresql::query_definitions[] = {
    ") AS listfile1 "
    "ON (listpath3.PathId = listfile1.PathId) "
 ") AS A "
+"ORDER BY Path ASC, JobId DESC "
+") "
 ,
 
 /* 0076_list_volumes_select_0 */

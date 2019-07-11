@@ -14,8 +14,9 @@
 #   %s JobIds ("1,2,...")
 #   %s JobIds ("1,2,...")
 #
-# row  0    1       2     3      4      5
-SELECT 'D', PathId, Path, JobId, LStat, FileId
+# row                     0    1       2     3      4      5
+(
+SELECT DISTINCT ON (Path) 'D', PathId, Path, JobId, LStat, FileId 
 FROM (
    SELECT
       Path1.PathId AS PathId,
@@ -58,3 +59,7 @@ FROM (
    ) AS listfile1
    ON (listpath3.PathId = listfile1.PathId)
 ) AS A
+ORDER BY Path ASC, JobId DESC
+)
+
+
