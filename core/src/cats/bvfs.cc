@@ -234,12 +234,12 @@ bool BareosDb::UpdatePathHierarchyCache(JobControlRecord* jcr,
   Mmsg(cmd,
        "INSERT INTO PathVisibility (PathId, JobId) "
        "SELECT DISTINCT PathId, JobId "
-       "FROM (SELECT PathId, JobId FROM File WHERE JobId = %s "
+       "FROM (SELECT PathId, JobId FROM File WHERE JobId = %s AND ClientId = client_of_job (%s) "
        "UNION "
        "SELECT PathId, BaseFiles.JobId "
        "FROM BaseFiles JOIN File AS F USING (FileId) "
-       "WHERE BaseFiles.JobId = %s) AS B",
-       jobid, jobid);
+       "WHERE ClientId = client_of_job (%s) AND BaseFiles.JobId = %s) AS B",
+       jobid, jobid, jobid, jobid);
 
   if (!QUERY_DB(jcr, cmd)) {
     Dmsg1(dbglevel, "Can't fill PathVisibility %d\n", (uint32_t)JobId);
