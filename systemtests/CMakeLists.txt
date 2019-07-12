@@ -169,23 +169,21 @@ set(SYSTEM_TESTS
   copy-remote-bscan
 )
 
-IF(PAM_WRAPPER_LIBRARIES)
-    find_program(PAMTESTER pamtester)
-    IF(PAMTESTER)
-        set(ENV{PAM_WRAPPER_LIBRARIES} "${PAM_WRAPPER_LIBRARIES}")
-        execute_process(
-            COMMAND           "${CMAKE_BINARY_DIR}/systemtests/tests/bconsole-pam/bin/check_pam_exec_available.sh"
-            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/systemtests/tests/bconsole-pam/"
-            RESULT_VARIABLE   PAM_EXEC_AVAILABLE_RC
-        )
-        IF(${PAM_EXEC_AVAILABLE_RC} EQUAL "0")
-            set(PAM_EXEC_FOUND TRUE)
-            list(APPEND SYSTEM_TESTS "bconsole-pam")
-        ENDIF()
-        
-        MESSAGE( STATUS "PAM_EXEC_FOUND:     " ${PAM_EXEC_FOUND} )
-
+IF(PAM_WRAPPER_LIBRARIES) # BareosFindLibrary(pam_wrapper)
+  find_program(PAMTESTER pamtester)
+  IF(PAMTESTER)
+    set(ENV{PAM_WRAPPER_LIBRARIES} "${PAM_WRAPPER_LIBRARIES}")
+    execute_process(
+      COMMAND           "${CMAKE_SOURCE_DIR}/systemtests/tests/bconsole-pam/bin/check_pam_exec_available.sh"
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/systemtests/tests/bconsole-pam/"
+      RESULT_VARIABLE   PAM_EXEC_AVAILABLE_RC
+    )
+    IF(${PAM_EXEC_AVAILABLE_RC} EQUAL "0")
+      set(PAM_EXEC_FOUND TRUE)
+      list(APPEND SYSTEM_TESTS "bconsole-pam")
     ENDIF()
+    MESSAGE( STATUS "PAM_EXEC_FOUND:     " ${PAM_EXEC_FOUND} )
+  ENDIF()
 ENDIF()
 
 
