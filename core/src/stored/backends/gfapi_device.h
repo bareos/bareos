@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2014 Planets Communications B.V.
-   Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,6 +29,10 @@
 #define BAREOS_STORED_BACKENDS_GFAPI_DEVICE_H_
 
 #include <api/glfs.h>
+
+#if defined GLFS_FTRUNCATE_HAS_FOUR_ARGS
+#define glfs_ftruncate(fd, offset) glfs_ftruncate(fd, offset, NULL, NULL)
+#endif
 
 namespace storagedaemon {
 

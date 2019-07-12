@@ -47,3 +47,19 @@ CHECK_SYMBOL_EXISTS(rados_ioctx_set_namespace rados/librados.h  HAVE_RADOS_NAMES
 CHECK_SYMBOL_EXISTS(rados_nobjects_list_open rados/librados.h HAVE_RADOS_NOBJECTS_LIST)
 cmake_pop_check_state()
 
+
+IF(HAVE_GLUSTERFS_API_GLFS_H)
+cmake_push_check_state()
+set (CMAKE_REQUIRED_LIBRARIES ${GFAPI_LIBRARIES})
+check_cxx_source_compiles("
+#include <glusterfs/api/glfs.h>
+int main(void)
+{
+       /* new glfs_ftruncate() passes two additional args */
+       return glfs_ftruncate(NULL, 0, NULL, NULL);
+}
+"
+GLFS_FTRUNCATE_HAS_FOUR_ARGS)
+
+endif()
+cmake_pop_check_state()

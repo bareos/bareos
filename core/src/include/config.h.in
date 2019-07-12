@@ -391,6 +391,9 @@
 /* Define to 1 if you have gfapi lib */
 #cmakedefine HAVE_GFAPI @HAVE_GFAPI@
 
+/* Define to 1 if the `glfs_ftruncate' function has four arguments. */
+#cmakedefine GLFS_FTRUNCATE_HAS_FOUR_ARGS @GLFS_FTRUNCATE_HAS_FOUR_ARGS@
+
 /* Define to 1 if you have the `glfs_readdirplus' function. */
 #cmakedefine HAVE_GLFS_READDIRPLUS @HAVE_GLFS_READDIRPLUS@
 
