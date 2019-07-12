@@ -13,7 +13,7 @@ set -e
 set -u
 
 export PAM_WRAPPER=1
-export PAM_WRAPPER_SERVICE_DIR=etc/pam.d/bareos
+export PAM_WRAPPER_SERVICE_DIR=etc/pam.d/bareos_discover_pam_exec
 
 if ! [ -e "${PAM_WRAPPER_SERVICE_DIR}" ]; then
     echo "PAM service file ${PAM_WRAPPER_SERVICE_DIR} not found"
@@ -28,6 +28,6 @@ fi
 # PAM_WRAPPER_LIBRARIES will be set my cmake
 USERNAME="user"
 PASSWORD="user"
-echo "$PASSWORD" | LD_PRELOAD=${PAM_WRAPPER_LIBRARIES} pamtester bareos "$USERNAME" authenticate
+echo "$PASSWORD" | LD_PRELOAD=${PAM_WRAPPER_LIBRARIES} pamtester bareos_discover_pam_exec "$USERNAME" authenticate
 
 exit $?
