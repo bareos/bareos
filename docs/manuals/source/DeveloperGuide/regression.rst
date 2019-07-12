@@ -1,6 +1,11 @@
 Bareos Regression Testing
 =========================
 
+.. note::
+
+   While Bareos Regression Testing is still in use,
+   new tests should be written as :ref:`DeveloperGuide/BuildAndTestBareos:Systemtests`.
+
 Setting up Regession Testing
 ----------------------------
 
@@ -11,11 +16,6 @@ recommend them before putting your system into production, and before
 each upgrade, especially if you build from source code. They are simply
 shell scripts that drive Bareos through bconsole and then typically
 compare the input and output with **diff**.
-
-You can find the existing regression scripts in the Bareos developer’s
-**git** repository on SourceForge. We strongly recommend that you
-**clone** the repository because afterwards, you can easily get pull the
-updates that have been made.
 
 To get started, we recommend that you create a directory named
 **bareos**, under which you will put the current source code and the
@@ -33,14 +33,14 @@ home directory in a non-root account):
 
 ::
 
-    git clone https://github.com/bareos/bareos-regress.git
+    git clone https://github.com/bareos/bareos.git
 
-This will create the directory **bareos-regress**. The above should be
+This will create the directory :file:`bareos`. The above should be
 needed only once. Thereafter to update to the latest code, you do:
 
 ::
 
-    cd bareos-regress
+    cd bareos
     git pull
 
 There are two different aspects of regression testing that this document
@@ -68,7 +68,7 @@ To begin:
 
 ::
 
-    cd bareos-regress
+    cd bareos/regress
 
 The very first time you are going to run the regression scripts, you
 will need to create a custom config file for your system. We suggest
@@ -83,7 +83,7 @@ Then you can edit the **config** file directly.
 ::
 
     # Where to get the source to be tested
-    BAREOS_SOURCE="${HOME}/bareos/bareos"
+    BAREOS_SOURCE="${HOME}/bareos/core"
 
     # Where to send email   !!!!! Change me !!!!!!!
     EMAIL=your-name@your-domain.com
