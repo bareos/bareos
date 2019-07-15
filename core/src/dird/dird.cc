@@ -427,9 +427,6 @@ int main(int argc, char* argv[])
 
   InitConsoleMsg(working_directory);
 
-  Dmsg0(200, "Start UA server\n");
-  if (!StartSocketServer(me->DIRaddrs)) { TerminateDird(0); }
-
   StartWatchdog(); /* start network watchdog thread */
 
   if (me->jcr_watchdog_time) {
@@ -445,6 +442,9 @@ int main(int argc, char* argv[])
   //   InitDeviceResources();
 
   StartStatisticsThread();
+
+  Dmsg0(200, "Start UA server\n");
+  if (!StartSocketServer(me->DIRaddrs)) { TerminateDird(0); }
 
   Dmsg0(200, "wait for next job\n");
   /* Main loop -- call scheduler to get next job to run */
