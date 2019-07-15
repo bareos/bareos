@@ -203,6 +203,7 @@ These two are linked together. Data that is received by the Tape Agent inside of
 
 On restore, the data is read by the conventional resource, and then recovered as NDMP stream from the NDMP resource.
 
+.. note:: Copying and migrating a NDMP_BAREOS job is not an NDMP operation. NDMP jobs are copied and migrated just like every other Bareos job.
 
 
 .. figure:: /include/images/ndmp-backup.*
