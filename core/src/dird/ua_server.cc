@@ -34,6 +34,7 @@
 #include "dird/authenticate.h"
 #include "dird/authenticate_console.h"
 #include "dird/job.h"
+#include "dird/pthread_detach_if_not_detached.h"
 #include "dird/ua_cmds.h"
 #include "dird/ua_db.h"
 #include "dird/ua_input.h"
@@ -41,6 +42,7 @@
 #include "dird/ua_server.h"
 #include "lib/bnet.h"
 #include "lib/parse_conf.h"
+
 
 namespace directordaemon {
 

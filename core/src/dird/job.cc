@@ -39,6 +39,7 @@
 #include "dird/fd_cmds.h"
 #include "dird/job.h"
 #include "dird/migration.h"
+#include "dird/pthread_detach_if_not_detached.h"
 #include "dird/restore.h"
 #include "dird/sd_cmds.h"
 #include "dird/stats.h"
