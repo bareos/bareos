@@ -228,7 +228,7 @@ IF(PHP)
         SET(CHROMEDRIVER_FOUND FALSE)
       ENDIF()
     ENDIF()
-  ENDIF()
+ ENDIF()
 ENDIF()
 
 MESSAGE(STATUS "PHP_FOUND:                    " ${PHP_FOUND})
