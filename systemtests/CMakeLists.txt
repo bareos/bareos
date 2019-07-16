@@ -169,6 +169,10 @@ set(SYSTEM_TESTS
   copy-remote-bscan
 )
 
+set(SYSTEM_TESTS_DISABLED
+  #initialy empty
+)
+
 IF(PAM_WRAPPER_LIBRARIES) # BareosFindLibrary(pam_wrapper)
   find_program(PAMTESTER pamtester)
   IF(PAMTESTER)
@@ -243,10 +247,16 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   add_test(NAME "system:${TEST_NAME}"
     COMMAND ${tests_dir}/${TEST_NAME}/testrunner
     WORKING_DIRECTORY ${tests_dir}/${TEST_NAME})
+
   math(EXPR BASEPORT "${BASEPORT} + 10")
 
 endforeach()
 
+foreach(TEST_NAME_DISABLED ${SYSTEM_TESTS_DISABLED})
+  add_test(NAME system:${TEST_NAME_DISABLED} COMMAND empty_command)
+  set_tests_properties(system:${TEST_NAME_DISABLED} PROPERTIES DISABLED true)
+  message(STATUS "Disabled test: system:${TEST_NAME_DISABLED}")
+endforeach()
 
 # create symlinks for the binaries
 
