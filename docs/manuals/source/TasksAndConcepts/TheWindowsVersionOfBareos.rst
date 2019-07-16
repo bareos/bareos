@@ -448,6 +448,54 @@ The FD hang problems were reported with MSDEwriter when:
 
 -  msdtcs was installed to run under "localsystem": try running msdtcs under networking account (instead of local system) (com+ seems to work better with this configuration).
 
+Backup/Restore of Windows Registry
+---------------------------------------
+The Windows Registry can be backed up using VSS.
+The VSS Registry Writer will make sure you can take a stable backup of the registry hives.
+
+The Registry is structured as different hives that are stored in separate files.
+You can find a list of hives with the corresponding files in the Registry itself under ``HKLM\System\CurrentControlSet\Control\hivelist``.
+By backing up the file that one of the hives is stored in, you'll get a backup of that part of the Registry.
+
+Well-Known Hives
+~~~~~~~~~~~~~~~~
++-------------------+-----------------------------------------------------------+---------------------------------------------+
+| Registry Key      | File Location                                             | Description                                 |
++===================+===========================================================+=============================================+
+| HKU\\<User-SID>   | %systemdrive%\\Users\\%username%\\NTUSER.DAT              | User Registry (each users's HKCU)           |
++-------------------+-----------------------------------------------------------+---------------------------------------------+
+| HKLM\\BCD00000000 | \\Device\\HarddiskVolume1\\Boot\\BCD                      | Boot Configuration Database                 |
++-------------------+-----------------------------------------------------------+---------------------------------------------+
+| HKLM\\COMPONENTS  | %systemroot%\\System32\\config\\COMPONENTS                | Component Based Servicing                   |
++-------------------+-----------------------------------------------------------+---------------------------------------------+
+| HKLM\\HARDWARE    | in-memory only                                            | Hardware information determined at runtime  |
++-------------------+-----------------------------------------------------------+---------------------------------------------+
+| HKLM\\SAM         | %systemroot%\\System32\\config\\SAM                       | Security Accounts Manager                   |
++-------------------+-----------------------------------------------------------+---------------------------------------------+
+| HKLM\\SECURITY    | %systemroot%\\System32\\config\\SECURITY                  | Security Policies and User Permission       |
++-------------------+-----------------------------------------------------------+---------------------------------------------+
+| HKLM\\SOFTWARE    | %systemroot%\\System32\\config\\SOFTWARE                  | System-wide settings, Application Settings  |
++-------------------+-----------------------------------------------------------+---------------------------------------------+
+| HKLM\\SYSTEM      | %systemroot%\\System32\\config\\SYSTEM                    | Startup config, drivers and system services |
++-------------------+-----------------------------------------------------------+---------------------------------------------+
+| HKU\\.DEFAULT     | %systemroot%\\System32\\config\\.DEFAULT                  | User Hive for Local System                  |
++-------------------+-----------------------------------------------------------+---------------------------------------------+
+| HKU\\S-1-5-18     | %systemroot%\\System32\\config\\.DEFAULT                  | User Hive for Local System (alternate path) |
++-------------------+-----------------------------------------------------------+---------------------------------------------+
+| HKU\\S-1-5-19     | %systemroot%\\ServiceProfiles\\LocalService\\Ntuser.dat   | User Hive for Local Service                 |
++-------------------+-----------------------------------------------------------+---------------------------------------------+
+| HKU\\S-1-5-20     | %systemroot%\\ServiceProfiles\\NetworkService\\Ntuser.dat | User Hive for Network Service               |
++-------------------+-----------------------------------------------------------+---------------------------------------------+
+
+Restoring the Registry
+~~~~~~~~~~~~~~~~~~~~~~
+To restore a part of the Registry, you simply restore the file containing the appropriate hive to another location on the machine.
+You can then use regedit to open ("mount") that restored hive file by selecting "Load Hive" in the "Registry" menu.
+With the hive mounted you can now export keys or subtrees from the mounted hive and import these at any other location.
+
+Once you're finished you should unload the hive using "Unload Hive" from the "Registry" menu.
+
+
 Windows Firewalls
 -----------------
 
