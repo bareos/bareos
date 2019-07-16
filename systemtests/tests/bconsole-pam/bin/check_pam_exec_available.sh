@@ -28,6 +28,6 @@ fi
 # PAM_WRAPPER_LIBRARIES will be set my cmake
 USERNAME="user"
 PASSWORD="user"
-echo "$PASSWORD" | LD_PRELOAD=${PAM_WRAPPER_LIBRARIES} pamtester bareos_discover_pam_exec "$USERNAME" authenticate
+echo "$PASSWORD" | LD_PRELOAD=${PAM_WRAPPER_LIBRARIES} pamtester bareos_discover_pam_exec "$USERNAME" authenticate > /dev/null 2>&1
 
 exit $?
