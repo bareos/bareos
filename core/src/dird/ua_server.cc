@@ -34,6 +34,7 @@
 #include "dird/authenticate.h"
 #include "dird/authenticate_console.h"
 #include "dird/job.h"
+#include "dird/pthread_detach_if_not_detached.h"
 #include "dird/ua_cmds.h"
 #include "dird/ua_db.h"
 #include "dird/ua_input.h"
@@ -41,6 +42,7 @@
 #include "dird/ua_server.h"
 #include "lib/bnet.h"
 #include "lib/parse_conf.h"
+
 
 namespace directordaemon {
 
@@ -79,7 +81,7 @@ JobControlRecord* new_control_jcr(const char* base_name, int job_type)
  */
 void* HandleUserAgentClientRequest(BareosSocket* user_agent_socket)
 {
-  pthread_detach(pthread_self());
+  DetachIfNotDetached(pthread_self());
 
   JobControlRecord* jcr = new_control_jcr("-Console-", JT_CONSOLE);
 

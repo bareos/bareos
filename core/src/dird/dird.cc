@@ -657,6 +657,7 @@ bail_out:
   is_reloading = false;
   return reloaded;
 }
+
 } /* namespace directordaemon */
 
 /*

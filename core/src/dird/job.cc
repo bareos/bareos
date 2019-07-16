@@ -39,6 +39,7 @@
 #include "dird/fd_cmds.h"
 #include "dird/job.h"
 #include "dird/migration.h"
+#include "dird/pthread_detach_if_not_detached.h"
 #include "dird/restore.h"
 #include "dird/sd_cmds.h"
 #include "dird/stats.h"
@@ -452,7 +453,7 @@ static void* job_thread(void* arg)
 {
   JobControlRecord* jcr = (JobControlRecord*)arg;
 
-  pthread_detach(pthread_self());
+  DetachIfNotDetached(pthread_self());
 
   Dmsg0(200, "=====Start Job=========\n");
   jcr->setJobStatus(JS_Running); /* this will be set only if no error */

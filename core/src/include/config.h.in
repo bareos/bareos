@@ -41,6 +41,12 @@
 // Define to 1 if you have SVR3.2 statfs to get filesystem type
 #cmakedefine FSTYPE_USG_STATFS @FSTYPE_USG_STATFS@
 
+// Define to 1 for pthread_attr_get_np() instead of pthread_getattr_np()
+#cmakedefine HAVE_PTHREAD_ATTR_GET_NP @HAVE_PTHREAD_ATTR_GET_NP@
+
+// Define to 1 if pthread_*_np() are in a seperate header
+#cmakedefine HAVE_PTHREAD_NP_H @HAVE_PTHREAD_NP_H@
+
 // Define to 1 if you want Normal acl support
 #cmakedefine HAVE_ACL @HAVE_ACL@
 
