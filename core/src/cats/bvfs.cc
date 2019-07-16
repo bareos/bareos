@@ -658,7 +658,7 @@ bool Bvfs::ls_dirs()
     db->FillQuery(filter, BareosDb::SQL_QUERY_match_query, pattern);
   }
   db->FillQuery(sub_dirs_query, BareosDb::SQL_QUERY_bvfs_ls_sub_dirs_7, pathid,
-                jobids, jobids, filter.c_str(), jcr->client_name, jcr->client_name, jobids);
+                jobids, jobids, jcr->client_name, filter.c_str(), jcr->client_name, jobids);
 
   db->FillQuery(union_query, BareosDb::SQL_QUERY_bvfs_lsdirs_4,
                 special_dirs_query.c_str(), sub_dirs_query.c_str(), limit,
@@ -669,7 +669,7 @@ bool Bvfs::ls_dirs()
 
   return true;
 }
-// maik: hier ClientId reinbringen
+
 static void build_ls_files_query(JobControlRecord* jcr,
                                  BareosDb* db,
                                  PoolMem& query,
