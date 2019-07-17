@@ -1,0 +1,42 @@
+#!/bin/sh
+#
+# Run a simple backup
+#   then restore it.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=bconsole-status-client
+. ./environment
+. "${scripts}/functions"
+
+"${scripts}/cleanup"
+"${scripts}/setup"
+
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+start_test
+rm -f "$tmp/log2.out"
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+status client=bareos-fd
+
+@$out $tmp/log2.out
+messages
+quit
+END_OF_DATA
+
+run_bareos
+stop_bareos
+
+# if log2.out has not been written, bconsole crashed or disconnected
+# after status client command
+test -f "$tmp/log2.out" || exit 2
+
+end_test

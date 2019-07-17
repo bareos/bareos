@@ -167,6 +167,7 @@ set(SYSTEM_TESTS
   backup-bscan
   copy-bscan
   copy-remote-bscan
+  bconsole-status-client
 )
 
 IF(PAM_WRAPPER_LIBRARIES) # BareosFindLibrary(pam_wrapper)
