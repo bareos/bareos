@@ -17,9 +17,10 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.3)
 project(bareos-systemtests)
 
+cmake_policy(SET CMP0057 NEW) #IF(.. IN_LIST ..)
 
 function(ConfigureFilesToSystemtest srcdir subdirectory globexpression configure_option)
   set(count 1)
@@ -36,7 +37,11 @@ function(ConfigureFilesToSystemtest srcdir subdirectory globexpression configure
   MESSAGE(STATUS "Configured ${COUNT} files from ${srcdir} to ${subdirectory} with glob ${globexpression} ${configure_option}" )
 endfunction()
 
-
+macro(CheckForEnabledAndDisabledListEntry TEST_NAME_TO_CHECK)
+  IF(${TEST_NAME_TO_CHECK} IN_LIST SYSTEM_TESTS AND ${TEST_NAME_TO_CHECK} IN_LIST SYSTEM_TESTS_DISABLED)
+    message(FATAL_ERROR "The test name: ${TEST_NAME} is listed ambiguously in SYSTEM_TESTS and SYSTEM_TESTS_DISABLED at the same time")
+  ENDIF()
+endmacro()
 
 # extract  db version from cats.h
 file(STRINGS ${CMAKE_SOURCE_DIR}/core/src/cats/cats.h DB_VERSION_STRING REGEX .*BDB_VERSION.*)
@@ -169,6 +174,10 @@ set(SYSTEM_TESTS
   copy-remote-bscan
 )
 
+set(SYSTEM_TESTS_DISABLED
+  #initialy empty
+)
+
 IF(PAM_WRAPPER_LIBRARIES) # BareosFindLibrary(pam_wrapper)
   find_program(PAMTESTER pamtester)
   IF(PAMTESTER)
@@ -180,12 +189,18 @@ IF(PAM_WRAPPER_LIBRARIES) # BareosFindLibrary(pam_wrapper)
     )
     IF(${PAM_EXEC_AVAILABLE_RC} EQUAL "0")
       set(PAM_EXEC_FOUND TRUE)
-      list(APPEND SYSTEM_TESTS "bconsole-pam")
+      set(ENABLE_BCONSOLE_PAM_TEST TRUE)
     ENDIF()
-    MESSAGE( STATUS "PAM_EXEC_FOUND:     " ${PAM_EXEC_FOUND} )
   ENDIF()
 ENDIF()
 
+MESSAGE( STATUS "PAM_EXEC_FOUND:               " ${PAM_EXEC_FOUND} )
+
+IF(ENABLE_BCONSOLE_PAM_TEST)
+  list(APPEND SYSTEM_TESTS "bconsole-pam")
+ELSE()
+  list(APPEND SYSTEM_TESTS_DISABLED "bconsole-pam")
+ENDIF()
 
 set(BASEPORT 42001)
 
@@ -240,13 +255,22 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   configure_file("bin/bconsole" "tests/${TEST_NAME}/bin/bconsole" COPYONLY)
   configure_file("bin/bareos" "tests/${TEST_NAME}/bin/bareos" COPYONLY)
 
+  CheckForEnabledAndDisabledListEntry(${TEST_NAME})
+
   add_test(NAME "system:${TEST_NAME}"
     COMMAND ${tests_dir}/${TEST_NAME}/testrunner
     WORKING_DIRECTORY ${tests_dir}/${TEST_NAME})
+
   math(EXPR BASEPORT "${BASEPORT} + 10")
 
 endforeach()
 
+foreach(TEST_NAME_DISABLED ${SYSTEM_TESTS_DISABLED})
+  CheckForEnabledAndDisabledListEntry(${TEST_NAME_DISABLED})
+  add_test(NAME system:${TEST_NAME_DISABLED} COMMAND empty_command)
+  set_tests_properties(system:${TEST_NAME_DISABLED} PROPERTIES DISABLED true)
+  message(STATUS "Disabled test: system:${TEST_NAME_DISABLED}")
+endforeach()
 
 # create symlinks for the binaries
 
