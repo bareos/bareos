@@ -286,10 +286,10 @@ nextvolume | nextvol
    Used in the list and llist commands. Takes no arguments.
 
 on
-   Takes no keyword.
+   Takes no arguments.
 
 off
-   Takes no keyword.
+   Takes no arguments.
 
 pool
    Specify the pool to be used.
