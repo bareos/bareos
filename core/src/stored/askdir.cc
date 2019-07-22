@@ -277,7 +277,7 @@ bool StorageDaemonDeviceControlRecord::DirGetVolumeInfo(enum get_vol_info_rw wri
  */
 bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
 {
-    bool retval;
+    bool retval = false;
     BareosSocket *dir = jcr->dir_bsock;
     PoolMem unwanted_volumes(PM_MESSAGE);
 
@@ -333,7 +333,6 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
        Dmsg2(debuglevel, "No vol. index %d return false. dev=%s\n", vol_index, dev->print_name());
        break;
     }
-    retval = false;
     VolumeName[0] = 0;
 
 get_out:

@@ -158,6 +158,15 @@ mount_next_vol:
    }
 
    switch (AutoloadDevice(dcr, true /* writing */, NULL)) {
+   case -3:
+      Dmsg0(100, "Wait after a unsuccessful tape load (empty slot).\n");
+      Jmsg0(jcr, M_WARNING, 0, "Wait after a unsuccessful tape load (empty slot).\n");
+      Bmicrosleep(1, 0);
+      dev->VolHdr.VolumeName[0] = 0;
+      dev->vol=0; /* do not free volume here because in this case
+                   * it is still on the vol_list chain for another job */
+      goto mount_next_vol;
+      break;
    case -2:
    case -1:
       /*
