@@ -52,18 +52,16 @@ The body of your message should provide detailed answers to the following questi
 * What was the motivation for the change?
 * How does it differ from the previous implementation?
 
-Use the imperative, present tense ("change", not "changed" or "changes") to be consistent with generated messages from commands like git merge.
-
 Commit message guideline
 ~~~~~~~~~~~~~~~~~~~~~~~~
 Start with a short (<= 50 characters) summary on a single line, followed by an empty line.
 If your commit changes a specific component of bareos try to mention it at the start of the summary.
+You should write the summary in imperative mood: "Fix bug" and not "Fixed bug" or "Fixes bug."
 
 If your commit fixes or affects an existing bug, add a single line in the format ``Fixes #12345: The exact title of the bug you fix.``, followed by another empty line.
 
 You can now continue with a detailed commit message.
 It should be wrapped at 72 chars and can consist of multiple paragraphs separated by empty lines.
-You should write in imperative: "Fix bug" and not "Fixed bug" or "Fixes bug."
 
 ::
 
