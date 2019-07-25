@@ -75,7 +75,6 @@
     HasCache : SMALLINT
     Reviewed : SMALLINT
     Comment : TEXT
-    'PRIMARY KEY (JobId)
   }
 
 
