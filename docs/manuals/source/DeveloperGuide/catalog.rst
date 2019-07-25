@@ -793,3 +793,9 @@ under FileId. FileIndex is the index of the file, and is used for
 optimization of Restore jobs to prevent the need to read the FileId
 record when creating the in memory tree. This record is not yet
 implemented.
+
+UML Diagram of Database Schema
+------------------------------
+
+.. uml:: catalog/schema_bareos_postgresql.puml
+

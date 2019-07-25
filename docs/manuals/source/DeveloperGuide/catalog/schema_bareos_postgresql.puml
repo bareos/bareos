@@ -1,0 +1,397 @@
+.. uml::
+  :caption: UML Diagram of the Bareos Database Schema
+
+  @startuml
+
+  ' hide the spot
+  hide circle
+
+   'avoid problems with angled crows feet
+  skinparam linetype ortho
+
+  entity Path {
+    **PathId** : SERIAL
+    --
+    Path : text
+  }
+
+  entity File {
+    **FileId** : BIGSERIAL
+    --
+    FileIndex : INTEGER
+    **JobId** : INTEGER
+    **PathId** :INTEGER
+    DeltaSeq : SMALLINT
+    MarkId : INTEGER
+    Fhinfo : NUMERIC(20)
+    Fhnode : NUMERIC(20)
+    LStat: TEXT
+    Md5 : TEXT
+    Name : TEXT
+  }
+
+
+  entity RestoreObject {
+    **RestoreObjectId** : SERIAL
+    --
+    ObjectName : TEXT
+    RestoreObject : BYTEA
+    PluginName : TEXT
+    ObjectLength : INTEGER
+    ObjectFullLength : INTEGER
+    ObjectIndex : INTEGER
+    ObjectType : INTEGER
+    FileIndex : INTEGER
+    **JobId** : INTEGER
+    ObjectCompression : INTEGER
+  }
+
+  entity Job {
+    **JobId** : SERIAL
+    --
+    Job : TEXT
+    Name : TEXT
+    Type : CHAR(1)
+    Level :CHAR(1)
+    **ClientId** : INTEGER
+    JobStatus : CHAR(1)
+    SchedTime : TIMESTAMP
+    StartTime : TIMESTAMP
+    EndTime : TIMESTAMP
+    RealEndTime : TIMESTAMP
+    JobTDate : BIGINT
+    VolSessionId : INTEGER
+    volSessionTime : INTEGER
+    JobFiles : INTEGER
+    JobBytes : BIGINT
+    ReadBytes : BIGINT
+    JobErrors : INTEGER
+    JobMissingFiles : INTEGER
+    **PoolId** : INTEGER
+    **FilesetId** : INTEGER
+    **PriorJobid** : INTEGER
+    PurgedFiles : SMALLINT
+    HasBase : SMALLINT
+    HasCache : SMALLINT
+    Reviewed : SMALLINT
+    Comment : TEXT
+    'PRIMARY KEY (JobId)
+  }
+
+
+  entity Location {
+    **LocationId** : SERIAL
+    --
+    Location : TEXT
+    Cost : INTEGER
+    Enabled : SMALLINT
+  }
+
+  entity Fileset {
+    **FileSetId** : SERIAL
+    --
+    Fileset : TEXT
+    FileSetText : TEXT
+    Md5 : TEXT
+    CreateTime : TIMESTAMP
+  }
+
+  entity JobMedia {
+    **JobMediaId** : SERIAL
+    --
+    **JobId** : INTEGER
+    **MediaId** : INTEGER
+    FirstIndex : INTEGER
+    LastIndex : INTEGER
+    StartFile : INTEGER
+    EndFile : INTEGER
+    StartBlock : BIGINT
+    EndBlock : BIGINT
+    JobBytes : NUMERIC(20)
+    VolIndex : INTEGER
+  }
+
+  entity Media {
+    **MediaId** : SERIAL
+    --
+    VolumeName : TEXT
+    Slot : INTEGER
+    **PoolId** : INTEGER
+    MediaType : TEXT
+    **MediaTypeId** : INTEGER
+    LabelType : INTEGER
+    FirstWritten : TIMESTAMP
+    LastWritten : TIMESTAMP
+    LabelDate : TIMESTAMP
+    VolJobs : INTEGER
+    VolFiles : INTEGER
+    VolBlocks : INTEGER
+    VolMounts : INTEGER
+    VolBytes : BIGINT
+    VolErrors : INTEGER
+    VolWrites : INTEGER
+    VolCapacityBytes : BIGINT
+    VolStatus : TEXT
+    Enabled : SMALLINT
+    Recycle : SMALLINT
+    ActionOnPurge : SMALLINT
+    VolRetention : BIGINT
+    VolUseDuration : BIGINT
+    MaxVolJobs : INTEGER
+    MaxVolFiles : INTEGER
+    MaxVolBytes : BIGINT
+    InChanger : SMALLINT
+    **StorageId** : INTEGER
+    **DeviceId** : INTEGER
+    MediaAddressing : SMALLINT
+    VolReadTime : BIGINT
+    VolWriteTime : BIGINT
+    EndFile : INTEGER
+    EndBlock : BIGINT
+    **LocationId** : INTEGER
+    RecycleCount : INTEGER
+    MinBlockSize : INTEGER
+    MaxBlockSize : INTEGER
+    InitialWrite : TIMESTAMP
+    **ScratchPoolId** : INTEGER
+    **RecyclePoolId** : INTEGER
+    EncryptionKey : TEXT
+    Comment : TEXT
+  }
+
+  entity MediaType {
+    **MediaTypeId** : SERIAL
+    --
+    MediaType : TEXT
+    ReadOnly : INTEGER
+  }
+
+  entity Storage {
+    **StorageId** : SERIAL
+    --
+    Name : TEXT
+    AutoChanger : INTEGER
+  }
+
+  entity Device {
+    **DeviceId** : SERIAL
+    --
+    Name : TEXT
+    **MediaTypeId** : INTEGER
+    **StorageId** : INTEGER
+    DevMounts : INTEGER
+    DevReadBytes : BIGINT
+    DevWriteBytes : BIGINT
+    DevReadBytesSinceCleaning : BIGINT
+    DevWriteBytesSinceCleaning : BIGINT
+    DevReadTime : BIGINT
+    DevWriteTime : BIGINT
+    DevReadTimeSinceCleaning : BIGINT
+    DevWriteTimeSinceCleaning : BIGINT
+    CleaningDate : TIMESTAMP
+    CleaningPeriod : BIGINT
+  }
+
+  entity Pool {
+    **PoolId** : SERIAL
+    --
+    Name : TEXT
+    NumVols : INTEGER
+    MaxVols : INTEGER
+    UseOnce : SMALLINT
+    UseCatalog : SMALLINT
+    AcceptAnyVolume : SMALLINT
+    VolRetention : BIGINT
+    VolUseDuration : BIGINT
+    MaxVolJobs : INTEGER
+    MaxVolFiles : INTEGER
+    MaxVolBytes : BIGINT
+    AutoPrune : SMALLINT
+    Recycle : SMALLINT
+    ActionOnPurge : SMALLINT
+    PoolType : TEXT
+    LabelType : INTEGER
+    LabelFormat : TEXT
+    Enabled : SMALLINT
+    **ScratchPoolId** : INTEGER
+    **RecyclePoolId** : INTEGER
+    **NextPoolId** : INTEGER
+    MinBlockSize : INTEGER
+    MaxBlockSize : INTEGER
+    MigrationHighBytes : BIGINT
+    MigrationLowBytes : BIGINT
+    MigrationTime : BIGINT
+  }
+
+
+  entity Client {
+    **ClientId** : SERIAL
+    --
+    Name : TEXT
+    UName : TEXT
+    AutoPrune : SMALLINT
+    FileRetention : BIGINT
+    JobRetention : BIGINT
+  }
+
+  entity Log {
+    **LogId** : SERIAL
+    --
+    **JobId** : INTEGER
+    Time : TIMESTAMP
+    LogText : TEXT
+  }
+
+  entity LocationLog {
+    **LocLogId** : SERIAL
+    --
+    Date : TIMESTAMP
+    Comment : TEXT
+    **MediaId** : INTEGER
+    LocationId : INTEGER
+    NewVolStatus : TEXT
+    newenabled : SMALLINT
+  }
+
+  entity basefiles {
+    **BaseId** : SERIAL
+    --
+    **JobId** : INTEGER
+    FileId : BIGINT
+    FileIndex : INTEGER
+    BaseJobId : INTEGER
+  }
+
+  entity PathHierarchy {
+    **PathId** : INTEGER
+    --
+    PPathId : INTEGER
+  }
+
+  entity PathVisibility {
+    **PathId** : INTEGER
+    **JobId** : INTEGER
+    --
+    Size : BIGINT
+    Files : INTEGER
+  }
+
+  entity Quota {
+    **ClientId** : INTEGER
+    --
+    GraceTime : BIGINT
+    QuotaLimit : BIGINT
+  }
+
+  entity NDMPLevelMap {
+    **ClientId** : INTEGER
+    **FilesetId** : INTEGER
+    FileSystem : TEXT
+    --
+    DumpLevel : INTEGER
+  }
+
+  entity NDMPJobEnvironment {
+    **JobId** : INTEGER
+    FileIndex : INTEGER
+    EnvName : TEXT
+    --
+    EnvValue : TEXT
+  }
+
+  entity DeviceStats {
+    **DeviceId** : INTEGER
+    SampleTime : TIMESTAMP
+    ReadTime : BIGINT
+    WriteTime : BIGINT
+    ReadBytes : BIGINT
+    WriteBytes : BIGINT
+    SpoolSize : BIGINT
+    NumWaiting : SMALLINT
+    NumWriters : SMALLINT
+    **MediaId** : INTEGER
+    VolCatBytes : BIGINT
+    VolCatFiles : BIGINT
+    VolCatBlocks : BIGINT
+  }
+
+  entity JobStats {
+    **DeviceId** : INTEGER
+    SampleTime : TIMESTAMP
+    **JobId** : INTEGER
+    JobFiles : INTEGER
+    JobBytes : BIGINT
+  }
+
+  entity TapeAlerts {
+    **DeviceId** : INTEGER
+    SampleTime : TIMESTAMP
+    AlertFlags : BIGINT
+  }
+
+  package unreferenced <<Rectangle>> {
+  entity Status {
+    **JobStatus** : CHAR(1)
+    --
+    JobStatusLong : TEXT
+    Severity : INTEGER
+  }
+
+  entity counters {
+    **Counter** : TEXT
+    --
+    MinValue : INTEGER
+    MaxValue : INTEGER
+    CurrentValue : INTEGER
+    wrapcounter : TEXT
+  }
+
+  entity version {
+    **VersionId** : INTEGER
+    --
+  }
+  }
+
+  Client }o-- Job
+  Client }o-- Quota
+  Client }o-- NDMPLevelMap
+
+  Device }o-- TapeAlerts
+  Device }o-- DeviceStats
+  Device }o-- Media
+
+  Fileset }o-- Job
+  Fileset }o-- NDMPLevelMap
+
+  Job  }o-- File
+  Job  }o-- Job
+  Job  }o-- JobMedia
+  Job  }o-- Log
+  Job  }o-- basefiles
+  Job  }o-- PathVisibility
+  Job  }o-- NDMPJobEnvironment
+  Job  }o-- JobStats
+  Job  }o-- RestoreObject
+
+  Location }o-- Media
+
+  Media }o-- JobMedia
+  Media }o-- LocationLog
+  Media }o-- DeviceStats
+
+  MediaType }o-- Device
+  MediaType }o-- Media
+
+  Path }o-- File
+  Path }o-- PathHierarchy
+  Path }o-- PathVisibility
+
+  Pool }o-- Job
+  Pool }o-- Pool
+  Pool }o--|{ Media
+
+  Storage }o-- Device
+  Storage }o-- Media
+
+  @enduml
+
