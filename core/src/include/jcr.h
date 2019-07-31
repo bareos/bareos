@@ -216,120 +216,110 @@ enum
  */
 class JobControlRecord;
 class BareosSocket;
-struct FindFilesPacket;
 class BareosDb;
+class htable;
+
 struct AttributesDbRecord;
+struct FindFilesPacket;
 struct bpContext;
 #ifdef HAVE_WIN32
 struct CopyThreadContext;
 #endif
-class htable;
 
 #ifdef FILE_DAEMON
 struct acl_data_t;
 struct xattr_data_t;
 
+/* clang-format off */
 struct CryptoContext {
-  bool pki_sign;                /**< Enable PKI Signatures? */
-  bool pki_encrypt;             /**< Enable PKI Encryption? */
-  DIGEST* digest;               /**< Last file's digest context */
-  X509_KEYPAIR* pki_keypair;    /**< Encryption key pair */
-  alist* pki_signers;           /**< Trusted Signers */
-  alist* pki_recipients;        /**< Trusted Recipients */
-  CRYPTO_SESSION* pki_session;  /**< PKE Public Keys + Symmetric Session Keys */
-  POOLMEM* crypto_buf;          /**< Encryption/Decryption buffer */
-  POOLMEM* pki_session_encoded; /**< Cached DER-encoded copy of pki_session */
-  int32_t pki_session_encoded_size; /**< Size of DER-encoded pki_session */
+  bool pki_sign = false;               /**< Enable PKI Signatures? */
+  bool pki_encrypt = false;            /**< Enable PKI Encryption? */
+  DIGEST* digest = nullptr;            /**< Last file's digest context */
+  X509_KEYPAIR* pki_keypair = nullptr; /**< Encryption key pair */
+  alist* pki_signers = nullptr;        /**< Trusted Signers */
+  alist* pki_recipients = nullptr;     /**< Trusted Recipients */
+  CRYPTO_SESSION* pki_session = nullptr; /**< PKE Public Keys + Symmetric Session Keys */
+  POOLMEM* crypto_buf = nullptr;       /**< Encryption/Decryption buffer */
+  POOLMEM* pki_session_encoded = nullptr; /**< Cached DER-encoded copy of pki_session */
+  int32_t pki_session_encoded_size = 0; /**< Size of DER-encoded pki_session */
 };
+/* clang-format on */
 #endif
 
+/* clang-format off */
 #ifdef DIRECTOR_DAEMON
 struct Resources {
-  directordaemon::JobResource* job; /**< Job resource */
-  directordaemon::JobResource*
-      verify_job; /**< Job resource of verify previous job */
-  directordaemon::JobResource*
-      previous_job; /**< Job resource of migration previous job */
-  directordaemon::StorageResource* read_storage;  /**< Selected read storage */
-  directordaemon::StorageResource* write_storage; /**< Selected write storage */
-  directordaemon::StorageResource*
-      paired_read_write_storage;          /**< Selected paired storage (saved
-                                             write_storage or read_storage) */
-  directordaemon::ClientResource* client; /**< Client resource */
-  directordaemon::PoolResource*
-      pool; /**< Pool resource = write for migration */
-  directordaemon::PoolResource* rpool; /**< Read pool. Used only in migration */
-  directordaemon::PoolResource* full_pool; /**< Full backup pool resource */
-  directordaemon::PoolResource*
-      vfull_pool; /**< Virtual Full backup pool resource */
-  directordaemon::PoolResource*
-      inc_pool; /**< Incremental backup pool resource */
-  directordaemon::PoolResource*
-      diff_pool; /**< Differential backup pool resource */
-  directordaemon::PoolResource*
-      next_pool; /**< Next Pool used for migration/copy and virtual backup */
-  directordaemon::FilesetResource* fileset; /**< FileSet resource */
-  directordaemon::CatalogResource* catalog; /**< Catalog resource */
-  MessagesResource* messages;               /**< Default message handler */
-  POOLMEM* pool_source;                     /**< Where pool came from */
-  POOLMEM* npool_source;                    /**< Where next pool came from */
-  POOLMEM* rpool_source;     /**< Where migrate read pool came from */
-  POOLMEM* rstore_source;    /**< Where read storage came from */
-  POOLMEM* wstore_source;    /**< Where write storage came from */
-  POOLMEM* catalog_source;   /**< Where catalog came from */
-  alist* read_storage_list;  /**< Read storage possibilities */
-  alist* write_storage_list; /**< Write storage possibilities */
-  alist* paired_read_write_storage_list; /**< Paired storage possibilities
-                                            (saved write_storage_list or
-                                            read_storage_list) */
-  bool run_pool_override;       /**< Pool override was given on run cmdline */
-  bool run_full_pool_override;  /**< Full pool override was given on run cmdline
-                                 */
-  bool run_vfull_pool_override; /**< Virtual Full pool override was given on run
-                                   cmdline */
-  bool run_inc_pool_override;   /**< Incremental pool override was given on run
-                                   cmdline */
-  bool run_diff_pool_override;  /**< Differential pool override was given on run
-                                   cmdline */
-  bool run_next_pool_override;  /**< Next pool override was given on run cmdline
-                                 */
+  directordaemon::JobResource* job = nullptr;        /**< Job resource */
+  directordaemon::JobResource* verify_job = nullptr; /**< Job resource of verify previous job */
+  directordaemon::JobResource* previous_job = nullptr; /**< Job resource of migration previous job */
+  directordaemon::StorageResource* read_storage = nullptr; /**< Selected read storage */
+  directordaemon::StorageResource* write_storage = nullptr; /**< Selected write storage */
+  directordaemon::StorageResource* paired_read_write_storage = nullptr; /*< Selected paired storage (savedwrite_storage or read_storage)*/
+  directordaemon::ClientResource* client = nullptr; /**< Client resource */
+  directordaemon::PoolResource* pool = nullptr; /**< Pool resource = write for migration */
+  directordaemon::PoolResource* rpool = nullptr; /**< Read pool. Used only in migration */
+  directordaemon::PoolResource* full_pool = nullptr; /**< Full backup pool resource */
+  directordaemon::PoolResource* vfull_pool = nullptr; /**< Virtual Full backup pool resource */
+  directordaemon::PoolResource* inc_pool = nullptr; /**< Incremental backup pool resource */
+  directordaemon::PoolResource* diff_pool = nullptr; /**< Differential backup pool resource */
+  directordaemon::PoolResource* next_pool = nullptr; /**< Next Pool used for migration/copy and virtual backup */
+  directordaemon::FilesetResource* fileset = nullptr; /**< FileSet resource */
+  directordaemon::CatalogResource* catalog = nullptr; /**< Catalog resource */
+  MessagesResource* messages = nullptr; /**< Default message handler */
+  POOLMEM* pool_source = nullptr;       /**< Where pool came from */
+  POOLMEM* npool_source = nullptr;      /**< Where next pool came from */
+  POOLMEM* rpool_source = nullptr;     /**< Where migrate read pool came from */
+  POOLMEM* rstore_source = nullptr;    /**< Where read storage came from */
+  POOLMEM* wstore_source = nullptr;    /**< Where write storage came from */
+  POOLMEM* catalog_source = nullptr;   /**< Where catalog came from */
+  alist* read_storage_list = nullptr;  /**< Read storage possibilities */
+  alist* write_storage_list = nullptr; /**< Write storage possibilities */
+  alist* paired_read_write_storage_list = nullptr; /**< Paired storage possibilities
+                                                     *  (saved write_storage_list or read_storage_list) */
+  bool run_pool_override = false; /**< Pool override was given on run cmdline */
+  bool run_full_pool_override = false; /**< Full pool override was given on run cmdline */
+  bool run_vfull_pool_override = false; /**< Virtual Full pool override was given on run cmdline */
+  bool run_inc_pool_override = false;   /**< Incremental pool override was given on run cmdline */
+  bool run_diff_pool_override = false; /**< Differential pool override was given on run cmdline */
+  bool run_next_pool_override = false; /**< Next pool override was given on run cmdline */
 };
+/* clang-format on */
 #endif
 
+/* clang-format off */
 struct CompressionContext {
-  POOLMEM* deflate_buffer; /**< Buffer used for deflation (compression) */
-  POOLMEM* inflate_buffer; /**< Buffer used for inflation (decompression) */
-  uint32_t deflate_buffer_size; /**< Length of deflation buffer */
-  uint32_t inflate_buffer_size; /**< Length of inflation buffer */
+  POOLMEM* deflate_buffer = nullptr; /**< Buffer used for deflation (compression) */
+  POOLMEM* inflate_buffer = nullptr; /**< Buffer used for inflation (decompression) */
+  uint32_t deflate_buffer_size = 0; /**< Length of deflation buffer */
+  uint32_t inflate_buffer_size = 0; /**< Length of inflation buffer */
   struct {
 #ifdef HAVE_LIBZ
-    void* pZLIB; /**< ZLIB compression session data */
+    void* pZLIB = nullptr; /**< ZLIB compression session data */
 #endif
 #ifdef HAVE_LZO
-    void* pLZO; /**< LZO compression session data */
+    void* pLZO = nullptr; /**< LZO compression session data */
 #endif
-    void* pZFAST; /**< FASTLZ compression session data */
+    void* pZFAST = nullptr; /**< FASTLZ compression session data */
   } workset;
 };
+/* clang-format on */
 
 struct job_callback_item {
   void (*JobEndCb)(JobControlRecord* jcr, void*);
-  void* ctx;
+  void* ctx = nullptr;
 };
 
 typedef void(JCR_free_HANDLER)(JobControlRecord* jcr);
 
-/**
- * Job Control Record (JobControlRecord)
- */
+/* clang-format off */
 class JobControlRecord {
  private:
-  pthread_mutex_t mutex;       /**< Jcr mutex */
-  volatile int32_t _use_count; /**< Use count */
-  int32_t JobType_;            /**< Backup, restore, verify ... */
-  int32_t JobLevel_;           /**< Job level */
-  int32_t Protocol_;           /**< Backup Protocol */
-  bool my_thread_killable;     /**< Can we kill the thread? */
+  pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; /**< Jcr mutex */
+  volatile int32_t _use_count = 0;                   /**< Use count */
+  int32_t JobType_ = 0;            /**< Backup, restore, verify ... */
+  int32_t JobLevel_ = 0;           /**< Job level */
+  int32_t Protocol_ = 0;           /**< Backup Protocol */
+  bool my_thread_killable = false; /**< Can we kill the thread? */
  public:
   JobControlRecord() { Dmsg0(100, "Construct JobControlRecord\n"); }
 
@@ -389,97 +379,93 @@ class JobControlRecord {
    * Global part of JobControlRecord common to all daemons
    */
   dlink link;                /**< JobControlRecord chain link */
-  pthread_t my_thread_id;    /**< Id of thread controlling jcr */
-  BareosSocket* dir_bsock;   /**< Director bsock or NULL if we are him */
-  BareosSocket* store_bsock; /**< Storage connection socket */
+  pthread_t my_thread_id = 0;  /**< Id of thread controlling jcr */
+  BareosSocket* dir_bsock = nullptr; /**< Director bsock or NULL if we are him */
+  BareosSocket* store_bsock = nullptr; /**< Storage connection socket */
   BareosSocket* file_bsock;  /**< File daemon connection socket */
-  JCR_free_HANDLER* daemon_free_jcr; /**< Local free routine */
-  dlist* msg_queue;                  /**< Queued messages */
-  pthread_mutex_t msg_queue_mutex;   /**< message queue mutex */
-  bool dequeuing_msgs;               /**< Set when dequeuing messages */
+  JCR_free_HANDLER* daemon_free_jcr = nullptr; /**< Local free routine */
+  dlist* msg_queue = nullptr;     /**< Queued messages */
+  pthread_mutex_t msg_queue_mutex = PTHREAD_MUTEX_INITIALIZER; /**< message queue mutex */
+  bool dequeuing_msgs = false;    /**< Set when dequeuing messages */
   alist job_end_callbacks;           /**< callbacks called at Job end */
-  POOLMEM* VolumeName;               /**< Volume name desired -- pool_memory */
-  POOLMEM* errmsg;                   /**< Edited error message */
-  char Job[MAX_NAME_LENGTH];         /**< Unique name of this Job */
+  POOLMEM* VolumeName = nullptr;  /**< Volume name desired -- pool_memory */
+  POOLMEM* errmsg = nullptr;      /**< Edited error message */
+  char Job[MAX_NAME_LENGTH]{0};   /**< Unique name of this Job */
 
-  uint32_t JobId; /**< Director's JobId */
-  uint32_t VolSessionId;
-  uint32_t VolSessionTime;
-  uint32_t JobFiles;          /**< Number of files written, this job */
-  uint32_t JobErrors;         /**< Number of non-fatal errors this job */
-  uint32_t JobWarnings;       /**< Number of warning messages */
-  uint32_t LastRate;          /**< Last sample bytes/sec */
-  uint64_t JobBytes;          /**< Number of bytes processed this job */
-  uint64_t LastJobBytes;      /**< Last sample number bytes */
-  uint64_t ReadBytes;         /**< Bytes read -- before compression */
-  FileId_t FileId;            /**< Last FileId used */
-  volatile int32_t JobStatus; /**< ready, running, blocked, terminated */
-  int32_t JobPriority;        /**< Job priority */
-  time_t sched_time; /**< Job schedule time, i.e. when it should start */
-  time_t initial_sched_time; /**< Original sched time before any reschedules are
-                                done */
-  time_t start_time;         /**< When job actually started */
-  time_t run_time;           /**< Used for computing speed */
-  time_t last_time;          /**< Last sample time */
-  time_t end_time;           /**< Job end time */
-  time_t wait_time_sum;      /**< Cumulative wait time since job start */
-  time_t wait_time;          /**< Timestamp when job have started to wait */
-  time_t job_started_time;   /**< Time when the MaxRunTime start to count */
-  POOLMEM* client_name;      /**< Client name */
-  POOLMEM* JobIds;           /**< User entered string of JobIds */
-  POOLMEM* RestoreBootstrap; /**< Bootstrap file to restore */
-  POOLMEM* stime;            /**< start time for incremental/differential */
-  char* sd_auth_key;         /**< SD auth key */
+  uint32_t JobId = 0; /**< Director's JobId */
+  uint32_t VolSessionId = 0;
+  uint32_t VolSessionTime = 0;
+  uint32_t JobFiles = 0;          /**< Number of files written, this job */
+  uint32_t JobErrors = 0;         /**< Number of non-fatal errors this job */
+  uint32_t JobWarnings = 0;       /**< Number of warning messages */
+  uint32_t LastRate = 0;          /**< Last sample bytes/sec */
+  uint64_t JobBytes = 0;          /**< Number of bytes processed this job */
+  uint64_t LastJobBytes = 0;      /**< Last sample number bytes */
+  uint64_t ReadBytes = 0;         /**< Bytes read -- before compression */
+  FileId_t FileId = 0;            /**< Last FileId used */
+  volatile int32_t JobStatus = 0; /**< ready, running, blocked, terminated */
+  int32_t JobPriority = 0;        /**< Job priority */
+  time_t sched_time = 0;          /**< Job schedule time, i.e. when it should start */
+  time_t initial_sched_time = 0;  /**< Original sched time before any reschedules are done */
+  time_t start_time = 0;          /**< When job actually started */
+  time_t run_time = 0;            /**< Used for computing speed */
+  time_t last_time = 0;           /**< Last sample time */
+  time_t end_time = 0;            /**< Job end time */
+  time_t wait_time_sum = 0;       /**< Cumulative wait time since job start */
+  time_t wait_time = 0;           /**< Timestamp when job have started to wait */
+  time_t job_started_time = 0;    /**< Time when the MaxRunTime start to count */
+  POOLMEM* client_name = nullptr; /**< Client name */
+  POOLMEM* JobIds = nullptr;      /**< User entered string of JobIds */
+  POOLMEM* RestoreBootstrap = nullptr; /**< Bootstrap file to restore */
+  POOLMEM* stime = nullptr;    /**< start time for incremental/differential */
+  char* sd_auth_key = nullptr; /**< SD auth key */
   TlsPolicy sd_tls_policy;   /**< SD Tls Policy */
-  MessagesResource* jcr_msgs; /**< Copy of message resource -- actually used */
-  uint32_t ClientId;          /**< Client associated with Job */
-  char* where;                /**< Prefix to restore files to */
-  char* RegexWhere;           /**< File relocation in restore */
-  alist* where_bregexp;       /**< BareosRegex alist for path manipulation */
-  int32_t cached_pnl;         /**< Cached path length */
-  POOLMEM* cached_path;       /**< Cached path */
-  bool passive_client; /**< Client is a passive client e.g. doesn't initiate any
-                          network connection */
-  bool prefix_links;   /**< Prefix links with Where path */
-  bool gui;            /**< Set if gui using console */
-  bool authenticated;  /**< Set when client authenticated */
-  bool cached_attribute; /**< Set if attribute is cached */
-  bool batch_started;    /**< Set if batch mode started */
-  bool cmd_plugin;       /**< Set when processing a command Plugin = */
-  bool opt_plugin;       /**< Set when processing an option Plugin = */
-  bool keep_path_list;   /**< Keep newly created path in a hash */
-  bool accurate;         /**< True if job is accurate */
-  bool HasBase;          /**< True if job use base jobs */
-  bool rerunning;        /**< Rerunning an incomplete job */
-  bool job_started;      /**< Set when the job is actually started */
-  bool suppress_output;  /**< Set if this JobControlRecord should not output any
-                            Jmsgs */
-  JobControlRecord* cjcr; /**< Controlling JobControlRecord when this is a slave
-                           * JobControlRecord being         controlled by
-                           * another JobControlRecord used for sending normal
-                           * and fatal errors.
+  MessagesResource* jcr_msgs = nullptr; /**< Copy of message resource -- actually used */
+  uint32_t ClientId = 0;      /**< Client associated with Job */
+  char* where = nullptr;      /**< Prefix to restore files to */
+  char* RegexWhere = nullptr; /**< File relocation in restore */
+  alist* where_bregexp = nullptr; /**< BareosRegex alist for path manipulation */
+  int32_t cached_pnl = 0; /**< Cached path length */
+  POOLMEM* cached_path = nullptr; /**< Cached path */
+  bool passive_client = false;    /**< Client is a passive client e.g. doesn't initiate any network connection */
+  bool prefix_links = false;      /**< Prefix links with Where path */
+  bool gui = false;               /**< Set if gui using console */
+  bool authenticated = false;     /**< Set when client authenticated */
+  bool cached_attribute = false;  /**< Set if attribute is cached */
+  bool batch_started = false;     /**< Set if batch mode started */
+  bool cmd_plugin = false;        /**< Set when processing a command Plugin = */
+  bool opt_plugin = false;        /**< Set when processing an option Plugin = */
+  bool keep_path_list = false;    /**< Keep newly created path in a hash */
+  bool accurate = false;          /**< True if job is accurate */
+  bool HasBase = false;           /**< True if job use base jobs */
+  bool rerunning = false;         /**< Rerunning an incomplete job */
+  bool job_started = false;       /**< Set when the job is actually started */
+  bool suppress_output = false;   /**< Set if this JobControlRecord should not output any Jmsgs */
+  JobControlRecord* cjcr = nullptr; /**< Controlling JobControlRecord when this
+                                     * is a slave JobControlRecord being
+                                     * controlled by another JobControlRecord
+                                     * used for sending normal and fatal errors.
                            */
-  int32_t buf_size;       /**< Length of buffer */
+  int32_t buf_size = 0;             /**< Length of buffer */
   CompressionContext compress; /**< Compression ctx */
 #ifdef HAVE_WIN32
-  CopyThreadContext* cp_thread; /**< Copy Thread ctx */
+  CopyThreadContext* cp_thread = nullptr; /**< Copy Thread ctx */
 #endif
-  POOLMEM* attr;               /**< Attribute string from SD */
-  BareosDb* db;                /**< database pointer */
-  BareosDb* db_batch;          /**< database pointer for batch and accurate */
-  uint64_t nb_base_files;      /**< Number of base files */
-  uint64_t nb_base_files_used; /**< Number of useful files in base */
+  POOLMEM* attr = nullptr;      /**< Attribute string from SD */
+  BareosDb* db = nullptr;       /**< database pointer */
+  BareosDb* db_batch = nullptr; /**< database pointer for batch and accurate */
+  uint64_t nb_base_files = 0;   /**< Number of base files */
+  uint64_t nb_base_files_used = 0; /**< Number of useful files in base */
 
-  AttributesDbRecord* ar; /**< DB attribute record */
-  guid_list* id_list;     /**< User/group id to name list */
+  AttributesDbRecord* ar = nullptr; /**< DB attribute record */
+  guid_list* id_list = nullptr;     /**< User/group id to name list */
 
-  alist* plugin_ctx_list; /**< List of contexts for plugins */
-  bpContext* plugin_ctx;  /**< Current plugin context */
-  POOLMEM* comment;       /**< Comment for this Job */
-  int64_t max_bandwidth;  /**< Bandwidth limit for this Job */
-  htable* path_list;      /**< Directory list (used by findlib) */
-  bool is_passive_client_connection_probing; /**< Set if director probes a
-                                                passive client connection */
+  alist* plugin_ctx_list = nullptr; /**< List of contexts for plugins */
+  bpContext* plugin_ctx = nullptr;  /**< Current plugin context */
+  POOLMEM* comment = nullptr;       /**< Comment for this Job */
+  int64_t max_bandwidth = 0;        /**< Bandwidth limit for this Job */
+  htable* path_list = nullptr;      /**< Directory list (used by findlib) */
+  bool is_passive_client_connection_probing = false; /**< Set if director probes a passive client connection */
 
   /*
    * Daemon specific part of JobControlRecord
@@ -490,123 +476,115 @@ class JobControlRecord {
   /*
    * Director Daemon specific data part of JobControlRecord
    */
-  pthread_t SD_msg_chan;        /**< Message channel thread id */
-  bool SD_msg_chan_started;     /**< Message channel thread started */
-  pthread_cond_t start_wait;    /**< Wait for FD to start Job */
-  pthread_cond_t term_wait;     /**< Wait for job termination */
-  pthread_cond_t nextrun_ready; /**< Wait for job next run to become ready */
-  BareosSocket* ua;             /**< User agent */
+  pthread_t SD_msg_chan = 0;        /**< Message channel thread id */
+  bool SD_msg_chan_started = false; /**< Message channel thread started */
+  pthread_cond_t start_wait = PTHREAD_COND_INITIALIZER; /**< Wait for FD to start Job */
+  pthread_cond_t term_wait = PTHREAD_COND_INITIALIZER; /**< Wait for job termination */
+  pthread_cond_t nextrun_ready = PTHREAD_COND_INITIALIZER; /**< Wait for job next run to become ready */
+  BareosSocket* ua = nullptr;             /**< User agent */
   Resources res;                /**< Resources assigned */
-  TREE_ROOT* restore_tree_root; /**< Selected files to restore (some protocols
-                                   need this info) */
-  storagedaemon::BootStrapRecord*
-      bsr;              /**< Bootstrap record -- has everything */
-  char* backup_format;  /**< Backup format used when doing a NDMP backup */
-  char* plugin_options; /**< User set options for plugin */
-  uint32_t SDJobFiles;  /**< Number of files written, this job */
-  uint64_t SDJobBytes;  /**< Number of bytes processed this job */
-  uint32_t SDErrors;    /**< Number of non-fatal errors */
-  volatile int32_t SDJobStatus; /**< Storage Job Status */
-  volatile int32_t FDJobStatus; /**< File daemon Job Status */
-  uint32_t DumpLevel;           /**< Dump level when doing a NDMP backup */
-  uint32_t ExpectedFiles;       /**< Expected restore files */
-  uint32_t MediaId;             /**< DB record IDs associated with this job */
-  uint32_t FileIndex;           /**< Last FileIndex processed */
-  utime_t MaxRunSchedTime;   /**< Max run time in seconds from Initial Scheduled
-                                time */
+  TREE_ROOT* restore_tree_root = nullptr; /**< Selected files to restore (some protocols need this info) */
+  storagedaemon::BootStrapRecord* bsr = nullptr; /**< Bootstrap record -- has everything */
+  char* backup_format = nullptr; /**< Backup format used when doing a NDMP backup */
+  char* plugin_options = nullptr;   /**< User set options for plugin */
+  uint32_t SDJobFiles = 0;          /**< Number of files written, this job */
+  uint64_t SDJobBytes = 0;          /**< Number of bytes processed this job */
+  uint32_t SDErrors = 0;            /**< Number of non-fatal errors */
+  volatile int32_t SDJobStatus = 0; /**< Storage Job Status */
+  volatile int32_t FDJobStatus = 0; /**< File daemon Job Status */
+  uint32_t DumpLevel = 0;           /**< Dump level when doing a NDMP backup */
+  uint32_t ExpectedFiles = 0;       /**< Expected restore files */
+  uint32_t MediaId = 0;        /**< DB record IDs associated with this job */
+  uint32_t FileIndex = 0;      /**< Last FileIndex processed */
+  utime_t MaxRunSchedTime = 0; /**< Max run time in seconds from Initial Scheduled time */
   JobDbRecord jr;            /**< Job DB record for current job */
   JobDbRecord previous_jr;   /**< Previous job database record */
-  JobControlRecord* mig_jcr; /**< JobControlRecord for migration/copy job */
-  char FSCreateTime[MAX_TIME_LENGTH]; /**< FileSet CreateTime as returned from
-                                         DB */
-  char since[MAX_TIME_LENGTH];        /**< Since time */
-  char PrevJob[MAX_NAME_LENGTH]; /**< Previous job name assiciated with since
-                                    time */
+  JobControlRecord* mig_jcr = nullptr; /**< JobControlRecord for migration/copy job */
+  char FSCreateTime[MAX_TIME_LENGTH]{0}; /**< FileSet CreateTime as returned from DB */
+  char since[MAX_TIME_LENGTH]{0};        /**< Since time */
+  char PrevJob[MAX_NAME_LENGTH]{0}; /**< Previous job name assiciated with since time */
   union {
     JobId_t RestoreJobId; /**< Restore JobId specified by UA */
     JobId_t MigrateJobId; /**< Migration JobId specified by UA */
     JobId_t VerifyJobId;  /**< Verify JobId specified by UA */
   };
-  POOLMEM* fname;                   /**< Name to put into catalog */
-  POOLMEM* client_uname;            /**< Client uname */
-  POOLMEM* FDSecureEraseCmd;        /**< Report: Secure Erase Command  */
-  POOLMEM* SDSecureEraseCmd;        /**< Report: Secure Erase Command  */
-  POOLMEM* vf_jobids;               /**< JobIds to use for Virtual Full */
-  uint32_t replace;                 /**< Replace option */
-  int32_t NumVols;                  /**< Number of Volume used in pool */
-  int32_t reschedule_count;         /**< Number of times rescheduled */
-  int32_t FDVersion;                /**< File daemon version number */
-  int64_t spool_size;               /**< Spool size for this job */
-  volatile bool sd_msg_thread_done; /**< Set when Storage message thread done */
-  bool IgnoreDuplicateJobChecking;  /**< Set in migration jobs */
-  bool IgnoreLevelPoolOverides;     /**< Set if a cmdline pool was specified */
-  bool IgnoreClientConcurrency;     /**< Set in migration jobs */
-  bool IgnoreStorageConcurrency;    /**< Set in migration jobs */
-  bool spool_data;                  /**< Spool data in SD */
-  bool acquired_resource_locks;     /**< Set if resource locks acquired */
-  bool start_wait_inited;           /**< Set when cond var inited */
-  bool term_wait_inited;            /**< Set when cond var inited */
-  bool nextrun_ready_inited;        /**< Set when cond var inited */
-  bool fn_printed;                  /**< Printed filename */
-  bool needs_sd;                    /**< Set if SD needed by Job */
-  bool cloned;                      /**< Set if cloned */
-  bool unlink_bsr;                  /**< Unlink bsr file created */
-  bool VSS;                         /**< VSS used by FD */
-  bool Encrypt;                     /**< Encryption used by FD */
-  bool stats_enabled;    /**< Keep all job records in a table for long term
-                            statistics */
-  bool no_maxtime;       /**< Don't check Max*Time for this JobControlRecord */
-  bool keep_sd_auth_key; /**< Clear or not the SD auth key after connection*/
-  bool use_accurate_chksum; /**< Use or not checksum option in accurate code */
-  bool sd_canceled;         /**< Set if SD canceled */
-  bool remote_replicate;    /**< Replicate data to remote SD */
-  bool RescheduleIncompleteJobs; /**< Set if incomplete can be rescheduled */
-  bool HasQuota;                 /**< Client has quota limits */
-  bool HasSelectedJobs; /**< Migration/Copy Job did actually select some JobIds
-                         */
-  directordaemon::ClientConnectionHandshakeMode connection_handshake_try_;
+  POOLMEM* fname = nullptr;            /**< Name to put into catalog */
+  POOLMEM* client_uname = nullptr;     /**< Client uname */
+  POOLMEM* FDSecureEraseCmd = nullptr; /**< Report: Secure Erase Command  */
+  POOLMEM* SDSecureEraseCmd = nullptr; /**< Report: Secure Erase Command  */
+  POOLMEM* vf_jobids = nullptr;        /**< JobIds to use for Virtual Full */
+  uint32_t replace = 0;                /**< Replace option */
+  int32_t NumVols = 0;                 /**< Number of Volume used in pool */
+  int32_t reschedule_count = 0;        /**< Number of times rescheduled */
+  int32_t FDVersion = 0;               /**< File daemon version number */
+  int64_t spool_size = 0;              /**< Spool size for this job */
+  volatile bool sd_msg_thread_done = false; /**< Set when Storage message thread done */
+  bool IgnoreDuplicateJobChecking = false; /**< Set in migration jobs */
+  bool IgnoreLevelPoolOverides = false; /**< Set if a cmdline pool was specified */
+  bool IgnoreClientConcurrency = false;  /**< Set in migration jobs */
+  bool IgnoreStorageConcurrency = false; /**< Set in migration jobs */
+  bool spool_data = false;               /**< Spool data in SD */
+  bool acquired_resource_locks = false;  /**< Set if resource locks acquired */
+  bool start_wait_inited = false;        /**< Set when cond var inited */
+  bool term_wait_inited = false;         /**< Set when cond var inited */
+  bool nextrun_ready_inited = false;     /**< Set when cond var inited */
+  bool fn_printed = false;               /**< Printed filename */
+  bool needs_sd = false;                 /**< Set if SD needed by Job */
+  bool cloned = false;                   /**< Set if cloned */
+  bool unlink_bsr = false;               /**< Unlink bsr file created */
+  bool VSS = false;                      /**< VSS used by FD */
+  bool Encrypt = false;                  /**< Encryption used by FD */
+  bool stats_enabled = false; /**< Keep all job records in a table for long term statistics */
+  bool no_maxtime = false; /**< Don't check Max*Time for this JobControlRecord */
+  bool keep_sd_auth_key = false; /**< Clear or not the SD auth key after connection*/
+  bool use_accurate_chksum = false;                /**< Use or not checksum option in accurate code */
+  bool sd_canceled = false; /**< Set if SD canceled */
+  bool remote_replicate = false; /**< Replicate data to remote SD */
+  bool RescheduleIncompleteJobs = false;             /**< Set if incomplete can be rescheduled */
+  bool HasQuota = false; /**< Client has quota limits */
+  bool HasSelectedJobs = false; /**< Migration/Copy Job did actually select some JobIds */
+  directordaemon::ClientConnectionHandshakeMode connection_handshake_try_ =
+      directordaemon::ClientConnectionHandshakeMode::kUndefined;
 #endif /* DIRECTOR_DAEMON */
 
 #ifdef FILE_DAEMON
   /*
    * File Daemon specific part of JobControlRecord
    */
-  uint32_t num_files_examined;   /**< Files examined this job */
-  POOLMEM* last_fname;           /**< Last file saved/verified */
-  POOLMEM* job_metadata;         /**< VSS job metadata */
-  acl_data_t* acl_data;          /**< ACLs for backup/restore */
-  xattr_data_t* xattr_data;      /**< Extended Attributes for backup/restore */
-  int32_t last_type;             /**< Type of last file saved/verified */
-  bool incremental;              /**< Set if incremental for SINCE */
-  utime_t mtime;                 /**< Begin time for SINCE */
-  int listing;                   /**< Job listing in estimate */
-  int32_t Ticket;                /**< Ticket */
-  char* big_buf;                 /**< I/O buffer */
-  int32_t replace;               /**< Replace options */
-  FindFilesPacket* ff;           /**< Find Files packet */
-  char PrevJob[MAX_NAME_LENGTH]; /**< Previous job name assiciated with since
-                                    time */
-  uint32_t ExpectedFiles;        /**< Expected restore files */
-  uint32_t StartFile;
-  uint32_t EndFile;
-  uint32_t StartBlock;
-  uint32_t EndBlock;
-  pthread_t heartbeat_id;                     /**< Id of heartbeat thread */
-  volatile bool hb_started;                   /**< Heartbeat running */
+  uint32_t num_files_examined = 0; /**< Files examined this job */
+  POOLMEM* last_fname = nullptr;   /**< Last file saved/verified */
+  POOLMEM* job_metadata = nullptr; /**< VSS job metadata */
+  acl_data_t* acl_data = nullptr;  /**< ACLs for backup/restore */
+  xattr_data_t* xattr_data = nullptr; /**< Extended Attributes for backup/restore */
+  int32_t last_type = 0;         /**< Type of last file saved/verified */
+  bool incremental = false;      /**< Set if incremental for SINCE */
+  utime_t mtime = 0;             /**< Begin time for SINCE */
+  int listing = 0;               /**< Job listing in estimate */
+  int32_t Ticket = 0;            /**< Ticket */
+  char* big_buf = nullptr;       /**< I/O buffer */
+  int32_t replace = 0;           /**< Replace options */
+  FindFilesPacket* ff = nullptr; /**< Find Files packet */
+  char PrevJob[MAX_NAME_LENGTH]{0}; /**< Previous job name assiciated with since time */
+  uint32_t ExpectedFiles = 0;       /**< Expected restore files */
+  uint32_t StartFile = 0;
+  uint32_t EndFile = 0;
+  uint32_t StartBlock = 0;
+  uint32_t EndBlock = 0;
+  pthread_t heartbeat_id = 0;                 /**< Id of heartbeat thread */
+  volatile bool hb_started = false;           /**< Heartbeat running */
   std::shared_ptr<BareosSocket> hb_bsock;     /**< Duped SD socket */
   std::shared_ptr<BareosSocket> hb_dir_bsock; /**< Duped DIR socket */
-  alist* RunScripts;    /**< Commands to run before and after job */
+  alist* RunScripts = nullptr; /**< Commands to run before and after job */
   CryptoContext crypto; /**< Crypto ctx */
-  filedaemon::DirectorResource* director; /**< Director resource */
-  bool enable_vss;                        /**< VSS used by FD */
-  bool got_metadata;                      /**< Set when found job_metadata */
-  bool multi_restore; /**< Dir can do multiple storage restore */
-  filedaemon::BareosAccurateFilelist*
-      file_list;                   /**< Previous file list (accurate mode) */
-  uint64_t base_size;              /**< Compute space saved with base job */
-  filedaemon::save_pkt* plugin_sp; /**< Plugin save packet */
+  filedaemon::DirectorResource* director = nullptr; /**< Director resource */
+  bool enable_vss = false;                          /**< VSS used by FD */
+  bool got_metadata = false;  /**< Set when found job_metadata */
+  bool multi_restore = false; /**< Dir can do multiple storage restore */
+  filedaemon::BareosAccurateFilelist* file_list = nullptr; /**< Previous file list (accurate mode) */
+  uint64_t base_size = 0; /**< Compute space saved with base job */
+  filedaemon::save_pkt* plugin_sp = nullptr; /**< Plugin save packet */
 #ifdef HAVE_WIN32
-  VSSClient* pVSSClient; /**< VSS Client Instance */
+  VSSClient* pVSSClient = nullptr; /**< VSS Client Instance */
 #endif
 #endif /* FILE_DAEMON */
 
@@ -614,73 +592,69 @@ class JobControlRecord {
   /*
    * Storage Daemon specific part of JobControlRecord
    */
-  JobControlRecord* next_dev; /**< Next JobControlRecord attached to device */
-  JobControlRecord*
-      prev_dev;       /**< Previous JobControlRecord attached to device */
-  char* dir_auth_key; /**< Dir auth key */
-  pthread_cond_t job_start_wait; /**< Wait for FD to start Job */
-  pthread_cond_t job_end_wait;   /**< Wait for Job to end */
-  int32_t type;
-  storagedaemon::DeviceControlRecord*
-      read_dcr;                            /**< Device context for reading */
-  storagedaemon::DeviceControlRecord* dcr; /**< Device context record */
-  alist* dcrs;                             /**< List of dcrs open */
-  POOLMEM* job_name;                       /**< Base Job name (not unique) */
-  POOLMEM* fileset_name;                   /**< FileSet */
-  POOLMEM* fileset_md5;                    /**< MD5 for FileSet */
-  POOLMEM* backup_format; /**< Backup format used when doing a NDMP backup */
-  storagedaemon::VolumeList* VolList; /**< List to read */
-  int32_t NumWriteVolumes;            /**< Number of volumes written */
-  int32_t NumReadVolumes;             /**< Total number of volumes to read */
-  int32_t CurReadVolume;              /**< Current read volume number */
-  int32_t label_errors;               /**< Count of label errors */
-  bool session_opened;
-  bool remote_replicate;                     /**< Replicate data to remote SD */
-  int32_t Ticket;                            /**< Ticket for this job */
-  bool ignore_label_errors;                  /**< Ignore Volume label errors */
-  bool spool_attributes;                     /**< Set if spooling attributes */
-  bool no_attributes;                        /**< Set if no attributes wanted */
-  int64_t spool_size;                        /**< Spool size for this job */
-  bool spool_data;                           /**< Set to spool data */
-  int32_t CurVol;                            /**< Current Volume count */
-  storagedaemon::DirectorResource* director; /**< Director resource */
-  alist* plugin_options; /**< Specific Plugin Options sent by DIR */
-  alist* write_store;    /**< List of write storage devices sent by DIR */
-  alist* read_store;     /**< List of read devices sent by DIR */
-  alist* reserve_msgs;   /**< Reserve fail messages */
-  bool acquired_storage; /**< Did we acquire our reserved storage already or not
-                          */
-  bool PreferMountedVols;       /**< Prefer mounted vols rather than new */
-  bool Resched;                 /**< Job may be rescheduled */
-  bool insert_jobmedia_records; /**< Need to insert job media records */
-  uint64_t RemainingQuota;      /**< Available bytes to use as quota */
+  JobControlRecord* next_dev = nullptr; /**< Next JobControlRecord attached to device */
+  JobControlRecord* prev_dev = nullptr; /**< Previous JobControlRecord attached to device */
+  char* dir_auth_key = nullptr; /**< Dir auth key */
+  pthread_cond_t job_start_wait = PTHREAD_COND_INITIALIZER; /**< Wait for FD to start Job */
+  pthread_cond_t job_end_wait = PTHREAD_COND_INITIALIZER; /**< Wait for Job to end */
+  int32_t type = 0;
+  storagedaemon::DeviceControlRecord* read_dcr = nullptr; /**< Device context for reading */
+  storagedaemon::DeviceControlRecord* dcr = nullptr;      /**< Device context record */
+  alist* dcrs = nullptr;            /**< List of dcrs open */
+  POOLMEM* job_name = nullptr;      /**< Base Job name (not unique) */
+  POOLMEM* fileset_name = nullptr;  /**< FileSet */
+  POOLMEM* fileset_md5 = nullptr;   /**< MD5 for FileSet */
+  POOLMEM* backup_format = nullptr; /**< Backup format used when doing a NDMP backup */
+  storagedaemon::VolumeList* VolList = nullptr; /**< List to read */
+  int32_t NumWriteVolumes = 0; /**< Number of volumes written */
+  int32_t NumReadVolumes = 0;  /**< Total number of volumes to read */
+  int32_t CurReadVolume = 0;   /**< Current read volume number */
+  int32_t label_errors = 0;    /**< Count of label errors */
+  bool session_opened = false;
+  bool remote_replicate = false;    /**< Replicate data to remote SD */
+  int32_t Ticket = 0;               /**< Ticket for this job */
+  bool ignore_label_errors = false; /**< Ignore Volume label errors */
+  bool spool_attributes = false;    /**< Set if spooling attributes */
+  bool no_attributes = false;       /**< Set if no attributes wanted */
+  int64_t spool_size = 0;           /**< Spool size for this job */
+  bool spool_data = false;          /**< Set to spool data */
+  int32_t CurVol = 0;               /**< Current Volume count */
+  storagedaemon::DirectorResource* director = nullptr; /**< Director resource */
+  alist* plugin_options = nullptr;  /**< Specific Plugin Options sent by DIR */
+  alist* write_store = nullptr;     /**< List of write storage devices sent by DIR */
+  alist* read_store = nullptr;      /**< List of read devices sent by DIR */
+  alist* reserve_msgs = nullptr;    /**< Reserve fail messages */
+  bool acquired_storage = false;    /**< Did we acquire our reserved storage already or not */
+  bool PreferMountedVols = false;   /**< Prefer mounted vols rather than new */
+  bool Resched = false;             /**< Job may be rescheduled */
+  bool insert_jobmedia_records = false; /**< Need to insert job media records */
+  uint64_t RemainingQuota = 0;          /**< Available bytes to use as quota */
 
   /*
    * Parameters for Open Read Session
    */
-  storagedaemon::READ_CTX*
-      rctx; /**< Read context used to keep track of what is processed or not */
-  storagedaemon::BootStrapRecord*
-      bsr;                /**< Bootstrap record -- has everything */
-  bool mount_next_volume; /**< Set to cause next volume mount */
-  uint32_t read_VolSessionId;
-  uint32_t read_VolSessionTime;
-  uint32_t read_StartFile;
-  uint32_t read_EndFile;
-  uint32_t read_StartBlock;
-  uint32_t read_EndBlock;
+  storagedaemon::READ_CTX* rctx = nullptr; /**< Read context used to keep track of what is processed or not */
+  storagedaemon::BootStrapRecord* bsr = nullptr; /**< Bootstrap record -- has everything */
+  bool mount_next_volume = false; /**< Set to cause next volume mount */
+  uint32_t read_VolSessionId = 0;
+  uint32_t read_VolSessionTime = 0;
+  uint32_t read_StartFile = 0;
+  uint32_t read_EndFile = 0;
+  uint32_t read_StartBlock = 0;
+  uint32_t read_EndBlock = 0;
 
   /*
    * Device wait times
    */
-  int32_t min_wait;
-  int32_t max_wait;
-  int32_t max_num_wait;
-  int32_t wait_sec;
-  int32_t rem_wait_sec;
-  int32_t num_wait;
+  int32_t min_wait = 0;
+  int32_t max_wait = 0;
+  int32_t max_num_wait = 0;
+  int32_t wait_sec = 0;
+  int32_t rem_wait_sec = 0;
+  int32_t num_wait = 0;
 #endif /* STORAGE_DAEMON */
 };
+/* clang-format on */
 
 #define INVALID_JCR (nullptr)
 
@@ -690,18 +664,18 @@ class JobControlRecord {
  */
 struct s_last_job {
   dlink link;
-  int32_t Errors; /** FD/SD errors */
-  int32_t JobType;
-  int32_t JobStatus;
-  int32_t JobLevel;
-  uint32_t JobId;
-  uint32_t VolSessionId;
-  uint32_t VolSessionTime;
-  uint32_t JobFiles;
-  uint64_t JobBytes;
-  utime_t start_time;
-  utime_t end_time;
-  char Job[MAX_NAME_LENGTH];
+  int32_t Errors = 0; /** FD/SD errors */
+  int32_t JobType = 0;
+  int32_t JobStatus = 0;
+  int32_t JobLevel = 0;
+  uint32_t JobId = 0;
+  uint32_t VolSessionId = 0;
+  uint32_t VolSessionTime = 0;
+  uint32_t JobFiles = 0;
+  uint64_t JobBytes = 0;
+  utime_t start_time = 0;
+  utime_t end_time = 0;
+  char Job[MAX_NAME_LENGTH]{0};
 };
 
 extern struct s_last_job last_job;
