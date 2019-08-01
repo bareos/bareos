@@ -178,6 +178,7 @@ set(SYSTEM_TESTS
   backup-bscan
   copy-bscan
   copy-remote-bscan
+  bconsole-status-client
 )
 
 set(SYSTEM_TESTS_DISABLED

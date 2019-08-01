@@ -333,6 +333,14 @@ void TlsOpenSsl::TlsBsockShutdown(BareosSocket* bsock)
 
   int ssl_error = SSL_get_error(d_->openssl_, err_shutdown);
 
+  /*
+   * There may be more errors on the thread-local error-queue.
+   * As we just shutdown our context and looked at the errors that we were
+   * interested in we clear the queue so nobody else gets to read an error
+   * that may have occured here.
+   */
+  ERR_clear_error(); // empties the current thread's openssl error queue
+
   SSL_free(d_->openssl_);
   d_->openssl_ = nullptr;
 
