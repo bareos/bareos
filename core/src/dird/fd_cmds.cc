@@ -977,6 +977,20 @@ bool SendPluginOptions(JobControlRecord* jcr)
       return false;
     }
   }
+  if (jcr->FdPluginOptions) {
+    msg = GetPoolMemory(PM_FNAME);
+    PmStrcpy(msg, jcr->FdPluginOptions);
+    BashSpaces(msg);
+    Dmsg2(100, "found FD Plugin Options! sending %s", msg);
+
+    fd->fsend(pluginoptionscmd, msg);
+    FreePoolMemory(msg);
+
+    if (!response(jcr, fd, OKPluginOptions, "PluginOptions", DISPLAY_ERROR)) {
+      Jmsg(jcr, M_FATAL, 0, _("Plugin options failed.\n"));
+      return false;
+    }
+  }
 
   return true;
 }
