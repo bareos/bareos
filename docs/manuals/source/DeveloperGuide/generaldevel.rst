@@ -35,38 +35,12 @@ Patches
 -------
 
 Patches should be sent as a pull-request to the master branch of the GitHub repository.
-To do so, you will need an account on GitHub.
+A detailed description can be found in the chapter :ref:`git-workflow`.
 If you don't want to sign up to GitHub, you can also send us your patches via E-Mail in **git format-patch** format to the `bareos-devel`_ mailing list.
 
 Please make sure to use the Bareos `Automatic Sourcecode Formatting`_
 Don’t forget any Copyrights and acknowledgments if it isn’t 100% your code.
 Also, include the Bareos copyright notice that can be found in every source file.
-
-Commit message guideline
-~~~~~~~~~~~~~~~~~~~~~~~~
-Start with a subject on a single line.
-If your commit changes a specific component of bareos try to mention it at the start of the subject.
-
-Next comes an empty line.
-
-If your commit fixes an existing bug, add a line in the format ``Fixes #12345: The exact title of the bug you fix.``.
-After this you can just write your detailed commit information.
-
-We strongly encourage you to keep the subject down to 50 characters and to wrap your text at the 50 character boundary.
-However, this is by no means enforced.
-
-::
-
-  lib: do a sample commit
-
-  Fixes #12345: Really nasty library needs a sample commit.
-
-  This patch fixes a bug in one of the libraries.
-  Before we applied this specific change, the
-  library was completely okay, but in desperate
-  need of a sample commit.
-
-
 
 Bug Database
 ------------
