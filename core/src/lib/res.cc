@@ -747,7 +747,7 @@ void ConfigurationParser::StoreAlistStr(LEX* lc,
     }
 
     list->append(strdup(lc->str));
-    Dmsg4(100, "BR debug: list.size %s, content %s", list->size(), list->at(0));
+    Dmsg4(100, "BR debug: list.size %s, content0 %s", list->size(), list->first());
   }
   ScanToEol(lc);
   SetBit(index, (*item->allocated_resource)->item_present_);
@@ -795,6 +795,7 @@ void ConfigurationParser::StoreAlistDir(LEX* lc,
     }
 
     list->append(strdup(lc->str));
+    Dmsg4(100, "BR debug: list.size %s, content0 %s", list->size(), list->first());
   }
   ScanToEol(lc);
   SetBit(index, (*item->allocated_resource)->item_present_);
