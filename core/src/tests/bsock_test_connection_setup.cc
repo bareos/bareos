@@ -123,7 +123,6 @@ typedef std::unique_ptr<BareosSocket, std::function<void(BareosSocket*)>>
 static PBareosSocket ConnectToDirector()
 {
   JobControlRecord jcr;
-  memset(&jcr, 0, sizeof(jcr));
   BStringList args;
   uint32_t response_id = kMessageIdUnknown;
 
