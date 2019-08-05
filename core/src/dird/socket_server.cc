@@ -75,11 +75,6 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
   char tbuf[MAX_TIME_LENGTH];
   int fd_protocol_version = 0;
 
-  JobControlRecord jcr;
-  memset(&jcr, 0, sizeof(JobControlRecord));
-
-  jcr.ua = bs;
-
   if (!TryTlsHandshakeAsAServer(bs, config)) {
     bs->signal(BNET_TERMINATE);
     bs->close();
