@@ -708,6 +708,13 @@ extern void DbgJcrAddHook(dbg_jcr_hook_t* fct);
 /* new interface */
 void InitJcr(std::shared_ptr<JobControlRecord> jcr,
              JCR_free_HANDLER* daemon_free_jcr);
+int32_t GetJcrCount();
+std::shared_ptr<JobControlRecord> GetJcrById(uint32_t JobId);
+std::shared_ptr<JobControlRecord> GetJcrByFullName(char* name_in);
+std::shared_ptr<JobControlRecord> GetJcrByPartialName(char* name_in);
+std::shared_ptr<JobControlRecord> GetJcrBySession(uint32_t SessionId,
+                                                  uint32_t SessionTime);
+uint32_t GetJobIdByThreadId(pthread_t tid);
 /* ************* */
 
 

@@ -52,6 +52,8 @@
 #include "lib/message_queue_item.h"
 #include "lib/watchdog.h"
 
+#include <algorithm>
+
 const int debuglevel = 3400;
 
 /* External variables we reference */
@@ -812,6 +814,89 @@ JobControlRecord* get_jcr_by_id(uint32_t JobId)
   return jcr;
 }
 
+int32_t GetJcrCount()
+{
+  lock_jcr_chain();
+  int32_t count =
+      count_if(job_control_record_cache.begin(), job_control_record_cache.end(),
+               [](std::weak_ptr<JobControlRecord>& p) { return !p.expired(); });
+  unlock_jcr_chain();
+
+  return count;
+}
+
+static std::shared_ptr<JobControlRecord> GetJcr(
+    std::function<bool(const JobControlRecord*)> compare)
+{
+  std::shared_ptr<JobControlRecord> result;
+
+  lock_jcr_chain();
+
+  // cleanup chache
+  job_control_record_cache.erase(
+      std::remove_if(
+          job_control_record_cache.begin(), job_control_record_cache.end(),
+          [](std::weak_ptr<JobControlRecord>& p) { return p.expired(); }),
+      job_control_record_cache.end());
+
+  find_if(job_control_record_cache.begin(), job_control_record_cache.end(),
+          [&compare, &result](std::weak_ptr<JobControlRecord>& p) {
+            auto jcr = p.lock();
+            if (compare(jcr.get())) {
+              result = jcr;
+              return true;
+            }
+            return false;
+          });
+
+  unlock_jcr_chain();
+
+  return result;
+}
+
+std::shared_ptr<JobControlRecord> GetJcrById(uint32_t JobId)
+{
+  return GetJcr(
+      [JobId](const JobControlRecord* jcr) { return jcr->JobId == JobId; });
+}
+
+std::shared_ptr<JobControlRecord> GetJcrByFullName(char* name_in)
+{
+  return GetJcr([name_in](const JobControlRecord* jcr) {
+    std::string name(name_in);
+    std::string job_name(jcr->Job);
+    return job_name == name;
+  });
+}
+
+std::shared_ptr<JobControlRecord> GetJcrByPartialName(char* name_in)
+{
+  return GetJcr([name_in](const JobControlRecord* jcr) {
+    std::string name(name_in);
+    std::string job_name(jcr->Job);
+    return job_name.find(name) == 0;
+  });
+}
+
+std::shared_ptr<JobControlRecord> GetJcrBySession(uint32_t SessionId,
+                                                  uint32_t SessionTime)
+{
+  return GetJcr([SessionId, SessionTime](const JobControlRecord* jcr) {
+    return (jcr->VolSessionId == SessionId &&
+            jcr->VolSessionTime == SessionTime);
+  });
+}
+
+uint32_t GetJobIdByThreadId(pthread_t tid)
+{
+  std::shared_ptr<JobControlRecord> jcr(
+      GetJcr([tid](const JobControlRecord* jcr) {
+        return pthread_equal(jcr->my_thread_id, tid);
+      }));
+
+  return jcr ? jcr->JobId : 0;
+}
+
 /*
  * Given a thread id, find the JobId
  *
@@ -1091,8 +1176,9 @@ void JobControlRecord::setJobStatus(int newJobStatus)
 
   /*
    * If status priority is > than proposed new status, change it.
-   * If status priority == new priority and both are zero, take the new status.
-   * If it is not zero, then we keep the first non-zero "error" that occurred.
+   * If status priority == new priority and both are zero, take the new
+   * status. If it is not zero, then we keep the first non-zero "error" that
+   * occurred.
    */
   if (priority > old_priority || (priority == 0 && old_priority == 0)) {
     Dmsg4(800, "Set new stat. old: %c,%d new: %c,%d\n", oldJobStatus,
@@ -1365,7 +1451,8 @@ void DbgJcrAddHook(dbg_jcr_hook_t* hook)
  * !!! WARNING !!!
  *
  * This function should be used ONLY after a fatal signal. We walk through the
- * JobControlRecord chain without doing any lock, BAREOS should not be running.
+ * JobControlRecord chain without doing any lock, BAREOS should not be
+ * running.
  */
 void DbgPrintJcr(FILE* fp)
 {
