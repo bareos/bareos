@@ -76,6 +76,7 @@ int num_jobs_run;
 dlist* last_jobs = nullptr;
 const int max_last_jobs = 10;
 
+static std::vector<std::weak_ptr<JobControlRecord>> job_control_record_cache;
 static dlist* job_control_record_chain = nullptr;
 static int watch_dog_timeout = 0;
 
@@ -370,68 +371,61 @@ void setup_tsd_key()
 #endif
 }
 
-/*
- * Create a Job Control Record and link it into JobControlRecord chain
- * Returns newly allocated JobControlRecord
- *
- * Note, since each daemon has a different JobControlRecord, he passes us the
- * size.
- */
-JobControlRecord* new_jcr(int size, JCR_free_HANDLER* daemon_free_jcr)
+JobControlRecord::JobControlRecord()
 {
-  JobControlRecord* jcr;
-  MessageQueueItem* item = nullptr;
-  struct sigaction sigtimer;
-  int status;
-
-  Dmsg0(debuglevel, "Enter new_jcr\n");
+  Dmsg0(100, "Construct JobControlRecord\n");
 
   setup_tsd_key();
 
-  jcr = (JobControlRecord*)malloc(size);
-  memset(jcr, 0, size);
-  jcr = new (jcr) JobControlRecord();
+  MessageQueueItem* item = nullptr;
+  msg_queue = new dlist(item, &item->link_);  // calculate offset
 
-  jcr->msg_queue = new dlist(item, &item->link_);
-  if ((status = pthread_mutex_init(&jcr->msg_queue_mutex, nullptr)) != 0) {
+  int status;
+  if ((status = pthread_mutex_init(&msg_queue_mutex, nullptr)) != 0) {
     BErrNo be;
     Jmsg(nullptr, M_ABORT, 0, _("Could not init msg_queue mutex. ERR=%s\n"),
          be.bstrerror(status));
   }
 
-  jcr->my_thread_id = pthread_self();
-  jcr->job_end_callbacks.init(1, false);
-  jcr->sched_time = time(nullptr);
-  jcr->initial_sched_time = jcr->sched_time;
-  jcr->daemon_free_jcr = daemon_free_jcr; /* plug daemon free routine */
-  jcr->InitMutex();
-  jcr->IncUseCount();
-  jcr->VolumeName = GetPoolMemory(PM_FNAME);
-  jcr->VolumeName[0] = 0;
-  jcr->errmsg = GetPoolMemory(PM_MESSAGE);
-  jcr->errmsg[0] = 0;
-  jcr->comment = GetPoolMemory(PM_FNAME);
-  jcr->comment[0] = 0;
+  my_thread_id = pthread_self();
+  job_end_callbacks.init(1, false);
+  sched_time = time(nullptr);
+  initial_sched_time = sched_time;
+  InitMutex();
+  IncUseCount();
+  VolumeName = GetPoolMemory(PM_FNAME);
+  VolumeName[0] = 0;
+  errmsg = GetPoolMemory(PM_MESSAGE);
+  errmsg[0] = 0;
+  comment = GetPoolMemory(PM_FNAME);
+  comment[0] = 0;
 
   /*
    * Setup some dummy values
    */
-  bstrncpy(jcr->Job, "*System*", sizeof(jcr->Job));
-  jcr->JobId = 0;
-  jcr->setJobType(JT_SYSTEM); /* internal job until defined */
-  jcr->setJobLevel(L_NONE);
-  jcr->setJobStatus(JS_Created); /* ready to run */
+  bstrncpy(Job, "*System*", sizeof(Job));
+  JobId = 0;
+  setJobType(JT_SYSTEM); /* internal job until defined */
+  setJobLevel(L_NONE);
+  setJobStatus(JS_Created); /* ready to run */
+  struct sigaction sigtimer;
   sigtimer.sa_flags = 0;
   sigtimer.sa_handler = TimeoutHandler;
   sigfillset(&sigtimer.sa_mask);
   sigaction(TIMEOUT_SIGNAL, &sigtimer, nullptr);
+}
 
-  /*
-   * Locking jobs is a global lock that is needed
-   * so that the Director can stop new jobs from being
-   * added to the jcr chain while it processes a new
-   * conf file and does the RegisterJobEndCallback().
-   */
+JobControlRecord* new_jcr(int size, JCR_free_HANDLER* daemon_free_jcr)
+{
+  Dmsg0(debuglevel, "Enter new_jcr\n");
+
+  JobControlRecord* jcr;
+  jcr = (JobControlRecord*)malloc(size);
+  memset(jcr, 0, size);
+  jcr = new (jcr) JobControlRecord();
+
+  jcr->daemon_free_jcr = daemon_free_jcr;
+
   LockJobs();
   lock_jcr_chain();
   if (!job_control_record_chain) {
@@ -440,8 +434,19 @@ JobControlRecord* new_jcr(int size, JCR_free_HANDLER* daemon_free_jcr)
   job_control_record_chain->append(jcr);
   unlock_jcr_chain();
   UnlockJobs();
-
   return jcr;
+}
+
+void InitJcr(std::shared_ptr<JobControlRecord> jcr,
+             JCR_free_HANDLER* daemon_free_jcr)
+{
+  jcr->daemon_free_jcr = daemon_free_jcr;
+
+  LockJobs();
+  lock_jcr_chain();
+  job_control_record_cache.emplace_back(jcr);
+  unlock_jcr_chain();
+  UnlockJobs();
 }
 
 /*
@@ -457,11 +462,7 @@ static void RemoveJcr(JobControlRecord* jcr)
   Dmsg0(debuglevel, "Leave RemoveJcr\n");
 }
 
-/*
- * Free stuff common to all JCRs.  N.B. Be careful to include only
- * generic stuff in the common part of the jcr.
- */
-static void FreeCommonJcr(JobControlRecord* jcr)
+static void FreeCommonJcr(JobControlRecord* jcr, bool internal = false)
 {
   Dmsg1(100, "FreeCommonJcr: %p \n", jcr);
 
@@ -544,7 +545,70 @@ static void FreeCommonJcr(JobControlRecord* jcr)
     jcr->comment = nullptr;
   }
 
-  free(jcr);
+  if (!internal) { free(jcr); }
+}
+
+JobControlRecord::~JobControlRecord()
+{
+  Dmsg0(100, "Destruct JobControlRecord\n");
+
+  DequeueMessages(this);
+  CallJobEndCallbacks(this);
+
+  Dmsg1(debuglevel, "End job=%d\n", JobId);
+
+  // statistics
+  struct s_last_job* je;
+  switch (getJobType()) {
+    case JT_BACKUP:
+    case JT_VERIFY:
+    case JT_RESTORE:
+    case JT_MIGRATE:
+    case JT_COPY:
+    case JT_ADMIN:
+      /*
+       * Keep list of last jobs, but not Console where JobId==0
+       */
+      if (JobId > 0) {
+        LockLastJobsList();
+        num_jobs_run++;
+        je = (struct s_last_job*)malloc(sizeof(struct s_last_job));
+        memset(je, 0,
+               sizeof(struct s_last_job)); /* zero in case unset fields */
+        je->Errors = JobErrors;
+        je->JobType = getJobType();
+        je->JobId = JobId;
+        je->VolSessionId = VolSessionId;
+        je->VolSessionTime = VolSessionTime;
+        bstrncpy(je->Job, Job, sizeof(je->Job));
+        je->JobFiles = JobFiles;
+        je->JobBytes = JobBytes;
+        je->JobStatus = JobStatus;
+        je->JobLevel = getJobLevel();
+        je->start_time = start_time;
+        je->end_time = time(nullptr);
+
+        if (!last_jobs) { InitLastJobsList(); }
+        last_jobs->append(je);
+        if (last_jobs->size() > max_last_jobs) {
+          je = (struct s_last_job*)last_jobs->first();
+          last_jobs->remove(je);
+          free(je);
+        }
+        UnlockLastJobsList();
+      }
+      break;
+    default:
+      break;
+  }
+
+  CloseMsg(this); /* close messages for this job */
+
+  if (daemon_free_jcr) { daemon_free_jcr(this); }
+
+  FreeCommonJcr(this, true);
+  CloseMsg(nullptr); /* flush any daemon messages */
+  Dmsg0(debuglevel, "JobControlRecord Destructor finished\n");
 }
 
 /*

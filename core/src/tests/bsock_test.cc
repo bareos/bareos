@@ -235,7 +235,10 @@ static bool connect_to_server(std::string console_name,
     }
   }
   if (success) { clone_a_client_socket(UA_sock); }
-  if (UA_sock) { UA_sock->close(); }
+  if (UA_sock) {
+    UA_sock->close();
+    jcr.dir_bsock = nullptr;
+  }
   return success;
 }
 

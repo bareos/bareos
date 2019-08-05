@@ -321,9 +321,8 @@ class JobControlRecord {
   int32_t Protocol_ = 0;           /**< Backup Protocol */
   bool my_thread_killable = false; /**< Can we kill the thread? */
  public:
-  JobControlRecord() { Dmsg0(100, "Construct JobControlRecord\n"); }
-
-  ~JobControlRecord() { Dmsg0(100, "Destruct JobControlRecord\n"); }
+  JobControlRecord();
+  ~JobControlRecord();
 
   void lock() { P(mutex); }
   void unlock() { V(mutex); }
@@ -704,5 +703,12 @@ extern void b_free_jcr(const char* file, int line, JobControlRecord* jcr);
  */
 typedef void(dbg_jcr_hook_t)(JobControlRecord* jcr, FILE* fp);
 extern void DbgJcrAddHook(dbg_jcr_hook_t* fct);
+
+
+/* new interface */
+void InitJcr(std::shared_ptr<JobControlRecord> jcr,
+             JCR_free_HANDLER* daemon_free_jcr);
+/* ************* */
+
 
 #endif /** BAREOS_INCLUDE_JCR_H_ */
