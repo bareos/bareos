@@ -700,7 +700,7 @@ void SetJcrInTsd(JobControlRecord* jcr)
 JobControlRecord* get_jcr_from_tsd()
 {
   JobControlRecord* jcr = (JobControlRecord*)INVALID_JCR;
-  if (jcr_initialized){
+  if (jcr_initialized) {
     jcr = (JobControlRecord*)pthread_getspecific(jcr_key);
   }
 
@@ -1011,7 +1011,7 @@ void JobControlRecord::setJobStatus(int newJobStatus)
   }
   priority = GetStatusPriority(newJobStatus);
 
-  Dmsg2(800, "SetJcrJobStatus(%s, %c)\n", Job, newJobStatus);
+  Dmsg2(800, "setJobStatus(%s, %c)\n", Job, newJobStatus);
 
   /*
    * Update wait_time depending on newJobStatus and oldJobStatus

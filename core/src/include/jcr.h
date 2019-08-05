@@ -694,8 +694,6 @@ extern JobControlRecord* get_jcr_by_partial_name(char* Job);
 extern JobControlRecord* get_jcr_by_full_name(char* Job);
 extern const char* JcrGetAuthenticateKey(const char* unified_job_name);
 TlsPolicy JcrGetTlsPolicy(const char* unified_job_name);
-extern JobControlRecord* get_next_jcr(JobControlRecord* jcr);
-extern void SetJcrJobStatus(JobControlRecord* jcr, int JobStatus);
 extern int num_jobs_run;
 
 extern void b_free_jcr(const char* file, int line, JobControlRecord* jcr);
