@@ -103,7 +103,6 @@ bool MonitorItem::doconnect()
   }
 
   JobControlRecord jcr;
-  memset(&jcr, 0, sizeof(jcr));
 
   DirectorResource* dird;
   ClientResource* filed;
