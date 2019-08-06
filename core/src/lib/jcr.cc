@@ -464,15 +464,13 @@ static void RemoveJcr(JobControlRecord* jcr)
   Dmsg0(debuglevel, "Leave RemoveJcr\n");
 }
 
-static void FreeCommonJcr(JobControlRecord* jcr, bool internal = false)
+static void FreeCommonJcr(JobControlRecord* jcr,
+                          bool is_destructor_call = false)
 {
   Dmsg1(100, "FreeCommonJcr: %p \n", jcr);
 
   if (!jcr) { Dmsg0(100, "FreeCommonJcr: Invalid jcr\n"); }
 
-  /*
-   * Uses jcr lock/unlock
-   */
   RemoveJcrFromTsd(jcr);
   jcr->SetKillable(false);
 
@@ -547,103 +545,11 @@ static void FreeCommonJcr(JobControlRecord* jcr, bool internal = false)
     jcr->comment = nullptr;
   }
 
-  if (!internal) { free(jcr); }
+  if (!is_destructor_call) { free(jcr); }
 }
 
-JobControlRecord::~JobControlRecord()
+static void JcrCleanup(JobControlRecord* jcr, bool is_destructor_call = false)
 {
-  Dmsg0(100, "Destruct JobControlRecord\n");
-
-  DequeueMessages(this);
-  CallJobEndCallbacks(this);
-
-  Dmsg1(debuglevel, "End job=%d\n", JobId);
-
-  // statistics
-  struct s_last_job* je;
-  switch (getJobType()) {
-    case JT_BACKUP:
-    case JT_VERIFY:
-    case JT_RESTORE:
-    case JT_MIGRATE:
-    case JT_COPY:
-    case JT_ADMIN:
-      /*
-       * Keep list of last jobs, but not Console where JobId==0
-       */
-      if (JobId > 0) {
-        LockLastJobsList();
-        num_jobs_run++;
-        je = (struct s_last_job*)malloc(sizeof(struct s_last_job));
-        memset(je, 0,
-               sizeof(struct s_last_job)); /* zero in case unset fields */
-        je->Errors = JobErrors;
-        je->JobType = getJobType();
-        je->JobId = JobId;
-        je->VolSessionId = VolSessionId;
-        je->VolSessionTime = VolSessionTime;
-        bstrncpy(je->Job, Job, sizeof(je->Job));
-        je->JobFiles = JobFiles;
-        je->JobBytes = JobBytes;
-        je->JobStatus = JobStatus;
-        je->JobLevel = getJobLevel();
-        je->start_time = start_time;
-        je->end_time = time(nullptr);
-
-        if (!last_jobs) { InitLastJobsList(); }
-        last_jobs->append(je);
-        if (last_jobs->size() > max_last_jobs) {
-          je = (struct s_last_job*)last_jobs->first();
-          last_jobs->remove(je);
-          free(je);
-        }
-        UnlockLastJobsList();
-      }
-      break;
-    default:
-      break;
-  }
-
-  CloseMsg(this); /* close messages for this job */
-
-  if (daemon_free_jcr) { daemon_free_jcr(this); }
-
-  FreeCommonJcr(this, true);
-  CloseMsg(nullptr); /* flush any daemon messages */
-  Dmsg0(debuglevel, "JobControlRecord Destructor finished\n");
-}
-
-/*
- * Global routine to free a jcr
- */
-void b_free_jcr(const char* file, int line, JobControlRecord* jcr)
-{
-  struct s_last_job* je;
-
-  Dmsg3(debuglevel, "Enter FreeJcr jid=%u from %s:%d\n", jcr->JobId, file,
-        line);
-
-  lock_jcr_chain();
-  jcr->DecUseCount(); /* decrement use count */
-  if (jcr->UseCount() < 0) {
-    Jmsg2(jcr, M_ERROR, 0, _("JobControlRecord UseCount=%d JobId=%d\n"),
-          jcr->UseCount(), jcr->JobId);
-  }
-  if (jcr->JobId > 0) {
-    Dmsg3(debuglevel, "Dec FreeJcr jid=%u UseCount=%d Job=%s\n", jcr->JobId,
-          jcr->UseCount(), jcr->Job);
-  }
-  if (jcr->UseCount() > 0) { /* if in use */
-    unlock_jcr_chain();
-    return;
-  }
-  if (jcr->JobId > 0) {
-    Dmsg3(debuglevel, "remove jcr jid=%u UseCount=%d Job=%s\n", jcr->JobId,
-          jcr->UseCount(), jcr->Job);
-  }
-  RemoveJcr(jcr); /* remove Jcr from chain */
-  unlock_jcr_chain();
-
   DequeueMessages(jcr);
   CallJobEndCallbacks(jcr); /* call registered callbacks */
 
@@ -652,6 +558,8 @@ void b_free_jcr(const char* file, int line, JobControlRecord* jcr)
   /*
    * Keep some statistics
    */
+  struct s_last_job* je = nullptr;
+
   switch (jcr->getJobType()) {
     case JT_BACKUP:
     case JT_VERIFY:
@@ -666,8 +574,7 @@ void b_free_jcr(const char* file, int line, JobControlRecord* jcr)
         LockLastJobsList();
         num_jobs_run++;
         je = (struct s_last_job*)malloc(sizeof(struct s_last_job));
-        memset(je, 0,
-               sizeof(struct s_last_job)); /* zero in case unset fields */
+        new (je) s_last_job();
         je->Errors = jcr->JobErrors;
         je->JobType = jcr->getJobType();
         je->JobId = jcr->JobId;
@@ -701,8 +608,52 @@ void b_free_jcr(const char* file, int line, JobControlRecord* jcr)
     jcr->daemon_free_jcr(jcr); /* call daemon free routine */
   }
 
-  FreeCommonJcr(jcr);
+  FreeCommonJcr(jcr, is_destructor_call);
   CloseMsg(nullptr); /* flush any daemon messages */
+}
+
+JobControlRecord::~JobControlRecord()
+{
+  Dmsg0(100, "Destruct JobControlRecord\n");
+  JcrCleanup(this, true);
+  Dmsg0(debuglevel, "JobControlRecord Destructor finished\n");
+}
+
+static bool RunJcrGarbageCollector(JobControlRecord* jcr)
+{
+  lock_jcr_chain();
+  jcr->DecUseCount(); /* decrement use count */
+  if (jcr->UseCount() < 0) {
+    Jmsg2(jcr, M_ERROR, 0, _("JobControlRecord UseCount=%d JobId=%d\n"),
+          jcr->UseCount(), jcr->JobId);
+  }
+  if (jcr->JobId > 0) {
+    Dmsg3(debuglevel, "Dec FreeJcr jid=%u UseCount=%d Job=%s\n", jcr->JobId,
+          jcr->UseCount(), jcr->Job);
+  }
+  if (jcr->UseCount() > 0) { /* if in use */
+    unlock_jcr_chain();
+    return false;
+  }
+  if (jcr->JobId > 0) {
+    Dmsg3(debuglevel, "remove jcr jid=%u UseCount=%d Job=%s\n", jcr->JobId,
+          jcr->UseCount(), jcr->Job);
+  }
+  RemoveJcr(jcr); /* remove Jcr from chain */
+  unlock_jcr_chain();
+  return true;
+}
+
+/*
+ * Global routine to free a jcr
+ */
+void b_free_jcr(const char* file, int line, JobControlRecord* jcr)
+{
+  Dmsg3(debuglevel, "Enter FreeJcr jid=%u from %s:%d\n", jcr->JobId, file,
+        line);
+
+  if (RunJcrGarbageCollector(jcr)) { JcrCleanup(jcr); }
+
   Dmsg0(debuglevel, "Exit FreeJcr\n");
 }
 
