@@ -814,10 +814,10 @@ JobControlRecord* get_jcr_by_id(uint32_t JobId)
   return jcr;
 }
 
-int32_t GetJcrCount()
+std::size_t GetJcrCount()
 {
   lock_jcr_chain();
-  int32_t count =
+  std::size_t count =
       count_if(job_control_record_cache.begin(), job_control_record_cache.end(),
                [](std::weak_ptr<JobControlRecord>& p) { return !p.expired(); });
   unlock_jcr_chain();
