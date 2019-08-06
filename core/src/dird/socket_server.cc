@@ -36,6 +36,7 @@
 #include "lib/berrno.h"
 #include "lib/bnet_server_tcp.h"
 #include "lib/thread_list.h"
+#include "lib/thread_specific_data.h"
 #include "lib/try_tls_handshake_as_a_server.h"
 
 #include <atomic>
@@ -132,7 +133,7 @@ static void* UserAgentShutdownCallback(void* bsock)
 
 extern "C" void* connect_thread(void* arg)
 {
-  SetJcrInTsd(INVALID_JCR);
+  SetJcrInThreadSpecificData(INVALID_JCR);
 
   /*
    * Permit MaxConnections connections.

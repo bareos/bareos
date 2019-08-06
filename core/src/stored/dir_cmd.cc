@@ -67,6 +67,7 @@
 #include "lib/edit.h"
 #include "lib/parse_bsr.h"
 #include "lib/parse_conf.h"
+#include "lib/thread_specific_data.h"
 #include "lib/util.h"
 #include "lib/watchdog.h"
 #include "lib/qualified_resource_name_type_converter.h"
@@ -277,7 +278,7 @@ void* HandleDirectorConnection(BareosSocket* dir)
 
   Dmsg0(1000, "stored in start_job\n");
 
-  SetJcrInTsd(jcr);
+  SetJcrInThreadSpecificData(jcr);
 
   /*
    * Authenticate the Director

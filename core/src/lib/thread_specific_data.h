@@ -1,7 +1,9 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,26 +20,16 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef BAREOS_LIB_JCR_H_
-#define BAREOS_LIB_JCR_H_
+
+#ifndef BAREOS_LIB_THREAD_SPECIFIC_DATA_H
+#define BAREOS_LIB_THREAD_SPECIFIC_DATA_H
+
 class JobControlRecord;
 
-void InitLastJobsList();
-void TermLastJobsList();
-void LockLastJobsList();
-void UnlockLastJobsList();
-bool ReadLastJobsList(int fd, uint64_t addr);
-uint64_t WriteLastJobsList(int fd, uint64_t addr);
-void WriteStateFile(char* dir, const char* progname, int port);
-void RegisterJobEndCallback(JobControlRecord* jcr,
-                            void JobEndCb(JobControlRecord* jcr, void*),
-                            void* ctx);
-void LockJobs();
-void UnlockJobs();
-JobControlRecord* jcr_walk_start();
-JobControlRecord* jcr_walk_next(JobControlRecord* prev_jcr);
-void JcrWalkEnd(JobControlRecord* jcr);
-int JobCount();
-uint32_t GetJobidFromTid(pthread_t tid);
+JobControlRecord* GetJcrFromThreadSpecificData();
+void SetJcrInThreadSpecificData(JobControlRecord* jcr);
+void RemoveJcrFromThreadSpecificData(JobControlRecord* jcr);
+uint32_t GetJobIdFromThreadSpecificData();
+void SetupThreadSpecificDataKey();
 
-#endif  // BAREOS_LIB_JCR_H_
+#endif  // BAREOS_LIB_THREAD_SPECIFIC_DATA_H

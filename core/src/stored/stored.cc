@@ -54,6 +54,7 @@
 #include "lib/daemon.h"
 #include "lib/bsignal.h"
 #include "lib/parse_conf.h"
+#include "lib/thread_specific_data.h"
 #include "lib/util.h"
 #include "lib/watchdog.h"
 #include "include/jcr.h"
@@ -287,7 +288,7 @@ int main(int argc, char* argv[])
   ReadCryptoCache(me->working_directory, "bareos-sd",
                   GetFirstPortHostOrder(me->SDaddrs));
 
-  SetJcrInTsd(INVALID_JCR);
+  SetJcrInThreadSpecificData(INVALID_JCR);
 
   /*
    * Make sure on Solaris we can run concurrent, watch dog + servers + misc

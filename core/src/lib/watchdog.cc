@@ -30,6 +30,7 @@
 #include "include/jcr.h"
 #include "lib/berrno.h"
 #include "lib/dlist.h"
+#include "lib/thread_specific_data.h"
 #include "lib/watchdog.h"
 
 
@@ -245,7 +246,7 @@ extern "C" void* watchdog_thread(void* arg)
   struct timezone tz;
   utime_t next_time;
 
-  SetJcrInTsd(INVALID_JCR);
+  SetJcrInThreadSpecificData(INVALID_JCR);
   Dmsg0(800, "NicB-reworked watchdog thread entered\n");
 
   while (!quit) {

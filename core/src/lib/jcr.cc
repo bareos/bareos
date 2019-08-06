@@ -47,6 +47,7 @@
 #include "include/jcr.h"
 #include "lib/berrno.h"
 #include "lib/edit.h"
+#include "lib/thread_specific_data.h"
 #include "lib/tls_conf.h"
 #include "lib/bsock.h"
 #include "lib/message_queue_item.h"
@@ -85,19 +86,6 @@ static int watch_dog_timeout = 0;
 static pthread_mutex_t jcr_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t job_start_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t last_jobs_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-static bool jcr_initialized = false;
-#ifdef HAVE_WIN32
-static bool tsd_initialized = false;
-static pthread_key_t jcr_key; /* Pointer to jcr for each thread */
-#else
-#ifdef PTHREAD_ONCE_KEY_NP
-static pthread_key_t jcr_key = PTHREAD_ONCE_KEY_NP;
-#else
-static pthread_key_t jcr_key; /* Pointer to jcr for each thread */
-static pthread_once_t key_once = PTHREAD_ONCE_INIT;
-#endif
-#endif
 
 static char Job_status[] = "Status Job=%s JobStatus=%d\n";
 
@@ -324,60 +312,11 @@ static void CallJobEndCallbacks(JobControlRecord* jcr)
   }
 }
 
-/*
- * Create thread key for thread specific data.
- */
-static void create_jcr_key()
-{
-  int status;
-
-#ifdef PTHREAD_ONCE_KEY_NP
-  status = pthread_key_create_once_np(&jcr_key, nullptr);
-#else
-  status = pthread_key_create(&jcr_key, nullptr);
-#endif
-  if (status != 0) {
-    BErrNo be;
-    Jmsg1(nullptr, M_ABORT, 0, _("pthread key create failed: ERR=%s\n"),
-          be.bstrerror(status));
-  } else {
-    jcr_initialized = true;
-  }
-}
-
-/*
- * Setup thread key for thread specific data.
- */
-void setup_tsd_key()
-{
-#ifdef HAVE_WIN32
-  P(jcr_lock);
-  if (!tsd_initialized) {
-    create_jcr_key();
-    tsd_initialized = true;
-  }
-  V(jcr_lock);
-#else
-#ifdef PTHREAD_ONCE_KEY_NP
-  create_jcr_key();
-#else
-  int status;
-
-  status = pthread_once(&key_once, create_jcr_key);
-  if (status != 0) {
-    BErrNo be;
-    Jmsg1(nullptr, M_ABORT, 0, _("pthread_once failed. ERR=%s\n"),
-          be.bstrerror(status));
-  }
-#endif
-#endif
-}
-
 JobControlRecord::JobControlRecord()
 {
   Dmsg0(100, "Construct JobControlRecord\n");
 
-  setup_tsd_key();
+  SetupThreadSpecificDataKey();
 
   MessageQueueItem* item = nullptr;
   msg_queue = new dlist(item, &item->link_);  // calculate offset
@@ -471,7 +410,7 @@ static void FreeCommonJcr(JobControlRecord* jcr,
 
   if (!jcr) { Dmsg0(100, "FreeCommonJcr: Invalid jcr\n"); }
 
-  RemoveJcrFromTsd(jcr);
+  RemoveJcrFromThreadSpecificData(jcr);
   jcr->SetKillable(false);
 
   jcr->DestroyMutex();
@@ -689,52 +628,19 @@ void JobControlRecord::MyThreadSendSignal(int sig)
  * Remove jcr from thread specific data, but but make sure it is us who are
  * attached.
  */
-void RemoveJcrFromTsd(JobControlRecord* jcr)
+void RemoveJcrFromThreadSpecificData(JobControlRecord* jcr)
 {
-  JobControlRecord* tjcr = get_jcr_from_tsd();
+  JobControlRecord* tjcr = GetJcrFromThreadSpecificData();
 
-  if (tjcr == jcr) { SetJcrInTsd(INVALID_JCR); }
-}
-
-/*
- * Put this jcr in the thread specifc data
- */
-void SetJcrInTsd(JobControlRecord* jcr)
-{
-  int status;
-
-  status = pthread_setspecific(jcr_key, (void*)jcr);
-  if (status != 0) {
-    BErrNo be;
-    Jmsg1(jcr, M_ABORT, 0, _("pthread_setspecific failed: ERR=%s\n"),
-          be.bstrerror(status));
-  }
-}
-
-/*
- * Give me the jcr that is attached to this thread
- */
-JobControlRecord* get_jcr_from_tsd()
-{
-  JobControlRecord* jcr = (JobControlRecord*)INVALID_JCR;
-  if (jcr_initialized) {
-    jcr = (JobControlRecord*)pthread_getspecific(jcr_key);
-  }
-
-  /*
-   * Set any INVALID_JCR to nullptr which the rest of BAREOS understands
-   */
-  if (jcr == INVALID_JCR) { jcr = nullptr; }
-
-  return jcr;
+  if (tjcr == jcr) { SetJcrInThreadSpecificData(INVALID_JCR); }
 }
 
 /*
  * Find which JobId corresponds to the current thread
  */
-uint32_t GetJobidFromTsd()
+uint32_t GetJobIdFromThreadSpecificData()
 {
-  JobControlRecord* jcr = get_jcr_from_tsd();
+  JobControlRecord* jcr = GetJcrFromThreadSpecificData();
   uint32_t JobId = 0;
 
   if (jcr && jcr != INVALID_JCR) { JobId = (uint32_t)jcr->JobId; }

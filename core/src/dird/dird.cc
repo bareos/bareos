@@ -43,6 +43,7 @@
 #include "lib/bsignal.h"
 #include "lib/daemon.h"
 #include "lib/parse_conf.h"
+#include "lib/thread_specific_data.h"
 #include "lib/util.h"
 #include "lib/watchdog.h"
 
@@ -379,7 +380,7 @@ int main(int argc, char* argv[])
                   GetFirstPortHostOrder(me->DIRaddrs));
   }
 
-  SetJcrInTsd(INVALID_JCR);
+  SetJcrInThreadSpecificData(INVALID_JCR);
   SetThreadConcurrency(me->MaxConcurrentJobs * 2 + 4 /* UA */ +
                        5 /* sched+watchdog+jobsvr+misc */);
 
@@ -449,7 +450,7 @@ int main(int argc, char* argv[])
   while ((jcr = wait_for_next_job(runjob))) {
     RunJob(jcr);  /* run job */
     FreeJcr(jcr); /* release jcr */
-    SetJcrInTsd(INVALID_JCR);
+    SetJcrInThreadSpecificData(INVALID_JCR);
     if (runjob) { /* command line, run a single job? */
       break;      /* yes, Terminate */
     }

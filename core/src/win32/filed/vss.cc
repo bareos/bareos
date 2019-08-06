@@ -33,6 +33,7 @@
 
 #include "include/bareos.h"
 #include "filed/filed.h"
+#include "lib/thread_specific_data.h"
 
 #include "ms_atl.h"
 #include <objbase.h>
@@ -52,7 +53,7 @@ static bool VSSPathConvert(const char* szFilePath,
                            char* szShadowPath,
                            int nBuflen)
 {
-  JobControlRecord* jcr = get_jcr_from_tsd();
+  JobControlRecord* jcr = GetJcrFromThreadSpecificData();
 
   if (jcr && jcr->pVSSClient) {
     return jcr->pVSSClient->GetShadowPath(szFilePath, szShadowPath, nBuflen);
@@ -65,7 +66,7 @@ static bool VSSPathConvertW(const wchar_t* szFilePath,
                             wchar_t* szShadowPath,
                             int nBuflen)
 {
-  JobControlRecord* jcr = get_jcr_from_tsd();
+  JobControlRecord* jcr = GetJcrFromThreadSpecificData();
 
   if (jcr && jcr->pVSSClient) {
     return jcr->pVSSClient->GetShadowPathW(szFilePath, szShadowPath, nBuflen);

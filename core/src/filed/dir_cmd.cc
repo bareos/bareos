@@ -50,6 +50,7 @@
 #include "lib/edit.h"
 #include "lib/path_list.h"
 #include "lib/qualified_resource_name_type_converter.h"
+#include "lib/thread_specific_data.h"
 #include "lib/tls_conf.h"
 #include "lib/parse_conf.h"
 #include "lib/bsock_tcp.h"
@@ -427,7 +428,7 @@ JobControlRecord* create_new_director_session(BareosSocket* dir)
   jcr->crypto.pki_signers = me->pki_signers;
   jcr->crypto.pki_recipients = me->pki_recipients;
   if (dir) { dir->SetJcr(jcr); }
-  SetJcrInTsd(jcr);
+  SetJcrInThreadSpecificData(jcr);
 
   EnableBackupPrivileges(nullptr, 1 /* ignore_errors */);
 
@@ -2321,7 +2322,8 @@ static BareosSocket* connect_to_director(JobControlRecord* jcr,
   Dmsg1(10, "Opened connection with Director %s\n", dir_res->resource_name_);
   jcr->dir_bsock = director_socket.get();
 
-  director_socket->InitBnetDump(my_config->CreateOwnQualifiedNameForNetworkDump());
+  director_socket->InitBnetDump(
+      my_config->CreateOwnQualifiedNameForNetworkDump());
   director_socket->fsend(hello_client, my_name, FD_PROTOCOL_VERSION);
   if (!AuthenticateWithDirector(jcr, dir_res)) {
     jcr->dir_bsock = nullptr;
