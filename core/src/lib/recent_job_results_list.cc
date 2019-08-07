@@ -28,22 +28,20 @@
 #include "lib/berrno.h"
 
 #include <vector>
+#include <mutex>
 
 static std::vector<RecentJobResultsList::JobResult*> recent_job_results_list;
 static const int max_count_recent_job_results = 10;
-
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-static void LockLastJobsList() { P(mutex); }
-static void UnlockLastJobsList() { V(mutex); }
+static std::mutex mutex;
 
 void RecentJobResultsList::Cleanup()
 {
   if (recent_job_results_list.empty()) { return; }
 
-  LockLastJobsList();
+  mutex.lock();
   for (auto je : recent_job_results_list) { free(je); };
   recent_job_results_list.clear();
-  UnlockLastJobsList();
+  mutex.unlock();
 }
 
 bool RecentJobResultsList::ImportFromFile(int fd, uint64_t addr)
@@ -59,7 +57,7 @@ bool RecentJobResultsList::ImportFromFile(int fd, uint64_t addr)
   if (num > 4 * max_count_recent_job_results) { /* sanity check */
     return false;
   }
-  LockLastJobsList();
+  mutex.lock();
   for (; num; num--) {
     if (read(fd, &job, sizeof(job)) != sizeof(job)) {
       BErrNo be;
@@ -78,7 +76,7 @@ bool RecentJobResultsList::ImportFromFile(int fd, uint64_t addr)
       }
     }
   }
-  UnlockLastJobsList();
+  mutex.unlock();
   return ok;
 }
 
@@ -90,7 +88,7 @@ uint64_t RecentJobResultsList::ExportToFile(int fd, uint64_t addr)
   Dmsg1(100, "write_last_jobs seek to %d\n", (int)addr);
   if (lseek(fd, (boffset_t)addr, SEEK_SET) < 0) { return 0; }
   if (!recent_job_results_list.empty()) {
-    LockLastJobsList();
+    mutex.lock();
     /*
      * First record is number of entires
      */
@@ -108,7 +106,7 @@ uint64_t RecentJobResultsList::ExportToFile(int fd, uint64_t addr)
         goto bail_out;
       }
     }
-    UnlockLastJobsList();
+    mutex.unlock();
   }
 
   /*
@@ -119,7 +117,7 @@ uint64_t RecentJobResultsList::ExportToFile(int fd, uint64_t addr)
   return status;
 
 bail_out:
-  UnlockLastJobsList();
+  mutex.unlock();
   return 0;
 }
 
@@ -138,7 +136,7 @@ void RecentJobResultsList::Append(JobControlRecord* jcr)
        * Keep list of last jobs, but not Console where JobId==0
        */
       if (jcr->JobId > 0) {
-        LockLastJobsList();
+        mutex.lock();
         num_jobs_run++;
         je = (struct RecentJobResultsList::JobResult*)malloc(
             sizeof(struct RecentJobResultsList::JobResult));
@@ -161,7 +159,7 @@ void RecentJobResultsList::Append(JobControlRecord* jcr)
           free(recent_job_results_list.front());
           recent_job_results_list.erase(recent_job_results_list.begin());
         }
-        UnlockLastJobsList();
+        mutex.unlock();
       }
       break;
     default:
@@ -172,27 +170,27 @@ void RecentJobResultsList::Append(JobControlRecord* jcr)
 std::vector<RecentJobResultsList::JobResult*> RecentJobResultsList::Get()
 {
   std::vector<RecentJobResultsList::JobResult*> l;
-  LockLastJobsList();
+  mutex.lock();
   l = recent_job_results_list;
-  UnlockLastJobsList();
+  mutex.unlock();
   return l;
 }
 
 std::size_t RecentJobResultsList::Count()
 {
   int count = 0;
-  LockLastJobsList();
+  mutex.lock();
   count = recent_job_results_list.size();
-  UnlockLastJobsList();
+  mutex.unlock();
   return count;
 }
 
 bool RecentJobResultsList::IsEmpty()
 {
   bool empty;
-  LockLastJobsList();
+  mutex.lock();
   empty = recent_job_results_list.empty();
-  UnlockLastJobsList();
+  mutex.unlock();
   return empty;
 }
 
@@ -200,8 +198,8 @@ bool RecentJobResultsList::IsEmpty()
 RecentJobResultsList::JobResult RecentJobResultsList::GetMostRecentJobResult()
 {
   RecentJobResultsList::JobResult j;
-  LockLastJobsList();
+  mutex.lock();
   if (recent_job_results_list.size()) { j = *recent_job_results_list.front(); }
-  UnlockLastJobsList();
+  mutex.unlock();
   return j;
 }
