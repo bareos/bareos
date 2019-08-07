@@ -567,7 +567,7 @@ void ReadStateFile(char* dir, const char* progname, int port)
     goto bail_out;
   }
 
-  if (!ReadLastJobsList(sfd, hdr.last_jobs_addr)) { goto bail_out; }
+  if (!RecentJobResultsList::ImportFromFile(sfd, hdr.last_jobs_addr)) { goto bail_out; }
   ok = true;
 bail_out:
   if (sfd >= 0) { close(sfd); }
@@ -609,7 +609,7 @@ void WriteStateFile(char* dir, const char* progname, int port)
   }
 
   state_hdr.last_jobs_addr = sizeof(state_hdr);
-  state_hdr.reserved[0] = WriteLastJobsList(sfd, state_hdr.last_jobs_addr);
+  state_hdr.reserved[0] = RecentJobResultsList::ExportToFile(sfd, state_hdr.last_jobs_addr);
   if (lseek(sfd, 0, SEEK_SET) < 0) {
     BErrNo be;
     Dmsg1(000, "lseek error: ERR=%s\n", be.bstrerror());

@@ -171,7 +171,7 @@ int main(int argc, char* const* argv)
     my_config = NULL;
   }
 
-  TermLastJobsList();
+  RecentJobResultsList::Cleanup();
   CleanupJcrChain();
 
   /* Clean up fileset */

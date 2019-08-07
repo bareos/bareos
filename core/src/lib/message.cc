@@ -521,7 +521,7 @@ void TermMsg()
     free(catalog_db);
     catalog_db = NULL;
   }
-  TermLastJobsList();
+  RecentJobResultsList::Cleanup();
   CleanupJcrChain();
 }
 

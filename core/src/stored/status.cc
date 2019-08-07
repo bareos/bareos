@@ -827,7 +827,7 @@ static void ListTerminatedJobs(StatusPacket* sp)
     sendit(msg, len, sp);
   }
 
-  if (LastJobsEmpty()) {
+  if (RecentJobResultsList::IsEmpty()) {
     if (!sp->api) {
       len = PmStrcpy(msg, "====\n");
       sendit(msg, len, sp);
@@ -844,7 +844,7 @@ static void ListTerminatedJobs(StatusPacket* sp)
     sendit(msg, len, sp);
   }
 
-  std::vector<s_last_job*> last_jobs = GetLastJobsList();
+  std::vector<RecentJobResultsList::JobResult*> last_jobs = RecentJobResultsList::Get();
 
   for (const auto je : last_jobs) {
     char JobName[MAX_NAME_LENGTH];
@@ -1053,8 +1053,8 @@ bool DotstatusCmd(JobControlRecord* jcr)
     endeach_jcr(njcr);
   } else if (Bstrcasecmp(cmd.c_str(), "last")) {
     dir->fsend(OKdotstatus, cmd.c_str());
-    if (LastJobsCount() > 0) {
-      s_last_job job = GetLastJob();
+    if (RecentJobResultsList::Count() > 0) {
+      RecentJobResultsList::JobResult job = RecentJobResultsList::GetMostRecentJobResult();
       dir->fsend(DotStatusJob, job.JobId, job.JobStatus, job.Errors);
     }
   } else if (Bstrcasecmp(cmd.c_str(), "header")) {
@@ -1102,7 +1102,7 @@ char* bareos_status(char* buf, int buf_len)
 {
   JobControlRecord* njcr;
   const char* termstat = _("Bareos Storage: Idle");
-  struct s_last_job* job;
+  struct RecentJobResultsList::JobResult* job;
   int status = 0; /* Idle */
 
   if (!last_jobs) { goto done; }
@@ -1118,7 +1118,7 @@ char* bareos_status(char* buf, int buf_len)
 
   if (status != 0) { goto done; }
   if (last_jobs->size() > 0) {
-    job = (struct s_last_job*)last_jobs->last();
+    job = (struct RecentJobResultsList::JobResult*)last_jobs->last();
     status = job->JobStatus;
     switch (job->JobStatus) {
       case JS_Canceled:

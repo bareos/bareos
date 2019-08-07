@@ -185,7 +185,7 @@ int main(int argc, char* const* argv)
   TermFindFiles(ff);
 
   FreeJcr(jcr);
-  TermLastJobsList();
+  RecentJobResultsList::Cleanup();
   CleanupJcrChain();
   CloseMemoryPool();
   exit(0);

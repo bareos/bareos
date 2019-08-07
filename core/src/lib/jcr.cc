@@ -378,7 +378,7 @@ static void JcrCleanup(JobControlRecord* jcr, bool is_destructor_call = false)
 
   Dmsg1(debuglevel, "End job=%d\n", jcr->JobId);
 
-  SetLastJobsStatistics(jcr);
+  RecentJobResultsList::Append(jcr);
 
   CloseMsg(jcr); /* close messages for this job */
 

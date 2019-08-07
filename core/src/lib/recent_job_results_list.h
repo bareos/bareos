@@ -24,7 +24,9 @@
 #ifndef BAREOS_LIB_RECENT_JOB_RESULTS_LIST_H
 #define BAREOS_LIB_RECENT_JOB_RESULTS_LIST_H
 
-struct s_last_job {
+namespace RecentJobResultsList {
+
+struct JobResult {
   int32_t Errors = 0; /** FD/SD errors */
   int32_t JobType = 0;
   int32_t JobStatus = 0;
@@ -39,18 +41,19 @@ struct s_last_job {
   char Job[MAX_NAME_LENGTH]{0};
 };
 
-void TermLastJobsList();
-void LockLastJobsList();
-void UnlockLastJobsList();
+void Append(JobControlRecord* jcr);
 
-bool ReadLastJobsList(int fd, uint64_t addr);
-uint64_t WriteLastJobsList(int fd, uint64_t addr);
+std::vector<RecentJobResultsList::JobResult*> Get();
+RecentJobResultsList::JobResult GetMostRecentJobResult();
+std::size_t Count();
+bool IsEmpty();
 
-void SetLastJobsStatistics(JobControlRecord* jcr);
+uint64_t ExportToFile(int fd, uint64_t addr);
+bool ImportFromFile(int fd, uint64_t addr);
 
-std::size_t LastJobsCount();
-std::size_t LastJobsEmpty();
-std::vector<s_last_job*> GetLastJobsList();
-s_last_job GetLastJob();
+void Cleanup();
+
+}  // namespace RecentJobResultsList
+
 
 #endif  // BAREOS_LIB_RECENT_JOB_RESULTS_LIST_H

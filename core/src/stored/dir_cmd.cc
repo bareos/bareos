@@ -74,8 +74,6 @@
 #include "include/jcr.h"
 
 /* Imported variables */
-extern struct s_last_job last_job;
-
 extern void terminate_child();
 
 namespace storagedaemon {

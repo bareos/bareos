@@ -368,7 +368,7 @@ static void TerminateBtape(int status)
 
   StopWatchdog();
   TermMsg();
-  TermLastJobsList();
+  RecentJobResultsList::Cleanup();
   CleanupJcrChain();
   CloseMemoryPool(); /* free memory in pool */
 

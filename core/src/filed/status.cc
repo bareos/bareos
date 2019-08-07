@@ -313,7 +313,7 @@ static void ListRunningJobs(StatusPacket* sp)
 static void ListTerminatedJobs(StatusPacket* sp)
 {
   int len;
-  struct s_last_job* je;
+  struct RecentJobResultsList::JobResult* je;
   PoolMem msg(PM_MESSAGE);
   char level[10], dt[MAX_TIME_LENGTH], b1[30], b2[30];
 
@@ -322,7 +322,7 @@ static void ListTerminatedJobs(StatusPacket* sp)
     sendit(msg, len, sp);
   }
 
-  if (LastJobsCount() == 0) {
+  if (RecentJobResultsList::Count() == 0) {
     if (!sp->api) {
       len = PmStrcpy(msg, _("====\n"));
       sendit(msg, len, sp);
@@ -339,7 +339,7 @@ static void ListTerminatedJobs(StatusPacket* sp)
     sendit(msg, len, sp);
   }
 
-  std::vector<s_last_job*> last_jobs = GetLastJobsList();
+  std::vector<RecentJobResultsList::JobResult*> last_jobs = RecentJobResultsList::Get();
 
   for (const auto je : last_jobs) {
     char* p;
@@ -450,7 +450,7 @@ bool QstatusCmd(JobControlRecord* jcr)
   BareosSocket* dir = jcr->dir_bsock;
   POOLMEM* cmd;
   JobControlRecord* njcr;
-  s_last_job* job;
+  RecentJobResultsList::JobResult* job;
   StatusPacket sp;
 
   sp.bs = dir;
@@ -476,8 +476,8 @@ bool QstatusCmd(JobControlRecord* jcr)
     endeach_jcr(njcr);
   } else if (bstrcmp(cmd, "last")) {
     dir->fsend(OKqstatus, cmd);
-    if (LastJobsCount() > 0) {
-      s_last_job job = GetLastJob();
+    if (RecentJobResultsList::Count() > 0) {
+      RecentJobResultsList::JobResult job = RecentJobResultsList::GetMostRecentJobResult();
       dir->fsend(DotStatusJob, job.JobId, job.JobStatus, job.Errors);
     }
   } else if (Bstrcasecmp(cmd, "header")) {
@@ -562,7 +562,7 @@ char* bareos_status(char* buf, int buf_len)
 {
   JobControlRecord* njcr;
   const char* termstat = _("Bareos Client: Idle");
-  struct s_last_job* job;
+  struct RecentJobResultsList::JobResult* job;
   int status = 0; /* Idle */
 
   if (!last_jobs) { goto done; }
@@ -578,7 +578,7 @@ char* bareos_status(char* buf, int buf_len)
 
   if (status != 0) { goto done; }
   if (last_jobs->size() > 0) {
-    job = (struct s_last_job*)last_jobs->last();
+    job = (struct RecentJobResultsList::JobResult*)last_jobs->last();
     status = job->JobStatus;
     switch (job->JobStatus) {
       case JS_Canceled:

@@ -117,8 +117,8 @@ bool DotStatusCmd(UaContext* ua, const char* cmd)
       endeach_jcr(njcr);
     } else if (Bstrcasecmp(ua->argk[2], "last")) {
       ua->SendMsg(OKdotstatus, ua->argk[2]);
-      if (LastJobsCount() > 0) {
-        s_last_job job = GetLastJob();
+      if (RecentJobResultsList::Count() > 0) {
+        RecentJobResultsList::JobResult job = RecentJobResultsList::GetMostRecentJobResult();
         if (ua->AclAccessOk(Job_ACL, job.Job)) {
           ua->SendMsg(DotStatusJob, edit_int64(job.JobId, ed1), job.JobStatus,
                       job.Errors);
@@ -1154,7 +1154,7 @@ static void ListTerminatedJobs(UaContext* ua)
   char dt[MAX_TIME_LENGTH], b1[30], b2[30];
   char level[10];
 
-  if (LastJobsEmpty()) {
+  if (RecentJobResultsList::IsEmpty()) {
     if (!ua->api) ua->SendMsg(_("No Terminated Jobs.\n"));
     return;
   }
@@ -1168,7 +1168,7 @@ static void ListTerminatedJobs(UaContext* ua)
           "\n"));
   }
 
-  std::vector<s_last_job*> last_jobs = GetLastJobsList();
+  std::vector<RecentJobResultsList::JobResult*> last_jobs = RecentJobResultsList::Get();
 
   for (const auto je : last_jobs) {
     char JobName[MAX_NAME_LENGTH];
