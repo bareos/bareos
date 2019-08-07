@@ -53,9 +53,9 @@ set (BAREOS_SRCS  address_conf.cc alist.cc attr.cc attribs.cc backtrace.cc base6
    connection_pool.cc cram_md5.cc crypto.cc  crypto_cache.cc
    crypto_none.cc crypto_nss.cc  crypto_openssl.cc crypto_wrap.cc daemon.cc
    devlock.cc dlist.cc  edit.cc fnmatch.cc guid_to_name.cc hmac.cc htable.cc
-   jcr.cc json.cc last_jobs_list.cc lockmgr.cc md5.cc mem_pool.cc message.cc messages_resource.cc
+   jcr.cc json.cc lockmgr.cc md5.cc mem_pool.cc message.cc messages_resource.cc
    mntent_cache.cc output_formatter.cc passphrase.cc path_list.cc plugins.cc
-   bpoll.cc  priv.cc
+   bpoll.cc  priv.cc recent_job_results_list.cc
    queue.cc rblist.cc runscript.cc rwlock.cc scan.cc scsi_crypto.cc  scsi_lli.cc
    serial.cc sha1.cc signal.cc thread_list.cc thread_specific_data.cc tls.cc
    tls_conf.cc tls_openssl.cc

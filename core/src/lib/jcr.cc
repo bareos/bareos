@@ -50,7 +50,7 @@
 #include "lib/thread_specific_data.h"
 #include "lib/tls_conf.h"
 #include "lib/bsock.h"
-#include "lib/last_jobs_list.h"
+#include "lib/recent_job_results_list.h"
 #include "lib/message_queue_item.h"
 #include "lib/watchdog.h"
 

@@ -35,7 +35,7 @@
 #include "lib/status.h"
 #include "lib/bsock.h"
 #include "lib/edit.h"
-#include "lib/last_jobs_list.h"
+#include "lib/recent_job_results_list.h"
 #include "findlib/enable_priv.h"
 #include "lib/util.h"
 

@@ -37,7 +37,7 @@
 #include "lib/bsock.h"
 #include "lib/util.h"
 #include "lib/watchdog.h"
-#include "lib/last_jobs_list.h"
+#include "lib/recent_job_results_list.h"
 #include "lib/messages_resource.h"
 #include "lib/message_destination_info.h"
 #include "lib/message_queue_item.h"

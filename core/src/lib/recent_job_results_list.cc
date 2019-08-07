@@ -23,7 +23,7 @@
 
 #include "include/bareos.h"
 #include "include/jcr.h"
-#include "lib/last_jobs_list.h"
+#include "lib/recent_job_results_list.h"
 #include "lib/dlist.h"
 #include "lib/berrno.h"
 

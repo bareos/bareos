@@ -32,7 +32,7 @@
 #include "filed/fd_plugins.h"
 #include "findlib/match.h"
 #include "lib/edit.h"
-#include "lib/last_jobs_list.h"
+#include "lib/recent_job_results_list.h"
 #include "lib/util.h"
 
 /* Dummy functions */

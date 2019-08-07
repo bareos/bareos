@@ -21,8 +21,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_LIB_LAST_JOBS_LIST_H
-#define BAREOS_LIB_LAST_JOBS_LIST_H
+#ifndef BAREOS_LIB_RECENT_JOB_RESULTS_LIST_H
+#define BAREOS_LIB_RECENT_JOB_RESULTS_LIST_H
 
 struct s_last_job {
   int32_t Errors = 0; /** FD/SD errors */
@@ -53,4 +53,4 @@ std::size_t LastJobsEmpty();
 std::vector<s_last_job*> GetLastJobsList();
 s_last_job GetLastJob();
 
-#endif  // BAREOS_LIB_LAST_JOBS_LIST_H
+#endif  // BAREOS_LIB_RECENT_JOB_RESULTS_LIST_H

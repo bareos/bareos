@@ -45,7 +45,7 @@
 #include "dird/ua_select.h"
 #include "dird/ua_status.h"
 #include "lib/edit.h"
-#include "lib/last_jobs_list.h"
+#include "lib/recent_job_results_list.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
 
