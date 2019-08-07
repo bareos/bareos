@@ -30,23 +30,21 @@
 #include <vector>
 #include <mutex>
 
-static std::vector<RecentJobResultsList::JobResult*> recent_job_results_list;
+static std::vector<RecentJobResultsList::JobResult> recent_job_results_list;
 static const int max_count_recent_job_results = 10;
 static std::mutex mutex;
 
 void RecentJobResultsList::Cleanup()
 {
-  if (recent_job_results_list.empty()) { return; }
-
-  mutex.lock();
-  for (auto je : recent_job_results_list) { free(je); };
-  recent_job_results_list.clear();
-  mutex.unlock();
+  if (!recent_job_results_list.empty()) {
+    mutex.lock();
+    recent_job_results_list.clear();
+    mutex.unlock();
+  }
 }
 
 bool RecentJobResultsList::ImportFromFile(int fd, uint64_t addr)
 {
-  struct RecentJobResultsList::JobResult *je, job;
   uint32_t num;
   bool ok = true;
 
@@ -59,6 +57,7 @@ bool RecentJobResultsList::ImportFromFile(int fd, uint64_t addr)
   }
   mutex.lock();
   for (; num; num--) {
+    RecentJobResultsList::JobResult job;
     if (read(fd, &job, sizeof(job)) != sizeof(job)) {
       BErrNo be;
       Pmsg1(000, "Read job entry. ERR=%s\n", be.bstrerror());
@@ -66,12 +65,9 @@ bool RecentJobResultsList::ImportFromFile(int fd, uint64_t addr)
       break;
     }
     if (job.JobId > 0) {
-      je = (struct RecentJobResultsList::JobResult*)malloc(
-          sizeof(struct RecentJobResultsList::JobResult));
-      memcpy((char*)je, (char*)&job, sizeof(job));
+      RecentJobResultsList::JobResult je = job;
       recent_job_results_list.push_back(je);
       if (recent_job_results_list.size() > max_count_recent_job_results) {
-        free(recent_job_results_list.front());
         recent_job_results_list.erase(recent_job_results_list.begin());
       }
     }
@@ -82,94 +78,59 @@ bool RecentJobResultsList::ImportFromFile(int fd, uint64_t addr)
 
 uint64_t RecentJobResultsList::ExportToFile(int fd, uint64_t addr)
 {
-  uint32_t num;
-  ssize_t status;
-
   Dmsg1(100, "write_last_jobs seek to %d\n", (int)addr);
   if (lseek(fd, (boffset_t)addr, SEEK_SET) < 0) { return 0; }
   if (!recent_job_results_list.empty()) {
-    mutex.lock();
-    /*
-     * First record is number of entires
-     */
-    num = recent_job_results_list.size();
+    std::lock_guard<std::mutex> m(mutex);
+    uint32_t num =
+        recent_job_results_list.size();  // always first entry in the file
     if (write(fd, &num, sizeof(num)) != sizeof(num)) {
       BErrNo be;
       Pmsg1(000, "Error writing num_items: ERR=%s\n", be.bstrerror());
-      goto bail_out;
+      return 0;
     }
     for (auto je : recent_job_results_list) {
-      if (write(fd, je, sizeof(struct RecentJobResultsList::JobResult)) !=
+      if (write(fd, &je, sizeof(struct RecentJobResultsList::JobResult)) !=
           sizeof(struct RecentJobResultsList::JobResult)) {
         BErrNo be;
         Pmsg1(000, "Error writing job: ERR=%s\n", be.bstrerror());
-        goto bail_out;
+        return 0;
       }
     }
-    mutex.unlock();
   }
 
-  /*
-   * Return current address
-   */
-  status = lseek(fd, 0, SEEK_CUR);
-  if (status < 0) { status = 0; }
-  return status;
-
-bail_out:
-  mutex.unlock();
-  return 0;
+  ssize_t current_address = lseek(fd, 0, SEEK_CUR);
+  if (current_address < 0) { current_address = 0; }
+  return current_address;
 }
 
 void RecentJobResultsList::Append(JobControlRecord* jcr)
 {
-  struct RecentJobResultsList::JobResult* je = nullptr;
+  RecentJobResultsList::JobResult je;
+  je.Errors = jcr->JobErrors;
+  je.JobType = jcr->getJobType();
+  je.JobId = jcr->JobId;
+  je.VolSessionId = jcr->VolSessionId;
+  je.VolSessionTime = jcr->VolSessionTime;
+  bstrncpy(je.Job, jcr->Job, sizeof(je.Job));
+  je.JobFiles = jcr->JobFiles;
+  je.JobBytes = jcr->JobBytes;
+  je.JobStatus = jcr->JobStatus;
+  je.JobLevel = jcr->getJobLevel();
+  je.start_time = jcr->start_time;
+  je.end_time = time(nullptr);
 
-  switch (jcr->getJobType()) {
-    case JT_BACKUP:
-    case JT_VERIFY:
-    case JT_RESTORE:
-    case JT_MIGRATE:
-    case JT_COPY:
-    case JT_ADMIN:
-      /*
-       * Keep list of last jobs, but not Console where JobId==0
-       */
-      if (jcr->JobId > 0) {
-        mutex.lock();
-        num_jobs_run++;
-        je = (struct RecentJobResultsList::JobResult*)malloc(
-            sizeof(struct RecentJobResultsList::JobResult));
-        new (je) RecentJobResultsList::JobResult();
-        je->Errors = jcr->JobErrors;
-        je->JobType = jcr->getJobType();
-        je->JobId = jcr->JobId;
-        je->VolSessionId = jcr->VolSessionId;
-        je->VolSessionTime = jcr->VolSessionTime;
-        bstrncpy(je->Job, jcr->Job, sizeof(je->Job));
-        je->JobFiles = jcr->JobFiles;
-        je->JobBytes = jcr->JobBytes;
-        je->JobStatus = jcr->JobStatus;
-        je->JobLevel = jcr->getJobLevel();
-        je->start_time = jcr->start_time;
-        je->end_time = time(nullptr);
-
-        recent_job_results_list.push_back(je);
-        if (recent_job_results_list.size() > max_count_recent_job_results) {
-          free(recent_job_results_list.front());
-          recent_job_results_list.erase(recent_job_results_list.begin());
-        }
-        mutex.unlock();
-      }
-      break;
-    default:
-      break;
+  mutex.lock();
+  recent_job_results_list.push_back(je);
+  if (recent_job_results_list.size() > max_count_recent_job_results) {
+    recent_job_results_list.erase(recent_job_results_list.begin());
   }
+  mutex.unlock();
 }
 
-std::vector<RecentJobResultsList::JobResult*> RecentJobResultsList::Get()
+std::vector<RecentJobResultsList::JobResult> RecentJobResultsList::Get()
 {
-  std::vector<RecentJobResultsList::JobResult*> l;
+  std::vector<RecentJobResultsList::JobResult> l;
   mutex.lock();
   l = recent_job_results_list;
   mutex.unlock();
@@ -199,7 +160,7 @@ RecentJobResultsList::JobResult RecentJobResultsList::GetMostRecentJobResult()
 {
   RecentJobResultsList::JobResult j;
   mutex.lock();
-  if (recent_job_results_list.size()) { j = *recent_job_results_list.front(); }
+  if (recent_job_results_list.size()) { j = recent_job_results_list.front(); }
   mutex.unlock();
   return j;
 }

@@ -118,7 +118,8 @@ bool DotStatusCmd(UaContext* ua, const char* cmd)
     } else if (Bstrcasecmp(ua->argk[2], "last")) {
       ua->SendMsg(OKdotstatus, ua->argk[2]);
       if (RecentJobResultsList::Count() > 0) {
-        RecentJobResultsList::JobResult job = RecentJobResultsList::GetMostRecentJobResult();
+        RecentJobResultsList::JobResult job =
+            RecentJobResultsList::GetMostRecentJobResult();
         if (ua->AclAccessOk(Job_ACL, job.Job)) {
           ua->SendMsg(DotStatusJob, edit_int64(job.JobId, ed1), job.JobStatus,
                       job.Errors);
@@ -1168,13 +1169,14 @@ static void ListTerminatedJobs(UaContext* ua)
           "\n"));
   }
 
-  std::vector<RecentJobResultsList::JobResult*> last_jobs = RecentJobResultsList::Get();
+  std::vector<RecentJobResultsList::JobResult> last_jobs =
+      RecentJobResultsList::Get();
 
   for (const auto je : last_jobs) {
     char JobName[MAX_NAME_LENGTH];
     const char* termstat;
 
-    bstrncpy(JobName, je->Job, sizeof(JobName));
+    bstrncpy(JobName, je.Job, sizeof(JobName));
     /* There are three periods after the Job name */
     char* p;
     for (int i = 0; i < 3; i++) {
@@ -1183,19 +1185,19 @@ static void ListTerminatedJobs(UaContext* ua)
 
     if (!ua->AclAccessOk(Job_ACL, JobName)) { continue; }
 
-    bstrftime_nc(dt, sizeof(dt), je->end_time);
-    switch (je->JobType) {
+    bstrftime_nc(dt, sizeof(dt), je.end_time);
+    switch (je.JobType) {
       case JT_ADMIN:
       case JT_ARCHIVE:
       case JT_RESTORE:
         bstrncpy(level, "    ", sizeof(level));
         break;
       default:
-        bstrncpy(level, JobLevelToString(je->JobLevel), sizeof(level));
+        bstrncpy(level, JobLevelToString(je.JobLevel), sizeof(level));
         level[4] = 0;
         break;
     }
-    switch (je->JobStatus) {
+    switch (je.JobStatus) {
       case JS_Created:
         termstat = _("Created");
         break;
@@ -1220,14 +1222,14 @@ static void ListTerminatedJobs(UaContext* ua)
         break;
     }
     if (ua->api) {
-      ua->SendMsg(_("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je->JobId, level,
-                  edit_uint64_with_commas(je->JobFiles, b1),
-                  edit_uint64_with_suffix(je->JobBytes, b2), termstat, dt,
+      ua->SendMsg(_("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je.JobId, level,
+                  edit_uint64_with_commas(je.JobFiles, b1),
+                  edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt,
                   JobName);
     } else {
-      ua->SendMsg(_("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"), je->JobId, level,
-                  edit_uint64_with_commas(je->JobFiles, b1),
-                  edit_uint64_with_suffix(je->JobBytes, b2), termstat, dt,
+      ua->SendMsg(_("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"), je.JobId, level,
+                  edit_uint64_with_commas(je.JobFiles, b1),
+                  edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt,
                   JobName);
     }
   }

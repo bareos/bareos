@@ -378,7 +378,21 @@ static void JcrCleanup(JobControlRecord* jcr, bool is_destructor_call = false)
 
   Dmsg1(debuglevel, "End job=%d\n", jcr->JobId);
 
-  RecentJobResultsList::Append(jcr);
+  switch (jcr->getJobType()) {
+    case JT_BACKUP:
+    case JT_VERIFY:
+    case JT_RESTORE:
+    case JT_MIGRATE:
+    case JT_COPY:
+    case JT_ADMIN:
+      if (jcr->JobId > 0) {  // except Console Jobs
+        num_jobs_run++;
+        RecentJobResultsList::Append(jcr);
+      }
+      break;
+    default:
+      break;
+  }
 
   CloseMsg(jcr); /* close messages for this job */
 

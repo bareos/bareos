@@ -27,7 +27,8 @@
 namespace RecentJobResultsList {
 
 struct JobResult {
-  int32_t Errors = 0; /** FD/SD errors */
+  // !! this plain data structure will be written to a file
+  int32_t Errors = 0;  // FD/SD errors
   int32_t JobType = 0;
   int32_t JobStatus = 0;
   int32_t JobLevel = 0;
@@ -43,7 +44,7 @@ struct JobResult {
 
 void Append(JobControlRecord* jcr);
 
-std::vector<RecentJobResultsList::JobResult*> Get();
+std::vector<RecentJobResultsList::JobResult> Get();
 RecentJobResultsList::JobResult GetMostRecentJobResult();
 std::size_t Count();
 bool IsEmpty();

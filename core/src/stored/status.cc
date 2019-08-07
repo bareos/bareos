@@ -844,24 +844,25 @@ static void ListTerminatedJobs(StatusPacket* sp)
     sendit(msg, len, sp);
   }
 
-  std::vector<RecentJobResultsList::JobResult*> last_jobs = RecentJobResultsList::Get();
+  std::vector<RecentJobResultsList::JobResult> last_jobs =
+      RecentJobResultsList::Get();
 
   for (const auto je : last_jobs) {
     char JobName[MAX_NAME_LENGTH];
     const char* termstat;
 
-    bstrftime_nc(dt, sizeof(dt), je->end_time);
-    switch (je->JobType) {
+    bstrftime_nc(dt, sizeof(dt), je.end_time);
+    switch (je.JobType) {
       case JT_ADMIN:
       case JT_RESTORE:
         bstrncpy(level, "    ", sizeof(level));
         break;
       default:
-        bstrncpy(level, JobLevelToString(je->JobLevel), sizeof(level));
+        bstrncpy(level, JobLevelToString(je.JobLevel), sizeof(level));
         level[4] = 0;
         break;
     }
-    switch (je->JobStatus) {
+    switch (je.JobStatus) {
       case JS_Created:
         termstat = _("Created");
         break;
@@ -885,22 +886,22 @@ static void ListTerminatedJobs(StatusPacket* sp)
         termstat = _("Other");
         break;
     }
-    bstrncpy(JobName, je->Job, sizeof(JobName));
+    bstrncpy(JobName, je.Job, sizeof(JobName));
     /* There are three periods after the Job name */
     char* p;
     for (int i = 0; i < 3; i++) {
       if ((p = strrchr(JobName, '.')) != NULL) { *p = 0; }
     }
     if (sp->api) {
-      len = Mmsg(msg, _("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je->JobId,
-                 level, edit_uint64_with_commas(je->JobFiles, b1),
-                 edit_uint64_with_suffix(je->JobBytes, b2), termstat, dt,
-                 JobName);
+      len =
+          Mmsg(msg, _("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je.JobId,
+               level, edit_uint64_with_commas(je.JobFiles, b1),
+               edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt, JobName);
     } else {
-      len = Mmsg(msg, _("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"), je->JobId,
-                 level, edit_uint64_with_commas(je->JobFiles, b1),
-                 edit_uint64_with_suffix(je->JobBytes, b2), termstat, dt,
-                 JobName);
+      len =
+          Mmsg(msg, _("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"), je.JobId, level,
+               edit_uint64_with_commas(je.JobFiles, b1),
+               edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt, JobName);
     }
     sendit(msg, len, sp);
   }
@@ -1054,7 +1055,8 @@ bool DotstatusCmd(JobControlRecord* jcr)
   } else if (Bstrcasecmp(cmd.c_str(), "last")) {
     dir->fsend(OKdotstatus, cmd.c_str());
     if (RecentJobResultsList::Count() > 0) {
-      RecentJobResultsList::JobResult job = RecentJobResultsList::GetMostRecentJobResult();
+      RecentJobResultsList::JobResult job =
+          RecentJobResultsList::GetMostRecentJobResult();
       dir->fsend(DotStatusJob, job.JobId, job.JobStatus, job.Errors);
     }
   } else if (Bstrcasecmp(cmd.c_str(), "header")) {
