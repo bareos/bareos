@@ -35,6 +35,7 @@
 #include "lib/status.h"
 #include "lib/bsock.h"
 #include "lib/edit.h"
+#include "lib/last_jobs_list.h"
 #include "findlib/enable_priv.h"
 #include "lib/util.h"
 
@@ -321,15 +322,13 @@ static void ListTerminatedJobs(StatusPacket* sp)
     sendit(msg, len, sp);
   }
 
-  if (last_jobs->size() == 0) {
+  if (LastJobsCount() == 0) {
     if (!sp->api) {
       len = PmStrcpy(msg, _("====\n"));
       sendit(msg, len, sp);
     }
     return;
   }
-
-  LockLastJobsList();
 
   if (!sp->api) {
     len = PmStrcpy(msg, _(" JobId  Level    Files      Bytes   Status   "
@@ -340,7 +339,9 @@ static void ListTerminatedJobs(StatusPacket* sp)
     sendit(msg, len, sp);
   }
 
-  foreach_dlist (je, last_jobs) {
+  std::vector<s_last_job*> last_jobs = GetLastJobsList();
+
+  for (const auto je : last_jobs) {
     char* p;
     char JobName[MAX_NAME_LENGTH];
     const char* termstat;
@@ -401,8 +402,6 @@ static void ListTerminatedJobs(StatusPacket* sp)
     }
     sendit(msg, len, sp);
   }
-
-  UnlockLastJobsList();
 
   if (!sp->api) {
     len = PmStrcpy(msg, _("====\n"));
@@ -477,9 +476,9 @@ bool QstatusCmd(JobControlRecord* jcr)
     endeach_jcr(njcr);
   } else if (bstrcmp(cmd, "last")) {
     dir->fsend(OKqstatus, cmd);
-    if ((last_jobs) && (last_jobs->size() > 0)) {
-      job = (s_last_job*)last_jobs->last();
-      dir->fsend(DotStatusJob, job->JobId, job->JobStatus, job->Errors);
+    if (LastJobsCount() > 0) {
+      s_last_job job = GetLastJob();
+      dir->fsend(DotStatusJob, job.JobId, job.JobStatus, job.Errors);
     }
   } else if (Bstrcasecmp(cmd, "header")) {
     sp.api = true;

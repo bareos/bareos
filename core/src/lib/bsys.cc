@@ -30,6 +30,7 @@
 
 #include "include/bareos.h"
 #include "lib/berrno.h"
+#include "lib/last_jobs_list.h"
 #ifndef HAVE_REGEX_H
 #include "lib/bregex.h"
 #else

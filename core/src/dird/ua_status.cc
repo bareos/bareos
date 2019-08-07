@@ -45,6 +45,7 @@
 #include "dird/ua_select.h"
 #include "dird/ua_status.h"
 #include "lib/edit.h"
+#include "lib/last_jobs_list.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
 
@@ -93,7 +94,6 @@ bool DotStatusCmd(UaContext* ua, const char* cmd)
   StorageResource* store;
   ClientResource* client;
   JobControlRecord* njcr = NULL;
-  s_last_job* job;
   char ed1[50];
   char* statuscmd = NULL;
 
@@ -117,11 +117,11 @@ bool DotStatusCmd(UaContext* ua, const char* cmd)
       endeach_jcr(njcr);
     } else if (Bstrcasecmp(ua->argk[2], "last")) {
       ua->SendMsg(OKdotstatus, ua->argk[2]);
-      if ((last_jobs) && (last_jobs->size() > 0)) {
-        job = (s_last_job*)last_jobs->last();
-        if (ua->AclAccessOk(Job_ACL, job->Job)) {
-          ua->SendMsg(DotStatusJob, edit_int64(job->JobId, ed1), job->JobStatus,
-                      job->Errors);
+      if (LastJobsCount() > 0) {
+        s_last_job job = GetLastJob();
+        if (ua->AclAccessOk(Job_ACL, job.Job)) {
+          ua->SendMsg(DotStatusJob, edit_int64(job.JobId, ed1), job.JobStatus,
+                      job.Errors);
         }
       }
     } else if (Bstrcasecmp(ua->argk[2], "header")) {
@@ -1154,12 +1154,10 @@ static void ListTerminatedJobs(UaContext* ua)
   char dt[MAX_TIME_LENGTH], b1[30], b2[30];
   char level[10];
 
-  if (last_jobs->empty()) {
+  if (LastJobsEmpty()) {
     if (!ua->api) ua->SendMsg(_("No Terminated Jobs.\n"));
     return;
   }
-  LockLastJobsList();
-  struct s_last_job* je;
   if (!ua->api) {
     ua->SendMsg(_("\nTerminated Jobs:\n"));
     ua->SendMsg(
@@ -1169,7 +1167,10 @@ static void ListTerminatedJobs(UaContext* ua)
         _("===================================================================="
           "\n"));
   }
-  foreach_dlist (je, last_jobs) {
+
+  std::vector<s_last_job*> last_jobs = GetLastJobsList();
+
+  for (const auto je : last_jobs) {
     char JobName[MAX_NAME_LENGTH];
     const char* termstat;
 
@@ -1231,7 +1232,6 @@ static void ListTerminatedJobs(UaContext* ua)
     }
   }
   if (!ua->api) ua->SendMsg(_("\n"));
-  UnlockLastJobsList();
 }
 
 

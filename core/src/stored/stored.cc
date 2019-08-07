@@ -316,6 +316,7 @@ int main(int argc, char* argv[])
     Emsg1(M_ABORT, 0, _("Unable to create thread. ERR=%s\n"), be.bstrerror());
   }
 
+  InitJcrChain();
   StartWatchdog(); /* start watchdog thread */
   if (me->jcr_watchdog_time) {
     InitJcrSubsystem(

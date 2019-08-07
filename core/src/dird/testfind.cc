@@ -172,6 +172,7 @@ int main(int argc, char* const* argv)
   }
 
   TermLastJobsList();
+  CleanupJcrChain();
 
   /* Clean up fileset */
   findFILESET* fileset = ff->fileset;

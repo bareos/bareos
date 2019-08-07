@@ -37,6 +37,7 @@
 #include "include/jcr.h"
 #include "lib/parse_conf.h"
 #include "lib/bsock.h"
+#include "lib/last_jobs_list.h"
 #include "lib/util.h"
 
 /* Imported functions */
@@ -818,7 +819,6 @@ static void ListTerminatedJobs(StatusPacket* sp)
 {
   int len;
   char level[10];
-  struct s_last_job* je;
   PoolMem msg(PM_MESSAGE);
   char dt[MAX_TIME_LENGTH], b1[30], b2[30];
 
@@ -827,15 +827,13 @@ static void ListTerminatedJobs(StatusPacket* sp)
     sendit(msg, len, sp);
   }
 
-  if (last_jobs->size() == 0) {
+  if (LastJobsEmpty()) {
     if (!sp->api) {
       len = PmStrcpy(msg, "====\n");
       sendit(msg, len, sp);
     }
     return;
   }
-
-  LockLastJobsList();
 
   if (!sp->api) {
     len = PmStrcpy(msg, _(" JobId  Level    Files      Bytes   Status   "
@@ -846,7 +844,9 @@ static void ListTerminatedJobs(StatusPacket* sp)
     sendit(msg, len, sp);
   }
 
-  foreach_dlist (je, last_jobs) {
+  std::vector<s_last_job*> last_jobs = GetLastJobsList();
+
+  for (const auto je : last_jobs) {
     char JobName[MAX_NAME_LENGTH];
     const char* termstat;
 
@@ -904,8 +904,6 @@ static void ListTerminatedJobs(StatusPacket* sp)
     }
     sendit(msg, len, sp);
   }
-
-  UnlockLastJobsList();
 
   if (!sp->api) {
     len = PmStrcpy(msg, "====\n");
@@ -1030,7 +1028,6 @@ bool DotstatusCmd(JobControlRecord* jcr)
   JobControlRecord* njcr;
   PoolMem cmd;
   StatusPacket sp;
-  s_last_job* job;
   BareosSocket* dir = jcr->dir_bsock;
 
   sp.bs = dir;
@@ -1056,9 +1053,9 @@ bool DotstatusCmd(JobControlRecord* jcr)
     endeach_jcr(njcr);
   } else if (Bstrcasecmp(cmd.c_str(), "last")) {
     dir->fsend(OKdotstatus, cmd.c_str());
-    if ((last_jobs) && (last_jobs->size() > 0)) {
-      job = (s_last_job*)last_jobs->last();
-      dir->fsend(DotStatusJob, job->JobId, job->JobStatus, job->Errors);
+    if (LastJobsCount() > 0) {
+      s_last_job job = GetLastJob();
+      dir->fsend(DotStatusJob, job.JobId, job.JobStatus, job.Errors);
     }
   } else if (Bstrcasecmp(cmd.c_str(), "header")) {
     sp.api = true;

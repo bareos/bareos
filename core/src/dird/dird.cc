@@ -428,6 +428,7 @@ int main(int argc, char* argv[])
 
   StartWatchdog(); /* start network watchdog thread */
 
+  InitJcrChain();
   if (me->jcr_watchdog_time) {
     InitJcrSubsystem(
         me->jcr_watchdog_time); /* start JobControlRecord watchdogs etc. */

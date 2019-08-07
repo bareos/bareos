@@ -658,29 +658,6 @@ class JobControlRecord {
 #define INVALID_JCR (nullptr)
 
 /*
- * Structure for all daemons that keeps some summary
- *  info on the last job run.
- */
-struct s_last_job {
-  dlink link;
-  int32_t Errors = 0; /** FD/SD errors */
-  int32_t JobType = 0;
-  int32_t JobStatus = 0;
-  int32_t JobLevel = 0;
-  uint32_t JobId = 0;
-  uint32_t VolSessionId = 0;
-  uint32_t VolSessionTime = 0;
-  uint32_t JobFiles = 0;
-  uint64_t JobBytes = 0;
-  utime_t start_time = 0;
-  utime_t end_time = 0;
-  char Job[MAX_NAME_LENGTH]{0};
-};
-
-extern struct s_last_job last_job;
-extern dlist* last_jobs;
-
-/*
  * The following routines are found in lib/jcr.c
  */
 extern int GetNextJobidFromList(char** p, uint32_t* JobId);
