@@ -28,6 +28,7 @@ namespace RecentJobResultsList {
 
 struct JobResult {
   // !! this plain data structure will be written to a file
+  char pad[16]{0};
   int32_t Errors = 0;  // FD/SD errors
   int32_t JobType = 0;
   int32_t JobStatus = 0;
@@ -49,8 +50,8 @@ RecentJobResultsList::JobResult GetMostRecentJobResult();
 std::size_t Count();
 bool IsEmpty();
 
-uint64_t ExportToFile(int fd, uint64_t addr);
-bool ImportFromFile(int fd, uint64_t addr);
+bool ExportToFile(std::ofstream& f);
+bool ImportFromFile(std::ifstream& f);
 
 void Cleanup();
 

@@ -336,3 +336,21 @@ target_link_libraries(test_job_control_record
 )
 gtest_discover_tests(test_job_control_record TEST_PREFIX gtest:)
 
+####### test_recent_job_results_list #####################################
+
+add_executable(test_recent_job_results_list recent_job_results_list.cc)
+
+file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/tests/test_recent_job_results_list_tmp)
+target_compile_definitions(test_recent_job_results_list
+  PRIVATE TEST_TEMP_DIR=\"${PROJECT_BINARY_DIR}/src/tests/test_recent_job_results_list_tmp\")
+target_compile_definitions(test_recent_job_results_list
+  PRIVATE TEST_ORIGINAL_FILE_DIR=\"${PROJECT_SOURCE_DIR}/src/tests/recent_job_results_list\")
+
+target_link_libraries(test_recent_job_results_list
+   bareos
+   ${GTEST_LIBRARIES}
+   ${GTEST_MAIN_LIBRARIES}
+)
+
+gtest_discover_tests(test_recent_job_results_list TEST_PREFIX gtest:)
+

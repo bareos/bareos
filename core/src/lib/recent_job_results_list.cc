@@ -29,6 +29,7 @@
 
 #include <vector>
 #include <mutex>
+#include <fstream>
 
 static std::vector<RecentJobResultsList::JobResult> recent_job_results_list;
 static const int max_count_recent_job_results = 10;
@@ -43,65 +44,84 @@ void RecentJobResultsList::Cleanup()
   }
 }
 
-bool RecentJobResultsList::ImportFromFile(int fd, uint64_t addr)
+bool RecentJobResultsList::ImportFromFile(std::ifstream& file)
 {
-  uint32_t num;
-  bool ok = true;
+  static_assert(
+      std::is_trivially_copyable<RecentJobResultsList::JobResult>::value,
+      "RecentJobResultsList::JobResult must be trivially copyable");
 
-  Dmsg1(100, "read_last_jobs seek to %d\n", (int)addr);
-  if (addr == 0 || lseek(fd, (boffset_t)addr, SEEK_SET) < 0) { return false; }
-  if (read(fd, &num, sizeof(num)) != sizeof(num)) { return false; }
+  uint32_t num;
+
+  try {
+    file.read(reinterpret_cast<char*>(&num), sizeof(num));
+  } catch (std::system_error& e) {
+    BErrNo be;
+    Dmsg3(010, "Could not open and read state file. ERR=%s - %s\n",
+          be.bstrerror(), e.code().message().c_str());
+    return false;
+  } catch (...) {
+    Dmsg0(100, "Could not read file. Some error occurred");
+    return false;
+  }
   Dmsg1(100, "Read num_items=%d\n", num);
   if (num > 4 * max_count_recent_job_results) { /* sanity check */
     return false;
   }
-  mutex.lock();
+
+  std::lock_guard<std::mutex> m(mutex);
+
   for (; num; num--) {
     RecentJobResultsList::JobResult job;
-    if (read(fd, &job, sizeof(job)) != sizeof(job)) {
+    try {
+      file.read(reinterpret_cast<char*>(&job), sizeof(job));
+    } catch (std::system_error& e) {
       BErrNo be;
-      Pmsg1(000, "Read job entry. ERR=%s\n", be.bstrerror());
-      ok = false;
-      break;
+      Dmsg3(010, "Could not read state file. ERR=%s - %s\n", be.bstrerror(),
+            e.code().message().c_str());
+      return false;
+    } catch (...) {
+      Dmsg0(100, "Could not read file. Some error occurred");
+      return false;
     }
     if (job.JobId > 0) {
-      RecentJobResultsList::JobResult je = job;
-      recent_job_results_list.push_back(je);
+      recent_job_results_list.push_back(job);
       if (recent_job_results_list.size() > max_count_recent_job_results) {
         recent_job_results_list.erase(recent_job_results_list.begin());
       }
     }
   }
-  mutex.unlock();
-  return ok;
+  return true;
 }
 
-uint64_t RecentJobResultsList::ExportToFile(int fd, uint64_t addr)
+bool RecentJobResultsList::ExportToFile(std::ofstream& file)
 {
-  Dmsg1(100, "write_last_jobs seek to %d\n", (int)addr);
-  if (lseek(fd, (boffset_t)addr, SEEK_SET) < 0) { return 0; }
   if (!recent_job_results_list.empty()) {
     std::lock_guard<std::mutex> m(mutex);
     uint32_t num =
         recent_job_results_list.size();  // always first entry in the file
-    if (write(fd, &num, sizeof(num)) != sizeof(num)) {
-      BErrNo be;
-      Pmsg1(000, "Error writing num_items: ERR=%s\n", be.bstrerror());
-      return 0;
-    }
-    for (auto je : recent_job_results_list) {
-      if (write(fd, &je, sizeof(struct RecentJobResultsList::JobResult)) !=
-          sizeof(struct RecentJobResultsList::JobResult)) {
-        BErrNo be;
-        Pmsg1(000, "Error writing job: ERR=%s\n", be.bstrerror());
-        return 0;
+
+    static_assert(
+        std::is_trivially_copyable<RecentJobResultsList::JobResult>::value,
+        "RecentJobResultsList::JobResult must be trivially copyable");
+
+    try {
+      file.write(reinterpret_cast<char*>(&num), sizeof(num));
+
+      for (auto je : recent_job_results_list) {
+        file.write(reinterpret_cast<char*>(&je),
+                   sizeof(struct RecentJobResultsList::JobResult));
       }
+    } catch (std::system_error& e) {
+      BErrNo be;
+      Dmsg3(010, "Could not write state file. ERR=%s - %s\n", be.bstrerror(),
+            e.code().message().c_str());
+      return false;
+    } catch (...) {
+      Dmsg0(100, "Could not write file. Some error occurred");
+      return false;
     }
   }
-
-  ssize_t current_address = lseek(fd, 0, SEEK_CUR);
-  if (current_address < 0) { current_address = 0; }
-  return current_address;
+  return true;
 }
 
 void RecentJobResultsList::Append(JobControlRecord* jcr)
