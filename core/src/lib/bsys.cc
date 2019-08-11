@@ -573,8 +573,11 @@ void ReadStateFile(char* dir, const char* progname, int port)
   std::string filename = CreateFileNameFrom(dir, progname, port);
   SecureEraseGuard secure_erase_guard(filename.data());
 
+#if defined HAVE_IS_TRIVIALLY_COPYABLE
   static_assert(std::is_trivially_copyable<StateFileHeader>::value,
                 "StateFileHeader must be trivially copyable");
+#endif
+
   struct StateFileHeader hdr {
     {0}, 0, 0, 0, { 0 }
   };
@@ -628,8 +631,10 @@ void WriteStateFile(char* dir, const char* progname, int port)
 {
   std::string filename = CreateFileNameFrom(dir, progname, port);
 
+#if defined HAVE_IS_TRIVIALLY_COPYABLE
   static_assert(std::is_trivially_copyable<StateFileHeader>::value,
                 "StateFileHeader must be trivially copyable");
+#endif
 
   SecureErase(NULL, filename.c_str());
 

@@ -46,9 +46,11 @@ void RecentJobResultsList::Cleanup()
 
 bool RecentJobResultsList::ImportFromFile(std::ifstream& file)
 {
+#if defined HAVE_IS_TRIVIALLY_COPYABLE
   static_assert(
       std::is_trivially_copyable<RecentJobResultsList::JobResult>::value,
       "RecentJobResultsList::JobResult must be trivially copyable");
+#endif
 
   uint32_t num;
 
@@ -100,9 +102,11 @@ bool RecentJobResultsList::ExportToFile(std::ofstream& file)
     uint32_t num =
         recent_job_results_list.size();  // always first entry in the file
 
+#if defined HAVE_IS_TRIVIALLY_COPYABLE
     static_assert(
         std::is_trivially_copyable<RecentJobResultsList::JobResult>::value,
         "RecentJobResultsList::JobResult must be trivially copyable");
+#endif
 
     try {
       file.write(reinterpret_cast<char*>(&num), sizeof(num));
