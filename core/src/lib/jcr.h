@@ -28,6 +28,10 @@ void RegisterJobEndCallback(JobControlRecord* jcr,
                             void* ctx);
 void LockJobs();
 void UnlockJobs();
+
+void LockJcrChain();
+void UnlockJcrChain();
+
 JobControlRecord* jcr_walk_start();
 JobControlRecord* jcr_walk_next(JobControlRecord* prev_jcr);
 void JcrWalkEnd(JobControlRecord* jcr);

@@ -66,15 +66,6 @@ void FreeBregexps(alist* bregexps);
 /* Forward referenced functions */
 extern "C" void TimeoutHandler(int sig);
 static void JcrTimeoutCheck(watchdog_t* self);
-#ifdef TRACE_JCR_CHAIN
-static void b_lock_jcr_chain(const char* filen, int line);
-static void b_unlock_jcr_chain(const char* filen, int line);
-#define lock_jcr_chain() b_lock_jcr_chain(__FILE__, __LINE__);
-#define unlock_jcr_chain() b_unlock_jcr_chain(__FILE__, __LINE__);
-#else
-static void lock_jcr_chain();
-static void unlock_jcr_chain();
-#endif
 
 int num_jobs_run;
 
@@ -82,7 +73,7 @@ static std::vector<std::weak_ptr<JobControlRecord>> job_control_record_cache;
 static dlist* job_control_record_chain = nullptr;
 static int watch_dog_timeout = 0;
 
-static pthread_mutex_t jcr_lock = PTHREAD_MUTEX_INITIALIZER;
+static std::mutex jcr_chain_mutex;
 static pthread_mutex_t job_start_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static char Job_status[] = "Status Job=%s JobStatus=%d\n";
@@ -254,10 +245,10 @@ JobControlRecord* new_jcr(int size, JCR_free_HANDLER* daemon_free_jcr)
   jcr->daemon_free_jcr = daemon_free_jcr;
 
   LockJobs();
-  lock_jcr_chain();
+  LockJcrChain();
   InitJcrChain();
   job_control_record_chain->append(jcr);
-  unlock_jcr_chain();
+  UnlockJcrChain();
   UnlockJobs();
   return jcr;
 }
@@ -268,9 +259,9 @@ void InitJcr(std::shared_ptr<JobControlRecord> jcr,
   jcr->daemon_free_jcr = daemon_free_jcr;
 
   LockJobs();
-  lock_jcr_chain();
+  LockJcrChain();
   job_control_record_cache.emplace_back(jcr);
-  unlock_jcr_chain();
+  UnlockJcrChain();
   UnlockJobs();
 }
 
@@ -413,7 +404,7 @@ JobControlRecord::~JobControlRecord()
 
 static bool RunJcrGarbageCollector(JobControlRecord* jcr)
 {
-  lock_jcr_chain();
+  LockJcrChain();
   jcr->DecUseCount(); /* decrement use count */
   if (jcr->UseCount() < 0) {
     Jmsg2(jcr, M_ERROR, 0, _("JobControlRecord UseCount=%d JobId=%d\n"),
@@ -424,7 +415,7 @@ static bool RunJcrGarbageCollector(JobControlRecord* jcr)
           jcr->UseCount(), jcr->Job);
   }
   if (jcr->UseCount() > 0) { /* if in use */
-    unlock_jcr_chain();
+    UnlockJcrChain();
     return false;
   }
   if (jcr->JobId > 0) {
@@ -432,7 +423,7 @@ static bool RunJcrGarbageCollector(JobControlRecord* jcr)
           jcr->UseCount(), jcr->Job);
   }
   RemoveJcr(jcr); /* remove Jcr from chain */
-  unlock_jcr_chain();
+  UnlockJcrChain();
   return true;
 }
 
@@ -526,11 +517,11 @@ JobControlRecord* get_jcr_by_id(uint32_t JobId)
 
 std::size_t GetJcrCount()
 {
-  lock_jcr_chain();
+  LockJcrChain();
   std::size_t count =
       count_if(job_control_record_cache.begin(), job_control_record_cache.end(),
                [](std::weak_ptr<JobControlRecord>& p) { return !p.expired(); });
-  unlock_jcr_chain();
+  UnlockJcrChain();
 
   return count;
 }
@@ -540,7 +531,7 @@ static std::shared_ptr<JobControlRecord> GetJcr(
 {
   std::shared_ptr<JobControlRecord> result;
 
-  lock_jcr_chain();
+  LockJcrChain();
 
   // cleanup chache
   job_control_record_cache.erase(
@@ -559,7 +550,7 @@ static std::shared_ptr<JobControlRecord> GetJcr(
             return false;
           });
 
-  unlock_jcr_chain();
+  UnlockJcrChain();
 
   return result;
 }
@@ -903,41 +894,9 @@ void JobControlRecord::setJobStatus(int newJobStatus)
   }
 }
 
-#ifdef TRACE_JCR_CHAIN
-static int lock_count = 0;
-#endif
+void LockJcrChain() { jcr_chain_mutex.lock(); }
 
-/*
- * Lock the chain
- */
-#ifdef TRACE_JCR_CHAIN
-static void b_lock_jcr_chain(const char* fname, int line)
-#else
-static void lock_jcr_chain()
-#endif
-{
-#ifdef TRACE_JCR_CHAIN
-  Dmsg3(debuglevel, "Lock jcr chain %d from %s:%d\n", ++lock_count, fname,
-        line);
-#endif
-  P(jcr_lock);
-}
-
-/*
- * Unlock the chain
- */
-#ifdef TRACE_JCR_CHAIN
-static void b_unlock_jcr_chain(const char* fname, int line)
-#else
-static void unlock_jcr_chain()
-#endif
-{
-#ifdef TRACE_JCR_CHAIN
-  Dmsg3(debuglevel, "Unlock jcr chain %d from %s:%d\n", lock_count--, fname,
-        line);
-#endif
-  V(jcr_lock);
-}
+void UnlockJcrChain() { jcr_chain_mutex.unlock(); }
 
 /*
  * Start walk of jcr chain
@@ -957,7 +916,7 @@ static void unlock_jcr_chain()
 JobControlRecord* jcr_walk_start()
 {
   JobControlRecord* jcr;
-  lock_jcr_chain();
+  LockJcrChain();
   jcr = (JobControlRecord*)job_control_record_chain->first();
   if (jcr) {
     jcr->IncUseCount();
@@ -966,7 +925,7 @@ JobControlRecord* jcr_walk_start()
             jcr->JobId, jcr->UseCount(), jcr->Job);
     }
   }
-  unlock_jcr_chain();
+  UnlockJcrChain();
   return jcr;
 }
 
@@ -977,7 +936,7 @@ JobControlRecord* jcr_walk_next(JobControlRecord* prev_jcr)
 {
   JobControlRecord* jcr;
 
-  lock_jcr_chain();
+  LockJcrChain();
   jcr = (JobControlRecord*)job_control_record_chain->next(prev_jcr);
   if (jcr) {
     jcr->IncUseCount();
@@ -986,7 +945,7 @@ JobControlRecord* jcr_walk_next(JobControlRecord* prev_jcr)
             jcr->UseCount(), jcr->Job);
     }
   }
-  unlock_jcr_chain();
+  UnlockJcrChain();
   if (prev_jcr) { FreeJcr(prev_jcr); }
   return jcr;
 }
@@ -1013,12 +972,12 @@ int JobCount()
   JobControlRecord* jcr;
   int count = 0;
 
-  lock_jcr_chain();
+  LockJcrChain();
   for (jcr = (JobControlRecord*)job_control_record_chain->first();
        (jcr = (JobControlRecord*)job_control_record_chain->next(jcr));) {
     if (jcr->JobId > 0) { count++; }
   }
-  unlock_jcr_chain();
+  UnlockJcrChain();
   return count;
 }
 

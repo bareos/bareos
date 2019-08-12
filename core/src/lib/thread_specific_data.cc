@@ -61,12 +61,12 @@ static void CreateThreadSpecificDataKey()
 void SetupThreadSpecificDataKey()
 {
 #ifdef HAVE_WIN32
-  P(jcr_lock);
+  LockJcrChain();
   if (!tsd_initialized) {
     CreateThreadSpecificDataKey();
     tsd_initialized = true;
   }
-  V(jcr_lock);
+  UnlockJcrChain();
 #else
 #ifdef PTHREAD_ONCE_KEY_NP
   CreateThreadSpecificDataKey();
