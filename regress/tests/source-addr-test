@@ -55,8 +55,8 @@ if [ $os = 'FreeBSD' ]; then
    INTERFACE=xn0
    IP=`ifconfig ${INTERFACE} | perl -ne '/inet (.+?) / && print $1'`
 elif [ $os = 'Linux' ]; then
-   INTERFACE=eth0
-   IP=`ifconfig ${INTERFACE} | perl -ne '/inet addr:(.+?) / && print $1'`
+   INTERFACE=$(ip addr show | awk '/inet.*brd/{print $NF; exit}')
+   IP=$(ip addr show | awk '/inet.*brd/{print $2; exit}' | sed 's,\(\w\+\)/.*,\1,')
 fi
 
 if [ "$IP" = '' ]; then
