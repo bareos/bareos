@@ -512,40 +512,42 @@ void PrintBsr(UaContext* ua, RestoreContext& rx)
 }
 
 /**
- * Find the right bsr for the supplied jobid, creating it if it doesn't yet
- * exist.
- */
-static RestoreBootstrapRecord* GetBsrForJobId(RestoreBootstrapRecord* bsr,
-                                              JobId_t t_JobId)
-{
-  if (bsr->fi->Empty()) { /* if no FI yet, jobid is not yet set */
-    bsr->JobId = t_JobId;
-    return bsr;
-  }
-  if (bsr->JobId != t_JobId) {
-    auto found = false;
-    do {
-      if (!bsr->next.get()) {
-        bsr->next = std::make_unique<RestoreBootstrapRecord>(t_JobId);
-        found = true;
-      } else if (bsr->next.get()->JobId == t_JobId) {
-        found = true;
-      }
-      bsr = bsr->next.get();
-    } while (!found);
-  }
-  return bsr;
-}
-
-/**
  * Add a FileIndex to the list of BootStrap records.
  * Here we are only dealing with JobId's and the FileIndexes
  * associated with those JobIds.
  */
 void AddFindex(RestoreBootstrapRecord* bsr, uint32_t JobId, int32_t findex)
 {
+  RestoreBootstrapRecord* nbsr;
+
   if (findex == 0) { return; /* probably a dummy directory */ }
-  GetBsrForJobId(bsr, JobId)->fi->Add(findex);
+
+  if (bsr->fi->Empty()) { /* if no FI yet, jobid is not yet set */
+    bsr->JobId = JobId;
+  }
+
+  /*
+   * Walk down list of bsrs until we find the JobId
+   */
+  if (bsr->JobId != JobId) {
+    for (nbsr = bsr->next.get(); nbsr; nbsr = nbsr->next.get()) {
+      if (nbsr->JobId == JobId) {
+        bsr = nbsr;
+        break;
+      }
+    }
+
+    if (!nbsr) { /* Must add new JobId */
+      /*
+       * Add new JobId at end of chain
+       */
+      for (nbsr = bsr; nbsr->next.get(); nbsr = nbsr->next.get()) {}
+      nbsr->next = std::make_unique<RestoreBootstrapRecord>(JobId);
+      bsr = nbsr->next.get();
+    }
+  }
+
+  bsr->fi->Add(findex);
 }
 
 /**
@@ -555,7 +557,32 @@ void AddFindex(RestoreBootstrapRecord* bsr, uint32_t JobId, int32_t findex)
  */
 void AddFindexAll(RestoreBootstrapRecord* bsr, uint32_t JobId)
 {
-  GetBsrForJobId(bsr, JobId)->fi->AddAll();
+  RestoreBootstrapRecord* nbsr;
+
+  if (bsr->fi->Empty()) { /* if no FI add one */
+    bsr->JobId = JobId;
+  }
+
+  /*
+   * Walk down list of bsrs until we find the JobId
+   */
+  if (bsr->JobId != JobId) {
+    for (nbsr = bsr->next.get(); nbsr; nbsr = nbsr->next.get()) {
+      if (nbsr->JobId == JobId) {
+        bsr = nbsr;
+        break;
+      }
+    }
+
+    if (!nbsr) { /* Must add new JobId */
+      for (nbsr = bsr; nbsr->next.get(); nbsr = nbsr->next.get()) {}
+      nbsr->next = std::make_unique<RestoreBootstrapRecord>(JobId);
+      if (bsr->fileregex) { nbsr->next->fileregex = strdup(bsr->fileregex); }
+      bsr = nbsr->next.get();
+    }
+  }
+
+  bsr->fi->AddAll();
 }
 
 /**
