@@ -411,3 +411,19 @@ void InitSignals(void Terminate(int sig))
 #endif
 }
 #endif
+
+extern "C" void TimeoutHandler(int sig)
+{
+  return; /* thus interrupting the function */
+}
+
+#include "lib/watchdog.h"
+
+void SetTimeoutHandler()
+{
+  struct sigaction sigtimer;
+  sigtimer.sa_flags = 0;
+  sigtimer.sa_handler = TimeoutHandler;
+  sigfillset(&sigtimer.sa_mask);
+  sigaction(TIMEOUT_SIGNAL, &sigtimer, nullptr);
+}

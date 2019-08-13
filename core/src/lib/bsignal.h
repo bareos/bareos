@@ -23,5 +23,6 @@
 
 void InitSignals(void Terminate(int sig));
 void InitStackDump(void);
+void SetTimeoutHandler();
 
 #endif  // BAREOS_LIB_BSIGNAL_H_

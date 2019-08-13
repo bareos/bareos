@@ -46,6 +46,8 @@
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "lib/berrno.h"
+#include "lib/bsignal.h"
+#include "lib/breg.h"
 #include "lib/edit.h"
 #include "lib/thread_specific_data.h"
 #include "lib/tls_conf.h"
@@ -58,13 +60,6 @@
 
 const int debuglevel = 3400;
 
-/* External variables we reference */
-
-/* External referenced functions */
-void FreeBregexps(alist* bregexps);
-
-/* Forward referenced functions */
-extern "C" void TimeoutHandler(int sig);
 static void JcrTimeoutCheck(watchdog_t* self);
 
 int num_jobs_run;
@@ -226,11 +221,7 @@ JobControlRecord::JobControlRecord()
   setJobType(JT_SYSTEM); /* internal job until defined */
   setJobLevel(L_NONE);
   setJobStatus(JS_Created); /* ready to run */
-  struct sigaction sigtimer;
-  sigtimer.sa_flags = 0;
-  sigtimer.sa_handler = TimeoutHandler;
-  sigfillset(&sigtimer.sa_mask);
-  sigaction(TIMEOUT_SIGNAL, &sigtimer, nullptr);
+  SetTimeoutHandler();
 }
 
 JobControlRecord* new_jcr(int size, JCR_free_HANDLER* daemon_free_jcr)
@@ -1085,14 +1076,6 @@ int GetNextJobidFromList(char** p, uint32_t* JobId)
   *p = q;
   *JobId = str_to_int64(jobid);
   return 1;
-}
-
-/*
- * Timeout signal comes here
- */
-extern "C" void TimeoutHandler(int sig)
-{
-  return; /* thus interrupting the function */
 }
 
 /*
