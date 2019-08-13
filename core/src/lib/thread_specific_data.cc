@@ -101,3 +101,16 @@ void SetJcrInThreadSpecificData(JobControlRecord* jcr)
           be.bstrerror(status));
   }
 }
+
+void RemoveJcrFromThreadSpecificData(JobControlRecord* jcr)
+{
+  if (jcr == GetJcrFromThreadSpecificData()) {
+    SetJcrInThreadSpecificData(nullptr);
+  }
+}
+
+uint32_t GetJobIdFromThreadSpecificData()
+{
+  JobControlRecord* jcr = GetJcrFromThreadSpecificData();
+  return (jcr ? jcr->JobId : 0);
+}

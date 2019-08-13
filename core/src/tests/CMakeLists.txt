@@ -354,3 +354,14 @@ target_link_libraries(test_recent_job_results_list
 
 gtest_discover_tests(test_recent_job_results_list TEST_PREFIX gtest:)
 
+####### test_job_control_record #####################################
+add_executable(test_thread_specific_data thread_specific_data.cc)
+
+target_link_libraries(test_thread_specific_data
+   bareos
+   ${GTEST_LIBRARIES}
+   ${GTEST_MAIN_LIBRARIES}
+)
+
+gtest_discover_tests(test_thread_specific_data TEST_PREFIX gtest:)
+

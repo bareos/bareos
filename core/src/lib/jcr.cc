@@ -468,29 +468,6 @@ void JobControlRecord::MyThreadSendSignal(int sig)
   unlock();
 }
 
-/*
- * Remove jcr from thread specific data, but but make sure it is us who are
- * attached.
- */
-void RemoveJcrFromThreadSpecificData(JobControlRecord* jcr)
-{
-  JobControlRecord* tjcr = GetJcrFromThreadSpecificData();
-
-  if (tjcr == jcr) { SetJcrInThreadSpecificData(INVALID_JCR); }
-}
-
-/*
- * Find which JobId corresponds to the current thread
- */
-uint32_t GetJobIdFromThreadSpecificData()
-{
-  JobControlRecord* jcr = GetJcrFromThreadSpecificData();
-  uint32_t JobId = 0;
-
-  if (jcr && jcr != INVALID_JCR) { JobId = (uint32_t)jcr->JobId; }
-
-  return JobId;
-}
 
 /*
  * Given a JobId, find the JobControlRecord
