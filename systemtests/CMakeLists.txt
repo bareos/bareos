@@ -96,9 +96,12 @@ set(logdir "log")
 set(mon_dir_password "mon_dir_password")
 set(mon_fd_password "mon_fd_password")
 set(mon_sd_password "mon_sd_password")
-set(plugindir ${PROJECT_BINARY_DIR}/plugindir)
+set(python_plugin_module_src_dir ${CMAKE_SOURCE_DIR}/core/src/plugins)
 set(plugindirtmp ${PROJECT_BINARY_DIR}/plugindirtmp)
 set(rscripts ${PROJECT_BINARY_DIR}/scripts)
+get_target_property(dir_plugin_binary_path python-dir BINARY_DIR)
+get_target_property(fd_plugin_binary_path python-fd BINARY_DIR)
+get_target_property(sd_plugin_binary_path python-sd BINARY_DIR)
 
 set(sbindir ${PROJECT_BINARY_DIR}/sbin)
 
@@ -179,6 +182,7 @@ set(SYSTEM_TESTS
   copy-bscan
   copy-remote-bscan
   bconsole-status-client
+  python-fd-plugin-local-fileset-test
 )
 
 set(SYSTEM_TESTS_DISABLED
