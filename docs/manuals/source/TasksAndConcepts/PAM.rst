@@ -63,12 +63,13 @@ PAM Module
 ^^^^^^^^^^
 This is depending on the operating system and on the used pam module. For details read the manuals. The name of the service that has to be registered is **bareos**.
 
-Fedora 28 example: :
+Fedora 28 example:
 
 .. code-block:: bareosconfig
-  :caption: :file:`/etc/pam.d/bareos`
+   :caption: :file:`/etc/pam.d/bareos`
 
-  auth       required     pam_unix.so
+   auth       required     pam_unix.so
+
 
 .. warning::
 
