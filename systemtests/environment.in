@@ -36,7 +36,7 @@ logdir=@logdir@
 # to override the defaults
 export BAREOS_CONFIG_DIR=${conf}
 export BAREOS_SCRIPTS_DIR=${scripts}
-export BAREOS_SBIN_DIR=${bin}
+export BAREOS_SBIN_DIR=${sbin}
 export BAREOS_WORKING_DIR=${working}
 export BASEPORT=@BASEPORT@
 export BAREOS_DIRECTOR_PORT=@dir_port@
