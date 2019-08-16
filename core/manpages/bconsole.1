@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH CONSOLE 1 "4 December 2009" "Kern Sibbald" "Backup Archiving REcovery Open Sourced"
+.TH BCONSOLE 1 "2019-08-16" "Backup Archiving REcovery Open Sourced" "Bareos Console"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .SH NAME
@@ -27,22 +27,35 @@ List defined Directors.
 .BI \-c\  path
 Specify the configuration file or directory to use.
 .TP
+.BI \-p\  file
+Specify pam credentials file
+(first line: username, second line: password).
+.TP
+.BI \-o
+Send pam credentials over unencrypted connection.
+.TP
 .BI \-d\  nn
 Set debug level to \fInn\fP.
 .TP
 .BI \-dt
 Print timestamp in debug output.
 .TP
-.B \-s
+.BI \-s
 No signals (for debugging).
 .TP
-.B \-u\  nn
-Set command execution timeout to \fInn\fP seconds
+.BI \-u\  nn
+Set command execution timeout to \fInn\fP seconds.
 .TP
-.B \-t
+.BI \-t
 Test the configuration file and report errors.
 .TP
-.B \-?
+.BI \-xc
+Print configuration and exit.
+.TP
+.BI \-xs
+Print configuration file schema in JSON format and exit.
+.TP
+.BI \-?
 Show version and usage of program.
 .SH SEE ALSO
 .BR bareos\-dir (8),
@@ -52,4 +65,4 @@ Show version and usage of program.
 .SH AUTHOR
 This manual page was written by Jose Luis Tallon
 .nh
-<jltallon@adv\-solutions.net>.
+<jltallon@adv\-solutions.net> and others.
