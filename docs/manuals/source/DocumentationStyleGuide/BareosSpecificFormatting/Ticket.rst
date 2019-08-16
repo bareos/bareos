@@ -21,7 +21,7 @@ For references to Github, we use the **sphinx_issues** extension.
 Issue
 ~~~~~
 
-Github issues are currently disabled, as https://bugs.baroes.org should be used instead.
+Github issues are currently disabled, as https://bugs.bareos.org should be used instead.
 
 Pull request
 ~~~~~~~~~~~~
