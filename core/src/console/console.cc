@@ -113,13 +113,15 @@ static void usage()
   fprintf(
       stderr,
       _(PROG_COPYRIGHT
-        "\nVersion: " VERSION " (" BDATE ") %s %s %s\n\n"
+        "\n"
+        "Version: " VERSION " (" BDATE ") %s %s %s\n\n"
         "Usage: bconsole [-s] [-c config_file] [-d debug_level]\n"
         "        -D <dir>    select a Director\n"
-        "        -l          list Directors defined\n"
+        "        -l          list defined Directors\n"
         "        -c <path>   specify configuration file or directory\n"
 #if defined(HAVE_PAM)
-        "        -p <file>   specify pam credentials file\n"
+        "        -p <file>   specify pam credentials file\n
+        "                    (first line: username, second line: password)\n"
         "        -o          send pam credentials over unencrypted connection\n"
 #endif
         "        -d <nn>     set debug level to <nn>\n"

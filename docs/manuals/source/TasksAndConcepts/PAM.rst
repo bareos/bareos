@@ -63,12 +63,13 @@ PAM Module
 ^^^^^^^^^^
 This is depending on the operating system and on the used pam module. For details read the manuals. The name of the service that has to be registered is **bareos**.
 
-Fedora 28 example: :
+Fedora 28 example:
 
 .. code-block:: bareosconfig
-  :caption: :file:`/etc/pam.d/bareos`
+   :caption: :file:`/etc/pam.d/bareos`
 
-  auth       required     pam_unix.so
+   auth       required     pam_unix.so
+
 
 .. warning::
 
@@ -114,3 +115,6 @@ Users have limited access to commands and jobs. Therefore the appropriate rights
      CommandACL = status, .status
      JobACL = *all*
   }
+
+
+Additional information can be found at https://github.com/bareos/bareos-contrib/tree/master/misc/bareos_pam_integration
