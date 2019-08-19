@@ -1,5 +1,4 @@
-
-/*
+/**
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2018-2018 Bareos GmbH & Co. KG
@@ -19,9 +18,27 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef STORED_CRC32_H_
-#define STORED_CRC32_H_
 
-uint32_t bcrc32(uint8_t* buf, int len);
+#include "gtest/gtest.h"
+#include "include/bareos.h"
+#include "stored/crc32/Crc32.h"
 
-#endif  // STORED_CRC32_H_
+const size_t len = 63 * 1024;
+
+TEST(crc32, internal)
+{
+  static const char* buf = "The quick brown fox jumps over the lazy dog";
+  EXPECT_EQ(0x414fa339, crc32_fast((uint8_t*)buf, strlen(buf)));
+}
+
+TEST(crc32, internal_spd)
+{
+  void* buf = malloc(len);
+  int fd = open("/dev/urandom", O_RDONLY);
+  read(fd, buf, len);
+  close(fd);
+  for(int i=0;i<10000;i++) {
+    crc32_fast((uint8_t*)buf, len);
+  }
+  free(buf);
+}

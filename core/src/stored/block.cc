@@ -31,7 +31,7 @@
 
 #include "include/bareos.h"
 #include "stored/stored.h"
-#include "stored/crc32.h"
+#include "stored/crc32/Crc32.h"
 #include "stored/dev.h"
 #include "stored/device.h"
 #include "stored/label.h"
@@ -91,7 +91,7 @@ void DumpBlock(DeviceBlock* b, const char* msg)
   }
 
   BlockCheckSum =
-      bcrc32((uint8_t*)b->buf + BLKHDR_CS_LENGTH, block_len - BLKHDR_CS_LENGTH);
+      crc32_fast((uint8_t*)b->buf + BLKHDR_CS_LENGTH, block_len - BLKHDR_CS_LENGTH);
   Pmsg6(000,
         _("Dump block %s %x: size=%d BlkNum=%d\n"
           "               Hdrcksum=%x cksum=%x\n"),
@@ -222,7 +222,7 @@ static uint32_t SerBlockHeader(DeviceBlock* block, bool DoChecksum)
    * Checksum whole block except for the checksum
    */
   if (DoChecksum) {
-    CheckSum = bcrc32((uint8_t*)block->buf + BLKHDR_CS_LENGTH,
+    CheckSum = crc32_fast((uint8_t*)block->buf + BLKHDR_CS_LENGTH,
                       block_len - BLKHDR_CS_LENGTH);
   }
   Dmsg1(1390, "ser_bloc_header: checksum=%x\n", CheckSum);
@@ -339,7 +339,7 @@ static inline bool unSerBlockHeader(JobControlRecord* jcr,
   Dmsg3(390, "Read binbuf = %d %d block_len=%d\n", block->binbuf, bhl,
         block_len);
   if (block_len <= block->read_len && dev->DoChecksum()) {
-    BlockCheckSum = bcrc32((uint8_t*)block->buf + BLKHDR_CS_LENGTH,
+    BlockCheckSum = crc32_fast((uint8_t*)block->buf + BLKHDR_CS_LENGTH,
                            block_len - BLKHDR_CS_LENGTH);
     if (BlockCheckSum != CheckSum) {
       dev->dev_errno = EIO;
