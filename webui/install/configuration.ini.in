@@ -45,3 +45,8 @@ save_previous_state=false
 ; Default: none
 labelpooltype=scratch
 
+[restore]
+; Restore filetree refresh timeout after n milliseconds
+; Default: 120000 milliseconds
+filetree_refresh_timeout=120000
+

@@ -207,6 +207,9 @@ class AuthController extends AbstractActionController
       }
       // Push dashboard configuration settings into SESSION context.
       $_SESSION['bareos']['dashboard_autorefresh_interval'] = $configuration['configuration']['dashboard']['autorefresh_interval'];
+      // Push restore configuration settings into SESSION context.
+      $_SESSION['bareos']['filetree_refresh_timeout'] = $configuration['configuration']['restore']['filetree_refresh_timeout'];
+
       if($this->params()->fromQuery('req')) {
          $redirect = $this->params()->fromQuery('req');
          $request = $this->getRequest();

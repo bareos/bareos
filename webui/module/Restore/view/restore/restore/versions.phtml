@@ -466,10 +466,22 @@ function updateRestoreParams(k, v) {
    return params.join('&');
 }
 
+function displayBvfsCacheUpdateInfo() {
+   $('#filebrowser').append("<br>");
+   $('#filebrowser').append("<div id='alert-bvfs' class='alert alert-info' role='alert'>");
+   $('#alert-bvfs').append("Update the Bvfs cache frequently to avoid timeouts.<br>");
+   $('#alert-bvfs').append("Please read the Bareos Documentation for further details.");
+   $('#filebrowser').append("</div>");
+}
+
 $(".search-input").keyup(function () {
    var searchString = $(this).val();
    console.log(searchString);
    $('#filebrowser').jstree('search', searchString);
+});
+
+$("#filebrowser").bind("loading.jstree", function() {
+   displayBvfsCacheUpdateInfo();
 });
 
 $('#filebrowser').jstree({
@@ -486,6 +498,7 @@ $('#filebrowser').jstree({
             "<p><b>Data:</b></p>" +
             "<pre><code>" + e.data + "</code></pre>"
          );
+         displayBvfsCacheUpdateInfo();
       },
       'multiple': false,
       'data': {
@@ -497,6 +510,7 @@ $('#filebrowser').jstree({
                'state': {'checkbox_disabled': true}
             };
          },
+         timeout: <?php echo $_SESSION['bareos']['filetree_refresh_timeout']; ?>,
       },
    },
    'state' : {
