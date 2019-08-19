@@ -269,10 +269,22 @@ $this->headTitle($title);
 
    }
 
+   function displayBvfsCacheUpdateInfo() {
+      $('#filebrowser').append("<br>");
+      $('#filebrowser').append("<div id='alert-bvfs' class='alert alert-info' role='alert'>");
+      $('#alert-bvfs').append("Update the Bvfs cache frequently to avoid timeouts.<br>");
+      $('#alert-bvfs').append("Please read the Bareos Documentation for further details.");
+      $('#filebrowser').append("</div>");
+   }
+
    $(".search-input").keyup(function() {
       var searchString = $(this).val();
       console.log(searchString);
       $('#filebrowser').jstree('search', searchString);
+   });
+
+   $("#filebrowser").bind("loading.jstree", function() {
+      displayBvfsCacheUpdateInfo();
    });
 
    $('#filebrowser').jstree({
@@ -280,8 +292,16 @@ $this->headTitle($title);
       'core' : {
          'animation': false,
          'force_text': true,
-         'error': function () {
-            alert('Oops, something went wrong, probably too many files.')
+         'error': function (e) {
+            $('#filebrowser').html(
+               "<h4>There was an error while loading data for this tree.</h4>" +
+               "<p><b>Error: </b>" + e.error + "</p>" +
+               "<p><b>Plugin: </b>" + e.plugin + "</p>" +
+               "<p><b>Reason: </b> " + e.reason + "</p>" +
+               "<p><b>Data:</b></p>" +
+               "<pre><code>" + e.data + "</code></pre>"
+            );
+            displayBvfsCacheUpdateInfo();
          },
          'data' :{
             'url' : '<?php echo $this->basePath() . "/restore/filebrowser?type=" . $this->restore_params['type'] . "&jobid=" . $this->restore_params['jobid'] . "&mergefilesets=" . $this->restore_params['mergefilesets'] . "&mergejobs=" . $this->restore_params['mergejobs'] . "&limit=" . $this->restore_params['limit']; ?>',
@@ -290,6 +310,7 @@ $this->headTitle($title);
                return { 'id' : node.id };
             },
          },
+         timeout: <?php echo $_SESSION['bareos']['filetree_refresh_timeout']; ?>,
       },
       'grid' : {
          width: '100%',

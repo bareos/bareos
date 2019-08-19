@@ -112,6 +112,13 @@ function read_configuration_ini($configuration, $configuration_ini)
       $arr['dashboard']['autorefresh_interval'] = 60000;
    }
 
+   if( array_key_exists('restore', $configuration) && array_key_exists('filetree_refresh_timeout', $configuration['restore']) && isset($configuration['restore']['filetree_refresh_timeout']) ) {
+      $arr['restore']['filetree_refresh_timeout'] = $configuration['restore']['filetree_refresh_timeout'];
+   }
+   else {
+      $arr['restore']['filetree_refresh_timeout'] = 120000;
+   }
+
    return $arr;
 }
 
