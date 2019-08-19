@@ -23,13 +23,13 @@ Features
 
 -  Intuitive web interface
 
--  Multilinugual
+-  Multilingual
 
 -  Can access multiple directors and catalogs
 
 -  Individual accounts and ACL support via Bareos restricted named consoles
 
--  Tape Autochanger management, with the possibility to label, import/export media and update your autochanger slot status
+-  Tape Autochanger management with the possibility to label, import/export media and update your autochanger slot status
 
 -  Temporarly enable or disable jobs, clients and schedules and also see their current state
 
@@ -43,13 +43,13 @@ Features
 
 -  Backup Jobs
 
-   -  Start, cancel, rerun and restore from.
+   -  Start, cancel, rerun and restore from
 
    -  Show the file list of backup jobs
 
--  Restore files by browsing through a filetree of your backup jobs.
+-  Restore files by browsing through a filetree of your backup jobs
 
-   -  Merge your backup jobs history and filesets of a client or use a single backup job for restore.
+   -  Merge your backup jobs history and filesets of a client or use a single backup job for restore
 
    -  Restore files to a different client instead of the origin
 
@@ -58,11 +58,11 @@ Features
 System Requirements
 -------------------
 
--  A platform, for which the **bareos-webui** package is available, see :ref:`section-BareosPackages`.
+-  A platform for which the **bareos-webui** package is available, see :ref:`section-BareosPackages`
 
--  A working Bareos environment.
+-  A working Bareos environment
 
--  |dir| version >= |webui| version.
+-  |dir| version >= |webui| version
 
 -  The |webui| can be installed on any host. It does not have to be installed on the same as the |dir|.
 
@@ -234,7 +234,7 @@ For details, please read :ref:`DirectorResourceProfile`.
 SELinux
 ^^^^^^^
 
-:index:`\ <single: SELinux; bareos-webui>`\ 
+:index:`\ <single: SELinux; bareos-webui>`\
 
 To use |dir| on a system with SELinux enabled, permission must be given to HTTPD to make network connections:
 
@@ -244,7 +244,7 @@ To use |dir| on a system with SELinux enabled, permission must be given to HTTPD
 
 
 .. _section-webui-apache:
-   
+
 Configure your Apache Webserver
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -402,6 +402,84 @@ Since :sinceVersion:`16.2.2: /etc/bareos-webui/configuration.ini` you are able t
    ; Default: none
    labelpooltype=scratch
 
+   [restore]
+   ; Restore filetree refresh timeout after n milliseconds
+   ; Default: 120000 milliseconds
+   filetree_refresh_timeout=120000
+
+.. _section-updating-bvfs-cache-frequently:
+
+Configure updating the Bvfs cache frequently
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The restore module in the |webui| makes use of the Bvfs API and for example the :bcommand:`.bvfs_update` command to
+generate or update the Bvfs cache for jobs that are not already in the cache.
+
+In case of larger backup jobs with lots of files that are not already in the cache, this could lead to timeouts
+while trying to load the filetree in the |webui|. That is why we highly recommend to update the Bvfs cache frequently.
+
+This can be accomplished by the Run Script directive of a Job Resource.
+
+The following code snippet is an example how to run the cache update process in a RunScript after the catalog backup.
+
+.. code-block:: bareosconfig
+  Job {
+    Name = "BackupCatalog"
+    Level = Full
+    Fileset = "Catalog"
+    Schedule = "WeeklyCycleAfterBackup"
+    JobDefs = "DefaultJob"
+    WriteBootstrap = "|/usr/sbin/bsmtp -h localhost -f "(Bareos) " -s "Bootstrap for Job %j" root@localhost"
+    Priority = 100
+    run before job = "/usr/lib/bareos/scripts/make_catalog_backup.pl MyCatalog"
+    run after job = "/usr/lib/bareos/scripts/delete_catalog_backup"
+    Run Script {
+      Console = ".bvfs_update"
+      RunsWhen = After
+      RunsOnClient = No
+    }
+
+.. note::
+  We do not provide a list of Jobs specified in the *JobId* command argument so the cache is computed
+  for all jobs not already in the cache.
+
+As an alternative to the method above the Bvfs cache can be updated after each job run by using the Run Script directive as well.
+
+.. code-block:: bareosconfig
+  Job {
+    Name = "backup-client-01"
+    Client = "client-01.example.com"
+    JobDefs = "DefaultJob"
+    Run Script {
+      Console = ".bvfs_update jobid=%i"
+      RunsWhen = After
+      RunsOnClient = No
+    }
+  }
+
+.. note::
+  We do provide a specific JobId in the *JobId* command argument in this example. Only the *JobId* given by the placeholder %i will be computed into the cache.
+
+Upgrade from 18.2.6 to 18.2.7
+-----------------------------
+
+Configuration changes
+~~~~~~~~~~~~~~~~~~~~~
+
+The configuration file :file:`configuration.ini` of the |webui| shipped with Bareos 18.2.7 introduced a new configuration
+parameter called :config:option:`filetree_refresh_timeout`. The default value is 120 seconds if not set explicitly.
+
+The |webui| triggers a Bvfs cache update automatically if required to be able to display the requested filetree.
+The configuration parameter has been introduced because in case of larger backup jobs with lots of files
+which are not already present in the Bvfs cache you could run into timeouts while trying to load the filetree
+in the restore module of the |webui|.
+
+If you have trouble with running into timeouts while loading the tree you can adjust the parameter :config:option:`filetree_refresh_timeout`
+to your needs. Keep in mind to set the timeout in your Apache or Nginx configuration accordingly to the setting
+in your :file:`configuration.ini`.
+
+In general we highly recommend updating the Bvfs cache frequently. Please see :ref:`section-updating-bvfs-cache-frequently` for further details on how to accomplish this.
+
 Upgrade from 15.2 to 16.2
 -------------------------
 
@@ -450,7 +528,7 @@ Additional information
 NGINX
 ~~~~~
 
-:index:`\ <single: nginx; bareos-webui>`\ 
+:index:`\ <single: nginx; bareos-webui>`\
 
 If you prefer to use |webui| on Nginx with php5-fpm instead of Apache, a basic working configuration could look like this:
 
@@ -489,6 +567,5 @@ If you prefer to use |webui| on Nginx with php5-fpm instead of Apache, a basic w
 
    }
 
-This will make the |webui| accessible at http://bareos:9100/ (assuming your DNS resolve the hostname :strong:`bareos` to the NGINX server).  
-
+This will make the |webui| accessible at http://bareos:9100/ (assuming your DNS resolve the hostname :strong:`bareos` to the NGINX server).
 
