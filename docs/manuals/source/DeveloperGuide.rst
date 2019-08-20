@@ -4,6 +4,7 @@ Developer Guide
 .. toctree::
 
    DeveloperGuide/generaldevel.rst
+   DeveloperGuide/BuildAndTestBareos.rst
    DeveloperGuide/gitworkflow.rst
    DeveloperGuide/messages.rst
    DeveloperGuide/pluginAPI.rst

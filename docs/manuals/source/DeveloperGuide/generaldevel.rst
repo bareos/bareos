@@ -85,57 +85,15 @@ The same applies to a support request (we answer only bugs), you might give the 
 .. _bareos-users:       https://groups.google.com/forum/#!forum/bareos-users
 .. _commercial support: https://www.bareos.com/en/Support.html
 
-Developing Bareos
------------------
-
-Building the testenvironment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This following shell script will show how to build the **Bareos test-environment** from source.
-
-.. code-block:: bash
-  :caption: Example shell script
-
-  #!/bin/sh
-
-  mkdir bareos-local-tests
-  cd bareos-local-tests
-  git clone https://github.com/bareos/bareos.git
-
-  mkdir build
-  cd build
-
-  cmake -Dsqlite3=yes -Dtraymonitor=yes ../bareos
-  make -j
-  make test
-
-Building the documentation
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This following shell script will show how to build the **Bareos documentation** from source.
-
-.. code-block:: bash
-  :caption: Example shell script
-
-  #!/bin/sh
-
-  mkdir bareos-local-tests
-  cd bareos-local-tests
-  git clone https://github.com/bareos/bareos.git
-
-  mkdir build-docs
-  cd build-docs
-
-  cmake -Ddocs-only=yes ../bareos
-  make
-
 
 Memory Leaks
-~~~~~~~~~~~~
+------------
+
 Use standard C++11 resource management (RAII and smart pointers) to prevent memory leaks in general. If you need to detect memory leaks, you can just use ``valgrind`` to do so.
 
 Guiding Principles
-~~~~~~~~~~~~~~~~~~
+------------------
+
 All new code should be written in modern C++11 following the `Google C++ Style Guide`_ and the `C++ Core Guidelines`_.
 
 We like simple rather than complex code, but complex code is still better than complicated code.
@@ -143,7 +101,7 @@ We like simple rather than complex code, but complex code is still better than c
 Currently there is still a lot of old C++ and C code in the code base and a lot of existing code violates our `do's`_ and `don'ts`_. Therefore our long-term goal is to modernize the code-base to make it easier to understand, easier to maintain and better approachable for new developers.
 
 Automatic Sourcecode Formatting
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------
 
 All C/C++ code should be formatted properly based on the principles mentioned above. Therefore we provide a configuration file for **clang-format** that contains all formatting rules. The filename is ".clang-format" and it is located in the root directory of the bareos repo.
 
@@ -159,17 +117,19 @@ The configuration file will be automatically found and used by clang-format:
 
 
 Formatting exceptions
-~~~~~~~~~~~~~~~~~~~~~
+---------------------
+
 For some parts of code it works best to hand-optimize the formatting. We sometimes do this for larger tables and deeply nested brace initialization. If you need to hand-optimize make sure you add **clang-format off** and **clang-format on** comments so applying **clang-format** on your source will not undo your manual optimization. Please apply common sense and use this exception sparingly.
 
 Sourcecode Comments
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
 Use ``/* */`` for multi-line comments.
 Use ``//`` for single-line comments.
 
 Do's
-~~~~
+----
+
 - write modern C++11
 - prefer simple code
 - write unit tests for your code
@@ -190,7 +150,8 @@ Do's
 .. _bareos-devel:              https://groups.google.com/forum/#!forum/bareos-devel
 
 Don'ts
-~~~~~~
+------
+
 avoid ``new``
   Starting with C++11 there are smart pointers like ``shared_ptr`` and ``unique_ptr``.
   To create a ``shared_ptr`` you should use ``make_shared()`` from the standard library.
