@@ -1021,6 +1021,11 @@ bool BareosDb::CreateAttributesRecord(JobControlRecord* jcr,
   /*
    * Make sure we have an acceptable attributes record.
    */
+  if (!ar) {
+    Mmsg0(errmsg, _("Attempt to create file attributes record with no data\n"));
+    Jmsg(jcr, M_FATAL, 0, "%s", errmsg);
+    return false;
+  }
   if (!(ar->Stream == STREAM_UNIX_ATTRIBUTES ||
         ar->Stream == STREAM_UNIX_ATTRIBUTES_EX)) {
     Mmsg1(errmsg, _("Attempt to put non-attributes into catalog. Stream=%d\n"),
