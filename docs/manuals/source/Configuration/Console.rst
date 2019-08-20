@@ -155,7 +155,7 @@ The following is an example of a :file:`bconsole.conf` file that can access seve
    Console {
       Name = restricted-user
       Password = "RUPASSWORD"
-      Director = MyDirector
+      Director = bareos-dir
    }
 
    Console {
