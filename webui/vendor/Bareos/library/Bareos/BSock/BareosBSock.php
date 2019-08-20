@@ -970,10 +970,6 @@ class BareosBSock implements BareosBSockInterface
          $debug = self::receive_message();
       }
 
-      if(self::send(".bvfs_update jobid=$jobids")) {
-         $debug = self::receive_message();
-      }
-
       if(self::send(".bvfs_restore jobid=$jobids fileid=$fileid dirid=$dirid path=b2000$rnd")) {
          $debug = self::receive_message();
       }
