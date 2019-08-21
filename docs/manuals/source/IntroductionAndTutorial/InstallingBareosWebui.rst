@@ -423,42 +423,46 @@ This can be accomplished by the Run Script directive of a Job Resource.
 The following code snippet is an example how to run the cache update process in a RunScript after the catalog backup.
 
 .. code-block:: bareosconfig
-  Job {
-    Name = "BackupCatalog"
-    Level = Full
-    Fileset = "Catalog"
-    Schedule = "WeeklyCycleAfterBackup"
-    JobDefs = "DefaultJob"
-    WriteBootstrap = "|/usr/sbin/bsmtp -h localhost -f "(Bareos) " -s "Bootstrap for Job %j" root@localhost"
-    Priority = 100
-    run before job = "/usr/lib/bareos/scripts/make_catalog_backup.pl MyCatalog"
-    run after job = "/usr/lib/bareos/scripts/delete_catalog_backup"
-    Run Script {
-      Console = ".bvfs_update"
-      RunsWhen = After
-      RunsOnClient = No
-    }
+
+   Job {
+     Name = "BackupCatalog"
+     Level = Full
+     Fileset = "Catalog"
+     Schedule = "WeeklyCycleAfterBackup"
+     JobDefs = "DefaultJob"
+     WriteBootstrap = "|/usr/sbin/bsmtp -h localhost -f "(Bareos) " -s "Bootstrap for Job %j" root@localhost"
+     Priority = 100
+     run before job = "/usr/lib/bareos/scripts/make_catalog_backup.pl MyCatalog"
+     run after job = "/usr/lib/bareos/scripts/delete_catalog_backup"
+     Run Script {
+       Console = ".bvfs_update"
+       RunsWhen = After
+       RunsOnClient = No
+     }
 
 .. note::
-  We do not provide a list of Jobs specified in the *JobId* command argument so the cache is computed
-  for all jobs not already in the cache.
+
+   We do not provide a list of Jobs specified in the *JobId* command argument so the cache is computed
+   for all jobs not already in the cache.
 
 As an alternative to the method above the Bvfs cache can be updated after each job run by using the Run Script directive as well.
 
 .. code-block:: bareosconfig
-  Job {
-    Name = "backup-client-01"
-    Client = "client-01.example.com"
-    JobDefs = "DefaultJob"
-    Run Script {
-      Console = ".bvfs_update jobid=%i"
-      RunsWhen = After
-      RunsOnClient = No
-    }
-  }
+
+   Job {
+     Name = "backup-client-01"
+     Client = "client-01.example.com"
+     JobDefs = "DefaultJob"
+     Run Script {
+       Console = ".bvfs_update jobid=%i"
+       RunsWhen = After
+       RunsOnClient = No
+     }
+   }
 
 .. note::
-  We do provide a specific JobId in the *JobId* command argument in this example. Only the *JobId* given by the placeholder %i will be computed into the cache.
+
+   We do provide a specific JobId in the *JobId* command argument in this example. Only the *JobId* given by the placeholder %i will be computed into the cache.
 
 Upgrade from 18.2.6 to 18.2.7
 -----------------------------
