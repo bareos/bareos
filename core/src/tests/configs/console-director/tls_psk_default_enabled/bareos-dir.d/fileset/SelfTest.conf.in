@@ -5,6 +5,6 @@ FileSet {
     Options {
       Signature = MD5 # calculate md5 checksum per file
     }
-    File = "/home/franku/01-prj/git/bareos-18.2-release-fixes/regress/bin"
+    File = "@regressdir@/bin"
   }
 }

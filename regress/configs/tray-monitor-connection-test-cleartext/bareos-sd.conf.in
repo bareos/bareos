@@ -13,13 +13,13 @@
 Storage {                             # definition of myself
   Name = 127.0.0.1-sd
   Maximum Concurrent Jobs = 20
-  Secure Erase Command = "/home/franku/01-prj/git/bareos-18.2-release-fixes/regress/bin/wipe-sd.sh"
+  Secure Erase Command = "@regressdir@/bin/wipe-sd.sh"
 
   # remove comment from "Plugin Directory" to load plugins from specified directory.
   # if "Plugin Names" is defined, only the specified plugins will be loaded,
   # otherwise all storage plugins (*-sd.so) from the "Plugin Directory".
   #
-  # Plugin Directory = /home/franku/01-prj/git/bareos-18.2-release-fixes/regress/bin/plugins
+  # Plugin Directory = @regressdir@/bin/plugins
   # Plugin Names = ""
 }
 
@@ -49,8 +49,8 @@ Director {
 Device {
   Name = FileStorage
   Media Type = File
-  Archive Device = /home/franku/01-prj/git/bareos-18.2-release-fixes/regress/tmp
-  Spool Directory = /home/franku/01-prj/git/bareos-18.2-release-fixes/regress/tmp
+  Archive Device = @regressdir@/tmp
+  Spool Directory = @regressdir@/tmp
   Maximum Spool Size = 10M
   LabelMedia = yes;                   # lets Bareos label unlabeled media
   Random Access = yes;

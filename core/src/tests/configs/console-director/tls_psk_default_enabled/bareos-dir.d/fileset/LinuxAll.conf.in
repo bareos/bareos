@@ -17,11 +17,11 @@ FileSet {
     File = /
   }
   # Things that usually have to be excluded
-  # You have to exclude /home/franku/01-prj/git/bareos-18.2-release-fixes/regress/tmp
+  # You have to exclude @regressdir@/tmp
   # on your bareos server
   Exclude {
-    File = /home/franku/01-prj/git/bareos-18.2-release-fixes/regress/working
-    File = /home/franku/01-prj/git/bareos-18.2-release-fixes/regress/tmp
+    File = @regressdir@/working
+    File = @regressdir@/tmp
     File = /proc
     File = /tmp
     File = /var/tmp

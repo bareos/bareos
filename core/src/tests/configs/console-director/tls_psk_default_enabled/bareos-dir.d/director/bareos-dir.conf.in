@@ -1,6 +1,6 @@
 Director {                            # define myself
   Name = bareos-dir
-  QueryFile = "/home/franku/01-prj/git/bareos-18.2-release-fixes/regress/bin/query.sql"
+  QueryFile = "@regressdir@/bin/query.sql"
   Maximum Concurrent Jobs = 10
   Password = "bareos"         # Console password
   Messages = Daemon
@@ -14,12 +14,12 @@ Director {                            # define myself
   # Heartbeat Interval = 1 min
 
   # remove comment in next line to load dynamic backends from specified directory
-  # Backend Directory = /home/franku/01-prj/git/bareos-18.2-release-fixes/regress/usr/lib/bareos/backends
+  # Backend Directory = @regressdir@/usr/lib/bareos/backends
 
   # remove comment from "Plugin Directory" to load plugins from specified directory.
   # if "Plugin Names" is defined, only the specified plugins will be loaded,
   # otherwise all director plugins (*-dir.so) from the "Plugin Directory".
   #
-  # Plugin Directory = "/home/franku/01-prj/git/bareos-18.2-release-fixes/regress/bin/plugins"
+  # Plugin Directory = "@regressdir@/bin/plugins"
   # Plugin Names = ""
 }
