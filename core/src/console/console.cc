@@ -120,7 +120,7 @@ static void usage()
         "        -l          list defined Directors\n"
         "        -c <path>   specify configuration file or directory\n"
 #if defined(HAVE_PAM)
-        "        -p <file>   specify pam credentials file\n
+        "        -p <file>   specify pam credentials file\n"
         "                    (first line: username, second line: password)\n"
         "        -o          send pam credentials over unencrypted connection\n"
 #endif
