@@ -148,18 +148,23 @@ $this->headTitle($title);
          echo '<p>'.$this->formRow($form->get('restorejob')).'</p>';
          echo '<p>'.$this->formRow($form->get('replace')).'</p>';
          echo '<p>'.$this->formRow($form->get('where')).'</p>';
-         echo '<p><button id="btn-form-submit" class="btn btn-primary" type="button">Restore</button></p>';
+
+         echo '<p>'.$this->formRow($form->get('form-submit')).'</p>';
+         //echo '<p><button id="btn-form-submit" class="btn btn-primary" type="button">Restore</button></p>';
+
          // Hidden fields
          echo $this->formRow($form->get('checked_files'));
          echo $this->formRow($form->get('checked_directories'));
          echo $this->formRow($form->get('jobids_hidden'));
       }
+    /*
       elseif($this->restore_params['type'] == "job") {
          echo $this->formRow($form->get('jobid')->setAttribute('class', 'form-control'));
          echo $this->formRow($form->get('restoreclient')->setAttribute('class','form-control'));
          echo $this->formRow($form->get('restorejob')->setAttribute('class','form-control'));
          echo $this->formRow($form->get('where')->setAttribute('class','form-control'));
       }
+    */
    ?>
 
    </div>
@@ -275,7 +280,8 @@ $this->headTitle($title);
    }
 
    function submitRestoreFormData() {
-      document.getElementById('restore').submit();
+      //document.getElementById('restore').submit();
+      document.restore.submit();
    }
 
    function updateModalRestoreParamsTable(client, restoreclient, replace, where, selectedNumberOfDirectories, selectedNumberOfFiles) {

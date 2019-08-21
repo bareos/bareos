@@ -52,6 +52,7 @@ class RestoreController extends AbstractActionController
    private $files = null;
 
    private $required_commands = array(
+      "list",
       "llist",
       ".filesets",
       ".jobs",
@@ -61,7 +62,8 @@ class RestoreController extends AbstractActionController
       ".bvfs_lsdirs",
       ".bvfs_lsfiles",
       ".bvfs_restore",
-      ".bvfs_cleanup"
+      ".bvfs_cleanup",
+      ".bvfs_versions"
    );
 
    /**
@@ -90,7 +92,7 @@ class RestoreController extends AbstractActionController
       $this->setRestoreParams();
       $errors = null;
       $result = null;
-
+/*
       if($this->restore_params['client'] == null) {
          try {
             $clients = $this->getClientModel()->getClients($this->bsock);
@@ -101,8 +103,8 @@ class RestoreController extends AbstractActionController
             echo $e->getMessage();
          }
       }
-
-      if($this->restore_params['type'] == "client" && $this->restore_params['jobid'] == null) {
+*/
+      if($this->restore_params['type'] == "client" && $this->restore_params['jobid'] == null && $this->restore_params['client'] != null) {
          try {
             $latestbackup = $this->getClientModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", 1);
             if(empty($latestbackup)) {
@@ -130,13 +132,16 @@ class RestoreController extends AbstractActionController
          }
       }
 
-      if($this->restore_params['type'] == "client") {
+      if($this->restore_params['type'] == "client" && $this->restore_params['client'] != null) {
          try {
             $backups = $this->getClientModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", null);
          }
          catch(Exception $e) {
             echo $e->getMessage();
          }
+      }
+      else {
+        $backups = null;
       }
 
       try {
@@ -149,7 +154,7 @@ class RestoreController extends AbstractActionController
          echo $e->getMessage();
       }
 
-      if(empty($backups)) {
+      if(isset($this->restore_params['client']) && empty($backups)) {
          $errors = 'No backups of client <strong>'.$this->restore_params['client'].'</strong> found.';
       }
 
@@ -401,7 +406,6 @@ class RestoreController extends AbstractActionController
 
     }
 
-
     /**
     * Delivers a subtree as Json for JStree
     */
@@ -429,24 +433,15 @@ class RestoreController extends AbstractActionController
       $this->directories = null;
 
       try {
-         if($this->restore_params['type'] == "client") {
-            if(empty($this->restore_params['jobid'])) {
-               $this->restore_params['jobids'] = null;
-            }
-            else {
-               $jobids = $this->getRestoreModel()->getJobIds($this->bsock, $this->restore_params['jobid'],$this->restore_params['mergefilesets'],$this->restore_params['mergejobs']);
-               $this->restore_params['jobids'] = $jobids;
-               $this->directories = $this->getRestoreModel()->getDirectories($this->bsock, $this->restore_params['jobids'], $this->restore_params['id']);
-            }
-         }
-         else {
-            $this->directories = $this->getRestoreModel()->getDirectories($this->bsock, $this->restore_params['jobid'], $this->restore_params['id']);
-         }
+        $this->directories = $this->getRestoreModel()->getDirectories(
+          $this->bsock,
+          $this->restore_params['jobids'],
+          $this->restore_params['id']
+        );
       }
       catch(Exception $e) {
          echo $e->getMessage();
       }
-
    }
 
    /**
@@ -457,24 +452,49 @@ class RestoreController extends AbstractActionController
       $this->files = null;
 
       try {
-         if($this->restore_params['type'] == "client") {
-            if(empty($this->restore_params['jobid'])) {
-               $this->restore_params['jobids'] = null;
-            }
-            else {
-               $jobids = $this->getRestoreModel()->getJobIds($this->bsock, $this->restore_params['jobid'],$this->restore_params['mergefilesets'],$this->restore_params['mergejobs']);
-               $this->restore_params['jobids'] = $jobids;
-               $this->files = $this->getRestoreModel()->getFiles($this->bsock, $this->restore_params['jobids'], $this->restore_params['id']);
-            }
-         }
-         else {
-            $this->files = $this->getRestoreModel()->getFiles($this->bsock, $this->restore_params['jobid'], $this->restore_params['id']);
-         }
+        $this->files = $this->getRestoreModel()->getFiles(
+          $this->bsock,
+          $this->restore_params['jobids'],
+          $this->restore_params['id']
+        );
       }
       catch(Exception $e) {
          echo $e->getMessage();
       }
+   }
 
+   /**
+    * Get depending JobIds considering the merge criteria
+    */
+   private function getJobIds()
+   {
+     try {
+       $this->restore_params['jobids'] = $this->getRestoreModel()->getJobIds(
+         $this->bsock,
+         $this->restore_params['jobid'],
+         $this->restore_params['mergefilesets'],
+         $this->restore_params['mergejobs']
+       );
+     }
+     catch(Exception $e) {
+       echo $e->getMessage();
+     }
+   }
+
+   /**
+    * Update Bvfs cache
+    */
+   private function updateBvfsCache()
+   {
+     try {
+       $this->getRestoreModel()->updateBvfsCache(
+         $this->bsock,
+         $this->restore_params['jobids']
+       );
+     }
+     catch(Exception $e) {
+       echo $e->getMessage();
+     }
    }
 
    /**
@@ -482,9 +502,14 @@ class RestoreController extends AbstractActionController
     */
    private function buildSubtree()
    {
-
       $this->bsock = $this->getServiceLocator()->get('director');
       $this->setRestoreParams();
+      $this->getJobIds();
+
+      if($this->restore_params['id'] == null || $this->restore_params['id'] == "#") {
+        $this->updateBvfsCache();
+      }
+
       $this->getDirectories();
       $this->getFiles();
 
@@ -496,7 +521,6 @@ class RestoreController extends AbstractActionController
       $items = '[';
 
       if($dnum > 0) {
-
          foreach($this->directories as $dir) {
             if($dir['name'] == ".") {
                --$dnum;
@@ -521,15 +545,12 @@ class RestoreController extends AbstractActionController
                }
             }
          }
-
          if($fnum > 0) {
             $items .= ",";
          }
-
       }
 
       if($fnum > 0) {
-
          foreach($this->files as $file) {
             $items .= '{';
             $items .= '"id":"' . $file["fileid"] . '"';
@@ -543,7 +564,6 @@ class RestoreController extends AbstractActionController
                $items .= ",";
             }
          }
-
       }
 
       $items .= ']';

@@ -46,19 +46,19 @@ class RestoreModel
 
          while (true) {
 
-            if($pathid == null || $pathid== "#") {
+            if($pathid == null || $pathid == "#") {
                $cmd_1 = '.bvfs_lsdirs jobid='.$jobid.' path= limit='.$limit.' offset='.$offset;
             }
             else {
                $cmd_1 = '.bvfs_lsdirs jobid='.$jobid.' pathid='.abs($pathid).' limit='.$limit.' offset='.$offset;
             }
 
-            $result = $bsock->send_command($cmd_1, 2, $jobid);
+            $result = $bsock->send_command($cmd_1, 2, null);
             $directories = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
 
             if(empty($directories['result'])) {
                $cmd_2 = '.bvfs_lsdirs jobid='.$jobid.' path=@ limit='.$limit;
-               $result = $bsock->send_command($cmd_2, 2, $jobid);
+               $result = $bsock->send_command($cmd_2, 2, null);
                $directories = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
                if(count($directories['result']['directories']) <= 2) {
                   $retval = array_merge($retval, $directories['result']['directories']);
@@ -122,7 +122,7 @@ class RestoreModel
                $cmd_1 = '.bvfs_lsfiles jobid='.$jobid.' pathid='.abs($pathid).' limit='.$limit.' offset='.$offset;
             }
 
-            $result = $bsock->send_command($cmd_1, 2, $jobid);
+            $result = $bsock->send_command($cmd_1, 2, null);
             $files = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
 
             if ( empty($files['result']) ) {
@@ -131,7 +131,7 @@ class RestoreModel
 
             if(empty($files['result']['files'])) {
                $cmd_2 = '.bvfs_lsfiles jobid='.$jobid.' path=@ limit='.$limit.' offset='.$offset;
-               $result = $bsock->send_command($cmd_2, 2, $jobid);
+               $result = $bsock->send_command($cmd_2, 2, null);
                $files = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
                if(empty($files['result']['files'])) {
                   return $retval;
@@ -214,6 +214,27 @@ class RestoreModel
       }
       else {
          throw new \Exception('Missing argument.');
+      }
+   }
+
+   /**
+    * Updates the bvfs cache
+    *
+    * @param $bsock
+    * @param $jobid
+    */
+   public function updateBvfsCache(&$bsock=null, $jobid=null)
+   {
+      if(isset($bsock)) {
+        if($jobid != null) {
+          $cmd = '.bvfs_update jobid='.$jobid;
+        } else {
+          $cmd = '.bvfs_update';
+        }
+        $result = $bsock->send_command($cmd, 2, null);
+      }
+      else {
+        throw new \Exception('Missing argument.');
       }
    }
 
