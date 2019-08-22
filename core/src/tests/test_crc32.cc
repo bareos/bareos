@@ -33,12 +33,11 @@ TEST(crc32, internal)
 
 TEST(crc32, internal_spd)
 {
-  void* buf = malloc(len);
-  int fd = open("/dev/urandom", O_RDONLY);
-  read(fd, buf, len);
-  close(fd);
+  uint8_t* buf = static_cast<uint8_t*>(malloc(len));
+  std::fill(buf, buf+len, 0xbb);
+
   for(int i=0;i<10000;i++) {
-    crc32_fast((uint8_t*)buf, len);
+    ASSERT_EQ(0xbc003c2c, crc32_fast(buf, len));
   }
   free(buf);
 }
