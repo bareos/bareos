@@ -290,7 +290,7 @@ IF(HAVE_EXECINFO_H AND HAVE_BACKTRACE AND HAVE_BACKTRACE_SYMBOLS)
   gtest_discover_tests(test_backtrace TEST_PREFIX gtest:)
 ENDIF()
 
-####### test_backtrace #####################################
+####### test_crc32 #####################################
 add_executable(test_crc32 test_crc32.cc ../stored/crc32/crc32.cc)
 
 target_link_libraries(test_crc32
