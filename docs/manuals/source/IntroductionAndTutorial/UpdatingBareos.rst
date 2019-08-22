@@ -26,9 +26,10 @@ Sometimes improvements in Bareos make it necessary to update the database scheme
 
 
 
-   .. warning::
+.. warning::
 
-      If the Bareos catalog database does not have the current schema, the Bareos Director refuses to start.
+   If the Bareos catalog database does not have the current schema, the Bareos Director refuses to start.
+
 
 Detailed information can then be found in the log file :file:`/var/log/bareos/bareos.log`.
 
@@ -36,24 +37,24 @@ Take a look into the :ref:`Release Notes <releasenotes>` to see which Bareos upd
 
 
 
-   .. warning::
+.. warning::
 
-      Especially the upgrade to Bareos >= 17.2.0 restructures the **File** database table. In larger installations this is very time consuming and temporarily doubles the amount of required database disk space.
+   Especially the upgrade to Bareos >= 17.2.0 restructures the **File** database table. In larger installations this is very time consuming and temporarily doubles the amount of required database disk space.
 
 Debian based Linux Distributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Since Bareos :sinceVersion:`14.2.0: dbconfig-common (Debian)` the Debian (and Ubuntu) based packages support the **dbconfig-common** mechanism to create and update the Bareos database. If this is properly configured, the database schema will be automatically adapted by the Bareos packages.
 
+.. warning::
 
+   When using the PostgreSQL backend and updating to Bareos < 14.2.3, it is necessary to manually grant database permissions, normally by using
 
-   .. warning::
-
-      When using the PostgreSQL backend and updating to Bareos < 14.2.3, it is necessary to manually grant database permissions, normally by using
 
 .. code-block:: shell-session
 
-   <command> </command><parameter>su - postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges</parameter>
+   root@host:~# su - postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges
+
 
 For details see :ref:`section-dbconfig`.
 

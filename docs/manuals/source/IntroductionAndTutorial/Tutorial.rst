@@ -65,7 +65,7 @@ The :command:`bconsole` runs the Bareos Console program, which connects to the |
 .. code-block:: shell-session
    :caption: bconsole
 
-   <command>bconsole</command>
+   root@host:~# bconsole
    Connecting to Director bareos:9101
    Enter a period to cancel a command.
    *
@@ -562,7 +562,7 @@ After exiting the Console program, you can examine the files in :file:`/tmp/bare
 .. code-block:: shell-session
    :caption: remove restore directory
 
-   <command>rm</command> -rf /tmp/bareos-restore
+   root@host:~# rm -rf /tmp/bareos-restore
 
 Quitting the Console Program
 ----------------------------

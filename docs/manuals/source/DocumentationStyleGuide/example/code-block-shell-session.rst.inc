@@ -9,6 +9,6 @@
    root@host:/etc/bareos# cd
    root@host:~# ssh root@bareos-dir.example.com
    root@bareos-dir:~# su - postgres
-   postgres@bareos-dir:~> psql bareos
+   postgres@bareos-dir:~$ psql bareos
    Welcome to psql 8.3.23, the PostgreSQL interactive terminal.
    ...

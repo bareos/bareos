@@ -623,12 +623,13 @@ Direct access to Volumes with with non-default block sizes
 
 To be able to read a volume written with an arbitrary block size, you need to set the :config:option:`sd/device/LabelBlockSize`\  (to be able to to read the label block) and the :config:option:`sd/device/MaximumBlockSize`\  (to be able to read the data blocks) setting in the device definition used by those tools to be able to open the medium.
 
-Example using :command:`bls` with a tape that was written with another blocksize than the ``DEFAULT_BLOCK_SIZE``\  (63k), but with the default label block size of 63k:
+Example using :command:`bls` with a tape that was written with another blocksize than the ``DEFAULT_BLOCK_SIZE``\  (63k),
+but with the default label block size of 63k:
 
 .. code-block:: shell-session
    :caption: bls with non-default block size
 
-   <command>bls</command> <parameter>FC-Drive-1 -V A00007L4</parameter>
+   root@host:~# bls FC-Drive-1 -V A00007L4
    bls: butil.c:289-0 Using device: "FC-Drive-1" for reading.
    25-Feb 12:47 bls JobId 0: No slot defined in catalog (slot=0) for Volume "A00007L4" on "FC-Drive-1" (/dev/tape/by-id/scsi-350011d00018a5f03-nst).
    25-Feb 12:47 bls JobId 0: Cartridge change or "update slots" may be required.
@@ -643,7 +644,7 @@ As can be seen, :command:`bls` manages to read the label block as it knows what 
 .. code-block:: shell-session
    :caption: dmesg
 
-   <command>dmesg</command>
+   root@host:~# dmesg
    [...]
    st2: Failed to read 131072 byte block with 64512 byte transfer.
    [...]
@@ -673,12 +674,13 @@ Now we can call bls again, and everything works as expected:
 .. code-block:: shell-session
    :caption: bls with non-default block size
 
-   <command>bls</command> <parameter>FC-Drive-1 -V A00007L4</parameter>
+   root@host:~# bls FC-Drive-1 -V A00007L4
    bls: butil.c:289-0 Using device: "FC-Drive-1" for reading.
    25-Feb 12:49 bls JobId 0: No slot defined in catalog (slot=0) for Volume "A00007L4" on "FC-Drive-1" (/dev/tape/by-id/scsi-350011d00018a5f03-nst).
    25-Feb 12:49 bls JobId 0: Cartridge change or "update slots" may be required.
    25-Feb 12:49 bls JobId 0: Ready to read from volume "A00007L4" on device "FC-Drive-1" (/dev/tape/by-id/scsi-350011d00018a5f03-nst).
    bls JobId 203: [...]
+
 
 How to configure the block sizes in your environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

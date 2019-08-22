@@ -406,7 +406,7 @@ As of http://kb.vmware.com/kb/2075984 manually enabling CBT is currently not wor
 .. code-block:: shell-session
    :caption: usage of vmware\_cbt\_tool.py
 
-   # <parameter>vmware_cbt_tool.py --help</parameter>
+   user@host:~$ vmware_cbt_tool.py --help
    usage: vmware_cbt_tool.py [-h] -s HOST [-o PORT] -u USER [-p PASSWORD] -d
                              DATACENTER [-f FOLDER] [-v VMNAME]
                              [--vm-uuid VM_UUID] [--enablecbt] [--disablecbt]
@@ -444,7 +444,7 @@ For the above configuration example, the command to enable CBT would be
 .. code-block:: shell-session
    :caption: Example using vmware\_cbt\_tool.py
 
-   # <parameter>vmware_cbt_tool.py -s vcenter.example.org -u bakadm@vsphere.local -p Bak.Adm-1234 -d mydc1 -f /webservers -v websrv1 --enablecbt</parameter>
+   user@host:~$ vmware_cbt_tool.py -s vcenter.example.org -u bakadm@vsphere.local -p Bak.Adm-1234 -d mydc1 -f /webservers -v websrv1 --enablecbt
 
 Note: CBT does not work if the virtual hardware version is 6 or earlier.
 

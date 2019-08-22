@@ -372,9 +372,10 @@ Now restart the |sd|. If everything is correct, the |sd| starts and listens now 
 
 .. code-block:: shell-session
 
-   <command>netstat</command> <parameter>-lntp | grep bareos-sd</parameter>
+   root@host:~# netstat -lntp | grep bareos-sd
    tcp        0      0 0.0.0.0:9103            0.0.0.0:*               LISTEN      10661/bareos-sd
    tcp        0      0 0.0.0.0:10000           0.0.0.0:*               LISTEN      10661/bareos-sd
+
 
 Bareos Director: Configure a Paired Storage
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

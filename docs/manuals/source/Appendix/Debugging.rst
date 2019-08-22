@@ -30,7 +30,7 @@ For this to work, you need to ensure that a few things are setup correctly on yo
    .. code-block:: shell-session
       :caption: disable ptrace protection to enable debugging (required on Ubuntu Linux)
 
-      <command> </command><parameter>test -e /proc/sys/kernel/yama/ptrace_scope && echo 0 > /proc/sys/kernel/yama/ptrace_scope</parameter>
+      root@host:~# test -e /proc/sys/kernel/yama/ptrace_scope && echo 0 > /proc/sys/kernel/yama/ptrace_scope
 
 If all the above conditions are met, the daemon that crashes will produce a traceback report and email it. If the above conditions are not true, you can run the debugger by hand as described below.
 
@@ -44,7 +44,7 @@ To "manually" test the traceback feature, you simply start Bareos then obtain th
 .. code-block:: shell-session
    :caption: get the process ID of a running Bareos daemon
 
-   <command> </command><parameter>ps fax | grep bareos-dir</parameter>
+   root@host:~# ps fax | grep bareos-dir
     2103 ?        S      0:00 /usr/sbin/bareos-dir
 
 which in this case is 2103. Then while Bareos is running, you call the program giving it the path to the Bareos executable and the PID. In this case, it is:
@@ -52,14 +52,15 @@ which in this case is 2103. Then while Bareos is running, you call the program g
 .. code-block:: shell-session
    :caption: get traceback of running Bareos director daemon
 
-   <command> </command><parameter>btraceback /usr/sbin/bareos-dir 2103</parameter>
+   root@host:~# btraceback /usr/sbin/bareos-dir 2103
 
 It should produce an email showing you the current state of the daemon (in this case the Director), and then exit leaving Bareos running as if nothing happened. If this is not the case, you will need to correct the problem by modifying the :command:`btraceback` script.
 
 Getting A Traceback On Other Systems
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-It should be possible to produce a similar traceback on systems other than Linux, either using :command:`gdb` or some other debugger. Solaris:index:`\ <single: Platform; Solaris; Debug>`\  with :command:`dbx` loaded works quite fine. On other systems, you will need to modify the :command:`btraceback` program to invoke the correct debugger, and possibly correct the :file:`btraceback.gdb` script to have appropriate commands for your debugger.
+It should be possible to produce a similar traceback on systems other than Linux, either using :command:`gdb` or some other debugger.
+:index:`Solaris <single: Platform; Solaris; Debug>`\  with :command:`dbx` loaded works quite fine. On other systems, you will need to modify the :command:`btraceback` program to invoke the correct debugger, and possibly correct the :file:`btraceback.gdb` script to have appropriate commands for your debugger.
 Please keep in mind that for any debugger to work, it will most likely need to run as root.
 
 Manually Running Bareos Under The Debugger
@@ -74,10 +75,11 @@ If for some reason you cannot get the automatic traceback, or if you want to int
    .. code-block:: shell-session
       :caption: run the Bareos Storage daemon in the debugger
 
-      <command>gdb</command><parameter> --args /usr/sbin/bareos-sd -f -s -d 200</parameter>
-      (gdb) <input>run</input>
+      root@host:~# su - bareos -s /bin/bash
+      bareos@host:~# gdb --args /usr/sbin/bareos-sd -f -s -d 200
+      (gdb) run
 
-   Parameter:
+   Bareos Parameter:
 
    -f
       foreground
@@ -99,12 +101,8 @@ If for some reason you cannot get the automatic traceback, or if you want to int
 #. To get a general traceback of all threads, issue the following command:
 
    .. code-block:: shell-session
-      :caption: run the Bareos Storage daemon in the debugger
+      :caption: Bareos Storage daemon in a debugger session
 
-      (gdb) <input>thread apply all bt</input>
+      (gdb) thread apply all bt
 
    After that you can issue any debugging command.
-
-
-
-

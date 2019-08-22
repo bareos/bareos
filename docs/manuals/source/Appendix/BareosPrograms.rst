@@ -285,7 +285,7 @@ For example:
 
 .. code-block:: shell-session
 
-   <command>bls</command> <parameter>FileStorage -V Full1</parameter>
+   root@host:~# bls FileStorage -V Full1
    bls: butil.c:282-0 Using device: "/var/lib/bareos/storage" for reading.
    12-Sep 18:30 bls JobId 0: Ready to read from volume "Full1" on device "FileStorage" (/var/lib/bareos/storage).
    bls JobId 1: -rwxr-xr-x   1 root     root            4614 2013-01-22 22:24:11  /usr/sbin/service
@@ -308,7 +308,7 @@ To retrieve information, about how a file is stored on the volume, you can use :
 
 .. code-block:: shell-session
 
-   <command>bls</command> <parameter>FileStorage -V TestVolume001 -v</parameter>
+   root@host:~# bls FileStorage -V TestVolume001 -v
    bls: butil.c:273-0 Using device: "FileStorage" for reading.
    22-Jun 19:34 bls JobId 0: Ready to read from volume "TestVolume001" on device "Storage1" (/var/lib/bareos/storage).
    Volume Label Record: VolSessionId=1 VolSessionTime=1498152622 JobId=0 DataLen=168
@@ -339,7 +339,7 @@ Using the :strong:`-L` the label information of a Volume is shown:
 .. code-block:: shell-session
    :caption: bls: show volume label
 
-   <command>bls</command> <parameter>-L /var/lib/bareos/storage/testvol</parameter>
+   root@host:~# bls -L /var/lib/bareos/storage/testvol
    bls: butil.c:282-0 Using device: "/var/lib/bareos/storage" for reading.
    12-Sep 18:41 bls JobId 0: Ready to read from volume "testvol" on device "FileStorage" (/var/lib/bareos/storage).
 
@@ -367,7 +367,7 @@ If you are listing a Volume to determine what Jobs to restore, normally the :str
 .. code-block:: shell-session
    :caption: bls: list jobs
 
-   <command>bls</command> <parameter>/var/lib/bareos/storage/testvol -j</parameter>
+   root@host:~# bls /var/lib/bareos/storage/testvol -j
    bls: butil.c:282-0 Using device: "/var/lib/bareos/storage" for reading.
    12-Sep 18:33 bls JobId 0: Ready to read from volume "testvol" on device "FileStorage" (/var/lib/bareos/storage).
    Volume Record: File:blk=0:193 SessId=1 SessTime=1362582744 JobId=0 DataLen=158
@@ -402,7 +402,7 @@ Normally, except for debugging purposes, you will not need to list Bareos blocks
 
 .. code-block:: shell-session
 
-   <command>bls</command> <parameter>-k /tmp/File002</parameter>
+   root@host:~# bls -k /tmp/File002
    bls: butil.c:148 Using device: /tmp
    Block: 1 size=64512
    Block: 2 size=64512
@@ -416,7 +416,7 @@ By adding the :strong:`-v` option, you can get more information, which can be us
 
 .. code-block:: shell-session
 
-   <command>bls</command> <parameter>-k -v /tmp/File002</parameter>
+   root@host:~# bls -k -v /tmp/File002
    Date label written: 2002-10-19 at 21:16
    Block: 1 blen=64512 First rec FI=VOL_LABEL SessId=1 SessTim=1035062102 Strm=0 rlen=147
    Block: 2 blen=64512 First rec FI=6 SessId=1 SessTim=1035062102 Strm=DATA rlen=4087
@@ -434,7 +434,7 @@ If you want to know even more, add a second :strong:`-v` to the command line to 
 
 .. code-block:: shell-session
 
-   <command>bls</command> <parameter>-k -vv /tmp/File002</parameter>
+   root@host:~# bls -k -vv /tmp/File002
    bls: block.c:79 Dump block  80f8ad0: size=64512 BlkNum=1
                   Hdrcksum=b1bdfd6d cksum=b1bdfd6d
    bls: block.c:92    Rec: VId=1 VT=1035062102 FI=VOL_LABEL Strm=0 len=147 p=80f8b40
@@ -559,20 +559,19 @@ Extracting Under Windows
 
 :index:`\ <single: Windows; bextract>`\ 
 
+.. warning::
 
+   If you use :command:`bextract` under Windows, the ordering of the parameters is essential.
 
-   .. warning::
-
-      If you use :command:`bextract` under Windows, the ordering of the parameters is essential.
 
 To use :command:`bextract`, the Bareos Storage Daemon must be installed. As bextract works on tapes or disk volumes, these must be configured in the Storage Daemon configuration file, normally found at :file:`C:\\ProgrammData\\Bareos\\bareos-sd.conf`. However, it is not required to start the Bareos Storage Daemon. Normally, if the Storage Daemon would be able to run, :command:`bextract` would not be required.
 
 After installing, :command:`bextract` can be called via command line:
 
-.. code-block:: shell-session
+.. code-block:: doscon
    :caption: Call of bextract
 
-   C:\Program Files\Bareos .\bextract.exe -c "C:\ProgrammData\Bareos\bareos-sd.conf" -V <Volume> <YourStorage> <YourDestination>
+   C:\Program Files\Bareos> .\bextract.exe -c "C:\ProgrammData\Bareos\bareos-sd.conf" -V <Volume> <YourStorage> <YourDestination>
 
 If you want to use exclude or include files you need to write them like you do on Linux. That means each path begins with a "/" and not with "yourdrive:/". You need to specify the parameter -e exclude.list as first parameter. For example:
 
@@ -582,10 +581,10 @@ If you want to use exclude or include files you need to write them like you do o
    /Program Files/Bareos/bareos-dir.exe
    /ProgramData/
 
-.. code-block:: shell-session
+.. code-block:: doscon
    :caption: Call bextract with exclude list
 
-   C:\Program Files\Bareos .\bextract.exe -e exclude.list -c "C:\ProgrammData\Bareos\bareos-sd.conf" -V <Volume> <YourStorage> <YourDestination>
+   C:\Program Files\Bareos> .\bextract.exe -e exclude.list -c "C:\ProgrammData\Bareos\bareos-sd.conf" -V <Volume> <YourStorage> <YourDestination>
 
 
 .. _bscan:
