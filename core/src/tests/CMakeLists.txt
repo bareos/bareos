@@ -291,7 +291,7 @@ IF(HAVE_EXECINFO_H AND HAVE_BACKTRACE AND HAVE_BACKTRACE_SYMBOLS)
 ENDIF()
 
 ####### test_backtrace #####################################
-add_executable(test_crc32 test_crc32.cc ../stored/crc32/Crc32.cpp)
+add_executable(test_crc32 test_crc32.cc ../stored/crc32/crc32.cc)
 
 target_link_libraries(test_crc32
    bareos

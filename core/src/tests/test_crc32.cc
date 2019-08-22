@@ -21,7 +21,7 @@
 
 #include "gtest/gtest.h"
 #include "include/bareos.h"
-#include "stored/crc32/Crc32.h"
+#include "stored/crc32/crc32.h"
 
 const size_t len = 63 * 1024;
 

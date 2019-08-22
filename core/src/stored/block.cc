@@ -31,7 +31,7 @@
 
 #include "include/bareos.h"
 #include "stored/stored.h"
-#include "stored/crc32/Crc32.h"
+#include "stored/crc32/crc32.h"
 #include "stored/dev.h"
 #include "stored/device.h"
 #include "stored/label.h"

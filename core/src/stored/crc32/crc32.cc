@@ -17,7 +17,7 @@
 // - crc32_16bytes  needs all of Crc32Lookup
 
 
-#include "Crc32.h"
+#include "crc32.h"
 
 // define endianess and some integer data types
 #if defined(_MSC_VER) || defined(__MINGW32__)
