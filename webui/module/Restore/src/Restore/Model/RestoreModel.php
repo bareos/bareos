@@ -258,12 +258,7 @@ class RestoreModel
    public function restore(&$bsock=null, $type=null, $jobid=null, $client=null, $restoreclient=null, $restorejob=null, $where=null, $fileid=null, $dirid=null, $jobids=null, $replace=null)
    {
       if(isset($bsock, $type)) {
-         if($type == "client") {
-            $result = $bsock->restore($type, $jobid, $client, $restoreclient, $restorejob, $where, $fileid, $dirid, $jobids, $replace);
-         }
-         elseif($type == "job") {
-            // TODO
-         }
+         $result = $bsock->restore($type, $jobid, $client, $restoreclient, $restorejob, $where, $fileid, $dirid, $jobids, $replace);
          return $result;
       }
       else {

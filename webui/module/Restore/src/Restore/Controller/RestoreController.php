@@ -92,18 +92,7 @@ class RestoreController extends AbstractActionController
       $this->setRestoreParams();
       $errors = null;
       $result = null;
-/*
-      if($this->restore_params['client'] == null) {
-         try {
-            $clients = $this->getClientModel()->getClients($this->bsock);
-            $client = array_pop($clients);
-            $this->restore_params['client'] = $client['name'];
-         }
-         catch(Exception $e) {
-            echo $e->getMessage();
-         }
-      }
-*/
+
       if($this->restore_params['type'] == "client" && $this->restore_params['jobid'] == null && $this->restore_params['client'] != null) {
          try {
             $latestbackup = $this->getClientModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", 1);
@@ -145,7 +134,6 @@ class RestoreController extends AbstractActionController
       }
 
       try {
-         //$jobs = $this->getJobModel()->getJobs();
          $clients = $this->getClientModel()->getClients($this->bsock);
          $filesets = $this->getFilesetModel()->getDotFilesets($this->bsock);
          $restorejobs = $this->getJobModel()->getRestoreJobs($this->bsock);
@@ -161,7 +149,6 @@ class RestoreController extends AbstractActionController
       // Create the form
       $form = new RestoreForm(
          $this->restore_params,
-         //$jobs,
          $clients,
          $filesets,
          $restorejobs,

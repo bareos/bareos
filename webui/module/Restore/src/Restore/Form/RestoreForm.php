@@ -5,7 +5,7 @@
 * bareos-webui - Bareos Web-Frontend
 *
 * @link      https://github.com/bareos/bareos-webui for the canonical source repository
-* @copyright Copyright (c) 2013-2015 dass-IT GmbH (http://www.dass-it.de/)
+* @copyright Copyright (c) 2013-2019 dass-IT GmbH (http://www.dass-it.de/)
 * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
 *
 * This program is free software: you can redistribute it and/or modify
@@ -32,58 +32,23 @@ class RestoreForm extends Form
 {
 
    protected $restore_params;
-   //protected $jobs;
    protected $clients;
    protected $filesets;
    protected $restorejobs;
    protected $jobids;
    protected $backups;
 
-   public function __construct($restore_params=null, /*$jobs=null,*/ $clients=null, $filesets=null, $restorejobs=null, $jobids=null, $backups=null)
+   public function __construct($restore_params=null, $clients=null, $filesets=null, $restorejobs=null, $jobids=null, $backups=null)
    {
 
       parent::__construct('restore');
 
       $this->restore_params = $restore_params;
-      //$this->jobs = $jobs;
       $this->clients = $clients;
       $this->filesets = $filesets;
       $this->restorejobs = $restorejobs;
       $this->jobids = $jobids;
       $this->backups = $backups;
-
-/*
-      // Job
-      if(isset($restore_params['jobid'])) {
-         $this->add(array(
-            'name' => 'jobid',
-            'type' => 'select',
-            'options' => array(
-               'label' => _('Job'),
-               'empty_option' => _('Please choose a job'),
-               'value_options' => $this->getJobList()
-            ),
-            'attributes' => array(
-               'id' => 'jobid',
-               'value' => $restore_params['jobid']
-            )
-         ));
-      }
-      else {
-         $this->add(array(
-            'name' => 'jobid',
-            'type' => 'select',
-            'options' => array(
-               'label' => _('Job'),
-               'empty_option' => _('Please choose a job'),
-               'value_options' => $this->getJobList()
-            ),
-            'attributes' => array(
-               'id' => 'jobid'
-            )
-         ));
-      }
-*/
 
       // Backup jobs
       if(isset($restore_params['jobid'])) {
@@ -171,7 +136,7 @@ class RestoreForm extends Form
                'class' => 'form-control selectpicker show-tick',
                'data-live-search' => 'true',
                'id' => 'client',
-               'value' => '' //@array_pop($this->getClientList())
+               'value' => ''
             )
          ));
       }
@@ -478,115 +443,7 @@ class RestoreForm extends Form
            )
         );
       }
-/*
-      // Path
-      if(isset($restore_params['path'])) {
-         $this->add(array(
-            'name' => 'path',
-            'type' => 'text',
-            'options' => array(
-               'label' => _('Path')
-               ),
-            'attributes' => array(
-               'class' => 'form-control',
-               'id' => 'path',
-               'size' => '15',
-               'placeholder' => '/',
-               'value' => $restore_params['path']
-               )
-            )
-         );
-      }
-      else {
-          $this->add(array(
-            'name' => 'path',
-            'type' => 'text',
-            'options' => array(
-               'label' => _('Path')
-               ),
-            'attributes' => array(
-               'class' => 'form-control',
-               'id' => 'path',
-               'size' => '15',
-               'placeholder' => '/',
-               'value' => ''
-               )
-            )
-         );
-      }
 
-      // Limit
-      if(isset($restore_params['limit'])) {
-         $this->add(array(
-            'name' => 'limit',
-            'type' => 'text',
-            'options' => array(
-               'label' => _('Limit')
-               ),
-            'attributes' => array(
-               'class' => 'form-control',
-               'id' => 'limit',
-               'size' => '15',
-               'placeholder' => 2000,
-               'value' => $restore_params['limit']
-               )
-            )
-         );
-      }
-      else {
-          $this->add(array(
-            'name' => 'limit',
-            'type' => 'text',
-            'options' => array(
-               'label' => _('Limit')
-               ),
-            'attributes' => array(
-               'class' => 'form-control',
-               'id' => 'limit',
-               'size' => '15',
-               'placeholder' => 2000,
-               'value' => 2000
-               )
-            )
-         );
-      }
-
-      // Offset
-      if(isset($restore_params['offset'])) {
-         $this->add(array(
-            'name' => 'offset',
-            'type' => 'text',
-            'options' => array(
-               'label' => _('Offset')
-               ),
-            'attributes' => array(
-               'class' => 'form-control',
-               'id' => 'offset',
-               'size' => '15',
-               'placeholder' => 0,
-               'value' => $restore_params['offset']
-               )
-            )
-         );
-      }
-      else {
-         $this->add(array(
-            'name' => 'offset',
-            'type' => 'text',
-            'options' => array(
-               'label' => _('Offset')
-               ),
-            'attributes' => array(
-               'class' => 'form-control',
-               'id' => 'offset',
-               'size' => '15',
-               'placeholder' => 0,
-               'value' => 0
-               )
-            )
-         );
-      }
- */
       // JobIds hidden
       $this->add(array(
          'name' => 'jobids_hidden',
