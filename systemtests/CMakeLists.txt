@@ -189,6 +189,7 @@ set(SYSTEM_TESTS
   copy-bscan
   copy-remote-bscan
   bconsole-status-client
+  python-bareos-test
 )
 
 set(SYSTEM_TESTS_DISABLED
