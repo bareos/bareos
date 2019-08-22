@@ -1,0 +1,10 @@
+FileSet {
+  Name = "PluginTest"
+  Description = "Test the Plugin functionality with a Python Plugin."
+  Include {
+    Options {
+      signature = MD5
+    }
+    Plugin = "python:module_path=@python_plugin_module_src_dir@/filed:module_name=bareos-fd-local-fileset:filename=@tmpdir@/file-list"
+  }
+}

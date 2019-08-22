@@ -19,10 +19,6 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 #
-# Bareos-dir-local-fileset a simple example for a python Bareos Dir Plugin using
-# BareosDirPluginBaseclass. The plugin argument 'filename' is used to read
-# all files listed in that file and add it to the fileset
-#
 # Author: Maik Aussendorf
 #
 
