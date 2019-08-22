@@ -253,7 +253,7 @@ class RestoreController extends AbstractActionController
         $this->setRestoreParams();
         $errors = null;
         $result = null;
-
+/*
         if ($this->restore_params['client'] == null) {
             try {
                 $clients = $this->getClientModel()->getClients($this->bsock);
@@ -263,8 +263,8 @@ class RestoreController extends AbstractActionController
                 echo $e->getMessage();
             }
         }
-
-        if ($this->restore_params['type'] == "client" && $this->restore_params['jobid'] == null) {
+*/
+        if ($this->restore_params['type'] == "client" && $this->restore_params['jobid'] == null && $this->restore_params['client'] != null) {
             try {
                 $latestbackup = $this->getClientModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", 1);
                 if (empty($latestbackup)) {
@@ -288,12 +288,15 @@ class RestoreController extends AbstractActionController
             }
         }
 
-        if ($this->restore_params['type'] == "client") {
+        if ($this->restore_params['type'] == "client" && $this->restore_params['client'] != null) {
             try {
                 $backups = $this->getClientModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", null);
             } catch (Exception $e) {
                 echo $e->getMessage();
             }
+        }
+        else {
+          $backups = null;
         }
 
         try {
@@ -305,7 +308,7 @@ class RestoreController extends AbstractActionController
             echo $e->getMessage();
         }
 
-        if (empty($backups)) {
+        if(isset($this->restore_params['client']) && empty($backups)) {
             $errors = 'No backups of client <strong>' . $this->restore_params['client'] . '</strong> found.';
         }
 

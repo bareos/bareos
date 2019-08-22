@@ -146,7 +146,10 @@ $this->headTitle($title);
                   echo '<p>' . $this->formRow($form->get('restorejob')) . '</p>';
                   echo '<p>' . $this->formRow($form->get('replace')) . '</p>';
                   echo '<p>' . $this->formRow($form->get('where')) . '</p>';
-                  echo '<p><button id="btn-form-submit" class="btn btn-primary" type="button">Restore</button></p>';
+
+                  echo '<p>'.$this->formRow($form->get('form-submit')).'</p>';
+                  // echo '<p><button id="btn-form-submit" class="btn btn-primary" type="button">Restore</button></p>';
+
                   // Hidden fields
                   echo $this->formRow($form->get('checked_files'));
                   echo $this->formRow($form->get('checked_directories'));
@@ -223,8 +226,6 @@ $this->headTitle($title);
 <?php
 echo $this->headScript()->prependFile($this->basePath() . '/js/jstreegrid.js');
 echo $this->headScript()->prependFile($this->basePath() . '/js/jstree.min.js');
-echo $this->headScript()->prependFile($this->basePath() . '/js/moment.min.js');
-echo $this->headScript()->prependFile($this->basePath() . '/js/moment-with-locales.min.js');
 echo $this->headLink()->prependStylesheet($this->basePath() . '/css/jstree.min.css');
 ?>
 
