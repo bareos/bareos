@@ -39,27 +39,26 @@ class RestoreModel
     */
    public function getDirectories(&$bsock=null, $jobid=null, $pathid=null) {
       if(isset($bsock)) {
-
          $limit = 1000;
          $offset = 0;
          $retval = array();
 
          while (true) {
-
             if($pathid == null || $pathid == "#") {
                $cmd_1 = '.bvfs_lsdirs jobid='.$jobid.' path= limit='.$limit.' offset='.$offset;
             }
             else {
                $cmd_1 = '.bvfs_lsdirs jobid='.$jobid.' pathid='.abs($pathid).' limit='.$limit.' offset='.$offset;
             }
-
             $result = $bsock->send_command($cmd_1, 2, null);
             $directories = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-
             if(empty($directories['result'])) {
                $cmd_2 = '.bvfs_lsdirs jobid='.$jobid.' path=@ limit='.$limit;
                $result = $bsock->send_command($cmd_2, 2, null);
                $directories = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+               if(empty($directories['result'])) {
+                 return $retval;
+               }
                if(count($directories['result']['directories']) <= 2) {
                   $retval = array_merge($retval, $directories['result']['directories']);
                   // as . and .. are always returned, filter possible duplicates of . and .. (current and parent dir)
@@ -88,9 +87,7 @@ class RestoreModel
                $retval = array_merge($retval, $directories['result']['directories']);
             }
             $offset = $offset + $limit;
-
          }
-
       }
       else {
          throw new \Exception('Missing argument.');
@@ -108,27 +105,22 @@ class RestoreModel
     */
    public function getFiles(&$bsock=null, $jobid=null, $pathid=null) {
       if(isset($bsock)) {
-
          $limit = 1000;
          $offset = 0;
          $retval = array();
 
          while (true) {
-
             if($pathid == null || $pathid == "#") {
                $cmd_1 = '.bvfs_lsfiles jobid='.$jobid.' path= limit='.$limit.' offset='.$offset;
             }
             else {
                $cmd_1 = '.bvfs_lsfiles jobid='.$jobid.' pathid='.abs($pathid).' limit='.$limit.' offset='.$offset;
             }
-
             $result = $bsock->send_command($cmd_1, 2, null);
             $files = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-
             if ( empty($files['result']) ) {
                return $retval;
             }
-
             if(empty($files['result']['files'])) {
                $cmd_2 = '.bvfs_lsfiles jobid='.$jobid.' path=@ limit='.$limit.' offset='.$offset;
                $result = $bsock->send_command($cmd_2, 2, null);
@@ -144,9 +136,7 @@ class RestoreModel
                $retval = array_merge($retval, $files['result']['files']);
             }
             $offset = $offset + $limit;
-
          }
-
       }
       else {
          throw new \Exception('Missing argument.');
