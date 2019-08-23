@@ -514,8 +514,18 @@ class RestoreController extends AbstractActionController
       $this->getDirectories();
       $this->getFiles();
 
-      $dnum = count($this->directories);
-      $fnum = count($this->files);
+      if(!empty($this->directories)) {
+        $dnum = count($this->directories);
+      } else {
+        $dnum = 0;
+      }
+
+      if(!empty($this->files)) {
+        $fnum = count($this->files);
+      } else {
+        $fnum = 0;
+      }
+
       $tmp = $dnum;
 
       // Build Json for JStree
