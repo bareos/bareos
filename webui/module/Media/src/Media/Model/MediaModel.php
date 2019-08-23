@@ -43,7 +43,7 @@ class MediaModel
          $offset = 0;
          $retval = array();
          while (true) {
-            $result = $bsock->send_command($cmd . ' limit=' . $limit . ' offset=' . $offset, 2, null);
+            $result = $bsock->send_command($cmd . ' limit=' . $limit . ' offset=' . $offset, 2);
             if (preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
                $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
                return $error['result']['error'];
@@ -77,7 +77,7 @@ class MediaModel
    {
       if(isset($bsock, $volume)) {
          $cmd = 'llist volume="'.$volume.'"';
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $volume = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $volume['result']['volume'];
       }
@@ -98,7 +98,7 @@ class MediaModel
    {
       if(isset($bsock, $volume)) {
          $cmd = 'llist jobs volume="'.$volume.'"';
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          if(preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
             $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
             return $error['result']['error'];

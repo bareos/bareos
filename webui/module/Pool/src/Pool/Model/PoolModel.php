@@ -39,7 +39,7 @@ class PoolModel
    {
       if(isset($bsock)) {
          $cmd = 'llist pools';
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $pools = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $pools['result']['pools'];
       }
@@ -65,7 +65,7 @@ class PoolModel
          else {
             $cmd = '.pools type="'.$type.'"';
          }
-         $pools = $bsock->send_command($cmd, 2, null);
+         $pools = $bsock->send_command($cmd, 2);
          $result = \Zend\Json\Json::decode($pools, \Zend\Json\Json::TYPE_ARRAY);
          return $result['result']['pools'];
       }
@@ -86,7 +86,7 @@ class PoolModel
    {
       if(isset($bsock, $pool)) {
          $cmd = 'llist pool="'.$pool.'"';
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $pool = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $pool['result']['pools'];
       }
@@ -111,7 +111,7 @@ class PoolModel
          $offset = 0;
          $retval = array();
          while (true) {
-            $result = $bsock->send_command($cmd . ' limit=' . $limit . ' offset=' . $offset, 2, null);
+            $result = $bsock->send_command($cmd . ' limit=' . $limit . ' offset=' . $offset, 2);
             if (preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
                $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
                return $error['result']['error'];

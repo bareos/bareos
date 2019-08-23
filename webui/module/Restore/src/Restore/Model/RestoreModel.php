@@ -50,11 +50,11 @@ class RestoreModel
             else {
                $cmd_1 = '.bvfs_lsdirs jobid='.$jobid.' pathid='.abs($pathid).' limit='.$limit.' offset='.$offset;
             }
-            $result = $bsock->send_command($cmd_1, 2, null);
+            $result = $bsock->send_command($cmd_1, 2);
             $directories = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
             if(empty($directories['result'])) {
                $cmd_2 = '.bvfs_lsdirs jobid='.$jobid.' path=@ limit='.$limit;
-               $result = $bsock->send_command($cmd_2, 2, null);
+               $result = $bsock->send_command($cmd_2, 2);
                $directories = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
                if(empty($directories['result'])) {
                  return $retval;
@@ -116,14 +116,14 @@ class RestoreModel
             else {
                $cmd_1 = '.bvfs_lsfiles jobid='.$jobid.' pathid='.abs($pathid).' limit='.$limit.' offset='.$offset;
             }
-            $result = $bsock->send_command($cmd_1, 2, null);
+            $result = $bsock->send_command($cmd_1, 2);
             $files = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
             if ( empty($files['result']) ) {
                return $retval;
             }
             if(empty($files['result']['files'])) {
                $cmd_2 = '.bvfs_lsfiles jobid='.$jobid.' path=@ limit='.$limit.' offset='.$offset;
-               $result = $bsock->send_command($cmd_2, 2, null);
+               $result = $bsock->send_command($cmd_2, 2);
                $files = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
                if(empty($files['result']['files'])) {
                   return $retval;
@@ -156,7 +156,7 @@ class RestoreModel
    public function getFileVersions(&$bsock=null, $clientname=null, $pathid=null, $filename=null) {
       if(isset($bsock)) {
          $cmd = '.bvfs_versions jobid=0 client='.$clientname.' pathid='.$pathid.' fname='.$filename;
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $versions = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $versions['result']['versions'];
       }
@@ -187,7 +187,7 @@ class RestoreModel
          else {
             $cmd = '.bvfs_get_jobids jobid='.$jobid.'';
          }
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $jobids = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          $result = "";
          if(!empty($jobids['result'])) {
@@ -221,7 +221,7 @@ class RestoreModel
         } else {
           $cmd = '.bvfs_update';
         }
-        $result = $bsock->send_command($cmd, 2, null);
+        $result = $bsock->send_command($cmd, 2);
       }
       else {
         throw new \Exception('Missing argument.');

@@ -39,7 +39,7 @@ class FilesetModel
    {
       if(isset($bsock)) {
          $cmd = 'list filesets';
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $filesets = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $filesets['result']['filesets'];
       }
@@ -60,7 +60,7 @@ class FilesetModel
    {
       if(isset($bsock, $id)) {
          $cmd = 'llist fileset filesetid='.$id.'';
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $fileset = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $fileset['result']['filesets'];
       }
@@ -80,7 +80,7 @@ class FilesetModel
    {
       if(isset($bsock)) {
          $cmd = '.filesets';
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $filesets = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $filesets['result']['filesets'];
       }

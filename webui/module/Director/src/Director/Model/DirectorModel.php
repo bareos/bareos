@@ -38,7 +38,7 @@ class DirectorModel
    {
       if(isset($bsock)) {
          $cmd = '.help';
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $messages = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $messages['result'];
       }
@@ -58,7 +58,7 @@ class DirectorModel
    {
       if(isset($bsock)) {
          $cmd = 'version';
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $version = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $version['result']['version'];
       }
@@ -78,7 +78,7 @@ class DirectorModel
    {
       if(isset($bsock)) {
          $cmd = 'status director';
-         $result = $bsock->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0);
          return $result;
       }
       else {
@@ -111,7 +111,7 @@ class DirectorModel
          else if(!$reverse && $offset == null) {
             $cmd = 'list log limit='.$limit;
          }
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $messages = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $messages['result']['log'];
       }
@@ -131,7 +131,7 @@ class DirectorModel
    public function sendDirectorCommand(&$bsock=null, $cmd=null)
    {
       if(isset($bsock, $cmd)) {
-         $result = $bsock->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0);
          return $result;
       }
       else {

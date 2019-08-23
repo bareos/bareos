@@ -42,7 +42,7 @@ class ScheduleModel
    {
       if(isset($bsock)) {
          $cmd = '.schedule';
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $schedules = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $schedules['result']['schedules'];
       }
@@ -62,7 +62,7 @@ class ScheduleModel
    {
       if(isset($bsock)) {
          $cmd = 'show schedule';
-         $result = $bsock->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0);
          return $result;
       }
       else {
@@ -81,7 +81,7 @@ class ScheduleModel
    {
       if(isset($bsock)) {
          $cmd = 'status scheduler';
-         $result = $bsock->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0);
          return $result;
       }
       else {
@@ -101,7 +101,7 @@ class ScheduleModel
    {
       if(isset($bsock, $name)) {
          $cmd = 'status scheduler schedule="'.$name;
-         $result = $bsock->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0);
          return $result;
       }
       else {
@@ -121,7 +121,7 @@ class ScheduleModel
    {
       if(isset($bsock, $name)) {
          $cmd = 'enable schedule="'.$name.'" yes';
-         $result = $bsock->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0);
          return $result;
       }
       else {
@@ -141,7 +141,7 @@ class ScheduleModel
    {
       if(isset($bsock, $name)) {
          $cmd = 'disable schedule="'.$name.'" yes';
-         $result = $bsock->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0);
          return $result;
       }
       else {

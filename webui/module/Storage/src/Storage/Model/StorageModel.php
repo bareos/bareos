@@ -39,7 +39,7 @@ class StorageModel
    {
       if(isset($bsock)) {
          $cmd = 'list storages';
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $storages = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $storages['result']['storages'];
       }
@@ -60,7 +60,7 @@ class StorageModel
    {
       if(isset($bsock, $storage)) {
          $cmd = 'status storage="' . $storage . '" slots';
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $slots = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $slots['result']['contents'];
       }
@@ -98,7 +98,7 @@ class StorageModel
                $cmd = 'import storage="' . $storage . '" srcslots=' . $srcslots . ' dstslots=' . $dstslots;
             }
          }
-         $result = $bsock->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0);
          return $result;
       }
       else {
@@ -119,7 +119,7 @@ class StorageModel
    {
       if(isset($bsock, $storage, $slots)) {
          $cmd = 'export storage="' . $storage . '" srcslots=' . $slots;
-         $result = $bsock->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0);
          return $result;
       }
       else {
@@ -141,7 +141,7 @@ class StorageModel
    {
       if(isset($bsock, $storage, $slot, $drive)) {
          $cmd = 'mount storage="' . $storage . '" slot=' . $slot . ' drive=' . $drive;
-         $result = $bsock->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0);
          return $result;
       }
       else {
@@ -162,7 +162,7 @@ class StorageModel
    {
       if(isset($bsock, $storage, $drive)) {
          $cmd = 'unmount storage="' . $storage . '" drive=' . $drive;
-         $result = $bsock->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0);
          return $result;
       }
       else {
@@ -183,7 +183,7 @@ class StorageModel
    {
       if(isset($bsock, $storage, $drive)) {
          $cmd = 'release storage="' . $storage . '" drive=' . $drive;
-         $result = $bsock->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0);
          return $result;
       }
       else {
@@ -203,7 +203,7 @@ class StorageModel
    {
       if(isset($bsock, $storage)) {
          $cmd = 'update slots storage="' . $storage . '"';
-         $result = $bsock->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0);
          return $result;
       }
       else {
@@ -225,7 +225,7 @@ class StorageModel
    {
       if(isset($bsock, $storage, $srcslots, $dstslots)) {
          $cmd = 'move storage="' . $storage . '" srcslots=' . $srcslots . ' dstslots=' . $dstslots;
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          return $result;
       }
       else {
@@ -248,7 +248,7 @@ class StorageModel
    {
       if(isset($bsock, $storage, $pool, $drive)) {
          $cmd = 'label storage="' . $storage . '" pool="'.$pool.'" drive="'.$drive.'" barcodes yes';
-         $result = $bsock->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0);
          return $result;
       }
       else {
@@ -268,7 +268,7 @@ class StorageModel
    {
       if(isset($bsock, $storage)) {
          $cmd = 'status storage="'.$storage.'" slots';
-         $slots = $bsock->send_command($cmd, 2, null);
+         $slots = $bsock->send_command($cmd, 2);
          $result = \Zend\Json\Json::decode($slots, \Zend\Json\Json::TYPE_ARRAY);
          return $result['result']['contents'];
       }
@@ -289,7 +289,7 @@ class StorageModel
    {
       if(isset($bsock, $storage)) {
          $cmd = 'status storage="'.$storage;
-         $result = $bsock->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0);
          return $result;
       }
       else {

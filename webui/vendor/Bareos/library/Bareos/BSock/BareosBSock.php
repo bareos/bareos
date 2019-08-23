@@ -895,7 +895,7 @@ class BareosBSock implements BareosBSockInterface
     * @param $api
     * @return string
     */
-   public function send_command($cmd, $api=0, $jobid=null)
+   public function send_command($cmd, $api=0)
    {
       $result = "";
       $debug = "";
@@ -928,12 +928,6 @@ class BareosBSock implements BareosBSockInterface
 
       if (isset($this->config['catalog'])) {
          if(self::send("use catalog=" . $this->config['catalog'])) {
-            $debug = self::receive_message();
-         }
-      }
-
-      if($jobid != null) {
-         if(self::send(".bvfs_update jobid=$jobid")) {
             $debug = self::receive_message();
          }
       }
