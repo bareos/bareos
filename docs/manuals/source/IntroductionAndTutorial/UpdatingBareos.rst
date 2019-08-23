@@ -48,7 +48,7 @@ Since Bareos :sinceVersion:`14.2.0: dbconfig-common (Debian)` the Debian (and Ub
 
 .. warning::
 
-   When using the PostgreSQL backend and updating to Bareos < 14.2.3, it is necessary to manually grant database permissions, normally by using
+   When using the PostgreSQL backend and updating to Bareos < 14.2.3, it is necessary to manually grant database permissions, normally by using the following command:
 
 
 .. code-block:: shell-session
