@@ -79,7 +79,7 @@ This will be displayed as:
 Unix Commmand Prompt
 ~~~~~~~~~~~~~~~~~~~~
 
-Unix command prompts should look identical thoughout the documentation.
+Unix command prompts should look identical throughout the documentation.
 Normally, we assume a root console on Linux: ``root@host:~#``\ . Mind a space after the ``#``.
 
 If no specific user is required, we use the username **user**.
