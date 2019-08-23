@@ -258,7 +258,7 @@ $this->headTitle($title);
                      switch(row.jobstatus) {
                         case 'T':
                         case 'W':
-                           return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/index?action=rerun&jobid='; ?>'+row.jobid+'" title="<?php echo $this->translate("Rerun"); ?>" id="btn-1"><span class="glyphicon glyphicon-repeat"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/restore/?type=client&mergefilesets=1&mergejobs=1&client='+row.client+'&jobid='+row.jobid+'" title="<?php echo $this->translate("Restore"); ?>" id="btn-1"><span class="glyphicon glyphicon-import"></span></a>';
+                           return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/index?action=rerun&jobid='; ?>'+row.jobid+'" title="<?php echo $this->translate("Rerun"); ?>" id="btn-1"><span class="glyphicon glyphicon-repeat"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/restore/?mergefilesets=1&mergejobs=1&client='+row.client+'&jobid='+row.jobid+'" title="<?php echo $this->translate("Restore"); ?>" id="btn-1"><span class="glyphicon glyphicon-import"></span></a>';
                         case 'E':
                         case 'e':
                         case 'f':

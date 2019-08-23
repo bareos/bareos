@@ -93,7 +93,7 @@ class RestoreController extends AbstractActionController
       $errors = null;
       $result = null;
 
-      if($this->restore_params['type'] == "client" && $this->restore_params['jobid'] == null && $this->restore_params['client'] != null) {
+      if($this->restore_params['jobid'] == null && $this->restore_params['client'] != null) {
          try {
             $latestbackup = $this->getClientModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", 1);
             if(empty($latestbackup)) {
@@ -121,7 +121,7 @@ class RestoreController extends AbstractActionController
          }
       }
 
-      if($this->restore_params['type'] == "client" && $this->restore_params['client'] != null) {
+      if($this->restore_params['client'] != null) {
          try {
             $backups = $this->getClientModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", null);
          }
@@ -169,9 +169,6 @@ class RestoreController extends AbstractActionController
 
          if($form->isValid()) {
 
-            if($this->restore_params['type'] == "client") {
-
-               $type = $this->restore_params['type'];
                $jobid = $form->getInputFilter()->getValue('jobid');
                $client = $form->getInputFilter()->getValue('client');
                $restoreclient = $form->getInputFilter()->getValue('restoreclient');
@@ -183,13 +180,22 @@ class RestoreController extends AbstractActionController
                $replace = $form->getInputFilter()->getValue('replace');
 
                try {
-                  $result = $this->getRestoreModel()->restore($this->bsock, $type, $jobid, $client, $restoreclient, $restorejob, $where, $fileid, $dirid, $jobids, $replace);
+                 $result = $this->getRestoreModel()->restore(
+                   $this->bsock,
+                   $jobid,
+                   $client,
+                   $restoreclient,
+                   $restorejob,
+                   $where,
+                   $fileid,
+                   $dirid,
+                   $jobids,
+                   $replace
+                 );
                }
                catch(Exception $e) {
                   echo $e->getMessage();
                }
-
-            }
 
             $this->bsock->disconnect();
 
@@ -253,18 +259,8 @@ class RestoreController extends AbstractActionController
         $this->setRestoreParams();
         $errors = null;
         $result = null;
-/*
-        if ($this->restore_params['client'] == null) {
-            try {
-                $clients = $this->getClientModel()->getClients($this->bsock);
-                $client = array_pop($clients);
-                $this->restore_params['client'] = $client['name'];
-            } catch (Exception $e) {
-                echo $e->getMessage();
-            }
-        }
-*/
-        if ($this->restore_params['type'] == "client" && $this->restore_params['jobid'] == null && $this->restore_params['client'] != null) {
+
+        if ($this->restore_params['jobid'] == null && $this->restore_params['client'] != null) {
             try {
                 $latestbackup = $this->getClientModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", 1);
                 if (empty($latestbackup)) {
@@ -288,7 +284,7 @@ class RestoreController extends AbstractActionController
             }
         }
 
-        if ($this->restore_params['type'] == "client" && $this->restore_params['client'] != null) {
+        if ($this->restore_params['client'] != null) {
             try {
                 $backups = $this->getClientModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", null);
             } catch (Exception $e) {
@@ -300,7 +296,6 @@ class RestoreController extends AbstractActionController
         }
 
         try {
-            //$jobs = $this->getJobModel()->getJobs();
             $clients = $this->getClientModel()->getClients($this->bsock);
             $filesets = $this->getFilesetModel()->getDotFilesets($this->bsock);
             $restorejobs = $this->getJobModel()->getRestoreJobs($this->bsock);
@@ -315,7 +310,6 @@ class RestoreController extends AbstractActionController
         // Create the form
         $form = new RestoreForm(
             $this->restore_params,
-            //$jobs,
             $clients,
             $filesets,
             $restorejobs,
@@ -336,9 +330,6 @@ class RestoreController extends AbstractActionController
 
             if ($form->isValid()) {
 
-                if ($this->restore_params['type'] == "client") {
-
-                    $type = $this->restore_params['type'];
                     $jobid = $form->getInputFilter()->getValue('jobid');
                     $client = $form->getInputFilter()->getValue('client');
                     $restoreclient = $form->getInputFilter()->getValue('restoreclient');
@@ -350,12 +341,21 @@ class RestoreController extends AbstractActionController
                     $replace = $form->getInputFilter()->getValue('replace');
 
                     try {
-                        $result = $this->getRestoreModel()->restore($this->bsock, $type, $jobid, $client, $restoreclient, $restorejob, $where, $fileid, $dirid, $jobids, $replace);
+                      $result = $this->getRestoreModel()->restore(
+                        $this->bsock,
+                        $jobid,
+                        $client,
+                        $restoreclient,
+                        $restorejob,
+                        $where,
+                        $fileid,
+                        $dirid,
+                        $jobids,
+                        $replace
+                      );
                     } catch (Exception $e) {
                         echo $e->getMessage();
                     }
-
-                }
 
                 $this->bsock->disconnect();
 
@@ -404,7 +404,18 @@ class RestoreController extends AbstractActionController
       $this->RequestURIPlugin()->setRequestURI();
 
       if(!$this->SessionTimeoutPlugin()->isValid()) {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
+        return $this->redirect()->toRoute(
+          'auth',
+          array(
+            'action' => 'login'
+          ),
+          array(
+            'query' => array(
+              'req' => $this->RequestURIPlugin()->getRequestURI(),
+              'dird' => $_SESSION['bareos']['director']
+            )
+          )
+        );
       }
 
       $this->setRestoreParams();
@@ -568,13 +579,6 @@ class RestoreController extends AbstractActionController
     */
    private function setRestoreParams()
    {
-      if($this->params()->fromQuery('type')) {
-         $this->restore_params['type'] = $this->params()->fromQuery('type');
-      }
-      else {
-         $this->restore_params['type'] = 'client';
-      }
-
       if($this->params()->fromQuery('jobid')) {
          $this->restore_params['jobid'] = $this->params()->fromQuery('jobid');
       }

@@ -139,7 +139,6 @@ $this->headTitle($title);
    <div class="col-md-3">
 
    <?php
-      if($this->restore_params['type'] == "client") {
          echo '<p>'.$this->formRow($form->get('client')).'</p>';
          echo '<p>'.$this->formRow($form->get('backups')).'</p>';
          echo '<p>'.$this->formRow($form->get('mergefilesets')).'</p>';
@@ -155,14 +154,12 @@ $this->headTitle($title);
          echo $this->formRow($form->get('checked_files'));
          echo $this->formRow($form->get('checked_directories'));
          echo $this->formRow($form->get('jobids_hidden'));
-      }
    ?>
 
    </div>
 
    <div class="col-md-9">
       <?php
-         if($this->restore_params['type'] == "client") {
                echo '<strong>';
                echo $this->translate("File selection");
                echo '</strong>';
@@ -171,7 +168,6 @@ $this->headTitle($title);
                  <div id="filebrowser"></div>
              </div>
              <?php
-         }
       ?>
    </div>
 
@@ -288,8 +284,6 @@ $this->headTitle($title);
       var p = [];
       var params = [];
 
-      p['type'] = '<?php echo $this->restore_params['type']; ?>';
-
       if(k === 'client') {
          p['jobid'] = '';
       }
@@ -373,7 +367,7 @@ $this->headTitle($title);
             displayBvfsCacheUpdateInfo();
          },
          'data' :{
-            'url' : '<?php echo $this->basePath() . "/restore/filebrowser?type=" . $this->restore_params['type'] . "&jobid=" . $this->restore_params['jobid'] . "&mergefilesets=" . $this->restore_params['mergefilesets'] . "&mergejobs=" . $this->restore_params['mergejobs'] . "&limit=" . $this->restore_params['limit']; ?>',
+            'url' : '<?php echo $this->basePath() . "/restore/filebrowser?jobid=" . $this->restore_params['jobid'] . "&mergefilesets=" . $this->restore_params['mergefilesets'] . "&mergejobs=" . $this->restore_params['mergejobs'] . "&limit=" . $this->restore_params['limit']; ?>',
             'dataType' : 'json',
             'data' : function (node) {
                return { 'id' : node.id };

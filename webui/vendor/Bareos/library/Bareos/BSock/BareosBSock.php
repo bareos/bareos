@@ -946,9 +946,8 @@ class BareosBSock implements BareosBSockInterface
    }
 
    /**
+    * Send restore command
     *
-    *
-    * @param $type
     * @param $jobid
     * @param $client
     * @param $restoreclient
@@ -960,7 +959,7 @@ class BareosBSock implements BareosBSockInterface
     *
     * @return string
     */
-   public function restore($type=null, $jobid=null, $client=null, $restoreclient=null, $restorejob=null, $where=null, $fileid=null, $dirid=null, $jobids=null, $replace=null)
+   public function restore($jobid=null, $client=null, $restoreclient=null, $restorejob=null, $where=null, $fileid=null, $dirid=null, $jobids=null, $replace=null)
    {
       $result = "";
       $debug = "";
