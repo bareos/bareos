@@ -59,7 +59,7 @@ It should produce an email showing you the current state of the daemon (in this 
 Getting A Traceback On Other Systems
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-It should be possible to produce a similar traceback on systems other than Linux, either using :command:`gdb` or some other debugger.
+It should be possible to produce a similar backtrace on systems other than Linux, either using :command:`gdb` or some other debugger.
 :index:`Solaris <single: Platform; Solaris; Debug>`\  with :command:`dbx` loaded works quite fine. On other systems, you will need to modify the :command:`btraceback` program to invoke the correct debugger, and possibly correct the :file:`btraceback.gdb` script to have appropriate commands for your debugger.
 Please keep in mind that for any debugger to work, it will most likely need to run as root.
 
