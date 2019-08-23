@@ -623,7 +623,7 @@ Direct access to Volumes with with non-default block sizes
 
 To be able to read a volume written with an arbitrary block size, you need to set the :config:option:`sd/device/LabelBlockSize`\  (to be able to to read the label block) and the :config:option:`sd/device/MaximumBlockSize`\  (to be able to read the data blocks) setting in the device definition used by those tools to be able to open the medium.
 
-Example using :command:`bls` with a tape that was written with another blocksize than the ``DEFAULT_BLOCK_SIZE``\  (63k),
+Example using :command:`bls` with a tape that was written with a different blocksize than the ``DEFAULT_BLOCK_SIZE``\  (63k),
 but with the default label block size of 63k:
 
 .. code-block:: shell-session
