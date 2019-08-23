@@ -1572,7 +1572,7 @@ Now lets take a slight variation on the above and suppose you want to save all y
 .. code-block:: shell-session
    :caption: df
 
-   <command>df</command>
+   user@host:~$ df
    Filesystem      1k-blocks      Used Available Use% Mounted on
    /dev/hda5         5044156    439232   4348692  10% /
    /dev/hda1           62193      4935     54047   9% /boot

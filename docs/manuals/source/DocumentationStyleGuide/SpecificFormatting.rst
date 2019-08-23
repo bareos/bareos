@@ -79,8 +79,11 @@ This will be displayed as:
 Unix Commmand Prompt
 ~~~~~~~~~~~~~~~~~~~~
 
-Unix command prompts should look identical thoughout the documentation.
+Unix command prompts should look identical throughout the documentation.
 Normally, we assume a root console on Linux: ``root@host:~#``\ . Mind a space after the ``#``.
+
+If no specific user is required, we use the username **user**.
+The prompt of a no-root user looks like: ``user@host:~$``\ .
 
 The hostname **host** is used, if it is a generic host.
 If the command runs on a specific Bareos server,

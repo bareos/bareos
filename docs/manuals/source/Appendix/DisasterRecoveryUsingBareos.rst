@@ -113,7 +113,7 @@ If you have installed and configured ReaR on your system, type
 .. code-block:: shell-session
    :caption: Create Rescue Image
 
-   <command>rear</command><parameter> -v mkrescue</parameter>
+   root@host:~# rear -v mkrescue
 
 to create the rescue image. If you used the configuration example above, you will get a bootable ISO image which can be burned onto a CD.
 
@@ -135,7 +135,7 @@ In case, you want to recover your system, boot it using the generated ReaR recov
 .. code-block:: shell-session
    :caption: Restore your system using Rear and Bareos
 
-   <command>rear</command><parameter> recover</parameter>
+   root@host:~# rear recover
 
 ReaR will now use the most recent backup from Bareos to restore your system. When the restore job has finished, ReaR will start a new shell which you can use to verify if the system has been restored correctly. The restored system can be found under the :file:`/mnt/local` directory. When you are done< with the verification, type ’exit’ to leave the shell, getting back to the recovery process. Finally, you will be asked to confirm that everything is correct. Type ’yes’ to continue. After that,
 ReaR will restore your bootloader. Recovery is complete.
@@ -143,17 +143,12 @@ ReaR will restore your bootloader. Recovery is complete.
 
 
 
-
-
+.. _section-RestoreServer:
 
 Restoring a Bareos Server
 -------------------------
 
 :index:`\ <single: Restore; Bareos Server>`\  
-
-.. _section-RestoreServer:
-
-
 
 Above, we considered how to recover a client machine where a valid Bareos server was running on another machine. However, what happens if your server goes down and you no longer have a running Director, Catalog, or Storage daemon? There are several solutions:
 
@@ -186,7 +181,3 @@ The second suggestion is probably a much simpler solution, and one I have done m
 -  Start the database, and restart Bareos. Then use the Console restore command, restore all the files on the damaged machine, where you have loaded a Bareos File daemon using the Rescue disk.
 
 For additional details of restoring your database, please see the :ref:`section-RestoreCatalog` chapter.
-
-
-
-
