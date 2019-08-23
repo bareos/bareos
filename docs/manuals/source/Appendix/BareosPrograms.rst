@@ -561,7 +561,7 @@ Extracting Under Windows
 
 .. warning::
 
-   If you use :command:`bextract` under Windows, the ordering of the parameters is essential.
+   If you use :command:`bextract` under Windows, the order of the parameters is essential.
 
 
 To use :command:`bextract`, the Bareos Storage Daemon must be installed. As bextract works on tapes or disk volumes, these must be configured in the Storage Daemon configuration file, normally found at :file:`C:\\ProgrammData\\Bareos\\bareos-sd.conf`. However, it is not required to start the Bareos Storage Daemon. Normally, if the Storage Daemon would be able to run, :command:`bextract` would not be required.
