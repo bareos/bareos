@@ -39,7 +39,7 @@ Take a look into the :ref:`Release Notes <releasenotes>` to see which Bareos upd
 
 .. warning::
 
-   Especially the upgrade to Bareos >= 17.2.0 restructures the **File** database table. In larger installations this is very time consuming and temporarily doubles the amount of required database disk space.
+   Especially the upgrade to Bareos >= 17.2.0 restructures the **File** database table. In larger installations this is very time consuming (up to several hours or days) and temporarily doubles the amount of required database disk space.
 
 Debian based Linux Distributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
