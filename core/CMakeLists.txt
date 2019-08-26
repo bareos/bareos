@@ -124,7 +124,9 @@ IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
    #set(CMAKE_INCLUDE_PATH  "${OPENSSL_INCLUDE_DIR}:${CMAKE_INCLUDE_PATH}")
    set(CMAKE_INCLUDE_PATH  "/usr/local/opt/:${CMAKE_INCLUDE_PATH}")
    link_directories(/usr/local/lib)
-   link_libraries(intl)
+
+   include_directories(/usr/local/opt/gettext/include)
+   link_libraries(/usr/local/opt/gettext/lib/libintl.a iconv "-framework CoreFoundation")
    set(CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}-${BAREOS_FULL_VERSION}")
 ENDIF()
 
