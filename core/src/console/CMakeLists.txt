@@ -23,7 +23,7 @@ IF(HAVE_WIN32)
    LIST(APPEND BCONSSRCS ../win32/console/consoleres.rc)
 ENDIF()
 
-include_directories(${Readline_INCLUDE_DIR})
+include_directories(${Readline_INCLUDE_DIR} ${OPENSSL_INCLUDE_DIR})
 
 IF(HAVE_PAM)
    include_directories(${PAM_INCLUDE_DIRS})

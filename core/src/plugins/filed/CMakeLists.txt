@@ -38,6 +38,7 @@ ELSE()
    include_directories(/usr/include/python2.7)
 ENDIF()
 
+include_directories(${OPENSSL_INCLUDE_DIR})
 
 
 #set(DLLIBS dl)
