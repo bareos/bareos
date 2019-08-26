@@ -25,6 +25,7 @@ IF(HAVE_WIN32)
    LIST(APPEND BAREOSFIND_SRCS ../win32/findlib/win32.cc)
 ENDIF()
 
+include_directories(${OPENSSL_INCLUDE_DIR})
 
 add_library(bareosfind SHARED ${BAREOSFIND_SRCS})
 

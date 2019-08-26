@@ -99,9 +99,11 @@ set(mon_sd_password "mon_sd_password")
 set(python_plugin_module_src_dir ${CMAKE_SOURCE_DIR}/core/src/plugins)
 set(plugindirtmp ${PROJECT_BINARY_DIR}/plugindirtmp)
 set(rscripts ${PROJECT_BINARY_DIR}/scripts)
-get_target_property(dir_plugin_binary_path python-dir BINARY_DIR)
 get_target_property(fd_plugin_binary_path python-fd BINARY_DIR)
-get_target_property(sd_plugin_binary_path python-sd BINARY_DIR)
+if(NOT client-only)
+  get_target_property(dir_plugin_binary_path python-dir BINARY_DIR)
+  get_target_property(sd_plugin_binary_path python-sd BINARY_DIR)
+endif()
 
 set(sbindir ${PROJECT_BINARY_DIR}/sbin)
 
