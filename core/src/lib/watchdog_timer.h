@@ -40,11 +40,11 @@ class WatchdogTimer {
   JobControlRecord* jcr_ = nullptr;
   const TimerThread::TimerControlledItem* GetTimerControlledItem() const
   {
-    return wd_;
+    return timer_item;
   }
 
  protected:
-  TimerThread::TimerControlledItem* wd_ = nullptr;
+  TimerThread::TimerControlledItem* timer_item = nullptr;
 
   // deleted:
   WatchdogTimer() = delete;

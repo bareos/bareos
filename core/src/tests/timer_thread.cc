@@ -52,18 +52,18 @@ void TimerThreadTest::SetUp(bool one_shot)
   timer_callback_was_called = false;
   user_destructor_was_called = false;
 
-  timer_item = TimerThread::NewTimerControlledItem();
+  timer_item = TimerThread::NewControlledItem();
 
-  timer_item->one_shot = one_shot;
+  timer_item->single_shot = one_shot;
   timer_item->interval = std::chrono::seconds(1);
 
-  timer_item->callback = TimerCallback;
-  timer_item->destructor = TimerUserDestructorCallback;
+  timer_item->user_callback = TimerCallback;
+  timer_item->user_destructor = TimerUserDestructorCallback;
 }
 
 void TimerThreadTest::TearDown()
 {
-  if (stop_timer_thread_on_tear_down) { TimerThread::StopTimerThread(); }
+  if (stop_timer_thread_on_tear_down) { TimerThread::Stop(); }
 }
 
 void TimerThreadTest::TimerCallback(TimerThread::TimerControlledItem* t)
@@ -132,7 +132,7 @@ TEST_F(TimerThreadTest, user_destructor_stop)
   SetUp();
   EXPECT_TRUE(TimerThread::RegisterTimer(timer_item));
 
-  TimerThread::StopTimerThread();
+  TimerThread::Stop();
 
   EXPECT_TRUE(user_destructor_was_called);
 }

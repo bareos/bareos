@@ -59,7 +59,7 @@ TEST(watchdog, legacy_thread_timer)
   EXPECT_LT(timeout, 20);
   EXPECT_TRUE(signal_handler_called);
 
-  TimerThread::StopTimerThread();
+  TimerThread::Stop();
 }
 
 TEST(watchdog, base_class)

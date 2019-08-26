@@ -30,34 +30,34 @@ static const int debuglevel = 900;
 
 WatchdogTimer::WatchdogTimer(JobControlRecord* jcr)
 {
-  wd_ = TimerThread::NewTimerControlledItem();
-  wd_->data = this;
-  wd_->one_shot = true;
+  timer_item = TimerThread::NewControlledItem();
+  timer_item->user_data = this;
+  timer_item->single_shot = true;
   jcr_ = jcr;
 }
 
 WatchdogTimer::~WatchdogTimer()
 {
-  if (wd_) { UnregisterTimer(wd_); }
+  if (timer_item) { UnregisterTimer(timer_item); }
 }
 
 void WatchdogTimer::Start(std::chrono::seconds interval)
 {
-  wd_->interval = interval;
-  RegisterTimer(wd_);
+  timer_item->interval = interval;
+  RegisterTimer(timer_item);
 }
 
 void WatchdogTimer::Stop()
 {
-  if (wd_) {
-    UnregisterTimer(wd_);
-    wd_ = nullptr;
+  if (timer_item) {
+    UnregisterTimer(timer_item);
+    timer_item = nullptr;
   }
 }
 
 void BThreadWatchdog::Callback(TimerThread::TimerControlledItem* item)
 {
-  BThreadWatchdog* timer = reinterpret_cast<BThreadWatchdog*>(item->data);
+  BThreadWatchdog* timer = reinterpret_cast<BThreadWatchdog*>(item->user_data);
   if (!timer) { return; }
 
   if (timer->jcr_) {
@@ -71,7 +71,7 @@ void BThreadWatchdog::Callback(TimerThread::TimerControlledItem* item)
 void BThreadWatchdog::Init()
 {
   thread_id_ = pthread_self();
-  wd_->callback = Callback;
+  timer_item->user_callback = Callback;
 }
 
 BThreadWatchdog::BThreadWatchdog(JobControlRecord* jcr) : WatchdogTimer(jcr)

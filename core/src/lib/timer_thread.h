@@ -19,13 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, December MMII
- */
-/**
- * @file
- * Watchdog timer routines
- */
+
 #ifndef BAREOS_LIB_TIMER_THREAD_H_
 #define BAREOS_LIB_TIMER_THREAD_H_
 
@@ -36,24 +30,28 @@
 namespace TimerThread {
 
 struct TimerControlledItem {
-  bool one_shot = true;
+  bool single_shot = true;
   bool is_active = false;
   std::chrono::seconds interval;
-  void (*callback)(struct TimerControlledItem* t) = nullptr;
-  void (*destructor)(struct TimerControlledItem* t) = nullptr;
-  void* data = nullptr;
+  void (*user_callback)(TimerControlledItem* t) = nullptr;
+  void (*user_destructor)(TimerControlledItem* t) = nullptr;
+  void* user_data = nullptr;
 
   std::chrono::steady_clock::time_point scheduled_run_timepoint;
 };
 
-int StartTimerThread(void);
-void StopTimerThread(void);
-TimerControlledItem* NewTimerControlledItem(void);
+bool Start(void);
+void Stop(void);
+
+TimerControlledItem* NewControlledItem(void);
+
 bool RegisterTimer(TimerControlledItem* t);
 bool UnregisterTimer(TimerControlledItem* t);
 bool IsRegisteredTimer(const TimerControlledItem* t);
+
 bool CurrentThreadIsTimerThread();
 void SetTimerIdleSleepTime(std::chrono::seconds time);
+
 std::time_t GetCalenderTimeOnLastTimerThreadRun();
 
 }  // namespace TimerThread
