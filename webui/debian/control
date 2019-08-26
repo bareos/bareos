@@ -5,9 +5,9 @@ Maintainer: Bareos Packager <packager@bareos.com>
 Build-Depends: debhelper (>= 7.0.50~),
   apache2-dev | apache2-prefork-dev, apache2
 Standards-Version: 3.9.1
-Homepage: https://github.com/bareos/bareos-webui
+Homepage: https://github.com/bareos/bareos
 Vcs-Git: git://github.com/bareos/bareos-webui.git
-Vcs-Browser: https://github.com/bareos/bareos-webui.git
+Vcs-Browser: https://github.com/bareos/bareos.git
 
 Package: bareos-webui
 Architecture: all
