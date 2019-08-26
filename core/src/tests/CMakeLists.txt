@@ -365,3 +365,25 @@ target_link_libraries(test_thread_specific_data
 
 gtest_discover_tests(test_thread_specific_data TEST_PREFIX gtest:)
 
+####### test_timer_thread  #####################################
+add_executable(test_timer_thread timer_thread.cc)
+
+target_link_libraries(test_timer_thread
+   bareos
+   ${GTEST_LIBRARIES}
+   ${GTEST_MAIN_LIBRARIES}
+)
+
+gtest_discover_tests(test_timer_thread TEST_PREFIX gtest:)
+
+####### test_watchdog_timer ##########################################
+add_executable(test_watchdog_timer watchdog_timer.cc)
+
+target_link_libraries(test_watchdog_timer
+   bareos
+   ${GTEST_LIBRARIES}
+   ${GTEST_MAIN_LIBRARIES}
+)
+
+gtest_discover_tests(test_watchdog_timer TEST_PREFIX gtest:)
+
