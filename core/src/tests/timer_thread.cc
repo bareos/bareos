@@ -55,7 +55,7 @@ void TimerThreadTest::SetUp(bool one_shot)
   timer_item = TimerThread::NewControlledItem();
 
   timer_item->single_shot = one_shot;
-  timer_item->interval = std::chrono::seconds(1);
+  timer_item->interval = std::chrono::milliseconds(100);
 
   timer_item->user_callback = TimerCallback;
   timer_item->user_destructor = TimerUserDestructorCallback;
@@ -82,28 +82,19 @@ TEST_F(TimerThreadTest, timeout)
 {
   SetUp();
 
-  time_t calender_time_before_timer_run =
-      TimerThread::GetCalenderTimeOnLastTimerThreadRun();
-
   EXPECT_TRUE(RegisterTimer(timer_item));
   EXPECT_FALSE(TimerThread::CurrentThreadIsTimerThread());
 
   timer_callback_was_called = false;
   timer_callback_thread_is_timer = false;
 
-  std::this_thread::sleep_for(std::chrono::milliseconds(900));
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
   EXPECT_FALSE(timer_callback_was_called);
   EXPECT_FALSE(timer_callback_thread_is_timer);
 
   std::this_thread::sleep_for(std::chrono::milliseconds(150));
   EXPECT_TRUE(timer_callback_was_called);
   EXPECT_TRUE(timer_callback_thread_is_timer);
-
-  time_t calender_time_after_timer_run =
-      TimerThread::GetCalenderTimeOnLastTimerThreadRun();
-
-  EXPECT_GT(calender_time_after_timer_run - calender_time_before_timer_run, 0);
-  EXPECT_LT(calender_time_after_timer_run - calender_time_before_timer_run, 3);
 }
 
 TEST_F(TimerThreadTest, timeout_one_shot)
@@ -116,7 +107,7 @@ TEST_F(TimerThreadTest, timeout_one_shot)
   timer_callback_was_called = false;
   timer_callback_thread_is_timer = false;
 
-  std::this_thread::sleep_for(std::chrono::milliseconds(900));
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
   EXPECT_FALSE(timer_callback_was_called);
   EXPECT_FALSE(timer_callback_thread_is_timer);
 

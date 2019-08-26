@@ -41,7 +41,7 @@ WatchdogTimer::~WatchdogTimer()
   if (timer_item) { UnregisterTimer(timer_item); }
 }
 
-void WatchdogTimer::Start(std::chrono::seconds interval)
+void WatchdogTimer::Start(std::chrono::milliseconds interval)
 {
   timer_item->interval = interval;
   RegisterTimer(timer_item);
@@ -80,7 +80,7 @@ BThreadWatchdog::BThreadWatchdog(JobControlRecord* jcr) : WatchdogTimer(jcr)
   Init();
 }
 
-BThreadWatchdog::BThreadWatchdog(std::chrono::seconds interval,
+BThreadWatchdog::BThreadWatchdog(std::chrono::milliseconds interval,
                                  JobControlRecord* jcr)
     : WatchdogTimer(jcr)
 {

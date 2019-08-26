@@ -34,7 +34,7 @@ class WatchdogTimer {
   WatchdogTimer(JobControlRecord* jcr = nullptr);
   ~WatchdogTimer();
 
-  void Start(std::chrono::seconds interval);
+  void Start(std::chrono::milliseconds interval);
   void Stop();
 
   JobControlRecord* jcr_ = nullptr;
@@ -57,7 +57,7 @@ class WatchdogTimer {
 class BThreadWatchdog : public WatchdogTimer {
  public:
   BThreadWatchdog(JobControlRecord* jcr);
-  BThreadWatchdog(std::chrono::seconds waittime, JobControlRecord* jcr);
+  BThreadWatchdog(std::chrono::milliseconds waittime, JobControlRecord* jcr);
   ~BThreadWatchdog() = default;
 
   pthread_t thread_id_;

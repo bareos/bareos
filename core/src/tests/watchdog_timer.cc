@@ -72,13 +72,13 @@ TEST(watchdog, base_class)
   EXPECT_FALSE(IsRegisteredTimer(wd));
 }
 
-TEST(watchdog, timer_thread)
+TEST(watchdog, thread_watchdog)
 {
   InstallSignalHandler();
 
   const TimerThread::TimerControlledItem* wd;
 
-  BThreadWatchdog watchdog(std::chrono::seconds(1), nullptr);
+  BThreadWatchdog watchdog(std::chrono::milliseconds(100), nullptr);
   wd = watchdog.GetTimerControlledItem();
 
   signal_handler_called = false;
@@ -92,7 +92,7 @@ TEST(watchdog, timer_thread)
   EXPECT_TRUE(signal_handler_called);
 }
 
-TEST(watchdog, separated_start_command)
+TEST(watchdog, thread_watchdog_separated_start_command)
 {
   InstallSignalHandler();
 
@@ -104,7 +104,7 @@ TEST(watchdog, separated_start_command)
   signal_handler_called = false;
   int timeout = 0;
 
-  watchdog.Start(std::chrono::seconds(1));
+  watchdog.Start(std::chrono::milliseconds(100));
 
   while (!signal_handler_called && ++timeout < 20) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));

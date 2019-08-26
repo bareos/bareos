@@ -32,7 +32,7 @@ namespace TimerThread {
 struct TimerControlledItem {
   bool single_shot = true;
   bool is_active = false;
-  std::chrono::seconds interval;
+  std::chrono::milliseconds interval;
   void (*user_callback)(TimerControlledItem* t) = nullptr;
   void (*user_destructor)(TimerControlledItem* t) = nullptr;
   void* user_data = nullptr;
