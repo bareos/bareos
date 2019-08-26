@@ -46,6 +46,7 @@ IF(HAVE_WIN32)
    LIST(APPEND FDSRCS ../win32/filed/filedres.rc)
 ENDIF()
 
+include_directories(${OPENSSL_INCLUDE_DIR})
 
 
 add_executable(bareos-fd ${FDSRCS})
