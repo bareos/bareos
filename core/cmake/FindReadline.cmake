@@ -10,10 +10,14 @@ find_path(Readline_INCLUDE_DIR
 )
 
 # Search for library
-find_library(Readline_LIBRARY
-    NAMES readline
-    HINTS ${Readline_ROOT_DIR}/lib
-)
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  set(Readline_LIBRARY /usr/local/opt/readline/lib/libreadline.a ncurses)
+else()
+  find_library(Readline_LIBRARY
+      NAMES readline
+      HINTS ${Readline_ROOT_DIR}/lib
+  )
+endif()
 # Conditionally set READLINE_FOUND value
 if(Readline_INCLUDE_DIR AND Readline_LIBRARY
   AND Ncurses_LIBRARY)
