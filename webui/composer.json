@@ -1,5 +1,5 @@
 {
-   "name": "bareos-webui",
+   "name": "bareos/bareos-webui",
    "description": "A Web-Frontend to manage Bareos",
    "license": "AGPL3",
    "keywords": [
