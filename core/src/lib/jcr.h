@@ -36,7 +36,6 @@ JobControlRecord* jcr_walk_start();
 JobControlRecord* jcr_walk_next(JobControlRecord* prev_jcr);
 void JcrWalkEnd(JobControlRecord* jcr);
 int JobCount();
-uint32_t GetJobidFromTid(pthread_t tid);
 void InitJcrChain();
 void CleanupJcrChain();
 

@@ -173,26 +173,6 @@ void DeviceControlRecord::dbg_mUnlock(const char* file, int line)
   return;
 }
 
-/**
- * Debug Device locks  N.B.
- *
- */
-void Device::dbg_Lock(const char* file, int line)
-{
-  Dmsg3(sd_debuglevel, "Lock from %s:%d precnt=%d\n", file, line, count_);
-  /* Note, this *really* should be protected by a mutex, but
-   *  since it is only debug code we don't worry too much.
-   */
-  if (count_ > 0 && pthread_equal(pid_, pthread_self())) {
-    Dmsg4(sd_debuglevel,
-          "Possible DEADLOCK!! lock held by JobId=%u from %s:%d count_=%d\n",
-          GetJobidFromTid(pid_), file, line, count_);
-  }
-  pthread_mutex_lock(&mutex_);
-  pid_ = pthread_self();
-  count_++;
-}
-
 void Device::dbg_Unlock(const char* file, int line)
 {
   count_--;

@@ -556,40 +556,6 @@ std::shared_ptr<JobControlRecord> GetJcrBySession(uint32_t SessionId,
   });
 }
 
-uint32_t GetJobIdByThreadId(pthread_t tid)
-{
-  std::shared_ptr<JobControlRecord> jcr(
-      GetJcr([tid](const JobControlRecord* jcr) {
-        return pthread_equal(jcr->my_thread_id, tid);
-      }));
-
-  return jcr ? jcr->JobId : 0;
-}
-
-/*
- * Given a thread id, find the JobId
- *
- * Returns: JobId on success
- *          0 on failure
- */
-uint32_t GetJobidFromTid(pthread_t tid)
-{
-  JobControlRecord* jcr = nullptr;
-  bool found = false;
-
-  foreach_jcr (jcr) {
-    if (pthread_equal(jcr->my_thread_id, tid)) {
-      found = true;
-      break;
-    }
-  }
-  endeach_jcr(jcr);
-
-  if (found) { return jcr->JobId; }
-
-  return 0;
-}
-
 /*
  * Given a SessionId and SessionTime, find the JobControlRecord
  *

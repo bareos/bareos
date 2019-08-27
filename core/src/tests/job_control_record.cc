@@ -32,13 +32,9 @@ static void callback(JobControlRecord* jcr)
 TEST(job_control_record, constructor_destructor)
 {
   std::shared_ptr<JobControlRecord> jcr(std::make_shared<JobControlRecord>());
-  jcr->JobId = 888;
   InitJcr(jcr, callback);
 
-  // my_thread_id is set in the constructor
-  EXPECT_EQ(GetJobIdByThreadId(pthread_self()), 888);
-  EXPECT_NE(GetJobIdByThreadId(pthread_self() - 1), 888);
-
+  callback_called_from_destructor = false;
   jcr.reset();
   EXPECT_TRUE(callback_called_from_destructor);
 }
