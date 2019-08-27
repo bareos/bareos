@@ -36,7 +36,6 @@
 #include "queue.h"
 #include "serial.h"
 #include "lex.h"
-#include "workq.h"
 #ifndef BAREOS_LIB_LIB_H_
 #include "fnmatch.h"
 #endif

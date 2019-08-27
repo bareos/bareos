@@ -24,6 +24,7 @@
 #include <atomic>
 
 class ConfigurationParser;
+class ThreadList;
 
 enum class BnetServerState
 {
@@ -41,11 +42,12 @@ void BnetThreadServerTcp(
     dlist* addr_list,
     int max_clients,
     alist* sockfds,
-    workq_t* client_wq,
+    ThreadList* thread_list,
     bool nokeepalive,
     void* HandleConnectionRequest(ConfigurationParser* config, void* bsock),
     ConfigurationParser* config,
-    std::atomic<BnetServerState>* const server_state = nullptr);
+    std::atomic<BnetServerState>* const server_state = nullptr,
+    void* UserAgentShutdownCallback(void* bsock) = nullptr);
 void BnetStopAndWaitForThreadServerTcp(pthread_t tid);
 
 #endif  // BAREOS_LIB_BNET_SEVER_TCP_H_

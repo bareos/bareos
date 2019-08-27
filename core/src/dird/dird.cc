@@ -304,9 +304,7 @@ int main(int argc, char* argv[])
         break;
 
       case 'z': /* switch network debugging on */
-        if (!BnetDump::EvaluateCommandLineArgs(optarg)) {
-          exit(1);
-        }
+        if (!BnetDump::EvaluateCommandLineArgs(optarg)) { exit(1); }
         break;
 
       case '?':
@@ -484,6 +482,7 @@ static
   debug_level = 0; /* turn off debug */
 
   DestroyConfigureUsageString();
+  StopSocketServer();
   StopStatisticsThread();
   StopWatchdog();
   DbSqlPoolDestroy();
@@ -506,7 +505,6 @@ static
     my_config = NULL;
   }
 
-  StopSocketServer();
   TermMsg(); /* Terminate message handler */
   CleanupCrypto();
   CloseMemoryPool(); /* release free memory in pool */

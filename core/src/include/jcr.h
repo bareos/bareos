@@ -497,7 +497,6 @@ class JobControlRecord {
   pthread_cond_t start_wait;    /**< Wait for FD to start Job */
   pthread_cond_t term_wait;     /**< Wait for job termination */
   pthread_cond_t nextrun_ready; /**< Wait for job next run to become ready */
-  workq_ele_t* work_item;       /**< Work queue item if scheduled */
   BareosSocket* ua;             /**< User agent */
   Resources res;                /**< Resources assigned */
   TREE_ROOT* restore_tree_root; /**< Selected files to restore (some protocols
