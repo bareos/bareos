@@ -134,7 +134,6 @@ void* HandleUserAgentClientRequest(BareosSocket* user_agent_socket)
   CloseDb(ua);
   FreeUaContext(ua);
   FreeJcr(jcr);
-  user_agent_socket->close();
   delete user_agent_socket;
 
   return NULL;

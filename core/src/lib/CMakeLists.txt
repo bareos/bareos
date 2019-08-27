@@ -30,8 +30,8 @@ set(INCLUDE_FILES ../include/baconfig.h ../include/bareos.h
    mntent_cache.h parse_conf.h
    plugins.h qualified_resource_name_type_converter.h queue.h rblist.h
    runscript.h rwlock.h scsi_crypto.h scsi_lli.h scsi_tapealert.h
-   serial.h sha1.h status.h tls.h tls_conf.h tree.h try_tls_handshake_as_a_server.h
-   var.h watchdog.h workq.h)
+   serial.h sha1.h status.h thread_list.h tls.h tls_conf.h tree.h try_tls_handshake_as_a_server.h
+   var.h watchdog.h)
 
 INSTALL(FILES ${INCLUDE_FILES} DESTINATION ${includedir})
 ENDIF()
@@ -58,10 +58,10 @@ set (BAREOS_SRCS  address_conf.cc alist.cc attr.cc attribs.cc backtrace.cc base6
    mntent_cache.cc output_formatter.cc passphrase.cc path_list.cc plugins.cc
    bpoll.cc  priv.cc
    queue.cc rblist.cc runscript.cc rwlock.cc scan.cc scsi_crypto.cc  scsi_lli.cc
-   serial.cc sha1.cc signal.cc tls.cc
+   serial.cc sha1.cc signal.cc thread_list.cc tls.cc
    tls_conf.cc tls_openssl.cc
    tls_openssl_crl.cc tls_openssl_private.cc tree.cc  try_tls_handshake_as_a_server.cc
-   compression.cc util.cc var.cc watchdog.cc workq.cc)
+   compression.cc util.cc var.cc watchdog.cc)
 
 IF(HAVE_WIN32)
    LIST(APPEND BAREOS_SRCS

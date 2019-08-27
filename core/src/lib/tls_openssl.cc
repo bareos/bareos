@@ -326,7 +326,7 @@ void TlsOpenSsl::TlsBsockShutdown(BareosSocket* bsock)
 
   if (err_shutdown == 0) {
     /* Complete the shutdown with the second call */
-    tid = StartBsockTimer(bsock, 60 * 2);
+    tid = StartBsockTimer(bsock, 2);
     err_shutdown = SSL_shutdown(d_->openssl_);
     StopBsockTimer(tid);
   }
@@ -339,7 +339,7 @@ void TlsOpenSsl::TlsBsockShutdown(BareosSocket* bsock)
    * interested in we clear the queue so nobody else gets to read an error
    * that may have occured here.
    */
-  ERR_clear_error(); // empties the current thread's openssl error queue
+  ERR_clear_error();  // empties the current thread's openssl error queue
 
   SSL_free(d_->openssl_);
   d_->openssl_ = nullptr;
