@@ -64,7 +64,7 @@ TEST(watchdog, legacy_thread_timer)
 
 TEST(watchdog, base_class)
 {
-  const TimerThread::TimerControlledItem* wd;
+  const TimerThread::Timer* wd;
   {
     WatchdogTimer watchdog(nullptr);
     wd = watchdog.GetTimerControlledItem();
@@ -76,7 +76,7 @@ TEST(watchdog, thread_watchdog)
 {
   InstallSignalHandler();
 
-  const TimerThread::TimerControlledItem* wd;
+  const TimerThread::Timer* wd;
 
   BThreadWatchdog watchdog(std::chrono::milliseconds(100), nullptr);
   wd = watchdog.GetTimerControlledItem();
@@ -96,7 +96,7 @@ TEST(watchdog, thread_watchdog_separated_start_command)
 {
   InstallSignalHandler();
 
-  const TimerThread::TimerControlledItem* wd;
+  const TimerThread::Timer* wd;
 
   BThreadWatchdog watchdog(nullptr);
   wd = watchdog.GetTimerControlledItem();
@@ -117,7 +117,7 @@ TEST(watchdog, thread_watchdog_separated_start_command)
 
 TEST(watchdog, timer_stop)
 {
-  const TimerThread::TimerControlledItem* wd;
+  const TimerThread::Timer* wd;
 
   BThreadWatchdog watchdog(std::chrono::seconds(1), nullptr);
   wd = watchdog.GetTimerControlledItem();

@@ -27,15 +27,15 @@
 
 class TimerThreadTest : public ::testing::Test {
  public:
-  static void TimerCallback(TimerThread::TimerControlledItem* t);
-  static void TimerUserDestructorCallback(TimerThread::TimerControlledItem* t);
+  static void TimerCallback(TimerThread::Timer* t);
+  static void TimerUserDestructorCallback(TimerThread::Timer* t);
 
   static bool timer_callback_was_called;
   static bool user_destructor_was_called;
   static bool timer_callback_thread_is_timer;
 
   bool stop_timer_thread_on_tear_down = true;
-  TimerThread::TimerControlledItem* timer_item = nullptr;
+  TimerThread::Timer* timer_item = nullptr;
 
   void SetUp(bool one_shot = false);
 
@@ -52,7 +52,7 @@ void TimerThreadTest::SetUp(bool one_shot)
   timer_callback_was_called = false;
   user_destructor_was_called = false;
 
-  timer_item = TimerThread::NewControlledItem();
+  timer_item = TimerThread::NewTimer();
 
   timer_item->single_shot = one_shot;
   timer_item->interval = std::chrono::milliseconds(100);
@@ -66,14 +66,14 @@ void TimerThreadTest::TearDown()
   if (stop_timer_thread_on_tear_down) { TimerThread::Stop(); }
 }
 
-void TimerThreadTest::TimerCallback(TimerThread::TimerControlledItem* t)
+void TimerThreadTest::TimerCallback(TimerThread::Timer* t)
 {
   timer_callback_was_called = true;
   timer_callback_thread_is_timer = TimerThread::CurrentThreadIsTimerThread();
 }
 
 void TimerThreadTest::TimerUserDestructorCallback(
-    TimerThread::TimerControlledItem* t)
+    TimerThread::Timer* t)
 {
   user_destructor_was_called = true;
 }

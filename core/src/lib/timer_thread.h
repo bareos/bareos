@@ -29,12 +29,12 @@
 
 namespace TimerThread {
 
-struct TimerControlledItem {
+struct Timer {
   bool single_shot = true;
   bool is_active = false;
   std::chrono::milliseconds interval;
-  void (*user_callback)(TimerControlledItem* t) = nullptr;
-  void (*user_destructor)(TimerControlledItem* t) = nullptr;
+  void (*user_callback)(Timer* t) = nullptr;
+  void (*user_destructor)(Timer* t) = nullptr;
   void* user_data = nullptr;
 
   std::chrono::steady_clock::time_point scheduled_run_timepoint;
@@ -43,11 +43,11 @@ struct TimerControlledItem {
 bool Start(void);
 void Stop(void);
 
-TimerControlledItem* NewControlledItem(void);
+Timer* NewTimer(void);
 
-bool RegisterTimer(TimerControlledItem* t);
-bool UnregisterTimer(TimerControlledItem* t);
-bool IsRegisteredTimer(const TimerControlledItem* t);
+bool RegisterTimer(Timer* t);
+bool UnregisterTimer(Timer* t);
+bool IsRegisteredTimer(const Timer* t);
 
 bool CurrentThreadIsTimerThread();
 void SetTimerIdleSleepTime(std::chrono::seconds time);

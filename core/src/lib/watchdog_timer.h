@@ -23,7 +23,7 @@
 #include <chrono>
 
 namespace TimerThread {
-struct TimerControlledItem;
+struct Timer;
 }
 
 class JobControlRecord;
@@ -38,13 +38,13 @@ class WatchdogTimer {
   void Stop();
 
   JobControlRecord* jcr_ = nullptr;
-  const TimerThread::TimerControlledItem* GetTimerControlledItem() const
+  const TimerThread::Timer* GetTimerControlledItem() const
   {
     return timer_item;
   }
 
  protected:
-  TimerThread::TimerControlledItem* timer_item = nullptr;
+  TimerThread::Timer* timer_item = nullptr;
 
   // deleted:
   WatchdogTimer() = delete;
@@ -61,7 +61,7 @@ class BThreadWatchdog : public WatchdogTimer {
   ~BThreadWatchdog() = default;
 
   pthread_t thread_id_;
-  static void Callback(TimerThread::TimerControlledItem* timer);
+  static void Callback(TimerThread::Timer* timer);
 
  private:
   void Init();

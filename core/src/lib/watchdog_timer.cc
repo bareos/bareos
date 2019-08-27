@@ -30,7 +30,7 @@ static const int debuglevel = 900;
 
 WatchdogTimer::WatchdogTimer(JobControlRecord* jcr)
 {
-  timer_item = TimerThread::NewControlledItem();
+  timer_item = TimerThread::NewTimer();
   timer_item->user_data = this;
   timer_item->single_shot = true;
   jcr_ = jcr;
@@ -55,7 +55,7 @@ void WatchdogTimer::Stop()
   }
 }
 
-void BThreadWatchdog::Callback(TimerThread::TimerControlledItem* item)
+void BThreadWatchdog::Callback(TimerThread::Timer* item)
 {
   BThreadWatchdog* timer = reinterpret_cast<BThreadWatchdog*>(item->user_data);
   if (!timer) { return; }

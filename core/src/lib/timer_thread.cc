@@ -62,7 +62,7 @@ static std::atomic<bool> quit_timer_thread(false);
 static std::unique_ptr<std::thread> timer_thread;
 static std::mutex controlled_items_list_mutex;
 
-static std::vector<TimerThread::TimerControlledItem*> controlled_items_list;
+static std::vector<TimerThread::Timer*> controlled_items_list;
 
 bool Start(void)
 {
@@ -102,9 +102,9 @@ void Stop(void)
   timer_thread->join();
 }
 
-TimerThread::TimerControlledItem* NewControlledItem(void)
+TimerThread::Timer* NewTimer(void)
 {
-  TimerThread::TimerControlledItem* t = new TimerThread::TimerControlledItem;
+  TimerThread::Timer* t = new TimerThread::Timer;
 
   std::lock_guard<std::mutex> l(controlled_items_list_mutex);
   controlled_items_list.push_back(t);
@@ -114,11 +114,11 @@ TimerThread::TimerControlledItem* NewControlledItem(void)
   return t;
 }
 
-bool RegisterTimer(TimerThread::TimerControlledItem* t)
+bool RegisterTimer(TimerThread::Timer* t)
 {
   assert(t->user_callback != nullptr);
 
-  TimerThread::TimerControlledItem wd_copy;
+  TimerThread::Timer wd_copy;
 
   {
     std::lock_guard<std::mutex> l(controlled_items_list_mutex);
@@ -142,7 +142,7 @@ bool RegisterTimer(TimerThread::TimerControlledItem* t)
   return true;
 }
 
-bool UnregisterTimer(TimerThread::TimerControlledItem* t)
+bool UnregisterTimer(TimerThread::Timer* t)
 {
   std::lock_guard<std::mutex> l(controlled_items_list_mutex);
 
@@ -161,7 +161,7 @@ bool UnregisterTimer(TimerThread::TimerControlledItem* t)
   }
 }
 
-bool IsRegisteredTimer(const TimerThread::TimerControlledItem* t)
+bool IsRegisteredTimer(const TimerThread::Timer* t)
 {
   std::lock_guard<std::mutex> l(controlled_items_list_mutex);
 
@@ -190,13 +190,13 @@ static void SleepUntil(std::chrono::steady_clock::time_point next_timer_run)
   wakeup_event_occured = false;
 }
 
-static void LogMessage(TimerThread::TimerControlledItem* p)
+static void LogMessage(TimerThread::Timer* p)
 {
   Dmsg2(3400, "Timer callback p=0x%p scheduled_run_timepoint=%d\n", p,
         p->scheduled_run_timepoint);
 }
 
-static bool RunOneItem(TimerThread::TimerControlledItem* p,
+static bool RunOneItem(TimerThread::Timer* p,
                        std::chrono::steady_clock::time_point& next_timer_run)
 {
   std::chrono::time_point<std::chrono::steady_clock> last_timer_run_timepoint =
@@ -225,7 +225,7 @@ static void RunAllItemsAndRemoveOneShotItems(
 
   auto new_end_of_vector = std::remove_if(  // one_shot items will be removed
       controlled_items_list.begin(), controlled_items_list.end(),
-      [&next_timer_run](TimerThread::TimerControlledItem* p) {
+      [&next_timer_run](TimerThread::Timer* p) {
         calendar_time_on_last_timer_run = time(nullptr);
 
         return RunOneItem(p, next_timer_run);
