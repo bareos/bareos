@@ -4,7 +4,7 @@
  *
  * bareos-webui - Bareos Web-Frontend
  *
- * @link      https://github.com/bareos/bareos-webui for the canonical source repository
+ * @link      https://github.com/bareos/bareos for the canonical source repository
  * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
@@ -56,7 +56,7 @@ class JobModel
          $offset = 0;
          $retval = array();
          while (true) {
-            $result = $bsock->send_command($cmd . ' limit=' . $limit . ' offset=' . $offset, 2, null);
+            $result = $bsock->send_command($cmd . ' limit=' . $limit . ' offset=' . $offset, 2);
             if (preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
                $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
                return $error['result']['error'];
@@ -114,7 +114,7 @@ class JobModel
          $offset = 0;
          $retval = array();
          while (true) {
-            $result = $bsock->send_command($cmd . ' limit=' . $limit . ' offset=' . $offset, 2, null);
+            $result = $bsock->send_command($cmd . ' limit=' . $limit . ' offset=' . $offset, 2);
             if (preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
                $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
                return $error['result']['error'];
@@ -148,7 +148,7 @@ class JobModel
    {
       if(isset($bsock, $id)) {
          $cmd = 'llist jobid='.$id.'';
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $job = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          if ( empty($job['result']) ) {
             return false; // No matching records found
@@ -177,7 +177,7 @@ class JobModel
          $offset = 0;
          $retval = array();
          while (true) {
-            $result = $bsock->send_command($cmd . ' limit=' . $limit . ' offset=' . $offset, 2, null);
+            $result = $bsock->send_command($cmd . ' limit=' . $limit . ' offset=' . $offset, 2);
             if(preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
                $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
                return $error['result']['error'];
@@ -211,7 +211,7 @@ class JobModel
    public function getJobMedia(&$bsock=null, $jobid=null)
    {
       $cmd = 'llist jobmedia jobid='.$jobid;
-      $result = $bsock->send_command($cmd, 2, null);
+      $result = $bsock->send_command($cmd, 2);
       if(preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
          //return false;
          $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
@@ -240,7 +240,7 @@ class JobModel
          else {
             $cmd = '.jobs type="'.$type.'"';
          }
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $jobs['result']['jobs'];
       }
@@ -260,7 +260,7 @@ class JobModel
    {
       if(isset($bsock)) {
          $cmd = 'llist jobs last current enabled';
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $jobs['result']['jobs'];
       }
@@ -280,7 +280,7 @@ class JobModel
    {
       if(isset($bsock)) {
          $cmd = 'list jobtotals';
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $jobtotals = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return array(0 => $jobtotals['result']['jobtotals']);
       }
@@ -310,7 +310,7 @@ class JobModel
 
             // GET THE JOB STATS
             $cmd = 'list jobstatistics jobid=' . $job['jobid'];
-            $result = $bsock->send_command($cmd, 2, null);
+            $result = $bsock->send_command($cmd, 2);
             $tmp = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
 
             // JOBID, JOBNAME AND CLIENT
@@ -355,7 +355,7 @@ class JobModel
                $level = $jobstats[$i]['level'];
                $cmd = 'list jobs jobname=' . $job['name'] . ' client=' . $job['client'] . ' jobstatus=T joblevel=' . $level . ' last';
 
-               $result = $bsock->send_command($cmd, 2, null);
+               $result = $bsock->send_command($cmd, 2);
                $tmp = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
                $jobstats[$i]['lastbackupsize'] = $tmp['result']['jobs'][0]['jobbytes'];
                if($jobstats[$i]['lastbackupsize'] > 0) {
@@ -402,7 +402,7 @@ class JobModel
    {
       if(isset($bsock)) {
          $cmd = '.jobs type=R';
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $restorejobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $restorejobs['result']['jobs'];
       }
@@ -423,7 +423,7 @@ class JobModel
    {
       if(isset($bsock, $name)) {
          $cmd = 'run job="'.$name.'" yes';
-         $result = $bsock->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0);
          return $result;
       }
       else {
@@ -443,7 +443,7 @@ class JobModel
    {
       if(isset($bsock, $name)) {
          $cmd = '.defaults job="'.$name.'"';
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $jobdefaults = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $jobdefaults['result']['defaults'];
       }
@@ -497,7 +497,7 @@ class JobModel
             $cmd .= ' when="' . $when . '"';
          }
          $cmd .= ' yes';
-         $result = $bsock->send_command($cmd, 0 , null);
+         $result = $bsock->send_command($cmd, 0);
          return 'Command send: '. $cmd . ' | Director message: ' . $result;
       }
       else {
@@ -517,7 +517,7 @@ class JobModel
    {
       if(isset($bsock, $id)) {
          $cmd = 'rerun jobid='.$id.' yes';
-         $result = $bsock->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0);
          return $result;
       }
       else {
@@ -537,7 +537,7 @@ class JobModel
    {
       if(isset($bsock, $id)) {
          $cmd = 'cancel jobid='.$id.' yes';
-         $result = $bsock->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0);
          return $result;
       }
       else {
@@ -557,7 +557,7 @@ class JobModel
    {
       if(isset($bsock, $name)) {
          $cmd = 'enable job="'.$name.'" yes';
-         $result = $bsock->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0);
          return $result;
       }
       else {
@@ -577,7 +577,7 @@ class JobModel
    {
       if(isset($bsock, $name)) {
          $cmd = 'disable job="'.$name.'" yes';
-         $result = $bsock->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0);
          return $result;
       }
       else {

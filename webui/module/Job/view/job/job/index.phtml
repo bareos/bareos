@@ -4,7 +4,7 @@
  *
  * bareos-webui - Bareos Web-Frontend
  *
- * @link      https://github.com/bareos/bareos-webui for the canonical source repository
+ * @link      https://github.com/bareos/bareos for the canonical source repository
  * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
@@ -259,9 +259,9 @@ $this->headTitle($title);
                      case 'W':
                         switch(row.type) {
                            case 'B':
-                              return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath();?>/job/details/'+row.jobid+'" title="<?php echo $this->translate("View Job Details"); ?>" id="btn-0"><span class="glyphicon glyphicon-search"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/index?action=rerun&jobid='; ?>'+row.jobid+'" title="<?php echo $this->translate("Rerun"); ?>" id="btn-1"><span class="glyphicon glyphicon-repeat"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/restore/?type=client&mergefilesets=1&mergejobs=1&client='+row.client+'&jobid='+row.jobid+'" title="<?php echo $this->translate("Restore"); ?>" id="btn-1"><span class="glyphicon glyphicon-import"></span></a>';
+                              return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath();?>/job/details/'+row.jobid+'" title="<?php echo $this->translate("View Job Details"); ?>" id="btn-0"><span class="glyphicon glyphicon-search"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/index?action=rerun&jobid='; ?>'+row.jobid+'" title="<?php echo $this->translate("Rerun"); ?>" id="btn-1"><span class="glyphicon glyphicon-repeat"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/restore/?mergefilesets=1&mergejobs=1&client='+row.client+'&jobid='+row.jobid+'" title="<?php echo $this->translate("Restore"); ?>" id="btn-1"><span class="glyphicon glyphicon-import"></span></a>';
                            case 'C':
-                              return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath();?>/job/details/'+row.jobid+'" title="<?php echo $this->translate("View Job Details"); ?>" id="btn-0"><span class="glyphicon glyphicon-search"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/restore/?type=client&mergefilesets=1&mergejobs=1&client='+row.client+'&jobid='+row.jobid+'" title="<?php echo $this->translate("Restore"); ?>" id="btn-1"><span class="glyphicon glyphicon-import"></span></a>';
+                              return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath();?>/job/details/'+row.jobid+'" title="<?php echo $this->translate("View Job Details"); ?>" id="btn-0"><span class="glyphicon glyphicon-search"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/restore/?mergefilesets=1&mergejobs=1&client='+row.client+'&jobid='+row.jobid+'" title="<?php echo $this->translate("Restore"); ?>" id="btn-1"><span class="glyphicon glyphicon-import"></span></a>';
                      }
                      case 'E':
                      case 'e':

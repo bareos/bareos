@@ -4,7 +4,7 @@
  *
  * bareos-webui - Bareos Web-Frontend
  *
- * @link      https://github.com/bareos/bareos-webui for the canonical source repository
+ * @link      https://github.com/bareos/bareos for the canonical source repository
  * @copyright Copyright (c) 2014 Bareos GmbH & Co. KG
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *

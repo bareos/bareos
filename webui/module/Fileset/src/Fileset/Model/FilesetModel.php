@@ -4,7 +4,7 @@
  *
  * bareos-webui - Bareos Web-Frontend
  *
- * @link      https://github.com/bareos/bareos-webui for the canonical source repository
+ * @link      https://github.com/bareos/bareos for the canonical source repository
  * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
@@ -39,7 +39,7 @@ class FilesetModel
    {
       if(isset($bsock)) {
          $cmd = 'list filesets';
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $filesets = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $filesets['result']['filesets'];
       }
@@ -60,7 +60,7 @@ class FilesetModel
    {
       if(isset($bsock, $id)) {
          $cmd = 'llist fileset filesetid='.$id.'';
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $fileset = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $fileset['result']['filesets'];
       }
@@ -80,7 +80,7 @@ class FilesetModel
    {
       if(isset($bsock)) {
          $cmd = '.filesets';
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $filesets = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $filesets['result']['filesets'];
       }

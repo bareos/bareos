@@ -4,8 +4,8 @@
 *
 * bareos-webui - Bareos Web-Frontend
 *
-* @link      https://github.com/bareos/bareos-webui for the canonical source repository
-* @copyright Copyright (c) 2013-2015 dass-IT GmbH (http://www.dass-it.de/)
+* @link      https://github.com/bareos/bareos for the canonical source repository
+* @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
 * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
 *
 * This program is free software: you can redistribute it and/or modify
@@ -32,58 +32,23 @@ class RestoreForm extends Form
 {
 
    protected $restore_params;
-   //protected $jobs;
    protected $clients;
    protected $filesets;
    protected $restorejobs;
    protected $jobids;
    protected $backups;
 
-   public function __construct($restore_params=null, /*$jobs=null,*/ $clients=null, $filesets=null, $restorejobs=null, $jobids=null, $backups=null)
+   public function __construct($restore_params=null, $clients=null, $filesets=null, $restorejobs=null, $jobids=null, $backups=null)
    {
 
       parent::__construct('restore');
 
       $this->restore_params = $restore_params;
-      //$this->jobs = $jobs;
       $this->clients = $clients;
       $this->filesets = $filesets;
       $this->restorejobs = $restorejobs;
       $this->jobids = $jobids;
       $this->backups = $backups;
-
-/*
-      // Job
-      if(isset($restore_params['jobid'])) {
-         $this->add(array(
-            'name' => 'jobid',
-            'type' => 'select',
-            'options' => array(
-               'label' => _('Job'),
-               'empty_option' => _('Please choose a job'),
-               'value_options' => $this->getJobList()
-            ),
-            'attributes' => array(
-               'id' => 'jobid',
-               'value' => $restore_params['jobid']
-            )
-         ));
-      }
-      else {
-         $this->add(array(
-            'name' => 'jobid',
-            'type' => 'select',
-            'options' => array(
-               'label' => _('Job'),
-               'empty_option' => _('Please choose a job'),
-               'value_options' => $this->getJobList()
-            ),
-            'attributes' => array(
-               'id' => 'jobid'
-            )
-         ));
-      }
-*/
 
       // Backup jobs
       if(isset($restore_params['jobid'])) {
@@ -92,7 +57,7 @@ class RestoreForm extends Form
             'type' => 'select',
             'options' => array(
                'label' => _('Backup jobs'),
-               //'empty_option' => _('Please choose a backup'),
+               'empty_option' => _('Please choose a backup'),
                'value_options' => $this->getBackupList()
             ),
             'attributes' => array(
@@ -109,13 +74,14 @@ class RestoreForm extends Form
             'type' => 'select',
             'options' => array(
                'label' => _('Backups'),
-               //'empty_option' => _('Please choose a backup'),
+               'empty_option' => _('Please choose a backup'),
                'value_options' => $this->getBackupList()
             ),
             'attributes' => array(
                'class' => 'form-control selectpicker show-tick',
                'data-live-search' => 'true',
-               'id' => 'jobid'
+               'id' => 'jobid',
+               'disabled' => true
             )
          ));
       }
@@ -128,7 +94,7 @@ class RestoreForm extends Form
                'type' => 'select',
                'options' => array(
                   'label' => _('Client'),
-                  //'empty_option' => _('Please choose a client'),
+                  'empty_option' => _('Please choose a client'),
                   'value_options' => $this->getClientList()
                ),
                'attributes' => array(
@@ -145,7 +111,7 @@ class RestoreForm extends Form
                'type' => 'select',
                'options' => array(
                   'label' => _('Client'),
-                  //'empty_option' => _('Please choose a client'),
+                  'empty_option' => _('Please choose a client'),
                   'value_options' => $this->getClientList()
                ),
                'attributes' => array(
@@ -163,14 +129,14 @@ class RestoreForm extends Form
             'type' => 'select',
             'options' => array(
                'label' => _('Client'),
-               //'empty_option' => _('Please choose a client'),
+               'empty_option' => _('Please choose a client'),
                'value_options' => $this->getClientList()
             ),
             'attributes' => array(
                'class' => 'form-control selectpicker show-tick',
                'data-live-search' => 'true',
                'id' => 'client',
-               'value' => @array_pop($this->getClientList())
+               'value' => ''
             )
          ));
       }
@@ -182,7 +148,7 @@ class RestoreForm extends Form
             'type' => 'select',
             'options' => array(
                'label' => _('Restore to client'),
-               //'empty_option' => _('Please choose a client'),
+               'empty_option' => _('Please choose a client'),
                'value_options' => $this->getClientList()
             ),
             'attributes' => array(
@@ -199,7 +165,7 @@ class RestoreForm extends Form
             'type' => 'select',
             'options' => array(
                'label' => _('Restore to client'),
-               //'empty_option' => _('Please choose a client'),
+               'empty_option' => _('Please choose a client'),
                'value_options' => $this->getClientList()
             ),
             'attributes' => array(
@@ -216,13 +182,14 @@ class RestoreForm extends Form
             'type' => 'select',
             'options' => array(
                'label' => _('Restore to (another) client'),
-               //'empty_option' => _('Please choose a client'),
+               'empty_option' => _('Please choose a client'),
                'value_options' => $this->getClientList()
             ),
             'attributes' => array(
                'class' => 'form-control selectpicker show-tick',
                'data-live-search' => 'true',
-               'id' => 'restoreclient'
+               'id' => 'restoreclient',
+               'disabled' => true
             )
          ));
       }
@@ -277,13 +244,13 @@ class RestoreForm extends Form
          ));
       }
       else {
-         if(count($this->getRestoreJobList()) == 1) {
+         if(!empty($this->restore_params['client']) && count($this->getRestoreJobList()) == 1) {
             $this->add(array(
                'name' => 'restorejob',
                'type' => 'select',
                'options' => array(
                   'label' => _('Restore job'),
-                  //'empty_option' => _('Please choose a restore job'),
+                  'empty_option' => _('Please choose a restore job'),
                   'value_options' => $this->getRestoreJobList()
                ),
                'attributes' => array(
@@ -300,20 +267,21 @@ class RestoreForm extends Form
                'type' => 'select',
                'options' => array(
                   'label' => _('Restore job'),
-                  //'empty_option' => _('Please choose a restore job'),
+                  'empty_option' => _('Please choose a restore job'),
                   'value_options' => $this->getRestoreJobList()
                ),
                'attributes' => array(
                   'class' => 'form-control selectpicker show-tick',
                   'data-live-search' => 'true',
-                  'id' => 'restorejob'
+                  'id' => 'restorejob',
+                  'disabled' => true
                )
             ));
          }
       }
 
       // Merge filesets
-      if(isset($restore_params['mergefilesets'])) {
+      if(isset($this->restore_params['client']) && isset($restore_params['mergefilesets'])) {
          $this->add(array(
             'name' => 'mergefilesets',
             'type' => 'select',
@@ -346,14 +314,15 @@ class RestoreForm extends Form
             'attributes' => array(
                   'class' => 'form-control selectpicker show-tick',
                   'id' => 'mergefilesets',
-                  'value' => '0'
+                  'value' => '0',
+                  'disabled' => true
                )
             )
          );
       }
 
       // Merge jobs
-      if(isset($restore_params['mergejobs'])) {
+      if(isset($this->restore_params['client']) && isset($restore_params['mergejobs'])) {
          $this->add(array(
             'name' => 'mergejobs',
             'type' => 'select',
@@ -386,156 +355,93 @@ class RestoreForm extends Form
             'attributes' => array(
                   'class' => 'form-control selectpicker show-tick',
                   'id' => 'mergejobs',
-                  'value' => '0'
+                  'value' => '0',
+                  'disabled' => true
                )
             )
          );
       }
 
       // Replace
-      $this->add(array(
-         'name' => 'replace',
-         'type' => 'select',
-         'options' => array(
-            'label' => _('Replace files on client'),
-            'value_options' => array(
-                  'always' => _('always'),
-                  'never' => _('never'),
-                  'ifolder' => _('if file being restored is older than existing file'),
-                  'ifnewer' => _('if file being restored is newer than existing file')
+      if(isset($restore_params['client'])) {
+        $this->add(array(
+           'name' => 'replace',
+           'type' => 'select',
+           'options' => array(
+              'label' => _('Replace files on client'),
+              'value_options' => array(
+                    'always' => _('always'),
+                    'never' => _('never'),
+                    'ifolder' => _('if file being restored is older than existing file'),
+                    'ifnewer' => _('if file being restored is newer than existing file')
+                 )
+              ),
+           'attributes' => array(
+                 'class' => 'form-control selectpicker show-tick',
+                 'id' => 'replace',
+                 'value' => 'never'
+              )
+           )
+        );
+      }
+      else {
+        $this->add(array(
+            'name' => 'replace',
+            'type' => 'select',
+            'options' => array(
+               'label' => _('Replace files on client'),
+               'value_options' => array(
+                     'always' => _('always'),
+                     'never' => _('never'),
+                     'ifolder' => _('if file being restored is older than existing file'),
+                     'ifnewer' => _('if file being restored is newer than existing file')
+                  )
+               ),
+            'attributes' => array(
+                  'class' => 'form-control selectpicker show-tick',
+                  'id' => 'replace',
+                  'value' => 'never',
+                  'disabled' => true
                )
-            ),
-         'attributes' => array(
-               'class' => 'form-control selectpicker show-tick',
-               'id' => 'replace',
-               'value' => 'never'
             )
-         )
-      );
+         );
+      }
 
       // Where
-      $this->add(array(
-         'name' => 'where',
-         'type' => 'text',
-         'options' => array(
-            'label' => _('Restore location on client')
-            ),
-         'attributes' => array(
-            'class' => 'form-control selectpicker show-tick',
-            'value' => '/tmp/bareos-restores/',
-            'id' => 'where',
-            'size' => '30',
-            'placeholder' => _('e.g. / or /tmp/bareos-restores/')
-            )
-         )
-      );
-
-      // Path
-      if(isset($restore_params['path'])) {
-         $this->add(array(
-            'name' => 'path',
-            'type' => 'text',
-            'options' => array(
-               'label' => _('Path')
-               ),
-            'attributes' => array(
-               'class' => 'form-control',
-               'id' => 'path',
-               'size' => '15',
-               'placeholder' => '/',
-               'value' => $restore_params['path']
-               )
-            )
-         );
+      if(isset($this->restore_params['client'])) {
+        $this->add(array(
+           'name' => 'where',
+           'type' => 'text',
+           'options' => array(
+              'label' => _('Restore location on client')
+              ),
+           'attributes' => array(
+              'class' => 'form-control selectpicker show-tick',
+              'value' => '/tmp/bareos-restores/',
+              'id' => 'where',
+              'size' => '30',
+              'placeholder' => _('e.g. / or /tmp/bareos-restores/')
+              )
+           )
+        );
       }
       else {
-          $this->add(array(
-            'name' => 'path',
-            'type' => 'text',
-            'options' => array(
-               'label' => _('Path')
-               ),
-            'attributes' => array(
-               'class' => 'form-control',
-               'id' => 'path',
-               'size' => '15',
-               'placeholder' => '/',
-               'value' => ''
-               )
-            )
-         );
-      }
-
-      // Limit
-      if(isset($restore_params['limit'])) {
-         $this->add(array(
-            'name' => 'limit',
-            'type' => 'text',
-            'options' => array(
-               'label' => _('Limit')
-               ),
-            'attributes' => array(
-               'class' => 'form-control',
-               'id' => 'limit',
-               'size' => '15',
-               'placeholder' => 2000,
-               'value' => $restore_params['limit']
-               )
-            )
-         );
-      }
-      else {
-          $this->add(array(
-            'name' => 'limit',
-            'type' => 'text',
-            'options' => array(
-               'label' => _('Limit')
-               ),
-            'attributes' => array(
-               'class' => 'form-control',
-               'id' => 'limit',
-               'size' => '15',
-               'placeholder' => 2000,
-               'value' => 2000
-               )
-            )
-         );
-      }
-
-      // Offset
-      if(isset($restore_params['offset'])) {
-         $this->add(array(
-            'name' => 'offset',
-            'type' => 'text',
-            'options' => array(
-               'label' => _('Offset')
-               ),
-            'attributes' => array(
-               'class' => 'form-control',
-               'id' => 'offset',
-               'size' => '15',
-               'placeholder' => 0,
-               'value' => $restore_params['offset']
-               )
-            )
-         );
-      }
-      else {
-         $this->add(array(
-            'name' => 'offset',
-            'type' => 'text',
-            'options' => array(
-               'label' => _('Offset')
-               ),
-            'attributes' => array(
-               'class' => 'form-control',
-               'id' => 'offset',
-               'size' => '15',
-               'placeholder' => 0,
-               'value' => 0
-               )
-            )
-         );
+        $this->add(array(
+           'name' => 'where',
+           'type' => 'text',
+           'options' => array(
+              'label' => _('Restore location on client')
+              ),
+           'attributes' => array(
+              'class' => 'form-control selectpicker show-tick',
+              'value' => '/tmp/bareos-restores/',
+              'id' => 'where',
+              'size' => '30',
+              'placeholder' => _('e.g. / or /tmp/bareos-restores/'),
+              'disabled' => true
+              )
+           )
+        );
       }
 
       // JobIds hidden
@@ -587,14 +493,35 @@ class RestoreForm extends Form
       );
 
       // Submit button
-      $this->add(array(
-         'name' => 'submit',
-         'type' => 'submit',
-         'attributes' => array(
-            'value' => _('Restore'),
-            'id' => 'submit'
-         )
-      ));
+      if(isset($this->restore_params['client'])) {
+        $this->add(array(
+          'name' => 'form-submit',
+          'type' => 'button',
+          'options' => array(
+            'label' => _('Restore')
+          ),
+          'attributes' => array(
+            //'value' => _('Restore'),
+            'id' => 'btn-form-submit',
+            'class' => 'btn btn-primary'
+          )
+        ));
+      }
+      else {
+        $this->add(array(
+           'name' => 'form-submit',
+           'type' => 'button',
+           'options' => array(
+             'label' => _('Restore')
+           ),
+           'attributes' => array(
+              //'value' => _('Restore'),
+              'id' => 'btn-form-submit',
+              'class' => 'btn btn-primary',
+              'disabled' => true
+           )
+        ));
+      }
 
    }
 

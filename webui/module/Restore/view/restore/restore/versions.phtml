@@ -4,7 +4,7 @@
  *
  * bareos-webui - Bareos Web-Frontend
  *
- * @link      https://github.com/bareos/bareos-webui for the canonical source repository
+ * @link      https://github.com/bareos/bareos for the canonical source repository
  * @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
@@ -137,7 +137,6 @@ $this->headTitle($title);
 
          <div class="col-md-3">
             <?php
-               if ($this->restore_params['type'] == "client") {
                   echo '<p>' . $this->formRow($form->get('client')) . '</p>';
                   echo '<p>' . $this->formRow($form->get('backups')) . '</p>';
                   echo '<p>' . $this->formRow($form->get('mergefilesets')) . '</p>';
@@ -146,23 +145,19 @@ $this->headTitle($title);
                   echo '<p>' . $this->formRow($form->get('restorejob')) . '</p>';
                   echo '<p>' . $this->formRow($form->get('replace')) . '</p>';
                   echo '<p>' . $this->formRow($form->get('where')) . '</p>';
-                  echo '<p><button id="btn-form-submit" class="btn btn-primary" type="button">Restore</button></p>';
+
+                  echo '<p>'.$this->formRow($form->get('form-submit')).'</p>';
+
                   // Hidden fields
                   echo $this->formRow($form->get('checked_files'));
                   echo $this->formRow($form->get('checked_directories'));
                   echo $this->formRow($form->get('jobids_hidden'));
-               } elseif ($this->restore_params['type'] == "job") {
-                  echo $this->formRow($form->get('jobid')->setAttribute('class', 'form-control'));
-                  echo $this->formRow($form->get('restoreclient')->setAttribute('class', 'form-control'));
-                  echo $this->formRow($form->get('restorejob')->setAttribute('class', 'form-control'));
-                  echo $this->formRow($form->get('where')->setAttribute('class', 'form-control'));
-               }
+
             ?>
          </div>
 
          <div class="col-md-5">
             <?php
-               if ($this->restore_params['type'] == "client") {
                   echo '<strong>';
                   echo $this->translate("File selection");
                   echo '</strong>';
@@ -170,9 +165,6 @@ $this->headTitle($title);
                <div class="panel panel-default">
                <div id="filebrowser"></div>
                </div>
-            <?php
-               }
-            ?>
          </div>
 
          <div class="col-md-4">
@@ -223,8 +215,6 @@ $this->headTitle($title);
 <?php
 echo $this->headScript()->prependFile($this->basePath() . '/js/jstreegrid.js');
 echo $this->headScript()->prependFile($this->basePath() . '/js/jstree.min.js');
-echo $this->headScript()->prependFile($this->basePath() . '/js/moment.min.js');
-echo $this->headScript()->prependFile($this->basePath() . '/js/moment-with-locales.min.js');
 echo $this->headLink()->prependStylesheet($this->basePath() . '/css/jstree.min.css');
 ?>
 
@@ -421,8 +411,6 @@ function updateRestoreParams(k, v) {
    var p = [];
    var params = [];
 
-   p['type'] = '<?php echo $this->restore_params['type']; ?>';
-
    if (k === 'client') {
       p['jobid'] = '';
    } else {
@@ -502,7 +490,7 @@ $('#filebrowser').jstree({
       },
       'multiple': false,
       'data': {
-         'url': '<?php echo $this->basePath() . "/restore/filebrowser?type=" . $this->restore_params['type'] . "&jobid=" . $this->restore_params['jobid'] . "&mergefilesets=" . $this->restore_params['mergefilesets'] . "&mergejobs=" . $this->restore_params['mergejobs'] . "&limit=" . $this->restore_params['limit']; ?>',
+         'url': '<?php echo $this->basePath() . "/restore/filebrowser?jobid=" . $this->restore_params['jobid'] . "&mergefilesets=" . $this->restore_params['mergefilesets'] . "&mergejobs=" . $this->restore_params['mergejobs'] . "&limit=" . $this->restore_params['limit']; ?>',
          'dataType': 'json',
          'data': function (node) {
             return {

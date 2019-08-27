@@ -4,7 +4,7 @@
  *
  * bareos-webui - Bareos Web-Frontend
  *
- * @link      https://github.com/bareos/bareos-webui for the canonical source repository
+ * @link      https://github.com/bareos/bareos for the canonical source repository
  * @copyright Copyright (c) 2014-2019 Bareos GmbH & Co. KG
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
@@ -895,7 +895,7 @@ class BareosBSock implements BareosBSockInterface
     * @param $api
     * @return string
     */
-   public function send_command($cmd, $api=0, $jobid=null)
+   public function send_command($cmd, $api=0)
    {
       $result = "";
       $debug = "";
@@ -932,12 +932,6 @@ class BareosBSock implements BareosBSockInterface
          }
       }
 
-      if($jobid != null) {
-         if(self::send(".bvfs_update jobid=$jobid")) {
-            $debug = self::receive_message();
-         }
-      }
-
       if(self::send($cmd)) {
          $result = self::receive_message();
       }
@@ -946,9 +940,8 @@ class BareosBSock implements BareosBSockInterface
    }
 
    /**
+    * Send restore command
     *
-    *
-    * @param $type
     * @param $jobid
     * @param $client
     * @param $restoreclient
@@ -960,17 +953,13 @@ class BareosBSock implements BareosBSockInterface
     *
     * @return string
     */
-   public function restore($type=null, $jobid=null, $client=null, $restoreclient=null, $restorejob=null, $where=null, $fileid=null, $dirid=null, $jobids=null, $replace=null)
+   public function restore($jobid=null, $client=null, $restoreclient=null, $restorejob=null, $where=null, $fileid=null, $dirid=null, $jobids=null, $replace=null)
    {
       $result = "";
       $debug = "";
       $rnd = rand(1000,1000000);
 
       if(self::send(".api 0")) {
-         $debug = self::receive_message();
-      }
-
-      if(self::send(".bvfs_update jobid=$jobids")) {
          $debug = self::receive_message();
       }
 

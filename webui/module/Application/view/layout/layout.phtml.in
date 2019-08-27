@@ -4,7 +4,7 @@
  *
  * bareos-webui - Bareos Web-Frontend
  *
- * @link      https://github.com/bareos/bareos-webui for the canonical source repository
+ * @link      https://github.com/bareos/bareos for the canonical source repository
  * @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  * @author    Frank Bergkemper
@@ -57,9 +57,9 @@ include 'version.php';
    ->prependFile($this->basePath() . '/js/bootstrap-select.min.js')
    ->prependFile($this->basePath() . '/js/bootstrap-datetimepicker.min.js')
    ->prependFile($this->basePath() . '/js/bootstrap.min.js')
-   ->prependFile($this->basePath() . '/js/moment.min.js')
-   ->prependFile($this->basePath() . '/js/excanvas.min.js', 'text/jaavscript')
+   ->prependFile($this->basePath() . '/js/excanvas.min.js', 'text/javascript')
    ->prependFile($this->basePath() . '/js/jquery.min.js', 'text/javascript')
+   ->prependFile($this->basePath() . '/js/moment.min.js')
    ->prependFile($this->basePath() . '/js/respond.min.js', 'text/javascript', array('conditional' => 'lt IE 9'))
    ->prependFile($this->basePath() . '/js/html5shiv.js', 'text/javascript', array('conditional' => 'lt IE 9'));
 ?>

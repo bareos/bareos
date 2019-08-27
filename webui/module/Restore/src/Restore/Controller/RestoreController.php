@@ -4,7 +4,7 @@
  *
  * bareos-webui - Bareos Web-Frontend
  *
- * @link      https://github.com/bareos/bareos-webui for the canonical source repository
+ * @link      https://github.com/bareos/bareos for the canonical source repository
  * @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
@@ -52,6 +52,7 @@ class RestoreController extends AbstractActionController
    private $files = null;
 
    private $required_commands = array(
+      "list",
       "llist",
       ".filesets",
       ".jobs",
@@ -61,7 +62,8 @@ class RestoreController extends AbstractActionController
       ".bvfs_lsdirs",
       ".bvfs_lsfiles",
       ".bvfs_restore",
-      ".bvfs_cleanup"
+      ".bvfs_cleanup",
+      ".bvfs_versions"
    );
 
    /**
@@ -91,18 +93,7 @@ class RestoreController extends AbstractActionController
       $errors = null;
       $result = null;
 
-      if($this->restore_params['client'] == null) {
-         try {
-            $clients = $this->getClientModel()->getClients($this->bsock);
-            $client = array_pop($clients);
-            $this->restore_params['client'] = $client['name'];
-         }
-         catch(Exception $e) {
-            echo $e->getMessage();
-         }
-      }
-
-      if($this->restore_params['type'] == "client" && $this->restore_params['jobid'] == null) {
+      if($this->restore_params['jobid'] == null && $this->restore_params['client'] != null) {
          try {
             $latestbackup = $this->getClientModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", 1);
             if(empty($latestbackup)) {
@@ -130,7 +121,7 @@ class RestoreController extends AbstractActionController
          }
       }
 
-      if($this->restore_params['type'] == "client") {
+      if($this->restore_params['client'] != null) {
          try {
             $backups = $this->getClientModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", null);
          }
@@ -138,9 +129,11 @@ class RestoreController extends AbstractActionController
             echo $e->getMessage();
          }
       }
+      else {
+        $backups = null;
+      }
 
       try {
-         //$jobs = $this->getJobModel()->getJobs();
          $clients = $this->getClientModel()->getClients($this->bsock);
          $filesets = $this->getFilesetModel()->getDotFilesets($this->bsock);
          $restorejobs = $this->getJobModel()->getRestoreJobs($this->bsock);
@@ -149,14 +142,13 @@ class RestoreController extends AbstractActionController
          echo $e->getMessage();
       }
 
-      if(empty($backups)) {
+      if(isset($this->restore_params['client']) && empty($backups)) {
          $errors = 'No backups of client <strong>'.$this->restore_params['client'].'</strong> found.';
       }
 
       // Create the form
       $form = new RestoreForm(
          $this->restore_params,
-         //$jobs,
          $clients,
          $filesets,
          $restorejobs,
@@ -177,9 +169,6 @@ class RestoreController extends AbstractActionController
 
          if($form->isValid()) {
 
-            if($this->restore_params['type'] == "client") {
-
-               $type = $this->restore_params['type'];
                $jobid = $form->getInputFilter()->getValue('jobid');
                $client = $form->getInputFilter()->getValue('client');
                $restoreclient = $form->getInputFilter()->getValue('restoreclient');
@@ -191,13 +180,22 @@ class RestoreController extends AbstractActionController
                $replace = $form->getInputFilter()->getValue('replace');
 
                try {
-                  $result = $this->getRestoreModel()->restore($this->bsock, $type, $jobid, $client, $restoreclient, $restorejob, $where, $fileid, $dirid, $jobids, $replace);
+                 $result = $this->getRestoreModel()->restore(
+                   $this->bsock,
+                   $jobid,
+                   $client,
+                   $restoreclient,
+                   $restorejob,
+                   $where,
+                   $fileid,
+                   $dirid,
+                   $jobids,
+                   $replace
+                 );
                }
                catch(Exception $e) {
                   echo $e->getMessage();
                }
-
-            }
 
             $this->bsock->disconnect();
 
@@ -262,17 +260,7 @@ class RestoreController extends AbstractActionController
         $errors = null;
         $result = null;
 
-        if ($this->restore_params['client'] == null) {
-            try {
-                $clients = $this->getClientModel()->getClients($this->bsock);
-                $client = array_pop($clients);
-                $this->restore_params['client'] = $client['name'];
-            } catch (Exception $e) {
-                echo $e->getMessage();
-            }
-        }
-
-        if ($this->restore_params['type'] == "client" && $this->restore_params['jobid'] == null) {
+        if ($this->restore_params['jobid'] == null && $this->restore_params['client'] != null) {
             try {
                 $latestbackup = $this->getClientModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", 1);
                 if (empty($latestbackup)) {
@@ -296,16 +284,18 @@ class RestoreController extends AbstractActionController
             }
         }
 
-        if ($this->restore_params['type'] == "client") {
+        if ($this->restore_params['client'] != null) {
             try {
                 $backups = $this->getClientModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", null);
             } catch (Exception $e) {
                 echo $e->getMessage();
             }
         }
+        else {
+          $backups = null;
+        }
 
         try {
-            //$jobs = $this->getJobModel()->getJobs();
             $clients = $this->getClientModel()->getClients($this->bsock);
             $filesets = $this->getFilesetModel()->getDotFilesets($this->bsock);
             $restorejobs = $this->getJobModel()->getRestoreJobs($this->bsock);
@@ -313,14 +303,13 @@ class RestoreController extends AbstractActionController
             echo $e->getMessage();
         }
 
-        if (empty($backups)) {
+        if(isset($this->restore_params['client']) && empty($backups)) {
             $errors = 'No backups of client <strong>' . $this->restore_params['client'] . '</strong> found.';
         }
 
         // Create the form
         $form = new RestoreForm(
             $this->restore_params,
-            //$jobs,
             $clients,
             $filesets,
             $restorejobs,
@@ -341,9 +330,6 @@ class RestoreController extends AbstractActionController
 
             if ($form->isValid()) {
 
-                if ($this->restore_params['type'] == "client") {
-
-                    $type = $this->restore_params['type'];
                     $jobid = $form->getInputFilter()->getValue('jobid');
                     $client = $form->getInputFilter()->getValue('client');
                     $restoreclient = $form->getInputFilter()->getValue('restoreclient');
@@ -355,12 +341,21 @@ class RestoreController extends AbstractActionController
                     $replace = $form->getInputFilter()->getValue('replace');
 
                     try {
-                        $result = $this->getRestoreModel()->restore($this->bsock, $type, $jobid, $client, $restoreclient, $restorejob, $where, $fileid, $dirid, $jobids, $replace);
+                      $result = $this->getRestoreModel()->restore(
+                        $this->bsock,
+                        $jobid,
+                        $client,
+                        $restoreclient,
+                        $restorejob,
+                        $where,
+                        $fileid,
+                        $dirid,
+                        $jobids,
+                        $replace
+                      );
                     } catch (Exception $e) {
                         echo $e->getMessage();
                     }
-
-                }
 
                 $this->bsock->disconnect();
 
@@ -401,7 +396,6 @@ class RestoreController extends AbstractActionController
 
     }
 
-
     /**
     * Delivers a subtree as Json for JStree
     */
@@ -410,7 +404,18 @@ class RestoreController extends AbstractActionController
       $this->RequestURIPlugin()->setRequestURI();
 
       if(!$this->SessionTimeoutPlugin()->isValid()) {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
+        return $this->redirect()->toRoute(
+          'auth',
+          array(
+            'action' => 'login'
+          ),
+          array(
+            'query' => array(
+              'req' => $this->RequestURIPlugin()->getRequestURI(),
+              'dird' => $_SESSION['bareos']['director']
+            )
+          )
+        );
       }
 
       $this->setRestoreParams();
@@ -429,24 +434,15 @@ class RestoreController extends AbstractActionController
       $this->directories = null;
 
       try {
-         if($this->restore_params['type'] == "client") {
-            if(empty($this->restore_params['jobid'])) {
-               $this->restore_params['jobids'] = null;
-            }
-            else {
-               $jobids = $this->getRestoreModel()->getJobIds($this->bsock, $this->restore_params['jobid'],$this->restore_params['mergefilesets'],$this->restore_params['mergejobs']);
-               $this->restore_params['jobids'] = $jobids;
-               $this->directories = $this->getRestoreModel()->getDirectories($this->bsock, $this->restore_params['jobids'], $this->restore_params['id']);
-            }
-         }
-         else {
-            $this->directories = $this->getRestoreModel()->getDirectories($this->bsock, $this->restore_params['jobid'], $this->restore_params['id']);
-         }
+        $this->directories = $this->getRestoreModel()->getDirectories(
+          $this->bsock,
+          $this->restore_params['jobids'],
+          $this->restore_params['id']
+        );
       }
       catch(Exception $e) {
          echo $e->getMessage();
       }
-
    }
 
    /**
@@ -457,24 +453,49 @@ class RestoreController extends AbstractActionController
       $this->files = null;
 
       try {
-         if($this->restore_params['type'] == "client") {
-            if(empty($this->restore_params['jobid'])) {
-               $this->restore_params['jobids'] = null;
-            }
-            else {
-               $jobids = $this->getRestoreModel()->getJobIds($this->bsock, $this->restore_params['jobid'],$this->restore_params['mergefilesets'],$this->restore_params['mergejobs']);
-               $this->restore_params['jobids'] = $jobids;
-               $this->files = $this->getRestoreModel()->getFiles($this->bsock, $this->restore_params['jobids'], $this->restore_params['id']);
-            }
-         }
-         else {
-            $this->files = $this->getRestoreModel()->getFiles($this->bsock, $this->restore_params['jobid'], $this->restore_params['id']);
-         }
+        $this->files = $this->getRestoreModel()->getFiles(
+          $this->bsock,
+          $this->restore_params['jobids'],
+          $this->restore_params['id']
+        );
       }
       catch(Exception $e) {
          echo $e->getMessage();
       }
+   }
 
+   /**
+    * Get depending JobIds considering the merge criteria
+    */
+   private function getJobIds()
+   {
+     try {
+       $this->restore_params['jobids'] = $this->getRestoreModel()->getJobIds(
+         $this->bsock,
+         $this->restore_params['jobid'],
+         $this->restore_params['mergefilesets'],
+         $this->restore_params['mergejobs']
+       );
+     }
+     catch(Exception $e) {
+       echo $e->getMessage();
+     }
+   }
+
+   /**
+    * Update Bvfs cache
+    */
+   private function updateBvfsCache()
+   {
+     try {
+       $this->getRestoreModel()->updateBvfsCache(
+         $this->bsock,
+         $this->restore_params['jobids']
+       );
+     }
+     catch(Exception $e) {
+       echo $e->getMessage();
+     }
    }
 
    /**
@@ -482,21 +503,35 @@ class RestoreController extends AbstractActionController
     */
    private function buildSubtree()
    {
-
       $this->bsock = $this->getServiceLocator()->get('director');
       $this->setRestoreParams();
+      $this->getJobIds();
+
+      if($this->restore_params['id'] == null || $this->restore_params['id'] == "#") {
+        $this->updateBvfsCache();
+      }
+
       $this->getDirectories();
       $this->getFiles();
 
-      $dnum = count($this->directories);
-      $fnum = count($this->files);
+      if(!empty($this->directories)) {
+        $dnum = count($this->directories);
+      } else {
+        $dnum = 0;
+      }
+
+      if(!empty($this->files)) {
+        $fnum = count($this->files);
+      } else {
+        $fnum = 0;
+      }
+
       $tmp = $dnum;
 
       // Build Json for JStree
       $items = '[';
 
       if($dnum > 0) {
-
          foreach($this->directories as $dir) {
             if($dir['name'] == ".") {
                --$dnum;
@@ -521,15 +556,12 @@ class RestoreController extends AbstractActionController
                }
             }
          }
-
          if($fnum > 0) {
             $items .= ",";
          }
-
       }
 
       if($fnum > 0) {
-
          foreach($this->files as $file) {
             $items .= '{';
             $items .= '"id":"' . $file["fileid"] . '"';
@@ -543,7 +575,6 @@ class RestoreController extends AbstractActionController
                $items .= ",";
             }
          }
-
       }
 
       $items .= ']';
@@ -558,13 +589,6 @@ class RestoreController extends AbstractActionController
     */
    private function setRestoreParams()
    {
-      if($this->params()->fromQuery('type')) {
-         $this->restore_params['type'] = $this->params()->fromQuery('type');
-      }
-      else {
-         $this->restore_params['type'] = 'client';
-      }
-
       if($this->params()->fromQuery('jobid')) {
          $this->restore_params['jobid'] = $this->params()->fromQuery('jobid');
       }

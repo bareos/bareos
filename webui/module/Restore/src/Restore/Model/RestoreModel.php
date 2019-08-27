@@ -4,7 +4,7 @@
  *
  * bareos-webui - Bareos Web-Frontend
  *
- * @link      https://github.com/bareos/bareos-webui for the canonical source repository
+ * @link      https://github.com/bareos/bareos for the canonical source repository
  * @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
@@ -39,27 +39,26 @@ class RestoreModel
     */
    public function getDirectories(&$bsock=null, $jobid=null, $pathid=null) {
       if(isset($bsock)) {
-
          $limit = 1000;
          $offset = 0;
          $retval = array();
 
          while (true) {
-
-            if($pathid == null || $pathid== "#") {
+            if($pathid == null || $pathid == "#") {
                $cmd_1 = '.bvfs_lsdirs jobid='.$jobid.' path= limit='.$limit.' offset='.$offset;
             }
             else {
                $cmd_1 = '.bvfs_lsdirs jobid='.$jobid.' pathid='.abs($pathid).' limit='.$limit.' offset='.$offset;
             }
-
-            $result = $bsock->send_command($cmd_1, 2, $jobid);
+            $result = $bsock->send_command($cmd_1, 2);
             $directories = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-
             if(empty($directories['result'])) {
                $cmd_2 = '.bvfs_lsdirs jobid='.$jobid.' path=@ limit='.$limit;
-               $result = $bsock->send_command($cmd_2, 2, $jobid);
+               $result = $bsock->send_command($cmd_2, 2);
                $directories = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+               if(empty($directories['result'])) {
+                 return $retval;
+               }
                if(count($directories['result']['directories']) <= 2) {
                   $retval = array_merge($retval, $directories['result']['directories']);
                   // as . and .. are always returned, filter possible duplicates of . and .. (current and parent dir)
@@ -88,9 +87,7 @@ class RestoreModel
                $retval = array_merge($retval, $directories['result']['directories']);
             }
             $offset = $offset + $limit;
-
          }
-
       }
       else {
          throw new \Exception('Missing argument.');
@@ -108,30 +105,25 @@ class RestoreModel
     */
    public function getFiles(&$bsock=null, $jobid=null, $pathid=null) {
       if(isset($bsock)) {
-
          $limit = 1000;
          $offset = 0;
          $retval = array();
 
          while (true) {
-
             if($pathid == null || $pathid == "#") {
                $cmd_1 = '.bvfs_lsfiles jobid='.$jobid.' path= limit='.$limit.' offset='.$offset;
             }
             else {
                $cmd_1 = '.bvfs_lsfiles jobid='.$jobid.' pathid='.abs($pathid).' limit='.$limit.' offset='.$offset;
             }
-
-            $result = $bsock->send_command($cmd_1, 2, $jobid);
+            $result = $bsock->send_command($cmd_1, 2);
             $files = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-
             if ( empty($files['result']) ) {
                return $retval;
             }
-
             if(empty($files['result']['files'])) {
                $cmd_2 = '.bvfs_lsfiles jobid='.$jobid.' path=@ limit='.$limit.' offset='.$offset;
-               $result = $bsock->send_command($cmd_2, 2, $jobid);
+               $result = $bsock->send_command($cmd_2, 2);
                $files = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
                if(empty($files['result']['files'])) {
                   return $retval;
@@ -144,9 +136,7 @@ class RestoreModel
                $retval = array_merge($retval, $files['result']['files']);
             }
             $offset = $offset + $limit;
-
          }
-
       }
       else {
          throw new \Exception('Missing argument.');
@@ -166,7 +156,7 @@ class RestoreModel
    public function getFileVersions(&$bsock=null, $clientname=null, $pathid=null, $filename=null) {
       if(isset($bsock)) {
          $cmd = '.bvfs_versions jobid=0 client='.$clientname.' pathid='.$pathid.' fname='.$filename;
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $versions = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $versions['result']['versions'];
       }
@@ -197,7 +187,7 @@ class RestoreModel
          else {
             $cmd = '.bvfs_get_jobids jobid='.$jobid.'';
          }
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $jobids = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          $result = "";
          if(!empty($jobids['result'])) {
@@ -218,10 +208,30 @@ class RestoreModel
    }
 
    /**
+    * Updates the bvfs cache
+    *
+    * @param $bsock
+    * @param $jobid
+    */
+   public function updateBvfsCache(&$bsock=null, $jobid=null)
+   {
+      if(isset($bsock)) {
+        if($jobid != null) {
+          $cmd = '.bvfs_update jobid='.$jobid;
+        } else {
+          $cmd = '.bvfs_update';
+        }
+        $result = $bsock->send_command($cmd, 2);
+      }
+      else {
+        throw new \Exception('Missing argument.');
+      }
+   }
+
+   /**
     * Restore
     *
     * @param $bsock
-    * @param $type
     * @param $jobid
     * @param $client
     * @param $restoreclient
@@ -234,15 +244,10 @@ class RestoreModel
     *
     * @return string
     */
-   public function restore(&$bsock=null, $type=null, $jobid=null, $client=null, $restoreclient=null, $restorejob=null, $where=null, $fileid=null, $dirid=null, $jobids=null, $replace=null)
+   public function restore(&$bsock=null, $jobid=null, $client=null, $restoreclient=null, $restorejob=null, $where=null, $fileid=null, $dirid=null, $jobids=null, $replace=null)
    {
-      if(isset($bsock, $type)) {
-         if($type == "client") {
-            $result = $bsock->restore($type, $jobid, $client, $restoreclient, $restorejob, $where, $fileid, $dirid, $jobids, $replace);
-         }
-         elseif($type == "job") {
-            // TODO
-         }
+      if(isset($bsock)) {
+         $result = $bsock->restore($jobid, $client, $restoreclient, $restorejob, $where, $fileid, $dirid, $jobids, $replace);
          return $result;
       }
       else {

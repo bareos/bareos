@@ -4,7 +4,7 @@
  *
  * bareos-webui - Bareos Web-Frontend
  *
- * @link      https://github.com/bareos/bareos-webui for the canonical source repository
+ * @link      https://github.com/bareos/bareos for the canonical source repository
  * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
@@ -38,7 +38,7 @@ class ClientModel
    {
       if(isset($bsock)) {
          $cmd = 'llist clients current';
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $clients = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $clients['result']['clients'];
       }
@@ -58,7 +58,7 @@ class ClientModel
    {
       if(isset($bsock)) {
          $cmd = '.clients';
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $clients = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $clients['result']['clients'];
       }
@@ -79,7 +79,7 @@ class ClientModel
    {
       if(isset($bsock, $client)) {
          $cmd = 'llist client="'.$client.'"';
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $client = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $client['result']['clients'];
       }
@@ -112,7 +112,7 @@ class ClientModel
          if ($limit != null) {
             $cmd .= ' limit='.$limit;
          }
-         $result = $bsock->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2);
          $backups = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $backups['result']['backups'];
       }
@@ -133,7 +133,7 @@ class ClientModel
    {
       if(isset($bsock, $name)) {
          $cmd = 'status client="'.$name;
-         $result = $bsock->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0);
          return $result;
       }
       else {
@@ -153,7 +153,7 @@ class ClientModel
    {
       if(isset($bsock, $name)) {
          $cmd = 'enable client="'.$name.'" yes';
-         $result = $bsock->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0);
          return $result;
       }
       else {
@@ -173,7 +173,7 @@ class ClientModel
    {
       if(isset($bsock, $name)) {
          $cmd = 'disable client="'.$name.'" yes';
-         $result = $bsock->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0);
          return $result;
       }
       else {
