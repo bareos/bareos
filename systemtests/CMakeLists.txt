@@ -189,12 +189,18 @@ set(SYSTEM_TESTS
   copy-bscan
   copy-remote-bscan
   bconsole-status-client
-  python-bareos-test
 )
 
 set(SYSTEM_TESTS_DISABLED
   #initialy empty
 )
+
+IF(PYTHON)
+  list(APPEND SYSTEM_TESTS "python-bareos-test")
+ELSE()
+  list(APPEND SYSTEM_TESTS_DISABLED "python-bareos-test")
+ENDIF()
+
 
 IF(PAM_WRAPPER_LIBRARIES) # BareosFindLibrary(pam_wrapper)
   find_program(PAMTESTER pamtester)
