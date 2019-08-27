@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -32,291 +32,379 @@ use Zend\Json\Json;
 class ScheduleController extends AbstractActionController
 {
 
-   /**
-    * Variables
-    */
-   protected $scheduleModel = null;
-   protected $bsock = null;
-   protected $acl_alert = false;
+  /**
+   * Variables
+   */
+  protected $scheduleModel = null;
+  protected $bsock = null;
+  protected $acl_alert = false;
 
-   private $required_commands = array(
-      ".schedule",
-      "show",
-      "status",
-      "enable",
-      "disable"
-   );
+  /**
+   * Index Action
+   *
+   * @return object
+   */
+  public function indexAction()
+  {
+    $this->RequestURIPlugin()->setRequestURI();
 
-   /**
-    * Index Action
-    *
-    * @return object
-    */
-   public function indexAction()
-   {
-      $this->RequestURIPlugin()->setRequestURI();
+    if(!$this->SessionTimeoutPlugin()->isValid()) {
+      return $this->redirect()->toRoute(
+        'auth',
+        array(
+          'action' => 'login'
+        ),
+        array(
+          'query' => array(
+            'req' => $this->RequestURIPlugin()->getRequestURI(),
+            'dird' => $_SESSION['bareos']['director']
+          )
+        )
+      );
+    }
 
-      if(!$this->SessionTimeoutPlugin()->isValid()) {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
-      }
+    $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
+    $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+      $module_config['console_commands']['Schedule']['mandatory']
+    );
+    if(count($unknown_commands) > 0) {
+      $this->acl_alert = true;
+      return new ViewModel(
+        array(
+          'acl_alert' => $this->acl_alert,
+          'unknown_commands' => implode(",", $unknown_commands)
+        )
+      );
+    }
 
-      if(!$this->CommandACLPlugin()->validate($_SESSION['bareos']['commands'], $this->required_commands)) {
-         $this->acl_alert = true;
-         return new ViewModel(
-            array(
-               'acl_alert' => $this->acl_alert,
-               'required_commands' => $this->required_commands,
-            )
-         );
-      }
+    $result = null;
 
-      $result = null;
+    $action = $this->params()->fromQuery('action');
+    $schedulename = $this->params()->fromQuery('schedule');
 
-      $action = $this->params()->fromQuery('action');
-      $schedulename = $this->params()->fromQuery('schedule');
+    try {
+      $this->bsock = $this->getServiceLocator()->get('director');
+    }
+    catch(Exception $e) {
+      echo $e->getMessage();
+    }
 
+    if(empty($action)) {
       try {
-         $this->bsock = $this->getServiceLocator()->get('director');
+        $schedules = $this->getScheduleModel()->getSchedules($this->bsock);
+        $this->bsock->disconnect();
       }
       catch(Exception $e) {
-         echo $e->getMessage();
+        echo $e->getMessage();
       }
-
-      if(empty($action)) {
-         try {
+      return new ViewModel(
+        array(
+          'schedules' => $schedules
+        )
+      );
+    }
+    else {
+      if($action == "enable") {
+        try {
+          $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
+          $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+            $module_config['console_commands']['Schedule']['optional']
+          );
+          if(count($unknown_commands) > 0 && in_array('enable', $unknown_commands)) {
+            $this->acl_alert = true;
+            return new ViewModel(
+              array(
+                'acl_alert' => $this->acl_alert,
+                'unknown_commands' => 'enable'
+              )
+            );
+          } else {
             $schedules = $this->getScheduleModel()->getSchedules($this->bsock);
-            $this->bsock->disconnect();
-         }
-         catch(Exception $e) {
-            echo $e->getMessage();
-         }
-         return new ViewModel(
-            array(
-               'schedules' => $schedules
-            )
-         );
+            $result = $this->getScheduleModel()->enableSchedule($this->bsock, $schedulename);
+          }
+        }
+        catch(Exception $e) {
+          echo $e->getMessage();
+        }
       }
-      else {
-         if($action == "enable") {
-            try {
-               $schedules = $this->getScheduleModel()->getSchedules($this->bsock);
-               $result = $this->getScheduleModel()->enableSchedule($this->bsock, $schedulename);
-            }
-            catch(Exception $e) {
-               echo $e->getMessage();
-            }
-         }
-         elseif($action == "disable") {
-            try {
-               $schedules = $this->getScheduleModel()->getSchedules($this->bsock);
-               $result = $this->getScheduleModel()->disableSchedule($this->bsock, $schedulename);
-            }
-            catch(Exception $e) {
-               echo $e->getMessage();
-            }
-         }
-
-         try {
-            $this->bsock->disconnect();
-            }
-         catch(Exception $e) {
-            echo $e->getMessage();
-         }
-
-         return new ViewModel(
-            array(
-               'schedules' => $schedules,
-               'result' => $result
-            )
-         );
+      elseif($action == "disable") {
+        try {
+          $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
+          $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+            $module_config['console_commands']['Schedule']['optional']
+          );
+          if(count($unknown_commands) > 0 && in_array('disable', $unknown_commands)) {
+            $this->acl_alert = true;
+            return new ViewModel(
+              array(
+                'acl_alert' => $this->acl_alert,
+                'unknown_commands' => 'disable'
+              )
+            );
+          } else {
+            $schedules = $this->getScheduleModel()->getSchedules($this->bsock);
+            $result = $this->getScheduleModel()->disableSchedule($this->bsock, $schedulename);
+          }
+        }
+        catch(Exception $e) {
+          echo $e->getMessage();
+        }
       }
-   }
-
-   /**
-    * Overview Action
-    *
-    * @return object
-    */
-   public function overviewAction()
-   {
-      $this->RequestURIPlugin()->setRequestURI();
-
-      if(!$this->SessionTimeoutPlugin()->isValid()) {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
-      }
-
-      if(!$this->CommandACLPlugin()->validate($_SESSION['bareos']['commands'], $this->required_commands)) {
-         $this->acl_alert = true;
-         return new ViewModel(
-            array(
-               'acl_alert' => $this->acl_alert,
-               'required_commands' => $this->required_commands,
-            )
-         );
-      }
-
-      $result = null;
 
       try {
-         $this->bsock = $this->getServiceLocator()->get('director');
-         $result = $this->getScheduleModel()->showSchedules($this->bsock);
-         $this->bsock->disconnect();
+        $this->bsock->disconnect();
       }
       catch(Exception $e) {
-         echo $e->getMessage();
+        echo $e->getMessage();
       }
 
       return new ViewModel(
-         array(
-            'result' => $result
-         )
+        array(
+          'schedules' => $schedules,
+          'result' => $result
+        )
       );
-   }
+    }
+  }
 
-   /**
-    * Status Action
-    *
-    * @return object
-    */
-   public function statusAction()
-   {
-      $this->RequestURIPlugin()->setRequestURI();
+  /**
+   * Overview Action
+   *
+   * @return object
+   */
+  public function overviewAction()
+  {
+    $this->RequestURIPlugin()->setRequestURI();
 
-      if(!$this->SessionTimeoutPlugin()->isValid()) {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
+    if(!$this->SessionTimeoutPlugin()->isValid()) {
+      return $this->redirect()->toRoute(
+        'auth',
+        array(
+          'action' => 'login'
+        ),
+        array(
+          'query' => array(
+            'req' => $this->RequestURIPlugin()->getRequestURI(),
+            'dird' => $_SESSION['bareos']['director']
+          )
+        )
+      );
+    }
+
+    $result = null;
+
+    try {
+      $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
+      $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+        $module_config['console_commands']['Schedule']['optional']
+      );
+      if(count($unknown_commands) > 0 && in_array('show', $unknown_commands)) {
+        $this->acl_alert = true;
+        return new ViewModel(
+          array(
+            'acl_alert' => $this->acl_alert,
+            'unknown_commands' => 'show'
+          )
+        );
+      } else {
+        $this->bsock = $this->getServiceLocator()->get('director');
+        $result = $this->getScheduleModel()->showSchedules($this->bsock);
+        $this->bsock->disconnect();
       }
+    } catch(Exception $e) {
+      echo $e->getMessage();
+    }
 
-      if(!$this->CommandACLPlugin()->validate($_SESSION['bareos']['commands'], $this->required_commands)) {
-         $this->acl_alert = true;
-         return new ViewModel(
-            array(
-               'acl_alert' => $this->acl_alert,
-               'required_commands' => $this->required_commands,
-            )
-         );
+    return new ViewModel(
+      array(
+        'result' => $result
+      )
+    );
+  }
+
+  /**
+   * Status Action
+   *
+   * @return object
+   */
+  public function statusAction()
+  {
+    $this->RequestURIPlugin()->setRequestURI();
+
+    if(!$this->SessionTimeoutPlugin()->isValid()) {
+      return $this->redirect()->toRoute(
+        'auth',
+        array(
+          'action' => 'login'
+        ),
+        array(
+          'query' => array(
+            'req' => $this->RequestURIPlugin()->getRequestURI(),
+            'dird' => $_SESSION['bareos']['director']
+          )
+        )
+      );
+    }
+
+    $result = null;
+
+    try {
+      $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
+      $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+        $module_config['console_commands']['Schedule']['optional']
+      );
+      if(count($unknown_commands) > 0 && in_array('status', $unknown_commands)) {
+        $this->acl_alert = true;
+        return new ViewModel(
+          array(
+            'acl_alert' => $this->acl_alert,
+            'unknown_commands' => 'status'
+          )
+        );
+      } else {
+        $this->bsock = $this->getServiceLocator()->get('director');
+        $result = $this->getScheduleModel()->getFullScheduleStatus($this->bsock);
+        $this->bsock->disconnect();
       }
+    } catch(Exception $e) {
+      echo $e->getMessage();
+    }
 
-      $result = null;
+    return new ViewModel(
+      array(
+        'result' => $result
+      )
+    );
+  }
 
+  /**
+   * Details Action
+   *
+   * @return object
+   */
+  public function detailsAction()
+  {
+    $this->RequestURIPlugin()->setRequestURI();
+
+    if(!$this->SessionTimeoutPlugin()->isValid()) {
+      return $this->redirect()->toRoute(
+        'auth',
+        array(
+          'action' => 'login'
+        ),
+        array(
+          'query' => array(
+            'req' => $this->RequestURIPlugin()->getRequestURI(),
+            'dird' => $_SESSION['bareos']['director']
+          )
+        )
+      );
+    }
+
+    $result = null;
+
+    $schedulename = $this->params()->fromQuery('schedule');
+
+    try {
+      $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
+      $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+        $module_config['console_commands']['Schedule']['optional']
+      );
+      if(count($unknown_commands) > 0 && in_array('status', $unknown_commands)) {
+        $this->acl_alert = true;
+        return new ViewModel(
+          array(
+            'acl_alert' => $this->acl_alert,
+            'unknown_commands' => 'status'
+          )
+        );
+      } else {
+        $this->bsock = $this->getServiceLocator()->get('director');
+        $result = $this->getScheduleModel()->getScheduleStatus($this->bsock, $schedulename);
+        $this->bsock->disconnect();
+      }
+    } catch(Exception $e) {
+      echo $e->getMessage();
+    }
+
+    return new ViewModel(
+      array(
+        'result' => $result
+      )
+    );
+  }
+
+  /**
+   * Get Data Action
+   *
+   * @return object
+   */
+  public function getDataAction()
+  {
+    $this->RequestURIPlugin()->setRequestURI();
+
+    if(!$this->SessionTimeoutPlugin()->isValid()) {
+      return $this->redirect()->toRoute(
+        'auth',
+        array(
+          'action' => 'login'
+        ),
+        array(
+          'query' => array(
+            'req' => $this->RequestURIPlugin()->getRequestURI(),
+            'dird' => $_SESSION['bareos']['director']
+          )
+        )
+      );
+    }
+
+    $result = null;
+
+    $data = $this->params()->fromQuery('data');
+    $schedule = $this->params()->fromQuery('schedule');
+
+    if($data == "all") {
       try {
-         $this->bsock = $this->getServiceLocator()->get('director');
-         $result = $this->getScheduleModel()->getFullScheduleStatus($this->bsock);
-         $this->bsock->disconnect();
+        $this->bsock = $this->getServiceLocator()->get('director');
+        $result = $this->getScheduleModel()->getSchedules($this->bsock);
+        $this->bsock->disconnect();
       }
       catch(Exception $e) {
-         echo $e->getMessage();
+        echo $e->getMessage();
       }
-
-      return new ViewModel(
-         array(
-            'result' => $result
-         )
-      );
-   }
-
-   /**
-    * Details Action
-    *
-    * @return object
-    */
-   public function detailsAction()
-   {
-      $this->RequestURIPlugin()->setRequestURI();
-
-      if(!$this->SessionTimeoutPlugin()->isValid()) {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
-      }
-
-      if(!$this->CommandACLPlugin()->validate($_SESSION['bareos']['commands'], $this->required_commands)) {
-         $this->acl_alert = true;
-         return new ViewModel(
-            array(
-               'acl_alert' => $this->acl_alert,
-               'required_commands' => $this->required_commands,
-            )
-         );
-      }
-
-      $result = null;
-
-      $schedulename = $this->params()->fromQuery('schedule');
-
+    }
+    elseif($data == "details" && isset($schedule)) {
       try {
-         $this->bsock = $this->getServiceLocator()->get('director');
-         $result = $this->getScheduleModel()->getScheduleStatus($this->bsock, $schedulename);
-         $this->bsock->disconnect();
+        $this->bsock = $this->getServiceLocator()->get('director');
+        $result = $this->getScheduleModel()->getSchedule($this->bsock, $schedule);
+        $this->bsock->disconnect();
       }
       catch(Exception $e) {
-         echo $e->getMessage();
+        echo $e->getMessage();
       }
+    }
 
-      return new ViewModel(
-         array(
-            'result' => $result
-         )
-      );
-   }
+    $response = $this->getResponse();
+    $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
 
-   /**
-    * Get Data Action
-    *
-    * @return object
-    */
-   public function getDataAction()
-   {
-      $this->RequestURIPlugin()->setRequestURI();
+    if(isset($result)) {
+      $response->setContent(JSON::encode($result));
+    }
 
-      if(!$this->SessionTimeoutPlugin()->isValid()) {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
-      }
+    return $response;
+  }
 
-      $result = null;
-
-      $data = $this->params()->fromQuery('data');
-      $schedule = $this->params()->fromQuery('schedule');
-
-      if($data == "all") {
-         try {
-            $this->bsock = $this->getServiceLocator()->get('director');
-            $result = $this->getScheduleModel()->getSchedules($this->bsock);
-            $this->bsock->disconnect();
-         }
-         catch(Exception $e) {
-            echo $e->getMessage();
-         }
-      }
-      elseif($data == "details" && isset($schedule)) {
-         try {
-            $this->bsock = $this->getServiceLocator()->get('director');
-            $result = $this->getScheduleModel()->getSchedule($this->bsock, $schedule);
-            $this->bsock->disconnect();
-         }
-         catch(Exception $e) {
-            echo $e->getMessage();
-         }
-      }
-
-      $response = $this->getResponse();
-      $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
-
-      if(isset($result)) {
-         $response->setContent(JSON::encode($result));
-      }
-
-      return $response;
-   }
-
-   /**
-    * Get Schedule Model
-    *
-    * @return object
-    */
-   public function getScheduleModel()
-   {
-      if(!$this->scheduleModel) {
-         $sm = $this->getServiceLocator();
-         $this->scheduleModel = $sm->get('Schedule\Model\ScheduleModel');
-      }
-      return $this->scheduleModel;
-   }
+  /**
+   * Get Schedule Model
+   *
+   * @return object
+   */
+  public function getScheduleModel()
+  {
+    if(!$this->scheduleModel) {
+      $sm = $this->getServiceLocator();
+      $this->scheduleModel = $sm->get('Schedule\Model\ScheduleModel');
+    }
+    return $this->scheduleModel;
+  }
 }

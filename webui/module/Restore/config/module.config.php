@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,40 +25,40 @@
 
 return array(
 
-   'controllers' => array(
-      'invokables' => array(
-         'Restore\Controller\Restore' => 'Restore\Controller\RestoreController',
+  'controllers' => array(
+    'invokables' => array(
+      'Restore\Controller\Restore' => 'Restore\Controller\RestoreController',
+    ),
+  ),
+  'controller_plugins' => array(
+    'invokables' => array(
+      'SessionTimeoutPlugin' => 'Application\Controller\Plugin\SessionTimeoutPlugin',
+      'CommandACLPlugin' => 'Application\Controller\Plugin\CommandACLPlugin',
+    ),
+  ),
+  'router' => array(
+    'routes' => array(
+      'restore' => array(
+        'type' => 'segment',
+        'options' => array(
+          'route' => '/restore[/][:action][/:id]',
+          'constraints' => array(
+            'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
+            'id' => '[0-9]+',
+          ),
+          'defaults' => array(
+            'controller' => 'Restore\Controller\Restore',
+            'action' => 'index',
+          ),
+        ),
       ),
-   ),
-   'controller_plugins' => array(
-      'invokables' => array(
-         'SessionTimeoutPlugin' => 'Application\Controller\Plugin\SessionTimeoutPlugin',
-         'CommandACLPlugin' => 'Application\Controller\Plugin\CommandACLPlugin',
-      ),
-   ),
-   'router' => array(
-      'routes' => array(
-         'restore' => array(
-            'type' => 'segment',
-            'options' => array(
-               'route' => '/restore[/][:action][/:id]',
-               'constraints' => array(
-                  'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
-                  'id' => '[0-9]+',
-               ),
-               'defaults' => array(
-                  'controller' => 'Restore\Controller\Restore',
-                  'action' => 'index',
-               ),
-            ),
-         ),
-      ),
-   ),
+    ),
+  ),
 
-   'view_manager' => array(
-      'template_path_stack' => array(
-         'restore' => __DIR__ . '/../view',
-      ),
-   ),
+  'view_manager' => array(
+    'template_path_stack' => array(
+      'restore' => __DIR__ . '/../view',
+    ),
+  ),
 
 );

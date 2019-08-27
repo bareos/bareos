@@ -5,9 +5,8 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
- * @author    Frank Bergkemper
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -35,148 +34,156 @@ use Bareos\BSock\BareosBsock;
 class Module
 {
 
-   public function onBootstrap(MvcEvent $e)
-   {
-      $eventManager = $e->getApplication()->getEventManager();
-      $moduleRouteListener = new ModuleRouteListener();
-      $moduleRouteListener->attach($eventManager);
-      $this->initSession($e);
+  public function onBootstrap(MvcEvent $e)
+  {
+    $eventManager = $e->getApplication()->getEventManager();
+    $moduleRouteListener = new ModuleRouteListener();
+    $moduleRouteListener->attach($eventManager);
+    $this->initSession($e);
 
-      $translator = $e->getApplication()->getServiceManager()->get('MVCTranslator');
-      $translator->setLocale( ( isset( $_SESSION['bareos']['locale'] ) ? $_SESSION['bareos']['locale'] : 'en_EN' ) )->setFallbackLocale('en_EN');
+    $translator = $e->getApplication()->getServiceManager()->get('MVCTranslator');
+    $translator->setLocale( ( isset( $_SESSION['bareos']['locale'] ) ? $_SESSION['bareos']['locale'] : 'en_EN' ) )->setFallbackLocale('en_EN');
 
-      $viewModel = $e->getApplication()->getMVCEvent()->getViewModel();
-      $viewModel->dirdUpdate = $_SESSION['bareos']['dird-update-available'];
+    $viewModel = $e->getApplication()->getMVCEvent()->getViewModel();
+    $viewModel->dirdUpdate = $_SESSION['bareos']['dird-update-available'];
 
-   }
+  }
 
-   public function getConfig()
-   {
-      return include __DIR__ . '/config/module.config.php';
-   }
+  public function getConfig()
+  {
+    $config = array();
+    $configFiles = array(
+      include __DIR__ . '/config/module.config.php',
+      include __DIR__ . '/config/module.commands.php'
+    );
+    foreach($configFiles as $file) {
+      $config = \Zend\Stdlib\ArrayUtils::merge($config, $file);
+    }
+    return $config;
+  }
 
-   public function getAutoloaderConfig()
-   {
-      return array(
-            'Zend\Loader\ClassMapAutoloader' => array(
-            'application' => __DIR__ . '/autoload_classmap.php',
-         ),
-         'Zend\Loader\StandardAutoloader' => array(
-            'namespaces' => array(
-                __NAMESPACE__ => __DIR__ . '/src/' . __NAMESPACE__,
-               'Bareos' => __DIR__ .'/../../vendor/Bareos/library/Bareos',
-            ),
-         ),
-      );
-   }
+  public function getAutoloaderConfig()
+  {
+    return array(
+      'Zend\Loader\ClassMapAutoloader' => array(
+        'application' => __DIR__ . '/autoload_classmap.php',
+      ),
+      'Zend\Loader\StandardAutoloader' => array(
+        'namespaces' => array(
+          __NAMESPACE__ => __DIR__ . '/src/' . __NAMESPACE__,
+          'Bareos' => __DIR__ .'/../../vendor/Bareos/library/Bareos',
+        ),
+      ),
+    );
+  }
 
-   public function initSession($e)
-   {
-      $session = $e->getApplication()->getServiceManager()->get('Zend\Session\SessionManager');
+  public function initSession($e)
+  {
+    $session = $e->getApplication()->getServiceManager()->get('Zend\Session\SessionManager');
 
-      if($session->isValid()) {
-         // do nothing
+    if($session->isValid()) {
+      // do nothing
+    }
+    else {
+      $session->expireSessionCookie();
+      $session->destroy();
+      $session->start();
+    }
+
+    $container = new Container('bareos');
+
+    if(!isset($container->init)) {
+
+      $serviceManager = $e->getApplication()->getServiceManager();
+      $request = $serviceManager->get('Request');
+
+      $session->regenerateId(true);
+      $container->init      = 1;
+      $container->remoteAddr      = $request->getServer()->get('REMOTE_ADDR');
+      $container->httpUserAgent   = $request->getServer()->get('HTTP_USER_AGENT');
+      $container->username       = "";
+      $container->authenticated   = false;
+
+      $config = $serviceManager->get('Config');
+
+      if(!isset($config['session'])) {
+        return;
       }
-      else {
-         $session->expireSessionCookie();
-         $session->destroy();
-         $session->start();
+
+      $sessionConfig = $config['session'];
+
+      if(isset($sessionConfig['validators'])) {
+        $chain = $session->getValidatorChain();
+        foreach($sessionConfig['validators'] as $validator) {
+          switch ($validator) {
+          case 'Zend\Session\Validator\HttpUserAgent':
+            $validator = new $validator($container->httpUserAgent);
+            break;
+          case 'Zend\Session\Validator\RemoteAddr':
+            $validator = new $validator($container->remoteAddr);
+            break;
+          default:
+            $validator = new $validator();
+          }
+          $chain->attach('session.validate', array($validator, 'isValid'));
+        }
       }
 
-      $container = new Container('bareos');
+    }
 
-      if(!isset($container->init)) {
+  }
 
-         $serviceManager = $e->getApplication()->getServiceManager();
-         $request = $serviceManager->get('Request');
+  public function getServiceConfig()
+  {
+    return array(
+      'factories' => array(
+        'Zend\Session\SessionManager' => function ($sm) {
 
-         $session->regenerateId(true);
-         $container->init      = 1;
-         $container->remoteAddr      = $request->getServer()->get('REMOTE_ADDR');
-         $container->httpUserAgent   = $request->getServer()->get('HTTP_USER_AGENT');
-         $container->username       = "";
-         $container->authenticated   = false;
+          $config = $sm->get('config');
 
-         $config = $serviceManager->get('Config');
+          if (isset($config['session'])) {
 
-         if(!isset($config['session'])) {
-            return;
-         }
+            $session = $config['session'];
 
-         $sessionConfig = $config['session'];
+            $sessionConfig = null;
 
-         if(isset($sessionConfig['validators'])) {
-            $chain = $session->getValidatorChain();
-            foreach($sessionConfig['validators'] as $validator) {
-               switch ($validator) {
-                  case 'Zend\Session\Validator\HttpUserAgent':
-                     $validator = new $validator($container->httpUserAgent);
-                     break;
-                  case 'Zend\Session\Validator\RemoteAddr':
-                     $validator = new $validator($container->remoteAddr);
-                     break;
-                  default:
-                     $validator = new $validator();
-               }
-               $chain->attach('session.validate', array($validator, 'isValid'));
+            if(isset($session['config'])) {
+              $class = isset($session['config']['class'])  ? $session['config']['class'] : 'Zend\Session\Config\SessionConfig';
+              $options = isset($session['config']['options']) ? $session['config']['options'] : array();
+              $sessionConfig = new $class();
+              $sessionConfig->setOptions($options);
             }
-         }
 
-      }
+            $sessionStorage = null;
 
-   }
+            if (isset($session['storage'])) {
+              $class = $session['storage'];
+              $sessionStorage = new $class();
+            }
 
-   public function getServiceConfig()
-   {
-      return array(
-         'factories' => array(
-            'Zend\Session\SessionManager' => function ($sm) {
+            $sessionSaveHandler = null;
 
-               $config = $sm->get('config');
+            if (isset($session['save_handler'])) {
+              // class should be fetched from service manager since it will require constructor arguments
+              $sessionSaveHandler = $sm->get($session['save_handler']);
+            }
 
-               if (isset($config['session'])) {
+            $sessionManager = new SessionManager($sessionConfig, $sessionStorage, $sessionSaveHandler);
 
-                  $session = $config['session'];
+          } else {
+            $sessionManager = new SessionManager();
+          }
 
-                  $sessionConfig = null;
+          Container::setDefaultManager($sessionManager);
 
-                  if(isset($session['config'])) {
-                     $class = isset($session['config']['class'])  ? $session['config']['class'] : 'Zend\Session\Config\SessionConfig';
-                     $options = isset($session['config']['options']) ? $session['config']['options'] : array();
-                     $sessionConfig = new $class();
-                     $sessionConfig->setOptions($options);
-                  }
+          return $sessionManager;
 
-                  $sessionStorage = null;
+        },
 
-                  if (isset($session['storage'])) {
-                     $class = $session['storage'];
-                     $sessionStorage = new $class();
-                  }
+      ),
 
-                  $sessionSaveHandler = null;
+    );
 
-                  if (isset($session['save_handler'])) {
-                     // class should be fetched from service manager since it will require constructor arguments
-                     $sessionSaveHandler = $sm->get($session['save_handler']);
-                  }
-
-                  $sessionManager = new SessionManager($sessionConfig, $sessionStorage, $sessionSaveHandler);
-
-                  } else {
-                     $sessionManager = new SessionManager();
-                  }
-
-                  Container::setDefaultManager($sessionManager);
-
-                  return $sessionManager;
-
-            },
-
-         ),
-
-      );
-
-   }
+  }
 
 }

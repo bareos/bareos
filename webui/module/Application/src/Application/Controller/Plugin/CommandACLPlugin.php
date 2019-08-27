@@ -6,19 +6,37 @@ use Zend\Mvc\Controller\Plugin\AbstractPlugin;
 
 class CommandACLPlugin extends AbstractPlugin
 {
-   private $commands = null;
-   private $required = null;
-
-   public function validate($commands=null, $required=null)
-   {
-      $this->commands = $commands;
-      $this->required = $required;
-
-      foreach($this->required as $cmd) {
-         if($this->commands[$cmd]['permission'] == 0) {
-            return false;
-         }
+  /**
+   * Get a list of invalid bconsole commands as an array
+   *
+   * Compares an array of bconsole commands with available commands given by
+   * ACL settings and returns the commands which are invalid due to
+   * restrictions by the Command ACL directive in console/profile
+   * resource settings as an array.
+   *
+   * Note: The list of available commands given by Command ACL settings is
+   * requested by the .help command during login time in the Auth module
+   * and stored in $_SESSION['bareos']['commands'].
+   *
+   * @param commands
+   *
+   * @return array
+   */
+  public function getInvalidCommands($commands=null)
+  {
+    if(is_array($commands) && !empty($commands)) {
+      $unknown_commands = array();
+      foreach($commands as $command) {
+        if(array_key_exists($command, $_SESSION['bareos']['commands'])) {
+          if(!$_SESSION['bareos']['commands'][$command]['permission']) {
+            array_push($unknown_commands, $command);
+          }
+        } else {
+          array_push($unknown_commands, $command);
+        }
       }
-      return true;
-   }
+      return $unknown_commands;
+    }
+    return null;
+  }
 }
