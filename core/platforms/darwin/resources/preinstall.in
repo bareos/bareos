@@ -6,8 +6,11 @@ LOG=/tmp/bareos-client-preinstall.log
 date >$LOG
 echo "Preinstall. Parameter: $@" >>$LOG
 
-if [ -f "$3/Library/LaunchDaemons/org.bareos.bareos-fd.plist" ]; then
-  /bin/launchctl unload -w "$3/Library/LaunchDaemons/org.bareos.bareos-fd.plist" >>$LOG 2>&1
-fi
+for plist_file in org.bareos.bareos-fd.plist com.bareos.bareos-fd.plist bareos.bareos-fd.plist; do
+  if [ -f "$3/Library/LaunchDaemons/$plist_file" ]; then
+    /bin/launchctl unload -w "$3/Library/LaunchDaemons/$plist_file" >>$LOG 2>&1
+    /bin/rm -f "$3/Library/LaunchDaemons/$plist_file" >>$LOG 2>&1
+  fi
+done
 
 echo "finished" >> $LOG
