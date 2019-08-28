@@ -19,6 +19,7 @@
 
 cmake_minimum_required(VERSION 3.0)
 project(bareos C CXX)
+SET(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME common)
 
 INCLUDE(GNUInstallDirs)
 
@@ -141,7 +142,7 @@ IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
    include_directories(/usr/local/opt/gettext/include)
    link_libraries(/usr/local/opt/gettext/lib/libintl.a iconv "-framework CoreFoundation")
-   set(CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}-${BAREOS_FULL_VERSION}")
+   set(CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}")
 ENDIF()
 
 # hpux

@@ -82,10 +82,10 @@ IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 ENDIF()
 
 
-INSTALL(TARGETS bareos-fd DESTINATION "${sbindir}")
+INSTALL(TARGETS bareos-fd DESTINATION "${sbindir}" COMPONENT client)
 
-install(CODE "set(PLUGINS \"${PLUGINS}\")")
-install(CODE "set(BACKENDS \"${BACKENDS}\")")
-install(CODE "set(configtemplatedir \"${configtemplatedir}\")")
-install(CODE "set(SRC_DIR \"${PROJECT_SOURCE_DIR}\")")
-install(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-filed-configfiles.cmake)
+install(CODE "set(PLUGINS \"${PLUGINS}\")" COMPONENT client)
+install(CODE "set(BACKENDS \"${BACKENDS}\")" COMPONENT client)
+install(CODE "set(configtemplatedir \"${configtemplatedir}\")" COMPONENT client)
+install(CODE "set(SRC_DIR \"${PROJECT_SOURCE_DIR}\")" COMPONENT client)
+install(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-filed-configfiles.cmake COMPONENT client)

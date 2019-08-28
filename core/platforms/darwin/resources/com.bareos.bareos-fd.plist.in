@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
         <key>Label</key>
-        <string>bareos.bareos-fd</string>
+        <string>com.bareos.bareos-fd</string>
         <key>ProgramArguments</key>
         <array>
                 <string>@CMAKE_INSTALL_PREFIX@/@sbindir@/bareos-fd</string>
