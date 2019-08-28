@@ -65,7 +65,11 @@ BareosFindLibraryAndHeaders("pam" "security/pam_appl.h")
 BareosFindLibraryAndHeaders("lzo2" "lzo/lzoconf.h")
 if (${LZO2_FOUND})
    SET(HAVE_LZO 1)
+   if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+     set(LZO2_LIBRARIES "/usr/local/opt/lzo/lib/liblzo2.a")
+   endif()
 endif()
+
 #MESSAGE(FATAL_ERROR "exit")
 INCLUDE(BareosFindLibrary)
 
