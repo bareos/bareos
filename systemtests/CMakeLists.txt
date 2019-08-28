@@ -187,7 +187,6 @@ set(SYSTEM_TESTS
   copy-bscan
   copy-remote-bscan
   bconsole-status-client
-  python-fd-plugin-local-fileset-test
 )
 
 set(SYSTEM_TESTS_DISABLED
@@ -250,6 +249,12 @@ IF(ENABLE_WEBUI_SELENIUM_TEST)
   list(APPEND SYSTEM_TESTS "webui-selenium")
 ELSE()
   list(APPEND SYSTEM_TESTS_DISABLED "webui-selenium")
+ENDIF()
+
+IF(PYTHONLIBS_FOUND)
+  list(APPEND SYSTEM_TESTS "python-fd-plugin-local-fileset-test")
+ELSE()
+  list(APPEND SYSTEM_TESTS_DISABLED "python-fd-plugin-local-fileset-test")
 ENDIF()
 
 set(BASEPORT 42001)
