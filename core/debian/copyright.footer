@@ -182,6 +182,9 @@ Copyright:  2010 Zilvinas Krapavickas <zkrapavickas@gmail.com>
             2013-2013 Bareos GmbH & Co. KG
 License: AGPL-3.0
 
+Files: core/src/stored/crc32/crc32.cc core/src/stored/crc32/crc32.h
+Copyright:  2011-2016 Stephan Brumme
+License: Zlib
 
 License: AGPL-3.0
     The full text of the
