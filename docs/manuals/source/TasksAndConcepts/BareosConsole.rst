@@ -412,21 +412,16 @@ create
 
    When starting a Job, if Bareos determines that there is no Pool record in the database, but there is a Pool resource of the appropriate name, it will create it for you. If you want the Pool record to appear in the database immediately, simply use this command to force it to be created.
 
-configure
-   
 
 .. _section-bcommandConfigure:
 
-
-
+configure
    Configures director resources during runtime. The first configure subcommands are :bcommand:`configure add` and :bcommand:`configure export`. Other subcommands may follow in later releases.
 
+   .. _section-bcommandConfigureAdd:
+
    configure add
-      
-
-.. _section-bcommandConfigureAdd:
-
- :index:`\ <single: Console; Command; configure add>`\ 
+      :index:`\ <single: Console; Command; configure add>`
 
       This command allows to add resources during runtime. Usage:
 
@@ -474,32 +469,25 @@ configure
 
       These two commands create three resource configuration files:
 
-      -  
+      - :file:`/etc/bareos/bareos-dir.d/client/client2-fd.conf`
 
-         :file:`/etc/bareos/bareos-dir.d/client/client2-fd.conf`
+      - :file:`/etc/bareos/bareos-dir-export/client/client2-fd/bareos-fd.d/director/bareos-dir.conf` (assuming your director resource is named **bareos-dir**)
 
-      -  :file:`/etc/bareos/bareos-dir-export/client/client2-fd/bareos-fd.d/director/bareos-dir.conf` (assuming your director resource is named **bareos-dir**)
-
-      -  
-
-         :file:`/etc/bareos/bareos-dir.d/job/client2-job.conf`
+      - :file:`/etc/bareos/bareos-dir.d/job/client2-job.conf`
 
       The files in :file:`bareos-dir-export/client/` directory are not used by the |dir|. However, they can be copied to new clients to configure these clients for the |dir|.
 
-      
+      .. warning::
 
-         .. warning::
-
-            Don't be confused by the extensive output of :bcommand:`help configure`. As :bcommand:`configure add` allows configuring arbitrary resources, the output of :bcommand:`help configure` lists all the resources, each with all valid directives. The same data is also used for :command:`bconsole` command line completion.
+         Don't be confused by the extensive output of :bcommand:`help configure`. As :bcommand:`configure add` allows configuring arbitrary resources, the output of :bcommand:`help configure` lists all the resources, each with all valid directives. The same data is also used for :command:`bconsole` command line completion.
 
       Available since Bareos :sinceVersion:`16.2.4: configure add`.
 
+
+   .. _section-bcommandConfigureExport:
+
    configure export
-      
-
-.. _section-bcommandConfigureExport:
-
- :index:`\ <single: Console; Command; configure export>`\ 
+      :index:`\ <single: Console; Command; configure export>`
 
       This command allows to export the :config:option:`Fd/Director`\  resource for clients already configured in the |dir|.
 
@@ -559,8 +547,6 @@ enable
    
 
 .. _estimate:
-
-
 
 estimate
    :index:`\ <single: Console; Command; estimate>`\  Using this command, you can get an idea how many files will be backed up, or if you are unsure about your Include statements in your FileSet, you can test them without doing an actual backup. The default is to assume a Full backup. However, you can override this by specifying a level=Incremental or level=Differential on the command line. A Job name must be specified or you will be prompted for one, and optionally a Client and FileSet may
@@ -736,14 +722,10 @@ label
 
    There are two ways to relabel a volume that already has a Bareos label. The brute force method is to write an end of file mark on the tape using the system mt program, something like the following:
 
-   
-
    ::
 
              mt -f /dev/st0 rewind
              mt -f /dev/st0 weof
-
-   
 
    For a disk volume, you would manually delete the Volume.
 
@@ -902,12 +884,13 @@ move
       3306 Issuing autochanger transfer command.
       3308 Successfully transfered volume from slot 32 to 33.
 
-prune
-   :index:`\ <single: Console; Command; prune>`\  
 
 .. _ManualPruning:
 
- The Prune command allows you to safely remove expired database records from Jobs, Volumes and Statistics. This command works only on the Catalog database and does not affect data written to Volumes. In all cases, the Prune command applies a retention period to the specified records. You can Prune expired File entries from Job records; you can Prune expired Job records from the database, and you can Prune
+prune
+   :index:`\ <single: Console; Command; prune>`
+
+   The Prune command allows you to safely remove expired database records from Jobs, Volumes and Statistics. This command works only on the Catalog database and does not affect data written to Volumes. In all cases, the Prune command applies a retention period to the specified records. You can Prune expired File entries from Job records; you can Prune expired Job records from the database, and you can Prune
    both expired Job and File records from specified Volumes.
 
    .. code-block:: bconsole
@@ -920,12 +903,13 @@ prune
 
    For a Volume to be pruned, the volume status must be **Full**, **Used** or **Append** otherwise the pruning will not take place.
 
-purge
-   :index:`\ <single: Console; Command; purge>`\  
 
 .. _bcommandPurge:
 
- The Purge command will delete associated catalog database records from Jobs and Volumes without considering the retention period. This command can be dangerous because you can delete catalog records associated with current backups of files, and we recommend that you do not use it unless you know what you are doing. The permitted forms of :bcommand:`purge` are:
+purge
+   :index:`\ <single: Console; Command; purge>`
+
+   The Purge command will delete associated catalog database records from Jobs and Volumes without considering the retention period. This command can be dangerous because you can delete catalog records associated with current backups of files, and we recommend that you do not use it unless you know what you are doing. The permitted forms of :bcommand:`purge` are:
 
    .. code-block:: bconsole
       :caption: purge
@@ -948,6 +932,7 @@ purge
 
    However, normally you should use the :bcommand:`purge` command only to purge a volume from the catalog and use the :bcommand:`truncate` command to truncate the volume on the |sd|.
 
+
 resolve
    :index:`\ <single: Console; Command; resolve>`\  In the configuration files, Addresses can (and normally should) be specified as DNS names. As the different components of Bareos will establish network connections to other Bareos components, it is important that DNS name resolution works on involved components and delivers the same results. The :bcommand:`resolve` command can be used to test DNS resolution of a given hostname on director, storage daemon or client.
 
@@ -963,12 +948,12 @@ resolve
       *<input>resolve storage=File www.bareos.com</input>
       bareos-sd resolves www.bareos.com to host[ipv4:84.44.166.242]
 
-query
-   :index:`\ <single: Console; Command; query>`\  
 
 .. _section-bcommandQuery:
 
- This command reads a predefined SQL query from the query file (the name and location of the query file is defined with the QueryFile resource record in the Director’s configuration file). You are prompted to select a query from the file, and possibly enter one or more parameters, then the command is submitted to the Catalog database SQL engine.
+query
+   :index:`\ <single: Console; Command; query>`
+   This command reads a predefined SQL query from the query file (the name and location of the query file is defined with the QueryFile resource record in the Director’s configuration file). You are prompted to select a query from the file, and possibly enter one or more parameters, then the command is submitted to the Catalog database SQL engine.
 
 quit
    :index:`\ <single: quit>`\  This command terminates the console program. The console program sends the quit request to the Director and waits for acknowledgment. If the Director is busy doing a previous command for you that has not terminated, it may take some time. You may quit immediately by issuing the .quit command (i.e. quit preceded by a period).
@@ -1018,12 +1003,15 @@ rerun
 
    You can select the jobid(s) to rerun by using one of the selection criteria. Using jobid= will automatically select all jobs failed after and including the given jobid for rerunning. By using days= or hours=, you can select all failed jobids in the last number of days or number of hours respectively for rerunning.
 
-restore
-   :index:`\ <single: Restore>`\  :index:`\ <single: Console; Command; restore>`\  :index:`\ <single: Console; File Selection>`\  
 
 .. _bcommandRestore:
 
- The restore command allows you to select one or more Jobs (JobIds) to be restored using various methods. Once the JobIds are selected, the File records for those Jobs are placed in an internal Bareos directory tree, and the restore enters a file selection mode that allows you to interactively walk up and down the
+restore
+   :index:`\ <single: Restore>`
+   :index:`\ <single: Console; Command; restore>`
+   :index:`\ <single: Console; File Selection>`
+
+   The restore command allows you to select one or more Jobs (JobIds) to be restored using various methods. Once the JobIds are selected, the File records for those Jobs are placed in an internal Bareos directory tree, and the restore enters a file selection mode that allows you to interactively walk up and down the
    file tree selecting individual files to be restored. This mode is somewhat similar to the standard Unix restore program’s interactive file selection mode.
 
    .. code-block:: bconsole
@@ -1044,7 +1032,8 @@ restore
    For more details, see the :ref:`Restore chapter <RestoreChapter>`.
 
 run
-   :index:`\ <single: Console; Command; run>`\  This command allows you to schedule jobs to be run immediately.
+   :index:`\ <single: Console; Command; run>`
+   This command allows you to schedule jobs to be run immediately.
 
    The full form of the command is:
 
@@ -1075,12 +1064,16 @@ setbandwidth
 
       setbandwidth limit=<nb> [jobid=<id> | client=<cli>]
 
-setdebug
-   
 
 .. _bcommandSetdebug:
 
- :index:`\ <single: Console; Command; setdebug>`\  :index:`\ <single: Debug; setdebug>`\  :index:`\ <single: Debug; Windows>`\  :index:`\ <single: Windows; Debug>`\  This command is used to set the debug level in each daemon. The form of this command is:
+setdebug
+   :index:`\ <single: Console; Command; setdebug>`
+   :index:`\ <single: Debug; setdebug>`
+   :index:`\ <single: Debug; Windows>`
+   :index:`\ <single: Windows; Debug>`
+
+   This command is used to set the debug level in each daemon. The form of this command is:
 
    .. code-block:: bconsole
       :caption: setdebug
@@ -1101,18 +1094,66 @@ setdebug
       *<input>setdebug level=100 trace=1 dir</input>
       level=100 trace=1 hangup=0 timestamp=0 tracefilename=/var/lib/bareos/bareos-dir.example.com.trace
 
-setip
-   
 
 .. _bcommandSetIP:
 
- :index:`\ <single: Console; Command; setip>`\  Sets new client address – if authorized.
+setip
+   :index:`\ <single: Console; Command; setip>`
+
+   Sets new client address – if authorized.
 
    A console is authorized to use the SetIP command only if it has a Console resource definition in both the Director and the Console. In addition, if the console name, provided on the Name = directive, must be the same as a Client name, the user of that console is permitted to use the SetIP command to change the Address directive in the Director’s client resource to the IP address of the Console. This permits portables or other machines using DHCP (non-fixed IP addresses) to "notify" the
    Director of their current IP address.
 
 show
-   :index:`\ <single: Console; Command; show>`\  The show command will list the Director’s resource records as defined in the Director’s configuration. This command is used mainly for debugging purposes by developers. The following keywords are accepted on the show command line: catalogs, clients, counters, devices, directors, filesets, jobs, messages, pools, schedules, storages, all, help. Please don’t confuse this command with the list, which displays the contents of the catalog.
+   :index:`\ <single: Console; Command; show>`
+
+   The show command will list the Director’s resource records as defined in the Director’s configuration.
+   :bcommand:`help show` will show you all available options.The following keywords are accepted on the show command line:
+
+   .. code-block:: bconsole
+
+      *<input>help show</input>
+        Command            Description
+        =======            ===========
+        show               Show resource records
+
+      Arguments:
+              catalog=<catalog-name> |
+              client=<client-name> |
+              ...
+              storages |
+              disabled [ clients | jobs | schedules ] |
+              all [verbose]
+
+   :bcommand:`show all` will show you all available resources.
+   The **verbose** argument will show you also all configuration directives with there default value:
+
+   .. code-block:: bconsole
+
+      *<input>show client=bareos-fd verbose</input>
+      Client {
+        Name = "bareos-fd"
+        Description = "Client resource of the Director itself."
+        Address = "localhost"
+        #  Port = 9102
+        Password = "*************************************"
+        #  Catalog = "MyCatalog"
+        #  Passive = no
+        #  ConnectionFromDirectorToClient = yes
+        #  ConnectionFromClientToDirector = no
+        #  Enabled = yes
+        ...
+      }
+
+   If you are not using the default console, but a named console,
+   ACLs are applied.
+   Additionally, if the named console don't have the permission
+   to run the :bcommand:`configure` command,
+   some resources (like consoles and profiles) are not shown at all.
+
+   Please don’t confuse this command with the :bcommand:`list` command, which displays the contents of the catalog.
+
 
 sqlquery
    :index:`\ <single: Console; Command; sqlquery>`\  The sqlquery command puts the Console program into SQL query mode where each line you enter is concatenated to the previous line until a semicolon (;) is seen. The semicolon terminates the command, which is then passed directly to the SQL database engine. When the output from the SQL engine is displayed, the formation of a new SQL command begins. To terminate SQL query mode and return to the Console command prompt, you enter a period (.)
@@ -1358,12 +1399,13 @@ unmount
 
    In most cases, it is preferable to use the :bcommand:`release` instead.
 
-update
-   :index:`\ <single: Console; Command; update>`\  
 
 .. _UpdateCommand:
 
- This command will update the catalog for either a specific Pool record, a Volume record, or the Slots in an autochanger with barcode capability. In the case of updating a Pool record, the new information will be automatically taken from the corresponding Director’s configuration resource record. It can be used to increase the maximum number of volumes permitted or to set a maximum number of volumes. The
+update
+   :index:`\ <single: Console; Command; update>`
+
+   This command will update the catalog for either a specific Pool record, a Volume record, or the Slots in an autochanger with barcode capability. In the case of updating a Pool record, the new information will be automatically taken from the corresponding Director’s configuration resource record. It can be used to increase the maximum number of volumes permitted or to set a maximum number of volumes. The
    following main keywords may be specified:
 
    -  volume
@@ -1377,8 +1419,6 @@ update
    -  stats
 
    In the case of updating a Volume (:bcommand:`update volume`), you will be prompted for which value you wish to change. The following Volume parameters may be changed:
-
-   
 
    ::
 
@@ -1429,23 +1469,24 @@ update
               stats [days=<number>]
 
 use
-   :index:`\ <single: Console; Command; use>`\  This command allows you to specify which Catalog database to use. Normally, you will be using only one database so this will be done automatically. In the case that you are using more than one database, you can use this command to switch from one to another.
+   :index:`\ <single: Console; Command; use>`
+   This command allows you to specify which Catalog database to use. Normally, you will be using only one database so this will be done automatically. In the case that you are using more than one database, you can use this command to switch from one to another.
 
    .. code-block:: bconsole
       :caption: use
 
       use [catalog=<catalog>]
 
-var
-   
-
 .. _var:
 
- :index:`\ <single: Console; Command; var>`\  This command takes a string or quoted string and does variable expansion on it mostly the same way variable expansion is done on the :config:option:`dir/pool/LabelFormat`\  string. The difference between the :bcommand:`var` command and the actual :config:option:`dir/pool/LabelFormat`\  process is that during the var command, no job is running so dummy values are
+var
+   :index:`\ <single: Console; Command; var>`
+   This command takes a string or quoted string and does variable expansion on it mostly the same way variable expansion is done on the :config:option:`dir/pool/LabelFormat`\  string. The difference between the :bcommand:`var` command and the actual :config:option:`dir/pool/LabelFormat`\  process is that during the var command, no job is running so dummy values are
    used in place of Job specific variables.
 
 version
-   :index:`\ <single: Console; Command; version>`\  The command prints the Director’s version.
+   :index:`\ <single: Console; Command; version>`
+   The command prints the Director’s version.
 
 wait
    :index:`\ <single: Console; Command; wait>`\  The wait command causes the Director to pause until there are no jobs running. This command is useful in a batch situation such as regression testing where you wish to start a job and wait until that job completes before continuing. This command now has the following options:
@@ -1456,6 +1497,11 @@ wait
       wait [jobid=<jobid>] [jobuid=<unique id>] [job=<job name>]
 
    If specified with a specific JobId, ... the wait command will wait for that particular job to terminate before continuing.
+
+whoami
+   :index:`\ <single: Console; Command; whoami>`
+   Print the name of the user associated with this console.
+
 
 .. _dotcommands:
 
