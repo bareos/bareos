@@ -28,5 +28,8 @@ if ! sed -e "s/@testname@/$testname/g" test_cmakelists_template.txt.in >> CMakeL
   exit 1
 fi
 
+echo "Don't forget to add your new file to the git index with"
+echo "     git add $testname.cc"
+
 exit 0
 
