@@ -3,6 +3,7 @@ Reimplementation of the bconsole program in python.
 """
 
 from   bareos.bsock.directorconsole import DirectorConsole
+import bareos.exceptions
 from   pprint import pformat, pprint
 import json
 
@@ -12,6 +13,10 @@ class DirectorConsoleJson(DirectorConsole):
     """
 
     def __init__(self, *args, **kwargs):
+        '''
+        @raise: bareos.exceptions.JsonRpcInvalidJsonReceivedException:
+                if the ".api" command is not available.
+        '''
         super(DirectorConsoleJson, self).__init__(*args, **kwargs)
 
     def _init_connection(self):
@@ -23,14 +28,21 @@ class DirectorConsoleJson(DirectorConsole):
 
 
     def call(self, command):
+        '''
+        @raise: bareos.exceptions.JsonRpcErrorReceivedException:
+                if an JSON-RPC error object is received.
+        @raise: bareos.exceptions.JsonRpcInvalidJsonReceivedException:
+                if an invalid JSON-RPC result is received.
+        '''
         json = self.call_fullresult(command)
         if json == None:
             return
         if 'result' in json:
             result = json['result']
+        elif 'error' in json:
+            raise bareos.exceptions.JsonRpcErrorReceivedException(json)
         else:
-            # TODO: or raise an exception?
-            result = json
+            raise bareos.exceptions.JsonRpcInvalidJsonReceivedException(json)
         return result
 
 
@@ -50,6 +62,7 @@ class DirectorConsoleJson(DirectorConsole):
                         'data': resultstring
                     },
                 }
+                raise bareos.exceptions.JsonRpcInvalidJsonReceivedException(data)
         return data
 
 
