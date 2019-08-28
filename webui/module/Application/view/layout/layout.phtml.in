@@ -94,6 +94,12 @@ include 'version.php';
         padding-top: 10px;
         padding-bottom: 10px;
     }
+    .navbar-right {
+        float: right!important;
+    }
+    .navbar-left {
+        float: left!important;
+    }
     .navbar-text {
         float: none;
         margin: 15px 0;
