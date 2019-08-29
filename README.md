@@ -2,7 +2,6 @@
 
 
 [![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos/branches)
-[![Build Status](https://saucelabs.com/buildstatus/bareossaucelabs)](https://saucelabs.com/u/bareossaucelabs)
 
 
 ### Bareos
@@ -52,6 +51,3 @@ The Bareos project offers two mailing lists: bareos-users and bareos-devel.
 
   * [http://download.bareos.org](http://download.bareos.org)
 
-### WebUI Automatic Testing Matrix
-
-[![Build Status](https://saucelabs.com/browser-matrix/bareossaucelabs.svg)](https://saucelabs.com/u/bareossaucelabs)
