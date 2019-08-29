@@ -2,7 +2,6 @@
 
 
 [![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos/branches)
-[![Build Status](https://saucelabs.com/buildstatus/bareossaucelabs)](https://saucelabs.com/u/bareossaucelabs)
 
 
 ### Bareos
