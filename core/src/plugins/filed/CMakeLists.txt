@@ -45,7 +45,7 @@ include_directories(${OPENSSL_INCLUDE_DIR})
 
 add_library(bpipe-fd MODULE bpipe-fd.cc)
 set_target_properties(bpipe-fd PROPERTIES PREFIX "")
-INSTALL(TARGETS bpipe-fd DESTINATION ${plugindir} COMPONENT client)
+INSTALL(TARGETS bpipe-fd DESTINATION ${plugindir} COMPONENT filedaemon)
 IF(HAVE_WIN32 OR HAVE_DARWIN_OS)
    target_link_libraries(bpipe-fd bareos)
 ENDIF()
@@ -58,7 +58,7 @@ IF(HAVE_WIN32)
       DEFINE_SYMBOL "BUILDING_DLL"
       )
 
-   INSTALL(TARGETS mssqlvdi-fd DESTINATION ${plugindir} COMPONENT client)
+   INSTALL(TARGETS mssqlvdi-fd DESTINATION ${plugindir} COMPONENT filedaemon)
    target_link_libraries(mssqlvdi-fd bareos)
 ENDIF()
 
@@ -66,13 +66,13 @@ ENDIF()
 if(${HAVE_CEPHFS})
    add_library(cephfs-fd MODULE cephfs-fd.cc)
    set_target_properties(cephfs-fd PROPERTIES PREFIX "")
-   INSTALL(TARGETS cephfs-fd DESTINATION ${plugindir} COMPONENT client)
+   INSTALL(TARGETS cephfs-fd DESTINATION ${plugindir} COMPONENT filedaemon)
 endif()
 
 if(${HAVE_CEPH_RADOS})
    add_library(rados-fd MODULE rados-fd.cc)
    set_target_properties(rados-fd PROPERTIES PREFIX "")
-   INSTALL(TARGETS rados-fd DESTINATION ${plugindir} COMPONENT client)
+   INSTALL(TARGETS rados-fd DESTINATION ${plugindir} COMPONENT filedaemon)
 endif()
 
 IF(NOT HAVE_WIN32)
@@ -83,21 +83,21 @@ ENDIF()
 IF(HAVE_PYTHON)
    add_library(python-fd MODULE python-fd.cc)
    set_target_properties(python-fd PROPERTIES PREFIX "")
-   INSTALL(TARGETS python-fd DESTINATION ${plugindir} COMPONENT client)
+   INSTALL(TARGETS python-fd DESTINATION ${plugindir} COMPONENT filedaemon)
    target_link_libraries(python-fd ${PYTHON_LIBRARIES} bareos)
 ENDIF()
 
 if(${HAVE_GLUSTERFS})
    add_library(gfapi-fd MODULE gfapi-fd.cc)
    set_target_properties(gfapi-fd PROPERTIES PREFIX "")
-   INSTALL(TARGETS gfapi-fd DESTINATION ${plugindir} COMPONENT client)
+   INSTALL(TARGETS gfapi-fd DESTINATION ${plugindir} COMPONENT filedaemon)
 endif()
 
 if (${HAVE_TEST_PLUGIN})
    add_library(test-plugin-fd MODULE test-plugin-fd.cc)
    # do not prefix with "lib"
    set_target_properties(test-plugin-fd PROPERTIES PREFIX "")
-   INSTALL(TARGETS test-plugin-fd DESTINATION ${plugindir} COMPONENT client)
+   INSTALL(TARGETS test-plugin-fd DESTINATION ${plugindir} COMPONENT filedaemon)
 endif()
 
 set (PYFILES
@@ -112,6 +112,6 @@ set (PYFILES
     BareosFdPluginLDAP.py
     )
 
-INSTALL(FILES ${PYFILES} DESTINATION ${plugindir} COMPONENT client)
+INSTALL(FILES ${PYFILES} DESTINATION ${plugindir} COMPONENT filedaemon)
 
 
