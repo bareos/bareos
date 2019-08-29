@@ -283,6 +283,8 @@ INCLUDE(BareosCheckStructHasMembers)
 
 INCLUDE(BareosDetermineHaveLowLevelScsiInterface)
 
+INCLUDE(acltypes)
+
 include_directories(${PYTHON_INCLUDE_DIRS})
 
 include_directories(${PYTHON_INCLUDE_PATH})
@@ -502,7 +504,7 @@ set(have_plugins "${have_plugins}" )
 set(have_afs "" )
 
 if(${acl})
-  if(NOT HAVE_WIN32 AND NOT HAVE_DARWIN_OS)
+  if(NOT HAVE_WIN32)
       if(${HAVE_SYS_ACL_H})
          set(HAVE_ACL 1)
          Message(STATUS "acl found, libs: ${ACL_LIBS}")
