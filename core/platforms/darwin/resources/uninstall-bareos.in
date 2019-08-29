@@ -27,5 +27,5 @@ fi
 
 echo "* Installer receipt... "
 sudo pkgutil --forget com.bareos.bareos.common
-sudo pkgutil --forget com.bareos.bareos.client
+sudo pkgutil --forget com.bareos.bareos.filedaemon
 sudo pkgutil --forget com.bareos.bareos.bconsole

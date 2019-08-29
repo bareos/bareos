@@ -31,7 +31,7 @@ INSTALL(FILES
                      GROUP_READ GROUP_EXECUTE
                      WORLD_READ WORLD_EXECUTE
          DESTINATION "${scriptdir}"
-	 COMPONENT client)
+	 COMPONENT filedaemon)
 
 INSTALL(FILES
          bareos
