@@ -18,7 +18,7 @@ if grep -qw "$testname.cc" CMakeLists.txt; then
   exit 1
 fi
 
-if ! sed -e "s/@year@/$(date +%Y)/" test_template.cc.in > "$testname.cc"; then
+if ! sed -e "s/@year@/$(date +%Y)/g" test_template.cc.in > "$testname.cc"; then
   echo "File creation failed: $testname.cc"
   exit 1
 fi
