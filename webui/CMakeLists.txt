@@ -105,14 +105,15 @@ ELSE()
  MESSAGE("PHP not found")
 ENDIF()
 
-INSTALL(FILES version.php init_autoloader.php DESTINATION ${SHARE_INSTALL_PREFIX}/bareos-webui)
-INSTALL(DIRECTORY tests config data module public vendor DESTINATION ${SHARE_INSTALL_PREFIX}/bareos-webui)
+IF(NOT client-only)
+  INSTALL(FILES version.php init_autoloader.php DESTINATION ${SHARE_INSTALL_PREFIX}/bareos-webui)
+  INSTALL(DIRECTORY tests config data module public vendor DESTINATION ${SHARE_INSTALL_PREFIX}/bareos-webui)
 
-INSTALL(FILES install/bareos/bareos-dir.d/console/admin.conf.example DESTINATION ${confdir}/bareos-dir.d/console/)
-INSTALL(FILES install/bareos/bareos-dir.d/profile/webui-admin.conf DESTINATION ${confdir}/bareos-dir.d/profile/)
-INSTALL(FILES install/apache/bareos-webui.conf DESTINATION ${HTTPD_CONF}/)
+  INSTALL(FILES install/bareos/bareos-dir.d/console/admin.conf.example DESTINATION ${confdir}/bareos-dir.d/console/)
+  INSTALL(FILES install/bareos/bareos-dir.d/profile/webui-admin.conf DESTINATION ${confdir}/bareos-dir.d/profile/)
+  INSTALL(FILES install/apache/bareos-webui.conf DESTINATION ${HTTPD_CONF}/)
 
-INSTALL(FILES install/directors.ini DESTINATION ${webuiconfdir})
-INSTALL(FILES install/configuration.ini DESTINATION ${webuiconfdir})
-
+  INSTALL(FILES install/directors.ini DESTINATION ${webuiconfdir})
+  INSTALL(FILES install/configuration.ini DESTINATION ${webuiconfdir})
+ENDIF()
 

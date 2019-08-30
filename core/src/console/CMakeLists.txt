@@ -23,7 +23,7 @@ IF(HAVE_WIN32)
    LIST(APPEND BCONSSRCS ../win32/console/consoleres.rc)
 ENDIF()
 
-include_directories(${Readline_INCLUDE_DIR})
+include_directories(${Readline_INCLUDE_DIR} ${OPENSSL_INCLUDE_DIR})
 
 IF(HAVE_PAM)
    include_directories(${PAM_INCLUDE_DIRS})
@@ -42,6 +42,6 @@ ENDIF()
 
 target_link_libraries(bconsole ${CONSOLE_LINK_LIBRARIES})
 
-INSTALL(TARGETS bconsole DESTINATION "${bindir}")
-INSTALL(TARGETS bconsole DESTINATION "${sbindir}")
-INSTALL(FILES bconsole.conf DESTINATION "${configtemplatedir}")
+INSTALL(TARGETS bconsole DESTINATION "${bindir}" COMPONENT bconsole)
+INSTALL(TARGETS bconsole DESTINATION "${sbindir}" COMPONENT bconsole)
+INSTALL(FILES bconsole.conf DESTINATION "${configtemplatedir}" COMPONENT bconsole)

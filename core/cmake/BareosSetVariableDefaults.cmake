@@ -68,7 +68,7 @@ IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
   # configtemplatedir
   IF(NOT DEFINED configtemplatedir)
-    set(configtemplatedir "${confdir}")
+    set(configtemplatedir "lib/${CMAKE_PROJECT_NAME}/defaultconfigs")
   ENDIF()
 
   # mandir

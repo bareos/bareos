@@ -26,18 +26,26 @@ INSTALL(FILES
          DESTINATION "${sbindir}")
 
 INSTALL(FILES
+	 bareos-ctl-fd
+         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+                     GROUP_READ GROUP_EXECUTE
+                     WORLD_READ WORLD_EXECUTE
+         DESTINATION "${scriptdir}"
+	 COMPONENT filedaemon)
+
+INSTALL(FILES
          bareos
          btraceback.gdb
          btraceback.dbx
          btraceback.mdb
          bareos-config
          bareos-config-lib.sh
-         bareos-ctl-fd
          bareos-ctl-funcs
          PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
                      GROUP_READ GROUP_EXECUTE
                      WORLD_READ WORLD_EXECUTE
-         DESTINATION "${scriptdir}")
+         DESTINATION "${scriptdir}"
+	)
 
 IF(NOT client-only)
    INSTALL(FILES

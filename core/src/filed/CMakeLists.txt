@@ -46,6 +46,7 @@ IF(HAVE_WIN32)
    LIST(APPEND FDSRCS ../win32/filed/filedres.rc)
 ENDIF()
 
+include_directories(${OPENSSL_INCLUDE_DIR})
 
 
 add_executable(bareos-fd ${FDSRCS})
@@ -78,10 +79,10 @@ IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 ENDIF()
 
 
-INSTALL(TARGETS bareos-fd DESTINATION "${sbindir}")
+INSTALL(TARGETS bareos-fd DESTINATION "${sbindir}" COMPONENT filedaemon)
 
-install(CODE "set(PLUGINS \"${PLUGINS}\")")
-install(CODE "set(BACKENDS \"${BACKENDS}\")")
-install(CODE "set(configtemplatedir \"${configtemplatedir}\")")
-install(CODE "set(SRC_DIR \"${PROJECT_SOURCE_DIR}\")")
-install(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-filed-configfiles.cmake)
+install(CODE "set(PLUGINS \"${PLUGINS}\")" COMPONENT filedaemon)
+install(CODE "set(BACKENDS \"${BACKENDS}\")" COMPONENT filedaemon)
+install(CODE "set(configtemplatedir \"${configtemplatedir}\")" COMPONENT filedaemon)
+install(CODE "set(SRC_DIR \"${PROJECT_SOURCE_DIR}\")" COMPONENT filedaemon)
+install(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-filed-configfiles.cmake COMPONENT filedaemon)

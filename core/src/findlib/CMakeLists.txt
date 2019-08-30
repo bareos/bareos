@@ -25,12 +25,13 @@ IF(HAVE_WIN32)
    LIST(APPEND BAREOSFIND_SRCS ../win32/findlib/win32.cc)
 ENDIF()
 
+include_directories(${OPENSSL_INCLUDE_DIR})
 
 add_library(bareosfind SHARED ${BAREOSFIND_SRCS})
 
 target_link_libraries(bareosfind bareos ${ACL_LIBS})
 
-INSTALL(TARGETS bareosfind DESTINATION ${libdir})
+INSTALL(TARGETS bareosfind DESTINATION ${libdir} COMPONENT filedaemon)
 
 set_target_properties(bareosfind PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
                                           SOVERSION "${SOVERSION}"
