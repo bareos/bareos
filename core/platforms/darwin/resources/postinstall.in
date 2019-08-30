@@ -5,14 +5,14 @@ date > $LOG
 echo "Postinstall. Parameter: $@" >> $LOG
 
 cd @CMAKE_INSTALL_PREFIX@
-echo "doing cp -v @libdir@/org.bareos.bareos-fd.plist $3/Library/LaunchDaemons/org.bareos.bareos-fd.plist " >> $LOG
-cp -v @scriptdir@/org.bareos.bareos-fd.plist $3/Library/LaunchDaemons/org.bareos.bareos-fd.plist >> $LOG
+echo "doing cp -v @libdir@/com.bareos.bareos-fd.plist $3/Library/LaunchDaemons/com.bareos.bareos-fd.plist " >> $LOG
+cp -v @scriptdir@/com.bareos.bareos-fd.plist $3/Library/LaunchDaemons/com.bareos.bareos-fd.plist >> $LOG
 
 
 @scriptdir@/bareos-config deploy_config "@configtemplatedir@" "@confdir@" bareos-fd >> $LOG 2>&1
 @scriptdir@/bareos-config deploy_config "@configtemplatedir@" "@confdir@" bconsole  >> $LOG 2>&1
 
 # Load startup item
-/bin/launchctl load -w "$3/Library/LaunchDaemons/org.bareos.bareos-fd.plist" >> $LOG 2>&1
+/bin/launchctl load -w "$3/Library/LaunchDaemons/com.bareos.bareos-fd.plist" >> $LOG 2>&1
 
 echo "finished" >> $LOG

@@ -19,6 +19,7 @@
 
 cmake_minimum_required(VERSION 3.0)
 project(bareos C CXX)
+SET(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME common)
 
 INCLUDE(GNUInstallDirs)
 
@@ -138,8 +139,10 @@ IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
    #set(CMAKE_INCLUDE_PATH  "${OPENSSL_INCLUDE_DIR}:${CMAKE_INCLUDE_PATH}")
    set(CMAKE_INCLUDE_PATH  "/usr/local/opt/:${CMAKE_INCLUDE_PATH}")
    link_directories(/usr/local/lib)
-   link_libraries(intl)
-   set(CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}-${BAREOS_FULL_VERSION}")
+
+   include_directories(/usr/local/opt/gettext/include)
+   link_libraries(/usr/local/opt/gettext/lib/libintl.a iconv "-framework CoreFoundation")
+   set(CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}")
 ENDIF()
 
 # hpux
@@ -279,6 +282,8 @@ INCLUDE(BareosCheckSymbols)
 INCLUDE(BareosCheckStructHasMembers)
 
 INCLUDE(BareosDetermineHaveLowLevelScsiInterface)
+
+INCLUDE(acltypes)
 
 include_directories(${PYTHON_INCLUDE_DIRS})
 
@@ -499,7 +504,7 @@ set(have_plugins "${have_plugins}" )
 set(have_afs "" )
 
 if(${acl})
-  if(NOT HAVE_WIN32 AND NOT HAVE_DARWIN_OS)
+  if(NOT HAVE_WIN32)
       if(${HAVE_SYS_ACL_H})
          set(HAVE_ACL 1)
          Message(STATUS "acl found, libs: ${ACL_LIBS}")

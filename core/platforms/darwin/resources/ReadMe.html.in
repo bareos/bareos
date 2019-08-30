@@ -35,19 +35,19 @@
 The bareos-fd must be restarted to reread its configuration:
 
 <pre>
-sudo launchctl stop org.bareos.bareos-fd
-sudo launchctl start org.bareos.bareos-fd
+sudo launchctl stop com.bareos.bareos-fd
+sudo launchctl start com.bareos.bareos-fd
 </pre>
 
 
 Following command can be used to check its status:
 
 <pre>
-sudo launchctl list org.bareos.bareos-fd
+sudo launchctl list com.bareos.bareos-fd
 </pre>
 You can also manually start bareos-fd in debug mode by:
 <pre>
-sudo /usr/local/sbin/bareos-fd -f -d 100
+sudo /usr/local/bareos/sbin/bareos-fd -f -d 100
 </pre>
 </body>
 </html>
