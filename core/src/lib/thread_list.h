@@ -23,9 +23,6 @@
 #define BAREOS_LIB_THREAD_LIST_H_ 1
 
 #include <functional>
-#include <condition_variable>
-#include <mutex>
-#include <set>
 
 class ConfigurationParser;
 struct ThreadListPrivate;
@@ -44,7 +41,7 @@ class ThreadList {
 
   bool CreateAndAddNewThread(ConfigurationParser* config, void* data);
   bool WaitUntilThreadListIsEmpty();
-  std::size_t GetSize();
+  std::size_t GetSize() const;
 
   ThreadList(const ThreadList& ohter) = delete;
   ThreadList(const ThreadList&& ohter) = delete;

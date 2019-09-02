@@ -80,17 +80,17 @@ static void* ShutdownCallback(void* data)
   return nullptr;
 }
 
-static constexpr int maximim_allowed_thread_count = 10;
+static constexpr int maximum_allowed_thread_count = 10;
 static constexpr int try_to_start_thread_count = 11;
 
 TEST(thread_list, thread_list_startup_and_shutdown)
 {
   std::unique_ptr<ThreadList> t(std::make_unique<ThreadList>());
 
-  t->Init(maximim_allowed_thread_count, ThreadHandler, ShutdownCallback);
+  t->Init(maximum_allowed_thread_count, ThreadHandler, ShutdownCallback);
 
   for (int i = 0; i < try_to_start_thread_count; i++) {
-    std::unique_ptr<WaitCondition> wc(std::make_unique<WaitCondition>());
+    auto wc(std::make_unique<WaitCondition>());
     if (t->CreateAndAddNewThread(nullptr, wc.get())) {
       list_of_wait_conditions.push_back(std::move(wc));
     }
@@ -103,5 +103,5 @@ TEST(thread_list, thread_list_startup_and_shutdown)
     EXPECT_EQ(c.get()->GetStatus(), WaitCondition::Status::kSuccess);
   }
 
-  EXPECT_EQ(counter, maximim_allowed_thread_count);
+  EXPECT_EQ(counter, maximum_allowed_thread_count);
 }

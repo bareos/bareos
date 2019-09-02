@@ -106,7 +106,7 @@ static void CleanupBnetThreadServerTcp(alist* sockfds, ThreadList& thread_list)
   }
 
   if (!thread_list.WaitUntilThreadListIsEmpty()) {
-    Emsg1(M_ERROR, 0, _("Could not destroy client queue.\n"));
+    Emsg1(M_ERROR, 0, _("Could not destroy thread list.\n"));
   }
   Dmsg0(100, "CleanupBnetThreadServerTcp: finish\n");
 }
@@ -395,8 +395,8 @@ void BnetThreadServerTcp(
         memset(&bs->peer_addr, 0, sizeof(bs->peer_addr));
         memcpy(&bs->client_addr, &cli_addr, sizeof(bs->client_addr));
 
-        if (!thread_list.CreateAndAddNewThread(config, (void*)bs)) {
-          Jmsg1(NULL, M_ABORT, 0, _("Could not add job to client queue.\n"));
+        if (!thread_list.CreateAndAddNewThread(config, bs)) {
+          Jmsg1(NULL, M_ABORT, 0, _("Could not add thread to list.\n"));
         }
       }
     }

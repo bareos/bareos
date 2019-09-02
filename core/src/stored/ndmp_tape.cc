@@ -1465,10 +1465,9 @@ extern "C" void* ndmp_thread_server(void* arg)
         memcpy(&new_handle->client_addr, &cli_addr,
                sizeof(new_handle->client_addr));
 
-        if (!ntsa->thread_list->CreateAndAddNewThread(my_config,
-                                                      (void*)new_handle)) {
+        if (!ntsa->thread_list->CreateAndAddNewThread(my_config, new_handle)) {
           Jmsg1(NULL, M_ABORT, 0,
-                _("Could not add job to ndmp client queue.\n"));
+                _("Could not add job to ndmp thread list.\n"));
         }
       }
     }
@@ -1483,14 +1482,8 @@ extern "C" void* ndmp_thread_server(void* arg)
     fd_ptr = (s_sockfd*)sockfds.next();
   }
 
-  /*
-   * Stop work queue thread
-   */
   if (!ntsa->thread_list->WaitUntilThreadListIsEmpty()) {
-    BErrNo be;
-    be.SetErrno(status);
-    Emsg1(M_FATAL, 0, _("Could not destroy ndmp client queue: ERR=%s\n"),
-          be.bstrerror());
+    Emsg1(M_FATAL, 0, _("Could not destroy ndmp thread list.\n"));
   }
 
   return NULL;

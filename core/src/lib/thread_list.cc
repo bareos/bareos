@@ -134,7 +134,6 @@ bool ThreadList::CreateAndAddNewThread(ConfigurationParser* config, void* data)
 
   std::lock_guard<std::mutex> l(impl_->thread_list_mutex_);
 
-  int success = false;
   if (impl_->thread_list_.size() < impl_->maximum_thread_count_) {
     ThreadListItem* item = new ThreadListItem;
     item->data_ = data;
@@ -145,9 +144,9 @@ bool ThreadList::CreateAndAddNewThread(ConfigurationParser* config, void* data)
     item->WorkerThread_.detach();
     impl_->thread_list_.insert(item);
 
-    success = true;
+    return true;
   }
-  return success;
+  return false;
 }
 
-std::size_t ThreadList::GetSize() { return impl_->thread_list_.size(); }
+std::size_t ThreadList::GetSize() const { return impl_->thread_list_.size(); }
