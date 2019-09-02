@@ -53,6 +53,7 @@ class ScheduleResource;
 struct RestoreBootstrapRecord;
 struct ua_cmdstruct;
 class UnifiedStorageResource;
+struct UserAcl;
 
 class UaContext {
  public:
@@ -63,7 +64,7 @@ class UaContext {
   BareosDb* shared_db;  /**< Shared database connection used by multiple ua's */
   BareosDb* private_db; /**< Private database connection only used by this ua */
   CatalogResource* catalog;
-  ConsoleResource* cons;          /**< Console resource */
+  UserAcl* user_acl;              /**< acl from console or user resource */
   POOLMEM* cmd;                   /**< Return command/name buffer */
   POOLMEM* args;                  /**< Command line arguments */
   POOLMEM* errmsg;                /**< Store error message */

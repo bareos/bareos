@@ -83,7 +83,7 @@ OptionResult ConsoleAuthenticator::DoDefaultAuthentication()
 
   auth_success_ = ua_->UA_sock->AuthenticateInboundConnection(
       NULL, my_config, default_console_name.c_str(), me->password_, me);
-  ua_->cons = nullptr;
+  ua_->user_acl = nullptr;
   return OptionResult::Completed;
 }
 
@@ -100,9 +100,9 @@ void ConsoleAuthenticator::DoNamedAuthentication()
       NULL, my_config, console_name_.c_str(),
       optional_console_resource_->password_, optional_console_resource_);
   if (auth_success_) {
-    ua_->cons = optional_console_resource_;
+    ua_->user_acl = &optional_console_resource_->user_acl;
   } else {
-    ua_->cons = nullptr;
+    ua_->user_acl = nullptr;
     Dmsg1(200, "Could not authenticate console %s\n", console_name_.c_str());
   }
 }
@@ -220,9 +220,9 @@ bool ConsoleAuthenticatorFrom_18_2::SendInfoMessage()
   message += BAREOS_SERVICES_MESSAGE;
   message += "\n";
   message += "You are ";
-  if (ua_->cons) {
+  if (ua_->user_acl) {
     message += "logged in as: ";
-    message += ua_->cons->resource_name_;
+    message += ua_->user_acl->corresponding_resource->resource_name_;
   } else {
     message += "connected using the default console";
   }
@@ -325,18 +325,18 @@ OptionResult ConsoleAuthenticatorFrom_18_2::AuthenticatePamUser()
     std::string authenticated_username;
     if (!PamAuthenticateUser(ua_->UA_sock, pam_username, pam_password,
                              authenticated_username)) {
-      ua_->cons = nullptr;
+      ua_->user_acl = nullptr;
       auth_success_ = false;
     } else {
-      ConsoleResource* user = (ConsoleResource*)my_config->GetResWithName(
-          R_CONSOLE, authenticated_username.c_str());
+      UserResource* user = (UserResource*)my_config->GetResWithName(
+          R_USER, authenticated_username.c_str());
       if (!user) {
         Dmsg1(200, "No user config found for user %s\n",
               authenticated_username.c_str());
-        ua_->cons = nullptr;
+        ua_->user_acl = nullptr;
         auth_success_ = false;
       } else {
-        ua_->cons = user;
+        ua_->user_acl = &user->user_acl;
         auth_success_ = true;
       }
     }

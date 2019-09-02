@@ -248,22 +248,22 @@ bool UaContext::AclAccessOk(int acl,
   /*
    * If no console resource => default console and all is permitted
    */
-  if (!cons) {
-    Dmsg0(1400, "Root cons access OK.\n");
+  if (!user_acl) {
+    Dmsg0(1400, "Root user access OK.\n");
     retval = true;
     goto bail_out;
   }
 
-  retval = FindInAclList(cons->ACL_lists[acl], acl, item, len);
+  retval = FindInAclList(user_acl->ACL_lists[acl], acl, item, len);
 
   /*
    * If we didn't find a matching ACL try to use the profiles this console is
    * connected to.
    */
-  if (!retval && cons->profiles && cons->profiles->size()) {
+  if (!retval && user_acl->profiles && user_acl->profiles->size()) {
     ProfileResource* profile = nullptr;
 
-    foreach_alist (profile, cons->profiles) {
+    foreach_alist (profile, user_acl->profiles) {
       retval = FindInAclList(profile->ACL_lists[acl], acl, item, len);
 
       /*
@@ -291,11 +291,11 @@ bool UaContext::AclNoRestrictions(int acl)
   /*
    * If no console resource => default console and all is permitted
    */
-  if (!cons) { return true; }
+  if (!user_acl) { return true; }
 
-  if (cons->ACL_lists[acl]) {
-    for (int i = 0; i < cons->ACL_lists[acl]->size(); i++) {
-      list_value = (char*)cons->ACL_lists[acl]->get(i);
+  if (user_acl->ACL_lists[acl]) {
+    for (int i = 0; i < user_acl->ACL_lists[acl]->size(); i++) {
+      list_value = (char*)user_acl->ACL_lists[acl]->get(i);
 
       if (*list_value == '!') { return false; }
 
@@ -303,7 +303,7 @@ bool UaContext::AclNoRestrictions(int acl)
     }
   }
 
-  foreach_alist (profile, cons->profiles) {
+  foreach_alist (profile, user_acl->profiles) {
     if (profile) {
       if (profile->ACL_lists[acl]) {
         for (int i = 0; i < profile->ACL_lists[acl]->size(); i++) {

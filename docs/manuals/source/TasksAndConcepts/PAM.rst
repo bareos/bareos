@@ -111,7 +111,6 @@ Users have limited access to commands and jobs. Therefore the appropriate rights
 
   User {
      Name = "a-pam-user"
-     Password = "" # unsed because authenticated by PAM
      CommandACL = status, .status
      JobACL = *all*
   }
