@@ -35,6 +35,7 @@
 #include "lib/bnet_server_tcp.h"
 #include "lib/bsock_tcp.h"
 #include "lib/bsys.h"
+#include "lib/thread_list.h"
 #include "lib/watchdog.h"
 
 #include <netinet/in.h>
@@ -91,7 +92,7 @@ void BnetStopAndWaitForThreadServerTcp(pthread_t tid)
  * Perform a cleanup for the Threaded Network Server check if there is still
  * something to do or that the cleanup already took place.
  */
-static void CleanupBnetThreadServerTcp(alist* sockfds, workq_t* client_wq)
+static void CleanupBnetThreadServerTcp(alist* sockfds, ThreadList& thread_list)
 {
   Dmsg0(100, "CleanupBnetThreadServerTcp: start\n");
 
@@ -104,33 +105,27 @@ static void CleanupBnetThreadServerTcp(alist* sockfds, workq_t* client_wq)
     sockfds->destroy();
   }
 
-  if (client_wq) {
-    int status = WorkqDestroy(client_wq);
-    if (status != 0) {
-      BErrNo be;
-      be.SetErrno(status);
-      Emsg1(M_ERROR, 0, _("Could not destroy client queue: ERR=%s\n"),
-            be.bstrerror());
-    }
+  if (!thread_list.WaitUntilThreadListIsEmpty()) {
+    Emsg1(M_ERROR, 0, _("Could not destroy thread list.\n"));
   }
   Dmsg0(100, "CleanupBnetThreadServerTcp: finish\n");
 }
 
 class BNetThreadServerCleanupObject {
  public:
-  BNetThreadServerCleanupObject(alist* sockfds, workq_t* client_wq)
-      : sockfds_(sockfds), client_wq_(client_wq)
+  BNetThreadServerCleanupObject(alist* sockfds, ThreadList& thread_list)
+      : sockfds_(sockfds), thread_list_(thread_list)
   {
   }
 
   ~BNetThreadServerCleanupObject()
   {
-    CleanupBnetThreadServerTcp(sockfds_, client_wq_);
+    CleanupBnetThreadServerTcp(sockfds_, thread_list_);
   }
 
  private:
   alist* sockfds_;
-  workq_t* client_wq_;
+  ThreadList& thread_list_;
 };
 
 /**
@@ -146,11 +141,12 @@ void BnetThreadServerTcp(
     dlist* addr_list,
     int max_clients,
     alist* sockfds,
-    workq_t* client_wq,
+    ThreadList& thread_list,
     bool nokeepalive,
     void* HandleConnectionRequest(ConfigurationParser* config, void* bsock),
     ConfigurationParser* config,
-    std::atomic<BnetServerState>* const server_state)
+    std::atomic<BnetServerState>* const server_state,
+    void* UserAgentShutdownCallback(void* bsock))
 {
   int newsockfd, status;
   socklen_t clilen;
@@ -171,7 +167,7 @@ void BnetThreadServerTcp(
 
   char allbuf[256 * 10];
 
-  BNetThreadServerCleanupObject cleanup_object(sockfds, client_wq);
+  BNetThreadServerCleanupObject cleanup_object(sockfds, thread_list);
 
   quit = false;
   if (server_state) { server_state->store(BnetServerState::kStarting); }
@@ -275,16 +271,8 @@ void BnetThreadServerTcp(
 #endif
   }
 
-  /*
-   * Start work queue thread
-   */
-  if ((status = WorkqInit(client_wq, max_clients, HandleConnectionRequest)) !=
-      0) {
-    BErrNo be;
-    be.SetErrno(status);
-    Emsg1(M_ABORT, 0, _("Could not init client queue: ERR=%s\n"),
-          be.bstrerror());
-  }
+  thread_list.Init(max_clients, HandleConnectionRequest,
+                   UserAgentShutdownCallback);
 
 #ifdef HAVE_POLL
   /*
@@ -357,7 +345,8 @@ void BnetThreadServerTcp(
          */
         do {
           clilen = sizeof(cli_addr);
-          newsockfd = accept(fd_ptr->fd, reinterpret_cast<sockaddr*>(&cli_addr), &clilen);
+          newsockfd = accept(fd_ptr->fd, reinterpret_cast<sockaddr*>(&cli_addr),
+                             &clilen);
         } while (newsockfd < 0 && errno == EINTR);
         if (newsockfd < 0) { continue; }
 #ifdef HAVE_LIBWRAP
@@ -368,7 +357,8 @@ void BnetThreadServerTcp(
           V(mutex);
           Jmsg2(NULL, M_SECURITY, 0,
                 _("Connection from %s:%d refused by hosts.access\n"),
-                SockaddrToAscii(reinterpret_cast<sockaddr*>(&cli_addr), buf, sizeof(buf)),
+                SockaddrToAscii(reinterpret_cast<sockaddr*>(&cli_addr), buf,
+                                sizeof(buf)),
                 SockaddrGetPort(reinterpret_cast<sockaddr*>(&cli_addr)));
           close(newsockfd);
           continue;
@@ -390,7 +380,8 @@ void BnetThreadServerTcp(
          * See who client is. i.e. who connected to us.
          */
         P(mutex);
-        SockaddrToAscii(reinterpret_cast<sockaddr*>(&cli_addr), buf, sizeof(buf));
+        SockaddrToAscii(reinterpret_cast<sockaddr*>(&cli_addr), buf,
+                        sizeof(buf));
         V(mutex);
 
         BareosSocket* bs;
@@ -404,15 +395,8 @@ void BnetThreadServerTcp(
         memset(&bs->peer_addr, 0, sizeof(bs->peer_addr));
         memcpy(&bs->client_addr, &cli_addr, sizeof(bs->client_addr));
 
-        /*
-         * Queue client to be served
-         */
-        if ((status = WorkqAdd(client_wq, config, (void*)bs, NULL)) != 0) {
-          BErrNo be;
-          be.SetErrno(status);
-          Jmsg1(NULL, M_ABORT, 0,
-                _("Could not add job to client queue: ERR=%s\n"),
-                be.bstrerror());
+        if (!thread_list.CreateAndAddNewThread(config, bs)) {
+          Jmsg1(NULL, M_ABORT, 0, _("Could not add thread to list.\n"));
         }
       }
     }

@@ -56,6 +56,7 @@
 #include "lib/edit.h"
 #include "lib/bpoll.h"
 #include "lib/parse_conf.h"
+#include "lib/thread_list.h"
 #include "include/jcr.h"
 
 #include <netinet/in.h>
@@ -83,13 +84,13 @@ namespace storagedaemon {
 /**
  * Structure used to pass arguments to the ndmp_thread_server thread
  * via a void * argument. Things like the addresslist, maximum number
- * of clients and the client workqueue to use are passed using this
+ * of clients and the client thread list to use are passed using this
  * structure.
  */
 struct ndmp_thread_server_args {
   dlist* addr_list;
   int max_clients;
-  workq_t* client_wq;
+  ThreadList* thread_list;
 };
 
 /**
@@ -116,7 +117,7 @@ struct ndmp_internal_state {
 typedef struct ndmp_internal_state NIS;
 
 #if HAVE_NDMP
-static workq_t ndmp_workq; /* Queue for processing NDMP connections */
+static ThreadList thread_list;
 #endif
 
 /* Static globals */
@@ -1357,16 +1358,7 @@ extern "C" void* ndmp_thread_server(void* arg)
 #endif
   }
 
-  /*
-   * Start work queue thread
-   */
-  if ((status = WorkqInit(ntsa->client_wq, ntsa->max_clients,
-                          HandleNdmpConnectionRequest)) != 0) {
-    BErrNo be;
-    be.SetErrno(status);
-    Emsg1(M_ABORT, 0, _("Could not init ndmp client queue: ERR=%s\n"),
-          be.bstrerror());
-  }
+  ntsa->thread_list->Init(ntsa->max_clients, HandleNdmpConnectionRequest);
 
 #ifdef HAVE_POLL
   /*
@@ -1473,16 +1465,9 @@ extern "C" void* ndmp_thread_server(void* arg)
         memcpy(&new_handle->client_addr, &cli_addr,
                sizeof(new_handle->client_addr));
 
-        /*
-         * Queue client to be served
-         */
-        if ((status = WorkqAdd(ntsa->client_wq, my_config, (void*)new_handle,
-                               NULL)) != 0) {
-          BErrNo be;
-          be.SetErrno(status);
+        if (!ntsa->thread_list->CreateAndAddNewThread(my_config, new_handle)) {
           Jmsg1(NULL, M_ABORT, 0,
-                _("Could not add job to ndmp client queue: ERR=%s\n"),
-                be.bstrerror());
+                _("Could not add job to ndmp thread list.\n"));
         }
       }
     }
@@ -1497,14 +1482,8 @@ extern "C" void* ndmp_thread_server(void* arg)
     fd_ptr = (s_sockfd*)sockfds.next();
   }
 
-  /*
-   * Stop work queue thread
-   */
-  if ((status = WorkqDestroy(ntsa->client_wq)) != 0) {
-    BErrNo be;
-    be.SetErrno(status);
-    Emsg1(M_FATAL, 0, _("Could not destroy ndmp client queue: ERR=%s\n"),
-          be.bstrerror());
+  if (!ntsa->thread_list->WaitUntilThreadListIsEmpty()) {
+    Emsg1(M_FATAL, 0, _("Could not destroy ndmp thread list.\n"));
   }
 
   return NULL;
@@ -1516,7 +1495,7 @@ int StartNdmpThreadServer(dlist* addr_list, int max_clients)
 
   ndmp_thread_server_args.addr_list = addr_list;
   ndmp_thread_server_args.max_clients = max_clients;
-  ndmp_thread_server_args.client_wq = &ndmp_workq;
+  ndmp_thread_server_args.thread_list = &thread_list;
 
   if ((status = pthread_create(&ndmp_tid, NULL, ndmp_thread_server,
                                (void*)&ndmp_thread_server_args)) != 0) {

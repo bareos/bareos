@@ -20,14 +20,6 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, July MMIII
- *
- *
- * This code was adapted from the Bareos workq, which was
- * adapted from "Programming with POSIX Threads", by
- * David R. Butenhof
- */
 /**
  * BAREOS job queue routines.
  *
@@ -312,8 +304,6 @@ int JobqAdd(jobq_t* jq, JobControlRecord* jcr)
 
 /**
  * Remove a job from the job queue. Used only by CancelJob().
- * jq is a queue that was created with jobq_init
- * work_item is an element of work
  *
  * Note, it is "removed" from the job queue.
  * If you want to cancel it, you need to provide some external means
@@ -958,10 +948,12 @@ void DecReadStore(JobControlRecord* jcr)
     Dmsg2(50, "Dec Rstore=%s rncj=%d\n", jcr->res.read_storage->resource_name_,
           jcr->res.read_storage->runtime_storage_status->NumConcurrentJobs);
 
-    if (jcr->res.read_storage->runtime_storage_status->NumConcurrentReadJobs < 0) {
-      Jmsg(jcr, M_FATAL, 0, _("NumConcurrentReadJobs Dec Rstore=%s rncj=%d\n"),
-           jcr->res.read_storage->resource_name_,
-           jcr->res.read_storage->runtime_storage_status->NumConcurrentReadJobs);
+    if (jcr->res.read_storage->runtime_storage_status->NumConcurrentReadJobs <
+        0) {
+      Jmsg(
+          jcr, M_FATAL, 0, _("NumConcurrentReadJobs Dec Rstore=%s rncj=%d\n"),
+          jcr->res.read_storage->resource_name_,
+          jcr->res.read_storage->runtime_storage_status->NumConcurrentReadJobs);
     }
 
     if (jcr->res.read_storage->runtime_storage_status->NumConcurrentJobs < 0) {

@@ -214,9 +214,7 @@ int main(int argc, char* argv[])
         break;
 
       case 'z': /* switch network debugging on */
-        if (!BnetDump::EvaluateCommandLineArgs(optarg)) {
-          exit(1);
-        }
+        if (!BnetDump::EvaluateCommandLineArgs(optarg)) { exit(1); }
         break;
 
       case '?':
@@ -640,9 +638,9 @@ static
 #if HAVE_NDMP
   if (me->ndmp_enable) { StopNdmpThreadServer(); }
 #endif
-  StopWatchdog();
-
   StopSocketServer();
+
+  StopWatchdog();
 
   if (sig == SIGTERM) { /* normal shutdown request? */
     /*
@@ -653,10 +651,7 @@ static
      */
     foreach_jcr (jcr) {
       BareosSocket* fd;
-      if (jcr->JobId == 0) {
-        FreeJcr(jcr);
-        continue; /* ignore console */
-      }
+      if (jcr->JobId == 0) { continue; /* ignore console */ }
       jcr->setJobStatus(JS_Canceled);
       fd = jcr->file_bsock;
       if (fd) {

@@ -37,11 +37,12 @@
 #include "stored/sd_cmds.h"
 #include "lib/bnet_server_tcp.h"
 #include "lib/bsock.h"
+#include "lib/thread_list.h"
 #include "lib/try_tls_handshake_as_a_server.h"
 
 namespace storagedaemon {
 
-static workq_t socket_workq;
+static ThreadList thread_list;
 static alist* sock_fds = NULL;
 static pthread_t tcp_server_tid;
 
@@ -123,6 +124,15 @@ void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
   return HandleDirectorConnection(bs);
 }
 
+static void* UserAgentShutdownCallback(void* bsock)
+{
+  if (bsock) {
+    BareosSocket* b = reinterpret_cast<BareosSocket*>(bsock);
+    b->SetTerminated();
+  }
+  return nullptr;
+}
+
 void StartSocketServer(dlist* addrs)
 {
   IPADDR* p;
@@ -137,8 +147,9 @@ void StartSocketServer(dlist* addrs)
   }
 
   sock_fds = new alist(10, not_owned_by_alist);
-  BnetThreadServerTcp(addrs, me->MaxConnections, sock_fds, &socket_workq,
-                      me->nokeepalive, HandleConnectionRequest, my_config);
+  BnetThreadServerTcp(addrs, me->MaxConnections, sock_fds, thread_list,
+                      me->nokeepalive, HandleConnectionRequest, my_config,
+                      nullptr, UserAgentShutdownCallback);
 }
 
 void StopSocketServer()
