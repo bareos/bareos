@@ -92,7 +92,7 @@ void BnetStopAndWaitForThreadServerTcp(pthread_t tid)
  * Perform a cleanup for the Threaded Network Server check if there is still
  * something to do or that the cleanup already took place.
  */
-static void CleanupBnetThreadServerTcp(alist* sockfds, ThreadList* thread_list)
+static void CleanupBnetThreadServerTcp(alist* sockfds, ThreadList& thread_list)
 {
   Dmsg0(100, "CleanupBnetThreadServerTcp: start\n");
 
@@ -105,17 +105,15 @@ static void CleanupBnetThreadServerTcp(alist* sockfds, ThreadList* thread_list)
     sockfds->destroy();
   }
 
-  if (thread_list) {
-    if (!thread_list->WaitUntilThreadListIsEmpty()) {
-      Emsg1(M_ERROR, 0, _("Could not destroy client queue.\n"));
-    }
+  if (!thread_list.WaitUntilThreadListIsEmpty()) {
+    Emsg1(M_ERROR, 0, _("Could not destroy client queue.\n"));
   }
   Dmsg0(100, "CleanupBnetThreadServerTcp: finish\n");
 }
 
 class BNetThreadServerCleanupObject {
  public:
-  BNetThreadServerCleanupObject(alist* sockfds, ThreadList* thread_list)
+  BNetThreadServerCleanupObject(alist* sockfds, ThreadList& thread_list)
       : sockfds_(sockfds), thread_list_(thread_list)
   {
   }
@@ -127,7 +125,7 @@ class BNetThreadServerCleanupObject {
 
  private:
   alist* sockfds_;
-  ThreadList* thread_list_;
+  ThreadList& thread_list_;
 };
 
 /**
@@ -143,7 +141,7 @@ void BnetThreadServerTcp(
     dlist* addr_list,
     int max_clients,
     alist* sockfds,
-    ThreadList* thread_list,
+    ThreadList& thread_list,
     bool nokeepalive,
     void* HandleConnectionRequest(ConfigurationParser* config, void* bsock),
     ConfigurationParser* config,
@@ -273,8 +271,8 @@ void BnetThreadServerTcp(
 #endif
   }
 
-  thread_list->Init(max_clients, HandleConnectionRequest,
-                    UserAgentShutdownCallback);
+  thread_list.Init(max_clients, HandleConnectionRequest,
+                   UserAgentShutdownCallback);
 
 #ifdef HAVE_POLL
   /*
@@ -397,7 +395,7 @@ void BnetThreadServerTcp(
         memset(&bs->peer_addr, 0, sizeof(bs->peer_addr));
         memcpy(&bs->client_addr, &cli_addr, sizeof(bs->client_addr));
 
-        if (!thread_list->CreateAndAddNewThread(config, (void*)bs)) {
+        if (!thread_list.CreateAndAddNewThread(config, (void*)bs)) {
           Jmsg1(NULL, M_ABORT, 0, _("Could not add job to client queue.\n"));
         }
       }

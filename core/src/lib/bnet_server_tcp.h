@@ -42,7 +42,7 @@ void BnetThreadServerTcp(
     dlist* addr_list,
     int max_clients,
     alist* sockfds,
-    ThreadList* thread_list,
+    ThreadList& thread_list,
     bool nokeepalive,
     void* HandleConnectionRequest(ConfigurationParser* config, void* bsock),
     ConfigurationParser* config,
