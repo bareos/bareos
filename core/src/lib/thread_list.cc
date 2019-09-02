@@ -22,11 +22,15 @@
 #include "include/bareos.h"
 #include "thread_list.h"
 #include "include/jcr.h"
+#include "include/make_unique.h"
 #include "lib/berrno.h"
 #include "lib/bsock.h"
 
 #include <algorithm>
+#include <condition_variable>
 #include <thread>
+#include <mutex>
+#include <set>
 
 struct ThreadListItem {
   std::thread WorkerThread_;
@@ -53,8 +57,8 @@ struct ThreadListPrivate {
   bool WaitForThreadsToShutdown();
 };
 
-ThreadList::ThreadList() { impl_ = new ThreadListPrivate; }
-ThreadList::~ThreadList() { delete impl_; }
+ThreadList::ThreadList() : impl_(std::make_unique<ThreadListPrivate>()) {}
+ThreadList::~ThreadList() = default;
 
 void ThreadList::Init(int maximum_thread_count,
                       std::function<void*(ConfigurationParser* config,

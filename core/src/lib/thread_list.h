@@ -52,7 +52,7 @@ class ThreadList {
   ThreadList& operator=(const ThreadList&& rhs) = delete;
 
  private:
-  ThreadListPrivate* impl_ = nullptr;
+  std::unique_ptr<ThreadListPrivate> impl_;
 };
 
 
