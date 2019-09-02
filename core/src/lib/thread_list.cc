@@ -20,7 +20,7 @@
 */
 
 #include "include/bareos.h"
-#include "lib/thread_list.h"
+#include "thread_list.h"
 #include "include/jcr.h"
 #include "lib/berrno.h"
 #include "lib/bsock.h"
@@ -101,28 +101,27 @@ bool ThreadList::WaitUntilThreadListIsEmpty()
 }
 
 struct CleanupOwnThreadAndNotify {
-  ThreadListItem* item_;
+  std::unique_ptr<ThreadListItem> item_;
   ThreadList* t_;
-  CleanupOwnThreadAndNotify(ThreadListItem* item, ThreadList* t)
-      : item_(item), t_(t)
+  CleanupOwnThreadAndNotify(std::unique_ptr<ThreadListItem> item, ThreadList* t)
+      : item_(std::move(item)), t_(t)
   {
   }
   ~CleanupOwnThreadAndNotify()
   {
     std::lock_guard<std::mutex> l(t_->impl_->thread_list_mutex_);
-    t_->impl_->thread_list_.erase(item_);
+    t_->impl_->thread_list_.erase(item_.get());
     t_->impl_->wait_shutdown_condition.notify_one();
-    delete item_;
   }
 };
 
-static void WorkerThread(ThreadListItem* item, ThreadList* t)
+static void WorkerThread(std::unique_ptr<ThreadListItem> item, ThreadList* t)
 {
   SetJcrInTsd(INVALID_JCR);
 
   item->ThreadInvokedHandler_(item->config_, item->data_);
 
-  CleanupOwnThreadAndNotify cleanup(item, t);
+  CleanupOwnThreadAndNotify cleanup(std::move(item), t);
 }
 
 bool ThreadList::CreateAndAddNewThread(ConfigurationParser* config, void* data)
@@ -137,10 +136,9 @@ bool ThreadList::CreateAndAddNewThread(ConfigurationParser* config, void* data)
     item->data_ = data;
     item->config_ = config;
     item->ThreadInvokedHandler_ = impl_->ThreadInvokedHandler_;
-
-    item->WorkerThread_ = std::thread(WorkerThread, item, this);
+    item->WorkerThread_ =
+        std::thread(WorkerThread, std::unique_ptr<ThreadListItem>(item), this);
     item->WorkerThread_.detach();
-
     impl_->thread_list_.insert(item);
 
     success = true;
