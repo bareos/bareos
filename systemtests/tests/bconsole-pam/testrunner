@@ -92,14 +92,46 @@ fi
 
 print_debug "OK: login as user2 failed."
 
+cat <<END_OF_DATA >$tmp/bconcmds-add-user
+@$out $tmp/log3.out
+configure add user name=user3 description="script configured user" profile=operator
+reload
+quit
+END_OF_DATA
+
+## create user3
+if ! ${bin}/bconsole -c "${conf}" -p etc/user1.cred < $tmp/bconcmds-add-user >${tmp}/log4.out 2>${tmp}/err4.out; then
+  cat ${tmp}/log4.out
+  cat ${tmp}/err4.out
+  set_error "Failed to login as user user1 and add new user3."
+  exit 1
+fi
+
+cat <<END_OF_DATA >$tmp/bconcmds-user3
+@$out $tmp/log5.out
+status director
+quit
+END_OF_DATA
+
+##login as user 3
+if ! ${bin}/bconsole -c "${conf}" -p etc/user3.cred < $tmp/bconcmds-user3 >${tmp}/log6.out 2>${tmp}/err6.out; then
+  cat ${tmp}/log6.out
+  cat ${tmp}/err6.out
+  set_error "Failed to login as user user3."
+  exit 1
+fi
+
+if ! grep -q "Running Jobs:" ${tmp}/log5.out; then
+  cat ${tmp}/log5.out
+  set_error "Unexpected output in user3 session."
+  exit 1
+fi
+
 if ! ${scripts}/bareos-ctl-dir status >/dev/null; then
   set_error "Director does not run anymore. This should not happen."
   exit 1
 fi
 
-
-#run_bareos
-#check_for_zombie_jobs storage=File
 stop_bareos > $output 2>&1
 
 end_test
