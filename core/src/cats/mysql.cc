@@ -156,7 +156,11 @@ bool BareosDbMysql::OpenDatabase(JobControlRecord *jcr)
 {
    bool retval = false;
    int errstat;
+#if LIBMYSQL_VERSION_ID > 80000
+   bool reconnect = 1;
+#else
    my_bool reconnect = 1;
+#endif
 
    P(mutex);
    if (connected_) {
