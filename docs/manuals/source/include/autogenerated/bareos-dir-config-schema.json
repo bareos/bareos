@@ -2406,37 +2406,37 @@
         },
         "PoolACL": {
           "datatype": "ACL",
-          "code": 5,
+          "code": 4,
           "equals": true,
           "description": "Lists the Pool resources, this resource has access to. The special keyword *all* allows access to all Pool resources."
         },
         "CommandACL": {
           "datatype": "ACL",
-          "code": 6,
+          "code": 5,
           "equals": true,
           "description": "Lists the commands, this resource has access to. The special keyword *all* allows using commands."
         },
         "FileSetACL": {
           "datatype": "ACL",
-          "code": 7,
+          "code": 6,
           "equals": true,
           "description": "Lists the File Set resources, this resource has access to. The special keyword *all* allows access to all File Set resources."
         },
         "CatalogACL": {
           "datatype": "ACL",
-          "code": 8,
+          "code": 7,
           "equals": true,
           "description": "Lists the Catalog resources, this resource has access to. The special keyword *all* allows access to all Catalog resources."
         },
         "WhereACL": {
           "datatype": "ACL",
-          "code": 9,
+          "code": 8,
           "equals": true,
           "description": "Specifies the base directories, where files could be restored. An empty string allows restores to all directories."
         },
         "PluginOptionsACL": {
           "datatype": "ACL",
-          "code": 10,
+          "code": 9,
           "equals": true,
           "description": "Specifies the allowed plugin options. An empty strings allows all Plugin Options."
         }
@@ -2462,57 +2462,62 @@
         "JobACL": {
           "datatype": "ACL",
           "code": 0,
-          "equals": true
+          "equals": true,
+          "description": "Lists the Job resources, this resource has access to. The special keyword *all* allows access to all Job resources."
         },
         "ClientACL": {
           "datatype": "ACL",
           "code": 1,
-          "equals": true
+          "equals": true,
+          "description": "Lists the Client resources, this resource has access to. The special keyword *all* allows access to all Client resources."
         },
         "StorageACL": {
           "datatype": "ACL",
           "code": 2,
-          "equals": true
+          "equals": true,
+          "description": "Lists the Storage resources, this resource has access to. The special keyword *all* allows access to all Storage resources."
         },
         "ScheduleACL": {
           "datatype": "ACL",
           "code": 3,
-          "equals": true
-        },
-        "RunACL": {
-          "datatype": "ACL",
-          "code": 4,
-          "equals": true
+          "equals": true,
+          "description": "Lists the Schedule resources, this resource has access to. The special keyword *all* allows access to all Schedule resources."
         },
         "PoolACL": {
           "datatype": "ACL",
-          "code": 5,
-          "equals": true
+          "code": 4,
+          "equals": true,
+          "description": "Lists the Pool resources, this resource has access to. The special keyword *all* allows access to all Pool resources."
         },
         "CommandACL": {
           "datatype": "ACL",
-          "code": 6,
-          "equals": true
+          "code": 5,
+          "equals": true,
+          "description": "Lists the commands, this resource has access to. The special keyword *all* allows using commands."
         },
         "FileSetACL": {
           "datatype": "ACL",
-          "code": 7,
-          "equals": true
+          "code": 6,
+          "equals": true,
+          "description": "Lists the File Set resources, this resource has access to. The special keyword *all* allows access to all File Set resources."
         },
         "CatalogACL": {
           "datatype": "ACL",
-          "code": 8,
-          "equals": true
+          "code": 7,
+          "equals": true,
+          "description": "Lists the Catalog resources, this resource has access to. The special keyword *all* allows access to all Catalog resources."
         },
         "WhereACL": {
           "datatype": "ACL",
-          "code": 9,
-          "equals": true
+          "code": 8,
+          "equals": true,
+          "description": "Specifies the base directories, where files could be restored. An empty string allows restores to all directories."
         },
         "PluginOptionsACL": {
           "datatype": "ACL",
-          "code": 10,
-          "equals": true
+          "code": 9,
+          "equals": true,
+          "description": "Specifies the allowed plugin options. An empty strings allows all Plugin Options."
         },
         "Profile": {
           "datatype": "RESOURCE_LIST",
@@ -2526,7 +2531,8 @@
           "code": 0,
           "default_value": "false",
           "equals": true,
-          "versions": "18.2.4-"
+          "versions": "18.2.4-",
+          "description": "If set to yes, PAM will be used to authenticate the user on this console. Otherwise, only the credentials of this console resource are used for authentication."
         },
         "TlsAuthenticate": {
           "datatype": "BOOLEAN",
@@ -2606,6 +2612,7 @@
           "description": "\"Common Name\"s (CNs) of the allowed peer certificates."
         }
       },
+      "Device": {},
       "User": {
         "Name": {
           "datatype": "NAME",
@@ -2618,66 +2625,65 @@
           "code": 0,
           "equals": true
         },
-        "Password": {
-          "datatype": "AUTOPASSWORD",
-          "code": 0,
-          "equals": true,
-          "required": true
-        },
         "JobACL": {
           "datatype": "ACL",
           "code": 0,
-          "equals": true
+          "equals": true,
+          "description": "Lists the Job resources, this resource has access to. The special keyword *all* allows access to all Job resources."
         },
         "ClientACL": {
           "datatype": "ACL",
           "code": 1,
-          "equals": true
+          "equals": true,
+          "description": "Lists the Client resources, this resource has access to. The special keyword *all* allows access to all Client resources."
         },
         "StorageACL": {
           "datatype": "ACL",
           "code": 2,
-          "equals": true
+          "equals": true,
+          "description": "Lists the Storage resources, this resource has access to. The special keyword *all* allows access to all Storage resources."
         },
         "ScheduleACL": {
           "datatype": "ACL",
           "code": 3,
-          "equals": true
-        },
-        "RunACL": {
-          "datatype": "ACL",
-          "code": 4,
-          "equals": true
+          "equals": true,
+          "description": "Lists the Schedule resources, this resource has access to. The special keyword *all* allows access to all Schedule resources."
         },
         "PoolACL": {
           "datatype": "ACL",
-          "code": 5,
-          "equals": true
+          "code": 4,
+          "equals": true,
+          "description": "Lists the Pool resources, this resource has access to. The special keyword *all* allows access to all Pool resources."
         },
         "CommandACL": {
           "datatype": "ACL",
-          "code": 6,
-          "equals": true
+          "code": 5,
+          "equals": true,
+          "description": "Lists the commands, this resource has access to. The special keyword *all* allows using commands."
         },
         "FileSetACL": {
           "datatype": "ACL",
-          "code": 7,
-          "equals": true
+          "code": 6,
+          "equals": true,
+          "description": "Lists the File Set resources, this resource has access to. The special keyword *all* allows access to all File Set resources."
         },
         "CatalogACL": {
           "datatype": "ACL",
-          "code": 8,
-          "equals": true
+          "code": 7,
+          "equals": true,
+          "description": "Lists the Catalog resources, this resource has access to. The special keyword *all* allows access to all Catalog resources."
         },
         "WhereACL": {
           "datatype": "ACL",
-          "code": 9,
-          "equals": true
+          "code": 8,
+          "equals": true,
+          "description": "Specifies the base directories, where files could be restored. An empty string allows restores to all directories."
         },
         "PluginOptionsACL": {
           "datatype": "ACL",
-          "code": 10,
-          "equals": true
+          "code": 9,
+          "equals": true,
+          "description": "Specifies the allowed plugin options. An empty strings allows all Plugin Options."
         },
         "Profile": {
           "datatype": "RESOURCE_LIST",
@@ -2685,93 +2691,8 @@
           "equals": true,
           "versions": "14.2.3-",
           "description": "Profiles can be assigned to a Console. ACL are checked until either a deny ACL is found or an allow ACL. First the console ACL is checked then any profile the console is linked to."
-        },
-        "UsePamAuthentication": {
-          "datatype": "BOOLEAN",
-          "code": 0,
-          "default_value": "false",
-          "equals": true,
-          "versions": "18.2.4-"
-        },
-        "TlsAuthenticate": {
-          "datatype": "BOOLEAN",
-          "code": 0,
-          "default_value": "false",
-          "equals": true,
-          "description": "Use TLS only to authenticate, not for encryption."
-        },
-        "TlsEnable": {
-          "datatype": "BOOLEAN",
-          "code": 0,
-          "default_value": "true",
-          "equals": true,
-          "description": "Enable TLS support."
-        },
-        "TlsRequire": {
-          "datatype": "BOOLEAN",
-          "code": 0,
-          "default_value": "false",
-          "equals": true,
-          "description": "Without setting this to yes, Bareos can fall back to use unencrypted connections. Enabling this implicitly sets \"TLS Enable = yes\"."
-        },
-        "TlsCipherList": {
-          "datatype": "DIRECTORY",
-          "code": 0,
-          "platform_specific": true,
-          "equals": true,
-          "description": "List of valid TLS Ciphers."
-        },
-        "TlsDhFile": {
-          "datatype": "DIRECTORY",
-          "code": 0,
-          "equals": true,
-          "description": "Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications."
-        },
-        "TlsVerifyPeer": {
-          "datatype": "BOOLEAN",
-          "code": 0,
-          "default_value": "false",
-          "equals": true,
-          "description": "If disabled, all certificates signed by a known CA will be accepted. If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list."
-        },
-        "TlsCaCertificateFile": {
-          "datatype": "DIRECTORY",
-          "code": 0,
-          "equals": true,
-          "description": "Path of a PEM encoded TLS CA certificate(s) file."
-        },
-        "TlsCaCertificateDir": {
-          "datatype": "DIRECTORY",
-          "code": 0,
-          "equals": true,
-          "description": "Path of a TLS CA certificate directory."
-        },
-        "TlsCertificateRevocationList": {
-          "datatype": "DIRECTORY",
-          "code": 0,
-          "equals": true,
-          "description": "Path of a Certificate Revocation List file."
-        },
-        "TlsCertificate": {
-          "datatype": "DIRECTORY",
-          "code": 0,
-          "equals": true,
-          "description": "Path of a PEM encoded TLS certificate."
-        },
-        "TlsKey": {
-          "datatype": "DIRECTORY",
-          "code": 0,
-          "equals": true,
-          "description": "Path of a PEM encoded private key. It must correspond to the specified \"TLS Certificate\"."
-        },
-        "TlsAllowedCn": {
-          "datatype": "STRING_LIST",
-          "code": 0,
-          "equals": true,
-          "description": "\"Common Name\"s (CNs) of the allowed peer certificates."
         }
-      },
-      "Device": {}
+      }
     }
   },
   "datatype": {

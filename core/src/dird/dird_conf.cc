@@ -168,7 +168,6 @@ static ResourceItem dir_items[] = {
      "Lists the Storage resources, this resource has access to. The special keyword *all* allows access to all Storage resources." },\
   { "ScheduleACL", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Schedule_ACL, 0, NULL, NULL,\
      "Lists the Schedule resources, this resource has access to. The special keyword *all* allows access to all Schedule resources." },\
-  { "RunACL", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Run_ACL, 0, NULL, NULL, NULL },\
   { "PoolACL", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Pool_ACL, 0, NULL, NULL,\
      "Lists the Pool resources, this resource has access to. The special keyword *all* allows access to all Pool resources." },\
   { "CommandACL", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Command_ACL, 0, NULL, NULL,\
@@ -203,7 +202,8 @@ static ResourceItem con_items[] = {
   USER_ACL(res_con, user_acl.ACL_lists),
   ACL_PROFILE(res_con),
   { "UsePamAuthentication", CFG_TYPE_BOOL, ITEM(res_con, use_pam_authentication_), 0, CFG_ITEM_DEFAULT,
-     "false", "18.2.4-", NULL },
+     "false", "18.2.4-", "If set to yes, PAM will be used to authenticate the user on this console. Otherwise, "
+     "only the credentials of this console resource are used for authentication." },
    TLS_COMMON_CONFIG(res_con),
    TLS_CERT_CONFIG(res_con),
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}

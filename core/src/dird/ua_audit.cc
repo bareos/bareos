@@ -83,9 +83,6 @@ static inline void LogAuditEventAclMsg(UaContext* ua,
     case Schedule_ACL:
       acl_type_name = _("for Schedule");
       break;
-    case Run_ACL:
-      acl_type_name = _("for Schedule");
-      break;
     case Pool_ACL:
       acl_type_name = _("for Pool");
       break;
