@@ -23,6 +23,12 @@ SET(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME common)
 
 INCLUDE(GNUInstallDirs)
 
+find_program(CCACHE_FOUND ccache)
+if(CCACHE_FOUND)
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+endif(CCACHE_FOUND)
+
 # switch on CXX 11 Support
 #
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
@@ -436,6 +442,8 @@ MESSAGE( STATUS "CMAKE_C_FLAGS: " ${CMAKE_C_FLAGS} )
 # the compiler flags for compiling C++ sources
 MESSAGE( STATUS "CMAKE_CXX_FLAGS: " ${CMAKE_CXX_FLAGS} )
 
+# wheter or not 
+MESSAGE( STATUS "CCACHE_FOUND: " ${CCACHE_FOUND})
 
 # Choose the type of build.  Example: SET(CMAKE_BUILD_TYPE Debug)
 MESSAGE( STATUS "CMAKE_BUILD_TYPE: " ${CMAKE_BUILD_TYPE} )
