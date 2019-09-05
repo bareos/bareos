@@ -541,6 +541,15 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
      * See if we are parsing an MD5 encoded password already.
      */
     if (bstrncmp(lc->str, "[md5]", 5)) {
+      if ((item->code & CFG_ITEM_REQUIRED) == CFG_ITEM_REQUIRED) {
+        static const char* empty_password_md5_hash =
+            "d41d8cd98f00b204e9800998ecf8427e";
+        if (strncmp(lc->str + 5, empty_password_md5_hash,
+                    strlen(empty_password_md5_hash)) == 0) {
+          Emsg1(M_ERROR_TERM, 0, "No Password for Resource \"%s\" given\n",
+                (*item->allocated_resource)->resource_name_);
+        }
+      }
       pwd->encoding = p_encoding_md5;
       pwd->value = strdup(lc->str + 5);
     } else {
@@ -548,6 +557,13 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
       MD5_CTX md5c;
       unsigned char digest[CRYPTO_DIGEST_MD5_SIZE];
       char sig[100];
+
+      if ((item->code & CFG_ITEM_REQUIRED) == CFG_ITEM_REQUIRED) {
+        if (strnlen(lc->str, MAX_NAME_LENGTH) == 0) {
+          Emsg1(M_ERROR_TERM, 0, "No Password for Resource \"%s\" given\n",
+                (*item->allocated_resource)->resource_name_);
+        }
+      }
 
       MD5_Init(&md5c);
       MD5_Update(&md5c, (unsigned char*)(lc->str), lc->str_len);
@@ -579,6 +595,13 @@ void ConfigurationParser::StoreClearpassword(LEX* lc,
 
 
     if (pwd->value) { free(pwd->value); }
+
+    if ((item->code & CFG_ITEM_REQUIRED) == CFG_ITEM_REQUIRED) {
+      if (strnlen(lc->str, MAX_NAME_LENGTH) == 0) {
+        Emsg1(M_ERROR_TERM, 0, "No Password for Resource \"%s\" given\n",
+              (*item->allocated_resource)->resource_name_);
+      }
+    }
 
     pwd->encoding = p_encoding_clear;
     pwd->value = strdup(lc->str);
