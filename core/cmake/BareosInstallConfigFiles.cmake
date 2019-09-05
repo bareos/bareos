@@ -62,6 +62,7 @@ endforeach()
 if (${CONFIGBASEDIRECTORY} STREQUAL "bareos-dir.d")
    file(MAKE_DIRECTORY "${DESTCONFDIR}/../bareos-dir-export/client/")
    file(MAKE_DIRECTORY "${DESTCONFDIR}/counter")
+   file(MAKE_DIRECTORY "${DESTCONFDIR}/user")
 endif()
 
 # add ndmp resource directory for bareos-sd
