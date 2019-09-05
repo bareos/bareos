@@ -962,6 +962,9 @@ static int RestoreObjectHandler(void* ctx, int num_fields, char** row)
 bool SendPluginOptions(JobControlRecord* jcr)
 {
   BareosSocket* fd = jcr->file_bsock;
+  int i;
+  PoolMem cur_plugin_options(PM_MESSAGE);
+  const char* plugin_options;
   POOLMEM* msg;
 
   if (jcr->plugin_options) {
@@ -975,6 +978,20 @@ bool SendPluginOptions(JobControlRecord* jcr)
     if (!response(jcr, fd, OKPluginOptions, "PluginOptions", DISPLAY_ERROR)) {
       Jmsg(jcr, M_FATAL, 0, _("Plugin options failed.\n"));
       return false;
+    }
+  }
+  if (jcr->res.job && jcr->res.job->FdPluginOptions &&
+      jcr->res.job->FdPluginOptions->size()) {
+    Dmsg2(200, "dird: sendpluginoptions found FdPluginOptions in res.job");
+    foreach_alist_index (i, plugin_options, jcr->res.job->FdPluginOptions) {
+      PmStrcpy(cur_plugin_options, plugin_options);
+      BashSpaces(cur_plugin_options.c_str());
+
+      fd->fsend(pluginoptionscmd, cur_plugin_options.c_str());
+      if (!response(jcr, fd, OKPluginOptions, "PluginOptions", DISPLAY_ERROR)) {
+      	Jmsg(jcr, M_FATAL, 0, _("Plugin options failed.\n"));
+        return false;
+      }
     }
   }
 

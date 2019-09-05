@@ -493,6 +493,8 @@ bool DoNativeBackup(JobControlRecord* jcr)
 
   if (!SendExcludeList(jcr)) { goto bail_out; }
 
+  if (!SendPluginOptions(jcr)) { goto bail_out; }
+
   if (!SendPreviousRestoreObjects(jcr)) { goto bail_out; }
 
   if (!SendSecureEraseReqToFd(jcr)) {
