@@ -12,7 +12,7 @@ License:        AGPL-3.0
 URL:            http://www.bareos.org/
 Vendor:         The Bareos Team
 %define         sourcename bareos-vmware-%{version}
-Source:         %{sourcename}.tar.gz
+Source:         %{sourcename}.tar.bz2
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
 BuildRequires:  bareos-vmware-vix-disklib-devel
@@ -32,7 +32,9 @@ Requires:       bareos-vmware-vix-disklib
 Uses vStorage API to connect to VMWare and dump data like virtual disks snapshots
 to be used by other programs.
 
-
+%if 0%{?opensuse_version} || 0%{?sle_version}
+%debug_package
+%endif
 
 %package -n     bareos-vmware-plugin
 Summary:        Bareos VMware plugin
@@ -100,9 +102,13 @@ chmod +x %{our_find_requires}
 %setup -q -n %{sourcename}
 
 %build
-cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr .
+CFLAGS="${CFLAGS:-%optflags}" ; export CFLAGS ;
+CXXFLAGS="${CXXFLAGS:-%optflags}" ; export CXXFLAGS ;
 
-make
+cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr -DCMAKE_VERBOSE_MAKEFILE=ON .
+
+%__make CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" %{?_smp_mflags};
+
 
 %install
 %make_install
