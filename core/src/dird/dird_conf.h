@@ -62,8 +62,9 @@ enum
   R_PROFILE,
   R_CONSOLE,
   R_DEVICE,
+  R_USER,
   R_FIRST = R_DIRECTOR,
-  R_LAST = R_DEVICE /* keep this updated */
+  R_LAST = R_USER /* keep this updated */
 };
 
 /**
@@ -204,7 +205,6 @@ enum
   Client_ACL,
   Storage_ACL,
   Schedule_ACL,
-  Run_ACL,
   Pool_ACL,
   Command_ACL,
   FileSet_ACL,
@@ -225,6 +225,12 @@ class ProfileResource : public BareosResource {
   alist* ACL_lists[Num_ACL] = {0}; /**< Pointers to ACLs */
 };
 
+struct UserAcl {
+  BareosResource* corresponding_resource = nullptr;
+  alist* ACL_lists[Num_ACL] = {0}; /**< Pointers to ACLs */
+  alist* profiles = nullptr;       /**< Pointers to profile resources */
+};
+
 /**
  * Console Resource
  */
@@ -234,10 +240,15 @@ class ConsoleResource
  public:
   ConsoleResource() = default;
   virtual ~ConsoleResource() = default;
-
-  alist* ACL_lists[Num_ACL] = {0};      /**< Pointers to ACLs */
-  alist* profiles = nullptr;            /**< Pointers to profile resources */
+  UserAcl user_acl;
   bool use_pam_authentication_ = false; /**< PAM Console */
+};
+
+class UserResource : public BareosResource {
+ public:
+  UserResource() = default;
+  virtual ~UserResource() = default;
+  UserAcl user_acl;
 };
 
 /**

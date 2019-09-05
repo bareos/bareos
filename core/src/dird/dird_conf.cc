@@ -105,6 +105,7 @@ static PoolResource* res_pool;
 static MessagesResource* res_msgs;
 static CounterResource* res_counter;
 static DeviceResource* res_dev;
+static UserResource* res_user;
 
 
 /* clang-format off */
@@ -158,56 +159,61 @@ static ResourceItem dir_items[] = {
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
+#define USER_ACL(resource, ACL_lists) \
+  { "JobACL", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Job_ACL, 0, NULL, NULL,\
+     "Lists the Job resources, this resource has access to. The special keyword *all* allows access to all Job resources." },\
+  { "ClientACL", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Client_ACL, 0, NULL, NULL,\
+     "Lists the Client resources, this resource has access to. The special keyword *all* allows access to all Client resources." },\
+  { "StorageACL", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Storage_ACL, 0, NULL, NULL,\
+     "Lists the Storage resources, this resource has access to. The special keyword *all* allows access to all Storage resources." },\
+  { "ScheduleACL", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Schedule_ACL, 0, NULL, NULL,\
+     "Lists the Schedule resources, this resource has access to. The special keyword *all* allows access to all Schedule resources." },\
+  { "PoolACL", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Pool_ACL, 0, NULL, NULL,\
+     "Lists the Pool resources, this resource has access to. The special keyword *all* allows access to all Pool resources." },\
+  { "CommandACL", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Command_ACL, 0, NULL, NULL,\
+     "Lists the commands, this resource has access to. The special keyword *all* allows using commands." },\
+  { "FileSetACL", CFG_TYPE_ACL, ITEM(resource, ACL_lists), FileSet_ACL, 0, NULL, NULL,\
+     "Lists the File Set resources, this resource has access to. The special keyword *all* allows access to all File Set resources." },\
+  { "CatalogACL", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Catalog_ACL, 0, NULL, NULL,\
+     "Lists the Catalog resources, this resource has access to. The special keyword *all* allows access to all Catalog resources." },\
+  { "WhereACL", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Where_ACL, 0, NULL, NULL,\
+     "Specifies the base directories, where files could be restored. An empty string allows restores to all directories." },\
+  { "PluginOptionsACL", CFG_TYPE_ACL, ITEM(resource, ACL_lists), PluginOptions_ACL, 0, NULL, NULL,\
+     "Specifies the allowed plugin options. An empty strings allows all Plugin Options." }
+
 static ResourceItem profile_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_profile, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL,
      "The name of the resource." },
   { "Description", CFG_TYPE_STR, ITEM(res_profile, description_), 0, 0, NULL, NULL,
      "Additional information about the resource. Only used for UIs." },
-  { "JobACL", CFG_TYPE_ACL, ITEM(res_profile, ACL_lists), Job_ACL, 0, NULL, NULL,
-     "Lists the Job resources, this resource has access to. The special keyword *all* allows access to all Job resources." },
-  { "ClientACL", CFG_TYPE_ACL, ITEM(res_profile, ACL_lists), Client_ACL, 0, NULL, NULL,
-     "Lists the Client resources, this resource has access to. The special keyword *all* allows access to all Client resources." },
-  { "StorageACL", CFG_TYPE_ACL, ITEM(res_profile, ACL_lists), Storage_ACL, 0, NULL, NULL,
-     "Lists the Storage resources, this resource has access to. The special keyword *all* allows access to all Storage resources." },
-  { "ScheduleACL", CFG_TYPE_ACL, ITEM(res_profile, ACL_lists), Schedule_ACL, 0, NULL, NULL,
-     "Lists the Schedule resources, this resource has access to. The special keyword *all* allows access to all Schedule resources." },
-  { "PoolACL", CFG_TYPE_ACL, ITEM(res_profile, ACL_lists), Pool_ACL, 0, NULL, NULL,
-     "Lists the Pool resources, this resource has access to. The special keyword *all* allows access to all Pool resources." },
-  { "CommandACL", CFG_TYPE_ACL, ITEM(res_profile, ACL_lists), Command_ACL, 0, NULL, NULL,
-     "Lists the commands, this resource has access to. The special keyword *all* allows using commands." },
-  { "FileSetACL", CFG_TYPE_ACL, ITEM(res_profile, ACL_lists), FileSet_ACL, 0, NULL, NULL,
-     "Lists the File Set resources, this resource has access to. The special keyword *all* allows access to all File Set resources." },
-  { "CatalogACL", CFG_TYPE_ACL, ITEM(res_profile, ACL_lists), Catalog_ACL, 0, NULL, NULL,
-     "Lists the Catalog resources, this resource has access to. The special keyword *all* allows access to all Catalog resources." },
-  { "WhereACL", CFG_TYPE_ACL, ITEM(res_profile, ACL_lists), Where_ACL, 0, NULL, NULL,
-     "Specifies the base directories, where files could be restored. An empty string allows restores to all directories." },
-  { "PluginOptionsACL", CFG_TYPE_ACL, ITEM(res_profile, ACL_lists), PluginOptions_ACL, 0, NULL, NULL,
-     "Specifies the allowed plugin options. An empty strings allows all Plugin Options." },
+  USER_ACL(res_profile, ACL_lists),
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
+
+#define ACL_PROFILE(resource) \
+  { "Profile", CFG_TYPE_ALIST_RES, ITEM(resource, user_acl.profiles), R_PROFILE, 0, NULL, "14.2.3-",\
+    "Profiles can be assigned to a Console. ACL are checked until either a deny ACL is found or an allow ACL. "\
+    "First the console ACL is checked then any profile the console is linked to." }
 
 static ResourceItem con_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_con, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
   { "Description", CFG_TYPE_STR, ITEM(res_con, description_), 0, 0, NULL, NULL, NULL },
   { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_con, password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-  { "JobACL", CFG_TYPE_ACL, ITEM(res_con, ACL_lists), Job_ACL, 0, NULL, NULL, NULL },
-  { "ClientACL", CFG_TYPE_ACL, ITEM(res_con, ACL_lists), Client_ACL, 0, NULL, NULL, NULL },
-  { "StorageACL", CFG_TYPE_ACL, ITEM(res_con, ACL_lists), Storage_ACL, 0, NULL, NULL, NULL },
-  { "ScheduleACL", CFG_TYPE_ACL, ITEM(res_con, ACL_lists), Schedule_ACL, 0, NULL, NULL, NULL },
-  { "RunACL", CFG_TYPE_ACL, ITEM(res_con, ACL_lists), Run_ACL, 0, NULL, NULL, NULL },
-  { "PoolACL", CFG_TYPE_ACL, ITEM(res_con, ACL_lists), Pool_ACL, 0, NULL, NULL, NULL },
-  { "CommandACL", CFG_TYPE_ACL, ITEM(res_con, ACL_lists), Command_ACL, 0, NULL, NULL, NULL },
-  { "FileSetACL", CFG_TYPE_ACL, ITEM(res_con, ACL_lists), FileSet_ACL, 0, NULL, NULL, NULL },
-  { "CatalogACL", CFG_TYPE_ACL, ITEM(res_con, ACL_lists), Catalog_ACL, 0, NULL, NULL, NULL },
-  { "WhereACL", CFG_TYPE_ACL, ITEM(res_con, ACL_lists), Where_ACL, 0, NULL, NULL, NULL },
-  { "PluginOptionsACL", CFG_TYPE_ACL, ITEM(res_con, ACL_lists), PluginOptions_ACL, 0, NULL, NULL, NULL },
-  { "Profile", CFG_TYPE_ALIST_RES, ITEM(res_con, profiles), R_PROFILE, 0, NULL, "14.2.3-",
-     "Profiles can be assigned to a Console. ACL are checked until either a deny ACL is found or an allow ACL. "
-     "First the console ACL is checked then any profile the console is linked to." },
+  USER_ACL(res_con, user_acl.ACL_lists),
+  ACL_PROFILE(res_con),
   { "UsePamAuthentication", CFG_TYPE_BOOL, ITEM(res_con, use_pam_authentication_), 0, CFG_ITEM_DEFAULT,
-     "false", "18.2.4-", NULL },
+     "false", "18.2.4-", "If set to yes, PAM will be used to authenticate the user on this console. Otherwise, "
+     "only the credentials of this console resource are used for authentication." },
    TLS_COMMON_CONFIG(res_con),
    TLS_CERT_CONFIG(res_con),
+  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
+};
+
+static ResourceItem user_items[] = {
+  { "Name", CFG_TYPE_NAME, ITEM(res_user, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+  { "Description", CFG_TYPE_STR, ITEM(res_user, description_), 0, 0, NULL, NULL, NULL },
+  USER_ACL(res_user, user_acl.ACL_lists),
+  ACL_PROFILE(res_user),
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
@@ -548,10 +554,10 @@ static ResourceTable resources[] = {
       [] (){ res_profile = new ProfileResource(); }, reinterpret_cast<BareosResource**>(&res_profile) },
   { "Console", con_items, R_CONSOLE, sizeof(ConsoleResource),
       [] (){ res_con = new ConsoleResource(); }, reinterpret_cast<BareosResource**>(&res_con) },
-  { "User", con_items, R_CONSOLE, sizeof(ConsoleResource),
-      [] (){ res_con = new ConsoleResource(); }, reinterpret_cast<BareosResource**>(&res_con) },
-  { "Device", NULL, R_DEVICE, sizeof(DeviceResource),
-      [] (){ res_dev = new DeviceResource(); }, reinterpret_cast<BareosResource**>(&res_dev) },/* info obtained from SD */
+  { "Device", NULL, R_DEVICE, sizeof(DeviceResource),/* info obtained from SD */
+      [] (){ res_dev = new DeviceResource(); }, reinterpret_cast<BareosResource**>(&res_dev) },
+  { "User", user_items, R_USER, sizeof(UserResource),
+      [] (){ res_user = new UserResource(); }, reinterpret_cast<BareosResource**>(&res_user) },
   {nullptr, nullptr, 0, 0, nullptr, nullptr}
 };
 
@@ -2380,7 +2386,21 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       } else {
         p->tls_cert_.allowed_certificate_common_names_ =
             std::move(res_con->tls_cert_.allowed_certificate_common_names_);
-        p->profiles = res_con->profiles;
+        p->user_acl.profiles = res_con->user_acl.profiles;
+        p->user_acl.corresponding_resource = p;
+      }
+      break;
+    }
+    case R_USER: {
+      UserResource* p = dynamic_cast<UserResource*>(
+          my_config->GetResWithName(R_USER, res_user->resource_name_));
+      if (!p) {
+        Emsg1(M_ERROR, 0, _("Cannot find User resource %s\n"),
+              res_user->resource_name_);
+        return false;
+      } else {
+        p->user_acl.profiles = res_user->user_acl.profiles;
+        p->user_acl.corresponding_resource = p;
       }
       break;
     }
@@ -3703,7 +3723,8 @@ static void ConfigBeforeCallback(ConfigurationParser& my_config)
       {R_SCHEDULE, "R_SCHEDULE"}, {R_FILESET, "R_FILESET"},
       {R_POOL, "R_POOL"},         {R_MSGS, "R_MSGS"},
       {R_COUNTER, "R_COUNTER"},   {R_PROFILE, "R_PROFILE"},
-      {R_CONSOLE, "R_CONSOLE"},   {R_DEVICE, "R_DEVICE"}};
+      {R_CONSOLE, "R_CONSOLE"},   {R_DEVICE, "R_DEVICE"},
+      {R_USER, "R_USER"}};
   my_config.InitializeQualifiedResourceNameTypeConverter(map);
 }
 
@@ -3767,6 +3788,10 @@ static bool AddResourceCopyToEndOfChain(int type,
       case R_CONSOLE:
         new_resource = res_con;
         res_con = nullptr;
+        break;
+      case R_USER:
+        new_resource = res_user;
+        res_user = nullptr;
         break;
       case R_DEVICE:
         new_resource = res_dev;
@@ -3847,6 +3872,7 @@ static void DumpResource(int type,
     case R_DIRECTOR:
     case R_PROFILE:
     case R_CONSOLE:
+    case R_USER:
     case R_COUNTER:
     case R_CLIENT:
     case R_DEVICE:
@@ -3950,11 +3976,26 @@ static void FreeResource(BareosResource* res, int type)
       ConsoleResource* p = dynamic_cast<ConsoleResource*>(res);
       assert(p);
       if (p->password_.value) { free(p->password_.value); }
-      if (p->profiles) { delete p->profiles; }
+      if (p->user_acl.profiles) { delete p->user_acl.profiles; }
       for (int i = 0; i < Num_ACL; i++) {
-        if (p->ACL_lists[i]) {
-          delete p->ACL_lists[i];
-          p->ACL_lists[i] = NULL;
+        if (p->user_acl.ACL_lists[i]) {
+          delete p->user_acl.ACL_lists[i];
+          p->user_acl.corresponding_resource = nullptr;
+          p->user_acl.ACL_lists[i] = NULL;
+        }
+      }
+      delete p;
+      break;
+    }
+    case R_USER: {
+      UserResource* p = dynamic_cast<UserResource*>(res);
+      assert(p);
+      if (p->user_acl.profiles) { delete p->user_acl.profiles; }
+      for (int i = 0; i < Num_ACL; i++) {
+        if (p->user_acl.ACL_lists[i]) {
+          delete p->user_acl.ACL_lists[i];
+          p->user_acl.corresponding_resource = nullptr;
+          p->user_acl.ACL_lists[i] = NULL;
         }
       }
       delete p;

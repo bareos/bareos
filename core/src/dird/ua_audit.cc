@@ -61,11 +61,13 @@ static inline void LogAuditEventAclMsg(UaContext* ua,
                                        int acl,
                                        const char* item)
 {
-  const char* console_name;
+  const char* user_name;
   const char* host;
   const char* acl_type_name;
 
-  console_name = (ua->cons) ? ua->cons->resource_name_ : "default";
+  user_name = (ua->user_acl)
+                  ? ua->user_acl->corresponding_resource->resource_name_
+                  : "default";
   host = (ua->UA_sock) ? ua->UA_sock->host() : "unknown";
 
   switch (acl) {
@@ -79,9 +81,6 @@ static inline void LogAuditEventAclMsg(UaContext* ua,
       acl_type_name = _("for Storage");
       break;
     case Schedule_ACL:
-      acl_type_name = _("for Schedule");
-      break;
-    case Run_ACL:
       acl_type_name = _("for Schedule");
       break;
     case Pool_ACL:
@@ -107,7 +106,7 @@ static inline void LogAuditEventAclMsg(UaContext* ua,
       break;
   }
 
-  Emsg4(M_AUDIT, 0, audit_msg, console_name, host, acl_type_name, item);
+  Emsg4(M_AUDIT, 0, audit_msg, user_name, host, acl_type_name, item);
 }
 
 void UaContext::LogAuditEventAclFailure(int acl, const char* item)
@@ -131,15 +130,16 @@ void UaContext::LogAuditEventAclSuccess(int acl, const char* item)
  */
 void UaContext::LogAuditEventCmdline()
 {
-  const char* console_name;
+  const char* user_name;
   const char* host;
 
   if (!me->auditing) { return; }
 
-  console_name = cons ? cons->resource_name_ : "default";
+  user_name =
+      user_acl ? user_acl->corresponding_resource->resource_name_ : "default";
   host = UA_sock ? UA_sock->host() : "unknown";
 
-  Emsg3(M_AUDIT, 0, _("Console [%s] from [%s] cmdline %s\n"), console_name,
-        host, cmd);
+  Emsg3(M_AUDIT, 0, _("Console [%s] from [%s] cmdline %s\n"), user_name, host,
+        cmd);
 }
 } /* namespace directordaemon */

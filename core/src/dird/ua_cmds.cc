@@ -1054,9 +1054,11 @@ static bool SetipCmd(UaContext* ua, const char* cmd)
   ClientResource* client;
   char buf[1024];
 
-  client = ua->GetClientResWithName(ua->cons->resource_name_);
+  client = ua->GetClientResWithName(
+      ua->user_acl->corresponding_resource->resource_name_);
   if (!client) {
-    ua->ErrorMsg(_("Client \"%s\" not found.\n"), ua->cons->resource_name_);
+    ua->ErrorMsg(_("Client \"%s\" not found.\n"),
+                 ua->user_acl->corresponding_resource->resource_name_);
     return false;
   }
 
@@ -2698,7 +2700,8 @@ static bool wait_cmd(UaContext* ua, const char* cmd)
 static bool WhoAmICmd(UaContext* ua, const char* cmd)
 {
   std::string message;
-  message = ua->cons ? ua->cons->resource_name_ : "root";
+  message = ua->user_acl ? ua->user_acl->corresponding_resource->resource_name_
+                         : "root";
   message += '\n';
   return ua->UA_sock->fsend(message.c_str());
 }
