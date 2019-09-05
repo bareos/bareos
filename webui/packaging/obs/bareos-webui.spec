@@ -9,7 +9,7 @@ Group:         Productivity/Archiving/Backup
 License:       AGPL-3.0+
 URL:           http://www.bareos-webui.org/
 Vendor:        The Bareos Team
-Source:        %{name}-%{version}.tar.gz
+Source:        %{name}-%{version}.tar.bz2
 BuildRoot:     %{_tmppath}/%{name}-%{version}-build
 BuildArch:     noarch
 

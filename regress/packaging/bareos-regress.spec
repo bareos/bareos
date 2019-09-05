@@ -40,6 +40,9 @@ Bareos source code has been released under the AGPL version 3 license.
 This package contains Bareos regression tests.
 Don't use them on productive systems.
 
+%if 0%{?opensuse_version} || 0%{?sle_version}
+%debug_package
+%endif
 
 %prep
 %setup
