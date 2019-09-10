@@ -1212,10 +1212,29 @@ class BareosOvirtWrapper(object):
 
         if self.snap_service:
             snap = self.snap_service.get()
+            
+	    # Remove the snapshot:
+            failCount = 0
+	    
+	    while True:
+	    	try:
+		   self.snap_service.remove()
+		except sdk.Error, e:
+		   if e.code == 400:
+			failCount += 1
 
-            # Remove the snapshot:
-            self.snap_service.remove()
-            bareosfd.JobMessage(
+			# Fail after 30 tries
+			if failCount > 30:
+				bareosfd.JobMessage(context, bJobMessageType['M_WARNING'], "The snapshot didn't unlock! Please remove it manually.\n")
+				return bRCs["bRC_Error"] 
+
+                   	bareosfd.JobMessage(context, bJobMessageType['M_INFO'], "Snapshot is still locked waiting 5 seconds... [" + str(failCount) +  "/30]\n")
+			time.sleep(5)
+			continue
+		   else:
+			break   		
+            
+	    bareosfd.JobMessage(
                 context, bJobMessageType['M_INFO'],
                     'Removed the snapshot \'%s\'.\n' % snap.description)
             
