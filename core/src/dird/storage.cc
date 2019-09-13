@@ -555,6 +555,9 @@ static inline void FreeVolList(changer_vol_list_t *vol_list)
 {
    vol_list_t *vl;
 
+   // make sure cache is treated as empty
+   vol_list->timestamp = 0;
+
    if (vol_list->contents) {
       foreach_dlist(vl, vol_list->contents) {
          if (vl->VolName) {
