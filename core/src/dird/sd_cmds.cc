@@ -372,7 +372,7 @@ dlist *native_get_vol_list(UaContext *ua, StorageResource *store, bool listall, 
        * See if this is a parsable string from either list or listall
        * e.g. at least f1:f2
        */
-      if (!field1 && !field2) {
+      if (!field1 || !field2) {
          goto parse_error;
       }
 
