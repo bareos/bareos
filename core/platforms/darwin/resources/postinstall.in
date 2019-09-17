@@ -1,18 +1,48 @@
 #!/bin/sh
-LOG=/tmp/bareos-client-postinstall.log
+LOG=/tmp/bareos-postinstall.log
+exec > $LOG 2>&1
 
-date > $LOG
-echo "Postinstall. Parameter: $@" >> $LOG
+date
+echo "Postinstall. Parameter: $*"
 
 cd @CMAKE_INSTALL_PREFIX@
-echo "doing cp -v @libdir@/com.bareos.bareos-fd.plist $3/Library/LaunchDaemons/com.bareos.bareos-fd.plist " >> $LOG
-cp -v @scriptdir@/com.bareos.bareos-fd.plist $3/Library/LaunchDaemons/com.bareos.bareos-fd.plist >> $LOG
+echo "doing cp -v @libdir@/com.bareos.bareos-fd.plist $3/Library/LaunchDaemons/com.bareos.bareos-fd.plist "
+cp -v "@scriptdir@/com.bareos.bareos-fd.plist" "$3/Library/LaunchDaemons/com.bareos.bareos-fd.plist"
 
+if [ ! -f "@confdir@/bareos-fd.conf" -a ! -d "@confdir@/bareos-fd.d" ]; then
+  echo "migrating config of previous version"
+  found_cfg=0
+  for cfgdir in \
+    /usr/local/bareos-19.*/etc/bareos \
+    /usr/local/bareos-18.*/etc/bareos \
+    /usr/local/etc/bareos; do
+    if [ -f "${cfgdir}/bareos-fd.conf" ]; then
+      mkdir -p "@confdir@"
+      cp -av "${cfgdir}/bareos-fd.conf" "@confdir@"
+      found_cfg=1
+    fi
+    if [ -d "${cfgdir}/bareos-fd.d" ]; then
+      mkdir -p "@confdir@"
+      cp -av "${cfgdir}/bareos-fd.d" "@confdir@"
+      found_cfg=1
+    fi
+    if [ -f "${cfgdir}/bconsole.conf" ]; then
+      mkdir -p "@confdir@"
+      cp -av "${cfgdir}/bconsole.conf" "@confdir@"
+      found_cfg=1
+    fi
+    if [ $found_cfg -gt 0 ]; then
+      break
+    fi
+  done
+else
+  echo "configuration already in place. Skipping migration"
+fi
 
-@scriptdir@/bareos-config deploy_config "@configtemplatedir@" "@confdir@" bareos-fd >> $LOG 2>&1
-@scriptdir@/bareos-config deploy_config "@configtemplatedir@" "@confdir@" bconsole  >> $LOG 2>&1
+@scriptdir@/bareos-config deploy_config "@configtemplatedir@" "@confdir@" bareos-fd
+@scriptdir@/bareos-config deploy_config "@configtemplatedir@" "@confdir@" bconsole
 
 # Load startup item
-/bin/launchctl load -w "$3/Library/LaunchDaemons/com.bareos.bareos-fd.plist" >> $LOG 2>&1
+/bin/launchctl load -w "$3/Library/LaunchDaemons/com.bareos.bareos-fd.plist"
 
-echo "finished" >> $LOG
+echo "finished"
