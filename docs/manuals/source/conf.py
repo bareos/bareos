@@ -81,6 +81,7 @@ extensions = [
     'sphinxcontrib.nwdiag',
     'sphinxcontrib.plantuml',
     'sphinxcontrib.seqdiag',
+	'crate.sphinx.csv'
 ]
 
 #    'limitation',
@@ -213,7 +214,6 @@ html_sidebars = {
         'searchbox.html',
     ]
 }
-
 
 # -- Options for HTMLHelp output ------------------------------------------
 

@@ -26,3 +26,4 @@ Developer Guide
    DeveloperGuide/directorConsole.rst
    DeveloperGuide/reservation.rst
    DeveloperGuide/jobexec.rst
+   DeveloperGuide/Webui.rst
