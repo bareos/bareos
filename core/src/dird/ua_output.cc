@@ -547,6 +547,11 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
 
   Dmsg1(20, "list: %s\n", cmd);
 
+  if (ua->argc <= 1) {
+    ua->ErrorMsg(_("%s command requires a keyword\n"), NPRT(ua->argk[0]));
+    return false;
+  }
+
   /*
    * days or hours given?
    */
