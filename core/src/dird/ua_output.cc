@@ -912,9 +912,21 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
            * List all volumes, flat
            */
           if (FindArg(ua, NT_("all")) > 0) {
+            /*
+             * The result of "list media all"
+             * does not contain the Pool information,
+             * therefore checking the Pool_ACL is not possible.
+             * For this reason, we prevent this command.
+             */
+            if (ua->AclHasRestrictions(Pool_ACL) && (llist != VERT_LIST)) {
+              ua->ErrorMsg(
+                  _("Restricted permission. Use the commands 'list media' or "
+                    "'llist media all' instead\n"));
+              return false;
+            }
             ua->send->ArrayStart("volumes");
-            SetAclFilter(ua, 1, Pool_ACL); /* PoolName */
-            if (current) { SetResFilter(ua, 1, R_POOL); /* PoolName */ }
+            SetAclFilter(ua, 4, Pool_ACL); /* PoolName */
+            if (current) { SetResFilter(ua, 4, R_POOL); /* PoolName */ }
             ua->db->ListMediaRecords(ua->jcr, &mr, query_range.c_str(), count,
                                      ua->send, llist);
             ua->send->ArrayEnd("volumes");
@@ -1018,9 +1030,11 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
       ua->db->ListJobstatisticsRecords(ua->jcr, jobid, ua->send, llist);
     } else {
       ua->ErrorMsg(_("no jobid given\n"));
+      return false;
     }
   } else {
     ua->ErrorMsg(_("Unknown list keyword: %s\n"), NPRT(ua->argk[1]));
+    return false;
   }
 
   return true;
