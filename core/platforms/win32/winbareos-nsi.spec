@@ -70,9 +70,8 @@ BuildRequires:  mingw64-libwinpthread1
 BuildRequires:  mingw32-libqt5-qtbase
 BuildRequires:  mingw64-libqt5-qtbase
 
-# needs to be added if qt is built with icu support
-#BuildRequires:  mingw32-icu
-#BuildRequires:  mingw64-icu
+BuildRequires:  mingw32-icu
+BuildRequires:  mingw64-icu
 
 
 BuildRequires:  mingw32-lzo
@@ -180,6 +179,9 @@ for flavor in %{flavors}; do
       Qt5Core.dll \
       Qt5Gui.dll \
       Qt5Widgets.dll \
+      icui18n56.dll \
+      icudata56.dll \
+      icuuc56.dll \
       libfreetype-6.dll \
       libglib-2.0-0.dll \
       libintl-8.dll \
