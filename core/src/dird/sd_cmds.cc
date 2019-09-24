@@ -359,7 +359,7 @@ dlist* native_get_vol_list(UaContext* ua,
      * See if this is a parsable string from either list or listall
      * e.g. at least f1:f2
      */
-    if (!field1 && !field2) { goto parse_error; }
+    if (!field1 || !field2) { goto parse_error; }
 
     vl = (vol_list_t*)malloc(sizeof(vol_list_t));
     memset(vl, 0, sizeof(vol_list_t));
