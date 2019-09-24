@@ -1,7 +1,5 @@
-# DB parameters
-db_name="@db_name@"
-db_user="@db_user@"
-db_password="@db_password@"
+
+PROJECT_SOURCE_DIR=@PROJECT_SOURCE_DIR@
 
 PROJECT_BINARY_DIR=@PROJECT_BINARY_DIR@
 bin=${PROJECT_BINARY_DIR}/bin
@@ -32,6 +30,10 @@ DBTYPE=@DEFAULT_DB_TYPE@
 archivedir=@archivedir@
 logdir=@logdir@
 
+export dir_password=@dir_password@
+export sd_password=@sd_password@
+export fd_password=@fd_password@
+
 # exported variables used by start/stop and other bareos scripts
 # to override the defaults
 export BAREOS_CONFIG_DIR=${conf}
@@ -51,9 +53,11 @@ export scripts
 export DBTYPE
 export tmp
 
+# DB parameters
 export db_name=@db_name@
-export db_password=@db_password@
 export db_user=@db_user@
+export db_password=@db_password@
+
 
 export PAM_WRAPPER_LIBRARIES=@PAM_WRAPPER_LIBRARIES@
 

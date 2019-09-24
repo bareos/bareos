@@ -56,34 +56,37 @@ if [ $? != 0 ] ; then
   zstat=1
   exit 1
 fi
-grep "ERROR" ${tmp}/log*.out 2>&1 >/dev/null
-if [ $? = 0 ] ; then
-  echo " "
-  echo "  !!!! ERROR in log output !!!!"
-  echo "  !!!! ERROR in log output !!!!" >>test.out
-  grep "ERROR" ${tmp}/log*.out
-  echo " "
-  zstat=1
-  exit 1
-fi
-grep "Fatal Error" ${tmp}/log*.out 2>&1 >/dev/null
-if [ $? = 0 ] ; then
-  echo " "
-  echo "  !!!! Fatal Error in log output !!!!"
-  echo "  !!!! Fatal Error in log output !!!!" >>test.out
-  grep "Fatal Error" ${tmp}/log*.out
-  echo " "
-  zstat=1
-  exit 1
-fi
 
-grep "glibc detected" ${tmp}/log*.out 2>&1 >/dev/null
-if [ $? = 0 ] ; then
-  echo " "
-  echo "  !!!! glibc detected Error in log output !!!!"
-  echo "  !!!! glibc detected Error in log output !!!!" >>test.out
-  grep "glibc detected" ${tmp}/log*.out
-  echo " "
-  zstat=1
-  exit 1
+if ls ${tmp}/log*.out >/dev/null 2>&1; then
+
+    if grep "ERROR" ${tmp}/log*.out >/dev/null 2>&1; then
+        echo " "
+        echo "  !!!! ERROR in log output !!!!"
+        echo "  !!!! ERROR in log output !!!!" >>test.out
+        grep "ERROR" ${tmp}/log*.out
+        echo " "
+        zstat=1
+        exit 1
+    fi
+
+    if grep "Fatal Error" ${tmp}/log*.out >/dev/null 2>&1; then    
+        echo " "
+        echo "  !!!! Fatal Error in log output !!!!"
+        echo "  !!!! Fatal Error in log output !!!!" >>test.out
+        grep "Fatal Error" ${tmp}/log*.out
+        echo " "
+        zstat=1
+        exit 1
+    fi
+
+    if grep "glibc detected" ${tmp}/log*.out >/dev/null 2>&1; then        
+        echo " "
+        echo "  !!!! glibc detected Error in log output !!!!"
+        echo "  !!!! glibc detected Error in log output !!!!" >>test.out
+        grep "glibc detected" ${tmp}/log*.out
+        echo " "
+        zstat=1
+        exit 1
+    fi
+
 fi

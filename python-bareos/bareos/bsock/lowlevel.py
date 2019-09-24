@@ -5,12 +5,13 @@ Low Level socket methods to communication with the bareos-director.
 # Authentication code is taken from
 # https://github.com/hanxiangduo/bacula-console-python
 
-from   bareos.exceptions import *
-from   bareos.util.bareosbase64 import BareosBase64
-from   bareos.util.password import Password
 from   bareos.bsock.constants import Constants
 from   bareos.bsock.connectiontype import ConnectionType
 from   bareos.bsock.protocolmessages import ProtocolMessages
+from   bareos.util.bareosbase64 import BareosBase64
+from   bareos.util.password import Password
+import bareos.exceptions
+import hashlib
 import hmac
 import logging
 import random
@@ -73,12 +74,12 @@ class LowLevel(object):
     def __connect(self):
         connected = False
         if self.tls_psk_require and not self.is_tls_psk_available():
-            raise ConnectionError(u'TLS-PSK is required, but sslpsk module not loaded/available.')
+            raise bareos.exceptions.ConnectionError(u'TLS-PSK is required, but sslpsk module not loaded/available.')
 
         if self.tls_psk_enable and self.is_tls_psk_available():
             try:
                 self.__connect_tls_psk()
-            except (ConnectionError, ssl.SSLError) as e:
+            except (bareos.exceptions.ConnectionError, ssl.SSLError) as e:
                 if self.tls_psk_require:
                     raise
                 else:
@@ -103,7 +104,7 @@ class LowLevel(object):
             self.socket.connect((self.address, self.port))
         except socket.gaierror as e:
             self._handleSocketError(e)
-            raise ConnectionError(
+            raise bareos.exceptions.ConnectionError(
                 "failed to connect to host {}, port {}: {}".format(self.address, self.port, str(e)))
         else:
             self.logger.debug("connected to {}:{}".format(self.address, self.port))
@@ -122,7 +123,7 @@ class LowLevel(object):
         if isinstance(self.password, Password):
             password = self.password.md5()
         else:
-            raise ConnectionError(u'No password provides.')
+            raise bareos.exceptions.ConnectionError(u'No password provides.')
         self.logger.debug("identity = {}, password = {}".format(identity, password))
         try:
             self.socket = sslpsk.wrap_socket(
@@ -155,7 +156,7 @@ class LowLevel(object):
         name: own name.
         '''
         if not isinstance(password, Password):
-            raise AuthenticationError("password must by of type bareos.Password() not %s" % (type(password)))
+            raise bareos.exceptions.AuthenticationError("password must by of type bareos.Password() not %s" % (type(password)))
         self.password = password
         self.name = name
         self.auth_success_regex = auth_success_regex
@@ -167,11 +168,14 @@ class LowLevel(object):
         # send the bash to the director
         self.send(bashed_name)
 
-        (ssl, result_compatible, result) = self._cram_md5_respond(password=self.password.md5(), tls_remote_need=0)
+        try:
+            (ssl, result_compatible, result) = self._cram_md5_respond(password=self.password.md5(), tls_remote_need=0)
+        except bareos.exceptions.SignalReceivedException as e:
+            raise bareos.exceptions.AuthenticationError('Received unexcepted signal: {}'.format(str(e)))
         if not result:
-            raise AuthenticationError("failed (in response)")
+            raise bareos.exceptions.AuthenticationError("failed (in response)")
         if not self._cram_md5_challenge(clientname=self.name, password=self.password.md5(), tls_local_need=0, compatible=True):
-            raise AuthenticationError("failed (in challenge)")
+            raise bareos.exceptions.AuthenticationError("failed (in challenge)")
         self.recv_msg(self.auth_success_regex)
         self.auth_credentials_valid = True
         return True
@@ -216,7 +220,7 @@ class LowLevel(object):
         try:
             self.send(bytearray(command, 'utf-8'))
             result = self.recv_msg()
-        except (SocketEmptyHeader, ConnectionLostError) as e:
+        except (SocketEmptyHeader, bareos.exceptions.ConnectionLostError) as e:
             self.logger.error("connection problem (%s): %s" % (type(e).__name__, str(e)))
             if count == 0:
                 if self.reconnect():
@@ -235,8 +239,8 @@ class LowLevel(object):
 
         try:
             # convert to network flow
+            self.logger.debug('{}'.format(msg.rstrip()))
             self.socket.sendall(struct.pack("!i", msg_len) + msg)
-            self.logger.debug("%s" %(msg))
         except socket.error as e:
             self._handleSocketError(e)
 
@@ -248,6 +252,7 @@ class LowLevel(object):
         header = self.__get_header()
         if header <= 0:
             self.logger.debug("header: " + str(header))
+            raise bareos.exceptions.SignalReceivedException(header)
         # get the message
         length = header
         msg = self.recv_submsg(length)
@@ -363,7 +368,7 @@ class LowLevel(object):
             header += submsg
         if len(header) == 0:
             self.logger.debug("received empty header, assuming connection is closed")
-            raise SocketEmptyHeader()
+            raise bareos.exceptions.SocketEmptyHeader()
         else:
             return self.__get_header_data(header)
 
@@ -410,7 +415,7 @@ class LowLevel(object):
         self.logger.debug("received: " + str(msg))
 
         # hash with password
-        hmac_md5 = hmac.new(bytes(bytearray(password, 'utf-8')))
+        hmac_md5 = hmac.new(bytes(bytearray(password, 'utf-8')), None, hashlib.md5)
         hmac_md5.update(bytes(bytearray(chal, 'utf-8')))
         bbase64compatible = BareosBase64().string_to_base64(bytearray(hmac_md5.digest()), True)
         bbase64notcompatible = BareosBase64().string_to_base64(bytearray(hmac_md5.digest()), False)
@@ -451,15 +456,15 @@ class LowLevel(object):
             return (0, True, False)
         
         # check the receive message
-        self.logger.debug("(recv): " + str(msg))
+        self.logger.debug("(recv): " + str(msg).rstrip())
         
-        msg_list = msg.split(b" ")
+        msg_list = msg.split(b' ')
         chal = msg_list[2]
         # get th timestamp and the tle info from director response
         ssl = int(msg_list[3][4])
         compatible = True
         # hmac chal and the password
-        hmac_md5 = hmac.new(bytes(bytearray(password, 'utf-8')))
+        hmac_md5 = hmac.new(bytes(bytearray(password, 'utf-8')), None, hashlib.md5)
         hmac_md5.update(bytes(chal))
 
         # base64 encoding
@@ -503,7 +508,7 @@ class LowLevel(object):
             result = False
             if self.auth_credentials_valid:
                 # connection have worked before, but now it is gone
-                raise ConnectionLostError("currently no network connection")
+                raise bareos.exceptions.ConnectionLostError("currently no network connection")
             else:
                 raise RuntimeError("should connect to director first before send data")
         return result

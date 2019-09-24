@@ -1,0 +1,50 @@
+#!/bin/sh
+#
+# Run a simple backup
+#   then restore it.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+. ./environment
+. ${scripts}/functions
+
+${scripts}/cleanup
+${scripts}/setup
+
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data
+
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+configure add console=admin password=secret profile=all
+messages
+quit
+END_OF_DATA
+
+run_bareos
+
+export PYTHONPATH=${PROJECT_SOURCE_DIR}/../python-bareos/
+print_debug "PYTHONPATH=$PYTHONPATH"
+if PYTHONRESULT=$(./python-bareos-unittest.py -v); then
+    print_debug "$PYTHONRESULT"
+else
+    set_error "$PYTHONRESULT"
+fi
+
+check_for_zombie_jobs storage=File
+
+stop_bareos
+
+end_test

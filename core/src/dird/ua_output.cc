@@ -180,6 +180,30 @@ static void ShowDisabledSchedules(UaContext* ua)
   if (first) { ua->SendMsg(_("No disabled Schedules.\n")); }
 }
 
+/**
+ * Enter with Resources locked
+ */
+static void ShowAll(UaContext* ua, bool hide_sensitive_data, bool verbose)
+{
+  for (int j = my_config->r_first_; j <= my_config->r_last_; j++) {
+    switch (j) {
+      case R_DEVICE:
+        /*
+         * Skip R_DEVICE since it is really not used or updated
+         */
+        continue;
+      default:
+        if (my_config->res_head_[j - my_config->r_first_]) {
+          my_config->DumpResourceCb_(
+              j, my_config->res_head_[j - my_config->r_first_], bsendmsg, ua,
+              hide_sensitive_data, verbose);
+        }
+        break;
+    }
+  }
+}
+
+
 struct showstruct {
   const char* res_name;
   int type;
@@ -199,6 +223,7 @@ static struct showstruct avail_resources[] = {{NT_("directors"), R_DIRECTOR},
                                               {NT_("messages"), R_MSGS},
                                               {NT_("profiles"), R_PROFILE},
                                               {NT_("consoles"), R_CONSOLE},
+                                              {NT_("users"), R_USER},
                                               {NT_("all"), -1},
                                               {NT_("help"), -2},
                                               {NULL, 0}};
@@ -206,6 +231,7 @@ static struct showstruct avail_resources[] = {{NT_("directors"), R_DIRECTOR},
 /**
  *  Displays Resources
  *
+ *  show
  *  show all
  *  show <resource-keyword-name> - e.g. show directors
  *  show <resource-keyword-name>=<name> - e.g. show director=HeadMan
@@ -234,13 +260,19 @@ bool show_cmd(UaContext* ua, const char* cmd)
   if (FindArg(ua, NT_("verbose")) > 0) { verbose = true; }
 
   LockRes(my_config);
+
+  /*
+   * Without parameter, show all ressources.
+   */
+  if (ua->argc == 1) { ShowAll(ua, hide_sensitive_data, verbose); }
+
   for (i = 1; i < ua->argc; i++) {
     /*
      * skip verbose keyword, already handled earlier.
      */
     if (Bstrcasecmp(ua->argk[i], NT_("verbose"))) { continue; }
 
-    if (Bstrcasecmp(ua->argk[i], _("disabled"))) {
+    if (Bstrcasecmp(ua->argk[i], NT_("disabled"))) {
       if (((i + 1) < ua->argc) && Bstrcasecmp(ua->argk[i + 1], NT_("jobs"))) {
         ShowDisabledJobs(ua);
       } else if (((i + 1) < ua->argc) &&
@@ -295,22 +327,7 @@ bool show_cmd(UaContext* ua, const char* cmd)
 
     switch (type) {
       case -1: /* all */
-        for (j = my_config->r_first_; j <= my_config->r_last_; j++) {
-          switch (j) {
-            case R_DEVICE:
-              /*
-               * Skip R_DEVICE since it is really not used or updated
-               */
-              continue;
-            default:
-              if (my_config->res_head_[j - my_config->r_first_]) {
-                my_config->DumpResourceCb_(
-                    j, my_config->res_head_[j - my_config->r_first_], bsendmsg,
-                    ua, hide_sensitive_data, verbose);
-              }
-              break;
-          }
-        }
+        ShowAll(ua, hide_sensitive_data, verbose);
         break;
       case -2:
         ua->SendMsg(_("Keywords for the show command are:\n"));
@@ -546,6 +563,11 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
   if (!OpenClientDb(ua, true)) { return true; }
 
   Dmsg1(20, "list: %s\n", cmd);
+
+  if (ua->argc <= 1) {
+    ua->ErrorMsg(_("%s command requires a keyword\n"), NPRT(ua->argk[0]));
+    return false;
+  }
 
   /*
    * days or hours given?
@@ -907,9 +929,21 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
            * List all volumes, flat
            */
           if (FindArg(ua, NT_("all")) > 0) {
+            /*
+             * The result of "list media all"
+             * does not contain the Pool information,
+             * therefore checking the Pool_ACL is not possible.
+             * For this reason, we prevent this command.
+             */
+            if (ua->AclHasRestrictions(Pool_ACL) && (llist != VERT_LIST)) {
+              ua->ErrorMsg(
+                  _("Restricted permission. Use the commands 'list media' or "
+                    "'llist media all' instead\n"));
+              return false;
+            }
             ua->send->ArrayStart("volumes");
-            SetAclFilter(ua, 1, Pool_ACL); /* PoolName */
-            if (current) { SetResFilter(ua, 1, R_POOL); /* PoolName */ }
+            SetAclFilter(ua, 4, Pool_ACL); /* PoolName */
+            if (current) { SetResFilter(ua, 4, R_POOL); /* PoolName */ }
             ua->db->ListMediaRecords(ua->jcr, &mr, query_range.c_str(), count,
                                      ua->send, llist);
             ua->send->ArrayEnd("volumes");
@@ -1013,9 +1047,11 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
       ua->db->ListJobstatisticsRecords(ua->jcr, jobid, ua->send, llist);
     } else {
       ua->ErrorMsg(_("no jobid given\n"));
+      return false;
     }
   } else {
     ua->ErrorMsg(_("Unknown list keyword: %s\n"), NPRT(ua->argk[1]));
+    return false;
   }
 
   return true;

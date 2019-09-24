@@ -2702,8 +2702,8 @@ static bool WhoAmICmd(UaContext* ua, const char* cmd)
   std::string message;
   message = ua->user_acl ? ua->user_acl->corresponding_resource->resource_name_
                          : "root";
-  message += '\n';
-  return ua->UA_sock->fsend(message.c_str());
+  ua->send->ObjectKeyValue("whoami", message.c_str(), "%s\n");
+  return true;
 }
 
 static bool help_cmd(UaContext* ua, const char* cmd)
