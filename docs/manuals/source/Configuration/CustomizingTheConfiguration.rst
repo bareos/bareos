@@ -415,11 +415,9 @@ In general, if you want spaces in a name to the right of the first equal sign (=
 
 Within a quoted string, any character following a backslash (\) is taken as itself (handy for inserting backslashes and double quotes (")).
 
+.. warning::
 
-
-   .. warning::
-
-      If the configure directive is used to define a number, the number is never to be put between surrounding quotes. This is even true if the number is specified together with its unit, like :strong:`365 days`.
+   If the configure directive is used to define a number, the number is never to be put between surrounding quotes. This is even true if the number is specified together with its unit, like :strong:`365 days`.
    
 
 Numbers
@@ -427,33 +425,29 @@ Numbers
 
 Numbers are not to be quoted, see :ref:`section-Quotes`. Also do not prepend numbers by zeros (0), as these are not parsed in the expected manner (write 1 instead of 01).
 
+.. _DataTypes:
+
 Data Types
 ^^^^^^^^^^
 
 :index:`\ <single: Configuration; Data Types>`\  :index:`\ <single: Data Type>`\  
 
-.. _DataTypes:
-
-
-
 When parsing the resource directives, Bareos classifies the data according to the types listed below.
+
+.. _DataTypeAcl:
 
 acl
    :index:`\ <single: Data Type; acl>`\  
 
-.. _DataTypeAcl:
-
- This directive defines what is permitted to be accessed. It does this by using a list of regular expressions, separated by commas (:strong:`,`) or using multiple directives. If :strong:`!` is prepended, the expression is negated. The special keyword :strong:`*all*` allows unrestricted access.
+   This directive defines what is permitted to be accessed. It does this by using a list of regular expressions, separated by commas (:strong:`,`) or using multiple directives. If :strong:`!` is prepended, the expression is negated. The special keyword :strong:`*all*` allows unrestricted access.
 
    Depending on the type of the ACL, the regular expressions can be either resource names, paths or console commands.
 
    Since Bareos :sinceVersion:`16.2.4: ACL: strict regular expression handling` regular expression are handled more strictly. Before also substring matches has been accepted.
 
-   
+   .. _section-CommandAclExample:
 
-.. _section-CommandAclExample:
-
- For clarification, we demonstrate the usage of ACLs by some examples for :config:option:`dir/console/CommandAcl`\ :
+   For clarification, we demonstrate the usage of ACLs by some examples for :config:option:`dir/console/CommandAcl`\ :
 
    .. code-block:: bareosconfig
       :caption: Allow only the help command
@@ -498,60 +492,61 @@ acl
 
    
 
-      .. warning::
+   .. warning::
 
-         
       ACL checking stops at the first match. So the following definition allows all commands, which might not be what you expected:
-      
 
-   .. code-block:: bareosconfig
-      :caption: Wrong: Allows all commands
+      .. code-block:: bareosconfig
+         :caption: Wrong: Allows all commands
 
-      # WARNING: this configuration ignores !sqlquery, as *all* is matched before.
-      Command ACL = *all*, !sqlquery
+         # WARNING: this configuration ignores !sqlquery, as *all* is matched before.
+         Command ACL = *all*, !sqlquery
+
+
+.. _DataTypeAuthType:
 
 auth-type
    :index:`\ <single: Data Type; auth-type>`\  
 
-.. _DataTypeAuthType:
-
- Specifies the authentication type that must be supplied when connecting to a backup protocol that uses a specific authentication type. Currently only used for :ref:`NDMPResource`.
+   Specifies the authentication type that must be supplied when connecting to a backup protocol that uses a specific authentication type. Currently only used for :ref:`NDMPResource`.
 
    The following values are allowed:
 
    None
-      - Use no password
+      Use no password
 
    Clear
-      - Use clear text password
+      Use clear text password
 
    MD5
-      - Use MD5 hashing
+      Use MD5 hashing
+
+
+.. _DataTypeInteger:
 
 integer
    :index:`\ <single: Data Type; integer>`\  
 
-.. _DataTypeInteger:
 
- A 32 bit integer value. It may be positive or negative.
+   A 32 bit integer value. It may be positive or negative.
 
    Don’t use quotes around the number, see :ref:`section-Quotes`.
+
+   
+.. _DataTypeLongInteger:
 
 long integer
    :index:`\ <single: Data Type; long integer>`\  
 
-.. _DataTypeLongInteger:
-
- A 64 bit integer value. Typically these are values such as bytes that can exceed 4 billion and thus require a 64 bit value.
+   A 64 bit integer value. Typically these are values such as bytes that can exceed 4 billion and thus require a 64 bit value.
 
    Don’t use quotes around the number, see :ref:`section-Quotes`.
 
-job protocol
-   :index:`\ <single: Data Type; job protocol>`\  
-
+   
 .. _DataTypeJobProtocol:
 
-
+job protocol
+   :index:`\ <single: Data Type; job protocol>`\  
 
    The protocol to run a the job. Following protocols are available:
 
@@ -567,81 +562,92 @@ job protocol
    NDMP_NATIVE
       Since Bareos :sinceVersion:`17.2.3: NDMP NATIVE`. See :ref:`section-NdmpNative`.
 
+      
+.. _DataTypeName:
+
 name
    :index:`\ <single: Data Type; name>`\  
 
-.. _DataTypeName:
-
- A keyword or name consisting of alphanumeric characters, including the hyphen, underscore, and dollar characters. The first character of a name must be a letter. A name has a maximum length currently set to 127 bytes.
+   A keyword or name consisting of alphanumeric characters, including the hyphen, underscore, and dollar characters. The first character of a name must be a letter. A name has a maximum length currently set to 127 bytes.
 
    Please note that Bareos resource names as well as certain other names (e.g. Volume names) must contain only letters (including ISO accented letters), numbers, and a few special characters (space, underscore, ...). All other characters and punctuation are invalid.
+
+
+.. _DataTypePassword:
 
 password
    :index:`\ <single: Data Type; password>`\  
 
-.. _DataTypePassword:
+   This is a Bareos password and it is stored internally in MD5 hashed format.
 
- This is a Bareos password and it is stored internally in MD5 hashed format.
+
+.. _DataTypeDirectory:
 
 path
    :index:`\ <single: Data Type; path>`\  
 
-.. _DataTypeDirectory:
+   A path is either a quoted or non-quoted string. A path will be passed to your standard shell for expansion when it is scanned. Thus constructs such as $HOME are interpreted to be their correct values. The path can either reference to a file or a directory.
 
- A path is either a quoted or non-quoted string. A path will be passed to your standard shell for expansion when it is scanned. Thus constructs such as $HOME are interpreted to be their correct values. The path can either reference to a file or a directory.
+
+.. _DataTypePositiveInteger:
 
 positive integer
    :index:`\ <single: Data Type; positive integer>`\  
 
-.. _DataTypePositiveInteger:
-
- A 32 bit positive integer value.
+   A 32 bit positive integer value.
 
    Don’t use quotes around the number, see :ref:`section-Quotes`.
+
+
+.. _DataTypeSpeed:
 
 speed
    :index:`\ <single: Data Type; speed>`\  
 
-.. _DataTypeSpeed:
-
- The speed parameter can be specified as k/s, kb/s, m/s or mb/s.
+   The speed parameter can be specified as k/s, kb/s, m/s or mb/s.
 
    Don’t use quotes around the parameter, see :ref:`section-Quotes`.
+
+
+.. _DataTypeString:
 
 string
    :index:`\ <single: Data Type; string>`\  
 
-.. _DataTypeString:
+   A quoted string containing virtually any character including spaces, or a non-quoted string. A string may be of any length. Strings are typically values that correspond to filenames, directories, or system command names. A backslash (\) turns the next character into itself, so to include a double quote in a string, you precede the double quote with a backslash. Likewise to include a backslash.
 
- A quoted string containing virtually any character including spaces, or a non-quoted string. A string may be of any length. Strings are typically values that correspond to filenames, directories, or system command names. A backslash (\) turns the next character into itself, so to include a double quote in a string, you precede the double quote with a backslash. Likewise to include a backslash.
+
+.. _DataTypeStringList:
 
 string-list
    :index:`\ <single: Data Type; string list>`\  
 
-.. _DataTypeStringList:
+   Multiple strings, specified in multiple directives, or in a single directive, separated by commas (**,**).
 
- Multiple strings, specified in multiple directives, or in a single directive, separated by commas (**,**).
+
+.. _DataTypeStrname:
 
 strname
    :index:`\ <single: Data Type; strname>`\  
 
-.. _DataTypeStrname:
+   is similar to a :strong:`Name`, except that the name may be quoted and can thus contain additional characters including spaces.
 
- is similar to a :strong:`Name`, except that the name may be quoted and can thus contain additional characters including spaces.
+
+
+.. _DataTypeNetAddress:
 
 net-address
    :index:`\ <single: Data Type; net-address>`\  
 
-.. _DataTypeNetAddress:
+   is either a domain name or an IP address specified as a dotted quadruple in string or quoted string format. This directive only permits a single address to be specified. The :strong:`NetPort` must be specificly separated. If multiple net-addresses are needed, please assess if it is also possible to specify :strong:`NetAddresses` (plural).
 
- is either a domain name or an IP address specified as a dotted quadruple in string or quoted string format. This directive only permits a single address to be specified. The :strong:`NetPort` must be specificly separated. If multiple net-addresses are needed, please assess if it is also possible to specify :strong:`NetAddresses` (plural).
+
+.. _DataTypeNetAddresses:
 
 net-addresses
    :index:`\ <single: Data Type; net-addresses>`\  
 
-.. _DataTypeNetAddresses:
-
- Specify a set of net-addresses and net-ports. Probably the simplest way to explain this is to show an example:
+   Specify a set of net-addresses and net-ports. Probably the simplest way to explain this is to show an example:
 
    .. code-block:: bareosconfig
       :caption: net-addresses
@@ -668,32 +674,31 @@ net-addresses
    where ip, ip4, ip6, addr, and port are all keywords. Note, that the address can be specified as either a dotted quadruple, or in IPv6 colon notation, or as a symbolic name (only in the ip specification). Also, the port can be specified as a number or as the mnemonic value from the :file:`/etc/services` file. If a port is not specified, the default one will be used. If an ip section is specified, the resolution can be made either by IPv4 or IPv6. If ip4 is specified, then only IPv4
    resolutions will be permitted, and likewise with ip6.
 
-net-port
-   :index:`\ <single: Data Type; net-port>`\  
 
 .. _DataTypeNetPort:
 
- Specify a network port (a positive integer).
+net-port
+   :index:`\ <single: Data Type; net-port>`\  
+
+   Specify a network port (a positive integer).
 
    Don’t use quotes around the parameter, see :ref:`section-Quotes`.
+
+
+.. _DataTypeRes:
 
 resource
    :index:`\ <single: Data Type; resource>`\  
 
-.. _DataTypeRes:
+   A resource defines a relation to the name of another resource.
 
- A resource defines a relation to the name of another resource.
+
+.. _DataTypeSize:
 
 size
    :index:`\ <single: Data Type; size>`\  
 
-.. _DataTypeSize:
-
- 
-
-.. _Size1:
-
- A size specified as bytes. Typically, this is a floating point scientific input format followed by an optional modifier. The floating point input is stored as a 64 bit integer value. If a modifier is present, it must immediately follow the value with no intervening spaces. The following modifiers are permitted:
+   A size specified as bytes. Typically, this is a floating point scientific input format followed by an optional modifier. The floating point input is stored as a 64 bit integer value. If a modifier is present, it must immediately follow the value with no intervening spaces. The following modifiers are permitted:
 
    k
       1,024 (kilobytes)
@@ -715,16 +720,13 @@ size
 
    Don’t use quotes around the parameter, see :ref:`section-Quotes`.
 
-time
-   :index:`\ <single: Data Type; time>`\  
 
 .. _DataTypeTime:
 
- 
+time
+   :index:`\ <single: Data Type; time>`\  
 
-.. _Time:
-
- A time or duration specified in seconds. The time is stored internally as a 64 bit integer value, but it is specified in two parts: a number part and a modifier part. The number can be an integer or a floating point number. If it is entered in floating point notation, it will be rounded to the nearest integer. The modifier is mandatory and follows the number part, either with or without
+   A time or duration specified in seconds. The time is stored internally as a 64 bit integer value, but it is specified in two parts: a number part and a modifier part. The number can be an integer or a floating point number. If it is entered in floating point notation, it will be rounded to the nearest integer. The modifier is mandatory and follows the number part, either with or without
    intervening spaces. The following modifiers are permitted:
 
    seconds
@@ -755,8 +757,6 @@ time
 
    The specification of a time may have as many number/modifier parts as you wish. For example:
 
-   
-
    ::
 
       1 week 2 days 3 hours 10 mins
@@ -768,26 +768,30 @@ time
 
    Don’t use quotes around the parameter, see :ref:`section-Quotes`.
 
-audit-command-list
-   :index:`\ <single: Data Type; audit command list>`\  
 
 .. _DataTypeAuditCommandList:
 
- Specifies the commands that should be logged on execution (audited). E.g.
+audit-command-list
+   :index:`\ <single: Data Type; audit command list>`\  
+
+   Specifies the commands that should be logged on execution (audited). E.g.
 
    .. code-block:: bareosconfig
 
       Audit Events = label
       Audit Events = restore
 
-   Based on the type \dtStringList.
+   Based on the type :ref:`string-list <DataTypeStringList>`. 
 
-yes\\|no`
-   :index:`\ <single: Data Type; \yesno>`\  :index:`\ <single: Data Type; boolean>`\  
 
 .. _DataTypeYesNo:
 
- Either a :strong:`yes` or a :strong:`no` (or :strong:`true` or :strong:`false`).
+yes|no
+   :index:`\ <single: Data Type; \yesno>`\  :index:`\ <single: Data Type; boolean>`\  
+
+   Either a :strong:`yes` or a :strong:`no` (or :strong:`true` or :strong:`false`).
+
+
 
 .. _VarsChapter:
 
