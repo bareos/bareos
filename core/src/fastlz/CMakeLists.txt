@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -16,30 +16,16 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
+cmake_minimum_required(VERSION 3.0)
+project(bareosfastlz LANGUAGES C)
 
-IF(NOT client-only)
-   add_subdirectory(tools)
-   IF(NOT HAVE_WIN32 AND GTEST_FOUND)
-      add_subdirectory(tests)
-   ENDIF()
-   add_subdirectory(cats)
-   IF(NOT HAVE_WIN32 AND ndmp)
-      add_subdirectory(ndmp)
-   ENDIF()
-   add_subdirectory(dird)
-   add_subdirectory(stored)
-ENDIF()
-
-add_subdirectory(console)
-IF(${HAVE_LMDB})
-    add_subdirectory(lmdb)
-ENDIF()
-add_subdirectory(lib)
-add_subdirectory(findlib)
-add_subdirectory(filed)
-add_subdirectory(plugins)
-add_subdirectory(fastlz)
-
-if (${traymonitor})
-   add_subdirectory(qt-tray-monitor)
-endif()
+add_library(bareosfastlz SHARED src/fastlzlib.c src/fastlz.c src/lz4.c src/lz4hc.c)
+target_include_directories(bareosfastlz PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    PRIVATE src)
+target_compile_definitions(bareosfastlz PRIVATE "-DDLL_EXPORT")
+install(TARGETS bareosfastlz DESTINATION ${libdir})
+set_target_properties(bareosfastlz PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
+                                              SOVERSION "${SOVERSION}"
+                                              )
