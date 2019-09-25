@@ -182,7 +182,6 @@ BuildRequires: openssl-devel
 BuildRequires: libacl-devel
 BuildRequires: pkgconfig
 BuildRequires: lzo-devel
-BuildRequires: libfastlz-devel
 BuildRequires: logrotate
 %if 0%{?build_sqlite3}
 %if 0%{?suse_version}
@@ -1182,6 +1181,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %endif
 %endif
 %dir %{backend_dir}
+%{library_dir}/libbareosfastlz.so*
 %{library_dir}/libbareos.so*
 %{library_dir}/libbareosfind.so*
 %{library_dir}/libbareoslmdb.so*
