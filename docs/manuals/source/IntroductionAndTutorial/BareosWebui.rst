@@ -145,7 +145,7 @@ having access to the RestoreFiles job resource, the required Bvfs API commands
 and the :bcommand:`restore` command itself.
 
 .. code-block:: cfg
-   :caption: Profile Resource - Normal User Access Example
+   :caption: Profile Resource - Limited Access Example
 
    Profile {
       Name = "webui-user"
