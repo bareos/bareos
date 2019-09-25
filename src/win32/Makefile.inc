@@ -39,7 +39,7 @@ MINGW_64_BASE = /usr/x86_64-w64-mingw32
 
 ifeq ($(WIN_VERSION),32)
 DEFINES = -DHAVE_WIN32 -DHAVE_MINGW -D_WIN32_WINNT=$(WINDOWS_VERSION)
-QMAKE = /usr/bin/i686-w64-mingw32-qmake-qt4
+QMAKE = /usr/bin/i686-w64-mingw32-qmake
 WINDRES = /usr/bin/i686-w64-mingw32-windres
 CC = /usr/bin/i686-w64-mingw32-gcc
 CXX = /usr/bin/i686-w64-mingw32-g++
@@ -53,7 +53,7 @@ endif
 MINGW_LIB = $(MINGW_32_BASE)/sys-root/mingw/lib
 else
 DEFINES = -DMINGW64 -DHAVE_WIN32 -DHAVE_MINGW -D_WIN32_WINNT=$(WINDOWS_VERSION)
-QMAKE = /usr/bin/x86_64-w64-mingw32-qmake-qt4
+QMAKE = /usr/bin/x86_64-w64-mingw32-qmake
 WINDRES = /usr/bin/x86_64-w64-mingw32-windres
 CC = /usr/bin/x86_64-w64-mingw32-gcc
 CXX = /usr/bin/x86_64-w64-mingw32-g++
