@@ -46,9 +46,7 @@
 #include <lzo/lzo1x.h>
 #endif
 
-#ifdef HAVE_FASTLZ
-#include <fastlzlib.h>
-#endif
+#include "fastlz/fastlzlib.h"
 
 #ifdef HAVE_LIBZ
 

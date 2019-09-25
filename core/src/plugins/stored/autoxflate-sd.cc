@@ -33,9 +33,7 @@
 #include <zlib.h>
 #endif
 
-#if defined(HAVE_FASTLZ)
-#include <fastlzlib.h>
-#endif
+#include "fastlz/fastlzlib.h"
 
 using namespace storagedaemon;
 
