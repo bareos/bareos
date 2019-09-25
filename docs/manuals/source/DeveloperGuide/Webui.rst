@@ -14,7 +14,7 @@ Following is a table of bconsole commands and |webui| modules.
 Commands are either marked as required, optional or empty if not used by the module.
 
 Required commands are mandatory for proper module functionality and access to them should
-not be denied by :config:option:`dir/profile/CommandACl` settings.
+not be denied by :config:option:`dir/profile/CommandACL` settings.
 
 Access to commands marked as optional may be denied by :config:option:`dir/profile/CommandACL` settings.
 
