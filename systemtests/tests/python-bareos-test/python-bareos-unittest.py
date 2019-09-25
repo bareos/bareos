@@ -208,7 +208,7 @@ class PythonBareosPlainTest(PythonBareosBase):
     # TODO: test_login_tlspsk
 
 #
-# Tesst with JSON backend
+# Test with JSON backend
 #
 
 class PythonBareosJsonBase(PythonBareosBase):
@@ -218,14 +218,54 @@ class PythonBareosJsonBase(PythonBareosBase):
     #
 
     @staticmethod
-    def check_console(director, name):
+    def check_resource(director, resourcesname, name):
         logger = logging.getLogger()
-        result = director.call(u'.consoles')
-        for i in result['consoles']:
-            if i['name'] == name:
-                return True
-        return False
+        result = False
+        try:
+            result = director.call(u'.{}'.format(resourcesname))
+            for i in result[resourcesname]:
+                if i['name'] == name:
+                    result = True
+        except Exception as e:
+            logger.warn(str(e))
+        return result
 
+    @staticmethod
+    def check_console(director, name):
+        return PythonBareosJsonBase.check_resource(director, 'consoles', name)
+
+    @staticmethod
+    def check_jobname(director, name):
+        return PythonBareosJsonBase.check_resource(director, 'jobs', name)
+    
+    def configure_add(self, director, resourcesname, resourcename, cmd):
+        if not self.check_resource(director, resourcesname, resourcename):
+            result = director.call('configure add {}'.format(cmd))
+            self.assertEqual(result['configure']['add']['name'], resourcename)
+            self.assertTrue(self.check_jobname(director, resourcename))    
+    
+
+    def run_job(self, director, jobname, level, wait=False):
+        logger = logging.getLogger()
+        run_parameter=[ 'job={}'.format(jobname), 'yes' ]
+        if level:
+            run_parameter.append(u'level={}'.format(level))
+        result = director.call('run {}'.format(u' '.join(run_parameter)))
+        jobId = result['run']['jobid']
+        if wait:
+            result = director.call('wait jobid={}'.format(jobId))
+            # "result": {
+            #    "Job": {
+            #    "jobid": 1,
+            #    "jobstatuslong": "OK",
+            #    "jobstatus": "T",
+            #    "exitstatus": 0
+            #    }
+            # }
+            self.assertEqual(result['Job']['jobstatuslong'], u'OK')
+
+        return jobId
+    
 
     def _test_job_result(self, jobs, jobid):
         logger = logging.getLogger()
@@ -255,6 +295,27 @@ class PythonBareosJsonBase(PythonBareosBase):
             self.assertNotEqual(volume['pool'], pool)
 
         return True
+
+
+    def _test_list_with_valid_jobid(self, director, jobId):
+        for cmd in [ 'list', 'llist' ]:
+            result = director.call('{} jobs'.format(cmd))
+            self._test_job_result(result['jobs'], jobId)
+
+            listcmd = '{} jobid={}'.format(cmd, jobId)
+            result = director.call(listcmd)
+            self._test_job_result(result['jobs'], jobId)
+
+
+    def _test_list_with_invalid_jobid(self, director, jobId):
+        for cmd in [ 'list', 'llist' ]:
+            result = director.call('{} jobs'.format(cmd))
+            with self.assertRaises(AssertionError):
+                self._test_job_result(result['jobs'], jobId)
+
+            listcmd = '{} jobid={}'.format(cmd, jobId)
+            result = director.call(listcmd)
+            self.assertEqual(len(result), 0, u'Command {} should not return results. Current result: {} visible'.format(listcmd, str(result)))
 
 
 
@@ -377,7 +438,7 @@ class PythonBareosJsonBackendTest(PythonBareosJsonBase):
 
 
 
-class PythonBareosJsonFunctionalTest(PythonBareosJsonBase):
+class PythonBareosJsonAclTest(PythonBareosJsonBase):
 
     def test_json_list_media_with_pool_acl(self):
         '''
@@ -478,16 +539,71 @@ class PythonBareosJsonFunctionalTest(PythonBareosJsonBase):
         # use profile without Pool restrictions
         # and overwrite the Pool ACL in the console.
         #
-        console_overwrite = 'overwritepoolacl'
-        if not self.check_console(director_root, console_overwrite):
-            result = director_root.call('configure add console={} password={} profile=operator poolacl=!Full'.format(console_overwrite, console_password))
-            self.assertEqual(result['configure']['add']['name'], console_overwrite)
-            self.assertTrue(self.check_console(director_root, console_overwrite))
+        self.configure_add(director_root, 'consoles', console_overwrite, u'console={} password={} profile=operator poolacl=!Full'.format(console_overwrite, console_password))
 
         # TODO: IMHO this is a bug. This console should not see volumes in the Full pool.
         #       It needs to be fixed in the server side code.
         with self.assertRaises(AssertionError):
             self._test_no_volume_in_pool(console_overwrite, console_password, 'Full')
+        
+
+    def test_json_list_jobid_with_job_acl(self):
+        '''
+        This tests checks if the Job ACL works with the "list jobs" and "list jobid=<>" commands.
+
+        login as operator
+          run a backup-bareos-fd job.
+          create and run a backup-bareos-fd-test job.
+          verifies that both jobs are visible by the list command.
+        login as a console that can only see backup-bareos-fd jobs
+          verifies that the backup-bareos-fd is visible.
+          verifies that the backup-bareos-fd is not visible.
+        '''
+        logger = logging.getLogger()
+
+        username = self.director_operator_username
+        password = self.director_operator_password
+
+        console_username = u'job-backup-bareos-fd'
+        console_password = u'secret'
+        jobname1 = u'backup-bareos-fd'
+        jobname2 = u'backup-bareos-fd-test'
+
+        bareos_password = bareos.bsock.Password(password)
+        director_root = bareos.bsock.DirectorConsoleJson(
+                    address=self.director_address,
+                    port=self.director_port,
+                    name=username,
+                    password=bareos_password)
+
+        jobId1 = self.run_job(director=director_root, jobname=jobname1, level=u'Full', wait=True)
+
+        self.configure_add(director_root, 'jobs', jobname2, 'job name={} client=bareos-fd jobdefs=DefaultJob'.format(jobname2))
+
+
+        jobId2 = self.run_job(director=director_root, jobname=jobname2, level=u'Full', wait=True)
+
+        #
+        # both jobid should be visible
+        #
+        self._test_list_with_valid_jobid(director_root, jobId1)
+        self._test_list_with_valid_jobid(director_root, jobId2)
+        
+        #
+        # login as console_username
+        #
+        bareos_password = bareos.bsock.Password(console_password)
+        director = bareos.bsock.DirectorConsoleJson(
+                    address=self.director_address,
+                    port=self.director_port,
+                    name=console_username,
+                    password=bareos_password)
+
+        #
+        # only jobid1 should be visible
+        #
+        self._test_list_with_valid_jobid(director, jobId1)
+        self._test_list_with_invalid_jobid(director, jobId2)
 
 
 
