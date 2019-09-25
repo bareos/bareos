@@ -81,7 +81,7 @@ extensions = [
     'sphinxcontrib.nwdiag',
     'sphinxcontrib.plantuml',
     'sphinxcontrib.seqdiag',
-	'crate.sphinx.csv'
+    'crate.sphinx.csv'
 ]
 
 #    'limitation',
