@@ -156,11 +156,6 @@ for flavor in %{flavors}; do
    done
 
 
-# needs to be added to following files if qt is built with icu support
-#      icui18n56.dll \
-#      icudata56.dll \
-#      icuuc56.dll \
-
    for file in \
       libcrypto-*.dll \
       libfastlz.dll \
