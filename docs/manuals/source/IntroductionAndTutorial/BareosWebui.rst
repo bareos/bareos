@@ -90,7 +90,8 @@ the Developer Guide chapter ":ref:`section-dev-webui-command-usage-in-modules`".
 Access Control Configuration
 ----------------------------
 
-Access Control is configured in :config:option:`dir/profile` resources.
+Access Control is configured in :config:option:`dir/profile`,
+:config:option:`dir/console` or :config:option:`dir/user` resources.
 
 Below are some example profile resources that should serve you as guidance to
 configure access to certain elements of the |webui| to your needs and use cases.
