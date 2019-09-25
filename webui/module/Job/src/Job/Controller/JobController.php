@@ -63,15 +63,15 @@ class JobController extends AbstractActionController
     }
 
     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-    $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+    $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
       $module_config['console_commands']['Job']['mandatory']
     );
-    if(count($unknown_commands) > 0) {
+    if(count($invalid_commands) > 0) {
       $this->acl_alert = true;
       return new ViewModel(
         array(
           'acl_alert' => $this->acl_alert,
-          'unknown_commands' => implode(",", $unknown_commands)
+          'invalid_commands' => implode(",", $invalid_commands)
         )
       );
     }
@@ -115,15 +115,15 @@ class JobController extends AbstractActionController
           $jobid = $this->params()->fromQuery('jobid');
           $result = null;
           $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-          $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+          $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
             $module_config['console_commands']['Job']['optional']
           );
-          if(count($unknown_commands) > 0 && in_array('rerun', $unknown_commands)) {
+          if(count($invalid_commands) > 0 && in_array('rerun', $invalid_commands)) {
             $this->acl_alert = true;
             return new ViewModel(
               array(
                 'acl_alert' => $this->acl_alert,
-                'unknown_commands' => 'rerun'
+                'invalid_commands' => 'rerun'
               )
             );
           } else {
@@ -174,15 +174,15 @@ class JobController extends AbstractActionController
     }
 
     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-    $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+    $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
       $module_config['console_commands']['Job']['mandatory']
     );
-    if(count($unknown_commands) > 0) {
+    if(count($invalid_commands) > 0) {
       $this->acl_alert = true;
       return new ViewModel(
         array(
           'acl_alert' => $this->acl_alert,
-          'unknown_commands' => implode(",", $unknown_commands)
+          'invalid_commands' => implode(",", $invalid_commands)
         )
       );
     }
@@ -222,15 +222,15 @@ class JobController extends AbstractActionController
     }
 
     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-    $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+    $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
       $module_config['console_commands']['Job']['optional']
     );
-    if(count($unknown_commands) > 0 && in_array('cancel', $unknown_commands)) {
+    if(count($invalid_commands) > 0 && in_array('cancel', $invalid_commands)) {
       $this->acl_alert = true;
       return new ViewModel(
         array(
           'acl_alert' => $this->acl_alert,
-          'unknown_commands' => 'cancel'
+          'invalid_commands' => 'cancel'
         )
       );
     }
@@ -275,15 +275,15 @@ class JobController extends AbstractActionController
     }
 
     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-    $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+    $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
       $module_config['console_commands']['Job']['mandatory']
     );
-    if(count($unknown_commands) > 0) {
+    if(count($invalid_commands) > 0) {
       $this->acl_alert = true;
       return new ViewModel(
         array(
           'acl_alert' => $this->acl_alert,
-          'unknown_commands' => implode(",", $unknown_commands)
+          'invalid_commands' => implode(",", $invalid_commands)
         )
       );
     }
@@ -307,15 +307,15 @@ class JobController extends AbstractActionController
         $jobname = $this->params()->fromQuery('job');
         try {
           $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-          $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+          $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
             $module_config['console_commands']['Job']['optional']
           );
-          if(count($unknown_commands) > 0 && in_array('run', $unknown_commands)) {
+          if(count($invalid_commands) > 0 && in_array('run', $invalid_commands)) {
             $this->acl_alert = true;
             return new ViewModel(
               array(
                 'acl_alert' => $this->acl_alert,
-                'unknown_commands' => 'run'
+                'invalid_commands' => 'run'
               )
             );
           } else {
@@ -330,15 +330,15 @@ class JobController extends AbstractActionController
         $jobname = $this->params()->fromQuery('job');
         try {
           $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-          $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+          $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
             $module_config['console_commands']['Job']['optional']
           );
-          if(count($unknown_commands) > 0 && in_array('enable', $unknown_commands)) {
+          if(count($invalid_commands) > 0 && in_array('enable', $invalid_commands)) {
             $this->acl_alert = true;
             return new ViewModel(
               array(
                 'acl_alert' => $this->acl_alert,
-                'unknown_commands' => 'enable'
+                'invalid_commands' => 'enable'
               )
             );
           } else {
@@ -353,15 +353,15 @@ class JobController extends AbstractActionController
         $jobname = $this->params()->fromQuery('job');
         try {
           $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-          $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+          $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
             $module_config['console_commands']['Job']['optional']
           );
-          if(count($unknown_commands) > 0 && in_array('disable', $unknown_commands)) {
+          if(count($invalid_commands) > 0 && in_array('disable', $invalid_commands)) {
             $this->acl_alert = true;
             return new ViewModel(
               array(
                 'acl_alert' => $this->acl_alert,
-                'unknown_commands' => 'disable'
+                'invalid_commands' => 'disable'
               )
             );
           } else {
@@ -408,15 +408,15 @@ class JobController extends AbstractActionController
     }
 
     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-    $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+    $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
       $module_config['console_commands']['Job']['mandatory']
     );
-    if(count($unknown_commands) > 0) {
+    if(count($invalid_commands) > 0) {
       $this->acl_alert = true;
       return new ViewModel(
         array(
           'acl_alert' => $this->acl_alert,
-          'unknown_commands' => implode(",", $unknown_commands)
+          'invalid_commands' => implode(",", $invalid_commands)
         )
       );
     }
@@ -483,15 +483,15 @@ class JobController extends AbstractActionController
 
         try {
           $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-          $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+          $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
             $module_config['console_commands']['Job']['optional']
           );
-          if(count($unknown_commands) > 0 && in_array('run', $unknown_commands)) {
+          if(count($invalid_commands) > 0 && in_array('run', $invalid_commands)) {
             $this->acl_alert = true;
             return new ViewModel(
               array(
                 'acl_alert' => $this->acl_alert,
-                'unknown_commands' => 'run'
+                'invalid_commands' => 'run'
               )
             );
           } else {

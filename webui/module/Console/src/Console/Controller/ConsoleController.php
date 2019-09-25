@@ -41,15 +41,15 @@ class ConsoleController extends AbstractActionController
     }
 
     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-    $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+    $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
       $module_config['console_commands']['Console']['mandatory']
     );
-    if(count($unknown_commands) > 0) {
+    if(count($invalid_commands) > 0) {
       $this->acl_alert = true;
       return new ViewModel(
         array(
           'acl_alert' => $this->acl_alert,
-          'unknown_commands' => implode(",", $unknown_commands)
+          'invalid_commands' => implode(",", $invalid_commands)
         )
       );
     }

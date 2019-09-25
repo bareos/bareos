@@ -63,15 +63,15 @@ class DirectorController extends AbstractActionController
     }
 
     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-    $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+    $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
       $module_config['console_commands']['Director']['optional']
     );
-    if(count($unknown_commands) > 0) {
+    if(count($invalid_commands) > 0) {
       $this->acl_alert = true;
       return new ViewModel(
         array(
           'acl_alert' => $this->acl_alert,
-          'unknown_commands' => implode(",", $unknown_commands)
+          'invalid_commands' => implode(",", $invalid_commands)
         )
       );
     }
@@ -115,15 +115,15 @@ class DirectorController extends AbstractActionController
     }
 
     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-    $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+    $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
       $module_config['console_commands']['Director']['optional']
     );
-    if(count($unknown_commands) > 0 && in_array('messages', $unknown_commands)) {
+    if(count($invalid_commands) > 0 && in_array('messages', $invalid_commands)) {
       $this->acl_alert = true;
       return new ViewModel(
         array(
           'acl_alert' => $this->acl_alert,
-          'unknown_commands' => implode(",", 'messages')
+          'invalid_commands' => implode(",", 'messages')
         )
       );
     }

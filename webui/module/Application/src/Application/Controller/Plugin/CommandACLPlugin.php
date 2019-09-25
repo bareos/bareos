@@ -25,17 +25,17 @@ class CommandACLPlugin extends AbstractPlugin
   public function getInvalidCommands($commands=null)
   {
     if(is_array($commands) && !empty($commands)) {
-      $unknown_commands = array();
+      $invalid_commands = array();
       foreach($commands as $command) {
         if(array_key_exists($command, $_SESSION['bareos']['commands'])) {
           if(!$_SESSION['bareos']['commands'][$command]['permission']) {
-            array_push($unknown_commands, $command);
+            array_push($invalid_commands, $command);
           }
         } else {
-          array_push($unknown_commands, $command);
+          array_push($invalid_commands, $command);
         }
       }
-      return $unknown_commands;
+      return $invalid_commands;
     }
     return null;
   }

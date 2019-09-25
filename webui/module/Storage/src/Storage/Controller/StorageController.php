@@ -67,15 +67,15 @@ class StorageController extends AbstractActionController
     }
 
     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-    $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+    $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
       $module_config['console_commands']['Storage']['mandatory']
     );
-    if(count($unknown_commands) > 0) {
+    if(count($invalid_commands) > 0) {
       $this->acl_alert = true;
       return new ViewModel(
         array(
           'acl_alert' => $this->acl_alert,
-          'unknown_commands' => implode(",", $unknown_commands)
+          'invalid_commands' => implode(",", $invalid_commands)
         )
       );
     }
@@ -108,15 +108,15 @@ class StorageController extends AbstractActionController
     }
 
     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-    $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+    $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
       $module_config['console_commands']['Storage']['mandatory']
     );
-    if(count($unknown_commands) > 0) {
+    if(count($invalid_commands) > 0) {
       $this->acl_alert = true;
       return new ViewModel(
         array(
           'acl_alert' => $this->acl_alert,
-          'unknown_commands' => implode(",", $unknown_commands)
+          'invalid_commands' => implode(",", $invalid_commands)
         )
       );
     }
@@ -135,15 +135,15 @@ class StorageController extends AbstractActionController
 
     try {
       $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-      $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+      $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
         $module_config['console_commands']['Storage']['optional']
       );
-      if(count($unknown_commands) > 0 && in_array('.pools', $unknown_commands)) {
+      if(count($invalid_commands) > 0 && in_array('.pools', $invalid_commands)) {
         $this->acl_alert = true;
         return new ViewModel(
           array(
             'acl_alert' => $this->acl_alert,
-            'unknown_commands' => '.pools'
+            'invalid_commands' => '.pools'
           )
         );
       } else {
@@ -160,15 +160,15 @@ class StorageController extends AbstractActionController
 
     try {
       $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-      $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+      $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
         $module_config['console_commands']['Storage']['optional']
       );
-      if(count($unknown_commands) > 0 && in_array('status', $unknown_commands)) {
+      if(count($invalid_commands) > 0 && in_array('status', $invalid_commands)) {
         $this->acl_alert = true;
         return new ViewModel(
           array(
             'acl_alert' => $this->acl_alert,
-            'unknown_commands' => 'status'
+            'invalid_commands' => 'status'
           )
         );
       } else {
@@ -201,15 +201,15 @@ class StorageController extends AbstractActionController
 
         try {
           $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-          $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+          $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
             $module_config['console_commands']['Storage']['optional']
           );
-          if(count($unknown_commands) > 0 && in_array('import', $unknown_commands)) {
+          if(count($invalid_commands) > 0 && in_array('import', $invalid_commands)) {
             $this->acl_alert = true;
             return new ViewModel(
               array(
                 'acl_alert' => $this->acl_alert,
-                'unknown_commands' => 'import'
+                'invalid_commands' => 'import'
               )
             );
           } else {
@@ -225,15 +225,15 @@ class StorageController extends AbstractActionController
 
         try {
           $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-          $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+          $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
             $module_config['console_commands']['Storage']['optional']
           );
-          if(count($unknown_commands) > 0 && in_array('export', $unknown_commands)) {
+          if(count($invalid_commands) > 0 && in_array('export', $invalid_commands)) {
             $this->acl_alert = true;
             return new ViewModel(
               array(
                 'acl_alert' => $this->acl_alert,
-                'unknown_commands' => 'export'
+                'invalid_commands' => 'export'
               )
             );
           } else {
@@ -250,15 +250,15 @@ class StorageController extends AbstractActionController
 
         try {
           $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-          $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+          $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
             $module_config['console_commands']['Storage']['optional']
           );
-          if(count($unknown_commands) > 0 && in_array('mount', $unknown_commands)) {
+          if(count($invalid_commands) > 0 && in_array('mount', $invalid_commands)) {
             $this->acl_alert = true;
             return new ViewModel(
               array(
                 'acl_alert' => $this->acl_alert,
-                'unknown_commands' => 'mount'
+                'invalid_commands' => 'mount'
               )
             );
           } else {
@@ -274,15 +274,15 @@ class StorageController extends AbstractActionController
 
         try {
           $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-          $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+          $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
             $module_config['console_commands']['Storage']['optional']
           );
-          if(count($unknown_commands) > 0 && in_array('unmount', $unknown_commands)) {
+          if(count($invalid_commands) > 0 && in_array('unmount', $invalid_commands)) {
             $this->acl_alert = true;
             return new ViewModel(
               array(
                 'acl_alert' => $this->acl_alert,
-                'unknown_commands' => 'unmount'
+                'invalid_commands' => 'unmount'
               )
             );
           } else {
@@ -298,15 +298,15 @@ class StorageController extends AbstractActionController
 
         try {
           $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-          $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+          $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
             $module_config['console_commands']['Storage']['optional']
           );
-          if(count($unknown_commands) > 0 && in_array('release', $unknown_commands)) {
+          if(count($invalid_commands) > 0 && in_array('release', $invalid_commands)) {
             $this->acl_alert = true;
             return new ViewModel(
               array(
                 'acl_alert' => $this->acl_alert,
-                'unknown_commands' => 'release'
+                'invalid_commands' => 'release'
               )
             );
           } else {
@@ -328,15 +328,15 @@ class StorageController extends AbstractActionController
             $drive = $form->getInputFilter()->getValue('drive');
             try {
               $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-              $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+              $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
                 $module_config['console_commands']['Storage']['optional']
               );
-              if(count($unknown_commands) > 0 && in_array('label', $unknown_commands)) {
+              if(count($invalid_commands) > 0 && in_array('label', $invalid_commands)) {
                 $this->acl_alert = true;
                 return new ViewModel(
                   array(
                     'acl_alert' => $this->acl_alert,
-                    'unknown_commands' => 'label'
+                    'invalid_commands' => 'label'
                   )
                 );
               } else {
@@ -356,15 +356,15 @@ class StorageController extends AbstractActionController
 
         try {
           $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-          $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+          $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
             $module_config['console_commands']['Storage']['optional']
           );
-          if(count($unknown_commands) > 0 && in_array('update', $unknown_commands)) {
+          if(count($invalid_commands) > 0 && in_array('update', $invalid_commands)) {
             $this->acl_alert = true;
             return new ViewModel(
               array(
                 'acl_alert' => $this->acl_alert,
-                'unknown_commands' => 'update'
+                'invalid_commands' => 'update'
               )
             );
           } else {
@@ -416,15 +416,15 @@ class StorageController extends AbstractActionController
     }
 
     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-    $unknown_commands = $this->CommandACLPlugin()->getInvalidCommands(
+    $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
       $module_config['console_commands']['Storage']['optional']
     );
-    if(count($unknown_commands) > 0 && in_array('status', $unknown_commands)) {
+    if(count($invalid_commands) > 0 && in_array('status', $invalid_commands)) {
       $this->acl_alert = true;
       return new ViewModel(
         array(
           'acl_alert' => $this->acl_alert,
-          'unknown_commands' => 'status'
+          'invalid_commands' => 'status'
         )
       );
     }

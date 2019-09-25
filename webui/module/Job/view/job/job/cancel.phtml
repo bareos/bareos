@@ -28,7 +28,7 @@ $this->headTitle($title);
 
 ?>
 
-<?php if($this->acl_alert) : echo $this->ACLAlert($this->unknown_commands); elseif(!$this->acl_alert) : ?>
+<?php if($this->acl_alert) : echo $this->ACLAlert($this->invalid_commands); elseif(!$this->acl_alert) : ?>
 
 <pre>
 <code>

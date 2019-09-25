@@ -30,7 +30,7 @@ $this->headTitle($title);
 
 <br />
 
-<?php if($this->acl_alert) : echo $this->ACLAlert($this->unknown_commands); elseif(!$this->acl_alert) : ?>
+<?php if($this->acl_alert) : echo $this->ACLAlert($this->invalid_commands); elseif(!$this->acl_alert) : ?>
 
 <pre class="bconsole" id="bconsole" style="font-size: 9pt; padding-left: 5px; overflow: scroll; width: 150vh; height: 75vh; background: #000; color: #fff;" onclick="focusScreen();">
    <p><?php echo $this->translate("bconsole (batch-mode), please handle with care."); ?><br /><?php echo $this->translate("All commands have to be a one liner, dialogs are not working."); ?><br /><?php echo $this->translate("Type help for a list of commands."); ?></p>
