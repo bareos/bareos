@@ -82,13 +82,6 @@ the module will not work.
    :exclude: {11: '-'}
    :file: ../../../../webui/module/Application/config/commands.csv
 
-.. note::
-
-   For the web console in the |webui| all commands are optional besides
-   the essential commands already mentioned above, :bcommand:`.api`,
-   :bcommand:`.help` and :bcommand:`use`.
-
-
 A complete overview of bconsole command usage in the |webui| can be found in
 the Developer Guide chapter ":ref:`section-dev-webui-command-usage-in-modules`".
 
