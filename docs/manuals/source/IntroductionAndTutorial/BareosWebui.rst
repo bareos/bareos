@@ -100,7 +100,7 @@ Full Access
 ~~~~~~~~~~~
 
 No restrictions are given by :config:option:`dir/profile`,
-everything is allowed.
+everything is allowed. This profile is included in the |webui| package.
 
 .. code-block:: cfg
    :caption: Profile Resource - Administrator Access Example
