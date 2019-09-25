@@ -45,10 +45,6 @@
 /* Define to 1 if you have the <lzo/lzoconf.h> header file. */
 #define HAVE_LZO_LZOCONF_H 1
 
-/* Define if you have fastlz lib */
-#define HAVE_FASTLZ 1
-
-
 /* File daemon specif libraries */
 #define FDLIBS 1
 

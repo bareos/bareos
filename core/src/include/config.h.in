@@ -268,12 +268,6 @@
 // Define to 1 if you want Extended acl support
 #cmakedefine HAVE_EXTENDED_ACL @HAVE_EXTENDED_ACL@
 
-// Define to 1 if you have fastlz lib
-#cmakedefine HAVE_FASTLZ @HAVE_FASTLZ@
-
-// Define to 1 if you have the <fastlzlib.h> header file
-#cmakedefine HAVE_FASTLZLIB_H @HAVE_FASTLZLIB_H@
-
 // Define to 1 if you have the `fchdir' function
 #cmakedefine HAVE_FCHDIR @HAVE_FCHDIR@
 

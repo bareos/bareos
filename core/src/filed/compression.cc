@@ -188,7 +188,6 @@ bool SetupCompressionContext(b_ctx& bctx)
       case COMPRESS_LZO1X:
         break;
 #endif
-#if defined(HAVE_FASTLZ)
       case COMPRESS_FZFZ:
       case COMPRESS_FZ4L:
       case COMPRESS_FZ4H: {
@@ -221,7 +220,6 @@ bool SetupCompressionContext(b_ctx& bctx)
         bctx.ch.level = bctx.ff_pkt->Compress_level;
         break;
       }
-#endif
       default:
         break;
     }
@@ -233,11 +231,4 @@ bail_out:
   return retval;
 }
 
-#else
-
-bool AdjustCompressionBuffers(JobControlRecord* jcr) { return true; }
-
-bool SetupCompressionContext(b_ctx& bctx) { return true; }
-
-#endif /* defined(HAVE_LZO) || defined(HAVE_LIBZ) || defined(HAVE_FASTLZ) */
 } /* namespace filedaemon */
