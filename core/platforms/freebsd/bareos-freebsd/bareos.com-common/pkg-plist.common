@@ -22,6 +22,9 @@
 lib/libbareos.so.%%DISTVERSION%%
 lib/libbareos.so.%%LIBVERSION%%
 lib/libbareos.so
+lib/libbareosfastlz.so.%%DISTVERSION%%
+lib/libbareosfastlz.so.%%LIBVERSION%%
+lib/libbareosfastlz.so
 lib/libbareosfind.so.%%DISTVERSION%%
 lib/libbareosfind.so.%%LIBVERSION%%
 lib/libbareosfind.so
