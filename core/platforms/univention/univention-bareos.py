@@ -4,15 +4,16 @@
 
 
 __package__ = ''        # workaround for PEP 366
-from listener import configRegistry, setuid, unsetuid
 import grp
 import os
 import stat
-
-import univention.debug as ud
 import string
 from   subprocess import Popen, PIPE, STDOUT
 import random
+
+from listener import setuid, unsetuid
+import univention.debug as ud
+
 
 name = 'bareos'
 description = 'Generate Bareos Configuration for Clients'
@@ -81,8 +82,8 @@ def postrun():
 
 
 def processClient(client_name,entry,delete=False):
-        if client_name==None:
-                return
+        if client_name is None:
+            return
 
         client_type='generic'
         if 'univentionWindows' in entry['objectClass']:
@@ -142,13 +143,12 @@ def createClientSecret(client_name):
 
     char_set = string.ascii_uppercase + string.digits + string.ascii_lowercase
     password=''.join(random.sample(char_set*40,40))
-    oldumask = os.umask(0o077)
-    try:
-        with open(path,'w') as f:
-            f.write(password)
-        os.chown(path,-1,0)
-    finally:
-        os.umask(oldumask)
+    with os.fdopen(os.open(
+            path,
+            os.O_CREAT | os.O_WRONLY,
+            stat.S_IRUSR | stat.S_IWUSR), 'w') as f:
+        f.write(password)
+    os.chown(path,-1,0)
 
     return password
 
@@ -166,17 +166,15 @@ def createClientJob(client_name,client_type,enable='Yes'):
         content=f.read()
 
     t=string.Template(content)
-    oldumask = os.umask(0o077)
-    try:
-        with open(path,"w") as f:
-            f.write(t.substitute(enable=enable, password=password, client_name=client_name))
-        os.chown(path,-1,bareos_gid)
-        os.chmod(path,stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP)
-    finally:
-        os.umask(oldumask)
+    with os.fdopen(os.open(
+            path, os.O_CREAT | os.O_WRONLY,
+            stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP), 'w') as f:
+        f.write(t.substitute(enable=enable, password=password, client_name=client_name))
+    os.chown(path, -1, bareos_gid)
 
-def disableClientJob(client_name,client_type):
-        createClientJob(client_name,client_type,'No')
+
+def disableClientJob(client_name, client_type):
+        createClientJob(client_name, client_type, 'No')
 
 def getClientIncludePath(client_name):
         return '@'+JOBS_PATH+'/'+client_name+'.include'
@@ -190,17 +188,17 @@ def addClientInclude(client_name):
                 # update the timestamp on the file
                 # to let the cron script know the configuration
                 # has changed
-                os.utime(INCLUDES_PATH,None)
+                os.utime(INCLUDES_PATH, None)
                 return
 
         # if not, add it at the end of the file
-        with  open(INCLUDES_PATH,'a') as f:
+        with  open(INCLUDES_PATH, 'a') as f:
                 f.write(getClientIncludePath(client_name))
                 f.write('\n')
 
 def isClientIncluded(client_name):
-        want=getClientIncludePath(client_name)
-        with  open(INCLUDES_PATH,'r') as f:
+        want = getClientIncludePath(client_name)
+        with open(INCLUDES_PATH, 'r') as f:
                 for l in f.readlines():
                         if want in l:
                                 return True
