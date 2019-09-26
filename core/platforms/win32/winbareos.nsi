@@ -576,6 +576,7 @@ SectionIn 1 2 3 4
   File "bareos-config-deploy.bat"
   File "bareos-fd.exe"
   File "libbareos.dll"
+  File "libbareosfastlz.dll"
   File "libbareosfind.dll"
   File "libbareoslmdb.dll"
   File "libbareossql.dll"
@@ -2154,6 +2155,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\bareos-config-deploy.bat"
 
   Delete "$INSTDIR\libbareos.dll"
+  Delete "$INSTDIR\libbareosfastlz.dll"
   Delete "$INSTDIR\libbareossd.dll"
   Delete "$INSTDIR\libbareosfind.dll"
   Delete "$INSTDIR\libbareoslmdb.dll"
