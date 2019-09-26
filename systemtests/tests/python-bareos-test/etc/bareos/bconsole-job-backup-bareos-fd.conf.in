@@ -1,0 +1,16 @@
+#
+# Bareos User Agent (or Console) Configuration File
+#
+
+Director {
+  Name = @basename@-dir
+  DIRport = @dir_port@
+  address = @hostname@
+  Password = "INVALID"
+}
+
+Console {
+  name = job-backup-bareos-fd
+  password = secret
+}
+
