@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -24,41 +24,38 @@
  */
 
 return array(
+  'controllers' => array(
+    'invokables' => array(
+      'Fileset\Controller\Fileset' => 'Fileset\Controller\FilesetController',
+    ),
+  ),
+  'controller_plugins' => array(
+    'invokables' => array(
+      'SessionTimeoutPlugin' => 'Application\Controller\Plugin\SessionTimeoutPlugin',
+    ),
+  ),
+  'router' => array(
+    'routes' => array(
+      'fileset' => array(
+        'type' => 'segment',
+        'options' => array(
+          'route' => '/fileset[/][:action][/][:id]',
+          'constraints' => array(
+            'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
+            'id' => '[0-9]+',
+          ),
+          'defaults' => array(
+            'controller' => 'Fileset\Controller\Fileset',
+            'action' => 'index',
+          ),
+        ),
 
-   'controllers' => array(
-      'invokables' => array(
-         'Fileset\Controller\Fileset' => 'Fileset\Controller\FilesetController',
       ),
-   ),
-   'controller_plugins' => array(
-      'invokables' => array(
-         'SessionTimeoutPlugin' => 'Application\Controller\Plugin\SessionTimeoutPlugin',
-      ),
-   ),
-   'router' => array(
-      'routes' => array(
-         'fileset' => array(
-            'type' => 'segment',
-            'options' => array(
-               'route' => '/fileset[/][:action][/][:id]',
-               'constraints' => array(
-                  'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
-                  'id' => '[0-9]+',
-               ),
-               'defaults' => array(
-                  'controller' => 'Fileset\Controller\Fileset',
-                  'action' => 'index',
-               ),
-            ),
-
-         ),
-      ),
-   ),
-
-   'view_manager' => array(
-      'template_path_stack' => array(
-         'fileset' => __DIR__ . '/../view',
-      ),
-   ),
-
+    ),
+  ),
+  'view_manager' => array(
+    'template_path_stack' => array(
+      'fileset' => __DIR__ . '/../view',
+    ),
+  ),
 );

@@ -28,8 +28,12 @@ $this->headTitle($title);
 
 ?>
 
+<?php if($this->acl_alert) : echo $this->ACLAlert($this->invalid_commands); elseif(!$this->acl_alert) : ?>
+
 <pre>
 <code>
 <?php echo $this->bconsoleOutput; ?>
 </code>
 </pre>
+
+<?php endif; ?>

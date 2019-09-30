@@ -5,9 +5,8 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
- * @author    Frank Bergkemper
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -29,36 +28,30 @@ use Zend\View\Helper\AbstractHelper;
 
 class ACLAlert extends AbstractHelper
 {
-   private $required_commands = null;
-   private $alert = null;
+  private $alert = null;
 
-   public function __invoke($required_commands)
-   {
-      $msg_part_a = _('Sorry, it seems you are not authorized to run this module. If you think this is an error, please contact your local administrator.');
-      $msg_part_b = _('Please read the <a href="%s" target="_blank">Bareos documentation</a> for any additional information on how to configure the Command ACL directive of your Console/Profile resources. Following is a list of required commands which need to be in your Command ACL to run this module properly:');
-      $msg_url = 'https://docs.bareos.org/IntroductionAndTutorial/InstallingBareosWebui.html#configuration-details';
+  public function __invoke($commands=null)
+  {
+    if($commands != null) {
+      $msg_part_a = _('<b>Access denied</b><br><br>Permission to execute the following commands is required:<br><br><kbd>'.$commands.'</kbd>');
+    } else {
+      $msg_part_a = _('Access denied');
+    }
+    $msg_part_b = _('Read the <a href="%s" target="_blank">Bareos documentation</a> on how to configure ACL settings in your Console/Profile resources.');
+    $msg_url = 'https://docs.bareos.org/IntroductionAndTutorial/InstallingBareosWebui.html#configuration-details';
+    $msg_part_c = _('Back');
 
-      $this->required_commands = $required_commands;
+    $this->alert = '<div class="container-fluid">';
+    $this->alert .= '<div class="row">';
+    $this->alert .= '<div class="col-md-6">';
+    $this->alert .= '<div class="alert alert-danger">'.$msg_part_a.'<br><br>'.sprintf($msg_part_b, $msg_url).'</div>';
+    $this->alert .= '</div>';
+    $this->alert .= '<div class="col-md-6"></div>';
+    $this->alert .= '</div>';
+    $this->alert .= '</div>';
 
-      $this->alert = '<div class="container-fluid">';
-      $this->alert .= '<div class="row">';
-      $this->alert .= '<div class="col-md-6">';
-      $this->alert .= '<div class="alert alert-danger"><b>'.$msg_part_a.'</b></div>';
-      $this->alert .= sprintf($msg_part_b, $msg_url);
+    $this->alert .= '<a class="btn btn-primary" href="javascript: window.history.back();" role="button">'.$msg_part_c.'</a>';
 
-      $this->alert .= '</br></br>';
-      $this->alert .= '<ul>';
-
-      foreach($this->required_commands as $cmd) {
-         $this->alert .= '<li>'.$cmd.'</li>';
-      }
-
-      $this->alert .= '</ul>';
-      $this->alert .= '</div>';
-      $this->alert .= '<div class="col-md-6"></div>';
-      $this->alert .= '</div>';
-      $this->alert .= '</div>';
-
-      return $this->alert;
-   }
+    return $this->alert;
+  }
 }

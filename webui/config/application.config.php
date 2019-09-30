@@ -25,7 +25,6 @@
 
 $env = getenv('APPLICATION_ENV') ?: 'production';
 
-// Use the $env value to dtermine which module to load
 $modules = array(
    'Application',
    'Dashboard',
@@ -39,9 +38,10 @@ $modules = array(
    'Job',
    'Restore',
    'Auth',
+   'Console',
 );
 
-
+// Use the $env value to determine which module to load
 if($env == 'development') {
    //$modules[] = 'ZendDeveloperTools';  // you may comment only this line out if ZendDeveloperTools are not installed e.g.
    ini_set('error_reporting', E_ALL);

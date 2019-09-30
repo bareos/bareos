@@ -34,6 +34,8 @@ $this->headTitle($title);
 
 <br />
 
+<?php if($this->acl_alert) : echo $this->ACLAlert($this->invalid_commands); elseif(!$this->acl_alert) : ?>
+
 <div class="row">
 
 <div class="col-md-12">
@@ -233,3 +235,6 @@ $this->headTitle($title);
    });
 
 </script>
+
+<?php endif; ?>
+

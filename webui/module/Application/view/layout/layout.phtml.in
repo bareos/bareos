@@ -141,7 +141,12 @@ include 'version.php';
                <?php echo $this->UpdateAlert($_SESSION['bareos']['product-updates-status'],$_SESSION['bareos']['dird-update-available']); ?>
             </li>
             <li class="dropdown">
-               <a href="#"><span class="glyphicon glyphicon-th"></span>&nbsp;<?php echo $_SESSION['bareos']['director']; ?></a>
+               <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+                 <span class="glyphicon glyphicon-th" aria-hidden="true"></span>&nbsp;<?php echo $_SESSION['bareos']['director']; ?> <span class="caret"></span>
+               </a>
+               <ul class="dropdown-menu" role="menu">
+                  <li><a href="<?php echo $this->url('console', array('action' => 'index')); ?>" target="_self"><?php echo $this->translate("Console"); ?></a></li>
+               </ul>
             </li>
             <li class="dropdown">
                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">

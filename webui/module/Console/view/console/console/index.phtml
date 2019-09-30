@@ -5,7 +5,7 @@
 * bareos-webui - Bareos Web-Frontend
 *
 * @link      https://github.com/bareos/bareos for the canonical source repository
-* @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
+* @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
 * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
 *
 * This program is free software: you can redistribute it and/or modify
@@ -28,17 +28,11 @@ $this->headTitle($title);
 
 ?>
 
-<ul class="nav nav-tabs">
-   <li><a href="<?php echo $this->url('director', array('action'=>'index')); ?>"><?php echo $this->translate('Status'); ?></a></li>
-   <li><a href="<?php echo $this->url('director', array('action'=>'messages')); ?>"><?php echo $this->translate('Messages'); ?></a></li>
-   <li class="active"><a href="<?php echo $this->url('director', array('action'=>'console')); ?>"><?php echo $this->translate('Console'); ?></a></li>
-</ul>
-
 <br />
 
-<?php if($this->acl_alert) : echo $this->ACLAlert($this->required_commands); elseif(!$this->acl_alert) : ?>
+<?php if($this->acl_alert) : echo $this->ACLAlert($this->invalid_commands); elseif(!$this->acl_alert) : ?>
 
-<pre class="bconsole" id="bconsole" style="font-size: 9pt; padding-left: 5px; overflow: scroll; width: 1080px; height: 650px; background: #000; color: #fff;" onclick="focusScreen();">
+<pre class="bconsole" id="bconsole" style="font-size: 9pt; padding-left: 5px; overflow: scroll; width: 150vh; height: 75vh; background: #000; color: #fff;" onclick="focusScreen();">
    <p><?php echo $this->translate("bconsole (batch-mode), please handle with care."); ?><br /><?php echo $this->translate("All commands have to be a one liner, dialogs are not working."); ?><br /><?php echo $this->translate("Type help for a list of commands."); ?></p>
    <div class="prompt"><label> * </label><input type="text" class="cli" id="cli" value ="" size=120 style="display: inline; background: #000; color: #fff; border-color: #000; border-style: hidden; outline: none;"/></div>
 </pre>
@@ -80,7 +74,7 @@ function send(cmd) {
       $('.prompt').hide();
       var request = $.ajax({
          method: "POST",
-         url: "<?php echo $this->url('director', array('action' => 'getData'), array('query' => array('data' => 'cli'))); ?>",
+         url: "<?php echo $this->url('console', array('action' => 'getData'), array('query' => array('data' => 'cli'))); ?>",
          data: {
             "command": cmd
          },

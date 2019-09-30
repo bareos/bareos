@@ -25,39 +25,38 @@
 
 return array(
 
-   'controllers' => array(
-      'invokables' => array(
-         'Client\Controller\Client' => 'Client\Controller\ClientController',
+  'controllers' => array(
+    'invokables' => array(
+      'Client\Controller\Client' => 'Client\Controller\ClientController',
+    ),
+  ),
+  'controller_plugins' => array(
+    'invokables' => array(
+      'SessionTimeoutPlugin' => 'Application\Controller\Plugin\SessionTimeoutPlugin',
+    ),
+  ),
+  'router' => array(
+    'routes' => array(
+      'client' => array(
+        'type' => 'segment',
+        'options' => array(
+          'route' => '/client[/][:action][/][:id]',
+          'constraints' => array(
+            'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
+            'id' => '[a-zA-Z0-9][a-zA-Z0-9\._-]*',
+          ),
+          'defaults' => array(
+            'controller' => 'Client\Controller\Client',
+            'action' => 'index',
+          ),
+        ),
       ),
-   ),
-   'controller_plugins' => array(
-      'invokables' => array(
-         'SessionTimeoutPlugin' => 'Application\Controller\Plugin\SessionTimeoutPlugin',
-      ),
-   ),
-   'router' => array(
-      'routes' => array(
-         'client' => array(
-            'type' => 'segment',
-            'options' => array(
-               'route' => '/client[/][:action][/][:id]',
-               'constraints' => array(
-                  'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
-                  'id' => '[a-zA-Z0-9][a-zA-Z0-9\._-]*',
-               ),
-               'defaults' => array(
-                  'controller' => 'Client\Controller\Client',
-                  'action' => 'index',
-               ),
-            ),
-         ),
-      ),
-   ),
-
-   'view_manager' => array(
-      'template_path_stack' => array(
-         'client' => __DIR__ . '/../view',
-      ),
-   ),
+    ),
+  ),
+  'view_manager' => array(
+    'template_path_stack' => array(
+      'client' => __DIR__ . '/../view',
+    ),
+  ),
 
 );

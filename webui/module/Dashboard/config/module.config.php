@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,54 +25,54 @@
 
 return array(
 
-   'controllers' => array(
-      'invokables' => array(
-         'Dashboard\Controller\Dashboard' => 'Dashboard\Controller\DashboardController',
+  'controllers' => array(
+    'invokables' => array(
+      'Dashboard\Controller\Dashboard' => 'Dashboard\Controller\DashboardController',
+    ),
+  ),
+  'controller_plugins' => array(
+    'invokables' => array(
+      'SessionTimeoutPlugin' => 'Application\Controller\Plugin\SessionTimeoutPlugin',
+    ),
+  ),
+  'router' => array(
+    'routes' => array(
+      'dashboard' => array(
+        'type' => 'segment',
+        'options' => array(
+          'route' => '/dashboard[/][:action][/:id]',
+          'constraints' => array(
+            'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
+            'id' => '[0-9]+',
+          ),
+          'defaults' => array(
+            'controller' => 'Dashboard\Controller\Dashboard',
+            'action' => 'index',
+          ),
+        ),
       ),
-   ),
-   'controller_plugins' => array(
-      'invokables' => array(
-         'SessionTimeoutPlugin' => 'Application\Controller\Plugin\SessionTimeoutPlugin',
+    ),
+  ),
+  'view_manager' => array(
+    'template_path_stack' => array(
+      'dashboard' => __DIR__ . '/../view',
+    ),
+    'template_map' => array(
+      'JobsPast24h' => __DIR__ . '/../view/partial/JobsPast24h.phtml',
+      'JobsLastStatus' => __DIR__ . '/../view/partial/JobsLastStatus.phtml',
+      'LastDirectorMessages' => __DIR__ . '/../view/partial/LastDirectorMessages.phtml',
+      'RunningJobs' => __DIR__ . '/../view/partial/RunningJobs.phtml',
+      'JobTotals' => __DIR__ . '/../view/partial/JobTotals.phtml',
+    ),
+  ),
+  'translator' => array(
+    'translation_file_patterns' => array(
+      array(
+        'type' => 'gettext',
+        'base_dir' => __DIR__ . '../../Application/language',
+        'pattern' => '%s.mo',
       ),
-   ),
-   'router' => array(
-      'routes' => array(
-         'dashboard' => array(
-            'type' => 'segment',
-            'options' => array(
-               'route' => '/dashboard[/][:action][/:id]',
-               'constraints' => array(
-                  'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
-                  'id' => '[0-9]+',
-               ),
-               'defaults' => array(
-                  'controller' => 'Dashboard\Controller\Dashboard',
-                  'action' => 'index',
-               ),
-            ),
-         ),
-      ),
-   ),
-   'view_manager' => array(
-      'template_path_stack' => array(
-         'dashboard' => __DIR__ . '/../view',
-      ),
-      'template_map' => array(
-         'JobsPast24h' => __DIR__ . '/../view/partial/JobsPast24h.phtml',
-         'JobsLastStatus' => __DIR__ . '/../view/partial/JobsLastStatus.phtml',
-         'LastDirectorMessages' => __DIR__ . '/../view/partial/LastDirectorMessages.phtml',
-         'RunningJobs' => __DIR__ . '/../view/partial/RunningJobs.phtml',
-         'JobTotals' => __DIR__ . '/../view/partial/JobTotals.phtml',
-      ),
-   ),
-   'translator' => array(
-      'translation_file_patterns' => array(
-         array(
-            'type' => 'gettext',
-            'base_dir' => __DIR__ . '../../Application/language',
-            'pattern' => '%s.mo',
-         ),
-      ),
-   ),
+    ),
+  ),
 
 );

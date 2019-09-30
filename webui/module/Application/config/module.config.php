@@ -112,13 +112,14 @@ return array(
          'ViewJsonStrategy',
       ),
     ),
+    /*
     // Placeholder for console routes
     'console' => array(
    'router' => array(
        'routes' => array(
        ),
    ),
-    ),
+    ),*/
     'navigation' => array(
       'default' => array(
          array(

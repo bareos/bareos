@@ -15,9 +15,6 @@ Since :sinceVersion:`15.2.0: bareos-webui` |webui| is part of the Bareos project
 .. image:: /include/images/bareos-webui-jobs.*
    :width: 80.0%
 
-
-
-
 Features
 --------
 
@@ -227,7 +224,7 @@ This is the default profile, giving access to all Bareos resources and allowing 
 
 The :config:option:`Dir/Profile`\  itself does not give any access to the |dir|, but can be used by :config:option:`Dir/Console`\ , which do give access to the |dir|, see :ref:`section-webui-console`.
 
-For details, please read :ref:`DirectorResourceProfile`.
+For details, please read :ref:`section-webui-access-control-configuration` and :ref:`DirectorResourceProfile`.
 
 .. _section-webui-selinux:
 
