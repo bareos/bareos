@@ -468,14 +468,14 @@ Configuration changes
 ~~~~~~~~~~~~~~~~~~~~~
 
 The configuration file :file:`configuration.ini` of the |webui| shipped with Bareos 18.2.7 introduced a new configuration
-parameter called :config:option:`filetree_refresh_timeout`. The default value is 120 seconds if not set explicitly.
+parameter called ``filetree_refresh_timeout``. The default value is 120 seconds if not set explicitly.
 
 The |webui| triggers a Bvfs cache update automatically if required to be able to display the requested filetree.
 The configuration parameter has been introduced because in case of larger backup jobs with lots of files
 which are not already present in the Bvfs cache you could run into timeouts while trying to load the filetree
 in the restore module of the |webui|.
 
-If you have trouble with running into timeouts while loading the tree you can adjust the parameter :config:option:`filetree_refresh_timeout`
+If you have trouble with running into timeouts while loading the tree you can adjust the parameter ``filetree_refresh_timeout``
 to your needs. Keep in mind to set the timeout in your Apache or Nginx configuration accordingly to the setting
 in your :file:`configuration.ini`.
 
