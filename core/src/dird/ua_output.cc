@@ -40,6 +40,7 @@
 #include "dird/ua_db.h"
 #include "dird/ua_output.h"
 #include "dird/ua_select.h"
+#include "dird/show_cmd_available_resources.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 
@@ -203,31 +204,6 @@ static void ShowAll(UaContext* ua, bool hide_sensitive_data, bool verbose)
   }
 }
 
-
-struct showstruct {
-  const char* res_name;
-  int type;
-};
-
-static struct showstruct avail_resources[] = {{NT_("directors"), R_DIRECTOR},
-                                              {NT_("clients"), R_CLIENT},
-                                              {NT_("counters"), R_COUNTER},
-                                              {NT_("devices"), R_DEVICE},
-                                              {NT_("jobs"), R_JOB},
-                                              {NT_("jobdefs"), R_JOBDEFS},
-                                              {NT_("storages"), R_STORAGE},
-                                              {NT_("catalogs"), R_CATALOG},
-                                              {NT_("schedules"), R_SCHEDULE},
-                                              {NT_("filesets"), R_FILESET},
-                                              {NT_("pools"), R_POOL},
-                                              {NT_("messages"), R_MSGS},
-                                              {NT_("profiles"), R_PROFILE},
-                                              {NT_("consoles"), R_CONSOLE},
-                                              {NT_("users"), R_USER},
-                                              {NT_("all"), -1},
-                                              {NT_("help"), -2},
-                                              {NULL, 0}};
-
 /**
  *  Displays Resources
  *
@@ -298,9 +274,10 @@ bool show_cmd(UaContext* ua, const char* cmd)
        */
       recurse = 1;
       len = strlen(res_name);
-      for (j = 0; avail_resources[j].res_name; j++) {
-        if (bstrncasecmp(res_name, _(avail_resources[j].res_name), len)) {
-          type = avail_resources[j].type;
+      for (j = 0; show_cmd_available_resources[j].res_name; j++) {
+        if (bstrncasecmp(res_name, _(show_cmd_available_resources[j].res_name),
+                         len)) {
+          type = show_cmd_available_resources[j].type;
           if (type > 0) {
             res = my_config->res_head_[type - my_config->r_first_];
           } else {
@@ -315,9 +292,10 @@ bool show_cmd(UaContext* ua, const char* cmd)
        */
       recurse = 0;
       len = strlen(res_name);
-      for (j = 0; avail_resources[j].res_name; j++) {
-        if (bstrncasecmp(res_name, _(avail_resources[j].res_name), len)) {
-          type = avail_resources[j].type;
+      for (j = 0; show_cmd_available_resources[j].res_name; j++) {
+        if (bstrncasecmp(res_name, _(show_cmd_available_resources[j].res_name),
+                         len)) {
+          type = show_cmd_available_resources[j].type;
           res = (BareosResource*)ua->GetResWithName(type, ua->argv[i], true);
           if (!res) { type = -3; }
           break;
@@ -331,8 +309,8 @@ bool show_cmd(UaContext* ua, const char* cmd)
         break;
       case -2:
         ua->SendMsg(_("Keywords for the show command are:\n"));
-        for (j = 0; avail_resources[j].res_name; j++) {
-          ua->ErrorMsg("%s\n", _(avail_resources[j].res_name));
+        for (j = 0; show_cmd_available_resources[j].res_name; j++) {
+          ua->ErrorMsg("%s\n", _(show_cmd_available_resources[j].res_name));
         }
         goto bail_out;
       case -3:
