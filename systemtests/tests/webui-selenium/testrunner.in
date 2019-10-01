@@ -51,8 +51,8 @@ export BAREOS_WEBUI_PROFILE=admin
 #
 # test with readonly profile resource
 #
-export BAREOS_WEBUI_USERNAME=ro
-export BAREOS_WEBUI_PASSWORD=ro
+export BAREOS_WEBUI_USERNAME=readonly
+export BAREOS_WEBUI_PASSWORD=readonly
 export BAREOS_WEBUI_PROFILE=readonly
 @PYTHON@ @CMAKE_SOURCE_DIR@/webui/tests/selenium/webui-selenium-test.py --fail >>"$tmp/selenium.out" 2>&1
 
