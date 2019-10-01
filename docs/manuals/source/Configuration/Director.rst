@@ -596,6 +596,7 @@ The directives within an Options resource may be one of the following:
         Note that Bareos only use one compression level LZO1X-1 specified by LZO.
 
    LZFAST
+        .. deprecated:: 19
         All files saved will be software compressed using the LZFAST
         compression format. The compression is done on a file by file basis by
         the File daemon. Everything else about GZIP is true for LZFAST.
@@ -603,6 +604,9 @@ The directives within an Options resource may be one of the following:
         LZFAST provides much faster compression and decompression speed but lower
         compression ratio than GZIP. If your CPU is fast enough you should be able
         to compress your data without making the backup duration longer.
+
+        .. warning:: This is a nonstandard compression algorithm and support for compressing backups using it may be removed in a future version. Please consider using one of the other algorithms instead.
+
 
    LZ4
         All files saved will be software compressed using the LZ4

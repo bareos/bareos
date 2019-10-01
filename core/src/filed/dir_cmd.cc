@@ -1806,12 +1806,10 @@ static inline void ClearCompressionFlagInFileset(JobControlRecord* jcr)
             case COMPRESS_LZO1X:
               break;
 #endif
-#if defined(HAVE_FASTLZ)
             case COMPRESS_FZFZ:
             case COMPRESS_FZ4L:
             case COMPRESS_FZ4H:
               break;
-#endif
             default:
               /*
                * When we get here its because the wanted compression protocol is

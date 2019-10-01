@@ -308,9 +308,7 @@ struct CompressionContext {
 #ifdef HAVE_LZO
     void* pLZO; /**< LZO compression session data */
 #endif
-#ifdef HAVE_FASTLZ
     void* pZFAST; /**< FASTLZ compression session data */
-#endif
   } workset;
 };
 

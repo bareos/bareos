@@ -35,8 +35,6 @@
 #include "include/streams.h"
 #include "lib/edit.h"
 
-#if defined(HAVE_LZO) || defined(HAVE_LIBZ) || defined(HAVE_FASTLZ)
-
 #ifdef HAVE_LIBZ
 #include <zlib.h>
 #endif
@@ -46,9 +44,7 @@
 #include <lzo/lzo1x.h>
 #endif
 
-#ifdef HAVE_FASTLZ
-#include <fastlzlib.h>
-#endif
+#include "fastlz/fastlzlib.h"
 
 #ifdef HAVE_LIBZ
 
@@ -107,7 +103,6 @@ static inline void UnknownCompressionAlgorithm(JobControlRecord* jcr,
        cmprs_algo_to_text(compression_algorithm));
 }
 
-#ifdef HAVE_FASTLZ
 static inline void NonCompatibleCompressionAlgorithm(
     JobControlRecord* jcr,
     uint32_t compression_algorithm)
@@ -116,7 +111,6 @@ static inline void NonCompatibleCompressionAlgorithm(
        _("Illegal compression algorithm %s for compatible mode\n"),
        cmprs_algo_to_text(compression_algorithm));
 }
-#endif
 
 bool SetupCompressionBuffers(JobControlRecord* jcr,
                              bool compatible,
@@ -214,7 +208,6 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
       break;
     }
 #endif
-#ifdef HAVE_FASTLZ
     case COMPRESS_FZFZ:
     case COMPRESS_FZ4L:
     case COMPRESS_FZ4H: {
@@ -268,7 +261,6 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
       }
       break;
     }
-#endif
     default:
       UnknownCompressionAlgorithm(jcr, compression_algorithm);
       return false;
@@ -378,7 +370,6 @@ static bool compress_with_lzo(JobControlRecord* jcr,
 }
 #endif
 
-#ifdef HAVE_FASTLZ
 static bool compress_with_fastlz(JobControlRecord* jcr,
                                  char* rbuf,
                                  uint32_t rsize,
@@ -421,7 +412,6 @@ static bool compress_with_fastlz(JobControlRecord* jcr,
 
   return true;
 }
-#endif
 
 bool CompressData(JobControlRecord* jcr,
                   uint32_t compression_algorithm,
@@ -453,7 +443,6 @@ bool CompressData(JobControlRecord* jcr,
       }
       break;
 #endif
-#ifdef HAVE_FASTLZ
     case COMPRESS_FZFZ:
     case COMPRESS_FZ4L:
     case COMPRESS_FZ4H:
@@ -464,7 +453,6 @@ bool CompressData(JobControlRecord* jcr,
         }
       }
       break;
-#endif
     default:
       break;
   }
@@ -631,7 +619,6 @@ static bool decompress_with_lzo(JobControlRecord* jcr,
 }
 #endif
 
-#ifdef HAVE_FASTLZ
 static bool decompress_with_fastlz(JobControlRecord* jcr,
                                    const char* last_fname,
                                    char** data,
@@ -731,7 +718,6 @@ cleanup:
 
   return false;
 }
-#endif
 
 bool DecompressData(JobControlRecord* jcr,
                     const char* last_fname,
@@ -813,7 +799,6 @@ bool DecompressData(JobControlRecord* jcr,
                                          want_data_stream);
           }
 #endif
-#ifdef HAVE_FASTLZ
         case COMPRESS_FZFZ:
         case COMPRESS_FZ4L:
         case COMPRESS_FZ4H:
@@ -826,7 +811,6 @@ bool DecompressData(JobControlRecord* jcr,
                                             comp_magic, false,
                                             want_data_stream);
           }
-#endif
         default:
           Qmsg(jcr, M_ERROR, 0,
                _("Compression algorithm 0x%x found, but not supported!\n"),
@@ -883,56 +867,8 @@ void CleanupCompression(JobControlRecord* jcr)
   }
 #endif
 
-#ifdef HAVE_FASTLZ
   if (jcr->compress.workset.pZFAST) {
     free(jcr->compress.workset.pZFAST);
     jcr->compress.workset.pZFAST = NULL;
   }
-#endif
 }
-#else
-const char* cmprs_algo_to_text(uint32_t compression_algorithm)
-{
-  return "Unknown";
-}
-
-bool SetupCompressionBuffers(JobControlRecord* jcr,
-                             bool compatible,
-                             uint32_t compression_algorithm,
-                             uint32_t* compress_buf_size)
-{
-  return true;
-}
-
-bool SetupDecompressionBuffers(JobControlRecord* jcr,
-                               uint32_t* decompress_buf_size)
-{
-  *decompress_buf_size = 0;
-  return true;
-}
-
-bool CompressData(JobControlRecord* jcr,
-                  uint32_t compression_algorithm,
-                  char* rbuf,
-                  uint32_t rsize,
-                  unsigned char* cbuf,
-                  uint32_t max_compress_len,
-                  uint32_t* compress_len)
-{
-  return true;
-}
-
-bool DecompressData(JobControlRecord* jcr,
-                    const char* last_fname,
-                    int32_t stream,
-                    char** data,
-                    uint32_t* length,
-                    bool want_data_stream)
-{
-  Qmsg(jcr, M_ERROR, 0,
-       _("Compressed data stream found, but compression not configured!\n"));
-  return false;
-}
-
-void CleanupCompression(JobControlRecord* jcr) {}
-#endif /* defined(HAVE_LZO) || defined(HAVE_LIBZ) || defined(HAVE_FASTLZ) */

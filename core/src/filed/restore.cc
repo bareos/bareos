@@ -104,11 +104,7 @@ const bool have_lzo = true;
 #else
 const bool have_lzo = false;
 #endif
-#if defined(HAVE_FASTLZ)
 const bool have_fastlz = true;
-#else
-const bool have_fastlz = false;
-#endif
 
 static void FreeSignature(r_ctx& rctx);
 static bool ClosePreviousStream(JobControlRecord* jcr, r_ctx& rctx);

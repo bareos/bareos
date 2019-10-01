@@ -33,19 +33,13 @@
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
 
-#if defined(HAVE_LZO) || defined(HAVE_LIBZ) || defined(HAVE_FASTLZ)
 #if defined(HAVE_LIBZ)
 #include <zlib.h>
 #endif
 
-#if defined(HAVE_FASTLZ)
-#include <fastlzlib.h>
-#endif
-#endif /* defined(HAVE_LZO) || defined(HAVE_LIBZ) || defined(HAVE_FASTLZ) */
-
+#include "fastlz/fastlzlib.h"
 
 namespace filedaemon {
-#if defined(HAVE_LZO) || defined(HAVE_LIBZ) || defined(HAVE_FASTLZ)
 
 /**
  * For compression we enable all used compressors in the fileset.
@@ -194,7 +188,6 @@ bool SetupCompressionContext(b_ctx& bctx)
       case COMPRESS_LZO1X:
         break;
 #endif
-#if defined(HAVE_FASTLZ)
       case COMPRESS_FZFZ:
       case COMPRESS_FZ4L:
       case COMPRESS_FZ4H: {
@@ -227,7 +220,6 @@ bool SetupCompressionContext(b_ctx& bctx)
         bctx.ch.level = bctx.ff_pkt->Compress_level;
         break;
       }
-#endif
       default:
         break;
     }
@@ -239,11 +231,4 @@ bail_out:
   return retval;
 }
 
-#else
-
-bool AdjustCompressionBuffers(JobControlRecord* jcr) { return true; }
-
-bool SetupCompressionContext(b_ctx& bctx) { return true; }
-
-#endif /* defined(HAVE_LZO) || defined(HAVE_LIBZ) || defined(HAVE_FASTLZ) */
 } /* namespace filedaemon */

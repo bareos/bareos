@@ -44,19 +44,16 @@ POST-DEINSTALL)
 		bareos.com-director*)
 			echo "shutting down bareos-dir..."
 			service bareos-dir status && service bareos-dir stop || echo " already stopped"
-			#sysrc -x bareosdir_enable
 		;;
 
 		bareos.com-filedaemon*)
 			echo "shutting down bareos-fd..."
 			service bareos-fd status && service bareos-fd stop || echo " already stopped"
-			#sysrc -x bareosfd_enable
 		;;
 
 		bareos.com-storage*)
 			echo "shutting down bareos-fd..."
 			service bareos-sd status && service bareos-sd stop || echo " already stopped"
-			#sysrc -x bareossd_enable
 		;;
         esac
 	;;

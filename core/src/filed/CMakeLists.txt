@@ -49,6 +49,7 @@ ENDIF()
 include_directories(${OPENSSL_INCLUDE_DIR})
 
 add_library(fd_objects STATIC ${FDSRCS})
+target_link_libraries(fd_objects PUBLIC bareos)
 
 add_executable(bareos-fd filed.cc)
 

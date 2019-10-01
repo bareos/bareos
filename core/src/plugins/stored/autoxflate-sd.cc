@@ -33,9 +33,7 @@
 #include <zlib.h>
 #endif
 
-#if defined(HAVE_FASTLZ)
-#include <fastlzlib.h>
-#endif
+#include "fastlz/fastlzlib.h"
 
 using namespace storagedaemon;
 
@@ -525,7 +523,6 @@ static bool SetupAutoDeflation(bpContext* ctx, DeviceControlRecord* dcr)
       compressorname = COMPRESSOR_NAME_LZO;
       break;
 #endif
-#if defined(HAVE_FASTLZ)
     case COMPRESS_FZFZ:
       compressorname = COMPRESSOR_NAME_FZLZ;
     case COMPRESS_FZ4L:
@@ -553,7 +550,6 @@ static bool SetupAutoDeflation(bpContext* ctx, DeviceControlRecord* dcr)
       }
       break;
     }
-#endif
     default:
       break;
   }

@@ -50,7 +50,6 @@ endif()
 
 INCLUDE(BareosFindLibraryAndHeaders)
 
-BareosFindLibraryAndHeaders("fastlz" "fastlzlib.h")
 BareosFindLibraryAndHeaders("jansson" "jansson.h")
 BareosFindLibraryAndHeaders("rados" "rados/librados.h")
 BareosFindLibraryAndHeaders("radosstriper" "radosstriper/libradosstriper.h")
