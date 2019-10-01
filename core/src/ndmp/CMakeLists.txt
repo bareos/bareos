@@ -37,7 +37,6 @@ set(RPC_GEN_FILES ndmp0.h ndmp0_xdr.c
                 ndmp9.h ndmp9_xdr.c
 )
 
-
 set(INCLUDE_FILES = ndmagents.h ndmlib.h ndmp_ammend.h ndmp_msg_buf.h ndmp_translate.h
 		ndmp0_enum_strs.h ndmp0.h ndmp2_enum_strs.h ndmp2_translate.h ndmp2.h
 		ndmp3_enum_strs.h ndmp3_translate.h ndmp3.h ndmp4_enum_strs.h
@@ -82,37 +81,24 @@ ELSE()
 ENDIF()
 
 # create files with rpcgen
-
-STRING(COMPARE EQUAL ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} IN_SOURCE_BUILD)
-foreach(NDMP_VERSION 0 1 2 3 4 9)
-   IF(IN_SOURCE_BUILD)
-      ADD_CUSTOM_COMMAND(
-         PRE_BUILD
-         OUTPUT ndmp${NDMP_VERSION}.h ndmp${NDMP_VERSION}_xdr.c
-         COMMAND  ${RPCGEN} ${RPCGEN_PARAMS} ${CMAKE_CURRENT_SOURCE_DIR}/ndmp${NDMP_VERSION}.x
-
-         DEPENDS ${RPCGEN} ${CMAKE_CURRENT_SOURCE_DIR}/ndmp${NDMP_VERSION}.x
-         )
-   ELSE()
-      ADD_CUSTOM_COMMAND(
-         PRE_BUILD
-         OUTPUT ndmp${NDMP_VERSION}.h ndmp${NDMP_VERSION}_xdr.c
-         COMMAND  ${RPCGEN} ${RPCGEN_PARAMS} ${CMAKE_CURRENT_SOURCE_DIR}/ndmp${NDMP_VERSION}.x
-         COMMAND  test -e ${CMAKE_CURRENT_SOURCE_DIR}/ndmp${NDMP_VERSION}.h && cp ${CMAKE_CURRENT_SOURCE_DIR}/ndmp${NDMP_VERSION}.h ${CMAKE_CURRENT_SOURCE_DIR}/ndmp${NDMP_VERSION}_xdr.c ${CMAKE_CURRENT_BINARY_DIR} || :
-         COMMAND  test -e ndmp${NDMP_VERSION}.h && cp ndmp${NDMP_VERSION}.h ndmp${NDMP_VERSION}_xdr.c ${CMAKE_CURRENT_SOURCE_DIR} || :
-         DEPENDS ${RPCGEN} ${CMAKE_CURRENT_SOURCE_DIR}/ndmp${NDMP_VERSION}.x
-         )
-   ENDIF()
+foreach(NDMP_VERSION 0 2 3 4 9)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ndmp${NDMP_VERSION}.x ${CMAKE_CURRENT_BINARY_DIR}/ndmp${NDMP_VERSION}.x COPYONLY)
+  add_custom_command(
+    OUTPUT ndmp${NDMP_VERSION}.h ndmp${NDMP_VERSION}_xdr.c
+    COMMAND  ${RPCGEN} ${RPCGEN_PARAMS} ndmp${NDMP_VERSION}.x
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    DEPENDS ${RPCGEN} ${CMAKE_CURRENT_BINARY_DIR}/ndmp${NDMP_VERSION}.x
+  )
 endforeach()
 
-add_library(bareosndmp SHARED ${LIBBAREOSNDMP_SRCS})
+add_library(bareosndmp SHARED ${LIBBAREOSNDMP_SRCS} ${RPC_GEN_FILES})
+target_include_directories(bareosndmp PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(bareosndmp ${WRAP_LIBS} ${TIRPC_LIBRARIES})
 
-INSTALL(TARGETS bareosndmp DESTINATION ${libdir})
+install(TARGETS bareosndmp DESTINATION ${libdir})
 
 set_target_properties(bareosndmp PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
                                           SOVERSION "${SOVERSION}"
-
                                           )
 IF(build_ndmjob)
   add_executable(ndmjob ${NDMJOB_SRCS})
