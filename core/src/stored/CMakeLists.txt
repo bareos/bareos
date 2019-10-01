@@ -175,6 +175,7 @@ IF(HAVE_DARWIN_OS)
 ENDIF()
 
 add_library(stored_objects STATIC ${SDSRCS})
+target_link_libraries(stored_objects ${NDMP_LIBS})
 
 add_executable(bareos-sd stored.cc)
 

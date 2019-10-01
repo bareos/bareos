@@ -66,6 +66,7 @@ set(DIRD_RESTYPES catalog client console counter director fileset job jobdefs me
 
 #dird_objects is also used as library for unittests
 add_library(dird_objects STATIC ${DIRD_OBJECTS_SRCS})
+target_link_libraries(dird_objects ${NDMP_LIBS})
 
 add_executable(bareos-dir ${DIRDSRCS})
 
