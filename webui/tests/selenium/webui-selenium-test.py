@@ -99,7 +99,7 @@ class WrongCredentialsException(Exception):
 class SeleniumTest(unittest.TestCase):
 
     browser = 'chrome'
-    chromdriverpath = None
+    chromedriverpath = None
     base_url = 'http://127.0.0.1/bareos-webui'
     username = 'admin'
     password = 'secret'
@@ -232,31 +232,35 @@ class SeleniumTest(unittest.TestCase):
         self.wait_and_click(By.ID, 'menu-topnavbar-client')
         self.wait_and_click(By.LINK_TEXT, self.client)
         self.wait_and_click(By.ID, 'menu-topnavbar-client')
-        # Checks if client is enabled
+
         if self.client_status(self.client) == 'Enabled':
             # Disables client
             self.wait_and_click(By.XPATH, '//tr[contains(td[1], "%s")]/td[5]/a[@title="Disable"]' % self.client)
-            # Switches to dashboard, if prevented by open modal: close modal
-            self.wait_and_click(By.ID, 'menu-topnavbar-dashboard', By.CSS_SELECTOR, 'div.modal-footer > button.btn.btn-default')
-        # Throw exception if client is already disabled
-        else:
-            raise ClientStatusException(self.client, 'disabled')
+            if self.profile == 'readonly':
+                self.wait_and_click(By.LINK_TEXT, 'Back')
+            else:
+                # Switches to dashboard, if prevented by open modal: close modal
+                self.wait_and_click(By.ID, 'menu-topnavbar-dashboard', By.CSS_SELECTOR, 'div.modal-footer > button.btn.btn-default')
+
         self.wait_and_click(By.ID, 'menu-topnavbar-client')
-        # Checks if client is disabled so that it can be enabled
+
         if self.client_status(self.client) == 'Disabled':
             # Enables client
             self.wait_and_click(By.XPATH, '//tr[contains(td[1], "%s")]/td[5]/a[@title="Enable"]' % self.client)
-            # Switches to dashboard, if prevented by open modal: close modal
-            self.wait_and_click(By.ID, 'menu-topnavbar-dashboard', By.CSS_SELECTOR, 'div.modal-footer > button.btn.btn-default')
-        # Throw exception if client is already enabled
-        else:
-            raise ClientStatusException(self.client, 'enabled')
+            if self.profile == 'readonly':
+                self.wait_and_click(By.LINK_TEXT, 'Back')
+            else:
+                # Switches to dashboard, if prevented by open modal: close modal
+                self.wait_and_click(By.ID, 'menu-topnavbar-dashboard', By.CSS_SELECTOR, 'div.modal-footer > button.btn.btn-default')
+
         self.logout()
 
     def disabled_test_job_canceling(self):
         self.login()
         job_id = self.job_start_configured()
         self.job_cancel(job_id)
+        if self.profile == 'readonly':
+            self.wait_and_click(By.LINK_TEXT, 'Back')
         self.logout()
 
     def test_languages(self):
@@ -293,7 +297,10 @@ class SeleniumTest(unittest.TestCase):
         self.wait_and_click(By.XPATH, '//tr[@data-index="0"]/td[1]/a')
         # Press on rerun button
         self.wait_and_click(By.CSS_SELECTOR, "span.glyphicon.glyphicon-repeat")
-        self.wait_and_click(By.ID, "menu-topnavbar-dashboard", By.XPATH, "//div[@id='modal-002']/div/div/div[3]/button")
+        if self.profile == 'readonly':
+            self.wait_and_click(By.LINK_TEXT, 'Back')
+        else:
+            self.wait_and_click(By.ID, "menu-topnavbar-dashboard", By.XPATH, "//div[@id='modal-002']/div/div/div[3]/button")
         self.logout()
 
     def test_restore(self):
@@ -314,13 +321,18 @@ class SeleniumTest(unittest.TestCase):
         self.wait_and_click(By.XPATH, '//button[@id="btn-form-submit"]')
         # Confirm modals
         self.wait_and_click(By.XPATH, '//div[@id="modal-003"]//button[.="OK"]')
-        self.wait_and_click(By.XPATH, '//div[@id="modal-002"]//button[.="Close"]')
+        if self.profile == 'readonly':
+            self.wait_and_click(By.LINK_TEXT, 'Back')
+        else:
+            self.wait_and_click(By.XPATH, '//div[@id="modal-002"]//button[.="Close"]')
         # Logout
         self.logout()
 
     def test_run_configured_job(self):
         self.login()
         self.job_start_configured()
+        if self.profile == 'readonly':
+            self.wait_and_click(By.LINK_TEXT, 'Back')
         self.logout()
 
     def test_run_default_job(self):
@@ -333,7 +345,10 @@ class SeleniumTest(unittest.TestCase):
         self.wait_and_click(By.XPATH, '(//li[@data-original-index="1"])')
         # Start it
         self.wait_and_click(By.ID, 'submit')
-        self.wait_and_click(By.ID, 'menu-topnavbar-dashboard')
+        if self.profile == 'readonly':
+            self.wait_and_click(By.LINK_TEXT, 'Back')
+        else:
+            self.wait_and_click(By.ID, 'menu-topnavbar-dashboard')
         self.logout()
 
     #
@@ -397,7 +412,7 @@ class SeleniumTest(unittest.TestCase):
             raise WrongCredentialsException(self.username, self.password)
 
     def logout(self):
-        self.wait_and_click(By.CSS_SELECTOR, 'a.dropdown-toggle')
+        self.wait_and_click(By.CSS_SELECTOR, 'span.glyphicon.glyphicon-user')
         self.wait_and_click(By.LINK_TEXT, 'Logout')
         sleep(self.sleeptime)
 
@@ -525,6 +540,9 @@ def get_env():
     password = os.environ.get('BAREOS_WEBUI_PASSWORD')
     if password:
         SeleniumTest.password = password
+    profile = os.environ.get('BAREOS_WEBUI_PROFILE')
+    if profile:
+        SeleniumTest.profile = profile
     client = os.environ.get('BAREOS_WEBUI_CLIENT_NAME')
     if client:
         SeleniumTest.client = client
