@@ -311,3 +311,18 @@ target_link_libraries(thread_list
 
 gtest_discover_tests(thread_list TEST_PREFIX gtest:)
 
+####### ua_available_resources_equals_config_resources  #####################################
+add_executable(show_cmd_available_resources_equals_config_resources show_cmd_available_resources_equals_config_resources.cc)
+
+target_link_libraries(show_cmd_available_resources_equals_config_resources
+   dird_objects
+   bareos
+   bareosfind
+   bareoscats
+   bareossql
+   ${GTEST_LIBRARIES}
+   ${GTEST_MAIN_LIBRARIES}
+)
+
+gtest_discover_tests(show_cmd_available_resources_equals_config_resources TEST_PREFIX gtest:)
+
