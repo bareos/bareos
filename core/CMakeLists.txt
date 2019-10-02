@@ -48,6 +48,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
+include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG(-Wsuggest-override compiler_will_suggest_override)
 
@@ -63,6 +64,23 @@ endif()
 CHECK_CXX_COMPILER_FLAG(-Werror=format-security compiler_error_format_security)
 if (${compiler_error_format_security})
    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=format-security")
+endif()
+
+option(DEBUG_PREFIX_MAP "remap absolute debug paths to relative if compiler supports it" ON)
+CHECK_C_COMPILER_FLAG(-fdebug-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=. c_compiler_debug_prefix_map)
+CHECK_CXX_COMPILER_FLAG(-fdebug-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=. cxx_compiler_debug_prefix_map)
+if(DEBUG_PREFIX_MAP AND c_compiler_debug_prefix_map AND cxx_compiler_debug_prefix_map)
+  set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdebug-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=.")
+  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdebug-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=.")
+endif()
+
+CHECK_C_COMPILER_FLAG(-fmacro-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=. c_compiler_macro_prefix_map)
+CHECK_CXX_COMPILER_FLAG(-fmacro-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=. cxx_compiler_macro_prefix_map)
+if (c_compiler_macro_prefix_map)
+  set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fmacro-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=.")
+endif()
+if (cxx_compiler_macro_prefix_map)
+  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fmacro-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=.")
 endif()
 
 # warn on sign-conversion

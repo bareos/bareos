@@ -737,14 +737,15 @@ CXXFLAGS="${CXXFLAGS:-%optflags}" ; export CXXFLAGS ;
 
 # use our own cmake call instead of cmake macro as it is different on different platforms/versions
 cmake  .. \
-      -DCMAKE_VERBOSE_MAKEFILE=ON \
-      -DCMAKE_INSTALL_PREFIX:PATH=/usr \
-      -DCMAKE_INSTALL_LIBDIR:PATH=/usr/lib \
-      -DINCLUDE_INSTALL_DIR:PATH=/usr/include \
-      -DLIB_INSTALL_DIR:PATH=/usr/lib \
-      -DSYSCONF_INSTALL_DIR:PATH=/etc \
-      -DSHARE_INSTALL_PREFIX:PATH=/usr/share \
-      -DBUILD_SHARED_LIBS:BOOL=ON \
+  -DCMAKE_VERBOSE_MAKEFILE=ON \
+  -DCMAKE_INSTALL_PREFIX:PATH=/usr \
+  -DCMAKE_INSTALL_LIBDIR:PATH=/usr/lib \
+  -DINCLUDE_INSTALL_DIR:PATH=/usr/include \
+  -DLIB_INSTALL_DIR:PATH=/usr/lib \
+  -DSYSCONF_INSTALL_DIR:PATH=/etc \
+  -DSHARE_INSTALL_PREFIX:PATH=/usr/share \
+  -DBUILD_SHARED_LIBS:BOOL=ON \
+  -DDEBUG_PREFIX_MAP:BOOL=OFF \
   -Dprefix=%{_prefix}\
   -Dlibdir=%{library_dir} \
   -Dsbindir=%{_sbindir} \
