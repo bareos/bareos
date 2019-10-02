@@ -1,52 +1,328 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: bareos-webui\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-10-02 14:34+0200\n"
-"Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: POEditor.com\n"
+"Project-Id-Version: bareos-webui\n"
+"Language: ru\n"
 
 #: ../module/Dashboard/view/dashboard/dashboard/index.phtml:26
 #: ../module/Application/config/module.config.php:126
 msgid "Dashboard"
 msgstr "Панель"
 
-#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:184
-#: ../module/Job/view/job/job/index.phtml:201
-#: ../module/Job/view/job/job/index.phtml:262
-#: ../module/Job/view/job/job/index.phtml:264
-#: ../module/Job/view/job/job/index.phtml:272
-#: ../module/Job/view/job/job/index.phtml:293
-#: ../module/Job/view/job/job/index.phtml:295
-#: ../module/Job/view/job/job/index.phtml:299
-#: ../module/Job/view/job/job/index.phtml:301
-#: ../module/Client/view/client/client/details.phtml:174
-#: ../module/Client/view/client/client/details.phtml:223
-#, fuzzy
-msgid "View Job Details"
-msgstr "Список фоновых заданий"
-
-#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:256
-msgid ""
-"Not enough data to estimate progress or statistics collection is disabled."
-msgstr ""
-
-#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:264
-msgid "There are no jobs running."
-msgstr ""
-
-#: ../module/Dashboard/view/partial/JobTotals.phtml:31
-#, fuzzy
-msgid "Job Totals"
-msgstr "Список фоновых заданий"
-
 #: ../module/Dashboard/view/partial/JobTotals.phtml:40
 #: ../module/Application/config/module.config.php:131
 msgid "Jobs"
 msgstr "Задания"
+
+#: ../module/Schedule/view/schedule/schedule/index.phtml:33
+#: ../module/Schedule/view/schedule/schedule/details.phtml:33
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:33
+#: ../module/Schedule/view/schedule/schedule/status.phtml:32
+#: ../module/Application/config/module.config.php:136
+msgid "Overview"
+msgstr "Краткий обзор"
+
+#: ../module/Job/view/job/job/run.phtml:34
+#: ../module/Job/view/job/job/index.phtml:34
+#: ../module/Job/view/job/job/details.phtml:34
+#: ../module/Job/view/job/job/actions.phtml:34
+#: ../module/Job/view/job/job/actions.phtml:138
+#: ../module/Job/view/job/job/actions.phtml:141
+#: ../module/Application/config/module.config.php:141
+msgid "Run"
+msgstr "Запуск"
+
+#: ../module/Job/view/job/job/index.phtml:262
+#: ../module/Job/view/job/job/index.phtml:264
+#: ../module/Job/view/job/job/details.phtml:261
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:501
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:515
+#: ../module/Restore/view/restore/restore/index.phtml:26
+#: ../module/Restore/view/restore/restore/versions.phtml:26
+#: ../module/Application/config/module.config.php:148
+#: ../module/Client/view/client/client/index.phtml:217
+#: ../module/Client/view/client/client/details.phtml:144
+#: ../public/js/custom-functions.js:114
+msgid "Restore"
+msgstr "Восстановление"
+
+#: ../module/Application/config/module.config.php:153
+#: ../module/Client/view/client/client/index.phtml:26
+#: ../module/Client/view/client/client/index.phtml:45
+msgid "Clients"
+msgstr "Клиенты"
+
+#: ../module/Schedule/view/schedule/schedule/index.phtml:26
+#: ../module/Schedule/view/schedule/schedule/index.phtml:68
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:26
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:47
+#: ../module/Application/config/module.config.php:158
+msgid "Schedules"
+msgstr "Расписание"
+
+#: ../module/Application/config/module.config.php:163
+#: ../module/Storage/view/storage/storage/index.phtml:26
+msgid "Storages"
+msgstr "Хранение"
+
+#: ../module/Job/src/Job/Form/RunJobForm.php:197
+#: ../module/Job/src/Job/Form/RunJobForm.php:213
+#: ../module/Job/view/job/job/index.phtml:156
+#: ../module/Job/view/job/job/details.phtml:155
+#: ../module/Application/config/module.config.php:168
+#: ../module/Application/config/module.config.php:173
+#: ../module/Storage/src/Storage/Form/StorageForm.php:61
+#: ../module/Storage/view/storage/storage/details.phtml:159
+#: ../module/Pool/view/pool/pool/details.phtml:48
+msgid "Pool"
+msgstr "Пул"
+
+#: ../module/Media/view/media/media/index.phtml:26
+#: ../module/Media/view/media/media/index.phtml:34
+#: ../module/Media/view/media/media/index.phtml:47
+#: ../module/Media/view/media/media/details.phtml:34
+#: ../module/Application/config/module.config.php:178
+#: ../module/Application/config/module.config.php:183
+#: ../module/Storage/view/storage/storage/index.phtml:34
+#: ../module/Storage/view/storage/storage/details.phtml:34
+#: ../module/Storage/view/storage/storage/status.phtml:34
+#: ../module/Pool/view/pool/pool/index.phtml:34
+#: ../module/Pool/view/pool/pool/index.phtml:57
+#: ../module/Pool/view/pool/pool/details.phtml:34
+#: ../module/Pool/view/pool/pool/details.phtml:58
+#: ../module/Pool/view/pool/pool/details.phtml:79
+msgid "Volumes"
+msgstr "Тома"
+
+#: ../module/Application/config/module.config.php:190
+#: ../module/Director/view/director/director/index.phtml:27
+#: ../module/Director/view/director/director/messages.phtml:26
+msgid "Director"
+msgstr "Директор"
+
+#: ../module/Application/view/error/404.phtml:3
+msgid "A 404 error occurred"
+msgstr "Произошла ошибка 404"
+
+#: ../module/Application/view/error/404.phtml:12
+msgid "The requested controller was unable to dispatch the request."
+msgstr "Запрошенный контроллер не смог отправить запрос."
+
+#: ../module/Application/view/error/404.phtml:15
+msgid "The requested controller could not be mapped to an existing controller class."
+msgstr "Запрашиваемый контроллер не может быть отображен в существующий класс контроллера."
+
+#: ../module/Application/view/error/404.phtml:18
+msgid "The requested controller was not dispatchable."
+msgstr "Запрашиваемая контроллер не был диспетчеризирован."
+
+#: ../module/Application/view/error/404.phtml:21
+msgid "The requested URL could not be matched by routing."
+msgstr "Запрошенный URL не может быть сопоставлен с помощью маршрутизации ."
+
+#: ../module/Application/view/error/404.phtml:24
+msgid "We cannot determine at this time why a 404 was generated."
+msgstr "В настоящее время мы не можем определить был сгенерироват 404."
+
+#: ../module/Application/view/error/404.phtml:36
+msgid "Controller"
+msgstr "Контроллер"
+
+#: ../module/Application/view/error/404.phtml:43
+msgid "resolves to %s"
+msgstr "решает %s"
+
+#: ../module/Application/view/error/index.phtml:11
+#: ../module/Application/view/error/404.phtml:55
+msgid "Additional information"
+msgstr "Дополнительная информация"
+
+#: ../module/Application/view/error/index.phtml:14
+#: ../module/Application/view/error/index.phtml:38
+#: ../module/Application/view/error/404.phtml:58
+#: ../module/Application/view/error/404.phtml:82
+msgid "File"
+msgstr "Файл"
+
+#: ../module/Job/view/job/job/details.phtml:87
+#: ../module/Application/view/error/index.phtml:18
+#: ../module/Application/view/error/index.phtml:42
+#: ../module/Application/view/error/404.phtml:62
+#: ../module/Application/view/error/404.phtml:86
+msgid "Message"
+msgstr "Сообщение"
+
+#: ../module/Application/view/error/index.phtml:22
+#: ../module/Application/view/error/index.phtml:46
+#: ../module/Application/view/error/404.phtml:66
+#: ../module/Application/view/error/404.phtml:90
+msgid "Stack trace"
+msgstr "Трассировки стека"
+
+#: ../module/Application/view/error/index.phtml:32
+#: ../module/Application/view/error/404.phtml:76
+msgid "Previous exceptions"
+msgstr "Предыдущие исключения"
+
+#: ../module/Application/view/error/index.phtml:61
+#: ../module/Application/view/error/404.phtml:105
+msgid "No Exception available"
+msgstr "Исключения не возможны"
+
+#: ../module/Application/view/error/index.phtml:4
+msgid "An error occurred"
+msgstr "Произошла ошибка"
+
+#: ../module/Application/view/layout/layout.phtml:156
+#, fuzzy
+msgid "Documentation"
+msgstr "Время хранения тома"
+
+#: ../module/Application/view/layout/layout.phtml:159
+#, fuzzy
+msgid "Support"
+msgstr "Экспорт"
+
+#: ../module/Application/view/layout/layout.phtml:162
+msgid "Logout"
+msgstr "Выход"
+
+#: ../module/Job/view/job/job/run.phtml:32
+#: ../module/Job/view/job/job/index.phtml:32
+#: ../module/Job/view/job/job/details.phtml:32
+#: ../module/Job/view/job/job/actions.phtml:32
+#: ../module/Schedule/view/schedule/schedule/index.phtml:32
+#: ../module/Schedule/view/schedule/schedule/details.phtml:32
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:32
+#: ../module/Schedule/view/schedule/schedule/status.phtml:31
+#: ../module/Client/view/client/client/index.phtml:32
+#: ../module/Client/view/client/client/details.phtml:32
+#: ../module/Client/view/client/client/status.phtml:32
+msgid "Show"
+msgstr "Показать"
+
+#: ../module/Client/view/client/client/status.phtml:45
+msgid "Client Status"
+msgstr "Статус клиента"
+
+#: ../module/Client/view/client/client/details.phtml:26
+msgid "Client details"
+msgstr "Информация о клиенте"
+
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:43
+#: ../module/Job/src/Job/Form/RunJobForm.php:56
+#: ../module/Job/src/Job/Form/RunJobForm.php:73
+#: ../module/Job/view/job/job/index.phtml:76
+#: ../module/Job/view/job/job/details.phtml:59
+#: ../module/Media/view/media/media/details.phtml:88
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:96
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:113
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:131
+#: ../module/Client/view/client/client/details.phtml:45
+msgid "Client"
+msgstr "Клиент"
+
+#: ../module/Media/view/media/media/index.phtml:55
+#: ../module/Media/view/media/media/details.phtml:55
+#: ../module/Schedule/view/schedule/schedule/index.phtml:76
+#: ../module/Restore/view/restore/restore/index.phtml:390
+#: ../module/Restore/view/restore/restore/versions.phtml:516
+#: ../module/Storage/view/storage/storage/index.phtml:55
+#: ../module/Client/view/client/client/index.phtml:53
+#: ../module/Client/view/client/client/details.phtml:52
+#: ../module/Fileset/view/fileset/fileset/details.phtml:48
+#: ../module/Pool/view/pool/pool/index.phtml:55
+#: ../module/Pool/view/pool/pool/details.phtml:56
+#: ../module/Pool/view/pool/pool/details.phtml:87
+msgid "Name"
+msgstr "Наименование"
+
+#: ../module/Client/view/client/client/index.phtml:54
+#: ../module/Client/view/client/client/details.phtml:53
+msgid "Version"
+msgstr "Версия"
+
+#: ../module/Client/view/client/client/details.phtml:54
+msgid "Autoprune"
+msgstr "Автоматическую очистку каталога и томов "
+
+#: ../module/Client/view/client/client/details.phtml:55
+msgid "Fileretention"
+msgstr "Время хранения файла"
+
+#: ../module/Client/view/client/client/details.phtml:56
+msgid "Jobretention"
+msgstr "Время хранения задания"
+
+#: ../module/Job/view/job/job/run.phtml:33
+#: ../module/Job/view/job/job/index.phtml:33
+#: ../module/Job/view/job/job/index.phtml:83
+#: ../module/Job/view/job/job/details.phtml:33
+#: ../module/Job/view/job/job/details.phtml:66
+#: ../module/Job/view/job/job/actions.phtml:33
+#: ../module/Job/view/job/job/actions.phtml:78
+#: ../module/Schedule/view/schedule/schedule/index.phtml:78
+#: ../module/Storage/view/storage/storage/index.phtml:57
+#: ../module/Storage/view/storage/storage/details.phtml:113
+#: ../module/Storage/view/storage/storage/details.phtml:129
+#: ../module/Storage/view/storage/storage/details.phtml:162
+#: ../module/Client/view/client/client/index.phtml:57
+#: ../module/Client/view/client/client/details.phtml:57
+#: ../module/Client/view/client/client/details.phtml:86
+msgid "Actions"
+msgstr "Действия"
+
+#: ../module/Client/view/client/client/details.phtml:71
+#, fuzzy
+msgid "Last successful backups"
+msgstr "Последние резервные копии"
+
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:42
+#: ../module/Job/view/job/job/index.phtml:74
+#: ../module/Job/view/job/job/details.phtml:57
+#: ../module/Media/view/media/media/details.phtml:86
+#: ../module/Client/view/client/client/details.phtml:78
+msgid "Job ID"
+msgstr "ID задания"
+
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:39
+#: ../module/Job/src/Job/Form/JobForm.php:53
+#: ../module/Job/view/job/job/index.phtml:75
+#: ../module/Job/view/job/job/details.phtml:58
+#: ../module/Job/view/job/job/actions.phtml:76
+#: ../module/Media/view/media/media/details.phtml:87
+#: ../module/Client/view/client/client/details.phtml:79
+msgid "Job name"
+msgstr "Имя задания"
+
+#: ../module/Job/view/job/job/details.phtml:86
+#: ../module/Client/view/client/client/details.phtml:80
+msgid "Timestamp"
+msgstr "Временная отметка"
+
+#: ../module/Job/src/Job/Form/RunJobForm.php:127
+#: ../module/Job/src/Job/Form/RunJobForm.php:143
+#: ../module/Job/view/job/job/index.phtml:152
+#: ../module/Job/view/job/job/details.phtml:151
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:203
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:218
+#: ../module/Client/view/client/client/details.phtml:81
+#: ../module/Fileset/view/fileset/fileset/details.phtml:39
+msgid "Fileset"
+msgstr "Набор файлов"
+
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:44
+#: ../module/Job/src/Job/Form/RunJobForm.php:232
+#: ../module/Job/src/Job/Form/RunJobForm.php:248
+#: ../module/Job/view/job/job/index.phtml:78
+#: ../module/Job/view/job/job/details.phtml:61
+#: ../module/Media/view/media/media/details.phtml:90
+#: ../module/Client/view/client/client/details.phtml:82
+msgid "Level"
+msgstr "Уровень"
 
 #: ../module/Dashboard/view/partial/JobTotals.phtml:41
 #: ../module/Job/view/job/job/index.phtml:79
@@ -65,20 +341,6 @@ msgstr "Файлы"
 #: ../module/Client/view/client/client/details.phtml:84
 msgid "Bytes"
 msgstr "Байты"
-
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:31
-msgid "Most recent job status per job name"
-msgstr "Последний статус задания (по имени)"
-
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:39
-#: ../module/Job/src/Job/Form/JobForm.php:53
-#: ../module/Job/view/job/job/index.phtml:75
-#: ../module/Job/view/job/job/details.phtml:58
-#: ../module/Job/view/job/job/actions.phtml:76
-#: ../module/Media/view/media/media/details.phtml:87
-#: ../module/Client/view/client/client/details.phtml:79
-msgid "Job name"
-msgstr "Имя задания"
 
 #: ../module/Dashboard/view/partial/JobsLastStatus.phtml:40
 #: ../module/Dashboard/view/partial/JobsLastStatus.phtml:41
@@ -102,36 +364,61 @@ msgstr "Имя задания"
 msgid "Status"
 msgstr "Статус"
 
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:42
-#: ../module/Job/view/job/job/index.phtml:74
-#: ../module/Job/view/job/job/details.phtml:57
-#: ../module/Media/view/media/media/details.phtml:86
-#: ../module/Client/view/client/client/details.phtml:78
-msgid "Job ID"
-msgstr "ID задания"
+#: ../module/Client/view/client/client/details.phtml:223
+msgid "Show Files"
+msgstr "Показать файлы"
 
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:43
-#: ../module/Job/src/Job/Form/RunJobForm.php:56
-#: ../module/Job/src/Job/Form/RunJobForm.php:73
-#: ../module/Job/view/job/job/index.phtml:76
-#: ../module/Job/view/job/job/details.phtml:59
-#: ../module/Media/view/media/media/details.phtml:88
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:96
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:113
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:131
-#: ../module/Client/view/client/client/details.phtml:45
-msgid "Client"
-msgstr "Клиент"
+#: ../module/Job/view/job/job/index.phtml:115
+#: ../module/Job/view/job/job/index.phtml:136
+#: ../module/Job/view/job/job/details.phtml:133
+#: ../module/Job/view/job/job/actions.phtml:55
+#: ../module/Media/view/media/media/index.phtml:93
+#: ../module/Media/view/media/media/details.phtml:126
+#: ../module/Schedule/view/schedule/schedule/index.phtml:55
+#: ../module/Restore/view/restore/restore/index.phtml:53
+#: ../module/Restore/view/restore/restore/index.phtml:76
+#: ../module/Restore/view/restore/restore/versions.phtml:53
+#: ../module/Restore/view/restore/restore/versions.phtml:77
+#: ../module/Storage/view/storage/storage/details.phtml:57
+#: ../module/Client/view/client/client/index.phtml:91
+#: ../module/Pool/view/pool/pool/details.phtml:125
+msgid "Close"
+msgstr "Закрыть"
 
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:44
-#: ../module/Job/src/Job/Form/RunJobForm.php:232
-#: ../module/Job/src/Job/Form/RunJobForm.php:248
-#: ../module/Job/view/job/job/index.phtml:78
-#: ../module/Job/view/job/job/details.phtml:61
-#: ../module/Media/view/media/media/details.phtml:90
-#: ../module/Client/view/client/client/details.phtml:82
-msgid "Level"
-msgstr "Уровень"
+#: ../module/Job/view/job/job/actions.phtml:127
+#: ../module/Media/view/media/media/details.phtml:342
+#: ../module/Schedule/view/schedule/schedule/index.phtml:131
+#: ../module/Client/view/client/client/index.phtml:206
+msgid "Enabled"
+msgstr "Включено"
+
+#: ../module/Job/view/job/job/actions.phtml:130
+#: ../module/Schedule/view/schedule/schedule/index.phtml:134
+#: ../module/Client/view/client/client/index.phtml:209
+#, fuzzy
+msgid "Disabled"
+msgstr "Выключен"
+
+#: ../module/Job/view/job/job/actions.phtml:138
+#: ../module/Schedule/view/schedule/schedule/index.phtml:142
+#: ../module/Client/view/client/client/index.phtml:220
+msgid "Disable"
+msgstr "Выключен"
+
+#: ../module/Job/view/job/job/actions.phtml:141
+#: ../module/Schedule/view/schedule/schedule/index.phtml:145
+#: ../module/Client/view/client/client/index.phtml:223
+msgid "Enable"
+msgstr "Включен"
+
+#: ../module/Dashboard/view/partial/JobTotals.phtml:31
+#, fuzzy
+msgid "Job Totals"
+msgstr "Список фоновых заданий"
+
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:31
+msgid "Most recent job status per job name"
+msgstr "Последний статус задания (по имени)"
 
 #: ../module/Dashboard/view/partial/JobsLastStatus.phtml:45
 #: ../module/Job/view/job/job/index.phtml:164
@@ -144,15 +431,6 @@ msgstr "Старт"
 #: ../module/Job/view/job/job/details.phtml:167
 msgid "End"
 msgstr "Конец"
-
-#: ../module/Dashboard/view/partial/LastDirectorMessages.phtml:32
-msgid "Current Director messages"
-msgstr "Текущие сообщения Директора"
-
-#: ../module/Dashboard/view/partial/RunningJobs.phtml:31
-#, fuzzy
-msgid "Running Jobs"
-msgstr "Выполнение"
 
 #: ../module/Dashboard/view/partial/JobsPast24h.phtml:31
 msgid "Jobs started during the past 24 hours"
@@ -172,21 +450,68 @@ msgstr "Выполнение"
 msgid "Waiting"
 msgstr "Ожидание"
 
-#: ../module/Dashboard/view/partial/JobsPast24h.phtml:68
-#, fuzzy
-msgid "Successful"
-msgstr "Успешно"
+#: ../module/Dashboard/view/partial/LastDirectorMessages.phtml:32
+msgid "Current Director messages"
+msgstr "Текущие сообщения Директора"
 
-#: ../module/Dashboard/view/partial/JobsPast24h.phtml:79
-#: ../public/js/custom-functions.js:448
+#: ../module/Dashboard/view/partial/RunningJobs.phtml:31
 #, fuzzy
-msgid "Warning"
-msgstr "выполнение"
+msgid "Running Jobs"
+msgstr "Выполнение"
 
-#: ../module/Dashboard/view/partial/JobsPast24h.phtml:90
-#, fuzzy
-msgid "Failed"
-msgstr "Сбой!"
+#: ../module/Job/view/job/job/details.phtml:81
+#: ../module/Director/view/director/director/index.phtml:34
+#: ../module/Director/view/director/director/messages.phtml:33
+msgid "Messages"
+msgstr "Сообщения"
+
+#: ../module/Application/view/layout/layout.phtml:148
+msgid "Console"
+msgstr "Консоль"
+
+#: ../module/Console/view/console/console/index.phtml:36
+msgid "bconsole (batch-mode), please handle with care."
+msgstr "bconsole (пакетный режим), будьте осторожны."
+
+#: ../module/Console/view/console/console/index.phtml:36
+msgid "All commands have to be a one liner, dialogs are not working."
+msgstr "Используйте однострочные команды, диалоги не работают."
+
+#: ../module/Console/view/console/console/index.phtml:36
+msgid "Type help for a list of commands."
+msgstr "Введите help для получения списка команд."
+
+#: ../module/Director/view/director/director/index.phtml:47
+msgid "Director Status"
+msgstr "Статус Директора"
+
+#: ../module/Director/view/director/director/messages.phtml:43
+msgid "Refresh"
+msgstr "Обновить"
+
+#: ../module/Director/view/director/director/messages.phtml:50
+msgid "Director messages"
+msgstr "Сообщения Директора"
+
+#: ../module/Fileset/view/fileset/fileset/index.phtml:26
+msgid "Filesets"
+msgstr "Набор файлов"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:26
+msgid "Fileset details"
+msgstr "Информация о наборе файлов"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:47
+msgid "Id"
+msgstr "Id"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:49
+msgid "MD5 checksum"
+msgstr "Контрольная сумма MD5"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:50
+msgid "Creation time"
+msgstr "Время создания"
 
 #: ../module/Job/src/Job/Form/JobForm.php:60
 #, fuzzy
@@ -245,27 +570,11 @@ msgstr "сбой"
 msgid "terminated successfully"
 msgstr "успех"
 
-#: ../module/Job/src/Job/Form/JobForm.php:102
-#, fuzzy
-msgid "warning"
-msgstr "выполнение"
-
 #: ../module/Job/src/Job/Form/RunJobForm.php:92
 #: ../module/Job/src/Job/Form/RunJobForm.php:108
 #: ../module/Job/view/job/job/details.phtml:49
 msgid "Job"
 msgstr "Задание"
-
-#: ../module/Job/src/Job/Form/RunJobForm.php:127
-#: ../module/Job/src/Job/Form/RunJobForm.php:143
-#: ../module/Job/view/job/job/index.phtml:152
-#: ../module/Job/view/job/job/details.phtml:151
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:203
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:218
-#: ../module/Client/view/client/client/details.phtml:81
-#: ../module/Fileset/view/fileset/fileset/details.phtml:39
-msgid "Fileset"
-msgstr "Набор файлов"
 
 #: ../module/Job/src/Job/Form/RunJobForm.php:162
 #: ../module/Job/src/Job/Form/RunJobForm.php:178
@@ -275,21 +584,9 @@ msgstr "Набор файлов"
 msgid "Storage"
 msgstr "Накопитель"
 
-#: ../module/Job/src/Job/Form/RunJobForm.php:197
-#: ../module/Job/src/Job/Form/RunJobForm.php:213
-#: ../module/Job/view/job/job/index.phtml:156
-#: ../module/Job/view/job/job/details.phtml:155
-#: ../module/Application/config/module.config.php:168
-#: ../module/Application/config/module.config.php:173
-#: ../module/Storage/src/Storage/Form/StorageForm.php:61
-#: ../module/Storage/view/storage/storage/details.phtml:159
-#: ../module/Pool/view/pool/pool/details.phtml:48
-msgid "Pool"
-msgstr "Пул"
-
-#: ../module/Job/src/Job/Form/RunJobForm.php:266
-msgid "Priority"
-msgstr ""
+#: ../module/Job/view/job/job/actions.phtml:69
+msgid "Job Actions"
+msgstr "Действия для заданий"
 
 #: ../module/Job/src/Job/Form/RunJobForm.php:281
 #: ../module/Job/src/Job/Form/RunJobForm.php:297
@@ -304,65 +601,22 @@ msgstr ""
 msgid "Type"
 msgstr "Тип"
 
-#: ../module/Job/src/Job/Form/RunJobForm.php:330
-msgid "When"
-msgstr ""
-
-#: ../module/Job/src/Job/Form/RunJobForm.php:345
-#: ../module/Storage/src/Storage/Form/StorageForm.php:93
-msgid "Submit"
-msgstr ""
-
-#: ../module/Job/view/job/job/run.phtml:32
-#: ../module/Job/view/job/job/index.phtml:32
-#: ../module/Job/view/job/job/details.phtml:32
-#: ../module/Job/view/job/job/actions.phtml:32
-#: ../module/Schedule/view/schedule/schedule/index.phtml:32
-#: ../module/Schedule/view/schedule/schedule/details.phtml:32
-#: ../module/Schedule/view/schedule/schedule/overview.phtml:32
-#: ../module/Schedule/view/schedule/schedule/status.phtml:31
-#: ../module/Client/view/client/client/index.phtml:32
-#: ../module/Client/view/client/client/details.phtml:32
-#: ../module/Client/view/client/client/status.phtml:32
-msgid "Show"
-msgstr "Показать"
-
-#: ../module/Job/view/job/job/run.phtml:33
-#: ../module/Job/view/job/job/index.phtml:33
-#: ../module/Job/view/job/job/index.phtml:83
-#: ../module/Job/view/job/job/details.phtml:33
-#: ../module/Job/view/job/job/details.phtml:66
-#: ../module/Job/view/job/job/actions.phtml:33
-#: ../module/Job/view/job/job/actions.phtml:78
-#: ../module/Schedule/view/schedule/schedule/index.phtml:78
-#: ../module/Storage/view/storage/storage/index.phtml:57
-#: ../module/Storage/view/storage/storage/details.phtml:113
-#: ../module/Storage/view/storage/storage/details.phtml:129
-#: ../module/Storage/view/storage/storage/details.phtml:162
-#: ../module/Client/view/client/client/index.phtml:57
-#: ../module/Client/view/client/client/details.phtml:57
-#: ../module/Client/view/client/client/details.phtml:86
-msgid "Actions"
-msgstr "Действия"
-
-#: ../module/Job/view/job/job/run.phtml:34
-#: ../module/Job/view/job/job/index.phtml:34
-#: ../module/Job/view/job/job/details.phtml:34
-#: ../module/Job/view/job/job/actions.phtml:34
-#: ../module/Job/view/job/job/actions.phtml:138
-#: ../module/Job/view/job/job/actions.phtml:141
-#: ../module/Application/config/module.config.php:141
-msgid "Run"
-msgstr "Запуск"
-
-#: ../module/Job/view/job/job/index.phtml:66
-msgid "Job list"
-msgstr "Список заданий"
-
 #: ../module/Job/view/job/job/index.phtml:81
 #: ../module/Job/view/job/job/details.phtml:64
 msgid "Errors"
 msgstr "Ошибки"
+
+#: ../module/Job/view/job/job/details.phtml:97
+#, fuzzy
+msgid "Used Volumes"
+msgstr "Объемы"
+
+#: ../module/Job/view/job/job/details.phtml:102
+#: ../module/Storage/view/storage/storage/details.phtml:112
+#: ../module/Storage/view/storage/storage/details.phtml:128
+#: ../module/Storage/view/storage/storage/details.phtml:153
+msgid "Volume"
+msgstr "Том"
 
 #: ../module/Job/view/job/job/index.phtml:107
 #: ../module/Job/view/job/job/details.phtml:126
@@ -373,12 +627,6 @@ msgstr "Ошибки"
 #: ../module/Pool/view/pool/pool/details.phtml:118
 msgid "Failed to retrieve data from Bareos director"
 msgstr "Не удалось получить данные от Bareos директора"
-
-#: ../module/Job/view/job/job/index.phtml:110
-msgid ""
-"Please try to reduce the amount of data to display, e.g. reduce time period."
-msgstr ""
-"Пожалуйста, попробуйте уменьшить объем данных для отображения, например "
 
 #: ../module/Job/view/job/job/index.phtml:111
 #: ../module/Job/view/job/job/details.phtml:129
@@ -395,100 +643,12 @@ msgstr "Сообщение об ошибке от директора:"
 #: ../module/Pool/view/pool/pool/details.phtml:122
 #, fuzzy
 msgid "Failed to send result as json. Maybe the result message is too long?"
-msgstr ""
-"Не удалось отправить результат в формате JSON. Может сообщение слишком "
-"длинное?"
-
-#: ../module/Job/view/job/job/index.phtml:115
-#: ../module/Job/view/job/job/index.phtml:136
-#: ../module/Job/view/job/job/details.phtml:133
-#: ../module/Job/view/job/job/actions.phtml:55
-#: ../module/Media/view/media/media/index.phtml:93
-#: ../module/Media/view/media/media/details.phtml:126
-#: ../module/Schedule/view/schedule/schedule/index.phtml:55
-#: ../module/Restore/view/restore/restore/index.phtml:53
-#: ../module/Restore/view/restore/restore/index.phtml:76
-#: ../module/Restore/view/restore/restore/versions.phtml:53
-#: ../module/Restore/view/restore/restore/versions.phtml:77
-#: ../module/Storage/view/storage/storage/details.phtml:57
-#: ../module/Client/view/client/client/index.phtml:91
-#: ../module/Pool/view/pool/pool/details.phtml:125
-msgid "Close"
-msgstr "Закрыть"
+msgstr "Не удалось отправить результат в формате JSON. Может сообщение слишком длинное?"
 
 #: ../module/Job/view/job/job/index.phtml:160
 #: ../module/Job/view/job/job/details.phtml:159
 msgid "Scheduled"
 msgstr "Запланировано"
-
-#: ../module/Job/view/job/job/index.phtml:262
-#: ../module/Job/view/job/job/index.phtml:272
-#: ../module/Job/view/job/job/details.phtml:261
-#: ../module/Job/view/job/job/details.phtml:266
-msgid "Rerun"
-msgstr "Перезапустить"
-
-#: ../module/Job/view/job/job/index.phtml:262
-#: ../module/Job/view/job/job/index.phtml:264
-#: ../module/Job/view/job/job/details.phtml:261
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:501
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:515
-#: ../module/Restore/view/restore/restore/index.phtml:26
-#: ../module/Restore/view/restore/restore/versions.phtml:26
-#: ../module/Application/config/module.config.php:148
-#: ../module/Client/view/client/client/index.phtml:217
-#: ../module/Client/view/client/client/details.phtml:144
-#: ../public/js/custom-functions.js:114
-msgid "Restore"
-msgstr "Восстановление"
-
-#: ../module/Job/view/job/job/index.phtml:293
-#: ../module/Job/view/job/job/index.phtml:299
-#: ../module/Job/view/job/job/details.phtml:281
-#: ../module/Restore/view/restore/restore/index.phtml:97
-#: ../module/Restore/view/restore/restore/versions.phtml:98
-#: ../module/Storage/view/storage/storage/details.phtml:88
-msgid "Cancel"
-msgstr "Отмена"
-
-#: ../module/Job/view/job/job/details.phtml:81
-#: ../module/Director/view/director/director/index.phtml:34
-#: ../module/Director/view/director/director/messages.phtml:33
-msgid "Messages"
-msgstr "Сообщения"
-
-#: ../module/Job/view/job/job/details.phtml:86
-#: ../module/Client/view/client/client/details.phtml:80
-msgid "Timestamp"
-msgstr "Временная отметка"
-
-#: ../module/Job/view/job/job/details.phtml:87
-#: ../module/Application/view/error/index.phtml:18
-#: ../module/Application/view/error/index.phtml:42
-#: ../module/Application/view/error/404.phtml:62
-#: ../module/Application/view/error/404.phtml:86
-msgid "Message"
-msgstr "Сообщение"
-
-#: ../module/Job/view/job/job/details.phtml:97
-#, fuzzy
-msgid "Used Volumes"
-msgstr "Объемы"
-
-#: ../module/Job/view/job/job/details.phtml:102
-#: ../module/Storage/view/storage/storage/details.phtml:112
-#: ../module/Storage/view/storage/storage/details.phtml:128
-#: ../module/Storage/view/storage/storage/details.phtml:153
-msgid "Volume"
-msgstr "Том"
-
-#: ../module/Job/view/job/job/details.phtml:180
-msgid "First Index"
-msgstr ""
-
-#: ../module/Job/view/job/job/details.phtml:184
-msgid "Last Index"
-msgstr ""
 
 #: ../module/Job/view/job/job/details.phtml:188
 #, fuzzy
@@ -500,52 +660,33 @@ msgstr "Старт"
 msgid "End Block"
 msgstr "Конечный блок"
 
-#: ../module/Job/view/job/job/actions.phtml:69
-msgid "Job Actions"
-msgstr "Действия для заданий"
+#: ../module/Job/view/job/job/index.phtml:262
+#: ../module/Job/view/job/job/index.phtml:272
+#: ../module/Job/view/job/job/details.phtml:261
+#: ../module/Job/view/job/job/details.phtml:266
+msgid "Rerun"
+msgstr "Перезапустить"
 
-#: ../module/Job/view/job/job/actions.phtml:127
-#: ../module/Media/view/media/media/details.phtml:342
-#: ../module/Schedule/view/schedule/schedule/index.phtml:131
-#: ../module/Client/view/client/client/index.phtml:206
-msgid "Enabled"
-msgstr "Включено"
+#: ../module/Job/view/job/job/index.phtml:293
+#: ../module/Job/view/job/job/index.phtml:299
+#: ../module/Job/view/job/job/details.phtml:281
+#: ../module/Restore/view/restore/restore/index.phtml:97
+#: ../module/Restore/view/restore/restore/versions.phtml:98
+#: ../module/Storage/view/storage/storage/details.phtml:88
+msgid "Cancel"
+msgstr "Отмена"
 
-#: ../module/Job/view/job/job/actions.phtml:130
-#: ../module/Schedule/view/schedule/schedule/index.phtml:134
-#: ../module/Client/view/client/client/index.phtml:209
-#, fuzzy
-msgid "Disabled"
-msgstr "Выключен"
+#: ../module/Job/view/job/job/index.phtml:66
+msgid "Job list"
+msgstr "Список заданий"
 
-#: ../module/Job/view/job/job/actions.phtml:138
-#: ../module/Schedule/view/schedule/schedule/index.phtml:142
-#: ../module/Client/view/client/client/index.phtml:220
-msgid "Disable"
-msgstr "Выключен"
+#: ../module/Job/view/job/job/index.phtml:110
+msgid "Please try to reduce the amount of data to display, e.g. reduce time period."
+msgstr "Пожалуйста, попробуйте уменьшить объем данных для отображения, например "
 
-#: ../module/Job/view/job/job/actions.phtml:141
-#: ../module/Schedule/view/schedule/schedule/index.phtml:145
-#: ../module/Client/view/client/client/index.phtml:223
-msgid "Enable"
-msgstr "Включен"
-
-#: ../module/Media/view/media/media/index.phtml:26
-#: ../module/Media/view/media/media/index.phtml:34
-#: ../module/Media/view/media/media/index.phtml:47
-#: ../module/Media/view/media/media/details.phtml:34
-#: ../module/Application/config/module.config.php:178
-#: ../module/Application/config/module.config.php:183
-#: ../module/Storage/view/storage/storage/index.phtml:34
-#: ../module/Storage/view/storage/storage/details.phtml:34
-#: ../module/Storage/view/storage/storage/status.phtml:34
-#: ../module/Pool/view/pool/pool/index.phtml:34
-#: ../module/Pool/view/pool/pool/index.phtml:57
-#: ../module/Pool/view/pool/pool/details.phtml:34
-#: ../module/Pool/view/pool/pool/details.phtml:58
-#: ../module/Pool/view/pool/pool/details.phtml:79
-msgid "Volumes"
-msgstr "Тома"
+#: ../module/Media/view/media/media/details.phtml:26
+msgid "Volume details"
+msgstr "Информация о томе"
 
 #: ../module/Media/view/media/media/index.phtml:32
 #: ../module/Media/view/media/media/details.phtml:32
@@ -568,21 +709,6 @@ msgstr "Устройства"
 #: ../module/Pool/view/pool/pool/details.phtml:33
 msgid "Pools"
 msgstr "Пулы"
-
-#: ../module/Media/view/media/media/index.phtml:55
-#: ../module/Media/view/media/media/details.phtml:55
-#: ../module/Schedule/view/schedule/schedule/index.phtml:76
-#: ../module/Restore/view/restore/restore/index.phtml:390
-#: ../module/Restore/view/restore/restore/versions.phtml:516
-#: ../module/Storage/view/storage/storage/index.phtml:55
-#: ../module/Client/view/client/client/index.phtml:53
-#: ../module/Client/view/client/client/details.phtml:52
-#: ../module/Fileset/view/fileset/fileset/details.phtml:48
-#: ../module/Pool/view/pool/pool/index.phtml:55
-#: ../module/Pool/view/pool/pool/details.phtml:56
-#: ../module/Pool/view/pool/pool/details.phtml:87
-msgid "Name"
-msgstr "Наименование"
 
 #: ../module/Media/view/media/media/index.phtml:58
 #: ../module/Media/view/media/media/index.phtml:196
@@ -612,6 +738,18 @@ msgstr "Максимум байт"
 msgid "Current bytes"
 msgstr "Текущие байты"
 
+#: ../module/Media/view/media/media/details.phtml:78
+msgid "Jobs on volume"
+msgstr "Задания тома"
+
+#: ../module/Media/view/media/media/details.phtml:93
+msgid "Starttime"
+msgstr "Время начала"
+
+#: ../module/Media/view/media/media/details.phtml:94
+msgid "Endtime"
+msgstr "Времы окончания"
+
 #: ../module/Media/view/media/media/index.phtml:188
 #: ../module/Media/view/media/media/details.phtml:274
 #: ../module/Pool/view/pool/pool/details.phtml:253
@@ -635,22 +773,6 @@ msgstr "Задания тома"
 #: ../module/Pool/view/pool/pool/details.phtml:269
 msgid "Recycle"
 msgstr "Переиспользовать"
-
-#: ../module/Media/view/media/media/details.phtml:26
-msgid "Volume details"
-msgstr "Информация о томе"
-
-#: ../module/Media/view/media/media/details.phtml:78
-msgid "Jobs on volume"
-msgstr "Задания тома"
-
-#: ../module/Media/view/media/media/details.phtml:93
-msgid "Starttime"
-msgstr "Время начала"
-
-#: ../module/Media/view/media/media/details.phtml:94
-msgid "Endtime"
-msgstr "Времы окончания"
 
 #: ../module/Media/view/media/media/details.phtml:294
 msgid "Volume writes"
@@ -747,74 +869,37 @@ msgstr "ID переиспользуемого пула"
 msgid "Comment"
 msgstr "Комментарий"
 
-#: ../module/Console/view/console/console/index.phtml:36
-msgid "bconsole (batch-mode), please handle with care."
-msgstr "bconsole (пакетный режим), будьте осторожны."
+#: ../module/Pool/view/pool/pool/details.phtml:26
+msgid "Pool details"
+msgstr "Информация о пуле"
 
-#: ../module/Console/view/console/console/index.phtml:36
-msgid "All commands have to be a one liner, dialogs are not working."
-msgstr "Используйте однострочные команды, диалоги не работают."
+#: ../module/Pool/view/pool/pool/index.phtml:58
+#: ../module/Pool/view/pool/pool/details.phtml:59
+msgid "Maximum volumes"
+msgstr "Максимальное количество томов"
 
-#: ../module/Console/view/console/console/index.phtml:36
-msgid "Type help for a list of commands."
-msgstr "Введите help для получения списка команд."
+#: ../module/Pool/view/pool/pool/index.phtml:59
+#: ../module/Pool/view/pool/pool/details.phtml:60
+msgid "Volume retention"
+msgstr "Время хранения тома"
 
-#: ../module/Schedule/view/schedule/schedule/index.phtml:26
-#: ../module/Schedule/view/schedule/schedule/index.phtml:68
-#: ../module/Schedule/view/schedule/schedule/overview.phtml:26
-#: ../module/Schedule/view/schedule/schedule/overview.phtml:47
-#: ../module/Application/config/module.config.php:158
-msgid "Schedules"
-msgstr "Расписание"
+#: ../module/Pool/view/pool/pool/index.phtml:60
+#: ../module/Pool/view/pool/pool/details.phtml:61
+msgid "Maximum volume jobs"
+msgstr "Максимум заданий в томе"
 
-#: ../module/Schedule/view/schedule/schedule/index.phtml:33
-#: ../module/Schedule/view/schedule/schedule/details.phtml:33
-#: ../module/Schedule/view/schedule/schedule/overview.phtml:33
-#: ../module/Schedule/view/schedule/schedule/status.phtml:32
-#: ../module/Application/config/module.config.php:136
-msgid "Overview"
-msgstr "Краткий обзор"
-
-#: ../module/Schedule/view/schedule/schedule/index.phtml:34
-#: ../module/Schedule/view/schedule/schedule/details.phtml:34
-#: ../module/Schedule/view/schedule/schedule/overview.phtml:34
-#: ../module/Schedule/view/schedule/schedule/status.phtml:33
-msgid "Scheduler status"
-msgstr "Статус планировщика"
-
-#: ../module/Schedule/view/schedule/schedule/details.phtml:26
-#: ../module/Schedule/view/schedule/schedule/details.phtml:47
-msgid "Schedule Details"
-msgstr "Информация о расписании"
-
-#: ../module/Schedule/view/schedule/schedule/status.phtml:26
-#: ../module/Schedule/view/schedule/schedule/status.phtml:46
-msgid "Status Scheduler"
-msgstr "Статус планировщика"
+#: ../module/Pool/view/pool/pool/index.phtml:61
+#: ../module/Pool/view/pool/pool/details.phtml:62
+msgid "Maximum volume bytes"
+msgstr "Максимум байт в томе"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:59
 msgid "Backup jobs"
 msgstr "Задания резервного копирования"
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:60
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:77
-#, fuzzy
-msgid "Please choose a backup"
-msgstr "Пожалуйста, выберите набор файлов"
-
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:76
 msgid "Backups"
 msgstr "Резервное копирование"
-
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:97
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:114
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:132
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:151
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:168
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:185
-#, fuzzy
-msgid "Please choose a client"
-msgstr "Пожалуйста, выберите набор файлов"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:150
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:167
@@ -835,12 +920,6 @@ msgstr "Пожалуйста, выберите набор файлов"
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:269
 msgid "Restore job"
 msgstr "Задание на восстановление"
-
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:253
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:270
-#, fuzzy
-msgid "Please choose a restore job"
-msgstr "Пожалуйста, выберите набор файлов"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:289
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:308
@@ -867,8 +946,7 @@ msgstr "Нет"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:330
 msgid "Merge all related jobs to last full backup of selected backup job"
-msgstr ""
-"Объединить все задания до последнего полного резервного копирования вместе"
+msgstr "Объединить все задания до последнего полного резервного копирования вместе"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:349
 msgid "Merge jobs"
@@ -910,21 +988,6 @@ msgstr "Папка восстановления на клиенте"
 msgid "e.g. / or /tmp/bareos-restores/"
 msgstr "например / или /tmp/bareos-restores/"
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:463
-msgid "Related jobs for a most recent full restore"
-msgstr ""
-
-#: ../module/Restore/view/restore/restore/index.phtml:32
-#: ../module/Restore/view/restore/restore/versions.phtml:32
-#, fuzzy
-msgid "Restore multiple files"
-msgstr "Восстановить на клиент"
-
-#: ../module/Restore/view/restore/restore/index.phtml:33
-#: ../module/Restore/view/restore/restore/versions.phtml:33
-msgid "Restore specific file version"
-msgstr ""
-
 #: ../module/Restore/view/restore/restore/index.phtml:49
 #: ../module/Restore/view/restore/restore/versions.phtml:49
 #, fuzzy
@@ -937,28 +1000,6 @@ msgstr "Сообщение об ошибке от директора:"
 msgid "Director message"
 msgstr "Сообщения Директора"
 
-#: ../module/Restore/view/restore/restore/index.phtml:75
-#: ../module/Restore/view/restore/restore/versions.phtml:76
-#, fuzzy
-msgid "Job report"
-msgstr "Список фоновых заданий"
-
-#: ../module/Restore/view/restore/restore/index.phtml:89
-#: ../module/Restore/view/restore/restore/versions.phtml:90
-msgid "Confirm restore job submit"
-msgstr ""
-
-#: ../module/Restore/view/restore/restore/index.phtml:98
-#: ../module/Restore/view/restore/restore/index.phtml:117
-#: ../module/Restore/view/restore/restore/versions.phtml:99
-#: ../module/Restore/view/restore/restore/versions.phtml:118
-msgid "OK"
-msgstr ""
-
-#: ../module/Restore/view/restore/restore/index.phtml:114
-msgid "No files or directories selected to restore!"
-msgstr ""
-
 #: ../module/Restore/view/restore/restore/index.phtml:164
 #: ../module/Restore/view/restore/restore/versions.phtml:162
 msgid "File selection"
@@ -970,183 +1011,18 @@ msgstr "Выбор файла"
 msgid "Size"
 msgstr "Размер"
 
-#: ../module/Restore/view/restore/restore/index.phtml:409
-#: ../module/Restore/view/restore/restore/versions.phtml:193
-#: ../module/Restore/view/restore/restore/versions.phtml:534
-msgid "Last modification"
-msgstr ""
-
-#: ../module/Restore/view/restore/restore/versions.phtml:115
-msgid "No file selected to restore!"
-msgstr ""
-
-#: ../module/Restore/view/restore/restore/versions.phtml:172
-msgid "Selected file"
-msgstr ""
-
-#: ../module/Restore/view/restore/restore/versions.phtml:180
-msgid "Available versions"
-msgstr ""
-
-#: ../module/Restore/view/restore/restore/versions.phtml:195
-#, fuzzy
-msgid "Checksum"
-msgstr "Контрольная сумма MD5"
-
-#: ../module/Application/src/Application/View/Helper/ACLAlert.php:36
-msgid ""
-"<b>Access denied</b><br><br>Permission to execute the following commands is "
-"required:<br><br><kbd>"
-msgstr ""
-
-#: ../module/Application/src/Application/View/Helper/ACLAlert.php:38
-msgid "Access denied"
-msgstr ""
-
-#: ../module/Application/src/Application/View/Helper/ACLAlert.php:40
-#, php-format
-msgid ""
-"Read the <a href=\"%s\" target=\"_blank\">Bareos documentation</a> on how to "
-"configure ACL settings in your Console/Profile resources."
-msgstr ""
-
-#: ../module/Application/src/Application/View/Helper/ACLAlert.php:42
-#, fuzzy
-msgid "Back"
-msgstr "Резервное копирование"
-
-#: ../module/Application/config/module.config.php:153
-#: ../module/Client/view/client/client/index.phtml:26
-#: ../module/Client/view/client/client/index.phtml:45
-msgid "Clients"
-msgstr "Клиенты"
-
-#: ../module/Application/config/module.config.php:163
-#: ../module/Storage/view/storage/storage/index.phtml:26
-msgid "Storages"
-msgstr "Хранение"
-
-#: ../module/Application/config/module.config.php:190
-#: ../module/Director/view/director/director/index.phtml:27
-#: ../module/Director/view/director/director/messages.phtml:26
-msgid "Director"
-msgstr "Директор"
-
-#: ../module/Application/view/layout/layout.phtml:148
-msgid "Console"
-msgstr "Консоль"
-
-#: ../module/Application/view/layout/layout.phtml:156
-#, fuzzy
-msgid "Documentation"
-msgstr "Время хранения тома"
-
-#: ../module/Application/view/layout/layout.phtml:157
-msgid "Mailinglists"
-msgstr ""
-
-#: ../module/Application/view/layout/layout.phtml:158
-msgid "Bugtracker"
-msgstr ""
-
-#: ../module/Application/view/layout/layout.phtml:159
-#, fuzzy
-msgid "Support"
-msgstr "Экспорт"
-
-#: ../module/Application/view/layout/layout.phtml:160
-msgid "Subscription"
-msgstr ""
-
-#: ../module/Application/view/layout/layout.phtml:162
-msgid "Logout"
-msgstr "Выход"
-
-#: ../module/Application/view/error/index.phtml:4
-msgid "An error occurred"
-msgstr "Произошла ошибка"
-
-#: ../module/Application/view/error/index.phtml:11
-#: ../module/Application/view/error/404.phtml:55
-msgid "Additional information"
-msgstr "Дополнительная информация"
-
-#: ../module/Application/view/error/index.phtml:14
-#: ../module/Application/view/error/index.phtml:38
-#: ../module/Application/view/error/404.phtml:58
-#: ../module/Application/view/error/404.phtml:82
-msgid "File"
-msgstr "Файл"
-
-#: ../module/Application/view/error/index.phtml:22
-#: ../module/Application/view/error/index.phtml:46
-#: ../module/Application/view/error/404.phtml:66
-#: ../module/Application/view/error/404.phtml:90
-msgid "Stack trace"
-msgstr "Трассировки стека"
-
-#: ../module/Application/view/error/index.phtml:32
-#: ../module/Application/view/error/404.phtml:76
-msgid "Previous exceptions"
-msgstr "Предыдущие исключения"
-
-#: ../module/Application/view/error/index.phtml:61
-#: ../module/Application/view/error/404.phtml:105
-msgid "No Exception available"
-msgstr "Исключения не возможны"
-
-#: ../module/Application/view/error/404.phtml:3
-msgid "A 404 error occurred"
-msgstr "Произошла ошибка 404"
-
-#: ../module/Application/view/error/404.phtml:12
-msgid "The requested controller was unable to dispatch the request."
-msgstr "Запрошенный контроллер не смог отправить запрос."
-
-#: ../module/Application/view/error/404.phtml:15
-msgid ""
-"The requested controller could not be mapped to an existing controller class."
-msgstr ""
-"Запрашиваемый контроллер не может быть отображен в существующий класс "
-"контроллера."
-
-#: ../module/Application/view/error/404.phtml:18
-msgid "The requested controller was not dispatchable."
-msgstr "Запрашиваемая контроллер не был диспетчеризирован."
-
-#: ../module/Application/view/error/404.phtml:21
-msgid "The requested URL could not be matched by routing."
-msgstr "Запрошенный URL не может быть сопоставлен с помощью маршрутизации ."
-
-#: ../module/Application/view/error/404.phtml:24
-msgid "We cannot determine at this time why a 404 was generated."
-msgstr "В настоящее время мы не можем определить был сгенерироват 404."
-
-#: ../module/Application/view/error/404.phtml:36
-msgid "Controller"
-msgstr "Контроллер"
-
-#: ../module/Application/view/error/404.phtml:43
-#, php-format
-msgid "resolves to %s"
-msgstr "решает %s"
+#: ../../../module/Restore/view/restore/restore/index.phtml:321
+msgid "Date"
+msgstr "Дата"
 
 #: ../module/Storage/src/Storage/Form/StorageForm.php:77
 #: ../module/Storage/view/storage/storage/details.phtml:126
 msgid "Drive"
 msgstr "Дисковод"
 
-#: ../module/Storage/view/storage/storage/index.phtml:47
-msgid "Storage Devices"
-msgstr "Устройства"
-
-#: ../module/Storage/view/storage/storage/index.phtml:56
-msgid "Autochanger"
-msgstr "Авточейнджер"
-
-#: ../module/Storage/view/storage/storage/index.phtml:116
-msgid "Manage autochanger"
-msgstr "Управление чейнджером"
+#: ../module/Storage/view/storage/storage/status.phtml:47
+msgid "Storage Status"
+msgstr "Статус накопителя"
 
 #: ../module/Storage/view/storage/storage/details.phtml:26
 msgid "Storage details"
@@ -1214,172 +1090,54 @@ msgstr "нет в каталоге"
 msgid "Export"
 msgstr "Экспорт"
 
-#: ../module/Storage/view/storage/storage/status.phtml:47
-msgid "Storage Status"
-msgstr "Статус накопителя"
+#: ../module/Storage/view/storage/storage/index.phtml:47
+msgid "Storage Devices"
+msgstr "Устройства"
 
-#: ../module/Client/view/client/client/index.phtml:54
-#: ../module/Client/view/client/client/details.phtml:53
-msgid "Version"
-msgstr "Версия"
+#: ../module/Storage/view/storage/storage/index.phtml:56
+msgid "Autochanger"
+msgstr "Авточейнджер"
 
-#: ../module/Client/view/client/client/details.phtml:26
-msgid "Client details"
-msgstr "Информация о клиенте"
+#: ../module/Storage/view/storage/storage/index.phtml:116
+msgid "Manage autochanger"
+msgstr "Управление чейнджером"
 
-#: ../module/Client/view/client/client/details.phtml:54
-msgid "Autoprune"
-msgstr "Автоматическую очистку каталога и томов "
+#: ../module/Schedule/view/schedule/schedule/details.phtml:26
+#: ../module/Schedule/view/schedule/schedule/details.phtml:47
+msgid "Schedule Details"
+msgstr "Информация о расписании"
 
-#: ../module/Client/view/client/client/details.phtml:55
-msgid "Fileretention"
-msgstr "Время хранения файла"
+#: ../module/Schedule/view/schedule/schedule/index.phtml:34
+#: ../module/Schedule/view/schedule/schedule/details.phtml:34
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:34
+#: ../module/Schedule/view/schedule/schedule/status.phtml:33
+msgid "Scheduler status"
+msgstr "Статус планировщика"
 
-#: ../module/Client/view/client/client/details.phtml:56
-msgid "Jobretention"
-msgstr "Время хранения задания"
-
-#: ../module/Client/view/client/client/details.phtml:71
-#, fuzzy
-msgid "Last successful backups"
-msgstr "Последние резервные копии"
-
-#: ../module/Client/view/client/client/details.phtml:223
-msgid "Show Files"
-msgstr "Показать файлы"
-
-#: ../module/Client/view/client/client/status.phtml:45
-msgid "Client Status"
-msgstr "Статус клиента"
-
-#: ../module/Director/view/director/director/index.phtml:47
-msgid "Director Status"
-msgstr "Статус Директора"
-
-#: ../module/Director/view/director/director/messages.phtml:43
-msgid "Refresh"
-msgstr "Обновить"
-
-#: ../module/Director/view/director/director/messages.phtml:50
-msgid "Director messages"
-msgstr "Сообщения Директора"
-
-#: ../module/Fileset/view/fileset/fileset/index.phtml:26
-msgid "Filesets"
-msgstr "Набор файлов"
-
-#: ../module/Fileset/view/fileset/fileset/details.phtml:26
-msgid "Fileset details"
-msgstr "Информация о наборе файлов"
-
-#: ../module/Fileset/view/fileset/fileset/details.phtml:47
-msgid "Id"
-msgstr "Id"
-
-#: ../module/Fileset/view/fileset/fileset/details.phtml:49
-msgid "MD5 checksum"
-msgstr "Контрольная сумма MD5"
-
-#: ../module/Fileset/view/fileset/fileset/details.phtml:50
-msgid "Creation time"
-msgstr "Время создания"
-
-#: ../module/Pool/view/pool/pool/index.phtml:58
-#: ../module/Pool/view/pool/pool/details.phtml:59
-msgid "Maximum volumes"
-msgstr "Максимальное количество томов"
-
-#: ../module/Pool/view/pool/pool/index.phtml:59
-#: ../module/Pool/view/pool/pool/details.phtml:60
-msgid "Volume retention"
-msgstr "Время хранения тома"
-
-#: ../module/Pool/view/pool/pool/index.phtml:60
-#: ../module/Pool/view/pool/pool/details.phtml:61
-msgid "Maximum volume jobs"
-msgstr "Максимум заданий в томе"
-
-#: ../module/Pool/view/pool/pool/index.phtml:61
-#: ../module/Pool/view/pool/pool/details.phtml:62
-msgid "Maximum volume bytes"
-msgstr "Максимум байт в томе"
-
-#: ../module/Pool/view/pool/pool/details.phtml:26
-msgid "Pool details"
-msgstr "Информация о пуле"
+#: ../module/Schedule/view/schedule/schedule/status.phtml:26
+#: ../module/Schedule/view/schedule/schedule/status.phtml:46
+msgid "Status Scheduler"
+msgstr "Статус планировщика"
 
 #: ../public/js/custom-functions.js:105
 #, fuzzy
 msgid "Backup"
 msgstr "Резервное копирование"
 
-#: ../public/js/custom-functions.js:108
-msgid "Migrated"
-msgstr ""
-
-#: ../public/js/custom-functions.js:111
-msgid "Verify"
-msgstr ""
-
 #: ../public/js/custom-functions.js:117
 #, fuzzy
 msgid "Console program"
 msgstr "Консоль"
-
-#: ../public/js/custom-functions.js:120
-msgid "Internal system job"
-msgstr ""
-
-#: ../public/js/custom-functions.js:123
-msgid "Admin"
-msgstr ""
-
-#: ../public/js/custom-functions.js:126
-msgid "Archive"
-msgstr ""
-
-#: ../public/js/custom-functions.js:129
-msgid "Copy of a job"
-msgstr ""
-
-#: ../public/js/custom-functions.js:132
-msgid "Copy job"
-msgstr ""
 
 #: ../public/js/custom-functions.js:135
 #, fuzzy
 msgid "Migration job"
 msgstr "Окончание"
 
-#: ../public/js/custom-functions.js:138
-msgid "Scan"
-msgstr ""
-
 #: ../public/js/custom-functions.js:141
 #, fuzzy
 msgid "Consolidate"
 msgstr "Консоль"
-
-#: ../public/js/custom-functions.js:153 ../public/js/custom-functions.js:201
-#: ../public/js/custom-functions.js:231
-msgid "Full"
-msgstr ""
-
-#: ../public/js/custom-functions.js:155
-msgid "Differential"
-msgstr ""
-
-#: ../public/js/custom-functions.js:157
-msgid "Incremental"
-msgstr ""
-
-#: ../public/js/custom-functions.js:159
-msgid "VirtualFull"
-msgstr ""
-
-#: ../public/js/custom-functions.js:161
-msgid "Base"
-msgstr ""
 
 #: ../public/js/custom-functions.js:163
 #, fuzzy
@@ -1401,10 +1159,6 @@ msgstr "Информация о томе"
 msgid "DiskToCatalog"
 msgstr "нет в каталоге"
 
-#: ../public/js/custom-functions.js:171
-msgid "Data"
-msgstr ""
-
 #: ../public/js/custom-functions.js:173
 msgid "None"
 msgstr "ничто"
@@ -1422,14 +1176,6 @@ msgstr "месяц (-ев) назад"
 #: ../public/js/custom-functions.js:187
 msgid "day(s)"
 msgstr "день(дни)"
-
-#: ../public/js/custom-functions.js:190
-msgid "hour(s)"
-msgstr ""
-
-#: ../public/js/custom-functions.js:193
-msgid "second(s)"
-msgstr ""
 
 #: ../public/js/custom-functions.js:201 ../public/js/custom-functions.js:231
 msgid "Used"
@@ -1477,36 +1223,14 @@ msgstr "Включено"
 msgid "disabled"
 msgstr "Выключен"
 
-#: ../public/js/custom-functions.js:332
-msgid "Non-fatal error"
-msgstr ""
-
 #: ../public/js/custom-functions.js:333 ../public/js/custom-functions.js:338
 #: ../public/js/custom-functions.js:343
 msgid "Failure"
 msgstr "Сбой!"
 
-#: ../public/js/custom-functions.js:337
-#, fuzzy
-msgid "Job terminated in error"
-msgstr "Сбой"
-
-#: ../public/js/custom-functions.js:342
-msgid "Fatal error"
-msgstr ""
-
-#: ../public/js/custom-functions.js:347
-#, fuzzy
-msgid "Terminated normally"
-msgstr "Сбой"
-
 #: ../public/js/custom-functions.js:348
 msgid "Success"
 msgstr "Успешно"
-
-#: ../public/js/custom-functions.js:357
-msgid "Created but not yet running"
-msgstr ""
 
 #: ../public/js/custom-functions.js:358
 msgid "Queued"
@@ -1517,13 +1241,58 @@ msgstr "В очереди"
 msgid "Blocked"
 msgstr "Конечный блок"
 
+#: ../public/js/custom-functions.js:368
+msgid "Verify found differences"
+msgstr "Проверка найденных различий"
+
+#: ../public/js/custom-functions.js:373
+#, fuzzy
+msgid "Canceled"
+msgstr "Отмена"
+
+#: ../public/js/custom-functions.js:438
+msgid "Incomplete"
+msgstr "Незавершенный"
+
+#: ../module/Dashboard/view/partial/JobsPast24h.phtml:79
+#: ../public/js/custom-functions.js:448
+#, fuzzy
+msgid "Warning"
+msgstr "выполнение"
+
+#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:184
+#: ../module/Job/view/job/job/index.phtml:201
+#: ../module/Job/view/job/job/index.phtml:262
+#: ../module/Job/view/job/job/index.phtml:264
+#: ../module/Job/view/job/job/index.phtml:272
+#: ../module/Job/view/job/job/index.phtml:293
+#: ../module/Job/view/job/job/index.phtml:295
+#: ../module/Job/view/job/job/index.phtml:299
+#: ../module/Job/view/job/job/index.phtml:301
+#: ../module/Client/view/client/client/details.phtml:174
+#: ../module/Client/view/client/client/details.phtml:223
+#, fuzzy
+msgid "View Job Details"
+msgstr "Список фоновых заданий"
+
+#: ../module/Job/src/Job/Form/JobForm.php:102
+#, fuzzy
+msgid "warning"
+msgstr "выполнение"
+
+#: ../public/js/custom-functions.js:337
+#, fuzzy
+msgid "Job terminated in error"
+msgstr "Сбой"
+
+#: ../public/js/custom-functions.js:347
+#, fuzzy
+msgid "Terminated normally"
+msgstr "Сбой"
+
 #: ../public/js/custom-functions.js:367
 #, fuzzy
 msgid "Verify differences"
-msgstr "Проверка найденных различий"
-
-#: ../public/js/custom-functions.js:368
-msgid "Verify found differences"
 msgstr "Проверка найденных различий"
 
 #: ../public/js/custom-functions.js:372
@@ -1531,88 +1300,30 @@ msgstr "Проверка найденных различий"
 msgid "Canceled by user"
 msgstr "Отмена"
 
-#: ../public/js/custom-functions.js:373
-#, fuzzy
-msgid "Canceled"
-msgstr "Отмена"
-
-#: ../public/js/custom-functions.js:377
-msgid "Waiting on File daemon"
-msgstr ""
-
-#: ../public/js/custom-functions.js:382
-msgid "Waiting on the Storage daemon"
-msgstr ""
-
-#: ../public/js/custom-functions.js:387
-msgid "Waiting for new media"
-msgstr ""
-
-#: ../public/js/custom-functions.js:392
-msgid "Waiting for Mount"
-msgstr ""
-
-#: ../public/js/custom-functions.js:397
-msgid "Waiting for storage resource"
-msgstr ""
-
-#: ../public/js/custom-functions.js:402
-msgid "Waiting for job resource"
-msgstr ""
-
-#: ../public/js/custom-functions.js:407
-msgid "Waiting for Client resource"
-msgstr ""
-
-#: ../public/js/custom-functions.js:412
-msgid "Waiting for maximum jobs"
-msgstr ""
-
-#: ../public/js/custom-functions.js:417
-msgid "Waiting for start time"
-msgstr ""
-
-#: ../public/js/custom-functions.js:422
-msgid "Waiting for higher priority jobs to finish"
-msgstr ""
-
-#: ../public/js/custom-functions.js:427 ../public/js/custom-functions.js:428
-msgid "SD despooling attributes"
-msgstr ""
-
-#: ../public/js/custom-functions.js:432 ../public/js/custom-functions.js:433
-msgid "Doing batch insert file records"
-msgstr ""
-
 #: ../public/js/custom-functions.js:437
 #, fuzzy
 msgid "Incomplete Job"
 msgstr "Незавершенный"
-
-#: ../public/js/custom-functions.js:438
-msgid "Incomplete"
-msgstr "Незавершенный"
-
-#: ../public/js/custom-functions.js:442
-msgid "Committing data (last despool)"
-msgstr ""
-
-#: ../public/js/custom-functions.js:443
-msgid "Committing data"
-msgstr ""
 
 #: ../public/js/custom-functions.js:447
 #, fuzzy
 msgid "Terminated normally with warnings"
 msgstr "Сбой"
 
-#: ../public/js/custom-functions.js:452 ../public/js/custom-functions.js:453
-msgid "Doing data despooling"
-msgstr ""
+#: ../module/Restore/view/restore/restore/index.phtml:32
+#: ../module/Restore/view/restore/restore/versions.phtml:32
+#, fuzzy
+msgid "Restore multiple files"
+msgstr "Восстановить на клиент"
 
-#: ../public/js/custom-functions.js:457 ../public/js/custom-functions.js:458
-msgid "Queued waiting for device"
-msgstr ""
+#: ../module/Restore/view/restore/restore/index.phtml:75
+#: ../module/Restore/view/restore/restore/versions.phtml:76
+#, fuzzy
+msgid "Job report"
+msgstr "Список фоновых заданий"
 
-#~ msgid "Date"
-#~ msgstr "Дата"
+#: ../module/Restore/view/restore/restore/versions.phtml:195
+#, fuzzy
+msgid "Checksum"
+msgstr "Контрольная сумма MD5"
+
