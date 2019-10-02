@@ -241,7 +241,7 @@ static inline bool fill_restore_environment(JobControlRecord* jcr,
     }
 
     /*
-     * Tell the data engine what was backuped.
+     * Tell the data engine what was backed up.
      */
     pv.name = ndmp_env_keywords[NDMP_ENV_KW_FILESYSTEM];
     pv.value = ndmp_filesystem;

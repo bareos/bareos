@@ -127,7 +127,7 @@ Proceed with the following steps:
 
       /usr/lib/bareos/create_bareos_database
 
--  Insert backuped db into new database:
+-  Insert backed up db into new database:
 
    .. code-block:: shell-session
 

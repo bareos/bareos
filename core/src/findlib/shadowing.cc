@@ -26,7 +26,7 @@
 /**
  * @file
  * Detect fileset shadowing e.g. when an include entry pulls in data
- * which is already being backuped by another include pattern. Currently
+ * which is already being backed up by another include pattern. Currently
  * we support both local and global shadowing. Where local shadowing is
  * when the shadowing occurs within one include block and global when
  * between multiple include blocks.

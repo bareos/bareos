@@ -81,7 +81,7 @@ stop_bareos
 check_two_logs
 
 # check for differences between original files and restored files
-# gives an error, because top-level data directory is not backuped
+# gives an error, because top-level data directory is not backed up
 # (and has therefore other permissions)
 for i in $DataDirs; do
    check_restore_diff ${BackupDirectory}/data$i

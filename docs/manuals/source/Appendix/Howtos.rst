@@ -186,7 +186,7 @@ instance
    Defines the instance within the database server.
 
 database
-   Defines the database that should get backuped.
+   Defines the database that should get backed up.
 
 username and password
    Username and Password are required, when the connection is done using a MSSQL user. If the systemaccount the bareos-fd runs with has succifient permissions, this is not required.

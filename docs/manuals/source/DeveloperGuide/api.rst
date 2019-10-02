@@ -482,7 +482,7 @@ Bvfs API
 --------
 
 The BVFS (Bareos Virtual File System) do provide a API for browsing the
-backuped files in the catalog and select files for restoring.
+backed up files in the catalog and select files for restoring.
 
 The Bvfs module works correctly with BaseJobs, Copy and Migration jobs.
 
@@ -822,7 +822,7 @@ Example for directory browsing using bvfs
     130 0   0   A A A A A A A A A A A A A A ..
     1   23  123 z GiuU EH9 C GHH GHH A BAA BAA I BWA5Px BaIDUN BaIDUN A A C sbin/
 
-    # the first really backuped path is /sbin/ (pathid=1)
+    # the first really backed up path is /sbin/ (pathid=1)
     # as it has values other than 0 for FileId, JobId and LStat.
     # Now we check, if it has futher subdirectories.
     *.bvfs_lsdir jobid=1 pathid=1
@@ -843,4 +843,4 @@ Example for directory browsing using bvfs
     1   18  123 z Gli+ IHo B GHH GHH A NVkY BAA BrA BaIDUJ BaIDUJ BaIDUJ A A C  928EB+EJGFtWD7wQ8bVjew  Full-0001   0
     1   1067    127 z Glnc IHo B GHH GHH A NVkY BAA BrA BaKDT2 BaKDT2 BaKDT2 A A C  928EB+EJGFtWD7wQ8bVjew  Incremental-0007    0
 
-    # multiple versions of the file bareos-dir have been backuped.
+    # multiple versions of the file bareos-dir have been backed up.

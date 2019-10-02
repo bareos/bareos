@@ -336,7 +336,7 @@ bool NdmpBuildClientJob(JobControlRecord* jcr,
   }
 
   /*
-   * The data_agent is the client being backuped or restored using NDMP.
+   * The data_agent is the client being backed up or restored using NDMP.
    */
   ASSERT(client->password_.encoding == p_encoding_clear);
   if (!fill_ndmp_agent_config(jcr, &job->data_agent, client->Protocol,

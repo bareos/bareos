@@ -2472,7 +2472,7 @@ static bRC bareosNewPreInclude(bpContext* ctx)
 }
 
 /**
- * Check if a file have to be backuped using Accurate code
+ * Check if a file have to be backed up using Accurate code
  */
 static bRC bareosCheckChanges(bpContext* ctx, struct save_pkt* sp)
 {

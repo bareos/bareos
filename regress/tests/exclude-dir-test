@@ -42,7 +42,7 @@ sed 's/FileSet="CompressedSet"/FileSet=ExcludeDir/' $conf/bareos-dir.conf >$tmp/
 cp -f $tmp/1 $conf/bareos-dir.conf
 change_jobname CompressedTest $JobName
 
-# Use a tgz to setup data to be backuped.
+# Use a tgz to setup data to be backed up.
 # Data will be placed at "${tmp}/data/".
 setup_data data/flat-c.tgz
 

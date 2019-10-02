@@ -23,7 +23,7 @@ scripts/copy-test-confs
 sed 's/Pool Type = Backup/Pool Type = Backup; ActionOnPurge = Truncate/' $conf/bareos-dir.conf > $tmp/1
 cp $tmp/1 $conf/bareos-dir.conf
 
-# Use a tgz to setup data to be backuped.
+# Use a tgz to setup data to be backed up.
 # Data will be placed at "${tmp}/data".
 setup_data data/small.tgz
 
