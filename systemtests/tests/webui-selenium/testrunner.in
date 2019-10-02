@@ -46,7 +46,8 @@ PHP_PID=$(echo $!)
 # test with admin profile resource
 #
 export BAREOS_WEBUI_PROFILE=admin
-@PYTHON@ @CMAKE_SOURCE_DIR@/webui/tests/selenium/webui-selenium-test.py --fail >"$tmp/selenium.out" 2>&1
+echo "test with admin profile:" >"$tmp/selenium.out" 2>&1
+@PYTHON@ @CMAKE_SOURCE_DIR@/webui/tests/selenium/webui-selenium-test.py --fail >>"$tmp/selenium.out" 2>&1
 
 #
 # test with readonly profile resource
@@ -54,6 +55,7 @@ export BAREOS_WEBUI_PROFILE=admin
 export BAREOS_WEBUI_USERNAME=readonly
 export BAREOS_WEBUI_PASSWORD=readonly
 export BAREOS_WEBUI_PROFILE=readonly
+echo "test with readonly profile:" >>"$tmp/selenium.out" 2>&1
 @PYTHON@ @CMAKE_SOURCE_DIR@/webui/tests/selenium/webui-selenium-test.py --fail >>"$tmp/selenium.out" 2>&1
 
 estat=$?
