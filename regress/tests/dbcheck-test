@@ -70,7 +70,7 @@ copy_configs
 # the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
 echo "${BackupDirectory}" >${tmp}/file-list
 
-# Use a tgz to setup data to be backuped.
+# Use a tgz to setup data to be backed up.
 # Data will be placed at "${tmp}/data/".
 setup_data data/small.tgz
 

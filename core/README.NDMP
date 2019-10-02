@@ -31,7 +31,7 @@ The core fileindex handling code is rewritten to use callback
 functions for doing the real work. This way we can hook in
 internal functions into the core file indexing process which
 happens after a backup and before a restore to fill the
-files which have been backuped or restored.
+files which have been backed up or restored.
 
 Some missing initialization, commission and decommission is
 added although it is empty it is better to have a consistent
@@ -280,8 +280,8 @@ Client {
   Port = 10000
   Protocol = NDMPv4                   # Need to specify protocol before password as protocol determines password encoding used.
   Auth Type = Clear                   # Clear == Clear Text, MD5 == Challenge protocol
-  Username = "ndmp"                   # username of the NDMP user on the DATA AGENT e.g. storage box being backuped.
-  Password = "test"                   # password of the NDMP user on the DATA AGENT e.g. storage box being backuped.
+  Username = "ndmp"                   # username of the NDMP user on the DATA AGENT e.g. storage box being backed up.
+  Password = "test"                   # password of the NDMP user on the DATA AGENT e.g. storage box being backed up.
 }
 
 #

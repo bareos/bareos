@@ -2943,7 +2943,7 @@ bail_out:
 
 /**
  * Callback function which is exposed as a part of the additional methods which
- * allow a Python plugin to issue a check if a file have to be backuped using
+ * allow a Python plugin to issue a check if a file have to be backed up using
  * Accurate code.
  */
 static PyObject* PyBareosCheckChanges(PyObject* self, PyObject* args)

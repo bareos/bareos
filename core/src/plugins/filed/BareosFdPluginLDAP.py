@@ -313,7 +313,7 @@ class BareosLDAPWrapper:
 
     def get_next_file_to_backup(self, context, savepkt):
         '''
-        Find out the next file that should be backuped
+        Find out the next file that should be backed up
         '''
         # When file_to_backup is not None we should return the LDIF.
         if self.file_to_backup:

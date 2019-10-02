@@ -246,8 +246,8 @@ In our example we connect to a Isilon storage appliance emulator:
      Port = 10000            # Default port for NDMP
      Protocol = NDMPv4       # Need to specify protocol before password as protocol determines password encoding used
      Auth Type = Clear       # Cleartext Authentication
-     Username = "ndmpadmin"  # username of the NDMP user on the DATA AGENT e.g. storage box being backuped.
-     Password = "secret"     # password of the NDMP user on the DATA AGENT e.g. storage box being backuped.
+     Username = "ndmpadmin"  # username of the NDMP user on the DATA AGENT e.g. storage box being backed up.
+     Password = "secret"     # password of the NDMP user on the DATA AGENT e.g. storage box being backed up.
    }
 
 Verify, that you can access your Primary Storage System via Bareos:
@@ -1395,7 +1395,7 @@ To be able to do scheduled backups, we need to configure a backup job that will 
       FileSet = isilon
    }
 
-As we also need to be able to do a restore of the backuped data, we also need to define an adequate restore job:
+As we also need to be able to do a restore of the backed up data, we also need to define an adequate restore job:
 
 .. code-block:: bareosconfig
    :caption: bareos-dir.d/Job/ndmp-native-restore-job.conf

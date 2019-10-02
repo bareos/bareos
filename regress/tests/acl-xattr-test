@@ -116,7 +116,7 @@ cp ${conf}/bareos-dir.conf  $cwd/tmp/1
 sed -f ${outf} ${cwd}/tmp/1 >${conf}/bareos-dir.conf
 
 
-# Use a tgz to setup data to be backuped.
+# Use a tgz to setup data to be backed up.
 # Data will be placed at "${tmp}/data".
 setup_data data/small.tgz
 

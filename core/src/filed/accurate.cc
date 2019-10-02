@@ -138,7 +138,7 @@ bool AccurateFinish(JobControlRecord* jcr)
 
 /**
  * This function is called for each file seen in fileset.
- * We check in file_list hash if fname have been backuped
+ * We check in file_list hash if fname have been backed up
  * the last time. After we can compare Lstat field.
  * Full Lstat usage have been removed on 6612
  *

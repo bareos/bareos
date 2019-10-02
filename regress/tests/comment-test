@@ -14,7 +14,7 @@ ${rscripts}/copy-test-confs
 # This directory will be created by setup_data().
 BackupDirectory="${tmpsrc}"
 
-# Use a tgz to setup data to be backuped.
+# Use a tgz to setup data to be backed up.
 # Data will be placed at "${tmp}/data/".
 setup_data data/flat-c.tgz
 

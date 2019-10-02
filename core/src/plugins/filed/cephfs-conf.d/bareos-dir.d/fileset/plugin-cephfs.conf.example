@@ -7,7 +7,7 @@ FileSet {
       xattrsupport = yes
     }
     # adapt this to your environment
-    #   basedir: optional, othewrwise all data will be backuped
+    #   basedir: optional, othewrwise all data will be backed up
     Plugin = "cephfs:conffile=<ceph_conf_file>:basedir=<basedir>:"
   }
 }

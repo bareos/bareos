@@ -732,7 +732,7 @@ static PyMethodDef BareosFDMethods[] = {
     {"NewPreInclude", PyBareosNewPreInclude, METH_VARARGS,
      "Add new pre include block"},
     {"CheckChanges", PyBareosCheckChanges, METH_VARARGS,
-     "Check if a file have to be backuped using Accurate code"},
+     "Check if a file have to be backed up using Accurate code"},
     {"AcceptFile", PyBareosAcceptFile, METH_VARARGS,
      "Check if a file would be saved using current Include/Exclude code"},
     {"SetSeenBitmap", PyBareosSetSeenBitmap, METH_VARARGS,

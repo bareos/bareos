@@ -26,7 +26,7 @@ sed "s%Client Run Before Job%#Client Run Before Job%" ${cwd}/tmp/1 >${cwd}/bin/b
 # This directory will be created by setup_data().
 BackupDirectory="${tmp}/data"
 
-# Use a tgz to setup data to be backuped.
+# Use a tgz to setup data to be backed up.
 # Data will be placed at "${tmp}/data/".
 setup_data data/small.tgz
 
