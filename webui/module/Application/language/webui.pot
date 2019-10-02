@@ -1,6 +1,14 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-06-18 12:43+0200\n"
+"POT-Creation-Date: 2019-10-02 14:34+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -10,7 +18,7 @@
 "Content-Transfer-Encoding: 8bit\n"
 
 #: ../module/Dashboard/view/dashboard/dashboard/index.phtml:26
-#: ../module/Application/config/module.config.php:125
+#: ../module/Application/config/module.config.php:126
 msgid "Dashboard"
 msgstr ""
 
@@ -23,8 +31,8 @@ msgstr ""
 #: ../module/Job/view/job/job/index.phtml:295
 #: ../module/Job/view/job/job/index.phtml:299
 #: ../module/Job/view/job/job/index.phtml:301
-#: ../module/Client/view/client/client/details.phtml:172
-#: ../module/Client/view/client/client/details.phtml:221
+#: ../module/Client/view/client/client/details.phtml:174
+#: ../module/Client/view/client/client/details.phtml:223
 msgid "View Job Details"
 msgstr ""
 
@@ -42,7 +50,7 @@ msgid "Job Totals"
 msgstr ""
 
 #: ../module/Dashboard/view/partial/JobTotals.phtml:40
-#: ../module/Application/config/module.config.php:130
+#: ../module/Application/config/module.config.php:131
 msgid "Jobs"
 msgstr ""
 
@@ -50,7 +58,7 @@ msgstr ""
 #: ../module/Job/view/job/job/index.phtml:79
 #: ../module/Job/view/job/job/details.phtml:62
 #: ../module/Media/view/media/media/details.phtml:91
-#: ../module/Client/view/client/client/details.phtml:81
+#: ../module/Client/view/client/client/details.phtml:83
 msgid "Files"
 msgstr ""
 
@@ -60,7 +68,7 @@ msgstr ""
 #: ../module/Job/view/job/job/details.phtml:63
 #: ../module/Media/view/media/media/details.phtml:92
 #: ../module/Storage/view/storage/storage/details.phtml:154
-#: ../module/Client/view/client/client/details.phtml:82
+#: ../module/Client/view/client/client/details.phtml:84
 msgid "Bytes"
 msgstr ""
 
@@ -74,7 +82,7 @@ msgstr ""
 #: ../module/Job/view/job/job/details.phtml:58
 #: ../module/Job/view/job/job/actions.phtml:76
 #: ../module/Media/view/media/media/details.phtml:87
-#: ../module/Client/view/client/client/details.phtml:77
+#: ../module/Client/view/client/client/details.phtml:79
 msgid "Job name"
 msgstr ""
 
@@ -92,11 +100,10 @@ msgstr ""
 #: ../module/Storage/view/storage/storage/details.phtml:157
 #: ../module/Client/view/client/client/index.phtml:56
 #: ../module/Client/view/client/client/index.phtml:217
-#: ../module/Client/view/client/client/details.phtml:83
-#: ../module/Client/view/client/client/details.phtml:142
+#: ../module/Client/view/client/client/details.phtml:85
+#: ../module/Client/view/client/client/details.phtml:144
 #: ../module/Director/view/director/director/index.phtml:33
 #: ../module/Director/view/director/director/messages.phtml:32
-#: ../module/Director/view/director/director/console.phtml:32
 #: ../module/Pool/view/pool/pool/details.phtml:91
 msgid "Status"
 msgstr ""
@@ -105,7 +112,7 @@ msgstr ""
 #: ../module/Job/view/job/job/index.phtml:74
 #: ../module/Job/view/job/job/details.phtml:57
 #: ../module/Media/view/media/media/details.phtml:86
-#: ../module/Client/view/client/client/details.phtml:76
+#: ../module/Client/view/client/client/details.phtml:78
 msgid "Job ID"
 msgstr ""
 
@@ -115,10 +122,10 @@ msgstr ""
 #: ../module/Job/view/job/job/index.phtml:76
 #: ../module/Job/view/job/job/details.phtml:59
 #: ../module/Media/view/media/media/details.phtml:88
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:130
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:147
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:165
-#: ../module/Client/view/client/client/details.phtml:43
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:96
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:113
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:131
+#: ../module/Client/view/client/client/details.phtml:45
 msgid "Client"
 msgstr ""
 
@@ -128,7 +135,7 @@ msgstr ""
 #: ../module/Job/view/job/job/index.phtml:78
 #: ../module/Job/view/job/job/details.phtml:61
 #: ../module/Media/view/media/media/details.phtml:90
-#: ../module/Client/view/client/client/details.phtml:80
+#: ../module/Client/view/client/client/details.phtml:82
 msgid "Level"
 msgstr ""
 
@@ -253,10 +260,10 @@ msgstr ""
 #: ../module/Job/src/Job/Form/RunJobForm.php:143
 #: ../module/Job/view/job/job/index.phtml:152
 #: ../module/Job/view/job/job/details.phtml:151
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:236
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:251
-#: ../module/Client/view/client/client/details.phtml:79
-#: ../module/Fileset/view/fileset/fileset/details.phtml:37
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:203
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:218
+#: ../module/Client/view/client/client/details.phtml:81
+#: ../module/Fileset/view/fileset/fileset/details.phtml:39
 msgid "Fileset"
 msgstr ""
 
@@ -272,8 +279,8 @@ msgstr ""
 #: ../module/Job/src/Job/Form/RunJobForm.php:213
 #: ../module/Job/view/job/job/index.phtml:156
 #: ../module/Job/view/job/job/details.phtml:155
-#: ../module/Application/config/module.config.php:167
-#: ../module/Application/config/module.config.php:172
+#: ../module/Application/config/module.config.php:168
+#: ../module/Application/config/module.config.php:173
 #: ../module/Storage/src/Storage/Form/StorageForm.php:61
 #: ../module/Storage/view/storage/storage/details.phtml:159
 #: ../module/Pool/view/pool/pool/details.phtml:48
@@ -316,7 +323,7 @@ msgstr ""
 #: ../module/Schedule/view/schedule/schedule/status.phtml:31
 #: ../module/Client/view/client/client/index.phtml:32
 #: ../module/Client/view/client/client/details.phtml:32
-#: ../module/Client/view/client/client/status.phtml:9
+#: ../module/Client/view/client/client/status.phtml:32
 msgid "Show"
 msgstr ""
 
@@ -333,8 +340,8 @@ msgstr ""
 #: ../module/Storage/view/storage/storage/details.phtml:129
 #: ../module/Storage/view/storage/storage/details.phtml:162
 #: ../module/Client/view/client/client/index.phtml:57
-#: ../module/Client/view/client/client/details.phtml:55
-#: ../module/Client/view/client/client/details.phtml:84
+#: ../module/Client/view/client/client/details.phtml:57
+#: ../module/Client/view/client/client/details.phtml:86
 msgid "Actions"
 msgstr ""
 
@@ -344,7 +351,7 @@ msgstr ""
 #: ../module/Job/view/job/job/actions.phtml:34
 #: ../module/Job/view/job/job/actions.phtml:138
 #: ../module/Job/view/job/job/actions.phtml:141
-#: ../module/Application/config/module.config.php:140
+#: ../module/Application/config/module.config.php:141
 msgid "Run"
 msgstr ""
 
@@ -412,25 +419,28 @@ msgstr ""
 
 #: ../module/Job/view/job/job/index.phtml:262
 #: ../module/Job/view/job/job/index.phtml:272
-#: ../module/Job/view/job/job/details.phtml:265
+#: ../module/Job/view/job/job/details.phtml:261
+#: ../module/Job/view/job/job/details.phtml:266
 msgid "Rerun"
 msgstr ""
 
 #: ../module/Job/view/job/job/index.phtml:262
 #: ../module/Job/view/job/job/index.phtml:264
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:594
+#: ../module/Job/view/job/job/details.phtml:261
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:501
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:515
 #: ../module/Restore/view/restore/restore/index.phtml:26
 #: ../module/Restore/view/restore/restore/versions.phtml:26
-#: ../module/Application/config/module.config.php:147
+#: ../module/Application/config/module.config.php:148
 #: ../module/Client/view/client/client/index.phtml:217
-#: ../module/Client/view/client/client/details.phtml:142
+#: ../module/Client/view/client/client/details.phtml:144
 #: ../public/js/custom-functions.js:114
 msgid "Restore"
 msgstr ""
 
 #: ../module/Job/view/job/job/index.phtml:293
 #: ../module/Job/view/job/job/index.phtml:299
-#: ../module/Job/view/job/job/details.phtml:280
+#: ../module/Job/view/job/job/details.phtml:281
 #: ../module/Restore/view/restore/restore/index.phtml:97
 #: ../module/Restore/view/restore/restore/versions.phtml:98
 #: ../module/Storage/view/storage/storage/details.phtml:88
@@ -440,12 +450,11 @@ msgstr ""
 #: ../module/Job/view/job/job/details.phtml:81
 #: ../module/Director/view/director/director/index.phtml:34
 #: ../module/Director/view/director/director/messages.phtml:33
-#: ../module/Director/view/director/director/console.phtml:33
 msgid "Messages"
 msgstr ""
 
 #: ../module/Job/view/job/job/details.phtml:86
-#: ../module/Client/view/client/client/details.phtml:78
+#: ../module/Client/view/client/client/details.phtml:80
 msgid "Timestamp"
 msgstr ""
 
@@ -517,11 +526,11 @@ msgstr ""
 #: ../module/Media/view/media/media/index.phtml:34
 #: ../module/Media/view/media/media/index.phtml:47
 #: ../module/Media/view/media/media/details.phtml:34
-#: ../module/Application/config/module.config.php:177
-#: ../module/Application/config/module.config.php:182
+#: ../module/Application/config/module.config.php:178
+#: ../module/Application/config/module.config.php:183
 #: ../module/Storage/view/storage/storage/index.phtml:34
 #: ../module/Storage/view/storage/storage/details.phtml:34
-#: ../module/Storage/view/storage/storage/status.phtml:11
+#: ../module/Storage/view/storage/storage/status.phtml:34
 #: ../module/Pool/view/pool/pool/index.phtml:34
 #: ../module/Pool/view/pool/pool/index.phtml:57
 #: ../module/Pool/view/pool/pool/details.phtml:34
@@ -534,7 +543,7 @@ msgstr ""
 #: ../module/Media/view/media/media/details.phtml:32
 #: ../module/Storage/view/storage/storage/index.phtml:32
 #: ../module/Storage/view/storage/storage/details.phtml:32
-#: ../module/Storage/view/storage/storage/status.phtml:9
+#: ../module/Storage/view/storage/storage/status.phtml:32
 #: ../module/Pool/view/pool/pool/index.phtml:32
 #: ../module/Pool/view/pool/pool/details.phtml:32
 msgid "Devices"
@@ -544,7 +553,7 @@ msgstr ""
 #: ../module/Media/view/media/media/details.phtml:33
 #: ../module/Storage/view/storage/storage/index.phtml:33
 #: ../module/Storage/view/storage/storage/details.phtml:33
-#: ../module/Storage/view/storage/storage/status.phtml:10
+#: ../module/Storage/view/storage/storage/status.phtml:33
 #: ../module/Pool/view/pool/pool/index.phtml:26
 #: ../module/Pool/view/pool/pool/index.phtml:33
 #: ../module/Pool/view/pool/pool/index.phtml:47
@@ -555,12 +564,12 @@ msgstr ""
 #: ../module/Media/view/media/media/index.phtml:55
 #: ../module/Media/view/media/media/details.phtml:55
 #: ../module/Schedule/view/schedule/schedule/index.phtml:76
-#: ../module/Restore/view/restore/restore/index.phtml:380
-#: ../module/Restore/view/restore/restore/versions.phtml:507
+#: ../module/Restore/view/restore/restore/index.phtml:390
+#: ../module/Restore/view/restore/restore/versions.phtml:516
 #: ../module/Storage/view/storage/storage/index.phtml:55
 #: ../module/Client/view/client/client/index.phtml:53
-#: ../module/Client/view/client/client/details.phtml:50
-#: ../module/Fileset/view/fileset/fileset/details.phtml:46
+#: ../module/Client/view/client/client/details.phtml:52
+#: ../module/Fileset/view/fileset/fileset/details.phtml:48
 #: ../module/Pool/view/pool/pool/index.phtml:55
 #: ../module/Pool/view/pool/pool/details.phtml:56
 #: ../module/Pool/view/pool/pool/details.phtml:87
@@ -729,11 +738,23 @@ msgstr ""
 msgid "Comment"
 msgstr ""
 
+#: ../module/Console/view/console/console/index.phtml:36
+msgid "bconsole (batch-mode), please handle with care."
+msgstr ""
+
+#: ../module/Console/view/console/console/index.phtml:36
+msgid "All commands have to be a one liner, dialogs are not working."
+msgstr ""
+
+#: ../module/Console/view/console/console/index.phtml:36
+msgid "Type help for a list of commands."
+msgstr ""
+
 #: ../module/Schedule/view/schedule/schedule/index.phtml:26
 #: ../module/Schedule/view/schedule/schedule/index.phtml:68
 #: ../module/Schedule/view/schedule/schedule/overview.phtml:26
 #: ../module/Schedule/view/schedule/schedule/overview.phtml:47
-#: ../module/Application/config/module.config.php:157
+#: ../module/Application/config/module.config.php:158
 msgid "Schedules"
 msgstr ""
 
@@ -741,7 +762,7 @@ msgstr ""
 #: ../module/Schedule/view/schedule/schedule/details.phtml:33
 #: ../module/Schedule/view/schedule/schedule/overview.phtml:33
 #: ../module/Schedule/view/schedule/schedule/status.phtml:32
-#: ../module/Application/config/module.config.php:135
+#: ../module/Application/config/module.config.php:136
 msgid "Overview"
 msgstr ""
 
@@ -762,110 +783,121 @@ msgstr ""
 msgid "Status Scheduler"
 msgstr ""
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:94
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:59
 msgid "Backup jobs"
 msgstr ""
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:111
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:60
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:77
+msgid "Please choose a backup"
+msgstr ""
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:76
 msgid "Backups"
 msgstr ""
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:184
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:201
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:97
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:114
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:132
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:151
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:168
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:185
+msgid "Please choose a client"
+msgstr ""
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:150
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:167
 msgid "Restore to client"
 msgstr ""
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:218
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:184
 msgid "Restore to (another) client"
 msgstr ""
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:237
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:252
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:204
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:219
 msgid "Please choose a fileset"
 msgstr ""
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:267
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:285
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:302
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:234
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:252
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:269
 msgid "Restore job"
 msgstr ""
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:321
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:340
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:253
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:270
+msgid "Please choose a restore job"
+msgstr ""
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:289
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:308
 msgid "Merge all client filesets"
 msgstr ""
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:323
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:342
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:363
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:382
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:291
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:310
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:332
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:351
 #: ../module/Storage/view/storage/storage/index.phtml:107
 #: ../public/js/custom-functions.js:319
 msgid "Yes"
 msgstr ""
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:324
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:343
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:364
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:383
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:292
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:311
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:333
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:352
 #: ../module/Storage/view/storage/storage/index.phtml:105
 #: ../public/js/custom-functions.js:322
 msgid "No"
 msgstr ""
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:361
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:330
 msgid "Merge all related jobs to last full backup of selected backup job"
 msgstr ""
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:380
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:349
 msgid "Merge jobs"
 msgstr ""
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:400
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:371
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:392
 msgid "Replace files on client"
 msgstr ""
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:402
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:373
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:394
 msgid "always"
 msgstr ""
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:403
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:374
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:395
 #: ../public/js/custom-functions.js:257
 msgid "never"
 msgstr ""
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:404
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:375
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:396
 msgid "if file being restored is older than existing file"
 msgstr ""
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:405
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:376
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:397
 msgid "if file being restored is newer than existing file"
 msgstr ""
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:421
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:416
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:433
 msgid "Restore location on client"
 msgstr ""
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:428
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:423
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:440
 msgid "e.g. / or /tmp/bareos-restores/"
 msgstr ""
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:439
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:456
-msgid "Path"
-msgstr ""
-
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:475
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:492
-msgid "Limit"
-msgstr ""
-
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:511
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:528
-msgid "Offset"
-msgstr ""
-
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:557
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:463
 msgid "Related jobs for a most recent full restore"
 msgstr ""
 
@@ -911,20 +943,20 @@ msgstr ""
 msgid "No files or directories selected to restore!"
 msgstr ""
 
-#: ../module/Restore/view/restore/restore/index.phtml:171
-#: ../module/Restore/view/restore/restore/versions.phtml:167
+#: ../module/Restore/view/restore/restore/index.phtml:164
+#: ../module/Restore/view/restore/restore/versions.phtml:162
 msgid "File selection"
 msgstr ""
 
-#: ../module/Restore/view/restore/restore/index.phtml:386
-#: ../module/Restore/view/restore/restore/versions.phtml:202
-#: ../module/Restore/view/restore/restore/versions.phtml:513
+#: ../module/Restore/view/restore/restore/index.phtml:396
+#: ../module/Restore/view/restore/restore/versions.phtml:194
+#: ../module/Restore/view/restore/restore/versions.phtml:522
 msgid "Size"
 msgstr ""
 
-#: ../module/Restore/view/restore/restore/index.phtml:399
-#: ../module/Restore/view/restore/restore/versions.phtml:201
-#: ../module/Restore/view/restore/restore/versions.phtml:525
+#: ../module/Restore/view/restore/restore/index.phtml:409
+#: ../module/Restore/view/restore/restore/versions.phtml:193
+#: ../module/Restore/view/restore/restore/versions.phtml:534
 msgid "Last modification"
 msgstr ""
 
@@ -932,71 +964,81 @@ msgstr ""
 msgid "No file selected to restore!"
 msgstr ""
 
-#: ../module/Restore/view/restore/restore/versions.phtml:180
+#: ../module/Restore/view/restore/restore/versions.phtml:172
 msgid "Selected file"
 msgstr ""
 
-#: ../module/Restore/view/restore/restore/versions.phtml:188
+#: ../module/Restore/view/restore/restore/versions.phtml:180
 msgid "Available versions"
 msgstr ""
 
-#: ../module/Restore/view/restore/restore/versions.phtml:203
+#: ../module/Restore/view/restore/restore/versions.phtml:195
 msgid "Checksum"
 msgstr ""
 
-#: ../module/Application/src/Application/View/Helper/ACLAlert.php:37
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:36
 msgid ""
-"Sorry, it seems you are not authorized to run this module. If you think this "
-"is an error, please contact your local administrator."
+"<b>Access denied</b><br><br>Permission to execute the following commands is "
+"required:<br><br><kbd>"
 msgstr ""
 
 #: ../module/Application/src/Application/View/Helper/ACLAlert.php:38
-msgid ""
-"Please read the <a href=\"%s\" target=\"_blank\">Bareos "
-"documentation</a> for any additional information on how to configure the "
-"Command ACL directive of your Console/Profile resources. Following is a list "
-"of required commands which need to be in your Command ACL to run this module "
-"properly:"
+msgid "Access denied"
 msgstr ""
 
-#: ../module/Application/config/module.config.php:152
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:40
+#, php-format
+msgid ""
+"Read the <a href=\"%s\" target=\"_blank\">Bareos documentation</a> on how to "
+"configure ACL settings in your Console/Profile resources."
+msgstr ""
+
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:42
+msgid "Back"
+msgstr ""
+
+#: ../module/Application/config/module.config.php:153
 #: ../module/Client/view/client/client/index.phtml:26
 #: ../module/Client/view/client/client/index.phtml:45
 msgid "Clients"
 msgstr ""
 
-#: ../module/Application/config/module.config.php:162
+#: ../module/Application/config/module.config.php:163
 #: ../module/Storage/view/storage/storage/index.phtml:26
 msgid "Storages"
 msgstr ""
 
-#: ../module/Application/config/module.config.php:189
+#: ../module/Application/config/module.config.php:190
 #: ../module/Director/view/director/director/index.phtml:27
 #: ../module/Director/view/director/director/messages.phtml:26
 msgid "Director"
 msgstr ""
 
-#: ../module/Application/view/layout/layout.phtml:145
+#: ../module/Application/view/layout/layout.phtml:148
+msgid "Console"
+msgstr ""
+
+#: ../module/Application/view/layout/layout.phtml:156
 msgid "Documentation"
 msgstr ""
 
-#: ../module/Application/view/layout/layout.phtml:146
+#: ../module/Application/view/layout/layout.phtml:157
 msgid "Mailinglists"
 msgstr ""
 
-#: ../module/Application/view/layout/layout.phtml:147
+#: ../module/Application/view/layout/layout.phtml:158
 msgid "Bugtracker"
 msgstr ""
 
-#: ../module/Application/view/layout/layout.phtml:148
+#: ../module/Application/view/layout/layout.phtml:159
 msgid "Support"
 msgstr ""
 
-#: ../module/Application/view/layout/layout.phtml:149
+#: ../module/Application/view/layout/layout.phtml:160
 msgid "Subscription"
 msgstr ""
 
-#: ../module/Application/view/layout/layout.phtml:151
+#: ../module/Application/view/layout/layout.phtml:162
 msgid "Logout"
 msgstr ""
 
@@ -1149,12 +1191,12 @@ msgstr ""
 msgid "Export"
 msgstr ""
 
-#: ../module/Storage/view/storage/storage/status.phtml:24
+#: ../module/Storage/view/storage/storage/status.phtml:47
 msgid "Storage Status"
 msgstr ""
 
 #: ../module/Client/view/client/client/index.phtml:54
-#: ../module/Client/view/client/client/details.phtml:51
+#: ../module/Client/view/client/client/details.phtml:53
 msgid "Version"
 msgstr ""
 
@@ -1162,58 +1204,40 @@ msgstr ""
 msgid "Client details"
 msgstr ""
 
-#: ../module/Client/view/client/client/details.phtml:52
+#: ../module/Client/view/client/client/details.phtml:54
 msgid "Autoprune"
 msgstr ""
 
-#: ../module/Client/view/client/client/details.phtml:53
+#: ../module/Client/view/client/client/details.phtml:55
 msgid "Fileretention"
 msgstr ""
 
-#: ../module/Client/view/client/client/details.phtml:54
+#: ../module/Client/view/client/client/details.phtml:56
 msgid "Jobretention"
 msgstr ""
 
-#: ../module/Client/view/client/client/details.phtml:69
+#: ../module/Client/view/client/client/details.phtml:71
 msgid "Last successful backups"
 msgstr ""
 
-#: ../module/Client/view/client/client/details.phtml:221
+#: ../module/Client/view/client/client/details.phtml:223
 msgid "Show Files"
 msgstr ""
 
-#: ../module/Client/view/client/client/status.phtml:20
+#: ../module/Client/view/client/client/status.phtml:45
 msgid "Client Status"
 msgstr ""
 
-#: ../module/Director/view/director/director/index.phtml:35
-#: ../module/Director/view/director/director/messages.phtml:34
-#: ../module/Director/view/director/director/console.phtml:34
-msgid "Console"
-msgstr ""
-
-#: ../module/Director/view/director/director/index.phtml:48
+#: ../module/Director/view/director/director/index.phtml:47
 msgid "Director Status"
 msgstr ""
 
-#: ../module/Director/view/director/director/messages.phtml:44
+#: ../module/Director/view/director/director/messages.phtml:43
 msgid "Refresh"
 msgstr ""
 
-#: ../module/Director/view/director/director/messages.phtml:51
+#: ../module/Director/view/director/director/messages.phtml:50
 msgid "Director messages"
-msgstr ""
-
-#: ../module/Director/view/director/director/console.phtml:42
-msgid "bconsole (batch-mode), please handle with care."
-msgstr ""
-
-#: ../module/Director/view/director/director/console.phtml:42
-msgid "All commands have to be a one liner, dialogs are not working."
-msgstr ""
-
-#: ../module/Director/view/director/director/console.phtml:42
-msgid "Type help for a list of commands."
 msgstr ""
 
 #: ../module/Fileset/view/fileset/fileset/index.phtml:26
@@ -1224,15 +1248,15 @@ msgstr ""
 msgid "Fileset details"
 msgstr ""
 
-#: ../module/Fileset/view/fileset/fileset/details.phtml:45
+#: ../module/Fileset/view/fileset/fileset/details.phtml:47
 msgid "Id"
 msgstr ""
 
-#: ../module/Fileset/view/fileset/fileset/details.phtml:47
+#: ../module/Fileset/view/fileset/fileset/details.phtml:49
 msgid "MD5 checksum"
 msgstr ""
 
-#: ../module/Fileset/view/fileset/fileset/details.phtml:48
+#: ../module/Fileset/view/fileset/fileset/details.phtml:50
 msgid "Creation time"
 msgstr ""
 
