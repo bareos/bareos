@@ -19,6 +19,12 @@
 
 cmake_minimum_required(VERSION 3.0)
 project(bareos C CXX)
+
+# disable in-source builds
+if("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
+  message(FATAL_ERROR "In-source builds are not allowed.")
+endif()
+
 SET(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME common)
 
 INCLUDE(GNUInstallDirs)
