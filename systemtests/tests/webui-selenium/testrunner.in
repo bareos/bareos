@@ -36,12 +36,27 @@ END_OF_DATA
 
 run_bareos
 
-@PHP@ -S 127.0.0.1:@php_port@ -t @PROJECT_SOURCE_DIR@/../webui/public/ >$tmp/php.out 2>&1 &
+@PHP@ -S 127.0.0.1:@php_port@ -t @PROJECT_SOURCE_DIR@/../webui/public/ >"$tmp/php.out" 2>&1 &
 
 PHP_PID=$(echo $!)
 
 # run tests but stop the test run on the first error or failure
-@PYTHON@ @CMAKE_SOURCE_DIR@/webui/tests/selenium/webui-selenium-test.py --fail >$tmp/selenium.out 2>&1
+
+#
+# test with admin profile resource
+#
+export BAREOS_WEBUI_PROFILE=admin
+echo "test with admin profile:" >"$tmp/selenium.out" 2>&1
+@PYTHON@ @CMAKE_SOURCE_DIR@/webui/tests/selenium/webui-selenium-test.py --fail >>"$tmp/selenium.out" 2>&1
+
+#
+# test with readonly profile resource
+#
+export BAREOS_WEBUI_USERNAME=readonly
+export BAREOS_WEBUI_PASSWORD=readonly
+export BAREOS_WEBUI_PROFILE=readonly
+echo "test with readonly profile:" >>"$tmp/selenium.out" 2>&1
+@PYTHON@ @CMAKE_SOURCE_DIR@/webui/tests/selenium/webui-selenium-test.py --fail >>"$tmp/selenium.out" 2>&1
 
 estat=$?
 export estat
