@@ -42,12 +42,10 @@ static pthread_once_t key_once = PTHREAD_ONCE_INIT;
 
 static void CreateThreadSpecificDataKey()
 {
-  int status;
-
 #ifdef PTHREAD_ONCE_KEY_NP
-  status = pthread_key_create_once_np(&jcr_key, nullptr);
+  int status = pthread_key_create_once_np(&jcr_key, nullptr);
 #else
-  status = pthread_key_create(&jcr_key, nullptr);
+  int status = pthread_key_create(&jcr_key, nullptr);
 #endif
   if (status != 0) {
     BErrNo be;
@@ -71,9 +69,7 @@ void SetupThreadSpecificDataKey()
 #ifdef PTHREAD_ONCE_KEY_NP
   CreateThreadSpecificDataKey();
 #else
-  int status;
-
-  status = pthread_once(&key_once, CreateThreadSpecificDataKey);
+  int status = pthread_once(&key_once, CreateThreadSpecificDataKey);
   if (status != 0) {
     BErrNo be;
     Jmsg1(nullptr, M_ABORT, 0, _("pthread_once failed. ERR=%s\n"),
@@ -94,7 +90,7 @@ JobControlRecord* GetJcrFromThreadSpecificData()
 
 void SetJcrInThreadSpecificData(JobControlRecord* jcr)
 {
-  int status = pthread_setspecific(jcr_key, (void*)jcr);
+  int status = pthread_setspecific(jcr_key, jcr);
   if (status != 0) {
     BErrNo be;
     Jmsg1(jcr, M_ABORT, 0, _("pthread_setspecific failed: ERR=%s\n"),
