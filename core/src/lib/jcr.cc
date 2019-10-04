@@ -529,30 +529,25 @@ std::shared_ptr<JobControlRecord> GetJcrById(uint32_t JobId)
       [JobId](const JobControlRecord* jcr) { return jcr->JobId == JobId; });
 }
 
-std::shared_ptr<JobControlRecord> GetJcrByFullName(char* name_in)
+std::shared_ptr<JobControlRecord> GetJcrByFullName(std::string name)
 {
-  return GetJcr([name_in](const JobControlRecord* jcr) {
-    std::string name(name_in);
-    std::string job_name(jcr->Job);
-    return job_name == name;
+  return GetJcr([&name](const JobControlRecord* jcr) {
+    return std::string{jcr->Job} == name;
   });
 }
 
-std::shared_ptr<JobControlRecord> GetJcrByPartialName(char* name_in)
+std::shared_ptr<JobControlRecord> GetJcrByPartialName(std::string name)
 {
-  return GetJcr([name_in](const JobControlRecord* jcr) {
-    std::string name(name_in);
-    std::string job_name(jcr->Job);
-    return job_name.find(name) == 0;
+  return GetJcr([&name](const JobControlRecord* jcr) {
+    return std::string{jcr->Job}.find(name) == 0;
   });
 }
 
-std::shared_ptr<JobControlRecord> GetJcrBySession(uint32_t SessionId,
-                                                  uint32_t SessionTime)
+std::shared_ptr<JobControlRecord> GetJcrBySession(SessionIdentifier identifier)
 {
-  return GetJcr([SessionId, SessionTime](const JobControlRecord* jcr) {
-    return (jcr->VolSessionId == SessionId &&
-            jcr->VolSessionTime == SessionTime);
+  return GetJcr([&identifier](const JobControlRecord* jcr) {
+    return (SessionIdentifier{jcr->VolSessionId, jcr->VolSessionTime} ==
+            identifier);
   });
 }
 

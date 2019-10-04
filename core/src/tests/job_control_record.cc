@@ -122,15 +122,15 @@ TEST_F(JobControlRecordTest, get_job_by_partial_name_not_found)
 
 TEST_F(JobControlRecordTest, get_job_by_session)
 {
-  auto found_jcr = GetJcrBySession(11, 101);
+  auto found_jcr = GetJcrBySession({11, 101});
   EXPECT_EQ(jobs[1].get(), found_jcr.get());
 }
 
 TEST_F(JobControlRecordTest, get_job_by_session_not_found)
 {
-  auto found_jcr = GetJcrBySession(12, 101);
+  auto found_jcr = GetJcrBySession({12, 101});
   EXPECT_FALSE(found_jcr.get());
 
-  found_jcr = GetJcrBySession(11, 103);
+  found_jcr = GetJcrBySession({11, 103});
   EXPECT_FALSE(found_jcr.get());
 }

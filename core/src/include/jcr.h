@@ -681,16 +681,24 @@ extern void b_free_jcr(const char* file, int line, JobControlRecord* jcr);
 typedef void(dbg_jcr_hook_t)(JobControlRecord* jcr, FILE* fp);
 extern void DbgJcrAddHook(dbg_jcr_hook_t* fct);
 
+struct SessionIdentifier {
+  uint32_t id_{0};
+  uint32_t time_{0};
+  SessionIdentifier(uint32_t id, uint32_t time) : id_(id), time_(time) {}
+  bool operator==(const SessionIdentifier& rhs) const
+  {
+    return id_ == rhs.id_ && time_ == rhs.time_;
+  }
+};
 
 /* new interface */
 void InitJcr(std::shared_ptr<JobControlRecord> jcr,
              JCR_free_HANDLER* daemon_free_jcr);
 std::size_t GetJcrCount();
 std::shared_ptr<JobControlRecord> GetJcrById(uint32_t JobId);
-std::shared_ptr<JobControlRecord> GetJcrByFullName(char* name_in);
-std::shared_ptr<JobControlRecord> GetJcrByPartialName(char* name_in);
-std::shared_ptr<JobControlRecord> GetJcrBySession(uint32_t SessionId,
-                                                  uint32_t SessionTime);
+std::shared_ptr<JobControlRecord> GetJcrByFullName(std::string name);
+std::shared_ptr<JobControlRecord> GetJcrByPartialName(std::string name);
+std::shared_ptr<JobControlRecord> GetJcrBySession(SessionIdentifier identifier);
 uint32_t GetJobIdByThreadId(pthread_t tid);
 /* ************* */
 
