@@ -1169,10 +1169,8 @@ static void ListTerminatedJobs(UaContext* ua)
           "\n"));
   }
 
-  std::vector<RecentJobResultsList::JobResult> last_jobs =
-      RecentJobResultsList::Get();
-
-  for (const auto je : last_jobs) {
+  for (const RecentJobResultsList::JobResult& je :
+       RecentJobResultsList::Get()) {
     char JobName[MAX_NAME_LENGTH];
     const char* termstat;
 

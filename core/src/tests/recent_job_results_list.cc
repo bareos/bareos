@@ -91,11 +91,11 @@ static bool create_file(std::string path, std::string filename)
     file1_orig.open(filename1_orig, std::ios::binary);
     file1.open(filename1, std::ios::binary);
     file1 << file1_orig.rdbuf();
-  } catch (std::system_error& e) {
+  } catch (const std::system_error& e) {
     std::cout << e.code().message().c_str() << std::endl;
     return false;
-  } catch (...) {
-    std::cout << "Unspecific error occurred" << std::endl;
+  } catch (const std::exception& e) {
+    std::cout << "Unspecific error occurred: " << e.what() << std::endl;
     return false;
   }
   return true;

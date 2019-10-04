@@ -313,7 +313,6 @@ static void ListRunningJobs(StatusPacket* sp)
 static void ListTerminatedJobs(StatusPacket* sp)
 {
   int len;
-  struct RecentJobResultsList::JobResult* je;
   PoolMem msg(PM_MESSAGE);
   char level[10], dt[MAX_TIME_LENGTH], b1[30], b2[30];
 
@@ -339,10 +338,8 @@ static void ListTerminatedJobs(StatusPacket* sp)
     sendit(msg, len, sp);
   }
 
-  std::vector<RecentJobResultsList::JobResult> last_jobs =
-      RecentJobResultsList::Get();
-
-  for (const auto je : last_jobs) {
+  for (const RecentJobResultsList::JobResult& je :
+       RecentJobResultsList::Get()) {
     char* p;
     char JobName[MAX_NAME_LENGTH];
     const char* termstat;

@@ -588,29 +588,19 @@ void ReadStateFile(char* dir, const char* progname, int port)
   try {
     file.open(filename, std::ios::binary);
     file.read(reinterpret_cast<char*>(&hdr), sizeof(StateFileHeader));
-  } catch (std::system_error& e) {
+    if (!CheckHeader(hdr)) { return; }
+    if (hdr.last_jobs_addr) {
+      Dmsg1(100, "ReadStateFile seek to %d\n", (int)hdr.last_jobs_addr);
+      file.seekg(hdr.last_jobs_addr);
+    }
+  } catch (const std::system_error& e) {
     BErrNo be;
     Dmsg3(100, "Could not open and read state file. size=%d: ERR=%s - %s\n",
           sizeof(StateFileHeader), be.bstrerror(), e.code().message().c_str());
     return;
-  } catch (...) {
-    Dmsg0(100, "Could not open or read file. Some error occurred");
-  }
-
-  if (!CheckHeader(hdr)) { return; }
-
-  Dmsg1(100, "ReadStateFile seek to %d\n", (int)hdr.last_jobs_addr);
-
-  try {
-    if (hdr.last_jobs_addr) { file.seekg(hdr.last_jobs_addr); }
-  } catch (std::system_error& e) {
-    BErrNo be;
-    Dmsg3(100, "Could not seek filepointer. ERR=%s - %s\n",
-          sizeof(StateFileHeader), be.bstrerror(), e.code().message().c_str());
-    return;
-  } catch (...) {
-    Dmsg0(100, "Could not seek filepointer. Some error occurred");
-    return;
+  } catch (const std::exception& e) {
+    Dmsg0(100, "Could not open or read file. Some error occurred: %s\n",
+          e.what());
   }
 
   if (!RecentJobResultsList::ImportFromFile(file)) { return; }
@@ -660,13 +650,14 @@ void WriteStateFile(char* dir, const char* progname, int port)
 
     file.seekp(0);
     file.write(reinterpret_cast<char*>(&state_hdr), sizeof(StateFileHeader));
-  } catch (std::system_error& e) {
+  } catch (const std::system_error& e) {
     BErrNo be;
     Dmsg3(100, "Could not seek filepointer. ERR=%s - %s\n",
           sizeof(StateFileHeader), be.bstrerror(), e.code().message().c_str());
     return;
-  } catch (...) {
-    Dmsg0(100, "Could not seek filepointer. Some error occurred");
+  } catch (const std::exception& e) {
+    Dmsg0(100, "Could not seek filepointer. Some error occurred: %s\n",
+          e.what());
     return;
   }
 

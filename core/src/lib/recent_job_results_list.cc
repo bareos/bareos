@@ -56,41 +56,33 @@ bool RecentJobResultsList::ImportFromFile(std::ifstream& file)
 
   try {
     file.read(reinterpret_cast<char*>(&num), sizeof(num));
-  } catch (std::system_error& e) {
-    BErrNo be;
-    Dmsg3(010, "Could not open and read state file. ERR=%s - %s\n",
-          be.bstrerror(), e.code().message().c_str());
-    return false;
-  } catch (...) {
-    Dmsg0(100, "Could not read file. Some error occurred");
-    return false;
-  }
-  Dmsg1(100, "Read num_items=%d\n", num);
-  if (num > 4 * max_count_recent_job_results) { /* sanity check */
-    return false;
-  }
 
-  std::lock_guard<std::mutex> m(mutex);
-
-  for (; num; num--) {
-    RecentJobResultsList::JobResult job;
-    try {
-      file.read(reinterpret_cast<char*>(&job), sizeof(job));
-    } catch (std::system_error& e) {
-      BErrNo be;
-      Dmsg3(010, "Could not read state file. ERR=%s - %s\n", be.bstrerror(),
-            e.code().message().c_str());
-      return false;
-    } catch (...) {
-      Dmsg0(100, "Could not read file. Some error occurred");
+    Dmsg1(100, "Read num_items=%d\n", num);
+    if (num > 4 * max_count_recent_job_results) { /* sanity check */
       return false;
     }
-    if (job.JobId > 0) {
-      recent_job_results_list.push_back(job);
-      if (recent_job_results_list.size() > max_count_recent_job_results) {
-        recent_job_results_list.erase(recent_job_results_list.begin());
+
+    std::lock_guard<std::mutex> m(mutex);
+
+    for (; num; num--) {
+      RecentJobResultsList::JobResult job;
+      file.read(reinterpret_cast<char*>(&job), sizeof(job));
+      if (job.JobId > 0) {
+        recent_job_results_list.push_back(job);
+        if (recent_job_results_list.size() > max_count_recent_job_results) {
+          recent_job_results_list.erase(recent_job_results_list.begin());
+        }
       }
     }
+  } catch (const std::system_error& e) {
+    BErrNo be;
+    Dmsg3(010, "Could not open or read state file. ERR=%s - %s\n",
+          be.bstrerror(), e.code().message().c_str());
+    return false;
+  } catch (const std::exception& e) {
+    Dmsg0(100, "Could not open or read file. Some error occurred: %s\n",
+          e.what());
+    return false;
   }
   return true;
 }
@@ -111,17 +103,17 @@ bool RecentJobResultsList::ExportToFile(std::ofstream& file)
     try {
       file.write(reinterpret_cast<char*>(&num), sizeof(num));
 
-      for (auto je : recent_job_results_list) {
-        file.write(reinterpret_cast<char*>(&je),
+      for (const auto& je : recent_job_results_list) {
+        file.write(reinterpret_cast<const char*>(&je),
                    sizeof(struct RecentJobResultsList::JobResult));
       }
-    } catch (std::system_error& e) {
+    } catch (const std::system_error& e) {
       BErrNo be;
       Dmsg3(010, "Could not write state file. ERR=%s - %s\n", be.bstrerror(),
             e.code().message().c_str());
       return false;
-    } catch (...) {
-      Dmsg0(100, "Could not write file. Some error occurred");
+    } catch (const std::exception& e) {
+      Dmsg0(100, "Could not write file. Some error occurred: %s\n", e.what());
       return false;
     }
   }
