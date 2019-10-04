@@ -57,7 +57,7 @@ void WatchdogTimer::Stop()
 
 void BThreadWatchdog::Callback(TimerThread::Timer* item)
 {
-  BThreadWatchdog* timer = reinterpret_cast<BThreadWatchdog*>(item->user_data);
+  BThreadWatchdog* timer = static_cast<BThreadWatchdog*>(item->user_data);
   if (!timer) { return; }
 
   if (timer->jcr_) {
