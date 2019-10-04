@@ -206,15 +206,15 @@ class PythonBareosJsonBase(PythonBareosBase):
     @staticmethod
     def check_resource(director, resourcesname, name):
         logger = logging.getLogger()
-        result = False
+        rc = False
         try:
             result = director.call(u'.{}'.format(resourcesname))
             for i in result[resourcesname]:
                 if i['name'] == name:
-                    result = True
+                    rc = True
         except Exception as e:
             logger.warn(str(e))
-        return result
+        return rc
 
     @staticmethod
     def check_console(director, name):
@@ -228,7 +228,9 @@ class PythonBareosJsonBase(PythonBareosBase):
         if not self.check_resource(director, resourcesname, resourcename):
             result = director.call('configure add {}'.format(cmd))
             self.assertEqual(result['configure']['add']['name'], resourcename)
-            self.assertTrue(self.check_jobname(director, resourcename))
+            self.assertTrue(
+                self.check_resource(director, resourcesname, resourcename),
+                u'Failed to find resource {} in {}.'.format(resourcename, resourcesname))
 
     def run_job(self, director, jobname, level, wait=False):
         logger = logging.getLogger()
