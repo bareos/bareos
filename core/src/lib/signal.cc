@@ -35,6 +35,7 @@
 #include "include/bareos.h"
 #include "lib/berrno.h"
 #include "lib/bsignal.h"
+#include "lib/watchdog.h"
 
 #ifndef _NSIG
 #define BA_NSIG 100
@@ -416,8 +417,6 @@ extern "C" void TimeoutHandler(int sig)
 {
   return; /* thus interrupting the function */
 }
-
-#include "lib/watchdog.h"
 
 void SetTimeoutHandler()
 {
