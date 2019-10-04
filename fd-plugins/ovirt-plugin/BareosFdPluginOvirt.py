@@ -457,6 +457,8 @@ class BareosOvirtWrapper(object):
 
         self.old_new_ids = {}
 
+        self.snapshot_remove_timeout = 300
+
     def connect_api(self, context, options):
 
         # ca certificate
@@ -1219,32 +1221,53 @@ class BareosOvirtWrapper(object):
     def end_vm_backup(self, context):
 
         if self.snap_service:
+            t_start = int(time.time())
             snap = self.snap_service.get()
 
             # Remove the snapshot:
-            failCount = 0
+            snapshot_deleted_success = False
+
+            bareosfd.JobMessage(
+                context, bJobMessageType['M_INFO'],
+                "Sending request to remove snapshot '%s', the id is '%s'.\n" %
+                (snap.description, snap.id))
 
             while True:
                 try:
                     self.snap_service.remove()
-                except sdk.Error, e:
-                    if e.code == 400:
-                        failCount += 1
+                except sdk.Error as e:
+                    if e.code in [400, 409]:
 
-                        # Fail after 30 tries
-                        if failCount > 30:
-                            bareosfd.JobMessage(context, bJobMessageType['M_WARNING'], "The snapshot didn't unlock! Please remove it manually.\n")
+                        # Fail after defined timeout
+                        elapsed = int(time.time()) - t_start
+                        if elapsed >= self.snapshot_remove_timeout:
+                            bareosfd.JobMessage(context, bJobMessageType['M_WARNING'],
+                                                "Remove snapshot timed out after %s s, reason: %s! Please remove it manually.\n" %
+                                                (elapsed, e.message))
                             return bRCs["bRC_Error"]
 
-                        bareosfd.JobMessage(context, bJobMessageType['M_INFO'], "Snapshot is still locked waiting 5 seconds... [" + str(failCount) + "/30]\n")
-                        time.sleep(5)
-                        continue
+                        bareosfd.DebugMessage(context, 100,
+                                              "Could not remove snapshot, reason: %s, retrying until timeout (%s seconds left).\n" %
+                                              (e.message, self.snapshot_remove_timeout - elapsed))
+                        bareosfd.JobMessage(context, bJobMessageType['M_INFO'],
+                                            "Still waiting for snapshot removal, retrying until timeout (%s seconds left).\n" %
+                                            (self.snapshot_remove_timeout - elapsed))
                     else:
-                        break
+                        bareosfd.JobMessage(context, bJobMessageType['M_WARNING'],
+                                            "Unexpected error removing snapshot: %s, Please remove it manually.\n" % e.message)
+                        return bRCs["bRC_Error"]
 
-            bareosfd.JobMessage(
-                context, bJobMessageType['M_INFO'],
-                'Removed the snapshot \'%s\'.\n' % snap.description)
+                if self.wait_for_snapshot_removal(snap.id):
+                    snapshot_deleted_success = True
+                    break
+                else:
+                    # the snapshot still exists
+                    continue
+
+            if snapshot_deleted_success:
+                bareosfd.JobMessage(
+                    context, bJobMessageType['M_INFO'],
+                    'Removed the snapshot \'%s\'.\n' % snap.description)
 
             # Send an external event to indicate to the administrator that the
             # backup of the virtual machine is completed:
@@ -1267,6 +1290,26 @@ class BareosOvirtWrapper(object):
         if self.connection:
             # Close the connection to the server:
             self.connection.close()
+
+    def wait_for_snapshot_removal(self, snapshot_id, timeout=60, delay=10):
+        t_start = int(time.time())
+        snaps_service = self.vm_service.snapshots_service()
+
+        while True:
+            snaps_map = {
+                snap.id: snap.description
+                for snap in snaps_service.list()
+            }
+
+            if snapshot_id not in snaps_map:
+                return True
+
+            if int(time.time()) - t_start > timeout:
+                return False
+
+            time.sleep(delay)
+
+        return
 
     def end_vm_restore(self, context):
 
