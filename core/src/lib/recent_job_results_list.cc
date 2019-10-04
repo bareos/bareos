@@ -37,11 +37,8 @@ static std::mutex mutex;
 
 void RecentJobResultsList::Cleanup()
 {
-  if (!recent_job_results_list.empty()) {
-    mutex.lock();
-    recent_job_results_list.clear();
-    mutex.unlock();
-  }
+  std::lock_guard<std::mutex> lg(mutex);
+  if (!recent_job_results_list.empty()) { recent_job_results_list.clear(); }
 }
 
 bool RecentJobResultsList::ImportFromFile(std::ifstream& file)
@@ -136,47 +133,37 @@ void RecentJobResultsList::Append(JobControlRecord* jcr)
   je.start_time = jcr->start_time;
   je.end_time = time(nullptr);
 
-  mutex.lock();
+  std::lock_guard<std::mutex> lg(mutex);
   recent_job_results_list.push_back(je);
   if (recent_job_results_list.size() > max_count_recent_job_results) {
     recent_job_results_list.erase(recent_job_results_list.begin());
   }
-  mutex.unlock();
 }
 
 std::vector<RecentJobResultsList::JobResult> RecentJobResultsList::Get()
 {
-  std::vector<RecentJobResultsList::JobResult> l;
-  mutex.lock();
-  l = recent_job_results_list;
-  mutex.unlock();
-  return l;
+  std::lock_guard<std::mutex> lg(mutex);
+  return recent_job_results_list;
 }
 
 std::size_t RecentJobResultsList::Count()
 {
-  int count = 0;
-  mutex.lock();
-  count = recent_job_results_list.size();
-  mutex.unlock();
-  return count;
+  std::lock_guard<std::mutex> lg(mutex);
+  return recent_job_results_list.size();
 }
 
 bool RecentJobResultsList::IsEmpty()
 {
-  bool empty;
-  mutex.lock();
-  empty = recent_job_results_list.empty();
-  mutex.unlock();
-  return empty;
+  std::lock_guard<std::mutex> lg(mutex);
+  return recent_job_results_list.empty();
 }
 
 
 RecentJobResultsList::JobResult RecentJobResultsList::GetMostRecentJobResult()
 {
-  RecentJobResultsList::JobResult j;
-  mutex.lock();
-  if (recent_job_results_list.size()) { j = recent_job_results_list.front(); }
-  mutex.unlock();
-  return j;
+  std::lock_guard<std::mutex> lg(mutex);
+  if (recent_job_results_list.size()) {
+    return recent_job_results_list.front();
+  }
+  return RecentJobResultsList::JobResult{};
 }
