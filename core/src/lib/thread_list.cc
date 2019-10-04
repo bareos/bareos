@@ -122,7 +122,7 @@ struct CleanupOwnThreadAndNotify {
 
 static void WorkerThread(std::unique_ptr<ThreadListItem> item, ThreadList* t)
 {
-  SetJcrInThreadSpecificData(INVALID_JCR);
+  SetJcrInThreadSpecificData(nullptr);
 
   item->ThreadInvokedHandler_(item->config_, item->data_);
 

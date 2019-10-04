@@ -380,7 +380,7 @@ int main(int argc, char* argv[])
                   GetFirstPortHostOrder(me->DIRaddrs));
   }
 
-  SetJcrInThreadSpecificData(INVALID_JCR);
+  SetJcrInThreadSpecificData(nullptr);
   SetThreadConcurrency(me->MaxConcurrentJobs * 2 + 4 /* UA */ +
                        5 /* sched+watchdog+jobsvr+misc */);
 
@@ -451,7 +451,7 @@ int main(int argc, char* argv[])
   while ((jcr = wait_for_next_job(runjob))) {
     RunJob(jcr);  /* run job */
     FreeJcr(jcr); /* release jcr */
-    SetJcrInThreadSpecificData(INVALID_JCR);
+    SetJcrInThreadSpecificData(nullptr);
     if (runjob) { /* command line, run a single job? */
       break;      /* yes, Terminate */
     }

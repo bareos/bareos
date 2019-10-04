@@ -655,8 +655,6 @@ class JobControlRecord {
 };
 /* clang-format on */
 
-#define INVALID_JCR (nullptr)
-
 /*
  * The following routines are found in lib/jcr.c
  */

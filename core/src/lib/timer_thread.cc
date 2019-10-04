@@ -236,7 +236,7 @@ static void RunAllItemsAndRemoveOneShotItems(
 
 static void TimerThread(void)
 {
-  SetJcrInThreadSpecificData(INVALID_JCR);
+  SetJcrInThreadSpecificData(nullptr);
 
   Dmsg0(800, "Timer thread started\n");
   timer_thread_state = TimerThreadState::IS_RUNNING;

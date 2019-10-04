@@ -246,7 +246,7 @@ extern "C" void* watchdog_thread(void* arg)
   struct timezone tz;
   utime_t next_time;
 
-  SetJcrInThreadSpecificData(INVALID_JCR);
+  SetJcrInThreadSpecificData(nullptr);
   Dmsg0(800, "NicB-reworked watchdog thread entered\n");
 
   while (!quit) {

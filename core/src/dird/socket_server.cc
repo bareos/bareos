@@ -133,7 +133,7 @@ static void* UserAgentShutdownCallback(void* bsock)
 
 extern "C" void* connect_thread(void* arg)
 {
-  SetJcrInThreadSpecificData(INVALID_JCR);
+  SetJcrInThreadSpecificData(nullptr);
 
   /*
    * Permit MaxConnections connections.

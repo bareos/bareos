@@ -81,7 +81,7 @@ void SetupThreadSpecificDataKey()
 
 JobControlRecord* GetJcrFromThreadSpecificData()
 {
-  JobControlRecord* jcr = INVALID_JCR;
+  JobControlRecord* jcr = nullptr;
   if (jcr_key_initialized) {
     jcr = (JobControlRecord*)pthread_getspecific(jcr_key);
   }

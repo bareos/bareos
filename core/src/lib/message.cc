@@ -225,7 +225,7 @@ void InitMsg(JobControlRecord* jcr,
      * Maybe we should give the daemon a jcr???
      */
     SetupThreadSpecificDataKey();
-    SetJcrInThreadSpecificData(INVALID_JCR);
+    SetJcrInThreadSpecificData(nullptr);
   }
 
   message_job_code_callback = job_code_callback;

@@ -166,7 +166,7 @@ extern "C" void* sched_wait(void* arg)
   JobControlRecord* jcr = ((wait_pkt*)arg)->jcr;
   jobq_t* jq = ((wait_pkt*)arg)->jq;
 
-  SetJcrInThreadSpecificData(INVALID_JCR);
+  SetJcrInThreadSpecificData(nullptr);
   Dmsg0(2300, "Enter sched_wait.\n");
   free(arg);
   time_t wtime = jcr->sched_time - time(NULL);
@@ -261,7 +261,7 @@ int JobqAdd(jobq_t* jq, JobControlRecord* jcr)
   /*
    * While waiting in a queue this job is not attached to a thread
    */
-  SetJcrInThreadSpecificData(INVALID_JCR);
+  SetJcrInThreadSpecificData(nullptr);
   if (JobCanceled(jcr)) {
     /*
      * Add job to ready queue so that it is canceled quickly
@@ -385,7 +385,7 @@ extern "C" void* jobq_server(void* arg)
   bool timedout = false;
   bool work = true;
 
-  SetJcrInThreadSpecificData(INVALID_JCR);
+  SetJcrInThreadSpecificData(nullptr);
   Dmsg0(2300, "Start jobq_server\n");
   P(jq->mutex);
 

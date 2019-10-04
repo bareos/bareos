@@ -88,7 +88,7 @@ void* HandleUserAgentClientRequest(BareosSocket* user_agent_socket)
 
   UaContext* ua = new_ua_context(jcr);
   ua->UA_sock = user_agent_socket;
-  SetJcrInThreadSpecificData(INVALID_JCR);
+  SetJcrInThreadSpecificData(nullptr);
 
   bool success = AuthenticateConsole(ua);
 
