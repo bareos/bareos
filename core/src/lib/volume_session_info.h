@@ -30,6 +30,10 @@ struct VolumeSessionInfo {
 
   /* explicit constructor disables default construction */
   VolumeSessionInfo(uint32_t t_id, uint32_t t_time) : id(t_id), time(t_time) {}
+  bool operator==(const VolumeSessionInfo& rhs) const
+  {
+    return id == rhs.id && time == rhs.time;
+  }
 };
 
 #endif /**  BAREOS_LIB_VOLUME_SESSION_INFO_H_ */

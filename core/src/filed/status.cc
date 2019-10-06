@@ -448,7 +448,6 @@ bool QstatusCmd(JobControlRecord* jcr)
   BareosSocket* dir = jcr->dir_bsock;
   POOLMEM* cmd;
   JobControlRecord* njcr;
-  RecentJobResultsList::JobResult* job;
   StatusPacket sp;
 
   sp.bs = dir;

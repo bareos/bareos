@@ -543,11 +543,10 @@ std::shared_ptr<JobControlRecord> GetJcrByPartialName(std::string name)
   });
 }
 
-std::shared_ptr<JobControlRecord> GetJcrBySession(SessionIdentifier identifier)
+std::shared_ptr<JobControlRecord> GetJcrBySession(const VolumeSessionInfo& vsi)
 {
-  return GetJcr([&identifier](const JobControlRecord* jcr) {
-    return (SessionIdentifier{jcr->VolSessionId, jcr->VolSessionTime} ==
-            identifier);
+  return GetJcr([&vsi](const JobControlRecord* jcr) {
+    return (VolumeSessionInfo{jcr->VolSessionId, jcr->VolSessionTime} == vsi);
   });
 }
 
