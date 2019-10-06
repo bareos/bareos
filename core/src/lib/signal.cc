@@ -33,9 +33,9 @@
 
 #ifndef HAVE_WIN32
 #include "include/bareos.h"
+#include "lib/watchdog.h"
 #include "lib/berrno.h"
 #include "lib/bsignal.h"
-#include "lib/watchdog.h"
 
 #ifndef _NSIG
 #define BA_NSIG 100
@@ -411,7 +411,6 @@ void InitSignals(void Terminate(int sig))
   sigaction(SIGLOST, &sighandle, NULL);
 #endif
 }
-#endif
 
 extern "C" void TimeoutHandler(int sig)
 {
@@ -426,3 +425,6 @@ void SetTimeoutHandler()
   sigfillset(&sigtimer.sa_mask);
   sigaction(TIMEOUT_SIGNAL, &sigtimer, nullptr);
 }
+#else   // HAVE_WIN32
+void SetTimeoutHandler() {}
+#endif  // !HAVE_WIN32
