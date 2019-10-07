@@ -177,7 +177,7 @@ When using NDMP_NATIVE, the Tape Agent must be provided by some other systems. S
    3-way backup,                                            |checkmark|, untested
    Full Backups,                                            |checkmark|, |checkmark| 
    Differential Backups,                                    |checkmark|, |checkmark| 
-   Incremental Backups,                                     :ref:`|checkmark| <section-NdmpBackupLevel>` (8), :ref:`|checkmark| <section-NdmpBackupLevel>` (8)
+   Incremental Backups,                                     |checkmark| :ref:`(8) <section-NdmpBackupLevel>`, |checkmark| :ref:`(8) <section-NdmpBackupLevel>`
    Single File Restore,                                     |checkmark|, |checkmark| 
    DAR,                                                                , |checkmark| 
    DDAR,                                                               , |checkmark| 
