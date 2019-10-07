@@ -518,6 +518,8 @@ if ("${HAVE_CAPABILITY}")
    message( STATUS "CAPABILITY set")
 endif()
 
+try_compile(HAVE_IS_TRIVIALLY_COPYABLE ${CMAKE_BINARY_DIR}/compile_tests ${PROJECT_SOURCE_DIR}/src/compile_tests/trivially_copyable.cc)
+
 set(ndmp "${ndmp}" )
 set(lmdb "${lmdb}" )
 set(build_client_only "${client-only}" )
@@ -748,6 +750,7 @@ message("   RPCGEN:                       ${RPCGEN}")
 message("   MTX:                          ${MTX}")
 message("   DEVELOPER:                    ${developer}")
 message("   LocalBuildDefinitionsFile:    ${BareosLocalBuildDefinitionsFile}")
+message("   HAVE_IS_TRIVIALLY_COPYABLE:   ${HAVE_IS_TRIVIALLY_COPYABLE}")
 
 message("   do-static-code-checks:        ${DO_STATIC_CODE_CHECKS}")
 if(DO_STATIC_CODE_CHECKS)

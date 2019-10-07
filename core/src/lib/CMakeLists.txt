@@ -80,11 +80,6 @@ LIST(APPEND BAREOS_SRCS ${BAREOSCFG_SRCS})
 
 add_library(bareos SHARED ${BAREOS_SRCS})
 
-try_compile(COMPILE_SUCCESS_TRIVIALLY_COPYABLE ${CMAKE_BINARY_DIR}/compile_tests ${PROJECT_SOURCE_DIR}/src/compile_tests/trivially_copyable.cc)
-IF(COMPILE_SUCCESS_TRIVIALLY_COPYABLE)
-  target_compile_definitions(bareos PUBLIC HAVE_IS_TRIVIALLY_COPYABLE)
-ENDIF()
-
 IF(HAVE_LIBDL)
   target_link_libraries(bareos dl)
 ENDIF()
