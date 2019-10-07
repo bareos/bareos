@@ -98,7 +98,7 @@ TEST(thread_list, thread_list_startup_and_shutdown)
 
   t->WaitUntilThreadListIsEmpty();
 
-  EXPECT_EQ(t->GetSize(), 0);
+  EXPECT_EQ(t->Size(), 0);
   for (const auto& c : list_of_wait_conditions) {
     EXPECT_EQ(c.get()->GetStatus(), WaitCondition::Status::kSuccess);
   }

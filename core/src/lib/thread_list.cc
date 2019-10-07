@@ -130,8 +130,6 @@ static void WorkerThread(std::unique_ptr<ThreadListItem> item, ThreadList* t)
 
 bool ThreadList::CreateAndAddNewThread(ConfigurationParser* config, void* data)
 {
-  if (!impl_) { return false; }
-
   std::lock_guard<std::mutex> l(impl_->thread_list_mutex_);
 
   if (impl_->thread_list_.size() < impl_->maximum_thread_count_) {
@@ -149,4 +147,8 @@ bool ThreadList::CreateAndAddNewThread(ConfigurationParser* config, void* data)
   return false;
 }
 
-std::size_t ThreadList::GetSize() const { return impl_->thread_list_.size(); }
+std::size_t ThreadList::Size() const
+{
+  std::lock_guard<std::mutex> l(impl_->thread_list_mutex_);
+  return impl_->thread_list_.size();
+}
