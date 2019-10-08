@@ -574,15 +574,15 @@ ENDIF()
 
 
 IF(NOT DEFINED job_email)
-   SET(job_email "root@localhost")
+   SET(job_email "root")
 ENDIF()
 
 IF(NOT DEFINED dump_email)
-   SET(dump_email "root@localhost")
+   SET(dump_email "root")
 ENDIF()
 
 IF(NOT DEFINED smtp_host)
-   SET(smtp_host "root@localhost")
+   SET(smtp_host "localhost")
 ENDIF()
 
 IF(DEFINED traymonitor)
