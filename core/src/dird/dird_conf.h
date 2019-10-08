@@ -474,7 +474,8 @@ class JobResource : public BareosResource {
   utime_t DuplicateJobProximity = {0}; /**< Permitted time between duplicicates */
   utime_t AlwaysIncrementalJobRetention = {0}; /**< Timeinterval where incrementals are not consolidated */
   utime_t AlwaysIncrementalMaxFullAge = {0};   /**< If Full Backup is older than this age
-   *                                            *   the consolidation job will include also the full */
+                                                *   the consolidation job will include also the full */
+  utime_t ScheduleOnClientConnectInterval = {0};
   int64_t spool_size = 0;    /**< Size of spool file for this job */
   int64_t max_bandwidth = 0; /**< Speed limit on this job */
   int64_t FileHistSize = 0; /**< Hint about the size of the expected File history */
@@ -734,6 +735,7 @@ extern "C" char* job_code_callback_director(JobControlRecord* jcr, const char*);
 const char* GetUsageStringForConsoleConfigureCommand();
 void DestroyConfigureUsageString();
 bool PopulateDefs();
+std::vector<JobResource*> GetAllJobResourcesByClientName(std::string name);
 
 } /* namespace directordaemon */
 #endif  // BAREOS_DIRD_DIRD_CONF_H_

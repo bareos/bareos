@@ -385,3 +385,24 @@ target_link_libraries(test_watchdog_timer
 
 gtest_discover_tests(test_watchdog_timer TEST_PREFIX gtest:)
 
+####### client-initiated-reconnect  #####################################
+add_executable(client-initiated-reconnect client-initiated-reconnect.cc)
+
+target_link_libraries(client-initiated-reconnect
+   dird_objects
+   bareos
+   bareosfind
+   bareoscats
+   bareossql
+   ${LMDB_LIBS}
+   ${NDMP_LIBS}
+   ${GTEST_LIBRARIES}
+   ${GTEST_MAIN_LIBRARIES}
+)
+
+IF(HAVE_PAM)
+   target_link_libraries(client-initiated-reconnect ${PAM_LIBRARIES})
+ENDIF()
+
+gtest_discover_tests(client-initiated-reconnect TEST_PREFIX gtest:)
+

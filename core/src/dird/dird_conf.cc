@@ -448,6 +448,9 @@ ResourceItem job_items[] = {
      "If \"AlwaysIncrementalMaxFullAge\" is set, during consolidations only incremental backups will be considered while the Full Backup remains to reduce the amount of data being consolidated. Only if the Full Backup is older than \"AlwaysIncrementalMaxFullAge\", the Full Backup will be part of the consolidation to avoid the Full Backup becoming too old ." },
   { "MaxFullConsolidations", CFG_TYPE_PINT32, ITEM(res_job, MaxFullConsolidations), 0, CFG_ITEM_DEFAULT, "0", "16.2.4-",
      "If \"AlwaysIncrementalMaxFullAge\" is configured, do not run more than \"MaxFullConsolidations\" consolidation jobs that include the Full backup."},
+  { "ScheduleOnClientConnectInterval", CFG_TYPE_TIME, ITEM(res_job, ScheduleOnClientConnectInterval), 0, CFG_ITEM_DEFAULT, "0", "19.2.4-",
+    "The interval specifies the time between the most recent successful backup (counting from start time) and the "
+    "event of a client initiated connection. When this interval is exceeded the job is started automatically." },
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
@@ -4189,6 +4192,23 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
 
   if (!AddResourceCopyToEndOfChain(type)) { return false; }
   return true;
+}
+
+std::vector<JobResource*> GetAllJobResourcesByClientName(std::string name)
+{
+  std::vector<JobResource*> all_matching_jobs;
+  JobResource* job{nullptr};
+
+  do {
+    job = static_cast<JobResource*>(my_config->GetNextRes(R_JOB, job));
+    if (job && job->client) {
+      if (std::string{job->client->resource_name_} == name) {
+        all_matching_jobs.push_back(job);
+      }
+    }
+  } while (job);
+
+  return all_matching_jobs;
 }
 
 } /* namespace directordaemon */
