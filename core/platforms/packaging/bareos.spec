@@ -57,6 +57,11 @@ Vendor: 	The Bareos Team
 %define use_libwrap 1
 %endif
 
+# rhel/centos 6 must not be built with libtirpc installed
+%if 0%{?rhel} == 6
+BuildConflicts: libtirpc-devel
+%endif
+
 # fedora 28: rpc was removed from libc
 %if 0%{?fedora} >= 28 || 0%{?rhel} > 7
 BuildRequires: rpcgen
@@ -123,7 +128,15 @@ BuildRequires: libtirpc-devel
 %define systemd_support 1
 %endif
 
-%if 0%{?rhel_version} >= 700
+%if 0%{?rhel_version} == 800
+%define droplet 0
+%endif
+
+%if 0%{?rhel_version} >= 700 && !0%{?centos_version}
+%define ceph 1
+%endif
+
+%if 0%{?centos} >= 8
 %define ceph 1
 %endif
 
@@ -151,19 +164,31 @@ BuildRequires: glusterfs-devel glusterfs-api-devel
 %endif
 
 %if 0%{?ceph}
-%if 0%{?sle_version} >= 120200
+  %if 0%{?sle_version} >= 120200
 BuildRequires: libcephfs-devel
 BuildRequires: librados-devel
-%else
+  %else
+# the rhel macro is set in docker, but not in obs
+    %if 0%{?rhel} == 7
+BuildRequires: librados2-devel
+BuildRequires: libcephfs1-devel
+    %else
+      %if 0%{?rhel} == 8
+BuildRequires: librados-devel
+BuildRequires: libradosstriper-devel
+BuildRequires: libcephfs-devel
+      %else
 BuildRequires: ceph-devel
-%endif
+      %endif
+    %endif
+  %endif
 %endif
 
 %if 0%{?have_git}
 BuildRequires: git-core
 %endif
 
-Source0: %{name}-%{version}.tar.gz
+Source0: %{name}-%{version}.tar.bz2
 
 BuildRequires: pam-devel
 
@@ -201,8 +226,8 @@ BuildRequires: mtx
 BuildRequires: libqt5-qtbase-devel
 %else
 
-%if 0%{?centos_version} == 600 || 0%{?rhel_version} <= 700
-BuildRequires: libqt4-devel
+%if 0%{?centos_version} <= 700 || 0%{?rhel_version} <= 700
+BuildRequires: qt-devel
 %else
 BuildRequires: qt5-qtbase-devel
 %endif
@@ -212,7 +237,11 @@ BuildRequires: qt5-qtbase-devel
 
 
 %if 0%{?python_plugins}
+%if 0%{?centos_version} >= 800 || 0%{?rhel_version} >= 800 || 0%{?fedora} >= 31
+BuildRequires: python2-devel >= 2.6
+%else
 BuildRequires: python-devel >= 2.6
+%endif
 %endif
 
 %if 0%{?suse_version}
@@ -299,6 +328,10 @@ Bareos source code has been released under the AGPL version 3 license.
 
 %description
 %{dscr}
+
+%if 0%{?opensuse_version} || 0%{?sle_version}
+%debug_package
+%endif
 
 # Notice : Don't try to change the order of package declaration
 # You will have side effect with PreReq

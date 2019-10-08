@@ -9,6 +9,11 @@
 %if 0%{?with_python2}
 %global PYVER 2
 %define noarch 0
+%if 0%{?rhel_version} >= 800 || 0%{?fedora} >= 31
+%define pypkg python2
+%else
+%define pypkg python
+%endif
 %else
 %global PYVER 3
 %define noarch 1
@@ -26,13 +31,13 @@ License:        AGPL-3.0
 URL:            https://github.com/bareos/python-bareos/
 Vendor:         The Bareos Team
 #Source0:        http://pypi.python.org/packages/source/e/%%{srcname}/%%{srcname}-%%{version}.tar.gz
-Source:         %{name}-%{version}.tar.gz
+Source:         %{name}-%{version}.tar.bz2
 BuildRoot:      %{_tmppath}/%{name}-root
 %global debug_package %{nil}
 %if %{with python2}
-BuildRequires:  python-devel
-BuildRequires:  python-setuptools
-Requires:       python-dateutil
+BuildRequires:  %{pypkg}-devel
+BuildRequires:  %{pypkg}-setuptools
+Requires:       %{pypkg}-dateutil
 %endif
 %if %{with python3}
 BuildRequires:  python3-devel
@@ -49,6 +54,10 @@ Bareos - Backup Archiving Recovery Open Sourced - Python module
 
 This packages contains a python module to interact with a Bareos backup system.
 It also includes some tools based on this module.
+
+%if 0%{?opensuse_version} || 0%{?sle_version}
+%debug_package
+%endif
 
 %define pyX_sitelib %(%{pyXcmd} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")
 
