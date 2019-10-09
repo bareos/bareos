@@ -34,7 +34,7 @@ target_link_libraries(bareosfind bareos ${ACL_LIBS})
 INSTALL(TARGETS bareosfind DESTINATION ${libdir} COMPONENT filedaemon)
 
 set_target_properties(bareosfind PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
-                                          SOVERSION "${SOVERSION}"
+                                          SOVERSION "${BAREOS_VERSION_MAJOR}"
                                           DEFINE_SYMBOL "BUILDING_DLL"
                                           )
 IF(HAVE_WIN32)

@@ -92,7 +92,7 @@ target_link_libraries(bareos bareosfastlz
 INSTALL(TARGETS bareos DESTINATION ${libdir})
 
 set_target_properties(bareos PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
-                                      SOVERSION "${SOVERSION}")
+                                      SOVERSION "${BAREOS_VERSION_MAJOR}")
 
 IF(HAVE_WIN32)
    set_target_properties(bareos PROPERTIES DEFINE_SYMBOL "BUILDING_DLL")

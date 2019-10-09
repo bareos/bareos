@@ -98,7 +98,7 @@ target_link_libraries(bareosndmp ${WRAP_LIBS} ${TIRPC_LIBRARIES})
 install(TARGETS bareosndmp DESTINATION ${libdir})
 
 set_target_properties(bareosndmp PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
-                                          SOVERSION "${SOVERSION}"
+                                            SOVERSION "${BAREOS_VERSION_MAJOR}"
                                           )
 IF(build_ndmjob)
   add_executable(ndmjob ${NDMJOB_SRCS})
