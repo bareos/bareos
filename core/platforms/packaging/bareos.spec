@@ -710,7 +710,9 @@ This package contains required files for Bareos regression testing.
 
 
 %prep
-%setup
+# this is a hack so we always build in "bareos" and not in "bareos-version"
+%setup -c -n bareos
+mv bareos-*/* .
 
 %build
 # Cleanup defined in Fedora Packaging:Guidelines
