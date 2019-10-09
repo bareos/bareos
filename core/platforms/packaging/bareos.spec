@@ -227,10 +227,10 @@ BuildRequires: mtx
 BuildRequires: libqt5-qtbase-devel
 %else
 
-%if 0%{?centos_version} <= 700 || 0%{?rhel_version} <= 700
-BuildRequires: qt-devel
-%else
+%if 0%{?centos_version} > 700 || 0%{?rhel_version} > 700 || 0%{?fedora} >= 29
 BuildRequires: qt5-qtbase-devel
+%else
+BuildRequires: qt-devel
 %endif
 
 %endif
