@@ -894,6 +894,7 @@ int main(int argc, char* argv[])
   PoolMem history_file;
 
   setlocale(LC_ALL, "");
+  tzset();
   bindtextdomain("bareos", LOCALEDIR);
   textdomain("bareos");
 

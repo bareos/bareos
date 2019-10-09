@@ -448,7 +448,7 @@ ResourceItem job_items[] = {
      "If \"AlwaysIncrementalMaxFullAge\" is set, during consolidations only incremental backups will be considered while the Full Backup remains to reduce the amount of data being consolidated. Only if the Full Backup is older than \"AlwaysIncrementalMaxFullAge\", the Full Backup will be part of the consolidation to avoid the Full Backup becoming too old ." },
   { "MaxFullConsolidations", CFG_TYPE_PINT32, ITEM(res_job, MaxFullConsolidations), 0, CFG_ITEM_DEFAULT, "0", "16.2.4-",
      "If \"AlwaysIncrementalMaxFullAge\" is configured, do not run more than \"MaxFullConsolidations\" consolidation jobs that include the Full backup."},
-  { "ScheduleOnClientConnectInterval", CFG_TYPE_TIME, ITEM(res_job, ScheduleOnClientConnectInterval), 0, CFG_ITEM_DEFAULT, "0", "19.2.4-",
+  { "RunOnIncomingConnectInterval", CFG_TYPE_TIME, ITEM(res_job, RunOnIncomingConnectInterval), 0, CFG_ITEM_DEFAULT, "0", "19.2.4-",
     "The interval specifies the time between the most recent successful backup (counting from start time) and the "
     "event of a client initiated connection. When this interval is exceeded the job is started automatically." },
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
@@ -1605,14 +1605,14 @@ static void PrintConfigRun(ResourceItem* item, PoolMem& cfg_str)
       all_set = true;
       nr_items = 31;
       for (i = 0; i < nr_items; i++) {
-        if (!BitIsSet(i, run->mday)) { all_set = false; }
+        if (!BitIsSet(i, run->date_time_bitfield.mday)) { all_set = false; }
       }
 
       if (!all_set) {
         interval_start = -1;
 
         for (i = 0; i < nr_items; i++) {
-          if (BitIsSet(i, run->mday)) {
+          if (BitIsSet(i, run->date_time_bitfield.mday)) {
             if (interval_start ==
                 -1) {             /* bit is set and we are not in an interval */
               interval_start = i; /* start an interval */
@@ -1622,7 +1622,7 @@ static void PrintConfigRun(ResourceItem* item, PoolMem& cfg_str)
             }
           }
 
-          if (!BitIsSet(i, run->mday)) {
+          if (!BitIsSet(i, run->date_time_bitfield.mday)) {
             if (interval_start !=
                 -1) { /* bit is unset and we are in an interval */
               if ((i - interval_start) > 1) {
@@ -1641,7 +1641,7 @@ static void PrintConfigRun(ResourceItem* item, PoolMem& cfg_str)
          * the interval stretches to the last item.
          */
         i = nr_items - 1;
-        if (interval_start != -1 && BitIsSet(i, run->mday)) {
+        if (interval_start != -1 && BitIsSet(i, run->date_time_bitfield.mday)) {
           if ((i - interval_start) > 1) {
             Dmsg2(200, "found end of interval from %d to %d\n",
                   interval_start + 1, i + 1);
@@ -1662,7 +1662,7 @@ static void PrintConfigRun(ResourceItem* item, PoolMem& cfg_str)
       all_set = true;
       nr_items = 5;
       for (i = 0; i < nr_items; i++) {
-        if (!BitIsSet(i, run->wom)) { all_set = false; }
+        if (!BitIsSet(i, run->date_time_bitfield.wom)) { all_set = false; }
       }
 
       if (!all_set) {
@@ -1670,7 +1670,7 @@ static void PrintConfigRun(ResourceItem* item, PoolMem& cfg_str)
 
         PmStrcpy(temp, "");
         for (i = 0; i < nr_items; i++) {
-          if (BitIsSet(i, run->wom)) {
+          if (BitIsSet(i, run->date_time_bitfield.wom)) {
             if (interval_start ==
                 -1) {             /* bit is set and we are not in an interval */
               interval_start = i; /* start an interval */
@@ -1680,7 +1680,7 @@ static void PrintConfigRun(ResourceItem* item, PoolMem& cfg_str)
             }
           }
 
-          if (!BitIsSet(i, run->wom)) {
+          if (!BitIsSet(i, run->date_time_bitfield.wom)) {
             if (interval_start !=
                 -1) { /* bit is unset and we are in an interval */
               if ((i - interval_start) > 1) {
@@ -1699,7 +1699,7 @@ static void PrintConfigRun(ResourceItem* item, PoolMem& cfg_str)
          * the interval stretches to the last item.
          */
         i = nr_items - 1;
-        if (interval_start != -1 && BitIsSet(i, run->wom)) {
+        if (interval_start != -1 && BitIsSet(i, run->date_time_bitfield.wom)) {
           if ((i - interval_start) > 1) {
             Dmsg2(200, "found end of interval from %s to %s\n",
                   ordinals[interval_start], ordinals[i]);
@@ -1718,7 +1718,7 @@ static void PrintConfigRun(ResourceItem* item, PoolMem& cfg_str)
       all_set = true;
       nr_items = 7;
       for (i = 0; i < nr_items; i++) {
-        if (!BitIsSet(i, run->wday)) { all_set = false; }
+        if (!BitIsSet(i, run->date_time_bitfield.wday)) { all_set = false; }
       }
 
       if (!all_set) {
@@ -1726,7 +1726,7 @@ static void PrintConfigRun(ResourceItem* item, PoolMem& cfg_str)
 
         PmStrcpy(temp, "");
         for (i = 0; i < nr_items; i++) {
-          if (BitIsSet(i, run->wday)) {
+          if (BitIsSet(i, run->date_time_bitfield.wday)) {
             if (interval_start ==
                 -1) {             /* bit is set and we are not in an interval */
               interval_start = i; /* start an interval */
@@ -1736,7 +1736,7 @@ static void PrintConfigRun(ResourceItem* item, PoolMem& cfg_str)
             }
           }
 
-          if (!BitIsSet(i, run->wday)) {
+          if (!BitIsSet(i, run->date_time_bitfield.wday)) {
             if (interval_start !=
                 -1) { /* bit is unset and we are in an interval */
               if ((i - interval_start) > 1) {
@@ -1755,7 +1755,7 @@ static void PrintConfigRun(ResourceItem* item, PoolMem& cfg_str)
          * the interval stretches to the last item.
          */
         i = nr_items - 1;
-        if (interval_start != -1 && BitIsSet(i, run->wday)) {
+        if (interval_start != -1 && BitIsSet(i, run->date_time_bitfield.wday)) {
           if ((i - interval_start) > 1) {
             Dmsg2(200, "found end of interval from %s to %s\n",
                   weekdays[interval_start], weekdays[i]);
@@ -1774,7 +1774,7 @@ static void PrintConfigRun(ResourceItem* item, PoolMem& cfg_str)
       all_set = true;
       nr_items = 12;
       for (i = 0; i < nr_items; i++) {
-        if (!BitIsSet(i, run->month)) { all_set = false; }
+        if (!BitIsSet(i, run->date_time_bitfield.month)) { all_set = false; }
       }
 
       if (!all_set) {
@@ -1782,7 +1782,7 @@ static void PrintConfigRun(ResourceItem* item, PoolMem& cfg_str)
 
         PmStrcpy(temp, "");
         for (i = 0; i < nr_items; i++) {
-          if (BitIsSet(i, run->month)) {
+          if (BitIsSet(i, run->date_time_bitfield.month)) {
             if (interval_start ==
                 -1) {             /* bit is set and we are not in an interval */
               interval_start = i; /* start an interval */
@@ -1792,7 +1792,7 @@ static void PrintConfigRun(ResourceItem* item, PoolMem& cfg_str)
             }
           }
 
-          if (!BitIsSet(i, run->month)) {
+          if (!BitIsSet(i, run->date_time_bitfield.month)) {
             if (interval_start !=
                 -1) { /* bit is unset and we are in an interval */
               if ((i - interval_start) > 1) {
@@ -1811,7 +1811,8 @@ static void PrintConfigRun(ResourceItem* item, PoolMem& cfg_str)
          * the interval stretches to the last item.
          */
         i = nr_items - 1;
-        if (interval_start != -1 && BitIsSet(i, run->month)) {
+        if (interval_start != -1 &&
+            BitIsSet(i, run->date_time_bitfield.month)) {
           if ((i - interval_start) > 1) {
             Dmsg2(200, "found end of interval from %s to %s\n",
                   months[interval_start], months[i]);
@@ -1830,7 +1831,7 @@ static void PrintConfigRun(ResourceItem* item, PoolMem& cfg_str)
       all_set = true;
       nr_items = 54;
       for (i = 0; i < nr_items; i++) {
-        if (!BitIsSet(i, run->woy)) { all_set = false; }
+        if (!BitIsSet(i, run->date_time_bitfield.woy)) { all_set = false; }
       }
 
       if (!all_set) {
@@ -1838,7 +1839,7 @@ static void PrintConfigRun(ResourceItem* item, PoolMem& cfg_str)
 
         PmStrcpy(temp, "");
         for (i = 0; i < nr_items; i++) {
-          if (BitIsSet(i, run->woy)) {
+          if (BitIsSet(i, run->date_time_bitfield.woy)) {
             if (interval_start ==
                 -1) {             /* bit is set and we are not in an interval */
               interval_start = i; /* start an interval */
@@ -1848,7 +1849,7 @@ static void PrintConfigRun(ResourceItem* item, PoolMem& cfg_str)
             }
           }
 
-          if (!BitIsSet(i, run->woy)) {
+          if (!BitIsSet(i, run->date_time_bitfield.woy)) {
             if (interval_start !=
                 -1) { /* bit is unset and we are in an interval */
               if ((i - interval_start) > 1) {
@@ -1867,7 +1868,7 @@ static void PrintConfigRun(ResourceItem* item, PoolMem& cfg_str)
          * the interval stretches to the last item.
          */
         i = nr_items - 1;
-        if (interval_start != -1 && BitIsSet(i, run->woy)) {
+        if (interval_start != -1 && BitIsSet(i, run->date_time_bitfield.woy)) {
           if ((i - interval_start) > 1) {
             Dmsg2(200, "found end of interval from w%02d to w%02d\n",
                   interval_start, i);
@@ -1887,7 +1888,7 @@ static void PrintConfigRun(ResourceItem* item, PoolMem& cfg_str)
       PmStrcpy(temp, "");
       for (i = 0; i < 24; i++) {
         if
-          BitIsSet(i, run->hour)
+          BitIsSet(i, run->date_time_bitfield.hour)
           {
             Mmsg(temp, "at %02d:%02d\n", i, run->minute);
             PmStrcat(run_str, temp.c_str());
@@ -4202,7 +4203,7 @@ std::vector<JobResource*> GetAllJobResourcesByClientName(std::string name)
   do {
     job = static_cast<JobResource*>(my_config->GetNextRes(R_JOB, job));
     if (job && job->client) {
-      if (std::string{job->client->resource_name_} == name) {
+      if (job->client->resource_name_ == name) {
         all_matching_jobs.push_back(job);
       }
     }

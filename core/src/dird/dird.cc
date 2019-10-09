@@ -225,7 +225,6 @@ static void usage()
 int main(int argc, char* argv[])
 {
   int ch;
-  JobControlRecord* jcr;
   cat_op mode;
   bool no_signals = false;
   bool export_config = false;
@@ -234,6 +233,7 @@ int main(int argc, char* argv[])
   char* gid = NULL;
 
   setlocale(LC_ALL, "");
+  tzset();
   bindtextdomain("bareos", LOCALEDIR);
   textdomain("bareos");
 
@@ -447,14 +447,12 @@ int main(int argc, char* argv[])
   if (!StartSocketServer(me->DIRaddrs)) { TerminateDird(0); }
 
   Dmsg0(200, "wait for next job\n");
-  /* Main loop -- call scheduler to get next job to run */
-  while ((jcr = wait_for_next_job(runjob))) {
-    RunJob(jcr);  /* run job */
-    FreeJcr(jcr); /* release jcr */
-    SetJcrInThreadSpecificData(nullptr);
-    if (runjob) { /* command line, run a single job? */
-      break;      /* yes, Terminate */
-    }
+
+  if (runjob) {
+    JobControlRecord* jcr = PrepareJobToRun(runjob);
+    if (jcr) { ExecuteJob(jcr); }
+  } else {
+    Scheduler::GetMainScheduler().Run();
   }
 
 bail_out:
@@ -496,7 +494,7 @@ static
     DeletePidFile(me->pid_directory, "bareos-dir",
                   GetFirstPortHostOrder(me->DIRaddrs));
   }
-  TermScheduler();
+  Scheduler::GetMainScheduler().Terminate();
   TermJobServer();
 
   if (runjob) { free(runjob); }
@@ -622,7 +620,7 @@ bool DoReloadConfig()
     int num_running_jobs = 0;
     resource_table_reference* new_table = NULL;
 
-    InvalidateSchedules();
+    Scheduler::GetMainScheduler().ClearQueue();
     foreach_jcr (jcr) {
       if (jcr->getJobType() != JT_SYSTEM) {
         if (!new_table) {

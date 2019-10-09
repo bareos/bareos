@@ -136,12 +136,12 @@ static void set_defaults()
 {
   have_hour = have_mday = have_wday = have_month = have_wom = have_woy = false;
   have_at = false;
-  SetBits(0, 23, res_run->hour);
-  SetBits(0, 30, res_run->mday);
-  SetBits(0, 6, res_run->wday);
-  SetBits(0, 11, res_run->month);
-  SetBits(0, 4, res_run->wom);
-  SetBits(0, 53, res_run->woy);
+  SetBits(0, 23, res_run->date_time_bitfield.hour);
+  SetBits(0, 30, res_run->date_time_bitfield.mday);
+  SetBits(0, 6, res_run->date_time_bitfield.wday);
+  SetBits(0, 11, res_run->date_time_bitfield.month);
+  SetBits(0, 4, res_run->date_time_bitfield.wom);
+  SetBits(0, 53, res_run->date_time_bitfield.woy);
 }
 
 /**
@@ -419,45 +419,45 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
         continue;
       case s_mday: /* Day of month */
         if (!have_mday) {
-          ClearBits(0, 30, res_run->mday);
+          ClearBits(0, 30, res_run->date_time_bitfield.mday);
           have_mday = true;
         }
-        SetBit(code, res_run->mday);
+        SetBit(code, res_run->date_time_bitfield.mday);
         break;
       case s_month: /* Month of year */
         if (!have_month) {
-          ClearBits(0, 11, res_run->month);
+          ClearBits(0, 11, res_run->date_time_bitfield.month);
           have_month = true;
         }
-        SetBit(code, res_run->month);
+        SetBit(code, res_run->date_time_bitfield.month);
         break;
       case s_wday: /* Week day */
         if (!have_wday) {
-          ClearBits(0, 6, res_run->wday);
+          ClearBits(0, 6, res_run->date_time_bitfield.wday);
           have_wday = true;
         }
-        SetBit(code, res_run->wday);
+        SetBit(code, res_run->date_time_bitfield.wday);
         break;
       case s_wom: /* Week of month 1st, ... */
         if (!have_wom) {
-          ClearBits(0, 4, res_run->wom);
+          ClearBits(0, 4, res_run->date_time_bitfield.wom);
           have_wom = true;
         }
-        SetBit(code, res_run->wom);
+        SetBit(code, res_run->date_time_bitfield.wom);
         break;
       case s_woy:
         if (!have_woy) {
-          ClearBits(0, 53, res_run->woy);
+          ClearBits(0, 53, res_run->date_time_bitfield.woy);
           have_woy = true;
         }
-        SetBit(code, res_run->woy);
+        SetBit(code, res_run->date_time_bitfield.woy);
         break;
       case s_time: /* Time */
         if (!have_at) {
           scan_err0(lc, _("Time must be preceded by keyword AT."));
           /* NOT REACHED */
         }
-        if (!have_hour) { ClearBits(0, 23, res_run->hour); }
+        if (!have_hour) { ClearBits(0, 23, res_run->date_time_bitfield.hour); }
         //       Dmsg1(000, "s_time=%s\n", lc->str);
         p = strchr(lc->str, ':');
         if (!p) {
@@ -498,7 +498,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
           scan_err0(lc, _("Bad time specification."));
           /* NOT REACHED */
         }
-        SetBit(code, res_run->hour);
+        SetBit(code, res_run->date_time_bitfield.hour);
         res_run->minute = code2;
         have_hour = true;
         break;
@@ -506,9 +506,9 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
         have_at = true;
         break;
       case s_last:
-        res_run->last_set = true;
+        res_run->date_time_bitfield.last_week_of_month = true;
         if (!have_wom) {
-          ClearBits(0, 4, res_run->wom);
+          ClearBits(0, 4, res_run->date_time_bitfield.wom);
           have_wom = true;
         }
         break;
@@ -531,14 +531,16 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
                             "than modulo."));
           }
           if (!have_mday) {
-            ClearBits(0, 30, res_run->mday);
+            ClearBits(0, 30, res_run->date_time_bitfield.mday);
             have_mday = true;
           }
           /*
            * Set the bits according to the modulo specification.
            */
           for (i = 0; i < 31; i++) {
-            if (i % code2 == 0) { SetBit(i + code, res_run->mday); }
+            if (i % code2 == 0) {
+              SetBit(i + code, res_run->date_time_bitfield.mday);
+            }
           }
         } else if (strlen(lc->str) == 3 && strlen(p) == 3 &&
                    (lc->str[0] == 'w' || lc->str[0] == 'W') &&
@@ -557,14 +559,16 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
                             "must always be <= than modulo."));
           }
           if (!have_woy) {
-            ClearBits(0, 53, res_run->woy);
+            ClearBits(0, 53, res_run->date_time_bitfield.woy);
             have_woy = true;
           }
           /*
            * Set the bits according to the modulo specification.
            */
           for (i = 0; i < 54; i++) {
-            if (i % code2 == 0) { SetBit(i + code - 1, res_run->woy); }
+            if (i % code2 == 0) {
+              SetBit(i + code - 1, res_run->date_time_bitfield.woy);
+            }
           }
         } else {
           scan_err0(lc, _("Bad modulo time specification. Format for weekdays "
@@ -586,14 +590,14 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             scan_err0(lc, _("Bad day range specification."));
           }
           if (!have_mday) {
-            ClearBits(0, 30, res_run->mday);
+            ClearBits(0, 30, res_run->date_time_bitfield.mday);
             have_mday = true;
           }
           if (code < code2) {
-            SetBits(code, code2, res_run->mday);
+            SetBits(code, code2, res_run->date_time_bitfield.mday);
           } else {
-            SetBits(code, 30, res_run->mday);
-            SetBits(0, code2, res_run->mday);
+            SetBits(code, 30, res_run->date_time_bitfield.mday);
+            SetBits(0, code2, res_run->date_time_bitfield.mday);
           }
         } else if (strlen(lc->str) == 3 && strlen(p) == 3 &&
                    (lc->str[0] == 'w' || lc->str[0] == 'W') &&
@@ -608,14 +612,14 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             scan_err0(lc, _("Week number out of range (0-53)"));
           }
           if (!have_woy) {
-            ClearBits(0, 53, res_run->woy);
+            ClearBits(0, 53, res_run->date_time_bitfield.woy);
             have_woy = true;
           }
           if (code < code2) {
-            SetBits(code, code2, res_run->woy);
+            SetBits(code, code2, res_run->date_time_bitfield.woy);
           } else {
-            SetBits(code, 53, res_run->woy);
-            SetBits(0, code2, res_run->woy);
+            SetBits(code, 53, res_run->date_time_bitfield.woy);
+            SetBits(0, code2, res_run->date_time_bitfield.woy);
           }
         } else {
           /*
@@ -654,63 +658,63 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
           }
           if (state == s_wday) {
             if (!have_wday) {
-              ClearBits(0, 6, res_run->wday);
+              ClearBits(0, 6, res_run->date_time_bitfield.wday);
               have_wday = true;
             }
             if (code < code2) {
-              SetBits(code, code2, res_run->wday);
+              SetBits(code, code2, res_run->date_time_bitfield.wday);
             } else {
-              SetBits(code, 6, res_run->wday);
-              SetBits(0, code2, res_run->wday);
+              SetBits(code, 6, res_run->date_time_bitfield.wday);
+              SetBits(0, code2, res_run->date_time_bitfield.wday);
             }
           } else if (state == s_month) {
             if (!have_month) {
-              ClearBits(0, 11, res_run->month);
+              ClearBits(0, 11, res_run->date_time_bitfield.month);
               have_month = true;
             }
             if (code < code2) {
-              SetBits(code, code2, res_run->month);
+              SetBits(code, code2, res_run->date_time_bitfield.month);
             } else {
               /*
                * This is a bit odd, but we accept it anyway
                */
-              SetBits(code, 11, res_run->month);
-              SetBits(0, code2, res_run->month);
+              SetBits(code, 11, res_run->date_time_bitfield.month);
+              SetBits(0, code2, res_run->date_time_bitfield.month);
             }
           } else {
             /*
              * Must be position
              */
             if (!have_wom) {
-              ClearBits(0, 4, res_run->wom);
+              ClearBits(0, 4, res_run->date_time_bitfield.wom);
               have_wom = true;
             }
             if (code < code2) {
-              SetBits(code, code2, res_run->wom);
+              SetBits(code, code2, res_run->date_time_bitfield.wom);
             } else {
-              SetBits(code, 4, res_run->wom);
-              SetBits(0, code2, res_run->wom);
+              SetBits(code, 4, res_run->date_time_bitfield.wom);
+              SetBits(0, code2, res_run->date_time_bitfield.wom);
             }
           }
         }
         break;
       case s_hourly:
         have_hour = true;
-        SetBits(0, 23, res_run->hour);
+        SetBits(0, 23, res_run->date_time_bitfield.hour);
         break;
       case s_weekly:
         have_mday = have_wom = have_woy = true;
-        SetBits(0, 30, res_run->mday);
-        SetBits(0, 4, res_run->wom);
-        SetBits(0, 53, res_run->woy);
+        SetBits(0, 30, res_run->date_time_bitfield.mday);
+        SetBits(0, 4, res_run->date_time_bitfield.wom);
+        SetBits(0, 53, res_run->date_time_bitfield.woy);
         break;
       case s_daily:
         have_mday = true;
-        SetBits(0, 6, res_run->wday);
+        SetBits(0, 6, res_run->date_time_bitfield.wday);
         break;
       case s_monthly:
         have_month = true;
-        SetBits(0, 11, res_run->month);
+        SetBits(0, 11, res_run->date_time_bitfield.month);
         break;
       default:
         scan_err0(lc, _("Unexpected run state\n"));

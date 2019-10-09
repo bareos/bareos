@@ -173,6 +173,7 @@ void intHandler(int) { exit(0); }
 static void InitEnvironment(int argc, char* argv[])
 {
   setlocale(LC_ALL, "");
+  tzset();
   bindtextdomain("bareos", LOCALEDIR);
   textdomain("bareos");
 

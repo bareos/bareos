@@ -32,8 +32,10 @@
 #include <vector>
 
 namespace directordaemon {
-
 bool DoReloadConfig() { return false; }
+}  // namespace directordaemon
+
+using namespace directordaemon;
 
 class ClientInitiatedReconnect : public ::testing::Test {
   void SetUp() override;
@@ -67,8 +69,8 @@ TEST_F(ClientInitiatedReconnect, find_all_jobs_for_client)
   EXPECT_EQ(jobs.size(), 4);
 
   EXPECT_TRUE(find(jobs, "backup-bareos-fd"));
-  EXPECT_TRUE(find(jobs, "backup-bareos-fd-reconnect"));
-  EXPECT_TRUE(find(jobs, "backup-bareos-fd-reconnect-2"));
+  EXPECT_TRUE(find(jobs, "backup-bareos-fd-connect"));
+  EXPECT_TRUE(find(jobs, "backup-bareos-fd-connect-2"));
   EXPECT_TRUE(find(jobs, "RestoreFiles"));
 }
 
@@ -77,13 +79,11 @@ TEST_F(ClientInitiatedReconnect, find_all_connect_interval_jobs_for_client)
   std::vector<JobResource*> jobs{GetAllJobResourcesByClientName("bareos-fd")};
 
   auto end = std::remove_if(jobs.begin(), jobs.end(), [](JobResource* job) {
-    return job->ScheduleOnClientConnectInterval == 0;
+    return job->RunOnIncomingConnectInterval == 0;
   });
   jobs.erase(end, jobs.end());
   EXPECT_EQ(jobs.size(), 2);
 
-  EXPECT_TRUE(find(jobs, "backup-bareos-fd-reconnect"));
-  EXPECT_TRUE(find(jobs, "backup-bareos-fd-reconnect-2"));
+  EXPECT_TRUE(find(jobs, "backup-bareos-fd-connect"));
+  EXPECT_TRUE(find(jobs, "backup-bareos-fd-connect-2"));
 }
-
-}  // namespace directordaemon

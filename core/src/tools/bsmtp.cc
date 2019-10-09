@@ -271,6 +271,7 @@ int main(int argc, char* argv[])
 #endif
 
   setlocale(LC_ALL, "en_US");
+  tzset();
   bindtextdomain("bareos", LOCALEDIR);
   textdomain("bareos");
 

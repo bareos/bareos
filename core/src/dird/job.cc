@@ -66,6 +66,7 @@
 #include "lib/edit.h"
 #include "lib/parse_bsr.h"
 #include "lib/parse_conf.h"
+#include "lib/thread_specific_data.h"
 #include "lib/tree.h"
 #include "lib/util.h"
 #include "lib/watchdog.h"
@@ -1923,4 +1924,12 @@ bool RunConsoleCommand(JobControlRecord* jcr, const char* cmd)
   FreeJcr(ljcr);
   return ok;
 }
+
+void ExecuteJob(JobControlRecord* jcr)
+{
+  RunJob(jcr);
+  FreeJcr(jcr);
+  SetJcrInThreadSpecificData(nullptr);
+}
+
 } /* namespace directordaemon */

@@ -120,6 +120,7 @@ int main(int argc, char* argv[])
   bool got_inc = false;
 
   setlocale(LC_ALL, "");
+  tzset();
   bindtextdomain("bareos", LOCALEDIR);
   textdomain("bareos");
   InitStackDump();

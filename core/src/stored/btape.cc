@@ -173,6 +173,7 @@ int main(int margc, char* margv[])
   DirectorResource* director = NULL;
 
   setlocale(LC_ALL, "");
+  tzset();
   bindtextdomain("bareos", LOCALEDIR);
   textdomain("bareos");
   InitStackDump();

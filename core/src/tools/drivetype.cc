@@ -80,6 +80,7 @@ int main(int argc, char* const* argv)
   char buf[16];
 
   setlocale(LC_ALL, "");
+  tzset();
   bindtextdomain("bareos", LOCALEDIR);
   textdomain("bareos");
 

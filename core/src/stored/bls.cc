@@ -120,6 +120,7 @@ int main(int argc, char* argv[])
   DirectorResource* director = NULL;
 
   setlocale(LC_ALL, "");
+  tzset();
   bindtextdomain("bareos", LOCALEDIR);
   textdomain("bareos");
   InitStackDump();

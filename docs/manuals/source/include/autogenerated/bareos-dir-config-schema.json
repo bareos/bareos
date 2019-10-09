@@ -1110,6 +1110,14 @@
           "equals": true,
           "versions": "16.2.4-",
           "description": "If \"AlwaysIncrementalMaxFullAge\" is configured, do not run more than \"MaxFullConsolidations\" consolidation jobs that include the Full backup."
+        },
+        "RunOnIncomingConnectInterval": {
+          "datatype": "TIME",
+          "code": 0,
+          "default_value": "0",
+          "equals": true,
+          "versions": "19.2.4-",
+          "description": "The interval specifies the time between the most recent successful backup (counting from start time) and the event of a client initiated connection. When this interval is exceeded the job is started automatically."
         }
       },
       "Job": {
@@ -1626,6 +1634,14 @@
           "equals": true,
           "versions": "16.2.4-",
           "description": "If \"AlwaysIncrementalMaxFullAge\" is configured, do not run more than \"MaxFullConsolidations\" consolidation jobs that include the Full backup."
+        },
+        "RunOnIncomingConnectInterval": {
+          "datatype": "TIME",
+          "code": 0,
+          "default_value": "0",
+          "equals": true,
+          "versions": "19.2.4-",
+          "description": "The interval specifies the time between the most recent successful backup (counting from start time) and the event of a client initiated connection. When this interval is exceeded the job is started automatically."
         }
       },
       "Storage": {
