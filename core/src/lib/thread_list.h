@@ -41,7 +41,7 @@ class ThreadList {
 
   bool CreateAndAddNewThread(ConfigurationParser* config, void* data);
   bool WaitUntilThreadListIsEmpty();
-  std::size_t GetSize() const;
+  std::size_t Size() const;
 
   ThreadList(const ThreadList& ohter) = delete;
   ThreadList(const ThreadList&& ohter) = delete;
