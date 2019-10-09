@@ -1,14 +1,14 @@
 #!/bin/sh
 #
 # This systemtest tests the plugin functionality 
-# of the Bareos FD by using the supplied module
-#   bareos-fd-local-fileset.py
+# of the Bareos DIR by using the module
+#   bareos-dir-test.py
 #
-# The module will backup some files.
-# This plugin is not intended for production,
-# but is only a minimal example that shows
-# how to use the python plugin interface.
-# File attributes like uses and times will not be saved.
+# This test will backup some files. While the 
+# backup some events of the director will be 
+# logged from the python module.
+# This testrunner will check if all events
+# have been logged.
 #
 TestName="$(basename "$(pwd)")"
 export TestName
@@ -43,15 +43,6 @@ status client
 status storage=File
 wait
 messages
-@#
-@# now do a restore
-@#
-@$out $tmp/log2.out
-wait
-restore client=bareos-fd fileset=PluginTest where=$tmp/bareos-restores select all done
-yes
-wait
-messages
 quit
 END_OF_DATA
 
@@ -59,7 +50,10 @@ run_bareos
 check_for_zombie_jobs storage=File
 stop_bareos
 
-check_two_logs
-list="$(find ${BackupDirectory} -type f)"
-check_restore_only_files_diff $list
+for i in bDirEventJobStart bDirEventJobInit bDirEventJobRun bDirEventJobEnd; do
+  if ! grep -q "$i" ${tmp}/test-plugin.log; then
+    set_error "Failed to find logged event $i"
+  fi
+done
+
 end_test

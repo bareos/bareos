@@ -6,8 +6,8 @@ Client {
   # if "Plugin Names" is defined, only the specified plugins will be loaded,
   # otherwise all filedaemon plugins (*-fd.so) from the "Plugin Directory".
   #
-  Plugin Directory = "@CMAKE_BINARY_DIR@/core/src/plugins/filed"
-  Plugin Names = "python"
+  # Plugin Directory = "@fd_plugin_binary_path@"
+  # Plugin Names = ""
 
   # if compatible is set to yes, we are compatible with bacula
   # if set to no, new bareos features are enabled which is the default
