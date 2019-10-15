@@ -1,8 +1,10 @@
 #!/bin/bash
 
-VERSION_H=../../../core/src/include/version.h
-if [ -f ${VERSION_H}  ]; then
-  grep "^#define VERSION" ${VERSION_H} | cut -b 17-  | sed 's/"//g'
+if type -p cmake3 >/dev/null 2>&1; then
+  cmake="$(type -p cmake3)"
 else
-  cd ../../ && dpkg-parsechangelog  | grep Version | cut -b 10-
+  cmake="$(type -p cmake)"
 fi
+
+pushd "$(dirname "$0")/../../.." >/dev/null
+"$cmake" -P get_version.cmake | sed -e 's/^-- //'
