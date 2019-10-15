@@ -2902,11 +2902,10 @@ static void HelpCmd()
 
 static void usage()
 {
+  kBareosVersion.printCopyright(stderr, 2000);
   fprintf(
       stderr,
-      _(PROG_COPYRIGHT
-        "\nVersion: %s (%s)\n\n"
-        "Usage: btape <options> <device_name>\n"
+      _("Usage: btape <options> <device_name>\n"
         "       -b <file>     specify bootstrap file\n"
         "       -c <path>     specify Storage configuration file or directory\n"
         "       -D <director> specify a director name specified in the "
@@ -2919,8 +2918,7 @@ static void usage()
         "       -s            turn off signals\n"
         "       -v            be verbose\n"
         "       -?            print this message.\n"
-        "\n"),
-      2000, VERSION, BDATE);
+        "\n"));
 }
 
 /**

@@ -20,7 +20,7 @@
 IF(NOT client-only)
 set(INCLUDE_FILES ../include/baconfig.h ../include/bareos.h
    ../include/bc_types.h ../include/config.h
-   ../include/jcr.h ../include/version.h
+   ../include/jcr.h version.h
    address_conf.h alist.h attr.h base64.h berrno.h
    bits.h bpipe.h breg.h bregex.h bstringlist.h bsock.h
    bsock_tcp.h btime.h btimers.h cbuf.h
@@ -78,7 +78,11 @@ set (BAREOSCFG_SRCS bareos_resource.cc configured_tls_policy_getter.cc ini.cc le
      res.cc qualified_resource_name_type_converter.cc)
 LIST(APPEND BAREOS_SRCS ${BAREOSCFG_SRCS})
 
-add_library(bareos SHARED ${BAREOS_SRCS})
+add_library(bareos SHARED ${BAREOS_SRCS} $<TARGET_OBJECTS:version-obj>)
+
+add_library(version-obj OBJECT version.c)
+target_compile_definitions(version-obj PRIVATE -DBAREOS_VERSION="${BAREOS_FULL_VERSION}" -DBAREOS_DATE="${DATE}" -DBAREOS_SHORT_DATE="${BAREOS_SHORT_DATE}" -DBAREOS_PROG_DATE_TIME="${BAREOS_PROG_DATE_TIME}" -DBAREOS_YEAR="${BAREOS_YEAR}")
+set_target_properties(version-obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 IF(HAVE_LIBDL)
   target_link_libraries(bareos dl)

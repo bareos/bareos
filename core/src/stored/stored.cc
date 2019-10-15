@@ -88,11 +88,10 @@ static bool foreground = 0;
 
 static void usage()
 {
+  kBareosVersion.printCopyright(stderr, 2000);
   fprintf(
       stderr,
-      _(PROG_COPYRIGHT
-        "\nVersion: %s (%s)\n\n"
-        "Usage: bareos-sd [options]\n"
+      _("Usage: bareos-sd [options]\n"
         "        -c <path>   use <path> as configuration file or directory\n"
         "        -d <nn>     set debug level to <nn>\n"
         "        -dt         print timestamp in debug output\n"
@@ -108,9 +107,7 @@ static void usage()
         "        -xs         print configuration file schema in JSON format "
         "and exit\n"
         "        -?          print this message.\n"
-        "\n"),
-      2000, VERSION, BDATE);
-
+        "\n"));
   exit(1);
 }
 

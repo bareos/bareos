@@ -72,11 +72,10 @@ static Session_Label sessrec;
 
 static void usage()
 {
+  kBareosVersion.printCopyright(stderr, 2002);
   fprintf(
       stderr,
-      _(PROG_COPYRIGHT
-        "\nVersion: %s (%s)\n\n"
-        "Usage: bcopy [-d debug_level] <input-archive> <output-archive>\n"
+      _("Usage: bcopy [-d debug_level] <input-archive> <output-archive>\n"
         "       -b bootstrap    specify a bootstrap file\n"
         "       -c <path>       specify a Storage configuration file or "
         "directory\n"
@@ -91,8 +90,7 @@ static void usage()
         "       -p              proceed inspite of errors\n"
         "       -v              verbose\n"
         "       -w <dir>        specify working directory (default /tmp)\n"
-        "       -?              print this message\n\n"),
-      2002, VERSION, BDATE);
+        "       -?              print this message\n\n"));
   exit(1);
 }
 

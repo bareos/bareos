@@ -1007,9 +1007,9 @@ static bool job_cmd(JobControlRecord* jcr)
 #endif
 
 #if !defined(IS_BUILD_ON_OBS)
-  return dir->fsend(OKjob, VERSION, LSMDATE, os_version, DISTNAME, DISTVER);
+  return dir->fsend(OKjob, kBareosVersion.Full, kBareosVersion.ShortDate, os_version, DISTNAME, DISTVER);
 #else
-  return dir->fsend(OKjob, VERSION, LSMDATE, os_version, DISTNAME, DISTVER,
+  return dir->fsend(OKjob, kBareosVersion.Full, kBareosVersion.ShortDate, os_version, DISTNAME, DISTVER,
                     OBS_DISTRIBUTION, OBS_ARCH);
 #endif
 }

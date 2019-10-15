@@ -53,6 +53,7 @@
  */
 
 #ifdef NDMOS_COMMON_SYNC_CONFIG_INFO
+#include "lib/version.h"
 /*
  * Get local info. Supports NDMPx_CONFIG_GET_HOST_INFO,
  * NDMP3_CONFIG_GET_SERVER_INFO, and NDMPx_CONFIG_GET_SCSI_INFO.
@@ -101,8 +102,8 @@ void ndmos_sync_config_info(struct ndm_session* sess)
   sess->config_info->product_name = (char*)NDMOS_CONST_PRODUCT_NAME;
 
   snprintf(revbuf, sizeof(revbuf), "%s LIB:%d.%d/%s OS:%s (%s)",
-           NDMOS_CONST_PRODUCT_REVISION, NDMJOBLIB_VERSION, NDMJOBLIB_RELEASE,
-           NDMOS_CONST_NDMJOBLIB_REVISION, NDMOS_CONST_NDMOS_REVISION, obuf);
+           kBareosVersion.Full, NDMJOBLIB_VERSION, NDMJOBLIB_RELEASE,
+           kBareosVersion.Full, NDMOS_CONST_NDMOS_REVISION, obuf);
 
   sess->config_info->revision_number = revbuf;
 

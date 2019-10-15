@@ -53,7 +53,6 @@ int debug_level = 0;                  /* debug level */
 bool dbg_timestamp = false;           /* print timestamp in debug output */
 bool prt_kaboom = false;              /* Print kaboom output */
 utime_t daemon_start_time = 0;        /* Daemon start time */
-const char* version = VERSION " (" BDATE ")";
 const char* dist_name = DISTNAME " " DISTVER;
 char my_name[128] = {0};   /* daemon name is stored here */
 char host_name[256] = {0}; /* host machine name */

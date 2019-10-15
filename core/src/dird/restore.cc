@@ -366,7 +366,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
     }
 
     if (jcr->impl->FDVersion < FD_VERSION_2) { /* Old FD */
-      break;                                    /* we do only one loop */
+      break;                                   /* we do only one loop */
     } else {
       if (!response(jcr, fd, OKstoreend, "Store end", DISPLAY_ERROR)) {
         goto bail_out;
@@ -564,14 +564,14 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
              "  SD termination status:  %s\n"
              "  Bareos binary info:     %s\n"
              "  Termination:            %s\n\n"),
-           BAREOS, my_name, VERSION, LSMDATE, HOST_OS, DISTNAME, DISTVER,
-           jcr->impl->jr.JobId, jcr->impl->jr.Job,
+           BAREOS, my_name, kBareosVersion.Full, kBareosVersion.ShortDate,
+           HOST_OS, DISTNAME, DISTVER, jcr->impl->jr.JobId, jcr->impl->jr.Job,
            jcr->impl->res.client->resource_name_, sdt, edt,
            edit_utime(RunTime, elapsed, sizeof(elapsed)),
            edit_uint64_with_commas((uint64_t)jcr->impl->ExpectedFiles, ec1),
            edit_uint64_with_commas((uint64_t)jcr->impl->jr.JobFiles, ec2),
            edit_uint64_with_commas(jcr->impl->jr.JobBytes, ec3), (float)kbps,
-           sd_term_msg, BAREOS_JOBLOG_MESSAGE, TermMsg);
+           sd_term_msg, kBareosVersion.JoblogMessage, TermMsg);
       break;
     default:
       if (me->secure_erase_cmdline) {
@@ -608,15 +608,15 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
              "%s"
              "  Bareos binary info:     %s\n"
              "  Termination:            %s\n\n"),
-           BAREOS, my_name, VERSION, LSMDATE, HOST_OS, DISTNAME, DISTVER,
-           jcr->impl->jr.JobId, jcr->impl->jr.Job,
+           BAREOS, my_name, kBareosVersion.Full, kBareosVersion.ShortDate,
+           HOST_OS, DISTNAME, DISTVER, jcr->impl->jr.JobId, jcr->impl->jr.Job,
            jcr->impl->res.client->resource_name_, sdt, edt,
            edit_utime(RunTime, elapsed, sizeof(elapsed)),
            edit_uint64_with_commas((uint64_t)jcr->impl->ExpectedFiles, ec1),
            edit_uint64_with_commas((uint64_t)jcr->impl->jr.JobFiles, ec2),
            edit_uint64_with_commas(jcr->impl->jr.JobBytes, ec3), (float)kbps,
            jcr->JobErrors, fd_term_msg, sd_term_msg,
-           secure_erase_status.c_str(), BAREOS_JOBLOG_MESSAGE, TermMsg);
+           secure_erase_status.c_str(), kBareosVersion.JoblogMessage, TermMsg);
       break;
   }
 }

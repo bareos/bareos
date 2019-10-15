@@ -587,9 +587,9 @@ void CreateVolumeLabel(Device* dev, const char* VolName, const char* PoolName)
   }
   bstrncpy(dev->VolHdr.LabelProg, my_name, sizeof(dev->VolHdr.LabelProg));
   snprintf(dev->VolHdr.ProgVersion, sizeof(dev->VolHdr.ProgVersion),
-           "Ver. %.32s %.12s", VERSION, BDATE);
-  snprintf(dev->VolHdr.ProgDate, sizeof(dev->VolHdr.ProgDate), "Build %s %s",
-           __DATE__, __TIME__);
+           "Ver. %.26s %.17s", kBareosVersion.Full, kBareosVersion.Date);
+  snprintf(dev->VolHdr.ProgDate, sizeof(dev->VolHdr.ProgDate), "Build %s",
+           kBareosVersion.ProgDateTime);
   dev->SetLabeled(); /* set has Bareos label */
   if (debug_level >= 90) { DumpVolumeLabel(dev); }
 }

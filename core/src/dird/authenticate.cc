@@ -229,7 +229,7 @@ bool AuthenticateFileDaemon(BareosSocket* fd, char* client_name)
     sleep(5);
     return false;
   }
-  fd->fsend("1000 OK: %s Version: %s (%s)\n", my_name, VERSION, BDATE);
+  fd->fsend("1000 OK: %s Version: %s (%s)\n", my_name, kBareosVersion.Full, kBareosVersion.Date);
 
   return true;
 }

@@ -88,10 +88,9 @@ static uint64_t fileAddr = 0; /* file write address */
 
 static void usage()
 {
+  kBareosVersion.printCopyright(stderr, 2000);
   fprintf(stderr,
-          _(PROG_COPYRIGHT
-            "\nVersion: %s (%s)\n\n"
-            "Usage: bextract <options> <bareos-archive-device-name> "
+          _("Usage: bextract <options> <bareos-archive-device-name> "
             "<directory-to-store-files>\n"
             "       -b <file>       specify a bootstrap file\n"
             "       -c <path>       specify a Storage configuration file or "
@@ -107,8 +106,7 @@ static void usage()
             "       -p              proceed inspite of I/O errors\n"
             "       -v              verbose\n"
             "       -V <volumes>    specify Volume names (separated by |)\n"
-            "       -?              print this message\n\n"),
-          2000, VERSION, BDATE);
+            "       -?              print this message\n\n"));
   exit(1);
 }
 

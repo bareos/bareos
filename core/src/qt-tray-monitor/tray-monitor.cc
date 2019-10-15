@@ -44,11 +44,10 @@ static QCoreApplication* app = nullptr;
 
 static void usage()
 {
-  QString out;
-
-  out = out.sprintf(
-      _(PROG_COPYRIGHT
-        "\nVersion: %s (%s) %s %s %s\n\n"
+  char copyright[500];
+  kBareosVersion.formatCopyright(copyright, 500, 2004);
+  QString out = QString::asprintf(
+      _("%s"
         "Usage: tray-monitor [options]\n"
         "        -c <path>   use <path> as configuration file or directory\n"
         "        -d <nn>     set debug level to <nn>\n"
@@ -60,7 +59,7 @@ static void usage()
         "and exit\n"
         "        -?          print this message.\n"
         "\n"),
-      2004, VERSION, BDATE, HOST_OS, DISTNAME, DISTVER);
+      copyright);
 
 #if HAVE_WIN32
   QMessageBox::information(0, "Help", out);

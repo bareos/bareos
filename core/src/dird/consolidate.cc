@@ -378,7 +378,7 @@ void ConsolidateCleanup(JobControlRecord* jcr, int TermCode)
   bstrftimes(edt, sizeof(edt), jcr->impl->jr.EndTime);
 
   Jmsg(jcr, msg_type, 0,
-       _("BAREOS " VERSION " (" LSMDATE "): %s\n"
+       _("BAREOS %s (%s): %s\n"
          "  JobId:                  %d\n"
          "  Job:                    %s\n"
          "  Scheduled time:         %s\n"
@@ -386,8 +386,9 @@ void ConsolidateCleanup(JobControlRecord* jcr, int TermCode)
          "  End time:               %s\n"
          "  Bareos binary info:     %s\n"
          "  Termination:            %s\n\n"),
-       edt, jcr->impl->jr.JobId, jcr->impl->jr.Job, schedt, sdt, edt,
-       BAREOS_JOBLOG_MESSAGE, TermMsg);
+       kBareosVersion.Full, kBareosVersion.ShortDate, edt, jcr->impl->jr.JobId,
+       jcr->impl->jr.Job, schedt, sdt, edt, kBareosVersion.JoblogMessage,
+       TermMsg);
 
   Dmsg0(debuglevel, "Leave ConsolidateCleanup()\n");
 }

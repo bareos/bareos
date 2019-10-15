@@ -137,11 +137,10 @@ static int num_restoreobjects = 0;
 
 static void usage()
 {
+  kBareosVersion.printCopyright(stderr, 2001);
   fprintf(
       stderr,
-      _(PROG_COPYRIGHT
-        "\nVersion: %s (%s)\n\n"
-        "Usage: bscan [ options ] <device-name>\n"
+      _("Usage: bscan [ options ] <device-name>\n"
         "       -B <drivername>   specify the database driver name (default "
         "NULL) <postgresql|mysql|sqlite3>\n"
         "       -b <bootstrap>    specify a bootstrap file\n"
@@ -171,8 +170,7 @@ static void usage()
         "configuration file)\n"
         "       -?                print this message\n\n"
         "example:\n"
-        "bscan -B postgresql -V Full-0001 FileStorage\n"),
-      2001, VERSION, BDATE, backend_directory);
+        "bscan -B postgresql -V Full-0001 FileStorage\n"));
   exit(1);
 }
 
@@ -1459,7 +1457,7 @@ static bool UpdateJobRecord(BareosDb* db,
            edit_uint64_with_commas(mjcr->JobFiles, ec1),
            edit_uint64_with_commas(mjcr->JobBytes, ec2), mjcr->VolSessionId,
            mjcr->VolSessionTime, edit_uint64_with_commas(mr.VolBytes, ec3),
-           BAREOS_BINARY_INFO, TermMsg);
+           kBareosVersion.BinaryInfo, TermMsg);
   }
   FreeJcr(mjcr);
 

@@ -343,7 +343,7 @@ bool BareosSocket::ConsoleAuthenticateWithDirector(
 
   dir->StartTimer(60 * 5); /* 5 minutes */
   dir->InitBnetDump(own_qualified_name);
-  dir->fsend("Hello %s calling version %s\n", bashed_name, VERSION);
+  dir->fsend("Hello %s calling version %s\n", bashed_name, kBareosVersion.Full);
 
   if (!AuthenticateOutboundConnection(jcr, own_qualified_name, identity,
                                       password, tls_resource)) {
