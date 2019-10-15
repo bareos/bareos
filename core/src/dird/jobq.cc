@@ -37,6 +37,7 @@
 #include "dird/jobq.h"
 #include "dird/storage.h"
 #include "lib/berrno.h"
+#include "lib/thread_specific_data.h"
 
 namespace directordaemon {
 
@@ -165,7 +166,7 @@ extern "C" void* sched_wait(void* arg)
   JobControlRecord* jcr = ((wait_pkt*)arg)->jcr;
   jobq_t* jq = ((wait_pkt*)arg)->jq;
 
-  SetJcrInTsd(INVALID_JCR);
+  SetJcrInThreadSpecificData(nullptr);
   Dmsg0(2300, "Enter sched_wait.\n");
   free(arg);
   time_t wtime = jcr->sched_time - time(NULL);
@@ -260,7 +261,7 @@ int JobqAdd(jobq_t* jq, JobControlRecord* jcr)
   /*
    * While waiting in a queue this job is not attached to a thread
    */
-  SetJcrInTsd(INVALID_JCR);
+  SetJcrInThreadSpecificData(nullptr);
   if (JobCanceled(jcr)) {
     /*
      * Add job to ready queue so that it is canceled quickly
@@ -384,7 +385,7 @@ extern "C" void* jobq_server(void* arg)
   bool timedout = false;
   bool work = true;
 
-  SetJcrInTsd(INVALID_JCR);
+  SetJcrInThreadSpecificData(nullptr);
   Dmsg0(2300, "Start jobq_server\n");
   P(jq->mutex);
 
@@ -445,7 +446,7 @@ extern "C" void* jobq_server(void* arg)
        * Attach jcr to this thread while we run the job
        */
       jcr->SetKillable(true);
-      SetJcrInTsd(jcr);
+      SetJcrInThreadSpecificData(jcr);
       Dmsg1(2300, "Took jobid=%d from ready and appended to run\n", jcr->JobId);
 
       /*
@@ -463,7 +464,7 @@ extern "C" void* jobq_server(void* arg)
       /*
        * Job finished detach from thread
        */
-      RemoveJcrFromTsd(je->jcr);
+      RemoveJcrFromThreadSpecificData(je->jcr);
       je->jcr->SetKillable(false);
 
       Dmsg2(2300, "Back from user engine jobid=%d use=%d.\n", jcr->JobId,

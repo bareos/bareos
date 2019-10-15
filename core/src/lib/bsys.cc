@@ -30,11 +30,15 @@
 
 #include "include/bareos.h"
 #include "lib/berrno.h"
+#include "lib/recent_job_results_list.h"
 #ifndef HAVE_REGEX_H
 #include "lib/bregex.h"
 #else
 #include <regex.h>
 #endif
+
+#include <fstream>
+#include <type_traits>
 
 static pthread_mutex_t timer_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t timer = PTHREAD_COND_INITIALIZER;
@@ -518,115 +522,146 @@ int DeletePidFile(char* dir, const char* progname, int port)
   return 1;
 }
 
-struct s_state_hdr {
+struct StateFileHeader {
   char id[14];
   int32_t version;
   uint64_t last_jobs_addr;
-  uint64_t reserved[20];
+  uint64_t end_of_recent_job_results_list;
+  uint64_t reserved[19];
 };
 
-static struct s_state_hdr state_hdr = {"Bareos State\n", 4, 0};
+static struct StateFileHeader state_hdr = {{"Bareos State\n"}, 4, 0, 0, {0}};
 
-/*
- * Open and read the state file for the daemon
- */
-void ReadStateFile(char* dir, const char* progname, int port)
+static bool CheckHeader(const StateFileHeader& hdr)
 {
-  int sfd;
-  ssize_t status;
-  bool ok = false;
-  POOLMEM* fname = GetPoolMemory(PM_FNAME);
-  struct s_state_hdr hdr;
-  int hdr_size = sizeof(hdr);
-
-  Mmsg(fname, "%s/%s.%d.state", dir, progname, port);
-  /*
-   * If file exists, see what we have
-   */
-  if ((sfd = open(fname, O_RDONLY | O_BINARY)) < 0) {
-    BErrNo be;
-    Dmsg3(010, "Could not open state file. sfd=%d size=%d: ERR=%s\n", sfd,
-          sizeof(hdr), be.bstrerror());
-    goto bail_out;
-  }
-  if ((status = read(sfd, &hdr, hdr_size)) != hdr_size) {
-    BErrNo be;
-    Dmsg4(010, "Could not read state file. sfd=%d status=%d size=%d: ERR=%s\n",
-          sfd, (int)status, hdr_size, be.bstrerror());
-    goto bail_out;
-  }
   if (hdr.version != state_hdr.version) {
-    Dmsg2(010, "Bad hdr version. Wanted %d got %d\n", state_hdr.version,
+    Dmsg2(100, "Bad hdr version. Wanted %d got %d\n", state_hdr.version,
           hdr.version);
-    goto bail_out;
-  }
-  hdr.id[13] = 0;
-  if (!bstrcmp(hdr.id, state_hdr.id)) {
-    Dmsg0(000, "State file header id invalid.\n");
-    goto bail_out;
+    return false;
   }
 
-  if (!ReadLastJobsList(sfd, hdr.last_jobs_addr)) { goto bail_out; }
-  ok = true;
-bail_out:
-  if (sfd >= 0) { close(sfd); }
-
-  if (!ok) { SecureErase(NULL, fname); }
-
-  FreePoolMemory(fname);
+  if (strncmp(hdr.id, state_hdr.id, sizeof(hdr.id))) {
+    Dmsg0(100, "State file header id invalid.\n");
+    return false;
+  }
+  return true;
 }
 
-/*
- * Write the state file
- */
-static pthread_mutex_t state_mutex = PTHREAD_MUTEX_INITIALIZER;
+class SecureEraseGuard {
+  std::string filename;
+  bool cleanup = true;
+
+ public:
+  SecureEraseGuard(const std::string& fname_in) : filename(fname_in) {}
+  ~SecureEraseGuard()
+  {
+    if (cleanup) { SecureErase(nullptr, filename.c_str()); }
+  }
+  void Release() { cleanup = false; }
+};
+
+static std::string CreateFileNameFrom(char* dir, const char* progname, int port)
+{
+  int amount = snprintf(nullptr, 0, "%s/%s.%d.state", dir, progname, port) + 1;
+  std::vector<char> filename(amount);
+  snprintf(filename.data(), amount, "%s/%s.%d.state", dir, progname, port);
+  return std::string(filename.data());
+}
+
+void ReadStateFile(char* dir, const char* progname, int port)
+{
+  std::string filename = CreateFileNameFrom(dir, progname, port);
+  SecureEraseGuard secure_erase_guard(filename.data());
+
+#if defined HAVE_IS_TRIVIALLY_COPYABLE
+  static_assert(std::is_trivially_copyable<StateFileHeader>::value,
+                "StateFileHeader must be trivially copyable");
+#endif
+
+  struct StateFileHeader hdr {
+    {0}, 0, 0, 0, { 0 }
+  };
+
+  std::ifstream file;
+  file.exceptions(file.exceptions() | std::ios::failbit | std::ios::badbit);
+
+  try {
+    file.open(filename, std::ios::binary);
+    file.read(reinterpret_cast<char*>(&hdr), sizeof(StateFileHeader));
+    if (!CheckHeader(hdr)) { return; }
+    if (hdr.last_jobs_addr) {
+      Dmsg1(100, "ReadStateFile seek to %d\n", (int)hdr.last_jobs_addr);
+      file.seekg(hdr.last_jobs_addr);
+    }
+  } catch (const std::system_error& e) {
+    BErrNo be;
+    Dmsg3(100, "Could not open and read state file. size=%d: ERR=%s - %s\n",
+          sizeof(StateFileHeader), be.bstrerror(), e.code().message().c_str());
+    return;
+  } catch (const std::exception& e) {
+    Dmsg0(100, "Could not open or read file. Some error occurred: %s\n",
+          e.what());
+  }
+
+  if (!RecentJobResultsList::ImportFromFile(file)) { return; }
+
+  secure_erase_guard.Release();
+}
+
+static void SafeTheLastWritePosition(std::ofstream& file, uint64_t pos)
+{
+  std::streampos position_after_export = file.tellp();
+
+  pos = (position_after_export == static_cast<std::streampos>(-1))
+            ? static_cast<std::streampos>(0)
+            : position_after_export;
+}
 
 void WriteStateFile(char* dir, const char* progname, int port)
 {
-  int sfd;
-  bool ok = false;
-  POOLMEM* fname = GetPoolMemory(PM_FNAME);
+  std::string filename = CreateFileNameFrom(dir, progname, port);
 
-  P(state_mutex); /* Only one job at a time can call here */
-  Mmsg(fname, "%s/%s.%d.state", dir, progname, port);
+#if defined HAVE_IS_TRIVIALLY_COPYABLE
+  static_assert(std::is_trivially_copyable<StateFileHeader>::value,
+                "StateFileHeader must be trivially copyable");
+#endif
 
-  /*
-   * Create new state file
-   */
-  SecureErase(NULL, fname);
-  if ((sfd = open(fname, O_CREAT | O_WRONLY | O_BINARY, 0640)) < 0) {
+  SecureErase(NULL, filename.c_str());
+
+  SecureEraseGuard erase_on_scope_exit(filename);
+  static std::mutex exclusive_write_access_mutex;
+  std::lock_guard<std::mutex> m(exclusive_write_access_mutex);
+
+  std::ofstream file;
+  file.exceptions(file.exceptions() | std::ios::failbit | std::ios::badbit);
+
+  try {
+    file.open(filename, std::ios::binary);
+    file.write(reinterpret_cast<char*>(&state_hdr), sizeof(StateFileHeader));
+
+    state_hdr.last_jobs_addr = sizeof(StateFileHeader);
+
+    Dmsg1(100, "write_last_jobs seek to %d\n", (int)state_hdr.last_jobs_addr);
+    file.seekp(state_hdr.last_jobs_addr);
+
+    if (RecentJobResultsList::ExportToFile(file)) {
+      SafeTheLastWritePosition(file, state_hdr.end_of_recent_job_results_list);
+    }
+
+    file.seekp(0);
+    file.write(reinterpret_cast<char*>(&state_hdr), sizeof(StateFileHeader));
+  } catch (const std::system_error& e) {
     BErrNo be;
-    Emsg2(M_ERROR, 0, _("Could not create state file. %s ERR=%s\n"), fname,
-          be.bstrerror());
-    goto bail_out;
+    Dmsg3(100, "Could not seek filepointer. ERR=%s - %s\n",
+          sizeof(StateFileHeader), be.bstrerror(), e.code().message().c_str());
+    return;
+  } catch (const std::exception& e) {
+    Dmsg0(100, "Could not seek filepointer. Some error occurred: %s\n",
+          e.what());
+    return;
   }
 
-  if (write(sfd, &state_hdr, sizeof(state_hdr)) != sizeof(state_hdr)) {
-    BErrNo be;
-    Dmsg1(000, "Write hdr error: ERR=%s\n", be.bstrerror());
-    goto bail_out;
-  }
-
-  state_hdr.last_jobs_addr = sizeof(state_hdr);
-  state_hdr.reserved[0] = WriteLastJobsList(sfd, state_hdr.last_jobs_addr);
-  if (lseek(sfd, 0, SEEK_SET) < 0) {
-    BErrNo be;
-    Dmsg1(000, "lseek error: ERR=%s\n", be.bstrerror());
-    goto bail_out;
-  }
-
-  if (write(sfd, &state_hdr, sizeof(state_hdr)) != sizeof(state_hdr)) {
-    BErrNo be;
-    Pmsg1(000, _("Write final hdr error: ERR=%s\n"), be.bstrerror());
-    goto bail_out;
-  }
-  ok = true;
-bail_out:
-  if (sfd >= 0) { close(sfd); }
-
-  if (!ok) { SecureErase(NULL, fname); }
-  V(state_mutex);
-  FreePoolMemory(fname);
+  erase_on_scope_exit.Release();
 }
 
 /* BSDI does not have this.  This is a *poor* simulation */

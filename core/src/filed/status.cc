@@ -35,6 +35,7 @@
 #include "lib/status.h"
 #include "lib/bsock.h"
 #include "lib/edit.h"
+#include "lib/recent_job_results_list.h"
 #include "findlib/enable_priv.h"
 #include "lib/util.h"
 
@@ -312,7 +313,6 @@ static void ListRunningJobs(StatusPacket* sp)
 static void ListTerminatedJobs(StatusPacket* sp)
 {
   int len;
-  struct s_last_job* je;
   PoolMem msg(PM_MESSAGE);
   char level[10], dt[MAX_TIME_LENGTH], b1[30], b2[30];
 
@@ -321,15 +321,13 @@ static void ListTerminatedJobs(StatusPacket* sp)
     sendit(msg, len, sp);
   }
 
-  if (last_jobs->size() == 0) {
+  if (RecentJobResultsList::Count() == 0) {
     if (!sp->api) {
       len = PmStrcpy(msg, _("====\n"));
       sendit(msg, len, sp);
     }
     return;
   }
-
-  LockLastJobsList();
 
   if (!sp->api) {
     len = PmStrcpy(msg, _(" JobId  Level    Files      Bytes   Status   "
@@ -340,25 +338,26 @@ static void ListTerminatedJobs(StatusPacket* sp)
     sendit(msg, len, sp);
   }
 
-  foreach_dlist (je, last_jobs) {
+  for (const RecentJobResultsList::JobResult& je :
+       RecentJobResultsList::Get()) {
     char* p;
     char JobName[MAX_NAME_LENGTH];
     const char* termstat;
 
-    bstrftime_nc(dt, sizeof(dt), je->end_time);
+    bstrftime_nc(dt, sizeof(dt), je.end_time);
 
-    switch (je->JobType) {
+    switch (je.JobType) {
       case JT_ADMIN:
       case JT_RESTORE:
         bstrncpy(level, "    ", sizeof(level));
         break;
       default:
-        bstrncpy(level, JobLevelToString(je->JobLevel), sizeof(level));
+        bstrncpy(level, JobLevelToString(je.JobLevel), sizeof(level));
         level[4] = 0;
         break;
     }
 
-    switch (je->JobStatus) {
+    switch (je.JobStatus) {
       case JS_Created:
         termstat = _("Created");
         break;
@@ -379,7 +378,7 @@ static void ListTerminatedJobs(StatusPacket* sp)
         termstat = _("Other");
         break;
     }
-    bstrncpy(JobName, je->Job, sizeof(JobName));
+    bstrncpy(JobName, je.Job, sizeof(JobName));
 
     /*
      * There are three periods after the Job name
@@ -389,20 +388,18 @@ static void ListTerminatedJobs(StatusPacket* sp)
     }
 
     if (sp->api) {
-      len = Mmsg(msg, _("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je->JobId,
-                 level, edit_uint64_with_commas(je->JobFiles, b1),
-                 edit_uint64_with_suffix(je->JobBytes, b2), termstat, dt,
-                 JobName);
+      len =
+          Mmsg(msg, _("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je.JobId,
+               level, edit_uint64_with_commas(je.JobFiles, b1),
+               edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt, JobName);
     } else {
-      len = Mmsg(msg, _("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"), je->JobId,
-                 level, edit_uint64_with_commas(je->JobFiles, b1),
-                 edit_uint64_with_suffix(je->JobBytes, b2), termstat, dt,
-                 JobName);
+      len =
+          Mmsg(msg, _("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"), je.JobId, level,
+               edit_uint64_with_commas(je.JobFiles, b1),
+               edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt, JobName);
     }
     sendit(msg, len, sp);
   }
-
-  UnlockLastJobsList();
 
   if (!sp->api) {
     len = PmStrcpy(msg, _("====\n"));
@@ -451,7 +448,6 @@ bool QstatusCmd(JobControlRecord* jcr)
   BareosSocket* dir = jcr->dir_bsock;
   POOLMEM* cmd;
   JobControlRecord* njcr;
-  s_last_job* job;
   StatusPacket sp;
 
   sp.bs = dir;
@@ -477,9 +473,10 @@ bool QstatusCmd(JobControlRecord* jcr)
     endeach_jcr(njcr);
   } else if (bstrcmp(cmd, "last")) {
     dir->fsend(OKqstatus, cmd);
-    if ((last_jobs) && (last_jobs->size() > 0)) {
-      job = (s_last_job*)last_jobs->last();
-      dir->fsend(DotStatusJob, job->JobId, job->JobStatus, job->Errors);
+    if (RecentJobResultsList::Count() > 0) {
+      RecentJobResultsList::JobResult job =
+          RecentJobResultsList::GetMostRecentJobResult();
+      dir->fsend(DotStatusJob, job.JobId, job.JobStatus, job.Errors);
     }
   } else if (Bstrcasecmp(cmd, "header")) {
     sp.api = true;
@@ -552,56 +549,4 @@ static const char* JobLevelToString(int level)
   return str;
 }
 
-
-#if defined(HAVE_WIN32)
-int bareosstat = 0;
-
-/**
- * Put message in Window List Box
- */
-char* bareos_status(char* buf, int buf_len)
-{
-  JobControlRecord* njcr;
-  const char* termstat = _("Bareos Client: Idle");
-  struct s_last_job* job;
-  int status = 0; /* Idle */
-
-  if (!last_jobs) { goto done; }
-  Dmsg0(1000, "Begin bareos_status jcr loop.\n");
-  foreach_jcr (njcr) {
-    if (njcr->JobId != 0) {
-      status = JS_Running;
-      termstat = _("Bareos Client: Running");
-      break;
-    }
-  }
-  endeach_jcr(njcr);
-
-  if (status != 0) { goto done; }
-  if (last_jobs->size() > 0) {
-    job = (struct s_last_job*)last_jobs->last();
-    status = job->JobStatus;
-    switch (job->JobStatus) {
-      case JS_Canceled:
-        termstat = _("Bareos Client: Last Job Canceled");
-        break;
-      case JS_ErrorTerminated:
-      case JS_FatalError:
-        termstat = _("Bareos Client: Last Job Failed");
-        break;
-      default:
-        if (job->Errors) {
-          termstat = _("Bareos Client: Last Job had Warnings");
-        }
-        break;
-    }
-  }
-  Dmsg0(1000, "End bareos_status jcr loop.\n");
-done:
-  bareosstat = status;
-  if (buf) { bstrncpy(buf, termstat, buf_len); }
-  return buf;
-}
-
-#endif /* HAVE_WIN32 */
 } /* namespace filedaemon */

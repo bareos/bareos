@@ -31,6 +31,7 @@
 #ifndef BAREOS_LIB_BTIMERS_H_
 #define BAREOS_LIB_BTIMERS_H_
 
+#include "lib/timer_thread.h"
 #include "lib/watchdog.h"
 
 class BareosSocket;

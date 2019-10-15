@@ -37,9 +37,11 @@
 #include "lib/bsock.h"
 #include "lib/util.h"
 #include "lib/watchdog.h"
+#include "lib/recent_job_results_list.h"
 #include "lib/messages_resource.h"
 #include "lib/message_destination_info.h"
 #include "lib/message_queue_item.h"
+#include "lib/thread_specific_data.h"
 
 static db_log_insert_func p_db_log_insert = NULL;
 
@@ -218,13 +220,12 @@ void InitMsg(JobControlRecord* jcr,
   int i;
 
   if (jcr == NULL && msg == NULL) {
-    InitLastJobsList();
     /*
      * Setup a daemon key then set invalid jcr
      * Maybe we should give the daemon a jcr???
      */
-    setup_tsd_key();
-    SetJcrInTsd(INVALID_JCR);
+    SetupThreadSpecificDataKey();
+    SetJcrInThreadSpecificData(nullptr);
   }
 
   message_job_code_callback = job_code_callback;
@@ -520,7 +521,8 @@ void TermMsg()
     free(catalog_db);
     catalog_db = NULL;
   }
-  TermLastJobsList();
+  RecentJobResultsList::Cleanup();
+  CleanupJcrChain();
 }
 
 static inline bool OpenDestFile(JobControlRecord* jcr,
@@ -671,7 +673,7 @@ void DispatchMessage(JobControlRecord* jcr, int type, utime_t mtime, char* msg)
    * Now figure out where to send the message
    */
   msgs = NULL;
-  if (!jcr) { jcr = get_jcr_from_tsd(); }
+  if (!jcr) { jcr = GetJcrFromThreadSpecificData(); }
 
   if (jcr) {
     /*
@@ -1013,7 +1015,7 @@ void d_msg(const char* file, int line, int level, const char* fmt, ...)
 
     if (details) {
       Mmsg(buf, "%s (%d): %s:%d-%u ", my_name, level, get_basename(file), line,
-           GetJobidFromTsd());
+           GetJobIdFromThreadSpecificData());
     }
 
     while (1) {
@@ -1097,7 +1099,7 @@ void p_msg(const char* file, int line, int level, const char* fmt, ...)
 
   if (level >= 0) {
     Mmsg(buf, "%s: %s:%d-%u ", my_name, get_basename(file), line,
-         GetJobidFromTsd());
+         GetJobIdFromThreadSpecificData());
   }
 
   while (1) {
@@ -1133,7 +1135,7 @@ void p_msg_fb(const char* file, int line, int level, const char* fmt, ...)
 
   if (level >= 0) {
     len = Bsnprintf(buf, sizeof(buf), "%s: %s:%d-%u ", my_name,
-                    get_basename(file), line, GetJobidFromTsd());
+                    get_basename(file), line, GetJobIdFromThreadSpecificData());
   }
 
   va_start(arg_ptr, fmt);
@@ -1173,7 +1175,7 @@ void t_msg(const char* file, int line, int level, const char* fmt, ...)
 
     if (details) {
       Mmsg(buf, "%s: %s:%d-%u ", my_name, get_basename(file), line,
-           GetJobidFromTsd());
+           GetJobIdFromThreadSpecificData());
     }
 
     while (1) {
@@ -1343,7 +1345,7 @@ void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
   }
 
   msgs = NULL;
-  if (!jcr) { jcr = get_jcr_from_tsd(); }
+  if (!jcr) { jcr = GetJcrFromThreadSpecificData(); }
 
   if (jcr) {
     /*
@@ -1595,7 +1597,7 @@ void Qmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
   item->mtime_ = time(NULL);
   item->msg_ = buf.c_str();
 
-  if (!jcr) { jcr = get_jcr_from_tsd(); }
+  if (!jcr) { jcr = GetJcrFromThreadSpecificData(); }
 
   /*
    * If no jcr  or no JobId or no queue or dequeuing send to syslog

@@ -53,14 +53,14 @@ set (BAREOS_SRCS  address_conf.cc alist.cc attr.cc attribs.cc backtrace.cc base6
    connection_pool.cc cram_md5.cc crypto.cc  crypto_cache.cc
    crypto_none.cc crypto_nss.cc  crypto_openssl.cc crypto_wrap.cc daemon.cc
    devlock.cc dlist.cc  edit.cc fnmatch.cc guid_to_name.cc hmac.cc htable.cc
-   jcr.cc json.cc  lockmgr.cc md5.cc mem_pool.cc message.cc messages_resource.cc
+   jcr.cc json.cc lockmgr.cc md5.cc mem_pool.cc message.cc messages_resource.cc
    mntent_cache.cc output_formatter.cc passphrase.cc path_list.cc plugins.cc
-   bpoll.cc  priv.cc
+   bpoll.cc  priv.cc recent_job_results_list.cc
    queue.cc rblist.cc runscript.cc rwlock.cc scan.cc scsi_crypto.cc  scsi_lli.cc
-   serial.cc sha1.cc signal.cc thread_list.cc tls.cc
+   serial.cc sha1.cc signal.cc thread_list.cc thread_specific_data.cc timer_thread.cc tls.cc
    tls_conf.cc tls_openssl.cc
    tls_openssl_crl.cc tls_openssl_private.cc tree.cc  try_tls_handshake_as_a_server.cc
-   compression.cc util.cc var.cc watchdog.cc)
+   compression.cc util.cc var.cc watchdog.cc watchdog_timer.cc)
 
 IF(HAVE_WIN32)
    LIST(APPEND BAREOS_SRCS

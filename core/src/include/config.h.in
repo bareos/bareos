@@ -439,6 +439,9 @@
 // Define to 1 if you are running IRIX
 #cmakedefine HAVE_IRIX_OS @HAVE_IRIX_OS@
 
+// Define HAVE_IS_TRIVIALLY_COPYABLE if compiler has type trait is_trivially_copyable
+#cmakedefine HAVE_IS_TRIVIALLY_COPYABLE
+
 // Define to 1 if you have jansson lib
 #cmakedefine HAVE_JANSSON @HAVE_JANSSON@
 

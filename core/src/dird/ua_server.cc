@@ -42,6 +42,7 @@
 #include "dird/ua_server.h"
 #include "lib/bnet.h"
 #include "lib/parse_conf.h"
+#include "lib/thread_specific_data.h"
 
 
 namespace directordaemon {
@@ -87,7 +88,7 @@ void* HandleUserAgentClientRequest(BareosSocket* user_agent_socket)
 
   UaContext* ua = new_ua_context(jcr);
   ua->UA_sock = user_agent_socket;
-  SetJcrInTsd(INVALID_JCR);
+  SetJcrInThreadSpecificData(nullptr);
 
   bool success = AuthenticateConsole(ua);
 

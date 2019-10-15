@@ -25,6 +25,7 @@
 #include "include/make_unique.h"
 #include "lib/berrno.h"
 #include "lib/bsock.h"
+#include "lib/thread_specific_data.h"
 
 #include <algorithm>
 #include <condition_variable>
@@ -121,7 +122,7 @@ struct CleanupOwnThreadAndNotify {
 
 static void WorkerThread(std::unique_ptr<ThreadListItem> item, ThreadList* t)
 {
-  SetJcrInTsd(INVALID_JCR);
+  SetJcrInThreadSpecificData(nullptr);
 
   item->ThreadInvokedHandler_(item->config_, item->data_);
 

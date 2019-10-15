@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,11 +18,17 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef BAREOS_LIB_BSIGNAL_H_
-#define BAREOS_LIB_BSIGNAL_H_
 
-void InitSignals(void Terminate(int sig));
-void InitStackDump(void);
-void SetTimeoutHandler();
+#include <type_traits>
 
-#endif  // BAREOS_LIB_BSIGNAL_H_
+struct should_be_trivially_copyable {
+  int i;
+  int j;
+};
+
+int main()
+{
+  static_assert(
+      std::is_trivially_copyable<should_be_trivially_copyable>::value);
+  return 0;
+}

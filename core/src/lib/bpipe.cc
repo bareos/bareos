@@ -407,7 +407,6 @@ int RunProgramFullOutput(char* prog, int wait, POOLMEM*& results)
   const int bufsize = 32000;
 
 
-
   tmp = GetPoolMemory(PM_MESSAGE);
   buf = (char*)malloc(bufsize + 1);
 

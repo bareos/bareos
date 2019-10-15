@@ -46,6 +46,7 @@
 #include "lib/bnet.h"
 #include "lib/edit.h"
 #include "lib/util.h"
+#include "lib/thread_specific_data.h"
 #include "lib/watchdog.h"
 
 namespace directordaemon {
@@ -409,7 +410,7 @@ extern "C" void* msg_thread(void* arg)
   uint64_t JobBytes;
 
   pthread_detach(pthread_self());
-  SetJcrInTsd(jcr);
+  SetJcrInThreadSpecificData(jcr);
   jcr->SD_msg_chan = pthread_self();
   jcr->SD_msg_chan_started = true;
   pthread_cleanup_push(MsgThreadCleanup, arg);

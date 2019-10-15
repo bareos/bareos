@@ -67,14 +67,13 @@
 #include "lib/edit.h"
 #include "lib/parse_bsr.h"
 #include "lib/parse_conf.h"
+#include "lib/thread_specific_data.h"
 #include "lib/util.h"
 #include "lib/watchdog.h"
 #include "lib/qualified_resource_name_type_converter.h"
 #include "include/jcr.h"
 
 /* Imported variables */
-extern struct s_last_job last_job;
-
 extern void terminate_child();
 
 namespace storagedaemon {
@@ -277,7 +276,7 @@ void* HandleDirectorConnection(BareosSocket* dir)
 
   Dmsg0(1000, "stored in start_job\n");
 
-  SetJcrInTsd(jcr);
+  SetJcrInThreadSpecificData(jcr);
 
   /*
    * Authenticate the Director

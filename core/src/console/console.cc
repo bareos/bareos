@@ -891,7 +891,6 @@ int main(int argc, char* argv[])
   bool test_config = false;
   bool export_config = false;
   bool export_config_schema = false;
-  JobControlRecord jcr;
   PoolMem history_file;
 
   setlocale(LC_ALL, "");
@@ -1047,8 +1046,6 @@ int main(int argc, char* argv[])
     exit(0);
   }
 
-  memset(&jcr, 0, sizeof(jcr));
-
   (void)WSA_Init(); /* Initialize Windows sockets */
 
   StartWatchdog(); /* Start socket watchdog */
@@ -1072,6 +1069,7 @@ int main(int argc, char* argv[])
   uint32_t response_id;
   BStringList response_args;
 
+  JobControlRecord jcr;
   UA_sock = ConnectToDirector(jcr, heart_beat, response_args, response_id);
   if (!UA_sock) {
     ConsoleOutput(_("Failed to connect to Director. Giving up.\n"));

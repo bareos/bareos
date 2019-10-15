@@ -36,6 +36,7 @@
 #include "lib/berrno.h"
 #include "lib/bnet_server_tcp.h"
 #include "lib/thread_list.h"
+#include "lib/thread_specific_data.h"
 #include "lib/try_tls_handshake_as_a_server.h"
 
 #include <atomic>
@@ -74,11 +75,6 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
   char name[MAX_NAME_LENGTH];
   char tbuf[MAX_TIME_LENGTH];
   int fd_protocol_version = 0;
-
-  JobControlRecord jcr;
-  memset(&jcr, 0, sizeof(JobControlRecord));
-
-  jcr.ua = bs;
 
   if (!TryTlsHandshakeAsAServer(bs, config)) {
     bs->signal(BNET_TERMINATE);
@@ -137,7 +133,7 @@ static void* UserAgentShutdownCallback(void* bsock)
 
 extern "C" void* connect_thread(void* arg)
 {
-  SetJcrInTsd(INVALID_JCR);
+  SetJcrInThreadSpecificData(nullptr);
 
   /*
    * Permit MaxConnections connections.

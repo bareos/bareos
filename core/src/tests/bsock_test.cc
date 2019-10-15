@@ -187,7 +187,6 @@ static bool connect_to_server(std::string console_name,
   utime_t heart_beat = 0;
 
   JobControlRecord jcr;
-  memset(&jcr, 0, sizeof(jcr));
 
   char* name = (char*)console_name.c_str();
 
@@ -236,7 +235,10 @@ static bool connect_to_server(std::string console_name,
     }
   }
   if (success) { clone_a_client_socket(UA_sock); }
-  if (UA_sock) { UA_sock->close(); }
+  if (UA_sock) {
+    UA_sock->close();
+    jcr.dir_bsock = nullptr;
+  }
   return success;
 }
 

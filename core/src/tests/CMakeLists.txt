@@ -311,7 +311,7 @@ target_link_libraries(thread_list
 
 gtest_discover_tests(thread_list TEST_PREFIX gtest:)
 
-####### ua_available_resources_equals_config_resources  #####################################
+####### ua_available_resources_equals_config_resources  ###########
 add_executable(show_cmd_available_resources_equals_config_resources show_cmd_available_resources_equals_config_resources.cc)
 
 target_link_libraries(show_cmd_available_resources_equals_config_resources
@@ -325,4 +325,65 @@ target_link_libraries(show_cmd_available_resources_equals_config_resources
 )
 
 gtest_discover_tests(show_cmd_available_resources_equals_config_resources TEST_PREFIX gtest:)
+
+####### test_job_control_record #####################################
+add_executable(test_job_control_record job_control_record.cc)
+
+target_link_libraries(test_job_control_record
+   bareos
+   ${GTEST_LIBRARIES}
+   ${GTEST_MAIN_LIBRARIES}
+)
+gtest_discover_tests(test_job_control_record TEST_PREFIX gtest:)
+
+####### test_recent_job_results_list #####################################
+
+add_executable(test_recent_job_results_list recent_job_results_list.cc)
+
+file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/tests/test_recent_job_results_list_tmp)
+target_compile_definitions(test_recent_job_results_list
+  PRIVATE TEST_TEMP_DIR=\"${PROJECT_BINARY_DIR}/src/tests/test_recent_job_results_list_tmp\")
+target_compile_definitions(test_recent_job_results_list
+  PRIVATE TEST_ORIGINAL_FILE_DIR=\"${PROJECT_SOURCE_DIR}/src/tests/recent_job_results_list\")
+
+target_link_libraries(test_recent_job_results_list
+   bareos
+   ${GTEST_LIBRARIES}
+   ${GTEST_MAIN_LIBRARIES}
+)
+
+gtest_discover_tests(test_recent_job_results_list TEST_PREFIX gtest:)
+
+####### test_job_control_record #####################################
+add_executable(test_thread_specific_data thread_specific_data.cc)
+
+target_link_libraries(test_thread_specific_data
+   bareos
+   ${GTEST_LIBRARIES}
+   ${GTEST_MAIN_LIBRARIES}
+)
+
+gtest_discover_tests(test_thread_specific_data TEST_PREFIX gtest:)
+
+####### test_timer_thread  #####################################
+add_executable(test_timer_thread timer_thread.cc)
+
+target_link_libraries(test_timer_thread
+   bareos
+   ${GTEST_LIBRARIES}
+   ${GTEST_MAIN_LIBRARIES}
+)
+
+gtest_discover_tests(test_timer_thread TEST_PREFIX gtest:)
+
+####### test_watchdog_timer ##########################################
+add_executable(test_watchdog_timer watchdog_timer.cc)
+
+target_link_libraries(test_watchdog_timer
+   bareos
+   ${GTEST_LIBRARIES}
+   ${GTEST_MAIN_LIBRARIES}
+)
+
+gtest_discover_tests(test_watchdog_timer TEST_PREFIX gtest:)
 

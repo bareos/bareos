@@ -33,6 +33,7 @@
 
 #ifndef HAVE_WIN32
 #include "include/bareos.h"
+#include "lib/watchdog.h"
 #include "lib/berrno.h"
 #include "lib/bsignal.h"
 
@@ -410,4 +411,20 @@ void InitSignals(void Terminate(int sig))
   sigaction(SIGLOST, &sighandle, NULL);
 #endif
 }
-#endif
+
+extern "C" void TimeoutHandler(int sig)
+{
+  return; /* thus interrupting the function */
+}
+
+void SetTimeoutHandler()
+{
+  struct sigaction sigtimer;
+  sigtimer.sa_flags = 0;
+  sigtimer.sa_handler = TimeoutHandler;
+  sigfillset(&sigtimer.sa_mask);
+  sigaction(TIMEOUT_SIGNAL, &sigtimer, nullptr);
+}
+#else   // HAVE_WIN32
+void SetTimeoutHandler() {}
+#endif  // !HAVE_WIN32

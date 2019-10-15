@@ -255,7 +255,7 @@ static inline LEX* lex_add(LEX* lf,
 
   lf->fd = fd;
   lf->bpipe = bpipe;
-  lf->fname = strdup(filename);
+  lf->fname = strdup(filename ? filename : "");
   lf->line = GetMemory(1024);
   lf->str = GetMemory(256);
   lf->str_max_len = SizeofPoolMemory(lf->str);

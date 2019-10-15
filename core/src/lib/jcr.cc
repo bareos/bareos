@@ -46,173 +46,36 @@
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "lib/berrno.h"
+#include "lib/bsignal.h"
+#include "lib/breg.h"
 #include "lib/edit.h"
+#include "lib/thread_specific_data.h"
 #include "lib/tls_conf.h"
 #include "lib/bsock.h"
+#include "lib/recent_job_results_list.h"
 #include "lib/message_queue_item.h"
 #include "lib/watchdog.h"
 
+#include <algorithm>
+
 const int debuglevel = 3400;
 
-/* External variables we reference */
-
-/* External referenced functions */
-void FreeBregexps(alist* bregexps);
-
-/* Forward referenced functions */
-extern "C" void TimeoutHandler(int sig);
 static void JcrTimeoutCheck(watchdog_t* self);
-#ifdef TRACE_JCR_CHAIN
-static void b_lock_jcr_chain(const char* filen, int line);
-static void b_unlock_jcr_chain(const char* filen, int line);
-#define lock_jcr_chain() b_lock_jcr_chain(__FILE__, __LINE__);
-#define unlock_jcr_chain() b_unlock_jcr_chain(__FILE__, __LINE__);
-#else
-static void lock_jcr_chain();
-static void unlock_jcr_chain();
-#endif
 
 int num_jobs_run;
-dlist* last_jobs = nullptr;
-const int max_last_jobs = 10;
 
+static std::vector<std::weak_ptr<JobControlRecord>> job_control_record_cache;
 static dlist* job_control_record_chain = nullptr;
 static int watch_dog_timeout = 0;
 
-static pthread_mutex_t jcr_lock = PTHREAD_MUTEX_INITIALIZER;
+static std::mutex jcr_chain_mutex;
 static pthread_mutex_t job_start_mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_mutex_t last_jobs_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-static bool jcr_initialized = false;
-#ifdef HAVE_WIN32
-static bool tsd_initialized = false;
-static pthread_key_t jcr_key; /* Pointer to jcr for each thread */
-#else
-#ifdef PTHREAD_ONCE_KEY_NP
-static pthread_key_t jcr_key = PTHREAD_ONCE_KEY_NP;
-#else
-static pthread_key_t jcr_key; /* Pointer to jcr for each thread */
-static pthread_once_t key_once = PTHREAD_ONCE_INIT;
-#endif
-#endif
 
 static char Job_status[] = "Status Job=%s JobStatus=%d\n";
 
 void LockJobs() { P(job_start_mutex); }
 
 void UnlockJobs() { V(job_start_mutex); }
-
-void InitLastJobsList()
-{
-  JobControlRecord* jcr = nullptr;
-  struct s_last_job* job_entry = nullptr;
-  if (!last_jobs) { last_jobs = new dlist(job_entry, &job_entry->link); }
-  if (!job_control_record_chain) {
-    job_control_record_chain = new dlist(jcr, &jcr->link);
-  }
-}
-
-void TermLastJobsList()
-{
-  if (last_jobs) {
-    LockLastJobsList();
-    while (!last_jobs->empty()) {
-      void* je = last_jobs->first();
-      last_jobs->remove(je);
-      free(je);
-    }
-    delete last_jobs;
-    last_jobs = nullptr;
-    UnlockLastJobsList();
-  }
-  if (job_control_record_chain) {
-    delete job_control_record_chain;
-    job_control_record_chain = nullptr;
-  }
-}
-
-bool ReadLastJobsList(int fd, uint64_t addr)
-{
-  struct s_last_job *je, job;
-  uint32_t num;
-  bool ok = true;
-
-  Dmsg1(100, "read_last_jobs seek to %d\n", (int)addr);
-  if (addr == 0 || lseek(fd, (boffset_t)addr, SEEK_SET) < 0) { return false; }
-  if (read(fd, &num, sizeof(num)) != sizeof(num)) { return false; }
-  Dmsg1(100, "Read num_items=%d\n", num);
-  if (num > 4 * max_last_jobs) { /* sanity check */
-    return false;
-  }
-  LockLastJobsList();
-  for (; num; num--) {
-    if (read(fd, &job, sizeof(job)) != sizeof(job)) {
-      BErrNo be;
-      Pmsg1(000, "Read job entry. ERR=%s\n", be.bstrerror());
-      ok = false;
-      break;
-    }
-    if (job.JobId > 0) {
-      je = (struct s_last_job*)malloc(sizeof(struct s_last_job));
-      memcpy((char*)je, (char*)&job, sizeof(job));
-      if (!last_jobs) { InitLastJobsList(); }
-      last_jobs->append(je);
-      if (last_jobs->size() > max_last_jobs) {
-        je = (struct s_last_job*)last_jobs->first();
-        last_jobs->remove(je);
-        free(je);
-      }
-    }
-  }
-  UnlockLastJobsList();
-  return ok;
-}
-
-uint64_t WriteLastJobsList(int fd, uint64_t addr)
-{
-  struct s_last_job* je;
-  uint32_t num;
-  ssize_t status;
-
-  Dmsg1(100, "write_last_jobs seek to %d\n", (int)addr);
-  if (lseek(fd, (boffset_t)addr, SEEK_SET) < 0) { return 0; }
-  if (last_jobs) {
-    LockLastJobsList();
-    /*
-     * First record is number of entires
-     */
-    num = last_jobs->size();
-    if (write(fd, &num, sizeof(num)) != sizeof(num)) {
-      BErrNo be;
-      Pmsg1(000, "Error writing num_items: ERR=%s\n", be.bstrerror());
-      goto bail_out;
-    }
-    foreach_dlist (je, last_jobs) {
-      if (write(fd, je, sizeof(struct s_last_job)) !=
-          sizeof(struct s_last_job)) {
-        BErrNo be;
-        Pmsg1(000, "Error writing job: ERR=%s\n", be.bstrerror());
-        goto bail_out;
-      }
-    }
-    UnlockLastJobsList();
-  }
-
-  /*
-   * Return current address
-   */
-  status = lseek(fd, 0, SEEK_CUR);
-  if (status < 0) { status = 0; }
-  return status;
-
-bail_out:
-  UnlockLastJobsList();
-  return 0;
-}
-
-void LockLastJobsList() { P(last_jobs_mutex); }
-
-void UnlockLastJobsList() { V(last_jobs_mutex); }
 
 /*
  * Get an ASCII representation of the Operation being performed as an english
@@ -321,127 +184,76 @@ static void CallJobEndCallbacks(JobControlRecord* jcr)
   }
 }
 
-/*
- * Create thread key for thread specific data.
- */
-static void create_jcr_key()
+JobControlRecord::JobControlRecord()
 {
-  int status;
+  Dmsg0(100, "Construct JobControlRecord\n");
 
-#ifdef PTHREAD_ONCE_KEY_NP
-  status = pthread_key_create_once_np(&jcr_key, nullptr);
-#else
-  status = pthread_key_create(&jcr_key, nullptr);
-#endif
-  if (status != 0) {
-    BErrNo be;
-    Jmsg1(nullptr, M_ABORT, 0, _("pthread key create failed: ERR=%s\n"),
-          be.bstrerror(status));
-  } else {
-    jcr_initialized = true;
-  }
-}
+  SetupThreadSpecificDataKey();
 
-/*
- * Setup thread key for thread specific data.
- */
-void setup_tsd_key()
-{
-#ifdef HAVE_WIN32
-  P(jcr_lock);
-  if (!tsd_initialized) {
-    create_jcr_key();
-    tsd_initialized = true;
-  }
-  V(jcr_lock);
-#else
-#ifdef PTHREAD_ONCE_KEY_NP
-  create_jcr_key();
-#else
-  int status;
-
-  status = pthread_once(&key_once, create_jcr_key);
-  if (status != 0) {
-    BErrNo be;
-    Jmsg1(nullptr, M_ABORT, 0, _("pthread_once failed. ERR=%s\n"),
-          be.bstrerror(status));
-  }
-#endif
-#endif
-}
-
-/*
- * Create a Job Control Record and link it into JobControlRecord chain
- * Returns newly allocated JobControlRecord
- *
- * Note, since each daemon has a different JobControlRecord, he passes us the
- * size.
- */
-JobControlRecord* new_jcr(int size, JCR_free_HANDLER* daemon_free_jcr)
-{
-  JobControlRecord* jcr;
   MessageQueueItem* item = nullptr;
-  struct sigaction sigtimer;
+  msg_queue = new dlist(item, &item->link_);  // calculate offset
+
   int status;
-
-  Dmsg0(debuglevel, "Enter new_jcr\n");
-
-  setup_tsd_key();
-
-  jcr = (JobControlRecord*)malloc(size);
-  memset(jcr, 0, size);
-  jcr = new (jcr) JobControlRecord();
-
-  jcr->msg_queue = new dlist(item, &item->link_);
-  if ((status = pthread_mutex_init(&jcr->msg_queue_mutex, nullptr)) != 0) {
+  if ((status = pthread_mutex_init(&msg_queue_mutex, nullptr)) != 0) {
     BErrNo be;
     Jmsg(nullptr, M_ABORT, 0, _("Could not init msg_queue mutex. ERR=%s\n"),
          be.bstrerror(status));
   }
 
-  jcr->my_thread_id = pthread_self();
-  jcr->job_end_callbacks.init(1, false);
-  jcr->sched_time = time(nullptr);
-  jcr->initial_sched_time = jcr->sched_time;
-  jcr->daemon_free_jcr = daemon_free_jcr; /* plug daemon free routine */
-  jcr->InitMutex();
-  jcr->IncUseCount();
-  jcr->VolumeName = GetPoolMemory(PM_FNAME);
-  jcr->VolumeName[0] = 0;
-  jcr->errmsg = GetPoolMemory(PM_MESSAGE);
-  jcr->errmsg[0] = 0;
-  jcr->comment = GetPoolMemory(PM_FNAME);
-  jcr->comment[0] = 0;
+  my_thread_id = pthread_self();
+  job_end_callbacks.init(1, false);
+  sched_time = time(nullptr);
+  initial_sched_time = sched_time;
+  InitMutex();
+  IncUseCount();
+  VolumeName = GetPoolMemory(PM_FNAME);
+  VolumeName[0] = 0;
+  errmsg = GetPoolMemory(PM_MESSAGE);
+  errmsg[0] = 0;
+  comment = GetPoolMemory(PM_FNAME);
+  comment[0] = 0;
 
   /*
    * Setup some dummy values
    */
-  bstrncpy(jcr->Job, "*System*", sizeof(jcr->Job));
-  jcr->JobId = 0;
-  jcr->setJobType(JT_SYSTEM); /* internal job until defined */
-  jcr->setJobLevel(L_NONE);
-  jcr->setJobStatus(JS_Created); /* ready to run */
-  sigtimer.sa_flags = 0;
-  sigtimer.sa_handler = TimeoutHandler;
-  sigfillset(&sigtimer.sa_mask);
-  sigaction(TIMEOUT_SIGNAL, &sigtimer, nullptr);
+  bstrncpy(Job, "*System*", sizeof(Job));
+  JobId = 0;
+  setJobType(JT_SYSTEM); /* internal job until defined */
+  setJobLevel(L_NONE);
+  setJobStatus(JS_Created); /* ready to run */
+  SetTimeoutHandler();
+}
 
-  /*
-   * Locking jobs is a global lock that is needed
-   * so that the Director can stop new jobs from being
-   * added to the jcr chain while it processes a new
-   * conf file and does the RegisterJobEndCallback().
-   */
+JobControlRecord* new_jcr(int size, JCR_free_HANDLER* daemon_free_jcr)
+{
+  Dmsg0(debuglevel, "Enter new_jcr\n");
+
+  JobControlRecord* jcr;
+  jcr = (JobControlRecord*)malloc(size);
+  memset(jcr, 0, size);
+  jcr = new (jcr) JobControlRecord();
+
+  jcr->daemon_free_jcr = daemon_free_jcr;
+
   LockJobs();
-  lock_jcr_chain();
-  if (!job_control_record_chain) {
-    job_control_record_chain = new dlist(jcr, &jcr->link);
-  }
+  LockJcrChain();
+  InitJcrChain();
   job_control_record_chain->append(jcr);
-  unlock_jcr_chain();
+  UnlockJcrChain();
   UnlockJobs();
-
   return jcr;
+}
+
+void InitJcr(std::shared_ptr<JobControlRecord> jcr,
+             JCR_free_HANDLER* daemon_free_jcr)
+{
+  jcr->daemon_free_jcr = daemon_free_jcr;
+
+  LockJobs();
+  LockJcrChain();
+  job_control_record_cache.emplace_back(jcr);
+  UnlockJcrChain();
+  UnlockJobs();
 }
 
 /*
@@ -457,20 +269,14 @@ static void RemoveJcr(JobControlRecord* jcr)
   Dmsg0(debuglevel, "Leave RemoveJcr\n");
 }
 
-/*
- * Free stuff common to all JCRs.  N.B. Be careful to include only
- * generic stuff in the common part of the jcr.
- */
-static void FreeCommonJcr(JobControlRecord* jcr)
+static void FreeCommonJcr(JobControlRecord* jcr,
+                          bool is_destructor_call = false)
 {
   Dmsg1(100, "FreeCommonJcr: %p \n", jcr);
 
   if (!jcr) { Dmsg0(100, "FreeCommonJcr: Invalid jcr\n"); }
 
-  /*
-   * Uses jcr lock/unlock
-   */
-  RemoveJcrFromTsd(jcr);
+  RemoveJcrFromThreadSpecificData(jcr);
   jcr->SetKillable(false);
 
   jcr->DestroyMutex();
@@ -544,48 +350,16 @@ static void FreeCommonJcr(JobControlRecord* jcr)
     jcr->comment = nullptr;
   }
 
-  free(jcr);
+  if (!is_destructor_call) { free(jcr); }
 }
 
-/*
- * Global routine to free a jcr
- */
-void b_free_jcr(const char* file, int line, JobControlRecord* jcr)
+static void JcrCleanup(JobControlRecord* jcr, bool is_destructor_call = false)
 {
-  struct s_last_job* je;
-
-  Dmsg3(debuglevel, "Enter FreeJcr jid=%u from %s:%d\n", jcr->JobId, file,
-        line);
-
-  lock_jcr_chain();
-  jcr->DecUseCount(); /* decrement use count */
-  if (jcr->UseCount() < 0) {
-    Jmsg2(jcr, M_ERROR, 0, _("JobControlRecord UseCount=%d JobId=%d\n"),
-          jcr->UseCount(), jcr->JobId);
-  }
-  if (jcr->JobId > 0) {
-    Dmsg3(debuglevel, "Dec FreeJcr jid=%u UseCount=%d Job=%s\n", jcr->JobId,
-          jcr->UseCount(), jcr->Job);
-  }
-  if (jcr->UseCount() > 0) { /* if in use */
-    unlock_jcr_chain();
-    return;
-  }
-  if (jcr->JobId > 0) {
-    Dmsg3(debuglevel, "remove jcr jid=%u UseCount=%d Job=%s\n", jcr->JobId,
-          jcr->UseCount(), jcr->Job);
-  }
-  RemoveJcr(jcr); /* remove Jcr from chain */
-  unlock_jcr_chain();
-
   DequeueMessages(jcr);
   CallJobEndCallbacks(jcr); /* call registered callbacks */
 
   Dmsg1(debuglevel, "End job=%d\n", jcr->JobId);
 
-  /*
-   * Keep some statistics
-   */
   switch (jcr->getJobType()) {
     case JT_BACKUP:
     case JT_VERIFY:
@@ -593,36 +367,9 @@ void b_free_jcr(const char* file, int line, JobControlRecord* jcr)
     case JT_MIGRATE:
     case JT_COPY:
     case JT_ADMIN:
-      /*
-       * Keep list of last jobs, but not Console where JobId==0
-       */
-      if (jcr->JobId > 0) {
-        LockLastJobsList();
+      if (jcr->JobId > 0) {  // except Console Jobs
         num_jobs_run++;
-        je = (struct s_last_job*)malloc(sizeof(struct s_last_job));
-        memset(je, 0,
-               sizeof(struct s_last_job)); /* zero in case unset fields */
-        je->Errors = jcr->JobErrors;
-        je->JobType = jcr->getJobType();
-        je->JobId = jcr->JobId;
-        je->VolSessionId = jcr->VolSessionId;
-        je->VolSessionTime = jcr->VolSessionTime;
-        bstrncpy(je->Job, jcr->Job, sizeof(je->Job));
-        je->JobFiles = jcr->JobFiles;
-        je->JobBytes = jcr->JobBytes;
-        je->JobStatus = jcr->JobStatus;
-        je->JobLevel = jcr->getJobLevel();
-        je->start_time = jcr->start_time;
-        je->end_time = time(nullptr);
-
-        if (!last_jobs) { InitLastJobsList(); }
-        last_jobs->append(je);
-        if (last_jobs->size() > max_last_jobs) {
-          je = (struct s_last_job*)last_jobs->first();
-          last_jobs->remove(je);
-          free(je);
-        }
-        UnlockLastJobsList();
+        RecentJobResultsList::Append(jcr);
       }
       break;
     default:
@@ -635,8 +382,52 @@ void b_free_jcr(const char* file, int line, JobControlRecord* jcr)
     jcr->daemon_free_jcr(jcr); /* call daemon free routine */
   }
 
-  FreeCommonJcr(jcr);
+  FreeCommonJcr(jcr, is_destructor_call);
   CloseMsg(nullptr); /* flush any daemon messages */
+}
+
+JobControlRecord::~JobControlRecord()
+{
+  Dmsg0(100, "Destruct JobControlRecord\n");
+  JcrCleanup(this, true);
+  Dmsg0(debuglevel, "JobControlRecord Destructor finished\n");
+}
+
+static bool RunJcrGarbageCollector(JobControlRecord* jcr)
+{
+  LockJcrChain();
+  jcr->DecUseCount(); /* decrement use count */
+  if (jcr->UseCount() < 0) {
+    Jmsg2(jcr, M_ERROR, 0, _("JobControlRecord UseCount=%d JobId=%d\n"),
+          jcr->UseCount(), jcr->JobId);
+  }
+  if (jcr->JobId > 0) {
+    Dmsg3(debuglevel, "Dec FreeJcr jid=%u UseCount=%d Job=%s\n", jcr->JobId,
+          jcr->UseCount(), jcr->Job);
+  }
+  if (jcr->UseCount() > 0) { /* if in use */
+    UnlockJcrChain();
+    return false;
+  }
+  if (jcr->JobId > 0) {
+    Dmsg3(debuglevel, "remove jcr jid=%u UseCount=%d Job=%s\n", jcr->JobId,
+          jcr->UseCount(), jcr->Job);
+  }
+  RemoveJcr(jcr); /* remove Jcr from chain */
+  UnlockJcrChain();
+  return true;
+}
+
+/*
+ * Global routine to free a jcr
+ */
+void b_free_jcr(const char* file, int line, JobControlRecord* jcr)
+{
+  Dmsg3(debuglevel, "Enter FreeJcr jid=%u from %s:%d\n", jcr->JobId, file,
+        line);
+
+  if (RunJcrGarbageCollector(jcr)) { JcrCleanup(jcr); }
+
   Dmsg0(debuglevel, "Exit FreeJcr\n");
 }
 
@@ -668,62 +459,6 @@ void JobControlRecord::MyThreadSendSignal(int sig)
   unlock();
 }
 
-/*
- * Remove jcr from thread specific data, but but make sure it is us who are
- * attached.
- */
-void RemoveJcrFromTsd(JobControlRecord* jcr)
-{
-  JobControlRecord* tjcr = get_jcr_from_tsd();
-
-  if (tjcr == jcr) { SetJcrInTsd(INVALID_JCR); }
-}
-
-/*
- * Put this jcr in the thread specifc data
- */
-void SetJcrInTsd(JobControlRecord* jcr)
-{
-  int status;
-
-  status = pthread_setspecific(jcr_key, (void*)jcr);
-  if (status != 0) {
-    BErrNo be;
-    Jmsg1(jcr, M_ABORT, 0, _("pthread_setspecific failed: ERR=%s\n"),
-          be.bstrerror(status));
-  }
-}
-
-/*
- * Give me the jcr that is attached to this thread
- */
-JobControlRecord* get_jcr_from_tsd()
-{
-  JobControlRecord* jcr = (JobControlRecord*)INVALID_JCR;
-  if (jcr_initialized){
-    jcr = (JobControlRecord*)pthread_getspecific(jcr_key);
-  }
-
-  /*
-   * Set any INVALID_JCR to nullptr which the rest of BAREOS understands
-   */
-  if (jcr == INVALID_JCR) { jcr = nullptr; }
-
-  return jcr;
-}
-
-/*
- * Find which JobId corresponds to the current thread
- */
-uint32_t GetJobidFromTsd()
-{
-  JobControlRecord* jcr = get_jcr_from_tsd();
-  uint32_t JobId = 0;
-
-  if (jcr && jcr != INVALID_JCR) { JobId = (uint32_t)jcr->JobId; }
-
-  return JobId;
-}
 
 /*
  * Given a JobId, find the JobControlRecord
@@ -748,28 +483,71 @@ JobControlRecord* get_jcr_by_id(uint32_t JobId)
   return jcr;
 }
 
-/*
- * Given a thread id, find the JobId
- *
- * Returns: JobId on success
- *          0 on failure
- */
-uint32_t GetJobidFromTid(pthread_t tid)
+std::size_t GetJcrCount()
 {
-  JobControlRecord* jcr = nullptr;
-  bool found = false;
+  LockJcrChain();
+  std::size_t count =
+      count_if(job_control_record_cache.begin(), job_control_record_cache.end(),
+               [](std::weak_ptr<JobControlRecord>& p) { return !p.expired(); });
+  UnlockJcrChain();
 
-  foreach_jcr (jcr) {
-    if (pthread_equal(jcr->my_thread_id, tid)) {
-      found = true;
-      break;
-    }
-  }
-  endeach_jcr(jcr);
+  return count;
+}
 
-  if (found) { return jcr->JobId; }
+static std::shared_ptr<JobControlRecord> GetJcr(
+    std::function<bool(const JobControlRecord*)> compare)
+{
+  std::shared_ptr<JobControlRecord> result;
 
-  return 0;
+  LockJcrChain();
+
+  // cleanup chache
+  job_control_record_cache.erase(
+      std::remove_if(
+          job_control_record_cache.begin(), job_control_record_cache.end(),
+          [](std::weak_ptr<JobControlRecord>& p) { return p.expired(); }),
+      job_control_record_cache.end());
+
+  find_if(job_control_record_cache.begin(), job_control_record_cache.end(),
+          [&compare, &result](std::weak_ptr<JobControlRecord>& p) {
+            auto jcr = p.lock();
+            if (compare(jcr.get())) {
+              result = jcr;
+              return true;
+            }
+            return false;
+          });
+
+  UnlockJcrChain();
+
+  return result;
+}
+
+std::shared_ptr<JobControlRecord> GetJcrById(uint32_t JobId)
+{
+  return GetJcr(
+      [JobId](const JobControlRecord* jcr) { return jcr->JobId == JobId; });
+}
+
+std::shared_ptr<JobControlRecord> GetJcrByFullName(std::string name)
+{
+  return GetJcr([&name](const JobControlRecord* jcr) {
+    return std::string{jcr->Job} == name;
+  });
+}
+
+std::shared_ptr<JobControlRecord> GetJcrByPartialName(std::string name)
+{
+  return GetJcr([&name](const JobControlRecord* jcr) {
+    return std::string{jcr->Job}.find(name) == 0;
+  });
+}
+
+std::shared_ptr<JobControlRecord> GetJcrBySession(const VolumeSessionInfo& vsi)
+{
+  return GetJcr([&vsi](const JobControlRecord* jcr) {
+    return (VolumeSessionInfo{jcr->VolSessionId, jcr->VolSessionTime} == vsi);
+  });
 }
 
 /*
@@ -1011,7 +789,7 @@ void JobControlRecord::setJobStatus(int newJobStatus)
   }
   priority = GetStatusPriority(newJobStatus);
 
-  Dmsg2(800, "SetJcrJobStatus(%s, %c)\n", Job, newJobStatus);
+  Dmsg2(800, "setJobStatus(%s, %c)\n", Job, newJobStatus);
 
   /*
    * Update wait_time depending on newJobStatus and oldJobStatus
@@ -1027,8 +805,9 @@ void JobControlRecord::setJobStatus(int newJobStatus)
 
   /*
    * If status priority is > than proposed new status, change it.
-   * If status priority == new priority and both are zero, take the new status.
-   * If it is not zero, then we keep the first non-zero "error" that occurred.
+   * If status priority == new priority and both are zero, take the new
+   * status. If it is not zero, then we keep the first non-zero "error" that
+   * occurred.
    */
   if (priority > old_priority || (priority == 0 && old_priority == 0)) {
     Dmsg4(800, "Set new stat. old: %c,%d new: %c,%d\n", oldJobStatus,
@@ -1043,41 +822,9 @@ void JobControlRecord::setJobStatus(int newJobStatus)
   }
 }
 
-#ifdef TRACE_JCR_CHAIN
-static int lock_count = 0;
-#endif
+void LockJcrChain() { jcr_chain_mutex.lock(); }
 
-/*
- * Lock the chain
- */
-#ifdef TRACE_JCR_CHAIN
-static void b_lock_jcr_chain(const char* fname, int line)
-#else
-static void lock_jcr_chain()
-#endif
-{
-#ifdef TRACE_JCR_CHAIN
-  Dmsg3(debuglevel, "Lock jcr chain %d from %s:%d\n", ++lock_count, fname,
-        line);
-#endif
-  P(jcr_lock);
-}
-
-/*
- * Unlock the chain
- */
-#ifdef TRACE_JCR_CHAIN
-static void b_unlock_jcr_chain(const char* fname, int line)
-#else
-static void unlock_jcr_chain()
-#endif
-{
-#ifdef TRACE_JCR_CHAIN
-  Dmsg3(debuglevel, "Unlock jcr chain %d from %s:%d\n", lock_count--, fname,
-        line);
-#endif
-  V(jcr_lock);
-}
+void UnlockJcrChain() { jcr_chain_mutex.unlock(); }
 
 /*
  * Start walk of jcr chain
@@ -1097,7 +844,7 @@ static void unlock_jcr_chain()
 JobControlRecord* jcr_walk_start()
 {
   JobControlRecord* jcr;
-  lock_jcr_chain();
+  LockJcrChain();
   jcr = (JobControlRecord*)job_control_record_chain->first();
   if (jcr) {
     jcr->IncUseCount();
@@ -1106,7 +853,7 @@ JobControlRecord* jcr_walk_start()
             jcr->JobId, jcr->UseCount(), jcr->Job);
     }
   }
-  unlock_jcr_chain();
+  UnlockJcrChain();
   return jcr;
 }
 
@@ -1117,7 +864,7 @@ JobControlRecord* jcr_walk_next(JobControlRecord* prev_jcr)
 {
   JobControlRecord* jcr;
 
-  lock_jcr_chain();
+  LockJcrChain();
   jcr = (JobControlRecord*)job_control_record_chain->next(prev_jcr);
   if (jcr) {
     jcr->IncUseCount();
@@ -1126,7 +873,7 @@ JobControlRecord* jcr_walk_next(JobControlRecord* prev_jcr)
             jcr->UseCount(), jcr->Job);
     }
   }
-  unlock_jcr_chain();
+  UnlockJcrChain();
   if (prev_jcr) { FreeJcr(prev_jcr); }
   return jcr;
 }
@@ -1153,12 +900,12 @@ int JobCount()
   JobControlRecord* jcr;
   int count = 0;
 
-  lock_jcr_chain();
+  LockJcrChain();
   for (jcr = (JobControlRecord*)job_control_record_chain->first();
        (jcr = (JobControlRecord*)job_control_record_chain->next(jcr));) {
     if (jcr->JobId > 0) { count++; }
   }
-  unlock_jcr_chain();
+  UnlockJcrChain();
   return count;
 }
 
@@ -1179,6 +926,22 @@ bool InitJcrSubsystem(int timeout)
   RegisterWatchdog(wd);
 
   return true;
+}
+
+void InitJcrChain()
+{
+  JobControlRecord* jcr = nullptr;
+  if (!job_control_record_chain) {
+    job_control_record_chain = new dlist(jcr, &jcr->link);
+  }
+}
+
+void CleanupJcrChain()
+{
+  if (job_control_record_chain) {
+    delete job_control_record_chain;
+    job_control_record_chain = nullptr;
+  }
 }
 
 static void JcrTimeoutCheck(watchdog_t* /* self */)
@@ -1276,14 +1039,6 @@ int GetNextJobidFromList(char** p, uint32_t* JobId)
 }
 
 /*
- * Timeout signal comes here
- */
-extern "C" void TimeoutHandler(int sig)
-{
-  return; /* thus interrupting the function */
-}
-
-/*
  * Used to display specific daemon information after a fatal signal
  * (like BareosDb in the director)
  */
@@ -1301,7 +1056,8 @@ void DbgJcrAddHook(dbg_jcr_hook_t* hook)
  * !!! WARNING !!!
  *
  * This function should be used ONLY after a fatal signal. We walk through the
- * JobControlRecord chain without doing any lock, BAREOS should not be running.
+ * JobControlRecord chain without doing any lock, BAREOS should not be
+ * running.
  */
 void DbgPrintJcr(FILE* fp)
 {

@@ -50,6 +50,7 @@
 #include "lib/berrno.h"
 #include "lib/edit.h"
 #include "lib/bsignal.h"
+#include "lib/recent_job_results_list.h"
 #include "lib/parse_bsr.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
@@ -367,7 +368,8 @@ static void TerminateBtape(int status)
 
   StopWatchdog();
   TermMsg();
-  TermLastJobsList();
+  RecentJobResultsList::Cleanup();
+  CleanupJcrChain();
   CloseMemoryPool(); /* free memory in pool */
 
   exit(status);

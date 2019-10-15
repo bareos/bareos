@@ -95,6 +95,19 @@ bool MonitorItem::GetJobDefaults(JobDefaults& job_defs)
   return true;
 }
 
+class ZeroBareosSocketInJcr {
+  JobControlRecord& jcr;
+
+ public:
+  ZeroBareosSocketInJcr(JobControlRecord& jcr_in) : jcr(jcr_in) {}
+  ~ZeroBareosSocketInJcr()
+  {
+    jcr.dir_bsock = nullptr;
+    jcr.file_bsock = nullptr;
+    jcr.store_bsock = nullptr;
+  }
+};
+
 bool MonitorItem::doconnect()
 {
   if (d->DSock) {
@@ -103,7 +116,7 @@ bool MonitorItem::doconnect()
   }
 
   JobControlRecord jcr;
-  memset(&jcr, 0, sizeof(jcr));
+  ZeroBareosSocketInJcr zero_jcr(jcr);
 
   DirectorResource* dird;
   ClientResource* filed;

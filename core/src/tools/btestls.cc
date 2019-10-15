@@ -32,6 +32,7 @@
 #include "filed/fd_plugins.h"
 #include "findlib/match.h"
 #include "lib/edit.h"
+#include "lib/recent_job_results_list.h"
 #include "lib/util.h"
 
 /* Dummy functions */
@@ -184,7 +185,8 @@ int main(int argc, char* const* argv)
   TermFindFiles(ff);
 
   FreeJcr(jcr);
-  TermLastJobsList(); /* free jcr chain */
+  RecentJobResultsList::Cleanup();
+  CleanupJcrChain();
   CloseMemoryPool();
   exit(0);
 }

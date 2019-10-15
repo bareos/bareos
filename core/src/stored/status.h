@@ -25,9 +25,6 @@ namespace storagedaemon {
 
 bool StatusCmd(JobControlRecord* jcr);
 bool DotstatusCmd(JobControlRecord* jcr);
-#if defined(HAVE_WIN32)
-char* bareos_status(char* buf, int buf_len);
-#endif
 
 } /* namespace storagedaemon */
 

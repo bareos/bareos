@@ -38,7 +38,7 @@
 #include "include/jcr.h"
 #include <signal.h>
 
-extern void setup_tsd_key();
+extern void SetupThreadSpecificDataKey();
 
 static void signal_handler(int arg) { return; }
 
@@ -120,10 +120,8 @@ static PConfigParser DirectorPrepareResources(const std::string& path_to_config)
 typedef std::unique_ptr<BareosSocket, std::function<void(BareosSocket*)>>
     PBareosSocket;
 
-static PBareosSocket ConnectToDirector()
+static PBareosSocket ConnectToDirector(JobControlRecord& jcr)
 {
-  JobControlRecord jcr;
-  memset(&jcr, 0, sizeof(jcr));
   BStringList args;
   uint32_t response_id = kMessageIdUnknown;
 
@@ -155,7 +153,7 @@ static bool do_connection_test(std::string path_to_config, TlsPolicy tls_policy)
 {
   InitSignalHandler();
   InitGlobals();
-  setup_tsd_key();
+  SetupThreadSpecificDataKey();
 
   PConfigParser console_config(ConsolePrepareResources(path_to_config));
   if (!console_config) { return false; }
@@ -168,13 +166,17 @@ static bool do_connection_test(std::string path_to_config, TlsPolicy tls_policy)
   EXPECT_TRUE(start_socket_server_ok) << "Could not start SocketServer";
   if (!start_socket_server_ok) { return false; }
 
-  PBareosSocket UA_sock(ConnectToDirector());
+  JobControlRecord jcr;
+
+  PBareosSocket UA_sock(ConnectToDirector(jcr));
   if (!UA_sock) { return false; }
 
   CheckEncryption(UA_sock.get(), tls_policy);
 
   UA_sock->signal(BNET_TERMINATE);
   UA_sock->close();
+  jcr.dir_bsock = nullptr;
+
   directordaemon::StopSocketServer();
   StopWatchdog();
 

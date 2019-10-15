@@ -54,6 +54,7 @@
 #include "lib/daemon.h"
 #include "lib/bsignal.h"
 #include "lib/parse_conf.h"
+#include "lib/thread_specific_data.h"
 #include "lib/util.h"
 #include "lib/watchdog.h"
 #include "include/jcr.h"
@@ -287,7 +288,7 @@ int main(int argc, char* argv[])
   ReadCryptoCache(me->working_directory, "bareos-sd",
                   GetFirstPortHostOrder(me->SDaddrs));
 
-  SetJcrInTsd(INVALID_JCR);
+  SetJcrInThreadSpecificData(nullptr);
 
   /*
    * Make sure on Solaris we can run concurrent, watch dog + servers + misc
@@ -315,6 +316,7 @@ int main(int argc, char* argv[])
     Emsg1(M_ABORT, 0, _("Unable to create thread. ERR=%s\n"), be.bstrerror());
   }
 
+  InitJcrChain();
   StartWatchdog(); /* start watchdog thread */
   if (me->jcr_watchdog_time) {
     InitJcrSubsystem(
