@@ -452,6 +452,12 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED "python-dir-plugin-test")
 endif()
 
+if(TARGET python-sd)
+  list(APPEND SYSTEM_TESTS "python-sd-plugin-test")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "python-sd-plugin-test")
+endif()
+
 set(PHP_FOUND FALSE)
 set(PYTHON_FOUND FALSE)
 set(PYTHON_SELENIUM_FOUND "NOT SEARCHED")
@@ -461,7 +467,7 @@ if(PHP)
   set(PHP_FOUND TRUE)
   if(PYTHON)
     set(PYTHON_FOUND TRUE)
-    pythonmodulestatus("selenium") # sets PYTHON_SELENIUM_FOUND to TRUE or FALSE
+    PythonModuleStatus("selenium") # sets PYTHON_SELENIUM_FOUND to TRUE or FALSE
     if(${PYTHON_SELENIUM_FOUND})
       find_program(CHROMEDRIVER chromedriver)
       if(CHROMEDRIVER)
