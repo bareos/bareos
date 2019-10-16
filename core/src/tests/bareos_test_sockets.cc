@@ -53,7 +53,7 @@ static int create_listening_server_socket(int port)
   }
 
   struct timeval timeout;
-  timeout.tv_sec = 1;  // after 1 seconds connect() will timeout
+  timeout.tv_sec = 10;  // after 10 seconds connect() will timeout
   timeout.tv_usec = 0;
 
   if (setsockopt(listen_file_descriptor, SOL_SOCKET, SO_RCVTIMEO, &timeout,
