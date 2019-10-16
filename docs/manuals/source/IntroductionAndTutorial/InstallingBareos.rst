@@ -49,27 +49,23 @@ Decide about the Database Backend
 
 Bareos offers the following database backends:
 
--  PostgreSQL by package **bareos-database-postgresql**. This is the recommended backend.
-
--  MariaDB/MySQL by package **bareos-database-mysql**
-
--  | Sqlite by package **bareos-database-sqlite3**
-   | 
-
-.. warning::
-
-   The Sqlite backend is only intended for testing, not for productive use.
-
 PostgreSQL
-   is the default backend.
+   This is the preferred default database backend. It is contained in package **bareos-database-postgresql**.
+   If you need to think about which backend to use, this is your choice!
 
 MariaDB/MySQL
-   backend is also included.
+   .. deprecated:: 19.0.0
+
+   This backend is provided only for backwards compatibility with existing MariaDB/MySQL deployments.
+   It is contained in package **bareos-database-mysql**.
+   **This is not the right choice for a new deployment.**
 
 Sqlite
-   backend is intended for testing purposes only.
+   This backend is for testing purposes only.
+   It is contained in package **bareos-database-sqlite3**.
+   **Do not use this in production.**
 
-The Bareos database packages have there dependencies only to the database client packages, therefore the database itself must be installed manually.
+The Bareos database packages have their dependencies only to the database client packages, therefore the database itself must be installed manually.
 
 If you do not explicitly choose a database backend, your operating system installer will choose one for you. The default should be PostgreSQL, but depending on your operating system and the already installed packages, this may differ.
 
