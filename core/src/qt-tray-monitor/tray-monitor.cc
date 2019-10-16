@@ -46,8 +46,8 @@ static void usage()
 {
   char copyright[500];
   kBareosVersion.formatCopyright(copyright, 500, 2004);
-  QString out = QString::asprintf(
-      _("%s"
+  QString out = QString(
+      _("%1"
         "Usage: tray-monitor [options]\n"
         "        -c <path>   use <path> as configuration file or directory\n"
         "        -d <nn>     set debug level to <nn>\n"
@@ -58,8 +58,7 @@ static void usage()
         "        -xs         print configuration file schema in JSON format "
         "and exit\n"
         "        -?          print this message.\n"
-        "\n"),
-      copyright);
+        "\n")).arg(copyright);
 
 #if HAVE_WIN32
   QMessageBox::information(0, "Help", out);
