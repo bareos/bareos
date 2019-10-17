@@ -48,10 +48,6 @@ set(LINK_LIBRARIES
 IF(HAVE_PAM)
   LIST(APPEND LINK_LIBRARIES ${PAM_LIBRARIES})
 ENDIF()
-add_definitions(-DTEST_SMALL_HTABLE)
-
-# where to find the certificates
-add_definitions(-DCERTDIR=\"${PROJECT_SOURCE_DIR}/../regress/configs/BASE/tls\")
 
 # where to find the source dir
 add_definitions(-DPROJECT_SOURCE_DIR=\"${PROJECT_SOURCE_DIR}\")
@@ -76,7 +72,8 @@ target_link_libraries(test_lib
    ${GTEST_MAIN_LIBRARIES}
    )
 
- gtest_discover_tests(test_lib TEST_PREFIX gtest:)
+target_compile_definitions(test_lib PRIVATE -DTEST_SMALL_HTABLE)
+gtest_discover_tests(test_lib TEST_PREFIX gtest:)
 
 ####### test_fd_plugins #####################################
 add_executable(test_fd_plugins
@@ -146,6 +143,7 @@ add_executable(test_bsock
     ${SSL_UNIT_TEST_FILES}
     )
 target_link_libraries(test_bsock ${LINK_LIBRARIES})
+target_compile_definitions(test_bsock PRIVATE -DCERTDIR=\"${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls\")
 gtest_discover_tests(test_bsock TEST_PREFIX gtest:)
 
 ####### test_connection_setup ###############################
