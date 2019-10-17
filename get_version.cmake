@@ -17,7 +17,7 @@
 
 cmake_minimum_required(VERSION 3.0)
 
-set(CMAKE_MODULE_PATH ./core/cmake ./webui/cmake)
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/core/cmake ${CMAKE_CURRENT_LIST_DIR}/webui/cmake)
 include(BareosVersion OPTIONAL RESULT_VARIABLE BareosVersionFile)
 if(BareosVersionFile STREQUAL "NOTFOUND")
   message(FATAL_ERROR "BareosVersion.cmake was not found")
