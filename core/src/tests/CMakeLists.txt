@@ -44,10 +44,6 @@ set(LINK_LIBRARIES
 IF(HAVE_PAM)
   LIST(APPEND LINK_LIBRARIES ${PAM_LIBRARIES})
 ENDIF()
-add_definitions(-DTEST_SMALL_HTABLE)
-
-# where to find the certificates
-add_definitions(-DCERTDIR=\"${PROJECT_SOURCE_DIR}/../regress/configs/BASE/tls\")
 
 # where to find the source dir
 add_definitions(-DPROJECT_SOURCE_DIR=\"${PROJECT_SOURCE_DIR}\")
@@ -71,6 +67,7 @@ target_link_libraries(test_lib
    ${GTEST_LIBRARIES}
    ${GTEST_MAIN_LIBRARIES}
    )
+target_compile_definitions(test_lib PRIVATE -DTEST_SMALL_HTABLE)
 
 add_test(NAME test_lib
    COMMAND test_lib
@@ -115,6 +112,7 @@ add_executable(test_bsock
     ${SSL_UNIT_TEST_FILES}
     )
 target_link_libraries(test_bsock ${LINK_LIBRARIES})
+target_compile_definitions(test_bsock PRIVATE -DCERTDIR=\"${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls\")
 add_test(NAME test_bsock COMMAND test_bsock)
 
 
