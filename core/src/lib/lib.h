@@ -33,7 +33,6 @@
 #include "crypto.h"
 #include "mem_pool.h"
 #include "rwlock.h"
-#include "queue.h"
 #include "serial.h"
 #include "lex.h"
 #ifndef BAREOS_LIB_LIB_H_

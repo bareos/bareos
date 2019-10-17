@@ -45,7 +45,6 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/catreq.h"
-#include "dird/mountreq.h"
 #include "dird/msgchan.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
@@ -265,11 +264,6 @@ int BgetDirmsg(BareosSocket* bs, bool allow_any_message)
       } else {
         bs->fsend("1990 ERROR BlastAttr\n");
       }
-      continue;
-    }
-    if (bs->msg[0] == 'M') { /* Mount request */
-      Dmsg1(900, "Mount req: %s", bs->msg);
-      MountRequest(jcr, bs, msg);
       continue;
     }
     if (bs->msg[0] == 'S') { /* Status change */
