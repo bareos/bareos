@@ -25,7 +25,8 @@ if(NOT DEFINED VERSION_STRING)
       set(VERSION_TIMESTAMP "${GIT_COMMIT_TIMESTAMP}")
     else()
       message(
-        FATAL_ERROR "VERSION_STRING not set, BareosVersion.cmake not found and no version data from git available."
+        FATAL_ERROR
+          "VERSION_STRING not set, BareosVersion.cmake not found and no version data from git available."
         )
     endif()
   else()
@@ -58,10 +59,15 @@ list(GET VERSION_LIST 2 BAREOS_VERSION_PATCH)
 message("BAREOS_NUMERIC_VERSION is ${BAREOS_NUMERIC_VERSION}")
 message("BAREOS_FULL_VERSION is ${BAREOS_FULL_VERSION}")
 
-string(TIMESTAMP DATE "%d %B %Y" UTC)
-string(TIMESTAMP BAREOS_SHORT_DATE "%d%b%y" UTC)
-string(TIMESTAMP BAREOS_YEAR "%Y" UTC)
-string(TIMESTAMP BAREOS_PROG_DATE_TIME "%Y-%m-%d %H:%M:%S" UTC)
+if(VERSION_TIMESTAMP GREATER 0)
+  include(BareosTimeFunctions)
+  timestamp_at("${VERSION_TIMESTAMP}" DATE "%d %B %Y")
+  timestamp_at("${VERSION_TIMESTAMP}" BAREOS_SHORT_DATE "%d%b%y")
+  timestamp_at("${VERSION_TIMESTAMP}" BAREOS_YEAR "%Y")
+  timestamp_at("${VERSION_TIMESTAMP}" BAREOS_PROG_DATE_TIME "%Y-%m-%d %H:%M:%S")
+else()
+  message(FATAL_ERROR "VERSION_TIMESTAMP is not set")
+endif()
 
 # extract  db version from cats.h
 file(STRINGS ${PROJECT_SOURCE_DIR}/src/cats/cats.h DB_VERSION_STRING
