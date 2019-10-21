@@ -18,11 +18,18 @@
 if(NOT DEFINED VERSION_STRING)
   include(BareosVersion OPTIONAL RESULT_VARIABLE BareosVersionFile)
   if(BareosVersionFile STREQUAL "NOTFOUND")
-    message(
-      FATAL_ERROR "VERSION_STRING not set and BareosVersion.cmake was not found"
-      )
+    # no version file, try data from git
+    if(GIT_DESCRIBE_VERSION)
+      message(STATUS "Using version information from Git")
+      set(VERSION_STRING "${GIT_DESCRIBE_VERSION}")
+      set(VERSION_TIMESTAMP "${GIT_COMMIT_TIMESTAMP}")
+    else()
+      message(
+        FATAL_ERROR "VERSION_STRING not set, BareosVersion.cmake not found and no version data from git available."
+        )
+    endif()
   else()
-    message("Using version information from ${BareosVersionFile}")
+    message(STATUS "Using version information from ${BareosVersionFile}")
   endif()
 endif()
 

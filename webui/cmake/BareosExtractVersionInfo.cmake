@@ -18,25 +18,34 @@
 if(NOT DEFINED VERSION_STRING)
   include(BareosVersion OPTIONAL RESULT_VARIABLE BareosVersionFile)
   if(BareosVersionFile STREQUAL "NOTFOUND")
-    message(
-      FATAL_ERROR "VERSION_STRING not set and BareosVersion.cmake was not found"
-      )
+    # no version file, try data from git
+    if(GIT_DESCRIBE_VERSION)
+      message(STATUS "Using version information from Git")
+      #message(FATAL_ERROR "${GIT_DESCRIBE_VERSION}")
+      set(VERSION_STRING "${GIT_DESCRIBE_VERSION}")
+      set(VERSION_TIMESTAMP "${GIT_COMMIT_TIMESTAMP}")
+    else()
+      message(
+        FATAL_ERROR "VERSION_STRING not set, BareosVersion.cmake not found and no version data from git available."
+        )
+    endif()
   else()
-    message("Using version information from ${BareosVersionFile}")
+    message(STATUS "Using version information from ${BareosVersionFile}")
   endif()
 endif()
 
 string(REGEX MATCH
-             [0-9.a-zA-Z]+
+             [-0-9.a-zA-Z]+
              BAREOS_FULL_VERSION
              ${VERSION_STRING})
+
+if(BAREOS_FULL_VERSION STREQUAL "")
+  message(FATAL_ERROR "BAREOS_FULL_VERSION is not set")
+endif()
+
 string(REGEX MATCH
              [0-9]+.[0-9]+.[0-9]+
              BAREOS_NUMERIC_VERSION
-             ${VERSION_STRING})
-string(REGEX MATCH
-             [0-9]+
-             SOVERSION
              ${VERSION_STRING})
 string(REPLACE "\""
                ""
