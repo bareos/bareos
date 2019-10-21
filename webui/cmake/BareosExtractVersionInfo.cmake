@@ -35,7 +35,7 @@ if(NOT DEFINED VERSION_STRING)
 endif()
 
 string(REGEX MATCH
-             [-0-9.a-zA-Z]+
+             [0-9.a-zA-Z~]+
              BAREOS_FULL_VERSION
              ${VERSION_STRING})
 

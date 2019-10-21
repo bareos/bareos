@@ -56,7 +56,7 @@ endif()
 if(NOT GIT_DESCRIBE_OUTPUT STREQUAL "")
   set(GIT_DESCRIBE_REGEX_LONG
       "^([^/]+)/([^-]+)-(([^-]+)?)-?([0-9]+)-g([0-9a-f]+(.dirty)?)[ \n]*")
-  set(GIT_DESCRIBE_REPLACE_LONG "\\2-\\3\\5.\\6")
+  set(GIT_DESCRIBE_REPLACE_LONG "\\2~\\3\\5.\\6")
   set(GIT_DESCRIBE_REGEX_SHORT "^([^/]+)/([0-9.]+)((-[^-]+)?)((.dirty)?)[ \n]*")
   set(GIT_DESCRIBE_REPLACE_SHORT "\\2\\3\\5")
 
