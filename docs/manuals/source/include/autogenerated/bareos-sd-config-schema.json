@@ -1,7 +1,6 @@
 {
   "format-version": 2,
   "component": "bareos-sd",
-  "version": "18.2.6",
   "resource": {
     "bareos-sd": {
       "Director": {

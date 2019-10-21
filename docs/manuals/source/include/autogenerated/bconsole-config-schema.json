@@ -1,7 +1,6 @@
 {
   "format-version": 2,
   "component": "bconsole",
-  "version": "18.2.6",
   "resource": {
     "bconsole": {
       "Console": {

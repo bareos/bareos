@@ -1,7 +1,6 @@
 {
   "format-version": 2,
   "component": "bareos-dir",
-  "version": "18.2.6",
   "resource": {
     "bareos-dir": {
       "Director": {
