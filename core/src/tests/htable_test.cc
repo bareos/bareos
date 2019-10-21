@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -88,12 +88,3 @@ struct RbListJobControlRecord {
   char* buf;
 };
 
-static int RblistCompare(void* item1, void* item2)
-{
-  RbListJobControlRecord *jcr1, *jcr2;
-  int comp;
-  jcr1 = (RbListJobControlRecord*)item1;
-  jcr2 = (RbListJobControlRecord*)item2;
-  comp = strcmp(jcr1->buf, jcr2->buf);
-  return comp;
-}
