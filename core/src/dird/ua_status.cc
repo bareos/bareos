@@ -345,7 +345,6 @@ void ListDirStatusHeader(UaContext* ua)
   int len, cnt;
   CatalogResource* catalog;
   char dt[MAX_TIME_LENGTH];
-  char b1[35], b2[35], b3[35], b4[35], b5[35];
   PoolMem msg(PM_FNAME), dbdrivers(PM_FNAME);
 
   cnt = 0;
@@ -774,8 +773,6 @@ static void PrtRuntime(UaContext* ua, sched_pkt* sp)
   JobControlRecord* jcr = ua->jcr;
   MediaDbRecord mr;
   int orig_jobtype;
-
-  memset(&mr, 0, sizeof(mr));
 
   orig_jobtype = jcr->getJobType();
   if (sp->job->JobType == JT_BACKUP) {
@@ -1276,9 +1273,6 @@ static void ContentSendInfoApi(UaContext* ua,
   /* Type|Slot|RealSlot|Volume|Bytes|Status|MediaType|Pool|LastW|Expire */
   const char* slot_api_full_format = "%c|%hd|%hd|%s|%s|%s|%s|%s|%s|%s\n";
 
-  memset(&pr, 0, sizeof(pr));
-  memset(&mr, 0, sizeof(mr));
-
   bstrncpy(mr.VolumeName, vol_name, sizeof(mr.VolumeName));
   if (ua->db->GetMediaRecord(ua->jcr, &mr)) {
     pr.PoolId = mr.PoolId;
@@ -1300,9 +1294,6 @@ static void ContentSendInfoJson(UaContext* ua,
 {
   PoolDbRecord pr;
   MediaDbRecord mr;
-
-  memset(&pr, 0, sizeof(pr));
-  memset(&mr, 0, sizeof(mr));
 
   bstrncpy(mr.VolumeName, vol_name, sizeof(mr.VolumeName));
   if (ua->db->GetMediaRecord(ua->jcr, &mr)) {
@@ -1595,8 +1586,6 @@ bail_out:
  */
 static void StatusSlots(UaContext* ua, StorageResource* store)
 {
-  PoolDbRecord pr;
-  MediaDbRecord mr;
   char* slot_list;
   vol_list_t *vl1, *vl2;
   slot_number_t max_slots;
@@ -1611,7 +1600,6 @@ static void StatusSlots(UaContext* ua, StorageResource* store)
 
   if (!OpenClientDb(ua)) { return; }
 
-  memset(&mr, 0, sizeof(mr));
 
   max_slots = GetNumSlots(ua, store);
   if (max_slots <= 0) {
@@ -1685,14 +1673,13 @@ static void StatusSlots(UaContext* ua, StorageResource* store)
                           "?", "?");
               continue;
             }
-            /*
-             * Note, fall through wanted
-             */
-          case slot_status_t::kSlotStatusFull:
+            [[fallthrough]];
+          case slot_status_t::kSlotStatusFull: {
             /*
              * We get here for all slots with content and for empty
              * slots with their volume loaded in a drive.
              */
+            MediaDbRecord mr;
             if (vl1->slot_status == slot_status_t::kSlotStatusFull) {
               if (!vl1->VolName) {
                 Dmsg1(100, "No VolName for Slot=%hd.\n",
@@ -1705,7 +1692,6 @@ static void StatusSlots(UaContext* ua, StorageResource* store)
                 continue;
               }
 
-              memset(&mr, 0, sizeof(mr));
               bstrncpy(mr.VolumeName, vl1->VolName, sizeof(mr.VolumeName));
             } else {
               if (!vl2 || !vl2->VolName) {
@@ -1719,12 +1705,11 @@ static void StatusSlots(UaContext* ua, StorageResource* store)
                 continue;
               }
 
-              memset(&mr, 0, sizeof(mr));
               bstrncpy(mr.VolumeName, vl2->VolName, sizeof(mr.VolumeName));
             }
 
             if (mr.VolumeName[0] && ua->db->GetMediaRecord(ua->jcr, &mr)) {
-              memset(&pr, 0, sizeof(pr));
+              PoolDbRecord pr;
               pr.PoolId = mr.PoolId;
               if (!ua->db->GetPoolRecord(ua->jcr, &pr)) {
                 strcpy(pr.Name, "?");
@@ -1750,6 +1735,7 @@ static void StatusSlots(UaContext* ua, StorageResource* store)
                   mr.VolumeName, "?", "?", "?");
             }
             break;
+          }
           default:
             break;
         }

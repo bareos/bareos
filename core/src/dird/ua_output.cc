@@ -376,8 +376,6 @@ static int GetJobidFromCmdline(UaContext* ua)
   JobDbRecord jr;
   ClientDbRecord cr;
 
-  memset(&jr, 0, sizeof(jr));
-
   i = FindArgWithValue(ua, NT_("ujobid"));
   if (i >= 0) {
     bstrncpy(jr.Job, ua->argv[i], MAX_NAME_LENGTH);
@@ -830,7 +828,6 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     /*
      * List POOLS
      */
-    memset(&pr, 0, sizeof(pr));
     if (ua->argv[1]) { bstrncpy(pr.Name, ua->argv[1], sizeof(pr.Name)); }
 
     SetAclFilter(ua, 1, Pool_ACL); /* PoolName */
@@ -1280,10 +1277,6 @@ static bool ListNextvol(UaContext* ua, int ndays)
   RunResource* run;
   utime_t runtime;
   bool found = false;
-  MediaDbRecord mr;
-  PoolDbRecord pr;
-
-  memset(&mr, 0, sizeof(mr));
 
   i = FindArgWithValue(ua, "job");
   if (i <= 0) {
@@ -1306,11 +1299,12 @@ static bool ListNextvol(UaContext* ua, int ndays)
       ua->ErrorMsg(_("Could not find Pool for Job %s\n"), job->resource_name_);
       continue;
     }
-    memset(&pr, 0, sizeof(pr));
+    PoolDbRecord pr;
     pr.PoolId = jcr->jr.PoolId;
     if (!ua->db->GetPoolRecord(jcr, &pr)) {
       bstrncpy(pr.Name, "*UnknownPool*", sizeof(pr.Name));
     }
+    MediaDbRecord mr;
     mr.PoolId = jcr->jr.PoolId;
     GetJobStorage(&store, job, run);
     SetStorageidInMr(store.store, &mr);
@@ -1424,9 +1418,6 @@ bool CompleteJcrForJob(JobControlRecord* jcr,
                        JobResource* job,
                        PoolResource* pool)
 {
-  PoolDbRecord pr;
-
-  memset(&pr, 0, sizeof(pr));
   SetJcrDefaults(jcr, job);
   if (pool) { jcr->res.pool = pool; /* override */ }
   if (jcr->db) {
@@ -1448,6 +1439,7 @@ bool CompleteJcrForJob(JobControlRecord* jcr,
          jcr->res.catalog->db_name);
     return false;
   }
+  PoolDbRecord pr;
   bstrncpy(pr.Name, jcr->res.pool->resource_name_, sizeof(pr.Name));
   while (!jcr->db->GetPoolRecord(jcr, &pr)) { /* get by Name */
     /* Try to create the pool */
