@@ -22,8 +22,6 @@
 /*
  * VADP Dumper - vStorage APIs for Data Protection Dumper program.
  *
- * Marco van Wieringen, July 2014
- * Renout Gerrits, Oct 2017, added thumbprint
  */
 #include <stdio.h>
 #include <stdint.h>
@@ -87,7 +85,7 @@
 #define CBT_CHANGEDAREA_LENGTH_KEY "length"
 #define CBT_START_OFFSET "startOffset"
 
-#define BAREOSMAGIC 0x12122012
+#define BAREOSMAGIC 0x12122012u
 #define PROTOCOL_VERSION 1
 
 #define BAREOS_VADPDUMPER_IDENTITY "BareosVADPDumper"
@@ -223,15 +221,15 @@ static inline void fill_runtime_disk_info_encoding(
 static inline void dump_runtime_disk_info_encoding(
     struct runtime_disk_info_encoding* rdie)
 {
-  fprintf(stderr, "Protocol version = %lu\n", rdie->protocol_version);
+  fprintf(stderr, "Protocol version = %u\n", rdie->protocol_version);
   fprintf(stderr, "Absolute disk length = %lu\n", rdie->absolute_disk_length);
   fprintf(stderr, "Absolute start offset = %lu\n", rdie->absolute_start_offset);
-  fprintf(stderr, "BIOS geometry (%ld cyl, %ld heads, %ld sectors)\n",
+  fprintf(stderr, "BIOS geometry (%u cyl, %u heads, %u sectors)\n",
           rdie->bios_cylinders, rdie->bios_heads, rdie->bios_sectors);
-  fprintf(stderr, "PHYS geometry (%ld cyl, %ld heads, %ld sectors)\n",
+  fprintf(stderr, "PHYS geometry (%u cyl, %u heads, %u sectors)\n",
           rdie->phys_cylinders, rdie->phys_heads, rdie->phys_sectors);
   fprintf(stderr, "Physical capacity %lu\n", rdie->phys_capacity);
-  fprintf(stderr, "Adapter Type %ld\n", rdie->adapter_type);
+  fprintf(stderr, "Adapter Type %u\n", rdie->adapter_type);
 }
 
 /*
@@ -244,16 +242,16 @@ static inline char validate_runtime_disk_info_encoding(
   if (info->biosGeo.cylinders > 0 &&
       info->biosGeo.cylinders < rdie->bios_cylinders) {
     fprintf(stderr,
-            "[validate_runtime_disk_info_encoding] New disk has %ld BIOS "
-            "cylinders original had %ld\n",
+            "[validate_runtime_disk_info_encoding] New disk has %u BIOS "
+            "cylinders original had %u\n",
             info->biosGeo.cylinders, rdie->bios_cylinders);
     goto bail_out;
   }
 
   if (info->biosGeo.heads > 0 && info->biosGeo.heads < rdie->bios_heads) {
     fprintf(stderr,
-            "[validate_runtime_disk_info_encoding] New disk has %ld BIOS heads "
-            "original had %ld\n",
+            "[validate_runtime_disk_info_encoding] New disk has %u BIOS heads "
+            "original had %u\n",
             info->biosGeo.heads, rdie->bios_heads);
     goto bail_out;
   }
@@ -261,32 +259,32 @@ static inline char validate_runtime_disk_info_encoding(
   if (info->biosGeo.cylinders > 0 &&
       info->biosGeo.cylinders < rdie->bios_cylinders) {
     fprintf(stderr,
-            "[validate_runtime_disk_info_encoding] New disk has %ld BIOS "
-            "sectors original had %ld\n",
+            "[validate_runtime_disk_info_encoding] New disk has %u BIOS "
+            "sectors original had %u\n",
             info->biosGeo.sectors, rdie->bios_sectors);
     goto bail_out;
   }
 
   if (info->physGeo.cylinders < rdie->phys_cylinders) {
     fprintf(stderr,
-            "[validate_runtime_disk_info_encoding] New disk has %ld PHYS "
-            "cylinders original had %ld\n",
+            "[validate_runtime_disk_info_encoding] New disk has %u PHYS "
+            "cylinders original had %u\n",
             info->physGeo.cylinders, rdie->phys_cylinders);
     goto bail_out;
   }
 
   if (info->physGeo.heads < rdie->phys_heads) {
     fprintf(stderr,
-            "[validate_runtime_disk_info_encoding] New disk has %ld PHYS heads "
-            "original had %ld\n",
+            "[validate_runtime_disk_info_encoding] New disk has %u PHYS heads "
+            "original had %u\n",
             info->biosGeo.heads, rdie->phys_heads);
     goto bail_out;
   }
 
   if (info->physGeo.cylinders < rdie->phys_cylinders) {
     fprintf(stderr,
-            "[validate_runtime_disk_info_encoding] New disk has %ld PHYS "
-            "sectors original had %ld\n",
+            "[validate_runtime_disk_info_encoding] New disk has %u PHYS "
+            "sectors original had %u\n",
             info->biosGeo.sectors, rdie->phys_sectors);
     goto bail_out;
   }
@@ -433,7 +431,7 @@ static void cleanup(void)
       char* error_txt;
 
       error_txt = VixDiskLib_GetErrorText(err, NULL);
-      fprintf(stderr, "Failed to End Access: %s [%d]\n", error_txt, err);
+      fprintf(stderr, "Failed to End Access: %s [%lu]\n", error_txt, err);
       VixDiskLib_FreeErrorText(error_txt);
     }
   }
@@ -499,7 +497,7 @@ static inline void do_vixdisklib_connect(const char* key,
     char* error_txt;
 
     error_txt = VixDiskLib_GetErrorText(err, NULL);
-    fprintf(stderr, "Failed to initialize vixdisklib %s [%d]\n", error_txt,
+    fprintf(stderr, "Failed to initialize vixdisklib %s [%lu]\n", error_txt,
             err);
     VixDiskLib_FreeErrorText(error_txt);
     goto bail_out;
@@ -592,7 +590,7 @@ static inline void do_vixdisklib_connect(const char* key,
         char* error_txt;
 
         error_txt = VixDiskLib_GetErrorText(err, NULL);
-        fprintf(stderr, "Failed to Prepare For Access: %s [%d]\n", error_txt,
+        fprintf(stderr, "Failed to Prepare For Access: %s [%lu]\n", error_txt,
                 err);
         VixDiskLib_FreeErrorText(error_txt);
       }
@@ -605,8 +603,8 @@ static inline void do_vixdisklib_connect(const char* key,
     char* error_txt;
 
     error_txt = VixDiskLib_GetErrorText(err, NULL);
-    fprintf(stderr, "Failed to connect to %s : %s [%d]\n", cnxParams.serverName,
-            error_txt, err);
+    fprintf(stderr, "Failed to connect to %s : %s [%lu]\n",
+            cnxParams.serverName, error_txt, err);
     VixDiskLib_FreeErrorText(error_txt);
     goto bail_out;
   }
@@ -663,7 +661,8 @@ static inline void do_vixdisklib_open(const char* key,
     char* error_txt;
 
     error_txt = VixDiskLib_GetErrorText(err, NULL);
-    fprintf(stderr, "Failed to open %s : %s [%d]\n", disk_path, error_txt, err);
+    fprintf(stderr, "Failed to open %s : %s [%lu]\n", disk_path, error_txt,
+            err);
     VixDiskLib_FreeErrorText(error_txt);
     goto bail_out;
   }
@@ -677,7 +676,7 @@ static inline void do_vixdisklib_open(const char* key,
       char* error_txt;
 
       error_txt = VixDiskLib_GetErrorText(err, NULL);
-      fprintf(stderr, "Failed to get Logical Disk Info for %s, %s [%d]\n",
+      fprintf(stderr, "Failed to get Logical Disk Info for %s, %s [%lu]\n",
               disk_path, error_txt, err);
       VixDiskLib_FreeErrorText(error_txt);
       goto bail_out;
@@ -744,7 +743,7 @@ static inline void do_vixdisklib_create(const char* key,
     char* error_txt;
 
     error_txt = VixDiskLib_GetErrorText(err, NULL);
-    fprintf(stderr, "Failed to create Logical Disk for %s, %s [%d]\n",
+    fprintf(stderr, "Failed to create Logical Disk for %s, %s [%lu]\n",
             disk_path, error_txt, err);
     VixDiskLib_FreeErrorText(error_txt);
     goto bail_out;
@@ -769,7 +768,7 @@ static size_t read_from_vmdk(size_t sector_offset, size_t nbyte, void* buf)
     char* error_txt;
 
     error_txt = VixDiskLib_GetErrorText(err, NULL);
-    fprintf(stderr, "VMDK Read error: %s [%d]\n", error_txt, err);
+    fprintf(stderr, "VMDK Read error: %s [%lu]\n", error_txt, err);
     return -1;
   }
 
@@ -789,7 +788,7 @@ static size_t write_to_vmdk(size_t sector_offset, size_t nbyte, void* buf)
     char* error_txt;
 
     error_txt = VixDiskLib_GetErrorText(err, NULL);
-    fprintf(stderr, "VMDK Write error: %s [%d]\n", error_txt, err);
+    fprintf(stderr, "VMDK Write error: %s [%lu]\n", error_txt, err);
     return -1;
   }
 
@@ -826,7 +825,7 @@ static size_t write_to_stream(size_t sector_offset, size_t nbyte, void* buf)
       char* error_txt;
 
       error_txt = VixDiskLib_GetErrorText(err, NULL);
-      fprintf(stderr, "VMDK Write error: %s [%d]\n", error_txt, err);
+      fprintf(stderr, "VMDK Write error: %s [%lu]\n", error_txt, err);
     }
   }
 
@@ -901,7 +900,7 @@ static inline bool process_disk_info(bool validate_only, json_t* value)
   if (rdie.start_magic != BAREOSMAGIC) {
     fprintf(stderr,
             "[runtime_disk_info_encoding] Failed to find valid MAGIC start "
-            "marker read %lu should have been %lu\n",
+            "marker read %u should have been %u\n",
             rdie.start_magic, BAREOSMAGIC);
     goto bail_out;
   }
@@ -909,7 +908,7 @@ static inline bool process_disk_info(bool validate_only, json_t* value)
   if (rdie.end_magic != BAREOSMAGIC) {
     fprintf(stderr,
             "[runtime_disk_info_encoding] Failed to find valid MAGIC end "
-            "marker read %lu should have been %lu\n",
+            "marker read %u should have been %u\n",
             rdie.end_magic, BAREOSMAGIC);
     goto bail_out;
   }
@@ -984,7 +983,7 @@ static inline bool read_meta_data_key(char* key)
 
     error_txt = VixDiskLib_GetErrorText(err, NULL);
     fprintf(stderr,
-            "Failed to read metadata for key %s : %s [%d] exiting ...\n", key,
+            "Failed to read metadata for key %s : %s [%lu] exiting ...\n", key,
             error_txt, err);
     goto bail_out;
   }
@@ -1001,7 +1000,7 @@ static inline bool read_meta_data_key(char* key)
 
       error_txt = VixDiskLib_GetErrorText(err, NULL);
       fprintf(stderr,
-              "Failed to write metadata for key %s : %s [%d] exiting ...\n",
+              "Failed to write metadata for key %s : %s [%lu] exiting ...\n",
               key, error_txt, err);
       goto bail_out;
     }
@@ -1073,7 +1072,7 @@ static inline bool save_meta_data()
       char* error_txt;
 
       error_txt = VixDiskLib_GetErrorText(err, NULL);
-      fprintf(stderr, "Failed to read metadata keys : %s [%d] exiting ...\n",
+      fprintf(stderr, "Failed to read metadata keys : %s [%lu] exiting ...\n",
               error_txt, err);
       goto bail_out;
     }
@@ -1132,7 +1131,7 @@ static inline bool process_meta_data(bool validate_only)
     if (rmde.start_magic != BAREOSMAGIC) {
       fprintf(stderr,
               "[runtime_meta_data_encoding] Failed to find valid MAGIC start "
-              "marker read %lu should have been %lu\n",
+              "marker read %u should have been %u\n",
               rmde.start_magic, BAREOSMAGIC);
       goto bail_out;
     }
@@ -1140,7 +1139,7 @@ static inline bool process_meta_data(bool validate_only)
     if (rmde.end_magic != BAREOSMAGIC) {
       fprintf(stderr,
               "[runtime_meta_data_encoding] Failed to find valid MAGIC end "
-              "marker read %lu should have been %lu\n",
+              "marker read %u should have been %u\n",
               rmde.end_magic, BAREOSMAGIC);
       goto bail_out;
     }
@@ -1189,7 +1188,7 @@ static inline bool process_meta_data(bool validate_only)
 
         error_txt = VixDiskLib_GetErrorText(err, NULL);
         fprintf(stderr,
-                "Failed to write metadata for key %s : %s [%d] exiting ...\n",
+                "Failed to write metadata for key %s : %s [%lu] exiting ...\n",
                 key, error_txt, err);
         goto bail_out;
       }
@@ -1394,7 +1393,7 @@ static inline bool process_restore_stream(bool validate_only, json_t* value)
     if (rce.start_magic != BAREOSMAGIC) {
       fprintf(stderr,
               "[runtime_cbt_encoding] Failed to find valid MAGIC start marker "
-              "read %lu should have been %lu\n",
+              "read %u should have been %u\n",
               rce.start_magic, BAREOSMAGIC);
       goto bail_out;
     }
@@ -1402,7 +1401,7 @@ static inline bool process_restore_stream(bool validate_only, json_t* value)
     if (rce.end_magic != BAREOSMAGIC) {
       fprintf(stderr,
               "[runtime_cbt_encoding] Failed to find valid MAGIC end marker "
-              "read %lu should have been %lu\n",
+              "read %u should have been %u\n",
               rce.end_magic, BAREOSMAGIC);
       goto bail_out;
     }
