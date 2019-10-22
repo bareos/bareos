@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -586,8 +586,10 @@ void CreateVolumeLabel(Device* dev, const char* VolName, const char* PoolName)
     dev->VolHdr.HostName[0] = 0;
   }
   bstrncpy(dev->VolHdr.LabelProg, my_name, sizeof(dev->VolHdr.LabelProg));
-  sprintf(dev->VolHdr.ProgVersion, "Ver. %s %s", VERSION, BDATE);
-  sprintf(dev->VolHdr.ProgDate, "Build %s %s", __DATE__, __TIME__);
+  snprintf(dev->VolHdr.ProgVersion, sizeof(dev->VolHdr.ProgVersion),
+           "Ver. %s %s", VERSION, BDATE);
+  snprintf(dev->VolHdr.ProgDate, sizeof(dev->VolHdr.ProgDate), "Build %s %s",
+           __DATE__, __TIME__);
   dev->SetLabeled(); /* set has Bareos label */
   if (debug_level >= 90) { DumpVolumeLabel(dev); }
 }
