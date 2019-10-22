@@ -1,9 +1,9 @@
 include_directories(/usr/lib/vmware-vix-disklib/include)
 link_directories(/usr/lib/vmware-vix-disklib/lib64)
 add_executable(bareos_vadp_dumper
-   bareos_vadp_dumper.cpp
-   cbuf.cpp
-   copy_thread.cpp
+   bareos_vadp_dumper.cc
+   cbuf.cc
+   copy_thread.cc
 )
 target_link_libraries(bareos_vadp_dumper
    vixDiskLib
