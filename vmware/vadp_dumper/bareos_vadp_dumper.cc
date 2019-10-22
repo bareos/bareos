@@ -223,15 +223,14 @@ static inline void fill_runtime_disk_info_encoding(
 static inline void dump_runtime_disk_info_encoding(
     struct runtime_disk_info_encoding* rdie)
 {
-  fprintf(stderr, "Protocol version = %lld\n", rdie->protocol_version);
-  fprintf(stderr, "Absolute disk length = %lld\n", rdie->absolute_disk_length);
-  fprintf(stderr, "Absolute start offset = %lld\n",
-          rdie->absolute_start_offset);
+  fprintf(stderr, "Protocol version = %lu\n", rdie->protocol_version);
+  fprintf(stderr, "Absolute disk length = %lu\n", rdie->absolute_disk_length);
+  fprintf(stderr, "Absolute start offset = %lu\n", rdie->absolute_start_offset);
   fprintf(stderr, "BIOS geometry (%ld cyl, %ld heads, %ld sectors)\n",
           rdie->bios_cylinders, rdie->bios_heads, rdie->bios_sectors);
   fprintf(stderr, "PHYS geometry (%ld cyl, %ld heads, %ld sectors)\n",
           rdie->phys_cylinders, rdie->phys_heads, rdie->phys_sectors);
-  fprintf(stderr, "Physical capacity %lld\n", rdie->phys_capacity);
+  fprintf(stderr, "Physical capacity %lu\n", rdie->phys_capacity);
   fprintf(stderr, "Adapter Type %ld\n", rdie->adapter_type);
 }
 
@@ -902,7 +901,7 @@ static inline bool process_disk_info(bool validate_only, json_t* value)
   if (rdie.start_magic != BAREOSMAGIC) {
     fprintf(stderr,
             "[runtime_disk_info_encoding] Failed to find valid MAGIC start "
-            "marker read %lld should have been %lld\n",
+            "marker read %lu should have been %lu\n",
             rdie.start_magic, BAREOSMAGIC);
     goto bail_out;
   }
@@ -910,7 +909,7 @@ static inline bool process_disk_info(bool validate_only, json_t* value)
   if (rdie.end_magic != BAREOSMAGIC) {
     fprintf(stderr,
             "[runtime_disk_info_encoding] Failed to find valid MAGIC end "
-            "marker read %lld should have been %lld\n",
+            "marker read %lu should have been %lu\n",
             rdie.end_magic, BAREOSMAGIC);
     goto bail_out;
   }
@@ -1133,7 +1132,7 @@ static inline bool process_meta_data(bool validate_only)
     if (rmde.start_magic != BAREOSMAGIC) {
       fprintf(stderr,
               "[runtime_meta_data_encoding] Failed to find valid MAGIC start "
-              "marker read %lld should have been %lld\n",
+              "marker read %lu should have been %lu\n",
               rmde.start_magic, BAREOSMAGIC);
       goto bail_out;
     }
@@ -1141,7 +1140,7 @@ static inline bool process_meta_data(bool validate_only)
     if (rmde.end_magic != BAREOSMAGIC) {
       fprintf(stderr,
               "[runtime_meta_data_encoding] Failed to find valid MAGIC end "
-              "marker read %lld should have been %lld\n",
+              "marker read %lu should have been %lu\n",
               rmde.end_magic, BAREOSMAGIC);
       goto bail_out;
     }
@@ -1256,10 +1255,9 @@ static inline bool process_cbt(const char* key, json_t* cbt)
     offset_length = json_integer_value(length);
 
     if (verbose) {
-      fprintf(stderr, "start = %lld\n", start_offset);
-      fprintf(stderr, "length = %lld\n", offset_length);
-      fprintf(stderr, "nr length = %lld\n",
-              offset_length / DEFAULT_SECTOR_SIZE);
+      fprintf(stderr, "start = %lu\n", start_offset);
+      fprintf(stderr, "length = %lu\n", offset_length);
+      fprintf(stderr, "nr length = %lu\n", offset_length / DEFAULT_SECTOR_SIZE);
       fflush(stderr);
     }
 
@@ -1396,7 +1394,7 @@ static inline bool process_restore_stream(bool validate_only, json_t* value)
     if (rce.start_magic != BAREOSMAGIC) {
       fprintf(stderr,
               "[runtime_cbt_encoding] Failed to find valid MAGIC start marker "
-              "read %lld should have been %lld\n",
+              "read %lu should have been %lu\n",
               rce.start_magic, BAREOSMAGIC);
       goto bail_out;
     }
@@ -1404,15 +1402,15 @@ static inline bool process_restore_stream(bool validate_only, json_t* value)
     if (rce.end_magic != BAREOSMAGIC) {
       fprintf(stderr,
               "[runtime_cbt_encoding] Failed to find valid MAGIC end marker "
-              "read %lld should have been %lld\n",
+              "read %lu should have been %lu\n",
               rce.end_magic, BAREOSMAGIC);
       goto bail_out;
     }
 
     if (verbose) {
-      fprintf(stderr, "start = %lld\n", rce.start_offset);
-      fprintf(stderr, "length = %lld\n", rce.offset_length);
-      fprintf(stderr, "nr length = %lld\n",
+      fprintf(stderr, "start = %lu\n", rce.start_offset);
+      fprintf(stderr, "length = %lu\n", rce.offset_length);
+      fprintf(stderr, "nr length = %lu\n",
               rce.offset_length / DEFAULT_SECTOR_SIZE);
       fflush(stderr);
     }
