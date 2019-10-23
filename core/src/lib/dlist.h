@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -49,12 +49,18 @@
  * Loop var through each member of list
  */
 #ifdef HAVE_TYPEOF
-#define foreach_dlist(var, list) \
-  for ((var) = NULL; list ? ((var) = (typeof(var))(list)->next(var)) : NULL;)
+#define foreach_dlist(var, list)                                        \
+  _Pragma("GCC diagnostic push")                                        \
+      _Pragma("GCC diagnostic ignored \"-Wnull-conversion\"") for (     \
+          (var) = NULL; list ? ((var) = (typeof(var))(list)->next(var)) \
+                             : NULL;) _Pragma("GCC diagnostic pop")
 #else
-#define foreach_dlist(var, list) \
-  for ((var) = NULL;             \
-       list ? (*((void**)&(var)) = (void*)((list)->next(var))) : NULL;)
+#define foreach_dlist(var, list)                                           \
+  _Pragma("GCC diagnostic push")                                           \
+      _Pragma("GCC diagnostic ignored \"-Wnull-conversion\"") for (        \
+          (var) = NULL;                                                    \
+          list ? (*((void**)&(var)) = (void*)((list)->next(var))) : NULL;) \
+          _Pragma("GCC diagnostic pop")
 #endif
 
 class dlist {
