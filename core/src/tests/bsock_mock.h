@@ -37,11 +37,13 @@
 
 #include <algorithm>
 
+/* ignore the suggest-override warnings caused by MOCK_METHODx */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsuggest-override"
 class BareosSocketMock : public BareosSocket {
  public:
   BareosSocketMock() : BareosSocket() {}
   ~BareosSocketMock();
-
   MOCK_METHOD0(clone, BareosSocket*());
   MOCK_METHOD9(connect,
                bool(JobControlRecord*,
@@ -83,6 +85,7 @@ class BareosSocketMock : public BareosSocket {
                     utime_t,
                     int*));
 };
+#pragma GCC diagnostic pop
 
 /* define a gmock action that fills bsock->msg so we can recv() a message */
 ACTION_P2(BareosSocket_Recv, bsock, msg)
