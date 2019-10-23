@@ -30,7 +30,6 @@
 #include <time.h>
 #include <unistd.h>
 #include <signal.h>
-#include <algorithm>
 
 #include "copy_thread.h"
 
@@ -64,6 +63,9 @@
  * e.g. 512 means 256 Kb per call (e.g. 512 x 512 bytes)
  */
 #define SECTORS_PER_CALL 1024
+
+#define MIN(a, b) ((a) < b) ? (a) : (b)
+#define MAX(a, b) ((a) > b) ? (a) : (b)
 
 #define CON_PARAMS_KEY "ConnParams"
 #define CON_PARAMS_VM_MOREF_KEY "VmMoRef"
@@ -1292,7 +1294,7 @@ static inline bool process_cbt(const char* key, json_t* cbt)
        * specified in the sectors_per_call variable.
        */
       sectors_to_read =
-          std::min(sectors_per_call, (offset_length / DEFAULT_SECTOR_SIZE));
+          MIN(sectors_per_call, (offset_length / DEFAULT_SECTOR_SIZE));
 
       if (multi_threaded) {
         if (!send_to_copy_thread(sector_offset,
@@ -1422,7 +1424,7 @@ static inline bool process_restore_stream(bool validate_only, json_t* value)
        * specified in the sectors_per_call variable.
        */
       sectors_to_read =
-          std::min(sectors_per_call, (rce.offset_length / DEFAULT_SECTOR_SIZE));
+          MIN(sectors_per_call, (rce.offset_length / DEFAULT_SECTOR_SIZE));
 
       if (!validate_only && multi_threaded) {
         if (!send_to_copy_thread(sector_offset,
