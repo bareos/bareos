@@ -211,8 +211,13 @@ IMPLEMENT_STACK_OF(RecipientInfo)
 
 #else
 /* Openssl Version >= 1.1 */
+
+/* ignore the suggest-override warnings caused by following DEFINE_STACK_OF() */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
 DEFINE_STACK_OF(SignerInfo)
 DEFINE_STACK_OF(RecipientInfo)
+#pragma GCC diagnostic pop
 
 
 #define M_ASN1_OCTET_STRING_free(a) ASN1_STRING_free((ASN1_STRING*)a)
