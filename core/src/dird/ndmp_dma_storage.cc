@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,7 +54,8 @@ int get_tape_info_cb(struct ndm_session* sess,
                      unsigned n_info)
 {
   Dmsg0(100, "Get tape info called\n");
-  unsigned int i, j, k;
+  unsigned int i = 0;
+  unsigned int j, k;
   const char* what = "tape";
   JobControlRecord* jcr = NULL;
   StorageResource* store = NULL;
