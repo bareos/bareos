@@ -266,6 +266,7 @@ set(SYSTEM_TESTS
   copy-remote-bscan
   bconsole-status-client
   scheduler-backup-test
+  client-initiated-connect-job-run-test
 )
 
 set(SYSTEM_TESTS_DISABLED
