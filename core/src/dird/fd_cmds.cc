@@ -44,6 +44,7 @@
 #include "dird/getmsg.h"
 #include "dird/jcr_private.h"
 #include "dird/msgchan.h"
+#include "dird/scheduler.h"
 #include "lib/berrno.h"
 #include "lib/bsock_tcp.h"
 #include "lib/bnet.h"
@@ -379,8 +380,7 @@ int SendJobInfoToFileDaemon(JobControlRecord* jcr)
     } else if (jcr->db) {
       ClientDbRecord cr;
 
-      bstrncpy(cr.Name, jcr->impl->res.client->resource_name_,
-               sizeof(cr.Name));
+      bstrncpy(cr.Name, jcr->impl->res.client->resource_name_, sizeof(cr.Name));
       cr.AutoPrune = jcr->impl->res.client->AutoPrune;
       cr.FileRetention = jcr->impl->res.client->FileRetention;
       cr.JobRetention = jcr->impl->res.client->JobRetention;
@@ -996,7 +996,7 @@ bool SendPluginOptions(JobControlRecord* jcr)
 
       fd->fsend(pluginoptionscmd, cur_plugin_options.c_str());
       if (!response(jcr, fd, OKPluginOptions, "PluginOptions", DISPLAY_ERROR)) {
-      	Jmsg(jcr, M_FATAL, 0, _("Plugin options failed.\n"));
+        Jmsg(jcr, M_FATAL, 0, _("Plugin options failed.\n"));
         return false;
       }
     }
@@ -1168,8 +1168,7 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
       ar->DeltaSeq = 0;
       jcr->cached_attribute = true;
 
-      Dmsg2(debuglevel, "dird<filed: stream=%d %s\n", stream,
-            jcr->impl->fname);
+      Dmsg2(debuglevel, "dird<filed: stream=%d %s\n", stream, jcr->impl->fname);
       Dmsg1(debuglevel, "dird<filed: attr=%s\n", ar->attr);
       jcr->FileId = ar->FileId;
     } else if (CryptoDigestStreamType(stream) != CRYPTO_DIGEST_NONE) {
@@ -1344,6 +1343,20 @@ void DoClientResolve(UaContext* ua, ClientResource* client)
   return;
 }
 
+static void AddJobsOnClientInitiatedConnect(std::string client_name)
+{
+  std::vector<JobResource*> job_resources =
+      GetAllJobResourcesByClientName(client_name.c_str());
+
+  if (!job_resources.empty()) {
+    for (auto job : job_resources) {
+      if (job->RunOnIncomingConnectInterval != 0) {
+        Scheduler::GetMainScheduler().AddJobWithNoRunResourceToQueue(job);
+      }
+    }
+  }
+}
+
 /**
  * After receiving a connection (in socket_server.c) if it is
  * from the File daemon, this routine is called.
@@ -1384,6 +1397,8 @@ void* HandleFiledConnection(ConnectionPool* connections,
     Emsg0(M_ERROR, 0, "Failed to add connection to pool.\n");
     goto getout;
   }
+
+  AddJobsOnClientInitiatedConnect(client_name);
 
   /*
    * The connection is now kept in connection_pool.
