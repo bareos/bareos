@@ -458,7 +458,6 @@ cleanup:
  */
 bool DoNdmpRestoreNdmpNative(JobControlRecord* jcr)
 {
-  JobDbRecord rjr; /* restore job record */
   int status;
 
   jcr->jr.JobLevel = L_FULL; /* Full restore */

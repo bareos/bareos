@@ -200,7 +200,6 @@ void DoNdmpNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
 
   NdmpDoQuery(ua, NULL, &ndmp_job, me->ndmp_loglevel, query_cbs);
 
-  ndmp_deviceinfo_t* deviceinfo = NULL;
   int i = 0;
   if (!store->runtime_storage_status->ndmp_deviceinfo.empty()) {
     ua->InfoMsg("NDMP Devices for storage %s:(%s)\n", store->resource_name_,

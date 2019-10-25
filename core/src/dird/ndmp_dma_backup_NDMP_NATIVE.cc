@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -169,7 +169,7 @@ int NdmpLoadNext(struct ndm_session* sess)
  */
 bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
 {
-  int i, status;
+  int status;
   char ed1[100];
   NIS* nis = NULL;
   FilesetResource* fileset;
@@ -179,7 +179,6 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
   bool retval = false;
   uint32_t ndmp_log_level;
 
-  int driveindex;
   char* item;
 
   ndmp_log_level = std::max(jcr->res.client->ndmp_loglevel, me->ndmp_loglevel);
