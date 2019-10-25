@@ -39,7 +39,10 @@
 #include "lib/bsignal.h"
 #include "lib/daemon.h"
 #include "lib/berrno.h"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #include "vss.h"
+#pragma GCC diagnostic pop
 
 /**
  * Sanity check to make sure FILE_ATTRIBUTE_VALID_FLAGS is always smaller

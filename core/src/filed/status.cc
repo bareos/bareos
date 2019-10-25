@@ -60,7 +60,10 @@ static char DotStatusJob[] = "JobId=%d JobStatus=%c JobErrors=%d\n";
 static int privs = 0;
 #endif
 #ifdef WIN32_VSS
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #include "vss.h"
+#pragma GCC diagnostic pop
 #define VSS " VSS"
 #else
 #define VSS ""
