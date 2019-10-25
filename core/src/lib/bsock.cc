@@ -351,6 +351,7 @@ bool BareosSocket::ConsoleAuthenticateWithDirector(
     dir->StopTimer();
     return false;
   }
+  dir->StopTimer();
 
   Dmsg1(6, ">dird: %s", dir->msg);
 
