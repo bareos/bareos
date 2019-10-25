@@ -407,8 +407,6 @@ static void FillVolumeName(vol_list_t* vl, struct smc_element_descriptor* edp)
 static void NdmpFillStorageMappings(StorageResource* store,
                                     struct ndm_session* ndmp_sess)
 {
-  drive_number_t drive;
-  slot_number_t slot, picker;
   struct smc_ctrl_block* smc;
 
   smc = ndmp_sess->control_acb->smc_cb;
