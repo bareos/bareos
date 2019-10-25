@@ -51,13 +51,13 @@
 #ifdef HAVE_TYPEOF
 #define foreach_dlist(var, list)                                        \
   _Pragma("GCC diagnostic push")                                        \
-      _Pragma("GCC diagnostic ignored \"-Wnull-conversion\"") for (     \
+      _Pragma("GCC diagnostic ignored \"-Wconversion-null\"") for (     \
           (var) = NULL; list ? ((var) = (typeof(var))(list)->next(var)) \
                              : NULL;) _Pragma("GCC diagnostic pop")
 #else
 #define foreach_dlist(var, list)                                           \
   _Pragma("GCC diagnostic push")                                           \
-      _Pragma("GCC diagnostic ignored \"-Wnull-conversion\"") for (        \
+      _Pragma("GCC diagnostic ignored \"-Wconversion-null\"") for (        \
           (var) = NULL;                                                    \
           list ? (*((void**)&(var)) = (void*)((list)->next(var))) : NULL;) \
           _Pragma("GCC diagnostic pop")
