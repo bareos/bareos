@@ -21,9 +21,7 @@ if(NOT DEFINED VERSION_STRING)
     # no version file, try data from git
     if(GIT_DESCRIBE_VERSION)
       message(STATUS "Using version information from Git")
-      #message(FATAL_ERROR "${GIT_DESCRIBE_VERSION}")
       set(VERSION_STRING "${GIT_DESCRIBE_VERSION}")
-      set(VERSION_TIMESTAMP "${GIT_COMMIT_TIMESTAMP}")
     else()
       message(
         FATAL_ERROR "VERSION_STRING not set, BareosVersion.cmake not found and no version data from git available."

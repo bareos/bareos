@@ -15,23 +15,25 @@
 # with this program; if not, write to the Free Software Foundation, Inc., 51
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-if(NOT DEFINED VERSION_STRING)
-  include(BareosVersion OPTIONAL RESULT_VARIABLE BareosVersionFile)
-  if(BareosVersionFile STREQUAL "NOTFOUND")
-    # no version file, try data from git
-    if(GIT_DESCRIBE_VERSION)
-      message(STATUS "Using version information from Git")
-      set(VERSION_STRING "${GIT_DESCRIBE_VERSION}")
-      set(VERSION_TIMESTAMP "${GIT_COMMIT_TIMESTAMP}")
+include(BareosVersion OPTIONAL RESULT_VARIABLE BareosVersionFile)
+if(BareosVersionFile STREQUAL "NOTFOUND")
+  # no version file, try data from git
+  if(GIT_DESCRIBE_VERSION)
+    message(STATUS "Using version information from Git")
+    if(DEFINED VERSION_STRING)
+      message(STATUS "VERSION_STRING already set to ${VERSION_STRING}. Will not overwrite")
     else()
-      message(
-        FATAL_ERROR
-          "VERSION_STRING not set, BareosVersion.cmake not found and no version data from git available."
-        )
+      set(VERSION_STRING "${GIT_DESCRIBE_VERSION}")
     endif()
+    set(VERSION_TIMESTAMP "${GIT_COMMIT_TIMESTAMP}")
   else()
-    message(STATUS "Using version information from ${BareosVersionFile}")
+    message(
+      FATAL_ERROR
+        "VERSION_STRING not set, BareosVersion.cmake not found and no version data from git available."
+      )
   endif()
+else()
+  message(STATUS "Using version information from ${BareosVersionFile}")
 endif()
 
 string(REGEX MATCH
