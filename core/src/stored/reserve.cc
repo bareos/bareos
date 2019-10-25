@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -406,7 +406,8 @@ static bool IsVolInAutochanger(ReserveContext& rctx, VolumeReservationItem* vol)
    * Find resource, and make sure we were able to open it
    */
   if (bstrcmp(rctx.device_name, changer->resource_name_)) {
-    Dmsg1(debuglevel, "Found changer device %s\n", vol->dev->device->resource_name_);
+    Dmsg1(debuglevel, "Found changer device %s\n",
+          vol->dev->device->resource_name_);
     return true;
   }
   Dmsg1(debuglevel, "Incorrect changer device %s\n", changer->resource_name_);
@@ -425,7 +426,7 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
 {
   bool ok = false;
   DirectorStorage* store;
-  char* device_name;
+  char* device_name = nullptr;
   alist* dirstore;
   DeviceControlRecord* dcr = jcr->dcr;
 
@@ -572,8 +573,8 @@ int SearchResForDevice(ReserveContext& rctx)
    * Look through Autochangers first
    */
   foreach_res (changer, R_AUTOCHANGER) {
-    Dmsg2(debuglevel, "Try match changer res=%s, wanted %s\n", changer->resource_name_,
-          rctx.device_name);
+    Dmsg2(debuglevel, "Try match changer res=%s, wanted %s\n",
+          changer->resource_name_, rctx.device_name);
     /*
      * Find resource, and make sure we were able to open it
      */
@@ -582,7 +583,8 @@ int SearchResForDevice(ReserveContext& rctx)
        * Try each device in this AutoChanger
        */
       foreach_alist (rctx.device, changer->device) {
-        Dmsg1(debuglevel, "Try changer device %s\n", rctx.device->resource_name_);
+        Dmsg1(debuglevel, "Try changer device %s\n",
+              rctx.device->resource_name_);
         if (!rctx.device->autoselect) {
           Dmsg1(100, "Device %s not autoselect skipped.\n",
                 rctx.device->resource_name_);
@@ -601,7 +603,8 @@ int SearchResForDevice(ReserveContext& rctx)
                 rctx.device->resource_name_, rctx.jcr->dcr->dev->NumReserved());
         } else {
           Dmsg2(debuglevel, "Device %s reserved=%d for read.\n",
-                rctx.device->resource_name_, rctx.jcr->read_dcr->dev->NumReserved());
+                rctx.device->resource_name_,
+                rctx.jcr->read_dcr->dev->NumReserved());
         }
         return status;
       }
@@ -613,8 +616,8 @@ int SearchResForDevice(ReserveContext& rctx)
    */
   if (!rctx.autochanger_only) {
     foreach_res (rctx.device, R_DEVICE) {
-      Dmsg2(debuglevel, "Try match res=%s wanted %s\n", rctx.device->resource_name_,
-            rctx.device_name);
+      Dmsg2(debuglevel, "Try match res=%s wanted %s\n",
+            rctx.device->resource_name_, rctx.device_name);
 
       /*
        * Find resource, and make sure we were able to open it
@@ -632,7 +635,8 @@ int SearchResForDevice(ReserveContext& rctx)
                 rctx.device->resource_name_, rctx.jcr->dcr->dev->NumReserved());
         } else {
           Dmsg2(debuglevel, "Device %s reserved=%d for read.\n",
-                rctx.device->resource_name_, rctx.jcr->read_dcr->dev->NumReserved());
+                rctx.device->resource_name_,
+                rctx.jcr->read_dcr->dev->NumReserved());
         }
         return status;
       }
@@ -661,10 +665,12 @@ int SearchResForDevice(ReserveContext& rctx)
            */
           if (rctx.store->append == SD_APPEND) {
             Dmsg2(debuglevel, "Device %s reserved=%d for append.\n",
-                  rctx.device->resource_name_, rctx.jcr->dcr->dev->NumReserved());
+                  rctx.device->resource_name_,
+                  rctx.jcr->dcr->dev->NumReserved());
           } else {
             Dmsg2(debuglevel, "Device %s reserved=%d for read.\n",
-                  rctx.device->resource_name_, rctx.jcr->read_dcr->dev->NumReserved());
+                  rctx.device->resource_name_,
+                  rctx.jcr->read_dcr->dev->NumReserved());
           }
           return status;
         }

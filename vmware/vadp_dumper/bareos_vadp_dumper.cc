@@ -1649,7 +1649,7 @@ void usage(const char* program_name)
 
 int main(int argc, char** argv)
 {
-  bool retval;
+  bool retval = false;
   const char* program_name;
   int ch;
 
