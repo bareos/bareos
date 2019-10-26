@@ -83,6 +83,14 @@ if (cxx_compiler_macro_prefix_map)
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fmacro-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=.")
 endif()
 
+
+CHECK_CXX_COMPILER_FLAG(-Wno-unknown-pragmas compiler_has_no_unknown_pragmas)
+if (${compiler_has_no_unknown_pragmas})
+   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
+endif()
+
+
+
 # warn on sign-conversion
 #include(CheckCCompilerFlag)
 #CHECK_C_COMPILER_FLAG(-Wsign-conversion c_compiler_will_warn_sign_conversion)
