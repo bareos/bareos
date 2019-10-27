@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -241,11 +241,9 @@ static bool PurgeFilesFromClient(UaContext* ua, ClientResource* client)
   ClientDbRecord cr;
   char ed1[50];
 
-  memset(&cr, 0, sizeof(cr));
   bstrncpy(cr.Name, client->resource_name_, sizeof(cr.Name));
   if (!ua->db->CreateClientRecord(ua->jcr, &cr)) { return false; }
 
-  memset(&del, 0, sizeof(del));
   del.max_ids = 1000;
   del.JobId = (JobId_t*)malloc(sizeof(JobId_t) * del.max_ids);
 
@@ -289,12 +287,10 @@ static bool PurgeJobsFromClient(UaContext* ua, ClientResource* client)
   ClientDbRecord cr;
   char ed1[50];
 
-  memset(&cr, 0, sizeof(cr));
 
   bstrncpy(cr.Name, client->resource_name_, sizeof(cr.Name));
   if (!ua->db->CreateClientRecord(ua->jcr, &cr)) { return false; }
 
-  memset(&del, 0, sizeof(del));
   del.max_ids = 1000;
   del.JobId = (JobId_t*)malloc(sizeof(JobId_t) * del.max_ids);
   del.PurgedFiles = (char*)malloc(del.max_ids);
@@ -424,7 +420,6 @@ static bool PurgeQuotaFromClient(UaContext* ua, ClientResource* client)
 {
   ClientDbRecord cr;
 
-  memset(&cr, 0, sizeof(cr));
   bstrncpy(cr.Name, client->resource_name_, sizeof(cr.Name));
   if (!ua->db->CreateClientRecord(ua->jcr, &cr)) { return false; }
   if (!ua->db->CreateQuotaRecord(ua->jcr, &cr)) { return false; }
@@ -728,8 +723,6 @@ static bool ActionOnPurgeCmd(UaContext* ua, const char* cmd)
   char esc[MAX_NAME_LENGTH * 2 + 1];
   PoolMem buf(PM_MESSAGE), volumes(PM_MESSAGE);
 
-  memset(&mr, 0, sizeof(mr));
-  memset(&pr, 0, sizeof(pr));
   PmStrcpy(volumes, "");
 
   /*
@@ -825,7 +818,6 @@ static bool ActionOnPurgeCmd(UaContext* ua, const char* cmd)
    * Loop over the candidate Volumes and actually truncate them
    */
   for (int i = 0; i < nb; i++) {
-    memset(&mr, 0, sizeof(mr));
     mr.MediaId = results[i];
     if (ua->db->GetMediaRecord(ua->jcr, &mr)) {
       /* TODO: ask for drive and change Pool */
@@ -872,8 +864,6 @@ bool MarkMediaPurged(UaContext* ua, MediaDbRecord* mr)
      */
     if (mr->RecyclePoolId && mr->RecyclePoolId != mr->PoolId) {
       PoolDbRecord oldpr, newpr;
-      memset(&oldpr, 0, sizeof(oldpr));
-      memset(&newpr, 0, sizeof(newpr));
       newpr.PoolId = mr->RecyclePoolId;
       oldpr.PoolId = mr->PoolId;
       if (ua->db->GetPoolRecord(jcr, &oldpr) &&
