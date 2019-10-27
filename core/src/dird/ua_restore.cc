@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -48,6 +48,10 @@
 #include "include/make_unique.h"
 
 namespace directordaemon {
+
+static const JobDbRecord emptyJobDbRecord = {};
+static const ClientDbRecord emptyClientDbRecord = {};
+static const FileSetDbRecord emptyFileSetDbRecord = {};
 
 /* Imported functions */
 extern void PrintBsr(UaContext* ua, RestoreBootstrapRecord* bsr);
@@ -396,7 +400,6 @@ static bool GetClientName(UaContext* ua, RestoreContext* rx)
 {
   int i;
   ClientDbRecord cr;
-  memset(&cr, 0, sizeof(cr));
 
   /*
    * If no client name specified yet, get it now
@@ -758,7 +761,8 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           return 0;
         }
 
-        memset(&jr, 0, sizeof(jr));
+        jr = emptyJobDbRecord;
+
         jr.JobId = str_to_int64(ua->cmd);
         if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
           ua->ErrorMsg(_("Unable to get Job record for JobId=%s: ERR=%s\n"),
@@ -777,7 +781,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
     }
   }
 
-  memset(&jr, 0, sizeof(jr));
+  jr = emptyJobDbRecord;
   POOLMEM* JobIds = GetPoolMemory(PM_FNAME);
   *JobIds = 0;
   rx->TotalFiles = 0;
@@ -795,7 +799,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
     }
     if (status == 0) { break; }
     if (jr.JobId == JobId) { continue; /* duplicate of last JobId */ }
-    memset(&jr, 0, sizeof(jr));
+    jr = emptyJobDbRecord;
     jr.JobId = JobId;
     if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
       ua->ErrorMsg(_("Unable to get Job record for JobId=%s: ERR=%s\n"),
@@ -1264,14 +1268,14 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
   /*
    * Select Client from the Catalog
    */
-  memset(&cr, 0, sizeof(cr));
+  cr = emptyClientDbRecord;
   if (!GetClientDbr(ua, &cr)) { goto bail_out; }
   rx->ClientName = strdup(cr.Name);
 
   /*
    * Get FileSet
    */
-  memset(&fsr, 0, sizeof(fsr));
+  fsr = emptyFileSetDbRecord;
   i = FindArgWithValue(ua, "FileSet");
 
   if (i >= 0 && IsNameValid(ua->argv[i], ua->errmsg)) {
@@ -1315,8 +1319,6 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
   pool_select[0] = 0;
   if (rx->pool) {
     PoolDbRecord pr;
-
-    memset(&pr, 0, sizeof(pr));
     bstrncpy(pr.Name, rx->pool->resource_name_, sizeof(pr.Name));
     if (ua->db->GetPoolRecord(ua->jcr, &pr)) {
       Bsnprintf(pool_select, sizeof(pool_select), "AND Media.PoolId=%s ",
