@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -41,6 +41,8 @@
 #include "lib/util.h"
 
 namespace directordaemon {
+
+static const MediaDbRecord emptyMediaDbRecord = {};
 
 /* Forward referenced functions */
 static bool UpdateVolume(UaContext* ua);
@@ -288,7 +290,6 @@ static void UpdateVolslot(UaContext* ua, char* val, MediaDbRecord* mr)
 {
   PoolDbRecord pr;
 
-  memset(&pr, 0, sizeof(pr));
   pr.PoolId = mr->PoolId;
   if (!ua->db->GetPoolRecord(ua->jcr, &pr)) {
     ua->ErrorMsg("%s", ua->db->strerror());
@@ -325,7 +326,6 @@ void UpdateVolPool(UaContext* ua,
   PoolMem query(PM_MESSAGE);
   char ed1[50], ed2[50];
 
-  memset(&pr, 0, sizeof(pr));
   bstrncpy(pr.Name, val, sizeof(pr.Name));
   if (!GetPoolDbr(ua, &pr)) { return; }
   mr->PoolId = pr.PoolId; /* set new PoolId */
@@ -363,7 +363,6 @@ void UpdateVolRecyclepool(UaContext* ua, char* val, MediaDbRecord* mr)
     /*
      * If a pool name is given, look up the PoolId
      */
-    memset(&pr, 0, sizeof(pr));
     bstrncpy(pr.Name, val, sizeof(pr.Name));
     if (!GetPoolDbr(ua, &pr, NT_("recyclepool"))) { return; }
     mr->RecyclePoolId = pr.PoolId; /* get the PoolId */
@@ -396,7 +395,6 @@ void UpdateVolStorage(UaContext* ua, char* val, MediaDbRecord* mr)
   PoolMem query(PM_MESSAGE);
   char ed1[50], ed2[50];
 
-  memset(&sr, 0, sizeof(sr));
   bstrncpy(sr.Name, val, sizeof(sr.Name));
   if (!GetStorageDbr(ua, &sr)) { return; }
   mr->StorageId = sr.StorageId; /* set new StorageId */
@@ -418,7 +416,6 @@ static void UpdateVolFromPool(UaContext* ua, MediaDbRecord* mr)
 {
   PoolDbRecord pr;
 
-  memset(&pr, 0, sizeof(pr));
   pr.PoolId = mr->PoolId;
   if (!ua->db->GetPoolRecord(ua->jcr, &pr) ||
       !ua->AclAccessOk(Pool_ACL, pr.Name, true)) {
@@ -441,9 +438,6 @@ static void UpdateAllVolsFromPool(UaContext* ua, const char* pool_name)
   PoolDbRecord pr;
   MediaDbRecord mr;
 
-  memset(&pr, 0, sizeof(pr));
-  memset(&mr, 0, sizeof(mr));
-
   bstrncpy(pr.Name, pool_name, sizeof(pr.Name));
   if (!GetPoolDbr(ua, &pr)) { return; }
   SetPoolDbrDefaultsInMediaDbr(&mr, &pr);
@@ -463,9 +457,6 @@ static void UpdateAllVols(UaContext* ua)
   uint32_t* ids;
   PoolDbRecord pr;
   MediaDbRecord mr;
-
-  memset(&pr, 0, sizeof(pr));
-  memset(&mr, 0, sizeof(mr));
 
   if (!ua->db->GetPoolIds(ua->jcr, &num_pools, &ids)) {
     ua->ErrorMsg(_("Error obtaining pool ids. ERR=%s\n"), ua->db->strerror());
@@ -572,9 +563,6 @@ static bool UpdateVolume(UaContext* ua)
     PoolDbRecord pr;
     MediaDbRecord mr;
 
-    memset(&pr, 0, sizeof(pr));
-    memset(&mr, 0, sizeof(mr));
-
     if ((j = FindArgWithValue(ua, kw[i])) > 0) {
       /* If all from pool don't select a media record */
       if (i != AllFromPool && !SelectMediaDbr(ua, &mr)) { return false; }
@@ -647,10 +635,6 @@ static bool UpdateVolume(UaContext* ua)
     PoolDbRecord pr;
     MediaDbRecord mr;
     StorageDbRecord sr;
-
-    memset(&pr, 0, sizeof(pr));
-    memset(&mr, 0, sizeof(mr));
-    memset(&sr, 0, sizeof(sr));
 
     StartPrompt(ua, _("Parameters to modify:\n"));
     AddPrompt(ua, _("Volume Status"));              /* 0 */
@@ -903,7 +887,6 @@ static bool UpdatePool(UaContext* ua)
   pool = get_pool_resource(ua);
   if (!pool) { return false; }
 
-  memset(&pr, 0, sizeof(pr));
   bstrncpy(pr.Name, pool->resource_name_, sizeof(pr.Name));
   if (!GetPoolDbr(ua, &pr)) { return false; }
 
@@ -1042,6 +1025,7 @@ static void UpdateSlots(UaContext* ua)
   bool have_enabled;
   int i;
 
+
   if (!OpenClientDb(ua)) { return; }
   store.store = get_storage_resource(ua, true, true);
   if (!store.store) { return; }
@@ -1086,7 +1070,6 @@ static void UpdateSlots(UaContext* ua)
   /*
    * Walk through the list updating the media records
    */
-  memset(&mr, 0, sizeof(mr));
   foreach_dlist (vl, vol_list->contents) {
     if (vl->bareos_slot_number > max_slots) {
       ua->WarningMsg(_("Slot %d greater than max %d ignored.\n"),
@@ -1176,8 +1159,7 @@ static void UpdateSlots(UaContext* ua)
     }
     DbUnlock(ua->db);
   }
-
-  memset(&mr, 0, sizeof(mr));
+  mr = emptyMediaDbRecord;
   mr.InChanger = 1;
   SetStorageidInMr(store.store, &mr);
 
@@ -1247,7 +1229,7 @@ void UpdateSlotsFromVolList(UaContext* ua,
     /*
      * Set InChanger to zero for this Slot
      */
-    memset(&mr, 0, sizeof(mr));
+    mr = emptyMediaDbRecord;
     mr.Slot = vl->bareos_slot_number;
     mr.InChanger = 1;
     mr.MediaId = 0; /* Get by VolumeName */
@@ -1355,7 +1337,7 @@ void UpdateInchangerForExport(UaContext* ua,
     /*
      * Set InChanger to zero for this Slot
      */
-    memset(&mr, 0, sizeof(mr));
+    mr = emptyMediaDbRecord;
     mr.Slot = vl->bareos_slot_number;
     mr.InChanger = 1;
     mr.MediaId = 0; /* Get by VolumeName */
