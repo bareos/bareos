@@ -59,6 +59,9 @@ extern bool ParseSdConfig(const char* configfile, int exit_code);
 
 using namespace storagedaemon;
 
+static const MediaDbRecord emptyMediaDbRecord = {};
+static const JobDbRecord emptyJobDbRecord = {};
+
 /* Forward referenced functions */
 static void do_scan(void);
 static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec);
@@ -446,13 +449,6 @@ static void do_scan()
 {
   attr = new_attr(bjcr);
 
-  memset(&ar, 0, sizeof(ar));
-  memset(&pr, 0, sizeof(pr));
-  memset(&jr, 0, sizeof(jr));
-  memset(&cr, 0, sizeof(cr));
-  memset(&fsr, 0, sizeof(fsr));
-  memset(&fr, 0, sizeof(fr));
-
   /*
    * Detach bscan's jcr as we are not a real Job on the tape
    */
@@ -582,7 +578,8 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
         /*
          * Check Media Info
          */
-        memset(&mr, 0, sizeof(mr));
+
+        mr = emptyMediaDbRecord;
         bstrncpy(mr.VolumeName, dev->VolHdr.VolumeName, sizeof(mr.VolumeName));
         mr.PoolId = pr.PoolId;
         num_media++;
@@ -642,7 +639,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
             ignored_msgs = 0;
           }
           UnserSessionLabel(&label, rec);
-          memset(&jr, 0, sizeof(jr));
+          jr = emptyJobDbRecord;
           bstrncpy(jr.Job, label.Job, sizeof(jr.Job));
           if (db->GetJobRecord(bjcr, &jr)) {
             /*
@@ -1459,7 +1456,6 @@ static bool CreateJobmediaRecord(BareosDb* db, JobControlRecord* mjcr)
   dcr->EndFile = dev->EndFile;
   dcr->VolMediaId = dev->VolCatInfo.VolMediaId;
 
-  memset(&jmr, 0, sizeof(jmr));
   jmr.JobId = mjcr->JobId;
   jmr.MediaId = mr.MediaId;
   jmr.FirstIndex = dcr->VolFirstIndex;
