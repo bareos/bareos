@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -46,6 +46,8 @@
 
 namespace directordaemon {
 
+static const MediaDbRecord emptyMediaDbRecord = {};
+
 /*
  * Forward referenced functions
  */
@@ -67,8 +69,6 @@ bool newVolume(JobControlRecord* jcr, MediaDbRecord* mr, StorageResource* store)
   bool retval = false;
   PoolDbRecord pr;
 
-  memset(&pr, 0, sizeof(pr));
-
   /*
    * See if we can create a new Volume
    */
@@ -76,7 +76,7 @@ bool newVolume(JobControlRecord* jcr, MediaDbRecord* mr, StorageResource* store)
   pr.PoolId = mr->PoolId;
   if (!jcr->db->GetPoolRecord(jcr, &pr)) { goto bail_out; }
   if (pr.MaxVols == 0 || pr.NumVols < pr.MaxVols) {
-    memset(mr, 0, sizeof(MediaDbRecord));
+    *mr = emptyMediaDbRecord;
     SetPoolDbrDefaultsInMediaDbr(mr, &pr);
     jcr->VolumeName[0] = 0;
     bstrncpy(mr->MediaType, jcr->res.write_storage->media_type,
@@ -150,7 +150,6 @@ static bool CreateSimpleName(JobControlRecord* jcr,
   for (int i = (int)ctx.value + 1; i < (int)ctx.value + 100; i++) {
     MediaDbRecord tmr;
 
-    memset(&tmr, 0, sizeof(tmr));
     sprintf(num, "%04d", i);
     bstrncpy(tmr.VolumeName, name.c_str(), sizeof(tmr.VolumeName));
     bstrncat(tmr.VolumeName, num, sizeof(tmr.VolumeName));
