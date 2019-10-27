@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -36,6 +36,7 @@
 
 namespace directordaemon {
 
+static const PoolDbRecord emptyPoolDbRecord = {};
 /* Imported subroutines */
 
 /**
@@ -207,8 +208,6 @@ int CreatePool(JobControlRecord* jcr,
 {
   PoolDbRecord pr;
 
-  memset(&pr, 0, sizeof(pr));
-
   bstrncpy(pr.Name, pool->resource_name_, sizeof(pr.Name));
 
   if (db->GetPoolRecord(jcr, &pr)) {
@@ -265,7 +264,7 @@ bool SetPooldbrReferences(JobControlRecord* jcr,
   bool ret = true;
 
   if (pool->RecyclePool) {
-    memset(&rpool, 0, sizeof(rpool));
+    rpool = emptyPoolDbRecord;
 
     bstrncpy(rpool.Name, pool->RecyclePool->resource_name_, sizeof(rpool.Name));
     if (db->GetPoolRecord(jcr, &rpool)) {
@@ -283,7 +282,7 @@ bool SetPooldbrReferences(JobControlRecord* jcr,
   }
 
   if (pool->ScratchPool) {
-    memset(&rpool, 0, sizeof(rpool));
+    rpool = emptyPoolDbRecord;
 
     bstrncpy(rpool.Name, pool->ScratchPool->resource_name_, sizeof(rpool.Name));
     if (db->GetPoolRecord(jcr, &rpool)) {
@@ -359,8 +358,7 @@ int UpdatePoolReferences(JobControlRecord* jcr,
   PoolDbRecord pr;
 
   if (!pool->RecyclePool && !pool->ScratchPool) { return true; }
-
-  memset(&pr, 0, sizeof(pr));
+  pr = emptyPoolDbRecord;
   bstrncpy(pr.Name, pool->resource_name_, sizeof(pr.Name));
 
   if (!db->GetPoolRecord(jcr, &pr)) { return -1; /* not exists in database */ }
