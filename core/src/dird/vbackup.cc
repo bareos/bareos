@@ -3,7 +3,7 @@
 
    Copyright (C) 2008-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,6 +54,8 @@
 #include "include/make_unique.h"
 
 namespace directordaemon {
+static const PoolDbRecord emptyPoolDbRecord = {};
+static const JobDbRecord emptyJobDbRecord = {};
 
 static const int dbglevel = 10;
 
@@ -229,8 +231,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
    */
   p = strchr(jobids, ','); /* find oldest jobid */
   if (p) { *p = '\0'; }
-
-  memset(&jcr->previous_jr, 0, sizeof(jcr->previous_jr));
+  jcr->previous_jr = emptyJobDbRecord;
   jcr->previous_jr.JobId = str_to_int64(jobids);
   Dmsg1(10, "Previous JobId=%s\n", jobids);
 
@@ -262,7 +263,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
     p = jobids;
   }
 
-  memset(&jcr->previous_jr, 0, sizeof(jcr->previous_jr));
+  jcr->previous_jr = emptyJobDbRecord;
   jcr->previous_jr.JobId = str_to_int64(p);
   Dmsg1(10, "Previous JobId=%s\n", p);
 
@@ -391,7 +392,6 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
   PoolMem query(PM_MESSAGE);
 
   Dmsg2(100, "Enter backup_cleanup %d %c\n", TermCode, TermCode);
-  memset(&cr, 0, sizeof(cr));
 
   switch (jcr->JobStatus) {
     case JS_Terminated:
