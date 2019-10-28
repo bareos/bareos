@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2013 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -62,17 +62,17 @@ void ReadVolWalkEnd(VolumeReservationItem* vol);
  * Volume reservation class -- see vol_mgr.c and reserve.c
  */
 class VolumeReservationItem {
-  bool swapping_;              /**< set when swapping to another drive */
-  bool in_use_;                /**< set when volume reserved or in use */
-  bool reading_;               /**< set when reading */
-  slot_number_t slot_;         /**< slot of swapping volume */
-  uint32_t JobId_;             /**< JobId for read volumes */
-  volatile int32_t use_count_; /**< Use count */
-  pthread_mutex_t mutex_;      /**< Vol muntex */
+  bool swapping_{false};          /**< set when swapping to another drive */
+  bool in_use_{false};            /**< set when volume reserved or in use */
+  bool reading_{false};           /**< set when reading */
+  slot_number_t slot_{0};         /**< slot of swapping volume */
+  uint32_t JobId_{0};             /**< JobId for read volumes */
+  volatile int32_t use_count_{0}; /**< Use count */
+  pthread_mutex_t mutex_;         /**< Vol muntex */
  public:
   dlink link;
-  char* vol_name; /**< Volume name */
-  Device* dev;    /**< Pointer to device to which we are attached */
+  char* vol_name{nullptr}; /**< Volume name */
+  Device* dev{nullptr};    /**< Pointer to device to which we are attached */
 
   void InitMutex() { pthread_mutex_init(&mutex_, NULL); }
   void DestroyMutex() { pthread_mutex_destroy(&mutex_); }

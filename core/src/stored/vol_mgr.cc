@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2013 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -36,6 +36,9 @@
 #include "lib/berrno.h"
 
 namespace storagedaemon {
+
+static const VolumeReservationItem emptyVol{};
+
 
 const int debuglevel = 150;
 
@@ -190,8 +193,7 @@ void RemoveReadVolume(JobControlRecord* jcr, const char* VolumeName)
   VolumeReservationItem vol, *fvol;
 
   LockReadVolumes();
-
-  memset(&vol, 0, sizeof(vol));
+  vol = emptyVol;
   vol.vol_name = strdup(VolumeName);
   vol.SetJobid(jcr->JobId);
 
@@ -230,8 +232,7 @@ static VolumeReservationItem* find_read_volume(const char* VolumeName)
    * Do not lock reservations here
    */
   LockReadVolumes();
-
-  memset(&vol, 0, sizeof(vol));
+  vol = emptyVol;
   vol.vol_name = strdup(VolumeName);
 
   /*
@@ -285,7 +286,7 @@ static VolumeReservationItem* new_vol_item(DeviceControlRecord* dcr,
   VolumeReservationItem* vol;
 
   vol = (VolumeReservationItem*)malloc(sizeof(VolumeReservationItem));
-  memset(vol, 0, sizeof(VolumeReservationItem));
+  *vol = emptyVol;
   vol->vol_name = strdup(VolumeName);
   if (dcr) {
     vol->dev = dcr->dev;
@@ -529,7 +530,7 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
         dcr->SetDev(vol->dev); /* temp point to other dev */
         slot = GetAutochangerLoadedSlot(dcr); /* get slot on other drive */
         dcr->SetDev(dev);                     /* restore dev */
-        vol->SetSlotNumber(slot);                   /* save slot */
+        vol->SetSlotNumber(slot);             /* save slot */
         vol->dev->SetUnload();                /* unload the other drive */
         vol->SetSwapping();                   /* swap from other drive */
         dev->swap_dev = vol->dev;             /* remember to get this vol */
