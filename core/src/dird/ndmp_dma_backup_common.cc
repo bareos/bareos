@@ -298,7 +298,6 @@ void NdmpBackupCleanup(JobControlRecord* jcr, int TermCode)
   ClientDbRecord cr;
 
   Dmsg2(100, "Enter NdmpBackupCleanup %d %c\n", TermCode, TermCode);
-  memset(&cr, 0, sizeof(cr));
 
   if (jcr->is_JobStatus(JS_Terminated) &&
       (jcr->JobErrors || jcr->SDErrors || jcr->JobWarnings)) {
