@@ -351,6 +351,7 @@ bool BareosSocket::ConsoleAuthenticateWithDirector(
     dir->StopTimer();
     return false;
   }
+  dir->StopTimer();
 
   Dmsg1(6, ">dird: %s", dir->msg);
 
@@ -396,7 +397,10 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord* jcr,
 
     btimer_t* tid = StartBsockTimer(this, AUTH_TIMEOUT);
 
-    if (ConnectionReceivedTerminateSignal()) { return false; }
+    if (ConnectionReceivedTerminateSignal()) {
+      if (tid) { StopBsockTimer(tid); }
+      return false;
+    }
 
     auth_success = cram_md5_handshake.DoHandshake(initiated_by_remote);
     if (!auth_success) {
