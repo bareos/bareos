@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -450,7 +450,8 @@ static void GetSessionRecord(Device* dev,
                              SESSION_LABEL* sessrec)
 {
   const char* rtype;
-  memset(sessrec, 0, sizeof(SESSION_LABEL));
+  static const SESSION_LABEL emptySESSION_LABEL{};
+  *sessrec = emptySESSION_LABEL;
   jcr->JobId = 0;
   switch (rec->FileIndex) {
     case PRE_LABEL:
