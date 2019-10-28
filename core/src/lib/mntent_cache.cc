@@ -3,7 +3,7 @@
 
    Copyright (C) 2009-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -153,7 +153,8 @@ static mntent_cache_entry_t* add_mntent_mapping(uint32_t dev,
   mntent_cache_entry_t* mce;
 
   mce = (mntent_cache_entry_t*)malloc(sizeof(mntent_cache_entry_t));
-  memset(mce, 0, sizeof(mntent_cache_entry_t));
+  static const mntent_cache_entry_t empty_mntent_cache_entry{};
+  *mce = empty_mntent_cache_entry;
   mce->dev = dev;
   mce->special = strdup(special);
   mce->mountpoint = strdup(mountpoint);

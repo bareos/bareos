@@ -3,7 +3,7 @@
 
    Copyright (C) 2009-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -47,14 +47,14 @@
 
 struct mntent_cache_entry_t {
   dlink link;
-  uint32_t dev;
-  char* special;
-  char* mountpoint;
-  char* fstype;
-  char* mntopts;
-  int reference_count;
-  bool validated;
-  bool destroyed;
+  uint32_t dev{0};
+  char* special{nullptr};
+  char* mountpoint{nullptr};
+  char* fstype{nullptr};
+  char* mntopts{nullptr};
+  int reference_count{0};
+  bool validated{false};
+  bool destroyed{false};
 };
 
 mntent_cache_entry_t* find_mntent_mapping(uint32_t dev);
