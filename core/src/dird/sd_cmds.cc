@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -362,7 +362,8 @@ dlist* native_get_vol_list(UaContext* ua,
     if (!field1 || !field2) { goto parse_error; }
 
     vl = (vol_list_t*)malloc(sizeof(vol_list_t));
-    memset(vl, 0, sizeof(vol_list_t));
+    static const vol_list_t empty_vol_list_t{};
+    *vl = empty_vol_list_t;
 
     if (scan && !listall) {
       /*
