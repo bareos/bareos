@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2015 Planets Communications B.V.
-   Copyright (C) 2015-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -81,26 +81,26 @@ struct ndmp_fhdb_root {
    */
   rblink sibling;
   rblist child;
-  char* fname;        /**< File name */
-  char* attr;         /**< Encoded stat struct */
-  int8_t FileType;    /**< Type of File */
-  int32_t FileIndex;  /**< File index */
-  uint64_t Offset;    /**< File Offset in NDMP stream */
-  uint64_t inode;     /**< Inode nr */
-  uint16_t fname_len; /**< Filename length */
-  ndmp_fhdb_node* next;
-  ndmp_fhdb_node* parent;
+  char* fname{nullptr};  /**< File name */
+  char* attr{nullptr};   /**< Encoded stat struct */
+  int8_t FileType{0};    /**< Type of File */
+  int32_t FileIndex{0};  /**< File index */
+  uint64_t Offset{0};    /**< File Offset in NDMP stream */
+  uint64_t inode{0};     /**< Inode nr */
+  uint16_t fname_len{0}; /**< Filename length */
+  ndmp_fhdb_node* next{nullptr};
+  ndmp_fhdb_node* parent{nullptr};
 
   /*
    * The above ^^^ must be identical to a ndmp_fhdb_node structure
    * The below vvv is only for the root of the tree.
    */
-  ndmp_fhdb_node* first;         /**< first entry in the tree */
-  ndmp_fhdb_node* last;          /**< last entry in the tree */
-  ndmp_fhdb_mem* mem;            /**< tree memory */
-  uint32_t total_size;           /**< total bytes allocated */
-  uint32_t blocks;               /**< total mallocs */
-  ndmp_fhdb_node* cached_parent; /**< cached parent */
+  ndmp_fhdb_node* first{nullptr};         /**< first entry in the tree */
+  ndmp_fhdb_node* last{nullptr};          /**< last entry in the tree */
+  ndmp_fhdb_mem* mem{nullptr};            /**< tree memory */
+  uint32_t total_size{0};                 /**< total bytes allocated */
+  uint32_t blocks{0};                     /**< total mallocs */
+  ndmp_fhdb_node* cached_parent{nullptr}; /**< cached parent */
 };
 typedef struct ndmp_fhdb_root N_TREE_ROOT;
 
@@ -145,7 +145,8 @@ static inline N_TREE_ROOT* ndmp_fhdb_new_tree()
   uint32_t size;
 
   root = (N_TREE_ROOT*)malloc(sizeof(N_TREE_ROOT));
-  memset(root, 0, sizeof(N_TREE_ROOT));
+  static const N_TREE_ROOT empty_N_TREE_ROOT{};
+  *root = empty_N_TREE_ROOT;
 
   /*
    * Assume filename + node  = 40 characters average length
@@ -207,7 +208,8 @@ static N_TREE_NODE* ndmp_fhdb_new_tree_node(N_TREE_ROOT* root)
   int size = sizeof(N_TREE_NODE);
 
   node = (N_TREE_NODE*)ndmp_fhdb_tree_alloc(root, size);
-  memset(node, 0, size);
+  static N_TREE_NODE empty_N_TREE_NODE{};
+  *node = empty_N_TREE_NODE;
 
   return node;
 }
