@@ -317,7 +317,6 @@ static bool WriteVolumeLabelToBlock(DeviceControlRecord* dcr)
 
   Dmsg0(130, "write Label in WriteVolumeLabelToBlock()\n");
 
-  memset(&rec, 0, sizeof(rec));
   rec.data = GetMemory(SER_LENGTH_Volume_Label);
   EmptyBlock(block); /* Volume label always at beginning */
 
