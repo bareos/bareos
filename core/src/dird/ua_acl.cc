@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2014-2016 Planets Communications B.V.
-   Copyright (C) 2014-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -422,7 +422,6 @@ StorageResource* UaContext::GetStoreResWithId(DBId_t id,
                                               bool lock)
 {
   StorageDbRecord storage_dbr;
-  memset(&storage_dbr, 0, sizeof(storage_dbr));
 
   storage_dbr.StorageId = id;
   if (db->GetStorageRecord(jcr, &storage_dbr)) {
