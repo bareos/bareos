@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2014-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -73,6 +73,8 @@ static inline bool LookupDevice(JobControlRecord* jcr,
                                 DBId_t* DeviceId)
 {
   DeviceDbRecord dr;
+
+  memset(&dr, 0, sizeof(dr));
 
   if (cached_device.StorageId == StorageId &&
       bstrcmp(cached_device.device_name, device_name)) {
@@ -175,8 +177,8 @@ extern "C" void* statistics_thread(void* arg)
         store = NULL;
       }
 
-      store = (StorageResource*)my_config->GetNextRes(R_STORAGE,
-                                                      (BareosResource*)store);
+      store = (StorageResource*)my_config->GetNextRes(
+          R_STORAGE, (BareosResource*)store);
       if (!store) {
         PmStrcpy(current_store, "");
         UnlockRes(my_config);
@@ -218,6 +220,7 @@ extern "C" void* statistics_thread(void* arg)
             PoolMem DevName(PM_NAME);
             DeviceStatisticsDbRecord dsr;
 
+            memset(&dsr, 0, sizeof(dsr));
             if (sscanf(sd->msg, DevStats, &dsr.SampleTime, DevName.c_str(),
                        &dsr.ReadBytes, &dsr.WriteBytes, &dsr.SpoolSize,
                        &dsr.NumWaiting, &dsr.NumWriters, &dsr.ReadTime,
@@ -252,6 +255,7 @@ extern "C" void* statistics_thread(void* arg)
             PoolMem DevName(PM_NAME);
             TapealertStatsDbRecord tsr;
 
+            memset(&tsr, 0, sizeof(tsr));
             if (sscanf(sd->msg, TapeAlerts, &tsr.SampleTime, DevName.c_str(),
                        &tsr.AlertFlags) == 3) {
               UnbashSpaces(DevName);
@@ -272,6 +276,7 @@ extern "C" void* statistics_thread(void* arg)
             PoolMem DevName(PM_NAME);
             JobStatisticsDbRecord jsr;
 
+            memset(&jsr, 0, sizeof(jsr));
             if (sscanf(sd->msg, JobStats, &jsr.SampleTime, &jsr.JobId,
                        &jsr.JobFiles, &jsr.JobBytes, DevName.c_str()) == 5) {
               UnbashSpaces(DevName);
