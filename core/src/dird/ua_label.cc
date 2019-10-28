@@ -50,6 +50,8 @@
 #include "lib/util.h"
 
 namespace directordaemon {
+static const MediaDbRecord emptyMediaDbRecord = {};
+static const PoolDbRecord emptyPoolDbRecord = {};
 
 /* Forward referenced functions */
 
@@ -324,7 +326,6 @@ static void label_from_barcodes(UaContext* ua,
   char* slot_list;
   int max_slots;
 
-  memset(&mr, 0, sizeof(mr));
 
   max_slots = GetNumSlots(ua, ua->jcr->res.write_storage);
   if (max_slots <= 0) {
@@ -366,7 +367,6 @@ static void label_from_barcodes(UaContext* ua,
   /*
    * Select a pool
    */
-  memset(&pr, 0, sizeof(pr));
   if (!SelectPoolDbr(ua, &pr)) { goto bail_out; }
 
   /*
@@ -376,7 +376,7 @@ static void label_from_barcodes(UaContext* ua,
     if (!vl->VolName || !BitIsSet(vl->bareos_slot_number - 1, slot_list)) {
       continue;
     }
-    memset(&mr, 0, sizeof(mr));
+    mr = emptyMediaDbRecord;
     bstrncpy(mr.VolumeName, vl->VolName, sizeof(mr.VolumeName));
     media_record_exists = false;
     if (ua->db->GetMediaRecord(ua->jcr, &mr)) {
@@ -478,10 +478,6 @@ static int do_label(UaContext* ua, const char* cmd, bool relabel)
   static const char* barcode_keywords[] = {"barcode", "barcodes", NULL};
 
   if (!OpenClientDb(ua)) { return 1; }
-
-  memset(&pr, 0, sizeof(pr));
-  memset(&mr, 0, sizeof(mr));
-  memset(&omr, 0, sizeof(omr));
 
   if (ua->batch || FindArg(ua, NT_("yes")) > 0) { yes = true; }
 
@@ -626,7 +622,7 @@ static int do_label(UaContext* ua, const char* cmd, bool relabel)
    * Must select Pool if not already done
    */
   if (pr.PoolId == 0) {
-    memset(&pr, 0, sizeof(pr));
+    pr = emptyPoolDbRecord;
     if (!SelectPoolDbr(ua, &pr)) { return 1; }
   }
 
