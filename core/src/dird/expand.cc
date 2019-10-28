@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2006 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -261,7 +261,7 @@ static var_rc_t lookup_counter_var(var_t* ctx,
         if (counter->Catalog) { /* update catalog if need be */
           CounterDbRecord cr;
           JobControlRecord* jcr = (JobControlRecord*)my_ctx;
-          memset(&cr, 0, sizeof(cr));
+
           bstrncpy(cr.Counter, counter->resource_name_, sizeof(cr.Counter));
           cr.MinValue = counter->MinValue;
           cr.MaxValue = counter->MaxValue;
