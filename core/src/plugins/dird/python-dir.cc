@@ -27,8 +27,14 @@
  * Python Director Plugin program
  */
 
+#if defined(HAVE_WIN32)
+#include "include/bareos.h"
+#include <Python.h>
+#else
 #include <Python.h>
 #include "include/bareos.h"
+#endif
+
 #include "dird/dird.h"
 
 #if (PY_VERSION_HEX < 0x02060000)

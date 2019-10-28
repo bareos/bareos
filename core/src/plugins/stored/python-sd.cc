@@ -26,8 +26,13 @@
  * @file
  * Python Storage daemon Plugin program
  */
+#if defined(HAVE_WIN32)
+#include "include/bareos.h"
+#include <Python.h>
+#else
 #include <Python.h>
 #include "include/bareos.h"
+#endif
 #include "stored/stored.h"
 
 using namespace storagedaemon;
