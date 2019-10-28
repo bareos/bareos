@@ -119,25 +119,25 @@ struct DeviceRecord {
   /**<
    * File and Block are always returned during reading and writing records.
    */
-  uint32_t File;                    /**< File number */
-  uint32_t Block;                   /**< Block number */
-  uint32_t VolSessionId;            /**< Sequential id within this session */
-  uint32_t VolSessionTime;          /**< Session start time */
-  int32_t FileIndex;                /**< Sequential file number */
-  int32_t Stream;                   /**< Full Stream number with high bits */
-  int32_t maskedStream;             /**< Masked Stream without high bits */
-  uint32_t data_len;                /**< Current record length */
-  uint32_t remainder;               /**< Remaining bytes to read/write */
-  char state_bits[REC_STATE_BYTES]; /**< State bits */
-  rec_state state;                  /**< State of WriteRecordToBlock */
-  BootStrapRecord* bsr;             /**< Pointer to bsr that matched */
-  POOLMEM* data;      /**< Record data. This MUST be a memory pool item */
-  int32_t match_stat; /**< BootStrapRecord match status */
-  uint32_t last_VolSessionId; /**< Used in sequencing FI for Vbackup */
-  uint32_t last_VolSessionTime;
-  int32_t last_FileIndex;
-  int32_t last_Stream; /**< Used in SD-SD replication */
-  bool own_mempool;    /**< Do we own the POOLMEM pointed to in data ? */
+  uint32_t File{0};                   /**< File number */
+  uint32_t Block{0};                  /**< Block number */
+  uint32_t VolSessionId{0};           /**< Sequential id within this session */
+  uint32_t VolSessionTime{0};         /**< Session start time */
+  int32_t FileIndex{0};               /**< Sequential file number */
+  int32_t Stream{0};                  /**< Full Stream number with high bits */
+  int32_t maskedStream{0};            /**< Masked Stream without high bits */
+  uint32_t data_len{0};               /**< Current record length */
+  uint32_t remainder{0};              /**< Remaining bytes to read/write */
+  char state_bits[REC_STATE_BYTES]{}; /**< State bits */
+  rec_state state{st_none};           /**< State of WriteRecordToBlock */
+  BootStrapRecord* bsr{nullptr};      /**< Pointer to bsr that matched */
+  POOLMEM* data{nullptr}; /**< Record data. This MUST be a memory pool item */
+  int32_t match_stat{0};  /**< BootStrapRecord match status */
+  uint32_t last_VolSessionId{0}; /**< Used in sequencing FI for Vbackup */
+  uint32_t last_VolSessionTime{0};
+  int32_t last_FileIndex{0};
+  int32_t last_Stream{0};  /**< Used in SD-SD replication */
+  bool own_mempool{false}; /**< Do we own the POOLMEM pointed to in data ? */
 };
 
 /*
