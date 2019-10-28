@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,53 +54,58 @@ static pthread_cond_t wait_for_next_run = PTHREAD_COND_INITIALIZER;
 
 struct device_statistic {
   dlink link;
-  bool collected;
-  utime_t timestamp;
-  btime_t DevReadTime;
-  btime_t DevWriteTime;
-  uint64_t DevWriteBytes;
-  uint64_t DevReadBytes;
-  uint64_t spool_size;
-  int num_waiting;
-  int num_writers;
-  DBId_t MediaId;
-  uint64_t VolCatBytes;
-  uint64_t VolCatFiles;
-  uint64_t VolCatBlocks;
+  bool collected{false};
+  utime_t timestamp{0};
+  btime_t DevReadTime{0};
+  btime_t DevWriteTime{0};
+  uint64_t DevWriteBytes{0};
+  uint64_t DevReadBytes{0};
+  uint64_t spool_size{0};
+  int num_waiting{0};
+  int num_writers{0};
+  DBId_t MediaId{0};
+  uint64_t VolCatBytes{0};
+  uint64_t VolCatFiles{0};
+  uint64_t VolCatBlocks{0};
 };
 
 struct device_tapealert {
   dlink link;
-  utime_t timestamp;
-  uint64_t flags;
+  utime_t timestamp{0};
+  uint64_t flags{0};
 };
 
 struct device_statistics {
   dlink link;
-  char DevName[MAX_NAME_LENGTH];
-  struct device_statistic* cached;
-  dlist* statistics;
-  dlist* tapealerts;
+  char DevName[MAX_NAME_LENGTH]{};
+  struct device_statistic* cached{nullptr};
+  dlist* statistics{nullptr};
+  dlist* tapealerts{nullptr};
 };
 
 struct job_statistic {
   dlink link;
-  bool collected;
-  utime_t timestamp;
-  uint32_t JobFiles;
-  uint64_t JobBytes;
-  char* DevName;
+  bool collected{false};
+  utime_t timestamp{0};
+  uint32_t JobFiles{0};
+  uint64_t JobBytes{0};
+  char* DevName{nullptr};
 };
 
 struct job_statistics {
   dlink link;
-  uint32_t JobId;
-  struct job_statistic* cached;
-  dlist* statistics;
+  uint32_t JobId{0};
+  struct job_statistic* cached{nullptr};
+  dlist* statistics{nullptr};
 };
 
 static dlist* device_statistics = NULL;
 static dlist* job_statistics = NULL;
+
+static const struct device_statistics empty_device_statistics {
+};
+static const struct job_statistics empty_job_statistics {
+};
 
 static inline void setup_statistics()
 {
@@ -129,7 +134,7 @@ void UpdateDeviceTapealert(const char* devname, uint64_t flags, utime_t now)
   if (!found) {
     dev_stats =
         (struct device_statistics*)malloc(sizeof(struct device_statistics));
-    memset(dev_stats, 0, sizeof(struct device_statistics));
+    *dev_stats = empty_device_statistics;
 
     bstrncpy(dev_stats->DevName, devname, sizeof(dev_stats->DevName));
     P(mutex);
@@ -142,7 +147,8 @@ void UpdateDeviceTapealert(const char* devname, uint64_t flags, utime_t now)
    */
   tape_alert =
       (struct device_tapealert*)malloc(sizeof(struct device_tapealert));
-  memset(tape_alert, 0, sizeof(struct device_tapealert));
+  static const device_tapealert empty_device_tapealert{};
+  *tape_alert = empty_device_tapealert;
 
   tape_alert->timestamp = now;
   tape_alert->flags = flags;
@@ -195,7 +201,7 @@ static inline void UpdateDeviceStatistics(const char* devname,
   } else if (!found) {
     dev_stats =
         (struct device_statistics*)malloc(sizeof(struct device_statistics));
-    memset(dev_stats, 0, sizeof(struct device_statistics));
+    *dev_stats = empty_device_statistics;
 
     bstrncpy(dev_stats->DevName, devname, sizeof(dev_stats->DevName));
     P(mutex);
@@ -207,7 +213,9 @@ static inline void UpdateDeviceStatistics(const char* devname,
    * Add a new set of statistics.
    */
   dev_stat = (struct device_statistic*)malloc(sizeof(struct device_statistic));
-  memset(dev_stat, 0, sizeof(struct device_statistic));
+
+  static device_statistic empty_device_statistic{};
+  *dev_stat = empty_device_statistic;
 
   dev_stat->timestamp = now;
   dev_stat->DevReadTime = dev->DevReadTime;
@@ -281,7 +289,7 @@ void UpdateJobStatistics(JobControlRecord* jcr, utime_t now)
     }
   } else if (!found) {
     job_stats = (struct job_statistics*)malloc(sizeof(struct job_statistics));
-    memset(job_stats, 0, sizeof(struct job_statistics));
+    *job_stats = empty_job_statistics;
 
     job_stats->JobId = jcr->JobId;
     P(mutex);
@@ -293,7 +301,8 @@ void UpdateJobStatistics(JobControlRecord* jcr, utime_t now)
    * Add a new set of statistics.
    */
   job_stat = (struct job_statistic*)malloc(sizeof(struct job_statistic));
-  memset(job_stat, 0, sizeof(struct job_statistic));
+  static job_statistic empty_job_statistic{};
+  *job_stat = empty_job_statistic;
 
   job_stat->timestamp = now;
   job_stat->JobFiles = jcr->JobFiles;
