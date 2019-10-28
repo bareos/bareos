@@ -614,7 +614,6 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
   int do_Digest = CRYPTO_DIGEST_NONE;
   int32_t file_index = 0;
 
-  memset(&fdbr, 0, sizeof(fdbr));
   fd = jcr->file_bsock;
   fdbr.JobId = JobId;
   jcr->FileIndex = 0;
