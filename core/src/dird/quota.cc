@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version two of the GNU General Public
@@ -297,7 +297,6 @@ bool CheckSoftquotas(JobControlRecord* jcr)
      * Reset softquota
      */
     ClientDbRecord cr;
-    memset(&cr, 0, sizeof(cr));
     cr.ClientId = jcr->jr.ClientId;
     if (!jcr->db->ResetQuotaRecord(jcr, &cr)) {
       Jmsg(jcr, M_WARNING, 0, _("Error setting Quota gracetime: ERR=%s\n"),
