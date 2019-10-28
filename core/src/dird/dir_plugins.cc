@@ -611,7 +611,6 @@ static bRC bareosGetValue(bpContext* ctx, brDirVariable var, void* value)
       case bDirVarNumVols: {
         PoolDbRecord pr;
 
-        memset(&pr, 0, sizeof(pr));
         bstrncpy(pr.Name, jcr->res.pool->resource_name_, sizeof(pr.Name));
         if (!jcr->db->GetPoolRecord(jcr, &pr)) { retval = bRC_Error; }
         *((int*)value) = pr.NumVols;
