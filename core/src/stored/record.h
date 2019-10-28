@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -213,13 +213,13 @@ typedef struct Volume_Label VOLUME_LABEL;
 struct Session_Label {
   char Id[32]{0}; /**< Bareos Immortal ... */
 
-  uint32_t VerNum = 0; /**< Label version number */
+  uint32_t VerNum{0}; /**< Label version number */
 
-  uint32_t JobId = 0;       /**< Job id */
-  uint32_t VolumeIndex = 0; /**< Sequence no of volume for this job */
+  uint32_t JobId{0};       /**< Job id */
+  uint32_t VolumeIndex{0}; /**< Sequence no of volume for this job */
 
   /* VerNum >= 11 */
-  btime_t write_btime = 0; /**< Tdate this label written */
+  btime_t write_btime{0}; /**< Tdate this label written */
 
   /* VerNum < 11 */
   float64_t write_date = 0.0; /**< Date this label written */
@@ -234,17 +234,17 @@ struct Session_Label {
   char Job[MAX_NAME_LENGTH]{0}; /**< Unique name of this Job */
   char FileSetName[MAX_NAME_LENGTH]{0};
   char FileSetMD5[MAX_NAME_LENGTH]{0};
-  uint32_t JobType = 0;
-  uint32_t JobLevel = 0;
+  uint32_t JobType{0};
+  uint32_t JobLevel{0};
   /* The remainder are part of EOS label only */
-  uint32_t JobFiles = 0;
-  uint64_t JobBytes = 0;
-  uint32_t StartBlock = 0;
-  uint32_t EndBlock = 0;
-  uint32_t StartFile = 0;
-  uint32_t EndFile = 0;
-  uint32_t JobErrors = 0;
-  uint32_t JobStatus = 0; /**< Job status */
+  uint32_t JobFiles{0};
+  uint64_t JobBytes{0};
+  uint32_t StartBlock{0};
+  uint32_t EndBlock{0};
+  uint32_t StartFile{0};
+  uint32_t EndFile{0};
+  uint32_t JobErrors{0};
+  uint32_t JobStatus{0}; /**< Job status */
 };
 typedef struct Session_Label SESSION_LABEL;
 
