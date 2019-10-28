@@ -255,7 +255,8 @@ bool DoConsolidate(JobControlRecord* jcr)
         /**
          * Get db record of oldest jobid and check its age
          */
-        memset(&jcr->previous_jr, 0, sizeof(jcr->previous_jr));
+        static const JobDbRecord emptyJobDbRecord{};
+        jcr->previous_jr = emptyJobDbRecord;
         jcr->previous_jr.JobId = str_to_int64(jobids);
         Dmsg1(10, "Previous JobId=%s\n", jobids);
 
@@ -311,7 +312,8 @@ bool DoConsolidate(JobControlRecord* jcr)
       if (!jcr->vf_jobids) { jcr->vf_jobids = GetPoolMemory(PM_MESSAGE); }
       PmStrcpy(jcr->vf_jobids, p);
 
-      Jmsg(jcr, M_INFO, 0, _("%s: Start new consolidation\n"), job->resource_name_);
+      Jmsg(jcr, M_INFO, 0, _("%s: Start new consolidation\n"),
+           job->resource_name_);
       StartNewConsolidationJob(jcr, job->resource_name_);
     }
   }
