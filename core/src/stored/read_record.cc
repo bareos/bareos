@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -53,8 +53,8 @@ static void HandleSessionRecord(Device* dev,
 {
   const char* rtype;
   char buf[100];
-
-  memset(sessrec, 0, sizeof(SESSION_LABEL));
+  static const SESSION_LABEL empty_SESSION_LABEL{};
+  *sessrec = empty_SESSION_LABEL;
   switch (rec->FileIndex) {
     case PRE_LABEL:
       rtype = _("Fresh Volume Label");
@@ -122,7 +122,8 @@ READ_CTX* new_read_context(void)
   READ_CTX* rctx;
 
   rctx = (READ_CTX*)malloc(sizeof(READ_CTX));
-  memset(rctx, 0, sizeof(READ_CTX));
+  static const READ_CTX empty_READ_CTX{};
+  *rctx = empty_READ_CTX;
 
   rctx->recs = new dlist(rec, &rec->link);
   return rctx;
