@@ -456,9 +456,10 @@ dlist* ndmp_get_vol_list(UaContext* ua,
    * Process the robot element status retrieved.
    */
   smc = ndmp_sess->control_acb->smc_cb;
+  static const vol_list_t empty_vol_list_t{};
   for (edp = smc->elem_desc; edp; edp = edp->next) {
     vl = (vol_list_t*)malloc(sizeof(vol_list_t));
-    memset(vl, 0, sizeof(vol_list_t));
+    *vl = empty_vol_list_t;
 
     if (scan && !listall) {
       /*
