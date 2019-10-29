@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -41,16 +41,16 @@
 #define WIN32_BACKUP_DATA 1
 
 typedef struct _BWIN32_STREAM_ID {
-  int32_t dwStreamId = 0;
-  int32_t dwStreamAttributes = 0;
-  int64_t Size = 0;
-  int32_t dwStreamNameSize = 0;
+  int32_t dwStreamId{0};
+  int32_t dwStreamAttributes{0};
+  int64_t Size{0};
+  int32_t dwStreamNameSize{0};
 } BWIN32_STREAM_ID, *LPBWIN32_STREAM_ID;
 
 
 typedef struct _PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT {
-  int64_t liNextHeader = 0;
-  bool bIsInData = false;
+  int64_t liNextHeader{0};
+  bool bIsInData{false};
   BWIN32_STREAM_ID header_stream;
 } PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT;
 
@@ -108,19 +108,18 @@ HANDLE BgetHandle(BareosWinFilePacket* bfd);
 
 /* Basic Unix low level I/O file packet */
 struct BareosWinFilePacket {
-  int fid = 0;                     /**< file id on Unix */
-  int flags_ = 0;                  /**< open flags */
-  int BErrNo = 0;                  /**< errno */
-  int32_t lerror = 0;              /**< not used - simplies Win32 builds */
-  boffset_t offset{0};             /**< Delta offset */
-  JobControlRecord* jcr = nullptr; /**< jcr for editing job codes */
+  int fid{0};                     /**< file id on Unix */
+  int flags_{0};                  /**< open flags */
+  int BErrNo{0};                  /**< errno */
+  int32_t lerror{0};              /**< not used - simplies Win32 builds */
+  boffset_t offset{0};            /**< Delta offset */
+  JobControlRecord* jcr{nullptr}; /**< jcr for editing job codes */
   PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT
   win32DecompContext; /**< context for decomposition of win32 backup streams
                        */
-  int use_backup_decomp =
-      0; /**< set if using BackupRead Stream Decomposition */
-  bool reparse_point = false; /**< not used in Unix */
-  bool cmd_plugin = false;    /**< set if we have a command plugin */
+  int use_backup_decomp{0}; /**< set if using BackupRead Stream Decomposition */
+  bool reparse_point{false}; /**< not used in Unix */
+  bool cmd_plugin{false};    /**< set if we have a command plugin */
 };
 
 #endif

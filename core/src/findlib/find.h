@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -182,9 +182,9 @@ struct findFILESET {
  * OSX resource fork.
  */
 struct HfsPlusInfo {
-  unsigned long length; /**< Mandatory field */
-  char fndrinfo[32];    /**< Finder Info */
-  off_t rsrclength;     /**< Size of resource fork */
+  unsigned long length{0}; /**< Mandatory field */
+  char fndrinfo[32]{};     /**< Finder Info */
+  off_t rsrclength{0};     /**< Size of resource fork */
 };
 
 /**
@@ -210,43 +210,44 @@ struct CurLink {
  * first argument to the FindFiles callback subroutine.
  */
 struct FindFilesPacket {
-  char* top_fname;          /**< Full filename before descending */
-  char* fname;              /**< Full filename */
-  char* link;               /**< Link if file linked */
-  char* object_name;        /**< Object name */
-  char* object;             /**< Restore object */
-  char* plugin;             /**< Current Options{Plugin=} name */
-  POOLMEM* sys_fname;       /**< System filename */
-  POOLMEM* fname_save;      /**< Save when stripping path */
-  POOLMEM* link_save;       /**< Save when stripping path */
-  POOLMEM* ignoredir_fname; /**< Used to ignore directories */
-  char* digest;        /**< Set to file digest when the file is a hardlink */
-  struct stat statp;   /**< Stat packet */
-  uint32_t digest_len; /**< Set to the digest len when the file is a hardlink*/
-  int32_t digest_stream; /**< Set to digest type when the file is hardlink */
-  int32_t FileIndex;     /**< FileIndex of this file */
-  int32_t LinkFI;        /**< FileIndex of main hard linked file */
-  int32_t delta_seq;     /**< Delta Sequence number */
-  int32_t object_index;  /**< Object index */
-  int32_t object_len;    /**< Object length */
-  int32_t object_compression; /**< Type of compression for object */
-  int type;                   /**< FT_ type from above */
-  int ff_errno;               /**< Errno */
-  BareosWinFilePacket bfd;    /**< Bareos file descriptor */
-  time_t save_time;           /**< Start of incremental time */
-  bool accurate_found;        /**< Found in the accurate hash (valid after
-                                 CheckChanges()) */
-  bool dereference;           /**< Follow links (not implemented) */
-  bool null_output_device;    /**< Using null output device */
-  bool incremental;           /**< Incremental save */
-  bool no_read;               /**< Do not read this file when using Plugin */
-  char VerifyOpts[MAX_OPTS];
-  char AccurateOpts[MAX_OPTS];
-  char BaseJobOpts[MAX_OPTS];
-  struct s_included_file* included_files_list;
-  struct s_excluded_file* excluded_files_list;
-  struct s_excluded_file* excluded_paths_list;
-  findFILESET* fileset;
+  char* top_fname{nullptr};          /**< Full filename before descending */
+  char* fname{nullptr};              /**< Full filename */
+  char* link{nullptr};               /**< Link if file linked */
+  char* object_name{nullptr};        /**< Object name */
+  char* object{nullptr};             /**< Restore object */
+  char* plugin{nullptr};             /**< Current Options{Plugin=} name */
+  POOLMEM* sys_fname{nullptr};       /**< System filename */
+  POOLMEM* fname_save{nullptr};      /**< Save when stripping path */
+  POOLMEM* link_save{nullptr};       /**< Save when stripping path */
+  POOLMEM* ignoredir_fname{nullptr}; /**< Used to ignore directories */
+  char* digest{nullptr}; /**< Set to file digest when the file is a hardlink */
+  struct stat statp;     /**< Stat packet */
+  uint32_t digest_len{
+      0}; /**< Set to the digest len when the file is a hardlink*/
+  int32_t digest_stream{0}; /**< Set to digest type when the file is hardlink */
+  int32_t FileIndex{0};     /**< FileIndex of this file */
+  int32_t LinkFI{0};        /**< FileIndex of main hard linked file */
+  int32_t delta_seq{0};     /**< Delta Sequence number */
+  int32_t object_index{0};  /**< Object index */
+  int32_t object_len{0};    /**< Object length */
+  int32_t object_compression{0};  /**< Type of compression for object */
+  int type{0};                    /**< FT_ type from above */
+  int ff_errno{0};                /**< Errno */
+  BareosWinFilePacket bfd;        /**< Bareos file descriptor */
+  time_t save_time{0};            /**< Start of incremental time */
+  bool accurate_found{false};     /**< Found in the accurate hash (valid after
+                              CheckChanges()) */
+  bool dereference{false};        /**< Follow links (not implemented) */
+  bool null_output_device{false}; /**< Using null output device */
+  bool incremental{false};        /**< Incremental save */
+  bool no_read{false}; /**< Do not read this file when using Plugin */
+  char VerifyOpts[MAX_OPTS]{};
+  char AccurateOpts[MAX_OPTS]{};
+  char BaseJobOpts[MAX_OPTS]{};
+  struct s_included_file* included_files_list{nullptr};
+  struct s_excluded_file* excluded_files_list{nullptr};
+  struct s_excluded_file* excluded_paths_list{nullptr};
+  findFILESET* fileset{nullptr};
   int (*FileSave)(JobControlRecord*,
                   FindFilesPacket*,
                   bool); /**< User's callback */
@@ -255,34 +256,34 @@ struct FindFilesPacket {
                     bool); /**< User's callback */
   bool (*CheckFct)(
       JobControlRecord*,
-      FindFilesPacket*); /**< Optionnal user fct to check file changes */
+      FindFilesPacket*); /**< Optional user fct to check file changes */
 
   /*
    * Values set by AcceptFile while processing Options
    */
-  char flags[FOPTS_BYTES]; /**< Backup options */
-  uint32_t Compress_algo;  /**< Compression algorithm. 4 letters stored as an
-                              integer */
-  int Compress_level;      /**< Compression level */
-  int StripPath;           /**< Strip path count */
-  struct s_sz_matching* size_match; /**< Perform size matching ? */
-  bool cmd_plugin;                  /**< Set if we have a command plugin */
-  bool opt_plugin;                  /**< Set if we have an option plugin */
-  alist fstypes;                    /**< Allowed file system types */
-  alist drivetypes;                 /**< Allowed drive types */
+  char flags[FOPTS_BYTES]{}; /**< Backup options */
+  uint32_t Compress_algo{0}; /**< Compression algorithm. 4 letters stored as an
+                             integer */
+  int Compress_level{0};     /**< Compression level */
+  int StripPath{0};          /**< Strip path count */
+  struct s_sz_matching* size_match{nullptr}; /**< Perform size matching ? */
+  bool cmd_plugin{false}; /**< Set if we have a command plugin */
+  bool opt_plugin{false}; /**< Set if we have an option plugin */
+  alist fstypes;          /**< Allowed file system types */
+  alist drivetypes;       /**< Allowed drive types */
 
   /*
    * List of all hard linked files found
    */
-  htable* linkhash;       /**< Hard linked files */
-  struct CurLink* linked; /**< Set if this file is hard linked */
+  htable* linkhash{nullptr};       /**< Hard linked files */
+  struct CurLink* linked{nullptr}; /**< Set if this file is hard linked */
 
   /*
    * Darwin specific things.
    * To avoid clutter, we always include rsrc_bfd and volhas_attrlist.
    */
   BareosWinFilePacket rsrc_bfd; /**< Fd for resource forks */
-  bool volhas_attrlist;         /**< Volume supports getattrlist() */
+  bool volhas_attrlist{false};  /**< Volume supports getattrlist() */
   struct HfsPlusInfo hfsinfo;   /**< Finder Info and resource fork size */
 };
 
