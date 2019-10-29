@@ -45,8 +45,6 @@
 
 namespace directordaemon {
 
-static const PoolDbRecord emptyPoolDbRecord = {};
-
 /*
  * Handle catalog request
  *  For now, we simply return next Volume to be used
@@ -116,7 +114,6 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
   PoolMem unwanted_volumes(PM_MESSAGE);
   int index, ok, label, writing;
   POOLMEM* omsg;
-  PoolDbRecord pr;
   uint32_t Stripe, Copy;
   uint64_t MediaId;
   utime_t VolFirstWritten;
@@ -142,7 +139,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
   unwanted_volumes.check_size(bs->message_length);
   if (sscanf(bs->msg, Find_media, &Job, &index, &pool_name, &mr.MediaType,
              unwanted_volumes.c_str()) == 5) {
-    pr = emptyPoolDbRecord;
+    PoolDbRecord pr;
     bstrncpy(pr.Name, pool_name, sizeof(pr.Name));
     UnbashSpaces(pr.Name);
     ok = jcr->db->GetPoolRecord(jcr, &pr);
