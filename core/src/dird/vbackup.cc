@@ -54,7 +54,6 @@
 #include "include/make_unique.h"
 
 namespace directordaemon {
-static const PoolDbRecord emptyPoolDbRecord = {};
 static const JobDbRecord emptyJobDbRecord = {};
 
 static const int dbglevel = 10;
