@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -452,9 +452,6 @@ bool GetScratchVolume(JobControlRecord* jcr,
    * GetPoolRecord will first try ScratchPoolId,
    * and then try the pool named Scratch
    */
-  memset(&smr, 0, sizeof(smr));
-  memset(&spr, 0, sizeof(spr));
-
   bstrncpy(spr.Name, "Scratch", sizeof(spr.Name));
   spr.PoolId = mr->ScratchPoolId;
   if (jcr->db->GetPoolRecord(jcr, &spr)) {
