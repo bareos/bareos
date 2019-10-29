@@ -437,7 +437,7 @@ bool GetScratchVolume(JobControlRecord* jcr,
                       StorageResource* store)
 {
   MediaDbRecord smr; /* for searching scratch pool */
-  PoolDbRecord spr, pr;
+  PoolDbRecord spr;
   bool ok = false;
   bool found = false;
 
@@ -484,7 +484,7 @@ bool GetScratchVolume(JobControlRecord* jcr,
        * Get pool record where the Scratch Volume will go to ensure that we can
        * add a Volume.
        */
-      memset(&pr, 0, sizeof(pr));
+      PoolDbRecord pr;
       bstrncpy(pr.Name, jcr->res.pool->resource_name_, sizeof(pr.Name));
 
       if (!jcr->db->GetPoolRecord(jcr, &pr)) {
