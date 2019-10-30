@@ -1,12 +1,12 @@
 #!/bin/sh
 #
 # This systemtest tests the plugin functionality 
-# of the Bareos DIR by using the module
-#   bareos-dir-test.py
+# of the Bareos SD by using the module
+#   bareos-sd-test.py
 #
 # This test will backup some files. While the 
-# backup some events of the director will be 
-# logged from the python module.
+# backup some events of the storage daemon 
+# will be logged from the python module.
 # This testrunner will check if all events
 # have been logged.
 #
@@ -50,7 +50,22 @@ run_bareos
 check_for_zombie_jobs storage=File
 stop_bareos
 
-for i in bDirEventJobStart bDirEventJobInit bDirEventJobRun bDirEventJobEnd; do
+events=(bsdEventJobStart
+bsdEventDeviceReserve
+bsdEventVolumeUnload
+bsdEventVolumeLoad
+bsdEventDeviceOpen
+bsdEventDeviceMount
+bsdEventLabelRead
+bsdEventLabelVerified
+bsdEventLabelWrite
+bsdEventSetupRecordTranslation
+bsdEventWriteRecordTranslation
+bsdEventDeviceUnmount
+bsdEventDeviceClose
+bsdEventJobEnd)
+
+for i in ${events[@]}; do
   if ! grep -q "$i" ${tmp}/test-plugin.log; then
     set_error "Failed to find logged event $i"
   fi
