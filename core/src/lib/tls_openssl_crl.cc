@@ -271,6 +271,9 @@ static int CrlReloaderGetBySubject(X509_LOOKUP* lookup,
   ret->type = 0;
   ret->data.crl = NULL;
   for (cnt = 0; cnt < MAX_CRLS; cnt++) {
+
+    if ( data->crls[cnt] == NULL ) { continue; }
+
     if (CrlEntryExpired(data->crls[cnt]) && !CrlReloaderReloadIfNewer(lookup)) {
       goto bail_out;
     }
