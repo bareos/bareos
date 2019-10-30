@@ -157,28 +157,28 @@ struct vol_list_t {
 /* clang-format on */
 
 struct changer_vol_list_t {
-  int16_t reference_count; /**< Number of references to this vol_list */
-  vol_list_type type;      /**< Type of vol_list see vol_list_type enum */
-  utime_t timestamp;       /**< When was this vol_list created */
-  dlist* contents;         /**< Contents of autochanger */
+  int16_t reference_count{}; /**< Number of references to this vol_list */
+  vol_list_type type{};      /**< Type of vol_list see vol_list_type enum */
+  utime_t timestamp{};       /**< When was this vol_list created */
+  dlist* contents{};         /**< Contents of autochanger */
 };
 
 /*
  * Mapping from logical to physical storage address
  */
 struct storage_mapping_t {
-  dlink link;                    /**< Link for list */
-  slot_type_t slot_type;         /**< See slot_type_* */
-  slot_number_t element_address; /**< scsi element address */
-  slot_number_t
-      Slot; /**< Drive number when kSlotTypeDrive or actual slot number */
+  dlink link{};                                         /**< Link for list */
+  slot_type_t slot_type{slot_type_t::kSlotTypeUnknown}; /**< See slot_type_* */
+  slot_number_t element_address{}; /**< scsi element address */
+  slot_number_t Slot{};            /**< Drive number when kSlotTypeDrive
+                                        or actual slot number */
 };
 
 #if HAVE_NDMP
 struct ndmp_deviceinfo_t {
   std::string device;
   std::string model;
-  JobId_t JobIdUsingDevice;
+  JobId_t JobIdUsingDevice{};
 };
 #endif
 
@@ -204,11 +204,11 @@ struct RuntimeStorageStatus {
 };
 
 struct runtime_client_status_t {
-  int32_t NumConcurrentJobs; /**< Number of concurrent jobs running */
+  int32_t NumConcurrentJobs{}; /**< Number of concurrent jobs running */
 };
 
 struct runtime_job_status_t {
-  int32_t NumConcurrentJobs; /**< Number of concurrent jobs running */
+  int32_t NumConcurrentJobs{}; /**< Number of concurrent jobs running */
 };
 
 #define INDEX_DRIVE_OFFSET 0

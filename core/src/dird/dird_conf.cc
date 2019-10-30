@@ -2513,7 +2513,8 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
 
         if (type == R_JOB) {
           p->rjs = (runtime_job_status_t*)malloc(sizeof(runtime_job_status_t));
-          memset(p->rjs, 0, sizeof(runtime_job_status_t));
+          runtime_job_status_t empty_rjs;
+          *p->rjs = empty_rjs;
         }
       }
       break;
@@ -2552,7 +2553,8 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
 
         p->rcs =
             (runtime_client_status_t*)malloc(sizeof(runtime_client_status_t));
-        memset(p->rcs, 0, sizeof(runtime_client_status_t));
+        runtime_client_status_t empty_rcs;
+        *p->rcs = empty_rcs;
       }
       break;
     }
