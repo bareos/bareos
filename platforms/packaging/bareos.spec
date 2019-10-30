@@ -137,7 +137,7 @@ BuildRequires: ceph-devel
 BuildRequires: git-core
 %endif
 
-Source0: %{name}-%{version}.tar.gz
+Source0: %{name}-%{version}.tar.bz2
 
 #BuildRequires: elfutils
 BuildRequires: gcc
