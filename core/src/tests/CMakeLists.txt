@@ -454,3 +454,13 @@ target_link_libraries(test_is_name_valid
 
 gtest_discover_tests(test_is_name_valid TEST_PREFIX gtest:)
 
+####### test_acl_entry_syntax  #####################################
+add_executable(test_acl_entry_syntax test_acl_entry_syntax.cc)
+
+target_link_libraries(test_acl_entry_syntax
+   bareos
+   ${GTEST_LIBRARIES}
+   ${GTEST_MAIN_LIBRARIES}
+)
+
+gtest_discover_tests(test_acl_entry_syntax TEST_PREFIX gtest:)

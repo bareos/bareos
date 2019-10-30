@@ -589,3 +589,55 @@ char* add_commas(char* val, char* buf)
 
   return buf;
 }
+
+/*
+ * check if acl entry is valid
+ * valid acl entries contain only A-Z 0-9 and !*.:_-'/
+ */
+bool IsAclEntryValid(const char* acl, char* msg)
+{
+  int len;
+  const char* p;
+  const char* accept = "!*.:_-'/"; /* Special characters to accept */
+
+
+  if (!acl) {
+    if (msg) { Mmsg(msg, _("Empty acl not allowed.\n")); }
+    return false;
+  }
+
+  /* Restrict the characters permitted in acl */
+  for (p = acl; *p; p++) {
+    if (B_ISALPHA(*p) || B_ISDIGIT(*p) || strchr(accept, (int)(*p))) {
+      continue;
+    }
+    if (msg) { Mmsg(msg, _("Illegal character \"%c\" in acl.\n"), *p); }
+    return false;
+  }
+
+  len = p - acl;
+  if (len >= MAX_NAME_LENGTH) {
+    if (msg) { Mmsg(msg, _("Acl too long.\n")); }
+    return false;
+  }
+
+  if (len == 0) {
+    if (msg) { Mmsg(msg, _("Acl must be at least one character long.\n")); }
+    return false;
+  }
+
+  return true;
+}
+
+bool IsAclEntryValid(const char* acl)
+{
+  bool retval;
+  POOLMEM* msg = GetPoolMemory(PM_NAME);
+
+  retval = IsAclEntryValid(acl, msg);
+
+  FreePoolMemory(msg);
+
+  return retval;
+}
+

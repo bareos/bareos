@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -63,6 +63,7 @@
 #include "lib/parse_conf.h"
 #include "lib/keyword_table_s.h"
 #include "lib/util.h"
+#include "lib/edit.h"
 #include "lib/tls_resource_items.h"
 
 #include <cassert>
@@ -3021,10 +3022,14 @@ static void StoreAcl(LEX* lc, ResourceItem* item, int index, int pass)
     }
   }
   list = alistvalue[item->code];
-
+  std::vector<char> msg(256);
   for (;;) {
     LexGetToken(lc, BCT_STRING);
     if (pass == 1) {
+      if (!IsAclEntryValid(lc->str, msg.data())) {
+        Emsg1(M_ERROR, 0, _("Cannot store Acl: %s\n"), msg.data());
+        return;
+      }
       list->append(strdup(lc->str));
       Dmsg2(900, "Appended to %d %s\n", item->code, lc->str);
     }
