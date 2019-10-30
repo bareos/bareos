@@ -42,8 +42,6 @@
 
 namespace directordaemon {
 
-static const MediaDbRecord emptyMediaDbRecord = {};
-
 /* Forward referenced functions */
 static bool UpdateVolume(UaContext* ua);
 static bool UpdatePool(UaContext* ua);
@@ -1159,25 +1157,26 @@ static void UpdateSlots(UaContext* ua)
     }
     DbUnlock(ua->db);
   }
-  mr = emptyMediaDbRecord;
-  mr.InChanger = 1;
-  SetStorageidInMr(store.store, &mr);
+  {
+    MediaDbRecord mr;
+    mr.InChanger = 1;
+    SetStorageidInMr(store.store, &mr);
 
-  /*
-   * Any slot not visited gets it Inchanger flag reset.
-   */
-  DbLock(ua->db);
-  for (i = 1; i <= max_slots; i++) {
-    if (BitIsSet(i - 1, slot_list)) {
-      /*
-       * Set InChanger to zero for this Slot
-       */
-      mr.Slot = i;
-      ua->db->MakeInchangerUnique(ua->jcr, &mr);
+    /*
+     * Any slot not visited gets it Inchanger flag reset.
+     */
+    DbLock(ua->db);
+    for (i = 1; i <= max_slots; i++) {
+      if (BitIsSet(i - 1, slot_list)) {
+        /*
+         * Set InChanger to zero for this Slot
+         */
+        mr.Slot = i;
+        ua->db->MakeInchangerUnique(ua->jcr, &mr);
+      }
     }
+    DbUnlock(ua->db);
   }
-  DbUnlock(ua->db);
-
 bail_out:
   if (vol_list) { StorageReleaseVolList(store.store, vol_list); }
   free(slot_list);
@@ -1203,7 +1202,6 @@ void UpdateSlotsFromVolList(UaContext* ua,
                             char* slot_list)
 {
   vol_list_t* vl;
-  MediaDbRecord mr;
 
   if (!OpenClientDb(ua)) { return; }
 
@@ -1229,7 +1227,7 @@ void UpdateSlotsFromVolList(UaContext* ua,
     /*
      * Set InChanger to zero for this Slot
      */
-    mr = emptyMediaDbRecord;
+    MediaDbRecord mr;
     mr.Slot = vl->bareos_slot_number;
     mr.InChanger = 1;
     mr.MediaId = 0; /* Get by VolumeName */
@@ -1311,7 +1309,6 @@ void UpdateInchangerForExport(UaContext* ua,
                               char* slot_list)
 {
   vol_list_t* vl;
-  MediaDbRecord mr;
 
   if (!OpenClientDb(ua)) { return; }
 
@@ -1337,7 +1334,7 @@ void UpdateInchangerForExport(UaContext* ua,
     /*
      * Set InChanger to zero for this Slot
      */
-    mr = emptyMediaDbRecord;
+    MediaDbRecord mr;
     mr.Slot = vl->bareos_slot_number;
     mr.InChanger = 1;
     mr.MediaId = 0; /* Get by VolumeName */

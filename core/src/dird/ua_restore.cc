@@ -50,10 +50,6 @@
 
 namespace directordaemon {
 
-static const JobDbRecord emptyJobDbRecord = {};
-static const ClientDbRecord emptyClientDbRecord = {};
-static const FileSetDbRecord emptyFileSetDbRecord = {};
-
 /* Imported functions */
 extern void PrintBsr(UaContext* ua, RestoreBootstrapRecord* bsr);
 
@@ -476,8 +472,6 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   /* Include current second if using current time */
   utime_t now = time(NULL) + 1;
   JobId_t JobId;
-  JobDbRecord jr;
-  jr.JobId = -1;
   bool done = false;
   int i, j;
   const char* list[] = {
@@ -761,19 +755,19 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
             !IsAnInteger(ua->cmd)) {
           return 0;
         }
-
-        jr = emptyJobDbRecord;
-
-        jr.JobId = str_to_int64(ua->cmd);
-        if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
-          ua->ErrorMsg(_("Unable to get Job record for JobId=%s: ERR=%s\n"),
-                       ua->cmd, ua->db->strerror());
-          return 0;
+        {
+          JobDbRecord jr;
+          jr.JobId = str_to_int64(ua->cmd);
+          if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
+            ua->ErrorMsg(_("Unable to get Job record for JobId=%s: ERR=%s\n"),
+                         ua->cmd, ua->db->strerror());
+            return 0;
+          }
+          ua->SendMsg(_("Selecting jobs to build the Full state at %s\n"),
+                      jr.cStartTime);
+          jr.JobLevel = L_INCREMENTAL; /* Take Full+Diff+Incr */
+          if (!ua->db->AccurateGetJobids(ua->jcr, &jr, &jobids)) { return 0; }
         }
-        ua->SendMsg(_("Selecting jobs to build the Full state at %s\n"),
-                    jr.cStartTime);
-        jr.JobLevel = L_INCREMENTAL; /* Take Full+Diff+Incr */
-        if (!ua->db->AccurateGetJobids(ua->jcr, &jr, &jobids)) { return 0; }
         PmStrcpy(rx->JobIds, jobids.list);
         Dmsg1(30, "Item 12: jobids = %s\n", rx->JobIds);
         break;
@@ -782,7 +776,6 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
     }
   }
 
-  jr = emptyJobDbRecord;
   POOLMEM* JobIds = GetPoolMemory(PM_FNAME);
   *JobIds = 0;
   rx->TotalFiles = 0;
@@ -790,6 +783,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
    * Find total number of files to be restored, and filter the JobId
    *  list to contain only ones permitted by the ACL conditions.
    */
+  JobDbRecord jr;
   for (p = rx->JobIds;;) {
     char ed1[50];
     int status = GetNextJobidFromList(&p, &JobId);
@@ -800,7 +794,8 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
     }
     if (status == 0) { break; }
     if (jr.JobId == JobId) { continue; /* duplicate of last JobId */ }
-    jr = emptyJobDbRecord;
+    JobDbRecord empty_jr;
+    jr = empty_jr;
     jr.JobId = JobId;
     if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
       ua->ErrorMsg(_("Unable to get Job record for JobId=%s: ERR=%s\n"),
@@ -1269,14 +1264,12 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
   /*
    * Select Client from the Catalog
    */
-  cr = emptyClientDbRecord;
   if (!GetClientDbr(ua, &cr)) { goto bail_out; }
   rx->ClientName = strdup(cr.Name);
 
   /*
    * Get FileSet
    */
-  fsr = emptyFileSetDbRecord;
   i = FindArgWithValue(ua, "FileSet");
 
   if (i >= 0 && IsNameValid(ua->argv[i], ua->errmsg)) {
