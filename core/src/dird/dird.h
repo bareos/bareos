@@ -68,7 +68,7 @@ struct del_ctx {
 };
 
 /* Flags for FindNextVolumeForAppend() */
-enum
+enum : bool
 {
   fnv_create_vol = true,
   fnv_no_create_vol = false,
