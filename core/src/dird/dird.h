@@ -34,6 +34,7 @@
 #include "lib/connection_pool.h"
 #include "lib/runscript.h"
 #include "stored/bsr.h"
+#include "ndmp/smc.h"
 
 #define DIRECTOR_DAEMON 1
 
@@ -173,34 +174,13 @@ struct storage_mapping_t {
       Slot; /**< Drive number when kSlotTypeDrive or actual slot number */
 };
 
-
 #if HAVE_NDMP
-/**
- * same as smc_element_address_assignment
- * from ndmp/smc.h
- * TODO: check if original definition can be used
- */
-struct smc_element_address_assignment {
-  unsigned mte_addr; /* media transport element */
-  unsigned mte_count;
-
-  unsigned se_addr; /* storage element */
-  unsigned se_count;
-
-  unsigned iee_addr; /* import/export element */
-  unsigned iee_count;
-
-  unsigned dte_addr; /* data transfer element */
-  unsigned dte_count;
-};
-
 struct ndmp_deviceinfo_t {
   std::string device;
   std::string model;
   JobId_t JobIdUsingDevice;
 };
 #endif
-
 
 struct RuntimeStorageStatus {
   RuntimeStorageStatus() = default;
@@ -218,7 +198,7 @@ struct RuntimeStorageStatus {
       PTHREAD_MUTEX_INITIALIZER; /**< Any access to the list devices is
        controlled by this lock */
 #if HAVE_NDMP
-  smc_element_address_assignment storage_mapping = {0};
+  struct smc_element_address_assignment storage_mapping = {0};
   std::list<ndmp_deviceinfo_t> ndmp_deviceinfo;
 #endif
 };
