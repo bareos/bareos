@@ -35,6 +35,7 @@
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
 #include "dird/ua_run.h"
+#include "lib/breg.h"
 #include "lib/berrno.h"
 #include "lib/edit.h"
 #include "lib/keyword_table_s.h"

@@ -236,7 +236,7 @@ bool PurgeCmd(UaContext* ua, const char* cmd)
  */
 static bool PurgeFilesFromClient(UaContext* ua, ClientResource* client)
 {
-  struct del_ctx del;
+  del_ctx del;
   PoolMem query(PM_MESSAGE);
   ClientDbRecord cr;
   char ed1[50];
@@ -818,14 +818,16 @@ static bool ActionOnPurgeCmd(UaContext* ua, const char* cmd)
    * Loop over the candidate Volumes and actually truncate them
    */
   for (int i = 0; i < nb; i++) {
-    mr.MediaId = results[i];
-    if (ua->db->GetMediaRecord(ua->jcr, &mr)) {
+    MediaDbRecord mr_temp;
+    mr_temp.MediaId = results[i];
+    if (ua->db->GetMediaRecord(ua->jcr, &mr_temp)) {
       /* TODO: ask for drive and change Pool */
       if (Bstrcasecmp("truncate", action) || Bstrcasecmp("all", action)) {
-        do_truncate_on_purge(ua, &mr, pr.Name, store->dev_name(), drive, sd);
+        do_truncate_on_purge(ua, &mr_temp, pr.Name, store->dev_name(), drive,
+                             sd);
       }
     } else {
-      Dmsg1(0, "Can't find MediaId=%lld\n", (uint64_t)mr.MediaId);
+      Dmsg1(0, "Can't find MediaId=%lld\n", (uint64_t)mr_temp.MediaId);
     }
   }
 

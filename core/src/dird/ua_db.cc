@@ -36,7 +36,6 @@
 
 namespace directordaemon {
 
-static const PoolDbRecord emptyPoolDbRecord = {};
 /* Imported subroutines */
 
 /**
@@ -264,7 +263,7 @@ bool SetPooldbrReferences(JobControlRecord* jcr,
   bool ret = true;
 
   if (pool->RecyclePool) {
-    rpool = emptyPoolDbRecord;
+    PoolDbRecord rpool;
 
     bstrncpy(rpool.Name, pool->RecyclePool->resource_name_, sizeof(rpool.Name));
     if (db->GetPoolRecord(jcr, &rpool)) {
@@ -282,7 +281,7 @@ bool SetPooldbrReferences(JobControlRecord* jcr,
   }
 
   if (pool->ScratchPool) {
-    rpool = emptyPoolDbRecord;
+    PoolDbRecord rpool;
 
     bstrncpy(rpool.Name, pool->ScratchPool->resource_name_, sizeof(rpool.Name));
     if (db->GetPoolRecord(jcr, &rpool)) {
@@ -358,7 +357,6 @@ int UpdatePoolReferences(JobControlRecord* jcr,
   PoolDbRecord pr;
 
   if (!pool->RecyclePool && !pool->ScratchPool) { return true; }
-  pr = emptyPoolDbRecord;
   bstrncpy(pr.Name, pool->resource_name_, sizeof(pr.Name));
 
   if (!db->GetPoolRecord(jcr, &pr)) { return -1; /* not exists in database */ }

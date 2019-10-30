@@ -29,21 +29,21 @@
  */
 #ifndef BAREOS_DIRD_DIRD_H_
 #define BAREOS_DIRD_DIRD_H_
+#include "dird/dird_conf.h"
+#include "include/bareos.h"
 #include "lib/connection_pool.h"
 #include "lib/runscript.h"
-#include "lib/breg.h"
 #include "stored/bsr.h"
-#include "dird_conf.h"
 
 #define DIRECTOR_DAEMON 1
 
-#include "dir_plugins.h"
 #include "cats/cats.h"
+#include "dir_plugins.h"
 
-#include "include/jcr.h"
 #include "dird/bsr.h"
-#include "ua.h"
+#include "include/jcr.h"
 #include "jobq.h"
+#include "ua.h"
 
 class dlist;
 
@@ -58,12 +58,12 @@ struct s_count_ctx {
 #define MAX_DEL_LIST_LEN 2000000
 
 struct del_ctx {
-  JobId_t* JobId;    /**< array of JobIds */
-  char* PurgedFiles; /**< Array of PurgedFile flags */
-  int num_ids;       /**< ids stored */
-  int max_ids;       /**< size of array */
-  int num_del;       /**< number deleted */
-  int tot_ids;       /**< total to process */
+  JobId_t* JobId{nullptr};    /**< array of JobIds */
+  char* PurgedFiles{nullptr}; /**< Array of PurgedFile flags */
+  int num_ids{0};             /**< ids stored */
+  int max_ids{0};             /**< size of array */
+  int num_del{0};             /**< number deleted */
+  int tot_ids{0};             /**< total to process */
 };
 
 /* Flags for FindNextVolumeForAppend() */
