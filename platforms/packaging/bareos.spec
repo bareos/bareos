@@ -42,13 +42,20 @@ Vendor: 	The Bareos Team
 %define build_bat 1
 %define build_qt_monitor 1
 %define build_sqlite3 1
-%define check_cmocka 1
+%define check_cmocka 0
 %define glusterfs 0
 %define have_git 1
 %define ceph 0
 %define install_suse_fw 0
 %define systemd 0
 %define python_plugins 1
+
+# fedora 28 deprecated libwrap
+%if 0%{?fedora} >= 28 || 0%{?rhel} > 7
+%define use_libwrap 0
+%else
+%define use_libwrap 1
+%endif
 
 #
 # SUSE (openSUSE, SLES) specific settigs
@@ -78,8 +85,8 @@ Vendor: 	The Bareos Team
 %define systemd_support 1
 %endif
 
-# SLES 12
-%if 0%{?suse_version} == 1315 && 0%{?is_opensuse} == 0
+# SLES 12+
+%if 0%{?sle_version} >= 120000
 %define ceph 1
 %endif
 
@@ -112,7 +119,7 @@ Vendor: 	The Bareos Team
 %endif
 %endif
 
-%if 0%{?rhel_version} >= 700
+%if 0%{?rhel_version} >= 700 && !0%{?centos_version}
 %define ceph 1
 %endif
 
@@ -130,7 +137,24 @@ BuildRequires: glusterfs-devel glusterfs-api-devel
 %endif
 
 %if 0%{?ceph}
+  %if 0%{?sle_version} >= 120200
+BuildRequires: libcephfs-devel
+BuildRequires: librados-devel
+  %else
+# the rhel macro is set in docker, but not in obs
+    %if 0%{?rhel} == 7
+BuildRequires: librados2-devel
+BuildRequires: libcephfs1-devel
+    %else
+      %if 0%{?rhel} == 8
+BuildRequires: librados-devel
+BuildRequires: libradosstriper-devel
+BuildRequires: libcephfs-devel
+      %else
 BuildRequires: ceph-devel
+      %endif
+    %endif
+  %endif
 %endif
 
 %if 0%{?have_git}
@@ -170,7 +194,11 @@ BuildRequires: libcap-devel
 BuildRequires: mtx
 
 %if 0%{?build_bat} || 0%{?build_qt_monitor}
+%if 0%{?suse_version}
 BuildRequires: libqt4-devel
+%else
+BuildRequires: qt-devel
+%endif
 %endif
 
 %if 0%{?check_cmocka}
@@ -206,7 +234,9 @@ BuildRequires: lsb-release
 
 BuildRequires: libtermcap-devel
 BuildRequires: passwd
+%if %{use_libwrap}
 BuildRequires: tcp_wrappers
+%endif
 
 # Some magic to be able to determine what platform we are running on.
 %if 0%{?rhel_version} || 0%{?centos_version} || 0%{?fedora_version}
@@ -228,7 +258,9 @@ BuildRequires: fedora-release
 
 %if 0%{?rhel_version} >= 600 || 0%{?centos_version} >= 600 || 0%{?fedora_version} >= 14
 BuildRequires: jansson-devel
+%if %{use_libwrap}
 BuildRequires: tcp_wrappers-devel
+%endif
 %endif
 
 %else
@@ -261,6 +293,10 @@ Bareos source code has been released under the AGPL version 3 license.
 
 %description
 %{dscr}
+
+%if 0%{?opensuse_version} || 0%{?sle_version}
+%debug_package
+%endif
 
 # Notice : Don't try to change the order of package declaration
 # You will have side effect with PreReq
@@ -447,10 +483,14 @@ Requires:   openssl-devel
 Requires:   libopenssl-devel
 %endif
 %if 0%{?rhel_version} >= 600 || 0%{?centos_version} >= 600 || 0%{?fedora_version}
+%if %{use_libwrap}
 Requires:   tcp_wrappers-devel
+%endif
 %else
 %if 0%{?rhel_version} || 0%{?centos_version}
+%if %{use_libwrap}
 Requires:   tcp_wrappers
+%endif
 %else
 Requires:   tcpd-devel
 %endif
@@ -660,6 +700,12 @@ This package contains bareos development files.
 if [ "%{?buildroot}" -a "%{?buildroot}" != "/" ]; then
     rm -rf "%{?buildroot}"
 fi
+
+# As we do not want to build droplet support and there is no way to
+# circumvent the autodetection, we patch configure so it is detected
+# as not present
+sed -i.bak -e 's/have_droplet="yes"/have_droplet="no"/' configure
+
 %if !0%{?suse_version}
 export PATH=$PATH:/usr/lib64/qt4/bin:/usr/lib/qt4/bin
 %endif
@@ -713,7 +759,9 @@ export MTX=/usr/sbin/mtx
 %if 0%{?build_sqlite3}
   --with-sqlite3 \
 %endif
+%if %{use_libwrap}
   --with-tcp-wrappers \
+%endif
   --with-dir-user=%{director_daemon_user} \
   --with-dir-group=%{daemon_group} \
   --with-sd-user=%{storage_daemon_user} \
@@ -733,6 +781,9 @@ export MTX=/usr/sbin/mtx
   --with-systemd \
 %endif
   --enable-includes
+
+# dependency ordering isn't correct, so we run rpcgen first.
+%__make -C src/ndmp ndmp0.h ndmp2.h ndmp3.h ndmp4.h ndmp9.h
 
 #Add flags
 %__make CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" %{?_smp_mflags};
