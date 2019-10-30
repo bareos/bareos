@@ -49,14 +49,14 @@ static const ClientDbRecord emptyClientDbRecord = {};
 /* Forward referenced functions */
 static bool PruneDirectory(UaContext* ua, ClientResource* client);
 static bool PruneStats(UaContext* ua, utime_t retention);
-static bool GrowDelList(struct del_ctx* del);
+static bool GrowDelList(del_ctx* del);
 
 /**
  * Called here to count entries to be deleted
  */
 int DelCountHandler(void* ctx, int num_fields, char** row)
 {
-  struct s_count_ctx* cnt = (struct s_count_ctx*)ctx;
+  s_count_ctx* cnt = static_cast<s_count_ctx*>(ctx);
 
   if (row[0]) {
     cnt->count = str_to_int64(row[0]);
@@ -76,7 +76,7 @@ int DelCountHandler(void* ctx, int num_fields, char** row)
  */
 int JobDeleteHandler(void* ctx, int num_fields, char** row)
 {
-  struct del_ctx* del = (struct del_ctx*)ctx;
+  del_ctx* del = static_cast<del_ctx*>(ctx);
 
   if (!GrowDelList(del)) { return 1; }
   del->JobId[del->num_ids] = (JobId_t)str_to_int64(row[0]);
@@ -88,7 +88,7 @@ int JobDeleteHandler(void* ctx, int num_fields, char** row)
 
 int FileDeleteHandler(void* ctx, int num_fields, char** row)
 {
-  struct del_ctx* del = (struct del_ctx*)ctx;
+  del_ctx* del = static_cast<del_ctx*>(ctx);
 
   if (!GrowDelList(del)) { return 1; }
   del->JobId[del->num_ids++] = (JobId_t)str_to_int64(row[0]);
@@ -489,15 +489,13 @@ static bool prune_set_filter(UaContext* ua,
  */
 bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool)
 {
-  struct del_ctx del;
+  del_ctx del;
   struct s_count_ctx cnt;
   PoolMem query(PM_MESSAGE);
   PoolMem sql_where(PM_MESSAGE);
   PoolMem sql_from(PM_MESSAGE);
   utime_t period;
   char ed1[50];
-
-  memset(&del, 0, sizeof(del));
 
   if (pool && pool->FileRetention > 0) {
     period = pool->FileRetention;
@@ -585,7 +583,7 @@ static bool CreateTempTables(UaContext* ua)
   return true;
 }
 
-static bool GrowDelList(struct del_ctx* del)
+static bool GrowDelList(del_ctx* del)
 {
   if (del->num_ids == MAX_DEL_LIST_LEN) { return false; }
 
@@ -666,8 +664,7 @@ static bool PruneBackupJobs(UaContext* ua,
   struct accurate_check_ctx* elt = nullptr;
   db_list_ctx jobids, tempids;
   JobDbRecord jr;
-  struct del_ctx del;
-  memset(&del, 0, sizeof(del));
+  del_ctx del;
 
   if (pool && pool->JobRetention > 0) {
     period = pool->JobRetention;
@@ -843,7 +840,7 @@ bool PruneJobs(UaContext* ua,
 bool PruneVolume(UaContext* ua, MediaDbRecord* mr)
 {
   PoolMem query(PM_MESSAGE);
-  struct del_ctx del;
+  del_ctx del;
   bool ok = false;
   int count;
 
@@ -851,7 +848,6 @@ bool PruneVolume(UaContext* ua, MediaDbRecord* mr)
     return false; /* Cannot prune archived volumes */
   }
 
-  memset(&del, 0, sizeof(del));
   del.max_ids = 10000;
   del.JobId = (JobId_t*)malloc(sizeof(JobId_t) * del.max_ids);
 

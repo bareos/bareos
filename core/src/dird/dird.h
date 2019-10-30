@@ -53,7 +53,7 @@ namespace directordaemon {
 /* Used in ua_prune.c and ua_purge.c */
 
 struct s_count_ctx {
-  int count;
+  int count{};
 };
 
 #define MAX_DEL_LIST_LEN 2000000

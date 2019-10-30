@@ -282,7 +282,7 @@ static bool PurgeFilesFromClient(UaContext* ua, ClientResource* client)
  */
 static bool PurgeJobsFromClient(UaContext* ua, ClientResource* client)
 {
-  struct del_ctx del;
+  del_ctx del;
   PoolMem query(PM_MESSAGE);
   ClientDbRecord cr;
   char ed1[50];

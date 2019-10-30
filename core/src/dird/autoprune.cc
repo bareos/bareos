@@ -89,7 +89,7 @@ void PruneVolumes(JobControlRecord* jcr,
   int count;
   UaContext* ua;
   dbid_list ids;
-  struct del_ctx prune_list;
+  del_ctx prune_list;
   PoolMem query(PM_MESSAGE);
   char ed1[50], ed2[100], ed3[50];
 
@@ -99,7 +99,6 @@ void PruneVolumes(JobControlRecord* jcr,
     return;
   }
 
-  memset(&prune_list, 0, sizeof(prune_list));
   prune_list.max_ids = 10000;
   prune_list.JobId = (JobId_t*)malloc(sizeof(JobId_t) * prune_list.max_ids);
 
