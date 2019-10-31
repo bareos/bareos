@@ -55,7 +55,8 @@ int get_tape_info_cb(struct ndm_session* sess,
 {
   Dmsg0(100, "Get tape info called\n");
   unsigned int i = 0;
-  unsigned int j, k;
+  unsigned int j;
+  unsigned int k;
   const char* what = "tape";
   JobControlRecord* jcr = NULL;
   StorageResource* store = NULL;
@@ -456,9 +457,9 @@ dlist* ndmp_get_vol_list(UaContext* ua,
    * Process the robot element status retrieved.
    */
   smc = ndmp_sess->control_acb->smc_cb;
-  static const vol_list_t empty_vol_list_t{};
   for (edp = smc->elem_desc; edp; edp = edp->next) {
     vl = (vol_list_t*)malloc(sizeof(vol_list_t));
+    vol_list_t empty_vol_list_t;
     *vl = empty_vol_list_t;
 
     if (scan && !listall) {

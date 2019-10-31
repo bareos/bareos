@@ -46,8 +46,6 @@
 
 namespace directordaemon {
 
-static const MediaDbRecord emptyMediaDbRecord = {};
-
 /*
  * Forward referenced functions
  */
@@ -76,6 +74,7 @@ bool newVolume(JobControlRecord* jcr, MediaDbRecord* mr, StorageResource* store)
   pr.PoolId = mr->PoolId;
   if (!jcr->db->GetPoolRecord(jcr, &pr)) { goto bail_out; }
   if (pr.MaxVols == 0 || pr.NumVols < pr.MaxVols) {
+    MediaDbRecord emptyMediaDbRecord;
     *mr = emptyMediaDbRecord;
     SetPoolDbrDefaultsInMediaDbr(mr, &pr);
     jcr->VolumeName[0] = 0;

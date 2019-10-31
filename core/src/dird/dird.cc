@@ -68,8 +68,6 @@ using namespace directordaemon;
 /* Forward referenced subroutines */
 namespace directordaemon {
 
-static const ClientDbRecord emptyClientDbRecord = {};
-
 #if !defined(HAVE_WIN32)
 static
 #endif
@@ -546,7 +544,7 @@ static bool InitSighandlerSighup()
   bool retval = false;
 #if !defined(HAVE_WIN32)
   sigset_t block_mask;
-  struct sigaction action;
+  struct sigaction action = {};
 
   /*
    *  while handling SIGHUP signal,
@@ -995,7 +993,6 @@ static bool CheckCatalog(cat_op mode)
       }
       Dmsg2(500, "create cat=%s for client=%s\n",
             client->catalog->resource_name_, client->resource_name_);
-      cr = emptyClientDbRecord;
       bstrncpy(cr.Name, client->resource_name_, sizeof(cr.Name));
       db->CreateClientRecord(NULL, &cr);
     }

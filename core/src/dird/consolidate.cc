@@ -255,7 +255,7 @@ bool DoConsolidate(JobControlRecord* jcr)
         /**
          * Get db record of oldest jobid and check its age
          */
-        JobDbRecord emptyJobDbRecord{};
+        JobDbRecord emptyJobDbRecord;
         jcr->previous_jr = emptyJobDbRecord;
         jcr->previous_jr.JobId = str_to_int64(jobids);
         Dmsg1(10, "Previous JobId=%s\n", jobids);

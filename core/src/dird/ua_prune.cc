@@ -44,8 +44,6 @@
 
 namespace directordaemon {
 
-static const ClientDbRecord emptyClientDbRecord = {};
-
 /* Forward referenced functions */
 static bool PruneDirectory(UaContext* ua, ClientResource* client);
 static bool PruneStats(UaContext* ua, utime_t retention);
@@ -338,6 +336,7 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
 
   if (client) {
     char ed1[50];
+    ClientDbRecord emptyClientDbRecord;
     cr = emptyClientDbRecord;
     bstrncpy(cr.Name, client->resource_name_, sizeof(cr.Name));
     if (!ua->db->CreateClientRecord(ua->jcr, &cr)) { goto bail_out; }

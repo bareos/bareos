@@ -50,8 +50,6 @@
 #include "lib/util.h"
 
 namespace directordaemon {
-static const MediaDbRecord emptyMediaDbRecord = {};
-static const PoolDbRecord emptyPoolDbRecord = {};
 
 /* Forward referenced functions */
 
@@ -376,6 +374,7 @@ static void label_from_barcodes(UaContext* ua,
     if (!vl->VolName || !BitIsSet(vl->bareos_slot_number - 1, slot_list)) {
       continue;
     }
+    MediaDbRecord emptyMediaDbRecord;
     mr = emptyMediaDbRecord;
     bstrncpy(mr.VolumeName, vl->VolName, sizeof(mr.VolumeName));
     media_record_exists = false;
@@ -622,6 +621,7 @@ static int do_label(UaContext* ua, const char* cmd, bool relabel)
    * Must select Pool if not already done
    */
   if (pr.PoolId == 0) {
+    PoolDbRecord emptyPoolDbRecord;
     pr = emptyPoolDbRecord;
     if (!SelectPoolDbr(ua, &pr)) { return 1; }
   }
