@@ -5,12 +5,6 @@ Low Level socket methods to communication with the bareos-director.
 # Authentication code is taken from
 # https://github.com/hanxiangduo/bacula-console-python
 
-from   bareos.bsock.constants import Constants
-from   bareos.bsock.connectiontype import ConnectionType
-from   bareos.bsock.protocolmessages import ProtocolMessages
-from   bareos.util.bareosbase64 import BareosBase64
-from   bareos.util.password import Password
-import bareos.exceptions
 import hashlib
 import hmac
 import logging
@@ -23,6 +17,13 @@ import struct
 import sys
 import time
 import warnings
+
+from   bareos.bsock.constants import Constants
+from   bareos.bsock.connectiontype import ConnectionType
+from   bareos.bsock.protocolmessages import ProtocolMessages
+from   bareos.util.bareosbase64 import BareosBase64
+from   bareos.util.password import Password
+import bareos.exceptions
 
 # Try to load the sslpsk module,
 # with implement TLS-PSK (Transport Layer Security - Pre-Shared-Key)
@@ -102,10 +103,10 @@ class LowLevel(object):
         try:
             #self.socket = socket.create_connection((self.address, self.port))
             self.socket.connect((self.address, self.port))
-        except socket.gaierror as e:
+        except (socket.error, socket.gaierror) as e:
             self._handleSocketError(e)
             raise bareos.exceptions.ConnectionError(
-                "failed to connect to host {}, port {}: {}".format(self.address, self.port, str(e)))
+                "Failed to connect to host {}, port {}: {}".format(self.address, self.port, str(e)))
         else:
             self.logger.debug("connected to {}:{}".format(self.address, self.port))
 
@@ -515,5 +516,5 @@ class LowLevel(object):
 
 
     def _handleSocketError(self, exception):
-        self.logger.error("socket error:" + str(exception))
+        self.logger.warn("socket error: {}".format(str(exception)))
         self.socket = None

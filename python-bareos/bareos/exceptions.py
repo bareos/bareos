@@ -32,7 +32,7 @@ class SocketEmptyHeader(Error):
     pass
 
 
-class AuthenticationError(Error):
+class AuthenticationError(ConnectionError):
     """
     error during Authentication
     """

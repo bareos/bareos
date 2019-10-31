@@ -4,6 +4,7 @@ from __future__ import print_function
 import argparse
 #import bareos
 import bareos.bsock
+import bareos.exceptions
 import logging
 import sys
 
@@ -38,7 +39,11 @@ if __name__ == '__main__':
         logger.debug('options: %s' % (parameter))
         password = bareos.bsock.Password(args.password)
         parameter['password']=password
-        director = bareos.bsock.DirectorConsole(**parameter)
+        try:
+            director = bareos.bsock.DirectorConsole(**parameter)
+        except (bareos.exceptions.ConnectionError) as e:
+            print(str(e))
+            sys.exit(1)
     except RuntimeError as e:
         print(str(e))
         sys.exit(1)
