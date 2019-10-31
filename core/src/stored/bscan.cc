@@ -59,9 +59,6 @@ extern bool ParseSdConfig(const char* configfile, int exit_code);
 
 using namespace storagedaemon;
 
-static const MediaDbRecord emptyMediaDbRecord = {};
-static const JobDbRecord emptyJobDbRecord = {};
-
 /* Forward referenced functions */
 static void do_scan(void);
 static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec);
@@ -449,6 +446,20 @@ static void do_scan()
 {
   attr = new_attr(bjcr);
 
+  AttributesDbRecord ar_emtpy;
+  PoolDbRecord pr_empty;
+  JobDbRecord jr_empty;
+  ClientDbRecord cr_empty;
+  FileSetDbRecord fsr_empty;
+  FileDbRecord fr_empty;
+
+  ar = ar_emtpy;
+  pr = pr_empty;
+  jr = jr_empty;
+  cr = cr_empty;
+  fsr = fsr_empty;
+  fr = fr_empty;
+
   /*
    * Detach bscan's jcr as we are not a real Job on the tape
    */
@@ -578,8 +589,10 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
         /*
          * Check Media Info
          */
-
-        mr = emptyMediaDbRecord;
+        {
+          MediaDbRecord emptyMediaDbRecord;
+          mr = emptyMediaDbRecord;
+        }
         bstrncpy(mr.VolumeName, dev->VolHdr.VolumeName, sizeof(mr.VolumeName));
         mr.PoolId = pr.PoolId;
         num_media++;
@@ -639,7 +652,10 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
             ignored_msgs = 0;
           }
           UnserSessionLabel(&label, rec);
-          jr = emptyJobDbRecord;
+          {
+            JobDbRecord emptyJobDbRecord;
+            jr = emptyJobDbRecord;
+          }
           bstrncpy(jr.Job, label.Job, sizeof(jr.Job));
           if (db->GetJobRecord(bjcr, &jr)) {
             /*
