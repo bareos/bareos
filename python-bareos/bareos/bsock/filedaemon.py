@@ -4,6 +4,8 @@ Communicates with the bareos-fd
 
 from   bareos.bsock.connectiontype  import ConnectionType
 from   bareos.bsock.lowlevel import LowLevel
+from   bareos.bsock.protocolmessageids import ProtocolMessageIds
+import bareos.exceptions
 import shlex
 
 
@@ -26,8 +28,25 @@ class FileDaemon(LowLevel):
         # but using the interface provided for Directors.
         self.identity_prefix = u'R_DIRECTOR'
         self.connect(address, port, dirname, ConnectionType.FILEDAEMON, name, password)
-        self.auth(name=name, password=password, auth_success_regex=b'^2000 OK Hello.*$')
+        self.auth(name=name, password=password)
         self._init_connection()
+
+
+    def get_and_evaluate_auth_responses(self):
+        code, text = self.receive_and_evaluate_response_message()
+
+        self.logger.debug(u'code: {}'.format(code))
+
+
+        #
+        # Test if authentication has been accepted.
+        #
+        if code == ProtocolMessageIds.FdOk:
+            self.logger.info(u'Authentication: {}'.format(text))
+            self.auth_credentials_valid = True
+        else:
+            raise bareos.exceptions.AuthenticationError("Received unexcepted message: {} {} (expecting auth ok)".format(code, text))
+
 
     def call(self, command):
         '''

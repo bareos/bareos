@@ -6,10 +6,12 @@ from __future__ import print_function
 import json
 import logging
 import os
+import re
 import unittest
 
 import bareos.bsock
-from bareos.bsock.constants import Constants
+from   bareos.bsock.constants import Constants
+from   bareos.bsock.protocolmessages import ProtocolMessages
 import bareos.exceptions
 
 
@@ -44,8 +46,11 @@ class PythonBareosBase(unittest.TestCase):
     def get_name_of_test(self):
         return self.id().split('.', 1)[1]
 
+class PythonBareosModuleTest(PythonBareosBase):
 
-class PythonBareosExceptionsTest(PythonBareosBase):
+    def versiontuple(self, v):
+        return tuple(map(int, (v.split("."))))
+
     def test_exception_connection_error(self):
         '''
         Test if the ConnectionError exception deliveres the expected result.
@@ -73,6 +78,24 @@ class PythonBareosExceptionsTest(PythonBareosBase):
             logger.debug('signal: str={}, repr={}, args={}'.format(
                 str(e), repr(e), e.args))
             self.assertIn('terminate', str(e))
+
+    def test_protocol_message(self):
+        logger = logging.getLogger()
+
+        name = u'Testname'
+        expected_regex = r'Hello {} calling version (.*)'.format(name)
+
+        hello_message = ProtocolMessages.hello(name)
+        logger.debug(hello_message)
+
+        self.assertRegexpMatches(hello_message, expected_regex)
+
+        version = re.search(expected_regex, hello_message).group(1)
+
+        logger.debug(u'version: {}'.format(version))
+
+        self.assertGreaterEqual(self.versiontuple(version), self.versiontuple(u'18.2.5'))
+
 
 
 class PythonBareosPlainTest(PythonBareosBase):
@@ -188,6 +211,31 @@ class PythonBareosPlainTest(PythonBareosBase):
         content = json.loads(str(result))
         logger.debug(str(content))
         self.assertEqual(content['result']['whoami'].rstrip(), username)
+
+
+    def test_login_proto182(self):
+
+        logger = logging.getLogger()
+
+        #username = self.director_operator_username
+        username = u'adminnotls'
+        password = self.director_operator_password
+
+        console_pam_username = u'PamConsole'
+        console_pam_password = u'secret'
+
+        bareos_password = bareos.bsock.Password(password)
+        director_root = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            tls_psk_enable=False,
+            name=username,
+            password=bareos_password)
+
+        result = director_root.call('whoami').decode('utf-8')
+        logger.debug(str(result))
+
+
 
     # TODO: test_login_tlspsk
 
@@ -427,7 +475,45 @@ class PythonBareosJsonBackendTest(PythonBareosJsonBase):
                 password=bareos_password)
 
 
+    def test_pam_login(self):
+
+        logger = logging.getLogger()
+
+        #username = self.director_operator_username
+        username = u'adminnotls'
+        password = self.director_operator_password
+
+        console_pam_username = u'PamConsole'
+        console_pam_password = u'secret'
+
+        bareos_password = bareos.bsock.Password(password)
+        director_root = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            tls_psk_enable=False,
+            name=username,
+            password=bareos_password)
+
+        self.configure_add(
+            director_root, 'consoles', console_pam_username,
+            'console name={} password={} UsePamAuthentication=yes tlsenable=false'.format(console_pam_username, console_pam_password))
+
+        #
+        # login as console_pam_username
+        #
+        bareos_password = bareos.bsock.Password(console_pam_password)
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            tls_psk_enable=False,
+            name=console_pam_username,
+            password=bareos_password,
+            )
+
+
+
 class PythonBareosJsonAclTest(PythonBareosJsonBase):
+
     def test_json_list_media_with_pool_acl(self):
         '''
         This tests checks if the Pool ACL works with the "llist media all" command.

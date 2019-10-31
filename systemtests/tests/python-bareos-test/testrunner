@@ -29,6 +29,7 @@ cat <<END_OF_DATA >$tmp/bconcmds
 messages
 @$out $tmp/log1.out
 configure add console=admin password=secret profile=all
+configure add console=adminnotls password=secret profile=all tlsenable=no
 messages
 quit
 END_OF_DATA

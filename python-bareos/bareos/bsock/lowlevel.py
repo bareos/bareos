@@ -20,7 +20,9 @@ import warnings
 
 from   bareos.bsock.constants import Constants
 from   bareos.bsock.connectiontype import ConnectionType
+from   bareos.bsock.protocolmessageids import ProtocolMessageIds
 from   bareos.bsock.protocolmessages import ProtocolMessages
+from   bareos.bsock.protocolversions import ProtocolVersions
 from   bareos.util.bareosbase64 import BareosBase64
 from   bareos.util.password import Password
 import bareos.exceptions
@@ -46,6 +48,8 @@ class LowLevel(object):
         self.status = None
         self.address = None
         self.password = None
+        self.pam_username = None
+        self.pam_password = None
         self.port = None
         self.dirname = None
         self.socket = None
@@ -53,10 +57,14 @@ class LowLevel(object):
         self.tls_psk_enable = True
         self.tls_psk_require = False
         self.connection_type = None
+        self.protocolversion = ProtocolVersions.last
+        self.protocol_messages = ProtocolMessages()
         # identity_prefix have to be set in each class
         self.identity_prefix = u'R_NONE'
         self.receive_buffer = b''
 
+    def __del__(self):
+        self.close()
 
     def connect(self, address, port, dirname, type, name = None, password = None):
         self.address = address
@@ -101,14 +109,13 @@ class LowLevel(object):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # initialize
         try:
-            #self.socket = socket.create_connection((self.address, self.port))
             self.socket.connect((self.address, self.port))
         except (socket.error, socket.gaierror) as e:
             self._handleSocketError(e)
             raise bareos.exceptions.ConnectionError(
                 "Failed to connect to host {}, port {}: {}".format(self.address, self.port, str(e)))
-        else:
-            self.logger.debug("connected to {}:{}".format(self.address, self.port))
+
+        self.logger.debug("connected to {}:{}".format(self.address, self.port))
 
         return True
 
@@ -124,14 +131,13 @@ class LowLevel(object):
         if isinstance(self.password, Password):
             password = self.password.md5()
         else:
-            raise bareos.exceptions.ConnectionError(u'No password provides.')
+            raise bareos.exceptions.ConnectionError(u'No password provided.')
         self.logger.debug("identity = {}, password = {}".format(identity, password))
         try:
             self.socket = sslpsk.wrap_socket(
                 client_socket,
                 psk=(password, identity),
                 ciphers='ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH',
-                #ssl_version=ssl.PROTOCOL_TLSv1_2,
                 server_side=False)
         except ssl.SSLError as e:
             # raise ConnectionError(
@@ -143,29 +149,41 @@ class LowLevel(object):
 
     def get_tls_psk_identity(self):
         '''Bareos TLS-PSK excepts the identiy is a specific format.'''
-        return u'{}{}{}'.format(self.identity_prefix, chr(0x1e), str(self.name))
+        return u'{}{}{}'.format(self.identity_prefix, Constants.record_separator, str(self.name))
 
-    def is_tls_psk_available(self):
+
+    @staticmethod
+    def is_tls_psk_available():
         '''Checks if we have all required modules for TLS-PSK.'''
         return 'sslpsk' in sys.modules
 
-    def auth(self, name, password, auth_success_regex):
+
+    def auth(self, name, password):
         '''
-        Login to the Bareos Director.
-        If the authenticate succeeds return True else False.
-        dir: the director name
-        name: own name.
+        Login to a Bareos Daemon.
+
+        @param name: Own name.
+        @type name: str
+
+        @param password: Password.
+        @type password: bareos.bsock.Password
+
+        @return: True, if the authentication succeeds.
+                 In earlier versions, authentication failures returned False.
+                 However, now an authentication failure raises an exception.
+        @rtype: bool
+
+        @raise bareos.exceptions.AuthenticationError: if authentication fails.
         '''
         if not isinstance(password, Password):
             raise bareos.exceptions.AuthenticationError("password must by of type bareos.Password() not %s" % (type(password)))
         self.password = password
         self.name = name
-        self.auth_success_regex = auth_success_regex
         return self.__auth()
 
 
     def __auth(self):
-        bashed_name = ProtocolMessages.hello(self.name, type=self.connection_type)
+        bashed_name = self.protocol_messages.hello(self.name, type=self.connection_type)
         # send the bash to the director
         self.send(bashed_name)
 
@@ -177,19 +195,32 @@ class LowLevel(object):
             raise bareos.exceptions.AuthenticationError("failed (in response)")
         if not self._cram_md5_challenge(clientname=self.name, password=self.password.md5(), tls_local_need=0, compatible=True):
             raise bareos.exceptions.AuthenticationError("failed (in challenge)")
-        self.recv_msg(self.auth_success_regex)
-        self.auth_credentials_valid = True
-        return True
+
+        self.get_and_evaluate_auth_responses()
+
+        return self.auth_credentials_valid
+
+
+    def receive_and_evaluate_response_message(self):
+        regex_str = r'^(\d\d\d\d){}(.*)$'.format(Constants.record_separator_compat_regex)
+        regex = bytes(bytearray(regex_str, 'utf8'))
+        incoming_message = self.recv_msg(regex)
+        match = re.search(regex, incoming_message, re.DOTALL)
+        code = int(match.group(1))
+        text = match.group(2)
+
+        return (code, text)
 
 
     def _init_connection(self):
         pass
 
 
-    def disconnect(self):
+    def close(self):
         '''disconnect'''
-        # TODO
-        pass
+        if self.socket:
+            self.socket.close()
+        self.socket = None
 
 
     def reconnect(self):
@@ -221,7 +252,7 @@ class LowLevel(object):
         try:
             self.send(bytearray(command, 'utf-8'))
             result = self.recv_msg()
-        except (SocketEmptyHeader, bareos.exceptions.ConnectionLostError) as e:
+        except (bareos.exceptions.SocketEmptyHeader, bareos.exceptions.ConnectionLostError) as e:
             self.logger.error("connection problem (%s): %s" % (type(e).__name__, str(e)))
             if count == 0:
                 if self.reconnect():
@@ -246,8 +277,43 @@ class LowLevel(object):
             self._handleSocketError(e)
 
 
+    def recv_bytes(self, length, timeout=10):
+        '''
+        Receive a number of bytes.
+
+        @raise bareos.exceptions.ConnectionLostError:
+               is raised, if the socket connection gets lost.
+        @raise socket.timeout:
+               is raised, if a timeout occurs on the socket connection,
+               meaning no data received.
+        '''
+        self.socket.settimeout(timeout)
+        msg = b''
+        # get the message
+        while length > 0:
+            self.logger.debug("  submsg len: " + str(length))
+            submsg = self.socket.recv(length)
+            if len(submsg) == 0:
+                errormsg = u'Failed to retrieve data. Assuming the connection is lost.'
+                self._handleSocketError(errormsg)
+                raise bareos.exceptions.ConnectionLostError(errormsg)
+            length -= len(submsg)
+            msg += submsg
+        return msg
+
+
     def recv(self):
-        '''will receive data from director '''
+        '''
+        Receive a single Director message.
+        This is,
+        header (4 bytes): if
+            > 0: length of the following message
+            < 0: Bareos signal
+        msg: of the length descriped in the header.
+
+        @raise bareos.exceptions.SignalReceivedException:
+               is raised, if a Bareos signal is received.
+        '''
         self.__check_socket_connection()
         # get the message header
         header = self.__get_header()
@@ -260,8 +326,18 @@ class LowLevel(object):
         return msg
 
 
-    def recv_msg(self, regex = b'^\d\d\d\d OK.*$', timeout = None):
-        '''will receive data from director '''
+    def recv_msg(self, regex=b'^\d\d\d\d OK.*$', timeout=None):
+        '''
+        Receive a full Director message.
+
+        It retrieves Director messages (header + message text),
+        until
+          1. the message matches the specified regex or
+          2. the header indicates a signal.
+
+        @raise bareos.exceptions.SignalReceivedException:
+               is raised, if a Bareos signal is received.
+        '''
         self.__check_socket_connection()
         try:
             timeouts = 0
@@ -292,35 +368,25 @@ class LowLevel(object):
                         # which might have been incomplete without new submsg.
                         lastlineindex = self.receive_buffer.rfind(b'\n') + 1
                         self.receive_buffer += submsg
-                        match = re.search(regex, self.receive_buffer[lastlineindex:], re.MULTILINE)
+                        match = re.search(regex, self.receive_buffer[lastlineindex:], re.DOTALL)
                         # Bareos indicates end of command result by line starting with 4 digits
                         if match:
                             self.logger.debug("msg \"{0}\" matches regex \"{1}\"".format(self.receive_buffer.strip(), regex))
                             result = self.receive_buffer[0:lastlineindex+match.end()]
                             self.receive_buffer = self.receive_buffer[lastlineindex+match.end()+1:]
                             return result
-                        #elif re.search("^\d\d\d\d .*$", msg, re.MULTILINE):
-                            #return msg
         except socket.error as e:
             self._handleSocketError(e)
 
 
     def recv_submsg(self, length):
         # get the message
-        msg = b''
-        while length > 0:
-            self.logger.debug("  submsg len: " + str(length))
-            # TODO
-            self.socket.settimeout(10)
-            submsg = self.socket.recv(length)
-            length -= len(submsg)
-            #self.logger.debug(submsg)
-            msg += submsg
+        msg = self.recv_bytes(length)
         if (type(msg) is str):
             msg = bytearray(msg.decode('utf-8'), 'utf-8')
         if (type(msg) is bytes):
             msg = bytearray(msg)
-        #self.logger.debug(str(msg))
+        self.logger.debug(str(msg))
         return msg
 
 
@@ -331,9 +397,17 @@ class LowLevel(object):
         """
         command = ""
         while command != "exit" and command != "quit" and self.is_connected():
-            command = self._get_input()
-            resultmsg = self.call(command)
-            self._show_result(resultmsg)
+            try:
+                command = self._get_input()
+            except EOFError:
+                return False
+            try:
+                resultmsg = self.call(command)
+                self._show_result(resultmsg)
+            except bareos.exceptions.JsonRpcErrorReceivedException as exp:
+                print(str(exp))
+                #print(str(exp.jsondata))
+
         return True
 
 
@@ -357,21 +431,8 @@ class LowLevel(object):
 
 
     def __get_header(self):
-        header = b''
-        header_length = 4
-        while header_length > 0:
-            self.logger.debug("  remaining header len: {0}".format(header_length))
-            self.__check_socket_connection()
-            # TODO
-            self.socket.settimeout(10)
-            submsg = self.socket.recv(header_length)
-            header_length -= len(submsg)
-            header += submsg
-        if len(header) == 0:
-            self.logger.debug("received empty header, assuming connection is closed")
-            raise bareos.exceptions.SocketEmptyHeader()
-        else:
-            return self.__get_header_data(header)
+        header = self.recv_bytes(4)
+        return self.__get_header_data(header)
 
 
     def __get_header_data(self, header):
@@ -505,7 +566,7 @@ class LowLevel(object):
 
     def __check_socket_connection(self):
         result = True
-        if self.socket == None:
+        if self.socket is None:
             result = False
             if self.auth_credentials_valid:
                 # connection have worked before, but now it is gone
@@ -516,5 +577,5 @@ class LowLevel(object):
 
 
     def _handleSocketError(self, exception):
-        self.logger.warn("socket error: {}".format(str(exception)))
-        self.socket = None
+        self.logger.warning("socket error: {}".format(str(exception)))
+        self.close()

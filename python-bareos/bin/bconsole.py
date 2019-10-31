@@ -2,9 +2,9 @@
 
 from __future__ import print_function
 import argparse
-#import bareos
 import bareos.bsock
 import bareos.exceptions
+from   bareos.bsock.protocolversions import ProtocolVersions
 import logging
 import sys
 
@@ -15,6 +15,9 @@ def getArguments():
     parser.add_argument('-p', '--password', help="password to authenticate to a Bareos Director console", required=True)
     parser.add_argument('--port', default=9101, help="Bareos Director network port")
     parser.add_argument('--dirname', help="Bareos Director name")
+    parser.add_argument('--protocolversion',
+                        default=ProtocolVersions.last,
+                        help=u'Specify the protocol version to use. Default: {} (current)'.format(ProtocolVersions.last))
     parser.add_argument('address', nargs='?', default="localhost", help="Bareos Director network address")
     args = parser.parse_args()
     return args
@@ -32,7 +35,7 @@ if __name__ == '__main__':
         parameter = {}
         for i in options:
             if hasattr(args, i) and getattr(args,i) != None:
-                logger.debug( "%s: %s" %(i, getattr(args,i)))
+                logger.debug("%s: %s" %(i, getattr(args,i)))
                 parameter[i] = getattr(args,i)
             else:
                 logger.debug( '%s: ""' %(i))

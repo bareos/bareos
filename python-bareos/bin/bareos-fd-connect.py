@@ -7,7 +7,7 @@ import logging
 import sys
 
 def getArguments():
-    parser = argparse.ArgumentParser(description='Connect to Bareos File Daemon.' )
+    parser = argparse.ArgumentParser(description='Connect to Bareos File Daemon.')
     parser.add_argument('-d', '--debug', action='store_true', help="enable debugging output")
     parser.add_argument('--name', help="Name of the Director resource in the File Daemon", required=True)
     parser.add_argument('-p', '--password', help="password to authenticate to a Bareos File Daemon", required=True)
