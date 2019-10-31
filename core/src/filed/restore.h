@@ -38,40 +38,38 @@ struct DelayedDataStream {
 struct RestoreCipherContext {
   CIPHER_CONTEXT* cipher;
   uint32_t block_size;
-
   POOLMEM* buf;       /* Pointer to descryption buffer */
   int32_t buf_len;    /* Count of bytes currently in buf */
   int32_t packet_len; /* Total bytes in packet */
 };
 
+/* clang-format off */
 struct r_ctx {
   JobControlRecord* jcr{nullptr};
   int32_t stream{0};           /* stream less new bits */
   int32_t prev_stream{0};      /* previous stream */
   int32_t full_stream{0};      /* full stream including new bits */
   int32_t comp_stream{0};      /* last compressed stream found. needed only to
-                               restore      encrypted compressed backup */
+                                  restore encrypted compressed backup */
   BareosWinFilePacket bfd;     /* File content */
   uint64_t fileAddr{0};        /* file write address */
   uint32_t size{0};            /* Size of file */
-  char flags[FOPTS_BYTES];     /* Options for ExtractData() */
+  char flags[FOPTS_BYTES]{};   /* Options for ExtractData() */
   BareosWinFilePacket forkbfd; /* Alternative data stream */
   uint64_t fork_addr{0};       /* Write address for alternative stream */
   int64_t fork_size{0};        /* Size of alternate stream */
-  char fork_flags[FOPTS_BYTES]{};  /* Options for ExtractData() */
-  int32_t type{0};                 /* file type FT_ */
-  Attributes* attr{nullptr};       /* Pointer to attributes */
-  bool extract{false};             /* set when extracting */
-  alist* delayed_streams{nullptr}; /* streams that should be restored as last */
-
-  SIGNATURE* sig{nullptr}; /* Cryptographic signature (if any) for file */
-  CRYPTO_SESSION* cs{
-      nullptr}; /* Cryptographic session data (if any) for file */
-  RestoreCipherContext
-      cipher_ctx{}; /* Cryptographic restore context (if any) for file */
-  RestoreCipherContext fork_cipher_ctx{}; /* Cryptographic restore context (if
-                                           any) for alternative stream */
+  char fork_flags[FOPTS_BYTES]{0};    /* Options for ExtractData() */
+  int32_t type{0};                    /* file type FT_ */
+  Attributes* attr{nullptr};          /* Pointer to attributes */
+  bool extract{false};                /* set when extracting */
+  alist* delayed_streams{nullptr};    /* streams that should be restored as last */
+  SIGNATURE* sig{nullptr};            /* Cryptographic signature (if any) for file */
+  CRYPTO_SESSION* cs{nullptr};        /* Cryptographic session data (if any) for file */
+  RestoreCipherContext cipher_ctx{0}; /* Cryptographic restore context (if any) for file */
+  RestoreCipherContext fork_cipher_ctx{0}; /* Cryptographic restore context (if any)
+                                              for alternative stream */
 };
+/* clang-format on */
 
 void DoRestore(JobControlRecord* jcr);
 void FreeSession(r_ctx& rctx);

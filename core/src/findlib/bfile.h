@@ -41,16 +41,16 @@
 #define WIN32_BACKUP_DATA 1
 
 typedef struct _BWIN32_STREAM_ID {
-  int32_t dwStreamId{0};
-  int32_t dwStreamAttributes{0};
-  int64_t Size{0};
-  int32_t dwStreamNameSize{0};
+  int32_t dwStreamId;
+  int32_t dwStreamAttributes;
+  int64_t Size;
+  int32_t dwStreamNameSize;
 } BWIN32_STREAM_ID, *LPBWIN32_STREAM_ID;
 
 
 typedef struct _PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT {
-  int64_t liNextHeader{0};
-  bool bIsInData{false};
+  int64_t liNextHeader;
+  bool bIsInData;
   BWIN32_STREAM_ID header_stream;
 } PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT;
 
@@ -72,11 +72,11 @@ enum
 /* In bfile.c */
 
 /* Basic Win32 low level I/O file packet */
+/* clang-format off */
 struct BareosWinFilePacket {
-  bool use_backup_api = false; /**< set if using BackupRead/Write */
-  bool encrypted =
-      false;    /**< set if using ReadEncryptedFileRaw/WriteEncryptedFileRaw */
-  int mode = 0; /**< set if file is open */
+  bool use_backup_api = false;      /**< set if using BackupRead/Write */
+  bool encrypted = false;           /**< set if using ReadEncryptedFileRaw/WriteEncryptedFileRaw */
+  int mode = BF_CLOSED;             /**< set if file is open */
   HANDLE fh = INVALID_HANDLE_VALUE; /**< Win32 file handle */
   int fid = 0;                      /**< fd if doing Unix style */
   LPVOID lpContext = nullptr;       /**< BackupRead/Write context */
@@ -87,13 +87,13 @@ struct BareosWinFilePacket {
   int BErrNo = 0;                   /**< errno */
   boffset_t offset = 0;             /**< Delta offset */
   JobControlRecord* jcr = nullptr;  /**< jcr for editing job codes */
-  PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT
-  win32DecompContext; /**< context for decomposition of win32 backup streams */
-  int use_backup_decomp =
-      0; /**< set if using BackupRead Stream Decomposition */
+  PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT win32DecompContext{0}; /**< context for decomposition
+                                                                   of win32 backup streams */
+  int use_backup_decomp = 0; /**< set if using BackupRead Stream Decomposition */
   bool reparse_point = false; /**< set if reparse point */
   bool cmd_plugin = false;    /**< set if we have a command plugin */
 };
+/* clang-format on */
 
 HANDLE BgetHandle(BareosWinFilePacket* bfd);
 
@@ -107,6 +107,7 @@ HANDLE BgetHandle(BareosWinFilePacket* bfd);
  */
 
 /* Basic Unix low level I/O file packet */
+/* clang-format off */
 struct BareosWinFilePacket {
   int fid{0};                     /**< file id on Unix */
   int flags_{0};                  /**< open flags */
@@ -114,13 +115,13 @@ struct BareosWinFilePacket {
   int32_t lerror{0};              /**< not used - simplies Win32 builds */
   boffset_t offset{0};            /**< Delta offset */
   JobControlRecord* jcr{nullptr}; /**< jcr for editing job codes */
-  PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT
-  win32DecompContext; /**< context for decomposition of win32 backup streams
-                       */
-  int use_backup_decomp{0}; /**< set if using BackupRead Stream Decomposition */
-  bool reparse_point{false}; /**< not used in Unix */
-  bool cmd_plugin{false};    /**< set if we have a command plugin */
+  PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT win32DecompContext{0}; /**< context for decomposition
+                                                                   of win32 backup streams */
+  int use_backup_decomp{0};       /**< set if using BackupRead Stream Decomposition */
+  bool reparse_point{false};      /**< not used in Unix */
+  bool cmd_plugin{false};         /**< set if we have a command plugin */
 };
+/* clang-format on */
 
 #endif
 
