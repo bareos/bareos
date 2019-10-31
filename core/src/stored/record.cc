@@ -523,7 +523,7 @@ DeviceRecord* new_record(bool with_data)
   DeviceRecord* rec;
 
   rec = (DeviceRecord*)GetPoolMemory(PM_RECORD);
-  static const DeviceRecord emptyDeviceRecord{};
+  DeviceRecord emptyDeviceRecord;
   *rec = emptyDeviceRecord;
   if (with_data) {
     rec->data = GetPoolMemory(PM_MESSAGE);
