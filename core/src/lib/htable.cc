@@ -256,7 +256,7 @@ void htable::stats()
   printf("buckets=%d num_items=%d max_items=%d\n", buckets, num_items,
          max_items);
   printf("max hits in a bucket = %d\n", max);
-  printf("total bytes malloced = %lu\n", total_size);
+  printf("total bytes malloced = %llu\n", total_size);
   printf("total blocks malloced = %d\n", blocks);
 }
 
