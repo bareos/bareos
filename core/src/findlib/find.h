@@ -209,6 +209,7 @@ struct CurLink {
  * Definition of the FindFiles packet passed as the
  * first argument to the FindFiles callback subroutine.
  */
+/* clang-format off */
 struct FindFilesPacket {
   char* top_fname{nullptr};          /**< Full filename before descending */
   char* fname{nullptr};              /**< Full filename */
@@ -220,10 +221,9 @@ struct FindFilesPacket {
   POOLMEM* fname_save{nullptr};      /**< Save when stripping path */
   POOLMEM* link_save{nullptr};       /**< Save when stripping path */
   POOLMEM* ignoredir_fname{nullptr}; /**< Used to ignore directories */
-  char* digest{nullptr}; /**< Set to file digest when the file is a hardlink */
-  struct stat statp;     /**< Stat packet */
-  uint32_t digest_len{
-      0}; /**< Set to the digest len when the file is a hardlink*/
+  char* digest{nullptr};  /**< Set to file digest when the file is a hardlink */
+  struct stat statp{};    /**< Stat packet */
+  uint32_t digest_len{0}; /**< Set to the digest len when the file is a hardlink*/
   int32_t digest_stream{0}; /**< Set to digest type when the file is hardlink */
   int32_t FileIndex{0};     /**< FileIndex of this file */
   int32_t LinkFI{0};        /**< FileIndex of main hard linked file */
@@ -236,11 +236,11 @@ struct FindFilesPacket {
   BareosWinFilePacket bfd;        /**< Bareos file descriptor */
   time_t save_time{0};            /**< Start of incremental time */
   bool accurate_found{false};     /**< Found in the accurate hash (valid after
-                              CheckChanges()) */
+                                       CheckChanges()) */
   bool dereference{false};        /**< Follow links (not implemented) */
   bool null_output_device{false}; /**< Using null output device */
   bool incremental{false};        /**< Incremental save */
-  bool no_read{false}; /**< Do not read this file when using Plugin */
+  bool no_read{false};            /**< Do not read this file when using Plugin */
   char VerifyOpts[MAX_OPTS]{};
   char AccurateOpts[MAX_OPTS]{};
   char BaseJobOpts[MAX_OPTS]{};
@@ -250,20 +250,19 @@ struct FindFilesPacket {
   findFILESET* fileset{nullptr};
   int (*FileSave)(JobControlRecord*,
                   FindFilesPacket*,
-                  bool); /**< User's callback */
+                  bool){};   /**< User's callback */
   int (*PluginSave)(JobControlRecord*,
                     FindFilesPacket*,
-                    bool); /**< User's callback */
+                    bool){}; /**< User's callback */
   bool (*CheckFct)(
       JobControlRecord*,
-      FindFilesPacket*); /**< Optional user fct to check file changes */
+      FindFilesPacket*){};   /**< Optional user fct to check file changes */
 
   /*
    * Values set by AcceptFile while processing Options
    */
   char flags[FOPTS_BYTES]{}; /**< Backup options */
-  uint32_t Compress_algo{0}; /**< Compression algorithm. 4 letters stored as an
-                             integer */
+  uint32_t Compress_algo{0}; /**< Compression algorithm. 4 letters stored as an integer */
   int Compress_level{0};     /**< Compression level */
   int StripPath{0};          /**< Strip path count */
   struct s_sz_matching* size_match{nullptr}; /**< Perform size matching ? */
@@ -284,8 +283,9 @@ struct FindFilesPacket {
    */
   BareosWinFilePacket rsrc_bfd; /**< Fd for resource forks */
   bool volhas_attrlist{false};  /**< Volume supports getattrlist() */
-  struct HfsPlusInfo hfsinfo;   /**< Finder Info and resource fork size */
+  HfsPlusInfo hfsinfo;          /**< Finder Info and resource fork size */
 };
+/* clang-format on */
 
 FindFilesPacket* init_find_files();
 void SetFindOptions(FindFilesPacket* ff, bool incremental, time_t mtime);

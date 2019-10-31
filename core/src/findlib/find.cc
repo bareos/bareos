@@ -57,7 +57,8 @@ FindFilesPacket* init_find_files()
   FindFilesPacket* ff;
 
   ff = (FindFilesPacket*)malloc(sizeof(FindFilesPacket));
-  memset(ff, 0, sizeof(FindFilesPacket));
+  FindFilesPacket empty_ff;
+  *ff = empty_ff;
 
   ff->sys_fname = GetPoolMemory(PM_FNAME);
 
