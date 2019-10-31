@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -472,7 +472,7 @@ findIncludeExcludeItem* allocate_new_incexe(void)
   findIncludeExcludeItem* incexe;
 
   incexe = (findIncludeExcludeItem*)malloc(sizeof(findIncludeExcludeItem));
-  memset(incexe, 0, sizeof(findIncludeExcludeItem));
+  *incexe = findIncludeExcludeItem{};
   incexe->opts_list.init(1, true);
   incexe->name_list.init();
   incexe->plugin_list.init();
@@ -546,7 +546,7 @@ findFOPTS* start_options(FindFilesPacket* ff)
   if (state != state_options) {
     ff->fileset->state = state_options;
     findFOPTS* fo = (findFOPTS*)malloc(sizeof(findFOPTS));
-    memset(fo, 0, sizeof(findFOPTS));
+    *fo = findFOPTS{};
     fo->regex.init(1, true);
     fo->regexdir.init(1, true);
     fo->regexfile.init(1, true);
@@ -572,7 +572,7 @@ void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe)
   findFOPTS* fo;
 
   fo = (findFOPTS*)malloc(sizeof(findFOPTS));
-  memset(fo, 0, sizeof(findFOPTS));
+  *fo = findFOPTS{};
   fo->regex.init(1, true);
   fo->regexdir.init(1, true);
   fo->regexfile.init(1, true);

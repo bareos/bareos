@@ -102,9 +102,9 @@ typedef enum
 } b_sz_match_type;
 
 struct s_sz_matching {
-  b_sz_match_type type;
-  uint64_t begin_size;
-  uint64_t end_size;
+  b_sz_match_type type{size_match_none};
+  uint64_t begin_size{};
+  uint64_t end_size{};
 };
 
 struct s_included_file {
@@ -133,28 +133,29 @@ struct s_excluded_file {
  * File options structure
  */
 struct findFOPTS {
-  char flags[FOPTS_BYTES];    /**< Backup options */
-  uint32_t Encryption_cipher; /**< Encryption cipher forced by fileset */
-  uint32_t Compress_algo;     /**< Compression algorithm. 4 letters stored as an
-                                 integer */
-  int Compress_level;         /**< Compression level */
-  int StripPath;              /**< Strip path count */
-  struct s_sz_matching* size_match;  /**< Perform size matching ? */
-  b_fileset_shadow_type shadow_type; /**< Perform fileset shadowing check ? */
-  char VerifyOpts[MAX_OPTS];         /**< Verify options */
-  char AccurateOpts[MAX_OPTS];       /**< Accurate mode options */
-  char BaseJobOpts[MAX_OPTS];        /**< Basejob mode options */
-  char* plugin;                      /**< Plugin that handle this section */
-  alist regex;                       /**< Regex string(s) */
-  alist regexdir;                    /**< Regex string(s) for directories */
-  alist regexfile;                   /**< Regex string(s) for files */
-  alist wild;                        /**< Wild card strings */
-  alist wilddir;                     /**< Wild card strings for directories */
-  alist wildfile;                    /**< Wild card strings for files */
-  alist wildbase;                    /**< Wild card strings for basenames */
-  alist base;                        /**< List of base names */
-  alist fstype;                      /**< File system type limitation */
-  alist Drivetype;                   /**< Drive type limitation */
+  char flags[FOPTS_BYTES]{};    /**< Backup options */
+  uint32_t Encryption_cipher{}; /**< Encryption cipher forced by fileset */
+  uint32_t Compress_algo{}; /**< Compression algorithm. 4 letters stored as an
+                             integer */
+  int Compress_level{};     /**< Compression level */
+  int StripPath{};          /**< Strip path count */
+  struct s_sz_matching* size_match; /**< Perform size matching ? */
+  b_fileset_shadow_type shadow_type{
+      check_shadow_none};        /**< Perform fileset shadowing check ? */
+  char VerifyOpts[MAX_OPTS]{};   /**< Verify options */
+  char AccurateOpts[MAX_OPTS]{}; /**< Accurate mode options */
+  char BaseJobOpts[MAX_OPTS]{};  /**< Basejob mode options */
+  char* plugin{};                /**< Plugin that handle this section */
+  alist regex;                   /**< Regex string(s) */
+  alist regexdir;                /**< Regex string(s) for directories */
+  alist regexfile;               /**< Regex string(s) for files */
+  alist wild;                    /**< Wild card strings */
+  alist wilddir;                 /**< Wild card strings for directories */
+  alist wildfile;                /**< Wild card strings for files */
+  alist wildbase;                /**< Wild card strings for basenames */
+  alist base;                    /**< List of base names */
+  alist fstype;                  /**< File system type limitation */
+  alist Drivetype;               /**< Drive type limitation */
 };
 
 /**
