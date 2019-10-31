@@ -37,9 +37,6 @@
 
 namespace storagedaemon {
 
-static const VolumeReservationItem emptyVol{};
-
-
 const int debuglevel = 150;
 
 static brwlock_t vol_list_lock;
@@ -193,7 +190,6 @@ void RemoveReadVolume(JobControlRecord* jcr, const char* VolumeName)
   VolumeReservationItem vol, *fvol;
 
   LockReadVolumes();
-  vol = emptyVol;
   vol.vol_name = strdup(VolumeName);
   vol.SetJobid(jcr->JobId);
 
@@ -232,7 +228,6 @@ static VolumeReservationItem* find_read_volume(const char* VolumeName)
    * Do not lock reservations here
    */
   LockReadVolumes();
-  vol = emptyVol;
   vol.vol_name = strdup(VolumeName);
 
   /*
@@ -284,6 +279,7 @@ static VolumeReservationItem* new_vol_item(DeviceControlRecord* dcr,
                                            const char* VolumeName)
 {
   VolumeReservationItem* vol;
+  VolumeReservationItem emptyVol;
 
   vol = (VolumeReservationItem*)malloc(sizeof(VolumeReservationItem));
   *vol = emptyVol;

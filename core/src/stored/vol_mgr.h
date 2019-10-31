@@ -68,7 +68,7 @@ class VolumeReservationItem {
   slot_number_t slot_{0};         /**< slot of swapping volume */
   uint32_t JobId_{0};             /**< JobId for read volumes */
   volatile int32_t use_count_{0}; /**< Use count */
-  pthread_mutex_t mutex_;         /**< Vol muntex */
+  pthread_mutex_t mutex_ = PTHREAD_MUTEX_INITIALIZER; /**< Vol muntex */
  public:
   dlink link;
   char* vol_name{nullptr}; /**< Volume name */
