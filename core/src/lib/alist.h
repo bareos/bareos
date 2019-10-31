@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -48,9 +48,10 @@
   for ((inx) = 0; list ? ((var) = (typeof((var)))(list)->get((inx))) : NULL; \
        (inx)++)
 
-#define foreach_alist_rindex(inx, var, list)    \
-  for (list ? (inx) = ((list)->size() - 1) : 0; \
-       list ? ((var) = (typeof((var)))(list)->get((inx))) : NULL; (inx)--)
+#define foreach_alist_rindex(inx, var, list)                                \
+  for ((list != NULL) ? (inx) = ((list)->size() - 1) : 0;                   \
+       (list != NULL) ? ((var) = (typeof((var)))(list)->get((inx))) : NULL; \
+       (inx)--)
 
 #else
 #define foreach_alist(var, list)                                            \
@@ -63,9 +64,10 @@
        list ? ((*((void**)&(var)) = (void*)((list)->get((inx))))) : NULL; \
        (inx)++)
 
-#define foreach_alist_rindex(inx, var, list)                              \
-  for (list ? (inx) = ((list)->size() - 1) : 0;                           \
-       list ? ((*((void**)&(var)) = (void*)((list)->get((inx))))) : NULL; \
+#define foreach_alist_rindex(inx, var, list)                                \
+  for ((list != NULL) ? (inx) = ((list)->size() - 1) : 0;                   \
+       (list != NULL) ? ((*((void**)&(var)) = (void*)((list)->get((inx))))) \
+                      : NULL;                                               \
        (inx)--)
 
 #endif
