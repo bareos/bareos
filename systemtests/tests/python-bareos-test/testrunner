@@ -24,27 +24,11 @@ setup_data
 
 start_test
 
-cat <<END_OF_DATA >$tmp/bconcmds
-@$out /dev/null
-messages
-@$out $tmp/log1.out
-configure add console=admin password=secret profile=all
-configure add console=adminnotls password=secret profile=all tlsenable=no
-messages
-quit
-END_OF_DATA
+start_bareos
 
-run_bareos
+run_python_unittests
 
-export PYTHONPATH=${PROJECT_SOURCE_DIR}/../python-bareos/
-print_debug "PYTHONPATH=$PYTHONPATH"
-if PYTHONRESULT=$(./python-bareos-unittest.py -v); then
-    print_debug "$PYTHONRESULT"
-else
-    set_error "$PYTHONRESULT"
-fi
-
-check_for_zombie_jobs storage=File
+check_for_zombie_jobs storage=File client=bareos-fd
 
 stop_bareos
 

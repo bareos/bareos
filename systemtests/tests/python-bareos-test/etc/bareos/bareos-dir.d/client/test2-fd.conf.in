@@ -1,0 +1,7 @@
+Client {
+  Name = test2-fd
+  Description = "Client resource, indentical to bareos-fd, for testing with multiple clients."
+  Address = localhost
+  Password = "@fd_password@"
+  FD PORT = @fd_port@
+}

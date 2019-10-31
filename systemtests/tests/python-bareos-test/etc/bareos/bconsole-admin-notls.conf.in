@@ -10,7 +10,6 @@ Director {
 }
 
 Console {
-  name = admin
+  name = admin-notls
   password = secret
 }
-
