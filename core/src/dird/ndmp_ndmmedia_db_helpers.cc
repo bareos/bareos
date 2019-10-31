@@ -173,9 +173,6 @@ bool StoreNdmmediaInfoInDatabase(ndmmedia* media, JobControlRecord* jcr)
 bool GetNdmmediaInfoFromDatabase(ndm_media_table* media_tab,
                                  JobControlRecord* jcr)
 {
-  JobMediaDbRecord jm;
-  MediaDbRecord mr;
-
   int VolCount;
   VolumeParameters* VolParams = NULL;
   bool retval = false;

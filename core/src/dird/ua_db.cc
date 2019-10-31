@@ -259,7 +259,6 @@ bool SetPooldbrReferences(JobControlRecord* jcr,
                           PoolDbRecord* pr,
                           PoolResource* pool)
 {
-  PoolDbRecord rpool;
   bool ret = true;
 
   if (pool->RecyclePool) {
