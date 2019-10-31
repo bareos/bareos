@@ -52,7 +52,7 @@ using namespace storagedaemon;
 /* Forward referenced functions */
 static void GetSessionRecord(Device* dev,
                              DeviceRecord* rec,
-                             SESSION_LABEL* sessrec);
+                             Session_Label* sessrec);
 static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec);
 
 
@@ -67,7 +67,7 @@ static bool list_records = false;
 static uint32_t records = 0;
 static uint32_t jobs = 0;
 static DeviceBlock* out_block;
-static SESSION_LABEL sessrec;
+static Session_Label sessrec;
 
 static void usage()
 {
@@ -357,10 +357,10 @@ static bool RecordCb(DeviceControlRecord* in_dcr, DeviceRecord* rec)
 
 static void GetSessionRecord(Device* dev,
                              DeviceRecord* rec,
-                             SESSION_LABEL* sessrec)
+                             Session_Label* sessrec)
 {
   const char* rtype;
-  static const SESSION_LABEL emptySESSION_LABEL{};
+  Session_Label emptySESSION_LABEL;
   *sessrec = emptySESSION_LABEL;
   switch (rec->FileIndex) {
     case PRE_LABEL:

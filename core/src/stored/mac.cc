@@ -138,8 +138,8 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
         Dmsg0(200, "Found first SOS_LABEL and adopting job info\n");
         found_first_sos_label = true;
 
-        static SESSION_LABEL the_label;
-        static SESSION_LABEL* label = &the_label;
+        static Session_Label the_label;
+        static Session_Label* label = &the_label;
 
         struct date_time dt;
         struct tm tm;

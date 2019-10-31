@@ -49,11 +49,11 @@ static const int debuglevel = 500;
 
 static void HandleSessionRecord(Device* dev,
                                 DeviceRecord* rec,
-                                SESSION_LABEL* sessrec)
+                                Session_Label* sessrec)
 {
   const char* rtype;
   char buf[100];
-  static const SESSION_LABEL empty_SESSION_LABEL{};
+  static const Session_Label empty_SESSION_LABEL{};
   *sessrec = empty_SESSION_LABEL;
   switch (rec->FileIndex) {
     case PRE_LABEL:
@@ -188,7 +188,7 @@ void ReadContextSetRecord(DeviceControlRecord* dcr, READ_CTX* rctx)
  * Any fatal error sets the status bool to false.
  */
 bool ReadNextBlockFromDevice(DeviceControlRecord* dcr,
-                             SESSION_LABEL* sessrec,
+                             Session_Label* sessrec,
                              bool RecordCb(DeviceControlRecord* dcr,
                                            DeviceRecord* rec),
                              bool mount_cb(DeviceControlRecord* dcr),

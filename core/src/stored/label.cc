@@ -782,7 +782,7 @@ bool UnserVolumeLabel(Device* dev, DeviceRecord* rec)
   return true;
 }
 
-bool UnserSessionLabel(SESSION_LABEL* label, DeviceRecord* rec)
+bool UnserSessionLabel(Session_Label* label, DeviceRecord* rec)
 {
   ser_declare;
 
@@ -904,7 +904,7 @@ static void DumpSessionLabel(DeviceRecord* rec, const char* type)
   int dbl;
   struct date_time dt;
   struct tm tm;
-  SESSION_LABEL label;
+  Session_Label label;
   char ec1[30], ec2[30], ec3[30], ec4[30], ec5[30], ec6[30], ec7[30];
 
   UnserSessionLabel(&label, rec);
@@ -1032,7 +1032,7 @@ void DumpLabelRecord(Device* dev, DeviceRecord* rec, bool verbose)
         break;
     }
   } else {
-    SESSION_LABEL label;
+    Session_Label label;
     char dt[50];
     switch (rec->FileIndex) {
       case SOS_LABEL:

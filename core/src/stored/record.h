@@ -211,56 +211,56 @@ typedef struct Volume_Label VOLUME_LABEL;
  *  This record is at the beginning and end of each session
  */
 struct Session_Label {
-  char Id[32]{0}; /**< Bareos Immortal ... */
+  char Id[32]{}; /**< Bareos Immortal ... */
 
-  uint32_t VerNum{0}; /**< Label version number */
+  uint32_t VerNum{}; /**< Label version number */
 
-  uint32_t JobId{0};       /**< Job id */
-  uint32_t VolumeIndex{0}; /**< Sequence no of volume for this job */
+  uint32_t JobId{};       /**< Job id */
+  uint32_t VolumeIndex{}; /**< Sequence no of volume for this job */
 
   /* VerNum >= 11 */
-  btime_t write_btime{0}; /**< Tdate this label written */
+  btime_t write_btime{}; /**< Tdate this label written */
 
   /* VerNum < 11 */
-  float64_t write_date = 0.0; /**< Date this label written */
+  float64_t write_date{}; /**< Date this label written */
 
   /* Unused VerNum >= 11 */
-  float64_t write_time = 0.0; /**< Time this label written */
+  float64_t write_time{}; /**< Time this label written */
 
-  char PoolName[MAX_NAME_LENGTH]{0}; /**< Pool name */
-  char PoolType[MAX_NAME_LENGTH]{0}; /**< Pool type */
-  char JobName[MAX_NAME_LENGTH]{0};  /**< base Job name */
-  char ClientName[MAX_NAME_LENGTH]{0};
-  char Job[MAX_NAME_LENGTH]{0}; /**< Unique name of this Job */
-  char FileSetName[MAX_NAME_LENGTH]{0};
-  char FileSetMD5[MAX_NAME_LENGTH]{0};
-  uint32_t JobType{0};
-  uint32_t JobLevel{0};
+  char PoolName[MAX_NAME_LENGTH]{}; /**< Pool name */
+  char PoolType[MAX_NAME_LENGTH]{}; /**< Pool type */
+  char JobName[MAX_NAME_LENGTH]{};  /**< base Job name */
+  char ClientName[MAX_NAME_LENGTH]{};
+  char Job[MAX_NAME_LENGTH]{}; /**< Unique name of this Job */
+  char FileSetName[MAX_NAME_LENGTH]{};
+  char FileSetMD5[MAX_NAME_LENGTH]{};
+  uint32_t JobType{};
+  uint32_t JobLevel{};
   /* The remainder are part of EOS label only */
-  uint32_t JobFiles{0};
-  uint64_t JobBytes{0};
-  uint32_t StartBlock{0};
-  uint32_t EndBlock{0};
-  uint32_t StartFile{0};
-  uint32_t EndFile{0};
-  uint32_t JobErrors{0};
-  uint32_t JobStatus{0}; /**< Job status */
+  uint32_t JobFiles{};
+  uint64_t JobBytes{};
+  uint32_t StartBlock{};
+  uint32_t EndBlock{};
+  uint32_t StartFile{};
+  uint32_t EndFile{};
+  uint32_t JobErrors{};
+  uint32_t JobStatus{}; /**< Job status */
 };
-typedef struct Session_Label SESSION_LABEL;
 
 #define SERIAL_BUFSIZE 1024 /**< Volume serialisation buffer size */
 
 /**
  * Read context used to keep track of what is processed or not.
  */
+/* clang-format off */
 struct Read_Context {
-  DeviceRecord* rec = nullptr; /**< Record currently being processed */
-  dlist* recs = nullptr;       /**< Linked list of record packets open */
-  SESSION_LABEL sessrec;       /**< Start Of Session record info */
-  uint32_t records_processed =
-      0;                     /**< Number of records processed from this block */
-  int32_t lastFileIndex = 0; /**< Last File Index processed */
+  DeviceRecord* rec = nullptr;    /**< Record currently being processed */
+  dlist* recs = nullptr;          /**< Linked list of record packets open */
+  Session_Label sessrec;          /**< Start Of Session record info */
+  uint32_t records_processed = 0; /**< Number of records processed from this block */
+  int32_t lastFileIndex = 0;      /**< Last File Index processed */
 };
+/* clang-format on */
 
 struct DelayedDataStream {
   int32_t stream = 0;          /**< stream less new bits */

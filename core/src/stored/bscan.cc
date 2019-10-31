@@ -79,11 +79,11 @@ static bool UpdateMediaRecord(BareosDb* db, MediaDbRecord* mr);
 static bool CreatePoolRecord(BareosDb* db, PoolDbRecord* pr);
 static JobControlRecord* CreateJobRecord(BareosDb* db,
                                          JobDbRecord* mr,
-                                         SESSION_LABEL* label,
+                                         Session_Label* label,
                                          DeviceRecord* rec);
 static bool UpdateJobRecord(BareosDb* db,
                             JobDbRecord* mr,
-                            SESSION_LABEL* elabel,
+                            Session_Label* elabel,
                             DeviceRecord* rec);
 static bool CreateClientRecord(BareosDb* db, ClientDbRecord* cr);
 static bool CreateFilesetRecord(BareosDb* db, FileSetDbRecord* fsr);
@@ -109,8 +109,8 @@ static FileSetDbRecord fsr;
 static RestoreObjectDbRecord rop;
 static AttributesDbRecord ar;
 static FileDbRecord fr;
-static SESSION_LABEL label;
-static SESSION_LABEL elabel;
+static Session_Label label;
+static Session_Label elabel;
 static Attributes* attr;
 
 static time_t lasttime = 0;
@@ -1274,7 +1274,7 @@ static bool CreateFilesetRecord(BareosDb* db, FileSetDbRecord* fsr)
  */
 static JobControlRecord* CreateJobRecord(BareosDb* db,
                                          JobDbRecord* jr,
-                                         SESSION_LABEL* label,
+                                         Session_Label* label,
                                          DeviceRecord* rec)
 {
   JobControlRecord* mjcr;
@@ -1334,7 +1334,7 @@ static JobControlRecord* CreateJobRecord(BareosDb* db,
  */
 static bool UpdateJobRecord(BareosDb* db,
                             JobDbRecord* jr,
-                            SESSION_LABEL* elabel,
+                            Session_Label* elabel,
                             DeviceRecord* rec)
 {
   struct date_time dt;

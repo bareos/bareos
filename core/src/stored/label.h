@@ -39,7 +39,7 @@ bool WriteSessionLabel(DeviceControlRecord* dcr, int label);
 void DumpVolumeLabel(Device* dev);
 void DumpLabelRecord(Device* dev, DeviceRecord* rec, bool verbose);
 bool UnserVolumeLabel(Device* dev, DeviceRecord* rec);
-bool UnserSessionLabel(SESSION_LABEL* label, DeviceRecord* rec);
+bool UnserSessionLabel(Session_Label* label, DeviceRecord* rec);
 bool WriteNewVolumeLabelToDev(DeviceControlRecord* dcr,
                               const char* VolName,
                               const char* PoolName,
