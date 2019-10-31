@@ -884,7 +884,7 @@ void DeviceControlRecord::ReleaseVolume()
   FreeVolume(dev);
   dev->block_num = dev->file = 0;
   dev->EndBlock = dev->EndFile = 0;
-  static const VolumeCatalogInfo empty_VolumeCatalogInfo{};
+  VolumeCatalogInfo empty_VolumeCatalogInfo;
   dev->VolCatInfo = empty_VolumeCatalogInfo;
   dev->ClearVolhdr();
 

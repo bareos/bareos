@@ -102,11 +102,6 @@ struct job_statistics {
 static dlist* device_statistics = NULL;
 static dlist* job_statistics = NULL;
 
-static const struct device_statistics empty_device_statistics {
-};
-static const struct job_statistics empty_job_statistics {
-};
-
 static inline void setup_statistics()
 {
   struct device_statistics* dev_stats = NULL;
@@ -134,6 +129,7 @@ void UpdateDeviceTapealert(const char* devname, uint64_t flags, utime_t now)
   if (!found) {
     dev_stats =
         (struct device_statistics*)malloc(sizeof(struct device_statistics));
+    struct device_statistics empty_device_statistics;
     *dev_stats = empty_device_statistics;
 
     bstrncpy(dev_stats->DevName, devname, sizeof(dev_stats->DevName));
@@ -147,7 +143,7 @@ void UpdateDeviceTapealert(const char* devname, uint64_t flags, utime_t now)
    */
   tape_alert =
       (struct device_tapealert*)malloc(sizeof(struct device_tapealert));
-  static const device_tapealert empty_device_tapealert{};
+  struct device_tapealert empty_device_tapealert;
   *tape_alert = empty_device_tapealert;
 
   tape_alert->timestamp = now;
@@ -201,6 +197,7 @@ static inline void UpdateDeviceStatistics(const char* devname,
   } else if (!found) {
     dev_stats =
         (struct device_statistics*)malloc(sizeof(struct device_statistics));
+    struct device_statistics empty_device_statistics;
     *dev_stats = empty_device_statistics;
 
     bstrncpy(dev_stats->DevName, devname, sizeof(dev_stats->DevName));
@@ -214,7 +211,7 @@ static inline void UpdateDeviceStatistics(const char* devname,
    */
   dev_stat = (struct device_statistic*)malloc(sizeof(struct device_statistic));
 
-  static device_statistic empty_device_statistic{};
+  struct device_statistic empty_device_statistic;
   *dev_stat = empty_device_statistic;
 
   dev_stat->timestamp = now;
@@ -289,6 +286,7 @@ void UpdateJobStatistics(JobControlRecord* jcr, utime_t now)
     }
   } else if (!found) {
     job_stats = (struct job_statistics*)malloc(sizeof(struct job_statistics));
+    struct job_statistics empty_job_statistics;
     *job_stats = empty_job_statistics;
 
     job_stats->JobId = jcr->JobId;
@@ -301,7 +299,7 @@ void UpdateJobStatistics(JobControlRecord* jcr, utime_t now)
    * Add a new set of statistics.
    */
   job_stat = (struct job_statistic*)malloc(sizeof(struct job_statistic));
-  static job_statistic empty_job_statistic{};
+  struct job_statistic empty_job_statistic;
   *job_stat = empty_job_statistic;
 
   job_stat->timestamp = now;

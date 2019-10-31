@@ -122,7 +122,7 @@ READ_CTX* new_read_context(void)
   READ_CTX* rctx;
 
   rctx = (READ_CTX*)malloc(sizeof(READ_CTX));
-  static const READ_CTX empty_READ_CTX{};
+  READ_CTX empty_READ_CTX;
   *rctx = empty_READ_CTX;
 
   rctx->recs = new dlist(rec, &rec->link);
