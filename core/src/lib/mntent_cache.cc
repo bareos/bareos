@@ -153,7 +153,7 @@ static mntent_cache_entry_t* add_mntent_mapping(uint32_t dev,
   mntent_cache_entry_t* mce;
 
   mce = (mntent_cache_entry_t*)malloc(sizeof(mntent_cache_entry_t));
-  static const mntent_cache_entry_t empty_mntent_cache_entry{};
+  mntent_cache_entry_t empty_mntent_cache_entry;
   *mce = empty_mntent_cache_entry;
   mce->dev = dev;
   mce->special = strdup(special);
