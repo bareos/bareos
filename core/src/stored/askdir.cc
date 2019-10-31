@@ -93,7 +93,6 @@ static bool DoGetVolumeInfo(DeviceControlRecord* dcr)
 {
   JobControlRecord* jcr = dcr->jcr;
   BareosSocket* dir = jcr->dir_bsock;
-  VolumeCatalogInfo vol;
   int n;
   int32_t InChanger;
 
@@ -103,8 +102,7 @@ static bool DoGetVolumeInfo(DeviceControlRecord* dcr)
     Mmsg(jcr->errmsg, _("Network error on BnetRecv in req_vol_info.\n"));
     return false;
   }
-  static const VolumeCatalogInfo emptyVolumeCatalogInfo{};
-  vol = emptyVolumeCatalogInfo;
+  VolumeCatalogInfo vol;
   Dmsg1(debuglevel, "<dird %s", dir->msg);
   n = sscanf(dir->msg, OK_media, vol.VolCatName, &vol.VolCatJobs,
              &vol.VolCatFiles, &vol.VolCatBlocks, &vol.VolCatBytes,
