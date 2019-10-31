@@ -523,8 +523,7 @@ DeviceRecord* new_record(bool with_data)
   DeviceRecord* rec;
 
   rec = (DeviceRecord*)GetPoolMemory(PM_RECORD);
-  DeviceRecord emptyDeviceRecord;
-  *rec = emptyDeviceRecord;
+  *rec = DeviceRecord{};
   if (with_data) {
     rec->data = GetPoolMemory(PM_MESSAGE);
     rec->own_mempool = true;

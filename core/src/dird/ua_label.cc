@@ -374,8 +374,7 @@ static void label_from_barcodes(UaContext* ua,
     if (!vl->VolName || !BitIsSet(vl->bareos_slot_number - 1, slot_list)) {
       continue;
     }
-    MediaDbRecord emptyMediaDbRecord;
-    mr = emptyMediaDbRecord;
+    mr = MediaDbRecord{};
     bstrncpy(mr.VolumeName, vl->VolName, sizeof(mr.VolumeName));
     media_record_exists = false;
     if (ua->db->GetMediaRecord(ua->jcr, &mr)) {
@@ -621,8 +620,7 @@ static int do_label(UaContext* ua, const char* cmd, bool relabel)
    * Must select Pool if not already done
    */
   if (pr.PoolId == 0) {
-    PoolDbRecord emptyPoolDbRecord;
-    pr = emptyPoolDbRecord;
+    pr = PoolDbRecord{};
     if (!SelectPoolDbr(ua, &pr)) { return 1; }
   }
 

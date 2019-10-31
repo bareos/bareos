@@ -589,10 +589,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
         /*
          * Check Media Info
          */
-        {
-          MediaDbRecord emptyMediaDbRecord;
-          mr = emptyMediaDbRecord;
-        }
+        mr = MediaDbRecord{};
         bstrncpy(mr.VolumeName, dev->VolHdr.VolumeName, sizeof(mr.VolumeName));
         mr.PoolId = pr.PoolId;
         num_media++;
@@ -652,10 +649,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
             ignored_msgs = 0;
           }
           UnserSessionLabel(&label, rec);
-          {
-            JobDbRecord emptyJobDbRecord;
-            jr = emptyJobDbRecord;
-          }
+          jr = JobDbRecord{};
           bstrncpy(jr.Job, label.Job, sizeof(jr.Job));
           if (db->GetJobRecord(bjcr, &jr)) {
             /*

@@ -54,7 +54,6 @@
 #include "include/make_unique.h"
 
 namespace directordaemon {
-static const JobDbRecord emptyJobDbRecord = {};
 
 static const int dbglevel = 10;
 
@@ -230,7 +229,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
    */
   p = strchr(jobids, ','); /* find oldest jobid */
   if (p) { *p = '\0'; }
-  jcr->previous_jr = emptyJobDbRecord;
+  jcr->previous_jr = JobDbRecord{};
   jcr->previous_jr.JobId = str_to_int64(jobids);
   Dmsg1(10, "Previous JobId=%s\n", jobids);
 
@@ -262,7 +261,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
     p = jobids;
   }
 
-  jcr->previous_jr = emptyJobDbRecord;
+  jcr->previous_jr = JobDbRecord{};
   jcr->previous_jr.JobId = str_to_int64(p);
   Dmsg1(10, "Previous JobId=%s\n", p);
 

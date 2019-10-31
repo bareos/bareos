@@ -794,8 +794,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
     }
     if (status == 0) { break; }
     if (jr.JobId == JobId) { continue; /* duplicate of last JobId */ }
-    JobDbRecord empty_jr;
-    jr = empty_jr;
+    jr = JobDbRecord{};
     jr.JobId = JobId;
     if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
       ua->ErrorMsg(_("Unable to get Job record for JobId=%s: ERR=%s\n"),

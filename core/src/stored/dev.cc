@@ -1000,8 +1000,7 @@ void Device::SetUnload()
 void Device::ClearVolhdr()
 {
   Dmsg1(100, "Clear volhdr vol=%s\n", VolHdr.VolumeName);
-  Volume_Label emptyVolumeLabel;
-  VolHdr = emptyVolumeLabel;
+  VolHdr = Volume_Label{};
   setVolCatInfo(false);
 }
 
@@ -1066,8 +1065,7 @@ bool Device::close(DeviceControlRecord* dcr)
   EndFile = EndBlock = 0;
   open_mode = 0;
   ClearVolhdr();
-  static const VolumeCatalogInfo emptyVolCatInfo{};
-  VolCatInfo = emptyVolCatInfo;
+  VolCatInfo = VolumeCatalogInfo{};
   if (tid) {
     StopThreadTimer(tid);
     tid = 0;

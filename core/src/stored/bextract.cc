@@ -426,8 +426,7 @@ static void DoExtract(char* devname)
   SetupDecompressionBuffers(jcr, &decompress_buf_size);
 
   if (decompress_buf_size > 0) {
-    CompressionContext emptyCompressionContext;
-    jcr->compress = emptyCompressionContext;
+    jcr->compress = CompressionContext{};
     jcr->compress.inflate_buffer = GetMemory(decompress_buf_size);
     jcr->compress.inflate_buffer_size = decompress_buf_size;
   }

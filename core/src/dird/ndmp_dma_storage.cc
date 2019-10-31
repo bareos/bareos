@@ -459,8 +459,7 @@ dlist* ndmp_get_vol_list(UaContext* ua,
   smc = ndmp_sess->control_acb->smc_cb;
   for (edp = smc->elem_desc; edp; edp = edp->next) {
     vl = (vol_list_t*)malloc(sizeof(vol_list_t));
-    vol_list_t empty_vol_list_t;
-    *vl = empty_vol_list_t;
+    *vl = vol_list_t{};
 
     if (scan && !listall) {
       /*

@@ -336,8 +336,7 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
 
   if (client) {
     char ed1[50];
-    ClientDbRecord emptyClientDbRecord;
-    cr = emptyClientDbRecord;
+    cr = ClientDbRecord{};
     bstrncpy(cr.Name, client->resource_name_, sizeof(cr.Name));
     if (!ua->db->CreateClientRecord(ua->jcr, &cr)) { goto bail_out; }
 

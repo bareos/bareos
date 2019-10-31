@@ -360,8 +360,7 @@ static void GetSessionRecord(Device* dev,
                              Session_Label* sessrec)
 {
   const char* rtype;
-  Session_Label emptySESSION_LABEL;
-  *sessrec = emptySESSION_LABEL;
+  *sessrec = Session_Label{};
   switch (rec->FileIndex) {
     case PRE_LABEL:
       rtype = _("Fresh Volume Label");
