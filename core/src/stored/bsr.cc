@@ -50,7 +50,7 @@ const int dbglevel = 500;
 /* Forward references */
 static int MatchVolume(BootStrapRecord* bsr,
                        BsrVolume* volume,
-                       VOLUME_LABEL* volrec,
+                       Volume_Label* volrec,
                        bool done);
 static int MatchSesstime(BootStrapRecord* bsr,
                          BsrSessionTime* sesstime,
@@ -97,7 +97,7 @@ static int MatchStream(BootStrapRecord* bsr,
                        bool done);
 static int MatchAll(BootStrapRecord* bsr,
                     DeviceRecord* rec,
-                    VOLUME_LABEL* volrec,
+                    Volume_Label* volrec,
                     Session_Label* sessrec,
                     bool done,
                     JobControlRecord* jcr);
@@ -209,7 +209,7 @@ static int MatchFileregex(BootStrapRecord* bsr,
  */
 int MatchBsr(BootStrapRecord* bsr,
              DeviceRecord* rec,
-             VOLUME_LABEL* volrec,
+             Volume_Label* volrec,
              Session_Label* sessrec,
              JobControlRecord* jcr)
 {
@@ -407,7 +407,7 @@ bool IsThisBsrDone(BootStrapRecord* bsr, DeviceRecord* rec)
  */
 static int MatchAll(BootStrapRecord* bsr,
                     DeviceRecord* rec,
-                    VOLUME_LABEL* volrec,
+                    Volume_Label* volrec,
                     Session_Label* sessrec,
                     bool done,
                     JobControlRecord* jcr)
@@ -537,7 +537,7 @@ no_match:
 
 static int MatchVolume(BootStrapRecord* bsr,
                        BsrVolume* volume,
-                       VOLUME_LABEL* volrec,
+                       Volume_Label* volrec,
                        bool done)
 {
   if (!volume) { return 0; /* Volume must match */ }

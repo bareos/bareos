@@ -71,7 +71,7 @@ static bool CreateFileAttributesRecord(BareosDb* db,
                                        DeviceRecord* rec);
 static bool CreateMediaRecord(BareosDb* db,
                               MediaDbRecord* mr,
-                              VOLUME_LABEL* vl);
+                              Volume_Label* vl);
 static bool UpdateMediaRecord(BareosDb* db, MediaDbRecord* mr);
 static bool CreatePoolRecord(BareosDb* db, PoolDbRecord* pr);
 static JobControlRecord* CreateJobRecord(BareosDb* db,
@@ -1132,7 +1132,7 @@ static bool CreateFileAttributesRecord(BareosDb* db,
 /**
  * For each Volume we see, we create a Medium record
  */
-static bool CreateMediaRecord(BareosDb* db, MediaDbRecord* mr, VOLUME_LABEL* vl)
+static bool CreateMediaRecord(BareosDb* db, MediaDbRecord* mr, Volume_Label* vl)
 {
   struct date_time dt;
   struct tm tm;

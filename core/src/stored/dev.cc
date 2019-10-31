@@ -1000,7 +1000,7 @@ void Device::SetUnload()
 void Device::ClearVolhdr()
 {
   Dmsg1(100, "Clear volhdr vol=%s\n", VolHdr.VolumeName);
-  static const Volume_Label emptyVolumeLabel{};
+  Volume_Label emptyVolumeLabel;
   VolHdr = emptyVolumeLabel;
   setVolCatInfo(false);
 }

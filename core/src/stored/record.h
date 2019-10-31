@@ -165,46 +165,44 @@ struct Volume_Label {
    * in the Device buffer, but are not actually written
    * to the tape.
    */
-  int32_t LabelType = 0;  /**< This is written in header only */
-  uint32_t LabelSize = 0; /**< length of serialized label */
+  int32_t LabelType{};  /**< This is written in header only */
+  uint32_t LabelSize{}; /**< length of serialized label */
   /*
    * The items below this line are stored on
    * the tape
    */
-  char Id[32]{0}; /**< Bareos Immortal ... */
+  char Id[32]{}; /**< Bareos Immortal ... */
 
-  uint32_t VerNum = 0; /**< Label version number */
+  uint32_t VerNum{}; /**< Label version number */
 
   /* VerNum <= 10 */
-  float64_t label_date = 0.0; /**< Date tape labeled */
-  float64_t label_time = 0.0; /**< Time tape labeled */
+  float64_t label_date{}; /**< Date tape labeled */
+  float64_t label_time{}; /**< Time tape labeled */
 
   /* VerNum >= 11 */
-  btime_t label_btime = 0; /**< tdate tape labeled */
-  btime_t write_btime = 0; /**< tdate tape written */
+  btime_t label_btime{}; /**< tdate tape labeled */
+  btime_t write_btime{}; /**< tdate tape written */
 
   /* Unused with VerNum >= 11 */
-  float64_t write_date = 0.0; /**< Date this label written */
-  float64_t write_time = 0.0; /**< Time this label written */
+  float64_t write_date{}; /**< Date this label written */
+  float64_t write_time{}; /**< Time this label written */
 
-  char VolumeName[MAX_NAME_LENGTH]{0};     /**< Volume name */
-  char PrevVolumeName[MAX_NAME_LENGTH]{0}; /**< Previous Volume Name */
-  char PoolName[MAX_NAME_LENGTH]{0};       /**< Pool name */
-  char PoolType[MAX_NAME_LENGTH]{0};       /**< Pool type */
-  char MediaType[MAX_NAME_LENGTH]{0};      /**< Type of this media */
+  char VolumeName[MAX_NAME_LENGTH]{};     /**< Volume name */
+  char PrevVolumeName[MAX_NAME_LENGTH]{}; /**< Previous Volume Name */
+  char PoolName[MAX_NAME_LENGTH]{};       /**< Pool name */
+  char PoolType[MAX_NAME_LENGTH]{};       /**< Pool type */
+  char MediaType[MAX_NAME_LENGTH]{};      /**< Type of this media */
 
-  char HostName[MAX_NAME_LENGTH]{0}; /**< Host name of writing computer */
-  char LabelProg[50]{0};             /**< Label program name */
-  char ProgVersion[50]{0};           /**< Program version */
-  char ProgDate[50]{0};              /**< Program build date/time */
+  char HostName[MAX_NAME_LENGTH]{}; /**< Host name of writing computer */
+  char LabelProg[50]{};             /**< Label program name */
+  char ProgVersion[50]{};           /**< Program version */
+  char ProgDate[50]{};              /**< Program build date/time */
 };
 
 #define SER_LENGTH_Volume_Label \
   1024 /**< max serialised length of volume label */
 #define SER_LENGTH_Session_Label \
   1024 /**< max serialised length of session label */
-
-typedef struct Volume_Label VOLUME_LABEL;
 
 /**
  * Session Start/End Label

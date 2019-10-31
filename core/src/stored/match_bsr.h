@@ -25,7 +25,7 @@ namespace storagedaemon {
 
 int MatchBsr(BootStrapRecord* bsr,
              DeviceRecord* rec,
-             VOLUME_LABEL* volrec,
+             Volume_Label* volrec,
              Session_Label* sesrec,
              JobControlRecord* jcr);
 int MatchBsrBlock(BootStrapRecord* bsr, DeviceBlock* block);

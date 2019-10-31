@@ -368,7 +368,7 @@ class Device {
   btimer_t* tid = nullptr; /**< Timer id */
 
   VolumeCatalogInfo VolCatInfo;       /**< Volume Catalog Information */
-  VOLUME_LABEL VolHdr;                /**< Actual volume label */
+  Volume_Label VolHdr;                /**< Actual volume label */
   char pool_name[MAX_NAME_LENGTH]{0}; /**< Pool name */
   char pool_type[MAX_NAME_LENGTH]{0}; /**< Pool type */
 
