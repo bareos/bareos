@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -343,8 +343,8 @@ bail_out:
  */
 void UnloadPlugins(alist* plugin_list)
 {
-  int i;
-  Plugin* plugin;
+  int i{};
+  Plugin* plugin{};
 
   if (!plugin_list) { return; }
   foreach_alist_index (i, plugin, plugin_list) {
@@ -372,8 +372,9 @@ void UnloadPlugin(alist* plugin_list, Plugin* plugin, int index)
 
 int ListPlugins(alist* plugin_list, PoolMem& msg)
 {
-  int i, len = 0;
-  Plugin* plugin;
+  int i{};
+  int len{};
+  Plugin* plugin{};
 
   if (plugin_list && plugin_list->size() > 0) {
     PmStrcpy(msg, "Plugin Info:\n");
@@ -439,8 +440,8 @@ void DbgPrintPluginAddHook(dbg_print_plugin_hook_t* fct)
 
 void DumpPlugins(alist* plugin_list, FILE* fp)
 {
-  int i;
-  Plugin* plugin;
+  int i{};
+  Plugin* plugin{};
   fprintf(fp, "Attempt to dump plugins. Hook count=%d\n",
           dbg_plugin_hook_count);
 
