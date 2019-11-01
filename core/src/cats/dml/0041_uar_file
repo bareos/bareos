@@ -3,9 +3,9 @@ SELECT Job.JobId AS JobId,
        Path.Path||File.Name AS Name,
        StartTime,
        TYPE AS JobType,
-               JobStatus,
-               JobFiles,
-               JobBytes
+       JobStatus,
+       JobFiles,
+       JobBytes
 FROM Client,
      Job,
      File,
