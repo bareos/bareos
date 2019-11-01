@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -346,7 +346,6 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
 {
   bEvent event;
   char* name = NULL;
-  int i;
   int len = 0;
   bool call_if_canceled = false;
   restore_object_pkt* rop;
@@ -429,6 +428,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
    * See if we need to trigger the loaded plugins in reverse order.
    */
   if (reverse) {
+    int i{};
     foreach_alist_rindex (i, ctx, plugin_ctx_list) {
       if (!for_thIsPlugin(ctx->plugin, name, len)) {
         Dmsg2(debuglevel, "Not for this plugin name=%s NULL=%d\n", name,
@@ -442,6 +442,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
       }
     }
   } else {
+    int i{};
     foreach_alist_index (i, ctx, plugin_ctx_list) {
       if (!for_thIsPlugin(ctx->plugin, name, len)) {
         Dmsg2(debuglevel, "Not for this plugin name=%s NULL=%d\n", name,
@@ -1674,7 +1675,6 @@ static void DumpFdPlugins(FILE* fp) { DumpPlugins(fd_plugin_list, fp); }
 void LoadFdPlugins(const char* plugin_dir, alist* plugin_names)
 {
   Plugin* plugin;
-  int i;
 
   if (!plugin_dir) {
     Dmsg0(debuglevel, "plugin dir is NULL\n");
@@ -1707,6 +1707,7 @@ void LoadFdPlugins(const char* plugin_dir, alist* plugin_names)
   /*
    * Verify that the plugin is acceptable, and print information about it.
    */
+  int i{0};
   foreach_alist_index (i, plugin, fd_plugin_list) {
     Dmsg1(debuglevel, "Loaded plugin: %s\n", plugin->file);
   }
@@ -1805,7 +1806,6 @@ static inline bpContext* instantiate_plugin(JobControlRecord* jcr,
  */
 void NewPlugins(JobControlRecord* jcr)
 {
-  int i, num;
   Plugin* plugin;
 
   if (!fd_plugin_list) {
@@ -1815,6 +1815,7 @@ void NewPlugins(JobControlRecord* jcr)
 
   if (jcr->IsJobCanceled()) { return; }
 
+  int num;
   num = fd_plugin_list->size();
   if (num == 0) {
     Dmsg0(debuglevel, "No plugins loaded\n");
@@ -1824,6 +1825,8 @@ void NewPlugins(JobControlRecord* jcr)
   jcr->plugin_ctx_list = new alist(10, owned_by_alist);
   Dmsg2(debuglevel, "Instantiate plugin_ctx=%p JobId=%d\n",
         jcr->plugin_ctx_list, jcr->JobId);
+
+  int i{};
   foreach_alist_index (i, plugin, fd_plugin_list) {
     /*
      * Start a new instance of each plugin
