@@ -249,3 +249,30 @@ Start, JobFiles AS Files,ROUND(Job.JobBytes/1024.0/1024.0/1024.0,3) AS Bytes
  AND JobMedia.MediaId=Media.MediaId
  GROUP by VolumeName, Job.JobID, Job.Name, Job.JobBytes, JobFiles, Job.StartTime
  ORDER by JobName, Start;
+ 
+# 21
+:List Jobs of a client that contain a file (regardless of the directory, with wildcards)
+*Enter Client name:
+*Enter Filename (no path, search uses SQL LIKE operation):
+*Enter search limit:
+SELECT DISTINCT
+  Job.JobId AS JobId,
+  Path.Path,
+  File.Name,
+  Job.StartTime,
+  File.MD5,
+  Job.Level,
+  Media.VolumeName
+FROM Client, Job, File, Path, JobMedia, Media
+WHERE Client.Name='%1'
+  AND File.Name LIKE '%2'
+  AND File.FileIndex > 0
+  AND Client.ClientId=Job.ClientId
+  AND Job.JobStatus IN ('T','W')
+  AND Job.JobId=File.JobId
+  AND Path.PathId=File.PathId
+  AND Client.ClientId=Job.ClientId
+  AND JobMedia.JobId=Job.JobId
+  AND JobMedia.MediaId=Media.MediaId
+ORDER BY File.Name ASC, Job.StartTime DESC
+LIMIT %3;
