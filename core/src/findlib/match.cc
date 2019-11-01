@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -567,7 +567,7 @@ bool ParseSizeMatch(const char* size_match_pattern,
   /*
    * Empty the matching arguments.
    */
-  memset(size_matching, 0, sizeof(struct s_sz_matching));
+  *size_matching = s_sz_matching{};
 
   /*
    * See if the size is a range e.g. there is a - in the
