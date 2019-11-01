@@ -40,8 +40,8 @@
  * Loop var through each member of list using an decreasing index.
  */
 #ifdef HAVE_TYPEOF
-#define foreach_alist(var, list)                                              \
-  for ((var) = (list != NULL) ? (typeof((var)))(list)->first() : NULL; (var); \
+#define foreach_alist(var, list)                                    \
+  for ((var) = list ? (typeof((var)))(list)->first() : NULL; (var); \
        (var) = (typeof(var))(list)->next())
 
 #define foreach_alist_index(inx, var, list)                                 \
@@ -55,9 +55,9 @@
        (inx)--)
 
 #else
-#define foreach_alist(var, list)                                               \
-  for ((list != NULL) ? (*((void**)&(var)) = (void*)((list)->first())) : NULL; \
-       (var); (*((void**)&(var)) = (void*)((list)->next())))
+#define foreach_alist(var, list)                                            \
+  for (list ? (*((void**)&(var)) = (void*)((list)->first())) : NULL; (var); \
+       (*((void**)&(var)) = (void*)((list)->next())))
 
 
 #define foreach_alist_index(inx, var, list)                                 \
