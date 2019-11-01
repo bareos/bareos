@@ -28,7 +28,7 @@ class ConfigurationParser;
 struct ThreadListPrivate;
 
 class ThreadList {
-  friend class CleanupOwnThreadAndNotify;
+  friend struct CleanupOwnThreadAndNotify;
 
  public:
   ThreadList();
