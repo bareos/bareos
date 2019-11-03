@@ -419,7 +419,7 @@ retry_fetch:
     } else {
       FillQuery(
           order,
-          SQL_QUERY_ENUM::sql_media_order_most_recently_written); /* Take
+          SQL_QUERY::sql_media_order_most_recently_written); /* Take
                                                                most recently
                                                                written */
     }

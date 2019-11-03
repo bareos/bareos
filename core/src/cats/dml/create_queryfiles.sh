@@ -49,7 +49,7 @@ printf "%s\n\n" "$NOTE" >> $QUERY_ENUM_FILE
 cat >> $QUERY_ENUM_FILE << EOF
 class BareosDbQueryEnum {
  public:
-  enum class SQL_QUERY_ENUM
+  enum class SQL_QUERY
   {
 EOF
 

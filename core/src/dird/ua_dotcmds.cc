@@ -641,7 +641,7 @@ bool DotBvfsGetJobidsCmd(UaContext* ua, const char* cmd)
      * this client
      */
     if (FindArg(ua, "all") > 0) {
-      ua->db->FillQuery(query, BareosDb::SQL_QUERY_ENUM::uar_sel_filesetid,
+      ua->db->FillQuery(query, BareosDb::SQL_QUERY::uar_sel_filesetid,
                         edit_int64(jr.ClientId, ed1));
       ua->db->GetQueryDbids(ua->jcr, query, ids);
     } else {
@@ -956,7 +956,7 @@ bool DotJobstatusCmd(UaContext* ua, const char* cmd)
     }
   }
 
-  ua->db->FillQuery(select, BareosDb::SQL_QUERY_ENUM::get_jobstatus_details,
+  ua->db->FillQuery(select, BareosDb::SQL_QUERY::get_jobstatus_details,
                     where.c_str());
 
   if (!OpenClientDb(ua)) { return false; }

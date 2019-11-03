@@ -33,12 +33,12 @@
 
 static const int debuglevel = 100;
 
-const char* BareosDb::get_predefined_query_name(BareosDb::SQL_QUERY_ENUM query)
+const char* BareosDb::get_predefined_query_name(BareosDb::SQL_QUERY query)
 {
   return query_names[static_cast<int>(query)];
 }
 
-const char* BareosDb::get_predefined_query(BareosDb::SQL_QUERY_ENUM query)
+const char* BareosDb::get_predefined_query(BareosDb::SQL_QUERY query)
 {
   if (!queries) {
     Emsg0(M_ERROR, 0, "No SQL queries defined. This should not happen.");
@@ -48,7 +48,7 @@ const char* BareosDb::get_predefined_query(BareosDb::SQL_QUERY_ENUM query)
   return queries[static_cast<int>(query)];
 }
 
-void BareosDb::FillQuery(BareosDb::SQL_QUERY_ENUM predefined_query, ...)
+void BareosDb::FillQuery(BareosDb::SQL_QUERY predefined_query, ...)
 {
   va_list arg_ptr;
 
@@ -58,7 +58,7 @@ void BareosDb::FillQuery(BareosDb::SQL_QUERY_ENUM predefined_query, ...)
 }
 
 void BareosDb::FillQuery(PoolMem& query,
-                         BareosDb::SQL_QUERY_ENUM predefined_query,
+                         BareosDb::SQL_QUERY predefined_query,
                          ...)
 {
   va_list arg_ptr;
@@ -69,7 +69,7 @@ void BareosDb::FillQuery(PoolMem& query,
 }
 
 void BareosDb::FillQuery(POOLMEM*& query,
-                         BareosDb::SQL_QUERY_ENUM predefined_query,
+                         BareosDb::SQL_QUERY predefined_query,
                          ...)
 {
   va_list arg_ptr;
@@ -81,7 +81,7 @@ void BareosDb::FillQuery(POOLMEM*& query,
 
 
 void BareosDb::FillQueryVaList(POOLMEM*& query,
-                               BareosDb::SQL_QUERY_ENUM predefined_query,
+                               BareosDb::SQL_QUERY predefined_query,
                                va_list arg_ptr)
 {
   PoolMem query_tmp(PM_MESSAGE);
@@ -92,7 +92,7 @@ void BareosDb::FillQueryVaList(POOLMEM*& query,
 
 
 void BareosDb::FillQueryVaList(PoolMem& query,
-                               BareosDb::SQL_QUERY_ENUM predefined_query,
+                               BareosDb::SQL_QUERY predefined_query,
                                va_list arg_ptr)
 {
   const char* query_name;
@@ -111,7 +111,7 @@ void BareosDb::FillQueryVaList(PoolMem& query,
 }
 
 
-bool BareosDb::SqlQuery(BareosDb::SQL_QUERY_ENUM predefined_query, ...)
+bool BareosDb::SqlQuery(BareosDb::SQL_QUERY predefined_query, ...)
 {
   va_list arg_ptr;
   PoolMem query(PM_MESSAGE);

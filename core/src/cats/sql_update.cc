@@ -133,7 +133,7 @@ int BareosDb::UpdateStats(JobControlRecord* jcr, utime_t age)
   DbLock(this);
 
   edit_uint64(now - age, ed1);
-  FillQuery(SQL_QUERY_ENUM::fill_jobhisto, ed1);
+  FillQuery(SQL_QUERY::fill_jobhisto, ed1);
   if (QUERY_DB(jcr, cmd)) {
     rows = SqlAffectedRows();
   } else {
@@ -240,7 +240,7 @@ bool BareosDb::UpdateCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr)
   DbLock(this);
 
   EscapeString(jcr, esc, cr->Counter, strlen(cr->Counter));
-  FillQuery(SQL_QUERY_ENUM::update_counter_values, cr->MinValue, cr->MaxValue,
+  FillQuery(SQL_QUERY::update_counter_values, cr->MinValue, cr->MaxValue,
             cr->CurrentValue, cr->WrapCounter, esc);
   retval = UPDATE_DB(jcr, cmd);
 

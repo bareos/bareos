@@ -831,7 +831,7 @@ bool BareosDb::GetCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr)
   DbLock(this);
   EscapeString(jcr, esc, cr->Counter, strlen(cr->Counter));
 
-  FillQuery(SQL_QUERY_ENUM::select_counter_values, esc);
+  FillQuery(SQL_QUERY::select_counter_values, esc);
   if (QUERY_DB(jcr, cmd)) {
     num_rows = SqlNumRows();
 
@@ -1267,12 +1267,11 @@ bool BareosDb::GetFileList(JobControlRecord* jcr,
   }
 
   if (use_delta) {
-    FillQuery(query2,
-              SQL_QUERY_ENUM::select_recent_version_with_basejob_and_delta,
+    FillQuery(query2, SQL_QUERY::select_recent_version_with_basejob_and_delta,
               jobids, jobids, jobids, jobids);
   } else {
-    FillQuery(query2, SQL_QUERY_ENUM::select_recent_version_with_basejob,
-              jobids, jobids, jobids, jobids);
+    FillQuery(query2, SQL_QUERY::select_recent_version_with_basejob, jobids,
+              jobids, jobids, jobids);
   }
 
   /*
@@ -1347,7 +1346,7 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
   /*
    * First, find the last good Full backup for this job/client/fileset
    */
-  FillQuery(query, SQL_QUERY_ENUM::create_temp_accurate_jobids,
+  FillQuery(query, SQL_QUERY::create_temp_accurate_jobids,
             edit_uint64(jcr->JobId, jobid), edit_uint64(jr->ClientId, clientid),
             date, edit_uint64(jr->FileSetId, filesetid));
 
@@ -1538,7 +1537,7 @@ bool BareosDb::get_quota_jobbytes(JobControlRecord* jcr,
 
   DbLock(this);
 
-  FillQuery(SQL_QUERY_ENUM::get_quota_jobbytes, edit_uint64(jr->ClientId, ed1),
+  FillQuery(SQL_QUERY::get_quota_jobbytes, edit_uint64(jr->ClientId, ed1),
             edit_uint64(jr->JobId, ed2), dt);
   if (QUERY_DB(jcr, cmd)) {
     num_rows = SqlNumRows();
@@ -1593,7 +1592,7 @@ bool BareosDb::get_quota_jobbytes_nofailed(JobControlRecord* jcr,
 
   DbLock(this);
 
-  FillQuery(SQL_QUERY_ENUM::get_quota_jobbytes_nofailed,
+  FillQuery(SQL_QUERY::get_quota_jobbytes_nofailed,
             edit_uint64(jr->ClientId, ed1), edit_uint64(jr->JobId, ed2), dt);
   if (QUERY_DB(jcr, cmd)) {
     num_rows = SqlNumRows();

@@ -1059,8 +1059,8 @@ static bool CheckCatalog(cat_op mode)
     }
     /* cleanup old job records */
     if (mode == UPDATE_AND_FIX) {
-      db->SqlQuery(BareosDb::SQL_QUERY_ENUM::cleanup_created_job);
-      db->SqlQuery(BareosDb::SQL_QUERY_ENUM::cleanup_running_job);
+      db->SqlQuery(BareosDb::SQL_QUERY::cleanup_created_job);
+      db->SqlQuery(BareosDb::SQL_QUERY::cleanup_running_job);
     }
 
     /* Set type in global for debugging */

@@ -2,7 +2,7 @@
 
 class BareosDbQueryEnum {
  public:
-  enum class SQL_QUERY_ENUM
+  enum class SQL_QUERY
   {
     get_restore_objects = 0,
     cleanup_created_job = 1,

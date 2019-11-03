@@ -180,7 +180,7 @@ bool BareosDb::CheckMaxConnections(JobControlRecord* jcr,
   /*
    * Check max_connections setting
    */
-  FillQuery(query, SQL_QUERY_ENUM::sql_get_max_connections);
+  FillQuery(query, SQL_QUERY::sql_get_max_connections);
   if (!SqlQueryWithHandler(query.c_str(), DbMaxConnectionsHandler, &context)) {
     Jmsg(jcr, M_ERROR, 0, "Can't verify max_connections settings %s", errmsg);
     return false;
