@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,7 +35,7 @@ static const int debuglevel = 100;
 
 const char* BareosDb::get_predefined_query_name(BareosDb::SQL_QUERY_ENUM query)
 {
-  return query_names[query];
+  return query_names[static_cast<int>(query)];
 }
 
 const char* BareosDb::get_predefined_query(BareosDb::SQL_QUERY_ENUM query)
@@ -45,7 +45,7 @@ const char* BareosDb::get_predefined_query(BareosDb::SQL_QUERY_ENUM query)
     return NULL;
   }
 
-  return queries[query];
+  return queries[static_cast<int>(query)];
 }
 
 void BareosDb::FillQuery(BareosDb::SQL_QUERY_ENUM predefined_query, ...)

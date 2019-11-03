@@ -3,7 +3,7 @@
 
    Copyright (C) 2009-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -295,7 +295,8 @@ bool BareosDb::UpdatePathHierarchyCache(JobControlRecord* jcr,
 
   StartTransaction(jcr);
 
-  FillQuery(cmd, SQL_QUERY_bvfs_update_path_visibility_3, jobid, jobid, jobid);
+  FillQuery(cmd, SQL_QUERY_ENUM::bvfs_update_path_visibility_3, jobid, jobid,
+            jobid);
 
   do {
     retval = QUERY_DB(jcr, cmd);
@@ -596,7 +597,7 @@ void Bvfs::GetAllFileVersions(DBId_t pathid,
   db->EscapeString(jcr, fname_esc, (char*)fname, strlen(fname));
   db->EscapeString(jcr, client_esc, (char*)client, strlen(client));
 
-  db->FillQuery(query, BareosDb::SQL_QUERY_bvfs_versions_6, fname_esc,
+  db->FillQuery(query, BareosDb::SQL_QUERY_ENUM::bvfs_versions_6, fname_esc,
                 edit_uint64(pathid, ed1), client_esc, filter.c_str(), limit,
                 offset);
   db->SqlQuery(query.c_str(), list_entries, user_data);
@@ -648,16 +649,17 @@ bool Bvfs::ls_dirs()
    */
   *prev_dir = 0;
 
-  db->FillQuery(special_dirs_query, BareosDb::SQL_QUERY_bvfs_ls_special_dirs_3,
-                pathid, pathid, jobids);
+  db->FillQuery(special_dirs_query,
+                BareosDb::SQL_QUERY_ENUM::bvfs_ls_special_dirs_3, pathid,
+                pathid, jobids);
 
   if (*pattern) {
-    db->FillQuery(filter, BareosDb::SQL_QUERY_match_query, pattern);
+    db->FillQuery(filter, BareosDb::SQL_QUERY_ENUM::match_query, pattern);
   }
-  db->FillQuery(sub_dirs_query, BareosDb::SQL_QUERY_bvfs_ls_sub_dirs_5, pathid,
-                jobids, jobids, filter.c_str(), jobids);
+  db->FillQuery(sub_dirs_query, BareosDb::SQL_QUERY_ENUM::bvfs_ls_sub_dirs_5,
+                pathid, jobids, jobids, filter.c_str(), jobids);
 
-  db->FillQuery(union_query, BareosDb::SQL_QUERY_bvfs_lsdirs_4,
+  db->FillQuery(union_query, BareosDb::SQL_QUERY_ENUM::bvfs_lsdirs_4,
                 special_dirs_query.c_str(), sub_dirs_query.c_str(), limit,
                 offset);
 
@@ -677,11 +679,11 @@ static void build_ls_files_query(JobControlRecord* jcr,
                                  int64_t offset)
 {
   if (db->GetTypeIndex() == SQL_TYPE_POSTGRESQL) {
-    db->FillQuery(query, BareosDb::SQL_QUERY_bvfs_list_files, JobId, PathId,
-                  JobId, PathId, filter, limit, offset);
+    db->FillQuery(query, BareosDb::SQL_QUERY_ENUM::bvfs_list_files, JobId,
+                  PathId, JobId, PathId, filter, limit, offset);
   } else {
-    db->FillQuery(query, BareosDb::SQL_QUERY_bvfs_list_files, JobId, PathId,
-                  JobId, PathId, limit, offset, filter, JobId, JobId);
+    db->FillQuery(query, BareosDb::SQL_QUERY_ENUM::bvfs_list_files, JobId,
+                  PathId, JobId, PathId, limit, offset, filter, JobId, JobId);
   }
 }
 
@@ -701,7 +703,7 @@ bool Bvfs::ls_files()
 
   edit_uint64(pwd_id, pathid);
   if (*pattern) {
-    db->FillQuery(filter, BareosDb::SQL_QUERY_match_query2, pattern);
+    db->FillQuery(filter, BareosDb::SQL_QUERY_ENUM::match_query2, pattern);
   }
 
   build_ls_files_query(jcr, db, query, jobids, pathid, filter.c_str(), limit,
@@ -764,7 +766,7 @@ void Bvfs::clear_cache()
    * as MySQL queries do only support single SQL statements,
    * not multiple.
    */
-  // db->SqlQuery(BareosDb::SQL_QUERY_bvfs_clear_cache_0);
+  // db->SqlQuery(BareosDb::SQL_QUERY_ENUM::bvfs_clear_cache_0);
   db->StartTransaction(jcr);
   db->SqlQuery("UPDATE Job SET HasCache=0");
   if (db->GetTypeIndex() == SQL_TYPE_SQLITE3) {
@@ -928,7 +930,7 @@ bool Bvfs::compute_restore_list(char* fileid,
     goto bail_out;
   }
 
-  db->FillQuery(query, BareosDb::SQL_QUERY_bvfs_select, output_table,
+  db->FillQuery(query, BareosDb::SQL_QUERY_ENUM::bvfs_select, output_table,
                 output_table, output_table);
 
   /* TODO: handle jobid filter */

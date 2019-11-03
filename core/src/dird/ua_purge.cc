@@ -452,7 +452,8 @@ void UpgradeCopies(UaContext* ua, char* jobs)
   DbLock(ua->db);
 
   /* Do it in two times for mysql */
-  ua->db->FillQuery(query, BareosDb::SQL_QUERY_uap_upgrade_copies_oldest_job,
+  ua->db->FillQuery(query,
+                    BareosDb::SQL_QUERY_ENUM::uap_upgrade_copies_oldest_job,
                     JT_JOB_COPY, jobs, jobs);
 
   ua->db->SqlQuery(query.c_str());

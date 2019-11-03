@@ -560,19 +560,19 @@ bail_out:
 
 static void DropTempTables(UaContext* ua)
 {
-  ua->db->SqlQuery(BareosDb::SQL_QUERY_drop_deltabs);
+  ua->db->SqlQuery(BareosDb::SQL_QUERY_ENUM::drop_deltabs);
 }
 
 static bool CreateTempTables(UaContext* ua)
 {
   /* Create temp tables and indicies */
-  if (!ua->db->SqlQuery(BareosDb::SQL_QUERY_create_deltabs)) {
+  if (!ua->db->SqlQuery(BareosDb::SQL_QUERY_ENUM::create_deltabs)) {
     ua->ErrorMsg("%s", ua->db->strerror());
     Dmsg0(050, "create DelTables table failed\n");
     return false;
   }
 
-  if (!ua->db->SqlQuery(BareosDb::SQL_QUERY_create_delindex)) {
+  if (!ua->db->SqlQuery(BareosDb::SQL_QUERY_ENUM::create_delindex)) {
     ua->ErrorMsg("%s", ua->db->strerror());
     Dmsg0(050, "create DelInx1 index failed\n");
     return false;
@@ -885,7 +885,7 @@ int GetPruneListForVolume(UaContext* ua, MediaDbRecord* mr, del_ctx* del)
    */
   period = mr->VolRetention;
   now = (utime_t)time(NULL);
-  ua->db->FillQuery(query, BareosDb::SQL_QUERY_sel_JobMedia,
+  ua->db->FillQuery(query, BareosDb::SQL_QUERY_ENUM::sel_JobMedia,
                     edit_int64(mr->MediaId, ed1),
                     edit_int64(now - period, ed2));
 

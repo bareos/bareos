@@ -49,7 +49,7 @@ printf "%s\n\n" "$NOTE" >> $QUERY_ENUM_FILE
 cat >> $QUERY_ENUM_FILE << EOF
 class BareosDbQueryEnum {
  public:
-  typedef enum
+  enum class SQL_QUERY_ENUM
   {
 EOF
 
@@ -69,7 +69,7 @@ let i=0
 for query in `ls ????_* | sed 's#\..*##g' | sort | uniq`; do
     queryname=`sed 's/[0-9]*_//' <<< $query`
     printf '"%s",\n' "$queryname" >> $QUERY_NAMES_FILE
-    printf "    SQL_QUERY_%s = %s,\n" "$queryname" "$i" >> $QUERY_ENUM_FILE
+    printf "    %s = %s,\n" "$queryname" "$i" >> $QUERY_ENUM_FILE
     let i++
 
     for db in $DATABASES; do
@@ -92,7 +92,7 @@ printf "NULL\n};\n" >> $QUERY_NAMES_FILE
 
 cat >> $QUERY_ENUM_FILE << EOF
     SQL_QUERY_NUMBER = $i
-  } SQL_QUERY_ENUM;
+  };
 };
 EOF
 

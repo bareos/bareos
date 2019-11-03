@@ -691,8 +691,8 @@ bool BareosDb::CreateCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr)
   }
   EscapeString(jcr, esc, cr->Counter, strlen(cr->Counter));
 
-  FillQuery(SQL_QUERY_insert_counter_values, esc, cr->MinValue, cr->MaxValue,
-            cr->CurrentValue, cr->WrapCounter);
+  FillQuery(SQL_QUERY_ENUM::insert_counter_values, esc, cr->MinValue,
+            cr->MaxValue, cr->CurrentValue, cr->WrapCounter);
 
   if (!INSERT_DB(jcr, cmd)) {
     Mmsg2(errmsg, _("Create DB Counters record %s failed. ERR=%s\n"), cmd,
@@ -837,18 +837,18 @@ bool BareosDb::WriteBatchFileRecords(JobControlRecord* jcr)
 
   if (JobCanceled(jcr)) { goto bail_out; }
 
-  if (!jcr->db_batch->SqlQuery(SQL_QUERY_batch_lock_path_query)) {
+  if (!jcr->db_batch->SqlQuery(SQL_QUERY_ENUM::batch_lock_path_query)) {
     Jmsg1(jcr, M_FATAL, 0, "Lock Path table %s\n", errmsg);
     goto bail_out;
   }
 
-  if (!jcr->db_batch->SqlQuery(SQL_QUERY_batch_fill_path_query)) {
+  if (!jcr->db_batch->SqlQuery(SQL_QUERY_ENUM::batch_fill_path_query)) {
     Jmsg1(jcr, M_FATAL, 0, "Fill Path table %s\n", errmsg);
-    jcr->db_batch->SqlQuery(SQL_QUERY_batch_unlock_tables_query);
+    jcr->db_batch->SqlQuery(SQL_QUERY_ENUM::batch_unlock_tables_query);
     goto bail_out;
   }
 
-  if (!jcr->db_batch->SqlQuery(SQL_QUERY_batch_unlock_tables_query)) {
+  if (!jcr->db_batch->SqlQuery(SQL_QUERY_ENUM::batch_unlock_tables_query)) {
     Jmsg1(jcr, M_FATAL, 0, "Unlock Path table %s\n", errmsg);
     goto bail_out;
   }
@@ -1146,11 +1146,11 @@ bool BareosDb::CreateBaseFileList(JobControlRecord* jcr, char* jobids)
     goto bail_out;
   }
 
-  FillQuery(SQL_QUERY_create_temp_basefile, (uint64_t)jcr->JobId);
+  FillQuery(SQL_QUERY_ENUM::create_temp_basefile, (uint64_t)jcr->JobId);
   if (!SqlQuery(cmd)) { goto bail_out; }
 
-  FillQuery(buf, SQL_QUERY_select_recent_version, jobids, jobids);
-  FillQuery(SQL_QUERY_create_temp_new_basefile, (uint64_t)jcr->JobId,
+  FillQuery(buf, SQL_QUERY_ENUM::select_recent_version, jobids, jobids);
+  FillQuery(SQL_QUERY_ENUM::create_temp_new_basefile, (uint64_t)jcr->JobId,
             buf.c_str());
 
   retval = SqlQuery(cmd);
