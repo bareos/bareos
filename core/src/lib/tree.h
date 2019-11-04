@@ -42,7 +42,7 @@
 struct s_mem {
   struct s_mem* next; /* next buffer */
   int rem;            /* remaining bytes */
-  char* mem;          /* memory pointer */
+  void* mem;          /* memory pointer */
   char first[1];      /* first byte */
 };
 
@@ -68,15 +68,25 @@ struct delta_list {
  *   there is one for each file.
  */
 struct s_tree_node {
+  s_tree_node()
+      : type{false}
+      , extract{false}
+      , extract_dir{false}
+      , hard_link{false}
+      , soft_link{false}
+      , inserted{false}
+      , loaded{false}
+  {
+  }
   /* KEEP sibling as the first member to avoid having to
    *  do initialization of child */
   rblink sibling;
   rblist child;
-  char* fname;                  /* file name */
-  int32_t FileIndex;            /* file index */
-  uint32_t JobId;               /* JobId */
-  int32_t delta_seq;            /* current delta sequence */
-  uint16_t fname_len;           /* filename length */
+  char* fname{};                /* file name */
+  int32_t FileIndex{};          /* file index */
+  uint32_t JobId{};             /* JobId */
+  int32_t delta_seq{};          /* current delta sequence */
+  uint16_t fname_len{};         /* filename length */
   unsigned int type : 8;        /* node type */
   unsigned int extract : 1;     /* extract item */
   unsigned int extract_dir : 1; /* extract dir entry only */
@@ -84,44 +94,53 @@ struct s_tree_node {
   unsigned int soft_link : 1;   /* set if is soft link */
   unsigned int inserted : 1;    /* set when node newly inserted */
   unsigned int loaded : 1;      /* set when the dir is in the tree */
-  struct s_tree_node* parent;
-  struct s_tree_node* next;      /* next hash of FileIndex */
-  struct delta_list* delta_list; /* delta parts for this node */
-  uint64_t fhinfo;               /* NDMP Fh_info */
-  uint64_t fhnode;               /* NDMP Fh_node */
+  struct s_tree_node* parent{};
+  struct s_tree_node* next{};      /* next hash of FileIndex */
+  struct delta_list* delta_list{}; /* delta parts for this node */
+  uint64_t fhinfo{};               /* NDMP Fh_info */
+  uint64_t fhnode{};               /* NDMP Fh_node */
 };
 typedef struct s_tree_node TREE_NODE;
 
 struct s_tree_root {
+  s_tree_root()
+      : type{false}
+      , extract{false}
+      , extract_dir{false}
+      , have_link{false}
+      , inserted{false}
+      , loaded{false}
+  {
+  }
   /* KEEP sibling as the first member to avoid having to
    *  do initialization of child */
-  rblink sibling;
+  rblink sibling{};
   rblist child;
-  const char* fname;            /* file name */
-  int32_t FileIndex;            /* file index */
-  uint32_t JobId;               /* JobId */
-  int32_t delta_seq;            /* current delta sequence */
-  uint16_t fname_len;           /* filename length */
+  const char* fname{};          /* file name */
+  int32_t FileIndex{};          /* file index */
+  uint32_t JobId{};             /* JobId */
+  int32_t delta_seq{};          /* current delta sequence */
+  uint16_t fname_len{};         /* filename length */
   unsigned int type : 8;        /* node type */
   unsigned int extract : 1;     /* extract item */
   unsigned int extract_dir : 1; /* extract dir entry only */
   unsigned int have_link : 1;   /* set if have hard link */
   unsigned int inserted : 1;    /* set when newly inserted */
   unsigned int loaded : 1;      /* set when the dir is in the tree */
-  struct s_tree_node* parent;
-  struct s_tree_node* next;      /* next hash of FileIndex */
-  struct delta_list* delta_list; /* delta parts for this node */
+  struct s_tree_node* parent{};
+  struct s_tree_node* next{};      /* next hash of FileIndex */
+  struct delta_list* delta_list{}; /* delta parts for this node */
 
   /* The above ^^^ must be identical to a TREE_NODE structure */
-  struct s_tree_node* first; /* first entry in the tree */
-  struct s_tree_node* last;  /* last entry in tree */
-  struct s_mem* mem;         /* tree memory */
-  uint32_t total_size;       /* total bytes allocated */
-  uint32_t blocks;           /* total mallocs */
-  int cached_path_len;       /* length of cached path */
-  char* cached_path;         /* cached current path */
-  TREE_NODE* cached_parent;  /* cached parent for above path */
-  htable hardlinks;          /* references to first occurence of hardlinks */
+  struct s_tree_node* first{}; /* first entry in the tree */
+  struct s_tree_node* last{};  /* last entry in tree */
+  struct s_mem* mem{};         /* tree memory */
+  uint32_t total_size{};       /* total bytes allocated */
+  uint32_t blocks{};           /* total mallocs */
+  int cached_path_len{};       /* length of cached path */
+  char* cached_path{};         /* cached current path */
+  TREE_NODE* cached_parent{};  /* cached parent for above path */
+  htable hardlinks;            /* references to first occurence of hardlinks */
 };
 typedef struct s_tree_root TREE_ROOT;
 

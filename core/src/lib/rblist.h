@@ -57,19 +57,27 @@ struct rblink {
 };
 
 class rblist {
+ public:
+  rblist() = default;
+  rblist(void* item, rblink* link);
+  ~rblist(void) { destroy(); }
+  void* insert(void* item, int compare(void* item1, void* item2));
+  int size(void) const;
+  bool empty(void) const;
+  void* first(void);
+  void* next(void* item);
+  void* search(void* item, int compare(void* item1, void* item2));
+  void remove(void* item);
+
+ private:
   void* head = nullptr;
   int16_t loffset = 0;
   uint32_t num_items = 0;
   bool down = false;
   void LeftRotate(void* item);
   void RightRotate(void* item);
-
- public:
-  rblist(void* item, rblink* link);
-  rblist(void);
-  ~rblist(void) { destroy(); }
-  void init(void* item, rblink* link);
   void SetParent(void* item, void* parent);
+  void init(void* item, rblink* link);
   void SetLeft(void* item, void* left);
   void SetRight(void* item, void* right);
   void SetRed(void* item, bool red);
@@ -77,14 +85,7 @@ class rblist {
   void* left(const void* item) const;
   void* right(const void* item) const;
   bool red(const void* item) const;
-  void* insert(void* item, int compare(void* item1, void* item2));
-  void* search(void* item, int compare(void* item1, void* item2));
-  void* first(void);
-  void* next(void* item);
   void* any(void* item);
-  void remove(void* item);
-  bool empty(void) const;
-  int size(void) const;
   void destroy(void);
 };
 
@@ -105,9 +106,6 @@ inline void rblist::init(void* item, rblink* link)
 }
 
 inline rblist::rblist(void* item, rblink* link) { init(item, link); }
-
-/* Constructor with link at head of item */
-inline rblist::rblist(void) : head(0), loffset(0), num_items(0) {}
 
 inline void rblist::SetParent(void* item, void* parent)
 {
