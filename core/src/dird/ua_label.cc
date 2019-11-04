@@ -39,6 +39,7 @@
 #endif
 
 #include "dird/ndmp_dma_storage.h"
+#include "dird/jcr_private.h"
 #include "dird/sd_cmds.h"
 #include "dird/storage.h"
 #include "dird/ua_db.h"
@@ -67,7 +68,7 @@ static inline bool update_database(UaContext* ua,
      * Update existing media record.
      */
     mr->InChanger = mr->Slot > 0; /* If slot give assume in changer */
-    SetStorageidInMr(ua->jcr->res.write_storage, mr);
+    SetStorageidInMr(ua->jcr->impl_->res.write_storage, mr);
     if (!ua->db->UpdateMediaRecord(ua->jcr, mr)) {
       ua->ErrorMsg("%s", ua->db->strerror());
       retval = false;
@@ -79,7 +80,7 @@ static inline bool update_database(UaContext* ua,
     SetPoolDbrDefaultsInMediaDbr(mr, pr);
     mr->InChanger = mr->Slot > 0; /* If slot give assume in changer */
     mr->Enabled = 1;
-    SetStorageidInMr(ua->jcr->res.write_storage, mr);
+    SetStorageidInMr(ua->jcr->impl_->res.write_storage, mr);
 
     if (ua->db->CreateMediaRecord(ua->jcr, mr)) {
       ua->InfoMsg(_("Catalog record for Volume \"%s\", Slot %hd successfully "
@@ -119,7 +120,8 @@ static inline bool native_send_label_request(UaContext* ua,
 
   if (!(sd = open_sd_bsock(ua))) { return false; }
 
-  bstrncpy(dev_name, ua->jcr->res.write_storage->dev_name(), sizeof(dev_name));
+  bstrncpy(dev_name, ua->jcr->impl_->res.write_storage->dev_name(),
+           sizeof(dev_name));
   BashSpaces(dev_name);
   BashSpaces(mr->VolumeName);
   BashSpaces(mr->MediaType);
@@ -288,19 +290,20 @@ static inline bool IsCleaningTape(UaContext* ua,
   /*
    * Find Pool resource
    */
-  ua->jcr->res.pool = ua->GetPoolResWithName(pr->Name, false);
-  if (!ua->jcr->res.pool) {
+  ua->jcr->impl_->res.pool = ua->GetPoolResWithName(pr->Name, false);
+  if (!ua->jcr->impl_->res.pool) {
     ua->ErrorMsg(_("Pool \"%s\" resource not found for volume \"%s\"!\n"),
                  pr->Name, mr->VolumeName);
     return false;
   }
 
-  retval = bstrncmp(mr->VolumeName, ua->jcr->res.pool->cleaning_prefix,
-                    strlen(ua->jcr->res.pool->cleaning_prefix));
+  retval = bstrncmp(mr->VolumeName, ua->jcr->impl_->res.pool->cleaning_prefix,
+                    strlen(ua->jcr->impl_->res.pool->cleaning_prefix));
 
   Dmsg4(100, "CLNprefix=%s: Vol=%s: len=%d bstrncmp=%s\n",
-        ua->jcr->res.pool->cleaning_prefix, mr->VolumeName,
-        strlen(ua->jcr->res.pool->cleaning_prefix), retval ? "true" : "false");
+        ua->jcr->impl_->res.pool->cleaning_prefix, mr->VolumeName,
+        strlen(ua->jcr->impl_->res.pool->cleaning_prefix),
+        retval ? "true" : "false");
 
   return retval;
 }
@@ -315,7 +318,7 @@ static void label_from_barcodes(UaContext* ua,
                                 bool label_encrypt,
                                 bool yes)
 {
-  StorageResource* store = ua->jcr->res.write_storage;
+  StorageResource* store = ua->jcr->impl_->res.write_storage;
   PoolDbRecord pr;
   MediaDbRecord mr;
   vol_list_t* vl;
@@ -325,7 +328,7 @@ static void label_from_barcodes(UaContext* ua,
   int max_slots;
 
 
-  max_slots = GetNumSlots(ua, ua->jcr->res.write_storage);
+  max_slots = GetNumSlots(ua, ua->jcr->impl_->res.write_storage);
   if (max_slots <= 0) {
     ua->WarningMsg(_("No slots in changer to scan.\n"));
     return;

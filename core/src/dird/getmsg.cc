@@ -45,6 +45,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/catreq.h"
+#include "dird/jcr_private.h"
 #include "dird/msgchan.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
@@ -86,12 +87,12 @@ static void SetJcrSdJobStatus(JobControlRecord* jcr, int SDJobStatus)
     Dmsg0(800, "Setting wait_time\n");
     jcr->wait_time = time(NULL);
   }
-  jcr->SDJobStatus = SDJobStatus;
+  jcr->impl_->SDJobStatus = SDJobStatus;
 
   /*
    * Some SD Job status setting are propagated to the controlling Job.
    */
-  switch (jcr->SDJobStatus) {
+  switch (jcr->impl_->SDJobStatus) {
     case JS_Incomplete:
       jcr->setJobStatus(JS_Incomplete);
       break;

@@ -30,6 +30,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
+#include "dird/jcr_private.h"
 #include "cats/sql_pooling.h"
 #include "dird/sd_cmds.h"
 #include "dird/ua_server.h"
@@ -130,17 +131,21 @@ extern "C" void* statistics_thread(void* arg)
 
   jcr = new_control_jcr("*StatisticsCollector*", JT_SYSTEM);
 
-  jcr->res.catalog = (CatalogResource*)my_config->GetNextRes(R_CATALOG, NULL);
+  jcr->impl_->res.catalog =
+      (CatalogResource*)my_config->GetNextRes(R_CATALOG, NULL);
   jcr->db = DbSqlGetPooledConnection(
-      jcr, jcr->res.catalog->db_driver, jcr->res.catalog->db_name,
-      jcr->res.catalog->db_user, jcr->res.catalog->db_password.value,
-      jcr->res.catalog->db_address, jcr->res.catalog->db_port,
-      jcr->res.catalog->db_socket, jcr->res.catalog->mult_db_connections,
-      jcr->res.catalog->disable_batch_insert, jcr->res.catalog->try_reconnect,
-      jcr->res.catalog->exit_on_fatal);
+      jcr, jcr->impl_->res.catalog->db_driver, jcr->impl_->res.catalog->db_name,
+      jcr->impl_->res.catalog->db_user,
+      jcr->impl_->res.catalog->db_password.value,
+      jcr->impl_->res.catalog->db_address, jcr->impl_->res.catalog->db_port,
+      jcr->impl_->res.catalog->db_socket,
+      jcr->impl_->res.catalog->mult_db_connections,
+      jcr->impl_->res.catalog->disable_batch_insert,
+      jcr->impl_->res.catalog->try_reconnect,
+      jcr->impl_->res.catalog->exit_on_fatal);
   if (jcr->db == NULL) {
     Jmsg(jcr, M_FATAL, 0, _("Could not open database \"%s\".\n"),
-         jcr->res.catalog->db_name);
+         jcr->impl_->res.catalog->db_name);
     goto bail_out;
   }
 
@@ -197,7 +202,7 @@ extern "C" void* statistics_thread(void* arg)
           continue;
       }
 
-      jcr->res.read_storage = store;
+      jcr->impl_->res.read_storage = store;
       if (!ConnectToStorageDaemon(jcr, 2, 1, false)) {
         UnlockRes(my_config);
         continue;

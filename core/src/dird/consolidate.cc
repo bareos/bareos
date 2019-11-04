@@ -33,6 +33,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/consolidate.h"
+#include "dird/jcr_private.h"
 #include "dird/job.h"
 #include "dird/storage.h"
 #include "dird/ua_input.h"
@@ -55,7 +56,7 @@ bool DoConsolidateInit(JobControlRecord* jcr)
 
 /**
  * Start a Virtual(Full) Job that creates a new virtual backup
- * containing the jobids given in jcr->vf_jobids
+ * containing the jobids given in jcr->impl_->vf_jobids
  */
 static inline void StartNewConsolidationJob(JobControlRecord* jcr,
                                             char* jobname)
@@ -67,7 +68,7 @@ static inline void StartNewConsolidationJob(JobControlRecord* jcr,
   ua = new_ua_context(jcr);
   ua->batch = true;
   Mmsg(ua->cmd, "run job=\"%s\" jobid=%s level=VirtualFull %s", jobname,
-       jcr->vf_jobids, jcr->accurate ? "accurate=yes" : "accurate=no");
+       jcr->impl_->vf_jobids, jcr->accurate ? "accurate=yes" : "accurate=no");
 
   Dmsg1(debuglevel, "=============== consolidate cmd=%s\n", ua->cmd);
   ParseUaArgs(ua); /* parse command */
@@ -101,15 +102,15 @@ bool DoConsolidate(JobControlRecord* jcr)
   int32_t fullconsolidations_started = 0;
   int32_t max_full_consolidations = 0;
 
-  tmpjob = jcr->res.job; /* Memorize job */
+  tmpjob = jcr->impl_->res.job; /* Memorize job */
 
   /*
    * Get Value for MaxFullConsolidations from Consolidation job
    */
-  max_full_consolidations = jcr->res.job->MaxFullConsolidations;
+  max_full_consolidations = jcr->impl_->res.job->MaxFullConsolidations;
 
-  jcr->jr.JobId = jcr->JobId;
-  jcr->fname = (char*)GetPoolMemory(PM_FNAME);
+  jcr->impl_->jr.JobId = jcr->JobId;
+  jcr->impl_->fname = (char*)GetPoolMemory(PM_FNAME);
 
   /*
    * Print Job Start message
@@ -132,12 +133,12 @@ bool DoConsolidate(JobControlRecord* jcr)
       /*
        * Fake always incremental job as job of current jcr.
        */
-      jcr->res.job = job;
-      jcr->res.fileset = job->fileset;
-      jcr->res.client = job->client;
-      jcr->jr.JobLevel = L_INCREMENTAL;
-      jcr->jr.limit = 0;
-      jcr->jr.StartTime = 0;
+      jcr->impl_->res.job = job;
+      jcr->impl_->res.fileset = job->fileset;
+      jcr->impl_->res.client = job->client;
+      jcr->impl_->jr.JobLevel = L_INCREMENTAL;
+      jcr->impl_->jr.limit = 0;
+      jcr->impl_->jr.StartTime = 0;
 
       if (!GetOrCreateFilesetRecord(jcr)) {
         Jmsg(jcr, M_FATAL, 0, _("JobId=%d no FileSet\n"), (int)jcr->JobId);
@@ -154,7 +155,7 @@ bool DoConsolidate(JobControlRecord* jcr)
       /*
        * First determine the number of total incrementals
        */
-      jcr->db->AccurateGetJobids(jcr, &jcr->jr, &jobids_ctx);
+      jcr->db->AccurateGetJobids(jcr, &jcr->impl_->jr, &jobids_ctx);
       incrementals_total = jobids_ctx.count - 1;
       Dmsg1(10, "unlimited jobids list:  %s.\n", jobids_ctx.list);
 
@@ -166,18 +167,19 @@ bool DoConsolidate(JobControlRecord* jcr)
       if (job->AlwaysIncrementalJobRetention) {
         char sdt[50];
 
-        jcr->jr.StartTime = now - job->AlwaysIncrementalJobRetention;
-        bstrftimes(sdt, sizeof(sdt), jcr->jr.StartTime);
+        jcr->impl_->jr.StartTime = now - job->AlwaysIncrementalJobRetention;
+        bstrftimes(sdt, sizeof(sdt), jcr->impl_->jr.StartTime);
         Jmsg(jcr, M_INFO, 0,
              _("%s: considering jobs older than %s for consolidation.\n"),
              job->resource_name_, sdt);
         Dmsg4(10,
               _("%s: considering jobs with ClientId %d and FilesetId %d older "
                 "than %s for consolidation.\n"),
-              job->resource_name_, jcr->jr.ClientId, jcr->jr.FileSetId, sdt);
+              job->resource_name_, jcr->impl_->jr.ClientId,
+              jcr->impl_->jr.FileSetId, sdt);
       }
 
-      jcr->db->AccurateGetJobids(jcr, &jcr->jr, &jobids_ctx);
+      jcr->db->AccurateGetJobids(jcr, &jcr->impl_->jr, &jobids_ctx);
       Dmsg1(10, "consolidate candidates:  %s.\n", jobids_ctx.list);
 
       /**
@@ -201,12 +203,12 @@ bool DoConsolidate(JobControlRecord* jcr)
       Dmsg2(10, "Incrementals found/required. (%d/%d).\n", incrementals_total,
             job->AlwaysIncrementalKeepNumber);
       if ((max_incrementals_to_consolidate + 1) > 1) {
-        jcr->jr.limit = max_incrementals_to_consolidate + 1;
+        jcr->impl_->jr.limit = max_incrementals_to_consolidate + 1;
         Dmsg3(10, "total: %d, to_consolidate: %d, limit: %d.\n",
               incrementals_total, max_incrementals_to_consolidate,
-              jcr->jr.limit);
+              jcr->impl_->jr.limit);
         jobids_ctx.reset();
-        jcr->db->AccurateGetJobids(jcr, &jcr->jr, &jobids_ctx);
+        jcr->db->AccurateGetJobids(jcr, &jcr->impl_->jr, &jobids_ctx);
         incrementals_to_consolidate = jobids_ctx.count - 1;
         Dmsg2(10, "%d consolidate ids after limit: %s.\n", jobids_ctx.count,
               jobids_ctx.list);
@@ -255,18 +257,18 @@ bool DoConsolidate(JobControlRecord* jcr)
         /**
          * Get db record of oldest jobid and check its age
          */
-        jcr->previous_jr = JobDbRecord{};
-        jcr->previous_jr.JobId = str_to_int64(jobids);
+        jcr->impl_->previous_jr = JobDbRecord{};
+        jcr->impl_->previous_jr.JobId = str_to_int64(jobids);
         Dmsg1(10, "Previous JobId=%s\n", jobids);
 
-        if (!jcr->db->GetJobRecord(jcr, &jcr->previous_jr)) {
+        if (!jcr->db->GetJobRecord(jcr, &jcr->impl_->previous_jr)) {
           Jmsg(jcr, M_FATAL, 0,
                _("Error getting Job record for first Job: ERR=%s"),
                jcr->db->strerror());
           goto bail_out;
         }
 
-        starttime = jcr->previous_jr.JobTDate;
+        starttime = jcr->impl_->previous_jr.JobTDate;
         oldest_allowed_starttime = now - job->AlwaysIncrementalMaxFullAge;
         bstrftimes(sdt_allowed, sizeof(sdt_allowed), oldest_allowed_starttime);
         bstrftimes(sdt_starttime, sizeof(sdt_starttime), starttime);
@@ -308,8 +310,10 @@ bool DoConsolidate(JobControlRecord* jcr)
       /**
        * Set the virtualfull jobids to be consolidated
        */
-      if (!jcr->vf_jobids) { jcr->vf_jobids = GetPoolMemory(PM_MESSAGE); }
-      PmStrcpy(jcr->vf_jobids, p);
+      if (!jcr->impl_->vf_jobids) {
+        jcr->impl_->vf_jobids = GetPoolMemory(PM_MESSAGE);
+      }
+      PmStrcpy(jcr->impl_->vf_jobids, p);
 
       Jmsg(jcr, M_INFO, 0, _("%s: Start new consolidation\n"),
            job->resource_name_);
@@ -321,7 +325,7 @@ bail_out:
   /**
    * Restore original job back to jcr.
    */
-  jcr->res.job = tmpjob;
+  jcr->impl_->res.job = tmpjob;
   jcr->setJobStatus(JS_Terminated);
   ConsolidateCleanup(jcr, JS_Terminated);
 
@@ -344,7 +348,7 @@ void ConsolidateCleanup(JobControlRecord* jcr, int TermCode)
 
   UpdateJobEnd(jcr, TermCode);
 
-  if (!jcr->db->GetJobRecord(jcr, &jcr->jr)) {
+  if (!jcr->db->GetJobRecord(jcr, &jcr->impl_->jr)) {
     Jmsg(jcr, M_WARNING, 0,
          _("Error getting Job record for Job report: ERR=%s"),
          jcr->db->strerror());
@@ -369,9 +373,9 @@ void ConsolidateCleanup(JobControlRecord* jcr, int TermCode)
       sprintf(term_code, _("Inappropriate term code: %c\n"), jcr->JobStatus);
       break;
   }
-  bstrftimes(schedt, sizeof(schedt), jcr->jr.SchedTime);
-  bstrftimes(sdt, sizeof(sdt), jcr->jr.StartTime);
-  bstrftimes(edt, sizeof(edt), jcr->jr.EndTime);
+  bstrftimes(schedt, sizeof(schedt), jcr->impl_->jr.SchedTime);
+  bstrftimes(sdt, sizeof(sdt), jcr->impl_->jr.StartTime);
+  bstrftimes(edt, sizeof(edt), jcr->impl_->jr.EndTime);
 
   Jmsg(jcr, msg_type, 0,
        _("BAREOS " VERSION " (" LSMDATE "): %s\n"
@@ -382,8 +386,8 @@ void ConsolidateCleanup(JobControlRecord* jcr, int TermCode)
          "  End time:               %s\n"
          "  Bareos binary info:     %s\n"
          "  Termination:            %s\n\n"),
-       edt, jcr->jr.JobId, jcr->jr.Job, schedt, sdt, edt, BAREOS_JOBLOG_MESSAGE,
-       TermMsg);
+       edt, jcr->impl_->jr.JobId, jcr->impl_->jr.Job, schedt, sdt, edt,
+       BAREOS_JOBLOG_MESSAGE, TermMsg);
 
   Dmsg0(debuglevel, "Leave ConsolidateCleanup()\n");
 }

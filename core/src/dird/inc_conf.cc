@@ -32,6 +32,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
+#include "dird/jcr_private.h"
 #include "findlib/match.h"
 #include "lib/parse_conf.h"
 
@@ -308,9 +309,9 @@ void FindUsedCompressalgos(PoolMem* compressalgos, JobControlRecord* jcr)
   FilesetResource* fs;
   struct s_fs_opt* fs_opt;
 
-  if (!jcr->res.job || !jcr->res.job->fileset) { return; }
+  if (!jcr->impl_->res.job || !jcr->impl_->res.job->fileset) { return; }
 
-  fs = jcr->res.job->fileset;
+  fs = jcr->impl_->res.job->fileset;
   for (std::size_t i = 0; i < fs->include_items.size(); i++) {
     inc = fs->include_items[i];
 

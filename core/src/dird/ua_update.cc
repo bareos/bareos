@@ -31,6 +31,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/jcr_private.h"
 #include "dird/next_vol.h"
 #include "dird/sd_cmds.h"
 #include "dird/storage.h"
@@ -1040,7 +1041,7 @@ static void UpdateSlots(UaContext* ua)
     have_enabled = false;
   }
 
-  max_slots = GetNumSlots(ua, ua->jcr->res.write_storage);
+  max_slots = GetNumSlots(ua, ua->jcr->impl_->res.write_storage);
   Dmsg1(100, "max_slots=%d\n", max_slots);
   if (max_slots <= 0) {
     ua->WarningMsg(_("No slots in changer to scan.\n"));

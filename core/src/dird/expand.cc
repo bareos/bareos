@@ -32,6 +32,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
+#include "dird/jcr_private.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
 #include "lib/output_formatter.h"
@@ -93,7 +94,7 @@ static int job_item(JobControlRecord* jcr,
 
   switch (code) {
     case 1: /* Job */
-      str = jcr->res.job->resource_name_;
+      str = jcr->impl_->res.job->resource_name_;
       break;
     case 2: /* Director's name */
       str = my_name;
@@ -109,31 +110,31 @@ static int job_item(JobControlRecord* jcr,
       str = buf;
       break;
     case 6: /* Client */
-      str = jcr->res.client->resource_name_;
+      str = jcr->impl_->res.client->resource_name_;
       if (!str) { str = " "; }
       break;
     case 7: /* NumVols */
-      Bsnprintf(buf, sizeof(buf), "%d", jcr->NumVols);
+      Bsnprintf(buf, sizeof(buf), "%d", jcr->impl_->NumVols);
       str = buf;
       break;
     case 8: /* Pool */
-      str = jcr->res.pool->resource_name_;
+      str = jcr->impl_->res.pool->resource_name_;
       break;
     case 9: /* Storage */
-      if (jcr->res.write_storage) {
-        str = jcr->res.write_storage->resource_name_;
+      if (jcr->impl_->res.write_storage) {
+        str = jcr->impl_->res.write_storage->resource_name_;
       } else {
-        str = jcr->res.read_storage->resource_name_;
+        str = jcr->impl_->res.read_storage->resource_name_;
       }
       break;
     case 10: /* Catalog */
-      str = jcr->res.catalog->resource_name_;
+      str = jcr->impl_->res.catalog->resource_name_;
       break;
     case 11: /* MediaType */
-      if (jcr->res.write_storage) {
-        str = jcr->res.write_storage->media_type;
+      if (jcr->impl_->res.write_storage) {
+        str = jcr->impl_->res.write_storage->media_type;
       } else {
-        str = jcr->res.read_storage->media_type;
+        str = jcr->impl_->res.read_storage->media_type;
       }
       break;
     case 12: /* JobName */

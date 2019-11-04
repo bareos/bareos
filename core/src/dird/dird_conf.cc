@@ -51,6 +51,7 @@
 #include "dird.h"
 #include "dird/inc_conf.h"
 #include "dird/dird_globals.h"
+#include "dird/jcr_private.h"
 #include "lib/berrno.h"
 #include "lib/breg.h"
 #include "lib/tls_conf.h"
@@ -3301,23 +3302,25 @@ extern "C" char* job_code_callback_director(JobControlRecord* jcr,
 
   switch (param[0]) {
     case 'f':
-      if (jcr->res.fileset) { return jcr->res.fileset->resource_name_; }
+      if (jcr->impl_->res.fileset) {
+        return jcr->impl_->res.fileset->resource_name_;
+      }
       break;
     case 'h':
-      if (jcr->res.client) { return jcr->res.client->address; }
+      if (jcr->impl_->res.client) { return jcr->impl_->res.client->address; }
       break;
     case 'p':
-      if (jcr->res.pool) { return jcr->res.pool->resource_name_; }
+      if (jcr->impl_->res.pool) { return jcr->impl_->res.pool->resource_name_; }
       break;
     case 'w':
-      if (jcr->res.write_storage) {
-        return jcr->res.write_storage->resource_name_;
+      if (jcr->impl_->res.write_storage) {
+        return jcr->impl_->res.write_storage->resource_name_;
       }
       break;
     case 'x':
-      return jcr->spool_data ? yes : no;
+      return jcr->impl_->spool_data ? yes : no;
     case 'C':
-      return jcr->cloned ? yes : no;
+      return jcr->impl_->cloned ? yes : no;
     case 'D':
       return my_name;
     case 'V':
@@ -3326,7 +3329,7 @@ extern "C" char* job_code_callback_director(JobControlRecord* jcr,
          * If this is a migration/copy we need the volume name from the
          * mig_jcr.
          */
-        if (jcr->mig_jcr) { jcr = jcr->mig_jcr; }
+        if (jcr->impl_->mig_jcr) { jcr = jcr->impl_->mig_jcr; }
 
         if (jcr->VolumeName) {
           return jcr->VolumeName;

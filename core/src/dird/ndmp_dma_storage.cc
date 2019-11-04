@@ -30,6 +30,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
+#include "dird/jcr_private.h"
 #include "dird/sd_cmds.h"
 #include "dird/storage.h"
 #include "dird/ndmp_slot2elemaddr.h"
@@ -71,10 +72,10 @@ int get_tape_info_cb(struct ndm_session* sess,
   }
 
   if (jcr->is_JobType(JT_BACKUP)) {
-    store = jcr->res.write_storage;
+    store = jcr->impl_->res.write_storage;
 
   } else if (jcr->is_JobType(JT_RESTORE)) {
-    store = jcr->res.read_storage;
+    store = jcr->impl_->res.read_storage;
 
   } else {
     return -1;
@@ -187,7 +188,7 @@ void DoNdmpNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
 {
   struct ndm_job_param ndmp_job;
 
-  ua->jcr->res.write_storage = store;
+  ua->jcr->impl_->res.write_storage = store;
 
   if (!NdmpBuildStorageJob(ua->jcr, store, true, /* Query Tape Agent */
                            true,                 /* Query Robot Agent */
@@ -1140,7 +1141,7 @@ bool ndmp_native_setup_robot_and_tape_for_native_backup_job(
    * unload tape if tape is in drive
    */
   ndmp_job.auto_remedy = 1;
-  ndmp_job.record_size = jcr->res.client->ndmp_blocksize;
+  ndmp_job.record_size = jcr->impl_->res.client->ndmp_blocksize;
 
   Jmsg(jcr, M_INFO, 0, _("Using Data  host %s\n"), ndmp_job.data_agent.host);
   Jmsg(jcr, M_INFO, 0, _("Using Tape  host:device:address  %s:%s:@%d\n"),

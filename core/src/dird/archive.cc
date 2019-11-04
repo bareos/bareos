@@ -32,6 +32,7 @@
 #include "dird.h"
 #include "dird/archive.h"
 #include "dird/job.h"
+#include "dird/jcr_private.h"
 #include "dird/storage.h"
 
 namespace directordaemon {
@@ -52,9 +53,9 @@ bool DoArchiveInit(JobControlRecord* jcr)
  */
 bool DoArchive(JobControlRecord* jcr)
 {
-  jcr->jr.JobId = jcr->JobId;
+  jcr->impl_->jr.JobId = jcr->JobId;
 
-  jcr->fname = (char*)GetPoolMemory(PM_FNAME);
+  jcr->impl_->fname = (char*)GetPoolMemory(PM_FNAME);
 
   /*
    * Print Job Start message
@@ -82,7 +83,7 @@ void ArchiveCleanup(JobControlRecord* jcr, int TermCode)
 
   UpdateJobEnd(jcr, TermCode);
 
-  if (!jcr->db->GetJobRecord(jcr, &jcr->jr)) {
+  if (!jcr->db->GetJobRecord(jcr, &jcr->impl_->jr)) {
     Jmsg(jcr, M_WARNING, 0,
          _("Error getting Job record for Job report: ERR=%s"),
          jcr->db->strerror());
@@ -108,9 +109,9 @@ void ArchiveCleanup(JobControlRecord* jcr, int TermCode)
       break;
   }
 
-  bstrftimes(schedt, sizeof(schedt), jcr->jr.SchedTime);
-  bstrftimes(sdt, sizeof(sdt), jcr->jr.StartTime);
-  bstrftimes(edt, sizeof(edt), jcr->jr.EndTime);
+  bstrftimes(schedt, sizeof(schedt), jcr->impl_->jr.SchedTime);
+  bstrftimes(sdt, sizeof(sdt), jcr->impl_->jr.StartTime);
+  bstrftimes(edt, sizeof(edt), jcr->impl_->jr.EndTime);
 
   Jmsg(jcr, msg_type, 0,
        _("BAREOS " VERSION " (" LSMDATE "): %s\n"
@@ -121,8 +122,8 @@ void ArchiveCleanup(JobControlRecord* jcr, int TermCode)
          "  End time:               %s\n"
          "  Bareos binary info:     %s\n"
          "  Termination:            %s\n\n"),
-       edt, jcr->jr.JobId, jcr->jr.Job, schedt, sdt, edt, BAREOS_JOBLOG_MESSAGE,
-       TermMsg);
+       edt, jcr->impl_->jr.JobId, jcr->impl_->jr.Job, schedt, sdt, edt,
+       BAREOS_JOBLOG_MESSAGE, TermMsg);
 
   Dmsg0(debuglevel, "Leave ArchiveCleanup()\n");
 }

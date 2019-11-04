@@ -36,6 +36,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
+#include "dird/jcr_private.h"
 #include "dird/ua_db.h"
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
@@ -1228,7 +1229,7 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
    * For NDMP restores its used in the DMA to know what to restore.
    * The tree is freed by the DMA when its done.
    */
-  ua->jcr->restore_tree_root = tree.root;
+  ua->jcr->impl_->restore_tree_root = tree.root;
 
   return OK;
 }

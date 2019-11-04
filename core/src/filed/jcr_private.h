@@ -42,7 +42,6 @@ struct CryptoContext {
   POOLMEM* pki_session_encoded = nullptr; /**< Cached DER-encoded copy of pki_session */
   int32_t pki_session_encoded_size = 0; /**< Size of DER-encoded pki_session */
 };
-/* clang-format on */
 
 struct JobControlRecordPrivate {
   uint32_t num_files_examined = 0; /**< Files examined this job */
@@ -76,13 +75,13 @@ struct JobControlRecordPrivate {
   bool enable_vss = false;                          /**< VSS used by FD */
   bool got_metadata = false;  /**< Set when found job_metadata */
   bool multi_restore = false; /**< Dir can do multiple storage restore */
-  filedaemon::BareosAccurateFilelist* file_list =
-      nullptr;            /**< Previous file list (accurate mode) */
+  filedaemon::BareosAccurateFilelist* file_list = nullptr; /**< Previous file list (accurate mode) */
   uint64_t base_size = 0; /**< Compute space saved with base job */
   filedaemon::save_pkt* plugin_sp = nullptr; /**< Plugin save packet */
 #ifdef HAVE_WIN32
   VSSClient* pVSSClient = nullptr; /**< VSS Client Instance */
 #endif
 };
+/* clang-format on */
 
 #endif  // BAREOS_SRC_FILED_JCR_H_
