@@ -32,6 +32,7 @@
 #include "dird/dird_globals.h"
 #include "dird/storage.h"
 #include "lib/edit.h"
+#include "lib/tree.h"
 
 #if HAVE_NDMP
 

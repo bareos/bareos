@@ -29,6 +29,8 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "lib/rblist.h"
+#include "lib/htable.h"
 
 #if HAVE_NDMP
 #include "ndmp/ndmagents.h"

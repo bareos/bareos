@@ -46,6 +46,7 @@
 #include "lib/edit.h"
 #include "lib/berrno.h"
 #include "lib/parse_conf.h"
+#include "lib/tree.h"
 #include "include/make_unique.h"
 
 namespace directordaemon {

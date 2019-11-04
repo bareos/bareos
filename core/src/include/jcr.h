@@ -44,10 +44,10 @@
 #ifdef DIRECTOR_DAEMON
 #include "cats/cats.h"
 #include "dird/client_connection_handshake_mode.h"
+typedef struct s_tree_root TREE_ROOT;
 #endif
 
 #include "lib/alist.h"
-#include "lib/tree.h"
 #include "lib/volume_session_info.h"
 
 class dlist;

@@ -36,6 +36,7 @@
 #include "dird/storage.h"
 
 #include "lib/parse_bsr.h"
+#include "lib/tree.h"
 #include "lib/volume_session_info.h"
 
 #if HAVE_NDMP
