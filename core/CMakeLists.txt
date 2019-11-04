@@ -213,7 +213,7 @@ endif()
 
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-   include_directories(
+   include_directories(SYSTEM
       ${PROJECT_SOURCE_DIR}/src/win32/include
       ${PROJECT_SOURCE_DIR}/src/win32/compat/include
       )
@@ -333,9 +333,9 @@ INCLUDE(BareosDetermineHaveLowLevelScsiInterface)
 
 INCLUDE(acltypes)
 
-include_directories(${PYTHON_INCLUDE_DIRS})
+include_directories(SYSTEM ${PYTHON_INCLUDE_DIRS})
 
-include_directories(${PYTHON_INCLUDE_PATH})
+include_directories(SYSTEM ${PYTHON_INCLUDE_PATH})
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
 
