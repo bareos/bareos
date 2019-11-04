@@ -487,8 +487,8 @@ int VariableExpansion(JobControlRecord* jcr, char* inp, POOLMEM*& exp)
   /*
    * Define callback
    */
-  if ((status = var_config(var_ctx, VAR_CONFIG_CB_VALUE, lookup_var,
-                           (void*)jcr)) != VAR_OK) {
+  if ((status = var_config(var_ctx, var_config_t::VAR_CONFIG_CB_VALUE,
+                           lookup_var, (void*)jcr)) != VAR_OK) {
     Jmsg(jcr, M_ERROR, 0, _("Cannot set var callback: ERR=%s\n"),
          var_strerror(var_ctx, status));
     goto bail_out;
@@ -497,8 +497,8 @@ int VariableExpansion(JobControlRecord* jcr, char* inp, POOLMEM*& exp)
   /*
    * Define special operations
    */
-  if ((status = var_config(var_ctx, VAR_CONFIG_CB_OPERATION, operate_var,
-                           (void*)jcr)) != VAR_OK) {
+  if ((status = var_config(var_ctx, var_config_t::VAR_CONFIG_CB_OPERATION,
+                           operate_var, (void*)jcr)) != VAR_OK) {
     Jmsg(jcr, M_ERROR, 0, _("Cannot set var operate: ERR=%s\n"),
          var_strerror(var_ctx, status));
     goto bail_out;

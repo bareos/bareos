@@ -2249,7 +2249,7 @@ var_rc_t var_create(var_t** pvar)
   if ((var = (var_t*)malloc(sizeof(var_t))) == NULL)
     return VAR_RC(VAR_ERR_OUT_OF_MEMORY);
   memset(var, 0, sizeof(var_t));
-  var_config(var, VAR_CONFIG_SYNTAX, &var_syntax_default);
+  var_config(var, var_config_t::VAR_CONFIG_SYNTAX, &var_syntax_default);
   *pvar = var;
   return VAR_OK;
 }
@@ -2272,7 +2272,7 @@ var_rc_t var_config(var_t* var, var_config_t mode, ...)
 
   va_start(ap, mode);
   switch (mode) {
-    case VAR_CONFIG_SYNTAX: {
+    case var_config_t::VAR_CONFIG_SYNTAX: {
       var_syntax_t* s;
       s = (var_syntax_t*)va_arg(ap, void*);
       if (s == NULL) {
@@ -2300,7 +2300,7 @@ var_rc_t var_config(var_t* var, var_config_t mode, ...)
       }
       break;
     }
-    case VAR_CONFIG_CB_VALUE: {
+    case var_config_t::VAR_CONFIG_CB_VALUE: {
       var_cb_value_t fct;
       void* ctx;
 
@@ -2310,7 +2310,7 @@ var_rc_t var_config(var_t* var, var_config_t mode, ...)
       var->cb_value_ctx = ctx;
       break;
     }
-    case VAR_CONFIG_CB_OPERATION: {
+    case var_config_t::VAR_CONFIG_CB_OPERATION: {
       var_cb_operation_t fct;
       void* ctx;
 
