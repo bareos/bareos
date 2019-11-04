@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,7 +30,6 @@ ConfigurationParser* my_config = nullptr;
 StorageResource* me;
 char* configfile;
 
-void* start_heap = nullptr;
 bool init_done = false;
 uint32_t vol_session_time;
 

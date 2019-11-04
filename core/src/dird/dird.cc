@@ -233,7 +233,6 @@ int main(int argc, char* argv[])
   char* uid = NULL;
   char* gid = NULL;
 
-  start_heap = sbrk(0);
   setlocale(LC_ALL, "");
   bindtextdomain("bareos", LOCALEDIR);
   textdomain("bareos");

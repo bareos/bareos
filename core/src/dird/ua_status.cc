@@ -53,8 +53,6 @@
 
 namespace directordaemon {
 
-extern void* start_heap;
-
 static void ListScheduledJobs(UaContext* ua);
 static void ListRunningJobs(UaContext* ua);
 static void ListTerminatedJobs(UaContext* ua);

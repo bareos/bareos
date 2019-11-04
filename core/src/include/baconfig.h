@@ -100,8 +100,6 @@ void InitWinAPIWrapper();
 
 #define OSDependentInit() InitWinAPIWrapper()
 
-#define sbrk(x) 0
-
 #define ClearThreadId(x) memset(&(x), 0, sizeof(x))
 
 #else /* HAVE_WIN32 */
