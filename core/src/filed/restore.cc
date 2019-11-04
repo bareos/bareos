@@ -31,6 +31,7 @@
 #include "include/bareos.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
+#include "filed/jcr_private.h"
 #include "filed/compression.h"
 #include "filed/crypto.h"
 #include "filed/restore.h"
@@ -135,7 +136,8 @@ static int BcloseChksize(JobControlRecord* jcr,
     Qmsg3(jcr, M_WARNING, 0,
           _("Size of data or stream of %s not correct. Original %s, restored "
             "%s.\n"),
-          jcr->last_fname, edit_uint64(osize, ec1), edit_uint64(fsize, ec2));
+          jcr->impl_->last_fname, edit_uint64(osize, ec1),
+          edit_uint64(fsize, ec2));
     return -1;
   }
   return 0;
@@ -153,16 +155,16 @@ static inline bool RestoreFinderinfo(JobControlRecord* jcr,
   attrList.commonattr = ATTR_CMN_FNDRINFO;
 
   Dmsg0(130, "Restoring Finder Info\n");
-  SetBit(FO_HFSPLUS, jcr->ff->flags);
+  SetBit(FO_HFSPLUS, jcr->impl_->ff->flags);
   if (buflen != 32) {
     Jmsg(jcr, M_WARNING, 0,
          _("Invalid length of Finder Info (got %d, not 32)\n"), buflen);
     return false;
   }
 
-  if (setattrlist(jcr->last_fname, &attrList, buf, buflen, 0) != 0) {
+  if (setattrlist(jcr->impl_->last_fname, &attrList, buf, buflen, 0) != 0) {
     Jmsg(jcr, M_WARNING, 0, _("Could not set Finder Info on %s\n"),
-         jcr->last_fname);
+         jcr->impl_->last_fname);
     return false;
   }
 
@@ -221,14 +223,14 @@ static inline bool do_reStoreAcl(JobControlRecord* jcr,
 {
   bacl_exit_code retval;
 
-  jcr->acl_data->last_fname = jcr->last_fname;
+  jcr->impl_->acl_data->last_fname = jcr->impl_->last_fname;
   switch (stream) {
     case STREAM_ACL_PLUGIN:
-      retval = plugin_parse_acl_streams(jcr, jcr->acl_data, stream, content,
-                                        content_length);
+      retval = plugin_parse_acl_streams(jcr, jcr->impl_->acl_data, stream,
+                                        content, content_length);
       break;
     default:
-      retval = parse_acl_streams(jcr, jcr->acl_data, stream, content,
+      retval = parse_acl_streams(jcr, jcr->impl_->acl_data, stream, content,
                                  content_length);
       break;
   }
@@ -242,10 +244,11 @@ static inline bool do_reStoreAcl(JobControlRecord* jcr,
        * ACL_REPORT_ERR_MAX_PER_JOB print the error message set by the lower
        * level routine in jcr->errmsg.
        */
-      if (jcr->acl_data->u.parse->nr_errors < ACL_REPORT_ERR_MAX_PER_JOB) {
+      if (jcr->impl_->acl_data->u.parse->nr_errors <
+          ACL_REPORT_ERR_MAX_PER_JOB) {
         Jmsg(jcr, M_WARNING, 0, "%s", jcr->errmsg);
       }
-      jcr->acl_data->u.parse->nr_errors++;
+      jcr->impl_->acl_data->u.parse->nr_errors++;
       break;
     case bacl_exit_ok:
       break;
@@ -265,14 +268,14 @@ static inline bool do_restore_xattr(JobControlRecord* jcr,
 {
   BxattrExitCode retval;
 
-  jcr->xattr_data->last_fname = jcr->last_fname;
+  jcr->impl_->xattr_data->last_fname = jcr->impl_->last_fname;
   switch (stream) {
     case STREAM_XATTR_PLUGIN:
-      retval = PluginParseXattrStreams(jcr, jcr->xattr_data, stream, content,
-                                       content_length);
+      retval = PluginParseXattrStreams(jcr, jcr->impl_->xattr_data, stream,
+                                       content, content_length);
       break;
     default:
-      retval = ParseXattrStreams(jcr, jcr->xattr_data, stream, content,
+      retval = ParseXattrStreams(jcr, jcr->impl_->xattr_data, stream, content,
                                  content_length);
       break;
   }
@@ -285,7 +288,7 @@ static inline bool do_restore_xattr(JobControlRecord* jcr,
       break;
     case BxattrExitCode::kError:
       Jmsg(jcr, M_ERROR, 0, "%s", jcr->errmsg);
-      jcr->xattr_data->u.parse->nr_errors++;
+      jcr->impl_->xattr_data->u.parse->nr_errors++;
       break;
     case BxattrExitCode::kSuccess:
       break;
@@ -487,18 +490,18 @@ void DoRestore(JobControlRecord* jcr)
   binit(&rctx.forkbfd);
   attr = rctx.attr = new_attr(jcr);
   if (have_acl) {
-    jcr->acl_data = (acl_data_t*)malloc(sizeof(acl_data_t));
-    memset(jcr->acl_data, 0, sizeof(acl_data_t));
-    jcr->acl_data->u.parse =
+    jcr->impl_->acl_data = (acl_data_t*)malloc(sizeof(acl_data_t));
+    memset(jcr->impl_->acl_data, 0, sizeof(acl_data_t));
+    jcr->impl_->acl_data->u.parse =
         (acl_parse_data_t*)malloc(sizeof(acl_parse_data_t));
-    memset(jcr->acl_data->u.parse, 0, sizeof(acl_parse_data_t));
+    memset(jcr->impl_->acl_data->u.parse, 0, sizeof(acl_parse_data_t));
   }
   if (have_xattr) {
-    jcr->xattr_data = (xattr_data_t*)malloc(sizeof(xattr_data_t));
-    memset(jcr->xattr_data, 0, sizeof(xattr_data_t));
-    jcr->xattr_data->u.parse =
+    jcr->impl_->xattr_data = (xattr_data_t*)malloc(sizeof(xattr_data_t));
+    memset(jcr->impl_->xattr_data, 0, sizeof(xattr_data_t));
+    jcr->impl_->xattr_data->u.parse =
         (xattr_parse_data_t*)malloc(sizeof(xattr_parse_data_t));
-    memset(jcr->xattr_data->u.parse, 0, sizeof(xattr_parse_data_t));
+    memset(jcr->impl_->xattr_data->u.parse, 0, sizeof(xattr_parse_data_t));
   }
 
   while (BgetMsg(sd) >= 0 && !JobCanceled(jcr)) {
@@ -607,20 +610,20 @@ void DoRestore(JobControlRecord* jcr)
          * Try to actually create the file, which returns a status telling
          * us if we need to extract or not.
          */
-        jcr->num_files_examined++;
+        jcr->impl_->num_files_examined++;
         rctx.extract = false;
         status = CF_CORE; /* By default, let Bareos's core handle it */
 
         if (jcr->IsPlugin()) {
-          status = PluginCreateFile(jcr, attr, &rctx.bfd, jcr->replace);
+          status = PluginCreateFile(jcr, attr, &rctx.bfd, jcr->impl_->replace);
         }
 
         if (status == CF_CORE) {
-          status = CreateFile(jcr, attr, &rctx.bfd, jcr->replace);
+          status = CreateFile(jcr, attr, &rctx.bfd, jcr->impl_->replace);
         }
         jcr->lock();
-        PmStrcpy(jcr->last_fname, attr->ofname);
-        jcr->last_type = attr->type;
+        PmStrcpy(jcr->impl_->last_fname, attr->ofname);
+        jcr->impl_->last_type = attr->type;
         jcr->unlock();
         Dmsg2(130, "Outfile=%s CreateFile status=%d\n", attr->ofname, status);
         switch (status) {
@@ -695,7 +698,7 @@ void DoRestore(JobControlRecord* jcr)
           /*
            * Do we have any keys at all?
            */
-          if (!jcr->crypto.pki_recipients) {
+          if (!jcr->impl_->crypto.pki_recipients) {
             Jmsg(jcr, M_ERROR, 0,
                  _("No private decryption keys have been defined to decrypt "
                    "encrypted backup data.\n"));
@@ -704,9 +707,11 @@ void DoRestore(JobControlRecord* jcr)
             break;
           }
 
-          if (jcr->crypto.digest) { CryptoDigestFree(jcr->crypto.digest); }
-          jcr->crypto.digest = crypto_digest_new(jcr, signing_algorithm);
-          if (!jcr->crypto.digest) {
+          if (jcr->impl_->crypto.digest) {
+            CryptoDigestFree(jcr->impl_->crypto.digest);
+          }
+          jcr->impl_->crypto.digest = crypto_digest_new(jcr, signing_algorithm);
+          if (!jcr->impl_->crypto.digest) {
             Jmsg0(jcr, M_FATAL, 0, _("Could not create digest.\n"));
             rctx.extract = false;
             bclose(&rctx.bfd);
@@ -716,9 +721,9 @@ void DoRestore(JobControlRecord* jcr)
           /*
            * Decode and save session keys.
            */
-          cryptoerr = CryptoSessionDecode((uint8_t*)sd->msg,
-                                          (uint32_t)sd->message_length,
-                                          jcr->crypto.pki_recipients, &rctx.cs);
+          cryptoerr = CryptoSessionDecode(
+              (uint8_t*)sd->msg, (uint32_t)sd->message_length,
+              jcr->impl_->crypto.pki_recipients, &rctx.cs);
           switch (cryptoerr) {
             case CRYPTO_ERROR_NONE:
               /*
@@ -873,7 +878,7 @@ void DoRestore(JobControlRecord* jcr)
       case STREAM_MACOS_FORK_DATA:
         if (have_darwin_os) {
           ClearAllBits(FO_MAX, rctx.fork_flags);
-          SetBit(FO_HFSPLUS, jcr->ff->flags);
+          SetBit(FO_HFSPLUS, jcr->impl_->ff->flags);
 
           if (rctx.stream == STREAM_ENCRYPTED_MACOS_FORK_DATA) {
             SetBit(FO_ENCRYPT, rctx.fork_flags);
@@ -888,10 +893,11 @@ void DoRestore(JobControlRecord* jcr)
 
           if (rctx.extract) {
             if (rctx.prev_stream != rctx.stream) {
-              if (BopenRsrc(&rctx.forkbfd, jcr->last_fname,
+              if (BopenRsrc(&rctx.forkbfd, jcr->impl_->last_fname,
                             O_WRONLY | O_TRUNC | O_BINARY, 0) < 0) {
                 Jmsg(jcr, M_WARNING, 0,
-                     _("Cannot open resource fork for %s.\n"), jcr->last_fname);
+                     _("Cannot open resource fork for %s.\n"),
+                     jcr->impl_->last_fname);
                 rctx.extract = false;
                 continue;
               }
@@ -951,8 +957,8 @@ void DoRestore(JobControlRecord* jcr)
          * b)     and it is not a directory (they are never "extracted")
          * c) or the file name is empty
          */
-        if ((!rctx.extract && jcr->last_type != FT_DIREND) ||
-            (*jcr->last_fname == 0)) {
+        if ((!rctx.extract && jcr->impl_->last_type != FT_DIREND) ||
+            (*jcr->impl_->last_fname == 0)) {
           break;
         }
         if (have_acl) {
@@ -960,7 +966,7 @@ void DoRestore(JobControlRecord* jcr)
            * For anything that is not a directory we delay
            * the restore of acls till a later stage.
            */
-          if (jcr->last_type != FT_DIREND) {
+          if (jcr->impl_->last_type != FT_DIREND) {
             PushDelayedDataStream(rctx, sd);
           } else {
             if (!do_reStoreAcl(jcr, rctx.stream, sd->msg, sd->message_length)) {
@@ -989,8 +995,8 @@ void DoRestore(JobControlRecord* jcr)
          * b)     and it is not a directory (they are never "extracted")
          * c) or the file name is empty
          */
-        if ((!rctx.extract && jcr->last_type != FT_DIREND) ||
-            (*jcr->last_fname == 0)) {
+        if ((!rctx.extract && jcr->impl_->last_type != FT_DIREND) ||
+            (*jcr->impl_->last_fname == 0)) {
           break;
         }
         if (have_xattr) {
@@ -998,7 +1004,7 @@ void DoRestore(JobControlRecord* jcr)
            * For anything that is not a directory we delay
            * the restore of xattr till a later stage.
            */
-          if (jcr->last_type != FT_DIREND) {
+          if (jcr->impl_->last_type != FT_DIREND) {
             PushDelayedDataStream(rctx, sd);
           } else {
             if (!do_restore_xattr(jcr, rctx.stream, sd->msg,
@@ -1018,8 +1024,8 @@ void DoRestore(JobControlRecord* jcr)
          * b)     and it is not a directory (they are never "extracted")
          * c) or the file name is empty
          */
-        if ((!rctx.extract && jcr->last_type != FT_DIREND) ||
-            (*jcr->last_fname == 0)) {
+        if ((!rctx.extract && jcr->impl_->last_type != FT_DIREND) ||
+            (*jcr->impl_->last_fname == 0)) {
           break;
         }
         if (have_xattr) {
@@ -1050,7 +1056,7 @@ void DoRestore(JobControlRecord* jcr)
                                  (uint32_t)sd->message_length)) == NULL) {
           Jmsg1(jcr, M_ERROR, 0,
                 _("Failed to decode message signature for %s\n"),
-                jcr->last_fname);
+                jcr->impl_->last_fname);
         }
         break;
 
@@ -1115,15 +1121,15 @@ ok_out:
    */
   Dmsg2(10, "End Do Restore. Files=%d Bytes=%s\n", jcr->JobFiles,
         edit_uint64(jcr->JobBytes, ec1));
-  if (have_acl && jcr->acl_data->u.parse->nr_errors > 0) {
+  if (have_acl && jcr->impl_->acl_data->u.parse->nr_errors > 0) {
     Jmsg(jcr, M_WARNING, 0,
          _("Encountered %ld acl errors while doing restore\n"),
-         jcr->acl_data->u.parse->nr_errors);
+         jcr->impl_->acl_data->u.parse->nr_errors);
   }
-  if (have_xattr && jcr->xattr_data->u.parse->nr_errors > 0) {
+  if (have_xattr && jcr->impl_->xattr_data->u.parse->nr_errors > 0) {
     Jmsg(jcr, M_WARNING, 0,
          _("Encountered %ld xattr errors while doing restore\n"),
-         jcr->xattr_data->u.parse->nr_errors);
+         jcr->impl_->xattr_data->u.parse->nr_errors);
   }
   if (non_support_data > 1 || non_support_attr > 1) {
     Jmsg(jcr, M_WARNING, 0,
@@ -1157,9 +1163,9 @@ ok_out:
    */
   FreeSignature(rctx);
   FreeSession(rctx);
-  if (jcr->crypto.digest) {
-    CryptoDigestFree(jcr->crypto.digest);
-    jcr->crypto.digest = NULL;
+  if (jcr->impl_->crypto.digest) {
+    CryptoDigestFree(jcr->impl_->crypto.digest);
+    jcr->impl_->crypto.digest = NULL;
   }
 
   /*
@@ -1187,16 +1193,16 @@ ok_out:
     rctx.fork_cipher_ctx.buf = NULL;
   }
 
-  if (have_acl && jcr->acl_data) {
-    free(jcr->acl_data->u.parse);
-    free(jcr->acl_data);
-    jcr->acl_data = NULL;
+  if (have_acl && jcr->impl_->acl_data) {
+    free(jcr->impl_->acl_data->u.parse);
+    free(jcr->impl_->acl_data);
+    jcr->impl_->acl_data = NULL;
   }
 
-  if (have_xattr && jcr->xattr_data) {
-    free(jcr->xattr_data->u.parse);
-    free(jcr->xattr_data);
-    jcr->xattr_data = NULL;
+  if (have_xattr && jcr->impl_->xattr_data) {
+    free(jcr->impl_->xattr_data->u.parse);
+    free(jcr->impl_->xattr_data);
+    jcr->impl_->xattr_data = NULL;
   }
 
   /*
@@ -1217,7 +1223,7 @@ ok_out:
 int DoFileDigest(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
 {
   Dmsg1(50, "DoFileDigest jcr=%p\n", jcr);
-  return (DigestFile(jcr, ff_pkt, jcr->crypto.digest));
+  return (DigestFile(jcr, ff_pkt, jcr->impl_->crypto.digest));
 }
 
 bool SparseData(JobControlRecord* jcr,
@@ -1237,7 +1243,7 @@ bool SparseData(JobControlRecord* jcr,
     if (blseek(bfd, (boffset_t)*addr, SEEK_SET) < 0) {
       BErrNo be;
       Jmsg3(jcr, M_ERROR, 0, _("Seek to %s error on %s: ERR=%s\n"),
-            edit_uint64(*addr, ec1), jcr->last_fname,
+            edit_uint64(*addr, ec1), jcr->impl_->last_fname,
             be.bstrerror(bfd->BErrNo));
       return false;
     }
@@ -1253,8 +1259,8 @@ bool StoreData(JobControlRecord* jcr,
                const int32_t length,
                bool win32_decomp)
 {
-  if (jcr->crypto.digest) {
-    CryptoDigestUpdate(jcr->crypto.digest, (uint8_t*)data, length);
+  if (jcr->impl_->crypto.digest) {
+    CryptoDigestUpdate(jcr->impl_->crypto.digest, (uint8_t*)data, length);
   }
 
   if (win32_decomp) {
@@ -1262,7 +1268,7 @@ bool StoreData(JobControlRecord* jcr,
       BErrNo be;
       Jmsg2(jcr, M_ERROR, 0,
             _("Write error in Win32 Block Decomposition on %s: %s\n"),
-            jcr->last_fname, be.bstrerror(bfd->BErrNo));
+            jcr->impl_->last_fname, be.bstrerror(bfd->BErrNo));
       return false;
     }
 #ifdef HAVE_WIN32
@@ -1271,22 +1277,22 @@ bool StoreData(JobControlRecord* jcr,
       if (win32_send_to_copy_thread(jcr, bfd, data, length) !=
           (ssize_t)length) {
         BErrNo be;
-        Jmsg2(jcr, M_ERROR, 0, _("Write error on %s: %s\n"), jcr->last_fname,
-              be.bstrerror(bfd->BErrNo));
+        Jmsg2(jcr, M_ERROR, 0, _("Write error on %s: %s\n"),
+              jcr->impl_->last_fname, be.bstrerror(bfd->BErrNo));
         return false;
       }
     } else {
       if (bwrite(bfd, data, length) != (ssize_t)length) {
         BErrNo be;
-        Jmsg2(jcr, M_ERROR, 0, _("Write error on %s: %s\n"), jcr->last_fname,
-              be.bstrerror(bfd->BErrNo));
+        Jmsg2(jcr, M_ERROR, 0, _("Write error on %s: %s\n"),
+              jcr->impl_->last_fname, be.bstrerror(bfd->BErrNo));
       }
     }
   }
 #else
   } else if (bwrite(bfd, data, length) != (ssize_t)length) {
     BErrNo be;
-    Jmsg2(jcr, M_ERROR, 0, _("Write error on %s: %s\n"), jcr->last_fname,
+    Jmsg2(jcr, M_ERROR, 0, _("Write error on %s: %s\n"), jcr->impl_->last_fname,
           be.bstrerror(bfd->BErrNo));
     return false;
   }
@@ -1330,7 +1336,8 @@ int32_t ExtractData(JobControlRecord* jcr,
   }
 
   if (BitIsSet(FO_COMPRESS, flags)) {
-    if (!DecompressData(jcr, jcr->last_fname, stream, &wbuf, &wsize, false)) {
+    if (!DecompressData(jcr, jcr->impl_->last_fname, stream, &wbuf, &wsize,
+                        false)) {
       goto bail_out;
     }
   }
@@ -1418,7 +1425,7 @@ static bool ClosePreviousStream(JobControlRecord* jcr, r_ctx& rctx)
      */
     FreeSignature(rctx);
     FreeSession(rctx);
-    ClearAllBits(FO_MAX, rctx.jcr->ff->flags);
+    ClearAllBits(FO_MAX, rctx.jcr->impl_->ff->flags);
     Dmsg0(130, "Stop extracting.\n");
   } else if (IsBopen(&rctx.bfd)) {
     Jmsg0(rctx.jcr, M_ERROR, 0,

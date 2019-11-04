@@ -31,6 +31,7 @@
 
 #include "include/bareos.h"
 #include "filed/filed.h"
+#include "filed/jcr_private.h"
 #include "filed/restore.h"
 #include "findlib/find_one.h"
 #include "lib/bsock.h"
@@ -61,15 +62,15 @@ bool CryptoSessionStart(JobControlRecord* jcr, crypto_cipher_t cipher)
    * structure. We use a single session key for each backup, so we'll encode
    * the session data only once.
    */
-  if (jcr->crypto.pki_encrypt) {
+  if (jcr->impl_->crypto.pki_encrypt) {
     uint32_t size = 0;
 
     /**
      * Create per-job session encryption context
      */
-    jcr->crypto.pki_session =
-        crypto_session_new(cipher, jcr->crypto.pki_recipients);
-    if (!jcr->crypto.pki_session) {
+    jcr->impl_->crypto.pki_session =
+        crypto_session_new(cipher, jcr->impl_->crypto.pki_recipients);
+    if (!jcr->impl_->crypto.pki_session) {
       Jmsg(jcr, M_FATAL, 0,
            _("Cannot create a new crypto session probably unsupported cipher "
              "configured.\n"));
@@ -79,7 +80,8 @@ bool CryptoSessionStart(JobControlRecord* jcr, crypto_cipher_t cipher)
     /**
      * Get the session data size
      */
-    if (!CryptoSessionEncode(jcr->crypto.pki_session, (uint8_t*)0, &size)) {
+    if (!CryptoSessionEncode(jcr->impl_->crypto.pki_session, (uint8_t*)0,
+                             &size)) {
       Jmsg(jcr, M_FATAL, 0,
            _("An error occurred while encrypting the stream.\n"));
       return false;
@@ -88,13 +90,13 @@ bool CryptoSessionStart(JobControlRecord* jcr, crypto_cipher_t cipher)
     /**
      * Allocate buffer
      */
-    jcr->crypto.pki_session_encoded = GetMemory(size);
+    jcr->impl_->crypto.pki_session_encoded = GetMemory(size);
 
     /**
      * Encode session data
      */
-    if (!CryptoSessionEncode(jcr->crypto.pki_session,
-                             (uint8_t*)jcr->crypto.pki_session_encoded,
+    if (!CryptoSessionEncode(jcr->impl_->crypto.pki_session,
+                             (uint8_t*)jcr->impl_->crypto.pki_session_encoded,
                              &size)) {
       Jmsg(jcr, M_FATAL, 0,
            _("An error occurred while encrypting the stream.\n"));
@@ -104,12 +106,12 @@ bool CryptoSessionStart(JobControlRecord* jcr, crypto_cipher_t cipher)
     /**
      * ... and store the encoded size
      */
-    jcr->crypto.pki_session_encoded_size = size;
+    jcr->impl_->crypto.pki_session_encoded_size = size;
 
     /**
      * Allocate the encryption/decryption buffer
      */
-    jcr->crypto.crypto_buf = GetMemory(CRYPTO_CIPHER_MAX_BLOCK_SIZE);
+    jcr->impl_->crypto.crypto_buf = GetMemory(CRYPTO_CIPHER_MAX_BLOCK_SIZE);
   }
 
   return true;
@@ -117,14 +119,16 @@ bool CryptoSessionStart(JobControlRecord* jcr, crypto_cipher_t cipher)
 
 void CryptoSessionEnd(JobControlRecord* jcr)
 {
-  if (jcr->crypto.crypto_buf) {
-    FreePoolMemory(jcr->crypto.crypto_buf);
-    jcr->crypto.crypto_buf = NULL;
+  if (jcr->impl_->crypto.crypto_buf) {
+    FreePoolMemory(jcr->impl_->crypto.crypto_buf);
+    jcr->impl_->crypto.crypto_buf = NULL;
   }
-  if (jcr->crypto.pki_session) { CryptoSessionFree(jcr->crypto.pki_session); }
-  if (jcr->crypto.pki_session_encoded) {
-    FreePoolMemory(jcr->crypto.pki_session_encoded);
-    jcr->crypto.pki_session_encoded = NULL;
+  if (jcr->impl_->crypto.pki_session) {
+    CryptoSessionFree(jcr->impl_->crypto.pki_session);
+  }
+  if (jcr->impl_->crypto.pki_session_encoded) {
+    FreePoolMemory(jcr->impl_->crypto.pki_session_encoded);
+    jcr->impl_->crypto.pki_session_encoded = NULL;
   }
 }
 
@@ -138,8 +142,8 @@ bool CryptoSessionSend(JobControlRecord* jcr, BareosSocket* sd)
   sd->fsend("%ld %d 0", jcr->JobFiles, STREAM_ENCRYPTED_SESSION_DATA);
 
   msgsave = sd->msg;
-  sd->msg = jcr->crypto.pki_session_encoded;
-  sd->message_length = jcr->crypto.pki_session_encoded_size;
+  sd->msg = jcr->impl_->crypto.pki_session_encoded;
+  sd->message_length = jcr->impl_->crypto.pki_session_encoded_size;
   jcr->JobBytes += sd->message_length;
 
   Dmsg1(100, "Send data len=%d\n", sd->message_length);
@@ -167,7 +171,7 @@ bool VerifySignature(JobControlRecord* jcr, r_ctx& rctx)
   crypto_digest_t algorithm;
   SIGNATURE* sig = rctx.sig;
 
-  if (!jcr->crypto.pki_sign) {
+  if (!jcr->impl_->crypto.pki_sign) {
     /*
      * no signature OK
      */
@@ -176,7 +180,7 @@ bool VerifySignature(JobControlRecord* jcr, r_ctx& rctx)
   if (!sig) {
     if (rctx.type == FT_REGE || rctx.type == FT_REG || rctx.type == FT_RAW) {
       Jmsg1(jcr, M_ERROR, 0, _("Missing cryptographic signature for %s\n"),
-            jcr->last_fname);
+            jcr->impl_->last_fname);
       goto bail_out;
     }
     return true;
@@ -185,33 +189,35 @@ bool VerifySignature(JobControlRecord* jcr, r_ctx& rctx)
   /*
    * Iterate through the trusted signers
    */
-  foreach_alist (keypair, jcr->crypto.pki_signers) {
-    err = CryptoSignGetDigest(sig, jcr->crypto.pki_keypair, algorithm, &digest);
+  foreach_alist (keypair, jcr->impl_->crypto.pki_signers) {
+    err = CryptoSignGetDigest(sig, jcr->impl_->crypto.pki_keypair, algorithm,
+                              &digest);
     switch (err) {
       case CRYPTO_ERROR_NONE:
         Dmsg0(50, "== Got digest\n");
         /*
-         * We computed jcr->crypto.digest using signing_algorithm while writing
-         * the file. If it is not the same as the algorithm used for
+         * We computed jcr->impl_->crypto.digest using signing_algorithm while
+         * writing the file. If it is not the same as the algorithm used for
          * this file, punt by releasing the computed algorithm and
          * computing by re-reading the file.
          */
         if (algorithm != signing_algorithm) {
-          if (jcr->crypto.digest) {
-            CryptoDigestFree(jcr->crypto.digest);
-            jcr->crypto.digest = NULL;
+          if (jcr->impl_->crypto.digest) {
+            CryptoDigestFree(jcr->impl_->crypto.digest);
+            jcr->impl_->crypto.digest = NULL;
           }
         }
-        if (jcr->crypto.digest) {
+        if (jcr->impl_->crypto.digest) {
           /*
            * Use digest computed while writing the file to verify the signature
            */
-          if ((err = CryptoSignVerify(sig, keypair, jcr->crypto.digest)) !=
+          if ((err =
+                   CryptoSignVerify(sig, keypair, jcr->impl_->crypto.digest)) !=
               CRYPTO_ERROR_NONE) {
-            Dmsg1(50, "Bad signature on %s\n", jcr->last_fname);
+            Dmsg1(50, "Bad signature on %s\n", jcr->impl_->last_fname);
             Jmsg2(jcr, M_ERROR, 0,
                   _("Signature validation failed for file %s: ERR=%s\n"),
-                  jcr->last_fname, crypto_strerror(err));
+                  jcr->impl_->last_fname, crypto_strerror(err));
             goto bail_out;
           }
         } else {
@@ -219,17 +225,17 @@ bool VerifySignature(JobControlRecord* jcr, r_ctx& rctx)
            * Signature found, digest allocated.  Old method,
            * re-read the file and compute the digest
            */
-          jcr->crypto.digest = digest;
+          jcr->impl_->crypto.digest = digest;
 
           /*
            * Checksum the entire file
            * Make sure we don't modify JobBytes by saving and restoring it
            */
           saved_bytes = jcr->JobBytes;
-          if (FindOneFile(jcr, jcr->ff, DoFileDigest, jcr->last_fname,
-                          (dev_t)-1, 1) != 0) {
+          if (FindOneFile(jcr, jcr->impl_->ff, DoFileDigest,
+                          jcr->impl_->last_fname, (dev_t)-1, 1) != 0) {
             Jmsg(jcr, M_ERROR, 0, _("Digest one file failed for file: %s\n"),
-                 jcr->last_fname);
+                 jcr->impl_->last_fname);
             jcr->JobBytes = saved_bytes;
             goto bail_out;
           }
@@ -240,19 +246,19 @@ bool VerifySignature(JobControlRecord* jcr, r_ctx& rctx)
            */
           if ((err = CryptoSignVerify(sig, keypair, digest)) !=
               CRYPTO_ERROR_NONE) {
-            Dmsg1(50, "Bad signature on %s\n", jcr->last_fname);
+            Dmsg1(50, "Bad signature on %s\n", jcr->impl_->last_fname);
             Jmsg2(jcr, M_ERROR, 0,
                   _("Signature validation failed for file %s: ERR=%s\n"),
-                  jcr->last_fname, crypto_strerror(err));
+                  jcr->impl_->last_fname, crypto_strerror(err));
             goto bail_out;
           }
-          jcr->crypto.digest = NULL;
+          jcr->impl_->crypto.digest = NULL;
         }
 
         /*
          * Valid signature
          */
-        Dmsg1(50, "Signature good on %s\n", jcr->last_fname);
+        Dmsg1(50, "Signature good on %s\n", jcr->impl_->last_fname);
         CryptoDigestFree(digest);
         return true;
 
@@ -270,7 +276,7 @@ bool VerifySignature(JobControlRecord* jcr, r_ctx& rctx)
          * Something strange happened (that shouldn't happen!)...
          */
         Qmsg2(jcr, M_ERROR, 0, _("Signature validation failed for %s: %s\n"),
-              jcr->last_fname, crypto_strerror(err));
+              jcr->impl_->last_fname, crypto_strerror(err));
         goto bail_out;
     }
   }
@@ -279,7 +285,7 @@ bool VerifySignature(JobControlRecord* jcr, r_ctx& rctx)
    * No signer
    */
   Dmsg1(50, "Could not find a valid public key for signature on %s\n",
-        jcr->last_fname);
+        jcr->impl_->last_fname);
 
 bail_out:
   if (digest) { CryptoDigestFree(digest); }
@@ -319,7 +325,7 @@ again:
      */
     Jmsg3(jcr, M_ERROR, 0,
           _("Decryption error. buf_len=%d decrypt_len=%d on file %s\n"),
-          cipher_ctx->buf_len, decrypted_len, jcr->last_fname);
+          cipher_ctx->buf_len, decrypted_len, jcr->impl_->last_fname);
   }
 
   Dmsg2(130, "Flush decrypt len=%d buf_len=%d\n", decrypted_len,
@@ -350,7 +356,8 @@ again:
   }
 
   if (BitIsSet(FO_COMPRESS, flags)) {
-    if (!DecompressData(jcr, jcr->last_fname, stream, &wbuf, &wsize, false)) {
+    if (!DecompressData(jcr, jcr->impl_->last_fname, stream, &wbuf, &wsize,
+                        false)) {
       return false;
     }
   }
@@ -436,8 +443,9 @@ bool SetupEncryptionContext(b_ctx& bctx)
     /*
      * Allocate the cipher context
      */
-    if ((bctx.cipher_ctx = crypto_cipher_new(bctx.jcr->crypto.pki_session, true,
-                                             &cipher_block_size)) == NULL) {
+    if ((bctx.cipher_ctx = crypto_cipher_new(
+             bctx.jcr->impl_->crypto.pki_session, true, &cipher_block_size)) ==
+        NULL) {
       /*
        * Shouldn't happen!
        */
@@ -453,15 +461,15 @@ bool SetupEncryptionContext(b_ctx& bctx)
      * could be returned for the given read buffer size.
      * (Using the larger of either rsize or max_compress_len)
      */
-    bctx.jcr->crypto.crypto_buf =
-        CheckPoolMemorySize(bctx.jcr->crypto.crypto_buf,
+    bctx.jcr->impl_->crypto.crypto_buf =
+        CheckPoolMemorySize(bctx.jcr->impl_->crypto.crypto_buf,
                             (MAX(bctx.jcr->buf_size + (int)sizeof(uint32_t),
                                  (int32_t)bctx.max_compress_len) +
                              cipher_block_size - 1) /
                                 cipher_block_size * cipher_block_size);
 
     bctx.wbuf =
-        bctx.jcr->crypto
+        bctx.jcr->impl_->crypto
             .crypto_buf; /* Encrypted, possibly compressed output here. */
   }
 
@@ -479,7 +487,7 @@ bool SetupDecryptionContext(r_ctx& rctx, RestoreCipherContext& rcctx)
   if (!rctx.cs) {
     Jmsg1(rctx.jcr, M_ERROR, 0,
           _("Missing encryption session data stream for %s\n"),
-          rctx.jcr->last_fname);
+          rctx.jcr->impl_->last_fname);
     return false;
   }
 
@@ -487,7 +495,7 @@ bool SetupDecryptionContext(r_ctx& rctx, RestoreCipherContext& rcctx)
       NULL) {
     Jmsg1(rctx.jcr, M_ERROR, 0,
           _("Failed to initialize decryption context for %s\n"),
-          rctx.jcr->last_fname);
+          rctx.jcr->impl_->last_fname);
     FreeSession(rctx);
     return false;
   }
@@ -530,7 +538,7 @@ bool EncryptData(b_ctx* bctx, bool* need_more_data)
   Dmsg1(20, "Encrypt len=%d\n", bctx->cipher_input_len);
 
   if (!CryptoCipherUpdate(bctx->cipher_ctx, packet_len, sizeof(packet_len),
-                          (uint8_t*)bctx->jcr->crypto.crypto_buf,
+                          (uint8_t*)bctx->jcr->impl_->crypto.crypto_buf,
                           &initial_len)) {
     /*
      * Encryption failed. Shouldn't happen.
@@ -542,10 +550,10 @@ bool EncryptData(b_ctx* bctx, bool* need_more_data)
   /*
    * Encrypt the input block
    */
-  if (CryptoCipherUpdate(bctx->cipher_ctx, bctx->cipher_input,
-                         bctx->cipher_input_len,
-                         (uint8_t*)&bctx->jcr->crypto.crypto_buf[initial_len],
-                         &bctx->encrypted_len)) {
+  if (CryptoCipherUpdate(
+          bctx->cipher_ctx, bctx->cipher_input, bctx->cipher_input_len,
+          (uint8_t*)&bctx->jcr->impl_->crypto.crypto_buf[initial_len],
+          &bctx->encrypted_len)) {
     if ((initial_len + bctx->encrypted_len) == 0) {
       /*
        * No full block of data available, read more data

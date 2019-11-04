@@ -32,6 +32,7 @@
 #include "include/bareos.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
+#include "filed/jcr_private.h"
 
 #if defined(HAVE_LIBZ)
 #include <zlib.h>
@@ -46,7 +47,7 @@ namespace filedaemon {
  */
 bool AdjustCompressionBuffers(JobControlRecord* jcr)
 {
-  findFILESET* fileset = jcr->ff->fileset;
+  findFILESET* fileset = jcr->impl_->ff->fileset;
   uint32_t compress_buf_size = 0;
 
   if (fileset) {
