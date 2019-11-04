@@ -13,6 +13,7 @@ import uuid
 
 import lxml.etree
 
+import logging
 import ovirtsdk4 as sdk
 import ovirtsdk4.types as types
 
@@ -467,11 +468,18 @@ class BareosOvirtWrapper(object):
         # set server url
         server_url = "https://%s/ovirt-engine/api" % str(options['server'])
 
+        ovirt_sdk_debug = False
+        if options.get('ovirt_sdk_debug_log') is not None:
+            logging.basicConfig(level=logging.DEBUG, filename=options['ovirt_sdk_debug_log'])
+            ovirt_sdk_debug = True
+
         # Create a connection to the server:
         self.connection = sdk.Connection(url=server_url,
                                          username=options['username'],
                                          password=options['password'],
-                                         ca_file=self.ca)
+                                         ca_file=self.ca,
+                                         debug=ovirt_sdk_debug,
+                                         log=logging.getLogger())
 
         if not self.connection:
             bareosfd.JobMessage(
