@@ -1,88 +1,160 @@
+#
+# python-bareos spec file.
+#
+
+# based on
+# https://docs.fedoraproject.org/en-US/packaging-guidelines/Python_Appendix/
+# specifically on
+# https://pagure.io/packaging-committee/blob/ae14fdb50cc6665a94bc32f7d984906ce1eece45/f/guidelines/modules/ROOT/pages/Python_Appendix.adoc
+#
+
+#
+# For current distribution, create
+# python2-bareos and python3-bareos packages.
+#
+# CentOS 6 supports only Python2.
+#
+# CentOS <= 7 and SLES <= 12,
+# the Python2 package is namend python-bareos (instead of python2-bareos).
+#
+
 %global srcname bareos
 
-#%%if 0%%{?rhel} || 0%%{?suse_version} == 1110 || 0%%{?suse_version} == 1315
-%bcond_without python2
-#%%else
-#%%bcond_with python2
-#%%endif
 
-%if 0%{?with_python2}
-%global PYVER 2
-%define noarch 0
-%if 0%{?rhel_version} >= 800 || 0%{?fedora} >= 31
-%define pypkg python2
-%else
-%define pypkg python
-%endif
-%else
-%global PYVER 3
-%define noarch 1
+%define python2_build_requires python-rpm-macros python2-devel python2-setuptools
+%define python3_build_requires python-rpm-macros python3-devel python3-setuptools
+
+%if 0%{?rhel} > 0 && 0%{?rhel} <= 6
+%define skip_python3 1
+%define python2_build_requires python-rpm-macros python2-rpm-macros python-devel python-setuptools
 %endif
 
-%global pyXsuf %{PYVER}
-%global pyXcmd python%{PYVER}
+
+%define python2_extra_package 1
+
+%if 0%{?rhel} > 0 && 0%{?rhel} <= 7
+%define python2_extra_package 0
+%endif
+
+%if 0%{?sle_version} <= 120000
+%define python2_extra_package 0
+%endif
+
 
 Name:           python-%{srcname}
 Version:        0
 Release:        1%{?dist}
-Summary:        Backup Archiving REcovery Open Sourced - Python module
-Group:          Productivity/Archiving/Backup
 License:        AGPL-3.0
-URL:            https://github.com/bareos/python-bareos/
+Summary:        Backup Archiving REcovery Open Sourced - Python module
+Url:            https://github.com/bareos/python-bareos/
+Group:          Productivity/Archiving/Backup
 Vendor:         The Bareos Team
-#Source0:        http://pypi.python.org/packages/source/e/%%{srcname}/%%{srcname}-%%{version}.tar.gz
 Source:         %{name}-%{version}.tar.bz2
 BuildRoot:      %{_tmppath}/%{name}-root
-%global debug_package %{nil}
-%if %{with python2}
-BuildRequires:  %{pypkg}-devel
-BuildRequires:  %{pypkg}-setuptools
-Requires:       %{pypkg}-dateutil
-%endif
-%if %{with python3}
-BuildRequires:  python3-devel
-BuildRequires:  python3-setuptools
-Requires:       python3-dateutil
-%endif
-%if %noarch
-BuildArch:      noarch
-%endif
-%{?python_provide:%python_provide python-%{srcname}}
 
-%description
+BuildArch:      noarch
+
+%global _description %{expand:
 Bareos - Backup Archiving Recovery Open Sourced - Python module
 
 This packages contains a python module to interact with a Bareos backup system.
-It also includes some tools based on this module.
+It also includes some tools based on this module.}
 
-%if 0%{?opensuse_version} || 0%{?sle_version}
-%debug_package
+%description %_description
+
+
+%if ! 0%{?skip_python2}
+
+%if 0%{?python2_extra_package}
+
+%package -n python2-%{srcname}
+Summary:        %{summary}
+BuildRequires:  %{python2_build_requires}
+%{?python_provide:%python_provide python2-%{srcname}}
+
+%description -n python2-%{srcname} %_description
+
 %endif
+# python2_extra_package
 
-%define pyX_sitelib %(%{pyXcmd} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")
+%endif
+# skip_python2
+
+
+%if ! 0%{?skip_python3}
+
+%package -n python3-%{srcname}
+Summary:        %{summary}
+BuildRequires:  %{python3_build_requires}
+%{?python_provide:%python_provide python3-%{srcname}}
+
+%description -n python3-%{srcname} %_description
+
+%endif
+# skip_python3
 
 %prep
+#%%autosetup -n %%{srcname}-%%{version}
 %setup -q
 
 %build
-%{pyXcmd} setup.py build
+%if ! 0%{?skip_python2}
+%py2_build
+%endif
+
+%if ! 0%{?skip_python3}
+%py3_build
+%endif
+
 
 %install
 # Must do the python2 install first because the scripts in /usr/bin are
 # overwritten with every setup.py install, and in general we want the
 # python3 version to be the default.
-%{pyXcmd} setup.py install --prefix=%{_prefix} --root=%{buildroot}
+%if ! 0%{?skip_python2}
+%py2_install
+%endif
+
+%if ! 0%{?skip_python3}
+%py3_install
+%endif
+
 
 %check
-# does not work, as it tries to download other packages from pip
+# This does not work,
+# as "test" tries to download other packages from pip.
 #%%{__python2} setup.py test
-#%%{pyXcmd} setup.py -q test
+#%%{__python3} setup.py test
 
-# Note that there is no %%files section for the unversioned python module if we are building for several python runtimes
+
+%if ! 0%{?skip_python2}
+%if ! 0%{?python2_extra_package}
 %files
+%else
+%files -n python2-%{srcname}
+%endif
+# python2_extra_package
 %defattr(-,root,root,-)
 %doc README.rst
-%{pyX_sitelib}/*
+%{python2_sitelib}/%{srcname}/
+%{python2_sitelib}/python_%{srcname}-*.egg-info/
+# Include binaries only if no python3 package will be build.
+%if 0%{?skip_python3}
 %{_bindir}/*
+%endif
+%endif
+# skip_python2
+
+
+%if ! 0%{?skip_python3}
+%files -n python3-%{srcname}
+%defattr(-,root,root,-)
+%doc README.rst
+%{python3_sitelib}/%{srcname}/
+%{python3_sitelib}/python_%{srcname}-*.egg-info/
+%{_bindir}/*
+%endif
+# skip_python3
+
 
 %changelog

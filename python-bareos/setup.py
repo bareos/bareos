@@ -32,6 +32,10 @@ setup(
     keywords='bareos',
     description='Network socket connection to the Bareos backup system.',
     long_description=open('README.rst').read(),
+    # Python 2.6 is used by RHEL/Centos 6.
+    # When RHEL/Centos 6 is no longer supported (End of 2020),
+    # Python 2.6 will no longer be supported by python-bareos.
+    python_requires='>=2.6',
     install_requires=[
         #'hmac',
         #'socket',

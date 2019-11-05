@@ -17,7 +17,7 @@ def getArguments():
     parser.add_argument('--dirname', help="Bareos Director name")
     parser.add_argument('--protocolversion',
                         default=ProtocolVersions.last,
-                        help=u'Specify the protocol version to use. Default: {} (current)'.format(ProtocolVersions.last))
+                        help=u'Specify the protocol version to use. Default: {0} (current)'.format(ProtocolVersions.last))
     parser.add_argument('address', nargs='?', default="localhost", help="Bareos Director network address")
     args = parser.parse_args()
     return args

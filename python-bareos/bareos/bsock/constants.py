@@ -6,7 +6,7 @@ class Constants:
 
     unit_separator = chr(0x1f);
     record_separator = chr(0x1e);
-    record_separator_compat_regex = r'[ {}]'.format(chr(0x1e));
+    record_separator_compat_regex = r'[ {0}]'.format(chr(0x1e));
     group_separator = chr(0x1d);
 
     """

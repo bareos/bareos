@@ -35,17 +35,17 @@ class FileDaemon(LowLevel):
     def get_and_evaluate_auth_responses(self):
         code, text = self.receive_and_evaluate_response_message()
 
-        self.logger.debug(u'code: {}'.format(code))
+        self.logger.debug(u'code: {0}'.format(code))
 
 
         #
         # Test if authentication has been accepted.
         #
         if code == ProtocolMessageIds.FdOk:
-            self.logger.info(u'Authentication: {}'.format(text))
+            self.logger.info(u'Authentication: {0}'.format(text))
             self.auth_credentials_valid = True
         else:
-            raise bareos.exceptions.AuthenticationError("Received unexcepted message: {} {} (expecting auth ok)".format(code, text))
+            raise bareos.exceptions.AuthenticationError("Received unexcepted message: {0} {1} (expecting auth ok)".format(code, text))
 
 
     def call(self, command):
