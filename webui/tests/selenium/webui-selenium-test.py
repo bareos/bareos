@@ -182,9 +182,14 @@ class SeleniumTest(unittest.TestCase):
             if self.browser == 'chrome':
                 self.chromedriverpath = self.getChromedriverpath()
                 self.driver = webdriver.Chrome(self.chromedriverpath)
-                # disable experimental feature
+                # chrome webdriver option: disable experimental feature
                 opt = webdriver.ChromeOptions()
                 opt.add_experimental_option('w3c',False)
+                # chrome webdriver option: specify user data directory
+                opt.add_argument('--user-data-dir=/tmp/chrome-user-data-'+SeleniumTest.profile+'-'+SeleniumTest.testname)
+                # test in headless mode?
+                if self.chromeheadless:
+                    opt.add_argument('--headless')
                 self.driver = webdriver.Chrome(chrome_options=opt)
                 # set explicit window size
                 self.driver.set_window_size(1920,1080)
@@ -209,7 +214,7 @@ class SeleniumTest(unittest.TestCase):
     #
     # Tests
     #
-    def test_login(self):
+    def disabled_test_login(self):
         self.login()
         self.logout()
 
@@ -263,7 +268,7 @@ class SeleniumTest(unittest.TestCase):
             self.wait_and_click(By.LINK_TEXT, 'Back')
         self.logout()
 
-    def test_languages(self):
+    def disabled_test_languages(self):
         # Goes to login page, matches found languages against predefined list, throws exception if no match
         driver = self.driver
         driver.get(self.base_url + '/auth/login')
@@ -277,7 +282,7 @@ class SeleniumTest(unittest.TestCase):
             if element not in found_elements:
                 self.logger.info('The webui misses %s' % element)
 
-    def test_menue(self):
+    def disabled_test_menue(self):
         self.login()
         self.wait_and_click(By.ID, 'menu-topnavbar-director')
         self.wait_and_click(By.ID, 'menu-topnavbar-schedule')
@@ -438,6 +443,7 @@ class SeleniumTest(unittest.TestCase):
             self.wait_for_spinner_absence()
             if modal_by and modal_value:
                 try:
+                    #self.driver.switchTo().activeElement(); # required???
                     self.driver.find_element(modal_by, modal_value).click()
                 except:
                     logger.info('skipped modal: %s %s not found', modal_by, modal_value)
@@ -528,6 +534,11 @@ def get_env():
     chromedriverpath = os.environ.get('BAREOS_WEBUI_CHROMEDRIVER_PATH')
     if chromedriverpath:
         SeleniumTest.chromedriverpath = chromedriverpath
+    chromeheadless = os.environ.get('BAREOS_WEBUI_CHROME_HEADLESS')
+    if chromeheadless:
+        SeleniumTest.chromeheadless = chromeheadless
+    else:
+        SeleniumTest.chromeheadless = True
     browser = os.environ.get('BAREOS_WEBUI_BROWSER')
     if browser:
         SeleniumTest.browser = browser
@@ -543,6 +554,9 @@ def get_env():
     profile = os.environ.get('BAREOS_WEBUI_PROFILE')
     if profile:
         SeleniumTest.profile = profile
+    testname = os.environ.get('BAREOS_WEBUI_TESTNAME')
+    if testname:
+        SeleniumTest.testname = testname
     client = os.environ.get('BAREOS_WEBUI_CLIENT_NAME')
     if client:
         SeleniumTest.client = client

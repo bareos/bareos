@@ -266,10 +266,22 @@ MESSAGE(STATUS "PYTHON_FOUND:                 " ${PYTHON_FOUND})
 MESSAGE(STATUS "PYTHON_SELENIUM_FOUND:        " ${PYTHON_SELENIUM_FOUND})
 MESSAGE(STATUS "CHROMEDRIVER_FOUND:           " ${CHROMEDRIVER_FOUND})
 
+list(APPEND WEBUI_SELENIUM_TESTS
+  "webui-admin-client-disabling"
+  "webui-admin-rerun-job"
+  "webui-admin-restore"
+  "webui-admin-run-custom-job"
+  "webui-admin-run-job"
+  "webui-readonly-client-disabling"
+  "webui-readonly-rerun-job"
+  "webui-readonly-restore"
+  "webui-readonly-run-custom-job"
+  "webui-readonly-run-job")
+
 IF(ENABLE_WEBUI_SELENIUM_TEST)
-  list(APPEND SYSTEM_TESTS "webui-selenium")
+  list(APPEND SYSTEM_TESTS ${WEBUI_SELENIUM_TESTS})
 ELSE()
-  list(APPEND SYSTEM_TESTS_DISABLED "webui-selenium")
+  list(APPEND SYSTEM_TESTS_DISABLED ${WEBUI_SELENIUM_TESTS})
 ENDIF()
 
 set(BASEPORT 42001)
@@ -317,13 +329,17 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   file(MAKE_DIRECTORY ${tmpdir})
   file(MAKE_DIRECTORY ${working_dir})
 
-  # webui-selenium
-  IF(${TEST_NAME} STREQUAL "webui-selenium")
-    set(WEBUICONFDIR ${current_test_directory}/etc/bareos-webui) #used for testenvironment settings
-    file(MAKE_DIRECTORY ${WEBUICONFDIR})
-    configure_file("${CMAKE_SOURCE_DIR}/webui/config/autoload/global.php.in" "${current_test_directory}/webui/config/autoload/global.php" @ONLY)
-    configure_file("${CMAKE_SOURCE_DIR}/systemtests/tests/webui-selenium/directors.ini.in" "${current_test_directory}/etc/bareos-webui/directors.ini" @ONLY)
-    file(COPY "${CMAKE_SOURCE_DIR}/webui/install/configuration.ini" DESTINATION "${current_test_directory}/etc/bareos-webui/")
+  # webui specific settings
+  IF(ENABLE_WEBUI_SELENIUM_TEST)
+    foreach(SELENIUM_TEST ${WEBUI_SELENIUM_TESTS})
+      IF(${TEST_NAME} STREQUAL SELENIUM_TEST)
+        set(WEBUICONFDIR ${current_test_directory}/etc/bareos-webui) # used for testenvironment settings
+        file(MAKE_DIRECTORY ${WEBUICONFDIR})
+        configure_file("${CMAKE_SOURCE_DIR}/webui/config/autoload/global.php.in" "${current_test_directory}/webui/config/autoload/global.php" @ONLY)
+        configure_file("${CMAKE_SOURCE_DIR}/systemtests/tests/${TEST_NAME}/directors.ini.in" "${current_test_directory}/etc/bareos-webui/directors.ini" @ONLY)
+        file(COPY "${CMAKE_SOURCE_DIR}/webui/install/configuration.ini" DESTINATION "${current_test_directory}/etc/bareos-webui/")
+      ENDIF()
+    endforeach()
   ENDIF()
 
   ConfigureFilesToSystemtest("systemtests"  "tests/${TEST_NAME}" "*" @ONLY)
