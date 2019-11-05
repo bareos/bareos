@@ -236,6 +236,10 @@ class JobControlRecord {
  public:
   JobControlRecord();
   ~JobControlRecord();
+  JobControlRecord(const JobControlRecord &other) = delete;
+  JobControlRecord(const JobControlRecord &&other) = delete;
+  JobControlRecord& operator=(const JobControlRecord& other) = delete;
+  JobControlRecord& operator=(const JobControlRecord&& other) = delete;
 
   void lock() { P(mutex); }
   void unlock() { V(mutex); }
