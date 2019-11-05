@@ -3419,11 +3419,11 @@ cleanup:
 int kill(int pid, int signal)
 {
   int rval = 0;
-  if (!TerminateProcess((HANDLE)pid, (UINT)signal)) {
+  if (!TerminateProcess((HANDLE)(UINT_PTR)pid, (UINT)signal)) {
     rval = -1;
     errno = b_errno_win32;
   }
-  CloseHandle((HANDLE)pid);
+  CloseHandle((HANDLE)(UINT_PTR)pid);
   return rval;
 }
 
