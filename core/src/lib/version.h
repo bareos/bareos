@@ -21,7 +21,8 @@
    02110-1301, USA.
 */
 
-#pragma once
+#ifndef BAREOS_LIB_VERSION_H_
+#define BAREOS_LIB_VERSION_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -115,3 +116,4 @@ extern const struct BareosVersion kBareosVersion;
  *  eliminate the comm time sending to the SD.
  */
 /* #define FD_NO_SEND_TEST 1 */
+#endif /* BAREOS_LIB_VERSION_H_ */
