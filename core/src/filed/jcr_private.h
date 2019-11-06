@@ -29,6 +29,10 @@
 struct acl_data_t;
 struct xattr_data_t;
 
+namespace filedaemon {
+class BareosAccurateFilelist;
+}
+
 /* clang-format off */
 struct CryptoContext {
   bool pki_sign = false;               /**< Enable PKI Signatures? */

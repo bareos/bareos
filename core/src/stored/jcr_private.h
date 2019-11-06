@@ -26,6 +26,9 @@
 
 #include "stored/read_ctx.h"
 
+#define SD_APPEND 1
+#define SD_READ 0
+
 namespace storagedaemon {
 struct VolumeList;
 class DeviceControlRecord;

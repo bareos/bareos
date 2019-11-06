@@ -21,6 +21,8 @@
 #ifndef BAREOS_FINDLIB_MATCH_H_
 #define BAREOS_FINDLIB_MATCH_H_
 
+struct FindFilesPacket;
+
 void InitIncludeExcludeFiles(FindFilesPacket* ff);
 void TermIncludeExcludeFiles(FindFilesPacket* ff);
 void AddFnameToIncludeList(FindFilesPacket* ff,

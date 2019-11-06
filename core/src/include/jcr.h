@@ -48,11 +48,6 @@ typedef struct s_tree_root TREE_ROOT;
 
 class dlist;
 
-namespace filedaemon {
-class BareosAccurateFilelist;
-struct save_pkt;
-}  // namespace filedaemon
-
 /**
  * Backup/Verify level code. These are stored in the DB
  */
@@ -179,19 +174,12 @@ enum
 
 #define endeach_jcr(jcr) JcrWalkEnd(jcr)
 
-#define SD_APPEND 1
-#define SD_READ 0
-
-/**
- * Forward referenced structures
- */
 class JobControlRecord;
 class BareosSocket;
 class BareosDb;
 class htable;
 
 struct AttributesDbRecord;
-struct FindFilesPacket;
 struct bpContext;
 #ifdef HAVE_WIN32
 struct CopyThreadContext;
@@ -232,7 +220,7 @@ class JobControlRecord {
   int32_t JobType_ = 0;            /**< Backup, restore, verify ... */
   int32_t JobLevel_ = 0;           /**< Job level */
   int32_t Protocol_ = 0;           /**< Backup Protocol */
-  bool my_thread_killable = false; /**< Can we kill the thread? */
+  bool my_thread_killable = false;
  public:
   JobControlRecord();
   ~JobControlRecord();
@@ -291,11 +279,8 @@ class JobControlRecord {
   void SetKillable(bool killable);               /**< in lib/jcr.c */
   bool IsKillable() const { return my_thread_killable; }
 
-  /*
-   * Global part of JobControlRecord common to all daemons
-   */
-  dlink link;                /**< JobControlRecord chain link */
-  pthread_t my_thread_id = 0;  /**< Id of thread controlling jcr */
+  dlink link;                     /**< JobControlRecord chain link */
+  pthread_t my_thread_id = 0;     /**< Id of thread controlling jcr */
   BareosSocket* dir_bsock = nullptr; /**< Director bsock or NULL if we are him */
   BareosSocket* store_bsock = nullptr; /**< Storage connection socket */
   BareosSocket* file_bsock;  /**< File daemon connection socket */
