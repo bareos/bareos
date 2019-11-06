@@ -35,7 +35,7 @@
  * file.
  */
 
-if(!empty(getenv('BAREOS_WEBUI_CONFDIR'))) {
+if(strlen(getenv('BAREOS_WEBUI_CONFDIR')) > 0) {
    $directors_ini = getenv('BAREOS_WEBUI_CONFDIR')."/directors.ini";
    $configuration_ini = getenv('BAREOS_WEBUI_CONFDIR')."/configuration.ini";
 } else {
