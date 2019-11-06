@@ -30,13 +30,9 @@ TEST(is_name_valid, is_name_valid)
   EXPECT_EQ(true, IsNameValid("STRING_CONTAINING_ALLOWED_CHARS :.-_/", msg));
   EXPECT_EQ(true, IsNameValid("A name_has_space_at_second_place"));
   EXPECT_EQ(true, IsNameValid("name_has_space_as_second_last Z"));
-  EXPECT_EQ(
-      true,
-      IsNameValid(
-          "STRING_WITH_MAX_ALLOWED_LENGTH......................................"
-          "...........................................................",
-          msg));
 
+  std::string string_maximum_length(MAX_NAME_LENGTH - 1, '.');
+  EXPECT_EQ(true, IsNameValid(string_maximum_length.c_str(), msg));
 
   EXPECT_EQ(false, IsNameValid("illegalch@racter", msg));
   EXPECT_STREQ("Illegal character \"@\" in name.\n", msg);
@@ -53,12 +49,10 @@ TEST(is_name_valid, is_name_valid)
   EXPECT_EQ(false, IsNameValid("name_ends_with_space ", msg));
   EXPECT_STREQ("Name cannot end with space.\n", msg);
 
-  EXPECT_EQ(
-      false,
-      IsNameValid(
-          "STRING_WITH_MAX_ALLOWED_LENGTH_PLUS_ONE............................."
-          "............................................................",
-          msg));
+  EXPECT_EQ(false, IsNameValid(" ", msg));
+  EXPECT_STREQ("Name cannot start with space.\n", msg);
+
+  std::string string_too_long(MAX_NAME_LENGTH, '.');
+  EXPECT_EQ(false, IsNameValid(string_too_long.c_str(), msg));
   EXPECT_STREQ("Name too long.\n", msg);
 }
-
