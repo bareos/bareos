@@ -75,9 +75,10 @@
 
 static void FormatCopyright(char* out, size_t len, int FsfYear)
 {
-  snprintf(out, len, BAREOS_COPYRIGHT_MESSAGE, kBareosVersionStrings.ServicesMessage,
-           kBareosVersionStrings.Year, FsfYear, kBareosVersionStrings.Full,
-           kBareosVersionStrings.Date, HOST_OS, DISTNAME, DISTVER);
+  snprintf(out, len, BAREOS_COPYRIGHT_MESSAGE,
+           kBareosVersionStrings.ServicesMessage, kBareosVersionStrings.Year,
+           FsfYear, kBareosVersionStrings.Full, kBareosVersionStrings.Date,
+           HOST_OS, DISTNAME, DISTVER);
 }
 static void PrintCopyright(FILE* fh, int FsfYear)
 {
@@ -98,4 +99,3 @@ const struct BareosVersionStrings kBareosVersionStrings = {
     .JoblogMessage = BAREOS_JOBLOG_MESSAGE,
     .FormatCopyright = FormatCopyright,
     .PrintCopyright = PrintCopyright};
-

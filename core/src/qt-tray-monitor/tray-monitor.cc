@@ -45,20 +45,24 @@ static QCoreApplication* app = nullptr;
 static void usage()
 {
   std::vector<char> copyright(1024);
-  kBareosVersionStrings.FormatCopyright(copyright.data(), copyright.size(), 2004);
-  QString out = QString(
-      _("%1"
-        "Usage: tray-monitor [options]\n"
-        "        -c <path>   use <path> as configuration file or directory\n"
-        "        -d <nn>     set debug level to <nn>\n"
-        "        -dt         print timestamp in debug output\n"
-        "        -t          test - read configuration and exit\n"
-        "        -rc         test - do connection test\n"
-        "        -xc         print configuration and exit\n"
-        "        -xs         print configuration file schema in JSON format "
-        "and exit\n"
-        "        -?          print this message.\n"
-        "\n")).arg(copyright.data());
+  kBareosVersionStrings.FormatCopyright(copyright.data(), copyright.size(),
+                                        2004);
+  QString out =
+      QString(_("%1"
+                "Usage: tray-monitor [options]\n"
+                "        -c <path>   use <path> as configuration file or "
+                "directory\n"
+                "        -d <nn>     set debug level to <nn>\n"
+                "        -dt         print timestamp in debug output\n"
+                "        -t          test - read configuration and exit\n"
+                "        -rc         test - do connection test\n"
+                "        -xc         print configuration and exit\n"
+                "        -xs         print configuration file schema in JSON "
+                "format "
+                "and exit\n"
+                "        -?          print this message.\n"
+                "\n"))
+          .arg(copyright.data());
 
 #if HAVE_WIN32
   QMessageBox::information(0, "Help", out);

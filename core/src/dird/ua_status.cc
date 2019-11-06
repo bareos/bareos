@@ -354,12 +354,14 @@ void ListDirStatusHeader(UaContext* ua)
     dbdrivers.strcat(catalog->db_driver);
     cnt++;
   }
-  ua->SendMsg(_("%s Version: %s (%s) %s %s %s\n"), my_name, kBareosVersionStrings.Full, kBareosVersionStrings.Date,
-              HOST_OS, DISTNAME, DISTVER);
+  ua->SendMsg(_("%s Version: %s (%s) %s %s %s\n"), my_name,
+              kBareosVersionStrings.Full, kBareosVersionStrings.Date, HOST_OS,
+              DISTNAME, DISTVER);
   bstrftime_nc(dt, sizeof(dt), daemon_start_time);
   ua->SendMsg(
       _("Daemon started %s. Jobs: run=%d, running=%d db:%s, %s binary\n"), dt,
-      num_jobs_run, JobCount(), dbdrivers.c_str(), kBareosVersionStrings.BinaryInfo);
+      num_jobs_run, JobCount(), dbdrivers.c_str(),
+      kBareosVersionStrings.BinaryInfo);
 
   if (me->secure_erase_cmdline) {
     ua->SendMsg(_(" secure erase command='%s'\n"), me->secure_erase_cmdline);

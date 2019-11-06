@@ -127,7 +127,8 @@ class ConsoleAuthenticatorBefore_18_2 : public ConsoleAuthenticator {
       if (ua_->UA_sock) {
         return ua_->UA_sock->fsend(_("1000 OK: %s Version: %s (%s) "
                                      "-- %s\n"),
-                                   my_name, kBareosVersionStrings.Full, kBareosVersionStrings.Date, cipher.c_str());
+                                   my_name, kBareosVersionStrings.Full,
+                                   kBareosVersionStrings.Date, cipher.c_str());
       }
     }
     return false;
@@ -205,8 +206,8 @@ bool ConsoleAuthenticatorFrom_18_2::SendResponseMessage(uint32_t response_id,
   std::string message;
   if (send_version_info) {
     char version_info[128];
-    ::snprintf(version_info, 100, "OK: %s Version: %s (%s)", my_name, kBareosVersionStrings.Full,
-               kBareosVersionStrings.Date);
+    ::snprintf(version_info, 100, "OK: %s Version: %s (%s)", my_name,
+               kBareosVersionStrings.Full, kBareosVersionStrings.Date);
     message = version_info;
   }
   return ua_->UA_sock->FormatAndSendResponseMessage(response_id, message);
