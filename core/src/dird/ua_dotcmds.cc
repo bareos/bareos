@@ -35,6 +35,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/jcr_private.h"
 #include "dird/job.h"
 #include "dird/dird_globals.h"
 #include "dird/sd_cmds.h"
@@ -44,6 +45,7 @@
 #include "dird/ua_db.h"
 #include "dird/ua_select.h"
 #include "dird/storage.h"
+#include "include/auth_protocol_types.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
