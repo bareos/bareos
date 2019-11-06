@@ -38,61 +38,61 @@ struct BootStrapRecord;
 
 /* clang-format off */
 struct JobControlRecordPrivate {
-  JobControlRecord* next_dev = nullptr; /**< Next JobControlRecord attached to device */
-  JobControlRecord* prev_dev = nullptr; /**< Previous JobControlRecord attached to device */
+  JobControlRecord* next_dev{}; /**< Next JobControlRecord attached to device */
+  JobControlRecord* prev_dev{}; /**< Previous JobControlRecord attached to device */
   pthread_cond_t job_start_wait = PTHREAD_COND_INITIALIZER; /**< Wait for FD to start Job */
-  pthread_cond_t job_end_wait = PTHREAD_COND_INITIALIZER; /**< Wait for Job to end */
-  storagedaemon::DeviceControlRecord* read_dcr = nullptr; /**< Device context for reading */
-  storagedaemon::DeviceControlRecord* dcr = nullptr;      /**< Device context record */
-  POOLMEM* job_name = nullptr;      /**< Base Job name (not unique) */
-  POOLMEM* fileset_name = nullptr;  /**< FileSet */
-  POOLMEM* fileset_md5 = nullptr;   /**< MD5 for FileSet */
-  POOLMEM* backup_format = nullptr; /**< Backup format used when doing a NDMP backup */
-  storagedaemon::VolumeList* VolList = nullptr; /**< List to read */
-  int32_t NumWriteVolumes = 0; /**< Number of volumes written */
-  int32_t NumReadVolumes = 0;  /**< Total number of volumes to read */
-  int32_t CurReadVolume = 0;   /**< Current read volume number */
-  int32_t label_errors = 0;    /**< Count of label errors */
-  bool session_opened = false;
-  bool remote_replicate = false;    /**< Replicate data to remote SD */
-  int32_t Ticket = 0;               /**< Ticket for this job */
-  bool ignore_label_errors = false; /**< Ignore Volume label errors */
-  bool spool_attributes = false;    /**< Set if spooling attributes */
-  bool no_attributes = false;       /**< Set if no attributes wanted */
-  int64_t spool_size = 0;           /**< Spool size for this job */
-  bool spool_data = false;          /**< Set to spool data */
-  storagedaemon::DirectorResource* director = nullptr; /**< Director resource */
-  alist* plugin_options = nullptr;  /**< Specific Plugin Options sent by DIR */
-  alist* write_store = nullptr;     /**< List of write storage devices sent by DIR */
-  alist* read_store = nullptr;      /**< List of read devices sent by DIR */
-  alist* reserve_msgs = nullptr;    /**< Reserve fail messages */
-  bool acquired_storage = false;    /**< Did we acquire our reserved storage already or not */
-  bool PreferMountedVols = false;   /**< Prefer mounted vols rather than new */
-  bool insert_jobmedia_records = false; /**< Need to insert job media records */
-  uint64_t RemainingQuota = 0;          /**< Available bytes to use as quota */
+  pthread_cond_t job_end_wait = PTHREAD_COND_INITIALIZER;   /**< Wait for Job to end */
+  storagedaemon::DeviceControlRecord* read_dcr{}; /**< Device context for reading */
+  storagedaemon::DeviceControlRecord* dcr{};      /**< Device context record */
+  POOLMEM* job_name{};            /**< Base Job name (not unique) */
+  POOLMEM* fileset_name{};        /**< FileSet */
+  POOLMEM* fileset_md5{};         /**< MD5 for FileSet */
+  POOLMEM* backup_format{};       /**< Backup format used when doing a NDMP backup */
+  storagedaemon::VolumeList* VolList{}; /**< List to read */
+  int32_t NumWriteVolumes{};      /**< Number of volumes written */
+  int32_t NumReadVolumes{};       /**< Total number of volumes to read */
+  int32_t CurReadVolume{};        /**< Current read volume number */
+  int32_t label_errors{};         /**< Count of label errors */
+  bool session_opened{};
+  bool remote_replicate{};        /**< Replicate data to remote SD */
+  int32_t Ticket{};               /**< Ticket for this job */
+  bool ignore_label_errors{};     /**< Ignore Volume label errors */
+  bool spool_attributes{};        /**< Set if spooling attributes */
+  bool no_attributes{};           /**< Set if no attributes wanted */
+  int64_t spool_size{};           /**< Spool size for this job */
+  bool spool_data{};              /**< Set to spool data */
+  storagedaemon::DirectorResource* director{}; /**< Director resource */
+  alist* plugin_options{};        /**< Specific Plugin Options sent by DIR */
+  alist* write_store{};           /**< List of write storage devices sent by DIR */
+  alist* read_store{};            /**< List of read devices sent by DIR */
+  alist* reserve_msgs{};          /**< Reserve fail messages */
+  bool acquired_storage{};        /**< Did we acquire our reserved storage already or not */
+  bool PreferMountedVols{};       /**< Prefer mounted vols rather than new */
+  bool insert_jobmedia_records{}; /**< Need to insert job media records */
+  uint64_t RemainingQuota{};      /**< Available bytes to use as quota */
 
   /*
    * Parameters for Open Read Session
    */
-  storagedaemon::READ_CTX* rctx = nullptr; /**< Read context used to keep track of what is processed or not */
-  storagedaemon::BootStrapRecord* bsr = nullptr; /**< Bootstrap record -- has everything */
-  bool mount_next_volume = false; /**< Set to cause next volume mount */
-  uint32_t read_VolSessionId = 0;
-  uint32_t read_VolSessionTime = 0;
-  uint32_t read_StartFile = 0;
-  uint32_t read_EndFile = 0;
-  uint32_t read_StartBlock = 0;
-  uint32_t read_EndBlock = 0;
+  storagedaemon::READ_CTX* rctx{};       /**< Read context used to keep track of what is processed or not */
+  storagedaemon::BootStrapRecord* bsr{}; /**< Bootstrap record -- has everything */
+  bool mount_next_volume{};              /**< Set to cause next volume mount */
+  uint32_t read_VolSessionId{};
+  uint32_t read_VolSessionTime{};
+  uint32_t read_StartFile{};
+  uint32_t read_EndFile{};
+  uint32_t read_StartBlock{};
+  uint32_t read_EndBlock{};
 
   /*
    * Device wait times
    */
-  int32_t min_wait = 0;
-  int32_t max_wait = 0;
-  int32_t max_num_wait = 0;
-  int32_t wait_sec = 0;
-  int32_t rem_wait_sec = 0;
-  int32_t num_wait = 0;
+  int32_t min_wait{};
+  int32_t max_wait{};
+  int32_t max_num_wait{};
+  int32_t wait_sec{};
+  int32_t rem_wait_sec{};
+  int32_t num_wait{};
 };
 /* clang-format on */
 
