@@ -54,6 +54,7 @@
 #include "lib/bsock.h"
 #include "lib/recent_job_results_list.h"
 #include "lib/message_queue_item.h"
+#include "lib/volume_session_info.h"
 #include "lib/watchdog.h"
 
 #include <algorithm>
@@ -149,6 +150,11 @@ bool JobControlRecord::JobReads()
   }
   return false;
 }
+
+struct job_callback_item {
+  void (*JobEndCb)(JobControlRecord* jcr, void*);
+  void* ctx{};
+};
 
 /*
  * Push a job_callback_item onto the job end callback stack.

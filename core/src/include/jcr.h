@@ -39,42 +39,23 @@
 #include <include/job_status.h>
 #include <include/job_types.h>
 #include "lib/tls_conf.h"
-
-#ifdef DIRECTOR_DAEMON
-#include "cats/cats.h"
-#include "dird/client_connection_handshake_mode.h"
-typedef struct s_tree_root TREE_ROOT;
-#endif
-
 #include "lib/alist.h"
-#include "lib/volume_session_info.h"
+#include "lib/tls_conf.h"
 
-
-#define JobTerminatedSuccessfully(jcr) \
-  (jcr->JobStatus == JS_Terminated || jcr->JobStatus == JS_Warnings)
-
-#define JobCanceled(jcr)                                                    \
-  (jcr->JobStatus == JS_Canceled || jcr->JobStatus == JS_ErrorTerminated || \
-   jcr->JobStatus == JS_FatalError)
-
-#define foreach_jcr(jcr) \
-  for (jcr = jcr_walk_start(); jcr; (jcr = jcr_walk_next(jcr)))
-
-#define endeach_jcr(jcr) JcrWalkEnd(jcr)
-
-class dlist;
-class JobControlRecord;
-class BareosSocket;
 class BareosDb;
+class BareosSocket;
+class dlist;
 class htable;
+class JobControlRecord;
 
 struct AttributesDbRecord;
 struct bpContext;
+struct JobControlRecordPrivate;
+struct VolumeSessionInfo;
+
 #ifdef HAVE_WIN32
 struct CopyThreadContext;
 #endif
-
-struct JobControlRecordPrivate;
 
 /* clang-format off */
 struct CompressionContext {
@@ -94,12 +75,19 @@ struct CompressionContext {
 };
 /* clang-format on */
 
-struct job_callback_item {
-  void (*JobEndCb)(JobControlRecord* jcr, void*);
-  void* ctx{};
-};
-
 typedef void(JCR_free_HANDLER)(JobControlRecord* jcr);
+
+#define JobTerminatedSuccessfully(jcr) \
+  (jcr->JobStatus == JS_Terminated || jcr->JobStatus == JS_Warnings)
+
+#define JobCanceled(jcr)                                                    \
+  (jcr->JobStatus == JS_Canceled || jcr->JobStatus == JS_ErrorTerminated || \
+   jcr->JobStatus == JS_FatalError)
+
+#define foreach_jcr(jcr) \
+  for (jcr = jcr_walk_start(); jcr; (jcr = jcr_walk_next(jcr)))
+
+#define endeach_jcr(jcr) JcrWalkEnd(jcr)
 
 /* clang-format off */
 class JobControlRecord {
