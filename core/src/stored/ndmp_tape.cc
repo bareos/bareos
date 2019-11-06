@@ -327,7 +327,7 @@ static inline bool bndmp_write_data_to_block(JobControlRecord* jcr,
                                              uint32_t data_length)
 {
   bool retval = false;
-  DeviceControlRecord* dcr = jcr->impl_->dcr;
+  DeviceControlRecord* dcr = jcr->impl->dcr;
   POOLMEM* rec_data;
 
   if (!dcr) {
@@ -376,8 +376,8 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
                                               uint32_t wanted_data_length,
                                               uint32_t* data_length)
 {
-  DeviceControlRecord* dcr = jcr->impl_->read_dcr;
-  READ_CTX* rctx = jcr->impl_->rctx;
+  DeviceControlRecord* dcr = jcr->impl->read_dcr;
+  READ_CTX* rctx = jcr->impl->rctx;
   bool done = false;
   bool ok = true;
 
@@ -480,7 +480,7 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
  */
 static inline bool BndmpCreateVirtualFile(JobControlRecord* jcr, char* filename)
 {
-  DeviceControlRecord* dcr = jcr->impl_->dcr;
+  DeviceControlRecord* dcr = jcr->impl->dcr;
   struct stat statp;
   time_t now = time(NULL);
   PoolMem attribs(PM_NAME), data(PM_NAME);
@@ -592,7 +592,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
    * In NDMP terms this is the same as a FD connecting so wake any waiting
    * threads.
    */
-  pthread_cond_signal(&jcr->impl_->job_start_wait);
+  pthread_cond_signal(&jcr->impl->job_start_wait);
 
   /*
    * Save the JobControlRecord to ndm_session binding so everything furher
@@ -624,9 +624,9 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
    * Depending on the open mode select the right DeviceControlRecord.
    */
   if (will_write) {
-    dcr = jcr->impl_->dcr;
+    dcr = jcr->impl->dcr;
   } else {
-    dcr = jcr->impl_->read_dcr;
+    dcr = jcr->impl->read_dcr;
   }
 
   if (!dcr) {
@@ -654,7 +654,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
      * One NDMP backup Job can be one or more save sessions so we keep
      * track if we already acquired the storage.
      */
-    if (!jcr->impl_->acquired_storage) {
+    if (!jcr->impl->acquired_storage) {
       /*
        * Actually acquire the device which we reserved.
        */
@@ -672,7 +672,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
       /*
        * Keep track that we acquired the storage.
        */
-      jcr->impl_->acquired_storage = true;
+      jcr->impl->acquired_storage = true;
 
       Dmsg1(50, "Begin append device=%s\n", dcr->dev->print_name());
 
@@ -730,16 +730,16 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
     /*
      * Setup internal system for reading data (if not done before).
      */
-    if (!jcr->impl_->acquired_storage) {
+    if (!jcr->impl->acquired_storage) {
       Dmsg0(20, "Start read data.\n");
 
-      if (jcr->impl_->NumReadVolumes == 0) {
+      if (jcr->impl->NumReadVolumes == 0) {
         Jmsg(jcr, M_FATAL, 0, _("No Volume names found for restore.\n"));
         goto bail_out;
       }
 
       Dmsg2(200, "Found %d volumes names to restore. First=%s\n",
-            jcr->impl_->NumReadVolumes, jcr->impl_->VolList->VolumeName);
+            jcr->impl->NumReadVolumes, jcr->impl->VolList->VolumeName);
 
       /*
        * Ready device for reading
@@ -758,7 +758,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
       /*
        * Keep track that we acquired the storage.
        */
-      jcr->impl_->acquired_storage = true;
+      jcr->impl->acquired_storage = true;
 
       /*
        * Change the Job to running state.
@@ -768,13 +768,13 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
       Dmsg1(50, "Begin reading device=%s\n", dcr->dev->print_name());
 
       PositionDeviceToFirstFile(jcr, dcr);
-      jcr->impl_->mount_next_volume = false;
+      jcr->impl->mount_next_volume = false;
 
       /*
        * Allocate a new read context for this Job.
        */
       rctx = new_read_context();
-      jcr->impl_->rctx = rctx;
+      jcr->impl->rctx = rctx;
 
       /*
        * Read the first block and setup record processing.
@@ -852,7 +852,7 @@ extern "C" ndmp9_error BndmpTapeClose(struct ndm_session* sess)
     }
   }
 
-  pthread_cond_signal(&jcr->impl_->job_end_wait); /* wake any waiting thread */
+  pthread_cond_signal(&jcr->impl->job_end_wait); /* wake any waiting thread */
 
   ndmos_tape_initialize(sess);
 
@@ -1034,7 +1034,7 @@ static inline void UnregisterCallbackHooks(struct ndm_session* sess)
 
 void EndOfNdmpBackup(JobControlRecord* jcr)
 {
-  DeviceControlRecord* dcr = jcr->impl_->dcr;
+  DeviceControlRecord* dcr = jcr->impl->dcr;
   char ec[50];
 
   /*
@@ -1100,9 +1100,9 @@ void EndOfNdmpBackup(JobControlRecord* jcr)
     /*
      * Release the device -- and send final Vol info to DIR and unlock it.
      */
-    if (jcr->impl_->acquired_storage) {
+    if (jcr->impl->acquired_storage) {
       ReleaseDevice(dcr);
-      jcr->impl_->acquired_storage = false;
+      jcr->impl->acquired_storage = false;
     } else {
       dcr->UnreserveDevice();
     }
@@ -1113,16 +1113,16 @@ void EndOfNdmpBackup(JobControlRecord* jcr)
 
 void EndOfNdmpRestore(JobControlRecord* jcr)
 {
-  if (jcr->impl_->rctx) {
-    FreeReadContext(jcr->impl_->rctx);
-    jcr->impl_->rctx = NULL;
+  if (jcr->impl->rctx) {
+    FreeReadContext(jcr->impl->rctx);
+    jcr->impl->rctx = NULL;
   }
 
-  if (jcr->impl_->acquired_storage) {
-    ReleaseDevice(jcr->impl_->read_dcr);
-    jcr->impl_->acquired_storage = false;
+  if (jcr->impl->acquired_storage) {
+    ReleaseDevice(jcr->impl->read_dcr);
+    jcr->impl->acquired_storage = false;
   } else {
-    jcr->impl_->read_dcr->UnreserveDevice();
+    jcr->impl->read_dcr->UnreserveDevice();
   }
 }
 

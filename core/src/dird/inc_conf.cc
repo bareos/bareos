@@ -309,9 +309,9 @@ void FindUsedCompressalgos(PoolMem* compressalgos, JobControlRecord* jcr)
   FilesetResource* fs;
   struct s_fs_opt* fs_opt;
 
-  if (!jcr->impl_->res.job || !jcr->impl_->res.job->fileset) { return; }
+  if (!jcr->impl->res.job || !jcr->impl->res.job->fileset) { return; }
 
-  fs = jcr->impl_->res.job->fileset;
+  fs = jcr->impl->res.job->fileset;
   for (std::size_t i = 0; i < fs->include_items.size(); i++) {
     inc = fs->include_items[i];
 

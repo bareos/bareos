@@ -94,7 +94,7 @@ static int job_item(JobControlRecord* jcr,
 
   switch (code) {
     case 1: /* Job */
-      str = jcr->impl_->res.job->resource_name_;
+      str = jcr->impl->res.job->resource_name_;
       break;
     case 2: /* Director's name */
       str = my_name;
@@ -110,31 +110,31 @@ static int job_item(JobControlRecord* jcr,
       str = buf;
       break;
     case 6: /* Client */
-      str = jcr->impl_->res.client->resource_name_;
+      str = jcr->impl->res.client->resource_name_;
       if (!str) { str = " "; }
       break;
     case 7: /* NumVols */
-      Bsnprintf(buf, sizeof(buf), "%d", jcr->impl_->NumVols);
+      Bsnprintf(buf, sizeof(buf), "%d", jcr->impl->NumVols);
       str = buf;
       break;
     case 8: /* Pool */
-      str = jcr->impl_->res.pool->resource_name_;
+      str = jcr->impl->res.pool->resource_name_;
       break;
     case 9: /* Storage */
-      if (jcr->impl_->res.write_storage) {
-        str = jcr->impl_->res.write_storage->resource_name_;
+      if (jcr->impl->res.write_storage) {
+        str = jcr->impl->res.write_storage->resource_name_;
       } else {
-        str = jcr->impl_->res.read_storage->resource_name_;
+        str = jcr->impl->res.read_storage->resource_name_;
       }
       break;
     case 10: /* Catalog */
-      str = jcr->impl_->res.catalog->resource_name_;
+      str = jcr->impl->res.catalog->resource_name_;
       break;
     case 11: /* MediaType */
-      if (jcr->impl_->res.write_storage) {
-        str = jcr->impl_->res.write_storage->media_type;
+      if (jcr->impl->res.write_storage) {
+        str = jcr->impl->res.write_storage->media_type;
       } else {
-        str = jcr->impl_->res.read_storage->media_type;
+        str = jcr->impl->res.read_storage->media_type;
       }
       break;
     case 12: /* JobName */

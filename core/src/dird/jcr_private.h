@@ -40,10 +40,10 @@ class CatalogResource;
     jcr->JobStatus == JS_WaitStoreRes || jcr->JobStatus == JS_WaitJobRes ||   \
     jcr->JobStatus == JS_WaitClientRes || jcr->JobStatus == JS_WaitMaxJobs || \
     jcr->JobStatus == JS_WaitPriority ||                                      \
-    jcr->impl_->SDJobStatus == JS_WaitMedia ||                                \
-    jcr->impl_->SDJobStatus == JS_WaitMount ||                                \
-    jcr->impl_->SDJobStatus == JS_WaitDevice ||                               \
-    jcr->impl_->SDJobStatus == JS_WaitMaxJobs))
+    jcr->impl->SDJobStatus == JS_WaitMedia ||                                 \
+    jcr->impl->SDJobStatus == JS_WaitMount ||                                 \
+    jcr->impl->SDJobStatus == JS_WaitDevice ||                                \
+    jcr->impl->SDJobStatus == JS_WaitMaxJobs))
 
 /* clang-format off */
 struct Resources {

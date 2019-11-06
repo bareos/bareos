@@ -142,10 +142,10 @@ int main(int argc, char* const* argv)
   }
 
   jcr = NewDirectorJcr();  // Ueb: null
-  jcr->impl_->res.fileset =
+  jcr->impl->res.fileset =
       (FilesetResource*)my_config->GetResWithName(R_FILESET, fileset_name);
 
-  if (jcr->impl_->res.fileset == NULL) {
+  if (jcr->impl->res.fileset == NULL) {
     fprintf(stderr, "%s: Fileset not found\n", fileset_name);
 
     FilesetResource* var;
@@ -413,7 +413,7 @@ static void CountFiles(FindFilesPacket* ar)
 
 static bool CopyFileset(FindFilesPacket* ff, JobControlRecord* jcr)
 {
-  FilesetResource* jcr_fileset = jcr->impl_->res.fileset;
+  FilesetResource* jcr_fileset = jcr->impl->res.fileset;
   int num;
   bool include = true;
 

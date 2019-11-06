@@ -66,20 +66,20 @@ void DoVerify(JobControlRecord* jcr)
 {
   jcr->setJobStatus(JS_Running);
   jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE;
-  if ((jcr->impl_->big_buf = (char*)malloc(jcr->buf_size)) == NULL) {
+  if ((jcr->impl->big_buf = (char*)malloc(jcr->buf_size)) == NULL) {
     Jmsg1(jcr, M_ABORT, 0, _("Cannot malloc %d network read buffer\n"),
           DEFAULT_NETWORK_BUFFER_SIZE);
   }
-  SetFindOptions((FindFilesPacket*)jcr->impl_->ff, jcr->impl_->incremental,
-                 jcr->impl_->mtime);
+  SetFindOptions((FindFilesPacket*)jcr->impl->ff, jcr->impl->incremental,
+                 jcr->impl->mtime);
   Dmsg0(10, "Start find files\n");
   /* Subroutine VerifyFile() is called for each file */
-  FindFiles(jcr, (FindFilesPacket*)jcr->impl_->ff, VerifyFile, NULL);
+  FindFiles(jcr, (FindFilesPacket*)jcr->impl->ff, VerifyFile, NULL);
   Dmsg0(10, "End find files\n");
 
-  if (jcr->impl_->big_buf) {
-    free(jcr->impl_->big_buf);
-    jcr->impl_->big_buf = NULL;
+  if (jcr->impl->big_buf) {
+    free(jcr->impl->big_buf);
+    jcr->impl->big_buf = NULL;
   }
   jcr->setJobStatus(JS_Terminated);
 }
@@ -100,7 +100,7 @@ static int VerifyFile(JobControlRecord* jcr,
   if (JobCanceled(jcr)) { return 0; }
 
   dir = jcr->dir_bsock;
-  jcr->impl_->num_files_examined++; /* bump total file count */
+  jcr->impl->num_files_examined++; /* bump total file count */
 
   switch (ff_pkt->type) {
     case FT_LNKSAVED: /* Hard linked, file already saved */
@@ -116,7 +116,7 @@ static int VerifyFile(JobControlRecord* jcr,
       Dmsg2(30, "FT_LNK saving: %s -> %s\n", ff_pkt->fname, ff_pkt->link);
       break;
     case FT_DIRBEGIN:
-      jcr->impl_->num_files_examined--; /* correct file count */
+      jcr->impl->num_files_examined--; /* correct file count */
       return 1;                         /* ignored */
     case FT_REPARSE:
     case FT_JUNCTION:
@@ -201,7 +201,7 @@ static int VerifyFile(JobControlRecord* jcr,
 
   jcr->lock();
   jcr->JobFiles++; /* increment number of files sent */
-  PmStrcpy(jcr->impl_->last_fname, ff_pkt->fname);
+  PmStrcpy(jcr->impl->last_fname, ff_pkt->fname);
   jcr->unlock();
 
   /*
@@ -343,7 +343,7 @@ static int ReadDigest(BareosWinFilePacket* bfd,
   char buf[DEFAULT_NETWORK_BUFFER_SIZE];
   int64_t n;
   int64_t bufsiz = (int64_t)sizeof(buf);
-  FindFilesPacket* ff_pkt = (FindFilesPacket*)jcr->impl_->ff;
+  FindFilesPacket* ff_pkt = (FindFilesPacket*)jcr->impl->ff;
   uint64_t fileAddr = 0; /* file address */
 
 
@@ -373,10 +373,10 @@ static int ReadDigest(BareosWinFilePacket* bfd,
   if (n < 0) {
     BErrNo be;
     be.SetErrno(bfd->BErrNo);
-    Dmsg2(100, "Error reading file %s: ERR=%s\n", jcr->impl_->last_fname,
+    Dmsg2(100, "Error reading file %s: ERR=%s\n", jcr->impl->last_fname,
           be.bstrerror());
     Jmsg(jcr, M_ERROR, 1, _("Error reading file %s: ERR=%s\n"),
-         jcr->impl_->last_fname, be.bstrerror());
+         jcr->impl->last_fname, be.bstrerror());
     jcr->JobErrors++;
     return -1;
   }

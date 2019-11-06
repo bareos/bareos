@@ -125,22 +125,22 @@ static bool connect_outbound_to_file_daemon(JobControlRecord* jcr,
 
   if (!IsConnectingToClientAllowed(jcr)) {
     Dmsg1(120, "connecting to client \"%s\" is not allowed.\n",
-          jcr->impl_->res.client->resource_name_);
+          jcr->impl->res.client->resource_name_);
     return false;
   }
 
   fd = new BareosSocketTCP;
   if (me->nokeepalive) { fd->ClearKeepalive(); }
-  heart_beat = get_heartbeat_interval(jcr->impl_->res.client);
+  heart_beat = get_heartbeat_interval(jcr->impl->res.client);
 
   char name[MAX_NAME_LENGTH + 100];
   bstrncpy(name, _("Client: "), sizeof(name));
-  bstrncat(name, jcr->impl_->res.client->resource_name_, sizeof(name));
+  bstrncat(name, jcr->impl->res.client->resource_name_, sizeof(name));
 
   fd->SetSourceAddress(me->DIRsrc_addr);
   if (!fd->connect(jcr, retry_interval, max_retry_time, heart_beat, name,
-                   jcr->impl_->res.client->address, NULL,
-                   jcr->impl_->res.client->FDport, verbose)) {
+                   jcr->impl->res.client->address, NULL,
+                   jcr->impl->res.client->FDport, verbose)) {
     delete fd;
     fd = NULL;
     jcr->setJobStatus(JS_ErrorTerminated);
@@ -158,9 +158,9 @@ static void OutputMessageForConnectionTry(JobControlRecord* jcr, UaContext* ua)
 {
   std::string m;
 
-  if (jcr->impl_->res.client->connection_successful_handshake_ ==
+  if (jcr->impl->res.client->connection_successful_handshake_ ==
           ClientConnectionHandshakeMode::kUndefined ||
-      jcr->impl_->res.client->connection_successful_handshake_ ==
+      jcr->impl->res.client->connection_successful_handshake_ ==
           ClientConnectionHandshakeMode::kFailed) {
     m = "Probing client protocol... (result will be saved until config reload)";
   } else {
@@ -188,12 +188,12 @@ static void SendInfoChosenCipher(JobControlRecord* jcr, UaContext* ua)
 static void SendInfoSuccess(JobControlRecord* jcr, UaContext* ua)
 {
   std::string m;
-  if (jcr->impl_->res.client->connection_successful_handshake_ ==
+  if (jcr->impl->res.client->connection_successful_handshake_ ==
       ClientConnectionHandshakeMode::kUndefined) {
     m += "\r\v";
   }
   bool add_newline_in_joblog = false;
-  switch (jcr->impl_->connection_handshake_try_) {
+  switch (jcr->impl->connection_handshake_try_) {
     case ClientConnectionHandshakeMode::kTlsFirst:
       m += " Handshake: Immediate TLS,";
       break;
@@ -234,22 +234,22 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
    * in case there is a client that cannot do Tls immediately then
    * fall back to cleartext md5-handshake */
   OutputMessageForConnectionTry(jcr, ua);
-  if (jcr->impl_->res.client->connection_successful_handshake_ ==
+  if (jcr->impl->res.client->connection_successful_handshake_ ==
           ClientConnectionHandshakeMode::kUndefined ||
-      jcr->impl_->res.client->connection_successful_handshake_ ==
+      jcr->impl->res.client->connection_successful_handshake_ ==
           ClientConnectionHandshakeMode::kFailed) {
-    if (jcr->impl_->res.client->IsTlsConfigured()) {
-      jcr->impl_->connection_handshake_try_ =
+    if (jcr->impl->res.client->IsTlsConfigured()) {
+      jcr->impl->connection_handshake_try_ =
           ClientConnectionHandshakeMode::kTlsFirst;
     } else {
-      jcr->impl_->connection_handshake_try_ =
+      jcr->impl->connection_handshake_try_ =
           ClientConnectionHandshakeMode::kCleartextFirst;
     }
     jcr->is_passive_client_connection_probing = true;
   } else {
     /* if there is a stored mode from a previous connection then use this */
-    jcr->impl_->connection_handshake_try_ =
-        jcr->impl_->res.client->connection_successful_handshake_;
+    jcr->impl->connection_handshake_try_ =
+        jcr->impl->res.client->connection_successful_handshake_;
     jcr->is_passive_client_connection_probing = false;
   }
 
@@ -275,14 +275,14 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
         SendInfoSuccess(jcr, ua);
         SendInfoChosenCipher(jcr, ua);
         jcr->is_passive_client_connection_probing = false;
-        jcr->impl_->res.client->connection_successful_handshake_ =
-            jcr->impl_->connection_handshake_try_;
+        jcr->impl->res.client->connection_successful_handshake_ =
+            jcr->impl->connection_handshake_try_;
       } else {
         /* authentication failed due to
          * - tls mismatch or
          * - if an old client cannot do tls- before md5-handshake
          * */
-        switch (jcr->impl_->connection_handshake_try_) {
+        switch (jcr->impl->connection_handshake_try_) {
           case ClientConnectionHandshakeMode::kTlsFirst:
             if (jcr->file_bsock) {
               jcr->file_bsock->close();
@@ -290,11 +290,11 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
               jcr->file_bsock = nullptr;
             }
             jcr->resetJobStatus(JS_Running);
-            jcr->impl_->connection_handshake_try_ =
+            jcr->impl->connection_handshake_try_ =
                 ClientConnectionHandshakeMode::kCleartextFirst;
             break;
           case ClientConnectionHandshakeMode::kCleartextFirst:
-            jcr->impl_->connection_handshake_try_ =
+            jcr->impl->connection_handshake_try_ =
                 ClientConnectionHandshakeMode::kFailed;
             break;
           case ClientConnectionHandshakeMode::kFailed:
@@ -305,11 +305,11 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
       }
     } else {
       Jmsg(jcr, M_FATAL, 0, "\nFailed to connect to client \"%s\".\n",
-           jcr->impl_->res.client->resource_name_);
+           jcr->impl->res.client->resource_name_);
     }
     connect_tries--;
   } while (!tcp_connect_failed && connect_tries && !success &&
-           jcr->impl_->connection_handshake_try_ !=
+           jcr->impl->connection_handshake_try_ !=
                ClientConnectionHandshakeMode::kFailed);
 
   if (!success) { jcr->setJobStatus(JS_ErrorTerminated); }
@@ -323,7 +323,7 @@ int SendJobInfoToFileDaemon(JobControlRecord* jcr)
 
   if (jcr->sd_auth_key == NULL) { jcr->sd_auth_key = strdup("dummy"); }
 
-  if (jcr->impl_->res.client->connection_successful_handshake_ ==
+  if (jcr->impl->res.client->connection_successful_handshake_ ==
       ClientConnectionHandshakeMode::kTlsFirst) {
     /* client protocol onwards Bareos 18.2 */
     TlsPolicy tls_policy = kBnetTlsUnknown;
@@ -336,10 +336,10 @@ int SendJobInfoToFileDaemon(JobControlRecord* jcr)
         break;
       default:
         StorageResource* storage = nullptr;
-        if (jcr->impl_->res.write_storage) {
-          storage = jcr->impl_->res.write_storage;
-        } else if (jcr->impl_->res.read_storage) {
-          storage = jcr->impl_->res.read_storage;
+        if (jcr->impl->res.write_storage) {
+          storage = jcr->impl->res.write_storage;
+        } else if (jcr->impl->res.read_storage) {
+          storage = jcr->impl->res.read_storage;
         } else {
           Jmsg(jcr, M_FATAL, 0, _("No read or write storage defined\n"));
           jcr->setJobStatus(JS_ErrorTerminated);
@@ -364,7 +364,7 @@ int SendJobInfoToFileDaemon(JobControlRecord* jcr)
   } /* if (jcr->impl_->res.client->connection_successful_handshake_ ==
        ClientConnectionHandshakeMode::kTlsFirst) */
 
-  if (!jcr->impl_->keep_sd_auth_key && !bstrcmp(jcr->sd_auth_key, "dummy")) {
+  if (!jcr->impl->keep_sd_auth_key && !bstrcmp(jcr->sd_auth_key, "dummy")) {
     memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
   }
 
@@ -373,17 +373,17 @@ int SendJobInfoToFileDaemon(JobControlRecord* jcr)
     Dmsg1(110, "<filed: %s", fd->msg);
     if (!bstrncmp(fd->msg, OKjob, strlen(OKjob))) {
       Jmsg(jcr, M_FATAL, 0, _("File daemon \"%s\" rejected Job command: %s\n"),
-           jcr->impl_->res.client->resource_name_, fd->msg);
+           jcr->impl->res.client->resource_name_, fd->msg);
       jcr->setJobStatus(JS_ErrorTerminated);
       return 0;
     } else if (jcr->db) {
       ClientDbRecord cr;
 
-      bstrncpy(cr.Name, jcr->impl_->res.client->resource_name_,
+      bstrncpy(cr.Name, jcr->impl->res.client->resource_name_,
                sizeof(cr.Name));
-      cr.AutoPrune = jcr->impl_->res.client->AutoPrune;
-      cr.FileRetention = jcr->impl_->res.client->FileRetention;
-      cr.JobRetention = jcr->impl_->res.client->JobRetention;
+      cr.AutoPrune = jcr->impl->res.client->AutoPrune;
+      cr.FileRetention = jcr->impl->res.client->FileRetention;
+      cr.JobRetention = jcr->impl->res.client->JobRetention;
       bstrncpy(cr.Uname, fd->msg + strlen(OKjob) + 1, sizeof(cr.Uname));
       if (!jcr->db->UpdateClientRecord(jcr, &cr)) {
         Jmsg(jcr, M_WARNING, 0, _("Error updating Client record. ERR=%s\n"),
@@ -408,8 +408,8 @@ bool SendPreviousRestoreObjects(JobControlRecord* jcr)
   switch (JobLevel) {
     case L_DIFFERENTIAL:
     case L_INCREMENTAL:
-      if (jcr->impl_->previous_jr.JobId > 0) {
-        if (!SendRestoreObjects(jcr, jcr->impl_->previous_jr.JobId, false)) {
+      if (jcr->impl->previous_jr.JobId > 0) {
+        if (!SendRestoreObjects(jcr, jcr->impl->previous_jr.JobId, false)) {
           return false;
         }
       }
@@ -425,7 +425,7 @@ bool SendBwlimitToFd(JobControlRecord* jcr, const char* Job)
 {
   BareosSocket* fd = jcr->file_bsock;
 
-  if (jcr->impl_->FDVersion >= FD_VERSION_4) {
+  if (jcr->impl->FDVersion >= FD_VERSION_4) {
     fd->fsend(bandwidthcmd, jcr->max_bandwidth, Job);
     if (!response(jcr, fd, OKBandwidth, "Bandwidth", DISPLAY_ERROR)) {
       jcr->max_bandwidth = 0; /* can't set bandwidth limit */
@@ -441,29 +441,29 @@ bool SendSecureEraseReqToFd(JobControlRecord* jcr)
   int32_t n;
   BareosSocket* fd = jcr->file_bsock;
 
-  if (!jcr->impl_->FDSecureEraseCmd) {
-    jcr->impl_->FDSecureEraseCmd = GetPoolMemory(PM_NAME);
+  if (!jcr->impl->FDSecureEraseCmd) {
+    jcr->impl->FDSecureEraseCmd = GetPoolMemory(PM_NAME);
   }
 
-  if (jcr->impl_->FDVersion > FD_VERSION_53) {
+  if (jcr->impl->FDVersion > FD_VERSION_53) {
     fd->fsend(getSecureEraseCmd);
     while ((n = BgetDirmsg(fd)) >= 0) {
-      jcr->impl_->FDSecureEraseCmd =
-          CheckPoolMemorySize(jcr->impl_->FDSecureEraseCmd, fd->message_length);
-      if (sscanf(fd->msg, OKgetSecureEraseCmd, jcr->impl_->FDSecureEraseCmd) ==
+      jcr->impl->FDSecureEraseCmd =
+          CheckPoolMemorySize(jcr->impl->FDSecureEraseCmd, fd->message_length);
+      if (sscanf(fd->msg, OKgetSecureEraseCmd, jcr->impl->FDSecureEraseCmd) ==
           1) {
         Dmsg1(400, "Got FD Secure Erase Cmd: %s\n",
-              jcr->impl_->FDSecureEraseCmd);
+              jcr->impl->FDSecureEraseCmd);
         break;
       } else {
         Jmsg(jcr, M_WARNING, 0, _("Unexpected Client Secure Erase Cmd: %s\n"),
              fd->msg);
-        PmStrcpy(jcr->impl_->FDSecureEraseCmd, "*None*");
+        PmStrcpy(jcr->impl->FDSecureEraseCmd, "*None*");
         return false;
       }
     }
   } else {
-    PmStrcpy(jcr->impl_->FDSecureEraseCmd, "*None*");
+    PmStrcpy(jcr->impl->FDSecureEraseCmd, "*None*");
   }
 
   return true;
@@ -477,7 +477,7 @@ static void SendSinceTime(JobControlRecord* jcr)
 
   stime = StrToUtime(jcr->stime);
   fd->fsend(levelcmd, "", NT_("since_utime "), edit_uint64(stime, ed1), 0,
-            NT_("prev_job="), jcr->impl_->PrevJob);
+            NT_("prev_job="), jcr->impl->PrevJob);
 
   while (BgetDirmsg(fd) >= 0) { /* allow him to poll us to sync clocks */
     Jmsg(jcr, M_INFO, 0, "%s\n", fd->msg);
@@ -538,9 +538,9 @@ bool SendLevelCommand(JobControlRecord* jcr)
  */
 static bool SendFileset(JobControlRecord* jcr)
 {
-  FilesetResource* fileset = jcr->impl_->res.fileset;
+  FilesetResource* fileset = jcr->impl->res.fileset;
   BareosSocket* fd = jcr->file_bsock;
-  StorageResource* store = jcr->impl_->res.write_storage;
+  StorageResource* store = jcr->impl->res.write_storage;
   int num;
   bool include = true;
 
@@ -783,8 +783,8 @@ static bool SendListItem(JobControlRecord* jcr,
 bool SendIncludeList(JobControlRecord* jcr)
 {
   BareosSocket* fd = jcr->file_bsock;
-  if (jcr->impl_->res.fileset->new_include) {
-    fd->fsend(filesetcmd, jcr->impl_->res.fileset->enable_vss ? " vss=1" : "");
+  if (jcr->impl->res.fileset->new_include) {
+    fd->fsend(filesetcmd, jcr->impl->res.fileset->enable_vss ? " vss=1" : "");
     return SendFileset(jcr);
   }
   return true;
@@ -832,18 +832,18 @@ int SendRunscriptsCommands(JobControlRecord* jcr)
   /*
    * See if there are any runscripts that need to be ran on the client.
    */
-  if (!HaveClientRunscripts(jcr->impl_->res.job->RunScripts)) { return 1; }
+  if (!HaveClientRunscripts(jcr->impl->res.job->RunScripts)) { return 1; }
 
   Dmsg0(120, "dird: sending runscripts to fd\n");
 
   msg = GetPoolMemory(PM_FNAME);
   ehost = GetPoolMemory(PM_FNAME);
-  foreach_alist (cmd, jcr->impl_->res.job->RunScripts) {
+  foreach_alist (cmd, jcr->impl->res.job->RunScripts) {
     if (!cmd->target.empty()) {
       ehost = edit_job_codes(jcr, ehost, cmd->target.c_str(), "");
       Dmsg2(200, "dird: runscript %s -> %s\n", cmd->target.c_str(), ehost);
 
-      if (bstrcmp(ehost, jcr->impl_->res.client->resource_name_)) {
+      if (bstrcmp(ehost, jcr->impl->res.client->resource_name_)) {
         PmStrcpy(msg, cmd->command.c_str());
         BashSpaces(msg);
 
@@ -917,15 +917,15 @@ static int RestoreObjectHandler(void* ctx, int num_fields, char** row)
   /*
    * Old File Daemon doesn't handle restore objects
    */
-  if (jcr->impl_->FDVersion < FD_VERSION_3) {
+  if (jcr->impl->FDVersion < FD_VERSION_3) {
     Jmsg(jcr, M_WARNING, 0,
          _("Client \"%s\" may not be used to restore "
            "this job. Please upgrade your client.\n"),
-         jcr->impl_->res.client->resource_name_);
+         jcr->impl->res.client->resource_name_);
     return 1;
   }
 
-  if (jcr->impl_->FDVersion <
+  if (jcr->impl->FDVersion <
       FD_VERSION_5) { /* Old version without PluginName */
     fd->fsend("restoreobject JobId=%s %s,%s,%s,%s,%s,%s\n", row[0], row[1],
               row[2], row[3], row[4], row[5], row[6]);
@@ -973,9 +973,9 @@ bool SendPluginOptions(JobControlRecord* jcr)
   const char* plugin_options;
   POOLMEM* msg;
 
-  if (jcr->impl_->plugin_options) {
+  if (jcr->impl->plugin_options) {
     msg = GetPoolMemory(PM_FNAME);
-    PmStrcpy(msg, jcr->impl_->plugin_options);
+    PmStrcpy(msg, jcr->impl->plugin_options);
     BashSpaces(msg);
 
     fd->fsend(pluginoptionscmd, msg);
@@ -986,11 +986,11 @@ bool SendPluginOptions(JobControlRecord* jcr)
       return false;
     }
   }
-  if (jcr->impl_->res.job && jcr->impl_->res.job->FdPluginOptions &&
-      jcr->impl_->res.job->FdPluginOptions->size()) {
+  if (jcr->impl->res.job && jcr->impl->res.job->FdPluginOptions &&
+      jcr->impl->res.job->FdPluginOptions->size()) {
     Dmsg2(200, "dird: sendpluginoptions found FdPluginOptions in res.job");
     foreach_alist_index (i, plugin_options,
-                         jcr->impl_->res.job->FdPluginOptions) {
+                         jcr->impl->res.job->FdPluginOptions) {
       PmStrcpy(cur_plugin_options, plugin_options);
       BashSpaces(cur_plugin_options.c_str());
 
@@ -1093,8 +1093,8 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
   PoolMem digest(PM_MESSAGE);
 
   fd = jcr->file_bsock;
-  jcr->impl_->jr.FirstIndex = 1;
-  jcr->impl_->FileIndex = 0;
+  jcr->impl->jr.FirstIndex = 1;
+  jcr->impl->FileIndex = 0;
 
   /*
    * Start transaction allocates jcr->attr and jcr->ar if needed
@@ -1148,15 +1148,15 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
       /*
        * Any cached attr is flushed so we can reuse jcr->attr and jcr->ar
        */
-      fn = jcr->impl_->fname =
-          CheckPoolMemorySize(jcr->impl_->fname, fd->message_length);
+      fn = jcr->impl->fname =
+          CheckPoolMemorySize(jcr->impl->fname, fd->message_length);
       while (*p != 0) { *fn++ = *p++; /* copy filename */ }
       *fn = *p++;             /* term filename and point p to attribs */
       PmStrcpy(jcr->attr, p); /* save attributes */
       jcr->JobFiles++;
-      jcr->impl_->FileIndex = file_index;
+      jcr->impl->FileIndex = file_index;
       ar->attr = jcr->attr;
-      ar->fname = jcr->impl_->fname;
+      ar->fname = jcr->impl->fname;
       ar->FileIndex = file_index;
       ar->Stream = stream;
       ar->link = NULL;
@@ -1169,7 +1169,7 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
       jcr->cached_attribute = true;
 
       Dmsg2(debuglevel, "dird<filed: stream=%d %s\n", stream,
-            jcr->impl_->fname);
+            jcr->impl->fname);
       Dmsg1(debuglevel, "dird<filed: attr=%s\n", ar->attr);
       jcr->FileId = ar->FileId;
     } else if (CryptoDigestStreamType(stream) != CRYPTO_DIGEST_NONE) {
@@ -1181,9 +1181,9 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
        * it (or not) When we get a new STREAM_UNIX_ATTRIBUTES, we known that we
        * can add file to the catalog At the end, we have to add the last file
        */
-      if (jcr->impl_->FileIndex != (uint32_t)file_index) {
+      if (jcr->impl->FileIndex != (uint32_t)file_index) {
         Jmsg3(jcr, M_ERROR, 0, _("%s index %d not same as attributes %d\n"),
-              stream_to_ascii(stream), file_index, jcr->impl_->FileIndex);
+              stream_to_ascii(stream), file_index, jcr->impl->FileIndex);
         continue;
       }
 
@@ -1195,8 +1195,8 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
       Dmsg4(debuglevel, "stream=%d DigestLen=%d Digest=%s type=%d\n", stream,
             strlen(digest.c_str()), digest.c_str(), ar->DigestType);
     }
-    jcr->impl_->jr.JobFiles = jcr->JobFiles = file_index;
-    jcr->impl_->jr.LastIndex = file_index;
+    jcr->impl->jr.JobFiles = jcr->JobFiles = file_index;
+    jcr->impl->jr.LastIndex = file_index;
   }
 
   if (IsBnetError(fd)) {
@@ -1228,7 +1228,7 @@ bool CancelFileDaemonJob(UaContext* ua, JobControlRecord* jcr)
 {
   BareosSocket* fd;
 
-  ua->jcr->impl_->res.client = jcr->impl_->res.client;
+  ua->jcr->impl->res.client = jcr->impl->res.client;
   if (!ConnectToFileDaemon(ua->jcr, 10, me->FDConnectTimeout, true, ua)) {
     ua->ErrorMsg(_("\nFailed to connect to File daemon.\n"));
     return false;
@@ -1256,7 +1256,7 @@ void DoNativeClientStatus(UaContext* ua, ClientResource* client, char* cmd)
   /*
    * Connect to File daemon
    */
-  ua->jcr->impl_->res.client = client;
+  ua->jcr->impl->res.client = client;
 
   /*
    * Try to connect for 15 seconds
@@ -1305,7 +1305,7 @@ void DoClientResolve(UaContext* ua, ClientResource* client)
   /*
    * Connect to File daemon
    */
-  ua->jcr->impl_->res.client = client;
+  ua->jcr->impl->res.client = client;
 
   /*
    * Try to connect for 15 seconds

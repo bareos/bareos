@@ -1203,7 +1203,7 @@ StorageResource* get_storage_resource(UaContext* ua,
           ua->ErrorMsg(_("JobId %s is not running.\n"), edit_int64(jobid, ed1));
           return NULL;
         }
-        store = jcr->impl_->res.write_storage;
+        store = jcr->impl->res.write_storage;
         FreeJcr(jcr);
         break;
       } else if (Bstrcasecmp(ua->argk[i], NT_("job")) ||
@@ -1216,7 +1216,7 @@ StorageResource* get_storage_resource(UaContext* ua,
           ua->ErrorMsg(_("Job \"%s\" is not running.\n"), ua->argv[i]);
           return NULL;
         }
-        store = jcr->impl_->res.write_storage;
+        store = jcr->impl->res.write_storage;
         FreeJcr(jcr);
         break;
       } else if (Bstrcasecmp(ua->argk[i], NT_("ujobid"))) {
@@ -1228,7 +1228,7 @@ StorageResource* get_storage_resource(UaContext* ua,
           ua->ErrorMsg(_("Job \"%s\" is not running.\n"), ua->argv[i]);
           return NULL;
         }
-        store = jcr->impl_->res.write_storage;
+        store = jcr->impl->res.write_storage;
         FreeJcr(jcr);
         break;
       }
@@ -1493,8 +1493,8 @@ alist* select_jobs(UaContext* ua, const char* reason)
       }
 
       if (jcr) {
-        if (jcr->impl_->res.job &&
-            !ua->AclAccessOk(Job_ACL, jcr->impl_->res.job->resource_name_,
+        if (jcr->impl->res.job &&
+            !ua->AclAccessOk(Job_ACL, jcr->impl->res.job->resource_name_,
                              true)) {
           ua->ErrorMsg(_("Unauthorized command from this console.\n"));
           goto bail_out;
@@ -1524,7 +1524,7 @@ alist* select_jobs(UaContext* ua, const char* reason)
         continue;
       }
       tjobs++; /* Count of all jobs */
-      if (!ua->AclAccessOk(Job_ACL, jcr->impl_->res.job->resource_name_)) {
+      if (!ua->AclAccessOk(Job_ACL, jcr->impl->res.job->resource_name_)) {
         continue; /* Skip not authorized */
       }
       njobs++; /* Count of authorized jobs */
@@ -1583,7 +1583,7 @@ alist* select_jobs(UaContext* ua, const char* reason)
           continue;
         }
 
-        if (!ua->AclAccessOk(Job_ACL, jcr->impl_->res.job->resource_name_)) {
+        if (!ua->AclAccessOk(Job_ACL, jcr->impl->res.job->resource_name_)) {
           continue; /* Skip not authorized */
         }
 
@@ -1640,7 +1640,7 @@ alist* select_jobs(UaContext* ua, const char* reason)
         if (jcr->JobId == 0) { /* This is us */
           continue;
         }
-        if (!ua->AclAccessOk(Job_ACL, jcr->impl_->res.job->resource_name_)) {
+        if (!ua->AclAccessOk(Job_ACL, jcr->impl->res.job->resource_name_)) {
           continue; /* Skip not authorized */
         }
         Bsnprintf(buf, sizeof(buf), _("JobId=%s Job=%s"),

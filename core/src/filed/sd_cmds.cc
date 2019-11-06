@@ -97,8 +97,8 @@ void* handle_stored_connection(BareosSocket* sd)
   }
 
   if (!jcr->max_bandwidth) {
-    if (jcr->impl_->director->max_bandwidth_per_job) {
-      jcr->max_bandwidth = jcr->impl_->director->max_bandwidth_per_job;
+    if (jcr->impl->director->max_bandwidth_per_job) {
+      jcr->max_bandwidth = jcr->impl->director->max_bandwidth_per_job;
     } else if (me->max_bandwidth_per_job) {
       jcr->max_bandwidth = me->max_bandwidth_per_job;
     }

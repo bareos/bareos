@@ -110,7 +110,7 @@ static inline bool extract_post_backup_stats(JobControlRecord* jcr,
   ndm_ee = sess->control_acb->job.result_env_tab.head;
   while (ndm_ee) {
     if (!jcr->db->CreateNdmpEnvironmentString(
-            jcr, &jcr->impl_->jr, ndm_ee->pval.name, ndm_ee->pval.value)) {
+            jcr, &jcr->impl->jr, ndm_ee->pval.name, ndm_ee->pval.value)) {
       break;
     }
     ndm_ee = ndm_ee->next;
@@ -121,7 +121,7 @@ static inline bool extract_post_backup_stats(JobControlRecord* jcr,
    * level.
    */
   if (nbf_options && nbf_options->uses_level) {
-    jcr->db->UpdateNdmpLevelMapping(jcr, &jcr->impl_->jr, filesystem,
+    jcr->db->UpdateNdmpLevelMapping(jcr, &jcr->impl->jr, filesystem,
                                     sess->control_acb->job.bu_level);
   }
 
@@ -137,13 +137,13 @@ bool DoNdmpBackupInit(JobControlRecord* jcr)
 
   if (!AllowDuplicateJob(jcr)) { return false; }
 
-  jcr->impl_->jr.PoolId =
-      GetOrCreatePoolRecord(jcr, jcr->impl_->res.pool->resource_name_);
-  if (jcr->impl_->jr.PoolId == 0) { return false; }
+  jcr->impl->jr.PoolId =
+      GetOrCreatePoolRecord(jcr, jcr->impl->res.pool->resource_name_);
+  if (jcr->impl->jr.PoolId == 0) { return false; }
 
   jcr->start_time = time(NULL);
-  jcr->impl_->jr.StartTime = jcr->start_time;
-  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->impl_->jr)) {
+  jcr->impl->jr.StartTime = jcr->start_time;
+  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
     return false;
   }
@@ -151,9 +151,9 @@ bool DoNdmpBackupInit(JobControlRecord* jcr)
   /*
    * If pool storage specified, use it instead of job storage
    */
-  CopyWstorage(jcr, jcr->impl_->res.pool->storage, _("Pool resource"));
+  CopyWstorage(jcr, jcr->impl->res.pool->storage, _("Pool resource"));
 
-  if (!jcr->impl_->res.write_storage_list) {
+  if (!jcr->impl->res.write_storage_list) {
     Jmsg(jcr, M_FATAL, 0,
          _("No Storage specification found in Job or Pool.\n"));
     return false;
@@ -199,7 +199,7 @@ bool DoNdmpBackup(JobControlRecord* jcr)
   int NdmpLoglevel;
 
   NdmpLoglevel =
-      std::max(jcr->impl_->res.client->ndmp_loglevel, me->ndmp_loglevel);
+      std::max(jcr->impl->res.client->ndmp_loglevel, me->ndmp_loglevel);
 
   /*
    * Print Job Start message
@@ -208,9 +208,9 @@ bool DoNdmpBackup(JobControlRecord* jcr)
        edit_uint64(jcr->JobId, ed1), jcr->Job);
 
   jcr->setJobStatus(JS_Running);
-  Dmsg2(100, "JobId=%d JobLevel=%c\n", jcr->impl_->jr.JobId,
-        jcr->impl_->jr.JobLevel);
-  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->impl_->jr)) {
+  Dmsg2(100, "JobId=%d JobLevel=%c\n", jcr->impl->jr.JobId,
+        jcr->impl->jr.JobLevel);
+  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
     return false;
   }
@@ -235,7 +235,7 @@ bool DoNdmpBackup(JobControlRecord* jcr)
    * data mover which moves the data from the NDMP DATA AGENT to the NDMP
    * TAPE AGENT.
    */
-  if (jcr->impl_->res.write_storage->paired_storage) {
+  if (jcr->impl->res.write_storage->paired_storage) {
     SetPairedStorage(jcr);
 
     jcr->setJobStatus(JS_WaitSD);
@@ -246,7 +246,7 @@ bool DoNdmpBackup(JobControlRecord* jcr)
     /*
      * Now start a job with the Storage daemon
      */
-    if (!StartStorageDaemonJob(jcr, NULL, jcr->impl_->res.write_storage_list)) {
+    if (!StartStorageDaemonJob(jcr, NULL, jcr->impl->res.write_storage_list)) {
       return false;
     }
 
@@ -273,8 +273,8 @@ bool DoNdmpBackup(JobControlRecord* jcr)
    * and reuse the job definition for each separate sub-backup we perform as
    * part of the whole job. We only free the env_table between every sub-backup.
    */
-  if (!NdmpBuildClientJob(jcr, jcr->impl_->res.client,
-                          jcr->impl_->res.paired_read_write_storage,
+  if (!NdmpBuildClientJob(jcr, jcr->impl->res.client,
+                          jcr->impl->res.paired_read_write_storage,
                           NDM_JOB_OP_BACKUP, &ndmp_job)) {
     goto bail_out;
   }
@@ -287,7 +287,7 @@ bool DoNdmpBackup(JobControlRecord* jcr)
    * included fileset.
    */
   cnt = 0;
-  fileset = jcr->impl_->res.fileset;
+  fileset = jcr->impl->res.fileset;
 
 
   for (i = 0; i < fileset->include_items.size(); i++) {
@@ -312,7 +312,7 @@ bool DoNdmpBackup(JobControlRecord* jcr)
       if (jcr->store_bsock && cnt > 0) {
         jcr->store_bsock->fsend("nextrun");
         P(mutex);
-        pthread_cond_wait(&jcr->impl_->nextrun_ready, &mutex);
+        pthread_cond_wait(&jcr->impl->nextrun_ready, &mutex);
         V(mutex);
       }
 
@@ -333,8 +333,8 @@ bool DoNdmpBackup(JobControlRecord* jcr)
       nis->filesystem = item;
       nis->FileIndex = cnt + 1;
       nis->jcr = jcr;
-      nis->save_filehist = jcr->impl_->res.job->SaveFileHist;
-      nis->filehist_size = jcr->impl_->res.job->FileHistSize;
+      nis->save_filehist = jcr->impl->res.job->SaveFileHist;
+      nis->filehist_size = jcr->impl->res.job->FileHistSize;
 
       ndmp_sess.param->log.ctx = nis;
       ndmp_sess.param->log_tag = strdup("DIR-NDMP");
@@ -369,9 +369,9 @@ bool DoNdmpBackup(JobControlRecord* jcr)
        * the individual file records to it. So we allocate it here once so its
        * available during the whole NDMP session.
        */
-      if (Bstrcasecmp(jcr->impl_->backup_format, "dump")) {
+      if (Bstrcasecmp(jcr->impl->backup_format, "dump")) {
         Mmsg(virtual_filename, "/@NDMP%s%%%d", nis->filesystem,
-             jcr->impl_->DumpLevel);
+             jcr->impl->DumpLevel);
       } else {
         Mmsg(virtual_filename, "/@NDMP%s", nis->filesystem);
       }
@@ -405,7 +405,7 @@ bool DoNdmpBackup(JobControlRecord* jcr)
       /*
        * See if there were any errors during the backup.
        */
-      jcr->impl_->jr.FileIndex = cnt + 1;
+      jcr->impl->jr.FileIndex = cnt + 1;
       if (!extract_post_backup_stats(jcr, item, &ndmp_sess)) { goto cleanup; }
 
       UnregisterCallbackHooks(&ndmp_sess.control_acb->job.index_log);

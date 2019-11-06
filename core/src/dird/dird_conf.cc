@@ -3302,25 +3302,25 @@ extern "C" char* job_code_callback_director(JobControlRecord* jcr,
 
   switch (param[0]) {
     case 'f':
-      if (jcr->impl_->res.fileset) {
-        return jcr->impl_->res.fileset->resource_name_;
+      if (jcr->impl->res.fileset) {
+        return jcr->impl->res.fileset->resource_name_;
       }
       break;
     case 'h':
-      if (jcr->impl_->res.client) { return jcr->impl_->res.client->address; }
+      if (jcr->impl->res.client) { return jcr->impl->res.client->address; }
       break;
     case 'p':
-      if (jcr->impl_->res.pool) { return jcr->impl_->res.pool->resource_name_; }
+      if (jcr->impl->res.pool) { return jcr->impl->res.pool->resource_name_; }
       break;
     case 'w':
-      if (jcr->impl_->res.write_storage) {
-        return jcr->impl_->res.write_storage->resource_name_;
+      if (jcr->impl->res.write_storage) {
+        return jcr->impl->res.write_storage->resource_name_;
       }
       break;
     case 'x':
-      return jcr->impl_->spool_data ? yes : no;
+      return jcr->impl->spool_data ? yes : no;
     case 'C':
-      return jcr->impl_->cloned ? yes : no;
+      return jcr->impl->cloned ? yes : no;
     case 'D':
       return my_name;
     case 'V':
@@ -3329,7 +3329,7 @@ extern "C" char* job_code_callback_director(JobControlRecord* jcr,
          * If this is a migration/copy we need the volume name from the
          * mig_jcr.
          */
-        if (jcr->impl_->mig_jcr) { jcr = jcr->impl_->mig_jcr; }
+        if (jcr->impl->mig_jcr) { jcr = jcr->impl->mig_jcr; }
 
         if (jcr->VolumeName) {
           return jcr->VolumeName;

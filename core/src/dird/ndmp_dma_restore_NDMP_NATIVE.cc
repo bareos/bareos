@@ -108,7 +108,7 @@ static inline bool fill_restore_environment_ndmp_native(
   if (jcr->where) {
     restore_prefix = jcr->where;
   } else {
-    restore_prefix = jcr->impl_->res.job->RestoreWhere;
+    restore_prefix = jcr->impl->res.job->RestoreWhere;
   }
 
   if (!restore_prefix) { return false; }
@@ -177,7 +177,7 @@ int SetFilesToRestoreNdmpNative(JobControlRecord* jcr,
   TREE_NODE *node, *parent;
   PoolMem restore_pathname, tmp;
 
-  node = FirstTreeNode(jcr->impl_->restore_tree_root);
+  node = FirstTreeNode(jcr->impl->restore_tree_root);
   while (node) {
     /*
      * node->extract_dir  means that only the directory should be selected for
@@ -254,7 +254,7 @@ static bool DoNdmpNativeRestore(JobControlRecord* jcr)
   slot_number_t ndmp_slot;
   StorageResource* store = NULL;
 
-  store = jcr->impl_->res.read_storage;
+  store = jcr->impl->res.read_storage;
 
   memset(&ndmp_sess, 0, sizeof(ndmp_sess));
 
@@ -262,9 +262,9 @@ static bool DoNdmpNativeRestore(JobControlRecord* jcr)
   memset(nis, 0, sizeof(NIS));
 
   NdmpLoglevel =
-      std::max(jcr->impl_->res.client->ndmp_loglevel, me->ndmp_loglevel);
+      std::max(jcr->impl->res.client->ndmp_loglevel, me->ndmp_loglevel);
 
-  if (!NdmpBuildClientAndStorageJob(jcr, store, jcr->impl_->res.client,
+  if (!NdmpBuildClientAndStorageJob(jcr, store, jcr->impl->res.client,
                                     true, /* init_tape */
                                     true, /* init_robot */
                                     NDM_JOB_OP_EXTRACT, &ndmp_job)) {
@@ -451,8 +451,8 @@ cleanup_ndmp:
 cleanup:
   free(nis);
 
-  FreeTree(jcr->impl_->restore_tree_root);
-  jcr->impl_->restore_tree_root = NULL;
+  FreeTree(jcr->impl->restore_tree_root);
+  jcr->impl->restore_tree_root = NULL;
   return retval;
 }
 
@@ -463,14 +463,14 @@ bool DoNdmpRestoreNdmpNative(JobControlRecord* jcr)
 {
   int status;
 
-  jcr->impl_->jr.JobLevel = L_FULL; /* Full restore */
-  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->impl_->jr)) {
+  jcr->impl->jr.JobLevel = L_FULL; /* Full restore */
+  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
     goto bail_out;
   }
   Dmsg0(20, "Updated job start record\n");
 
-  Dmsg1(20, "RestoreJobId=%d\n", jcr->impl_->res.job->RestoreJobId);
+  Dmsg1(20, "RestoreJobId=%d\n", jcr->impl->res.job->RestoreJobId);
 
   /*
    * Validate the Job to have a NDMP client.

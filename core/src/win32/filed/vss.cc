@@ -56,8 +56,8 @@ static bool VSSPathConvert(const char* szFilePath,
 {
   JobControlRecord* jcr = GetJcrFromThreadSpecificData();
 
-  if (jcr && jcr->impl_->pVSSClient) {
-    return jcr->impl_->pVSSClient->GetShadowPath(szFilePath, szShadowPath,
+  if (jcr && jcr->impl->pVSSClient) {
+    return jcr->impl->pVSSClient->GetShadowPath(szFilePath, szShadowPath,
                                                  nBuflen);
   }
 
@@ -70,8 +70,8 @@ static bool VSSPathConvertW(const wchar_t* szFilePath,
 {
   JobControlRecord* jcr = GetJcrFromThreadSpecificData();
 
-  if (jcr && jcr->impl_->pVSSClient) {
-    return jcr->impl_->pVSSClient->GetShadowPathW(szFilePath, szShadowPath,
+  if (jcr && jcr->impl->pVSSClient) {
+    return jcr->impl->pVSSClient->GetShadowPathW(szFilePath, szShadowPath,
                                                   nBuflen);
   }
 
@@ -86,17 +86,17 @@ void VSSInit(JobControlRecord* jcr)
   if (g_MajorVersion == 5) {
     switch (g_MinorVersion) {
       case 1:
-        jcr->impl_->pVSSClient = new VSSClientXP();
+        jcr->impl->pVSSClient = new VSSClientXP();
         break;
       case 2:
-        jcr->impl_->pVSSClient = new VSSClient2003();
+        jcr->impl->pVSSClient = new VSSClient2003();
         break;
     }
     /*
      * Vista or Longhorn or later
      */
   } else if (g_MajorVersion >= 6) {
-    jcr->impl_->pVSSClient = new VSSClientVista();
+    jcr->impl->pVSSClient = new VSSClientVista();
   }
 
   /*

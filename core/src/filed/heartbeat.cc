@@ -67,9 +67,9 @@ extern "C" void* sd_heartbeat_thread(void* arg)
   sd.reset(jcr->store_bsock->clone());
   dir.reset(jcr->dir_bsock->clone());
 
-  jcr->impl_->hb_bsock = sd;
-  jcr->impl_->hb_started = true;
-  jcr->impl_->hb_dir_bsock = dir;
+  jcr->impl->hb_bsock = sd;
+  jcr->impl->hb_started = true;
+  jcr->impl->hb_dir_bsock = dir;
   dir->suppress_error_msgs_ = true;
   sd->suppress_error_msgs_ = true;
 
@@ -104,9 +104,9 @@ extern "C" void* sd_heartbeat_thread(void* arg)
 
   sd->close();
   dir->close();
-  jcr->impl_->hb_bsock.reset();
-  jcr->impl_->hb_started = false;
-  jcr->impl_->hb_dir_bsock = NULL;
+  jcr->impl->hb_bsock.reset();
+  jcr->impl->hb_started = false;
+  jcr->impl->hb_dir_bsock = NULL;
 
   return NULL;
 }
@@ -120,10 +120,10 @@ void StartHeartbeatMonitor(JobControlRecord* jcr)
    * make debugging impossible.
    */
   if (!no_signals) {
-    jcr->impl_->hb_bsock = NULL;
-    jcr->impl_->hb_started = false;
-    jcr->impl_->hb_dir_bsock = NULL;
-    pthread_create(&jcr->impl_->heartbeat_id, NULL, sd_heartbeat_thread,
+    jcr->impl->hb_bsock = NULL;
+    jcr->impl->hb_started = false;
+    jcr->impl->hb_dir_bsock = NULL;
+    pthread_create(&jcr->impl->heartbeat_id, NULL, sd_heartbeat_thread,
                    (void*)jcr);
   }
 }
@@ -134,24 +134,24 @@ void StopHeartbeatMonitor(JobControlRecord* jcr)
   int cnt = 0;
   if (no_signals) { return; }
   /* Wait max 10 secs for heartbeat thread to start */
-  while (!jcr->impl_->hb_started && cnt++ < 200) {
+  while (!jcr->impl->hb_started && cnt++ < 200) {
     Bmicrosleep(0, 50000); /* wait for start */
   }
 
-  if (jcr->impl_->hb_started) {
-    jcr->impl_->hb_bsock->SetTimedOut();   /* set timed_out to Terminate read */
-    jcr->impl_->hb_bsock->SetTerminated(); /* set to Terminate read */
+  if (jcr->impl->hb_started) {
+    jcr->impl->hb_bsock->SetTimedOut();   /* set timed_out to Terminate read */
+    jcr->impl->hb_bsock->SetTerminated(); /* set to Terminate read */
   }
 
-  if (jcr->impl_->hb_dir_bsock) {
-    jcr->impl_->hb_dir_bsock
+  if (jcr->impl->hb_dir_bsock) {
+    jcr->impl->hb_dir_bsock
         ->SetTimedOut(); /* set timed_out to Terminate read */
-    jcr->impl_->hb_dir_bsock->SetTerminated(); /* set to Terminate read */
+    jcr->impl->hb_dir_bsock->SetTerminated(); /* set to Terminate read */
   }
 
-  if (jcr->impl_->hb_started) {
+  if (jcr->impl->hb_started) {
     Dmsg0(100, "Send kill to heartbeat id\n");
-    pthread_kill(jcr->impl_->heartbeat_id,
+    pthread_kill(jcr->impl->heartbeat_id,
                  TIMEOUT_SIGNAL); /* make heartbeat thread go away */
     Bmicrosleep(0, 50000);
   }
@@ -160,20 +160,20 @@ void StopHeartbeatMonitor(JobControlRecord* jcr)
   /*
    * Wait max 100 secs for heartbeat thread to stop
    */
-  while (jcr->impl_->hb_started && cnt++ < 200) {
-    pthread_kill(jcr->impl_->heartbeat_id,
+  while (jcr->impl->hb_started && cnt++ < 200) {
+    pthread_kill(jcr->impl->heartbeat_id,
                  TIMEOUT_SIGNAL); /* make heartbeat thread go away */
     Bmicrosleep(0, 500000);
   }
 
-  if (jcr->impl_->hb_bsock) {
+  if (jcr->impl->hb_bsock) {
     // delete jcr->impl_->hb_bsock;
-    jcr->impl_->hb_bsock.reset();
+    jcr->impl->hb_bsock.reset();
   }
 
-  if (jcr->impl_->hb_dir_bsock) {
+  if (jcr->impl->hb_dir_bsock) {
     // delete jcr->impl_->hb_dir_bsock;
-    jcr->impl_->hb_dir_bsock.reset();
+    jcr->impl->hb_dir_bsock.reset();
   }
 }
 
@@ -195,8 +195,8 @@ extern "C" void* dir_heartbeat_thread(void* arg)
    */
   dir = jcr->dir_bsock->clone();
 
-  jcr->impl_->hb_bsock.reset(dir);
-  jcr->impl_->hb_started = true;
+  jcr->impl->hb_bsock.reset(dir);
+  jcr->impl->hb_started = true;
   dir->suppress_error_msgs_ = true;
 
   while (!dir->IsStop()) {
@@ -212,8 +212,8 @@ extern "C" void* dir_heartbeat_thread(void* arg)
     Bmicrosleep(next, 0);
   }
   dir->close();
-  jcr->impl_->hb_bsock.reset();
-  jcr->impl_->hb_started = false;
+  jcr->impl->hb_bsock.reset();
+  jcr->impl->hb_started = false;
   return NULL;
 }
 
@@ -224,7 +224,7 @@ void StartDirHeartbeat(JobControlRecord* jcr)
 {
   if (me->heartbeat_interval) {
     jcr->dir_bsock->SetLocking();
-    pthread_create(&jcr->impl_->heartbeat_id, NULL, dir_heartbeat_thread,
+    pthread_create(&jcr->impl->heartbeat_id, NULL, dir_heartbeat_thread,
                    (void*)jcr);
   }
 }

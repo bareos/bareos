@@ -47,7 +47,7 @@ namespace filedaemon {
  */
 bool AdjustCompressionBuffers(JobControlRecord* jcr)
 {
-  findFILESET* fileset = jcr->impl_->ff->fileset;
+  findFILESET* fileset = jcr->impl->ff->fileset;
   uint32_t compress_buf_size = 0;
 
   if (fileset) {

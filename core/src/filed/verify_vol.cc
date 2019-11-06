@@ -173,8 +173,8 @@ void DoVerifyVolume(JobControlRecord* jcr)
         }
         jcr->lock();
         jcr->JobFiles++;
-        jcr->impl_->num_files_examined++;
-        PmStrcpy(jcr->impl_->last_fname, fname); /* last file examined */
+        jcr->impl->num_files_examined++;
+        PmStrcpy(jcr->impl->last_fname, fname); /* last file examined */
         jcr->unlock();
 
         /*
@@ -256,7 +256,7 @@ void DoVerifyVolume(JobControlRecord* jcr)
       case STREAM_RESTORE_OBJECT:
         jcr->lock();
         jcr->JobFiles++;
-        jcr->impl_->num_files_examined++;
+        jcr->impl->num_files_examined++;
         jcr->unlock();
 
         Dmsg2(400, "send inx=%d STREAM_RESTORE_OBJECT-%d\n", jcr->JobFiles,

@@ -1229,7 +1229,7 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
    * For NDMP restores its used in the DMA to know what to restore.
    * The tree is freed by the DMA when its done.
    */
-  ua->jcr->impl_->restore_tree_root = tree.root;
+  ua->jcr->impl->restore_tree_root = tree.root;
 
   return OK;
 }

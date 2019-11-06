@@ -87,12 +87,12 @@ static void SetJcrSdJobStatus(JobControlRecord* jcr, int SDJobStatus)
     Dmsg0(800, "Setting wait_time\n");
     jcr->wait_time = time(NULL);
   }
-  jcr->impl_->SDJobStatus = SDJobStatus;
+  jcr->impl->SDJobStatus = SDJobStatus;
 
   /*
    * Some SD Job status setting are propagated to the controlling Job.
    */
-  switch (jcr->impl_->SDJobStatus) {
+  switch (jcr->impl->SDJobStatus) {
     case JS_Incomplete:
       jcr->setJobStatus(JS_Incomplete);
       break;

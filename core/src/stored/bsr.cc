@@ -796,13 +796,13 @@ static VolumeList* new_restore_volume()
  */
 static bool AddRestoreVolume(JobControlRecord* jcr, VolumeList* vol)
 {
-  VolumeList* next = jcr->impl_->VolList;
+  VolumeList* next = jcr->impl->VolList;
 
   /* Add volume to volume manager's read list */
   AddReadVolume(jcr, vol->VolumeName);
 
   if (!next) {                 /* list empty ? */
-    jcr->impl_->VolList = vol; /* yes, add volume */
+    jcr->impl->VolList = vol; /* yes, add volume */
   } else {
     /* Loop through all but last */
     for (; next->next; next = next->next) {
@@ -838,10 +838,10 @@ void CreateRestoreVolumeList(JobControlRecord* jcr)
   /*
    * Build a list of volumes to be processed
    */
-  jcr->impl_->NumReadVolumes = 0;
-  jcr->impl_->CurReadVolume = 0;
-  if (jcr->impl_->bsr) {
-    BootStrapRecord* bsr = jcr->impl_->bsr;
+  jcr->impl->NumReadVolumes = 0;
+  jcr->impl->CurReadVolume = 0;
+  if (jcr->impl->bsr) {
+    BootStrapRecord* bsr = jcr->impl->bsr;
     if (!bsr->volume || !bsr->volume->VolumeName[0]) { return; }
     for (; bsr; bsr = bsr->next) {
       BsrVolume* bsrvol;
@@ -861,7 +861,7 @@ void CreateRestoreVolumeList(JobControlRecord* jcr)
         vol->Slot = bsrvol->Slot;
         vol->start_file = sfile;
         if (AddRestoreVolume(jcr, vol)) {
-          jcr->impl_->NumReadVolumes++;
+          jcr->impl->NumReadVolumes++;
           Dmsg2(400, "Added volume=%s mediatype=%s\n", vol->VolumeName,
                 vol->MediaType);
         } else {
@@ -873,15 +873,15 @@ void CreateRestoreVolumeList(JobControlRecord* jcr)
     }
   } else {
     /* This is the old way -- deprecated */
-    for (p = jcr->impl_->dcr->VolumeName; p && *p;) {
+    for (p = jcr->impl->dcr->VolumeName; p && *p;) {
       n = strchr(p, '|'); /* volume name separator */
       if (n) { *n++ = 0; /* Terminate name */ }
       vol = new_restore_volume();
       bstrncpy(vol->VolumeName, p, sizeof(vol->VolumeName));
-      bstrncpy(vol->MediaType, jcr->impl_->dcr->media_type,
+      bstrncpy(vol->MediaType, jcr->impl->dcr->media_type,
                sizeof(vol->MediaType));
       if (AddRestoreVolume(jcr, vol)) {
-        jcr->impl_->NumReadVolumes++;
+        jcr->impl->NumReadVolumes++;
       } else {
         free((char*)vol);
       }
@@ -892,7 +892,7 @@ void CreateRestoreVolumeList(JobControlRecord* jcr)
 
 void FreeRestoreVolumeList(JobControlRecord* jcr)
 {
-  VolumeList* vol = jcr->impl_->VolList;
+  VolumeList* vol = jcr->impl->VolList;
   VolumeList* tmp;
 
   for (; vol;) {
@@ -901,7 +901,7 @@ void FreeRestoreVolumeList(JobControlRecord* jcr)
     free(vol);
     vol = tmp;
   }
-  jcr->impl_->VolList = NULL;
+  jcr->impl->VolList = NULL;
 }
 
 } /* namespace storagedaemon */

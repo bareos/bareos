@@ -63,8 +63,8 @@ JobControlRecord* new_control_jcr(const char* base_name, int job_type)
    * everything is correctly initialized.
    */
   LockRes(my_config);
-  jcr->impl_->res.job = (JobResource*)my_config->GetNextRes(R_JOB, NULL);
-  SetJcrDefaults(jcr, jcr->impl_->res.job);
+  jcr->impl->res.job = (JobResource*)my_config->GetNextRes(R_JOB, NULL);
+  SetJcrDefaults(jcr, jcr->impl->res.job);
   UnlockRes(my_config);
 
   jcr->sd_auth_key = strdup("dummy"); /* dummy Storage daemon key */

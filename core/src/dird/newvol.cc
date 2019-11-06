@@ -78,7 +78,7 @@ bool newVolume(JobControlRecord* jcr, MediaDbRecord* mr, StorageResource* store)
     *mr = MediaDbRecord{};
     SetPoolDbrDefaultsInMediaDbr(mr, &pr);
     jcr->VolumeName[0] = 0;
-    bstrncpy(mr->MediaType, jcr->impl_->res.write_storage->media_type,
+    bstrncpy(mr->MediaType, jcr->impl->res.write_storage->media_type,
              sizeof(mr->MediaType));
     GeneratePluginEvent(jcr, bDirEventNewVolume); /* return void... */
     if (jcr->VolumeName[0] && IsVolumeNameLegal(NULL, jcr->VolumeName)) {
@@ -181,7 +181,7 @@ static bool PerformFullNameSubstitution(JobControlRecord* jcr,
   bool ok = false;
   POOLMEM* label = GetPoolMemory(PM_FNAME);
 
-  jcr->impl_->NumVols = pr->NumVols;
+  jcr->impl->NumVols = pr->NumVols;
   if (VariableExpansion(jcr, pr->LabelFormat, label)) {
     bstrncpy(mr->VolumeName, label, sizeof(mr->VolumeName));
     ok = true;

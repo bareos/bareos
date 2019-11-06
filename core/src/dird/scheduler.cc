@@ -188,34 +188,34 @@ again:
   if (run->level) { jcr->setJobLevel(run->level); /* override run level */ }
 
   if (run->pool) {
-    jcr->impl_->res.pool = run->pool; /* override pool */
-    jcr->impl_->res.run_pool_override = true;
+    jcr->impl->res.pool = run->pool; /* override pool */
+    jcr->impl->res.run_pool_override = true;
   }
 
   if (run->full_pool) {
-    jcr->impl_->res.full_pool = run->full_pool; /* override full pool */
-    jcr->impl_->res.run_full_pool_override = true;
+    jcr->impl->res.full_pool = run->full_pool; /* override full pool */
+    jcr->impl->res.run_full_pool_override = true;
   }
 
   if (run->vfull_pool) {
-    jcr->impl_->res.vfull_pool =
+    jcr->impl->res.vfull_pool =
         run->vfull_pool; /* override virtual full pool */
-    jcr->impl_->res.run_vfull_pool_override = true;
+    jcr->impl->res.run_vfull_pool_override = true;
   }
 
   if (run->inc_pool) {
-    jcr->impl_->res.inc_pool = run->inc_pool; /* override inc pool */
-    jcr->impl_->res.run_inc_pool_override = true;
+    jcr->impl->res.inc_pool = run->inc_pool; /* override inc pool */
+    jcr->impl->res.run_inc_pool_override = true;
   }
 
   if (run->diff_pool) {
-    jcr->impl_->res.diff_pool = run->diff_pool; /* override diff pool */
-    jcr->impl_->res.run_diff_pool_override = true;
+    jcr->impl->res.diff_pool = run->diff_pool; /* override diff pool */
+    jcr->impl->res.run_diff_pool_override = true;
   }
 
   if (run->next_pool) {
-    jcr->impl_->res.next_pool = run->next_pool; /* override next pool */
-    jcr->impl_->res.run_next_pool_override = true;
+    jcr->impl->res.next_pool = run->next_pool; /* override next pool */
+    jcr->impl->res.run_next_pool_override = true;
   }
 
   if (run->storage) {
@@ -226,19 +226,19 @@ again:
   }
 
   if (run->msgs) {
-    jcr->impl_->res.messages = run->msgs; /* override messages */
+    jcr->impl->res.messages = run->msgs; /* override messages */
   }
 
   if (run->Priority) { jcr->JobPriority = run->Priority; }
 
-  if (run->spool_data_set) { jcr->impl_->spool_data = run->spool_data; }
+  if (run->spool_data_set) { jcr->impl->spool_data = run->spool_data; }
 
   if (run->accurate_set) {
     jcr->accurate = run->accurate; /* overwrite accurate mode */
   }
 
   if (run->MaxRunSchedTime_set) {
-    jcr->impl_->MaxRunSchedTime = run->MaxRunSchedTime;
+    jcr->impl->MaxRunSchedTime = run->MaxRunSchedTime;
   }
 
   Dmsg0(debuglevel, "Leave wait_for_next_job()\n");

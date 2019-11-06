@@ -685,8 +685,8 @@ bool DeviceControlRecord::WriteRecord()
   }
 
   jcr->JobBytes += after_rec->data_len; /* increment bytes this job */
-  if (jcr->impl_->RemainingQuota &&
-      jcr->JobBytes > jcr->impl_->RemainingQuota) {
+  if (jcr->impl->RemainingQuota &&
+      jcr->JobBytes > jcr->impl->RemainingQuota) {
     Jmsg0(jcr, M_FATAL, 0, _("Quota Exceeded. Job Terminated.\n"));
     goto bail_out;
   }

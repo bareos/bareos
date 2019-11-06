@@ -51,14 +51,14 @@ void DoAutoprune(JobControlRecord* jcr)
   PoolResource* pool;
   bool pruned;
 
-  if (!jcr->impl_->res.client) { /* temp -- remove me */
+  if (!jcr->impl->res.client) { /* temp -- remove me */
     return;
   }
 
   ua = new_ua_context(jcr);
-  job = jcr->impl_->res.job;
-  client = jcr->impl_->res.client;
-  pool = jcr->impl_->res.pool;
+  job = jcr->impl->res.job;
+  client = jcr->impl->res.client;
+  pool = jcr->impl->res.pool;
 
   if (job->PruneJobs || client->AutoPrune) {
     PruneJobs(ua, client, pool, jcr->getJobType());
@@ -94,8 +94,8 @@ void PruneVolumes(JobControlRecord* jcr,
   PoolMem query(PM_MESSAGE);
   char ed1[50], ed2[100], ed3[50];
 
-  Dmsg1(100, "Prune volumes PoolId=%d\n", jcr->impl_->jr.PoolId);
-  if (!jcr->impl_->res.job->PruneVolumes && !jcr->impl_->res.pool->AutoPrune) {
+  Dmsg1(100, "Prune volumes PoolId=%d\n", jcr->impl->jr.PoolId);
+  if (!jcr->impl->res.job->PruneVolumes && !jcr->impl->res.pool->AutoPrune) {
     Dmsg0(100, "AutoPrune not set in Pool.\n");
     return;
   }

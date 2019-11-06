@@ -254,10 +254,10 @@ int main(int argc, char* argv[])
     jcr = SetupJcr("bls", argv[i], bsr, director, dcr, VolumeName,
                    true); /* read device */
     if (!jcr) { exit(1); }
-    jcr->impl_->ignore_label_errors = ignore_label_errors;
-    dev = jcr->impl_->dcr->dev;
+    jcr->impl->ignore_label_errors = ignore_label_errors;
+    dev = jcr->impl->dcr->dev;
     if (!dev) { exit(1); }
-    dcr = jcr->impl_->dcr;
+    dcr = jcr->impl->dcr;
     rec = new_record();
     attr = new_attr(jcr);
     /*
@@ -290,9 +290,9 @@ static void do_close(JobControlRecord* jcr)
 {
   FreeAttr(attr);
   FreeRecord(rec);
-  CleanDevice(jcr->impl_->dcr);
+  CleanDevice(jcr->impl->dcr);
   dev->term();
-  FreeDeviceControlRecord(jcr->impl_->dcr);
+  FreeDeviceControlRecord(jcr->impl->dcr);
   FreeJcr(jcr);
 }
 

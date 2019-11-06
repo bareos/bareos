@@ -46,14 +46,14 @@ int MakeEstimate(JobControlRecord* jcr)
 
   jcr->setJobStatus(JS_Running);
 
-  SetFindOptions((FindFilesPacket*)jcr->impl_->ff, jcr->impl_->incremental,
-                 jcr->impl_->mtime);
+  SetFindOptions((FindFilesPacket*)jcr->impl->ff, jcr->impl->incremental,
+                 jcr->impl->mtime);
   /* in accurate mode, we overwrite the find_one check function */
   if (jcr->accurate) {
-    SetFindChangedFunction((FindFilesPacket*)jcr->impl_->ff, AccurateCheckFile);
+    SetFindChangedFunction((FindFilesPacket*)jcr->impl->ff, AccurateCheckFile);
   }
 
-  status = FindFiles(jcr, (FindFilesPacket*)jcr->impl_->ff, TallyFile,
+  status = FindFiles(jcr, (FindFilesPacket*)jcr->impl->ff, TallyFile,
                      PluginEstimate);
   AccurateFree(jcr);
   return status;
@@ -109,9 +109,9 @@ static int TallyFile(JobControlRecord* jcr,
     }
 #endif
   }
-  jcr->impl_->num_files_examined++;
+  jcr->impl->num_files_examined++;
   jcr->JobFiles++; /* increment number of files seen */
-  if (jcr->impl_->listing) {
+  if (jcr->impl->listing) {
     memcpy(&attr.statp, &ff_pkt->statp, sizeof(struct stat));
     attr.type = ff_pkt->type;
     attr.ofname = (POOLMEM*)ff_pkt->fname;

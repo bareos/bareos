@@ -61,7 +61,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   int32_t n, file_index, stream, last_file_index, job_elapsed;
   bool ok = true;
   char buf1[100];
-  DeviceControlRecord* dcr = jcr->impl_->dcr;
+  DeviceControlRecord* dcr = jcr->impl->dcr;
   Device* dev;
   POOLMEM* rec_data;
   char ec[50];
@@ -363,11 +363,11 @@ bool SendAttrsToDir(JobControlRecord* jcr, DeviceRecord* rec)
       rec->maskedStream == STREAM_UNIX_ATTRIBUTES_EX ||
       rec->maskedStream == STREAM_RESTORE_OBJECT ||
       CryptoDigestStreamType(rec->maskedStream) != CRYPTO_DIGEST_NONE) {
-    if (!jcr->impl_->no_attributes) {
+    if (!jcr->impl->no_attributes) {
       BareosSocket* dir = jcr->dir_bsock;
       if (AreAttributesSpooled(jcr)) { dir->SetSpooling(); }
       Dmsg0(850, "Send attributes to dir.\n");
-      if (!jcr->impl_->dcr->DirUpdateFileAttributes(rec)) {
+      if (!jcr->impl->dcr->DirUpdateFileAttributes(rec)) {
         Jmsg(jcr, M_FATAL, 0, _("Error updating file attributes. ERR=%s\n"),
              dir->bstrerror());
         dir->ClearSpooling();

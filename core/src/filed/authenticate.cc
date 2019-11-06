@@ -149,7 +149,7 @@ bool AuthenticateDirector(JobControlRecord* jcr)
     return false;
   }
 
-  jcr->impl_->director = director;
+  jcr->impl->director = director;
 
   return dir->fsend("%s", (me->compatible) ? OK_hello_compat : OK_hello);
 }

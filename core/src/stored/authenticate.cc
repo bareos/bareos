@@ -89,7 +89,7 @@ bool AuthenticateDirector(JobControlRecord* jcr)
 
   UnbashSpaces(dirname);
   director = (DirectorResource*)my_config->GetResWithName(R_DIRECTOR, dirname);
-  jcr->impl_->director = director;
+  jcr->impl->director = director;
 
   if (!director) {
     Dmsg2(debuglevel, "Connection from unknown Director %s at %s rejected.\n",

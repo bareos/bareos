@@ -135,27 +135,27 @@ bool job_cmd(JobControlRecord* jcr)
   }
   bstrncpy(jcr->Job, job, sizeof(jcr->Job));
   UnbashSpaces(job_name);
-  jcr->impl_->job_name = GetPoolMemory(PM_NAME);
-  PmStrcpy(jcr->impl_->job_name, job_name);
+  jcr->impl->job_name = GetPoolMemory(PM_NAME);
+  PmStrcpy(jcr->impl->job_name, job_name);
   UnbashSpaces(client_name);
   jcr->client_name = GetPoolMemory(PM_NAME);
   PmStrcpy(jcr->client_name, client_name);
   UnbashSpaces(fileset_name);
-  jcr->impl_->fileset_name = GetPoolMemory(PM_NAME);
-  PmStrcpy(jcr->impl_->fileset_name, fileset_name);
+  jcr->impl->fileset_name = GetPoolMemory(PM_NAME);
+  PmStrcpy(jcr->impl->fileset_name, fileset_name);
   jcr->setJobType(JobType);
   jcr->setJobLevel(level);
-  jcr->impl_->no_attributes = no_attributes;
-  jcr->impl_->spool_attributes = spool_attributes;
-  jcr->impl_->spool_data = spool_data;
-  jcr->impl_->spool_size = str_to_int64(spool_size);
-  jcr->impl_->fileset_md5 = GetPoolMemory(PM_NAME);
-  PmStrcpy(jcr->impl_->fileset_md5, fileset_md5);
-  jcr->impl_->PreferMountedVols = PreferMountedVols;
-  jcr->impl_->RemainingQuota = quota;
+  jcr->impl->no_attributes = no_attributes;
+  jcr->impl->spool_attributes = spool_attributes;
+  jcr->impl->spool_data = spool_data;
+  jcr->impl->spool_size = str_to_int64(spool_size);
+  jcr->impl->fileset_md5 = GetPoolMemory(PM_NAME);
+  PmStrcpy(jcr->impl->fileset_md5, fileset_md5);
+  jcr->impl->PreferMountedVols = PreferMountedVols;
+  jcr->impl->RemainingQuota = quota;
   UnbashSpaces(backup_format);
-  jcr->impl_->backup_format = GetPoolMemory(PM_NAME);
-  PmStrcpy(jcr->impl_->backup_format, backup_format);
+  jcr->impl->backup_format = GetPoolMemory(PM_NAME);
+  PmStrcpy(jcr->impl->backup_format, backup_format);
   jcr->authenticated = false;
 
   Dmsg1(50, "Quota set as %llu\n", quota);
@@ -201,7 +201,7 @@ bool DoJobRun(JobControlRecord* jcr)
   P(mutex);
   while (!jcr->authenticated && !JobCanceled(jcr)) {
     errstat =
-        pthread_cond_timedwait(&jcr->impl_->job_start_wait, &mutex, &timeout);
+        pthread_cond_timedwait(&jcr->impl->job_start_wait, &mutex, &timeout);
     if (errstat == ETIMEDOUT || errstat == EINVAL || errstat == EPERM) {
       break;
     }
@@ -227,7 +227,7 @@ bool DoJobRun(JobControlRecord* jcr)
          */
         Dmsg2(800, "Wait for end job jid=%d %p\n", jcr->JobId, jcr);
         P(mutex);
-        pthread_cond_wait(&jcr->impl_->job_end_wait, &mutex);
+        pthread_cond_wait(&jcr->impl->job_end_wait, &mutex);
         V(mutex);
       }
       Dmsg2(800, "Done jid=%d %p\n", jcr->JobId, jcr);
@@ -296,7 +296,7 @@ bool nextRunCmd(JobControlRecord* jcr)
 
       P(mutex);
       while (!jcr->authenticated && !JobCanceled(jcr)) {
-        errstat = pthread_cond_timedwait(&jcr->impl_->job_start_wait, &mutex,
+        errstat = pthread_cond_timedwait(&jcr->impl->job_start_wait, &mutex,
                                          &timeout);
         if (errstat == ETIMEDOUT || errstat == EINVAL || errstat == EPERM) {
           break;
@@ -320,7 +320,7 @@ bool nextRunCmd(JobControlRecord* jcr)
          */
         Dmsg2(800, "Wait for end job jid=%d %p\n", jcr->JobId, jcr);
         P(mutex);
-        pthread_cond_wait(&jcr->impl_->job_end_wait, &mutex);
+        pthread_cond_wait(&jcr->impl->job_end_wait, &mutex);
         V(mutex);
       }
       Dmsg2(800, "Done jid=%d %p\n", jcr->JobId, jcr);
@@ -416,27 +416,27 @@ void StoredFreeJcr(JobControlRecord* jcr)
     jcr->file_bsock = NULL;
   }
 
-  if (jcr->impl_->job_name) { FreePoolMemory(jcr->impl_->job_name); }
+  if (jcr->impl->job_name) { FreePoolMemory(jcr->impl->job_name); }
 
   if (jcr->client_name) {
     FreeMemory(jcr->client_name);
     jcr->client_name = NULL;
   }
 
-  if (jcr->impl_->fileset_name) { FreeMemory(jcr->impl_->fileset_name); }
+  if (jcr->impl->fileset_name) { FreeMemory(jcr->impl->fileset_name); }
 
-  if (jcr->impl_->fileset_md5) { FreeMemory(jcr->impl_->fileset_md5); }
+  if (jcr->impl->fileset_md5) { FreeMemory(jcr->impl->fileset_md5); }
 
-  if (jcr->impl_->backup_format) { FreeMemory(jcr->impl_->backup_format); }
+  if (jcr->impl->backup_format) { FreeMemory(jcr->impl->backup_format); }
 
-  if (jcr->impl_->bsr) {
-    libbareos::FreeBsr(jcr->impl_->bsr);
-    jcr->impl_->bsr = NULL;
+  if (jcr->impl->bsr) {
+    libbareos::FreeBsr(jcr->impl->bsr);
+    jcr->impl->bsr = NULL;
   }
 
-  if (jcr->impl_->rctx) {
-    FreeReadContext(jcr->impl_->rctx);
-    jcr->impl_->rctx = NULL;
+  if (jcr->impl->rctx) {
+    FreeReadContext(jcr->impl->rctx);
+    jcr->impl->rctx = NULL;
   }
 
   if (jcr->compress.deflate_buffer || jcr->compress.inflate_buffer) {
@@ -453,48 +453,48 @@ void StoredFreeJcr(JobControlRecord* jcr)
     jcr->RestoreBootstrap = NULL;
   }
 
-  if (jcr->impl_->next_dev || jcr->impl_->prev_dev) {
+  if (jcr->impl->next_dev || jcr->impl->prev_dev) {
     Emsg0(M_FATAL, 0, _("In FreeJcr(), but still attached to device!!!!\n"));
   }
 
-  pthread_cond_destroy(&jcr->impl_->job_start_wait);
-  pthread_cond_destroy(&jcr->impl_->job_end_wait);
+  pthread_cond_destroy(&jcr->impl->job_start_wait);
+  pthread_cond_destroy(&jcr->impl->job_end_wait);
 
   /*
    * Avoid a double free
    */
-  if (jcr->impl_->dcr == jcr->impl_->read_dcr) { jcr->impl_->read_dcr = NULL; }
+  if (jcr->impl->dcr == jcr->impl->read_dcr) { jcr->impl->read_dcr = NULL; }
 
-  if (jcr->impl_->dcr) {
-    FreeDeviceControlRecord(jcr->impl_->dcr);
-    jcr->impl_->dcr = NULL;
+  if (jcr->impl->dcr) {
+    FreeDeviceControlRecord(jcr->impl->dcr);
+    jcr->impl->dcr = NULL;
   }
 
-  if (jcr->impl_->read_dcr) {
-    FreeDeviceControlRecord(jcr->impl_->read_dcr);
-    jcr->impl_->read_dcr = NULL;
+  if (jcr->impl->read_dcr) {
+    FreeDeviceControlRecord(jcr->impl->read_dcr);
+    jcr->impl->read_dcr = NULL;
   }
 
-  if (jcr->impl_->plugin_options) { delete jcr->impl_->plugin_options; }
+  if (jcr->impl->plugin_options) { delete jcr->impl->plugin_options; }
 
-  if (jcr->impl_->read_store) {
+  if (jcr->impl->read_store) {
     DirectorStorage* store = nullptr;
-    foreach_alist (store, jcr->impl_->read_store) {
+    foreach_alist (store, jcr->impl->read_store) {
       delete store->device;
       delete store;
     }
-    delete jcr->impl_->read_store;
-    jcr->impl_->read_store = NULL;
+    delete jcr->impl->read_store;
+    jcr->impl->read_store = NULL;
   }
 
-  if (jcr->impl_->write_store) {
+  if (jcr->impl->write_store) {
     DirectorStorage* store = nullptr;
-    foreach_alist (store, jcr->impl_->write_store) {
+    foreach_alist (store, jcr->impl->write_store) {
       delete store->device;
       delete store;
     }
-    delete jcr->impl_->write_store;
-    jcr->impl_->write_store = NULL;
+    delete jcr->impl->write_store;
+    jcr->impl->write_store = NULL;
   }
 
   FreePlugins(jcr); /* release instantiated plugins */
@@ -505,9 +505,9 @@ void StoredFreeJcr(JobControlRecord* jcr)
                    GetFirstPortHostOrder(me->SDaddrs));
   }
 
-  if (jcr->impl_) {
-    delete jcr->impl_;
-    jcr->impl_ = nullptr;
+  if (jcr->impl) {
+    delete jcr->impl;
+    jcr->impl = nullptr;
   }
 
   Dmsg0(200, "End stored FreeJcr\n");
@@ -518,7 +518,7 @@ void StoredFreeJcr(JobControlRecord* jcr)
 JobControlRecord* NewStoredJcr()
 {
   JobControlRecord* jcr = new_jcr(StoredFreeJcr);
-  jcr->impl_ = new JobControlRecordPrivate;
+  jcr->impl = new JobControlRecordPrivate;
   return jcr;
 }
 

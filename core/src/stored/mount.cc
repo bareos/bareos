@@ -953,15 +953,15 @@ bool MountNextReadVolume(DeviceControlRecord* dcr)
 {
   Device* dev = dcr->dev;
   JobControlRecord* jcr = dcr->jcr;
-  Dmsg2(90, "NumReadVolumes=%d CurReadVolume=%d\n", jcr->impl_->NumReadVolumes,
-        jcr->impl_->CurReadVolume);
+  Dmsg2(90, "NumReadVolumes=%d CurReadVolume=%d\n", jcr->impl->NumReadVolumes,
+        jcr->impl->CurReadVolume);
 
   VolumeUnused(dcr); /* release current volume */
   /*
    * End Of Tape -- mount next Volume (if another specified)
    */
-  if (jcr->impl_->NumReadVolumes > 1 &&
-      jcr->impl_->CurReadVolume < jcr->impl_->NumReadVolumes) {
+  if (jcr->impl->NumReadVolumes > 1 &&
+      jcr->impl->CurReadVolume < jcr->impl->NumReadVolumes) {
     dev->Lock();
     dev->close(dcr);
     dev->SetRead();

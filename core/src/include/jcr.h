@@ -367,7 +367,7 @@ class JobControlRecord {
   htable* path_list{};      /**< Directory list (used by findlib) */
   bool is_passive_client_connection_probing{}; /**< Set if director probes a passive client connection */
 
-  JobControlRecordPrivate* impl_{nullptr}; /* Pointer to implementation of each daemon */
+  JobControlRecordPrivate* impl{nullptr}; /* Pointer to implementation of each daemon */
 };
 /* clang-format on */
 

@@ -253,7 +253,7 @@ void* HandleDirectorConnection(BareosSocket* dir)
   /*
    * Initialize Start Job condition variable
    */
-  errstat = pthread_cond_init(&jcr->impl_->job_start_wait, NULL);
+  errstat = pthread_cond_init(&jcr->impl->job_start_wait, NULL);
   if (errstat != 0) {
     BErrNo be;
     Jmsg1(jcr, M_FATAL, 0,
@@ -265,7 +265,7 @@ void* HandleDirectorConnection(BareosSocket* dir)
   /*
    * Initialize End Job condition variable
    */
-  errstat = pthread_cond_init(&jcr->impl_->job_end_wait, NULL);
+  errstat = pthread_cond_init(&jcr->impl->job_end_wait, NULL);
   if (errstat != 0) {
     BErrNo be;
     Jmsg1(jcr, M_FATAL, 0, _("Unable to init job end cond variable: ERR=%s\n"),
@@ -304,7 +304,7 @@ void* HandleDirectorConnection(BareosSocket* dir)
     found = false;
     for (i = 0; cmds[i].cmd; i++) {
       if (bstrncmp(cmds[i].cmd, dir->msg, strlen(cmds[i].cmd))) {
-        if ((!cmds[i].monitoraccess) && (jcr->impl_->director->monitor)) {
+        if ((!cmds[i].monitoraccess) && (jcr->impl->director->monitor)) {
           Dmsg1(100, "Command \"%s\" is invalid.\n", cmds[i].cmd);
           dir->fsend(invalid_cmd);
           dir->signal(BNET_EOD);
@@ -496,7 +496,7 @@ static bool CancelCmd(JobControlRecord* cjcr)
   Dmsg2(800, "Cancel JobId=%d %p\n", jcr->JobId, jcr);
   if (!jcr->authenticated &&
       (oldStatus == JS_WaitFD || oldStatus == JS_WaitSD)) {
-    pthread_cond_signal(&jcr->impl_->job_start_wait); /* wake waiting thread */
+    pthread_cond_signal(&jcr->impl->job_start_wait); /* wake waiting thread */
   }
 
   if (jcr->file_bsock) {
@@ -508,7 +508,7 @@ static bool CancelCmd(JobControlRecord* cjcr)
       /*
        * Still waiting for FD to connect, release it
        */
-      pthread_cond_signal(&jcr->impl_->job_start_wait); /* wake waiting job */
+      pthread_cond_signal(&jcr->impl->job_start_wait); /* wake waiting job */
       Dmsg2(800, "Signal FD connect jid=%d %p\n", jcr->JobId, jcr);
     }
   }
@@ -516,17 +516,17 @@ static bool CancelCmd(JobControlRecord* cjcr)
   /*
    * If thread waiting on mount, wake him
    */
-  if (jcr->impl_->dcr && jcr->impl_->dcr->dev &&
-      jcr->impl_->dcr->dev->waiting_for_mount()) {
-    pthread_cond_broadcast(&jcr->impl_->dcr->dev->wait_next_vol);
+  if (jcr->impl->dcr && jcr->impl->dcr->dev &&
+      jcr->impl->dcr->dev->waiting_for_mount()) {
+    pthread_cond_broadcast(&jcr->impl->dcr->dev->wait_next_vol);
     Dmsg1(100, "JobId=%u broadcast wait_device_release\n",
           (uint32_t)jcr->JobId);
     ReleaseDeviceCond();
   }
 
-  if (jcr->impl_->read_dcr && jcr->impl_->read_dcr->dev &&
-      jcr->impl_->read_dcr->dev->waiting_for_mount()) {
-    pthread_cond_broadcast(&jcr->impl_->read_dcr->dev->wait_next_vol);
+  if (jcr->impl->read_dcr && jcr->impl->read_dcr->dev &&
+      jcr->impl->read_dcr->dev->waiting_for_mount()) {
+    pthread_cond_broadcast(&jcr->impl->read_dcr->dev->wait_next_vol);
     Dmsg1(100, "JobId=%u broadcast wait_device_release\n",
           (uint32_t)jcr->JobId);
     ReleaseDeviceCond();
@@ -550,7 +550,7 @@ static bool CancelCmd(JobControlRecord* cjcr)
       }
   }
 
-  pthread_cond_signal(&jcr->impl_->job_end_wait); /* wake waiting job */
+  pthread_cond_signal(&jcr->impl->job_end_wait); /* wake waiting job */
   jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
 
   dir->fsend(_("3000 JobId=%ld Job=\"%s\" marked to be %s.\n"), jcr->JobId,
@@ -1314,12 +1314,12 @@ static inline bool GetBootstrapFile(JobControlRecord* jcr, BareosSocket* sock)
   }
   fclose(bs);
   Dmsg0(10, "=== end bootstrap file ===\n");
-  jcr->impl_->bsr = libbareos::parse_bsr(jcr, jcr->RestoreBootstrap);
-  if (!jcr->impl_->bsr) {
+  jcr->impl->bsr = libbareos::parse_bsr(jcr, jcr->RestoreBootstrap);
+  if (!jcr->impl->bsr) {
     Jmsg(jcr, M_FATAL, 0, _("Error parsing bootstrap file.\n"));
     goto bail_out;
   }
-  if (debug_level >= 10) { libbareos::DumpBsr(jcr->impl_->bsr, true); }
+  if (debug_level >= 10) { libbareos::DumpBsr(jcr->impl->bsr, true); }
   /* If we got a bootstrap, we are reading, so create read volume list */
   CreateRestoreVolumeList(jcr);
   ok = true;
@@ -1651,8 +1651,8 @@ static bool ReplicateCmd(JobControlRecord* jcr)
   storage_daemon_socket->SetSourceAddress(me->SDsrc_addr);
 
   if (!jcr->max_bandwidth) {
-    if (jcr->impl_->director->max_bandwidth_per_job) {
-      jcr->max_bandwidth = jcr->impl_->director->max_bandwidth_per_job;
+    if (jcr->impl->director->max_bandwidth_per_job) {
+      jcr->max_bandwidth = jcr->impl->director->max_bandwidth_per_job;
     } else if (me->max_bandwidth_per_job) {
       jcr->max_bandwidth = me->max_bandwidth_per_job;
     }
@@ -1707,7 +1707,7 @@ static bool ReplicateCmd(JobControlRecord* jcr)
     connect_state(ReplicateCmdState::kAuthenticated);
     Dmsg0(110, "Authenticated with SD.\n");
 
-    jcr->impl_->remote_replicate = true;
+    jcr->impl->remote_replicate = true;
 
     storage_daemon_socket.release(); /* jcr->store_bsock */
     return dir->fsend(OK_replicate);
@@ -1828,10 +1828,10 @@ static bool PluginoptionsCmd(JobControlRecord* jcr)
   }
 
   UnbashSpaces(plugin_options);
-  if (!jcr->impl_->plugin_options) {
-    jcr->impl_->plugin_options = new alist(10, owned_by_alist);
+  if (!jcr->impl->plugin_options) {
+    jcr->impl->plugin_options = new alist(10, owned_by_alist);
   }
-  jcr->impl_->plugin_options->append(strdup(plugin_options));
+  jcr->impl->plugin_options->append(strdup(plugin_options));
 
   /*
    * Send OK to Director

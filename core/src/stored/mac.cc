@@ -120,7 +120,7 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
   bool retval = false;
   bool translated_record = false;
   JobControlRecord* jcr = dcr->jcr;
-  Device* dev = jcr->impl_->dcr->dev;
+  Device* dev = jcr->impl->dcr->dev;
   char buf1[100], buf2[100];
 
   /*
@@ -149,10 +149,10 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
 
         if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY)) {
           bstrncpy(jcr->Job, label->Job, sizeof(jcr->Job));
-          PmStrcpy(jcr->impl_->job_name, label->JobName);
+          PmStrcpy(jcr->impl->job_name, label->JobName);
           PmStrcpy(jcr->client_name, label->ClientName);
-          PmStrcpy(jcr->impl_->fileset_name, label->FileSetName);
-          PmStrcpy(jcr->impl_->fileset_md5, label->FileSetMD5);
+          PmStrcpy(jcr->impl->fileset_name, label->FileSetName);
+          PmStrcpy(jcr->impl->fileset_md5, label->FileSetMD5);
         }
         jcr->setJobType(label->JobType);
         jcr->setJobLevel(label->JobLevel);
@@ -171,7 +171,7 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
         jcr->start_time = jcr->sched_time;
 
         /* write the SOS Label with the existing timestamp infos */
-        if (!WriteSessionLabel(jcr->impl_->dcr, SOS_LABEL)) {
+        if (!WriteSessionLabel(jcr->impl->dcr, SOS_LABEL)) {
           Jmsg1(jcr, M_FATAL, 0, _("Write session label failed. ERR=%s\n"),
                 dev->bstrerror());
           jcr->setJobStatus(JS_ErrorTerminated);
@@ -223,10 +223,10 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
   /*
    * Perform record translations.
    */
-  jcr->impl_->dcr->before_rec = rec;
-  jcr->impl_->dcr->after_rec = NULL;
+  jcr->impl->dcr->before_rec = rec;
+  jcr->impl->dcr->after_rec = NULL;
   if (GeneratePluginEvent(jcr, bsdEventWriteRecordTranslation,
-                          jcr->impl_->dcr) != bRC_OK) {
+                          jcr->impl->dcr) != bRC_OK) {
     goto bail_out;
   }
 
@@ -236,17 +236,17 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
    * taken place we just point the after_rec pointer to same DeviceRecord as in
    * the before_rec pointer.
    */
-  if (!jcr->impl_->dcr->after_rec) {
-    jcr->impl_->dcr->after_rec = jcr->impl_->dcr->before_rec;
+  if (!jcr->impl->dcr->after_rec) {
+    jcr->impl->dcr->after_rec = jcr->impl->dcr->before_rec;
   } else {
     translated_record = true;
   }
 
-  while (!WriteRecordToBlock(jcr->impl_->dcr, jcr->impl_->dcr->after_rec)) {
+  while (!WriteRecordToBlock(jcr->impl->dcr, jcr->impl->dcr->after_rec)) {
     Dmsg4(200, "!WriteRecordToBlock blkpos=%u:%u len=%d rem=%d\n", dev->file,
-          dev->block_num, jcr->impl_->dcr->after_rec->data_len,
-          jcr->impl_->dcr->after_rec->remainder);
-    if (!jcr->impl_->dcr->WriteBlockToDevice()) {
+          dev->block_num, jcr->impl->dcr->after_rec->data_len,
+          jcr->impl->dcr->after_rec->remainder);
+    if (!jcr->impl->dcr->WriteBlockToDevice()) {
       Dmsg2(90, "Got WriteBlockToDev error on device %s. %s\n",
             dev->print_name(), dev->bstrerror());
       Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
@@ -259,34 +259,34 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
   /*
    * Restore packet
    */
-  jcr->impl_->dcr->after_rec->VolSessionId =
-      jcr->impl_->dcr->after_rec->last_VolSessionId;
-  jcr->impl_->dcr->after_rec->VolSessionTime =
-      jcr->impl_->dcr->after_rec->last_VolSessionTime;
+  jcr->impl->dcr->after_rec->VolSessionId =
+      jcr->impl->dcr->after_rec->last_VolSessionId;
+  jcr->impl->dcr->after_rec->VolSessionTime =
+      jcr->impl->dcr->after_rec->last_VolSessionTime;
 
-  if (jcr->impl_->dcr->after_rec->FileIndex < 0) {
+  if (jcr->impl->dcr->after_rec->FileIndex < 0) {
     retval = true; /* don't send LABELs to Dir */
     goto bail_out;
   }
 
   jcr->JobBytes +=
-      jcr->impl_->dcr->after_rec->data_len; /* increment bytes of this job */
+      jcr->impl->dcr->after_rec->data_len; /* increment bytes of this job */
 
   Dmsg5(500, "wrote_record JobId=%d FI=%s SessId=%d Strm=%s len=%d\n",
-        jcr->JobId, FI_to_ascii(buf1, jcr->impl_->dcr->after_rec->FileIndex),
-        jcr->impl_->dcr->after_rec->VolSessionId,
-        stream_to_ascii(buf2, jcr->impl_->dcr->after_rec->Stream,
-                        jcr->impl_->dcr->after_rec->FileIndex),
-        jcr->impl_->dcr->after_rec->data_len);
+        jcr->JobId, FI_to_ascii(buf1, jcr->impl->dcr->after_rec->FileIndex),
+        jcr->impl->dcr->after_rec->VolSessionId,
+        stream_to_ascii(buf2, jcr->impl->dcr->after_rec->Stream,
+                        jcr->impl->dcr->after_rec->FileIndex),
+        jcr->impl->dcr->after_rec->data_len);
 
-  SendAttrsToDir(jcr, jcr->impl_->dcr->after_rec);
+  SendAttrsToDir(jcr, jcr->impl->dcr->after_rec);
 
   retval = true;
 
 bail_out:
   if (translated_record) {
-    FreeRecord(jcr->impl_->dcr->after_rec);
-    jcr->impl_->dcr->after_rec = NULL;
+    FreeRecord(jcr->impl->dcr->after_rec);
+    jcr->impl->dcr->after_rec = NULL;
   }
 
   return retval;
@@ -435,22 +435,22 @@ static inline void CheckAutoXflation(JobControlRecord* jcr)
   /*
    * Check autodeflation.
    */
-  switch (jcr->impl_->read_dcr->autodeflate) {
+  switch (jcr->impl->read_dcr->autodeflate) {
     case IO_DIRECTION_IN:
     case IO_DIRECTION_INOUT:
       Dmsg0(200, "Clearing autodeflate on read_dcr\n");
-      jcr->impl_->read_dcr->autodeflate = IO_DIRECTION_NONE;
+      jcr->impl->read_dcr->autodeflate = IO_DIRECTION_NONE;
       break;
     default:
       break;
   }
 
-  if (jcr->impl_->dcr) {
-    switch (jcr->impl_->dcr->autodeflate) {
+  if (jcr->impl->dcr) {
+    switch (jcr->impl->dcr->autodeflate) {
       case IO_DIRECTION_OUT:
       case IO_DIRECTION_INOUT:
         Dmsg0(200, "Clearing autodeflate on write dcr\n");
-        jcr->impl_->dcr->autodeflate = IO_DIRECTION_NONE;
+        jcr->impl->dcr->autodeflate = IO_DIRECTION_NONE;
         break;
       default:
         break;
@@ -460,22 +460,22 @@ static inline void CheckAutoXflation(JobControlRecord* jcr)
   /*
    * Check autoinflation.
    */
-  switch (jcr->impl_->read_dcr->autoinflate) {
+  switch (jcr->impl->read_dcr->autoinflate) {
     case IO_DIRECTION_IN:
     case IO_DIRECTION_INOUT:
       Dmsg0(200, "Clearing autoinflate on read_dcr\n");
-      jcr->impl_->read_dcr->autoinflate = IO_DIRECTION_NONE;
+      jcr->impl->read_dcr->autoinflate = IO_DIRECTION_NONE;
       break;
     default:
       break;
   }
 
-  if (jcr->impl_->dcr) {
-    switch (jcr->impl_->dcr->autoinflate) {
+  if (jcr->impl->dcr) {
+    switch (jcr->impl->dcr->autoinflate) {
       case IO_DIRECTION_OUT:
       case IO_DIRECTION_INOUT:
         Dmsg0(200, "Clearing autoinflate on write dcr\n");
-        jcr->impl_->dcr->autoinflate = IO_DIRECTION_NONE;
+        jcr->impl->dcr->autoinflate = IO_DIRECTION_NONE;
         break;
       default:
         break;
@@ -494,7 +494,7 @@ bool DoMacRun(JobControlRecord* jcr)
   bool ok = true;
   bool acquire_fail = false;
   BareosSocket* dir = jcr->dir_bsock;
-  Device* dev = jcr->impl_->dcr->dev;
+  Device* dev = jcr->impl->dcr->dev;
 
   switch (jcr->getJobType()) {
     case JT_MIGRATE:
@@ -516,7 +516,7 @@ bool DoMacRun(JobControlRecord* jcr)
 
   Dmsg0(20, "Start read data.\n");
 
-  if (jcr->impl_->NumReadVolumes == 0) {
+  if (jcr->impl->NumReadVolumes == 0) {
     Jmsg(jcr, M_FATAL, 0, _("No Volume names found for %s.\n"), Type);
     goto bail_out;
   }
@@ -529,30 +529,30 @@ bool DoMacRun(JobControlRecord* jcr)
   /*
    * See if we perform both read and write or read only.
    */
-  if (jcr->impl_->remote_replicate) {
+  if (jcr->impl->remote_replicate) {
     BareosSocket* sd;
 
-    if (!jcr->impl_->read_dcr) {
+    if (!jcr->impl->read_dcr) {
       Jmsg(jcr, M_FATAL, 0, _("Read device not properly initialized.\n"));
       goto bail_out;
     }
 
-    Dmsg1(100, "read_dcr=%p\n", jcr->impl_->read_dcr);
+    Dmsg1(100, "read_dcr=%p\n", jcr->impl->read_dcr);
     Dmsg3(200, "Found %d volumes names for %s. First=%s\n",
-          jcr->impl_->NumReadVolumes, Type, jcr->impl_->VolList->VolumeName);
+          jcr->impl->NumReadVolumes, Type, jcr->impl->VolList->VolumeName);
 
     /*
      * Ready devices for reading.
      */
-    if (!AcquireDeviceForRead(jcr->impl_->read_dcr)) {
+    if (!AcquireDeviceForRead(jcr->impl->read_dcr)) {
       ok = false;
       acquire_fail = true;
       goto bail_out;
     }
 
     Dmsg2(200, "===== After acquire pos %u:%u\n",
-          jcr->impl_->read_dcr->dev->file,
-          jcr->impl_->read_dcr->dev->block_num);
+          jcr->impl->read_dcr->dev->file,
+          jcr->impl->read_dcr->dev->block_num);
 
     jcr->sendJobStatus(JS_Running);
 
@@ -577,12 +577,12 @@ bool DoMacRun(JobControlRecord* jcr)
      */
     if (BgetMsg(sd) >= 0) {
       Dmsg1(110, "<stored: %s", sd->msg);
-      if (sscanf(sd->msg, OK_start_replicate, &jcr->impl_->Ticket) != 1) {
+      if (sscanf(sd->msg, OK_start_replicate, &jcr->impl->Ticket) != 1) {
         Jmsg(jcr, M_FATAL, 0, _("Bad response to start replicate: %s\n"),
              sd->msg);
         goto bail_out;
       }
-      Dmsg1(110, "Got Ticket=%d\n", jcr->impl_->Ticket);
+      Dmsg1(110, "Got Ticket=%d\n", jcr->impl->Ticket);
     } else {
       Jmsg(jcr, M_FATAL, 0,
            _("Bad response from stored to start replicate command\n"));
@@ -592,7 +592,7 @@ bool DoMacRun(JobControlRecord* jcr)
     /*
      * Let the remote SD know we are now really going to send the data.
      */
-    sd->fsend(ReplicateData, jcr->impl_->Ticket);
+    sd->fsend(ReplicateData, jcr->impl->Ticket);
     Dmsg1(110, ">stored: %s", sd->msg);
 
     /*
@@ -612,7 +612,7 @@ bool DoMacRun(JobControlRecord* jcr)
     /*
      * Read all data and send it to remote SD.
      */
-    ok = ReadRecords(jcr->impl_->read_dcr, CloneRecordToRemoteSd,
+    ok = ReadRecords(jcr->impl->read_dcr, CloneRecordToRemoteSd,
                      MountNextReadVolume);
 
     /*
@@ -652,28 +652,28 @@ bool DoMacRun(JobControlRecord* jcr)
     /* Inform Storage daemon that we are done */
     sd->signal(BNET_TERMINATE);
   } else {
-    if (!jcr->impl_->read_dcr) {
+    if (!jcr->impl->read_dcr) {
       Jmsg(jcr, M_FATAL, 0, _("Read device not properly initialized.\n"));
       goto bail_out;
     }
 
-    Dmsg2(100, "read_dcr=%p write_dcr=%p\n", jcr->impl_->read_dcr,
-          jcr->impl_->dcr);
+    Dmsg2(100, "read_dcr=%p write_dcr=%p\n", jcr->impl->read_dcr,
+          jcr->impl->dcr);
     Dmsg3(200, "Found %d volumes names for %s. First=%s\n",
-          jcr->impl_->NumReadVolumes, Type, jcr->impl_->VolList->VolumeName);
+          jcr->impl->NumReadVolumes, Type, jcr->impl->VolList->VolumeName);
 
     /*
      * Ready devices for reading and writing.
      */
-    if (!AcquireDeviceForRead(jcr->impl_->read_dcr) ||
-        !AcquireDeviceForAppend(jcr->impl_->dcr)) {
+    if (!AcquireDeviceForRead(jcr->impl->read_dcr) ||
+        !AcquireDeviceForAppend(jcr->impl->dcr)) {
       ok = false;
       acquire_fail = true;
       goto bail_out;
     }
 
-    Dmsg2(200, "===== After acquire pos %u:%u\n", jcr->impl_->dcr->dev->file,
-          jcr->impl_->dcr->dev->block_num);
+    Dmsg2(200, "===== After acquire pos %u:%u\n", jcr->impl->dcr->dev->file,
+          jcr->impl->dcr->dev->block_num);
 
     jcr->sendJobStatus(JS_Running);
 
@@ -683,7 +683,7 @@ bool DoMacRun(JobControlRecord* jcr)
     now = (utime_t)time(NULL);
     UpdateJobStatistics(jcr, now);
 
-    if (!BeginDataSpool(jcr->impl_->dcr)) {
+    if (!BeginDataSpool(jcr->impl->dcr)) {
       ok = false;
       goto bail_out;
     }
@@ -693,22 +693,22 @@ bool DoMacRun(JobControlRecord* jcr)
       goto bail_out;
     }
 
-    jcr->impl_->dcr->VolFirstIndex = jcr->impl_->dcr->VolLastIndex = 0;
+    jcr->impl->dcr->VolFirstIndex = jcr->impl->dcr->VolLastIndex = 0;
     jcr->run_time = time(NULL);
-    SetStartVolPosition(jcr->impl_->dcr);
+    SetStartVolPosition(jcr->impl->dcr);
     jcr->JobFiles = 0;
 
     /*
      * Read all data and make a local clone of it.
      */
-    ok = ReadRecords(jcr->impl_->read_dcr, CloneRecordInternally,
+    ok = ReadRecords(jcr->impl->read_dcr, CloneRecordInternally,
                      MountNextReadVolume);
   }
 
 bail_out:
   if (!ok) { jcr->setJobStatus(JS_ErrorTerminated); }
 
-  if (!acquire_fail && !jcr->impl_->remote_replicate && jcr->impl_->dcr) {
+  if (!acquire_fail && !jcr->impl->remote_replicate && jcr->impl->dcr) {
     /*
      * Don't use time_t for job_elapsed as time_t can be 32 or 64 bits,
      *   and the subsequent Jmsg() editing will break
@@ -728,7 +728,7 @@ bail_out:
       /*
        * Write End Of Session Label
        */
-      DeviceControlRecord* dcr = jcr->impl_->dcr;
+      DeviceControlRecord* dcr = jcr->impl->dcr;
       if (!WriteSessionLabel(dcr, EOS_LABEL)) {
         /*
          * Print only if ok and not cancelled to avoid spurious messages
@@ -747,7 +747,7 @@ bail_out:
       /*
        * Flush out final partial block of this session
        */
-      if (!jcr->impl_->dcr->WriteBlockToDevice()) {
+      if (!jcr->impl->dcr->WriteBlockToDevice()) {
         Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
               dev->print_name(), dev->bstrerror());
         Dmsg0(100, _("Set ok=FALSE after WriteBlockToDevice.\n"));
@@ -759,12 +759,12 @@ bail_out:
 
 
     if (!ok) {
-      DiscardDataSpool(jcr->impl_->dcr);
+      DiscardDataSpool(jcr->impl->dcr);
     } else {
       /*
        * Note: if commit is OK, the device will remain blocked
        */
-      CommitDataSpool(jcr->impl_->dcr);
+      CommitDataSpool(jcr->impl->dcr);
     }
 
     job_elapsed = time(NULL) - jcr->run_time;
@@ -778,7 +778,7 @@ bail_out:
     /*
      * Release the device -- and send final Vol info to DIR
      */
-    ReleaseDevice(jcr->impl_->dcr);
+    ReleaseDevice(jcr->impl->dcr);
 
     if (!ok || JobCanceled(jcr)) {
       DiscardAttributeSpool(jcr);
@@ -787,8 +787,8 @@ bail_out:
     }
   }
 
-  if (jcr->impl_->read_dcr) {
-    if (!ReleaseDevice(jcr->impl_->read_dcr)) { ok = false; }
+  if (jcr->impl->read_dcr) {
+    if (!ReleaseDevice(jcr->impl->read_dcr)) { ok = false; }
   }
 
   jcr->sendJobStatus(); /* update director */

@@ -329,7 +329,7 @@ static inline void CleanupFileset(JobControlRecord* jcr)
   findIncludeExcludeItem* incexe;
   findFOPTS* fo;
 
-  fileset = jcr->impl_->ff->fileset;
+  fileset = jcr->impl->ff->fileset;
   if (fileset) {
     /*
      * Delete FileSet Include lists
@@ -394,7 +394,7 @@ static inline void CleanupFileset(JobControlRecord* jcr)
     fileset->exclude_list.destroy();
     free(fileset);
   }
-  jcr->impl_->ff->fileset = nullptr;
+  jcr->impl->ff->fileset = nullptr;
 }
 
 static inline bool AreMaxConcurrentJobsExceeded()
@@ -413,7 +413,7 @@ static inline bool AreMaxConcurrentJobsExceeded()
 static JobControlRecord* NewFiledJcr()
 {
   JobControlRecord* jcr = new_jcr(FiledFreeJcr);
-  jcr->impl_ = new JobControlRecordPrivate;
+  jcr->impl = new JobControlRecordPrivate;
   return jcr;
 }
 
@@ -423,19 +423,19 @@ JobControlRecord* create_new_director_session(BareosSocket* dir)
 
   JobControlRecord* jcr{NewFiledJcr()};
   jcr->dir_bsock = dir;
-  jcr->impl_->ff = init_find_files();
+  jcr->impl->ff = init_find_files();
   jcr->start_time = time(nullptr);
-  jcr->impl_->RunScripts = new alist(10, not_owned_by_alist);
-  jcr->impl_->last_fname = GetPoolMemory(PM_FNAME);
-  jcr->impl_->last_fname[0] = 0;
+  jcr->impl->RunScripts = new alist(10, not_owned_by_alist);
+  jcr->impl->last_fname = GetPoolMemory(PM_FNAME);
+  jcr->impl->last_fname[0] = 0;
   jcr->client_name = GetMemory(strlen(my_name) + 1);
   PmStrcpy(jcr->client_name, my_name);
   bstrncpy(jcr->Job, jobname, sizeof(jobname)); /* dummy */
-  jcr->impl_->crypto.pki_sign = me->pki_sign;
-  jcr->impl_->crypto.pki_encrypt = me->pki_encrypt;
-  jcr->impl_->crypto.pki_keypair = me->pki_keypair;
-  jcr->impl_->crypto.pki_signers = me->pki_signers;
-  jcr->impl_->crypto.pki_recipients = me->pki_recipients;
+  jcr->impl->crypto.pki_sign = me->pki_sign;
+  jcr->impl->crypto.pki_encrypt = me->pki_encrypt;
+  jcr->impl->crypto.pki_keypair = me->pki_keypair;
+  jcr->impl->crypto.pki_signers = me->pki_signers;
+  jcr->impl->crypto.pki_recipients = me->pki_recipients;
   if (dir) { dir->SetJcr(jcr); }
   SetJcrInThreadSpecificData(jcr);
 
@@ -469,7 +469,7 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
     for (int i = 0; cmds[i].cmd; i++) {
       if (bstrncmp(cmds[i].cmd, dir->msg, strlen(cmds[i].cmd))) {
         found = true; /* indicate command found */
-        if ((!cmds[i].monitoraccess) && (jcr->impl_->director->monitor)) {
+        if ((!cmds[i].monitoraccess) && (jcr->impl->director->monitor)) {
           Dmsg1(100, "Command \"%s\" is invalid.\n", cmds[i].cmd);
           dir->fsend(invalid_cmd);
           dir->signal(BNET_EOD);
@@ -498,12 +498,11 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
   /*
    * Run the after job
    */
-  if (jcr->impl_->RunScripts) {
-    RunScripts(
-        jcr, jcr->impl_->RunScripts, "ClientAfterJob",
-        (jcr->impl_->director && jcr->impl_->director->allowed_script_dirs)
-            ? jcr->impl_->director->allowed_script_dirs
-            : me->allowed_script_dirs);
+  if (jcr->impl->RunScripts) {
+    RunScripts(jcr, jcr->impl->RunScripts, "ClientAfterJob",
+               (jcr->impl->director && jcr->impl->director->allowed_script_dirs)
+                   ? jcr->impl->director->allowed_script_dirs
+                   : me->allowed_script_dirs);
   }
 
   if (jcr->JobId) { /* send EndJob if running a job */
@@ -514,7 +513,7 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
     dir->fsend(EndJob, jcr->JobStatus, jcr->JobFiles,
                edit_uint64(jcr->ReadBytes, ed1),
                edit_uint64(jcr->JobBytes, ed2), jcr->JobErrors,
-               jcr->impl_->enable_vss, jcr->impl_->crypto.pki_encrypt);
+               jcr->impl->enable_vss, jcr->impl->crypto.pki_encrypt);
     Dmsg1(110, "End FD msg: %s\n", dir->msg);
   }
 
@@ -528,7 +527,7 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
   dir->signal(BNET_TERMINATE);
 
   FreePlugins(jcr); /* release instantiated plugins */
-  FreeAndNullPoolMemory(jcr->impl_->job_metadata);
+  FreeAndNullPoolMemory(jcr->impl->job_metadata);
 
   /*
    * Clean up fileset
@@ -943,14 +942,14 @@ static bool EstimateCmd(JobControlRecord* jcr)
    */
   if (!ValidateCommand(
           jcr, "estimate",
-          (jcr->impl_->director && jcr->impl_->director->allowed_job_cmds)
-              ? jcr->impl_->director->allowed_job_cmds
+          (jcr->impl->director && jcr->impl->director->allowed_job_cmds)
+              ? jcr->impl->director->allowed_job_cmds
               : me->allowed_job_cmds)) {
     dir->fsend(_("2992 Bad estimate command.\n"));
     return 0;
   }
 
-  if (sscanf(dir->msg, Estimatecmd, &jcr->impl_->listing) != 1) {
+  if (sscanf(dir->msg, Estimatecmd, &jcr->impl->listing) != 1) {
     PmStrcpy(jcr->errmsg, dir->msg);
     Jmsg(jcr, M_FATAL, 0, _("Bad estimate command: %s"), jcr->errmsg);
     dir->fsend(_("2992 Bad estimate command.\n"));
@@ -959,8 +958,7 @@ static bool EstimateCmd(JobControlRecord* jcr)
 
   MakeEstimate(jcr);
 
-  dir->fsend(OKest,
-             edit_uint64_with_commas(jcr->impl_->num_files_examined, ed1),
+  dir->fsend(OKest, edit_uint64_with_commas(jcr->impl->num_files_examined, ed1),
              edit_uint64_with_commas(jcr->JobBytes, ed2));
   dir->signal(BNET_EOD);
 
@@ -1066,9 +1064,9 @@ static bool RunbeforenowCmd(JobControlRecord* jcr)
 {
   BareosSocket* dir = jcr->dir_bsock;
 
-  RunScripts(jcr, jcr->impl_->RunScripts, "ClientBeforeJob",
-             (jcr->impl_->director && jcr->impl_->director->allowed_script_dirs)
-                 ? jcr->impl_->director->allowed_script_dirs
+  RunScripts(jcr, jcr->impl->RunScripts, "ClientBeforeJob",
+             (jcr->impl->director && jcr->impl->director->allowed_script_dirs)
+                 ? jcr->impl->director->allowed_script_dirs
                  : me->allowed_script_dirs);
 
   if (JobCanceled(jcr)) {
@@ -1113,7 +1111,7 @@ static bool RunafterCmd(JobControlRecord* jcr)
   script->when = SCRIPT_After;
   FreeMemory(cmd);
 
-  jcr->impl_->RunScripts->append(script);
+  jcr->impl->RunScripts->append(script);
 
   return dir->fsend(OKRunAfter);
 }
@@ -1130,8 +1128,8 @@ static bool RunscriptCmd(JobControlRecord* jcr)
    */
   if (!ValidateCommand(
           jcr, "runscript",
-          (jcr->impl_->director && jcr->impl_->director->allowed_job_cmds)
-              ? jcr->impl_->director->allowed_job_cmds
+          (jcr->impl->director && jcr->impl->director->allowed_job_cmds)
+              ? jcr->impl->director->allowed_job_cmds
               : me->allowed_job_cmds)) {
     dir->fsend(FailedRunScript);
     return 0;
@@ -1164,7 +1162,7 @@ static bool RunscriptCmd(JobControlRecord* jcr)
 
   cmd->SetCommand(msg);
   cmd->Debug();
-  jcr->impl_->RunScripts->append(cmd);
+  jcr->impl->RunScripts->append(cmd);
 
   FreePoolMemory(msg);
 
@@ -1311,7 +1309,7 @@ static bool RestoreObjectCmd(JobControlRecord* jcr)
    */
   if (bstrcmp(rop.object_name, "job_metadata.xml")) {
     Dmsg0(100, "got job metadata\n");
-    jcr->impl_->got_metadata = true;
+    jcr->impl->got_metadata = true;
   }
 
   GeneratePluginEvent(jcr, bEventRestoreObject, (void*)&rop);
@@ -1337,7 +1335,7 @@ static inline int CountIncludeListFileEntries(JobControlRecord* jcr)
   findFILESET* fileset;
   findIncludeExcludeItem* incexe;
 
-  fileset = jcr->impl_->ff->fileset;
+  fileset = jcr->impl->ff->fileset;
   if (fileset) {
     for (int i = 0; i < fileset->include_list.size(); i++) {
       incexe = (findIncludeExcludeItem*)fileset->include_list.get(i);
@@ -1373,13 +1371,13 @@ static bool FilesetCmd(JobControlRecord* jcr)
   if (!TermFileset(jcr)) { return false; }
 
 #if defined(WIN32_VSS)
-  jcr->impl_->enable_vss =
+  jcr->impl->enable_vss =
       (vss && (CountIncludeListFileEntries(jcr) > 0)) ? true : false;
 #endif
 
   retval = dir->fsend(OKinc);
   GeneratePluginEvent(jcr, bEventEndFileSet);
-  CheckIncludeListShadowing(jcr, jcr->impl_->ff->fileset);
+  CheckIncludeListShadowing(jcr, jcr->impl->ff->fileset);
 
   return retval;
 }
@@ -1494,7 +1492,7 @@ static bool LevelCmd(JobControlRecord* jcr)
     }
 
     if (sscanf(dir->msg, "level = since_utime %s mtime_only=%d prev_job=%127s",
-               buf, &mtime_only, jcr->impl_->PrevJob) != 3) {
+               buf, &mtime_only, jcr->impl->PrevJob) != 3) {
       if (sscanf(dir->msg, "level = since_utime %s mtime_only=%d", buf,
                  &mtime_only) != 2) {
         goto bail_out;
@@ -1502,8 +1500,7 @@ static bool LevelCmd(JobControlRecord* jcr)
     }
 
     since_time = str_to_uint64(buf); /* this is the since time */
-    Dmsg2(100, "since_time=%lld prev_job=%s\n", since_time,
-          jcr->impl_->PrevJob);
+    Dmsg2(100, "since_time=%lld prev_job=%s\n", since_time, jcr->impl->PrevJob);
     /*
      * Sync clocks by polling him for the time. We take 10 samples of his time
      * throwing out the first two.
@@ -1551,9 +1548,9 @@ static bool LevelCmd(JobControlRecord* jcr)
     dir->signal(BNET_EOD);
 
     Dmsg2(100, "adj=%lld since_time=%lld\n", adj, since_time);
-    jcr->impl_->incremental = true; /* set incremental or decremental backup */
-    jcr->impl_->mtime = since_time; /* set since time */
-    GeneratePluginEvent(jcr, bEventSince, (void*)(time_t)jcr->impl_->mtime);
+    jcr->impl->incremental = true; /* set incremental or decremental backup */
+    jcr->impl->mtime = since_time; /* set since time */
+    GeneratePluginEvent(jcr, bEventSince, (void*)(time_t)jcr->impl->mtime);
   } else {
     Jmsg1(jcr, M_FATAL, 0, _("Unknown backup level: %s\n"), level);
     FreeMemory(level);
@@ -1585,8 +1582,8 @@ static bool SessionCmd(JobControlRecord* jcr)
 
   Dmsg1(100, "SessionCmd: %s", dir->msg);
   if (sscanf(dir->msg, sessioncmd, jcr->VolumeName, &jcr->VolSessionId,
-             &jcr->VolSessionTime, &jcr->impl_->StartFile, &jcr->impl_->EndFile,
-             &jcr->impl_->StartBlock, &jcr->impl_->EndBlock) != 7) {
+             &jcr->VolSessionTime, &jcr->impl->StartFile, &jcr->impl->EndFile,
+             &jcr->impl->StartBlock, &jcr->impl->EndBlock) != 7) {
     PmStrcpy(jcr->errmsg, dir->msg);
     Jmsg(jcr, M_FATAL, 0, _("Bad session command: %s"), jcr->errmsg);
     return false;
@@ -1621,7 +1618,7 @@ static void SetStorageAuthKeyAndTlsPolicy(JobControlRecord* jcr,
      * restore
      */
     Dmsg0(5, "set multi_restore=true\n");
-    jcr->impl_->multi_restore = true;
+    jcr->impl->multi_restore = true;
     free(jcr->sd_auth_key);
   }
 
@@ -1668,8 +1665,8 @@ static bool StorageCmd(JobControlRecord* jcr)
    * TODO: see if we put limit on restore and backup...
    */
   if (!jcr->max_bandwidth) {
-    if (jcr->impl_->director->max_bandwidth_per_job) {
-      jcr->max_bandwidth = jcr->impl_->director->max_bandwidth_per_job;
+    if (jcr->impl->director->max_bandwidth_per_job) {
+      jcr->max_bandwidth = jcr->impl->director->max_bandwidth_per_job;
     } else if (me->max_bandwidth_per_job) {
       jcr->max_bandwidth = me->max_bandwidth_per_job;
     }
@@ -1735,7 +1732,7 @@ static void LogFlagStatus(JobControlRecord* jcr,
                           int flag,
                           const char* flag_text)
 {
-  findFILESET* fileset = jcr->impl_->ff->fileset;
+  findFILESET* fileset = jcr->impl->ff->fileset;
   bool found = false;
   if (fileset) {
     for (int i = 0; i < fileset->include_list.size() && !found; i++) {
@@ -1769,7 +1766,7 @@ static inline void ClearFlagInFileset(JobControlRecord* jcr,
   findFILESET* fileset;
   bool cleared_flag = false;
 
-  fileset = jcr->impl_->ff->fileset;
+  fileset = jcr->impl->ff->fileset;
   if (fileset) {
     for (int i = 0; i < fileset->include_list.size(); i++) {
       findIncludeExcludeItem* incexe =
@@ -1799,7 +1796,7 @@ static inline void ClearCompressionFlagInFileset(JobControlRecord* jcr)
 {
   findFILESET* fileset;
 
-  fileset = jcr->impl_->ff->fileset;
+  fileset = jcr->impl->ff->fileset;
   if (fileset) {
     for (int i = 0; i < fileset->include_list.size(); i++) {
       findIncludeExcludeItem* incexe =
@@ -1859,7 +1856,7 @@ static inline bool GetWantedCryptoCipher(JobControlRecord* jcr,
    * Walk the fileset and check for the FO_FORCE_ENCRYPT flag and any forced
    * crypto cipher.
    */
-  fileset = jcr->impl_->ff->fileset;
+  fileset = jcr->impl->ff->fileset;
   if (fileset) {
     for (int i = 0; i < fileset->include_list.size(); i++) {
       findIncludeExcludeItem* incexe =
@@ -1883,7 +1880,7 @@ static inline bool GetWantedCryptoCipher(JobControlRecord* jcr,
           /*
            * See if pki_encrypt is already set for this Job.
            */
-          if (!jcr->impl_->crypto.pki_encrypt) {
+          if (!jcr->impl->crypto.pki_encrypt) {
             if (!me->pki_keypair_file) {
               Jmsg(jcr, M_FATAL, 0,
                    _("Fileset contains cipher settings but PKI Key Pair is not "
@@ -1894,8 +1891,8 @@ static inline bool GetWantedCryptoCipher(JobControlRecord* jcr,
             /*
              * Enable encryption and signing for this Job.
              */
-            jcr->impl_->crypto.pki_sign = true;
-            jcr->impl_->crypto.pki_encrypt = true;
+            jcr->impl->crypto.pki_sign = true;
+            jcr->impl->crypto.pki_encrypt = true;
           }
 
           wanted_cipher = (crypto_cipher_t)fo->Encryption_cipher;
@@ -1919,7 +1916,7 @@ static inline bool GetWantedCryptoCipher(JobControlRecord* jcr,
    * See if FO_FORCE_ENCRYPT is set and encryption is not configured for the
    * filed.
    */
-  if (force_encrypt && !jcr->impl_->crypto.pki_encrypt) {
+  if (force_encrypt && !jcr->impl->crypto.pki_encrypt) {
     Jmsg(jcr, M_FATAL, 0,
          _("Fileset forces encryption but encryption is not configured\n"));
     return false;
@@ -1958,14 +1955,14 @@ static bool BackupCmd(JobControlRecord* jcr)
    */
   if (!ValidateCommand(
           jcr, "backup",
-          (jcr->impl_->director && jcr->impl_->director->allowed_job_cmds)
-              ? jcr->impl_->director->allowed_job_cmds
+          (jcr->impl->director && jcr->impl->director->allowed_job_cmds)
+              ? jcr->impl->director->allowed_job_cmds
               : me->allowed_job_cmds)) {
     goto cleanup;
   }
 
 #if defined(WIN32_VSS)
-  if (jcr->impl_->enable_vss) { VSSInit(jcr); }
+  if (jcr->impl->enable_vss) { VSSInit(jcr); }
 #endif
 
   if (sscanf(dir->msg, "backup FileIndex=%ld\n", &FileIndex) == 1) {
@@ -2009,7 +2006,7 @@ static bool BackupCmd(JobControlRecord* jcr)
 
   jcr->setJobStatus(JS_Blocked);
   jcr->setJobType(JT_BACKUP);
-  Dmsg1(100, "begin backup ff=%p\n", jcr->impl_->ff);
+  Dmsg1(100, "begin backup ff=%p\n", jcr->impl->ff);
 
   if (sd == nullptr) {
     Jmsg(jcr, M_FATAL, 0, _("Cannot contact Storage daemon\n"));
@@ -2031,11 +2028,11 @@ static bool BackupCmd(JobControlRecord* jcr)
    */
   if (BgetMsg(sd) >= 0) {
     Dmsg1(110, "<stored: %s", sd->msg);
-    if (sscanf(sd->msg, OK_open, &jcr->impl_->Ticket) != 1) {
+    if (sscanf(sd->msg, OK_open, &jcr->impl->Ticket) != 1) {
       Jmsg(jcr, M_FATAL, 0, _("Bad response to append open: %s\n"), sd->msg);
       goto cleanup;
     }
-    Dmsg1(110, "Got Ticket=%d\n", jcr->impl_->Ticket);
+    Dmsg1(110, "Got Ticket=%d\n", jcr->impl->Ticket);
   } else {
     Jmsg(jcr, M_FATAL, 0, _("Bad response from stored to open command\n"));
     goto cleanup;
@@ -2044,7 +2041,7 @@ static bool BackupCmd(JobControlRecord* jcr)
   /**
    * Send Append data command to Storage daemon
    */
-  sd->fsend(append_data, jcr->impl_->Ticket);
+  sd->fsend(append_data, jcr->impl->Ticket);
   Dmsg1(110, ">stored: %s", sd->msg);
 
   /**
@@ -2062,8 +2059,8 @@ static bool BackupCmd(JobControlRecord* jcr)
   /*
    * START VSS ON WIN32
    */
-  if (jcr->impl_->pVSSClient) {
-    if (jcr->impl_->pVSSClient->InitializeForBackup(jcr)) {
+  if (jcr->impl->pVSSClient) {
+    if (jcr->impl->pVSSClient->InitializeForBackup(jcr)) {
       int drive_count;
       char szWinDriveLetters[27];
       bool onefs_disabled;
@@ -2081,18 +2078,18 @@ static bool BackupCmd(JobControlRecord* jcr)
       GeneratePluginEvent(jcr, bEventVssPrepareSnapshot, szWinDriveLetters);
 
       drive_count =
-          get_win32_driveletters(jcr->impl_->ff->fileset, szWinDriveLetters);
+          get_win32_driveletters(jcr->impl->ff->fileset, szWinDriveLetters);
 
-      onefs_disabled = win32_onefs_is_disabled(jcr->impl_->ff->fileset);
+      onefs_disabled = win32_onefs_is_disabled(jcr->impl->ff->fileset);
 
       if (drive_count > 0) {
         Jmsg(jcr, M_INFO, 0,
              _("Generate VSS snapshots. Driver=\"%s\", Drive(s)=\"%s\"\n"),
-             jcr->impl_->pVSSClient->GetDriverName(),
+             jcr->impl->pVSSClient->GetDriverName(),
              (drive_count) ? szWinDriveLetters : "None");
 
-        if (!jcr->impl_->pVSSClient->CreateSnapshots(szWinDriveLetters,
-                                                     onefs_disabled)) {
+        if (!jcr->impl->pVSSClient->CreateSnapshots(szWinDriveLetters,
+                                                    onefs_disabled)) {
           BErrNo be;
           Jmsg(jcr, M_FATAL, 0,
                _("CreateSGenerate VSS snapshots failed. ERR=%s\n"),
@@ -2103,7 +2100,7 @@ static bool BackupCmd(JobControlRecord* jcr)
           /*
            * Inform about VMPs if we have them
            */
-          jcr->impl_->pVSSClient->ShowVolumeMountPointStats(jcr);
+          jcr->impl->pVSSClient->ShowVolumeMountPointStats(jcr);
 
           /*
            * Tell user if snapshot creation of a specific drive failed
@@ -2119,11 +2116,10 @@ static bool BackupCmd(JobControlRecord* jcr)
           /*
            * Inform user about writer states
            */
-          for (size_t i = 0; i < jcr->impl_->pVSSClient->GetWriterCount();
-               i++) {
-            if (jcr->impl_->pVSSClient->GetWriterState(i) < 1) {
+          for (size_t i = 0; i < jcr->impl->pVSSClient->GetWriterCount(); i++) {
+            if (jcr->impl->pVSSClient->GetWriterState(i) < 1) {
               Jmsg(jcr, M_INFO, 0, _("VSS Writer (PrepareForBackup): %s\n"),
-                   jcr->impl_->pVSSClient->GetWriterInfo(i));
+                   jcr->impl->pVSSClient->GetWriterInfo(i));
             }
           }
         }
@@ -2139,18 +2135,17 @@ static bool BackupCmd(JobControlRecord* jcr)
            be.bstrerror());
     }
 
-    RunScripts(
-        jcr, jcr->impl_->RunScripts, "ClientAfterVSS",
-        (jcr->impl_->director && jcr->impl_->director->allowed_script_dirs)
-            ? jcr->impl_->director->allowed_script_dirs
-            : me->allowed_script_dirs);
+    RunScripts(jcr, jcr->impl->RunScripts, "ClientAfterVSS",
+               (jcr->impl->director && jcr->impl->director->allowed_script_dirs)
+                   ? jcr->impl->director->allowed_script_dirs
+                   : me->allowed_script_dirs);
   }
 #endif
 
   /**
    * Send Files to Storage daemon
    */
-  Dmsg1(110, "begin blast ff=%p\n", (FindFilesPacket*)jcr->impl_->ff);
+  Dmsg1(110, "begin blast ff=%p\n", (FindFilesPacket*)jcr->impl->ff);
   if (!BlastDataToStorageDaemon(jcr, nullptr, cipher)) {
     jcr->setJobStatus(JS_ErrorTerminated);
     BnetSuppressErrorMessages(sd, 1);
@@ -2173,7 +2168,7 @@ static bool BackupCmd(JobControlRecord* jcr)
     /**
      * Send Append End Data to Storage daemon
      */
-    sd->fsend(append_end, jcr->impl_->Ticket);
+    sd->fsend(append_end, jcr->impl->Ticket);
     /* Get end OK */
     if (!response(jcr, sd, OK_end, "Append End")) {
       jcr->setJobStatus(JS_ErrorTerminated);
@@ -2183,7 +2178,7 @@ static bool BackupCmd(JobControlRecord* jcr)
     /**
      * Send Append Close to Storage daemon
      */
-    sd->fsend(append_close, jcr->impl_->Ticket);
+    sd->fsend(append_close, jcr->impl->Ticket);
     while (BgetMsg(sd) >= 0) { /* stop on signal or error */
       if (sscanf(sd->msg, OK_close, &SDJobStatus) == 1) {
         ok = 1;
@@ -2202,7 +2197,7 @@ static bool BackupCmd(JobControlRecord* jcr)
 
 cleanup:
 #if defined(WIN32_VSS)
-  if (jcr->impl_->pVSSClient) { jcr->impl_->pVSSClient->DestroyWriterInfo(); }
+  if (jcr->impl->pVSSClient) { jcr->impl->pVSSClient->DestroyWriterInfo(); }
 #endif
 
   GeneratePluginEvent(jcr, bEventEndBackupJob);
@@ -2224,8 +2219,8 @@ static bool VerifyCmd(JobControlRecord* jcr)
    */
   if (!ValidateCommand(
           jcr, "verify",
-          (jcr->impl_->director && jcr->impl_->director->allowed_job_cmds)
-              ? jcr->impl_->director->allowed_job_cmds
+          (jcr->impl->director && jcr->impl->director->allowed_job_cmds)
+              ? jcr->impl->director->allowed_job_cmds
               : me->allowed_job_cmds)) {
     dir->fsend(_("2994 Bad verify command: %s\n"), dir->msg);
     return 0;
@@ -2272,7 +2267,7 @@ static bool VerifyCmd(JobControlRecord* jcr)
       /*
        * Send Close session command to Storage daemon
        */
-      sd->fsend(read_close, jcr->impl_->Ticket);
+      sd->fsend(read_close, jcr->impl->Ticket);
       Dmsg1(130, "filed>stored: %s", sd->msg);
 
       /* ****FIXME**** check response */
@@ -2352,7 +2347,7 @@ static BareosSocket* connect_to_director(JobControlRecord* jcr,
   director_socket->recv();
   ParseOkVersion(director_socket->msg);
 
-  jcr->impl_->director = dir_res;
+  jcr->impl->director = dir_res;
 
   return director_socket.release();
 }
@@ -2386,8 +2381,8 @@ static bool RestoreCmd(JobControlRecord* jcr)
    */
   if (!ValidateCommand(
           jcr, "restore",
-          (jcr->impl_->director && jcr->impl_->director->allowed_job_cmds)
-              ? jcr->impl_->director->allowed_job_cmds
+          (jcr->impl->director && jcr->impl->director->allowed_job_cmds)
+              ? jcr->impl->director->allowed_job_cmds
               : me->allowed_job_cmds)) {
     return 0;
   }
@@ -2422,9 +2417,9 @@ static bool RestoreCmd(JobControlRecord* jcr)
   /**
    * No need to enable VSS for restore if we do not have plugin data to restore
    */
-  jcr->impl_->enable_vss = jcr->impl_->got_metadata;
+  jcr->impl->enable_vss = jcr->impl->got_metadata;
 
-  if (jcr->impl_->enable_vss) { VSSInit(jcr); }
+  if (jcr->impl->enable_vss) { VSSInit(jcr); }
 #endif
 
   /*
@@ -2452,7 +2447,7 @@ static bool RestoreCmd(JobControlRecord* jcr)
   }
 
   FreePoolMemory(args);
-  jcr->impl_->replace = replace;
+  jcr->impl->replace = replace;
   jcr->prefix_links = prefix_links;
 
   dir->fsend(OKrestore);
@@ -2477,8 +2472,8 @@ static bool RestoreCmd(JobControlRecord* jcr)
   /*
    * START VSS ON WIN32
    */
-  if (jcr->impl_->pVSSClient) {
-    if (!jcr->impl_->pVSSClient->InitializeForRestore(jcr)) {
+  if (jcr->impl->pVSSClient) {
+    if (!jcr->impl->pVSSClient->InitializeForRestore(jcr)) {
       BErrNo be;
       Jmsg(jcr, M_WARNING, 0,
            _("VSS was not initialized properly. VSS support is disabled. "
@@ -2488,11 +2483,10 @@ static bool RestoreCmd(JobControlRecord* jcr)
 
     GeneratePluginEvent(jcr, bEventVssRestoreLoadComponentMetadata);
 
-    RunScripts(
-        jcr, jcr->impl_->RunScripts, "ClientAfterVSS",
-        (jcr->impl_->director && jcr->impl_->director->allowed_script_dirs)
-            ? jcr->impl_->director->allowed_script_dirs
-            : me->allowed_script_dirs);
+    RunScripts(jcr, jcr->impl->RunScripts, "ClientAfterVSS",
+               (jcr->impl->director && jcr->impl->director->allowed_script_dirs)
+                   ? jcr->impl->director->allowed_script_dirs
+                   : me->allowed_script_dirs);
   }
 #endif
 
@@ -2508,7 +2502,7 @@ static bool RestoreCmd(JobControlRecord* jcr)
   /**
    * Send Close session command to Storage daemon
    */
-  sd->fsend(read_close, jcr->impl_->Ticket);
+  sd->fsend(read_close, jcr->impl->Ticket);
   Dmsg1(100, "filed>stored: %s", sd->msg);
 
   BgetMsg(sd); /* get OK */
@@ -2521,26 +2515,26 @@ static bool RestoreCmd(JobControlRecord* jcr)
    * STOP VSS ON WIN32
    * Tell vss to close the restore session
    */
-  if (jcr->impl_->pVSSClient) {
+  if (jcr->impl->pVSSClient) {
     Dmsg0(100, "About to call CloseRestore\n");
 
     GeneratePluginEvent(jcr, bEventVssCloseRestore);
 
     Dmsg0(100, "Really about to call CloseRestore\n");
-    if (jcr->impl_->pVSSClient->CloseRestore()) {
+    if (jcr->impl->pVSSClient->CloseRestore()) {
       Dmsg0(100, "CloseRestore success\n");
       /*
        * Inform user about writer states
        */
-      for (size_t i = 0; i < jcr->impl_->pVSSClient->GetWriterCount(); i++) {
+      for (size_t i = 0; i < jcr->impl->pVSSClient->GetWriterCount(); i++) {
         int msg_type = M_INFO;
 
-        if (jcr->impl_->pVSSClient->GetWriterState(i) < 1) {
+        if (jcr->impl->pVSSClient->GetWriterState(i) < 1) {
           msg_type = M_WARNING;
           jcr->JobErrors++;
         }
         Jmsg(jcr, msg_type, 0, _("VSS Writer (RestoreComplete): %s\n"),
-             jcr->impl_->pVSSClient->GetWriterInfo(i));
+             jcr->impl->pVSSClient->GetWriterInfo(i));
       }
     } else {
       Dmsg1(100, "CloseRestore fail - %08x\n", errno);
@@ -2555,7 +2549,7 @@ bail_out:
 
   Dmsg0(100, "Done in job.c\n");
 
-  if (jcr->impl_->multi_restore) {
+  if (jcr->impl->multi_restore) {
     Dmsg0(100, OKstoreend);
     dir->fsend(OKstoreend);
     retval = true; /* we continue the loop, waiting for next part */
@@ -2588,14 +2582,14 @@ static bool OpenSdReadSession(JobControlRecord* jcr)
     return false;
   }
   Dmsg4(120, "VolSessId=%ld VolsessT=%ld SF=%ld EF=%ld\n", jcr->VolSessionId,
-        jcr->VolSessionTime, jcr->impl_->StartFile, jcr->impl_->EndFile);
+        jcr->VolSessionTime, jcr->impl->StartFile, jcr->impl->EndFile);
   Dmsg2(120, "JobId=%d vol=%s\n", jcr->JobId, "DummyVolume");
   /*
    * Open Read Session with Storage daemon
    */
   sd->fsend(read_open, "DummyVolume", jcr->VolSessionId, jcr->VolSessionTime,
-            jcr->impl_->StartFile, jcr->impl_->EndFile, jcr->impl_->StartBlock,
-            jcr->impl_->EndBlock);
+            jcr->impl->StartFile, jcr->impl->EndFile, jcr->impl->StartBlock,
+            jcr->impl->EndBlock);
   Dmsg1(110, ">stored: %s", sd->msg);
 
   /*
@@ -2603,11 +2597,11 @@ static bool OpenSdReadSession(JobControlRecord* jcr)
    */
   if (BgetMsg(sd) >= 0) {
     Dmsg1(110, "filed<stored: %s", sd->msg);
-    if (sscanf(sd->msg, OK_open, &jcr->impl_->Ticket) != 1) {
+    if (sscanf(sd->msg, OK_open, &jcr->impl->Ticket) != 1) {
       Jmsg(jcr, M_FATAL, 0, _("Bad response to SD read open: %s\n"), sd->msg);
       return false;
     }
-    Dmsg1(110, "filed: got Ticket=%d\n", jcr->impl_->Ticket);
+    Dmsg1(110, "filed: got Ticket=%d\n", jcr->impl->Ticket);
   } else {
     Jmsg(jcr, M_FATAL, 0, _("Bad response from stored to read open command\n"));
     return false;
@@ -2616,7 +2610,7 @@ static bool OpenSdReadSession(JobControlRecord* jcr)
   /*
    * Start read of data with Storage daemon
    */
-  sd->fsend(read_data, jcr->impl_->Ticket);
+  sd->fsend(read_data, jcr->impl->Ticket);
   Dmsg1(110, ">stored: %s", sd->msg);
 
   /*
@@ -2633,9 +2627,9 @@ static bool OpenSdReadSession(JobControlRecord* jcr)
 static void FiledFreeJcr(JobControlRecord* jcr)
 {
 #if defined(WIN32_VSS)
-  if (jcr->impl_->pVSSClient) {
-    delete jcr->impl_->pVSSClient;
-    jcr->impl_->pVSSClient = nullptr;
+  if (jcr->impl->pVSSClient) {
+    delete jcr->impl->pVSSClient;
+    jcr->impl->pVSSClient = nullptr;
   }
 #endif
 
@@ -2651,29 +2645,29 @@ static void FiledFreeJcr(JobControlRecord* jcr)
     jcr->dir_bsock = nullptr;
   }
 
-  if (jcr->impl_->last_fname) { FreePoolMemory(jcr->impl_->last_fname); }
+  if (jcr->impl->last_fname) { FreePoolMemory(jcr->impl->last_fname); }
 
   FreeBootstrap(jcr);
-  FreeRunscripts(jcr->impl_->RunScripts);
-  delete jcr->impl_->RunScripts;
-  jcr->impl_->RunScripts = nullptr;
+  FreeRunscripts(jcr->impl->RunScripts);
+  delete jcr->impl->RunScripts;
+  jcr->impl->RunScripts = nullptr;
 
   if (jcr->path_list) {
     FreePathList(jcr->path_list);
     jcr->path_list = nullptr;
   }
 
-  TermFindFiles(jcr->impl_->ff);
-  jcr->impl_->ff = nullptr;
+  TermFindFiles(jcr->impl->ff);
+  jcr->impl->ff = nullptr;
 
   if (jcr->JobId != 0) {
     WriteStateFile(me->working_directory, "bareos-fd",
                    GetFirstPortHostOrder(me->FDaddrs));
   }
 
-  if (jcr->impl_) {
-    delete jcr->impl_;
-    jcr->impl_ = nullptr;
+  if (jcr->impl) {
+    delete jcr->impl;
+    jcr->impl = nullptr;
   }
 
   return;

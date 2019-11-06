@@ -138,7 +138,7 @@ void WaitThenUnreserve(std::unique_ptr<TestJob>&);
 void WaitThenUnreserve(std::unique_ptr<TestJob>& job)
 {
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  job->jcr->impl_->dcr->UnreserveDevice();
+  job->jcr->impl->dcr->UnreserveDevice();
   ReleaseDeviceCond();
 }
 

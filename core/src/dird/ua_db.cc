@@ -146,7 +146,7 @@ bool OpenDb(UaContext* ua, bool use_private)
   mult_db_conn = ua->catalog->mult_db_connections;
   if (use_private) { mult_db_conn = true; }
 
-  ua->jcr->impl_->res.catalog = ua->catalog;
+  ua->jcr->impl->res.catalog = ua->catalog;
   Dmsg0(100, "UA Open database\n");
   ua->db = DbSqlGetPooledConnection(
       ua->jcr, ua->catalog->db_driver, ua->catalog->db_name,

@@ -571,9 +571,9 @@ bool Do_a_command(UaContext* ua)
   Dmsg1(900, "Command: %s\n", ua->argk[0]);
   if (ua->argc == 0) { return false; }
 
-  while (ua->jcr->impl_->res.write_storage_list &&
-         ua->jcr->impl_->res.write_storage_list->size()) {
-    ua->jcr->impl_->res.write_storage_list->remove(0);
+  while (ua->jcr->impl->res.write_storage_list &&
+         ua->jcr->impl->res.write_storage_list->size()) {
+    ua->jcr->impl->res.write_storage_list->remove(0);
   }
 
   len = strlen(ua->argk[0]);
@@ -897,7 +897,7 @@ static inline bool SetbwlimitFiled(UaContext* ua,
   /*
    * Connect to File daemon
    */
-  ua->jcr->impl_->res.client = client;
+  ua->jcr->impl->res.client = client;
   ua->jcr->max_bandwidth = limit;
 
   /*
@@ -922,7 +922,7 @@ static inline bool SetbwlimitFiled(UaContext* ua,
   ua->jcr->file_bsock->close();
   delete ua->jcr->file_bsock;
   ua->jcr->file_bsock = NULL;
-  ua->jcr->impl_->res.client = NULL;
+  ua->jcr->impl->res.client = NULL;
   ua->jcr->max_bandwidth = 0;
 
   return true;
@@ -951,7 +951,7 @@ static inline bool setbwlimit_stored(UaContext* ua,
   /*
    * Connect to Storage daemon
    */
-  ua->jcr->impl_->res.write_storage = store;
+  ua->jcr->impl->res.write_storage = store;
   ua->jcr->max_bandwidth = limit;
 
   /*
@@ -976,7 +976,7 @@ static inline bool setbwlimit_stored(UaContext* ua,
   ua->jcr->store_bsock->close();
   delete ua->jcr->store_bsock;
   ua->jcr->store_bsock = NULL;
-  ua->jcr->impl_->res.write_storage = NULL;
+  ua->jcr->impl->res.write_storage = NULL;
   ua->jcr->max_bandwidth = 0;
 
   return true;
@@ -1018,10 +1018,10 @@ static bool SetbwlimitCmd(UaContext* ua, const char* cmd)
       switch (jcr->getJobType()) {
         case JT_COPY:
         case JT_MIGRATE:
-          store = jcr->impl_->res.read_storage;
+          store = jcr->impl->res.read_storage;
           break;
         default:
-          client = jcr->impl_->res.client;
+          client = jcr->impl->res.client;
           break;
       }
       FreeJcr(jcr);
@@ -1231,7 +1231,7 @@ static void DoClientSetdebug(UaContext* ua,
   /*
    * Connect to File daemon
    */
-  ua->jcr->impl_->res.client = client;
+  ua->jcr->impl->res.client = client;
 
   /*
    * Try to connect for 15 seconds
@@ -1246,7 +1246,7 @@ static void DoClientSetdebug(UaContext* ua,
 
   Dmsg0(120, "Connected to file daemon\n");
   fd = ua->jcr->file_bsock;
-  if (ua->jcr->impl_->FDVersion >= FD_VERSION_53) {
+  if (ua->jcr->impl->FDVersion >= FD_VERSION_53) {
     fd->fsend("setdebug=%d trace=%d hangup=%d timestamp=%d\n", level,
               trace_flag, hangup_flag, timestamp_flag);
   } else {
@@ -1795,8 +1795,8 @@ static bool EstimateCmd(UaContext* ua, const char* cmd)
     return false;
   }
 
-  jcr->impl_->res.client = client;
-  jcr->impl_->res.fileset = fileset;
+  jcr->impl->res.client = client;
+  jcr->impl->res.fileset = fileset;
   CloseDb(ua);
 
   switch (client->Protocol) {
@@ -1815,7 +1815,7 @@ static bool EstimateCmd(UaContext* ua, const char* cmd)
 
   if (!OpenDb(ua)) { return false; }
 
-  jcr->impl_->res.job = job;
+  jcr->impl->res.job = job;
   jcr->setJobType(JT_BACKUP);
   jcr->start_time = time(NULL);
   InitJcrJobRecord(jcr);
@@ -1827,8 +1827,8 @@ static bool EstimateCmd(UaContext* ua, const char* cmd)
   GetLevelSinceTime(jcr);
 
   ua->SendMsg(_("Connecting to Client %s at %s:%d\n"),
-              jcr->impl_->res.client->resource_name_,
-              jcr->impl_->res.client->address, jcr->impl_->res.client->FDport);
+              jcr->impl->res.client->resource_name_,
+              jcr->impl->res.client->address, jcr->impl->res.client->FDport);
   if (!ConnectToFileDaemon(jcr, 1, 15, false)) {
     ua->ErrorMsg(_("Failed to connect to Client.\n"));
     return false;
@@ -2119,14 +2119,14 @@ static bool DoTruncate(UaContext* ua, MediaDbRecord& mr)
   /*
    * Choose storage
    */
-  ua->jcr->impl_->res.write_storage = ua->GetStoreResWithName(storage_dbr.Name);
-  if (!ua->jcr->impl_->res.write_storage) {
+  ua->jcr->impl->res.write_storage = ua->GetStoreResWithName(storage_dbr.Name);
+  if (!ua->jcr->impl->res.write_storage) {
     ua->ErrorMsg("failed to determine storage resource by name %s\n",
                  storage_dbr.Name);
     goto bail_out;
   }
 
-  if (SendLabelRequest(ua, ua->jcr->impl_->res.write_storage, &mr, &mr,
+  if (SendLabelRequest(ua, ua->jcr->impl->res.write_storage, &mr, &mr,
                        &pool_dbr,
                        /* bool media_record_exists */
                        true,
@@ -2141,7 +2141,7 @@ static bool DoTruncate(UaContext* ua, MediaDbRecord& mr)
   }
 
 bail_out:
-  ua->jcr->impl_->res.write_storage = NULL;
+  ua->jcr->impl->res.write_storage = NULL;
   return retval;
 }
 
@@ -2440,7 +2440,7 @@ static void DoMountCmd(UaContext* ua, const char* cmd)
   if (!do_alldrives) {
     DoAutochangerVolumeOperation(ua, store.store, cmd, drive, slot);
   } else {
-    nr_drives = GetNumDrives(ua, ua->jcr->impl_->res.write_storage);
+    nr_drives = GetNumDrives(ua, ua->jcr->impl->res.write_storage);
     for (drive_number_t i = 0; i < nr_drives; i++) {
       DoAutochangerVolumeOperation(ua, store.store, cmd, i, slot);
     }

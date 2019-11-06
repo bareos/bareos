@@ -126,9 +126,9 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
   if (jcr->authenticated) { return true; }
 
   BareosSocket* fd = jcr->file_bsock;
-  ClientResource* client = jcr->impl_->res.client;
+  ClientResource* client = jcr->impl->res.client;
 
-  if (jcr->impl_->connection_handshake_try_ ==
+  if (jcr->impl->connection_handshake_try_ ==
       ClientConnectionHandshakeMode::kTlsFirst) {
     std::string qualified_resource_name;
     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
@@ -192,9 +192,9 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
   }
 
   Dmsg1(110, "<filed: %s", fd->msg);
-  jcr->impl_->FDVersion = 0;
+  jcr->impl->FDVersion = 0;
   if (!bstrncmp(fd->msg, FDOKhello, sizeof(FDOKhello)) &&
-      sscanf(fd->msg, FDOKnewHello, &jcr->impl_->FDVersion) != 1) {
+      sscanf(fd->msg, FDOKnewHello, &jcr->impl->FDVersion) != 1) {
     Dmsg0(debuglevel, _("File daemon rejected Hello command\n"));
     Jmsg(jcr, M_FATAL, 0,
          _("File daemon at \"%s:%d\" rejected Hello command\n"), fd->host(),

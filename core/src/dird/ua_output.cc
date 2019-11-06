@@ -1296,17 +1296,17 @@ static bool ListNextvol(UaContext* ua, int ndays)
       found = false;
       goto get_out;
     }
-    if (!jcr->impl_->jr.PoolId) {
+    if (!jcr->impl->jr.PoolId) {
       ua->ErrorMsg(_("Could not find Pool for Job %s\n"), job->resource_name_);
       continue;
     }
     PoolDbRecord pr;
-    pr.PoolId = jcr->impl_->jr.PoolId;
+    pr.PoolId = jcr->impl->jr.PoolId;
     if (!ua->db->GetPoolRecord(jcr, &pr)) {
       bstrncpy(pr.Name, "*UnknownPool*", sizeof(pr.Name));
     }
     MediaDbRecord mr;
-    mr.PoolId = jcr->impl_->jr.PoolId;
+    mr.PoolId = jcr->impl->jr.PoolId;
     GetJobStorage(&store, job, run);
     SetStorageidInMr(store.store, &mr);
     /* no need to set ScratchPoolId, since we use fnv_no_create_vol */
@@ -1420,7 +1420,7 @@ bool CompleteJcrForJob(JobControlRecord* jcr,
                        PoolResource* pool)
 {
   SetJcrDefaults(jcr, job);
-  if (pool) { jcr->impl_->res.pool = pool; /* override */ }
+  if (pool) { jcr->impl->res.pool = pool; /* override */ }
   if (jcr->db) {
     Dmsg0(100, "complete_jcr close db\n");
     DbSqlClosePooledConnection(jcr, jcr->db);
@@ -1429,25 +1429,25 @@ bool CompleteJcrForJob(JobControlRecord* jcr,
 
   Dmsg0(100, "complete_jcr open db\n");
   jcr->db = DbSqlGetPooledConnection(
-      jcr, jcr->impl_->res.catalog->db_driver, jcr->impl_->res.catalog->db_name,
-      jcr->impl_->res.catalog->db_user,
-      jcr->impl_->res.catalog->db_password.value,
-      jcr->impl_->res.catalog->db_address, jcr->impl_->res.catalog->db_port,
-      jcr->impl_->res.catalog->db_socket,
-      jcr->impl_->res.catalog->mult_db_connections,
-      jcr->impl_->res.catalog->disable_batch_insert,
-      jcr->impl_->res.catalog->try_reconnect,
-      jcr->impl_->res.catalog->exit_on_fatal);
+      jcr, jcr->impl->res.catalog->db_driver, jcr->impl->res.catalog->db_name,
+      jcr->impl->res.catalog->db_user,
+      jcr->impl->res.catalog->db_password.value,
+      jcr->impl->res.catalog->db_address, jcr->impl->res.catalog->db_port,
+      jcr->impl->res.catalog->db_socket,
+      jcr->impl->res.catalog->mult_db_connections,
+      jcr->impl->res.catalog->disable_batch_insert,
+      jcr->impl->res.catalog->try_reconnect,
+      jcr->impl->res.catalog->exit_on_fatal);
   if (jcr->db == NULL) {
     Jmsg(jcr, M_FATAL, 0, _("Could not open database \"%s\".\n"),
-         jcr->impl_->res.catalog->db_name);
+         jcr->impl->res.catalog->db_name);
     return false;
   }
   PoolDbRecord pr;
-  bstrncpy(pr.Name, jcr->impl_->res.pool->resource_name_, sizeof(pr.Name));
+  bstrncpy(pr.Name, jcr->impl->res.pool->resource_name_, sizeof(pr.Name));
   while (!jcr->db->GetPoolRecord(jcr, &pr)) { /* get by Name */
     /* Try to create the pool */
-    if (CreatePool(jcr, jcr->db, jcr->impl_->res.pool, POOL_OP_CREATE) < 0) {
+    if (CreatePool(jcr, jcr->db, jcr->impl->res.pool, POOL_OP_CREATE) < 0) {
       Jmsg(jcr, M_FATAL, 0, _("Pool %s not in database. %s"), pr.Name,
            jcr->db->strerror());
       if (jcr->db) {
@@ -1459,7 +1459,7 @@ bool CompleteJcrForJob(JobControlRecord* jcr,
       Jmsg(jcr, M_INFO, 0, _("Pool %s created in database.\n"), pr.Name);
     }
   }
-  jcr->impl_->jr.PoolId = pr.PoolId;
+  jcr->impl->jr.PoolId = pr.PoolId;
   return true;
 }
 

@@ -89,7 +89,7 @@ static int SendVolumeInfoToStorageDaemon(JobControlRecord* jcr,
   int status;
   char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50], ed6[50];
 
-  jcr->impl_->MediaId = mr->MediaId;
+  jcr->impl->MediaId = mr->MediaId;
   PmStrcpy(jcr->VolumeName, mr->VolumeName);
   BashSpaces(mr->VolumeName);
   status = sd->fsend(
@@ -146,7 +146,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     ok = jcr->db->GetPoolRecord(jcr, &pr);
     if (ok) {
       mr.PoolId = pr.PoolId;
-      SetStorageidInMr(jcr->impl_->res.write_storage, &mr);
+      SetStorageidInMr(jcr->impl->res.write_storage, &mr);
       mr.ScratchPoolId = pr.ScratchPoolId;
       ok = FindNextVolumeForAppend(jcr, &mr, index, unwanted_volumes.c_str(),
                                    fnv_create_vol, fnv_prune);
@@ -187,10 +187,10 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
          *   Pool matches, and it is either Append or Recycle
          *   and Media Type matches and Pool allows any volume.
          */
-        if (mr.PoolId != jcr->impl_->jr.PoolId) {
+        if (mr.PoolId != jcr->impl->jr.PoolId) {
           reason = _("not in Pool");
         } else if (!bstrcmp(mr.MediaType,
-                            jcr->impl_->res.write_storage->media_type)) {
+                            jcr->impl->res.write_storage->media_type)) {
           reason = _("not correct MediaType");
         } else {
           /*
@@ -297,13 +297,13 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
      * However, do so only if we are writing the tape, i.e.
      * the number of VolWrites has increased.
      */
-    if (jcr->impl_->res.write_storage && sdmr.VolWrites > mr.VolWrites) {
+    if (jcr->impl->res.write_storage && sdmr.VolWrites > mr.VolWrites) {
       Dmsg2(050, "Update StorageId old=%d new=%d\n", mr.StorageId,
-            jcr->impl_->res.write_storage->StorageId);
+            jcr->impl->res.write_storage->StorageId);
       /*
        * Update StorageId after write
        */
-      SetStorageidInMr(jcr->impl_->res.write_storage, &mr);
+      SetStorageidInMr(jcr->impl->res.write_storage, &mr);
     } else {
       /*
        * Nothing written, reset same StorageId
@@ -356,8 +356,8 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     /*
      * Request to create a JobMedia record
      */
-    if (jcr->impl_->mig_jcr) {
-      jm.JobId = jcr->impl_->mig_jcr->JobId;
+    if (jcr->impl->mig_jcr) {
+      jm.JobId = jcr->impl->mig_jcr->JobId;
     } else {
       jm.JobId = jcr->JobId;
     }
@@ -468,7 +468,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
   Dmsg5(400, "UpdCat VolSessId=%d VolSessT=%d FI=%d Strm=%d reclen=%d\n",
         VolSessionId, VolSessionTime, FileIndex, Stream, reclen);
 
-  jcr->impl_->SDJobBytes +=
+  jcr->impl->SDJobBytes +=
       reclen; /* update number of bytes transferred for quotas */
 
   /*
@@ -525,8 +525,8 @@ static void UpdateAttribute(JobControlRecord* jcr,
       }
       ar->Stream = Stream;
       ar->link = NULL;
-      if (jcr->impl_->mig_jcr) {
-        ar->JobId = jcr->impl_->mig_jcr->JobId;
+      if (jcr->impl->mig_jcr) {
+        ar->JobId = jcr->impl->mig_jcr->JobId;
       } else {
         ar->JobId = jcr->JobId;
       }
@@ -552,8 +552,8 @@ static void UpdateAttribute(JobControlRecord* jcr,
 
       ro.Stream = Stream;
       ro.FileIndex = FileIndex;
-      if (jcr->impl_->mig_jcr) {
-        ro.JobId = jcr->impl_->mig_jcr->JobId;
+      if (jcr->impl->mig_jcr) {
+        ro.JobId = jcr->impl->mig_jcr->JobId;
       } else {
         ro.JobId = jcr->JobId;
       }
@@ -679,7 +679,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
  */
 void CatalogUpdate(JobControlRecord* jcr, BareosSocket* bs)
 {
-  if (!jcr->impl_->res.pool->catalog_files) {
+  if (!jcr->impl->res.pool->catalog_files) {
     return; /* user disabled cataloging */
   }
 
@@ -717,7 +717,7 @@ bool DespoolAttributesFromFile(JobControlRecord* jcr, const char* file)
 
   Dmsg0(100, "Begin DespoolAttributesFromFile\n");
 
-  if (jcr->IsJobCanceled() || !jcr->impl_->res.pool->catalog_files ||
+  if (jcr->IsJobCanceled() || !jcr->impl->res.pool->catalog_files ||
       !jcr->db) {
     goto bail_out; /* user disabled cataloging */
   }

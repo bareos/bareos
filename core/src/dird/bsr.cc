@@ -253,13 +253,13 @@ static void MakeUniqueRestoreFilename(UaContext* ua, PoolMem& fname)
   int i = FindArgWithValue(ua, "bootstrap");
   if (i >= 0) {
     Mmsg(fname, "%s", ua->argv[i]);
-    jcr->impl_->unlink_bsr = false;
+    jcr->impl->unlink_bsr = false;
   } else {
     P(mutex);
     uniq++;
     V(mutex);
     Mmsg(fname, "%s/%s.restore.%u.bsr", working_directory, my_name, uniq);
-    jcr->impl_->unlink_bsr = true;
+    jcr->impl->unlink_bsr = true;
   }
   if (jcr->RestoreBootstrap) { free(jcr->RestoreBootstrap); }
   jcr->RestoreBootstrap = strdup(fname.c_str());
@@ -603,7 +603,7 @@ bool OpenBootstrapFile(JobControlRecord* jcr, bootstrap_info& info)
   info.ua = NULL;
 
   if (!jcr->RestoreBootstrap) { return false; }
-  bstrncpy(info.storage, jcr->impl_->res.read_storage->resource_name_,
+  bstrncpy(info.storage, jcr->impl->res.read_storage->resource_name_,
            MAX_NAME_LENGTH);
 
   bs = fopen(jcr->RestoreBootstrap, "rb");
@@ -643,7 +643,7 @@ static inline bool IsOnSameStorage(JobControlRecord* jcr, char* new_one)
   /*
    * With old FD, we send the whole bootstrap to the storage
    */
-  if (jcr->impl_->FDVersion < FD_VERSION_2) { return true; }
+  if (jcr->impl->FDVersion < FD_VERSION_2) { return true; }
 
   /*
    * We are in init loop ? shoudn't fail here
@@ -653,7 +653,7 @@ static inline bool IsOnSameStorage(JobControlRecord* jcr, char* new_one)
   /*
    * Same name
    */
-  if (bstrcmp(new_one, jcr->impl_->res.read_storage->resource_name_)) {
+  if (bstrcmp(new_one, jcr->impl->res.read_storage->resource_name_)) {
     return true;
   }
 
@@ -668,8 +668,8 @@ static inline bool IsOnSameStorage(JobControlRecord* jcr, char* new_one)
    * If Port and Hostname/IP are same, we are talking to the same
    * Storage Daemon
    */
-  if (jcr->impl_->res.read_storage->SDport != new_store->SDport ||
-      !bstrcmp(jcr->impl_->res.read_storage->address, new_store->address)) {
+  if (jcr->impl->res.read_storage->SDport != new_store->SDport ||
+      !bstrcmp(jcr->impl->res.read_storage->address, new_store->address)) {
     return false;
   }
 

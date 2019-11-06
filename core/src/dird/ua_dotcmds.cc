@@ -742,7 +742,7 @@ static void DoClientCmd(UaContext* ua, ClientResource* client, const char* cmd)
 
   /* Connect to File daemon */
 
-  ua->jcr->impl_->res.client = client;
+  ua->jcr->impl->res.client = client;
   /* Try to connect for 15 seconds */
   ua->SendMsg(_("Connecting to Client %s at %s:%d\n"), client->resource_name_,
               client->address, client->FDport);

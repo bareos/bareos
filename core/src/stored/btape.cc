@@ -311,7 +311,7 @@ int main(int margc, char* margv[])
                  false); /* write device */
   if (!jcr) { exit(1); }
 
-  dev = jcr->impl_->dcr->dev;
+  dev = jcr->impl->dcr->dev;
   if (!dev) { exit(1); }
 
   if (!dev->IsTape()) {
@@ -2173,7 +2173,7 @@ static void fillcmd()
     exit_code = 1;
     return;
   }
-  block = jcr->impl_->dcr->block;
+  block = jcr->impl->dcr->block;
 
   Dmsg0(100, "Just after AcquireDeviceForAppend\n");
   /*
@@ -2199,7 +2199,7 @@ static void fillcmd()
   /*
    * Generate data as if from File daemon, write to device
    */
-  jcr->impl_->dcr->VolFirstIndex = 0;
+  jcr->impl->dcr->VolFirstIndex = 0;
   time(&jcr->run_time); /* start counting time for rates */
 
   bstrftime(buf1, sizeof(buf1), jcr->run_time, "%H:%M:%S");
@@ -2345,15 +2345,15 @@ static void fillcmd()
       Pmsg3(0,
             _("\n\n%s Done filling tape at %d:%d. Now beginning re-read of "
               "tape ...\n"),
-            buf1, jcr->impl_->dcr->dev->file, jcr->impl_->dcr->dev->block_num);
+            buf1, jcr->impl->dcr->dev->file, jcr->impl->dcr->dev->block_num);
     } else {
       Pmsg3(0,
             _("\n\n%s Done filling tapes at %d:%d. Now beginning re-read of "
               "first tape ...\n"),
-            buf1, jcr->impl_->dcr->dev->file, jcr->impl_->dcr->dev->block_num);
+            buf1, jcr->impl->dcr->dev->file, jcr->impl->dcr->dev->block_num);
     }
 
-    jcr->impl_->dcr->block = block;
+    jcr->impl->dcr->block = block;
     if (!do_unfill()) {
       Pmsg0(000, _("do_unfill failed.\n"));
       exit_code = 1;
@@ -2446,13 +2446,13 @@ static bool do_unfill()
   last_block = last_block1;
 
   FreeRestoreVolumeList(jcr);
-  jcr->impl_->bsr = NULL;
+  jcr->impl->bsr = NULL;
   bstrncpy(dcr->VolumeName, "TestVolume1|TestVolume2", sizeof(dcr->VolumeName));
   CreateRestoreVolumeList(jcr);
-  if (jcr->impl_->VolList != NULL) {
-    jcr->impl_->VolList->Slot = 1;
-    if (jcr->impl_->VolList->next != NULL) {
-      jcr->impl_->VolList->next->Slot = 2;
+  if (jcr->impl->VolList != NULL) {
+    jcr->impl->VolList->Slot = 1;
+    if (jcr->impl->VolList->next != NULL) {
+      jcr->impl->VolList->next->Slot = 2;
     }
   }
 
@@ -2473,7 +2473,7 @@ static bool do_unfill()
 
   dev->close(dcr);
   dev->num_writers = 0;
-  jcr->impl_->dcr->clear_will_write();
+  jcr->impl->dcr->clear_will_write();
 
   if (!AcquireDeviceForRead(dcr)) {
     Pmsg1(-1, "%s", dev->errmsg);
@@ -2700,7 +2700,7 @@ static int FlushBlock(DeviceBlock* block, int dump)
       stop = -1; /* stop, but do simplified test */
     } else {
       /* Full test in progress */
-      if (!FixupDeviceBlockWriteError(jcr->impl_->dcr)) {
+      if (!FixupDeviceBlockWriteError(jcr->impl->dcr)) {
         Pmsg1(000, _("Cannot fixup device error. %s\n"), dev->bstrerror());
         ok = false;
         dev->Unlock();
@@ -3066,7 +3066,7 @@ static bool MyMountNextReadVolume(DeviceControlRecord* dcr)
 
 static void SetVolumeName(const char* VolName, int volnum)
 {
-  DeviceControlRecord* dcr = jcr->impl_->dcr;
+  DeviceControlRecord* dcr = jcr->impl->dcr;
   volumename = VolName;
   vol_num = volnum;
   dev->setVolCatName(VolName);
