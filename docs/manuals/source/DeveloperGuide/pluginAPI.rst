@@ -742,7 +742,7 @@ setFileAttributes(bpContext \*ctx, struct restore_pkt \*rp)
 
 This is call not yet implemented. Called for a command plugin.
 
-See the definition of **restre_pkt** in the above section.
+See the definition of **restore_pkt** in the above section.
 
 endRestoreFile(bpContext \*ctx)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

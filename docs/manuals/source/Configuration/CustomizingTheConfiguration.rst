@@ -231,8 +231,8 @@ Updates from Bareos < 16.2.4
          :caption: bareos-migrate-config.sh
 
          # prepare temporary directory
-         mkdir /tmp/baroes-dir.d
-         cd /tmp/baroes-dir.d
+         mkdir /tmp/bareos-dir.d
+         cd /tmp/bareos-dir.d
 
          # download migration script
          wget https://raw.githubusercontent.com/bareos/bareos-contrib/master/misc/bareos-migrate-config/bareos-migrate-config.sh
