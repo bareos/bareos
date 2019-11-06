@@ -44,8 +44,8 @@ static QCoreApplication* app = nullptr;
 
 static void usage()
 {
-  char copyright[500];
-  kBareosVersionStrings.FormatCopyright(copyright, 500, 2004);
+  std::vector<char> copyright(1024);
+  kBareosVersionStrings.FormatCopyright(copyright.data(), copyright.size(), 2004);
   QString out = QString(
       _("%1"
         "Usage: tray-monitor [options]\n"
@@ -58,7 +58,7 @@ static void usage()
         "        -xs         print configuration file schema in JSON format "
         "and exit\n"
         "        -?          print this message.\n"
-        "\n")).arg(copyright);
+        "\n")).arg(copyright.data());
 
 #if HAVE_WIN32
   QMessageBox::information(0, "Help", out);
