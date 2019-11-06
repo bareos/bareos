@@ -224,13 +224,12 @@ JobControlRecord::JobControlRecord()
   SetTimeoutHandler();
 }
 
-JobControlRecord* new_jcr(int size, JCR_free_HANDLER* daemon_free_jcr)
+JobControlRecord* new_jcr(JCR_free_HANDLER* daemon_free_jcr)
 {
   Dmsg0(debuglevel, "Enter new_jcr\n");
 
-  JobControlRecord* jcr;
-  jcr = (JobControlRecord*)malloc(size);
-  memset(jcr, 0, size);
+  JobControlRecord* jcr =
+      static_cast<JobControlRecord*>(malloc(sizeof(JobControlRecord)));
   jcr = new (jcr) JobControlRecord();
 
   jcr->daemon_free_jcr = daemon_free_jcr;

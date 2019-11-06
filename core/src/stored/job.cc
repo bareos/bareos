@@ -517,7 +517,7 @@ void StoredFreeJcr(JobControlRecord* jcr)
 
 JobControlRecord* NewStoredJcr()
 {
-  JobControlRecord* jcr = new_jcr(sizeof(JobControlRecord), StoredFreeJcr);
+  JobControlRecord* jcr = new_jcr(StoredFreeJcr);
   jcr->impl_ = new JobControlRecordPrivate;
   return jcr;
 }

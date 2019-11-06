@@ -412,7 +412,7 @@ static inline bool AreMaxConcurrentJobsExceeded()
 
 static JobControlRecord* NewFiledJcr()
 {
-  JobControlRecord* jcr = new_jcr(sizeof(JobControlRecord), FiledFreeJcr);
+  JobControlRecord* jcr = new_jcr(FiledFreeJcr);
   jcr->impl_ = new JobControlRecordPrivate;
   return jcr;
 }

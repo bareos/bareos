@@ -1549,7 +1549,7 @@ static JobControlRecord* create_jcr(JobDbRecord* jr,
    * Transfer as much as possible to the Job JobControlRecord. Most important is
    *   the JobId and the ClientId.
    */
-  jobjcr = new_jcr(sizeof(JobControlRecord), BscanFreeJcr);
+  jobjcr = new_jcr(BscanFreeJcr);
   jobjcr->impl_ = new JobControlRecordPrivate;
   jobjcr->setJobType(jr->JobType);
   jobjcr->setJobLevel(jr->JobLevel);

@@ -68,7 +68,7 @@ JobControlRecord* SetupJcr(const char* name,
                            const char* VolumeName,
                            bool readonly)
 {
-  JobControlRecord* jcr = new_jcr(sizeof(JobControlRecord), MyFreeJcr);
+  JobControlRecord* jcr = new_jcr(MyFreeJcr);
   jcr->impl_ = new JobControlRecordPrivate;
 
   jcr->impl_->bsr = bsr;

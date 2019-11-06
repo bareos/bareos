@@ -1695,7 +1695,7 @@ void GetJobStorage(UnifiedStorageResource* store,
 
 JobControlRecord* NewDirectorJcr()
 {
-  JobControlRecord* jcr = new_jcr(sizeof(JobControlRecord), DirdFreeJcr);
+  JobControlRecord* jcr = new_jcr(DirdFreeJcr);
   jcr->impl_ = new JobControlRecordPrivate;
   return jcr;
 }
