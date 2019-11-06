@@ -52,17 +52,6 @@ typedef struct s_tree_root TREE_ROOT;
 class dlist;
 
 /**
- * Authentication types
- */
-enum
-{
-  AT_NONE = 0,
-  AT_CLEAR,
-  AT_MD5,
-  AT_VOID
-};
-
-/**
  * Migration selection types
  */
 enum
