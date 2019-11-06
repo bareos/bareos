@@ -42,6 +42,7 @@
 #include "lib/parse_bsr.h"
 #include "lib/util.h"
 #include "include/jcr.h"
+#include "include/protocol_types.h"
 
 namespace storagedaemon {
 

@@ -52,16 +52,6 @@ typedef struct s_tree_root TREE_ROOT;
 class dlist;
 
 /**
- * Protocol types
- */
-enum
-{
-  PT_NATIVE = 0,
-  PT_NDMP_BAREOS, /* alias for PT_NDMP */
-  PT_NDMP_NATIVE
-};
-
-/**
  * Authentication Protocol types
  */
 enum

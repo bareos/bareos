@@ -52,6 +52,7 @@
 #include "dird/restore.h"
 #include "dird/sd_cmds.h"
 #include "dird/storage.h"
+#include "include/protocol_types.h"
 #include "lib/edit.h"
 #include "lib/util.h"
 

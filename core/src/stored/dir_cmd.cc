@@ -61,6 +61,7 @@
 #include "stored/job.h"
 #include "stored/mac.h"
 #include "include/make_unique.h"
+#include "include/protocol_types.h"
 #include "lib/berrno.h"
 #include "lib/bnet.h"
 #include "lib/bsock.h"

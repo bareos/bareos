@@ -48,6 +48,7 @@
 #include "dird/sd_cmds.h"
 #include "ndmp/smc.h"
 #include "dird/storage.h"
+#include "include/protocol_types.h"
 
 #include "cats/sql.h"
 #include "lib/bnet.h"
