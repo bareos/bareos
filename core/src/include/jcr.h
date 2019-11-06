@@ -191,8 +191,8 @@ struct JobControlRecordPrivate;
 struct CompressionContext {
   POOLMEM* deflate_buffer{nullptr}; /**< Buffer used for deflation (compression) */
   POOLMEM* inflate_buffer{nullptr}; /**< Buffer used for inflation (decompression) */
-  uint32_t deflate_buffer_size{0}; /**< Length of deflation buffer */
-  uint32_t inflate_buffer_size{0}; /**< Length of inflation buffer */
+  uint32_t deflate_buffer_size{}; /**< Length of deflation buffer */
+  uint32_t inflate_buffer_size{}; /**< Length of inflation buffer */
   struct {
 #ifdef HAVE_LIBZ
     void* pZLIB{nullptr}; /**< ZLIB compression session data */
@@ -207,7 +207,7 @@ struct CompressionContext {
 
 struct job_callback_item {
   void (*JobEndCb)(JobControlRecord* jcr, void*);
-  void* ctx = nullptr;
+  void* ctx{};
 };
 
 typedef void(JCR_free_HANDLER)(JobControlRecord* jcr);
@@ -216,11 +216,11 @@ typedef void(JCR_free_HANDLER)(JobControlRecord* jcr);
 class JobControlRecord {
  private:
   pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; /**< Jcr mutex */
-  volatile int32_t _use_count = 0;                   /**< Use count */
-  int32_t JobType_ = 0;            /**< Backup, restore, verify ... */
-  int32_t JobLevel_ = 0;           /**< Job level */
-  int32_t Protocol_ = 0;           /**< Backup Protocol */
-  bool my_thread_killable = false;
+  volatile int32_t _use_count{};                   /**< Use count */
+  int32_t JobType_{};            /**< Backup, restore, verify ... */
+  int32_t JobLevel_{};           /**< Job level */
+  int32_t Protocol_{};           /**< Backup Protocol */
+  bool my_thread_killable{};
  public:
   JobControlRecord();
   ~JobControlRecord();
@@ -280,95 +280,94 @@ class JobControlRecord {
   bool IsKillable() const { return my_thread_killable; }
 
   dlink link;                     /**< JobControlRecord chain link */
-  pthread_t my_thread_id = 0;     /**< Id of thread controlling jcr */
-  BareosSocket* dir_bsock = nullptr; /**< Director bsock or NULL if we are him */
-  BareosSocket* store_bsock = nullptr; /**< Storage connection socket */
-  BareosSocket* file_bsock;  /**< File daemon connection socket */
-  JCR_free_HANDLER* daemon_free_jcr = nullptr; /**< Local free routine */
-  dlist* msg_queue = nullptr;     /**< Queued messages */
+  pthread_t my_thread_id{};       /**< Id of thread controlling jcr */
+  BareosSocket* dir_bsock{};      /**< Director bsock or NULL if we are him */
+  BareosSocket* store_bsock{};    /**< Storage connection socket */
+  BareosSocket* file_bsock{};     /**< File daemon connection socket */
+  JCR_free_HANDLER* daemon_free_jcr{}; /**< Local free routine */
+  dlist* msg_queue{};             /**< Queued messages */
   pthread_mutex_t msg_queue_mutex = PTHREAD_MUTEX_INITIALIZER; /**< message queue mutex */
-  bool dequeuing_msgs = false;    /**< Set when dequeuing messages */
-  alist job_end_callbacks;           /**< callbacks called at Job end */
-  POOLMEM* VolumeName = nullptr;  /**< Volume name desired -- pool_memory */
-  POOLMEM* errmsg = nullptr;      /**< Edited error message */
-  char Job[MAX_NAME_LENGTH]{0};   /**< Unique name of this Job */
+  bool dequeuing_msgs{};          /**< Set when dequeuing messages */
+  alist job_end_callbacks;        /**< callbacks called at Job end */
+  POOLMEM* VolumeName{};          /**< Volume name desired -- pool_memory */
+  POOLMEM* errmsg{};              /**< Edited error message */
+  char Job[MAX_NAME_LENGTH]{};    /**< Unique name of this Job */
 
-  uint32_t JobId = 0; /**< Director's JobId */
-  uint32_t VolSessionId = 0;
-  uint32_t VolSessionTime = 0;
-  uint32_t JobFiles = 0;          /**< Number of files written, this job */
-  uint32_t JobErrors = 0;         /**< Number of non-fatal errors this job */
-  uint32_t JobWarnings = 0;       /**< Number of warning messages */
-  uint32_t LastRate = 0;          /**< Last sample bytes/sec */
-  uint64_t JobBytes = 0;          /**< Number of bytes processed this job */
-  uint64_t LastJobBytes = 0;      /**< Last sample number bytes */
-  uint64_t ReadBytes = 0;         /**< Bytes read -- before compression */
-  FileId_t FileId = 0;            /**< Last FileId used */
-  volatile int32_t JobStatus = 0; /**< ready, running, blocked, terminated */
-  int32_t JobPriority = 0;        /**< Job priority */
-  time_t sched_time = 0;          /**< Job schedule time, i.e. when it should start */
-  time_t initial_sched_time = 0;  /**< Original sched time before any reschedules are done */
-  time_t start_time = 0;          /**< When job actually started */
-  time_t run_time = 0;            /**< Used for computing speed */
-  time_t last_time = 0;           /**< Last sample time */
-  time_t end_time = 0;            /**< Job end time */
-  time_t wait_time_sum = 0;       /**< Cumulative wait time since job start */
-  time_t wait_time = 0;           /**< Timestamp when job have started to wait */
-  time_t job_started_time = 0;    /**< Time when the MaxRunTime start to count */
-  POOLMEM* client_name = nullptr; /**< Client name */
-  POOLMEM* JobIds = nullptr;      /**< User entered string of JobIds */
-  POOLMEM* RestoreBootstrap = nullptr; /**< Bootstrap file to restore */
-  POOLMEM* stime = nullptr;    /**< start time for incremental/differential */
-  char* sd_auth_key = nullptr; /**< SD auth key */
-  TlsPolicy sd_tls_policy;   /**< SD Tls Policy */
-  MessagesResource* jcr_msgs = nullptr; /**< Copy of message resource -- actually used */
-  uint32_t ClientId = 0;      /**< Client associated with Job */
-  char* where = nullptr;      /**< Prefix to restore files to */
-  char* RegexWhere = nullptr; /**< File relocation in restore */
-  alist* where_bregexp = nullptr; /**< BareosRegex alist for path manipulation */
-  int32_t cached_pnl = 0; /**< Cached path length */
-  POOLMEM* cached_path = nullptr; /**< Cached path */
-  bool passive_client = false;    /**< Client is a passive client e.g. doesn't initiate any network connection */
-  bool prefix_links = false;      /**< Prefix links with Where path */
-  bool gui = false;               /**< Set if gui using console */
-  bool authenticated = false;     /**< Set when client authenticated */
-  bool cached_attribute = false;  /**< Set if attribute is cached */
-  bool batch_started = false;     /**< Set if batch mode started */
-  bool cmd_plugin = false;        /**< Set when processing a command Plugin = */
-  bool opt_plugin = false;        /**< Set when processing an option Plugin = */
-  bool keep_path_list = false;    /**< Keep newly created path in a hash */
-  bool accurate = false;          /**< True if job is accurate */
-  bool HasBase = false;           /**< True if job use base jobs */
-  bool rerunning = false;         /**< Rerunning an incomplete job */
-  bool job_started = false;       /**< Set when the job is actually started */
-  bool suppress_output = false;   /**< Set if this JobControlRecord should not output any Jmsgs */
-  JobControlRecord* cjcr = nullptr; /**< Controlling JobControlRecord when this
-                                     * is a slave JobControlRecord being
-                                     * controlled by another JobControlRecord
-                                     * used for sending normal and fatal errors.
-                           */
-  int32_t buf_size = 0;             /**< Length of buffer */
+  uint32_t JobId{};             /**< Director's JobId */
+  uint32_t VolSessionId{};
+  uint32_t VolSessionTime{};
+  uint32_t JobFiles{};          /**< Number of files written, this job */
+  uint32_t JobErrors{};         /**< Number of non-fatal errors this job */
+  uint32_t JobWarnings{};       /**< Number of warning messages */
+  uint32_t LastRate{};          /**< Last sample bytes/sec */
+  uint64_t JobBytes{};          /**< Number of bytes processed this job */
+  uint64_t LastJobBytes{};      /**< Last sample number bytes */
+  uint64_t ReadBytes{};         /**< Bytes read -- before compression */
+  FileId_t FileId{};            /**< Last FileId used */
+  volatile int32_t JobStatus{}; /**< ready, running, blocked, terminated */
+  int32_t JobPriority{};        /**< Job priority */
+  time_t sched_time{};          /**< Job schedule time, i.e. when it should start */
+  time_t initial_sched_time{};  /**< Original sched time before any reschedules are done */
+  time_t start_time{};          /**< When job actually started */
+  time_t run_time{};            /**< Used for computing speed */
+  time_t last_time{};           /**< Last sample time */
+  time_t end_time{};            /**< Job end time */
+  time_t wait_time_sum{};       /**< Cumulative wait time since job start */
+  time_t wait_time{};           /**< Timestamp when job have started to wait */
+  time_t job_started_time{};    /**< Time when the MaxRunTime start to count */
+  POOLMEM* client_name{};       /**< Client name */
+  POOLMEM* JobIds{};            /**< User entered string of JobIds */
+  POOLMEM* RestoreBootstrap{};  /**< Bootstrap file to restore */
+  POOLMEM* stime{};             /**< start time for incremental/differential */
+  char* sd_auth_key{};          /**< SD auth key */
+  TlsPolicy sd_tls_policy;      /**< SD Tls Policy */
+  MessagesResource* jcr_msgs{}; /**< Copy of message resource -- actually used */
+  uint32_t ClientId{};          /**< Client associated with Job */
+  char* where{};                /**< Prefix to restore files to */
+  char* RegexWhere{};           /**< File relocation in restore */
+  alist* where_bregexp{};       /**< BareosRegex alist for path manipulation */
+  int32_t cached_pnl{};         /**< Cached path length */
+  POOLMEM* cached_path{};   /**< Cached path */
+  bool passive_client{};    /**< Client is a passive client e.g. doesn't initiate any network connection */
+  bool prefix_links{};      /**< Prefix links with Where path */
+  bool gui{};               /**< Set if gui using console */
+  bool authenticated{};     /**< Set when client authenticated */
+  bool cached_attribute{};  /**< Set if attribute is cached */
+  bool batch_started{};     /**< Set if batch mode started */
+  bool cmd_plugin{};        /**< Set when processing a command Plugin = */
+  bool opt_plugin{};        /**< Set when processing an option Plugin = */
+  bool keep_path_list{};    /**< Keep newly created path in a hash */
+  bool accurate{};          /**< True if job is accurate */
+  bool HasBase{};           /**< True if job use base jobs */
+  bool rerunning{};         /**< Rerunning an incomplete job */
+  bool job_started{};       /**< Set when the job is actually started */
+  bool suppress_output{};   /**< Set if this JobControlRecord should not output any Jmsgs */
+  JobControlRecord* cjcr{}; /**< Controlling JobControlRecord when this
+                                 is a slave JobControlRecord being
+                                 controlled by another JobControlRecord
+                                 used for sending normal and fatal errors. */
+  int32_t buf_size{};          /**< Length of buffer */
   CompressionContext compress; /**< Compression ctx */
 #ifdef HAVE_WIN32
-  CopyThreadContext* cp_thread = nullptr; /**< Copy Thread ctx */
+  CopyThreadContext* cp_thread{}; /**< Copy Thread ctx */
 #endif
-  POOLMEM* attr = nullptr;      /**< Attribute string from SD */
-  BareosDb* db = nullptr;       /**< database pointer */
-  BareosDb* db_batch = nullptr; /**< database pointer for batch and accurate */
-  uint64_t nb_base_files = 0;   /**< Number of base files */
-  uint64_t nb_base_files_used = 0; /**< Number of useful files in base */
+  POOLMEM* attr{};      /**< Attribute string from SD */
+  BareosDb* db{};       /**< database pointer */
+  BareosDb* db_batch{}; /**< database pointer for batch and accurate */
+  uint64_t nb_base_files{};       /**< Number of base files */
+  uint64_t nb_base_files_used{};  /**< Number of useful files in base */
 
-  AttributesDbRecord* ar = nullptr; /**< DB attribute record */
-  guid_list* id_list = nullptr;     /**< User/group id to name list */
+  AttributesDbRecord* ar{}; /**< DB attribute record */
+  guid_list* id_list{};     /**< User/group id to name list */
 
-  alist* plugin_ctx_list = nullptr; /**< List of contexts for plugins */
-  bpContext* plugin_ctx = nullptr;  /**< Current plugin context */
-  POOLMEM* comment = nullptr;       /**< Comment for this Job */
-  int64_t max_bandwidth = 0;        /**< Bandwidth limit for this Job */
-  htable* path_list = nullptr;      /**< Directory list (used by findlib) */
-  bool is_passive_client_connection_probing = false; /**< Set if director probes a passive client connection */
+  alist* plugin_ctx_list{}; /**< List of contexts for plugins */
+  bpContext* plugin_ctx{};  /**< Current plugin context */
+  POOLMEM* comment{};       /**< Comment for this Job */
+  int64_t max_bandwidth{};  /**< Bandwidth limit for this Job */
+  htable* path_list{};      /**< Directory list (used by findlib) */
+  bool is_passive_client_connection_probing{}; /**< Set if director probes a passive client connection */
 
-  JobControlRecordPrivate* impl_;
+  JobControlRecordPrivate* impl_{nullptr}; /* Pointer to implementation of each daemon */
 };
 /* clang-format on */
 
