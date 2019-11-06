@@ -30,11 +30,23 @@
 #define SD_READ 0
 
 namespace storagedaemon {
+
 struct VolumeList;
 class DeviceControlRecord;
 class DirectorResource;
 struct BootStrapRecord;
+
+struct DeviceWaitTimes {
+  int32_t min_wait{};
+  int32_t max_wait{};
+  int32_t max_num_wait{};
+  int32_t wait_sec{};
+  int32_t rem_wait_sec{};
+  int32_t num_wait{};
+};
+
 }  // namespace storagedaemon
+
 
 /* clang-format off */
 struct JobControlRecordPrivate {
@@ -84,15 +96,7 @@ struct JobControlRecordPrivate {
   uint32_t read_StartBlock{};
   uint32_t read_EndBlock{};
 
-  /*
-   * Device wait times
-   */
-  int32_t min_wait{};
-  int32_t max_wait{};
-  int32_t max_num_wait{};
-  int32_t wait_sec{};
-  int32_t rem_wait_sec{};
-  int32_t num_wait{};
+  storagedaemon::DeviceWaitTimes device_wait_times;
 };
 /* clang-format on */
 
