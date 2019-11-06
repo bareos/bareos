@@ -361,7 +361,7 @@ static void FreeCommonJcr(JobControlRecord* jcr,
 static void JcrCleanup(JobControlRecord* jcr, bool is_destructor_call = false)
 {
   DequeueMessages(jcr);
-  CallJobEndCallbacks(jcr); /* call registered callbacks */
+  CallJobEndCallbacks(jcr);
 
   Dmsg1(debuglevel, "End job=%d\n", jcr->JobId);
 
@@ -381,14 +381,12 @@ static void JcrCleanup(JobControlRecord* jcr, bool is_destructor_call = false)
       break;
   }
 
-  CloseMsg(jcr); /* close messages for this job */
+  CloseMsg(jcr);
 
-  if (jcr->daemon_free_jcr) {
-    jcr->daemon_free_jcr(jcr); /* call daemon free routine */
-  }
+  if (jcr->daemon_free_jcr) { jcr->daemon_free_jcr(jcr); }
 
   FreeCommonJcr(jcr, is_destructor_call);
-  CloseMsg(nullptr); /* flush any daemon messages */
+  CloseMsg(nullptr);  // flush any daemon messages
 }
 
 JobControlRecord::~JobControlRecord()
