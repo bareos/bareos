@@ -49,23 +49,6 @@ typedef struct s_tree_root TREE_ROOT;
 #include "lib/alist.h"
 #include "lib/volume_session_info.h"
 
-class dlist;
-
-/**
- * Migration selection types
- */
-enum
-{
-  MT_SMALLEST_VOL = 1,
-  MT_OLDEST_VOL,
-  MT_POOL_OCCUPANCY,
-  MT_POOL_TIME,
-  MT_POOL_UNCOPIED_JOBS,
-  MT_CLIENT,
-  MT_VOLUME,
-  MT_JOB,
-  MT_SQLQUERY
-};
 
 #define JobTerminatedSuccessfully(jcr) \
   (jcr->JobStatus == JS_Terminated || jcr->JobStatus == JS_Warnings)
@@ -79,6 +62,7 @@ enum
 
 #define endeach_jcr(jcr) JcrWalkEnd(jcr)
 
+class dlist;
 class JobControlRecord;
 class BareosSocket;
 class BareosDb;
