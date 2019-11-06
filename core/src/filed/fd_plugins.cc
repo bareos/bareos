@@ -2065,7 +2065,7 @@ static bRC bareosGetValue(bpContext* ctx, bVariable var, void* value)
       *(char**)value = exepath;
       break;
     case bVarVersion:
-      *(const char**)value = kBareosVersion.FullWithDate;
+      *(const char**)value = kBareosVersionStrings.FullWithDate;
       break;
     case bVarDistName:
       *(char**)value = dist_name;

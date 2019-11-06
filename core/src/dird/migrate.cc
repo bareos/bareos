@@ -1766,8 +1766,8 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
            "  SD termination status:  %s\n"
            "  Bareos binary info:     %s\n"
            "  Termination:            %s\n\n"),
-         BAREOS, my_name, kBareosVersion.Full, kBareosVersion.ShortDate,
-         HOST_OS, DISTNAME, DISTVER,
+         BAREOS, my_name, kBareosVersionStrings.Full,
+         kBareosVersionStrings.ShortDate, HOST_OS, DISTNAME, DISTVER,
          edit_uint64(jcr->impl->previous_jr.JobId, ec6),
          jcr->impl->previous_jr.Job,
          mig_jcr ? edit_uint64(mig_jcr->impl->jr.JobId, ec7) : _("*None*"),
@@ -1798,7 +1798,7 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
          mig_jcr ? mig_jcr->VolumeName : _("*None*"), jcr->VolSessionId,
          jcr->VolSessionTime, edit_uint64_with_commas(mr->VolBytes, ec4),
          edit_uint64_with_suffix(mr->VolBytes, ec5), jcr->impl->SDErrors,
-         sd_term_msg, kBareosVersion.JoblogMessage, term_code);
+         sd_term_msg, kBareosVersionStrings.JoblogMessage, term_code);
   } else {
     /*
      * Copy/Migrate selection only Job.
@@ -1815,12 +1815,12 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
            "  Priority:               %d\n"
            "  Bareos binary info:     %s\n"
            "  Termination:            %s\n\n"),
-         BAREOS, my_name, kBareosVersion.Full, kBareosVersion.ShortDate,
-         HOST_OS, DISTNAME, DISTVER, edit_uint64(jcr->impl->jr.JobId, ec8),
-         jcr->impl->jr.Job, jcr->impl->res.catalog->resource_name_,
-         jcr->impl->res.catalog_source, sdt, edt,
-         edit_utime(RunTime, elapsed, sizeof(elapsed)), jcr->JobPriority,
-         kBareosVersion.JoblogMessage, term_code);
+         BAREOS, my_name, kBareosVersionStrings.Full,
+         kBareosVersionStrings.ShortDate, HOST_OS, DISTNAME, DISTVER,
+         edit_uint64(jcr->impl->jr.JobId, ec8), jcr->impl->jr.Job,
+         jcr->impl->res.catalog->resource_name_, jcr->impl->res.catalog_source,
+         sdt, edt, edit_utime(RunTime, elapsed, sizeof(elapsed)),
+         jcr->JobPriority, kBareosVersionStrings.JoblogMessage, term_code);
   }
 }
 

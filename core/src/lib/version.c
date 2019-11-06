@@ -73,20 +73,20 @@
   "\n"
 
 
-static void formatCopyright(char* out, size_t len, int FsfYear)
+static void FormatCopyright(char* out, size_t len, int FsfYear)
 {
-  snprintf(out, len, BAREOS_COPYRIGHT_MESSAGE, kBareosVersion.ServicesMessage,
-           kBareosVersion.Year, FsfYear, kBareosVersion.Full,
-           kBareosVersion.Date, HOST_OS, DISTNAME, DISTVER);
+  snprintf(out, len, BAREOS_COPYRIGHT_MESSAGE, kBareosVersionStrings.ServicesMessage,
+           kBareosVersionStrings.Year, FsfYear, kBareosVersionStrings.Full,
+           kBareosVersionStrings.Date, HOST_OS, DISTNAME, DISTVER);
 }
-static void printCopyright(FILE* fh, int FsfYear)
+static void PrintCopyright(FILE* fh, int FsfYear)
 {
-  fprintf(fh, BAREOS_COPYRIGHT_MESSAGE, kBareosVersion.ServicesMessage,
-          kBareosVersion.Year, FsfYear, kBareosVersion.Full,
-          kBareosVersion.Date, HOST_OS, DISTNAME, DISTVER);
+  fprintf(fh, BAREOS_COPYRIGHT_MESSAGE, kBareosVersionStrings.ServicesMessage,
+          kBareosVersionStrings.Year, FsfYear, kBareosVersionStrings.Full,
+          kBareosVersionStrings.Date, HOST_OS, DISTNAME, DISTVER);
 }
 
-const struct BareosVersion kBareosVersion = {
+const struct BareosVersionStrings kBareosVersionStrings = {
     .Full = BAREOS_VERSION,
     .Date = BAREOS_DATE,
     .ShortDate = BAREOS_SHORT_DATE,
@@ -96,6 +96,6 @@ const struct BareosVersion kBareosVersion = {
     .BinaryInfo = BAREOS_BINARY_INFO,
     .ServicesMessage = BAREOS_SERVICES_MESSAGE,
     .JoblogMessage = BAREOS_JOBLOG_MESSAGE,
-    .formatCopyright = formatCopyright,
-    .printCopyright = printCopyright};
+    .FormatCopyright = FormatCopyright,
+    .PrintCopyright = PrintCopyright};
 

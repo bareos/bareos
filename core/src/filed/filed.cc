@@ -55,7 +55,7 @@ static bool foreground = false;
 
 static void usage()
 {
-  kBareosVersion.printCopyright(stderr, 2000);
+  kBareosVersionStrings.PrintCopyright(stderr, 2000);
   fprintf(
       stderr,
       _("Usage: bareos-fd [options]\n"

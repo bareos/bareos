@@ -2806,8 +2806,8 @@ static bool VersionCmd(UaContext* ua, const char* cmd)
   ua->send->ObjectStart("version");
   ua->send->ObjectKeyValue("name", my_name, "%s ");
   ua->send->ObjectKeyValue("type", "bareos-director");
-  ua->send->ObjectKeyValue("Version", "%s: ", kBareosVersion.Full, "%s ");
-  ua->send->ObjectKeyValue("bdate", kBareosVersion.Date, "(%s) ");
+  ua->send->ObjectKeyValue("Version", "%s: ", kBareosVersionStrings.Full, "%s ");
+  ua->send->ObjectKeyValue("bdate", kBareosVersionStrings.Date, "(%s) ");
   ua->send->ObjectKeyValue("operatingsystem", HOST_OS, "%s ");
   ua->send->ObjectKeyValue("distname", DISTNAME, "%s ");
   ua->send->ObjectKeyValue("distversion", DISTVER, "%s ");

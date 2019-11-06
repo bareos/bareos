@@ -45,7 +45,7 @@ static QCoreApplication* app = nullptr;
 static void usage()
 {
   char copyright[500];
-  kBareosVersion.formatCopyright(copyright, 500, 2004);
+  kBareosVersionStrings.FormatCopyright(copyright, 500, 2004);
   QString out = QString(
       _("%1"
         "Usage: tray-monitor [options]\n"

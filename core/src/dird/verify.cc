@@ -569,13 +569,16 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
              "  SD termination status:  %s\n"
              "  Bareos binary info:     %s\n"
              "  Termination:            %s\n\n"),
-           BAREOS, my_name, kBareosVersion.Full, kBareosVersion.ShortDate,
-           HOST_OS, DISTNAME, DISTVER, jcr->impl->jr.JobId, jcr->impl->jr.Job,
+           BAREOS, my_name, kBareosVersionStrings.Full,
+           kBareosVersionStrings.ShortDate, HOST_OS, DISTNAME, DISTVER,
+           jcr->impl->jr.JobId, jcr->impl->jr.Job,
            jcr->impl->res.fileset->resource_name_, JobLevelToString(JobLevel),
-           jcr->impl->res.client->resource_name_, jcr->impl->previous_jr.JobId, Name, sdt,
-           edt, edit_uint64_with_commas(jcr->impl->ExpectedFiles, ec1),
+           jcr->impl->res.client->resource_name_, jcr->impl->previous_jr.JobId,
+           Name, sdt, edt,
+           edit_uint64_with_commas(jcr->impl->ExpectedFiles, ec1),
            edit_uint64_with_commas(jcr->JobFiles, ec2), jcr->JobErrors,
-           fd_term_msg, sd_term_msg, kBareosVersion.JoblogMessage, TermMsg);
+           fd_term_msg, sd_term_msg, kBareosVersionStrings.JoblogMessage,
+           TermMsg);
       break;
     default:
       Jmsg(jcr, msg_type, 0,
@@ -595,12 +598,14 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
              "  FD termination status:  %s\n"
              "  Bareos binary info:     %s\n"
              "  Termination:            %s\n\n"),
-           BAREOS, my_name, kBareosVersion.Full, kBareosVersion.ShortDate,
-           HOST_OS, DISTNAME, DISTVER, jcr->impl->jr.JobId, jcr->impl->jr.Job,
+           BAREOS, my_name, kBareosVersionStrings.Full,
+           kBareosVersionStrings.ShortDate, HOST_OS, DISTNAME, DISTVER,
+           jcr->impl->jr.JobId, jcr->impl->jr.Job,
            jcr->impl->res.fileset->resource_name_, JobLevelToString(JobLevel),
-           jcr->impl->res.client->resource_name_, jcr->impl->previous_jr.JobId, Name, sdt,
-           edt, edit_uint64_with_commas(jcr->JobFiles, ec1), jcr->JobErrors,
-           fd_term_msg, kBareosVersion.JoblogMessage, TermMsg);
+           jcr->impl->res.client->resource_name_, jcr->impl->previous_jr.JobId,
+           Name, sdt, edt, edit_uint64_with_commas(jcr->JobFiles, ec1),
+           jcr->JobErrors, fd_term_msg, kBareosVersionStrings.JoblogMessage,
+           TermMsg);
       break;
   }
 
@@ -697,8 +702,8 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
          * Find equivalent record in the database
          */
         fdbr.FileId = 0;
-        if (!jcr->db->GetFileAttributesRecord(
-                jcr, jcr->impl->fname, &jcr->impl->previous_jr, &fdbr)) {
+        if (!jcr->db->GetFileAttributesRecord(jcr, jcr->impl->fname,
+                                              &jcr->impl->previous_jr, &fdbr)) {
           Jmsg(jcr, M_INFO, 0, _("New file: %s\n"), jcr->impl->fname);
           Dmsg1(020, _("File not in catalog: %s\n"), jcr->impl->fname);
           jcr->setJobStatus(JS_Differences);

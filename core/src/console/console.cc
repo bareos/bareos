@@ -110,7 +110,7 @@ static int EolCmd(FILE* input, BareosSocket* UA_sock);
 
 static void usage()
 {
-  kBareosVersion.printCopyright(stderr, 2000);
+  kBareosVersionStrings.PrintCopyright(stderr, 2000);
   fprintf(
       stderr,
       _("Usage: bconsole [-s] [-c config_file] [-d debug_level]\n"
@@ -1225,8 +1225,8 @@ static int CheckResources()
 /* @version */
 static int Versioncmd(FILE* input, BareosSocket* UA_sock)
 {
-  ConsoleOutputFormat("Version: %s (%s) %s %s %s\n", kBareosVersion.Full,
-                      kBareosVersion.Date, HOST_OS, DISTNAME, DISTVER);
+  ConsoleOutputFormat("Version: %s (%s) %s %s %s\n", kBareosVersionStrings.Full,
+                      kBareosVersionStrings.Date, HOST_OS, DISTNAME, DISTVER);
   return 1;
 }
 

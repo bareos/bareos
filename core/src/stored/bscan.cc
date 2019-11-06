@@ -137,7 +137,7 @@ static int num_restoreobjects = 0;
 
 static void usage()
 {
-  kBareosVersion.printCopyright(stderr, 2001);
+  kBareosVersionStrings.PrintCopyright(stderr, 2001);
   fprintf(
       stderr,
       _("Usage: bscan [ options ] <device-name>\n"
@@ -1457,7 +1457,7 @@ static bool UpdateJobRecord(BareosDb* db,
            edit_uint64_with_commas(mjcr->JobFiles, ec1),
            edit_uint64_with_commas(mjcr->JobBytes, ec2), mjcr->VolSessionId,
            mjcr->VolSessionTime, edit_uint64_with_commas(mr.VolBytes, ec3),
-           kBareosVersion.BinaryInfo, TermMsg);
+           kBareosVersionStrings.BinaryInfo, TermMsg);
   }
   FreeJcr(mjcr);
 

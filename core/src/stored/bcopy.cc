@@ -72,7 +72,7 @@ static Session_Label sessrec;
 
 static void usage()
 {
-  kBareosVersion.printCopyright(stderr, 2002);
+  kBareosVersionStrings.PrintCopyright(stderr, 2002);
   fprintf(
       stderr,
       _("Usage: bcopy [-d debug_level] <input-archive> <output-archive>\n"

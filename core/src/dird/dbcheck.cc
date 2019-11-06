@@ -126,7 +126,7 @@ const int number_commands =
 
 static void usage()
 {
-  kBareosVersion.printCopyright(stderr, 2002);
+  kBareosVersionStrings.PrintCopyright(stderr, 2002);
   fprintf(stderr,
           "Usage: bareos-dbcheck [ options ] <working-directory> "
           "<bareos-database> <user> <password> [<dbhost>] [<dbport>]\n"

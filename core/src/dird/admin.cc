@@ -122,8 +122,8 @@ void AdminCleanup(JobControlRecord* jcr, int TermCode)
          "  End time:               %s\n"
          "  Bareos binary info:     %s\n"
          "  Termination:            %s\n\n"),
-       kBareosVersion.Full, kBareosVersion.ShortDate, edt, jcr->impl->jr.JobId,
-       jcr->impl->jr.Job, schedt, sdt, edt, kBareosVersion.JoblogMessage,
+       kBareosVersionStrings.Full, kBareosVersionStrings.ShortDate, edt, jcr->impl->jr.JobId,
+       jcr->impl->jr.Job, schedt, sdt, edt, kBareosVersionStrings.JoblogMessage,
        TermMsg);
 
   Dmsg0(debuglevel, "Leave AdminCleanup()\n");

@@ -88,7 +88,7 @@ static uint64_t fileAddr = 0; /* file write address */
 
 static void usage()
 {
-  kBareosVersion.printCopyright(stderr, 2000);
+  kBareosVersionStrings.PrintCopyright(stderr, 2000);
   fprintf(stderr,
           _("Usage: bextract <options> <bareos-archive-device-name> "
             "<directory-to-store-files>\n"

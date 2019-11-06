@@ -114,8 +114,8 @@ void MainWindow::on_TrayMenu_About_triggered()
           "<p>Copyright &copy; 2013-%2 Bareos GmbH & Co. KG"
           "<p>BAREOS &reg; is a registered trademark of Bareos GmbH & Co. KG"
           "<p>Licensed under GNU AGPLv3.")
-          .arg(kBareosVersion.Full)
-          .arg(kBareosVersion.Year);
+          .arg(kBareosVersionStrings.Full)
+          .arg(kBareosVersionStrings.Year);
 
   QMessageBox::about(this, tr("About Bareos Tray Monitor"), fmt);
 }

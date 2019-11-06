@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-struct BareosVersion {
+struct BareosVersionStrings {
   const char* Full;
   const char* Date;
   const char* ShortDate;
@@ -38,11 +38,11 @@ struct BareosVersion {
   const char* BinaryInfo;
   const char* ServicesMessage;
   const char* JoblogMessage;
-  void (*formatCopyright)(char* out, size_t len, int FsfYear);
-  void (*printCopyright)(FILE* fh, int FsfYear);
+  void (*FormatCopyright)(char* out, size_t len, int FsfYear);
+  void (*PrintCopyright)(FILE* fh, int FsfYear);
 };
 
-extern const struct BareosVersion kBareosVersion;
+extern const struct BareosVersionStrings kBareosVersionStrings;
 
 #ifdef __cplusplus
 }

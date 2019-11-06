@@ -402,7 +402,7 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
   json_t* json = json_object();
   json_object_set_new(json, "format-version", json_integer(2));
   json_object_set_new(json, "component", json_string("bareos-tray-monitor"));
-  json_object_set_new(json, "version", json_string(kBareosVersion.Full));
+  json_object_set_new(json, "version", json_string(kBareosVersionStrings.Full));
 
   /*
    * Resources

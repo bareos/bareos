@@ -1196,7 +1196,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
         "%s"                                        /* SecureErase status */
         "  Bareos binary info:     %s\n"
         "  Termination:            %s\n\n"),
-        BAREOS, my_name, kBareosVersion.Full, kBareosVersion.ShortDate,
+        BAREOS, my_name, kBareosVersionStrings.Full, kBareosVersionStrings.ShortDate,
         HOST_OS, DISTNAME, DISTVER,
         jcr->impl->jr.JobId,
         jcr->impl->jr.Job,
@@ -1222,7 +1222,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
         edit_uint64_with_suffix(mr.VolBytes, ec8),
         daemon_status.c_str(),
         secure_erase_status.c_str(),
-        kBareosVersion.JoblogMessage,
+        kBareosVersionStrings.JoblogMessage,
         TermMsg);
 
   /* clang-format on */

@@ -102,8 +102,8 @@ void ndmos_sync_config_info(struct ndm_session* sess)
   sess->config_info->product_name = (char*)NDMOS_CONST_PRODUCT_NAME;
 
   snprintf(revbuf, sizeof(revbuf), "%s LIB:%d.%d/%s OS:%s (%s)",
-           kBareosVersion.Full, NDMJOBLIB_VERSION, NDMJOBLIB_RELEASE,
-           kBareosVersion.Full, NDMOS_CONST_NDMOS_REVISION, obuf);
+           kBareosVersionStrings.Full, NDMJOBLIB_VERSION, NDMJOBLIB_RELEASE,
+           kBareosVersionStrings.Full, NDMOS_CONST_NDMOS_REVISION, obuf);
 
   sess->config_info->revision_number = revbuf;
 

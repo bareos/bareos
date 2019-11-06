@@ -80,7 +80,7 @@ static BootStrapRecord* bsr = NULL;
 
 static void usage()
 {
-  kBareosVersion.printCopyright(stderr, 2000);
+  kBareosVersionStrings.PrintCopyright(stderr, 2000);
   fprintf(
       stderr,
       _("Usage: bls [options] <device-name>\n"
