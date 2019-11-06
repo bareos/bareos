@@ -31,6 +31,7 @@
 #include "include/bareos.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
+#include "stored/jcr_private.h"
 #include "lib/status.h"
 #include "stored/spool.h"
 #include "lib/edit.h"
@@ -687,8 +688,8 @@ static void ListRunningJobs(StatusPacket* sp)
                  job_type_to_str(jcr->getJobType()), jcr->Job);
       sendit(msg, len, sp);
     }
-    dcr = jcr->dcr;
-    rdcr = jcr->read_dcr;
+    dcr = jcr->impl_->dcr;
+    rdcr = jcr->impl_->read_dcr;
     if ((dcr && dcr->device) || (rdcr && rdcr->device)) {
       bstrncpy(JobName, jcr->Job, sizeof(JobName));
       /* There are three periods after the Job name */
@@ -776,7 +777,7 @@ static inline void SendDriveReserveMessages(JobControlRecord* jcr,
   char* msg;
 
   jcr->lock();
-  msgs = jcr->reserve_msgs;
+  msgs = jcr->impl_->reserve_msgs;
   if (!msgs || msgs->size() == 0) { goto bail_out; }
   for (i = msgs->size() - 1; i >= 0; i--) {
     msg = (char*)msgs->get(i);
@@ -804,7 +805,7 @@ static void ListJobsWaitingOnReservation(StatusPacket* sp)
   }
 
   foreach_jcr (jcr) {
-    if (!jcr->reserve_msgs) { continue; }
+    if (!jcr->impl_->reserve_msgs) { continue; }
     SendDriveReserveMessages(jcr, sp);
   }
   endeach_jcr(jcr);

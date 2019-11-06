@@ -39,8 +39,10 @@
 #include "stored/stored.h"
 #include "stored/butil.h"
 #include "stored/device.h"
+#include "stored/jcr_private.h"
 #include "stored/label.h"
 #include "stored/match_bsr.h"
+#include "stored/read_ctx.h"
 #include "include/jcr.h"
 
 namespace storagedaemon {
@@ -220,15 +222,15 @@ bool ReadNextBlockFromDevice(DeviceControlRecord* dcr,
             trec->FileIndex = EOT_LABEL;
             trec->File = dcr->dev->file;
             *status = RecordCb(dcr, trec);
-            if (jcr->mount_next_volume) {
-              jcr->mount_next_volume = false;
+            if (jcr->impl_->mount_next_volume) {
+              jcr->impl_->mount_next_volume = false;
               dcr->dev->ClearEot();
             }
             FreeRecord(trec);
           }
           return false;
         }
-        jcr->mount_next_volume = false;
+        jcr->impl_->mount_next_volume = false;
 
         /*
          * We just have a new tape up, now read the label (first record)
@@ -261,7 +263,7 @@ bool ReadNextBlockFromDevice(DeviceControlRecord* dcr,
            * I/O error or strange end of tape
            */
           DisplayTapeErrorStatus(jcr, dcr->dev);
-          if (forge_on || jcr->ignore_label_errors) {
+          if (forge_on || jcr->impl_->ignore_label_errors) {
             dcr->dev->fsr(1); /* try skipping bad record */
             Pmsg0(000, _("Did fsr in attemp to skip bad record.\n"));
             continue;
@@ -327,11 +329,11 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
      */
     if (rec->FileIndex < 0) {
       HandleSessionRecord(dcr->dev, rec, &rctx->sessrec);
-      if (jcr->bsr) {
+      if (jcr->impl_->bsr) {
         /*
          * We just check block FI and FT not FileIndex
          */
-        rec->match_stat = MatchBsrBlock(jcr->bsr, dcr->block);
+        rec->match_stat = MatchBsrBlock(jcr->impl_->bsr, dcr->block);
       } else {
         rec->match_stat = 0;
       }
@@ -342,9 +344,9 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
     /*
      * Apply BootStrapRecord filter
      */
-    if (jcr->bsr) {
+    if (jcr->impl_->bsr) {
       rec->match_stat =
-          MatchBsr(jcr->bsr, rec, &dev->VolHdr, &rctx->sessrec, jcr);
+          MatchBsr(jcr->impl_->bsr, rec, &dev->VolHdr, &rctx->sessrec, jcr);
       if (rec->match_stat == -1) { /* no more possible matches */
         *done = true;              /* all items found, stop */
         Dmsg2(debuglevel, "All done=(file:block) %u:%u\n", dev->file,
@@ -375,7 +377,7 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
 
     if (rctx->lastFileIndex != READ_NO_FILEINDEX &&
         rctx->lastFileIndex != rec->FileIndex) {
-      if (IsThisBsrDone(jcr->bsr, rec) &&
+      if (IsThisBsrDone(jcr->impl_->bsr, rec) &&
           TryDeviceRepositioning(jcr, rec, dcr)) {
         Dmsg2(debuglevel, "This bsr done, break pos %u:%u\n", dev->file,
               dev->block_num);
@@ -410,7 +412,7 @@ bool ReadRecords(DeviceControlRecord* dcr,
 
   rctx = new_read_context();
   PositionDeviceToFirstFile(jcr, dcr);
-  jcr->mount_next_volume = false;
+  jcr->impl_->mount_next_volume = false;
 
   while (ok && !done) {
     if (JobCanceled(jcr)) {

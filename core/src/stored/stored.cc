@@ -40,6 +40,7 @@
 #include "stored/autochanger.h"
 #include "stored/bsr.h"
 #include "stored/device.h"
+#include "stored/jcr_private.h"
 #include "stored/job.h"
 #include "stored/label.h"
 #include "stored/ndmp_tape.h"
@@ -533,14 +534,14 @@ extern "C" void* device_initialization(void* arg)
   LockRes(my_config);
 
   pthread_detach(pthread_self());
-  jcr = new_jcr(sizeof(JobControlRecord), StoredFreeJcr);
+  jcr = NewStoredJcr();
   NewPlugins(jcr); /* instantiate plugins */
   jcr->setJobType(JT_SYSTEM);
 
   /*
    * Initialize job start condition variable
    */
-  errstat = pthread_cond_init(&jcr->job_start_wait, NULL);
+  errstat = pthread_cond_init(&jcr->impl_->job_start_wait, NULL);
   if (errstat != 0) {
     BErrNo be;
     Jmsg1(jcr, M_ABORT, 0,
@@ -551,7 +552,7 @@ extern "C" void* device_initialization(void* arg)
   /*
    * Initialize job end condition variable
    */
-  errstat = pthread_cond_init(&jcr->job_end_wait, NULL);
+  errstat = pthread_cond_init(&jcr->impl_->job_end_wait, NULL);
   if (errstat != 0) {
     BErrNo be;
     Jmsg1(jcr, M_ABORT, 0,
@@ -570,9 +571,9 @@ extern "C" void* device_initialization(void* arg)
     }
 
     dcr = new StorageDaemonDeviceControlRecord;
-    jcr->dcr = dcr;
+    jcr->impl_->dcr = dcr;
     SetupNewDcrDevice(jcr, dcr, dev, NULL);
-    jcr->dcr->SetWillWrite();
+    jcr->impl_->dcr->SetWillWrite();
     GeneratePluginEvent(jcr, bsdEventDeviceInit, dcr);
     if (dev->IsAutochanger()) {
       /*
@@ -588,7 +589,7 @@ extern "C" void* device_initialization(void* arg)
               dev->print_name());
         Dmsg1(20, "Could not open device %s\n", dev->print_name());
         FreeDeviceControlRecord(dcr);
-        jcr->dcr = NULL;
+        jcr->impl_->dcr = NULL;
         continue;
       }
     }
@@ -606,7 +607,7 @@ extern "C" void* device_initialization(void* arg)
       }
     }
     FreeDeviceControlRecord(dcr);
-    jcr->dcr = NULL;
+    jcr->impl_->dcr = NULL;
   }
   FreeJcr(jcr);
   init_done = true;
@@ -660,15 +661,16 @@ static
         jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
         Dmsg1(100, "term_stored killing JobId=%d\n", jcr->JobId);
         /* ***FIXME*** wiffle through all dcrs */
-        if (jcr->dcr && jcr->dcr->dev && jcr->dcr->dev->blocked()) {
-          pthread_cond_broadcast(&jcr->dcr->dev->wait_next_vol);
+        if (jcr->impl_->dcr && jcr->impl_->dcr->dev &&
+            jcr->impl_->dcr->dev->blocked()) {
+          pthread_cond_broadcast(&jcr->impl_->dcr->dev->wait_next_vol);
           Dmsg1(100, "JobId=%u broadcast wait_device_release\n",
                 (uint32_t)jcr->JobId);
           ReleaseDeviceCond();
         }
-        if (jcr->read_dcr && jcr->read_dcr->dev &&
-            jcr->read_dcr->dev->blocked()) {
-          pthread_cond_broadcast(&jcr->read_dcr->dev->wait_next_vol);
+        if (jcr->impl_->read_dcr && jcr->impl_->read_dcr->dev &&
+            jcr->impl_->read_dcr->dev->blocked()) {
+          pthread_cond_broadcast(&jcr->impl_->read_dcr->dev->wait_next_vol);
           Dmsg1(100, "JobId=%u broadcast wait_device_release\n",
                 (uint32_t)jcr->JobId);
           ReleaseDeviceCond();

@@ -32,6 +32,7 @@
 #include "stored/stored.h"
 #include "stored/acquire.h"
 #include "stored/bsr.h"
+#include "stored/jcr_private.h"
 #include "stored/mount.h"
 #include "stored/read_record.h"
 #include "lib/bnet.h"
@@ -57,7 +58,7 @@ static char rec_header[] = "rechdr %ld %ld %ld %ld %ld";
 bool DoReadData(JobControlRecord* jcr)
 {
   BareosSocket* fd = jcr->file_bsock;
-  DeviceControlRecord* dcr = jcr->read_dcr;
+  DeviceControlRecord* dcr = jcr->impl_->read_dcr;
   bool ok = true;
 
   Dmsg0(20, "Start read data.\n");
@@ -67,14 +68,14 @@ bool DoReadData(JobControlRecord* jcr)
     return false;
   }
 
-  if (jcr->NumReadVolumes == 0) {
+  if (jcr->impl_->NumReadVolumes == 0) {
     Jmsg(jcr, M_FATAL, 0, _("No Volume names found for restore.\n"));
     fd->fsend(FD_error);
     return false;
   }
 
   Dmsg2(200, "Found %d volumes names to restore. First=%s\n",
-        jcr->NumReadVolumes, jcr->VolList->VolumeName);
+        jcr->impl_->NumReadVolumes, jcr->impl_->VolList->VolumeName);
 
   /*
    * Ready device for reading
@@ -104,7 +105,7 @@ bool DoReadData(JobControlRecord* jcr)
    */
   fd->signal(BNET_EOD);
 
-  if (!ReleaseDevice(jcr->read_dcr)) { ok = false; }
+  if (!ReleaseDevice(jcr->impl_->read_dcr)) { ok = false; }
 
   Dmsg0(30, "Done reading.\n");
   return ok;

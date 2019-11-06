@@ -32,6 +32,7 @@
 #include "stored/stored.h"  /* pull in Storage Daemon headers */
 #include "stored/acquire.h"
 #include "stored/autochanger.h"
+#include "stored/jcr_private.h"
 #include "stored/label.h"
 #include "lib/edit.h"
 #include "include/jcr.h"
@@ -952,14 +953,15 @@ bool MountNextReadVolume(DeviceControlRecord* dcr)
 {
   Device* dev = dcr->dev;
   JobControlRecord* jcr = dcr->jcr;
-  Dmsg2(90, "NumReadVolumes=%d CurReadVolume=%d\n", jcr->NumReadVolumes,
-        jcr->CurReadVolume);
+  Dmsg2(90, "NumReadVolumes=%d CurReadVolume=%d\n", jcr->impl_->NumReadVolumes,
+        jcr->impl_->CurReadVolume);
 
   VolumeUnused(dcr); /* release current volume */
   /*
    * End Of Tape -- mount next Volume (if another specified)
    */
-  if (jcr->NumReadVolumes > 1 && jcr->CurReadVolume < jcr->NumReadVolumes) {
+  if (jcr->impl_->NumReadVolumes > 1 &&
+      jcr->impl_->CurReadVolume < jcr->impl_->NumReadVolumes) {
     dev->Lock();
     dev->close(dcr);
     dev->SetRead();

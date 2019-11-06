@@ -53,6 +53,7 @@
 #include "stored/bsr.h"
 #include "stored/stored.h" /* pull in Storage Daemon headers */
 #include "stored/device.h"
+#include "stored/jcr_private.h"
 #include "stored/match_bsr.h"
 #include "lib/edit.h"
 #include "include/jcr.h"
@@ -172,7 +173,7 @@ bool FixupDeviceBlockWriteError(DeviceControlRecord* dcr, int retries)
   }
 
   /* Clear NewVol now because DirGetVolumeInfo() already done */
-  jcr->dcr->NewVol = false;
+  jcr->impl_->dcr->NewVol = false;
   SetNewVolumeParameters(dcr);
 
   jcr->run_time += time(NULL) - wait_time; /* correct run time for mount wait */
@@ -230,7 +231,7 @@ void SetNewVolumeParameters(DeviceControlRecord* dcr)
     Jmsg1(jcr, M_ERROR, 0, "%s", jcr->errmsg);
   }
   SetNewFileParameters(dcr);
-  jcr->NumWriteVolumes++;
+  jcr->impl_->NumWriteVolumes++;
   dcr->NewVol = false;
 }
 
@@ -312,9 +313,9 @@ BootStrapRecord* PositionDeviceToFirstFile(JobControlRecord* jcr,
    * Now find and position to first file and block
    *   on this tape.
    */
-  if (jcr->bsr) {
-    jcr->bsr->Reposition = true; /* force repositioning */
-    bsr = find_next_bsr(jcr->bsr, dev);
+  if (jcr->impl_->bsr) {
+    jcr->impl_->bsr->Reposition = true; /* force repositioning */
+    bsr = find_next_bsr(jcr->impl_->bsr, dev);
     if (GetBsrStartAddr(bsr, &file, &block) > 0) {
       Jmsg(jcr, M_INFO, 0,
            _("Forward spacing Volume \"%s\" to file:block %u:%u.\n"),
@@ -338,15 +339,15 @@ bool TryDeviceRepositioning(JobControlRecord* jcr,
   BootStrapRecord* bsr;
   Device* dev = dcr->dev;
 
-  bsr = find_next_bsr(jcr->bsr, dev);
-  if (bsr == NULL && jcr->bsr->mount_next_volume) {
+  bsr = find_next_bsr(jcr->impl_->bsr, dev);
+  if (bsr == NULL && jcr->impl_->bsr->mount_next_volume) {
     Dmsg0(500, "Would mount next volume here\n");
     Dmsg2(500, "Current position (file:block) %u:%u\n", dev->file,
           dev->block_num);
-    jcr->bsr->mount_next_volume = false;
+    jcr->impl_->bsr->mount_next_volume = false;
     if (!dev->AtEot()) {
       /* Set EOT flag to force mount of next Volume */
-      jcr->mount_next_volume = true;
+      jcr->impl_->mount_next_volume = true;
       dev->SetEot();
     }
     rec->Block = 0;

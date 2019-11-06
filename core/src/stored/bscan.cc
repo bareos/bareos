@@ -33,6 +33,7 @@
 #include "include/bareos.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
+#include "stored/jcr_private.h"
 #include "lib/crypto_cache.h"
 #include "findlib/find.h"
 #include "cats/cats.h"
@@ -342,7 +343,7 @@ int main(int argc, char* argv[])
   dcr = new DeviceControlRecord;
   bjcr = SetupJcr("bscan", argv[0], bsr, director, dcr, VolumeName, true);
   if (!bjcr) { exit(1); }
-  dev = bjcr->read_dcr->dev;
+  dev = bjcr->impl_->read_dcr->dev;
 
   if (showProgress) {
     char ed1[50];
@@ -385,9 +386,9 @@ int main(int argc, char* argv[])
   }
   DbFlushBackends();
 
-  CleanDevice(bjcr->dcr);
+  CleanDevice(bjcr->impl_->dcr);
   dev->term();
-  FreeDeviceControlRecord(bjcr->dcr);
+  FreeDeviceControlRecord(bjcr->impl_->dcr);
   FreeJcr(bjcr);
 
   return 0;
@@ -415,8 +416,8 @@ static bool BscanMountNextReadVolume(DeviceControlRecord* dcr)
     mdcr->EndBlock = dcr->EndBlock;
     mdcr->EndFile = dcr->EndFile;
     mdcr->VolMediaId = dcr->VolMediaId;
-    mjcr->read_dcr->VolLastIndex = dcr->VolLastIndex;
-    if (mjcr->insert_jobmedia_records) {
+    mjcr->impl_->read_dcr->VolLastIndex = dcr->VolLastIndex;
+    if (mjcr->impl_->insert_jobmedia_records) {
       if (!CreateJobmediaRecord(db, mjcr)) {
         Pmsg2(000, _("Could not create JobMedia record for Volume=%s Job=%s\n"),
               dev->getVolCatName(), mjcr->Job);
@@ -463,7 +464,7 @@ static void do_scan()
   /*
    * Detach bscan's jcr as we are not a real Job on the tape
    */
-  ReadRecords(bjcr->read_dcr, RecordCb, BscanMountNextReadVolume);
+  ReadRecords(bjcr->impl_->read_dcr, RecordCb, BscanMountNextReadVolume);
 
   if (update_db) {
     db->WriteBatchFileRecords(bjcr); /* used by bulk batch file insert */
@@ -681,7 +682,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
            * Process label, if Job record exists don't update db
            */
           mjcr = CreateJobRecord(db, &jr, &label, rec);
-          dcr = mjcr->read_dcr;
+          dcr = mjcr->impl_->read_dcr;
           update_db = save_update_db;
 
           jr.PoolId = pr.PoolId;
@@ -690,8 +691,8 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
 
           mjcr->client_name = GetPoolMemory(PM_FNAME);
           PmStrcpy(mjcr->client_name, label.ClientName);
-          mjcr->fileset_name = GetPoolMemory(PM_FNAME);
-          PmStrcpy(mjcr->fileset_name, label.FileSetName);
+          mjcr->impl_->fileset_name = GetPoolMemory(PM_FNAME);
+          PmStrcpy(mjcr->impl_->fileset_name, label.FileSetName);
           bstrncpy(dcr->pool_type, label.PoolType, sizeof(dcr->pool_type));
           bstrncpy(dcr->pool_name, label.PoolName, sizeof(dcr->pool_name));
 
@@ -705,9 +706,9 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
                jr.JobId);
           db->SqlQuery(sql_buffer.c_str(), db_int64_handler, &jmr_count);
           if (jmr_count.value > 0) {
-            mjcr->insert_jobmedia_records = false;
+            mjcr->impl_->insert_jobmedia_records = false;
           } else {
-            mjcr->insert_jobmedia_records = true;
+            mjcr->impl_->insert_jobmedia_records = true;
           }
 
           if (rec->VolSessionId != jr.VolSessionId) {
@@ -770,9 +771,11 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
           /*
            * Create JobMedia record
            */
-          mjcr->read_dcr->VolLastIndex = dcr->VolLastIndex;
-          if (mjcr->insert_jobmedia_records) { CreateJobmediaRecord(db, mjcr); }
-          FreeDeviceControlRecord(mjcr->read_dcr);
+          mjcr->impl_->read_dcr->VolLastIndex = dcr->VolLastIndex;
+          if (mjcr->impl_->insert_jobmedia_records) {
+            CreateJobmediaRecord(db, mjcr);
+          }
+          FreeDeviceControlRecord(mjcr->impl_->read_dcr);
           FreeJcr(mjcr);
         }
         break;
@@ -829,7 +832,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
     }
     return true;
   }
-  dcr = mjcr->read_dcr;
+  dcr = mjcr->impl_->read_dcr;
   if (dcr->VolFirstIndex == 0) { dcr->VolFirstIndex = block->FirstIndex; }
 
   /*
@@ -1068,14 +1071,19 @@ static void BscanFreeJcr(JobControlRecord* jcr)
 
   if (jcr->RestoreBootstrap) { free(jcr->RestoreBootstrap); }
 
-  if (jcr->dcr) {
-    FreeDeviceControlRecord(jcr->dcr);
-    jcr->dcr = NULL;
+  if (jcr->impl_->dcr) {
+    FreeDeviceControlRecord(jcr->impl_->dcr);
+    jcr->impl_->dcr = NULL;
   }
 
-  if (jcr->read_dcr) {
-    FreeDeviceControlRecord(jcr->read_dcr);
-    jcr->read_dcr = NULL;
+  if (jcr->impl_->read_dcr) {
+    FreeDeviceControlRecord(jcr->impl_->read_dcr);
+    jcr->impl_->read_dcr = NULL;
+  }
+
+  if (jcr->impl_) {
+    delete jcr->impl_;
+    jcr->impl_ = nullptr;
   }
 
   Dmsg0(200, "End bscan FreeJcr\n");
@@ -1093,7 +1101,7 @@ static bool CreateFileAttributesRecord(BareosDb* db,
                                        char* ap,
                                        DeviceRecord* rec)
 {
-  DeviceControlRecord* dcr = mjcr->read_dcr;
+  DeviceControlRecord* dcr = mjcr->impl_->read_dcr;
   ar.fname = fname;
   ar.link = lname;
   ar.ClientId = mjcr->ClientId;
@@ -1445,7 +1453,7 @@ static bool UpdateJobRecord(BareosDb* db,
              "Last Volume Bytes:      %s\n"
              "Bareos binary info:     %s\n"
              "Termination:            %s\n\n"),
-           edt, mjcr->JobId, mjcr->Job, mjcr->fileset_name,
+           edt, mjcr->JobId, mjcr->Job, mjcr->impl_->fileset_name,
            job_level_to_str(mjcr->getJobLevel()), mjcr->client_name, sdt, edt,
            edit_uint64_with_commas(mjcr->JobFiles, ec1),
            edit_uint64_with_commas(mjcr->JobBytes, ec2), mjcr->VolSessionId,
@@ -1460,7 +1468,7 @@ static bool UpdateJobRecord(BareosDb* db,
 static bool CreateJobmediaRecord(BareosDb* db, JobControlRecord* mjcr)
 {
   JobMediaDbRecord jmr;
-  DeviceControlRecord* dcr = mjcr->read_dcr;
+  DeviceControlRecord* dcr = mjcr->impl_->read_dcr;
 
   dcr->EndBlock = dev->EndBlock;
   dcr->EndFile = dev->EndFile;
@@ -1542,6 +1550,7 @@ static JobControlRecord* create_jcr(JobDbRecord* jr,
    *   the JobId and the ClientId.
    */
   jobjcr = new_jcr(sizeof(JobControlRecord), BscanFreeJcr);
+  jobjcr->impl_ = new JobControlRecordPrivate;
   jobjcr->setJobType(jr->JobType);
   jobjcr->setJobLevel(jr->JobLevel);
   jobjcr->JobStatus = jr->JobStatus;
@@ -1552,8 +1561,8 @@ static JobControlRecord* create_jcr(JobDbRecord* jr,
   jobjcr->VolSessionId = rec->VolSessionId;
   jobjcr->VolSessionTime = rec->VolSessionTime;
   jobjcr->ClientId = jr->ClientId;
-  jobjcr->dcr = jobjcr->read_dcr = new DeviceControlRecord;
-  SetupNewDcrDevice(jobjcr, jobjcr->dcr, dev, NULL);
+  jobjcr->impl_->dcr = jobjcr->impl_->read_dcr = new DeviceControlRecord;
+  SetupNewDcrDevice(jobjcr, jobjcr->impl_->dcr, dev, NULL);
 
   return jobjcr;
 }

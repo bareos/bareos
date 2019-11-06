@@ -76,6 +76,8 @@
 #include "stored/block.h"
 #include "stored/stored.h"
 #include "stored/autochanger.h"
+#include "stored/bsr.h"
+#include "stored/jcr_private.h"
 #include "stored/sd_backends.h"
 #include "lib/btimers.h"
 #include "include/jcr.h"
@@ -445,23 +447,23 @@ void InitDeviceWaitTimers(DeviceControlRecord* dcr)
   dev->num_wait = 0;
   dev->poll = false;
 
-  jcr->min_wait = 60 * 60;
-  jcr->max_wait = 24 * 60 * 60;
-  jcr->max_num_wait = 9; /* 5 waits =~ 1 day, then 1 day at a time */
-  jcr->wait_sec = jcr->min_wait;
-  jcr->rem_wait_sec = jcr->wait_sec;
-  jcr->num_wait = 0;
+  jcr->impl_->min_wait = 60 * 60;
+  jcr->impl_->max_wait = 24 * 60 * 60;
+  jcr->impl_->max_num_wait = 9; /* 5 waits =~ 1 day, then 1 day at a time */
+  jcr->impl_->wait_sec = jcr->impl_->min_wait;
+  jcr->impl_->rem_wait_sec = jcr->impl_->wait_sec;
+  jcr->impl_->num_wait = 0;
 }
 
 void InitJcrDeviceWaitTimers(JobControlRecord* jcr)
 {
   /* ******FIXME******* put these on config variables */
-  jcr->min_wait = 60 * 60;
-  jcr->max_wait = 24 * 60 * 60;
-  jcr->max_num_wait = 9; /* 5 waits =~ 1 day, then 1 day at a time */
-  jcr->wait_sec = jcr->min_wait;
-  jcr->rem_wait_sec = jcr->wait_sec;
-  jcr->num_wait = 0;
+  jcr->impl_->min_wait = 60 * 60;
+  jcr->impl_->max_wait = 24 * 60 * 60;
+  jcr->impl_->max_num_wait = 9; /* 5 waits =~ 1 day, then 1 day at a time */
+  jcr->impl_->wait_sec = jcr->impl_->min_wait;
+  jcr->impl_->rem_wait_sec = jcr->impl_->wait_sec;
+  jcr->impl_->num_wait = 0;
 }
 
 /**

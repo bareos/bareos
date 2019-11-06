@@ -38,6 +38,7 @@
 #include "stored/stored_globals.h"
 #include "stored/append.h"
 #include "stored/authenticate.h"
+#include "stored/jcr_private.h"
 #include "stored/sd_stats.h"
 #include "stored/sd_stats.h"
 #include "lib/bnet.h"
@@ -145,7 +146,7 @@ void* handle_stored_connection(BareosSocket* sd, char* job_name)
 
   if (!jcr->authenticated) { jcr->setJobStatus(JS_ErrorTerminated); }
 
-  pthread_cond_signal(&jcr->job_start_wait); /* wake waiting job */
+  pthread_cond_signal(&jcr->impl_->job_start_wait); /* wake waiting job */
   FreeJcr(jcr);
 
   return NULL;
@@ -238,7 +239,7 @@ bool DoListenRun(JobControlRecord* jcr)
    */
   P(mutex);
   while (!jcr->authenticated && !JobCanceled(jcr)) {
-    errstat = pthread_cond_wait(&jcr->job_start_wait, &mutex);
+    errstat = pthread_cond_wait(&jcr->impl_->job_start_wait, &mutex);
     if (errstat == EINVAL || errstat == EPERM) { break; }
     Dmsg1(800, "=== Auth cond errstat=%d\n", errstat);
   }
@@ -299,13 +300,13 @@ static bool StartReplicationSession(JobControlRecord* jcr)
   BareosSocket* sd = jcr->store_bsock;
 
   Dmsg1(120, "Start replication session: %s", sd->msg);
-  if (jcr->session_opened) {
+  if (jcr->impl_->session_opened) {
     PmStrcpy(jcr->errmsg, _("Attempt to open already open session.\n"));
     sd->fsend(NO_open);
     return false;
   }
 
-  jcr->session_opened = true;
+  jcr->impl_->session_opened = true;
 
   /*
    * Send "Ticket" to Storage Daemon
@@ -326,7 +327,7 @@ static bool ReplicateData(JobControlRecord* jcr)
   BareosSocket* sd = jcr->store_bsock;
 
   Dmsg1(120, "Replicate data: %s", sd->msg);
-  if (jcr->session_opened) {
+  if (jcr->impl_->session_opened) {
     utime_t now;
 
     /*
@@ -359,7 +360,7 @@ static bool EndReplicationSession(JobControlRecord* jcr)
   BareosSocket* sd = jcr->store_bsock;
 
   Dmsg1(120, "stored<stored: %s", sd->msg);
-  if (!jcr->session_opened) {
+  if (!jcr->impl_->session_opened) {
     PmStrcpy(jcr->errmsg, _("Attempt to close non-open session.\n"));
     sd->fsend(NOT_opened);
     return false;

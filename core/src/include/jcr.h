@@ -37,10 +37,6 @@
 #include <include/bareos.h>
 #include "lib/tls_conf.h"
 
-#ifdef STORAGE_DAEMON
-#include "stored/read_ctx.h"
-#endif
-
 #ifdef DIRECTOR_DAEMON
 #include "cats/cats.h"
 #include "dird/client_connection_handshake_mode.h"
@@ -51,13 +47,6 @@ typedef struct s_tree_root TREE_ROOT;
 #include "lib/volume_session_info.h"
 
 class dlist;
-
-namespace storagedaemon {
-struct VolumeList;
-class DeviceControlRecord;
-class DirectorResource;
-struct BootStrapRecord;
-}  // namespace storagedaemon
 
 namespace filedaemon {
 class BareosAccurateFilelist;
@@ -391,72 +380,6 @@ class JobControlRecord {
   bool is_passive_client_connection_probing = false; /**< Set if director probes a passive client connection */
 
   JobControlRecordPrivate* impl_;
-
-#ifdef STORAGE_DAEMON
-  /*
-   * Storage Daemon specific part of JobControlRecord
-   */
-  JobControlRecord* next_dev = nullptr; /**< Next JobControlRecord attached to device */
-  JobControlRecord* prev_dev = nullptr; /**< Previous JobControlRecord attached to device */
-  char* dir_auth_key = nullptr; /**< Dir auth key */
-  pthread_cond_t job_start_wait = PTHREAD_COND_INITIALIZER; /**< Wait for FD to start Job */
-  pthread_cond_t job_end_wait = PTHREAD_COND_INITIALIZER; /**< Wait for Job to end */
-  int32_t type = 0;
-  storagedaemon::DeviceControlRecord* read_dcr = nullptr; /**< Device context for reading */
-  storagedaemon::DeviceControlRecord* dcr = nullptr;      /**< Device context record */
-  alist* dcrs = nullptr;            /**< List of dcrs open */
-  POOLMEM* job_name = nullptr;      /**< Base Job name (not unique) */
-  POOLMEM* fileset_name = nullptr;  /**< FileSet */
-  POOLMEM* fileset_md5 = nullptr;   /**< MD5 for FileSet */
-  POOLMEM* backup_format = nullptr; /**< Backup format used when doing a NDMP backup */
-  storagedaemon::VolumeList* VolList = nullptr; /**< List to read */
-  int32_t NumWriteVolumes = 0; /**< Number of volumes written */
-  int32_t NumReadVolumes = 0;  /**< Total number of volumes to read */
-  int32_t CurReadVolume = 0;   /**< Current read volume number */
-  int32_t label_errors = 0;    /**< Count of label errors */
-  bool session_opened = false;
-  bool remote_replicate = false;    /**< Replicate data to remote SD */
-  int32_t Ticket = 0;               /**< Ticket for this job */
-  bool ignore_label_errors = false; /**< Ignore Volume label errors */
-  bool spool_attributes = false;    /**< Set if spooling attributes */
-  bool no_attributes = false;       /**< Set if no attributes wanted */
-  int64_t spool_size = 0;           /**< Spool size for this job */
-  bool spool_data = false;          /**< Set to spool data */
-  int32_t CurVol = 0;               /**< Current Volume count */
-  storagedaemon::DirectorResource* director = nullptr; /**< Director resource */
-  alist* plugin_options = nullptr;  /**< Specific Plugin Options sent by DIR */
-  alist* write_store = nullptr;     /**< List of write storage devices sent by DIR */
-  alist* read_store = nullptr;      /**< List of read devices sent by DIR */
-  alist* reserve_msgs = nullptr;    /**< Reserve fail messages */
-  bool acquired_storage = false;    /**< Did we acquire our reserved storage already or not */
-  bool PreferMountedVols = false;   /**< Prefer mounted vols rather than new */
-  bool Resched = false;             /**< Job may be rescheduled */
-  bool insert_jobmedia_records = false; /**< Need to insert job media records */
-  uint64_t RemainingQuota = 0;          /**< Available bytes to use as quota */
-
-  /*
-   * Parameters for Open Read Session
-   */
-  storagedaemon::READ_CTX* rctx = nullptr; /**< Read context used to keep track of what is processed or not */
-  storagedaemon::BootStrapRecord* bsr = nullptr; /**< Bootstrap record -- has everything */
-  bool mount_next_volume = false; /**< Set to cause next volume mount */
-  uint32_t read_VolSessionId = 0;
-  uint32_t read_VolSessionTime = 0;
-  uint32_t read_StartFile = 0;
-  uint32_t read_EndFile = 0;
-  uint32_t read_StartBlock = 0;
-  uint32_t read_EndBlock = 0;
-
-  /*
-   * Device wait times
-   */
-  int32_t min_wait = 0;
-  int32_t max_wait = 0;
-  int32_t max_num_wait = 0;
-  int32_t wait_sec = 0;
-  int32_t rem_wait_sec = 0;
-  int32_t num_wait = 0;
-#endif /* STORAGE_DAEMON */
 };
 /* clang-format on */
 

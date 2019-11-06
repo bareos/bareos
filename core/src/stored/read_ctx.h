@@ -24,7 +24,21 @@
 #ifndef BAREOS_STORED_READ_CTX_H_
 #define BAREOS_STORED_READ_CTX_H_ 1
 
+#include "stored/record.h"
+
 namespace storagedaemon {
+
+struct DeviceRecord;
+
+/* clang-format off */
+struct Read_Context {
+  DeviceRecord* rec = nullptr;    /**< Record currently being processed */
+  dlist* recs = nullptr;          /**< Linked list of record packets open */
+  Session_Label sessrec;          /**< Start Of Session record info */
+  uint32_t records_processed = 0; /**< Number of records processed from this block */
+  int32_t lastFileIndex = 0;      /**< Last File Index processed */
+};
+/* clang-format on */
 
 typedef struct Read_Context READ_CTX;
 

@@ -30,7 +30,7 @@
 #include "include/bareos.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
-#include "include/jcr.h"
+#include "stored/jcr_private.h"
 #include "lib/parse_conf.h"
 #include "lib/bsock.h"
 #include "lib/bnet_network_dump.h"
@@ -89,7 +89,7 @@ bool AuthenticateDirector(JobControlRecord* jcr)
 
   UnbashSpaces(dirname);
   director = (DirectorResource*)my_config->GetResWithName(R_DIRECTOR, dirname);
-  jcr->director = director;
+  jcr->impl_->director = director;
 
   if (!director) {
     Dmsg2(debuglevel, "Connection from unknown Director %s at %s rejected.\n",
@@ -161,7 +161,8 @@ bool AuthenticateWithStoragedaemon(JobControlRecord* jcr)
   password.value = jcr->sd_auth_key;
 
   if (!sd->AuthenticateOutboundConnection(
-          jcr, my_config->CreateOwnQualifiedNameForNetworkDump(), identity, password, me)) {
+          jcr, my_config->CreateOwnQualifiedNameForNetworkDump(), identity,
+          password, me)) {
     Jmsg1(jcr, M_FATAL, 0,
           _("Authorization problem: Two way security handshake failed with "
             "Storage daemon at %s\n"),
