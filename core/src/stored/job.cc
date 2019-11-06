@@ -429,14 +429,14 @@ void StoredFreeJcr(JobControlRecord* jcr)
 
   if (jcr->impl->backup_format) { FreeMemory(jcr->impl->backup_format); }
 
-  if (jcr->impl->bsr) {
-    libbareos::FreeBsr(jcr->impl->bsr);
-    jcr->impl->bsr = NULL;
+  if (jcr->impl->read_session.bsr) {
+    libbareos::FreeBsr(jcr->impl->read_session.bsr);
+    jcr->impl->read_session.bsr = NULL;
   }
 
-  if (jcr->impl->rctx) {
-    FreeReadContext(jcr->impl->rctx);
-    jcr->impl->rctx = NULL;
+  if (jcr->impl->read_session.rctx) {
+    FreeReadContext(jcr->impl->read_session.rctx);
+    jcr->impl->read_session.rctx = NULL;
   }
 
   if (jcr->compress.deflate_buffer || jcr->compress.inflate_buffer) {

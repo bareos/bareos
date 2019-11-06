@@ -313,9 +313,9 @@ BootStrapRecord* PositionDeviceToFirstFile(JobControlRecord* jcr,
    * Now find and position to first file and block
    *   on this tape.
    */
-  if (jcr->impl->bsr) {
-    jcr->impl->bsr->Reposition = true; /* force repositioning */
-    bsr = find_next_bsr(jcr->impl->bsr, dev);
+  if (jcr->impl->read_session.bsr) {
+    jcr->impl->read_session.bsr->Reposition = true;
+    bsr = find_next_bsr(jcr->impl->read_session.bsr, dev);
     if (GetBsrStartAddr(bsr, &file, &block) > 0) {
       Jmsg(jcr, M_INFO, 0,
            _("Forward spacing Volume \"%s\" to file:block %u:%u.\n"),
@@ -339,15 +339,15 @@ bool TryDeviceRepositioning(JobControlRecord* jcr,
   BootStrapRecord* bsr;
   Device* dev = dcr->dev;
 
-  bsr = find_next_bsr(jcr->impl->bsr, dev);
-  if (bsr == NULL && jcr->impl->bsr->mount_next_volume) {
+  bsr = find_next_bsr(jcr->impl->read_session.bsr, dev);
+  if (bsr == NULL && jcr->impl->read_session.bsr->mount_next_volume) {
     Dmsg0(500, "Would mount next volume here\n");
     Dmsg2(500, "Current position (file:block) %u:%u\n", dev->file,
           dev->block_num);
-    jcr->impl->bsr->mount_next_volume = false;
+    jcr->impl->read_session.bsr->mount_next_volume = false;
     if (!dev->AtEot()) {
       /* Set EOT flag to force mount of next Volume */
-      jcr->impl->mount_next_volume = true;
+      jcr->impl->read_session.mount_next_volume = true;
       dev->SetEot();
     }
     rec->Block = 0;

@@ -36,6 +36,18 @@ class DeviceControlRecord;
 class DirectorResource;
 struct BootStrapRecord;
 
+struct ReadSession {
+  READ_CTX* rctx{};
+  BootStrapRecord* bsr{};
+  bool mount_next_volume{};
+  uint32_t read_VolSessionId{};
+  uint32_t read_VolSessionTime{};
+  uint32_t read_StartFile{};
+  uint32_t read_EndFile{};
+  uint32_t read_StartBlock{};
+  uint32_t read_EndBlock{};
+};
+
 struct DeviceWaitTimes {
   int32_t min_wait{};
   int32_t max_wait{};
@@ -83,19 +95,7 @@ struct JobControlRecordPrivate {
   bool insert_jobmedia_records{}; /**< Need to insert job media records */
   uint64_t RemainingQuota{};      /**< Available bytes to use as quota */
 
-  /*
-   * Parameters for Open Read Session
-   */
-  storagedaemon::READ_CTX* rctx{};       /**< Read context used to keep track of what is processed or not */
-  storagedaemon::BootStrapRecord* bsr{}; /**< Bootstrap record -- has everything */
-  bool mount_next_volume{};              /**< Set to cause next volume mount */
-  uint32_t read_VolSessionId{};
-  uint32_t read_VolSessionTime{};
-  uint32_t read_StartFile{};
-  uint32_t read_EndFile{};
-  uint32_t read_StartBlock{};
-  uint32_t read_EndBlock{};
-
+  storagedaemon::ReadSession read_session;
   storagedaemon::DeviceWaitTimes device_wait_times;
 };
 /* clang-format on */

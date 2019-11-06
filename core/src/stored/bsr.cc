@@ -801,7 +801,7 @@ static bool AddRestoreVolume(JobControlRecord* jcr, VolumeList* vol)
   /* Add volume to volume manager's read list */
   AddReadVolume(jcr, vol->VolumeName);
 
-  if (!next) {                 /* list empty ? */
+  if (!next) {                /* list empty ? */
     jcr->impl->VolList = vol; /* yes, add volume */
   } else {
     /* Loop through all but last */
@@ -840,8 +840,8 @@ void CreateRestoreVolumeList(JobControlRecord* jcr)
    */
   jcr->impl->NumReadVolumes = 0;
   jcr->impl->CurReadVolume = 0;
-  if (jcr->impl->bsr) {
-    BootStrapRecord* bsr = jcr->impl->bsr;
+  if (jcr->impl->read_session.bsr) {
+    BootStrapRecord* bsr = jcr->impl->read_session.bsr;
     if (!bsr->volume || !bsr->volume->VolumeName[0]) { return; }
     for (; bsr; bsr = bsr->next) {
       BsrVolume* bsrvol;

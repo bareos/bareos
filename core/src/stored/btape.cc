@@ -2446,7 +2446,7 @@ static bool do_unfill()
   last_block = last_block1;
 
   FreeRestoreVolumeList(jcr);
-  jcr->impl->bsr = NULL;
+  jcr->impl->read_session.bsr = NULL;
   bstrncpy(dcr->VolumeName, "TestVolume1|TestVolume2", sizeof(dcr->VolumeName));
   CreateRestoreVolumeList(jcr);
   if (jcr->impl->VolList != NULL) {

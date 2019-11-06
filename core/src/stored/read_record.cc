@@ -222,15 +222,15 @@ bool ReadNextBlockFromDevice(DeviceControlRecord* dcr,
             trec->FileIndex = EOT_LABEL;
             trec->File = dcr->dev->file;
             *status = RecordCb(dcr, trec);
-            if (jcr->impl->mount_next_volume) {
-              jcr->impl->mount_next_volume = false;
+            if (jcr->impl->read_session.mount_next_volume) {
+              jcr->impl->read_session.mount_next_volume = false;
               dcr->dev->ClearEot();
             }
             FreeRecord(trec);
           }
           return false;
         }
-        jcr->impl->mount_next_volume = false;
+        jcr->impl->read_session.mount_next_volume = false;
 
         /*
          * We just have a new tape up, now read the label (first record)
@@ -329,11 +329,12 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
      */
     if (rec->FileIndex < 0) {
       HandleSessionRecord(dcr->dev, rec, &rctx->sessrec);
-      if (jcr->impl->bsr) {
+      if (jcr->impl->read_session.bsr) {
         /*
          * We just check block FI and FT not FileIndex
          */
-        rec->match_stat = MatchBsrBlock(jcr->impl->bsr, dcr->block);
+        rec->match_stat =
+            MatchBsrBlock(jcr->impl->read_session.bsr, dcr->block);
       } else {
         rec->match_stat = 0;
       }
@@ -344,9 +345,9 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
     /*
      * Apply BootStrapRecord filter
      */
-    if (jcr->impl->bsr) {
-      rec->match_stat =
-          MatchBsr(jcr->impl->bsr, rec, &dev->VolHdr, &rctx->sessrec, jcr);
+    if (jcr->impl->read_session.bsr) {
+      rec->match_stat = MatchBsr(jcr->impl->read_session.bsr, rec,
+                                 &dev->VolHdr, &rctx->sessrec, jcr);
       if (rec->match_stat == -1) { /* no more possible matches */
         *done = true;              /* all items found, stop */
         Dmsg2(debuglevel, "All done=(file:block) %u:%u\n", dev->file,
@@ -377,7 +378,7 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
 
     if (rctx->lastFileIndex != READ_NO_FILEINDEX &&
         rctx->lastFileIndex != rec->FileIndex) {
-      if (IsThisBsrDone(jcr->impl->bsr, rec) &&
+      if (IsThisBsrDone(jcr->impl->read_session.bsr, rec) &&
           TryDeviceRepositioning(jcr, rec, dcr)) {
         Dmsg2(debuglevel, "This bsr done, break pos %u:%u\n", dev->file,
               dev->block_num);
@@ -412,7 +413,7 @@ bool ReadRecords(DeviceControlRecord* dcr,
 
   rctx = new_read_context();
   PositionDeviceToFirstFile(jcr, dcr);
-  jcr->impl->mount_next_volume = false;
+  jcr->impl->read_session.mount_next_volume = false;
 
   while (ok && !done) {
     if (JobCanceled(jcr)) {

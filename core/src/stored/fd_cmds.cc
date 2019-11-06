@@ -382,9 +382,12 @@ static bool ReadOpenSession(JobControlRecord* jcr)
   }
 
   if (sscanf(fd->msg, read_open, jcr->impl->read_dcr->VolumeName,
-             &jcr->impl->read_VolSessionId, &jcr->impl->read_VolSessionTime,
-             &jcr->impl->read_StartFile, &jcr->impl->read_EndFile,
-             &jcr->impl->read_StartBlock, &jcr->impl->read_EndBlock) == 7) {
+             &jcr->impl->read_session.read_VolSessionId,
+             &jcr->impl->read_session.read_VolSessionTime,
+             &jcr->impl->read_session.read_StartFile,
+             &jcr->impl->read_session.read_EndFile,
+             &jcr->impl->read_session.read_StartBlock,
+             &jcr->impl->read_session.read_EndBlock) == 7) {
     if (jcr->impl->session_opened) {
       PmStrcpy(jcr->errmsg, _("Attempt to open read on non-open session.\n"));
       fd->fsend(NOT_opened);
@@ -393,10 +396,13 @@ static bool ReadOpenSession(JobControlRecord* jcr)
     Dmsg4(100,
           "ReadOpenSession got: JobId=%d Vol=%s VolSessId=%ld VolSessT=%ld\n",
           jcr->JobId, jcr->impl->read_dcr->VolumeName,
-          jcr->impl->read_VolSessionId, jcr->impl->read_VolSessionTime);
+          jcr->impl->read_session.read_VolSessionId,
+          jcr->impl->read_session.read_VolSessionTime);
     Dmsg4(100, "  StartF=%ld EndF=%ld StartB=%ld EndB=%ld\n",
-          jcr->impl->read_StartFile, jcr->impl->read_EndFile,
-          jcr->impl->read_StartBlock, jcr->impl->read_EndBlock);
+          jcr->impl->read_session.read_StartFile,
+          jcr->impl->read_session.read_EndFile,
+          jcr->impl->read_session.read_StartBlock,
+          jcr->impl->read_session.read_EndBlock);
   }
 
   jcr->impl->session_opened = true;

@@ -71,7 +71,7 @@ JobControlRecord* SetupJcr(const char* name,
   JobControlRecord* jcr = new_jcr(MyFreeJcr);
   jcr->impl = new JobControlRecordPrivate;
 
-  jcr->impl->bsr = bsr;
+  jcr->impl->read_session.bsr = bsr;
   jcr->impl->director = director;
   jcr->VolSessionId = 1;
   jcr->VolSessionTime = (uint32_t)time(NULL);
@@ -142,7 +142,7 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
   } else {
     VolName[0] = 0;
   }
-  if (!jcr->impl->bsr && VolName[0] == 0) {
+  if (!jcr->impl->read_session.bsr && VolName[0] == 0) {
     if (!bstrncmp(dev_name, "/dev/", 5)) {
       /* Try stripping file part */
       p = dev_name + strlen(dev_name);

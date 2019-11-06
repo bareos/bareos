@@ -1314,12 +1314,15 @@ static inline bool GetBootstrapFile(JobControlRecord* jcr, BareosSocket* sock)
   }
   fclose(bs);
   Dmsg0(10, "=== end bootstrap file ===\n");
-  jcr->impl->bsr = libbareos::parse_bsr(jcr, jcr->RestoreBootstrap);
-  if (!jcr->impl->bsr) {
+  jcr->impl->read_session.bsr =
+      libbareos::parse_bsr(jcr, jcr->RestoreBootstrap);
+  if (!jcr->impl->read_session.bsr) {
     Jmsg(jcr, M_FATAL, 0, _("Error parsing bootstrap file.\n"));
     goto bail_out;
   }
-  if (debug_level >= 10) { libbareos::DumpBsr(jcr->impl->bsr, true); }
+  if (debug_level >= 10) {
+    libbareos::DumpBsr(jcr->impl->read_session.bsr, true);
+  }
   /* If we got a bootstrap, we are reading, so create read volume list */
   CreateRestoreVolumeList(jcr);
   ok = true;

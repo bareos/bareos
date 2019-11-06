@@ -377,7 +377,7 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
                                               uint32_t* data_length)
 {
   DeviceControlRecord* dcr = jcr->impl->read_dcr;
-  READ_CTX* rctx = jcr->impl->rctx;
+  READ_CTX* rctx = jcr->impl->read_session.rctx;
   bool done = false;
   bool ok = true;
 
@@ -768,13 +768,13 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
       Dmsg1(50, "Begin reading device=%s\n", dcr->dev->print_name());
 
       PositionDeviceToFirstFile(jcr, dcr);
-      jcr->impl->mount_next_volume = false;
+      jcr->impl->read_session.mount_next_volume = false;
 
       /*
        * Allocate a new read context for this Job.
        */
       rctx = new_read_context();
-      jcr->impl->rctx = rctx;
+      jcr->impl->read_session.rctx = rctx;
 
       /*
        * Read the first block and setup record processing.
@@ -1113,9 +1113,9 @@ void EndOfNdmpBackup(JobControlRecord* jcr)
 
 void EndOfNdmpRestore(JobControlRecord* jcr)
 {
-  if (jcr->impl->rctx) {
-    FreeReadContext(jcr->impl->rctx);
-    jcr->impl->rctx = NULL;
+  if (jcr->impl->read_session.rctx) {
+    FreeReadContext(jcr->impl->read_session.rctx);
+    jcr->impl->read_session.rctx = NULL;
   }
 
   if (jcr->impl->acquired_storage) {
