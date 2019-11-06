@@ -35,6 +35,7 @@
 #define BAREOS_INCLUDE_JCR_H_ 1
 
 #include <include/bareos.h>
+#include <include/job_level.h>
 #include "lib/tls_conf.h"
 
 #ifdef DIRECTOR_DAEMON
@@ -47,24 +48,6 @@ typedef struct s_tree_root TREE_ROOT;
 #include "lib/volume_session_info.h"
 
 class dlist;
-
-/**
- * Backup/Verify level code. These are stored in the DB
- */
-#define L_FULL 'F'         /**< Full backup */
-#define L_INCREMENTAL 'I'  /**< Since last backup */
-#define L_DIFFERENTIAL 'D' /**< Since last full backup */
-#define L_SINCE 'S'
-#define L_VERIFY_CATALOG 'C' /**< Verify from catalog */
-#define L_VERIFY_INIT 'V'    /**< Verify save (init DB) */
-#define L_VERIFY_VOLUME_TO_CATALOG                                         \
-  'O'                                /**< Verify Volume to catalog entries \
-                                      */
-#define L_VERIFY_DISK_TO_CATALOG 'd' /**< Verify Disk attributes to catalog */
-#define L_VERIFY_DATA 'A'            /**< Verify data on volume */
-#define L_BASE 'B'                   /**< Base level job */
-#define L_NONE ' '                   /**< None, for Restore and Admin */
-#define L_VIRTUAL_FULL 'f'           /**< Virtual full backup */
 
 /**
  * Job Types. These are stored in the DB
