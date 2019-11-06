@@ -34,11 +34,11 @@
 #ifndef BAREOS_INCLUDE_JCR_H_
 #define BAREOS_INCLUDE_JCR_H_ 1
 
-#include <include/bareos.h>
-#include <include/job_level.h>
-#include <include/job_status.h>
-#include <include/job_types.h>
-#include "lib/tls_conf.h"
+#include "include/bareos.h"
+#include "include/compression_context.h"
+#include "include/job_level.h"
+#include "include/job_status.h"
+#include "include/job_types.h"
 #include "lib/alist.h"
 #include "lib/tls_conf.h"
 
@@ -56,24 +56,6 @@ struct VolumeSessionInfo;
 #ifdef HAVE_WIN32
 struct CopyThreadContext;
 #endif
-
-/* clang-format off */
-struct CompressionContext {
-  POOLMEM* deflate_buffer{nullptr}; /**< Buffer used for deflation (compression) */
-  POOLMEM* inflate_buffer{nullptr}; /**< Buffer used for inflation (decompression) */
-  uint32_t deflate_buffer_size{}; /**< Length of deflation buffer */
-  uint32_t inflate_buffer_size{}; /**< Length of inflation buffer */
-  struct {
-#ifdef HAVE_LIBZ
-    void* pZLIB{nullptr}; /**< ZLIB compression session data */
-#endif
-#ifdef HAVE_LZO
-    void* pLZO{nullptr}; /**< LZO compression session data */
-#endif
-    void* pZFAST{nullptr}; /**< FASTLZ compression session data */
-  } workset;
-};
-/* clang-format on */
 
 typedef void(JCR_free_HANDLER)(JobControlRecord* jcr);
 
