@@ -34,6 +34,7 @@
 #include "dird/dird_globals.h"
 #include "dird/jcr_private.h"
 #include "dird/sd_cmds.h"
+#include "include/auth_protocol_types.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
 

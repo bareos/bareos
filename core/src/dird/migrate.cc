@@ -52,6 +52,7 @@
 #include "dird/ua_server.h"
 #include "dird/ua_purge.h"
 #include "dird/ua_run.h"
+#include "include/auth_protocol_types.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"

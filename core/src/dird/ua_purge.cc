@@ -43,6 +43,7 @@
 #include "dird/ua_select.h"
 #include "dird/ua_prune.h"
 #include "dird/ua_purge.h"
+#include "include/auth_protocol_types.h"
 #include "lib/edit.h"
 #include "lib/util.h"
 

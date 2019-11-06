@@ -46,6 +46,7 @@
 #include "dird/ua_input.h"
 #include "dird/ua_label.h"
 #include "dird/ua_select.h"
+#include "include/auth_protocol_types.h"
 #include "lib/crypto_wrap.h"
 #include "lib/passphrase.h"
 #include "lib/util.h"

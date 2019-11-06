@@ -45,6 +45,7 @@
 #include "dird/ua_output.h"
 #include "dird/ua_select.h"
 #include "dird/ua_status.h"
+#include "include/auth_protocol_types.h"
 #include "lib/edit.h"
 #include "lib/recent_job_results_list.h"
 #include "lib/parse_conf.h"

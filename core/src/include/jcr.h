@@ -52,17 +52,6 @@ typedef struct s_tree_root TREE_ROOT;
 class dlist;
 
 /**
- * Authentication Protocol types
- */
-enum
-{
-  APT_NATIVE = 0,
-  APT_NDMPV2,
-  APT_NDMPV3,
-  APT_NDMPV4
-};
-
-/**
  * Authentication types
  */
 enum

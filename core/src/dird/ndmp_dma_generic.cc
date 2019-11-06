@@ -31,6 +31,7 @@
 #include "dird.h"
 #include "dird/jcr_private.h"
 #include "dird/dird_globals.h"
+#include "include/auth_protocol_types.h"
 
 #if HAVE_NDMP
 #define SMTAPE_MIN_BLOCKSIZE 4096        /**< 4 Kb */

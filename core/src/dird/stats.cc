@@ -34,6 +34,7 @@
 #include "cats/sql_pooling.h"
 #include "dird/sd_cmds.h"
 #include "dird/ua_server.h"
+#include "include/auth_protocol_types.h"
 #include "lib/bnet.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"

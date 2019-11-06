@@ -52,6 +52,7 @@
 #include "dird/inc_conf.h"
 #include "dird/dird_globals.h"
 #include "dird/jcr_private.h"
+#include "include/auth_protocol_types.h"
 #include "include/protocol_types.h"
 #include "lib/berrno.h"
 #include "lib/breg.h"
