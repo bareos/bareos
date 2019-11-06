@@ -91,7 +91,7 @@ static void ListStatusHeader(StatusPacket* sp)
 #endif
 
   len = Mmsg(msg, _("%s Version: %s (%s) %s %s %s %s\n"), my_name,
-             kBareosVersionStrings.Date, kBareosVersionStrings.Date, VSS,
+             kBareosVersionStrings.Full, kBareosVersionStrings.Date, VSS,
              HOST_OS, DISTNAME, DISTVER);
   sendit(msg, len, sp);
   bstrftime_nc(dt, sizeof(dt), daemon_start_time);
