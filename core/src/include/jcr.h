@@ -36,6 +36,8 @@
 
 #include <include/bareos.h>
 #include <include/job_level.h>
+#include <include/job_status.h>
+#include <include/job_types.h>
 #include "lib/tls_conf.h"
 
 #ifdef DIRECTOR_DAEMON
@@ -48,54 +50,6 @@ typedef struct s_tree_root TREE_ROOT;
 #include "lib/volume_session_info.h"
 
 class dlist;
-
-/**
- * Job Types. These are stored in the DB
- */
-#define JT_BACKUP 'B'       /**< Backup Job */
-#define JT_MIGRATED_JOB 'M' /**< A previous backup job that was migrated */
-#define JT_VERIFY 'V'       /**< Verify Job */
-#define JT_RESTORE 'R'      /**< Restore Job */
-#define JT_CONSOLE 'U'      /**< console program */
-#define JT_SYSTEM 'I'       /**< internal system "job" */
-#define JT_ADMIN 'D'        /**< admin job */
-#define JT_ARCHIVE 'A'      /**< Archive Job */
-#define JT_JOB_COPY 'C'     /**< Copy of a Job */
-#define JT_COPY 'c'         /**< Copy Job */
-#define JT_MIGRATE 'g'      /**< Migration Job */
-#define JT_SCAN 'S'         /**< Scan Job */
-#define JT_CONSOLIDATE 'O'  /**< Always Incremental Consolidate Job */
-
-/**
- * Job Status. Some of these are stored in the DB
- */
-#define JS_Canceled 'A'        /**< Canceled by user */
-#define JS_Blocked 'B'         /**< Blocked */
-#define JS_Created 'C'         /**< Created but not yet running */
-#define JS_Differences 'D'     /**< Verify differences */
-#define JS_ErrorTerminated 'E' /**< Job terminated in error */
-#define JS_WaitFD 'F'          /**< Waiting on File daemon */
-#define JS_Incomplete 'I'      /**< Incomplete Job */
-#define JS_DataCommitting 'L'  /**< Committing data (last despool) */
-#define JS_WaitMount 'M'       /**< Waiting for Mount */
-#define JS_Running 'R'         /**< Running */
-#define JS_WaitSD 'S'          /**< Waiting on the Storage daemon */
-#define JS_Terminated 'T'      /**< Terminated normally */
-#define JS_Warnings 'W'        /**< Terminated normally with warnings */
-
-#define JS_AttrDespooling 'a' /**< SD despooling attributes */
-#define JS_WaitClientRes 'c'  /**< Waiting for Client resource */
-#define JS_WaitMaxJobs 'd'    /**< Waiting for maximum jobs */
-#define JS_Error 'e'          /**< Non-fatal error */
-#define JS_FatalError 'f'     /**< Fatal error */
-#define JS_AttrInserting 'i'  /**< Doing batch insert file records */
-#define JS_WaitJobRes 'j'     /**< Waiting for job resource */
-#define JS_DataDespooling 'l' /**< Doing data despooling */
-#define JS_WaitMedia 'm'      /**< Waiting for new media */
-#define JS_WaitPriority 'p'   /**< Waiting for higher priority jobs to finish */
-#define JS_WaitDevice 'q'     /**< Queued waiting for device */
-#define JS_WaitStoreRes 's'   /**< Waiting for storage resource */
-#define JS_WaitStartTime 't'  /**< Waiting for start time */
 
 /**
  * Protocol types
