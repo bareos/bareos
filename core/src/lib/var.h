@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2009 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -100,12 +100,12 @@ typedef enum
 struct var_st;
 typedef struct var_st var_t;
 
-typedef enum
+enum class var_config_t
 {
   VAR_CONFIG_SYNTAX,
   VAR_CONFIG_CB_VALUE,
   VAR_CONFIG_CB_OPERATION
-} var_config_t;
+};
 
 typedef struct {
   char escape;            /* default: '\' */

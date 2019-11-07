@@ -39,7 +39,10 @@
 #include "lib/bsignal.h"
 #include "lib/daemon.h"
 #include "lib/berrno.h"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #include "vss.h"
+#pragma GCC diagnostic pop
 
 /**
  * Sanity check to make sure FILE_ATTRIBUTE_VALID_FLAGS is always smaller
@@ -3416,11 +3419,11 @@ cleanup:
 int kill(int pid, int signal)
 {
   int rval = 0;
-  if (!TerminateProcess((HANDLE)pid, (UINT)signal)) {
+  if (!TerminateProcess((HANDLE)(UINT_PTR)pid, (UINT)signal)) {
     rval = -1;
     errno = b_errno_win32;
   }
-  CloseHandle((HANDLE)pid);
+  CloseHandle((HANDLE)(UINT_PTR)pid);
   return rval;
 }
 

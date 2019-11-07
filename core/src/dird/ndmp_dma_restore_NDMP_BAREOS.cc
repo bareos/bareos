@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -36,6 +36,7 @@
 #include "dird/storage.h"
 
 #include "lib/parse_bsr.h"
+#include "lib/tree.h"
 #include "lib/volume_session_info.h"
 
 #if HAVE_NDMP
@@ -769,7 +770,6 @@ bail_out:
  */
 bool DoNdmpRestore(JobControlRecord* jcr)
 {
-  JobDbRecord rjr; /* restore job record */
   int status;
 
   jcr->jr.JobLevel = L_FULL; /* Full restore */

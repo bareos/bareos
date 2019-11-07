@@ -3,7 +3,7 @@
 
    Copyright (C) 2008-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1371,7 +1371,7 @@ static BxattrExitCode generic_parse_xattr_streams(JobControlRecord* jcr,
                                                   char* content,
                                                   uint32_t content_length)
 {
-  xattr_t* current_xattr;
+  xattr_t* current_xattr = nullptr;
   alist* xattr_value_list;
   BxattrExitCode retval = BxattrExitCode::kError;
 

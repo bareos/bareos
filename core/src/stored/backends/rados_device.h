@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2016 Planets Communications B.V.
-   Copyright (C) 2014-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -100,13 +100,15 @@ class rados_device : public Device {
   /*
    * Interface from Device
    */
-  int d_close(int);
-  int d_open(const char* pathname, int flags, int mode);
-  int d_ioctl(int fd, ioctl_req_t request, char* mt = NULL);
-  boffset_t d_lseek(DeviceControlRecord* dcr, boffset_t offset, int whence);
-  ssize_t d_read(int fd, void* buffer, size_t count);
-  ssize_t d_write(int fd, const void* buffer, size_t count);
-  bool d_truncate(DeviceControlRecord* dcr);
+  int d_close(int) override;
+  int d_open(const char* pathname, int flags, int mode) override;
+  int d_ioctl(int fd, ioctl_req_t request, char* mt = NULL) override;
+  boffset_t d_lseek(DeviceControlRecord* dcr,
+                    boffset_t offset,
+                    int whence) override;
+  ssize_t d_read(int fd, void* buffer, size_t count) override;
+  ssize_t d_write(int fd, const void* buffer, size_t count) override;
+  bool d_truncate(DeviceControlRecord* dcr) override;
 };
 } /* namespace storagedaemon */
 #endif /* BAREOS_STORED_BACKENDS_RADOS_DEVICE_H_ */

@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -52,7 +52,7 @@ using namespace storagedaemon;
 /* Forward referenced functions */
 static void GetSessionRecord(Device* dev,
                              DeviceRecord* rec,
-                             SESSION_LABEL* sessrec);
+                             Session_Label* sessrec);
 static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec);
 
 
@@ -67,7 +67,7 @@ static bool list_records = false;
 static uint32_t records = 0;
 static uint32_t jobs = 0;
 static DeviceBlock* out_block;
-static SESSION_LABEL sessrec;
+static Session_Label sessrec;
 
 static void usage()
 {
@@ -357,10 +357,10 @@ static bool RecordCb(DeviceControlRecord* in_dcr, DeviceRecord* rec)
 
 static void GetSessionRecord(Device* dev,
                              DeviceRecord* rec,
-                             SESSION_LABEL* sessrec)
+                             Session_Label* sessrec)
 {
   const char* rtype;
-  memset(sessrec, 0, sizeof(SESSION_LABEL));
+  *sessrec = Session_Label{};
   switch (rec->FileIndex) {
     case PRE_LABEL:
       rtype = _("Fresh Volume Label");

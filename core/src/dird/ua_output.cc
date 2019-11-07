@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1258,11 +1258,11 @@ static bool ParseListBackupsCmd(UaContext* ua,
   PmStrcat(criteria, range);
 
   if (llist == VERT_LIST) {
-    ua->db->FillQuery(ua->cmd, BareosDb::SQL_QUERY_list_jobs_long,
+    ua->db->FillQuery(ua->cmd, BareosDb::SQL_QUERY::list_jobs_long,
                       selection.c_str(), criteria.c_str());
   } else {
-    ua->db->FillQuery(ua->cmd, BareosDb::SQL_QUERY_list_jobs, selection.c_str(),
-                      criteria.c_str());
+    ua->db->FillQuery(ua->cmd, BareosDb::SQL_QUERY::list_jobs,
+                      selection.c_str(), criteria.c_str());
   }
 
   return true;

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -523,7 +523,7 @@ DeviceRecord* new_record(bool with_data)
   DeviceRecord* rec;
 
   rec = (DeviceRecord*)GetPoolMemory(PM_RECORD);
-  memset(rec, 0, sizeof(DeviceRecord));
+  *rec = DeviceRecord{};
   if (with_data) {
     rec->data = GetPoolMemory(PM_MESSAGE);
     rec->own_mempool = true;

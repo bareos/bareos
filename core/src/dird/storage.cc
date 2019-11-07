@@ -620,8 +620,8 @@ changer_vol_list_t* get_vol_list_from_storage(UaContext* ua,
       Dmsg0(100, "Need to free still referenced vol_list\n");
       store->runtime_storage_status->vol_list =
           (changer_vol_list_t*)malloc(sizeof(changer_vol_list_t));
-      memset(store->runtime_storage_status->vol_list, 0,
-             sizeof(changer_vol_list_t));
+      changer_vol_list_t empty_vol_list;
+      *store->runtime_storage_status->vol_list = empty_vol_list;
     }
   }
 
@@ -648,8 +648,8 @@ changer_vol_list_t* get_vol_list_from_storage(UaContext* ua,
     if (!store->runtime_storage_status->vol_list) {
       store->runtime_storage_status->vol_list =
           (changer_vol_list_t*)malloc(sizeof(changer_vol_list_t));
-      memset(store->runtime_storage_status->vol_list, 0,
-             sizeof(changer_vol_list_t));
+      changer_vol_list_t empty_vol_list;
+      *store->runtime_storage_status->vol_list = empty_vol_list;
     }
     vol_list = store->runtime_storage_status->vol_list;
     vol_list->reference_count++;

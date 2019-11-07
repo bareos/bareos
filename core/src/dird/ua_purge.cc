@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -236,16 +236,14 @@ bool PurgeCmd(UaContext* ua, const char* cmd)
  */
 static bool PurgeFilesFromClient(UaContext* ua, ClientResource* client)
 {
-  struct del_ctx del;
+  del_ctx del;
   PoolMem query(PM_MESSAGE);
   ClientDbRecord cr;
   char ed1[50];
 
-  memset(&cr, 0, sizeof(cr));
   bstrncpy(cr.Name, client->resource_name_, sizeof(cr.Name));
   if (!ua->db->CreateClientRecord(ua->jcr, &cr)) { return false; }
 
-  memset(&del, 0, sizeof(del));
   del.max_ids = 1000;
   del.JobId = (JobId_t*)malloc(sizeof(JobId_t) * del.max_ids);
 
@@ -284,17 +282,15 @@ static bool PurgeFilesFromClient(UaContext* ua, ClientResource* client)
  */
 static bool PurgeJobsFromClient(UaContext* ua, ClientResource* client)
 {
-  struct del_ctx del;
+  del_ctx del;
   PoolMem query(PM_MESSAGE);
   ClientDbRecord cr;
   char ed1[50];
 
-  memset(&cr, 0, sizeof(cr));
 
   bstrncpy(cr.Name, client->resource_name_, sizeof(cr.Name));
   if (!ua->db->CreateClientRecord(ua->jcr, &cr)) { return false; }
 
-  memset(&del, 0, sizeof(del));
   del.max_ids = 1000;
   del.JobId = (JobId_t*)malloc(sizeof(JobId_t) * del.max_ids);
   del.PurgedFiles = (char*)malloc(del.max_ids);
@@ -424,7 +420,6 @@ static bool PurgeQuotaFromClient(UaContext* ua, ClientResource* client)
 {
   ClientDbRecord cr;
 
-  memset(&cr, 0, sizeof(cr));
   bstrncpy(cr.Name, client->resource_name_, sizeof(cr.Name));
   if (!ua->db->CreateClientRecord(ua->jcr, &cr)) { return false; }
   if (!ua->db->CreateQuotaRecord(ua->jcr, &cr)) { return false; }
@@ -457,7 +452,7 @@ void UpgradeCopies(UaContext* ua, char* jobs)
   DbLock(ua->db);
 
   /* Do it in two times for mysql */
-  ua->db->FillQuery(query, BareosDb::SQL_QUERY_uap_upgrade_copies_oldest_job,
+  ua->db->FillQuery(query, BareosDb::SQL_QUERY::uap_upgrade_copies_oldest_job,
                     JT_JOB_COPY, jobs, jobs);
 
   ua->db->SqlQuery(query.c_str());
@@ -728,8 +723,6 @@ static bool ActionOnPurgeCmd(UaContext* ua, const char* cmd)
   char esc[MAX_NAME_LENGTH * 2 + 1];
   PoolMem buf(PM_MESSAGE), volumes(PM_MESSAGE);
 
-  memset(&mr, 0, sizeof(mr));
-  memset(&pr, 0, sizeof(pr));
   PmStrcpy(volumes, "");
 
   /*
@@ -825,15 +818,16 @@ static bool ActionOnPurgeCmd(UaContext* ua, const char* cmd)
    * Loop over the candidate Volumes and actually truncate them
    */
   for (int i = 0; i < nb; i++) {
-    memset(&mr, 0, sizeof(mr));
-    mr.MediaId = results[i];
-    if (ua->db->GetMediaRecord(ua->jcr, &mr)) {
+    MediaDbRecord mr_temp;
+    mr_temp.MediaId = results[i];
+    if (ua->db->GetMediaRecord(ua->jcr, &mr_temp)) {
       /* TODO: ask for drive and change Pool */
       if (Bstrcasecmp("truncate", action) || Bstrcasecmp("all", action)) {
-        do_truncate_on_purge(ua, &mr, pr.Name, store->dev_name(), drive, sd);
+        do_truncate_on_purge(ua, &mr_temp, pr.Name, store->dev_name(), drive,
+                             sd);
       }
     } else {
-      Dmsg1(0, "Can't find MediaId=%lld\n", (uint64_t)mr.MediaId);
+      Dmsg1(0, "Can't find MediaId=%lld\n", (uint64_t)mr_temp.MediaId);
     }
   }
 
@@ -872,8 +866,6 @@ bool MarkMediaPurged(UaContext* ua, MediaDbRecord* mr)
      */
     if (mr->RecyclePoolId && mr->RecyclePoolId != mr->PoolId) {
       PoolDbRecord oldpr, newpr;
-      memset(&oldpr, 0, sizeof(oldpr));
-      memset(&newpr, 0, sizeof(newpr));
       newpr.PoolId = mr->RecyclePoolId;
       oldpr.PoolId = mr->PoolId;
       if (ua->db->GetPoolRecord(jcr, &oldpr) &&

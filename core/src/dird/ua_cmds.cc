@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -656,9 +656,6 @@ static bool add_cmd(UaContext* ua, const char* cmd)
 
   if (!OpenClientDb(ua)) { return true; }
 
-  memset(&pr, 0, sizeof(pr));
-  memset(&mr, 0, sizeof(mr));
-
   if (!GetPoolDbr(ua, &pr)) { return true; }
 
   Dmsg4(120, "id=%d Num=%d Max=%d type=%s\n", pr.PoolId, pr.NumVols, pr.MaxVols,
@@ -993,7 +990,6 @@ static bool SetbwlimitCmd(UaContext* ua, const char* cmd)
   char Job[MAX_NAME_LENGTH];
   const char* lst[] = {"job", "jobid", "ujobid", "all", "state", NULL};
 
-  memset(Job, 0, sizeof(Job));
   i = FindArgWithValue(ua, NT_("limit"));
   if (i >= 0) { limit = ((int64_t)atoi(ua->argv[i]) * 1024); }
 
@@ -1936,14 +1932,10 @@ static bool TruncateCmd(UaContext* ua, const char* cmd)
   PoolDbRecord pool_dbr;
   StorageDbRecord storage_dbr;
 
-  memset(&pool_dbr, 0, sizeof(pool_dbr));
-  memset(&storage_dbr, 0, sizeof(storage_dbr));
-
   /*
    * Look for volumes that can be recycled,
    * are enabled and have used more than the first block.
    */
-  memset(&mr, 0, sizeof(mr));
   mr.Recycle = 1;
   mr.Enabled = VOL_ENABLED;
   mr.VolBytes = (512 * 126); /* search volumes with more than 64,512 bytes
@@ -2085,7 +2077,6 @@ static bool TruncateCmd(UaContext* ua, const char* cmd)
    * Loop over the candidate Volumes and actually truncate them
    */
   for (int i = 0; i < mediaIds.size(); i++) {
-    memset(&mr, 0, sizeof(mr));
     mr.MediaId = mediaIds.get(i);
     if (!ua->db->GetMediaRecord(ua->jcr, &mr)) {
       Dmsg1(0, "Can't find MediaId=%lld\n", (uint64_t)mr.MediaId);
@@ -2111,8 +2102,6 @@ static bool DoTruncate(UaContext* ua, MediaDbRecord& mr)
   StorageDbRecord storage_dbr;
   PoolDbRecord pool_dbr;
 
-  memset(&storage_dbr, 0, sizeof(storage_dbr));
-  memset(&pool_dbr, 0, sizeof(pool_dbr));
 
   storage_dbr.StorageId = mr.StorageId;
   if (!ua->db->GetStorageRecord(ua->jcr, &storage_dbr)) {
@@ -2361,7 +2350,6 @@ static bool DeleteVolume(UaContext* ua)
   char buf[1000];
   db_list_ctx lst;
 
-  memset(&mr, 0, sizeof(mr));
   if (!SelectMediaDbr(ua, &mr)) { return true; }
   ua->WarningMsg(_("\nThis command will delete volume %s\n"
                    "and all Jobs saved on that volume from the Catalog\n"),
@@ -2400,7 +2388,6 @@ static bool DeletePool(UaContext* ua)
   PoolDbRecord pr;
   char buf[200];
 
-  memset(&pr, 0, sizeof(pr));
 
   if (!GetPoolDbr(ua, &pr)) { return true; }
   Bsnprintf(buf, sizeof(buf),

@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -47,14 +47,14 @@ namespace directordaemon {
 /* Forward referenced functions */
 static bool PruneDirectory(UaContext* ua, ClientResource* client);
 static bool PruneStats(UaContext* ua, utime_t retention);
-static bool GrowDelList(struct del_ctx* del);
+static bool GrowDelList(del_ctx* del);
 
 /**
  * Called here to count entries to be deleted
  */
 int DelCountHandler(void* ctx, int num_fields, char** row)
 {
-  struct s_count_ctx* cnt = (struct s_count_ctx*)ctx;
+  s_count_ctx* cnt = static_cast<s_count_ctx*>(ctx);
 
   if (row[0]) {
     cnt->count = str_to_int64(row[0]);
@@ -74,7 +74,7 @@ int DelCountHandler(void* ctx, int num_fields, char** row)
  */
 int JobDeleteHandler(void* ctx, int num_fields, char** row)
 {
-  struct del_ctx* del = (struct del_ctx*)ctx;
+  del_ctx* del = static_cast<del_ctx*>(ctx);
 
   if (!GrowDelList(del)) { return 1; }
   del->JobId[del->num_ids] = (JobId_t)str_to_int64(row[0]);
@@ -86,7 +86,7 @@ int JobDeleteHandler(void* ctx, int num_fields, char** row)
 
 int FileDeleteHandler(void* ctx, int num_fields, char** row)
 {
-  struct del_ctx* del = (struct del_ctx*)ctx;
+  del_ctx* del = static_cast<del_ctx*>(ctx);
 
   if (!GrowDelList(del)) { return 1; }
   del->JobId[del->num_ids++] = (JobId_t)str_to_int64(row[0]);
@@ -127,9 +127,6 @@ bool PruneCmd(UaContext* ua, const char* cmd)
   }
 
   if (!OpenClientDb(ua, true)) { return false; }
-
-  memset(&pr, 0, sizeof(pr));
-  memset(&mr, 0, sizeof(mr));
 
   /*
    * First search args
@@ -339,8 +336,7 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
 
   if (client) {
     char ed1[50];
-
-    memset(&cr, 0, sizeof(cr));
+    cr = ClientDbRecord{};
     bstrncpy(cr.Name, client->resource_name_, sizeof(cr.Name));
     if (!ua->db->CreateClientRecord(ua->jcr, &cr)) { goto bail_out; }
 
@@ -491,15 +487,13 @@ static bool prune_set_filter(UaContext* ua,
  */
 bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool)
 {
-  struct del_ctx del;
+  del_ctx del;
   struct s_count_ctx cnt;
   PoolMem query(PM_MESSAGE);
   PoolMem sql_where(PM_MESSAGE);
   PoolMem sql_from(PM_MESSAGE);
   utime_t period;
   char ed1[50];
-
-  memset(&del, 0, sizeof(del));
 
   if (pool && pool->FileRetention > 0) {
     period = pool->FileRetention;
@@ -566,19 +560,19 @@ bail_out:
 
 static void DropTempTables(UaContext* ua)
 {
-  ua->db->SqlQuery(BareosDb::SQL_QUERY_drop_deltabs);
+  ua->db->SqlQuery(BareosDb::SQL_QUERY::drop_deltabs);
 }
 
 static bool CreateTempTables(UaContext* ua)
 {
   /* Create temp tables and indicies */
-  if (!ua->db->SqlQuery(BareosDb::SQL_QUERY_create_deltabs)) {
+  if (!ua->db->SqlQuery(BareosDb::SQL_QUERY::create_deltabs)) {
     ua->ErrorMsg("%s", ua->db->strerror());
     Dmsg0(050, "create DelTables table failed\n");
     return false;
   }
 
-  if (!ua->db->SqlQuery(BareosDb::SQL_QUERY_create_delindex)) {
+  if (!ua->db->SqlQuery(BareosDb::SQL_QUERY::create_delindex)) {
     ua->ErrorMsg("%s", ua->db->strerror());
     Dmsg0(050, "create DelInx1 index failed\n");
     return false;
@@ -587,7 +581,7 @@ static bool CreateTempTables(UaContext* ua)
   return true;
 }
 
-static bool GrowDelList(struct del_ctx* del)
+static bool GrowDelList(del_ctx* del)
 {
   if (del->num_ids == MAX_DEL_LIST_LEN) { return false; }
 
@@ -668,8 +662,7 @@ static bool PruneBackupJobs(UaContext* ua,
   struct accurate_check_ctx* elt = nullptr;
   db_list_ctx jobids, tempids;
   JobDbRecord jr;
-  struct del_ctx del;
-  memset(&del, 0, sizeof(del));
+  del_ctx del;
 
   if (pool && pool->JobRetention > 0) {
     period = pool->JobRetention;
@@ -845,7 +838,7 @@ bool PruneJobs(UaContext* ua,
 bool PruneVolume(UaContext* ua, MediaDbRecord* mr)
 {
   PoolMem query(PM_MESSAGE);
-  struct del_ctx del;
+  del_ctx del;
   bool ok = false;
   int count;
 
@@ -853,7 +846,6 @@ bool PruneVolume(UaContext* ua, MediaDbRecord* mr)
     return false; /* Cannot prune archived volumes */
   }
 
-  memset(&del, 0, sizeof(del));
   del.max_ids = 10000;
   del.JobId = (JobId_t*)malloc(sizeof(JobId_t) * del.max_ids);
 
@@ -893,7 +885,7 @@ int GetPruneListForVolume(UaContext* ua, MediaDbRecord* mr, del_ctx* del)
    */
   period = mr->VolRetention;
   now = (utime_t)time(NULL);
-  ua->db->FillQuery(query, BareosDb::SQL_QUERY_sel_JobMedia,
+  ua->db->FillQuery(query, BareosDb::SQL_QUERY::sel_JobMedia,
                     edit_int64(mr->MediaId, ed1),
                     edit_int64(now - period, ed2));
 

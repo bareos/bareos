@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -40,7 +40,7 @@
 
 class dlist;
 
-/* import automatically generated SQL_QUERY_ENUM */
+/* import automatically generated SQL_QUERY */
 #include "bdb_query_enum_class.h"
 
 /* ==============================================================
@@ -402,9 +402,9 @@ struct ClientDbRecord {
  */
 struct CounterDbRecord {
   char Counter[MAX_NAME_LENGTH]{0};
-  int32_t MinValue = 0;
-  int32_t MaxValue = 0;
-  int32_t CurrentValue = 0;
+  int32_t MinValue{0};
+  int32_t MaxValue{0};
+  int32_t CurrentValue{0};
   char WrapCounter[MAX_NAME_LENGTH]{0};
 };
 
@@ -648,10 +648,10 @@ class BareosDb : public BareosDbQueryEnum {
                                 pathid_cache& ppathid_cache,
                                 JobId_t JobId);
   void FillQueryVaList(POOLMEM*& query,
-                       BareosDb::SQL_QUERY_ENUM predefined_query,
+                       BareosDb::SQL_QUERY predefined_query,
                        va_list arg_ptr);
   void FillQueryVaList(PoolMem& query,
-                       BareosDb::SQL_QUERY_ENUM predefined_query,
+                       BareosDb::SQL_QUERY predefined_query,
                        va_list arg_ptr);
 
  public:
@@ -922,7 +922,7 @@ class BareosDb : public BareosDbQueryEnum {
                     e_list_type type,
                     bool verbose);
   bool ListSqlQuery(JobControlRecord* jcr,
-                    SQL_QUERY_ENUM query,
+                    SQL_QUERY query,
                     OutputFormatter* sendit,
                     e_list_type type,
                     bool verbose);
@@ -933,7 +933,7 @@ class BareosDb : public BareosDbQueryEnum {
                     const char* description,
                     bool verbose = false);
   bool ListSqlQuery(JobControlRecord* jcr,
-                    SQL_QUERY_ENUM query,
+                    SQL_QUERY query,
                     OutputFormatter* sendit,
                     e_list_type type,
                     const char* description,
@@ -952,14 +952,14 @@ class BareosDb : public BareosDbQueryEnum {
                            OutputFormatter* sendit);
 
   /* SqlQuery.c */
-  const char* get_predefined_query_name(SQL_QUERY_ENUM query);
-  const char* get_predefined_query(SQL_QUERY_ENUM query);
+  const char* get_predefined_query_name(SQL_QUERY query);
+  const char* get_predefined_query(SQL_QUERY query);
 
-  void FillQuery(SQL_QUERY_ENUM predefined_query, ...);
-  void FillQuery(POOLMEM*& query, SQL_QUERY_ENUM predefined_query, ...);
-  void FillQuery(PoolMem& query, SQL_QUERY_ENUM predefined_query, ...);
+  void FillQuery(SQL_QUERY predefined_query, ...);
+  void FillQuery(POOLMEM*& query, SQL_QUERY predefined_query, ...);
+  void FillQuery(PoolMem& query, SQL_QUERY predefined_query, ...);
 
-  bool SqlQuery(SQL_QUERY_ENUM query, ...);
+  bool SqlQuery(SQL_QUERY query, ...);
   bool SqlQuery(const char* query, int flags = 0);
   bool SqlQuery(const char* query, DB_RESULT_HANDLER* ResultHandler, void* ctx);
 

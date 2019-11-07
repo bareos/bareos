@@ -50,7 +50,7 @@ const int dbglevel = 500;
 /* Forward references */
 static int MatchVolume(BootStrapRecord* bsr,
                        BsrVolume* volume,
-                       VOLUME_LABEL* volrec,
+                       Volume_Label* volrec,
                        bool done);
 static int MatchSesstime(BootStrapRecord* bsr,
                          BsrSessionTime* sesstime,
@@ -61,23 +61,23 @@ static int MatchSessid(BootStrapRecord* bsr,
                        DeviceRecord* rec);
 static int MatchClient(BootStrapRecord* bsr,
                        BsrClient* client,
-                       SESSION_LABEL* sessrec,
+                       Session_Label* sessrec,
                        bool done);
 static int MatchJob(BootStrapRecord* bsr,
                     BsrJob* job,
-                    SESSION_LABEL* sessrec,
+                    Session_Label* sessrec,
                     bool done);
 static int MatchJobType(BootStrapRecord* bsr,
                         BsrJobType* job_type,
-                        SESSION_LABEL* sessrec,
+                        Session_Label* sessrec,
                         bool done);
 static int MatchJobLevel(BootStrapRecord* bsr,
                          BsrJoblevel* job_level,
-                         SESSION_LABEL* sessrec,
+                         Session_Label* sessrec,
                          bool done);
 static int MatchJobid(BootStrapRecord* bsr,
                       BsrJobid* jobid,
-                      SESSION_LABEL* sessrec,
+                      Session_Label* sessrec,
                       bool done);
 static int MatchFindex(BootStrapRecord* bsr,
                        BsrFileIndex* findex,
@@ -97,8 +97,8 @@ static int MatchStream(BootStrapRecord* bsr,
                        bool done);
 static int MatchAll(BootStrapRecord* bsr,
                     DeviceRecord* rec,
-                    VOLUME_LABEL* volrec,
-                    SESSION_LABEL* sessrec,
+                    Volume_Label* volrec,
+                    Session_Label* sessrec,
                     bool done,
                     JobControlRecord* jcr);
 static int MatchBlockSesstime(BootStrapRecord* bsr,
@@ -209,8 +209,8 @@ static int MatchFileregex(BootStrapRecord* bsr,
  */
 int MatchBsr(BootStrapRecord* bsr,
              DeviceRecord* rec,
-             VOLUME_LABEL* volrec,
-             SESSION_LABEL* sessrec,
+             Volume_Label* volrec,
+             Session_Label* sessrec,
              JobControlRecord* jcr)
 {
   int status;
@@ -407,8 +407,8 @@ bool IsThisBsrDone(BootStrapRecord* bsr, DeviceRecord* rec)
  */
 static int MatchAll(BootStrapRecord* bsr,
                     DeviceRecord* rec,
-                    VOLUME_LABEL* volrec,
-                    SESSION_LABEL* sessrec,
+                    Volume_Label* volrec,
+                    Session_Label* sessrec,
                     bool done,
                     JobControlRecord* jcr)
 {
@@ -537,7 +537,7 @@ no_match:
 
 static int MatchVolume(BootStrapRecord* bsr,
                        BsrVolume* volume,
-                       VOLUME_LABEL* volrec,
+                       Volume_Label* volrec,
                        bool done)
 {
   if (!volume) { return 0; /* Volume must match */ }
@@ -551,7 +551,7 @@ static int MatchVolume(BootStrapRecord* bsr,
 
 static int MatchClient(BootStrapRecord* bsr,
                        BsrClient* client,
-                       SESSION_LABEL* sessrec,
+                       Session_Label* sessrec,
                        bool done)
 {
   if (!client) { return 1; /* no specification matches all */ }
@@ -562,7 +562,7 @@ static int MatchClient(BootStrapRecord* bsr,
 
 static int MatchJob(BootStrapRecord* bsr,
                     BsrJob* job,
-                    SESSION_LABEL* sessrec,
+                    Session_Label* sessrec,
                     bool done)
 {
   if (!job) { return 1; /* no specification matches all */ }
@@ -573,7 +573,7 @@ static int MatchJob(BootStrapRecord* bsr,
 
 static int MatchJobType(BootStrapRecord* bsr,
                         BsrJobType* job_type,
-                        SESSION_LABEL* sessrec,
+                        Session_Label* sessrec,
                         bool done)
 {
   if (!job_type) { return 1; /* no specification matches all */ }
@@ -584,7 +584,7 @@ static int MatchJobType(BootStrapRecord* bsr,
 
 static int MatchJobLevel(BootStrapRecord* bsr,
                          BsrJoblevel* job_level,
-                         SESSION_LABEL* sessrec,
+                         Session_Label* sessrec,
                          bool done)
 {
   if (!job_level) { return 1; /* no specification matches all */ }
@@ -597,7 +597,7 @@ static int MatchJobLevel(BootStrapRecord* bsr,
 
 static int MatchJobid(BootStrapRecord* bsr,
                       BsrJobid* jobid,
-                      SESSION_LABEL* sessrec,
+                      Session_Label* sessrec,
                       bool done)
 {
   if (!jobid) { return 1; /* no specification matches all */ }

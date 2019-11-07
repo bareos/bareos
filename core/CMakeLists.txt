@@ -83,6 +83,14 @@ if (cxx_compiler_macro_prefix_map)
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fmacro-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=.")
 endif()
 
+
+CHECK_CXX_COMPILER_FLAG(-Wno-unknown-pragmas compiler_has_no_unknown_pragmas)
+if (${compiler_has_no_unknown_pragmas})
+   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
+endif()
+
+
+
 # warn on sign-conversion
 #include(CheckCCompilerFlag)
 #CHECK_C_COMPILER_FLAG(-Wsign-conversion c_compiler_will_warn_sign_conversion)
@@ -205,7 +213,7 @@ endif()
 
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-   include_directories(
+   include_directories(SYSTEM
       ${PROJECT_SOURCE_DIR}/src/win32/include
       ${PROJECT_SOURCE_DIR}/src/win32/compat/include
       )
@@ -325,9 +333,9 @@ INCLUDE(BareosDetermineHaveLowLevelScsiInterface)
 
 INCLUDE(acltypes)
 
-include_directories(${PYTHON_INCLUDE_DIRS})
+include_directories(SYSTEM ${PYTHON_INCLUDE_DIRS})
 
-include_directories(${PYTHON_INCLUDE_PATH})
+include_directories(SYSTEM ${PYTHON_INCLUDE_PATH})
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
 

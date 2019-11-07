@@ -411,7 +411,6 @@ bool DoNativeRestoreInit(JobControlRecord* jcr)
  */
 bool DoNativeRestore(JobControlRecord* jcr)
 {
-  JobDbRecord rjr; /* restore job record */
   int status;
 
   jcr->jr.JobLevel = L_FULL; /* Full restore */
@@ -560,8 +559,8 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
              "  Bareos binary info:     %s\n"
              "  Termination:            %s\n\n"),
            BAREOS, my_name, VERSION, LSMDATE, HOST_OS, DISTNAME, DISTVER,
-           jcr->jr.JobId, jcr->jr.Job, jcr->res.client->resource_name_, sdt, edt,
-           edit_utime(RunTime, elapsed, sizeof(elapsed)),
+           jcr->jr.JobId, jcr->jr.Job, jcr->res.client->resource_name_, sdt,
+           edt, edit_utime(RunTime, elapsed, sizeof(elapsed)),
            edit_uint64_with_commas((uint64_t)jcr->ExpectedFiles, ec1),
            edit_uint64_with_commas((uint64_t)jcr->jr.JobFiles, ec2),
            edit_uint64_with_commas(jcr->jr.JobBytes, ec3), (float)kbps,
@@ -601,8 +600,8 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
              "  Bareos binary info:     %s\n"
              "  Termination:            %s\n\n"),
            BAREOS, my_name, VERSION, LSMDATE, HOST_OS, DISTNAME, DISTVER,
-           jcr->jr.JobId, jcr->jr.Job, jcr->res.client->resource_name_, sdt, edt,
-           edit_utime(RunTime, elapsed, sizeof(elapsed)),
+           jcr->jr.JobId, jcr->jr.Job, jcr->res.client->resource_name_, sdt,
+           edt, edit_utime(RunTime, elapsed, sizeof(elapsed)),
            edit_uint64_with_commas((uint64_t)jcr->ExpectedFiles, ec1),
            edit_uint64_with_commas((uint64_t)jcr->jr.JobFiles, ec2),
            edit_uint64_with_commas(jcr->jr.JobBytes, ec3), (float)kbps,

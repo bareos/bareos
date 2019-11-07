@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -636,14 +636,12 @@ bool DotBvfsGetJobidsCmd(UaContext* ua, const char* cmd)
   if (jr.JobLevel == L_BASE) {
     jobids.add(edit_int64(jr.JobId, ed1));
   } else {
-    FileSetDbRecord fs;
-
     /*
      * If we have the "all" option, we do a search on all defined fileset for
      * this client
      */
     if (FindArg(ua, "all") > 0) {
-      ua->db->FillQuery(query, BareosDb::SQL_QUERY_uar_sel_filesetid,
+      ua->db->FillQuery(query, BareosDb::SQL_QUERY::uar_sel_filesetid,
                         edit_int64(jr.ClientId, ed1));
       ua->db->GetQueryDbids(ua->jcr, query, ids);
     } else {
@@ -657,7 +655,7 @@ bool DotBvfsGetJobidsCmd(UaContext* ua, const char* cmd)
      * Foreach different FileSet, we build a restore jobid list
      */
     for (int i = 0; i < ids.num_ids; i++) {
-      memset(&fs, 0, sizeof(fs));
+      FileSetDbRecord fs;
 
       /*
        * Lookup the FileSet.
@@ -958,7 +956,7 @@ bool DotJobstatusCmd(UaContext* ua, const char* cmd)
     }
   }
 
-  ua->db->FillQuery(select, BareosDb::SQL_QUERY_get_jobstatus_details,
+  ua->db->FillQuery(select, BareosDb::SQL_QUERY::get_jobstatus_details,
                     where.c_str());
 
   if (!OpenClientDb(ua)) { return false; }

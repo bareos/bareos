@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1368,7 +1368,8 @@ extern "C" void* ndmp_thread_server(void* arg)
   memset(pfds, 0, sizeof(struct pollfd) * nfds);
 
   nfds = 0;
-  foreach_alist (fd_ptr, &sockfds) {
+  foreach_alist_null(fd_ptr, &sockfds)
+  {
     pfds[nfds].fd = fd_ptr->fd;
     pfds[nfds].events |= POLL_IN;
     nfds++;
@@ -1411,7 +1412,8 @@ extern "C" void* ndmp_thread_server(void* arg)
     }
 
     cnt = 0;
-    foreach_alist (fd_ptr, &sockfds) {
+    foreach_alist_null(fd_ptr, &sockfds)
+    {
       if (pfds[cnt++].revents & POLLIN) {
 #endif
         /*

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -424,8 +424,9 @@ static void DoExtract(char* devname)
 
   jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE;
   SetupDecompressionBuffers(jcr, &decompress_buf_size);
+
   if (decompress_buf_size > 0) {
-    memset(&jcr->compress, 0, sizeof(CompressionContext));
+    jcr->compress = CompressionContext{};
     jcr->compress.inflate_buffer = GetMemory(decompress_buf_size);
     jcr->compress.inflate_buffer_size = decompress_buf_size;
   }

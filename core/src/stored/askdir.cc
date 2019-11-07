@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -93,7 +93,6 @@ static bool DoGetVolumeInfo(DeviceControlRecord* dcr)
 {
   JobControlRecord* jcr = dcr->jcr;
   BareosSocket* dir = jcr->dir_bsock;
-  VolumeCatalogInfo vol;
   int n;
   int32_t InChanger;
 
@@ -103,7 +102,7 @@ static bool DoGetVolumeInfo(DeviceControlRecord* dcr)
     Mmsg(jcr->errmsg, _("Network error on BnetRecv in req_vol_info.\n"));
     return false;
   }
-  memset(&vol, 0, sizeof(vol));
+  VolumeCatalogInfo vol;
   Dmsg1(debuglevel, "<dird %s", dir->msg);
   n = sscanf(dir->msg, OK_media, vol.VolCatName, &vol.VolCatJobs,
              &vol.VolCatFiles, &vol.VolCatBlocks, &vol.VolCatBytes,

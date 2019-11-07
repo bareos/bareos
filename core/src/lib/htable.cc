@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -40,6 +40,7 @@
  * Kern Sibbald, July MMIII
  */
 
+#include <cinttypes>
 #include "include/hostconfig.h"
 
 #ifdef HAVE_HPUX_OS
@@ -256,7 +257,7 @@ void htable::stats()
   printf("buckets=%d num_items=%d max_items=%d\n", buckets, num_items,
          max_items);
   printf("max hits in a bucket = %d\n", max);
-  printf("total bytes malloced = %lld\n", (long long int)total_size);
+  printf("total bytes malloced = %" PRIu64 "\n", total_size);
   printf("total blocks malloced = %d\n", blocks);
 }
 

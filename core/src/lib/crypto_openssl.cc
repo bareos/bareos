@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -211,8 +211,14 @@ IMPLEMENT_STACK_OF(RecipientInfo)
 
 #else
 /* Openssl Version >= 1.1 */
+
+/* ignore the suggest-override warnings caused by following DEFINE_STACK_OF() */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
 DEFINE_STACK_OF(SignerInfo)
 DEFINE_STACK_OF(RecipientInfo)
+#pragma GCC diagnostic pop
+
 
 #define M_ASN1_OCTET_STRING_free(a) ASN1_STRING_free((ASN1_STRING*)a)
 #define M_ASN1_OCTET_STRING_cmp(a, b) \

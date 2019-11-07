@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,7 +54,9 @@ int get_tape_info_cb(struct ndm_session* sess,
                      unsigned n_info)
 {
   Dmsg0(100, "Get tape info called\n");
-  unsigned int i, j, k;
+  unsigned int i = 0;
+  unsigned int j;
+  unsigned int k;
   const char* what = "tape";
   JobControlRecord* jcr = NULL;
   StorageResource* store = NULL;
@@ -199,7 +201,6 @@ void DoNdmpNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
 
   NdmpDoQuery(ua, NULL, &ndmp_job, me->ndmp_loglevel, query_cbs);
 
-  ndmp_deviceinfo_t* deviceinfo = NULL;
   int i = 0;
   if (!store->runtime_storage_status->ndmp_deviceinfo.empty()) {
     ua->InfoMsg("NDMP Devices for storage %s:(%s)\n", store->resource_name_,
@@ -407,8 +408,6 @@ static void FillVolumeName(vol_list_t* vl, struct smc_element_descriptor* edp)
 static void NdmpFillStorageMappings(StorageResource* store,
                                     struct ndm_session* ndmp_sess)
 {
-  drive_number_t drive;
-  slot_number_t slot, picker;
   struct smc_ctrl_block* smc;
 
   smc = ndmp_sess->control_acb->smc_cb;
@@ -460,7 +459,7 @@ dlist* ndmp_get_vol_list(UaContext* ua,
   smc = ndmp_sess->control_acb->smc_cb;
   for (edp = smc->elem_desc; edp; edp = edp->next) {
     vl = (vol_list_t*)malloc(sizeof(vol_list_t));
-    memset(vl, 0, sizeof(vol_list_t));
+    *vl = vol_list_t{};
 
     if (scan && !listall) {
       /*

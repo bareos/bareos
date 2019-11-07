@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -60,7 +60,7 @@ static void do_ls(char* fname);
 static void do_close(JobControlRecord* jcr);
 static void GetSessionRecord(Device* dev,
                              DeviceRecord* rec,
-                             SESSION_LABEL* sessrec);
+                             Session_Label* sessrec);
 static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec);
 
 static Device* dev;
@@ -70,7 +70,7 @@ static bool list_blocks = false;
 static bool list_jobs = false;
 static DeviceRecord* rec;
 static JobControlRecord* jcr;
-static SESSION_LABEL sessrec;
+static Session_Label sessrec;
 static uint32_t num_files = 0;
 static Attributes* attr;
 
@@ -447,10 +447,11 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
 
 static void GetSessionRecord(Device* dev,
                              DeviceRecord* rec,
-                             SESSION_LABEL* sessrec)
+                             Session_Label* sessrec)
 {
   const char* rtype;
-  memset(sessrec, 0, sizeof(SESSION_LABEL));
+  Session_Label empty_Session_Label;
+  *sessrec = empty_Session_Label;
   jcr->JobId = 0;
   switch (rec->FileIndex) {
     case PRE_LABEL:

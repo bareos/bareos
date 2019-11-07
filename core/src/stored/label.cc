@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -317,7 +317,6 @@ static bool WriteVolumeLabelToBlock(DeviceControlRecord* dcr)
 
   Dmsg0(130, "write Label in WriteVolumeLabelToBlock()\n");
 
-  memset(&rec, 0, sizeof(rec));
   rec.data = GetMemory(SER_LENGTH_Volume_Label);
   EmptyBlock(block); /* Volume label always at beginning */
 
@@ -586,8 +585,10 @@ void CreateVolumeLabel(Device* dev, const char* VolName, const char* PoolName)
     dev->VolHdr.HostName[0] = 0;
   }
   bstrncpy(dev->VolHdr.LabelProg, my_name, sizeof(dev->VolHdr.LabelProg));
-  sprintf(dev->VolHdr.ProgVersion, "Ver. %s %s", VERSION, BDATE);
-  sprintf(dev->VolHdr.ProgDate, "Build %s %s", __DATE__, __TIME__);
+  snprintf(dev->VolHdr.ProgVersion, sizeof(dev->VolHdr.ProgVersion),
+           "Ver. %.32s %.12s", VERSION, BDATE);
+  snprintf(dev->VolHdr.ProgDate, sizeof(dev->VolHdr.ProgDate), "Build %s %s",
+           __DATE__, __TIME__);
   dev->SetLabeled(); /* set has Bareos label */
   if (debug_level >= 90) { DumpVolumeLabel(dev); }
 }
@@ -781,7 +782,7 @@ bool UnserVolumeLabel(Device* dev, DeviceRecord* rec)
   return true;
 }
 
-bool UnserSessionLabel(SESSION_LABEL* label, DeviceRecord* rec)
+bool UnserSessionLabel(Session_Label* label, DeviceRecord* rec)
 {
   ser_declare;
 
@@ -903,7 +904,7 @@ static void DumpSessionLabel(DeviceRecord* rec, const char* type)
   int dbl;
   struct date_time dt;
   struct tm tm;
-  SESSION_LABEL label;
+  Session_Label label;
   char ec1[30], ec2[30], ec3[30], ec4[30], ec5[30], ec6[30], ec7[30];
 
   UnserSessionLabel(&label, rec);
@@ -1031,7 +1032,7 @@ void DumpLabelRecord(Device* dev, DeviceRecord* rec, bool verbose)
         break;
     }
   } else {
-    SESSION_LABEL label;
+    Session_Label label;
     char dt[50];
     switch (rec->FileIndex) {
       case SOS_LABEL:

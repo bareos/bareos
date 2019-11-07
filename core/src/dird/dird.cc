@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -67,6 +67,7 @@ using namespace directordaemon;
 
 /* Forward referenced subroutines */
 namespace directordaemon {
+
 #if !defined(HAVE_WIN32)
 static
 #endif
@@ -232,7 +233,6 @@ int main(int argc, char* argv[])
   char* uid = NULL;
   char* gid = NULL;
 
-  start_heap = sbrk(0);
   setlocale(LC_ALL, "");
   bindtextdomain("bareos", LOCALEDIR);
   textdomain("bareos");
@@ -543,7 +543,7 @@ static bool InitSighandlerSighup()
   bool retval = false;
 #if !defined(HAVE_WIN32)
   sigset_t block_mask;
-  struct sigaction action;
+  struct sigaction action = {};
 
   /*
    *  while handling SIGHUP signal,
@@ -552,7 +552,6 @@ static bool InitSighandlerSighup()
   sigemptyset(&block_mask);
   sigaddset(&block_mask, SIGHUP);
 
-  memset(&action, 0, sizeof(action));
   action.sa_sigaction = SighandlerReloadConfig;
   action.sa_mask = block_mask;
   action.sa_flags = SA_SIGINFO;
@@ -993,7 +992,6 @@ static bool CheckCatalog(cat_op mode)
       }
       Dmsg2(500, "create cat=%s for client=%s\n",
             client->catalog->resource_name_, client->resource_name_);
-      memset(&cr, 0, sizeof(cr));
       bstrncpy(cr.Name, client->resource_name_, sizeof(cr.Name));
       db->CreateClientRecord(NULL, &cr);
     }
@@ -1003,8 +1001,6 @@ static bool CheckCatalog(cat_op mode)
     foreach_res (store, R_STORAGE) {
       StorageDbRecord sr;
       MediaTypeDbRecord mtr;
-      memset(&sr, 0, sizeof(sr));
-      memset(&mtr, 0, sizeof(mtr));
       if (store->media_type) {
         bstrncpy(mtr.MediaType, store->media_type, sizeof(mtr.MediaType));
         mtr.ReadOnly = 0;
@@ -1062,8 +1058,8 @@ static bool CheckCatalog(cat_op mode)
     }
     /* cleanup old job records */
     if (mode == UPDATE_AND_FIX) {
-      db->SqlQuery(BareosDb::SQL_QUERY_cleanup_created_job);
-      db->SqlQuery(BareosDb::SQL_QUERY_cleanup_running_job);
+      db->SqlQuery(BareosDb::SQL_QUERY::cleanup_created_job);
+      db->SqlQuery(BareosDb::SQL_QUERY::cleanup_running_job);
     }
 
     /* Set type in global for debugging */

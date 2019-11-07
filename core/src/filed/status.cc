@@ -60,7 +60,10 @@ static char DotStatusJob[] = "JobId=%d JobStatus=%c JobErrors=%d\n";
 static int privs = 0;
 #endif
 #ifdef WIN32_VSS
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #include "vss.h"
+#pragma GCC diagnostic pop
 #define VSS " VSS"
 #else
 #define VSS ""
@@ -81,7 +84,7 @@ static void ListStatusHeader(StatusPacket* sp)
   int len;
   char dt[MAX_TIME_LENGTH];
   PoolMem msg(PM_MESSAGE);
-  char b1[32], b2[32], b3[32], b4[32], b5[35];
+  char b1[32];
 #if defined(HAVE_WIN32)
   char buf[300];
 #endif

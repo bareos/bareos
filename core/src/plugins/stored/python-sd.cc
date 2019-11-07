@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2014 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,8 +26,13 @@
  * @file
  * Python Storage daemon Plugin program
  */
+#if defined(HAVE_WIN32)
 #include "include/bareos.h"
 #include <Python.h>
+#else
+#include <Python.h>
+#include "include/bareos.h"
+#endif
 #include "stored/stored.h"
 
 using namespace storagedaemon;

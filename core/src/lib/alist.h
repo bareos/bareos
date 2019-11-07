@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -40,34 +40,44 @@
  * Loop var through each member of list using an decreasing index.
  */
 #ifdef HAVE_TYPEOF
-#define foreach_alist(var, list)                                    \
+#define foreach_alist(var, list)                                 \
+  for ((var) = list ? (typeof((var)))(list)->first() : 0; (var); \
+       (var) = (typeof(var))(list)->next())
+
+#define foreach_alist_null(var, list)                               \
   for ((var) = list ? (typeof((var)))(list)->first() : NULL; (var); \
        (var) = (typeof(var))(list)->next())
 
-#define foreach_alist_index(inx, var, list)                                  \
-  for ((inx) = 0; list ? ((var) = (typeof((var)))(list)->get((inx))) : NULL; \
+#define foreach_alist_index(inx, var, list)                              \
+  for ((inx) = 0;                                                        \
+       (list != NULL) ? ((var) = (typeof((var)))(list)->get((inx))) : 0; \
        (inx)++)
 
-#define foreach_alist_rindex(inx, var, list)    \
-  for (list ? (inx) = ((list)->size() - 1) : 0; \
-       list ? ((var) = (typeof((var)))(list)->get((inx))) : NULL; (inx)--)
+#define foreach_alist_rindex(inx, var, list)                             \
+  for ((list != NULL) ? (inx) = ((list)->size() - 1) : 0;                \
+       (list != NULL) ? ((var) = (typeof((var)))(list)->get((inx))) : 0; \
+       (inx)--)
 
 #else
-#define foreach_alist(var, list)                                            \
+#define foreach_alist(var, list)                                         \
+  for (list ? (*((void**)&(var)) = (void*)((list)->first())) : 0; (var); \
+       (*((void**)&(var)) = (void*)((list)->next())))
+
+#define foreach_alist_null(var, list)                                       \
   for (list ? (*((void**)&(var)) = (void*)((list)->first())) : NULL; (var); \
        (*((void**)&(var)) = (void*)((list)->next())))
 
-
-#define foreach_alist_index(inx, var, list)                               \
-  for ((inx) = 0;                                                         \
-       list ? ((*((void**)&(var)) = (void*)((list)->get((inx))))) : NULL; \
+#define foreach_alist_index(inx, var, list)                                 \
+  for ((inx) = 0;                                                           \
+       (list != NULL) ? ((*((void**)&(var)) = (void*)((list)->get((inx))))) \
+                      : 0;                                                  \
        (inx)++)
 
-#define foreach_alist_rindex(inx, var, list)                              \
-  for (list ? (inx) = ((list)->size() - 1) : 0;                           \
-       list ? ((*((void**)&(var)) = (void*)((list)->get((inx))))) : NULL; \
+#define foreach_alist_rindex(inx, var, list)                                \
+  for ((list != NULL) ? (inx) = ((list)->size() - 1) : 0;                   \
+       (list != NULL) ? ((*((void**)&(var)) = (void*)((list)->get((inx))))) \
+                      : 0;                                                  \
        (inx)--)
-
 #endif
 
 /**

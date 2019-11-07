@@ -13,6 +13,7 @@
 #define BUILD_PLUGIN
 #define BUILDING_DLL /* required for Windows plugin */
 
+#include <cinttypes>
 #include "include/bareos.h"
 #include "filed/fd_plugins.h"
 
@@ -173,10 +174,11 @@ static bRC handlePluginEvent(bpContext* ctx, bEvent* event, void* value)
       printf("plugin: BackupEnd\n");
       break;
     case bEventLevel:
-      printf("plugin: JobLevel=%c %ld\n", (int)(int64_t)value, (int64_t)value);
+      printf("plugin: JobLevel=%c %" PRId64 "\n", (int)(int64_t)value,
+             (int64_t)value);
       break;
     case bEventSince:
-      printf("plugin: since=%ld\n", (int64_t)value);
+      printf("plugin: since=%" PRId64 "\n", (int64_t)value);
       break;
     case bEventStartRestoreJob:
       printf("plugin: StartRestoreJob\n");

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -894,7 +894,6 @@ DBId_t GetOrCreatePoolRecord(JobControlRecord* jcr, char* pool_name)
 {
   PoolDbRecord pr;
 
-  memset(&pr, 0, sizeof(pr));
   bstrncpy(pr.Name, pool_name, sizeof(pr.Name));
   Dmsg1(110, "get_or_create_pool=%s\n", pool_name);
 
@@ -1357,7 +1356,6 @@ bool GetOrCreateClientRecord(JobControlRecord* jcr)
 {
   ClientDbRecord cr;
 
-  memset(&cr, 0, sizeof(cr));
   bstrncpy(cr.Name, jcr->res.client->resource_name_, sizeof(cr.Name));
   cr.AutoPrune = jcr->res.client->AutoPrune;
   cr.FileRetention = jcr->res.client->FileRetention;
@@ -1401,7 +1399,6 @@ bool GetOrCreateFilesetRecord(JobControlRecord* jcr)
   /*
    * Get or Create FileSet record
    */
-  memset(&fsr, 0, sizeof(fsr));
   bstrncpy(fsr.FileSet, jcr->res.fileset->resource_name_, sizeof(fsr.FileSet));
   if (jcr->res.fileset->have_MD5) {
     MD5_CTX md5c;

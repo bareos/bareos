@@ -43,6 +43,7 @@
 #include "dird/ua_input.h"
 #include "dird/ua_server.h"
 #include "lib/edit.h"
+#include "lib/tree.h"
 #include "lib/util.h"
 
 namespace directordaemon {

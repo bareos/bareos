@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -50,7 +50,8 @@ bool FillBackupEnvironment(JobControlRecord* jcr,
                            char* filesystem,
                            struct ndm_job_param* job)
 {
-  int i, j, cnt;
+  uint64_t i;
+  int j, cnt;
   bool exclude;
   FileOptions* fo;
   ndmp9_pval pv;
@@ -297,7 +298,6 @@ void NdmpBackupCleanup(JobControlRecord* jcr, int TermCode)
   ClientDbRecord cr;
 
   Dmsg2(100, "Enter NdmpBackupCleanup %d %c\n", TermCode, TermCode);
-  memset(&cr, 0, sizeof(cr));
 
   if (jcr->is_JobStatus(JS_Terminated) &&
       (jcr->JobErrors || jcr->SDErrors || jcr->JobWarnings)) {

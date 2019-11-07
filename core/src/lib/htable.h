@@ -109,6 +109,7 @@ class htable {
   void grow_table();                              /* Grow the table */
 
  public:
+  htable() = default;
   htable(void* item,
          void* link,
          int tsize = 31,

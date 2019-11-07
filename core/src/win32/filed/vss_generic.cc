@@ -108,7 +108,10 @@ class IXMLDOMDocument;
 
 #define VSS_ERROR_OBJECT_ALREADY_EXISTS 0x8004230D
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #include "vss.h"
+#pragma GCC diagnostic pop
 
 using namespace filedaemon;
 

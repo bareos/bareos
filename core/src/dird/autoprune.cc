@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -87,10 +87,9 @@ void PruneVolumes(JobControlRecord* jcr,
 {
   int i;
   int count;
-  PoolDbRecord spr;
   UaContext* ua;
   dbid_list ids;
-  struct del_ctx prune_list;
+  del_ctx prune_list;
   PoolMem query(PM_MESSAGE);
   char ed1[50], ed2[100], ed3[50];
 
@@ -100,7 +99,6 @@ void PruneVolumes(JobControlRecord* jcr,
     return;
   }
 
-  memset(&prune_list, 0, sizeof(prune_list));
   prune_list.max_ids = 10000;
   prune_list.JobId = (JobId_t*)malloc(sizeof(JobId_t) * prune_list.max_ids);
 
@@ -115,7 +113,7 @@ void PruneVolumes(JobControlRecord* jcr,
   /*
    * Get Pool record for Scratch Pool
    */
-  memset(&spr, 0, sizeof(spr));
+  PoolDbRecord spr;
   bstrncpy(spr.Name, "Scratch", sizeof(spr.Name));
   if (jcr->db->GetPoolRecord(jcr, &spr)) {
     edit_int64(spr.PoolId, ed2);
@@ -168,7 +166,6 @@ void PruneVolumes(JobControlRecord* jcr,
   for (i = 0; i < ids.num_ids; i++) {
     MediaDbRecord lmr;
 
-    memset(&lmr, 0, sizeof(lmr));
     lmr.MediaId = ids.DBId[i];
     Dmsg1(100, "Get record MediaId=%d\n", (int)lmr.MediaId);
     if (!jcr->db->GetMediaRecord(jcr, &lmr)) {

@@ -32,6 +32,7 @@
 #include "dird/dird_globals.h"
 #include "dird/storage.h"
 #include "lib/edit.h"
+#include "lib/tree.h"
 
 #if HAVE_NDMP
 
@@ -458,7 +459,6 @@ cleanup:
  */
 bool DoNdmpRestoreNdmpNative(JobControlRecord* jcr)
 {
-  JobDbRecord rjr; /* restore job record */
   int status;
 
   jcr->jr.JobLevel = L_FULL; /* Full restore */

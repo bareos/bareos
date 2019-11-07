@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -180,7 +180,7 @@ bool BareosDb::CheckMaxConnections(JobControlRecord* jcr,
   /*
    * Check max_connections setting
    */
-  FillQuery(query, SQL_QUERY_sql_get_max_connections);
+  FillQuery(query, SQL_QUERY::sql_get_max_connections);
   if (!SqlQueryWithHandler(query.c_str(), DbMaxConnectionsHandler, &context)) {
     Jmsg(jcr, M_ERROR, 0, "Can't verify max_connections settings %s", errmsg);
     return false;
@@ -723,10 +723,11 @@ int BareosDb::ListResult(JobControlRecord* jcr,
 
   num_fields = SqlNumFields();
   switch (type) {
+    case E_LIST_INIT:
     case NF_LIST:
     case RAW_LIST:
       /*
-       * No need to calculate things like column widths for unformated or raw
+       * No need to calculate things like column widths for unformatted or raw
        * output.
        */
       break;
@@ -779,6 +780,7 @@ int BareosDb::ListResult(JobControlRecord* jcr,
   filters_enabled = send->HasFilters();
 
   switch (type) {
+    case E_LIST_INIT:
     case NF_LIST:
     case RAW_LIST:
       Dmsg1(800, "ListResult starts second loop looking at %d fields\n",

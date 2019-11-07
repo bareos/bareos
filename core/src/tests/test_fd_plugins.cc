@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -98,7 +98,11 @@ TEST(fd, fd_plugins)
 
   OSDependentInit();
 
-  getcwd(plugin_dir, sizeof(plugin_dir) - 1);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
+  char* cwd = getcwd(plugin_dir, sizeof(plugin_dir) - 1);
+#pragma GCC diagnostic pop
+
   LoadFdPlugins(plugin_dir, NULL);
 
   jcr1->JobId = 111;

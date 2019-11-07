@@ -37,7 +37,8 @@ static TREE_NODE* search_and_insert_tree_node(char* fname,
                                               int type,
                                               TREE_ROOT* root,
                                               TREE_NODE* parent);
-static char* tree_alloc(TREE_ROOT* root, int size);
+template <typename T>
+static T* tree_alloc(TREE_ROOT* root, int size);
 
 /*
  * NOTE !!!!! we turn off Debug messages for performance reasons.
@@ -64,7 +65,7 @@ static void MallocBuf(TREE_ROOT* root, int size)
   mem->next = root->mem;
   root->mem = mem;
   mem->mem = mem->first;
-  mem->rem = (char*)mem + size - mem->mem;
+  mem->rem = (char*)mem + size - (char*)mem->mem;
   Dmsg2(200, "malloc buf size=%d rem=%d\n", size, mem->rem);
 }
 
@@ -82,8 +83,8 @@ TREE_ROOT* new_tree(int count)
   if (count < 1000) { /* minimum tree size */
     count = 1000;
   }
-  root = (TREE_ROOT*)malloc(sizeof(TREE_ROOT));
-  memset(root, 0, sizeof(TREE_ROOT));
+  root = static_cast<TREE_ROOT*>(malloc(sizeof(TREE_ROOT)));
+  root = new (root) TREE_ROOT();
 
   /*
    * Assume filename + node  = 40 characters average length
@@ -108,8 +109,8 @@ static TREE_NODE* new_tree_node(TREE_ROOT* root)
 {
   TREE_NODE* node;
   int size = sizeof(TREE_NODE);
-  node = (TREE_NODE*)tree_alloc(root, size);
-  memset(node, 0, size);
+  node = tree_alloc<TREE_NODE>(root, size);
+  node = new (node) TREE_NODE();
   node->delta_seq = -1;
   return node;
 }
@@ -121,14 +122,14 @@ static void FreeTreeNode(TREE_ROOT* root)
 {
   int asize = BALIGN(sizeof(TREE_NODE));
   root->mem->rem += asize;
-  root->mem->mem -= asize;
+  root->mem->mem = (char*)root->mem->mem - asize;
 }
 
 void TreeRemoveNode(TREE_ROOT* root, TREE_NODE* node)
 {
   int asize = BALIGN(sizeof(TREE_NODE));
   node->parent->child.remove(node);
-  if ((root->mem->mem - asize) == (char*)node) {
+  if (((char*)root->mem->mem - asize) == (char*)node) {
     FreeTreeNode(root);
   } else {
     Dmsg0(0, "Can't release tree node\n");
@@ -140,9 +141,10 @@ void TreeRemoveNode(TREE_ROOT* root, TREE_NODE* node)
  * Keep the pointers properly aligned by allocating
  * sizes that are aligned.
  */
-static char* tree_alloc(TREE_ROOT* root, int size)
+template <typename T>
+static T* tree_alloc(TREE_ROOT* root, int size)
 {
-  char* buf;
+  T* buf;
   int asize = BALIGN(size);
 
   if (root->mem->rem < asize) {
@@ -155,8 +157,8 @@ static char* tree_alloc(TREE_ROOT* root, int size)
     MallocBuf(root, mb_size);
   }
   root->mem->rem -= asize;
-  buf = root->mem->mem;
-  root->mem->mem += asize;
+  buf = static_cast<T*>(root->mem->mem);
+  root->mem->mem = (char*)root->mem->mem + asize;
   return buf;
 }
 
@@ -195,7 +197,7 @@ void TreeAddDeltaPart(TREE_ROOT* root,
                       int32_t FileIndex)
 {
   struct delta_list* elt =
-      (struct delta_list*)tree_alloc(root, sizeof(struct delta_list));
+      tree_alloc<delta_list>(root, sizeof(struct delta_list));
 
   elt->next = node->delta_list;
   elt->JobId = JobId;
@@ -356,7 +358,7 @@ static TREE_NODE* search_and_insert_tree_node(char* fname,
    * It was not found, but is now inserted
    */
   node->fname_len = strlen(fname);
-  node->fname = tree_alloc(root, node->fname_len + 1);
+  node->fname = tree_alloc<char>(root, node->fname_len + 1);
   strcpy(node->fname, fname);
   node->parent = parent;
   node->type = type;

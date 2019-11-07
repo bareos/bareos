@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1000,7 +1000,7 @@ void Device::SetUnload()
 void Device::ClearVolhdr()
 {
   Dmsg1(100, "Clear volhdr vol=%s\n", VolHdr.VolumeName);
-  memset(&VolHdr, 0, sizeof(VolHdr));
+  VolHdr = Volume_Label{};
   setVolCatInfo(false);
 }
 
@@ -1065,7 +1065,7 @@ bool Device::close(DeviceControlRecord* dcr)
   EndFile = EndBlock = 0;
   open_mode = 0;
   ClearVolhdr();
-  memset(&VolCatInfo, 0, sizeof(VolCatInfo));
+  VolCatInfo = VolumeCatalogInfo{};
   if (tid) {
     StopThreadTimer(tid);
     tid = 0;

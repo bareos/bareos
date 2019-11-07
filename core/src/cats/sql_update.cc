@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -133,7 +133,7 @@ int BareosDb::UpdateStats(JobControlRecord* jcr, utime_t age)
   DbLock(this);
 
   edit_uint64(now - age, ed1);
-  FillQuery(SQL_QUERY_fill_jobhisto, ed1);
+  FillQuery(SQL_QUERY::fill_jobhisto, ed1);
   if (QUERY_DB(jcr, cmd)) {
     rows = SqlAffectedRows();
   } else {
@@ -240,7 +240,7 @@ bool BareosDb::UpdateCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr)
   DbLock(this);
 
   EscapeString(jcr, esc, cr->Counter, strlen(cr->Counter));
-  FillQuery(SQL_QUERY_update_counter_values, cr->MinValue, cr->MaxValue,
+  FillQuery(SQL_QUERY::update_counter_values, cr->MinValue, cr->MaxValue,
             cr->CurrentValue, cr->WrapCounter, esc);
   retval = UPDATE_DB(jcr, cmd);
 

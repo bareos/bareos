@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -55,7 +55,7 @@ bool BareosDb::ListSqlQuery(JobControlRecord* jcr,
 }
 
 bool BareosDb::ListSqlQuery(JobControlRecord* jcr,
-                            BareosDb::SQL_QUERY_ENUM query,
+                            SQL_QUERY query,
                             OutputFormatter* sendit,
                             e_list_type type,
                             bool verbose)
@@ -92,7 +92,7 @@ bail_out:
 }
 
 bool BareosDb::ListSqlQuery(JobControlRecord* jcr,
-                            BareosDb::SQL_QUERY_ENUM query,
+                            SQL_QUERY query,
                             OutputFormatter* sendit,
                             e_list_type type,
                             const char* description,
@@ -237,18 +237,18 @@ void BareosDb::ListMediaRecords(JobControlRecord* jcr,
   if (count) {
     /* NOTE: ACLs are ignored. */
     if (mdbr->VolumeName[0] != 0) {
-      FillQuery(query, SQL_QUERY_list_volumes_by_name_count_1, esc);
+      FillQuery(query, SQL_QUERY::list_volumes_by_name_count_1, esc);
     } else if (mdbr->PoolId > 0) {
-      FillQuery(query, SQL_QUERY_list_volumes_by_poolid_count_1,
+      FillQuery(query, SQL_QUERY::list_volumes_by_poolid_count_1,
                 edit_int64(mdbr->PoolId, ed1));
     } else {
-      FillQuery(query, SQL_QUERY_list_volumes_count_0);
+      FillQuery(query, SQL_QUERY::list_volumes_count_0);
     }
   } else {
     if (type == VERT_LIST) {
-      FillQuery(select, SQL_QUERY_list_volumes_select_long_0);
+      FillQuery(select, SQL_QUERY::list_volumes_select_long_0);
     } else {
-      FillQuery(select, SQL_QUERY_list_volumes_select_0);
+      FillQuery(select, SQL_QUERY::list_volumes_select_0);
     }
 
     if (mdbr->VolumeName[0] != 0) {
@@ -480,9 +480,9 @@ void BareosDb::ListJoblogRecords(JobControlRecord* jcr,
 
   DbLock(this);
   if (count) {
-    FillQuery(SQL_QUERY_list_joblog_count_1, edit_int64(JobId, ed1));
+    FillQuery(SQL_QUERY::list_joblog_count_1, edit_int64(JobId, ed1));
   } else {
-    FillQuery(SQL_QUERY_list_joblog_2, edit_int64(JobId, ed1), range);
+    FillQuery(SQL_QUERY::list_joblog_2, edit_int64(JobId, ed1), range);
     if (type != VERT_LIST) {
       /*
        * When something else then a vertical list is requested set the list type
@@ -606,18 +606,18 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
   DbLock(this);
 
   if (count) {
-    FillQuery(SQL_QUERY_list_jobs_count, selection.c_str(), range);
+    FillQuery(SQL_QUERY::list_jobs_count, selection.c_str(), range);
   } else if (last) {
     if (type == VERT_LIST) {
-      FillQuery(SQL_QUERY_list_jobs_long_last, selection.c_str(), range);
+      FillQuery(SQL_QUERY::list_jobs_long_last, selection.c_str(), range);
     } else {
-      FillQuery(SQL_QUERY_list_jobs_last, selection.c_str(), range);
+      FillQuery(SQL_QUERY::list_jobs_last, selection.c_str(), range);
     }
   } else {
     if (type == VERT_LIST) {
-      FillQuery(SQL_QUERY_list_jobs_long, selection.c_str(), range);
+      FillQuery(SQL_QUERY::list_jobs_long, selection.c_str(), range);
     } else {
-      FillQuery(SQL_QUERY_list_jobs, selection.c_str(), range);
+      FillQuery(SQL_QUERY::list_jobs, selection.c_str(), range);
     }
   }
 

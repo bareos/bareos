@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -114,15 +114,10 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
   PoolMem unwanted_volumes(PM_MESSAGE);
   int index, ok, label, writing;
   POOLMEM* omsg;
-  PoolDbRecord pr;
   uint32_t Stripe, Copy;
   uint64_t MediaId;
   utime_t VolFirstWritten;
   utime_t VolLastWritten;
-
-  memset(&sdmr, 0, sizeof(sdmr));
-  memset(&jm, 0, sizeof(jm));
-  memset(&mr, 0, sizeof(mr));
 
   /*
    * Request to find next appendable Volume for this Job
@@ -144,7 +139,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
   unwanted_volumes.check_size(bs->message_length);
   if (sscanf(bs->msg, Find_media, &Job, &index, &pool_name, &mr.MediaType,
              unwanted_volumes.c_str()) == 5) {
-    memset(&pr, 0, sizeof(pr));
+    PoolDbRecord pr;
     bstrncpy(pr.Name, pool_name, sizeof(pr.Name));
     UnbashSpaces(pr.Name);
     ok = jcr->db->GetPoolRecord(jcr, &pr);
@@ -552,7 +547,6 @@ static void UpdateAttribute(JobControlRecord* jcr,
     case STREAM_RESTORE_OBJECT: {
       RestoreObjectDbRecord ro;
 
-      memset(&ro, 0, sizeof(ro));
       ro.Stream = Stream;
       ro.FileIndex = FileIndex;
       if (jcr->mig_jcr) {

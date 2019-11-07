@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,10 +44,10 @@
 #ifdef DIRECTOR_DAEMON
 #include "cats/cats.h"
 #include "dird/client_connection_handshake_mode.h"
+typedef struct s_tree_root TREE_ROOT;
 #endif
 
 #include "lib/alist.h"
-#include "lib/tree.h"
 #include "lib/volume_session_info.h"
 
 class dlist;
@@ -289,18 +289,18 @@ struct Resources {
 
 /* clang-format off */
 struct CompressionContext {
-  POOLMEM* deflate_buffer = nullptr; /**< Buffer used for deflation (compression) */
-  POOLMEM* inflate_buffer = nullptr; /**< Buffer used for inflation (decompression) */
-  uint32_t deflate_buffer_size = 0; /**< Length of deflation buffer */
-  uint32_t inflate_buffer_size = 0; /**< Length of inflation buffer */
+  POOLMEM* deflate_buffer{nullptr}; /**< Buffer used for deflation (compression) */
+  POOLMEM* inflate_buffer{nullptr}; /**< Buffer used for inflation (decompression) */
+  uint32_t deflate_buffer_size{0}; /**< Length of deflation buffer */
+  uint32_t inflate_buffer_size{0}; /**< Length of inflation buffer */
   struct {
 #ifdef HAVE_LIBZ
-    void* pZLIB = nullptr; /**< ZLIB compression session data */
+    void* pZLIB{nullptr}; /**< ZLIB compression session data */
 #endif
 #ifdef HAVE_LZO
-    void* pLZO = nullptr; /**< LZO compression session data */
+    void* pLZO{nullptr}; /**< LZO compression session data */
 #endif
-    void* pZFAST = nullptr; /**< FASTLZ compression session data */
+    void* pZFAST{nullptr}; /**< FASTLZ compression session data */
   } workset;
 };
 /* clang-format on */

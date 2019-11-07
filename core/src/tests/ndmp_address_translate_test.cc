@@ -26,7 +26,7 @@
 #include "dird/storage.h"
 
 
-void print_smc_aa(directordaemon::smc_element_address_assignment smc_elem_aa)
+void print_smc_aa(smc_element_address_assignment smc_elem_aa)
 {
   printf("drive: %d, %d\n", smc_elem_aa.dte_addr, smc_elem_aa.dte_count);
   printf("robot: %d, %d\n", smc_elem_aa.mte_addr, smc_elem_aa.mte_count);
@@ -34,7 +34,7 @@ void print_smc_aa(directordaemon::smc_element_address_assignment smc_elem_aa)
   printf("slot: %d, %d\n\n", smc_elem_aa.se_addr, smc_elem_aa.se_count);
 }
 
-void init_smc_aa(directordaemon::smc_element_address_assignment& smc_elem_aa)
+void init_smc_aa(smc_element_address_assignment& smc_elem_aa)
 {
   // Tapes Drives
   smc_elem_aa.dte_addr = 1000;
@@ -81,7 +81,7 @@ SLOT   ADDR
 
 TEST(ndmp, slot_to_element_addr)
 {
-  directordaemon::smc_element_address_assignment smc_elem_aa;
+  smc_element_address_assignment smc_elem_aa;
 
   init_smc_aa(smc_elem_aa);
   print_smc_aa(smc_elem_aa);
@@ -136,7 +136,7 @@ TEST(ndmp, slot_to_element_addr)
 
 TEST(ndmp, element_addr_to_slot)
 {
-  directordaemon::smc_element_address_assignment smc_elem_aa;
+  smc_element_address_assignment smc_elem_aa;
 
   init_smc_aa(smc_elem_aa);
   print_smc_aa(smc_elem_aa);

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,8 +28,14 @@
  */
 #define BUILD_PLUGIN
 
+#if defined(HAVE_WIN32)
 #include "include/bareos.h"
 #include <Python.h>
+#else
+#include <Python.h>
+#include "include/bareos.h"
+#endif
+
 #include "filed/fd_plugins.h"
 #include "plugins/filed/fd_common.h"
 #include "python-fd.h"
@@ -1562,8 +1568,7 @@ static inline bool PySavePacketToNative(PySavePacket* pSavePkt,
           char* buf;
 
           if (p_ctx->object_name) { free(p_ctx->object_name); }
-          p_ctx->object_name =
-              strdup(PyString_AsString(pSavePkt->object_name));
+          p_ctx->object_name = strdup(PyString_AsString(pSavePkt->object_name));
           sp->object_name = p_ctx->object_name;
 
           sp->object_len = pSavePkt->object_len;

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -376,7 +376,6 @@ int SendJobInfoToFileDaemon(JobControlRecord* jcr)
     } else if (jcr->db) {
       ClientDbRecord cr;
 
-      memset(&cr, 0, sizeof(cr));
       bstrncpy(cr.Name, jcr->res.client->resource_name_, sizeof(cr.Name));
       cr.AutoPrune = jcr->res.client->AutoPrune;
       cr.FileRetention = jcr->res.client->FileRetention;
@@ -989,7 +988,7 @@ bool SendPluginOptions(JobControlRecord* jcr)
 
       fd->fsend(pluginoptionscmd, cur_plugin_options.c_str());
       if (!response(jcr, fd, OKPluginOptions, "PluginOptions", DISPLAY_ERROR)) {
-      	Jmsg(jcr, M_FATAL, 0, _("Plugin options failed.\n"));
+        Jmsg(jcr, M_FATAL, 0, _("Plugin options failed.\n"));
         return false;
       }
     }
@@ -1009,18 +1008,18 @@ static void SendGlobalRestoreObjects(JobControlRecord* jcr,
   /*
    * Send restore objects for all jobs involved
    */
-  jcr->db->FillQuery(query, BareosDb::SQL_QUERY_get_restore_objects,
+  jcr->db->FillQuery(query, BareosDb::SQL_QUERY::get_restore_objects,
                      jcr->JobIds, FT_RESTORE_FIRST);
   jcr->db->SqlQuery(query.c_str(), RestoreObjectHandler, (void*)octx);
 
-  jcr->db->FillQuery(query, BareosDb::SQL_QUERY_get_restore_objects,
+  jcr->db->FillQuery(query, BareosDb::SQL_QUERY::get_restore_objects,
                      jcr->JobIds, FT_PLUGIN_CONFIG);
   jcr->db->SqlQuery(query.c_str(), RestoreObjectHandler, (void*)octx);
 
   /*
    * Send config objects for the current restore job
    */
-  jcr->db->FillQuery(query, BareosDb::SQL_QUERY_get_restore_objects,
+  jcr->db->FillQuery(query, BareosDb::SQL_QUERY::get_restore_objects,
                      edit_uint64(jcr->JobId, ed1), FT_PLUGIN_CONFIG_FILLED);
   jcr->db->SqlQuery(query.c_str(), RestoreObjectHandler, (void*)octx);
 }
@@ -1035,11 +1034,11 @@ static void SendJobSpecificRestoreObjects(JobControlRecord* jcr,
   /*
    * Send restore objects for specific JobId.
    */
-  jcr->db->FillQuery(query, BareosDb::SQL_QUERY_get_restore_objects,
+  jcr->db->FillQuery(query, BareosDb::SQL_QUERY::get_restore_objects,
                      edit_uint64(JobId, ed1), FT_RESTORE_FIRST);
   jcr->db->SqlQuery(query.c_str(), RestoreObjectHandler, (void*)octx);
 
-  jcr->db->FillQuery(query, BareosDb::SQL_QUERY_get_restore_objects,
+  jcr->db->FillQuery(query, BareosDb::SQL_QUERY::get_restore_objects,
                      edit_uint64(JobId, ed1), FT_PLUGIN_CONFIG);
   jcr->db->SqlQuery(query.c_str(), RestoreObjectHandler, (void*)octx);
 }

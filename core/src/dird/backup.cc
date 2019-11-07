@@ -137,7 +137,8 @@ static inline bool ValidateStorage(JobControlRecord* jcr)
       default:
         Jmsg(jcr, M_FATAL, 0,
              _("Storage %s has illegal backup protocol %s for Native backup\n"),
-             store->resource_name_, AuthenticationProtocolTypeToString(store->Protocol));
+             store->resource_name_,
+             AuthenticationProtocolTypeToString(store->Protocol));
         return false;
     }
   }
@@ -783,7 +784,6 @@ void NativeBackupCleanup(JobControlRecord* jcr, int TermCode)
   ClientDbRecord cr;
 
   Dmsg2(100, "Enter backup_cleanup %d %c\n", TermCode, TermCode);
-  memset(&cr, 0, sizeof(cr));
 
   if (jcr->is_JobStatus(JS_Terminated) &&
       (jcr->JobErrors || jcr->SDErrors || jcr->JobWarnings)) {
@@ -941,7 +941,6 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
             secure_erase_status,
             compress_algo_list;
 
-   memset(&mr, 0, sizeof(mr));
    bstrftimes(schedt, sizeof(schedt), jcr->jr.SchedTime);
    bstrftimes(sdt, sizeof(sdt), jcr->jr.StartTime);
    bstrftimes(edt, sizeof(edt), jcr->jr.EndTime);

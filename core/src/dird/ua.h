@@ -34,11 +34,12 @@
 #include "include/bareos.h"
 #include "lib/bsock.h"
 #include "lib/output_formatter.h"
-#include "lib/tree.h"
 
 class JobControlRecord;
 class BareosDb;
 class guid_list;
+typedef struct s_tree_root TREE_ROOT;
+typedef struct s_tree_node TREE_NODE;
 
 namespace directordaemon {
 

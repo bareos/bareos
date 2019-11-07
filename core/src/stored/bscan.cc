@@ -71,16 +71,16 @@ static bool CreateFileAttributesRecord(BareosDb* db,
                                        DeviceRecord* rec);
 static bool CreateMediaRecord(BareosDb* db,
                               MediaDbRecord* mr,
-                              VOLUME_LABEL* vl);
+                              Volume_Label* vl);
 static bool UpdateMediaRecord(BareosDb* db, MediaDbRecord* mr);
 static bool CreatePoolRecord(BareosDb* db, PoolDbRecord* pr);
 static JobControlRecord* CreateJobRecord(BareosDb* db,
                                          JobDbRecord* mr,
-                                         SESSION_LABEL* label,
+                                         Session_Label* label,
                                          DeviceRecord* rec);
 static bool UpdateJobRecord(BareosDb* db,
                             JobDbRecord* mr,
-                            SESSION_LABEL* elabel,
+                            Session_Label* elabel,
                             DeviceRecord* rec);
 static bool CreateClientRecord(BareosDb* db, ClientDbRecord* cr);
 static bool CreateFilesetRecord(BareosDb* db, FileSetDbRecord* fsr);
@@ -106,8 +106,8 @@ static FileSetDbRecord fsr;
 static RestoreObjectDbRecord rop;
 static AttributesDbRecord ar;
 static FileDbRecord fr;
-static SESSION_LABEL label;
-static SESSION_LABEL elabel;
+static Session_Label label;
+static Session_Label elabel;
 static Attributes* attr;
 
 static time_t lasttime = 0;
@@ -446,12 +446,19 @@ static void do_scan()
 {
   attr = new_attr(bjcr);
 
-  memset(&ar, 0, sizeof(ar));
-  memset(&pr, 0, sizeof(pr));
-  memset(&jr, 0, sizeof(jr));
-  memset(&cr, 0, sizeof(cr));
-  memset(&fsr, 0, sizeof(fsr));
-  memset(&fr, 0, sizeof(fr));
+  AttributesDbRecord ar_emtpy;
+  PoolDbRecord pr_empty;
+  JobDbRecord jr_empty;
+  ClientDbRecord cr_empty;
+  FileSetDbRecord fsr_empty;
+  FileDbRecord fr_empty;
+
+  ar = ar_emtpy;
+  pr = pr_empty;
+  jr = jr_empty;
+  cr = cr_empty;
+  fsr = fsr_empty;
+  fr = fr_empty;
 
   /*
    * Detach bscan's jcr as we are not a real Job on the tape
@@ -582,7 +589,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
         /*
          * Check Media Info
          */
-        memset(&mr, 0, sizeof(mr));
+        mr = MediaDbRecord{};
         bstrncpy(mr.VolumeName, dev->VolHdr.VolumeName, sizeof(mr.VolumeName));
         mr.PoolId = pr.PoolId;
         num_media++;
@@ -642,7 +649,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
             ignored_msgs = 0;
           }
           UnserSessionLabel(&label, rec);
-          memset(&jr, 0, sizeof(jr));
+          jr = JobDbRecord{};
           bstrncpy(jr.Job, label.Job, sizeof(jr.Job));
           if (db->GetJobRecord(bjcr, &jr)) {
             /*
@@ -1119,7 +1126,7 @@ static bool CreateFileAttributesRecord(BareosDb* db,
 /**
  * For each Volume we see, we create a Medium record
  */
-static bool CreateMediaRecord(BareosDb* db, MediaDbRecord* mr, VOLUME_LABEL* vl)
+static bool CreateMediaRecord(BareosDb* db, MediaDbRecord* mr, Volume_Label* vl)
 {
   struct date_time dt;
   struct tm tm;
@@ -1277,7 +1284,7 @@ static bool CreateFilesetRecord(BareosDb* db, FileSetDbRecord* fsr)
  */
 static JobControlRecord* CreateJobRecord(BareosDb* db,
                                          JobDbRecord* jr,
-                                         SESSION_LABEL* label,
+                                         Session_Label* label,
                                          DeviceRecord* rec)
 {
   JobControlRecord* mjcr;
@@ -1337,7 +1344,7 @@ static JobControlRecord* CreateJobRecord(BareosDb* db,
  */
 static bool UpdateJobRecord(BareosDb* db,
                             JobDbRecord* jr,
-                            SESSION_LABEL* elabel,
+                            Session_Label* elabel,
                             DeviceRecord* rec)
 {
   struct date_time dt;
@@ -1459,7 +1466,6 @@ static bool CreateJobmediaRecord(BareosDb* db, JobControlRecord* mjcr)
   dcr->EndFile = dev->EndFile;
   dcr->VolMediaId = dev->VolCatInfo.VolMediaId;
 
-  memset(&jmr, 0, sizeof(jmr));
   jmr.JobId = mjcr->JobId;
   jmr.MediaId = mr.MediaId;
   jmr.FirstIndex = dcr->VolFirstIndex;

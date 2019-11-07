@@ -293,7 +293,6 @@ static inline bool SetMigrationNextPool(JobControlRecord* jcr,
    * Get the PoolId used with the original job. Then
    * find the pool name from the database record.
    */
-  memset(&pr, 0, sizeof(pr));
   pr.PoolId = jcr->jr.PoolId;
   if (!jcr->db->GetPoolRecord(jcr, &pr)) {
     Jmsg(jcr, M_FATAL, 0, _("Pool for JobId %s not in database. ERR=%s\n"),
@@ -1810,7 +1809,6 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
   JobControlRecord* mig_jcr = jcr->mig_jcr;
   PoolMem query(PM_MESSAGE);
 
-  memset(&mr, 0, sizeof(mr));
   Dmsg2(100, "Enter migrate_cleanup %d %c\n", TermCode, TermCode);
   UpdateJobEnd(jcr, TermCode);
 
