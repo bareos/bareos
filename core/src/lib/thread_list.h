@@ -23,24 +23,28 @@
 #define BAREOS_LIB_THREAD_LIST_H_ 1
 
 #include <functional>
+#include <memory>
 
 class ConfigurationParser;
-struct ThreadListPrivate;
+class ThreadListPrivate;
 
 class ThreadList {
-  friend struct CleanupOwnThreadAndNotify;
+  friend class ThreadGuard;
 
  public:
   ThreadList();
   ~ThreadList();
 
+  using ThreadHandler =
+      std::function<void*(ConfigurationParser* config, void* data)>;
+  using ShutdownCallback = std::function<void*(void* data)>;
+
   void Init(int maximum_thread_count,
-            std::function<void*(ConfigurationParser* config, void* data)>
-                ThreadInvokedHandler,
-            std::function<void*(void* arg)> ShutdownCallback = nullptr);
+            ThreadHandler ThreadInvokedHandler,
+            ShutdownCallback ShutdownCallback = nullptr);
 
   bool CreateAndAddNewThread(ConfigurationParser* config, void* data);
-  bool WaitUntilThreadListIsEmpty();
+  bool ShutdownAndWaitForThreadsToFinish();
   std::size_t Size() const;
 
   ThreadList(const ThreadList& ohter) = delete;

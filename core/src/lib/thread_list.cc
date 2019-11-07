@@ -20,39 +20,46 @@
 */
 
 #include "include/bareos.h"
-#include "thread_list.h"
 #include "include/jcr.h"
 #include "include/make_unique.h"
 #include "lib/berrno.h"
 #include "lib/bsock.h"
+#include "lib/thread_list.h"
 #include "lib/thread_specific_data.h"
 
 #include <algorithm>
+#include <chrono>
 #include <condition_variable>
-#include <thread>
+#include <memory>
 #include <mutex>
 #include <set>
+#include <thread>
+
+static constexpr int debuglevel{800};
 
 struct ThreadListItem {
-  std::thread WorkerThread_;
-  void* data_ = nullptr;
-  ConfigurationParser* config_ = nullptr;
-  std::function<void*(ConfigurationParser* config_, void* data)>
-      ThreadInvokedHandler_ = nullptr;
+  void* data_{};
 };
 
-struct ThreadListPrivate {
-  std::size_t maximum_thread_count_ = 0;
-
+struct ThreadListContainer {
   std::set<ThreadListItem*> thread_list_;
   std::mutex thread_list_mutex_;
-
   std::condition_variable wait_shutdown_condition;
+};
 
-  std::function<void*(ConfigurationParser* config, void* data)>
-      ThreadInvokedHandler_ = nullptr;
+class ThreadListPrivate {
+  friend class ThreadList;
+  friend class ThreadGuard;
 
-  std::function<void*(void* data)> ShutdownCallback_ = nullptr;
+ private:
+  std::size_t maximum_thread_count_{};
+
+  std::shared_ptr<ThreadListContainer> l{
+      std::make_shared<ThreadListContainer>()};
+
+
+  ThreadList::ThreadHandler ThreadInvokedHandler_{};
+  ThreadList::ShutdownCallback ShutdownCallback_{};
 
   void CallRegisteredShutdownCallbackForAllThreads();
   bool WaitForThreadsToShutdown();
@@ -62,22 +69,21 @@ ThreadList::ThreadList() : impl_(std::make_unique<ThreadListPrivate>()) {}
 ThreadList::~ThreadList() = default;
 
 void ThreadList::Init(int maximum_thread_count,
-                      std::function<void*(ConfigurationParser* config,
-                                          void* data)> ThreadInvokedHandler,
-                      std::function<void*(void* data)> ShutdownCallback)
+                      ThreadHandler ThreadInvokedHandler,
+                      ShutdownCallback ShutdownCallback)
 {
-  if (impl_->thread_list_.size()) { return; }
+  if (!impl_->l->thread_list_.empty()) { return; }
   impl_->maximum_thread_count_ = maximum_thread_count;
-  impl_->ThreadInvokedHandler_ = ThreadInvokedHandler;
-  impl_->ShutdownCallback_ = ShutdownCallback;
+  impl_->ThreadInvokedHandler_ = std::move(ThreadInvokedHandler);
+  impl_->ShutdownCallback_ = std::move(ShutdownCallback);
 }
 
 void ThreadListPrivate::CallRegisteredShutdownCallbackForAllThreads()
 {
-  std::lock_guard<std::mutex> l(thread_list_mutex_);
+  std::lock_guard<std::mutex> lg(l->thread_list_mutex_);
 
-  for (auto item : thread_list_) {
-    if (ShutdownCallback_) ShutdownCallback_(item->data_);
+  for (auto item : l->thread_list_) {
+    if (ShutdownCallback_) { ShutdownCallback_(item->data_); };
   }
 }
 
@@ -85,18 +91,20 @@ bool ThreadListPrivate::WaitForThreadsToShutdown()
 {
   bool list_is_empty = false;
 
-  std::unique_lock<std::mutex> l(thread_list_mutex_);
-
-  int timeout = 0;
+  int tries = 0;
   do {
-    list_is_empty = wait_shutdown_condition.wait_for(
-        l, std::chrono::seconds(10), [&]() { return thread_list_.empty(); });
-  } while (!list_is_empty && ++timeout < 3);
+    std::unique_lock<std::mutex> ul(l->thread_list_mutex_);
+    static constexpr auto timeout = std::chrono::seconds(10);
+
+    list_is_empty = l->wait_shutdown_condition.wait_for(
+        ul, timeout, [&]() { return l->thread_list_.empty(); });
+
+  } while (!list_is_empty && ++tries < 3);
 
   return list_is_empty;
 }
 
-bool ThreadList::WaitUntilThreadListIsEmpty()
+bool ThreadList::ShutdownAndWaitForThreadsToFinish()
 {
   impl_->CallRegisteredShutdownCallbackForAllThreads();
 
@@ -105,51 +113,107 @@ bool ThreadList::WaitUntilThreadListIsEmpty()
   return shutdown_successful;
 }
 
-struct CleanupOwnThreadAndNotify {
-  std::unique_ptr<ThreadListItem> item_;
-  ThreadList* t_;
-  CleanupOwnThreadAndNotify(std::unique_ptr<ThreadListItem> item, ThreadList* t)
-      : item_(std::move(item)), t_(t)
+class ThreadGuard {
+ public:
+  ThreadGuard(std::shared_ptr<ThreadListContainer> l,
+              std::unique_ptr<ThreadListItem>&& item)
+      : l_(l), item_(std::move(item))
   {
+    // thread_list_mutex_ locked by CreateAndAddNewThread
+    l_->thread_list_.insert(item_.get());
   }
-  ~CleanupOwnThreadAndNotify()
+  ~ThreadGuard()
   {
-    std::lock_guard<std::mutex> l(t_->impl_->thread_list_mutex_);
-    t_->impl_->thread_list_.erase(item_.get());
-    t_->impl_->wait_shutdown_condition.notify_one();
+    std::lock_guard<std::mutex> lg(l_->thread_list_mutex_);
+    l_->thread_list_.erase(item_.get());
+    l_->wait_shutdown_condition.notify_one();
   }
+
+ private:
+  std::shared_ptr<ThreadListContainer> l_;
+  std::unique_ptr<ThreadListItem> item_;  // finally destroys the item
 };
 
-static void WorkerThread(std::unique_ptr<ThreadListItem> item, ThreadList* t)
+class RunningCondition {
+ public:
+  void Running()
+  {
+    std::lock_guard<std::mutex> lg(mutex_);
+    is_running_ = true;
+    var_.notify_one();
+  }
+  enum class Result
+  {
+    kRunning,
+    kTimedout
+  };
+  Result WaitUntilThreadIsRunning()
+  {
+    static constexpr auto waittime = std::chrono::seconds(10);
+    std::unique_lock<std::mutex> ul(mutex_);
+
+    return var_.wait_for(ul, waittime, [&]() { return is_running_; })
+               ? Result::kRunning
+               : Result::kTimedout;
+  }
+
+ private:
+  std::mutex mutex_;
+  std::condition_variable var_;
+  bool is_running_{false};
+};
+
+static void WorkerThread(
+    std::shared_ptr<ThreadListContainer> l,
+    const ThreadList::ThreadHandler& ThreadInvokedHandler,
+    ConfigurationParser* config,
+    void* data,
+    std::shared_ptr<RunningCondition> run_condition)  // copy, not reference
 {
+  std::unique_ptr<ThreadListItem> item{std::make_unique<ThreadListItem>()};
+  item->data_ = data;
+
+  ThreadGuard guard(l, std::move(item));
+
+  run_condition->Running();
   SetJcrInThreadSpecificData(nullptr);
 
-  item->ThreadInvokedHandler_(item->config_, item->data_);
+  ThreadInvokedHandler(config, data);
 
-  CleanupOwnThreadAndNotify cleanup(std::move(item), t);
+  Dmsg0(debuglevel, "Finished WorkerThread.\n");
 }
 
 bool ThreadList::CreateAndAddNewThread(ConfigurationParser* config, void* data)
 {
-  std::lock_guard<std::mutex> l(impl_->thread_list_mutex_);
+  std::lock_guard<std::mutex> lg(impl_->l->thread_list_mutex_);
 
-  if (impl_->thread_list_.size() < impl_->maximum_thread_count_) {
-    ThreadListItem* item = new ThreadListItem;
-    item->data_ = data;
-    item->config_ = config;
-    item->ThreadInvokedHandler_ = impl_->ThreadInvokedHandler_;
-    item->WorkerThread_ =
-        std::thread(WorkerThread, std::unique_ptr<ThreadListItem>(item), this);
-    item->WorkerThread_.detach();
-    impl_->thread_list_.insert(item);
+  if (impl_->l->thread_list_.size() >= impl_->maximum_thread_count_) {
+    Dmsg1(debuglevel, "Number of maximum threads exceeded: %d\n",
+          impl_->maximum_thread_count_);
+    return false;
+  }
 
+  auto run_condition = std::make_shared<RunningCondition>();
+
+  try {
+    std::thread(WorkerThread, impl_->l, impl_->ThreadInvokedHandler_, config,
+                data, run_condition)
+        .detach();
+  } catch (const std::system_error& e) {
+    Dmsg1(debuglevel, "Could not start and detach thread: %s\n", e.what());
+    return false;
+  }
+
+  if (run_condition->WaitUntilThreadIsRunning() ==
+      RunningCondition::Result::kRunning) {
     return true;
   }
+  Dmsg0(debuglevel, "Could not run WorkerThread.\n");
   return false;
 }
 
 std::size_t ThreadList::Size() const
 {
-  std::lock_guard<std::mutex> l(impl_->thread_list_mutex_);
-  return impl_->thread_list_.size();
+  std::lock_guard<std::mutex> l(impl_->l->thread_list_mutex_);
+  return impl_->l->thread_list_.size();
 }
