@@ -43,6 +43,8 @@
 namespace directordaemon {
 
 static const int debuglevel = 200;
+static constexpr auto seconds_per_hour = std::chrono::seconds(3600);
+static constexpr auto seconds_per_minute = std::chrono::seconds(60);
 
 static bool IsAutomaticSchedulerJob(JobResource* job)
 {
@@ -55,7 +57,7 @@ static bool IsAutomaticSchedulerJob(JobResource* job)
 
 static void SetJcrFromRunResource(JobControlRecord* jcr, RunResource* run)
 {
-  if (run->level != 0u) {
+  if (run->level != 0U) {
     jcr->setJobLevel(run->level); /* override run level */
   }
 
@@ -181,7 +183,7 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
   RunHourValidator this_hour(time_adapter->time_source_->SystemTime());
   this_hour.PrintDebugMessage(debuglevel);
 
-  RunHourValidator next_hour(this_hour.Time() + 3600);
+  RunHourValidator next_hour(this_hour.Time() + seconds_per_hour.count());
   next_hour.PrintDebugMessage(debuglevel);
 
   JobResource* job = nullptr;
@@ -206,7 +208,8 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
           AddJobToQueue(job, run, this_hour.Time(), runtime);
         }
         if (run_next_hour) {
-          AddJobToQueue(job, run, this_hour.Time(), runtime + 3600);
+          AddJobToQueue(job, run, this_hour.Time(),
+                        runtime + seconds_per_hour.count());
         }
       }
     }
@@ -244,7 +247,7 @@ class DefaultSchedulerTimeAdapter : public SchedulerTimeAdapter {
   DefaultSchedulerTimeAdapter()
       : SchedulerTimeAdapter(std::make_unique<SystemTimeSource>())
   {
-    default_wait_interval_ = 60;
+    default_wait_interval_ = seconds_per_minute.count();
   }
 };
 
