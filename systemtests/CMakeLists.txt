@@ -22,19 +22,27 @@ project(bareos-systemtests)
 
 cmake_policy(SET CMP0057 NEW) #IF(.. IN_LIST ..)
 
-function(ConfigureFilesToSystemtest srcdir subdirectory globexpression configure_option)
+function(ConfigureFilesToSystemtest srcbasedir dirname globexpression configure_option srcdirname)
+  if (srcdirname STREQUAL "")
+    set(srcdirname "${dirname}" )
+    message ("srcdirname empty setting to ${dirname}")
+  else()
+    message ("srcdirname given as ${srcdirname}, using it as sourcedir")
+  endif()
+  message ("srcdirname is ${srcdirname}")
   set(count 1)
-  file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${subdirectory})
-  file(GLOB_RECURSE ALL_FILES "${CMAKE_SOURCE_DIR}/${srcdir}/${subdirectory}/${globexpression}")
+  file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${dirname})
+  file(GLOB_RECURSE ALL_FILES "${CMAKE_SOURCE_DIR}/${srcbasedir}/${srcdirname}/${globexpression}")
+  MESSAGE(STATUS "globbing in ${CMAKE_SOURCE_DIR}/${srcbasedir}/${srcdirname}/${globexpression}" )
   foreach(CURRENT_FILE ${ALL_FILES})
     MATH(EXPR COUNT "${COUNT}+1")
     string(REPLACE "${CMAKE_SOURCE_DIR}/" "" TARGET_FILE ${CURRENT_FILE})
     string(REGEX REPLACE ".in$" "" TARGET_FILE ${TARGET_FILE}) # do not mess with .ini files
-    #MESSAGE(STATUS "configuring  ${TARGET_FILE}" )
-    string(REPLACE "${srcdir}/${subdirectory}" "" TARGET_FILE ${TARGET_FILE})
-    configure_file(${CURRENT_FILE} ${PROJECT_BINARY_DIR}/${subdirectory}/${TARGET_FILE} ${configure_option})
+    string(REPLACE "${srcbasedir}/${srcdirname}" "" TARGET_FILE ${TARGET_FILE})
+    MESSAGE(STATUS "configuring  ${TARGET_FILE}" )
+    configure_file(${CURRENT_FILE} ${PROJECT_BINARY_DIR}/${dirname}/${TARGET_FILE} ${configure_option})
   endforeach()
-  MESSAGE(STATUS "Configured ${COUNT} files from ${srcdir} to ${subdirectory} with glob ${globexpression} ${configure_option}" )
+  MESSAGE(STATUS "Configured ${COUNT} files from ${srcbasedir}/${srcdirname} to ${dirname} with glob ${globexpression} ${configure_option}" )
 endfunction()
 
 # generic function to probe for a python module
@@ -52,6 +60,52 @@ macro(CheckForEnabledAndDisabledListEntry TEST_NAME_TO_CHECK)
   IF(${TEST_NAME_TO_CHECK} IN_LIST SYSTEM_TESTS AND ${TEST_NAME_TO_CHECK} IN_LIST SYSTEM_TESTS_DISABLED)
     message(FATAL_ERROR "The test name: ${TEST_NAME} is listed ambiguously in SYSTEM_TESTS and SYSTEM_TESTS_DISABLED at the same time")
   ENDIF()
+endmacro()
+
+
+
+macro (prepare_test)
+  # base directory for this test
+  set(current_test_directory ${PROJECT_BINARY_DIR}/tests/${TEST_NAME})
+  set(basename ${TEST_NAME})
+
+  #db parameters
+  set(db_password "")
+  #db_name is regress-${TEST_NAME} replacing - by _
+  string(REPLACE "-" "_" db_name "regress-${TEST_NAME}")
+  #set(db_name "regress-${TEST_NAME}")
+  set(db_user "regress")
+
+  set(job_email root@localhost)
+
+  set(dir_password dir_password)
+  set(fd_password fd_password)
+  set(mon_dir_password mon_dir_password)
+  set(mon_fd_password mon_fd_password)
+  set(mon_sd_password mon_sd_password)
+  set(sd_password sd_password)
+
+  math(EXPR dir_port "${BASEPORT} + 0")
+  math(EXPR  fd_port "${BASEPORT} + 1")
+  math(EXPR  sd_port "${BASEPORT} + 2")
+  math(EXPR sd2_port "${BASEPORT} + 3")
+  math(EXPR php_port "${BASEPORT} + 4")
+
+  # set(DEFAULT_DB_TYPE )
+  set(archivedir ${current_test_directory}/storage)
+  set(confdir ${current_test_directory}/etc/bareos)
+
+  set(logdir ${current_test_directory}/log)
+  set(tmpdir ${current_test_directory}/tmp)
+  set(tmp ${tmpdir})
+  set(working_dir ${current_test_directory}/working)
+  set(python_plugin_module_src_test_dir ${current_test_directory}/python-modules)
+
+  file(MAKE_DIRECTORY ${archivedir})
+  file(MAKE_DIRECTORY ${confdir})
+  file(MAKE_DIRECTORY ${logdir})
+  file(MAKE_DIRECTORY ${tmpdir})
+  file(MAKE_DIRECTORY ${working_dir})
 endmacro()
 
 # extract  db version from cats.h
@@ -136,26 +190,26 @@ set(DB_USER @DB_USER@)
 set(DB_PASS @DB_PASS@)
 set(DB_VERSION @DB_VERSION@)
 
-ConfigureFilesToSystemtest("systemtests"  "data" "*.tgz" COPYONLY)
+ConfigureFilesToSystemtest("systemtests"  "data" "*.tgz" COPYONLY "")
 
-ConfigureFilesToSystemtest("systemtests"  "scripts" "functions" @ONLY)
-ConfigureFilesToSystemtest("systemtests"  "scripts" "cleanup" @ONLY)
-ConfigureFilesToSystemtest("systemtests"  "scripts" "setup" @ONLY)
-ConfigureFilesToSystemtest("systemtests"  "scripts" "check_for_zombie_jobs" @ONLY)
-ConfigureFilesToSystemtest("systemtests"  "scripts" "diff.pl.in" @ONLY)
+ConfigureFilesToSystemtest("systemtests"  "scripts" "functions" @ONLY "")
+ConfigureFilesToSystemtest("systemtests"  "scripts" "cleanup" @ONLY "")
+ConfigureFilesToSystemtest("systemtests"  "scripts" "setup" @ONLY "")
+ConfigureFilesToSystemtest("systemtests"  "scripts" "check_for_zombie_jobs" @ONLY "")
+ConfigureFilesToSystemtest("systemtests"  "scripts" "diff.pl.in" @ONLY "")
 
-ConfigureFilesToSystemtest("core/src" "defaultconfigs" "*.conf" @ONLY)
-ConfigureFilesToSystemtest("core/src" "defaultconfigs" "*.in" @ONLY)
+ConfigureFilesToSystemtest("core/src" "defaultconfigs" "*.conf" @ONLY "")
+ConfigureFilesToSystemtest("core/src" "defaultconfigs" "*.in" @ONLY "")
 
-ConfigureFilesToSystemtest("core" "scripts" "*.in" @ONLY)
-ConfigureFilesToSystemtest("core" "scripts" "bareos-ctl-funcs" @ONLY)
-ConfigureFilesToSystemtest("core" "scripts" "btraceback.gdb" @ONLY)
+ConfigureFilesToSystemtest("core" "scripts" "*.in" @ONLY "")
+ConfigureFilesToSystemtest("core" "scripts" "bareos-ctl-funcs" @ONLY "")
+ConfigureFilesToSystemtest("core" "scripts" "btraceback.gdb" @ONLY "")
 
-ConfigureFilesToSystemtest("core/src/cats" "ddl" "${DEFAULT_DB_TYPE}*" @ONLY)
-ConfigureFilesToSystemtest("core/src" "cats" "*.in" @ONLY)
-ConfigureFilesToSystemtest("core/src" "cats" "*_bareos_*" @ONLY)
+ConfigureFilesToSystemtest("core/src/cats" "ddl" "${DEFAULT_DB_TYPE}*" @ONLY "")
+ConfigureFilesToSystemtest("core/src" "cats" "*.in" @ONLY "")
+ConfigureFilesToSystemtest("core/src" "cats" "*_bareos_*" @ONLY "")
 
-ConfigureFilesToSystemtest("core/src" "console" "*.in" @ONLY)
+ConfigureFilesToSystemtest("core/src" "console" "*.in" @ONLY "")
 
 
 file(MAKE_DIRECTORY ${subsysdir})
@@ -266,83 +320,32 @@ MESSAGE(STATUS "PYTHON_FOUND:                 " ${PYTHON_FOUND})
 MESSAGE(STATUS "PYTHON_SELENIUM_FOUND:        " ${PYTHON_SELENIUM_FOUND})
 MESSAGE(STATUS "CHROMEDRIVER_FOUND:           " ${CHROMEDRIVER_FOUND})
 
-list(APPEND WEBUI_SELENIUM_TESTS
-  "webui-admin-client-disabling"
-  "webui-admin-rerun-job"
-  "webui-admin-restore"
-  "webui-admin-run-custom-job"
-  "webui-admin-run-job"
-  "webui-readonly-client-disabling"
-  "webui-readonly-rerun-job"
-  "webui-readonly-restore"
-  "webui-readonly-run-custom-job"
-  "webui-readonly-run-job")
 
 IF(ENABLE_WEBUI_SELENIUM_TEST)
-  list(APPEND SYSTEM_TESTS ${WEBUI_SELENIUM_TESTS})
+set(WEBUI_SELENIUM_TESTS
+  "admin-client_disabling"
+  "admin-rerun_job"
+  "admin-restore"
+  "admin-run_configured_job"
+  "admin-run_default_job"
+  "readonly-client_disabling"
+  "readonly-rerun_job"
+  "readonly-restore"
+  "readonly-run_configured_job"
+  "readonly-run_default_job"
+  )
 ELSE()
-  list(APPEND SYSTEM_TESTS_DISABLED ${WEBUI_SELENIUM_TESTS})
+set(WEBUI_SELENIUM_TESTS
+  )
 ENDIF()
 
 set(BASEPORT 42001)
 
 foreach(TEST_NAME ${SYSTEM_TESTS})
-  # base directory for this test
-  set(current_test_directory ${PROJECT_BINARY_DIR}/tests/${TEST_NAME})
-  set(basename ${TEST_NAME})
 
-  #db parameters
-  set(db_password "")
-  #db_name is regress-${TEST_NAME} replacing - by _
-  string(REPLACE "-" "_" db_name "regress-${TEST_NAME}")
-  #set(db_name "regress-${TEST_NAME}")
-  set(db_user "regress")
+  prepare_test()
 
-  set(job_email root@localhost)
-
-  set(dir_password dir_password)
-  set(fd_password fd_password)
-  set(mon_dir_password mon_dir_password)
-  set(mon_fd_password mon_fd_password)
-  set(mon_sd_password mon_sd_password)
-  set(sd_password sd_password)
-
-  math(EXPR dir_port "${BASEPORT} + 0")
-  math(EXPR  fd_port "${BASEPORT} + 1")
-  math(EXPR  sd_port "${BASEPORT} + 2")
-  math(EXPR sd2_port "${BASEPORT} + 3")
-  math(EXPR php_port "${BASEPORT} + 4")
-
-  # set(DEFAULT_DB_TYPE )
-  set(archivedir ${current_test_directory}/storage)
-  set(confdir ${current_test_directory}/etc/bareos)
-
-  set(logdir ${current_test_directory}/log)
-  set(python_plugin_module_src_test_dir ${current_test_directory}/python-modules)
-  set(tmpdir ${current_test_directory}/tmp)
-  set(tmp ${tmpdir})
-  set(working_dir ${current_test_directory}/working)
-
-  file(MAKE_DIRECTORY ${archivedir})
-  file(MAKE_DIRECTORY ${confdir})
-  file(MAKE_DIRECTORY ${logdir})
-  file(MAKE_DIRECTORY ${tmpdir})
-  file(MAKE_DIRECTORY ${working_dir})
-
-  # webui specific settings
-  IF(ENABLE_WEBUI_SELENIUM_TEST)
-    foreach(SELENIUM_TEST ${WEBUI_SELENIUM_TESTS})
-      IF(${TEST_NAME} STREQUAL SELENIUM_TEST)
-        set(WEBUICONFDIR ${current_test_directory}/etc/bareos-webui) # used for testenvironment settings
-        file(MAKE_DIRECTORY ${WEBUICONFDIR})
-        configure_file("${CMAKE_SOURCE_DIR}/webui/config/autoload/global.php.in" "${current_test_directory}/webui/config/autoload/global.php" @ONLY)
-        configure_file("${CMAKE_SOURCE_DIR}/systemtests/tests/${TEST_NAME}/directors.ini.in" "${current_test_directory}/etc/bareos-webui/directors.ini" @ONLY)
-        file(COPY "${CMAKE_SOURCE_DIR}/webui/install/configuration.ini" DESTINATION "${current_test_directory}/etc/bareos-webui/")
-      ENDIF()
-    endforeach()
-  ENDIF()
-
-  ConfigureFilesToSystemtest("systemtests"  "tests/${TEST_NAME}" "*" @ONLY)
+  ConfigureFilesToSystemtest("systemtests"  "tests/${TEST_NAME}" "*" @ONLY "")
 
   configure_file("environment.in" "tests/${TEST_NAME}/environment" @ONLY)
   # create a bin/bareos and bin/bconsole script
@@ -387,6 +390,42 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   math(EXPR BASEPORT "${BASEPORT} + 10")
 
 endforeach()
+
+# webui specific settings
+IF(ENABLE_WEBUI_SELENIUM_TEST)
+  foreach(TEST_NAME ${WEBUI_SELENIUM_TESTS})
+
+    prepare_test()
+
+    # split WEBUI_TEST_NAME into PROFILE and TESTNAME
+    string(REPLACE "-" ";" SELENIUM_TESTCOMPONENTS ${TEST_NAME})
+    #"webui-admin-restore"
+    list(GET SELENIUM_TESTCOMPONENTS 0 BAREOS_WEBUI_PROFILE)
+    list(GET SELENIUM_TESTCOMPONENTS 1 BAREOS_WEBUI_TESTNAME)
+
+    set(WEBUICONFDIR ${current_test_directory}/etc/bareos-webui) # used for testenvironment settings
+    file(MAKE_DIRECTORY ${WEBUICONFDIR})
+    configure_file("${CMAKE_SOURCE_DIR}/webui/config/autoload/global.php.in" "${current_test_directory}/webui/config/autoload/global.php" @ONLY)
+    configure_file("${CMAKE_SOURCE_DIR}/systemtests/tests/webui-common/directors.ini.in" "${current_test_directory}/etc/bareos-webui/directors.ini" @ONLY)
+    file(COPY "${CMAKE_SOURCE_DIR}/webui/install/configuration.ini" DESTINATION "${current_test_directory}/etc/bareos-webui/")
+    configure_file("${CMAKE_SOURCE_DIR}/systemtests/tests/webui-common/testrunner.in" "${current_test_directory}/testrunner" @ONLY)
+    ConfigureFilesToSystemtest("systemtests"  "tests/${TEST_NAME}" "*" @ONLY "tests/webui-common")
+    configure_file("environment.in" "tests/${TEST_NAME}/environment" @ONLY)
+    # create a bin/bareos and bin/bconsole script
+    # in every testdir for start/stop and bconsole
+    #file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/tests/${TEST_NAME}/bin")
+    configure_file("bin/bconsole" "tests/${TEST_NAME}/bin/bconsole" COPYONLY)
+    configure_file("bin/bareos" "tests/${TEST_NAME}/bin/bareos" COPYONLY)
+
+    CheckForEnabledAndDisabledListEntry(${TEST_NAME})
+
+    add_test(NAME "webui:${TEST_NAME}" COMMAND ${tests_dir}/${TEST_NAME}/testrunner WORKING_DIRECTORY ${tests_dir}/${TEST_NAME})
+    math(EXPR BASEPORT "${BASEPORT} + 10")
+  endforeach()
+ENDIF()
+
+
+
 
 foreach(TEST_NAME_DISABLED ${SYSTEM_TESTS_DISABLED})
   CheckForEnabledAndDisabledListEntry(${TEST_NAME_DISABLED})

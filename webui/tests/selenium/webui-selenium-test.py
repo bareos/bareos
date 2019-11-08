@@ -534,38 +534,50 @@ def get_env():
     chromedriverpath = os.environ.get('BAREOS_WEBUI_CHROMEDRIVER_PATH')
     if chromedriverpath:
         SeleniumTest.chromedriverpath = chromedriverpath
+
     chromeheadless = os.environ.get('BAREOS_WEBUI_CHROME_HEADLESS')
     if chromeheadless:
         SeleniumTest.chromeheadless = chromeheadless
     else:
         SeleniumTest.chromeheadless = True
+
     browser = os.environ.get('BAREOS_WEBUI_BROWSER')
     if browser:
         SeleniumTest.browser = browser
+
     base_url = os.environ.get('BAREOS_WEBUI_BASE_URL')
     if base_url:
         SeleniumTest.base_url = base_url.rstrip('/')
+
     username = os.environ.get('BAREOS_WEBUI_USERNAME')
     if username:
         SeleniumTest.username = username
+
     password = os.environ.get('BAREOS_WEBUI_PASSWORD')
     if password:
         SeleniumTest.password = password
+
     profile = os.environ.get('BAREOS_WEBUI_PROFILE')
     if profile:
         SeleniumTest.profile = profile
+        print("using profile:" + profile)
+
     testname = os.environ.get('BAREOS_WEBUI_TESTNAME')
     if testname:
         SeleniumTest.testname = testname
+
     client = os.environ.get('BAREOS_WEBUI_CLIENT_NAME')
     if client:
         SeleniumTest.client = client
+
     restorefile = os.environ.get('BAREOS_WEBUI_RESTOREFILE')
     if restorefile:
         SeleniumTest.restorefile = restorefile
+
     logpath = os.environ.get('BAREOS_WEBUI_LOG_PATH')
     if logpath:
         SeleniumTest.logpath = logpath
+
     sleeptime = os.environ.get('BAREOS_WEBUI_DELAY')
     if sleeptime:
         SeleniumTest.sleeptime = float(sleeptime)
