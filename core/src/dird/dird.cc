@@ -79,6 +79,7 @@ static bool CheckResources();
 static bool InitializeSqlPooling(void);
 static void CleanUpOldFiles();
 static bool InitSighandlerSighup();
+static JobControlRecord* PrepareJobToRun(const char* job_name);
 
 /* Exported subroutines */
 extern bool ParseDirConfig(const char* configfile, int exit_code);
@@ -895,6 +896,20 @@ static bool InitializeSqlPooling(void)
 
 bail_out:
   return retval;
+}
+
+static JobControlRecord* PrepareJobToRun(const char* job_name)
+{
+  JobResource* job =
+      static_cast<JobResource*>(my_config->GetResWithName(R_JOB, job_name));
+  if (!job) {
+    Emsg1(M_ERROR, 0, _("Job %s not found\n"), job_name);
+    return nullptr;
+  }
+  Dmsg1(5, "Found job_name %s\n", job_name);
+  JobControlRecord* jcr = NewDirectorJcr();
+  SetJcrDefaults(jcr, job);
+  return jcr;
 }
 
 /**

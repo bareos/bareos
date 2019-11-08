@@ -25,6 +25,7 @@
 #include "dird/dird.h"
 #include "dird/dird_conf.h"
 #include "dird/dird_globals.h"
+#include "dird/jcr_private.h"
 #include "dird/job.h"
 #include "dird/run_hour_validator.h"
 #include "dird/scheduler.h"
@@ -59,33 +60,34 @@ static void SetJcrFromRunResource(JobControlRecord* jcr, RunResource* run)
   }
 
   if (run->pool != nullptr) {
-    jcr->res.pool = run->pool; /* override pool */
-    jcr->res.run_pool_override = true;
+    jcr->impl->res.pool = run->pool; /* override pool */
+    jcr->impl->res.run_pool_override = true;
   }
 
   if (run->full_pool != nullptr) {
-    jcr->res.full_pool = run->full_pool; /* override full pool */
-    jcr->res.run_full_pool_override = true;
+    jcr->impl->res.full_pool = run->full_pool; /* override full pool */
+    jcr->impl->res.run_full_pool_override = true;
   }
 
   if (run->vfull_pool != nullptr) {
-    jcr->res.vfull_pool = run->vfull_pool; /* override virtual full pool */
-    jcr->res.run_vfull_pool_override = true;
+    jcr->impl->res.vfull_pool =
+        run->vfull_pool; /* override virtual full pool */
+    jcr->impl->res.run_vfull_pool_override = true;
   }
 
   if (run->inc_pool != nullptr) {
-    jcr->res.inc_pool = run->inc_pool; /* override inc pool */
-    jcr->res.run_inc_pool_override = true;
+    jcr->impl->res.inc_pool = run->inc_pool; /* override inc pool */
+    jcr->impl->res.run_inc_pool_override = true;
   }
 
   if (run->diff_pool != nullptr) {
-    jcr->res.diff_pool = run->diff_pool; /* override diff pool */
-    jcr->res.run_diff_pool_override = true;
+    jcr->impl->res.diff_pool = run->diff_pool; /* override diff pool */
+    jcr->impl->res.run_diff_pool_override = true;
   }
 
   if (run->next_pool != nullptr) {
-    jcr->res.next_pool = run->next_pool; /* override next pool */
-    jcr->res.run_next_pool_override = true;
+    jcr->impl->res.next_pool = run->next_pool; /* override next pool */
+    jcr->impl->res.run_next_pool_override = true;
   }
 
   if (run->storage != nullptr) {
@@ -96,25 +98,27 @@ static void SetJcrFromRunResource(JobControlRecord* jcr, RunResource* run)
   }
 
   if (run->msgs != nullptr) {
-    jcr->res.messages = run->msgs; /* override messages */
+    jcr->impl->res.messages = run->msgs; /* override messages */
   }
 
   if (run->Priority != 0) { jcr->JobPriority = run->Priority; }
 
-  if (run->spool_data_set) { jcr->spool_data = run->spool_data; }
+  if (run->spool_data_set) { jcr->impl->spool_data = run->spool_data; }
 
   if (run->accurate_set) {
     jcr->accurate = run->accurate; /* overwrite accurate mode */
   }
 
-  if (run->MaxRunSchedTime_set) { jcr->MaxRunSchedTime = run->MaxRunSchedTime; }
+  if (run->MaxRunSchedTime_set) {
+    jcr->impl->MaxRunSchedTime = run->MaxRunSchedTime;
+  }
 }
 
 JobControlRecord* SchedulerPrivate::TryCreateJobControlRecord(
     const SchedulerJobItem& next_job)
 {
   if (next_job.job->client == nullptr) { return nullptr; }
-  JobControlRecord* jcr = new_jcr(sizeof(JobControlRecord), DirdFreeJcr);
+  JobControlRecord* jcr = NewDirectorJcr();
   SetJcrDefaults(jcr, next_job.job);
   if (next_job.run != nullptr) {
     next_job.run->last_run = time_adapter->time_source_->SystemTime();

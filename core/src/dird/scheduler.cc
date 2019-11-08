@@ -35,9 +35,13 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
+#include "dird/scheduler.h"
+#include "dird/scheduler_private.h"
+#include "dird/scheduler_time_adapter.h"
 #include "dird/jcr_private.h"
 #include "dird/job.h"
 #include "dird/storage.h"
+#include "include/make_unique.h"
 #include "lib/parse_conf.h"
 
 class JobControlRecord;
@@ -53,7 +57,7 @@ Scheduler& Scheduler::GetMainScheduler() noexcept
 {
   static Scheduler scheduler;
   return scheduler;
-  }
+}
 
 Scheduler::Scheduler() noexcept : impl_(std::make_unique<SchedulerPrivate>()){};
 
@@ -63,7 +67,7 @@ Scheduler::Scheduler(std::unique_ptr<SchedulerTimeAdapter> time_adapter,
           std::forward<std::unique_ptr<SchedulerTimeAdapter>>(time_adapter),
           std::forward<std::function<void(JobControlRecord*)>>(ExecuteJob)))
 {
-  }
+}
 
 Scheduler::~Scheduler() = default;
 
@@ -78,14 +82,14 @@ void Scheduler::Run()
     Dmsg0(debuglevel, "Scheduler Cycle\n");
     impl_->FillSchedulerJobQueueOrSleep();
     impl_->WaitForJobsToRun();
-    }
   }
+}
 
 void Scheduler::Terminate()
 {
   impl_->active = false;
   impl_->time_adapter->time_source_->Terminate();
-    }
+}
 
 void Scheduler::ClearQueue() { impl_->prioritised_job_item_queue.Clear(); }
 
