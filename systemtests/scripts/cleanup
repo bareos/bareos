@@ -25,6 +25,8 @@ find . -name "gigaslam.gif" -exec rm -f {} \;
 #rm -rf ${conf}/bareos-dir-export/
 #rm -rf ${conf}/tls/
 
+# cleanup chrome user data (selenium tests)
+rm -rf /tmp/chrome-user-data-*
 
 #if [ -f ${scripts}/bareos ]; then
 #  ${scripts}/bareos stop 2>&1 >/dev/null

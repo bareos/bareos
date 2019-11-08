@@ -79,4 +79,3 @@ dirport = 9101
 ;cert_file = ""
 ;cert_file_passphrase = ""
 ;allowed_cns = ""
-
