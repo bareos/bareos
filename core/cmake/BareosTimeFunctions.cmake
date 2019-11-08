@@ -19,14 +19,24 @@ function(timestamp_at
          at
          result
          format)
-  set(old_lang "$ENV{LC_ALL}")
-  set(ENV{LC_ALL} "C")
-  execute_process(COMMAND date
-                          --utc
-                          "--date=@${at}"
-                          "+${format}"
-                  OUTPUT_VARIABLE out
-                  OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if(CMAKE_VERSION VERSION_GREATER 3.8.0)
+    set(old_epoch "$ENV{SOURCE_DATE_EPOCH}")
+    set(ENV{SOURCE_DATE_EPOCH} "${at}")
+    string(TIMESTAMP out "${format}" UTC)
+    set(ENV{SOURCE_DATE_EPOCH} "${old_epoch}")
+  else()
+    set(old_lang "$ENV{LC_ALL}")
+    set(ENV{LC_ALL} "C")
+    execute_process(COMMAND date
+                            --utc
+                            "--date=@${at}"
+                            "+${format}"
+                    OUTPUT_VARIABLE out
+                    OUTPUT_STRIP_TRAILING_WHITESPACE)
+    set(ENV{LC_ALL} "${old_lang}")
+    if(out STREQUAL "")
+	    message(FATAL_ERROR "Cannot use SOURCE_DATE_EPOCH (cmake < 3.8) and your 'date' command is not compatible with Bareos' timestamp_at().")
+    endif()
+  endif()
   set("${result}" "${out}" PARENT_SCOPE)
-  set(ENV{LC_ALL} "${old_lang}")
 endfunction()
