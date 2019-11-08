@@ -33,12 +33,10 @@ TEST(acl_entry_syntax_test, acl_entry_syntax_test)
   EXPECT_STREQ("Illegal character \",\" in acl.\n", msg);
 
   EXPECT_EQ(true, IsAclEntryValid("STRING.CONTAINING.ALLOWED.CHARS!*.", msg));
-  EXPECT_EQ(
-      true,
-      IsAclEntryValid(
-          "STRING.WITH.MAX.ALLOWED.LENGTH......................................"
-          "...........................................................",
-          msg));
+
+  std::string string_maximum_length(MAX_NAME_LENGTH - 1, '.');
+  EXPECT_EQ(true, IsAclEntryValid(string_maximum_length.c_str(), msg));
+
   EXPECT_EQ(false, IsAclEntryValid("illegalch@racter", msg));
   EXPECT_STREQ("Illegal character \"@\" in acl.\n", msg);
 
@@ -48,12 +46,8 @@ TEST(acl_entry_syntax_test, acl_entry_syntax_test)
   EXPECT_EQ(false, IsAclEntryValid(nullptr, msg));
   EXPECT_STREQ("Empty acl not allowed.\n", msg);
 
+  std::string string_too_long(MAX_NAME_LENGTH, '.');
+  EXPECT_EQ(false, IsAclEntryValid(string_too_long.c_str(), msg));
 
-  EXPECT_EQ(
-      false,
-      IsAclEntryValid(
-          "STRING.WITH.MAX.ALLOWED.LENGTH.PLUS.ONE............................."
-          "............................................................",
-          msg));
   EXPECT_STREQ("Acl too long.\n", msg);
 }
