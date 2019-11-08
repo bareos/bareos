@@ -103,6 +103,7 @@ class SeleniumTest(unittest.TestCase):
     base_url = 'http://127.0.0.1/bareos-webui'
     username = 'admin'
     password = 'secret'
+    profile = None
     client = 'bareos-fd'
     restorefile = '/usr/sbin/bconsole'
     # path to store logging files
@@ -110,9 +111,10 @@ class SeleniumTest(unittest.TestCase):
     # slow down test for debugging
     sleeptime = 0.0
     # max seconds to wait for an element
-    maxwait = 10
+    maxwait = 5
     # time to wait before trying again
-    waittime = 0.1
+    # Value must be > 0.1.
+    waittime = 0.2
     # Travis SauceLab integration
     travis = False
     sauce_username = None
@@ -191,8 +193,6 @@ class SeleniumTest(unittest.TestCase):
                 if self.chromeheadless:
                     opt.add_argument('--headless')
                 self.driver = webdriver.Chrome(chrome_options=opt)
-                # set explicit window size
-                self.driver.set_window_size(1920,1080)
             elif self.browser == "firefox":
                 d = DesiredCapabilities.FIREFOX
                 d['loggingPrefs'] = {'browser': 'ALL'}
@@ -201,6 +201,13 @@ class SeleniumTest(unittest.TestCase):
                 self.driver = webdriver.Firefox(capabilities=d, firefox_profile=fp)
             else:
                 raise RuntimeError('Browser {} not found.'.format(str(self.browser)))
+            #
+            # set explicit window size
+            #
+            # Used by Univention AppCenter test.
+            self.driver.set_window_size(1200, 800)
+            # Large resolution to show website without hamburger menu.
+            #self.driver.set_window_size(1920, 1080)
 
 
         # used as timeout for selenium.webdriver.support.expected_conditions (EC)
@@ -223,7 +230,7 @@ class SeleniumTest(unittest.TestCase):
         # disables it, closes a possible modal, goes to dashboard and reenables client.
         self.login()
         # Clicks on client menue tab
-        self.wait_and_click(By.ID, 'menu-topnavbar-client')
+        self.select_tab('client')
         # Tries to click on client...
         try:
             self.wait_and_click(By.LINK_TEXT, self.client)
@@ -231,12 +238,12 @@ class SeleniumTest(unittest.TestCase):
         except ElementTimeoutException:
             raise ClientNotFoundException(self.client)
         # And goes back to dashboard tab.
-        self.wait_and_click(By.ID, 'menu-topnavbar-dashboard')
+        self.select_tab('dashboard')
         # Back to the clients
         # Disables client 1 and goes back to the dashboard.
-        self.wait_and_click(By.ID, 'menu-topnavbar-client')
+        self.select_tab('client')
         self.wait_and_click(By.LINK_TEXT, self.client)
-        self.wait_and_click(By.ID, 'menu-topnavbar-client')
+        self.select_tab('client')
 
         if self.client_status(self.client) == 'Enabled':
             # Disables client
@@ -245,9 +252,9 @@ class SeleniumTest(unittest.TestCase):
                 self.wait_and_click(By.LINK_TEXT, 'Back')
             else:
                 # Switches to dashboard, if prevented by open modal: close modal
-                self.wait_and_click(By.ID, 'menu-topnavbar-dashboard', By.CSS_SELECTOR, 'div.modal-footer > button.btn.btn-default')
+                self.select_tab('dashboard', [(By.CSS_SELECTOR, 'div.modal-footer > button.btn.btn-default')])
 
-        self.wait_and_click(By.ID, 'menu-topnavbar-client')
+        self.select_tab('client')
 
         if self.client_status(self.client) == 'Disabled':
             # Enables client
@@ -256,7 +263,7 @@ class SeleniumTest(unittest.TestCase):
                 self.wait_and_click(By.LINK_TEXT, 'Back')
             else:
                 # Switches to dashboard, if prevented by open modal: close modal
-                self.wait_and_click(By.ID, 'menu-topnavbar-dashboard', By.CSS_SELECTOR, 'div.modal-footer > button.btn.btn-default')
+                self.select_tab('dashboard', [(By.CSS_SELECTOR, 'div.modal-footer > button.btn.btn-default')])
 
         self.logout()
 
@@ -284,19 +291,19 @@ class SeleniumTest(unittest.TestCase):
 
     def disabled_test_menue(self):
         self.login()
-        self.wait_and_click(By.ID, 'menu-topnavbar-director')
-        self.wait_and_click(By.ID, 'menu-topnavbar-schedule')
+        self.select_tab('director')
+        self.select_tab('schedule')
         self.wait_and_click(By.XPATH, '//a[contains(@href, "/schedule/status/")]')
-        self.wait_and_click(By.ID, 'menu-topnavbar-storage')
-        self.wait_and_click(By.ID, 'menu-topnavbar-client')
-        self.wait_and_click(By.ID, 'menu-topnavbar-restore')
-        self.wait_and_click(By.ID, 'menu-topnavbar-dashboard', By.XPATH, '//div[@id="modal-001"]//button[.="Close"]')
+        self.select_tab('storage')
+        self.select_tab('client')
+        self.select_tab('restore')
+        self.select_tab('dashboard')
         self.close_alert_and_get_its_text()
         self.logout()
 
     def test_rerun_job(self):
         self.login()
-        self.wait_and_click(By.ID, "menu-topnavbar-client")
+        self.select_tab('client')
         self.wait_and_click(By.LINK_TEXT, self.client)
         # Select first backup in list
         self.wait_and_click(By.XPATH, '//tr[@data-index="0"]/td[1]/a')
@@ -305,15 +312,15 @@ class SeleniumTest(unittest.TestCase):
         if self.profile == 'readonly':
             self.wait_and_click(By.LINK_TEXT, 'Back')
         else:
-            self.wait_and_click(By.ID, "menu-topnavbar-dashboard", By.XPATH, "//div[@id='modal-002']/div/div/div[3]/button")
+            self.select_tab('dashboard', [(By.XPATH, "//div[@id='modal-002']/div/div/div[3]/button")])
         self.logout()
 
     def test_restore(self):
         # Login
         self.login()
-        self.wait_and_click(By.ID, 'menu-topnavbar-restore')
+        self.select_tab('restore')
         # Click on client dropdown menue and close the possible modal
-        self.wait_and_click(By.XPATH, '(//button[@data-id="client"])', By.XPATH, '//div[@id="modal-001"]//button[.="Close"]')
+        self.wait_and_click(By.XPATH, '(//button[@data-id="client"])', [(By.XPATH, '//div[@id="modal-001"]//button[.="Close"]')])
         # Select correct client
         self.wait_and_click(By.LINK_TEXT, self.client)
         # Clicks on file and navigates through the tree
@@ -342,7 +349,7 @@ class SeleniumTest(unittest.TestCase):
 
     def test_run_default_job(self):
         self.login()
-        self.wait_and_click(By.ID, 'menu-topnavbar-job')
+        self.select_tab('job')
         self.wait_and_click(By.LINK_TEXT, 'Run')
         # Open the job list
         self.wait_and_click(By.XPATH, '(//button[@data-id="job"])')
@@ -353,7 +360,7 @@ class SeleniumTest(unittest.TestCase):
         if self.profile == 'readonly':
             self.wait_and_click(By.LINK_TEXT, 'Back')
         else:
-            self.wait_and_click(By.ID, 'menu-topnavbar-dashboard')
+            self.select_tab('dashboard')
         self.logout()
 
     #
@@ -376,14 +383,13 @@ class SeleniumTest(unittest.TestCase):
 
     def job_start_configured(self):
         driver = self.driver
-        self.wait_and_click(By.ID, 'menu-topnavbar-job')
+        self.select_tab('job')
         self.wait_and_click(By.LINK_TEXT, 'Run')
         Select(driver.find_element_by_id('job')).select_by_visible_text('backup-bareos-fd')
         Select(driver.find_element_by_id('client')).select_by_visible_text(self.client)
         Select(driver.find_element_by_id('level')).select_by_visible_text('Incremental')
         # Clears the priority field and enters 5.
-        driver.find_element_by_id('priority').clear()
-        driver.find_element_by_id('priority').send_keys('5')
+        self.enter_input('priority', '5')
         # Open the calendar
         self.wait_and_click(By.CSS_SELECTOR, "span.glyphicon.glyphicon-calendar")
         # Click the icon to delay jobstart by 1h six times
@@ -402,10 +408,8 @@ class SeleniumTest(unittest.TestCase):
         driver = self.driver
         driver.get(self.base_url + '/auth/login')
         Select(driver.find_element_by_name('director')).select_by_visible_text('localhost-dir')
-        driver.find_element_by_name('consolename').clear()
-        driver.find_element_by_name('consolename').send_keys(self.username)
-        driver.find_element_by_name('password').clear()
-        driver.find_element_by_name('password').send_keys(self.password)
+        self.enter_input('consolename', self.username)
+        self.enter_input('password', self.password)
         driver.find_element_by_xpath('(//button[@type="button"])[2]').click()
         driver.find_element_by_link_text('English').click()
         driver.find_element_by_xpath('//input[@id="submit"]').click()
@@ -417,9 +421,30 @@ class SeleniumTest(unittest.TestCase):
             raise WrongCredentialsException(self.username, self.password)
 
     def logout(self):
-        self.wait_and_click(By.CSS_SELECTOR, 'span.glyphicon.glyphicon-user')
+        self.wait_and_click(By.CSS_SELECTOR, 'span.glyphicon.glyphicon-user', [(By.CSS_SELECTOR, 'div.navbar-header > button')])
         self.wait_and_click(By.LINK_TEXT, 'Logout')
         sleep(self.sleeptime)
+
+    def select_tab(self, tab, additional_modals=None):
+        tabid = u'menu-topnavbar-{}'.format(tab)
+        # (By.CLASS_NAME, 'navbar-toggle')
+        # is used, when top navbar is hidden,
+        # because of low windows resolution.
+        modals = []
+        if additional_modals:
+            modals = additional_modals
+        modals += [(By.CLASS_NAME, 'navbar-toggle')]
+        self.wait_and_click(By.ID, tabid, modals)
+
+    def enter_input(self, inputname, inputvalue):
+        """
+        Enter inputvalue into an input-element with the tag inputname.
+        """
+        logger = logging.getLogger()
+        logger.info('Entering %r into the input-field %r.', inputvalue, inputname)
+        elem = self.driver.find_element_by_name(inputname)
+        elem.clear()
+        elem.send_keys(inputvalue)
 
     #
     # Methods used for waiting and clicking
@@ -434,31 +459,94 @@ class SeleniumTest(unittest.TestCase):
             return SeleniumTest.chromedriverpath
         raise IOError('Chrome Driver file not found.')
 
-    def wait_and_click(self, by, value, modal_by=None, modal_value=None):
+    def get_duration(self, start):
+        return (datetime.now() - start).total_seconds()
+
+    def close_modals(self, modal=None):
+        """
+        Try to close modals, if they exist.
+        If not, nothing will be done.
+
+        @param modal: A list of elements that may exist
+                      and if they exist,
+                      they must be clicked.
+        @type modal: List of tuples. Tuples consist out of By and by selector value.
+
+        @return: remaining modals (modals not found and clicked)
+        @rtype: List of tuples. Tuples consist out of By and by selector value.
+        """
         logger = logging.getLogger()
-        element = None
-        starttime = datetime.now()
-        seconds = 0.0
-        while seconds < self.maxwait:
-            self.wait_for_spinner_absence()
-            if modal_by and modal_value:
+        self.wait_for_spinner_absence()
+        done = True
+        if modal:
+            logger.info('checking for modals %s', str(modal))
+            done = False
+        while not done:
+            done = True
+            modal_todo = modal
+            modal = []
+            for modal_by,modal_value in modal_todo:
                 try:
                     #self.driver.switchTo().activeElement(); # required???
                     self.driver.find_element(modal_by, modal_value).click()
                 except:
                     logger.info('skipped modal: %s %s not found', modal_by, modal_value)
+                    modal += [(modal_by,modal_value)]
                 else:
                     logger.info('closing modal %s %s', modal_by, modal_value)
-            logger.info('waiting for %s %s (%ss)', by, value, seconds)
-            element = self.wait_for_element(by, value)
+                    # One modal is closed, retry the remaining modals.
+                    done = False
+            sleep(self.waittime)
+            self.wait_for_spinner_absence()
+        return modal
+
+
+    def wait_and_click(self, by, value, modal=None):
+        """
+        @param by: Element selection type.
+        @type by: By
+        @param value: Element selection value.
+        @type value: C{string}
+        @param modal: A list of elements that may exist
+                      and if they exist,
+                      they must be clicked,
+                      before our target element can be clicked.
+                      This
+        @type modal: List of tuples. Tuples consist out of by selector and value.
+
+        @return: Selected element
+        @rtype: WebElement
+
+        @raises: FailedClickException: if element could not be found.
+        """
+        logger = logging.getLogger()
+        logger.info('element=%s (modals=%s)', str((by,value)), str(modal))
+        element = None
+        starttime = datetime.now()
+        seconds = 0.0
+        retry = 1
+        maxretry = 5
+        while retry <= maxretry:
+            modal = self.close_modals(modal)
+            logger.info('waiting for ({}, {}) (try {}/{})'.format(by, value, retry, maxretry))
             try:
-                element.click()
-            except WebDriverException as e:
-                logger.info('WebDriverException: %s', e)
-                sleep(self.waittime)
+                element = self.wait_for_element(by, value)
+            except (
+                    ElementTimeoutException,
+                    ElementNotFoundException,
+                    ElementCoveredException
+                    ) as exp:
+                pass
             else:
-                return element
-            seconds = (datetime.now() - starttime).total_seconds()
+                try:
+                    element.click()
+                except WebDriverException as e:
+                    logger.info('WebDriverException: %s', e)
+                    sleep(self.waittime)
+                else:
+                    logger.info('clicked %s %s (after %ss)', by, value, self.get_duration(starttime))
+                    return element
+            retry += 1
         logger.error('failed to click %s %s', by, value)
         raise FailedClickException(value)
 
@@ -469,9 +557,6 @@ class SeleniumTest(unittest.TestCase):
         try:
             element = self.wait.until(EC.element_to_be_clickable((by, value)))
         except TimeoutException:
-            self.driver.save_screenshot('screenshot.png')
-            raise ElementTimeoutException(value)
-        if element is None:
             try:
                 self.driver.find_element(by, value)
             except NoSuchElementException:
@@ -483,11 +568,14 @@ class SeleniumTest(unittest.TestCase):
         return element
 
     def wait_for_spinner_absence(self):
+        logger = logging.getLogger()
+        starttime = datetime.now()
         element = None
         try:
             element = WebDriverWait(self.driver, self.maxwait).until(EC.invisibility_of_element_located((By.ID, 'spinner')))
         except TimeoutException:
             raise ElementTimeoutException("spinner")
+        logger.info(u'waited %ss', (self.get_duration(starttime)))
         return element
 
     def close_alert_and_get_its_text(self, accept=True):
