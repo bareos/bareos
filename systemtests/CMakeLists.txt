@@ -62,7 +62,34 @@ macro(CheckForEnabledAndDisabledListEntry TEST_NAME_TO_CHECK)
   ENDIF()
 endmacro()
 
+macro (handle_python_plugin_modules)
+  IF (EXISTS ${python_plugin_module_src_test_dir})
+    set(PYMODULES_TO_LINK_TO_SRC
+      filed/bareos-fd-local-fileset.py
+      filed/BareosFdPluginLocalFileset.py
+      filed/BareosFdWrapper.py
+      filed/BareosFdPluginLDAP.py
+      filed/bareos-fd-mock-test.py
+      filed/BareosFdPluginBaseclass.py
+      filed/bareos_fd_consts.py
+      filed/bareos-fd-ldap.py
+      dird/bareos_dir_consts.py
+      dird/BareosDirPluginBaseclass.py
+      dird/bareos-dir-class-plugin.py
+      dird/BareosDirWrapper.py
+      stored/bareos_sd_consts.py
+      stored/bareos-sd-class-plugin.py
+      stored/BareosSdPluginBaseclass.py
+      stored/BareosSdWrapper.py
+    )
 
+    foreach (PYMODULE_SOURCEPATH ${PYMODULES_TO_LINK_TO_SRC})
+      get_filename_component(PYMODULE_NAME ${PYMODULE_SOURCEPATH} NAME)
+    execute_process(COMMAND
+      ${CMAKE_COMMAND} -E create_symlink ${PROJECT_SOURCE_DIR}/../core/src/plugins/${PYMODULE_SOURCEPATH} ${python_plugin_module_src_test_dir}/${PYMODULE_NAME})
+    endforeach()
+  ENDIF()
+endmacro()
 
 macro (prepare_test)
   # base directory for this test
@@ -354,32 +381,6 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   configure_file("bin/bconsole" "tests/${TEST_NAME}/bin/bconsole" COPYONLY)
   configure_file("bin/bareos" "tests/${TEST_NAME}/bin/bareos" COPYONLY)
 
-  IF (EXISTS ${python_plugin_module_src_test_dir})
-    set(PYMODULES_TO_LINK_TO_SRC
-      filed/bareos-fd-local-fileset.py
-      filed/BareosFdPluginLocalFileset.py
-      filed/BareosFdWrapper.py
-      filed/BareosFdPluginLDAP.py
-      filed/bareos-fd-mock-test.py
-      filed/BareosFdPluginBaseclass.py
-      filed/bareos_fd_consts.py
-      filed/bareos-fd-ldap.py
-      dird/bareos_dir_consts.py
-      dird/BareosDirPluginBaseclass.py
-      dird/bareos-dir-class-plugin.py
-      dird/BareosDirWrapper.py
-      stored/bareos_sd_consts.py
-      stored/bareos-sd-class-plugin.py
-      stored/BareosSdPluginBaseclass.py
-      stored/BareosSdWrapper.py
-    )
-
-    foreach (PYMODULE_SOURCEPATH ${PYMODULES_TO_LINK_TO_SRC})
-      get_filename_component(PYMODULE_NAME ${PYMODULE_SOURCEPATH} NAME)
-    execute_process(COMMAND
-      ${CMAKE_COMMAND} -E create_symlink ${PROJECT_SOURCE_DIR}/../core/src/plugins/${PYMODULE_SOURCEPATH} ${python_plugin_module_src_test_dir}/${PYMODULE_NAME})
-    endforeach()
-  ENDIF()
 
   CheckForEnabledAndDisabledListEntry(${TEST_NAME})
 
@@ -396,7 +397,7 @@ IF(ENABLE_WEBUI_SELENIUM_TEST)
   foreach(TEST_NAME ${WEBUI_SELENIUM_TESTS})
 
     prepare_test()
-
+    handle_python_plugin_modules()
     # split WEBUI_TEST_NAME into PROFILE and TESTNAME
     string(REPLACE "-" ";" SELENIUM_TESTCOMPONENTS ${TEST_NAME})
     #"webui-admin-restore"
