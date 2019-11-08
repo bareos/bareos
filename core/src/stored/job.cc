@@ -33,6 +33,7 @@
 #include "stored/bsr.h"
 #include "stored/acquire.h"
 #include "stored/fd_cmds.h"
+#include "stored/jcr_private.h"
 #include "stored/ndmp_tape.h"
 #include "stored/read_record.h"
 #include "stored/stored_globals.h"
@@ -41,6 +42,7 @@
 #include "lib/parse_bsr.h"
 #include "lib/util.h"
 #include "include/jcr.h"
+#include "include/protocol_types.h"
 
 namespace storagedaemon {
 
@@ -134,27 +136,27 @@ bool job_cmd(JobControlRecord* jcr)
   }
   bstrncpy(jcr->Job, job, sizeof(jcr->Job));
   UnbashSpaces(job_name);
-  jcr->job_name = GetPoolMemory(PM_NAME);
-  PmStrcpy(jcr->job_name, job_name);
+  jcr->impl->job_name = GetPoolMemory(PM_NAME);
+  PmStrcpy(jcr->impl->job_name, job_name);
   UnbashSpaces(client_name);
   jcr->client_name = GetPoolMemory(PM_NAME);
   PmStrcpy(jcr->client_name, client_name);
   UnbashSpaces(fileset_name);
-  jcr->fileset_name = GetPoolMemory(PM_NAME);
-  PmStrcpy(jcr->fileset_name, fileset_name);
+  jcr->impl->fileset_name = GetPoolMemory(PM_NAME);
+  PmStrcpy(jcr->impl->fileset_name, fileset_name);
   jcr->setJobType(JobType);
   jcr->setJobLevel(level);
-  jcr->no_attributes = no_attributes;
-  jcr->spool_attributes = spool_attributes;
-  jcr->spool_data = spool_data;
-  jcr->spool_size = str_to_int64(spool_size);
-  jcr->fileset_md5 = GetPoolMemory(PM_NAME);
-  PmStrcpy(jcr->fileset_md5, fileset_md5);
-  jcr->PreferMountedVols = PreferMountedVols;
-  jcr->RemainingQuota = quota;
+  jcr->impl->no_attributes = no_attributes;
+  jcr->impl->spool_attributes = spool_attributes;
+  jcr->impl->spool_data = spool_data;
+  jcr->impl->spool_size = str_to_int64(spool_size);
+  jcr->impl->fileset_md5 = GetPoolMemory(PM_NAME);
+  PmStrcpy(jcr->impl->fileset_md5, fileset_md5);
+  jcr->impl->PreferMountedVols = PreferMountedVols;
+  jcr->impl->RemainingQuota = quota;
   UnbashSpaces(backup_format);
-  jcr->backup_format = GetPoolMemory(PM_NAME);
-  PmStrcpy(jcr->backup_format, backup_format);
+  jcr->impl->backup_format = GetPoolMemory(PM_NAME);
+  PmStrcpy(jcr->impl->backup_format, backup_format);
   jcr->authenticated = false;
 
   Dmsg1(50, "Quota set as %llu\n", quota);
@@ -199,7 +201,8 @@ bool DoJobRun(JobControlRecord* jcr)
    */
   P(mutex);
   while (!jcr->authenticated && !JobCanceled(jcr)) {
-    errstat = pthread_cond_timedwait(&jcr->job_start_wait, &mutex, &timeout);
+    errstat =
+        pthread_cond_timedwait(&jcr->impl->job_start_wait, &mutex, &timeout);
     if (errstat == ETIMEDOUT || errstat == EINVAL || errstat == EPERM) {
       break;
     }
@@ -225,7 +228,7 @@ bool DoJobRun(JobControlRecord* jcr)
          */
         Dmsg2(800, "Wait for end job jid=%d %p\n", jcr->JobId, jcr);
         P(mutex);
-        pthread_cond_wait(&jcr->job_end_wait, &mutex);
+        pthread_cond_wait(&jcr->impl->job_end_wait, &mutex);
         V(mutex);
       }
       Dmsg2(800, "Done jid=%d %p\n", jcr->JobId, jcr);
@@ -294,8 +297,8 @@ bool nextRunCmd(JobControlRecord* jcr)
 
       P(mutex);
       while (!jcr->authenticated && !JobCanceled(jcr)) {
-        errstat =
-            pthread_cond_timedwait(&jcr->job_start_wait, &mutex, &timeout);
+        errstat = pthread_cond_timedwait(&jcr->impl->job_start_wait, &mutex,
+                                         &timeout);
         if (errstat == ETIMEDOUT || errstat == EINVAL || errstat == EPERM) {
           break;
         }
@@ -318,7 +321,7 @@ bool nextRunCmd(JobControlRecord* jcr)
          */
         Dmsg2(800, "Wait for end job jid=%d %p\n", jcr->JobId, jcr);
         P(mutex);
-        pthread_cond_wait(&jcr->job_end_wait, &mutex);
+        pthread_cond_wait(&jcr->impl->job_end_wait, &mutex);
         V(mutex);
       }
       Dmsg2(800, "Done jid=%d %p\n", jcr->JobId, jcr);
@@ -414,27 +417,27 @@ void StoredFreeJcr(JobControlRecord* jcr)
     jcr->file_bsock = NULL;
   }
 
-  if (jcr->job_name) { FreePoolMemory(jcr->job_name); }
+  if (jcr->impl->job_name) { FreePoolMemory(jcr->impl->job_name); }
 
   if (jcr->client_name) {
     FreeMemory(jcr->client_name);
     jcr->client_name = NULL;
   }
 
-  if (jcr->fileset_name) { FreeMemory(jcr->fileset_name); }
+  if (jcr->impl->fileset_name) { FreeMemory(jcr->impl->fileset_name); }
 
-  if (jcr->fileset_md5) { FreeMemory(jcr->fileset_md5); }
+  if (jcr->impl->fileset_md5) { FreeMemory(jcr->impl->fileset_md5); }
 
-  if (jcr->backup_format) { FreeMemory(jcr->backup_format); }
+  if (jcr->impl->backup_format) { FreeMemory(jcr->impl->backup_format); }
 
-  if (jcr->bsr) {
-    libbareos::FreeBsr(jcr->bsr);
-    jcr->bsr = NULL;
+  if (jcr->impl->read_session.bsr) {
+    libbareos::FreeBsr(jcr->impl->read_session.bsr);
+    jcr->impl->read_session.bsr = NULL;
   }
 
-  if (jcr->rctx) {
-    FreeReadContext(jcr->rctx);
-    jcr->rctx = NULL;
+  if (jcr->impl->read_session.rctx) {
+    FreeReadContext(jcr->impl->read_session.rctx);
+    jcr->impl->read_session.rctx = NULL;
   }
 
   if (jcr->compress.deflate_buffer || jcr->compress.inflate_buffer) {
@@ -451,53 +454,48 @@ void StoredFreeJcr(JobControlRecord* jcr)
     jcr->RestoreBootstrap = NULL;
   }
 
-  if (jcr->next_dev || jcr->prev_dev) {
+  if (jcr->impl->next_dev || jcr->impl->prev_dev) {
     Emsg0(M_FATAL, 0, _("In FreeJcr(), but still attached to device!!!!\n"));
   }
 
-  pthread_cond_destroy(&jcr->job_start_wait);
-  pthread_cond_destroy(&jcr->job_end_wait);
-
-  if (jcr->dcrs) {
-    delete jcr->dcrs;
-    jcr->dcrs = NULL;
-  }
+  pthread_cond_destroy(&jcr->impl->job_start_wait);
+  pthread_cond_destroy(&jcr->impl->job_end_wait);
 
   /*
    * Avoid a double free
    */
-  if (jcr->dcr == jcr->read_dcr) { jcr->read_dcr = NULL; }
+  if (jcr->impl->dcr == jcr->impl->read_dcr) { jcr->impl->read_dcr = NULL; }
 
-  if (jcr->dcr) {
-    FreeDeviceControlRecord(jcr->dcr);
-    jcr->dcr = NULL;
+  if (jcr->impl->dcr) {
+    FreeDeviceControlRecord(jcr->impl->dcr);
+    jcr->impl->dcr = NULL;
   }
 
-  if (jcr->read_dcr) {
-    FreeDeviceControlRecord(jcr->read_dcr);
-    jcr->read_dcr = NULL;
+  if (jcr->impl->read_dcr) {
+    FreeDeviceControlRecord(jcr->impl->read_dcr);
+    jcr->impl->read_dcr = NULL;
   }
 
-  if (jcr->plugin_options) { delete jcr->plugin_options; }
+  if (jcr->impl->plugin_options) { delete jcr->impl->plugin_options; }
 
-  if (jcr->read_store) {
+  if (jcr->impl->read_store) {
     DirectorStorage* store = nullptr;
-    foreach_alist (store, jcr->read_store) {
+    foreach_alist (store, jcr->impl->read_store) {
       delete store->device;
       delete store;
     }
-    delete jcr->read_store;
-    jcr->read_store = NULL;
+    delete jcr->impl->read_store;
+    jcr->impl->read_store = NULL;
   }
 
-  if (jcr->write_store) {
+  if (jcr->impl->write_store) {
     DirectorStorage* store = nullptr;
-    foreach_alist (store, jcr->write_store) {
+    foreach_alist (store, jcr->impl->write_store) {
       delete store->device;
       delete store;
     }
-    delete jcr->write_store;
-    jcr->write_store = NULL;
+    delete jcr->impl->write_store;
+    jcr->impl->write_store = NULL;
   }
 
   FreePlugins(jcr); /* release instantiated plugins */
@@ -508,9 +506,21 @@ void StoredFreeJcr(JobControlRecord* jcr)
                    GetFirstPortHostOrder(me->SDaddrs));
   }
 
+  if (jcr->impl) {
+    delete jcr->impl;
+    jcr->impl = nullptr;
+  }
+
   Dmsg0(200, "End stored FreeJcr\n");
 
   return;
+}
+
+JobControlRecord* NewStoredJcr()
+{
+  JobControlRecord* jcr = new_jcr(StoredFreeJcr);
+  jcr->impl = new JobControlRecordPrivate;
+  return jcr;
 }
 
 } /* namespace storagedaemon */

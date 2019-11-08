@@ -34,6 +34,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/jcr_private.h"
 #include "dird/next_vol.h"
 #include "dird/sd_cmds.h"
 #include "dird/ua_db.h"
@@ -42,6 +43,7 @@
 #include "dird/ua_select.h"
 #include "dird/ua_prune.h"
 #include "dird/ua_purge.h"
+#include "include/auth_protocol_types.h"
 #include "lib/edit.h"
 #include "lib/util.h"
 
@@ -755,7 +757,7 @@ static bool ActionOnPurgeCmd(UaContext* ua, const char* cmd)
   /*
    * Choose storage
    */
-  ua->jcr->res.write_storage = store = get_storage_resource(ua);
+  ua->jcr->impl->res.write_storage = store = get_storage_resource(ua);
   if (!store) { goto bail_out; }
 
   switch (store->Protocol) {
@@ -834,7 +836,7 @@ static bool ActionOnPurgeCmd(UaContext* ua, const char* cmd)
 bail_out:
   CloseDb(ua);
   if (sd) { CloseSdBsock(ua); }
-  ua->jcr->res.write_storage = NULL;
+  ua->jcr->impl->res.write_storage = NULL;
   if (results) { free(results); }
 
   return true;

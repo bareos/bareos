@@ -29,6 +29,7 @@ namespace directordaemon {
 class UaContext;
 
 bool AllowDuplicateJob(JobControlRecord* jcr);
+JobControlRecord* NewDirectorJcr();
 void SetJcrDefaults(JobControlRecord* jcr, JobResource* job);
 void CreateUniqueJobName(JobControlRecord* jcr, const char* base_name);
 void UpdateJobEndRecord(JobControlRecord* jcr);

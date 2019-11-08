@@ -30,6 +30,7 @@
 
 #include "include/bareos.h"
 #include "filed/filed.h"
+#include "filed/jcr_private.h"
 #include "filed/accurate.h"
 
 namespace filedaemon {
@@ -45,13 +46,15 @@ int MakeEstimate(JobControlRecord* jcr)
 
   jcr->setJobStatus(JS_Running);
 
-  SetFindOptions((FindFilesPacket*)jcr->ff, jcr->incremental, jcr->mtime);
+  SetFindOptions((FindFilesPacket*)jcr->impl->ff, jcr->impl->incremental,
+                 jcr->impl->mtime);
   /* in accurate mode, we overwrite the find_one check function */
   if (jcr->accurate) {
-    SetFindChangedFunction((FindFilesPacket*)jcr->ff, AccurateCheckFile);
+    SetFindChangedFunction((FindFilesPacket*)jcr->impl->ff, AccurateCheckFile);
   }
 
-  status = FindFiles(jcr, (FindFilesPacket*)jcr->ff, TallyFile, PluginEstimate);
+  status = FindFiles(jcr, (FindFilesPacket*)jcr->impl->ff, TallyFile,
+                     PluginEstimate);
   AccurateFree(jcr);
   return status;
 }
@@ -106,9 +109,9 @@ static int TallyFile(JobControlRecord* jcr,
     }
 #endif
   }
-  jcr->num_files_examined++;
+  jcr->impl->num_files_examined++;
   jcr->JobFiles++; /* increment number of files seen */
-  if (jcr->listing) {
+  if (jcr->impl->listing) {
     memcpy(&attr.statp, &ff_pkt->statp, sizeof(struct stat));
     attr.type = ff_pkt->type;
     attr.ofname = (POOLMEM*)ff_pkt->fname;

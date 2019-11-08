@@ -31,6 +31,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/autorecycle.h"
+#include "dird/jcr_private.h"
 #include "dird/next_vol.h"
 
 namespace directordaemon {
@@ -46,8 +47,8 @@ bool FindRecycledVolume(JobControlRecord* jcr,
   bstrncpy(mr->VolStatus, "Recycle", sizeof(mr->VolStatus));
   SetStorageidInMr(store, mr);
   if (jcr->db->FindNextVolume(jcr, 1, InChanger, mr, unwanted_volumes)) {
-    jcr->MediaId = mr->MediaId;
-    Dmsg1(20, "Find_next_vol MediaId=%u\n", jcr->MediaId);
+    jcr->impl->MediaId = mr->MediaId;
+    Dmsg1(20, "Find_next_vol MediaId=%u\n", jcr->impl->MediaId);
     PmStrcpy(jcr->VolumeName, mr->VolumeName);
     SetStorageidInMr(store, mr);
 

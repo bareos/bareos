@@ -45,6 +45,7 @@
 #define NEED_JANSSON_NAMESPACE 1
 #include "lib/output_formatter.h"
 #include "lib/json.h"
+#include "include/auth_types.h"
 #include "include/jcr.h"
 
 namespace storagedaemon {

@@ -34,6 +34,7 @@
 #include "filed/heartbeat.h"
 #include "filed/fileset.h"
 #include "filed/heartbeat.h"
+#include "filed/jcr_private.h"
 #include "findlib/attribs.h"
 #include "findlib/find.h"
 #include "findlib/find_one.h"
@@ -742,8 +743,8 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
         goto bail_out;
       }
 
-      jcr->plugin_sp = &sp;
-      ff_pkt = jcr->ff;
+      jcr->impl->plugin_sp = &sp;
+      ff_pkt = jcr->impl->ff;
 
       /*
        * Save original flags.
@@ -1009,13 +1010,13 @@ int PluginEstimate(JobControlRecord* jcr,
           default:
             break;
         }
-        jcr->num_files_examined++;
+        jcr->impl->num_files_examined++;
 
         if (sp.type != FT_LNKSAVED && S_ISREG(sp.statp.st_mode)) {
           if (sp.statp.st_size > 0) { jcr->JobBytes += sp.statp.st_size; }
         }
 
-        if (jcr->listing) {
+        if (jcr->impl->listing) {
           memcpy(&attr.statp, &sp.statp, sizeof(struct stat));
           attr.type = sp.type;
           attr.ofname = (POOLMEM*)sp.fname;
@@ -1057,7 +1058,7 @@ bool SendPluginName(JobControlRecord* jcr, BareosSocket* sd, bool start)
 {
   int status;
   int index = jcr->JobFiles;
-  struct save_pkt* sp = (struct save_pkt*)jcr->plugin_sp;
+  struct save_pkt* sp = (struct save_pkt*)jcr->impl->plugin_sp;
 
   if (!sp) {
     Jmsg0(jcr, M_FATAL, 0, _("Plugin save packet not found.\n"));
@@ -1257,7 +1258,7 @@ int PluginCreateFile(JobControlRecord* jcr,
   rp.olname = attr->olname;
   rp.where = jcr->where;
   rp.RegexWhere = jcr->RegexWhere;
-  rp.replace = jcr->replace;
+  rp.replace = jcr->impl->replace;
   rp.create_status = CF_ERROR;
 
   Dmsg4(debuglevel,
@@ -1355,7 +1356,7 @@ bool PluginSetAttributes(JobControlRecord* jcr,
   rp.olname = attr->olname;
   rp.where = jcr->where;
   rp.RegexWhere = jcr->RegexWhere;
-  rp.replace = jcr->replace;
+  rp.replace = jcr->impl->replace;
   rp.create_status = CF_ERROR;
 
   PlugFunc(plugin)->setFileAttributes(jcr->plugin_ctx, &rp);
@@ -2107,7 +2108,7 @@ static bRC bareosGetValue(bpContext* ctx, bVariable var, void* value)
               NPRT(*((char**)value)));
         break;
       case bVarPrevJobName:
-        *((char**)value) = jcr->PrevJob;
+        *((char**)value) = jcr->impl->PrevJob;
         Dmsg1(debuglevel, "fd-plugin: return bVarPrevJobName=%s\n",
               NPRT(*((char**)value)));
         break;
@@ -2117,9 +2118,9 @@ static bRC bareosGetValue(bpContext* ctx, bVariable var, void* value)
               jcr->JobStatus);
         break;
       case bVarSinceTime:
-        *((int*)value) = (int)jcr->mtime;
+        *((int*)value) = (int)jcr->impl->mtime;
         Dmsg1(debuglevel, "fd-plugin: return bVarSinceTime=%d\n",
-              (int)jcr->mtime);
+              (int)jcr->impl->mtime);
         break;
       case bVarAccurate:
         *((int*)value) = (int)jcr->accurate;
@@ -2130,8 +2131,8 @@ static bRC bareosGetValue(bpContext* ctx, bVariable var, void* value)
         break; /* a write only variable, ignore read request */
       case bVarVssClient:
 #ifdef HAVE_WIN32
-        if (jcr->pVSSClient) {
-          *(void**)value = jcr->pVSSClient;
+        if (jcr->impl->pVSSClient) {
+          *(void**)value = jcr->impl->pVSSClient;
           Dmsg1(debuglevel, "fd-plugin: return bVarVssClient=%p\n",
                 *(void**)value);
           break;
@@ -2339,7 +2340,7 @@ static bRC bareosAddExclude(bpContext* ctx, const char* fname)
    */
   if (!old) { return bRC_Error; }
 
-  if (!bctx->exclude) { bctx->exclude = new_exclude(jcr->ff->fileset); }
+  if (!bctx->exclude) { bctx->exclude = new_exclude(jcr->impl->ff->fileset); }
 
   /*
    * Set the Exclude context
@@ -2444,7 +2445,7 @@ static bRC bareosNewOptions(bpContext* ctx)
   b_plugin_ctx* bctx;
 
   if (!IsCtxGood(ctx, jcr, bctx)) { return bRC_Error; }
-  (void)NewOptions(jcr->ff, jcr->ff->fileset->incexe);
+  (void)NewOptions(jcr->impl->ff, jcr->impl->ff->fileset->incexe);
 
   return bRC_OK;
 }
@@ -2455,7 +2456,7 @@ static bRC bareosNewInclude(bpContext* ctx)
   b_plugin_ctx* bctx;
 
   if (!IsCtxGood(ctx, jcr, bctx)) { return bRC_Error; }
-  (void)new_include(jcr->ff->fileset);
+  (void)new_include(jcr->impl->ff->fileset);
 
   return bRC_OK;
 }
@@ -2467,8 +2468,8 @@ static bRC bareosNewPreInclude(bpContext* ctx)
 
   if (!IsCtxGood(ctx, jcr, bctx)) { return bRC_Error; }
 
-  bctx->include = new_preinclude(jcr->ff->fileset);
-  NewOptions(jcr->ff, bctx->include);
+  bctx->include = new_preinclude(jcr->impl->ff->fileset);
+  NewOptions(jcr->impl->ff, bctx->include);
   SetIncexe(jcr, bctx->include);
 
   return bRC_OK;
@@ -2488,7 +2489,7 @@ static bRC bareosCheckChanges(bpContext* ctx, struct save_pkt* sp)
 
   if (!sp) { goto bail_out; }
 
-  ff_pkt = jcr->ff;
+  ff_pkt = jcr->impl->ff;
   /*
    * Copy fname and link because SaveFile() zaps them.
    * This avoids zaping the plugin's strings.
@@ -2538,7 +2539,7 @@ static bRC bareosAcceptFile(bpContext* ctx, struct save_pkt* sp)
   if (!IsCtxGood(ctx, jcr, bctx)) { goto bail_out; }
   if (!sp) { goto bail_out; }
 
-  ff_pkt = jcr->ff;
+  ff_pkt = jcr->impl->ff;
 
   ff_pkt->fname = sp->fname;
   memcpy(&ff_pkt->statp, &sp->statp, sizeof(ff_pkt->statp));

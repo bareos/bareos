@@ -39,6 +39,7 @@
 #include "dird/fd_cmds.h"
 #include "dird/client_connection_handshake_mode.h"
 #include "dird/dird_globals.h"
+#include "dird/jcr_private.h"
 #include "lib/bnet.h"
 #include "lib/qualified_resource_name_type_converter.h"
 #include "lib/bstringlist.h"
@@ -72,8 +73,7 @@ bool AuthenticateWithStorageDaemon(BareosSocket* sd,
   bstrncpy(dirname, me->resource_name_, sizeof(dirname));
   BashSpaces(dirname);
 
-  sd->InitBnetDump(
-      my_config->CreateOwnQualifiedNameForNetworkDump());
+  sd->InitBnetDump(my_config->CreateOwnQualifiedNameForNetworkDump());
   if (!sd->fsend(hello, dirname)) {
     Dmsg1(debuglevel, _("Error sending Hello to Storage daemon. ERR=%s\n"),
           BnetStrerror(sd));
@@ -126,9 +126,9 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
   if (jcr->authenticated) { return true; }
 
   BareosSocket* fd = jcr->file_bsock;
-  ClientResource* client = jcr->res.client;
+  ClientResource* client = jcr->impl->res.client;
 
-  if (jcr->connection_handshake_try_ ==
+  if (jcr->impl->connection_handshake_try_ ==
       ClientConnectionHandshakeMode::kTlsFirst) {
     std::string qualified_resource_name;
     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
@@ -151,8 +151,7 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
   bstrncpy(dirname, me->resource_name_, sizeof(dirname));
   BashSpaces(dirname);
 
-  fd->InitBnetDump(
-      my_config->CreateOwnQualifiedNameForNetworkDump());
+  fd->InitBnetDump(my_config->CreateOwnQualifiedNameForNetworkDump());
   if (!fd->fsend(hello, dirname)) {
     Jmsg(jcr, M_FATAL, 0,
          _("Error sending Hello to File daemon at \"%s:%d\". ERR=%s\n"),
@@ -193,9 +192,9 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
   }
 
   Dmsg1(110, "<filed: %s", fd->msg);
-  jcr->FDVersion = 0;
+  jcr->impl->FDVersion = 0;
   if (!bstrncmp(fd->msg, FDOKhello, sizeof(FDOKhello)) &&
-      sscanf(fd->msg, FDOKnewHello, &jcr->FDVersion) != 1) {
+      sscanf(fd->msg, FDOKnewHello, &jcr->impl->FDVersion) != 1) {
     Dmsg0(debuglevel, _("File daemon rejected Hello command\n"));
     Jmsg(jcr, M_FATAL, 0,
          _("File daemon at \"%s:%d\" rejected Hello command\n"), fd->host(),

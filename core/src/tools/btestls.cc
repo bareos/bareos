@@ -133,7 +133,7 @@ int main(int argc, char* const* argv)
   argc -= optind;
   argv += optind;
 
-  jcr = new_jcr(sizeof(JobControlRecord), NULL);
+  jcr = new_jcr(nullptr);
 
   ff = init_find_files();
   if (argc == 0 && !inc) {

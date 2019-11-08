@@ -34,6 +34,7 @@
 #include "lib/crypto_cache.h"
 #include "stored/acquire.h"
 #include "stored/butil.h"
+#include "stored/jcr_private.h"
 #include "stored/mount.h"
 #include "stored/read_record.h"
 #include "findlib/find.h"
@@ -402,9 +403,9 @@ static void DoExtract(char* devname)
   jcr = SetupJcr("bextract", devname, bsr, director, dcr, VolumeName,
                  true); /* read device */
   if (!jcr) { exit(1); }
-  dev = jcr->read_dcr->dev;
+  dev = jcr->impl->read_dcr->dev;
   if (!dev) { exit(1); }
-  dcr = jcr->read_dcr;
+  dcr = jcr->impl->read_dcr;
 
   /*
    * Make sure where directory exists and that it is a directory
@@ -453,7 +454,7 @@ static void DoExtract(char* devname)
 
   CleanupCompression(jcr);
 
-  CleanDevice(jcr->dcr);
+  CleanDevice(jcr->impl->dcr);
   dev->term();
   FreeDeviceControlRecord(dcr);
   FreeJcr(jcr);

@@ -247,19 +247,6 @@ struct Session_Label {
 
 #define SERIAL_BUFSIZE 1024 /**< Volume serialisation buffer size */
 
-/**
- * Read context used to keep track of what is processed or not.
- */
-/* clang-format off */
-struct Read_Context {
-  DeviceRecord* rec = nullptr;    /**< Record currently being processed */
-  dlist* recs = nullptr;          /**< Linked list of record packets open */
-  Session_Label sessrec;          /**< Start Of Session record info */
-  uint32_t records_processed = 0; /**< Number of records processed from this block */
-  int32_t lastFileIndex = 0;      /**< Last File Index processed */
-};
-/* clang-format on */
-
 struct DelayedDataStream {
   int32_t stream = 0;          /**< stream less new bits */
   char* content = nullptr;     /**< stream data */

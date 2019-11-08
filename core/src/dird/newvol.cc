@@ -38,6 +38,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/expand.h"
+#include "dird/jcr_private.h"
 #include "dird/next_vol.h"
 #include "cats/sql.h"
 #include "dird/ua_db.h"
@@ -77,7 +78,7 @@ bool newVolume(JobControlRecord* jcr, MediaDbRecord* mr, StorageResource* store)
     *mr = MediaDbRecord{};
     SetPoolDbrDefaultsInMediaDbr(mr, &pr);
     jcr->VolumeName[0] = 0;
-    bstrncpy(mr->MediaType, jcr->res.write_storage->media_type,
+    bstrncpy(mr->MediaType, jcr->impl->res.write_storage->media_type,
              sizeof(mr->MediaType));
     GeneratePluginEvent(jcr, bDirEventNewVolume); /* return void... */
     if (jcr->VolumeName[0] && IsVolumeNameLegal(NULL, jcr->VolumeName)) {
@@ -180,7 +181,7 @@ static bool PerformFullNameSubstitution(JobControlRecord* jcr,
   bool ok = false;
   POOLMEM* label = GetPoolMemory(PM_FNAME);
 
-  jcr->NumVols = pr->NumVols;
+  jcr->impl->NumVols = pr->NumVols;
   if (VariableExpansion(jcr, pr->LabelFormat, label)) {
     bstrncpy(mr->VolumeName, label, sizeof(mr->VolumeName));
     ok = true;

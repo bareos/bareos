@@ -35,6 +35,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
+#include "dird/jcr_private.h"
 #include "dird/job.h"
 #include "dird/storage.h"
 #include "lib/parse_conf.h"
@@ -106,7 +107,7 @@ JobControlRecord* wait_for_next_job(char* one_shot_job_to_run)
         Emsg1(M_ABORT, 0, _("Job %s not found\n"), one_shot_job_to_run);
       }
       Dmsg1(5, "Found one_shot_job_to_run %s\n", one_shot_job_to_run);
-      jcr = new_jcr(sizeof(JobControlRecord), DirdFreeJcr);
+      jcr = NewDirectorJcr();
       SetJcrDefaults(jcr, job);
       return jcr;
     }
@@ -166,7 +167,7 @@ again:
     }
   }
 
-  jcr = new_jcr(sizeof(JobControlRecord), DirdFreeJcr);
+  jcr = NewDirectorJcr();
   run = next_job->run; /* pick up needed values */
   job = next_job->job;
 
@@ -187,33 +188,34 @@ again:
   if (run->level) { jcr->setJobLevel(run->level); /* override run level */ }
 
   if (run->pool) {
-    jcr->res.pool = run->pool; /* override pool */
-    jcr->res.run_pool_override = true;
+    jcr->impl->res.pool = run->pool; /* override pool */
+    jcr->impl->res.run_pool_override = true;
   }
 
   if (run->full_pool) {
-    jcr->res.full_pool = run->full_pool; /* override full pool */
-    jcr->res.run_full_pool_override = true;
+    jcr->impl->res.full_pool = run->full_pool; /* override full pool */
+    jcr->impl->res.run_full_pool_override = true;
   }
 
   if (run->vfull_pool) {
-    jcr->res.vfull_pool = run->vfull_pool; /* override virtual full pool */
-    jcr->res.run_vfull_pool_override = true;
+    jcr->impl->res.vfull_pool =
+        run->vfull_pool; /* override virtual full pool */
+    jcr->impl->res.run_vfull_pool_override = true;
   }
 
   if (run->inc_pool) {
-    jcr->res.inc_pool = run->inc_pool; /* override inc pool */
-    jcr->res.run_inc_pool_override = true;
+    jcr->impl->res.inc_pool = run->inc_pool; /* override inc pool */
+    jcr->impl->res.run_inc_pool_override = true;
   }
 
   if (run->diff_pool) {
-    jcr->res.diff_pool = run->diff_pool; /* override diff pool */
-    jcr->res.run_diff_pool_override = true;
+    jcr->impl->res.diff_pool = run->diff_pool; /* override diff pool */
+    jcr->impl->res.run_diff_pool_override = true;
   }
 
   if (run->next_pool) {
-    jcr->res.next_pool = run->next_pool; /* override next pool */
-    jcr->res.run_next_pool_override = true;
+    jcr->impl->res.next_pool = run->next_pool; /* override next pool */
+    jcr->impl->res.run_next_pool_override = true;
   }
 
   if (run->storage) {
@@ -223,17 +225,21 @@ again:
     SetRwstorage(jcr, &store); /* override storage */
   }
 
-  if (run->msgs) { jcr->res.messages = run->msgs; /* override messages */ }
+  if (run->msgs) {
+    jcr->impl->res.messages = run->msgs; /* override messages */
+  }
 
   if (run->Priority) { jcr->JobPriority = run->Priority; }
 
-  if (run->spool_data_set) { jcr->spool_data = run->spool_data; }
+  if (run->spool_data_set) { jcr->impl->spool_data = run->spool_data; }
 
   if (run->accurate_set) {
     jcr->accurate = run->accurate; /* overwrite accurate mode */
   }
 
-  if (run->MaxRunSchedTime_set) { jcr->MaxRunSchedTime = run->MaxRunSchedTime; }
+  if (run->MaxRunSchedTime_set) {
+    jcr->impl->MaxRunSchedTime = run->MaxRunSchedTime;
+  }
 
   Dmsg0(debuglevel, "Leave wait_for_next_job()\n");
   return jcr;

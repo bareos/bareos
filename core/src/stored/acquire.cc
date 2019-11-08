@@ -43,6 +43,7 @@
 #include "lib/berrno.h"
 #include "include/jcr.h"
 #include "stored/block.h"
+#include "stored/jcr_private.h"
 
 namespace storagedaemon {
 
@@ -112,7 +113,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
   }
 
   /* Find next Volume, if any */
-  vol = jcr->VolList;
+  vol = jcr->impl->VolList;
   if (!vol) {
     char ed1[50];
     Jmsg(jcr, M_FATAL, 0,
@@ -120,12 +121,12 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
          edit_int64(jcr->JobId, ed1));
     goto get_out;
   }
-  jcr->CurReadVolume++;
-  for (i = 1; i < jcr->CurReadVolume; i++) { vol = vol->next; }
+  jcr->impl->CurReadVolume++;
+  for (i = 1; i < jcr->impl->CurReadVolume; i++) { vol = vol->next; }
   if (!vol) {
     Jmsg(jcr, M_FATAL, 0,
          _("Logic error: no next volume to read. Numvol=%d Curvol=%d\n"),
-         jcr->NumReadVolumes, jcr->CurReadVolume);
+         jcr->impl->NumReadVolumes, jcr->impl->CurReadVolume);
     goto get_out; /* should not happen */
   }
   SetDcrFromVol(dcr, vol);
@@ -166,8 +167,8 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
     LockReservations();
     memset(&rctx, 0, sizeof(ReserveContext));
     rctx.jcr = jcr;
-    jcr->read_dcr = dcr;
-    jcr->reserve_msgs = new alist(10, not_owned_by_alist);
+    jcr->impl->read_dcr = dcr;
+    jcr->impl->reserve_msgs = new alist(10, not_owned_by_alist);
     rctx.any_drive = true;
     rctx.device_name = vol->device;
     store = new DirectorStorage;
@@ -508,7 +509,7 @@ DeviceControlRecord* AcquireDeviceForAppend(DeviceControlRecord* dcr)
   }
 
   dev->num_writers++; /* we are now a writer */
-  if (jcr->NumWriteVolumes == 0) { jcr->NumWriteVolumes = 1; }
+  if (jcr->impl->NumWriteVolumes == 0) { jcr->impl->NumWriteVolumes = 1; }
   dev->VolCatInfo.VolCatJobs++; /* increment number of jobs on vol */
   Dmsg4(100, "=== nwriters=%d nres=%d vcatjob=%d dev=%s\n", dev->num_writers,
         dev->NumReserved(), dev->VolCatInfo.VolCatJobs, dev->print_name());
@@ -782,8 +783,8 @@ void SetupNewDcrDevice(JobControlRecord* jcr,
     /*
      * Use job spoolsize prior to device spoolsize
      */
-    if (jcr && jcr->spool_size) {
-      dcr->max_job_spool_size = jcr->spool_size;
+    if (jcr && jcr->impl->spool_size) {
+      dcr->max_job_spool_size = jcr->impl->spool_size;
     } else {
       dcr->max_job_spool_size = dev->device->max_job_spool_size;
     }
@@ -876,9 +877,9 @@ void FreeDeviceControlRecord(DeviceControlRecord* dcr)
 
   if (dcr->rec) { FreeRecord(dcr->rec); }
 
-  if (jcr && jcr->dcr == dcr) { jcr->dcr = NULL; }
+  if (jcr && jcr->impl->dcr == dcr) { jcr->impl->dcr = NULL; }
 
-  if (jcr && jcr->read_dcr == dcr) { jcr->read_dcr = NULL; }
+  if (jcr && jcr->impl->read_dcr == dcr) { jcr->impl->read_dcr = NULL; }
 
   V(dcr->mutex_);
 

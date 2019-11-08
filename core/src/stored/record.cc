@@ -29,6 +29,7 @@
  */
 
 #include "include/bareos.h"
+#include "stored/jcr_private.h"
 #include "stored/stored.h"
 #include "lib/attribs.h"
 #include "lib/util.h"
@@ -684,7 +685,8 @@ bool DeviceControlRecord::WriteRecord()
   }
 
   jcr->JobBytes += after_rec->data_len; /* increment bytes this job */
-  if (jcr->RemainingQuota && jcr->JobBytes > jcr->RemainingQuota) {
+  if (jcr->impl->RemainingQuota &&
+      jcr->JobBytes > jcr->impl->RemainingQuota) {
     Jmsg0(jcr, M_FATAL, 0, _("Quota Exceeded. Job Terminated.\n"));
     goto bail_out;
   }

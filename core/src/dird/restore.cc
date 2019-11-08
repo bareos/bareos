@@ -46,11 +46,13 @@
 #include "dird/backup.h"
 #include "dird/fd_cmds.h"
 #include "dird/getmsg.h"
+#include "dird/jcr_private.h"
 #include "dird/job.h"
 #include "dird/msgchan.h"
 #include "dird/restore.h"
 #include "dird/sd_cmds.h"
 #include "dird/storage.h"
+#include "include/protocol_types.h"
 #include "lib/edit.h"
 #include "lib/util.h"
 
@@ -82,10 +84,10 @@ static void BuildRestoreCommand(JobControlRecord* jcr, PoolMem& ret)
   /*
    * Build the restore command
    */
-  if (jcr->replace != 0) {
-    replace = jcr->replace;
-  } else if (jcr->res.job->replace != 0) {
-    replace = jcr->res.job->replace;
+  if (jcr->impl->replace != 0) {
+    replace = jcr->impl->replace;
+  } else if (jcr->impl->res.job->replace != 0) {
+    replace = jcr->impl->res.job->replace;
   } else {
     replace = REPLACE_ALWAYS; /* always replace */
   }
@@ -93,21 +95,21 @@ static void BuildRestoreCommand(JobControlRecord* jcr, PoolMem& ret)
   if (jcr->RegexWhere) {
     where = jcr->RegexWhere; /* override */
     cmd = restorecmdR;
-  } else if (jcr->res.job->RegexWhere) {
-    where = jcr->res.job->RegexWhere; /* no override take from job */
+  } else if (jcr->impl->res.job->RegexWhere) {
+    where = jcr->impl->res.job->RegexWhere; /* no override take from job */
     cmd = restorecmdR;
   } else if (jcr->where) {
     where = jcr->where; /* override */
     cmd = restorecmd;
-  } else if (jcr->res.job->RestoreWhere) {
-    where = jcr->res.job->RestoreWhere; /* no override take from job */
+  } else if (jcr->impl->res.job->RestoreWhere) {
+    where = jcr->impl->res.job->RestoreWhere; /* no override take from job */
     cmd = restorecmd;
   } else {          /* nothing was specified */
     where = &empty; /* use default */
     cmd = restorecmd;
   }
 
-  jcr->prefix_links = jcr->res.job->PrefixLinks;
+  jcr->prefix_links = jcr->impl->res.job->PrefixLinks;
 
   BashSpaces(where);
   Mmsg(ret, cmd, replace, jcr->prefix_links, where);
@@ -135,7 +137,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
   PoolMem RestoreCmd(PM_MESSAGE);
   char* connection_target_address;
 
-  client = jcr->res.client;
+  client = jcr->impl->res.client;
   /*
    * This command is used for each part
    */
@@ -152,7 +154,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
   jcr->passive_client = client->passive;
   while (!feof(info.bs)) {
     if (!SelectNextRstore(jcr, info)) { goto bail_out; }
-    store = jcr->res.read_storage;
+    store = jcr->impl->res.read_storage;
 
     /**
      * Open a message channel connection with the Storage
@@ -174,7 +176,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
     /*
      * Now start a job with the Storage daemon
      */
-    if (!StartStorageDaemonJob(jcr, jcr->res.read_storage_list, NULL)) {
+    if (!StartStorageDaemonJob(jcr, jcr->impl->res.read_storage_list, NULL)) {
       goto bail_out;
     }
 
@@ -183,7 +185,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
        * Start conversation with File daemon
        */
       jcr->setJobStatus(JS_WaitFD);
-      jcr->keep_sd_auth_key = true; /* don't clear the sd_auth_key now */
+      jcr->impl->keep_sd_auth_key = true; /* don't clear the sd_auth_key now */
 
       if (!ConnectToFileDaemon(jcr, 10, me->FDConnectTimeout, true)) {
         goto bail_out;
@@ -198,11 +200,11 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
       /*
        * Check if the file daemon supports passive client mode.
        */
-      if (jcr->passive_client && jcr->FDVersion < FD_VERSION_51) {
+      if (jcr->passive_client && jcr->impl->FDVersion < FD_VERSION_51) {
         Jmsg(jcr, M_FATAL, 0,
              _("Client \"%s\" doesn't support passive client mode. "
                "Please upgrade your client or disable compat mode.\n"),
-             jcr->res.client->resource_name_);
+             jcr->impl->res.client->resource_name_);
         goto bail_out;
       }
     }
@@ -247,7 +249,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
        */
 
       TlsPolicy tls_policy;
-      if (jcr->res.client->connection_successful_handshake_ !=
+      if (jcr->impl->res.client->connection_successful_handshake_ !=
           ClientConnectionHandshakeMode::kTlsFirst) {
         tls_policy = store->GetPolicy();
       } else {
@@ -283,7 +285,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
 
       TlsPolicy tls_policy;
 
-      if (jcr->res.client->connection_successful_handshake_ !=
+      if (jcr->impl->res.client->connection_successful_handshake_ !=
           ClientConnectionHandshakeMode::kTlsFirst) {
         tls_policy = client->GetPolicy();
       } else {
@@ -332,7 +334,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
       /*
        * Only FD version 52 and later understand the sending of plugin options.
        */
-      if (jcr->FDVersion >= FD_VERSION_52) {
+      if (jcr->impl->FDVersion >= FD_VERSION_52) {
         if (!SendPluginOptions(jcr)) {
           Dmsg0(000, "FAIL: Send plugin options\n");
           goto bail_out;
@@ -342,11 +344,11 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
          * Plugin options specified and not a FD that understands the new
          * protocol keyword.
          */
-        if (jcr->plugin_options) {
+        if (jcr->impl->plugin_options) {
           Jmsg(jcr, M_FATAL, 0,
                _("Client \"%s\" doesn't support plugin option passing. "
                  "Please upgrade your client or disable compat mode.\n"),
-               jcr->res.client->resource_name_);
+               jcr->impl->res.client->resource_name_);
           goto bail_out;
         }
       }
@@ -363,8 +365,8 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
       goto bail_out;
     }
 
-    if (jcr->FDVersion < FD_VERSION_2) { /* Old FD */
-      break;                             /* we do only one loop */
+    if (jcr->impl->FDVersion < FD_VERSION_2) { /* Old FD */
+      break;                                    /* we do only one loop */
     } else {
       if (!response(jcr, fd, OKstoreend, "Store end", DISPLAY_ERROR)) {
         goto bail_out;
@@ -373,7 +375,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
     }
   } /* the whole boostrap has been send */
 
-  if (fd && jcr->FDVersion >= FD_VERSION_2) { fd->fsend("endrestore"); }
+  if (fd && jcr->impl->FDVersion >= FD_VERSION_2) { fd->fsend("endrestore"); }
 
   CloseBootstrapFile(info);
   return true;
@@ -413,14 +415,14 @@ bool DoNativeRestore(JobControlRecord* jcr)
 {
   int status;
 
-  jcr->jr.JobLevel = L_FULL; /* Full restore */
-  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->jr)) {
+  jcr->impl->jr.JobLevel = L_FULL; /* Full restore */
+  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
     goto bail_out;
   }
   Dmsg0(20, "Updated job start record\n");
 
-  Dmsg1(20, "RestoreJobId=%d\n", jcr->res.job->RestoreJobId);
+  Dmsg1(20, "RestoreJobId=%d\n", jcr->impl->res.job->RestoreJobId);
 
   if (!jcr->RestoreBootstrap) {
     Jmsg(jcr, M_FATAL, 0,
@@ -464,16 +466,16 @@ void NativeRestoreCleanup(JobControlRecord* jcr, int TermCode)
   Dmsg0(20, "In NativeRestoreCleanup\n");
   UpdateJobEnd(jcr, TermCode);
 
-  if (jcr->unlink_bsr && jcr->RestoreBootstrap) {
+  if (jcr->impl->unlink_bsr && jcr->RestoreBootstrap) {
     SecureErase(jcr, jcr->RestoreBootstrap);
-    jcr->unlink_bsr = false;
+    jcr->impl->unlink_bsr = false;
   }
 
   if (JobCanceled(jcr)) { CancelStorageDaemonJob(jcr); }
 
   switch (TermCode) {
     case JS_Terminated:
-      if (jcr->ExpectedFiles > jcr->jr.JobFiles) {
+      if (jcr->impl->ExpectedFiles > jcr->impl->jr.JobFiles) {
         TermMsg = _("Restore OK -- warning file count mismatch");
       } else {
         TermMsg = _("Restore OK");
@@ -488,14 +490,18 @@ void NativeRestoreCleanup(JobControlRecord* jcr, int TermCode)
       msg_type = M_ERROR; /* Generate error message */
       if (jcr->store_bsock) {
         jcr->store_bsock->signal(BNET_TERMINATE);
-        if (jcr->SD_msg_chan_started) { pthread_cancel(jcr->SD_msg_chan); }
+        if (jcr->impl->SD_msg_chan_started) {
+          pthread_cancel(jcr->impl->SD_msg_chan);
+        }
       }
       break;
     case JS_Canceled:
       TermMsg = _("Restore Canceled");
       if (jcr->store_bsock) {
         jcr->store_bsock->signal(BNET_TERMINATE);
-        if (jcr->SD_msg_chan_started) { pthread_cancel(jcr->SD_msg_chan); }
+        if (jcr->impl->SD_msg_chan_started) {
+          pthread_cancel(jcr->impl->SD_msg_chan);
+        }
       }
       break;
     default:
@@ -526,18 +532,18 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
   double kbps;
   PoolMem temp, secure_erase_status;
 
-  bstrftimes(sdt, sizeof(sdt), jcr->jr.StartTime);
-  bstrftimes(edt, sizeof(edt), jcr->jr.EndTime);
-  RunTime = jcr->jr.EndTime - jcr->jr.StartTime;
+  bstrftimes(sdt, sizeof(sdt), jcr->impl->jr.StartTime);
+  bstrftimes(edt, sizeof(edt), jcr->impl->jr.EndTime);
+  RunTime = jcr->impl->jr.EndTime - jcr->impl->jr.StartTime;
   if (RunTime <= 0) {
     kbps = 0;
   } else {
-    kbps = ((double)jcr->jr.JobBytes) / (1000.0 * (double)RunTime);
+    kbps = ((double)jcr->impl->jr.JobBytes) / (1000.0 * (double)RunTime);
   }
   if (kbps < 0.05) { kbps = 0; }
 
-  JobstatusToAscii(jcr->FDJobStatus, fd_term_msg, sizeof(fd_term_msg));
-  JobstatusToAscii(jcr->SDJobStatus, sd_term_msg, sizeof(sd_term_msg));
+  JobstatusToAscii(jcr->impl->FDJobStatus, fd_term_msg, sizeof(fd_term_msg));
+  JobstatusToAscii(jcr->impl->SDJobStatus, sd_term_msg, sizeof(sd_term_msg));
 
   switch (jcr->getJobProtocol()) {
     case PT_NDMP_BAREOS:
@@ -559,11 +565,12 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
              "  Bareos binary info:     %s\n"
              "  Termination:            %s\n\n"),
            BAREOS, my_name, VERSION, LSMDATE, HOST_OS, DISTNAME, DISTVER,
-           jcr->jr.JobId, jcr->jr.Job, jcr->res.client->resource_name_, sdt,
-           edt, edit_utime(RunTime, elapsed, sizeof(elapsed)),
-           edit_uint64_with_commas((uint64_t)jcr->ExpectedFiles, ec1),
-           edit_uint64_with_commas((uint64_t)jcr->jr.JobFiles, ec2),
-           edit_uint64_with_commas(jcr->jr.JobBytes, ec3), (float)kbps,
+           jcr->impl->jr.JobId, jcr->impl->jr.Job,
+           jcr->impl->res.client->resource_name_, sdt, edt,
+           edit_utime(RunTime, elapsed, sizeof(elapsed)),
+           edit_uint64_with_commas((uint64_t)jcr->impl->ExpectedFiles, ec1),
+           edit_uint64_with_commas((uint64_t)jcr->impl->jr.JobFiles, ec2),
+           edit_uint64_with_commas(jcr->impl->jr.JobBytes, ec3), (float)kbps,
            sd_term_msg, BAREOS_JOBLOG_MESSAGE, TermMsg);
       break;
     default:
@@ -571,12 +578,14 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
         Mmsg(temp, "  Dir Secure Erase Cmd:   %s\n", me->secure_erase_cmdline);
         PmStrcat(secure_erase_status, temp.c_str());
       }
-      if (!bstrcmp(jcr->FDSecureEraseCmd, "*None*")) {
-        Mmsg(temp, "  FD  Secure Erase Cmd:   %s\n", jcr->FDSecureEraseCmd);
+      if (!bstrcmp(jcr->impl->FDSecureEraseCmd, "*None*")) {
+        Mmsg(temp, "  FD  Secure Erase Cmd:   %s\n",
+             jcr->impl->FDSecureEraseCmd);
         PmStrcat(secure_erase_status, temp.c_str());
       }
-      if (!bstrcmp(jcr->SDSecureEraseCmd, "*None*")) {
-        Mmsg(temp, "  SD  Secure Erase Cmd:   %s\n", jcr->SDSecureEraseCmd);
+      if (!bstrcmp(jcr->impl->SDSecureEraseCmd, "*None*")) {
+        Mmsg(temp, "  SD  Secure Erase Cmd:   %s\n",
+             jcr->impl->SDSecureEraseCmd);
         PmStrcat(secure_erase_status, temp.c_str());
       }
 
@@ -600,11 +609,12 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
              "  Bareos binary info:     %s\n"
              "  Termination:            %s\n\n"),
            BAREOS, my_name, VERSION, LSMDATE, HOST_OS, DISTNAME, DISTVER,
-           jcr->jr.JobId, jcr->jr.Job, jcr->res.client->resource_name_, sdt,
-           edt, edit_utime(RunTime, elapsed, sizeof(elapsed)),
-           edit_uint64_with_commas((uint64_t)jcr->ExpectedFiles, ec1),
-           edit_uint64_with_commas((uint64_t)jcr->jr.JobFiles, ec2),
-           edit_uint64_with_commas(jcr->jr.JobBytes, ec3), (float)kbps,
+           jcr->impl->jr.JobId, jcr->impl->jr.Job,
+           jcr->impl->res.client->resource_name_, sdt, edt,
+           edit_utime(RunTime, elapsed, sizeof(elapsed)),
+           edit_uint64_with_commas((uint64_t)jcr->impl->ExpectedFiles, ec1),
+           edit_uint64_with_commas((uint64_t)jcr->impl->jr.JobFiles, ec2),
+           edit_uint64_with_commas(jcr->impl->jr.JobBytes, ec3), (float)kbps,
            jcr->JobErrors, fd_term_msg, sd_term_msg,
            secure_erase_status.c_str(), BAREOS_JOBLOG_MESSAGE, TermMsg);
       break;

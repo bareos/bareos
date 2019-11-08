@@ -37,6 +37,7 @@
 #include "filed/crypto.h"
 #include "filed/heartbeat.h"
 #include "filed/backup.h"
+#include "filed/jcr_private.h"
 #include "include/ch.h"
 #include "findlib/attribs.h"
 #include "findlib/hardlink.h"
@@ -130,52 +131,53 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr,
 
   if (!CryptoSessionStart(jcr, cipher)) { return false; }
 
-  SetFindOptions((FindFilesPacket*)jcr->ff, jcr->incremental, jcr->mtime);
+  SetFindOptions((FindFilesPacket*)jcr->impl->ff, jcr->impl->incremental,
+                 jcr->impl->mtime);
 
   /**
    * In accurate mode, we overload the find_one check function
    */
   if (jcr->accurate) {
-    SetFindChangedFunction((FindFilesPacket*)jcr->ff, AccurateCheckFile);
+    SetFindChangedFunction((FindFilesPacket*)jcr->impl->ff, AccurateCheckFile);
   }
 
   StartHeartbeatMonitor(jcr);
 
   if (have_acl) {
-    jcr->acl_data = (acl_data_t*)malloc(sizeof(acl_data_t));
-    memset(jcr->acl_data, 0, sizeof(acl_data_t));
-    jcr->acl_data->u.build =
+    jcr->impl->acl_data = (acl_data_t*)malloc(sizeof(acl_data_t));
+    memset(jcr->impl->acl_data, 0, sizeof(acl_data_t));
+    jcr->impl->acl_data->u.build =
         (acl_build_data_t*)malloc(sizeof(acl_build_data_t));
-    memset(jcr->acl_data->u.build, 0, sizeof(acl_build_data_t));
-    jcr->acl_data->u.build->content = GetPoolMemory(PM_MESSAGE);
+    memset(jcr->impl->acl_data->u.build, 0, sizeof(acl_build_data_t));
+    jcr->impl->acl_data->u.build->content = GetPoolMemory(PM_MESSAGE);
   }
 
   if (have_xattr) {
-    jcr->xattr_data = (xattr_data_t*)malloc(sizeof(xattr_data_t));
-    memset(jcr->xattr_data, 0, sizeof(xattr_data_t));
-    jcr->xattr_data->u.build =
+    jcr->impl->xattr_data = (xattr_data_t*)malloc(sizeof(xattr_data_t));
+    memset(jcr->impl->xattr_data, 0, sizeof(xattr_data_t));
+    jcr->impl->xattr_data->u.build =
         (xattr_build_data_t*)malloc(sizeof(xattr_build_data_t));
-    memset(jcr->xattr_data->u.build, 0, sizeof(xattr_build_data_t));
-    jcr->xattr_data->u.build->content = GetPoolMemory(PM_MESSAGE);
+    memset(jcr->impl->xattr_data->u.build, 0, sizeof(xattr_build_data_t));
+    jcr->impl->xattr_data->u.build->content = GetPoolMemory(PM_MESSAGE);
   }
 
   /**
    * Subroutine SaveFile() is called for each file
    */
-  if (!FindFiles(jcr, (FindFilesPacket*)jcr->ff, SaveFile, PluginSave)) {
+  if (!FindFiles(jcr, (FindFilesPacket*)jcr->impl->ff, SaveFile, PluginSave)) {
     ok = false; /* error */
     jcr->setJobStatus(JS_ErrorTerminated);
   }
 
-  if (have_acl && jcr->acl_data->u.build->nr_errors > 0) {
+  if (have_acl && jcr->impl->acl_data->u.build->nr_errors > 0) {
     Jmsg(jcr, M_WARNING, 0,
          _("Encountered %ld acl errors while doing backup\n"),
-         jcr->acl_data->u.build->nr_errors);
+         jcr->impl->acl_data->u.build->nr_errors);
   }
-  if (have_xattr && jcr->xattr_data->u.build->nr_errors > 0) {
+  if (have_xattr && jcr->impl->xattr_data->u.build->nr_errors > 0) {
     Jmsg(jcr, M_WARNING, 0,
          _("Encountered %ld xattr errors while doing backup\n"),
-         jcr->xattr_data->u.build->nr_errors);
+         jcr->impl->xattr_data->u.build->nr_errors);
   }
 
   CloseVssBackupSession(jcr);
@@ -186,23 +188,23 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr,
 
   sd->signal(BNET_EOD); /* end of sending data */
 
-  if (have_acl && jcr->acl_data) {
-    FreePoolMemory(jcr->acl_data->u.build->content);
-    free(jcr->acl_data->u.build);
-    free(jcr->acl_data);
-    jcr->acl_data = NULL;
+  if (have_acl && jcr->impl->acl_data) {
+    FreePoolMemory(jcr->impl->acl_data->u.build->content);
+    free(jcr->impl->acl_data->u.build);
+    free(jcr->impl->acl_data);
+    jcr->impl->acl_data = NULL;
   }
 
-  if (have_xattr && jcr->xattr_data) {
-    FreePoolMemory(jcr->xattr_data->u.build->content);
-    free(jcr->xattr_data->u.build);
-    free(jcr->xattr_data);
-    jcr->xattr_data = NULL;
+  if (have_xattr && jcr->impl->xattr_data) {
+    FreePoolMemory(jcr->impl->xattr_data->u.build->content);
+    free(jcr->impl->xattr_data->u.build);
+    free(jcr->impl->xattr_data);
+    jcr->impl->xattr_data = NULL;
   }
 
-  if (jcr->big_buf) {
-    free(jcr->big_buf);
-    jcr->big_buf = NULL;
+  if (jcr->impl->big_buf) {
+    free(jcr->impl->big_buf);
+    jcr->impl->big_buf = NULL;
   }
 
   CleanupCompression(jcr);
@@ -323,7 +325,7 @@ static inline bool SetupEncryptionDigests(b_save_ctx& bsctx)
   /* TODO landonf: We should really only calculate the digest once, for
    * both verification and signing.
    */
-  if (bsctx.jcr->crypto.pki_sign) {
+  if (bsctx.jcr->impl->crypto.pki_sign) {
     bsctx.signing_digest = crypto_digest_new(bsctx.jcr, signing_algorithm);
 
     /*
@@ -341,7 +343,7 @@ static inline bool SetupEncryptionDigests(b_save_ctx& bsctx)
   /*
    * Enable encryption
    */
-  if (bsctx.jcr->crypto.pki_encrypt) {
+  if (bsctx.jcr->impl->crypto.pki_encrypt) {
     SetBit(FO_ENCRYPT, bsctx.ff_pkt->flags);
   }
   retval = true;
@@ -367,7 +369,7 @@ static inline bool TerminateSigningDigest(b_save_ctx& bsctx)
   }
 
   if (!CryptoSignAddSigner(signature, bsctx.signing_digest,
-                           bsctx.jcr->crypto.pki_keypair)) {
+                           bsctx.jcr->impl->crypto.pki_keypair)) {
     Jmsg(bsctx.jcr, M_FATAL, 0,
          _("An error occurred while signing the stream.\n"));
     goto bail_out;
@@ -461,13 +463,13 @@ static inline bool DoBackupAcl(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 {
   bacl_exit_code retval;
 
-  jcr->acl_data->filetype = ff_pkt->type;
-  jcr->acl_data->last_fname = jcr->last_fname;
+  jcr->impl->acl_data->filetype = ff_pkt->type;
+  jcr->impl->acl_data->last_fname = jcr->impl->last_fname;
 
   if (jcr->IsPlugin()) {
-    retval = PluginBuildAclStreams(jcr, jcr->acl_data, ff_pkt);
+    retval = PluginBuildAclStreams(jcr, jcr->impl->acl_data, ff_pkt);
   } else {
-    retval = BuildAclStreams(jcr, jcr->acl_data, ff_pkt);
+    retval = BuildAclStreams(jcr, jcr->impl->acl_data, ff_pkt);
   }
 
   switch (retval) {
@@ -475,7 +477,7 @@ static inline bool DoBackupAcl(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
       return false;
     case bacl_exit_error:
       Jmsg(jcr, M_ERROR, 0, "%s", jcr->errmsg);
-      jcr->acl_data->u.build->nr_errors++;
+      jcr->impl->acl_data->u.build->nr_errors++;
       break;
     case bacl_exit_ok:
       break;
@@ -488,12 +490,12 @@ static inline bool DoBackupXattr(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 {
   BxattrExitCode retval;
 
-  jcr->xattr_data->last_fname = jcr->last_fname;
+  jcr->impl->xattr_data->last_fname = jcr->impl->last_fname;
 
   if (jcr->IsPlugin()) {
-    retval = PluginBuildXattrStreams(jcr, jcr->xattr_data, ff_pkt);
+    retval = PluginBuildXattrStreams(jcr, jcr->impl->xattr_data, ff_pkt);
   } else {
-    retval = BuildXattrStreams(jcr, jcr->xattr_data, ff_pkt);
+    retval = BuildXattrStreams(jcr, jcr->impl->xattr_data, ff_pkt);
   }
 
   switch (retval) {
@@ -504,7 +506,7 @@ static inline bool DoBackupXattr(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
       break;
     case BxattrExitCode::kError:
       Jmsg(jcr, M_ERROR, 0, "%s", jcr->errmsg);
-      jcr->xattr_data->u.build->nr_errors++;
+      jcr->impl->xattr_data->u.build->nr_errors++;
       break;
     case BxattrExitCode::kSuccess:
       break;
@@ -537,7 +539,7 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
 
   if (jcr->IsCanceled() || jcr->IsIncomplete()) { return 0; }
 
-  jcr->num_files_examined++; /* bump total file count */
+  jcr->impl->num_files_examined++; /* bump total file count */
 
   switch (ff_pkt->type) {
     case FT_LNKSAVED: /* Hard linked, file already saved */
@@ -562,8 +564,8 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
       Dmsg1(100, "FT_PLUGIN_CONFIG saving: %s\n", ff_pkt->fname);
       break;
     case FT_DIRBEGIN:
-      jcr->num_files_examined--; /* correct file count */
-      return 1;                  /* not used */
+      jcr->impl->num_files_examined--; /* correct file count */
+      return 1;                         /* not used */
     case FT_NORECURSE:
       Jmsg(jcr, M_INFO, 1,
            _("     Recursion turned off. Will not descend from %s into %s\n"),
@@ -698,7 +700,7 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
         Dmsg2(10, "Option plugin %s will be used to backup %s\n",
               ff_pkt->plugin, ff_pkt->fname);
         jcr->opt_plugin = true;
-        jcr->plugin_sp = &sp;
+        jcr->impl->plugin_sp = &sp;
         PluginUpdateFfPkt(ff_pkt, &sp);
         do_plugin_set = true;
         break;
@@ -742,7 +744,7 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
   /*
    * Set up the encryption context and send the session data to the SD
    */
-  if (has_file_data && jcr->crypto.pki_encrypt) {
+  if (has_file_data && jcr->impl->crypto.pki_encrypt) {
     if (!CryptoSessionSend(jcr, sd)) { goto bail_out; }
   }
 
@@ -883,7 +885,7 @@ bail_out:
     SendPluginName(jcr, sd, false); /* signal end of plugin data */
   }
   if (ff_pkt->opt_plugin) {
-    jcr->plugin_sp = NULL; /* sp is local to this function */
+    jcr->impl->plugin_sp = NULL; /* sp is local to this function */
     jcr->opt_plugin = false;
   }
   if (bsctx.digest) { CryptoDigestFree(bsctx.digest); }
@@ -1217,7 +1219,8 @@ static int send_data(JobControlRecord* jcr,
     /*
      * For encryption, we must call finalize to push out any buffered data.
      */
-    if (!CryptoCipherFinalize(bctx.cipher_ctx, (uint8_t*)jcr->crypto.crypto_buf,
+    if (!CryptoCipherFinalize(bctx.cipher_ctx,
+                              (uint8_t*)jcr->impl->crypto.crypto_buf,
                               &bctx.encrypted_len)) {
       /*
        * Padding failed. Shouldn't happen.
@@ -1231,7 +1234,7 @@ static int send_data(JobControlRecord* jcr,
      */
     if (bctx.encrypted_len > 0) {
       sd->message_length = bctx.encrypted_len; /* set encrypted length */
-      sd->msg = jcr->crypto.crypto_buf;        /* set correct write buffer */
+      sd->msg = jcr->impl->crypto.crypto_buf; /* set correct write buffer */
       if (!sd->send()) {
         if (!jcr->IsJobCanceled()) {
           Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
@@ -1313,7 +1316,7 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
   jcr->lock();
   jcr->JobFiles++;                   /* increment number of files sent */
   ff_pkt->FileIndex = jcr->JobFiles; /* return FileIndex */
-  PmStrcpy(jcr->last_fname, ff_pkt->fname);
+  PmStrcpy(jcr->impl->last_fname, ff_pkt->fname);
   jcr->unlock();
 
   /*
@@ -1567,33 +1570,33 @@ static void CloseVssBackupSession(JobControlRecord* jcr)
    * STOP VSS ON WIN32
    * Tell vss to close the backup session
    */
-  if (jcr->pVSSClient) {
+  if (jcr->impl->pVSSClient) {
     /*
      * We are about to call the BackupComplete VSS method so let all plugins
      * know that by raising the bEventVssBackupComplete event.
      */
     GeneratePluginEvent(jcr, bEventVssBackupComplete);
-    if (jcr->pVSSClient->CloseBackup()) {
+    if (jcr->impl->pVSSClient->CloseBackup()) {
       /*
        * Inform user about writer states
        */
-      for (size_t i = 0; i < jcr->pVSSClient->GetWriterCount(); i++) {
+      for (size_t i = 0; i < jcr->impl->pVSSClient->GetWriterCount(); i++) {
         int msg_type = M_INFO;
-        if (jcr->pVSSClient->GetWriterState(i) < 1) {
+        if (jcr->impl->pVSSClient->GetWriterState(i) < 1) {
           msg_type = M_WARNING;
           jcr->JobErrors++;
         }
         Jmsg(jcr, msg_type, 0, _("VSS Writer (BackupComplete): %s\n"),
-             jcr->pVSSClient->GetWriterInfo(i));
+             jcr->impl->pVSSClient->GetWriterInfo(i));
       }
     }
 
     /*
      * Generate Job global writer metadata
      */
-    wchar_t* metadata = jcr->pVSSClient->GetMetadata();
+    wchar_t* metadata = jcr->impl->pVSSClient->GetMetadata();
     if (metadata) {
-      FindFilesPacket* ff_pkt = jcr->ff;
+      FindFilesPacket* ff_pkt = jcr->impl->ff;
       ff_pkt->fname = (char*)"*all*"; /* for all plugins */
       ff_pkt->type = FT_RESTORE_FIRST;
       ff_pkt->LinkFI = 0;

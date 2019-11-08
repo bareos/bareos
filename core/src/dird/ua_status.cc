@@ -30,6 +30,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/jcr_private.h"
 #include "dird/dird_globals.h"
 #include "dird/fd_cmds.h"
 #include "dird/job.h"
@@ -44,6 +45,7 @@
 #include "dird/ua_output.h"
 #include "dird/ua_select.h"
 #include "dird/ua_status.h"
+#include "include/auth_protocol_types.h"
 #include "lib/edit.h"
 #include "lib/recent_job_results_list.h"
 #include "lib/parse_conf.h"
@@ -107,7 +109,7 @@ bool DotStatusCmd(UaContext* ua, const char* cmd)
       ua->SendMsg(OKdotstatus, ua->argk[2]);
       foreach_jcr (njcr) {
         if (njcr->JobId != 0 &&
-            ua->AclAccessOk(Job_ACL, njcr->res.job->resource_name_)) {
+            ua->AclAccessOk(Job_ACL, njcr->impl->res.job->resource_name_)) {
           ua->SendMsg(DotStatusJob, edit_int64(njcr->JobId, ed1),
                       njcr->JobStatus, njcr->JobErrors);
         }
@@ -776,12 +778,12 @@ static void PrtRuntime(UaContext* ua, sched_pkt* sp)
   if (sp->job->JobType == JT_BACKUP) {
     jcr->db = NULL;
     ok = CompleteJcrForJob(jcr, sp->job, sp->pool);
-    Dmsg1(250, "Using pool=%s\n", jcr->res.pool->resource_name_);
+    Dmsg1(250, "Using pool=%s\n", jcr->impl->res.pool->resource_name_);
     if (jcr->db) { CloseDb = true; /* new db opened, remember to close it */ }
     if (ok) {
-      mr.PoolId = jcr->jr.PoolId;
-      jcr->res.write_storage = sp->store;
-      SetStorageidInMr(jcr->res.write_storage, &mr);
+      mr.PoolId = jcr->impl->jr.PoolId;
+      jcr->impl->res.write_storage = sp->store;
+      SetStorageidInMr(jcr->impl->res.write_storage, &mr);
       Dmsg0(250, "call FindNextVolumeForAppend\n");
       /* no need to set ScratchPoolId, since we use fnv_no_create_vol */
       ok = FindNextVolumeForAppend(jcr, &mr, 1, NULL, fnv_no_create_vol,
@@ -952,7 +954,7 @@ static void ListRunningJobs(UaContext* ua)
   }
   foreach_jcr (jcr) {
     if (jcr->JobId == 0 ||
-        !ua->AclAccessOk(Job_ACL, jcr->res.job->resource_name_)) {
+        !ua->AclAccessOk(Job_ACL, jcr->impl->res.job->resource_name_)) {
       continue;
     }
     njobs++;
@@ -989,23 +991,23 @@ static void ListRunningJobs(UaContext* ua)
         break;
       case JS_WaitFD:
         emsg = (char*)GetPoolMemory(PM_FNAME);
-        if (!jcr->res.client) {
+        if (!jcr->impl->res.client) {
           Mmsg(emsg, _("is waiting on Client"));
         } else {
           Mmsg(emsg, _("is waiting on Client %s"),
-               jcr->res.client->resource_name_);
+               jcr->impl->res.client->resource_name_);
         }
         pool_mem = true;
         msg = emsg;
         break;
       case JS_WaitSD:
         emsg = (char*)GetPoolMemory(PM_FNAME);
-        if (jcr->res.write_storage) {
+        if (jcr->impl->res.write_storage) {
           Mmsg(emsg, _("is waiting on Storage \"%s\""),
-               jcr->res.write_storage->resource_name_);
-        } else if (jcr->res.read_storage) {
+               jcr->impl->res.write_storage->resource_name_);
+        } else if (jcr->impl->res.read_storage) {
           Mmsg(emsg, _("is waiting on Storage \"%s\""),
-               jcr->res.read_storage->resource_name_);
+               jcr->impl->res.read_storage->resource_name_);
         } else {
           Mmsg(emsg, _("is waiting on Storage"));
         }
@@ -1062,7 +1064,7 @@ static void ListRunningJobs(UaContext* ua)
     /*
      * Now report Storage daemon status code
      */
-    switch (jcr->SDJobStatus) {
+    switch (jcr->impl->SDJobStatus) {
       case JS_WaitMount:
         if (pool_mem) {
           FreePoolMemory(emsg);
@@ -1088,12 +1090,12 @@ static void ListRunningJobs(UaContext* ua)
            */
           Mmsg(emsg, _("is waiting for Client to connect (Client Initiated "
                        "Connection)"));
-        } else if (!jcr->res.client || !jcr->res.write_storage) {
+        } else if (!jcr->impl->res.client || !jcr->impl->res.write_storage) {
           Mmsg(emsg, _("is waiting for Client to connect to Storage daemon"));
         } else {
           Mmsg(emsg, _("is waiting for Client %s to connect to Storage %s"),
-               jcr->res.client->resource_name_,
-               jcr->res.write_storage->resource_name_);
+               jcr->impl->res.client->resource_name_,
+               jcr->impl->res.write_storage->resource_name_);
         }
         msg = emsg;
         break;
@@ -1589,7 +1591,7 @@ static void StatusSlots(UaContext* ua, StorageResource* store)
   slot_number_t max_slots;
   changer_vol_list_t* vol_list = NULL;
 
-  ua->jcr->res.write_storage = store;
+  ua->jcr->impl->res.write_storage = store;
 
   /*
    * Slot | Volume | Status | MediaType | Pool

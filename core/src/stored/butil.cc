@@ -40,6 +40,7 @@
 #include "stored/autochanger.h"
 #include "stored/device.h"
 #include "stored/bsr.h"
+#include "stored/jcr_private.h"
 #include "lib/parse_bsr.h"
 #include "lib/parse_conf.h"
 #include "include/jcr.h"
@@ -67,28 +68,29 @@ JobControlRecord* SetupJcr(const char* name,
                            const char* VolumeName,
                            bool readonly)
 {
-  JobControlRecord* jcr = new_jcr(sizeof(JobControlRecord), MyFreeJcr);
+  JobControlRecord* jcr = new_jcr(MyFreeJcr);
+  jcr->impl = new JobControlRecordPrivate;
 
-  jcr->bsr = bsr;
-  jcr->director = director;
+  jcr->impl->read_session.bsr = bsr;
+  jcr->impl->director = director;
   jcr->VolSessionId = 1;
   jcr->VolSessionTime = (uint32_t)time(NULL);
-  jcr->NumReadVolumes = 0;
-  jcr->NumWriteVolumes = 0;
+  jcr->impl->NumReadVolumes = 0;
+  jcr->impl->NumWriteVolumes = 0;
   jcr->JobId = 0;
   jcr->setJobType(JT_CONSOLE);
   jcr->setJobLevel(L_FULL);
   jcr->JobStatus = JS_Terminated;
   jcr->where = strdup("");
-  jcr->job_name = GetPoolMemory(PM_FNAME);
-  PmStrcpy(jcr->job_name, "Dummy.Job.Name");
+  jcr->impl->job_name = GetPoolMemory(PM_FNAME);
+  PmStrcpy(jcr->impl->job_name, "Dummy.Job.Name");
   jcr->client_name = GetPoolMemory(PM_FNAME);
   PmStrcpy(jcr->client_name, "Dummy.Client.Name");
   bstrncpy(jcr->Job, name, sizeof(jcr->Job));
-  jcr->fileset_name = GetPoolMemory(PM_FNAME);
-  PmStrcpy(jcr->fileset_name, "Dummy.fileset.name");
-  jcr->fileset_md5 = GetPoolMemory(PM_FNAME);
-  PmStrcpy(jcr->fileset_md5, "Dummy.fileset.md5");
+  jcr->impl->fileset_name = GetPoolMemory(PM_FNAME);
+  PmStrcpy(jcr->impl->fileset_name, "Dummy.fileset.name");
+  jcr->impl->fileset_md5 = GetPoolMemory(PM_FNAME);
+  PmStrcpy(jcr->impl->fileset_md5, "Dummy.fileset.md5");
 
   NewPlugins(jcr); /* instantiate plugins */
 
@@ -140,7 +142,7 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
   } else {
     VolName[0] = 0;
   }
-  if (!jcr->bsr && VolName[0] == 0) {
+  if (!jcr->impl->read_session.bsr && VolName[0] == 0) {
     if (!bstrncmp(dev_name, "/dev/", 5)) {
       /* Try stripping file part */
       p = dev_name + strlen(dev_name);
@@ -165,7 +167,7 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
     return false;
   }
   device->dev = dev;
-  jcr->dcr = dcr;
+  jcr->impl->dcr = dcr;
   SetupNewDcrDevice(jcr, dcr, dev, NULL);
   if (!readonly) { dcr->SetWillWrite(); }
 
@@ -179,7 +181,7 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
   if (readonly) { /* read only access? */
     Dmsg0(100, "Acquire device for read\n");
     if (!AcquireDeviceForRead(dcr)) { return false; }
-    jcr->read_dcr = dcr;
+    jcr->impl->read_dcr = dcr;
   } else {
     if (!FirstOpenDevice(dcr)) {
       Jmsg1(jcr, M_FATAL, 0, _("Cannot open %s\n"), dev->print_name());
@@ -196,9 +198,9 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
  */
 static void MyFreeJcr(JobControlRecord* jcr)
 {
-  if (jcr->job_name) {
-    FreePoolMemory(jcr->job_name);
-    jcr->job_name = NULL;
+  if (jcr->impl->job_name) {
+    FreePoolMemory(jcr->impl->job_name);
+    jcr->impl->job_name = NULL;
   }
 
   if (jcr->client_name) {
@@ -206,14 +208,14 @@ static void MyFreeJcr(JobControlRecord* jcr)
     jcr->client_name = NULL;
   }
 
-  if (jcr->fileset_name) {
-    FreePoolMemory(jcr->fileset_name);
-    jcr->fileset_name = NULL;
+  if (jcr->impl->fileset_name) {
+    FreePoolMemory(jcr->impl->fileset_name);
+    jcr->impl->fileset_name = NULL;
   }
 
-  if (jcr->fileset_md5) {
-    FreePoolMemory(jcr->fileset_md5);
-    jcr->fileset_md5 = NULL;
+  if (jcr->impl->fileset_md5) {
+    FreePoolMemory(jcr->impl->fileset_md5);
+    jcr->impl->fileset_md5 = NULL;
   }
 
   if (jcr->comment) {
@@ -221,11 +223,16 @@ static void MyFreeJcr(JobControlRecord* jcr)
     jcr->comment = NULL;
   }
 
-  if (jcr->VolList) { FreeRestoreVolumeList(jcr); }
+  if (jcr->impl->VolList) { FreeRestoreVolumeList(jcr); }
 
-  if (jcr->dcr) {
-    FreeDeviceControlRecord(jcr->dcr);
-    jcr->dcr = NULL;
+  if (jcr->impl->dcr) {
+    FreeDeviceControlRecord(jcr->impl->dcr);
+    jcr->impl->dcr = NULL;
+  }
+
+  if (jcr->impl) {
+    delete jcr->impl;
+    jcr->impl = nullptr;
   }
 
   return;

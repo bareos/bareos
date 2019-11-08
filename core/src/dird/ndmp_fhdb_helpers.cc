@@ -29,6 +29,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "include/protocol_types.h"
 
 #if HAVE_NDMP
 

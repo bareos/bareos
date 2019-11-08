@@ -32,6 +32,7 @@
 #include "include/bareos.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
+#include "filed/jcr_private.h"
 #include "lib/status.h"
 #include "lib/bsock.h"
 #include "lib/edit.h"
@@ -181,7 +182,9 @@ static void ListRunningJobsPlain(StatusPacket* sp)
 #ifdef WIN32_VSS
       len = Mmsg(
           msg, _("    %s%s %s Job started: %s\n"),
-          (njcr->pVSSClient && njcr->pVSSClient->IsInitialized()) ? "VSS " : "",
+          (njcr->impl->pVSSClient && njcr->impl->pVSSClient->IsInitialized())
+              ? "VSS "
+              : "",
           JobLevelToString(njcr->getJobLevel()),
           job_type_to_str(njcr->getJobType()), dt);
 #else
@@ -189,9 +192,9 @@ static void ListRunningJobsPlain(StatusPacket* sp)
                  JobLevelToString(njcr->getJobLevel()),
                  job_type_to_str(njcr->getJobType()), dt);
 #endif
-    } else if ((njcr->JobId == 0) && (njcr->director)) {
+    } else if ((njcr->JobId == 0) && (njcr->impl->director)) {
       len = Mmsg(msg, _("%s (director) connected at: %s\n"),
-                 njcr->director->resource_name_, dt);
+                 njcr->impl->director->resource_name_, dt);
     } else {
       /*
        * This should only occur shortly, until the JobControlRecord values are
@@ -213,11 +216,11 @@ static void ListRunningJobsPlain(StatusPacket* sp)
                edit_uint64_with_commas(njcr->max_bandwidth, b4));
     sendit(msg, len, sp);
     len = Mmsg(msg, _("    Files Examined=%s\n"),
-               edit_uint64_with_commas(njcr->num_files_examined, b1));
+               edit_uint64_with_commas(njcr->impl->num_files_examined, b1));
     sendit(msg, len, sp);
     if (njcr->JobFiles > 0) {
       njcr->lock();
-      len = Mmsg(msg, _("    Processing file: %s\n"), njcr->last_fname);
+      len = Mmsg(msg, _("    Processing file: %s\n"), njcr->impl->last_fname);
       njcr->unlock();
       sendit(msg, len, sp);
     }
@@ -261,10 +264,12 @@ static void ListRunningJobsApi(StatusPacket* sp)
       len = Mmsg(msg, "JobId=%d\n Job=%s\n", njcr->JobId, njcr->Job);
       sendit(msg, len, sp);
 #ifdef WIN32_VSS
-      len =
-          Mmsg(msg, " VSS=%d\n Level=%c\n JobType=%c\n JobStarted=%s\n",
-               (njcr->pVSSClient && njcr->pVSSClient->IsInitialized()) ? 1 : 0,
-               njcr->getJobLevel(), njcr->getJobType(), dt);
+      len = Mmsg(
+          msg, " VSS=%d\n Level=%c\n JobType=%c\n JobStarted=%s\n",
+          (njcr->impl->pVSSClient && njcr->impl->pVSSClient->IsInitialized())
+              ? 1
+              : 0,
+          njcr->getJobLevel(), njcr->getJobType(), dt);
 #else
       len = Mmsg(msg, " VSS=%d\n Level=%c\n JobType=%c\n JobStarted=%s\n", 0,
                  njcr->getJobLevel(), njcr->getJobType(), dt);
@@ -283,11 +288,11 @@ static void ListRunningJobsApi(StatusPacket* sp)
                edit_int64(njcr->max_bandwidth, b4));
     sendit(msg, len, sp);
     len = Mmsg(msg, " Files Examined=%s\n",
-               edit_uint64(njcr->num_files_examined, b1));
+               edit_uint64(njcr->impl->num_files_examined, b1));
     sendit(msg, len, sp);
     if (njcr->JobFiles > 0) {
       njcr->lock();
-      len = Mmsg(msg, " Processing file=%s\n", njcr->last_fname);
+      len = Mmsg(msg, " Processing file=%s\n", njcr->impl->last_fname);
       njcr->unlock();
       sendit(msg, len, sp);
     }

@@ -31,6 +31,7 @@
 #include "lib/crypto_cache.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
+#include "stored/jcr_private.h"
 #include "stored/job.h"
 #include "stored/sd_plugins.h"
 #include "stored/sd_stats.h"
@@ -113,7 +114,7 @@ struct TestJob {
   TestJob() = delete;
   TestJob(uint32_t jobid)
   {
-    jcr = new_jcr(sizeof(JobControlRecord), storagedaemon::StoredFreeJcr);
+    jcr = NewStoredJcr();
     jcr->JobId = jobid;
     jcr->sd_auth_key = strdup("no key set");
   }
@@ -137,7 +138,7 @@ void WaitThenUnreserve(std::unique_ptr<TestJob>&);
 void WaitThenUnreserve(std::unique_ptr<TestJob>& job)
 {
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  job->jcr->dcr->UnreserveDevice();
+  job->jcr->impl->dcr->UnreserveDevice();
   ReleaseDeviceCond();
 }
 

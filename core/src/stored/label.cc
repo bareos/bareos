@@ -33,6 +33,7 @@
 #include "stored/stored_globals.h"
 #include "stored/dev.h"
 #include "stored/device.h"
+#include "stored/jcr_private.h"
 #include "stored/label.h"
 #include "lib/edit.h"
 #include "include/jcr.h"
@@ -131,7 +132,7 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
       Mmsg(jcr->errmsg,
            _("Wrong Volume mounted on device %s: Wanted %s have %s\n"),
            dev->print_name(), VolName, dev->VolHdr.VolumeName);
-      if (!dev->poll && jcr->label_errors++ > 100) {
+      if (!dev->poll && jcr->impl->label_errors++ > 100) {
         Jmsg(jcr, M_FATAL, 0, _("Too many tries: %s"), jcr->errmsg);
       }
       goto bail_out;
@@ -177,7 +178,7 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
   if (!dev->IsVolumeToUnload()) { dev->ClearUnload(); }
 
   if (!ok) {
-    if (forge_on || jcr->ignore_label_errors) {
+    if (forge_on || jcr->impl->ignore_label_errors) {
       dev->SetLabeled(); /* set has Bareos label */
       Jmsg(jcr, M_ERROR, 0, "%s", jcr->errmsg);
       goto ok_out;
@@ -213,7 +214,7 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
     Mmsg(jcr->errmsg, _("Volume on %s has bad Bareos label type: %x\n"),
          dev->print_name(), dev->VolHdr.LabelType);
     Dmsg1(130, "%s", jcr->errmsg);
-    if (!dev->poll && jcr->label_errors++ > 100) {
+    if (!dev->poll && jcr->impl->label_errors++ > 100) {
       Jmsg(jcr, M_FATAL, 0, _("Too many tries: %s"), jcr->errmsg);
     }
     Dmsg0(150, "return VOL_LABEL_ERROR\n");
@@ -236,7 +237,7 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
      * Cancel Job if too many label errors
      *  => we are in a loop
      */
-    if (!dev->poll && jcr->label_errors++ > 100) {
+    if (!dev->poll && jcr->impl->label_errors++ > 100) {
       Jmsg(jcr, M_FATAL, 0, "Too many tries: %s", jcr->errmsg);
     }
     Dmsg0(150, "return VOL_NAME_ERROR\n");
@@ -543,8 +544,8 @@ static void CreateVolumeLabelRecord(DeviceControlRecord* dcr,
   rec->FileIndex = dev->VolHdr.LabelType;
   rec->VolSessionId = jcr->VolSessionId;
   rec->VolSessionTime = jcr->VolSessionTime;
-  rec->Stream = jcr->NumWriteVolumes;
-  rec->maskedStream = jcr->NumWriteVolumes;
+  rec->Stream = jcr->impl->NumWriteVolumes;
+  rec->maskedStream = jcr->impl->NumWriteVolumes;
   Dmsg2(150, "Created Vol label rec: FI=%s len=%d\n",
         FI_to_ascii(buf, rec->FileIndex), rec->data_len);
 }
@@ -627,16 +628,16 @@ static void CreateSessionLabel(DeviceControlRecord* dcr,
 
   SerString(dcr->pool_name);
   SerString(dcr->pool_type);
-  SerString(jcr->job_name); /* base Job name */
+  SerString(jcr->impl->job_name); /* base Job name */
   SerString(jcr->client_name);
 
   /* Added in VerNum 10 */
   SerString(jcr->Job); /* Unique name of this Job */
-  SerString(jcr->fileset_name);
+  SerString(jcr->impl->fileset_name);
   ser_uint32(jcr->getJobType());
   ser_uint32(jcr->getJobLevel());
   /* Added in VerNum 11 */
-  SerString(jcr->fileset_md5);
+  SerString(jcr->impl->fileset_md5);
 
   if (label == EOS_LABEL) {
     ser_uint32(jcr->JobFiles);

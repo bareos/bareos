@@ -34,6 +34,7 @@
 #include "dird/dird_globals.h"
 #include "dird/authenticate.h"
 #include "dird/getmsg.h"
+#include "dird/jcr_private.h"
 #include "dird/job.h"
 #include "dird/msgchan.h"
 #include "dird/storage.h"
@@ -93,10 +94,10 @@ bool ConnectToStorageDaemon(JobControlRecord* jcr,
   if (jcr->store_bsock) { return true; /* already connected */ }
 
   StorageResource* store;
-  if (jcr->res.write_storage) {
-    store = jcr->res.write_storage;
+  if (jcr->impl->res.write_storage) {
+    store = jcr->impl->res.write_storage;
   } else {
-    store = jcr->res.read_storage;
+    store = jcr->impl->res.read_storage;
   }
 
   if (!store) {
@@ -153,7 +154,7 @@ bool ConnectToStorageDaemon(JobControlRecord* jcr,
 
 BareosSocket* open_sd_bsock(UaContext* ua)
 {
-  StorageResource* store = ua->jcr->res.write_storage;
+  StorageResource* store = ua->jcr->impl->res.write_storage;
 
   if (!store) {
     Dmsg0(200, "open_sd_bsock: No storage resource pointer set\n");
@@ -182,12 +183,12 @@ char* get_volume_name_from_SD(UaContext* ua,
                               drive_number_t drive)
 {
   BareosSocket* sd;
-  StorageResource* store = ua->jcr->res.write_storage;
+  StorageResource* store = ua->jcr->impl->res.write_storage;
   char dev_name[MAX_NAME_LENGTH];
   char* VolName = nullptr;
   int rtn_slot;
 
-  ua->jcr->res.write_storage = store;
+  ua->jcr->impl->res.write_storage = store;
   if (!(sd = open_sd_bsock(ua))) {
     ua->ErrorMsg(_("Could not open SD socket.\n"));
     return nullptr;
@@ -266,7 +267,7 @@ dlist* native_get_vol_list(UaContext* ua,
   dlist* vol_list;
   BareosSocket* sd = nullptr;
 
-  ua->jcr->res.write_storage = store;
+  ua->jcr->impl->res.write_storage = store;
   if (!(sd = open_sd_bsock(ua))) { return nullptr; }
 
   bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
@@ -547,7 +548,7 @@ slot_number_t NativeGetNumSlots(UaContext* ua, StorageResource* store)
   BareosSocket* sd;
   slot_number_t slots = 0;
 
-  ua->jcr->res.write_storage = store;
+  ua->jcr->impl->res.write_storage = store;
   if (!(sd = open_sd_bsock(ua))) { return 0; }
 
   bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
@@ -579,7 +580,7 @@ drive_number_t NativeGetNumDrives(UaContext* ua, StorageResource* store)
   BareosSocket* sd;
   drive_number_t drives = 0;
 
-  ua->jcr->res.write_storage = store;
+  ua->jcr->impl->res.write_storage = store;
   if (!(sd = open_sd_bsock(ua))) { return 0; }
 
   bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
@@ -613,7 +614,7 @@ bool CancelStorageDaemonJob(UaContext* ua, StorageResource* store, char* JobId)
 
   control_jcr = new_control_jcr("*JobCancel*", JT_SYSTEM);
 
-  control_jcr->res.write_storage = store;
+  control_jcr->impl->res.write_storage = store;
 
   /* the next call will set control_jcr->store_bsock */
   if (!ConnectToStorageDaemon(control_jcr, 10, me->SDConnectTimeout, true)) {
@@ -641,18 +642,20 @@ bool CancelStorageDaemonJob(UaContext* ua,
                             JobControlRecord* jcr,
                             bool interactive)
 {
-  if (!ua->jcr->res.write_storage_list) {
-    if (jcr->res.read_storage_list) {
-      CopyWstorage(ua->jcr, jcr->res.read_storage_list, _("Job resource"));
+  if (!ua->jcr->impl->res.write_storage_list) {
+    if (jcr->impl->res.read_storage_list) {
+      CopyWstorage(ua->jcr, jcr->impl->res.read_storage_list,
+                   _("Job resource"));
     } else {
-      CopyWstorage(ua->jcr, jcr->res.write_storage_list, _("Job resource"));
+      CopyWstorage(ua->jcr, jcr->impl->res.write_storage_list,
+                   _("Job resource"));
     }
   } else {
     UnifiedStorageResource store;
-    if (jcr->res.read_storage_list) {
-      store.store = jcr->res.read_storage;
+    if (jcr->impl->res.read_storage_list) {
+      store.store = jcr->impl->res.read_storage;
     } else {
-      store.store = jcr->res.write_storage;
+      store.store = jcr->impl->res.write_storage;
     }
     if (!store.store) {
       Dmsg0(200, "CancelStorageDaemonJob: No storage resource pointer set\n");
@@ -681,7 +684,7 @@ bool CancelStorageDaemonJob(UaContext* ua,
 
   TerminateAndCloseJcrStoreSocket(ua->jcr);
 
-  if (!interactive) { jcr->sd_canceled = true; }
+  if (!interactive) { jcr->impl->sd_canceled = true; }
 
   SdMsgThreadSendSignal(jcr, TIMEOUT_SIGNAL);
 
@@ -692,7 +695,7 @@ bool CancelStorageDaemonJob(UaContext* ua,
 
 void CancelStorageDaemonJob(JobControlRecord* jcr)
 {
-  if (jcr->sd_canceled) { return; /* cancel only once */ }
+  if (jcr->impl->sd_canceled) { return; /* cancel only once */ }
 
   UaContext* ua = new_ua_context(jcr);
   JobControlRecord* control_jcr = new_control_jcr("*JobCancel*", JT_SYSTEM);
@@ -776,7 +779,7 @@ bool NativeTransferVolume(UaContext* ua,
   bool retval = true;
   char dev_name[MAX_NAME_LENGTH];
 
-  ua->jcr->res.write_storage = store;
+  ua->jcr->impl->res.write_storage = store;
   if (!(sd = open_sd_bsock(ua))) { return false; }
 
   bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
@@ -823,7 +826,7 @@ bool NativeAutochangerVolumeOperation(UaContext* ua,
   bool retval = true;
   char dev_name[MAX_NAME_LENGTH];
 
-  ua->jcr->res.write_storage = store;
+  ua->jcr->impl->res.write_storage = store;
   if (!(sd = open_sd_bsock(ua))) { return false; }
 
   bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
@@ -860,21 +863,21 @@ bool SendSecureEraseReqToSd(JobControlRecord* jcr)
   int32_t n;
   BareosSocket* sd = jcr->store_bsock;
 
-  if (!jcr->SDSecureEraseCmd) {
-    jcr->SDSecureEraseCmd = GetPoolMemory(PM_NAME);
+  if (!jcr->impl->SDSecureEraseCmd) {
+    jcr->impl->SDSecureEraseCmd = GetPoolMemory(PM_NAME);
   }
 
   sd->fsend(getSecureEraseCmd);
   while ((n = BgetDirmsg(sd)) >= 0) {
-    jcr->SDSecureEraseCmd =
-        CheckPoolMemorySize(jcr->SDSecureEraseCmd, sd->message_length);
-    if (sscanf(sd->msg, OKSecureEraseCmd, jcr->SDSecureEraseCmd) == 1) {
-      Dmsg1(421, "Got SD Secure Erase Cmd: %s\n", jcr->SDSecureEraseCmd);
+    jcr->impl->SDSecureEraseCmd =
+        CheckPoolMemorySize(jcr->impl->SDSecureEraseCmd, sd->message_length);
+    if (sscanf(sd->msg, OKSecureEraseCmd, jcr->impl->SDSecureEraseCmd) == 1) {
+      Dmsg1(421, "Got SD Secure Erase Cmd: %s\n", jcr->impl->SDSecureEraseCmd);
       break;
     } else {
       Jmsg(jcr, M_WARNING, 0, _("Unexpected SD Secure Erase Cmd: %s\n"),
            sd->msg);
-      PmStrcpy(jcr->SDSecureEraseCmd, "*None*");
+      PmStrcpy(jcr->impl->SDSecureEraseCmd, "*None*");
       return false;
     }
   }
@@ -904,7 +907,7 @@ bool DoStorageResolve(UaContext* ua, StorageResource* store)
   PmStrcpy(lstore.store_source, _("unknown source"));
   SetWstorage(ua->jcr, &lstore);
 
-  ua->jcr->res.write_storage = store;
+  ua->jcr->impl->res.write_storage = store;
   if (!(sd = open_sd_bsock(ua))) { return false; }
 
   for (int i = 1; i < ua->argc; i++) {
@@ -926,9 +929,10 @@ bool SendStoragePluginOptions(JobControlRecord* jcr)
   const char* plugin_options;
   BareosSocket* sd = jcr->store_bsock;
 
-  if (jcr->res.job && jcr->res.job->SdPluginOptions &&
-      jcr->res.job->SdPluginOptions->size()) {
-    foreach_alist_index (i, plugin_options, jcr->res.job->SdPluginOptions) {
+  if (jcr->impl->res.job && jcr->impl->res.job->SdPluginOptions &&
+      jcr->impl->res.job->SdPluginOptions->size()) {
+    foreach_alist_index (i, plugin_options,
+                         jcr->impl->res.job->SdPluginOptions) {
       PmStrcpy(cur_plugin_options, plugin_options);
       BashSpaces(cur_plugin_options.c_str());
 

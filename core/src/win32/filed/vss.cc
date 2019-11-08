@@ -33,6 +33,7 @@
 
 #include "include/bareos.h"
 #include "filed/filed.h"
+#include "filed/jcr_private.h"
 #include "lib/thread_specific_data.h"
 
 #include "ms_atl.h"
@@ -55,8 +56,9 @@ static bool VSSPathConvert(const char* szFilePath,
 {
   JobControlRecord* jcr = GetJcrFromThreadSpecificData();
 
-  if (jcr && jcr->pVSSClient) {
-    return jcr->pVSSClient->GetShadowPath(szFilePath, szShadowPath, nBuflen);
+  if (jcr && jcr->impl->pVSSClient) {
+    return jcr->impl->pVSSClient->GetShadowPath(szFilePath, szShadowPath,
+                                                 nBuflen);
   }
 
   return false;
@@ -68,8 +70,9 @@ static bool VSSPathConvertW(const wchar_t* szFilePath,
 {
   JobControlRecord* jcr = GetJcrFromThreadSpecificData();
 
-  if (jcr && jcr->pVSSClient) {
-    return jcr->pVSSClient->GetShadowPathW(szFilePath, szShadowPath, nBuflen);
+  if (jcr && jcr->impl->pVSSClient) {
+    return jcr->impl->pVSSClient->GetShadowPathW(szFilePath, szShadowPath,
+                                                  nBuflen);
   }
 
   return false;
@@ -83,17 +86,17 @@ void VSSInit(JobControlRecord* jcr)
   if (g_MajorVersion == 5) {
     switch (g_MinorVersion) {
       case 1:
-        jcr->pVSSClient = new VSSClientXP();
+        jcr->impl->pVSSClient = new VSSClientXP();
         break;
       case 2:
-        jcr->pVSSClient = new VSSClient2003();
+        jcr->impl->pVSSClient = new VSSClient2003();
         break;
     }
     /*
      * Vista or Longhorn or later
      */
   } else if (g_MajorVersion >= 6) {
-    jcr->pVSSClient = new VSSClientVista();
+    jcr->impl->pVSSClient = new VSSClientVista();
   }
 
   /*
@@ -209,14 +212,11 @@ bool VSSClient::GetShadowPathW(const wchar_t* szFilePath,
   return false;
 }
 
-size_t VSSClient::GetWriterCount() const
-{
-  return writer_info_.size();
-}
+size_t VSSClient::GetWriterCount() const { return writer_info_.size(); }
 
 const char* VSSClient::GetWriterInfo(size_t nIndex) const
 {
-  if ( nIndex < writer_info_.size() ) {
+  if (nIndex < writer_info_.size()) {
     return writer_info_[nIndex].info_text_.c_str();
   }
   return nullptr;
@@ -224,9 +224,7 @@ const char* VSSClient::GetWriterInfo(size_t nIndex) const
 
 int VSSClient::GetWriterState(size_t nIndex) const
 {
-  if ( nIndex < writer_info_.size() ) {
-    return writer_info_[nIndex].state_;
-  }
+  if (nIndex < writer_info_.size()) { return writer_info_[nIndex].state_; }
   return 0;
 }
 
@@ -241,8 +239,5 @@ void VSSClient::AppendWriterInfo(int nState, const char* pszInfo)
 /*
  * Note, this is called at the end of every job, so release all items
  */
-void VSSClient::DestroyWriterInfo()
-{
-  writer_info_.clear();
-}
+void VSSClient::DestroyWriterInfo() { writer_info_.clear(); }
 #endif

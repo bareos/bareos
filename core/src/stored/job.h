@@ -30,6 +30,8 @@ bool FinishCmd(JobControlRecord* jcr);
 bool job_cmd(JobControlRecord* jcr);
 bool nextRunCmd(JobControlRecord* jcr);
 
+JobControlRecord* NewStoredJcr();
+
 } /* namespace storagedaemon  */
 
 #endif  // BAREOS_STORED_JOB_H_

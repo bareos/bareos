@@ -22,6 +22,7 @@
 #include "gtest/gtest.h"
 #include "include/bareos.h"
 #include "include/jcr.h"
+#include "lib/volume_session_info.h"
 
 static bool callback_called_from_destructor = false;
 static void callback(JobControlRecord* jcr)

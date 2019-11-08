@@ -54,6 +54,7 @@
 #include "lib/bsock.h"
 #include "lib/recent_job_results_list.h"
 #include "lib/message_queue_item.h"
+#include "lib/volume_session_info.h"
 #include "lib/watchdog.h"
 
 #include <algorithm>
@@ -150,6 +151,11 @@ bool JobControlRecord::JobReads()
   return false;
 }
 
+struct job_callback_item {
+  void (*JobEndCb)(JobControlRecord* jcr, void*);
+  void* ctx{};
+};
+
 /*
  * Push a job_callback_item onto the job end callback stack.
  */
@@ -224,13 +230,12 @@ JobControlRecord::JobControlRecord()
   SetTimeoutHandler();
 }
 
-JobControlRecord* new_jcr(int size, JCR_free_HANDLER* daemon_free_jcr)
+JobControlRecord* new_jcr(JCR_free_HANDLER* daemon_free_jcr)
 {
   Dmsg0(debuglevel, "Enter new_jcr\n");
 
-  JobControlRecord* jcr;
-  jcr = (JobControlRecord*)malloc(size);
-  memset(jcr, 0, size);
+  JobControlRecord* jcr =
+      static_cast<JobControlRecord*>(malloc(sizeof(JobControlRecord)));
   jcr = new (jcr) JobControlRecord();
 
   jcr->daemon_free_jcr = daemon_free_jcr;
@@ -356,7 +361,7 @@ static void FreeCommonJcr(JobControlRecord* jcr,
 static void JcrCleanup(JobControlRecord* jcr, bool is_destructor_call = false)
 {
   DequeueMessages(jcr);
-  CallJobEndCallbacks(jcr); /* call registered callbacks */
+  CallJobEndCallbacks(jcr);
 
   Dmsg1(debuglevel, "End job=%d\n", jcr->JobId);
 
@@ -376,14 +381,12 @@ static void JcrCleanup(JobControlRecord* jcr, bool is_destructor_call = false)
       break;
   }
 
-  CloseMsg(jcr); /* close messages for this job */
+  CloseMsg(jcr);
 
-  if (jcr->daemon_free_jcr) {
-    jcr->daemon_free_jcr(jcr); /* call daemon free routine */
-  }
+  if (jcr->daemon_free_jcr) { jcr->daemon_free_jcr(jcr); }
 
   FreeCommonJcr(jcr, is_destructor_call);
-  CloseMsg(nullptr); /* flush any daemon messages */
+  CloseMsg(nullptr);  // flush any daemon messages
 }
 
 JobControlRecord::~JobControlRecord()

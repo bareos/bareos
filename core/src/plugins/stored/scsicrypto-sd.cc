@@ -61,6 +61,7 @@
  */
 #include "include/bareos.h"
 #include "stored/stored.h"
+#include "stored/jcr_private.h"
 #include "lib/berrno.h"
 #include "lib/status.h"
 #include "lib/crypto_wrap.h"
@@ -365,8 +366,8 @@ static bRC do_set_scsi_encryption_key(void* value)
    * has been wrapped using RFC3394 key wrapping. We first copy the current
    * wrapped key into a temporary variable for unwrapping.
    */
-  if (dcr->jcr && dcr->jcr->director) {
-    director = dcr->jcr->director;
+  if (dcr->jcr && dcr->jcr->impl->director) {
+    director = dcr->jcr->impl->director;
     if (director->keyencrkey.value) {
       char WrappedVolEncrKey[MAX_NAME_LENGTH];
 

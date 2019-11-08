@@ -35,6 +35,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/jcr_private.h"
 #include "dird/job.h"
 #include "dird/dird_globals.h"
 #include "dird/sd_cmds.h"
@@ -44,6 +45,7 @@
 #include "dird/ua_db.h"
 #include "dird/ua_select.h"
 #include "dird/storage.h"
+#include "include/auth_protocol_types.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
@@ -742,7 +744,7 @@ static void DoClientCmd(UaContext* ua, ClientResource* client, const char* cmd)
 
   /* Connect to File daemon */
 
-  ua->jcr->res.client = client;
+  ua->jcr->impl->res.client = client;
   /* Try to connect for 15 seconds */
   ua->SendMsg(_("Connecting to Client %s at %s:%d\n"), client->resource_name_,
               client->address, client->FDport);

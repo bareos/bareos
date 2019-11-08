@@ -29,7 +29,10 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/jcr_private.h"
 #include "dird/dird_globals.h"
+#include "include/auth_protocol_types.h"
+#include "include/auth_types.h"
 
 #if HAVE_NDMP
 #define SMTAPE_MIN_BLOCKSIZE 4096        /**< 4 Kb */
@@ -90,24 +93,25 @@ ndmp_backup_format_option* ndmp_lookup_backup_format_options(
  */
 bool NdmpValidateClient(JobControlRecord* jcr)
 {
-  switch (jcr->res.client->Protocol) {
+  switch (jcr->impl->res.client->Protocol) {
     case APT_NDMPV2:
     case APT_NDMPV3:
     case APT_NDMPV4:
-      if (jcr->res.client->password_.encoding != p_encoding_clear) {
+      if (jcr->impl->res.client->password_.encoding != p_encoding_clear) {
         Jmsg(jcr, M_FATAL, 0,
              _("Client %s, has incompatible password encoding for running NDMP "
                "backup.\n"),
-             jcr->res.client->resource_name_);
+             jcr->impl->res.client->resource_name_);
         return false;
       }
       break;
     default:
-      Jmsg(jcr, M_FATAL, 0,
-           _("Client %s, with backup protocol %s  not compatible for running "
-             "NDMP backup.\n"),
-           jcr->res.client->resource_name_,
-           AuthenticationProtocolTypeToString(jcr->res.client->Protocol));
+      Jmsg(
+          jcr, M_FATAL, 0,
+          _("Client %s, with backup protocol %s  not compatible for running "
+            "NDMP backup.\n"),
+          jcr->impl->res.client->resource_name_,
+          AuthenticationProtocolTypeToString(jcr->impl->res.client->Protocol));
       return false;
   }
 
@@ -132,7 +136,8 @@ static inline bool NdmpValidateStorage(JobControlRecord* jcr,
     default:
       Jmsg(jcr, M_FATAL, 0,
            _("Storage %s has illegal backup protocol %s for NDMP backup\n"),
-           store->resource_name_, AuthenticationProtocolTypeToString(store->Protocol));
+           store->resource_name_,
+           AuthenticationProtocolTypeToString(store->Protocol));
       return false;
   }
 
@@ -143,12 +148,12 @@ bool NdmpValidateStorage(JobControlRecord* jcr)
 {
   StorageResource* store = nullptr;
 
-  if (jcr->res.write_storage_list) {
-    foreach_alist (store, jcr->res.write_storage_list) {
+  if (jcr->impl->res.write_storage_list) {
+    foreach_alist (store, jcr->impl->res.write_storage_list) {
       if (!NdmpValidateStorage(jcr, store)) { return false; }
     }
   } else {
-    foreach_alist (store, jcr->res.read_storage_list) {
+    foreach_alist (store, jcr->impl->res.read_storage_list) {
       if (!NdmpValidateStorage(jcr, store)) { return false; }
     }
   }
@@ -324,7 +329,7 @@ bool NdmpBuildClientJob(JobControlRecord* jcr,
   memset(job, 0, sizeof(struct ndm_job_param));
 
   job->operation = operation;
-  job->bu_type = jcr->backup_format;
+  job->bu_type = jcr->impl->backup_format;
 
   /*
    * For NDMP the backupformat is a prerequite abort the backup job when
@@ -355,31 +360,32 @@ bool NdmpBuildClientJob(JobControlRecord* jcr,
     goto bail_out;
   }
 
-  if (Bstrcasecmp(jcr->backup_format, "smtape")) {
+  if (Bstrcasecmp(jcr->impl->backup_format, "smtape")) {
     /*
      * SMTAPE only wants certain blocksizes.
      */
-    if (jcr->res.client->ndmp_blocksize < SMTAPE_MIN_BLOCKSIZE ||
-        jcr->res.client->ndmp_blocksize > SMTAPE_MAX_BLOCKSIZE) {
+    if (jcr->impl->res.client->ndmp_blocksize < SMTAPE_MIN_BLOCKSIZE ||
+        jcr->impl->res.client->ndmp_blocksize > SMTAPE_MAX_BLOCKSIZE) {
       Jmsg(jcr, M_FATAL, 0,
            _("For SMTAPE NDMP jobs the NDMP blocksize needs to be between %d "
              "and %d, but is set to %d\n"),
            SMTAPE_MIN_BLOCKSIZE, SMTAPE_MAX_BLOCKSIZE,
-           jcr->res.client->ndmp_blocksize);
+           jcr->impl->res.client->ndmp_blocksize);
       goto bail_out;
     }
 
-    if ((jcr->res.client->ndmp_blocksize % SMTAPE_BLOCKSIZE_INCREMENTS) != 0) {
+    if ((jcr->impl->res.client->ndmp_blocksize %
+         SMTAPE_BLOCKSIZE_INCREMENTS) != 0) {
       Jmsg(jcr, M_FATAL, 0,
            _("For SMTAPE NDMP jobs the NDMP blocksize needs to be in "
              "increments of %d bytes, but is set to %d\n"),
-           SMTAPE_BLOCKSIZE_INCREMENTS, jcr->res.client->ndmp_blocksize);
+           SMTAPE_BLOCKSIZE_INCREMENTS, jcr->impl->res.client->ndmp_blocksize);
       goto bail_out;
     }
 
-    job->record_size = jcr->res.client->ndmp_blocksize;
+    job->record_size = jcr->impl->res.client->ndmp_blocksize;
   } else {
-    job->record_size = jcr->res.client->ndmp_blocksize;
+    job->record_size = jcr->impl->res.client->ndmp_blocksize;
   }
 
   return true;
@@ -399,7 +405,7 @@ bool NdmpBuildStorageJob(JobControlRecord* jcr,
   memset(job, 0, sizeof(struct ndm_job_param));
 
   job->operation = operation;
-  job->bu_type = jcr->backup_format;
+  job->bu_type = jcr->impl->backup_format;
 
   if (!fill_ndmp_agent_config(jcr, &job->data_agent, store->Protocol,
                               store->AuthType, store->address, store->SDport,
