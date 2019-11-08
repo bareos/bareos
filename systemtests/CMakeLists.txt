@@ -158,15 +158,15 @@ ConfigureFilesToSystemtest("core/src" "cats" "*_bareos_*" @ONLY)
 ConfigureFilesToSystemtest("core/src" "console" "*.in" @ONLY)
 
 
-execute_process(COMMAND
-  ${CMAKE_COMMAND} -E create_symlink ${scriptdir}/btraceback ${sbindir}/btraceback)
-
 file(MAKE_DIRECTORY ${subsysdir})
 file(MAKE_DIRECTORY ${sbindir})
 file(MAKE_DIRECTORY ${bindir})
 file(MAKE_DIRECTORY ${scripts})
 file(MAKE_DIRECTORY ${working})
 file(MAKE_DIRECTORY ${archivedir})
+
+execute_process(COMMAND
+  ${CMAKE_COMMAND} -E create_symlink ${scriptdir}/btraceback ${sbindir}/btraceback)
 
 file(REMOVE_RECURSE ${scripts}/ddl)
 file(RENAME ${PROJECT_BINARY_DIR}/ddl ${scripts}/ddl)
@@ -231,6 +231,12 @@ IF(TARGET python-fd)
   list(APPEND SYSTEM_TESTS "python-fd-plugin-local-fileset-test")
 ELSE()
   list(APPEND SYSTEM_TESTS_DISABLED "python-fd-plugin-local-fileset-test")
+ENDIF()
+
+IF(TARGET python-dir)
+  list(APPEND SYSTEM_TESTS "python-dir-plugin-test")
+ELSE()
+  list(APPEND SYSTEM_TESTS_DISABLED "python-dir-plugin-test")
 ENDIF()
 
 SET(PHP_FOUND FALSE)
@@ -300,8 +306,9 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   set(confdir ${current_test_directory}/etc/bareos)
 
   set(logdir ${current_test_directory}/log)
+  set(python_plugin_module_src_test_dir ${current_test_directory}/python-modules)
   set(tmpdir ${current_test_directory}/tmp)
-  set(tmp ${tmpdir}/tmp)
+  set(tmp ${tmpdir})
   set(working_dir ${current_test_directory}/working)
 
   file(MAKE_DIRECTORY ${archivedir})
@@ -327,6 +334,33 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   #file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/tests/${TEST_NAME}/bin")
   configure_file("bin/bconsole" "tests/${TEST_NAME}/bin/bconsole" COPYONLY)
   configure_file("bin/bareos" "tests/${TEST_NAME}/bin/bareos" COPYONLY)
+
+  IF (EXISTS ${python_plugin_module_src_test_dir})
+    set(PYMODULES_TO_LINK_TO_SRC
+      filed/bareos-fd-local-fileset.py
+      filed/BareosFdPluginLocalFileset.py
+      filed/BareosFdWrapper.py
+      filed/BareosFdPluginLDAP.py
+      filed/bareos-fd-mock-test.py
+      filed/BareosFdPluginBaseclass.py
+      filed/bareos_fd_consts.py
+      filed/bareos-fd-ldap.py
+      dird/bareos_dir_consts.py
+      dird/BareosDirPluginBaseclass.py
+      dird/bareos-dir-class-plugin.py
+      dird/BareosDirWrapper.py
+      stored/bareos_sd_consts.py
+      stored/bareos-sd-class-plugin.py
+      stored/BareosSdPluginBaseclass.py
+      stored/BareosSdWrapper.py
+    )
+
+    foreach (PYMODULE_SOURCEPATH ${PYMODULES_TO_LINK_TO_SRC})
+      get_filename_component(PYMODULE_NAME ${PYMODULE_SOURCEPATH} NAME)
+    execute_process(COMMAND
+      ${CMAKE_COMMAND} -E create_symlink ${PROJECT_SOURCE_DIR}/../core/src/plugins/${PYMODULE_SOURCEPATH} ${python_plugin_module_src_test_dir}/${PYMODULE_NAME})
+    endforeach()
+  ENDIF()
 
   CheckForEnabledAndDisabledListEntry(${TEST_NAME})
 

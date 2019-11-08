@@ -1,0 +1,59 @@
+#!/bin/sh
+#
+# This systemtest tests the plugin functionality 
+# of the Bareos DIR by using the module
+#   bareos-dir-test.py
+#
+# This test will backup some files. While the 
+# backup some events of the director will be 
+# logged from the python module.
+# This testrunner will check if all events
+# have been logged.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+. ./environment
+. ${scripts}/functions
+
+${scripts}/cleanup
+${scripts}/setup
+
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data
+
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+setdebug level=100 storage=File
+label volume=TestVolume001 storage=File pool=Full
+run job=$JobName yes
+status director
+status client
+status storage=File
+wait
+messages
+quit
+END_OF_DATA
+
+run_bareos
+check_for_zombie_jobs storage=File
+stop_bareos
+
+for i in bDirEventJobStart bDirEventJobInit bDirEventJobRun bDirEventJobEnd; do
+  if ! grep -q "$i" ${tmp}/test-plugin.log; then
+    set_error "Failed to find logged event $i"
+  fi
+done
+
+end_test
