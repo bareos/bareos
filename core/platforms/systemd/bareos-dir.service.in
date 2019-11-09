@@ -14,8 +14,8 @@
 [Unit]
 Description=Bareos Director Daemon service
 Documentation=man:bareos-dir(8)
-Requires=nss-lookup.target network.target remote-fs.target time-sync.target
-After=nss-lookup.target network.target remote-fs.target time-sync.target postgresql.service mysql.service mariadb.service
+Requires=nss-lookup.target network-online.target remote-fs.target time-sync.target
+After=nss-lookup.target network-online.target remote-fs.target time-sync.target postgresql.service mysql.service mariadb.service
 # Dependency about the database
 # We let administrators decide if they need it (if local db instance)
 # Wants=@DEFAULT_DB_TYPE@.service
