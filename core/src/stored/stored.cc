@@ -135,6 +135,7 @@ int main(int argc, char* argv[])
   char* gid = NULL;
 
   setlocale(LC_ALL, "");
+  tzset();
   bindtextdomain("bareos", LOCALEDIR);
   textdomain("bareos");
 

@@ -76,6 +76,7 @@ void InitForTest()
   console::me = cons_cons_config.get();
 
   setlocale(LC_ALL, "");
+  tzset();
   bindtextdomain("bareos", LOCALEDIR);
   textdomain("bareos");
 

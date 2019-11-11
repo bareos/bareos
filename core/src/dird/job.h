@@ -46,6 +46,7 @@ void GetJobStorage(UnifiedStorageResource* store,
 void InitJcrJobRecord(JobControlRecord* jcr);
 void UpdateJobEnd(JobControlRecord* jcr, int TermCode);
 bool SetupJob(JobControlRecord* jcr, bool suppress_output = false);
+void ExecuteJob(JobControlRecord* jcr);
 void CreateClones(JobControlRecord* jcr);
 int CreateRestoreBootstrapFile(JobControlRecord* jcr);
 void DirdFreeJcr(JobControlRecord* jcr);

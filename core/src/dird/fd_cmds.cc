@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -996,7 +996,7 @@ bool SendPluginOptions(JobControlRecord* jcr)
 
       fd->fsend(pluginoptionscmd, cur_plugin_options.c_str());
       if (!response(jcr, fd, OKPluginOptions, "PluginOptions", DISPLAY_ERROR)) {
-        Jmsg(jcr, M_FATAL, 0, _("Plugin options failed.\n"));
+      	Jmsg(jcr, M_FATAL, 0, _("Plugin options failed.\n"));
         return false;
       }
     }

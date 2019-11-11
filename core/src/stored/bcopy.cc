@@ -108,6 +108,7 @@ int main(int argc, char* argv[])
   DeviceControlRecord *in_dcr, *out_dcr;
 
   setlocale(LC_ALL, "");
+  tzset();
   bindtextdomain("bareos", LOCALEDIR);
   textdomain("bareos");
   InitStackDump();

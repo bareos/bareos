@@ -24,6 +24,11 @@
 #ifndef BAREOS_SRC_DIRD_JCR_PRIVATE_H_
 #define BAREOS_SRC_DIRD_JCR_PRIVATE_H_
 
+#include "cats/cats.h"
+#include "dird/client_connection_handshake_mode.h"
+
+typedef struct s_tree_root TREE_ROOT;
+
 namespace directordaemon {
 class JobResource;
 class StorageResource;
@@ -32,6 +37,10 @@ class PoolResource;
 class FilesetResource;
 class CatalogResource;
 }  // namespace directordaemon
+
+namespace storagedaemon {
+struct BootStrapRecord;
+}  // namespace storagedaemon
 
 #define JobWaiting(jcr)                                                       \
   (jcr->job_started &&                                                        \

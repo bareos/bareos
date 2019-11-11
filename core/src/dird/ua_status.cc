@@ -31,6 +31,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/jcr_private.h"
+#include "dird/run_hour_validator.h"
 #include "dird/dird_globals.h"
 #include "dird/fd_cmds.h"
 #include "dird/job.h"
@@ -372,39 +373,27 @@ static bool show_scheduled_preview(UaContext* ua,
                                    ScheduleResource* sched,
                                    PoolMem& overview,
                                    int* max_date_len,
-                                   struct tm tm,
                                    time_t time_to_check)
 {
-  int date_len, hour, mday, wday, month, wom, woy, yday;
-  bool is_last_week = false; /* Are we in the last week of a month? */
+  int date_len;
   char dt[MAX_TIME_LENGTH];
   time_t runtime;
   RunResource* run;
   PoolMem temp(PM_NAME);
 
-  hour = tm.tm_hour;
-  mday = tm.tm_mday - 1;
-  wday = tm.tm_wday;
-  month = tm.tm_mon;
-  wom = mday / 7;
-  woy = TmWoy(time_to_check); /* Get week of year */
-  yday = tm.tm_yday;          /* Get day of year */
-
-  is_last_week = IsDoyInLastWeek(tm.tm_year + 1900, yday);
+  RunHourValidator run_hour_validator(time_to_check);
 
   for (run = sched->run; run; run = run->next) {
     bool run_now;
     int cnt = 0;
 
-    run_now = BitIsSet(hour, run->hour) && BitIsSet(mday, run->mday) &&
-              BitIsSet(wday, run->wday) && BitIsSet(month, run->month) &&
-              (BitIsSet(wom, run->wom) || (run->last_set && is_last_week)) &&
-              BitIsSet(woy, run->woy);
+    run_now = run_hour_validator.TriggersOn(run->date_time_bitfield);
 
     if (run_now) {
       /*
        * Find time (time_t) job is to be run
        */
+      struct tm tm;
       Blocaltime(&time_to_check, &tm); /* Reset tm structure */
       tm.tm_min = run->minute;         /* Set run minute */
       tm.tm_sec = 0;                   /* Zero secs */
@@ -544,7 +533,6 @@ static void DoSchedulerStatus(UaContext* ua)
   char schedulename[MAX_NAME_LENGTH];
   const int seconds_per_day = 86400; /* Number of seconds in one day */
   const int seconds_per_hour = 3600; /* Number of seconds in one hour */
-  struct tm tm;
   ClientResource* client = NULL;
   JobResource* job = NULL;
   ScheduleResource* sched;
@@ -650,8 +638,6 @@ static void DoSchedulerStatus(UaContext* ua)
 start_again:
   time_to_check = start;
   while (time_to_check < stop) {
-    Blocaltime(&time_to_check, &tm);
-
     if (client || job) {
       /*
        * List specific schedule.
@@ -659,7 +645,7 @@ start_again:
       if (job) {
         if (job->schedule) {
           if (!show_scheduled_preview(ua, job->schedule, overview,
-                                      &max_date_len, tm, time_to_check)) {
+                                      &max_date_len, time_to_check)) {
             goto start_again;
           }
         }
@@ -670,7 +656,7 @@ start_again:
 
           if (job->schedule && job->client == client) {
             if (!show_scheduled_preview(ua, job->schedule, overview,
-                                        &max_date_len, tm, time_to_check)) {
+                                        &max_date_len, time_to_check)) {
               job = NULL;
               UnlockRes(my_config);
               goto start_again;
@@ -694,7 +680,7 @@ start_again:
           if (!bstrcmp(sched->resource_name_, schedulename)) { continue; }
         }
 
-        if (!show_scheduled_preview(ua, sched, overview, &max_date_len, tm,
+        if (!show_scheduled_preview(ua, sched, overview, &max_date_len,
                                     time_to_check)) {
           UnlockRes(my_config);
           goto start_again;

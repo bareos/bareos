@@ -1,7 +1,9 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,12 +24,34 @@
 #ifndef BAREOS_DIRD_SCHEDULER_H_
 #define BAREOS_DIRD_SCHEDULER_H_
 
+#include <memory>
+#include <functional>
+
+class JobControlRecord;
+
 namespace directordaemon {
 
-JobControlRecord* wait_for_next_job(char* one_shot_job_to_run);
-bool IsDoyInLastWeek(int year, int doy);
-void TermScheduler();
-void InvalidateSchedules();
+class JobResource;
+class SchedulerPrivate;
+class SchedulerTimeAdapter;
+
+class Scheduler {
+ public:
+  Scheduler() noexcept;
+  Scheduler(std::unique_ptr<SchedulerTimeAdapter> time_adapter,
+            std::function<void(JobControlRecord*)> ExecuteJob) noexcept;
+  ~Scheduler();
+
+  void Run();
+  void Terminate();
+  void ClearQueue();
+  void AddJobWithNoRunResourceToQueue(JobResource* job);
+  static Scheduler& GetMainScheduler() noexcept;
+
+ private:
+  std::unique_ptr<SchedulerPrivate> impl_;
+};
 
 } /* namespace directordaemon */
+
 #endif  // BAREOS_DIRD_SCHEDULER_H_
