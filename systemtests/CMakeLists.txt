@@ -374,6 +374,7 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   prepare_test()
 
   ConfigureFilesToSystemtest("systemtests"  "tests/${TEST_NAME}" "*" @ONLY "")
+  handle_python_plugin_modules()
 
   configure_file("environment.in" "tests/${TEST_NAME}/environment" @ONLY)
   # create a bin/bareos and bin/bconsole script
@@ -398,7 +399,6 @@ IF(ENABLE_WEBUI_SELENIUM_TEST)
   foreach(TEST_NAME ${WEBUI_SELENIUM_TESTS})
 
     prepare_test()
-    handle_python_plugin_modules()
     # split WEBUI_TEST_NAME into PROFILE and TESTNAME
     string(REPLACE "-" ";" SELENIUM_TESTCOMPONENTS ${TEST_NAME})
     #"webui-admin-restore"
@@ -411,7 +411,9 @@ IF(ENABLE_WEBUI_SELENIUM_TEST)
     configure_file("${CMAKE_SOURCE_DIR}/systemtests/tests/webui-common/directors.ini.in" "${current_test_directory}/etc/bareos-webui/directors.ini" @ONLY)
     file(COPY "${CMAKE_SOURCE_DIR}/webui/install/configuration.ini" DESTINATION "${current_test_directory}/etc/bareos-webui/")
     configure_file("${CMAKE_SOURCE_DIR}/systemtests/tests/webui-common/testrunner.in" "${current_test_directory}/testrunner" @ONLY)
+
     ConfigureFilesToSystemtest("systemtests"  "tests/${TEST_NAME}" "*" @ONLY "tests/webui-common")
+
     configure_file("environment.in" "tests/${TEST_NAME}/environment" @ONLY)
     # create a bin/bareos and bin/bconsole script
     # in every testdir for start/stop and bconsole
