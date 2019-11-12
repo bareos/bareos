@@ -194,8 +194,6 @@ JobControlRecord::JobControlRecord()
 {
   Dmsg0(100, "Construct JobControlRecord\n");
 
-  SetupThreadSpecificDataKey();
-
   MessageQueueItem* item = nullptr;
   msg_queue = new dlist(item, &item->link_);  // calculate offset
 

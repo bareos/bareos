@@ -23,74 +23,18 @@
 
 #include "include/bareos.h"
 #include "lib/thread_specific_data.h"
+#include "lib/thread_specific_data_key.h"
 #include "include/jcr.h"
-#include "lib/berrno.h"
-
-static bool jcr_key_initialized = false;
-
-#ifdef HAVE_WIN32
-static bool tsd_initialized = false;
-static pthread_key_t jcr_key; /* Pointer to jcr for each thread */
-#else
-#ifdef PTHREAD_ONCE_KEY_NP
-static pthread_key_t jcr_key = PTHREAD_ONCE_KEY_NP;
-#else
-static pthread_key_t jcr_key; /* Pointer to jcr for each thread */
-static pthread_once_t key_once = PTHREAD_ONCE_INIT;
-#endif
-#endif
-
-static void CreateThreadSpecificDataKey()
-{
-#ifdef PTHREAD_ONCE_KEY_NP
-  int status = pthread_key_create_once_np(&jcr_key, nullptr);
-#else
-  int status = pthread_key_create(&jcr_key, nullptr);
-#endif
-  if (status != 0) {
-    BErrNo be;
-    Jmsg1(nullptr, M_ABORT, 0, _("pthread key create failed: ERR=%s\n"),
-          be.bstrerror(status));
-  } else {
-    jcr_key_initialized = true;
-  }
-}
-
-void SetupThreadSpecificDataKey()
-{
-#ifdef HAVE_WIN32
-  LockJcrChain();
-  if (!tsd_initialized) {
-    CreateThreadSpecificDataKey();
-    tsd_initialized = true;
-  }
-  UnlockJcrChain();
-#else
-#ifdef PTHREAD_ONCE_KEY_NP
-  CreateThreadSpecificDataKey();
-#else
-  int status = pthread_once(&key_once, CreateThreadSpecificDataKey);
-  if (status != 0) {
-    BErrNo be;
-    Jmsg1(nullptr, M_ABORT, 0, _("pthread_once failed. ERR=%s\n"),
-          be.bstrerror(status));
-  }
-#endif
-#endif
-}
 
 JobControlRecord* GetJcrFromThreadSpecificData()
 {
-  JobControlRecord* jcr = nullptr;
-  if (jcr_key_initialized) {
-    jcr = (JobControlRecord*)pthread_getspecific(jcr_key);
-  }
-  return jcr;
+  return static_cast<JobControlRecord*>(
+      pthread_getspecific(ThreadSpecificDataKey::Key()));
 }
 
 void SetJcrInThreadSpecificData(JobControlRecord* jcr)
 {
-  int status = pthread_setspecific(jcr_key, jcr);
+  int status = pthread_setspecific(ThreadSpecificDataKey::Key(), jcr);
   if (status != 0) {
     BErrNo be;
     Jmsg1(jcr, M_ABORT, 0, _("pthread_setspecific failed: ERR=%s\n"),
