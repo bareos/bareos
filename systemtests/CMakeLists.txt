@@ -343,9 +343,7 @@ MESSAGE(STATUS "PYTHON_FOUND:                 " ${PYTHON_FOUND})
 MESSAGE(STATUS "PYTHON_SELENIUM_FOUND:        " ${PYTHON_SELENIUM_FOUND})
 MESSAGE(STATUS "CHROMEDRIVER_FOUND:           " ${CHROMEDRIVER_FOUND})
 
-
-IF(ENABLE_WEBUI_SELENIUM_TEST)
-set(WEBUI_SELENIUM_TESTS
+set(AVAILABLE_WEBUI_SELENIUM_TESTS
   "admin-client_disabling"
   "admin-rerun_job"
   "admin-restore"
@@ -357,9 +355,16 @@ set(WEBUI_SELENIUM_TESTS
   "readonly-run_configured_job"
   "readonly-run_default_job"
   )
+
+IF(ENABLE_WEBUI_SELENIUM_TEST)
+  set(WEBUI_SELENIUM_TESTS ${AVAILABLE_WEBUI_SELENIUM_TESTS})
 ELSE()
-set(WEBUI_SELENIUM_TESTS
-  )
+  set(WEBUI_SELENIUM_TESTS)
+  foreach(TEST_NAME_DISABLED ${AVAILABLE_WEBUI_SELENIUM_TESTS})
+    add_test(NAME webui:${TEST_NAME_DISABLED} COMMAND empty_command)
+    set_tests_properties(webui:${TEST_NAME_DISABLED} PROPERTIES DISABLED true)
+    message(STATUS "Disabled test: webui:${TEST_NAME_DISABLED}")
+  endforeach()
 ENDIF()
 
 set(BASEPORT 42001)
