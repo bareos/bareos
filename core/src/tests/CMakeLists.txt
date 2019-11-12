@@ -443,3 +443,14 @@ ENDIF()
 
 gtest_discover_tests(scheduler TEST_PREFIX gtest:)
 
+####### test_is_name_valid  #####################################
+add_executable(test_is_name_valid test_is_name_valid.cc)
+
+target_link_libraries(test_is_name_valid
+   bareos
+   ${GTEST_LIBRARIES}
+   ${GTEST_MAIN_LIBRARIES}
+)
+
+gtest_discover_tests(test_is_name_valid TEST_PREFIX gtest:)
+

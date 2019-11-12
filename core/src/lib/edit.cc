@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -498,9 +498,8 @@ bool IsAnInteger(const char* n)
 }
 
 /*
- * Check if BAREOS Resoure Name is valid
+ * Check if BAREOS Resource Name is valid
  *
- * Check if the Volume name has legal characters
  * If ua is non-NULL send the message
  */
 bool IsNameValid(const char* name, POOLMEM*& msg)
@@ -512,11 +511,15 @@ bool IsNameValid(const char* name, POOLMEM*& msg)
    */
   const char* accept = ":.-_/ ";
 
-  /*
-   * No name is invalid
-   */
+  /* Empty name is invalid */
   if (!name) {
     if (msg) { Mmsg(msg, _("Empty name not allowed.\n")); }
+    return false;
+  }
+
+  /* check for beginning space */
+  if (name[0] == ' ') {
+    if (msg) { Mmsg(msg, _("Name cannot start with space.\n")); }
     return false;
   }
 
@@ -538,10 +541,14 @@ bool IsNameValid(const char* name, POOLMEM*& msg)
   }
 
   if (len == 0) {
-    if (msg) {
-      Mmsg(msg, _("Volume name must be at least one character long.\n"));
-    }
+    if (msg) { Mmsg(msg, _("Name must be at least one character long.\n")); }
     return false;
+  } else {
+    /* check for ending space */
+    if (*(p - 1) == ' ') {
+      if (msg) { Mmsg(msg, _("Name cannot end with space.\n")); }
+      return false;
+    }
   }
 
   return true;
