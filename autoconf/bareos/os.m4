@@ -169,10 +169,7 @@ else
    then
       LSB_DISTRIBUTOR=`lsb_release -i -s`
       case ${LSB_DISTRIBUTOR} in
-         "SUSE LINUX")
-            DISTNAME=suse
-            ;;
-         "openSUSE project")
+         *SUSE*)
             DISTNAME=suse
             ;;
          CentOS)
