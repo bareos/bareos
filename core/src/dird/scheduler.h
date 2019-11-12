@@ -32,8 +32,8 @@ class JobControlRecord;
 namespace directordaemon {
 
 class JobResource;
-class SchedulerPrivate;
 class SchedulerTimeAdapter;
+struct SchedulerPrivate;
 
 class Scheduler {
  public:

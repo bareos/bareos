@@ -37,24 +37,28 @@ class TimerThreadTest : public ::testing::Test {
   bool stop_timer_thread_on_tear_down = true;
   TimerThread::Timer* timer_item = nullptr;
 
-  void SetUp(bool one_shot = false);
+  void OneShotTimerOn() { one_shot_ = true; }
+  void OneShotTimerOff() { one_shot_ = false; }
+
+  void SetUp() override;
 
  private:
   void TearDown() override;
+  bool one_shot_{false};
 };
 
 bool TimerThreadTest::timer_callback_was_called = false;
 bool TimerThreadTest::user_destructor_was_called = false;
 bool TimerThreadTest::timer_callback_thread_is_timer = false;
 
-void TimerThreadTest::SetUp(bool one_shot)
+void TimerThreadTest::SetUp()
 {
   timer_callback_was_called = false;
   user_destructor_was_called = false;
 
   timer_item = TimerThread::NewTimer();
 
-  timer_item->single_shot = one_shot;
+  timer_item->single_shot = one_shot_;
   timer_item->interval = std::chrono::milliseconds(100);
 
   timer_item->user_callback = TimerCallback;
@@ -72,14 +76,14 @@ void TimerThreadTest::TimerCallback(TimerThread::Timer* t)
   timer_callback_thread_is_timer = TimerThread::CurrentThreadIsTimerThread();
 }
 
-void TimerThreadTest::TimerUserDestructorCallback(
-    TimerThread::Timer* t)
+void TimerThreadTest::TimerUserDestructorCallback(TimerThread::Timer* t)
 {
   user_destructor_was_called = true;
 }
 
 TEST_F(TimerThreadTest, timeout)
 {
+  OneShotTimerOff();
   SetUp();
 
   EXPECT_TRUE(RegisterTimer(timer_item));
@@ -99,7 +103,8 @@ TEST_F(TimerThreadTest, timeout)
 
 TEST_F(TimerThreadTest, timeout_one_shot)
 {
-  SetUp(true);
+  OneShotTimerOn();
+  SetUp();
 
   EXPECT_TRUE(RegisterTimer(timer_item));
   EXPECT_FALSE(TimerThread::CurrentThreadIsTimerThread());
@@ -120,6 +125,7 @@ TEST_F(TimerThreadTest, timeout_one_shot)
 
 TEST_F(TimerThreadTest, user_destructor_stop)
 {
+  OneShotTimerOff();
   SetUp();
   EXPECT_TRUE(TimerThread::RegisterTimer(timer_item));
 
@@ -130,6 +136,7 @@ TEST_F(TimerThreadTest, user_destructor_stop)
 
 TEST_F(TimerThreadTest, user_destructor_unregister)
 {
+  OneShotTimerOff();
   SetUp();
   EXPECT_TRUE(TimerThread::RegisterTimer(timer_item));
 
@@ -140,6 +147,7 @@ TEST_F(TimerThreadTest, user_destructor_unregister)
 
 TEST_F(TimerThreadTest, register_twice_fails)
 {
+  OneShotTimerOff();
   SetUp();
   EXPECT_TRUE(TimerThread::RegisterTimer(timer_item));
   EXPECT_TRUE(TimerThread::RegisterTimer(timer_item));
@@ -148,6 +156,7 @@ TEST_F(TimerThreadTest, register_twice_fails)
 
 TEST_F(TimerThreadTest, should_shutdown_with_timer_thread_guard)
 {
+  OneShotTimerOff();
   SetUp();
 
   /* This test does not shutdown the timer thread during tear down,
