@@ -170,7 +170,8 @@ static void usage()
         "configuration file)\n"
         "       -?                print this message\n\n"
         "example:\n"
-        "bscan -B postgresql -V Full-0001 FileStorage\n"));
+        "bscan -B postgresql -V Full-0001 FileStorage\n"),
+      backend_directory);
   exit(1);
 }
 
