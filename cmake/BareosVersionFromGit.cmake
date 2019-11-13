@@ -24,6 +24,7 @@ if(Git_FOUND)
                           --pretty=format:%ct
                   RESULT_VARIABLE GIT_COMMIT_TIMESTAMP_RESULT
                   OUTPUT_VARIABLE GIT_COMMIT_TIMESTAMP
+                  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
                   ERROR_QUIET)
 endif()
 
@@ -37,6 +38,7 @@ if(GIT_COMMIT_TIMESTAMP_RESULT EQUAL 0)
                           --dirty=.dirty
                   RESULT_VARIABLE GIT_DESCRIBE_RELEASE_RESULT
                   OUTPUT_VARIABLE GIT_DESCRIBE_OUTPUT
+                  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
                   ERROR_QUIET
                   OUTPUT_STRIP_TRAILING_WHITESPACE)
   if(NOT GIT_DESCRIBE_RELEASE_RESULT EQUAL 0)
@@ -48,6 +50,7 @@ if(GIT_COMMIT_TIMESTAMP_RESULT EQUAL 0)
                             --dirty=.dirty
                     RESULT_VARIABLE GIT_DESCRIBE_WIP_RESULT
                     OUTPUT_VARIABLE GIT_DESCRIBE_OUTPUT
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
                     ERROR_QUIET
                     OUTPUT_STRIP_TRAILING_WHITESPACE)
   endif()
