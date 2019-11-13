@@ -28,6 +28,7 @@
 #include "dird/scheduler.h"
 #include "dird/job.h"
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
