@@ -1134,8 +1134,8 @@ bool DoMigrationInit(JobControlRecord* jcr)
     if (!jcr->db->GetJobRecord(jcr, &jcr->impl->previous_jr)) {
       Jmsg(jcr, M_FATAL, 0,
            _("Could not get job record for JobId %s to %s. ERR=%s"),
-           edit_int64(jcr->impl->previous_jr.JobId, ed1),
-           jcr->get_ActionName(), jcr->db->strerror());
+           edit_int64(jcr->impl->previous_jr.JobId, ed1), jcr->get_ActionName(),
+           jcr->db->strerror());
       return false;
     }
 
@@ -1208,9 +1208,7 @@ bool DoMigrationInit(JobControlRecord* jcr)
      * If the current Job has no explicit fileset set use the client setting of
      * the previous Job.
      */
-    if (!jcr->impl->res.fileset) {
-      jcr->impl->res.fileset = prev_job->fileset;
-    }
+    if (!jcr->impl->res.fileset) { jcr->impl->res.fileset = prev_job->fileset; }
 
     /*
      * See if spooling data is not enabled yet. If so turn on spooling if
@@ -1768,16 +1766,17 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
            "  SD termination status:  %s\n"
            "  Bareos binary info:     %s\n"
            "  Termination:            %s\n\n"),
-         BAREOS, my_name, VERSION, LSMDATE, HOST_OS, DISTNAME, DISTVER,
+         BAREOS, my_name, kBareosVersionStrings.Full,
+         kBareosVersionStrings.ShortDate, HOST_OS, DISTNAME, DISTVER,
          edit_uint64(jcr->impl->previous_jr.JobId, ec6),
          jcr->impl->previous_jr.Job,
          mig_jcr ? edit_uint64(mig_jcr->impl->jr.JobId, ec7) : _("*None*"),
          edit_uint64(jcr->impl->jr.JobId, ec8), jcr->impl->jr.Job,
          JobLevelToString(jcr->getJobLevel()),
          jcr->impl->res.client ? jcr->impl->res.client->resource_name_
-                                : _("*None*"),
+                               : _("*None*"),
          jcr->impl->res.fileset ? jcr->impl->res.fileset->resource_name_
-                                 : _("*None*"),
+                                : _("*None*"),
          jcr->impl->res.rpool->resource_name_, jcr->impl->res.rpool_source,
          jcr->impl->res.read_storage
              ? jcr->impl->res.read_storage->resource_name_
@@ -1789,18 +1788,17 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
              : _("*None*"),
          NPRT(jcr->impl->res.wstore_source),
          jcr->impl->res.next_pool ? jcr->impl->res.next_pool->resource_name_
-                                   : _("*None*"),
+                                  : _("*None*"),
          NPRT(jcr->impl->res.npool_source),
-         jcr->impl->res.catalog->resource_name_,
-         jcr->impl->res.catalog_source, sdt, edt,
-         edit_utime(RunTime, elapsed, sizeof(elapsed)), jcr->JobPriority,
-         edit_uint64_with_commas(jcr->impl->SDJobFiles, ec1),
+         jcr->impl->res.catalog->resource_name_, jcr->impl->res.catalog_source,
+         sdt, edt, edit_utime(RunTime, elapsed, sizeof(elapsed)),
+         jcr->JobPriority, edit_uint64_with_commas(jcr->impl->SDJobFiles, ec1),
          edit_uint64_with_commas(jcr->impl->SDJobBytes, ec2),
          edit_uint64_with_suffix(jcr->impl->SDJobBytes, ec3), (float)kbps,
          mig_jcr ? mig_jcr->VolumeName : _("*None*"), jcr->VolSessionId,
          jcr->VolSessionTime, edit_uint64_with_commas(mr->VolBytes, ec4),
          edit_uint64_with_suffix(mr->VolBytes, ec5), jcr->impl->SDErrors,
-         sd_term_msg, BAREOS_JOBLOG_MESSAGE, term_code);
+         sd_term_msg, kBareosVersionStrings.JoblogMessage, term_code);
   } else {
     /*
      * Copy/Migrate selection only Job.
@@ -1817,12 +1815,12 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
            "  Priority:               %d\n"
            "  Bareos binary info:     %s\n"
            "  Termination:            %s\n\n"),
-         BAREOS, my_name, VERSION, LSMDATE, HOST_OS, DISTNAME, DISTVER,
+         BAREOS, my_name, kBareosVersionStrings.Full,
+         kBareosVersionStrings.ShortDate, HOST_OS, DISTNAME, DISTVER,
          edit_uint64(jcr->impl->jr.JobId, ec8), jcr->impl->jr.Job,
-         jcr->impl->res.catalog->resource_name_,
-         jcr->impl->res.catalog_source, sdt, edt,
-         edit_utime(RunTime, elapsed, sizeof(elapsed)), jcr->JobPriority,
-         BAREOS_JOBLOG_MESSAGE, term_code);
+         jcr->impl->res.catalog->resource_name_, jcr->impl->res.catalog_source,
+         sdt, edt, edit_utime(RunTime, elapsed, sizeof(elapsed)),
+         jcr->JobPriority, kBareosVersionStrings.JoblogMessage, term_code);
   }
 }
 

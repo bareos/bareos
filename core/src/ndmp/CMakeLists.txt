@@ -19,10 +19,10 @@
 
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNDMOS_OPTION_NO_TEST_AGENTS")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNDMOS_CONST_NDMJOBLIB_REVISION=\\\"${BAREOS_FULL_VERSION}\\\"")
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNDMOS_CONST_NDMJOBLIB_REVISION=\\\"${BAREOS_FULL_VERSION}\\\"")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNDMOS_CONST_VENDOR_NAME=\\\"Bareos\\ GmbH\\ \\&\\ Co.KG\\\"")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNDMOS_CONST_PRODUCT_NAME=\\\"Bareos\\\"")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNDMOS_CONST_PRODUCT_REVISION=\\\"${BAREOS_FULL_VERSION}\\\"")
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNDMOS_CONST_PRODUCT_REVISION=\\\"${BAREOS_FULL_VERSION}\\\"")
 
 if (${HAVE_LINUX_OS})
    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_LINUX_OS")
@@ -98,7 +98,7 @@ target_link_libraries(bareosndmp ${WRAP_LIBS} ${TIRPC_LIBRARIES})
 install(TARGETS bareosndmp DESTINATION ${libdir})
 
 set_target_properties(bareosndmp PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
-                                          SOVERSION "${SOVERSION}"
+                                            SOVERSION "${BAREOS_VERSION_MAJOR}"
                                           )
 IF(build_ndmjob)
   add_executable(ndmjob ${NDMJOB_SRCS})

@@ -286,7 +286,7 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
   json_t* json = json_object();
   json_object_set_new(json, "format-version", json_integer(2));
   json_object_set_new(json, "component", json_string("bareos-fd"));
-  json_object_set_new(json, "version", json_string(VERSION));
+  json_object_set_new(json, "version", json_string(kBareosVersionStrings.Full));
 
   /*
    * Resources

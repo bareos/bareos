@@ -28,7 +28,7 @@ set(CMAKE_MODULE_PATH
          ${PROJECT_SOURCE_DIR}/cmake
          )
 
-INCLUDE(BareosLocalBuildDefinitions RESULT_VARIABLE BareosLocalBuildDefinitionsFile)
+INCLUDE(BareosLocalBuildDefinitions OPTIONAL RESULT_VARIABLE BareosLocalBuildDefinitionsFile)
 
 IF (NOT DEFINED VERSION_STRING)
   # try to get version info from version.h

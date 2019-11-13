@@ -134,9 +134,8 @@ execute_process(
 )
 
 INCLUDE(BareosExtractVersionInfo)
-add_definitions(-DVERSION="${BAREOS_FULL_VERSION}")
 
-INCLUDE(BareosLocalBuildDefinitions RESULT_VARIABLE BareosLocalBuildDefinitionsFile)
+INCLUDE(BareosLocalBuildDefinitions OPTIONAL RESULT_VARIABLE BareosLocalBuildDefinitionsFile)
 
 IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
    set(OPENSSL_ROOT_DIR /usr/local/opt/openssl)

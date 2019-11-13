@@ -34,7 +34,7 @@
  *
  */
 
-
+#include "lib/version.h"
 #include "ndmjob.h"
 
 
@@ -706,8 +706,8 @@ void ndmjob_version_info(void)
 
   printf("%s (%s)\n", NDMOS_CONST_PRODUCT_NAME, NDMOS_CONST_VENDOR_NAME);
 
-  printf("  Rev %s LIB:%d.%d/%s OS:%s (%s)\n", NDMOS_CONST_PRODUCT_REVISION,
-         NDMJOBLIB_VERSION, NDMJOBLIB_RELEASE, NDMOS_CONST_NDMJOBLIB_REVISION,
+  printf("  Rev %s LIB:%d.%d/%s OS:%s (%s)\n", kBareosVersionStrings.Full,
+         NDMJOBLIB_VERSION, NDMJOBLIB_RELEASE, kBareosVersionStrings.Full,
          NDMOS_CONST_NDMOS_REVISION, obuf);
 
   printf("  Agents:   %s\n", abuf);

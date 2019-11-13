@@ -110,12 +110,10 @@ static int EolCmd(FILE* input, BareosSocket* UA_sock);
 
 static void usage()
 {
+  kBareosVersionStrings.PrintCopyright(stderr, 2000);
   fprintf(
       stderr,
-      _(PROG_COPYRIGHT
-        "\n"
-        "Version: " VERSION " (" BDATE ") %s %s %s\n\n"
-        "Usage: bconsole [-s] [-c config_file] [-d debug_level]\n"
+      _("Usage: bconsole [-s] [-c config_file] [-d debug_level]\n"
         "        -D <dir>    select a Director\n"
         "        -l          list defined Directors\n"
         "        -c <path>   specify configuration file or directory\n"
@@ -133,8 +131,7 @@ static void usage()
         "        -xs         print configuration file schema in JSON format "
         "and exit\n"
         "        -?          print this message.\n"
-        "\n"),
-      2000, HOST_OS, DISTNAME, DISTVER);
+        "\n"));
 }
 
 extern "C" void GotSigstop(int sig) { stop = true; }
@@ -1228,8 +1225,8 @@ static int CheckResources()
 /* @version */
 static int Versioncmd(FILE* input, BareosSocket* UA_sock)
 {
-  ConsoleOutputFormat("Version: " VERSION " (" BDATE ") %s %s %s\n", HOST_OS,
-                      DISTNAME, DISTVER);
+  ConsoleOutputFormat("Version: %s (%s) %s %s %s\n", kBareosVersionStrings.Full,
+                      kBareosVersionStrings.Date, HOST_OS, DISTNAME, DISTVER);
   return 1;
 }
 

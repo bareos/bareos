@@ -128,7 +128,8 @@ static void start_bareos_server(std::promise<bool>* promise,
                                            dir_cons_config.get())) {
       Dmsg0(10, "Server: inbound auth failed\n");
     } else {
-      bs->fsend(_("1000 OK: %s Version: %s (%s)\n"), my_name, VERSION, BDATE);
+      bs->fsend(_("1000 OK: %s Version: %s (%s)\n"), my_name,
+                kBareosVersionStrings.Full, kBareosVersionStrings.Date);
       Dmsg0(10, "Server: inbound auth successful\n");
       std::string cipher;
       if (bs->tls_conn) {

@@ -46,7 +46,7 @@
 
 #include "include/hostconfig.h"
 
-#include "include/version.h"
+#include "lib/version.h"
 #include "include/bc_types.h"
 #include "include/fileopts.h"
 #include "lib/plugins.h"

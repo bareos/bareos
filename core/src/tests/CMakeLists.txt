@@ -464,3 +464,14 @@ target_link_libraries(test_acl_entry_syntax
 )
 
 gtest_discover_tests(test_acl_entry_syntax TEST_PREFIX gtest:)
+
+####### version_strings  #####################################
+add_executable(version_strings version_strings.cc)
+
+target_link_libraries(version_strings
+   bareos
+   ${GTEST_LIBRARIES}
+   ${GTEST_MAIN_LIBRARIES}
+)
+
+gtest_discover_tests(version_strings TEST_PREFIX gtest:)

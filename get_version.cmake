@@ -1,6 +1,6 @@
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+# Copyright (C) 2019-2019 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or modify it under
 # the terms of version three of the GNU Affero General Public License as
@@ -15,40 +15,25 @@
 # with this program; if not, write to the Free Software Foundation, Inc., 51
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+cmake_minimum_required(VERSION 3.0)
+
 if(NOT DEFINED VERSION_STRING)
+  set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake"
+                        "${CMAKE_CURRENT_LIST_DIR}/core/cmake"
+                        "${CMAKE_CURRENT_LIST_DIR}/webui/cmake")
+
+  find_package(Git QUIET)
+  include(BareosVersionFromGit)
+
   include(BareosVersion OPTIONAL RESULT_VARIABLE BareosVersionFile)
   if(BareosVersionFile STREQUAL "NOTFOUND")
-    # no version file, try data from git
     if(GIT_DESCRIBE_VERSION)
-      message(STATUS "Using version information from Git")
       set(VERSION_STRING "${GIT_DESCRIBE_VERSION}")
     else()
       message(
-        FATAL_ERROR "VERSION_STRING not set, BareosVersion.cmake not found and no version data from git available."
-        )
+        FATAL_ERROR
+          "BareosVersion.cmake not found and no git version available.")
     endif()
-  else()
-    message(STATUS "Using version information from ${BareosVersionFile}")
   endif()
 endif()
-
-string(REGEX MATCH
-             [0-9.a-zA-Z~]+
-             BAREOS_FULL_VERSION
-             ${VERSION_STRING})
-
-if(BAREOS_FULL_VERSION STREQUAL "")
-  message(FATAL_ERROR "BAREOS_FULL_VERSION is not set")
-endif()
-
-string(REGEX MATCH
-             [0-9]+.[0-9]+.[0-9]+
-             BAREOS_NUMERIC_VERSION
-             ${VERSION_STRING})
-string(REPLACE "\""
-               ""
-               BAREOS_FULL_VERSION
-               ${BAREOS_FULL_VERSION})
-
-message(STATUS "BareosExtractVersionInfo: BAREOS_FULL_VERSION is "
-               ${BAREOS_FULL_VERSION})
+message(STATUS "${VERSION_STRING}")

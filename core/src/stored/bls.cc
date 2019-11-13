@@ -80,11 +80,10 @@ static BootStrapRecord* bsr = NULL;
 
 static void usage()
 {
+  kBareosVersionStrings.PrintCopyright(stderr, 2000);
   fprintf(
       stderr,
-      _(PROG_COPYRIGHT
-        "\nVersion: %s (%s)\n\n"
-        "Usage: bls [options] <device-name>\n"
+      _("Usage: bls [options] <device-name>\n"
         "       -b <file>       specify a bootstrap file\n"
         "       -c <path>       specify a Storage configuration file or "
         "directory\n"
@@ -103,8 +102,7 @@ static void usage()
         "       -p              proceed inspite of errors\n"
         "       -v              be verbose (can be specified multiple times)\n"
         "       -V              specify Volume names (separated by |)\n"
-        "       -?              print this message\n\n"),
-      2000, VERSION, BDATE);
+        "       -?              print this message\n\n"));
   exit(1);
 }
 

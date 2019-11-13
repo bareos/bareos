@@ -1,7 +1,6 @@
 {
   "format-version": 2,
   "component": "bareos-fd",
-  "version": "19.1.2",
   "resource": {
     "bareos-fd": {
       "Director": {

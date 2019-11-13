@@ -1,7 +1,6 @@
 {
   "format-version": 2,
   "component": "bareos-tray-monitor",
-  "version": "19.1.2",
   "resource": {
     "bareos-tray-monitor": {
       "Monitor": {
