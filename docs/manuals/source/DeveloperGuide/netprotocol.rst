@@ -118,7 +118,7 @@ It returns:
 
 It should be noted that bnet_recv() is a blocking read.
 
-.. _sec:bnet_sig:
+.. _section-signals:
 
 bnet_sig
 ~~~~~~~~

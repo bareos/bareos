@@ -1,17 +1,20 @@
 .. _CommEncryption:
 
+.. _section-TransportEncryption:
+
 Transport Encryption
 ====================
 
-
-
-.. _section-TransportEncryption:
-
- :index:`\ <single: Communications Encryption>`\  :index:`\ <single: Encryption; Communication>`\  :index:`\ <single: Encryption; Transport>`\  :index:`\ <single: Transport Encryption>`\  :index:`\ <single: TLS>`\  :index:`\ <single: SSL>`\
+.. index:: Communications Encryption
+.. index:: Transport Encryption
+.. index:: Encryption; Transport
+.. index:: TLS
+.. index:: TLS-PSK
+.. index:: SSL
 
 Bareos uses TLS (Transport Layer Security) to provide secure network transport. For data encryption in contrast, please see the :ref:`DataEncryption` chapter. The initial Bacula encryption implementation has been written by Landon Fuller.
 
-With :sinceVersion:`18.2:""` the TLS code has been enhanced by the TLS-PSK (Pre Shared Keys) feature which allows the daemons to setup an encrypted connection directly without using certificates. The library used for TLS is openSSL.
+With :sinceVersion:`18.2.4: TLS-PSK` the TLS code has been enhanced by the TLS-PSK (Pre Shared Keys) feature which allows the daemons to setup an encrypted connection directly without using certificates. The library used for TLS is openSSL.
 
 .. _TlsDirectives:
 
@@ -302,7 +305,7 @@ The following sequence is used to figure out the right protocol version and to s
 |bareosFD| 18.2 with Bareos before 18.2
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-|bareosFD| :sinceVersion:`18.2:""` can be used on a Bareos system before Bareos-18.2.
+|bareosFD| >= 18.2 can be used on a Bareos system before Bareos-18.2.
 
 The *older* |bareosDir| and |bareosSD| connect to |bareosFD| using the cleartext Bareos handshake before they can switch to TLS. If you want transport encryption then only TLS with certificates can be used. TLS-PSK is not possible with |bareosDir| and |bareosSd| before Bareos-18.2.
 

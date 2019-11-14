@@ -3,7 +3,8 @@
 Director Configuration
 ======================
 
- :index:`\ <single: Director; Configuration>`\  :index:`\ <single: Configuration; Director>`\ 
+.. index::
+   pair: Director; Configuration
 
 Of all the configuration files needed to run Bareos, the Director’s is the most complicated and the one that you will need to modify the most often as you add clients or modify the FileSets.
 
@@ -610,7 +611,8 @@ The directives within an Options resource may be one of the following:
         Note that Bareos only use one compression level LZO1X-1 specified by LZO.
 
    LZFAST
-        .. deprecated:: 19
+        .. deprecated:: 19.2
+
         All files saved will be software compressed using the LZFAST
         compression format. The compression is done on a file by file basis by
         the File daemon. Everything else about GZIP is true for LZFAST.
@@ -917,44 +919,47 @@ The directives within an Options resource may be one of the following:
 
    :type: yes|no
 
-    :index:`\ <single: sparse>`\ 
-    :index:`\ <single: Directive; sparse>`\ 
-    Enable special code that checks for sparse files such as created by
-    ndbm.  The default is :strong:`no`, so no checks are made for sparse files.
-    You may specify :strong:`sparse=yes` even on files that are not sparse file.
-    No harm will be done, but there will be a small additional overhead to
-    check for buffers of all zero, and if there is a 32K block of all zeros
-    (see below), that block will become a hole in the file, which
-    may not be desirable if the original file was not a sparse file.
+   .. index::
+      single: sparse
+      single: Directive; sparse
 
-    :strong:`Restrictions:` Bareos reads files in 32K buffers.  If the whole
-    buffer is zero, it will be treated as a sparse block and not written to
-    tape.  However, if any part of the buffer is non-zero, the whole buffer
-    will be written to tape, possibly including some disk sectors (generally
-    4098 bytes) that are all zero.  As a consequence, Bareos's detection of
-    sparse blocks is in 32K increments rather than the system block size.
-    If anyone considers this to be a real problem, please send in a request
-    for change with the reason.
+   Enable special code that checks for sparse files such as created by
+   ndbm.  The default is :strong:`no`, so no checks are made for sparse files.
+   You may specify :strong:`sparse=yes` even on files that are not sparse file.
+   No harm will be done, but there will be a small additional overhead to
+   check for buffers of all zero, and if there is a 32K block of all zeros
+   (see below), that block will become a hole in the file, which
+   may not be desirable if the original file was not a sparse file.
 
-    If you are not familiar with sparse files, an example is say a file
-    where you wrote 512 bytes at address zero, then 512 bytes at address 1
-    million.  The operating system will allocate only two blocks, and the
-    empty space or hole will have nothing allocated.  However, when you read
-    the sparse file and read the addresses where nothing was written, the OS
-    will return all zeros as if the space were allocated, and if you backup
-    such a file, a lot of space will be used to write zeros to the volume.
-    Worse yet, when you restore the file, all the previously empty space
-    will now be allocated using much more disk space.  By turning on the
-    :strong:`sparse` option, Bareos will specifically look for empty space in
-    the file, and any empty space will not be written to the Volume, nor
-    will it be restored.  The price to pay for this is that Bareos must
-    search each block it reads before writing it.  On a slow system, this
-    may be important.  If you suspect you have sparse files, you should
-    benchmark the difference or set sparse for only those files that are
-    really sparse.
+   :strong:`Restrictions:` Bareos reads files in 32K buffers.  If the whole
+   buffer is zero, it will be treated as a sparse block and not written to
+   tape.  However, if any part of the buffer is non-zero, the whole buffer
+   will be written to tape, possibly including some disk sectors (generally
+   4098 bytes) that are all zero.  As a consequence, Bareos's detection of
+   sparse blocks is in 32K increments rather than the system block size.
+   If anyone considers this to be a real problem, please send in a request
+   for change with the reason.
 
-    You probably should not use this option on files or raw disk devices
-    that are not really sparse files (i.e. have holes in them).
+   If you are not familiar with sparse files, an example is say a file
+   where you wrote 512 bytes at address zero, then 512 bytes at address 1
+   million.  The operating system will allocate only two blocks, and the
+   empty space or hole will have nothing allocated.  However, when you read
+   the sparse file and read the addresses where nothing was written, the OS
+   will return all zeros as if the space were allocated, and if you backup
+   such a file, a lot of space will be used to write zeros to the volume.
+   Worse yet, when you restore the file, all the previously empty space
+   will now be allocated using much more disk space.  By turning on the
+   :strong:`sparse` option, Bareos will specifically look for empty space in
+   the file, and any empty space will not be written to the Volume, nor
+   will it be restored.  The price to pay for this is that Bareos must
+   search each block it reads before writing it.  On a slow system, this
+   may be important.  If you suspect you have sparse files, you should
+   benchmark the difference or set sparse for only those files that are
+   really sparse.
+
+   You probably should not use this option on files or raw disk devices
+   that are not really sparse files (i.e. have holes in them).
+
 
 .. _readfifo:
 
@@ -962,54 +967,55 @@ The directives within an Options resource may be one of the following:
 
    :type: yes|no
 
-   :index:`\ <single: readfifo>`\ 
-   :index:`\ <single: Directive; readfifo>`\ 
+   .. index::
+      single: readfifo
+      single: Directive; readfifo
    
-    If enabled, tells the Client to read the data on a backup and write the
-    data on a restore to any FIFO (pipe) that is explicitly mentioned in the
-    FileSet.  In this case, you must have a program already running that
-    writes into the FIFO for a backup or reads from the FIFO on a restore.
-    This can be accomplished with the :strong:`RunBeforeJob` directive.  If this
-    is not the case, Bareos will hang indefinitely on reading/writing the
-    FIFO. When this is not enabled (default), the Client simply saves the
-    directory entry for the FIFO.
+   If enabled, tells the Client to read the data on a backup and write the
+   data on a restore to any FIFO (pipe) that is explicitly mentioned in the
+   FileSet.  In this case, you must have a program already running that
+   writes into the FIFO for a backup or reads from the FIFO on a restore.
+   This can be accomplished with the :strong:`RunBeforeJob` directive.  If this
+   is not the case, Bareos will hang indefinitely on reading/writing the
+   FIFO. When this is not enabled (default), the Client simply saves the
+   directory entry for the FIFO.
 
-    Normally, when Bareos runs a RunBeforeJob, it waits until that
-    script terminates, and if the script accesses the FIFO to write
-    into it, the Bareos job will block and everything will stall.
-    However, Vladimir Stavrinov as supplied tip that allows this feature
-    to work correctly.  He simply adds the following to the beginning
-    of the RunBeforeJob script:
+   Normally, when Bareos runs a RunBeforeJob, it waits until that
+   script terminates, and if the script accesses the FIFO to write
+   into it, the Bareos job will block and everything will stall.
+   However, Vladimir Stavrinov as supplied tip that allows this feature
+   to work correctly.  He simply adds the following to the beginning
+   of the RunBeforeJob script:
 
-    .. code-block:: sh
+   .. code-block:: sh
 
-        exec > /dev/null
+      exec > /dev/null
 
-    .. code-block:: bareosconfig
-       :caption: FileSet with Fifo
+   .. code-block:: bareosconfig
+      :caption: FileSet with Fifo
 
-       Include {
-         Options {
-           signature=SHA1
-           readfifo=yes
-         }
-         File = /home/abc/fifo
-       }
+      Include {
+            Options {
+            signature=SHA1
+            readfifo=yes
+            }
+            File = /home/abc/fifo
+      }
 
-    This feature can be used to do a "hot" database backup.  
-    You can use the :strong:`RunBeforeJob` to create the fifo
-    and to start a program that dynamically reads your database and writes
-    it to the fifo.  Bareos will then write it to the Volume. 
+   This feature can be used to do a "hot" database backup.  
+   You can use the :strong:`RunBeforeJob` to create the fifo
+   and to start a program that dynamically reads your database and writes
+   it to the fifo.  Bareos will then write it to the Volume. 
 
-    During the restore operation, the inverse is true, after Bareos creates
-    the fifo if there was any data stored with it (no need to explicitly
-    list it or add any options), that data will be written back to the fifo.
-    As a consequence, if any such FIFOs exist in the fileset to be restored,
-    you must ensure that there is a reader program or Bareos will block, and
-    after one minute, Bareos will time out the write to the fifo and move on
-    to the next file.
+   During the restore operation, the inverse is true, after Bareos creates
+   the fifo if there was any data stored with it (no need to explicitly
+   list it or add any options), that data will be written back to the fifo.
+   As a consequence, if any such FIFOs exist in the fileset to be restored,
+   you must ensure that there is a reader program or Bareos will block, and
+   after one minute, Bareos will time out the write to the fifo and move on
+   to the next file.
 
-    If you are planing to use a Fifo for backup, better take a look to the :ref:`bpipe` section.
+   If you are planing to use a Fifo for backup, better take a look to the :ref:`bpipe` section.
 
 
 .. config:option:: dir/fileset/include/options/NoAtime
@@ -1053,24 +1059,26 @@ The directives within an Options resource may be one of the following:
 
    :type: yes|no
 
-    :index:`\ <single: keepatime>`\ 
-    :index:`\ <single: Directive; keepatime>`\ 
-    The default is :strong:`no`.  When enabled, Bareos will reset the st\_atime
-    (access time) field of files that it backs up to their value prior to
-    the backup.  This option is not generally recommended as there are very
-    few programs that use st\_atime, and the backup overhead is increased
-    because of the additional system call necessary to reset the times.
-    However, for some files, such as mailboxes, when Bareos backs up the
-    file, the user will notice that someone (Bareos) has accessed the
-    file. In this, case keepatime can be useful.
-    (I'm not sure this works on Win32).
+   .. index::
+      single: keepatime
+      single: Directive; keepatime
 
-    Note, if you use this feature, when Bareos resets the access time, the
-    change time (st\_ctime) will automatically be modified by the system,
-    so on the next incremental job, the file will be backed up even if
-    it has not changed. As a consequence, you will probably also want
-    to use :strong:`mtimeonly = yes` as well as keepatime (thanks to
-    Rudolf Cejka for this tip).
+   The default is :strong:`no`.  When enabled, Bareos will reset the st\_atime
+   (access time) field of files that it backs up to their value prior to
+   the backup.  This option is not generally recommended as there are very
+   few programs that use st\_atime, and the backup overhead is increased
+   because of the additional system call necessary to reset the times.
+   However, for some files, such as mailboxes, when Bareos backs up the
+   file, the user will notice that someone (Bareos) has accessed the
+   file. In this, case keepatime can be useful.
+   (I'm not sure this works on Win32).
+
+   Note, if you use this feature, when Bareos resets the access time, the
+   change time (st\_ctime) will automatically be modified by the system,
+   so on the next incremental job, the file will be backed up even if
+   it has not changed. As a consequence, you will probably also want
+   to use :strong:`mtimeonly = yes` as well as keepatime (thanks to
+   Rudolf Cejka for this tip).
 
 .. config:option:: dir/fileset/include/options/checkfilechanges
 
@@ -1269,39 +1277,42 @@ The directives within an Options resource may be one of the following:
 
    :type: yes|no
 
-    :index:`\ <single: aclsupport>`\ 
-    :index:`\ <single: Directive; aclsupport>`\ 
+   .. index::
+      single acl support
+      single Directive; acl support
    
-    The default is :strong:`yes` since Bareos 18.2. If this option is set to yes, and you have the
-    POSIX :strong:`libacl` installed on your Linux system, Bareos will backup the
-    file and directory Unix Access Control Lists (ACL) as defined in IEEE Std
-    1003.1e draft 17 and "POSIX.1e" (abandoned).  This feature is
-    available on Unix systems only and requires the Linux ACL library. Bareos is
-    automatically compiled with ACL support if the :strong:`libacl` library is
-    installed on your Linux system (shown in config.out).  While restoring the
-    files Bareos will try to restore the ACLs, if there is no ACL support
-    available on the system, Bareos restores the files and directories but
-    not the ACL information.  Please note, if you backup an EXT3 or XFS
-    filesystem with ACLs, then you restore them to a different filesystem
-    (perhaps reiserfs) that does not have ACLs, the ACLs will be ignored.
+   Since :sinceVersion:`18.2.4: ACL support = yes (new default)`
+   the default is :strong:`yes`.
+   If this option is set to yes, and you have the
+   POSIX :strong:`libacl` installed on your Linux system, Bareos will backup the
+   file and directory Unix Access Control Lists (ACL) as defined in IEEE Std
+   1003.1e draft 17 and "POSIX.1e" (abandoned).  This feature is
+   available on Unix systems only and requires the Linux ACL library. Bareos is
+   automatically compiled with ACL support if the :strong:`libacl` library is
+   installed on your Linux system (shown in config.out).  While restoring the
+   files Bareos will try to restore the ACLs, if there is no ACL support
+   available on the system, Bareos restores the files and directories but
+   not the ACL information.  Please note, if you backup an EXT3 or XFS
+   filesystem with ACLs, then you restore them to a different filesystem
+   (perhaps reiserfs) that does not have ACLs, the ACLs will be ignored.
 
-    For other operating systems there is support for either POSIX ACLs or
-    the more extensible NFSv4 ACLs.
+   For other operating systems there is support for either POSIX ACLs or
+   the more extensible NFSv4 ACLs.
 
-    The ACL stream format between Operation Systems is :strong:`not`
-    compatible so for example an ACL saved on Linux cannot be restored on
-    Solaris.
+   The ACL stream format between Operation Systems is :strong:`not`
+   compatible so for example an ACL saved on Linux cannot be restored on
+   Solaris.
 
-    The following Operating Systems are currently supported:
+   The following Operating Systems are currently supported:
 
-    * AIX (pre-5.3 (POSIX) and post 5.3 (POSIX and NFSv4) ACLs)
-    * Darwin
-    * FreeBSD (POSIX and NFSv4/ZFS ACLs)
-    * HPUX
-    * IRIX
-    * Linux
-    * Solaris (POSIX and NFSv4/ZFS ACLs)
-    * Tru64
+   * AIX (pre-5.3 (POSIX) and post 5.3 (POSIX and NFSv4) ACLs)
+   * Darwin
+   * FreeBSD (POSIX and NFSv4/ZFS ACLs)
+   * HPUX
+   * IRIX
+   * Linux
+   * Solaris (POSIX and NFSv4/ZFS ACLs)
+   * Tru64
    
 
 .. _XattrSupport:
@@ -1310,33 +1321,37 @@ The directives within an Options resource may be one of the following:
 
    :type: yes|no
 
-    :index:`\ <single: xattrsupport>`\ 
-    :index:`\ <single: Directive; xattrsupport>`\ 
-    The default is :strong:`yes` since Bareos 18.2. If this option is set to yes, and your
-    operating system support either so called Extended Attributes or
-    Extensible Attributes Bareos will backup the file and directory
-    XATTR data. This feature is available on UNIX only and depends on
-    support of some specific library calls in libc.
+   .. index::
+      single: xattr support
+      single: Directive; xattr support
 
-    The XATTR stream format between Operating Systems is :strong:`not`
-    compatible so an XATTR saved on Linux cannot for example be restored
-    on Solaris.
+   Since :sinceVersion:`18.2.4: xattr support = yes (new default)`
+   the default is :strong:`yes.
+   If this option is set to yes, and your
+   operating system support either so called Extended Attributes or
+   Extensible Attributes Bareos will backup the file and directory
+   XATTR data. This feature is available on UNIX only and depends on
+   support of some specific library calls in libc.
 
-    On some operating systems ACLs are also stored as Extended Attributes
-    (Linux, Darwin, FreeBSD) Bareos checks if you have the aclsupport
-    option enabled and if so will not save the same info when saving
-    extended attribute information. Thus ACLs are only saved once.
+   The XATTR stream format between Operating Systems is :strong:`not`
+   compatible so an XATTR saved on Linux cannot for example be restored
+   on Solaris.
 
-    The following Operating Systems are currently supported:
+   On some operating systems ACLs are also stored as Extended Attributes
+   (Linux, Darwin, FreeBSD) Bareos checks if you have the aclsupport
+   option enabled and if so will not save the same info when saving
+   extended attribute information. Thus ACLs are only saved once.
 
-    * AIX (Extended Attributes)
-    * Darwin (Extended Attributes)
-    * FreeBSD (Extended Attributes)
-    * IRIX (Extended Attributes)
-    * Linux (Extended Attributes)
-    * NetBSD (Extended Attributes)
-    * Solaris (Extended Attributes and Extensible Attributes)
-    * Tru64 (Extended Attributes)
+   The following Operating Systems are currently supported:
+
+   * AIX (Extended Attributes)
+   * Darwin (Extended Attributes)
+   * FreeBSD (Extended Attributes)
+   * IRIX (Extended Attributes)
+   * Linux (Extended Attributes)
+   * NetBSD (Extended Attributes)
+   * Solaris (Extended Attributes and Extensible Attributes)
+   * Tru64 (Extended Attributes)
 
 
 .. config:option:: dir/fileset/include/options/IgnoreCase
