@@ -38,8 +38,6 @@
 #include "include/jcr.h"
 #include <signal.h>
 
-extern void SetupThreadSpecificDataKey();
-
 static void signal_handler(int arg) { return; }
 
 namespace directordaemon {
@@ -153,7 +151,6 @@ static bool do_connection_test(std::string path_to_config, TlsPolicy tls_policy)
 {
   InitSignalHandler();
   InitGlobals();
-  SetupThreadSpecificDataKey();
 
   PConfigParser console_config(ConsolePrepareResources(path_to_config));
   if (!console_config) { return false; }

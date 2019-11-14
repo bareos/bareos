@@ -223,7 +223,6 @@ void InitMsg(JobControlRecord* jcr,
      * Setup a daemon key then set invalid jcr
      * Maybe we should give the daemon a jcr???
      */
-    SetupThreadSpecificDataKey();
     SetJcrInThreadSpecificData(nullptr);
   }
 

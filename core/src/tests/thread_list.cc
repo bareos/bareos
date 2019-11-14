@@ -27,6 +27,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
+#include <random>
 #include <thread>
 
 class WaitCondition {
@@ -62,14 +63,14 @@ class WaitCondition {
   Status GetStatus() { return status_; }
 };
 
-static std::atomic<int> counter(0);
+static std::atomic<int> thread_counter(0);
 static std::vector<std::unique_ptr<WaitCondition>> list_of_wait_conditions;
 
 static void* ThreadHandler(ConfigurationParser*, void* data)
 {
   WaitCondition* cond = reinterpret_cast<WaitCondition*>(data);
   cond->WaitFor(std::chrono::milliseconds(10000));
-  counter++;
+  thread_counter++;
   return nullptr;
 }
 
@@ -96,12 +97,41 @@ TEST(thread_list, thread_list_startup_and_shutdown)
     }
   }
 
-  t->WaitUntilThreadListIsEmpty();
+  t->ShutdownAndWaitForThreadsToFinish();
 
   EXPECT_EQ(t->Size(), 0);
   for (const auto& c : list_of_wait_conditions) {
     EXPECT_EQ(c.get()->GetStatus(), WaitCondition::Status::kSuccess);
   }
 
-  EXPECT_EQ(counter, maximum_allowed_thread_count);
+  EXPECT_EQ(thread_counter, maximum_allowed_thread_count);
+}
+
+static void* ThreadHandlerSleepRandomTime(ConfigurationParser*, void* data)
+{
+  std::mt19937_64 eng{std::random_device{}()};  // or seed however you want
+  std::uniform_int_distribution<> dist{0, 10};
+  std::chrono::milliseconds ms{dist(eng)};
+  // std::cout << "sleep for: " << ms.count() << " ms" << std::endl;
+  std::this_thread::sleep_for(ms);
+  ++thread_counter;
+  return nullptr;
+}
+
+TEST(thread_list, thread_random_shutdown)
+{
+  std::unique_ptr<ThreadList> t(std::make_unique<ThreadList>());
+
+  t->Init(maximum_allowed_thread_count, ThreadHandlerSleepRandomTime, nullptr);
+
+  thread_counter = 0;
+  for (int i = 0; i < maximum_allowed_thread_count; i++) {
+    t->CreateAndAddNewThread(nullptr, nullptr);
+  }
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  t->ShutdownAndWaitForThreadsToFinish();
+
+  EXPECT_EQ(t->Size(), 0);
+  EXPECT_EQ(thread_counter, maximum_allowed_thread_count);
 }

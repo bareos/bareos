@@ -105,7 +105,7 @@ static void CleanupBnetThreadServerTcp(alist* sockfds, ThreadList& thread_list)
     sockfds->destroy();
   }
 
-  if (!thread_list.WaitUntilThreadListIsEmpty()) {
+  if (!thread_list.ShutdownAndWaitForThreadsToFinish()) {
     Emsg1(M_ERROR, 0, _("Could not destroy thread list.\n"));
   }
   Dmsg0(100, "CleanupBnetThreadServerTcp: finish\n");

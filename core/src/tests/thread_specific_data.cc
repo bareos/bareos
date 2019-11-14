@@ -29,8 +29,6 @@
 
 TEST(thread_specific_data, setup_and_readout_data_one_thread)
 {
-  SetupThreadSpecificDataKey();
-
   std::unique_ptr<JobControlRecord> jcr(std::make_unique<JobControlRecord>());
   jcr->JobId = 123;
 
@@ -67,8 +65,6 @@ static void test_thread(uint32_t index)
 
 TEST(thread_specific_data, setup_and_readout_data_multiple_threads)
 {
-  SetupThreadSpecificDataKey();
-
   std::vector<std::thread> threads;
 
   for (std::size_t i = 0; i < thread_jobids.size(); i++) {

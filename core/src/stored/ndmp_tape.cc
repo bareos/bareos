@@ -1486,7 +1486,7 @@ extern "C" void* ndmp_thread_server(void* arg)
     fd_ptr = (s_sockfd*)sockfds.next();
   }
 
-  if (!ntsa->thread_list->WaitUntilThreadListIsEmpty()) {
+  if (!ntsa->thread_list->ShutdownAndWaitForThreadsToFinish()) {
     Emsg1(M_FATAL, 0, _("Could not destroy ndmp thread list.\n"));
   }
 

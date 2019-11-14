@@ -1457,8 +1457,9 @@ bool DotDefaultsCmd(UaContext* ua, const char* cmd)
           "%s\n");
       ua->send->SendBuffer();
       GetJobStorage(&store, job, NULL);
-      ua->send->ObjectKeyValue("storage", "%s=", store.store->resource_name_,
-                               "%s\n");
+      ua->send->ObjectKeyValue(
+          "storage",
+          "%s=", store.store ? store.store->resource_name_ : "*None*", "%s\n");
       ua->send->SendBuffer();
       ua->send->ObjectKeyValue(
           "where", "%s=", (job->RestoreWhere ? job->RestoreWhere : ""), "%s\n");

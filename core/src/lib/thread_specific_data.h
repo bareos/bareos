@@ -30,6 +30,5 @@ JobControlRecord* GetJcrFromThreadSpecificData();
 void SetJcrInThreadSpecificData(JobControlRecord* jcr);
 void RemoveJcrFromThreadSpecificData(JobControlRecord* jcr);
 uint32_t GetJobIdFromThreadSpecificData();
-void SetupThreadSpecificDataKey();
 
 #endif  // BAREOS_LIB_THREAD_SPECIFIC_DATA_H
