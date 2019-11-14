@@ -43,7 +43,7 @@ class BareosDbPostgresql : public BareosDbPrivateInterface {
   bool ValidateConnection(void) override;
   void EscapeString(JobControlRecord* jcr,
                     char* snew,
-                    char* old,
+                    const char* old,
                     int len) override;
   char* EscapeObject(JobControlRecord* jcr, char* old, int len) override;
   void UnescapeObject(JobControlRecord* jcr,

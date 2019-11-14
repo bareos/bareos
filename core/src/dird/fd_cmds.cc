@@ -37,12 +37,14 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
+#include "dird/get_database_connection.h"
 #include "dird/jcr_private.h"
 #include "findlib/find.h"
 #include "dird/authenticate.h"
 #include "dird/fd_cmds.h"
 #include "dird/getmsg.h"
 #include "dird/jcr_private.h"
+#include "dird/job.h"
 #include "dird/msgchan.h"
 #include "dird/scheduler.h"
 #include "lib/berrno.h"
@@ -1343,6 +1345,22 @@ void DoClientResolve(UaContext* ua, ClientResource* client)
   return;
 }
 
+static bool FindJobStart(JobResource* job, const std::string& client_name)
+{
+  JobControlRecord* jcr = NewDirectorJcr();
+  SetJcrDefaults(jcr, job);
+  jcr->db = GetDatabaseConnection(jcr);
+
+  jcr->stime = GetPoolMemory(PM_MESSAGE);
+
+  bool success = jcr->db->FindLastStartTimeForJobAndClient(
+      jcr, job->resource_name_, client_name, jcr->stime);
+
+  FreeJcr(jcr);
+
+  return success;
+}
+
 static void AddJobsOnClientInitiatedConnect(std::string client_name)
 {
   std::vector<JobResource*> job_resources =
@@ -1351,6 +1369,7 @@ static void AddJobsOnClientInitiatedConnect(std::string client_name)
   if (!job_resources.empty()) {
     for (auto job : job_resources) {
       if (job->RunOnIncomingConnectInterval != 0) {
+        FindJobStart(job, client_name);
         Scheduler::GetMainScheduler().AddJobWithNoRunResourceToQueue(job);
       }
     }

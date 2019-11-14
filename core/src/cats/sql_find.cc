@@ -147,6 +147,56 @@ bail_out:
   return retval;
 }
 
+bool BareosDb::FindLastStartTimeForJobAndClient(JobControlRecord* jcr,
+                                                std::string job_basename,
+                                                std::string client_name,
+                                                POOLMEM*& stime)
+{
+  bool retval = true;
+
+  std::vector<char> esc_jobname(MAX_ESCAPE_NAME_LENGTH);
+  std::vector<char> esc_clientname(MAX_ESCAPE_NAME_LENGTH);
+
+  DbLock(this);
+  EscapeString(nullptr, esc_jobname.data(), job_basename.c_str(),
+               job_basename.size());
+  EscapeString(nullptr, esc_clientname.data(), client_name.c_str(),
+               client_name.size());
+
+  PmStrcpy(stime, "0000-00-00 00:00:00"); /* default */
+
+  Mmsg(cmd,
+       "SELECT StartTime from Job WHERE Job.Name='%s' "
+       "AND Job.ClientId=(SELECT ClientId FROM Client WHERE "
+       "Client.Name='%s') ORDER BY StartTime DESC LIMIT 1",
+       esc_jobname.data(), esc_clientname.data());
+
+  if (!QUERY_DB(jcr, cmd)) {
+    PmStrcpy(stime, ""); /* set EOS */
+    Mmsg2(errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"),
+          sql_strerror(), cmd);
+    goto bail_out;
+  }
+
+  SQL_ROW row;
+  if ((row = SqlFetchRow()) == NULL) {
+    Mmsg2(errmsg, _("No Job record found: ERR=%s\nCMD=%s\n"), sql_strerror(),
+          cmd);
+    SqlFreeResult();
+    goto bail_out;
+  }
+
+  Dmsg2(100, "Got start time: %s\n", row[0]);
+  PmStrcpy(stime, row[0]);
+
+  SqlFreeResult();
+
+  retval = true;
+
+bail_out:
+  DbUnlock(this);
+  return retval;
+}
 
 /**
  * Find the last job start time for the specified JobLevel

@@ -341,7 +341,7 @@ void BareosDbMysql::ThreadCleanup(void)
  */
 void BareosDbMysql::EscapeString(JobControlRecord* jcr,
                                  char* snew,
-                                 char* old,
+                                 const char* old,
                                  int len)
 {
   mysql_real_escape_string(db_handle_, snew, old, len);
