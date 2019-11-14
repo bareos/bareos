@@ -37,6 +37,7 @@
 #include "dird/backup.h"
 #include "dird/consolidate.h"
 #include "dird/fd_cmds.h"
+#include "dird/get_database_connection.h"
 #include "dird/job.h"
 #include "dird/jcr_private.h"
 #include "dird/migration.h"
@@ -186,16 +187,7 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
    * Open database
    */
   Dmsg0(100, "Open database\n");
-  jcr->db = DbSqlGetPooledConnection(
-      jcr, jcr->impl->res.catalog->db_driver, jcr->impl->res.catalog->db_name,
-      jcr->impl->res.catalog->db_user,
-      jcr->impl->res.catalog->db_password.value,
-      jcr->impl->res.catalog->db_address, jcr->impl->res.catalog->db_port,
-      jcr->impl->res.catalog->db_socket,
-      jcr->impl->res.catalog->mult_db_connections,
-      jcr->impl->res.catalog->disable_batch_insert,
-      jcr->impl->res.catalog->try_reconnect,
-      jcr->impl->res.catalog->exit_on_fatal);
+  jcr->db = GetDatabaseConnection(jcr);
   if (jcr->db == NULL) {
     Jmsg(jcr, M_FATAL, 0, _("Could not open database \"%s\".\n"),
          jcr->impl->res.catalog->db_name);
@@ -249,8 +241,7 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
     if (jcr->impl->res.job->storage) {
       CopyRwstorage(jcr, jcr->impl->res.job->storage, _("Job resource"));
     } else {
-      CopyRwstorage(jcr, jcr->impl->res.job->pool->storage,
-                    _("Pool resource"));
+      CopyRwstorage(jcr, jcr->impl->res.job->pool->storage, _("Pool resource"));
     }
   }
 
@@ -1623,9 +1614,7 @@ void DirdFreeJcr(JobControlRecord* jcr)
     jcr->db = NULL;
   }
 
-  if (jcr->impl->restore_tree_root) {
-    FreeTree(jcr->impl->restore_tree_root);
-  }
+  if (jcr->impl->restore_tree_root) { FreeTree(jcr->impl->restore_tree_root); }
 
   if (jcr->impl->bsr) {
     libbareos::FreeBsr(jcr->impl->bsr);

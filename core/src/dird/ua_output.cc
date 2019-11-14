@@ -33,6 +33,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
+#include "dird/get_database_connection.h"
 #include "dird/jcr_private.h"
 #include "dird/job.h"
 #include "dird/ua_cmdstruct.h"
@@ -1429,16 +1430,7 @@ bool CompleteJcrForJob(JobControlRecord* jcr,
   }
 
   Dmsg0(100, "complete_jcr open db\n");
-  jcr->db = DbSqlGetPooledConnection(
-      jcr, jcr->impl->res.catalog->db_driver, jcr->impl->res.catalog->db_name,
-      jcr->impl->res.catalog->db_user,
-      jcr->impl->res.catalog->db_password.value,
-      jcr->impl->res.catalog->db_address, jcr->impl->res.catalog->db_port,
-      jcr->impl->res.catalog->db_socket,
-      jcr->impl->res.catalog->mult_db_connections,
-      jcr->impl->res.catalog->disable_batch_insert,
-      jcr->impl->res.catalog->try_reconnect,
-      jcr->impl->res.catalog->exit_on_fatal);
+  jcr->db = GetDatabaseConnection(jcr);
   if (jcr->db == NULL) {
     Jmsg(jcr, M_FATAL, 0, _("Could not open database \"%s\".\n"),
          jcr->impl->res.catalog->db_name);

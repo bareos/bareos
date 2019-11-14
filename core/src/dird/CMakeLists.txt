@@ -24,7 +24,7 @@ set(DIRDSRCS dird.cc)
 set(DIRD_OBJECTS_SRCS admin.cc archive.cc authenticate.cc authenticate_console.cc
    autoprune.cc backup.cc bsr.cc catreq.cc
    consolidate.cc dird_globals.cc dir_plugins.cc dird_conf.cc expand.cc fd_cmds.cc
-   getmsg.cc inc_conf.cc job.cc jobq.cc migrate.cc msgchan.cc
+   get_database_connection.cc getmsg.cc inc_conf.cc job.cc jobq.cc migrate.cc msgchan.cc
    ndmp_dma_storage.cc
    ndmp_dma_backup_common.cc ndmp_dma_backup_NDMP_BAREOS.cc ndmp_dma_backup_NDMP_NATIVE.cc
    ndmp_dma_generic.cc
