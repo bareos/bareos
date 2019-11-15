@@ -1077,7 +1077,7 @@ void DoRestore(JobControlRecord* jcr)
       case STREAM_PLUGIN_NAME:
         if (!ClosePreviousStream(jcr, rctx)) { goto bail_out; }
         Dmsg1(50, "restore stream_plugin_name=%s\n", sd->msg);
-        PluginNameStream(jcr, sd->msg);
+        if (!PluginNameStream(jcr, sd->msg)) { goto bail_out; }
         break;
 
       case STREAM_RESTORE_OBJECT:

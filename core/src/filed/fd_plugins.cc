@@ -1113,6 +1113,7 @@ bool PluginNameStream(JobControlRecord* jcr, char* name)
   char* cmd;
   char* p = name;
   bool start;
+  bool retval = true;
   bpContext* ctx = nullptr;
   alist* plugin_ctx_list;
 
@@ -1140,7 +1141,15 @@ bool PluginNameStream(JobControlRecord* jcr, char* name)
       Dmsg2(debuglevel, "End plugin data plugin=%p ctx=%p\n", plugin,
             jcr->plugin_ctx);
       if (b_ctx->restoreFileStarted) {
-        PlugFunc(plugin)->endRestoreFile(jcr->plugin_ctx);
+        /* PlugFunc(plugin)->endRestoreFile(jcr->plugin_ctx); */
+        bRC ret = PlugFunc(plugin)->endRestoreFile(jcr->plugin_ctx);
+        Dmsg1(0, "endRestoreFile ret: %d\n", ret);
+        if (ret < 0) {
+          Jmsg2(jcr, M_FATAL, 0,
+                "Return value of endRestoreFile invalid: %d, plugin=%s\n", ret,
+                jcr->plugin_ctx->plugin->file);
+          retval = false;
+        }
       }
       b_ctx->restoreFileStarted = false;
       b_ctx->createFileCalled = false;
@@ -1212,7 +1221,7 @@ bool PluginNameStream(JobControlRecord* jcr, char* name)
   Jmsg1(jcr, M_WARNING, 0, _("Plugin=%s not found.\n"), cmd);
 
 bail_out:
-  return start;
+  return retval;
 }
 
 /**
