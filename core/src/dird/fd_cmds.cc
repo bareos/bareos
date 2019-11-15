@@ -1345,33 +1345,64 @@ void DoClientResolve(UaContext* ua, ClientResource* client)
   return;
 }
 
-static bool FindJobStart(JobResource* job, const std::string& client_name)
+static time_t FindLastJobStart(JobResource* job, const std::string& client_name)
 {
   JobControlRecord* jcr = NewDirectorJcr();
   SetJcrDefaults(jcr, job);
   jcr->db = GetDatabaseConnection(jcr);
 
-  jcr->stime = GetPoolMemory(PM_MESSAGE);
+  POOLMEM* stime = GetPoolMemory(PM_MESSAGE);
 
   bool success = jcr->db->FindLastStartTimeForJobAndClient(
-      jcr, job->resource_name_, client_name, jcr->stime);
+      jcr, job->resource_name_, client_name, stime);
+
+  time_t time = 0;
+  if (success) { time = static_cast<time_t>(StrToUtime(stime)); }
 
   FreeJcr(jcr);
 
-  return success;
+  return time;
 }
 
-static void AddJobsOnClientInitiatedConnect(std::string client_name)
+static void RunJobIfIntervalExceeded(JobResource* job, time_t last_start_time)
+{
+  using std::chrono::duration_cast;
+  using std::chrono::hours;
+  using std::chrono::seconds;
+  using std::chrono::system_clock;
+
+  bool interval_time_exceeded = false;
+  bool job_run_before = last_start_time != 0;
+
+  if (job_run_before) {
+    auto timepoint_now = system_clock::now();
+    auto timepoint_last_start = system_clock::from_time_t(last_start_time);
+
+    auto diff_seconds =
+        duration_cast<seconds>(timepoint_now - timepoint_last_start).count();
+
+    auto maximum_interval_seconds =
+        seconds(job->RunOnIncomingConnectInterval).count();
+
+    interval_time_exceeded = diff_seconds > maximum_interval_seconds;
+  }
+
+  if (job_run_before == false || interval_time_exceeded) {
+    Scheduler::GetMainScheduler().AddJobWithNoRunResourceToQueue(job);
+  }
+}
+
+static void RunMatchingJobsOnIncomingConnect(std::string client_name)
 {
   std::vector<JobResource*> job_resources =
       GetAllJobResourcesByClientName(client_name.c_str());
 
-  if (!job_resources.empty()) {
-    for (auto job : job_resources) {
-      if (job->RunOnIncomingConnectInterval != 0) {
-        FindJobStart(job, client_name);
-        Scheduler::GetMainScheduler().AddJobWithNoRunResourceToQueue(job);
-      }
+  if (job_resources.empty()) { return; }
+
+  for (auto job : job_resources) {
+    if (job->RunOnIncomingConnectInterval != 0) {
+      time_t last_start_time = FindLastJobStart(job, client_name);
+      RunJobIfIntervalExceeded(job, last_start_time);
     }
   }
 }
@@ -1417,7 +1448,7 @@ void* HandleFiledConnection(ConnectionPool* connections,
     goto getout;
   }
 
-  AddJobsOnClientInitiatedConnect(client_name);
+  RunMatchingJobsOnIncomingConnect(client_name);
 
   /*
    * The connection is now kept in connection_pool.
