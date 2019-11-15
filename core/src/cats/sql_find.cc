@@ -53,8 +53,8 @@
  *  StartTime is returned in stime
  *  Job name is returned in job (MAX_NAME_LENGTH)
  *
- * Returns: 0 on failure
- *          1 on success, jr is unchanged, but stime and job are set
+ * Returns: false on failure
+ *          true on success, jr is unchanged, but stime and job are set
  */
 bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
                                 JobDbRecord* jr,
