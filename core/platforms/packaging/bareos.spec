@@ -855,8 +855,18 @@ cmake  .. \
 
 %check
 # run unit tests
-# pushd %{CMAKE_BUILDDIR}
-# make check
+pushd %{CMAKE_BUILDDIR}
+make clean
+ctest -R gtest: -D Continuous || result=$?
+result=$?
+if [ $result -eq 1 ]; then
+  echo "ctest result $result is expected and OK"
+  exit 0
+else
+  echo "ctest result $result is not 1, ERROR"
+fi
+
+
 
 %install
 ##if 0#{?suse_version}
