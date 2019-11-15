@@ -66,7 +66,7 @@ void ReservationTest::SetUp()
   OSDependentInit();
 
   /* configfile is a global char* from stored_globals.h */
-  configfile = strdup(PROJECT_SOURCE_DIR "/src/tests/configs/sd_reservation/");
+  configfile = strdup("configs/sd_reservation/");
   my_config = InitSdConfig(configfile, M_ERROR_TERM);
   ParseSdConfig(configfile, M_ERROR_TERM);
   /*

@@ -1,5 +1,0 @@
-Device {
-  Name = single1
-  Media Type = File
-  Archive Device = @PROJECT_BINARY_DIR@/non-existent
-}
