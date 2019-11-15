@@ -21,6 +21,7 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 include(GoogleTest)
 
+
 IF(HAVE_WIN32)
    link_libraries(kernel32
       user32 gdi32 winspool shell32 ole32 oleaut32 uuid comdlg32 advapi32)
@@ -50,7 +51,9 @@ IF(HAVE_PAM)
 ENDIF()
 
 # where to find the source dir
-add_definitions(-DPROJECT_SOURCE_DIR=\"${PROJECT_SOURCE_DIR}\")
+file(RELATIVE_PATH RELATIVE_PROJECT_SOURCE_DIR  ${CMAKE_CURRENT_BINARY_DIR} ${PROJECT_SOURCE_DIR} )
+add_definitions(-DRELATIVE_PROJECT_SOURCE_DIR=\"${RELATIVE_PROJECT_SOURCE_DIR}\")
+
 
 ####### test_lib ###############################
 add_executable(test_lib

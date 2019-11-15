@@ -47,8 +47,8 @@ static DeviceResource* GetMultipliedDeviceResource(
 TEST(sd, MultipliedDeviceTest_ConfigParameter)
 {
   InitGlobals();
-  std::string path_to_config =
-      PROJECT_SOURCE_DIR "/src/tests/configs/stored_multiplied_device/";
+  std::string path_to_config = RELATIVE_PROJECT_SOURCE_DIR
+      "/src/tests/configs/stored_multiplied_device/";
 
   PConfigParser my_config(InitSdConfig(path_to_config.c_str(), M_INFO));
   storagedaemon::my_config = my_config.get();
@@ -74,8 +74,8 @@ static uint32_t CountAllDeviceResources(ConfigurationParser& my_config)
 TEST(sd, MultipliedDeviceTest_CountAllAutomaticallyCreatedResources)
 {
   InitGlobals();
-  std::string path_to_config =
-      PROJECT_SOURCE_DIR "/src/tests/configs/stored_multiplied_device/";
+  std::string path_to_config = RELATIVE_PROJECT_SOURCE_DIR
+      "/src/tests/configs/stored_multiplied_device/";
 
   PConfigParser my_config(InitSdConfig(path_to_config.c_str(), M_INFO));
   storagedaemon::my_config = my_config.get();
@@ -136,8 +136,8 @@ static uint32_t CheckNamesOfConfiguredDeviceResources_1(
 TEST(sd, MultipliedDeviceTest_CheckNames_1)
 {
   InitGlobals();
-  std::string path_to_config =
-      PROJECT_SOURCE_DIR "/src/tests/configs/stored_multiplied_device/";
+  std::string path_to_config = RELATIVE_PROJECT_SOURCE_DIR
+      "/src/tests/configs/stored_multiplied_device/";
 
   PConfigParser my_config(InitSdConfig(path_to_config.c_str(), M_INFO));
   storagedaemon::my_config = my_config.get();
@@ -199,8 +199,8 @@ static uint32_t CheckNamesOfConfiguredDeviceResources_2(
 TEST(sd, MultipliedDeviceTest_CheckNames_2)
 {
   InitGlobals();
-  std::string path_to_config =
-      PROJECT_SOURCE_DIR "/src/tests/configs/stored_multiplied_device/";
+  std::string path_to_config = RELATIVE_PROJECT_SOURCE_DIR
+      "/src/tests/configs/stored_multiplied_device/";
 
   PConfigParser my_config(InitSdConfig(path_to_config.c_str(), M_INFO));
   storagedaemon::my_config = my_config.get();
@@ -247,8 +247,8 @@ static uint32_t CheckAutochangerInAllDevices(ConfigurationParser& my_config)
 TEST(sd, MultipliedDeviceTest_CheckNameOfAutomaticallyAttachedAutochanger)
 {
   InitGlobals();
-  std::string path_to_config =
-      PROJECT_SOURCE_DIR "/src/tests/configs/stored_multiplied_device/";
+  std::string path_to_config = RELATIVE_PROJECT_SOURCE_DIR
+      "/src/tests/configs/stored_multiplied_device/";
 
   PConfigParser my_config(InitSdConfig(path_to_config.c_str(), M_INFO));
   storagedaemon::my_config = my_config.get();
@@ -291,8 +291,8 @@ TEST(sd,
      MultipliedDeviceTest_CheckNameOfDevicesAutomaticallyAttachedToAutochanger)
 {
   InitGlobals();
-  std::string path_to_config =
-      PROJECT_SOURCE_DIR "/src/tests/configs/stored_multiplied_device/";
+  std::string path_to_config = RELATIVE_PROJECT_SOURCE_DIR
+      "/src/tests/configs/stored_multiplied_device/";
 
   PConfigParser my_config(InitSdConfig(path_to_config.c_str(), M_INFO));
   storagedaemon::my_config = my_config.get();
@@ -307,8 +307,8 @@ TEST(sd,
 TEST(sd, MultipliedDeviceTest_CheckPointerReferenceOfOriginalDevice)
 {
   InitGlobals();
-  std::string path_to_config =
-      PROJECT_SOURCE_DIR "/src/tests/configs/stored_multiplied_device/";
+  std::string path_to_config = RELATIVE_PROJECT_SOURCE_DIR
+      "/src/tests/configs/stored_multiplied_device/";
 
   PConfigParser my_config(InitSdConfig(path_to_config.c_str(), M_INFO));
   storagedaemon::my_config = my_config.get();
@@ -325,8 +325,8 @@ TEST(sd, MultipliedDeviceTest_CheckPointerReferenceOfOriginalDevice)
 TEST(sd, MultipliedDeviceTest_CheckPointerReferenceOfCopiedDevice)
 {
   InitGlobals();
-  std::string path_to_config =
-      PROJECT_SOURCE_DIR "/src/tests/configs/stored_multiplied_device/";
+  std::string path_to_config = RELATIVE_PROJECT_SOURCE_DIR
+      "/src/tests/configs/stored_multiplied_device/";
 
   PConfigParser my_config(InitSdConfig(path_to_config.c_str(), M_INFO));
   storagedaemon::my_config = my_config.get();
