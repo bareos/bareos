@@ -41,6 +41,7 @@
  */
 typedef enum
 {
+  PYTHON_UNDEFINED_RETURN_VALUE = -1,
   bRC_OK = 0,     /* OK */
   bRC_Stop = 1,   /* Stop calling other plugins */
   bRC_Error = 2,  /* Some kind of error */

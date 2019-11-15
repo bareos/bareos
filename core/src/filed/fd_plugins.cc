@@ -1144,7 +1144,7 @@ bool PluginNameStream(JobControlRecord* jcr, char* name)
         /* PlugFunc(plugin)->endRestoreFile(jcr->plugin_ctx); */
         bRC ret = PlugFunc(plugin)->endRestoreFile(jcr->plugin_ctx);
         Dmsg1(0, "endRestoreFile ret: %d\n", ret);
-        if (ret < 0) {
+        if (ret == PYTHON_UNDEFINED_RETURN_VALUE) {
           Jmsg2(jcr, M_FATAL, 0,
                 "Return value of endRestoreFile invalid: %d, plugin=%s\n", ret,
                 jcr->plugin_ctx->plugin->file);
