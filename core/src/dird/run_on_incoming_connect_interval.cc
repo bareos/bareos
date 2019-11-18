@@ -37,9 +37,9 @@ RunOnIncomingConnectInterval::RunOnIncomingConnectInterval(
     std::string client_name,
     Scheduler& scheduler,
     BareosDb* db)
-    : client_name_{std::move(std::move(client_name))}
-    , scheduler_{scheduler}
-    , db_{db}
+    : client_name_(std::move(std::move(client_name)))
+    , scheduler_(scheduler)
+    , db_(db)
 {
 }
 
