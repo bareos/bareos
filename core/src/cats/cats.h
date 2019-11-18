@@ -35,8 +35,8 @@
 #ifndef BAREOS_CATS_CATS_H_
 #define BAREOS_CATS_CATS_H_ 1
 
+#include "include/bareos.h"
 #include "lib/output_formatter.h"
-
 
 class dlist;
 

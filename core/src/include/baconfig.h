@@ -275,14 +275,6 @@ typedef int(INTHANDLER)();
 #define MODE_RW 0666
 #endif
 
-
-enum
-{
-  API_MODE_OFF = 0,
-  API_MODE_ON = 1,
-  API_MODE_JSON = 2
-};
-
 #if defined(HAVE_WIN32)
 typedef int64_t boffset_t;
 #define caddr_t char*

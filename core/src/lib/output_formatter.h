@@ -53,6 +53,9 @@ typedef struct json_t json_t;
 #endif /* HAVE_JANSSON */
 
 #include "lib/alist.h"
+#include "lib/api_mode.h"
+
+class PoolMem;
 
 /**
  * Filtering states.
