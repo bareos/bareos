@@ -20,16 +20,22 @@
 */
 
 #include "gtest/gtest.h"
+#include "gmock/gmock.h"
+#include "cats/cats.h"
 #include "include/bareos.h"
 #include "include/jcr.h"
+#include "include/make_unique.h"
 #include "lib/parse_conf.h"
 #include "dird/dird_globals.h"
 #include "dird/dird_conf.h"
 #include "dird/scheduler.h"
+#include "dird/scheduler_time_adapter.h"
+#include "dird/run_on_incoming_connect_interval.h"
 #include "dird/job.h"
 
 #include <algorithm>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace directordaemon {
@@ -38,12 +44,12 @@ bool DoReloadConfig() { return false; }
 
 using namespace directordaemon;
 
-class RunOnIncomingConnectInterval : public ::testing::Test {
+class RunOnIncomingConnectIntervalClass : public ::testing::Test {
   void SetUp() override;
   void TearDown() override;
 };
 
-void RunOnIncomingConnectInterval::SetUp()
+void RunOnIncomingConnectIntervalClass::SetUp()
 {
   InitMsg(nullptr, nullptr);
 
@@ -53,7 +59,7 @@ void RunOnIncomingConnectInterval::SetUp()
   my_config->ParseConfig();
 }
 
-void RunOnIncomingConnectInterval::TearDown() { delete my_config; }
+void RunOnIncomingConnectIntervalClass::TearDown() { delete my_config; }
 
 static bool find(std::vector<JobResource*> jobs, std::string jobname)
 {
@@ -63,7 +69,7 @@ static bool find(std::vector<JobResource*> jobs, std::string jobname)
          });
 }
 
-TEST_F(RunOnIncomingConnectInterval, find_all_jobs_for_client)
+TEST_F(RunOnIncomingConnectIntervalClass, find_all_jobs_for_client)
 {
   std::vector<JobResource*> jobs{GetAllJobResourcesByClientName("bareos-fd")};
 
@@ -75,7 +81,8 @@ TEST_F(RunOnIncomingConnectInterval, find_all_jobs_for_client)
   EXPECT_TRUE(find(jobs, "RestoreFiles"));
 }
 
-TEST_F(RunOnIncomingConnectInterval, find_all_connect_interval_jobs_for_client)
+TEST_F(RunOnIncomingConnectIntervalClass,
+       find_all_connect_interval_jobs_for_client)
 {
   std::vector<JobResource*> jobs{GetAllJobResourcesByClientName("bareos-fd")};
 
@@ -87,4 +94,65 @@ TEST_F(RunOnIncomingConnectInterval, find_all_connect_interval_jobs_for_client)
 
   EXPECT_TRUE(find(jobs, "backup-bareos-fd-connect"));
   EXPECT_TRUE(find(jobs, "backup-bareos-fd-connect-2"));
+}
+
+class TestTimeSource : public TimeSource {
+ public:
+  int counter = 0;
+  time_t SystemTime() override { return ++counter; }
+  void SleepFor(std::chrono::seconds wait_interval) override { return; }
+  void Terminate() override { return; }
+};
+
+class TimeAdapter : public SchedulerTimeAdapter {
+ public:
+  TimeAdapter(std::unique_ptr<TestTimeSource> t)
+      : SchedulerTimeAdapter(std::move(t))
+  {
+  }
+};
+
+static int job_counter{};
+
+static void RunAJob(JobControlRecord* jcr)
+{
+  ++job_counter;
+  return;
+}
+
+class MockDatabase : public BareosDb {
+ public:
+  bool FindLastStartTimeForJobAndClient(JobControlRecord* jcr,
+                                        std::string job_basename,
+                                        std::string client_name,
+                                        POOLMEM*& stime) override
+  {
+    snprintf(stime, MAX_NAME_LENGTH, "bla");
+    return true;
+  }
+  bool OpenDatabase(JobControlRecord* jcr) override { return false; }
+  void CloseDatabase(JobControlRecord* jcr) override { return; }
+  bool ValidateConnection(void) override { return false; }
+  void StartTransaction(JobControlRecord* jcr) override { return; }
+  void EndTransaction(JobControlRecord* jcr) override { return; }
+};
+
+void scheduler_thread(Scheduler* s) { s->Run(); }
+
+TEST_F(RunOnIncomingConnectIntervalClass, run_on_connect)
+{
+  Scheduler s(std::make_unique<TimeAdapter>(std::make_unique<TestTimeSource>()),
+              RunAJob);
+
+  std::thread st(scheduler_thread, &s);
+
+  MockDatabase db;
+
+  RunOnIncomingConnectInterval run("bareos-fd", s, &db);
+  run();
+  std::this_thread::sleep_for(std::chrono::seconds(1));
+
+  EXPECT_EQ(job_counter, 2);
+  s.Terminate();
+  st.join();
 }
