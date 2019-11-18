@@ -63,9 +63,8 @@ Scheduler::Scheduler() noexcept : impl_(std::make_unique<SchedulerPrivate>()){};
 
 Scheduler::Scheduler(std::unique_ptr<SchedulerTimeAdapter> time_adapter,
                      std::function<void(JobControlRecord*)> ExecuteJob) noexcept
-    : impl_(std::make_unique<SchedulerPrivate>(
-          std::forward<std::unique_ptr<SchedulerTimeAdapter>>(time_adapter),
-          std::forward<std::function<void(JobControlRecord*)>>(ExecuteJob)))
+    : impl_(std::make_unique<SchedulerPrivate>(std::move(time_adapter),
+                                               std::move(ExecuteJob)))
 {
 }
 

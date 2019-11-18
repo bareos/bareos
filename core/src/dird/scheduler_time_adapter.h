@@ -42,7 +42,7 @@ class SchedulerTimeAdapter {
 
  protected:
   SchedulerTimeAdapter(std::unique_ptr<TimeSource> time_source)
-      : time_source_(std::forward<std::unique_ptr<TimeSource>>(time_source))
+      : time_source_(std::move(time_source))
   {
   }
 };
