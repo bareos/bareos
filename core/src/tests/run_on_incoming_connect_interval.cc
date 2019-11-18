@@ -114,14 +114,17 @@ class TimeAdapter : public SchedulerTimeAdapter {
   }
 };
 
-static int job_counter{};
-static std::map<std::string, int> job_names;
+static struct {
+  int job_counter{};
+  std::map<std::string, int> job_names;
+} test_results;
 
 static void RunAJob(JobControlRecord* jcr)
 {
-  job_names[jcr->impl->res.job->resource_name_]++;  // just add entry
-  ++job_counter;
-  return;
+  ++test_results.job_counter;
+
+  // add job-name to map
+  test_results.job_names[jcr->impl->res.job->resource_name_]++;
 }
 
 class MockDatabase : public BareosDb {
@@ -152,16 +155,20 @@ TEST_F(RunOnIncomingConnectIntervalClass, run_on_connect)
 
   MockDatabase db;
 
-  job_counter = 0;
-  job_names.clear();
+  test_results.job_counter = 0;
+  test_results.job_names.clear();
   RunOnIncomingConnectInterval("bareos-fd", s, &db).Run();
 
   std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
-  EXPECT_EQ(job_counter, 2);
-  EXPECT_NE(job_names.find("backup-bareos-fd-connect"), job_names.end())
+  EXPECT_EQ(test_results.job_counter, 2);
+
+  EXPECT_NE(test_results.job_names.find("backup-bareos-fd-connect"),
+            test_results.job_names.end())
       << "Job backup-bareos-fd-connect did not run";
-  EXPECT_NE(job_names.find("backup-bareos-fd-connect-2"), job_names.end())
+
+  EXPECT_NE(test_results.job_names.find("backup-bareos-fd-connect-2"),
+            test_results.job_names.end())
       << "Job backup-bareos-fd-connect2 did not run";
 
   s.Terminate();
