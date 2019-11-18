@@ -33,7 +33,8 @@ set(DIRD_OBJECTS_SRCS admin.cc archive.cc authenticate.cc authenticate_console.c
    ndmp_slot2elemaddr.cc
    ndmp_fhdb_mem.cc ndmp_fhdb_lmdb.cc ndmp_ndmmedia_db_helpers.cc
    newvol.cc next_vol.cc quota.cc run_hour_validator.cc socket_server.cc recycle.cc restore.cc
-   run_conf.cc sd_cmds.cc scheduler.cc scheduler_job_item_queue.cc scheduler_private.cc
+   run_conf.cc run_on_incoming_connect_interval.cc
+   sd_cmds.cc scheduler.cc scheduler_job_item_queue.cc scheduler_private.cc
    stats.cc storage.cc ua.cc ua_acl.cc ua_audit.cc
    ua_cmds.cc ua_configure.cc ua_db.cc ua_dotcmds.cc ua_input.cc ua_impexp.cc
    ua_label.cc ua_output.cc ua_prune.cc ua_purge.cc ua_query.cc ua_restore.cc

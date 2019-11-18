@@ -33,20 +33,17 @@
  * These functions are used by both backup and verify.
  */
 
-#include <algorithm>
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
-#include "dird/get_database_connection.h"
 #include "dird/jcr_private.h"
 #include "findlib/find.h"
 #include "dird/authenticate.h"
 #include "dird/fd_cmds.h"
 #include "dird/getmsg.h"
 #include "dird/jcr_private.h"
-#include "dird/job.h"
 #include "dird/msgchan.h"
-#include "dird/scheduler.h"
+#include "dird/run_on_incoming_connect_interval.h"
 #include "lib/berrno.h"
 #include "lib/bsock_tcp.h"
 #include "lib/bnet.h"
@@ -54,6 +51,8 @@
 #include "lib/parse_conf.h"
 #include "lib/util.h"
 #include "lib/watchdog.h"
+
+#include <algorithm>
 
 
 namespace directordaemon {
@@ -1345,68 +1344,6 @@ void DoClientResolve(UaContext* ua, ClientResource* client)
   return;
 }
 
-static time_t FindLastJobStart(JobResource* job, const std::string& client_name)
-{
-  JobControlRecord* jcr = NewDirectorJcr();
-  SetJcrDefaults(jcr, job);
-  jcr->db = GetDatabaseConnection(jcr);
-
-  POOLMEM* stime = GetPoolMemory(PM_MESSAGE);
-
-  bool success = jcr->db->FindLastStartTimeForJobAndClient(
-      jcr, job->resource_name_, client_name, stime);
-
-  time_t time = 0;
-  if (success) { time = static_cast<time_t>(StrToUtime(stime)); }
-
-  FreeJcr(jcr);
-
-  return time;
-}
-
-static void RunJobIfIntervalExceeded(JobResource* job, time_t last_start_time)
-{
-  using std::chrono::duration_cast;
-  using std::chrono::hours;
-  using std::chrono::seconds;
-  using std::chrono::system_clock;
-
-  bool interval_time_exceeded = false;
-  bool job_run_before = last_start_time != 0;
-
-  if (job_run_before) {
-    auto timepoint_now = system_clock::now();
-    auto timepoint_last_start = system_clock::from_time_t(last_start_time);
-
-    auto diff_seconds =
-        duration_cast<seconds>(timepoint_now - timepoint_last_start).count();
-
-    auto maximum_interval_seconds =
-        seconds(job->RunOnIncomingConnectInterval).count();
-
-    interval_time_exceeded = diff_seconds > maximum_interval_seconds;
-  }
-
-  if (job_run_before == false || interval_time_exceeded) {
-    Scheduler::GetMainScheduler().AddJobWithNoRunResourceToQueue(job);
-  }
-}
-
-static void RunMatchingJobsOnIncomingConnect(std::string client_name)
-{
-  std::vector<JobResource*> job_resources =
-      GetAllJobResourcesByClientName(client_name.c_str());
-
-  if (job_resources.empty()) { return; }
-
-  for (auto job : job_resources) {
-    if (job->RunOnIncomingConnectInterval != 0) {
-      time_t last_start_time = FindLastJobStart(job, client_name);
-      RunJobIfIntervalExceeded(job, last_start_time);
-    }
-  }
-}
-
 /**
  * After receiving a connection (in socket_server.c) if it is
  * from the File daemon, this routine is called.
@@ -1448,7 +1385,7 @@ void* HandleFiledConnection(ConnectionPool* connections,
     goto getout;
   }
 
-  RunMatchingJobsOnIncomingConnect(client_name);
+  RunOnIncomingConnectInterval(client_name);
 
   /*
    * The connection is now kept in connection_pool.

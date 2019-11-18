@@ -38,12 +38,12 @@ bool DoReloadConfig() { return false; }
 
 using namespace directordaemon;
 
-class ClientInitiatedReconnect : public ::testing::Test {
+class RunOnIncomingConnectInterval : public ::testing::Test {
   void SetUp() override;
   void TearDown() override;
 };
 
-void ClientInitiatedReconnect::SetUp()
+void RunOnIncomingConnectInterval::SetUp()
 {
   InitMsg(nullptr, nullptr);
 
@@ -53,7 +53,7 @@ void ClientInitiatedReconnect::SetUp()
   my_config->ParseConfig();
 }
 
-void ClientInitiatedReconnect::TearDown() { delete my_config; }
+void RunOnIncomingConnectInterval::TearDown() { delete my_config; }
 
 static bool find(std::vector<JobResource*> jobs, std::string jobname)
 {
@@ -63,7 +63,7 @@ static bool find(std::vector<JobResource*> jobs, std::string jobname)
          });
 }
 
-TEST_F(ClientInitiatedReconnect, find_all_jobs_for_client)
+TEST_F(RunOnIncomingConnectInterval, find_all_jobs_for_client)
 {
   std::vector<JobResource*> jobs{GetAllJobResourcesByClientName("bareos-fd")};
 
@@ -75,7 +75,7 @@ TEST_F(ClientInitiatedReconnect, find_all_jobs_for_client)
   EXPECT_TRUE(find(jobs, "RestoreFiles"));
 }
 
-TEST_F(ClientInitiatedReconnect, find_all_connect_interval_jobs_for_client)
+TEST_F(RunOnIncomingConnectInterval, find_all_connect_interval_jobs_for_client)
 {
   std::vector<JobResource*> jobs{GetAllJobResourcesByClientName("bareos-fd")};
 

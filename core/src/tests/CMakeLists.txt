@@ -385,10 +385,10 @@ target_link_libraries(test_watchdog_timer
 
 gtest_discover_tests(test_watchdog_timer TEST_PREFIX gtest:)
 
-####### client-initiated-reconnect  #####################################
-add_executable(client-initiated-reconnect client-initiated-reconnect.cc)
+####### run_on_incoming_connect_interval  #####################################
+add_executable(run_on_incoming_connect_interval run_on_incoming_connect_interval.cc)
 
-target_link_libraries(client-initiated-reconnect
+target_link_libraries(run_on_incoming_connect_interval
    dird_objects
    bareos
    bareosfind
@@ -401,10 +401,10 @@ target_link_libraries(client-initiated-reconnect
 )
 
 IF(HAVE_PAM)
-   target_link_libraries(client-initiated-reconnect ${PAM_LIBRARIES})
+   target_link_libraries(run_on_incoming_connect_interval ${PAM_LIBRARIES})
 ENDIF()
 
-gtest_discover_tests(client-initiated-reconnect TEST_PREFIX gtest:)
+gtest_discover_tests(run_on_incoming_connect_interval TEST_PREFIX gtest:)
 
 ####### scheduler_job_item_queue  #####################################
 add_executable(scheduler_job_item_queue scheduler_job_item_queue.cc)
