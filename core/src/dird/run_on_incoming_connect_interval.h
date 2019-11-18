@@ -29,9 +29,25 @@
 namespace directordaemon {
 
 class Scheduler;
+class JobResource;
 
-void RunOnIncomingConnectInterval(std::string client_name,
-                                  Scheduler& scheduler);
+class RunOnIncomingConnectInterval {
+ public:
+  ~RunOnIncomingConnectInterval() = default;
+
+  RunOnIncomingConnectInterval(std::string client_name,
+                               Scheduler& scheduler,
+                               BareosDb* db = nullptr);
+  void operator()();
+
+ private:
+  time_t FindLastJobStart(JobResource* job);
+  void RunJobIfIntervalExceeded(JobResource* job, time_t last_start_time);
+
+  std::string client_name_;
+  Scheduler& scheduler_;
+  BareosDb* db_{nullptr};
+};
 
 }  // namespace directordaemon
 

@@ -31,16 +31,24 @@
 
 namespace directordaemon {
 
-static time_t FindLastJobStart(JobResource* job, const std::string& client_name)
+RunOnIncomingConnectInterval::RunOnIncomingConnectInterval(
+    std::string client_name,
+    Scheduler& scheduler,
+    BareosDb* db)
+    : client_name_{client_name}, scheduler_{scheduler}, db_{db}
+{
+}
+
+time_t RunOnIncomingConnectInterval::FindLastJobStart(JobResource* job)
 {
   JobControlRecord* jcr = NewDirectorJcr();
   SetJcrDefaults(jcr, job);
-  jcr->db = GetDatabaseConnection(jcr);
+  jcr->db = db_ ? db_ : GetDatabaseConnection(jcr);
 
   POOLMEM* stime = GetPoolMemory(PM_MESSAGE);
 
   bool success = jcr->db->FindLastStartTimeForJobAndClient(
-      jcr, job->resource_name_, client_name, stime);
+      jcr, job->resource_name_, client_name_, stime);
 
   time_t time = 0;
   if (success) { time = static_cast<time_t>(StrToUtime(stime)); }
@@ -50,9 +58,9 @@ static time_t FindLastJobStart(JobResource* job, const std::string& client_name)
   return time;
 }
 
-static void RunJobIfIntervalExceeded(JobResource* job,
-                                     time_t last_start_time,
-                                     Scheduler& scheduler)
+void RunOnIncomingConnectInterval::RunJobIfIntervalExceeded(
+    JobResource* job,
+    time_t last_start_time)
 {
   using std::chrono::duration_cast;
   using std::chrono::hours;
@@ -76,21 +84,21 @@ static void RunJobIfIntervalExceeded(JobResource* job,
   }
 
   if (job_run_before == false || interval_time_exceeded) {
-    scheduler.AddJobWithNoRunResourceToQueue(job);
+    scheduler_.AddJobWithNoRunResourceToQueue(job);
   }
 }
 
-void RunOnIncomingConnectInterval(std::string client_name, Scheduler& scheduler)
+void RunOnIncomingConnectInterval::operator()()
 {
   std::vector<JobResource*> job_resources =
-      GetAllJobResourcesByClientName(client_name.c_str());
+      GetAllJobResourcesByClientName(client_name_.c_str());
 
   if (job_resources.empty()) { return; }
 
   for (auto job : job_resources) {
     if (job->RunOnIncomingConnectInterval != 0) {
-      time_t last_start_time = FindLastJobStart(job, client_name);
-      RunJobIfIntervalExceeded(job, last_start_time, scheduler);
+      time_t last_start_time = FindLastJobStart(job);
+      RunJobIfIntervalExceeded(job, last_start_time);
     }
   }
 }
