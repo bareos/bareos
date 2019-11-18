@@ -73,9 +73,9 @@ void RunOnIncomingConnectInterval::RunJobIfIntervalExceeded(
   using std::chrono::system_clock;
 
   bool interval_time_exceeded = false;
-  bool job_run_before = last_start_time != 0;
+  bool job_ran_before = last_start_time != 0;
 
-  if (job_run_before) {
+  if (job_ran_before) {
     auto timepoint_now = system_clock::now();
     auto timepoint_last_start = system_clock::from_time_t(last_start_time);
 
@@ -88,7 +88,7 @@ void RunOnIncomingConnectInterval::RunJobIfIntervalExceeded(
     interval_time_exceeded = diff_seconds > maximum_interval_seconds;
   }
 
-  if (!job_run_before || interval_time_exceeded) {
+  if (!job_ran_before || interval_time_exceeded) {
     scheduler_.AddJobWithNoRunResourceToQueue(job);
   }
 }
