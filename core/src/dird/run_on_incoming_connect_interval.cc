@@ -58,6 +58,7 @@ time_t RunOnIncomingConnectInterval::FindLastJobStart(JobResource* job)
   if (success) { time = static_cast<time_t>(StrToUtime(stime)); }
 
   FreeJcr(jcr);
+  FreePoolMemory(stime);
 
   return time;
 }
