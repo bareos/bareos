@@ -19,6 +19,7 @@
    02110-1301, USA.
 */
 
+#include "include/bareos.h"
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 #include "cats/cats.h"

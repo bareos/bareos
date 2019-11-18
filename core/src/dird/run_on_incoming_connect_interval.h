@@ -26,6 +26,8 @@
 
 #include <string>
 
+class BareosDb;
+
 namespace directordaemon {
 
 class Scheduler;

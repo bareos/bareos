@@ -34,6 +34,7 @@
  */
 
 #include "include/bareos.h"
+#include "cats/cats.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
 #include "dird/jcr_private.h"
