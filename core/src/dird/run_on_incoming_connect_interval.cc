@@ -50,7 +50,9 @@ static time_t FindLastJobStart(JobResource* job, const std::string& client_name)
   return time;
 }
 
-static void RunJobIfIntervalExceeded(JobResource* job, time_t last_start_time)
+static void RunJobIfIntervalExceeded(JobResource* job,
+                                     time_t last_start_time,
+                                     Scheduler& scheduler)
 {
   using std::chrono::duration_cast;
   using std::chrono::hours;
@@ -74,11 +76,11 @@ static void RunJobIfIntervalExceeded(JobResource* job, time_t last_start_time)
   }
 
   if (job_run_before == false || interval_time_exceeded) {
-    Scheduler::GetMainScheduler().AddJobWithNoRunResourceToQueue(job);
+    scheduler.AddJobWithNoRunResourceToQueue(job);
   }
 }
 
-void RunOnIncomingConnectInterval(std::string client_name)
+void RunOnIncomingConnectInterval(std::string client_name, Scheduler& scheduler)
 {
   std::vector<JobResource*> job_resources =
       GetAllJobResourcesByClientName(client_name.c_str());
@@ -88,7 +90,7 @@ void RunOnIncomingConnectInterval(std::string client_name)
   for (auto job : job_resources) {
     if (job->RunOnIncomingConnectInterval != 0) {
       time_t last_start_time = FindLastJobStart(job, client_name);
-      RunJobIfIntervalExceeded(job, last_start_time);
+      RunJobIfIntervalExceeded(job, last_start_time, scheduler);
     }
   }
 }

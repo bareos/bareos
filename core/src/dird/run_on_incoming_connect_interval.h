@@ -27,7 +27,12 @@
 #include <string>
 
 namespace directordaemon {
-void RunOnIncomingConnectInterval(std::string client_name);
+
+class Scheduler;
+
+void RunOnIncomingConnectInterval(std::string client_name,
+                                  Scheduler& scheduler);
+
 }  // namespace directordaemon
 
 #endif  // BAREOS_SRC_DIRD_RUN_ON_INCOMING_CONNECT_INTERVAL_H_

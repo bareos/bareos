@@ -44,6 +44,7 @@
 #include "dird/jcr_private.h"
 #include "dird/msgchan.h"
 #include "dird/run_on_incoming_connect_interval.h"
+#include "dird/scheduler.h"
 #include "lib/berrno.h"
 #include "lib/bsock_tcp.h"
 #include "lib/bnet.h"
@@ -1385,7 +1386,7 @@ void* HandleFiledConnection(ConnectionPool* connections,
     goto getout;
   }
 
-  RunOnIncomingConnectInterval(client_name);
+  RunOnIncomingConnectInterval(client_name, Scheduler::GetMainScheduler());
 
   /*
    * The connection is now kept in connection_pool.
