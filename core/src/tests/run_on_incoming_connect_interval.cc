@@ -29,10 +29,11 @@
 #include "lib/parse_conf.h"
 #include "dird/dird_globals.h"
 #include "dird/dird_conf.h"
+#include "dird/jcr_private.h"
+#include "dird/job.h"
+#include "dird/run_on_incoming_connect_interval.h"
 #include "dird/scheduler.h"
 #include "dird/scheduler_time_adapter.h"
-#include "dird/run_on_incoming_connect_interval.h"
-#include "dird/job.h"
 
 #include <algorithm>
 #include <string>
@@ -114,9 +115,11 @@ class TimeAdapter : public SchedulerTimeAdapter {
 };
 
 static int job_counter{};
+static std::map<std::string, int> job_names;
 
 static void RunAJob(JobControlRecord* jcr)
 {
+  job_names[jcr->impl->res.job->resource_name_]++;  // just add entry
   ++job_counter;
   return;
 }
@@ -149,11 +152,18 @@ TEST_F(RunOnIncomingConnectIntervalClass, run_on_connect)
 
   MockDatabase db;
 
+  job_counter = 0;
+  job_names.clear();
   RunOnIncomingConnectInterval("bareos-fd", s, &db).Run();
 
-  std::this_thread::sleep_for(std::chrono::seconds(1));
+  std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
   EXPECT_EQ(job_counter, 2);
+  EXPECT_NE(job_names.find("backup-bareos-fd-connect"), job_names.end())
+      << "Job backup-bareos-fd-connect did not run";
+  EXPECT_NE(job_names.find("backup-bareos-fd-connect-2"), job_names.end())
+      << "Job backup-bareos-fd-connect2 did not run";
+
   s.Terminate();
   st.join();
 }
