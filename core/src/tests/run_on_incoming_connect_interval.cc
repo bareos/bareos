@@ -149,8 +149,8 @@ TEST_F(RunOnIncomingConnectIntervalClass, run_on_connect)
 
   MockDatabase db;
 
-  RunOnIncomingConnectInterval run("bareos-fd", s, &db);
-  run();
+  RunOnIncomingConnectInterval("bareos-fd", s, &db).Run();
+
   std::this_thread::sleep_for(std::chrono::seconds(1));
 
   EXPECT_EQ(job_counter, 2);

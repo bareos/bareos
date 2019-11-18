@@ -23,11 +23,13 @@
 
 #include "include/bareos.h"
 #include "cats/cats.h"
-#include "dird/run_on_incoming_connect_interval.h"
 #include "dird/dird_conf.h"
 #include "dird/get_database_connection.h"
 #include "dird/job.h"
+#include "dird/run_on_incoming_connect_interval.h"
 #include "dird/scheduler.h"
+
+#include <utility>
 
 namespace directordaemon {
 
@@ -35,7 +37,9 @@ RunOnIncomingConnectInterval::RunOnIncomingConnectInterval(
     std::string client_name,
     Scheduler& scheduler,
     BareosDb* db)
-    : client_name_{client_name}, scheduler_{scheduler}, db_{db}
+    : client_name_{std::move(std::move(client_name))}
+    , scheduler_{scheduler}
+    , db_{db}
 {
 }
 
@@ -43,7 +47,7 @@ time_t RunOnIncomingConnectInterval::FindLastJobStart(JobResource* job)
 {
   JobControlRecord* jcr = NewDirectorJcr();
   SetJcrDefaults(jcr, job);
-  jcr->db = db_ ? db_ : GetDatabaseConnection(jcr);
+  jcr->db = db_ != nullptr ? db_ : GetDatabaseConnection(jcr);
 
   POOLMEM* stime = GetPoolMemory(PM_MESSAGE);
 
@@ -83,15 +87,15 @@ void RunOnIncomingConnectInterval::RunJobIfIntervalExceeded(
     interval_time_exceeded = diff_seconds > maximum_interval_seconds;
   }
 
-  if (job_run_before == false || interval_time_exceeded) {
+  if (!job_run_before || interval_time_exceeded) {
     scheduler_.AddJobWithNoRunResourceToQueue(job);
   }
 }
 
-void RunOnIncomingConnectInterval::operator()()
+void RunOnIncomingConnectInterval::Run()
 {
   std::vector<JobResource*> job_resources =
-      GetAllJobResourcesByClientName(client_name_.c_str());
+      GetAllJobResourcesByClientName(client_name_);
 
   if (job_resources.empty()) { return; }
 
