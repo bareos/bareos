@@ -20,22 +20,23 @@
 */
 
 #include "include/bareos.h"
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
 #include "cats/cats.h"
-#include "include/bareos.h"
-#include "include/jcr.h"
-#include "include/make_unique.h"
-#include "lib/parse_conf.h"
-#include "dird/dird_globals.h"
 #include "dird/dird_conf.h"
+#include "dird/dird_globals.h"
 #include "dird/jcr_private.h"
 #include "dird/job.h"
 #include "dird/run_on_incoming_connect_interval.h"
 #include "dird/scheduler.h"
 #include "dird/scheduler_time_adapter.h"
+#include "gmock/gmock.h"
+#include "include/bareos.h"
+#include "include/jcr.h"
+#include "include/make_unique.h"
+#include "lib/parse_conf.h"
+#include "gtest/gtest.h"
 
 #include <algorithm>
+#include <chrono>
 #include <string>
 #include <thread>
 #include <vector>
@@ -44,14 +45,24 @@ namespace directordaemon {
 bool DoReloadConfig() { return false; }
 }  // namespace directordaemon
 
-using namespace directordaemon;
+using directordaemon::GetAllJobResourcesByClientName;
+using directordaemon::InitDirConfig;
+using directordaemon::JobResource;
+using directordaemon::my_config;
+using directordaemon::RunOnIncomingConnectInterval;
+using directordaemon::Scheduler;
+using directordaemon::SchedulerTimeAdapter;
+using directordaemon::TimeSource;
+using std::chrono::hours;
+using std::chrono::seconds;
+using std::chrono::system_clock;
 
-class RunOnIncomingConnectIntervalClass : public ::testing::Test {
+class RunOnIncomingConnectIntervalTest : public ::testing::Test {
   void SetUp() override;
   void TearDown() override;
 };
 
-void RunOnIncomingConnectIntervalClass::SetUp()
+void RunOnIncomingConnectIntervalTest::SetUp()
 {
   InitMsg(nullptr, nullptr);
 
@@ -61,7 +72,7 @@ void RunOnIncomingConnectIntervalClass::SetUp()
   my_config->ParseConfig();
 }
 
-void RunOnIncomingConnectIntervalClass::TearDown() { delete my_config; }
+void RunOnIncomingConnectIntervalTest::TearDown() { delete my_config; }
 
 static bool find(std::vector<JobResource*> jobs, std::string jobname)
 {
@@ -71,7 +82,7 @@ static bool find(std::vector<JobResource*> jobs, std::string jobname)
          });
 }
 
-TEST_F(RunOnIncomingConnectIntervalClass, find_all_jobs_for_client)
+TEST_F(RunOnIncomingConnectIntervalTest, find_all_jobs_for_client)
 {
   std::vector<JobResource*> jobs{GetAllJobResourcesByClientName("bareos-fd")};
 
@@ -83,7 +94,7 @@ TEST_F(RunOnIncomingConnectIntervalClass, find_all_jobs_for_client)
   EXPECT_TRUE(find(jobs, "RestoreFiles"));
 }
 
-TEST_F(RunOnIncomingConnectIntervalClass,
+TEST_F(RunOnIncomingConnectIntervalTest,
        find_all_connect_interval_jobs_for_client)
 {
   std::vector<JobResource*> jobs{GetAllJobResourcesByClientName("bareos-fd")};
@@ -102,13 +113,13 @@ class TestTimeSource : public TimeSource {
  public:
   int counter = 0;
   time_t SystemTime() override { return ++counter; }
-  void SleepFor(std::chrono::seconds wait_interval) override { return; }
-  void Terminate() override { return; }
+  void SleepFor(std::chrono::seconds /*wait_interval*/) override {}
+  void Terminate() override {}
 };
 
 class TimeAdapter : public SchedulerTimeAdapter {
  public:
-  TimeAdapter(std::unique_ptr<TestTimeSource> t)
+  explicit TimeAdapter(std::unique_ptr<TestTimeSource> t)
       : SchedulerTimeAdapter(std::move(t))
   {
   }
@@ -134,10 +145,10 @@ class MockDatabase : public BareosDb {
     kFindNoStartTime,
     kFindStartTime
   };
-  MockDatabase(Mode mode) : mode_(mode) {}
-  bool FindLastStartTimeForJobAndClient(JobControlRecord* jcr,
-                                        std::string job_basename,
-                                        std::string client_name,
+  explicit MockDatabase(Mode mode) : mode_(mode) {}
+  bool FindLastStartTimeForJobAndClient(JobControlRecord* /*jcr*/,
+                                        std::string /*job_basename*/,
+                                        std::string /*client_name*/,
                                         POOLMEM*& stime) override
   {
     switch (mode_) {
@@ -145,17 +156,23 @@ class MockDatabase : public BareosDb {
       case Mode::kFindNoStartTime:
         return false;
       case Mode::kFindStartTime: {
-        utime_t now = time(nullptr) - (3600 * 3 + 1);
-        bstrutime(stime, MAX_NAME_LENGTH, now);
+        auto now = system_clock::now();
+        auto three_hours = seconds(hours(3) + seconds(1));
+
+        utime_t fake_start_time_three_hours_in_the_past =
+            system_clock::to_time_t(now - three_hours);
+
+        bstrutime(stime, MAX_NAME_LENGTH,
+                  fake_start_time_three_hours_in_the_past);
         return true;
       }
     }
   }
-  bool OpenDatabase(JobControlRecord* jcr) override { return false; }
-  void CloseDatabase(JobControlRecord* jcr) override { return; }
-  bool ValidateConnection(void) override { return false; }
-  void StartTransaction(JobControlRecord* jcr) override { return; }
-  void EndTransaction(JobControlRecord* jcr) override { return; }
+  bool OpenDatabase(JobControlRecord* /*jcr*/) override { return false; }
+  void CloseDatabase(JobControlRecord* /*jcr*/) override {}
+  bool ValidateConnection() override { return false; }
+  void StartTransaction(JobControlRecord* /*jcr*/) override {}
+  void EndTransaction(JobControlRecord* /*jcr*/) override {}
 
  private:
   Mode mode_{};
@@ -182,7 +199,7 @@ static void RunJob(BareosDb& db)
   thread.join();
 }
 
-TEST_F(RunOnIncomingConnectIntervalClass, no_start_time_found_in_database)
+TEST_F(RunOnIncomingConnectIntervalTest, no_start_time_found_in_database)
 {
   MockDatabase db(MockDatabase::Mode::kFindNoStartTime);
   RunJob(db);
@@ -198,7 +215,7 @@ TEST_F(RunOnIncomingConnectIntervalClass, no_start_time_found_in_database)
       << "Job backup-bareos-fd-connect2 did not run";
 }
 
-TEST_F(RunOnIncomingConnectIntervalClass, start_time_found_in_database)
+TEST_F(RunOnIncomingConnectIntervalTest, start_time_found_in_database)
 {
   MockDatabase db(MockDatabase::Mode::kFindStartTime);
   RunJob(db);
