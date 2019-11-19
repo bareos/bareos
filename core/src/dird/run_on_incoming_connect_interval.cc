@@ -63,8 +63,8 @@ time_t RunOnIncomingConnectInterval::FindLastJobStart(JobResource* job)
   bool success = jcr->db->FindLastStartTimeForJobAndClient(
       jcr, job->resource_name_, client_name_, stime);
 
-  time_t time = 0;
-  if (success) { time = static_cast<time_t>(StrToUtime(stime)); }
+  utime_t time = 0;
+  if (success) { time = static_cast<utime_t>(StrToUtime(stime)); }
 
   FreeJcr(jcr);
   FreePoolMemory(stime);

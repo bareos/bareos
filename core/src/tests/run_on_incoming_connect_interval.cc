@@ -114,7 +114,7 @@ class TimeAdapter : public SchedulerTimeAdapter {
   }
 };
 
-static struct {
+static struct TestResults {
   int job_counter{};
   std::map<std::string, int> job_names;
 } test_results;
@@ -129,41 +129,65 @@ static void RunAJob(JobControlRecord* jcr)
 
 class MockDatabase : public BareosDb {
  public:
+  enum class Mode
+  {
+    kFindNoStartTime,
+    kFindStartTime
+  };
+  MockDatabase(Mode mode) : mode_(mode) {}
   bool FindLastStartTimeForJobAndClient(JobControlRecord* jcr,
                                         std::string job_basename,
                                         std::string client_name,
                                         POOLMEM*& stime) override
   {
-    snprintf(stime, MAX_NAME_LENGTH, "bla");
-    return true;
+    switch (mode_) {
+      default:
+      case Mode::kFindNoStartTime:
+        return false;
+      case Mode::kFindStartTime: {
+        utime_t now = time(nullptr) - (3600 * 3 + 1);
+        bstrutime(stime, MAX_NAME_LENGTH, now);
+        return true;
+      }
+    }
   }
   bool OpenDatabase(JobControlRecord* jcr) override { return false; }
   void CloseDatabase(JobControlRecord* jcr) override { return; }
   bool ValidateConnection(void) override { return false; }
   void StartTransaction(JobControlRecord* jcr) override { return; }
   void EndTransaction(JobControlRecord* jcr) override { return; }
+
+ private:
+  Mode mode_{};
 };
 
-static void scheduler_thread(Scheduler* s) { s->Run(); }
+static void scheduler_thread(Scheduler* scheduler) { scheduler->Run(); }
 
-TEST_F(RunOnIncomingConnectIntervalClass, run_on_connect)
+static void RunJob(BareosDb& db)
 {
   auto tts{std::make_unique<TestTimeSource>()};
   auto ta{std::make_unique<TimeAdapter>(std::move(tts))};
 
-  Scheduler s(std::move(ta), RunAJob);
+  Scheduler scheduler(std::move(ta), RunAJob);
 
-  std::thread thread(scheduler_thread, &s);
+  std::thread thread(scheduler_thread, &scheduler);
 
-  test_results.job_counter = 0;
-  test_results.job_names.clear();
+  test_results = TestResults();
 
-  MockDatabase db;
-  RunOnIncomingConnectInterval("bareos-fd", s, &db).Run();
+  RunOnIncomingConnectInterval("bareos-fd", scheduler, &db).Run();
 
   std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
-  EXPECT_EQ(test_results.job_counter, 2);
+  scheduler.Terminate();
+  thread.join();
+}
+
+TEST_F(RunOnIncomingConnectIntervalClass, no_start_time_found_in_database)
+{
+  MockDatabase db(MockDatabase::Mode::kFindNoStartTime);
+  RunJob(db);
+
+  ASSERT_EQ(test_results.job_counter, 2) << "Not all jobs did run";
 
   EXPECT_NE(test_results.job_names.find("backup-bareos-fd-connect"),
             test_results.job_names.end())
@@ -172,7 +196,17 @@ TEST_F(RunOnIncomingConnectIntervalClass, run_on_connect)
   EXPECT_NE(test_results.job_names.find("backup-bareos-fd-connect-2"),
             test_results.job_names.end())
       << "Job backup-bareos-fd-connect2 did not run";
+}
 
-  s.Terminate();
-  thread.join();
+TEST_F(RunOnIncomingConnectIntervalClass, start_time_found_in_database)
+{
+  MockDatabase db(MockDatabase::Mode::kFindStartTime);
+  RunJob(db);
+
+  ASSERT_EQ(test_results.job_counter, 1)
+      << "backup-bareos-fd-connect did not run";
+
+  EXPECT_NE(test_results.job_names.find("backup-bareos-fd-connect"),
+            test_results.job_names.end())
+      << "Job backup-bareos-fd-connect did not run";
 }
