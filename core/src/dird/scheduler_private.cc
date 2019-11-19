@@ -42,16 +42,22 @@
 
 namespace directordaemon {
 
-static const int debuglevel = 200;
+static const int local_debuglevel = 200;
 static constexpr auto seconds_per_hour = std::chrono::seconds(3600);
 static constexpr auto seconds_per_minute = std::chrono::seconds(60);
 
 static bool IsAutomaticSchedulerJob(JobResource* job)
 {
+  Dmsg1(local_debuglevel + 100,
+        "Scheduler: Check if job IsAutomaticSchedulerJob %s.",
+        job->resource_name_);
   if (job->schedule == nullptr) { return false; }
   if (!job->schedule->enabled) { return false; }
   if (!job->enabled) { return false; }
   if ((job->client != nullptr) && !job->client->enabled) { return false; }
+  Dmsg1(local_debuglevel + 100,
+        "Scheduler: Check if job IsAutomaticSchedulerJob %s: Yes.",
+        job->resource_name_);
   return true;
 }
 
@@ -143,11 +149,17 @@ void SchedulerPrivate::WaitForJobsToRun()
 
       if (now >= next_job.runtime) {
         JobControlRecord* jcr = TryCreateJobControlRecord(next_job);
+        Dmsg1(local_debuglevel, "Scheduler: Running job %s.",
+              next_job.job->resource_name_);
         if (jcr != nullptr) { ExecuteJobCallback_(jcr); }
         job_started = true;
       } else {
         time_t wait_interval{std::min(time_adapter->default_wait_interval_,
                                       next_job.runtime - now)};
+        Dmsg2(local_debuglevel,
+              "Scheduler: WaitForJobsToRun is sleeping for %d seconds. Next "
+              "job: %s.",
+              wait_interval, next_job.job->resource_name_);
         time_adapter->time_source_->SleepFor(
             std::chrono::seconds(wait_interval));
       }
@@ -178,13 +190,13 @@ static time_t CalculateRuntime(time_t time, uint32_t minute)
 
 void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
 {
-  Dmsg0(debuglevel, "Begin AddJobsForThisAndNextHourToQueue\n");
+  Dmsg0(local_debuglevel, "Begin AddJobsForThisAndNextHourToQueue\n");
 
   RunHourValidator this_hour(time_adapter->time_source_->SystemTime());
-  this_hour.PrintDebugMessage(debuglevel);
+  this_hour.PrintDebugMessage(local_debuglevel);
 
   RunHourValidator next_hour(this_hour.Time() + seconds_per_hour.count());
-  next_hour.PrintDebugMessage(debuglevel);
+  next_hour.PrintDebugMessage(local_debuglevel);
 
   JobResource* job = nullptr;
 
@@ -192,14 +204,14 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
   foreach_res (job, R_JOB) {
     if (!IsAutomaticSchedulerJob(job)) { continue; }
 
-    Dmsg1(debuglevel, "Got job: %s\n", job->resource_name_);
+    Dmsg1(local_debuglevel, "Got job: %s\n", job->resource_name_);
 
     for (RunResource* run = job->schedule->run; run != nullptr;
          run = run->next) {
       bool run_this_hour = this_hour.TriggersOn(run->date_time_bitfield);
       bool run_next_hour = next_hour.TriggersOn(run->date_time_bitfield);
 
-      Dmsg3(debuglevel, "run@%p: run_now=%d run_next_hour=%d\n", run,
+      Dmsg3(local_debuglevel, "run@%p: run_now=%d run_next_hour=%d\n", run,
             run_this_hour, run_next_hour);
 
       if (run_this_hour || run_next_hour) {
@@ -215,7 +227,7 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
     }
   }
   UnlockRes(my_config);
-  Dmsg0(debuglevel, "Finished AddJobsForThisAndNextHourToQueue\n");
+  Dmsg0(local_debuglevel, "Finished AddJobsForThisAndNextHourToQueue\n");
 }
 
 void SchedulerPrivate::AddJobToQueue(JobResource* job,
@@ -223,6 +235,9 @@ void SchedulerPrivate::AddJobToQueue(JobResource* job,
                                      time_t now,
                                      time_t runtime)
 {
+  Dmsg1(local_debuglevel + 100, "Scheduler: Try AddJobToQueue %s.",
+        job->resource_name_);
+
   if (run != nullptr) {
     if ((runtime - run->last_run) < 61) { return; }
   }
@@ -230,9 +245,13 @@ void SchedulerPrivate::AddJobToQueue(JobResource* job,
   if ((runtime + 59) < now) { return; }
 
   try {
+    Dmsg1(local_debuglevel + 100, "Scheduler: Put job %s into queue.",
+          job->resource_name_);
+
     prioritised_job_item_queue.EmplaceItem(job, run, runtime);
+
   } catch (const std::invalid_argument& e) {
-    Dmsg1(debuglevel, "Could not emplace job: %s\n", e.what());
+    Dmsg1(local_debuglevel + 100, "Could not emplace job: %s\n", e.what());
   }
 }
 

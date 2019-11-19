@@ -54,7 +54,12 @@ time_t RunOnIncomingConnectInterval::FindLastJobStart(JobResource* job)
 {
   JobControlRecord* jcr = NewDirectorJcr();
   SetJcrDefaults(jcr, job);
-  jcr->db = db_ != nullptr ? db_ : GetDatabaseConnection(jcr);
+  auto db = db_ != nullptr ? db_ : GetDatabaseConnection(jcr);
+  if (db == nullptr) {
+    Dmsg0(200, "Could not retrieve a database connection.");
+    return 0;
+  }
+  jcr->db = db;
 
   POOLMEM* stime = GetPoolMemory(PM_MESSAGE);
 
@@ -96,6 +101,7 @@ void RunOnIncomingConnectInterval::RunJobIfIntervalExceeded(
   }
 
   if (!job_ran_before || interval_time_exceeded) {
+    Dmsg1(800, "Add job %s to scheduler queue.", job->resource_name_);
     scheduler_.AddJobWithNoRunResourceToQueue(job);
   }
 }
@@ -110,6 +116,8 @@ void RunOnIncomingConnectInterval::Run()
   for (auto job : job_resources) {
     if (job->RunOnIncomingConnectInterval != 0) {
       time_t last_start_time = FindLastJobStart(job);
+      Dmsg2(800, "Try RunOnIncomingConnectInterval job %s for client %s.",
+            job->resource_name_, client_name_.c_str());
       RunJobIfIntervalExceeded(job, last_start_time);
     }
   }
