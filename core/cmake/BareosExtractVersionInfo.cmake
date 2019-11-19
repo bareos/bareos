@@ -45,7 +45,11 @@ if(BAREOS_FULL_VERSION STREQUAL "")
   message(FATAL_ERROR "BAREOS_FULL_VERSION is not set")
 endif()
 
-set(BAREOS_FULL_VERSION ${BAREOS_FULL_VERSION} PARENT_SCOPE)
+# set BAREOS_FULL_VERSION in parent scope if there is a parent scope
+get_directory_property(hasParent PARENT_DIRECTORY)
+if(hasParent)
+  set(BAREOS_FULL_VERSION ${BAREOS_FULL_VERSION} PARENT_SCOPE)
+endif()
 
 string(REGEX MATCH
              [0-9]+.[0-9]+.[0-9]+
