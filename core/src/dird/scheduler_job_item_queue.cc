@@ -55,7 +55,22 @@ SchedulerJobItemQueue::SchedulerJobItemQueue()
 
 SchedulerJobItemQueue::~SchedulerJobItemQueue() = default;
 
-SchedulerJobItem SchedulerJobItemQueue::TakeOutTopItem()
+SchedulerJobItem SchedulerJobItemQueue::TakeOutTopItemIfSame(
+    const SchedulerJobItem& compare)
+{
+  std::lock_guard<std::mutex> lg(impl_->mutex);
+
+  if (!impl_->priority_queue.empty()) {
+    auto job_item_with_highest_priority = impl_->priority_queue.top();
+    if (job_item_with_highest_priority == compare) {
+      impl_->priority_queue.pop();
+      return job_item_with_highest_priority;
+    }
+  }
+  return SchedulerJobItem();
+}
+
+SchedulerJobItem SchedulerJobItemQueue::TopItem() const
 {
   SchedulerJobItem job_item_with_highest_priority;
 
@@ -63,7 +78,6 @@ SchedulerJobItem SchedulerJobItemQueue::TakeOutTopItem()
 
   if (!impl_->priority_queue.empty()) {
     job_item_with_highest_priority = impl_->priority_queue.top();
-    impl_->priority_queue.pop();
   }
 
   return job_item_with_highest_priority;

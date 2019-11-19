@@ -140,7 +140,7 @@ void SchedulerPrivate::WaitForJobsToRun()
   SchedulerJobItem next_job;
 
   while (active && !prioritised_job_item_queue.Empty()) {
-    next_job = prioritised_job_item_queue.TakeOutTopItem();
+    next_job = prioritised_job_item_queue.TopItem();
     if (!next_job.is_valid) { break; }
 
     bool job_started = false;
@@ -148,9 +148,14 @@ void SchedulerPrivate::WaitForJobsToRun()
       time_t now = time_adapter->time_source_->SystemTime();
 
       if (now >= next_job.runtime) {
-        JobControlRecord* jcr = TryCreateJobControlRecord(next_job);
+        auto run_job =
+            prioritised_job_item_queue.TakeOutTopItemIfSame(next_job);
+        if (!run_job.is_valid) {
+          continue;  // check queue again
+        }
+        JobControlRecord* jcr = TryCreateJobControlRecord(run_job);
         Dmsg1(local_debuglevel, "Scheduler: Running job %s.",
-              next_job.job->resource_name_);
+              run_job.job->resource_name_);
         if (jcr != nullptr) { ExecuteJobCallback_(jcr); }
         job_started = true;
       } else {

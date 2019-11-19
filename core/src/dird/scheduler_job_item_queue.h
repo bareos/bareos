@@ -62,7 +62,8 @@ class SchedulerJobItemQueue {
   SchedulerJobItemQueue();
   ~SchedulerJobItemQueue();
 
-  SchedulerJobItem TakeOutTopItem();
+  SchedulerJobItem TopItem() const;
+  SchedulerJobItem TakeOutTopItemIfSame(const SchedulerJobItem& compare);
   void EmplaceItem(JobResource* job, RunResource* run, time_t runtime);
   bool Empty() const;
   void Clear();
