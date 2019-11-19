@@ -41,6 +41,15 @@ RunOnIncomingConnectInterval::RunOnIncomingConnectInterval(
     , scheduler_(scheduler)
     , db_(db)
 {
+  // use the given database
+}
+
+RunOnIncomingConnectInterval::RunOnIncomingConnectInterval(
+    std::string client_name,
+    Scheduler& scheduler)
+    : client_name_(std::move(std::move(client_name))), scheduler_(scheduler)
+{
+  // initialize database by job settings
 }
 
 time_t RunOnIncomingConnectInterval::FindLastJobStart(JobResource* job)
