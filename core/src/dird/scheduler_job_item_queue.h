@@ -43,6 +43,13 @@ struct SchedulerJobItem {
   {
     is_valid = job && runtime;
   };
+  bool operator==(const SchedulerJobItem& rhs) const
+  {
+    return runtime == rhs.runtime && job == rhs.job &&
+           priority == rhs.priority && run == rhs.run;
+  }
+  bool operator!=(const SchedulerJobItem& rhs) const { return !(*this == rhs); }
+
   JobResource* job{nullptr};
   RunResource* run{nullptr};
   time_t runtime{0};
