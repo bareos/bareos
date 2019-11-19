@@ -144,19 +144,21 @@ class MockDatabase : public BareosDb {
   void EndTransaction(JobControlRecord* jcr) override { return; }
 };
 
-void scheduler_thread(Scheduler* s) { s->Run(); }
+static void scheduler_thread(Scheduler* s) { s->Run(); }
 
 TEST_F(RunOnIncomingConnectIntervalClass, run_on_connect)
 {
-  Scheduler s(std::make_unique<TimeAdapter>(std::make_unique<TestTimeSource>()),
-              RunAJob);
+  auto tts{std::make_unique<TestTimeSource>()};
+  auto ta{std::make_unique<TimeAdapter>(std::move(tts))};
 
-  std::thread st(scheduler_thread, &s);
+  Scheduler s(std::move(ta), RunAJob);
 
-  MockDatabase db;
+  std::thread thread(scheduler_thread, &s);
 
   test_results.job_counter = 0;
   test_results.job_names.clear();
+
+  MockDatabase db;
   RunOnIncomingConnectInterval("bareos-fd", s, &db).Run();
 
   std::this_thread::sleep_for(std::chrono::milliseconds(20));
@@ -172,5 +174,5 @@ TEST_F(RunOnIncomingConnectIntervalClass, run_on_connect)
       << "Job backup-bareos-fd-connect2 did not run";
 
   s.Terminate();
-  st.join();
+  thread.join();
 }
