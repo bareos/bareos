@@ -42,9 +42,11 @@
 
 namespace directordaemon {
 
+using std::chrono::seconds;
+
 static const int local_debuglevel = 200;
-static constexpr auto seconds_per_hour = std::chrono::seconds(3600);
-static constexpr auto seconds_per_minute = std::chrono::seconds(60);
+static constexpr auto seconds_per_hour = seconds(3600);
+static constexpr auto seconds_per_minute = seconds(60);
 
 static bool IsAutomaticSchedulerJob(JobResource* job)
 {
@@ -158,6 +160,7 @@ void SchedulerPrivate::WaitForJobsToRun()
               run_job.job->resource_name_);
         if (jcr != nullptr) { ExecuteJobCallback_(jcr); }
         job_started = true;
+
       } else {
         time_t wait_interval{std::min(time_adapter->default_wait_interval_,
                                       next_job.runtime - now)};
@@ -165,8 +168,8 @@ void SchedulerPrivate::WaitForJobsToRun()
               "Scheduler: WaitForJobsToRun is sleeping for %d seconds. Next "
               "job: %s.",
               wait_interval, next_job.job->resource_name_);
-        time_adapter->time_source_->SleepFor(
-            std::chrono::seconds(wait_interval));
+
+        time_adapter->time_source_->SleepFor(seconds(wait_interval));
       }
     }
   }
@@ -178,7 +181,7 @@ void SchedulerPrivate::FillSchedulerJobQueueOrSleep()
     AddJobsForThisAndNextHourToQueue();
     if (prioritised_job_item_queue.Empty()) {
       time_adapter->time_source_->SleepFor(
-          std::chrono::seconds(time_adapter->default_wait_interval_));
+          seconds(time_adapter->default_wait_interval_));
     }
   }
 }
