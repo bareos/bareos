@@ -23,6 +23,12 @@ project(bareos NONE)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 set(default_build_type "Debug")
+
+find_package(Git)
+include(BareosVersionFromGit)
+
+set(BUILDNAME "${GIT_DESCRIBE_VERSION}" CACHE STRING "site name variable for CDash")
+set(SITE "${CMAKE_SYSTEM}" CACHE STRING "build name variable for CDash")
 # enable "make test"
 enable_testing()
 set(CMAKE_CTEST_COMMAND ctest -V)
@@ -44,8 +50,6 @@ ELSE()
   set(BUILD_BAREOS_BINARIES yes)
 ENDIF()
 
-find_package(Git)
-include(BareosVersionFromGit)
 
 IF(BUILD_BAREOS_BINARIES)
 add_subdirectory(core)
