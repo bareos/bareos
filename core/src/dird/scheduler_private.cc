@@ -153,9 +153,11 @@ void SchedulerPrivate::WaitForJobsToRun()
         continue;  // check queue again
       }
       JobControlRecord* jcr = TryCreateJobControlRecord(run_job);
-      Dmsg1(local_debuglevel, "Scheduler: Running job %s.",
-            run_job.job->resource_name_);
-      if (jcr != nullptr) { ExecuteJobCallback_(jcr); }
+      if (jcr != nullptr) {
+        Dmsg1(local_debuglevel, "Scheduler: Running job %s.",
+              run_job.job->resource_name_);
+        ExecuteJobCallback_(jcr);
+      }
 
     } else {
       time_t wait_interval{std::min(time_adapter->default_wait_interval_,
