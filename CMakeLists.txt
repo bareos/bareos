@@ -21,13 +21,15 @@ cmake_minimum_required(VERSION 3.0)
 
 project(bareos NONE)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/core/cmake")
 
 set(default_build_type "Debug")
 
 find_package(Git)
 include(BareosVersionFromGit)
+include(BareosExtractVersionInfo)
 
-set(BUILDNAME "${GIT_DESCRIBE_VERSION}" CACHE STRING "site name variable for CDash")
+set(BUILDNAME "${BAREOS_FULL_VERSION}" CACHE STRING "site name variable for CDash")
 set(SITE "${CMAKE_SYSTEM}" CACHE STRING "build name variable for CDash")
 # enable "make test"
 enable_testing()

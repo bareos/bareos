@@ -45,6 +45,8 @@ if(BAREOS_FULL_VERSION STREQUAL "")
   message(FATAL_ERROR "BAREOS_FULL_VERSION is not set")
 endif()
 
+set(BAREOS_FULL_VERSION ${BAREOS_FULL_VERSION} PARENT_SCOPE)
+
 string(REGEX MATCH
              [0-9]+.[0-9]+.[0-9]+
              BAREOS_NUMERIC_VERSION
@@ -72,7 +74,7 @@ else()
 endif()
 
 # extract  db version from cats.h
-file(STRINGS ${PROJECT_SOURCE_DIR}/src/cats/cats.h DB_VERSION_STRING
+file(STRINGS ${CMAKE_CURRENT_LIST_DIR}/../src/cats/cats.h DB_VERSION_STRING
      REGEX .*BDB_VERSION.*)
 string(REGEX MATCH
              [0-9]+
