@@ -121,17 +121,20 @@ SET(host ${CMAKE_SYSTEM})
 
 SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# enable "make test"
-enable_testing()
-set(CMAKE_CTEST_COMMAND ctest -V)
-include(CTest)
-
 # run git-info to collect sourcecode info
 file(MAKE_DIRECTORY build)
 execute_process(
     COMMAND ${PROJECT_SOURCE_DIR}/scripts/git-info.sh
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/build
 )
+
+set(BUILDNAME "${BAREOS_FULL_VERSION}" CACHE STRING "site name variable for CDash")
+set(SITE "${CMAKE_SYSTEM}" CACHE STRING "build name variable for CDash")
+# enable "make test"
+enable_testing()
+set(CMAKE_CTEST_COMMAND ctest -V)
+include(CTest)
+
 
 INCLUDE(BareosExtractVersionInfo)
 
