@@ -34,22 +34,20 @@
 namespace directordaemon {
 
 RunOnIncomingConnectInterval::RunOnIncomingConnectInterval(
-    std::string client_name,
-    Scheduler& scheduler,
-    BareosDb* db)
-    : client_name_(std::move(std::move(client_name)))
-    , scheduler_(scheduler)
-    , db_(db)
+    std::string client_name)
+    : client_name_(std::move(client_name))
+    , scheduler_(Scheduler::GetMainScheduler())
 {
-  // use the given database
+  // initialize database by job settings
 }
 
 RunOnIncomingConnectInterval::RunOnIncomingConnectInterval(
     std::string client_name,
-    Scheduler& scheduler)
-    : client_name_(std::move(std::move(client_name))), scheduler_(scheduler)
+    Scheduler& scheduler,
+    BareosDb* db)
+    : client_name_(std::move(client_name)), scheduler_(scheduler), db_(db)
 {
-  // initialize database by job settings
+  // use the given database and scheduler
 }
 
 time_t RunOnIncomingConnectInterval::FindLastJobStart(JobResource* job)

@@ -1402,8 +1402,7 @@ void* HandleFiledConnection(ConnectionPool* connections,
     return NULL;
   }
 
-  RunOnIncomingConnectInterval(client_name, Scheduler::GetMainScheduler())
-      .Run();
+  RunOnIncomingConnectInterval(client_name).Run();
 
   /*
    * The connection is now kept in the connection_pool.

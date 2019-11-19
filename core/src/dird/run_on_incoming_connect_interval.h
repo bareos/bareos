@@ -35,7 +35,7 @@ class JobResource;
 
 class RunOnIncomingConnectInterval {
  public:
-  RunOnIncomingConnectInterval(std::string client_name, Scheduler& scheduler);
+  explicit RunOnIncomingConnectInterval(std::string client_name);
   RunOnIncomingConnectInterval(std::string client_name,
                                Scheduler& scheduler,
                                BareosDb* db);
