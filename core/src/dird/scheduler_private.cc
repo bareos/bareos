@@ -145,32 +145,27 @@ void SchedulerPrivate::WaitForJobsToRun()
     next_job = prioritised_job_item_queue.TopItem();
     if (!next_job.is_valid) { break; }
 
-    bool job_started = false;
-    while (active && !job_started) {
-      time_t now = time_adapter->time_source_->SystemTime();
+    time_t now = time_adapter->time_source_->SystemTime();
 
-      if (now >= next_job.runtime) {
-        auto run_job =
-            prioritised_job_item_queue.TakeOutTopItemIfSame(next_job);
-        if (!run_job.is_valid) {
-          continue;  // check queue again
-        }
-        JobControlRecord* jcr = TryCreateJobControlRecord(run_job);
-        Dmsg1(local_debuglevel, "Scheduler: Running job %s.",
-              run_job.job->resource_name_);
-        if (jcr != nullptr) { ExecuteJobCallback_(jcr); }
-        job_started = true;
-
-      } else {
-        time_t wait_interval{std::min(time_adapter->default_wait_interval_,
-                                      next_job.runtime - now)};
-        Dmsg2(local_debuglevel,
-              "Scheduler: WaitForJobsToRun is sleeping for %d seconds. Next "
-              "job: %s.",
-              wait_interval, next_job.job->resource_name_);
-
-        time_adapter->time_source_->SleepFor(seconds(wait_interval));
+    if (now >= next_job.runtime) {
+      auto run_job = prioritised_job_item_queue.TakeOutTopItemIfSame(next_job);
+      if (!run_job.is_valid) {
+        continue;  // check queue again
       }
+      JobControlRecord* jcr = TryCreateJobControlRecord(run_job);
+      Dmsg1(local_debuglevel, "Scheduler: Running job %s.",
+            run_job.job->resource_name_);
+      if (jcr != nullptr) { ExecuteJobCallback_(jcr); }
+
+    } else {
+      time_t wait_interval{std::min(time_adapter->default_wait_interval_,
+                                    next_job.runtime - now)};
+      Dmsg2(local_debuglevel,
+            "Scheduler: WaitForJobsToRun is sleeping for %d seconds. Next "
+            "job: %s.",
+            wait_interval, next_job.job->resource_name_);
+
+      time_adapter->time_source_->SleepFor(seconds(wait_interval));
     }
   }
 }
