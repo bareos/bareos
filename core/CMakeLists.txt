@@ -128,6 +128,9 @@ execute_process(
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/build
 )
 
+INCLUDE(BareosExtractVersionInfo)
+INCLUDE(BareosLocalBuildDefinitions OPTIONAL RESULT_VARIABLE BareosLocalBuildDefinitionsFile)
+
 set(BUILDNAME "${BAREOS_FULL_VERSION}" CACHE STRING "site name variable for CDash")
 set(SITE "${CMAKE_SYSTEM}" CACHE STRING "build name variable for CDash")
 # enable "make test"
@@ -135,8 +138,6 @@ enable_testing()
 set(CMAKE_CTEST_COMMAND ctest -V)
 include(CTest)
 
-
-INCLUDE(BareosExtractVersionInfo)
 
 IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
    set(OPENSSL_ROOT_DIR /usr/local/opt/openssl)
