@@ -146,8 +146,7 @@ void SchedulerPrivate::WaitForJobsToRun()
     time_t now = time_adapter->time_source_->SystemTime();
 
     if (now >= next_job.runtime) {
-      auto run_job =
-          prioritised_job_item_queue.TakeOutTopItemIfEqualWith(next_job);
+      auto run_job = prioritised_job_item_queue.TakeOutTopItem();
       if (!run_job.is_valid) {
         continue;  // check queue again
       }
