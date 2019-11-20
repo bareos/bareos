@@ -37,7 +37,6 @@ class SchedulerTimeAdapter;
 class SchedulerPrivate {
  public:
   ~SchedulerPrivate();
-
   SchedulerPrivate();
 
   SchedulerPrivate(const SchedulerPrivate& other) = delete;
