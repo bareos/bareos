@@ -2605,7 +2605,7 @@ bool PropagateJobdefs(int res_type, JobResource* res)
    */
   if (res->jobdefs == res) { return false; }
 
-  if (res_type == R_JOB) {
+  if (res_type == R_JOB || res_type == R_JOBDEFS) {
     jobdefs = res->jobdefs;
 
     /*
