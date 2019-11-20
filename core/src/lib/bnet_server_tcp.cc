@@ -65,7 +65,7 @@ int allow_severity = LOG_NOTICE;
 int deny_severity = LOG_WARNING;
 #endif
 
-static bool quit = false;
+static std::atomic<bool> quit{false};
 
 struct s_sockfd {
   int fd;
@@ -81,7 +81,6 @@ void BnetStopAndWaitForThreadServerTcp(pthread_t tid)
   Dmsg0(100, "BnetThreadServer: Request Stop\n");
   quit = true;
   if (!pthread_equal(tid, pthread_self())) {
-    pthread_kill(tid, TIMEOUT_SIGNAL);
     Dmsg0(100, "BnetThreadServer: Wait until finished\n");
     pthread_join(tid, nullptr);
     Dmsg0(100, "BnetThreadServer: finished\n");
@@ -148,7 +147,7 @@ void BnetThreadServerTcp(
     std::atomic<BnetServerState>* const server_state,
     void* UserAgentShutdownCallback(void* bsock))
 {
-  int newsockfd, status;
+  int newsockfd;
   socklen_t clilen;
   struct sockaddr_storage cli_addr; /* client's address */
   int tlog;
@@ -313,8 +312,16 @@ void BnetThreadServerTcp(
       if ((unsigned)fd_ptr->fd > maxfd) { maxfd = fd_ptr->fd; }
     }
 
+    struct timeval timeout {
+      .tv_sec = 1, .tv_usec = 0
+    };
+
     errno = 0;
-    if ((status = select(maxfd + 1, &sockset, NULL, NULL, NULL)) < 0) {
+    int status = select(maxfd + 1, &sockset, NULL, NULL, &timeout);
+
+    if (status == 0) {
+      continue;  // timeout: check if thread should quit
+    } else if (status < 0) {
       BErrNo be; /* capture errno */
       if (errno == EINTR) { continue; }
       if (server_state) { server_state->store(BnetServerState::kError); }
@@ -325,10 +332,14 @@ void BnetThreadServerTcp(
     foreach_alist (fd_ptr, sockfds) {
       if (FD_ISSET(fd_ptr->fd, &sockset)) {
 #else
-    int cnt;
+    static constexpr int timeout_ms{1000};
 
     errno = 0;
-    if ((status = poll(pfds, nfds, -1)) < 0) {
+    int status = poll(pfds, nfds, timeout_ms);
+
+    if (status == 0) {
+      continue;  // timeout: check if thread should quit
+    } else if (status < 0) {
       BErrNo be; /* capture errno */
       if (errno == EINTR) { continue; }
       Emsg1(M_FATAL, 0, _("Error in poll: %s\n"), be.bstrerror());
@@ -336,7 +347,7 @@ void BnetThreadServerTcp(
       break;
     }
 
-    cnt = 0;
+    int cnt = 0;
     foreach_alist (fd_ptr, sockfds) {
       if (pfds[cnt++].revents & events) {
 #endif
