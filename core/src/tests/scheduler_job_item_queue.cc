@@ -90,7 +90,7 @@ TEST(scheduler_job_item_queue, priority_and_time)
   while (!scheduler_job_item_queue.Empty()) {
     auto next_job_item = scheduler_job_item_queue.TopItem();
     auto job_item =
-        scheduler_job_item_queue.TakeOutTopItemIfSame(next_job_item);
+        scheduler_job_item_queue.TakeOutTopItemIfEqualWith(next_job_item);
     ASSERT_TRUE(job_item.is_valid);
     ASSERT_EQ(job_item.job->selection_type, item_position)
         << "selection_type is used as "

@@ -47,7 +47,7 @@ RunOnIncomingConnectInterval::RunOnIncomingConnectInterval(
     BareosDb* db)
     : client_name_(std::move(client_name)), scheduler_(scheduler), db_(db)
 {
-  // use the given database and scheduler
+  // constructor used for tests to inject mocked scheduler and database
 }
 
 time_t RunOnIncomingConnectInterval::FindLastJobStart(JobResource* job)

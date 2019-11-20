@@ -130,7 +130,7 @@ static struct TestResults {
   std::map<std::string, int> job_names;
 } test_results;
 
-static void RunAJob(JobControlRecord* jcr)
+static void SchedulerJobCallback(JobControlRecord* jcr)
 {
   ++test_results.job_counter;
 
@@ -157,13 +157,12 @@ class MockDatabase : public BareosDb {
         return false;
       case Mode::kFindStartTime: {
         auto now = system_clock::now();
-        auto three_hours = seconds(hours(3) + seconds(1));
+        auto more_than_three_hours = seconds(hours(3) + seconds(1));
 
-        utime_t fake_start_time_three_hours_in_the_past =
-            system_clock::to_time_t(now - three_hours);
+        utime_t fake_start_time_of_previous_job =
+            system_clock::to_time_t(now - more_than_three_hours);
 
-        bstrutime(stime, MAX_NAME_LENGTH,
-                  fake_start_time_three_hours_in_the_past);
+        bstrutime(stime, MAX_NAME_LENGTH, fake_start_time_of_previous_job);
         return true;
       }
     }
@@ -178,31 +177,38 @@ class MockDatabase : public BareosDb {
   Mode mode_{};
 };
 
-static void scheduler_thread(Scheduler* scheduler) { scheduler->Run(); }
+static void scheduler_loop(Scheduler* scheduler) { scheduler->Run(); }
 
-static void RunJob(BareosDb& db)
+static void SimulateClientConnect(std::string client_name,
+                                  Scheduler& scheduler,
+                                  BareosDb& db)
+{
+  RunOnIncomingConnectInterval(client_name, scheduler, &db).Run();
+}
+
+static void RunSchedulerAndSimulateClientConnect(BareosDb& db)
 {
   auto tts{std::make_unique<TestTimeSource>()};
   auto ta{std::make_unique<TimeAdapter>(std::move(tts))};
 
-  Scheduler scheduler(std::move(ta), RunAJob);
+  Scheduler scheduler(std::move(ta), SchedulerJobCallback);
 
-  std::thread thread(scheduler_thread, &scheduler);
+  std::thread scheduler_thread(scheduler_loop, &scheduler);
 
   test_results = TestResults();
 
-  RunOnIncomingConnectInterval("bareos-fd", scheduler, &db).Run();
+  SimulateClientConnect("bareos-fd", scheduler, db);
 
   std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
   scheduler.Terminate();
-  thread.join();
+  scheduler_thread.join();
 }
 
 TEST_F(RunOnIncomingConnectIntervalTest, no_start_time_found_in_database)
 {
   MockDatabase db(MockDatabase::Mode::kFindNoStartTime);
-  RunJob(db);
+  RunSchedulerAndSimulateClientConnect(db);
 
   ASSERT_EQ(test_results.job_counter, 2) << "Not all jobs did run";
 
@@ -218,7 +224,7 @@ TEST_F(RunOnIncomingConnectIntervalTest, no_start_time_found_in_database)
 TEST_F(RunOnIncomingConnectIntervalTest, start_time_found_in_database)
 {
   MockDatabase db(MockDatabase::Mode::kFindStartTime);
-  RunJob(db);
+  RunSchedulerAndSimulateClientConnect(db);
 
   ASSERT_EQ(test_results.job_counter, 1)
       << "backup-bareos-fd-connect did not run";

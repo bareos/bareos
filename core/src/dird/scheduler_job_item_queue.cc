@@ -55,7 +55,7 @@ SchedulerJobItemQueue::SchedulerJobItemQueue()
 
 SchedulerJobItemQueue::~SchedulerJobItemQueue() = default;
 
-SchedulerJobItem SchedulerJobItemQueue::TakeOutTopItemIfSame(
+SchedulerJobItem SchedulerJobItemQueue::TakeOutTopItemIfEqualWith(
     const SchedulerJobItem& compare)
 {
   std::lock_guard<std::mutex> lg(impl_->mutex);

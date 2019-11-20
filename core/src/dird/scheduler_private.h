@@ -34,19 +34,28 @@ namespace directordaemon {
 
 class SchedulerTimeAdapter;
 
-struct SchedulerPrivate {
-  SchedulerPrivate();
-  SchedulerPrivate(std::unique_ptr<SchedulerTimeAdapter> time_adapter,
-                   std::function<void(JobControlRecord*)> ExecuteJobCallback);
+class SchedulerPrivate {
+ public:
   ~SchedulerPrivate();
+
+  SchedulerPrivate();
+
+  SchedulerPrivate(const SchedulerPrivate& other) = delete;
+  SchedulerPrivate(SchedulerPrivate&& other) = delete;
+  SchedulerPrivate& operator=(SchedulerPrivate&& other) = delete;
+  SchedulerPrivate& operator=(const SchedulerPrivate& other) = delete;
 
   void WaitForJobsToRun();
   void FillSchedulerJobQueueOrSleep();
-  void AddJobToQueue(JobResource* job);
+  void AddJobWithNoRunResourceToQueue(JobResource* job);
 
   std::unique_ptr<SchedulerTimeAdapter> time_adapter;
   SchedulerJobItemQueue prioritised_job_item_queue;
   std::atomic<bool> active{true};
+
+  // testing:
+  SchedulerPrivate(std::unique_ptr<SchedulerTimeAdapter> time_adapter,
+                   std::function<void(JobControlRecord*)> ExecuteJobCallback);
 
  private:
   std::function<void(JobControlRecord*)> ExecuteJobCallback_;

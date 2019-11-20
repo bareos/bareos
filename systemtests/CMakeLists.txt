@@ -269,7 +269,6 @@ set(SYSTEM_TESTS
 )
 
 set(SYSTEM_TESTS_DISABLED
-  client-initiated-connect-job-run-test #currently disabled
   #initialy empty
 )
 

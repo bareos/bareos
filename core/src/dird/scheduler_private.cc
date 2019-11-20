@@ -139,16 +139,15 @@ JobControlRecord* SchedulerPrivate::TryCreateJobControlRecord(
 
 void SchedulerPrivate::WaitForJobsToRun()
 {
-  SchedulerJobItem next_job;
-
   while (active && !prioritised_job_item_queue.Empty()) {
-    next_job = prioritised_job_item_queue.TopItem();
+    auto next_job = prioritised_job_item_queue.TopItem();
     if (!next_job.is_valid) { break; }
 
     time_t now = time_adapter->time_source_->SystemTime();
 
     if (now >= next_job.runtime) {
-      auto run_job = prioritised_job_item_queue.TakeOutTopItemIfSame(next_job);
+      auto run_job =
+          prioritised_job_item_queue.TakeOutTopItemIfEqualWith(next_job);
       if (!run_job.is_valid) {
         continue;  // check queue again
       }
@@ -260,7 +259,7 @@ void SchedulerPrivate::AddJobToQueue(JobResource* job,
   }
 }
 
-void SchedulerPrivate::AddJobToQueue(JobResource* job)
+void SchedulerPrivate::AddJobWithNoRunResourceToQueue(JobResource* job)
 {
   time_t now = time_adapter->time_source_->SystemTime();
   AddJobToQueue(job, nullptr, now, now);
@@ -279,6 +278,7 @@ SchedulerPrivate::SchedulerPrivate()
     : time_adapter{std::make_unique<DefaultSchedulerTimeAdapter>()}
     , ExecuteJobCallback_{ExecuteJob}
 {
+  // this is the default director scheduler
 }
 
 SchedulerPrivate::SchedulerPrivate(
@@ -287,6 +287,7 @@ SchedulerPrivate::SchedulerPrivate(
     : time_adapter{std::move(time_adapter)}
     , ExecuteJobCallback_{std::move(std::move(ExecuteJobCallback))}
 {
+  // constructor used for tests to inject mocked time adapter and callbacks
 }
 
 SchedulerPrivate::~SchedulerPrivate() = default;

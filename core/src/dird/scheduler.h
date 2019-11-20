@@ -33,7 +33,7 @@ namespace directordaemon {
 
 class JobResource;
 class SchedulerTimeAdapter;
-struct SchedulerPrivate;
+class SchedulerPrivate;
 
 class Scheduler {
  public:

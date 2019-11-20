@@ -36,9 +36,6 @@ class JobResource;
 class RunOnIncomingConnectInterval {
  public:
   explicit RunOnIncomingConnectInterval(std::string client_name);
-  RunOnIncomingConnectInterval(std::string client_name,
-                               Scheduler& scheduler,
-                               BareosDb* db);
 
   ~RunOnIncomingConnectInterval() = default;
   RunOnIncomingConnectInterval(const RunOnIncomingConnectInterval&) = delete;
@@ -49,6 +46,11 @@ class RunOnIncomingConnectInterval {
       delete;
 
   void Run();
+
+  // testing
+  RunOnIncomingConnectInterval(std::string client_name,
+                               Scheduler& scheduler,
+                               BareosDb* db);
 
  private:
   time_t FindLastJobStart(JobResource* job);
