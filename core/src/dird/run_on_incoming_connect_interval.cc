@@ -61,16 +61,29 @@ time_t RunOnIncomingConnectInterval::FindLastJobStart(JobResource* job)
   }
   jcr->db = db;
 
-  POOLMEM* stime = GetPoolMemory(PM_MESSAGE);
+  std::vector<char> stime(MAX_NAME_LENGTH);
 
-  bool success = jcr->db->FindLastStartTimeForJobAndClient(
-      jcr, job->resource_name_, client_name_, stime);
+  BareosDb::SqlFindResult result = jcr->db->FindLastStartTimeForJobAndClient(
+      jcr, job->resource_name_, client_name_, stime.data());
 
-  utime_t time = 0;
-  if (success) { time = static_cast<utime_t>(StrToUtime(stime)); }
+  time_t time{-1};
+
+  switch (result) {
+    case BareosDb::SqlFindResult::kSuccess: {
+      time_t time_converted = static_cast<time_t>(StrToUtime(stime.data()));
+      time = time_converted == 0 ? -1 : time_converted;
+      break;
+    }
+    case BareosDb::SqlFindResult::kEmptyResultSet:
+      time = 0;
+      break;
+    default:
+    case BareosDb::SqlFindResult::kError:
+      time = -1;
+      break;
+  }
 
   FreeJcr(jcr);
-  FreePoolMemory(stime);
 
   return time;
 }
@@ -116,9 +129,11 @@ void RunOnIncomingConnectInterval::Run()
   for (auto job : job_resources) {
     if (job->RunOnIncomingConnectInterval != 0) {
       time_t last_start_time = FindLastJobStart(job);
-      Dmsg2(800, "Try RunOnIncomingConnectInterval job %s for client %s.",
-            job->resource_name_, client_name_.c_str());
-      RunJobIfIntervalExceeded(job, last_start_time);
+      if (last_start_time != -1) {
+        Dmsg2(800, "Try RunOnIncomingConnectInterval job %s for client %s.",
+              job->resource_name_, client_name_.c_str());
+        RunJobIfIntervalExceeded(job, last_start_time);
+      }
     }
   }
 }

@@ -147,12 +147,13 @@ bail_out:
   return retval;
 }
 
-bool BareosDb::FindLastStartTimeForJobAndClient(JobControlRecord* jcr,
-                                                std::string job_basename,
-                                                std::string client_name,
-                                                POOLMEM*& stime)
+BareosDb::SqlFindResult BareosDb::FindLastStartTimeForJobAndClient(
+    JobControlRecord* jcr,
+    std::string job_basename,
+    std::string client_name,
+    char* stime)
 {
-  bool retval = true;
+  auto retval = SqlFindResult::kError;
 
   std::vector<char> esc_jobname(MAX_ESCAPE_NAME_LENGTH);
   std::vector<char> esc_clientname(MAX_ESCAPE_NAME_LENGTH);
@@ -172,9 +173,9 @@ bool BareosDb::FindLastStartTimeForJobAndClient(JobControlRecord* jcr,
        esc_jobname.data(), esc_clientname.data());
 
   if (!QUERY_DB(jcr, cmd)) {
-    PmStrcpy(stime, ""); /* set EOS */
     Mmsg2(errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"),
           sql_strerror(), cmd);
+    retval = SqlFindResult::kError;
     goto bail_out;
   }
 
@@ -183,6 +184,7 @@ bool BareosDb::FindLastStartTimeForJobAndClient(JobControlRecord* jcr,
     Mmsg2(errmsg, _("No Job record found: ERR=%s\nCMD=%s\n"), sql_strerror(),
           cmd);
     SqlFreeResult();
+    retval = SqlFindResult::kEmptyResultSet;
     goto bail_out;
   }
 
@@ -191,7 +193,7 @@ bool BareosDb::FindLastStartTimeForJobAndClient(JobControlRecord* jcr,
 
   SqlFreeResult();
 
-  retval = true;
+  retval = SqlFindResult::kSuccess;
 
 bail_out:
   DbUnlock(this);

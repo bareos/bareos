@@ -749,10 +749,20 @@ class BareosDb : public BareosDbQueryEnum {
   bool PurgeMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr);
 
   /* sql_find.c */
-  virtual bool FindLastStartTimeForJobAndClient(JobControlRecord* jcr,
-                                                std::string job_basename,
-                                                std::string client_name,
-                                                POOLMEM*& stime);
+
+  enum class SqlFindResult
+  {
+    kError,
+    kSuccess,
+    kEmptyResultSet
+  };
+
+  virtual SqlFindResult FindLastStartTimeForJobAndClient(
+      JobControlRecord* jcr,
+      std::string job_basename,
+      std::string client_name,
+      char* stime);
+
   bool FindLastJobStartTime(JobControlRecord* jcr,
                             JobDbRecord* jr,
                             POOLMEM*& stime,

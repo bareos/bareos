@@ -37,6 +37,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>
 #include <string>
 #include <thread>
 #include <vector>
@@ -143,18 +144,19 @@ class MockDatabase : public BareosDb {
   enum class Mode
   {
     kFindNoStartTime,
-    kFindStartTime
+    kFindStartTime,
+    kFindStartTimeWrongString
   };
   explicit MockDatabase(Mode mode) : mode_(mode) {}
-  bool FindLastStartTimeForJobAndClient(JobControlRecord* /*jcr*/,
-                                        std::string /*job_basename*/,
-                                        std::string /*client_name*/,
-                                        POOLMEM*& stime) override
+  SqlFindResult FindLastStartTimeForJobAndClient(JobControlRecord* /*jcr*/,
+                                                 std::string /*job_basename*/,
+                                                 std::string /*client_name*/,
+                                                 char* stime) override
   {
     switch (mode_) {
-      default:
       case Mode::kFindNoStartTime:
-        return false;
+        return SqlFindResult::kEmptyResultSet;
+
       case Mode::kFindStartTime: {
         auto now = system_clock::now();
         auto more_than_three_hours = seconds(hours(3) + seconds(1));
@@ -163,10 +165,22 @@ class MockDatabase : public BareosDb {
             system_clock::to_time_t(now - more_than_three_hours);
 
         bstrutime(stime, MAX_NAME_LENGTH, fake_start_time_of_previous_job);
-        return true;
+        return SqlFindResult::kSuccess;
       }
-    }
+
+      case Mode::kFindStartTimeWrongString: {
+        auto now = system_clock::now();
+        bstrutime(stime, MAX_NAME_LENGTH, system_clock::to_time_t(now));
+        stime[5] = 0;  // truncate string
+        return SqlFindResult::kSuccess;
+      }
+
+      default:
+        std::abort();
+
+    }  // switch(mode)
   }
+
   bool OpenDatabase(JobControlRecord* /*jcr*/) override { return false; }
   void CloseDatabase(JobControlRecord* /*jcr*/) override {}
   bool ValidateConnection() override { return false; }
@@ -232,4 +246,13 @@ TEST_F(RunOnIncomingConnectIntervalTest, start_time_found_in_database)
   EXPECT_NE(test_results.job_names.find("backup-bareos-fd-connect"),
             test_results.job_names.end())
       << "Job backup-bareos-fd-connect did not run";
+}
+
+TEST_F(RunOnIncomingConnectIntervalTest, start_time_found_wrong_time_string)
+{
+  MockDatabase db(MockDatabase::Mode::kFindStartTimeWrongString);
+  RunSchedulerAndSimulateClientConnect(db);
+
+  ASSERT_EQ(test_results.job_counter, 0)
+      << "backup-bareos-fd-connect did not run";
 }

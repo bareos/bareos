@@ -34,7 +34,7 @@
 #include "cats/sql_pooling.h"
 #include "dird.h"
 #include "dird_globals.h"
-#include "dird/check_catalogue.h"
+#include "dird/check_catalog.h"
 #include "dird/job.h"
 #include "dird/scheduler.h"
 #include "dird/socket_server.h"

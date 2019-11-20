@@ -44,7 +44,7 @@ namespace directordaemon {
 
 using std::chrono::seconds;
 
-static const int local_debuglevel = 200;
+static constexpr int local_debuglevel = 200;
 static constexpr auto seconds_per_hour = seconds(3600);
 static constexpr auto seconds_per_minute = seconds(60);
 

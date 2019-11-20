@@ -51,7 +51,7 @@ namespace directordaemon {
 class JobResource;
 class SchedulerTimeAdapter;
 
-static const int debuglevel = 200;
+static constexpr int debuglevel = 200;
 
 Scheduler& Scheduler::GetMainScheduler() noexcept
 {

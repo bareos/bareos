@@ -20,8 +20,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef BAREOS_SRC_DIRD_CHECK_CATALOGUE_H_
-#define BAREOS_SRC_DIRD_CHECK_CATALOGUE_H_
+#ifndef BAREOS_SRC_DIRD_CHECK_CATALOG_H_
+#define BAREOS_SRC_DIRD_CHECK_CATALOG_H_
 
 namespace directordaemon {
 
@@ -36,4 +36,4 @@ bool CheckCatalog(cat_op mode);
 
 }  // namespace directordaemon
 
-#endif  // BAREOS_SRC_DIRD_CHECK_CATALOGUE_H_
+#endif  // BAREOS_SRC_DIRD_CHECK_CATALOG_H_

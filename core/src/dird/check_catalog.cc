@@ -24,7 +24,7 @@
 #include "include/bareos.h"
 #include "cats/cats.h"
 #include "cats/cats_backends.h"
-#include "dird/check_catalogue.h"
+#include "dird/check_catalog.h"
 #include "dird/dird.h"
 #include "dird/dird_conf.h"
 #include "dird/dird_globals.h"
