@@ -63,7 +63,7 @@ time_t RunOnIncomingConnectInterval::FindLastJobStart(JobResource* job)
 
   std::vector<char> stime(MAX_NAME_LENGTH);
 
-  BareosDb::SqlFindResult result = jcr->db->FindLastStartTimeForJobAndClient(
+  BareosDb::SqlFindResult result = jcr->db->FindLastJobStartTimeForJobAndClient(
       jcr, job->resource_name_, client_name_, stime.data());
 
   time_t time{-1};

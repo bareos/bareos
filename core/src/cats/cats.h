@@ -757,7 +757,7 @@ class BareosDb : public BareosDbQueryEnum {
     kEmptyResultSet
   };
 
-  virtual SqlFindResult FindLastStartTimeForJobAndClient(
+  virtual SqlFindResult FindLastJobStartTimeForJobAndClient(
       JobControlRecord* jcr,
       std::string job_basename,
       std::string client_name,

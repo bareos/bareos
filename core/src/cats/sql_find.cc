@@ -147,7 +147,7 @@ bail_out:
   return retval;
 }
 
-BareosDb::SqlFindResult BareosDb::FindLastStartTimeForJobAndClient(
+BareosDb::SqlFindResult BareosDb::FindLastJobStartTimeForJobAndClient(
     JobControlRecord* jcr,
     std::string job_basename,
     std::string client_name,
@@ -167,9 +167,13 @@ BareosDb::SqlFindResult BareosDb::FindLastStartTimeForJobAndClient(
   PmStrcpy(stime, "0000-00-00 00:00:00"); /* default */
 
   Mmsg(cmd,
-       "SELECT StartTime from Job WHERE Job.Name='%s' "
-       "AND Job.ClientId=(SELECT ClientId FROM Client WHERE "
-       "Client.Name='%s') ORDER BY StartTime DESC LIMIT 1",
+       "SELECT starttime"
+       " FROM job"
+       " WHERE job.name='%s'"
+       " AND (job.jobstatus='T' OR job.jobstatus='W')"
+       " AND job.clientid=(SELECT clientid"
+       "                   FROM client WHERE client.name='%s')"
+       " ORDER BY starttime DESC LIMIT 1",
        esc_jobname.data(), esc_clientname.data());
 
   if (!QUERY_DB(jcr, cmd)) {
