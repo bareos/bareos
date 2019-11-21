@@ -19,7 +19,9 @@
 
 IF(NOT client-only)
    add_subdirectory(tools)
-   add_subdirectory(tests)
+   IF(GTEST_FOUND)
+     add_subdirectory(tests)
+   ENDIF()
    add_subdirectory(cats)
    IF(NOT HAVE_WIN32 AND ndmp)
       add_subdirectory(ndmp)
