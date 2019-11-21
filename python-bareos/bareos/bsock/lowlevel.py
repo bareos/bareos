@@ -42,6 +42,26 @@ class LowLevel(object):
     Low Level socket methods to communicate with the bareos-director.
     """
 
+    @staticmethod
+    def argparser_get_bareos_parameter(args):
+        """
+        This method is usally used together with the method argparser_add_default_command_line_arguments.
+        
+        @param args: Arguments retrieved by ArgumentParser.parse_args()
+        @type args:  ArgParser.Namespace
+        
+        @return: returns the relevant parameter from args to initialize a connection.
+        @rtype: dict
+        """
+        result = {}
+        for key,value in vars(args).items():
+            if value is not None:
+                if key.startswith('BAREOS_'):
+                    bareoskey=key.split('BAREOS_', 1)[1]
+                    result[bareoskey]=value
+        return result
+
+
     def __init__(self):
         self.logger = logging.getLogger()
         self.logger.debug("init")
@@ -54,10 +74,11 @@ class LowLevel(object):
         self.dirname = None
         self.socket = None
         self.auth_credentials_valid = False
+        self.max_reconnects = 0
         self.tls_psk_enable = True
         self.tls_psk_require = False
         self.connection_type = None
-        self.protocolversion = ProtocolVersions.last
+        self.requested_protocol_version = None
         self.protocol_messages = ProtocolMessages()
         # identity_prefix have to be set in each class
         self.identity_prefix = u'R_NONE'
@@ -66,33 +87,42 @@ class LowLevel(object):
     def __del__(self):
         self.close()
 
-    def connect(self, address, port, dirname, type, name = None, password = None):
+    def connect(self, address, port, dirname, connection_type, name = None, password = None):
         self.address = address
         self.port = int(port)
         if dirname:
             self.dirname = dirname
         else:
             self.dirname = address
-        self.connection_type = type
+        self.connection_type = connection_type
         self.name = name
-        self.password = password
+        if isinstance(password, Password):
+            self.password = password
+        else:
+            self.password = Password(password)
 
         return self.__connect()
 
 
     def __connect(self):
         connected = False
-        if self.tls_psk_require and not self.is_tls_psk_available():
-            raise bareos.exceptions.ConnectionError(u'TLS-PSK is required, but sslpsk module not loaded/available.')
+        connected_plain = False
+        auth = False
+        if self.tls_psk_require:
+            if not self.is_tls_psk_available():
+                raise bareos.exceptions.ConnectionError(u'TLS-PSK is required, but sslpsk module not loaded/available.')
+            if not self.tls_psk_enable:
+                raise bareos.exceptions.ConnectionError(u'TLS-PSK is required, but not enabled.')
 
         if self.tls_psk_enable and self.is_tls_psk_available():
             try:
                 self.__connect_tls_psk()
             except (bareos.exceptions.ConnectionError, ssl.SSLError) as e:
+                self._handleSocketError(e)
                 if self.tls_psk_require:
                     raise
                 else:
-                    self.logger.warn(u'Failed to connect via TLS-PSK. Trying plain connection.')
+                    self.logger.warning(u'Failed to connect via TLS-PSK. Trying plain connection.')
             else:
                 connected = True
                 self.logger.debug("Encryption: {0}".format(self.socket.cipher()))
@@ -100,9 +130,29 @@ class LowLevel(object):
         if not connected:
             self.__connect_plain()
             connected = True
+            connected_plain = True
             self.logger.debug("Encryption: None")
 
-        return connected
+        if connected:
+            try:
+                auth = self.auth()
+            except bareos.exceptions.PamAuthenticationError:
+                raise
+            except bareos.exceptions.AuthenticationError:
+                if self.connection_type == ConnectionType.DIRECTOR \
+                    and self.requested_protocol_version is None \
+                    and self.get_protocol_version() > ProtocolVersions.bareos_12_4 \
+                :
+                    # reconnect and try old protocol
+                    self.logger.warning("Failed to connect using protocol version {0}. Trying protocol version {1}. ".format(self.get_protocol_version(), ProtocolVersions.bareos_12_4))
+                    self.close()
+                    self.__connect_plain()
+                    self.protocol_messages.set_version(ProtocolVersions.bareos_12_4)
+                    auth = self.auth()
+                else:
+                    raise
+
+        return auth
 
 
     def __connect_plain(self):
@@ -157,16 +207,18 @@ class LowLevel(object):
         '''Checks if we have all required modules for TLS-PSK.'''
         return 'sslpsk' in sys.modules
 
+    def get_protocol_version(self):
+        return self.protocol_messages.get_version()
 
-    def auth(self, name, password):
+    def get_cipher(self):
+        if hasattr(self.socket, 'cipher'):
+            return self.socket.cipher()
+        else:
+            return None
+
+    def auth(self):
         '''
         Login to a Bareos Daemon.
-
-        @param name: Own name.
-        @type name: str
-
-        @param password: Password.
-        @type password: bareos.bsock.Password
 
         @return: True, if the authentication succeeds.
                  In earlier versions, authentication failures returned False.
@@ -175,14 +227,7 @@ class LowLevel(object):
 
         @raise bareos.exceptions.AuthenticationError: if authentication fails.
         '''
-        if not isinstance(password, Password):
-            raise bareos.exceptions.AuthenticationError("password must by of type bareos.Password() not %s" % (type(password)))
-        self.password = password
-        self.name = name
-        return self.__auth()
 
-
-    def __auth(self):
         bashed_name = self.protocol_messages.hello(self.name, type=self.connection_type)
         # send the bash to the director
         self.send(bashed_name)
@@ -190,13 +235,14 @@ class LowLevel(object):
         try:
             (ssl, result_compatible, result) = self._cram_md5_respond(password=self.password.md5(), tls_remote_need=0)
         except bareos.exceptions.SignalReceivedException as e:
+            self._handleSocketError(e)
             raise bareos.exceptions.AuthenticationError('Received unexcepted signal: {0}'.format(str(e)))
         if not result:
             raise bareos.exceptions.AuthenticationError("failed (in response)")
         if not self._cram_md5_challenge(clientname=self.name, password=self.password.md5(), tls_local_need=0, compatible=True):
             raise bareos.exceptions.AuthenticationError("failed (in challenge)")
 
-        self.get_and_evaluate_auth_responses()
+        self.finalize_authentication()
 
         return self.auth_credentials_valid
 
@@ -225,9 +271,10 @@ class LowLevel(object):
 
     def reconnect(self):
         result = False
-        if self.auth_credentials_valid:
+        if self.max_reconnects > 0:
             try:
-                if self.__connect() and self.__auth() and self._init_connection():
+                self.max_reconnects -= 1
+                if self.__connect() and self._init_connection():
                     result = True
             except socket.error:
                 self.logger.warning("failed to reconnect")
@@ -240,10 +287,10 @@ class LowLevel(object):
         '''
         if isinstance(command, list):
             command = " ".join(command)
-        return self.__call(command, 0)
+        return self._send_a_command_and_receive_result(command)
 
 
-    def __call(self, command, count):
+    def _send_a_command_and_receive_result(self, command):
         '''
         Send a command and receive the result.
         If connection is lost, try to reconnect.
@@ -254,9 +301,10 @@ class LowLevel(object):
             result = self.recv_msg()
         except (bareos.exceptions.SocketEmptyHeader, bareos.exceptions.ConnectionLostError) as e:
             self.logger.error("connection problem (%s): %s" % (type(e).__name__, str(e)))
-            if count == 0:
-                if self.reconnect():
-                    return self.__call(command, count+1)
+            if self.reconnect():
+                return self._send_a_command_and_receive_result(command, count+1)
+            else:
+                raise
         return result
 
 
@@ -291,7 +339,7 @@ class LowLevel(object):
         msg = b''
         # get the message
         while length > 0:
-            self.logger.debug("  submsg len: " + str(length))
+            self.logger.debug("expecting {0} bytes.".format(length))
             submsg = self.socket.recv(length)
             if len(submsg) == 0:
                 errormsg = u'Failed to retrieve data. Assuming the connection is lost.'
@@ -304,7 +352,7 @@ class LowLevel(object):
 
     def recv(self):
         '''
-        Receive a single Director message.
+        Receive a single message.
         This is,
         header (4 bytes): if
             > 0: length of the following message
@@ -326,7 +374,7 @@ class LowLevel(object):
         return msg
 
 
-    def recv_msg(self, regex=b'^\d\d\d\d OK.*$', timeout=None):
+    def recv_msg(self, regex=b'^\d\d\d\d OK.*$'):
         '''
         Receive a full Director message.
 
@@ -343,13 +391,19 @@ class LowLevel(object):
             timeouts = 0
             while True:
                 # get the message header
-                self.socket.settimeout(0.1)
                 try:
                     header = self.__get_header()
-                except socket.timeout:
-                    # only log every 100 timeouts
-                    if timeouts % 100 == 0:
-                        self.logger.debug("timeout (%i) on receiving header" % (timeouts))
+                except (socket.timeout, ssl.SSLError) as exception:
+                    # When using a SSL connection,
+                    # a timeout is raised as
+                    # ssl.SSLError exception with message: 'The read operation timed out'.
+                    # ssl.SSLError is inherited from socket.error.
+                    # Because we can't be sure,
+                    # that it is really a timeout, we log it.
+                    if isinstance(exception, ssl.SSLError) and self.logger.isEnabledFor(logging.DEBUG):
+                        #self.logger.exception('On SSL connections, timeout are raised as ssl.SSLError exceptions:')
+                        self.logger.debug('{0}'.format(repr(exception)))
+                    self.logger.debug("timeout (%i) on receiving header" % (timeouts))
                     timeouts+=1
                 else:
                     if header <= 0:
@@ -430,8 +484,8 @@ class LowLevel(object):
                 sys.stdout.write(b'\n')
 
 
-    def __get_header(self):
-        header = self.recv_bytes(4)
+    def __get_header(self, timeout = 10):
+        header = self.recv_bytes(4, timeout)
         return self.__get_header_data(header)
 
 

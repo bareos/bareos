@@ -39,6 +39,13 @@ class AuthenticationError(ConnectionError):
     pass
 
 
+class PamAuthenticationError(AuthenticationError):
+    """
+    error during PAM Authentication
+    """
+    pass
+
+
 class SignalReceivedException(Error):
     """
     received a signal during a connection.

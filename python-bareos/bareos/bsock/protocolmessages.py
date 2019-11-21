@@ -19,6 +19,9 @@ class ProtocolMessages():
     def set_version(self, protocolversion):
         self.protocolversion = protocolversion
 
+    def get_version(self):
+        return self.protocolversion
+
     def hello(self, name, type=ConnectionType.DIRECTOR):
         if type == ConnectionType.FILEDAEMON:
             return bytearray("Hello Director %s calling\n" % (name), 'utf-8')
