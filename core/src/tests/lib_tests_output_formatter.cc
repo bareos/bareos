@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,9 +18,12 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
+#define _S_IFDIR S_IFDIR
+#define _stat stat
+#include "minwindef.h"
 
-#include "gtest/gtest.h"
 #include "include/bareos.h"
+#include "gtest/gtest.h"
 #include "lib/output_formatter.h"
 
 TEST(output_formatter, constructor_destructor) {}

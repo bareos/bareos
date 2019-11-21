@@ -144,7 +144,29 @@ IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
    set(Readline_ROOT_DIR /usr/local/opt/readline)
 ENDIF()
 
+IF (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  set(MINGW_PREFIX ${CMAKE_INSTALL_PREFIX}/)
+  set(MINGW_LIBDIR "${MINGW_PREFIX}/lib")
+  set(MINGW_BINDIR "${MINGW_PREFIX}/bin")
+  IF(${WINDOWS_BITS} MATCHES "32")
+    set(CMAKE_CROSSCOMPILING_EMULATOR wine)
+  ELSE()
+    set(CMAKE_CROSSCOMPILING_EMULATOR wine64)
+  ENDIF()
+  set(CMAKE_LIBRARY_PATH ${MINGW_LIBDIR})
+
+  # convert mingw dll directories into wine (windows) paths
+  execute_process(COMMAND winepath -w ${MINGW_PREFIX} OUTPUT_VARIABLE MINGW_PREFIX_AS_WINEPATH OUTPUT_STRIP_TRAILING_WHITESPACE)
+  string(STRIP ${MINGW_PREFIX_AS_WINEPATH} MINGW_PREFIX_AS_WINEPATH)
+  set(MINGW_LIBDIR_AS_WINEPATH "${MINGW_PREFIX_AS_WINEPATH}\\lib")
+  set(MINGW_BINDIR_AS_WINEPATH "${MINGW_PREFIX_AS_WINEPATH}\\bin")
+
+  # export WINEPATH so that cross-compiled .exe tests find their dlls
+  set(ENV{WINEPATH} "${MINGW_LIBDIR_AS_WINEPATH}:${MINGW_BINDIR_AS_WINEPATH}" )
+ENDIF()
+
 INCLUDE(BareosFindAllLibraries)
+INCLUDE(BareosFindPrograms)
 
 IF (NOT ${OPENSSL_FOUND})
   MESSAGE(FATAL_ERROR "FATAL ERROR: OpenSSL is required but was not found.")
@@ -253,7 +275,6 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-register")
 endif()
 
-INCLUDE(BareosFindPrograms)
 
 
 INCLUDE(BareosSetVariableDefaults)

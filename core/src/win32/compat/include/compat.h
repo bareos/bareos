@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -110,7 +111,6 @@ typedef UINT32 mode_t;
 typedef INT32 ssize_t;
 typedef UINT32 size_t;
 #define HAVE_SSIZE_T 1
-
 #endif /* HAVE_MINGW */
 
 struct dirent {
@@ -335,7 +335,7 @@ int stat(const char*, struct stat*);
 #if defined(__cplusplus)
 #define access _access
 extern "C" _CRTIMP int __cdecl _access(const char*, int);
-int execvp(const char*, char* []);
+int execvp(const char*, char*[]);
 extern "C" void* __cdecl _alloca(size_t);
 #endif
 #endif  // HAVE_MINGW

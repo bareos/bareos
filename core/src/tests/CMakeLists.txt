@@ -54,7 +54,7 @@ ENDIF()
 file(RELATIVE_PATH RELATIVE_PROJECT_SOURCE_DIR  ${CMAKE_CURRENT_BINARY_DIR} ${PROJECT_SOURCE_DIR} )
 add_definitions(-DRELATIVE_PROJECT_SOURCE_DIR=\"${RELATIVE_PROJECT_SOURCE_DIR}\")
 
-
+IF(NOT HAVE_WIN32)
 ####### test_lib ###############################
 add_executable(test_lib
     alist_test.cc
@@ -124,17 +124,22 @@ target_link_libraries(test_dir_plugins
 
   gtest_discover_tests(test_dir_plugins TEST_PREFIX gtest:)
 
+ENDIF()
+IF(HAVE_WIN32)
+
 ####### test_output_formatter ###############################
 add_executable(test_output_formatter
     lib_tests_output_formatter.cc
     )
 target_link_libraries(test_output_formatter
-   bareos
-   ${JANSSON_LIBRARIES}
-   ${GTEST_LIBRARIES}
    ${GTEST_MAIN_LIBRARIES}
+   ${GTEST_LIBRARIES}
+   ${JANSSON_LIBRARIES}
+   bareos
    )
- gtest_discover_tests(test_output_formatter TEST_PREFIX gtest:)
+   gtest_discover_tests(test_output_formatter TEST_PREFIX gtest:)
+ENDIF()
+IF(NOT HAVE_WIN32)
 
 ####### test_bsock ###############################
 add_executable(test_bsock
@@ -478,3 +483,5 @@ target_link_libraries(version_strings
 )
 
 gtest_discover_tests(version_strings TEST_PREFIX gtest:)
+
+ENDIF()
