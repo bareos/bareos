@@ -1383,7 +1383,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %files filedaemon-ovirt-python-plugin
 %defattr(-, root, root)
 %{plugin_dir}/bareos-fd-ovirt.py*
-%{plugin_dir}/BareosFdPluginOvirtpy*
+%{plugin_dir}/BareosFdPluginOvirt.py*
 ##attr(0640, #{director_daemon_user}, #{daemon_group}) #{_sysconfdir}/#{name}/bareos-dir.d/fileset/plugin-ovirt.conf.example
 ##attr(0640, #{director_daemon_user}, #{daemon_group}) #{_sysconfdir}/#{name}/bareos-dir.d/job/backup-ovirt.conf.example
 ##attr(0640, #{director_daemon_user}, #{daemon_group}) #{_sysconfdir}/#{name}/bareos-dir.d/job/restore-ovirt.conf.example
