@@ -171,10 +171,11 @@ void BareosDb::PrintLockInfo(FILE* fp)
  */
 void BareosDb::EscapeString(JobControlRecord* jcr,
                             char* snew,
-                            char* old,
+                            const char* old,
                             int len)
 {
-  char *n, *o;
+  char* n;
+  const char* o;
 
   n = snew;
   o = old;

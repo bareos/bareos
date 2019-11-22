@@ -390,7 +390,7 @@ bail_out:
  */
 void BareosDbDBI::EscapeString(JobControlRecord* jcr,
                                char* snew,
-                               char* old,
+                               const char* old,
                                int len)
 {
   char* inew;

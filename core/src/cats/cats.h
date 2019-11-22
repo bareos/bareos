@@ -35,8 +35,8 @@
 #ifndef BAREOS_CATS_CATS_H_
 #define BAREOS_CATS_CATS_H_ 1
 
+#include "include/bareos.h"
 #include "lib/output_formatter.h"
-
 
 class dlist;
 
@@ -749,6 +749,20 @@ class BareosDb : public BareosDbQueryEnum {
   bool PurgeMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr);
 
   /* sql_find.c */
+
+  enum class SqlFindResult
+  {
+    kError,
+    kSuccess,
+    kEmptyResultSet
+  };
+
+  virtual SqlFindResult FindLastJobStartTimeForJobAndClient(
+      JobControlRecord* jcr,
+      std::string job_basename,
+      std::string client_name,
+      char* stime);
+
   bool FindLastJobStartTime(JobControlRecord* jcr,
                             JobDbRecord* jr,
                             POOLMEM*& stime,
@@ -1006,7 +1020,7 @@ class BareosDb : public BareosDbQueryEnum {
   virtual void ThreadCleanup(void) {}
   virtual void EscapeString(JobControlRecord* jcr,
                             char* snew,
-                            char* old,
+                            const char* old,
                             int len);
   virtual char* EscapeObject(JobControlRecord* jcr, char* old, int len);
   virtual void UnescapeObject(JobControlRecord* jcr,

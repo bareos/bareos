@@ -704,11 +704,8 @@ class RunResource : public BareosResource {
   PoolResource* next_pool = nullptr;  /**< Next Pool override */
   StorageResource* storage = nullptr; /**< Storage override */
   MessagesResource* msgs = nullptr;   /**< Messages override */
-  char* since = nullptr;
-  uint32_t level_no = 0;
-  uint32_t minute = 0;   /* minute to run job */
-  time_t last_run = {0}; /* last time run */
-  time_t next_run = {0}; /* next time to run */
+  uint32_t minute = 0;                /* minute to run job */
+  time_t scheduled_last = {0};
   DateTimeBitfield date_time_bitfield;
 };
 

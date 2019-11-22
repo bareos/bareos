@@ -30,6 +30,8 @@
 #ifndef BAREOS_CATS_CATS_BACKENDS_H_
 #define BAREOS_CATS_CATS_BACKENDS_H_ 1
 
+class BareosDb;
+
 extern "C" {
 typedef BareosDb* (*t_backend_instantiate)(JobControlRecord* jcr,
                                            const char* db_driver,

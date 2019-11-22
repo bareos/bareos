@@ -20,6 +20,9 @@
 */
 #ifndef BAREOS_CATS_SQL_POOLING_H_
 #define BAREOS_CATS_SQL_POOLING_H_
+
+class BareosDb;
+
 bool db_sql_pool_initialize(const char* db_drivername,
                             const char* db_name,
                             const char* db_user,

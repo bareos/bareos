@@ -51,7 +51,7 @@ namespace directordaemon {
 class JobResource;
 class SchedulerTimeAdapter;
 
-static const int debuglevel = 200;
+static constexpr int debuglevel = 200;
 
 Scheduler& Scheduler::GetMainScheduler() noexcept
 {
@@ -63,17 +63,17 @@ Scheduler::Scheduler() noexcept : impl_(std::make_unique<SchedulerPrivate>()){};
 
 Scheduler::Scheduler(std::unique_ptr<SchedulerTimeAdapter> time_adapter,
                      std::function<void(JobControlRecord*)> ExecuteJob) noexcept
-    : impl_(std::make_unique<SchedulerPrivate>(
-          std::forward<std::unique_ptr<SchedulerTimeAdapter>>(time_adapter),
-          std::forward<std::function<void(JobControlRecord*)>>(ExecuteJob)))
+    : impl_(std::make_unique<SchedulerPrivate>(std::move(time_adapter),
+                                               std::move(ExecuteJob)))
 {
+  // constructor used for tests to inject mocked time adapter and callbacks
 }
 
 Scheduler::~Scheduler() = default;
 
 void Scheduler::AddJobWithNoRunResourceToQueue(JobResource* job)
 {
-  impl_->AddJobToQueue(job);
+  impl_->AddJobWithNoRunResourceToQueue(job);
 }
 
 void Scheduler::Run()

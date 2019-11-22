@@ -33,8 +33,8 @@
  * These functions are used by both backup and verify.
  */
 
-#include <algorithm>
 #include "include/bareos.h"
+#include "cats/cats.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
 #include "dird/jcr_private.h"
@@ -44,6 +44,8 @@
 #include "dird/getmsg.h"
 #include "dird/jcr_private.h"
 #include "dird/msgchan.h"
+#include "dird/run_on_incoming_connect_interval.h"
+#include "dird/scheduler.h"
 #include "lib/berrno.h"
 #include "lib/bsock_tcp.h"
 #include "lib/bnet.h"
@@ -51,6 +53,8 @@
 #include "lib/parse_conf.h"
 #include "lib/util.h"
 #include "lib/watchdog.h"
+
+#include <algorithm>
 
 
 namespace directordaemon {
@@ -379,8 +383,7 @@ int SendJobInfoToFileDaemon(JobControlRecord* jcr)
     } else if (jcr->db) {
       ClientDbRecord cr;
 
-      bstrncpy(cr.Name, jcr->impl->res.client->resource_name_,
-               sizeof(cr.Name));
+      bstrncpy(cr.Name, jcr->impl->res.client->resource_name_, sizeof(cr.Name));
       cr.AutoPrune = jcr->impl->res.client->AutoPrune;
       cr.FileRetention = jcr->impl->res.client->FileRetention;
       cr.JobRetention = jcr->impl->res.client->JobRetention;
@@ -996,7 +999,7 @@ bool SendPluginOptions(JobControlRecord* jcr)
 
       fd->fsend(pluginoptionscmd, cur_plugin_options.c_str());
       if (!response(jcr, fd, OKPluginOptions, "PluginOptions", DISPLAY_ERROR)) {
-      	Jmsg(jcr, M_FATAL, 0, _("Plugin options failed.\n"));
+        Jmsg(jcr, M_FATAL, 0, _("Plugin options failed.\n"));
         return false;
       }
     }
@@ -1168,8 +1171,7 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
       ar->DeltaSeq = 0;
       jcr->cached_attribute = true;
 
-      Dmsg2(debuglevel, "dird<filed: stream=%d %s\n", stream,
-            jcr->impl->fname);
+      Dmsg2(debuglevel, "dird<filed: stream=%d %s\n", stream, jcr->impl->fname);
       Dmsg1(debuglevel, "dird<filed: attr=%s\n", ar->attr);
       jcr->FileId = ar->FileId;
     } else if (CryptoDigestStreamType(stream) != CRYPTO_DIGEST_NONE) {
@@ -1344,10 +1346,24 @@ void DoClientResolve(UaContext* ua, ClientResource* client)
   return;
 }
 
-/**
- * After receiving a connection (in socket_server.c) if it is
- * from the File daemon, this routine is called.
- */
+class SocketGuard {
+ public:
+  ~SocketGuard()
+  {
+    if (owns_) {
+      fd_->close();
+      delete fd_;
+    }
+  }
+
+  explicit SocketGuard(BareosSocket* fd) : fd_{fd} {}
+  void Release() { owns_ = false; }
+
+ private:
+  bool owns_{true};
+  BareosSocket* fd_;
+};
+
 void* HandleFiledConnection(ConnectionPool* connections,
                             BareosSocket* fd,
                             char* client_name,
@@ -1355,6 +1371,7 @@ void* HandleFiledConnection(ConnectionPool* connections,
 {
   ClientResource* client_resource;
   Connection* connection = NULL;
+  SocketGuard socket_guard{fd};
 
   client_resource =
       (ClientResource*)my_config->GetResWithName(R_CLIENT, client_name);
@@ -1363,7 +1380,7 @@ void* HandleFiledConnection(ConnectionPool* connections,
           "Client \"%s\" tries to connect, "
           "but no matching resource is defined.\n",
           client_name);
-    goto getout;
+    return NULL;
   }
 
   if (!IsConnectFromClientAllowed(client_resource)) {
@@ -1371,10 +1388,10 @@ void* HandleFiledConnection(ConnectionPool* connections,
           "Client \"%s\" tries to connect, "
           "but does not have the required permission.\n",
           client_name);
-    goto getout;
+    return NULL;
   }
 
-  if (!AuthenticateFileDaemon(fd, client_name)) { goto getout; }
+  if (!AuthenticateFileDaemon(fd, client_name)) { return NULL; }
 
   Dmsg1(20, "Connected to file daemon %s\n", client_name);
 
@@ -1382,18 +1399,16 @@ void* HandleFiledConnection(ConnectionPool* connections,
       connections->add_connection(client_name, fd_protocol_version, fd, true);
   if (!connection) {
     Emsg0(M_ERROR, 0, "Failed to add connection to pool.\n");
-    goto getout;
+    return NULL;
   }
 
+  RunOnIncomingConnectInterval(client_name).Run();
+
   /*
-   * The connection is now kept in connection_pool.
+   * The connection is now kept in the connection_pool.
    * This thread is no longer required and will end now.
    */
-  return NULL;
-
-getout:
-  fd->close();
-  delete (fd);
+  socket_guard.Release();
   return NULL;
 }
 } /* namespace directordaemon */

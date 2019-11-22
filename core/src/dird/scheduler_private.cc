@@ -42,16 +42,24 @@
 
 namespace directordaemon {
 
-static const int debuglevel = 200;
-static constexpr auto seconds_per_hour = std::chrono::seconds(3600);
-static constexpr auto seconds_per_minute = std::chrono::seconds(60);
+using std::chrono::seconds;
+
+static constexpr int local_debuglevel = 200;
+static constexpr auto seconds_per_hour = seconds(3600);
+static constexpr auto seconds_per_minute = seconds(60);
 
 static bool IsAutomaticSchedulerJob(JobResource* job)
 {
+  Dmsg1(local_debuglevel + 100,
+        "Scheduler: Check if job IsAutomaticSchedulerJob %s.",
+        job->resource_name_);
   if (job->schedule == nullptr) { return false; }
   if (!job->schedule->enabled) { return false; }
   if (!job->enabled) { return false; }
   if ((job->client != nullptr) && !job->client->enabled) { return false; }
+  Dmsg1(local_debuglevel + 100,
+        "Scheduler: Check if job IsAutomaticSchedulerJob %s: Yes.",
+        job->resource_name_);
   return true;
 }
 
@@ -123,7 +131,7 @@ JobControlRecord* SchedulerPrivate::TryCreateJobControlRecord(
   JobControlRecord* jcr = NewDirectorJcr();
   SetJcrDefaults(jcr, next_job.job);
   if (next_job.run != nullptr) {
-    next_job.run->last_run = time_adapter->time_source_->SystemTime();
+    next_job.run->scheduled_last = time_adapter->time_source_->SystemTime();
     SetJcrFromRunResource(jcr, next_job.run);
   }
   return jcr;
@@ -131,26 +139,33 @@ JobControlRecord* SchedulerPrivate::TryCreateJobControlRecord(
 
 void SchedulerPrivate::WaitForJobsToRun()
 {
-  SchedulerJobItem next_job;
-
   while (active && !prioritised_job_item_queue.Empty()) {
-    next_job = prioritised_job_item_queue.TakeOutTopItem();
+    auto next_job = prioritised_job_item_queue.TopItem();
     if (!next_job.is_valid) { break; }
 
-    bool job_started = false;
-    while (active && !job_started) {
-      time_t now = time_adapter->time_source_->SystemTime();
+    time_t now = time_adapter->time_source_->SystemTime();
 
-      if (now >= next_job.runtime) {
-        JobControlRecord* jcr = TryCreateJobControlRecord(next_job);
-        if (jcr != nullptr) { ExecuteJobCallback_(jcr); }
-        job_started = true;
-      } else {
-        time_t wait_interval{std::min(time_adapter->default_wait_interval_,
-                                      next_job.runtime - now)};
-        time_adapter->time_source_->SleepFor(
-            std::chrono::seconds(wait_interval));
+    if (now >= next_job.runtime) {
+      auto run_job = prioritised_job_item_queue.TakeOutTopItem();
+      if (!run_job.is_valid) {
+        continue;  // check queue again
       }
+      JobControlRecord* jcr = TryCreateJobControlRecord(run_job);
+      if (jcr != nullptr) {
+        Dmsg1(local_debuglevel, "Scheduler: Running job %s.",
+              run_job.job->resource_name_);
+        ExecuteJobCallback_(jcr);
+      }
+
+    } else {
+      time_t wait_interval{std::min(time_adapter->default_wait_interval_,
+                                    next_job.runtime - now)};
+      Dmsg2(local_debuglevel,
+            "Scheduler: WaitForJobsToRun is sleeping for %d seconds. Next "
+            "job: %s.",
+            wait_interval, next_job.job->resource_name_);
+
+      time_adapter->time_source_->SleepFor(seconds(wait_interval));
     }
   }
 }
@@ -161,7 +176,7 @@ void SchedulerPrivate::FillSchedulerJobQueueOrSleep()
     AddJobsForThisAndNextHourToQueue();
     if (prioritised_job_item_queue.Empty()) {
       time_adapter->time_source_->SleepFor(
-          std::chrono::seconds(time_adapter->default_wait_interval_));
+          seconds(time_adapter->default_wait_interval_));
     }
   }
 }
@@ -178,13 +193,13 @@ static time_t CalculateRuntime(time_t time, uint32_t minute)
 
 void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
 {
-  Dmsg0(debuglevel, "Begin AddJobsForThisAndNextHourToQueue\n");
+  Dmsg0(local_debuglevel, "Begin AddJobsForThisAndNextHourToQueue\n");
 
   RunHourValidator this_hour(time_adapter->time_source_->SystemTime());
-  this_hour.PrintDebugMessage(debuglevel);
+  this_hour.PrintDebugMessage(local_debuglevel);
 
   RunHourValidator next_hour(this_hour.Time() + seconds_per_hour.count());
-  next_hour.PrintDebugMessage(debuglevel);
+  next_hour.PrintDebugMessage(local_debuglevel);
 
   JobResource* job = nullptr;
 
@@ -192,14 +207,14 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
   foreach_res (job, R_JOB) {
     if (!IsAutomaticSchedulerJob(job)) { continue; }
 
-    Dmsg1(debuglevel, "Got job: %s\n", job->resource_name_);
+    Dmsg1(local_debuglevel, "Got job: %s\n", job->resource_name_);
 
     for (RunResource* run = job->schedule->run; run != nullptr;
          run = run->next) {
       bool run_this_hour = this_hour.TriggersOn(run->date_time_bitfield);
       bool run_next_hour = next_hour.TriggersOn(run->date_time_bitfield);
 
-      Dmsg3(debuglevel, "run@%p: run_now=%d run_next_hour=%d\n", run,
+      Dmsg3(local_debuglevel, "run@%p: run_now=%d run_next_hour=%d\n", run,
             run_this_hour, run_next_hour);
 
       if (run_this_hour || run_next_hour) {
@@ -215,7 +230,7 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
     }
   }
   UnlockRes(my_config);
-  Dmsg0(debuglevel, "Finished AddJobsForThisAndNextHourToQueue\n");
+  Dmsg0(local_debuglevel, "Finished AddJobsForThisAndNextHourToQueue\n");
 }
 
 void SchedulerPrivate::AddJobToQueue(JobResource* job,
@@ -223,20 +238,27 @@ void SchedulerPrivate::AddJobToQueue(JobResource* job,
                                      time_t now,
                                      time_t runtime)
 {
+  Dmsg1(local_debuglevel + 100, "Scheduler: Try AddJobToQueue %s.",
+        job->resource_name_);
+
   if (run != nullptr) {
-    if ((runtime - run->last_run) < 61) { return; }
+    if ((runtime - run->scheduled_last) < 61) { return; }
   }
 
   if ((runtime + 59) < now) { return; }
 
   try {
+    Dmsg1(local_debuglevel + 100, "Scheduler: Put job %s into queue.",
+          job->resource_name_);
+
     prioritised_job_item_queue.EmplaceItem(job, run, runtime);
+
   } catch (const std::invalid_argument& e) {
-    Dmsg1(debuglevel, "Could not emplace job: %s\n", e.what());
+    Dmsg1(local_debuglevel + 100, "Could not emplace job: %s\n", e.what());
   }
 }
 
-void SchedulerPrivate::AddJobToQueue(JobResource* job)
+void SchedulerPrivate::AddJobWithNoRunResourceToQueue(JobResource* job)
 {
   time_t now = time_adapter->time_source_->SystemTime();
   AddJobToQueue(job, nullptr, now, now);
@@ -255,6 +277,7 @@ SchedulerPrivate::SchedulerPrivate()
     : time_adapter{std::make_unique<DefaultSchedulerTimeAdapter>()}
     , ExecuteJobCallback_{ExecuteJob}
 {
+  // this is the default director scheduler
 }
 
 SchedulerPrivate::SchedulerPrivate(
@@ -263,6 +286,7 @@ SchedulerPrivate::SchedulerPrivate(
     : time_adapter{std::move(time_adapter)}
     , ExecuteJobCallback_{std::move(std::move(ExecuteJobCallback))}
 {
+  // constructor used for tests to inject mocked time adapter and callbacks
 }
 
 SchedulerPrivate::~SchedulerPrivate() = default;

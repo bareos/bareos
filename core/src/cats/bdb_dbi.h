@@ -45,7 +45,10 @@ class BareosDbDBI : public BareosDbPrivateInterface {
   bool OpenDatabase(JobControlRecord* jcr);
   void CloseDatabase(JobControlRecord* jcr);
   bool ValidateConnection(void);
-  void EscapeString(JobControlRecord* jcr, char* snew, char* old, int len);
+  void EscapeString(JobControlRecord* jcr,
+                    char* snew,
+                    const char* old,
+                    int len);
   char* EscapeObject(JobControlRecord* jcr, char* old, int len);
   void UnescapeObject(JobControlRecord* jcr,
                       char* from,

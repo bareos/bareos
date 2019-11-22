@@ -42,6 +42,19 @@ TEST(scheduler_job_item_queue, job_item)
   EXPECT_TRUE(item_unitialised.is_valid);
 }
 
+TEST(scheduler_job_item_queue, compare_job_items)
+{
+  JobResource job[2];
+  RunResource run[2];
+
+  SchedulerJobItem item1(&job[0], &run[0], time(nullptr), 10);
+  SchedulerJobItem item2 = item1;
+  SchedulerJobItem item3(&job[1], &run[1], time(nullptr) + 3600, 11);
+
+  EXPECT_EQ(item1, item2);
+  EXPECT_NE(item1, item3);
+}
+
 TEST(scheduler_job_item_queue, priority_and_time)
 {
   time_t now = time(nullptr);
@@ -75,7 +88,7 @@ TEST(scheduler_job_item_queue, priority_and_time)
 
   int item_position = 1;
   while (!scheduler_job_item_queue.Empty()) {
-    SchedulerJobItem job_item = scheduler_job_item_queue.TakeOutTopItem();
+    auto job_item = scheduler_job_item_queue.TakeOutTopItem();
     ASSERT_TRUE(job_item.is_valid);
     ASSERT_EQ(job_item.job->selection_type, item_position)
         << "selection_type is used as "

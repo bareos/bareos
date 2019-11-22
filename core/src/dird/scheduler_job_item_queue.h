@@ -34,7 +34,14 @@ class JobResource;
 struct SchedulerJobItemQueuePrivate;
 
 struct SchedulerJobItem {
+  ~SchedulerJobItem() = default;
+
   SchedulerJobItem() = default;
+  SchedulerJobItem(const SchedulerJobItem& other) = default;
+  SchedulerJobItem(SchedulerJobItem&& other) = default;
+  SchedulerJobItem& operator=(const SchedulerJobItem& other) = default;
+  SchedulerJobItem& operator=(SchedulerJobItem&& other) = default;
+
   SchedulerJobItem(JobResource* job_in,
                    RunResource* run_in,
                    time_t runtime_in,
@@ -43,6 +50,15 @@ struct SchedulerJobItem {
   {
     is_valid = job && runtime;
   };
+
+  bool operator==(const SchedulerJobItem& rhs) const
+  {
+    return runtime == rhs.runtime && job == rhs.job &&
+           priority == rhs.priority && run == rhs.run;
+  }
+
+  bool operator!=(const SchedulerJobItem& rhs) const { return !(*this == rhs); }
+
   JobResource* job{nullptr};
   RunResource* run{nullptr};
   time_t runtime{0};
@@ -55,10 +71,16 @@ class SchedulerJobItemQueue {
   SchedulerJobItemQueue();
   ~SchedulerJobItemQueue();
 
+  SchedulerJobItem TopItem() const;
   SchedulerJobItem TakeOutTopItem();
   void EmplaceItem(JobResource* job, RunResource* run, time_t runtime);
   bool Empty() const;
   void Clear();
+
+  SchedulerJobItemQueue(const SchedulerJobItemQueue& other) = delete;
+  SchedulerJobItemQueue(SchedulerJobItemQueue&& other) = delete;
+  SchedulerJobItemQueue& operator=(const SchedulerJobItemQueue& other) = delete;
+  SchedulerJobItemQueue& operator=(SchedulerJobItemQueue&& other) = delete;
 
  private:
   static constexpr int default_priority{10};

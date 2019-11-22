@@ -565,7 +565,7 @@ void Bvfs::GetAllFileVersions(const char* path,
   DBId_t pathid = 0;
   char path_esc[MAX_ESCAPE_NAME_LENGTH];
 
-  db->EscapeString(jcr, path_esc, (char*)path, strlen(path));
+  db->EscapeString(jcr, path_esc, path, strlen(path));
   pathid = db->GetPathRecord(jcr, path_esc);
   GetAllFileVersions(pathid, fname, client);
 }
@@ -593,8 +593,8 @@ void Bvfs::GetAllFileVersions(DBId_t pathid,
     Mmsg(filter, " AND Job.Type = 'B' ");
   }
 
-  db->EscapeString(jcr, fname_esc, (char*)fname, strlen(fname));
-  db->EscapeString(jcr, client_esc, (char*)client, strlen(client));
+  db->EscapeString(jcr, fname_esc, fname, strlen(fname));
+  db->EscapeString(jcr, client_esc, client, strlen(client));
 
   db->FillQuery(query, BareosDb::SQL_QUERY::bvfs_versions_6, fname_esc,
                 edit_uint64(pathid, ed1), client_esc, filter.c_str(), limit,

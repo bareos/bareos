@@ -69,6 +69,19 @@ SchedulerJobItem SchedulerJobItemQueue::TakeOutTopItem()
   return job_item_with_highest_priority;
 }
 
+SchedulerJobItem SchedulerJobItemQueue::TopItem() const
+{
+  SchedulerJobItem job_item_with_highest_priority;
+
+  std::lock_guard<std::mutex> lg(impl_->mutex);
+
+  if (!impl_->priority_queue.empty()) {
+    job_item_with_highest_priority = impl_->priority_queue.top();
+  }
+
+  return job_item_with_highest_priority;
+}
+
 void SchedulerJobItemQueue::EmplaceItem(JobResource* job,
                                         RunResource* run,
                                         time_t runtime)

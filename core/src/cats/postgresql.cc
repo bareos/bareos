@@ -354,7 +354,7 @@ bail_out:
  */
 void BareosDbPostgresql::EscapeString(JobControlRecord* jcr,
                                       char* snew,
-                                      char* old,
+                                      const char* old,
                                       int len)
 {
   int error;
