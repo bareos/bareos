@@ -131,7 +131,7 @@ JobControlRecord* SchedulerPrivate::TryCreateJobControlRecord(
   JobControlRecord* jcr = NewDirectorJcr();
   SetJcrDefaults(jcr, next_job.job);
   if (next_job.run != nullptr) {
-    next_job.run->last_run = time_adapter->time_source_->SystemTime();
+    next_job.run->scheduled_last = time_adapter->time_source_->SystemTime();
     SetJcrFromRunResource(jcr, next_job.run);
   }
   return jcr;
@@ -242,7 +242,7 @@ void SchedulerPrivate::AddJobToQueue(JobResource* job,
         job->resource_name_);
 
   if (run != nullptr) {
-    if ((runtime - run->last_run) < 61) { return; }
+    if ((runtime - run->scheduled_last) < 61) { return; }
   }
 
   if ((runtime + 59) < now) { return; }
