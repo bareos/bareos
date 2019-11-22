@@ -568,6 +568,15 @@ Requires:   bareos-filedaemon = %{version}
 Requires:   bareos-filedaemon-python-plugin = %{version}
 Requires:   python-ldap
 
+%package    filedaemon-ovirt-python-plugin
+Summary:    Ovirt Python plugin for Bareos File daemon
+Group:      Productivity/Archiving/Backup
+Requires:   bareos-filedaemon = %{version}
+Requires:   bareos-filedaemon-python-plugin = %{version}
+Requires:   python-pycurl
+Requires:   python-lxml
+Requires:   python-ovirt-engine-sdk4
+
 %package    storage-python-plugin
 Summary:    Python plugin for Bareos Storage daemon
 Group:      Productivity/Archiving/Backup
@@ -587,6 +596,11 @@ This package contains the python plugin for the file daemon
 %{dscr}
 
 This package contains the LDAP python plugin for the file daemon
+
+%description filedaemon-ovirt-python-plugin
+%{dscr}
+
+This package contains the Ovirt python plugin for the file daemon
 
 %description storage-python-plugin
 %{dscr}
@@ -1365,6 +1379,14 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/fileset/plugin-ldap.conf.example
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/job/backup-ldap.conf.example
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/job/restore-ldap.conf.example
+
+%files filedaemon-ovirt-python-plugin
+%defattr(-, root, root)
+%{plugin_dir}/bareos-fd-ovirt.py*
+%{plugin_dir}/BareosFdPluginOvirtpy*
+#%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/fileset/plugin-ovirt.conf.example
+#%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/job/backup-ovirt.conf.example
+#%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/job/restore-ovirt.conf.example
 
 %files director-python-plugin
 %defattr(-, root, root)
