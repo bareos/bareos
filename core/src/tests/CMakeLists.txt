@@ -19,8 +19,11 @@
 
 # "gtest_discover_tests" was added in cmake 3.10
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
-include(GoogleTest)
 
+IF(HAVE_WIN32)
+set(ENV{WINEPATH} "${WINEPATH}" )
+ENDIF()
+include(GoogleTest)
 
 IF(HAVE_WIN32)
    link_libraries(kernel32
@@ -137,7 +140,11 @@ target_link_libraries(test_output_formatter
    ${JANSSON_LIBRARIES}
    bareos
    )
-   gtest_discover_tests(test_output_formatter TEST_PREFIX gtest:)
+   execute_process(COMMAND printenv WINEPATH OUTPUT_VARIABLE PRINTENV_OUT OUTPUT_STRIP_TRAILING_WHITESPACE)
+   message("WINEPATH is ${PRINTENV_OUT}")
+   gtest_discover_tests(test_output_formatter TEST_PREFIX gtest:
+          DISCOVERY_TIMEOUT 30
+          PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}" )
 ENDIF()
 IF(NOT HAVE_WIN32)
 

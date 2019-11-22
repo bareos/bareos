@@ -158,11 +158,12 @@ IF (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   # convert mingw dll directories into wine (windows) paths
   execute_process(COMMAND winepath -w ${MINGW_PREFIX} OUTPUT_VARIABLE MINGW_PREFIX_AS_WINEPATH OUTPUT_STRIP_TRAILING_WHITESPACE)
   string(STRIP ${MINGW_PREFIX_AS_WINEPATH} MINGW_PREFIX_AS_WINEPATH)
-  set(MINGW_LIBDIR_AS_WINEPATH "${MINGW_PREFIX_AS_WINEPATH}\\lib")
-  set(MINGW_BINDIR_AS_WINEPATH "${MINGW_PREFIX_AS_WINEPATH}\\bin")
+  # set(MINGW_LIBDIR_AS_WINEPATH "${MINGW_PREFIX_AS_WINEPATH}lib")
+  set(MINGW_BINDIR_AS_WINEPATH "${MINGW_PREFIX_AS_WINEPATH}bin")
 
-  # export WINEPATH so that cross-compiled .exe tests find their dlls
-  set(ENV{WINEPATH} "${MINGW_LIBDIR_AS_WINEPATH};${MINGW_BINDIR_AS_WINEPATH}" )
+  # prepare WINEPATH so that cross-compiled .exe tests find their dlls
+  set(WINEPATH "${MINGW_BINDIR_AS_WINEPATH}" )
+
 ENDIF()
 
 INCLUDE(BareosFindAllLibraries)
