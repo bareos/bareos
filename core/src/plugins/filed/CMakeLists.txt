@@ -138,7 +138,12 @@ set(PYFILES
     bareos_fd_consts.py
     bareos-fd-ldap.py
     BareosFdPluginLDAP.py
-)
+    bareos-fd-ovirt.py
+    BareosFdPluginOvirt.py
+    )
+
+INSTALL(FILES ${PYFILES} DESTINATION ${plugindir} COMPONENT filedaemon)
+
 
 install(
   FILES ${PYFILES}
