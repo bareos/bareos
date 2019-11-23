@@ -1,0 +1,10 @@
+FileSet {
+  Name = "plugin-ovirt"
+  Include {
+    Options {
+      signature = MD5
+    }
+    #
+    Plugin = "python:module_path=@plugindir@:module_name=bareos-fd-ovirt:"
+  }
+}
