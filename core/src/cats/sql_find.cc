@@ -167,13 +167,13 @@ BareosDb::SqlFindResult BareosDb::FindLastJobStartTimeForJobAndClient(
   PmStrcpy(stime, "0000-00-00 00:00:00"); /* default */
 
   Mmsg(cmd,
-       "SELECT starttime"
-       " FROM job"
-       " WHERE job.name='%s'"
-       " AND (job.jobstatus='T' OR job.jobstatus='W')"
-       " AND job.clientid=(SELECT clientid"
-       "                   FROM client WHERE client.name='%s')"
-       " ORDER BY starttime DESC LIMIT 1",
+       "SELECT StartTime"
+       " FROM Job"
+       " WHERE Job.Name='%s'"
+       " AND (Job.JobStatus='T' OR Job.JobStatus='W')"
+       " AND Job.ClientId=(SELECT ClientId"
+       "                   FROM Client WHERE Client.Name='%s')"
+       " ORDER BY StartTime DESC LIMIT 1",
        esc_jobname.data(), esc_clientname.data());
 
   if (!QUERY_DB(jcr, cmd)) {
