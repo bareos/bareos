@@ -988,7 +988,7 @@ int main(int argc, char* argv[])
   char* catalogname = NULL;
   char* endptr;
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-  alist* backend_directories = NULL;
+  std::vector<std::string> backend_directories;
 #endif
 
   setlocale(LC_ALL, "");
@@ -1089,7 +1089,7 @@ int main(int argc, char* argv[])
 
       SetWorkingDirectory(me->working_directory);
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-      DbSetBackendDirs(me->backend_directories);
+      DbSetBackendDirs(std::move(me->backend_directories));
 #endif
 
       /*
@@ -1155,10 +1155,8 @@ int main(int argc, char* argv[])
     }
 
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-    backend_directories = new alist(10, owned_by_alist);
-    backend_directories->append((char*)backend_directory);
-
-    DbSetBackendDirs(backend_directories);
+    backend_directories.emplace_back(backend_directory);
+    DbSetBackendDirs(std::move(backend_directories));
 #endif
   }
 

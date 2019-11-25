@@ -1416,6 +1416,7 @@ bool ConfigurationParser::StoreResource(int type,
       StoreAlistStr(lc, item, index, pass);
       break;
     case CFG_TYPE_STR_VECTOR:
+    case CFG_TYPE_STR_VECTOR_OF_DIRS:
       StoreStdVectorStr(lc, item, index, pass);
       break;
     case CFG_TYPE_ALIST_DIR:
@@ -2024,7 +2025,8 @@ bool BareosResource::PrintConfig(PoolMem& buff,
           IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
         }
         break;
-      case CFG_TYPE_STR_VECTOR: {
+      case CFG_TYPE_STR_VECTOR:
+      case CFG_TYPE_STR_VECTOR_OF_DIRS: {
         /*
          * One line for each member of the list
          */
@@ -2281,9 +2283,9 @@ static DatatypeName datatype_names[] = {
     {CFG_TYPE_ADDRESSES_ADDRESS, "ADDRESS", "ip address"},
     {CFG_TYPE_ADDRESSES_PORT, "PORT", "network port"},
     {CFG_TYPE_PLUGIN_NAMES, "PLUGIN_NAMES", "Plugin Name(s)"},
-    {CFG_TYPE_STR_VECTOR, "STRING_LIST",
-     "string list"}, /* values are stored internally in
-                      * std::vector<std::string>> */
+    {CFG_TYPE_STR_VECTOR, "STRING_LIST", "string list"},
+    {CFG_TYPE_STR_VECTOR_OF_DIRS, "DIRECTORY_LIST", "directory list"},
+
     /*
      * Director resource types. handlers in dird_conf.
      */

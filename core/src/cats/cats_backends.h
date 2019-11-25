@@ -74,8 +74,7 @@ struct backend_shared_library_t {
 #endif
 
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-class alist;
-void DbSetBackendDirs(alist* new_backend_dirs);
+void DbSetBackendDirs(std::vector<std::string>&& new_backend_dirs);
 #endif
 void DbFlushBackends(void);
 BareosDb* db_init_database(JobControlRecord* jcr,

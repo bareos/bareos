@@ -347,14 +347,12 @@ int main(int argc, char* argv[])
       InitStackDump(); /* grab new pid */
     }
   }
-  char* backend_dir;
   if (InitCrypto() != 0) {
     Jmsg((JobControlRecord*)NULL, M_ERROR_TERM, 0,
          _("Cryptography library initialization failed.\n"));
     goto bail_out;
   }
 
-  backend_dir = nullptr;
   if (!CheckResources()) {
     Jmsg((JobControlRecord*)NULL, M_ERROR_TERM, 0,
          _("Please correct the configuration in %s\n"),
@@ -375,13 +373,11 @@ int main(int argc, char* argv[])
                        5 /* sched+watchdog+jobsvr+misc */);
 
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-  backend_dir = nullptr;
-
-  foreach_alist (backend_dir, me->backend_directories) {
-    Dmsg1(100, "backend path: %s\n", backend_dir);
+  for (const auto& backend_dir : me->backend_directories) {
+    Dmsg1(100, "backend path: %s\n", backend_dir.c_str());
   }
 
-  DbSetBackendDirs(me->backend_directories);
+  DbSetBackendDirs(std::move(me->backend_directories));
 #endif
   LoadDirPlugins(me->plugin_directory, me->plugin_names);
 

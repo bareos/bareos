@@ -124,15 +124,15 @@ class DirectorResource
   virtual ~DirectorResource() = default;
 
   dlist* DIRaddrs = nullptr;
-  dlist* DIRsrc_addr = nullptr;         /* Address to source connections from */
-  char* query_file = nullptr;           /* SQL query file */
-  char* working_directory = nullptr;    /* WorkingDirectory */
-  char* scripts_directory = nullptr;    /* ScriptsDirectory */
-  char* plugin_directory = nullptr;     /* Plugin Directory */
-  alist* plugin_names = nullptr;        /* Plugin names to load */
-  char* pid_directory = nullptr;        /* PidDirectory */
-  char* subsys_directory = nullptr;     /* SubsysDirectory */
-  alist* backend_directories = nullptr; /* Backend Directories */
+  dlist* DIRsrc_addr = nullptr;      /* Address to source connections from */
+  char* query_file = nullptr;        /* SQL query file */
+  char* working_directory = nullptr; /* WorkingDirectory */
+  char* scripts_directory = nullptr; /* ScriptsDirectory */
+  char* plugin_directory = nullptr;  /* Plugin Directory */
+  alist* plugin_names = nullptr;     /* Plugin names to load */
+  char* pid_directory = nullptr;     /* PidDirectory */
+  char* subsys_directory = nullptr;  /* SubsysDirectory */
+  std::vector<std::string> backend_directories;
   MessagesResource* messages = nullptr; /* Daemon message handler */
   uint32_t MaxConcurrentJobs = 0; /* Max concurrent jobs for whole director */
   uint32_t MaxConnections = 0;    /* Max concurrent connections */

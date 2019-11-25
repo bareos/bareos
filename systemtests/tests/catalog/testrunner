@@ -1,0 +1,17 @@
+#!/bin/sh
+#
+# Run a simple backup
+#   then restore it.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+. ./environment
+. ${scripts}/functions
+
+${scripts}/cleanup
+${scripts}/setup
+
+start_test
+
+end_test
