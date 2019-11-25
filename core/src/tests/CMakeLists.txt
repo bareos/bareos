@@ -101,7 +101,6 @@ target_link_libraries(test_fd_plugins
           PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}" )
 
 
-IF(NOT HAVE_WIN32)
 
 ####### test_sd_plugins #####################################
 add_executable(test_sd_plugins
@@ -115,7 +114,11 @@ target_link_libraries(test_sd_plugins
     ${GTEST_MAIN_LIBRARIES}
     )
 
-  gtest_discover_tests(test_sd_plugins TEST_PREFIX gtest:)
+   gtest_add_tests(TARGET test_sd_plugins
+          TEST_PREFIX gtest:
+          TEST_LIST found_tests)
+   set_tests_properties(${found_tests}
+          PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}" )
 
 ####### test_dir_plugins #####################################
 add_executable(test_dir_plugins
@@ -131,8 +134,13 @@ target_link_libraries(test_dir_plugins
     ${GTEST_MAIN_LIBRARIES}
     )
 
-  gtest_discover_tests(test_dir_plugins TEST_PREFIX gtest:)
+   gtest_add_tests(TARGET test_dir_plugins
+          TEST_PREFIX gtest:
+          TEST_LIST found_tests)
+   set_tests_properties(${found_tests}
+          PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}" )
 
+IF(NOT HAVE_WIN32)
 ENDIF()
 IF(HAVE_WIN32)
 
