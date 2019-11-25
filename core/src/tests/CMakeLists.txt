@@ -140,9 +140,6 @@ target_link_libraries(test_dir_plugins
    set_tests_properties(${found_tests}
           PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}" )
 
-IF(NOT HAVE_WIN32)
-ENDIF()
-IF(HAVE_WIN32)
 
 ####### test_output_formatter ###############################
 add_executable(test_output_formatter
@@ -159,9 +156,8 @@ target_link_libraries(test_output_formatter
           TEST_LIST found_tests)
    set_tests_properties(${found_tests}
           PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}" )
-ENDIF()
-IF(NOT HAVE_WIN32)
 
+IF(NOT HAVE_WIN32)
 ####### test_bsock ###############################
 add_executable(test_bsock
     bsock_test.cc
