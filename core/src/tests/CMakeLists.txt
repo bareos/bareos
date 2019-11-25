@@ -479,6 +479,8 @@ target_link_libraries(test_is_name_valid
 
 gtest_discover_tests(test_is_name_valid TEST_PREFIX gtest:)
 
+ENDIF()
+
 ####### test_acl_entry_syntax  #####################################
 add_executable(test_acl_entry_syntax test_acl_entry_syntax.cc)
 
@@ -488,9 +490,13 @@ target_link_libraries(test_acl_entry_syntax
    ${GTEST_MAIN_LIBRARIES}
 )
 
-gtest_discover_tests(test_acl_entry_syntax TEST_PREFIX gtest:)
+   gtest_add_tests(TARGET test_acl_entry_syntax
+          TEST_PREFIX gtest:
+          TEST_LIST found_tests)
+   set_tests_properties(${found_tests}
+          PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}" )
 
-ENDIF()
+
 
 ####### version_strings  #####################################
 add_executable(version_strings version_strings.cc)

@@ -19,9 +19,6 @@
    02110-1301, USA.
 */
 #include <algorithm>
-//#include <ctype.h>
-//#include <string>
-//#include <string.h>
 #include <vector>
 
 #if defined(HAVE_MINGW)
