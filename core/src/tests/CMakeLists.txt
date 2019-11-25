@@ -81,7 +81,6 @@ target_compile_definitions(test_lib PRIVATE -DTEST_SMALL_HTABLE)
    set_tests_properties(${found_tests}
           PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}" )
 
-IF(NOT HAVE_WIN32)
 ####### test_fd_plugins #####################################
 add_executable(test_fd_plugins
     test_fd_plugins.cc
@@ -95,8 +94,14 @@ target_link_libraries(test_fd_plugins
     ${GTEST_LIBRARIES}
     ${GTEST_MAIN_LIBRARIES}
     )
+   gtest_add_tests(TARGET test_fd_plugins
+          TEST_PREFIX gtest:
+          TEST_LIST found_tests)
+   set_tests_properties(${found_tests}
+          PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}" )
 
-  gtest_discover_tests(test_fd_plugins TEST_PREFIX gtest:)
+
+IF(NOT HAVE_WIN32)
 
 ####### test_sd_plugins #####################################
 add_executable(test_sd_plugins
@@ -152,7 +157,7 @@ IF(NOT HAVE_WIN32)
 ####### test_bsock ###############################
 add_executable(test_bsock
     bsock_test.cc
-    #    bareos_test_sockets.cc
+    bareos_test_sockets.cc
     bsock_constructor_test.cc
     bsock_cert_verify_common_names_test.cc
     create_resource.cc

@@ -164,6 +164,7 @@ IF (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(WINEPATH "Z:${MINGW_BINDIR}\\\\;")
   string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/lib\\\\;")
   string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/fastlz\\\\;")
+  string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/findlib\\\\;")
 
 
   MESSAGE(${WINEPATH})
