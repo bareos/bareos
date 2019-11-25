@@ -145,8 +145,7 @@ IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 ENDIF()
 
 IF (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  set(MINGW_PREFIX ${CMAKE_INSTALL_PREFIX}/)
-  set(MINGW_LIBDIR "${MINGW_PREFIX}/lib")
+  set(MINGW_PREFIX ${CMAKE_INSTALL_PREFIX})
   set(MINGW_BINDIR "${MINGW_PREFIX}/bin")
   IF(${WINDOWS_BITS} MATCHES "32")
     set(CMAKE_CROSSCOMPILING_EMULATOR wine)
@@ -155,16 +154,22 @@ IF (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set(CMAKE_CROSSCOMPILING_EMULATOR wine64)
     set(SITE "${CMAKE_SYSTEM}-64" CACHE STRING "build name variable for CDash")
   ENDIF()
+
   set(CMAKE_LIBRARY_PATH ${MINGW_LIBDIR})
 
-  # convert mingw dll directories into wine (windows) paths
-  execute_process(COMMAND winepath -w ${MINGW_PREFIX} OUTPUT_VARIABLE MINGW_PREFIX_AS_WINEPATH OUTPUT_STRIP_TRAILING_WHITESPACE)
-  string(STRIP ${MINGW_PREFIX_AS_WINEPATH} MINGW_PREFIX_AS_WINEPATH)
-  # set(MINGW_LIBDIR_AS_WINEPATH "${MINGW_PREFIX_AS_WINEPATH}lib")
-  set(MINGW_BINDIR_AS_WINEPATH "${MINGW_PREFIX_AS_WINEPATH}bin")
+  # set WINEPATH so that cross-compiled .exe tests find their dlls
+  set(WINEPATH "Z:${MINGW_BINDIR}\\\\;")
+  string(APPEND WINEPATH "Z:${CMAKE_BINARY_DIR}/src/lib\\\\;")
+  string(APPEND WINEPATH "Z:${CMAKE_BINARY_DIR}/src/fastlz\\\\;")
 
-  # prepare WINEPATH so that cross-compiled .exe tests find their dlls
-  set(WINEPATH "${MINGW_BINDIR_AS_WINEPATH}" )
+
+  MESSAGE(${WINEPATH})
+  # replace slash with backslash everywhere
+  string(REPLACE "/" "\\" WINEPATH ${WINEPATH})
+  #MESSAGE(FATAL_ERROR ${WINEPATH})
+
+  set(ENV{WINEPATH} ${WINEPATH})
+
 
 ENDIF()
 
