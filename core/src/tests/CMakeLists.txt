@@ -467,6 +467,7 @@ IF(HAVE_PAM)
 ENDIF()
 
 gtest_discover_tests(scheduler TEST_PREFIX gtest:)
+ENDIF()
 
 ####### test_is_name_valid  #####################################
 add_executable(test_is_name_valid test_is_name_valid.cc)
@@ -477,9 +478,12 @@ target_link_libraries(test_is_name_valid
    ${GTEST_MAIN_LIBRARIES}
 )
 
-gtest_discover_tests(test_is_name_valid TEST_PREFIX gtest:)
+   gtest_add_tests(TARGET test_is_name_valid
+          TEST_PREFIX gtest:
+          TEST_LIST found_tests)
+   set_tests_properties(${found_tests}
+          PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}" )
 
-ENDIF()
 
 ####### test_acl_entry_syntax  #####################################
 add_executable(test_acl_entry_syntax test_acl_entry_syntax.cc)

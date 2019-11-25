@@ -19,8 +19,16 @@
    02110-1301, USA.
 */
 
+#if defined(HAVE_MINGW)
+#define _S_IFDIR S_IFDIR
+#define _stat stat
+#include "minwindef.h"
+#include "include/bareos.h"
+#include "gtest/gtest.h"
+#else
 #include "gtest/gtest.h"
 #include "include/bareos.h"
+#endif
 #include "lib/edit.h"
 
 POOLMEM* msg = GetPoolMemory(PM_FNAME);
