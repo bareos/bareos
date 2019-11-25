@@ -25,6 +25,7 @@ if("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
   message(FATAL_ERROR "In-source builds are not allowed.")
 endif()
 
+
 SET(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME common)
 
 INCLUDE(GNUInstallDirs)
@@ -106,7 +107,7 @@ endif()
 #endif()
 
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-include_directories(/usr/include)
+  include_directories(/usr/include)
 endif()
 
 
@@ -155,12 +156,14 @@ IF (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set(SITE "${CMAKE_SYSTEM}-64" CACHE STRING "build name variable for CDash")
   ENDIF()
 
+  # search for dll.a files before .dll
+  set(MINGW_LIBDIR "${MINGW_PREFIX}/lib")
   set(CMAKE_LIBRARY_PATH ${MINGW_LIBDIR})
 
   # set WINEPATH so that cross-compiled .exe tests find their dlls
   set(WINEPATH "Z:${MINGW_BINDIR}\\\\;")
-  string(APPEND WINEPATH "Z:${CMAKE_BINARY_DIR}/core/src/lib\\\\;")
-  string(APPEND WINEPATH "Z:${CMAKE_BINARY_DIR}/core/src/fastlz\\\\;")
+  string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/lib\\\\;")
+  string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/fastlz\\\\;")
 
 
   MESSAGE(${WINEPATH})
