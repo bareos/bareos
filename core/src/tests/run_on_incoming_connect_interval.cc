@@ -159,9 +159,9 @@ class MockDatabase : public BareosDb {
   explicit MockDatabase(Mode mode) : mode_(mode) {}
   SqlFindResult FindLastJobStartTimeForJobAndClient(
       JobControlRecord* /*jcr*/,
-      std::string /*job_basename*/,
-      std::string /*client_name*/,
-      char* stime) override
+                                                 std::string /*job_basename*/,
+                                                 std::string /*client_name*/,
+                                                 char* stime) override
   {
     switch (mode_) {
       case Mode::kFindNoStartTime:
