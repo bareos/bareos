@@ -159,8 +159,8 @@ IF (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
   # set WINEPATH so that cross-compiled .exe tests find their dlls
   set(WINEPATH "Z:${MINGW_BINDIR}\\\\;")
-  string(APPEND WINEPATH "Z:${CMAKE_BINARY_DIR}/src/lib\\\\;")
-  string(APPEND WINEPATH "Z:${CMAKE_BINARY_DIR}/src/fastlz\\\\;")
+  string(APPEND WINEPATH "Z:${CMAKE_BINARY_DIR}/core/src/lib\\\\;")
+  string(APPEND WINEPATH "Z:${CMAKE_BINARY_DIR}/core/src/fastlz\\\\;")
 
 
   MESSAGE(${WINEPATH})

@@ -26,8 +26,14 @@
  *
  * Philipp Storz, November 2017
  */
-#include "gtest/gtest.h"
+
+#define _S_IFDIR S_IFDIR
+#define _stat stat
+#include "minwindef.h"
+
+#include "include/bareos.h"
 #include "lib/htable.h"
+#include "gtest/gtest.h"
 
 struct HTABLEJCR {
 #ifndef TEST_NON_CHAR

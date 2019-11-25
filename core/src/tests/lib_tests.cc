@@ -18,9 +18,11 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
+#define _S_IFDIR S_IFDIR
+#define _stat stat
 
-#include "gtest/gtest.h"
 #include "include/bareos.h"
+#include "gtest/gtest.h"
 #include "include/version_numbers.h"
 #define BAREOS_TEST_LIB
 #include "lib/bnet.h"

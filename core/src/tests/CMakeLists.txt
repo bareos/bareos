@@ -54,14 +54,13 @@ ENDIF()
 file(RELATIVE_PATH RELATIVE_PROJECT_SOURCE_DIR  ${CMAKE_CURRENT_BINARY_DIR} ${PROJECT_SOURCE_DIR} )
 add_definitions(-DRELATIVE_PROJECT_SOURCE_DIR=\"${RELATIVE_PROJECT_SOURCE_DIR}\")
 
-IF(NOT HAVE_WIN32)
 ####### test_lib ###############################
 add_executable(test_lib
     alist_test.cc
-    bareos_test_sockets.cc
+    #    bareos_test_sockets.cc
     dlist_test.cc
     htable_test.cc
-    qualified_resource_name_type_converter_test.cc
+    #qualified_resource_name_type_converter_test.cc
     lib_tests.cc
     ${PROJECT_SOURCE_DIR}/src/filed/evaluate_job_command.cc
     )
@@ -82,6 +81,7 @@ target_compile_definitions(test_lib PRIVATE -DTEST_SMALL_HTABLE)
    set_tests_properties(${found_tests}
           PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}" )
 
+IF(NOT HAVE_WIN32)
 ####### test_fd_plugins #####################################
 add_executable(test_fd_plugins
     test_fd_plugins.cc
@@ -152,7 +152,7 @@ IF(NOT HAVE_WIN32)
 ####### test_bsock ###############################
 add_executable(test_bsock
     bsock_test.cc
-    bareos_test_sockets.cc
+    #    bareos_test_sockets.cc
     bsock_constructor_test.cc
     bsock_cert_verify_common_names_test.cc
     create_resource.cc
