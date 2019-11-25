@@ -29,6 +29,7 @@
 #include "gtest/gtest.h"
 #include "include/bareos.h"
 #endif
+
 #include "lib/edit.h"
 
 POOLMEM* msg = GetPoolMemory(PM_FNAME);
