@@ -20,6 +20,31 @@
 # "gtest_discover_tests" was added in cmake 3.10
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
+
+macro(bareos_gtest_add_tests testname)
+  gtest_add_tests(TARGET ${testname}
+          TEST_PREFIX gtest:
+          TEST_LIST found_tests)
+IF(HAVE_WIN32)
+   set_tests_properties(${found_tests}
+          PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}" )
+ENDIF() #HAVE_WIN32
+endmacro()
+
+
+macro(bareos_add_test testname additional_sources link_libraries compile_definitions)
+  message("bareos_add_test \"${testname}\" with additional sources \"${additional_sources}\" ,link_libraries \"${link_libraries}\" and compile definitions \"${compile_definitions}\" called ")
+  add_executable(${testname}
+      ${testname}.cc
+      ${additional_sources}
+      )
+  target_link_libraries(${testname} ${link_libraries})
+  target_compile_definitions(${testname} PRIVATE ${compile_definitions})
+  bareos_gtest_add_tests(${testname})
+endmacro()
+
+
+
 include(GoogleTest)
 
 IF(HAVE_WIN32)
@@ -75,111 +100,43 @@ target_link_libraries(test_lib
    )
 
 target_compile_definitions(test_lib PRIVATE -DTEST_SMALL_HTABLE)
-   gtest_add_tests(TARGET test_lib
-          TEST_PREFIX gtest:
-          TEST_LIST found_tests)
-   set_tests_properties(${found_tests}
-          PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}" )
+bareos_gtest_add_tests(test_lib)
 
 ####### test_fd_plugins #####################################
-add_executable(test_fd_plugins
-    test_fd_plugins.cc
-    ${PROJECT_SOURCE_DIR}/src/filed/fd_plugins.cc
-    ${PROJECT_SOURCE_DIR}/src/filed/fileset.cc
-    )
-
-target_link_libraries(test_fd_plugins
-    bareos
-    bareosfind
-    ${GTEST_LIBRARIES}
-    ${GTEST_MAIN_LIBRARIES}
-    )
-   gtest_add_tests(TARGET test_fd_plugins
-          TEST_PREFIX gtest:
-          TEST_LIST found_tests)
-   set_tests_properties(${found_tests}
-          PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}" )
-
-
+bareos_add_test(test_fd_plugins
+  "${PROJECT_SOURCE_DIR}/src/filed/fd_plugins.cc;${PROJECT_SOURCE_DIR}/src/filed/fileset.cc"
+  "bareos;bareosfind;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}"
+  ""
+  )
 
 ####### test_sd_plugins #####################################
-add_executable(test_sd_plugins
-    test_sd_plugins.cc
-    )
-
-target_link_libraries(test_sd_plugins
-    bareos
-    bareossd
-    ${GTEST_LIBRARIES}
-    ${GTEST_MAIN_LIBRARIES}
-    )
-
-   gtest_add_tests(TARGET test_sd_plugins
-          TEST_PREFIX gtest:
-          TEST_LIST found_tests)
-   set_tests_properties(${found_tests}
-          PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}" )
+bareos_add_test(test_sd_plugins "" "bareos;bareossd;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
 
 ####### test_dir_plugins #####################################
-add_executable(test_dir_plugins
-    test_dir_plugins.cc
-    ${PROJECT_SOURCE_DIR}/src/dird/dir_plugins.cc
-    )
-
-target_link_libraries(test_dir_plugins
-    bareos
-    bareoscats
-    bareossql
-    ${GTEST_LIBRARIES}
-    ${GTEST_MAIN_LIBRARIES}
-    )
-
-   gtest_add_tests(TARGET test_dir_plugins
-          TEST_PREFIX gtest:
-          TEST_LIST found_tests)
-   set_tests_properties(${found_tests}
-          PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}" )
-
+bareos_add_test(test_dir_plugins "${PROJECT_SOURCE_DIR}/src/dird/dir_plugins.cc" "bareos;bareoscats;bareossql;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
 
 ####### test_output_formatter ###############################
-add_executable(test_output_formatter
-    lib_tests_output_formatter.cc
-    )
-target_link_libraries(test_output_formatter
-   ${GTEST_MAIN_LIBRARIES}
-   ${GTEST_LIBRARIES}
-   ${JANSSON_LIBRARIES}
-   bareos
-   )
-   gtest_add_tests(TARGET test_output_formatter
-          TEST_PREFIX gtest:
-          TEST_LIST found_tests)
-   set_tests_properties(${found_tests}
-          PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}" )
+bareos_add_test(test_output_formatter  ""  "${GTEST_MAIN_LIBRARIES};${GTEST_LIBRARIES};${JANSSON_LIBRARIES};bareos" "")
 
 IF(NOT HAVE_WIN32)
 ####### test_bsock ###############################
-add_executable(test_bsock
-    bsock_test.cc
-    bareos_test_sockets.cc
-    bsock_constructor_test.cc
-    bsock_cert_verify_common_names_test.cc
-    create_resource.cc
-    ${SSL_UNIT_TEST_FILES}
-    )
-target_link_libraries(test_bsock ${LINK_LIBRARIES})
-target_compile_definitions(test_bsock PRIVATE -DCERTDIR=\"${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls\")
-gtest_discover_tests(test_bsock TEST_PREFIX gtest:)
+bareos_add_test(test_bsock
+  "bareos_test_sockets.cc;bsock_constructor_test.cc;bsock_cert_verify_common_names_test.cc;create_resource.cc;${SSL_UNIT_TEST_FILES}"
+  "${LINK_LIBRARIES}"
+  "-DCERTDIR=\"${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls\""
+  )
 
 ####### test_connection_setup ###############################
-add_executable(test_connection_setup
-    bsock_test_connection_setup.cc
-    ${SSL_UNIT_TEST_FILES}
-)
+bareos_add_test( bsock_test_connection_setup "${SSL_UNIT_TEST_FILES}" "${LINK_LIBRARIES}" "")
 
-target_link_libraries(test_connection_setup ${LINK_LIBRARIES})
+# add_executable(test_connection_setup
+#     bsock_test_connection_setup.cc
+#     ${SSL_UNIT_TEST_FILES}
+# )
 
-gtest_discover_tests(test_connection_setup TEST_PREFIX gtest:)
+# target_link_libraries(test_connection_setup ${LINK_LIBRARIES})
+
+# bareos_gtest_add_tests(test_connection_setup)
 
 
 ####### test_stored_multiplied_device ###############################
@@ -188,7 +145,7 @@ add_executable(test_stored_multiplied_device
 )
 
 target_link_libraries(test_stored_multiplied_device ${LINK_LIBRARIES})
-gtest_discover_tests(test_stored_multiplied_device TEST_PREFIX gtest:)
+bareos_gtest_add_tests(test_stored_multiplied_device)
 
 
 ####### test_ndmp_address_translate ###############################
@@ -198,14 +155,14 @@ add_executable(test_ndmp_address_translate
 )
 
 target_link_libraries(test_ndmp_address_translate ${LINK_LIBRARIES})
-gtest_discover_tests(test_ndmp_address_translate TEST_PREFIX gtest:)
+bareos_gtest_add_tests(test_ndmp_address_translate)
 
 ####### test_sd_reservation #####################################
 if(GMOCK_FOUND)
   add_executable(test_sd_reservation sd_reservation.cc)
 
   target_link_libraries(test_sd_reservation ${LINK_LIBRARIES} ${GMOCK_LIBRARIES})
-  gtest_discover_tests(test_sd_reservation TEST_PREFIX gtest:)
+  bareos_gtest_add_tests(test_sd_reservation)
 endif()
 
 ####### test_config_parser_sd #####################################
@@ -219,7 +176,8 @@ target_link_libraries(test_config_parser_sd
    ${GTEST_MAIN_LIBRARIES}
 )
 
-gtest_discover_tests(test_config_parser_sd TEST_PREFIX gtest:)
+   bareos_gtest_add_tests(test_config_parser_sd)
+
 
 ####### test_config_parser_dir  #####################################
 add_executable(test_config_parser_dir test_config_parser_dir.cc)
@@ -234,8 +192,7 @@ target_link_libraries(test_config_parser_dir
    ${GTEST_MAIN_LIBRARIES}
 )
 
-gtest_discover_tests(test_config_parser_dir TEST_PREFIX gtest:)
-
+   bareos_gtest_add_tests(test_config_parser_dir)
 
 ####### test_config_parser_console  #####################################
 add_executable(test_config_parser_console test_config_parser_console.cc)
@@ -248,8 +205,7 @@ target_link_libraries(test_config_parser_console
    ${GTEST_MAIN_LIBRARIES}
 )
 
-gtest_discover_tests(test_config_parser_console TEST_PREFIX gtest:)
-
+   bareos_gtest_add_tests(test_config_parser_console)
 
 ####### test_config_parser_fd  #####################################
 add_executable(test_config_parser_fd test_config_parser_fd.cc ${FDSRCS})
@@ -262,7 +218,7 @@ target_link_libraries(test_config_parser_fd
    ${GTEST_MAIN_LIBRARIES}
 )
 
-gtest_discover_tests(test_config_parser_fd TEST_PREFIX gtest:)
+   bareos_gtest_add_tests(test_config_parser_fd)
 
 ####### test_setdebug #####################################
 add_executable(test_setdebug test_setdebug.cc)
@@ -279,8 +235,8 @@ target_link_libraries(test_setdebug
    ${GTEST_LIBRARIES}
    ${GTEST_MAIN_LIBRARIES}
 )
+   bareos_gtest_add_tests(test_setdebug)
 
-gtest_discover_tests(test_setdebug TEST_PREFIX gtest:)
 
 ####### test_fileindex_list #####################################
 add_executable(test_fileindex_list test_fileindex_list.cc)
@@ -298,7 +254,7 @@ target_link_libraries(test_fileindex_list
  ${GTEST_MAIN_LIBRARIES}
 )
 
-gtest_discover_tests(test_fileindex_list TEST_PREFIX gtest:)
+   bareos_gtest_add_tests(test_fileindex_list)
 
 ####### test_backtrace #####################################
 IF(HAVE_EXECINFO_H AND HAVE_BACKTRACE AND HAVE_BACKTRACE_SYMBOLS)
@@ -310,7 +266,8 @@ IF(HAVE_EXECINFO_H AND HAVE_BACKTRACE AND HAVE_BACKTRACE_SYMBOLS)
      ${GTEST_MAIN_LIBRARIES}
   )
 
-  gtest_discover_tests(test_backtrace TEST_PREFIX gtest:)
+   bareos_gtest_add_tests(test_backtrace)
+
 ENDIF()
 
 ####### test_crc32 #####################################
@@ -322,7 +279,7 @@ target_link_libraries(test_crc32
    ${GTEST_MAIN_LIBRARIES}
 )
 
-gtest_discover_tests(test_crc32 TEST_PREFIX gtest:)
+   bareos_gtest_add_tests(test_crc32)
 ####### thread_list  #####################################
 add_executable(thread_list thread_list.cc)
 
@@ -332,7 +289,7 @@ target_link_libraries(thread_list
    ${GTEST_MAIN_LIBRARIES}
 )
 
-gtest_discover_tests(thread_list TEST_PREFIX gtest:)
+   bareos_gtest_add_tests(thread_list)
 
 ####### ua_available_resources_equals_config_resources  ###########
 add_executable(show_cmd_available_resources_equals_config_resources show_cmd_available_resources_equals_config_resources.cc)
@@ -347,7 +304,7 @@ target_link_libraries(show_cmd_available_resources_equals_config_resources
    ${GTEST_MAIN_LIBRARIES}
 )
 
-gtest_discover_tests(show_cmd_available_resources_equals_config_resources TEST_PREFIX gtest:)
+   bareos_gtest_add_tests(show_cmd_available_resources_equals_config_resources)
 
 ####### test_job_control_record #####################################
 add_executable(test_job_control_record job_control_record.cc)
@@ -357,7 +314,7 @@ target_link_libraries(test_job_control_record
    ${GTEST_LIBRARIES}
    ${GTEST_MAIN_LIBRARIES}
 )
-gtest_discover_tests(test_job_control_record TEST_PREFIX gtest:)
+   bareos_gtest_add_tests(test_job_control_record)
 
 ####### test_recent_job_results_list #####################################
 
@@ -375,7 +332,7 @@ target_link_libraries(test_recent_job_results_list
    ${GTEST_MAIN_LIBRARIES}
 )
 
-gtest_discover_tests(test_recent_job_results_list TEST_PREFIX gtest:)
+   bareos_gtest_add_tests(test_recent_job_results_list)
 
 ####### test_job_control_record #####################################
 add_executable(test_thread_specific_data thread_specific_data.cc)
@@ -386,7 +343,8 @@ target_link_libraries(test_thread_specific_data
    ${GTEST_MAIN_LIBRARIES}
 )
 
-gtest_discover_tests(test_thread_specific_data TEST_PREFIX gtest:)
+   bareos_gtest_add_tests(test_thread_specific_data)
+
 
 ####### test_timer_thread  #####################################
 add_executable(test_timer_thread timer_thread.cc)
@@ -396,8 +354,8 @@ target_link_libraries(test_timer_thread
    ${GTEST_LIBRARIES}
    ${GTEST_MAIN_LIBRARIES}
 )
+bareos_gtest_add_tests(test_timer_thread)
 
-gtest_discover_tests(test_timer_thread TEST_PREFIX gtest:)
 
 ####### test_watchdog_timer ##########################################
 add_executable(test_watchdog_timer watchdog_timer.cc)
@@ -407,8 +365,8 @@ target_link_libraries(test_watchdog_timer
    ${GTEST_LIBRARIES}
    ${GTEST_MAIN_LIBRARIES}
 )
+   bareos_gtest_add_tests(test_watchdog_timer)
 
-gtest_discover_tests(test_watchdog_timer TEST_PREFIX gtest:)
 
 ####### run_on_incoming_connect_interval  #####################################
 add_executable(run_on_incoming_connect_interval run_on_incoming_connect_interval.cc)
@@ -429,7 +387,7 @@ IF(HAVE_PAM)
    target_link_libraries(run_on_incoming_connect_interval ${PAM_LIBRARIES})
 ENDIF()
 
-gtest_discover_tests(run_on_incoming_connect_interval TEST_PREFIX gtest:)
+   bareos_gtest_add_tests(client-initiated-reconnect)
 
 ####### scheduler_job_item_queue  #####################################
 add_executable(scheduler_job_item_queue scheduler_job_item_queue.cc)
@@ -445,11 +403,7 @@ IF(HAVE_PAM)
    target_link_libraries(scheduler_job_item_queue ${PAM_LIBRARIES})
 ENDIF()
 
-   gtest_add_tests(TARGET scheduler_job_item_queue
-          TEST_PREFIX gtest:
-          TEST_LIST found_tests)
-   set_tests_properties(${found_tests}
-          PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}" )
+   bareos_gtest_add_tests(scheduler_job_item_queue)
 
 ####### scheduler  #####################################
 add_executable(scheduler scheduler.cc)
@@ -470,11 +424,7 @@ IF(HAVE_PAM)
    target_link_libraries(scheduler ${PAM_LIBRARIES})
 ENDIF()
 
-   gtest_add_tests(TARGET scheduler
-          TEST_PREFIX gtest:
-          TEST_LIST found_tests)
-   set_tests_properties(${found_tests}
-          PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}" )
+   bareos_gtest_add_tests(scheduler)
 
 ####### test_is_name_valid  #####################################
 add_executable(test_is_name_valid test_is_name_valid.cc)
@@ -485,11 +435,7 @@ target_link_libraries(test_is_name_valid
    ${GTEST_MAIN_LIBRARIES}
 )
 
-   gtest_add_tests(TARGET test_is_name_valid
-          TEST_PREFIX gtest:
-          TEST_LIST found_tests)
-   set_tests_properties(${found_tests}
-          PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}" )
+   bareos_gtest_add_tests(test_is_name_valid)
 
 
 ####### test_acl_entry_syntax  #####################################
@@ -501,11 +447,7 @@ target_link_libraries(test_acl_entry_syntax
    ${GTEST_MAIN_LIBRARIES}
 )
 
-   gtest_add_tests(TARGET test_acl_entry_syntax
-          TEST_PREFIX gtest:
-          TEST_LIST found_tests)
-   set_tests_properties(${found_tests}
-          PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}" )
+   bareos_gtest_add_tests(test_acl_entry_syntax)
 
 
 
@@ -517,10 +459,6 @@ target_link_libraries(version_strings
    ${GTEST_LIBRARIES}
    ${GTEST_MAIN_LIBRARIES}
 )
-   gtest_add_tests(TARGET version_strings
-          TEST_PREFIX gtest:
-          TEST_LIST found_tests)
-   set_tests_properties(${found_tests}
-          PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}" )
+   bareos_gtest_add_tests(version_strings)
 
 

@@ -27,7 +27,7 @@
 
 namespace console {
 
-TEST(ConfigParser, test_filed_config)
+TEST(ConfigParser, test_console_config)
 {
   InitMsg(NULL, NULL); /* initialize message handler */
 
