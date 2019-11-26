@@ -12,6 +12,14 @@ export TestName
 ${scripts}/cleanup
 ${scripts}/setup
 
+exit_failure()
+{
+  estat=1
+  end_test
+}
+
 start_test
-./../../../../b/core/src/tests/catalog
+
+./../../../../b/core/src/tests/catalog || exit_failure
+
 end_test

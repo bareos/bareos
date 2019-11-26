@@ -342,8 +342,8 @@ if(NOT HAVE_WIN32 AND NOT client-only)
 )
 endif()
 
-add_test(NAME catalog::postgresql COMMAND catalog TEST_PREFIX gtest:)
-set_tests_properties(catalog::postgresql PROPERTIES
-  ENVIRONMENT CATALOG_BACKEND=postgresql
-  ENVIRONMENT BACKEND_DIRS=${CMAKE_BINARY_DIR}/core/src/cats)
+#add_test(NAME catalog::postgresql COMMAND catalog TEST_PREFIX gtest:)
+#set_tests_properties(catalog::postgresql PROPERTIES
+#  ENVIRONMENT CATALOG_BACKEND=postgresql
+#  ENVIRONMENT BACKEND_DIRS=${CMAKE_BINARY_DIR}/core/src/cats)
 

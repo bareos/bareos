@@ -110,8 +110,8 @@ TEST_F(CatalogTest, database)
 
   ASSERT_NE(testable_catalog_backends.find(catalog_backend_name),
             testable_catalog_backends.end())
-      << "Environment variable CATALOG_BACKEND does not contain a testable "
-         "catalog backend name.";
+      << "Environment variable CATALOG_BACKEND does not contain a name for a "
+         "testable catalog backend.";
 
   JobControlRecord* jcr = directordaemon::NewDirectorJcr();
   jcr->impl->res.catalog =
