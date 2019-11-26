@@ -40,7 +40,7 @@ run_bareos
 
 PHP_PID=$(echo $!)
 
-# run tests but stop the test run on the first error or failure
+# run tests
 
 #
 # test with admin profile resource
@@ -48,10 +48,13 @@ PHP_PID=$(echo $!)
 export BAREOS_WEBUI_PROFILE=@BAREOS_WEBUI_PROFILE@
 export BAREOS_WEBUI_TESTNAME=@BAREOS_WEBUI_TESTNAME@
 echo "test with ${BAREOS_WEBUI_PROFILE} profile:" >"$tmp/selenium.out" 2>&1
-@PYTHON@ @CMAKE_SOURCE_DIR@/webui/tests/selenium/webui-selenium-test.py -v "SeleniumTest.test_${BAREOS_WEBUI_TESTNAME}" | tee "$tmp/selenium.out" 2>&1
+# WRONG: false | tee /tmp/tmp.txt has always $? == 0.
+#@PYTHON@ @CMAKE_SOURCE_DIR@/webui/tests/selenium/webui-selenium-test.py -v "SeleniumTest.test_${BAREOS_WEBUI_TESTNAME}" | tee "$tmp/selenium.out" 2>&1
+if ! @PYTHON@ @CMAKE_SOURCE_DIR@/webui/tests/selenium/webui-selenium-test.py -v "SeleniumTest.test_${BAREOS_WEBUI_TESTNAME}" >>"$tmp/selenium.out" 2>&1; then
 
-estat=$?
-export estat
+    set_error "$(cat "$tmp/selenium.out")"
+
+fi
 
 kill "${PHP_PID}"
 

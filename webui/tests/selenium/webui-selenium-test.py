@@ -4,6 +4,7 @@
 
 # selenium.common.exceptions.ElementNotInteractableException: requires >= selenium-3.4.0
 
+from   __future__ import print_function
 from   datetime import datetime
 import logging
 import os
@@ -99,6 +100,10 @@ class WrongCredentialsException(Exception):
 class SeleniumTest(unittest.TestCase):
 
     browser = 'chrome'
+    # Used by Univention AppCenter test: 1200x800
+    # Large resolution to show website without hamburger menu, e.g. 1920x1080
+    resolution_x = 1920
+    resolution_y = 1080
     chromedriverpath = None
     base_url = 'http://127.0.0.1/bareos-webui'
     username = 'admin'
@@ -205,7 +210,7 @@ class SeleniumTest(unittest.TestCase):
             # set explicit window size
             #
             # Used by Univention AppCenter test.
-            self.driver.set_window_size(1200, 800)
+            self.driver.set_window_size(self.resolution_x, self.resolution_y)
             # Large resolution to show website without hamburger menu.
             #self.driver.set_window_size(1920, 1080)
 
@@ -230,7 +235,7 @@ class SeleniumTest(unittest.TestCase):
         # disables it, closes a possible modal, goes to dashboard and reenables client.
         self.login()
         # Clicks on client menue tab
-        self.select_tab('client')
+        self.select_navbar_element('client')
         # Tries to click on client...
         try:
             self.wait_and_click(By.LINK_TEXT, self.client)
@@ -238,12 +243,12 @@ class SeleniumTest(unittest.TestCase):
         except ElementTimeoutException:
             raise ClientNotFoundException(self.client)
         # And goes back to dashboard tab.
-        self.select_tab('dashboard')
+        self.select_navbar_element('dashboard')
         # Back to the clients
         # Disables client 1 and goes back to the dashboard.
-        self.select_tab('client')
+        self.select_navbar_element('client')
         self.wait_and_click(By.LINK_TEXT, self.client)
-        self.select_tab('client')
+        self.select_navbar_element('client')
 
         if self.client_status(self.client) == 'Enabled':
             # Disables client
@@ -252,9 +257,9 @@ class SeleniumTest(unittest.TestCase):
                 self.wait_and_click(By.LINK_TEXT, 'Back')
             else:
                 # Switches to dashboard, if prevented by open modal: close modal
-                self.select_tab('dashboard', [(By.CSS_SELECTOR, 'div.modal-footer > button.btn.btn-default')])
+                self.select_navbar_element('dashboard', [(By.CSS_SELECTOR, 'div.modal-footer > button.btn.btn-default')])
 
-        self.select_tab('client')
+        self.select_navbar_element('client')
 
         if self.client_status(self.client) == 'Disabled':
             # Enables client
@@ -263,7 +268,7 @@ class SeleniumTest(unittest.TestCase):
                 self.wait_and_click(By.LINK_TEXT, 'Back')
             else:
                 # Switches to dashboard, if prevented by open modal: close modal
-                self.select_tab('dashboard', [(By.CSS_SELECTOR, 'div.modal-footer > button.btn.btn-default')])
+                self.select_navbar_element('dashboard', [(By.CSS_SELECTOR, 'div.modal-footer > button.btn.btn-default')])
 
         self.logout()
 
@@ -291,19 +296,19 @@ class SeleniumTest(unittest.TestCase):
 
     def disabled_test_menue(self):
         self.login()
-        self.select_tab('director')
-        self.select_tab('schedule')
+        self.select_navbar_element('director')
+        self.select_navbar_element('schedule')
         self.wait_and_click(By.XPATH, '//a[contains(@href, "/schedule/status/")]')
-        self.select_tab('storage')
-        self.select_tab('client')
-        self.select_tab('restore')
-        self.select_tab('dashboard')
+        self.select_navbar_element('storage')
+        self.select_navbar_element('client')
+        self.select_navbar_element('restore')
+        self.select_navbar_element('dashboard')
         self.close_alert_and_get_its_text()
         self.logout()
 
     def test_rerun_job(self):
         self.login()
-        self.select_tab('client')
+        self.select_navbar_element('client')
         self.wait_and_click(By.LINK_TEXT, self.client)
         # Select first backup in list
         self.wait_and_click(By.XPATH, '//tr[@data-index="0"]/td[1]/a')
@@ -312,13 +317,13 @@ class SeleniumTest(unittest.TestCase):
         if self.profile == 'readonly':
             self.wait_and_click(By.LINK_TEXT, 'Back')
         else:
-            self.select_tab('dashboard', [(By.XPATH, "//div[@id='modal-002']/div/div/div[3]/button")])
+            self.select_navbar_element('dashboard', [(By.XPATH, "//div[@id='modal-002']/div/div/div[3]/button")])
         self.logout()
 
     def test_restore(self):
         # Login
         self.login()
-        self.select_tab('restore')
+        self.select_navbar_element('restore')
         # Click on client dropdown menue and close the possible modal
         self.wait_and_click(By.XPATH, '(//button[@data-id="client"])', [(By.XPATH, '//div[@id="modal-001"]//button[.="Close"]')])
         # Select correct client
@@ -349,7 +354,7 @@ class SeleniumTest(unittest.TestCase):
 
     def test_run_default_job(self):
         self.login()
-        self.select_tab('job')
+        self.select_navbar_element('job')
         self.wait_and_click(By.LINK_TEXT, 'Run')
         # Open the job list
         self.wait_and_click(By.XPATH, '(//button[@data-id="job"])')
@@ -360,7 +365,7 @@ class SeleniumTest(unittest.TestCase):
         if self.profile == 'readonly':
             self.wait_and_click(By.LINK_TEXT, 'Back')
         else:
-            self.select_tab('dashboard')
+            self.select_navbar_element('dashboard')
         self.logout()
 
     #
@@ -383,7 +388,7 @@ class SeleniumTest(unittest.TestCase):
 
     def job_start_configured(self):
         driver = self.driver
-        self.select_tab('job')
+        self.select_navbar_element('job')
         self.wait_and_click(By.LINK_TEXT, 'Run')
         Select(driver.find_element_by_id('job')).select_by_visible_text('backup-bareos-fd')
         Select(driver.find_element_by_id('client')).select_by_visible_text(self.client)
@@ -425,7 +430,7 @@ class SeleniumTest(unittest.TestCase):
         self.wait_and_click(By.LINK_TEXT, 'Logout')
         sleep(self.sleeptime)
 
-    def select_tab(self, tab, additional_modals=None):
+    def select_navbar_element(self, tab, additional_modals=None):
         tabid = u'menu-topnavbar-{}'.format(tab)
         # (By.CLASS_NAME, 'navbar-toggle')
         # is used, when top navbar is hidden,
@@ -632,6 +637,15 @@ def get_env():
     browser = os.environ.get('BAREOS_WEBUI_BROWSER')
     if browser:
         SeleniumTest.browser = browser
+
+    resolution = os.environ.get('BAREOS_WEBUI_BROWSER_RESOLUTION')
+    if resolution:
+        res = [ int(i.strip()) for i in resolution.split('x', 1) ]
+        if len(res) != 2:
+            print('The variable BAREOS_WEBUI_BROWSER_RESOLUTION must be set like "1200 x 800"')
+            sys.exit(1)
+        SeleniumTest.resolution_x = res[0]
+        SeleniumTest.resolution_y = res[1]
 
     base_url = os.environ.get('BAREOS_WEBUI_BASE_URL')
     if base_url:
