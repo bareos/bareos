@@ -431,6 +431,7 @@ ENDIF()
 
 gtest_discover_tests(run_on_incoming_connect_interval TEST_PREFIX gtest:)
 
+ENDIF()# HAVE_WIN32
 ####### scheduler_job_item_queue  #####################################
 add_executable(scheduler_job_item_queue scheduler_job_item_queue.cc)
 
@@ -445,9 +446,12 @@ IF(HAVE_PAM)
    target_link_libraries(scheduler_job_item_queue ${PAM_LIBRARIES})
 ENDIF()
 
-gtest_discover_tests(scheduler_job_item_queue TEST_PREFIX gtest:)
+   gtest_add_tests(TARGET scheduler_job_item_queue
+          TEST_PREFIX gtest:
+          TEST_LIST found_tests)
+   set_tests_properties(${found_tests}
+          PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}" )
 
-ENDIF() #IF(NOT HAVE_WIN32)
 ####### scheduler  #####################################
 add_executable(scheduler scheduler.cc)
 
