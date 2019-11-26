@@ -91,6 +91,7 @@ extern bool DotJobstatusCmd(UaContext* ua, const char* cmd);
 extern bool DotFilesetsCmd(UaContext* ua, const char* cmd);
 extern bool DotClientsCmd(UaContext* ua, const char* cmd);
 extern bool DotConsolesCmd(UaContext* ua, const char* cmd);
+extern bool DotUsersCmd(UaContext* ua, const char* cmd);
 extern bool DotMsgsCmd(UaContext* ua, const char* cmd);
 extern bool DotPoolsCmd(UaContext* ua, const char* cmd);
 extern bool DotScheduleCmd(UaContext* ua, const char* cmd);
@@ -181,6 +182,8 @@ static struct ua_cmdstruct commands[] = {
      NT_("[enabled | disabled]"), true, false},
     {NT_(".consoles"), DotConsolesCmd, _("List all console resources"), NULL,
      true, false},
+    {NT_(".users"), DotUsersCmd, _("List all user resources"), NULL, true,
+     false},
     {NT_(".defaults"), DotDefaultsCmd, _("Get default settings"),
      NT_("job=<job-name> | client=<client-name> | storage=<storage-name | "
          "pool=<pool-name>"),
