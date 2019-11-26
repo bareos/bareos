@@ -3,13 +3,11 @@
 Release Notes
 =============
 
-:index:`\ <single: Releases>`\ 
+:index:`\ <single: Releases>`\
 
 The technical changelog is automatically generated from the Bareos bug tracking system, see http://bugs.bareos.org/changelog_page.php.
 
 Please note, that some of the subreleases are only internal development releases.
-
-Open issues for a specific version are shown at http://bugs.bareos.org/roadmap_page.php.
 
 The overview about new feature of a release are shown at the :ref:`genindex` of this document.
 
