@@ -102,7 +102,7 @@ class ClientModel
    public function getClientBackups(&$bsock=null, $client=null, $fileset=null, $order=null, $limit=null)
    {
       if(isset($bsock, $client)) {
-         $cmd = 'llist backups client="'.$client.'"';
+         $cmd = 'llist jobs client="'.$client.'"';
          if ($fileset != null) {
             $cmd .= ' fileset="'.$fileset.'"';
          }
@@ -114,7 +114,7 @@ class ClientModel
          }
          $result = $bsock->send_command($cmd, 2);
          $backups = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-         return $backups['result']['backups'];
+         return $backups['result']['jobs'];
       }
       else {
          throw new \Exception('Missing argument.');
