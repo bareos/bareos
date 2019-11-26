@@ -79,363 +79,40 @@ ENDIF()
 file(RELATIVE_PATH RELATIVE_PROJECT_SOURCE_DIR  ${CMAKE_CURRENT_BINARY_DIR} ${PROJECT_SOURCE_DIR} )
 add_definitions(-DRELATIVE_PROJECT_SOURCE_DIR=\"${RELATIVE_PROJECT_SOURCE_DIR}\")
 
-####### test_lib ###############################
-add_executable(test_lib
-    alist_test.cc
-    #    bareos_test_sockets.cc
-    dlist_test.cc
-    htable_test.cc
-    #qualified_resource_name_type_converter_test.cc
-    lib_tests.cc
-    ${PROJECT_SOURCE_DIR}/src/filed/evaluate_job_command.cc
-    )
+bareos_add_test( lib_tests "alist_test.cc;bareos_test_sockets.cc;dlist_test.cc;htable_test.cc;qualified_resource_name_type_converter_test.cc;${PROJECT_SOURCE_DIR}/src/filed/evaluate_job_command.cc" "stored_objects;bareossd;bareos;${JANSSON_LIBRARIES};${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
 
-target_link_libraries(test_lib
-   stored_objects
-   bareossd
-   bareos
-   ${JANSSON_LIBRARIES}
-   ${GTEST_LIBRARIES}
-   ${GTEST_MAIN_LIBRARIES}
-   )
-
-target_compile_definitions(test_lib PRIVATE -DTEST_SMALL_HTABLE)
-bareos_gtest_add_tests(test_lib)
-
-####### test_fd_plugins #####################################
-bareos_add_test(test_fd_plugins
-  "${PROJECT_SOURCE_DIR}/src/filed/fd_plugins.cc;${PROJECT_SOURCE_DIR}/src/filed/fileset.cc"
-  "bareos;bareosfind;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}"
-  ""
-  )
-
-####### test_sd_plugins #####################################
-bareos_add_test(test_sd_plugins "" "bareos;bareossd;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
-
-####### test_dir_plugins #####################################
-bareos_add_test(test_dir_plugins "${PROJECT_SOURCE_DIR}/src/dird/dir_plugins.cc" "bareos;bareoscats;bareossql;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
-
-####### test_output_formatter ###############################
-bareos_add_test(test_output_formatter  ""  "${GTEST_MAIN_LIBRARIES};${GTEST_LIBRARIES};${JANSSON_LIBRARIES};bareos" "")
-
-IF(NOT HAVE_WIN32)
-####### test_bsock ###############################
-bareos_add_test(test_bsock
-  "bareos_test_sockets.cc;bsock_constructor_test.cc;bsock_cert_verify_common_names_test.cc;create_resource.cc;${SSL_UNIT_TEST_FILES}"
-  "${LINK_LIBRARIES}"
-  "-DCERTDIR=\"${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls\""
-  )
-
-####### test_connection_setup ###############################
+bareos_add_test( test_fd_plugins "${PROJECT_SOURCE_DIR}/src/filed/fd_plugins.cc;${PROJECT_SOURCE_DIR}/src/filed/fileset.cc" "bareos;bareosfind;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
+bareos_add_test( test_sd_plugins "" "bareos;bareossd;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
+bareos_add_test( test_dir_plugins "${PROJECT_SOURCE_DIR}/src/dird/dir_plugins.cc" "bareos;bareoscats;bareossql;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
+bareos_add_test( test_output_formatter  ""  "${GTEST_MAIN_LIBRARIES};${GTEST_LIBRARIES};${JANSSON_LIBRARIES};bareos" "")
+bareos_add_test( test_bsock "bareos_test_sockets.cc;bsock_constructor_test.cc;bsock_cert_verify_common_names_test.cc;create_resource.cc;${SSL_UNIT_TEST_FILES}" "${LINK_LIBRARIES}" "-DCERTDIR=\"${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls\"")
 bareos_add_test( bsock_test_connection_setup "${SSL_UNIT_TEST_FILES}" "${LINK_LIBRARIES}" "")
-
-####### test_stored_multiplied_device ###############################
 bareos_add_test( multiplied_device_test "" "${LINK_LIBRARIES}" "")
-
-####### test_ndmp_address_translate ###############################
-bareos_add_test(ndmp_address_translate_test "../dird/ndmp_slot2elemaddr.cc" "${LINK_LIBRARIES}" "")
-
-####### test_sd_reservation #####################################
+bareos_add_test( ndmp_address_translate_test "../dird/ndmp_slot2elemaddr.cc" "${LINK_LIBRARIES}" "")
 if(GMOCK_FOUND)
-  bareos_add_test(sd_reservation "" "${LINK_LIBRARIES};${GMOCK_LIBRARIES}" "")
+  bareos_add_test( sd_reservation "" "${LINK_LIBRARIES};${GMOCK_LIBRARIES}" "")
 endif()
-
-####### test_config_parser_sd #####################################
-bareos_add_test(test_config_parser_sd "" "stored_objects;bareossd;bareos;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
-
-# add_executable(test_config_parser_sd test_config_parser_sd.cc)
-
-# target_link_libraries(test_config_parser_sd
-#    stored_objects
-#    bareossd
-#    bareos
-#    ${GTEST_LIBRARIES}
-#    ${GTEST_MAIN_LIBRARIES}
-# )
-
-#    bareos_gtest_add_tests(test_config_parser_sd)
-
-
-####### test_config_parser_dir  #####################################
-add_executable(test_config_parser_dir test_config_parser_dir.cc)
-
-target_link_libraries(test_config_parser_dir
-   dird_objects
-   bareos
-   bareosfind
-   bareoscats
-   bareossql
-   ${GTEST_LIBRARIES}
-   ${GTEST_MAIN_LIBRARIES}
-)
-
-   bareos_gtest_add_tests(test_config_parser_dir)
-
-####### test_config_parser_console  #####################################
-add_executable(test_config_parser_console test_config_parser_console.cc)
-
-target_link_libraries(test_config_parser_console
-   bareos
-   bareosfind
-   console_objects
-   ${GTEST_LIBRARIES}
-   ${GTEST_MAIN_LIBRARIES}
-)
-
-   bareos_gtest_add_tests(test_config_parser_console)
-
-####### test_config_parser_fd  #####################################
-add_executable(test_config_parser_fd test_config_parser_fd.cc ${FDSRCS})
-
-target_link_libraries(test_config_parser_fd
-   bareos
-   bareosfind
-   fd_objects
-   ${GTEST_LIBRARIES}
-   ${GTEST_MAIN_LIBRARIES}
-)
-
-   bareos_gtest_add_tests(test_config_parser_fd)
-
-####### test_setdebug #####################################
-add_executable(test_setdebug test_setdebug.cc)
-
-target_link_libraries(test_setdebug
-   dird_objects
-   bareos
-   bareosfind
-   bareoscats
-   bareossql
-   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}>
-   ${LMDB_LIBS}
-   ${NDMP_LIBS}
-   ${GTEST_LIBRARIES}
-   ${GTEST_MAIN_LIBRARIES}
-)
-   bareos_gtest_add_tests(test_setdebug)
-
-
-####### test_fileindex_list #####################################
-add_executable(test_fileindex_list test_fileindex_list.cc)
-
-target_link_libraries(test_fileindex_list
- dird_objects
- bareos
- bareosfind
- bareoscats
- bareossql
- $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}>
- ${LMDB_LIBS}
- ${NDMP_LIBS}
- ${GTEST_LIBRARIES}
- ${GTEST_MAIN_LIBRARIES}
-)
-
-   bareos_gtest_add_tests(test_fileindex_list)
-
-####### test_backtrace #####################################
+bareos_add_test( test_config_parser_sd "" "stored_objects;bareossd;bareos;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
+bareos_add_test( test_config_parser_dir "" "dird_objects;bareos;bareosfind;bareoscats;bareossql;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
+bareos_add_test( test_config_parser_console "" "console_objects;bareos;bareosfind;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
+bareos_add_test( test_config_parser_fd "" "fd_objects;bareos;bareosfind;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
+bareos_add_test( test_setdebug "" "dird_objects;bareos;bareosfind;bareoscats;bareossql;$<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}>;${LMDB_LIBS};${NDMP_LIBS};${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
+bareos_add_test( test_fileindex_list "" "dird_objects;bareos;bareosfind;bareoscats;bareossql;$<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}>;${LMDB_LIBS};${NDMP_LIBS};${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
 IF(HAVE_EXECINFO_H AND HAVE_BACKTRACE AND HAVE_BACKTRACE_SYMBOLS)
-  add_executable(test_backtrace test_backtrace.cc)
-
-  target_link_libraries(test_backtrace
-     bareos
-     ${GTEST_LIBRARIES}
-     ${GTEST_MAIN_LIBRARIES}
-  )
-
-   bareos_gtest_add_tests(test_backtrace)
-
+  bareos_add_test(test_backtrace "" "bareos;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
 ENDIF()
-
-####### test_crc32 #####################################
-add_executable(test_crc32 test_crc32.cc ../stored/crc32/crc32.cc)
-
-target_link_libraries(test_crc32
-   bareos
-   ${GTEST_LIBRARIES}
-   ${GTEST_MAIN_LIBRARIES}
-)
-
-   bareos_gtest_add_tests(test_crc32)
-####### thread_list  #####################################
-add_executable(thread_list thread_list.cc)
-
-target_link_libraries(thread_list
-   bareos
-   ${GTEST_LIBRARIES}
-   ${GTEST_MAIN_LIBRARIES}
-)
-
-   bareos_gtest_add_tests(thread_list)
-
-####### ua_available_resources_equals_config_resources  ###########
-add_executable(show_cmd_available_resources_equals_config_resources show_cmd_available_resources_equals_config_resources.cc)
-
-target_link_libraries(show_cmd_available_resources_equals_config_resources
-   dird_objects
-   bareos
-   bareosfind
-   bareoscats
-   bareossql
-   ${GTEST_LIBRARIES}
-   ${GTEST_MAIN_LIBRARIES}
-)
-
-   bareos_gtest_add_tests(show_cmd_available_resources_equals_config_resources)
-
-####### test_job_control_record #####################################
-add_executable(test_job_control_record job_control_record.cc)
-
-target_link_libraries(test_job_control_record
-   bareos
-   ${GTEST_LIBRARIES}
-   ${GTEST_MAIN_LIBRARIES}
-)
-   bareos_gtest_add_tests(test_job_control_record)
-
-####### test_recent_job_results_list #####################################
-
-add_executable(test_recent_job_results_list recent_job_results_list.cc)
-
-file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/tests/test_recent_job_results_list_tmp)
-target_compile_definitions(test_recent_job_results_list
-  PRIVATE TEST_TEMP_DIR=\"${PROJECT_BINARY_DIR}/src/tests/test_recent_job_results_list_tmp\")
-target_compile_definitions(test_recent_job_results_list
-  PRIVATE TEST_ORIGINAL_FILE_DIR=\"${PROJECT_SOURCE_DIR}/src/tests/recent_job_results_list\")
-
-target_link_libraries(test_recent_job_results_list
-   bareos
-   ${GTEST_LIBRARIES}
-   ${GTEST_MAIN_LIBRARIES}
-)
-
-   bareos_gtest_add_tests(test_recent_job_results_list)
-
-####### test_job_control_record #####################################
-add_executable(test_thread_specific_data thread_specific_data.cc)
-
-target_link_libraries(test_thread_specific_data
-   bareos
-   ${GTEST_LIBRARIES}
-   ${GTEST_MAIN_LIBRARIES}
-)
-
-   bareos_gtest_add_tests(test_thread_specific_data)
-
-
-####### test_timer_thread  #####################################
-add_executable(test_timer_thread timer_thread.cc)
-
-target_link_libraries(test_timer_thread
-   bareos
-   ${GTEST_LIBRARIES}
-   ${GTEST_MAIN_LIBRARIES}
-)
-bareos_gtest_add_tests(test_timer_thread)
-
-
-####### test_watchdog_timer ##########################################
-add_executable(test_watchdog_timer watchdog_timer.cc)
-
-target_link_libraries(test_watchdog_timer
-   bareos
-   ${GTEST_LIBRARIES}
-   ${GTEST_MAIN_LIBRARIES}
-)
-   bareos_gtest_add_tests(test_watchdog_timer)
-
-
-####### run_on_incoming_connect_interval  #####################################
-add_executable(run_on_incoming_connect_interval run_on_incoming_connect_interval.cc)
-
-target_link_libraries(run_on_incoming_connect_interval
-   dird_objects
-   bareos
-   bareosfind
-   bareoscats
-   bareossql
-   ${LMDB_LIBS}
-   ${NDMP_LIBS}
-   ${GTEST_LIBRARIES}
-   ${GTEST_MAIN_LIBRARIES}
-)
-
-IF(HAVE_PAM)
-   target_link_libraries(run_on_incoming_connect_interval ${PAM_LIBRARIES})
-ENDIF()
-
-   bareos_gtest_add_tests(client-initiated-reconnect)
-
-####### scheduler_job_item_queue  #####################################
-add_executable(scheduler_job_item_queue scheduler_job_item_queue.cc)
-
-target_link_libraries(scheduler_job_item_queue
-   dird_objects
-   bareos
-   ${GTEST_LIBRARIES}
-   ${GTEST_MAIN_LIBRARIES}
-)
-
-IF(HAVE_PAM)
-   target_link_libraries(scheduler_job_item_queue ${PAM_LIBRARIES})
-ENDIF()
-
-   bareos_gtest_add_tests(scheduler_job_item_queue)
-
-####### scheduler  #####################################
-add_executable(scheduler scheduler.cc)
-
-target_link_libraries(scheduler
-   dird_objects
-   bareos
-   bareosfind
-   bareoscats
-   bareossql
-   ${LMDB_LIBS}
-   ${NDMP_LIBS}
-   ${GTEST_LIBRARIES}
-   ${GTEST_MAIN_LIBRARIES}
-)
-
-IF(HAVE_PAM)
-   target_link_libraries(scheduler ${PAM_LIBRARIES})
-ENDIF()
-
-   bareos_gtest_add_tests(scheduler)
-
-####### test_is_name_valid  #####################################
-add_executable(test_is_name_valid test_is_name_valid.cc)
-
-target_link_libraries(test_is_name_valid
-   bareos
-   ${GTEST_LIBRARIES}
-   ${GTEST_MAIN_LIBRARIES}
-)
-
-   bareos_gtest_add_tests(test_is_name_valid)
-
-
-####### test_acl_entry_syntax  #####################################
-add_executable(test_acl_entry_syntax test_acl_entry_syntax.cc)
-
-target_link_libraries(test_acl_entry_syntax
-   bareos
-   ${GTEST_LIBRARIES}
-   ${GTEST_MAIN_LIBRARIES}
-)
-
-   bareos_gtest_add_tests(test_acl_entry_syntax)
-
-
-
-####### version_strings  #####################################
-add_executable(version_strings version_strings.cc)
-
-target_link_libraries(version_strings
-   bareos
-   ${GTEST_LIBRARIES}
-   ${GTEST_MAIN_LIBRARIES}
-)
-   bareos_gtest_add_tests(version_strings)
-
+bareos_add_test( test_crc32 "../stored/crc32/crc32.cc" "bareos;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
+bareos_add_test( thread_list "" "bareos;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
+bareos_add_test( show_cmd_available_resources_equals_config_resources "" "dird_objects;bareos;bareosfind;bareoscats;bareossql;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
+bareos_add_test( job_control_record "" "bareos;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
+bareos_add_test( recent_job_results_list "" "bareos;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "TEST_TEMP_DIR=\"${PROJECT_BINARY_DIR}/src/tests/test_recent_job_results_list_tmp\";TEST_ORIGINAL_FILE_DIR=\"${PROJECT_SOURCE_DIR}/src/tests/recent_job_results_list\"")
+bareos_add_test( thread_specific_data "" "bareos;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
+bareos_add_test( timer_thread "" "bareos;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
+bareos_add_test( watchdog_timer "" "bareos;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
+bareos_add_test( run_on_incoming_connect_interval "" "dird_objects;bareos;bareosfind;bareoscats;bareossql;$<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}>;${LMDB_LIBS};${NDMP_LIBS};${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
+bareos_add_test( scheduler_job_item_queue "" "dird_objects;bareos;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
+bareos_add_test( scheduler "" "dird_objects;bareos;bareosfind;bareoscats;bareossql;$<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}>;${LMDB_LIBS};${NDMP_LIBS};${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
+bareos_add_test( test_is_name_valid "" "bareos;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
+bareos_add_test( test_acl_entry_syntax "" "bareos;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
+bareos_add_test( version_strings "" "bareos;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
 
