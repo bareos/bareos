@@ -129,54 +129,31 @@ bareos_add_test(test_bsock
 ####### test_connection_setup ###############################
 bareos_add_test( bsock_test_connection_setup "${SSL_UNIT_TEST_FILES}" "${LINK_LIBRARIES}" "")
 
-# add_executable(test_connection_setup
-#     bsock_test_connection_setup.cc
-#     ${SSL_UNIT_TEST_FILES}
-# )
-
-# target_link_libraries(test_connection_setup ${LINK_LIBRARIES})
-
-# bareos_gtest_add_tests(test_connection_setup)
-
-
 ####### test_stored_multiplied_device ###############################
-add_executable(test_stored_multiplied_device
-  multiplied_device_test.cc
-)
-
-target_link_libraries(test_stored_multiplied_device ${LINK_LIBRARIES})
-bareos_gtest_add_tests(test_stored_multiplied_device)
-
+bareos_add_test( multiplied_device_test "" "${LINK_LIBRARIES}" "")
 
 ####### test_ndmp_address_translate ###############################
-add_executable(test_ndmp_address_translate
-  ndmp_address_translate_test.cc
-  ../dird/ndmp_slot2elemaddr.cc
-)
-
-target_link_libraries(test_ndmp_address_translate ${LINK_LIBRARIES})
-bareos_gtest_add_tests(test_ndmp_address_translate)
+bareos_add_test(ndmp_address_translate_test "../dird/ndmp_slot2elemaddr.cc" "${LINK_LIBRARIES}" "")
 
 ####### test_sd_reservation #####################################
 if(GMOCK_FOUND)
-  add_executable(test_sd_reservation sd_reservation.cc)
-
-  target_link_libraries(test_sd_reservation ${LINK_LIBRARIES} ${GMOCK_LIBRARIES})
-  bareos_gtest_add_tests(test_sd_reservation)
+  bareos_add_test(sd_reservation "" "${LINK_LIBRARIES};${GMOCK_LIBRARIES}" "")
 endif()
 
 ####### test_config_parser_sd #####################################
-add_executable(test_config_parser_sd test_config_parser_sd.cc)
+bareos_add_test(test_config_parser_sd "" "stored_objects;bareossd;bareos;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
 
-target_link_libraries(test_config_parser_sd
-   stored_objects
-   bareossd
-   bareos
-   ${GTEST_LIBRARIES}
-   ${GTEST_MAIN_LIBRARIES}
-)
+# add_executable(test_config_parser_sd test_config_parser_sd.cc)
 
-   bareos_gtest_add_tests(test_config_parser_sd)
+# target_link_libraries(test_config_parser_sd
+#    stored_objects
+#    bareossd
+#    bareos
+#    ${GTEST_LIBRARIES}
+#    ${GTEST_MAIN_LIBRARIES}
+# )
+
+#    bareos_gtest_add_tests(test_config_parser_sd)
 
 
 ####### test_config_parser_dir  #####################################
