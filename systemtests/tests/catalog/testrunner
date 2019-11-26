@@ -13,5 +13,5 @@ ${scripts}/cleanup
 ${scripts}/setup
 
 start_test
-
+./../../../../b/core/src/tests/catalog
 end_test

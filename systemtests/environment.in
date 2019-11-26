@@ -78,3 +78,6 @@ export BAREOS_WEBUI_RESTOREFILE=${PROJECT_BINARY_DIR}
 export BAREOS_WEBUI_LOG_PATH=${logdir}
 export BAREOS_WEBUI_DELAY=1
 
+export CATALOG_BACKEND=postgresql
+export BACKEND_DIRS=/home/franku/01-prj/git/bareos-master/b/core/src/cats
+
