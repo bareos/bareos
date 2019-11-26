@@ -1058,7 +1058,7 @@ POOLMEM* edit_job_codes(JobControlRecord* jcr,
   return omsg;
 }
 
-void SetWorkingDirectory(char* wd)
+void SetWorkingDirectory(const char* wd)
 {
   struct stat stat_buf;
 

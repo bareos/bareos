@@ -151,7 +151,7 @@ BareosDb::SqlFindResult BareosDb::FindLastJobStartTimeForJobAndClient(
     JobControlRecord* jcr,
     std::string job_basename,
     std::string client_name,
-    char* stime)
+    std::vector<char>& stime_out)
 {
   auto retval = SqlFindResult::kError;
 
@@ -164,7 +164,9 @@ BareosDb::SqlFindResult BareosDb::FindLastJobStartTimeForJobAndClient(
   EscapeString(nullptr, esc_clientname.data(), client_name.c_str(),
                client_name.size());
 
-  PmStrcpy(stime, "0000-00-00 00:00:00"); /* default */
+  constexpr const char* default_time{"0000-00-00 00:00:00"};
+  stime_out.resize(strlen(default_time));
+  strcpy(stime_out.data(), default_time);
 
   Mmsg(cmd,
        "SELECT StartTime"
@@ -193,7 +195,12 @@ BareosDb::SqlFindResult BareosDb::FindLastJobStartTimeForJobAndClient(
   }
 
   Dmsg2(100, "Got start time: %s\n", row[0]);
-  PmStrcpy(stime, row[0]);
+
+  {
+    std::size_t len = strlen(row[0]);
+    stime_out.resize(len + 1);
+    strcpy(stime_out.data(), row[0]);
+  }
 
   SqlFreeResult();
 

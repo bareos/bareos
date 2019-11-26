@@ -1,14 +1,17 @@
 
 PROJECT_SOURCE_DIR=@PROJECT_SOURCE_DIR@
+CMAKE_BINARY_DIR=@CMAKE_BINARY_DIR@
 
 PROJECT_BINARY_DIR=@PROJECT_BINARY_DIR@
 bin=${PROJECT_BINARY_DIR}/bin
 sbin=${PROJECT_BINARY_DIR}/sbin
 
+BAREOS_UNITTESTS_BINARY_DIR=$CMAKE_BINARY_DIR/core/src/tests
+
 current_test_directory=${PROJECT_BINARY_DIR}/tests/@TEST_NAME@
 
 conf=${current_test_directory}/etc/bareos
-confdir=${conf}
+export confdir=${conf}
 configs=${conf}
 BAREOS_CONFIG_DIR=${conf}
 
@@ -18,7 +21,6 @@ tmp=${current_test_directory}/tmp
 
 
 dumps=${current_test_directory}/dumps
-backenddir=@backenddir@
 plugindir=${PROJECT_BINARY_DIR}/plugins
 plugindirtmp=${PROJECT_BINARY_DIR}/pluginstmp
 rscripts=${PROJECT_BINARY_DIR}/scripts
@@ -29,6 +31,8 @@ tmpsrc=${PROJECT_BINARY_DIR}/tmpsrc
 DBTYPE=@DEFAULT_DB_TYPE@
 archivedir=@archivedir@
 logdir=@logdir@
+
+export backenddir=@backenddir@
 
 export dir_password=@dir_password@
 export sd_password=@sd_password@
@@ -78,6 +82,4 @@ export BAREOS_WEBUI_RESTOREFILE=${PROJECT_BINARY_DIR}
 export BAREOS_WEBUI_LOG_PATH=${logdir}
 export BAREOS_WEBUI_DELAY=1
 
-export CATALOG_BACKEND=$DBTYPE
-export BACKEND_DIRS=$backenddir
 

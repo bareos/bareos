@@ -761,7 +761,7 @@ class BareosDb : public BareosDbQueryEnum {
       JobControlRecord* jcr,
       std::string job_basename,
       std::string client_name,
-      char* stime);
+      std::vector<char>& stime_out);
 
   bool FindLastJobStartTime(JobControlRecord* jcr,
                             JobDbRecord* jr,

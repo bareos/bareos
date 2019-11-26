@@ -32,7 +32,7 @@ macro(bareos_gtest_add_tests testname)
 endmacro()
 
 macro(bareos_add_test BAREOS_ADD_TEST_TESTNAME)
-  set(options "") # no options
+  set(options SKIP_GTEST)
   set(multiValueArgs ADDITIONAL_SOURCES LINK_LIBRARIES COMPILE_DEFINITIONS)
   cmake_parse_arguments(
     BAREOS_ADD_TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN}
@@ -48,7 +48,9 @@ macro(bareos_add_test BAREOS_ADD_TEST_TESTNAME)
   target_compile_definitions(
     ${BAREOS_ADD_TEST_TESTNAME} PRIVATE ${BAREOS_ADD_TEST_COMPILE_DEFINITIONS}
   )
-  bareos_gtest_add_tests(${BAREOS_ADD_TEST_TESTNAME})
+  if(NOT BAREOS_ADD_TEST_SKIP_GTEST)
+    bareos_gtest_add_tests(${BAREOS_ADD_TEST_TESTNAME})
+  endif()
 endmacro()
 
 include(GoogleTest)
@@ -294,6 +296,23 @@ bareos_add_test(
   timer_thread LINK_LIBRARIES bareos ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES}
 )
 
+if(NOT client-only)
+  bareos_add_test(
+    catalog
+    LINK_LIBRARIES
+      bareos
+      dird_objects
+      bareosfind
+      bareoscats
+      bareossql
+      $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}>
+      ${LMDB_LIBS}
+      ${GTEST_LIBRARIES}
+      ${GTEST_MAIN_LIBRARIES}
+    SKIP_GTEST
+  )
+endif()
+
 if(HAVE_EXECINFO_H
    AND HAVE_BACKTRACE
    AND HAVE_BACKTRACE_SYMBOLS
@@ -341,9 +360,3 @@ if(NOT HAVE_WIN32 AND NOT client-only)
    ${GTEST_MAIN_LIBRARIES}
 )
 endif()
-
-#add_test(NAME catalog::postgresql COMMAND catalog TEST_PREFIX gtest:)
-#set_tests_properties(catalog::postgresql PROPERTIES
-#  ENVIRONMENT CATALOG_BACKEND=postgresql
-#  ENVIRONMENT BACKEND_DIRS=${CMAKE_BINARY_DIR}/core/src/cats)
-

@@ -57,7 +57,7 @@ additional_commands = {
   "bareos_add_test": {
     "pargs": 1,
     "flags": [
-      "",
+      "SKIP_GTEST",
       ""
     ],
     "kwargs": {

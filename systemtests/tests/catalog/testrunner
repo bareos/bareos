@@ -1,8 +1,5 @@
 #!/bin/sh
 #
-# Run a simple backup
-#   then restore it.
-#
 TestName="$(basename "$(pwd)")"
 export TestName
 
@@ -20,6 +17,6 @@ exit_failure()
 
 start_test
 
-./../../../../b/core/src/tests/catalog || exit_failure
+${BAREOS_UNITTESTS_BINARY_DIR}/catalog || exit_failure
 
 end_test
