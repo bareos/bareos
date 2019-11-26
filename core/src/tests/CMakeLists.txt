@@ -431,7 +431,6 @@ ENDIF()
 
 gtest_discover_tests(run_on_incoming_connect_interval TEST_PREFIX gtest:)
 
-ENDIF()# HAVE_WIN32
 ####### scheduler_job_item_queue  #####################################
 add_executable(scheduler_job_item_queue scheduler_job_item_queue.cc)
 
