@@ -1,10 +1,7 @@
 Bareos Main Reference and Documentation
 =======================================
 
-for Bareos version |version| release |release|, created |today|
-
-The Information regarding the newest release in the :ref:`bareos-current-releasenotes`.
-
+For information regarding the newest release see the :ref:`release notes <bareos-current-releasenotes>`.
 
 .. toctree::
 
