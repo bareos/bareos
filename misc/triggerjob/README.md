@@ -1,11 +1,15 @@
 _triggerjob_ is a Python script that allows you to perform a backup for a connected client if a definable time has passed since the last backup. 
 
-This is especially useful for Client Initiated Connections, as the job is only executed when the client is available and not just when a certain amount of time has passed.
+It will look for all clients connected to the Director. If it finds a job named **backup-{clientname}** that did not successfully run during the specified time period, it will trigger this job. This way, clients that are not regularly connected to the director, such as notebooks, can be reliably backed up.
+
+_triggerjob_ should be executed regularly to detect newly connected clients. To do so, a **cronjob** should run the script repeatedly.
+
+Note: _triggerjob_ **requires a connection between director and client**. Therefore, activate [Client Initiated Connections](https://docs.bareos.org/TasksAndConcepts/NetworkSetup.html#client-initiated-connection) to automatically establish a connection whenever possible. Otherwise no jobs will be started
 
 Sample usage:
 
 ```
-$ ./triggerjob.py -p secret --hours 24 localhost
+$ ./triggerjob.py -p PASSWORD --hours 24 localhost
 ```
 
 ```
