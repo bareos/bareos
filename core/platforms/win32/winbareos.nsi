@@ -67,7 +67,7 @@ $\r$\n\
 $\r$\n\
 [/? (this help dialog)]"
 
-SetCompressor lzma
+SetCompressor /solid lzma
 
 # variable definitions
 Var LocalHostAddress
