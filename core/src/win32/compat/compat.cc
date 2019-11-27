@@ -1689,6 +1689,10 @@ static int stat2(const char* filename, struct stat* sb)
                     OPEN_EXISTING, 0, NULL);
 
     FreePoolMemory(win32_fname);
+  } else {
+    Emsg0(M_FATAL, 0,
+          _("p_GetFileAttributesW and p_GetFileAttributesA undefined. "
+            "probably missing OSDependentInit() call\n"));
   }
 
   if (attr == (DWORD)-1) {
@@ -1762,6 +1766,9 @@ int stat(const char* filename, struct stat* sb)
       goto bail_out;
     }
   } else {
+    Emsg0(M_FATAL, 0,
+          _("p_GetFileAttributesExW and p_GetFileAttributesExA undefined. "
+            "probably missing OSDependentInit() call\n"));
     goto bail_out;
   }
 
