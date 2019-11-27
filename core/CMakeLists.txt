@@ -135,8 +135,6 @@ execute_process(
 
 INCLUDE(BareosExtractVersionInfo)
 
-INCLUDE(BareosLocalBuildDefinitions OPTIONAL RESULT_VARIABLE BareosLocalBuildDefinitionsFile)
-
 IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
    set(OPENSSL_ROOT_DIR /usr/local/opt/openssl)
    set(Readline_ROOT_DIR /usr/local/opt/readline)
@@ -652,6 +650,8 @@ add_subdirectory(scripts)
 add_subdirectory(manpages)
 add_subdirectory(platforms)
 add_subdirectory(src)
+
+INCLUDE(BareosLocalBuildDefinitions OPTIONAL RESULT_VARIABLE BareosLocalBuildDefinitionsFile)
 
 STRING(TIMESTAMP NOW "%Y-%m-%d %H:%M:%S")
 
