@@ -40,14 +40,15 @@ import BareosFdPluginLDAP
 
 
 def load_bareos_plugin(context, plugindef):
-    '''
+    """
     This function is called by the Bareos-FD to load the plugin
     We use it to intantiate the plugin class
-    '''
-    BareosFdWrapper.bareos_fd_plugin_object = \
-        BareosFdPluginLDAP.BareosFdPluginLDAP(
-            context, plugindef)
+    """
+    BareosFdWrapper.bareos_fd_plugin_object = BareosFdPluginLDAP.BareosFdPluginLDAP(
+        context, plugindef
+    )
 
-    return bRCs['bRC_OK']
+    return bRCs["bRC_OK"]
+
 
 # the rest is done in the Plugin module

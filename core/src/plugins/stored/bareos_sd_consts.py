@@ -35,7 +35,7 @@ bJobMessageType = dict(
     M_RESTORED=13,
     M_SECURITY=14,
     M_ALERT=15,
-    M_VOLMGMT=16
+    M_VOLMGMT=16,
 )
 
 bsdrVariable = dict(
@@ -55,14 +55,11 @@ bsdrVariable = dict(
     bsdVarJobFiles=14,
     bsdVarJobBytes=15,
     bsdVarCompatible=16,
-    bsdVarPluginDir=17
+    bsdVarPluginDir=17,
 )
 
 bsdwVariable = dict(
-    bsdwVarJobReport=1,
-    bsdwVarVolumeName=2,
-    bsdwVarPriority=3,
-    bsdwVarJobLevel=4
+    bsdwVarJobReport=1, bsdwVarVolumeName=2, bsdwVarPriority=3, bsdwVarJobLevel=4
 )
 
 bRCs = dict(
@@ -74,7 +71,7 @@ bRCs = dict(
     bRC_Seen=5,
     bRC_Core=6,
     bRC_Skip=7,
-    bRC_Cancel=8
+    bRC_Cancel=8,
 )
 
 bsdEventType = dict(
@@ -101,5 +98,5 @@ bsdEventType = dict(
     bsdEventDeviceRelease=21,
     bsdEventNewPluginOptions=22,
     bsdEventChangerLock=23,
-    bsdEventChangerUnlock=24
+    bsdEventChangerUnlock=24,
 )

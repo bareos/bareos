@@ -35,9 +35,13 @@ import BareosFdPluginBaseclass
 
 
 def load_bareos_plugin(context, plugindef):
-    bareosfd.DebugMessage(context, 100, "------ Plugin loader called with " + plugindef + "\n")
-    BareosFdWrapper.bareos_fd_plugin_object = \
-        BareosFdPluginBaseclass.BareosFdPluginBaseclass(context, plugindef)
-    return bareos_fd_consts.bRCs['bRC_OK']
+    bareosfd.DebugMessage(
+        context, 100, "------ Plugin loader called with " + plugindef + "\n"
+    )
+    BareosFdWrapper.bareos_fd_plugin_object = BareosFdPluginBaseclass.BareosFdPluginBaseclass(
+        context, plugindef
+    )
+    return bareos_fd_consts.bRCs["bRC_OK"]
+
 
 # the rest is done in the Plugin module

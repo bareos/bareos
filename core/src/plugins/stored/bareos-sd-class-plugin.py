@@ -38,16 +38,17 @@ import BareosSdPluginBaseclass
 
 
 def load_bareos_plugin(context, plugindef):
-    '''
+    """
     This function is called by the Bareos-SD to load the plugin
     We use it to instantiate the plugin class
-    '''
+    """
     # BareosSdWrapper.bareos_sd_plugin_object is the module attribute that
     # holds the plugin class object
-    BareosSdWrapper.bareos_sd_plugin_object = \
-        BareosSdPluginBaseclass.BareosSdPluginBaseclass(
-            context, plugindef)
-    return bareos_sd_consts.bRCs['bRC_OK']
+    BareosSdWrapper.bareos_sd_plugin_object = BareosSdPluginBaseclass.BareosSdPluginBaseclass(
+        context, plugindef
+    )
+    return bareos_sd_consts.bRCs["bRC_OK"]
+
 
 # the rest is done in the Plugin module
 

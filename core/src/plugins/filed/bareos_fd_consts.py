@@ -35,7 +35,7 @@ bJobMessageType = dict(
     M_RESTORED=13,
     M_SECURITY=14,
     M_ALERT=15,
-    M_VOLMGMT=16
+    M_VOLMGMT=16,
 )
 
 bVariable = dict(
@@ -57,7 +57,7 @@ bVariable = dict(
     bVarVersion=16,
     bVarDistName=17,
     bVarPrevJobName=18,
-    bVarPrefixLinks=19
+    bVarPrefixLinks=19,
 )
 
 bFileType = dict(
@@ -88,7 +88,7 @@ bFileType = dict(
     FT_RESTORE_FIRST=25,
     FT_JUNCTION=26,
     FT_PLUGIN_CONFIG=27,
-    FT_PLUGIN_CONFIG_FILLED=28
+    FT_PLUGIN_CONFIG_FILLED=28,
 )
 
 bRCs = dict(
@@ -100,16 +100,10 @@ bRCs = dict(
     bRC_Seen=5,
     bRC_Core=6,
     bRC_Skip=7,
-    bRC_Cancel=8
+    bRC_Cancel=8,
 )
 
-bCFs = dict(
-    CF_SKIP=1,
-    CF_ERROR=2,
-    CF_EXTRACT=3,
-    CF_CREATED=4,
-    CF_CORE=5
-)
+bCFs = dict(CF_SKIP=1, CF_ERROR=2, CF_EXTRACT=3, CF_CREATED=4, CF_CORE=5)
 
 bEventType = dict(
     bEventJobStart=1,
@@ -142,28 +136,22 @@ bEventType = dict(
     bEventVssRestoreLoadComponentMetadata=28,
     bEventVssRestoreSetComponentsSelected=29,
     bEventVssCloseRestore=30,
-    bEventVssBackupComplete=31
+    bEventVssBackupComplete=31,
 )
 
-bIOPS = dict(
-    IO_OPEN=1,
-    IO_READ=2,
-    IO_WRITE=3,
-    IO_CLOSE=4,
-    IO_SEEK=5
-)
+bIOPS = dict(IO_OPEN=1, IO_READ=2, IO_WRITE=3, IO_CLOSE=4, IO_SEEK=5)
 
 bLevels = dict(
-    L_FULL='F',
-    L_INCREMENTAL='I',
-    L_DIFFERENTIAL='D',
-    L_SINCE='S',
-    L_VERIFY_CATALOG='C',
-    L_VERIFY_INIT='V',
-    L_VERIFY_VOLUME_TO_CATALOG='O',
-    L_VERIFY_DISK_TO_CATALOG='d',
-    L_VERIFY_DATA='A',
-    L_BASE='B',
-    L_NONE=' ',
-    L_VIRTUAL_FULL='f'
+    L_FULL="F",
+    L_INCREMENTAL="I",
+    L_DIFFERENTIAL="D",
+    L_SINCE="S",
+    L_VERIFY_CATALOG="C",
+    L_VERIFY_INIT="V",
+    L_VERIFY_VOLUME_TO_CATALOG="O",
+    L_VERIFY_DISK_TO_CATALOG="d",
+    L_VERIFY_DATA="A",
+    L_BASE="B",
+    L_NONE=" ",
+    L_VIRTUAL_FULL="f",
 )
