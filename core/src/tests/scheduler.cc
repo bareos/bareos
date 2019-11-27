@@ -276,6 +276,7 @@ TEST_F(SchedulerTest, on_time)
 
 TEST_F(SchedulerTest, add_job_with_no_run_resource_to_queue)
 {
+  OSDependentInit();
   InitMsg(NULL, NULL);
 
   if (debug) { std::cout << "Start test" << std::endl; }
