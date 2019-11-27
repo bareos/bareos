@@ -27,15 +27,11 @@
  * Philipp Storz, November 2017
  */
 #if defined(HAVE_MINGW)
-#define _S_IFDIR S_IFDIR
-#define _stat stat
-#include "minwindef.h"
 #include "include/bareos.h"
 #include "gtest/gtest.h"
-
 #else
 #include "gtest/gtest.h"
-
+#include "include/bareos.h"
 #endif
 
 #include "lib/htable.h"

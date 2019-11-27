@@ -191,6 +191,9 @@ struct stat {
 #define S_ISVTX 001000
 #define S_ISSOCK(x) 0
 
+#define _S_IFDIR S_IFDIR
+#define _stat stat
+
 #if __STDC__
 #define O_RDONLY _O_RDONLY
 #define O_WRONLY _O_WRONLY
