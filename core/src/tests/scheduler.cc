@@ -69,6 +69,7 @@ static SimulatedTimeAdapter* time_adapter;
 class SchedulerTest : public ::testing::Test {
   void SetUp() override
   {
+    OSDependentInit();
     std::unique_ptr<SimulatedTimeAdapter> ta =
         std::make_unique<SimulatedTimeAdapter>();
     time_adapter = ta.get();
@@ -276,7 +277,6 @@ TEST_F(SchedulerTest, on_time)
 
 TEST_F(SchedulerTest, add_job_with_no_run_resource_to_queue)
 {
-  OSDependentInit();
   InitMsg(NULL, NULL);
 
   if (debug) { std::cout << "Start test" << std::endl; }
