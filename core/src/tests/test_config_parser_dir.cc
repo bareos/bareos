@@ -31,9 +31,8 @@ TEST(ConfigParser_Dir, bareos_configparser_tests)
 {
   InitMsg(NULL, NULL); /* initialize message handler */
 
-  std::string path_to_config_file =
-      std::string(RELATIVE_PROJECT_SOURCE_DIR
-                  "/src/tests/configs/bareos-configparser-tests");
+  std::string path_to_config_file = std::string(
+      RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests");
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   my_config->ParseConfig();
 
@@ -49,9 +48,8 @@ TEST(ConfigParser_Dir, runscript_test)
 {
   InitMsg(NULL, NULL); /* initialize message handler */
 
-  std::string path_to_config_file =
-      std::string(RELATIVE_PROJECT_SOURCE_DIR
-                  "/src/tests/configs/runscript-tests/bareos-dir.conf");
+  std::string path_to_config_file = std::string(
+      RELATIVE_PROJECT_SOURCE_DIR "/configs/runscript-tests/bareos-dir.conf");
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   my_config->ParseConfig();
 

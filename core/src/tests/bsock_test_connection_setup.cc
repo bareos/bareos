@@ -184,17 +184,15 @@ TEST(bsock, console_director_connection_test_tls_psk)
 {
   InitOpenSsl();
   do_connection_test(
-      std::string(
-          RELATIVE_PROJECT_SOURCE_DIR
-          "/src/tests/configs/console-director/tls_psk_default_enabled/"),
+      std::string(RELATIVE_PROJECT_SOURCE_DIR
+                  "/configs/console-director/tls_psk_default_enabled/"),
       TlsPolicy::kBnetTlsEnabled);
 }
 
 TEST(bsock, console_director_connection_test_cleartext)
 {
   InitOpenSsl();
-  do_connection_test(
-      std::string(RELATIVE_PROJECT_SOURCE_DIR
-                  "/src/tests/configs/console-director/tls_disabled/"),
-      TlsPolicy::kBnetTlsNone);
+  do_connection_test(std::string(RELATIVE_PROJECT_SOURCE_DIR
+                                 "/configs/console-director/tls_disabled/"),
+                     TlsPolicy::kBnetTlsNone);
 }

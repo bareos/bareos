@@ -89,8 +89,8 @@ TEST_F(SchedulerTest, terminate)
 {
   InitMsg(NULL, NULL); /* initialize message handler */
 
-  std::string path_to_config_file = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR "/src/tests/configs/scheduler-hourly");
+  std::string path_to_config_file =
+      std::string(RELATIVE_PROJECT_SOURCE_DIR "/configs/scheduler-hourly");
 
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   ASSERT_TRUE(my_config);
@@ -183,8 +183,8 @@ TEST_F(SchedulerTest, hourly)
 
   if (debug) { std::cout << "Start test" << std::endl; }
 
-  std::string path_to_config_file{std::string(
-      RELATIVE_PROJECT_SOURCE_DIR "/src/tests/configs/scheduler-hourly")};
+  std::string path_to_config_file{
+      std::string(RELATIVE_PROJECT_SOURCE_DIR "/configs/scheduler-hourly")};
 
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   ASSERT_TRUE(my_config);
@@ -241,8 +241,8 @@ TEST_F(SchedulerTest, on_time)
 
   if (debug) { std::cout << "Start test" << std::endl; }
 
-  std::string path_to_config_file{std::string(
-      RELATIVE_PROJECT_SOURCE_DIR "/src/tests/configs/scheduler-on-time")};
+  std::string path_to_config_file{
+      std::string(RELATIVE_PROJECT_SOURCE_DIR "/configs/scheduler-on-time")};
 
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   ASSERT_TRUE(my_config);
@@ -280,9 +280,8 @@ TEST_F(SchedulerTest, add_job_with_no_run_resource_to_queue)
 
   if (debug) { std::cout << "Start test" << std::endl; }
 
-  std::string path_to_config_file{
-      std::string(RELATIVE_PROJECT_SOURCE_DIR
-                  "/src/tests/configs/bareos-configparser-tests")};
+  std::string path_to_config_file{std::string(
+      RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests")};
 
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   ASSERT_TRUE(my_config);
