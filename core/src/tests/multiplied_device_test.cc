@@ -19,8 +19,14 @@
    02110-1301, USA.
 */
 
+#if defined(HAVE_MINGW)
+#include "include/bareos.h"
+#include "gtest/gtest.h"
+#else
 #include "gtest/gtest.h"
 #include "include/bareos.h"
+#endif
+
 #include "lib/alist.h"
 #include "lib/parse_conf.h"
 #include "stored/stored_conf.h"
@@ -30,7 +36,11 @@ using namespace storagedaemon;
 
 typedef std::unique_ptr<ConfigurationParser> PConfigParser;
 
-static void InitGlobals() { my_config = nullptr; }
+static void InitGlobals()
+{
+  my_config = nullptr;
+  OSDependentInit();
+}
 
 static DeviceResource* GetMultipliedDeviceResource(
     ConfigurationParser& my_config)

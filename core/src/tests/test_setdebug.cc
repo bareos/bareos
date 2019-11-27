@@ -20,9 +20,14 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-
+#if defined(HAVE_MINGW)
+#include "include/bareos.h"
+#include "gtest/gtest.h"
+#else
 #include "gtest/gtest.h"
 #include "include/bareos.h"
+#endif
+
 #include "lib/parse_conf.h"
 #include "dird/dird_globals.h"
 #include "dird/dird_conf.h"
@@ -64,6 +69,7 @@ static void DoStorageSetdebug(UaContext* ua,
 
 void SetdebugTest::SetUpTestCase()
 {
+  OSDependentInit();
   std::string path_to_config_file = std::string(
       RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests");
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);

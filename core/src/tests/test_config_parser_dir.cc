@@ -18,9 +18,14 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-
+#if defined(HAVE_MINGW)
+#include "include/bareos.h"
+#include "gtest/gtest.h"
+#else
 #include "gtest/gtest.h"
 #include "include/bareos.h"
+#endif
+
 #include "lib/parse_conf.h"
 #include "dird/dird_globals.h"
 #include "dird/dird_conf.h"
@@ -29,6 +34,7 @@ namespace directordaemon {
 
 TEST(ConfigParser_Dir, bareos_configparser_tests)
 {
+  OSDependentInit();
   InitMsg(NULL, NULL); /* initialize message handler */
 
   std::string path_to_config_file = std::string(
@@ -46,6 +52,7 @@ TEST(ConfigParser_Dir, bareos_configparser_tests)
 
 TEST(ConfigParser_Dir, runscript_test)
 {
+  OSDependentInit();
   InitMsg(NULL, NULL); /* initialize message handler */
 
   std::string path_to_config_file = std::string(

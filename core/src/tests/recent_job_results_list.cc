@@ -18,9 +18,14 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-
+#if defined(HAVE_MINGW)
+#include "include/bareos.h"
+#include "gtest/gtest.h"
+#else
 #include "gtest/gtest.h"
 #include "include/bareos.h"
+#endif
+
 #include "lib/bsys.h"
 #include "lib/recent_job_results_list.h"
 
@@ -29,6 +34,7 @@
 
 TEST(recent_job_results_list, read_job_results_from_file)
 {
+  OSDependentInit();
   RecentJobResultsList::Cleanup();
 
   char orig_path[]{TEST_ORIGINAL_FILE_DIR};
@@ -48,6 +54,7 @@ TEST(recent_job_results_list, read_job_results_from_file)
 
 TEST(recent_job_results_list, write_job_results_to_file)
 {
+  OSDependentInit();
   RecentJobResultsList::Cleanup();
 
   char orig_path[]{TEST_ORIGINAL_FILE_DIR};
@@ -75,6 +82,7 @@ TEST(recent_job_results_list, write_job_results_to_file)
 // create truncated files that will be deleted from ReadStateFile
 static bool create_file(std::string path, std::string filename)
 {
+  OSDependentInit();
   std::string filename1(path);
   filename1 += "/";
   filename1 += filename;
@@ -103,6 +111,7 @@ static bool create_file(std::string path, std::string filename)
 
 TEST(recent_job_results_list, read_job_results_from_file_truncated_jobs)
 {
+  OSDependentInit();
   RecentJobResultsList::Cleanup();
 
   char orig_path[]{TEST_ORIGINAL_FILE_DIR};
@@ -120,6 +129,7 @@ TEST(recent_job_results_list, read_job_results_from_file_truncated_jobs)
 
 TEST(recent_job_results_list, read_job_results_from_file_truncated_header)
 {
+  OSDependentInit();
   RecentJobResultsList::Cleanup();
 
   char orig_path[]{TEST_ORIGINAL_FILE_DIR};
@@ -135,6 +145,7 @@ TEST(recent_job_results_list, read_job_results_from_file_truncated_header)
 
 TEST(recent_job_results_list, read_job_results_from_file_not_exist)
 {
+  OSDependentInit();
   RecentJobResultsList::Cleanup();
 
   char orig_path[]{TEST_ORIGINAL_FILE_DIR};

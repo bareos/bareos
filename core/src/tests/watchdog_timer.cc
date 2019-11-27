@@ -18,8 +18,13 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-
+#if defined(HAVE_MINGW)
+#include "include/bareos.h"
 #include "gtest/gtest.h"
+#else
+#include "gtest/gtest.h"
+#endif
+
 #include "lib/btimers.h"
 #include "lib/bsignal.h"
 #include "lib/watchdog_timer.h"

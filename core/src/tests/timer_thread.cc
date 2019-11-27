@@ -19,10 +19,15 @@
    02110-1301, USA.
 */
 
+#if defined(HAVE_MINGW)
+#include "include/bareos.h"
+#include "gtest/gtest.h"
+#else
 #include "gtest/gtest.h"
 #include "include/bareos.h"
-#include "lib/timer_thread.h"
+#endif
 
+#include "lib/timer_thread.h"
 #include <thread>
 
 class TimerThreadTest : public ::testing::Test {
