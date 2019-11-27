@@ -3,7 +3,7 @@
 
    Copyright (C) 2011-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -206,12 +206,9 @@ void BareosDb::EscapeString(JobControlRecord* jcr,
  */
 char* BareosDb::EscapeObject(JobControlRecord* jcr, char* old, int len)
 {
-  int length;
-  int MaxLength;
-
-  MaxLength = (len * 4) / 3;
+  const int MaxLength = Base64LengthUnpadded(len) + 1;
   esc_obj = CheckPoolMemorySize(esc_obj, MaxLength + 1);
-  length = BinToBase64(esc_obj, MaxLength, old, len, true);
+  const int length = BinToBase64(esc_obj, MaxLength, old, len, true);
   esc_obj[length] = '\0';
 
   return esc_obj;
@@ -234,7 +231,11 @@ void BareosDb::UnescapeObject(JobControlRecord* jcr,
   }
 
   dest = CheckPoolMemorySize(dest, expected_len + 1);
-  Base64ToBin(dest, expected_len + 1, from, strlen(from));
+  /*
+   * Note: Base64ToBin() does not check the expected length correctly,
+   * so we must add 2 to make sure it works.
+   */
+  Base64ToBin(dest, expected_len + 2, from, strlen(from));
   *dest_len = expected_len;
   dest[expected_len] = '\0';
 }

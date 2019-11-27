@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -218,4 +218,23 @@ int Base64ToBin(char* dest, int dest_size, char* src, int srclen)
   *bufout = 0;
 
   return (bufout - (uint8_t*)dest);
+}
+
+/**
+ * Calculate the correct unpadded base64 length for a given length
+ * of an unencoded string
+ *
+ *  Returns: Length of unpadded base64
+ */
+int Base64LengthUnpadded(const int source_length)
+{
+  if (source_length == 0) { return 0; }
+
+  int quotient = source_length / 3;
+  const int remainder = source_length % 3;
+  if (remainder > 0) { ++quotient; }
+  int unpadded_length = 4 * quotient;
+  if (remainder > 0) { unpadded_length -= 3 - remainder; }
+
+  return unpadded_length;
 }
