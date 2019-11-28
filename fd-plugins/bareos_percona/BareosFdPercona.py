@@ -91,6 +91,12 @@ class BareosFdPercona (BareosFdPluginBaseclass):
         else:
             self.mycnf = ""
 
+        if 'instance' in self.options:
+            self.connect_options['read_default_group'] = self.options['instance']
+            self.default_group = "--defaults-group-suffix=%s " % self.options['instance']
+        else:
+            self.default_group = ""
+
         # If true, incremental jobs will only be performed, if LSN has increased
         # since last call.
         if 'strictIncremental' in self.options and self.options['strictIncremental'] == 'true':
@@ -98,7 +104,7 @@ class BareosFdPercona (BareosFdPluginBaseclass):
         else:
             self.strictIncremental = False
 
-        self.dumpoptions = self.mycnf
+        self.dumpoptions = self.mycnf + self.default_group
 
         # if dumpoptions is set, we use that here, otherwise defaults
         if 'dumpoptions' in self.options:
@@ -115,7 +121,7 @@ class BareosFdPercona (BareosFdPluginBaseclass):
         if 'mysqlcmd' in self.options:
             self.mysqlcmd = self.options['mysqlcmd']
         else:
-            self.mysqlcmd = "mysql %s -r" % self.mycnf
+            self.mysqlcmd = "mysql %s %s -r" % (self.mycnf, self.default_group)
 
         return bRCs['bRC_OK']
 
@@ -203,7 +209,7 @@ class BareosFdPercona (BareosFdPluginBaseclass):
                     conn.close()
                     for line in info.split("\n"):
                         if line.startswith('Log sequence number'):
-                            last_lsn = int(line.split(' ')[3])
+                            last_lsn = int(line.split(' ')[-1])
                 except Exception, e:
                     JobMessage(context, bJobMessageType['M_FATAL'], "Could not get LSN, Error: %s" % e)
                     return bRCs['bRC_Error']
