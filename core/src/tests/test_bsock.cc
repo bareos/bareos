@@ -23,7 +23,9 @@
 #include "gtest/gtest.h"
 #else
 #include "gtest/gtest.h"
+#include "include/bareos.h"
 #endif
+
 #include "bsock_test.h"
 #include "create_resource.h"
 #include "tests/bareos_test_sockets.h"

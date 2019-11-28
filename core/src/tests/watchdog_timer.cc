@@ -23,6 +23,7 @@
 #include "gtest/gtest.h"
 #else
 #include "gtest/gtest.h"
+#include "include/bareos.h"
 #endif
 
 #include "lib/btimers.h"
