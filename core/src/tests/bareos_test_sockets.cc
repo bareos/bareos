@@ -41,7 +41,7 @@ static int create_listening_server_socket(int port)
     return -1;
   }
 
-  if (setsockopt(listen_file_descriptor, SOL_SOCKET, SO_REUSEADDR, &opt,
+  if (setsockopt(listen_file_descriptor, SOL_SOCKET, SO_REUSEADDR, (sockopt_val_t)&opt,
                  sizeof(opt))) {
     perror("setsockopt");
     return -1;
@@ -61,7 +61,7 @@ static int create_listening_server_socket(int port)
   timeout.tv_sec = 10;  // after 10 seconds connect() will timeout
   timeout.tv_usec = 0;
 
-  if (setsockopt(listen_file_descriptor, SOL_SOCKET, SO_RCVTIMEO, &timeout,
+  if (setsockopt(listen_file_descriptor, SOL_SOCKET, SO_RCVTIMEO, (sockopt_val_t)&timeout,
                  sizeof(timeout)) < 0) {
     perror("setsockopt");
     return -1;
