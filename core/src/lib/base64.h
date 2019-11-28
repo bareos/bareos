@@ -36,4 +36,4 @@ int ToBase64(int64_t value, char* where);
 int FromBase64(int64_t* value, char* where);
 int BinToBase64(char* buf, int buflen, char* bin, int binlen, bool compatible);
 int Base64ToBin(char* dest, int destlen, char* src, int srclen);
-int Base64LengthUnpadded(const int source_length);
+int Base64LengthUnpadded(int source_length);
