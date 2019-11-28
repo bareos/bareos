@@ -76,14 +76,17 @@ IF(HAVE_PAM)
 ENDIF()
 
 
-# where to find the source dir
+# set some path variables used during test compilation
 IF(HAVE_WIN32)
   set(RELATIVE_PROJECT_SOURCE_DIR "Z:${CMAKE_CURRENT_SOURCE_DIR}")
+  set(TEST_ORIGINAL_FILE_DIR Z:${CMAKE_CURRENT_SOURCE_DIR}/recent_job_results_list)
+  set(TEST_TEMP_DIR Z:${CMAKE_CURRENT_BINARY_DIR}/recent_job_results_list)
 ELSE()
   file(RELATIVE_PATH RELATIVE_PROJECT_SOURCE_DIR  ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+  set(TEST_ORIGINAL_FILE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/recent_job_results_list)
+  set(TEST_TEMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/recent_job_results_list)
 ENDIF()
 
-#message(${RELATIVE_PROJECT_SOURCE_DIR})
 add_definitions(-DRELATIVE_PROJECT_SOURCE_DIR=\"${RELATIVE_PROJECT_SOURCE_DIR}\")
 
 bareos_add_test( client-initiated-reconnect "" "dird_objects;bareos;bareosfind;bareoscats;bareossql;$<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}>;${LMDB_LIBS};${NDMP_LIBS};${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
@@ -100,7 +103,8 @@ bareos_add_test( version_strings "" "bareos;${GTEST_LIBRARIES};${GTEST_MAIN_LIBR
   bareos_add_test( job_control_record "" "bareos;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
   bareos_add_test( multiplied_device_test "" "${LINK_LIBRARIES}" "")
   bareos_add_test( ndmp_address_translate_test "../dird/ndmp_slot2elemaddr.cc" "${LINK_LIBRARIES}" "")
-  bareos_add_test( recent_job_results_list "" "bareos;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "TEST_TEMP_DIR=\"${PROJECT_BINARY_DIR}/src/tests/test_recent_job_results_list_tmp\";TEST_ORIGINAL_FILE_DIR=\"${PROJECT_SOURCE_DIR}/src/tests/recent_job_results_list\"")
+  bareos_add_test( recent_job_results_list "" "bareos;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "TEST_TEMP_DIR=\"${TEST_TEMP_DIR}\";TEST_ORIGINAL_FILE_DIR=\"${TEST_ORIGINAL_FILE_DIR}\"")
+
   bareos_add_test( show_cmd_available_resources_equals_config_resources "" "dird_objects;bareos;bareosfind;bareoscats;bareossql;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
   bareos_add_test( test_config_parser_console "" "console_objects;bareos;bareosfind;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
   bareos_add_test( test_config_parser_dir "" "dird_objects;bareos;bareosfind;bareoscats;bareossql;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
