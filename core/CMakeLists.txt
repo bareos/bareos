@@ -275,6 +275,13 @@ else()
    add_definitions("-D_FILE_OFFSET_BITS=64")
 endif()
 
+if(HAVE_DYNAMIC_SD_BACKENDS)
+  set(SD_BACKEND_DIRECTORY "Backend Directory")
+else()
+  set(SD_BACKEND_DIRECTORY "# Backend Directory")
+endif()
+
+
 INCLUDE(FindIntl)
 
 IF(developer)
