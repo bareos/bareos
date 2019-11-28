@@ -73,10 +73,11 @@ class RunOnIncomingConnectIntervalTest : public ::testing::Test {
 
 void RunOnIncomingConnectIntervalTest::SetUp()
 {
+  OSDependentInit();
   InitMsg(nullptr, nullptr);
 
   std::string path_to_config_file = std::string(
-      PROJECT_SOURCE_DIR "/src/tests/configs/client-initiated-reconnect");
+      RELATIVE_PROJECT_SOURCE_DIR "/configs/client-initiated-reconnect");
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   my_config->ParseConfig();
 }
