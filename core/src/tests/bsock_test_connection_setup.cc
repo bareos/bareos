@@ -60,6 +60,7 @@ static void InitSignalHandler()
 
 static void InitGlobals()
 {
+  OSDependentInit();
   directordaemon::my_config = nullptr;
   directordaemon::me = nullptr;
   console::my_config = nullptr;

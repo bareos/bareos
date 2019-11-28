@@ -70,6 +70,7 @@ static std::unique_ptr<console::ConsoleResource> cons_cons_config;
 
 void InitForTest()
 {
+  OSDependentInit();
   InitOpenSsl();
   dir_cons_config.reset(
       directordaemon::CreateAndInitializeNewConsoleResource());
