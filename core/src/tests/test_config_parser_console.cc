@@ -34,11 +34,11 @@ namespace console {
 
 TEST(ConfigParser, test_console_config)
 {
+  OSDependentInit();
   InitMsg(NULL, NULL); /* initialize message handler */
 
-  std::string path_to_config_file =
-      std::string(RELATIVE_PROJECT_SOURCE_DIR
-                  "/src/tests/configs/bareos-configparser-tests");
+  std::string path_to_config_file = std::string(
+      RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests");
 
   my_config = InitConsConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   my_config->ParseConfig();
