@@ -209,7 +209,7 @@ class BareosFdPercona (BareosFdPluginBaseclass):
                     return bRCs['bRC_Error']
             # use old method as fallback, if module MySQLdb not available
             else:
-                get_lsn_command = ("echo 'SHOW ENGINE INNODB STATUS' | %s | grep 'Log sequence number' | cut -d ' ' -f 4"
+                get_lsn_command = ("echo 'SHOW ENGINE INNODB STATUS' | %s | grep 'Log sequence number' | tr -s [:blank:] | cut -d ' ' -f 4"
                                    % self.mysqlcmd)
                 last_lsn_proc = Popen(get_lsn_command, shell=True, stdout=PIPE, stderr=PIPE)
                 last_lsn_proc.wait()
