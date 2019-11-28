@@ -171,7 +171,6 @@ Read close session = <Ticket>
     closed at any time; you needn’t read all its blocks before closing
     it.
 
-*by January 30th, MM*
 
 SD Data Structures
 ------------------

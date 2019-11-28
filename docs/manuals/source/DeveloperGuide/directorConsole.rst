@@ -11,7 +11,7 @@ change the creation of output.
 -  Output can be send to a console connection (UserAgent Socket) or the
    command is executed in a job
 -  free text (with the use of some helper functions)
--  `Signals <#sec:bnet_sig>`__
+-  -  :ref:`Signals <section-signals>`
 -  Different Message types
 
    -  Types

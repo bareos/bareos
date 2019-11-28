@@ -41,54 +41,11 @@ ways that Bareos is designed to facilitate this:
    Jobs, list of all Clients, list of all Pools, list of all Storage, …
    Thus the GUI interface can get to virtually all information that the
    Director has in a deterministic way. See
-   https://github.com/bareos/bareos/blob/bareos-17.2/src/dird/ua_dotcmds.c
+   https://github.com/bareos/bareos/blob/master/core/src/dird/ua_dotcmds.cc
    for more details on this.
 
 -  Most console commands allow all the arguments to be specified on the
    command line: e.g. ``run job=NightlyBackup level=Full``
-
-One of the first things to overcome is to be able to establish a
-conversation with the Director. Although you can write all your own
-code, it is probably easier to use the Bareos subroutines. The following
-code is used by the Console program to begin a conversation.
-
-::
-
-    static BSOCK *UA_sock = NULL;
-    static JCR *jcr;
-    ...
-      read-your-config-getting-address-and-pasword;
-      UA_sock = bnet_connect(NULL, 5, 15, "Director daemon", dir->address,
-                              NULL, dir->DIRport, 0);
-       if (UA_sock == NULL) {
-          terminate_console(0);
-          return 1;
-       }
-       jcr.dir_bsock = UA_sock;
-       if (!authenticate_director(\&jcr, dir)) {
-          fprintf(stderr, "ERR=%s", UA_sock->msg);
-          terminate_console(0);
-          return 1;
-       }
-       read_and_process_input(stdin, UA_sock);
-       if (UA_sock) {
-          bnet_sig(UA_sock, BNET_TERMINATE); /* send EOF */
-          bnet_close(UA_sock);
-       }
-       exit 0;
-
-Then the read_and_process_input routine looks like the following:
-
-::
-
-       get-input-to-send-to-the-Director;
-       bnet_fsend(UA_sock, "%s", input);
-       stat = bnet_recv(UA_sock);
-       process-output-from-the-Director;
-
-For a GUI program things will be a bit more complicated. Basically in
-the very inner loop, you will need to check and see if any output is
-available on the UA_sock.
 
 dot commands
 ------------
@@ -98,7 +55,7 @@ Director offers a number of so called *dot commands*. They all begin
 with a period, are all non-interactive, easily parseable and are
 indended to be used by other Bareos interface programs (GUIs).
 
-See https://github.com/bareos/bareos/blob/master/src/dird/ua_dotcmds.c
+See https://github.com/bareos/bareos/blob/master/core/src/dird/ua_dotcmds.cc
 for more details.
 
 -  ``.actiononpurge``
@@ -218,6 +175,8 @@ the bconsole. The output should be human readable.
 API mode 1 (on)
 ~~~~~~~~~~~~~~~
 
+.. deprecated:: 16.2.0
+
 To get better parsable output, a console connection could be switched to
 API mode 1 (on).
 
@@ -242,7 +201,7 @@ If running in a bconsole, this leads not parsable output for human.
 
 Example:
 
-::
+.. code-block:: bconsole
 
     *.api 0
     api: 0
@@ -263,9 +222,9 @@ Example:
     *.defaults job=BackupClient1
     job=BackupClient1pool=Incrementalmessages=Standardclient=client1.example.com-fdstorage=Filewhere=level=Incrementaltype=Backupfileset=SelfTestenabled=1catalog=MyCatalog
 
-This mode is used by BAT.
+This mode has been introduced by BAT and is now deprecated.
 
--  `Signals <#sec:bnet_sig>`__
+-  :ref:`Signals <section-signals>`
 
 API mode 2 (json)
 ~~~~~~~~~~~~~~~~~
@@ -287,7 +246,7 @@ should be safe to run all commands in JSON mode.
 
 A successful responce should return
 
-::
+.. code-block:: bconsole
 
     "result": {
         "<type_of_the_results>": [
@@ -314,7 +273,7 @@ Examples
 
    -  e.g.
 
-   ::
+   .. code-block:: bconsole
 
        *list jobs
        {
@@ -353,7 +312,7 @@ Examples
 
    -  e.g.
 
-   ::
+   .. code-block:: bconsole
 
        *llist jobs
        {
@@ -424,7 +383,7 @@ Examples
 
    -  e.g.
 
-   ::
+   .. code-block:: bconsole
 
        *.jobs
        {
@@ -451,7 +410,7 @@ Example of a JSON-RPC Error Response
 Example of a JSON-RPC Error Response
 (http://www.jsonrpc.org/specification#error_object):
 
-::
+.. code-block:: bconsole
 
     *gui
     {
@@ -527,7 +486,7 @@ To get all JobId needed to restore a particular job, you can use the
 
 Example:
 
-::
+.. code-block:: bconsole
 
     *.bvfs_get_jobids jobid=10
     1,2,5,10
@@ -552,7 +511,7 @@ specified in argument, or for all jobs if unspecified.
 
 Example:
 
-::
+.. code-block:: bconsole
 
     *.bvfs_update jobid=1,2,3
 
@@ -564,7 +523,7 @@ List directories
 
 Bvfs allows you to list directories in a specific path.
 
-::
+.. code-block:: bconsole
 
     *.bvfs_lsdirs pathid=num path=/apath jobid=numlist limit=num offset=num
     PathId  FileId  JobId  LStat  Path
@@ -608,7 +567,7 @@ API mode 0
 
 Bvfs allows you to list files in a specific path.
 
-::
+.. code-block:: bconsole
 
     .bvfs_lsfiles pathid=num path=/apath jobid=numlist limit=num offset=num
     PathId  FileId  JobId  LStat  Filename
@@ -626,7 +585,7 @@ You need to ``pathid`` or ``path``. Using ``path=`` will list “/” on
 Unix and all drives on Windows. If FilenameId is 0, the record listed is
 a directory.
 
-::
+.. code-block:: bconsole
 
     *.bvfs_lsdir pathid=4 jobid=1,11,12
     4       0       0       A A A A A A A A A A A A A A     .
@@ -635,7 +594,7 @@ a directory.
 
 In this example, to list files present in ``regress/``, you can use
 
-::
+.. code-block:: bconsole
 
     *.bvfs_lsfiles pathid=1 jobid=1,11,12
     1   52   12    gD HRid IGk BAA I BMqcPH BMqcPE BMqe+t A     titi
@@ -647,7 +606,7 @@ In this example, to list files present in ``regress/``, you can use
 API mode 1
 ^^^^^^^^^^
 
-::
+.. code-block:: bconsole
 
     *.api 1
     *.bvfs_lsfiles jobid=1 pathid=1
@@ -658,7 +617,7 @@ API mode 1
 API mode 2
 ^^^^^^^^^^
 
-::
+.. code-block:: bconsole
 
     *.api 2
     *.bvfs_lsfiles jobid=1 pathid=1
@@ -728,7 +687,7 @@ encoding, this function uses only PathId and FilenameId.
 
 The jobid argument is mandatory but unused.
 
-::
+.. code-block:: bconsole
 
     *.bvfs_versions jobid=0 client=filedaemon pathid=num fname=filename [copies] [versions]
     PathId FileId JobId LStat Md5 VolName InChanger
@@ -737,7 +696,7 @@ The jobid argument is mandatory but unused.
 
 Example:
 
-::
+.. code-block:: bconsole
 
     *.bvfs_versions jobid=0 client=localhost-fd pathid=1 fnane=toto
     1  49  12  gD HRid IGk D Po Po A P BAA I A   /uPgWaxMgKZlnMti7LChyA  Vol1  1
@@ -749,7 +708,7 @@ Bvfs allows you to create a SQL table that contains files that you want
 to restore. This table can be provided to a restore command with the
 file option.
 
-::
+.. code-block:: bconsole
 
     *.bvfs_restore fileid=numlist dirid=numlist hardlink=numlist path=b2num
     OK
@@ -768,7 +727,7 @@ by b2 and followed by digits).
 
 Example:
 
-::
+.. code-block:: bconsole
 
     *.bvfs_restore fileid=1,2,3,4 hardlink=10,15,10,20 jobid=10 path=b20001
     OK
@@ -779,7 +738,7 @@ Cleanup after Restore
 To drop the table used by the restore command, you can use the
 ``.bvfs_cleanup`` command.
 
-::
+.. code-block:: bconsole
 
     *.bvfs_cleanup path=b20001
 
@@ -788,7 +747,7 @@ Clearing the BVFS Cache
 
 To clear the BVFS cache, you can use the ``.bvfs_clear_cache`` command.
 
-::
+.. code-block:: bconsole
 
     *.bvfs_clear_cache yes
     OK
@@ -796,7 +755,7 @@ To clear the BVFS cache, you can use the ``.bvfs_clear_cache`` command.
 Example for directory browsing using bvfs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-::
+.. code-block:: bconsole
 
     # update the bvfs cache for all jobs
     *.bvfs_update
