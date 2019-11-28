@@ -35,7 +35,7 @@ bJobMessageType = dict(
     M_RESTORED=13,
     M_SECURITY=14,
     M_ALERT=15,
-    M_VOLMGMT=16
+    M_VOLMGMT=16,
 )
 
 brDirVariable = dict(
@@ -65,14 +65,11 @@ brDirVariable = dict(
     bDirVarPluginDir=24,
     bDirVarLastRate=25,
     bDirVarJobBytes=26,
-    bDirVarReadBytes=27
+    bDirVarReadBytes=27,
 )
 
 bwDirVariable = dict(
-    bwDirVarJobReport=1,
-    bwDirVarVolumeName=2,
-    bwDirVarPriority=3,
-    bwDirVarJobLevel=4
+    bwDirVarJobReport=1, bwDirVarVolumeName=2, bwDirVarPriority=3, bwDirVarJobLevel=4
 )
 
 bRCs = dict(
@@ -84,7 +81,7 @@ bRCs = dict(
     bRC_Seen=5,
     bRC_Core=6,
     bRC_Skip=7,
-    bRC_Cancel=8
+    bRC_Cancel=8,
 )
 
 bDirEventType = dict(
@@ -98,5 +95,5 @@ bDirEventType = dict(
     bDirEventVolumeFull=8,
     bDirEventRecyle=9,
     bDirEventGetScratch=10,
-    bDirEventNewPluginOptions=11
+    bDirEventNewPluginOptions=11,
 )

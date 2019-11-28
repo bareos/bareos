@@ -27,7 +27,8 @@
 
 import sys
 import os.path
-libdirs = ['/usr/lib64/bareos/plugins/', '/usr/lib/bareos/plugins/']
+
+libdirs = ["/usr/lib64/bareos/plugins/", "/usr/lib/bareos/plugins/"]
 sys.path.extend([l for l in libdirs if os.path.isdir(l)])
 
 # newer Python versions, eg. Debian 8/Python >= 2.7.9 and
@@ -37,6 +38,7 @@ sys.path.extend([l for l in libdirs if os.path.isdir(l)])
 py_ver = sys.version_info[0:3]
 if py_ver[0] == 2 and py_ver[1] == 7 and py_ver[2] >= 5:
     import ssl
+
     try:
         ssl._create_default_https_context = ssl._create_unverified_context
     except AttributeError:
@@ -56,14 +58,15 @@ import BareosFdPluginVMware
 
 
 def load_bareos_plugin(context, plugindef):
-    '''
+    """
     This function is called by the Bareos-FD to load the plugin
     We use it to intantiate the plugin class
-    '''
-    BareosFdWrapper.bareos_fd_plugin_object = \
-        BareosFdPluginVMware.BareosFdPluginVMware(
-            context, plugindef)
+    """
+    BareosFdWrapper.bareos_fd_plugin_object = BareosFdPluginVMware.BareosFdPluginVMware(
+        context, plugindef
+    )
 
-    return bRCs['bRC_OK']
+    return bRCs["bRC_OK"]
+
 
 # the rest is done in the Plugin module

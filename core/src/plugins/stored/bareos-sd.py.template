@@ -22,46 +22,61 @@
 from bareossd import *
 from bareos_sd_consts import *
 
+
 def load_bareos_plugin(context, plugindef):
-  DebugMessage(context, 100, "load_bareos_plugin called with param: " + plugindef + "\n");
-  events = [];
-  events.append(bsdEventType['bsdEventJobStart']);
-  events.append(bsdEventType['bsdEventJobEnd']);
-  RegisterEvents(context, events);
-  return bRCs['bRC_OK'];
+    DebugMessage(
+        context, 100, "load_bareos_plugin called with param: " + plugindef + "\n"
+    )
+    events = []
+    events.append(bsdEventType["bsdEventJobStart"])
+    events.append(bsdEventType["bsdEventJobEnd"])
+    RegisterEvents(context, events)
+    return bRCs["bRC_OK"]
+
 
 def parse_plugin_definition(context, plugindef):
-  DebugMessage(context, 100, "parse_plugin_definition called with param: " + plugindef + "\n");
-  plugin_options = plugindef.split(":");
-  for current_option in plugin_options:
-    key,sep,val = current_option.partition("=");
-    if val == '':
-      continue;
+    DebugMessage(
+        context, 100, "parse_plugin_definition called with param: " + plugindef + "\n"
+    )
+    plugin_options = plugindef.split(":")
+    for current_option in plugin_options:
+        key, sep, val = current_option.partition("=")
+        if val == "":
+            continue
 
-    elif key == 'instance':
-      continue;
+        elif key == "instance":
+            continue
 
-    elif key == 'module_path':
-      continue;
+        elif key == "module_path":
+            continue
 
-    elif key == 'module_name':
-      continue;
+        elif key == "module_name":
+            continue
 
-    else:
-      DebugMessage(context, 100, "parse_plugin_definition unknown option " + key + " with value " + val + "\n");
-      return bRCs['bRC_Error'];
+        else:
+            DebugMessage(
+                context,
+                100,
+                "parse_plugin_definition unknown option "
+                + key
+                + " with value "
+                + val
+                + "\n",
+            )
+            return bRCs["bRC_Error"]
 
-  return bRCs['bRC_OK'];
+    return bRCs["bRC_OK"]
+
 
 def handle_plugin_event(context, event):
-  if event == bsdEventType['bsdEventJobStart']:
-    DebugMessage(context, 100, "bsdEventJobStart event triggered\n");
-    jobname = GetValue(context, bsdrVariable['bsdVarJobName']);
-    DebugMessage(context, 100, "Job " + jobname + " starting\n");
+    if event == bsdEventType["bsdEventJobStart"]:
+        DebugMessage(context, 100, "bsdEventJobStart event triggered\n")
+        jobname = GetValue(context, bsdrVariable["bsdVarJobName"])
+        DebugMessage(context, 100, "Job " + jobname + " starting\n")
 
-  elif event == bsdEventType['bsdEventJobEnd']:
-    DebugMessage(context, 100, "bsdEventJobEnd event triggered\n");
-    jobname = GetValue(context, bsdrVariable['bsdVarJobName']);
-    DebugMessage(context, 100, "Job " + jobname + " stopped\n");
+    elif event == bsdEventType["bsdEventJobEnd"]:
+        DebugMessage(context, 100, "bsdEventJobEnd event triggered\n")
+        jobname = GetValue(context, bsdrVariable["bsdVarJobName"])
+        DebugMessage(context, 100, "Job " + jobname + " stopped\n")
 
-  return bRCs['bRC_OK'];
+    return bRCs["bRC_OK"]
