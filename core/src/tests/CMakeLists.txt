@@ -129,7 +129,7 @@ ENDIF()
 
 bareos_add_test( lib_tests "alist_test.cc;bareos_test_sockets.cc;dlist_test.cc;htable_test.cc;qualified_resource_name_type_converter_test.cc;${PROJECT_SOURCE_DIR}/src/filed/evaluate_job_command.cc" "stored_objects;bareossd;bareos;${JANSSON_LIBRARIES};${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
 bareos_add_test( bsock_test_connection_setup "${SSL_UNIT_TEST_FILES}" "${LINK_LIBRARIES}" "")
-bareos_add_test( test_bsock "bareos_test_sockets.cc;bsock_constructor_test.cc;bsock_cert_verify_common_names_test.cc;create_resource.cc;${SSL_UNIT_TEST_FILES}" "${LINK_LIBRARIES}" "-DCERTDIR=\"${CERTDIR}\"")
 IF(NOT HAVE_WIN32)
+bareos_add_test( test_bsock "bareos_test_sockets.cc;bsock_constructor_test.cc;bsock_cert_verify_common_names_test.cc;create_resource.cc;${SSL_UNIT_TEST_FILES}" "${LINK_LIBRARIES}" "-DCERTDIR=\"${CERTDIR}\"")
 bareos_add_test( watchdog_timer "" "bareos;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
 endif()
