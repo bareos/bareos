@@ -22,54 +22,69 @@
 from bareosdir import *
 from bareos_dir_consts import *
 
+
 def load_bareos_plugin(context, plugindef):
-  DebugMessage(context, 100, "load_bareos_plugin called with param: " + plugindef + "\n");
-  events = [];
-  events.append(bDirEventType['bDirEventJobStart']);
-  events.append(bDirEventType['bDirEventJobEnd']);
-  events.append(bDirEventType['bDirEventJobInit']);
-  events.append(bDirEventType['bDirEventJobRun']);
-  RegisterEvents(context, events);
-  return bRCs['bRC_OK'];
+    DebugMessage(
+        context, 100, "load_bareos_plugin called with param: " + plugindef + "\n"
+    )
+    events = []
+    events.append(bDirEventType["bDirEventJobStart"])
+    events.append(bDirEventType["bDirEventJobEnd"])
+    events.append(bDirEventType["bDirEventJobInit"])
+    events.append(bDirEventType["bDirEventJobRun"])
+    RegisterEvents(context, events)
+    return bRCs["bRC_OK"]
+
 
 def parse_plugin_definition(context, plugindef):
-  DebugMessage(context, 100, "parse_plugin_definition called with param: " + plugindef + "\n");
-  plugin_options = plugindef.split(":");
-  for current_option in plugin_options:
-    key,sep,val = current_option.partition("=");
-    if val == '':
-      continue;
+    DebugMessage(
+        context, 100, "parse_plugin_definition called with param: " + plugindef + "\n"
+    )
+    plugin_options = plugindef.split(":")
+    for current_option in plugin_options:
+        key, sep, val = current_option.partition("=")
+        if val == "":
+            continue
 
-    elif key == 'instance':
-      continue;
+        elif key == "instance":
+            continue
 
-    elif key == 'module_path':
-      continue;
+        elif key == "module_path":
+            continue
 
-    elif key == 'module_name':
-      continue;
+        elif key == "module_name":
+            continue
 
-    else:
-      DebugMessage(context, 100, "parse_plugin_definition unknown option " + key + " with value " + val + "\n");
-      return bRCs['bRC_Error'];
+        else:
+            DebugMessage(
+                context,
+                100,
+                "parse_plugin_definition unknown option "
+                + key
+                + " with value "
+                + val
+                + "\n",
+            )
+            return bRCs["bRC_Error"]
 
-  return bRCs['bRC_OK'];
+    return bRCs["bRC_OK"]
+
 
 def handle_plugin_event(context, event):
-  if event == bDirEventType['bDirEventJobStart']:
-    DebugMessage(context, 100, "bDirEventJobStart event triggered\n");
-    jobname = GetValue(context, brDirVariable['bDirVarJobName']);
-    DebugMessage(context, 100, "Job " + jobname + " starting\n");
+    if event == bDirEventType["bDirEventJobStart"]:
+        DebugMessage(context, 100, "bDirEventJobStart event triggered\n")
+        jobname = GetValue(context, brDirVariable["bDirVarJobName"])
+        DebugMessage(context, 100, "Job " + jobname + " starting\n")
 
-  elif event == bDirEventType['bDirEventJobEnd']:
-    DebugMessage(context, 100, "bDirEventJobEnd event triggered\n");
-    jobname = GetValue(context, brDirVariable['bDirVarJobName']);
-    DebugMessage(context, 100, "Job " + jobname + " stopped\n");
+    elif event == bDirEventType["bDirEventJobEnd"]:
+        DebugMessage(context, 100, "bDirEventJobEnd event triggered\n")
+        jobname = GetValue(context, brDirVariable["bDirVarJobName"])
+        DebugMessage(context, 100, "Job " + jobname + " stopped\n")
 
-  elif event == bDirEventType['bDirEventJobInit']:
-    DebugMessage(context, 100, "bDirEventJobInit event triggered\n");
+    elif event == bDirEventType["bDirEventJobInit"]:
+        DebugMessage(context, 100, "bDirEventJobInit event triggered\n")
 
-  elif event == bDirEventType['bDirEventJobRun']:
-    DebugMessage(context, 100, "bDirEventJobRun event triggered\n");
+    elif event == bDirEventType["bDirEventJobRun"]:
+        DebugMessage(context, 100, "bDirEventJobRun event triggered\n")
 
-  return bRCs['bRC_OK'];
+    return bRCs["bRC_OK"]

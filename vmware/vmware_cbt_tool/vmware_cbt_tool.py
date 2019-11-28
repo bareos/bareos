@@ -43,66 +43,85 @@ def GetArgs():
     """
 
     parser = argparse.ArgumentParser(
-        description='Process args for enabling/disabling/resetting CBT')
-    parser.add_argument('-s', '--host',
-                        required=True,
-                        action='store',
-                        help='Remote host to connect to')
-    parser.add_argument('-o', '--port',
-                        type=int,
-                        default=443,
-                        action='store',
-                        help='Port to connect on')
-    parser.add_argument('-u', '--user',
-                        required=True,
-                        action='store',
-                        help='User name to use when connecting to host')
-    parser.add_argument('-p', '--password',
-                        required=False,
-                        action='store',
-                        help='Password to use when connecting to host')
-    parser.add_argument('-d', '--datacenter',
-                        required=True,
-                        action='store',
-                        help='DataCenter Name')
-    parser.add_argument('-f', '--folder',
-                        required=False,
-                        action='store',
-                        help='Folder Name (must start with /, use / for root folder')
-    parser.add_argument('-v', '--vmname',
-                        required=False,
-                        action='append',
-                        help='Names of the Virtual Machines')
-    parser.add_argument('--vm-uuid',
-                        required=False,
-                        action='append',
-                        help='Instance UUIDs of the Virtual Machines')
-    parser.add_argument('--enablecbt',
-                        action='store_true',
-                        default=False,
-                        help='Enable CBT')
-    parser.add_argument('--disablecbt',
-                        action='store_true',
-                        default=False,
-                        help='Disable CBT')
-    parser.add_argument('--resetcbt',
-                        action='store_true',
-                        default=False,
-                        help='Reset CBT (disable, then enable)')
-    parser.add_argument('--info',
-                        action='store_true',
-                        default=False,
-                        help='Show information (CBT supported and enabled or disabled)')
-    parser.add_argument('--listall',
-                        action='store_true',
-                        default=False,
-                        help='List all VMs in the given datacenter with UUID and containing folder')
+        description="Process args for enabling/disabling/resetting CBT"
+    )
+    parser.add_argument(
+        "-s", "--host", required=True, action="store", help="Remote host to connect to"
+    )
+    parser.add_argument(
+        "-o", "--port", type=int, default=443, action="store", help="Port to connect on"
+    )
+    parser.add_argument(
+        "-u",
+        "--user",
+        required=True,
+        action="store",
+        help="User name to use when connecting to host",
+    )
+    parser.add_argument(
+        "-p",
+        "--password",
+        required=False,
+        action="store",
+        help="Password to use when connecting to host",
+    )
+    parser.add_argument(
+        "-d", "--datacenter", required=True, action="store", help="DataCenter Name"
+    )
+    parser.add_argument(
+        "-f",
+        "--folder",
+        required=False,
+        action="store",
+        help="Folder Name (must start with /, use / for root folder",
+    )
+    parser.add_argument(
+        "-v",
+        "--vmname",
+        required=False,
+        action="append",
+        help="Names of the Virtual Machines",
+    )
+    parser.add_argument(
+        "--vm-uuid",
+        required=False,
+        action="append",
+        help="Instance UUIDs of the Virtual Machines",
+    )
+    parser.add_argument(
+        "--enablecbt", action="store_true", default=False, help="Enable CBT"
+    )
+    parser.add_argument(
+        "--disablecbt", action="store_true", default=False, help="Disable CBT"
+    )
+    parser.add_argument(
+        "--resetcbt",
+        action="store_true",
+        default=False,
+        help="Reset CBT (disable, then enable)",
+    )
+    parser.add_argument(
+        "--info",
+        action="store_true",
+        default=False,
+        help="Show information (CBT supported and enabled or disabled)",
+    )
+    parser.add_argument(
+        "--listall",
+        action="store_true",
+        default=False,
+        help="List all VMs in the given datacenter with UUID and containing folder",
+    )
     args = parser.parse_args()
 
-    if [args.enablecbt, args.disablecbt, args.resetcbt, args.info, args.listall].count(True) > 1:
-        parser.error("Only one of --enablecbt, --disablecbt, --resetcbt, --info, --listall allowed")
+    if [args.enablecbt, args.disablecbt, args.resetcbt, args.info, args.listall].count(
+        True
+    ) > 1:
+        parser.error(
+            "Only one of --enablecbt, --disablecbt, --resetcbt, --info, --listall allowed"
+        )
 
-    if args.folder and not args.folder.startswith('/'):
+    if args.folder and not args.folder.startswith("/"):
         parser.error("Folder name must start with /")
 
     return args
@@ -120,6 +139,7 @@ def main():
     py_ver = sys.version_info[0:3]
     if py_ver[0] == 2 and py_ver[1] == 7 and py_ver[2] >= 5:
         import ssl
+
         try:
             ssl._create_default_https_context = ssl._create_unverified_context
         except AttributeError:
@@ -130,22 +150,23 @@ def main():
         password = args.password
     else:
         password = getpass.getpass(
-            prompt='Enter password for host %s and user %s: ' %
-            (args.host, args.user))
+            prompt="Enter password for host %s and user %s: " % (args.host, args.user)
+        )
 
     try:
 
         si = None
         try:
-            si = SmartConnect(host=args.host,
-                              user=args.user,
-                              pwd=password,
-                              port=int(args.port))
+            si = SmartConnect(
+                host=args.host, user=args.user, pwd=password, port=int(args.port)
+            )
         except IOError as e:
             pass
         if not si:
-            print ("Cannot connect to specified host using specified"
-                   "username and password")
+            print (
+                "Cannot connect to specified host using specified"
+                "username and password"
+            )
             sys.exit()
 
         atexit.register(Disconnect, si)
@@ -153,15 +174,15 @@ def main():
         content = si.content
 
         dcftree = {}
-        dcView = content.viewManager.CreateContainerView(content.rootFolder,
-                                                         [vim.Datacenter],
-                                                         False)
+        dcView = content.viewManager.CreateContainerView(
+            content.rootFolder, [vim.Datacenter], False
+        )
         dcList = dcView.view
         dcView.Destroy()
         for dc in dcList:
             if dc.name == args.datacenter:
                 dcftree[dc.name] = {}
-                folder = ''
+                folder = ""
                 get_dcftree(dcftree[dc.name], folder, dc.vmFolder)
 
         if args.listall:
@@ -173,9 +194,13 @@ def main():
         for vm in get_vm_list(args, dcftree):
 
             print "INFO: VM %s CBT supported: %s" % (
-                vm.name, vm.capability.changeTrackingSupported)
+                vm.name,
+                vm.capability.changeTrackingSupported,
+            )
             print "INFO: VM %s CBT enabled: %s" % (
-                vm.name, vm.config.changeTrackingEnabled)
+                vm.name,
+                vm.config.changeTrackingEnabled,
+            )
 
             if args.enablecbt:
                 print "INFO: VM %s trying to enable CBT now" % (vm.name)
@@ -203,10 +228,10 @@ def get_vm_list(args, dcftree):
     vm_list = []
     if args.vmname:
         for vmname in args.vmname:
-            folder_u = unicode(args.folder, 'utf8')
-            vmname_u = unicode(vmname, 'utf8')
-            vm_path = folder_u + '/' + vmname_u
-            if args.folder.endswith('/'):
+            folder_u = unicode(args.folder, "utf8")
+            vmname_u = unicode(vmname, "utf8")
+            vm_path = folder_u + "/" + vmname_u
+            if args.folder.endswith("/"):
                 vm_path = folder_u + vmname_u
 
             if args.datacenter not in dcftree:
@@ -214,8 +239,7 @@ def get_vm_list(args, dcftree):
                 sys.exit(1)
 
             if vm_path not in dcftree[args.datacenter]:
-                print "ERROR: Could not find VM %s in folder %s" % (
-                    vmname_u, folder_u)
+                print "ERROR: Could not find VM %s in folder %s" % (vmname_u, folder_u)
                 sys.exit(1)
 
             vm_list.append(dcftree[args.datacenter][vm_path])
@@ -271,13 +295,13 @@ def disable_cbt(si, vm):
 def get_dcftree(dcf, folder, vm_folder):
     for vm_or_folder in vm_folder.childEntity:
         if isinstance(vm_or_folder, vim.VirtualMachine):
-            dcf[folder + '/' + vm_or_folder.name] = vm_or_folder
+            dcf[folder + "/" + vm_or_folder.name] = vm_or_folder
         elif isinstance(vm_or_folder, vim.Folder):
-            get_dcftree(dcf, folder + '/' + vm_or_folder.name, vm_or_folder)
+            get_dcftree(dcf, folder + "/" + vm_or_folder.name, vm_or_folder)
         elif isinstance(vm_or_folder, vim.VirtualApp):
             # vm_or_folder is a vApp in this case, contains a list a VMs
             for vapp_vm in vm_or_folder.vm:
-                dcf[folder + '/' + vm_or_folder.name + '/' + vapp_vm.name] = vapp_vm
+                dcf[folder + "/" + vm_or_folder.name + "/" + vapp_vm.name] = vapp_vm
         else:
             print "NOTE: %s is neither Folder nor VirtualMachine nor vApp, ignoring." % vm_or_folder
 
@@ -290,10 +314,11 @@ def create_vm_snapshot(si, vm):
     create_snap_result = None
     try:
         create_snap_task = vm.CreateSnapshot_Task(
-            name='CBTtoolTmpSnap',
-            description='CBT tool temporary snapshot',
+            name="CBTtoolTmpSnap",
+            description="CBT tool temporary snapshot",
             memory=False,
-            quiesce=False)
+            quiesce=False,
+        )
     except vmodl.MethodFault as e:
         print "Failed to create snapshot %s" % (e.msg)
         return False
@@ -309,8 +334,7 @@ def remove_vm_snapshot(si, create_snap_result):
     """
     remove_snap_task = None
     try:
-        remove_snap_task = create_snap_result.RemoveSnapshot_Task(
-            removeChildren=True)
+        remove_snap_task = create_snap_result.RemoveSnapshot_Task(removeChildren=True)
     except vmodl.MethodFault as e:
         print "Failed to remove snapshot %s" % (e.msg)
         return False
@@ -324,7 +348,9 @@ def create_and_remove_snapshot(si, vm):
     creates, then removes a snapshot,
     also named stun-unstun cycle
     """
-    print "INFO: VM %s trying to create and remove a snapshot to activate CBT" % (vm.name)
+    print "INFO: VM %s trying to create and remove a snapshot to activate CBT" % (
+        vm.name
+    )
     snapshot_result = create_vm_snapshot(si, vm)
     if snapshot_result:
         if remove_vm_snapshot(si, snapshot_result):
@@ -345,10 +371,10 @@ def WaitForTasks(tasks, si):
     taskList = [str(task) for task in tasks]
 
     # Create filter
-    objSpecs = [vmodl.query.PropertyCollector.ObjectSpec(obj=task)
-                for task in tasks]
-    propSpec = vmodl.query.PropertyCollector.PropertySpec(type=vim.Task,
-                                                          pathSet=[], all=True)
+    objSpecs = [vmodl.query.PropertyCollector.ObjectSpec(obj=task) for task in tasks]
+    propSpec = vmodl.query.PropertyCollector.PropertySpec(
+        type=vim.Task, pathSet=[], all=True
+    )
     filterSpec = vmodl.query.PropertyCollector.FilterSpec()
     filterSpec.objectSet = objSpecs
     filterSpec.propSet = [propSpec]
@@ -364,9 +390,9 @@ def WaitForTasks(tasks, si):
                 for objSet in filterSet.objectSet:
                     task = objSet.obj
                     for change in objSet.changeSet:
-                        if change.name == 'info':
+                        if change.name == "info":
                             state = change.val.state
-                        elif change.name == 'info.state':
+                        elif change.name == "info.state":
                             state = change.val
                         else:
                             continue
@@ -395,13 +421,22 @@ def print_dcftree(dcftree):
     for dc in dcftree:
         dcftree_by_folder = defaultdict(dict)
         for vm_path in dcftree[dc]:
-            dcftree_by_folder[os.path.dirname(vm_path)][os.path.basename(vm_path)] = \
-                dcftree[dc][vm_path].config.instanceUuid
+            dcftree_by_folder[os.path.dirname(vm_path)][
+                os.path.basename(vm_path)
+            ] = dcftree[dc][vm_path].config.instanceUuid
         print "DataCenter: %s" % dc
-        print "%-36s %-50s %s" % ('VM-Instance-UUID', 'VM-Name', 'VM-Folder and/or vApp')
+        print "%-36s %-50s %s" % (
+            "VM-Instance-UUID",
+            "VM-Name",
+            "VM-Folder and/or vApp",
+        )
         for vm_folder in sorted(dcftree_by_folder):
             for vm_name in sorted(dcftree_by_folder[vm_folder]):
-                print "%36s %-50s %s" % (dcftree_by_folder[vm_folder][vm_name], vm_name, vm_folder)
+                print "%36s %-50s %s" % (
+                    dcftree_by_folder[vm_folder][vm_name],
+                    vm_name,
+                    vm_folder,
+                )
 
 
 def get_vms_by_uuid(dcftree):
