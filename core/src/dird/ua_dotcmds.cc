@@ -1054,6 +1054,23 @@ bool DotConsolesCmd(UaContext* ua, const char* cmd)
   return true;
 }
 
+bool DotUsersCmd(UaContext* ua, const char* cmd)
+{
+  UserResource* user;
+
+  LockRes(my_config);
+  ua->send->ArrayStart("users");
+  foreach_res (user, R_USER) {
+    ua->send->ObjectStart();
+    ua->send->ObjectKeyValue("name", user->resource_name_, "%s\n");
+    ua->send->ObjectEnd();
+  }
+  ua->send->ArrayEnd("users");
+  UnlockRes(my_config);
+
+  return true;
+}
+
 bool DotMsgsCmd(UaContext* ua, const char* cmd)
 {
   MessagesResource* msgs = NULL;
