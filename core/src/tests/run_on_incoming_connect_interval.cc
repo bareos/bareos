@@ -19,7 +19,17 @@
    02110-1301, USA.
 */
 
+
+#if defined(HAVE_MINGW)
 #include "include/bareos.h"
+#include "gtest/gtest.h"
+#include "gmock/gmock.h"
+#else
+#include "gtest/gtest.h"
+#include "gmock/gmock.h"
+#include "include/bareos.h"
+#endif
+
 #include "cats/cats.h"
 #include "dird/dird_conf.h"
 #include "dird/dird_globals.h"
@@ -28,12 +38,10 @@
 #include "dird/run_on_incoming_connect_interval.h"
 #include "dird/scheduler.h"
 #include "dird/scheduler_time_adapter.h"
-#include "gmock/gmock.h"
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "include/make_unique.h"
 #include "lib/parse_conf.h"
-#include "gtest/gtest.h"
 
 #include <algorithm>
 #include <chrono>
@@ -148,10 +156,11 @@ class MockDatabase : public BareosDb {
     kFindStartTimeWrongString
   };
   explicit MockDatabase(Mode mode) : mode_(mode) {}
-  SqlFindResult FindLastJobStartTimeForJobAndClient(JobControlRecord* /*jcr*/,
-                                                 std::string /*job_basename*/,
-                                                 std::string /*client_name*/,
-                                                 char* stime) override
+  SqlFindResult FindLastJobStartTimeForJobAndClient(
+      JobControlRecord* /*jcr*/,
+      std::string /*job_basename*/,
+      std::string /*client_name*/,
+      char* stime) override
   {
     switch (mode_) {
       case Mode::kFindNoStartTime:

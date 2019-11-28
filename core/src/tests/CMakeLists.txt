@@ -91,7 +91,7 @@ ELSE()
 ENDIF()
 add_definitions(-DRELATIVE_PROJECT_SOURCE_DIR=\"${RELATIVE_PROJECT_SOURCE_DIR}\")
 
-bareos_add_test( client-initiated-reconnect "" "dird_objects;bareos;bareosfind;bareoscats;bareossql;$<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}>;${LMDB_LIBS};${NDMP_LIBS};${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
+bareos_add_test( run_on_incoming_connect_interval "" "dird_objects;bareos;bareosfind;bareoscats;bareossql;$<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}>;${LMDB_LIBS};${NDMP_LIBS};${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
 bareos_add_test( scheduler "" "dird_objects;bareos;bareosfind;bareoscats;bareossql;$<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}>;${LMDB_LIBS};${NDMP_LIBS};${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
 bareos_add_test( scheduler_job_item_queue "" "dird_objects;bareos;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
 bareos_add_test( test_acl_entry_syntax "" "bareos;${GTEST_LIBRARIES};${GTEST_MAIN_LIBRARIES}" "")
