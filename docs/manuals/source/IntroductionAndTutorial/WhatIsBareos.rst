@@ -86,6 +86,8 @@ The three SQL databases currently supported (MySQL, PostgreSQL or SQLite) provid
 
 To perform a successful save or restore, the following four daemons must be configured and running: the Director daemon, the File daemon, the Storage daemon, and the Catalog service (MySQL, PostgreSQL or SQLite).
 
+.. _section-version-numbers:
+
 Bareos Version Numbers and Releases
 -----------------------------------
 
