@@ -5,6 +5,6 @@ FileSet {
     Options {
       signature = MD5
     }
-    Plugin = "python:module_path=@python_plugin_module_src_dir@/filed:module_name=bareos-fd-local-fileset:filename=@tmpdir@/file-list"
+    Plugin = "python:module_path=@python_plugin_module_src_test_dir@:module_name=bareos-fd-local-fileset-with-restoreobjects:filename=@tmpdir@/file-list"
   }
 }

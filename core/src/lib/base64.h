@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2006 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -36,3 +36,4 @@ int ToBase64(int64_t value, char* where);
 int FromBase64(int64_t* value, char* where);
 int BinToBase64(char* buf, int buflen, char* bin, int binlen, bool compatible);
 int Base64ToBin(char* dest, int destlen, char* src, int srclen);
+int Base64LengthUnpadded(int source_length);
