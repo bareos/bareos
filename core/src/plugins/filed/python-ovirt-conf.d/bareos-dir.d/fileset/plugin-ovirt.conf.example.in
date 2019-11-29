@@ -5,6 +5,6 @@ FileSet {
       signature = MD5
     }
     #
-    Plugin = "python:module_path=@plugindir@:module_name=bareos-fd-ovirt:"
+    Plugin = "python:module_path=@plugindir@:module_name=bareos-fd-ovirt:ca=/etc/bareos/ovirt-ca.cert:server=ovirt-engine.example.com:username=admin@internal:password=yourSecretPassword:vm_name=testvm1"
   }
 }

@@ -1,7 +1,0 @@
-Job {
-  Name = "restore-ovirt"
-  JobDefs = "DefaultJob"
-  Type = Restore
-  Fileset= "plugin-ovirt"
-  # Client = "ovirthost-fd"
-}
