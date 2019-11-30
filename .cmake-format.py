@@ -108,7 +108,7 @@ enable_markup = True
 # If comment markup is enabled, don't reflow the first comment block in each
 # listfile. Use this to preserve formatting of your copyright/license
 # statements.
-first_comment_is_literal = False
+first_comment_is_literal = True
 
 # If comment markup is enabled, don't reflow any comment block which matches
 # this (regex) pattern. Default is `None` (disabled).
