@@ -31,13 +31,10 @@ endmacro()
 
 macro(bareos_add_test BAREOS_ADD_TEST_TESTNAME)
   set(options "") # no options
-  # set(oneValueArgs TESTNAME)
   set(multiValueArgs ADDITIONAL_SOURCES LINK_LIBRARIES COMPILE_DEFINITIONS)
   cmake_parse_arguments(
     BAREOS_ADD_TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN}
   )
-  # testname additional_sources link_libraries compile_definitions)
-
   message(
     "bareos_add_test: TESTNAME:\"${BAREOS_ADD_TEST_TESTNAME}\" \nADDITIONAL_SOURCES:\"${BAREOS_ADD_TEST_ADDITIONAL_SOURCES}\"\nLINK_LIBRARIES:\"${BAREOS_ADD_TEST_LINK_LIBRARIES}\"\nCOMPILE_DEFINITIONS:\"${BAREOS_ADD_TEST_COMPILE_DEFINITIONS}\"\n\n"
   )
