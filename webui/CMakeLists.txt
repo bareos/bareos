@@ -19,103 +19,139 @@
 cmake_minimum_required(VERSION 3.0)
 project(bareos-webui)
 
-INCLUDE(GNUInstallDirs)
+include(GNUInstallDirs)
 
 set(CMAKE_MODULE_PATH
-         ${CMAKE_MODULE_PATH}
-         ${PROJECT_SOURCE_DIR}/../../SOURCES
-         ${PROJECT_SOURCE_DIR}/../SOURCES
-         ${PROJECT_SOURCE_DIR}/cmake
-         )
+    ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/../../SOURCES
+    ${PROJECT_SOURCE_DIR}/../SOURCES ${PROJECT_SOURCE_DIR}/cmake
+)
 
-INCLUDE(BareosLocalBuildDefinitions OPTIONAL RESULT_VARIABLE BareosLocalBuildDefinitionsFile)
+include(BareosLocalBuildDefinitions OPTIONAL
+        RESULT_VARIABLE BareosLocalBuildDefinitionsFile
+)
 
-IF (NOT DEFINED VERSION_STRING)
+if(NOT DEFINED VERSION_STRING)
   # try to get version info from version.h
-  INCLUDE(BareosExtractVersionInfo)
-ELSE()
+  include(BareosExtractVersionInfo)
+else()
   # we got VERSION_STRING from cmake commandline
   set(BAREOS_FULL_VERSION ${VERSION_STRING})
-ENDIF()
+endif()
 
-IF (BAREOS_FULL_VERSION STREQUAL "")
-  MESSAGE(FATAL_ERROR BAREOS_FULL_VERSION is not set)
-ENDIF()
+if(BAREOS_FULL_VERSION STREQUAL "")
+  message(FATAL_ERROR BAREOS_FULL_VERSION is not set)
+endif()
 
 find_program(PHP php)
 
 # set defaults
-IF(NOT DEFINED sysconfdir)
-   set(sysconfdir ${CMAKE_INSTALL_FULL_SYSCONFDIR})
-ENDIF()
-IF(NOT DEFINED confdir)
-   set(confdir "${sysconfdir}/bareos")
-ENDIF()
-IF(NOT DEFINED webuiconfdir)
-   set(webuiconfdir "${sysconfdir}/bareos-webui")
-ENDIF()
-IF(NOT DEFINED baseport)
-   set(baseport 9101)
-ENDIF()
+if(NOT DEFINED sysconfdir)
+  set(sysconfdir ${CMAKE_INSTALL_FULL_SYSCONFDIR})
+endif()
+if(NOT DEFINED confdir)
+  set(confdir "${sysconfdir}/bareos")
+endif()
+if(NOT DEFINED webuiconfdir)
+  set(webuiconfdir "${sysconfdir}/bareos-webui")
+endif()
+if(NOT DEFINED baseport)
+  set(baseport 9101)
+endif()
 
-set (dirport ${baseport})
-MATH(EXPR webuiport "${baseport} + 3")
+set(dirport ${baseport})
+math(EXPR webuiport "${baseport} + 3")
 
 # upcase variables for CONFIGURE_FILE
 set(SYSCONFDIR "${sysconfdir}")
 set(CONFDIR "${confdir}")
 set(WEBUICONFDIR "${webuiconfdir}")
 
-
-MESSAGE("   PHP is ${PHP} ")
-MESSAGE("   Install system config files:   ${sysconfdir} ")
-MESSAGE("   Install Bareos config dir:     ${confdir} ")
-MESSAGE("   Install BareosWebui configdir: ${webuiconfdir} ")
-MESSAGE("   VERSION_STRING:                ${VERSION_STRING} ")
-MESSAGE("   BAREOS_FULL_VERSION:           ${BAREOS_FULL_VERSION} ")
+message("   PHP is ${PHP} ")
+message("   Install system config files:   ${sysconfdir} ")
+message("   Install Bareos config dir:     ${confdir} ")
+message("   Install BareosWebui configdir: ${webuiconfdir} ")
+message("   VERSION_STRING:                ${VERSION_STRING} ")
+message("   BAREOS_FULL_VERSION:           ${BAREOS_FULL_VERSION} ")
 message("   LocalBuildDefinitionsFile:     ${BareosLocalBuildDefinitionsFile}")
 
-IF (EXISTS ${sysconfdir}/httpd/conf.d)
-  SET(HTTPD_CONF ${sysconfdir}/httpd/conf.d)
-ELSEIF (EXISTS ${sysconfdir}/apache2/conf.d)
-  SET(HTTPD_CONF ${sysconfdir}/apache2/conf.d)
-ELSEIF (EXISTS ${sysconfdir}/apache/conf.d)
-  SET(HTTPD_CONF ${sysconfdir}/apache/conf.d)
-ELSEIF (EXISTS ${sysconfdir}/apache2/conf-available)
-  SET(HTTPD_CONF ${sysconfdir}/apache2/conf-available)
-ELSE()
-  SET(HTTPD_CONF ${sysconfdir}/httpd/conf.d)
-ENDIF()
+if(EXISTS ${sysconfdir}/httpd/conf.d)
+  set(HTTPD_CONF ${sysconfdir}/httpd/conf.d)
+elseif(EXISTS ${sysconfdir}/apache2/conf.d)
+  set(HTTPD_CONF ${sysconfdir}/apache2/conf.d)
+elseif(EXISTS ${sysconfdir}/apache/conf.d)
+  set(HTTPD_CONF ${sysconfdir}/apache/conf.d)
+elseif(EXISTS ${sysconfdir}/apache2/conf-available)
+  set(HTTPD_CONF ${sysconfdir}/apache2/conf-available)
+else()
+  set(HTTPD_CONF ${sysconfdir}/httpd/conf.d)
+endif()
 
-CONFIGURE_FILE(config/autoload/global.php.in ${CMAKE_CURRENT_SOURCE_DIR}/config/autoload/global.php @ONLY)
-CONFIGURE_FILE(install/directors.ini.in ${CMAKE_CURRENT_SOURCE_DIR}/install/directors.ini @ONLY)
-CONFIGURE_FILE(install/configuration.ini.in ${CMAKE_CURRENT_SOURCE_DIR}/install/configuration.ini @ONLY)
+configure_file(
+  config/autoload/global.php.in
+  ${CMAKE_CURRENT_SOURCE_DIR}/config/autoload/global.php @ONLY
+)
+configure_file(
+  install/directors.ini.in ${CMAKE_CURRENT_SOURCE_DIR}/install/directors.ini
+  @ONLY
+)
+configure_file(
+  install/configuration.ini.in
+  ${CMAKE_CURRENT_SOURCE_DIR}/install/configuration.ini @ONLY
+)
 
-CONFIGURE_FILE(version.php.in ${CMAKE_CURRENT_SOURCE_DIR}/version.php @ONLY)
-CONFIGURE_FILE(module/Application/view/layout/layout.phtml.in ${CMAKE_CURRENT_SOURCE_DIR}/module/Application/view/layout/layout.phtml @ONLY)
-CONFIGURE_FILE(module/Application/view/layout/login.phtml.in ${CMAKE_CURRENT_SOURCE_DIR}/module/Application/view/layout/login.phtml @ONLY)
+configure_file(version.php.in ${CMAKE_CURRENT_SOURCE_DIR}/version.php @ONLY)
+configure_file(
+  module/Application/view/layout/layout.phtml.in
+  ${CMAKE_CURRENT_SOURCE_DIR}/module/Application/view/layout/layout.phtml @ONLY
+)
+configure_file(
+  module/Application/view/layout/login.phtml.in
+  ${CMAKE_CURRENT_SOURCE_DIR}/module/Application/view/layout/login.phtml @ONLY
+)
 
-SET(WEBUI_DIR  ${SHARE_INSTALL_PREFIX}/bareos-webui)
-SET(WEBUI_TESTS_DIR  ${WEBUI_DIR}/tests/regress)
-IF (PHP)
- CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/tests/regress/webui-bsock-connection-test.in ${CMAKE_CURRENT_SOURCE_DIR}/tests/regress/webui-bsock-connection-test @ONLY)
- CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/tests/regress/webui-bsock-connection-test-tls.in ${CMAKE_CURRENT_SOURCE_DIR}/tests/regress/webui-bsock-connection-test-tls @ONLY)
- CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/tests/regress/webui-bsock-connection-test-tls.php.in ${CMAKE_CURRENT_SOURCE_DIR}/tests/regress/webui-bsock-connection-test-tls.php @ONLY)
-ELSE()
- MESSAGE("PHP not found")
-ENDIF()
+set(WEBUI_DIR ${SHARE_INSTALL_PREFIX}/bareos-webui)
+set(WEBUI_TESTS_DIR ${WEBUI_DIR}/tests/regress)
+if(PHP)
+  configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/regress/webui-bsock-connection-test.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/regress/webui-bsock-connection-test @ONLY
+  )
+  configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/regress/webui-bsock-connection-test-tls.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/regress/webui-bsock-connection-test-tls
+    @ONLY
+  )
+  configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/regress/webui-bsock-connection-test-tls.php.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/regress/webui-bsock-connection-test-tls.php
+    @ONLY
+  )
+else()
+  message("PHP not found")
+endif()
 
-IF(NOT client-only)
-  INSTALL(FILES version.php init_autoloader.php DESTINATION ${SHARE_INSTALL_PREFIX}/bareos-webui)
-  INSTALL(DIRECTORY tests config data module public vendor DESTINATION ${SHARE_INSTALL_PREFIX}/bareos-webui)
+if(NOT client-only)
+  install(FILES version.php init_autoloader.php
+          DESTINATION ${SHARE_INSTALL_PREFIX}/bareos-webui
+  )
+  install(DIRECTORY tests config data module public vendor
+          DESTINATION ${SHARE_INSTALL_PREFIX}/bareos-webui
+  )
 
-  INSTALL(FILES install/bareos/bareos-dir.d/console/admin.conf.example DESTINATION ${confdir}/bareos-dir.d/console/)
-  INSTALL(FILES install/bareos/bareos-dir.d/profile/webui-admin.conf DESTINATION ${confdir}/bareos-dir.d/profile/)
-  INSTALL(FILES install/bareos/bareos-dir.d/profile/webui-limited.conf.example DESTINATION ${confdir}/bareos-dir.d/profile/)
-  INSTALL(FILES install/bareos/bareos-dir.d/profile/webui-readonly.conf DESTINATION ${confdir}/bareos-dir.d/profile/)
-  INSTALL(FILES install/apache/bareos-webui.conf DESTINATION ${HTTPD_CONF}/)
+  install(FILES install/bareos/bareos-dir.d/console/admin.conf.example
+          DESTINATION ${confdir}/bareos-dir.d/console/
+  )
+  install(FILES install/bareos/bareos-dir.d/profile/webui-admin.conf
+          DESTINATION ${confdir}/bareos-dir.d/profile/
+  )
+  install(FILES install/bareos/bareos-dir.d/profile/webui-limited.conf.example
+          DESTINATION ${confdir}/bareos-dir.d/profile/
+  )
+  install(FILES install/bareos/bareos-dir.d/profile/webui-readonly.conf
+          DESTINATION ${confdir}/bareos-dir.d/profile/
+  )
+  install(FILES install/apache/bareos-webui.conf DESTINATION ${HTTPD_CONF}/)
 
-  INSTALL(FILES install/directors.ini DESTINATION ${webuiconfdir})
-  INSTALL(FILES install/configuration.ini DESTINATION ${webuiconfdir})
-ENDIF()
-
+  install(FILES install/directors.ini DESTINATION ${webuiconfdir})
+  install(FILES install/configuration.ini DESTINATION ${webuiconfdir})
+endif()

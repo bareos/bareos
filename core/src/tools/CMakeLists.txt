@@ -17,10 +17,10 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-SET(BSMTPSRCS bsmtp.cc)
-IF(HAVE_WIN32)
-   LIST(APPEND BSMTPSRCS ../win32/tools/bsmtpres.rc)
-ENDIF()
+set(BSMTPSRCS bsmtp.cc)
+if(HAVE_WIN32)
+  list(APPEND BSMTPSRCS ../win32/tools/bsmtpres.rc)
+endif()
 add_executable(bsmtp ${BSMTPSRCS})
 target_link_libraries(bsmtp bareos ${JANSSON_LIBRARIES})
 
@@ -30,47 +30,46 @@ target_link_libraries(drivetype bareos bareosfind ${JANSSON_LIBRARIES})
 add_executable(fstype fstype.cc)
 target_link_libraries(fstype bareos bareosfind ${JANSSON_LIBRARIES})
 
-SET(BREGEXSRCS bregex.cc)
-IF(HAVE_WIN32)
-   LIST(APPEND BREGEXSRCS ../win32/tools/bregexres.rc)
-ENDIF()
+set(BREGEXSRCS bregex.cc)
+if(HAVE_WIN32)
+  list(APPEND BREGEXSRCS ../win32/tools/bregexres.rc)
+endif()
 add_executable(bregex ${BREGEXSRCS})
 target_link_libraries(bregex bareos bareosfind ${JANSSON_LIBRARIES})
 
-SET(BWILDSRCS bwild.cc)
-IF(HAVE_WIN32)
-   LIST(APPEND BWILDSRCS ../win32/tools/bwildres.rc)
-ENDIF()
+set(BWILDSRCS bwild.cc)
+if(HAVE_WIN32)
+  list(APPEND BWILDSRCS ../win32/tools/bwildres.rc)
+endif()
 add_executable(bwild ${BWILDSRCS})
 target_link_libraries(bwild bareos ${JANSSON_LIBRARIES})
 
 add_executable(bscrypto bscrypto.cc)
 target_link_libraries(bscrypto bareos ${JANSSON_LIBRARIES})
 
+if(NOT HAVE_WIN32)
 
-IF(NOT HAVE_WIN32)
+  add_executable(btestls btestls.cc)
+  target_link_libraries(btestls bareosfind bareos ${JANSSON_LIBRARIES})
 
-   add_executable(btestls btestls.cc)
-   target_link_libraries(btestls bareosfind bareos ${JANSSON_LIBRARIES})
+  add_executable(bpluginfo bpluginfo.cc)
+  target_link_libraries(bpluginfo bareos ${DL_LIBRARIES} ${JANSSON_LIBRARIES})
 
-   add_executable(bpluginfo bpluginfo.cc)
-   target_link_libraries(bpluginfo bareos ${DL_LIBRARIES} ${JANSSON_LIBRARIES})
+  add_executable(timelimit timelimit.cc)
+endif()
 
-   add_executable(timelimit timelimit.cc)
-ENDIF()
+set(TOOLS_BIN bsmtp bwild bregex)
 
-set (TOOLS_BIN bsmtp bwild bregex)
+set(TOOLS_SBIN bscrypto bwild bregex)
 
-set (TOOLS_SBIN bscrypto bwild bregex)
+if(NOT HAVE_WIN32)
+  list(APPEND TOOLS_BIN timelimit)
+  list(APPEND TOOLS_SBIN bpluginfo timelimit btestls)
+endif()
 
-IF(NOT HAVE_WIN32)
-   LIST(APPEND TOOLS_BIN  timelimit)
-   LIST(APPEND TOOLS_SBIN bpluginfo timelimit btestls)
-ENDIF()
-
-INSTALL(TARGETS ${TOOLS_BIN} DESTINATION "${bindir}")
-INSTALL(TARGETS ${TOOLS_SBIN} DESTINATION "${sbindir}")
+install(TARGETS ${TOOLS_BIN} DESTINATION "${bindir}")
+install(TARGETS ${TOOLS_SBIN} DESTINATION "${sbindir}")
 
 # install bsmtp for non-root directors
-INSTALL(TARGETS bsmtp DESTINATION "${bindir}")
-INSTALL(TARGETS bsmtp DESTINATION "${sbindir}")
+install(TARGETS bsmtp DESTINATION "${bindir}")
+install(TARGETS bsmtp DESTINATION "${sbindir}")

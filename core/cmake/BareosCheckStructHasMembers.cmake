@@ -17,16 +17,22 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-INCLUDE (CheckStructHasMember)
+include(CheckStructHasMember)
 
-check_struct_has_member("struct stat"   st_blksize  sys/stat.h HAVE_STRUCT_STAT_ST_BLKSIZE  )
+check_struct_has_member(
+  "struct stat" st_blksize sys/stat.h HAVE_STRUCT_STAT_ST_BLKSIZE
+)
 set(HAVE_ST_BLKSIZE ${HAVE_STRUCT_STAT_ST_BLKSIZE})
 
-check_struct_has_member("struct stat"   st_blocks   sys/stat.h HAVE_STRUCT_STAT_ST_BLOCKS  )
+check_struct_has_member(
+  "struct stat" st_blocks sys/stat.h HAVE_STRUCT_STAT_ST_BLOCKS
+)
 set(HAVE_ST_BLOCKS ${HAVE_STRUCT_STAT_ST_BLOCKS})
 
-check_struct_has_member("struct stat"   st_rdev     sys/stat.h HAVE_STRUCT_STAT_ST_RDEV  )
+check_struct_has_member(
+  "struct stat" st_rdev sys/stat.h HAVE_STRUCT_STAT_ST_RDEV
+)
 set(HAVE_ST_RDEV ${HAVE_STRUCT_STAT_ST_RDEV})
 
-check_struct_has_member("struct tm"       tm_zone        time.h       HAVE_STRUCT_TM_TM_ZONE)
+check_struct_has_member("struct tm" tm_zone time.h HAVE_STRUCT_TM_TM_ZONE)
 set(HAVE_TM_ZONE ${HAVE_STRUCT_TM_TM_ZONE})

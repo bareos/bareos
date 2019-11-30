@@ -17,9 +17,8 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-
-IF(NOT client-only)
-   add_subdirectory(dird)
-   add_subdirectory(stored)
-ENDIF()
+if(NOT client-only)
+  add_subdirectory(dird)
+  add_subdirectory(stored)
+endif()
 add_subdirectory(filed)

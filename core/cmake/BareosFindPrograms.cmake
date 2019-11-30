@@ -20,14 +20,14 @@
 # find programs
 find_program(AWK awk)
 find_program(GAWK gawk)
-IF(HAVE_SUN_OS)
-   SET(AWK ${GAWK})
-ENDIF()
+if(HAVE_SUN_OS)
+  set(AWK ${GAWK})
+endif()
 
 find_program(PIDOF pidof)
-IF(NOT PIDOF)
-   SET(PIDOF "")
-ENDIF()
+if(NOT PIDOF)
+  set(PIDOF "")
+endif()
 
 find_program(PS ps)
 find_program(PGREP pgrep)

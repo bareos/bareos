@@ -17,64 +17,75 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-
-
-
 # determine value of HAVE_LOWLEVEL_SCSI_INTERFACE
 
 if(${scsi-crypto})
 
-   # LINUX: check if HAVE_SCSI_SG_H and HAVE_SCSI_SCSI_H are true
-   if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-      if ("${HAVE_SCSI_SG_H}" AND "${HAVE_SCSI_SCSI_H}")
-         SET(HAVE_LOWLEVEL_SCSI_INTERFACE 1)
-      else()
-         SET(HAVE_LOWLEVEL_SCSI_INTERFACE 0)
-         MESSAGE(FATAL_ERROR "scsi crypto support selected but required headers are missing")
-      endif()
-   endif()
+  # LINUX: check if HAVE_SCSI_SG_H and HAVE_SCSI_SCSI_H are true
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    if("${HAVE_SCSI_SG_H}" AND "${HAVE_SCSI_SCSI_H}")
+      set(HAVE_LOWLEVEL_SCSI_INTERFACE 1)
+    else()
+      set(HAVE_LOWLEVEL_SCSI_INTERFACE 0)
+      message(
+        FATAL_ERROR
+          "scsi crypto support selected but required headers are missing"
+      )
+    endif()
+  endif()
 
-   # SUN: check if HAVE_SYS_SCSI_IMPL_USCSI_H
-   if (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-      if ("${HAVE_SYS_SCSI_IMPL_USCSI_H}")
-         SET(HAVE_LOWLEVEL_SCSI_INTERFACE 1)
-      else()
-         SET(HAVE_LOWLEVEL_SCSI_INTERFACE 0)
-         MESSAGE(FATAL_ERROR "scsi crypto support selected but required headers are missing")
-      endif()
-   endif()
+  # SUN: check if HAVE_SYS_SCSI_IMPL_USCSI_H
+  if(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+    if("${HAVE_SYS_SCSI_IMPL_USCSI_H}")
+      set(HAVE_LOWLEVEL_SCSI_INTERFACE 1)
+    else()
+      set(HAVE_LOWLEVEL_SCSI_INTERFACE 0)
+      message(
+        FATAL_ERROR
+          "scsi crypto support selected but required headers are missing"
+      )
+    endif()
+  endif()
 
+  # FREEBSD: HAVE_CAMLIB_H and HAVE_CAM_SCSI_SCSI_MESSAGE_H also add
+  # CAM_LIBS="-lcam"
+  if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
+    if("${HAVE_CAMLIB_H}" AND "${HAVE_CAM_SCSI_SCSI_MESSAGE_H}")
+      set(HAVE_LOWLEVEL_SCSI_INTERFACE 1)
+      set(CAM_LIBRARIES cam)
+    else()
+      set(HAVE_LOWLEVEL_SCSI_INTERFACE 0)
+      message(
+        FATAL_ERROR
+          "scsi crypto support selected but required headers are missing"
+      )
+    endif()
+  endif()
 
-   # FREEBSD: HAVE_CAMLIB_H and HAVE_CAM_SCSI_SCSI_MESSAGE_H also add CAM_LIBS="-lcam"
-   if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
-      if ("${HAVE_CAMLIB_H}" AND "${HAVE_CAM_SCSI_SCSI_MESSAGE_H}")
-         SET(HAVE_LOWLEVEL_SCSI_INTERFACE 1)
-         SET(CAM_LIBRARIES cam)
-      else()
-         SET(HAVE_LOWLEVEL_SCSI_INTERFACE 0)
-         MESSAGE(FATAL_ERROR "scsi crypto support selected but required headers are missing")
-      endif()
-   endif()
+  # NETBSD: HAVE_DEV_SCSIPI_SCSIPI_ALL_H
+  if(${CMAKE_SYSTEM_NAME} MATCHES "NetBSD")
+    if("${HAVE_DEV_SCSIPI_SCSIPI_ALL_H}")
+      set(HAVE_LOWLEVEL_SCSI_INTERFACE 1)
+    else()
+      set(HAVE_LOWLEVEL_SCSI_INTERFACE 0)
+      message(
+        FATAL_ERROR
+          "scsi crypto support selected but required headers are missing"
+      )
+    endif()
+  endif()
 
-   # NETBSD: HAVE_DEV_SCSIPI_SCSIPI_ALL_H
-   if (${CMAKE_SYSTEM_NAME} MATCHES "NetBSD")
-      if ("${HAVE_DEV_SCSIPI_SCSIPI_ALL_H}")
-         SET(HAVE_LOWLEVEL_SCSI_INTERFACE 1)
-      else()
-         SET(HAVE_LOWLEVEL_SCSI_INTERFACE 0)
-         MESSAGE(FATAL_ERROR "scsi crypto support selected but required headers are missing")
-      endif()
-   endif()
-
-   # OPENBSD: HAVE_USCSI_ALL_H
-   if (${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD")
-      if ("${HAVE_USCSI_ALL_H}")
-         SET(HAVE_LOWLEVEL_SCSI_INTERFACE 1)
-      else()
-         SET(HAVE_LOWLEVEL_SCSI_INTERFACE 0)
-         MESSAGE(FATAL_ERROR "scsi crypto support selected but required headers are missing")
-      endif()
-   endif()
-
+  # OPENBSD: HAVE_USCSI_ALL_H
+  if(${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD")
+    if("${HAVE_USCSI_ALL_H}")
+      set(HAVE_LOWLEVEL_SCSI_INTERFACE 1)
+    else()
+      set(HAVE_LOWLEVEL_SCSI_INTERFACE 0)
+      message(
+        FATAL_ERROR
+          "scsi crypto support selected but required headers are missing"
+      )
+    endif()
+  endif()
 
 endif()

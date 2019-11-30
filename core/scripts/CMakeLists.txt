@@ -17,57 +17,43 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+install(
+  FILES bareos btraceback
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
+              WORLD_READ WORLD_EXECUTE
+  DESTINATION "${sbindir}"
+)
 
-INSTALL(FILES
-         bareos btraceback
-         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-                                 GROUP_READ GROUP_EXECUTE
-                                 WORLD_READ WORLD_EXECUTE
-         DESTINATION "${sbindir}")
+install(
+  FILES bareos-ctl-fd
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
+              WORLD_READ WORLD_EXECUTE
+  DESTINATION "${scriptdir}"
+  COMPONENT filedaemon
+)
 
-INSTALL(FILES
-	 bareos-ctl-fd
-         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-                     GROUP_READ GROUP_EXECUTE
-                     WORLD_READ WORLD_EXECUTE
-         DESTINATION "${scriptdir}"
-	 COMPONENT filedaemon)
+install(
+  FILES bareos btraceback.gdb btraceback.dbx btraceback.mdb bareos-config
+        bareos-config-lib.sh bareos-ctl-funcs
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
+              WORLD_READ WORLD_EXECUTE
+  DESTINATION "${scriptdir}"
+)
 
-INSTALL(FILES
-         bareos
-         btraceback.gdb
-         btraceback.dbx
-         btraceback.mdb
-         bareos-config
-         bareos-config-lib.sh
-         bareos-ctl-funcs
-         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-                     GROUP_READ GROUP_EXECUTE
-                     WORLD_READ WORLD_EXECUTE
-         DESTINATION "${scriptdir}"
-	)
+if(NOT client-only)
+  install(
+    FILES mtx-changer disk-changer bareos-explorer bareos-glusterfind-wrapper
+          bareos-ctl-dir bareos-ctl-sd bareos-ctl-funcs
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
+                WORLD_READ WORLD_EXECUTE
+    DESTINATION "${scriptdir}"
+  )
 
-IF(NOT client-only)
-   INSTALL(FILES
-         mtx-changer
-         disk-changer
-         bareos-explorer
-         bareos-glusterfind-wrapper
-         bareos-ctl-dir
-         bareos-ctl-sd
-         bareos-ctl-funcs
-         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-                     GROUP_READ GROUP_EXECUTE
-                     WORLD_READ WORLD_EXECUTE
-         DESTINATION "${scriptdir}")
+  install(FILES mtx-changer.conf bareos-regress.conf DESTINATION "${confdir}")
 
-   INSTALL(FILES
-            mtx-changer.conf
-            bareos-regress.conf
-            DESTINATION "${confdir}")
-
-   INSTALL(FILES
-          logrotate
-          DESTINATION "${sysconfdir}/logrotate.d"
-          RENAME bareos-dir)
-ENDIF()
+  install(
+    FILES logrotate
+    DESTINATION "${sysconfdir}/logrotate.d"
+    RENAME bareos-dir
+  )
+endif()

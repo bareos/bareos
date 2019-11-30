@@ -18,4 +18,6 @@
 #   02110-1301, USA.
 
 include(${CMAKE_CURRENT_LIST_DIR}/BareosInstallConfigFiles.cmake)
-BareosInstallConfigFiles("${configtemplatedir}" "tray-monitor.d" "" "" "${SRC_DIR}")
+bareosinstallconfigfiles(
+  "${configtemplatedir}" "tray-monitor.d" "" "" "${SRC_DIR}"
+)

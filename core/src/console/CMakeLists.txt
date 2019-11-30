@@ -17,31 +17,38 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-
-SET (BCONSSRCS connect_to_director.cc console_conf.cc console_globals.cc console_output.cc)
-IF(HAVE_WIN32)
-   LIST(APPEND BCONSSRCS ../win32/console/consoleres.rc)
-ENDIF()
+set(BCONSSRCS connect_to_director.cc console_conf.cc console_globals.cc
+              console_output.cc
+)
+if(HAVE_WIN32)
+  list(APPEND BCONSSRCS ../win32/console/consoleres.rc)
+endif()
 
 include_directories(${Readline_INCLUDE_DIR} ${OPENSSL_INCLUDE_DIR})
 
-IF(HAVE_PAM)
-   include_directories(${PAM_INCLUDE_DIRS})
-   LIST(APPEND BCONSSRCS auth_pam.cc)
-ENDIF()
+if(HAVE_PAM)
+  include_directories(${PAM_INCLUDE_DIRS})
+  list(APPEND BCONSSRCS auth_pam.cc)
+endif()
 
 add_executable(bconsole console.cc)
 
 add_library(console_objects STATIC ${BCONSSRCS})
 
-IF(HAVE_PAM)
-   set(CONSOLE_LINK_LIBRARIES console_objects bareos ${Readline_LIBRARY} ${PAM_LIBRARIES})
-ELSE()
-   set(CONSOLE_LINK_LIBRARIES console_objects bareos ${Readline_LIBRARY})
-ENDIF()
+if(HAVE_PAM)
+  set(CONSOLE_LINK_LIBRARIES console_objects bareos ${Readline_LIBRARY}
+                             ${PAM_LIBRARIES}
+  )
+else()
+  set(CONSOLE_LINK_LIBRARIES console_objects bareos ${Readline_LIBRARY})
+endif()
 
 target_link_libraries(bconsole ${CONSOLE_LINK_LIBRARIES})
 
-INSTALL(TARGETS bconsole DESTINATION "${bindir}" COMPONENT bconsole)
-INSTALL(TARGETS bconsole DESTINATION "${sbindir}" COMPONENT bconsole)
-INSTALL(FILES bconsole.conf DESTINATION "${configtemplatedir}" COMPONENT bconsole)
+install(TARGETS bconsole DESTINATION "${bindir}" COMPONENT bconsole)
+install(TARGETS bconsole DESTINATION "${sbindir}" COMPONENT bconsole)
+install(
+  FILES bconsole.conf
+  DESTINATION "${configtemplatedir}"
+  COMPONENT bconsole
+)

@@ -17,49 +17,63 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+set(FIREWALL_DIR ${sysconfdir}/sysconfig/SuSEfirewall2.d/services/)
+set(DESTSTARTDIR ${sysconfdir}/init.d/)
 
-set (FIREWALL_DIR ${sysconfdir}/sysconfig/SuSEfirewall2.d/services/)
-set (DESTSTARTDIR ${sysconfdir}/init.d/)
+message(STATUS "installing startfiles to ${DESTSTARTDIR}")
 
-MESSAGE(STATUS  "installing startfiles to ${DESTSTARTDIR}")
-
-INSTALL(DIRECTORY DESTINATION ${DESTSTARTDIR})
+install(DIRECTORY DESTINATION ${DESTSTARTDIR})
 
 # Install autostart fd
-INSTALL (FILES "${CMAKE_CURRENT_LIST_DIR}/bareos-fd" DESTINATION "${DESTSTARTDIR}"
-         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-                     GROUP_READ GROUP_EXECUTE
-                     WORLD_READ WORLD_EXECUTE)
+install(
+  FILES "${CMAKE_CURRENT_LIST_DIR}/bareos-fd"
+  DESTINATION "${DESTSTARTDIR}"
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
+              WORLD_READ WORLD_EXECUTE
+)
 # Install autostart sd
-INSTALL (FILES "${CMAKE_CURRENT_LIST_DIR}/bareos-sd" DESTINATION "${DESTSTARTDIR}"
-         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-                     GROUP_READ GROUP_EXECUTE
-                     WORLD_READ WORLD_EXECUTE)
+install(
+  FILES "${CMAKE_CURRENT_LIST_DIR}/bareos-sd"
+  DESTINATION "${DESTSTARTDIR}"
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
+              WORLD_READ WORLD_EXECUTE
+)
 # Install autostart dir
-INSTALL (FILES "${CMAKE_CURRENT_LIST_DIR}/bareos-dir" DESTINATION "${DESTSTARTDIR}"
-         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-                     GROUP_READ GROUP_EXECUTE
-                     WORLD_READ WORLD_EXECUTE)
+install(
+  FILES "${CMAKE_CURRENT_LIST_DIR}/bareos-dir"
+  DESTINATION "${DESTSTARTDIR}"
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
+              WORLD_READ WORLD_EXECUTE
+)
 
-
-MESSAGE(STATUS  "installing firewall files to ${DESTSTARTDIR}")
+message(STATUS "installing firewall files to ${DESTSTARTDIR}")
 
 # Install firewall fd
-INSTALL (FILES "${CMAKE_CURRENT_LIST_DIR}/bareos-fd.fw" DESTINATION "${FIREWALL_DIR}" RENAME bareos-fd)
+install(
+  FILES "${CMAKE_CURRENT_LIST_DIR}/bareos-fd.fw"
+  DESTINATION "${FIREWALL_DIR}"
+  RENAME bareos-fd
+)
 # Install firewall sd
-INSTALL (FILES "${CMAKE_CURRENT_LIST_DIR}/bareos-sd.fw" DESTINATION "${FIREWALL_DIR}" RENAME bareos-sd)
+install(
+  FILES "${CMAKE_CURRENT_LIST_DIR}/bareos-sd.fw"
+  DESTINATION "${FIREWALL_DIR}"
+  RENAME bareos-sd
+)
 # Install firewall dir
-INSTALL (FILES "${CMAKE_CURRENT_LIST_DIR}/bareos-dir.fw" DESTINATION "${FIREWALL_DIR}" RENAME bareos-dir)
+install(
+  FILES "${CMAKE_CURRENT_LIST_DIR}/bareos-dir.fw"
+  DESTINATION "${FIREWALL_DIR}"
+  RENAME bareos-dir
+)
 
-INSTALL(DIRECTORY DESTINATION ${sbindir})
+install(DIRECTORY DESTINATION ${sbindir})
 
-INSTALL(
-   CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink ${DESTSTARTDIR}/bareos-fd $ENV{RPM_BUILD_ROOT}/${sbindir}/rcbareos-fd )"
-   CODE "MESSAGE(STATUS ${CMAKE_COMMAND}           -E create_symlink ${DESTSTARTDIR}/bareos-fd $ENV{RPM_BUILD_ROOT}/${sbindir}/rcbareos-fd )"
-
-   CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink ${DESTSTARTDIR}/bareos-sd $ENV{RPM_BUILD_ROOT}/${sbindir}/rcbareos-sd )"
-   CODE "MESSAGE(STATUS ${CMAKE_COMMAND}           -E create_symlink ${DESTSTARTDIR}/bareos-sd $ENV{RPM_BUILD_ROOT}/${sbindir}/rcbareos-sd )"
-
-   CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink ${DESTSTARTDIR}/bareos-dir $ENV{RPM_BUILD_ROOT}/${sbindir}/rcbareos-dir )"
-   CODE "MESSAGE(STATUS ${CMAKE_COMMAND}           -E create_symlink ${DESTSTARTDIR}/bareos-dir $ENV{RPM_BUILD_ROOT}/${sbindir}/rcbareos-dir )"
+install(
+  CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink ${DESTSTARTDIR}/bareos-fd $ENV{RPM_BUILD_ROOT}/${sbindir}/rcbareos-fd )"
+  CODE "MESSAGE(STATUS ${CMAKE_COMMAND}           -E create_symlink ${DESTSTARTDIR}/bareos-fd $ENV{RPM_BUILD_ROOT}/${sbindir}/rcbareos-fd )"
+  CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink ${DESTSTARTDIR}/bareos-sd $ENV{RPM_BUILD_ROOT}/${sbindir}/rcbareos-sd )"
+  CODE "MESSAGE(STATUS ${CMAKE_COMMAND}           -E create_symlink ${DESTSTARTDIR}/bareos-sd $ENV{RPM_BUILD_ROOT}/${sbindir}/rcbareos-sd )"
+  CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink ${DESTSTARTDIR}/bareos-dir $ENV{RPM_BUILD_ROOT}/${sbindir}/rcbareos-dir )"
+  CODE "MESSAGE(STATUS ${CMAKE_COMMAND}           -E create_symlink ${DESTSTARTDIR}/bareos-dir $ENV{RPM_BUILD_ROOT}/${sbindir}/rcbareos-dir )"
 )

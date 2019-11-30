@@ -17,30 +17,29 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+if(HAVE_WIN32)
+  include_directories(
+    ${PROJECT_SOURCE_DIR}/src/win32/generic
+    ${PROJECT_SOURCE_DIR}/src/win32/dird
+    ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/include
+  )
+  link_directories(
+    ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/lib/${WINDOWS_BITS}
+  )
+  add_definitions(-DMS_WIN${WINDOWS_BITS})
+endif()
 
-IF(HAVE_WIN32)
-   include_directories(
-      ${PROJECT_SOURCE_DIR}/src/win32/generic
-      ${PROJECT_SOURCE_DIR}/src/win32/dird
-      ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/include
-      )
-   link_directories(${PROJECT_SOURCE_DIR}/src/win32/plugins/python/lib/${WINDOWS_BITS})
-   add_definitions(-DMS_WIN${WINDOWS_BITS})
-ENDIF()
+if(HAVE_PYTHON)
+  add_library(python-dir MODULE python-dir.cc)
+  # do not prefix with "lib"
+  set_target_properties(python-dir PROPERTIES PREFIX "")
+  install(TARGETS python-dir DESTINATION ${plugindir})
+  target_link_libraries(python-dir ${PYTHON_LIBRARIES} bareos)
 
-IF(HAVE_PYTHON)
-   add_library(python-dir MODULE python-dir.cc)
-   # do not prefix with "lib"
-   set_target_properties(python-dir PROPERTIES PREFIX "")
-   INSTALL(TARGETS python-dir DESTINATION ${plugindir})
-   target_link_libraries(python-dir ${PYTHON_LIBRARIES} bareos)
+  set(PYFILES
+      bareos-dir.py.template bareos-dir-class-plugin.py bareos_dir_consts.py
+      BareosDirPluginBaseclass.py BareosDirWrapper.py
+  )
 
-
-   set (PYFILES bareos-dir.py.template
-      bareos-dir-class-plugin.py
-      bareos_dir_consts.py
-      BareosDirPluginBaseclass.py
-      BareosDirWrapper.py)
-
-   INSTALL(FILES ${PYFILES} DESTINATION ${plugindir})
-ENDIF()
+  install(FILES ${PYFILES} DESTINATION ${plugindir})
+endif()

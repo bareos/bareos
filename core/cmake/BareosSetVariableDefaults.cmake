@@ -17,490 +17,487 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-
 # check if variables are set via cmdline else set them to default values
 
-## configure variables
-##
-## strings - directories
+# configure variables
+#
+# strings - directories
 
 # prefix
-IF(NOT DEFINED prefix)
-   set (prefix ${CMAKE_DEFAULT_PREFIX})
-ENDIF()
+if(NOT DEFINED prefix)
+  set(prefix ${CMAKE_DEFAULT_PREFIX})
+endif()
 
-
-IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
   # libdir
-  IF(NOT DEFINED libdir)
+  if(NOT DEFINED libdir)
     set(libdir ${CMAKE_INSTALL_LIBDIR}/${CMAKE_PROJECT_NAME})
-  ENDIF()
+  endif()
 
   # includedir
-  IF(NOT DEFINED includedir)
+  if(NOT DEFINED includedir)
     set(includedir ${CMAKE_INSTALL_INCLUDEDIR}/${CMAKE_PROJECT_NAME})
-  ENDIF()
+  endif()
 
   # bindir
-  IF(NOT DEFINED bindir)
+  if(NOT DEFINED bindir)
     set(bindir ${CMAKE_INSTALL_BINDIR})
-    MESSAGE(STATUS "set bindir to default ${bindir}")
-  ENDIF()
-
+    message(STATUS "set bindir to default ${bindir}")
+  endif()
 
   # sbindir
-  IF(NOT DEFINED sbindir)
+  if(NOT DEFINED sbindir)
     set(sbindir ${CMAKE_INSTALL_SBINDIR})
-    MESSAGE(STATUS "set sbindir to default ${sbindir}")
-  ENDIF()
+    message(STATUS "set sbindir to default ${sbindir}")
+  endif()
 
   # sysconfdir
-  IF(NOT DEFINED sysconfdir)
+  if(NOT DEFINED sysconfdir)
     set(sysconfdir ${CMAKE_INSTALL_SYSCONFDIR})
-  ENDIF()
+  endif()
   set(SYSCONFDIR "\"${sysconfdir}\"")
 
   # confdir
-  IF(NOT DEFINED confdir)
+  if(NOT DEFINED confdir)
     set(confdir "${sysconfdir}/${CMAKE_PROJECT_NAME}")
-  ENDIF()
+  endif()
 
   # configtemplatedir
-  IF(NOT DEFINED configtemplatedir)
+  if(NOT DEFINED configtemplatedir)
     set(configtemplatedir "lib/${CMAKE_PROJECT_NAME}/defaultconfigs")
-  ENDIF()
+  endif()
 
   # mandir
-  IF(NOT DEFINED mandir)
+  if(NOT DEFINED mandir)
     set(mandir ${CMAKE_INSTALL_MANDIR})
-  ENDIF()
+  endif()
 
   # docdir
-  IF(NOT DEFINED docdir)
-    SET(docdir default_for_docdir)
-  ENDIF()
+  if(NOT DEFINED docdir)
+    set(docdir default_for_docdir)
+  endif()
 
   # htmldir
-  IF(NOT DEFINED htmldir)
-    SET(htmldir default_for_htmldir)
-  ENDIF()
+  if(NOT DEFINED htmldir)
+    set(htmldir default_for_htmldir)
+  endif()
 
   # archivedir
-  IF(NOT DEFINED archivedir)
-    set(archivedir "/${CMAKE_INSTALL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}/storage")
-  ENDIF()
+  if(NOT DEFINED archivedir)
+    set(archivedir
+        "/${CMAKE_INSTALL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}/storage"
+    )
+  endif()
 
   # backenddir
-  IF(NOT DEFINED backenddir)
+  if(NOT DEFINED backenddir)
     set(backenddir ${CMAKE_INSTALL_LIBDIR}/${CMAKE_PROJECT_NAME}/backends)
-  ENDIF()
+  endif()
 
   # scriptdir
-  IF(NOT DEFINED scriptdir)
+  if(NOT DEFINED scriptdir)
     set(scriptdir "lib/${CMAKE_PROJECT_NAME}/scripts")
-  ENDIF()
+  endif()
 
   # workingdir
-  IF(NOT DEFINED workingdir)
+  if(NOT DEFINED workingdir)
     set(workingdir "${CMAKE_INSTALL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}")
-  ENDIF()
+  endif()
   set(working_dir "${workingdir}")
 
   # plugindir
-  IF(NOT DEFINED plugindir)
+  if(NOT DEFINED plugindir)
     set(plugindir ${CMAKE_INSTALL_LIBDIR}/${CMAKE_PROJECT_NAME}/plugins)
-  ENDIF()
+  endif()
 
   # piddir
-  IF(NOT DEFINED piddir)
-    SET(piddir ${workingdir})
-  ENDIF()
+  if(NOT DEFINED piddir)
+    set(piddir ${workingdir})
+  endif()
 
   # bsrdir
-  IF(NOT DEFINED bsrdir)
-    SET(bsrdir ${workingdir})
-  ENDIF()
+  if(NOT DEFINED bsrdir)
+    set(bsrdir ${workingdir})
+  endif()
 
   # logdir
-  IF(NOT DEFINED logdir)
+  if(NOT DEFINED logdir)
     set(logdir "${CMAKE_INSTALL_LOCALSTATEDIR}/log/${CMAKE_PROJECT_NAME}")
-  ENDIF()
+  endif()
 
   # datarootdir
-  IF(NOT DEFINED datarootdir)
+  if(NOT DEFINED datarootdir)
     set(datarootdir "${CMAKE_INSTALL_DATAROOTDIR}")
-  ENDIF()
+  endif()
 
   # subsysdir
-  IF(NOT DEFINED subsysdir)
+  if(NOT DEFINED subsysdir)
     set(subsysdir "${workingdir}")
-  ENDIF()
+  endif()
 
-ELSE() # IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+else() # IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
   # libdir
-  IF(NOT DEFINED libdir)
+  if(NOT DEFINED libdir)
     set(libdir ${CMAKE_INSTALL_FULL_LIBDIR}/${CMAKE_PROJECT_NAME})
-  ENDIF()
+  endif()
 
   # includedir
-  IF(NOT DEFINED includedir)
+  if(NOT DEFINED includedir)
     set(includedir ${CMAKE_INSTALL_FULL_INCLUDEDIR}/${CMAKE_PROJECT_NAME})
-  ENDIF()
+  endif()
 
   # bindir
-  IF(NOT DEFINED bindir)
+  if(NOT DEFINED bindir)
     set(bindir ${CMAKE_INSTALL_FULL_BINDIR})
-    MESSAGE(STATUS "set bindir to default ${bindir}")
-  ENDIF()
-
+    message(STATUS "set bindir to default ${bindir}")
+  endif()
 
   # sbindir
-  IF(NOT DEFINED sbindir)
+  if(NOT DEFINED sbindir)
     set(sbindir ${CMAKE_INSTALL_FULL_SBINDIR})
-    MESSAGE(STATUS "set sbindir to default ${sbindir}")
-  ENDIF()
+    message(STATUS "set sbindir to default ${sbindir}")
+  endif()
 
   # sysconfdir
-  IF(NOT DEFINED sysconfdir)
+  if(NOT DEFINED sysconfdir)
     set(sysconfdir ${CMAKE_INSTALL_FULL_SYSCONFDIR})
-  ENDIF()
+  endif()
   set(SYSCONFDIR "\"${sysconfdir}\"")
 
   # confdir
-  IF(NOT DEFINED confdir)
+  if(NOT DEFINED confdir)
     set(confdir "${sysconfdir}/${CMAKE_PROJECT_NAME}")
-  ENDIF()
+  endif()
 
   # configtemplatedir
-  IF(NOT DEFINED configtemplatedir)
+  if(NOT DEFINED configtemplatedir)
     set(configtemplatedir "${confdir}")
-  ENDIF()
+  endif()
 
   # mandir
-  IF(NOT DEFINED mandir)
+  if(NOT DEFINED mandir)
     set(mandir ${CMAKE_INSTALL_FULL_MANDIR})
-  ENDIF()
+  endif()
 
   # docdir
-  IF(NOT DEFINED docdir)
-    SET(docdir default_for_docdir)
-  ENDIF()
+  if(NOT DEFINED docdir)
+    set(docdir default_for_docdir)
+  endif()
 
   # htmldir
-  IF(NOT DEFINED htmldir)
-    SET(htmldir default_for_htmldir)
-  ENDIF()
+  if(NOT DEFINED htmldir)
+    set(htmldir default_for_htmldir)
+  endif()
 
   # archivedir
-  IF(NOT DEFINED archivedir)
-    set(archivedir "/${CMAKE_INSTALL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}/storage")
-  ENDIF()
+  if(NOT DEFINED archivedir)
+    set(archivedir
+        "/${CMAKE_INSTALL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}/storage"
+    )
+  endif()
 
   # backenddir
-  IF(NOT DEFINED backenddir)
+  if(NOT DEFINED backenddir)
     set(backenddir ${CMAKE_INSTALL_FULL_LIBDIR}/${CMAKE_PROJECT_NAME}/backends)
-  ENDIF()
+  endif()
 
   # scriptdir
-  IF(NOT DEFINED scriptdir)
+  if(NOT DEFINED scriptdir)
     set(scriptdir "${CMAKE_INSTALL_PREFIX}/lib/${CMAKE_PROJECT_NAME}/scripts")
-  ENDIF()
+  endif()
 
   # workingdir
-  IF(NOT DEFINED workingdir)
+  if(NOT DEFINED workingdir)
     set(workingdir "/${CMAKE_INSTALL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}")
-  ENDIF()
+  endif()
   set(working_dir "${workingdir}")
 
   # plugindir
-  IF(NOT DEFINED plugindir)
+  if(NOT DEFINED plugindir)
     set(plugindir ${CMAKE_INSTALL_FULL_LIBDIR}/${CMAKE_PROJECT_NAME}/plugins)
-  ENDIF()
+  endif()
 
   # piddir
-  IF(NOT DEFINED piddir)
-    SET(piddir ${workingdir})
-  ENDIF()
+  if(NOT DEFINED piddir)
+    set(piddir ${workingdir})
+  endif()
 
   # bsrdir
-  IF(NOT DEFINED bsrdir)
-    SET(bsrdir ${workingdir})
-  ENDIF()
+  if(NOT DEFINED bsrdir)
+    set(bsrdir ${workingdir})
+  endif()
 
   # logdir
-  IF(NOT DEFINED logdir)
+  if(NOT DEFINED logdir)
     set(logdir "${CMAKE_INSTALL_LOCALSTATEDIR}/log/${CMAKE_PROJECT_NAME}")
-  ENDIF()
+  endif()
 
   # datarootdir
-  IF(NOT DEFINED datarootdir)
+  if(NOT DEFINED datarootdir)
     set(datarootdir "${CMAKE_INSTALL_FULL_DATAROOTDIR}")
-  ENDIF()
+  endif()
 
   # subsysdir
-  IF(NOT DEFINED subsysdir)
+  if(NOT DEFINED subsysdir)
     set(subsysdir "${workingdir}")
-  ENDIF()
+  endif()
 
-ENDIF() # IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-
+endif() # IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 # db_name
-IF(NOT DEFINED db_name)
-   SET(db_name "bareos")
-ENDIF()
+if(NOT DEFINED db_name)
+  set(db_name "bareos")
+endif()
 
 # db_user
-IF(NOT DEFINED db_user)
-   SET(db_user "bareos")
-ENDIF()
+if(NOT DEFINED db_user)
+  set(db_user "bareos")
+endif()
 
 # db_password
-IF(NOT DEFINED db_password)
-   SET(db_password "")
-ENDIF()
+if(NOT DEFINED db_password)
+  set(db_password "")
+endif()
 
 # dir-user
-IF(NOT DEFINED dir-user)
-   SET(dir-user "")
-ENDIF()
-SET(dir_user "${dir-user}")
+if(NOT DEFINED dir-user)
+  set(dir-user "")
+endif()
+set(dir_user "${dir-user}")
 
 # dir-group
-IF(NOT DEFINED dir-group)
-   SET(dir-group "")
-ENDIF()
+if(NOT DEFINED dir-group)
+  set(dir-group "")
+endif()
 set(dir_group ${dir-group})
 
 # sd-user
-IF(NOT DEFINED sd-user)
-   SET(sd-user "")
-ENDIF()
-SET(sd_user ${sd-user})
+if(NOT DEFINED sd-user)
+  set(sd-user "")
+endif()
+set(sd_user ${sd-user})
 
 # sd-group
-IF(NOT DEFINED sd-group)
-   SET(sd-group "")
-ENDIF()
-SET(sd_group ${sd-group})
+if(NOT DEFINED sd-group)
+  set(sd-group "")
+endif()
+set(sd_group ${sd-group})
 
 # fd-user
-IF(NOT DEFINED fd-user)
-   SET(fd-user "")
-ENDIF()
-SET(fd_user ${fd-user})
+if(NOT DEFINED fd-user)
+  set(fd-user "")
+endif()
+set(fd_user ${fd-user})
 
 # fd-group
-IF(NOT DEFINED fd-group)
-   SET(fd-group "")
-ENDIF()
-SET(fd_group ${fd-group})
-
+if(NOT DEFINED fd-group)
+  set(fd-group "")
+endif()
+set(fd_group ${fd-group})
 
 # dir-password
-IF(NOT DEFINED dir-password)
-   SET(dir-password "bareos")
-ENDIF()
-SET(dir_password ${dir-password})
+if(NOT DEFINED dir-password)
+  set(dir-password "bareos")
+endif()
+set(dir_password ${dir-password})
 
 # fd-password
-IF(NOT DEFINED fd-password)
-   SET(fd-password "")
-ENDIF()
-SET(fd_password ${fd-password})
+if(NOT DEFINED fd-password)
+  set(fd-password "")
+endif()
+set(fd_password ${fd-password})
 
 # sd-password
-IF(NOT DEFINED sd-password)
-   SET(sd-password "")
-ENDIF()
-SET(sd_password ${sd-password})
+if(NOT DEFINED sd-password)
+  set(sd-password "")
+endif()
+set(sd_password ${sd-password})
 
 # mon-dir-password
-IF(NOT DEFINED mon-dir-password)
-   SET(mon-dir-password "")
-ENDIF()
-SET(mon_dir_password ${mon-dir-password})
+if(NOT DEFINED mon-dir-password)
+  set(mon-dir-password "")
+endif()
+set(mon_dir_password ${mon-dir-password})
 
 # mon-fd-password
-IF(NOT DEFINED mon-fd-password)
-   SET(mon-fd-password "")
-ENDIF()
-SET(mon_fd_password ${mon-fd-password})
+if(NOT DEFINED mon-fd-password)
+  set(mon-fd-password "")
+endif()
+set(mon_fd_password ${mon-fd-password})
 
 # mon-sd-password
-IF(NOT DEFINED mon-sd-password)
-   SET(mon-sd-password "")
-ENDIF()
-SET(mon_sd_password ${mon-sd-password} )
+if(NOT DEFINED mon-sd-password)
+  set(mon-sd-password "")
+endif()
+set(mon_sd_password ${mon-sd-password})
 
 # basename
-IF(NOT DEFINED basename)
-   SET(basename localhost)
-ENDIF()
-
-# hostname
-IF(NOT DEFINED hostname)
-   SET(hostname localhost)
-ENDIF()
-
-##########
-## rights
-##########
-# sbin-perm
-IF(NOT DEFINED sbin-perm)
-   SET(sbin-perm 755)
-ENDIF()
-
-
-
-###########
-## bool
-###########
-# python
-IF(NOT DEFINED python)
-   SET(python ON)
-ENDIF()
-
-# lockmgr
-IF(NOT DEFINED lockmgr)
-   SET(lockmgr OFF)
-   set(LOCKMGR 0)
-ENDIF()
-
-# readline
-IF(NOT DEFINED readline)
-   SET(readline ON)
-ENDIF()
-
-# batch-insert
-IF((NOT DEFINED batch-insert) OR (${batch-insert}))
-   SET(batch-insert ON)
-   SET(HAVE_POSTGRESQL_BATCH_FILE_INSERT 1)
-   SET(USE_BATCH_FILE_INSERT 1)
-ENDIF()
-
-# dynamic-cats-backends
-IF(NOT DEFINED dynamic-cats-backends)
-   SET(dynamic-cats-backends ON)
-   SET(HAVE_DYNAMIC_CATS_BACKENDS 1)
-ELSE()
-   IF (${dynamic-cats-backends})
-     SET(HAVE_DYNAMIC_CATS_BACKENDS 1)
-   ELSE()
-     SET(HAVE_DYNAMIC_CATS_BACKENDS 0)
-   ENDIF()
-ENDIF()
-
-# dynamic-storage-backends
-IF(NOT DEFINED dynamic-storage-backends)
-  SET(dynamic-storage-backends ON)
-  SET(HAVE_DYNAMIC_SD_BACKENDS 1)
-ELSE()
-  IF (${dynamic-storage-backends})
-    SET(HAVE_DYNAMIC_SD_BACKENDS 1)
-  ELSE()
-    SET(HAVE_DYNAMIC_SD_BACKENDS 0)
-  ENDIF()
-ENDIF()
-
-# scsi-crypto
-IF(NOT DEFINED scsi-crypto)
-   SET(scsi-crypto OFF)
-ENDIF()
-
-# lmdb
-IF(NOT DEFINED lmdb)
-   SET(lmdb ON)
-ENDIF()
-
-# ndmp
-IF(NOT DEFINED ndmp)
-   SET(ndmp ON)
-ENDIF()
-
-# ipv6
-IF((NOT DEFINED ipv6) OR (${ipv6}))
-   SET(ipv6 ON)
-   SET(HAVE_IPV6 1)
-ENDIF()
-
-# acl
-IF(NOT DEFINED acl)
-   SET(acl ON)
-ENDIF()
-
-# xattr
-IF(NOT DEFINED xattr)
-   SET(xattr ON)
-ENDIF()
-
-# build_ndmjob
-IF(NOT DEFINED build_ndmjob)
-   SET(build_ndmjob OFF)
-ENDIF()
-
-# bat
-IF(NOT DEFINED bat)
-   SET(bat OFF)
-ENDIF()
-
-# traymonitor
-IF(NOT DEFINED traymonitor)
-   SET(HAVE_TRAYMONITOR 0)
-ENDIF()
-
-# client-only
-IF(NOT DEFINED client-only)
-   SET(client-only OFF)
-   SET(build_client_only OFF)
-ELSE()
-   SET(client-only ON)
-   SET(build_client_only ON)
-ENDIF()
-
-# postgresql
-IF(NOT DEFINED postgresql)
-   SET(postgresql OFF)
-ENDIF()
-
-# mysql
-IF(NOT DEFINED mysql)
-   SET(mysql OFF)
-ENDIF()
-
-# sqlite3
-IF(NOT DEFINED sqlite3)
-   SET(sqlite3 OFF)
-ENDIF()
-
-
-IF(NOT sqlite3)
-   IF(NOT mysql)
-      IF(NOT postgresql)
-         IF(NOT client-only)
-         MESSAGE(FATAL_ERROR "No database backend was chosen, please choose at least one from \n"
-          " - postgresql (-Dpostgresql=yes)\n"
-          " - mysqli     (-Dmysql=yes)     \n"
-          " - sqlite3    (-Dsqlite3=yes)   \n"
-          " or select client only build     (-Dclient-only=yes)   \n"
-          )
-         ENDIF()
-      ENDIF()
-   ENDIF()
-ENDIF()
-
-IF(NOT mysql)
-   set(MYSQL_INCLUDE_DIR "")
+if(NOT DEFINED basename)
+  set(basename localhost)
 endif()
 
-IF(NOT postgresql)
- set(PostgreSQL_INCLUDE_DIR "")
+# hostname
+if(NOT DEFINED hostname)
+  set(hostname localhost)
+endif()
+
+# ##############################################################################
+# rights
+# ##############################################################################
+# sbin-perm
+if(NOT DEFINED sbin-perm)
+  set(sbin-perm 755)
+endif()
+
+# ##############################################################################
+# bool
+# ##############################################################################
+# python
+if(NOT DEFINED python)
+  set(python ON)
+endif()
+
+# lockmgr
+if(NOT DEFINED lockmgr)
+  set(lockmgr OFF)
+  set(LOCKMGR 0)
+endif()
+
+# readline
+if(NOT DEFINED readline)
+  set(readline ON)
+endif()
+
+# batch-insert
+if((NOT DEFINED batch-insert) OR (${batch-insert}))
+  set(batch-insert ON)
+  set(HAVE_POSTGRESQL_BATCH_FILE_INSERT 1)
+  set(USE_BATCH_FILE_INSERT 1)
+endif()
+
+# dynamic-cats-backends
+if(NOT DEFINED dynamic-cats-backends)
+  set(dynamic-cats-backends ON)
+  set(HAVE_DYNAMIC_CATS_BACKENDS 1)
+else()
+  if(${dynamic-cats-backends})
+    set(HAVE_DYNAMIC_CATS_BACKENDS 1)
+  else()
+    set(HAVE_DYNAMIC_CATS_BACKENDS 0)
+  endif()
+endif()
+
+# dynamic-storage-backends
+if(NOT DEFINED dynamic-storage-backends)
+  set(dynamic-storage-backends ON)
+  set(HAVE_DYNAMIC_SD_BACKENDS 1)
+else()
+  if(${dynamic-storage-backends})
+    set(HAVE_DYNAMIC_SD_BACKENDS 1)
+  else()
+    set(HAVE_DYNAMIC_SD_BACKENDS 0)
+  endif()
+endif()
+
+# scsi-crypto
+if(NOT DEFINED scsi-crypto)
+  set(scsi-crypto OFF)
+endif()
+
+# lmdb
+if(NOT DEFINED lmdb)
+  set(lmdb ON)
+endif()
+
+# ndmp
+if(NOT DEFINED ndmp)
+  set(ndmp ON)
+endif()
+
+# ipv6
+if((NOT DEFINED ipv6) OR (${ipv6}))
+  set(ipv6 ON)
+  set(HAVE_IPV6 1)
+endif()
+
+# acl
+if(NOT DEFINED acl)
+  set(acl ON)
+endif()
+
+# xattr
+if(NOT DEFINED xattr)
+  set(xattr ON)
+endif()
+
+# build_ndmjob
+if(NOT DEFINED build_ndmjob)
+  set(build_ndmjob OFF)
+endif()
+
+# bat
+if(NOT DEFINED bat)
+  set(bat OFF)
+endif()
+
+# traymonitor
+if(NOT DEFINED traymonitor)
+  set(HAVE_TRAYMONITOR 0)
+endif()
+
+# client-only
+if(NOT DEFINED client-only)
+  set(client-only OFF)
+  set(build_client_only OFF)
+else()
+  set(client-only ON)
+  set(build_client_only ON)
+endif()
+
+# postgresql
+if(NOT DEFINED postgresql)
+  set(postgresql OFF)
+endif()
+
+# mysql
+if(NOT DEFINED mysql)
+  set(mysql OFF)
+endif()
+
+# sqlite3
+if(NOT DEFINED sqlite3)
+  set(sqlite3 OFF)
+endif()
+
+if(NOT sqlite3)
+  if(NOT mysql)
+    if(NOT postgresql)
+      if(NOT client-only)
+        message(
+          FATAL_ERROR
+            "No database backend was chosen, please choose at least one from \n"
+            " - postgresql (-Dpostgresql=yes)\n"
+            " - mysqli     (-Dmysql=yes)     \n"
+            " - sqlite3    (-Dsqlite3=yes)   \n"
+            " or select client only build     (-Dclient-only=yes)   \n"
+        )
+      endif()
+    endif()
+  endif()
+endif()
+
+if(NOT mysql)
+  set(MYSQL_INCLUDE_DIR "")
+endif()
+
+if(NOT postgresql)
+  set(PostgreSQL_INCLUDE_DIR "")
 endif()
 
 if(NOT Readline_LIBRARY)
- set(Readline_LIBRARY "")
+  set(Readline_LIBRARY "")
 endif()
 
 if(NOT LIBZ_FOUND)
@@ -509,168 +506,162 @@ endif()
 
 set(db_backends "")
 
-IF(NOT client-only)
-   if(${sqlite3})
-      set(HAVE_SQLITE3 1)
-      list(APPEND db_backends sqlite3)
-   endif()
+if(NOT client-only)
+  if(${sqlite3})
+    set(HAVE_SQLITE3 1)
+    list(APPEND db_backends sqlite3)
+  endif()
 
-   if(${postgresql})
-      set(HAVE_POSTGRESQL 1)
-      list(APPEND db_backends postgresql)
-   endif()
+  if(${postgresql})
+    set(HAVE_POSTGRESQL 1)
+    list(APPEND db_backends postgresql)
+  endif()
 
-   if(${mysql})
-      set(HAVE_MYSQL 1)
-      list(APPEND db_backends mysql)
-   endif()
+  if(${mysql})
+    set(HAVE_MYSQL 1)
+    list(APPEND db_backends mysql)
+  endif()
 
-   # set first entry as default db backend
-   LIST(GET db_backends 0 default_db_backend)
-   get_directory_property(hasParent PARENT_DIRECTORY)
-   if(hasParent)
-     set (DEFAULT_DB_TYPE ${default_db_backend} PARENT_SCOPE)
-   endif()
-   set (DEFAULT_DB_TYPE ${default_db_backend})
+  # set first entry as default db backend
+  list(GET db_backends 0 default_db_backend)
+  get_directory_property(hasParent PARENT_DIRECTORY)
+  if(hasParent)
+    set(DEFAULT_DB_TYPE
+        ${default_db_backend}
+        PARENT_SCOPE
+    )
+  endif()
+  set(DEFAULT_DB_TYPE ${default_db_backend})
 endif()
 
 # tcp-wrappers
-IF(NOT DEFINED tcp-wrappers)
-   SET(tcp-wrappers OFF)
-ENDIF()
+if(NOT DEFINED tcp-wrappers)
+  set(tcp-wrappers OFF)
+endif()
 
 # systemd
-IF(NOT DEFINED systemd)
-   SET(systemd OFF)
-ENDIF()
+if(NOT DEFINED systemd)
+  set(systemd OFF)
+endif()
 
 # includes
-IF(NOT DEFINED includes)
-   SET(includes ON)
-ENDIF()
+if(NOT DEFINED includes)
+  set(includes ON)
+endif()
 
 # openssl
-IF(NOT DEFINED openssl)
-   SET(openssl ON)
-ENDIF()
-
-
+if(NOT DEFINED openssl)
+  set(openssl ON)
+endif()
 
 # ports
-IF(NOT DEFINED dir_port)
-   SET(dir_port "9101")
-ENDIF()
+if(NOT DEFINED dir_port)
+  set(dir_port "9101")
+endif()
 
-IF(NOT DEFINED fd_port)
-   SET(fd_port "9102")
-ENDIF()
+if(NOT DEFINED fd_port)
+  set(fd_port "9102")
+endif()
 
-IF(NOT DEFINED sd_port)
-   SET(sd_port "9103")
-ENDIF()
+if(NOT DEFINED sd_port)
+  set(sd_port "9103")
+endif()
 
-IF(DEFINED baseport)
-   MATH(EXPR dir_port "${baseport}+0")
-   MATH(EXPR fd_port "${baseport}+1")
-   MATH(EXPR sd_port "${baseport}+2")
-ENDIF()
+if(DEFINED baseport)
+  math(EXPR dir_port "${baseport}+0")
+  math(EXPR fd_port "${baseport}+1")
+  math(EXPR sd_port "${baseport}+2")
+endif()
 
+if(NOT DEFINED job_email)
+  set(job_email "root")
+endif()
 
-IF(NOT DEFINED job_email)
-   SET(job_email "root")
-ENDIF()
+if(NOT DEFINED dump_email)
+  set(dump_email "root")
+endif()
 
-IF(NOT DEFINED dump_email)
-   SET(dump_email "root")
-ENDIF()
+if(NOT DEFINED smtp_host)
+  set(smtp_host "localhost")
+endif()
 
-IF(NOT DEFINED smtp_host)
-   SET(smtp_host "localhost")
-ENDIF()
+if(DEFINED traymonitor)
+  set(HAVE_TRAYMONITOR 1)
+endif()
 
-IF(DEFINED traymonitor)
-   SET(HAVE_TRAYMONITOR 1)
-ENDIF()
+if(DEFINED test-plugin)
+  set(HAVE_TEST_PLUGIN 1)
+endif()
 
-IF(DEFINED test-plugin)
-   SET(HAVE_TEST_PLUGIN 1)
-ENDIF()
+if(NOT DEFINED developer)
+  set(developer OFF)
+endif()
 
-IF(NOT DEFINED developer)
-   SET(developer OFF)
-ENDIF()
+if(DEFINED dynamic-debian-package-list)
+  set(GENERATE_DEBIAN_CONTROL ON)
+else()
+  set(GENERATE_DEBIAN_CONTROL OFF)
+endif()
 
-IF(DEFINED dynamic-debian-package-list)
-   SET(GENERATE_DEBIAN_CONTROL ON)
-ELSE()
-   SET(GENERATE_DEBIAN_CONTROL OFF)
-ENDIF()
-
-IF(NOT DEFINED coverage)
-   set (coverage OFF)
-ENDIF()
+if(NOT DEFINED coverage)
+  set(coverage OFF)
+endif()
 
 # do not destroy bareos-config-lib.sh
-SET(DB_NAME "@DB_NAME@")
-SET(DB_USER "@DB_USER@")
-SET(DB_PASS "@DB_PASS@")
-SET(DB_VERSION "@DB_VERSION@")
+set(DB_NAME "@DB_NAME@")
+set(DB_USER "@DB_USER@")
+set(DB_PASS "@DB_PASS@")
+set(DB_VERSION "@DB_VERSION@")
 
-
-IF (${CMAKE_COMPILER_IS_GNUCC})
-   SET(HAVE_GCC 1)
-ENDIF()
-
-
-
+if(${CMAKE_COMPILER_IS_GNUCC})
+  set(HAVE_GCC 1)
+endif()
 
 set(lld "\"lld\"")
 set(llu "\"llu\"")
 
-SET(HAVE_MYSQL_THREAD_SAFE 1)
-SET(HAVE_POSIX_SIGNALS 1)
-SET(HAVE_SHA2 1)
-SET(HAVE_PQISTHREADSAFE 1)
-SET(HAVE_PQ_COPY 1)
+set(HAVE_MYSQL_THREAD_SAFE 1)
+set(HAVE_POSIX_SIGNALS 1)
+set(HAVE_SHA2 1)
+set(HAVE_PQISTHREADSAFE 1)
+set(HAVE_PQ_COPY 1)
 
-SET(PROTOTYPES 1)
-SET(RETSIGTYPE void)
-SET(SETPGRP_VOID 1)
-SET(SSTDC_HEADERS 1)
+set(PROTOTYPES 1)
+set(RETSIGTYPE void)
+set(SETPGRP_VOID 1)
+set(SSTDC_HEADERS 1)
 
+set(_LARGEFILE_SOURCE 1)
+set(_LARGE_FILES 1)
+set(_FILE_OFFSET_BITS 64)
+set(HAVE_COMPRESS_BOUND 1)
+set(STDC_HEADERS 1)
+set(HAVE_SQLITE3_THREADSAFE 1)
+set(FSTYPE_MNTENT 1)
 
-SET(_LARGEFILE_SOURCE 1)
-SET(_LARGE_FILES 1)
-SET(_FILE_OFFSET_BITS 64)
-SET(HAVE_COMPRESS_BOUND 1)
-SET(STDC_HEADERS 1)
-SET(HAVE_SQLITE3_THREADSAFE 1)
-SET(FSTYPE_MNTENT 1)
-
-SET(PACKAGE_BUGREPORT "\"\"")
-SET(PACKAGE_NAME "\"${CMAKE_PROJECT_NAME}\"")
-SET(PACKAGE_STRING "\"${CMAKE_PROJECT_NAME} ${BAREOS_NUMERIC_VERSION}\"")
-SET(PACKAGE_TARNAME "\"\"" )
-SET(PACKAGE_URL "\"\"")
-SET(PACKAGE_VERSION "\"${BAREOS_NUMERIC_VERSION}\"")
+set(PACKAGE_BUGREPORT "\"\"")
+set(PACKAGE_NAME "\"${CMAKE_PROJECT_NAME}\"")
+set(PACKAGE_STRING "\"${CMAKE_PROJECT_NAME} ${BAREOS_NUMERIC_VERSION}\"")
+set(PACKAGE_TARNAME "\"\"")
+set(PACKAGE_URL "\"\"")
+set(PACKAGE_VERSION "\"${BAREOS_NUMERIC_VERSION}\"")
 
 set(ENABLE_NLS 1)
 
+if(HAVE_WIN32)
 
-IF(HAVE_WIN32)
+  if(NOT DEFINED WINDOWS_VERSION)
+    set(WINDOWS_VERSION 0x600)
+  endif()
 
-   IF(NOT DEFINED WINDOWS_VERSION)
-      SET(WINDOWS_VERSION 0x600)
-   ENDIF()
+  if(NOT DEFINED WINDOWS_BITS)
+    set(WINDOWS_BITS 64)
+  endif()
 
-   IF(NOT DEFINED WINDOWS_BITS)
-      SET(WINDOWS_BITS 64)
-   ENDIF()
+endif()
 
-ENDIF()
-
-IF(DEFINED do-static-code-checks)
-  SET(DO_STATIC_CODE_CHECKS ${do-static-code-checks})
-ELSE()
-  SET(DO_STATIC_CODE_CHECKS OFF)
-ENDIF()
+if(DEFINED do-static-code-checks)
+  set(DO_STATIC_CODE_CHECKS ${do-static-code-checks})
+else()
+  set(DO_STATIC_CODE_CHECKS OFF)
+endif()

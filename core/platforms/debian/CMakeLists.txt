@@ -17,103 +17,174 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+set(DESTSTARTDIR "${sysconfdir}/init.d/")
 
-
-set (DESTSTARTDIR "${sysconfdir}/init.d/")
-
-MESSAGE(STATUS  "installing startfiles to ${DESTSTARTDIR}")
+message(STATUS "installing startfiles to ${DESTSTARTDIR}")
 
 # Install autostart fd
-INSTALL (FILES "${CMAKE_CURRENT_LIST_DIR}/../../debian/bareos-filedaemon.bareos-fd.init" DESTINATION "${DESTSTARTDIR}/bareos-fd"
-         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-                     GROUP_READ GROUP_EXECUTE
-                     WORLD_READ WORLD_EXECUTE)
+install(
+  FILES
+    "${CMAKE_CURRENT_LIST_DIR}/../../debian/bareos-filedaemon.bareos-fd.init"
+  DESTINATION "${DESTSTARTDIR}/bareos-fd"
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
+              WORLD_READ WORLD_EXECUTE
+)
 
 # Install autostart sd
-INSTALL (FILES "${CMAKE_CURRENT_LIST_DIR}/../../debian/bareos-storage.bareos-sd.init" DESTINATION "${DESTSTARTDIR}/bareos-sd"
-         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-                     GROUP_READ GROUP_EXECUTE
-                     WORLD_READ WORLD_EXECUTE)
+install(
+  FILES "${CMAKE_CURRENT_LIST_DIR}/../../debian/bareos-storage.bareos-sd.init"
+  DESTINATION "${DESTSTARTDIR}/bareos-sd"
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
+              WORLD_READ WORLD_EXECUTE
+)
 
 # Install autostart dir
-INSTALL (FILES "${CMAKE_CURRENT_LIST_DIR}/../../debian/bareos-director.bareos-dir.init" DESTINATION "${DESTSTARTDIR}/bareos-dir"
-         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-                     GROUP_READ GROUP_EXECUTE
-                     WORLD_READ WORLD_EXECUTE)
-
+install(
+  FILES "${CMAKE_CURRENT_LIST_DIR}/../../debian/bareos-director.bareos-dir.init"
+  DESTINATION "${DESTSTARTDIR}/bareos-dir"
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
+              WORLD_READ WORLD_EXECUTE
+)
 
 # logrotate
 
-
-
 # dbconfig
-INSTALL (FILES "${CMAKE_CURRENT_LIST_DIR}/../debian/set_dbconfig_vars.sh" DESTINATION "${scriptdir}/"
-         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-                     GROUP_READ GROUP_EXECUTE
-                     WORLD_READ WORLD_EXECUTE)
+install(
+  FILES "${CMAKE_CURRENT_LIST_DIR}/../debian/set_dbconfig_vars.sh"
+  DESTINATION "${scriptdir}/"
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
+              WORLD_READ WORLD_EXECUTE
+)
 
-INSTALL (DIRECTORY DESTINATION "${datarootdir}/dbconfig-common/data/bareos-database-common/install/")
-
+install(
+  DIRECTORY
+  DESTINATION
+    "${datarootdir}/dbconfig-common/data/bareos-database-common/install/"
+)
 
 #
 # mysql
 #
-INSTALL (FILES "${CMAKE_CURRENT_LIST_DIR}/../../src/cats/ddl/creates/mysql.sql" DESTINATION "${datarootdir}/dbconfig-common/data/bareos-database-common/install" RENAME "mysql")
-INSTALL (DIRECTORY DESTINATION "${datarootdir}/dbconfig-common/data/bareos-database-common/upgrade/mysql")
+install(
+  FILES "${CMAKE_CURRENT_LIST_DIR}/../../src/cats/ddl/creates/mysql.sql"
+  DESTINATION
+    "${datarootdir}/dbconfig-common/data/bareos-database-common/install"
+  RENAME "mysql"
+)
+install(
+  DIRECTORY
+  DESTINATION
+    "${datarootdir}/dbconfig-common/data/bareos-database-common/upgrade/mysql"
+)
 
-FILE(GLOB SQLFILES "${CMAKE_CURRENT_LIST_DIR}/../../src/cats/ddl/updates/mysql.*.sql")
-FOREACH(SQLFILE ${SQLFILES})
-   GET_FILENAME_COMPONENT(BASENAME ${SQLFILE} NAME)
-   STRING(REGEX MATCH  "[0-9]*_([0-9]*)" DUMMMY ${SQLFILE}) # match the regex, we only are interested in submatch in parentheses
-   SET(VERSION ${CMAKE_MATCH_1})
-   INSTALL (FILES ${SQLFILE} DESTINATION ${datarootdir}/dbconfig-common/data/bareos-database-common/upgrade/mysql RENAME ${BAREOS_NUMERIC_VERSION})
-ENDFOREACH()
-
+file(GLOB SQLFILES
+     "${CMAKE_CURRENT_LIST_DIR}/../../src/cats/ddl/updates/mysql.*.sql"
+)
+foreach(SQLFILE ${SQLFILES})
+  get_filename_component(BASENAME ${SQLFILE} NAME)
+  string(
+    REGEX MATCH "[0-9]*_([0-9]*)" DUMMMY ${SQLFILE}
+  ) # match the regex, we only are interested in submatch in parentheses
+  set(VERSION ${CMAKE_MATCH_1})
+  install(
+    FILES ${SQLFILE}
+    DESTINATION
+      ${datarootdir}/dbconfig-common/data/bareos-database-common/upgrade/mysql
+    RENAME ${BAREOS_NUMERIC_VERSION}
+  )
+endforeach()
 
 #
 # postgresql
 #
-INSTALL (FILES "${CMAKE_CURRENT_LIST_DIR}/../../src/cats/ddl/creates/postgresql.sql" DESTINATION "${datarootdir}/dbconfig-common/data/bareos-database-common/install" RENAME "pgsql")
-INSTALL (DIRECTORY DESTINATION "${datarootdir}/dbconfig-common/data/bareos-database-common/upgrade/pgsql/")
-INSTALL (DIRECTORY DESTINATION "${datarootdir}/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/pgsql/")
+install(
+  FILES "${CMAKE_CURRENT_LIST_DIR}/../../src/cats/ddl/creates/postgresql.sql"
+  DESTINATION
+    "${datarootdir}/dbconfig-common/data/bareos-database-common/install"
+  RENAME "pgsql"
+)
+install(
+  DIRECTORY
+  DESTINATION
+    "${datarootdir}/dbconfig-common/data/bareos-database-common/upgrade/pgsql/"
+)
+install(
+  DIRECTORY
+  DESTINATION
+    "${datarootdir}/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/pgsql/"
+)
 
-SET(UPGRADE_DIR ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/upgrade/pgsql/)
-SET(UPGRADE_DBADMIN_DIR ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/upgrade-dbadmin/pgsql/)
-FILE (MAKE_DIRECTORY ${UPGRADE_DIR})
-FILE (MAKE_DIRECTORY ${UPGRADE_DBADMIN_DIR})
+set(UPGRADE_DIR
+    ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/upgrade/pgsql/
+)
+set(UPGRADE_DBADMIN_DIR
+    ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/upgrade-dbadmin/pgsql/
+)
+file(MAKE_DIRECTORY ${UPGRADE_DIR})
+file(MAKE_DIRECTORY ${UPGRADE_DBADMIN_DIR})
 
-FILE(GLOB SQLFILES "${CMAKE_CURRENT_LIST_DIR}/../../src/cats/ddl/updates/postgresql.*.sql")
-FOREACH(SQLFILE ${SQLFILES})
-   GET_FILENAME_COMPONENT(BASENAME ${SQLFILE} NAME)
-   STRING(REGEX MATCH  "[0-9]*_([0-9]*)" DUMMMY ${SQLFILE}) # match the regex, we only are interested in submatch in parentheses
-   SET(VERSION ${CMAKE_MATCH_1})
+file(GLOB SQLFILES
+     "${CMAKE_CURRENT_LIST_DIR}/../../src/cats/ddl/updates/postgresql.*.sql"
+)
+foreach(SQLFILE ${SQLFILES})
+  get_filename_component(BASENAME ${SQLFILE} NAME)
+  string(
+    REGEX MATCH "[0-9]*_([0-9]*)" DUMMMY ${SQLFILE}
+  ) # match the regex, we only are interested in submatch in parentheses
+  set(VERSION ${CMAKE_MATCH_1})
 
-   FILE(STRINGS ${SQLFILE} SQLFILE_LINE)
-   FOREACH(LINE ${SQLFILE_LINE})
-     STRING(REGEX MATCH "^ALTER|^DROP|^--|^$" IS_UPGRADE_LINE ${LINE})
-     IF (NOT ${IS_UPGRADE_LINE} STREQUAL "")
-        FILE(APPEND ${UPGRADE_DBADMIN_DIR}/${BAREOS_NUMERIC_VERSION} "${LINE}\n")
-        SET(LINE "-- upgrade-dbadmin: ${LINE}")
-        FILE(APPEND ${UPGRADE_DIR}/${BAREOS_NUMERIC_VERSION} "${LINE}\n")
-     ELSE()
-        FILE(APPEND ${UPGRADE_DIR}/${BAREOS_NUMERIC_VERSION} "${LINE}\n")
-     ENDIF()
-   ENDFOREACH()
-ENDFOREACH()
+  file(STRINGS ${SQLFILE} SQLFILE_LINE)
+  foreach(LINE ${SQLFILE_LINE})
+    string(REGEX MATCH "^ALTER|^DROP|^--|^$" IS_UPGRADE_LINE ${LINE})
+    if(NOT ${IS_UPGRADE_LINE} STREQUAL "")
+      file(APPEND ${UPGRADE_DBADMIN_DIR}/${BAREOS_NUMERIC_VERSION} "${LINE}\n")
+      set(LINE "-- upgrade-dbadmin: ${LINE}")
+      file(APPEND ${UPGRADE_DIR}/${BAREOS_NUMERIC_VERSION} "${LINE}\n")
+    else()
+      file(APPEND ${UPGRADE_DIR}/${BAREOS_NUMERIC_VERSION} "${LINE}\n")
+    endif()
+  endforeach()
+endforeach()
 
-INSTALL (DIRECTORY ${UPGRADE_DBADMIN_DIR} DESTINATION ${datarootdir}/dbconfig-common/data/bareos-database-common/upgrade/pgsql)
-INSTALL (DIRECTORY ${UPGRADE_DIR} DESTINATION ${datarootdir}/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/pgsql)
+install(
+  DIRECTORY ${UPGRADE_DBADMIN_DIR}
+  DESTINATION
+    ${datarootdir}/dbconfig-common/data/bareos-database-common/upgrade/pgsql
+)
+install(
+  DIRECTORY ${UPGRADE_DIR}
+  DESTINATION
+    ${datarootdir}/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/pgsql
+)
 
 #
 # sqlite3
 #
-INSTALL (FILES "${CMAKE_CURRENT_LIST_DIR}/../../src/cats/ddl/creates/sqlite3.sql" DESTINATION "${datarootdir}/dbconfig-common/data/bareos-database-common/install" RENAME "sqlite3")
-INSTALL (DIRECTORY DESTINATION "${datarootdir}/dbconfig-common/data/bareos-database-common/upgrade/sqlite/")
+install(
+  FILES "${CMAKE_CURRENT_LIST_DIR}/../../src/cats/ddl/creates/sqlite3.sql"
+  DESTINATION
+    "${datarootdir}/dbconfig-common/data/bareos-database-common/install"
+  RENAME "sqlite3"
+)
+install(
+  DIRECTORY
+  DESTINATION
+    "${datarootdir}/dbconfig-common/data/bareos-database-common/upgrade/sqlite/"
+)
 
-FILE(GLOB SQLFILES "${CMAKE_CURRENT_LIST_DIR}/../../src/cats/ddl/updates/sqlite3.*.sql")
-FOREACH(SQLFILE ${SQLFILES})
-   GET_FILENAME_COMPONENT(BASENAME ${SQLFILE} NAME)
-   STRING(REGEX MATCH  "[0-9]*_([0-9]*)" DUMMMY ${SQLFILE}) # match the regex, we only are interested in submatch in parentheses
-   SET(VERSION ${CMAKE_MATCH_1})
-   INSTALL (FILES ${SQLFILE} DESTINATION ${datarootdir}/dbconfig-common/data/bareos-database-common/upgrade/sqlite3 RENAME ${BAREOS_NUMERIC_VERSION})
-ENDFOREACH()
+file(GLOB SQLFILES
+     "${CMAKE_CURRENT_LIST_DIR}/../../src/cats/ddl/updates/sqlite3.*.sql"
+)
+foreach(SQLFILE ${SQLFILES})
+  get_filename_component(BASENAME ${SQLFILE} NAME)
+  string(
+    REGEX MATCH "[0-9]*_([0-9]*)" DUMMMY ${SQLFILE}
+  ) # match the regex, we only are interested in submatch in parentheses
+  set(VERSION ${CMAKE_MATCH_1})
+  install(
+    FILES ${SQLFILE}
+    DESTINATION
+      ${datarootdir}/dbconfig-common/data/bareos-database-common/upgrade/sqlite3
+    RENAME ${BAREOS_NUMERIC_VERSION}
+  )
+endforeach()

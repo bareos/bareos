@@ -17,24 +17,21 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+if(DO_STATIC_CODE_CHECKS)
+  # analyse the code with clang-tidy, cppcheck, cpplint and iwyu
+  find_program(IWYU iwyu)
+  set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE ${IWYU})
+  set(CMAKE_C_INCLUDE_WHAT_YOU_USE ${IWYU})
 
-IF(DO_STATIC_CODE_CHECKS)
-# analyse the code with clang-tidy, cppcheck, cpplint and iwyu
-find_program(IWYU iwyu)
-set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE ${IWYU})
-set(CMAKE_C_INCLUDE_WHAT_YOU_USE ${IWYU})
+  set(CMAKE_LINK_WHAT_YOU_USE true)
 
-set(CMAKE_LINK_WHAT_YOU_USE true)
+  find_program(CLANGTIDY clang-tidy)
+  set(CMAKE_CXX_CLANG_TIDY "${CLANGTIDY};-checks=*")
 
-find_program(CLANGTIDY clang-tidy)
-set(CMAKE_CXX_CLANG_TIDY "${CLANGTIDY};-checks=*")
+  find_program(CPPCHECK cppcheck)
+  set(CMAKE_CXX_CPPCHECK "${CPPCHECK};--std=c++11")
 
-find_program(CPPCHECK cppcheck)
-set(CMAKE_CXX_CPPCHECK "${CPPCHECK};--std=c++11")
+  find_program(CPPLINT cpplint.py)
+  set(CMAKE_CXX_CPPLINT "${CPPLINT};--linelength=80")
 
-find_program(CPPLINT cpplint.py)
-set(CMAKE_CXX_CPPLINT "${CPPLINT};--linelength=80")
-
-ENDIF()
-
-
+endif()

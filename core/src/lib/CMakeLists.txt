@@ -17,88 +17,221 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-IF(NOT client-only)
-set(INCLUDE_FILES ../include/baconfig.h ../include/bareos.h
-   ../include/bc_types.h ../include/config.h
-   ../include/jcr.h version.h
-   address_conf.h alist.h attr.h base64.h berrno.h
-   bits.h bpipe.h breg.h bregex.h bstringlist.h bsock.h
-   bsock_tcp.h btime.h btimers.h cbuf.h
-   crypto.h crypto_cache.h devlock.h dlist.h fnmatch.h
-   guid_to_name.h htable.h ini.h lex.h lib.h lockmgr.h
-   md5.h mem_pool.h message.h messages_resource.h messages_resource_items.h
-   mntent_cache.h parse_conf.h
-   plugins.h qualified_resource_name_type_converter.h rblist.h
-   runscript.h rwlock.h scsi_crypto.h scsi_lli.h scsi_tapealert.h
-   serial.h sha1.h status.h thread_list.h tls.h tls_conf.h tree.h try_tls_handshake_as_a_server.h
-   var.h watchdog.h)
+if(NOT client-only)
+  set(INCLUDE_FILES
+      ../include/baconfig.h
+      ../include/bareos.h
+      ../include/bc_types.h
+      ../include/config.h
+      ../include/jcr.h
+      version.h
+      address_conf.h
+      alist.h
+      attr.h
+      base64.h
+      berrno.h
+      bits.h
+      bpipe.h
+      breg.h
+      bregex.h
+      bstringlist.h
+      bsock.h
+      bsock_tcp.h
+      btime.h
+      btimers.h
+      cbuf.h
+      crypto.h
+      crypto_cache.h
+      devlock.h
+      dlist.h
+      fnmatch.h
+      guid_to_name.h
+      htable.h
+      ini.h
+      lex.h
+      lib.h
+      lockmgr.h
+      md5.h
+      mem_pool.h
+      message.h
+      messages_resource.h
+      messages_resource_items.h
+      mntent_cache.h
+      parse_conf.h
+      plugins.h
+      qualified_resource_name_type_converter.h
+      rblist.h
+      runscript.h
+      rwlock.h
+      scsi_crypto.h
+      scsi_lli.h
+      scsi_tapealert.h
+      serial.h
+      sha1.h
+      status.h
+      thread_list.h
+      tls.h
+      tls_conf.h
+      tree.h
+      try_tls_handshake_as_a_server.h
+      var.h
+      watchdog.h
+  )
 
-INSTALL(FILES ${INCLUDE_FILES} DESTINATION ${includedir})
-ENDIF()
+  install(FILES ${INCLUDE_FILES} DESTINATION ${includedir})
+endif()
 
 include_directories(
-   ${OPENSSL_INCLUDE_DIR}
-   ${PTHREAD_INCLUDE_DIRS}
-   ${ZLIB_INCLUDE_DIRS}
-   ${ACL_INCLUDE_DIRS}
-   ${LZO2_INCLUDE_DIRS}
-   ${CAP_INCLUDE_DIRS}
-   ${WRAP_INCLUDE_DIRS})
+  ${OPENSSL_INCLUDE_DIR} ${PTHREAD_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS}
+  ${ACL_INCLUDE_DIRS} ${LZO2_INCLUDE_DIRS} ${CAP_INCLUDE_DIRS}
+  ${WRAP_INCLUDE_DIRS}
+)
 
-set (BAREOS_SRCS  address_conf.cc alist.cc attr.cc attribs.cc backtrace.cc base64.cc
-   berrno.cc bget_msg.cc binflate.cc bnet_server_tcp.cc bnet.cc  bnet_network_dump.cc
-   bnet_network_dump_private.cc bpipe.cc breg.cc bregex.cc bsnprintf.cc bsock.cc
-   bsock_tcp.cc bstringlist.cc
-   bsys.cc btime.cc btimers.cc  cbuf.cc
-   connection_pool.cc cram_md5.cc crypto.cc  crypto_cache.cc
-   crypto_none.cc crypto_nss.cc  crypto_openssl.cc crypto_wrap.cc daemon.cc
-   devlock.cc dlist.cc  edit.cc fnmatch.cc guid_to_name.cc hmac.cc htable.cc
-   jcr.cc json.cc lockmgr.cc md5.cc mem_pool.cc message.cc messages_resource.cc
-   mntent_cache.cc output_formatter.cc passphrase.cc path_list.cc plugins.cc
-   bpoll.cc  priv.cc recent_job_results_list.cc
-   rblist.cc runscript.cc rwlock.cc scan.cc scsi_crypto.cc  scsi_lli.cc
-   serial.cc sha1.cc signal.cc thread_list.cc thread_specific_data.cc timer_thread.cc tls.cc
-   tls_conf.cc tls_openssl.cc
-   tls_openssl_crl.cc tls_openssl_private.cc tree.cc  try_tls_handshake_as_a_server.cc
-   compression.cc util.cc var.cc watchdog.cc watchdog_timer.cc)
+set(BAREOS_SRCS
+    address_conf.cc
+    alist.cc
+    attr.cc
+    attribs.cc
+    backtrace.cc
+    base64.cc
+    berrno.cc
+    bget_msg.cc
+    binflate.cc
+    bnet_server_tcp.cc
+    bnet.cc
+    bnet_network_dump.cc
+    bnet_network_dump_private.cc
+    bpipe.cc
+    breg.cc
+    bregex.cc
+    bsnprintf.cc
+    bsock.cc
+    bsock_tcp.cc
+    bstringlist.cc
+    bsys.cc
+    btime.cc
+    btimers.cc
+    cbuf.cc
+    connection_pool.cc
+    cram_md5.cc
+    crypto.cc
+    crypto_cache.cc
+    crypto_none.cc
+    crypto_nss.cc
+    crypto_openssl.cc
+    crypto_wrap.cc
+    daemon.cc
+    devlock.cc
+    dlist.cc
+    edit.cc
+    fnmatch.cc
+    guid_to_name.cc
+    hmac.cc
+    htable.cc
+    jcr.cc
+    json.cc
+    lockmgr.cc
+    md5.cc
+    mem_pool.cc
+    message.cc
+    messages_resource.cc
+    mntent_cache.cc
+    output_formatter.cc
+    passphrase.cc
+    path_list.cc
+    plugins.cc
+    bpoll.cc
+    priv.cc
+    recent_job_results_list.cc
+    rblist.cc
+    runscript.cc
+    rwlock.cc
+    scan.cc
+    scsi_crypto.cc
+    scsi_lli.cc
+    serial.cc
+    sha1.cc
+    signal.cc
+    thread_list.cc
+    thread_specific_data.cc
+    timer_thread.cc
+    tls.cc
+    tls_conf.cc
+    tls_openssl.cc
+    tls_openssl_crl.cc
+    tls_openssl_private.cc
+    tree.cc
+    try_tls_handshake_as_a_server.cc
+    compression.cc
+    util.cc
+    var.cc
+    watchdog.cc
+    watchdog_timer.cc
+)
 
-IF(HAVE_WIN32)
-   LIST(APPEND BAREOS_SRCS
-      ../win32/compat/compat.cc
-      ../win32/compat/glob.cc
-      ../win32/compat/print.cc
-      ../win32/compat/winapi.cc)
-ELSE()
-   LIST(APPEND BAREOS_SRCS
-     scsi_tapealert.cc)
-ENDIF()
+if(HAVE_WIN32)
+  list(APPEND BAREOS_SRCS ../win32/compat/compat.cc ../win32/compat/glob.cc
+              ../win32/compat/print.cc ../win32/compat/winapi.cc
+  )
+else()
+  list(APPEND BAREOS_SRCS scsi_tapealert.cc)
+endif()
 
-set (BAREOSCFG_SRCS bareos_resource.cc configured_tls_policy_getter.cc ini.cc lex.cc
-     parse_bsr.cc res.cc parse_conf.cc parse_conf_init_resource.cc parse_conf_state_machine.cc
-     res.cc qualified_resource_name_type_converter.cc)
-LIST(APPEND BAREOS_SRCS ${BAREOSCFG_SRCS})
+set(BAREOSCFG_SRCS
+    bareos_resource.cc
+    configured_tls_policy_getter.cc
+    ini.cc
+    lex.cc
+    parse_bsr.cc
+    res.cc
+    parse_conf.cc
+    parse_conf_init_resource.cc
+    parse_conf_state_machine.cc
+    res.cc
+    qualified_resource_name_type_converter.cc
+)
+list(APPEND BAREOS_SRCS ${BAREOSCFG_SRCS})
 
 add_library(bareos SHARED ${BAREOS_SRCS} $<TARGET_OBJECTS:version-obj>)
 
 add_library(version-obj OBJECT version.c)
-target_compile_definitions(version-obj PRIVATE -DBAREOS_VERSION="${BAREOS_FULL_VERSION}" -DBAREOS_DATE="${DATE}" -DBAREOS_SHORT_DATE="${BAREOS_SHORT_DATE}" -DBAREOS_PROG_DATE_TIME="${BAREOS_PROG_DATE_TIME}" -DBAREOS_YEAR="${BAREOS_YEAR}")
+target_compile_definitions(
+  version-obj
+  PRIVATE
+  -DBAREOS_VERSION="${BAREOS_FULL_VERSION}"
+  -DBAREOS_DATE="${DATE}"
+  -DBAREOS_SHORT_DATE="${BAREOS_SHORT_DATE}"
+  -DBAREOS_PROG_DATE_TIME="${BAREOS_PROG_DATE_TIME}"
+  -DBAREOS_YEAR="${BAREOS_YEAR}"
+)
 set_target_properties(version-obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-IF(HAVE_LIBDL)
+if(HAVE_LIBDL)
   target_link_libraries(bareos dl)
-ENDIF()
+endif()
 
-target_link_libraries(bareos bareosfastlz
-   ${OPENSSL_LIBRARIES} ${PTHREAD_LIBRARIES} ${ZLIB_LIBRARIES}
-   ${ACL_LIBRARIES} ${LZO2_LIBRARIES} ${CAP_LIBRARIES} ${WRAP_LIBRARIES}
-   ${CAM_LIBRARIES} ${WINDOWS_LIBRARIES} ${JANSSON_LIBRARIES})
+target_link_libraries(
+  bareos
+  bareosfastlz
+  ${OPENSSL_LIBRARIES}
+  ${PTHREAD_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${ACL_LIBRARIES}
+  ${LZO2_LIBRARIES}
+  ${CAP_LIBRARIES}
+  ${WRAP_LIBRARIES}
+  ${CAM_LIBRARIES}
+  ${WINDOWS_LIBRARIES}
+  ${JANSSON_LIBRARIES}
+)
 
-INSTALL(TARGETS bareos DESTINATION ${libdir})
+install(TARGETS bareos DESTINATION ${libdir})
 
-set_target_properties(bareos PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
-                                      SOVERSION "${BAREOS_VERSION_MAJOR}")
+set_target_properties(
+  bareos PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}" SOVERSION
+                    "${BAREOS_VERSION_MAJOR}"
+)
 
-IF(HAVE_WIN32)
-   set_target_properties(bareos PROPERTIES DEFINE_SYMBOL "BUILDING_DLL")
-ENDIF()
-
+if(HAVE_WIN32)
+  set_target_properties(bareos PROPERTIES DEFINE_SYMBOL "BUILDING_DLL")
+endif()

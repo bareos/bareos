@@ -21,9 +21,9 @@
 # configure file all *.in files
 #
 
-FILE(GLOB_RECURSE IN_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.in" )
-FOREACH(in_file ${IN_FILES})
-   string(REGEX REPLACE ".in\$" "" file ${in_file})
-   message(STATUS "creating file ${file}")
-   CONFIGURE_FILE(${in_file} ${file} @ONLY)
-ENDFOREACH()
+file(GLOB_RECURSE IN_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.in")
+foreach(in_file ${IN_FILES})
+  string(REGEX REPLACE ".in\$" "" file ${in_file})
+  message(STATUS "creating file ${file}")
+  configure_file(${in_file} ${file} @ONLY)
+endforeach()

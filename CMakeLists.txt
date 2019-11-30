@@ -29,37 +29,50 @@ find_package(Git)
 include(BareosVersionFromGit)
 include(BareosExtractVersionInfo)
 
-set(BUILDNAME "${BAREOS_FULL_VERSION}" CACHE STRING "site name variable for CDash")
-set(SITE "${CMAKE_SYSTEM}" CACHE STRING "build name variable for CDash")
+set(BUILDNAME
+    "${BAREOS_FULL_VERSION}"
+    CACHE STRING "site name variable for CDash"
+)
+set(SITE
+    "${CMAKE_SYSTEM}"
+    CACHE STRING "build name variable for CDash"
+)
 # enable "make test"
 enable_testing()
 set(CMAKE_CTEST_COMMAND ctest -V)
 include(CTest)
 
-IF(docs-build-json)
-# check for wrong combinations of build flags
-  IF(docs-only)
-    MESSAGE(FATAL_ERROR "\n\"docs-build-json\" needs bareos-executables and cannot be combined with \"docs-only\"")
-  ENDIF()
-  IF(NOT traymonitor)
-    MESSAGE(FATAL_ERROR "\n\"docs-build-json\" needs the traymonitor executable: add \"-Dtraymonitor=yes\"")
-  ENDIF()
-ENDIF()
+if(docs-build-json)
+  # check for wrong combinations of build flags
+  if(docs-only)
+    message(
+      FATAL_ERROR
+        "\n\"docs-build-json\" needs bareos-executables and cannot be combined with \"docs-only\""
+    )
+  endif()
+  if(NOT traymonitor)
+    message(
+      FATAL_ERROR
+        "\n\"docs-build-json\" needs the traymonitor executable: add \"-Dtraymonitor=yes\""
+    )
+  endif()
+endif()
 
-IF(docs-only)
+if(docs-only)
   set(BUILD_BAREOS_BINARIES no)
-ELSE()
+else()
   set(BUILD_BAREOS_BINARIES yes)
-ENDIF()
+endif()
 
+if(BUILD_BAREOS_BINARIES)
+  add_subdirectory(core)
+  add_subdirectory(webui)
+  add_subdirectory(systemtests)
+endif()
 
-IF(BUILD_BAREOS_BINARIES)
-add_subdirectory(core)
-add_subdirectory(webui)
-add_subdirectory(systemtests)
-ENDIF()
-
-IF(docs OR docs-only OR docs-build-json)
-   add_subdirectory(docs/manuals)
-ENDIF()
-
+if(docs
+   OR docs-only
+   OR docs-build-json
+)
+  add_subdirectory(docs/manuals)
+endif()

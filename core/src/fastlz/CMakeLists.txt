@@ -19,13 +19,18 @@
 cmake_minimum_required(VERSION 3.0)
 project(bareosfastlz LANGUAGES C)
 
-add_library(bareosfastlz SHARED src/fastlzlib.c src/fastlz.c src/lz4.c src/lz4hc.c)
-target_include_directories(bareosfastlz PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>
-    PRIVATE src)
+add_library(
+  bareosfastlz SHARED src/fastlzlib.c src/fastlz.c src/lz4.c src/lz4hc.c
+)
+target_include_directories(
+  bareosfastlz
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+         $<INSTALL_INTERFACE:include>
+  PRIVATE src
+)
 target_compile_definitions(bareosfastlz PRIVATE "-DDLL_EXPORT")
 install(TARGETS bareosfastlz DESTINATION ${libdir})
-set_target_properties(bareosfastlz PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
-                                            SOVERSION "${BAREOS_VERSION_MAJOR}"
-                                              )
+set_target_properties(
+  bareosfastlz PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}" SOVERSION
+                          "${BAREOS_VERSION_MAJOR}"
+)

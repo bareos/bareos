@@ -20,9 +20,9 @@
 cmake_minimum_required(VERSION 3.0)
 # (for AUTOUIC)
 
-IF(HAVE_WIN32)
+if(HAVE_WIN32)
   add_definitions(-D_STAT_DEFINED=1)
-ENDIF()
+endif()
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -30,62 +30,71 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
 find_package(Qt5 COMPONENTS Core Widgets)
-IF(Qt5Widgets_FOUND)
+if(Qt5Widgets_FOUND)
   message(STATUS "Found QT5Widgets")
-ELSE()
+else()
   message(STATUS "QT5Widgets NOT found, checking for Qt4 ...")
   find_package(Qt4)
-  IF (NOT Qt4_FOUND)
+  if(NOT Qt4_FOUND)
     message(FATAL_ERROR "Both Qt5 and Qt4 not found, cannot build tray-monitor")
-  ENDIF()
-ENDIF()
+  endif()
+endif()
 
-
-IF(HAVE_WIN32)
-   include_directories(
-      ${PROJECT_SOURCE_DIR}/src/win32/include
-      ${PROJECT_SOURCE_DIR}/src/win32/lib
-      )
-ENDIF()
-
+if(HAVE_WIN32)
+  include_directories(
+    ${PROJECT_SOURCE_DIR}/src/win32/include ${PROJECT_SOURCE_DIR}/src/win32/lib
+  )
+endif()
 
 set(SOURCES
-   tray-monitor.cc authenticate.cc tray_conf.cc tray-monitor.cc
-   traymenu.cc systemtrayicon.cc mainwindow.cc monitoritem.cc
-   monitoritemthread.cc
-   )
+    tray-monitor.cc
+    authenticate.cc
+    tray_conf.cc
+    tray-monitor.cc
+    traymenu.cc
+    systemtrayicon.cc
+    mainwindow.cc
+    monitoritem.cc
+    monitoritemthread.cc
+)
 
-IF(HAVE_WIN32)
-   LIST(APPEND SOURCES ../win32/qt-tray-monitor/traymon.rc)
-ENDIF()
+if(HAVE_WIN32)
+  list(APPEND SOURCES ../win32/qt-tray-monitor/traymon.rc)
+endif()
 
-IF(Qt4_FOUND)
+if(Qt4_FOUND)
   set(TRAYMON_LIBRARIES bareos-tray-monitor Qt4::QtGui bareos)
-ELSE()
+else()
   set(TRAYMON_LIBRARIES bareos-tray-monitor bareos)
-ENDIF()
+endif()
 
-IF(HAVE_WIN32)
-   add_executable(bareos-tray-monitor WIN32 ${SOURCES} main.qrc)
-ELSE()
-   add_executable(bareos-tray-monitor ${SOURCES} main.qrc)
-ENDIF()
+if(HAVE_WIN32)
+  add_executable(bareos-tray-monitor WIN32 ${SOURCES} main.qrc)
+else()
+  add_executable(bareos-tray-monitor ${SOURCES} main.qrc)
+endif()
 
-IF(Qt5Widgets_FOUND)
+if(Qt5Widgets_FOUND)
   qt5_use_modules(bareos-tray-monitor Widgets)
-ENDIF()
+endif()
 
 target_link_libraries(${TRAYMON_LIBRARIES})
 
-INSTALL(TARGETS bareos-tray-monitor DESTINATION "${bindir}")
+install(TARGETS bareos-tray-monitor DESTINATION "${bindir}")
 
 install(CODE "set(PLUGINS \"${PLUGINS}\")")
 install(CODE "set(BACKENDS \"${BACKENDS}\")")
 install(CODE "set(configtemplatedir \"${configtemplatedir}\")")
 install(CODE "set(SRC_DIR \"${PROJECT_SOURCE_DIR}\")")
 
-INSTALL(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-tray-monitor-configfiles.cmake)
+install(
+  SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-tray-monitor-configfiles.cmake
+)
 
-INSTALL(FILES bareos-tray-monitor.desktop DESTINATION ${datarootdir}/applications/)
-INSTALL(FILES bareos-tray-monitor.desktop DESTINATION ${sysconfdir}/xdg/autostart/ )
-INSTALL(FILES bareos-tray-monitor.xpm DESTINATION ${datarootdir}/pixmaps/)
+install(FILES bareos-tray-monitor.desktop
+        DESTINATION ${datarootdir}/applications/
+)
+install(FILES bareos-tray-monitor.desktop
+        DESTINATION ${sysconfdir}/xdg/autostart/
+)
+install(FILES bareos-tray-monitor.xpm DESTINATION ${datarootdir}/pixmaps/)
