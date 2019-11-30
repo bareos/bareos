@@ -261,6 +261,7 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         else:
             if not restorepkt.ofname.endswith(".ovf"):
                 FNAME = restorepkt.ofname
+                FNAME = FNAME.decode("utf-8")
 
                 disk = self.ovirt.get_vm_disk_by_basename(context, FNAME)
                 if disk is None:
@@ -1292,9 +1293,14 @@ class BareosOvirtWrapper(object):
                 bareosfd.DebugMessage(
                     context,
                     200,
-                    "get_vm_disk_by_basename(): lookup %s == %s\n" % (basename, key),
+                    "get_vm_disk_by_basename(): lookup %s == %s and %s == %s\n" % (repr(relname), repr(key), repr(basename), repr(obj["diskId"])),
                 )
                 if relname == key and basename == obj["diskId"]:
+                    bareosfd.DebugMessage(
+                        context,
+                        200,
+                        "get_vm_disk_by_basename(): lookup matched"
+                    )
                     old_disk_id = os.path.dirname(obj["fileRef"])
 
                     new_disk_id = None
