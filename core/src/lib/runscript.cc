@@ -134,40 +134,48 @@ int RunScripts(JobControlRecord* jcr,
           NSTDPRNT(script->command));
     runit = false;
 
-    if ((script->when & SCRIPT_Before) && (when & SCRIPT_Before)) {
-      if ((script->on_success &&
-           (jcr->JobStatus == JS_Running || jcr->JobStatus == JS_Created)) ||
-          (script->on_failure &&
-           (JobCanceled(jcr) || jcr->JobStatus == JS_Differences))) {
-        Dmsg4(200, "runscript: Run it because SCRIPT_Before (%s,%i,%i,%c)\n",
-              script->command.c_str(), script->on_success, script->on_failure,
-              jcr->JobStatus);
-        runit = true;
+    if (!script->IsLocal()) {
+      if (jcr->is_JobType(JT_ADMIN)) {
+        Jmsg(jcr, M_WARNING, 0,
+             "Invalid runscript definition (command=%s). Admin Jobs only "
+             "support local runscripts.\n",
+             script->command.c_str());
+      }
+    } else {
+      if ((script->when & SCRIPT_Before) && (when & SCRIPT_Before)) {
+        if ((script->on_success &&
+             (jcr->JobStatus == JS_Running || jcr->JobStatus == JS_Created)) ||
+            (script->on_failure &&
+             (JobCanceled(jcr) || jcr->JobStatus == JS_Differences))) {
+          Dmsg4(200, "runscript: Run it because SCRIPT_Before (%s,%i,%i,%c)\n",
+                script->command.c_str(), script->on_success, script->on_failure,
+                jcr->JobStatus);
+          runit = true;
+        }
+      }
+
+      if ((script->when & SCRIPT_AfterVSS) && (when & SCRIPT_AfterVSS)) {
+        if ((script->on_success && (jcr->JobStatus == JS_Blocked)) ||
+            (script->on_failure && JobCanceled(jcr))) {
+          Dmsg4(200,
+                "runscript: Run it because SCRIPT_AfterVSS (%s,%i,%i,%c)\n",
+                script->command.c_str(), script->on_success, script->on_failure,
+                jcr->JobStatus);
+          runit = true;
+        }
+      }
+
+      if ((script->when & SCRIPT_After) && (when & SCRIPT_After)) {
+        if ((script->on_success && jcr->IsTerminatedOk()) ||
+            (script->on_failure &&
+             (JobCanceled(jcr) || jcr->JobStatus == JS_Differences))) {
+          Dmsg4(200, "runscript: Run it because SCRIPT_After (%s,%i,%i,%c)\n",
+                script->command.c_str(), script->on_success, script->on_failure,
+                jcr->JobStatus);
+          runit = true;
+        }
       }
     }
-
-    if ((script->when & SCRIPT_AfterVSS) && (when & SCRIPT_AfterVSS)) {
-      if ((script->on_success && (jcr->JobStatus == JS_Blocked)) ||
-          (script->on_failure && JobCanceled(jcr))) {
-        Dmsg4(200, "runscript: Run it because SCRIPT_AfterVSS (%s,%i,%i,%c)\n",
-              script->command.c_str(), script->on_success, script->on_failure,
-              jcr->JobStatus);
-        runit = true;
-      }
-    }
-
-    if ((script->when & SCRIPT_After) && (when & SCRIPT_After)) {
-      if ((script->on_success && jcr->IsTerminatedOk()) ||
-          (script->on_failure &&
-           (JobCanceled(jcr) || jcr->JobStatus == JS_Differences))) {
-        Dmsg4(200, "runscript: Run it because SCRIPT_After (%s,%i,%i,%c)\n",
-              script->command.c_str(), script->on_success, script->on_failure,
-              jcr->JobStatus);
-        runit = true;
-      }
-    }
-
-    if (!script->IsLocal()) { runit = false; }
 
     /*
      * We execute it
