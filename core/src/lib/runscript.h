@@ -37,7 +37,6 @@ class alist;
 
 /* Usage:
  *
- * #define USE_RUNSCRIPT
  * #include "lib/runscript.h"
  *
  * RunScript *script = new RunScript;
@@ -45,7 +44,7 @@ class alist;
  * script->on_failure = true;
  * script->when = SCRIPT_After;
  *
- * script->run("LabelBefore");  // the label must contain "Before" or "After"
+ * script->Run("LabelBefore");  // the label must contain "Before" or "After"
  * special keyword FreeRunscript(script);
  */
 
@@ -81,7 +80,9 @@ class RunScript : public BareosResource {
   RunScript(const RunScript& other) = default;
 
   std::string command;       /* Command string */
-  std::string target;        /* Host target */
+  std::string target;        /* Host target. Values:
+                                Empty string: run locally.
+                                "%c": (Client’s name). Run on client. */
   int when = SCRIPT_Never;   /* SCRIPT_Before|Script_After BEFORE/AFTER JOB*/
   int cmd_type = 0;          /* Command type -- Shell, Console */
   char level = 0;            /* Base|Full|Incr...|All (NYI) */

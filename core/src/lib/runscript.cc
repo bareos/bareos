@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -130,8 +131,11 @@ int RunScripts(JobControlRecord* jcr,
   }
 
   foreach_alist (script, runscripts) {
-    Dmsg2(200, "runscript: try to run %s:%s\n", NSTDPRNT(script->target),
-          NSTDPRNT(script->command));
+    Dmsg5(200,
+          "runscript: try to run (Target=%s, OnSuccess=%i, OnFailure=%i, "
+          "CurrentJobStatus=%c, command=%s)\n",
+          NSTDPRNT(script->target), script->on_success, script->on_failure,
+          jcr->JobStatus, NSTDPRNT(script->command));
     runit = false;
 
     if (!script->IsLocal()) {
@@ -215,8 +219,6 @@ void RunScript::SetCommand(const std::string& cmd, int acmd_type)
 void RunScript::SetTarget(const std::string& client_name)
 {
   Dmsg1(500, "runscript: setting target = %s\n", NSTDPRNT(client_name));
-
-  if (client_name.empty()) { return; }
 
   target = client_name;
 }
