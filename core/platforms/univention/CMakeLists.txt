@@ -57,6 +57,10 @@ install(
 )
 
 install(
+  # This file contains the Bareos repository signature public.
+  # During the automatic build process, It will be added.
+  # For manual builds, download the file from 
+  # http://download.bareos.org/bareos/release/<RELEASE>/<DISTRIBUTION>/Release.key
   FILES "bareos-release.key"
   DESTINATION "${confdir}"
 )
