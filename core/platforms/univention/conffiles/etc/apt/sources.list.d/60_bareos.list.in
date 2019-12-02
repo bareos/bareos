@@ -11,25 +11,15 @@ password = configRegistry.get('bareos/subscription/password', '')
 if username and password:
 
     bareos_major_version  = @BAREOS_VERSION_MAJOR@.@BAREOS_VERSION_MINOR@
-    #bareos_sign_key_id = 'F93C028C093BFBA2'
 
     ucs_version = configRegistry.get('version/version')
     bareos_univention_dist = '@OBS_DISTRIBUTION@'
 
-    #
-    # example:
-    #   http://download.bareos.com/bareos/release/15.2/Univention_4.0/
-    # https does not work on UCS 4.0, even if apt-transport-https is installed.
-    # With UCS 4.2, https can and will be used.
-    #
     bareos_com_url = "https://{username}:{password}@download.bareos.com/bareos/release/{version}/{dist}".format(username=quote(username), password=password, version=bareos_major_version, dist=bareos_univention_dist)
 
-    # import the bareos signing key from a keyserver (does work, if internet connection is available)
-    #cmd = subprocess.Popen(['apt-key', 'adv', '--keyserver', 'pool.sks-keyservers.net', '--recv-key', bareos_sign_key_id], stdout=sys.stderr, stderr=sys.stderr)
     sys.stderr.write("importing bareos.com release key: ")
-    cmd = subprocess.Popen(['apt-key', 'add', '/etc/bareos/bareos-com-release.key'], stdout=sys.stderr, stderr=sys.stderr)
+    cmd = subprocess.Popen(['apt-key', 'add', '/etc/bareos/bareos-release.key'], stdout=sys.stderr, stderr=sys.stderr)
     rc = cmd.wait()
-    #sys.stderr.write("rc=" + str(rc) + "\n")
 
     print "deb {url} /".format(url=bareos_com_url)
 
