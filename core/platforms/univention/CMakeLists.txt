@@ -57,7 +57,7 @@ install(
 )
 
 install(
-  FILES "bareos-com-release.key"
+  FILES "bareos-release.key"
   DESTINATION "${confdir}"
 )
 
