@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -210,7 +210,7 @@ class JobModel
     */
    public function getJobMedia(&$bsock=null, $jobid=null)
    {
-      $cmd = 'llist jobmedia jobid='.$jobid;
+      $cmd = 'list volumes jobid='.$jobid;
       $result = $bsock->send_command($cmd, 2);
       if(preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
          //return false;
@@ -219,7 +219,7 @@ class JobModel
       }
       else {
          $jobmedia = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-         return $jobmedia['result']['jobmedia'];
+         return $jobmedia['result']['volumes'];
       }
    }
 
