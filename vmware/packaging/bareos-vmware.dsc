@@ -7,6 +7,5 @@ Maintainer: Bareos Team <packager@bareos.com>
 Homepage: http://www.bareos.org/
 Standards-Version: 3.9.3
 Build-Depends: cmake (>= 3.0.0), debhelper (>= 8.0.0), libjansson-dev, bareos-vmware-vix-disklib-dev
-DEBTRANSFORM-RELEASE: 1
 Files:
 

@@ -17,5 +17,4 @@ Build-Depends: acl-dev, bc, chrpath, debhelper (>= 7.0.50~), dpkg-dev (>= 1.13.1
 #     glusterfs-common
 #     dh-systemd
 Build-Conflicts: python2.2-dev, python2.3, python2.4, qt3-dev-tools
-DEBTRANSFORM-RELEASE: 1
 Files:
