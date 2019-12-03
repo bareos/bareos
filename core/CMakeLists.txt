@@ -155,7 +155,7 @@ set(BUILDNAME
     CACHE STRING "site name variable for CDash"
 )
 set(SITE
-  "${CMAKE_SYSTEM}-${DISTNAME}"
+  "${CMAKE_SYSTEM}-${DISTNAME}-${DISTVER}"
     CACHE STRING "build name variable for CDash"
 )
 # enable "make test"
