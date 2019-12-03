@@ -99,7 +99,9 @@ if(HAVE_WIN32)
   set(TEST_ORIGINAL_FILE_DIR
       Z:${CMAKE_CURRENT_SOURCE_DIR}/recent_job_results_list
   )
-  set(TEST_TEMP_DIR Z:${CMAKE_CURRENT_BINARY_DIR}/recent_job_results_list)
+  set(TEST_TEMP_DIR Z:${CMAKE_CURRENT_BINARY_DIR}/recent_job_results_list_tmp)
+  file (MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/recent_job_results_list_tmp)
+
   set(CERTDIR Z:${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls)
 else()
   file(RELATIVE_PATH RELATIVE_PROJECT_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}
@@ -108,10 +110,12 @@ else()
   set(TEST_ORIGINAL_FILE_DIR
       ${CMAKE_CURRENT_SOURCE_DIR}/recent_job_results_list
   )
-  set(TEST_TEMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/recent_job_results_list)
-  set(CERTDIR ${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls)
+  set(TEST_TEMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/recent_job_results_list_tmp)
+  file (MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/recent_job_results_list_tmp)
 
+  set(CERTDIR ${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls)
 endif()
+
 add_definitions(
   -DRELATIVE_PROJECT_SOURCE_DIR=\"${RELATIVE_PROJECT_SOURCE_DIR}\"
 )
