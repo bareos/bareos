@@ -19,9 +19,6 @@
 
 if(NOT client-only)
   add_subdirectory(tools)
-  if(GTEST_FOUND)
-    add_subdirectory(tests)
-  endif()
   add_subdirectory(cats)
   if(NOT HAVE_WIN32 AND ndmp)
     add_subdirectory(ndmp)
@@ -30,7 +27,11 @@ if(NOT client-only)
   add_subdirectory(stored)
 endif()
 
-add_subdirectory(console)
+if(GTEST_FOUND)
+  add_subdirectory(tests)
+endif()
+
+  add_subdirectory(console)
 if(${HAVE_LMDB})
   add_subdirectory(lmdb)
 endif()

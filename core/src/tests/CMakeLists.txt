@@ -120,6 +120,7 @@ add_definitions(
   -DRELATIVE_PROJECT_SOURCE_DIR=\"${RELATIVE_PROJECT_SOURCE_DIR}\"
 )
 
+if (NOT client-only)
 bareos_add_test(
   run_on_incoming_connect_interval
   LINK_LIBRARIES
@@ -148,20 +149,25 @@ bareos_add_test(
     ${GTEST_LIBRARIES}
     ${GTEST_MAIN_LIBRARIES}
 )
+endif()
+if (NOT client-only)
 bareos_add_test(
   scheduler_job_item_queue
   LINK_LIBRARIES dird_objects bareos ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES}
 )
+endif()
 bareos_add_test(
   test_acl_entry_syntax LINK_LIBRARIES bareos ${GTEST_LIBRARIES}
                                        ${GTEST_MAIN_LIBRARIES}
 )
+if (NOT client-only)
 bareos_add_test(
   test_dir_plugins
   ADDITIONAL_SOURCES ${PROJECT_SOURCE_DIR}/src/dird/dir_plugins.cc
   LINK_LIBRARIES bareos bareoscats bareossql ${GTEST_LIBRARIES}
                  ${GTEST_MAIN_LIBRARIES}
 )
+endif()
 bareos_add_test(
   test_fd_plugins
   ADDITIONAL_SOURCES ${PROJECT_SOURCE_DIR}/src/filed/fd_plugins.cc
@@ -177,10 +183,12 @@ bareos_add_test(
   LINK_LIBRARIES ${GTEST_MAIN_LIBRARIES} ${GTEST_LIBRARIES}
                  ${JANSSON_LIBRARIES} bareos
 )
+if(NOT client-only)
 bareos_add_test(
   test_sd_plugins LINK_LIBRARIES bareos bareossd ${GTEST_LIBRARIES}
                                  ${GTEST_MAIN_LIBRARIES}
 )
+endif()
 bareos_add_test(
   version_strings LINK_LIBRARIES bareos ${GTEST_LIBRARIES}
                                  ${GTEST_MAIN_LIBRARIES}
@@ -190,12 +198,16 @@ bareos_add_test(
   job_control_record LINK_LIBRARIES bareos ${GTEST_LIBRARIES}
                                     ${GTEST_MAIN_LIBRARIES}
 )
+if(NOT client-only)
 bareos_add_test(multiplied_device_test LINK_LIBRARIES ${LINK_LIBRARIES})
-bareos_add_test(
-  ndmp_address_translate_test
-  ADDITIONAL_SOURCES ../dird/ndmp_slot2elemaddr.cc
-  LINK_LIBRARIES ${LINK_LIBRARIES}
-)
+endif()
+if(NOT client-only)
+  bareos_add_test(
+    ndmp_address_translate_test
+    ADDITIONAL_SOURCES ../dird/ndmp_slot2elemaddr.cc
+    LINK_LIBRARIES ${LINK_LIBRARIES}
+  )
+endif()#client-only
 bareos_add_test(
   recent_job_results_list
   LINK_LIBRARIES bareos ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES}
@@ -203,36 +215,44 @@ bareos_add_test(
                       TEST_ORIGINAL_FILE_DIR=\"${TEST_ORIGINAL_FILE_DIR}\"
 )
 
+if(NOT client-only)
 bareos_add_test(
   show_cmd_available_resources_equals_config_resources
   LINK_LIBRARIES dird_objects bareos bareosfind bareoscats bareossql
                  ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES}
 )
+endif()
 bareos_add_test(
   test_config_parser_console
   LINK_LIBRARIES console_objects bareos bareosfind ${GTEST_LIBRARIES}
                  ${GTEST_MAIN_LIBRARIES}
 )
+
+if(NOT client-only)
 bareos_add_test(
   test_config_parser_dir
   LINK_LIBRARIES dird_objects bareos bareosfind bareoscats bareossql
                  ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES}
 )
+endif()
 bareos_add_test(
   test_config_parser_fd
   LINK_LIBRARIES fd_objects bareos bareosfind ${GTEST_LIBRARIES}
                  ${GTEST_MAIN_LIBRARIES}
 )
+if(NOT client-only)
 bareos_add_test(
   test_config_parser_sd
   LINK_LIBRARIES stored_objects bareossd bareos ${GTEST_LIBRARIES}
                  ${GTEST_MAIN_LIBRARIES}
 )
+endif()
 bareos_add_test(
   test_crc32
   ADDITIONAL_SOURCES ../stored/crc32/crc32.cc
   LINK_LIBRARIES bareos ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES}
 )
+if(NOT client-only)
 bareos_add_test(
   test_fileindex_list
   LINK_LIBRARIES
@@ -247,6 +267,8 @@ bareos_add_test(
     ${GTEST_LIBRARIES}
     ${GTEST_MAIN_LIBRARIES}
 )
+endif()
+if(NOT client-only)
 bareos_add_test(
   test_setdebug
   LINK_LIBRARIES
@@ -261,6 +283,7 @@ bareos_add_test(
     ${GTEST_LIBRARIES}
     ${GTEST_MAIN_LIBRARIES}
 )
+endif()
 bareos_add_test(
   thread_list LINK_LIBRARIES bareos ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES}
 )
@@ -282,12 +305,13 @@ if(HAVE_EXECINFO_H
   )
 endif()
 
-if(GMOCK_FOUND)
+if(GMOCK_FOUND AND NOT client-only)
   bareos_add_test(
     sd_reservation LINK_LIBRARIES ${LINK_LIBRARIES} ${GMOCK_LIBRARIES}
   )
 endif()
 
+if(NOT client-only)
 bareos_add_test(
   lib_tests
   ADDITIONAL_SOURCES
@@ -302,7 +326,8 @@ bareos_add_test(
   ADDITIONAL_SOURCES ${SSL_UNIT_TEST_FILES}
   LINK_LIBRARIES ${LINK_LIBRARIES}
 )
-if(NOT HAVE_WIN32)
+endif()
+if(NOT HAVE_WIN32 AND NOT client-only)
   bareos_add_test(
     test_bsock
     ADDITIONAL_SOURCES
