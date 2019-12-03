@@ -20,6 +20,8 @@
 # "gtest_discover_tests" was added in cmake 3.10
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
+include_directories(${OPENSSL_INCLUDE_DIR})
+
 macro(bareos_gtest_add_tests testname)
   gtest_add_tests(TARGET ${testname} TEST_PREFIX gtest: TEST_LIST found_tests)
   if(HAVE_WIN32)
