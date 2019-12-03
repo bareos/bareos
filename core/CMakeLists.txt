@@ -148,6 +148,8 @@ include(BareosLocalBuildDefinitions OPTIONAL
         RESULT_VARIABLE BareosLocalBuildDefinitionsFile
 )
 
+include(BareosGetDistInfo)
+
 set(BUILDNAME
     "${BAREOS_FULL_VERSION}"
     CACHE STRING "site name variable for CDash"
@@ -341,7 +343,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
 endif()
 include(BareosFindStaticCodeAnalysisTools)
 
-include(BareosGetDistInfo)
 
 include(BareosGenerateDebianInfo)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
