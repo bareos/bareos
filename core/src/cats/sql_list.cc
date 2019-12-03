@@ -343,7 +343,7 @@ void BareosDb::ListVolumesOfJobid(JobControlRecord* jcr,
          edit_int64(JobId, ed1));
   } else {
     Mmsg(cmd,
-         "SELECT Media.VolumeName "
+         "SELECT DISTINCT Media.VolumeName "
          "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId "
          "AND JobMedia.JobId=%s",
          edit_int64(JobId, ed1));
