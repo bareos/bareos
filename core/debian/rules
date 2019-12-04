@@ -93,8 +93,6 @@ endif
 CONFIGURE_CLIENT_ONLY = $(CONFIGURE_COMMON) -Dclient-only=yes
 CONFIGURE_FULL        = $(CONFIGURE_COMMON) -Dpython=yes -Dtraymonitor=yes
 
-#DEB_CTEST_OPTIONS     = "model=Experimental submit"
-
 override_dh_auto_configure:
 	@if [ "`lsb_release --short  --id`" = "Ubuntu" ] && [ "`lsb_release --short  --release`" = "8.04" ]; then \
 		echo "configure common configuration"; \
