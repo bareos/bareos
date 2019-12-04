@@ -151,7 +151,7 @@ include(BareosLocalBuildDefinitions OPTIONAL
 include(BareosGetDistInfo)
 
 set(BUILDNAME
-    "${BAREOS_FULL_VERSION}"
+    "${BAREOS_NUMERIC_VERSION}"
     CACHE STRING "site name variable for CDash"
 )
 set(SITE
