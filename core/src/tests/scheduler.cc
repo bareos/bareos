@@ -113,7 +113,7 @@ TEST_F(SchedulerTest, system_time_source)
   s.SleepFor(std::chrono::seconds(1));
   time_t end = s.SystemTime();
   EXPECT_GT(end - start, 0);
-  EXPECT_LT(end - start, 2);
+  EXPECT_LT(end - start, 3);
 }
 
 TEST_F(SchedulerTest, system_time_source_canceled)
