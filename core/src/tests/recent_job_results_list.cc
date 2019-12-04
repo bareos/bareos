@@ -87,7 +87,7 @@ static bool create_file(std::string path, std::string filename)
   filename1 += "/";
   filename1 += filename;
   std::string filename1_orig(filename1);
-  filename1_orig += ".orig";
+  filename1_orig += ".original";
 
   std::ifstream file1_orig;
   std::ofstream file1;
