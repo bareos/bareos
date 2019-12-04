@@ -316,12 +316,6 @@ else()
   add_definitions("-D_FILE_OFFSET_BITS=64")
 endif()
 
-if(HAVE_DYNAMIC_SD_BACKENDS)
-  set(SD_BACKEND_DIRECTORY "Backend Directory")
-else()
-  set(SD_BACKEND_DIRECTORY "# Backend Directory")
-endif()
-
 include(FindIntl)
 
 if(developer)
@@ -590,6 +584,13 @@ message(STATUS "CMAKE_AR: " ${CMAKE_AR})
 message(STATUS "CMAKE_RANLIB: " ${CMAKE_RANLIB})
 
 message(STATUS "CMAKE_INSTALL_PREFIX:         " ${CMAKE_INSTALL_PREFIX})
+
+
+if(HAVE_DYNAMIC_SD_BACKENDS)
+  set(UNCOMMENT_SD_BACKEND_DIRECTORY "")
+else()
+  set(UNCOMMENT_SD_BACKEND_DIRECTORY "# ")
+endif()
 
 set(uncomment_dbi "#")
 
