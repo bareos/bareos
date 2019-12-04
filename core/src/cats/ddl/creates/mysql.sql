@@ -130,7 +130,8 @@ CREATE TABLE Job (
    Reviewed TINYINT DEFAULT 0,
    Comment BLOB,
    PRIMARY KEY(JobId),
-   INDEX (Name(128))
+   INDEX (Name(128)),
+   INDEX (JobTDate)
 );
 
 -- Create a table like Job for long term statistics
@@ -316,7 +317,7 @@ CREATE TABLE Log (
 );
 
 CREATE TABLE BaseFiles (
-   BaseId INTEGER UNSIGNED AUTO_INCREMENT,
+   BaseId BIGINT UNSIGNED AUTO_INCREMENT,
    BaseJobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
    JobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
    FileId BIGINT UNSIGNED NOT NULL REFERENCES File,
@@ -369,8 +370,6 @@ CREATE TABLE PathVisibility
    Files int4 DEFAULT 0,
    CONSTRAINT pathvisibility_pkey PRIMARY KEY (JobId, PathId)
 );
-CREATE INDEX pathvisibility_jobid
-	     ON PathVisibility (JobId);
 
 CREATE TABLE Version (
    VersionId INTEGER UNSIGNED NOT NULL
@@ -460,5 +459,5 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 -- Initialize Version
 --   DELETE should not be required,
 --   but prevents errors if create script is called multiple times
-DELETE FROM Version WHERE VersionId<=2171;
-INSERT INTO Version (VersionId) VALUES (2171);
+DELETE FROM Version WHERE VersionId<=2192;
+INSERT INTO Version (VersionId) VALUES (2192);

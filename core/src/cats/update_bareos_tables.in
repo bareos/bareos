@@ -170,6 +170,20 @@ do
       postgresql)
          psql -f ${temp_sql_schema} -d ${db_name} $*
          retval=$?
+         if [ $retval -eq 0 ] && [ ${end_version} -eq 2192 ]; then
+             PGSQLVERSION=`psql -d template1 -c 'SELECT version()' $* 2>/dev/null | \
+                    awk '/PostgreSQL/ { print $2 }' | \
+                    cut -d '.' -f 1,2`
+             case ${PGSQLVERSION} in
+                 10.*|11.*|12.*)
+                     psql -d ${db_name} -c 'ALTER SEQUENCE basefiles_baseid_seq AS BIGINT'
+                     result=$?
+                     if [ $result -ne 0 ]; then
+                         echo "WARNING: Failed to update sequence basefiles_baseid_seq"
+                     fi
+                     ;;
+             esac
+         fi
          ;;
    esac
 

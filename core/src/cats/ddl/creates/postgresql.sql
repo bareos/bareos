@@ -322,7 +322,7 @@ CREATE TABLE counters
 
 CREATE TABLE basefiles
 (
-    BaseId            SERIAL      NOT NULL,
+    BaseId            BIGSERIAL   NOT NULL,
     JobId             INTEGER     NOT NULL,
     FileId            BIGINT      NOT NULL,
     FileIndex         INTEGER,
@@ -360,8 +360,6 @@ CREATE TABLE PathVisibility
       Files           INTEGER     DEFAULT 0,
       CONSTRAINT pathvisibility_pkey PRIMARY KEY (JobId, PathId)
 );
-CREATE INDEX pathvisibility_jobid
-             ON PathVisibility (JobId);
 
 CREATE TABLE version
 (
@@ -484,7 +482,7 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 -- Initialize Version
 --   DELETE should not be required,
 --   but prevents errors if create script is called multiple times
-DELETE FROM Version WHERE VersionId<=2171;
-INSERT INTO Version (VersionId) VALUES (2171);
+DELETE FROM Version WHERE VersionId<=2192;
+INSERT INTO Version (VersionId) VALUES (2192);
 
 -- Make sure we have appropriate permissions
