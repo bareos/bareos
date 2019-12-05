@@ -33,13 +33,6 @@ import BareosFdPluginBaseclass
 # sent to the audit log:
 APPLICATION_NAME = "BareOS Ovirt plugin"
 
-# OVF Namespaces
-OVF_NAMESPACES = {
-    "ovf": "http://schemas.dmtf.org/ovf/envelope/1/",
-    "xsi": "http://www.w3.org/2001/XMLSchema-instance",
-    "rasd": "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData",
-}
-
 
 class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     """
@@ -94,6 +87,15 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         bareosfd.DebugMessage(
             context, 100, "BareosFdPluginOvirt:start_backup_job() called\n"
         )
+
+        if chr(self.level) != "F":
+            bareosfd.JobMessage(
+                context,
+                bJobMessageType["M_FATAL"],
+                "BareosFdPluginOvirt can only perform level F (Full) backups, but level is %s\n"
+                % (chr(self.level)),
+            )
+            return bRCs["bRC_Error"]
 
         if not self.ovirt.connect_api(context, self.options):
             return bRCs["bRC_Error"]
@@ -350,12 +352,14 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                             )
                             os.makedirs(dirname)
                         self.file = open(self.FNAME, "wb")
-                    # else:
-                    #     bareosfd.DebugMessage(
-                    #         context, 100,
-                    #         "Open file %s for reading with %s\n" %
-                    #         (self.FNAME, IOP))
-                    #     self.file = open(self.FNAME, 'rb')
+                    else:
+                        IOP.status = -1
+                        bareosfd.JobMessage(
+                            context,
+                            bJobMessageType["M_FATAL"],
+                            "plugin_io: option local=yes can only be used on restore\n",
+                        )
+                    return bRCs["bRC_Error"]
                 except (OSError, IOError) as io_open_error:
                     IOP.status = -1
                     bareosfd.DebugMessage(
@@ -1048,6 +1052,7 @@ class BareosOvirtWrapper(object):
         return chunk
 
     def prepare_vm_restore(self, context, options):
+        restore_existing_vm = False
         if self.connection is None:
             # if not connected yet
             if not self.connect_api(context, options):
@@ -1072,7 +1077,7 @@ class BareosOvirtWrapper(object):
             storage_domain = options["storage_domain"]
 
             # Parse the OVF as XML document:
-            self.ovf = lxml.etree.fromstring(self.ovf_data)
+            self.ovf = Ovf(self.ovf_data)
 
             bareosfd.DebugMessage(
                 context, 200, "prepare_vm_restore(): %s\n" % (self.ovf)
@@ -1084,10 +1089,7 @@ class BareosOvirtWrapper(object):
                 vm_name = options["vm_name"]
 
             if vm_name is None:
-                vm_name = self.ovf.xpath(
-                    '/ovf:Envelope/Content[@xsi:type="ovf:VirtualSystem_Type"]/Name',
-                    namespaces=OVF_NAMESPACES,
-                )[0].text
+                vm_name = self.ovf.get_element("vm_name")
 
             # Find the cluster name of the virtual machine within the OVF:
             cluster_name = None
@@ -1096,181 +1098,224 @@ class BareosOvirtWrapper(object):
 
             if cluster_name is None:
                 # Find the cluster name of the virtual machine within the OVF:
-                cluster_name = self.ovf.xpath(
-                    '/ovf:Envelope/Content[@xsi:type="ovf:VirtualSystem_Type"]/ClusterName',
-                    namespaces=OVF_NAMESPACES,
-                )[0].text
+                cluster_name = self.ovf.get_element("cluster_name")
 
             # check if VM exists
             res = self.vms_service.list(
                 search="name=%s and cluster=%s" % (str(vm_name), str(cluster_name))
             )
-            if len(res) > 0:
+            if len(res) > 1:
                 bareosfd.JobMessage(
                     context,
                     bJobMessageType["M_FATAL"],
-                    "VM '%s' exists. Unable to restore.\n" % str(vm_name),
+                    "Found %s VMs with name '%s'\n" % (len(res), str(vm_name)),
                 )
                 return bRCs["bRC_Error"]
-            else:
 
-                vm_template = "Blank"
-                if "vm_template" in options:
-                    vm_template = options["vm_template"]
+            if len(res) == 1:
+                if not options.get("overwrite") == "yes":
+                    bareosfd.JobMessage(
+                        context,
+                        bJobMessageType["M_FATAL"],
+                        "If you are sure you want to overwrite the existing VM '%s', please add the plugin option 'overwrite=yes'\n"
+                        % (str(vm_name)),
+                    )
+                    return bRCs["bRC_Error"]
 
-                # Add the virtual machine, the transfered disks will be
-                # attached to this virtual machine:
                 bareosfd.JobMessage(
                     context,
                     bJobMessageType["M_INFO"],
-                    "Adding virtual machine %s\n" % vm_name,
+                    "Restore to existing VM '%s'\n" % str(vm_name),
+                )
+                self.vm = res[0]
+
+                if self.vm.status != types.VmStatus.DOWN:
+                    bareosfd.JobMessage(
+                        context,
+                        bJobMessageType["M_FATAL"],
+                        "VM '%s' must be down for restore, but status is %s\n"
+                        % (str(vm_name), self.vm.status),
+                    )
+                    return bRCs["bRC_Error"]
+
+                restore_existing_vm = True
+
+            else:
+                self.create_vm(context, options, vm_name, cluster_name)
+                self.add_nics_to_vm(context)
+
+            # Extract disk information from OVF
+            disk_elements = self.ovf.get_elements("disk_elements")
+
+            if self.restore_objects is None:
+                self.restore_objects = []
+
+            for disk_element in disk_elements:
+                # Get disk properties:
+                props = {}
+                for key, value in disk_element.items():
+                    key = key.replace("{%s}" % self.ovf.OVF_NAMESPACES["ovf"], "")
+                    props[key] = value
+
+                # set storage domain
+                props["storage_domain"] = storage_domain
+                self.restore_objects.append(props)
+                if restore_existing_vm:
+                    # When restoring to existing VM, old and new disk ID are identical
+                    # Important: The diskId property in the OVF is not the oVirt
+                    # diskId, which can be found in the first part of the OVF fileRef
+                    old_disk_id = os.path.dirname(props["fileRef"])
+                    self.old_new_ids[old_disk_id] = old_disk_id
+
+            bareosfd.DebugMessage(
+                context,
+                200,
+                "end of prepare_vm_restore(): self.restore_objects: %s self.old_new_ids: %s\n"
+                % (self.restore_objects, self.old_new_ids),
+            )
+        return bRCs["bRC_OK"]
+
+    def create_vm(self, context, options, vm_name, cluster_name):
+
+        vm_template = "Blank"
+        if "vm_template" in options:
+            vm_template = options["vm_template"]
+
+        # Add the virtual machine, the transfered disks will be
+        # attached to this virtual machine:
+        bareosfd.JobMessage(
+            context, bJobMessageType["M_INFO"], "Adding virtual machine %s\n" % vm_name,
+        )
+
+        # vm type (server/desktop)
+        vm_type = "server"
+        if "vm_type" in options:
+            vm_type = options["vm_type"]
+
+        # vm memory and cpu
+        vm_memory = None
+        if "vm_memory" in options:
+            vm_memory = int(options["vm_memory"]) * 2 ** 20
+
+        vm_cpu = None
+        if "vm_cpu" in options:
+            vm_cpu_arr = options["vm_cpu"].split(",")
+            if len(vm_cpu_arr) > 0:
+                if len(vm_cpu_arr) < 2:
+                    vm_cpu_arr.append(1)
+                    vm_cpu_arr.append(1)
+                elif len(vm_cpu_arr) < 3:
+                    vm_cpu_arr.append(1)
+
+                vm_cpu = types.Cpu(
+                    topology=types.CpuTopology(
+                        cores=int(vm_cpu_arr[0]),
+                        sockets=int(vm_cpu_arr[1]),
+                        threads=int(vm_cpu_arr[2]),
+                    )
                 )
 
-                # vm type (server/desktop)
-                vm_type = "server"
-                if "vm_type" in options:
-                    vm_type = options["vm_type"]
+        if vm_memory is None or vm_cpu is None:
+            # Find the resources section
+            resources_elements = self.ovf.get_elements("resources_elements")
+            for resource in resources_elements:
+                # Get resource properties:
+                props = {}
+                for e in resource:
+                    key = e.tag
+                    value = e.text
+                    key = key.replace("{%s}" % self.ovf.OVF_NAMESPACES["rasd"], "")
+                    props[key] = value
 
-                # vm memory and cpu
-                vm_memory = None
-                if "vm_memory" in options:
-                    vm_memory = int(options["vm_memory"]) * 2 ** 20
-
-                vm_cpu = None
-                if "vm_cpu" in options:
-                    vm_cpu_arr = options["vm_cpu"].split(",")
-                    if len(vm_cpu_arr) > 0:
-                        if len(vm_cpu_arr) < 2:
-                            vm_cpu_arr.append(1)
-                            vm_cpu_arr.append(1)
-                        elif len(vm_cpu_arr) < 3:
-                            vm_cpu_arr.append(1)
-
+                if vm_cpu is None:
+                    # for ResourceType = 3 (CPU)
+                    if int(props["ResourceType"]) == 3:
                         vm_cpu = types.Cpu(
                             topology=types.CpuTopology(
-                                cores=int(vm_cpu_arr[0]),
-                                sockets=int(vm_cpu_arr[1]),
-                                threads=int(vm_cpu_arr[2]),
+                                cores=int(props["cpu_per_socket"]),
+                                sockets=int(props["num_of_sockets"]),
+                                threads=int(props["threads_per_cpu"]),
                             )
                         )
+                if vm_memory is None:
+                    # for ResourceType = 4 (Memory)
+                    if int(props["ResourceType"]) == 4:
+                        vm_memory = int(props["VirtualQuantity"])
+                        if props["AllocationUnits"] == "GigaBytes":
+                            vm_memory = vm_memory * 2 ** 30
+                        elif props["AllocationUnits"] == "MegaBytes":
+                            vm_memory = vm_memory * 2 ** 20
+                        elif props["AllocationUnits"] == "KiloBytes":
+                            vm_memory = vm_memory * 2 ** 10
 
-                if vm_memory is None or vm_cpu is None:
-                    # Find the resources section
-                    resources_elements = self.ovf.xpath(
-                        '/ovf:Envelope/Content[@xsi:type="ovf:VirtualSystem_Type"]/Section[@xsi:type="ovf:VirtualHardwa'
-                        'reSection_Type"]/Item[rasd:ResourceType=3 or rasd:ResourceType=4]',
-                        namespaces=OVF_NAMESPACES,
-                    )
-                    for resource in resources_elements:
-                        # Get resource properties:
-                        props = {}
-                        for e in resource:
-                            key = e.tag
-                            value = e.text
-                            key = key.replace("{%s}" % OVF_NAMESPACES["rasd"], "")
-                            props[key] = value
+        vm_memory_policy = None
+        if vm_memory is not None:
+            vm_maxmemory = 4 * vm_memory  # 4x memory
+            vm_memory_policy = types.MemoryPolicy(
+                guaranteed=vm_memory, max=vm_maxmemory
+            )
 
-                        if vm_cpu is None:
-                            # for ResourceType = 3 (CPU)
-                            if int(props["ResourceType"]) == 3:
-                                vm_cpu = types.Cpu(
-                                    topology=types.CpuTopology(
-                                        cores=int(props["cpu_per_socket"]),
-                                        sockets=int(props["num_of_sockets"]),
-                                        threads=int(props["threads_per_cpu"]),
-                                    )
-                                )
-                        if vm_memory is None:
-                            # for ResourceType = 4 (Memory)
-                            if int(props["ResourceType"]) == 4:
-                                vm_memory = int(props["VirtualQuantity"])
-                                if props["AllocationUnits"] == "GigaBytes":
-                                    vm_memory = vm_memory * 2 ** 30
-                                elif props["AllocationUnits"] == "MegaBytes":
-                                    vm_memory = vm_memory * 2 ** 20
-                                elif props["AllocationUnits"] == "KiloBytes":
-                                    vm_memory = vm_memory * 2 ** 10
+        self.vm = self.vms_service.add(
+            types.Vm(
+                name=vm_name,
+                type=types.VmType(vm_type),
+                memory=vm_memory,
+                memory_policy=vm_memory_policy,
+                cpu=vm_cpu,
+                template=types.Template(name=vm_template),
+                cluster=types.Cluster(name=cluster_name),
+            ),
+        )
 
-                vm_memory_policy = None
-                if vm_memory is not None:
-                    vm_maxmemory = 4 * vm_memory  # 4x memory
-                    vm_memory_policy = types.MemoryPolicy(
-                        guaranteed=vm_memory, max=vm_maxmemory
-                    )
+    def add_nics_to_vm(self, context):
+        # Find the network section
+        network_elements = self.ovf.get_elements("network_elements")
+        bareosfd.DebugMessage(
+            context,
+            200,
+            "add_nics_to_vm(): network_elements: %s\n" % (network_elements),
+        )
+        for nic in network_elements:
+            # Get nic properties:
+            props = {}
+            for e in nic:
+                key = e.tag
+                value = e.text
+                key = key.replace("{%s}" % self.ovf.OVF_NAMESPACES["rasd"], "")
+                props[key] = value
 
-                self.vm = self.vms_service.add(
-                    types.Vm(
-                        name=vm_name,
-                        type=types.VmType(vm_type),
-                        memory=vm_memory,
-                        memory_policy=vm_memory_policy,
-                        cpu=vm_cpu,
-                        template=types.Template(name=vm_template),
-                        cluster=types.Cluster(name=cluster_name),
+            bareosfd.DebugMessage(
+                context, 200, "add_nics_to_vm(): props: %s\n" % (props)
+            )
+
+            network = props["Connection"]
+            if network not in self.network_profiles:
+                bareosfd.JobMessage(
+                    context,
+                    bJobMessageType["M_WARNING"],
+                    "No network profile found for '%s'\n" % (network),
+                )
+            else:
+                profile_id = self.network_profiles[network]
+
+                # Locate the service that manages the network interface cards of the
+                # virtual machine:
+                nics_service = self.vms_service.vm_service(self.vm.id).nics_service()
+
+                # Use the "add" method of the network interface cards service to add the
+                # new network interface card:
+                nics_service.add(
+                    types.Nic(
+                        name=props["Name"],
+                        description=props["Caption"],
+                        vnic_profile=types.VnicProfile(id=profile_id,),
                     ),
                 )
-
-                # Find the network section
-                network_elements = self.ovf.xpath(
-                    '/ovf:Envelope/Content[@xsi:type="ovf:VirtualSystem_Type"]/Section[@xsi:type="ovf:VirtualHardwareSection_Type"]/Item[Type="interface"]',
-                    namespaces=OVF_NAMESPACES,
+                bareosfd.DebugMessage(
+                    context,
+                    200,
+                    "add_nics_to_vm(): added NIC with props %s\n" % (props),
                 )
-                for nic in network_elements:
-                    # Get nic properties:
-                    props = {}
-                    for e in nic:
-                        key = e.tag
-                        value = e.text
-                        key = key.replace("{%s}" % OVF_NAMESPACES["rasd"], "")
-                        props[key] = value
-
-                    network = props["Connection"]
-                    if network not in self.network_profiles:
-                        bareosfd.JobMessage(
-                            context,
-                            bJobMessageType["M_WARNING"],
-                            "No network profile found for '%s'\n" % (network),
-                        )
-                    else:
-                        profile_id = self.network_profiles[network]
-
-                        # Locate the service that manages the network interface cards of the
-                        # virtual machine:
-                        nics_service = self.vms_service.vm_service(
-                            self.vm.id
-                        ).nics_service()
-
-                        # Use the "add" method of the network interface cards service to add the
-                        # new network interface card:
-                        nics_service.add(
-                            types.Nic(
-                                name=props["Name"],
-                                description=props["Caption"],
-                                vnic_profile=types.VnicProfile(id=profile_id,),
-                            ),
-                        )
-
-                # Find the disks section:
-                disk_elements = self.ovf.xpath(
-                    '/ovf:Envelope/Section[@xsi:type="ovf:DiskSection_Type"]/Disk',
-                    namespaces=OVF_NAMESPACES,
-                )
-
-                if self.restore_objects is None:
-                    self.restore_objects = []
-
-                for disk_element in disk_elements:
-                    # Get disk properties:
-                    props = {}
-                    for key, value in disk_element.items():
-                        key = key.replace("{%s}" % OVF_NAMESPACES["ovf"], "")
-                        props[key] = value
-
-                    # set storage domain
-                    props["storage_domain"] = storage_domain
-                    self.restore_objects.append(props)
-
-        return bRCs["bRC_OK"]
 
     def get_vm_disk_by_basename(self, context, fname):
 
@@ -1293,18 +1338,23 @@ class BareosOvirtWrapper(object):
                 bareosfd.DebugMessage(
                     context,
                     200,
-                    "get_vm_disk_by_basename(): lookup %s == %s and %s == %s\n" % (repr(relname), repr(key), repr(basename), repr(obj["diskId"])),
+                    "get_vm_disk_by_basename(): lookup %s == %s and %s == %s\n"
+                    % (repr(relname), repr(key), repr(basename), repr(obj["diskId"])),
                 )
                 if relname == key and basename == obj["diskId"]:
                     bareosfd.DebugMessage(
-                        context,
-                        200,
-                        "get_vm_disk_by_basename(): lookup matched"
+                        context, 200, "get_vm_disk_by_basename(): lookup matched\n"
                     )
                     old_disk_id = os.path.dirname(obj["fileRef"])
 
                     new_disk_id = None
                     if old_disk_id in self.old_new_ids:
+                        bareosfd.DebugMessage(
+                            context,
+                            200,
+                            "get_vm_disk_by_basename(): disk id %s found in old_new_ids: %s\n"
+                            % (old_disk_id, self.old_new_ids),
+                        )
                         new_disk_id = self.old_new_ids[old_disk_id]
 
                     # get base disks
@@ -1632,6 +1682,62 @@ class BareosOvirtWrapper(object):
         if self.connection:
             # Close the connection to the server:
             self.connection.close()
+
+
+class Ovf(object):
+    """
+    This class is used to encapsulate XPath expressions to extract data from OVF
+    """
+
+    # OVF Namespaces
+    OVF_NAMESPACES = {
+        "ovf": "http://schemas.dmtf.org/ovf/envelope/1/",
+        "xsi": "http://www.w3.org/2001/XMLSchema-instance",
+        "rasd": "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData",
+    }
+
+    # XPath expressions
+    OVF_XPATH_EXPRESSIONS = {
+        "vm_name": '/ovf:Envelope/Content[@xsi:type="ovf:VirtualSystem_Type"]/Name',
+        "cluster_name": '/ovf:Envelope/Content[@xsi:type="ovf:VirtualSystem_Type"]/ClusterName',
+        "network_elements": '/ovf:Envelope/Content[@xsi:type="ovf:VirtualSystem_Type"]/Section[@xsi:type="ovf:VirtualHardwareSection_Type"]/Item[Type="interface"]',
+        "disk_elements": '/ovf:Envelope/Section[@xsi:type="ovf:DiskSection_Type"]/Disk',
+        "resources_elements": '/ovf:Envelope/Content[@xsi:type="ovf:VirtualSystem_Type"]/Section[@xsi:type="ovf:VirtualHardwareSection_Type"]/Item[rasd:ResourceType=3 or rasd:ResourceType=4]',
+    }
+
+    def __init__(self, ovf_data=None):
+        """
+        Creates a new OVF object
+
+        This method supports the following parameters:
+
+        `ovf_data`:: A string containing the OVF XML data
+        """
+
+        # Parse the OVF as XML document:
+        self.ovf = lxml.etree.fromstring(ovf_data)
+
+    def get_element(self, element_name):
+        """
+        Method to extract a single element from OVF data
+
+        This method supports the following parameters:
+        `element_name':: A string with the element name to extract
+        """
+        return self.ovf.xpath(
+            self.OVF_XPATH_EXPRESSIONS[element_name], namespaces=self.OVF_NAMESPACES
+        )[0].text
+
+    def get_elements(self, element_name):
+        """
+        Method to extract a list of elements from OVF data
+
+        This method supports the following parameters:
+        `element_name':: A string with the element name to extract
+        """
+        return self.ovf.xpath(
+            self.OVF_XPATH_EXPRESSIONS[element_name], namespaces=self.OVF_NAMESPACES
+        )
 
 
 # vim: tabstop=4 shiftwidth=4 softtabstop=4 expandtab
