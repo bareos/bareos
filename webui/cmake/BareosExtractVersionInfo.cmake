@@ -25,7 +25,9 @@ if(NOT DEFINED VERSION_STRING)
     else()
       message(
         FATAL_ERROR
-          "VERSION_STRING not set, BareosVersion.cmake not found and no version data from git available."
+          "VERSION_STRING not set, BareosVersion.cmake not found and no version data from git available.\n"
+          "For more information why this happened and how to fix it, please see "
+          "https://docs.bareos.org/DeveloperGuide/AutomaticVersionGeneration.html#troubleshooting"
       )
     endif()
   else()
