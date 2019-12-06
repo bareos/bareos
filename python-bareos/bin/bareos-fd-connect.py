@@ -7,14 +7,11 @@ import logging
 import sys
 
 def getArguments():
-    parser = argparse.ArgumentParser(description='Connect to Bareos File Daemon.' )
-    parser.add_argument('-d', '--debug', action='store_true', help="enable debugging output")
-    parser.add_argument('--name', help="Name of the Director resource in the File Daemon", required=True)
-    parser.add_argument('-p', '--password', help="password to authenticate to a Bareos File Daemon", required=True)
-    parser.add_argument('--port', default=9102, help="Bareos File Daemon network port")
-    parser.add_argument('address', nargs='?', default="localhost", help="Bareos File Daemon network address")
-    parser.add_argument('command', nargs='*', help="Command to send to the Bareos File Daemon")
-    args = parser.parse_args()
+    argparser = argparse.ArgumentParser(description='Connect to Bareos File Daemon.')
+    argparser.add_argument('-d', '--debug', action='store_true', help="enable debugging output")
+    bareos.bsock.FileDaemon.argparser_add_default_command_line_arguments(argparser)
+    argparser.add_argument('command', nargs='*', help="Command to send to the Bareos File Daemon")
+    args = argparser.parse_args()
     return args
 
 if __name__ == '__main__':
@@ -25,20 +22,11 @@ if __name__ == '__main__':
     if args.debug:
         logger.setLevel(logging.DEBUG)
 
+    bareos_args = bareos.bsock.FileDaemon.argparser_get_bareos_parameter(args)
+    logger.debug('options: %s' % (bareos_args))
     try:
-        options = [ 'address', 'port', 'name' ]
-        parameter = {}
-        for i in options:
-            if hasattr(args, i) and getattr(args,i) != None:
-                logger.debug( "%s: %s" %(i, getattr(args,i)))
-                parameter[i] = getattr(args,i)
-            else:
-                logger.debug( '%s: ""' %(i))
-        logger.debug('options: %s' % (parameter))
-        password = bareos.bsock.Password(args.password)
-        parameter['password']=password
-        bsock=FileDaemon(**parameter)
-    except RuntimeError as e:
+        bsock=FileDaemon(**bareos_args)
+    except (bareos.exceptions.Error) as e:
         print(str(e))
         sys.exit(1)
     logger.debug( "authentication successful" )

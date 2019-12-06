@@ -1,6 +1,0 @@
-TODO:
-
-  * pyunit
-
-To test the Bareos Python module without installing, set PYTHONPATH accordingly, eg.
-export PYTHONPATH=.

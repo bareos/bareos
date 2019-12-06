@@ -32,9 +32,16 @@ class SocketEmptyHeader(Error):
     pass
 
 
-class AuthenticationError(Error):
+class AuthenticationError(ConnectionError):
     """
     error during Authentication
+    """
+    pass
+
+
+class PamAuthenticationError(AuthenticationError):
+    """
+    error during PAM Authentication
     """
     pass
 
@@ -46,7 +53,7 @@ class SignalReceivedException(Error):
     def __init__(self, signal):
         # Call the base class constructor with the parameters it needs
         message = Constants.get_description(signal)
-        super(SignalReceivedException, self).__init__('{} ({})'.format(message, signal))
+        super(SignalReceivedException, self).__init__('{0} ({1})'.format(message, signal))
 
         # Now for your custom code...
         self.signal = signal
@@ -74,7 +81,7 @@ class JsonRpcErrorReceivedException(Error):
         except (KeyError, TypeError):
             error = str(jsondata)
 
-        super(JsonRpcErrorReceivedException, self).__init__('{}: {}'.format(message, error))
+        super(JsonRpcErrorReceivedException, self).__init__('{0}: {1}'.format(message, error))
 
         # Now for your custom code...
         self.jsondata = jsondata
@@ -101,7 +108,7 @@ class JsonRpcInvalidJsonReceivedException(JsonRpcErrorReceivedException):
         except (KeyError, TypeError):
             origdata = ''
 
-        super(JsonRpcErrorReceivedException, self).__init__('{}: {}'.format(message, origdata))
+        super(JsonRpcErrorReceivedException, self).__init__('{0}: {1}'.format(message, origdata))
 
         # Now for your custom code...
         self.jsondata = jsondata

@@ -3,8 +3,14 @@ Constants used by Bareos.
 """
 
 class Constants:
+
+    unit_separator = chr(0x1f);
+    record_separator = chr(0x1e);
+    record_separator_compat_regex = r'[ {0}]'.format(chr(0x1e));
+    group_separator = chr(0x1d);
+
     """
-    translated enum from https://github.com/bareos/bareos/blob/master/src/lib/bsock.h
+    translated enum from https://github.com/bareos/bareos/blob/master/core/src/lib/bsock.h
     """
     BNET_EOD            = -1    #,          /* End of data stream, new data may follow */
     BNET_EOD_POLL       = -2    #,          /* End of data and poll all in one */
@@ -67,7 +73,7 @@ class Constants:
     }
 
     @staticmethod
-    def get_description( code ):
+    def get_description(code):
         try:
             description = Constants.description[code]
         except KeyError:

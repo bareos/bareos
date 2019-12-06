@@ -473,6 +473,28 @@ stop_bareos()
    fi
 }
 
+
+run_python_unittests()
+{
+    PYTHON_UNITTEST_SCRIPT=${1:-python-bareos-unittest.py}
+    if [ "${PROJECT_SOURCE_DIR}" ] && [ -e "${PROJECT_SOURCE_DIR}/../python-bareos/" ]; then
+        if [ "$PYTHONPATH" ]; then
+            export PYTHONPATH=${PROJECT_SOURCE_DIR}/../python-bareos/:$PYTHONPATH
+        else
+            export PYTHONPATH=${PROJECT_SOURCE_DIR}/../python-bareos/
+        fi
+        print_debug "PYTHONPATH=$PYTHONPATH"
+        #if PYTHONRESULT=$(${cwd}/${PYTHON_UNITTEST_SCRIPT} -v 2>&1); then
+        if PYTHONRESULT=$(${cwd}/${PYTHON_UNITTEST_SCRIPT} -v); then
+            print_debug "$PYTHONRESULT"
+        else
+            set_error "$PYTHONRESULT"
+        fi
+    fi
+}
+
+
+
 change_files()
 {
    #
