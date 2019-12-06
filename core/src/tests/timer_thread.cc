@@ -159,19 +159,22 @@ TEST_F(TimerThreadTest, register_twice_fails)
   TimerThread::UnregisterTimer(timer_item);
 }
 
-TEST_F(TimerThreadTest, should_shutdown_with_timer_thread_guard)
-{
-  OneShotTimerOff();
-  SetUp();
-
-  /* This test does not shutdown the timer thread during tear down,
-   * as a matter of fact the timer thread keeps running and will be
-   * stopped by the timer thread guard. */
-
-  stop_timer_thread_on_tear_down = false;
-  // use debugger to check c++ library shut-down
-}
-
+// Disabled the following test as shows undefined behaviour on wine:
+// Sometimes the test successfully passes but the executable does not exit.
+//
+// TEST_F(TimerThreadTest, should_shutdown_with_timer_thread_guard)
+//{
+//  OneShotTimerOff();
+//  SetUp();
+//
+//  /* This test does not shutdown the timer thread during tear down,
+//   * as a matter of fact the timer thread keeps running and will be
+//   * stopped by the timer thread guard. */
+//
+//  stop_timer_thread_on_tear_down = false;
+//  // use debugger to check c++ library shut-down
+//}
+//
 // TEST_F(TimerThreadTest, just_run_timer_thread)
 //{
 //  while (1) continue;
