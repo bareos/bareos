@@ -1,0 +1,67 @@
+#!/bin/sh
+#
+# This systemtest tests the plugin functionality
+# of the Bareos FD by using the supplied module
+#   bareos-fd-local-fileset.py
+#
+# The module will backup some files.
+# This plugin is not intended for production,
+# but is only a minimal example that shows
+# how to use the python plugin interface.
+# File attributes like uses and times will not be saved.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+. ./environment
+. ${scripts}/functions
+
+${scripts}/cleanup
+${scripts}/setup
+
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backed up.
+# Data will be placed at "${tmp}/data/".
+setup_data
+
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+setdebug level=100 storage=File
+label volume=TestVolume001 storage=File pool=Full
+run job=$JobName yes
+status director
+status client
+status storage=File
+wait
+messages
+@#
+@# now do a restore
+@#
+@$out $tmp/log2.out
+wait
+restore client=bareos-fd fileset=OvirtTest where=$tmp/bareos-restores select all done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bareos
+check_for_zombie_jobs storage=File
+stop_bareos
+
+check_two_logs
+list="$(find ${BackupDirectory} -type f)"
+# Using check_restore_only_files_diff instead of check_restore_diff
+# to dont diff the file attributes, because they are not saved
+check_restore_only_files_diff $list
+end_test

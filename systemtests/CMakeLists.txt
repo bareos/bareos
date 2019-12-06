@@ -86,22 +86,31 @@ endmacro()
 macro(handle_python_plugin_modules)
   if(EXISTS ${python_plugin_module_src_test_dir})
     set(PYMODULES_TO_LINK_TO_SRC
-        filed/bareos-fd-local-fileset.py
-        filed/BareosFdPluginLocalFileset.py
-        filed/BareosFdWrapper.py
-        filed/BareosFdPluginLDAP.py
-        filed/bareos-fd-mock-test.py
-        filed/BareosFdPluginBaseclass.py
-        filed/bareos_fd_consts.py
-        filed/bareos-fd-ldap.py
-        dird/bareos_dir_consts.py
-        dird/BareosDirPluginBaseclass.py
-        dird/bareos-dir-class-plugin.py
-        dird/BareosDirWrapper.py
-        stored/bareos_sd_consts.py
-        stored/bareos-sd-class-plugin.py
-        stored/BareosSdPluginBaseclass.py
-        stored/BareosSdWrapper.py
+
+      filed/BareosFdWrapper.py
+      filed/BareosFdPluginBaseclass.py
+      filed/bareos_fd_consts.py
+      filed/bareos-fd-mock-test.py
+
+      filed/bareos-fd-local-fileset.py
+      filed/BareosFdPluginLocalFileset.py
+
+      filed/BareosFdPluginLDAP.py
+      filed/bareos-fd-ldap.py
+
+      filed/BareosFdPluginOvirt.py
+      filed/bareos-fd-ovirt.py
+
+
+      dird/bareos_dir_consts.py
+      dird/BareosDirPluginBaseclass.py
+      dird/bareos-dir-class-plugin.py
+      dird/BareosDirWrapper.py
+
+      stored/bareos_sd_consts.py
+      stored/bareos-sd-class-plugin.py
+      stored/BareosSdPluginBaseclass.py
+      stored/BareosSdWrapper.py
     )
 
     foreach(PYMODULE_SOURCEPATH ${PYMODULES_TO_LINK_TO_SRC})
@@ -342,8 +351,10 @@ endif()
 
 if(TARGET python-fd)
   list(APPEND SYSTEM_TESTS "python-fd-plugin-local-fileset-test")
+  list(APPEND SYSTEM_TESTS "python-fd-ovirt-plugin-test")
 else()
   list(APPEND SYSTEM_TESTS_DISABLED "python-fd-plugin-local-fileset-test")
+  list(APPEND SYSTEM_TESTS_DISABLED "python-fd-ovirt-plugin-test")
 endif()
 
 if(TARGET python-dir)
