@@ -19,8 +19,15 @@
   02110-1301, USA.
 */
 
+#if defined(HAVE_MINGW)
 #include "include/bareos.h"
 #include "gtest/gtest.h"
+#else
+#include "gtest/gtest.h"
+#include "include/bareos.h"
+#endif
+
+
 #include "dird/dird_globals.h"
 #include "dird/jcr_private.h"
 #include "dird/scheduler.h"
@@ -62,6 +69,7 @@ static SimulatedTimeAdapter* time_adapter;
 class SchedulerTest : public ::testing::Test {
   void SetUp() override
   {
+    OSDependentInit();
     std::unique_ptr<SimulatedTimeAdapter> ta =
         std::make_unique<SimulatedTimeAdapter>();
     time_adapter = ta.get();
@@ -83,7 +91,7 @@ TEST_F(SchedulerTest, terminate)
   InitMsg(NULL, NULL); /* initialize message handler */
 
   std::string path_to_config_file =
-      std::string(PROJECT_SOURCE_DIR "/src/tests/configs/scheduler-hourly");
+      std::string(RELATIVE_PROJECT_SOURCE_DIR "/configs/scheduler-hourly");
 
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   ASSERT_TRUE(my_config);
@@ -105,7 +113,7 @@ TEST_F(SchedulerTest, system_time_source)
   s.SleepFor(std::chrono::seconds(1));
   time_t end = s.SystemTime();
   EXPECT_GT(end - start, 0);
-  EXPECT_LT(end - start, 2);
+  EXPECT_LT(end - start, 3);
 }
 
 TEST_F(SchedulerTest, system_time_source_canceled)
@@ -177,7 +185,7 @@ TEST_F(SchedulerTest, hourly)
   if (debug) { std::cout << "Start test" << std::endl; }
 
   std::string path_to_config_file{
-      std::string(PROJECT_SOURCE_DIR "/src/tests/configs/scheduler-hourly")};
+      std::string(RELATIVE_PROJECT_SOURCE_DIR "/configs/scheduler-hourly")};
 
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   ASSERT_TRUE(my_config);
@@ -235,7 +243,7 @@ TEST_F(SchedulerTest, on_time)
   if (debug) { std::cout << "Start test" << std::endl; }
 
   std::string path_to_config_file{
-      std::string(PROJECT_SOURCE_DIR "/src/tests/configs/scheduler-on-time")};
+      std::string(RELATIVE_PROJECT_SOURCE_DIR "/configs/scheduler-on-time")};
 
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   ASSERT_TRUE(my_config);
@@ -274,7 +282,7 @@ TEST_F(SchedulerTest, add_job_with_no_run_resource_to_queue)
   if (debug) { std::cout << "Start test" << std::endl; }
 
   std::string path_to_config_file{std::string(
-      PROJECT_SOURCE_DIR "/src/tests/configs/bareos-configparser-tests")};
+      RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests")};
 
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   ASSERT_TRUE(my_config);

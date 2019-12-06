@@ -17,48 +17,46 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-IF(HAVE_WIN32)
-   include_directories(
-      ${PROJECT_SOURCE_DIR}/src/win32/generic
-      ${PROJECT_SOURCE_DIR}/src/win32/stored
-      ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/include
-      )
-   link_directories(${PROJECT_SOURCE_DIR}/src/win32/plugins/python/lib/${WINDOWS_BITS})
-   add_definitions(-DMS_WIN${WINDOWS_BITS})
-ENDIF()
-
-
+if(HAVE_WIN32)
+  include_directories(
+    ${PROJECT_SOURCE_DIR}/src/win32/generic
+    ${PROJECT_SOURCE_DIR}/src/win32/stored
+    ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/include
+  )
+  link_directories(
+    ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/lib/${WINDOWS_BITS}
+  )
+  add_definitions(-DMS_WIN${WINDOWS_BITS})
+endif()
 
 add_library(autoxflate-sd MODULE autoxflate-sd.cc)
 set_target_properties(autoxflate-sd PROPERTIES PREFIX "")
 target_link_libraries(autoxflate-sd bareos)
-INSTALL(TARGETS autoxflate-sd DESTINATION ${plugindir})
+install(TARGETS autoxflate-sd DESTINATION ${plugindir})
 
-IF(NOT HAVE_WIN32 AND NOT HAVE_DARWIN_OS)
-   add_library(scsicrypto-sd MODULE scsicrypto-sd.cc)
-   set_target_properties(scsicrypto-sd PROPERTIES PREFIX "")
-   INSTALL(TARGETS scsicrypto-sd DESTINATION ${plugindir})
+if(NOT HAVE_WIN32 AND NOT HAVE_DARWIN_OS)
+  add_library(scsicrypto-sd MODULE scsicrypto-sd.cc)
+  set_target_properties(scsicrypto-sd PROPERTIES PREFIX "")
+  install(TARGETS scsicrypto-sd DESTINATION ${plugindir})
 
-   add_library(scsitapealert-sd MODULE scsitapealert-sd.cc)
-   set_target_properties(scsitapealert-sd PROPERTIES PREFIX "")
-   INSTALL(TARGETS scsitapealert-sd DESTINATION ${plugindir})
-   IF(HAVE_DARWIN_OS)
-     target_link_libraries(scsitapealert-sd bareossd)
-   ENDIF()
-ENDIF()
+  add_library(scsitapealert-sd MODULE scsitapealert-sd.cc)
+  set_target_properties(scsitapealert-sd PROPERTIES PREFIX "")
+  install(TARGETS scsitapealert-sd DESTINATION ${plugindir})
+  if(HAVE_DARWIN_OS)
+    target_link_libraries(scsitapealert-sd bareossd)
+  endif()
+endif()
 
-IF(HAVE_PYTHON)
-   add_library(python-sd MODULE python-sd.cc)
-   set_target_properties(python-sd PROPERTIES PREFIX "")
-   INSTALL(TARGETS python-sd DESTINATION ${plugindir})
-   target_link_libraries(python-sd ${PYTHON_LIBRARIES} bareos)
+if(HAVE_PYTHON)
+  add_library(python-sd MODULE python-sd.cc)
+  set_target_properties(python-sd PROPERTIES PREFIX "")
+  install(TARGETS python-sd DESTINATION ${plugindir})
+  target_link_libraries(python-sd ${PYTHON_LIBRARIES} bareos)
 
+  set(PYFILES
+      bareos-sd-class-plugin.py bareos_sd_consts.py BareosSdPluginBaseclass.py
+      bareos-sd.py.template BareosSdWrapper.py
+  )
 
-   set (PYFILES bareos-sd-class-plugin.py
-      bareos_sd_consts.py
-      BareosSdPluginBaseclass.py
-      bareos-sd.py.template
-      BareosSdWrapper.py)
-
-   INSTALL(FILES ${PYFILES} DESTINATION ${plugindir})
-ENDIF()
+  install(FILES ${PYFILES} DESTINATION ${plugindir})
+endif()

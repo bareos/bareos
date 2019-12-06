@@ -18,9 +18,10 @@
 cmake_minimum_required(VERSION 3.0)
 
 if(NOT DEFINED VERSION_STRING)
-  set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake"
-                        "${CMAKE_CURRENT_LIST_DIR}/core/cmake"
-                        "${CMAKE_CURRENT_LIST_DIR}/webui/cmake")
+  set(CMAKE_MODULE_PATH
+      "${CMAKE_CURRENT_LIST_DIR}/cmake" "${CMAKE_CURRENT_LIST_DIR}/core/cmake"
+      "${CMAKE_CURRENT_LIST_DIR}/webui/cmake"
+  )
 
   find_package(Git QUIET)
   include(BareosVersionFromGit)
@@ -32,7 +33,8 @@ if(NOT DEFINED VERSION_STRING)
     else()
       message(
         FATAL_ERROR
-          "BareosVersion.cmake not found and no git version available.")
+          "BareosVersion.cmake not found and no git version available."
+      )
     endif()
   endif()
 endif()

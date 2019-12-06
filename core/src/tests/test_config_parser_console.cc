@@ -18,21 +18,27 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-
+#if defined(HAVE_MINGW)
+#include "include/bareos.h"
+#include "gtest/gtest.h"
+#else
 #include "gtest/gtest.h"
 #include "include/bareos.h"
+#endif
+
 #include "lib/parse_conf.h"
 #include "console/console_globals.h"
 #include "console/console_conf.h"
 
 namespace console {
 
-TEST(ConfigParser, test_filed_config)
+TEST(ConfigParser, test_console_config)
 {
+  OSDependentInit();
   InitMsg(NULL, NULL); /* initialize message handler */
 
   std::string path_to_config_file = std::string(
-      PROJECT_SOURCE_DIR "/src/tests/configs/bareos-configparser-tests");
+      RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests");
 
   my_config = InitConsConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   my_config->ParseConfig();

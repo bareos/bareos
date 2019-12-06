@@ -19,54 +19,47 @@
 
 # generic macro to find libraries
 
-MACRO(BareosFindLibrary LIBNAME)
-   MESSAGE(STATUS  "checking for library ${LIBNAME}...")
+macro(BareosFindLibrary LIBNAME)
+  message(STATUS "checking for library ${LIBNAME}...")
 
-   STRING(TOUPPER ${LIBNAME} LIBNAME_UPCASE)
-   SET(INCLUDE_VAR_NAME ${LIBNAME_UPCASE}_INCLUDE_DIRS)
-   SET(LIB_VAR_NAME ${LIBNAME_UPCASE}_LIBRARIES)
-   SET(FOUND_VAR_NAME ${LIBNAME_UPCASE}_FOUND)
-   SET(HAVE_VAR_NAME HAVE_LIB${LIBNAME_UPCASE})
+  string(TOUPPER ${LIBNAME} LIBNAME_UPCASE)
+  set(INCLUDE_VAR_NAME ${LIBNAME_UPCASE}_INCLUDE_DIRS)
+  set(LIB_VAR_NAME ${LIBNAME_UPCASE}_LIBRARIES)
+  set(FOUND_VAR_NAME ${LIBNAME_UPCASE}_FOUND)
+  set(HAVE_VAR_NAME HAVE_LIB${LIBNAME_UPCASE})
 
+  find_library(${LIB_VAR_NAME} NAMES ${LIBNAME})
 
-   find_library(${LIB_VAR_NAME} NAMES ${LIBNAME})
+  set(LIBFOUND ${${LIB_VAR_NAME}})
 
+  string(REGEX MATCH "-NOTFOUND" LIBNOTFOUND ${LIBFOUND})
+  # MESSAGE(STATUS  "LIB REGEX MATCH: ${LIBNOTFOUND}")
+  string(LENGTH "${LIBNOTFOUND}" LIBNOTFOUND)
 
-   SET(LIBFOUND ${${LIB_VAR_NAME}})
+  if(NOT ${LIBNOTFOUND})
+    set(${FOUND_VAR_NAME} TRUE)
+    set(${HAVE_VAR_NAME} 1)
+  else()
+    set(${FOUND_VAR_NAME} FALSE)
+    set(${HAVE_VAR_NAME} 0)
+  endif()
 
-   STRING(REGEX MATCH "-NOTFOUND" LIBNOTFOUND ${LIBFOUND})
-   #MESSAGE(STATUS  "LIB REGEX MATCH: ${LIBNOTFOUND}")
-   STRING(LENGTH  "${LIBNOTFOUND}" LIBNOTFOUND )
+  set(QUIETVALUE ${${QUIET_VAR_NAME}})
+  set(FOUNDVALUE ${${FOUND_VAR_NAME}})
+  if(${FOUNDVALUE})
+    message(STATUS "  ${FOUND_VAR_NAME}=${${FOUND_VAR_NAME}}")
+    message(STATUS "  ${LIB_VAR_NAME}=${${LIB_VAR_NAME}}")
+    message(STATUS "  ${HAVE_VAR_NAME}=${${HAVE_VAR_NAME}}")
+  else()
+    message(STATUS "              ERROR:  ${LIBNAME} libraries NOT found. ")
 
-   if (NOT ${LIBNOTFOUND})
-      set(${FOUND_VAR_NAME} TRUE)
-      set(${HAVE_VAR_NAME} 1)
-   else()
-      set(${FOUND_VAR_NAME} FALSE)
-      set(${HAVE_VAR_NAME} 0)
-   endif ()
+    set("${LIB_VAR_NAME}" "")
+    set("${INCLUDE_VAR_NAME}" "")
 
+    message(STATUS "  ${FOUND_VAR_NAME}=${${FOUND_VAR_NAME}}")
+    message(STATUS "  ${LIB_VAR_NAME}=${${LIB_VAR_NAME}}")
+    message(STATUS "  ${HAVE_VAR_NAME}=${${HAVE_VAR_NAME}}")
+  endif()
 
-
-   SET(QUIETVALUE ${${QUIET_VAR_NAME}})
-   SET(FOUNDVALUE ${${FOUND_VAR_NAME}})
-   if (${FOUNDVALUE})
-      message(STATUS "  ${FOUND_VAR_NAME}=${${FOUND_VAR_NAME}}")
-      message(STATUS "  ${LIB_VAR_NAME}=${${LIB_VAR_NAME}}")
-      message(STATUS "  ${HAVE_VAR_NAME}=${${HAVE_VAR_NAME}}")
-   else ()
-      message(STATUS     "              ERROR:  ${LIBNAME} libraries NOT found. ")
-
-      set("${LIB_VAR_NAME}" "")
-      set("${INCLUDE_VAR_NAME}" "")
-
-      message(STATUS "  ${FOUND_VAR_NAME}=${${FOUND_VAR_NAME}}")
-      message(STATUS "  ${LIB_VAR_NAME}=${${LIB_VAR_NAME}}")
-      message(STATUS "  ${HAVE_VAR_NAME}=${${HAVE_VAR_NAME}}")
-   endif ()
-
-   mark_as_advanced(
-      ${LIB_VAR_NAME}
-      ${FOUND_VAR_NAME}
-      )
-ENDMACRO()
+  mark_as_advanced(${LIB_VAR_NAME} ${FOUND_VAR_NAME})
+endmacro()

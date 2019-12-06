@@ -20,82 +20,111 @@
 cmake_minimum_required(VERSION 3.3)
 project(bareos-systemtests)
 
-cmake_policy(SET CMP0057 NEW) #IF(.. IN_LIST ..)
+cmake_policy(SET CMP0057 NEW) # IF(.. IN_LIST ..)
 
-function(ConfigureFilesToSystemtest srcbasedir dirname globexpression configure_option srcdirname)
-  if (srcdirname STREQUAL "")
-    set(srcdirname "${dirname}" )
+function(ConfigureFilesToSystemtest srcbasedir dirname globexpression
+         configure_option srcdirname
+)
+  if(srcdirname STREQUAL "")
+    set(srcdirname "${dirname}")
   endif()
   set(count 1)
   file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${dirname})
-  file(GLOB_RECURSE ALL_FILES "${CMAKE_SOURCE_DIR}/${srcbasedir}/${srcdirname}/${globexpression}")
+  file(GLOB_RECURSE ALL_FILES
+       "${CMAKE_SOURCE_DIR}/${srcbasedir}/${srcdirname}/${globexpression}"
+  )
   foreach(CURRENT_FILE ${ALL_FILES})
-    MATH(EXPR COUNT "${COUNT}+1")
+    math(EXPR COUNT "${COUNT}+1")
     string(REPLACE "${CMAKE_SOURCE_DIR}/" "" TARGET_FILE ${CURRENT_FILE})
-    string(REGEX REPLACE ".in$" "" TARGET_FILE ${TARGET_FILE}) # do not mess with .ini files
+    string(REGEX REPLACE ".in$" "" TARGET_FILE ${TARGET_FILE}) # do not mess
+                                                               # with .ini files
     string(REPLACE "${srcbasedir}/${srcdirname}" "" TARGET_FILE ${TARGET_FILE})
-    #MESSAGE(STATUS "configuring  ${TARGET_FILE}" )
-    configure_file(${CURRENT_FILE} ${PROJECT_BINARY_DIR}/${dirname}/${TARGET_FILE} ${configure_option})
+    # MESSAGE(STATUS "configuring  ${TARGET_FILE}" )
+    configure_file(
+      ${CURRENT_FILE} ${PROJECT_BINARY_DIR}/${dirname}/${TARGET_FILE}
+      ${configure_option}
+    )
   endforeach()
-  MESSAGE(STATUS "Configured ${COUNT} files from ${srcbasedir}/${srcdirname} to ${dirname} with glob ${globexpression} ${configure_option}" )
+  message(
+    STATUS
+      "Configured ${COUNT} files from ${srcbasedir}/${srcdirname} to ${dirname} with glob ${globexpression} ${configure_option}"
+  )
 endfunction()
 
 # generic function to probe for a python module
 function(PythonModuleStatus module)
-  EXECUTE_PROCESS(COMMAND "${PYTHON}" "-c" "import ${module}" RESULT_VARIABLE ${module}_status ERROR_QUIET)
-  STRING(TOUPPER ${module} module_uppercase)
-  IF(${module}_status EQUAL 0)
-    SET("PYTHON_${module_uppercase}_FOUND" TRUE PARENT_SCOPE)
-  ELSE()
-    SET("PYTHON_${module_uppercase}_FOUND" FALSE PARENT_SCOPE)
-  ENDIF()
+  execute_process(
+    COMMAND "${PYTHON}" "-c" "import ${module}"
+    RESULT_VARIABLE ${module}_status
+    ERROR_QUIET
+  )
+  string(TOUPPER ${module} module_uppercase)
+  if(${module}_status EQUAL 0)
+    set("PYTHON_${module_uppercase}_FOUND"
+        TRUE
+        PARENT_SCOPE
+    )
+  else()
+    set("PYTHON_${module_uppercase}_FOUND"
+        FALSE
+        PARENT_SCOPE
+    )
+  endif()
 endfunction()
 
 macro(CheckForEnabledAndDisabledListEntry TEST_NAME_TO_CHECK)
-  IF(${TEST_NAME_TO_CHECK} IN_LIST SYSTEM_TESTS AND ${TEST_NAME_TO_CHECK} IN_LIST SYSTEM_TESTS_DISABLED)
-    message(FATAL_ERROR "The test name: ${TEST_NAME} is listed ambiguously in SYSTEM_TESTS and SYSTEM_TESTS_DISABLED at the same time")
-  ENDIF()
+  if(${TEST_NAME_TO_CHECK} IN_LIST SYSTEM_TESTS
+     AND ${TEST_NAME_TO_CHECK} IN_LIST SYSTEM_TESTS_DISABLED
+  )
+    message(
+      FATAL_ERROR
+        "The test name: ${TEST_NAME} is listed ambiguously in SYSTEM_TESTS and SYSTEM_TESTS_DISABLED at the same time"
+    )
+  endif()
 endmacro()
 
-macro (handle_python_plugin_modules)
-  IF (EXISTS ${python_plugin_module_src_test_dir})
+macro(handle_python_plugin_modules)
+  if(EXISTS ${python_plugin_module_src_test_dir})
     set(PYMODULES_TO_LINK_TO_SRC
-      filed/bareos-fd-local-fileset.py
-      filed/BareosFdPluginLocalFileset.py
-      filed/BareosFdWrapper.py
-      filed/BareosFdPluginLDAP.py
-      filed/bareos-fd-mock-test.py
-      filed/BareosFdPluginBaseclass.py
-      filed/bareos_fd_consts.py
-      filed/bareos-fd-ldap.py
-      dird/bareos_dir_consts.py
-      dird/BareosDirPluginBaseclass.py
-      dird/bareos-dir-class-plugin.py
-      dird/BareosDirWrapper.py
-      stored/bareos_sd_consts.py
-      stored/bareos-sd-class-plugin.py
-      stored/BareosSdPluginBaseclass.py
-      stored/BareosSdWrapper.py
+        filed/bareos-fd-local-fileset.py
+        filed/BareosFdPluginLocalFileset.py
+        filed/BareosFdWrapper.py
+        filed/BareosFdPluginLDAP.py
+        filed/bareos-fd-mock-test.py
+        filed/BareosFdPluginBaseclass.py
+        filed/bareos_fd_consts.py
+        filed/bareos-fd-ldap.py
+        dird/bareos_dir_consts.py
+        dird/BareosDirPluginBaseclass.py
+        dird/bareos-dir-class-plugin.py
+        dird/BareosDirWrapper.py
+        stored/bareos_sd_consts.py
+        stored/bareos-sd-class-plugin.py
+        stored/BareosSdPluginBaseclass.py
+        stored/BareosSdWrapper.py
     )
 
-    foreach (PYMODULE_SOURCEPATH ${PYMODULES_TO_LINK_TO_SRC})
+    foreach(PYMODULE_SOURCEPATH ${PYMODULES_TO_LINK_TO_SRC})
       get_filename_component(PYMODULE_NAME ${PYMODULE_SOURCEPATH} NAME)
-    execute_process(COMMAND
-      ${CMAKE_COMMAND} -E create_symlink ${PROJECT_SOURCE_DIR}/../core/src/plugins/${PYMODULE_SOURCEPATH} ${python_plugin_module_src_test_dir}/${PYMODULE_NAME})
+      execute_process(
+        COMMAND ${CMAKE_COMMAND} -E create_symlink
+                ${PROJECT_SOURCE_DIR}/../core/src/plugins/${PYMODULE_SOURCEPATH}
+                ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
+      )
     endforeach()
-  ENDIF()
+  endif()
 endmacro()
 
-macro (prepare_test)
+macro(prepare_test)
   # base directory for this test
   set(current_test_directory ${PROJECT_BINARY_DIR}/tests/${TEST_NAME})
   set(basename ${TEST_NAME})
 
-  #db parameters
+  # db parameters
   set(db_password "")
-  #db_name is regress-${TEST_NAME} replacing - by _
+  # db_name is regress-${TEST_NAME} replacing - by _
   string(REPLACE "-" "_" db_name "regress-${TEST_NAME}")
-  #set(db_name "regress-${TEST_NAME}")
+  # set(db_name "regress-${TEST_NAME}")
   set(db_user "regress")
 
   set(job_email root@localhost)
@@ -108,8 +137,8 @@ macro (prepare_test)
   set(sd_password sd_password)
 
   math(EXPR dir_port "${BASEPORT} + 0")
-  math(EXPR  fd_port "${BASEPORT} + 1")
-  math(EXPR  sd_port "${BASEPORT} + 2")
+  math(EXPR fd_port "${BASEPORT} + 1")
+  math(EXPR sd_port "${BASEPORT} + 2")
   math(EXPR sd2_port "${BASEPORT} + 3")
   math(EXPR php_port "${BASEPORT} + 4")
 
@@ -121,7 +150,9 @@ macro (prepare_test)
   set(tmpdir ${current_test_directory}/tmp)
   set(tmp ${tmpdir})
   set(working_dir ${current_test_directory}/working)
-  set(python_plugin_module_src_test_dir ${current_test_directory}/python-modules)
+  set(python_plugin_module_src_test_dir
+      ${current_test_directory}/python-modules
+  )
 
   file(MAKE_DIRECTORY ${archivedir})
   file(MAKE_DIRECTORY ${confdir})
@@ -131,18 +162,20 @@ macro (prepare_test)
 endmacro()
 
 # extract  db version from cats.h
-file(STRINGS ${CMAKE_SOURCE_DIR}/core/src/cats/cats.h DB_VERSION_STRING REGEX .*BDB_VERSION.*)
+file(STRINGS ${CMAKE_SOURCE_DIR}/core/src/cats/cats.h DB_VERSION_STRING
+     REGEX .*BDB_VERSION.*
+)
 string(REGEX MATCH [0-9]+ BDB_VERSION ${DB_VERSION_STRING})
 
 find_program(PERL perl)
 find_program(PYTHON python)
 find_program(PHP php)
 
-# set variable values to be replaced by configure_file
-#set(DEFAULT_DB_TYPE  ${default_db_backend})
+# set variable values to be replaced by configure_file set(DEFAULT_DB_TYPE
+# ${default_db_backend})
 message(STATUS "DEFAULT_DB_TYPE is ${DEFAULT_DB_TYPE}")
 
-#set(TAPEDRIVE "TAPEDRIVE")
+# set(TAPEDRIVE "TAPEDRIVE")
 
 set(archivedir "${PROJECT_BINARY_DIR}/archivedir")
 set(backenddir "${PROJECT_BINARY_DIR}/../core/src/cats")
@@ -150,9 +183,8 @@ set(backenddir "${PROJECT_BINARY_DIR}/../core/src/cats")
 set(bin ${PROJECT_BINARY_DIR}/bin)
 set(bindir ${PROJECT_BINARY_DIR}/bin)
 
-#set(conf ${PROJECT_BINARY_DIR}/defaultconfigs)
-#set(confdir ${conf})
-#set(configs ${conf})
+# set(conf ${PROJECT_BINARY_DIR}/defaultconfigs) set(confdir ${conf})
+# set(configs ${conf})
 
 set(BAREOS_CONFIG_DIR ${conf})
 set(db_name "regress")
@@ -177,10 +209,10 @@ set(plugindirtmp ${PROJECT_BINARY_DIR}/plugindirtmp)
 set(rscripts ${PROJECT_BINARY_DIR}/scripts)
 
 if(TARGET python-dir)
-    get_target_property(dir_plugin_binary_path python-dir BINARY_DIR)
+  get_target_property(dir_plugin_binary_path python-dir BINARY_DIR)
 endif()
 if(TARGET python-sd)
-    get_target_property(sd_plugin_binary_path python-sd BINARY_DIR)
+  get_target_property(sd_plugin_binary_path python-sd BINARY_DIR)
 endif()
 if(TARGET python-fd)
   get_target_property(fd_plugin_binary_path python-fd BINARY_DIR)
@@ -204,7 +236,7 @@ set(working_dir ${PROJECT_BINARY_DIR}/working)
 set(piddir ${PROJECT_BINARY_DIR}/piddir)
 file(MAKE_DIRECTORY ${piddir})
 
-#set(BASEPORT ${dir_port})
+# set(BASEPORT ${dir_port})
 
 # for config-lib.sh: do not remove @DB___@ but replace them with the original
 set(DB_NAME @DB_NAME@)
@@ -212,27 +244,28 @@ set(DB_USER @DB_USER@)
 set(DB_PASS @DB_PASS@)
 set(DB_VERSION @DB_VERSION@)
 
-ConfigureFilesToSystemtest("systemtests"  "data" "*.tgz" COPYONLY "")
+configurefilestosystemtest("systemtests" "data" "*.tgz" COPYONLY "")
 
-ConfigureFilesToSystemtest("systemtests"  "scripts" "functions" @ONLY "")
-ConfigureFilesToSystemtest("systemtests"  "scripts" "cleanup" @ONLY "")
-ConfigureFilesToSystemtest("systemtests"  "scripts" "setup" @ONLY "")
-ConfigureFilesToSystemtest("systemtests"  "scripts" "check_for_zombie_jobs" @ONLY "")
-ConfigureFilesToSystemtest("systemtests"  "scripts" "diff.pl.in" @ONLY "")
+configurefilestosystemtest("systemtests" "scripts" "functions" @ONLY "")
+configurefilestosystemtest("systemtests" "scripts" "cleanup" @ONLY "")
+configurefilestosystemtest("systemtests" "scripts" "setup" @ONLY "")
+configurefilestosystemtest(
+  "systemtests" "scripts" "check_for_zombie_jobs" @ONLY ""
+)
+configurefilestosystemtest("systemtests" "scripts" "diff.pl.in" @ONLY "")
 
-ConfigureFilesToSystemtest("core/src" "defaultconfigs" "*.conf" @ONLY "")
-ConfigureFilesToSystemtest("core/src" "defaultconfigs" "*.in" @ONLY "")
+configurefilestosystemtest("core/src" "defaultconfigs" "*.conf" @ONLY "")
+configurefilestosystemtest("core/src" "defaultconfigs" "*.in" @ONLY "")
 
-ConfigureFilesToSystemtest("core" "scripts" "*.in" @ONLY "")
-ConfigureFilesToSystemtest("core" "scripts" "bareos-ctl-funcs" @ONLY "")
-ConfigureFilesToSystemtest("core" "scripts" "btraceback.gdb" @ONLY "")
+configurefilestosystemtest("core" "scripts" "*.in" @ONLY "")
+configurefilestosystemtest("core" "scripts" "bareos-ctl-funcs" @ONLY "")
+configurefilestosystemtest("core" "scripts" "btraceback.gdb" @ONLY "")
 
-ConfigureFilesToSystemtest("core/src/cats" "ddl" "${DEFAULT_DB_TYPE}*" @ONLY "")
-ConfigureFilesToSystemtest("core/src" "cats" "*.in" @ONLY "")
-ConfigureFilesToSystemtest("core/src" "cats" "*_bareos_*" @ONLY "")
+configurefilestosystemtest("core/src/cats" "ddl" "${DEFAULT_DB_TYPE}*" @ONLY "")
+configurefilestosystemtest("core/src" "cats" "*.in" @ONLY "")
+configurefilestosystemtest("core/src" "cats" "*_bareos_*" @ONLY "")
 
-ConfigureFilesToSystemtest("core/src" "console" "*.in" @ONLY "")
-
+configurefilestosystemtest("core/src" "console" "*.in" @ONLY "")
 
 file(MAKE_DIRECTORY ${subsysdir})
 file(MAKE_DIRECTORY ${sbindir})
@@ -241,131 +274,133 @@ file(MAKE_DIRECTORY ${scripts})
 file(MAKE_DIRECTORY ${working})
 file(MAKE_DIRECTORY ${archivedir})
 
-execute_process(COMMAND
-  ${CMAKE_COMMAND} -E create_symlink ${scriptdir}/btraceback ${sbindir}/btraceback)
+execute_process(
+  COMMAND ${CMAKE_COMMAND} -E create_symlink ${scriptdir}/btraceback
+          ${sbindir}/btraceback
+)
 
 file(REMOVE_RECURSE ${scripts}/ddl)
 file(RENAME ${PROJECT_BINARY_DIR}/ddl ${scripts}/ddl)
 
 file(GLOB ALL_FILES "${CMAKE_BINARY_DIR}/systemtests/cats/*_bareos_*")
 foreach(CURRENT_FILE ${ALL_FILES})
-  string(REPLACE "${CMAKE_BINARY_DIR}/systemtests/cats/" "" TARGET_FILE ${CURRENT_FILE})
+  string(REPLACE "${CMAKE_BINARY_DIR}/systemtests/cats/" "" TARGET_FILE
+                 ${CURRENT_FILE}
+  )
   file(RENAME ${CURRENT_FILE} ${scripts}/${TARGET_FILE})
   # MESSAGE(STATUS "moved  ${scripts}/${TARGET_FILE}")
 endforeach()
 
 set(tests_dir ${PROJECT_BINARY_DIR}/tests)
 set(SYSTEM_TESTS
-  backup-bareos-test
-  backup-bareos-passive-test
-  multiplied-device-test
-  virtualfull
-  virtualfull-bscan
-  backup-bscan
-  copy-bscan
-  copy-remote-bscan
-  bconsole-status-client
-  scheduler-backup-test
+    backup-bareos-test
+    backup-bareos-passive-test
+    multiplied-device-test
+    virtualfull
+    virtualfull-bscan
+    backup-bscan
+    copy-bscan
+    copy-remote-bscan
+    bconsole-status-client
+    scheduler-backup-test
 )
 
-set(SYSTEM_TESTS_DISABLED
-  #initialy empty
+set(SYSTEM_TESTS_DISABLED # initialy empty
 )
 
-IF(PYTHON)
+if(PYTHON)
   list(APPEND SYSTEM_TESTS "python-bareos-test")
-ELSE()
+else()
   list(APPEND SYSTEM_TESTS_DISABLED "python-bareos-test")
-ENDIF()
+endif()
 
-
-IF(PAM_WRAPPER_LIBRARIES) # BareosFindLibrary(pam_wrapper)
+if(PAM_WRAPPER_LIBRARIES) # BareosFindLibrary(pam_wrapper)
   find_program(PAMTESTER pamtester)
-  IF(PAMTESTER)
+  if(PAMTESTER)
     set(ENV{PAM_WRAPPER_LIBRARIES} "${PAM_WRAPPER_LIBRARIES}")
     execute_process(
-      COMMAND           "${CMAKE_SOURCE_DIR}/systemtests/tests/bconsole-pam/bin/check_pam_exec_available.sh"
+      COMMAND
+        "${CMAKE_SOURCE_DIR}/systemtests/tests/bconsole-pam/bin/check_pam_exec_available.sh"
       WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/systemtests/tests/bconsole-pam/"
-      RESULT_VARIABLE   PAM_EXEC_AVAILABLE_RC
+      RESULT_VARIABLE PAM_EXEC_AVAILABLE_RC
     )
-    IF(${PAM_EXEC_AVAILABLE_RC} EQUAL "0")
+    if(${PAM_EXEC_AVAILABLE_RC} EQUAL "0")
       set(PAM_EXEC_FOUND TRUE)
       set(ENABLE_BCONSOLE_PAM_TEST TRUE)
-    ENDIF()
-  ENDIF()
-ENDIF()
+    endif()
+  endif()
+endif()
 
+message(STATUS "PAM_EXEC_FOUND:               " ${PAM_EXEC_FOUND})
 
-MESSAGE( STATUS "PAM_EXEC_FOUND:               " ${PAM_EXEC_FOUND} )
-
-IF(ENABLE_BCONSOLE_PAM_TEST)
+if(ENABLE_BCONSOLE_PAM_TEST)
   list(APPEND SYSTEM_TESTS "bconsole-pam")
-ELSE()
+else()
   list(APPEND SYSTEM_TESTS_DISABLED "bconsole-pam")
-ENDIF()
+endif()
 
-IF(TARGET python-fd)
+if(TARGET python-fd)
   list(APPEND SYSTEM_TESTS "python-fd-plugin-local-fileset-test")
-ELSE()
+else()
   list(APPEND SYSTEM_TESTS_DISABLED "python-fd-plugin-local-fileset-test")
-ENDIF()
+endif()
 
-IF(TARGET python-dir)
+if(TARGET python-dir)
   list(APPEND SYSTEM_TESTS "python-dir-plugin-test")
-ELSE()
+else()
   list(APPEND SYSTEM_TESTS_DISABLED "python-dir-plugin-test")
-ENDIF()
+endif()
 
-SET(PHP_FOUND FALSE)
-SET(PYTHON_FOUND FALSE)
-SET(PYTHON_SELENIUM_FOUND "NOT SEARCHED")
-SET(CHROMEDRIVER_FOUND "NOT SEARCHED")
+set(PHP_FOUND FALSE)
+set(PYTHON_FOUND FALSE)
+set(PYTHON_SELENIUM_FOUND "NOT SEARCHED")
+set(CHROMEDRIVER_FOUND "NOT SEARCHED")
 
-IF(PHP)
-  SET(PHP_FOUND TRUE)
-  IF(PYTHON)
-    SET(PYTHON_FOUND TRUE)
-    PythonModuleStatus("selenium") # sets PYTHON_SELENIUM_FOUND to TRUE or FALSE
-    IF(${PYTHON_SELENIUM_FOUND})
+if(PHP)
+  set(PHP_FOUND TRUE)
+  if(PYTHON)
+    set(PYTHON_FOUND TRUE)
+    pythonmodulestatus("selenium") # sets PYTHON_SELENIUM_FOUND to TRUE or FALSE
+    if(${PYTHON_SELENIUM_FOUND})
       find_program(CHROMEDRIVER chromedriver)
-      IF(CHROMEDRIVER)
-        SET(CHROMEDRIVER_FOUND TRUE)
-        SET(ENABLE_WEBUI_SELENIUM_TEST TRUE)
-      ELSE()
-        SET(CHROMEDRIVER_FOUND FALSE)
-      ENDIF()
-    ENDIF()
- ENDIF()
-ENDIF()
+      if(CHROMEDRIVER)
+        set(CHROMEDRIVER_FOUND TRUE)
+        set(ENABLE_WEBUI_SELENIUM_TEST TRUE)
+      else()
+        set(CHROMEDRIVER_FOUND FALSE)
+      endif()
+    endif()
+  endif()
+endif()
 
-MESSAGE(STATUS "PHP_FOUND:                    " ${PHP_FOUND})
-MESSAGE(STATUS "PYTHON_FOUND:                 " ${PYTHON_FOUND})
-MESSAGE(STATUS "PYTHON_SELENIUM_FOUND:        " ${PYTHON_SELENIUM_FOUND})
-MESSAGE(STATUS "CHROMEDRIVER_FOUND:           " ${CHROMEDRIVER_FOUND})
+message(STATUS "PHP_FOUND:                    " ${PHP_FOUND})
+message(STATUS "PYTHON_FOUND:                 " ${PYTHON_FOUND})
+message(STATUS "PYTHON_SELENIUM_FOUND:        " ${PYTHON_SELENIUM_FOUND})
+message(STATUS "CHROMEDRIVER_FOUND:           " ${CHROMEDRIVER_FOUND})
 
 set(AVAILABLE_WEBUI_SELENIUM_TESTS
-  "admin-client_disabling"
-  "admin-rerun_job"
-  "admin-restore"
-  "admin-run_configured_job"
-  "admin-run_default_job"
-  "readonly-client_disabling"
-  "readonly-rerun_job"
-  "readonly-restore"
-  "readonly-run_configured_job"
-  "readonly-run_default_job"
-  )
+    "admin-client_disabling"
+    "admin-rerun_job"
+    "admin-restore"
+    "admin-run_configured_job"
+    "admin-run_default_job"
+    "readonly-client_disabling"
+    "readonly-rerun_job"
+    "readonly-restore"
+    "readonly-run_configured_job"
+    "readonly-run_default_job"
+)
 
-IF(ENABLE_WEBUI_SELENIUM_TEST)
+if(ENABLE_WEBUI_SELENIUM_TEST)
   set(WEBUI_SELENIUM_TESTS ${AVAILABLE_WEBUI_SELENIUM_TESTS})
-ELSE()
+else()
   set(WEBUI_SELENIUM_TESTS)
   foreach(TEST_NAME_DISABLED ${AVAILABLE_WEBUI_SELENIUM_TESTS})
     add_test(NAME webui:${TEST_NAME_DISABLED} COMMAND empty_command)
     set_tests_properties(webui:${TEST_NAME_DISABLED} PROPERTIES DISABLED true)
     message(STATUS "Disabled test: webui:${TEST_NAME_DISABLED}")
   endforeach()
-ENDIF()
+endif()
 
 set(BASEPORT 42001)
 
@@ -373,66 +408,83 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
 
   prepare_test()
 
-  ConfigureFilesToSystemtest("systemtests"  "tests/${TEST_NAME}" "*" @ONLY "")
+  configurefilestosystemtest("systemtests" "tests/${TEST_NAME}" "*" @ONLY "")
   handle_python_plugin_modules()
 
   configure_file("environment.in" "tests/${TEST_NAME}/environment" @ONLY)
-  # create a bin/bareos and bin/bconsole script
-  # in every testdir for start/stop and bconsole
-  #file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/tests/${TEST_NAME}/bin")
+  # create a bin/bareos and bin/bconsole script in every testdir for start/stop
+  # and bconsole file(MAKE_DIRECTORY
+  # "${CMAKE_BINARY_DIR}/tests/${TEST_NAME}/bin")
   configure_file("bin/bconsole" "tests/${TEST_NAME}/bin/bconsole" COPYONLY)
   configure_file("bin/bareos" "tests/${TEST_NAME}/bin/bareos" COPYONLY)
 
+  checkforenabledanddisabledlistentry(${TEST_NAME})
 
-  CheckForEnabledAndDisabledListEntry(${TEST_NAME})
-
-  add_test(NAME "system:${TEST_NAME}"
+  add_test(
+    NAME "system:${TEST_NAME}"
     COMMAND ${tests_dir}/${TEST_NAME}/testrunner
-    WORKING_DIRECTORY ${tests_dir}/${TEST_NAME})
+    WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
+  )
 
   math(EXPR BASEPORT "${BASEPORT} + 10")
 
 endforeach()
 
 # webui specific settings
-IF(ENABLE_WEBUI_SELENIUM_TEST)
+if(ENABLE_WEBUI_SELENIUM_TEST)
   foreach(TEST_NAME ${WEBUI_SELENIUM_TESTS})
 
     prepare_test()
     # split WEBUI_TEST_NAME into PROFILE and TESTNAME
     string(REPLACE "-" ";" SELENIUM_TESTCOMPONENTS ${TEST_NAME})
-    #"webui-admin-restore"
+    # "webui-admin-restore"
     list(GET SELENIUM_TESTCOMPONENTS 0 BAREOS_WEBUI_PROFILE)
     list(GET SELENIUM_TESTCOMPONENTS 1 BAREOS_WEBUI_TESTNAME)
 
-    set(WEBUICONFDIR ${current_test_directory}/etc/bareos-webui) # used for testenvironment settings
+    set(WEBUICONFDIR ${current_test_directory}/etc/bareos-webui) # used for test
+                                                                 # environment
+                                                                 # settings
     file(MAKE_DIRECTORY ${WEBUICONFDIR})
-    configure_file("${CMAKE_SOURCE_DIR}/webui/config/autoload/global.php.in" "${current_test_directory}/webui/config/autoload/global.php" @ONLY)
-    configure_file("${CMAKE_SOURCE_DIR}/systemtests/tests/webui-common/directors.ini.in" "${current_test_directory}/etc/bareos-webui/directors.ini" @ONLY)
-    file(COPY "${CMAKE_SOURCE_DIR}/webui/install/configuration.ini" DESTINATION "${current_test_directory}/etc/bareos-webui/")
-    configure_file("${CMAKE_SOURCE_DIR}/systemtests/tests/webui-common/testrunner.in" "${current_test_directory}/testrunner" @ONLY)
+    configure_file(
+      "${CMAKE_SOURCE_DIR}/webui/config/autoload/global.php.in"
+      "${current_test_directory}/webui/config/autoload/global.php" @ONLY
+    )
+    configure_file(
+      "${CMAKE_SOURCE_DIR}/systemtests/tests/webui-common/directors.ini.in"
+      "${current_test_directory}/etc/bareos-webui/directors.ini" @ONLY
+    )
+    file(COPY "${CMAKE_SOURCE_DIR}/webui/install/configuration.ini"
+         DESTINATION "${current_test_directory}/etc/bareos-webui/"
+    )
+    configure_file(
+      "${CMAKE_SOURCE_DIR}/systemtests/tests/webui-common/testrunner.in"
+      "${current_test_directory}/testrunner" @ONLY
+    )
 
-    ConfigureFilesToSystemtest("systemtests"  "tests/${TEST_NAME}" "*" @ONLY "tests/webui-common")
+    configurefilestosystemtest(
+      "systemtests" "tests/${TEST_NAME}" "*" @ONLY "tests/webui-common"
+    )
 
     configure_file("environment.in" "tests/${TEST_NAME}/environment" @ONLY)
-    # create a bin/bareos and bin/bconsole script
-    # in every testdir for start/stop and bconsole
-    #file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/tests/${TEST_NAME}/bin")
+    # create a bin/bareos and bin/bconsole script in every testdir for
+    # start/stop and bconsole file(MAKE_DIRECTORY
+    # "${CMAKE_BINARY_DIR}/tests/${TEST_NAME}/bin")
     configure_file("bin/bconsole" "tests/${TEST_NAME}/bin/bconsole" COPYONLY)
     configure_file("bin/bareos" "tests/${TEST_NAME}/bin/bareos" COPYONLY)
 
-    CheckForEnabledAndDisabledListEntry(${TEST_NAME})
+    checkforenabledanddisabledlistentry(${TEST_NAME})
 
-    add_test(NAME "webui:${TEST_NAME}" COMMAND ${tests_dir}/${TEST_NAME}/testrunner WORKING_DIRECTORY ${tests_dir}/${TEST_NAME})
+    add_test(
+      NAME "webui:${TEST_NAME}"
+      COMMAND ${tests_dir}/${TEST_NAME}/testrunner
+      WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
+    )
     math(EXPR BASEPORT "${BASEPORT} + 10")
   endforeach()
-ENDIF()
-
-
-
+endif()
 
 foreach(TEST_NAME_DISABLED ${SYSTEM_TESTS_DISABLED})
-  CheckForEnabledAndDisabledListEntry(${TEST_NAME_DISABLED})
+  checkforenabledanddisabledlistentry(${TEST_NAME_DISABLED})
   add_test(NAME system:${TEST_NAME_DISABLED} COMMAND empty_command)
   set_tests_properties(system:${TEST_NAME_DISABLED} PROPERTIES DISABLED true)
   message(STATUS "Disabled test: system:${TEST_NAME_DISABLED}")
@@ -441,47 +493,56 @@ endforeach()
 # create symlinks for the binaries
 
 set(BINARIES_TO_LINK_TO_SBIN
-  dird/bareos-dir
-  dird/bareos-dbcheck
-  filed/bareos-fd
-  stored/bareos-sd
-  stored/bcopy
-  stored/btape
-  stored/bextract
-  stored/bareos-sd
-  stored/bls
-  stored/bscan
-  )
+    dird/bareos-dir
+    dird/bareos-dbcheck
+    filed/bareos-fd
+    stored/bareos-sd
+    stored/bcopy
+    stored/btape
+    stored/bextract
+    stored/bareos-sd
+    stored/bls
+    stored/bscan
+)
 
-foreach (BINARY_SOURCEPATH ${BINARIES_TO_LINK_TO_SBIN})
+foreach(BINARY_SOURCEPATH ${BINARIES_TO_LINK_TO_SBIN})
   get_filename_component(BINARY_NAME ${BINARY_SOURCEPATH} NAME)
-execute_process(COMMAND
-    ${CMAKE_COMMAND} -E create_symlink ${PROJECT_BINARY_DIR}/../core/src/${BINARY_SOURCEPATH} ${sbindir}/${BINARY_NAME})
+  execute_process(
+    COMMAND ${CMAKE_COMMAND} -E create_symlink
+            ${PROJECT_BINARY_DIR}/../core/src/${BINARY_SOURCEPATH}
+            ${sbindir}/${BINARY_NAME}
+  )
 endforeach()
 
 set(BINARIES_TO_LINK_TO_BIN
-  console/bconsole
-  tools/bsmtp
-  tools/timelimit
-  tools/bwild
-  tools/bpluginfo
-  tools/bsmtp
-  tools/bscrypto
-  tools/btestls
-  tools/drivetype
-  tools/fstype
-  tools/bregex
-  )
+    console/bconsole
+    tools/bsmtp
+    tools/timelimit
+    tools/bwild
+    tools/bpluginfo
+    tools/bsmtp
+    tools/bscrypto
+    tools/btestls
+    tools/drivetype
+    tools/fstype
+    tools/bregex
+)
 
-foreach (BINARY_SOURCEPATH ${BINARIES_TO_LINK_TO_BIN})
+foreach(BINARY_SOURCEPATH ${BINARIES_TO_LINK_TO_BIN})
   get_filename_component(BINARY_NAME ${BINARY_SOURCEPATH} NAME)
-execute_process(COMMAND
-    ${CMAKE_COMMAND} -E create_symlink ${PROJECT_BINARY_DIR}/../core/src/${BINARY_SOURCEPATH} ${bindir}/${BINARY_NAME})
+  execute_process(
+    COMMAND ${CMAKE_COMMAND} -E create_symlink
+            ${PROJECT_BINARY_DIR}/../core/src/${BINARY_SOURCEPATH}
+            ${bindir}/${BINARY_NAME}
+  )
 endforeach()
 
-execute_process(COMMAND
-  ${CMAKE_COMMAND} -E create_symlink ${PROJECT_BINARY_DIR}/../core/src/console/bconsole ${bindir}/bconsole)
+execute_process(
+  COMMAND ${CMAKE_COMMAND} -E create_symlink
+          ${PROJECT_BINARY_DIR}/../core/src/console/bconsole ${bindir}/bconsole
+)
 
-execute_process(COMMAND
-  ${CMAKE_COMMAND} -E create_symlink ${scriptdir}/bareos ${bindir}/bareos)
-
+execute_process(
+  COMMAND ${CMAKE_COMMAND} -E create_symlink ${scriptdir}/bareos
+          ${bindir}/bareos
+)

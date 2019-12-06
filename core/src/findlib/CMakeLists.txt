@@ -17,13 +17,26 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-SET(BAREOSFIND_SRCS acl.cc attribs.cc bfile.cc create_file.cc drivetype.cc
-      enable_priv.cc find_one.cc find.cc fstype.cc hardlink.cc match.cc
-      mkpath.cc shadowing.cc xattr.cc)
+set(BAREOSFIND_SRCS
+    acl.cc
+    attribs.cc
+    bfile.cc
+    create_file.cc
+    drivetype.cc
+    enable_priv.cc
+    find_one.cc
+    find.cc
+    fstype.cc
+    hardlink.cc
+    match.cc
+    mkpath.cc
+    shadowing.cc
+    xattr.cc
+)
 
-IF(HAVE_WIN32)
-   LIST(APPEND BAREOSFIND_SRCS ../win32/findlib/win32.cc)
-ENDIF()
+if(HAVE_WIN32)
+  list(APPEND BAREOSFIND_SRCS ../win32/findlib/win32.cc)
+endif()
 
 include_directories(${OPENSSL_INCLUDE_DIR})
 
@@ -31,16 +44,16 @@ add_library(bareosfind SHARED ${BAREOSFIND_SRCS})
 
 target_link_libraries(bareosfind bareos ${ACL_LIBS})
 
-INSTALL(TARGETS bareosfind DESTINATION ${libdir} COMPONENT filedaemon)
+install(TARGETS bareosfind DESTINATION ${libdir} COMPONENT filedaemon)
 
-set_target_properties(bareosfind PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
-                                          SOVERSION "${BAREOS_VERSION_MAJOR}"
-                                          DEFINE_SYMBOL "BUILDING_DLL"
-                                          )
-IF(HAVE_WIN32)
-   set_target_properties(bareosfind PROPERTIES DEFINE_SYMBOL "BUILDING_DLL")
-ENDIF()
+set_target_properties(
+  bareosfind PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}" SOVERSION
+                        "${BAREOS_VERSION_MAJOR}" DEFINE_SYMBOL "BUILDING_DLL"
+)
+if(HAVE_WIN32)
+  set_target_properties(bareosfind PROPERTIES DEFINE_SYMBOL "BUILDING_DLL")
+endif()
 
-IF(NOT HAVE_WIN32 AND GTEST_FOUND)
-   #add_subdirectory(unittests)
-ENDIF()
+if(NOT HAVE_WIN32 AND GTEST_FOUND)
+  # add_subdirectory(unittests)
+endif()

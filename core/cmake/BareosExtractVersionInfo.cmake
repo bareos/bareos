@@ -21,7 +21,10 @@ if(BareosVersionFile STREQUAL "NOTFOUND")
   if(GIT_DESCRIBE_VERSION)
     message(STATUS "Using version information from Git")
     if(DEFINED VERSION_STRING)
-      message(STATUS "VERSION_STRING already set to ${VERSION_STRING}. Will not overwrite")
+      message(
+        STATUS
+          "VERSION_STRING already set to ${VERSION_STRING}. Will not overwrite"
+      )
     else()
       set(VERSION_STRING "${GIT_DESCRIBE_VERSION}")
     endif()
@@ -30,30 +33,32 @@ if(BareosVersionFile STREQUAL "NOTFOUND")
     message(
       FATAL_ERROR
         "VERSION_STRING not set, BareosVersion.cmake not found and no version data from git available."
-      )
+    )
   endif()
 else()
   message(STATUS "Using version information from ${BareosVersionFile}")
 endif()
 
-string(REGEX MATCH
-             [0-9.a-zA-Z~]+
-             BAREOS_FULL_VERSION
-             ${VERSION_STRING})
+string(REGEX MATCH [0-9.a-zA-Z~]+ BAREOS_FULL_VERSION ${VERSION_STRING})
 
 if(BAREOS_FULL_VERSION STREQUAL "")
   message(FATAL_ERROR "BAREOS_FULL_VERSION is not set")
 endif()
 
-string(REGEX MATCH
-             [0-9]+.[0-9]+.[0-9]+
-             BAREOS_NUMERIC_VERSION
-             ${VERSION_STRING})
+# set BAREOS_FULL_VERSION in parent scope if there is a parent scope
+get_directory_property(hasParent PARENT_DIRECTORY)
+if(hasParent)
+  set(BAREOS_FULL_VERSION
+      ${BAREOS_FULL_VERSION}
+      PARENT_SCOPE
+  )
+endif()
 
-string(REPLACE "."
-               ";"
-               VERSION_LIST
-               ${BAREOS_NUMERIC_VERSION})
+string(REGEX MATCH [0-9]+.[0-9]+.[0-9]+ BAREOS_NUMERIC_VERSION
+             ${VERSION_STRING}
+)
+
+string(REPLACE "." ";" VERSION_LIST ${BAREOS_NUMERIC_VERSION})
 list(GET VERSION_LIST 0 BAREOS_VERSION_MAJOR)
 list(GET VERSION_LIST 1 BAREOS_VERSION_MINOR)
 list(GET VERSION_LIST 2 BAREOS_VERSION_PATCH)
@@ -72,9 +77,7 @@ else()
 endif()
 
 # extract  db version from cats.h
-file(STRINGS ${PROJECT_SOURCE_DIR}/src/cats/cats.h DB_VERSION_STRING
-     REGEX .*BDB_VERSION.*)
-string(REGEX MATCH
-             [0-9]+
-             BDB_VERSION
-             ${DB_VERSION_STRING})
+file(STRINGS ${CMAKE_CURRENT_LIST_DIR}/../src/cats/cats.h DB_VERSION_STRING
+     REGEX .*BDB_VERSION.*
+)
+string(REGEX MATCH [0-9]+ BDB_VERSION ${DB_VERSION_STRING})

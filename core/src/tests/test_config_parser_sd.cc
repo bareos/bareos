@@ -18,9 +18,14 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-
+#if defined(HAVE_MINGW)
+#include "include/bareos.h"
+#include "gtest/gtest.h"
+#else
 #include "gtest/gtest.h"
 #include "include/bareos.h"
+#endif
+
 #include "lib/parse_conf.h"
 #include "stored/stored_globals.h"
 #include "stored/stored_conf.h"
@@ -29,10 +34,11 @@ namespace storagedaemon {
 
 TEST(ConfigParser, test_stored_config)
 {
+  OSDependentInit();
   InitMsg(NULL, NULL); /* initialize message handler */
 
   std::string path_to_config_file = std::string(
-      PROJECT_SOURCE_DIR "/src/tests/configs/bareos-configparser-tests");
+      RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests");
   my_config = InitSdConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   ParseSdConfig(configfile, M_ERROR_TERM);
 

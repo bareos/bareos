@@ -24,31 +24,26 @@ if(NOT DEFINED VERSION_STRING)
       set(VERSION_STRING "${GIT_DESCRIBE_VERSION}")
     else()
       message(
-        FATAL_ERROR "VERSION_STRING not set, BareosVersion.cmake not found and no version data from git available."
-        )
+        FATAL_ERROR
+          "VERSION_STRING not set, BareosVersion.cmake not found and no version data from git available."
+      )
     endif()
   else()
     message(STATUS "Using version information from ${BareosVersionFile}")
   endif()
 endif()
 
-string(REGEX MATCH
-             [0-9.a-zA-Z~]+
-             BAREOS_FULL_VERSION
-             ${VERSION_STRING})
+string(REGEX MATCH [0-9.a-zA-Z~]+ BAREOS_FULL_VERSION ${VERSION_STRING})
 
 if(BAREOS_FULL_VERSION STREQUAL "")
   message(FATAL_ERROR "BAREOS_FULL_VERSION is not set")
 endif()
 
-string(REGEX MATCH
-             [0-9]+.[0-9]+.[0-9]+
-             BAREOS_NUMERIC_VERSION
-             ${VERSION_STRING})
-string(REPLACE "\""
-               ""
-               BAREOS_FULL_VERSION
-               ${BAREOS_FULL_VERSION})
+string(REGEX MATCH [0-9]+.[0-9]+.[0-9]+ BAREOS_NUMERIC_VERSION
+             ${VERSION_STRING}
+)
+string(REPLACE "\"" "" BAREOS_FULL_VERSION ${BAREOS_FULL_VERSION})
 
 message(STATUS "BareosExtractVersionInfo: BAREOS_FULL_VERSION is "
-               ${BAREOS_FULL_VERSION})
+               ${BAREOS_FULL_VERSION}
+)

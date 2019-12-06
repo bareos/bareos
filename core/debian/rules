@@ -90,7 +90,6 @@ endif
 ifeq ($(DEB_HOST_ARCH_OS),hurd)
 CONFIGURE_COMMON       += -Dscsi-crypto=no -Dndmp=no
 endif
-
 CONFIGURE_CLIENT_ONLY = $(CONFIGURE_COMMON) -Dclient-only=yes
 CONFIGURE_FULL        = $(CONFIGURE_COMMON) -Dpython=yes -Dtraymonitor=yes
 
@@ -127,7 +126,8 @@ override_dh_installinit:
 override_dh_makeshlibs:
 	dh_makeshlibs -n
 
-
+override_dh_auto_test:
+	cd obj-x86_64-linux-gnu && make clean && make -j4 Continuous || echo "ctest failed"
 
 override_dh_shlibdeps:
 	dh_shlibdeps -l$(shell pwd)/debian/tmp/usr/lib/bareos

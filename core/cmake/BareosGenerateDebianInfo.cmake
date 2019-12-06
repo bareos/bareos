@@ -17,32 +17,45 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+if(GENERATE_DEBIAN_CONTROL)
 
-IF(GENERATE_DEBIAN_CONTROL)
+  if(HAVE_TRAYMONITOR)
+    file(READ ./debian/control.bareos-traymonitor DEBIAN_CONTROL_TRAYMONITOR)
+  endif()
 
-   IF(HAVE_TRAYMONITOR)
-      FILE(READ ./debian/control.bareos-traymonitor DEBIAN_CONTROL_TRAYMONITOR)
-   ENDIF()
+  if(HAVE_GLUSTERFS)
+    file(READ ./debian/control.bareos-filedaemon-glusterfs-plugin
+         DEBIAN_CONTROL_FILEDAEMON_GLUSTERFS_PLUGIN
+    )
+    file(READ ./debian/control.bareos-storage-glusterfs
+         DEBIAN_CONTROL_STORAGE_GLUSTERFS
+    )
+  endif()
 
-   IF(HAVE_GLUSTERFS)
-      FILE(READ ./debian/control.bareos-filedaemon-glusterfs-plugin DEBIAN_CONTROL_FILEDAEMON_GLUSTERFS_PLUGIN)
-      FILE(READ ./debian/control.bareos-storage-glusterfs DEBIAN_CONTROL_STORAGE_GLUSTERFS)
-   ENDIF()
+  if(HAVE_CEPHFS)
+    file(READ ./debian/control.bareos-filedaemon-ceph-plugin
+         DEBIAN_CONTROL_FILEDAEMON_CEPH_PLUGIN
+    )
+    file(READ ./debian/control.bareos-storage-ceph DEBIAN_CONTROL_STORAGE_CEPH)
+  endif()
 
-   IF(HAVE_CEPHFS)
-      FILE(READ ./debian/control.bareos-filedaemon-ceph-plugin DEBIAN_CONTROL_FILEDAEMON_CEPH_PLUGIN)
-      FILE(READ ./debian/control.bareos-storage-ceph DEBIAN_CONTROL_STORAGE_CEPH)
-   ENDIF()
+  if(HAVE_PYTHON)
+    file(READ ./debian/control.bareos-filedaemon-python-plugin
+         DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGIN
+    )
+    file(READ ./debian/control.bareos-storage-python-plugin
+         DEBIAN_CONTROL_STORAGE_PYTHON_PLUGIN
+    )
+    file(READ ./debian/control.bareos-director-python-plugin
+         DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN
+    )
+  endif()
 
-   IF(HAVE_PYTHON)
-      FILE(READ ./debian/control.bareos-filedaemon-python-plugin DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGIN)
-      FILE(READ ./debian/control.bareos-storage-python-plugin DEBIAN_CONTROL_STORAGE_PYTHON_PLUGIN)
-      FILE(READ ./debian/control.bareos-director-python-plugin DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN)
-   ENDIF()
+  if(${DISTNAME} MATCHES "univention")
+    # only required for univention
+    file(READ ./debian/control.univention-bareos
+         DEBIAN_CONTROL_UNIVENTION_BAREOS
+    )
+  endif()
 
-   IF (${DISTNAME} MATCHES "univention")
-       # only required for univention
-       FILE(READ ./debian/control.univention-bareos DEBIAN_CONTROL_UNIVENTION_BAREOS)
-   ENDIF()
-
-ENDIF()
+endif()

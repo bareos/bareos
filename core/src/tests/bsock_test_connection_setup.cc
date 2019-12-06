@@ -18,8 +18,12 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-
+#if defined(HAVE_MINGW)
+#include "include/bareos.h"
 #include "gtest/gtest.h"
+#else
+#include "gtest/gtest.h"
+#endif
 
 #include "console/console_conf.h"
 #include "console/console_globals.h"
@@ -47,9 +51,7 @@ bool DoReloadConfig() { return false; }
 static void InitSignalHandler()
 {
   struct sigaction sig {
-    {
-      0
-    }
+    (0)
   };
   sig.sa_handler = signal_handler;
   sigaction(SIGUSR2, &sig, nullptr);
@@ -58,6 +60,10 @@ static void InitSignalHandler()
 
 static void InitGlobals()
 {
+  OSDependentInit();
+#if HAVE_WIN32
+  WSA_Init();
+#endif
   directordaemon::my_config = nullptr;
   directordaemon::me = nullptr;
   console::my_config = nullptr;
@@ -184,17 +190,15 @@ TEST(bsock, console_director_connection_test_tls_psk)
 {
   InitOpenSsl();
   do_connection_test(
-      std::string(
-          PROJECT_SOURCE_DIR
-          "/src/tests/configs/console-director/tls_psk_default_enabled/"),
+      std::string(RELATIVE_PROJECT_SOURCE_DIR
+                  "/configs/console-director/tls_psk_default_enabled/"),
       TlsPolicy::kBnetTlsEnabled);
 }
 
 TEST(bsock, console_director_connection_test_cleartext)
 {
   InitOpenSsl();
-  do_connection_test(
-      std::string(PROJECT_SOURCE_DIR
-                  "/src/tests/configs/console-director/tls_disabled/"),
-      TlsPolicy::kBnetTlsNone);
+  do_connection_test(std::string(RELATIVE_PROJECT_SOURCE_DIR
+                                 "/configs/console-director/tls_disabled/"),
+                     TlsPolicy::kBnetTlsNone);
 }

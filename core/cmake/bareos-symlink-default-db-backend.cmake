@@ -16,8 +16,13 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
-MESSAGE(STATUS "${CMAKE_COMMAND} -E create_symlink ${libdir}/libbareoscats${CMAKE_SHARED_LIBRARY_SUFFIX} ${backenddir}/libbareoscats-${default_db_backend}${CMAKE_SHARED_LIBRARY_SUFFIX}")
-execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
-   ${backenddir}/libbareoscats-${default_db_backend}${CMAKE_SHARED_LIBRARY_SUFFIX}
-   ${libdir}/libbareoscats${CMAKE_SHARED_LIBRARY_SUFFIX}.${BAREOS_NUMERIC_VERSION}
-   )
+message(
+  STATUS
+    "${CMAKE_COMMAND} -E create_symlink ${libdir}/libbareoscats${CMAKE_SHARED_LIBRARY_SUFFIX} ${backenddir}/libbareoscats-${default_db_backend}${CMAKE_SHARED_LIBRARY_SUFFIX}"
+)
+execute_process(
+  COMMAND
+    ${CMAKE_COMMAND} -E create_symlink
+    ${backenddir}/libbareoscats-${default_db_backend}${CMAKE_SHARED_LIBRARY_SUFFIX}
+    ${libdir}/libbareoscats${CMAKE_SHARED_LIBRARY_SUFFIX}.${BAREOS_NUMERIC_VERSION}
+)

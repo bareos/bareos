@@ -19,7 +19,14 @@
    02110-1301, USA.
 */
 
+#if defined(HAVE_MINGW)
+#include "include/bareos.h"
 #include "gtest/gtest.h"
+#else
+#include "gtest/gtest.h"
+#endif
+
+
 #include "lib/thread_list.h"
 #include "include/make_unique.h"
 

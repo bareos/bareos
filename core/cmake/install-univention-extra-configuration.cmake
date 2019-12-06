@@ -17,8 +17,13 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-MESSAGE( STATUS "${PROJECT_SOURCE_DIR}/platform/univention/create_ucs_template_scripts.sh ${PROJECT_SOURCE_DIR} $ENV{DESTDIR}/etc/univention/templates/scripts/" )
+message(
+  STATUS
+    "${PROJECT_SOURCE_DIR}/platform/univention/create_ucs_template_scripts.sh ${PROJECT_SOURCE_DIR} $ENV{DESTDIR}/etc/univention/templates/scripts/"
+)
 
 execute_process(
-  COMMAND ${PROJECT_SOURCE_DIR}/platforms/univention/create_ucs_template_scripts.sh ${PROJECT_SOURCE_DIR} $ENV{DESTDIR}/etc/univention/templates/scripts/
+  COMMAND
+    ${PROJECT_SOURCE_DIR}/platforms/univention/create_ucs_template_scripts.sh
+    ${PROJECT_SOURCE_DIR} $ENV{DESTDIR}/etc/univention/templates/scripts/
 )

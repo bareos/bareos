@@ -17,91 +17,90 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-IF(HAVE_WIN32)
-   include_directories(
-      ${PROJECT_SOURCE_DIR}/src/win32
-      ${PROJECT_SOURCE_DIR}/src/win32/include
-      ${PROJECT_SOURCE_DIR}/src/win32/filed
-      ${PROJECT_SOURCE_DIR}/src/win32/plugins/filed
-      ${PROJECT_SOURCE_DIR}/src/win32/compat/include
-      ${PROJECT_SOURCE_DIR}/src/win32/vdi/include
-      ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/include
-      ${PROJECT_SOURCE_DIR}/src/include
-      ${PROJECT_SOURCE_DIR}/src
-      ${PROJECT_SOURCE_DIR}/src/filed
-      ${PROJECT_SOURCE_DIR}/src/plugins/filed
-      )
+if(HAVE_WIN32)
+  include_directories(
+    ${PROJECT_SOURCE_DIR}/src/win32
+    ${PROJECT_SOURCE_DIR}/src/win32/include
+    ${PROJECT_SOURCE_DIR}/src/win32/filed
+    ${PROJECT_SOURCE_DIR}/src/win32/plugins/filed
+    ${PROJECT_SOURCE_DIR}/src/win32/compat/include
+    ${PROJECT_SOURCE_DIR}/src/win32/vdi/include
+    ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/include
+    ${PROJECT_SOURCE_DIR}/src/include
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}/src/filed
+    ${PROJECT_SOURCE_DIR}/src/plugins/filed
+  )
 
-   link_directories(${PROJECT_SOURCE_DIR}/src/win32/plugins/python/lib/${WINDOWS_BITS})
-   add_definitions(-DMS_WIN${WINDOWS_BITS})
-ELSE()
-   include_directories(/usr/include/python2.7)
-ENDIF()
+  link_directories(
+    ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/lib/${WINDOWS_BITS}
+  )
+  add_definitions(-DMS_WIN${WINDOWS_BITS})
+else()
+  include_directories(/usr/include/python2.7)
+endif()
 
 include_directories(${OPENSSL_INCLUDE_DIR})
 
-
-#set(DLLIBS dl)
+# set(DLLIBS dl)
 
 add_library(bpipe-fd MODULE bpipe-fd.cc)
 set_target_properties(bpipe-fd PROPERTIES PREFIX "")
-INSTALL(TARGETS bpipe-fd DESTINATION ${plugindir} COMPONENT filedaemon)
-IF(HAVE_WIN32 OR HAVE_DARWIN_OS)
-   target_link_libraries(bpipe-fd bareos)
-ENDIF()
+install(TARGETS bpipe-fd DESTINATION ${plugindir} COMPONENT filedaemon)
+if(HAVE_WIN32 OR HAVE_DARWIN_OS)
+  target_link_libraries(bpipe-fd bareos)
+endif()
 
+if(HAVE_WIN32)
+  add_library(mssqlvdi-fd MODULE ../../win32/plugins/filed/mssqlvdi-fd.cc)
+  target_compile_options(mssqlvdi-fd PUBLIC -fpermissive)
+  set_target_properties(
+    mssqlvdi-fd PROPERTIES PREFIX "" DEFINE_SYMBOL "BUILDING_DLL"
+  )
 
-IF(HAVE_WIN32)
-   add_library(mssqlvdi-fd MODULE ../../win32/plugins/filed/mssqlvdi-fd.cc)
-   target_compile_options(mssqlvdi-fd PUBLIC -fpermissive)
-   set_target_properties(mssqlvdi-fd PROPERTIES PREFIX ""
-      DEFINE_SYMBOL "BUILDING_DLL"
-      )
-
-   INSTALL(TARGETS mssqlvdi-fd DESTINATION ${plugindir} COMPONENT filedaemon)
-   target_link_libraries(mssqlvdi-fd bareos)
-ENDIF()
-
+  install(TARGETS mssqlvdi-fd DESTINATION ${plugindir} COMPONENT filedaemon)
+  target_link_libraries(mssqlvdi-fd bareos)
+endif()
 
 if(${HAVE_CEPHFS})
-   add_library(cephfs-fd MODULE cephfs-fd.cc)
-   set_target_properties(cephfs-fd PROPERTIES PREFIX "")
-   INSTALL(TARGETS cephfs-fd DESTINATION ${plugindir} COMPONENT filedaemon)
+  add_library(cephfs-fd MODULE cephfs-fd.cc)
+  set_target_properties(cephfs-fd PROPERTIES PREFIX "")
+  install(TARGETS cephfs-fd DESTINATION ${plugindir} COMPONENT filedaemon)
 endif()
 
 if(${HAVE_CEPH_RADOS})
-   add_library(rados-fd MODULE rados-fd.cc)
-   set_target_properties(rados-fd PROPERTIES PREFIX "")
-   INSTALL(TARGETS rados-fd DESTINATION ${plugindir} COMPONENT filedaemon)
+  add_library(rados-fd MODULE rados-fd.cc)
+  set_target_properties(rados-fd PROPERTIES PREFIX "")
+  install(TARGETS rados-fd DESTINATION ${plugindir} COMPONENT filedaemon)
 endif()
 
-IF(NOT HAVE_WIN32)
-   add_library(example-plugin-fd MODULE example-plugin-fd.cc)
-   set_target_properties(example-plugin-fd PROPERTIES PREFIX "")
-ENDIF()
+if(NOT HAVE_WIN32)
+  add_library(example-plugin-fd MODULE example-plugin-fd.cc)
+  set_target_properties(example-plugin-fd PROPERTIES PREFIX "")
+endif()
 
-IF(HAVE_PYTHON)
-   add_library(python-fd MODULE python-fd.cc)
-   set_target_properties(python-fd PROPERTIES PREFIX "")
-   INSTALL(TARGETS python-fd DESTINATION ${plugindir} COMPONENT filedaemon)
-   target_link_libraries(python-fd ${PYTHON_LIBRARIES} bareos)
-ENDIF()
+if(HAVE_PYTHON)
+  add_library(python-fd MODULE python-fd.cc)
+  set_target_properties(python-fd PROPERTIES PREFIX "")
+  install(TARGETS python-fd DESTINATION ${plugindir} COMPONENT filedaemon)
+  target_link_libraries(python-fd ${PYTHON_LIBRARIES} bareos)
+endif()
 
 if(${HAVE_GLUSTERFS})
-   add_library(gfapi-fd MODULE gfapi-fd.cc)
-   set_target_properties(gfapi-fd PROPERTIES PREFIX "")
-   INSTALL(TARGETS gfapi-fd DESTINATION ${plugindir} COMPONENT filedaemon)
-   target_link_libraries(gfapi-fd gfapi)
+  add_library(gfapi-fd MODULE gfapi-fd.cc)
+  set_target_properties(gfapi-fd PROPERTIES PREFIX "")
+  install(TARGETS gfapi-fd DESTINATION ${plugindir} COMPONENT filedaemon)
+  target_link_libraries(gfapi-fd gfapi)
 endif()
 
-if (${HAVE_TEST_PLUGIN})
-   add_library(test-plugin-fd MODULE test-plugin-fd.cc)
-   # do not prefix with "lib"
-   set_target_properties(test-plugin-fd PROPERTIES PREFIX "")
-   INSTALL(TARGETS test-plugin-fd DESTINATION ${plugindir} COMPONENT filedaemon)
+if(${HAVE_TEST_PLUGIN})
+  add_library(test-plugin-fd MODULE test-plugin-fd.cc)
+  # do not prefix with "lib"
+  set_target_properties(test-plugin-fd PROPERTIES PREFIX "")
+  install(TARGETS test-plugin-fd DESTINATION ${plugindir} COMPONENT filedaemon)
 endif()
 
-set (PYFILES
+set(PYFILES
     bareos-fd.py.template
     bareos-fd-local-fileset.py
     bareos-fd-mock-test.py
@@ -111,8 +110,10 @@ set (PYFILES
     bareos_fd_consts.py
     bareos-fd-ldap.py
     BareosFdPluginLDAP.py
-    )
+)
 
-INSTALL(FILES ${PYFILES} DESTINATION ${plugindir} COMPONENT filedaemon)
-
-
+install(
+  FILES ${PYFILES}
+  DESTINATION ${plugindir}
+  COMPONENT filedaemon
+)

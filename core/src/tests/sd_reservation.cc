@@ -21,12 +21,19 @@
    02110-1301, USA.
 */
 
+#if defined(HAVE_MINGW)
+#include "include/bareos.h"
+#include "gtest/gtest.h"
+#else
+#include "gtest/gtest.h"
+#include "include/bareos.h"
+#endif
+
+
 #include <chrono>
 #include <future>
 
 #define STORAGE_DAEMON 1
-#include "gtest/gtest.h"
-#include "include/bareos.h"
 #include "include/jcr.h"
 #include "lib/crypto_cache.h"
 #include "lib/edit.h"
@@ -62,11 +69,11 @@ class ReservationTest : public ::testing::Test {
 
 void ReservationTest::SetUp()
 {
-  InitMsg(NULL, NULL);
   OSDependentInit();
+  InitMsg(NULL, NULL);
 
   /* configfile is a global char* from stored_globals.h */
-  configfile = strdup(PROJECT_SOURCE_DIR "/src/tests/configs/sd_reservation/");
+  configfile = strdup(RELATIVE_PROJECT_SOURCE_DIR "/configs/sd_reservation/");
   my_config = InitSdConfig(configfile, M_ERROR_TERM);
   ParseSdConfig(configfile, M_ERROR_TERM);
   /*

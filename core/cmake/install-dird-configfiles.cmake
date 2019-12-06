@@ -18,4 +18,6 @@
 #   02110-1301, USA.
 
 include(${CMAKE_CURRENT_LIST_DIR}/BareosInstallConfigFiles.cmake)
-BareosInstallConfigFiles("${configtemplatedir}" "bareos-dir.d" "${PLUGINS}" "${BACKENDS}" "${SRC_DIR}")
+bareosinstallconfigfiles(
+  "${configtemplatedir}" "bareos-dir.d" "${PLUGINS}" "${BACKENDS}" "${SRC_DIR}"
+)

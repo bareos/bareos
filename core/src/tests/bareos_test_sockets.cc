@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,12 +18,17 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
+#if defined(HAVE_MINGW)
+#include "include/bareos.h"
+#include "gtest/gtest.h"
+#else
+#include "gtest/gtest.h"
+#include "include/bareos.h"
+#endif
 
 #include "bareos_test_sockets.h"
 #include "tests/bsock_test.h"
 
-#include "gtest/gtest.h"
-#include "include/bareos.h"
 #include "lib/bsock_tcp.h"
 
 static int create_listening_server_socket(int port)
@@ -36,7 +41,7 @@ static int create_listening_server_socket(int port)
     return -1;
   }
 
-  if (setsockopt(listen_file_descriptor, SOL_SOCKET, SO_REUSEADDR, &opt,
+  if (setsockopt(listen_file_descriptor, SOL_SOCKET, SO_REUSEADDR, (sockopt_val_t)&opt,
                  sizeof(opt))) {
     perror("setsockopt");
     return -1;
@@ -56,7 +61,7 @@ static int create_listening_server_socket(int port)
   timeout.tv_sec = 10;  // after 10 seconds connect() will timeout
   timeout.tv_usec = 0;
 
-  if (setsockopt(listen_file_descriptor, SOL_SOCKET, SO_RCVTIMEO, &timeout,
+  if (setsockopt(listen_file_descriptor, SOL_SOCKET, SO_RCVTIMEO, (sockopt_val_t)&timeout,
                  sizeof(timeout)) < 0) {
     perror("setsockopt");
     return -1;

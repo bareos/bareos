@@ -17,13 +17,10 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-
-MESSAGE( STATUS "CMAKE_CURRENT_LIST_FILE: " ${CMAKE_CURRENT_LIST_FILE} )
-MESSAGE(STATUS  "installing systemd files to  ${SYSTEMD_UNITDIR}")
+message(STATUS "CMAKE_CURRENT_LIST_FILE: " ${CMAKE_CURRENT_LIST_FILE})
+message(STATUS "installing systemd files to  ${SYSTEMD_UNITDIR}")
 set(SYSTEMD_TMPFILES ${sysconfdir}/tmpfiles.d)
 
-
-
-INSTALL(FILES "bareos-sd.service" DESTINATION ${SYSTEMD_UNITDIR})
-INSTALL(FILES "bareos-fd.service" DESTINATION ${SYSTEMD_UNITDIR})
-INSTALL(FILES "bareos-dir.service" DESTINATION ${SYSTEMD_UNITDIR})
+install(FILES "bareos-sd.service" DESTINATION ${SYSTEMD_UNITDIR})
+install(FILES "bareos-fd.service" DESTINATION ${SYSTEMD_UNITDIR})
+install(FILES "bareos-dir.service" DESTINATION ${SYSTEMD_UNITDIR})

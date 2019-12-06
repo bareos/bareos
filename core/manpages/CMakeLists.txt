@@ -17,44 +17,35 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-set (MAN1
-   bconsole.1
-   )
+set(MAN1 bconsole.1)
 
-set (MAN8
-   bareos-fd.8
-   bareos.8
-   )
+set(MAN8 bareos-fd.8 bareos.8)
 
+if(NOT client-only)
+  set(MAN1-server
+      bareos-tray-monitor.1
+      # bat.1
+      bsmtp.1 bwild.1 bregex.1
+  )
 
-IF(NOT client-only)
-set ( MAN1-server
-   bareos-tray-monitor.1
-   #bat.1
-   bsmtp.1
-   bwild.1
-   bregex.1
-   )
+  set(MAN8-server
+      bareos-dir.8
+      bareos-sd.8
+      bcopy.8
+      bareos-dbcheck.8
+      bextract.8
+      bls.8
+      bscan.8
+      btape.8
+      btraceback.8
+      bpluginfo.8
+      bscrypto.8
+  )
 
-set ( MAN8-server
-   bareos-dir.8
-   bareos-sd.8
-   bcopy.8
-   bareos-dbcheck.8
-   bextract.8
-   bls.8
-   bscan.8
-   btape.8
-   btraceback.8
-   bpluginfo.8
-   bscrypto.8
-   )
+  set(MAN1 "${MAN1};${MAN1-server}")
+  set(MAN8 "${MAN8};${MAN8-server}")
 
-set(MAN1 "${MAN1};${MAN1-server}")
-set(MAN8 "${MAN8};${MAN8-server}")
+endif()
 
-ENDIF()
-
-
-INSTALL(FILES ${MAN1} DESTINATION "${mandir}/man1")
-INSTALL(FILES ${MAN8} DESTINATION "${mandir}/man8")
+install(FILES ${MAN1} DESTINATION "${mandir}/man1")
+install(FILES ${MAN8} DESTINATION "${mandir}/man8")

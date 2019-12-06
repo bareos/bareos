@@ -19,7 +19,14 @@
    02110-1301, USA.
 */
 
+#if defined(HAVE_MINGW)
+#include "include/bareos.h"
 #include "gtest/gtest.h"
+#else
+#include "gtest/gtest.h"
+#include "include/bareos.h"
+#endif
+
 #include "dird/dird_globals.h"
 #include "dird/scheduler.h"
 #include "dird/scheduler_job_item_queue.h"

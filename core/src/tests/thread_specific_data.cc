@@ -18,9 +18,14 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-
+#if defined(HAVE_MINGW)
+#include "include/bareos.h"
+#include "gtest/gtest.h"
+#else
 #include "gtest/gtest.h"
 #include "include/bareos.h"
+#endif
+
 #include "include/jcr.h"
 #include "include/make_unique.h"
 #include "lib/thread_specific_data.h"

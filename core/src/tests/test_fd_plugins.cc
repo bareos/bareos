@@ -31,9 +31,14 @@
  * @file
  * Bareos pluginloader
  */
-#include "gtest/gtest.h"
-
+#if defined(HAVE_MINGW)
 #include "include/bareos.h"
+#include "gtest/gtest.h"
+#else
+#include "gtest/gtest.h"
+#include "include/bareos.h"
+#endif
+
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
 #include "filed/accurate.h"
