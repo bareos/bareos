@@ -77,7 +77,7 @@ void RunOnIncomingConnectIntervalTest::SetUp()
   InitMsg(nullptr, nullptr);
 
   std::string path_to_config_file = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/client-initiated-reconnect");
+      RELATIVE_PROJECT_SOURCE_DIR "/configs/run-on-incoming-connect-interval/");
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   my_config->ParseConfig();
 }
@@ -159,8 +159,8 @@ class MockDatabase : public BareosDb {
   explicit MockDatabase(Mode mode) : mode_(mode) {}
   SqlFindResult FindLastJobStartTimeForJobAndClient(
       JobControlRecord* /*jcr*/,
-                                                 std::string /*job_basename*/,
-                                                 std::string /*client_name*/,
+      std::string /*job_basename*/,
+      std::string /*client_name*/,
       std::vector<char>& stime_out) override
   {
     switch (mode_) {
