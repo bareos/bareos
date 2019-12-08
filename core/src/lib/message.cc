@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -523,9 +523,7 @@ void TermMsg()
   CleanupJcrChain();
 }
 
-static inline bool OpenDestFile(JobControlRecord* jcr,
-                                MessageDestinationInfo* d,
-                                const char* mode)
+static inline bool OpenDestFile(MessageDestinationInfo* d, const char* mode)
 {
   d->file_pointer_ = fopen(d->where_.c_str(), mode);
   if (!d->file_pointer_) {
@@ -814,7 +812,6 @@ void DispatchMessage(JobControlRecord* jcr, int type, utime_t mtime, char* msg)
           break;
         case MessageDestinationCode::kOperator:
           Dmsg1(850, "OPERATOR for following msg: %s\n", msg);
-          if (!jcr) { break; }
           mcmd = GetPoolMemory(PM_MESSAGE);
           if ((bpipe = open_mail_pipe(jcr, mcmd, d))) {
             int status;
@@ -872,9 +869,8 @@ void DispatchMessage(JobControlRecord* jcr, int type, utime_t mtime, char* msg)
           mode = "w+b";
         send_to_file:
           if (msgs->IsClosing()) { break; }
-          if (!jcr) { break; }
           msgs->SetInUse();
-          if (!d->file_pointer_ && !OpenDestFile(jcr, d, mode)) {
+          if (!d->file_pointer_ && !OpenDestFile(d, mode)) {
             msgs->ClearInUse();
             break;
           }
@@ -886,7 +882,7 @@ void DispatchMessage(JobControlRecord* jcr, int type, utime_t mtime, char* msg)
           if (ferror(d->file_pointer_)) {
             fclose(d->file_pointer_);
             d->file_pointer_ = NULL;
-            if (OpenDestFile(jcr, d, mode)) {
+            if (OpenDestFile(d, mode)) {
               fputs(dt, d->file_pointer_);
               fputs(msg, d->file_pointer_);
             }
