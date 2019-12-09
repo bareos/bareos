@@ -45,8 +45,9 @@ set(POSTGRESQL_SRCS postgresql.cc ${LIBBAREOSCATS_SRCS})
 add_library(bareossql SHARED ${LIBBAREOSSQL_SRCS})
 
 set_target_properties(
-  bareossql PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}" SOVERSION
-                       "${BAREOS_VERSION_MAJOR}"
+  bareossql
+  PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}" SOVERSION
+                                                 "${BAREOS_VERSION_MAJOR}"
 )
 target_link_libraries(bareossql bareoscats bareos)
 
@@ -60,8 +61,9 @@ list(LENGTH db_backends nr_db_backends)
 add_library(bareoscats SHARED ${LIBBAREOSCATS_SRCS})
 target_link_libraries(bareoscats bareos)
 set_target_properties(
-  bareoscats PROPERTIES VERSION ${BAREOS_NUMERIC_VERSION} SOVERSION
-                        "${BAREOS_VERSION_MAJOR}"
+  bareoscats
+  PROPERTIES VERSION ${BAREOS_NUMERIC_VERSION} SOVERSION
+                                               "${BAREOS_VERSION_MAJOR}"
 )
 install(TARGETS bareoscats DESTINATION ${libdir})
 

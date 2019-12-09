@@ -134,7 +134,8 @@ endif()
 
 # target: docs ######
 add_custom_target(
-  docs ${DOCS_ALL}
+  docs
+  ${DOCS_ALL}
   COMMAND ${SPHINX_COMMAND} -M html "${SPHINX_SOURCE_DIR}" "${SPHINX_BUILDDIR}"
           "${SPHINX_OPTS}"
   DEPENDS $<$<BOOL:${docs-build-json}>:clean-docs>

@@ -155,7 +155,7 @@ set(BUILDNAME
     CACHE STRING "site name variable for CDash"
 )
 set(SITE
-  "${CMAKE_SYSTEM_NAME}-${DISTVER}-${CMAKE_HOST_SYSTEM_PROCESSOR}"
+    "${CMAKE_SYSTEM_NAME}-${DISTVER}-${CMAKE_HOST_SYSTEM_PROCESSOR}"
     CACHE STRING "build name variable for CDash"
 )
 # enable "make test"
@@ -336,7 +336,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
   set(ENABLE_NLS 0)
 endif()
 include(BareosFindStaticCodeAnalysisTools)
-
 
 include(BareosGenerateDebianInfo)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
@@ -584,7 +583,6 @@ message(STATUS "CMAKE_AR: " ${CMAKE_AR})
 message(STATUS "CMAKE_RANLIB: " ${CMAKE_RANLIB})
 
 message(STATUS "CMAKE_INSTALL_PREFIX:         " ${CMAKE_INSTALL_PREFIX})
-
 
 if(HAVE_DYNAMIC_SD_BACKENDS)
   set(UNCOMMENT_SD_BACKEND_DIRECTORY "")

@@ -31,6 +31,7 @@ target_include_directories(
 target_compile_definitions(bareosfastlz PRIVATE "-DDLL_EXPORT")
 install(TARGETS bareosfastlz DESTINATION ${libdir})
 set_target_properties(
-  bareosfastlz PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}" SOVERSION
-                          "${BAREOS_VERSION_MAJOR}"
+  bareosfastlz
+  PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}" SOVERSION
+                                                 "${BAREOS_VERSION_MAJOR}"
 )
