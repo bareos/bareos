@@ -490,17 +490,42 @@ This release contains several enhancements. Excerpt:
 Bareos-16.2
 -----------
 
+.. _bareos-16.2.9:
+
+bareos-16.2.9
+~~~~~~~~~~~~~
+
+:index:`\ <single: bareos-16.2.9; Release Notes>`\
+
+================ ===============================================
+Code Release     2019-12-12
+Database Version 2004 (unchanged)
+Release Ticket   :mantis:`1154`
+Url              http://download.bareos.com/bareos/release/16.2/
+================ ===============================================
+
+-  Improve list command
+
+   -  Honor "pool" filter for jobs so you can list jobs by pool
+
+-  Updated MySQL creation schema to current standards
+
+-  Packaging: Use .tar.bz2 instead of tar.gz
+
+-  Packaging: Make rpm spec compatible to docker builds
+
+
 .. _bareos-16.2.8:
 
 bareos-16.2.8
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-16.2.8; Release Notes>`\ 
+:index:`\ <single: bareos-16.2.8; Release Notes>`\
 
 ================ ===============================================
 Code Release     2018-07-06
 Database Version 2004 (unchanged)
-Release Ticket   :ticket:`863`
+Release Ticket   :mantis:`863`
 Url              http://download.bareos.com/bareos/release/16.2/
 ================ ===============================================
 
@@ -524,7 +549,7 @@ This release contains several bugfixes and enhancements. Excerpt:
 
 -  Backport ceph: ported cephfs-fd and :command:`cephfs_device` to new api
 
--  :ticket:`967` Windows: Symbolic links are now replaceable during restore
+-  :mantis:`967` Windows: Symbolic links are now replaceable during restore
 
 .. _bareos-16.2.7:
 
@@ -536,7 +561,7 @@ bareos-16.2.7
 ================ ===============================================
 Code Release     2017-10-09
 Database Version 2004 (unchanged)
-Release Ticket   :ticket:`836`
+Release Ticket   :mantis:`836`
 Url              http://download.bareos.com/bareos/release/16.2/
 ================ ===============================================
 
@@ -584,7 +609,7 @@ bareos-16.2.6
 ================ ===============================================
 Code Release     2017-06-22
 Database Version 2004 (unchanged)
-Release Ticket   :ticket:`794`
+Release Ticket   :mantis:`794`
 Url              http://download.bareos.com/bareos/release/16.2/
 ================ ===============================================
 
@@ -656,7 +681,7 @@ bareos-16.2.5
 ================ ===============================================
 Code Release     2017-03-03
 Database Version 2004 (unchanged)
-Release Ticket   :ticket:`734`
+Release Ticket   :mantis:`734`
 Url              http://download.bareos.com/bareos/release/16.2/
 ================ ===============================================
 
@@ -682,7 +707,7 @@ bareos-16.2.4
 ================ ===============================================
 Code Release     2016-10-28
 Database Version 2004 (unchanged)
-Release Ticket   :ticket:`698`
+Release Ticket   :mantis:`698`
 Url              http://download.bareos.org/bareos/release/16.2/
 \                http://download.bareos.com/bareos/release/16.2/
 ================ ===============================================
