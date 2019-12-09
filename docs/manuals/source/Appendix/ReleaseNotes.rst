@@ -18,7 +18,115 @@ The feature overview for a release are shown at the :ref:`genindex` of this docu
 
 .. _bareos-current-releasenotes:
 
-.. _bareos-1826-releasenotes:
+.. _bareos-1924-releasenotes:
+
+.. _bareos-19.2.4:
+
+Bareos-19.2
+-----------
+
+Bareos-19.2.4~rc1
+~~~~~~~~~~~~~~~~~
+
+General Information
+^^^^^^^^^^^^^^^^^^^
+
+.. list-table:: Bareos 19.2.4 Release Information
+   :header-rows: 0
+   :widths: auto
+
+   * - **Release Date**
+     - 19 December 2019
+   * - **Database Version**
+     -  2192
+   * - **URL**
+     - https://download.bareos.com/bareos/release/19.2/
+   * -
+     - https://download.bareos.org/bareos/release/19.2/
+   * - **Release Ticket**
+     - :mantis:`1156`
+
+New Features
+^^^^^^^^^^^^
+* oVirt Plugin: The oVirt Plugin can be used for agentless backups of virtual machines running on oVirt or Red Hat Virtualization (RHV)
+* |webui|: :ref:`section-webui-restore` a specific file version
+* Display a summary before performing a restore in the |webui|
+* New configuration parameter *filetree_refresh_timeout* has been added to configuration.ini file of the |webui| to set a custom timeout while refreshing the file tree (.bvfs_cache_update) in the restore module (:ref:`section-updating-bvfs-cache-frequently`)
+* Configuration: Add :ref:`DirectorResourceUser` for pam authentication
+* Configuration: : Simplified :ref:`StorageResourceMultipliedDevice` Storage Configuration
+* Client initiated connection: Run dedicated jobs when a client connects to the |dir|. Introduced a new configuration directive RunOnIncomingConnectInterval, see the documentation here: :config:option:`dir/job/RunOnIncomingConnectInterval`
+* Python-bareos: Depending on the distribution, the Python module is packaged for Python 2 and/or Python 3. Previously it has only been packaged for Python 2
+* Python-bareos: There are two variants of the Console protocol. The protocol used before Bareos-18.2 and the protocol used thereafter. The protocol since Bareos-18.2 supports TLS-PSK and PAM authentication, see :ref:`bareos-18.2.5`. Beginning with this version, Python-bareos also supports both protocols. As TLS-PSK for Python (module **sslpsk**) is not available for all platforms, Python-bareos has integrated an automatic fallback to the old protocol.
+
+Changed Features
+^^^^^^^^^^^^^^^^
+* Improved Command ACL handling and error messages in the |webui|
+* Restricted-console profile examples for limited and read-only purposes have been added to the |webui| package
+* Updated |webui| localization
+* Configuration: Do not allow empty passwords for mandatory passwords
+* All daemons: Generate a log message if extended attributes are disabled automatically
+* All daemons: replace crc32 implementation with a faster one
+* |dir|: Add support for MySQL 8
+* PAM authentication requires a *User* configuration resource. Previously *Console* and *User* resources could be used.
+* The *User* configuration resource changed.  Previously it has been an alias to the *Console* resource, which requires a password and allows some additional options. Now it only consists of a Name and ACL definitions, see :ref:`DirectorResourceUser`.
+* Database schema update from version 2171 to 2192
+
+Deprecated and Removed Features
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+* |webui|: Functionality of pre-selecting a backup client in the restore module has been removed
+
+Bugs Fixed
+^^^^^^^^^^
+* :mantis:`385`: Bareos daemon stop or restart hangs if bareos-tray-monitor is connected
+* :mantis:`975`: .bvfs\_lsdirs limit offset command parameters do not work properly
+* :mantis:`990`: SD sometimes tries to load empty tape slot
+* :mantis:`1004`: Very high cpu usage on Debian stretch
+* :mantis:`1030`: Bscan does not work for migration and copy jobs
+* :mantis:`1034`: Read-error on tape may be misinterpreted as end-of-tape
+* :mantis:`1045`: Webui login problem
+* :mantis:`1049`: Translation in German webUI
+* :mantis:`1056`: NDMP restore on 16.2.5 and above does not fill NDMP environment correctly
+* :mantis:`1058`: 18.2.6 build error because cmake does not build the correct dependencies
+* :mantis:`1059`: Webui spams Apache error_log with bconsole messages
+* :mantis:`1064`: Bconsole crashes after 5 minutes in restore operation due to forgotten watchdog
+* :mantis:`1072`: Newer versions of Fedora use stricter code checking
+* :mantis:`1073`: Pthread\_detach for FreeBSD (PR169)
+* :mantis:`1091`: NDMP to NDMP Copy Job Fails
+* :mantis:`1095`: |webui|: When login as a user without the permission to the ".api" command, the webui shows a wrong and ugly error message
+* :mantis:`1100`: Bconsole crashes when pam authentication aborts
+* :mantis:`1112`: After mount/unmount of tape "status slots" shows empty list
+* :mantis:`1123`: Director can crash during TwoWay Authentication
+* :mantis:`1149`: Audit messages are not logged any more
+* :mantis:`1150`: dbconfig schema update scripts broken since 18.2
+* :mantis:`1161`: Tremendous MySQL load
+* :mantis:`1188`: Integer out of range when using large amounts of files with Base Jobs
+* All daemons: Fix buffer overrun in PathAppend
+* |dir|: Add support for MySQL 8
+* |dir|: Fix nullptr cornercase in mtx-changer parser
+* |webui|: Fix overflowing top navigation bar content hiding tab navigation in some modules
+* |webui|: Fix always active debug messages in error.log
+* |webui|: Bvfs cache update notification added
+* |webui|: Fix Application Controller Plugin CommandACLPlugin
+
+
+Updated Documentation
+^^^^^^^^^^^^^^^^^^^^^
+* :ref:`section-updating-bvfs-cache-frequently`
+* |webui| Command ACL Requirements: :ref:`section-webui-command-acl-requirements`
+* |webui| Access Control Configuration: :ref:`section-webui-access-control-configuration`
+* |webui| Restore: :ref:`section-webui-restore`
+* Developer Guide: :ref:`section-dev-webui-command-usage-in-modules`
+* Documentation: Add message diagrams for backup, restore and verify
+* Documentation: Correct configuration expamles and rewrite several feature introductions
+* Documentation: Improve documentation of postgresql database schema and add diagrams
+
+Internal Project Changes
+^^^^^^^^^^^^^^^^^^^^^^^^
+* All daemons: Smartalloc has been removed from the sourcecode
+* All daemons: Removed many compiler warnings
+* All daemons: Refactored scheduler, threadlist, configuration parser and recently used job-list code to be more robust and testable
+* Documentation: Merge new documentation-source structure for Sphinx-build
+* Removed PHP Warnings and Notices, JS and CSS errors
 
 
 .. _bareos-1827-releasenotes:
