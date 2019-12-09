@@ -234,6 +234,54 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson libr
 
 If you prefer using the versions of Bareos directly integrated into the distributions, please note that there are some differences, see :ref:`section-DebianOrgLimitations`.
 
+Install on FreeBSD based Distributions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:index:`\ <single: Platform; FreeBSD>`\  :index:`\ <single: Platform; FreeBSD>`\
+
+.. code-block:: shell-session
+   :caption: Shell example script for Bareos installation on FreeBSD
+
+   #!/bin/sh
+
+   # See http://download.bareos.org/bareos/release/
+   # for applicable releases and distributions
+
+   DIST=FreeBSD_12.1
+   # or
+   # DIST=FreeBSD_12.0
+
+   RELEASE=release/19.2/
+   # or
+   # RELEASE=release/latest/
+   # RELEASE=experimental/nightly/
+
+   URL=http://download.bareos.org/bareos/$RELEASE/$DIST
+
+   # add the Bareos repository
+   cd /usr/local/etc/pkg/repos
+   wget -q $URL/bareos.conf
+
+   # install Bareos packages
+   pkg install --yes bareos.com-director bareos.com-storage bareos.com-filedaemon bareos.com-database-postgresql bareos.com-bconsole
+
+   # setup the Bareos database
+   su postgres -c /usr/lib/bareos/scripts/create_bareos_database
+   su postgres -c /usr/lib/bareos/scripts/make_bareos_tables
+   su postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges
+
+   # enable services
+   sysrc bareosdir_enable=YES
+   sysrc bareossd_enable=YES
+   sysrc bareosfd_enable=YES
+
+   # start services
+   service bareos-dir start
+   service bareos-sd start
+   service bareos-fd start
+
+
+
 Install on Univention Corporate Server
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
