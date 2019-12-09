@@ -37,7 +37,7 @@ However, please double-check and add or update the version mapping if needed.
 
 Prepare the git commits and tags
 --------------------------------
-There is a helper script :file:`prep-release.sh` that will help with the process.
+There is a helper script :file:`prepare-release.sh` that will help with the process.
 You can just call the script and it will handle the version-dependant things that need to happen for the release.
 The script will also prepare all git commits that are required to release the new version and set the correct git tags.
 
@@ -52,8 +52,8 @@ Whenever you release a new major version you will be releasing more or less the 
 To allow the splitting of the development (i.e. continue working on master, but allowing to work on the newly released version, too) you will have to carry out a few additional steps.
 
 First of all, do not release from the master branch.
-Before running ``prep-release.sh`` you should create the new release-branch and switch to it using ``git checkout -b bareos-X.Y``.
-When you now run ``prep-release.sh`` it will only generate a new WIP-tag for your branch and nothing for the master branch.
+Before running ``prepare-release.sh`` you should create the new release-branch and switch to it using ``git checkout -b bareos-X.Y``.
+When you now run ``prepare-release.sh`` it will only generate a new WIP-tag for your branch and nothing for the master branch.
 Also the release of the major version itself will not be visible on the master branch.
 
 To make the release visible on the master branch, you can just forward the branch pointer to the parent of the new WIP-tag.
