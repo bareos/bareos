@@ -104,7 +104,7 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson libr
    # DIST=Fedora_26
    # DIST=Fedora_25
 
-   RELEASE=release/17.2/
+   RELEASE=release/19.2/
    # or
    # RELEASE=release/latest/
    # RELEASE=experimental/nightly/
@@ -140,7 +140,7 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson libr
    DIST=RHEL_6
    # DIST=CentOS_6
 
-   RELEASE=release/17.2/
+   RELEASE=release/19.2/
    # or
    # RELEASE=release/latest/
    # RELEASE=experimental/nightly/
@@ -151,36 +151,6 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson libr
 
    # install Bareos packages
    yum install bareos bareos-database-postgresql
-
-RHEL 5
-^^^^^^
-
-:index:`\ <single: Platform; RHEL; 5>`\ 
-
-yum in RHEL 5/CentOS 5 has slightly different behaviour as far as dependency resolving is concerned: it sometimes install a dependent package after the one that has the dependency defined. To make sure that it works, install the desired Bareos database backend package first in a separate step:
-
-.. code-block:: shell-session
-   :caption: Shell example script for Bareos installation on RHEL 5 / CentOS 5
-
-   #!/bin/sh
-
-   # See http://download.bareos.org/bareos/release/
-   # for applicable releases and distributions
-
-   DIST=RHEL_5
-
-   RELEASE=release/17.2/
-   # or
-   # RELEASE=release/latest/
-   # RELEASE=experimental/nightly/
-
-   # add the Bareos repository
-   URL=http://download.bareos.org/bareos/$RELEASE/$DIST
-   wget -O /etc/yum.repos.d/bareos.repo $URL/bareos.repo
-
-   # install Bareos packages
-   yum install bareos-database-postgresql
-   yum install bareos
 
 Install on SUSE based Linux Distributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -206,7 +176,7 @@ SUSE Linux Enterprise Server (SLES), openSUSE
    # DIST=openSUSE_Leap_42.3
    # DIST=openSUSE_Leap_42.2
 
-   RELEASE=release/17.2/
+   RELEASE=release/19.2/
    # or
    # RELEASE=release/latest/
    # RELEASE=experimental/nightly/
@@ -245,7 +215,7 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson libr
    # DIST=xUbuntu_14.04
    # DIST=xUbuntu_12.04
 
-   RELEASE=release/17.2/
+   RELEASE=release/19.2/
    # or
    # RELEASE=release/latest/
    # RELEASE=experimental/nightly/
