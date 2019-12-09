@@ -65,6 +65,17 @@ additional_commands = {
       "LINK_LIBRARIES": "*",
       "COMPILE_DEFINITIONS": "*"
     }
+  },
+  "bareos_install_sql_files_to_dbconfig_common": {
+    "pargs": 0,
+    "flags": [
+      "",
+      ""
+    ],
+    "kwargs": {
+      "BAREOS_DB_NAME": "*",
+      "DEBIAN_DB_NAME": "*"
+    }
   }
 }
 
