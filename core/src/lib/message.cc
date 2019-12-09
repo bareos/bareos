@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -736,7 +736,7 @@ void TermMsg()
    TermLastJobsList();
 }
 
-static inline bool OpenDestFile(JobControlRecord *jcr, DEST *d, const char *mode)
+static inline bool OpenDestFile(DEST *d, const char *mode)
 {
    d->fd = fopen(d->where, mode);
    if (!d->fd) {
@@ -1051,7 +1051,6 @@ void DispatchMessage(JobControlRecord *jcr, int type, utime_t mtime, char *msg)
             break;
          case MD_OPERATOR:
             Dmsg1(850, "OPERATOR for following msg: %s\n", msg);
-            if (!jcr) { break; }
             mcmd = GetPoolMemory(PM_MESSAGE);
             if ((bpipe=open_mail_pipe(jcr, mcmd, d))) {
                int status;
@@ -1111,9 +1110,8 @@ send_to_file:
             if (msgs->IsClosing()) {
                break;
             }
-            if (!jcr) { break; }
             msgs->SetInUse();
-            if (!d->fd && !OpenDestFile(jcr, d, mode)) {
+            if (!d->fd && !OpenDestFile(d, mode)) {
                msgs->ClearInUse();
                break;
             }
@@ -1125,7 +1123,7 @@ send_to_file:
             if (ferror(d->fd)) {
                fclose(d->fd);
                d->fd = NULL;
-               if (OpenDestFile(jcr, d, mode)) {
+               if (OpenDestFile(d, mode)) {
                   fputs(dt, d->fd);
                   fputs(msg, d->fd);
                }
