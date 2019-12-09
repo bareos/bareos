@@ -27,3 +27,6 @@ cscope.out
 
 # generated version files
 */cmake/BareosVersion.cmake
+
+# JetBrains Pycharm
+.idea
