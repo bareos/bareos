@@ -303,29 +303,60 @@ Internal Project Changes
 Bareos-17.2
 -----------
 
+.. _bareos-17.2.8:
+
+bareos-17.2.8
+~~~~~~~~~~~~~
+
+:index:`\ <single: bareos-17.2.8; Release Notes>`\
+
+================ ===============================================
+Code Release     2019-12-12
+Database Version 2171 (unchanged)
+Release Ticket   :mantis:`1153`
+Url              http://download.bareos.com/bareos/release/17.2/
+================ ===============================================
+
+-  Droplet: improves handling when truncating volumes
+
+   -  Without this change, errors when truncating a droplet volume are silently ignored.
+
+-  :mantis:`1030`  bscan does not work for migration and copy jobs
+
+-  :mantis:`1034`: Read error on tape may be misinterpreted as end-of-tape.
+
+-  Fix nullptr cornercase in mtx-changer parser in the |dir|
+
+-  Fix corner-case crash during job cancel in the |sd|
+
+-  Fix crash on excessive SOS records
+
+-  Packaging: make specfiles compatible to docker
+
+
 .. _bareos-17.2.7:
 
 bareos-17.2.7
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-17.2.7; Release Notes>`\ 
+:index:`\ <single: bareos-17.2.7; Release Notes>`\
 
 ================ ===============================================
 Code Release     2018-07-13
 Database Version 2171 (unchanged)
-Release Ticket   :ticket:`966`
+Release Ticket   :mantis:`966`
 Url              http://download.bareos.com/bareos/release/17.2/
 ================ ===============================================
 
 This release contains several bugfixes and enhancements. Excerpt:
 
--  :ticket:`892` **bareos-storage-droplet**: improve error handling on unavailable backend.
+-  :mantis:`892` **bareos-storage-droplet**: improve error handling on unavailable backend.
 
--  :ticket:`902` **bareos-storage-droplet**: improve job status handling (terminate job after all data is written).
+-  :mantis:`902` **bareos-storage-droplet**: improve job status handling (terminate job after all data is written).
 
--  :ticket:`967` :os:`Windows`: overwrite symbolic links on restore.
+-  :mantis:`967` :os:`Windows`: overwrite symbolic links on restore.
 
--  :ticket:`983` |sd|: prevent sporadic crash when :config:option:`sd/storage/CollectJobStatistics = yes`\ .
+-  :mantis:`983` |sd|: prevent sporadic crash when :config:option:`sd/storage/CollectJobStatistics = yes`\ .
 
 -  :os:`SLES 12sp2` and :os:`SLES 12sp3`: provide **bareos-storage-ceph** and **bareos-filedaemon-ceph-plugin** packages.
 
@@ -339,7 +370,7 @@ bareos-17.2.6
 ================ ===============================================
 Code Release     2018-06-21
 Database Version 2171 (unchanged)
-Release Ticket   :ticket:`916`
+Release Ticket   :mantis:`916`
 Url              http://download.bareos.com/bareos/release/17.2/
 ================ ===============================================
 
@@ -349,15 +380,15 @@ This release contains several bugfixes and enhancements. Excerpt:
 
 -  :os:`Univention 4.3`: fixes integration.
 
--  :ticket:`872` adapted to new Ceph API.
+-  :mantis:`872` adapted to new Ceph API.
 
--  :ticket:`943` use **tirpc** if Sun-RPC is not provided.
+-  :mantis:`943` use **tirpc** if Sun-RPC is not provided.
 
--  :ticket:`964` fixes the predefined queries.
+-  :mantis:`964` fixes the predefined queries.
 
--  :ticket:`969` fixes a problem of restoring more files then selected in |webui|/BVFS.
+-  :mantis:`969` fixes a problem of restoring more files then selected in |webui|/BVFS.
 
--  |dir|: fixes for a crash after reload in the statistics thread (:ticket:`695`, :ticket:`903`).
+-  |dir|: fixes for a crash after reload in the statistics thread (:mantis:`695`, :mantis:`903`).
 
 -  :command:`bareos-dbcheck`: cleanup and speedup for some some of the checks.
 
@@ -370,12 +401,12 @@ This release contains several bugfixes and enhancements. Excerpt:
 bareos-17.2.5
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-17.2.5; Release Notes>`\ 
+:index:`\ <single: bareos-17.2.5; Release Notes>`\
 
 ================ ===============================================
 Code Release     2018-02-16
 Database Version 2171 (unchanged)
-Release Ticket   :ticket:`910`
+Release Ticket   :mantis:`910`
 Url              http://download.bareos.com/bareos/release/17.2/
 ================ ===============================================
 
@@ -393,21 +424,21 @@ This release contains several bugfixes and enhancements. Excerpt:
 
 -  :command:`bareos-dbcheck` improvements and fixes: with older versions it could happen, that it destroys structures required by :bcommand:`.bvfs_*`.
 
--  :ticket:`850` fixes a bug on :os:`Univention`: fixes a problem of regenerating passwords when resyncing settings.
+-  :mantis:`850` fixes a bug on :os:`Univention`: fixes a problem of regenerating passwords when resyncing settings.
 
--  :ticket:`890` :bcommand:`.bvfs_update` fix. Before there have been cases where it did not update the cache.
+-  :mantis:`890` :bcommand:`.bvfs_update` fix. Before there have been cases where it did not update the cache.
 
 -  :bcommand:`.bvfs_lsdirs` make limit- and offset-option work correctly.
 
 -  :bcommand:`.bvfs_lsdirs` show special directory (like :file:`@bpipe@/`) on the same level as :file:`/`.
 
--  :ticket:`895` added description to the output of :bcommand:`show filesets`.
+-  :mantis:`895` added description to the output of :bcommand:`show filesets`.
 
 -  |webui|: Restore Browser fixes
 
-   -  There was the possibility of an endless loop if the BVFS API delivers unexpected results. This has been fixed. See bugreports :ticket:`887` and :ticket:`893` for details.
+   -  There was the possibility of an endless loop if the BVFS API delivers unexpected results. This has been fixed. See bugreports :mantis:`887` and :mantis:`893` for details.
 
-   -  :ticket:`905` fixes a problem with file names containing quotes.
+   -  :mantis:`905` fixes a problem with file names containing quotes.
 
 -  :config:option:`dir/client/NdmpBlockSize`\  changed type from :strong:`Pint32` to :strong:`Size32`. This should not affect any configuration, but is more consistent with other block size configuration directives.
 
@@ -416,12 +447,12 @@ This release contains several bugfixes and enhancements. Excerpt:
 bareos-17.2.4
 ~~~~~~~~~~~~~
 
-:index:`\ <single: bareos-17.2.4; Release Notes>`\ 
+:index:`\ <single: bareos-17.2.4; Release Notes>`\
 
 ================ ===============================================
 Code Release     2017-12-14
 Database Version 2171
-Release Ticket   :ticket:`861`
+Release Ticket   :mantis:`861`
 Url              http://download.bareos.org/bareos/release/17.2/
 \                http://download.bareos.com/bareos/release/17.2/
 ================ ===============================================
@@ -430,7 +461,7 @@ This release contains several enhancements. Excerpt:
 
 -  Bareos Distribution (packages)
 
-   -  **python-bareos** is included in the core distribution.
+   -  **Python-bareos** is included in the core distribution.
 
    -  **bareos-storage-droplet** is a storage backend for the droplet library. Most notably it allows backup and restores to a S3 environment. \betaSince{sd}{bareos-storage-droplet}{17.2.4}
 
@@ -477,15 +508,15 @@ This release contains several enhancements. Excerpt:
 
 -  :bcommand:`list volumes`: fix limit and offset handling.
 
--  :ticket:`629` Windows: restore directory attributes.
+-  :mantis:`629` Windows: restore directory attributes.
 
--  :ticket:`639` tape: fix block size handling, AWS VTL iSCSI devices
+-  :mantis:`639` tape: fix block size handling, AWS VTL iSCSI devices
 
--  :ticket:`705` support for MySQL 5.7
+-  :mantis:`705` support for MySQL 5.7
 
--  :ticket:`719` allow long JSON messages (has been increased from 100KB to 2GB).
+-  :mantis:`719` allow long JSON messages (has been increased from 100KB to 2GB).
 
--  :ticket:`793` Virtual Backups: skip jobs with no files.
+-  :mantis:`793` Virtual Backups: skip jobs with no files.
 
 Bareos-16.2
 -----------
