@@ -5,7 +5,7 @@
 
 #define PROG_COPYRIGHT "Copyright (C) %d-2012 Free Software Foundation Europe e.V.\n" \
                        "Copyright (C) 2010-2017 Planets Communications B.V.\n" \
-                       "Copyright (C) 2013-2018 Bareos GmbH & Co. KG\n"
+                       "Copyright (C) 2013-" BYEAR " Bareos GmbH & Co. KG\n"
 #define BYEAR "2018"       /* year for copyright messages in programs */
 
 /*
