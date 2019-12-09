@@ -20,10 +20,83 @@ The feature overview for a release are shown at the :ref:`genindex` of this docu
 
 .. _bareos-1826-releasenotes:
 
-.. _bareos-18.2.6:
+
+.. _bareos-1827-releasenotes:
+
+.. _bareos-18.2.7:
 
 Bareos-18.2
 -----------
+
+Bareos-18.2.7
+~~~~~~~~~~~~~
+
+General Information
+^^^^^^^^^^^^^^^^^^^
+
+.. list-table:: Bareos 18.2.7 Release Information
+   :header-rows: 0
+   :widths: auto
+
+   * - **Release Date**
+     - 12 December 2019
+   * - **Database Version**
+     -  2171
+   * - **URL**
+     - https://download.bareos.com/bareos/release/18.2/
+
+   * - **Release Ticket**
+     - :mantis:`1152`
+
+.. csv-table:: binary package availablility in the `bareos.com subscription repos <https://www.bareos.com/en/Subscription.html>`_
+   :header: "Distribution", "Architecture"
+   :widths: auto
+
+   CentOS_6, "x86_64"
+   CentOS_7, "x86_64"
+   Debian_8.0, "i586,x86_64"
+   Debian_9.0, "i586,x86_64"
+   Fedora_28, "x86_64"
+   Fedora_29, "x86_64"
+   FreeBSD_11.2, "x86_64"
+   MacOS, "x86_64"
+   RHEL_6, "x86_64"
+   RHEL_7, "x86_64"
+   SLE_12_SP3, "x86_64"
+   SLE_12_SP4, "x86_64"
+   SLE_15, "x86_64"
+   openSUSE_Leap_15.0, "x86_64"
+   Univention_4.3, "x86_64"
+   Windows, "32Bit, 64Bit"
+   xUbuntu_14.04, "i586,x86_64"
+   xUbuntu_16.04, "i586,x86_64"
+   xUbuntu_18.04, "x86_64"
+
+Bugfixes and Changes
+^^^^^^^^^^^^^^^^^^^^
+* :mantis:`990`: SD sometimes tries to load empty tape slot
+* :mantis:`1030`: Bscan does not work for migration and copy jobs
+* :mantis:`1056`: NDMP restore on 16.2.5 and above does not fill NDMP environment correctly
+* :mantis:`1058`: 18.2.6 build error while cmake don't build the correct dependency's
+* :mantis:`1059`: Webui spams Apache error_log with bconsole messages
+* :mantis:`1072`: Newer versions of Fedora use stricter code checking
+* :mantis:`1095`: |webui|: When login as a user without the permission to the ".api" command, the webui show a wrong and ugly error message
+* :mantis:`1100`: Bconsole crashes when a pam authentication aborts
+* :mantis:`1112`: After mount/unmount of tape "status slots" shows empty list
+* :mantis:`1149`: Audit messages are not logged any more
+* :mantis:`1150`: dbconfig schema update scripts broken since 18.2
+* All daemons: Fix buffer overrun in PathAppend
+* |dir|: Add support for MySQL 8
+* |dir|: Fix nullptr cornercase in mtx-changer parser
+* |dir|: Fix audit messages
+* |webui|: Fix overflowing top navigation bar content hiding tab navigation in some modules
+* |webui|: Fix always active debug messages in error.log
+* |webui|: Bvfs cache update notification added
+* Documentation: Various improvements and updates
+
+.. _bareos-1826-releasenotes:
+
+.. _bareos-18.2.6:
 
 Bareos-18.2.6
 ~~~~~~~~~~~~~
@@ -41,12 +114,8 @@ General Information
      -  2171
    * - **URL**
      - https://download.bareos.com/bareos/release/18.2/
-..
    * - **Release Ticket**
-     - :ticket:`1040`
-..
-   * - **LOC**
-     - 123456+ 12345-
+     - n/a
 
 .. csv-table:: binary package availablility in the `bareos.com subscription repos <https://www.bareos.com/en/Subscription.html>`_
    :header: "Distribution", "Architecture"
@@ -76,8 +145,8 @@ New Features
 ^^^^^^^^^^^^
 * New packages for MacOS and FreeBSD
 * Updated documentation
-* |bareosWebui|: Fixed TLS-Cert problem with old PHP versions :ticket:`1045`
-* dbcheck: completed merge of "Fix dbcheck orphaned path entries performance issue" (a8f2a39)
+* :mantis:`1045`: Fixed TLS-Cert problem with old PHP versions in the |webui|
+* dbcheck: Completed merge of "Fix dbcheck orphaned path entries performance issue" (a8f2a39)
 
 
 .. _bareos-1825-releasenotes:
@@ -102,10 +171,7 @@ General Information
      - http://download.bareos.org/bareos/release/18.2/
 
    * - **Release Ticket**
-     - :ticket:`1040`
-..
-   * - **LOC**
-     - 123456+ 12345-
+     - :mantis:`1040`
 
 .. csv-table:: binary package availablility
    :header: "Distribution", "Architecture"
@@ -143,7 +209,7 @@ New Features
     * Old |bareosFd| speaking the old protocol are automatically detected
       and daemons switch to the old protocol
 
-  * Easy update without configuration changes
+  * Easily update without configuration changes
 
     * Existing Bareos installations can be upgraded without configuration changes
 
@@ -159,15 +225,15 @@ Changed Features
 * Bandwidth limiting now also works in TLS encrypted connections. Before, bandwidth limiting
   was ignored when the connections were TLS encrypted
 
-* droplet (S3): multiple enhancements
+* Droplet (S3): multiple enhancements
 
-* |bconsole|: added "whoami" command to show currently associated user
+* |bconsole|: Added "whoami" command to show currently associated user
 
 * xattr and acl support now are enabled by default
 
-  * both features were disabled by default and needed to be enabled in the fileset options
-  * now both are enabled by default and can be disabled in the fileset options
-  * new |bareosFd| logs the current status of both options in job log
+  * Both features were disabled by default and needed to be enabled in the fileset options
+  * Now both are enabled by default and can be disabled in the fileset options
+  * New |bareosFd| logs the current status of both options in job log
 
 Backward compatibility
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -232,23 +298,23 @@ For a detailed explanation of all connection modes see :ref:`ConnectionOverviewR
 
 Deprecated and Removed Features
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-* removed Bareos conio option, as the standard library readline is used instead
+* Removed Bareos conio option, as the standard library readline is used instead
 * GnutTLS is not supported anymore, OpenSSL is now required
 
 
 Bugs Fixed
 ^^^^^^^^^^
-* :ticket:`845`: NetApp OnCommand System Manager calls on SD Port 10000 lead to Segmentation Violation
-* :ticket:`805`: can't restore vmware-plugin assisted backups via |bareosWebui|
+* :mantis:`845`: NetApp OnCommand System Manager calls on SD Port 10000 leads to Segmentation Violation
+* :mantis:`805`: Can't restore vmware-plugin assisted backups via |bareosWebui|
 * Windows Installer: Fixed infinite install dialog for VC 2012 checks on x86 windows
 * Fixed memory leaks in the |bareosDir| when using bconsole or |bareosWebui|
 * Fixed a debug message handler bug on |bareosDir| when debuglevel is >= 900
 * Improved shutdown of |bareosDir|
-* :ticket:`1034`: Read error on tape may be misinterpreted as end-of-tape
+* :mantis:`1034`: Read error on tape may be misinterpreted as end-of-tape
 * "Exit On Fatal" works now as expected
 * Fixed a bug when migration storage daemons cannot connect
 * Guarded numerous nullpointers
-* VMware: fixed errors when using non-ascii characters
+* VMware: Fixed errors when using non-ascii characters
 
 Updated Documentation
 ^^^^^^^^^^^^^^^^^^^^^
@@ -260,41 +326,41 @@ Updated Documentation
 
 Internal Project Changes
 ^^^^^^^^^^^^^^^^^^^^^^^^
-* reorganized the whole git repository and merged sub repositories into main repository
-* changed the build system from autoconf/automake to cmake
-* switched from cmocka to google test framework for unit tests
-* introduced namespaces to avoid name clashes when parts of different daemons are tested in one test
-* switched to use c++11 standard, start to refactor using standard library instead of legacy features
-* use google c++ style guide
+* Reorganized the whole git repository and merged sub repositories into main repository
+* Changed the build system from autoconf/automake to cmake
+* Switched from cmocka to google test framework for unit tests
+* Introduced namespaces to avoid name clashes when parts of different daemons are tested in one test
+* Switched to use c++11 standard, start to refactor using standard library instead of legacy features
+* Use google c++ style guide
 
-  * refactored variable names
+  * Refactored variable names
 
-* refactored configuration parser
+* Refactored configuration parser
 * TLS implementation has now a base class interface instead of compile time switched behaviour
-* library cleanup and reorganization
+* Library cleanup and reorganization
 
-  * library does not use main program variables anymore
-  * removed libbareoscfg
-  * enhanced windows cross building
+  * Library does not use main program variables anymore
+  * Removed libbareoscfg
+  * Enhanced windows cross building
 
-* renamed c++ files to use .cc file extension
-* cleanup of header files
+* Renamed c++ files to use .cc file extension
+* Cleanup of header files
 
-  * removed "protos.h"
-  * introduced individual header file for each c++ file
-  * each header file has own google c++ standard header guard
-  * explicitly declare functions override where applicable
+  * Removed "protos.h"
+  * Introduced individual header fileS for each c++ file
+  * Each header file has own google c++ standard header guard
+  * Explicitly declare functions override where applicable
 
 
 * |bareosTraymonitor|: Allows compiling using Qt4 or Qt5
-* switch the documentation from LaTeX to Sphinx (work in progress)
+* Switch the documentation from LaTeX to Sphinx (work in progress)
 * |bareosWebui|: Enhances Selenium tests to be used on https://saucelabs.com/u/bareossaucelabs
-* clang: massively reduced number of warnings
+* clang: Massively reduced number of warnings
 * FreeBSD: added start scripts, fixed buggy cmake detection of ACL support
-* regression tests
+* Regression tests
 
-  * automatically build |bareosTraymonitor|
-  * preconfigure |bareosWebui| to run in php's own webserver for easy testing
+  * Automatically build |bareosTraymonitor|
+  * Preconfigure |bareosWebui| to run in php's own webserver for easy testing
 
 
 
