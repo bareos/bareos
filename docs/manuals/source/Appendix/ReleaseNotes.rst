@@ -734,7 +734,7 @@ bareos-15.2.4
 ================ ===============================================
 Code Release     2016-06-10
 Database Version 2004 (unchanged)
-Release Ticket   :ticket:`641`
+Release Ticket   :mantis:`641`
 Url              http://download.bareos.com/bareos/release/15.2/
 ================ ===============================================
 
@@ -760,7 +760,7 @@ bareos-15.2.3
 ================ ===============================================
 Code Release     2016-03-11
 Database Version 2004 (unchanged)
-Release Ticket   :ticket:`625`
+Release Ticket   :mantis:`625`
 Url              http://download.bareos.com/bareos/release/15.2/
 ================ ===============================================
 
@@ -795,7 +795,7 @@ bareos-15.2.2
 Code Release     2015-11-19
 Database Version 2004
 \                Database update required (if coming from bareos-14.2). See the :ref:`bareos-update` section.
-Release Ticket   :ticket:`554`
+Release Ticket   :mantis:`554`
 Url              http://download.bareos.org/bareos/release/15.2/
 \                http://download.bareos.com/bareos/release/15.2/
 ================ ============================================================================================================
@@ -815,7 +815,7 @@ When coming from bareos-14.2.x, the following things have changed (same as in ba
 Code Release     2015-09-16
 Database Version 2004
 \                Database update required, see the :ref:`bareos-update` section.
-Release Ticket   :ticket:`501`
+Release Ticket   :mantis:`501`
 Url              http://download.bareos.org/bareos/release/15.2/
 ================ ===============================================================================
 
@@ -840,7 +840,7 @@ bareos-14.2.7
 ================ ===============================================
 Code Release     2016-07-11
 Database Version 2003 (unchanged)
-Release Ticket   :ticket:`584`
+Release Ticket   :mantis:`584`
 Url              http://download.bareos.com/bareos/release/14.2/
 ================ ===============================================
 
@@ -849,46 +849,46 @@ This release contains several bugfixes. Excerpt:
 -  bareos-dir
 
    -  | Fixes pretty printing of Fileset options block
-      | :ticket:`591`: config pretty-printer does not print filesets correctly
+      | :mantis:`591`: config pretty-printer does not print filesets correctly
 
    -  | run command: fixes changing the pool when changing the backup level in interactive mode
-      | :ticket:`633`: Interactive run doesn’t update pool on level change
+      | :mantis:`633`: Interactive run doesn’t update pool on level change
 
    -  | Ignore the Fileset option DriveType on non Windows systems
-      | :ticket:`644`: Setting DriveType causes empty backups on Linux
+      | :mantis:`644`: Setting DriveType causes empty backups on Linux
 
    -  | Suppress already queued jobs for disabled schedules
-      | :ticket:`659`: Suppress already queued jobs for disabled schedules
+      | :mantis:`659`: Suppress already queued jobs for disabled schedules
 
 -  NDMP
 
    -  | Fixes cancel of NDMP jobs
-      | :ticket:`604`: Cancel a NDMP Job causes the sd to crash
+      | :mantis:`604`: Cancel a NDMP Job causes the sd to crash
 
 -  bpipe-fd plugin
 
    -  | Only take stdout into account, ignore stderr (like earlier versions)
-      | :ticket:`632`: fd-bpipe plugin merges stderr with stdout, which can result in corrupted backups
+      | :mantis:`632`: fd-bpipe plugin merges stderr with stdout, which can result in corrupted backups
 
 -  win32
 
    -  | Fix symlink and junction support
-      | :ticket:`575`: charset problem in symlinks/junctions windows restore
-      | :ticket:`615`: symlinks/junctions wrong target path on restore (wide chars)
+      | :mantis:`575`: charset problem in symlinks/junctions windows restore
+      | :mantis:`615`: symlinks/junctions wrong target path on restore (wide chars)
 
    -  | Fixes quoting for bmail.exe in bareos-dir.conf
-      | :ticket:`581`: Installer is setting up a wrong path to bmail.exe without quotes / bmail not called
+      | :mantis:`581`: Installer is setting up a wrong path to bmail.exe without quotes / bmail not called
 
    -  | Fix crash on restore of sparse files
-      | :ticket:`640`: File daemon crashed after restoring sparse file on windows
+      | :mantis:`640`: File daemon crashed after restoring sparse file on windows
 
 -  win32 mssql plugin
 
    -  | Allow connecting to non default instance
-      | :ticket:`383`: mssqldvi problem with connection to mssql not default instance
+      | :mantis:`383`: mssqldvi problem with connection to mssql not default instance
 
    -  | Fix backup/restore of incremental backups
-      | :ticket:`588`: Incremental MSSQL backup fails when database name contains spaces
+      | :mantis:`588`: Incremental MSSQL backup fails when database name contains spaces
 
 .. _bareos-14.2.6:
 
@@ -900,7 +900,7 @@ bareos-14.2.6
 ================ ===============================================
 Code Release     2015-12-03
 Database Version 2003 (unchanged)
-Release Ticket   :ticket:`474`
+Release Ticket   :mantis:`474`
 Url              http://download.bareos.com/bareos/release/14.2/
 ================ ===============================================
 
@@ -916,7 +916,7 @@ bareos-14.2.5
 ================ ===============================================
 Code Release     2015-06-01
 Database Version 2003 (unchanged)
-Release Ticket   :ticket:`447`
+Release Ticket   :mantis:`447`
 Url              http://download.bareos.com/bareos/release/14.2/
 ================ ===============================================
 
@@ -932,11 +932,11 @@ bareos-14.2.4
 ================ ===============================================
 Code Release     2015-03-23
 Database Version 2003 (unchanged)
-Release Ticket   :ticket:`420`
+Release Ticket   :mantis:`420`
 Url              http://download.bareos.com/bareos/release/14.2/
 ================ ===============================================
 
-This release contains several bugfixes, including one major bugfix (:ticket:`437`), relevant for those of you using backup to disk with autolabeling enabled.
+This release contains several bugfixes, including one major bugfix (:mantis:`437`), relevant for those of you using backup to disk with autolabeling enabled.
 
 It can lead to loss of a 64k block of data when all of this conditions apply:
 
@@ -966,7 +966,7 @@ bareos-14.2.3
 ================ ===============================================
 Code Release     2015-02-02
 Database Version 2003 (unchanged)
-Release Ticket   :ticket:`393`
+Release Ticket   :mantis:`393`
 Url              http://download.bareos.com/bareos/release/14.2/
 ================ ===============================================
 
