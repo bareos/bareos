@@ -1326,7 +1326,7 @@ The directives within an Options resource may be one of the following:
       single: Directive; xattr support
 
    Since :sinceVersion:`18.2.4: xattr support = yes (new default)`
-   the default is :strong:`yes.
+   the default is :strong:`yes`.
    If this option is set to yes, and your
    operating system support either so called Extended Attributes or
    Extensible Attributes Bareos will backup the file and directory

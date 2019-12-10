@@ -552,7 +552,7 @@ def setup(app):
     app.add_role('bcommand', bcommand())
     app.add_role('os', os())    
     app.add_role('sinceversion', sinceVersion())
-    app.add_role('ticket', autolink('https://bugs.bareos.org/view.php?id={}', 'Ticket #{}'))
+    app.add_role('mantis', autolink('https://bugs.bareos.org/view.php?id={}', 'Issue #{}'))
 
     
     # identifies the version of our extension

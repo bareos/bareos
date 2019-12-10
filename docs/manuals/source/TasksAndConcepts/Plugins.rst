@@ -211,7 +211,7 @@ Current limitations amongst others are:
 
 .. limitation:: VMware Plugin: Virtual Disks have to be smaller than 2TB.
 
-       Virtual Disks have to be smaller than 2 TB, see :ticket:`670`.
+       Virtual Disks have to be smaller than 2 TB, see :mantis:`670`.
 
 
 
