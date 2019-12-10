@@ -3,21 +3,17 @@
 Release Notes
 =============
 
-:index:`\ <single: Releases>`\
-
-The technical changelog is automatically generated from the Bareos bug tracking system, see http://bugs.bareos.org/changelog_page.php.
-
-Please note, that some of the subreleases are only internal development releases.
-
-The overview about new feature of a release are shown at the :ref:`genindex` of this document.
-
-This chapter concentrates on things to do when updating an existing Bareos installation.
-
-
+.. index:: Releases
 
 .. warning::
 
       While all the source code is published on `GitHub <https://github.com/bareos/bareos>`_, the releases of packages on http://download.bareos.org is limited to the initial versions of a major release. Later maintenance releases are only published on https://download.bareos.com.
+
+This chapter concentrates on things to do when updating an existing Bareos installation.
+
+Please note, that some of the subreleases are only development releases.
+
+The feature overview for a release are shown at the :ref:`genindex` of this document.
 
 
 .. _bareos-current-releasenotes:
@@ -47,7 +43,7 @@ General Information
      - https://download.bareos.com/bareos/release/18.2/
 ..
    * - **Release Ticket**
-     - :issue:`1040`
+     - :ticket:`1040`
 ..
    * - **LOC**
      - 123456+ 12345-
@@ -80,7 +76,7 @@ New Features
 ^^^^^^^^^^^^
 * New packages for MacOS and FreeBSD
 * Updated documentation
-* |bareosWebui|: Fixed TLS-Cert problem with old PHP versions :issue:`1045`
+* |bareosWebui|: Fixed TLS-Cert problem with old PHP versions :ticket:`1045`
 * dbcheck: completed merge of "Fix dbcheck orphaned path entries performance issue" (a8f2a39)
 
 
@@ -106,7 +102,7 @@ General Information
      - http://download.bareos.org/bareos/release/18.2/
 
    * - **Release Ticket**
-     - :issue:`1040`
+     - :ticket:`1040`
 ..
    * - **LOC**
      - 123456+ 12345-
@@ -242,13 +238,13 @@ Deprecated and Removed Features
 
 Bugs Fixed
 ^^^^^^^^^^
-* :issue:`845`: NetApp OnCommand System Manager calls on SD Port 10000 lead to Segmentation Violation
-* :issue:`805`: can't restore vmware-plugin assisted backups via |bareosWebui|
+* :ticket:`845`: NetApp OnCommand System Manager calls on SD Port 10000 lead to Segmentation Violation
+* :ticket:`805`: can't restore vmware-plugin assisted backups via |bareosWebui|
 * Windows Installer: Fixed infinite install dialog for VC 2012 checks on x86 windows
 * Fixed memory leaks in the |bareosDir| when using bconsole or |bareosWebui|
 * Fixed a debug message handler bug on |bareosDir| when debuglevel is >= 900
 * Improved shutdown of |bareosDir|
-* :issue:`1034`: Read error on tape may be misinterpreted as end-of-tape
+* :ticket:`1034`: Read error on tape may be misinterpreted as end-of-tape
 * "Exit On Fatal" works now as expected
 * Fixed a bug when migration storage daemons cannot connect
 * Guarded numerous nullpointers
