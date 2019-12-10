@@ -13,7 +13,7 @@ This chapter concentrates on things to do when updating an existing Bareos insta
 
 Please note, that some of the subreleases are only development releases.
 
-The overview about new feature of a release are shown at the :ref:`genindex` of this document.
+The feature overview for a release are shown at the :ref:`genindex` of this document.
 
 
 .. _bareos-current-releasenotes:
