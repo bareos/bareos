@@ -98,11 +98,13 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson libr
    # See http://download.bareos.org/bareos/release/
    # for applicable releases and distributions
 
-   DIST=RHEL_7
+   DIST=RHEL_8
    # or
+   # DIST=RHEL_7
+   # DIST=CentOS_8
    # DIST=CentOS_7
-   # DIST=Fedora_26
-   # DIST=Fedora_25
+   # DIST=Fedora_30
+   # DIST=Fedora_31
 
    RELEASE=release/19.2/
    # or
@@ -168,13 +170,10 @@ SUSE Linux Enterprise Server (SLES), openSUSE
    # See http://download.bareos.org/bareos/release/
    # for applicable releases and distributions
 
-   DIST=SLE_12_SP3
+   DIST=SLE_15_SP1
    # or
-   # DIST=SLE_12_SP2
-   # DIST=SLE_12_SP1
-   # DIST=SLE_11_SP4
-   # DIST=openSUSE_Leap_42.3
-   # DIST=openSUSE_Leap_42.2
+   # DIST=SLE_12_SP4
+   # DIST=openSUSE_Leap_15.1
 
    RELEASE=release/19.2/
    # or
@@ -208,12 +207,11 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson libr
    # See http://download.bareos.org/bareos/release/
    # for applicable releases and distributions
 
-   DIST=Debian_9.0
+   DIST=Debian_10.0
    # or
-   # DIST=Debian_8.0
+   # DIST=Debian_9.0
+   # DIST=xUbuntu_18.04
    # DIST=xUbuntu_16.04
-   # DIST=xUbuntu_14.04
-   # DIST=xUbuntu_12.04
 
    RELEASE=release/19.2/
    # or
@@ -250,6 +248,7 @@ Install on FreeBSD based Distributions
    DIST=FreeBSD_12.1
    # or
    # DIST=FreeBSD_12.0
+   # DIST=FreeBSD_11.3
 
    RELEASE=release/19.2/
    # or
