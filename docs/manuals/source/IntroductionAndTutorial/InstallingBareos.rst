@@ -88,7 +88,7 @@ RHEL>7, CentOS>7, Fedora
 
 :index:`\ <single: Platform; RHEL>`\  :index:`\ <single: Platform; CentOS>`\  :index:`\ <single: Platform; Fedora>`\
 
-Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson library <jansson>` package. On RHEL 7 it is available through the RHEL Server Optional channel. On CentOS 7 and Fedora is it included on the main repository.
+Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson library <jansson>` package. On RHEL 7 it is available through the RHEL Server Optional channel. On CentOS 7 and Fedora is it included in the main repository.
 
 .. code-block:: shell-session
    :caption: Shell example script for Bareos installation on RHEL > 7 / CentOS > 7 / Fedora
@@ -332,7 +332,7 @@ Other Platforms
 PostgreSQL
 ^^^^^^^^^^
 
-If your are using PostgreSQL and your PostgreSQL administration user is **postgres** (default), use following commands:
+If your are using PostgreSQL and your PostgreSQL administration user is **postgres** (default), use the following commands:
 
 .. code-block:: shell-session
    :caption: Setup Bareos catalog with PostgreSQL
@@ -354,7 +354,7 @@ Make sure, that **root** has direct access to the local MySQL server. Check if t
    user=root
    password=<input>YourPasswordForAccessingMysqlAsRoot</input>
 
-It is recommended, to secure the Bareos database connection with a password. See :ref:`Catalog Maintenance -- MySQL <catalog-maintenance-mysql>` about how to archieve this. For testing, using a password-less MySQL connection is probable okay. Setup the Bareos database tables by following commands:
+It is recommended to secure the Bareos database connection with a password. See :ref:`Catalog Maintenance -- MySQL <catalog-maintenance-mysql>` on how to achieve this. For testing, using a password-less MySQL connection is probably okay. Setup the Bareos database tables using the following commands:
 
 .. code-block:: shell-session
    :caption: Setup Bareos catalog with MySQL
@@ -363,7 +363,7 @@ It is recommended, to secure the Bareos database connection with a password. See
    /usr/lib/bareos/scripts/make_bareos_tables
    /usr/lib/bareos/scripts/grant_bareos_privileges
 
-As some Bareos updates require a database schema update, therefore the file :file:`/root/.my.cnf` might also be useful in the future.
+As some Bareos updates require a database schema update, the file :file:`/root/.my.cnf` might also be useful in the future.
 
 .. _section-StartDaemons:
 
@@ -377,9 +377,9 @@ Start the daemons
    service bareos-sd start
    service bareos-fd start
 
-You will eventually have to allow access to the ports 9101-9103, used by Bareos.
+Please remark, the Bareos Daemons need to have access to the ports 9101-9103.
 
-Now you should be able to access the director using the bconsole.
+Now you should be able to log in to the director using the bconsole.
 
 When you want to use the bareos-webui, please refer to the chapter :ref:`section-install-webui`.  
 
