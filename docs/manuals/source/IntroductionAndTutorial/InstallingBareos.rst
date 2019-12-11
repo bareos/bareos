@@ -88,7 +88,7 @@ RHEL>7, CentOS>7, Fedora
 
 :index:`\ <single: Platform; RHEL>`\  :index:`\ <single: Platform; CentOS>`\  :index:`\ <single: Platform; Fedora>`\
 
-Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson library <jansson>` package. On RHEL 7 it is available through the RHEL Server Optional channel. On CentOS 7 and Fedora is it included on the main repository.
+Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson library <jansson>` package. On RHEL 7 it is available through the RHEL Server Optional channel. On CentOS 7 and Fedora is it included in the main repository.
 
 .. code-block:: shell-session
    :caption: Shell example script for Bareos installation on RHEL > 7 / CentOS > 7 / Fedora
@@ -98,13 +98,15 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson libr
    # See http://download.bareos.org/bareos/release/
    # for applicable releases and distributions
 
-   DIST=RHEL_7
+   DIST=RHEL_8
    # or
+   # DIST=RHEL_7
+   # DIST=CentOS_8
    # DIST=CentOS_7
-   # DIST=Fedora_26
-   # DIST=Fedora_25
+   # DIST=Fedora_30
+   # DIST=Fedora_31
 
-   RELEASE=release/17.2/
+   RELEASE=release/19.2/
    # or
    # RELEASE=release/latest/
    # RELEASE=experimental/nightly/
@@ -140,7 +142,7 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson libr
    DIST=RHEL_6
    # DIST=CentOS_6
 
-   RELEASE=release/17.2/
+   RELEASE=release/19.2/
    # or
    # RELEASE=release/latest/
    # RELEASE=experimental/nightly/
@@ -151,36 +153,6 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson libr
 
    # install Bareos packages
    yum install bareos bareos-database-postgresql
-
-RHEL 5
-^^^^^^
-
-:index:`\ <single: Platform; RHEL; 5>`\ 
-
-yum in RHEL 5/CentOS 5 has slightly different behaviour as far as dependency resolving is concerned: it sometimes install a dependent package after the one that has the dependency defined. To make sure that it works, install the desired Bareos database backend package first in a separate step:
-
-.. code-block:: shell-session
-   :caption: Shell example script for Bareos installation on RHEL 5 / CentOS 5
-
-   #!/bin/sh
-
-   # See http://download.bareos.org/bareos/release/
-   # for applicable releases and distributions
-
-   DIST=RHEL_5
-
-   RELEASE=release/17.2/
-   # or
-   # RELEASE=release/latest/
-   # RELEASE=experimental/nightly/
-
-   # add the Bareos repository
-   URL=http://download.bareos.org/bareos/$RELEASE/$DIST
-   wget -O /etc/yum.repos.d/bareos.repo $URL/bareos.repo
-
-   # install Bareos packages
-   yum install bareos-database-postgresql
-   yum install bareos
 
 Install on SUSE based Linux Distributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -198,15 +170,12 @@ SUSE Linux Enterprise Server (SLES), openSUSE
    # See http://download.bareos.org/bareos/release/
    # for applicable releases and distributions
 
-   DIST=SLE_12_SP3
+   DIST=SLE_15_SP1
    # or
-   # DIST=SLE_12_SP2
-   # DIST=SLE_12_SP1
-   # DIST=SLE_11_SP4
-   # DIST=openSUSE_Leap_42.3
-   # DIST=openSUSE_Leap_42.2
+   # DIST=SLE_12_SP4
+   # DIST=openSUSE_Leap_15.1
 
-   RELEASE=release/17.2/
+   RELEASE=release/19.2/
    # or
    # RELEASE=release/latest/
    # RELEASE=experimental/nightly/
@@ -238,14 +207,13 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson libr
    # See http://download.bareos.org/bareos/release/
    # for applicable releases and distributions
 
-   DIST=Debian_9.0
+   DIST=Debian_10.0
    # or
-   # DIST=Debian_8.0
+   # DIST=Debian_9.0
+   # DIST=xUbuntu_18.04
    # DIST=xUbuntu_16.04
-   # DIST=xUbuntu_14.04
-   # DIST=xUbuntu_12.04
 
-   RELEASE=release/17.2/
+   RELEASE=release/19.2/
    # or
    # RELEASE=release/latest/
    # RELEASE=experimental/nightly/
@@ -263,6 +231,55 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson libr
    apt-get install bareos bareos-database-postgresql
 
 If you prefer using the versions of Bareos directly integrated into the distributions, please note that there are some differences, see :ref:`section-DebianOrgLimitations`.
+
+Install on FreeBSD based Distributions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:index:`\ <single: Platform; FreeBSD>`\  :index:`\ <single: Platform; FreeBSD>`\
+
+.. code-block:: shell-session
+   :caption: Shell example script for Bareos installation on FreeBSD
+
+   #!/bin/sh
+
+   # See http://download.bareos.org/bareos/release/
+   # for applicable releases and distributions
+
+   DIST=FreeBSD_12.1
+   # or
+   # DIST=FreeBSD_12.0
+   # DIST=FreeBSD_11.3
+
+   RELEASE=release/19.2/
+   # or
+   # RELEASE=release/latest/
+   # RELEASE=experimental/nightly/
+
+   URL=http://download.bareos.org/bareos/$RELEASE/$DIST
+
+   # add the Bareos repository
+   cd /usr/local/etc/pkg/repos
+   wget -q $URL/bareos.conf
+
+   # install Bareos packages
+   pkg install --yes bareos.com-director bareos.com-storage bareos.com-filedaemon bareos.com-database-postgresql bareos.com-bconsole
+
+   # setup the Bareos database
+   su postgres -c /usr/lib/bareos/scripts/create_bareos_database
+   su postgres -c /usr/lib/bareos/scripts/make_bareos_tables
+   su postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges
+
+   # enable services
+   sysrc bareosdir_enable=YES
+   sysrc bareossd_enable=YES
+   sysrc bareosfd_enable=YES
+
+   # start services
+   service bareos-dir start
+   service bareos-sd start
+   service bareos-fd start
+
+
 
 Install on Univention Corporate Server
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -314,7 +331,7 @@ Other Platforms
 PostgreSQL
 ^^^^^^^^^^
 
-If your are using PostgreSQL and your PostgreSQL administration user is **postgres** (default), use following commands:
+If your are using PostgreSQL and your PostgreSQL administration user is **postgres** (default), use the following commands:
 
 .. code-block:: shell-session
    :caption: Setup Bareos catalog with PostgreSQL
@@ -336,7 +353,7 @@ Make sure, that **root** has direct access to the local MySQL server. Check if t
    user=root
    password=<input>YourPasswordForAccessingMysqlAsRoot</input>
 
-It is recommended, to secure the Bareos database connection with a password. See :ref:`Catalog Maintenance -- MySQL <catalog-maintenance-mysql>` about how to archieve this. For testing, using a password-less MySQL connection is probable okay. Setup the Bareos database tables by following commands:
+It is recommended to secure the Bareos database connection with a password. See :ref:`Catalog Maintenance -- MySQL <catalog-maintenance-mysql>` on how to achieve this. For testing, using a password-less MySQL connection is probably okay. Setup the Bareos database tables using the following commands:
 
 .. code-block:: shell-session
    :caption: Setup Bareos catalog with MySQL
@@ -345,7 +362,7 @@ It is recommended, to secure the Bareos database connection with a password. See
    /usr/lib/bareos/scripts/make_bareos_tables
    /usr/lib/bareos/scripts/grant_bareos_privileges
 
-As some Bareos updates require a database schema update, therefore the file :file:`/root/.my.cnf` might also be useful in the future.
+As some Bareos updates require a database schema update, the file :file:`/root/.my.cnf` might also be useful in the future.
 
 .. _section-StartDaemons:
 
@@ -359,9 +376,9 @@ Start the daemons
    service bareos-sd start
    service bareos-fd start
 
-You will eventually have to allow access to the ports 9101-9103, used by Bareos.
+Please remark, the Bareos Daemons need to have access to the ports 9101-9103.
 
-Now you should be able to access the director using the bconsole.
+Now you should be able to log in to the director using the bconsole.
 
 When you want to use the bareos-webui, please refer to the chapter :ref:`section-install-webui`.  
 
