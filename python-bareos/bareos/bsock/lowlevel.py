@@ -456,6 +456,8 @@ class LowLevel(object):
             except EOFError:
                 return False
             try:
+                if command == "exit" or command == "quit":
+                    return True
                 resultmsg = self.call(command)
                 self._show_result(resultmsg)
             except bareos.exceptions.JsonRpcErrorReceivedException as exp:
