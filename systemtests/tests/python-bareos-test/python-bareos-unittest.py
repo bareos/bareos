@@ -445,7 +445,7 @@ class PythonBareosTlsPskTest(PythonBareosBase):
         self.assertFalse(hasattr(director.socket, 'cipher'))
 
 
-    def test_login_notls_tls_fixprotocolversion(self):
+    def test_login_notls_tls_fixedprotocolversion(self):
         '''
         console: notls, director: tls => nologin
 
@@ -512,6 +512,34 @@ class PythonBareosTlsPskTest(PythonBareosBase):
         director = bareos.bsock.DirectorConsole(
             address=self.director_address,
             port=self.director_port,
+            name=username,
+            password=password)
+
+        whoami = director.call('whoami').decode('utf-8')
+        self.assertEqual(username, whoami.rstrip())
+
+        self.assertTrue(hasattr(director.socket, 'cipher'))
+        cipher = director.socket.cipher()
+        logger.debug(str(cipher))
+
+
+    @unittest.skipUnless(bareos.bsock.DirectorConsole.is_tls_psk_available(),
+                         "TLS-PSK is not available.")
+    def test_login_tls_tls_fixedprotocolversion(self):
+        '''
+        console: tls, director: tls     => login
+        '''
+
+        logger = logging.getLogger()
+
+        username = self.get_operator_username(tls=True)
+        password = self.get_operator_password(username)
+
+        director = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            protocolversion=ProtocolVersions.last,
+            tls_psk_require=True,
             name=username,
             password=password)
 
