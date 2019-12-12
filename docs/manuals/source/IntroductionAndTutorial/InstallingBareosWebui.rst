@@ -423,6 +423,7 @@ This can be accomplished by the Run Script directive of a Job Resource.
 The following code snippet is an example how to run the cache update process in a RunScript after the catalog backup.
 
 .. code-block:: bareosconfig
+
   Job {
     Name = "BackupCatalog"
     Level = Full
@@ -446,6 +447,7 @@ The following code snippet is an example how to run the cache update process in 
 As an alternative to the method above the Bvfs cache can be updated after each job run by using the Run Script directive as well.
 
 .. code-block:: bareosconfig
+
   Job {
     Name = "backup-client-01"
     Client = "client-01.example.com"
