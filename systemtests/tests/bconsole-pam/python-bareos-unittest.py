@@ -8,8 +8,8 @@ import os
 import unittest
 
 import bareos.bsock
-import bareos.exceptions
 from   bareos.bsock.protocolversions import ProtocolVersions
+import bareos.exceptions
 
 
 class PythonBareosBase(unittest.TestCase):
@@ -18,7 +18,7 @@ class PythonBareosBase(unittest.TestCase):
     director_root_password = 'secret'
     director_operator_username = 'admin'
     director_operator_password = 'secret'
-    console_pam_username = u'PamConsole'
+    console_pam_username = u'PamConsole-notls'
     console_pam_password = u'secret'
     client = 'bareos-fd'
     #restorefile = '/usr/sbin/bconsole'
@@ -51,7 +51,7 @@ class PythonBareosPamLoginTest(PythonBareosBase):
     Requires Bareos Console Protocol >= 18.2.
     '''
 
-    def test_pam_login(self):
+    def test_pam_login_notls(self):
 
         pam_username = u'user1'
         pam_password = u'user1'
@@ -64,6 +64,32 @@ class PythonBareosPamLoginTest(PythonBareosBase):
             address=self.director_address,
             port=self.director_port,
             name=self.console_pam_username,
+            password=bareos_password,
+            pam_username=pam_username,
+            pam_password=pam_password)
+
+        whoami = director.call('whoami').decode('utf-8')
+        self.assertEqual(pam_username, whoami.rstrip())
+
+
+    @unittest.skipUnless(bareos.bsock.DirectorConsole.is_tls_psk_available(),
+                         "TLS-PSK is not available.")
+    def test_pam_login_tls(self):
+
+        pam_username = u'user1'
+        pam_password = u'user1'
+        
+        console_pam_username = u"PamConsole"
+        console_pam_password = u"secret"
+
+        #
+        # login as console_pam_username
+        #
+        bareos_password = bareos.bsock.Password(console_pam_password)
+        director = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name=console_pam_username,
             password=bareos_password,
             pam_username=pam_username,
             pam_password=pam_password)
@@ -152,6 +178,8 @@ class PythonBareosPamLoginTest(PythonBareosBase):
         the console first retrieves a "1000 OK",
         but further communication fails.
         In the end, a ConnectionLostError exception is raised.
+        Sometimes this occurs during initialization,
+        sometimes first the call command fails.
         '''
 
         bareos_password = bareos.bsock.Password(self.console_pam_password)
@@ -162,8 +190,7 @@ class PythonBareosPamLoginTest(PythonBareosBase):
                 protocolversion=ProtocolVersions.bareos_12_4,
                 name=self.console_pam_username,
                 password=bareos_password)
-
-
+            result = director.call('whomi').decode('utf-8')
 
 
 def get_env():
