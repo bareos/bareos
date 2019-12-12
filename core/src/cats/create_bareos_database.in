@@ -109,7 +109,7 @@ case ${db_type} in
       # This must be updated for future versions of PostgreSQL
       #
       case ${PSQLVERSION} in
-         9.*|10.*)
+         9.*|10.*|11.*|12.*)
 	    ENCODING="ENCODING 'SQL_ASCII' LC_COLLATE 'C' LC_CTYPE 'C'"
             ;;
          8.[456789])

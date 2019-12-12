@@ -292,7 +292,7 @@ CREATE TABLE Client (
 );
 
 CREATE TABLE BaseFiles (
-   BaseId INTEGER,
+   BaseId BIGINT,
    BaseJobId INTEGER UNSIGNED REFERENCES Job NOT NULL,
    JobId INTEGER UNSIGNED REFERENCES Job NOT NULL,
    FileId INTEGER UNSIGNED REFERENCES File NOT NULL,
@@ -351,9 +351,6 @@ CREATE TABLE PathVisibility
    Files int4 DEFAULT 0,
    CONSTRAINT pathvisibility_pkey PRIMARY KEY (JobId, PathId)
 );
-
-CREATE INDEX pathvisibility_jobid
-	  ON PathVisibility (JobId);
 
 CREATE TABLE Status (
    JobStatus CHAR(1) NOT NULL,
@@ -471,8 +468,8 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 -- Initialize Version
 --   DELETE should not be required,
 --   but prevents errors if create script is called multiple times
-DELETE FROM Version WHERE VersionId<=2171;
-INSERT INTO Version (VersionId) VALUES (2171);
+DELETE FROM Version WHERE VersionId<=2192;
+INSERT INTO Version (VersionId) VALUES (2192);
 
 PRAGMA default_cache_size = 100000;
 PRAGMA synchronous = NORMAL;
