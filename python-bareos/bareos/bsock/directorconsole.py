@@ -74,6 +74,11 @@ class DirectorConsole(LowLevel):
                                action='store_true',
                                dest='BAREOS_tls_psk_require')
 
+        argparser.add_argument('--tls-require',
+                               help="Allow only encrypted connections. Default: False.",
+                               action='store_true',
+                               dest='BAREOS_tls_require')
+
 
     def __init__(self,
                  address="localhost",
@@ -85,13 +90,17 @@ class DirectorConsole(LowLevel):
                  pam_username=None,
                  pam_password=None,
                  tls_psk_enable=True,
-                 tls_psk_require=False
+                 tls_psk_require=False,
+                 tls_enable=True,
+                 tls_require=False,
                  ):
         super(DirectorConsole, self).__init__()
         self.pam_username=pam_username
         self.pam_password=pam_password
         self.tls_psk_enable=tls_psk_enable
         self.tls_psk_require=tls_psk_require
+        self.tls_enable=tls_enable
+        self.tls_require=tls_require
         self.identity_prefix = u'R_CONSOLE'
         if protocolversion is not None:
             self.requested_protocol_version = int(protocolversion)

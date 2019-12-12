@@ -77,6 +77,8 @@ class LowLevel(object):
         self.max_reconnects = 0
         self.tls_psk_enable = True
         self.tls_psk_require = False
+        self.tls_enable = True
+        self.tls_require = False
         self.connection_type = None
         self.requested_protocol_version = None
         self.protocol_messages = ProtocolMessages()
@@ -127,6 +129,19 @@ class LowLevel(object):
                 connected = True
                 self.logger.debug("Encryption: {0}".format(self.socket.cipher()))
 
+        if self.tls_enable and self.tls_require:
+            try:
+                self.__connect_tls()
+            except (bareos.exceptions.ConnectionError, ssl.SSLError) as e:
+                self._handleSocketError(e)
+                if self.tls_require:
+                    raise
+                else:
+                    self.logger.warning(u'Failed to connect via TLS. Trying plain connection.')
+            else:
+                connected = True
+                self.logger.debug("Encryption: {0}".format(self.socket.cipher()))
+
         if not connected:
             self.__connect_plain()
             connected = True
@@ -167,6 +182,30 @@ class LowLevel(object):
 
         self.logger.debug("connected to {0}:{1}".format(self.address, self.port))
 
+        return True
+
+    def __connect_tls(self):
+        '''
+        Connect and establish a TLS connection on top of the connection
+        '''
+        self.__connect_plain()
+        # wrap socket with TLS
+        client_socket = self.socket
+        if isinstance(self.password, Password):
+            password = self.password.md5()
+        else:
+            raise bareos.exceptions.ConnectionError(u'No password provided.')
+        #self.logger.debug("identity = {0}, password = {1}".format(identity, password))
+        try:
+            self.socket = ssl.wrap_socket(
+                client_socket,
+                ciphers='ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH',
+                server_side=False)
+        except ssl.SSLError as e:
+            # raise ConnectionError(
+            #     "failed to connect to host {0}, port {1}: {2}".format(self.address, self.port, str(e)))
+            # Using a general raise keep more information about the type of error.
+            raise
         return True
 
 
