@@ -1,0 +1,27 @@
+Job {
+  Name = "admin-runscript-client-server"
+  JobDefs = "DefaultJob"
+  Type = Admin
+  RunScript {
+    RunsWhen = Before
+    Runs On Failure = Yes
+    #Runs On Client = Yes
+    FailJobOnError = Yes
+    # %d    Daemon’s name (Such as host-dir or host-fd)
+    # %n    Job name
+    # %t    Job type (Backup, …)
+    # %i    Job Id
+    Command = "@PROJECT_BINARY_DIR@/tests/@TEST_NAME@/write.sh @working_dir@/jobid-%i-runscript.log 'daemon=%d' 'jobname=%n' 'jobtype=%t' 'jobid=%i'"
+  }
+  RunScript {
+    RunsWhen = Before
+    Runs On Failure = Yes
+    Runs On Client = No
+    FailJobOnError = Yes
+    # %d    Daemon’s name (Such as host-dir or host-fd)
+    # %n    Job name
+    # %t    Job type (Backup, …)
+    # %i    Job Id
+    Command = "@PROJECT_BINARY_DIR@/tests/@TEST_NAME@/write.sh @working_dir@/jobid-%i-runscript.log 'daemon=%d' 'jobname=%n' 'jobtype=%t' 'jobid=%i'"
+  }
+}

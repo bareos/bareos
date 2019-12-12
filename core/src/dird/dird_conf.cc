@@ -591,7 +591,7 @@ static ResourceItem runscript_items[] = {
  { "FailJobOnError", CFG_TYPE_RUNSCRIPT_BOOL, ITEM(res_runscript,fail_on_error), 0, 0, NULL, NULL, NULL },
  { "AbortJobOnError", CFG_TYPE_RUNSCRIPT_BOOL, ITEM(res_runscript,fail_on_error), 0, 0, NULL, NULL, NULL },
  { "RunsWhen", CFG_TYPE_RUNSCRIPT_WHEN, ITEM(res_runscript,when), 0, 0, NULL, NULL, NULL },
- { "RunsOnClient", CFG_TYPE_RUNSCRIPT_TARGET, ITEMC(res_runscript), 0, 0, NULL, NULL, NULL }, /* TODO */
+ { "RunsOnClient", CFG_TYPE_RUNSCRIPT_TARGET, ITEMC(res_runscript), 0, 0, NULL, NULL, NULL },
  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
@@ -3220,6 +3220,14 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
 
   res_runscript = new RunScript();
 
+  /*
+   * Run on client by default.
+   * Set this here, instead of in the class constructor,
+   * as the class is also used by other daemon,
+   * where the default differs.
+   */
+  if (res_runscript->target.empty()) { res_runscript->SetTarget("%c"); }
+
   while ((token = LexGetToken(lc, BCT_SKIP_EOL)) != BCT_EOF) {
     if (token == BCT_EOB) { break; }
 
@@ -3261,9 +3269,6 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
   }
 
   if (pass == 2) {
-    // Run on client by default
-    if (res_runscript->target.empty()) { res_runscript->SetTarget("%c"); }
-
     alist** runscripts = GetItemVariablePointer<alist**>(*item);
     if (!*runscripts) { *runscripts = new alist(10, not_owned_by_alist); }
 
