@@ -276,7 +276,7 @@ class LowLevel(object):
                 self.max_reconnects -= 1
                 if self.__connect() and self._init_connection():
                     result = True
-            except socket.error:
+            except (socket.error, bareos.exceptions.ConnectionLostError):
                 self.logger.warning("failed to reconnect")
         return result
 
