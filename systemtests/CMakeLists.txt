@@ -28,7 +28,7 @@ function(ConfigureFilesToSystemtest srcbasedir dirname globexpression
   if(srcdirname STREQUAL "")
     set(srcdirname "${dirname}")
   endif()
-  set(count 1)
+  set(COUNT 1)
   file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${dirname})
   file(GLOB_RECURSE ALL_FILES
        "${CMAKE_SOURCE_DIR}/${srcbasedir}/${srcdirname}/${globexpression}"
