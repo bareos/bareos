@@ -1,12 +1,12 @@
 #undef  VERSION
-#define VERSION "17.2.7"
-#define BDATE   "16 Jul 2018"
-#define LSMDATE "16Jul18"
+#define VERSION "17.2.8"
+#define BDATE   "12 December 2019"
+#define LSMDATE "12Dec19"
 
 #define PROG_COPYRIGHT "Copyright (C) %d-2012 Free Software Foundation Europe e.V.\n" \
                        "Copyright (C) 2010-2017 Planets Communications B.V.\n" \
                        "Copyright (C) 2013-" BYEAR " Bareos GmbH & Co. KG\n"
-#define BYEAR "2018"       /* year for copyright messages in programs */
+#define BYEAR "2019"       /* year for copyright messages in programs */
 
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
