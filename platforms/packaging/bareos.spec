@@ -809,6 +809,8 @@ export MTX=/usr/sbin/mtx
   --enable-includes
 
 
+# dependency ordering isn't correct, so we run rpcgen first.
+%__make -C src/ndmp ndmp0.h ndmp2.h ndmp3.h ndmp4.h ndmp9.h
 
 #Add flags
 %__make CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" %{?_smp_mflags};
