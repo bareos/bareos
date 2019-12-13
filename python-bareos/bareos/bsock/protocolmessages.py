@@ -61,4 +61,4 @@ class ProtocolMessages():
         Returns a string similar to:
         4002 USERNAME PASSWORD
         '''
-        return b'{id}{s}{username}{s}{password}'.format(id=ProtocolMessageIds.PamUserCredentials, username=pam_username, password=pam_password, s=Constants.record_separator)
+        return bytearray('{id}{s}{username}{s}{password}'.format(id=ProtocolMessageIds.PamUserCredentials, username=pam_username, password=pam_password, s=Constants.record_separator), 'utf-8')
