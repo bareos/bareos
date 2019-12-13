@@ -190,7 +190,7 @@ class PythonBareosPamLoginTest(PythonBareosBase):
                 protocolversion=ProtocolVersions.bareos_12_4,
                 name=self.console_pam_username,
                 password=bareos_password)
-            result = director.call('whomi').decode('utf-8')
+            result = director.call('whoami').decode('utf-8')
 
 
 def get_env():
