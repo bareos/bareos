@@ -67,6 +67,7 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             "BareosFdPluginOvirt:parse_plugin_definition() called with options '%s' \n"
             % str(self.options),
         )
+        self.ovirt.set_options(self.options)
         return bRCs["bRC_OK"]
 
     def check_options(self, context, mandatory_options=None):
@@ -97,10 +98,10 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             )
             return bRCs["bRC_Error"]
 
-        if not self.ovirt.connect_api(context, self.options):
+        if not self.ovirt.connect_api(context):
             return bRCs["bRC_Error"]
 
-        return self.ovirt.prepare_vm_backup(context, self.options)
+        return self.ovirt.prepare_vm_backup(context)
 
     def start_backup_file(self, context, savepkt):
         """
@@ -298,7 +299,7 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             return bRCs["bRC_OK"]
         else:
             # restore to VM to OVirt
-            if not self.ovirt.connect_api(context, self.options):
+            if not self.ovirt.connect_api(context):
                 return bRCs["bRC_Error"]
 
         return bRCs["bRC_OK"]
@@ -393,7 +394,7 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     self.ovirt.end_transfer(context)
             elif self.jobType == "R":
                 if self.FNAME.endswith(".ovf"):
-                    return self.ovirt.prepare_vm_restore(context, self.options)
+                    return self.ovirt.prepare_vm_restore(context)
                 else:
                     self.ovirt.end_transfer(context)
             return bRCs["bRC_OK"]
@@ -615,6 +616,7 @@ class BareosOvirtWrapper(object):
 
     def __init__(self):
 
+        self.options = None
         self.ca = None
 
         self.connection = None
@@ -645,26 +647,30 @@ class BareosOvirtWrapper(object):
 
         self.snapshot_remove_timeout = 300
 
-    def connect_api(self, context, options):
+    def set_options(self, options):
+        # make the plugin options also available in this class
+        self.options = options
+
+    def connect_api(self, context):
 
         # ca certificate
-        self.ca = options["ca"]
+        self.ca = self.options["ca"]
 
         # set server url
-        server_url = "https://%s/ovirt-engine/api" % str(options["server"])
+        server_url = "https://%s/ovirt-engine/api" % str(self.options["server"])
 
         ovirt_sdk_debug = False
-        if options.get("ovirt_sdk_debug_log") is not None:
+        if self.options.get("ovirt_sdk_debug_log") is not None:
             logging.basicConfig(
-                level=logging.DEBUG, filename=options["ovirt_sdk_debug_log"]
+                level=logging.DEBUG, filename=self.options["ovirt_sdk_debug_log"]
             )
             ovirt_sdk_debug = True
 
         # Create a connection to the server:
         self.connection = sdk.Connection(
             url=server_url,
-            username=options["username"],
-            password=options["password"],
+            username=self.options["username"],
+            password=self.options["password"],
             ca_file=self.ca,
             debug=ovirt_sdk_debug,
             log=logging.getLogger(),
@@ -675,7 +681,7 @@ class BareosOvirtWrapper(object):
                 context,
                 bJobMessageType["M_FATAL"],
                 "Cannot connect to host %s with user %s and ca file %s\n"
-                % (options["server"], options["username"], self.ca),
+                % (self.options["server"], self.options["username"], self.ca),
             )
             return False
 
@@ -708,12 +714,12 @@ class BareosOvirtWrapper(object):
                 "Successfully connected to Ovirt Engine API on '%s' with"
                 " user %s and ca file %s\n"
             )
-            % (options["server"], options["username"], self.ca),
+            % (self.options["server"], self.options["username"], self.ca),
         )
 
         return True
 
-    def prepare_vm_backup(self, context, options):
+    def prepare_vm_backup(self, context):
         """
         prepare VM backup:
         - get vm details
@@ -726,7 +732,7 @@ class BareosOvirtWrapper(object):
             "BareosOvirtWrapper::prepare_vm_backup: prepare VM to backup\n",
         )
 
-        if not self.get_vm(context, options):
+        if not self.get_vm(context):
             bareosfd.DebugMessage(context, 100, "Error getting details for VM\n")
 
             return bRCs["bRC_Error"]
@@ -780,12 +786,12 @@ class BareosOvirtWrapper(object):
 
             return bRCs["bRC_OK"]
 
-    def get_vm(self, context, options):
+    def get_vm(self, context):
         search = None
-        if "uuid" in options:
-            search = "uuid=%s" % str(options["uuid"])
-        elif "vm_name" in options:
-            search = "name=%s" % str(options["vm_name"])
+        if "uuid" in self.options:
+            search = "uuid=%s" % str(self.options["uuid"])
+        elif "vm_name" in self.options:
+            search = "name=%s" % str(self.options["vm_name"])
 
         if search is not None:
             bareosfd.DebugMessage(context, 100, "get_vm search vm by '%s'\n" % (search))
@@ -883,6 +889,20 @@ class BareosOvirtWrapper(object):
         # download disk snaphost
         for snap_disk in snap_disks:
             disk_id = snap_disk.id
+            disk_alias = snap_disk.alias
+            bareosfd.DebugMessage(
+                context,
+                200,
+                "get_vm_backup_disks(): disk_id: '%s' disk_alias '%s'\n"
+                % (disk_id, disk_alias),
+            )
+
+            if not self.is_included(context, snap_disk):
+                continue
+
+            if self.is_excluded(context, snap_disk):
+                continue
+
             sd_id = snap_disk.storage_domains[0].id
 
             # Get a reference to the storage domain service in which the disk snapshots reside:
@@ -912,6 +932,37 @@ class BareosOvirtWrapper(object):
                     )
                 has_disks = True
         return has_disks
+
+    def is_included(self, context, disk):
+        if self.options.get("include_disk_aliases") is None:
+            return True
+
+        include_disk_aliases = self.options["include_disk_aliases"].split(",")
+        if disk.alias in include_disk_aliases:
+            bareosfd.JobMessage(
+                context,
+                bJobMessageType["M_INFO"],
+                "Including disk with alias %s (Id %s)\n" % (disk.alias, disk.id),
+            )
+            return True
+
+        return False
+
+    def is_excluded(self, context, disk):
+        if self.options.get("exclude_disk_aliases") is None:
+            return False
+
+        exclude_disk_aliases = self.options["exclude_disk_aliases"].split(",")
+
+        if disk.alias in exclude_disk_aliases:
+            bareosfd.JobMessage(
+                context,
+                bJobMessageType["M_INFO"],
+                "Excluding disk with alias %s (Id %s)\n" % (disk.alias, disk.id),
+            )
+            return True
+
+        return False
 
     def get_transfer_service(self, image_transfer):
         # Get a reference to the service that manages the image transfer:
@@ -1051,11 +1102,11 @@ class BareosOvirtWrapper(object):
 
         return chunk
 
-    def prepare_vm_restore(self, context, options):
+    def prepare_vm_restore(self, context):
         restore_existing_vm = False
         if self.connection is None:
             # if not connected yet
-            if not self.connect_api(context, options):
+            if not self.connect_api(context, self.options):
                 return bRCs["bRC_Error"]
 
         if self.ovf_data is None:
@@ -1066,7 +1117,7 @@ class BareosOvirtWrapper(object):
             )
             return bRCs["bRC_Error"]
         else:
-            if "storage_domain" not in options:
+            if "storage_domain" not in self.options:
                 bareosfd.JobMessage(
                     context,
                     bJobMessageType["M_FATAL"],
@@ -1074,7 +1125,7 @@ class BareosOvirtWrapper(object):
                 )
                 return bRCs["bRC_Error"]
 
-            storage_domain = options["storage_domain"]
+            storage_domain = self.options["storage_domain"]
 
             # Parse the OVF as XML document:
             self.ovf = Ovf(self.ovf_data)
@@ -1085,16 +1136,16 @@ class BareosOvirtWrapper(object):
 
             # Find the name of the virtual machine within the OVF:
             vm_name = None
-            if "vm_name" in options:
-                vm_name = options["vm_name"]
+            if "vm_name" in self.options:
+                vm_name = self.options["vm_name"]
 
             if vm_name is None:
                 vm_name = self.ovf.get_element("vm_name")
 
             # Find the cluster name of the virtual machine within the OVF:
             cluster_name = None
-            if "cluster_name" in options:
-                cluster_name = options["cluster_name"]
+            if "cluster_name" in self.options:
+                cluster_name = self.options["cluster_name"]
 
             if cluster_name is None:
                 # Find the cluster name of the virtual machine within the OVF:
@@ -1113,7 +1164,7 @@ class BareosOvirtWrapper(object):
                 return bRCs["bRC_Error"]
 
             if len(res) == 1:
-                if not options.get("overwrite") == "yes":
+                if not self.options.get("overwrite") == "yes":
                     bareosfd.JobMessage(
                         context,
                         bJobMessageType["M_FATAL"],
@@ -1141,7 +1192,7 @@ class BareosOvirtWrapper(object):
                 restore_existing_vm = True
 
             else:
-                self.create_vm(context, options, vm_name, cluster_name)
+                self.create_vm(context, vm_name, cluster_name)
                 self.add_nics_to_vm(context)
 
             # Extract disk information from OVF
@@ -1175,11 +1226,11 @@ class BareosOvirtWrapper(object):
             )
         return bRCs["bRC_OK"]
 
-    def create_vm(self, context, options, vm_name, cluster_name):
+    def create_vm(self, context, vm_name, cluster_name):
 
         vm_template = "Blank"
-        if "vm_template" in options:
-            vm_template = options["vm_template"]
+        if "vm_template" in self.options:
+            vm_template = self.options["vm_template"]
 
         # Add the virtual machine, the transfered disks will be
         # attached to this virtual machine:
@@ -1189,17 +1240,17 @@ class BareosOvirtWrapper(object):
 
         # vm type (server/desktop)
         vm_type = "server"
-        if "vm_type" in options:
-            vm_type = options["vm_type"]
+        if "vm_type" in self.options:
+            vm_type = self.options["vm_type"]
 
         # vm memory and cpu
         vm_memory = None
-        if "vm_memory" in options:
-            vm_memory = int(options["vm_memory"]) * 2 ** 20
+        if "vm_memory" in self.options:
+            vm_memory = int(self.options["vm_memory"]) * 2 ** 20
 
         vm_cpu = None
-        if "vm_cpu" in options:
-            vm_cpu_arr = options["vm_cpu"].split(",")
+        if "vm_cpu" in self.options:
+            vm_cpu_arr = self.options["vm_cpu"].split(",")
             if len(vm_cpu_arr) > 0:
                 if len(vm_cpu_arr) < 2:
                     vm_cpu_arr.append(1)
