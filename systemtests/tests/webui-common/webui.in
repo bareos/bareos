@@ -1,0 +1,27 @@
+#!/bin/sh
+# script to start and stop the webui manually
+#
+. ./environment
+. ${scripts}/functions
+
+
+case "$1" in
+   start)
+      echo "running  @PHP@ -S 127.0.0.1:@php_port@ -t @PROJECT_SOURCE_DIR@/../webui/public/"
+      @PHP@ -S 127.0.0.1:@php_port@ -t @PROJECT_SOURCE_DIR@/../webui/public/ &
+      echo $! > php_pidfile
+      echo "opening webui via xdg-open ..."
+      xdg-open "http://127.0.0.1:@php_port@"
+      ;;
+   stop)
+      PHP_PID=$(cat php_pidfile)
+      echo "stopping php process $PHP_PID"
+      kill "${PHP_PID}"
+      ;;
+   *)
+      echo "Usage: $0 {start|stop}"
+      exit 1
+      ;;
+esac
+
+
