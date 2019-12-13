@@ -1,14 +1,8 @@
 #!/bin/sh
 #
-# This systemtest tests the plugin functionality
+# This systemtest tests the oVirt plugin functionality
 # of the Bareos FD by using the supplied module
-#   bareos-fd-local-fileset.py
-#
-# The module will backup some files.
-# This plugin is not intended for production,
-# but is only a minimal example that shows
-# how to use the python plugin interface.
-# File attributes like uses and times will not be saved.
+#   BareosFdPluginOvirt.py
 #
 TestName="$(basename "$(pwd)")"
 export TestName
@@ -20,14 +14,15 @@ JobName=backup-bareos-fd
 ${scripts}/cleanup
 ${scripts}/setup
 
+curl -k -o ${BAREOS_CONFIG_DIR}/ovirt-ca.cert "https://$OVIRT_SERVER/ovirt-engine/services/pki-resource?resource=ca-certificate&format=X509-PEM-CA"
 
 # Directory to backup.
 # This directory will be created by setup_data().
-BackupDirectory="${tmp}/data"
+# BackupDirectory="${tmp}/data"
 
 # Use a tgz to setup data to be backed up.
 # Data will be placed at "${tmp}/data/".
-setup_data
+# setup_data
 
 start_test
 
@@ -37,7 +32,7 @@ messages
 @$out $tmp/log1.out
 setdebug level=100 storage=File
 label volume=TestVolume001 storage=File pool=Full
-run job=$JobName yes
+run job=$JobName level=Full yes
 status director
 status client
 status storage=File
@@ -48,7 +43,7 @@ messages
 @#
 @$out $tmp/log2.out
 wait
-restore client=bareos-fd fileset=OvirtTest where=$tmp/bareos-restores select all done
+restore client=bareos-fd fileset=OvirtTest where=$tmp/bareos-restores pluginoptions=python:local=yes select all done
 yes
 wait
 messages
@@ -60,8 +55,14 @@ check_for_zombie_jobs storage=File
 stop_bareos
 
 check_two_logs
-list="$(find ${BackupDirectory} -type f)"
-# Using check_restore_only_files_diff instead of check_restore_diff
-# to dont diff the file attributes, because they are not saved
-check_restore_only_files_diff $list
+
+# Check restored disk image content
+restored_disk_image=$(find $tmp/bareos-restores -type f | grep -v "\.ovf" | tail -1)
+if [ $(strings $restored_disk_image | tail -1) == "BareosTest" ]; then
+    echo "Restored disk image content OK"
+else
+    echo "Restored disk image ERROR: Does not contain expected string"
+    dstat=1
+fi
+
 end_test

@@ -1,10 +1,10 @@
 FileSet {
   Name = "OvirtTest"
-  Description = "Test the Plugin functionality with a Python Plugin."
+  Description = "Test the Plugin functionality of the oVirt Plugin."
   Include {
     Options {
       signature = MD5
     }
-    Plugin = "python:module_path=@python_plugin_module_src_test_dir@:module_name=bareos-fd-ovirt:ca=/etc/bareos/ovirt-ca.cert:server=ovirt-engine.example.com:username=admin@internal:password=yourSecretPassword:vm_name=testvm1"
+    Plugin = "python:module_path=@python_plugin_module_src_test_dir@:module_name=bareos-fd-ovirt:ca=@current_test_directory@/etc/bareos/ovirt-ca.cert:server=@ovirt_server@:username=@ovirt_user@:password=@ovirt_password@:vm_name=@ovirt_vm_name@:include_disk_aliases=@ovirt_include_disk_alias@"
   }
 }
