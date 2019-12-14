@@ -61,11 +61,11 @@ static struct backend_interface_mapping_t {
  * All loaded backends.
  */
 static alist* loaded_backends = NULL;
-static alist* backend_dirs = NULL;
+static std::vector<std::string> backend_dirs;
 
-void DbSetBackendDirs(alist* new_backend_dirs)
+void DbSetBackendDirs(std::vector<std::string>&& new_backend_dirs)
 {
-  backend_dirs = new_backend_dirs;
+  backend_dirs = std::move(new_backend_dirs);
 }
 
 static inline backend_interface_mapping_t* lookup_backend_interface_mapping(
@@ -116,7 +116,6 @@ BareosDb* db_init_database(JobControlRecord* jcr,
                            bool exit_on_fatal,
                            bool need_private)
 {
-  char* backend_dir = nullptr;
   void* dl_handle = NULL;
   PoolMem shared_library_name(PM_FNAME);
   PoolMem error(PM_FNAME);
@@ -129,7 +128,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
    * For dynamic loading catalog backends there must be a list of backend dirs
    * set.
    */
-  if (!backend_dirs) {
+  if (backend_dirs.empty()) {
     Jmsg(jcr, M_ERROR_TERM, 0, _("Catalog Backends Dir not configured.\n"));
   }
 
@@ -170,12 +169,12 @@ BareosDb* db_init_database(JobControlRecord* jcr,
    * This is a new backend try to use dynamic loading to load the backend
    * library.
    */
-  foreach_alist (backend_dir, backend_dirs) {
+  for (const auto& backend_dir : backend_dirs) {
 #ifndef HAVE_WIN32
-    Mmsg(shared_library_name, "%s/libbareoscats-%s%s", backend_dir,
+    Mmsg(shared_library_name, "%s/libbareoscats-%s%s", backend_dir.c_str(),
          backend_interface_mapping->interface_name, DYN_LIB_EXTENSION);
     Dmsg3(100, "db_init_database: testing backend %s/libbareoscats-%s%s\n",
-          backend_dir, backend_interface_mapping->interface_name,
+          backend_dir.c_str(), backend_interface_mapping->interface_name,
           DYN_LIB_EXTENSION);
 
     /*

@@ -77,7 +77,7 @@ void RunOnIncomingConnectIntervalTest::SetUp()
   InitMsg(nullptr, nullptr);
 
   std::string path_to_config_file = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/client-initiated-reconnect");
+      RELATIVE_PROJECT_SOURCE_DIR "/configs/run-on-incoming-connect-interval/");
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   my_config->ParseConfig();
 }
@@ -161,7 +161,7 @@ class MockDatabase : public BareosDb {
       JobControlRecord* /*jcr*/,
       std::string /*job_basename*/,
       std::string /*client_name*/,
-      char* stime) override
+      std::vector<char>& stime_out) override
   {
     switch (mode_) {
       case Mode::kFindNoStartTime:
@@ -174,14 +174,18 @@ class MockDatabase : public BareosDb {
         utime_t fake_start_time_of_previous_job =
             system_clock::to_time_t(now - more_than_three_hours);
 
-        bstrutime(stime, MAX_NAME_LENGTH, fake_start_time_of_previous_job);
+        stime_out.resize(MAX_NAME_LENGTH);
+        bstrutime(stime_out.data(), MAX_NAME_LENGTH,
+                  fake_start_time_of_previous_job);
         return SqlFindResult::kSuccess;
       }
 
       case Mode::kFindStartTimeWrongString: {
         auto now = system_clock::now();
-        bstrutime(stime, MAX_NAME_LENGTH, system_clock::to_time_t(now));
-        stime[5] = 0;  // truncate string
+        stime_out.resize(MAX_NAME_LENGTH);
+        bstrutime(stime_out.data(), MAX_NAME_LENGTH,
+                  system_clock::to_time_t(now));
+        stime_out[5] = 0;  // truncate string
         return SqlFindResult::kSuccess;
       }
 

@@ -31,7 +31,7 @@ if(GTEST_FOUND)
   add_subdirectory(tests)
 endif()
 
-  add_subdirectory(console)
+add_subdirectory(console)
 if(${HAVE_LMDB})
   add_subdirectory(lmdb)
 endif()

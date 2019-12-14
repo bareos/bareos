@@ -87,7 +87,7 @@ static ResourceItem store_items[] = {
       CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, _PATH_BAREOS_PIDDIR, NULL, NULL},
   {"SubSysDirectory", CFG_TYPE_DIR, ITEM(res_store, subsys_directory), CFG_ITEM_DEPRECATED, 0, NULL, NULL, NULL},
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
-  {"BackendDirectory", CFG_TYPE_ALIST_DIR, ITEM(res_store, backend_directories), 0,
+  {"BackendDirectory", CFG_TYPE_STR_VECTOR_OF_DIRS, ITEM(res_store, backend_directories), 0,
       CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, _PATH_BAREOS_BACKENDDIR, NULL, NULL},
 #endif
   {"PluginDirectory", CFG_TYPE_DIR, ITEM(res_store, plugin_directory), 0, 0, NULL, NULL, NULL},
@@ -571,7 +571,7 @@ bool ParseSdConfig(const char* configfile, int exit_code)
     }
 
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
-    SdSetBackendDirs(me->backend_directories);
+    SdSetBackendDirs(std::move(me->backend_directories));
 #endif
   }
 
@@ -893,7 +893,6 @@ static void FreeResource(BareosResource* res, int type)
       if (p->plugin_directory) { free(p->plugin_directory); }
       if (p->plugin_names) { delete p->plugin_names; }
       if (p->scripts_directory) { free(p->scripts_directory); }
-      if (p->backend_directories) { delete p->backend_directories; }
       if (p->verid) { free(p->verid); }
       if (p->secure_erase_cmdline) { free(p->secure_erase_cmdline); }
       if (p->log_timestamp_format) { free(p->log_timestamp_format); }

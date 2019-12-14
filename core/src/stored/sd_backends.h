@@ -65,7 +65,7 @@ struct backend_shared_library_t {
 
 
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
-void SdSetBackendDirs(alist* new_backend_dirs);
+void SdSetBackendDirs(std::vector<std::string>&& new_backend_dirs);
 Device* init_backend_dev(JobControlRecord* jcr, int device_type);
 void DevFlushBackends();
 #endif

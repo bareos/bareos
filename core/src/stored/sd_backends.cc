@@ -59,9 +59,9 @@ static struct backend_interface_mapping_t {
  * All loaded backends.
  */
 static alist* loaded_backends = NULL;
-static alist* backend_dirs = NULL;
+static std::vector<std::string> backend_dirs;
 
-void SdSetBackendDirs(alist* new_backend_dirs)
+void SdSetBackendDirs(std::vector<std::string>&& new_backend_dirs)
 {
   backend_dirs = new_backend_dirs;
 }
@@ -88,7 +88,6 @@ static inline backend_interface_mapping_t* lookup_backend_interface_mapping(
 Device* init_backend_dev(JobControlRecord* jcr, int device_type)
 {
   struct stat st;
-  char* backend_dir = nullptr;
   void* dl_handle = NULL;
   PoolMem shared_library_name(PM_FNAME);
   PoolMem error(PM_FNAME);
@@ -101,7 +100,7 @@ Device* init_backend_dev(JobControlRecord* jcr, int device_type)
    * For dynamic loading storage backends there must be a list of backend dirs
    * set.
    */
-  if (!backend_dirs) {
+  if (backend_dirs.empty()) {
     Jmsg(jcr, M_ERROR_TERM, 0, _("Catalog Backends Dir not configured.\n"));
   }
 
@@ -124,11 +123,11 @@ Device* init_backend_dev(JobControlRecord* jcr, int device_type)
    * This is a new backend try to use dynamic loading to load the backend
    * library.
    */
-  foreach_alist (backend_dir, backend_dirs) {
-    Mmsg(shared_library_name, "%s/libbareossd-%s%s", backend_dir,
+  for (const auto& backend_dir : backend_dirs) {
+    Mmsg(shared_library_name, "%s/libbareossd-%s%s", backend_dir.c_str(),
          backend_interface_mapping->interface_name, DYN_LIB_EXTENSION);
     Dmsg3(100, "init_backend_dev: testing backend %s/libbareossd-%s%s\n",
-          backend_dir, backend_interface_mapping->interface_name,
+          backend_dir.c_str(), backend_interface_mapping->interface_name,
           DYN_LIB_EXTENSION);
 
     /*

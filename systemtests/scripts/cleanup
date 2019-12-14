@@ -31,8 +31,9 @@ rm -rf /tmp/chrome-user-data-*
 #if [ -f ${scripts}/bareos ]; then
 #  ${scripts}/bareos stop 2>&1 >/dev/null
 #fi
-${cats}/drop_bareos_tables ${DBTYPE} >/dev/null 2>&1
+${scripts}/drop_bareos_tables ${DBTYPE} >/dev/null
+${scripts}/drop_bareos_database ${DBTYPE} >/dev/null
 echo "creating database (${DBTYPE})"
-${cats}/create_bareos_tables ${DBTYPE} >/dev/null 2>&1
-${cats}/make_bareos_tables ${DBTYPE} >/dev/null 2>&1
-${cats}/grant_bareos_privileges ${DBTYPE} >/dev/null 2>&1
+${scripts}/create_bareos_database ${DBTYPE} >/dev/null
+${scripts}/make_bareos_tables ${DBTYPE} >/dev/null
+${scripts}/grant_bareos_privileges ${DBTYPE} >/dev/null

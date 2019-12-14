@@ -184,7 +184,7 @@ int main(int argc, char* argv[])
   DirectorResource* director = NULL;
   DeviceControlRecord* dcr;
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-  alist* backend_directories = NULL;
+  std::vector<std::string> backend_directories;
 #endif
 
   setlocale(LC_ALL, "");
@@ -355,10 +355,8 @@ int main(int argc, char* argv[])
   }
 
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-  backend_directories = new alist(10, owned_by_alist);
-  backend_directories->append((char*)backend_directory);
-
-  DbSetBackendDirs(backend_directories);
+  backend_directories.emplace_back(backend_directory);
+  DbSetBackendDirs(std::move(backend_directories));
 #endif
 
   db = db_init_database(NULL, db_driver, db_name, db_user, db_password, db_host,

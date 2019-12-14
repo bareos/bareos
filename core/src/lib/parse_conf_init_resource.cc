@@ -164,6 +164,20 @@ void ConfigurationParser::SetResourceDefaultsParserPass2(ResourceItem* item)
         (*alistvalue)->append(strdup(pathname.c_str()));
         break;
       }
+      case CFG_TYPE_STR_VECTOR_OF_DIRS: {
+        std::vector<std::string>* list =
+            GetItemVariablePointer<std::vector<std::string>*>(*item);
+
+        PoolMem pathname(PM_FNAME);
+        PmStrcpy(pathname, item->default_value);
+        if (*item->default_value != '|') {
+          int size = pathname.size() + 1024;
+          pathname.check_size(size);
+          DoShellExpansion(pathname.c_str(), pathname.size());
+        }
+        list->emplace_back(pathname.c_str());
+        break;
+      }
       default:
         if (init_res_) { init_res_(item, 2); }
         break;

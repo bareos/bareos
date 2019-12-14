@@ -45,8 +45,16 @@ endif()
 
 target_link_libraries(bconsole ${CONSOLE_LINK_LIBRARIES})
 
-install(TARGETS bconsole DESTINATION "${bindir}" COMPONENT bconsole)
-install(TARGETS bconsole DESTINATION "${sbindir}" COMPONENT bconsole)
+install(
+  TARGETS bconsole
+  DESTINATION "${bindir}"
+  COMPONENT bconsole
+)
+install(
+  TARGETS bconsole
+  DESTINATION "${sbindir}"
+  COMPONENT bconsole
+)
 install(
   FILES bconsole.conf
   DESTINATION "${configtemplatedir}"

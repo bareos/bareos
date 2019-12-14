@@ -27,8 +27,9 @@ add_library(bareoslmdb SHARED mdb.c midl.c)
 set_property(TARGET bareoslmdb PROPERTY INCLUDE_DIRECTORIES "")
 
 set_target_properties(
-  bareoslmdb PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}" SOVERSION
-                        "${BAREOS_VERSION_MAJOR}"
+  bareoslmdb
+  PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}" SOVERSION
+                                                 "${BAREOS_VERSION_MAJOR}"
 )
 if(HAVE_WIN32)
   set_target_properties(bareoslmdb PROPERTIES DEFINE_SYMBOL "BUILDING_DLL")

@@ -295,6 +295,7 @@ set(tests_dir ${PROJECT_BINARY_DIR}/tests)
 set(SYSTEM_TESTS
     backup-bareos-test
     backup-bareos-passive-test
+    catalog
     multiplied-device-test
     virtualfull
     virtualfull-bscan

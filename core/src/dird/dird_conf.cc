@@ -134,7 +134,7 @@ static ResourceItem dir_items[] = {
       "14.2.0-", "List of plugins, that should get loaded from 'Plugin Directory' (only basenames, '-dir.so' is added automatically). If empty, all plugins will get loaded." },
   { "ScriptsDirectory", CFG_TYPE_DIR, ITEM(res_dir, scripts_directory), 0, 0, NULL, NULL, "This directive is currently unused." },
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-  { "BackendDirectory", CFG_TYPE_ALIST_DIR, ITEM(res_dir, backend_directories), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, _PATH_BAREOS_BACKENDDIR, NULL, NULL },
+  { "BackendDirectory", CFG_TYPE_STR_VECTOR_OF_DIRS, ITEM(res_dir, backend_directories), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, _PATH_BAREOS_BACKENDDIR, NULL, NULL },
 #endif
   { "Subscriptions", CFG_TYPE_PINT32, ITEM(res_dir, subscriptions), 0, CFG_ITEM_DEFAULT, "0", "12.4.4-", NULL },
   { "SubSysDirectory", CFG_TYPE_DIR, ITEM(res_dir, subsys_directory), 0, CFG_ITEM_DEPRECATED, NULL, "-12.4.0", NULL },
@@ -3959,7 +3959,6 @@ static void FreeResource(BareosResource* res, int type)
       if (p->plugin_names) { delete p->plugin_names; }
       if (p->pid_directory) { free(p->pid_directory); }
       if (p->subsys_directory) { free(p->subsys_directory); }
-      if (p->backend_directories) { delete p->backend_directories; }
       if (p->password_.value) { free(p->password_.value); }
       if (p->query_file) { free(p->query_file); }
       if (p->DIRaddrs) { FreeAddresses(p->DIRaddrs); }

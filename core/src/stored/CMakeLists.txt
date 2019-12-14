@@ -233,8 +233,8 @@ target_link_libraries(bcopy bareossd bareos)
 
 install(TARGETS bareossd DESTINATION ${libdir})
 
-install(TARGETS bareos-sd bls bextract bscan btape bcopy DESTINATION
-                "${sbindir}"
+install(TARGETS bareos-sd bls bextract bscan btape bcopy
+        DESTINATION "${sbindir}"
 )
 
 install(CODE "set(PLUGINS \"${PLUGINS}\")")
