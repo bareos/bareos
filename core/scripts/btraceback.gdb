@@ -2,7 +2,8 @@ print my_name
 print exename
 print exepath
 print catalog_db
-print version
+print kBareosVersionStrings.FullWithDate
+print kBareosVersionStrings.BinaryInfo
 print host_os
 print distname
 print distver

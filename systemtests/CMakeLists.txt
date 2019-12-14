@@ -461,7 +461,11 @@ if(ENABLE_WEBUI_SELENIUM_TEST)
       "${CMAKE_SOURCE_DIR}/systemtests/tests/webui-common/testrunner.in"
       "${current_test_directory}/testrunner" @ONLY
     )
-
+    # webui start script
+    configure_file(
+      "${CMAKE_SOURCE_DIR}/systemtests/tests/webui-common/webui.in"
+      "${current_test_directory}/bin/webui" @ONLY
+    )
     configurefilestosystemtest(
       "systemtests" "tests/${TEST_NAME}" "*" @ONLY "tests/webui-common"
     )

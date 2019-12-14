@@ -134,33 +134,51 @@ class ThreadGuard {
   std::unique_ptr<ThreadListItem> item_;  // finally destroys the item
 };
 
-class RunningCondition {
+class IsRunningCondition {
  public:
-  void Running()
+  void ThreadIsRunning()
   {
-    std::lock_guard<std::mutex> lg(mutex_);
+    std::lock_guard<std::mutex> lg(is_running_mutex_);
     is_running_ = true;
-    var_.notify_one();
+    is_running_condition_.notify_one();
+  }
+  void IsDetached()
+  {
+    std::lock_guard<std::mutex> lg(is_detached_mutex_);
+    is_detached_ = true;
+    is_detached_condition_.notify_one();
   }
   enum class Result
   {
-    kRunning,
+    kIsRunning,
     kTimedout
   };
   Result WaitUntilThreadIsRunning()
   {
-    static constexpr auto waittime = std::chrono::seconds(10);
-    std::unique_lock<std::mutex> ul(mutex_);
+    std::unique_lock<std::mutex> ul(is_running_mutex_);
 
-    return var_.wait_for(ul, waittime, [&]() { return is_running_; })
-               ? Result::kRunning
+    return is_running_condition_.wait_for(ul, timeout,
+                                          [&]() { return is_running_; })
+               ? Result::kIsRunning
+               : Result::kTimedout;
+  }
+  Result WaitUntilThreadIsDetached()
+  {
+    std::unique_lock<std::mutex> ul(is_detached_mutex_);
+    return is_detached_condition_.wait_for(ul, timeout,
+                                           [&]() { return is_detached_; })
+               ? Result::kIsRunning
                : Result::kTimedout;
   }
 
  private:
-  std::mutex mutex_;
-  std::condition_variable var_;
   bool is_running_{false};
+  bool is_detached_{false};
+  std::mutex is_running_mutex_;
+  std::mutex is_detached_mutex_;
+  std::condition_variable is_running_condition_;
+  std::condition_variable is_detached_condition_;
+  const std::chrono::minutes timeout{std::chrono::minutes(5)};
 };
 
 static void WorkerThread(
@@ -168,14 +186,20 @@ static void WorkerThread(
     const ThreadList::ThreadHandler& ThreadInvokedHandler,
     ConfigurationParser* config,
     void* data,
-    std::shared_ptr<RunningCondition> run_condition)  // copy, not reference
+    std::shared_ptr<IsRunningCondition> run_condition)  // copy, not reference
 {
   std::unique_ptr<ThreadListItem> item{std::make_unique<ThreadListItem>()};
   item->data_ = data;
 
   ThreadGuard guard(l, std::move(item));
 
-  run_condition->Running();
+  run_condition->ThreadIsRunning();
+
+  if (run_condition->WaitUntilThreadIsDetached() ==
+      IsRunningCondition::Result::kTimedout) {
+    Emsg0(M_ABORT, 0, "Timeout while waiting to be detached.\n");
+  }
+
   SetJcrInThreadSpecificData(nullptr);
 
   ThreadInvokedHandler(config, data);
@@ -193,22 +217,32 @@ bool ThreadList::CreateAndAddNewThread(ConfigurationParser* config, void* data)
     return false;
   }
 
-  auto run_condition = std::make_shared<RunningCondition>();
+  auto run_condition = std::make_shared<IsRunningCondition>();
+  bool success{false};
 
   try {
-    std::thread(WorkerThread, impl_->l, impl_->ThreadInvokedHandler_, config,
-                data, run_condition)
-        .detach();
+    std::thread thr{std::thread(WorkerThread, impl_->l,
+                                impl_->ThreadInvokedHandler_, config, data,
+                                run_condition)};
+
+    if (run_condition->WaitUntilThreadIsRunning() ==
+        IsRunningCondition::Result::kIsRunning) {
+      success = true;
+    } else {
+      Emsg0(M_ABORT, 0, "Timeout while waiting for new thread.\n");
+    }
+
+    thr.detach();
+    run_condition->IsDetached();
+
   } catch (const std::system_error& e) {
-    Dmsg1(debuglevel, "Could not start and detach thread: %s\n", e.what());
-    return false;
+    Emsg1(M_ABORT, 0, "Could not start and detach thread: %s\n", e.what());
   }
 
-  if (run_condition->WaitUntilThreadIsRunning() ==
-      RunningCondition::Result::kRunning) {
+  if (success) {
+    Dmsg0(debuglevel, "Run WorkerThread successfully.\n");
     return true;
   }
-  Dmsg0(debuglevel, "Could not run WorkerThread.\n");
   return false;
 }
 
