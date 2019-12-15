@@ -35,9 +35,13 @@
 #include "dird/storage.h"
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
-#include "dird/ua_select.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
+#include "lib/util.h"
+
+#include <algorithm>
+#include <string>
+#include <vector>
 
 namespace directordaemon {
 
@@ -152,6 +156,7 @@ StorageResource* select_storage_resource(UaContext* ua, bool autochanger_only)
 {
   StorageResource* store;
   char name[MAX_NAME_LENGTH];
+  std::vector<std::string> storage_resource_names;
 
   if (autochanger_only) {
     StartPrompt(ua, _("The defined Autochanger Storage resources are:\n"));
@@ -165,11 +170,17 @@ StorageResource* select_storage_resource(UaContext* ua, bool autochanger_only)
       if (autochanger_only && !store->autochanger) {
         continue;
       } else {
-        AddPrompt(ua, store->resource_name_);
+        storage_resource_names.emplace_back(store->resource_name_);
       }
     }
   }
   UnlockRes(my_config);
+
+  SortCaseInsensitive(storage_resource_names);
+
+  for (auto& resource_name : storage_resource_names) {
+    AddPrompt(ua, std::move(resource_name));
+  }
 
   if (DoPrompt(ua, _("Storage"), _("Select Storage resource"), name,
                sizeof(name)) < 0) {
@@ -187,16 +198,23 @@ FilesetResource* select_fileset_resource(UaContext* ua)
 {
   FilesetResource* fs;
   char name[MAX_NAME_LENGTH];
+  std::vector<std::string> fileset_resource_names;
 
   StartPrompt(ua, _("The defined FileSet resources are:\n"));
 
   LockRes(my_config);
   foreach_res (fs, R_FILESET) {
     if (ua->AclAccessOk(FileSet_ACL, fs->resource_name_)) {
-      AddPrompt(ua, fs->resource_name_);
+      fileset_resource_names.emplace_back(fs->resource_name_);
     }
   }
   UnlockRes(my_config);
+
+  SortCaseInsensitive(fileset_resource_names);
+
+  for (auto& resource_name : fileset_resource_names) {
+    AddPrompt(ua, std::move(resource_name));
+  }
 
   if (DoPrompt(ua, _("FileSet"), _("Select FileSet resource"), name,
                sizeof(name)) < 0) {
@@ -270,6 +288,7 @@ JobResource* select_enable_disable_job_resource(UaContext* ua, bool enable)
 {
   JobResource* job;
   char name[MAX_NAME_LENGTH];
+  std::vector<std::string> job_resource_names;
 
   StartPrompt(ua, _("The defined Job resources are:\n"));
 
@@ -279,9 +298,15 @@ JobResource* select_enable_disable_job_resource(UaContext* ua, bool enable)
     if (job->enabled == enable) { /* Already enabled/disabled? */
       continue;                   /* yes, skip */
     }
-    AddPrompt(ua, job->resource_name_);
+    job_resource_names.emplace_back(job->resource_name_);
   }
   UnlockRes(my_config);
+
+  SortCaseInsensitive(job_resource_names);
+
+  for (auto& resource_name : job_resource_names) {
+    AddPrompt(ua, std::move(resource_name));
+  }
 
   if (DoPrompt(ua, _("Job"), _("Select Job resource"), name, sizeof(name)) <
       0) {
@@ -300,16 +325,23 @@ JobResource* select_job_resource(UaContext* ua)
 {
   JobResource* job;
   char name[MAX_NAME_LENGTH];
+  std::vector<std::string> job_resource_names;
 
   StartPrompt(ua, _("The defined Job resources are:\n"));
 
   LockRes(my_config);
   foreach_res (job, R_JOB) {
     if (ua->AclAccessOk(Job_ACL, job->resource_name_)) {
-      AddPrompt(ua, job->resource_name_);
+      job_resource_names.emplace_back(job->resource_name_);
     }
   }
   UnlockRes(my_config);
+
+  SortCaseInsensitive(job_resource_names);
+
+  for (auto& resource_name : job_resource_names) {
+    AddPrompt(ua, std::move(resource_name));
+  }
 
   if (DoPrompt(ua, _("Job"), _("Select Job resource"), name, sizeof(name)) <
       0) {
@@ -347,6 +379,7 @@ JobResource* select_restore_job_resource(UaContext* ua)
 {
   JobResource* job;
   char name[MAX_NAME_LENGTH];
+  std::vector<std::string> restore_job_names;
 
   StartPrompt(ua, _("The defined Restore Job resources are:\n"));
 
@@ -354,10 +387,16 @@ JobResource* select_restore_job_resource(UaContext* ua)
   foreach_res (job, R_JOB) {
     if (job->JobType == JT_RESTORE &&
         ua->AclAccessOk(Job_ACL, job->resource_name_)) {
-      AddPrompt(ua, job->resource_name_);
+      restore_job_names.emplace_back(job->resource_name_);
     }
   }
   UnlockRes(my_config);
+
+  SortCaseInsensitive(restore_job_names);
+
+  for (auto& resource_name : restore_job_names) {
+    AddPrompt(ua, std::move(resource_name));
+  }
 
   if (DoPrompt(ua, _("Job"), _("Select Restore Job"), name, sizeof(name)) < 0) {
     return NULL;
@@ -375,16 +414,23 @@ ClientResource* select_client_resource(UaContext* ua)
 {
   ClientResource* client;
   char name[MAX_NAME_LENGTH];
+  std::vector<std::string> client_resource_names;
 
   StartPrompt(ua, _("The defined Client resources are:\n"));
 
   LockRes(my_config);
   foreach_res (client, R_CLIENT) {
     if (ua->AclAccessOk(Client_ACL, client->resource_name_)) {
-      AddPrompt(ua, client->resource_name_);
+      client_resource_names.emplace_back(client->resource_name_);
     }
   }
   UnlockRes(my_config);
+
+  SortCaseInsensitive(client_resource_names);
+
+  for (auto& resource_name : client_resource_names) {
+    AddPrompt(ua, std::move(resource_name));
+  }
 
   if (DoPrompt(ua, _("Client"), _("Select Client (File daemon) resource"), name,
                sizeof(name)) < 0) {
@@ -404,6 +450,7 @@ ClientResource* select_enable_disable_client_resource(UaContext* ua,
 {
   ClientResource* client;
   char name[MAX_NAME_LENGTH];
+  std::vector<std::string> client_resource_names;
 
   StartPrompt(ua, _("The defined Client resources are:\n"));
 
@@ -413,9 +460,15 @@ ClientResource* select_enable_disable_client_resource(UaContext* ua,
     if (client->enabled == enable) { /* Already enabled/disabled? */
       continue;                      /* yes, skip */
     }
-    AddPrompt(ua, client->resource_name_);
+    client_resource_names.emplace_back(client->resource_name_);
   }
   UnlockRes(my_config);
+
+  SortCaseInsensitive(client_resource_names);
+
+  for (auto& resource_name : client_resource_names) {
+    AddPrompt(ua, std::move(resource_name));
+  }
 
   if (DoPrompt(ua, _("Client"), _("Select Client resource"), name,
                sizeof(name)) < 0) {
@@ -461,6 +514,7 @@ ScheduleResource* select_enable_disable_schedule_resource(UaContext* ua,
 {
   ScheduleResource* sched;
   char name[MAX_NAME_LENGTH];
+  std::vector<std::string> schedule_resource_names;
 
   StartPrompt(ua, _("The defined Schedule resources are:\n"));
 
@@ -470,9 +524,15 @@ ScheduleResource* select_enable_disable_schedule_resource(UaContext* ua,
     if (sched->enabled == enable) { /* Already enabled/disabled? */
       continue;                     /* yes, skip */
     }
-    AddPrompt(ua, sched->resource_name_);
+    schedule_resource_names.emplace_back(sched->resource_name_);
   }
   UnlockRes(my_config);
+
+  SortCaseInsensitive(schedule_resource_names);
+
+  for (auto& resource_name : schedule_resource_names) {
+    AddPrompt(ua, std::move(resource_name));
+  }
 
   if (DoPrompt(ua, _("Schedule"), _("Select Schedule resource"), name,
                sizeof(name)) < 0) {
@@ -883,15 +943,22 @@ PoolResource* select_pool_resource(UaContext* ua)
 {
   PoolResource* pool;
   char name[MAX_NAME_LENGTH];
+  std::vector<std::string> pool_resource_names;
 
   StartPrompt(ua, _("The defined Pool resources are:\n"));
   LockRes(my_config);
   foreach_res (pool, R_POOL) {
     if (ua->AclAccessOk(Pool_ACL, pool->resource_name_)) {
-      AddPrompt(ua, pool->resource_name_);
+      pool_resource_names.emplace_back(pool->resource_name_);
     }
   }
   UnlockRes(my_config);
+
+  SortCaseInsensitive(pool_resource_names);
+
+  for (auto& resource_name : pool_resource_names) {
+    AddPrompt(ua, std::move(resource_name));
+  }
 
   if (DoPrompt(ua, _("Pool"), _("Select Pool resource"), name, sizeof(name)) <
       0) {
@@ -1024,6 +1091,12 @@ void AddPrompt(UaContext* ua, const char* prompt)
   }
 
   ua->prompt[ua->num_prompts++] = strdup(prompt);
+}
+
+void AddPrompt(UaContext* ua, std::string&& prompt)
+{
+  std::string p{prompt};
+  AddPrompt(ua, p.c_str());
 }
 
 /**
