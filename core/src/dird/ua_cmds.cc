@@ -2734,7 +2734,7 @@ static bool help_cmd(UaContext* ua, const char* cmd)
     ua->SendMsg(_("\nCan't find %s command.\n\n"), ua->argk[1]);
   }
   ua->send->Decoration(
-      _("\nWhen at a prompt, entering a period cancels the command.\n\n"));
+      _("\nWhen at a prompt, entering a period (.) cancels the command.\n\n"));
 
   return true;
 }
