@@ -306,6 +306,7 @@ set(SYSTEM_TESTS
     copy-remote-bscan
     bconsole-status-client
     scheduler-backup-test
+    reload-works-on-adding-duplicate-job-resource
 )
 
 set(SYSTEM_TESTS_DISABLED # initialy empty
