@@ -736,7 +736,7 @@ end_test()
       cat "$tmp/err.log"
    fi
    ENDDATE="$(date +%R:%S)"
-   if [ $estat != 0 ] ; then
+   if [ "$estat" != "0" ] ; then
       echo " "
       echo "  !!!!! $TestName failed!!! $ENDDATE !!!!! "
       echo "   Status: estat=$estat zombie=$zstat backup=$bstat restore=$rstat diff=$dstat"
@@ -745,7 +745,7 @@ end_test()
       echo " "
       exit 1
    fi
-   if [ $zstat != 0 ] ; then
+   if [ "$zstat" != "0" ] ; then
       echo " "
       echo "  !!!!! $TestName failed!!! $ENDDATA !!!!! "
       echo "   Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat"
@@ -754,7 +754,7 @@ end_test()
       echo " "
       exit 1
    fi
-   if [ $dstat != 0 -o $bstat != 0 -o $rstat != 0 ] ; then
+   if [ "$dstat" != "0" -o "$bstat" != "0" -o "$rstat" != "0" ] ; then
       echo " "
       echo " "
       echo "  !!!!! $TestName failed!!! $ENDDATE !!!!! "
