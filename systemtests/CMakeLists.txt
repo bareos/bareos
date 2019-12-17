@@ -309,6 +309,7 @@ set(SYSTEM_TESTS
     reload-works-on-adding-duplicate-job-resource
     reload-works-on-unchanged-config
     reload-works-on-adding-uncommented-string
+    reload-works-on-adding-empty-job-resource
 )
 
 set(SYSTEM_TESTS_DISABLED # initialy empty
