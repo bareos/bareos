@@ -266,7 +266,7 @@ bool makepath(Attributes *attr, const char *apath, mode_t mode, mode_t parent_mo
    /*
     * Set for final component
     */
-   if (i < ndir && new_dir[i++]) {
+   if (i < ndir && new_dir[i++] && !keep_dir_modes) {
       SetOwnMod(attr, path, owner, group, mode);
    }
 
