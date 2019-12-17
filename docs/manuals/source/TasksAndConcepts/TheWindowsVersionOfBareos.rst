@@ -38,17 +38,16 @@ Typically, you only want to install the Bareos Client (|fd|) and optionally some
 .. limitation:: Windows: |dir| does not support MySQL database backend.
 
 
-   When running the |dir| on Windows, only PostgreSQL (and SQLite) database backends are supported.
+   When running the Director on Windows, only PostgreSQL (and SQLite) database backends are supported.
    SQLite is best suited for test environments.
-   
 
 
 
-.. limitation:: Windows: |sd| only support backup to disk, not to tape.
 
+.. limitation:: Windows: Storage Daemon only supports backup to disk, not to tape.
 
-   
-
+   The Windows version of the |sd| currently only supports backup to disk.
+   Access to tape devices and to media changers is not supported.
 
 
 .. limitation:: Windows: The default installation of |webui| is only suitable for local access.
@@ -58,7 +57,7 @@ Typically, you only want to install the Bareos Client (|fd|) and optionally some
    the configuration shipped the the **winbareos** package uses the PHP internal webserver.
    This is okay for local access, but not suitable for being accessed via the network.
    To guarantee this, it is configured to only listen locally (http://localhost:9100).
-   
+
 
 
 
