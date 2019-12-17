@@ -136,10 +136,15 @@ set(PYFILES
     BareosFdPluginLocalFileset.py
     BareosFdWrapper.py
     bareos_fd_consts.py
+
     bareos-fd-ldap.py
     BareosFdPluginLDAP.py
+
     bareos-fd-ovirt.py
     BareosFdPluginOvirt.py
+
+    bareos-fd-percona.py
+    BareosFdPercona.py
     )
 
 install(
