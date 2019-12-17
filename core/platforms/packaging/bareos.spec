@@ -577,6 +577,13 @@ Requires:   python-pycurl
 Requires:   python-lxml
 Requires:   python-ovirt-engine-sdk4
 
+%package    filedaemon-percona-python-plugin
+Summary:    LDAP Python plugin for Bareos File daemon
+Group:      Productivity/Archiving/Backup
+Requires:   bareos-filedaemon = %{version}
+Requires:   bareos-filedaemon-python-plugin = %{version}
+#Requires:   python-percona
+
 %package    storage-python-plugin
 Summary:    Python plugin for Bareos Storage daemon
 Group:      Productivity/Archiving/Backup
@@ -601,6 +608,11 @@ This package contains the LDAP python plugin for the file daemon
 %{dscr}
 
 This package contains the Ovirt python plugin for the file daemon
+
+%description filedaemon-percona-python-plugin
+%{dscr}
+
+This package contains the Percona python plugin for the file daemon
 
 %description storage-python-plugin
 %{dscr}
@@ -1387,6 +1399,14 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/fileset/plugin-ovirt.conf.example
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/job/backup-ovirt.conf.example
 
+%files filedaemon-percona-python-plugin
+%defattr(-, root, root)
+%{plugin_dir}/bareos-fd-percona.py*
+%{plugin_dir}/BareosFdPercona.py*
+#%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/fileset/plugin-percona.conf.example
+#%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/job/backup-percona.conf.example
+#%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/job/restore-percona.conf.example
+
 %files director-python-plugin
 %defattr(-, root, root)
 %{plugin_dir}/python-dir.so
@@ -1644,11 +1664,17 @@ fi; \
 
 
 %if 0%{?python_plugins}
+
 %post filedaemon-ldap-python-plugin
 %post_backup_file /etc/%{name}/bareos-dir.d/plugin-python-ldap.conf
-
 %posttrans filedaemon-ldap-python-plugin
 %posttrans_restore_file /etc/%{name}/bareos-dir.d/plugin-python-ldap.conf
+
+#post filedaemon-percona-python-plugin
+#post_backup_file /etc/#{name}/bareos-dir.d/plugin-python-percona.conf
+#posttrans filedaemon-percona-python-plugin
+#posttrans_restore_file /etc/#{name}/bareos-dir.d/plugin-python-percona.conf
+
 %endif
 
 
