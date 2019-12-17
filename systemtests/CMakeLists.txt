@@ -307,6 +307,7 @@ set(SYSTEM_TESTS
     bconsole-status-client
     scheduler-backup-test
     reload-works-on-adding-duplicate-job-resource
+    reload-works-on-unchanged-config
 )
 
 set(SYSTEM_TESTS_DISABLED # initialy empty
