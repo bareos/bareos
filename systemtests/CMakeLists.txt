@@ -145,6 +145,7 @@ macro(prepare_test)
   # set(DEFAULT_DB_TYPE )
   set(archivedir ${current_test_directory}/storage)
   set(confdir ${current_test_directory}/etc/bareos)
+  set(config_directory_dir_additional_test_config ${current_test_directory}/etc/bareos/bareos-dir.d/additional_test_config)
 
   set(logdir ${current_test_directory}/log)
   set(tmpdir ${current_test_directory}/tmp)
@@ -159,6 +160,7 @@ macro(prepare_test)
   file(MAKE_DIRECTORY ${logdir})
   file(MAKE_DIRECTORY ${tmpdir})
   file(MAKE_DIRECTORY ${working_dir})
+  file(MAKE_DIRECTORY ${config_directory_dir_additional_test_config})
 endmacro()
 
 # extract  db version from cats.h
