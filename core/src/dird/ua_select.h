@@ -48,6 +48,7 @@ bool SelectClientDbr(UaContext* ua, ClientDbRecord* cr);
 
 void StartPrompt(UaContext* ua, const char* msg);
 void AddPrompt(UaContext* ua, const char* prompt);
+void AddPrompt(UaContext* ua, std::string&& prompt);
 int DoPrompt(UaContext* ua,
              const char* automsg,
              const char* msg,

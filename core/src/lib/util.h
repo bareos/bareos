@@ -66,5 +66,6 @@ POOLMEM* edit_job_codes(JobControlRecord* jcr,
                         job_code_callback_t job_code_callback = NULL);
 void SetWorkingDirectory(const char* wd);
 const char* last_path_separator(const char* str);
+void SortCaseInsensitive(std::vector<std::string>& v);
 
 #endif  // BAREOS_LIB_UTIL_H_

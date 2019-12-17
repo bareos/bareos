@@ -1087,3 +1087,20 @@ const char* last_path_separator(const char* str)
   }
   return NULL;
 }
+
+void StringToLowerCase(std::string& s)
+{
+  for (auto& c : s) { c = std::tolower(c); }
+}
+
+void SortCaseInsensitive(std::vector<std::string>& v)
+{
+  if (v.empty()) { return; }
+
+  std::sort(v.begin(), v.end(), [](const std::string& a, const std::string& b) {
+    std::string x{a}, y{b};
+    StringToLowerCase(x);
+    StringToLowerCase(y);
+    return x < y;
+  });
+}
