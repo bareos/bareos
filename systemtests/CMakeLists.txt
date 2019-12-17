@@ -308,6 +308,7 @@ set(SYSTEM_TESTS
     scheduler-backup-test
     reload-works-on-adding-duplicate-job-resource
     reload-works-on-unchanged-config
+    reload-works-on-adding-uncommented-string
 )
 
 set(SYSTEM_TESTS_DISABLED # initialy empty
