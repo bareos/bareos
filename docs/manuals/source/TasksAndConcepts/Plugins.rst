@@ -3,7 +3,7 @@
 Plugins
 =======
 
-:index:`\ <single: Plugin>`\ 
+:index:`\ <single: Plugin>`\
 
 The functionality of Bareos can be extended by plugins. They do exists plugins for the different daemons (Director, Storage- and File-Daemon).
 
@@ -31,7 +31,7 @@ File Daemon plugins are configured by the :strong:`Plugin`\  directive of a :ref
 bpipe Plugin
 ~~~~~~~~~~~~
 
-:index:`\ <single: Plugin; bpipe>`\ 
+:index:`\ <single: Plugin; bpipe>`\
 
 The bpipe plugin is a generic pipe program, that simply transmits the data from a specified program to Bareos for backup, and from Bareos to a specified program for restore. The purpose of the plugin is to provide an interface to any system program for backup and restore. That allows you, for example, to do database backups without a local dump. By using different command lines to bpipe, you can backup any kind of data (ASCII or binary) depending on the program called.
 
@@ -98,35 +98,35 @@ See chapter :ref:`MSSQL`.
 LDAP Plugin
 ~~~~~~~~~~~
 
-:index:`\ <single: Plugin; ldap>`\ 
+:index:`\ <single: Plugin; ldap>`\
 
 This plugin is intended to backup (and restore) the contents of a LDAP server. It uses normal LDAP operation for this. The package **bareos-filedaemon-ldap-python-plugin** (:sinceVersion:`15.2.0: LDAP Plugin`) contains an example configuration file, that must be adapted to your envirnoment.
 
 Cephfs Plugin
 ~~~~~~~~~~~~~
 
-:index:`\ <single: Plugin; ceph; cephfs>`\  :index:`\ <single: Ceph; Cephfs Plugin>`\ 
+:index:`\ <single: Plugin; ceph; cephfs>`\  :index:`\ <single: Ceph; Cephfs Plugin>`\
 
 Opposite to the :ref:`Rados Backend <SdBackendRados>` that is used to store data on a CEPH Object Store, this plugin is intended to backup a CEPH Object Store via the Cephfs interface to other media. The package **bareos-filedaemon-ceph-plugin** (:sinceVersion:`15.2.0: Cephfs Plugin`) contains an example configuration file, that must be adapted to your envirnoment.
 
 Rados Plugin
 ~~~~~~~~~~~~
 
-:index:`\ <single: Plugin; ceph; rados>`\  :index:`\ <single: Ceph; Rados Plugin>`\ 
+:index:`\ <single: Plugin; ceph; rados>`\  :index:`\ <single: Ceph; Rados Plugin>`\
 
 Opposite to the :ref:`Rados Backend <SdBackendRados>` that is used to store data on a CEPH Object Store, this plugin is intended to backup a CEPH Object Store via the Rados interface to other media. The package **bareos-filedaemon-ceph-plugin** (:sinceVersion:`15.2.0: CEPH Rados Plugin`) contains an example configuration file, that must be adapted to your envirnoment.
 
 GlusterFS Plugin
 ~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Plugin; glusterfs>`\  :index:`\ <single: GlusterFS; Plugin>`\ 
+:index:`\ <single: Plugin; glusterfs>`\  :index:`\ <single: GlusterFS; Plugin>`\
 
 Opposite to the :ref:`GFAPI Backend <SdBackendGfapi>` that is used to store data on a Gluster system, this plugin is intended to backup data from a Gluster system to other media. The package **bareos-filedaemon-glusterfs-plugin** (:sinceVersion:`15.2.0: GlusterFS Plugin`) contains an example configuration file, that must be adapted to your envirnoment.
 
 python-fd Plugin
 ~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Plugin; Python; File Daemon>`\ 
+:index:`\ <single: Plugin; Python; File Daemon>`\
 
 The **python-fd** plugin behaves similar to the :ref:`director-python-plugin`. Base plugins and an example get installed via the package bareos-filedaemon-python-plugin. Configuration is done in the :ref:`DirectorResourceFileSet` on the director.
 
@@ -149,7 +149,7 @@ Command plugins are used to replace or extend the FileSet definition in the File
        File = "/etc"
        Plugin = "python:module_path=/usr/lib/bareos/plugins:module_name=bareos-fd-mysql"
      }
-   } 
+   }
 
 :index:`\ <single: MySQL; Backup>`\  This example uses the :ref:`MySQL plugin <backup-mysql-python>` to backup MySQL dumps in addition to :file:`/etc`.
 
@@ -182,7 +182,7 @@ This plugin bareos-fd-file-interact from https://github.com/bareos/bareos-contri
 VMware Plugin
 ~~~~~~~~~~~~~
 
-:index:`\ <single: Plugin; VMware>`\  :index:`\ <single: VMware Plugin>`\ 
+:index:`\ <single: Plugin; VMware>`\  :index:`\ <single: VMware Plugin>`\
 
 The |vmware| Plugin can be used for agentless backups of virtual machines running on |vsphere|. It makes use of CBT (Changed Block Tracking) to do space efficient full and incremental backups, see below for mandatory requirements.
 
@@ -219,7 +219,7 @@ Current limitations amongst others are:
 
        Until Bareos Version 15.2.2, the restore has only be possible to the same existing VM with existing virtual disks.
        Since :sinceVersion:`15.2.3: VMware Plugin: restore to VMDK files`
-       %**bareos-vadp-dumper** :sinceVersion:`15.2.2-15: bareos-vadp-dumper` and 
+       %**bareos-vadp-dumper** :sinceVersion:`15.2.2-15: bareos-vadp-dumper` and
        %**bareos-vmware-plugin** :sinceVersion:`15.2.2-27: bareos-vmware-plugin`
        it is also possible to restore to local VMDK files, see below for more details.
 
@@ -460,7 +460,7 @@ For restore, the VM must be powered off and no snapshot must exist. In :command:
 Restore to local VMDK File
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`\ <single: VMware Plugin; VMDK files>`\ 
+:index:`\ <single: VMware Plugin; VMDK files>`\
 
 Since :sinceVersion:`15.2.3: VMware Plugin: restore to VMDK files` it is possible to restore to local VMDK files. That means, instead of directly restoring a disk that belongs to the VM, the restore creates VMDK disk image files on the filesystem of the system that runs the |fd|. As the VM that the backup was taken from is not affected by this, it can remain switched on while restoring to local VMDK. Such a restored VMDK file can then be uploaded to a
 |vsphere| datastore or accessed by tools like `guestfish <http://libguestfs.org/guestfish.1.html>`_ to extract single files.
@@ -501,7 +501,7 @@ For restoring to local VMDK, the plugin option :strong:`localvmdk=yes` must be p
    ...
    You have selected the following JobIds: 625,626,631,632,635
 
-   Building directory tree for JobId(s) 625,626,631,632,635 ...  
+   Building directory tree for JobId(s) 625,626,631,632,635 ...
    10 files inserted into the tree.
 
    You are now entering file selection mode where you add (mark) and
@@ -518,7 +518,7 @@ For restoring to local VMDK, the plugin option :strong:`localvmdk=yes` must be p
    The job will require the following
       Volume(s)                 Storage(s)                SD Device(s)
    ===========================================================================
-      
+
        Full-0001                 File                      FileStorage
        ...
        Incremental-0078          File                      FileStorage
@@ -983,6 +983,185 @@ This will create disk image files that could be examined for example by using
 the **guestfish** tool (see http://libguestfs.org/guestfish.1.html). This tool
 can also be used to extract single files from the disk image.
 
+.. _PerconaXtrabackupPlugin:
+
+Percona Xtrabackup Plugin
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# The Bareos MySQL / MariaDB Percona xtrabackup Plugin
+
+This plugin uses Perconas xtrackup tool, to make full and incremental backups of Mysql / MariaDB databases.
+
+The key features of xtrabackup are:
+
+- Incremental backups
+- Backups that complete quickly and reliably
+- Uninterrupted transaction processing during backups
+- Savings on disk space and network bandwidth
+- Higher uptime due to faster restore time
+
+Incremental backups only work for INNODB tables, when using MYISAM, only full backups can be created.
+
+## Prerequisites
+You need to have the 'mysql' client program and the xtrabackup tool installed.
+More about xtrabackup: https://www.percona.com/software/mysql-database/percona-xtrabackup
+
+You will also need the package *bareos-filedaemon-python-plugin* installed on your client.
+
+## Compatibility
+
+There are different versions of _xtrabackup_ available. Older versions required an extra binary called _innobackupex_, especially when dealing with myISAM tables. In newer versions, _innobackupex_ is just a sysmbolic link to _xtrabackup_.
+
+We've tested some versions of xtrabackup together with the plugin:
+
+| xtrabackup version | Status | Remarks |
+| -----------------: |:------:| -------:|
+|2.0.8| - | InnoDB only seems to work |
+|2.3.5| + | |
+|2.4.4| + | |
+
+We've used the official Percona rpms on Centos 6 for testing.
+
+## Installation ##
+
+1. Make sure you have met the prerequisites.
+2. Install the files *BareosFdPercona.py* and *bareos-fd-percona.py* in your Bareos plugin directory (usually */usr/lib64/bareos/plugins*)
+
+
+## Configuration ##
+
+### Activate your plugin directory in the fd resource conf on the client
+```
+FileDaemon {
+  Name = client-fd
+  ...
+  Plugin Directory = /usr/lib64/bareos/plugins
+}
+```
+
+### Include the Plugin in the fileset definition on the director
+```
+FileSet {
+    Name = "client-data"
+       Include  {
+                Options {
+                        compression=GZIP
+                        signature = MD5
+                }
+                File = /etc
+                #...
+                Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-percona"
+        }
+}
+```
+
+#### Options ####
+
+You can append options to the plugin call as key=value pairs, separated by ':'.
+Please read more about the Bareos Python Plugin Interface here: http://doc.bareos.org/master/html/bareos-manual-main-reference.html#Python-fdPlugin
+
+
+##### defaultsfile ####
+
+This parameter allows to specify a defaultsfile that shall be used for mysql(client) and *xtrabackup* command line utilities.
+Example:
+
+```
+Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-percona:mycnf=/path/to/your/my.cnf"
+```
+
+##### dumpbinary #####
+
+Command (with or without full path) to create the dumps. Default: *xtrabackup*
+
+##### dumpoptions #####
+
+Options to be used with the dumpbinary.
+Default:
+   --backup --stream=xbstream
+
+##### extradumpoptions #####
+
+Additional options appended to dumpoptions.
+
+###### Choosing databases ######
+
+By default all found databases are backed up. You can restrict this
+using the dumpoptions or extradumpoptions parameter. If you modify
+dumpoptions, be careful that you include all necessary options.  See
+*xtrabackup* documentation for details.
+
+
+##### restorecommand
+Command used for restoring, default:
+   xbstream -x -C
+
+##### strictIncremental #####
+Default: False
+
+By default, an incremental will create data, even if the Log Sequence Number (LSN) wasn't increased since last backup. This is to ensure, that eventual changes to
+MYISAM tables get into the backup. MYISAM does not support incremental backups, you will always get a full bakcup of these tables.
+
+If set to true, no data will be written into backup, if the LSN wasn't changed.
+
+##### log #####
+Default: false
+
+By default, no extra logfile is written on the FD running the plugin. If you want to have some additional debug information, you might specify a
+logfile here. If you set a filename with path, this will be used. If you specify just a filename without path, the default path for logs
+*/var/log/bareos/* will be prepended.
+
+If you use a logfilename that matches */var/log/bareos/bareos\*.log*, it will be handled by logrotate.
+
+## Backup ##
+
+When running full backups, the plugin will call the _xtrabackup_ command with the according options. Format is _xbstream_. LSN information
+will be written into a temporary directory, using the _--extra-lsndir_ option. The information (LSN) will be used to write a so called
+restore object. This information is needed for following incremental jobs, so they are aware of the previous backups (and how far by
+means of LSN) they went.
+
+## Restore ##
+
+With the usual Bareos restore mechanism a file-hierarchy will be created on the restore client under the default restore location:
+
+*/tmp/bareos-restores/_percona/<jobid>*
+
+Each restore job gets an own subdirectory, because Percona expects an empty directory. In that subdirectory,
+a new directory is created for every backup job that was part of the Full-Incremental sequence.
+
+The naming scheme is:
+*fromLSN_toLSN_jobid*
+
+Example:
+```
+/tmp/bareos-restores/_percona/351/
+├── 00000000000000000000_00000000000010129154_0000000334
+├── 00000000000010129154_00000000000010142295_0000000335
+├── 00000000000010142295_00000000000010201260_0000000338
+```
+
+This example shows the restore tree for restore job with ID 351. First subdirectory has all files
+from the first full backup job with ID 334. It starts at LSN 0 and goes until LSN 10129154.
+
+Next line is the first incremental job with ID 335, starting at LSN 10129154 until 10142295.
+The third line is the 2nd incremental job with ID 338.
+
+To further prepare the restored files, use the *xtrabackup --prepare* command. Read https://www.percona.com/doc/percona-xtrabackup/2.4/xtrabackup_bin/incremental_backups.html
+for more information.
+
+
+## Troubleshooting ##
+
+If things don't work as expected, make sure:
+
+- Bareos FileDaemon (FD) works in general, so that you can make simple file backups  and restores
+- Bareos FD Python plugins work in genreral, try one of the shipped simple sample plugins
+- Make sure *xtrabackup* works as user root, MySQL access needs to be configured properly
+
+If this all does not help, you can start the Bareos FD in Debug mode and look deeper into it.
+
+Support is available here: https://www.bareos.com
+
 
 .. _sdPlugins:
 
@@ -994,7 +1173,7 @@ Storage Daemon Plugins
 autoxflate-sd
 ~~~~~~~~~~~~~
 
-:index:`\ <single: Plugin; autoxflate-sd>`\ 
+:index:`\ <single: Plugin; autoxflate-sd>`\
 
 This plugin is part of the **bareos-storage** package.
 
@@ -1052,7 +1231,7 @@ Additional :config:option:`sd/storage/AutoXflateOnReplication`\  can be configur
 scsicrypto-sd
 ~~~~~~~~~~~~~
 
-:index:`\ <single: Plugin; scsicrypto-sd>`\ 
+:index:`\ <single: Plugin; scsicrypto-sd>`\
 
 This plugin is part of the **bareos-storage-tape** package.
 
@@ -1129,9 +1308,9 @@ Some security levels need to be increased for the storage daemon to be able to u
 The following additional security is needed for the following operating systems:
 
 Linux (SG_IO ioctl interface):
-                              
 
-The user running the storage daemon needs the following additional capabilities: :index:`\ <single: Platform; Linux; Privileges>`\ 
+
+The user running the storage daemon needs the following additional capabilities: :index:`\ <single: Platform; Linux; Privileges>`\
 
 -  :strong:`CAP_SYS_RAWIO` (see capabilities(7))
 
@@ -1162,9 +1341,9 @@ Check the setting with
 If :command:`bareos-sd` does not have the appropriate capabilities, all other tape operations may still work correctly, but you will get "Unable to perform SG\_IO ioctl" errors.
 
 Solaris (USCSI ioctl interface):
-                                
 
-The user running the storage daemon needs the following additional privileges: :index:`\ <single: Platform; Solaris; Privileges>`\ 
+
+The user running the storage daemon needs the following additional privileges: :index:`\ <single: Platform; Solaris; Privileges>`\
 
 -  :strong:`PRIV_SYS_DEVICES` (see privileges(5))
 
@@ -1248,14 +1427,14 @@ of AME which may for big libraries be easier, although the overhead of using AME
 scsitapealert-sd
 ~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Plugin; scsitapealert-sd>`\ 
+:index:`\ <single: Plugin; scsitapealert-sd>`\
 
 This plugin is part of the **bareos-storage-tape** package.
 
 python-sd Plugin
 ~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Plugin; Python; Storage Daemon>`\ 
+:index:`\ <single: Plugin; Python; Storage Daemon>`\
 
 The **python-sd** plugin behaves similar to the :ref:`director-python-plugin`.
 
@@ -1269,7 +1448,7 @@ Director Plugins
 python-dir Plugin
 ~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Plugin; Python; Director>`\ 
+:index:`\ <single: Plugin; Python; Director>`\
 
 The **python-dir** plugin is intended to extend the functionality of the Bareos Director by Python code. A working example is included.
 
