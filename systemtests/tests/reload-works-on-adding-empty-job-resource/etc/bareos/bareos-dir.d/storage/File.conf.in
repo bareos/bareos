@@ -1,0 +1,8 @@
+Storage {
+  Name = File
+  Address = @hostname@                # N.B. Use a fully qualified name here (do not use "localhost" here).
+  Password = "@sd_password@"
+  Device = FileStorage
+  Media Type = File
+  SD Port = @sd_port@
+}

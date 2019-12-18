@@ -1,0 +1,11 @@
+FileSet {
+  Name = "SelfTest"
+  Description = "fileset just to backup some files for selftest"
+  Include {
+    Options {
+      Signature = MD5 # calculate md5 checksum per file
+    }
+   #File = "@sbindir@"
+    File=<@tmpdir@/file-list
+  }
+}

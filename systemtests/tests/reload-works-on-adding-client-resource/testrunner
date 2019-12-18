@@ -1,0 +1,120 @@
+#!/bin/sh
+#
+#set -x
+#trap read debug
+
+TestName="$(basename "$(pwd)")"
+
+export TestName
+export estat
+
+# shellcheck disable=SC1091
+. ./environment
+. ${scripts}/functions
+
+temporary_config_file="$config_directory_dir_additional_test_config/another_client.conf"
+bconsole_command_file="$tmp/bconsole_reload_command"
+console_logfile="$tmp/console.log"
+console_show_client_output_file="$tmp/list_of_clients.out"
+
+director_debug_level=""
+#director_debug_level="-d 200"
+
+exit_with_error() {
+  echo "$1"
+  estat=1
+  end_test
+  exit 1
+}
+
+stop_director() {
+  "${scripts}/bareos-ctl-dir" stop
+  if [ -n "$(pidof bareos-dir)" ]; then
+    killall -SIGKILL "$(pidof bareos-dir)"
+  fi
+  if [ -n "$(pidof bareos-dir)" ]; then
+    exit_with_error "Bareos director could not be stopped"
+  fi
+}
+
+start_director() {
+  "${scripts}/bareos-ctl-dir" start "$director_debug_level"
+  director_pid=$(pidof bareos-dir)
+
+  if [ -z "$director_pid" ]; then
+    exit_with_error "Bareos director could not be started"
+  fi
+}
+
+create_console_command_file() {
+  if [ ! -f "$bconsole_command_file" ]; then
+  cat > "$bconsole_command_file" <<EOF
+@$out "$console_logfile"
+reload
+messages
+EOF
+  fi
+}
+
+test_reload_will_not_crash_director() {
+  create_console_command_file
+
+  "$bin"/bconsole -c "$conf"/bconsole.conf < "$bconsole_command_file" 2>&1 >> /dev/null
+  if [ $? != 0 ] ; then
+    exit_with_error "BConsole finished with errors"
+  fi
+
+  if ! ps $director_pid > /dev/null; then
+      exit_with_error "Bareos director should not stop after reload"
+  fi
+}
+
+find_added_client_in_config() {
+  echo "show client" | bin/bconsole > "$console_show_client_output_file"
+  if ! grep -wq "bareos-fd-2" "$console_show_client_output_file"; then
+    exit_with_error 'Could not find client "bareos-fd-2" in console output'
+  fi
+}
+
+add_another_client() {
+cat <<END_OF_DATA > "$temporary_config_file"
+Client {
+  Name = bareos-fd-2
+  Description = "Another Client resource."
+  Address = localhost
+  Password = "@fd_password@"          # password for FileDaemon
+  FD PORT = @fd_port@
+}
+END_OF_DATA
+}
+
+remove_console_logfiles() {
+  rm -f "$console_logfile"
+  rm -f "$console_show_client_output_file"
+}
+
+############################################
+start_test
+############################################
+
+#be sure no director is started
+stop_director
+
+#cleanup possible leftover from last run
+${scripts}/cleanup
+remove_console_logfiles
+
+${scripts}/setup
+start_director
+
+#reload modified config
+add_another_client
+test_reload_will_not_crash_director
+find_added_client_in_config
+
+stop_director
+
+############################################
+end_test
+############################################
+
