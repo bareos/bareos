@@ -912,7 +912,8 @@ bool SelectMediaDbr(UaContext* ua, MediaDbRecord* mr)
     mr->PoolId = pr.PoolId;
     ua->db->ListMediaRecords(ua->jcr, mr, NULL, false, ua->send, HORZ_LIST);
 
-    if (!GetCmd(ua, _("Enter *MediaId or Volume name: "))) { goto bail_out; }
+    ua->SendMsg(_("Enter the volume name or MediaId of the volume prefixed with an asterisk (*).\n"));
+    if (!GetCmd(ua, _("E.g. \"full-0001\" or \"*42\": "))) { goto bail_out; }
 
     if (ua->cmd[0] == '*' && Is_a_number(ua->cmd + 1)) {
       mr->MediaId = str_to_int64(ua->cmd + 1);
