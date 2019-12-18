@@ -1124,7 +1124,7 @@ int main(int argc, char* argv[])
 
   Dmsg0(40, "Opened connection with Director daemon\n");
 
-  ConsoleOutput(_("\nEnter a period to cancel a command.\n"));
+  ConsoleOutput(_("\nEnter a period (.) to cancel a command.\n"));
 
 #if defined(HAVE_WIN32)
   char* env = getenv("USERPROFILE");
