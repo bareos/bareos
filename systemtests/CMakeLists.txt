@@ -311,6 +311,7 @@ set(SYSTEM_TESTS
     reload-works-on-adding-uncommented-string
     reload-works-on-adding-empty-job-resource
     reload-works-on-adding-second-director-resource
+    reload-works-on-adding-client-resource
 )
 
 set(SYSTEM_TESTS_DISABLED # initialy empty
