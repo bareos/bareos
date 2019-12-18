@@ -3,8 +3,15 @@
 # Bareos python class for Ovirt related backup and restore
 
 import bareosfd
-from bareos_fd_consts import bJobMessageType, bFileType, bRCs, bIOPS
-from bareos_fd_consts import bEventType, bVariable, bCFs
+from bareos_fd_consts import (
+    bJobMessageType,
+    bFileType,
+    bRCs,
+    bIOPS,
+    bEventType,
+    bVariable,
+    bCFs,
+)
 
 import os
 import io
@@ -31,12 +38,12 @@ import BareosFdPluginBaseclass
 
 # The name of the application, to be used as the 'origin' of events
 # sent to the audit log:
-APPLICATION_NAME = "BareOS Ovirt plugin"
+APPLICATION_NAME = "Bareos oVirt plugin"
 
 
 class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     """
-        Plugin for Ovirt backup and restore
+        Plugin for oVirt backup and restore
     """
 
     def __init__(self, context, plugindef):
@@ -111,12 +118,11 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             context, 100, "BareosFdPluginOvirt:start_backup_file() called\n"
         )
 
-        self.backup_obj = None
-
         if not self.ovirt.backup_objects:
             bareosfd.JobMessage(
                 context, bJobMessageType["M_ERROR"], "Nothing to backup.\n"
             )
+            self.backup_obj = None
             return bRCs["bRC_Skip"]
 
         self.backup_obj = self.ovirt.backup_objects.pop(0)
