@@ -28,9 +28,18 @@
 #include <atomic>
 #include <condition_variable>
 #include <thread>
+#include <iomanip>
 #include <iostream>
 
 static bool debug{false};
+
+/* libstdc++ on rhel7 does not have put_time, so we add it here */
+std::string put_time(const std::tm* tmb, const char* fmt) {
+  size_t maxlen = strlen(fmt)+100;
+  std::vector<char> s(maxlen);
+  strftime(s.data(), s.size(), fmt, tmb);
+  return std::string{s.data()};
+}
 
 class SimulatedTimeSource : public directordaemon::TimeSource {
  public:
@@ -41,7 +50,7 @@ class SimulatedTimeSource : public directordaemon::TimeSource {
 
     if (debug) {
       time_t t{clock_value_};
-      std::cout << std::put_time(
+      std::cout << put_time(
                        gmtime(&t),
                        "Start simulated Clock at time: %d-%m-%Y %H:%M:%S")
                 << std::endl;
