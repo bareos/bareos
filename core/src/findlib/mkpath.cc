@@ -257,7 +257,7 @@ bool makepath(Attributes* attr,
   /*
    * Set for final component
    */
-  if (i < ndir && new_dir[i++]) { SetOwnMod(attr, path, owner, group, mode); }
+  if (i < ndir && new_dir[i++] && !keep_dir_modes) { SetOwnMod(attr, path, owner, group, mode); }
 
   ok = true;
 bail_out:
