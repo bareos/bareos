@@ -351,9 +351,13 @@ endif()
 
 if(TARGET python-fd)
   list(APPEND SYSTEM_TESTS "python-fd-plugin-local-fileset-test")
-  list(APPEND SYSTEM_TESTS "python-fd-ovirt-plugin-test")
 else()
   list(APPEND SYSTEM_TESTS_DISABLED "python-fd-plugin-local-fileset-test")
+endif()
+
+if(TARGET python-fd AND ovirt_server)
+  list(APPEND SYSTEM_TESTS "python-fd-ovirt-plugin-test")
+else()
   list(APPEND SYSTEM_TESTS_DISABLED "python-fd-ovirt-plugin-test")
 endif()
 
