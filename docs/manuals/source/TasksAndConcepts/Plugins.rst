@@ -600,7 +600,7 @@ oVirt Plugin
 
 The oVirt Plugin can be used for agentless backups of virtual machines running on oVirt or Red Hat Virtualization (RHV).
 It was tested with oVirt/RHV 4.3. There are currently no known technical differences between
-RHV and oVirt (which is RHVs upstream project) that are relevant for this plugin, so both
+RHV and oVirt (which is RHV's upstream project) that are relevant for this plugin, so both
 names are equivalent in this documentation if not explicitly mentioned.
 
 For backing up a VM, the plugin performs the following steps:
@@ -619,8 +619,12 @@ Status
 ^^^^^^
 
 The Plugin can currently only take full backups of VM disks.
-When performing restores, the plugin can write local disk image files only
-or create a new VM with new disks or overwrite existing disks of an existings VM.
+
+When performing restores, the plugin can do one of the following:
+
+* Write local disk image files
+* Create a new VM with new disks
+* Overwrite existing disks of an existing VM
 
 Currently, the access to disk images is implemented only via the oVirt Image I/O Proxy component
 of the engine server.
@@ -633,15 +637,15 @@ Requirements
 The plugin is currently only available for Red Hat Enterprise Linux 7 and CentOS 7. It requires the
 Python oVirt Engine SDK version 4, Red Hat Subscriptions customers can find the package
 **python-ovirt-engine-sdk4** in the ``rh-common`` repo, which may not be enabled by default.
-The oVirt project provides the package at https://resources.ovirt.org/pub/ovirt-4.3/rpm/el7/x86_64/
+The oVirt project provides the package at https://resources.ovirt.org/pub/ovirt-4.3/rpm/el7/x86_64/.
 
-The system runing the Bareos FD with this plugin must have network access to the oVirt/RHV
+The system running the |fd| with this plugin must have network access to the oVirt/RHV
 engine server on the TCP ports 443 (https for API access) and 54323 (for Image I/O Proxy access).
 
 The QEMU Guest Agent (QEMU GA) should be installed inside VMs to optimize the consistency
 of snapshots by filesystem flushing and quiescing. This also allows custom freeze/thaw hook
 scripts in Linux VMs to ensure application level consistency of snapshots. On Windows the
-QEMU GA provides VSS support and live snapshots attempt to quiesce whenever possible.
+QEMU GA provides VSS support thus live snapshots attempt to quiesce whenever possible.
 
 .. _oVirtPlugin-installation:
 
@@ -652,12 +656,12 @@ The installation is done by installing the package **bareos-filedaemon-ovirt-pyt
 
 :command:`yum install bareos-filedaemon-ovirt-python-plugin`
 
-.. _oVirtPlugin-configuration
+.. _oVirtPlugin-configuration:
 
 Configuration
 ^^^^^^^^^^^^^
 
-As the Plugin needs access to the oVirt API, an account with appriate privileges must be used.
+As the Plugin needs access to the oVirt API, an account with appropriate privileges must be used.
 The default **admin@internal** user works, as it has all privileges. Using an account with
 less privileges should be possible, the plugin needs to be able to do the following:
 
@@ -737,10 +741,10 @@ Optional Plugin Options:
 
 uuid
    Instead of specifying the VM to be backed up by name (using option **vm_name**), the VM
-   can be specified by its uuid
+   can be specified by its uuid.
 
 include_disk_aliases
-   Comma separated list of disk alias names to be included only, if not specified, all disks
+   Comma separated list of disk alias names to be included only. If not specified, all disks
    that are attached to the VM are included. Currently only used on backup.
 
 exclude_disk_aliases
@@ -752,7 +756,8 @@ exclude_disk_aliases
 
 overwrite
    When restoring disks of an existing VM, the option **overwrite=yes** must be explictly
-   passed to prevent from accidentally overwriting an existing VM.
+   passed to force overwriting. To prevent from accidentally overwriting an existing VM,
+   the plugin will return an error message if this option is not passed.
 
 cluster_name
    When restoring, the target cluster name can be specified. Otherwise the default cluster
@@ -765,23 +770,23 @@ vm_template
 vm_type
    When not using this option, the VM type *Server* will be used when restoring to a new VM. The VM Type
    can be set to *Desktop* or *High Performance* optionally by using **vm_type=desktop**
-   or **vm_type=high_performance**
+   or **vm_type=high_performance**.
 
 vm_memory
    When not using this option, the amount of VM memory configured when restoring to a new VM will
    be taken from the VM metadata that have been saved on backup. Optionally, the amount of
    memory for the new VM can be specified in Megabytes here, for example by using
-   **vm_memory=4** would create the new vm with 4 MB or RAM
+   **vm_memory=4** would create the new vm with 4 MB or RAM.
 
 vm_cpu
    When not using this option, the number of virtual CPU cores/sockets/threads configured when restoring
    to a new VM will be taken from the VM metadata that have been saved on backup. Optionally, the
    amount of a cores/sockets/threads can be specified as a comma separated list
-   **vm_cpu=<cores>,<sockets>,<threads>**
+   **vm_cpu=<cores>,<sockets>,<threads>**.
 
 ovirt_sdk_debug_log
    Only useful for debugging purposes, enables writing oVirt SDK debug log to the specified file, for
-   example by adding **ovirt_sdk_debug_log=/var/log/bareos/ovirt-sdk-debug.log**
+   example by adding **ovirt_sdk_debug_log=/var/log/bareos/ovirt-sdk-debug.log**.
 
 
 .. _oVirtPlugin-backup
@@ -789,10 +794,10 @@ ovirt_sdk_debug_log
 Backup
 ^^^^^^
 
-To manually run a backup, use the following command in **bconsole**:
+To manually run a backup, use the following command in |bconsole|:
 
 .. code-block:: bconsole
-   :caption: Example: running a oVirt Plugin backup job
+   :caption: Example: Running a oVirt Plugin backup job
 
    *<input>run job=testvm1_job level=Full</input>
    Using Catalog "MyCatalog"
@@ -944,9 +949,12 @@ are created in the storage domain **hosted_storage** with the same cpu and memor
 as the backed up VM.
 
 When omitting the **vm_name** Parameter, the VM name will be taken from the backed up metadata
-and the plugin will restore to the same VM if it still exists. For restoring to an existing
-VM, the options **overwirte=yes** must be added to the Plugin Options to prevent from
-accidentally overwriting existing VMs. Only powered off VMs can be overwritten.
+and the plugin will restore to the same VM if it still exists.
+
+
+When restoring disks of an existing VM, the option **overwrite=yes** must be explictly
+passed to force overwriting. To prevent from accidentally overwriting an existing VM,
+the plugin will return an error message if this option is not passed.
 
 .. _oVirtPlugin-restore-to-local-image
 
