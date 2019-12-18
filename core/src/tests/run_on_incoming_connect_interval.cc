@@ -216,10 +216,9 @@ static void SimulateClientConnect(std::string client_name,
 
 static void RunSchedulerAndSimulateClientConnect(BareosDb& db)
 {
-  auto tts{std::make_unique<TestTimeSource>()};
-  auto ta{std::make_unique<TimeAdapter>(std::move(tts))};
-
-  Scheduler scheduler(std::move(ta), SchedulerJobCallback);
+  Scheduler scheduler(
+      std::make_unique<TimeAdapter>(std::make_unique<TestTimeSource>()),
+      SchedulerJobCallback);
 
   std::thread scheduler_thread(scheduler_loop, &scheduler);
 

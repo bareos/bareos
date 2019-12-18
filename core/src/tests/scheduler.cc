@@ -159,7 +159,7 @@ void SimulatedTimeSource::ExecuteJob(JobControlRecord* jcr)
 
   // auto tm = *std::gmtime(&t);
   // std::cout << "Executing job: " << jcr->Job << std::endl;
-  // std::cout << std::put_time(&tm, "%d-%m-%Y %H:%M:%S") << std::endl;
+  // std::cout << put_time(&tm, "%d-%m-%Y %H:%M:%S") << std::endl;
 }
 
 static int CalculateAverage()
@@ -217,7 +217,7 @@ TEST_F(SchedulerTest, hourly)
     for (const auto& t : list_of_job_execution_time_stamps) {
       auto tm = *std::gmtime(&t);
       std::cout << "Hour " << hour << ": "
-                << std::put_time(&tm, "%d-%m-%Y %H:%M:%S");
+                << put_time(&tm, "%d-%m-%Y %H:%M:%S");
       if (hour) {
         std::cout << " - " << list_of_time_gaps_between_adjacent_jobs[hour]
                   << " sec";
@@ -267,7 +267,7 @@ TEST_F(SchedulerTest, on_time)
     EXPECT_TRUE(is_two_o_clock);
     EXPECT_TRUE(is_monday);
     if (debug || !is_two_o_clock || !is_monday) {
-      std::cout << std::put_time(&tm, "%A, %d-%m-%Y %H:%M:%S ") << std::endl;
+      std::cout << put_time(&tm, "%A, %d-%m-%Y %H:%M:%S ") << std::endl;
     }
   }
 
@@ -295,7 +295,7 @@ TEST_F(SchedulerTest, add_job_with_no_run_resource_to_queue)
   counter_of_number_of_jobs_run = 0;
   maximum_number_of_jobs_run = 1;
 
-  auto scheduler_thread{std::thread([]() { scheduler->Run(); })};
+  std::thread scheduler_thread{[]() { scheduler->Run(); }};
 
   JobResource* job{dynamic_cast<JobResource*>(
       my_config->GetResWithName(R_JOB, "backup-bareos-fd"))};
