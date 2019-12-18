@@ -73,6 +73,7 @@ General Information
 
 New Features
 ^^^^^^^^^^^^
+* oVirt Plugin: The oVirt Plugin can be used for agentless backups of virtual machines running on oVirt or Red Hat Virtualization (RHV)
 * |webui|: :ref:`section-webui-restore` a specific file version
 * Display a summary before performing a restore in the |webui|
 * New configuration parameter *filetree_refresh_timeout* has been added to configuration.ini file of the |webui| to set a custom timeout while refreshing the file tree (.bvfs_cache_update) in the restore module (:ref:`section-updating-bvfs-cache-frequently`)
