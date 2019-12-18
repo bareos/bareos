@@ -142,9 +142,6 @@ set(PYFILES
     BareosFdPluginOvirt.py
     )
 
-INSTALL(FILES ${PYFILES} DESTINATION ${plugindir} COMPONENT filedaemon)
-
-
 install(
   FILES ${PYFILES}
   DESTINATION ${plugindir}

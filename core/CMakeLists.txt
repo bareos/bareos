@@ -696,8 +696,8 @@ endif()
 
 # info what the config files need to be installed
 #####  PLUGINS  ############
-SET(PLUGINS python-ldap-conf.d)
-LIST(APPEND PLUGINS python-ovirt-conf.d)
+set(PLUGINS python-ldap-conf.d)
+list(APPEND PLUGINS python-ovirt-conf.d)
 
 if(${HAVE_CEPHFS})
   list(APPEND PLUGINS cephfs-conf.d)
