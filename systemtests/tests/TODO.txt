@@ -31,7 +31,6 @@ disk:allowed-jobcommand-test
 disk:allowed-scriptdir-test
 disk:always-incremental-test
 disk:auto-label-test
-disk:backup-bareos-client-initiated-connection-test
 disk:backup-to-null
 disk:bandwidth-limit-per-client-test
 disk:base-job-test
@@ -108,7 +107,6 @@ disk:quota-includefailed-test
 disk:quota-softquota-test
 disk:recycle-test
 disk:regexwhere-test
-disk:reload-test
 disk:rerun-test
 disk:restore-by-file-test
 disk:restore-disk-seek-test
