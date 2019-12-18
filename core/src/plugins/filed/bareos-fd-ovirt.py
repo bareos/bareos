@@ -13,7 +13,24 @@ from bareos_fd_consts import bRCs
 # functions call the corresponding
 # methods from your plugin class
 import BareosFdWrapper
-from BareosFdWrapper import *  # noqa
+from BareosFdWrapper import (
+    parse_plugin_definition,
+    handle_plugin_event,
+    start_backup_file,
+    end_backup_file,
+    start_restore_file,
+    end_restore_file,
+    restore_object_data,
+    plugin_io,
+    create_file,
+    set_file_attributes,
+    check_file,
+    get_acl,
+    set_acl,
+    get_xattr,
+    set_xattr,
+    handle_backup_file,
+)
 
 # This module contains the used plugin class
 import BareosFdPluginOvirt
