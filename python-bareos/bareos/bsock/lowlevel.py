@@ -456,6 +456,8 @@ class LowLevel(object):
             except EOFError:
                 return False
             try:
+                if command == "exit" or command == "quit":
+                    return True
                 resultmsg = self.call(command)
                 self._show_result(resultmsg)
             except bareos.exceptions.JsonRpcErrorReceivedException as exp:
@@ -481,7 +483,7 @@ class LowLevel(object):
         # add a linefeed, if there isn't one already
         if len(msg) >= 2:
             if msg[-2] != ord(b'\n'):
-                sys.stdout.write(b'\n')
+                sys.stdout.write('\n')
 
 
     def __get_header(self, timeout = 10):
