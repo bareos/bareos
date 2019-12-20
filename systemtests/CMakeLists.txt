@@ -321,6 +321,7 @@ set(SYSTEM_TESTS
     reload-works-on-adding-empty-job-resource
     reload-works-on-adding-second-director-resource
     reload-works-on-adding-client-resource
+    backup-bareos-client-initiated-test
 )
 
 set(SYSTEM_TESTS_DISABLED # initialy empty
