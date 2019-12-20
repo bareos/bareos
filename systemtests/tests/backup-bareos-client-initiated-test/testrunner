@@ -17,13 +17,6 @@ exit_with_error() {
   exit 1
 }
 
-stop_bareos_daemons() {
-  stop_bareos
-  if [ -n "$(pidof bareos-sd)" ]; then killall -SIGKILL bareos-sd >/dev/null 2>&1; fi
-  if [ -n "$(pidof bareos-fd)" ]; then killall -SIGKILL bareos-fd >/dev/null 2>&1; fi
-  if [ -n "$(pidof bareos-dir)" ]; then killall -SIGKILL bareos-dir >/dev/null 2>&1; fi
-}
-
 # Directory to backup.
 # This directory will be created by setup_data().
 BackupDirectory="${tmp}/data"
@@ -34,7 +27,7 @@ setup_data
 
 start_test
 
-stop_bareos_daemons
+stop_bareos
 
 cat <<END_OF_DATA >"${tmp}"/bconcmds
 @$out /dev/null
