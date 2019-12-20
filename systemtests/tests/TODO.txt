@@ -100,7 +100,6 @@ disk:prune-config-test
 disk:prune-copy-test
 disk:prune-migration-test
 disk:prune-test
-disk:python-bareos-connection-test
 disk:query-test
 disk:quota-hardquota-test
 disk:quota-includefailed-test
