@@ -618,7 +618,8 @@ It is included in Bareos since :sinceVersion:`19: oVirt Plugin`.
 Status
 ^^^^^^
 
-The Plugin can currently only take full backups of VM disks.
+The Plugin can currently only take full backups of VM disks because
+the oVirt/RHV API does not yet provide methods for incremental backups.
 
 When performing restores, the plugin can do one of the following:
 
