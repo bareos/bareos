@@ -1506,6 +1506,7 @@ void CreateUniqueJobName(JobControlRecord* jcr, const char* base_name)
   static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
   static time_t last_start_time = 0;
   static int seq = 0;
+  int lseq = 0;
   time_t now = time(NULL);
   char dt[MAX_TIME_LENGTH];
   char name[MAX_NAME_LENGTH];
@@ -1524,6 +1525,7 @@ void CreateUniqueJobName(JobControlRecord* jcr, const char* base_name)
       now = time(NULL);
     }
   }
+  lseq = seq;
   last_start_time = now;
   V(mutex); /* allow creation of jobs */
   jcr->start_time = now;
@@ -1538,7 +1540,7 @@ void CreateUniqueJobName(JobControlRecord* jcr, const char* base_name)
   bstrncpy(name, base_name, sizeof(name));
   name[sizeof(name) - len] = 0; /* truncate if too long */
   Bsnprintf(jcr->Job, sizeof(jcr->Job), "%s.%s_%02d", name, dt,
-            seq); /* add date & time */
+            lseq); /* add date & time */
   /* Convert spaces into underscores */
   for (p = jcr->Job; *p; p++) {
     if (*p == ' ') { *p = '_'; }
