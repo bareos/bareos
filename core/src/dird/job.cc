@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1478,6 +1478,7 @@ void CreateUniqueJobName(JobControlRecord *jcr, const char *base_name)
    static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
    static time_t last_start_time = 0;
    static int seq = 0;
+   int lseq = 0;
    time_t now = time(NULL);
    char dt[MAX_TIME_LENGTH];
    char name[MAX_NAME_LENGTH];
@@ -1496,6 +1497,7 @@ void CreateUniqueJobName(JobControlRecord *jcr, const char *base_name)
          now = time(NULL);
       }
    }
+   lseq = seq;
    last_start_time = now;
    V(mutex);                          /* allow creation of jobs */
    jcr->start_time = now;
@@ -1509,7 +1511,7 @@ void CreateUniqueJobName(JobControlRecord *jcr, const char *base_name)
    len = strlen(dt) + 5;   /* dt + .%02d EOS */
    bstrncpy(name, base_name, sizeof(name));
    name[sizeof(name)-len] = 0;          /* truncate if too long */
-   Bsnprintf(jcr->Job, sizeof(jcr->Job), "%s.%s_%02d", name, dt, seq); /* add date & time */
+   Bsnprintf(jcr->Job, sizeof(jcr->Job), "%s.%s_%02d", name, dt, lseq); /* add date & time */
    /* Convert spaces into underscores */
    for (p=jcr->Job; *p; p++) {
       if (*p == ' ') {
