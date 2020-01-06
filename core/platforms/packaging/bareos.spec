@@ -1402,7 +1402,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %files filedaemon-percona-python-plugin
 %defattr(-, root, root)
 %{plugin_dir}/bareos-fd-percona.py*
-%{plugin_dir}/BareosFdPercona.py*
+%{plugin_dir}/BareosFdPluginPercona.py*
 #%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/fileset/plugin-percona.conf.example
 #%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/job/backup-percona.conf.example
 #%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/job/restore-percona.conf.example
