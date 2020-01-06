@@ -37,7 +37,6 @@ echo -e "wait JobName=$JobName" | $BCONSOLE
 echo "status dir" | $BCONSOLE
 # insert data and run incremental
 echo "insert into test (data) VALUES ('test eintrag 2') " | mysql ${db_name}_percona
-touch /root/testfile
 
 COMMAND="$COMMAND level=Incremental"
 echo -e "$COMMAND \ryes\rwait" | $BCONSOLE #| grep "Job queued. JobId="
