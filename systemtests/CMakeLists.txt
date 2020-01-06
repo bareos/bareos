@@ -101,6 +101,8 @@ macro(handle_python_plugin_modules)
       filed/BareosFdPluginOvirt.py
       filed/bareos-fd-ovirt.py
 
+      filed/BareosFdPluginPercona.py
+      filed/bareos-fd-percona.py
 
       dird/bareos_dir_consts.py
       dird/BareosDirPluginBaseclass.py
@@ -367,6 +369,12 @@ if(TARGET python-fd AND ovirt_server)
   list(APPEND SYSTEM_TESTS "python-fd-ovirt-plugin-test")
 else()
   list(APPEND SYSTEM_TESTS_DISABLED "python-fd-ovirt-plugin-test")
+endif()
+
+if(TARGET python-fd AND XTRABACKUP)
+  list(APPEND SYSTEM_TESTS "python-fd-percona-plugin-test")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "python-fd-percona-plugin-test")
 endif()
 
 if(TARGET python-dir)
