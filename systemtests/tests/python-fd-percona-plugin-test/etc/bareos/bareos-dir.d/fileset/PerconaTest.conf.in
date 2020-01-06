@@ -1,10 +1,10 @@
 FileSet {
   Name = "PerconaTest"
-  Description = "Test the Plugin functionality of the oVirt Plugin."
+  Description = "Test the Plugin functionality of the Percona Plugin."
   Include {
     Options {
       signature = MD5
     }
-    Plugin = "python:module_path=@python_plugin_module_src_test_dir@:module_name=bareos-fd-percona:ca=@current_test_directory@/etc/bareos/percona-ca.cert:server=@percona_server@:username=@percona_user@:password=@percona_password@:vm_name=@percona_vm_name@:include_disk_aliases=@percona_include_disk_alias@"
+    Plugin = "python:module_path=@python_plugin_module_src_test_dir@:module_name=bareos-fd-percona"
   }
 }
