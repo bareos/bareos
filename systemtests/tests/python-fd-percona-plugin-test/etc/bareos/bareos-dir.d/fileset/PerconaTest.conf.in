@@ -1,5 +1,5 @@
 FileSet {
-  Name = "perconaTest"
+  Name = "PerconaTest"
   Description = "Test the Plugin functionality of the oVirt Plugin."
   Include {
     Options {

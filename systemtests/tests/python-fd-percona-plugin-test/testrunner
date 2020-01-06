@@ -2,7 +2,7 @@
 #
 # This systemtest tests the oVirt plugin functionality
 # of the Bareos FD by using the supplied module
-#   BareosFdPluginOvirt.py
+#   BareosFdPluginPercona.py
 #
 TestName="$(basename "$(pwd)")"
 export TestName
@@ -13,8 +13,6 @@ JobName=backup-bareos-fd
 
 ${scripts}/cleanup
 ${scripts}/setup
-
-curl -k -o ${BAREOS_CONFIG_DIR}/ovirt-ca.cert "https://$OVIRT_SERVER/ovirt-engine/services/pki-resource?resource=ca-certificate&format=X509-PEM-CA"
 
 # Directory to backup.
 # This directory will be created by setup_data().
@@ -43,7 +41,7 @@ messages
 @#
 @$out $tmp/log2.out
 wait
-restore client=bareos-fd fileset=OvirtTest where=$tmp/bareos-restores pluginoptions=python:local=yes select all done
+restore client=bareos-fd fileset=PerconaTest where=$tmp/bareos-restores pluginoptions=python:local=yes select all done
 yes
 wait
 messages
