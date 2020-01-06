@@ -84,83 +84,70 @@ macro(CheckForEnabledAndDisabledListEntry TEST_NAME_TO_CHECK)
 endmacro()
 
 macro(handle_python_plugin_modules test_name)
-    set(PYMODULES_TO_LINK_TO_SRC
-    )
+  set(PYMODULES_TO_LINK_TO_SRC)
 
   message("test_name: ${test_name}")
   string(REGEX MATCH ^python-fd.* starts_with_python-fd ${test_name})
   if(starts_with_python-fd)
-    list(APPEND PYMODULES_TO_LINK_TO_SRC
-        filed/BareosFdWrapper.py
-        filed/BareosFdPluginBaseclass.py
-        filed/bareos_fd_consts.py
-        filed/bareos-fd-mock-test.py
+    list(APPEND PYMODULES_TO_LINK_TO_SRC filed/BareosFdWrapper.py
+                filed/BareosFdPluginBaseclass.py filed/bareos_fd_consts.py
+                filed/bareos-fd-mock-test.py
     )
   endif()
 
   string(REGEX MATCH ^python-sd.* starts_with_python-sd ${test_name})
   if(starts_with_python-sd)
-    list(APPEND PYMODULES_TO_LINK_TO_SRC
-      stored/bareos_sd_consts.py
-      stored/bareos-sd-class-plugin.py
-      stored/BareosSdPluginBaseclass.py
-      stored/BareosSdWrapper.py
+    list(APPEND PYMODULES_TO_LINK_TO_SRC stored/bareos_sd_consts.py
+                stored/bareos-sd-class-plugin.py
+                stored/BareosSdPluginBaseclass.py stored/BareosSdWrapper.py
     )
   endif()
 
   string(REGEX MATCH ^python-dir.* starts_with_python-dir ${test_name})
   if(starts_with_python-dir)
-    list(APPEND PYMODULES_TO_LINK_TO_SRC
-      dird/bareos_dir_consts.py
-      dird/BareosDirPluginBaseclass.py
-      dird/bareos-dir-class-plugin.py
-      dird/BareosDirWrapper.py
+    list(APPEND PYMODULES_TO_LINK_TO_SRC dird/bareos_dir_consts.py
+                dird/BareosDirPluginBaseclass.py
+                dird/bareos-dir-class-plugin.py dird/BareosDirWrapper.py
     )
   endif()
 
   if(${test_name} STREQUAL python-dir-plugin-test)
-    list(APPEND PYMODULES_TO_LINK_TO_SRC
-    )
+    list(APPEND PYMODULES_TO_LINK_TO_SRC)
   endif()
 
   if(${test_name} STREQUAL python-fd-percona-plugin-test)
-    list(APPEND PYMODULES_TO_LINK_TO_SRC
-      filed/BareosFdPluginPercona.py
-      filed/bareos-fd-percona.py
+    list(APPEND PYMODULES_TO_LINK_TO_SRC filed/BareosFdPluginPercona.py
+                filed/bareos-fd-percona.py
     )
   endif()
 
   if(${test_name} STREQUAL python-fd-ovirt-plugin-test)
-    list(APPEND PYMODULES_TO_LINK_TO_SRC
-      filed/BareosFdPluginOvirt.py
-      filed/bareos-fd-ovirt.py
+    list(APPEND PYMODULES_TO_LINK_TO_SRC filed/BareosFdPluginOvirt.py
+                filed/bareos-fd-ovirt.py
     )
   endif()
 
   if(${test_name} STREQUAL python-fd-plugin-local-fileset-test)
-    list(APPEND PYMODULES_TO_LINK_TO_SRC
-      filed/bareos-fd-local-fileset.py
-      filed/BareosFdPluginLocalFileset.py
+    list(APPEND PYMODULES_TO_LINK_TO_SRC filed/bareos-fd-local-fileset.py
+                filed/BareosFdPluginLocalFileset.py
     )
   endif()
 
-# still missing:
-#      filed/BareosFdPluginLDAP.py
-#      filed/bareos-fd-ldap.py
+  # still missing: filed/BareosFdPluginLDAP.py filed/bareos-fd-ldap.py
 
-    if(NOT EXISTS ${python_plugin_module_src_test_dir})
-      file(MAKE_DIRECTORY ${python_plugin_module_src_test_dir})
-    endif()
+  if(NOT EXISTS ${python_plugin_module_src_test_dir})
+    file(MAKE_DIRECTORY ${python_plugin_module_src_test_dir})
+  endif()
 
-    foreach(PYMODULE_SOURCEPATH ${PYMODULES_TO_LINK_TO_SRC})
-      get_filename_component(PYMODULE_NAME ${PYMODULE_SOURCEPATH} NAME)
-      execute_process(
-        COMMAND ${CMAKE_COMMAND} -E create_symlink
-                ${PROJECT_SOURCE_DIR}/../core/src/plugins/${PYMODULE_SOURCEPATH}
-                ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
-      )
-    endforeach()
-#  endif()
+  foreach(PYMODULE_SOURCEPATH ${PYMODULES_TO_LINK_TO_SRC})
+    get_filename_component(PYMODULE_NAME ${PYMODULE_SOURCEPATH} NAME)
+    execute_process(
+      COMMAND ${CMAKE_COMMAND} -E create_symlink
+              ${PROJECT_SOURCE_DIR}/../core/src/plugins/${PYMODULE_SOURCEPATH}
+              ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
+    )
+  endforeach()
+  # endif()
 endmacro()
 
 macro(prepare_test)
@@ -193,7 +180,9 @@ macro(prepare_test)
   # set(DEFAULT_DB_TYPE )
   set(archivedir ${current_test_directory}/storage)
   set(confdir ${current_test_directory}/etc/bareos)
-  set(config_directory_dir_additional_test_config ${current_test_directory}/etc/bareos/bareos-dir.d/additional_test_config)
+  set(config_directory_dir_additional_test_config
+      ${current_test_directory}/etc/bareos/bareos-dir.d/additional_test_config
+  )
 
   set(logdir ${current_test_directory}/log)
   set(tmpdir ${current_test_directory}/tmp)
