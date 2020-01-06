@@ -83,37 +83,74 @@ macro(CheckForEnabledAndDisabledListEntry TEST_NAME_TO_CHECK)
   endif()
 endmacro()
 
-macro(handle_python_plugin_modules)
-  if(EXISTS ${python_plugin_module_src_test_dir})
+macro(handle_python_plugin_modules test_name)
     set(PYMODULES_TO_LINK_TO_SRC
+    )
 
-      filed/BareosFdWrapper.py
-      filed/BareosFdPluginBaseclass.py
-      filed/bareos_fd_consts.py
-      filed/bareos-fd-mock-test.py
+  message("test_name: ${test_name}")
+  string(REGEX MATCH ^python-fd.* starts_with_python-fd ${test_name})
+  if(starts_with_python-fd)
+    list(APPEND PYMODULES_TO_LINK_TO_SRC
+        filed/BareosFdWrapper.py
+        filed/BareosFdPluginBaseclass.py
+        filed/bareos_fd_consts.py
+        filed/bareos-fd-mock-test.py
+    )
+  endif()
 
-      filed/bareos-fd-local-fileset.py
-      filed/BareosFdPluginLocalFileset.py
-
-      filed/BareosFdPluginLDAP.py
-      filed/bareos-fd-ldap.py
-
-      filed/BareosFdPluginOvirt.py
-      filed/bareos-fd-ovirt.py
-
-      filed/BareosFdPluginPercona.py
-      filed/bareos-fd-percona.py
-
-      dird/bareos_dir_consts.py
-      dird/BareosDirPluginBaseclass.py
-      dird/bareos-dir-class-plugin.py
-      dird/BareosDirWrapper.py
-
+  string(REGEX MATCH ^python-sd.* starts_with_python-sd ${test_name})
+  if(starts_with_python-sd)
+    list(APPEND PYMODULES_TO_LINK_TO_SRC
       stored/bareos_sd_consts.py
       stored/bareos-sd-class-plugin.py
       stored/BareosSdPluginBaseclass.py
       stored/BareosSdWrapper.py
     )
+  endif()
+
+  string(REGEX MATCH ^python-dir.* starts_with_python-dir ${test_name})
+  if(starts_with_python-dir)
+    list(APPEND PYMODULES_TO_LINK_TO_SRC
+      dird/bareos_dir_consts.py
+      dird/BareosDirPluginBaseclass.py
+      dird/bareos-dir-class-plugin.py
+      dird/BareosDirWrapper.py
+    )
+  endif()
+
+  if(${test_name} STREQUAL python-dir-plugin-test)
+    list(APPEND PYMODULES_TO_LINK_TO_SRC
+    )
+  endif()
+
+  if(${test_name} STREQUAL python-fd-percona-plugin-test)
+    list(APPEND PYMODULES_TO_LINK_TO_SRC
+      filed/BareosFdPluginPercona.py
+      filed/bareos-fd-percona.py
+    )
+  endif()
+
+  if(${test_name} STREQUAL python-fd-ovirt-plugin-test)
+    list(APPEND PYMODULES_TO_LINK_TO_SRC
+      filed/BareosFdPluginOvirt.py
+      filed/bareos-fd-ovirt.py
+    )
+  endif()
+
+  if(${test_name} STREQUAL python-fd-plugin-local-fileset-test)
+    list(APPEND PYMODULES_TO_LINK_TO_SRC
+      filed/bareos-fd-local-fileset.py
+      filed/BareosFdPluginLocalFileset.py
+    )
+  endif()
+
+# still missing:
+#      filed/BareosFdPluginLDAP.py
+#      filed/bareos-fd-ldap.py
+
+    if(NOT EXISTS ${python_plugin_module_src_test_dir})
+      file(MAKE_DIRECTORY ${python_plugin_module_src_test_dir})
+    endif()
 
     foreach(PYMODULE_SOURCEPATH ${PYMODULES_TO_LINK_TO_SRC})
       get_filename_component(PYMODULE_NAME ${PYMODULE_SOURCEPATH} NAME)
@@ -123,7 +160,7 @@ macro(handle_python_plugin_modules)
                 ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
       )
     endforeach()
-  endif()
+#  endif()
 endmacro()
 
 macro(prepare_test)
@@ -442,7 +479,7 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   prepare_test()
 
   configurefilestosystemtest("systemtests" "tests/${TEST_NAME}" "*" @ONLY "")
-  handle_python_plugin_modules()
+  handle_python_plugin_modules(${TEST_NAME})
 
   configure_file("environment.in" "tests/${TEST_NAME}/environment" @ONLY)
   # create a bin/bareos and bin/bconsole script in every testdir for start/stop
