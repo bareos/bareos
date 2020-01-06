@@ -158,7 +158,7 @@ class BareosFdPercona(BareosFdPluginBaseclass):
                 % (FNAME, origJobId),
             )
 
-        # Create restore directory, if not existant
+        # Create restore directory, if not existent
         if not os.path.exists(self.writeDir):
             bareosfd.DebugMessage(
                 context,
@@ -171,7 +171,7 @@ class BareosFdPercona(BareosFdPluginBaseclass):
             JobMessage(
                 context,
                 bJobMessageType["M_FATAL"],
-                "Restore with xbstream needs empty directoy: %s\n" % self.writeDir,
+                "Restore with xbstream needs empty directory: %s\n" % self.writeDir,
             )
             return bRCs["bRC_Error"]
         self.restorecommand += self.writeDir
@@ -227,7 +227,7 @@ class BareosFdPercona(BareosFdPluginBaseclass):
                         JobMessage(
                             context,
                             bJobMessageType["M_FATAL"],
-                            "Could not fetch SHOW ENGINE INNODB STATUS, unpriveleged user?",
+                            "Could not fetch SHOW ENGINE INNODB STATUS, unprivileged user?",
                         )
                         return bRCs["bRC_Error"]
                     info = result[0][2]
@@ -494,7 +494,7 @@ class BareosFdPercona(BareosFdPluginBaseclass):
 
     def end_restore_file(self, context):
         """
-        Check, if writing to restore command was succesfull.
+        Check if writing to restore command was successful.
         """
         returnCode = self.subprocess_returnCode
         if returnCode is None:
