@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -45,10 +45,10 @@ function(ConfigureFilesToSystemtest srcbasedir dirname globexpression
       ${configure_option}
     )
   endforeach()
-  message(
-    STATUS
-      "Configured ${COUNT} files from ${srcbasedir}/${srcdirname} to ${dirname} with glob ${globexpression} ${configure_option}"
-  )
+  #  message(
+  #  STATUS
+  #    "Configured ${COUNT} files from ${srcbasedir}/${srcdirname} to ${dirname} with glob ${globexpression} ${configure_option}"
+  #)
 endfunction()
 
 # generic function to probe for a python module
@@ -86,7 +86,6 @@ endmacro()
 macro(handle_python_plugin_modules test_name)
   set(PYMODULES_TO_LINK_TO_SRC)
 
-  message("test_name: ${test_name}")
   string(REGEX MATCH ^python-fd.* starts_with_python-fd ${test_name})
   if(starts_with_python-fd)
     list(APPEND PYMODULES_TO_LINK_TO_SRC filed/BareosFdWrapper.py
