@@ -1017,18 +1017,6 @@ As it is a Python plugin, it will also require to have the package **bareos-file
 For authentication the :file:`.mycnf` file of the user running the |fd|. Before proceeding, make sure that XtraBackup can connect to the database and create backups.
 
 
-There are different versions of _XtraBackup_ available. Older versions required an extra binary called _innobackupex_, especially when dealing with myISAM tables. In newer versions, _innobackupex_ is just a sysmbolic link to _XtraBackup_.
-
-We've tested some versions of XtraBackup together with the plugin:
-
-| XtraBackup version | Status | Remarks |
-| -----------------: |:------:| -------:|
-|2.0.8| - | InnoDB only seems to work |
-|2.3.5| + | |
-|2.4.4| + | |
-
-We've used the official Percona rpms on Centos 6 for testing.
-
 Installation
 ''''''''''''
 
@@ -1062,7 +1050,7 @@ Now include the plugin as command-plugin in the Fileset resource:
            }
            File = /etc
            #...
-           Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-percona:mycnf=/root/.my.cnf"
+           Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-percona_xtrabackup:mycnf=/root/.my.cnf"
        }
    }
 
@@ -1104,11 +1092,11 @@ This example shows the restore tree for restore job with ID 351. First subdirect
 
 Next line is the first incremental job with ID 335, starting at LSN 10129154 until 10142295. The third line is the 2nd incremental job with ID 338.
 
-To further prepare the restored files, use the :command:`XtraBackup --prepare` command. Read https://www.percona.com/doc/percona-XtraBackup/2.4/XtraBackup_bin/incremental_backups.html for more information.
+To further prepare the restored files, use the :command:`XtraBackup --prepare` command. Read https://www.percona.com/doc/percona-xtrabackup/2.4/backup_scenarios/incremental_backup.html for more information.
 
 
-## Troubleshooting ##
-
+Troubleshooting
+'''''''''''''''
 If things don't work as expected, make sure that
 
 - Bareos FileDaemon (FD) works in general, so that you can make simple file
