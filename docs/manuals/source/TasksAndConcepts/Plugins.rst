@@ -88,7 +88,7 @@ See chapter :ref:`backup-postgresql-plugin`.
 MySQL Plugin
 ~~~~~~~~~~~~
 
-See the chapters :ref:`backup-mysql-xtrabackup` and :ref:`backup-mysql-python`.
+See the chapters :ref:`backup-mysql-XtraBackup` and :ref:`backup-mysql-python`.
 
 MSSQL Plugin
 ~~~~~~~~~~~~
@@ -983,16 +983,20 @@ This will create disk image files that could be examined for example by using
 the **guestfish** tool (see http://libguestfs.org/guestfish.1.html). This tool
 can also be used to extract single files from the disk image.
 
+
 .. _PerconaXtrabackupPlugin:
+.. _backup-mysql-XtraBackup:
 
-Percona Xtrabackup Plugin
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Backup of MySQL Databases using the Bareos MySQL Percona XtraBackup Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-# The Bareos MySQL / MariaDB Percona xtrabackup Plugin
+:index:`\ <single: Plugin; MySQL Backup>`
+:index:`\ <single: Percona XtraBackup>`
+:index:`\ <single: XtraBackup>`
 
-This plugin uses Perconas xtrackup tool, to make full and incremental backups of Mysql / MariaDB databases.
+This plugin uses Perconas XtraBackup tool, to make full and incremental backups of Mysql / MariaDB databases.
 
-The key features of xtrabackup are:
+The key features of XtraBackup are:
 
 - Incremental backups
 - Backups that complete quickly and reliably
@@ -1002,19 +1006,22 @@ The key features of xtrabackup are:
 
 Incremental backups only work for INNODB tables, when using MYISAM, only full backups can be created.
 
-## Prerequisites
-You need to have the 'mysql' client program and the xtrabackup tool installed.
-More about xtrabackup: https://www.percona.com/software/mysql-database/percona-xtrabackup
 
-You will also need the package *bareos-filedaemon-python-plugin* installed on your client.
+Prerequisites
+'''''''''''''
 
-## Compatibility
+Install the XtraBackup tool from Percona. Documentation and packages are available here: https://www.percona.com/software/mysql-database/percona-XtraBackup. The plugin was successfully tested with XtraBackup versions 2.3.5 and 2.4.4.
 
-There are different versions of _xtrabackup_ available. Older versions required an extra binary called _innobackupex_, especially when dealing with myISAM tables. In newer versions, _innobackupex_ is just a sysmbolic link to _xtrabackup_.
+As it is a Python plugin, it will also require to have the package **bareos-filedaemon-python-plugin** installed on the |fd|, where you run it.
 
-We've tested some versions of xtrabackup together with the plugin:
+For authentication the :file:`.mycnf` file of the user running the |fd|. Before proceeding, make sure that XtraBackup can connect to the database and create backups.
 
-| xtrabackup version | Status | Remarks |
+
+There are different versions of _XtraBackup_ available. Older versions required an extra binary called _innobackupex_, especially when dealing with myISAM tables. In newer versions, _innobackupex_ is just a sysmbolic link to _XtraBackup_.
+
+We've tested some versions of XtraBackup together with the plugin:
+
+| XtraBackup version | Status | Remarks |
 | -----------------: |:------:| -------:|
 |2.0.8| - | InnoDB only seems to work |
 |2.3.5| + | |
@@ -1022,143 +1029,94 @@ We've tested some versions of xtrabackup together with the plugin:
 
 We've used the official Percona rpms on Centos 6 for testing.
 
-## Installation ##
+Installation
+''''''''''''
 
-1. Make sure you have met the prerequisites.
-2. Install the files *BareosFdPercona.py* and *bareos-fd-percona.py* in your Bareos plugin directory (usually */usr/lib64/bareos/plugins*)
+Make sure you have met the prerequisites. Install the package **bareos-filedaemon-percona_XtraBackup-python-plugin**.
 
+Configuration
+'''''''''''''
 
-## Configuration ##
+Activate your plugin directory in the |fd| configuration. See :ref:`fdPlugins` for more about plugins in general.
 
-### Activate your plugin directory in the fd resource conf on the client
-```
-FileDaemon {
-  Name = client-fd
-  ...
-  Plugin Directory = /usr/lib64/bareos/plugins
-}
-```
+.. code-block:: bareosconfig
+   :caption: bareos-fd.d/client/myself.conf
 
-### Include the Plugin in the fileset definition on the director
-```
-FileSet {
-    Name = "client-data"
+   Client {
+     ...
+     Plugin Directory = /usr/lib64/bareos/plugins
+     Plugin Names = "python"
+   }
+
+Now include the plugin as command-plugin in the Fileset resource:
+
+.. code-block:: bareosconfig
+   :caption: bareos-dir.d/fileset/mysql.conf
+
+   FileSet {
+       Name = "mysql"
        Include  {
-                Options {
-                        compression=GZIP
-                        signature = MD5
-                }
-                File = /etc
-                #...
-                Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-percona"
-        }
-}
-```
+           Options {
+               compression=GZIP
+               signature = MD5
+           }
+           File = /etc
+           #...
+           Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-percona:mycnf=/root/.my.cnf"
+       }
+   }
 
-#### Options ####
+If used this way, the plugin will call XtraBackup to create a backup of all databases in the xbstream format. This stream will be processed by Bareos. If job level is incremental, XtraBackup will perform an incremental backup since the last backup – for InnoDB tables. If you have MyISAM tables, you will get a full backup of those.
 
-You can append options to the plugin call as key=value pairs, separated by ':'.
-Please read more about the Bareos Python Plugin Interface here: http://doc.bareos.org/master/html/bareos-manual-main-reference.html#Python-fdPlugin
+You can append options to the plugin call as key=value pairs, separated by ’:’. The following options are available:
 
+-  With :strong:`mycnf` you can make XtraBackup use a special mycnf-file with login credentials.
 
-##### defaultsfile ####
+-  :strong:`dumpbinary` lets you modify the default command XtraBackup.
 
-This parameter allows to specify a defaultsfile that shall be used for mysql(client) and *xtrabackup* command line utilities.
-Example:
+-  :strong:`dumpoptions` to modify the options for XtraBackup. Default setting is: :command:`--backup --datadir=/var/lib/mysql/ --stream=xbstream --extra-lsndir=/tmp/individual_tempdir`
 
-```
-Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-percona:mycnf=/path/to/your/my.cnf"
-```
+-  :strong:`restorecommand` to modify the command for restore. Default setting is: :command:`xbstream -x -C`
 
-##### dumpbinary #####
+-  :strong:`strictIncremental`: By default (false), an incremental backup will create data, even if the Log Sequence Number (LSN) wasn’t increased since last backup. This is to ensure, that eventual changes to MYISAM tables get into the backup. MYISAM does not support incremental backups, you will always get a full bakcup of these tables. If set to true, no data will be written into backup, if the LSN wasn’t changed.
 
-Command (with or without full path) to create the dumps. Default: *xtrabackup*
-
-##### dumpoptions #####
-
-Options to be used with the dumpbinary.
-Default:
-   --backup --stream=xbstream
-
-##### extradumpoptions #####
-
-Additional options appended to dumpoptions.
-
-###### Choosing databases ######
-
-By default all found databases are backed up. You can restrict this
-using the dumpoptions or extradumpoptions parameter. If you modify
-dumpoptions, be careful that you include all necessary options.  See
-*xtrabackup* documentation for details.
-
-
-##### restorecommand
-Command used for restoring, default:
-   xbstream -x -C
-
-##### strictIncremental #####
-Default: False
-
-By default, an incremental will create data, even if the Log Sequence Number (LSN) wasn't increased since last backup. This is to ensure, that eventual changes to
-MYISAM tables get into the backup. MYISAM does not support incremental backups, you will always get a full bakcup of these tables.
-
-If set to true, no data will be written into backup, if the LSN wasn't changed.
-
-##### log #####
-Default: false
-
-By default, no extra logfile is written on the FD running the plugin. If you want to have some additional debug information, you might specify a
-logfile here. If you set a filename with path, this will be used. If you specify just a filename without path, the default path for logs
-*/var/log/bareos/* will be prepended.
-
-If you use a logfilename that matches */var/log/bareos/bareos\*.log*, it will be handled by logrotate.
-
-## Backup ##
-
-When running full backups, the plugin will call the _xtrabackup_ command with the according options. Format is _xbstream_. LSN information
-will be written into a temporary directory, using the _--extra-lsndir_ option. The information (LSN) will be used to write a so called
-restore object. This information is needed for following incremental jobs, so they are aware of the previous backups (and how far by
-means of LSN) they went.
-
-## Restore ##
+Restore
+'''''''
 
 With the usual Bareos restore mechanism a file-hierarchy will be created on the restore client under the default restore location:
 
-*/tmp/bareos-restores/_percona/<jobid>*
+:file:`/tmp/bareos-restores/_percona/`
 
-Each restore job gets an own subdirectory, because Percona expects an empty directory. In that subdirectory,
-a new directory is created for every backup job that was part of the Full-Incremental sequence.
+Each restore job gets an own subdirectory, because Percona expects an empty directory. In that subdirectory, a new directory is created for every backup job that was part of the Full-Incremental sequence.
 
-The naming scheme is:
-*fromLSN_toLSN_jobid*
+The naming scheme is: :file:`fromLSN_toLSN_jobid`
 
 Example:
-```
-/tmp/bareos-restores/_percona/351/
-├── 00000000000000000000_00000000000010129154_0000000334
-├── 00000000000010129154_00000000000010142295_0000000335
-├── 00000000000010142295_00000000000010201260_0000000338
-```
 
-This example shows the restore tree for restore job with ID 351. First subdirectory has all files
-from the first full backup job with ID 334. It starts at LSN 0 and goes until LSN 10129154.
+::
 
-Next line is the first incremental job with ID 335, starting at LSN 10129154 until 10142295.
-The third line is the 2nd incremental job with ID 338.
+   /tmp/bareos-restores/_percona/351/
+   |-- 00000000000000000000_00000000000010129154_0000000334
+   |-- 00000000000010129154_00000000000010142295_0000000335
+   |-- 00000000000010142295_00000000000010201260_0000000338
 
-To further prepare the restored files, use the *xtrabackup --prepare* command. Read https://www.percona.com/doc/percona-xtrabackup/2.4/xtrabackup_bin/incremental_backups.html
-for more information.
+This example shows the restore tree for restore job with ID 351. First subdirectory has all files from the first full backup job with ID 334. It starts at LSN 0 and goes until LSN 10129154.
+
+Next line is the first incremental job with ID 335, starting at LSN 10129154 until 10142295. The third line is the 2nd incremental job with ID 338.
+
+To further prepare the restored files, use the :command:`XtraBackup --prepare` command. Read https://www.percona.com/doc/percona-XtraBackup/2.4/XtraBackup_bin/incremental_backups.html for more information.
 
 
 ## Troubleshooting ##
 
-If things don't work as expected, make sure:
+If things don't work as expected, make sure that
 
-- Bareos FileDaemon (FD) works in general, so that you can make simple file backups  and restores
-- Bareos FD Python plugins work in genreral, try one of the shipped simple sample plugins
-- Make sure *xtrabackup* works as user root, MySQL access needs to be configured properly
+- Bareos FileDaemon (FD) works in general, so that you can make simple file
+  backups  and restores - Bareos FD Python plugins work in general, try one of
+  the shipped simple sample plugins
+- Make sure *XtraBackup* works as user root, MySQL access needs to be
+  configured properly
 
-If this all does not help, you can start the Bareos FD in Debug mode and look deeper into it.
 
 Support is available here: https://www.bareos.com
 
