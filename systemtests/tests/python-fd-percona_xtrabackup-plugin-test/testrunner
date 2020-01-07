@@ -2,7 +2,7 @@
 #
 # This systemtest tests the Percona plugin functionality
 # of the Bareos FD by using the supplied module
-#   BareosFdPluginPercona.py
+#   BareosFdPluginPerconaXtraBackup.py
 #
 TestName="$(basename "$(pwd)")"
 export TestName
@@ -14,13 +14,15 @@ JobName=backup-bareos-fd
 ${scripts}/cleanup
 ${scripts}/setup
 
+xtrabackup_test_db="${db_name}_xtrabackup"
+
 start_test
 
 echo "------ running PERCONA tests"
-echo "drop database ${db_name}_percona" | mysql
-echo "create database ${db_name}_percona" | mysql
-echo "CREATE TABLE test ( id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, data VARCHAR(100), created TIMESTAMP DEFAULT NOW())  " | mysql ${db_name}_percona
-echo "insert into test (data) VALUES ('test eintrag 1') " | mysql ${db_name}_percona
+echo "drop database ${xtrabackup_test_db}" | mysql
+echo "create database ${xtrabackup_test_db}" | mysql
+echo "CREATE TABLE test ( id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, data VARCHAR(100), created TIMESTAMP DEFAULT NOW())  " | mysql ${xtrabackup_test_db}
+echo "insert into test (data) VALUES ('test entry 1') " | mysql ${xtrabackup_test_db}
 
 
 BCONSOLE="${current_test_directory}/bin/bconsole"
@@ -36,7 +38,7 @@ echo -e "wait JobName=$JobName" | $BCONSOLE
 #sleep 2
 echo "status dir" | $BCONSOLE
 # insert data and run incremental
-echo "insert into test (data) VALUES ('test eintrag 2') " | mysql ${db_name}_percona
+echo "insert into test (data) VALUES ('test entry 2') " | mysql ${xtrabackup_test_db}
 
 COMMAND="$COMMAND level=Incremental"
 echo -e "$COMMAND \ryes\rwait" | $BCONSOLE #| grep "Job queued. JobId="
@@ -55,7 +57,7 @@ echo "status dir" | $BCONSOLE
 
 
 # run restore
-RESTORECMD="restore client=bareos-fd fileset=PerconaTest yes restorejob=RestoreFile select all\rdone\r"
+RESTORECMD="restore client=bareos-fd fileset=PerconaXtraBackupTest yes restorejob=RestoreFile select all\rdone\r"
 
 echo "@$out $tmp/log2.out"  | $BCONSOLE
 
