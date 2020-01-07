@@ -27,7 +27,7 @@ from bareos_fd_consts import *
 from BareosFdWrapper import *
 
 # This module contains the used plugin class
-from BareosFdPluginPercona import *
+from BareosFdPluginPerconaXtraBackup import *
 
 
 def load_bareos_plugin(context, plugindef):
