@@ -22,8 +22,10 @@ AWK=@AWK@
 #  easier to "steal" this code for the development
 #  environment where they are different.
 #
-BIN=@sbindir@/bareos-fd
-PIDDIR=@piddir@
+
+
+BAREOS_FILEDAEMON_BINARY=${BAREOS_FILEDAEMON_BINARY:-@sbindir@/bareos-fd}
+PIDDIR=${PIDDIR:-@piddir@}
 SUBSYSDIR=@subsysdir@
 
 BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-@confdir@}
@@ -49,7 +51,7 @@ fi
 
 case "$1" in
     start)
-        if [ -x ${BIN} ]; then
+        if [ -x ${BAREOS_FILEDAEMON_BINARY} ]; then
             echo "Starting the $Bareos File daemon"
             OPTIONS=''
             if [ "${BAREOS_FD_USER}" != '' ]; then
@@ -65,17 +67,17 @@ case "$1" in
             fi
 
             if [ "x${VALGRIND_FD}" = "x1" ]; then
-                valgrind --leak-check=full ${BIN} -v $2 $3 ${OPTIONS}
+                valgrind --leak-check=full ${BAREOS_FILEDAEMON_BINARY} -v $2 $3 ${OPTIONS}
             else
-                ${BIN} -v $2 $3 ${OPTIONS}
+                ${BAREOS_FILEDAEMON_BINARY} -v $2 $3 ${OPTIONS}
             fi
         fi
         ;;
 
     stop)
-        if [ -x ${BIN} ]; then
+        if [ -x ${BAREOS_FILEDAEMON_BINARY} ]; then
             echo "Stopping the $Bareos File daemon"
-            killproc ${BIN} ${BAREOS_FD_PORT}
+            killproc ${BAREOS_FILEDAEMON_BINARY} ${BAREOS_FD_PORT}
         fi
         ;;
 
@@ -86,7 +88,7 @@ case "$1" in
         ;;
 
     status)
-        [ -x ${BIN} ] && status ${BIN} ${BAREOS_FD_PORT}
+        [ -x ${BAREOS_FILEDAEMON_BINARY} ] && status ${BAREOS_FILEDAEMON_BINARY} ${BAREOS_FD_PORT}
         exit $?
         ;;
 
