@@ -1,5 +1,5 @@
 Job {
   Name = "backup-bareos-fd"
   JobDefs = "DefaultJob"
-  Client = "bareos-fd"
+  Client = "@basename@-fd"
 }

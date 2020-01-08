@@ -1,0 +1,92 @@
+#!/bin/sh
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+. ./environment
+. "${scripts}"/functions
+
+"${scripts}"/cleanup
+"${scripts}"/setup
+
+exit_with_error() {
+  echo "$1"
+  estat=1
+  end_test
+  exit 1
+}
+
+stop_bareos_daemons() {
+  stop_bareos
+  if [ -n "$(pidof bareos-sd)" ]; then killall -SIGKILL bareos-sd >/dev/null 2>&1; fi
+  if [ -n "$(pidof bareos-fd)" ]; then killall -SIGKILL bareos-fd >/dev/null 2>&1; fi
+  if [ -n "$(pidof bareos-dir)" ]; then killall -SIGKILL bareos-dir >/dev/null 2>&1; fi
+}
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backed up.
+# Data will be placed at "${tmp}/data/".
+setup_data
+
+start_test
+
+stop_bareos_daemons
+
+cat <<END_OF_DATA >"${tmp}"/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+setdebug level=100 storage=File
+label volume=TestVolume001 storage=File pool=Full
+run job=$JobName yes
+status director
+status client
+status storage=File
+wait
+messages
+@#
+@# now do a restore
+@#
+@$out $tmp/log2.out
+wait
+restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+"${scripts}"/bareos-ctl-dir start
+sleep 1
+
+echo "Waiting for the director to start"
+if ! bin/bconsole <<< "status dir" > /dev/null 2>&1; then
+  exit_with_error "Director did not start"
+fi
+echo "Director is running"
+
+"${scripts}"/bareos-ctl-sd start
+"${scripts}"/bareos-ctl-fd start
+
+echo "Check if the filedaemon is connected to the director"
+if ! bin/bconsole <<< "status dir" | grep --quiet --word-regexp "${TestName}-fd"; then
+  exit_with_error "Filedaemon ${TestName} could not connect to director"
+fi
+echo "Filedaemon is connected, running backup and restore"
+
+run_bconsole "$tmp/bconcmds"
+
+check_for_zombie_jobs storage=File
+
+"${scripts}"/bareos-ctl-dir stop
+"${scripts}"/bareos-ctl-sd stop
+"${scripts}"/bareos-ctl-fd stop
+
+check_two_logs
+check_restore_diff "${BackupDirectory}"
+end_test
+
