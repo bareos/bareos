@@ -127,6 +127,7 @@ endmacro()
 macro(prepare_test)
   # base directory for this test
   set(current_test_directory ${PROJECT_BINARY_DIR}/tests/${TEST_NAME})
+  set(current_test_source_directory ${PROJECT_SOURCE_DIR}/tests/${TEST_NAME})
   set(basename ${TEST_NAME})
 
   # db parameters
@@ -165,7 +166,7 @@ macro(prepare_test)
   )
 
   # skip for tests without etc/bareos ("catalog" test)
-  if(EXISTS ${current_test_directory}/etc/bareos)
+  if(EXISTS ${current_test_source_directory}/etc/bareos)
     file(MAKE_DIRECTORY ${tmpdir})
     file(MAKE_DIRECTORY ${archivedir})
     file(MAKE_DIRECTORY ${logdir})
