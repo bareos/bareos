@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -164,12 +164,20 @@ macro(prepare_test)
       ${current_test_directory}/python-modules
   )
 
-  file(MAKE_DIRECTORY ${archivedir})
-  file(MAKE_DIRECTORY ${confdir})
-  file(MAKE_DIRECTORY ${logdir})
-  file(MAKE_DIRECTORY ${tmpdir})
-  file(MAKE_DIRECTORY ${working_dir})
-  file(MAKE_DIRECTORY ${config_directory_dir_additional_test_config})
+  # skip for tests without etc/bareos ("catalog" test)
+  if(EXISTS ${current_test_directory}/etc/bareos)
+    file(MAKE_DIRECTORY ${tmpdir})
+    file(MAKE_DIRECTORY ${archivedir})
+    file(MAKE_DIRECTORY ${logdir})
+    file(MAKE_DIRECTORY ${confdir})
+    file(MAKE_DIRECTORY ${working_dir})
+    file(MAKE_DIRECTORY ${config_directory_dir_additional_test_config})
+    # create a bin/bareos and bin/bconsole script in every testdir for start/stop
+    # and bconsole
+    file(MAKE_DIRECTORY "${current_test_directory}/bin")
+    configure_file("bin/bconsole" "${current_test_directory}/bin/bconsole" COPYONLY)
+    configure_file("bin/bareos" "${current_test_directory}/bin/bareos" COPYONLY)
+  endif()
 endmacro()
 
 # extract  db version from cats.h
@@ -437,11 +445,6 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   handle_python_plugin_modules()
 
   configure_file("environment.in" "tests/${TEST_NAME}/environment" @ONLY)
-  # create a bin/bareos and bin/bconsole script in every testdir for start/stop
-  # and bconsole file(MAKE_DIRECTORY
-  # "${CMAKE_BINARY_DIR}/tests/${TEST_NAME}/bin")
-  configure_file("bin/bconsole" "tests/${TEST_NAME}/bin/bconsole" COPYONLY)
-  configure_file("bin/bareos" "tests/${TEST_NAME}/bin/bareos" COPYONLY)
 
   checkforenabledanddisabledlistentry(${TEST_NAME})
 
