@@ -27,12 +27,6 @@ exit_with_error() {
 
 stop_director() {
   "${scripts}/bareos-ctl-dir" stop
-  if [ -n "$(pidof bareos-dir)" ]; then
-    killall -SIGKILL "$(pidof bareos-dir)"
-  fi
-  if [ -n "$(pidof bareos-dir)" ]; then
-    exit_with_error "Bareos director could not be stopped"
-  fi
 }
 
 start_director() {
