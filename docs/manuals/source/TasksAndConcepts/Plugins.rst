@@ -1014,13 +1014,13 @@ Install the XtraBackup tool from Percona. Documentation and packages are availab
 
 As it is a Python plugin, it will also require to have the package **bareos-filedaemon-python-plugin** installed on the |fd|, where you run it.
 
-For authentication the :file:`.mycnf` file of the user running the |fd|. Before proceeding, make sure that XtraBackup can connect to the database and create backups.
+For authentication the :file:`.mycnf` file of the user running the |fd| is used. Before proceeding, make sure that XtraBackup can connect to the database and create backups.
 
 
 Installation
 ''''''''''''
 
-Make sure you have met the prerequisites. Install the package **bareos-filedaemon-percona_XtraBackup-python-plugin**.
+Make sure you have met the prerequisites, after that install the package **bareos-filedaemon-percona_XtraBackup-python-plugin**.
 
 Configuration
 '''''''''''''
@@ -1099,8 +1099,8 @@ Troubleshooting
 '''''''''''''''
 If things don't work as expected, make sure that
 
-- Bareos FileDaemon (FD) works in general, so that you can make simple file
-  backups  and restores - Bareos FD Python plugins work in general, try one of
+- the |fd| (FD) works in general, so that you can make simple file backups and restores
+  - the Bareos FD Python plugins work in general, try one of
   the shipped simple sample plugins
 - Make sure *XtraBackup* works as user root, MySQL access needs to be
   configured properly
@@ -1477,7 +1477,6 @@ Write your own Python Plugin
 
 Some plugin examples are available on https://github.com/bareos/bareos-contrib. The class-based approach lets you easily reuse stuff already defined in the baseclass BareosDirPluginBaseclass, which ships with the **bareos-director-python-plugin** package. The examples contain the plugin bareos-dir-nsca-sender, that submits the results and performance data of a backup job directly to Icinga:index:`\ <single: Icinga>`\  or
 Nagios:index:`\ <single: Nagios|see{Icinga}>`\  using the NSCA protocol.
-
 
 
 
