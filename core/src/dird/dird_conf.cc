@@ -1033,6 +1033,10 @@ const char* GetUsageStringForConsoleConfigureCommand()
       }
     }
     /*
+     * subcommand: delete
+     */
+    configure_usage_string->strcat("delete <resource>");
+    /*
      * subcommand: export
      */
     configure_usage_string->strcat("export client=<client>");

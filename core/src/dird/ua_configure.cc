@@ -441,6 +441,65 @@ static inline bool ConfigureExport(UaContext* ua)
   return result;
 }
 
+static inline bool ConfigureDeleteResource(UaContext* ua,
+                                        int first_parameter,
+                                        ResourceTable* res_table)
+{
+  PoolMem resource(PM_MESSAGE);
+  PoolMem name(PM_MESSAGE);
+  PoolMem filename(PM_FNAME);
+
+  if (!configure_create_resource_string(ua, first_parameter, res_table, name,
+                                        resource)) {
+    return false;
+  }
+
+  if (!my_config->GetResWithName(res_table->rcode, name.c_str())) {
+    ua->ErrorMsg("Resource \"%s\" with name \"%s\" does not exists.\n",
+                 res_table->name, name.c_str());
+    return false;
+  }
+
+  if (!my_config->GetPathOfResource(filename, NULL, res_table->name,
+                                       name.c_str())) {
+    ua->ErrorMsg("%s", name.c_str());
+    return false;
+  }
+  if (remove(filename.c_str()) != 0) {
+    ua->ErrorMsg("Could not delete resource file \"%s\".\n",
+                 filename.c_str());
+    return false;
+  }
+  my_config->RemoveResource(res_table->rcode, name.c_str());
+  ua->WarningMsg("You should reload your config to check your resources.\n");
+
+  return true;
+}
+
+static inline bool ConfigureDelete(UaContext* ua, int resource_parameter)
+{
+  bool result = false;
+  ResourceTable* res_table = NULL;
+
+  res_table = my_config->GetResourceTable(ua->argk[resource_parameter]);
+  if (!res_table) {
+    ua->ErrorMsg(_("invalid resource %s.\n"),
+                 ua->argk[resource_parameter]);
+    return false;
+  }
+
+  if (res_table->rcode == R_DIRECTOR) {
+    ua->ErrorMsg(_("Deleting the Director is not possible from inside a running instance.\n"));
+    return false;
+  }
+
+  ua->send->ObjectStart("configure");
+  result = ConfigureDeleteResource(ua, resource_parameter + 1, res_table);
+  ua->send->ObjectEnd("configure");
+
+  return result;
+}
+
 bool ConfigureCmd(UaContext* ua, const char* cmd)
 {
   bool result = false;
@@ -457,6 +516,7 @@ bool ConfigureCmd(UaContext* ua, const char* cmd)
     ua->ErrorMsg(
         _("usage:\n"
           "  configure add <resourcetype> <key1>=<value1> ...\n"
+          "  configure delete <resource>\n"
           "  configure export client=<clientname>\n"));
     return false;
   }
@@ -465,6 +525,8 @@ bool ConfigureCmd(UaContext* ua, const char* cmd)
     result = ConfigureAdd(ua, 2);
   } else if (Bstrcasecmp(ua->argk[1], NT_("export"))) {
     result = ConfigureExport(ua);
+  } else if (Bstrcasecmp(ua->argk[1], NT_("delete"))) {
+    result = ConfigureDelete(ua,2);
   } else {
     ua->ErrorMsg(_("invalid subcommand %s.\n"), ua->argk[1]);
     return false;
