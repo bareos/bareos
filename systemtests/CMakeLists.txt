@@ -114,9 +114,9 @@ macro(handle_python_plugin_modules test_name)
     list(APPEND PYMODULES_TO_LINK_TO_SRC)
   endif()
 
-  if(${test_name} STREQUAL python-fd-percona_xtrabackup-plugin-test)
+  if(${test_name} STREQUAL python-fd-percona-xtrabackup-plugin-test)
     list(APPEND PYMODULES_TO_LINK_TO_SRC filed/BareosFdPluginPerconaXtraBackup.py
-                filed/bareos-fd-percona_xtrabackup.py
+                filed/bareos-fd-percona-xtrabackup.py
     )
   endif()
 
@@ -397,9 +397,9 @@ else()
 endif()
 
 if(TARGET python-fd AND XTRABACKUP)
-  list(APPEND SYSTEM_TESTS "python-fd-percona_xtrabackup-plugin-test")
+  list(APPEND SYSTEM_TESTS "python-fd-percona-xtrabackup-plugin-test")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "python-fd-percona_xtrabackup-plugin-test")
+  list(APPEND SYSTEM_TESTS_DISABLED "python-fd-percona-xtrabackup-plugin-test")
 endif()
 
 if(TARGET python-dir)

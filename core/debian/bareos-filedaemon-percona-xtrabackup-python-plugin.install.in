@@ -1,2 +1,2 @@
-@plugindir@/bareos-fd-percona_xtrabackup.py*
+@plugindir@/bareos-fd-percona-xtrabackup.py*
 @plugindir@/BareosFdPluginPerconaXtraBackup.py*
