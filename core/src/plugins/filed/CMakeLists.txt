@@ -143,7 +143,7 @@ set(PYFILES
     bareos-fd-ovirt.py
     BareosFdPluginOvirt.py
 
-    bareos-fd-percona_xtrabackup.py
+    bareos-fd-percona-xtrabackup.py
     BareosFdPluginPerconaXtraBackup.py
     )
 

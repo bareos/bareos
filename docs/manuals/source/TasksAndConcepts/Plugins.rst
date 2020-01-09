@@ -1050,7 +1050,7 @@ Now include the plugin as command-plugin in the Fileset resource:
            }
            File = /etc
            #...
-           Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-percona_xtrabackup:mycnf=/root/.my.cnf"
+           Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-percona-xtrabackup:mycnf=/root/.my.cnf"
        }
    }
 
