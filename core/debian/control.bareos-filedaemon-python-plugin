@@ -20,7 +20,7 @@ Description: Backup Archiving Recovery Open Sourced - file daemon LDAP plugin
  .
  This package provides the LDAP Python plugin for the filedaemon.
 
-Package:        bareos-filedaemon-percona_xtrabackup-python-plugin
+Package:        bareos-filedaemon-percona-xtrabackup-python-plugin
 Architecture:   any
 Section:        python
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
