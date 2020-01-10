@@ -160,7 +160,9 @@ macro(prepare_testdir_for_daemon_run)
   set(python_plugin_module_src_test_dir
       ${current_test_directory}/python-modules
   )
+  set(piddir ${current_test_directory}/piddir)
 
+  file(MAKE_DIRECTORY ${piddir})
   file(MAKE_DIRECTORY ${tmpdir})
   file(MAKE_DIRECTORY ${archivedir})
   file(MAKE_DIRECTORY ${logdir})
@@ -310,8 +312,6 @@ set(tmpsrc ${PROJECT_BINARY_DIR}/tmpsrc)
 set(working ${PROJECT_BINARY_DIR}/working)
 set(working_dir ${PROJECT_BINARY_DIR}/working)
 
-set(piddir ${PROJECT_BINARY_DIR}/piddir)
-file(MAKE_DIRECTORY ${piddir})
 
 # set(BASEPORT ${dir_port})
 
