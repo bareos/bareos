@@ -988,8 +988,8 @@ can also be used to extract single files from the disk image.
 .. _PerconaXtrabackupPlugin:
 .. _backup-mysql-XtraBackup:
 
-Backup of MySQL Databases using the Bareos MySQL Percona XtraBackup Plugin
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Percona XtraBackup Plugin
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :index:`\ <single: Plugin; MySQL Backup>`
 :index:`\ <single: Percona XtraBackup>`
