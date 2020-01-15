@@ -380,15 +380,11 @@ if((NOT DEFINED batch-insert) OR (${batch-insert}))
 endif()
 
 # dynamic-cats-backends
-if(NOT DEFINED dynamic-cats-backends)
-  set(dynamic-cats-backends ON)
+option(dynamic-cats-backends "enable dynamic catalog backends" ON)
+if(dynamic-cats-backends)
   set(HAVE_DYNAMIC_CATS_BACKENDS 1)
 else()
-  if(${dynamic-cats-backends})
-    set(HAVE_DYNAMIC_CATS_BACKENDS 1)
-  else()
-    set(HAVE_DYNAMIC_CATS_BACKENDS 0)
-  endif()
+  set(HAVE_DYNAMIC_CATS_BACKENDS 0)
 endif()
 
 # dynamic-storage-backends
