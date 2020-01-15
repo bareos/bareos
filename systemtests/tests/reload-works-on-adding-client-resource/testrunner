@@ -29,17 +29,11 @@ exit_with_error() {
 
 stop_director() {
   "${scripts}/bareos-ctl-dir" stop
-  if [ -n "$(pidof bareos-dir)" ]; then
-    killall -SIGKILL "$(pidof bareos-dir)"
-  fi
-  if [ -n "$(pidof bareos-dir)" ]; then
-    exit_with_error "Bareos director could not be stopped"
-  fi
 }
 
 start_director() {
   "${scripts}/bareos-ctl-dir" start "$director_debug_level"
-  director_pid=$(pidof bareos-dir)
+  director_pid=$(pidof ${BAREOS_DIRECTOR_BINARY})
 
   if [ -z "$director_pid" ]; then
     exit_with_error "Bareos director could not be started"

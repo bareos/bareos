@@ -58,7 +58,7 @@ if is_debug; then
     output=/dev/stdout
 fi
 
-LD_PRELOAD=${PAM_WRAPPER_LIBRARIES} ${sbin}/bareos-dir -c etc/bareos -f ${BAREOS_DIR_OPTIONS} >$output 2>&1 &
+LD_PRELOAD=${PAM_WRAPPER_LIBRARIES} ${BAREOS_DIRECTOR_BINARY} -c etc/bareos -f ${BAREOS_DIR_OPTIONS} >$output 2>&1 &
 
 sleep 1
 

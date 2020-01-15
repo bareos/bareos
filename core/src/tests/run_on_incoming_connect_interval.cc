@@ -119,11 +119,21 @@ TEST_F(RunOnIncomingConnectIntervalTest,
   EXPECT_TRUE(find(jobs, "backup-bareos-fd-connect-2"));
 }
 
+static struct TestResults {
+  int job_counter{};
+  int scheduler_sleep_count{};
+  int timeout{};
+  std::map<std::string, int> job_names;
+} test_results;
+
 class TestTimeSource : public TimeSource {
  public:
-  int counter = 0;
+  int counter{};
   time_t SystemTime() override { return ++counter; }
-  void SleepFor(std::chrono::seconds /*wait_interval*/) override {}
+  void SleepFor(std::chrono::seconds /*wait_interval*/) override
+  {
+    ++test_results.scheduler_sleep_count;
+  }
   void Terminate() override {}
 };
 
@@ -134,11 +144,6 @@ class TimeAdapter : public SchedulerTimeAdapter {
   {
   }
 };
-
-static struct TestResults {
-  int job_counter{};
-  std::map<std::string, int> job_names;
-} test_results;
 
 static void SchedulerJobCallback(JobControlRecord* jcr)
 {
@@ -220,13 +225,17 @@ static void RunSchedulerAndSimulateClientConnect(BareosDb& db)
       std::make_unique<TimeAdapter>(std::make_unique<TestTimeSource>()),
       SchedulerJobCallback);
 
-  std::thread scheduler_thread(scheduler_loop, &scheduler);
-
   test_results = TestResults();
 
   SimulateClientConnect("bareos-fd", scheduler, db);
 
-  std::this_thread::sleep_for(std::chrono::milliseconds(20));
+  std::thread scheduler_thread(scheduler_loop, &scheduler);
+
+  int timeout{};
+  while (test_results.scheduler_sleep_count < 3 && timeout < 500) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    ++timeout;
+  }
 
   scheduler.Terminate();
   scheduler_thread.join();
@@ -236,6 +245,9 @@ TEST_F(RunOnIncomingConnectIntervalTest, no_start_time_found_in_database)
 {
   MockDatabase db(MockDatabase::Mode::kFindNoStartTime);
   RunSchedulerAndSimulateClientConnect(db);
+
+  EXPECT_TRUE(test_results.scheduler_sleep_count > 0)
+      << "The scheduler did not sleep";
 
   ASSERT_EQ(test_results.job_counter, 2) << "Not all jobs did run";
 
@@ -253,6 +265,9 @@ TEST_F(RunOnIncomingConnectIntervalTest, start_time_found_in_database)
   MockDatabase db(MockDatabase::Mode::kFindStartTime);
   RunSchedulerAndSimulateClientConnect(db);
 
+  EXPECT_TRUE(test_results.scheduler_sleep_count > 0)
+      << "The scheduler did not sleep";
+
   ASSERT_EQ(test_results.job_counter, 1)
       << "backup-bareos-fd-connect did not run";
 
@@ -265,6 +280,9 @@ TEST_F(RunOnIncomingConnectIntervalTest, start_time_found_wrong_time_string)
 {
   MockDatabase db(MockDatabase::Mode::kFindStartTimeWrongString);
   RunSchedulerAndSimulateClientConnect(db);
+
+  EXPECT_TRUE(test_results.scheduler_sleep_count > 0)
+      << "The scheduler did not sleep";
 
   ASSERT_EQ(test_results.job_counter, 0)
       << "backup-bareos-fd-connect did not run";
