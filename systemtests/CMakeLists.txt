@@ -574,8 +574,15 @@ set(SYSTEM_TESTS
 set(SYSTEM_TESTS_DISABLED # initially empty
 )
 
+if(${mysql} AND ${postgresql})
+  list(APPEND SYSTEM_TESTS "database-convert-test")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "database-convert-test")
+endif()
+
 # python-bareos-test does not work on installed files
 if(PYTHON AND NOT RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
+
   list(APPEND SYSTEM_TESTS "python-bareos-test")
 else()
   list(APPEND SYSTEM_TESTS_DISABLED "python-bareos-test")
