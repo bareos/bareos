@@ -32,7 +32,7 @@ stop_director() {
 
 start_director() {
   "${scripts}/bareos-ctl-dir" start "$director_debug_level"
-  director_pid=$(pidof bareos-dir)
+  director_pid=$(pidof ${BAREOS_DIRECTOR_BINARY})
 
   if [ -z "$director_pid" ]; then
     exit_with_error "Bareos director could not be started"
