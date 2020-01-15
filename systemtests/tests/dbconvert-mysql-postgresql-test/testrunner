@@ -10,9 +10,14 @@ JobName=backup-bareos-fd
 . ./environment
 . ${scripts}/functions
 
+. ./environment-mysql
 ${scripts}/cleanup
 ${scripts}/setup
 
+. ./environment-postgresql
+${scripts}/cleanup
+${scripts}/setup
+exit 0
 
 # Directory to backup.
 # This directory will be created by setup_data().
