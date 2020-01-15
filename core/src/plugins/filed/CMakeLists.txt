@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -136,10 +136,15 @@ set(PYFILES
     BareosFdPluginLocalFileset.py
     BareosFdWrapper.py
     bareos_fd_consts.py
+
     bareos-fd-ldap.py
     BareosFdPluginLDAP.py
+
     bareos-fd-ovirt.py
     BareosFdPluginOvirt.py
+
+    bareos-fd-percona-xtrabackup.py
+    BareosFdPluginPerconaXtraBackup.py
     )
 
 install(

@@ -57,6 +57,8 @@ New Features
 * Client initiated connection: Run dedicated jobs when a client connects to the |dir|. Introduced a new configuration directive RunOnIncomingConnectInterval, see the documentation here: :config:option:`dir/job/RunOnIncomingConnectInterval`
 * Python-bareos: Depending on the distribution, the Python module is packaged for Python 2 and/or Python 3. Previously it has only been packaged for Python 2
 * Python-bareos: There are two variants of the Console protocol. The protocol used before Bareos-18.2 and the protocol used thereafter. The protocol since Bareos-18.2 supports TLS-PSK and PAM authentication, see :ref:`bareos-18.2.5`. Beginning with this version, Python-bareos also supports both protocols. As TLS-PSK for Python (module **sslpsk**) is not available for all platforms, Python-bareos has integrated an automatic fallback to the old protocol.
+* Percona XtraBackup Plugin: The :ref:`PerconaXtrabackupPlugin` can be used to backup MySQL Databases.
+  It uses the command line tool *Percona XtraBackup* to create backups. The plugin was formerly part of the bareos-contrib source code repository.
 
 Changed Features
 ^^^^^^^^^^^^^^^^

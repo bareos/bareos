@@ -1,0 +1,81 @@
+#!/bin/sh
+#
+# This systemtest tests the Percona plugin functionality
+# of the Bareos FD by using the supplied module
+#   BareosFdPluginPerconaXtraBackup.py
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+. ./environment
+. ${scripts}/functions
+
+${scripts}/cleanup
+${scripts}/setup
+
+xtrabackup_test_db="${db_name}_xtrabackup"
+BCONSOLE="${current_test_directory}/bin/bconsole"
+
+start_test
+
+echo "drop database ${xtrabackup_test_db}" | mysql
+echo "create database ${xtrabackup_test_db}" | mysql
+echo "CREATE TABLE test ( id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, data VARCHAR(100), created TIMESTAMP DEFAULT NOW())  " | mysql ${xtrabackup_test_db}
+echo "insert into test (data) VALUES ('test entry 1') " | mysql ${xtrabackup_test_db}
+
+
+run_bareos
+
+echo "@$out $tmp/log1.out"  | $BCONSOLE
+
+COMMAND="run job=$JobName"
+echo "$COMMAND yes" | $BCONSOLE
+echo "wait JobName=$JobName" | $BCONSOLE
+echo "status dir" | $BCONSOLE
+# insert data and run incremental
+echo "insert into test (data) VALUES ('test entry 2') " | mysql ${xtrabackup_test_db}
+
+COMMAND="$COMMAND level=Incremental"
+echo "$COMMAND yes" | $BCONSOLE #| grep "Job queued. JobId="
+echo "wait JobName=$JobName" | $BCONSOLE
+echo "status dir" | $BCONSOLE
+
+
+# run incremental again without any new data
+echo "$COMMAND yes" | $BCONSOLE #| grep "Job queued. JobId="
+echo "wait JobName=$JobName" | $BCONSOLE
+echo "status dir" | $BCONSOLE
+
+
+# run restore
+RESTORECMD="restore client=bareos-fd fileset=PerconaXtraBackupTest yes restorejob=RestoreFile select all done"
+
+echo "@$out $tmp/log2.out"  | $BCONSOLE
+
+JOBID=`echo "$RESTORECMD" | $BCONSOLE | grep "Job queued. JobId=" | sed s'/.*=//' `
+
+echo "wait jobid=$JOBID" | $BCONSOLE | grep -q "JobStatus=OK"
+if [[ $? != 0 ]]; then
+    echo "Restore Job $JOBID failed"
+    estat=1
+fi
+
+# Check, if xtrabackup has extracted some files at least
+# TODO: verify that xtrabackup --prepare works and eventually do complete datbase restore
+ls -lR  $tmp/bareos-restores/_percona/
+if [ -z "$(ls -A $tmp/bareos-restores/_percona/)" ]; then
+       echo "No restore data found"
+       estat=1
+fi
+
+
+
+
+
+check_for_zombie_jobs storage=File
+stop_bareos
+
+check_two_logs
+
+end_test
