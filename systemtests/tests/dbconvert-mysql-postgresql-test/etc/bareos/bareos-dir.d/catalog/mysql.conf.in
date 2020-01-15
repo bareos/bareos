@@ -1,0 +1,7 @@
+Catalog {
+  Name = mysql
+  dbdriver = "mysql"
+  dbname = "@db_name@"
+  dbuser = "@db_user@"
+  dbpassword = "@db_password@"
+}

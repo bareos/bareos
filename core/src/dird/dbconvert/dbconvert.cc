@@ -45,12 +45,6 @@ namespace directordaemon {
 bool DoReloadConfig() { return false; }
 }  // namespace directordaemon
 
-static int ResultHandler(void* ctx, int fields, char** row)
-{
-  std::cout << row[1] << std::endl;
-  return 0;
-}
-
 class DbTool {
  public:
   enum class DbOrigin
