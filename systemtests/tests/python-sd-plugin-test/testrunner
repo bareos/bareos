@@ -1,0 +1,74 @@
+#!/bin/sh
+#
+# This systemtest tests the plugin functionality 
+# of the Bareos SD by using the module
+#   bareos-sd-test.py
+#
+# This test will backup some files. While the 
+# backup some events of the storage daemon 
+# will be logged from the python module.
+# This testrunner will check if all events
+# have been logged.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+. ./environment
+. ${scripts}/functions
+
+${scripts}/cleanup
+${scripts}/setup
+
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data
+
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+setdebug level=100 storage=File
+label volume=TestVolume001 storage=File pool=Full
+run job=$JobName yes
+status director
+status client
+status storage=File
+wait
+messages
+quit
+END_OF_DATA
+
+run_bareos
+check_for_zombie_jobs storage=File
+stop_bareos
+
+events=(bsdEventJobStart
+bsdEventDeviceReserve
+bsdEventVolumeUnload
+bsdEventVolumeLoad
+bsdEventDeviceOpen
+bsdEventDeviceMount
+bsdEventLabelRead
+bsdEventLabelVerified
+bsdEventLabelWrite
+bsdEventSetupRecordTranslation
+bsdEventWriteRecordTranslation
+bsdEventDeviceUnmount
+bsdEventDeviceClose
+bsdEventJobEnd)
+
+for i in ${events[@]}; do
+  if ! grep -q "$i" ${tmp}/test-plugin.log; then
+    set_error "Failed to find logged event $i"
+  fi
+done
+
+end_test
