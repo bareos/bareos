@@ -22,8 +22,8 @@ AWK=@AWK@
 #  easier to "steal" this code for the development
 #  environment where they are different.
 #
-BIN=@sbindir@/bareos-sd
-export PIDDIR=@piddir@
+BAREOS_STORAGEDAEMON_BINARY=${BAREOS_STORAGEDAEMON_BINARY:-@sbindir@/bareos-sd}
+PIDDIR=${PIDDIR:-@piddir@}
 SUBSYSDIR=@subsysdir@
 
 BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-@confdir@}
@@ -49,7 +49,7 @@ fi
 
 case "$1" in
     start)
-        if [ -x ${BIN} ]; then
+        if [ -x ${BAREOS_STORAGEDAEMON_BINARY} ]; then
             echo "Starting the $Bareos Storage daemon"
             OPTIONS=''
             if [ "${BAREOS_SD_USER}" != '' ]; then
@@ -65,17 +65,17 @@ case "$1" in
             fi
 
             if [ "x${VALGRIND_SD}" = "x1" ]; then
-                valgrind --leak-check=full ${BIN} -v $2 $3 ${OPTIONS}
+                valgrind --leak-check=full ${BAREOS_STORAGEDAEMON_BINARY} -v $2 $3 ${OPTIONS}
             else
-                ${BIN} -v $2 $3 ${OPTIONS}
+                ${BAREOS_STORAGEDAEMON_BINARY} -v $2 $3 ${OPTIONS}
             fi
         fi
         ;;
 
     stop)
-        if [ -x ${BIN} ]; then
+        if [ -x ${BAREOS_STORAGEDAEMON_BINARY} ]; then
             echo "Stopping the $Bareos Storage daemon"
-            killproc ${BIN} ${BAREOS_SD_PORT}
+            killproc ${BAREOS_STORAGEDAEMON_BINARY} ${BAREOS_SD_PORT}
         fi
         ;;
 
@@ -86,7 +86,7 @@ case "$1" in
         ;;
 
     status)
-        [ -x ${BIN} ] && status ${BIN} ${BAREOS_SD_PORT}
+        [ -x ${BAREOS_STORAGEDAEMON_BINARY} ] && status ${BAREOS_STORAGEDAEMON_BINARY} ${BAREOS_SD_PORT}
         exit $?
         ;;
 

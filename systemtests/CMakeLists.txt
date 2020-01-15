@@ -45,10 +45,6 @@ function(ConfigureFilesToSystemtest srcbasedir dirname globexpression
       ${configure_option}
     )
   endforeach()
-  #  message(
-  #  STATUS
-  #    "Configured ${COUNT} files from ${srcbasedir}/${srcdirname} to ${dirname} with glob ${globexpression} ${configure_option}"
-  #)
 endfunction()
 
 # generic function to probe for a python module
@@ -149,6 +145,62 @@ macro(handle_python_plugin_modules test_name)
   # endif()
 endmacro()
 
+
+
+
+macro(prepare_testdir_for_daemon_run)
+  set(archivedir ${current_test_directory}/storage)
+  set(confdir ${current_test_directory}/etc/bareos)
+  set(config_directory_dir_additional_test_config
+      ${current_test_directory}/etc/bareos/bareos-dir.d/additional_test_config)
+  set(logdir ${current_test_directory}/log)
+  set(tmpdir ${current_test_directory}/tmp)
+  set(tmp ${tmpdir})
+  set(working_dir ${current_test_directory}/working)
+  set(python_plugin_module_src_test_dir
+      ${current_test_directory}/python-modules
+  )
+  set(piddir ${current_test_directory}/piddir)
+
+  file(MAKE_DIRECTORY ${piddir})
+  file(MAKE_DIRECTORY ${tmpdir})
+  file(MAKE_DIRECTORY ${archivedir})
+  file(MAKE_DIRECTORY ${logdir})
+  file(MAKE_DIRECTORY ${confdir})
+  file(MAKE_DIRECTORY ${working_dir})
+  file(MAKE_DIRECTORY ${config_directory_dir_additional_test_config})
+  # create a bin/bareos and bin/bconsole script in every testdir for
+  # start/stop and bconsole
+  file(MAKE_DIRECTORY "${current_test_directory}/bin")
+  configure_file(
+    "bin/bconsole" "${current_test_directory}/bin/bconsole" COPYONLY
+  )
+  configure_file("bin/bareos" "${current_test_directory}/bin/bareos" COPYONLY)
+
+  set(BAREOS_DIRECTOR_BINARY
+      ${current_test_directory}/sbin/bareos-dir-${TEST_NAME}
+  )
+  set(BAREOS_STORAGEDAEMON_BINARY
+      ${current_test_directory}/sbin/bareos-sd-${TEST_NAME}
+  )
+  set(BAREOS_FILEDAEMON_BINARY
+      ${current_test_directory}/sbin/bareos-fd-${TEST_NAME}
+  )
+  file(MAKE_DIRECTORY "${current_test_directory}/sbin")
+  create_symlink(
+    "${CMAKE_CURRENT_BINARY_DIR}/sbin/bareos-dir" "${BAREOS_DIRECTOR_BINARY}"
+  )
+  create_symlink(
+    "${CMAKE_CURRENT_BINARY_DIR}/sbin/bareos-sd"
+    "${BAREOS_STORAGEDAEMON_BINARY}"
+  )
+  create_symlink(
+    "${CMAKE_CURRENT_BINARY_DIR}/sbin/bareos-fd"
+    "${BAREOS_FILEDAEMON_BINARY}"
+  )
+endmacro()
+
+
 macro(prepare_test)
   # base directory for this test
   set(current_test_directory ${PROJECT_BINARY_DIR}/tests/${TEST_NAME})
@@ -177,35 +229,15 @@ macro(prepare_test)
   math(EXPR sd2_port "${BASEPORT} + 3")
   math(EXPR php_port "${BASEPORT} + 4")
 
-  # set(DEFAULT_DB_TYPE )
-  set(archivedir ${current_test_directory}/storage)
-  set(confdir ${current_test_directory}/etc/bareos)
-  set(config_directory_dir_additional_test_config
-      ${current_test_directory}/etc/bareos/bareos-dir.d/additional_test_config
-  )
-
-  set(logdir ${current_test_directory}/log)
-  set(tmpdir ${current_test_directory}/tmp)
-  set(tmp ${tmpdir})
-  set(working_dir ${current_test_directory}/working)
-  set(python_plugin_module_src_test_dir
-      ${current_test_directory}/python-modules
-  )
 
   # skip for tests without etc/bareos ("catalog" test)
   if(EXISTS ${current_test_source_directory}/etc/bareos)
-    file(MAKE_DIRECTORY ${tmpdir})
-    file(MAKE_DIRECTORY ${archivedir})
-    file(MAKE_DIRECTORY ${logdir})
-    file(MAKE_DIRECTORY ${confdir})
-    file(MAKE_DIRECTORY ${working_dir})
-    file(MAKE_DIRECTORY ${config_directory_dir_additional_test_config})
-    # create a bin/bareos and bin/bconsole script in every testdir for start/stop
-    # and bconsole
-    file(MAKE_DIRECTORY "${current_test_directory}/bin")
-    configure_file("bin/bconsole" "${current_test_directory}/bin/bconsole" COPYONLY)
-    configure_file("bin/bareos" "${current_test_directory}/bin/bareos" COPYONLY)
+    prepare_testdir_for_daemon_run()
   endif()
+endmacro()
+
+macro(create_symlink target link)
+  execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${target} ${link})
 endmacro()
 
 # extract  db version from cats.h
@@ -280,8 +312,6 @@ set(tmpsrc ${PROJECT_BINARY_DIR}/tmpsrc)
 set(working ${PROJECT_BINARY_DIR}/working)
 set(working_dir ${PROJECT_BINARY_DIR}/working)
 
-set(piddir ${PROJECT_BINARY_DIR}/piddir)
-file(MAKE_DIRECTORY ${piddir})
 
 # set(BASEPORT ${dir_port})
 
@@ -321,10 +351,7 @@ file(MAKE_DIRECTORY ${scripts})
 file(MAKE_DIRECTORY ${working})
 file(MAKE_DIRECTORY ${archivedir})
 
-execute_process(
-  COMMAND ${CMAKE_COMMAND} -E create_symlink ${scriptdir}/btraceback
-          ${sbindir}/btraceback
-)
+create_symlink(${scriptdir}/btraceback ${sbindir}/btraceback)
 
 file(REMOVE_RECURSE ${scripts}/ddl)
 file(RENAME ${PROJECT_BINARY_DIR}/ddl ${scripts}/ddl)
@@ -504,6 +531,7 @@ if(ENABLE_WEBUI_SELENIUM_TEST)
   foreach(TEST_NAME ${WEBUI_SELENIUM_TESTS})
 
     prepare_test()
+    prepare_testdir_for_daemon_run()
     # split WEBUI_TEST_NAME into PROFILE and TESTNAME
     string(REPLACE "-" ";" SELENIUM_TESTCOMPONENTS ${TEST_NAME})
     # "webui-admin-restore"
@@ -580,10 +608,9 @@ set(BINARIES_TO_LINK_TO_SBIN
 
 foreach(BINARY_SOURCEPATH ${BINARIES_TO_LINK_TO_SBIN})
   get_filename_component(BINARY_NAME ${BINARY_SOURCEPATH} NAME)
-  execute_process(
-    COMMAND ${CMAKE_COMMAND} -E create_symlink
-            ${PROJECT_BINARY_DIR}/../core/src/${BINARY_SOURCEPATH}
-            ${sbindir}/${BINARY_NAME}
+  create_symlink(
+    ${PROJECT_BINARY_DIR}/../core/src/${BINARY_SOURCEPATH}
+    ${sbindir}/${BINARY_NAME}
   )
 endforeach()
 
@@ -603,19 +630,13 @@ set(BINARIES_TO_LINK_TO_BIN
 
 foreach(BINARY_SOURCEPATH ${BINARIES_TO_LINK_TO_BIN})
   get_filename_component(BINARY_NAME ${BINARY_SOURCEPATH} NAME)
-  execute_process(
-    COMMAND ${CMAKE_COMMAND} -E create_symlink
-            ${PROJECT_BINARY_DIR}/../core/src/${BINARY_SOURCEPATH}
-            ${bindir}/${BINARY_NAME}
+  create_symlink(
+    ${PROJECT_BINARY_DIR}/../core/src/${BINARY_SOURCEPATH}
+    ${bindir}/${BINARY_NAME}
   )
 endforeach()
 
-execute_process(
-  COMMAND ${CMAKE_COMMAND} -E create_symlink
-          ${PROJECT_BINARY_DIR}/../core/src/console/bconsole ${bindir}/bconsole
+create_symlink(
+  ${PROJECT_BINARY_DIR}/../core/src/console/bconsole ${bindir}/bconsole
 )
-
-execute_process(
-  COMMAND ${CMAKE_COMMAND} -E create_symlink ${scriptdir}/bareos
-          ${bindir}/bareos
-)
+create_symlink(${scriptdir}/bareos ${bindir}/bareos)

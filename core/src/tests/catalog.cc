@@ -184,5 +184,5 @@ TEST_F(CatalogTest, database)
 
   time_t time_converted = static_cast<time_t>(StrToUtime(stime.data()));
 
-  EXPECT_EQ(time_converted, 1574863489);
+  EXPECT_EQ(time_converted, StrToUtime("2019-11-27 15:04:49"));
 }
