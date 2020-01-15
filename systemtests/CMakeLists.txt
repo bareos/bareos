@@ -390,7 +390,7 @@ set(SYSTEM_TESTS
 set(SYSTEM_TESTS_DISABLED # initialy empty
 )
 
-if(${mysql} AND ${postgresql})
+if(mysql AND postgresql AND dynamic-cats-backends)
   list(APPEND SYSTEM_TESTS "database-convert-test")
 else()
   list(APPEND SYSTEM_TESTS_DISABLED "database-convert-test")

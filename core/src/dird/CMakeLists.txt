@@ -181,14 +181,16 @@ install(CODE "set(SRC_DIR \"${PROJECT_SOURCE_DIR}\")")
 
 install(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-dird-configfiles.cmake)
 
-add_executable(bareos-dbconvert dbconvert.cc)
-target_link_libraries(bareos-dbconvert
-    bareos
-    dird_objects
-    bareosfind
-    bareoscats
-    bareossql
-    $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}>
-    ${LMDB_LIBS}
-)
+if(dynamic-cats-backends)
+  add_executable(bareos-dbconvert dbconvert.cc)
+  target_link_libraries(bareos-dbconvert
+      bareos
+      dird_objects
+      bareosfind
+      bareoscats
+      bareossql
+      $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}>
+      ${LMDB_LIBS}
+  )
+endif()
 
