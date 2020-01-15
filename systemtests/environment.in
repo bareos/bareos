@@ -30,7 +30,9 @@ scripts=${PROJECT_BINARY_DIR}/scripts
 cats=${PROJECT_BINARY_DIR}/cats
 src=${PROJECT_BINARY_DIR}/src
 tmpsrc=${PROJECT_BINARY_DIR}/tmpsrc
-DBTYPE=@DEFAULT_DB_TYPE@
+if [ -z "$DBTYPE" ]; then
+  DBTYPE=@DEFAULT_DB_TYPE@
+fi
 archivedir=@archivedir@
 logdir=@logdir@
 
