@@ -1,0 +1,10 @@
+FileSet {
+  Name = "PerconaXtraBackupTest"
+  Description = "Test the Plugin functionality of the Percona Plugin."
+  Include {
+    Options {
+      signature = MD5
+    }
+    Plugin = "python:module_path=@python_plugin_module_src_test_dir@:module_name=bareos-fd-percona-xtrabackup:dumpbinary=@XTRABACKUP_OR_MARIABACKUP@:extradumpoptions=@extradumpoptions@"
+  }
+}

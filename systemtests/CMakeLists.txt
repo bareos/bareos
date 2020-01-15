@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -45,10 +45,10 @@ function(ConfigureFilesToSystemtest srcbasedir dirname globexpression
       ${configure_option}
     )
   endforeach()
-  message(
-    STATUS
-      "Configured ${COUNT} files from ${srcbasedir}/${srcdirname} to ${dirname} with glob ${globexpression} ${configure_option}"
-  )
+  #  message(
+  #  STATUS
+  #    "Configured ${COUNT} files from ${srcbasedir}/${srcdirname} to ${dirname} with glob ${globexpression} ${configure_option}"
+  #)
 endfunction()
 
 # generic function to probe for a python module
@@ -83,45 +83,70 @@ macro(CheckForEnabledAndDisabledListEntry TEST_NAME_TO_CHECK)
   endif()
 endmacro()
 
-macro(handle_python_plugin_modules)
-  if(EXISTS ${python_plugin_module_src_test_dir})
-    set(PYMODULES_TO_LINK_TO_SRC
+macro(handle_python_plugin_modules test_name)
+  set(PYMODULES_TO_LINK_TO_SRC)
 
-      filed/BareosFdWrapper.py
-      filed/BareosFdPluginBaseclass.py
-      filed/bareos_fd_consts.py
-      filed/bareos-fd-mock-test.py
-
-      filed/bareos-fd-local-fileset.py
-      filed/BareosFdPluginLocalFileset.py
-
-      filed/BareosFdPluginLDAP.py
-      filed/bareos-fd-ldap.py
-
-      filed/BareosFdPluginOvirt.py
-      filed/bareos-fd-ovirt.py
-
-
-      dird/bareos_dir_consts.py
-      dird/BareosDirPluginBaseclass.py
-      dird/bareos-dir-class-plugin.py
-      dird/BareosDirWrapper.py
-
-      stored/bareos_sd_consts.py
-      stored/bareos-sd-class-plugin.py
-      stored/BareosSdPluginBaseclass.py
-      stored/BareosSdWrapper.py
+  string(REGEX MATCH ^python-fd.* starts_with_python-fd ${test_name})
+  if(starts_with_python-fd)
+    list(APPEND PYMODULES_TO_LINK_TO_SRC filed/BareosFdWrapper.py
+                filed/BareosFdPluginBaseclass.py filed/bareos_fd_consts.py
+                filed/bareos-fd-mock-test.py
     )
-
-    foreach(PYMODULE_SOURCEPATH ${PYMODULES_TO_LINK_TO_SRC})
-      get_filename_component(PYMODULE_NAME ${PYMODULE_SOURCEPATH} NAME)
-      execute_process(
-        COMMAND ${CMAKE_COMMAND} -E create_symlink
-                ${PROJECT_SOURCE_DIR}/../core/src/plugins/${PYMODULE_SOURCEPATH}
-                ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
-      )
-    endforeach()
   endif()
+
+  string(REGEX MATCH ^python-sd.* starts_with_python-sd ${test_name})
+  if(starts_with_python-sd)
+    list(APPEND PYMODULES_TO_LINK_TO_SRC stored/bareos_sd_consts.py
+                stored/bareos-sd-class-plugin.py
+                stored/BareosSdPluginBaseclass.py stored/BareosSdWrapper.py
+    )
+  endif()
+
+  string(REGEX MATCH ^python-dir.* starts_with_python-dir ${test_name})
+  if(starts_with_python-dir)
+    list(APPEND PYMODULES_TO_LINK_TO_SRC dird/bareos_dir_consts.py
+                dird/BareosDirPluginBaseclass.py
+                dird/bareos-dir-class-plugin.py dird/BareosDirWrapper.py
+    )
+  endif()
+
+  if(${test_name} STREQUAL python-dir-plugin-test)
+    list(APPEND PYMODULES_TO_LINK_TO_SRC)
+  endif()
+
+  if(${test_name} STREQUAL python-fd-percona-xtrabackup-plugin-test)
+    list(APPEND PYMODULES_TO_LINK_TO_SRC filed/BareosFdPluginPerconaXtraBackup.py
+                filed/bareos-fd-percona-xtrabackup.py
+    )
+  endif()
+
+  if(${test_name} STREQUAL python-fd-ovirt-plugin-test)
+    list(APPEND PYMODULES_TO_LINK_TO_SRC filed/BareosFdPluginOvirt.py
+                filed/bareos-fd-ovirt.py
+    )
+  endif()
+
+  if(${test_name} STREQUAL python-fd-plugin-local-fileset-test)
+    list(APPEND PYMODULES_TO_LINK_TO_SRC filed/bareos-fd-local-fileset.py
+                filed/BareosFdPluginLocalFileset.py
+    )
+  endif()
+
+  # still missing: filed/BareosFdPluginLDAP.py filed/bareos-fd-ldap.py
+
+  if(NOT EXISTS ${python_plugin_module_src_test_dir})
+    file(MAKE_DIRECTORY ${python_plugin_module_src_test_dir})
+  endif()
+
+  foreach(PYMODULE_SOURCEPATH ${PYMODULES_TO_LINK_TO_SRC})
+    get_filename_component(PYMODULE_NAME ${PYMODULE_SOURCEPATH} NAME)
+    execute_process(
+      COMMAND ${CMAKE_COMMAND} -E create_symlink
+              ${PROJECT_SOURCE_DIR}/../core/src/plugins/${PYMODULE_SOURCEPATH}
+              ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
+    )
+  endforeach()
+  # endif()
 endmacro()
 
 macro(prepare_test)
@@ -154,7 +179,9 @@ macro(prepare_test)
   # set(DEFAULT_DB_TYPE )
   set(archivedir ${current_test_directory}/storage)
   set(confdir ${current_test_directory}/etc/bareos)
-  set(config_directory_dir_additional_test_config ${current_test_directory}/etc/bareos/bareos-dir.d/additional_test_config)
+  set(config_directory_dir_additional_test_config
+      ${current_test_directory}/etc/bareos/bareos-dir.d/additional_test_config
+  )
 
   set(logdir ${current_test_directory}/log)
   set(tmpdir ${current_test_directory}/tmp)
@@ -369,6 +396,19 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED "python-fd-ovirt-plugin-test")
 endif()
 
+if(XTRABACKUP)
+  set (XTRABACKUP_OR_MARIABACKUP ${XTRABACKUP})
+endif()
+if(MARIABACKUP)
+  set (XTRABACKUP_OR_MARIABACKUP ${MARIABACKUP})
+  set (extradumpoptions "--user=root")
+endif()
+if(TARGET python-fd AND XTRABACKUP_OR_MARIABACKUP )
+  list(APPEND SYSTEM_TESTS "python-fd-percona-xtrabackup-plugin-test")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "python-fd-percona-xtrabackup-plugin-test")
+endif()
+
 if(TARGET python-dir)
   list(APPEND SYSTEM_TESTS "python-dir-plugin-test")
 else()
@@ -433,7 +473,7 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   prepare_test()
 
   configurefilestosystemtest("systemtests" "tests/${TEST_NAME}" "*" @ONLY "")
-  handle_python_plugin_modules()
+  handle_python_plugin_modules(${TEST_NAME})
 
   configure_file("environment.in" "tests/${TEST_NAME}/environment" @ONLY)
   # create a bin/bareos and bin/bconsole script in every testdir for start/stop
