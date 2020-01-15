@@ -3,8 +3,11 @@ PROJECT_SOURCE_DIR=@PROJECT_SOURCE_DIR@
 CMAKE_BINARY_DIR=@CMAKE_BINARY_DIR@
 
 PROJECT_BINARY_DIR=@PROJECT_BINARY_DIR@
-bin=${PROJECT_BINARY_DIR}/bin
-sbin=${PROJECT_BINARY_DIR}/sbin
+#bin=${PROJECT_BINARY_DIR}/bin
+#sbin=${PROJECT_BINARY_DIR}/sbin
+
+bin=/usr/bin
+sbin=/usr/sbin
 
 BAREOS_UNITTESTS_BINARY_DIR=$CMAKE_BINARY_DIR/core/src/tests
 
@@ -26,7 +29,7 @@ dumps=${current_test_directory}/dumps
 plugindir=${PROJECT_BINARY_DIR}/plugins
 plugindirtmp=${PROJECT_BINARY_DIR}/pluginstmp
 rscripts=${PROJECT_BINARY_DIR}/scripts
-scripts=${PROJECT_BINARY_DIR}/scripts
+scripts=/usr/lib/bareos/scripts
 cats=${PROJECT_BINARY_DIR}/cats
 src=${PROJECT_BINARY_DIR}/src
 tmpsrc=${PROJECT_BINARY_DIR}/tmpsrc
