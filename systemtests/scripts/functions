@@ -404,15 +404,15 @@ start_bareos()
    zstat=0
    estat=0
    if test "$debug" -eq 1 ; then
-     "${scripts}/bareos-ctl-dir" start -m -d 100
-     "${scripts}/bareos-ctl-sd" start -m -d 100
-     "${scripts}/bareos-ctl-fd" start -m "$1" -d 100
+     "${rscripts}/bareos-ctl-dir" start -m -d 100
+     "${rscripts}/bareos-ctl-sd" start -m -d 100
+     "${rscripts}/bareos-ctl-fd" start -m "$1" -d 100
    else
-     "${scripts}/bareos" start >/dev/null 2>&1
+     "${rscripts}/bareos" start >/dev/null 2>&1
    fi
 
    # check daemons
-   DAEMON_STATUS_OUT="$("${scripts}/bareos" status)"
+   DAEMON_STATUS_OUT="$("${rscripts}/bareos" status)"
    DAEMON_STATUS=$?
    print_debug "$DAEMON_STATUS_OUT"
 
@@ -467,9 +467,9 @@ run_bscan_db()
 stop_bareos()
 {
    if test "$debug" -eq 1 ; then
-      "${scripts}/bareos" stop
+      "${rscripts}/bareos" stop
    else
-      "${scripts}/bareos" stop 2>&1 >/dev/null
+      "${rscripts}/bareos" stop 2>&1 >/dev/null
    fi
 }
 

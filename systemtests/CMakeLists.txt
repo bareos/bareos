@@ -188,14 +188,14 @@ macro(prepare_testdir_for_daemon_run)
   )
   file(MAKE_DIRECTORY "${current_test_directory}/sbin")
   create_symlink(
-    "${CMAKE_CURRENT_BINARY_DIR}/sbin/bareos-dir" "${BAREOS_DIRECTOR_BINARY}"
+    "/sbin/bareos-dir" "${BAREOS_DIRECTOR_BINARY}"
   )
   create_symlink(
-    "${CMAKE_CURRENT_BINARY_DIR}/sbin/bareos-sd"
+    "/sbin/bareos-sd"
     "${BAREOS_STORAGEDAEMON_BINARY}"
   )
   create_symlink(
-    "${CMAKE_CURRENT_BINARY_DIR}/sbin/bareos-fd"
+    "/sbin/bareos-fd"
     "${BAREOS_FILEDAEMON_BINARY}"
   )
 endmacro()
