@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -181,13 +181,15 @@ install(CODE "set(SRC_DIR \"${PROJECT_SOURCE_DIR}\")")
 
 install(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-dird-configfiles.cmake)
 
-add_executable(bareos-dbconvert dbconvert.cc)
-target_link_libraries(bareos-dbconvert
-    bareos
-    dird_objects
-    bareosfind
-    bareoscats
-    bareossql
-    $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}>
-    ${LMDB_LIBS}
-)
+if(dynamic-cats-backends)
+  add_executable(bareos-dbconvert dbconvert.cc)
+  target_link_libraries(bareos-dbconvert
+      bareos
+      dird_objects
+      bareosfind
+      bareoscats
+      bareossql
+      $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}>
+      ${LMDB_LIBS}
+  )
+endif()
