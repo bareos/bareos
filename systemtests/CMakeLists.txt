@@ -390,6 +390,12 @@ set(SYSTEM_TESTS
 set(SYSTEM_TESTS_DISABLED # initialy empty
 )
 
+if(${mysql} AND ${postgresql})
+  list(APPEND SYSTEM_TESTS "database-convert-test")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "database-convert-test")
+endif()
+
 if(PYTHON)
   list(APPEND SYSTEM_TESTS "python-bareos-test")
 else()
