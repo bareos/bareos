@@ -391,9 +391,9 @@ set(SYSTEM_TESTS_DISABLED # initialy empty
 )
 
 if(mysql AND postgresql AND dynamic-cats-backends)
-  list(APPEND SYSTEM_TESTS "database-convert-test")
+  list(APPEND SYSTEM_TESTS "dbconvert-mysql-postgresql-test")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "database-convert-test")
+  list(APPEND SYSTEM_TESTS_DISABLED "dbconvert-mysql-postgresql-test")
 endif()
 
 if(PYTHON)
