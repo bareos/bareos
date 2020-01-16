@@ -6,9 +6,9 @@ provide dynamic authentication support for applications and services in a Linux 
 
 PAM authentication is included since Bareos >= 18.2, see https://docs.bareos.org/master/TasksAndConcepts/PAM.html#configuration
 
-However, this support does only the include the authentication.
+However, this supports only the authentication mechanism.
 That means, the user must be known in the backend system used by PAM  (:file:`/etc/passwd`, LDAP or ...)
-**and** the user/console has to exist in the Bareos Director.
+**and** the user has to exist in the Bareos Director.
 
 The PAM implementation of Bareos is only used for authentication of console connections.
 Console access is only provided by the Bareos Director.
@@ -23,8 +23,8 @@ The Bareos Director uses the service name **bareos**.
 The corresponding configuration file is :file:`/etc/pam.d/bareos`.
 If this file does not exist, PAM uses the fallback file :file:`/etc/pam.d/other`.
 
-Often PAM is offered by system services, meaning the calling process has **root** priviliges.
-The Bareos Director on Linux runs as user **bareos**,
+Often PAM is offered by system services, meaning the calling process has *root* priviliges.
+In contrast, the Bareos Director on Linux runs as user *bareos*,
 therefore by default it might not offer all required functionality.
 
 Known Limitations of PAM Modules
@@ -32,7 +32,7 @@ Known Limitations of PAM Modules
 
 :pam_unix:
     When authenticating with pam_unix, it tries to read system files,
-    also the file :file:`/etc/shadow`.
+    including the file :file:`/etc/shadow`.
     By default, the user *bareos* do not have the permission to read this file.
     If this functionality is required, adapt the priviliges accordingly
     (e.g. add the user bareos to the group owning the file).
@@ -110,7 +110,7 @@ Reuse your existing PamConsole or create an additional one::
    }
 
 As PHP does not yet support TLS-PSK, the setting ``TLS Enable = no`` is required.
-For security, use this only, if the Bareos Director and Bareos WebUI run on the same host.
+Therefore it is advised to run the Bareos Director and Bareos WebUI on the same host.
 
 You may want to add following section to your :file:`/etc/bareos-webui/directors.ini`::
 
@@ -138,6 +138,8 @@ The PAM script ``pam_exec_add_bareos_user.py`` can circumvent this.
 
 It can be integrated into the Bareos PAM configuration by ``pam_exec`` .
 
+This version of the script requires at least Bareos >= 19.2.4.
+
 Installation
 ^^^^^^^^^^^^
 
@@ -152,7 +154,7 @@ Create a Bareos console for user pam-adduser:
    Console {
      Name       = "pam-adduser"
      Password   = "secret"
-     CommandACL = ".api", ".consoles", ".profiles", "configure"
+     CommandACL = ".api", ".profiles", ".users", "configure", "version"
      TlsEnable  = no
    }
 
@@ -163,9 +165,9 @@ This example uses pam_ldap to authenticate.
 ::
 
    auth     requisite           pam_ldap.so
-   auth     [default=ignore]    pam_exec.so quiet /usr/local/bin/pam_exec_add_bareos_user.py --name pam-adduser --password secret --profile webui-admin
+   auth     [default=ignore]    pam_exec.so /usr/local/bin/pam_exec_add_bareos_user.py --name pam-adduser --password secret --profile webui-admin
 
 Make sure, an unsuccessful authentication ends before pam_exec.so.
 In this example, this is done by the *requisite* keyword (when not successful, stop executing the PAM stack).
 
-Using this, a user that successfully authenticates against LDAP, will be created as Bareos console/user with ACLs as defined in profile *webui-admin*.
+Using this, a user who successfully authenticates against LDAP, will be created as Bareos user with ACLs as defined in profile *webui-admin*.
