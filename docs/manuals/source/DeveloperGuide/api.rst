@@ -470,6 +470,11 @@ General notes
 -  Due to potential encoding problem, it’s advised to use ``pathid``
    instead of ``path`` in queries.
 
+.. limitation:: BVFS: bvfs_lsdirs limit/offset not working correctly on MySQL
+
+  As described in :mantis:`975` the limit/offset does not work correctly for bvfs_lsdirs on MySQL.
+  The problem has been fixed for PostgreSQL, but the SQL syntax required to formulate the query is unavailable on MySQL so there is no easy way to replicate that fix on MySQL.
+
 Get dependent jobs from a given JobId
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
