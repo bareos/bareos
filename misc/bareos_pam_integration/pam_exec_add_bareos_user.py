@@ -2,7 +2,7 @@
 
 """
 This script is intended to be integrated with pam_exec into the Linux authentication process.
-It can be used to auto-create users that do already exists as PAM users as Bareos users.
+It can be used to auto-create users that do already exist as PAM users as Bareos users.
 
 Requires Bareos >= 19.2.4.
 """
