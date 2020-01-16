@@ -131,7 +131,7 @@ if __name__ == "__main__":
     profile = getattr(args, "profile", "webui-admin")
 
     if username is None:
-        logger.error("Failed: username not given.")
+        logger.error("Failed: Username not given.")
         sys.exit(1)
 
     if does_user_exists(director, username):

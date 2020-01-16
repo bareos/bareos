@@ -6,7 +6,7 @@ provide dynamic authentication support for applications and services in a Linux 
 
 PAM authentication is included since Bareos >= 18.2, see https://docs.bareos.org/master/TasksAndConcepts/PAM.html#configuration
 
-However, this support offers the authentication.
+However, this supports only the authentication mechanism.
 That means, the user must be known in the backend system used by PAM  (:file:`/etc/passwd`, LDAP or ...)
 **and** the user has to exist in the Bareos Director.
 
@@ -24,7 +24,7 @@ The corresponding configuration file is :file:`/etc/pam.d/bareos`.
 If this file does not exist, PAM uses the fallback file :file:`/etc/pam.d/other`.
 
 Often PAM is offered by system services, meaning the calling process has *root* priviliges.
-The Bareos Director on Linux runs as user *bareos*,
+In contrast, the Bareos Director on Linux runs as user *bareos*,
 therefore by default it might not offer all required functionality.
 
 Known Limitations of PAM Modules
@@ -170,4 +170,4 @@ This example uses pam_ldap to authenticate.
 Make sure, an unsuccessful authentication ends before pam_exec.so.
 In this example, this is done by the *requisite* keyword (when not successful, stop executing the PAM stack).
 
-Using this, a user that successfully authenticates against LDAP, will be created as Bareos user with ACLs as defined in profile *webui-admin*.
+Using this, a user who successfully authenticates against LDAP, will be created as Bareos user with ACLs as defined in profile *webui-admin*.
