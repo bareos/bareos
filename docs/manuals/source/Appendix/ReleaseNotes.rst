@@ -80,7 +80,7 @@ Deprecated and Removed Features
 Bugs Fixed
 ^^^^^^^^^^
 * :mantis:`385`: Bareos daemon stop or restart hangs if bareos-tray-monitor is connected
-* :mantis:`975`: .bvfs\_lsdirs limit offset command parameters do not work properly
+* :mantis:`975`: .bvfs\_lsdirs limit offset command parameters do not work properly (only fixed for PostgreSQL)
 * :mantis:`990`: SD sometimes tries to load empty tape slot
 * :mantis:`1004`: Very high cpu usage on Debian stretch
 * :mantis:`1030`: Bscan does not work for migration and copy jobs
