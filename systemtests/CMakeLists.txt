@@ -338,7 +338,7 @@ configurefilestosystemtest("core" "scripts" "*.in" @ONLY "")
 configurefilestosystemtest("core" "scripts" "bareos-ctl-funcs" @ONLY "")
 configurefilestosystemtest("core" "scripts" "btraceback.gdb" @ONLY "")
 
-configurefilestosystemtest("core/src/cats" "ddl" "${DEFAULT_DB_TYPE}*" @ONLY "")
+configurefilestosystemtest("core/src/cats" "ddl" "*" @ONLY "")
 configurefilestosystemtest("core/src" "cats" "*.in" @ONLY "")
 configurefilestosystemtest("core/src" "cats" "*_bareos_*" @ONLY "")
 
