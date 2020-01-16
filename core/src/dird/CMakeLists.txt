@@ -161,6 +161,8 @@ else()
   target_link_libraries(bareos-dir ${BAREOS_DIR_LIBRARIES})
 endif()
 
+add_subdirectory(dbconvert)
+
 add_executable(bareos-dbcheck ${DBCHKSRCS})
 set(DBCHECK_LIBRARIES bareossql bareos bareosfind bareoscats)
 
@@ -171,7 +173,13 @@ target_link_libraries(bareos-dbcheck ${DBCHECK_LIBRARIES})
 # add_executable(testfind ${TSTFNDSRCS}) target_link_libraries(testfind bareos
 # bareosfind jansson ${OPENSSL_LIBS} acl cap lzo2 )
 
-install(TARGETS bareos-dir bareos-dbcheck DESTINATION "${sbindir}")
+install(TARGETS
+  bareos-dir
+  bareos-dbcheck
+  bareos-dbconvert
+  DESTINATION "${sbindir}"
+)
+
 install(FILES query.sql DESTINATION "${scriptdir}")
 
 install(CODE "set(PLUGINS \"${PLUGINS}\")")
@@ -180,17 +188,4 @@ install(CODE "set(configtemplatedir \"${configtemplatedir}\")")
 install(CODE "set(SRC_DIR \"${PROJECT_SOURCE_DIR}\")")
 
 install(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-dird-configfiles.cmake)
-
-if(dynamic-cats-backends)
-  add_executable(bareos-dbconvert dbconvert.cc)
-  target_link_libraries(bareos-dbconvert
-      bareos
-      dird_objects
-      bareosfind
-      bareoscats
-      bareossql
-      $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}>
-      ${LMDB_LIBS}
-  )
-endif()
 

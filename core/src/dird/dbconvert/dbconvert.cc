@@ -45,6 +45,12 @@ namespace directordaemon {
 bool DoReloadConfig() { return false; }
 }  // namespace directordaemon
 
+static int ResultHandler(void* ctx, int fields, char** row)
+{
+  std::cout << row[1] << std::endl;
+  return 0;
+}
+
 class DbTool {
  public:
   enum class DbOrigin
@@ -130,7 +136,17 @@ class DbTool {
     SetWorkingDirectory(current_working_directory_.data());
   }
 
-  void DoMigration() {}
+  static int ResultHandler(void* ctx, int fields, char** row)
+  {
+    std::cout << row[1] << std::endl;
+    return 0;
+  }
+
+  void DoMigration()
+  {
+    source_db_pointers_.db_->BigSqlQuery("SELECT * FROM Job;", ResultHandler,
+                                         nullptr);
+  }
 
   class CommandLineParser {
     friend class DbTool;
