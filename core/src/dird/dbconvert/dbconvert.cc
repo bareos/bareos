@@ -28,6 +28,7 @@
 #include "dird/dird_globals.h"
 #include "dird/jcr_private.h"
 #include "dird/job.h"
+#include "dird/dbconvert/database_connection.h"
 #include "include/make_unique.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
@@ -38,88 +39,35 @@
 #error "NOT DEFINED: HAVE_DYNAMIC_CATS_BACKENDS"
 #endif
 
-using directordaemon::InitDirConfig;
-using directordaemon::my_config;
-
 namespace directordaemon {
 bool DoReloadConfig() { return false; }
 }  // namespace directordaemon
 
 class DbTool {
  public:
-  enum class DbOrigin
+  explicit DbTool(int argc, char** argv)
   {
-    kSource,
-    kDestination
-  };
-
-  void ConnectToDatabase(DbOrigin origin)
-  {
-    const char* db_resource_name{};
-    DatabasePointers* db_pointer{};
-
-    switch (origin) {
-      default:
-      case DbOrigin::kSource:
-        db_pointer = &source_db_pointers_;
-        db_resource_name = cl.source_db_resource_name.c_str();
-        break;
-      case DbOrigin::kDestination:
-        db_pointer = &destination_db_pointers_;
-        db_resource_name = cl.destination_db_resource_name.c_str();
-        break;
-    }
-
-    JobControlRecord* jcr = directordaemon::NewDirectorJcr();
-
-    jcr->impl->res.catalog =
-        (directordaemon::CatalogResource*)my_config->GetResWithName(
-            directordaemon::R_CATALOG, db_resource_name);
-
-    if (jcr->impl->res.catalog == nullptr) {
-      std::string err{"Could not find catalog resource "};
-      err += db_resource_name;
-      err += ".";
-      throw std::runtime_error(err);
-    }
-
-    BareosDb* db = directordaemon::GetDatabaseConnection(jcr);
-
-    if (db == nullptr) {
-      std::string err{"Could not open database "};
-      err += db_resource_name;
-      err += ".";
-      throw std::runtime_error(err);
-    }
-
-    db_pointer->db_ = db;
-    db_pointer->jcr_.reset(jcr);
-
-    if (source_db_pointers_.jcr_ != nullptr &&
-        destination_db_pointers_.jcr_ != nullptr &&
-        source_db_pointers_.jcr_->impl->res.catalog ==
-            destination_db_pointers_.jcr_->impl->res.catalog) {
-      throw std::runtime_error(
-          "Source and destination catalog resource are the same.");
-    }
+    InitMsg(nullptr, nullptr);
+    SetWorkingDir();
+    cl.ParseCommandLine(argc, argv);
+    ParseConfig();
+    ConnectToDatabases();
   }
 
-  void ParseConfig()
+  static int ResultHandler(void* ctx, int fields, char** row)
   {
-    my_config = InitDirConfig(cl.configfile.c_str(), M_ERROR_TERM);
-    my_config_.reset(my_config);
-    if (!my_config->ParseConfig()) {
-      throw std::runtime_error("Error when loading config.");
-    }
-    directordaemon::me =
-        (directordaemon::DirectorResource*)my_config->GetNextRes(
-            directordaemon::R_DIRECTOR, nullptr);
-    if (!directordaemon::me) {
-      throw std::runtime_error("Could not find director resource.");
-    }
-    DbSetBackendDirs(std::move(directordaemon::me->backend_directories));
+    std::cout << row[1] << std::endl;
+    return 0;
   }
 
+  void DoDatabaseConversion()
+  {
+    source_db_->db->BigSqlQuery("SELECT * FROM Job;", ResultHandler, nullptr);
+    destination_db_->db->BigSqlQuery("SELECT * FROM Job;", ResultHandler,
+                                     nullptr);
+  }
+
+ private:
   void SetWorkingDir()
   {
     if (getcwd(current_working_directory_.data(),
@@ -130,16 +78,39 @@ class DbTool {
     SetWorkingDirectory(current_working_directory_.data());
   }
 
-  static int ResultHandler(void* ctx, int fields, char** row)
+  void ParseConfig()
   {
-    std::cout << row[1] << std::endl;
-    return 0;
+    directordaemon::my_config =
+        directordaemon::InitDirConfig(cl.configpath_.c_str(), M_ERROR_TERM);
+
+    my_config_.reset(directordaemon::my_config);
+
+    if (!directordaemon::my_config->ParseConfig()) {
+      throw std::runtime_error("Error when loading config.");
+    }
+
+    directordaemon::me = static_cast<directordaemon::DirectorResource*>(
+        my_config->GetNextRes(directordaemon::R_DIRECTOR, nullptr));
+
+    if (!directordaemon::me) {
+      throw std::runtime_error("Could not find director resource.");
+    }
+
+    DbSetBackendDirs(std::move(directordaemon::me->backend_directories));
   }
 
-  void DoMigration()
+  void ConnectToDatabases()
   {
-    source_db_pointers_.db_->BigSqlQuery("SELECT * FROM Job;", ResultHandler,
-                                         nullptr);
+    try {
+      source_db_ = std::make_unique<DatabaseConnection>(
+          cl.source_db_resource_name, directordaemon::my_config);
+
+      destination_db_ = std::make_unique<DatabaseConnection>(
+          cl.destination_db_resource_name, directordaemon::my_config);
+
+    } catch (const std::runtime_error& e) {
+      throw e;
+    }
   }
 
   class CommandLineParser {
@@ -150,13 +121,13 @@ class DbTool {
     {
       char c{};
       bool options_error{false};
-      bool configfile_set{};
+      bool configpath_set{};
 
       while ((c = getopt(argc, argv, "c:?")) != -1 && !options_error) {
         switch (c) {
           case 'c':
-            configfile = optarg;
-            configfile_set = true;
+            configpath_ = optarg;
+            configpath_set = true;
             break;
           case '?':
           default:
@@ -165,7 +136,7 @@ class DbTool {
         }
       }
 
-      int argcount{configfile_set ? 5 : 3};
+      int argcount{configpath_set ? 5 : 3};
 
       if (options_error || argc != argcount) {
         usage();
@@ -176,7 +147,7 @@ class DbTool {
     }
 
    private:
-    std::string configfile{"/etc/bareos"};
+    std::string configpath_{"/etc/bareos"};
     std::string source_db_resource_name, destination_db_resource_name;
 
     void usage() noexcept
@@ -191,47 +162,37 @@ class DbTool {
     }
   };  // class CommandLineParser
 
-  CommandLineParser cl;
-
  public:
-  DbTool() = default;
+  ~DbTool() = default;
   DbTool(const DbTool& other) = delete;
   DbTool(const DbTool&& other) = delete;
   DbTool& operator=(const DbTool& rhs) = delete;
   DbTool& operator=(const DbTool&& rhs) = delete;
 
-  ~DbTool()
+ private:
+  CommandLineParser cl;
+  std::unique_ptr<DatabaseConnection> source_db_;
+  std::unique_ptr<DatabaseConnection> destination_db_;
+  std::unique_ptr<ConfigurationParser> my_config_;
+  std::array<char, 1024> current_working_directory_;
+};
+
+class Cleanup {
+ public:
+  ~Cleanup()
   {
     DbSqlPoolDestroy();
     DbFlushBackends();
   }
-
- private:
-  std::unique_ptr<ConfigurationParser> my_config_;
-  std::array<char, 1024> current_working_directory_;
-
-  class DatabasePointers {
-    friend class DbTool;
-    BareosDb* db_{};
-    std::unique_ptr<JobControlRecord> jcr_{};
-  };
-
-  DatabasePointers source_db_pointers_{};
-  DatabasePointers destination_db_pointers_{};
 };
 
 int main(int argc, char** argv)
 {
-  DbTool db_tool;
-  InitMsg(nullptr, nullptr);
+  Cleanup c;
 
   try {
-    db_tool.SetWorkingDir();
-    db_tool.cl.ParseCommandLine(argc, argv);
-    db_tool.ParseConfig();
-    db_tool.ConnectToDatabase(DbTool::DbOrigin::kSource);
-    db_tool.ConnectToDatabase(DbTool::DbOrigin::kDestination);
-    db_tool.DoMigration();
+    DbTool db_tool(argc, argv);
+    db_tool.DoDatabaseConversion();
   } catch (const std::runtime_error& e) {
     std::string errstring{e.what()};
     if (!errstring.empty()) { std::cerr << e.what() << std::endl; }
