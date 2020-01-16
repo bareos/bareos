@@ -3,5 +3,6 @@ Job {
   JobDefs = "DefaultJob"
   Client = "bareos-fd"
   MaximumConcurrentJobs = 10
+  MaximumBandwidth=50k/s
   Pool = Pool1
 }

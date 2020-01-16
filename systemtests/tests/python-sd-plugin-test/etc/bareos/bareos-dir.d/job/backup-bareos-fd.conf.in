@@ -1,0 +1,6 @@
+Job {
+  Name = "backup-bareos-fd"
+  SD Plugin Options = "python:instance=0:module_path=@python_plugin_module_src_test_dir@:module_name=bareos-sd-test:output=@tmp@/test-plugin.log"
+  JobDefs = "DefaultJob"
+  Client = "bareos-fd"
+}
