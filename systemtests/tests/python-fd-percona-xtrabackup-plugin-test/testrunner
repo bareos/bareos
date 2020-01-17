@@ -9,10 +9,10 @@ export TestName
 
 JobName=backup-bareos-fd
 . ./environment
-. ${scripts}/functions
+. ${rscripts}/functions
 
-${scripts}/cleanup
-${scripts}/setup
+${rscripts}/cleanup
+${rscripts}/setup
 
 xtrabackup_test_db="${db_name}_xtrabackup"
 BCONSOLE="${current_test_directory}/bin/bconsole"
