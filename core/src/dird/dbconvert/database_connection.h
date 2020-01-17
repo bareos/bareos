@@ -28,14 +28,38 @@
 #include "dird/dird_globals.h"
 #include "lib/parse_conf.h"
 
+#include <map>
+
 class BareosDb;
 class JobControlRecord;
 
 using directordaemon::my_config;
 
+class DatabaseType {
+ public:
+  enum class Enum
+  {
+    kUndefined,
+    kPostgresql,
+    kMysql
+  };
+  static const std::map<std::string, Enum> types;
+  static Enum convert(const std::string& s)
+  {
+    if (types.find(s) == types.end()) { return Enum::kUndefined; }
+    return types.at(s);
+  }
+};
+
+const std::map<std::string, DatabaseType::Enum> DatabaseType::types{
+    {"postgresql", DatabaseType::Enum::kPostgresql},
+    {"mysql", DatabaseType::Enum::kMysql}};
+
+
 class DatabaseConnection {
  public:
   BareosDb* db{};
+  DatabaseType::Enum db_type{DatabaseType::Enum::kUndefined};
 
   DatabaseConnection(const std::string& catalog_resource_name,
                      ConfigurationParser* config)
@@ -61,6 +85,8 @@ class DatabaseConnection {
       err += ".";
       throw std::runtime_error(err);
     }
+
+    db_type = DatabaseType::convert(jcr_->impl->res.catalog->db_driver);
   }
 
  private:
