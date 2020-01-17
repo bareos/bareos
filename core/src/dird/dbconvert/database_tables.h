@@ -24,6 +24,8 @@
 #ifndef BAREOS_SRC_DIRD_DBCONVERT_DATABASE_TABLES_H_
 #define BAREOS_SRC_DIRD_DBCONVERT_DATABASE_TABLES_H_
 
+#include "dird/dbconvert/database_table_description.h"
+
 #include <string>
 #include <vector>
 
@@ -32,10 +34,20 @@ class BareosDb;
 class DatabaseTables {
  public:
   DatabaseTables(BareosDb* db);
-  std::vector<std::string> tables_names;
+
+  class TableDescription {
+   public:
+    TableDescription(std::string&& t, std::vector<RowDescription>&& r)
+        : table_name(t), row_descriptions(r){};
+    std::string table_name;
+    std::vector<RowDescription> row_descriptions;
+  };
+
+  std::vector<TableDescription> tables;
 
  protected:
-  void SelectTableNames(const std::string& sql_query);
+  void SelectTableNames(const std::string& sql_query,
+                        std::vector<std::string>& tables_names);
 
  private:
   BareosDb* db_{};
