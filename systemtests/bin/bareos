@@ -2,4 +2,4 @@
 # script to start and stop daemons for individual test
 . ./environment
 ${scripts}/bareos-config initialize_database_driver
-${scripts}/bareos $@
+${rscripts}/bareos $@

@@ -84,9 +84,11 @@ macro(handle_python_plugin_modules test_name)
 
   string(REGEX MATCH ^python-fd.* starts_with_python-fd ${test_name})
   if(starts_with_python-fd)
-    list(APPEND PYMODULES_TO_LINK_TO_SRC filed/BareosFdWrapper.py
-                filed/BareosFdPluginBaseclass.py filed/bareos_fd_consts.py
-                filed/bareos-fd-mock-test.py
+    list(APPEND PYMODULES_TO_LINK_TO_SRC
+                BareosFdWrapper.py
+                BareosFdPluginBaseclass.py
+                bareos_fd_consts.py
+                bareos-fd-mock-test.py
     )
   endif()
 
@@ -111,8 +113,9 @@ macro(handle_python_plugin_modules test_name)
   endif()
 
   if(${test_name} STREQUAL python-fd-percona-xtrabackup-plugin-test)
-    list(APPEND PYMODULES_TO_LINK_TO_SRC filed/BareosFdPluginPerconaXtraBackup.py
-                filed/bareos-fd-percona-xtrabackup.py
+    list(APPEND PYMODULES_TO_LINK_TO_SRC
+                BareosFdPluginPerconaXtraBackup.py
+                bareos-fd-percona-xtrabackup.py
     )
   endif()
 
@@ -138,7 +141,7 @@ macro(handle_python_plugin_modules test_name)
     get_filename_component(PYMODULE_NAME ${PYMODULE_SOURCEPATH} NAME)
     execute_process(
       COMMAND ${CMAKE_COMMAND} -E create_symlink
-              ${PROJECT_SOURCE_DIR}/../core/src/plugins/${PYMODULE_SOURCEPATH}
+              ${python_plugin_module_src_dir}/${PYMODULE_SOURCEPATH}
               ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
     )
   endforeach()
@@ -283,18 +286,22 @@ set(logdir "log")
 set(mon_dir_password "mon_dir_password")
 set(mon_fd_password "mon_fd_password")
 set(mon_sd_password "mon_sd_password")
-set(python_plugin_module_src_dir ${CMAKE_SOURCE_DIR}/core/src/plugins)
+#set(python_plugin_module_src_dir ${CMAKE_SOURCE_DIR}/core/src/plugins)
+set(python_plugin_module_src_dir /usr/lib64/bareos/plugins)
 set(plugindirtmp ${PROJECT_BINARY_DIR}/plugindirtmp)
 set(rscripts ${PROJECT_BINARY_DIR}/scripts)
 
 if(TARGET python-dir)
-  get_target_property(dir_plugin_binary_path python-dir BINARY_DIR)
+  #get_target_property(dir_plugin_binary_path python-dir BINARY_DIR)
+  set(dir_plugin_binary_path /usr/lib64/bareos/plugins)
 endif()
 if(TARGET python-sd)
-  get_target_property(sd_plugin_binary_path python-sd BINARY_DIR)
+  #get_target_property(sd_plugin_binary_path python-sd BINARY_DIR)
+  set(sd_plugin_binary_path /usr/lib64/bareos/plugins)
 endif()
 if(TARGET python-fd)
-  get_target_property(fd_plugin_binary_path python-fd BINARY_DIR)
+  #get_target_property(fd_plugin_binary_path python-fd BINARY_DIR)
+  set(fd_plugin_binary_path /usr/lib64/bareos/plugins)
 endif()
 
 set(sbindir ${PROJECT_BINARY_DIR}/sbin)
