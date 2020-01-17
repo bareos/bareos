@@ -1,5 +1,5 @@
 if(dynamic-cats-backends)
-  add_executable(bareos-dbconvert dbconvert.cc)
+  add_executable(bareos-dbconvert dbconvert.cc database_tables.cc)
   target_link_libraries(bareos-dbconvert
       bareos
       dird_objects
