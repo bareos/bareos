@@ -23,29 +23,35 @@
 
 #include "include/bareos.h"
 #include "database_tables.h"
+#include "dird/dbconvert/database_table_description.h"
 #include "cats/cats.h"
 
 #include <algorithm>
 #include <iostream>
+#include <memory>
 
 DatabaseTables::DatabaseTables(BareosDb* db) : db_{db} {}
 
-void DatabaseTables::SelectTableNames(const std::string& sql_query)
+using TableNames = std::vector<std::string>;
+
+void DatabaseTables::SelectTableNames(const std::string& sql_query,
+                                      TableNames& table_names)
 {
-  if (!db_->SqlQuery(sql_query.c_str(), DatabaseTables::ResultHandler, this)) {
+  if (!db_->SqlQuery(sql_query.c_str(), DatabaseTables::ResultHandler,
+                     std::addressof(table_names))) {
     std::string err{"Could not select table names: "};
     err += sql_query;
     throw std::runtime_error(err);
   }
-  if (!tables_names.empty()) {
-    std::sort(tables_names.begin(), tables_names.end());
+  if (!table_names.empty()) {
+    std::sort(table_names.begin(), table_names.end());
   }
 }
 
 int DatabaseTables::ResultHandler(void* ctx, int fields, char** row)
 {
-  auto t = static_cast<DatabaseTables*>(ctx);
-  if (row[0] != nullptr) { t->tables_names.emplace_back(row[0]); }
+  auto table_names = static_cast<TableNames*>(ctx);
+  if (row[0] != nullptr) { table_names->emplace_back(row[0]); }
   return 0;
 }
 
@@ -55,7 +61,14 @@ DatabaseTablesPostgresql::DatabaseTablesPostgresql(BareosDb* db)
   std::string sql{
       "SELECT table_name FROM INFORMATION_SCHEMA.TABLES WHERE "
       "table_schema='public'"};
-  SelectTableNames(sql);
+
+  std::vector<std::string> table_names;
+  SelectTableNames(sql, table_names);
+
+  for (auto t : table_names) {
+    DatabaseTableDescriptionPostgresl p(db, t);
+    tables.emplace_back(std::move(t), std::move(p.row_descriptions));
+  }
 }
 
 DatabaseTablesMysql::DatabaseTablesMysql(BareosDb* db) : DatabaseTables(db)
@@ -64,5 +77,12 @@ DatabaseTablesMysql::DatabaseTablesMysql(BareosDb* db) : DatabaseTables(db)
       "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='"};
   sql += db->get_db_name();
   sql += "'";
-  SelectTableNames(sql);
+
+  std::vector<std::string> table_names;
+  SelectTableNames(sql, table_names);
+
+  for (auto t : table_names) {
+    DatabaseTableDescriptionMysql p(db, t);
+    tables.emplace_back(std::move(t), std::move(p.row_descriptions));
+  }
 }
