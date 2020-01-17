@@ -44,9 +44,9 @@ namespace directordaemon {
 bool DoReloadConfig() { return false; }
 }  // namespace directordaemon
 
-class DbTool {
+class DbConvert {
  public:
-  explicit DbTool(int argc, char** argv)
+  explicit DbConvert(int argc, char** argv)
   {
     InitMsg(nullptr, nullptr);
     SetWorkingDir();
@@ -115,7 +115,7 @@ class DbTool {
   }
 
   class CommandLineParser {
-    friend class DbTool;
+    friend class DbConvert;
 
    public:
     void ParseCommandLine(int argc, char** argv)
@@ -155,7 +155,7 @@ class DbTool {
     {
       kBareosVersionStrings.PrintCopyright(stderr, 2000);
 
-      fprintf(stderr, _("Usage: dbtool [options] Source Destination\n"
+      fprintf(stderr, _("Usage: dbconvert [options] Source Destination\n"
                         "        -c <path>   use <path> as configuration file "
                         "or directory\n"
                         "        -?          print this message.\n"
@@ -164,11 +164,11 @@ class DbTool {
   };  // class CommandLineParser
 
  public:
-  ~DbTool() = default;
-  DbTool(const DbTool& other) = delete;
-  DbTool(const DbTool&& other) = delete;
-  DbTool& operator=(const DbTool& rhs) = delete;
-  DbTool& operator=(const DbTool&& rhs) = delete;
+  ~DbConvert() = default;
+  DbConvert(const DbConvert& other) = delete;
+  DbConvert(const DbConvert&& other) = delete;
+  DbConvert& operator=(const DbConvert& rhs) = delete;
+  DbConvert& operator=(const DbConvert&& rhs) = delete;
 
  private:
   CommandLineParser cl;
@@ -192,7 +192,7 @@ int main(int argc, char** argv)
   Cleanup c;
 
   try {
-    DbTool db_tool(argc, argv);
+    DbConvert dbconvert(argc, argv);
     db_tool.DoDatabaseConversion();
   } catch (const std::runtime_error& e) {
     std::string errstring{e.what()};
