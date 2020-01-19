@@ -30,6 +30,7 @@
 #include "dird/job.h"
 #include "dird/dbconvert/database_connection.h"
 #include "dird/dbconvert/database_tables.h"
+#include "dird/dbconvert/database_table_description.h"
 #include "include/make_unique.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
@@ -59,9 +60,15 @@ class DbConvert {
   {
     std::unique_ptr<DatabaseTables> destination_tables =
         DatabaseTables::Create(*destination_db_);
+    for (const auto& t : destination_tables->tables) {
+      std::cout << t.table_name << std::endl;
+    }
 
     std::unique_ptr<DatabaseTables> source_tables =
         DatabaseTables::Create(*source_db_);
+    for (const auto& t : source_tables->tables) {
+      std::cout << t.table_name << std::endl;
+    }
   }
 
  private:
