@@ -55,17 +55,13 @@ class DbConvert {
     ConnectToDatabases();
   }
 
-  static int ResultHandler(void* ctx, int fields, char** row)
-  {
-    std::cout << row[1] << std::endl;
-    return 0;
-  }
-
   void DoDatabaseConversion()
   {
-    source_db_->db->BigSqlQuery("SELECT * FROM Job;", ResultHandler, nullptr);
-    destination_db_->db->BigSqlQuery("SELECT * FROM Job;", ResultHandler,
-                                     nullptr);
+    std::unique_ptr<DatabaseTables> destination_tables =
+        DatabaseTables::Create(*destination_db_);
+
+    std::unique_ptr<DatabaseTables> source_tables =
+        DatabaseTables::Create(*source_db_);
   }
 
  private:
@@ -193,7 +189,7 @@ int main(int argc, char** argv)
 
   try {
     DbConvert dbconvert(argc, argv);
-    db_tool.DoDatabaseConversion();
+    dbconvert.DoDatabaseConversion();
   } catch (const std::runtime_error& e) {
     std::string errstring{e.what()};
     if (!errstring.empty()) { std::cerr << e.what() << std::endl; }

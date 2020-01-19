@@ -26,6 +26,12 @@
 
 #include "include/bareos.h"
 #include "dird/dird_globals.h"
+#include "dird/job.h"
+#include "dird/jcr_private.h"
+#include "dird/dird_conf.h"
+#include "dird/get_database_connection.h"
+#include "dird/dbconvert/database_type.h"
+#include "include/jcr.h"
 #include "lib/parse_conf.h"
 
 #include <map>
@@ -34,27 +40,6 @@ class BareosDb;
 class JobControlRecord;
 
 using directordaemon::my_config;
-
-class DatabaseType {
- public:
-  enum class Enum
-  {
-    kUndefined,
-    kPostgresql,
-    kMysql
-  };
-  static const std::map<std::string, Enum> types;
-  static Enum convert(const std::string& s)
-  {
-    if (types.find(s) == types.end()) { return Enum::kUndefined; }
-    return types.at(s);
-  }
-};
-
-const std::map<std::string, DatabaseType::Enum> DatabaseType::types{
-    {"postgresql", DatabaseType::Enum::kPostgresql},
-    {"mysql", DatabaseType::Enum::kMysql}};
-
 
 class DatabaseConnection {
  public:

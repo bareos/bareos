@@ -86,3 +86,19 @@ DatabaseTablesMysql::DatabaseTablesMysql(BareosDb* db) : DatabaseTables(db)
     tables.emplace_back(std::move(t), std::move(p.row_descriptions));
   }
 }
+
+std::unique_ptr<DatabaseTables> DatabaseTables::Create(
+    const DatabaseConnection& connection)
+{
+  switch (connection.db_type) {
+    case DatabaseType::Enum::kMysql:
+      return std::make_unique<DatabaseTablesMysql>(connection.db);
+      break;
+    case DatabaseType::Enum::kPostgresql:
+      return std::make_unique<DatabaseTablesPostgresql>(connection.db);
+      break;
+    default:
+      throw std::runtime_error("Database type unknown");
+      return std::unique_ptr<DatabaseTables>();
+  }
+}
