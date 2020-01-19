@@ -27,6 +27,9 @@ class JobControlRecord;
 namespace directordaemon {
 
 class UaContext;
+class JobResource;
+class UnifiedStorageResource;
+class RunResource;
 
 bool AllowDuplicateJob(JobControlRecord* jcr);
 JobControlRecord* NewDirectorJcr();

@@ -25,6 +25,8 @@
 #define BAREOS_SRC_DIRD_DBCONVERT_DATABASE_TABLES_H_
 
 #include "dird/dbconvert/database_table_description.h"
+#include "dird/dbconvert/database_connection.h"
+#include "include/make_unique.h"
 
 #include <string>
 #include <vector>
@@ -33,6 +35,9 @@ class BareosDb;
 
 class DatabaseTables {
  public:
+  static std::unique_ptr<DatabaseTables> Create(
+      const DatabaseConnection& connection);
+
   DatabaseTables(BareosDb* db);
 
   class TableDescription {
