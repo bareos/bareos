@@ -76,18 +76,15 @@ if(${HAVE_UINTPTR_T})
   set(HAVE_UINTPTR_T 1)
 endif()
 
-if(${HAVE_INT8_T}
-   AND ${HAVE_INT16_T}
-   AND ${HAVE_INT32_T}
-   AND ${HAVE_INT32_T}
-)
+if(${HAVE_INT8_T} AND ${HAVE_INT16_T} AND ${HAVE_INT32_T} AND ${HAVE_INT32_T})
   set(HAVE_INTXX_T 1)
 endif()
 
-if(${HAVE_U_INT8_T}
-   AND ${HAVE_U_INT16_T}
-   AND ${HAVE_U_INT32_T}
-   AND ${HAVE_U_INT32_T}
+if(
+  ${HAVE_U_INT8_T}
+  AND ${HAVE_U_INT16_T}
+  AND ${HAVE_U_INT32_T}
+  AND ${HAVE_U_INT32_T}
 )
   set(HAVE_U_INTXX_T 1)
 endif()

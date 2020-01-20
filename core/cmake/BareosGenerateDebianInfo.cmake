@@ -25,37 +25,30 @@ if(GENERATE_DEBIAN_CONTROL)
 
   if(HAVE_GLUSTERFS)
     file(READ ./debian/control.bareos-filedaemon-glusterfs-plugin
-         DEBIAN_CONTROL_FILEDAEMON_GLUSTERFS_PLUGIN
-    )
+         DEBIAN_CONTROL_FILEDAEMON_GLUSTERFS_PLUGIN)
     file(READ ./debian/control.bareos-storage-glusterfs
-         DEBIAN_CONTROL_STORAGE_GLUSTERFS
-    )
+         DEBIAN_CONTROL_STORAGE_GLUSTERFS)
   endif()
 
   if(HAVE_CEPHFS)
     file(READ ./debian/control.bareos-filedaemon-ceph-plugin
-         DEBIAN_CONTROL_FILEDAEMON_CEPH_PLUGIN
-    )
+         DEBIAN_CONTROL_FILEDAEMON_CEPH_PLUGIN)
     file(READ ./debian/control.bareos-storage-ceph DEBIAN_CONTROL_STORAGE_CEPH)
   endif()
 
   if(HAVE_PYTHON)
     file(READ ./debian/control.bareos-filedaemon-python-plugin
-         DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGIN
-    )
+         DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGIN)
     file(READ ./debian/control.bareos-storage-python-plugin
-         DEBIAN_CONTROL_STORAGE_PYTHON_PLUGIN
-    )
+         DEBIAN_CONTROL_STORAGE_PYTHON_PLUGIN)
     file(READ ./debian/control.bareos-director-python-plugin
-         DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN
-    )
+         DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN)
   endif()
 
   if(${DISTNAME} MATCHES "univention")
     # only required for univention
     file(READ ./debian/control.univention-bareos
-         DEBIAN_CONTROL_UNIVENTION_BAREOS
-    )
+         DEBIAN_CONTROL_UNIVENTION_BAREOS)
   endif()
 
 endif()

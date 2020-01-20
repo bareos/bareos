@@ -35,17 +35,34 @@ if(NOT DEFINED VERSION_STRING)
   endif()
 endif()
 
-string(REGEX MATCH [0-9.a-zA-Z~]+ BAREOS_FULL_VERSION ${VERSION_STRING})
+string(
+  REGEX
+    MATCH
+    [0-9.a-zA-Z~]+
+    BAREOS_FULL_VERSION
+    ${VERSION_STRING}
+)
 
 if(BAREOS_FULL_VERSION STREQUAL "")
   message(FATAL_ERROR "BAREOS_FULL_VERSION is not set")
 endif()
 
-string(REGEX MATCH [0-9]+.[0-9]+.[0-9]+ BAREOS_NUMERIC_VERSION
-             ${VERSION_STRING}
+string(
+  REGEX
+    MATCH
+    [0-9]+.[0-9]+.[0-9]+
+    BAREOS_NUMERIC_VERSION
+    ${VERSION_STRING}
 )
-string(REPLACE "\"" "" BAREOS_FULL_VERSION ${BAREOS_FULL_VERSION})
+string(
+  REPLACE
+    "\""
+    ""
+    BAREOS_FULL_VERSION
+    ${BAREOS_FULL_VERSION}
+)
 
-message(STATUS "BareosExtractVersionInfo: BAREOS_FULL_VERSION is "
-               ${BAREOS_FULL_VERSION}
+message(
+  STATUS
+    "BareosExtractVersionInfo: BAREOS_FULL_VERSION is " ${BAREOS_FULL_VERSION}
 )

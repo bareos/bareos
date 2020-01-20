@@ -85,8 +85,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
   # archivedir
   if(NOT DEFINED archivedir)
-    set(archivedir
-        "/${CMAKE_INSTALL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}/storage"
+    set(
+      archivedir
+      "/${CMAKE_INSTALL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}/storage"
     )
   endif()
 
@@ -193,8 +194,9 @@ else() # IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
   # archivedir
   if(NOT DEFINED archivedir)
-    set(archivedir
-        "/${CMAKE_INSTALL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}/storage"
+    set(
+      archivedir
+      "/${CMAKE_INSTALL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}/storage"
     )
   endif()
 
@@ -526,10 +528,7 @@ if(NOT client-only)
   list(GET db_backends 0 default_db_backend)
   get_directory_property(hasParent PARENT_DIRECTORY)
   if(hasParent)
-    set(DEFAULT_DB_TYPE
-        ${default_db_backend}
-        PARENT_SCOPE
-    )
+    set(DEFAULT_DB_TYPE ${default_db_backend} PARENT_SCOPE)
   endif()
   set(DEFAULT_DB_TYPE ${default_db_backend})
 endif()

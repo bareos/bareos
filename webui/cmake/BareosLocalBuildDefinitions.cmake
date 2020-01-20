@@ -18,9 +18,11 @@
 #   02110-1301, USA.
 
 set(BareosComSubscriptionLink "https://www.bareos.com/en/Subscription.html")
-set(BareosGetOfficialBinariesAndSupportOnBareosComMainPage
-    "Get official binaries and support on bareos.com"
+set(
+  BareosGetOfficialBinariesAndSupportOnBareosComMainPage
+  "Get official binaries and support on bareos.com"
 )
-set(BareosGetOfficialBinariesAndSupportOnBareosComLoginPage
-    "Get official binaries and support on bareos.com"
+set(
+  BareosGetOfficialBinariesAndSupportOnBareosComLoginPage
+  "Get official binaries and support on bareos.com"
 )
