@@ -23,7 +23,7 @@
 
 #include "include/bareos.h"
 #include "database_table_descriptions.h"
-#include "dird/dbconvert/database_row_descriptions.h"
+#include "dird/dbconvert/database_column_descriptions.h"
 #include "cats/cats.h"
 
 #include <algorithm>
@@ -33,9 +33,10 @@
 using TableNames = std::vector<std::string>;
 
 void DatabaseTableDescriptions::SelectTableNames(const std::string& sql_query,
-                                      TableNames& table_names)
+                                                 TableNames& table_names)
 {
-  if (!db_->SqlQuery(sql_query.c_str(), DatabaseTableDescriptions::ResultHandler,
+  if (!db_->SqlQuery(sql_query.c_str(),
+                     DatabaseTableDescriptions::ResultHandler,
                      std::addressof(table_names))) {
     std::string err{"Could not select table names: "};
     err += sql_query;
@@ -64,12 +65,13 @@ DatabaseTablesPostgresql::DatabaseTablesPostgresql(BareosDb* db)
   SelectTableNames(sql, table_names);
 
   for (auto t : table_names) {
-    DatabaseRowDescriptionsPostgresql p(db, t);
-    tables.emplace_back(std::move(t), std::move(p.row_descriptions));
+    DatabaseColumnDescriptionsPostgresql p(db, t);
+    tables.emplace_back(std::move(t), std::move(p.column_descriptions));
   }
 }
 
-DatabaseTablesMysql::DatabaseTablesMysql(BareosDb* db) : DatabaseTableDescriptions(db)
+DatabaseTablesMysql::DatabaseTablesMysql(BareosDb* db)
+    : DatabaseTableDescriptions(db)
 {
   std::string sql{
       "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='"};
@@ -80,8 +82,8 @@ DatabaseTablesMysql::DatabaseTablesMysql(BareosDb* db) : DatabaseTableDescriptio
   SelectTableNames(sql, table_names);
 
   for (auto t : table_names) {
-    DatabaseRowDescriptionsMysql p(db, t);
-    tables.emplace_back(std::move(t), std::move(p.row_descriptions));
+    DatabaseColumnDescriptionsMysql p(db, t);
+    tables.emplace_back(std::move(t), std::move(p.column_descriptions));
   }
 }
 

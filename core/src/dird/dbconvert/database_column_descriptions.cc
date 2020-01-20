@@ -24,13 +24,15 @@
 #include "include/bareos.h"
 #include "include/make_unique.h"
 #include "cats/cats.h"
-#include "dird/dbconvert/database_row_descriptions.h"
+#include "dird/dbconvert/database_column_descriptions.h"
 
 #include <iostream>
 
-DatabaseRowDescriptions::DatabaseRowDescriptions(BareosDb* db) : db_{db} {}
+DatabaseColumnDescriptions::DatabaseColumnDescriptions(BareosDb* db) : db_{db}
+{
+}
 
-void DatabaseRowDescriptions::SelectTableDescriptions(
+void DatabaseColumnDescriptions::SelectTableDescriptions(
     const std::string& sql_query,
     DB_RESULT_HANDLER* ResultHandler)
 {
@@ -41,23 +43,24 @@ void DatabaseRowDescriptions::SelectTableDescriptions(
   }
 }
 
-int DatabaseRowDescriptionsPostgresql::ResultHandler(void* ctx,
-                                                     int fields,
-                                                     char** row)
+int DatabaseColumnDescriptionsPostgresql::ResultHandler(void* ctx,
+                                                        int fields,
+                                                        char** row)
 {
-  auto t = static_cast<DatabaseRowDescriptions*>(ctx);
+  auto t = static_cast<DatabaseColumnDescriptions*>(ctx);
 
-  t->row_descriptions.emplace_back(std::make_unique<RowDescriptionPostgresql>(
-      row[RowIndex::kColumnName], row[RowIndex::kDataType],
-      row[RowIndex::kCharMaxLenght]));
+  t->column_descriptions.emplace_back(
+      std::make_unique<ColumnDescriptionPostgresql>(
+          row[RowIndex::kColumnName], row[RowIndex::kDataType],
+          row[RowIndex::kCharMaxLenght]));
 
   return 0;
 }
 
-DatabaseRowDescriptionsPostgresql::DatabaseRowDescriptionsPostgresql(
+DatabaseColumnDescriptionsPostgresql::DatabaseColumnDescriptionsPostgresql(
     BareosDb* db,
     const std::string& table_name)
-    : DatabaseRowDescriptions(db)
+    : DatabaseColumnDescriptions(db)
 {
   std::string sql{
       "select column_name, data_type, "
@@ -68,23 +71,23 @@ DatabaseRowDescriptionsPostgresql::DatabaseRowDescriptionsPostgresql(
   SelectTableDescriptions(sql, ResultHandler);
 }
 
-int DatabaseRowDescriptionsMysql::ResultHandler(void* ctx,
-                                                int fields,
-                                                char** row)
+int DatabaseColumnDescriptionsMysql::ResultHandler(void* ctx,
+                                                   int fields,
+                                                   char** row)
 {
-  auto t = static_cast<DatabaseRowDescriptions*>(ctx);
+  auto t = static_cast<DatabaseColumnDescriptions*>(ctx);
 
-  t->row_descriptions.emplace_back(std::make_unique<RowDescriptionMysql>(
+  t->column_descriptions.emplace_back(std::make_unique<ColumnDescriptionMysql>(
       row[RowIndex::kColumnName], row[RowIndex::kDataType],
       row[RowIndex::kCharMaxLenght]));
 
   return 0;
 }
 
-DatabaseRowDescriptionsMysql::DatabaseRowDescriptionsMysql(
+DatabaseColumnDescriptionsMysql::DatabaseColumnDescriptionsMysql(
     BareosDb* db,
     const std::string& table_name)
-    : DatabaseRowDescriptions(db)
+    : DatabaseColumnDescriptions(db)
 {
   std::string sql{
       "select column_name, data_type, "

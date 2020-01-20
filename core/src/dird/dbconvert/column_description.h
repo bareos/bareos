@@ -21,18 +21,18 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_SRC_DIRD_DBCONVERT_ROW_DESCRIPTION_H_
-#define BAREOS_SRC_DIRD_DBCONVERT_ROW_DESCRIPTION_H_
+#ifndef BAREOS_SRC_DIRD_DBCONVERT_COLUMN_DESCRIPTION_H_
+#define BAREOS_SRC_DIRD_DBCONVERT_COLUMN_DESCRIPTION_H_
 
 #include <functional>
 #include <map>
 #include <string>
 
-class RowDescription {
+class ColumnDescription {
  public:
-  RowDescription(const char* column_name_in,
-                 const char* data_type_in,
-                 const char* max_length_in);
+  ColumnDescription(const char* column_name_in,
+                    const char* data_type_in,
+                    const char* max_length_in);
 
   std::string column_name;
   std::string data_type;
@@ -41,23 +41,23 @@ class RowDescription {
   std::function<const char*(const char*)> db_import_converter;
 };
 
-class RowDescriptionMysql : public RowDescription {
+class ColumnDescriptionMysql : public ColumnDescription {
  public:
-  RowDescriptionMysql(const char* column_name_in,
-                      const char* data_type_in,
-                      const char* max_length_in);
+  ColumnDescriptionMysql(const char* column_name_in,
+                         const char* data_type_in,
+                         const char* max_length_in);
   static const std::map<std::string, std::function<const char*(const char*)>>
       data_type_converter;
 };
 
-class RowDescriptionPostgresql : public RowDescription {
+class ColumnDescriptionPostgresql : public ColumnDescription {
  public:
-  RowDescriptionPostgresql(const char* column_name_in,
-                           const char* data_type_in,
-                           const char* max_length_in);
+  ColumnDescriptionPostgresql(const char* column_name_in,
+                              const char* data_type_in,
+                              const char* max_length_in);
   static const std::map<std::string, std::function<const char*(const char*)>>
       data_type_converter;
 };
 
 
-#endif  // BAREOS_SRC_DIRD_DBCONVERT_ROW_DESCRIPTION_H_
+#endif  // BAREOS_SRC_DIRD_DBCONVERT_COLUMN_DESCRIPTION_H_
