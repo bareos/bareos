@@ -334,10 +334,7 @@ class BareosLDAPWrapper:
         # When file_to_backup is not None we should return the LDIF.
         if self.file_to_backup:
             # Remove some attributes from entry before creating the LDIF.
-            ignore_attribute = [
-                "createTimestamp",
-                "modifyTimestamp",
-            ]
+            ignore_attribute = ["createTimestamp", "modifyTimestamp"]
 
             keys = self.entry.keys()
             for value in keys:
