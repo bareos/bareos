@@ -29,7 +29,7 @@
 #include "dird/jcr_private.h"
 #include "dird/job.h"
 #include "dird/dbconvert/database_connection.h"
-#include "dird/dbconvert/database_tables.h"
+#include "dird/dbconvert/database_table_descriptions.h"
 #include "dird/dbconvert/database_row_descriptions.h"
 #include "include/make_unique.h"
 #include "lib/parse_conf.h"
