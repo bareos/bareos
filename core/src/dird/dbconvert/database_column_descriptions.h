@@ -34,7 +34,10 @@ class DatabaseColumnDescriptions {
  public:
   DatabaseColumnDescriptions(BareosDb* db);
 
-  std::vector<std::unique_ptr<ColumnDescription>> column_descriptions;
+  using VectorOfColumnDescriptions =
+      std::vector<std::unique_ptr<ColumnDescription>>;
+
+  VectorOfColumnDescriptions column_descriptions;
 
  protected:
   enum RowIndex : int
