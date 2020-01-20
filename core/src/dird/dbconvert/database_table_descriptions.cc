@@ -32,10 +32,10 @@
 
 using TableNames = std::vector<std::string>;
 
-void DatabaseTables::SelectTableNames(const std::string& sql_query,
+void DatabaseTableDescriptions::SelectTableNames(const std::string& sql_query,
                                       TableNames& table_names)
 {
-  if (!db_->SqlQuery(sql_query.c_str(), DatabaseTables::ResultHandler,
+  if (!db_->SqlQuery(sql_query.c_str(), DatabaseTableDescriptions::ResultHandler,
                      std::addressof(table_names))) {
     std::string err{"Could not select table names: "};
     err += sql_query;
@@ -46,7 +46,7 @@ void DatabaseTables::SelectTableNames(const std::string& sql_query,
   }
 }
 
-int DatabaseTables::ResultHandler(void* ctx, int fields, char** row)
+int DatabaseTableDescriptions::ResultHandler(void* ctx, int fields, char** row)
 {
   auto table_names = static_cast<TableNames*>(ctx);
   if (row[0] != nullptr) { table_names->emplace_back(row[0]); }
@@ -54,7 +54,7 @@ int DatabaseTables::ResultHandler(void* ctx, int fields, char** row)
 }
 
 DatabaseTablesPostgresql::DatabaseTablesPostgresql(BareosDb* db)
-    : DatabaseTables(db)
+    : DatabaseTableDescriptions(db)
 {
   std::string sql{
       "SELECT table_name FROM INFORMATION_SCHEMA.TABLES WHERE "
@@ -69,7 +69,7 @@ DatabaseTablesPostgresql::DatabaseTablesPostgresql(BareosDb* db)
   }
 }
 
-DatabaseTablesMysql::DatabaseTablesMysql(BareosDb* db) : DatabaseTables(db)
+DatabaseTablesMysql::DatabaseTablesMysql(BareosDb* db) : DatabaseTableDescriptions(db)
 {
   std::string sql{
       "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='"};
@@ -85,7 +85,7 @@ DatabaseTablesMysql::DatabaseTablesMysql(BareosDb* db) : DatabaseTables(db)
   }
 }
 
-std::unique_ptr<DatabaseTables> DatabaseTables::Create(
+std::unique_ptr<DatabaseTableDescriptions> DatabaseTableDescriptions::Create(
     const DatabaseConnection& connection)
 {
   switch (connection.db_type) {
@@ -97,6 +97,6 @@ std::unique_ptr<DatabaseTables> DatabaseTables::Create(
       break;
     default:
       throw std::runtime_error("Database type unknown");
-      return std::unique_ptr<DatabaseTables>();
+      return std::unique_ptr<DatabaseTableDescriptions>();
   }
 }

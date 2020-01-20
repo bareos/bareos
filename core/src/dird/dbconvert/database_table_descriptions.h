@@ -33,7 +33,7 @@
 
 class BareosDb;
 
-class DatabaseTables {
+class DatabaseTableDescriptions {
  public:
   class TableDescription {
    public:
@@ -46,11 +46,12 @@ class DatabaseTables {
 
   std::vector<TableDescription> tables;
 
-  static std::unique_ptr<DatabaseTables> Create(
+  static std::unique_ptr<DatabaseTableDescriptions> Create(
       const DatabaseConnection& connection);
 
+
  protected:
-  DatabaseTables(BareosDb* db) : db_{db} {}
+  DatabaseTableDescriptions(BareosDb* db) : db_{db} {}
 
   void SelectTableNames(const std::string& sql_query,
                         std::vector<std::string>& tables_names);
@@ -60,12 +61,12 @@ class DatabaseTables {
   static int ResultHandler(void* ctx, int fields, char** row);
 };
 
-class DatabaseTablesPostgresql : public DatabaseTables {
+class DatabaseTablesPostgresql : public DatabaseTableDescriptions {
  public:
   DatabaseTablesPostgresql(BareosDb* db);
 };
 
-class DatabaseTablesMysql : public DatabaseTables {
+class DatabaseTablesMysql : public DatabaseTableDescriptions {
  public:
   DatabaseTablesMysql(BareosDb* db);
 };

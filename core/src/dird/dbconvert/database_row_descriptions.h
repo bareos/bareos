@@ -24,15 +24,11 @@
 #ifndef BAREOS_SRC_DIRD_DBCONVERT_DATABASE_ROW_DESCRIPTIONS_H_
 #define BAREOS_SRC_DIRD_DBCONVERT_DATABASE_ROW_DESCRIPTIONS_H_
 
+#include "dird/dbconvert/row_description.h"
+
 #include <string>
 
 class BareosDb;
-
-struct RowDescription {
-  std::string column_name;
-  std::string data_type;
-  std::size_t character_maximum_length{};
-};
 
 class DatabaseRowDescriptions {
  public:
