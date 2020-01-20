@@ -30,7 +30,7 @@
 #include "dird/job.h"
 #include "dird/dbconvert/database_connection.h"
 #include "dird/dbconvert/database_table_descriptions.h"
-#include "dird/dbconvert/database_row_descriptions.h"
+#include "dird/dbconvert/database_column_descriptions.h"
 #include "include/make_unique.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"

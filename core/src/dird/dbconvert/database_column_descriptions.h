@@ -21,22 +21,22 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_SRC_DIRD_DBCONVERT_DATABASE_ROW_DESCRIPTIONS_H_
-#define BAREOS_SRC_DIRD_DBCONVERT_DATABASE_ROW_DESCRIPTIONS_H_
+#ifndef BAREOS_SRC_DIRD_DBCONVERT_DATABASE_COLUMN_DESCRIPTIONS_H_
+#define BAREOS_SRC_DIRD_DBCONVERT_DATABASE_COLUMN_DESCRIPTIONS_H_
 
 #include "include/bareos.h"
-#include "dird/dbconvert/row_description.h"
+#include "dird/dbconvert/column_description.h"
 #include "cats/cats.h"
 
 #include <string>
 
 class BareosDb;
 
-class DatabaseRowDescriptions {
+class DatabaseColumnDescriptions {
  public:
-  DatabaseRowDescriptions(BareosDb* db);
+  DatabaseColumnDescriptions(BareosDb* db);
 
-  std::vector<std::unique_ptr<RowDescription>> row_descriptions;
+  std::vector<std::unique_ptr<ColumnDescription>> column_descriptions;
 
  protected:
   enum RowIndex : int
@@ -52,16 +52,17 @@ class DatabaseRowDescriptions {
   BareosDb* db_;
 };
 
-class DatabaseRowDescriptionsPostgresql : public DatabaseRowDescriptions {
+class DatabaseColumnDescriptionsPostgresql : public DatabaseColumnDescriptions {
  public:
-  DatabaseRowDescriptionsPostgresql(BareosDb* db, const std::string& table_name);
+  DatabaseColumnDescriptionsPostgresql(BareosDb* db,
+                                       const std::string& table_name);
   static int ResultHandler(void* ctx, int fields, char** row);
 };
 
-class DatabaseRowDescriptionsMysql : public DatabaseRowDescriptions {
+class DatabaseColumnDescriptionsMysql : public DatabaseColumnDescriptions {
  public:
-  DatabaseRowDescriptionsMysql(BareosDb* db, const std::string& table_name);
+  DatabaseColumnDescriptionsMysql(BareosDb* db, const std::string& table_name);
   static int ResultHandler(void* ctx, int fields, char** row);
 };
 
-#endif  // BAREOS_SRC_DIRD_DBCONVERT_DATABASE_ROW_DESCRIPTIONS_H_
+#endif  // BAREOS_SRC_DIRD_DBCONVERT_DATABASE_COLUMN_DESCRIPTIONS_H_
