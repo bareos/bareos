@@ -25,10 +25,15 @@
 #define BAREOS_SRC_DIRD_DBCONVERT_ROW_DESCRIPTION_H_
 
 #include <functional>
+#include <map>
 #include <string>
 
 class RowDescription {
  public:
+  RowDescription(const char* column_name_in,
+                 const char* data_type_in,
+                 const char* max_length_in);
+
   std::string column_name;
   std::string data_type;
   std::size_t character_maximum_length{};
@@ -37,9 +42,21 @@ class RowDescription {
 };
 
 class RowDescriptionMysql : public RowDescription {
+ public:
+  RowDescriptionMysql(const char* column_name_in,
+                      const char* data_type_in,
+                      const char* max_length_in);
+  static const std::map<std::string, std::function<const char*(const char*)>>
+      data_type_converter;
 };
 
 class RowDescriptionPostgresql : public RowDescription {
+ public:
+  RowDescriptionPostgresql(const char* column_name_in,
+                           const char* data_type_in,
+                           const char* max_length_in);
+  static const std::map<std::string, std::function<const char*(const char*)>>
+      data_type_converter;
 };
 
 

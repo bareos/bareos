@@ -37,11 +37,12 @@ class DatabaseTableDescriptions {
  public:
   class TableDescription {
    public:
-    TableDescription(std::string&& t, std::vector<RowDescription>&& r)
-        : table_name(t), row_descriptions(r){};
+    TableDescription(std::string&& t,
+                     std::vector<std::unique_ptr<RowDescription>>&& r)
+        : table_name(t), row_descriptions(std::move(r)){};
 
     std::string table_name;
-    std::vector<RowDescription> row_descriptions;
+    std::vector<std::unique_ptr<RowDescription>> row_descriptions;
   };
 
   std::vector<TableDescription> tables;

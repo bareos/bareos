@@ -64,7 +64,7 @@ DatabaseTablesPostgresql::DatabaseTablesPostgresql(BareosDb* db)
   SelectTableNames(sql, table_names);
 
   for (auto t : table_names) {
-    DatabaseTableDescriptionPostgresl p(db, t);
+    DatabaseRowDescriptionsPostgresql p(db, t);
     tables.emplace_back(std::move(t), std::move(p.row_descriptions));
   }
 }
@@ -80,7 +80,7 @@ DatabaseTablesMysql::DatabaseTablesMysql(BareosDb* db) : DatabaseTableDescriptio
   SelectTableNames(sql, table_names);
 
   for (auto t : table_names) {
-    DatabaseTableDescriptionMysql p(db, t);
+    DatabaseRowDescriptionsMysql p(db, t);
     tables.emplace_back(std::move(t), std::move(p.row_descriptions));
   }
 }
