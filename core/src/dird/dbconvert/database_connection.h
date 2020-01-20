@@ -71,7 +71,7 @@ class DatabaseConnection {
       throw std::runtime_error(err);
     }
 
-    db_type = DatabaseType::convert(jcr_->impl->res.catalog->db_driver);
+    db_type = DatabaseType::Convert(jcr_->impl->res.catalog->db_driver);
   }
 
  private:
