@@ -44,6 +44,7 @@ class DatabaseTables {
    public:
     TableDescription(std::string&& t, std::vector<RowDescription>&& r)
         : table_name(t), row_descriptions(r){};
+
     std::string table_name;
     std::vector<RowDescription> row_descriptions;
   };

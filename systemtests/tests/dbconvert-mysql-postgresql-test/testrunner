@@ -33,10 +33,10 @@ cat <<END_OF_DATA >$tmp/bconcmds
 messages
 @$out $tmp/log1.out
 setdebug level=100 storage=File
-label volume=TestVolume001 storage=File pool=Full
+label volume=TestVolume001 storage=File pool=Full catalog=mysql
 run job=$JobName yes
 status director
-status client
+status client=bareos-mysql-fd
 status storage=File
 wait
 messages
@@ -45,7 +45,8 @@ messages
 @#
 @$out $tmp/log2.out
 wait
-restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done
+restore client=bareos-mysql-fd fileset=SelfTest where=$tmp/bareos-restores select all done
+#restore client=bareos-postgresql-fd fileset=SelfTest where=$tmp/bareos-restores select all done
 yes
 wait
 messages
@@ -53,7 +54,7 @@ quit
 END_OF_DATA
 
 run_bareos
-check_for_zombie_jobs storage=File
+check_for_zombie_jobs storage=File client=bareos-mysql-fd
 stop_bareos
 
 check_two_logs
