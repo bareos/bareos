@@ -729,7 +729,13 @@ def get_env():
         SeleniumTest.chromedriverpath = chromedriverpath
 
     chromeheadless = os.environ.get("BAREOS_WEBUI_CHROME_HEADLESS")
-    if chromeheadless is not None and chromeheadless.lower() in ["false", "0", "n", "no", "off"]:
+    if chromeheadless is not None and chromeheadless.lower() in [
+        "false",
+        "0",
+        "n",
+        "no",
+        "off",
+    ]:
         SeleniumTest.chromeheadless = False
     else:
         SeleniumTest.chromeheadless = True
