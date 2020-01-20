@@ -35,11 +35,6 @@ class BareosDb;
 
 class DatabaseTables {
  public:
-  static std::unique_ptr<DatabaseTables> Create(
-      const DatabaseConnection& connection);
-
-  DatabaseTables(BareosDb* db);
-
   class TableDescription {
    public:
     TableDescription(std::string&& t, std::vector<RowDescription>&& r)
@@ -51,7 +46,12 @@ class DatabaseTables {
 
   std::vector<TableDescription> tables;
 
+  static std::unique_ptr<DatabaseTables> Create(
+      const DatabaseConnection& connection);
+
  protected:
+  DatabaseTables(BareosDb* db) : db_{db} {}
+
   void SelectTableNames(const std::string& sql_query,
                         std::vector<std::string>& tables_names);
 

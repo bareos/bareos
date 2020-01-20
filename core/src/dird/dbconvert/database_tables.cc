@@ -30,8 +30,6 @@
 #include <iostream>
 #include <memory>
 
-DatabaseTables::DatabaseTables(BareosDb* db) : db_{db} {}
-
 using TableNames = std::vector<std::string>;
 
 void DatabaseTables::SelectTableNames(const std::string& sql_query,
