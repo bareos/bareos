@@ -22,52 +22,39 @@
 */
 
 #include "include/bareos.h"
+#include "include/make_unique.h"
 #include "cats/cats.h"
-#include "database_row_descriptions.h"
+#include "dird/dbconvert/database_row_descriptions.h"
 
 #include <iostream>
 
 DatabaseRowDescriptions::DatabaseRowDescriptions(BareosDb* db) : db_{db} {}
 
 void DatabaseRowDescriptions::SelectTableDescriptions(
-    const std::string& sql_query)
+    const std::string& sql_query,
+    DB_RESULT_HANDLER* ResultHandler)
 {
-  if (!db_->SqlQuery(sql_query.c_str(), DatabaseRowDescriptions::ResultHandler,
-                     this)) {
+  if (!db_->SqlQuery(sql_query.c_str(), ResultHandler, this)) {
     std::string err{"Could not select table names: "};
     err += sql_query;
     throw std::runtime_error(err);
   }
 }
 
-int DatabaseRowDescriptions::ResultHandler(void* ctx, int fields, char** row)
+int DatabaseRowDescriptionsPostgresql::ResultHandler(void* ctx,
+                                                     int fields,
+                                                     char** row)
 {
-  RowDescription td;
-  td.column_name = row[RowIndex::kColumnName];
-  td.data_type = row[RowIndex::kDataType];
-  std::string field;
-  try {
-    const char* p{row[RowIndex::kCharMaxLenght]};
-    field = p ? p : "";
-    if (!field.empty()) { td.character_maximum_length = std::stoul(field); }
-  } catch (const std::exception& e) {
-    std::string err{__FILE__};
-    err += ":";
-    err += std::to_string(__LINE__);
-    err += ": Could not convert number ";
-    err += "<";
-    err += field;
-    err += ">";
-    throw std::runtime_error(err);
-  }
-
   auto t = static_cast<DatabaseRowDescriptions*>(ctx);
 
-  t->row_descriptions.emplace_back(td);
+  t->row_descriptions.emplace_back(std::make_unique<RowDescriptionPostgresql>(
+      row[RowIndex::kColumnName], row[RowIndex::kDataType],
+      row[RowIndex::kCharMaxLenght]));
+
   return 0;
 }
 
-DatabaseTableDescriptionPostgresl::DatabaseTableDescriptionPostgresl(
+DatabaseRowDescriptionsPostgresql::DatabaseRowDescriptionsPostgresql(
     BareosDb* db,
     const std::string& table_name)
     : DatabaseRowDescriptions(db)
@@ -78,10 +65,23 @@ DatabaseTableDescriptionPostgresl::DatabaseTableDescriptionPostgresl(
       "table_name = '"};
   sql += table_name;
   sql += "'";
-  SelectTableDescriptions(sql);
+  SelectTableDescriptions(sql, ResultHandler);
 }
 
-DatabaseTableDescriptionMysql::DatabaseTableDescriptionMysql(
+int DatabaseRowDescriptionsMysql::ResultHandler(void* ctx,
+                                                int fields,
+                                                char** row)
+{
+  auto t = static_cast<DatabaseRowDescriptions*>(ctx);
+
+  t->row_descriptions.emplace_back(std::make_unique<RowDescriptionMysql>(
+      row[RowIndex::kColumnName], row[RowIndex::kDataType],
+      row[RowIndex::kCharMaxLenght]));
+
+  return 0;
+}
+
+DatabaseRowDescriptionsMysql::DatabaseRowDescriptionsMysql(
     BareosDb* db,
     const std::string& table_name)
     : DatabaseRowDescriptions(db)
@@ -92,5 +92,5 @@ DatabaseTableDescriptionMysql::DatabaseTableDescriptionMysql(
       "table_name = '"};
   sql += table_name;
   sql += "'";
-  SelectTableDescriptions(sql);
+  SelectTableDescriptions(sql, ResultHandler);
 }

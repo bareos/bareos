@@ -65,6 +65,8 @@ class DbConvert {
       std::cout << t.table_name << std::endl;
     }
 
+    std::cout << std::endl;
+
     std::unique_ptr<DatabaseTableDescriptions> source_tables =
         DatabaseTableDescriptions::Create(*source_db_);
     for (const auto& t : source_tables->tables) {
