@@ -24,7 +24,7 @@
 #ifndef BAREOS_SRC_DIRD_DBCONVERT_DATABASE_TABLES_H_
 #define BAREOS_SRC_DIRD_DBCONVERT_DATABASE_TABLES_H_
 
-#include "dird/dbconvert/database_row_descriptions.h"
+#include "dird/dbconvert/database_column_descriptions.h"
 #include "dird/dbconvert/database_connection.h"
 #include "include/make_unique.h"
 
@@ -38,11 +38,11 @@ class DatabaseTableDescriptions {
   class TableDescription {
    public:
     TableDescription(std::string&& t,
-                     std::vector<std::unique_ptr<RowDescription>>&& r)
-        : table_name(t), row_descriptions(std::move(r)){};
+                     std::vector<std::unique_ptr<ColumnDescription>>&& r)
+        : table_name(t), column_descriptions(std::move(r)){};
 
     std::string table_name;
-    std::vector<std::unique_ptr<RowDescription>> row_descriptions;
+    std::vector<std::unique_ptr<ColumnDescription>> column_descriptions;
   };
 
   std::vector<TableDescription> tables;
