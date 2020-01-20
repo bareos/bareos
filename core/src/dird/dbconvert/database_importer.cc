@@ -23,9 +23,53 @@
 #include "dird/dbconvert/database_importer.h"
 #include "dird/dbconvert/database_table_descriptions.h"
 
+#include <iostream>
+#include <cassert>
+
+struct ResultHandlerContext {
+  ResultHandlerContext(
+      const DatabaseColumnDescriptions::VectorOfColumnDescriptions& c,
+      DatabaseImporter::RowDataMap& r)
+      : cols(c), one_row_of_data(r)
+  {
+  }
+  const DatabaseColumnDescriptions::VectorOfColumnDescriptions& cols;
+  DatabaseImporter::RowDataMap& one_row_of_data;
+};
+
 DatabaseImporter::DatabaseImporter(const DatabaseConnection& db_connection)
     : table_descriptions(DatabaseTableDescriptions::Create(db_connection))
 {
+  for (const auto& t : table_descriptions->tables) {
+    std::string query{"SELECT "};
+    for (const auto& col : t.column_descriptions) {
+      query += col->column_name;
+      query += ", ";
+    }
+    query.erase(query.cend() - 2);
+    query += "FROM ";
+    query += t.table_name;
+    one_row_of_data.clear();
+    ResultHandlerContext ctx(t.column_descriptions, one_row_of_data);
+    if (!db_connection.db->SqlQuery(query.c_str(), ResultHandler, &ctx)) {
+      std::cout << "Could not import table: " << t.table_name << std::endl;
+      std::string err{"Could not execute select statement: "};
+      err += query;
+      std::cout << query << std::endl;
+    }
+  }
 }
+
+int DatabaseImporter::ResultHandler(void* ctx, int fields, char** row)
+{
+  ResultHandlerContext* r = static_cast<ResultHandlerContext*>(ctx);
+  assert(fields == (int)r->cols.size());
+  for (int i = 0; i < fields; i++) {
+    const std::string& column_name = r->cols[i]->column_name;
+    r->one_row_of_data[column_name] = row[i];
+  }
+  return 0;
+}
+
 
 DatabaseImporter::~DatabaseImporter() = default;

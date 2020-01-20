@@ -40,7 +40,7 @@ class DatabaseTableDescriptions {
         : table_name(t), column_descriptions(std::move(r)){};
 
     std::string table_name;
-    std::vector<std::unique_ptr<ColumnDescription>> column_descriptions;
+    DatabaseColumnDescriptions::VectorOfColumnDescriptions column_descriptions;
   };
 
   std::vector<TableDescription> tables;
