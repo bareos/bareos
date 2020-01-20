@@ -21,53 +21,48 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_SRC_DIRD_DBCONVERT_DATABASE_TABLES_H_
-#define BAREOS_SRC_DIRD_DBCONVERT_DATABASE_TABLES_H_
-
-#include "dird/dbconvert/database_row_descriptions.h"
-#include "dird/dbconvert/database_connection.h"
-#include "include/make_unique.h"
+#ifndef BAREOS_SRC_DIRD_DBCONVERT_DATABASE_ROW_DESCRIPTIONS_H_
+#define BAREOS_SRC_DIRD_DBCONVERT_DATABASE_ROW_DESCRIPTIONS_H_
 
 #include <string>
-#include <vector>
 
 class BareosDb;
 
-class DatabaseTables {
+struct RowDescription {
+  std::string column_name;
+  std::string data_type;
+  std::size_t character_maximum_length{};
+};
+
+class DatabaseRowDescriptions {
  public:
-  static std::unique_ptr<DatabaseTables> Create(
-      const DatabaseConnection& connection);
+  DatabaseRowDescriptions(BareosDb* db);
 
-  DatabaseTables(BareosDb* db);
-
-  class TableDescription {
-   public:
-    TableDescription(std::string&& t, std::vector<RowDescription>&& r)
-        : table_name(t), row_descriptions(r){};
-
-    std::string table_name;
-    std::vector<RowDescription> row_descriptions;
-  };
-
-  std::vector<TableDescription> tables;
+  std::vector<RowDescription> row_descriptions;
 
  protected:
-  void SelectTableNames(const std::string& sql_query,
-                        std::vector<std::string>& tables_names);
+  enum RowIndex : int
+  {
+    kColumnName = 0,
+    kDataType = 1,
+    kCharMaxLenght = 2
+  };
+  void SelectTableDescriptions(const std::string& sql_query);
 
  private:
-  BareosDb* db_{};
+  BareosDb* db_;
   static int ResultHandler(void* ctx, int fields, char** row);
 };
 
-class DatabaseTablesPostgresql : public DatabaseTables {
+class DatabaseTableDescriptionPostgresl : public DatabaseRowDescriptions {
  public:
-  DatabaseTablesPostgresql(BareosDb* db);
+  DatabaseTableDescriptionPostgresl(BareosDb* db,
+                                    const std::string& table_name);
 };
 
-class DatabaseTablesMysql : public DatabaseTables {
+class DatabaseTableDescriptionMysql : public DatabaseRowDescriptions {
  public:
-  DatabaseTablesMysql(BareosDb* db);
+  DatabaseTableDescriptionMysql(BareosDb* db, const std::string& table_name);
 };
 
-#endif  // BAREOS_SRC_DIRD_DBCONVERT_DATABASE_TABLES_H_
+#endif  // BAREOS_SRC_DIRD_DBCONVERT_DATABASE_ROW_DESCRIPTIONS_H_

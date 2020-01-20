@@ -23,7 +23,7 @@
 
 #include "include/bareos.h"
 #include "database_tables.h"
-#include "dird/dbconvert/database_table_description.h"
+#include "dird/dbconvert/database_row_descriptions.h"
 #include "cats/cats.h"
 
 #include <algorithm>
