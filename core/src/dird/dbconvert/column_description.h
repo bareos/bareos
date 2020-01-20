@@ -35,17 +35,21 @@ class ColumnDescription {
   std::string column_name;
   std::string data_type;
   std::size_t character_maximum_length{};
-  std::function<const char*(const char*)> db_export_converter;
-  std::function<const char*(const char*)> db_import_converter;
+  std::function<const char*(const char*)> db_export_converter{};
+  std::function<const char*(const char*)> db_import_converter{};
 };
+
+using DataTypeConverterMap =
+    std::map<std::string, std::function<const char*(const char*)>>;
 
 class ColumnDescriptionMysql : public ColumnDescription {
  public:
   ColumnDescriptionMysql(const char* column_name_in,
                          const char* data_type_in,
                          const char* max_length_in);
-  static const std::map<std::string, std::function<const char*(const char*)>>
-      data_type_converter;
+
+ private:
+  static const DataTypeConverterMap db_import_converter_map;
 };
 
 class ColumnDescriptionPostgresql : public ColumnDescription {
@@ -53,8 +57,9 @@ class ColumnDescriptionPostgresql : public ColumnDescription {
   ColumnDescriptionPostgresql(const char* column_name_in,
                               const char* data_type_in,
                               const char* max_length_in);
-  static const std::map<std::string, std::function<const char*(const char*)>>
-      data_type_converter;
+
+ private:
+  static const DataTypeConverterMap db_export_converter_map;
 };
 
 
