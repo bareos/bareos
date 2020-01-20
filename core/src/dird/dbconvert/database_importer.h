@@ -22,6 +22,9 @@
 #ifndef BAREOS_SRC_DIRD_DBCONVERT_DATABASE_IMPORTER_H_
 #define BAREOS_SRC_DIRD_DBCONVERT_DATABASE_IMPORTER_H_
 
+#include <map>
+#include <string>
+
 class DatabaseConnection;
 class DatabaseExporter;
 class DatabaseTableDescriptions;
@@ -33,8 +36,13 @@ class DatabaseImporter {
 
   void ExportTo(DatabaseExporter& exporter);
 
+  using RowDataMap = std::map<std::string, const char*>;
+
  private:
+  RowDataMap one_row_of_data;
+
   std::unique_ptr<DatabaseTableDescriptions> table_descriptions;
+  static int ResultHandler(void* ctx, int fields, char** row);
 };
 
 

@@ -93,5 +93,9 @@ DatabaseColumnDescriptionsMysql::DatabaseColumnDescriptionsMysql(
       "table_name = '"};
   sql += table_name;
   sql += "'";
+  sql += " AND";
+  sql += " table_schema='";
+  sql += db->get_db_name();
+  sql += "'";
   SelectTableDescriptions(sql, ResultHandler);
 }
