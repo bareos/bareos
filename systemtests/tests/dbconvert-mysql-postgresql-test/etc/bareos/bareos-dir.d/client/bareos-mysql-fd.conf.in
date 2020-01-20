@@ -1,7 +1,8 @@
 Client {
-  Name = bareos-fd
+  Name = bareos-mysql-fd
   Description = "Client resource of the Director itself."
   Address = localhost
   Password = "@fd_password@"          # password for FileDaemon
   FD PORT = @fd_port@
+  catalog = "mysql"
 }
