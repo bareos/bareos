@@ -58,17 +58,19 @@ class DbConvert {
 
   void DoDatabaseConversion()
   {
-    std::unique_ptr<DatabaseTables> destination_tables =
-        DatabaseTables::Create(*destination_db_);
+#if 1
+    std::unique_ptr<DatabaseTableDescriptions> destination_tables =
+        DatabaseTableDescriptions::Create(*destination_db_);
     for (const auto& t : destination_tables->tables) {
       std::cout << t.table_name << std::endl;
     }
 
-    std::unique_ptr<DatabaseTables> source_tables =
-        DatabaseTables::Create(*source_db_);
+    std::unique_ptr<DatabaseTableDescriptions> source_tables =
+        DatabaseTableDescriptions::Create(*source_db_);
     for (const auto& t : source_tables->tables) {
       std::cout << t.table_name << std::endl;
     }
+#endif
   }
 
  private:
