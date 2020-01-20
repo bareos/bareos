@@ -44,32 +44,37 @@ ColumnDescription::ColumnDescription(const char* column_name_in,
 
 static const char* no_conversion(const char* in) { return in; }
 
-const std::map<std::string, std::function<const char*(const char*)>>
-    ColumnDescriptionMysql::data_type_converter{
-        {"bigint", no_conversion},   {"binary", no_conversion},
-        {"blob", no_conversion},     {"char", no_conversion},
-        {"datetime", no_conversion}, {"decimal", no_conversion},
-        {"enum", no_conversion},     {"int", no_conversion},
-        {"longblob", no_conversion}, {"smallint", no_conversion},
-        {"tinyblob", no_conversion}, {"tinyint", no_conversion}};
+const DataTypeConverterMap ColumnDescriptionMysql::db_import_converter_map{
+    {"bigint", no_conversion},   {"binary", no_conversion},
+    {"blob", no_conversion},     {"char", no_conversion},
+    {"datetime", no_conversion}, {"decimal", no_conversion},
+    {"enum", no_conversion},     {"int", no_conversion},
+    {"longblob", no_conversion}, {"smallint", no_conversion},
+    {"tinyblob", no_conversion}, {"tinyint", no_conversion}};
 
 ColumnDescriptionMysql::ColumnDescriptionMysql(const char* column_name_in,
                                                const char* data_type_in,
                                                const char* max_length_in)
     : ColumnDescription(column_name_in, data_type_in, max_length_in)
 {
+  try {
+    db_import_converter = db_import_converter_map.at(data_type_in);
+  } catch (const std::out_of_range& e) {
+    std::string err{"Data type not found in conversion map: "};
+    err += data_type_in;
+    throw std::runtime_error(err);
+  }
 }
 
-const std::map<std::string, std::function<const char*(const char*)>>
-    ColumnDescriptionPostgresql::data_type_converter{
-        {"bigint", no_conversion},
-        {"bytea", no_conversion},
-        {"character", no_conversion},
-        {"integer", no_conversion},
-        {"numeric", no_conversion},
-        {"smallint", no_conversion},
-        {"text", no_conversion},
-        {"timestamp without time zone", no_conversion}};
+const DataTypeConverterMap ColumnDescriptionPostgresql::db_export_converter_map{
+    {"bigint", no_conversion},
+    {"bytea", no_conversion},
+    {"character", no_conversion},
+    {"integer", no_conversion},
+    {"numeric", no_conversion},
+    {"smallint", no_conversion},
+    {"text", no_conversion},
+    {"timestamp without time zone", no_conversion}};
 
 ColumnDescriptionPostgresql::ColumnDescriptionPostgresql(
     const char* column_name_in,
@@ -77,4 +82,11 @@ ColumnDescriptionPostgresql::ColumnDescriptionPostgresql(
     const char* max_length_in)
     : ColumnDescription(column_name_in, data_type_in, max_length_in)
 {
+  try {
+    db_export_converter = db_export_converter_map.at(data_type_in);
+  } catch (const std::out_of_range& e) {
+    std::string err{"Data type not found in conversion map: "};
+    err += data_type_in;
+    throw std::runtime_error(err);
+  }
 }
