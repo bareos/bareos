@@ -29,8 +29,7 @@
 #include "dird/jcr_private.h"
 #include "dird/job.h"
 #include "dird/dbconvert/database_connection.h"
-#include "dird/dbconvert/database_table_descriptions.h"
-#include "dird/dbconvert/database_column_descriptions.h"
+#include "dird/dbconvert/database_importer.h"
 #include "include/make_unique.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
@@ -58,18 +57,12 @@ class DbConvert {
 
   void DoDatabaseConversion()
   {
-#if 1
+    DatabaseImporter imp(*source_db_);
+
+#if 0
     std::unique_ptr<DatabaseTableDescriptions> destination_tables =
         DatabaseTableDescriptions::Create(*destination_db_);
     for (const auto& t : destination_tables->tables) {
-      std::cout << t.table_name << std::endl;
-    }
-
-    std::cout << std::endl;
-
-    std::unique_ptr<DatabaseTableDescriptions> source_tables =
-        DatabaseTableDescriptions::Create(*source_db_);
-    for (const auto& t : source_tables->tables) {
       std::cout << t.table_name << std::endl;
     }
 #endif
