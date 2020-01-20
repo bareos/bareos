@@ -24,7 +24,9 @@
 #ifndef BAREOS_SRC_DIRD_DBCONVERT_DATABASE_ROW_DESCRIPTIONS_H_
 #define BAREOS_SRC_DIRD_DBCONVERT_DATABASE_ROW_DESCRIPTIONS_H_
 
+#include "include/bareos.h"
 #include "dird/dbconvert/row_description.h"
+#include "cats/cats.h"
 
 #include <string>
 
@@ -34,7 +36,7 @@ class DatabaseRowDescriptions {
  public:
   DatabaseRowDescriptions(BareosDb* db);
 
-  std::vector<RowDescription> row_descriptions;
+  std::vector<std::unique_ptr<RowDescription>> row_descriptions;
 
  protected:
   enum RowIndex : int
@@ -43,22 +45,23 @@ class DatabaseRowDescriptions {
     kDataType = 1,
     kCharMaxLenght = 2
   };
-  void SelectTableDescriptions(const std::string& sql_query);
+  void SelectTableDescriptions(const std::string& sql_query,
+                               DB_RESULT_HANDLER* ResultHandler);
 
  private:
   BareosDb* db_;
+};
+
+class DatabaseRowDescriptionsPostgresql : public DatabaseRowDescriptions {
+ public:
+  DatabaseRowDescriptionsPostgresql(BareosDb* db, const std::string& table_name);
   static int ResultHandler(void* ctx, int fields, char** row);
 };
 
-class DatabaseTableDescriptionPostgresl : public DatabaseRowDescriptions {
+class DatabaseRowDescriptionsMysql : public DatabaseRowDescriptions {
  public:
-  DatabaseTableDescriptionPostgresl(BareosDb* db,
-                                    const std::string& table_name);
-};
-
-class DatabaseTableDescriptionMysql : public DatabaseRowDescriptions {
- public:
-  DatabaseTableDescriptionMysql(BareosDb* db, const std::string& table_name);
+  DatabaseRowDescriptionsMysql(BareosDb* db, const std::string& table_name);
+  static int ResultHandler(void* ctx, int fields, char** row);
 };
 
 #endif  // BAREOS_SRC_DIRD_DBCONVERT_DATABASE_ROW_DESCRIPTIONS_H_
