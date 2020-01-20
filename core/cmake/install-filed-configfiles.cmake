@@ -19,5 +19,9 @@
 
 include(${CMAKE_CURRENT_LIST_DIR}/BareosInstallConfigFiles.cmake)
 bareosinstallconfigfiles(
-  "${configtemplatedir}" "bareos-fd.d" "${PLUGINS}" "${BACKENDS}" "${SRC_DIR}"
+  "${configtemplatedir}"
+  "bareos-fd.d"
+  "${PLUGINS}"
+  "${BACKENDS}"
+  "${SRC_DIR}"
 )

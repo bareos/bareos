@@ -24,7 +24,14 @@ endif()
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   # make sure we get python 2 not 3
-  set(Python_ADDITIONAL_VERSIONS 2.5 2.6 2.7 2.8 2.9)
+  set(
+    Python_ADDITIONAL_VERSIONS
+    2.5
+    2.6
+    2.7
+    2.8
+    2.9
+  )
   find_package(PythonInterp)
   include(FindPythonLibs)
 

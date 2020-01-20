@@ -70,7 +70,14 @@ include(CMakeParseArguments)
 
 # Check prereqs
 find_program(GCOV_PATH gcov)
-find_program(LCOV_PATH NAMES lcov lcov.bat lcov.exe lcov.perl)
+find_program(
+  LCOV_PATH
+  NAMES
+    lcov
+    lcov.bat
+    lcov.exe
+    lcov.perl
+)
 find_program(GENHTML_PATH NAMES genhtml genhtml.perl genhtml.bat)
 find_program(GCOVR_PATH gcovr PATHS ${PROJECT_SOURCE_DIR}/scripts/test)
 find_program(SIMPLE_PYTHON_EXECUTABLE python)
@@ -87,33 +94,39 @@ elseif(NOT CMAKE_COMPILER_IS_GNUCXX)
   message(FATAL_ERROR "Compiler is not GNU gcc! Aborting...")
 endif()
 
-set(COVERAGE_COMPILER_FLAGS
-    "-g -O0 --coverage -fprofile-arcs -ftest-coverage"
-    CACHE INTERNAL ""
+set(
+  COVERAGE_COMPILER_FLAGS
+  "-g -O0 --coverage -fprofile-arcs -ftest-coverage"
+  CACHE INTERNAL ""
 )
 
-set(CMAKE_CXX_FLAGS_COVERAGE
-    ${COVERAGE_COMPILER_FLAGS}
-    CACHE STRING "Flags used by the C++ compiler during coverage builds." FORCE
+set(
+  CMAKE_CXX_FLAGS_COVERAGE
+  ${COVERAGE_COMPILER_FLAGS}
+  CACHE STRING "Flags used by the C++ compiler during coverage builds." FORCE
 )
-set(CMAKE_C_FLAGS_COVERAGE
-    ${COVERAGE_COMPILER_FLAGS}
-    CACHE STRING "Flags used by the C compiler during coverage builds." FORCE
+set(
+  CMAKE_C_FLAGS_COVERAGE
+  ${COVERAGE_COMPILER_FLAGS}
+  CACHE STRING "Flags used by the C compiler during coverage builds." FORCE
 )
-set(CMAKE_EXE_LINKER_FLAGS_COVERAGE
-    ""
-    CACHE STRING "Flags used for linking binaries during coverage builds."
-          FORCE
+set(
+  CMAKE_EXE_LINKER_FLAGS_COVERAGE
+  ""
+  CACHE STRING "Flags used for linking binaries during coverage builds." FORCE
 )
-set(CMAKE_SHARED_LINKER_FLAGS_COVERAGE
-    ""
-    CACHE STRING
-          "Flags used by the shared libraries linker during coverage builds."
-          FORCE
+set(
+  CMAKE_SHARED_LINKER_FLAGS_COVERAGE
+  ""
+  CACHE
+    STRING "Flags used by the shared libraries linker during coverage builds."
+    FORCE
 )
 mark_as_advanced(
-  CMAKE_CXX_FLAGS_COVERAGE CMAKE_C_FLAGS_COVERAGE
-  CMAKE_EXE_LINKER_FLAGS_COVERAGE CMAKE_SHARED_LINKER_FLAGS_COVERAGE
+  CMAKE_CXX_FLAGS_COVERAGE
+  CMAKE_C_FLAGS_COVERAGE
+  CMAKE_EXE_LINKER_FLAGS_COVERAGE
+  CMAKE_SHARED_LINKER_FLAGS_COVERAGE
 )
 
 if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -144,7 +157,11 @@ function(SETUP_TARGET_FOR_COVERAGE)
   set(oneValueArgs NAME)
   set(multiValueArgs EXECUTABLE EXECUTABLE_ARGS DEPENDENCIES)
   cmake_parse_arguments(
-    Coverage "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN}
+    Coverage
+    "${options}"
+    "${oneValueArgs}"
+    "${multiValueArgs}"
+    ${ARGN}
   )
 
   if(NOT LCOV_PATH)
@@ -160,27 +177,59 @@ function(SETUP_TARGET_FOR_COVERAGE)
     ${Coverage_NAME}
     # Cleanup lcov
     COMMAND
-      ${LCOV_PATH} --directory . --zerocounters
-
-
+      ${LCOV_PATH}
+      --directory
+      .
+      --zerocounters
       # Create baseline to make sure untouched files show up in the report
-    COMMAND ${LCOV_PATH} -c -i -d . -o ${Coverage_NAME}.base
-            # Run tests
-    COMMAND ${Coverage_EXECUTABLE}
-
-            # Capturing lcov counters and generating report
-    COMMAND ${LCOV_PATH} --directory . --capture --output-file
-            ${Coverage_NAME}.info
-            # add baseline counters
-    COMMAND ${LCOV_PATH} -a ${Coverage_NAME}.base -a ${Coverage_NAME}.info
-            --output-file ${Coverage_NAME}.total
-    COMMAND ${LCOV_PATH} --remove ${Coverage_NAME}.total ${COVERAGE_EXCLUDES}
-            --output-file ${PROJECT_BINARY_DIR}/${Coverage_NAME}.info.cleaned
-    COMMAND ${GENHTML_PATH} -o ${Coverage_NAME}
-            ${PROJECT_BINARY_DIR}/${Coverage_NAME}.info.cleaned
-    COMMAND ${CMAKE_COMMAND} -E remove ${Coverage_NAME}.base
-            ${Coverage_NAME}.info ${Coverage_NAME}.total
-            ${PROJECT_BINARY_DIR}/${Coverage_NAME}.info.cleaned
+    COMMAND
+      ${LCOV_PATH}
+      -c
+      -i
+      -d
+      .
+      -o
+      ${Coverage_NAME}.base
+      # Run tests
+    COMMAND
+      ${Coverage_EXECUTABLE}
+      # Capturing lcov counters and generating report
+    COMMAND
+      ${LCOV_PATH}
+      --directory
+      .
+      --capture
+      --output-file
+      ${Coverage_NAME}.info
+      # add baseline counters
+    COMMAND
+      ${LCOV_PATH}
+      -a
+      ${Coverage_NAME}.base
+      -a
+      ${Coverage_NAME}.info
+      --output-file
+      ${Coverage_NAME}.total
+    COMMAND
+      ${LCOV_PATH}
+      --remove
+      ${Coverage_NAME}.total
+      ${COVERAGE_EXCLUDES}
+      --output-file
+      ${PROJECT_BINARY_DIR}/${Coverage_NAME}.info.cleaned
+    COMMAND
+      ${GENHTML_PATH}
+      -o
+      ${Coverage_NAME}
+      ${PROJECT_BINARY_DIR}/${Coverage_NAME}.info.cleaned
+    COMMAND
+      ${CMAKE_COMMAND}
+      -E
+      remove
+      ${Coverage_NAME}.base
+      ${Coverage_NAME}.info
+      ${Coverage_NAME}.total
+      ${PROJECT_BINARY_DIR}/${Coverage_NAME}.info.cleaned
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     DEPENDS ${Coverage_DEPENDENCIES}
     COMMENT
@@ -212,7 +261,11 @@ function(SETUP_TARGET_FOR_COVERAGE_COBERTURA)
   set(oneValueArgs NAME)
   set(multiValueArgs EXECUTABLE EXECUTABLE_ARGS DEPENDENCIES)
   cmake_parse_arguments(
-    Coverage "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN}
+    Coverage
+    "${options}"
+    "${oneValueArgs}"
+    "${multiValueArgs}"
+    ${ARGN}
   )
 
   if(NOT SIMPLE_PYTHON_EXECUTABLE)
@@ -234,8 +287,14 @@ function(SETUP_TARGET_FOR_COVERAGE_COBERTURA)
     # Run tests
     ${Coverage_EXECUTABLE}
     # Running gcovr
-    COMMAND ${GCOVR_PATH} -x -r ${PROJECT_SOURCE_DIR} ${COBERTURA_EXCLUDES} -o
-            ${Coverage_NAME}.xml
+    COMMAND
+      ${GCOVR_PATH}
+      -x
+      -r
+      ${PROJECT_SOURCE_DIR}
+      ${COBERTURA_EXCLUDES}
+      -o
+      ${Coverage_NAME}.xml
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     DEPENDS ${Coverage_DEPENDENCIES}
     COMMENT "Running gcovr to produce Cobertura code coverage report."
@@ -251,13 +310,11 @@ function(SETUP_TARGET_FOR_COVERAGE_COBERTURA)
 endfunction() # SETUP_TARGET_FOR_COVERAGE_COBERTURA
 
 function(APPEND_COVERAGE_COMPILER_FLAGS)
-  set(CMAKE_C_FLAGS
-      "${CMAKE_C_FLAGS} ${COVERAGE_COMPILER_FLAGS}"
-      PARENT_SCOPE
-  )
-  set(CMAKE_CXX_FLAGS
-      "${CMAKE_CXX_FLAGS} ${COVERAGE_COMPILER_FLAGS}"
-      PARENT_SCOPE
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COVERAGE_COMPILER_FLAGS}" PARENT_SCOPE)
+  set(
+    CMAKE_CXX_FLAGS
+    "${CMAKE_CXX_FLAGS} ${COVERAGE_COMPILER_FLAGS}"
+    PARENT_SCOPE
   )
   message(
     STATUS "Appending code coverage compiler flags: ${COVERAGE_COMPILER_FLAGS}"

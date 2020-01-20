@@ -41,7 +41,13 @@ else()
   message(STATUS "Using version information from ${BareosVersionFile}")
 endif()
 
-string(REGEX MATCH [0-9.a-zA-Z~]+ BAREOS_FULL_VERSION ${VERSION_STRING})
+string(
+  REGEX
+    MATCH
+    [0-9.a-zA-Z~]+
+    BAREOS_FULL_VERSION
+    ${VERSION_STRING}
+)
 
 if(BAREOS_FULL_VERSION STREQUAL "")
   message(FATAL_ERROR "BAREOS_FULL_VERSION is not set")
@@ -50,17 +56,24 @@ endif()
 # set BAREOS_FULL_VERSION in parent scope if there is a parent scope
 get_directory_property(hasParent PARENT_DIRECTORY)
 if(hasParent)
-  set(BAREOS_FULL_VERSION
-      ${BAREOS_FULL_VERSION}
-      PARENT_SCOPE
-  )
+  set(BAREOS_FULL_VERSION ${BAREOS_FULL_VERSION} PARENT_SCOPE)
 endif()
 
-string(REGEX MATCH [0-9]+.[0-9]+.[0-9]+ BAREOS_NUMERIC_VERSION
-             ${VERSION_STRING}
+string(
+  REGEX
+    MATCH
+    [0-9]+.[0-9]+.[0-9]+
+    BAREOS_NUMERIC_VERSION
+    ${VERSION_STRING}
 )
 
-string(REPLACE "." ";" VERSION_LIST ${BAREOS_NUMERIC_VERSION})
+string(
+  REPLACE
+    "."
+    ";"
+    VERSION_LIST
+    ${BAREOS_NUMERIC_VERSION}
+)
 list(GET VERSION_LIST 0 BAREOS_VERSION_MAJOR)
 list(GET VERSION_LIST 1 BAREOS_VERSION_MINOR)
 list(GET VERSION_LIST 2 BAREOS_VERSION_PATCH)
@@ -79,7 +92,14 @@ else()
 endif()
 
 # extract  db version from cats.h
-file(STRINGS ${CMAKE_CURRENT_LIST_DIR}/../src/cats/cats.h DB_VERSION_STRING
-     REGEX .*BDB_VERSION.*
+file(
+  STRINGS ${CMAKE_CURRENT_LIST_DIR}/../src/cats/cats.h DB_VERSION_STRING
+  REGEX .*BDB_VERSION.*
 )
-string(REGEX MATCH [0-9]+ BDB_VERSION ${DB_VERSION_STRING})
+string(
+  REGEX
+    MATCH
+    [0-9]+
+    BDB_VERSION
+    ${DB_VERSION_STRING}
+)
