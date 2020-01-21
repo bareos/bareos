@@ -60,13 +60,13 @@ DatabaseColumnDescriptionsPostgresql::DatabaseColumnDescriptionsPostgresql(
     const std::string& table_name)
     : DatabaseColumnDescriptions(db)
 {
-  std::string sql{
+  std::string query{
       "select column_name, data_type, "
       "character_maximum_length from INFORMATION_SCHEMA.COLUMNS where "
       "table_name = '"};
-  sql += table_name;
-  sql += "'";
-  SelectTableDescriptions(sql, ResultHandler);
+  query += table_name;
+  query += "'";
+  SelectTableDescriptions(query, ResultHandler);
 }
 
 int DatabaseColumnDescriptionsMysql::ResultHandler(void* ctx,
@@ -87,15 +87,15 @@ DatabaseColumnDescriptionsMysql::DatabaseColumnDescriptionsMysql(
     const std::string& table_name)
     : DatabaseColumnDescriptions(db)
 {
-  std::string sql{
+  std::string query{
       "select column_name, data_type, "
       "character_maximum_length from INFORMATION_SCHEMA.COLUMNS where "
       "table_name = '"};
-  sql += table_name;
-  sql += "'";
-  sql += " AND";
-  sql += " table_schema='";
-  sql += db->get_db_name();
-  sql += "'";
-  SelectTableDescriptions(sql, ResultHandler);
+  query += table_name;
+  query += "'";
+  query += " AND";
+  query += " table_schema='";
+  query += db->get_db_name();
+  query += "'";
+  SelectTableDescriptions(query, ResultHandler);
 }
