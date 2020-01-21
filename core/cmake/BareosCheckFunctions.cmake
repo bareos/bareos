@@ -34,14 +34,12 @@ check_function_exists(extattr_get_file HAVE_EXTATTR_GET_FILE)
 check_function_exists(extattr_get_link HAVE_EXTATTR_GET_LINK)
 check_function_exists(extattr_list_file HAVE_EXTATTR_LIST_FILE)
 check_function_exists(extattr_list_link HAVE_EXTATTR_LIST_LINK)
-check_function_exists(
-  extattr_namespace_to_string HAVE_EXTATTR_NAMESPACE_TO_STRING
-)
+check_function_exists(extattr_namespace_to_string
+                      HAVE_EXTATTR_NAMESPACE_TO_STRING)
 check_function_exists(extattr_set_file HAVE_EXTATTR_SET_FILE)
 check_function_exists(extattr_set_link HAVE_EXTATTR_SET_LINK)
-check_function_exists(
-  extattr_string_to_namespace HAVE_EXTATTR_STRING_TO_NAMESPACE
-)
+check_function_exists(extattr_string_to_namespace
+                      HAVE_EXTATTR_STRING_TO_NAMESPACE)
 check_function_exists(fchownat HAVE_FCHOWNAT)
 check_function_exists(fdatasync HAVE_FDATASYNC)
 check_function_exists(fseeko HAVE_FSEEKO)

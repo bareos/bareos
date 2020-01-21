@@ -22,7 +22,9 @@ message(
 )
 execute_process(
   COMMAND
-    ${CMAKE_COMMAND} -E create_symlink
+    ${CMAKE_COMMAND}
+    -E
+    create_symlink
     ${backenddir}/libbareoscats-${default_db_backend}${CMAKE_SHARED_LIBRARY_SUFFIX}
     ${libdir}/libbareoscats${CMAKE_SHARED_LIBRARY_SUFFIX}.${BAREOS_NUMERIC_VERSION}
 )

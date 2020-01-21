@@ -10,7 +10,12 @@ if(MYSQL_INCLUDE_DIR)
   set(MYSQL_FIND_QUIETLY TRUE)
 endif(MYSQL_INCLUDE_DIR)
 
-find_path(MYSQL_INCLUDE_DIR mysql.h /usr/local/include/mysql /usr/include/mysql)
+find_path(
+  MYSQL_INCLUDE_DIR
+  mysql.h
+  /usr/local/include/mysql
+  /usr/include/mysql
+)
 
 set(MYSQL_NAMES mysqlclient mysqlclient_r)
 find_library(

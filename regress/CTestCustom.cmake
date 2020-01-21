@@ -1,19 +1,21 @@
-set(CTEST_CUSTOM_ERROR_EXCEPTION
-    ${CTEST_CUSTOM_ERROR_EXCEPTION}
-    "ERROR: *role \".*\" already exists"
-    "ERROR: *database \".*\" already exists"
-    "ERROR: *table \".*\" does not exist"
-    "NOTICE: *table \".*\" does not exist, skipping"
-    "NOTICE: .*will create implicit sequence"
-    "NOTICE: .*will create implicit index"
+set(
+  CTEST_CUSTOM_ERROR_EXCEPTION
+  ${CTEST_CUSTOM_ERROR_EXCEPTION}
+  "ERROR: *role \".*\" already exists"
+  "ERROR: *database \".*\" already exists"
+  "ERROR: *table \".*\" does not exist"
+  "NOTICE: *table \".*\" does not exist, skipping"
+  "NOTICE: .*will create implicit sequence"
+  "NOTICE: .*will create implicit index"
 )
 
-set(CTEST_CUSTOM_WARNING_EXCEPTION
-    ${CTEST_CUSTOM_WARNING_EXCEPTION}
-    "libtool: install: warning: relinking .*"
-    "libtool: link: warning: .* seems to be moved"
-    "libtool: relink: warning: .* seems to be moved"
-    "libtool: warning: relinking .*"
+set(
+  CTEST_CUSTOM_WARNING_EXCEPTION
+  ${CTEST_CUSTOM_WARNING_EXCEPTION}
+  "libtool: install: warning: relinking .*"
+  "libtool: link: warning: .* seems to be moved"
+  "libtool: relink: warning: .* seems to be moved"
+  "libtool: warning: relinking .*"
 )
 
 set(CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE 100000)

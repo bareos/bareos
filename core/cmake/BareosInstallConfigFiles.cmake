@@ -17,8 +17,13 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-macro(BareosInstallConfigFiles CONFDIR CONFIGBASEDIRECTORY PLUGINS BACKENDS
-      SRC_DIR
+macro(
+  BareosInstallConfigFiles
+  CONFDIR
+  CONFIGBASEDIRECTORY
+  PLUGINS
+  BACKENDS
+  SRC_DIR
 )
 
   message(
@@ -34,8 +39,9 @@ macro(BareosInstallConfigFiles CONFDIR CONFIGBASEDIRECTORY PLUGINS BACKENDS
   if(IS_ABSOLUTE ${CONFDIR})
     set(DESTCONFDIR "$ENV{DESTDIR}${CONFDIR}/${CONFIGBASEDIRECTORY}/")
   else()
-    set(DESTCONFDIR
-        "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CONFDIR}/${CONFIGBASEDIRECTORY}/"
+    set(
+      DESTCONFDIR
+      "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CONFDIR}/${CONFIGBASEDIRECTORY}/"
     )
   endif()
 
@@ -48,8 +54,7 @@ macro(BareosInstallConfigFiles CONFDIR CONFIGBASEDIRECTORY PLUGINS BACKENDS
     STATUS "globbing ${SRC_DIR}/src/defaultconfigs/${CONFIGBASEDIRECTORY}/*"
   )
   file(GLOB resourcedirs
-       "${SRC_DIR}/src/defaultconfigs/${CONFIGBASEDIRECTORY}/*"
-  )
+       "${SRC_DIR}/src/defaultconfigs/${CONFIGBASEDIRECTORY}/*")
   foreach(resdir ${resourcedirs})
     file(GLOB configfiles "${resdir}/*.conf")
     get_filename_component(resname ${resdir} NAME)
@@ -61,13 +66,15 @@ macro(BareosInstallConfigFiles CONFDIR CONFIGBASEDIRECTORY PLUGINS BACKENDS
         file(RENAME "${configfile}" "${configfile}.new")
 
         message(STATUS "copy ${configfile}.new to ${DESTCONFDIR}/${resname}")
-        file(INSTALL "${configfile}.new"
-             DESTINATION "${DESTCONFDIR}/${resname}"
+        file(
+          INSTALL "${configfile}.new"
+          DESTINATION "${DESTCONFDIR}/${resname}"
         )
         file(RENAME "${configfile}.new" "${configfile}")
       else()
         message(
-          STATUS "${resname}/${fname} as ${resname}/${fname} (new installation)"
+          STATUS
+            "${resname}/${fname} as ${resname}/${fname} (new installation)"
         )
         file(COPY "${configfile}" DESTINATION "${DESTCONFDIR}/${resname}")
       endif()
@@ -93,8 +100,9 @@ macro(BareosInstallConfigFiles CONFDIR CONFIGBASEDIRECTORY PLUGINS BACKENDS
       STATUS
         "install ${CONFIGBASEDIRECTORY} config files for BACKEND ${BACKEND}"
     )
-    set(BackendConfigSrcDir
-        "${SRC_DIR}/src/stored/backends/${BACKEND}/${CONFIGBASEDIRECTORY}"
+    set(
+      BackendConfigSrcDir
+      "${SRC_DIR}/src/stored/backends/${BACKEND}/${CONFIGBASEDIRECTORY}"
     )
 
     file(
@@ -109,18 +117,18 @@ macro(BareosInstallConfigFiles CONFDIR CONFIGBASEDIRECTORY PLUGINS BACKENDS
       if(EXISTS ${DESTCONFDIR}/${configfile})
         message(STATUS "${configfile} as ${configfile}.new (keep existing)")
         file(RENAME "${BackendConfigSrcDir}/${configfile}"
-             "${BackendConfigSrcDir}/${configfile}.new"
-        )
-        file(COPY "${BackendConfigSrcDir}/${configfile}.new"
-             DESTINATION "${DESTCONFDIR}/${dir}"
+             "${BackendConfigSrcDir}/${configfile}.new")
+        file(
+          COPY "${BackendConfigSrcDir}/${configfile}.new"
+          DESTINATION "${DESTCONFDIR}/${dir}"
         )
         file(RENAME "${BackendConfigSrcDir}/${configfile}.new"
-             "${BackendConfigSrcDir}/${configfile}"
-        )
+             "${BackendConfigSrcDir}/${configfile}")
       else()
         message(STATUS "${configfile} as ${configfile}")
-        file(COPY "${BackendConfigSrcDir}/${configfile}"
-             DESTINATION "${DESTCONFDIR}/${dir}"
+        file(
+          COPY "${BackendConfigSrcDir}/${configfile}"
+          DESTINATION "${DESTCONFDIR}/${dir}"
         )
       endif()
     endforeach()
@@ -140,8 +148,9 @@ macro(BareosInstallConfigFiles CONFDIR CONFIGBASEDIRECTORY PLUGINS BACKENDS
         message(STATUS "${configfile} as ${configfile}")
       endif()
 
-      file(COPY "${BackendConfigSrcDir}/${configfile}"
-           DESTINATION "${DESTCONFDIR}/${dir}"
+      file(
+        COPY "${BackendConfigSrcDir}/${configfile}"
+        DESTINATION "${DESTCONFDIR}/${dir}"
       )
     endforeach()
 
@@ -151,13 +160,18 @@ macro(BareosInstallConfigFiles CONFDIR CONFIGBASEDIRECTORY PLUGINS BACKENDS
   foreach(PLUGIN ${PLUGINS})
     message(STATUS "install config files for PLUGIN ${PLUGIN}")
     file(GLOB resourcedirs
-         "${SRC_DIR}/src/plugins/filed/${PLUGIN}/${CONFIGBASEDIRECTORY}/*"
-    )
+         "${SRC_DIR}/src/plugins/filed/${PLUGIN}/${CONFIGBASEDIRECTORY}/*")
     foreach(resdir ${resourcedirs})
       file(GLOB configfiles "${resdir}/*.conf*")
       get_filename_component(resname ${resdir} NAME)
       foreach(configfile ${configfiles})
-        string(REGEX MATCH "\\.in\$" IS_INFILE ${configfile})
+        string(
+          REGEX
+            MATCH
+            "\\.in\$"
+            IS_INFILE
+            ${configfile}
+        )
         if(NOT "${IS_INFILE}" STREQUAL ".in")
           get_filename_component(fname ${configfile} NAME)
           if(EXISTS ${DESTCONFDIR}/${resname}/${fname})
@@ -166,8 +180,9 @@ macro(BareosInstallConfigFiles CONFDIR CONFIGBASEDIRECTORY PLUGINS BACKENDS
                 "${resname}/${fname} as ${resname}/${fname}.new (keep existing)"
             )
             file(RENAME "${configfile}" "${configfile}.new")
-            file(COPY "${configfile}.new"
-                 DESTINATION "${DESTCONFDIR}/${resname}"
+            file(
+              COPY "${configfile}.new"
+              DESTINATION "${DESTCONFDIR}/${resname}"
             )
             file(RENAME "${configfile}.new" "${configfile}")
           else()
