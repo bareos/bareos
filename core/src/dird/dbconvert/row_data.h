@@ -18,31 +18,17 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
+#ifndef BAREOS_SRC_DIRD_DBCONVERT_ROW_DATA_H_
+#define BAREOS_SRC_DIRD_DBCONVERT_ROW_DATA_H_
 
-#ifndef BAREOS_SRC_DIRD_DBCONVERT_DATABASE_IMPORTER_H_
-#define BAREOS_SRC_DIRD_DBCONVERT_DATABASE_IMPORTER_H_
-
-#include <map>
-#include <string>
-
-class BareosDb;
-class DatabaseConnection;
-class DatabaseExport;
-class DatabaseTableDescriptions;
-
-class DatabaseImport {
- public:
-  DatabaseImport(const DatabaseConnection& db_connection);
-  ~DatabaseImport();
-
-  void ExportTo(DatabaseExport& exporter);
-
- private:
-  BareosDb* db_{};
-
-  std::unique_ptr<DatabaseTableDescriptions> table_descriptions_;
-  static int ResultHandler(void* ctx, int fields, char** row);
+struct FieldData {
+  const char* data_pointer{};
+  std::string converted_data;
 };
 
+struct RowData {
+  std::string table_name;
+  std::map<std::string, FieldData> row;
+};
 
-#endif  // BAREOS_SRC_DIRD_DBCONVERT_DATABASE_IMPORTER_H_
+#endif  // BAREOS_SRC_DIRD_DBCONVERT_ROW_DATA_H_

@@ -22,6 +22,24 @@
 #ifndef BAREOS_SRC_DIRD_DBCONVERT_DATABASE_EXPORT_H_
 #define BAREOS_SRC_DIRD_DBCONVERT_DATABASE_EXPORT_H_
 
+#include "dird/dbconvert/row_data.h"
 
+class BareosDb;
+class DatabaseConnection;
+class DatabaseTableDescriptions;
+
+class DatabaseExport {
+ public:
+  DatabaseExport(const DatabaseConnection& db_connection,
+                 bool clear_tables = false);
+  ~DatabaseExport();
+
+  void operator<<(const RowData& data);
+
+ private:
+  BareosDb* db_{};
+  std::unique_ptr<DatabaseTableDescriptions> table_descriptions_;
+  static int ResultHandler(void* ctx, int fields, char** row);
+};
 
 #endif  // BAREOS_SRC_DIRD_DBCONVERT_DATABASE_EXPORT_H_

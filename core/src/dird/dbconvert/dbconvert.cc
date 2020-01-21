@@ -29,6 +29,7 @@
 #include "dird/jcr_private.h"
 #include "dird/job.h"
 #include "dird/dbconvert/database_connection.h"
+#include "dird/dbconvert/database_export.h"
 #include "dird/dbconvert/database_import.h"
 #include "include/make_unique.h"
 #include "lib/parse_conf.h"
@@ -57,7 +58,10 @@ class DbConvert {
 
   void DoDatabaseConversion()
   {
-    DatabaseImporter imp(*source_db_);
+    DatabaseImport imp(*source_db_);
+    DatabaseExport exp(*destination_db_, true);
+
+    imp.ExportTo(exp);
 
 #if 0
     std::unique_ptr<DatabaseTableDescriptions> destination_tables =
@@ -196,7 +200,9 @@ int main(int argc, char** argv)
     dbconvert.DoDatabaseConversion();
   } catch (const std::runtime_error& e) {
     std::string errstring{e.what()};
-    if (!errstring.empty()) { std::cerr << e.what() << std::endl; }
+    if (!errstring.empty()) {
+      std::cerr << std::endl << std::endl << e.what() << std::endl;
+    }
     return 1;
   }
   return 0;
