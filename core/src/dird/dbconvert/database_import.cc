@@ -42,12 +42,12 @@ struct ResultHandlerContext {
       const DatabaseColumnDescriptions::VectorOfColumnDescriptions& c,
       RowData& d,
       DatabaseExport& e)
-      : column_descriptions(c), data(d), exporter(e)
+      : column_descriptions(c), row_data(d), exporter(e)
   {
   }
   const DatabaseColumnDescriptions::VectorOfColumnDescriptions&
       column_descriptions;
-  RowData& data;
+  RowData& row_data;
   DatabaseExport& exporter;
 };
 
@@ -63,9 +63,9 @@ void DatabaseImport::ExportTo(DatabaseExport& exporter)
     query += "FROM ";
     query += t.table_name;
 
-    RowData data;
-    data.table_name = t.table_name;
-    ResultHandlerContext ctx(t.column_descriptions, data, exporter);
+    RowData row_data;
+    row_data.table_name = t.table_name;
+    ResultHandlerContext ctx(t.column_descriptions, row_data, exporter);
 
     if (!db_->SqlQuery(query.c_str(), ResultHandler, &ctx)) {
       std::cout << "Could not import table: " << t.table_name << std::endl;
@@ -86,13 +86,14 @@ int DatabaseImport::ResultHandler(void* ctx, int fields, char** row)
   }
 
   for (int i = 0; i < fields; i++) {
-    RowData& row_data = r->data;
     const std::string& column_name = r->column_descriptions[i]->column_name;
+
+    RowData& row_data = r->row_data;
     row_data.row[column_name].data_pointer = row[i];
     r->column_descriptions[i]->db_import_converter(row_data.row[column_name]);
   }
 
-  r->exporter << r->data;
+  r->exporter << r->row_data;
 
   return 0;
 }
