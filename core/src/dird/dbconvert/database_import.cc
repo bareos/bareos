@@ -22,25 +22,38 @@
 #include "include/bareos.h"
 #include "dird/dbconvert/database_import.h"
 #include "dird/dbconvert/database_table_descriptions.h"
+#include "dird/dbconvert/row_data.h"
+#include "dird/dbconvert/database_export.h"
 
 #include <iostream>
 #include <cassert>
 
+DatabaseImport::DatabaseImport(const DatabaseConnection& db_connection)
+    : db_(db_connection.db)
+    , table_descriptions_(DatabaseTableDescriptions::Create(db_connection))
+{
+  return;
+}
+
+DatabaseImport::~DatabaseImport() = default;
+
 struct ResultHandlerContext {
   ResultHandlerContext(
       const DatabaseColumnDescriptions::VectorOfColumnDescriptions& c,
-      DatabaseImporter::RowDataMap& r)
-      : cols(c), one_row_of_data(r)
+      RowData& d,
+      DatabaseExport& e)
+      : column_descriptions(c), data(d), exporter(e)
   {
   }
-  const DatabaseColumnDescriptions::VectorOfColumnDescriptions& cols;
-  DatabaseImporter::RowDataMap& one_row_of_data;
+  const DatabaseColumnDescriptions::VectorOfColumnDescriptions&
+      column_descriptions;
+  RowData& data;
+  DatabaseExport& exporter;
 };
 
-DatabaseImporter::DatabaseImporter(const DatabaseConnection& db_connection)
-    : table_descriptions(DatabaseTableDescriptions::Create(db_connection))
+void DatabaseImport::ExportTo(DatabaseExport& exporter)
 {
-  for (const auto& t : table_descriptions->tables) {
+  for (const auto& t : table_descriptions_->tables) {
     std::string query{"SELECT "};
     for (const auto& col : t.column_descriptions) {
       query += col->column_name;
@@ -49,9 +62,12 @@ DatabaseImporter::DatabaseImporter(const DatabaseConnection& db_connection)
     query.erase(query.cend() - 2);
     query += "FROM ";
     query += t.table_name;
-    one_row_of_data.clear();
-    ResultHandlerContext ctx(t.column_descriptions, one_row_of_data);
-    if (!db_connection.db->SqlQuery(query.c_str(), ResultHandler, &ctx)) {
+
+    RowData data;
+    data.table_name = t.table_name;
+    ResultHandlerContext ctx(t.column_descriptions, data, exporter);
+
+    if (!db_->SqlQuery(query.c_str(), ResultHandler, &ctx)) {
       std::cout << "Could not import table: " << t.table_name << std::endl;
       std::string err{"Could not execute select statement: "};
       err += query;
@@ -60,17 +76,23 @@ DatabaseImporter::DatabaseImporter(const DatabaseConnection& db_connection)
   }
 }
 
-int DatabaseImporter::ResultHandler(void* ctx, int fields, char** row)
+int DatabaseImport::ResultHandler(void* ctx, int fields, char** row)
 {
   ResultHandlerContext* r = static_cast<ResultHandlerContext*>(ctx);
-  assert(fields == (int)r->cols.size());
-  for (int i = 0; i < fields; i++) {
-    const std::string& column_name = r->cols[i]->column_name;
-    r->one_row_of_data[column_name] = row[i];
+
+  if (fields != static_cast<int>(r->column_descriptions.size())) {
+    throw std::runtime_error(
+        "Number of database fields does not match description");
   }
-  // export data to second database
+
+  for (int i = 0; i < fields; i++) {
+    RowData& row_data = r->data;
+    const std::string& column_name = r->column_descriptions[i]->column_name;
+    row_data.row[column_name].data_pointer = row[i];
+    r->column_descriptions[i]->db_import_converter(row_data.row[column_name]);
+  }
+
+  r->exporter << r->data;
+
   return 0;
 }
-
-
-DatabaseImporter::~DatabaseImporter() = default;

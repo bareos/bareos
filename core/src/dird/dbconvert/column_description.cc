@@ -20,6 +20,7 @@
 */
 
 #include "dird/dbconvert/column_description.h"
+#include "dird/dbconvert/row_data.h"
 
 ColumnDescription::ColumnDescription(const char* column_name_in,
                                      const char* data_type_in,
@@ -42,15 +43,29 @@ ColumnDescription::ColumnDescription(const char* column_name_in,
   }
 }
 
-static const char* no_conversion(const char* in) { return in; }
+static void no_conversion(FieldData& fd)
+{
+  fd.data_pointer = fd.data_pointer ? fd.data_pointer : "";
+}
+
+static void timestamp_conversion_postgresql(FieldData& fd)
+{
+  fd.data_pointer = fd.data_pointer ? fd.data_pointer : "2020-01-20 21:28:45";
+}
 
 const DataTypeConverterMap ColumnDescriptionMysql::db_import_converter_map{
-    {"bigint", no_conversion},   {"binary", no_conversion},
-    {"blob", no_conversion},     {"char", no_conversion},
-    {"datetime", no_conversion}, {"decimal", no_conversion},
-    {"enum", no_conversion},     {"int", no_conversion},
-    {"longblob", no_conversion}, {"smallint", no_conversion},
-    {"tinyblob", no_conversion}, {"tinyint", no_conversion}};
+    {"bigint", no_conversion},
+    {"binary", no_conversion},
+    {"blob", no_conversion},
+    {"char", no_conversion},
+    {"datetime", timestamp_conversion_postgresql},
+    {"decimal", no_conversion},
+    {"enum", no_conversion},
+    {"int", no_conversion},
+    {"longblob", no_conversion},
+    {"smallint", no_conversion},
+    {"tinyblob", no_conversion},
+    {"tinyint", no_conversion}};
 
 ColumnDescriptionMysql::ColumnDescriptionMysql(const char* column_name_in,
                                                const char* data_type_in,
