@@ -55,12 +55,12 @@ int DatabaseTableDescriptions::ResultHandler(void* ctx, int fields, char** row)
 DatabaseTablesPostgresql::DatabaseTablesPostgresql(BareosDb* db)
     : DatabaseTableDescriptions(db)
 {
-  std::string sql{
+  std::string query{
       "SELECT table_name FROM INFORMATION_SCHEMA.TABLES WHERE "
       "table_schema='public'"};
 
   std::vector<std::string> table_names;
-  SelectTableNames(sql, table_names);
+  SelectTableNames(query, table_names);
 
   for (auto t : table_names) {
     DatabaseColumnDescriptionsPostgresql p(db, t);
@@ -71,13 +71,13 @@ DatabaseTablesPostgresql::DatabaseTablesPostgresql(BareosDb* db)
 DatabaseTablesMysql::DatabaseTablesMysql(BareosDb* db)
     : DatabaseTableDescriptions(db)
 {
-  std::string sql{
+  std::string query{
       "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='"};
-  sql += db->get_db_name();
-  sql += "'";
+  query += db->get_db_name();
+  query += "'";
 
   std::vector<std::string> table_names;
-  SelectTableNames(sql, table_names);
+  SelectTableNames(query, table_names);
 
   for (auto t : table_names) {
     DatabaseColumnDescriptionsMysql p(db, t);
