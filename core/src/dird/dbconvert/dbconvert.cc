@@ -59,17 +59,9 @@ class DbConvert {
   void DoDatabaseConversion()
   {
     DatabaseImport imp(*source_db_);
-    DatabaseExport exp(*destination_db_, true);
+    DatabaseExport exp(*destination_db_, cl.empty_destination_tables);
 
     imp.ExportTo(exp);
-
-#if 0
-    std::unique_ptr<DatabaseTableDescriptions> destination_tables =
-        DatabaseTableDescriptions::Create(*destination_db_);
-    for (const auto& t : destination_tables->tables) {
-      std::cout << t.table_name << std::endl;
-    }
-#endif
   }
 
  private:
@@ -126,13 +118,17 @@ class DbConvert {
     {
       char c{};
       bool options_error{false};
-      bool configpath_set{};
+      int argument_count{};
 
       while ((c = getopt(argc, argv, "c:?")) != -1 && !options_error) {
         switch (c) {
           case 'c':
             configpath_ = optarg;
-            configpath_set = true;
+            argument_count += 2;
+            break;
+          case 'd':
+            empty_destination_tables = true;
+            ++argument_count;
             break;
           case '?':
           default:
@@ -141,9 +137,9 @@ class DbConvert {
         }
       }
 
-      int argcount{configpath_set ? 5 : 3};
+      argument_count += 3;
 
-      if (options_error || argc != argcount) {
+      if (options_error || argc != argument_count) {
         usage();
         throw std::runtime_error(std::string());
       }
@@ -154,6 +150,7 @@ class DbConvert {
    private:
     std::string configpath_{"/etc/bareos"};
     std::string source_db_resource_name, destination_db_resource_name;
+    bool empty_destination_tables{false};
 
     void usage() noexcept
     {
