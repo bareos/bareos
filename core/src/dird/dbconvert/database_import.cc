@@ -20,7 +20,7 @@
 */
 
 #include "include/bareos.h"
-#include "dird/dbconvert/database_importer.h"
+#include "dird/dbconvert/database_import.h"
 #include "dird/dbconvert/database_table_descriptions.h"
 
 #include <iostream>
@@ -68,6 +68,7 @@ int DatabaseImporter::ResultHandler(void* ctx, int fields, char** row)
     const std::string& column_name = r->cols[i]->column_name;
     r->one_row_of_data[column_name] = row[i];
   }
+  // export data to second database
   return 0;
 }
 
