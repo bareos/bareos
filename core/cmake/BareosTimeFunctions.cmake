@@ -15,7 +15,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc., 51
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-function(timestamp_at at result format)
+function(
+  timestamp_at
+  at
+  result
+  format
+)
   if(CMAKE_VERSION VERSION_GREATER 3.10.0)
     set(old_epoch "$ENV{SOURCE_DATE_EPOCH}")
     set(ENV{SOURCE_DATE_EPOCH} "${at}")
@@ -25,7 +30,11 @@ function(timestamp_at at result format)
     set(old_lang "$ENV{LC_ALL}")
     set(ENV{LC_ALL} "C")
     execute_process(
-      COMMAND date --utc "--date=@${at}" "+${format}"
+      COMMAND
+        date
+        --utc
+        "--date=@${at}"
+        "+${format}"
       OUTPUT_VARIABLE out
       OUTPUT_STRIP_TRAILING_WHITESPACE
     )
@@ -37,8 +46,5 @@ function(timestamp_at at result format)
       )
     endif()
   endif()
-  set("${result}"
-      "${out}"
-      PARENT_SCOPE
-  )
+  set("${result}" "${out}" PARENT_SCOPE)
 endfunction()

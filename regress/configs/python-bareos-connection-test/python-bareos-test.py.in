@@ -1,5 +1,6 @@
 import bareos.bsock
 
-password=bareos.bsock.Password("bareos")
-directorconsole=bareos.bsock.DirectorConsole(address="@hostname@", port=@dirport@, password=password)
-
+password = bareos.bsock.Password("bareos")
+directorconsole = bareos.bsock.DirectorConsole(
+    address="@hostname@", port=@dirport@, password=password
+)

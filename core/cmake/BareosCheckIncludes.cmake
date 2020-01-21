@@ -103,9 +103,8 @@ check_include_files(api/glfs.h HAVE_API_GLFS_H)
 check_include_files(cephfs/libcephfs.h HAVE_CEPHFS_LIBCEPHFS_H)
 check_include_files("sys/stat.h;cephfs/ceph_statx.h" HAVE_CEPHFS_CEPH_STATX_H)
 check_include_files(rados/librados.h HAVE_RADOS_LIBRADOS_H)
-check_include_files(
-  radosstriper/libradosstriper.h HAVE_RADOSSTRIPER_LIBRADOSSTRIPER_H
-)
+check_include_files(radosstriper/libradosstriper.h
+                    HAVE_RADOSSTRIPER_LIBRADOSSTRIPER_H)
 
 # CHECK_INCLUDE_FILES(glusterfs/glusterfs.h HAVE_GLUSTERFS_GLUSTERFS_H)
 check_include_files(glusterfs/api/glfs.h HAVE_GLUSTERFS_API_GLFS_H)
@@ -131,9 +130,8 @@ check_include_files(sys/dir.h HAVE_SYS_DIR_H)
 check_include_files(termcap.h HAVE_TERMCAP_H)
 check_include_files(term.h HAVE_TERM_H)
 
-check_include_files(
-  "sys/types.h;sys/scsi/impl/uscsi.h" HAVE_SYS_SCSI_IMPL_USCSI_H
-)
+check_include_files("sys/types.h;sys/scsi/impl/uscsi.h"
+                    HAVE_SYS_SCSI_IMPL_USCSI_H)
 check_include_files("stdio.h;camlib.h" HAVE_CAMLIB_H)
 check_include_files(cam/scsi/scsi_message.h HAVE_CAM_SCSI_SCSI_MESSAGE_H)
 check_include_files(dev/scsipi/scsipi_all.h HAVE_DEV_SCSIPI_SCSIPI_ALL_H)

@@ -34,12 +34,8 @@ def load_bareos_plugin(context, plugindef):
     events.append(bsdEventType["bsdEventLabelRead"])
     events.append(bsdEventType["bsdEventLabelVerified"])
     events.append(bsdEventType["bsdEventLabelWrite"])
-    events.append(
-        bsdEventType["bsdEventSetupRecordTranslation"]
-    )
-    events.append(
-        bsdEventType["bsdEventWriteRecordTranslation"]
-    )
+    events.append(bsdEventType["bsdEventSetupRecordTranslation"])
+    events.append(bsdEventType["bsdEventWriteRecordTranslation"])
     events.append(bsdEventType["bsdEventDeviceUnmount"])
     events.append(bsdEventType["bsdEventDeviceClose"])
     events.append(bsdEventType["bsdEventJobEnd"])
@@ -89,15 +85,9 @@ def handle_plugin_event(context, event):
         toFile("bsdEventLabelVerified\n")
     elif event == bsdEventType["bsdEventLabelWrite"]:
         toFile("bsdEventLabelWrite\n")
-    elif (
-        event
-        == bsdEventType["bsdEventSetupRecordTranslation"]
-    ):
+    elif event == bsdEventType["bsdEventSetupRecordTranslation"]:
         toFile("bsdEventSetupRecordTranslation\n")
-    elif (
-        event
-        == bsdEventType["bsdEventWriteRecordTranslation"]
-    ):
+    elif event == bsdEventType["bsdEventWriteRecordTranslation"]:
         toFile("bsdEventWriteRecordTranslation\n")
     elif event == bsdEventType["bsdEventDeviceUnmount"]:
         toFile("bsdEventDeviceUnmount\n")

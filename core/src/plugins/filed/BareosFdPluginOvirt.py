@@ -824,7 +824,7 @@ class BareosOvirtWrapper(object):
         # will know what snapshot was used and remove it manually.
         self.events_service.add(
             event=types.Event(
-                vm=types.Vm(id=self.vm.id,),
+                vm=types.Vm(id=self.vm.id),
                 origin=APPLICATION_NAME,
                 severity=types.LogSeverity.NORMAL,
                 custom_id=self.event_id,
@@ -832,7 +832,7 @@ class BareosOvirtWrapper(object):
                     "Backup of virtual machine '%s' using snapshot '%s' is "
                     "starting." % (self.vm.name, snap_description)
                 ),
-            ),
+            )
         )
         self.event_id += 1
 
@@ -844,8 +844,8 @@ class BareosOvirtWrapper(object):
         snaps_service = self.vm_service.snapshots_service()
         snap = snaps_service.add(
             snapshot=types.Snapshot(
-                description=snap_description, persist_memorystate=False,
-            ),
+                description=snap_description, persist_memorystate=False
+            )
         )
         bareosfd.JobMessage(
             context,
@@ -996,7 +996,7 @@ class BareosOvirtWrapper(object):
         # your CA certificate of the engine in the system, you need to pass it to HTTPSConnection.
         context.load_verify_locations(cafile=self.ca)
 
-        return HTTPSConnection(proxy_url.hostname, proxy_url.port, context=context,)
+        return HTTPSConnection(proxy_url.hostname, proxy_url.port, context=context)
 
     def start_download(self, context, snapshot, disk):
 
@@ -1018,14 +1018,10 @@ class BareosOvirtWrapper(object):
         self.proxy_connection = self.get_proxy_connection(proxy_url)
 
         # Set needed headers for downloading:
-        transfer_headers = {
-            "Authorization": transfer.signed_ticket,
-        }
+        transfer_headers = {"Authorization": transfer.signed_ticket}
 
         # Perform the request.
-        self.proxy_connection.request(
-            "GET", proxy_url.path, headers=transfer_headers,
-        )
+        self.proxy_connection.request("GET", proxy_url.path, headers=transfer_headers)
         # Get response
         self.response = self.proxy_connection.getresponse()
 
@@ -1241,7 +1237,7 @@ class BareosOvirtWrapper(object):
         # Add the virtual machine, the transfered disks will be
         # attached to this virtual machine:
         bareosfd.JobMessage(
-            context, bJobMessageType["M_INFO"], "Adding virtual machine %s\n" % vm_name,
+            context, bJobMessageType["M_INFO"], "Adding virtual machine %s\n" % vm_name
         )
 
         # vm type (server/desktop)
@@ -1321,7 +1317,7 @@ class BareosOvirtWrapper(object):
                 cpu=vm_cpu,
                 template=types.Template(name=vm_template),
                 cluster=types.Cluster(name=cluster_name),
-            ),
+            )
         )
 
     def add_nics_to_vm(self, context):
@@ -1365,8 +1361,8 @@ class BareosOvirtWrapper(object):
                     types.Nic(
                         name=props["Name"],
                         description=props["Caption"],
-                        vnic_profile=types.VnicProfile(id=profile_id,),
-                    ),
+                        vnic_profile=types.VnicProfile(id=profile_id),
+                    )
                 )
                 bareosfd.DebugMessage(
                     context,
@@ -1513,7 +1509,7 @@ class BareosOvirtWrapper(object):
                         interface=disk_interface,
                         bootable=disk_bootable,
                         active=True,
-                    ),
+                    )
                 )
 
                 # 'Waiting for Disk creation to finish'
@@ -1686,7 +1682,7 @@ class BareosOvirtWrapper(object):
             # backup of the virtual machine is completed:
             self.events_service.add(
                 event=types.Event(
-                    vm=types.Vm(id=self.vm.id,),
+                    vm=types.Vm(id=self.vm.id),
                     origin=APPLICATION_NAME,
                     severity=types.LogSeverity.NORMAL,
                     custom_id=self.event_id,
@@ -1694,7 +1690,7 @@ class BareosOvirtWrapper(object):
                         "Backup of virtual machine '%s' using snapshot '%s' is "
                         "completed." % (self.vm.name, snap.description)
                     ),
-                ),
+                )
             )
             self.event_id += 1
 
@@ -1725,14 +1721,14 @@ class BareosOvirtWrapper(object):
         # restore of the virtual machine is completed:
         self.events_service.add(
             event=types.Event(
-                vm=types.Vm(id=self.vm.id,),
+                vm=types.Vm(id=self.vm.id),
                 origin=APPLICATION_NAME,
                 severity=types.LogSeverity.NORMAL,
                 custom_id=self.event_id,
                 description=(
                     "Restore of virtual machine '%s' is " "completed." % (self.vm.name)
                 ),
-            ),
+            )
         )
         self.event_id += 1
 

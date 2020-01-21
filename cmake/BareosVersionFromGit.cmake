@@ -19,7 +19,11 @@
 
 if(Git_FOUND)
   execute_process(
-    COMMAND ${GIT_EXECUTABLE} log -1 --pretty=format:%ct
+    COMMAND
+      ${GIT_EXECUTABLE}
+      log
+      -1
+      --pretty=format:%ct
     RESULT_VARIABLE GIT_COMMIT_TIMESTAMP_RESULT
     OUTPUT_VARIABLE GIT_COMMIT_TIMESTAMP
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
@@ -29,8 +33,14 @@ endif()
 
 if(GIT_COMMIT_TIMESTAMP_RESULT EQUAL 0)
   execute_process(
-    COMMAND ${GIT_EXECUTABLE} describe --tags --exact-match --match "Release/*"
-            --dirty=.dirty
+    COMMAND
+      ${GIT_EXECUTABLE}
+      describe
+      --tags
+      --exact-match
+      --match
+      "Release/*"
+      --dirty=.dirty
     RESULT_VARIABLE GIT_DESCRIBE_RELEASE_RESULT
     OUTPUT_VARIABLE GIT_DESCRIBE_OUTPUT
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
@@ -38,7 +48,13 @@ if(GIT_COMMIT_TIMESTAMP_RESULT EQUAL 0)
   )
   if(NOT GIT_DESCRIBE_RELEASE_RESULT EQUAL 0)
     execute_process(
-      COMMAND ${GIT_EXECUTABLE} describe --tags --match "WIP/*" --dirty=.dirty
+      COMMAND
+        ${GIT_EXECUTABLE}
+        describe
+        --tags
+        --match
+        "WIP/*"
+        --dirty=.dirty
       RESULT_VARIABLE GIT_DESCRIBE_WIP_RESULT
       OUTPUT_VARIABLE GIT_DESCRIBE_OUTPUT
       WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
@@ -48,26 +64,38 @@ if(GIT_COMMIT_TIMESTAMP_RESULT EQUAL 0)
 endif()
 
 if(NOT GIT_DESCRIBE_OUTPUT STREQUAL "")
-  set(GIT_DESCRIBE_REGEX_LONG
-      "^([^/]+)/([^-]+)-(([^-]+)?)-?([0-9]+)-g([0-9a-f]+(.dirty)?)[ \n]*"
+  set(
+    GIT_DESCRIBE_REGEX_LONG
+    "^([^/]+)/([^-]+)-(([^-]+)?)-?([0-9]+)-g([0-9a-f]+(.dirty)?)[ \n]*"
   )
   set(GIT_DESCRIBE_REPLACE_LONG "\\2~\\3\\5.\\6")
   set(GIT_DESCRIBE_REGEX_SHORT "^([^/]+)/([0-9.]+)((-[^-]+)?)((.dirty)?)[ \n]*")
   set(GIT_DESCRIBE_REPLACE_SHORT "\\2\\3\\5")
 
-  string(REGEX MATCH "${GIT_DESCRIBE_REGEX_LONG}" GIT_DESCRIBE_REGEX_LONG_MATCH
-               "${GIT_DESCRIBE_OUTPUT}"
+  string(
+    REGEX
+      MATCH
+      "${GIT_DESCRIBE_REGEX_LONG}"
+      GIT_DESCRIBE_REGEX_LONG_MATCH
+      "${GIT_DESCRIBE_OUTPUT}"
   )
   if(GIT_DESCRIBE_REGEX_LONG_MATCH STREQUAL "")
     string(
       REGEX
-      REPLACE "${GIT_DESCRIBE_REGEX_SHORT}" "${GIT_DESCRIBE_REPLACE_SHORT}"
-              GIT_DESCRIBE_VERSION "${GIT_DESCRIBE_OUTPUT}"
+      REPLACE
+        "${GIT_DESCRIBE_REGEX_SHORT}"
+        "${GIT_DESCRIBE_REPLACE_SHORT}"
+        GIT_DESCRIBE_VERSION
+        "${GIT_DESCRIBE_OUTPUT}"
     )
   else()
-    string(REGEX
-           REPLACE "${GIT_DESCRIBE_REGEX_LONG}" "${GIT_DESCRIBE_REPLACE_LONG}"
-                   GIT_DESCRIBE_VERSION "${GIT_DESCRIBE_OUTPUT}"
+    string(
+      REGEX
+      REPLACE
+        "${GIT_DESCRIBE_REGEX_LONG}"
+        "${GIT_DESCRIBE_REPLACE_LONG}"
+        GIT_DESCRIBE_VERSION
+        "${GIT_DESCRIBE_OUTPUT}"
     )
   endif()
 endif()

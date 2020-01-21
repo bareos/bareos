@@ -32,7 +32,13 @@ macro(BareosFindLibrary LIBNAME)
 
   set(LIBFOUND ${${LIB_VAR_NAME}})
 
-  string(REGEX MATCH "-NOTFOUND" LIBNOTFOUND ${LIBFOUND})
+  string(
+    REGEX
+      MATCH
+      "-NOTFOUND"
+      LIBNOTFOUND
+      ${LIBFOUND}
+  )
   # MESSAGE(STATUS  "LIB REGEX MATCH: ${LIBNOTFOUND}")
   string(LENGTH "${LIBNOTFOUND}" LIBNOTFOUND)
 
