@@ -21,3 +21,66 @@
 
 #include "include/bareos.h"
 #include "dird/dbconvert/database_export.h"
+#include "dird/dbconvert/database_table_descriptions.h"
+#include "dird/dbconvert/row_data.h"
+
+#include <iostream>
+#include <memory>
+
+DatabaseExport::DatabaseExport(const DatabaseConnection& db_connection,
+                               bool clear_tables)
+    : db_(db_connection.db)
+    , table_descriptions_(DatabaseTableDescriptions::Create(db_connection))
+{
+  if (clear_tables) {
+    for (const auto& t : table_descriptions_->tables) {
+      if (t.table_name != "version") {
+        std::string query("DELETE ");
+        query += " FROM ";
+        query += t.table_name;
+        if (!db_->SqlQuery(query.c_str())) {
+          std::string err{"Could not delete table: "};
+          err += t.table_name;
+          err += " ";
+          err += db_->get_errmsg();
+          throw std::runtime_error(err);
+        }
+      }
+    }
+  }
+}
+
+DatabaseExport::~DatabaseExport() = default;
+
+void DatabaseExport::operator<<(const RowData& data)
+{
+  std::string query{"INSERT INTO "};
+  query += data.table_name;
+  query += " (";
+  for (const auto& r : data.row) {
+    query += r.first;
+    query += ", ";
+  }
+  query.erase(query.end() - 2);
+  query += ")";
+
+  query += " VALUES (";
+
+  for (const auto& r : data.row) {
+    query += "'";
+    query += r.second.data_pointer;
+    query += "',";
+  }
+
+  query.erase(query.end() - 1);
+  query += ")";
+#if 0
+  std::cout << query << std::endl;
+#else
+  if (!db_->SqlQuery(query.c_str())) {
+    std::string err{"Could not execute query: "};
+    err += db_->get_errmsg();
+    throw std::runtime_error(err);
+  }
+#endif
+}

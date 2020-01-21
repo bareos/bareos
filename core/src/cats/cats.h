@@ -662,6 +662,7 @@ class BareosDb : public BareosDbQueryEnum {
   virtual ~BareosDb() {}
   const char* get_db_name(void) { return db_name_; }
   const char* get_db_user(void) { return db_user_; }
+  const char* get_errmsg(void) const { return errmsg; }
   bool IsConnected(void) { return connected_; }
   bool BatchInsertAvailable(void) { return have_batch_insert_; }
   bool IsPrivate(void) { return is_private_; }
