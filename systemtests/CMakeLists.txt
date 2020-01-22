@@ -614,6 +614,7 @@ endif()
 
 
 message(STATUS "Looking for pam test requirements ...")
+find_program(PYTHON python)
 
 find_program(PAMTESTER pamtester)
 
@@ -644,6 +645,11 @@ else()
 endif()
 
 
+if(ENABLE_BCONSOLE_PAM_TEST AND PYTHON )
+  list(APPEND SYSTEM_TESTS "python-pam")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "python-pam")
+endif()
 
 
 
@@ -653,7 +659,6 @@ endif()
 message(STATUS "Looking for webui test requirements ...")
 
 find_program(PERL perl)
-find_program(PYTHON python)
 find_program(PHP php)
 find_program(CHROMEDRIVER chromedriver)
 pythonmodulestatus("selenium") # sets PYTHON_SELENIUM_FOUND to TRUE or FALSE

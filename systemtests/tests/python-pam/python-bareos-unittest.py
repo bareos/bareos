@@ -78,8 +78,8 @@ class PythonBareosPamLoginTest(PythonBareosBase):
     )
     def test_pam_login_tls(self):
 
-        pam_username = u"user1"
-        pam_password = u"user1"
+        pam_username = u'user1'
+        pam_password = u'user1'
 
         console_pam_username = u"PamConsole"
         console_pam_password = u"secret"
