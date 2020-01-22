@@ -8,10 +8,10 @@ export TestName
 
 JobName=backup-bareos-fd
 . ./environment
-. ${scripts}/functions
+. ${rscripts}/functions
 
-${scripts}/cleanup
-${scripts}/setup
+${rscripts}/cleanup
+${rscripts}/setup
 
 
 # Directory to backup.
