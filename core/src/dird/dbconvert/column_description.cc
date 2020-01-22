@@ -89,7 +89,7 @@ const DataTypeConverterMap ColumnDescriptionPostgresql::db_export_converter_map{
     {"numeric", no_conversion},
     {"smallint", no_conversion},
     {"text", no_conversion},
-    {"timestamp without time zone", no_conversion}};
+    {"timestamp without time zone", timestamp_conversion_postgresql}};
 
 ColumnDescriptionPostgresql::ColumnDescriptionPostgresql(
     const char* column_name_in,
