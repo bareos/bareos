@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -923,7 +923,6 @@ message("   GAWK:                         ${GAWK}")
 message("   RPCGEN:                       ${RPCGEN}")
 message("   MTX:                          ${MTX}")
 message("   XTRABACKUP:                   ${XTRABACKUP}")
-message("   MARIABACKUP:                  ${MARIABACKUP}")
 message("   DEVELOPER:                    ${developer}")
 message("   LocalBuildDefinitionsFile:    ${BareosLocalBuildDefinitionsFile}")
 message("   HAVE_IS_TRIVIALLY_COPYABLE:   ${HAVE_IS_TRIVIALLY_COPYABLE}")
