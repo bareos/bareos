@@ -2,7 +2,7 @@ JobDefs {
   Name = "DefaultJob"
   Type = Backup
   Level = Incremental
-  Client = bareos-fd
+  Client = bareos-mysql-fd
   FileSet = "SelfTest"
   Storage = File
   Messages = Standard
