@@ -50,7 +50,7 @@ static void no_conversion(FieldData& fd)
 
 static void timestamp_conversion_postgresql(FieldData& fd)
 {
-  fd.data_pointer = fd.data_pointer ? fd.data_pointer : "2020-01-20 21:28:45";
+  fd.data_pointer = fd.data_pointer ? fd.data_pointer : "1970-01-01 00:00:00";
 }
 
 const DataTypeConverterMap ColumnDescriptionMysql::db_import_converter_map{
