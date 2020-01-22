@@ -247,6 +247,8 @@ macro(prepare_testdir_for_daemon_run)
   )
   set(piddir ${current_test_directory}/piddir)
 
+  set(backenddir ${BACKEND_DIR_TO_TEST})
+
   if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
     set(bin /bin)
     set(sbin /sbin)
@@ -324,6 +326,7 @@ endmacro()
 
 message( "Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
+find_program(PERL perl)
 
 option(RUN_SYSTEMTESTS_ON_INSTALLED_FILES
        "configure the system tests to run on installed files (from packages)"
@@ -393,6 +396,10 @@ if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
     PYTHON_PLUGINS_DIR_TO_TEST BareosFdWrapper.py
     PATHS /usr/lib/bareos/plugins /usr/lib64/bareos/plugins
   )
+  find_program(
+    BACKEND_DIR_TO_TEST libbareoscats.so
+    PATHS /usr/lib/bareos/backends /usr/lib64/bareos/backends
+  )
 
   get_filename_component(PLUGINS_DIR_TO_TEST ${PYTHON_PLUGIN_TO_TEST} DIRECTORY)
   get_filename_component(
@@ -403,14 +410,9 @@ if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
   )
 
   set(FD_PLUGINS_DIR_TO_TEST ${PLUGINS_DIR_TO_TEST})
-  message("   FD_PLUGINS_DIR_TO_TEST: ${PLUGINS_DIR_TO_TEST}")
-
   set(SD_PLUGINS_DIR_TO_TEST ${PLUGINS_DIR_TO_TEST})
-  message("   SD_PLUGINS_DIR_TO_TEST: ${PLUGINS_DIR_TO_TEST}")
-
   set(DIR_PLUGINS_DIR_TO_TEST ${PLUGINS_DIR_TO_TEST})
-  message("   DIR_PLUGINS_DIR_TO_TEST: ${PLUGINS_DIR_TO_TEST}")
-
+  set(BACKEND_DIR_TO_TEST ${BACKEND_DIR_TO_TEST})
 else() # run systemtests on source and compiled files
 
   foreach(BINARY ${ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS})
@@ -420,10 +422,16 @@ else() # run systemtests on source and compiled files
   get_target_property(FD_PLUGINS_DIR_TO_TEST bpipe-fd BINARY_DIR)
   get_target_property(SD_PLUGINS_DIR_TO_TEST autoxflate-sd BINARY_DIR)
   get_target_property(DIR_PLUGINS_DIR_TO_TEST python-dir BINARY_DIR)
+  get_target_property(BACKEND_DIR_TO_TEST bareoscats BINARY_DIR)
 
   set(SCRIPTS_DIR_TO_TEST ${CMAKE_BINARY_DIR}/core/scripts)
 
 endif()
+
+message("   FD_PLUGINS_DIR_TO_TEST: ${PLUGINS_DIR_TO_TEST}")
+message("   SD_PLUGINS_DIR_TO_TEST: ${PLUGINS_DIR_TO_TEST}")
+message("   DIR_PLUGINS_DIR_TO_TEST: ${PLUGINS_DIR_TO_TEST}")
+message("   BACKEND_DIR_TO_TEST: ${BACKEND_DIR_TO_TEST}")
 
 # extract  db version from cats.h
 file(STRINGS ${CMAKE_SOURCE_DIR}/core/src/cats/cats.h DB_VERSION_STRING
@@ -440,7 +448,8 @@ message(STATUS "DEFAULT_DB_TYPE is ${DEFAULT_DB_TYPE}")
 # set(TAPEDRIVE "TAPEDRIVE")
 
 set(archivedir "${PROJECT_BINARY_DIR}/archivedir")
-set(backenddir /usr/lib64/bareos/backends)
+
+
 set(bin ${PROJECT_BINARY_DIR}/bin)
 set(bindir ${PROJECT_BINARY_DIR}/bin)
 
@@ -658,7 +667,6 @@ endif()
 
 message(STATUS "Looking for webui test requirements ...")
 
-find_program(PERL perl)
 find_program(PHP php)
 find_program(CHROMEDRIVER chromedriver)
 pythonmodulestatus("selenium") # sets PYTHON_SELENIUM_FOUND to TRUE or FALSE
