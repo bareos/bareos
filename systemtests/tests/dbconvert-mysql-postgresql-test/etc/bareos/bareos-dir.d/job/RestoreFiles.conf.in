@@ -2,7 +2,7 @@ Job {
   Name = "RestoreFiles"
   Description = "Standard Restore template. Only one such job is needed for all standard Jobs/Clients/Storage ..."
   Type = Restore
-  Client = bareos-fd
+  Client = bareos-mysql-fd
   FileSet = SelfTest
   Storage = File
   Pool = Incremental
