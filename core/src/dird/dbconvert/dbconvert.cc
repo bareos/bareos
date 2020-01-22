@@ -120,7 +120,7 @@ class DbConvert {
       bool options_error{false};
       int argument_count{};
 
-      while ((c = getopt(argc, argv, "c:?")) != -1 && !options_error) {
+      while ((c = getopt(argc, argv, "dc:?")) != -1 && !options_error) {
         switch (c) {
           case 'c':
             configpath_ = optarg;
@@ -143,8 +143,8 @@ class DbConvert {
         usage();
         throw std::runtime_error(std::string());
       }
-      source_db_resource_name = argv[3];
-      destination_db_resource_name = argv[4];
+      source_db_resource_name = argv[argument_count - 2];
+      destination_db_resource_name = argv[argument_count - 1];
     }
 
    private:
@@ -202,5 +202,6 @@ int main(int argc, char** argv)
     }
     return 1;
   }
+  std::cout << "Successfully converted database" << std::endl;
   return 0;
 }
