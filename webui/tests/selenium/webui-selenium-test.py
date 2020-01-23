@@ -217,7 +217,6 @@ class SeleniumTest(unittest.TestCase):
         else:
             if self.browser == "chrome":
                 self.chromedriverpath = self.getChromedriverpath()
-                self.driver = webdriver.Chrome(self.chromedriverpath)
                 # chrome webdriver option: disable experimental feature
                 opt = webdriver.ChromeOptions()
                 opt.add_experimental_option("w3c", False)
@@ -231,7 +230,7 @@ class SeleniumTest(unittest.TestCase):
                 # test in headless mode?
                 if self.chromeheadless:
                     opt.add_argument("--headless")
-                self.driver = webdriver.Chrome(chrome_options=opt)
+                self.driver = webdriver.Chrome(self.chromedriverpath, chrome_options=opt)
             elif self.browser == "firefox":
                 d = DesiredCapabilities.FIREFOX
                 d["loggingPrefs"] = {"browser": "ALL"}
