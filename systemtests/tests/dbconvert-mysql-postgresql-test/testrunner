@@ -36,15 +36,18 @@ setdebug level=100 storage=File
 label volume=TestVolume001 storage=File pool=Full catalog=mysql
 run job=$JobName yes
 status director
-status client=bareos-mysql-fd
+status client=bareos-fd
 status storage=File
 wait
 messages
-#END_OF_DATA
-#run_bareos
-#stop_bareos
+END_OF_DATA
 
-#/home/franku/01-prj/git/bareos-master/b/core/src/dird/dbconvert/bareos-dbconvert -c /home/franku/01-prj/git/bareos-master/b/systemtests/tests/dbconvert-mysql-postgresql-test/etc/bareos mysql postgresql
+cp "${conf}"/bareos-dir.d/client/bareos-mysql-fd.conf.test "${conf}"/bareos-dir.d/client/bareos-fd.conf
+
+run_bareos
+stop_bareos
+
+/home/franku/01-prj/git/bareos-master/b/core/src/dird/dbconvert/bareos-dbconvert -c /home/franku/01-prj/git/bareos-master/b/systemtests/tests/dbconvert-mysql-postgresql-test/etc/bareos mysql postgresql
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @#
@@ -52,16 +55,17 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @#
 @$out $tmp/log2.out
 wait
-restore client=bareos-mysql-fd fileset=SelfTest where=$tmp/bareos-restores select all done
-#restore client=bareos-postgresql-fd fileset=SelfTest where=$tmp/bareos-restores select all done
+restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done
 yes
 wait
 messages
 quit
 END_OF_DATA
 
+cp "${conf}"/bareos-dir.d/client/bareos-postgresql-fd.conf.test "${conf}"/bareos-dir.d/client/bareos-fd.conf
+
 run_bareos
-check_for_zombie_jobs storage=File client=bareos-postgresql-fd
+check_for_zombie_jobs storage=File client=bareos-fd
 stop_bareos
 
 check_two_logs
