@@ -95,7 +95,7 @@ case ${db_type} in
       #
       # use SQL_ASCII to be able to put any filename into
       # the database even those created with unusual character sets
-      PSQLVERSION=`psql -d template1 -c 'SELECT version()' $* 2>/dev/null | \
+      PSQLVERSION=`PGOPTIONS='--client-min-messages=warning' psql -d template1 -c 'SELECT version()' $* 2>/dev/null | \
                    awk '/PostgreSQL/ { print $2 }' | \
                    cut -d '.' -f 1,2`
 
@@ -120,14 +120,14 @@ case ${db_type} in
             ;;
       esac
 
-      psql -f - -d template1 $* << END-OF-DATA
+      PGOPTIONS='--client-min-messages=warning' psql -f - -d template1 $* << END-OF-DATA
 \set ON_ERROR_STOP on
 CREATE DATABASE ${db_name} $ENCODING TEMPLATE template0;
 ALTER DATABASE ${db_name} SET datestyle TO 'ISO, YMD';
 END-OF-DATA
       retval=$?
 
-      if psql -l ${dbname} $* | grep " ${db_name}.*SQL_ASCII" >/dev/null; then
+      if PGOPTIONS='--client-min-messages=warning' psql -l ${dbname} $* | grep " ${db_name}.*SQL_ASCII" >/dev/null; then
          echo "Database encoding OK"
       else
          echo " "
