@@ -25,8 +25,11 @@
 #include "dird/dbconvert/row_data.h"
 #include "dird/dbconvert/database_export.h"
 
-#include <iostream>
 #include <cassert>
+#include <chrono>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
 
 DatabaseImport::DatabaseImport(const DatabaseConnection& db_connection)
     : db_(db_connection.db)
@@ -56,7 +59,8 @@ void DatabaseImport::ExportTo(DatabaseExport& exporter)
   exporter.Start();
 
   for (const auto& t : table_descriptions_->tables) {
-    std::cout << "Converting table: " << t.table_name << std::endl;
+    auto start = std::chrono::steady_clock::now();
+    std::cout << "Converting table: " << t.table_name << ", duration: ";
     std::string query{"SELECT "};
     for (const auto& col : t.column_descriptions) {
       query += col->column_name;
@@ -77,6 +81,16 @@ void DatabaseImport::ExportTo(DatabaseExport& exporter)
       err += query;
       std::cout << query << std::endl;
     }
+    auto end = std::chrono::steady_clock::now();
+    auto duration = end - start;
+    auto c(std::chrono::duration_cast<std::chrono::milliseconds>(duration)
+               .count());
+    std::ostringstream oss;
+    oss << std::setfill('0')            // set field fill character to '0'
+        << (c % 1000000) / 1000 << "s"  // format seconds
+        << "::" << std::setw(3)         // set width of milliseconds field
+        << (c % 1000) << "ms";          // format milliseconds
+    std::cout << oss.str() << std::endl;
   }
   exporter.End();
 }
