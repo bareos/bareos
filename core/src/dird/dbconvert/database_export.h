@@ -34,7 +34,9 @@ class DatabaseExport {
                  bool clear_tables = false);
   ~DatabaseExport();
 
+  void Start();
   void operator<<(const RowData& data);
+  void End();
 
  private:
   BareosDb* db_{};
