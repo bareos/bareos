@@ -22,9 +22,8 @@ project(bareos-systemtests)
 cmake_policy(SET CMP0057 NEW) # IF(.. IN_LIST ..)
 cmake_policy(SET CMP0053 NEW)
 
-# create a variable BINARY_NAME_TO_TEST for each binary name
-# bareos-dir -> BAREOS_DIR_TO_TEST
-# bconsole -> BCONSOLE_TO_TEST
+# create a variable BINARY_NAME_TO_TEST for each binary name bareos-dir ->
+# BAREOS_DIR_TO_TEST bconsole -> BCONSOLE_TO_TEST
 macro(create_variable_BINARY_NAME_TO_TEST_for_binary_name binary_name)
   string(TOUPPER ${binary_name} binary_name_to_test_upcase)
   string(REPLACE "-" "_" binary_name_to_test_upcase
@@ -33,35 +32,37 @@ macro(create_variable_BINARY_NAME_TO_TEST_for_binary_name binary_name)
   string(APPEND binary_name_to_test_upcase _TO_TEST)
 endmacro()
 
-
-# find the full path of the given binary when *compiling* the software
-# and create and set the BINARY_NAME_TO_TEST variable to the full path of it
+# find the full path of the given binary when *compiling* the software and
+# create and set the BINARY_NAME_TO_TEST variable to the full path of it
 macro(find_compiled_binary_and_set_BINARY_NAME_TO_TEST_variable_for binary_name)
-  create_variable_BINARY_NAME_TO_TEST_for_binary_name(${binary_name})
+  create_variable_binary_name_to_test_for_binary_name(${binary_name})
   get_target_property(
     "${binary_name_to_test_upcase}" "${binary_name}" BINARY_DIR
   )
   set("${binary_name_to_test_upcase}"
       "${${binary_name_to_test_upcase}}/${binary_name}"
   )
-  message( "   ${binary_name_to_test_upcase} is ${${binary_name_to_test_upcase}}")
+  message(
+    "   ${binary_name_to_test_upcase} is ${${binary_name_to_test_upcase}}"
+  )
 endmacro()
 
-# find the full path of the given binary in the *installed* binaries
-# and create and set the BINARY_NAME_TO_TEST variable to the full path of it
+# find the full path of the given binary in the *installed* binaries and create
+# and set the BINARY_NAME_TO_TEST variable to the full path of it
 macro(find_installed_binary_and_set_BINARY_NAME_TO_TEST_variable_for
       binary_name
 )
-  create_variable_BINARY_NAME_TO_TEST_for_binary_name(${binary_name})
+  create_variable_binary_name_to_test_for_binary_name(${binary_name})
   find_program(
     "${binary_name_to_test_upcase}" ${binary_name} PATHS /usr/bin /usr/sbin
                                                          /bin /sbin
   )
   set("${binary_name_to_test_upcase}" "${${binary_name_to_test_upcase}}")
-  message( "   ${binary_name_to_test_upcase} is ${${binary_name_to_test_upcase}}")
+  message(
+    "   ${binary_name_to_test_upcase} is ${${binary_name_to_test_upcase}}"
+  )
 
 endmacro()
-
 
 function(ConfigureFilesToSystemtest srcbasedir dirname globexpression
          configure_option srcdirname
@@ -215,19 +216,15 @@ endmacro()
 
 macro(link_binaries_to_test_to_current_sbin_dir_with_individual_filename)
   foreach(binary_name ${ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS})
-    create_variable_BINARY_NAME_TO_TEST_for_binary_name(${binary_name})
+    create_variable_binary_name_to_test_for_binary_name(${binary_name})
     string(REPLACE "-" "_" binary_name ${binary_name})
     string(TOUPPER ${binary_name} binary_name_upcase)
-    string(CONCAT bareos_XXX_binary  ${binary_name_upcase} "_BINARY" )
-    #message (STATUS "${bareos_XXX_binary}")
-    set( ${bareos_XXX_binary} ${CURRENT_SBIN_DIR}/${binary_name}-${TEST_NAME} )
-    #message(
-    #  "creating symlink ${${bareos_XXX_binary}}  -> ${${binary_name_to_test_upcase}}"
-    #)
-    create_symlink(
-      ${${binary_name_to_test_upcase}}
-      ${${bareos_XXX_binary}}
-    )
+    string(CONCAT bareos_XXX_binary ${binary_name_upcase} "_BINARY")
+    # message (STATUS "${bareos_XXX_binary}")
+    set(${bareos_XXX_binary} ${CURRENT_SBIN_DIR}/${binary_name}-${TEST_NAME})
+    # message( "creating symlink ${${bareos_XXX_binary}}  ->
+    # ${${binary_name_to_test_upcase}}" )
+    create_symlink(${${binary_name_to_test_upcase}} ${${bareos_XXX_binary}})
   endforeach()
 endmacro()
 
@@ -321,10 +318,9 @@ macro(create_symlink target link)
   execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${target} ${link})
 endmacro()
 
+# Main starts here...
 
-### Main starts here...
-
-message( "Entering ${CMAKE_CURRENT_SOURCE_DIR}")
+message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 find_program(PERL perl)
 
@@ -369,11 +365,9 @@ set(AVAILABLE_WEBUI_SELENIUM_TESTS
     "readonly-run_default_job"
 )
 
-
-
-
-message(STATUS
-  "RUN_SYSTEMTESTS_ON_INSTALLED_FILES:   ${RUN_SYSTEMTESTS_ON_INSTALLED_FILES}"
+message(
+  STATUS
+    "RUN_SYSTEMTESTS_ON_INSTALLED_FILES:   ${RUN_SYSTEMTESTS_ON_INSTALLED_FILES}"
 )
 
 message(STATUS "Looking for binaries and paths...")
@@ -408,9 +402,7 @@ if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
   get_filename_component(
     SCRIPTS_DIR_TO_TEST ${CREATE_BAREOS_DATABASE_TO_TEST} DIRECTORY
   )
-  get_filename_component(
-    BACKEND_DIR_TO_TEST ${BACKEND_DIR_TO_TEST} DIRECTORY
-  )
+  get_filename_component(BACKEND_DIR_TO_TEST ${BACKEND_DIR_TO_TEST} DIRECTORY)
 
   set(FD_PLUGINS_DIR_TO_TEST ${PLUGINS_DIR_TO_TEST})
   set(SD_PLUGINS_DIR_TO_TEST ${PLUGINS_DIR_TO_TEST})
@@ -441,8 +433,7 @@ file(STRINGS ${CMAKE_SOURCE_DIR}/core/src/cats/cats.h DB_VERSION_STRING
      REGEX .*BDB_VERSION.*
 )
 string(REGEX MATCH [0-9]+ BDB_VERSION ${DB_VERSION_STRING})
-message (STATUS "db version from cat.sh is ${BDB_VERSION}")
-
+message(STATUS "db version from cat.sh is ${BDB_VERSION}")
 
 # set variable values to be replaced by configure_file set(DEFAULT_DB_TYPE
 # ${default_db_backend})
@@ -451,7 +442,6 @@ message(STATUS "DEFAULT_DB_TYPE is ${DEFAULT_DB_TYPE}")
 # set(TAPEDRIVE "TAPEDRIVE")
 
 set(archivedir "${PROJECT_BINARY_DIR}/archivedir")
-
 
 set(bin ${PROJECT_BINARY_DIR}/bin)
 set(bindir ${PROJECT_BINARY_DIR}/bin)
@@ -594,7 +584,6 @@ else()
   message(STATUS "disabling catalog test as gtest was not found")
 endif()
 
-
 if(TARGET python-fd)
   list(APPEND SYSTEM_TESTS "python-fd-plugin-local-fileset-test")
 else()
@@ -604,14 +593,19 @@ endif()
 if(TARGET python-fd AND ovirt_server)
   list(APPEND SYSTEM_TESTS "python-fd-ovirt-plugin-test")
 else()
-  message(STATUS "disabling python-fd-ovirt-plugin-test as ovirt_server is not set")
+  message(
+    STATUS "disabling python-fd-ovirt-plugin-test as ovirt_server is not set"
+  )
   list(APPEND SYSTEM_TESTS_DISABLED "python-fd-ovirt-plugin-test")
 endif()
 
 if(TARGET python-fd AND XTRABACKUP)
   list(APPEND SYSTEM_TESTS "python-fd-percona-xtrabackup-plugin-test")
 else()
-  message(STATUS "disabling python-fd-percona-xtrabackup-plugin-test as XTRABACKUP was not found")
+  message(
+    STATUS
+      "disabling python-fd-percona-xtrabackup-plugin-test as XTRABACKUP was not found"
+  )
   list(APPEND SYSTEM_TESTS_DISABLED "python-fd-percona-xtrabackup-plugin-test")
 endif()
 
@@ -627,15 +621,18 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED "python-sd-plugin-test")
 endif()
 
-
 message(STATUS "Looking for pam test requirements ...")
 find_program(PYTHON python)
 bareosfindlibraryandheaders("pam" "security/pam_appl.h")
 find_program(PAMTESTER pamtester)
 
 set(ENV{PAM_WRAPPER_LIBRARIES} "${PAM_WRAPPER_LIBRARIES}")
-execute_process( COMMAND "${CMAKE_SOURCE_DIR}/systemtests/tests/bconsole-pam/bin/check_pam_exec_available.sh"
-      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/systemtests/tests/bconsole-pam/" RESULT_VARIABLE PAM_EXEC_AVAILABLE_RC)
+execute_process(
+  COMMAND
+    "${CMAKE_SOURCE_DIR}/systemtests/tests/bconsole-pam/bin/check_pam_exec_available.sh"
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/systemtests/tests/bconsole-pam/"
+  RESULT_VARIABLE PAM_EXEC_AVAILABLE_RC
+)
 if(PAM_EXEC_AVAILABLE_RC EQUAL "0")
   set(PAM_EXEC_AVAILABLE TRUE)
 endif()
@@ -644,14 +641,19 @@ message("   PAM_WRAPPER_LIBRARIES:    " ${PAM_WRAPPER_LIBRARIES})
 message("   PAMTESTER:                " ${PAMTESTER})
 message("   PAM_EXEC_AVAILABLE:       " ${PAM_EXEC_AVAILABLE})
 
-if (PAM_WRAPPER_LIBRARIES AND PAMTESTER AND PAM_EXEC_AVAILABLE AND PAM_FOUND)
+if(PAM_WRAPPER_LIBRARIES
+   AND PAMTESTER
+   AND PAM_EXEC_AVAILABLE
+   AND PAM_FOUND
+)
   set(ENABLE_BCONSOLE_PAM_TEST TRUE)
   message(STATUS "OK: all requirements for pam tests were met.")
 else()
   set(ENABLE_BCONSOLE_PAM_TEST FALSE)
-  message(STATUS "NOT OK: disabling pam tests as not all requirements were found.")
+  message(
+    STATUS "NOT OK: disabling pam tests as not all requirements were found."
+  )
 endif()
-
 
 if(ENABLE_BCONSOLE_PAM_TEST)
   list(APPEND SYSTEM_TESTS "bconsole-pam")
@@ -659,18 +661,12 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED "bconsole-pam")
 endif()
 
-
 # python-bareos does not work on installed files and is used here
-if(ENABLE_BCONSOLE_PAM_TEST AND NOT RUN_SYSTEMTESTS_ON_INSTALLED_FILES )
+if(ENABLE_BCONSOLE_PAM_TEST AND NOT RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
   list(APPEND SYSTEM_TESTS "python-pam")
 else()
   list(APPEND SYSTEM_TESTS_DISABLED "python-pam")
 endif()
-
-
-
-
-
 
 message(STATUS "Looking for webui test requirements ...")
 
@@ -683,12 +679,18 @@ message("   PYTHON:                 " ${PYTHON})
 message("   PYTHON_SELENIUM_FOUND:  " ${PYTHON_SELENIUM_FOUND})
 message("   CHROMEDRIVER:           " ${CHROMEDRIVER})
 
-if (PHP AND PYTHON AND PYTHON_SELENIUM_FOUND AND CHROMEDRIVER)
+if(PHP
+   AND PYTHON
+   AND PYTHON_SELENIUM_FOUND
+   AND CHROMEDRIVER
+)
   set(ENABLE_WEBUI_SELENIUM_TEST TRUE)
   message(STATUS "OK: all requirements for webui tests were met.")
 else()
   set(ENABLE_WEBUI_SELENIUM_TEST FALSE)
-  message(STATUS "NOT OK: disabling webui tests as not all requirements were found.")
+  message(
+    STATUS "NOT OK: disabling webui tests as not all requirements were found."
+  )
 endif()
 
 if(ENABLE_WEBUI_SELENIUM_TEST)
@@ -696,9 +698,18 @@ if(ENABLE_WEBUI_SELENIUM_TEST)
 else()
   set(WEBUI_SELENIUM_TESTS)
   foreach(TEST_NAME_DISABLED ${AVAILABLE_WEBUI_SELENIUM_TESTS})
-    add_test(NAME ${WEBUI_TEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME_DISABLED} COMMAND empty_command)
-    set_tests_properties(${WEBUI_TEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME_DISABLED} PROPERTIES DISABLED true)
-    message(STATUS "Disabled test: ${WEBUI_TEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME_DISABLED}")
+    add_test(
+      NAME ${WEBUI_TEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME_DISABLED}
+      COMMAND empty_command
+    )
+    set_tests_properties(
+      ${WEBUI_TEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME_DISABLED}
+      PROPERTIES DISABLED true
+    )
+    message(
+      STATUS
+        "Disabled test: ${WEBUI_TEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME_DISABLED}"
+    )
   endforeach()
 endif()
 
@@ -712,7 +723,10 @@ else()
 endif()
 
 foreach(TEST_NAME ${SYSTEM_TESTS})
-  message (STATUS "Configuring test: ${SYSTEMTEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME}")
+  message(
+    STATUS
+      "Configuring test: ${SYSTEMTEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME}"
+  )
   prepare_test()
 
   configurefilestosystemtest("systemtests" "tests/${TEST_NAME}" "*" @ONLY "")
@@ -732,13 +746,14 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
 
 endforeach()
 
-
-
 set(WEBUI_TEST_PREFIX "webui:")
 # webui specific settings
 if(ENABLE_WEBUI_SELENIUM_TEST)
   foreach(TEST_NAME ${WEBUI_SELENIUM_TESTS})
-  message (STATUS "Configuring test: ${WEBUI_TEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME}")
+    message(
+      STATUS
+        "Configuring test: ${WEBUI_TEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME}"
+    )
 
     prepare_test()
     prepare_testdir_for_daemon_run()
@@ -796,8 +811,16 @@ endif()
 
 foreach(TEST_NAME_DISABLED ${SYSTEM_TESTS_DISABLED})
   checkforenabledanddisabledlistentry(${TEST_NAME_DISABLED})
-  add_test(NAME ${SYSTEMTEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME_DISABLED} COMMAND empty_command)
-  set_tests_properties(${SYSTEMTEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME_DISABLED} PROPERTIES DISABLED true)
-  message(STATUS "Disabled test: ${SYSTEMTEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME_DISABLED}")
+  add_test(
+    NAME ${SYSTEMTEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME_DISABLED}
+    COMMAND empty_command
+  )
+  set_tests_properties(
+    ${SYSTEMTEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME_DISABLED}
+    PROPERTIES DISABLED true
+  )
+  message(
+    STATUS
+      "Disabled test: ${SYSTEMTEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME_DISABLED}"
+  )
 endforeach()
-

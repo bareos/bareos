@@ -46,11 +46,7 @@ include_directories(${OPENSSL_INCLUDE_DIR})
 
 add_library(bpipe-fd MODULE bpipe-fd.cc)
 set_target_properties(bpipe-fd PROPERTIES PREFIX "")
-install(
-  TARGETS bpipe-fd
-  DESTINATION ${plugindir}
-  COMPONENT filedaemon
-)
+install(TARGETS bpipe-fd DESTINATION ${plugindir} COMPONENT filedaemon)
 if(HAVE_WIN32 OR HAVE_DARWIN_OS)
   target_link_libraries(bpipe-fd bareos)
 endif()
@@ -62,32 +58,20 @@ if(HAVE_WIN32)
     mssqlvdi-fd PROPERTIES PREFIX "" DEFINE_SYMBOL "BUILDING_DLL"
   )
 
-  install(
-    TARGETS mssqlvdi-fd
-    DESTINATION ${plugindir}
-    COMPONENT filedaemon
-  )
+  install(TARGETS mssqlvdi-fd DESTINATION ${plugindir} COMPONENT filedaemon)
   target_link_libraries(mssqlvdi-fd bareos)
 endif()
 
 if(${HAVE_CEPHFS})
   add_library(cephfs-fd MODULE cephfs-fd.cc)
   set_target_properties(cephfs-fd PROPERTIES PREFIX "")
-  install(
-    TARGETS cephfs-fd
-    DESTINATION ${plugindir}
-    COMPONENT filedaemon
-  )
+  install(TARGETS cephfs-fd DESTINATION ${plugindir} COMPONENT filedaemon)
 endif()
 
 if(${HAVE_CEPH_RADOS})
   add_library(rados-fd MODULE rados-fd.cc)
   set_target_properties(rados-fd PROPERTIES PREFIX "")
-  install(
-    TARGETS rados-fd
-    DESTINATION ${plugindir}
-    COMPONENT filedaemon
-  )
+  install(TARGETS rados-fd DESTINATION ${plugindir} COMPONENT filedaemon)
 endif()
 
 if(NOT HAVE_WIN32)
@@ -98,22 +82,14 @@ endif()
 if(HAVE_PYTHON)
   add_library(python-fd MODULE python-fd.cc)
   set_target_properties(python-fd PROPERTIES PREFIX "")
-  install(
-    TARGETS python-fd
-    DESTINATION ${plugindir}
-    COMPONENT filedaemon
-  )
+  install(TARGETS python-fd DESTINATION ${plugindir} COMPONENT filedaemon)
   target_link_libraries(python-fd ${PYTHON_LIBRARIES} bareos)
 endif()
 
 if(${HAVE_GLUSTERFS})
   add_library(gfapi-fd MODULE gfapi-fd.cc)
   set_target_properties(gfapi-fd PROPERTIES PREFIX "")
-  install(
-    TARGETS gfapi-fd
-    DESTINATION ${plugindir}
-    COMPONENT filedaemon
-  )
+  install(TARGETS gfapi-fd DESTINATION ${plugindir} COMPONENT filedaemon)
   target_link_libraries(gfapi-fd gfapi)
 endif()
 
@@ -121,11 +97,7 @@ if(${HAVE_TEST_PLUGIN})
   add_library(test-plugin-fd MODULE test-plugin-fd.cc)
   # do not prefix with "lib"
   set_target_properties(test-plugin-fd PROPERTIES PREFIX "")
-  install(
-    TARGETS test-plugin-fd
-    DESTINATION ${plugindir}
-    COMPONENT filedaemon
-  )
+  install(TARGETS test-plugin-fd DESTINATION ${plugindir} COMPONENT filedaemon)
 endif()
 
 set(PYFILES
@@ -136,16 +108,13 @@ set(PYFILES
     BareosFdPluginLocalFileset.py
     BareosFdWrapper.py
     bareos_fd_consts.py
-
     bareos-fd-ldap.py
     BareosFdPluginLDAP.py
-
     bareos-fd-ovirt.py
     BareosFdPluginOvirt.py
-
     bareos-fd-percona-xtrabackup.py
     BareosFdPluginPerconaXtraBackup.py
-    )
+)
 
 install(
   FILES ${PYFILES}

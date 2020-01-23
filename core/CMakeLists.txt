@@ -694,8 +694,7 @@ if(${lmdb})
   set(LMDB_LIBS bareoslmdb)
 endif()
 
-# info what the config files need to be installed
-#####  PLUGINS  ############
+# info what the config files need to be installed PLUGINS  ############
 set(PLUGINS python-ldap-conf.d)
 list(APPEND PLUGINS python-ovirt-conf.d)
 
@@ -928,8 +927,6 @@ message("   LocalBuildDefinitionsFile:    ${BareosLocalBuildDefinitionsFile}")
 message("   HAVE_IS_TRIVIALLY_COPYABLE:   ${HAVE_IS_TRIVIALLY_COPYABLE}")
 
 message("   do-static-code-checks:        ${DO_STATIC_CODE_CHECKS}")
-
-
 
 if(DO_STATIC_CODE_CHECKS)
   message("    static code check tools:")

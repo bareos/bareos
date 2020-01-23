@@ -228,9 +228,8 @@ target_link_libraries(
 install(TARGETS bareos DESTINATION ${libdir})
 
 set_target_properties(
-  bareos
-  PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}" SOVERSION
-                                                 "${BAREOS_VERSION_MAJOR}"
+  bareos PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}" SOVERSION
+                    "${BAREOS_VERSION_MAJOR}"
 )
 
 if(HAVE_WIN32)
