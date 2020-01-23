@@ -9,10 +9,10 @@ export TestName
 
 JobName=backup-bareos-fd
 . ./environment
-. ${scripts}/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
 
-${scripts}/cleanup
-${scripts}/setup
 
 curl -k -o ${BAREOS_CONFIG_DIR}/ovirt-ca.cert "https://$OVIRT_SERVER/ovirt-engine/services/pki-resource?resource=ca-certificate&format=X509-PEM-CA"
 

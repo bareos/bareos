@@ -5,12 +5,11 @@
 #
 TestName="$(basename "$(pwd)")"
 export TestName
-
 . ./environment
-. ${scripts}/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
 
-${scripts}/cleanup
-${scripts}/setup
 
 # Directory to backup.
 # This directory will be created by setup_data().

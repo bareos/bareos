@@ -14,7 +14,7 @@ else
     client="client"
 fi
 
-${bin}/bconsole -c ${conf} <<END_OF_DATA 2>&1 >/dev/null
+${BAREOS_BCONSOLE_BINARY} -c ${conf} <<END_OF_DATA 2>&1 >/dev/null
 @output ${tmp}/dir.out
 status dir
 @output ${tmp}/fd.out

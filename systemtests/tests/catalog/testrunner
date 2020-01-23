@@ -2,12 +2,11 @@
 #
 TestName="$(basename "$(pwd)")"
 export TestName
-
 . ./environment
-. ${scripts}/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
 
-${scripts}/cleanup
-${scripts}/setup
 
 exit_failure()
 {

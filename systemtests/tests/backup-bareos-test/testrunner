@@ -8,23 +8,9 @@ export TestName
 
 JobName=backup-bareos-fd
 . ./environment
-. ${rscripts}/functions
-
-${rscripts}/cleanup
-${rscripts}/setup
-
-echo "
-testing information:
-dir: $(readlink -f ${BAREOS_DIRECTOR_BINARY})
-sd:  $(readlink -f ${BAREOS_STORAGEDAEMON_BINARY})
-fd:  $(readlink -f ${BAREOS_FILEDAEMON_BINARY})
-sbin: ${sbin}
-scripts: ${scripts}
-"
-
-
-
-
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
 
 
 # Directory to backup.

@@ -5,10 +5,9 @@ export TestName
 
 JobName=backup-bareos-fd
 . ./environment
-. "${scripts}"/functions
-
-"${scripts}"/cleanup
-"${scripts}"/setup
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
 
 exit_with_error() {
   echo "$1"
@@ -57,20 +56,20 @@ messages
 quit
 END_OF_DATA
 
-"${scripts}"/bareos-ctl-dir start
+"${rscripts}"/bareos-ctl-dir start
 sleep 1
 
 echo "Waiting for the director to start"
-if ! bin/bconsole <<< "status dir" > /dev/null 2>&1; then
+if ! ${BAREOS_BCONSOLE_BINARY} -c "$conf"/bconsole.conf  <<< "status dir" > /dev/null 2>&1; then
   exit_with_error "Director did not start"
 fi
 echo "Director is running"
 
-"${scripts}"/bareos-ctl-sd start
-"${scripts}"/bareos-ctl-fd start
+"${rscripts}"/bareos-ctl-sd start
+"${rscripts}"/bareos-ctl-fd start
 
 echo "Check if the filedaemon is connected to the director"
-if ! bin/bconsole <<< "status dir" | grep --quiet --word-regexp "${TestName}-fd"; then
+if ! ${BAREOS_BCONSOLE_BINARY} -c "$conf"/bconsole.conf <<< "status dir" | grep --quiet --word-regexp "${TestName}-fd"; then
   exit_with_error "Filedaemon ${TestName} could not connect to director"
 fi
 echo "Filedaemon is connected, running backup and restore"
@@ -79,9 +78,9 @@ run_bconsole "$tmp/bconcmds"
 
 check_for_zombie_jobs storage=File
 
-"${scripts}"/bareos-ctl-dir stop
-"${scripts}"/bareos-ctl-sd stop
-"${scripts}"/bareos-ctl-fd stop
+"${rscripts}"/bareos-ctl-dir stop
+"${rscripts}"/bareos-ctl-sd stop
+"${rscripts}"/bareos-ctl-fd stop
 
 check_two_logs
 check_restore_diff "${BackupDirectory}"

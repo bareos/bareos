@@ -10,7 +10,7 @@ export estat
 
 # shellcheck disable=SC1091
 . ./environment
-. ${scripts}/functions
+. "${rscripts}"/functions
 
 temporary_director_config_file="$config_directory_dir_additional_test_config/another_director.conf"
 bconsole_command_file="$tmp/bconsole_reload_command"
@@ -27,11 +27,11 @@ exit_with_error() {
 }
 
 stop_director() {
-  "${scripts}/bareos-ctl-dir" stop
+  "${rscripts}/bareos-ctl-dir" stop
 }
 
 start_director() {
-  "${scripts}/bareos-ctl-dir" start "$director_debug_level"
+  "${rscripts}/bareos-ctl-dir" start "$director_debug_level"
   director_pid=$(pidof ${BAREOS_DIRECTOR_BINARY})
 
   if [ -z "$director_pid" ]; then
@@ -52,7 +52,7 @@ EOF
 test_reload_will_not_crash_director() {
   create_console_command_file
 
-  "$bin"/bconsole -c "$conf"/bconsole.conf < "$bconsole_command_file" 2>&1 >> /dev/null
+  ${BAREOS_BCONSOLE_BINARY} -c "$conf"/bconsole.conf < "$bconsole_command_file" 2>&1 >> /dev/null
   if [ $? != 0 ] ; then
     exit_with_error "BConsole finished with errors"
   fi
@@ -98,10 +98,10 @@ start_test
 stop_director
 
 #cleanup possible leftover from last run
-${scripts}/cleanup
+${rscripts}/cleanup
 remove_console_logfile
 
-${scripts}/setup
+${rscripts}/setup
 start_director
 
 #reload modified config
