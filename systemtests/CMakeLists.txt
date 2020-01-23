@@ -397,7 +397,7 @@ if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
     PATHS /usr/lib/bareos/plugins /usr/lib64/bareos/plugins
   )
   find_program(
-    BACKEND_DIR_TO_TEST libbareoscats.so
+    BACKEND_DIR_TO_TEST libbareoscats-${DEFAULT_DB_TYPE}.so
     PATHS /usr/lib/bareos/backends /usr/lib64/bareos/backends
   )
 
@@ -407,6 +407,9 @@ if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
   )
   get_filename_component(
     SCRIPTS_DIR_TO_TEST ${CREATE_BAREOS_DATABASE_TO_TEST} DIRECTORY
+  )
+  get_filename_component(
+    BACKEND_DIR_TO_TEST ${BACKEND_DIR_TO_TEST} DIRECTORY
   )
 
   set(FD_PLUGINS_DIR_TO_TEST ${PLUGINS_DIR_TO_TEST})
@@ -689,16 +692,23 @@ if(ENABLE_WEBUI_SELENIUM_TEST)
 else()
   set(WEBUI_SELENIUM_TESTS)
   foreach(TEST_NAME_DISABLED ${AVAILABLE_WEBUI_SELENIUM_TESTS})
-    add_test(NAME webui:${TEST_NAME_DISABLED} COMMAND empty_command)
-    set_tests_properties(webui:${TEST_NAME_DISABLED} PROPERTIES DISABLED true)
-    message(STATUS "Disabled test: webui:${TEST_NAME_DISABLED}")
+    add_test(NAME ${WEBUI_TEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME_DISABLED} COMMAND empty_command)
+    set_tests_properties(${WEBUI_TEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME_DISABLED} PROPERTIES DISABLED true)
+    message(STATUS "Disabled test: ${WEBUI_TEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME_DISABLED}")
   endforeach()
 endif()
 
 set(BASEPORT 42001)
 
+set(SYSTEMTEST_PREFIX "system:")
+if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
+  set(SOURCETREE_OR_PACKAGE "package:")
+else()
+  set(SOURCETREE_OR_PACKAGE "source:")
+endif()
+
 foreach(TEST_NAME ${SYSTEM_TESTS})
-  message (STATUS "Configuring test: system:${TEST_NAME}")
+  message (STATUS "Configuring test: ${SYSTEMTEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME}")
   prepare_test()
 
   configurefilestosystemtest("systemtests" "tests/${TEST_NAME}" "*" @ONLY "")
@@ -709,7 +719,7 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   checkforenabledanddisabledlistentry(${TEST_NAME})
 
   add_test(
-    NAME "system:${TEST_NAME}"
+    NAME "${SYSTEMTEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME}"
     COMMAND ${tests_dir}/${TEST_NAME}/testrunner
     WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
   )
@@ -720,10 +730,11 @@ endforeach()
 
 
 
+set(WEBUI_TEST_PREFIX "webui:")
 # webui specific settings
 if(ENABLE_WEBUI_SELENIUM_TEST)
   foreach(TEST_NAME ${WEBUI_SELENIUM_TESTS})
-  message (STATUS "Configuring test: webui:${TEST_NAME}")
+  message (STATUS "Configuring test: ${WEBUI_TEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME}")
 
     prepare_test()
     prepare_testdir_for_daemon_run()
@@ -771,7 +782,7 @@ if(ENABLE_WEBUI_SELENIUM_TEST)
     checkforenabledanddisabledlistentry(${TEST_NAME})
 
     add_test(
-      NAME "webui:${TEST_NAME}"
+      NAME "${WEBUI_TEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME}"
       COMMAND ${tests_dir}/${TEST_NAME}/testrunner
       WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
     )
@@ -781,8 +792,8 @@ endif()
 
 foreach(TEST_NAME_DISABLED ${SYSTEM_TESTS_DISABLED})
   checkforenabledanddisabledlistentry(${TEST_NAME_DISABLED})
-  add_test(NAME system:${TEST_NAME_DISABLED} COMMAND empty_command)
-  set_tests_properties(system:${TEST_NAME_DISABLED} PROPERTIES DISABLED true)
-  message(STATUS "Disabled test: system:${TEST_NAME_DISABLED}")
+  add_test(NAME ${SYSTEMTEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME_DISABLED} COMMAND empty_command)
+  set_tests_properties(${SYSTEMTEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME_DISABLED} PROPERTIES DISABLED true)
+  message(STATUS "Disabled test: ${SYSTEMTEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME_DISABLED}")
 endforeach()
 
