@@ -60,7 +60,8 @@ void DatabaseImport::ExportTo(DatabaseExport& exporter)
 
   for (const auto& t : table_descriptions_->tables) {
     auto start = std::chrono::steady_clock::now();
-    std::cout << "Converting table: " << t.table_name << ", duration: ";
+    std::cout << "Converting table: " << t.table_name
+              << ", duration: " << std::flush;
     std::string query{"SELECT "};
     for (const auto& col : t.column_descriptions) {
       query += col->column_name;
@@ -69,7 +70,7 @@ void DatabaseImport::ExportTo(DatabaseExport& exporter)
     query.erase(query.cend() - 2);
     query += "FROM ";
     query += t.table_name;
-    query += " LIMIT 1000";
+    query += " LIMIT 100000";
 
     RowData row_data;
     row_data.table_name = t.table_name;
