@@ -52,6 +52,12 @@ class DbConvert {
     InitMsg(nullptr, nullptr);
     SetWorkingDir();
     cl.ParseCommandLine(argc, argv);
+
+    if (cl.source_db_resource_name != "mysql")
+      throw std::runtime_error("source database is not mysql");
+    if (cl.destination_db_resource_name != "postgresql")
+      throw std::runtime_error("destination database is not postgresql");
+
     ParseConfig();
     ConnectToDatabases();
   }
