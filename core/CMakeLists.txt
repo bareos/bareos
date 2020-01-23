@@ -929,6 +929,9 @@ message("   LocalBuildDefinitionsFile:    ${BareosLocalBuildDefinitionsFile}")
 message("   HAVE_IS_TRIVIALLY_COPYABLE:   ${HAVE_IS_TRIVIALLY_COPYABLE}")
 
 message("   do-static-code-checks:        ${DO_STATIC_CODE_CHECKS}")
+
+
+
 if(DO_STATIC_CODE_CHECKS)
   message("    static code check tools:")
   message(

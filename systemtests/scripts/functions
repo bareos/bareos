@@ -88,7 +88,7 @@ disable_plugin()
 
 check_encoding()
 {
-   "${bin}/bareos-dir" -d50 -t 2>&1 | grep 'Wanted SQL_ASCII, got UTF8' >/dev/null
+   "${BAREOS_DIRECTOR_BINARY}" -d50 -t 2>&1 | grep 'Wanted SQL_ASCII, got UTF8' >/dev/null
    if [ $? = 0 ]; then
        echo "Found database encoding problem, please modify the database encoding (SQL_ASCII)"
        exit 1
@@ -306,7 +306,7 @@ check_files_written()
 check_linked_against()
 {
    LIB="$1"
-   BIN=${2:-${bin}/bareos-fd}
+   BIN=${2:-${BAREOS_FILEDAEMON_BINARY}}
 
    #
    # See if library is linked against libfastlz
@@ -328,7 +328,7 @@ bls_files_verbose()
    #local JOBID=${3}
    #local FILENAME=${4}
 
-   "${bin}/bls" -V "${VOLUME}" -c "${conf}" -v "${STORAGE}"
+   "${BAREOS_BLS_BINARY}" -V "${VOLUME}" -c "${conf}" -v "${STORAGE}"
    return $?
 }
 
@@ -433,9 +433,9 @@ run_bconsole()
    bconsole_file="${1:-${tmp}/bconcmds}"
    if [ -f "$bconsole_file" ]; then
       if test "$debug" -eq 1 ; then
-        "${bin}/bconsole" -c "${conf}" < "$bconsole_file"
+        "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" < "$bconsole_file"
       else
-        "${bin}/bconsole" -c "${conf}" < "$bconsole_file" 2>&1 >/dev/null
+        "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" < "$bconsole_file" 2>&1 >/dev/null
       fi
    fi
    return $?
@@ -452,10 +452,11 @@ run_btape()
 
 run_bscan()
 {
+   print_debug "bscanning with ${BAREOS_BSCAN_BINARY}"
    if test "$debug" -eq 1 ; then
-      "${sbin}/bscan" -B "$DBTYPE" -a "$backenddir" -c "${conf}" "$@" </dev/null | tee "${tmp}/bscan.out"
+      "${BAREOS_BSCAN_BINARY}" -B "$DBTYPE" -a "$backenddir" -c "${conf}" "$@" </dev/null | tee "${tmp}/bscan.out"
    else
-      "${sbin}/bscan" -B "$DBTYPE" -a "$backenddir" -c "${conf}" "$@" </dev/null 2>&1 >"${tmp}/bscan.out"
+      "${BAREOS_BSCAN_BINARY}" -B "$DBTYPE" -a "$backenddir" -c "${conf}" "$@" </dev/null 2>&1 >"${tmp}/bscan.out"
    fi
 }
 

@@ -10,16 +10,15 @@ export TestName
 
 JobName=backup-bareos-fd
 . ./environment
-. "${scripts}/functions"
-
-"${scripts}/cleanup"
-"${scripts}/setup"
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
 
 mkdir -p "${archivedir}-remote"
 find "${archivedir}-remote" -mindepth 1 -delete
 
 bareos_ctl_sd2() {
-  BAREOS_CONFIG_DIR="${BAREOS_CONFIG_DIR}-remote" BAREOS_SD_PORT=${BAREOS_STORAGE2_PORT} "${scripts}/bareos-ctl-sd" "$@"
+  BAREOS_CONFIG_DIR="${BAREOS_CONFIG_DIR}-remote" BAREOS_SD_PORT=${BAREOS_STORAGE2_PORT} "${rscripts}/bareos-ctl-sd" "$@"
 }
 
 my_stop_bareos() {

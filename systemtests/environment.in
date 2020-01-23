@@ -1,13 +1,9 @@
 
 PROJECT_SOURCE_DIR=@PROJECT_SOURCE_DIR@
 CMAKE_BINARY_DIR=@CMAKE_BINARY_DIR@
-
 PROJECT_BINARY_DIR=@PROJECT_BINARY_DIR@
-#bin=${PROJECT_BINARY_DIR}/bin
-#sbin=${PROJECT_BINARY_DIR}/sbin
-
-bin=/usr/bin
-sbin=/usr/sbin
+bin=@bin@
+sbin=@sbin@
 
 BAREOS_UNITTESTS_BINARY_DIR=$CMAKE_BINARY_DIR/core/src/tests
 
@@ -26,10 +22,10 @@ tmp=${current_test_directory}/tmp
 
 
 dumps=${current_test_directory}/dumps
-plugindir=${PROJECT_BINARY_DIR}/plugins
+plugindir=@plugins@
 plugindirtmp=${PROJECT_BINARY_DIR}/pluginstmp
 rscripts=${PROJECT_BINARY_DIR}/scripts
-scripts=/usr/lib/bareos/scripts
+scripts=@scripts@
 cats=${PROJECT_BINARY_DIR}/cats
 src=${PROJECT_BINARY_DIR}/src
 tmpsrc=${PROJECT_BINARY_DIR}/tmpsrc
@@ -55,9 +51,12 @@ export BAREOS_STORAGE_PORT=@sd_port@
 export BAREOS_STORAGE2_PORT=@sd2_port@
 export BAREOS_FD_PORT=@fd_port@
 
-export BAREOS_DIRECTOR_BINARY=@BAREOS_DIRECTOR_BINARY@
-export BAREOS_FILEDAEMON_BINARY=@BAREOS_FILEDAEMON_BINARY@
-export BAREOS_STORAGEDAEMON_BINARY=@BAREOS_STORAGEDAEMON_BINARY@
+export BAREOS_DIRECTOR_BINARY=@BAREOS_DIR_BINARY@
+export BAREOS_FILEDAEMON_BINARY=@BAREOS_FD_BINARY@
+export BAREOS_STORAGEDAEMON_BINARY=@BAREOS_SD_BINARY@
+export BAREOS_BSCAN_BINARY=@BSCAN_BINARY@
+export BAREOS_BLS_BINARY=@BLS_BINARY@
+export BAREOS_BCONSOLE_BINARY=@BCONSOLE_BINARY@
 
 
 
