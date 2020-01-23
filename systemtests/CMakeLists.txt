@@ -584,11 +584,13 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED "python-bareos-test")
 endif()
 
+bareosfindlibrary("gtest")
 if(GTEST_FOUND)
   list(APPEND SYSTEM_TESTS "catalog")
+  message(STATUS "adding catalog test as gtest was found")
 else()
   list(APPEND SYSTEM_TESTS_DISABLED "catalog")
-  message(STATUS "disabling catalog test as gtest was not")
+  message(STATUS "disabling catalog test as gtest was not found")
 endif()
 
 
