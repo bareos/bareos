@@ -145,5 +145,6 @@ void DatabaseExport::End()
     if (!db_->SqlQuery(sequence_schema_query.c_str())) {
       throw std::runtime_error("DatabaseExport: Could not set sequence");
     }
+    std::cout << "Updating sequence for table: " << s.table_name << std::endl;
   }
 }
