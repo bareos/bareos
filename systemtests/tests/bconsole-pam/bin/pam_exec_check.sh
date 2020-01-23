@@ -15,17 +15,17 @@
 #   type=type
 #     Only run the command if the module type matches the given type.
 #   stdout
-#     Per default the output of the executed command is written to /dev/null. 
-#     With this option, the stdout output of the executed command is redirected 
-#     to the calling application. 
-#     It's in the responsibility of this application what happens with the output. 
+#     Per default the output of the executed command is written to /dev/null.
+#     With this option, the stdout output of the executed command is redirected
+#     to the calling application.
+#     It's in the responsibility of this application what happens with the output.
 #     The log option is ignored.
 #  quiet
-#    Per default pam_exec.so will echo the exit status of the external command 
+#    Per default pam_exec.so will echo the exit status of the external command
 #    if it fails. Specifying this option will suppress the message.
 #  seteuid
-#    Per default pam_exec.so will execute the external command 
-#    with the real user ID of the calling process. 
+#    Per default pam_exec.so will execute the external command
+#    with the real user ID of the calling process.
 #    Specifying this option means the command is run with the effective user ID.
 
 # PAM_TYPE:
