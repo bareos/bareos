@@ -555,7 +555,6 @@ set(tests_dir ${PROJECT_BINARY_DIR}/tests)
 set(SYSTEM_TESTS
     backup-bareos-test
     backup-bareos-passive-test
-    catalog
     multiplied-device-test
     virtualfull
     virtualfull-bscan
@@ -582,6 +581,12 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED "python-bareos-test")
 endif()
 
+if(GTEST_FOUND)
+  list(APPEND SYSTEM_TESTS "catalog")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "catalog")
+  message(STATUS "disabling catalog test as gtest was not")
+endif()
 
 
 if(TARGET python-fd)
@@ -619,7 +624,7 @@ endif()
 
 message(STATUS "Looking for pam test requirements ...")
 find_program(PYTHON python)
-
+bareosfindlibraryandheaders("pam" "security/pam_appl.h")
 find_program(PAMTESTER pamtester)
 
 set(ENV{PAM_WRAPPER_LIBRARIES} "${PAM_WRAPPER_LIBRARIES}")
@@ -628,12 +633,12 @@ execute_process( COMMAND "${CMAKE_SOURCE_DIR}/systemtests/tests/bconsole-pam/bin
 if(PAM_EXEC_AVAILABLE_RC EQUAL "0")
   set(PAM_EXEC_AVAILABLE TRUE)
 endif()
-
+message("   PAM_FOUND:                " ${PAM_FOUND})
 message("   PAM_WRAPPER_LIBRARIES:    " ${PAM_WRAPPER_LIBRARIES})
 message("   PAMTESTER:                " ${PAMTESTER})
 message("   PAM_EXEC_AVAILABLE:       " ${PAM_EXEC_AVAILABLE})
 
-if (PAM_WRAPPER_LIBRARIES AND PAMTESTER AND PAM_EXEC_AVAILABLE)
+if (PAM_WRAPPER_LIBRARIES AND PAMTESTER AND PAM_EXEC_AVAILABLE AND PAM_FOUND)
   set(ENABLE_BCONSOLE_PAM_TEST TRUE)
   message(STATUS "OK: all requirements for pam tests were met.")
 else()
