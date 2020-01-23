@@ -21,9 +21,14 @@
 #ifndef BAREOS_SRC_DIRD_DBCONVERT_ROW_DATA_H_
 #define BAREOS_SRC_DIRD_DBCONVERT_ROW_DATA_H_
 
+#include "include/bareos.h"
+#include <vector>
+
+class BareosDb;
+
 struct FieldData {
   const char* data_pointer{};
-  std::string converted_data;
+  std::vector<char> converted_data;
 };
 
 struct RowData {
