@@ -62,6 +62,7 @@ void DatabaseImport::ExportTo(DatabaseExport& exporter)
     query.erase(query.cend() - 2);
     query += "FROM ";
     query += t.table_name;
+    query += " LIMIT 100";
 
     RowData row_data;
     row_data.table_name = t.table_name;
