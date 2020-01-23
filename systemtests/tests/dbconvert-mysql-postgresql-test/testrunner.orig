@@ -40,20 +40,12 @@ status client=bareos-mysql-fd
 status storage=File
 wait
 messages
-#END_OF_DATA
-#run_bareos
-#stop_bareos
-
-#/home/franku/01-prj/git/bareos-master/b/core/src/dird/dbconvert/bareos-dbconvert -c /home/franku/01-prj/git/bareos-master/b/systemtests/tests/dbconvert-mysql-postgresql-test/etc/bareos mysql postgresql
-
-cat <<END_OF_DATA >$tmp/bconcmds
 @#
-@# now do a restore on the postgresql database
+@# now do a restore on the mysql database
 @#
 @$out $tmp/log2.out
 wait
 restore client=bareos-mysql-fd fileset=SelfTest where=$tmp/bareos-restores select all done
-#restore client=bareos-postgresql-fd fileset=SelfTest where=$tmp/bareos-restores select all done
 yes
 wait
 messages
@@ -61,7 +53,7 @@ quit
 END_OF_DATA
 
 run_bareos
-check_for_zombie_jobs storage=File client=bareos-postgresql-fd
+check_for_zombie_jobs storage=File client=bareos-mysql-fd
 stop_bareos
 
 check_two_logs
