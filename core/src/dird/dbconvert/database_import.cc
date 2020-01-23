@@ -53,7 +53,10 @@ struct ResultHandlerContext {
 
 void DatabaseImport::ExportTo(DatabaseExport& exporter)
 {
+  exporter.Start();
+
   for (const auto& t : table_descriptions_->tables) {
+    std::cout << "Converting table: " << t.table_name << std::endl;
     std::string query{"SELECT "};
     for (const auto& col : t.column_descriptions) {
       query += col->column_name;
@@ -68,17 +71,14 @@ void DatabaseImport::ExportTo(DatabaseExport& exporter)
     row_data.table_name = t.table_name;
     ResultHandlerContext ctx(t.column_descriptions, row_data, exporter);
 
-    exporter.Start();
-
     if (!db_->SqlQuery(query.c_str(), ResultHandler, &ctx)) {
       std::cout << "Could not import table: " << t.table_name << std::endl;
       std::string err{"Could not execute select statement: "};
       err += query;
       std::cout << query << std::endl;
     }
-
-    exporter.End();
   }
+  exporter.End();
 }
 
 int DatabaseImport::ResultHandler(void* ctx, int fields, char** row)
