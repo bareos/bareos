@@ -19,34 +19,23 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_SRC_DIRD_DBCONVERT_DATABASE_EXPORT_H_
-#define BAREOS_SRC_DIRD_DBCONVERT_DATABASE_EXPORT_H_
+#ifndef BAREOS_SRC_DIRD_DBCONVERT_DATABASE_EXPORT_POSTGRESQL_H_
+#define BAREOS_SRC_DIRD_DBCONVERT_DATABASE_EXPORT_POSTGRESQL_H_
 
-#include "dird/dbconvert/row_data.h"
-
-#include <memory>
-
-class BareosDb;
 class DatabaseConnection;
 class DatabaseTableDescriptions;
 
-class DatabaseExport {
+class DatabaseExportPostgresql : public DatabaseExport {
  public:
-  DatabaseExport(const DatabaseConnection& db_connection,
-                 bool clear_tables = false);
-  virtual ~DatabaseExport();
+  DatabaseExportPostgresql(const DatabaseConnection& db_connection,
+                           bool clear_tables = false);
+  ~DatabaseExportPostgresql();
 
-  static std::unique_ptr<DatabaseExport> Create(
-      const DatabaseConnection& db_connection,
-      bool clear_tables = false);
+  void Start() override;
+  void operator<<(const RowData& data) override;
+  void End() override;
 
-  virtual void Start() = 0;
-  virtual void operator<<(const RowData& data) = 0;
-  virtual void End() = 0;
-
- protected:
-  BareosDb* db_{};
-  std::unique_ptr<DatabaseTableDescriptions> table_descriptions_;
+ private:
+  static int ResultHandler(void* ctx, int fields, char** row);
 };
-
-#endif  // BAREOS_SRC_DIRD_DBCONVERT_DATABASE_EXPORT_H_
+#endif  // BAREOS_SRC_DIRD_DBCONVERT_DATABASE_EXPORT_POSTGRESQL_H_

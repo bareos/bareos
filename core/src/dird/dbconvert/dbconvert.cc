@@ -30,6 +30,7 @@
 #include "dird/job.h"
 #include "dird/dbconvert/database_connection.h"
 #include "dird/dbconvert/database_export.h"
+#include "dird/dbconvert/database_export_postgresql.h"
 #include "dird/dbconvert/database_import.h"
 #include "include/make_unique.h"
 #include "lib/parse_conf.h"
@@ -65,9 +66,10 @@ class DbConvert {
   void DoDatabaseConversion()
   {
     DatabaseImport imp(*source_db_);
-    DatabaseExport exp(*destination_db_, cl.empty_destination_tables);
+    std::unique_ptr<DatabaseExport> exp(
+        DatabaseExport::Create(*destination_db_, cl.empty_destination_tables));
 
-    imp.ExportTo(exp);
+    imp.ExportTo(*exp);
   }
 
  private:
