@@ -112,27 +112,19 @@ cleanup()
 #
 setup_data()
 {
-    SRC=${1:-../../data/small.tgz}
-    RC=0
+  data_dir="${tmp}/data"
 
-    if [ -z "$SRC" ]; then
-       set_error "setup_data: no source given."
-       return 1
-    fi
-    if [ ! -e "$SRC" ]; then
-        set_error "setup_data $SRC: $SRC not found."
-        return 1
-    fi
+  [ -d "$data_dir" ] || mkdir "$data_dir"
 
-    mkdir -p "${tmp}/data"
-    (cd "${tmp}/data" && tar xzf "${cwd}/$SRC")
-    RC=$?
+  for tar in "../../data/small.tgz" "../../data/weird-files.tar.gz"; do
+   if [ ! -f "$tar" ]; then
+    set_error "setup_data: $tar not found."
+    return 1
+   fi
+   tar --directory="$data_dir" -xf "$tar" || return 1
+  done
 
-   # if [ ! -e ${tmp}/file-list ]; then
-       echo "${tmp}/data" >"${tmp}/file-list"
-   # fi
-
-    return $RC
+  return 0
 }
 
 start_test()
