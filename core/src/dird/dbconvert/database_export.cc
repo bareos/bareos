@@ -21,11 +21,9 @@
 
 #include "include/bareos.h"
 #include "dird/dbconvert/database_export.h"
+#include "dird/dbconvert/database_export_postgresql.h"
 #include "dird/dbconvert/database_table_descriptions.h"
-#include "dird/dbconvert/row_data.h"
-#include "lib/bstringlist.h"
 
-#include <iostream>
 #include <memory>
 
 DatabaseExport::DatabaseExport(const DatabaseConnection& db_connection,
@@ -33,122 +31,22 @@ DatabaseExport::DatabaseExport(const DatabaseConnection& db_connection,
     : db_(db_connection.db)
     , table_descriptions_(DatabaseTableDescriptions::Create(db_connection))
 {
-  if (clear_tables) {
-    for (const auto& t : table_descriptions_->tables) {
-      if (t.table_name != "version") {
-        std::string query("DELETE ");
-        query += " FROM ";
-        query += t.table_name;
-        if (!db_->SqlQuery(query.c_str())) {
-          std::string err{"Could not delete table: "};
-          err += t.table_name;
-          err += " ";
-          err += db_->get_errmsg();
-          throw std::runtime_error(err);
-        }
-      }
-    }
-  }
+  return;
 }
 
 DatabaseExport::~DatabaseExport() = default;
 
-void DatabaseExport::operator<<(const RowData& data)
+std::unique_ptr<DatabaseExport> DatabaseExport::Create(
+    const DatabaseConnection& db_connection,
+    bool clear_tables)
 {
-  std::string query{"INSERT INTO "};
-  query += data.table_name;
-  query += " (";
-  for (const auto& r : data.row) {
-    query += r.first;
-    query += ", ";
+  switch (db_connection.db_type) {
+    case DatabaseType::Enum::kPostgresql:
+      return std::make_unique<DatabaseExportPostgresql>(db_connection,
+                                                        clear_tables);
+    default:
+    case DatabaseType::Enum::kMysql:
+      throw std::runtime_error(
+          "DatabaseExport: Database type unknown or not implemented");
   }
-  query.erase(query.end() - 2);
-  query += ")";
-
-  query += " VALUES (";
-
-  for (const auto& r : data.row) {
-    query += "'";
-    query += r.second.data_pointer;
-    query += "',";
-  }
-
-  query.erase(query.end() - 1);
-  query += ")";
-#if 0
-  std::cout << query << std::endl;
-#else
-  if (!db_->SqlQuery(query.c_str())) {
-    std::string err{"DatabaseExport: Could not execute query: "};
-    err += db_->get_errmsg();
-    throw std::runtime_error(err);
-  }
-#endif
-}
-
-void DatabaseExport::Start()
-{
-  if (!db_->SqlQuery("BEGIN")) { throw std::runtime_error(db_->get_errmsg()); }
-}
-
-struct SequenceSchema {
-  std::string table_name;
-  std::string column_name;
-  std::string sequence_name;
-};
-
-
-using SequenceSchemaVector = std::vector<SequenceSchema>;
-
-int DatabaseExport::ResultHandler(void* ctx, int fields, char** row)
-{
-  if (fields != 3) {
-    throw std::runtime_error("DatabaseExport: Wrong number of rows");
-  }
-
-  SequenceSchema s;
-  s.table_name = row[0];
-  s.column_name = row[1];
-
-  BStringList l(row[2], "'");
-  if (l.size() != 3) {
-    throw std::runtime_error("DatabaseExport: Wrong column_default syntax");
-  }
-  s.sequence_name = l[1];
-
-  SequenceSchemaVector* v = static_cast<SequenceSchemaVector*>(ctx);
-  v->push_back(s);
-  return 0;
-}
-
-void DatabaseExport::End()
-{
-  const std::string query{
-      "select table_name, column_name,"
-      " column_default from information_schema.columns where table_schema ="
-      " 'public' and column_default like 'nextval(%';"};
-
-  SequenceSchemaVector v;
-
-  if (!db_->SqlQuery(query.c_str(), ResultHandler, &v)) {
-    std::string err{"DatabaseExport: Could not change sequence: "};
-    err += db_->get_errmsg();
-    throw std::runtime_error(err);
-  }
-
-  for (const auto& s : v) {
-    std::string sequence_schema_query{"select setval(' "};
-    sequence_schema_query += s.sequence_name;
-    sequence_schema_query += "', (select max(";
-    sequence_schema_query += s.column_name;
-    sequence_schema_query += ") from ";
-    sequence_schema_query += s.table_name;
-    sequence_schema_query += "))";
-    if (!db_->SqlQuery(sequence_schema_query.c_str())) {
-      throw std::runtime_error("DatabaseExport: Could not set sequence");
-    }
-    //    std::cout << "Updating sequence for table: " << s.table_name <<
-    //    std::endl;
-  }
-  if (!db_->SqlQuery("COMMIT")) { throw std::runtime_error(db_->get_errmsg()); }
 }
