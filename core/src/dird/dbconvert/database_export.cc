@@ -80,8 +80,7 @@ void DatabaseExport::operator<<(const RowData& data)
 #else
   if (!db_->SqlQuery(query.c_str())) {
     std::string err{"DatabaseExport: Could not execute query: "};
-    err += query;
-    //    err += db_->get_errmsg();
+    err += db_->get_errmsg();
     throw std::runtime_error(err);
   }
 #endif
