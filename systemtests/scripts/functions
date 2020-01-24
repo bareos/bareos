@@ -124,6 +124,8 @@ setup_data()
    tar --directory="$data_dir" -xf "$tar" || return 1
   done
 
+  echo "${data_dir}" >"${tmp}/file-list"
+
   return 0
 }
 
