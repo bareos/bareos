@@ -322,6 +322,7 @@ set(DB_PASS @DB_PASS@)
 set(DB_VERSION @DB_VERSION@)
 
 configurefilestosystemtest("systemtests" "data" "*.tgz" COPYONLY "")
+configurefilestosystemtest("systemtests" "data" "*.gz" COPYONLY "")
 
 configurefilestosystemtest("systemtests" "scripts" "functions" @ONLY "")
 configurefilestosystemtest("systemtests" "scripts" "cleanup" @ONLY "")
@@ -608,6 +609,7 @@ endforeach()
 set(BINARIES_TO_LINK_TO_SBIN
     dird/bareos-dir
     dird/bareos-dbcheck
+    dird/dbconvert/bareos-dbconvert
     filed/bareos-fd
     stored/bareos-sd
     stored/bcopy
