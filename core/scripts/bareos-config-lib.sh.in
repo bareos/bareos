@@ -695,9 +695,10 @@ get_database_param()
         echo "" >> $temp_log
 
         # if default value is given, return it anyway
-        #if [ -n "$DEFAULT" ]; then
-        #    info "unable to get \"${PARAM}\" from config, using default value \"${DEFAULT}\". Check $temp_log"
-        #    echo "$DEFAULT"
+        if [ -n "$DEFAULT" ]; then
+            #info "unable to get \"${PARAM}\" from config, using default value \"${DEFAULT}\". Check $temp_log"
+            echo "$DEFAULT"
+        fi
         #else
         #    info "unable to get \"${PARAM}\" from config, this is usually not an error. Check $temp_log"
         #fi
