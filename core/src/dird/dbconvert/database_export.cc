@@ -88,7 +88,9 @@ void DatabaseExport::operator<<(const RowData& data)
 
 void DatabaseExport::Start()
 {
-  //
+  if (!db_->SqlQuery("BEGIN")) {
+    throw std::runtime_error(db_->get_errmsg());
+  }
 }
 
 struct SequenceSchema {
@@ -146,5 +148,8 @@ void DatabaseExport::End()
       throw std::runtime_error("DatabaseExport: Could not set sequence");
     }
     std::cout << "Updating sequence for table: " << s.table_name << std::endl;
+  }
+  if (!db_->SqlQuery("COMMIT")) {
+    throw std::runtime_error(db_->get_errmsg());
   }
 }
