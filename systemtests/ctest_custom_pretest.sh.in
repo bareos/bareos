@@ -1,2 +1,4 @@
 #!/bin/sh
-echo "pretest"
+echo "@TEST_INFO_TEXT@"
+echo "running @BAREOS_DIR_TO_TEST@ -? as pretest"
+@BAREOS_DIR_TO_TEST@ -? 2>&1 | grep Version >/dev/null
