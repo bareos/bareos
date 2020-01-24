@@ -322,6 +322,8 @@ endmacro()
 # Main starts here...
 
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
+configure_file("CTestCustom.cmake.in" "${CMAKE_BINARY_DIR}/CTestCustom.cmake" @ONLY)
+configure_file("ctest_custom_pretest.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/ctest_custom_pretest.sh" @ONLY)
 
 find_program(PERL perl)
 
@@ -722,7 +724,7 @@ set(BASEPORT 42001)
 
 set(SYSTEMTEST_PREFIX "system:")
 if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
-  set(SOURCETREE_OR_PACKAGE "package:")
+  set(SOURCETREE_OR_PACKAGE "installed:")
 else()
   set(SOURCETREE_OR_PACKAGE "source:")
 endif()
