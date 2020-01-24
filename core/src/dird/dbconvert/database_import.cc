@@ -54,11 +54,14 @@ struct ResultHandlerContext {
   DatabaseExport& exporter;
 };
 
+static int counter{};
+
 void DatabaseImport::ExportTo(DatabaseExport& exporter)
 {
   exporter.Start();
 
   for (const auto& t : table_descriptions_->tables) {
+    counter = 0;
     auto start = std::chrono::steady_clock::now();
     std::cout << "Converting table: " << t.table_name
               << ", duration: " << std::flush;
@@ -70,7 +73,7 @@ void DatabaseImport::ExportTo(DatabaseExport& exporter)
     query.erase(query.cend() - 2);
     query += "FROM ";
     query += t.table_name;
-    query += " LIMIT 100000";
+//    query += " LIMIT 100000";
 
     RowData row_data;
     row_data.table_name = t.table_name;
@@ -114,6 +117,8 @@ int DatabaseImport::ResultHandler(void* ctx, int fields, char** row)
   }
 
   r->exporter << r->row_data;
-
+  if(!(++counter % 10000)) {
+    std::cout << "." << std::flush;
+  }
   return 0;
 }
