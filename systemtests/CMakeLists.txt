@@ -723,9 +723,9 @@ set(BASEPORT 42001)
 set(SYSTEMTEST_PREFIX "system:")
 
 if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
-  set(TEST_INFO_TEXT "\nrunning system tests on installed files\n")
+  set(TEST_INFO_TEXT "running system tests on installed files")
 else()
-  set(TEST_INFO_TEXT "\nrunning system tests on the sourcetree\n")
+  set(TEST_INFO_TEXT "running system tests on the sourcetree")
 endif()
 
 
