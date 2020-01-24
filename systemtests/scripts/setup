@@ -1,5 +1,4 @@
 #!/bin/sh
-echo "running $0 with scripts from ${scripts}"
 ${scripts}/bareos-config initialize_database_driver
 . ${rscripts}/functions
 
