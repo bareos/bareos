@@ -60,20 +60,20 @@ void DatabaseImport::ExportTo(DatabaseExport& exporter)
 {
   exporter.Start();
 
+  auto start = std::chrono::steady_clock::now();
+
   for (const auto& t : table_descriptions_->tables) {
     counter = 0;
-    auto start = std::chrono::steady_clock::now();
-    std::cout << "Converting table: " << t.table_name
-              << ", duration: " << std::flush;
-    std::string query{"SELECT "};
+    std::string query{"SELECT `"};
     for (const auto& col : t.column_descriptions) {
       query += col->column_name;
-      query += ", ";
+      query += "`, `";
     }
+    query.erase(query.cend() - 1);
     query.erase(query.cend() - 2);
     query += "FROM ";
     query += t.table_name;
-//    query += " LIMIT 100000";
+    //    query += " LIMIT 100000";
 
     RowData row_data;
     row_data.table_name = t.table_name;
@@ -85,18 +85,21 @@ void DatabaseImport::ExportTo(DatabaseExport& exporter)
       err += query;
       std::cout << query << std::endl;
     }
-    auto end = std::chrono::steady_clock::now();
-    auto duration = end - start;
-    auto c(std::chrono::duration_cast<std::chrono::milliseconds>(duration)
-               .count());
-    std::ostringstream oss;
-    oss << std::setfill('0')            // set field fill character to '0'
-        << (c % 1000000) / 1000 << "s"  // format seconds
-        << "::" << std::setw(3)         // set width of milliseconds field
-        << (c % 1000) << "ms";          // format milliseconds
-    std::cout << oss.str() << std::endl;
+    // std::cout << query << std::endl << std::endl;
   }
   exporter.End();
+
+  auto end = std::chrono::steady_clock::now();
+  auto duration = end - start;
+  auto c(
+      std::chrono::duration_cast<std::chrono::milliseconds>(duration).count());
+  std::ostringstream oss;
+  oss << std::setfill('0')            // set field fill character to '0'
+      << (c % 1000000) / 1000 << "s"  // format seconds
+      << "::" << std::setw(3)         // set width of milliseconds field
+      << (c % 1000) << "ms";          // format milliseconds
+
+  std::cout << "Duration: " << oss.str() << std::endl;
 }
 
 int DatabaseImport::ResultHandler(void* ctx, int fields, char** row)
@@ -117,8 +120,6 @@ int DatabaseImport::ResultHandler(void* ctx, int fields, char** row)
   }
 
   r->exporter << r->row_data;
-  if(!(++counter % 10000)) {
-    std::cout << "." << std::flush;
-  }
+  if (!(++counter % 10000)) { std::cout << "." << std::flush; }
   return 0;
 }
