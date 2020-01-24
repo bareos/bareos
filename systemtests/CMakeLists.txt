@@ -506,6 +506,7 @@ set(DB_PASS @DB_PASS@)
 set(DB_VERSION @DB_VERSION@)
 
 configurefilestosystemtest("systemtests" "data" "*.tgz" COPYONLY "")
+configurefilestosystemtest("systemtests" "data" "*.gz" COPYONLY "")
 
 configurefilestosystemtest("systemtests" "scripts" "functions" @ONLY "")
 configurefilestosystemtest("systemtests" "scripts" "reload_test_functions" @ONLY "")
