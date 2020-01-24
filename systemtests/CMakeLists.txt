@@ -322,8 +322,6 @@ endmacro()
 # Main starts here...
 
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
-configure_file("CTestCustom.cmake.in" "${CMAKE_BINARY_DIR}/CTestCustom.cmake" @ONLY)
-configure_file("ctest_custom_pretest.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/ctest_custom_pretest.sh" @ONLY)
 
 find_program(PERL perl)
 
@@ -706,16 +704,16 @@ else()
   set(WEBUI_SELENIUM_TESTS)
   foreach(TEST_NAME_DISABLED ${AVAILABLE_WEBUI_SELENIUM_TESTS})
     add_test(
-      NAME ${WEBUI_TEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME_DISABLED}
+      NAME ${WEBUI_TEST_PREFIX}${TEST_NAME_DISABLED}
       COMMAND empty_command
     )
     set_tests_properties(
-      ${WEBUI_TEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME_DISABLED}
+      ${WEBUI_TEST_PREFIX}${TEST_NAME_DISABLED}
       PROPERTIES DISABLED true
     )
     message(
       STATUS
-        "Disabled test: ${WEBUI_TEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME_DISABLED}"
+        "Disabled test: ${WEBUI_TEST_PREFIX}${TEST_NAME_DISABLED}"
     )
   endforeach()
 endif()
@@ -723,16 +721,18 @@ endif()
 set(BASEPORT 42001)
 
 set(SYSTEMTEST_PREFIX "system:")
+
 if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
-  set(SOURCETREE_OR_PACKAGE "installed:")
+  set(TEST_INFO_TEXT "\nrunning system tests on installed files\n")
 else()
-  set(SOURCETREE_OR_PACKAGE "source:")
+  set(TEST_INFO_TEXT "\nrunning system tests on the sourcetree\n")
 endif()
+
 
 foreach(TEST_NAME ${SYSTEM_TESTS})
   message(
     STATUS
-      "Configuring test: ${SYSTEMTEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME}"
+      "Configuring test: ${SYSTEMTEST_PREFIX}${TEST_NAME}"
   )
   prepare_test()
 
@@ -744,7 +744,7 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   checkforenabledanddisabledlistentry(${TEST_NAME})
 
   add_test(
-    NAME "${SYSTEMTEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME}"
+    NAME "${SYSTEMTEST_PREFIX}${TEST_NAME}"
     COMMAND ${tests_dir}/${TEST_NAME}/testrunner
     WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
   )
@@ -759,7 +759,7 @@ if(ENABLE_WEBUI_SELENIUM_TEST)
   foreach(TEST_NAME ${WEBUI_SELENIUM_TESTS})
     message(
       STATUS
-        "Configuring test: ${WEBUI_TEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME}"
+        "Configuring test: ${WEBUI_TEST_PREFIX}${TEST_NAME}"
     )
 
     prepare_test()
@@ -808,7 +808,7 @@ if(ENABLE_WEBUI_SELENIUM_TEST)
     checkforenabledanddisabledlistentry(${TEST_NAME})
 
     add_test(
-      NAME "${WEBUI_TEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME}"
+      NAME "${WEBUI_TEST_PREFIX}${TEST_NAME}"
       COMMAND ${tests_dir}/${TEST_NAME}/testrunner
       WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
     )
@@ -819,15 +819,19 @@ endif()
 foreach(TEST_NAME_DISABLED ${SYSTEM_TESTS_DISABLED})
   checkforenabledanddisabledlistentry(${TEST_NAME_DISABLED})
   add_test(
-    NAME ${SYSTEMTEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME_DISABLED}
+    NAME ${SYSTEMTEST_PREFIX}${TEST_NAME_DISABLED}
     COMMAND empty_command
   )
   set_tests_properties(
-    ${SYSTEMTEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME_DISABLED}
+    ${SYSTEMTEST_PREFIX}${TEST_NAME_DISABLED}
     PROPERTIES DISABLED true
   )
   message(
     STATUS
-      "Disabled test: ${SYSTEMTEST_PREFIX}${SOURCETREE_OR_PACKAGE}${TEST_NAME_DISABLED}"
+      "Disabled test: ${SYSTEMTEST_PREFIX}${TEST_NAME_DISABLED}"
   )
 endforeach()
+
+
+configure_file("CTestCustom.cmake.in" "${CMAKE_BINARY_DIR}/CTestCustom.cmake" @ONLY)
+configure_file("ctest_custom_pretest.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/ctest_custom_pretest.sh" @ONLY)
