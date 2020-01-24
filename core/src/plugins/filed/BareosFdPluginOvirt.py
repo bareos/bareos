@@ -18,6 +18,7 @@ import io
 import time
 import uuid
 import json
+import ConfigParser as configparser
 
 import lxml.etree
 
@@ -58,7 +59,7 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         if self.mandatory_options is None:
             self.mandatory_options = []
 
-        # self.mandatory_options.extend(['vmname','storage_domain'])
+        self.config = None
 
         self.ovirt = BareosOvirtWrapper()
 
@@ -74,15 +75,23 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             "BareosFdPluginOvirt:parse_plugin_definition() called with options '%s' \n"
             % str(self.options),
         )
+
+        # if the option config_file is present, parse the given file
+        config_file = self.options.get("config_file")
+        if config_file:
+            if not self.parse_config_file(context):
+                return bRCs["bRC_Error"]
+
         self.ovirt.set_options(self.options)
         return bRCs["bRC_OK"]
 
     def check_options(self, context, mandatory_options=None):
         """
         Check Plugin options
-        Note: this is called by parent class parse_plugin_definition(),
-        to handle plugin options entered at restore, the real check
-        here is done by check_plugin_options() which is called from
+        Note: this is called by parent class parse_plugin_definition().
+        This plugin does not yet implement any checks.
+        If it is required to know if it is a backup or a restore, it
+        may make more sense to invoke the options checking from
         start_backup_job() and start_restore_job()
         """
         return bRCs["bRC_OK"]
@@ -249,6 +258,23 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             100,
             "create_file() entry point in Python called with %s\n" % (restorepkt),
         )
+
+        # process includes/excludes for restore, note that it is more
+        # efficient to mark only the disks to restore, as skipping
+        # here can not prevent from receiving the data from bareos-sd
+        # which is useless for excluded disks.
+        if not restorepkt.ofname.endswith(".ovf"):
+            disk_alias = self.ovirt.get_ovf_disk_alias_by_basename(
+                context, restorepkt.ofname
+            )
+
+            if not self.ovirt.is_disk_alias_included(context, disk_alias):
+                restorepkt.create_status = bCFs["CF_SKIP"]
+                return bRCs["bRC_OK"]
+
+            if self.ovirt.is_disk_alias_excluded(context, disk_alias):
+                restorepkt.create_status = bCFs["CF_SKIP"]
+                return bRCs["bRC_OK"]
 
         if self.options.get("local") == "yes":
             FNAME = restorepkt.ofname
@@ -614,6 +640,75 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         return bRCs["bRC_OK"]
 
+    def parse_config_file(self, context):
+        """
+        Parse the config file given in the config_file plugin option
+        """
+        bareosfd.DebugMessage(
+            context,
+            100,
+            "BareosFdPluginOvirt: parse_config_file(): parse %s\n"
+            % (self.options["config_file"]),
+        )
+
+        self.config = configparser.ConfigParser()
+
+        try:
+            self.config.readfp(open(self.options["config_file"]))
+        except IOError as err:
+            bareosfd.JobMessage(
+                context,
+                bJobMessageType["M_FATAL"],
+                "BareosFdPluginOvirt: Error reading config file %s: %s\n"
+                % (self.options["config_file"], err.strerror),
+            )
+            return False
+
+        return self.check_config(context)
+
+    def check_config(self, context):
+        """
+        Check the configuration and set or override options if necesary,
+        considering mandatory: username and password in the [credentials] section
+        """
+        bareosfd.DebugMessage(context, 100, "BareosFdPluginOvirt: check_config()\n")
+        mandatory_sections = ["credentials"]
+        mandatory_options = {}
+        mandatory_options["credentials"] = ["username", "password"]
+
+        for section in mandatory_sections:
+            if not self.config.has_section(section):
+                bareosfd.JobMessage(
+                    context,
+                    bJobMessageType["M_FATAL"],
+                    "BareosFdPluginOvirt: Section [%s] missing in config file %s\n"
+                    % (section, self.options["config_file"]),
+                )
+                return False
+
+            for option in mandatory_options[section]:
+                if not self.config.has_option(section, option):
+                    bareosfd.JobMessage(
+                        context,
+                        bJobMessageType["M_FATAL"],
+                        "BareosFdPluginOvirt: Options %s missing in Section [%s] in config file %s\n"
+                        % (option, section, self.options["config_file"]),
+                    )
+                    return False
+
+                plugin_option = self.options.get(option)
+                if plugin_option:
+                    bareosfd.JobMessage(
+                        context,
+                        bJobMessageType["M_WARNING"],
+                        "BareosFdPluginOvirt: Overriding plugin option %s from config file %s\n"
+                        % (option, self.options["config_file"]),
+                    )
+
+                self.options[option] = self.config.get(section, option)
+
+        return True
+
 
 class BareosOvirtWrapper(object):
     """
@@ -647,7 +742,9 @@ class BareosOvirtWrapper(object):
 
         self.backup_objects = None
         self.restore_objects = None
+        self.ovf_disks_by_alias_and_fileref = {}
         self.disk_metadata_by_id = {}
+        self.all_disks_excluded = False
 
         self.old_new_ids = {}
 
@@ -782,7 +879,7 @@ class BareosOvirtWrapper(object):
             self.create_vm_snapshot(context)
 
             # get vm backup disks from snapshot
-            if not self.get_vm_backup_disks(context):
+            if not self.all_disks_excluded and not self.get_vm_backup_disks(context):
                 bareosfd.JobMessage(
                     context,
                     bJobMessageType["M_FATAL"],
@@ -832,7 +929,7 @@ class BareosOvirtWrapper(object):
                     "Backup of virtual machine '%s' using snapshot '%s' is "
                     "starting." % (self.vm.name, snap_description)
                 ),
-            )
+            ),
         )
         self.event_id += 1
 
@@ -844,8 +941,10 @@ class BareosOvirtWrapper(object):
         snaps_service = self.vm_service.snapshots_service()
         snap = snaps_service.add(
             snapshot=types.Snapshot(
-                description=snap_description, persist_memorystate=False
-            )
+                description=snap_description,
+                persist_memorystate=False,
+                disk_attachments=self.get_vm_disks_for_snapshot(context),
+            ),
         )
         bareosfd.JobMessage(
             context,
@@ -875,6 +974,42 @@ class BareosOvirtWrapper(object):
             context, bJobMessageType["M_INFO"], "'  The snapshot is now complete.\n"
         )
 
+    def get_vm_disks_for_snapshot(self, context):
+        # return list of disks for snapshot, process include/exclude if given
+        disk_attachments_service = self.vm_service.disk_attachments_service()
+        disk_attachments = disk_attachments_service.list()
+        included_disk_ids = []
+        included_disks = None
+        for disk_attachment in disk_attachments:
+            disk = self.connection.follow_link(disk_attachment.disk)
+
+            if not self.is_disk_alias_included(context, disk.alias):
+                continue
+            if self.is_disk_alias_excluded(context, disk.alias):
+                continue
+
+            included_disk_ids.append(disk.id)
+
+        if len(included_disk_ids) == 0:
+            # No disks to backup, snapshot will only contain VM config
+            # Note: The comma must not be omitted here:
+            # included_disks = (types.DiskAttachment(),)
+            self.all_disks_excluded = True
+            bareosfd.JobMessage(
+                context,
+                bJobMessageType["M_INFO"],
+                "All disks excluded, only backing up VM configuration.\n",
+            )
+            included_disks = [types.DiskAttachment()]
+
+        else:
+            included_disks = [
+                types.DiskAttachment(disk=types.Disk(id=disk_id))
+                for disk_id in included_disk_ids
+            ]
+
+        return included_disks
+
     def get_vm_backup_disks(self, context):
 
         has_disks = False
@@ -902,12 +1037,6 @@ class BareosOvirtWrapper(object):
                 "get_vm_backup_disks(): disk_id: '%s' disk_alias '%s'\n"
                 % (disk_id, disk_alias),
             )
-
-            if not self.is_included(context, snap_disk):
-                continue
-
-            if self.is_excluded(context, snap_disk):
-                continue
 
             sd_id = snap_disk.storage_domains[0].id
 
@@ -939,32 +1068,32 @@ class BareosOvirtWrapper(object):
                 has_disks = True
         return has_disks
 
-    def is_included(self, context, disk):
+    def is_disk_alias_included(self, context, disk_alias):
         if self.options.get("include_disk_aliases") is None:
             return True
 
         include_disk_aliases = self.options["include_disk_aliases"].split(",")
-        if disk.alias in include_disk_aliases:
+        if disk_alias in include_disk_aliases:
             bareosfd.JobMessage(
                 context,
                 bJobMessageType["M_INFO"],
-                "Including disk with alias %s (Id %s)\n" % (disk.alias, disk.id),
+                "Including disk with alias %s\n" % (disk_alias),
             )
             return True
 
         return False
 
-    def is_excluded(self, context, disk):
+    def is_disk_alias_excluded(self, context, disk_alias):
         if self.options.get("exclude_disk_aliases") is None:
             return False
 
         exclude_disk_aliases = self.options["exclude_disk_aliases"].split(",")
 
-        if disk.alias in exclude_disk_aliases:
+        if "*" in exclude_disk_aliases or disk_alias in exclude_disk_aliases:
             bareosfd.JobMessage(
                 context,
                 bJobMessageType["M_INFO"],
-                "Excluding disk with alias %s (Id %s)\n" % (disk.alias, disk.id),
+                "Excluding disk with alias %s\n" % (disk_alias),
             )
             return True
 
@@ -1108,7 +1237,7 @@ class BareosOvirtWrapper(object):
         restore_existing_vm = False
         if self.connection is None:
             # if not connected yet
-            if not self.connect_api(context, self.options):
+            if not self.connect_api(context):
                 return bRCs["bRC_Error"]
 
         if self.ovf_data is None:
@@ -1213,6 +1342,13 @@ class BareosOvirtWrapper(object):
                 # set storage domain
                 props["storage_domain"] = storage_domain
                 self.restore_objects.append(props)
+
+                # used by get_ovf_disk_alias_by_basename(), needed to process
+                # includes/excludes on restore
+                self.ovf_disks_by_alias_and_fileref[
+                    props["disk-alias"] + "-" + props["fileRef"]
+                ] = props
+
                 if restore_existing_vm:
                     # When restoring to existing VM, old and new disk ID are identical
                     # Important: The diskId property in the OVF is not the oVirt
@@ -1226,6 +1362,7 @@ class BareosOvirtWrapper(object):
                 "end of prepare_vm_restore(): self.restore_objects: %s self.old_new_ids: %s\n"
                 % (self.restore_objects, self.old_new_ids),
             )
+
         return bRCs["bRC_OK"]
 
     def create_vm(self, context, vm_name, cluster_name):
@@ -1317,7 +1454,7 @@ class BareosOvirtWrapper(object):
                 cpu=vm_cpu,
                 template=types.Template(name=vm_template),
                 cluster=types.Cluster(name=cluster_name),
-            )
+            ),
         )
 
     def add_nics_to_vm(self, context):
@@ -1362,13 +1499,26 @@ class BareosOvirtWrapper(object):
                         name=props["Name"],
                         description=props["Caption"],
                         vnic_profile=types.VnicProfile(id=profile_id),
-                    )
+                    ),
                 )
                 bareosfd.DebugMessage(
                     context,
                     200,
                     "add_nics_to_vm(): added NIC with props %s\n" % (props),
                 )
+
+    def get_ovf_disk_alias_by_basename(self, context, fname):
+        """
+        Return the disk alias name from OVF data for given fname (full path),
+        this is used on restore by create_file() to process includes/excludes
+        """
+
+        dirpath = os.path.dirname(fname)
+        dirname = os.path.basename(dirpath)
+        basename = os.path.basename(fname)
+        relname = "%s/%s" % (dirname, basename)
+
+        return self.ovf_disks_by_alias_and_fileref[relname]["disk-alias"]
 
     def get_vm_disk_by_basename(self, context, fname):
 
@@ -1509,7 +1659,7 @@ class BareosOvirtWrapper(object):
                         interface=disk_interface,
                         bootable=disk_bootable,
                         active=True,
-                    )
+                    ),
                 )
 
                 # 'Waiting for Disk creation to finish'
@@ -1690,7 +1840,7 @@ class BareosOvirtWrapper(object):
                         "Backup of virtual machine '%s' using snapshot '%s' is "
                         "completed." % (self.vm.name, snap.description)
                     ),
-                )
+                ),
             )
             self.event_id += 1
 
@@ -1728,7 +1878,7 @@ class BareosOvirtWrapper(object):
                 description=(
                     "Restore of virtual machine '%s' is " "completed." % (self.vm.name)
                 ),
-            )
+            ),
         )
         self.event_id += 1
 
