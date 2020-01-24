@@ -245,6 +245,7 @@ macro(prepare_testdir_for_daemon_run)
   set(piddir ${current_test_directory}/piddir)
 
   set(backenddir ${BACKEND_DIR_TO_TEST})
+  set(BAREOS_WEBUI_PUBLIC_DIR ${WEBUI_PUBLIC_DIR_TO_TEST})
 
   if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
     set(bin /bin)
@@ -408,6 +409,8 @@ if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
   set(SD_PLUGINS_DIR_TO_TEST ${PLUGINS_DIR_TO_TEST})
   set(DIR_PLUGINS_DIR_TO_TEST ${PLUGINS_DIR_TO_TEST})
   set(BACKEND_DIR_TO_TEST ${BACKEND_DIR_TO_TEST})
+  set(WEBUI_PUBLIC_DIR_TO_TEST /usr/share/bareos-webui/public)
+
 else() # run systemtests on source and compiled files
 
   foreach(BINARY ${ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS})
@@ -420,13 +423,15 @@ else() # run systemtests on source and compiled files
   get_target_property(BACKEND_DIR_TO_TEST bareoscats BINARY_DIR)
 
   set(SCRIPTS_DIR_TO_TEST ${CMAKE_BINARY_DIR}/core/scripts)
+  set(WEBUI_PUBLIC_DIR_TO_TEST ${PROJECT_SOURCE_DIR}/../webui/public)
 
 endif()
 
-message("   FD_PLUGINS_DIR_TO_TEST: ${PLUGINS_DIR_TO_TEST}")
-message("   SD_PLUGINS_DIR_TO_TEST: ${PLUGINS_DIR_TO_TEST}")
-message("   DIR_PLUGINS_DIR_TO_TEST: ${PLUGINS_DIR_TO_TEST}")
+message("   FD_PLUGINS_DIR_TO_TEST: ${FD_PLUGINS_DIR_TO_TEST}")
+message("   SD_PLUGINS_DIR_TO_TEST: ${SD_PLUGINS_DIR_TO_TEST}")
+message("   DIR_PLUGINS_DIR_TO_TEST: ${DIR_PLUGINS_DIR_TO_TEST}")
 message("   BACKEND_DIR_TO_TEST: ${BACKEND_DIR_TO_TEST}")
+message("   WEBUI_PUBLIC_DIR_TO_TEST: ${WEBUI_PUBLIC_DIR_TO_TEST}")
 
 # extract  db version from cats.h
 file(STRINGS ${CMAKE_SOURCE_DIR}/core/src/cats/cats.h DB_VERSION_STRING
