@@ -36,10 +36,10 @@ DatabaseExport::DatabaseExport(const DatabaseConnection& db_connection,
   if (clear_tables) {
     for (const auto& t : table_descriptions_->tables) {
       if (t.table_name != "version") {
-        std::string sequenc_schema_query("DELETE ");
-        sequenc_schema_query += " FROM ";
-        sequenc_schema_query += t.table_name;
-        if (!db_->SqlQuery(sequenc_schema_query.c_str())) {
+        std::string query("DELETE ");
+        query += " FROM ";
+        query += t.table_name;
+        if (!db_->SqlQuery(query.c_str())) {
           std::string err{"Could not delete table: "};
           err += t.table_name;
           err += " ";
@@ -55,32 +55,33 @@ DatabaseExport::~DatabaseExport() = default;
 
 void DatabaseExport::operator<<(const RowData& data)
 {
-  std::string sequenc_schema_query{"INSERT INTO "};
-  sequenc_schema_query += data.table_name;
-  sequenc_schema_query += " (";
+  std::string query{"INSERT INTO "};
+  query += data.table_name;
+  query += " (";
   for (const auto& r : data.row) {
-    sequenc_schema_query += r.first;
-    sequenc_schema_query += ", ";
+    query += r.first;
+    query += ", ";
   }
-  sequenc_schema_query.erase(sequenc_schema_query.end() - 2);
-  sequenc_schema_query += ")";
+  query.erase(query.end() - 2);
+  query += ")";
 
-  sequenc_schema_query += " VALUES (";
+  query += " VALUES (";
 
   for (const auto& r : data.row) {
-    sequenc_schema_query += "'";
-    sequenc_schema_query += r.second.data_pointer;
-    sequenc_schema_query += "',";
+    query += "'";
+    query += r.second.data_pointer;
+    query += "',";
   }
 
-  sequenc_schema_query.erase(sequenc_schema_query.end() - 1);
-  sequenc_schema_query += ")";
+  query.erase(query.end() - 1);
+  query += ")";
 #if 0
-  std::cout << sequenc_schema_query << std::endl;
+  std::cout << query << std::endl;
 #else
-  if (!db_->SqlQuery(sequenc_schema_query.c_str())) {
-    std::string err{"Could not execute sequenc_schema_query: "};
-    err += db_->get_errmsg();
+  if (!db_->SqlQuery(query.c_str())) {
+    std::string err{"DatabaseExport: Could not execute query: "};
+    err += query;
+    //    err += db_->get_errmsg();
     throw std::runtime_error(err);
   }
 #endif
@@ -88,9 +89,7 @@ void DatabaseExport::operator<<(const RowData& data)
 
 void DatabaseExport::Start()
 {
-  if (!db_->SqlQuery("BEGIN")) {
-    throw std::runtime_error(db_->get_errmsg());
-  }
+  if (!db_->SqlQuery("BEGIN")) { throw std::runtime_error(db_->get_errmsg()); }
 }
 
 struct SequenceSchema {
@@ -125,15 +124,17 @@ int DatabaseExport::ResultHandler(void* ctx, int fields, char** row)
 
 void DatabaseExport::End()
 {
-  const std::string sequenc_schema_query{
+  const std::string query{
       "select table_name, column_name,"
       " column_default from information_schema.columns where table_schema ="
       " 'public' and column_default like 'nextval(%';"};
 
   SequenceSchemaVector v;
 
-  if (!db_->SqlQuery(sequenc_schema_query.c_str(), ResultHandler, &v)) {
-    std::cout << sequenc_schema_query << std::endl;
+  if (!db_->SqlQuery(query.c_str(), ResultHandler, &v)) {
+    std::string err{"DatabaseExport: Could not change sequence: "};
+    err += db_->get_errmsg();
+    throw std::runtime_error(err);
   }
 
   for (const auto& s : v) {
@@ -147,9 +148,8 @@ void DatabaseExport::End()
     if (!db_->SqlQuery(sequence_schema_query.c_str())) {
       throw std::runtime_error("DatabaseExport: Could not set sequence");
     }
-    std::cout << "Updating sequence for table: " << s.table_name << std::endl;
+    //    std::cout << "Updating sequence for table: " << s.table_name <<
+    //    std::endl;
   }
-  if (!db_->SqlQuery("COMMIT")) {
-    throw std::runtime_error(db_->get_errmsg());
-  }
+  if (!db_->SqlQuery("COMMIT")) { throw std::runtime_error(db_->get_errmsg()); }
 }
