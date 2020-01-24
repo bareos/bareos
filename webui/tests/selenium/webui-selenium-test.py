@@ -230,6 +230,8 @@ class SeleniumTest(unittest.TestCase):
                 # test in headless mode?
                 if self.chromeheadless:
                     opt.add_argument("--headless")
+                    opt.add_argument("--no-sandbox")
+
                 self.driver = webdriver.Chrome(self.chromedriverpath, chrome_options=opt)
             elif self.browser == "firefox":
                 d = DesiredCapabilities.FIREFOX
