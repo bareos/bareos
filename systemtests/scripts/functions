@@ -628,8 +628,8 @@ check_restore_diff()
 
    "$rscripts/diff.pl" -s "${dest}" -d "${tmp}/bareos-restores/${dest}"
    result=$?
-   OUT="$(diff -ur "${dest}" "${tmp}/bareos-restores/${dest}")"
-   result="$(($result + $?))"
+   OUT="$(diff --no-dereference -ur --exclude="fifo*" "${dest}" "${tmp}/bareos-restores/${dest}")"
+   result="$(expr "$result" + $?)"
    if is_debug; then
        printf "%s\n" "$OUT"
    fi
