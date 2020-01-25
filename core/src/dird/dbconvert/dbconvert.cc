@@ -164,7 +164,7 @@ class DbConvert {
     {
       kBareosVersionStrings.PrintCopyright(stderr, 2000);
 
-      fprintf(stderr, _("Usage: dbconvert [options] Source Destination\n"
+      fprintf(stderr, _("Usage: bareos-dbconvert [options] Source Destination\n"
                         "        -c <path>   use <path> as configuration file "
                         "or directory\n"
                         "        -?          print this message.\n"
