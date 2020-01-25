@@ -1,4 +1,5 @@
 /usr/sbin/bareos-dbcheck
+/usr/sbin/bareos-dbconvert
 /usr/sbin/bscan
 /usr/share/man/man8/bareos-dbcheck.8*
 /usr/share/man/man8/bscan.8*

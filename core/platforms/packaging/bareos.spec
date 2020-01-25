@@ -481,7 +481,7 @@ Provides:   %{name}-database-backend
 %endif
 
 %package    database-tools
-Summary:    Bareos CLI tools with database dependencies (bareos-dbcheck, bscan)
+Summary:    Bareos CLI tools with database dependencies (bareos-dbcheck, bareos-dbconvert, bscan)
 Group:      Productivity/Archiving/Backup
 Requires:   %{name}-common = %{version}
 Requires:   %{name}-database-common = %{version}
@@ -1328,9 +1328,10 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %endif
 
 %files database-tools
-# dbtools with link to db libs (dbcheck, bscan)
+# dbtools with link to db libs (dbcheck, bscan, dbconvert)
 %defattr(-, root, root)
 %{_sbindir}/bareos-dbcheck
+%{_sbindir}/bareos-dbconvert
 %{_sbindir}/bscan
 %{_mandir}/man8/bareos-dbcheck.8.gz
 %{_mandir}/man8/bscan.8.gz
