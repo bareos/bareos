@@ -69,7 +69,7 @@ class CatalogTest : public ::testing::Test {
 
 static std::string getenv_std_string(std::string env_var)
 {
-  const char* v=(std::getenv(env_var.c_str()));
+  const char* v = (std::getenv(env_var.c_str()));
   return v ? std::string(v) : std::string();
 }
 
@@ -143,7 +143,7 @@ void CatalogTest::TearDown()
 TEST_F(CatalogTest, database)
 {
   std::vector<char> stime;
-  auto jcr=directordaemon::NewDirectorJcr();
+  auto jcr = directordaemon::NewDirectorJcr();
 
   auto result = db->FindLastJobStartTimeForJobAndClient(jcr, "backup-bareos-fd",
                                                         "bareos-fd", stime);
