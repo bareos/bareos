@@ -20,8 +20,11 @@
 TestName="$(basename "$(pwd)")"
 export TestName
 
-JobName=backup-bareos-fd
+#shellcheck source=../environment.in
 . ./environment
+
+JobName=backup-bareos-fd
+#shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
@@ -55,9 +58,10 @@ if is_debug; then
     export PAM_WRAPPER_DEBUGLEVEL=4
     BAREOS_DIR_OPTIONS="-d 200"
     output=/dev/stdout
+    LD_PRELOAD=${PAM_WRAPPER_LIBRARIES} "${BAREOS_DIRECTOR_BINARY}" -c "${conf}" -f "${BAREOS_DIR_OPTIONS}" >$output 2>&1 &
+else
+    LD_PRELOAD=${PAM_WRAPPER_LIBRARIES} "${BAREOS_DIRECTOR_BINARY}" -c "${conf}" -f                       >$output 2>&1 &
 fi
-
-LD_PRELOAD=${PAM_WRAPPER_LIBRARIES} ${BAREOS_DIRECTOR_BINARY} -c ${conf} -f ${BAREOS_DIR_OPTIONS} >$output 2>&1 &
 
 sleep 1
 
@@ -70,7 +74,7 @@ END_OF_DATA
 #
 # run Python Unit Tests
 #
-run_python_unittests
+run_python_unittests "$@"
 
 
 if ! ${rscripts}/bareos-ctl-dir status >/dev/null; then

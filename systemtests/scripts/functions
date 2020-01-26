@@ -54,7 +54,7 @@ enable_plugin()
       exit 1
    fi
 
-   if ! cp $plugindir/${PLUGIN}.* "$plugindirtmp/"; then
+   if ! cp "$plugindir/${PLUGIN}".* "$plugindirtmp/"; then
       set_error "enable_plugin: failed to enable ${PLUGIN} plugin."
       RC=1
       exit 1
@@ -75,7 +75,7 @@ disable_plugin()
       exit 1
    fi
 
-   if ! rm $plugindirtmp/${PLUGIN}.*; then
+   if ! rm "$plugindirtmp/${PLUGIN}".*; then
       set_error "disable_plugin: failed to disable ${PLUGIN} plugin."
       RC=1
       exit 1
@@ -88,8 +88,8 @@ disable_plugin()
 
 check_encoding()
 {
-   "${BAREOS_DIRECTOR_BINARY}" -d50 -t 2>&1 | grep 'Wanted SQL_ASCII, got UTF8' >/dev/null
-   if [ $? = 0 ]; then
+   if "${BAREOS_DIRECTOR_BINARY}" -d50 -t 2>&1 | grep 'Wanted SQL_ASCII, got UTF8' >/dev/null
+   then
        echo "Found database encoding problem, please modify the database encoding (SQL_ASCII)"
        exit 1
    fi
@@ -266,7 +266,7 @@ write_stdin_to_file()
   >"${FILE}"
 
   # read stdin and write to file
-  while read input; do
+  while read -r input; do
     printf '%s\n' "$input" >>"${FILE}"
   done
 }
@@ -276,7 +276,7 @@ log_stdin()
   FILE="${1:-${tmp}/debug.log}"
 
   # read stdin and write to file
-  while read input; do
+  while read -r input; do
     # print if debug is set
     print_debug "$input"
     # write to log file
@@ -470,7 +470,7 @@ stop_bareos()
    if test "$debug" -eq 1 ; then
       "${rscripts}/bareos" stop
    else
-      "${rscripts}/bareos" stop 2>&1 >/dev/null
+      "${rscripts}/bareos" stop >/dev/null 2>&1
    fi
 }
 
@@ -485,8 +485,7 @@ run_python_unittests()
             export PYTHONPATH=${PROJECT_SOURCE_DIR}/../python-bareos/
         fi
         print_debug "PYTHONPATH=$PYTHONPATH"
-        #if PYTHONRESULT=$(${cwd}/${PYTHON_UNITTEST_SCRIPT} -v 2>&1); then
-        if PYTHONRESULT=$(${cwd}/${PYTHON_UNITTEST_SCRIPT} -v); then
+        if PYTHONRESULT=$("${cwd}/${PYTHON_UNITTEST_SCRIPT}" -v); then
             print_debug "$PYTHONRESULT"
         else
             set_error "$PYTHONRESULT"
@@ -559,23 +558,23 @@ change_jobname()
 
 check_two_logs()
 {
-   grep "^  Termination: *Backup OK" "${tmp}/log1.out" 2>&1 >/dev/null
+   grep "^  Termination: *Backup OK" "${tmp}/log1.out" >/dev/null 2>&1
    bstat=${bstat:-$?}
-   grep "^  Termination: .*Backup Error" "${tmp}/log1.out" 2>&1 >/dev/null
+   grep "^  Termination: .*Backup Error" "${tmp}/log1.out" >/dev/null 2>&1
    if test $? -eq 0; then
       bstat=2
    fi
-   grep "^  Termination: *Restore OK" "${tmp}/log2.out" 2>&1 >/dev/null
+   grep "^  Termination: *Restore OK" "${tmp}/log2.out" >/dev/null 2>&1
    rstat=${rstat:-$?}
-   grep "^  Termination: .*Restore Error" "${tmp}/log2.out" 2>&1 >/dev/null
+   grep "^  Termination: .*Restore Error" "${tmp}/log2.out" >/dev/null 2>&1
    if test $? -eq 0; then
       rstat=2
    fi
-   grep "^  Termination: *Restore OK -- warning file count mismatch" "${tmp}/log2.out" 2>&1 >/dev/null
+   grep "^  Termination: *Restore OK -- warning file count mismatch" "${tmp}/log2.out" >/dev/null 2>&1
    if test $? -eq 0; then
       rstat=3
    fi
-   grep "^  Termination: .*Verify Differences" "${tmp}/log2.out" 2>&1 >/dev/null
+   grep "^  Termination: .*Verify Differences" "${tmp}/log2.out" >/dev/null 2>&1
    if test $? -eq 0; then
       rstat=4
    fi
@@ -618,7 +617,7 @@ check_log()
       rstat=1
    fi
 
-   if [ $bstat != 0 -o $rstat != 0 ] ; then
+   if [ $bstat != 0 ] || [ $rstat != 0 ] ; then
       return 1
    fi
 
@@ -636,12 +635,12 @@ check_restore_diff()
    "$rscripts/diff.pl" -s "${dest}" -d "${tmp}/bareos-restores/${dest}"
    result=$?
    OUT="$(diff -ur "${dest}" "${tmp}/bareos-restores/${dest}")"
-   result="$(expr "$result" + $?)"
+   result="$(($result + $?))"
    if is_debug; then
        printf "%s\n" "$OUT"
    fi
 
-   if [ "$result" -ne 0 -a "${dstat:-0}" -eq 0 ]; then
+   if [ "$result" -ne 0 ] && [ "${dstat:-0}" -eq 0 ]; then
       dstat="$result"
    fi
 
@@ -657,7 +656,7 @@ check_restore_only_files_diff()
    differences=0
    for i in "$@"; do
      if ! diff -ur "$i" "${tmp}/bareos-restores/$i"; then
-       differences="$(expr $differences + 1)"
+       differences="$(( differences + 1 ))"
        dstat=1
      fi
    done
@@ -698,7 +697,7 @@ check_restore_bin_diff()
       "$rscripts/diff.pl" -s "${bin}" -d "${tmp}/bareos-restores${bin}"
       diff -ur "${bin}" "${tmp}/bareos-restores${bin}"
    else
-      diff -ur "${bin}" "${tmp}/bareos-restores${bin}" 2>&1 >/dev/null
+      diff -ur "${bin}" "${tmp}/bareos-restores${bin}" >/dev/null 2>&1
    fi
    dstat=$?
 }
@@ -710,7 +709,7 @@ check_restore_tmp_build_diff()
       "$rscripts/diff.pl" -s "${tmpsrc}" -d "${tmp}/bareos-restores${tmpsrc}"
       diff -ur "${tmpsrc}" "${tmp}/bareos-restores${tmpsrc}"
    else
-      diff -ur "${tmpsrc}" "${tmp}/bareos-restores${tmpsrc}" 2>&1 >/dev/null
+      diff -ur "${tmpsrc}" "${tmp}/bareos-restores${tmpsrc}" >/dev/null 2>&1
    fi
    dstat=$?
 }
@@ -728,10 +727,10 @@ end_test()
    trap '' EXIT
 
    if [ "$notracedump" != "yes" ]; then
-      cat ${working}/bareos.*.traceback 2>/dev/null
-      cp -f  ${working}/bareos.*.traceback "${dumps}" 2>/dev/null
-      cat ${working}/*.bactrace 2>/dev/null
-      cp -f ${working}/*.bactrace "${dumps}" 2>/dev/null
+      cat "${working}"/bareos.*.traceback 2>/dev/null
+      cp -f  "${working}"/bareos.*.traceback "${dumps}" 2>/dev/null
+      cat "${working}"/*.bactrace 2>/dev/null
+      cp -f "${working}"/*.bactrace "${dumps}" 2>/dev/null
    fi
    if [ -f "$tmp/err.log" ]; then
       cat "$tmp/err.log"
@@ -748,21 +747,21 @@ end_test()
    fi
    if [ "$zstat" != "0" ] ; then
       echo " "
-      echo "  !!!!! $TestName failed!!! $ENDDATA !!!!! "
+      echo "  !!!!! $TestName failed!!! $ENDDATE !!!!! "
       echo "   Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat"
       echo "  !!!!! $TestName failed!!! $ENDDATE !!!!! " >>test.out
       echo "   Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat" >>test.out
       echo " "
       exit 1
    fi
-   if [ "$dstat" != "0" -o "$bstat" != "0" -o "$rstat" != "0" ] ; then
+   if [ "$dstat" != "0" ] || [ "$bstat" != "0" ] || [ "$rstat" != "0" ] ; then
       echo " "
       echo " "
       echo "  !!!!! $TestName failed!!! $ENDDATE !!!!! "
       echo "   Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat"
       echo "  !!!!! $TestName failed!!! $ENDDATE !!!!! " >>test.out
       echo "   Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat" >>test.out
-      if [ $bstat != 0 -o $rstat != 0 ] ; then
+      if [ $bstat != 0 ] || [ $rstat != 0 ] ; then
          echo "  !!!!! Bad termination status       !!!!! "
          echo "  !!!!! Bad termination status       !!!!! " >>test.out
       else
@@ -806,9 +805,9 @@ disable_plugins()
 
 update_win32()
 {
-   if [ -d "$cwd/build/src/win32/release32"   \
-     -a -d "$cwd/build/src/win32/release64" ] \
-   || [ -d "$cwd/release32" -a -d "$cwd/release64" ]
+   if [ -d "$cwd/build/src/win32/release32" ]  \
+     && [ -d "$cwd/build/src/win32/release64" ] \
+   || [ -d "$cwd/release32" ] && [ -d "$cwd/release64" ]
    then
        echo -ne "Try to upgrade the FileDaemon:\t"
        wget -qO - "$WIN32_ADDR:8091/install"
@@ -819,7 +818,7 @@ debug_wait()
 {
   if test "${REGRESS_WAIT}" = "1"; then
      echo "Start Bareos under debugger and enter anything when ready ..."
-     read a
+     read -r
   fi
 }
 
@@ -895,6 +894,7 @@ fi
 cwd="$(pwd)"
 
 # Source the configuration variables
+# shellcheck source=../environment.in
 . "${cwd}/environment"
 
 db_name="${db_name:-"regress"}"

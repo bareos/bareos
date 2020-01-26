@@ -1,4 +1,7 @@
 #!/bin/sh
+#shellcheck source=../environment.in
+. ./environment
+
 ${scripts}/bareos-config initialize_database_driver
 . ${rscripts}/functions
 
