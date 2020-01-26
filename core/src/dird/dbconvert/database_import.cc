@@ -30,6 +30,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <algorithm>
 
 DatabaseImport::DatabaseImport(const DatabaseConnection& db_connection)
     : db_(db_connection.db)
