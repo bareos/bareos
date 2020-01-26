@@ -632,6 +632,7 @@ Additionally it is possible to
 
 * Skip disks by alias names using include/exclude
 * Restoring the VM only without any disks is possible by
+
   * Selecting to restore only the **.ovf** file
   * Excluding all disks by alias
 
