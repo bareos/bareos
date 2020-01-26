@@ -8,9 +8,13 @@ TestName="$(basename "$(pwd)")"
 export TestName
 export estat
 
-# shellcheck disable=SC1091
+#shellcheck source=../environment.in
 . ./environment
+#shellcheck source=../scripts/functions
 . "${rscripts}"/functions
+#shellcheck source=../scripts/reload_test_functions
+. "${rscripts}"/reload_test_functions
+
 
 bconsole_command_file="$tmp/bconsole_reload_command"
 console_logfile="$tmp/console.log"
@@ -18,48 +22,6 @@ console_logfile="$tmp/console.log"
 director_debug_level=""
 #director_debug_level="-d 200"
 
-exit_with_error() {
-  echo "$1"
-  estat=1
-  end_test
-  exit 1
-}
-
-stop_director() {
-  "${rscripts}/bareos-ctl-dir" stop
-}
-
-start_director() {
-  "${rscripts}/bareos-ctl-dir" start "$director_debug_level"
-  director_pid=$(pidof ${BAREOS_DIRECTOR_BINARY})
-
-  if [ -z "$director_pid" ]; then
-    exit_with_error "Bareos director could not be started"
-  fi
-}
-
-create_console_command_file() {
-  if [ ! -f "$bconsole_command_file" ]; then
-  cat > "$bconsole_command_file" <<EOF
-@$out "$console_logfile"
-reload
-messages
-EOF
-  fi
-}
-
-test_reload_will_not_crash_director() {
-  create_console_command_file
-
-  ${BAREOS_BCONSOLE_BINARY} -c "$conf"/bconsole.conf < "$bconsole_command_file" 2>&1 >> /dev/null
-  if [ $? != 0 ] ; then
-    exit_with_error "BConsole finished with errors"
-  fi
-
-  if ! ps $director_pid > /dev/null; then
-      exit_with_error "Bareos director should not stop after reload"
-  fi
-}
 
 ############################################
 start_test

@@ -2,11 +2,14 @@
 #
 TestName="$(basename "$(pwd)")"
 export TestName
+#shellcheck source=../environment.in
 . ./environment
+
+JobName=backup-bareos-fd
+#shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
-
 
 exit_failure()
 {

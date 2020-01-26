@@ -14,7 +14,11 @@ TestName="$(basename "$(pwd)")"
 export TestName
 
 JobName=backup-bareos-fd
+#shellcheck source=../environment.in
 . ./environment
+
+JobName=backup-bareos-fd
+#shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
@@ -22,12 +26,12 @@ JobName=backup-bareos-fd
 
 
 # Directory to backup.
-# This directory will be created by setup_data().
+# This directory will be created by setup_data "$@"().
 BackupDirectory="${tmp}/data"
 
 # Use a tgz to setup data to be backuped.
 # Data will be placed at "${tmp}/data/".
-setup_data
+setup_data "$@"
 
 start_test
 
@@ -46,7 +50,7 @@ messages
 quit
 END_OF_DATA
 
-run_bareos
+run_bareos "$@"
 check_for_zombie_jobs storage=File
 stop_bareos
 

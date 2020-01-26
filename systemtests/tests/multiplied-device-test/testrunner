@@ -7,20 +7,23 @@ TestName="$(basename "$(pwd)")"
 export TestName
 
 JobName=backup-to-pool1
+#shellcheck source=../environment.in
 . ./environment
+
+JobName=backup-bareos-fd
+#shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
 
-
 # Directory to backup.
-# This directory will be created by setup_data().
+# This directory will be created by setup_data "$@"().
 BackupDirectory="${tmp}/data"
 
 # Use a tgz to setup data to be backed up.
 # Data will be placed at "${tmp}/data/".
-setup_data
+setup_data "$@"
 
 start_test
 
@@ -49,7 +52,7 @@ messages
 quit
 END_OF_DATA
 
-run_bareos
+run_bareos "$@"
 check_for_zombie_jobs storage=File
 stop_bareos
 
@@ -57,9 +60,9 @@ check_two_logs
 check_restore_diff ${BackupDirectory}
 
 #make sure all MultiFileStorage devices are used
-grep "Using Device \"MultiFileStorage0001\"" ${tmp}/log1.out 2>&1 >/dev/null &&
-grep "Using Device \"MultiFileStorage0002\"" ${tmp}/log1.out 2>&1 >/dev/null &&
-grep "Using Device \"MultiFileStorage0003\"" ${tmp}/log1.out 2>&1 >/dev/null
+grep "Using Device \"MultiFileStorage0001\"" ${tmp}/log1.out >/dev/null 2>&1 &&
+grep "Using Device \"MultiFileStorage0002\"" ${tmp}/log1.out >/dev/null 2>&1 &&
+grep "Using Device \"MultiFileStorage0003\"" ${tmp}/log1.out >/dev/null 2>&1
 if test $? -ne 0 ; then
   echo "Not all MultiFileStorage devices are used."
   estat=1;

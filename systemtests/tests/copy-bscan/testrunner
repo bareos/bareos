@@ -8,19 +8,22 @@
 TestName="$(basename "$(pwd)")"
 export TestName
 
-JobName=backup-bareos-fd
+#shellcheck source=../environment.in
 . ./environment
+
+JobName=backup-bareos-fd
+#shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
 # Directory to backup.
-# This directory will be created by setup_data().
+# This directory will be created by setup_data "$@"().
 BackupDirectory="${tmp}/data"
 
 # Use a tgz to setup data to be backed up.
 # Data will be placed at "${tmp}/data/".
-setup_data
+setup_data "$@"
 
 start_test
 
@@ -86,7 +89,7 @@ if [ "$num_sos" -ne 1 ]; then
 fi
 num_eos=$(grep -c '^End Job Session Record:$' "$tmp/bscan.out")
 if [ "$num_eos" -ne 1 ]; then
-  echo "Found $eum_sos end of session records instead of 1"
+  echo "Found $num_sos end of session records instead of 1"
   stop_bareos
   exit 1
 fi
@@ -100,7 +103,7 @@ if [ "$my_jobid_records" -ne 2 ]; then
   exit 1
 fi
 if [ "$my_jobid_records" -ne "$total_jobid_records" ]; then
-  echo "Volume containes excess session records:"
+  echo "Volume contains excess session records:"
   echo "Got $total_jobid_records in total, only $my_jobid_records mention my original jobid"
   stop_bareos
   exit 1
