@@ -18,7 +18,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-
+#include "include/bareos.h"
 #include "dird/dbconvert/column_description.h"
 #include "dird/dbconvert/row_data.h"
 
@@ -62,33 +62,33 @@ static void timestamp_conversion_postgresql(FieldData& fd)
 
 static void string_conversion_postgresql(FieldData& fd)
 {
-  if(fd.data_pointer) {
+  if (fd.data_pointer) {
     std::size_t len{strlen(fd.data_pointer)};
-    fd.converted_data.resize(len *2 +1);
+    fd.converted_data.resize(len * 2 + 1);
     char* n = fd.converted_data.data();
     const char* o = fd.data_pointer;
 
     while (len--) {
-     switch (*o) {
-      case '\'':
-        *n++ = '\'';
-        *n++ = '\'';
-        o++;
-        break;
-      case 0:
-        *n++ = '\\';
-        *n++ = 0;
-        o++;
-        break;
-      case '\"':
-	*n++ = '\\';
-	*n++ = '\"';
-	o++;
-	break;
-      default:
-        *n++ = *o++;
-        break;
-     }
+      switch (*o) {
+        case '\'':
+          *n++ = '\'';
+          *n++ = '\'';
+          o++;
+          break;
+        case 0:
+          *n++ = '\\';
+          *n++ = 0;
+          o++;
+          break;
+        case '\"':
+          *n++ = '\\';
+          *n++ = '\"';
+          o++;
+          break;
+        default:
+          *n++ = *o++;
+          break;
+      }
     }
     *n = 0;
     fd.data_pointer = fd.converted_data.data();
