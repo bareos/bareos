@@ -37,6 +37,7 @@
 #include "lib/util.h"
 
 #include <iostream>
+#include <array>
 
 #if !defined HAVE_DYNAMIC_CATS_BACKENDS
 #error "NOT DEFINED: HAVE_DYNAMIC_CATS_BACKENDS"
