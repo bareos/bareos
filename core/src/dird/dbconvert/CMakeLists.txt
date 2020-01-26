@@ -12,4 +12,12 @@ if(dynamic-cats-backends)
       $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}>
       ${LMDB_LIBS}
   )
+
+install(TARGETS
+  bareos-dbconvert
+  DESTINATION "${sbindir}"
+)
+
+
+
 endif()

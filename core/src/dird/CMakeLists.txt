@@ -176,7 +176,6 @@ target_link_libraries(bareos-dbcheck ${DBCHECK_LIBRARIES})
 install(TARGETS
   bareos-dir
   bareos-dbcheck
-  bareos-dbconvert
   DESTINATION "${sbindir}"
 )
 
