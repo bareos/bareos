@@ -24,6 +24,7 @@
 #include "cats/cats.h"
 #include "dird/dbconvert/database_column_descriptions.h"
 
+#include <algorithm>
 #include <iostream>
 
 DatabaseColumnDescriptions::DatabaseColumnDescriptions(BareosDb* db) : db_{db}
@@ -39,6 +40,11 @@ void DatabaseColumnDescriptions::SelectTableDescriptions(
     err += sql_query;
     throw std::runtime_error(err);
   }
+  std::sort(column_descriptions.begin(), column_descriptions.end(),
+            [](std::unique_ptr<ColumnDescription>& v1,
+               std::unique_ptr<ColumnDescription>& v2) {
+              return v1->column_name < v2->column_name;
+            });
 }
 
 int DatabaseColumnDescriptionsPostgresql::ResultHandler(void* ctx,

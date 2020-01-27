@@ -94,13 +94,6 @@ void DatabaseExportPostgresql::CopyStart()
   if (!db_->SqlQuery("BEGIN")) { throw std::runtime_error(db_->get_errmsg()); }
 }
 
-struct SequenceSchema {
-  std::string table_name;
-  std::string column_name;
-  std::string sequence_name;
-};
-using SequenceSchemaVector = std::vector<SequenceSchema>;
-
 int DatabaseExportPostgresql::ResultHandlerSequenceSchema(void* ctx,
                                                           int fields,
                                                           char** row)
