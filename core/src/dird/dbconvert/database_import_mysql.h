@@ -19,29 +19,26 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_SRC_DIRD_DBCONVERT_DATABASE_IMPORTER_H_
-#define BAREOS_SRC_DIRD_DBCONVERT_DATABASE_IMPORTER_H_
+#ifndef BAREOS_SRC_DIRD_DBCONVERT_DATABASE_IMPORT_MYSQL_H_
+#define BAREOS_SRC_DIRD_DBCONVERT_DATABASE_IMPORT_MYSQL_H_
+
+#include "include/bareos.h"
+#include "dird/dbconvert/database_import.h"
 
 class BareosDb;
 class DatabaseConnection;
 class DatabaseExport;
 class DatabaseTableDescriptions;
 
-class DatabaseImport {
+class DatabaseImportMysql : public DatabaseImport {
  public:
-  DatabaseImport(const DatabaseConnection& db_connection);
-  virtual ~DatabaseImport();
+  DatabaseImportMysql(const DatabaseConnection& db_connection);
 
-  virtual void ExportTo(DatabaseExport& exporter) = 0;
+  void ExportTo(DatabaseExport& exporter) override;
 
-  static std::unique_ptr<DatabaseImport> Create(
-      const DatabaseConnection& db_connection);
-
- protected:
-  BareosDb* db_{};
-
-  std::unique_ptr<DatabaseTableDescriptions> table_descriptions_;
+ private:
+  static int ResultHandler(void* ctx, int fields, char** row);
 };
 
 
-#endif  // BAREOS_SRC_DIRD_DBCONVERT_DATABASE_IMPORTER_H_
+#endif  // BAREOS_SRC_DIRD_DBCONVERT_DATABASE_IMPORT_MYSQL_H_
