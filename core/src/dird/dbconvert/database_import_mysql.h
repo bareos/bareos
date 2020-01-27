@@ -29,15 +29,24 @@ class BareosDb;
 class DatabaseConnection;
 class DatabaseExport;
 class DatabaseTableDescriptions;
+class ResultHandlerContext;
 
 class DatabaseImportMysql : public DatabaseImport {
  public:
   DatabaseImportMysql(const DatabaseConnection& db_connection);
 
   void ExportTo(DatabaseExport& exporter) override;
+  void CompareWith(DatabaseExport& exporter) override;
 
  private:
-  static int ResultHandler(void* ctx, int fields, char** row);
+  static int ResultHandlerCopy(void* ctx, int fields, char** row);
+  static int ResultHandlerCompare(void* ctx, int fields, char** row);
+  static void FillRowWithDatabaseResult(ResultHandlerContext* r,
+                                        int fields,
+                                        char** row);
+
+  void RunQuerySelectAllRows(DB_RESULT_HANDLER* result_handler,
+                             DatabaseExport& exporter);
 };
 
 

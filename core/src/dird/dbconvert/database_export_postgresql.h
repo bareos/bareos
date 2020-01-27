@@ -31,11 +31,32 @@ class DatabaseExportPostgresql : public DatabaseExport {
                            bool clear_tables = false);
   ~DatabaseExportPostgresql();
 
-  void Start() override;
-  void operator<<(const RowData& data) override;
-  void End() override;
+  void StartTable() override;
+  void EndTable() override;
+
+  void CopyStart() override;
+  void CopyRow(const RowData& data) override;
+  void CopyEnd() override;
+
+  virtual void CompareRow(const RowData& data) override;
+
+ public:
+  struct SequenceSchema {
+    std::string table_name;
+    std::string column_name;
+    std::string sequence_name;
+  };
+
+  using SequenceSchemaVector = std::vector<SequenceSchema>;
 
  private:
-  static int ResultHandler(void* ctx, int fields, char** row);
+  bool transaction_{false};
+  bool start_new_table{false};
+  SequenceSchemaVector sequence_schema_vector_;
+
+  void SelectSequenceSchema();
+  void CursorStartTable(const std::string& table_name);
+  static int ResultHandlerSequenceSchema(void* ctx, int fields, char** row);
+  static int ResultHandlerCompare(void* ctx, int fields, char** row);
 };
 #endif  // BAREOS_SRC_DIRD_DBCONVERT_DATABASE_EXPORT_POSTGRESQL_H_

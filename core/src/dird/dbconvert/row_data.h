@@ -22,6 +22,8 @@
 #define BAREOS_SRC_DIRD_DBCONVERT_ROW_DATA_H_
 
 #include "include/bareos.h"
+#include "dird/dbconvert/database_column_descriptions.h"
+
 #include <vector>
 
 class BareosDb;
@@ -32,8 +34,26 @@ struct FieldData {
 };
 
 struct RowData {
+  RowData(const DatabaseColumnDescriptions::VectorOfColumnDescriptions&
+              column_descriptions_in,
+          const std::string& table_name_in)
+      : table_name(table_name_in), column_descriptions(column_descriptions_in)
+  {
+    row.resize(column_descriptions.size());
+  }
+
   std::string table_name;
-  std::map<std::string, FieldData> row;
+
+  std::vector<FieldData> row;  // same index as column_descriptions
+  const DatabaseColumnDescriptions::VectorOfColumnDescriptions&
+      column_descriptions;
+
+ public:
+  ~RowData() = default;
+  RowData(const RowData& other) = delete;
+  RowData(RowData&& other) = delete;
+  const RowData& operator=(const RowData& rhs) = delete;
+  const RowData& operator=(RowData&& rhs) = delete;
 };
 
 #endif  // BAREOS_SRC_DIRD_DBCONVERT_ROW_DATA_H_
