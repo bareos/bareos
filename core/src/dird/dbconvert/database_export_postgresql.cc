@@ -140,9 +140,12 @@ void DatabaseExportPostgresql::SelectSequenceSchema()
   }
 }
 
-void DatabaseExportPostgresql::CopyEnd()
+static void UpdateSequences(
+    BareosDb* db,
+    const DatabaseExportPostgresql::SequenceSchemaVector&
+        sequence_schema_vector)
 {
-  for (const auto& s : sequence_schema_vector_) {
+  for (const auto& s : sequence_schema_vector) {
     std::string sequence_schema_query{"select setval(' "};
     sequence_schema_query += s.sequence_name;
     sequence_schema_query += "', (select max(";
@@ -150,7 +153,7 @@ void DatabaseExportPostgresql::CopyEnd()
     sequence_schema_query += ") from ";
     sequence_schema_query += s.table_name;
     sequence_schema_query += "))";
-    if (!db_->SqlQuery(sequence_schema_query.c_str())) {
+    if (!db->SqlQuery(sequence_schema_query.c_str())) {
       throw std::runtime_error(
           "DatabaseExportPostgresql: Could not set sequence");
     }
@@ -159,6 +162,12 @@ void DatabaseExportPostgresql::CopyEnd()
     std::endl;
 #endif
   }
+}
+
+void DatabaseExportPostgresql::CopyEnd()
+{
+  UpdateSequences(db_, sequence_schema_vector_);
+
   if (!db_->SqlQuery("COMMIT")) { throw std::runtime_error(db_->get_errmsg()); }
 }
 

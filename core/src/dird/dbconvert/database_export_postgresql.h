@@ -39,13 +39,16 @@ class DatabaseExportPostgresql : public DatabaseExport {
   virtual void CompareRow(const RowData& data) override;
   virtual void CompareEnd() override;
 
- private:
+ public:
   struct SequenceSchema {
     std::string table_name;
     std::string column_name;
     std::string sequence_name;
   };
+
   using SequenceSchemaVector = std::vector<SequenceSchema>;
+
+ private:
   SequenceSchemaVector sequence_schema_vector_;
 
   void SelectSequenceSchema();
