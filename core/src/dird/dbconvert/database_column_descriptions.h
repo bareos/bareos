@@ -33,6 +33,7 @@ class BareosDb;
 class DatabaseColumnDescriptions {
  public:
   DatabaseColumnDescriptions(BareosDb* db);
+  virtual ~DatabaseColumnDescriptions() = default;
 
   using VectorOfColumnDescriptions =
       std::vector<std::unique_ptr<ColumnDescription>>;

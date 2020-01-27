@@ -33,6 +33,7 @@ class ColumnDescription {
   ColumnDescription(const char* column_name_in,
                     const char* data_type_in,
                     const char* max_length_in);
+  virtual ~ColumnDescription() = default;
 
   std::string column_name;
   std::string data_type;
