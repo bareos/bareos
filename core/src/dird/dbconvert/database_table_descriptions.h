@@ -48,6 +48,7 @@ class DatabaseTableDescriptions {
   static std::unique_ptr<DatabaseTableDescriptions> Create(
       const DatabaseConnection& connection);
 
+  virtual ~DatabaseTableDescriptions() = default;
 
  protected:
   DatabaseTableDescriptions(BareosDb* db) : db_{db} {}
