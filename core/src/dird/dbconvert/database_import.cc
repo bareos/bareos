@@ -70,8 +70,7 @@ void DatabaseImport::ExportTo(DatabaseExport& exporter)
       query += col->column_name;
       query += "`, `";
     }
-    // query.erase(query.cend() - 3, query.cend());
-    query = query.substr(0, query.size() - 3);
+    query.resize(query.size() - 3);
     query += " FROM ";
     query += t.table_name;
     //    query += " LIMIT 100000";
