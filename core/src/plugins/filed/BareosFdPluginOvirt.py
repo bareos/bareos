@@ -287,7 +287,7 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 )
                 os.makedirs(dirname)
             # open creates the file, if not yet existing, we close it again right
-            # aways it will be opened again in plugin_io.
+            # always it will be opened again in plugin_io.
             # But: only do this for regular files, prevent from
             # IOError: (21, 'Is a directory', '/tmp/bareos-restores/my/dir/')
             # if it's a directory
@@ -668,7 +668,7 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
     def check_config(self, context):
         """
-        Check the configuration and set or override options if necesary,
+        Check the configuration and set or override options if necessary,
         considering mandatory: username and password in the [credentials] section
         """
         bareosfd.DebugMessage(context, 100, "BareosFdPluginOvirt: check_config()\n")
@@ -1371,7 +1371,7 @@ class BareosOvirtWrapper(object):
         if "vm_template" in self.options:
             vm_template = self.options["vm_template"]
 
-        # Add the virtual machine, the transfered disks will be
+        # Add the virtual machine, the transferred disks will be
         # attached to this virtual machine:
         bareosfd.JobMessage(
             context, bJobMessageType["M_INFO"], "Adding virtual machine %s\n" % vm_name
