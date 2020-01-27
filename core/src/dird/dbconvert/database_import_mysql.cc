@@ -78,13 +78,10 @@ struct ResultHandlerContext {
   uint64_t counter{};
 };
 
-void DatabaseImportMysql::ExportTo(DatabaseExport& exporter)
+void DatabaseImportMysql::RunQuerySelectAllRows(
+    DB_RESULT_HANDLER* ResultHandler,
+    DatabaseExport& exporter)
 {
-  Stopwatch stopwatch;
-  stopwatch.Start();
-
-  exporter.Start();
-
   for (const auto& t : table_descriptions_->tables) {
     std::string query{"SELECT `"};
     for (const auto& col : t.column_descriptions) {
@@ -96,9 +93,10 @@ void DatabaseImportMysql::ExportTo(DatabaseExport& exporter)
     query += t.table_name;
     //    query += " LIMIT 100000";
 
-    RowData row_data;
-    row_data.table_name = t.table_name;
+    RowData row_data(t.column_descriptions, t.table_name);
     ResultHandlerContext ctx(t.column_descriptions, row_data, exporter);
+
+    exporter.StartTable();
 
     if (!db_->SqlQuery(query.c_str(), ResultHandler, &ctx)) {
       std::cout << "Could not import table: " << t.table_name << std::endl;
@@ -106,31 +104,66 @@ void DatabaseImportMysql::ExportTo(DatabaseExport& exporter)
       err += query;
       std::cout << query << std::endl;
     }
+
+    exporter.EndTable();
     // std::cout << query << std::endl << std::endl;
   }
-  exporter.End();
+}
+
+void DatabaseImportMysql::ExportTo(DatabaseExport& exporter)
+{
+  Stopwatch stopwatch;
+  stopwatch.Start();
+
+  exporter.CopyStart();
+
+  RunQuerySelectAllRows(ResultHandlerCopy, exporter);
+
+  exporter.CopyEnd();
+
   stopwatch.Stop();
   stopwatch.PrintDurationToStdout();
 }
 
-int DatabaseImportMysql::ResultHandler(void* ctx, int fields, char** row)
+void DatabaseImportMysql::CompareWith(DatabaseExport& exporter)
 {
-  ResultHandlerContext* r = static_cast<ResultHandlerContext*>(ctx);
+  RunQuerySelectAllRows(ResultHandlerCompare, exporter);
+}
 
+void DatabaseImportMysql::FillRowWithDatabaseResult(ResultHandlerContext* r,
+                                                    int fields,
+                                                    char** row)
+{
   if (fields != static_cast<int>(r->column_descriptions.size())) {
     throw std::runtime_error(
         "Number of database fields does not match description");
   }
 
   for (int i = 0; i < fields; i++) {
-    const std::string& column_name = r->column_descriptions[i]->column_name;
-
     RowData& row_data = r->row_data;
-    row_data.row[column_name].data_pointer = row[i];
-    r->column_descriptions[i]->db_import_converter(row_data.row[column_name]);
+    row_data.row[i].data_pointer = row[i];
+    r->column_descriptions[i]->db_import_converter(row_data.row[i]);
   }
+}
 
-  r->exporter << r->row_data;
+int DatabaseImportMysql::ResultHandlerCopy(void* ctx, int fields, char** row)
+{
+  ResultHandlerContext* r = static_cast<ResultHandlerContext*>(ctx);
+  FillRowWithDatabaseResult(r, fields, row);
+
+  r->exporter.CopyRow(r->row_data);
+
+  if (!(++r->counter % 10000)) { std::cout << "." << std::flush; }
+  return 0;
+}
+
+int DatabaseImportMysql::ResultHandlerCompare(void* ctx, int fields, char** row)
+{
+  ResultHandlerContext* r = static_cast<ResultHandlerContext*>(ctx);
+  FillRowWithDatabaseResult(r, fields, row);
+
+  r->exporter.CompareRow(r->row_data);
+
   if (!(++r->counter % 10000)) { std::cout << "." << std::flush; }
   return 0;
 }

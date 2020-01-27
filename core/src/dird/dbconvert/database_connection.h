@@ -32,8 +32,6 @@
 #include "include/jcr.h"
 #include "lib/parse_conf.h"
 
-#include <map>
-
 class BareosDb;
 class JobControlRecord;
 

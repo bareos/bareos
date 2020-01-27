@@ -33,6 +33,7 @@ class DatabaseImport {
   virtual ~DatabaseImport();
 
   virtual void ExportTo(DatabaseExport& exporter) = 0;
+  virtual void CompareWith(DatabaseExport& exporter) = 0;
 
   static std::unique_ptr<DatabaseImport> Create(
       const DatabaseConnection& db_connection);

@@ -26,6 +26,8 @@
 #include "dird/dbconvert/database_connection.h"
 #include "include/make_unique.h"
 
+#include <algorithm>
+#include <cctype>
 #include <string>
 #include <vector>
 
@@ -43,10 +45,14 @@ class DatabaseTableDescriptions {
     DatabaseColumnDescriptions::VectorOfColumnDescriptions column_descriptions;
   };
 
+ public:
   std::vector<TableDescription> tables;
 
   static std::unique_ptr<DatabaseTableDescriptions> Create(
       const DatabaseConnection& connection);
+
+  const TableDescription* GetTableDescription(
+      const std::string& table_name) const;
 
   virtual ~DatabaseTableDescriptions() = default;
 
