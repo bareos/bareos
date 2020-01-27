@@ -31,13 +31,14 @@ class DatabaseExportPostgresql : public DatabaseExport {
                            bool clear_tables = false);
   ~DatabaseExportPostgresql();
 
+  void StartTable(const RowData& row_data) override;
+  void EndTable() override;
+
   void CopyStart() override;
   void CopyRow(const RowData& data) override;
   void CopyEnd() override;
 
-  virtual void CompareStart() override;
   virtual void CompareRow(const RowData& data) override;
-  virtual void CompareEnd() override;
 
  public:
   struct SequenceSchema {

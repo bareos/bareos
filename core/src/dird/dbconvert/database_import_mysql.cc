@@ -82,11 +82,6 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
     DB_RESULT_HANDLER* ResultHandler,
     DatabaseExport& exporter)
 {
-  Stopwatch stopwatch;
-  stopwatch.Start();
-
-  exporter.CopyStart();
-
   for (const auto& t : table_descriptions_->tables) {
     std::string query{"SELECT `"};
     for (const auto& col : t.column_descriptions) {
@@ -110,14 +105,21 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
     }
     // std::cout << query << std::endl << std::endl;
   }
-  exporter.CopyEnd();
-  stopwatch.Stop();
-  stopwatch.PrintDurationToStdout();
 }
 
 void DatabaseImportMysql::ExportTo(DatabaseExport& exporter)
 {
+  Stopwatch stopwatch;
+  stopwatch.Start();
+
+  exporter.CopyStart();
+
   RunQuerySelectAllRows(ResultHandlerCopy, exporter);
+
+  exporter.CopyEnd();
+
+  stopwatch.Stop();
+  stopwatch.PrintDurationToStdout();
 }
 
 void DatabaseImportMysql::CompareWith(DatabaseExport& exporter)

@@ -63,7 +63,7 @@ void DatabaseExportPostgresql::CopyRow(const RowData& data)
     query += r.first;
     query += ", ";
   }
-  query.erase(query.end() - 2);
+  query.resize(query.size() - 2);
   query += ")";
 
   query += " VALUES (";
@@ -74,7 +74,7 @@ void DatabaseExportPostgresql::CopyRow(const RowData& data)
     query += "',";
   }
 
-  query.erase(query.end() - 1);
+  query.resize(query.size() - 1);
   query += ")";
 #if 0
   std::cout << query << std::endl;
@@ -85,13 +85,6 @@ void DatabaseExportPostgresql::CopyRow(const RowData& data)
     throw std::runtime_error(err);
   }
 #endif
-}
-
-void DatabaseExportPostgresql::CopyStart()
-{
-  SelectSequenceSchema();
-
-  if (!db_->SqlQuery("BEGIN")) { throw std::runtime_error(db_->get_errmsg()); }
 }
 
 int DatabaseExportPostgresql::ResultHandlerSequenceSchema(void* ctx,
@@ -133,6 +126,13 @@ void DatabaseExportPostgresql::SelectSequenceSchema()
   }
 }
 
+void DatabaseExportPostgresql::CopyStart()
+{
+  SelectSequenceSchema();
+
+  if (!db_->SqlQuery("BEGIN")) { throw std::runtime_error(db_->get_errmsg()); }
+}
+
 static void UpdateSequences(
     BareosDb* db,
     const DatabaseExportPostgresql::SequenceSchemaVector&
@@ -164,7 +164,15 @@ void DatabaseExportPostgresql::CopyEnd()
   if (!db_->SqlQuery("COMMIT")) { throw std::runtime_error(db_->get_errmsg()); }
 }
 
-void DatabaseExportPostgresql::CompareStart() {}
+void DatabaseExportPostgresql::StartTable(const RowData& row_data)
+{
+  std::string query{
+      "BEGIN "
+      " DECLARE curs1 CURSOR FOR SELECT "};
+}
+
+void DatabaseExportPostgresql::EndTable() {}
+
 
 void DatabaseExportPostgresql::CompareRow(const RowData& data)
 {
@@ -198,5 +206,3 @@ int DatabaseExportPostgresql::ResultHandlerCompare(void* ctx,
   const RowData* data = static_cast<RowData*>(ctx);
   return 1;
 }
-
-void DatabaseExportPostgresql::CompareEnd() {}
