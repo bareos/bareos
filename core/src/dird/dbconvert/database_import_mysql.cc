@@ -40,6 +40,29 @@ DatabaseImportMysql::DatabaseImportMysql(
   return;
 }
 
+class Stopwatch {
+ public:
+  void Start() { start_ = std::chrono::steady_clock::now(); }
+  void Stop() { end_ = std::chrono::steady_clock::now(); }
+  void PrintDurationToStdout()
+  {
+    auto duration = end_ - start_;
+    auto c(std::chrono::duration_cast<std::chrono::milliseconds>(duration)
+               .count());
+    std::ostringstream oss;
+    oss << std::setfill('0')            // set field fill character to '0'
+        << (c % 1000000) / 1000 << "s"  // format seconds
+        << "::" << std::setw(3)         // set width of milliseconds field
+        << (c % 1000) << "ms";          // format milliseconds
+
+    std::cout << "Duration: " << oss.str() << std::endl;
+  }
+
+ private:
+  std::chrono::time_point<std::chrono::steady_clock> start_;
+  std::chrono::time_point<std::chrono::steady_clock> end_;
+};
+
 struct ResultHandlerContext {
   ResultHandlerContext(
       const DatabaseColumnDescriptions::VectorOfColumnDescriptions& c,
@@ -57,9 +80,10 @@ struct ResultHandlerContext {
 
 void DatabaseImportMysql::ExportTo(DatabaseExport& exporter)
 {
-  exporter.Start();
+  Stopwatch stopwatch;
+  stopwatch.Start();
 
-  auto start = std::chrono::steady_clock::now();
+  exporter.Start();
 
   for (const auto& t : table_descriptions_->tables) {
     std::string query{"SELECT `"};
@@ -85,18 +109,8 @@ void DatabaseImportMysql::ExportTo(DatabaseExport& exporter)
     // std::cout << query << std::endl << std::endl;
   }
   exporter.End();
-
-  auto end = std::chrono::steady_clock::now();
-  auto duration = end - start;
-  auto c(
-      std::chrono::duration_cast<std::chrono::milliseconds>(duration).count());
-  std::ostringstream oss;
-  oss << std::setfill('0')            // set field fill character to '0'
-      << (c % 1000000) / 1000 << "s"  // format seconds
-      << "::" << std::setw(3)         // set width of milliseconds field
-      << (c % 1000) << "ms";          // format milliseconds
-
-  std::cout << "Duration: " << oss.str() << std::endl;
+  stopwatch.Stop();
+  stopwatch.PrintDurationToStdout();
 }
 
 int DatabaseImportMysql::ResultHandler(void* ctx, int fields, char** row)
