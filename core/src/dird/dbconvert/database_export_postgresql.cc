@@ -54,7 +54,7 @@ DatabaseExportPostgresql::DatabaseExportPostgresql(
 
 DatabaseExportPostgresql::~DatabaseExportPostgresql() = default;
 
-void DatabaseExportPostgresql::operator<<(const RowData& data)
+void DatabaseExportPostgresql::CopyRow(const RowData& data)
 {
   std::string query{"INSERT INTO "};
   query += data.table_name;
@@ -87,8 +87,10 @@ void DatabaseExportPostgresql::operator<<(const RowData& data)
 #endif
 }
 
-void DatabaseExportPostgresql::Start()
+void DatabaseExportPostgresql::CopyStart()
 {
+  SelectSequenceSchema();
+
   if (!db_->SqlQuery("BEGIN")) { throw std::runtime_error(db_->get_errmsg()); }
 }
 
@@ -97,11 +99,11 @@ struct SequenceSchema {
   std::string column_name;
   std::string sequence_name;
 };
-
-
 using SequenceSchemaVector = std::vector<SequenceSchema>;
 
-int DatabaseExportPostgresql::ResultHandler(void* ctx, int fields, char** row)
+int DatabaseExportPostgresql::ResultHandlerSequenceSchema(void* ctx,
+                                                          int fields,
+                                                          char** row)
 {
   if (fields != 3) {
     throw std::runtime_error("DatabaseExportPostgresql: Wrong number of rows");
@@ -123,22 +125,24 @@ int DatabaseExportPostgresql::ResultHandler(void* ctx, int fields, char** row)
   return 0;
 }
 
-void DatabaseExportPostgresql::End()
+void DatabaseExportPostgresql::SelectSequenceSchema()
 {
   const std::string query{
       "select table_name, column_name,"
       " column_default from information_schema.columns where table_schema ="
       " 'public' and column_default like 'nextval(%';"};
 
-  SequenceSchemaVector v;
-
-  if (!db_->SqlQuery(query.c_str(), ResultHandler, &v)) {
+  if (!db_->SqlQuery(query.c_str(), ResultHandlerSequenceSchema,
+                     &sequence_schema_vector_)) {
     std::string err{"DatabaseExportPostgresql: Could not change sequence: "};
     err += db_->get_errmsg();
     throw std::runtime_error(err);
   }
+}
 
-  for (const auto& s : v) {
+void DatabaseExportPostgresql::CopyEnd()
+{
+  for (const auto& s : sequence_schema_vector_) {
     std::string sequence_schema_query{"select setval(' "};
     sequence_schema_query += s.sequence_name;
     sequence_schema_query += "', (select max(";
@@ -150,8 +154,47 @@ void DatabaseExportPostgresql::End()
       throw std::runtime_error(
           "DatabaseExportPostgresql: Could not set sequence");
     }
-    //    std::cout << "Updating sequence for table: " << s.table_name <<
-    //    std::endl;
+#if 0
+    std::cout << "Updating sequence for table: " << s.table_name <<
+    std::endl;
+#endif
   }
   if (!db_->SqlQuery("COMMIT")) { throw std::runtime_error(db_->get_errmsg()); }
 }
+
+void DatabaseExportPostgresql::CompareStart() {}
+
+void DatabaseExportPostgresql::CompareRow(const RowData& data)
+{
+  std::string query{"SELECT "};
+  for (const auto& r : data.row) {
+    query += r.first;
+    query += ", ";
+  }
+  query.resize(query.size() - 2);
+
+  query += " FROM ";
+  query += data.table_name;
+
+#if 0
+  std::cout << query << std::endl;
+#else
+  RowData& no_const_rowdata{const_cast<RowData&>(data)};
+  if (!db_->SqlQuery(query.c_str(), ResultHandlerCompare, &no_const_rowdata)) {
+    std::string err{
+        "DatabaseExportPostgresql (compare): Could not execute query: "};
+    err += db_->get_errmsg();
+    throw std::runtime_error(err);
+  }
+#endif
+}
+
+int DatabaseExportPostgresql::ResultHandlerCompare(void* ctx,
+                                                   int fields,
+                                                   char** row)
+{
+  const RowData* data = static_cast<RowData*>(ctx);
+  return 1;
+}
+
+void DatabaseExportPostgresql::CompareEnd() {}

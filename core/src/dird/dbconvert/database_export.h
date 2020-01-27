@@ -40,9 +40,13 @@ class DatabaseExport {
       const DatabaseConnection& db_connection,
       bool clear_tables = false);
 
-  virtual void Start() = 0;
-  virtual void operator<<(const RowData& data) = 0;
-  virtual void End() = 0;
+  virtual void CopyStart() = 0;
+  virtual void CopyRow(const RowData& data) = 0;
+  virtual void CopyEnd() = 0;
+
+  virtual void CompareStart() = 0;
+  virtual void CompareRow(const RowData& data) = 0;
+  virtual void CompareEnd() = 0;
 
  protected:
   BareosDb* db_{};

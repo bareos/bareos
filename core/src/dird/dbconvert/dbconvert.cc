@@ -71,6 +71,8 @@ class DbConvert {
         DatabaseExport::Create(*destination_db_, cl.empty_destination_tables));
 
     imp->ExportTo(*exp);
+
+    if (cl.compare_all_rows) { imp->CompareWith(*exp); }
   }
 
  private:
@@ -129,7 +131,7 @@ class DbConvert {
       bool options_error{false};
       int argument_count{};
 
-      while ((c = getopt(argc, argv, "dc:?")) != -1 && !options_error) {
+      while ((c = getopt(argc, argv, "c:de?")) != -1 && !options_error) {
         switch (c) {
           case 'c':
             configpath_ = optarg;
@@ -137,6 +139,10 @@ class DbConvert {
             break;
           case 'd':
             empty_destination_tables = true;
+            ++argument_count;
+            break;
+          case 'e':
+            compare_all_rows = true;
             ++argument_count;
             break;
           case '?':
@@ -160,6 +166,7 @@ class DbConvert {
     std::string configpath_{"/etc/bareos"};
     std::string source_db_resource_name, destination_db_resource_name;
     bool empty_destination_tables{false};
+    bool compare_all_rows{false};
 
     void usage() noexcept
     {
@@ -167,6 +174,7 @@ class DbConvert {
 
       fprintf(stderr, _("Usage: bareos-dbconvert [options] Source Destination\n"
                         "        -c <path>   use <path> as configuration file "
+                        "        -e          examine (compare) all rows"
                         "or directory\n"
                         "        -?          print this message.\n"
                         "\n"));
