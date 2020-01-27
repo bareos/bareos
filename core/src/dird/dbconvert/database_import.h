@@ -33,7 +33,7 @@ class DatabaseTableDescriptions;
 class DatabaseImport {
  public:
   DatabaseImport(const DatabaseConnection& db_connection);
-  ~DatabaseImport();
+  virtual ~DatabaseImport();
 
   void ExportTo(DatabaseExport& exporter);
 
