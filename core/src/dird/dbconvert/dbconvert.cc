@@ -66,11 +66,11 @@ class DbConvert {
 
   void DoDatabaseConversion()
   {
-    DatabaseImport imp(*source_db_);
+    std::unique_ptr<DatabaseImport> imp(DatabaseImport::Create(*source_db_));
     std::unique_ptr<DatabaseExport> exp(
         DatabaseExport::Create(*destination_db_, cl.empty_destination_tables));
 
-    imp.ExportTo(*exp);
+    imp->ExportTo(*exp);
   }
 
  private:
