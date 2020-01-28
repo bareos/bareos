@@ -33,7 +33,8 @@ class ResultHandlerContext;
 
 class DatabaseImportMysql : public DatabaseImport {
  public:
-  DatabaseImportMysql(const DatabaseConnection& db_connection);
+  DatabaseImportMysql(const DatabaseConnection& db_connection,
+                      std::size_t maximum_amount_of_rows);
 
   void ExportTo(DatabaseExport& exporter) override;
   void CompareWith(DatabaseExport& exporter) override;
@@ -47,6 +48,7 @@ class DatabaseImportMysql : public DatabaseImport {
 
   void RunQuerySelectAllRows(DB_RESULT_HANDLER* result_handler,
                              DatabaseExport& exporter);
+  std::size_t maximum_amount_of_rows{};
 };
 
 

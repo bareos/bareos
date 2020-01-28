@@ -56,6 +56,7 @@ class DatabaseExportPostgresql : public DatabaseExport {
 
   void SelectSequenceSchema();
   void CursorStartTable(const std::string& table_name);
+  bool TableExists(const std::string& table_name);
   static int ResultHandlerSequenceSchema(void* ctx, int fields, char** row);
   static int ResultHandlerCompare(void* ctx, int fields, char** row);
 };
