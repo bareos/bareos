@@ -161,7 +161,7 @@ else()
   target_link_libraries(bareos-dir ${BAREOS_DIR_LIBRARIES})
 endif()
 
-add_subdirectory(dbconvert)
+add_subdirectory(dbcopy)
 
 add_executable(bareos-dbcheck ${DBCHKSRCS})
 set(DBCHECK_LIBRARIES bareossql bareos bareosfind bareoscats)

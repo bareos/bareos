@@ -576,9 +576,9 @@ set(SYSTEM_TESTS_DISABLED # initially empty
 )
 
 if(mysql AND postgresql AND dynamic-cats-backends)
-  list(APPEND SYSTEM_TESTS "dbconvert-mysql-postgresql-test")
+  list(APPEND SYSTEM_TESTS "dbcopy-mysql-postgresql-test")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "dbconvert-mysql-postgresql-test")
+  list(APPEND SYSTEM_TESTS_DISABLED "dbcopy-mysql-postgresql-test")
 endif()
 
 # python-bareos-test does not work on installed files

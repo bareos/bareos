@@ -23,7 +23,7 @@
 #define BAREOS_SRC_DIRD_DBCONVERT_DATABASE_COLUMN_DESCRIPTIONS_H_
 
 #include "include/bareos.h"
-#include "dird/dbconvert/column_description.h"
+#include "dird/dbcopy/column_description.h"
 #include "cats/cats.h"
 
 #include <string>
