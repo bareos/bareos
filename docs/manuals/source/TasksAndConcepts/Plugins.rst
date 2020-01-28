@@ -610,6 +610,7 @@ For backing up a VM, the plugin performs the following steps:
 * Retrieve the VM disk image data of the snapshot via oVirt Image I/O
 * Remove the snapshot
 
+When using include/exclude options, the snapshot will only contain the resulting disks.
 
 It is included in Bareos since :sinceVersion:`19: oVirt Plugin`.
 
@@ -626,6 +627,14 @@ When performing restores, the plugin can do one of the following:
 * Write local disk image files
 * Create a new VM with new disks
 * Overwrite existing disks of an existing VM
+
+Additionally it is possible to
+
+* Skip disks by alias names using include/exclude
+* Restoring the VM only without any disks is possible by
+
+  * Selecting to restore only the **.ovf** file
+  * Excluding all disks by alias
 
 Currently, the access to disk images is implemented only via the oVirt Image I/O Proxy component
 of the engine server.
@@ -711,6 +720,38 @@ And the job as follows:
       FileSet = "testvm1_fileset"
    }
 
+Optionally, it is possible to use a configuration file on the system running the |fd| for storing the credentials instead of using the plugin options **username** and **password**. Use the plugin option **config_file** to specify the config file name as in the following example:
+
+.. code-block:: bareosconfig
+   :caption: /etc/bareos/bareos-dir.d/fileset/testvm1_fileset.conf
+
+   FileSet {
+      Name = "testvm1_fileset"
+
+      Include {
+         Options {
+            signature = MD5
+            Compression = LZ4
+         }
+         Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-ovirt:ca=/etc/bareos/ovirt-ca.cert:server=engine.example.com:config_file=/etc/bareos/ovirt-plugin.ini:vm_name=testvm1"
+      }
+   }
+
+And the config file as follows:
+
+.. code-block:: bareosconfig
+   :caption: /etc/bareos/ovirt-plugin.ini
+
+   [credentials]
+   username = admin@internal
+   password = secret
+
+.. note::
+
+   Do not use quotes in the above config file, it is processed by the Python ConfigParser module and the quotes would not be stripped from the string.
+
+Currently the config file can only be used for credentials. If **username** and **password** are also present in the plugin options, the credentials from the config file will override them. In this case, the job log will contain a warning.
+
 Mandatory Plugin Options:
 
 module_path
@@ -746,14 +787,16 @@ uuid
 
 include_disk_aliases
    Comma separated list of disk alias names to be included only. If not specified, all disks
-   that are attached to the VM are included. Currently only used on backup.
+   that are attached to the VM are included. Can be used on backup and restore.
 
 exclude_disk_aliases
    Comma separated list of disk alias names to be excluded, if not specified, no disk will
-   be excluded. Currently only used on backup. Note that the **include_disk_aliases** options
+   be excluded. Using ``exclude_disk_aliases=*`` would exclude all disks. Can be used on
+   backup and restore. Note that the **include_disk_aliases** options
    is applied first, then **exclude_disk_aliases**, so using both usually makes no sense.
    Also note that disk alias names are not unique, so if two disks of a VM have the same
-   alias name, they will be excluded both.
+   alias name, they will be excluded both. Excluded disks will be already excluded from
+   the snapshot.
 
 overwrite
    When restoring disks of an existing VM, the option **overwrite=yes** must be explictly
