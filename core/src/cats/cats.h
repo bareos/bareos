@@ -626,6 +626,7 @@ class BareosDb : public BareosDbQueryEnum {
   POOLMEM* errmsg = nullptr;        /**< Nicely edited error message */
   const char** queries = nullptr;   /**< table of query texts */
   static const char* query_names[]; /**< table of query names */
+  int num_rows_ = 0; /**< Number of rows returned by last query */
 
  private:
   /*
@@ -668,6 +669,12 @@ class BareosDb : public BareosDbQueryEnum {
   bool IsPrivate(void) { return is_private_; }
   void SetPrivate(bool IsPrivate) { is_private_ = IsPrivate; }
   void IncrementRefcount(void) { ref_count_++; }
+
+  int SqlNumRows(void)
+  {
+    // only valid for queries without handler
+    return num_rows_;
+  }
 
   /* bvfs.c */
   bool BvfsUpdatePathHierarchyCache(JobControlRecord* jcr, char* jobids);
@@ -1050,7 +1057,6 @@ class BareosDb : public BareosDbQueryEnum {
    * Backend methods
    */
  private:
-  virtual int SqlNumRows(void) = 0;
   virtual void SqlFieldSeek(int field) = 0;
   virtual int SqlNumFields(void) = 0;
   virtual void SqlFreeResult(void) = 0;
