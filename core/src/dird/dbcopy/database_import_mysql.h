@@ -23,7 +23,7 @@
 #define BAREOS_SRC_DIRD_DBCONVERT_DATABASE_IMPORT_MYSQL_H_
 
 #include "include/bareos.h"
-#include "dird/dbconvert/database_import.h"
+#include "dird/dbcopy/database_import.h"
 
 class BareosDb;
 class DatabaseConnection;

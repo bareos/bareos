@@ -20,10 +20,10 @@
 */
 
 #include "include/bareos.h"
-#include "dird/dbconvert/database_table_descriptions.h"
-#include "dird/dbconvert/row_data.h"
-#include "dird/dbconvert/database_export.h"
-#include "dird/dbconvert/database_import_mysql.h"
+#include "dird/dbcopy/database_table_descriptions.h"
+#include "dird/dbcopy/row_data.h"
+#include "dird/dbcopy/database_export.h"
+#include "dird/dbcopy/database_import_mysql.h"
 #include "include/make_unique.h"
 
 #include <cassert>

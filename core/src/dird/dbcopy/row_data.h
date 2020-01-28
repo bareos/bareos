@@ -22,7 +22,7 @@
 #define BAREOS_SRC_DIRD_DBCONVERT_ROW_DATA_H_
 
 #include "include/bareos.h"
-#include "dird/dbconvert/database_column_descriptions.h"
+#include "dird/dbcopy/database_column_descriptions.h"
 
 #include <vector>
 

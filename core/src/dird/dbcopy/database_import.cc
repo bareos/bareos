@@ -20,10 +20,10 @@
 */
 
 #include "include/bareos.h"
-#include "dird/dbconvert/database_import.h"
-#include "dird/dbconvert/database_connection.h"
-#include "dird/dbconvert/database_table_descriptions.h"
-#include "dird/dbconvert/database_import_mysql.h"
+#include "dird/dbcopy/database_import.h"
+#include "dird/dbcopy/database_connection.h"
+#include "dird/dbcopy/database_table_descriptions.h"
+#include "dird/dbcopy/database_import_mysql.h"
 
 DatabaseImport::DatabaseImport(const DatabaseConnection& db_connection)
     : db_(db_connection.db)

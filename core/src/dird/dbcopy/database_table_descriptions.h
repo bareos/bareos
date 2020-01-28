@@ -22,8 +22,8 @@
 #ifndef BAREOS_SRC_DIRD_DBCONVERT_DATABASE_TABLES_H_
 #define BAREOS_SRC_DIRD_DBCONVERT_DATABASE_TABLES_H_
 
-#include "dird/dbconvert/database_column_descriptions.h"
-#include "dird/dbconvert/database_connection.h"
+#include "dird/dbcopy/database_column_descriptions.h"
+#include "dird/dbcopy/database_connection.h"
 #include "include/make_unique.h"
 
 #include <algorithm>

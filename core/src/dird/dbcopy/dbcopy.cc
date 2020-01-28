@@ -28,10 +28,10 @@
 #include "dird/dird_globals.h"
 #include "dird/jcr_private.h"
 #include "dird/job.h"
-#include "dird/dbconvert/database_connection.h"
-#include "dird/dbconvert/database_export.h"
-#include "dird/dbconvert/database_export_postgresql.h"
-#include "dird/dbconvert/database_import.h"
+#include "dird/dbcopy/database_connection.h"
+#include "dird/dbcopy/database_export.h"
+#include "dird/dbcopy/database_export_postgresql.h"
+#include "dird/dbcopy/database_import.h"
 #include "include/make_unique.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
@@ -183,7 +183,7 @@ class DbConvert {
       kBareosVersionStrings.PrintCopyright(stderr, 2000);
 
       fprintf(stderr,
-              _("Usage: bareos-dbconvert [options] Source Destination\n"
+              _("Usage: bareos-dbcopy [options] Source Destination\n"
                 "        -c <path>   use <path> as configuration file or "
                 "directory\n"
                 "        -e          examine (compare) all rows"
@@ -222,8 +222,8 @@ int main(int argc, char** argv)
   Cleanup c;
 
   try {
-    DbConvert dbconvert(argc, argv);
-    dbconvert.DoDatabaseConversion();
+    DbConvert dbcopy(argc, argv);
+    dbcopy.DoDatabaseConversion();
   } catch (const std::runtime_error& e) {
     std::string errstring{e.what()};
     if (!errstring.empty()) {
