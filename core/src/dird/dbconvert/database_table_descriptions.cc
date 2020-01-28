@@ -31,29 +31,6 @@
 
 using TableNames = std::vector<std::string>;
 
-static std::set<std::string> names_of_unused_tables{
-    "webacula_client_acl",
-    "webacula_command_acl",
-    "webacula_dt_commands",
-    "webacula_dt_resources",
-    "webacula_file_56a09a83344113cb847c81a3306809d5",
-    "webacula_fileset_acl",
-    "webacula_job_acl",
-    "webacula_jobdesc",
-    "webacula_logbook",
-    "webacula_logtype",
-    "webacula_php_session",
-    "webacula_pool_acl",
-    "webacula_resources",
-    "webacula_roles",
-    "webacula_storage_acl",
-    "webacula_tmp_file_754baa5bda2eeab536bb707609c07c90",
-    "webacula_tmp_tablelist",
-    "webacula_tmptablelist",
-    "webacula_users",
-    "webacula_version",
-    "webacula_where_acl"};
-
 void DatabaseTableDescriptions::SelectTableNames(const std::string& sql_query,
                                                  TableNames& table_names)
 {
@@ -64,16 +41,6 @@ void DatabaseTableDescriptions::SelectTableNames(const std::string& sql_query,
     err += sql_query;
     throw std::runtime_error(err);
   }
-
-  table_names.erase(std::remove_if(table_names.begin(), table_names.end(),
-                                   [](const std::string& tn) {
-                                     if (names_of_unused_tables.find(tn) !=
-                                         names_of_unused_tables.end()) {
-                                       return true;
-                                     }
-                                     return false;
-                                   }),
-                    table_names.end());
 
   if (!table_names.empty()) {
     std::sort(table_names.begin(), table_names.end());

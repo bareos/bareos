@@ -35,11 +35,13 @@ DatabaseImport::DatabaseImport(const DatabaseConnection& db_connection)
 DatabaseImport::~DatabaseImport() = default;
 
 std::unique_ptr<DatabaseImport> DatabaseImport::Create(
-    const DatabaseConnection& db_connection)
+    const DatabaseConnection& db_connection,
+    std::size_t maximum_amount_of_rows)
 {
   switch (db_connection.db_type) {
     case DatabaseType::Enum::kMysql:
-      return std::make_unique<DatabaseImportMysql>(db_connection);
+      return std::make_unique<DatabaseImportMysql>(db_connection,
+                                                   maximum_amount_of_rows);
     default:
     case DatabaseType::Enum::kPostgresql:
       throw std::runtime_error(
