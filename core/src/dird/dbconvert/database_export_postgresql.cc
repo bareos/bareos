@@ -156,6 +156,7 @@ static bool TableIsEmtpy(BareosDb* db, const std::string& table_name)
 {
   std::string query{"SELECT * FROM "};
   query += table_name;
+  query += " LIMIT 1";
 
   if (!db->SqlQuery(query.c_str())) {
     std::string err{"DatabaseExportPostgresql: Could not select table: "};
