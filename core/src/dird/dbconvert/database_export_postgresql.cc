@@ -191,7 +191,15 @@ int DatabaseExportPostgresql::ResultHandlerCompare(void* ctx,
                                                    int fields,
                                                    char** row)
 {
-  for (int i = 0; i < fields; i++) { std::string r1{row[i]}; }
+  const RowData* rd{static_cast<RowData*>(ctx)};
+
+  for (int i = 0; i < fields; i++) {
+    std::string r1{row[i]};
+    std::string r2{rd->row[i].data_pointer};
+    if (r1 != r2) { throw std::runtime_error("What??"); }
+    if (rd->table_name == "File") { std::cout << r1 << " " << r2 << std::endl; }
+    return 1;
+  }
   return 0;
 }
 
