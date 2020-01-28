@@ -9,7 +9,7 @@ export TestName
 #shellcheck source=../environment.in
 . ./environment
 
-JobName=backup-bareos-fd
+JobName=bconsole-status-client
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup

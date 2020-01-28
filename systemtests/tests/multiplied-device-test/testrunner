@@ -60,9 +60,9 @@ check_two_logs
 check_restore_diff ${BackupDirectory}
 
 #make sure all MultiFileStorage devices are used
-grep "Using Device \"MultiFileStorage0001\"" ${tmp}/log1.out >/dev/null 2>&1 &&
-grep "Using Device \"MultiFileStorage0002\"" ${tmp}/log1.out >/dev/null 2>&1 &&
-grep "Using Device \"MultiFileStorage0003\"" ${tmp}/log1.out >/dev/null 2>&1
+grep "Using Device \"MultiFileStorage0001\"" "${tmp}"/log1.out >/dev/null 2>&1 &&
+grep "Using Device \"MultiFileStorage0002\"" "${tmp}"/log1.out >/dev/null 2>&1 &&
+grep "Using Device \"MultiFileStorage0003\"" "${tmp}"/log1.out >/dev/null 2>&1
 if test $? -ne 0 ; then
   echo "Not all MultiFileStorage devices are used."
   estat=1;

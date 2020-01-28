@@ -617,7 +617,7 @@ check_log()
       rstat=1
    fi
 
-   if [ $bstat != 0 ] || [ $rstat != 0 ] ; then
+   if [ $bstat -ne 0 ] || [ $rstat -ne 0 ] ; then
       return 1
    fi
 
@@ -761,7 +761,7 @@ end_test()
       echo "   Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat"
       echo "  !!!!! $TestName failed!!! $ENDDATE !!!!! " >>test.out
       echo "   Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat" >>test.out
-      if [ $bstat != 0 ] || [ $rstat != 0 ] ; then
+      if [ $bstat -ne 0 ] || [ $rstat -ne 0 ] ; then
          echo "  !!!!! Bad termination status       !!!!! "
          echo "  !!!!! Bad termination status       !!!!! " >>test.out
       else

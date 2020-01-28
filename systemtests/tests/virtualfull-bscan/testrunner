@@ -92,7 +92,7 @@ if [ "$num_sos" -ne 1 ]; then
 fi
 num_eos=$(grep -c '^End Job Session Record:$' "$tmp/bscan.out")
 if [ "$num_eos" -ne 1 ]; then
-  echo "Found $num_sos end of session records instead of 1"
+  echo "Found $num_eos end of session records instead of 1"
   stop_bareos
   exit 1
 fi

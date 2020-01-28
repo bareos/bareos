@@ -3,5 +3,5 @@
 #shellcheck source=../environment.in
 . ./environment
 
-"${BAREOS_BCONSOLE_BINARY}" -c ${conf} "$@"
+"${BAREOS_BCONSOLE_BINARY}" -c "${conf}" "$@"
 
