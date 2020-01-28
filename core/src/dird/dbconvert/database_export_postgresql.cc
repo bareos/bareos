@@ -197,8 +197,6 @@ int DatabaseExportPostgresql::ResultHandlerCompare(void* ctx,
     std::string r1{row[i]};
     std::string r2{rd->row[i].data_pointer};
     if (r1 != r2) { throw std::runtime_error("What??"); }
-    if (rd->table_name == "File") { std::cout << r1 << " " << r2 << std::endl; }
-    return 1;
   }
   return 0;
 }
