@@ -1,6 +1,6 @@
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+# Copyright (C) 2019-2020 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -137,6 +137,8 @@ add_custom_target(
   docs
   ${DOCS_ALL}
   COMMAND ${SPHINX_COMMAND} -M html "${SPHINX_SOURCE_DIR}" "${SPHINX_BUILDDIR}"
+          "${SPHINX_OPTS}"
+  COMMAND ${SPHINX_COMMAND} -b man "${SPHINX_SOURCE_DIR}" "${SPHINX_BUILDDIR}"
           "${SPHINX_OPTS}"
   DEPENDS $<$<BOOL:${docs-build-json}>:clean-docs>
   DEPENDS check-git

@@ -923,6 +923,7 @@ for F in  \
     %{_mandir}/man1/bsmtp.1.gz \
     %{_mandir}/man1/bwild.1.gz \
     %{_mandir}/man8/bareos-dbcheck.8.gz \
+    %{_mandir}/man8/bareos-dbcopy.8.gz \
     %{_mandir}/man8/bareos-dir.8.gz \
     %{_mandir}/man8/bareos-sd.8.gz \
     %{_mandir}/man8/bareos.8.gz \
