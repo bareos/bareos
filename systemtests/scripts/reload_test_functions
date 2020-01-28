@@ -74,7 +74,8 @@ END_OF_DATA
 }
 
 find_error_string_in_console_log() {
-  err=$1
+  local err
+  err="$1"
   if ! grep -q "$err" "$console_logfile"; then
     exit_with_error "Could not find error string in console output"
   fi
