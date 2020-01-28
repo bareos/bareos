@@ -214,6 +214,36 @@ macro(handle_python_plugin_modules test_name)
 
 endmacro()
 
+# set the data encryption and signature keys
+set(pki_keypair
+  ${CMAKE_CURRENT_SOURCE_DIR}/pki/fd.pem)
+set(pki_master_key
+  ${CMAKE_CURRENT_SOURCE_DIR}/pki/master.cert)
+
+# set the tls ca keys
+set(tls_ca_certificate
+  ${CMAKE_CURRENT_SOURCE_DIR}/tls/bareos-ca.pem)
+
+set(tls_fd_certificate
+  ${CMAKE_CURRENT_SOURCE_DIR}/tls/client1.bareos.org-cert.pem)
+set(tls_fd_key
+  ${CMAKE_CURRENT_SOURCE_DIR}/tls/client1.bareos.org-key.pem)
+
+set(tls_sd_certificate
+  ${CMAKE_CURRENT_SOURCE_DIR}/tls/bareos-sd1.bareos.org-cert.pem)
+set(tls_sd_key
+  ${CMAKE_CURRENT_SOURCE_DIR}/tls/bareos-sd1.bareos.org-key.pem)
+
+set(tls_dir_certificate
+  ${CMAKE_CURRENT_SOURCE_DIR}/tls/bareos-dir.bareos.org-cert.pem)
+set(tls_dir_key
+  ${CMAKE_CURRENT_SOURCE_DIR}/tls/bareos-dir.bareos.org-key.pem)
+
+set(tls_con_certificate
+  ${CMAKE_CURRENT_SOURCE_DIR}/tls/console.bareos.org-cert.pem)
+set(tls_con_key
+  ${CMAKE_CURRENT_SOURCE_DIR}/tls/console.bareos.org-key.pem)
+
 macro(link_binaries_to_test_to_current_sbin_dir_with_individual_filename)
   foreach(binary_name ${ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS})
     create_variable_binary_name_to_test_for_binary_name(${binary_name})
@@ -554,6 +584,8 @@ set(tests_dir ${PROJECT_BINARY_DIR}/tests)
 set(SYSTEM_TESTS
     backup-bareos-test
     backup-bareos-passive-test
+    backup-bareos-encrypt-signature-test
+    backup-bareos-encrypt-signature-test-with-tls-cert
     multiplied-device-test
     virtualfull
     virtualfull-bscan
