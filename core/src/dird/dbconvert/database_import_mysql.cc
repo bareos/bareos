@@ -93,8 +93,7 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
     query += t.table_name;
     //    query += " LIMIT 100000";
 
-    RowData row_data;
-    row_data.table_name = t.table_name;
+    RowData row_data(t.column_descriptions, t.table_name);
     ResultHandlerContext ctx(t.column_descriptions, row_data, exporter);
 
     exporter.StartTable();
@@ -141,11 +140,9 @@ void DatabaseImportMysql::FillRowWithDatabaseResult(ResultHandlerContext* r,
   }
 
   for (int i = 0; i < fields; i++) {
-    const std::string& column_name = r->column_descriptions[i]->column_name;
-
     RowData& row_data = r->row_data;
-    row_data.row[column_name].data_pointer = row[i];
-    r->column_descriptions[i]->db_import_converter(row_data.row[column_name]);
+    row_data.row[i].data_pointer = row[i];
+    r->column_descriptions[i]->db_import_converter(row_data.row[i]);
   }
 }
 

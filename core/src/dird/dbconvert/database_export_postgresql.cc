@@ -62,8 +62,8 @@ void DatabaseExportPostgresql::CopyRow(const RowData& data)
   std::string query{"INSERT INTO "};
   query += data.table_name;
   query += " (";
-  for (const auto& r : data.row) {
-    query += r.first;
+  for (const auto& c : data.column_descriptions) {
+    query += c->column_name;
     query += ", ";
   }
   query.resize(query.size() - 2);
@@ -73,7 +73,7 @@ void DatabaseExportPostgresql::CopyRow(const RowData& data)
 
   for (const auto& r : data.row) {
     query += "'";
-    query += r.second.data_pointer;
+    query += r.data_pointer;
     query += "',";
   }
 
@@ -155,7 +155,6 @@ void DatabaseExportPostgresql::CursorStartTable(const std::string& table_name)
 void DatabaseExportPostgresql::StartTable()
 {
   if (db_->SqlQuery("BEGIN")) {
-    std::cout << "BEGIN" << std::endl;
     transaction_ = true;
     start_new_table = true;
   }
@@ -164,7 +163,6 @@ void DatabaseExportPostgresql::StartTable()
 void DatabaseExportPostgresql::EndTable()
 {
   if (transaction_) {
-    std::cout << "COMMIT" << std::endl;
     db_->SqlQuery("COMMIT");
     transaction_ = false;
   }
@@ -173,7 +171,6 @@ void DatabaseExportPostgresql::EndTable()
 void DatabaseExportPostgresql::CompareRow(const RowData& data)
 {
   if (start_new_table) {
-    std::cout << "Start table: " << data.table_name << std::endl;
     CursorStartTable(data.table_name);
     start_new_table = false;
   }
@@ -194,11 +191,7 @@ int DatabaseExportPostgresql::ResultHandlerCompare(void* ctx,
                                                    int fields,
                                                    char** row)
 {
-  for (int i = 0; i < fields; i++) {
-    std::string r1{row[i]};
-    std::cout << r1 << " ";
-  }
-  std::cout << std::endl;
+  for (int i = 0; i < fields; i++) { std::string r1{row[i]}; }
   return 0;
 }
 
