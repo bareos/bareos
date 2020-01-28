@@ -164,30 +164,34 @@ static bool TableIsEmtpy(BareosDb* db, const std::string& table_name)
     throw std::runtime_error(err);
   }
 
-  if (db->SqlNumRows() > 0) {
-    std::cout << "DatabaseExportPostgresql: Table is not empty, skipping: ";
-    std::cout << table_name << std::endl;
-    return false;
-  }
+  if (db->SqlNumRows() > 0) { return false; }
   return true;
 }
 
 bool DatabaseExportPostgresql::TableExists(const std::string& table_name)
 {
   auto found = table_descriptions_->GetTableDescription(table_name);
-  if (found == nullptr) {
-    std::cout << "DatabaseExportPostgresql: Table not found, skipping: ";
-    std::cout << table_name << std::endl;
-    return false;
-  }
+  if (found == nullptr) { return false; }
   return true;
 }
 
 bool DatabaseExportPostgresql::StartTable(const std::string& table_name)
 {
-  if (!TableIsEmtpy(db_, table_name)) { return false; }
+  std::cout << "Check if table exists: ";
+  std::cout << table_name << " ..." << std::flush;
+  if (!TableExists(table_name)) {
+    std::cout << " does not exist." << std::endl;
+    return false;
+  }
+  std::cout << " exists." << std::endl;
 
-  if (!TableExists(table_name)) { return false; }
+  std::cout << "Check if table is empty: ";
+  std::cout << table_name << " ..." << std::flush;
+  if (!TableIsEmtpy(db_, table_name)) {
+    std::cout << " not empty." << std::endl;
+    return false;
+  }
+  std::cout << table_name << " is empty." << std::endl;
 
   if (db_->SqlQuery("BEGIN")) {
     transaction_ = true;
