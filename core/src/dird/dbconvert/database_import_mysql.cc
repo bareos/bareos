@@ -97,12 +97,16 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
     row_data.table_name = t.table_name;
     ResultHandlerContext ctx(t.column_descriptions, row_data, exporter);
 
+    exporter.StartTable();
+
     if (!db_->SqlQuery(query.c_str(), ResultHandler, &ctx)) {
       std::cout << "Could not import table: " << t.table_name << std::endl;
       std::string err{"Could not execute select statement: "};
       err += query;
       std::cout << query << std::endl;
     }
+
+    exporter.EndTable();
     // std::cout << query << std::endl << std::endl;
   }
 }

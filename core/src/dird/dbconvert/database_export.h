@@ -29,7 +29,6 @@
 class BareosDb;
 class DatabaseConnection;
 class DatabaseTableDescriptions;
-class RowData;
 
 class DatabaseExport {
  public:
@@ -41,7 +40,7 @@ class DatabaseExport {
       const DatabaseConnection& db_connection,
       bool clear_tables = false);
 
-  virtual void StartTable(const RowData& row_data) = 0;
+  virtual void StartTable() = 0;
   virtual void EndTable() = 0;
 
   virtual void CopyStart() = 0;

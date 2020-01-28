@@ -31,7 +31,7 @@ class DatabaseExportPostgresql : public DatabaseExport {
                            bool clear_tables = false);
   ~DatabaseExportPostgresql();
 
-  void StartTable(const RowData& row_data) override;
+  void StartTable() override;
   void EndTable() override;
 
   void CopyStart() override;
@@ -50,9 +50,12 @@ class DatabaseExportPostgresql : public DatabaseExport {
   using SequenceSchemaVector = std::vector<SequenceSchema>;
 
  private:
+  bool transaction_{false};
+  bool start_new_table{false};
   SequenceSchemaVector sequence_schema_vector_;
 
   void SelectSequenceSchema();
+  void CursorStartTable(const std::string& table_name);
   static int ResultHandlerSequenceSchema(void* ctx, int fields, char** row);
   static int ResultHandlerCompare(void* ctx, int fields, char** row);
 };

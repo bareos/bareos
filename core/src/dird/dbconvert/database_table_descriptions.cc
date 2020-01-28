@@ -120,6 +120,22 @@ DatabaseTablesMysql::DatabaseTablesMysql(BareosDb* db)
   }
 }
 
+const DatabaseTableDescriptions::TableDescription*
+DatabaseTableDescriptions::GetTableDescription(
+    const std::string& table_name) const
+{
+  auto tr = std::find_if(
+      tables.begin(), tables.end(), [&table_name](const TableDescription& t) {
+        std::string l1, l2;
+        std::transform(table_name.cbegin(), table_name.cend(),
+                       std::back_inserter(l1), ::tolower);
+        std::transform(t.table_name.cbegin(), t.table_name.cend(),
+                       std::back_inserter(l2), ::tolower);
+        return l1 == l2;
+      });
+  return tr == tables.end() ? nullptr : std::addressof(*tr);
+}
+
 std::unique_ptr<DatabaseTableDescriptions> DatabaseTableDescriptions::Create(
     const DatabaseConnection& connection)
 {
