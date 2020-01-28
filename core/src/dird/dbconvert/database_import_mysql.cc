@@ -95,6 +95,7 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
     query.resize(query.size() - 3);
     query += " FROM ";
     query += t.table_name;
+
     if (maximum_amount_of_rows) {
       query += " LIMIT ";
       query += std::to_string(maximum_amount_of_rows);
