@@ -48,7 +48,7 @@ cp "${conf}"/bareos-dir.d/client/bareos-mysql-fd.conf.test "${conf}"/bareos-dir.
 run_bareos
 stop_bareos
 
-"${sbin}"/bareos-dbconvert -d -c ${current_test_directory}/etc/bareos mysql postgresql
+"${sbin}"/bareos-dbcopy -d -c ${current_test_directory}/etc/bareos mysql postgresql
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @#

@@ -22,7 +22,7 @@
 #ifndef BAREOS_SRC_DIRD_DBCONVERT_DATABASE_EXPORT_H_
 #define BAREOS_SRC_DIRD_DBCONVERT_DATABASE_EXPORT_H_
 
-#include "dird/dbconvert/row_data.h"
+#include "dird/dbcopy/row_data.h"
 
 #include <memory>
 

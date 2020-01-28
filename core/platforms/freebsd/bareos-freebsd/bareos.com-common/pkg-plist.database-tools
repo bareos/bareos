@@ -1,6 +1,6 @@
 
 sbin/bareos-dbcheck
-sbin/bareos-dbconvert
+sbin/bareos-dbcopy
 sbin/bscan
 man/man8/bareos-dbcheck.8.gz
 man/man8/bscan.8.gz

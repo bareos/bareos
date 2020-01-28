@@ -392,9 +392,9 @@ set(SYSTEM_TESTS_DISABLED # initialy empty
 )
 
 if(mysql AND postgresql AND dynamic-cats-backends)
-  list(APPEND SYSTEM_TESTS "dbconvert-mysql-postgresql-test")
+  list(APPEND SYSTEM_TESTS "dbcopy-mysql-postgresql-test")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "dbconvert-mysql-postgresql-test")
+  list(APPEND SYSTEM_TESTS_DISABLED "dbcopy-mysql-postgresql-test")
 endif()
 
 if(PYTHON)
@@ -609,7 +609,7 @@ endforeach()
 set(BINARIES_TO_LINK_TO_SBIN
     dird/bareos-dir
     dird/bareos-dbcheck
-    dird/dbconvert/bareos-dbconvert
+    dird/dbcopy/bareos-dbcopy
     filed/bareos-fd
     stored/bareos-sd
     stored/bcopy

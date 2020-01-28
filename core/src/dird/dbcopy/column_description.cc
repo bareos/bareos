@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 #include "include/bareos.h"
-#include "dird/dbconvert/column_description.h"
-#include "dird/dbconvert/row_data.h"
+#include "dird/dbcopy/column_description.h"
+#include "dird/dbcopy/row_data.h"
 
 #include <cstring>
 #include <vector>
