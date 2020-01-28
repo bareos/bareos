@@ -36,7 +36,8 @@ class DatabaseImport {
   virtual void CompareWith(DatabaseExport& exporter) = 0;
 
   static std::unique_ptr<DatabaseImport> Create(
-      const DatabaseConnection& db_connection);
+      const DatabaseConnection& db_connection,
+      std::size_t maximum_amount_of_rows);
 
  protected:
   BareosDb* db_{};

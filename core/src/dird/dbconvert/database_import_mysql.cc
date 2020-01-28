@@ -34,8 +34,10 @@
 #include <vector>
 
 DatabaseImportMysql::DatabaseImportMysql(
-    const DatabaseConnection& db_connection)
+    const DatabaseConnection& db_connection,
+    std::size_t maximum_amount_of_rows_in)
     : DatabaseImport(db_connection)
+    , maximum_amount_of_rows(maximum_amount_of_rows_in)
 {
   return;
 }
@@ -93,7 +95,10 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
     query.resize(query.size() - 3);
     query += " FROM ";
     query += t.table_name;
-    //    query += " LIMIT 100000";
+    if (maximum_amount_of_rows) {
+      query += " LIMIT ";
+      query += std::to_string(maximum_amount_of_rows);
+    }
 
     RowData row_data(t.column_descriptions, t.table_name);
     ResultHandlerContext ctx(t.column_descriptions, row_data, exporter);

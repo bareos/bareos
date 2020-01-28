@@ -66,7 +66,8 @@ class DbConvert {
 
   void DoDatabaseConversion()
   {
-    std::unique_ptr<DatabaseImport> imp(DatabaseImport::Create(*source_db_));
+    std::unique_ptr<DatabaseImport> imp(
+        DatabaseImport::Create(*source_db_, cl.maximum_number_of_rows));
     std::unique_ptr<DatabaseExport> exp(
         DatabaseExport::Create(*destination_db_, cl.empty_destination_tables));
 
@@ -131,7 +132,7 @@ class DbConvert {
       bool options_error{false};
       int argument_count{};
 
-      while ((c = getopt(argc, argv, "c:de?")) != -1 && !options_error) {
+      while ((c = getopt(argc, argv, "c:del:?")) != -1 && !options_error) {
         switch (c) {
           case 'c':
             configpath_ = optarg;
@@ -144,6 +145,14 @@ class DbConvert {
           case 'e':
             compare_all_rows = true;
             ++argument_count;
+            break;
+          case 'l':
+            try {
+              maximum_number_of_rows = std::atoi(optarg);
+            } catch (...) {
+              throw std::runtime_error("Wrong argument for 'l'");
+            }
+            argument_count += 2;
             break;
           case '?':
           default:
@@ -167,17 +176,20 @@ class DbConvert {
     std::string source_db_resource_name, destination_db_resource_name;
     bool empty_destination_tables{false};
     bool compare_all_rows{false};
+    std::size_t maximum_number_of_rows;
 
     void usage() noexcept
     {
       kBareosVersionStrings.PrintCopyright(stderr, 2000);
 
-      fprintf(stderr, _("Usage: bareos-dbconvert [options] Source Destination\n"
-                        "        -c <path>   use <path> as configuration file "
-                        "        -e          examine (compare) all rows"
-                        "or directory\n"
-                        "        -?          print this message.\n"
-                        "\n"));
+      fprintf(stderr,
+              _("Usage: bareos-dbconvert [options] Source Destination\n"
+                "        -c <path>   use <path> as configuration file or "
+                "directory\n"
+                "        -e          examine (compare) all rows"
+                "        -l <number> limit amount of copy to number of rows"
+                "        -?          print this message.\n"
+                "\n"));
     }
   };  // class CommandLineParser
 

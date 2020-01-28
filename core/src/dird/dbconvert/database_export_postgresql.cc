@@ -152,22 +152,41 @@ void DatabaseExportPostgresql::CursorStartTable(const std::string& table_name)
   }
 }
 
-bool DatabaseExportPostgresql::StartTable(const std::string& table_name)
+static bool TableIsEmtpy(BareosDb* db, const std::string& table_name)
 {
   std::string query{"SELECT * FROM "};
   query += table_name;
 
-  if (!db_->SqlQuery(query.c_str())) {
+  if (!db->SqlQuery(query.c_str())) {
     std::string err{"DatabaseExportPostgresql: Could not select table: "};
     err += table_name;
     throw std::runtime_error(err);
   }
 
-  if (db_->SqlNumRows() > 0) {
-    std::cout << "DatabaseExportPostgresql: Table is not empty, table: ";
+  if (db->SqlNumRows() > 0) {
+    std::cout << "DatabaseExportPostgresql: Table is not empty, skipping: ";
     std::cout << table_name << std::endl;
     return false;
   }
+  return true;
+}
+
+bool DatabaseExportPostgresql::TableExists(const std::string& table_name)
+{
+  auto found = table_descriptions_->GetTableDescription(table_name);
+  if (found == nullptr) {
+    std::cout << "DatabaseExportPostgresql: Table not found, skipping: ";
+    std::cout << table_name << std::endl;
+    return false;
+  }
+  return true;
+}
+
+bool DatabaseExportPostgresql::StartTable(const std::string& table_name)
+{
+  if (!TableIsEmtpy(db_, table_name)) { return false; }
+
+  if (!TableExists(table_name)) { return false; }
 
   if (db_->SqlQuery("BEGIN")) {
     transaction_ = true;
