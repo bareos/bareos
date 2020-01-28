@@ -83,6 +83,8 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
     DatabaseExport& exporter)
 {
   for (const auto& t : table_descriptions_->tables) {
+    if (!exporter.StartTable(t.table_name)) { continue; }
+
     std::string query{"SELECT `"};
     for (const auto& col : t.column_descriptions) {
       query += col->column_name;
@@ -95,8 +97,6 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
 
     RowData row_data(t.column_descriptions, t.table_name);
     ResultHandlerContext ctx(t.column_descriptions, row_data, exporter);
-
-    exporter.StartTable();
 
     if (!db_->SqlQuery(query.c_str(), ResultHandler, &ctx)) {
       std::cout << "Could not import table: " << t.table_name << std::endl;
