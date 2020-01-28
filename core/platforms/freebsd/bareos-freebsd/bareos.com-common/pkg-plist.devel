@@ -235,6 +235,7 @@ man/man1/bregex.1.gz
 man/man1/bsmtp.1.gz
 man/man1/bwild.1.gz
 man/man8/bareos-dbcheck.8.gz
+man/man8/bareos-dbcopy.8.gz
 man/man8/bareos-dir.8.gz
 man/man8/bareos-fd.8.gz
 man/man8/bareos-sd.8.gz

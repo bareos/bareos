@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -33,6 +33,7 @@ if(NOT client-only)
       bareos-sd.8
       bcopy.8
       bareos-dbcheck.8
+      bareos-dbcopy.8
       bextract.8
       bls.8
       bscan.8

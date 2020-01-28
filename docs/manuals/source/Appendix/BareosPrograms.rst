@@ -1254,4 +1254,4 @@ bpluginfo
 
 The main purpose of bpluginfo is to display different information about Bareos plugin. You can use it to check a plugin name, author, license and short description. You can use -f option to display API implemented by the plugin. Some plugins may require additional ’-a’ option for val- idating a Bareos Daemons API. In most cases it is not required. 
 
-
+.. include:: ../man/bareos-dbcopy.rst

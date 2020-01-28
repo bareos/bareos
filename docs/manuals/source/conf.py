@@ -238,9 +238,11 @@ latex_documents = [
 
 # -- Options for manual page output ---------------------------------------
 
+man_bareos_dbcopy = "man/bareos-dbcopy"
+
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "bareos", "Bareos Documentation", [author], 1)]
+man_pages = [(man_bareos_dbcopy, "bareos-dbcopy", "bareos-dbcopy", [author], 8)]
 
 
 # -- Options for Texinfo output -------------------------------------------
