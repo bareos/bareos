@@ -40,7 +40,7 @@ class DatabaseExport {
       const DatabaseConnection& db_connection,
       bool clear_tables = false);
 
-  virtual void StartTable() = 0;
+  virtual bool StartTable(const std::string& table_name) = 0;
   virtual void EndTable() = 0;
 
   virtual void CopyStart() = 0;

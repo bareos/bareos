@@ -152,12 +152,29 @@ void DatabaseExportPostgresql::CursorStartTable(const std::string& table_name)
   }
 }
 
-void DatabaseExportPostgresql::StartTable()
+bool DatabaseExportPostgresql::StartTable(const std::string& table_name)
 {
+  std::string query{"SELECT * FROM "};
+  query += table_name;
+
+  if (!db_->SqlQuery(query.c_str())) {
+    std::string err{"DatabaseExportPostgresql: Could not select table: "};
+    err += table_name;
+    throw std::runtime_error(err);
+  }
+
+  if (db_->SqlNumRows() > 0) {
+    std::cout << "DatabaseExportPostgresql: Table is not empty, table: ";
+    std::cout << table_name << std::endl;
+    return false;
+  }
+
   if (db_->SqlQuery("BEGIN")) {
     transaction_ = true;
     start_new_table = true;
   }
+
+  return true;
 }
 
 void DatabaseExportPostgresql::EndTable()

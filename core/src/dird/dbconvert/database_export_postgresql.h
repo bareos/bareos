@@ -31,7 +31,7 @@ class DatabaseExportPostgresql : public DatabaseExport {
                            bool clear_tables = false);
   ~DatabaseExportPostgresql();
 
-  void StartTable() override;
+  bool StartTable(const std::string& table_name) override;
   void EndTable() override;
 
   void CopyStart() override;
