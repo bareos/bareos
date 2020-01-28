@@ -73,7 +73,7 @@ class DbConvert {
 
     imp->ExportTo(*exp);
 
-    if (cl.compare_all_rows) { imp->CompareWith(*exp); }
+    //    if (cl.compare_all_rows) { imp->CompareWith(*exp); }
   }
 
  private:
@@ -132,7 +132,7 @@ class DbConvert {
       bool options_error{false};
       int argument_count{};
 
-      while ((c = getopt(argc, argv, "c:del:?")) != -1 && !options_error) {
+      while ((c = getopt(argc, argv, "c:dl:?")) != -1 && !options_error) {
         switch (c) {
           case 'c':
             configpath_ = optarg;
@@ -142,10 +142,12 @@ class DbConvert {
             empty_destination_tables = true;
             ++argument_count;
             break;
+#if 0
           case 'e':
             compare_all_rows = true;
             ++argument_count;
             break;
+#endif
           case 'l':
             try {
               maximum_number_of_rows = std::atoi(optarg);
