@@ -41,8 +41,8 @@ void DatabaseColumnDescriptions::SelectTableDescriptions(
     throw std::runtime_error(err);
   }
   std::sort(column_descriptions.begin(), column_descriptions.end(),
-            [](std::unique_ptr<ColumnDescription>& v1,
-               std::unique_ptr<ColumnDescription>& v2) {
+            [](const std::unique_ptr<ColumnDescription>& v1,
+               const std::unique_ptr<ColumnDescription>& v2) {
               return v1->column_name < v2->column_name;
             });
 }
