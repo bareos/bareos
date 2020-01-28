@@ -123,7 +123,7 @@ case ${db_type} in
       fi
       ;;
    postgresql)
-      psql -f ${temp_sql_schema} -d ${db_name} $*
+      PGOPTIONS='--client-min-messages=warning' psql -f ${temp_sql_schema} -d ${db_name} $*
 
       retval=$?
       if test $retval = 0; then

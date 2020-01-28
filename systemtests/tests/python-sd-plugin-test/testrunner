@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # This systemtest tests the plugin functionality 
 # of the Bareos SD by using the module
@@ -14,11 +14,15 @@ TestName="$(basename "$(pwd)")"
 export TestName
 
 JobName=backup-bareos-fd
+#shellcheck source=../environment.in
 . ./environment
-. ${scripts}/functions
 
-${scripts}/cleanup
-${scripts}/setup
+JobName=backup-bareos-fd
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
 
 
 # Directory to backup.
@@ -27,7 +31,7 @@ BackupDirectory="${tmp}/data"
 
 # Use a tgz to setup data to be backuped.
 # Data will be placed at "${tmp}/data/".
-setup_data
+setup_data "$@"
 
 start_test
 
@@ -46,7 +50,7 @@ messages
 quit
 END_OF_DATA
 
-run_bareos
+run_bareos "$@"
 check_for_zombie_jobs storage=File
 stop_bareos
 
@@ -65,7 +69,7 @@ bsdEventDeviceUnmount
 bsdEventDeviceClose
 bsdEventJobEnd)
 
-for i in ${events[@]}; do
+for i in "${events[@]}"; do
   if ! grep -q "$i" ${tmp}/test-plugin.log; then
     set_error "Failed to find logged event $i"
   fi

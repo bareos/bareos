@@ -19,8 +19,50 @@
 
 cmake_minimum_required(VERSION 3.3)
 project(bareos-systemtests)
-
 cmake_policy(SET CMP0057 NEW) # IF(.. IN_LIST ..)
+cmake_policy(SET CMP0053 NEW)
+
+# create a variable BINARY_NAME_TO_TEST for each binary name bareos-dir ->
+# BAREOS_DIR_TO_TEST bconsole -> BCONSOLE_TO_TEST
+macro(create_variable_BINARY_NAME_TO_TEST_for_binary_name binary_name)
+  string(TOUPPER ${binary_name} binary_name_to_test_upcase)
+  string(REPLACE "-" "_" binary_name_to_test_upcase
+                 ${binary_name_to_test_upcase}
+  )
+  string(APPEND binary_name_to_test_upcase _TO_TEST)
+endmacro()
+
+# find the full path of the given binary when *compiling* the software and
+# create and set the BINARY_NAME_TO_TEST variable to the full path of it
+macro(find_compiled_binary_and_set_BINARY_NAME_TO_TEST_variable_for binary_name)
+  create_variable_binary_name_to_test_for_binary_name(${binary_name})
+  get_target_property(
+    "${binary_name_to_test_upcase}" "${binary_name}" BINARY_DIR
+  )
+  set("${binary_name_to_test_upcase}"
+      "${${binary_name_to_test_upcase}}/${binary_name}"
+  )
+  message(
+    "   ${binary_name_to_test_upcase} is ${${binary_name_to_test_upcase}}"
+  )
+endmacro()
+
+# find the full path of the given binary in the *installed* binaries and create
+# and set the BINARY_NAME_TO_TEST variable to the full path of it
+macro(find_installed_binary_and_set_BINARY_NAME_TO_TEST_variable_for
+      binary_name
+)
+  create_variable_binary_name_to_test_for_binary_name(${binary_name})
+  find_program(
+    "${binary_name_to_test_upcase}" ${binary_name} PATHS /usr/bin /usr/sbin
+                                                         /bin /sbin
+  )
+  set("${binary_name_to_test_upcase}" "${${binary_name_to_test_upcase}}")
+  message(
+    "   ${binary_name_to_test_upcase} is ${${binary_name_to_test_upcase}}"
+  )
+
+endmacro()
 
 function(ConfigureFilesToSystemtest srcbasedir dirname globexpression
          configure_option srcdirname
@@ -84,47 +126,47 @@ macro(handle_python_plugin_modules test_name)
 
   string(REGEX MATCH ^python-fd.* starts_with_python-fd ${test_name})
   if(starts_with_python-fd)
-    list(APPEND PYMODULES_TO_LINK_TO_SRC filed/BareosFdWrapper.py
-                filed/BareosFdPluginBaseclass.py filed/bareos_fd_consts.py
-                filed/bareos-fd-mock-test.py
+    list(APPEND FD_PYMODULES_TO_LINK_TO_SRC BareosFdWrapper.py
+                BareosFdPluginBaseclass.py bareos_fd_consts.py
+                bareos-fd-mock-test.py
     )
   endif()
 
   string(REGEX MATCH ^python-sd.* starts_with_python-sd ${test_name})
   if(starts_with_python-sd)
-    list(APPEND PYMODULES_TO_LINK_TO_SRC stored/bareos_sd_consts.py
-                stored/bareos-sd-class-plugin.py
-                stored/BareosSdPluginBaseclass.py stored/BareosSdWrapper.py
+    list(APPEND SD_PYMODULES_TO_LINK_TO_SRC bareos_sd_consts.py
+                bareos-sd-class-plugin.py BareosSdPluginBaseclass.py
+                BareosSdWrapper.py
     )
   endif()
 
   string(REGEX MATCH ^python-dir.* starts_with_python-dir ${test_name})
   if(starts_with_python-dir)
-    list(APPEND PYMODULES_TO_LINK_TO_SRC dird/bareos_dir_consts.py
-                dird/BareosDirPluginBaseclass.py
-                dird/bareos-dir-class-plugin.py dird/BareosDirWrapper.py
+    list(APPEND DIR_PYMODULES_TO_LINK_TO_SRC bareos_dir_consts.py
+                BareosDirPluginBaseclass.py bareos-dir-class-plugin.py
+                BareosDirWrapper.py
     )
   endif()
 
   if(${test_name} STREQUAL python-dir-plugin-test)
-    list(APPEND PYMODULES_TO_LINK_TO_SRC)
+    list(APPEND DIR_PYMODULES_TO_LINK_TO_SRC)
   endif()
 
   if(${test_name} STREQUAL python-fd-percona-xtrabackup-plugin-test)
-    list(APPEND PYMODULES_TO_LINK_TO_SRC filed/BareosFdPluginPerconaXtraBackup.py
-                filed/bareos-fd-percona-xtrabackup.py
+    list(APPEND FD_PYMODULES_TO_LINK_TO_SRC BareosFdPluginPerconaXtraBackup.py
+                bareos-fd-percona-xtrabackup.py
     )
   endif()
 
   if(${test_name} STREQUAL python-fd-ovirt-plugin-test)
-    list(APPEND PYMODULES_TO_LINK_TO_SRC filed/BareosFdPluginOvirt.py
-                filed/bareos-fd-ovirt.py
+    list(APPEND FD_PYMODULES_TO_LINK_TO_SRC BareosFdPluginOvirt.py
+                bareos-fd-ovirt.py
     )
   endif()
 
   if(${test_name} STREQUAL python-fd-plugin-local-fileset-test)
-    list(APPEND PYMODULES_TO_LINK_TO_SRC filed/bareos-fd-local-fileset.py
-                filed/BareosFdPluginLocalFileset.py
+    list(APPEND FD_PYMODULES_TO_LINK_TO_SRC bareos-fd-local-fileset.py
+                BareosFdPluginLocalFileset.py
     )
   endif()
 
@@ -134,25 +176,65 @@ macro(handle_python_plugin_modules test_name)
     file(MAKE_DIRECTORY ${python_plugin_module_src_test_dir})
   endif()
 
-  foreach(PYMODULE_SOURCEPATH ${PYMODULES_TO_LINK_TO_SRC})
-    get_filename_component(PYMODULE_NAME ${PYMODULE_SOURCEPATH} NAME)
-    execute_process(
-      COMMAND ${CMAKE_COMMAND} -E create_symlink
-              ${PROJECT_SOURCE_DIR}/../core/src/plugins/${PYMODULE_SOURCEPATH}
-              ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
+  foreach(PYMODULE ${DIR_PYMODULES_TO_LINK_TO_SRC})
+    get_filename_component(PYMODULE_NAME ${PYMODULE} NAME)
+    if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
+      set(ORIGINAL_FILE ${python_plugin_module_src_dir}/${PYMODULE})
+    else()
+      set(ORIGINAL_FILE ${python_plugin_module_src_dir}/dird/${PYMODULE})
+    endif()
+    create_symlink(
+      ${ORIGINAL_FILE} ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
     )
   endforeach()
-  # endif()
+
+  foreach(PYMODULE ${FD_PYMODULES_TO_LINK_TO_SRC})
+    get_filename_component(PYMODULE_NAME ${PYMODULE} NAME)
+    if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
+      set(ORIGINAL_FILE ${python_plugin_module_src_dir}/${PYMODULE})
+    else()
+      set(ORIGINAL_FILE ${python_plugin_module_src_dir}/filed/${PYMODULE})
+    endif()
+    create_symlink(
+      ${ORIGINAL_FILE} ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
+    )
+  endforeach()
+
+  foreach(PYMODULE ${SD_PYMODULES_TO_LINK_TO_SRC})
+    get_filename_component(PYMODULE_NAME ${PYMODULE} NAME)
+    if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
+      set(ORIGINAL_FILE ${python_plugin_module_src_dir}/${PYMODULE})
+    else()
+      set(ORIGINAL_FILE ${python_plugin_module_src_dir}/stored/${PYMODULE})
+    endif()
+    create_symlink(
+      ${ORIGINAL_FILE} ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
+    )
+  endforeach()
+
 endmacro()
 
-
-
+macro(link_binaries_to_test_to_current_sbin_dir_with_individual_filename)
+  foreach(binary_name ${ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS})
+    create_variable_binary_name_to_test_for_binary_name(${binary_name})
+    string(REPLACE "-" "_" binary_name ${binary_name})
+    string(TOUPPER ${binary_name} binary_name_upcase)
+    string(CONCAT bareos_XXX_binary ${binary_name_upcase} "_BINARY")
+    # message (STATUS "${bareos_XXX_binary}")
+    set(${bareos_XXX_binary} ${CURRENT_SBIN_DIR}/${binary_name}-${TEST_NAME})
+    # message( "creating symlink ${${bareos_XXX_binary}}  ->
+    # ${${binary_name_to_test_upcase}}" )
+    create_symlink(${${binary_name_to_test_upcase}} ${${bareos_XXX_binary}})
+  endforeach()
+endmacro()
 
 macro(prepare_testdir_for_daemon_run)
+
   set(archivedir ${current_test_directory}/storage)
   set(confdir ${current_test_directory}/etc/bareos)
   set(config_directory_dir_additional_test_config
-      ${current_test_directory}/etc/bareos/bareos-dir.d/additional_test_config)
+      ${current_test_directory}/etc/bareos/bareos-dir.d/additional_test_config
+  )
   set(logdir ${current_test_directory}/log)
   set(tmpdir ${current_test_directory}/tmp)
   set(tmp ${tmpdir})
@@ -162,6 +244,21 @@ macro(prepare_testdir_for_daemon_run)
   )
   set(piddir ${current_test_directory}/piddir)
 
+  set(backenddir ${BACKEND_DIR_TO_TEST})
+  set(BAREOS_WEBUI_PUBLIC_DIR ${WEBUI_PUBLIC_DIR_TO_TEST})
+
+  if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
+    set(bin /bin)
+    set(sbin /sbin)
+    set(scripts ${SCRIPTS_DIR_TO_TEST})
+    set(python_plugin_module_src_dir ${PYTHON_PLUGINS_DIR_TO_TEST})
+  else()
+    set(bin ${PROJECT_BINARY_DIR}/bin)
+    set(sbin ${PROJECT_BINARY_DIR}/sbin)
+    set(scripts ${PROJECT_BINARY_DIR}/scripts)
+    set(python_plugin_module_src_dir ${CMAKE_SOURCE_DIR}/core/src/plugins)
+  endif()
+
   file(MAKE_DIRECTORY ${piddir})
   file(MAKE_DIRECTORY ${tmpdir})
   file(MAKE_DIRECTORY ${archivedir})
@@ -169,37 +266,20 @@ macro(prepare_testdir_for_daemon_run)
   file(MAKE_DIRECTORY ${confdir})
   file(MAKE_DIRECTORY ${working_dir})
   file(MAKE_DIRECTORY ${config_directory_dir_additional_test_config})
-  # create a bin/bareos and bin/bconsole script in every testdir for
-  # start/stop and bconsole
+
+  # create a bin/bareos and bin/bconsole script in every testdir for start/stop
+  # and bconsole
   file(MAKE_DIRECTORY "${current_test_directory}/bin")
   configure_file(
     "bin/bconsole" "${current_test_directory}/bin/bconsole" COPYONLY
   )
   configure_file("bin/bareos" "${current_test_directory}/bin/bareos" COPYONLY)
 
-  set(BAREOS_DIRECTOR_BINARY
-      ${current_test_directory}/sbin/bareos-dir-${TEST_NAME}
-  )
-  set(BAREOS_STORAGEDAEMON_BINARY
-      ${current_test_directory}/sbin/bareos-sd-${TEST_NAME}
-  )
-  set(BAREOS_FILEDAEMON_BINARY
-      ${current_test_directory}/sbin/bareos-fd-${TEST_NAME}
-  )
-  file(MAKE_DIRECTORY "${current_test_directory}/sbin")
-  create_symlink(
-    "${CMAKE_CURRENT_BINARY_DIR}/sbin/bareos-dir" "${BAREOS_DIRECTOR_BINARY}"
-  )
-  create_symlink(
-    "${CMAKE_CURRENT_BINARY_DIR}/sbin/bareos-sd"
-    "${BAREOS_STORAGEDAEMON_BINARY}"
-  )
-  create_symlink(
-    "${CMAKE_CURRENT_BINARY_DIR}/sbin/bareos-fd"
-    "${BAREOS_FILEDAEMON_BINARY}"
-  )
-endmacro()
+  set(CURRENT_SBIN_DIR ${current_test_directory}/sbin)
+  file(MAKE_DIRECTORY ${CURRENT_SBIN_DIR})
 
+  link_binaries_to_test_to_current_sbin_dir_with_individual_filename()
+endmacro()
 
 macro(prepare_test)
   # base directory for this test
@@ -229,7 +309,6 @@ macro(prepare_test)
   math(EXPR sd2_port "${BASEPORT} + 3")
   math(EXPR php_port "${BASEPORT} + 4")
 
-
   # skip for tests without etc/bareos ("catalog" test)
   if(EXISTS ${current_test_source_directory}/etc/bareos)
     prepare_testdir_for_daemon_run()
@@ -240,15 +319,126 @@ macro(create_symlink target link)
   execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${target} ${link})
 endmacro()
 
+# Main starts here...
+
+message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
+
+find_program(PERL perl)
+
+option(RUN_SYSTEMTESTS_ON_INSTALLED_FILES
+       "configure the system tests to run on installed files (from packages)"
+)
+
+set(ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS
+    bareos-dir
+    bareos-dbcheck
+    bareos-fd
+    bareos-sd
+    bcopy
+    btape
+    bextract
+    bareos-sd
+    bls
+    bscan
+    bconsole
+    bsmtp
+    timelimit
+    bwild
+    bpluginfo
+    bsmtp
+    bscrypto
+    btestls
+    drivetype
+    fstype
+    bregex
+)
+
+set(AVAILABLE_WEBUI_SELENIUM_TESTS
+    "admin-client_disabling"
+    "admin-rerun_job"
+    "admin-restore"
+    "admin-run_configured_job"
+    "admin-run_default_job"
+    "readonly-client_disabling"
+    "readonly-rerun_job"
+    "readonly-restore"
+    "readonly-run_configured_job"
+    "readonly-run_default_job"
+)
+
+message(
+  STATUS
+    "RUN_SYSTEMTESTS_ON_INSTALLED_FILES:   ${RUN_SYSTEMTESTS_ON_INSTALLED_FILES}"
+)
+
+message(STATUS "Looking for binaries and paths...")
+
+if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
+
+  foreach(BINARY ${ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS})
+    find_installed_binary_and_set_binary_name_to_test_variable_for(${BINARY})
+  endforeach()
+
+  find_program(
+    PYTHON_PLUGIN_TO_TEST python-fd.so PATHS /usr/lib/bareos/plugins
+                                             /usr/lib64/bareos/plugins
+  )
+  find_program(
+    CREATE_BAREOS_DATABASE_TO_TEST create_bareos_database
+    PATHS /usr/lib/bareos/scripts
+  )
+  find_program(
+    PYTHON_PLUGINS_DIR_TO_TEST BareosFdWrapper.py
+    PATHS /usr/lib/bareos/plugins /usr/lib64/bareos/plugins
+  )
+  find_program(
+    BACKEND_DIR_TO_TEST libbareoscats-${DEFAULT_DB_TYPE}.so
+    PATHS /usr/lib/bareos/backends /usr/lib64/bareos/backends
+  )
+
+  get_filename_component(PLUGINS_DIR_TO_TEST ${PYTHON_PLUGIN_TO_TEST} DIRECTORY)
+  get_filename_component(
+    PYTHON_PLUGINS_DIR_TO_TEST ${PYTHON_PLUGINS_DIR_TO_TEST} DIRECTORY
+  )
+  get_filename_component(
+    SCRIPTS_DIR_TO_TEST ${CREATE_BAREOS_DATABASE_TO_TEST} DIRECTORY
+  )
+  get_filename_component(BACKEND_DIR_TO_TEST ${BACKEND_DIR_TO_TEST} DIRECTORY)
+
+  set(FD_PLUGINS_DIR_TO_TEST ${PLUGINS_DIR_TO_TEST})
+  set(SD_PLUGINS_DIR_TO_TEST ${PLUGINS_DIR_TO_TEST})
+  set(DIR_PLUGINS_DIR_TO_TEST ${PLUGINS_DIR_TO_TEST})
+  set(BACKEND_DIR_TO_TEST ${BACKEND_DIR_TO_TEST})
+  set(WEBUI_PUBLIC_DIR_TO_TEST /usr/share/bareos-webui/public)
+
+else() # run systemtests on source and compiled files
+
+  foreach(BINARY ${ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS})
+    find_compiled_binary_and_set_binary_name_to_test_variable_for(${BINARY})
+  endforeach()
+
+  get_target_property(FD_PLUGINS_DIR_TO_TEST bpipe-fd BINARY_DIR)
+  get_target_property(SD_PLUGINS_DIR_TO_TEST autoxflate-sd BINARY_DIR)
+  get_target_property(DIR_PLUGINS_DIR_TO_TEST python-dir BINARY_DIR)
+  get_target_property(BACKEND_DIR_TO_TEST bareoscats BINARY_DIR)
+
+  set(SCRIPTS_DIR_TO_TEST ${CMAKE_BINARY_DIR}/core/scripts)
+  set(WEBUI_PUBLIC_DIR_TO_TEST ${PROJECT_SOURCE_DIR}/../webui/public)
+
+endif()
+
+message("   FD_PLUGINS_DIR_TO_TEST: ${FD_PLUGINS_DIR_TO_TEST}")
+message("   SD_PLUGINS_DIR_TO_TEST: ${SD_PLUGINS_DIR_TO_TEST}")
+message("   DIR_PLUGINS_DIR_TO_TEST: ${DIR_PLUGINS_DIR_TO_TEST}")
+message("   BACKEND_DIR_TO_TEST: ${BACKEND_DIR_TO_TEST}")
+message("   WEBUI_PUBLIC_DIR_TO_TEST: ${WEBUI_PUBLIC_DIR_TO_TEST}")
+
 # extract  db version from cats.h
 file(STRINGS ${CMAKE_SOURCE_DIR}/core/src/cats/cats.h DB_VERSION_STRING
      REGEX .*BDB_VERSION.*
 )
 string(REGEX MATCH [0-9]+ BDB_VERSION ${DB_VERSION_STRING})
-
-find_program(PERL perl)
-find_program(PYTHON python)
-find_program(PHP php)
+message(STATUS "db version from cat.sh is ${BDB_VERSION}")
 
 # set variable values to be replaced by configure_file set(DEFAULT_DB_TYPE
 # ${default_db_backend})
@@ -257,13 +447,9 @@ message(STATUS "DEFAULT_DB_TYPE is ${DEFAULT_DB_TYPE}")
 # set(TAPEDRIVE "TAPEDRIVE")
 
 set(archivedir "${PROJECT_BINARY_DIR}/archivedir")
-set(backenddir "${PROJECT_BINARY_DIR}/../core/src/cats")
 
 set(bin ${PROJECT_BINARY_DIR}/bin)
 set(bindir ${PROJECT_BINARY_DIR}/bin)
-
-# set(conf ${PROJECT_BINARY_DIR}/defaultconfigs) set(confdir ${conf})
-# set(configs ${conf})
 
 set(BAREOS_CONFIG_DIR ${conf})
 set(db_name "regress")
@@ -283,18 +469,17 @@ set(logdir "log")
 set(mon_dir_password "mon_dir_password")
 set(mon_fd_password "mon_fd_password")
 set(mon_sd_password "mon_sd_password")
-set(python_plugin_module_src_dir ${CMAKE_SOURCE_DIR}/core/src/plugins)
 set(plugindirtmp ${PROJECT_BINARY_DIR}/plugindirtmp)
 set(rscripts ${PROJECT_BINARY_DIR}/scripts)
 
 if(TARGET python-dir)
-  get_target_property(dir_plugin_binary_path python-dir BINARY_DIR)
+  set(dir_plugin_binary_path ${DIR_PLUGINS_DIR_TO_TEST})
 endif()
 if(TARGET python-sd)
-  get_target_property(sd_plugin_binary_path python-sd BINARY_DIR)
+  set(sd_plugin_binary_path ${SD_PLUGINS_DIR_TO_TEST})
 endif()
 if(TARGET python-fd)
-  get_target_property(fd_plugin_binary_path python-fd BINARY_DIR)
+  set(fd_plugin_binary_path ${FD_PLUGINS_DIR_TO_TEST})
 endif()
 
 set(sbindir ${PROJECT_BINARY_DIR}/sbin)
@@ -312,7 +497,6 @@ set(tmpsrc ${PROJECT_BINARY_DIR}/tmpsrc)
 set(working ${PROJECT_BINARY_DIR}/working)
 set(working_dir ${PROJECT_BINARY_DIR}/working)
 
-
 # set(BASEPORT ${dir_port})
 
 # for config-lib.sh: do not remove @DB___@ but replace them with the original
@@ -324,6 +508,7 @@ set(DB_VERSION @DB_VERSION@)
 configurefilestosystemtest("systemtests" "data" "*.tgz" COPYONLY "")
 
 configurefilestosystemtest("systemtests" "scripts" "functions" @ONLY "")
+configurefilestosystemtest("systemtests" "scripts" "reload_test_functions" @ONLY "")
 configurefilestosystemtest("systemtests" "scripts" "cleanup" @ONLY "")
 configurefilestosystemtest("systemtests" "scripts" "setup" @ONLY "")
 configurefilestosystemtest(
@@ -369,7 +554,6 @@ set(tests_dir ${PROJECT_BINARY_DIR}/tests)
 set(SYSTEM_TESTS
     backup-bareos-test
     backup-bareos-passive-test
-    catalog
     multiplied-device-test
     virtualfull
     virtualfull-bscan
@@ -387,38 +571,23 @@ set(SYSTEM_TESTS
     backup-bareos-client-initiated-test
 )
 
-set(SYSTEM_TESTS_DISABLED # initialy empty
+set(SYSTEM_TESTS_DISABLED # initially empty
 )
 
-if(PYTHON)
+# python-bareos-test does not work on installed files
+if(PYTHON AND NOT RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
   list(APPEND SYSTEM_TESTS "python-bareos-test")
 else()
   list(APPEND SYSTEM_TESTS_DISABLED "python-bareos-test")
 endif()
 
-if(PAM_WRAPPER_LIBRARIES) # BareosFindLibrary(pam_wrapper)
-  find_program(PAMTESTER pamtester)
-  if(PAMTESTER)
-    set(ENV{PAM_WRAPPER_LIBRARIES} "${PAM_WRAPPER_LIBRARIES}")
-    execute_process(
-      COMMAND
-        "${CMAKE_SOURCE_DIR}/systemtests/tests/bconsole-pam/bin/check_pam_exec_available.sh"
-      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/systemtests/tests/bconsole-pam/"
-      RESULT_VARIABLE PAM_EXEC_AVAILABLE_RC
-    )
-    if(${PAM_EXEC_AVAILABLE_RC} EQUAL "0")
-      set(PAM_EXEC_FOUND TRUE)
-      set(ENABLE_BCONSOLE_PAM_TEST TRUE)
-    endif()
-  endif()
-endif()
-
-message(STATUS "PAM_EXEC_FOUND:               " ${PAM_EXEC_FOUND})
-
-if(ENABLE_BCONSOLE_PAM_TEST)
-  list(APPEND SYSTEM_TESTS "bconsole-pam")
+bareosfindlibrary("gtest")
+if(GTEST_FOUND AND NOT RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
+  list(APPEND SYSTEM_TESTS "catalog")
+  message(STATUS "adding catalog test as gtest was found and not testing installed files")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "bconsole-pam")
+  list(APPEND SYSTEM_TESTS_DISABLED "catalog")
+  message(STATUS "disabling catalog test as gtest was not found")
 endif()
 
 if(TARGET python-fd)
@@ -430,19 +599,19 @@ endif()
 if(TARGET python-fd AND ovirt_server)
   list(APPEND SYSTEM_TESTS "python-fd-ovirt-plugin-test")
 else()
+  message(
+    STATUS "disabling python-fd-ovirt-plugin-test as ovirt_server is not set"
+  )
   list(APPEND SYSTEM_TESTS_DISABLED "python-fd-ovirt-plugin-test")
 endif()
 
-if(XTRABACKUP)
-  set (XTRABACKUP_OR_MARIABACKUP ${XTRABACKUP})
-endif()
-if(MARIABACKUP)
-  set (XTRABACKUP_OR_MARIABACKUP ${MARIABACKUP})
-  set (extradumpoptions "--user=root")
-endif()
-if(TARGET python-fd AND XTRABACKUP_OR_MARIABACKUP )
+if(TARGET python-fd AND XTRABACKUP)
   list(APPEND SYSTEM_TESTS "python-fd-percona-xtrabackup-plugin-test")
 else()
+  message(
+    STATUS
+      "disabling python-fd-percona-xtrabackup-plugin-test as XTRABACKUP was not found"
+  )
   list(APPEND SYSTEM_TESTS_DISABLED "python-fd-percona-xtrabackup-plugin-test")
 endif()
 
@@ -458,61 +627,114 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED "python-sd-plugin-test")
 endif()
 
-set(PHP_FOUND FALSE)
-set(PYTHON_FOUND FALSE)
-set(PYTHON_SELENIUM_FOUND "NOT SEARCHED")
-set(CHROMEDRIVER_FOUND "NOT SEARCHED")
+message(STATUS "Looking for pam test requirements ...")
+find_program(PYTHON python)
+bareosfindlibraryandheaders("pam" "security/pam_appl.h")
+find_program(PAMTESTER pamtester)
 
-if(PHP)
-  set(PHP_FOUND TRUE)
-  if(PYTHON)
-    set(PYTHON_FOUND TRUE)
-    PythonModuleStatus("selenium") # sets PYTHON_SELENIUM_FOUND to TRUE or FALSE
-    if(${PYTHON_SELENIUM_FOUND})
-      find_program(CHROMEDRIVER chromedriver)
-      if(CHROMEDRIVER)
-        set(CHROMEDRIVER_FOUND TRUE)
-        set(ENABLE_WEBUI_SELENIUM_TEST TRUE)
-      else()
-        set(CHROMEDRIVER_FOUND FALSE)
-      endif()
-    endif()
-  endif()
+set(ENV{PAM_WRAPPER_LIBRARIES} "${PAM_WRAPPER_LIBRARIES}")
+execute_process(
+  COMMAND
+    "${CMAKE_SOURCE_DIR}/systemtests/tests/bconsole-pam/bin/check_pam_exec_available.sh"
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/systemtests/tests/bconsole-pam/"
+  RESULT_VARIABLE PAM_EXEC_AVAILABLE_RC
+)
+if(PAM_EXEC_AVAILABLE_RC EQUAL "0")
+  set(PAM_EXEC_AVAILABLE TRUE)
+endif()
+message("   PAM_FOUND:                " ${PAM_FOUND})
+message("   PAM_WRAPPER_LIBRARIES:    " ${PAM_WRAPPER_LIBRARIES})
+message("   PAMTESTER:                " ${PAMTESTER})
+message("   PAM_EXEC_AVAILABLE:       " ${PAM_EXEC_AVAILABLE})
+
+if(PAM_WRAPPER_LIBRARIES
+   AND PAMTESTER
+   AND PAM_EXEC_AVAILABLE
+   AND PAM_FOUND
+)
+  set(ENABLE_BCONSOLE_PAM_TEST TRUE)
+  message(STATUS "OK: all requirements for pam tests were met.")
+else()
+  set(ENABLE_BCONSOLE_PAM_TEST FALSE)
+  message(
+    STATUS "NOT OK: disabling pam tests as not all requirements were found."
+  )
 endif()
 
-message(STATUS "PHP_FOUND:                    " ${PHP_FOUND})
-message(STATUS "PYTHON_FOUND:                 " ${PYTHON_FOUND})
-message(STATUS "PYTHON_SELENIUM_FOUND:        " ${PYTHON_SELENIUM_FOUND})
-message(STATUS "CHROMEDRIVER_FOUND:           " ${CHROMEDRIVER_FOUND})
+if(ENABLE_BCONSOLE_PAM_TEST)
+  list(APPEND SYSTEM_TESTS "bconsole-pam")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "bconsole-pam")
+endif()
 
-set(AVAILABLE_WEBUI_SELENIUM_TESTS
-    "admin-client_disabling"
-    "admin-rerun_job"
-    "admin-restore"
-    "admin-run_configured_job"
-    "admin-run_default_job"
-    "readonly-client_disabling"
-    "readonly-rerun_job"
-    "readonly-restore"
-    "readonly-run_configured_job"
-    "readonly-run_default_job"
+# python-bareos does not work on installed files and is used here
+if(ENABLE_BCONSOLE_PAM_TEST AND NOT RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
+  list(APPEND SYSTEM_TESTS "python-pam")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "python-pam")
+endif()
+
+message(STATUS "Looking for webui test requirements ...")
+
+find_program(PHP php)
+find_program(CHROMEDRIVER chromedriver)
+pythonmodulestatus("selenium") # sets PYTHON_SELENIUM_FOUND to TRUE or FALSE
+
+message("   PHP:                    " ${PHP})
+message("   PYTHON:                 " ${PYTHON})
+message("   PYTHON_SELENIUM_FOUND:  " ${PYTHON_SELENIUM_FOUND})
+message("   CHROMEDRIVER:           " ${CHROMEDRIVER})
+
+if(PHP
+   AND PYTHON
+   AND PYTHON_SELENIUM_FOUND
+   AND CHROMEDRIVER
 )
+  set(ENABLE_WEBUI_SELENIUM_TEST TRUE)
+  message(STATUS "OK: all requirements for webui tests were met.")
+else()
+  set(ENABLE_WEBUI_SELENIUM_TEST FALSE)
+  message(
+    STATUS "NOT OK: disabling webui tests as not all requirements were found."
+  )
+endif()
 
 if(ENABLE_WEBUI_SELENIUM_TEST)
   set(WEBUI_SELENIUM_TESTS ${AVAILABLE_WEBUI_SELENIUM_TESTS})
 else()
   set(WEBUI_SELENIUM_TESTS)
   foreach(TEST_NAME_DISABLED ${AVAILABLE_WEBUI_SELENIUM_TESTS})
-    add_test(NAME webui:${TEST_NAME_DISABLED} COMMAND empty_command)
-    set_tests_properties(webui:${TEST_NAME_DISABLED} PROPERTIES DISABLED true)
-    message(STATUS "Disabled test: webui:${TEST_NAME_DISABLED}")
+    add_test(
+      NAME ${WEBUI_TEST_PREFIX}${TEST_NAME_DISABLED}
+      COMMAND empty_command
+    )
+    set_tests_properties(
+      ${WEBUI_TEST_PREFIX}${TEST_NAME_DISABLED}
+      PROPERTIES DISABLED true
+    )
+    message(
+      STATUS
+        "Disabled test: ${WEBUI_TEST_PREFIX}${TEST_NAME_DISABLED}"
+    )
   endforeach()
 endif()
 
 set(BASEPORT 42001)
 
-foreach(TEST_NAME ${SYSTEM_TESTS})
+set(SYSTEMTEST_PREFIX "system:")
 
+if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
+  set(TEST_INFO_TEXT "running system tests on installed files")
+else()
+  set(TEST_INFO_TEXT "running system tests on the sourcetree")
+endif()
+
+
+foreach(TEST_NAME ${SYSTEM_TESTS})
+  message(
+    STATUS
+      "Configuring test: ${SYSTEMTEST_PREFIX}${TEST_NAME}"
+  )
   prepare_test()
 
   configurefilestosystemtest("systemtests" "tests/${TEST_NAME}" "*" @ONLY "")
@@ -523,7 +745,7 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   checkforenabledanddisabledlistentry(${TEST_NAME})
 
   add_test(
-    NAME "system:${TEST_NAME}"
+    NAME "${SYSTEMTEST_PREFIX}${TEST_NAME}"
     COMMAND ${tests_dir}/${TEST_NAME}/testrunner
     WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
   )
@@ -532,9 +754,14 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
 
 endforeach()
 
+set(WEBUI_TEST_PREFIX "webui:")
 # webui specific settings
 if(ENABLE_WEBUI_SELENIUM_TEST)
   foreach(TEST_NAME ${WEBUI_SELENIUM_TESTS})
+    message(
+      STATUS
+        "Configuring test: ${WEBUI_TEST_PREFIX}${TEST_NAME}"
+    )
 
     prepare_test()
     prepare_testdir_for_daemon_run()
@@ -582,7 +809,7 @@ if(ENABLE_WEBUI_SELENIUM_TEST)
     checkforenabledanddisabledlistentry(${TEST_NAME})
 
     add_test(
-      NAME "webui:${TEST_NAME}"
+      NAME "${WEBUI_TEST_PREFIX}${TEST_NAME}"
       COMMAND ${tests_dir}/${TEST_NAME}/testrunner
       WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
     )
@@ -592,57 +819,20 @@ endif()
 
 foreach(TEST_NAME_DISABLED ${SYSTEM_TESTS_DISABLED})
   checkforenabledanddisabledlistentry(${TEST_NAME_DISABLED})
-  add_test(NAME system:${TEST_NAME_DISABLED} COMMAND empty_command)
-  set_tests_properties(system:${TEST_NAME_DISABLED} PROPERTIES DISABLED true)
-  message(STATUS "Disabled test: system:${TEST_NAME_DISABLED}")
-endforeach()
-
-# create symlinks for the binaries
-
-set(BINARIES_TO_LINK_TO_SBIN
-    dird/bareos-dir
-    dird/bareos-dbcheck
-    filed/bareos-fd
-    stored/bareos-sd
-    stored/bcopy
-    stored/btape
-    stored/bextract
-    stored/bareos-sd
-    stored/bls
-    stored/bscan
-)
-
-foreach(BINARY_SOURCEPATH ${BINARIES_TO_LINK_TO_SBIN})
-  get_filename_component(BINARY_NAME ${BINARY_SOURCEPATH} NAME)
-  create_symlink(
-    ${PROJECT_BINARY_DIR}/../core/src/${BINARY_SOURCEPATH}
-    ${sbindir}/${BINARY_NAME}
+  add_test(
+    NAME ${SYSTEMTEST_PREFIX}${TEST_NAME_DISABLED}
+    COMMAND empty_command
+  )
+  set_tests_properties(
+    ${SYSTEMTEST_PREFIX}${TEST_NAME_DISABLED}
+    PROPERTIES DISABLED true
+  )
+  message(
+    STATUS
+      "Disabled test: ${SYSTEMTEST_PREFIX}${TEST_NAME_DISABLED}"
   )
 endforeach()
 
-set(BINARIES_TO_LINK_TO_BIN
-    console/bconsole
-    tools/bsmtp
-    tools/timelimit
-    tools/bwild
-    tools/bpluginfo
-    tools/bsmtp
-    tools/bscrypto
-    tools/btestls
-    tools/drivetype
-    tools/fstype
-    tools/bregex
-)
 
-foreach(BINARY_SOURCEPATH ${BINARIES_TO_LINK_TO_BIN})
-  get_filename_component(BINARY_NAME ${BINARY_SOURCEPATH} NAME)
-  create_symlink(
-    ${PROJECT_BINARY_DIR}/../core/src/${BINARY_SOURCEPATH}
-    ${bindir}/${BINARY_NAME}
-  )
-endforeach()
-
-create_symlink(
-  ${PROJECT_BINARY_DIR}/../core/src/console/bconsole ${bindir}/bconsole
-)
-create_symlink(${scriptdir}/bareos ${bindir}/bareos)
+configure_file("CTestCustom.cmake.in" "${CMAKE_BINARY_DIR}/CTestCustom.cmake" @ONLY)
+configure_file("ctest_custom_pretest.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/ctest_custom_pretest.sh" @ONLY)

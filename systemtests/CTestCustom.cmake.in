@@ -1,0 +1,1 @@
+set (CTEST_CUSTOM_PRE_TEST @CMAKE_CURRENT_BINARY_DIR@/ctest_custom_pretest.sh)

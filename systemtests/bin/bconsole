@@ -1,5 +1,7 @@
 #!/bin/bash
 # wrapper script to start/stop bconsole for each individual test
+#shellcheck source=../environment.in
 . ./environment
-${bin}/bconsole -c ${conf} "$@"
+
+"${BAREOS_BCONSOLE_BINARY}" -c "${conf}" "$@"
 

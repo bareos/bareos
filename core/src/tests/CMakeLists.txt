@@ -386,10 +386,9 @@ if(NOT HAVE_WIN32 AND NOT client-only)
   )
 endif() # NOT HAVE_WIN32 AND NOT client-only
 
-
 if(NOT client-only)
   bareos_add_test(
     sort_stringvector LINK_LIBRARIES bareos ${GTEST_LIBRARIES}
                                      ${GTEST_MAIN_LIBRARIES}
-)
+  )
 endif() # NOT client-only

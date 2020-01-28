@@ -1,5 +1,7 @@
 #!/bin/bash
 # script to start and stop daemons for individual test
+
+#shellcheck source=../environment.in
 . ./environment
-${scripts}/bareos-config initialize_database_driver
-${scripts}/bareos $@
+"${scripts}"/bareos-config initialize_database_driver
+"${rscripts}"/bareos "$@"

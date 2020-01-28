@@ -8,14 +8,16 @@ TestName="$(basename "$(pwd)")"
 export TestName
 
 JobName=backup-bareos-fd
+#shellcheck source=../environment.in
 . ./environment
-. ${scripts}/functions
 
-${scripts}/cleanup
-${scripts}/setup
+JobName=backup-bareos-fd
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
 
 xtrabackup_test_db="${db_name}_xtrabackup"
-BCONSOLE="${current_test_directory}/bin/bconsole"
 
 start_test
 
@@ -25,38 +27,38 @@ echo "CREATE TABLE test ( id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, data VARCH
 echo "insert into test (data) VALUES ('test entry 1') " | mysql ${xtrabackup_test_db}
 
 
-run_bareos
+run_bareos "$@"
 
-echo "@$out $tmp/log1.out"  | $BCONSOLE
+echo "@$out $tmp/log1.out"  | $BAREOS_BCONSOLE_BINARY -c "$conf"/bconsole.conf
 
 COMMAND="run job=$JobName"
-echo "$COMMAND yes" | $BCONSOLE
-echo "wait JobName=$JobName" | $BCONSOLE
-echo "status dir" | $BCONSOLE
+echo "$COMMAND yes" | $BAREOS_BCONSOLE_BINARY -c "$conf"/bconsole.conf
+echo "wait JobName=$JobName" | $BAREOS_BCONSOLE_BINARY -c "$conf"/bconsole.conf
+echo "status dir" | $BAREOS_BCONSOLE_BINARY -c "$conf"/bconsole.conf
 # insert data and run incremental
 echo "insert into test (data) VALUES ('test entry 2') " | mysql ${xtrabackup_test_db}
 
 COMMAND="$COMMAND level=Incremental"
-echo "$COMMAND yes" | $BCONSOLE #| grep "Job queued. JobId="
-echo "wait JobName=$JobName" | $BCONSOLE
-echo "status dir" | $BCONSOLE
+echo "$COMMAND yes" | $BAREOS_BCONSOLE_BINARY -c "$conf"/bconsole.conf #| grep "Job queued. JobId="
+echo "wait JobName=$JobName" | $BAREOS_BCONSOLE_BINARY -c "$conf"/bconsole.conf
+echo "status dir" | $BAREOS_BCONSOLE_BINARY -c "$conf"/bconsole.conf
 
 
 # run incremental again without any new data
-echo "$COMMAND yes" | $BCONSOLE #| grep "Job queued. JobId="
-echo "wait JobName=$JobName" | $BCONSOLE
-echo "status dir" | $BCONSOLE
+echo "$COMMAND yes" | $BAREOS_BCONSOLE_BINARY -c "$conf"/bconsole.conf #| grep "Job queued. JobId="
+echo "wait JobName=$JobName" | $BAREOS_BCONSOLE_BINARY -c "$conf"/bconsole.conf
+echo "status dir" | $BAREOS_BCONSOLE_BINARY -c "$conf"/bconsole.conf
 
 
 # run restore
 RESTORECMD="restore client=bareos-fd fileset=PerconaXtraBackupTest yes restorejob=RestoreFile select all done"
 
-echo "@$out $tmp/log2.out"  | $BCONSOLE
+echo "@$out $tmp/log2.out"  | $BAREOS_BCONSOLE_BINARY -c "$conf"/bconsole.conf
 
-JOBID=`echo "$RESTORECMD" | $BCONSOLE | grep "Job queued. JobId=" | sed s'/.*=//' `
+JOBID=$(echo "$RESTORECMD" | $BAREOS_BCONSOLE_BINARY -c "$conf"/bconsole.conf | grep "Job queued. JobId=" | sed s'/.*=//')
 
-echo "wait jobid=$JOBID" | $BCONSOLE | grep -q "JobStatus=OK"
-if [[ $? != 0 ]]; then
+if ! echo "wait jobid=$JOBID" | $BAREOS_BCONSOLE_BINARY -c "$conf"/bconsole.conf | grep -q "JobStatus=OK";
+then
     echo "Restore Job $JOBID failed"
     estat=1
 fi

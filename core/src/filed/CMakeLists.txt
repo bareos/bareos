@@ -89,11 +89,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   )
 endif()
 
-install(
-  TARGETS bareos-fd
-  DESTINATION "${sbindir}"
-  COMPONENT filedaemon
-)
+install(TARGETS bareos-fd DESTINATION "${sbindir}" COMPONENT filedaemon)
 
 install(CODE "set(PLUGINS \"${PLUGINS}\")" COMPONENT filedaemon)
 install(CODE "set(BACKENDS \"${BACKENDS}\")" COMPONENT filedaemon)

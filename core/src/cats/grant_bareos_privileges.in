@@ -99,7 +99,7 @@ case ${db_type} in
       retval=$?
       ;;
    postgresql)
-      psql -f ${temp_sql_grants} -d ${db_name} $*
+      PGOPTIONS='--client-min-messages=warning' psql -f ${temp_sql_grants} -d ${db_name} $*
 
       retval=$?
       ;;

@@ -8,11 +8,15 @@ TestName="$(basename "$(pwd)")"
 export TestName
 
 JobName=backup-bareos-fd
+#shellcheck source=../environment.in
 . ./environment
-. ${scripts}/functions
 
-${scripts}/cleanup
-${scripts}/setup
+JobName=backup-bareos-fd
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
 
 curl -k -o ${BAREOS_CONFIG_DIR}/ovirt-ca.cert "https://$OVIRT_SERVER/ovirt-engine/services/pki-resource?resource=ca-certificate&format=X509-PEM-CA"
 
@@ -50,7 +54,7 @@ messages
 quit
 END_OF_DATA
 
-run_bareos
+run_bareos "$@"
 check_for_zombie_jobs storage=File
 stop_bareos
 
@@ -58,7 +62,7 @@ check_two_logs
 
 # Check restored disk image content
 restored_disk_image=$(find $tmp/bareos-restores -type f | grep -v "\.ovf" | tail -1)
-if [ $(strings $restored_disk_image | tail -1) == "BareosTest" ]; then
+if [ "$(strings "$restored_disk_image" | tail -1)" = "BareosTest" ]; then
     echo "Restored disk image content OK"
 else
     echo "Restored disk image ERROR: Does not contain expected string"

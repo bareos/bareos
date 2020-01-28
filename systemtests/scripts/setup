@@ -1,10 +1,11 @@
 #!/bin/sh
-echo "running $0"
+#shellcheck source=../environment.in
+. ./environment
+
 ${scripts}/bareos-config initialize_database_driver
-. ${scripts}/functions
+. ${rscripts}/functions
 
 print_debug "drop database \"${db_name}\" (${DBTYPE})"
-#${scripts}/drop_bareos_tables ${DBTYPE} >/dev/null 2>&1
 ${scripts}/drop_bareos_database ${DBTYPE} >/dev/null 2>&1
 
 print_debug "creating database \"${db_name}\" (${DBTYPE})"

@@ -1,0 +1,5 @@
+#!/bin/sh
+echo "PRETEST: running $0 script"
+echo "PRETEST: @TEST_INFO_TEXT@"
+echo "PRETEST: executing @BAREOS_DIR_TO_TEST@ -?"
+@BAREOS_DIR_TO_TEST@ -? 2>&1 | grep Version >/dev/null

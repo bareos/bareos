@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -27,7 +27,11 @@ if(NOT client-only)
   add_subdirectory(stored)
 endif()
 
-if(GTEST_FOUND)
+if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
+  message(status "Skipping unit tests as testing on installed files is requested")
+elseif(NOT GTEST_FOUND)
+  message(status "Skipping unit tests as gtest was not found")
+else()
   add_subdirectory(tests)
 endif()
 
