@@ -94,7 +94,7 @@ do
                     sed -n -e 's/^.*VersionId.*: \(.*\)$/\1/p'`
          ;;
       postgresql)
-         DBVERSION=`psql -d ${db_name} -t --pset format=unaligned -c "SELECT MAX(VersionId) FROM Version;" $*`
+         DBVERSION=`PGOPTIONS='--client-min-messages=warning' psql -d ${db_name} -t --pset format=unaligned -c "SELECT MAX(VersionId) FROM Version;" $*`
          ;;
       *)
          echo "Unknown database type ${db_type}"
@@ -168,15 +168,15 @@ do
          retval=$?
          ;;
       postgresql)
-         psql -f ${temp_sql_schema} -d ${db_name} $*
+         PGOPTIONS='--client-min-messages=warning' -f ${temp_sql_schema} -d ${db_name} $*
          retval=$?
          if [ $retval -eq 0 ] && [ ${end_version} -eq 2192 ]; then
-             PGSQLVERSION=`psql -d template1 -c 'SELECT version()' $* 2>/dev/null | \
+             PGSQLVERSION=`PGOPTIONS='--client-min-messages=warning' -d template1 -c 'SELECT version()' $* 2>/dev/null | \
                     awk '/PostgreSQL/ { print $2 }' | \
                     cut -d '.' -f 1,2`
              case ${PGSQLVERSION} in
                  10.*|11.*|12.*)
-                     psql -d ${db_name} -c 'ALTER SEQUENCE basefiles_baseid_seq AS BIGINT'
+                     PGOPTIONS='--client-min-messages=warning' -d ${db_name} -c 'ALTER SEQUENCE basefiles_baseid_seq AS BIGINT'
                      result=$?
                      if [ $result -ne 0 ]; then
                          echo "WARNING: Failed to update sequence basefiles_baseid_seq"

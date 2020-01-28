@@ -4,11 +4,14 @@ TestName="$(basename "$(pwd)")"
 export TestName
 
 JobName=backup-bareos-fd
-. ./environment
-. "${scripts}"/functions
 
-"${scripts}"/cleanup
-"${scripts}"/setup
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
 
 exit_with_error() {
   echo "$1"
@@ -27,7 +30,7 @@ BackupDirectory="${tmp}/data"
 
 # Use a tgz to setup data to be backed up.
 # Data will be placed at "${tmp}/data/".
-setup_data
+setup_data "$@"
 
 start_test
 
@@ -57,20 +60,20 @@ messages
 quit
 END_OF_DATA
 
-"${scripts}"/bareos-ctl-dir start
+"${rscripts}"/bareos-ctl-dir start
 sleep 1
 
 echo "Waiting for the director to start"
-if ! bin/bconsole <<< "status dir" > /dev/null 2>&1; then
+if ! echo echo "status dir" | "${BAREOS_BCONSOLE_BINARY}" -c "$conf"/bconsole.conf > /dev/null 2>&1; then
   exit_with_error "Director did not start"
 fi
 echo "Director is running"
 
-"${scripts}"/bareos-ctl-sd start
-"${scripts}"/bareos-ctl-fd start
+"${rscripts}"/bareos-ctl-sd start
+"${rscripts}"/bareos-ctl-fd start
 
 echo "Check if the filedaemon is connected to the director"
-if ! bin/bconsole <<< "status dir" | grep --quiet --word-regexp "${TestName}-fd"; then
+if ! echo "status dir" | "${BAREOS_BCONSOLE_BINARY}" -c "$conf"/bconsole.conf  | grep --quiet --word-regexp "${TestName}-fd"; then
   exit_with_error "Filedaemon ${TestName} could not connect to director"
 fi
 echo "Filedaemon is connected, running backup and restore"
@@ -79,9 +82,9 @@ run_bconsole "$tmp/bconcmds"
 
 check_for_zombie_jobs storage=File
 
-"${scripts}"/bareos-ctl-dir stop
-"${scripts}"/bareos-ctl-sd stop
-"${scripts}"/bareos-ctl-fd stop
+"${rscripts}"/bareos-ctl-dir stop
+"${rscripts}"/bareos-ctl-sd stop
+"${rscripts}"/bareos-ctl-fd stop
 
 check_two_logs
 check_restore_diff "${BackupDirectory}"

@@ -8,10 +8,10 @@ export TestName
 
 JobName=backup-bareos-fd
 . ./environment
-. ${scripts}/functions
+. ${rscripts}/functions
 
-${scripts}/cleanup
-${scripts}/setup
+${rscripts}/cleanup
+${rscripts}/setup
 
 
 # Directory to backup.
@@ -36,7 +36,7 @@ END_OF_DATA
 
 run_bareos
 
-@PHP@ -S 127.0.0.1:@php_port@ -t @PROJECT_SOURCE_DIR@/../webui/public/ >"$tmp/php.out" 2>&1 &
+@PHP@ -S 127.0.0.1:@php_port@ -t @BAREOS_WEBUI_PUBLIC_DIR@ >"$tmp/php.out" 2>&1 &
 
 PHP_PID=$(echo $!)
 

@@ -20,12 +20,14 @@
 TestName="$(basename "$(pwd)")"
 export TestName
 
-JobName=backup-bareos-fd
+#shellcheck source=../environment.in
 . ./environment
-. ${scripts}/functions
 
-${scripts}/cleanup
-${scripts}/setup
+JobName=backup-bareos-fd
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
 
 # Directory to backup.
 # This directory will be created by setup_data().
@@ -56,43 +58,44 @@ if is_debug; then
     export PAM_WRAPPER_DEBUGLEVEL=4
     BAREOS_DIR_OPTIONS="-d 200"
     output=/dev/stdout
+    LD_PRELOAD=${PAM_WRAPPER_LIBRARIES} "${BAREOS_DIRECTOR_BINARY}" -c "${conf}" -f "${BAREOS_DIR_OPTIONS}" >$output 2>&1 &
+else
+    LD_PRELOAD=${PAM_WRAPPER_LIBRARIES} "${BAREOS_DIRECTOR_BINARY}" -c "${conf}" -f                       >$output 2>&1 &
 fi
-
-LD_PRELOAD=${PAM_WRAPPER_LIBRARIES} ${BAREOS_DIRECTOR_BINARY} -c etc/bareos -f ${BAREOS_DIR_OPTIONS} >$output 2>&1 &
 
 sleep 1
 
-cat <<END_OF_DATA >$tmp/bconcmds
+cat <<END_OF_DATA >"$tmp"/bconcmds
 @$out $tmp/log1.out
 status director
 quit
 END_OF_DATA
 
-if ! ${bin}/bconsole -c "${conf}" -p etc/user1.cred < $tmp/bconcmds >${tmp}/log1.out 2>${tmp}/err1.out; then
-  cat ${tmp}/log1.out
-  cat ${tmp}/err1.out
+if ! "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" -p etc/user1.cred < "$tmp"/bconcmds >"${tmp}"/log1.out 2>"${tmp}"/err1.out; then
+  cat "${tmp}"/log1.out
+  cat "${tmp}"/err1.out
   set_error "Failed to login as user user1."
   exit 1
 fi
 
-if ! grep -q "Running Jobs:" ${tmp}/log1.out; then
-  cat ${tmp}/log1.out
+if ! grep -q "Running Jobs:" "${tmp}"/log1.out; then
+  cat "${tmp}"/log1.out
   set_error "Unexpected output in user1 session."
   exit 1
 fi
 
 print_debug "OK: login as user1 succeeded."
 
-if ${bin}/bconsole -c "${conf}" -p etc/user2.cred < $tmp/bconcmds >${tmp}/log2.out 2>${tmp}/err2.out; then
-  cat ${tmp}/log2.out
-  cat ${tmp}/err2.out
+if "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" -p etc/user2.cred < "$tmp"/bconcmds >"${tmp}"/log2.out 2>"${tmp}"/err2.out; then
+  cat "${tmp}"/log2.out
+  cat "${tmp}"/err2.out
   set_error "Login as user user2 succeeded. This should NOT happen."
   exit 1
 fi
 
 print_debug "OK: login as user2 failed."
 
-cat <<END_OF_DATA >$tmp/bconcmds-add-user
+cat <<END_OF_DATA >"$tmp"/bconcmds-add-user
 @$out $tmp/log3.out
 configure add user name=user3 description="script configured user" profile=operator
 reload
@@ -100,41 +103,35 @@ quit
 END_OF_DATA
 
 ## create user3
-if ! ${bin}/bconsole -c "${conf}" -p etc/user1.cred < $tmp/bconcmds-add-user >${tmp}/log4.out 2>${tmp}/err4.out; then
-  cat ${tmp}/log4.out
-  cat ${tmp}/err4.out
+if ! "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" -p etc/user1.cred < "$tmp"/bconcmds-add-user >"${tmp}"/log4.out 2>"${tmp}"/err4.out; then
+  cat "${tmp}"/log4.out
+  cat "${tmp}"/err4.out
   set_error "Failed to login as user user1 and add new user3."
   exit 1
 fi
 
-cat <<END_OF_DATA >$tmp/bconcmds-user3
+cat <<END_OF_DATA >"$tmp"/bconcmds-user3
 @$out $tmp/log5.out
 status director
 quit
 END_OF_DATA
 
 ##login as user 3
-if ! ${bin}/bconsole -c "${conf}" -p etc/user3.cred < $tmp/bconcmds-user3 >${tmp}/log6.out 2>${tmp}/err6.out; then
-  cat ${tmp}/log6.out
-  cat ${tmp}/err6.out
+if ! "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" -p etc/user3.cred < "$tmp"/bconcmds-user3 >"${tmp}"/log6.out 2>"${tmp}"/err6.out; then
+  cat "${tmp}"/log6.out
+  cat "${tmp}"/err6.out
   set_error "Failed to login as user user3."
   exit 1
 fi
 
-if ! grep -q "Running Jobs:" ${tmp}/log5.out; then
-  cat ${tmp}/log5.out
+if ! grep -q "Running Jobs:" "${tmp}"/log5.out; then
+  cat "${tmp}"/log5.out
   set_error "Unexpected output in user3 session."
   exit 1
 fi
 
 
-#
-# run Python Unit Tests
-#
-run_python_unittests
-
-
-if ! ${scripts}/bareos-ctl-dir status >/dev/null; then
+if ! ${rscripts}/bareos-ctl-dir status >/dev/null; then
   set_error "Director does not run anymore. This should not happen."
   exit 1
 fi

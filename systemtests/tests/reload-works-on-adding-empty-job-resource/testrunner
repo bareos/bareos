@@ -8,77 +8,19 @@ TestName="$(basename "$(pwd)")"
 export TestName
 export estat
 
-# shellcheck disable=SC1091
+#shellcheck source=../environment.in
 . ./environment
-. ${scripts}/functions
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+#shellcheck source=../scripts/reload_test_functions
+. "${rscripts}"/reload_test_functions
 
-temporary_job_config_file="$config_directory_dir_additional_test_config/new_empty_job_definition.conf"
-bconsole_command_file="$tmp/bconsole_reload_command"
-console_logfile="$tmp/console.log"
+export temporary_job_config_file="$config_directory_dir_additional_test_config/new_empty_job_definition.conf"
+export bconsole_command_file="$tmp/bconsole_reload_command"
+export console_logfile="$tmp/console.log"
 
-director_debug_level=""
+export director_debug_level=""
 #director_debug_level="-d 200"
-
-exit_with_error() {
-  echo "$1"
-  estat=1
-  end_test
-  exit 1
-}
-
-stop_director() {
-  "${scripts}/bareos-ctl-dir" stop
-}
-
-start_director() {
-  "${scripts}/bareos-ctl-dir" start "$director_debug_level"
-  director_pid=$(pidof ${BAREOS_DIRECTOR_BINARY})
-
-  if [ -z "$director_pid" ]; then
-    exit_with_error "Bareos director could not be started"
-  fi
-}
-
-create_console_command_file() {
-  if [ ! -f "$bconsole_command_file" ]; then
-  cat > "$bconsole_command_file" <<EOF
-@$out "$console_logfile"
-reload
-messages
-EOF
-  fi
-}
-
-test_reload_will_not_crash_director() {
-  create_console_command_file
-
-  "$bin"/bconsole -c "$conf"/bconsole.conf < "$bconsole_command_file" 2>&1 >> /dev/null
-  if [ $? != 0 ] ; then
-    exit_with_error "BConsole finished with errors"
-  fi
-
-  if ! ps $director_pid > /dev/null; then
-      exit_with_error "Bareos director should not stop after reload"
-  fi
-}
-
-find_error_string_in_console_log() {
-  err='Config error: Name not specified for resource'
-  if ! grep -q "$err" "$console_logfile"; then
-    exit_with_error "Could not find error string in console output"
-  fi
-}
-
-add_empty_job_to_config() {
-cat <<END_OF_DATA > "$temporary_job_config_file"
-Job {
-}
-END_OF_DATA
-}
-
-remove_console_logfile() {
-  rm -f "$console_logfile"
-}
 
 ############################################
 start_test
@@ -88,16 +30,16 @@ start_test
 stop_director
 
 #cleanup possible leftover from last run
-${scripts}/cleanup
+${rscripts}/cleanup
 remove_console_logfile
 
-${scripts}/setup
+${rscripts}/setup
 start_director
 
 #reload modified config
 add_empty_job_to_config
 test_reload_will_not_crash_director
-find_error_string_in_console_log
+find_error_string_in_console_log 'Config error: Name not specified for resource'
 
 stop_director
 

@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -694,8 +694,7 @@ if(${lmdb})
   set(LMDB_LIBS bareoslmdb)
 endif()
 
-# info what the config files need to be installed
-#####  PLUGINS  ############
+# info what the config files need to be installed PLUGINS  ############
 set(PLUGINS python-ldap-conf.d)
 list(APPEND PLUGINS python-ovirt-conf.d)
 
@@ -923,12 +922,12 @@ message("   GAWK:                         ${GAWK}")
 message("   RPCGEN:                       ${RPCGEN}")
 message("   MTX:                          ${MTX}")
 message("   XTRABACKUP:                   ${XTRABACKUP}")
-message("   MARIABACKUP:                  ${MARIABACKUP}")
 message("   DEVELOPER:                    ${developer}")
 message("   LocalBuildDefinitionsFile:    ${BareosLocalBuildDefinitionsFile}")
 message("   HAVE_IS_TRIVIALLY_COPYABLE:   ${HAVE_IS_TRIVIALLY_COPYABLE}")
 
 message("   do-static-code-checks:        ${DO_STATIC_CODE_CHECKS}")
+
 if(DO_STATIC_CODE_CHECKS)
   message("    static code check tools:")
   message(

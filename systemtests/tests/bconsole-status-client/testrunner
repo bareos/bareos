@@ -6,13 +6,14 @@
 TestName="$(basename "$(pwd)")"
 export TestName
 
-JobName=bconsole-status-client
+#shellcheck source=../environment.in
 . ./environment
-. "${scripts}/functions"
 
-"${scripts}/cleanup"
-"${scripts}/setup"
-
+JobName=bconsole-status-client
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
 
 # Directory to backup.
 # This directory will be created by setup_data().
@@ -32,7 +33,7 @@ messages
 quit
 END_OF_DATA
 
-run_bareos
+run_bareos "$@"
 stop_bareos
 
 # if log2.out has not been written, bconsole crashed or disconnected

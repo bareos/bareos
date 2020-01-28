@@ -1,0 +1,88 @@
+#!/bin/bash
+#
+# This test tests the bconsole against the bareos-dir using PAM authentication.
+#
+# Requires:
+# on Debian following packages must be installed:
+#   libpam-modules (for pam_exec.so),
+#   libpam-wrapper,
+#   pamtester
+# On Fedora, the names are similar: pam, pam-wrapper, pamtester.
+#
+# If they are not available, the test will be disabled by cmake.
+#
+# PAM is configured to accept all users where USERNAME = PASSWORD.
+#
+# Interactive PAM login in bconsole does not work,
+# as the configured PAM module does not ask for the username.
+# However, providing the PAM credentials to bconsole as file (bconsole -p CREDENTIALS_FILE) does work.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+JobName=backup-bareos-fd
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backed up.
+# Data will be placed at "${tmp}/data/".
+#setup_data
+
+start_test
+
+${scripts}/bareos-config initialize_database_driver
+
+export PAM_WRAPPER=1
+export PAM_WRAPPER_SERVICE_DIR=${current_test_directory}/etc/pam.d/bareos
+# PAM_WRAPPER creates extra environments in /tmp/pam.*/
+# However, these are removed when bareos-dir daemonized.
+# This settings keeps them all.
+# Other workaround: don't let bareos-dir daemonize itself,
+# but use foreground and ampersand (-f and &)
+#export PAM_WRAPPER_KEEP_DIR=1
+
+# PAM_WRAPPER_LIBRARIES has to set be cmake
+
+output=/dev/null
+BAREOS_DIR_OPTIONS=""
+if is_debug; then
+    export PAM_WRAPPER_DEBUGLEVEL=4
+    BAREOS_DIR_OPTIONS="-d 200"
+    output=/dev/stdout
+    LD_PRELOAD=${PAM_WRAPPER_LIBRARIES} "${BAREOS_DIRECTOR_BINARY}" -c "${conf}" -f "${BAREOS_DIR_OPTIONS}" >$output 2>&1 &
+else
+    LD_PRELOAD=${PAM_WRAPPER_LIBRARIES} "${BAREOS_DIRECTOR_BINARY}" -c "${conf}" -f                       >$output 2>&1 &
+fi
+
+sleep 1
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/log1.out
+status director
+quit
+END_OF_DATA
+
+#
+# run Python Unit Tests
+#
+run_python_unittests "$@"
+
+
+if ! ${rscripts}/bareos-ctl-dir status >/dev/null; then
+  set_error "Director does not run anymore. This should not happen."
+  exit 1
+fi
+
+
+stop_bareos > $output 2>&1
+
+end_test

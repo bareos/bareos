@@ -1,37 +1,26 @@
 #!/bin/sh
 set -u
 
+#shellcheck source=../environment.in
 . ./environment
 
-rm -rf ${tmp}/*
-rm -rf ${logdir}/*.log
-rm -rf ${working}/*.bsr ${working}/log*.sd
-rm -rf ${working}/*.trace ${working}/*.traceback ${working}/*.bactrace
-rm -rf ${working}/*.state
-rm -rf ${working}/*.conmsg
-rm -rf ${working}/*.pid
-rm -rf ${working}/*.mail
-rm -rf ${working}/CLEANUPMARKER
-rm -rf ${working}/plugins/*
-rm -rf ${archivedir}/*
-rm -f  ${config_directory_dir_additional_test_config}/*
+rm -rf "${tmp:?}"/*
+rm -rf "${logdir:?}"/*.log
+rm -rf "${working:?}"/*.bsr "${working:?}"/log*.sd
+rm -rf "${working:?}"/*.trace "${working:?}"/*.traceback "${working:?}"/*.bactrace
+rm -rf "${working:?}"/*.state
+rm -rf "${working:?}"/*.conmsg
+rm -rf "${working:?}"/*.pid
+rm -rf "${working:?}"/*.mail
+rm -rf "${working:?}"/CLEANUPMARKER
+rm -rf "${working:?}"/plugins/*
+rm -rf "${archivedir:?}"/*
+rm -f  "${config_directory_dir_additional_test_config}"/*
 find . -name "gigaslam.gif" -exec rm -f {} \;
-# cleanup old config files
-# don't delete mtx-changer.conf (and other files?)
-#rm -f  ${conf}/*.cert
-#rm -f  ${conf}/bareos*.conf
-#rm -f  ${conf}/bconsole*.conf
-#rm -rf ${conf}/*.d/
-#rm -f  ${conf}/*.pem
-#rm -rf ${conf}/bareos-dir-export/
-#rm -rf ${conf}/tls/
 
 # cleanup chrome user data (selenium tests)
 rm -rf /tmp/chrome-user-data-*
 
-#if [ -f ${scripts}/bareos ]; then
-#  ${scripts}/bareos stop 2>&1 >/dev/null
-#fi
 ${scripts}/drop_bareos_tables ${DBTYPE} >/dev/null
 ${scripts}/drop_bareos_database ${DBTYPE} >/dev/null
 echo "creating database (${DBTYPE})"
