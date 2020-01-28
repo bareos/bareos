@@ -214,7 +214,7 @@ void DatabaseExportPostgresql::CompareRow(const RowData& data)
 
   std::string query{"FETCH NEXT FROM curs1"};
 
-  RowData& rd{const_cast<RowData&>(data)};
+  RowData& rd(const_cast<RowData&>(data));
 
   if (!db_->SqlQuery(query.c_str(), ResultHandlerCompare, &rd)) {
     std::string err{
