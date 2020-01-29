@@ -54,6 +54,10 @@ class DatabaseTableDescriptions {
   const TableDescription* GetTableDescription(
       const std::string& table_name) const;
 
+  const ColumnDescription* GetColumnDescription(
+      const std::string& table_name,
+      const std::string& column_name) const;
+
   virtual ~DatabaseTableDescriptions() = default;
 
  protected:
