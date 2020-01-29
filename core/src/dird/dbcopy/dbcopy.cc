@@ -47,9 +47,9 @@ namespace directordaemon {
 bool DoReloadConfig() { return false; }
 }  // namespace directordaemon
 
-class DbConvert {
+class DbCopy {
  public:
-  explicit DbConvert(int argc, char** argv)
+  explicit DbCopy(int argc, char** argv)
   {
     InitMsg(nullptr, nullptr);
     SetWorkingDir();
@@ -64,7 +64,7 @@ class DbConvert {
     ConnectToDatabases();
   }
 
-  void DoDatabaseConversion()
+  void DoDatabaseCopy()
   {
     std::unique_ptr<DatabaseImport> imp(
         DatabaseImport::Create(*source_db_, cl.maximum_number_of_rows));
@@ -123,7 +123,7 @@ class DbConvert {
   }
 
   class CommandLineParser {
-    friend class DbConvert;
+    friend class DbCopy;
 
    public:
     void ParseCommandLine(int argc, char** argv)
@@ -196,11 +196,11 @@ class DbConvert {
   };  // class CommandLineParser
 
  public:
-  ~DbConvert() = default;
-  DbConvert(const DbConvert& other) = delete;
-  DbConvert(const DbConvert&& other) = delete;
-  DbConvert& operator=(const DbConvert& rhs) = delete;
-  DbConvert& operator=(const DbConvert&& rhs) = delete;
+  ~DbCopy() = default;
+  DbCopy(const DbCopy& other) = delete;
+  DbCopy(const DbCopy&& other) = delete;
+  DbCopy& operator=(const DbCopy& rhs) = delete;
+  DbCopy& operator=(const DbCopy&& rhs) = delete;
 
  private:
   CommandLineParser cl;
@@ -224,8 +224,8 @@ int main(int argc, char** argv)
   Cleanup c;
 
   try {
-    DbConvert dbcopy(argc, argv);
-    dbcopy.DoDatabaseConversion();
+    DbCopy dbcopy(argc, argv);
+    dbcopy.DoDatabaseCopy();
   } catch (const std::runtime_error& e) {
     std::string errstring{e.what()};
     if (!errstring.empty()) {
