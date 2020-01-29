@@ -17,7 +17,4 @@ install(TARGETS
   bareos-dbcopy
   DESTINATION "${sbindir}"
 )
-
-
-
-endif()
+endif() #dynamic-cats-backends
