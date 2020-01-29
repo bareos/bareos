@@ -47,8 +47,8 @@ class DatabaseColumnDescriptions {
     kDataType = 1,
     kCharMaxLenght = 2
   };
-  void SelectTableDescriptions(const std::string& sql_query,
-                               DB_RESULT_HANDLER* ResultHandler);
+  void SelectColumnDescriptions(const std::string& sql_query,
+                                DB_RESULT_HANDLER* ResultHandler);
 
  private:
   BareosDb* db_;

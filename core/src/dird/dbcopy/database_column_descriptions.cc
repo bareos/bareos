@@ -31,7 +31,7 @@ DatabaseColumnDescriptions::DatabaseColumnDescriptions(BareosDb* db) : db_{db}
 {
 }
 
-void DatabaseColumnDescriptions::SelectTableDescriptions(
+void DatabaseColumnDescriptions::SelectColumnDescriptions(
     const std::string& sql_query,
     DB_RESULT_HANDLER* ResultHandler)
 {
@@ -72,7 +72,11 @@ DatabaseColumnDescriptionsPostgresql::DatabaseColumnDescriptionsPostgresql(
       "table_name = '"};
   query += table_name;
   query += "'";
-  SelectTableDescriptions(query, ResultHandler);
+
+  std::cout << "Collecting column descriptions for: " << table_name
+            << std::endl;
+
+  SelectColumnDescriptions(query, ResultHandler);
 }
 
 int DatabaseColumnDescriptionsMysql::ResultHandler(void* ctx,
@@ -103,5 +107,5 @@ DatabaseColumnDescriptionsMysql::DatabaseColumnDescriptionsMysql(
   query += " table_schema='";
   query += db->get_db_name();
   query += "'";
-  SelectTableDescriptions(query, ResultHandler);
+  SelectColumnDescriptions(query, ResultHandler);
 }
