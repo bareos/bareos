@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_SRC_DIRD_DBCONVERT_DATABASE_IMPORT_MYSQL_H_
-#define BAREOS_SRC_DIRD_DBCONVERT_DATABASE_IMPORT_MYSQL_H_
+#ifndef BAREOS_SRC_DIRD_DBCOPY_DATABASE_IMPORT_MYSQL_H_
+#define BAREOS_SRC_DIRD_DBCOPY_DATABASE_IMPORT_MYSQL_H_
 
 #include "include/bareos.h"
 #include "dird/dbcopy/database_import.h"
@@ -52,4 +52,4 @@ class DatabaseImportMysql : public DatabaseImport {
 };
 
 
-#endif  // BAREOS_SRC_DIRD_DBCONVERT_DATABASE_IMPORT_MYSQL_H_
+#endif  // BAREOS_SRC_DIRD_DBCOPY_DATABASE_IMPORT_MYSQL_H_

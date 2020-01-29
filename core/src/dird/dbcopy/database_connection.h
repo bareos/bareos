@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_SRC_DIRD_DBCONVERT_DATABASE_CONNECTION_H_
-#define BAREOS_SRC_DIRD_DBCONVERT_DATABASE_CONNECTION_H_
+#ifndef BAREOS_SRC_DIRD_DBCOPY_DATABASE_CONNECTION_H_
+#define BAREOS_SRC_DIRD_DBCOPY_DATABASE_CONNECTION_H_
 
 #include "include/bareos.h"
 #include "dird/dird_globals.h"
@@ -74,4 +74,4 @@ class DatabaseConnection {
   std::unique_ptr<JobControlRecord> jcr_{};
 };
 
-#endif  // BAREOS_SRC_DIRD_DBCONVERT_DATABASE_CONNECTIO_H_
+#endif  // BAREOS_SRC_DIRD_DBCOPY_DATABASE_CONNECTIO_H_

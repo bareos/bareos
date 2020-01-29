@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_SRC_DIRD_DBCONVERT_DATABASE_EXPORT_H_
-#define BAREOS_SRC_DIRD_DBCONVERT_DATABASE_EXPORT_H_
+#ifndef BAREOS_SRC_DIRD_DBCOPY_DATABASE_EXPORT_H_
+#define BAREOS_SRC_DIRD_DBCOPY_DATABASE_EXPORT_H_
 
 #include "dird/dbcopy/row_data.h"
 
@@ -54,4 +54,4 @@ class DatabaseExport {
   std::unique_ptr<DatabaseTableDescriptions> table_descriptions_;
 };
 
-#endif  // BAREOS_SRC_DIRD_DBCONVERT_DATABASE_EXPORT_H_
+#endif  // BAREOS_SRC_DIRD_DBCOPY_DATABASE_EXPORT_H_
