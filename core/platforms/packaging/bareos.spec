@@ -1335,6 +1335,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{_sbindir}/bareos-dbcopy
 %{_sbindir}/bscan
 %{_mandir}/man8/bareos-dbcheck.8.gz
+%{_mandir}/man8/bareos-dbcopy.8.gz
 %{_mandir}/man8/bscan.8.gz
 
 %files tools
