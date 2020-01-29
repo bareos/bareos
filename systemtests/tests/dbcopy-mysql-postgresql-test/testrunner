@@ -41,6 +41,9 @@ status client=bareos-fd
 status storage=File
 wait
 messages
+@$out $tmp/files.mysql
+messages
+list files jobid=1
 END_OF_DATA
 
 cp "${conf}"/bareos-dir.d/client/bareos-mysql-fd.conf.test "${conf}"/bareos-dir.d/client/bareos-fd.conf
@@ -60,7 +63,9 @@ restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all 
 yes
 wait
 messages
-quit
+@$out $tmp/files.postgresql
+messages
+list files jobid=1
 END_OF_DATA
 
 cp "${conf}"/bareos-dir.d/client/bareos-postgresql-fd.conf.test "${conf}"/bareos-dir.d/client/bareos-fd.conf
@@ -71,4 +76,17 @@ stop_bareos
 
 check_two_logs
 check_restore_diff ${BackupDirectory}
+
+sed -i '/Using Catalog.*/d' "${tmp}"/files.postgresql
+sed -i '/Using Catalog.*/d' "${tmp}"/files.mysql
+
+sort "${tmp}"/files.mysql -o "${tmp}"/files.mysql
+sort "${tmp}"/files.postgresql -o "${tmp}"/files.postgresql
+
+if ! diff "${tmp}"/files.mysql "${tmp}"/files.postgresql;
+then
+  estat=1
+  echo "differences in \"list files jobid=1\" output!"
+fi
+
 end_test
