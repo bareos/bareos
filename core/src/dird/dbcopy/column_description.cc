@@ -80,11 +80,6 @@ static void string_conversion_postgresql(FieldData& fd)
           *n++ = 0;
           o++;
           break;
-        case '\"':
-          *n++ = '\\';
-          *n++ = '\"';
-          o++;
-          break;
         default:
           *n++ = *o++;
           break;
