@@ -59,32 +59,51 @@ DatabaseExportPostgresql::~DatabaseExportPostgresql()
   if (transaction_) { db_->SqlQuery("ROLLBACK"); }
 }
 
-void DatabaseExportPostgresql::CopyRow(const RowData& data)
+void DatabaseExportPostgresql::CopyRow(RowData& origin_data)
 {
-  std::string query{"INSERT INTO "};
-  query += data.table_name;
-  query += " (";
-  for (const auto& c : data.column_descriptions) {
-    query += c->column_name;
-    query += ", ";
+  std::string query_into{"INSERT INTO "};
+  query_into += origin_data.table_name;
+  query_into += " (";
+
+  std::string query_values = " VALUES (";
+
+  for (std::size_t i = 0; i < origin_data.column_descriptions.size(); i++) {
+    query_into += origin_data.column_descriptions[i]->column_name;
+    query_into += ", ";
+
+    const ColumnDescription* column_description =
+        table_descriptions_->GetColumnDescription(
+            origin_data.table_name,
+            origin_data.column_descriptions[i]->column_name);
+
+    if (!column_description) {
+      std::string err{"Could not get column description for: "};
+      err += origin_data.column_descriptions[i]->column_name;
+      throw std::runtime_error(err);
+    }
+
+    if (i < origin_data.row.size()) {
+      query_values += "'";
+      column_description->db_export_converter(origin_data.row[i]);
+      query_values += origin_data.row[i].data_pointer;
+      query_values += "',";
+    } else {
+      throw std::runtime_error("Row number does not match column description");
+    }
   }
-  query.resize(query.size() - 2);
-  query += ")";
 
-  query += " VALUES (";
+  query_values.resize(query_values.size() - 1);
+  query_values += ")";
 
-  for (const auto& r : data.row) {
-    query += "'";
-    query += r.data_pointer;
-    query += "',";
-  }
+  query_into.resize(query_into.size() - 2);
+  query_into += ")";
 
-  query.resize(query.size() - 1);
-  query += ")";
+  query_into += query_values;
+
 #if 0
-  std::cout << query << std::endl;
+  std::cout << query_into << std::endl;
 #else
-  if (!db_->SqlQuery(query.c_str())) {
+  if (!db_->SqlQuery(query_into.c_str())) {
     std::string err{"DatabaseExportPostgresql: Could not execute query: "};
     err += db_->get_errmsg();
     throw std::runtime_error(err);

@@ -44,7 +44,7 @@ class DatabaseExport {
   virtual void EndTable() = 0;
 
   virtual void CopyStart() = 0;
-  virtual void CopyRow(const RowData& data) = 0;
+  virtual void CopyRow(RowData& origin_data) = 0;
   virtual void CopyEnd() = 0;
 
   virtual void CompareRow(const RowData& data) = 0;

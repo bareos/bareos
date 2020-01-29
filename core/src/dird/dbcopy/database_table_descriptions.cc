@@ -87,20 +87,50 @@ DatabaseTablesMysql::DatabaseTablesMysql(BareosDb* db)
   }
 }
 
+static void ToLowerCase(const std::string& i1,
+                        const std::string& i2,
+                        std::string& o1,
+                        std::string& o2)
+{
+  o1.clear();
+  o2.clear();
+  std::transform(i1.cbegin(), i1.cend(), std::back_inserter(o1), ::tolower);
+  std::transform(i2.cbegin(), i2.cend(), std::back_inserter(o2), ::tolower);
+}
+
 const DatabaseTableDescriptions::TableDescription*
 DatabaseTableDescriptions::GetTableDescription(
     const std::string& table_name) const
 {
-  auto tr = std::find_if(
-      tables.begin(), tables.end(), [&table_name](const TableDescription& t) {
-        std::string l1, l2;
-        std::transform(table_name.cbegin(), table_name.cend(),
-                       std::back_inserter(l1), ::tolower);
-        std::transform(t.table_name.cbegin(), t.table_name.cend(),
-                       std::back_inserter(l2), ::tolower);
-        return l1 == l2;
-      });
+  auto tr = std::find_if(tables.begin(), tables.end(),
+                         [&table_name](const TableDescription& t) {
+                           std::string l1, l2;
+                           ToLowerCase(table_name, t.table_name, l1, l2);
+                           return l1 == l2;
+                         });
   return tr == tables.end() ? nullptr : std::addressof(*tr);
+}
+
+const ColumnDescription* DatabaseTableDescriptions::GetColumnDescription(
+    const std::string& table_name,
+    const std::string& column_name) const
+{
+  const DatabaseTableDescriptions::TableDescription* table =
+      GetTableDescription(table_name);
+  if (table == nullptr) {
+    std::cout << "Could not get table description for table: " << table_name
+              << std::endl;
+    return nullptr;
+  }
+  auto c = std::find_if(
+      table->column_descriptions.cbegin(), table->column_descriptions.cend(),
+      [&column_name](const std::unique_ptr<ColumnDescription>& c) {
+        std::string l1, l2;
+        ToLowerCase(column_name, c->column_name, l1, l2);
+        if (l1 == l2) { return true; }
+        return false;
+      });
+  return (c == table->column_descriptions.cend()) ? nullptr : c->get();
 }
 
 std::unique_ptr<DatabaseTableDescriptions> DatabaseTableDescriptions::Create(

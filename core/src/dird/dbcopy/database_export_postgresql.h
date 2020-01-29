@@ -35,7 +35,7 @@ class DatabaseExportPostgresql : public DatabaseExport {
   void EndTable() override;
 
   void CopyStart() override;
-  void CopyRow(const RowData& data) override;
+  void CopyRow(RowData& origin_data) override;
   void CopyEnd() override;
 
   virtual void CompareRow(const RowData& data) override;
