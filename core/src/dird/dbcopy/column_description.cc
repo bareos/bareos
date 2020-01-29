@@ -53,10 +53,13 @@ static void no_conversion(FieldData& fd)
 
 static void timestamp_conversion_postgresql(FieldData& fd)
 {
+  static const char* dummy_timepoint = "1970-01-01 00:00:00";
   if (!fd.data_pointer) {
-    fd.data_pointer = "1970-01-01 00:00:00";
+    fd.data_pointer = dummy_timepoint;
   } else if (fd.data_pointer[0] == '0') {
-    fd.data_pointer = "1970-01-01 00:00:00";
+    fd.data_pointer = dummy_timepoint;
+  } else if (strlen(fd.data_pointer) == 0) {
+    fd.data_pointer = dummy_timepoint;
   }
 }
 
@@ -93,21 +96,14 @@ static void string_conversion_postgresql(FieldData& fd)
 }
 
 const DataTypeConverterMap ColumnDescriptionMysql::db_import_converter_map{
-    {"bigint", no_conversion},
-    {"binary", no_conversion},
-    {"blob", string_conversion_postgresql},
-    {"char", no_conversion},
-    {"datetime", timestamp_conversion_postgresql},
-    {"decimal", no_conversion},
-    {"enum", no_conversion},
-    {"int", no_conversion},
-    {"longblob", no_conversion},
-    {"smallint", no_conversion},
-    {"text", string_conversion_postgresql},
-    {"timestamp", timestamp_conversion_postgresql},
-    {"tinyblob", no_conversion},
-    {"tinyint", no_conversion},
-    {"varchar", string_conversion_postgresql}};
+    {"bigint", no_conversion},   {"binary", no_conversion},
+    {"blob", no_conversion},     {"char", no_conversion},
+    {"datetime", no_conversion}, {"decimal", no_conversion},
+    {"enum", no_conversion},     {"int", no_conversion},
+    {"longblob", no_conversion}, {"smallint", no_conversion},
+    {"text", no_conversion},     {"timestamp", no_conversion},
+    {"tinyblob", no_conversion}, {"tinyint", no_conversion},
+    {"varchar", no_conversion}};
 
 ColumnDescriptionMysql::ColumnDescriptionMysql(const char* column_name_in,
                                                const char* data_type_in,
@@ -125,13 +121,13 @@ ColumnDescriptionMysql::ColumnDescriptionMysql(const char* column_name_in,
 
 const DataTypeConverterMap ColumnDescriptionPostgresql::db_export_converter_map{
     {"bigint", no_conversion},
-    {"bytea", no_conversion},
-    {"character", no_conversion},
+    {"bytea", string_conversion_postgresql},
+    {"character", string_conversion_postgresql},
     {"integer", no_conversion},
     {"numeric", no_conversion},
     {"smallint", no_conversion},
-    {"text", no_conversion},
-    {"timestamp without time zone", no_conversion}};
+    {"text", string_conversion_postgresql},
+    {"timestamp without time zone", timestamp_conversion_postgresql}};
 
 ColumnDescriptionPostgresql::ColumnDescriptionPostgresql(
     const char* column_name_in,
