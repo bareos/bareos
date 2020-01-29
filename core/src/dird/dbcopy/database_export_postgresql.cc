@@ -37,6 +37,8 @@ DatabaseExportPostgresql::DatabaseExportPostgresql(
   if (clear_tables) {
     for (const auto& t : table_descriptions_->tables) {
       if (t.table_name != "version") {
+        std::cout << "Deleting contents of table: " << t.table_name
+                  << std::endl;
         std::string query("DELETE ");
         query += " FROM ";
         query += t.table_name;
