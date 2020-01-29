@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_SRC_DIRD_DBCONVERT_DATABASE_TABLES_H_
-#define BAREOS_SRC_DIRD_DBCONVERT_DATABASE_TABLES_H_
+#ifndef BAREOS_SRC_DIRD_DBCOPY_DATABASE_TABLES_H_
+#define BAREOS_SRC_DIRD_DBCOPY_DATABASE_TABLES_H_
 
 #include "dird/dbcopy/database_column_descriptions.h"
 #include "dird/dbcopy/database_connection.h"
@@ -77,4 +77,4 @@ class DatabaseTablesMysql : public DatabaseTableDescriptions {
   DatabaseTablesMysql(BareosDb* db);
 };
 
-#endif  // BAREOS_SRC_DIRD_DBCONVERT_DATABASE_TABLES_H_
+#endif  // BAREOS_SRC_DIRD_DBCOPY_DATABASE_TABLES_H_

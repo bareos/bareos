@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_SRC_DIRD_DBCONVERT_DATABASE_COLUMN_DESCRIPTIONS_H_
-#define BAREOS_SRC_DIRD_DBCONVERT_DATABASE_COLUMN_DESCRIPTIONS_H_
+#ifndef BAREOS_SRC_DIRD_DBCOPY_DATABASE_COLUMN_DESCRIPTIONS_H_
+#define BAREOS_SRC_DIRD_DBCOPY_DATABASE_COLUMN_DESCRIPTIONS_H_
 
 #include "include/bareos.h"
 #include "dird/dbcopy/column_description.h"
@@ -67,4 +67,4 @@ class DatabaseColumnDescriptionsMysql : public DatabaseColumnDescriptions {
   static int ResultHandler(void* ctx, int fields, char** row);
 };
 
-#endif  // BAREOS_SRC_DIRD_DBCONVERT_DATABASE_COLUMN_DESCRIPTIONS_H_
+#endif  // BAREOS_SRC_DIRD_DBCOPY_DATABASE_COLUMN_DESCRIPTIONS_H_

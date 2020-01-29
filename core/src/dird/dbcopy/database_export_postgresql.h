@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_SRC_DIRD_DBCONVERT_DATABASE_EXPORT_POSTGRESQL_H_
-#define BAREOS_SRC_DIRD_DBCONVERT_DATABASE_EXPORT_POSTGRESQL_H_
+#ifndef BAREOS_SRC_DIRD_DBCOPY_DATABASE_EXPORT_POSTGRESQL_H_
+#define BAREOS_SRC_DIRD_DBCOPY_DATABASE_EXPORT_POSTGRESQL_H_
 
 class DatabaseConnection;
 class DatabaseTableDescriptions;
@@ -60,4 +60,4 @@ class DatabaseExportPostgresql : public DatabaseExport {
   static int ResultHandlerSequenceSchema(void* ctx, int fields, char** row);
   static int ResultHandlerCompare(void* ctx, int fields, char** row);
 };
-#endif  // BAREOS_SRC_DIRD_DBCONVERT_DATABASE_EXPORT_POSTGRESQL_H_
+#endif  // BAREOS_SRC_DIRD_DBCOPY_DATABASE_EXPORT_POSTGRESQL_H_

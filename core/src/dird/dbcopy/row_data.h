@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef BAREOS_SRC_DIRD_DBCONVERT_ROW_DATA_H_
-#define BAREOS_SRC_DIRD_DBCONVERT_ROW_DATA_H_
+#ifndef BAREOS_SRC_DIRD_DBCOPY_ROW_DATA_H_
+#define BAREOS_SRC_DIRD_DBCOPY_ROW_DATA_H_
 
 #include "include/bareos.h"
 #include "dird/dbcopy/database_column_descriptions.h"
@@ -56,4 +56,4 @@ struct RowData {
   const RowData& operator=(RowData&& rhs) = delete;
 };
 
-#endif  // BAREOS_SRC_DIRD_DBCONVERT_ROW_DATA_H_
+#endif  // BAREOS_SRC_DIRD_DBCOPY_ROW_DATA_H_
