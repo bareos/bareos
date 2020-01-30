@@ -566,7 +566,7 @@ file(MAKE_DIRECTORY ${scripts})
 file(MAKE_DIRECTORY ${working})
 file(MAKE_DIRECTORY ${archivedir})
 
-create_symlink(${scriptdir}/btraceback ${sbindir}/btraceback)
+create_symlink(${scriptdir}/btraceback ${bindir}/btraceback)
 
 file(REMOVE_RECURSE ${scripts}/ddl)
 file(RENAME ${PROJECT_BINARY_DIR}/ddl ${scripts}/ddl)
