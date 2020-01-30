@@ -59,33 +59,33 @@ DatabaseExportPostgresql::~DatabaseExportPostgresql()
   if (transaction_) { db_->SqlQuery("ROLLBACK"); }
 }
 
-void DatabaseExportPostgresql::CopyRow(RowData& origin_data)
+void DatabaseExportPostgresql::CopyRow(RowData& source_data_row)
 {
   std::string query_into{"INSERT INTO "};
-  query_into += origin_data.table_name;
+  query_into += source_data_row.table_name;
   query_into += " (";
 
   std::string query_values = " VALUES (";
 
-  for (std::size_t i = 0; i < origin_data.column_descriptions.size(); i++) {
-    query_into += origin_data.column_descriptions[i]->column_name;
-    query_into += ", ";
-
+  for (std::size_t i = 0; i < source_data_row.column_descriptions.size(); i++) {
     const ColumnDescription* column_description =
         table_descriptions_->GetColumnDescription(
-            origin_data.table_name,
-            origin_data.column_descriptions[i]->column_name);
+            source_data_row.table_name,
+            source_data_row.column_descriptions[i]->column_name);
 
     if (!column_description) {
       std::string err{"Could not get column description for: "};
-      err += origin_data.column_descriptions[i]->column_name;
+      err += source_data_row.column_descriptions[i]->column_name;
       throw std::runtime_error(err);
     }
 
-    if (i < origin_data.row.size()) {
+    query_into += column_description->column_name;
+    query_into += ", ";
+
+    if (i < source_data_row.columns.size()) {
       query_values += "'";
-      column_description->db_export_converter(db_, origin_data.row[i]);
-      query_values += origin_data.row[i].data_pointer;
+      column_description->db_export_converter(db_, source_data_row.columns[i]);
+      query_values += source_data_row.columns[i].data_pointer;
       query_values += "',";
     } else {
       throw std::runtime_error("Row number does not match column description");
@@ -250,8 +250,8 @@ int DatabaseExportPostgresql::ResultHandlerCompare(void* ctx,
 
   for (int i = 0; i < fields; i++) {
     std::string r1{row[i]};
-    std::string r2{rd->row[i].data_pointer};
-    if (r1 != r2) { throw std::runtime_error("What??"); }
+    std::string r2{rd->columns[i].data_pointer};
+    if (r1 != r2) { throw std::runtime_error("Data is not same"); }
   }
   return 0;
 }

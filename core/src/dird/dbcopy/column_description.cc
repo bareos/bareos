@@ -23,6 +23,7 @@
 #include "dird/dbcopy/row_data.h"
 
 #include <cstring>
+#include <iostream>
 #include <vector>
 
 ColumnDescription::ColumnDescription(const char* column_name_in,
@@ -46,12 +47,12 @@ ColumnDescription::ColumnDescription(const char* column_name_in,
   }
 }
 
-static void no_conversion(BareosDb* db, FieldData& fd)
+static void no_conversion(BareosDb* db, ColumnData& fd)
 {
   fd.data_pointer = fd.data_pointer ? fd.data_pointer : "";
 }
 
-static void timestamp_conversion_postgresql(BareosDb* db, FieldData& fd)
+static void timestamp_conversion_postgresql(BareosDb* db, ColumnData& fd)
 {
   static const char* dummy_timepoint = "1970-01-01 00:00:00";
   if (!fd.data_pointer) {
@@ -63,60 +64,55 @@ static void timestamp_conversion_postgresql(BareosDb* db, FieldData& fd)
   }
 }
 
-static void string_conversion_postgresql(BareosDb* db, FieldData& fd)
+static void string_conversion_postgresql(BareosDb* db, ColumnData& fd)
 {
   if (fd.data_pointer) {
     std::size_t len{strlen(fd.data_pointer)};
     fd.converted_data.resize(len * 2 + 1);
-#if 1
     db->EscapeString(nullptr, fd.converted_data.data(), fd.data_pointer, len);
-#else
-    char* n = fd.converted_data.data();
-    const char* o = fd.data_pointer;
-
-    while (len--) {
-      switch (*o) {
-        case '\'':
-          *n++ = '\'';
-          *n++ = '\'';
-          o++;
-          break;
-        case 0:
-          *n++ = '\\';
-          *n++ = 0;
-          o++;
-          break;
-        default:
-          *n++ = *o++;
-          break;
-      }
-    }
-    *n = 0;
-#endif
     fd.data_pointer = fd.converted_data.data();
   } else {
     fd.data_pointer = "";
   }
 }
 
-static void bytea_conversion_postgresql(BareosDb* db, FieldData& fd)
+static void bytea_conversion_postgresql(BareosDb* db, ColumnData& fd)
 {
   std::size_t new_len{};
+  std::size_t old_len = fd.size;
+
   auto old = reinterpret_cast<const unsigned char*>(fd.data_pointer);
-  auto obj = db->EscapeObject(old, strlen(fd.data_pointer), new_len);
+
+  auto obj = db->EscapeObject(old, old_len, new_len);
+
   fd.converted_data.resize(new_len + 1);
   memcpy(fd.converted_data.data(), obj, new_len + 1);
+
   db->FreeEscapedObjectMemory(obj);
+
+  fd.data_pointer = fd.converted_data.data();
+}
+
+static void longblob_conversion_mysql(BareosDb* db, ColumnData& fd)
+{
+  no_conversion(db, fd);
 }
 
 const DataTypeConverterMap ColumnDescriptionMysql::db_import_converter_map{
-    {"bigint", no_conversion},   {"binary", no_conversion},
-    {"blob", no_conversion},     {"char", no_conversion},
-    {"datetime", no_conversion}, {"decimal", no_conversion},
-    {"enum", no_conversion},     {"int", no_conversion},
-    {"longblob", no_conversion}, {"smallint", no_conversion},
-    {"text", no_conversion},     {"timestamp", no_conversion},
-    {"tinyblob", no_conversion}, {"tinyint", no_conversion},
+    {"bigint", no_conversion},
+    {"binary", no_conversion},
+    {"blob", no_conversion},
+    {"char", no_conversion},
+    {"datetime", no_conversion},
+    {"decimal", no_conversion},
+    {"enum", no_conversion},
+    {"int", no_conversion},
+    {"longblob", longblob_conversion_mysql},
+    {"smallint", no_conversion},
+    {"text", no_conversion},
+    {"timestamp", no_conversion},
+    {"tinyblob", no_conversion},
+    {"tinyint", no_conversion},
     {"varchar", no_conversion}};
 
 ColumnDescriptionMysql::ColumnDescriptionMysql(const char* column_name_in,

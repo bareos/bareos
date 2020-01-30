@@ -28,7 +28,8 @@
 
 class BareosDb;
 
-struct FieldData {
+struct ColumnData {
+  std::size_t size{};  // length_of_restore_object
   const char* data_pointer{};
   std::vector<char> converted_data;
 };
@@ -36,17 +37,21 @@ struct FieldData {
 struct RowData {
   RowData(const DatabaseColumnDescriptions::VectorOfColumnDescriptions&
               column_descriptions_in,
-          const std::string& table_name_in)
-      : table_name(table_name_in), column_descriptions(column_descriptions_in)
+          const std::string& table_name_in,
+          bool is_restore_object_in)
+      : table_name(table_name_in)
+      , column_descriptions(column_descriptions_in)
+      , is_restore_object(is_restore_object_in)
   {
-    row.resize(column_descriptions.size());
+    columns.resize(column_descriptions.size());
   }
 
   std::string table_name;
 
-  std::vector<FieldData> row;  // same index as column_descriptions
+  std::vector<ColumnData> columns;  // same index as column_descriptions
   const DatabaseColumnDescriptions::VectorOfColumnDescriptions&
       column_descriptions;
+  bool is_restore_object{};
 
  public:
   ~RowData() = default;
