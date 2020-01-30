@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -40,6 +40,7 @@ BareosSocket* ConnectToDirector(JobControlRecord& jcr,
                         director_resource->address, NULL,
                         director_resource->DIRport, false)) {
     delete UA_sock;
+    UA_sock = nullptr;
     return nullptr;
   }
   jcr.dir_bsock = UA_sock;
@@ -65,6 +66,8 @@ BareosSocket* ConnectToDirector(JobControlRecord& jcr,
     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
             name, my_config->r_own_, qualified_resource_name)) {
       delete UA_sock;
+      UA_sock = nullptr;
+      jcr.dir_bsock = nullptr;
       return nullptr;
     }
 
@@ -72,6 +75,8 @@ BareosSocket* ConnectToDirector(JobControlRecord& jcr,
                                  false, qualified_resource_name.c_str(),
                                  password->value, &jcr)) {
       delete UA_sock;
+      UA_sock = nullptr;
+      jcr.dir_bsock = nullptr;
       return nullptr;
     }
   } /* IsTlsConfigured */
@@ -83,6 +88,8 @@ BareosSocket* ConnectToDirector(JobControlRecord& jcr,
           &jcr, name, *password, director_resource, own_qualified_name,
           response_args, response_id)) {
     delete UA_sock;
+    UA_sock = nullptr;
+    jcr.dir_bsock = nullptr;
     return nullptr;
   }
   return UA_sock;
