@@ -27,6 +27,8 @@ BackupDirectory="${tmp}/data"
 # Data will be placed at "${tmp}/data/".
 setup_data
 
+echo "$conf"  >  "$tmp/file-list-python-plugin"
+
 start_test
 
 #enable only mysql (disable postgresql)
