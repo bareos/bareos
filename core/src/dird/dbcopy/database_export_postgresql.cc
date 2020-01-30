@@ -84,7 +84,7 @@ void DatabaseExportPostgresql::CopyRow(RowData& origin_data)
 
     if (i < origin_data.row.size()) {
       query_values += "'";
-      column_description->db_export_converter(origin_data.row[i]);
+      column_description->db_export_converter(db_, origin_data.row[i]);
       query_values += origin_data.row[i].data_pointer;
       query_values += "',";
     } else {

@@ -46,6 +46,10 @@ class BareosDbPostgresql : public BareosDbPrivateInterface {
                     const char* old,
                     int len) override;
   char* EscapeObject(JobControlRecord* jcr, char* old, int len) override;
+  unsigned char* EscapeObject(const unsigned char* old,
+                              std::size_t old_len,
+                              std::size_t& new_len) override;
+  void FreeEscapedObjectMemory(unsigned char* obj) override;
   void UnescapeObject(JobControlRecord* jcr,
                       char* from,
                       int32_t expected_len,
