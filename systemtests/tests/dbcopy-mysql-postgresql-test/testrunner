@@ -29,6 +29,9 @@ setup_data
 
 start_test
 
+#enable only mysql (disable postgresql)
+mv "${conf}"/bareos-dir.d/catalog/postgresql.conf "${conf}"/bareos-dir.d/catalog/postgresql.conf.disabled
+
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
 messages
@@ -46,12 +49,17 @@ messages
 list files jobid=1
 END_OF_DATA
 
-cp "${conf}"/bareos-dir.d/client/bareos-mysql-fd.conf.test "${conf}"/bareos-dir.d/client/bareos-fd.conf
-
 run_bareos
 stop_bareos
 
+#enable mysql and postgresql
+mv "${conf}"/bareos-dir.d/catalog/postgresql.conf.disabled "${conf}"/bareos-dir.d/catalog/postgresql.conf
+
+#do the database copy
 "${sbin}"/bareos-dbcopy -d -c ${current_test_directory}/etc/bareos mysql postgresql
+
+#enable only postgresql (disable mysql)
+mv "${conf}"/bareos-dir.d/catalog/mysql.conf "${conf}"/bareos-dir.d/catalog/mysql.conf.disabled
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @#
@@ -67,8 +75,6 @@ messages
 messages
 list files jobid=1
 END_OF_DATA
-
-cp "${conf}"/bareos-dir.d/client/bareos-postgresql-fd.conf.test "${conf}"/bareos-dir.d/client/bareos-fd.conf
 
 run_bareos
 check_for_zombie_jobs storage=File client=bareos-fd

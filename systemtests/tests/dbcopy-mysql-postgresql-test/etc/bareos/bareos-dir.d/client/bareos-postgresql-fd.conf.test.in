@@ -4,5 +4,4 @@ Client {
   Address = localhost
   Password = "@fd_password@"          # password for FileDaemon
   FD PORT = @fd_port@
-  catalog = "postgresql"
 }
