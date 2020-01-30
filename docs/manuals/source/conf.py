@@ -242,7 +242,7 @@ man_bareos_dbcopy = "man/bareos-dbcopy"
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(man_bareos_dbcopy, "bareos-dbcopy", "bareos-dbcopy", [author], 8)]
+man_pages = [(man_bareos_dbcopy, "bareos-dbcopy", "Copy the Bareos catalog database between catalog backends", [author], 8)]
 
 
 # -- Options for Texinfo output -------------------------------------------
