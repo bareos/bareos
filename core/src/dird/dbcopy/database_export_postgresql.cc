@@ -100,15 +100,11 @@ void DatabaseExportPostgresql::CopyRow(RowData& origin_data)
 
   query_into += query_values;
 
-#if 0
-  std::cout << query_into << std::endl;
-#else
   if (!db_->SqlQuery(query_into.c_str())) {
     std::string err{"DatabaseExportPostgresql: Could not execute query: "};
     err += db_->get_errmsg();
     throw std::runtime_error(err);
   }
-#endif
 }
 
 void DatabaseExportPostgresql::CopyStart() { SelectSequenceSchema(); }
@@ -130,10 +126,7 @@ static void UpdateSequences(
       throw std::runtime_error(
           "DatabaseExportPostgresql: Could not set sequence");
     }
-#if 0
-    std::cout << "Updating sequence for table: " << s.table_name <<
-    std::endl;
-#endif
+    std::cout << "Updating sequence for table: " << s.table_name << std::endl;
   }
 }
 
