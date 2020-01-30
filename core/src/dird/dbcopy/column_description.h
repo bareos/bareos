@@ -26,7 +26,7 @@
 #include <map>
 #include <string>
 
-class FieldData;
+class ColumnData;
 class BareosDb;
 
 class ColumnDescription {
@@ -40,7 +40,7 @@ class ColumnDescription {
   std::string data_type;
   std::size_t character_maximum_length{};
 
-  using ConverterCallback = std::function<void(BareosDb*, FieldData&)>;
+  using ConverterCallback = std::function<void(BareosDb*, ColumnData&)>;
   ConverterCallback db_export_converter{};
   ConverterCallback db_import_converter{};
 };

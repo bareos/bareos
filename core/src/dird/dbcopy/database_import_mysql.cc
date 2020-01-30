@@ -30,6 +30,7 @@
 #include <chrono>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <sstream>
 #include <vector>
 
@@ -70,8 +71,13 @@ struct ResultHandlerContext {
       const DatabaseColumnDescriptions::VectorOfColumnDescriptions& c,
       RowData& d,
       DatabaseExport& e,
-      BareosDb* db_in)
-      : column_descriptions(c), row_data(d), exporter(e), db(db_in)
+      BareosDb* db_in,
+      bool is_restore_object_in)
+      : column_descriptions(c)
+      , row_data(d)
+      , exporter(e)
+      , db(db_in)
+      , is_restore_object(is_restore_object_in)
   {
   }
   const DatabaseColumnDescriptions::VectorOfColumnDescriptions&
@@ -79,7 +85,8 @@ struct ResultHandlerContext {
   RowData& row_data;
   DatabaseExport& exporter;
   uint64_t counter{};
-  BareosDb* db;
+  BareosDb* db{};
+  bool is_restore_object{};
 };
 
 void DatabaseImportMysql::RunQuerySelectAllRows(
@@ -100,6 +107,13 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
       query += "`, `";
     }
     query.resize(query.size() - 3);
+
+    bool is_restore_object = false;
+    if (t.table_name == "RestoreObject") {
+      query += ", length(`RestoreObject`) as `length_of_restore_object`";
+      is_restore_object = true;
+    }
+
     query += " FROM ";
     query += t.table_name;
 
@@ -108,8 +122,9 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
       query += std::to_string(maximum_amount_of_rows);
     }
 
-    RowData row_data(t.column_descriptions, t.table_name);
-    ResultHandlerContext ctx(t.column_descriptions, row_data, exporter, db_);
+    RowData row_data(t.column_descriptions, t.table_name, is_restore_object);
+    ResultHandlerContext ctx(t.column_descriptions, row_data, exporter, db_,
+                             is_restore_object);
 
     if (!db_->SqlQuery(query.c_str(), ResultHandler, &ctx)) {
       std::cout << "Could not import table: " << t.table_name << std::endl;
@@ -144,19 +159,55 @@ void DatabaseImportMysql::CompareWith(DatabaseExport& exporter)
   RunQuerySelectAllRows(ResultHandlerCompare, exporter);
 }
 
+static void ReadoutSizeOfRestoreObject(ResultHandlerContext* r,
+                                       RowData& row_data,
+                                       int field_index_longblob,
+                                       char** row)
+{
+  auto invalid = std::numeric_limits<std::size_t>::max();
+  std::size_t index_of_restore_object = invalid;
+
+  for (std::size_t i = 0; i < r->column_descriptions.size(); i++) {
+    if (r->column_descriptions[i]->data_type == "longblob") {
+      index_of_restore_object = i;
+      break;
+    }
+  }
+
+  if (index_of_restore_object == invalid) {
+    throw std::runtime_error("No longblob object found as restore object");
+  }
+
+  std::istringstream(row[field_index_longblob]) >>
+      row_data.columns[index_of_restore_object].size;
+}
+
+
 void DatabaseImportMysql::FillRowWithDatabaseResult(ResultHandlerContext* r,
                                                     int fields,
                                                     char** row)
 {
-  if (fields != static_cast<int>(r->column_descriptions.size())) {
+  std::size_t number_of_fields = r->column_descriptions.size();
+
+  if (r->is_restore_object) {
+    ++number_of_fields;  // one more for length_of_restore_object
+  }
+
+  if (fields != static_cast<int>(number_of_fields)) {
     throw std::runtime_error(
         "Number of database fields does not match description");
   }
 
-  for (int i = 0; i < fields; i++) {
-    RowData& row_data = r->row_data;
-    row_data.row[i].data_pointer = row[i];
-    r->column_descriptions[i]->db_import_converter(r->db, row_data.row[i]);
+  RowData& row_data = r->row_data;
+
+  if (r->is_restore_object) {
+    std::size_t field_index_longblob = fields - 1;
+    ReadoutSizeOfRestoreObject(r, row_data, field_index_longblob, row);
+  }
+
+  for (std::size_t i = 0; i < r->column_descriptions.size(); i++) {
+    row_data.columns[i].data_pointer = row[i];
+    r->column_descriptions[i]->db_import_converter(r->db, row_data.columns[i]);
   }
 }
 
