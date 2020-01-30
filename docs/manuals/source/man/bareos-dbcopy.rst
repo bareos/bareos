@@ -19,15 +19,27 @@ Description
 for both ``<sourcecatalog>`` and ``<destinationcatalog>`` must exist.
 
 The main use of :program:`bareos-dbcopy` is to migrate an existing Bareos
-installation from a mysql/mariadb catalog to postgresql.
+installation from mysql to postgresql.
 
 :program:`bareos-dbcopy` only copies the data over to the new catalog.
 The ``<destinationcatalog>`` needs to be created and initialized with the
 correct tables and columns via :program:`create_bareos_database`,
 :program:`make_bareos_tables` and :program:`grant_bareos_privileges`.
-Both ``sourcecatalog`` and ``destinationcatalog`` need to have the same database
-scheme version, i.e. have the schema from the identical Bareos version..
 
+Both ``sourcecatalog`` and ``destinationcatalog`` need to have the same database
+scheme version, i.e. have the schema from the identical Bareos version.
+
+Internal workflow
+-----------------
+* :program:`bareos-dbcopy` scans both the source and destination database for
+  existing tables and column definitions.
+
+* For each table, each row is transferred from the source to the destination
+  database. Depending on the column type, data filters are applied.
+
+* Tables exiting on the source side but not on the destination side are skipped.
+
+* If the destination table already contains data, the table is skipped.
 
 Options
 -------
@@ -38,12 +50,6 @@ Options
 
    bareos-dbcopy reads the director configuration from the given
    <configuration directory> instead of :file:`/etc/bareos`
-
-.. option:: -e
-
-   Examine and verify every single data record of each table after
-   copying. This can take a very long time. Without -e, only the first
-   and last record of each database is examined and verified.
 
 .. option:: -?
 
