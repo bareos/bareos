@@ -191,21 +191,17 @@ bool DatabaseExportPostgresql::TableExists(const std::string& table_name)
 
 bool DatabaseExportPostgresql::StartTable(const std::string& table_name)
 {
-  std::cout << "Check if table exists: ";
-  std::cout << table_name << " ..." << std::flush;
+  std::cout << "====== table " << table_name << " ======" << std::endl;
+  std::cout << "--> checking destination table..." << std::endl;
   if (!TableExists(table_name)) {
-    std::cout << " does not exist." << std::endl;
+    std::cout << "--> destination table does not exist" << std::endl;
     return false;
   }
-  std::cout << " exists." << std::endl;
 
-  std::cout << "Check if table is empty: ";
-  std::cout << table_name << " ..." << std::flush;
   if (!TableIsEmtpy(db_, table_name)) {
-    std::cout << " not empty." << std::endl;
+    std::cout << "--> destination table is not empty" << std::endl;
     return false;
   }
-  std::cout << table_name << " is empty." << std::endl;
 
   if (db_->SqlQuery("BEGIN")) {
     transaction_ = true;

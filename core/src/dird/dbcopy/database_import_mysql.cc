@@ -95,11 +95,11 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
 {
   for (const auto& t : table_descriptions_->tables) {
     if (!exporter.StartTable(t.table_name)) {
-      std::cout << "Skipping table " << t.table_name << std::endl;
+      std::cout << "--> skipping" << std::endl;
       continue;
     }
 
-    std::cout << "Copy data from: " << t.table_name << std::endl;
+    std::cout << "--> copying..." << std::endl;
 
     std::string query{"SELECT `"};
     for (const auto& col : t.column_descriptions) {
@@ -134,7 +134,7 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
     }
 
     exporter.EndTable(t.table_name);
-    std::cout << "Finished copy data from: " << t.table_name << std::endl;
+    std::cout << "--> success" << std::endl;
     // std::cout << query << std::endl << std::endl;
   }
 }
@@ -198,7 +198,7 @@ void DatabaseImportMysql::FillRowWithDatabaseResult(ResultHandlerContext* r,
         "Number of database fields does not match description");
   }
 
-  RowData& row_data = r->row_data;
+    RowData& row_data = r->row_data;
 
   if (r->is_restore_object) {
     std::size_t field_index_longblob = fields - 1;
