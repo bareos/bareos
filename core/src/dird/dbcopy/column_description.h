@@ -27,6 +27,7 @@
 #include <string>
 
 class FieldData;
+class BareosDb;
 
 class ColumnDescription {
  public:
@@ -38,12 +39,14 @@ class ColumnDescription {
   std::string column_name;
   std::string data_type;
   std::size_t character_maximum_length{};
-  std::function<void(FieldData&)> db_export_converter{};
-  std::function<void(FieldData&)> db_import_converter{};
+
+  using ConverterCallback = std::function<void(BareosDb*, FieldData&)>;
+  ConverterCallback db_export_converter{};
+  ConverterCallback db_import_converter{};
 };
 
 using DataTypeConverterMap =
-    std::map<std::string, std::function<void(FieldData&)>>;
+    std::map<std::string, ColumnDescription::ConverterCallback>;
 
 class ColumnDescriptionMysql : public ColumnDescription {
  public:

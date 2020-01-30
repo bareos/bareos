@@ -69,8 +69,9 @@ struct ResultHandlerContext {
   ResultHandlerContext(
       const DatabaseColumnDescriptions::VectorOfColumnDescriptions& c,
       RowData& d,
-      DatabaseExport& e)
-      : column_descriptions(c), row_data(d), exporter(e)
+      DatabaseExport& e,
+      BareosDb* db_in)
+      : column_descriptions(c), row_data(d), exporter(e), db(db_in)
   {
   }
   const DatabaseColumnDescriptions::VectorOfColumnDescriptions&
@@ -78,6 +79,7 @@ struct ResultHandlerContext {
   RowData& row_data;
   DatabaseExport& exporter;
   uint64_t counter{};
+  BareosDb* db;
 };
 
 void DatabaseImportMysql::RunQuerySelectAllRows(
@@ -107,7 +109,7 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
     }
 
     RowData row_data(t.column_descriptions, t.table_name);
-    ResultHandlerContext ctx(t.column_descriptions, row_data, exporter);
+    ResultHandlerContext ctx(t.column_descriptions, row_data, exporter, db_);
 
     if (!db_->SqlQuery(query.c_str(), ResultHandler, &ctx)) {
       std::cout << "Could not import table: " << t.table_name << std::endl;
@@ -154,7 +156,7 @@ void DatabaseImportMysql::FillRowWithDatabaseResult(ResultHandlerContext* r,
   for (int i = 0; i < fields; i++) {
     RowData& row_data = r->row_data;
     row_data.row[i].data_pointer = row[i];
-    r->column_descriptions[i]->db_import_converter(row_data.row[i]);
+    r->column_descriptions[i]->db_import_converter(r->db, row_data.row[i]);
   }
 }
 

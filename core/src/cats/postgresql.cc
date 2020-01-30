@@ -400,6 +400,19 @@ char* BareosDbPostgresql::EscapeObject(JobControlRecord* jcr,
   return (char*)esc_obj;
 }
 
+unsigned char* BareosDbPostgresql::EscapeObject(const unsigned char* old,
+                                                std::size_t old_len,
+                                                std::size_t& new_len)
+{
+  return PQescapeByteaConn(db_handle_, old, old_len, std::addressof(new_len));
+}
+
+void BareosDbPostgresql::FreeEscapedObjectMemory(unsigned char* obj)
+{
+  PQfreemem(obj);
+}
+
+
 /**
  * Unescape binary object so that PostgreSQL is happy
  *
