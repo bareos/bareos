@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -2902,7 +2902,7 @@ static void HelpCmd()
 
 static void usage()
 {
-  kBareosVersionStrings.PrintCopyright(stderr, 2000);
+  kBareosVersionStrings.PrintCopyrightWithFsfAndPlanets(stderr, 2000);
   fprintf(
       stderr,
       _("Usage: btape <options> <device_name>\n"
