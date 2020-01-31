@@ -56,7 +56,7 @@ DatabaseExportPostgresql::DatabaseExportPostgresql(
 
 DatabaseExportPostgresql::~DatabaseExportPostgresql()
 {
-  if (transaction_) { db_->SqlQuery("ROLLBACK"); }
+  if (transaction_open_) { db_->SqlQuery("ROLLBACK"); }
 }
 
 void DatabaseExportPostgresql::CopyRow(RowData& source_data_row)
@@ -124,20 +124,20 @@ static void UpdateSequences(
     std::transform(table_name.cbegin(), table_name.cend(),
                    std::back_inserter(table_name_lower_case), ::tolower);
     if (s.table_name == table_name_lower_case) {
-    std::string sequence_schema_query{"select setval(' "};
-    sequence_schema_query += s.sequence_name;
-    sequence_schema_query += "', (select max(";
-    sequence_schema_query += s.column_name;
-    sequence_schema_query += ") from ";
+      std::string sequence_schema_query{"select setval(' "};
+      sequence_schema_query += s.sequence_name;
+      sequence_schema_query += "', (select max(";
+      sequence_schema_query += s.column_name;
+      sequence_schema_query += ") from ";
       sequence_schema_query += table_name_lower_case;
-    sequence_schema_query += "))";
+      sequence_schema_query += "))";
       std::cout << "--> updating sequence" << std::endl;
-    if (!db->SqlQuery(sequence_schema_query.c_str())) {
-      throw std::runtime_error(
-          "DatabaseExportPostgresql: Could not set sequence");
+      if (!db->SqlQuery(sequence_schema_query.c_str())) {
+        throw std::runtime_error(
+            "DatabaseExportPostgresql: Could not set sequence");
+      }
     }
   }
-}
 }
 
 void DatabaseExportPostgresql::CopyEnd() {}
@@ -211,8 +211,8 @@ bool DatabaseExportPostgresql::StartTable(const std::string& table_name)
   }
 
   if (db_->SqlQuery("BEGIN")) {
-    transaction_ = true;
-    start_new_table = true;
+    transaction_open_ = true;
+    cursor_start_new_table_ = true;
   }
 
   return true;
@@ -232,17 +232,17 @@ void DatabaseExportPostgresql::EndTable(const std::string& table_name)
 
   UpdateSequences(db_, sequence_schema_vector_, table_name);
 
-  if (transaction_) {
+  if (transaction_open_) {
     db_->SqlQuery("COMMIT");
-    transaction_ = false;
+    transaction_open_ = false;
   }
 }
 
 void DatabaseExportPostgresql::CompareRow(const RowData& data)
 {
-  if (start_new_table) {
+  if (cursor_start_new_table_) {
     CursorStartTable(data.table_name);
-    start_new_table = false;
+    cursor_start_new_table_ = false;
   }
 
   std::string query{"FETCH NEXT FROM curs1"};

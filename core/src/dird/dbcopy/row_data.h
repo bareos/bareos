@@ -37,11 +37,8 @@ struct ColumnData {
 struct RowData {
   RowData(const DatabaseColumnDescriptions::VectorOfColumnDescriptions&
               column_descriptions_in,
-          const std::string& table_name_in,
-          bool is_restore_object_in)
-      : table_name(table_name_in)
-      , column_descriptions(column_descriptions_in)
-      , is_restore_object(is_restore_object_in)
+          const std::string& table_name_in)
+      : table_name(table_name_in), column_descriptions(column_descriptions_in)
   {
     columns.resize(column_descriptions.size());
   }
@@ -51,7 +48,6 @@ struct RowData {
   std::vector<ColumnData> columns;  // same index as column_descriptions
   const DatabaseColumnDescriptions::VectorOfColumnDescriptions&
       column_descriptions;
-  bool is_restore_object{};
 
  public:
   ~RowData() = default;

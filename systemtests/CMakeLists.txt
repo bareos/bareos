@@ -218,7 +218,7 @@ macro(link_binaries_to_test_to_current_sbin_dir_with_individual_filename)
     string(REPLACE "-" "_" binary_name ${binary_name})
     string(TOUPPER ${binary_name} binary_name_upcase)
     string(CONCAT bareos_XXX_binary ${binary_name_upcase} "_BINARY")
-    # message (STATUS "${bareos_XXX_binary}")
+    #message (STATUS "${bareos_XXX_binary}")
     set(${bareos_XXX_binary} ${CURRENT_SBIN_DIR}/${binary_name}-${TEST_NAME})
     # message( "creating symlink ${${bareos_XXX_binary}}  ->
     # ${${binary_name_to_test_upcase}}" )
@@ -332,6 +332,7 @@ set(ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS
     bareos-dbcheck
     bareos-fd
     bareos-sd
+    bareos-dbcopy
     bcopy
     btape
     bextract

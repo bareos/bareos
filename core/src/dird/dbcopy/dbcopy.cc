@@ -55,11 +55,6 @@ class DbCopy {
     SetWorkingDir();
     cl.ParseCommandLine(argc, argv);
 
-    if (cl.source_db_resource_name != "mysql")
-      throw std::runtime_error("source database is not mysql");
-    if (cl.destination_db_resource_name != "postgresql")
-      throw std::runtime_error("destination database is not postgresql");
-
     ParseConfig();
     std::cout << "Copying tables from \"" << cl.source_db_resource_name
               << "\" to \"" << cl.destination_db_resource_name << "\""
@@ -69,12 +64,12 @@ class DbCopy {
 
   void DoDatabaseCopy()
   {
-    std::cout << "gathering info about source catalog \""
+    std::cout << "gathering information about source catalog \""
               << cl.source_db_resource_name << "\"..." << std::endl;
     std::unique_ptr<DatabaseImport> imp(
         DatabaseImport::Create(*source_db_, cl.maximum_number_of_rows));
 
-    std::cout << "gathering info about destination catalog \""
+    std::cout << "gathering information about destination catalog \""
               << cl.destination_db_resource_name << "\"..." << std::endl;
     std::unique_ptr<DatabaseExport> exp(
         DatabaseExport::Create(*destination_db_, cl.empty_destination_tables));
@@ -126,6 +121,13 @@ class DbCopy {
 
       destination_db_ = std::make_unique<DatabaseConnection>(
           cl.destination_db_resource_name, directordaemon::my_config);
+
+      if (source_db_->db_type != DatabaseType::Enum::kMysql)
+        throw std::runtime_error("Error: Source database is not mysql");
+
+      if (destination_db_->db_type != DatabaseType::Enum::kPostgresql)
+        throw std::runtime_error(
+            "Error: Destination database is not postgresql");
 
     } catch (const std::runtime_error& e) {
       throw e;
@@ -215,7 +217,7 @@ class DbCopy {
   std::unique_ptr<DatabaseConnection> source_db_;
   std::unique_ptr<DatabaseConnection> destination_db_;
   std::unique_ptr<ConfigurationParser> my_config_;
-  std::array<char, 1024> current_working_directory_;
+  std::array<char, 2048> current_working_directory_;
 };
 
 class Cleanup {

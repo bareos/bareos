@@ -93,26 +93,14 @@ static void bytea_conversion_postgresql(BareosDb* db, ColumnData& fd)
   fd.data_pointer = fd.converted_data.data();
 }
 
-static void longblob_conversion_mysql(BareosDb* db, ColumnData& fd)
-{
-  no_conversion(db, fd);
-}
-
 const DataTypeConverterMap ColumnDescriptionMysql::db_import_converter_map{
-    {"bigint", no_conversion},
-    {"binary", no_conversion},
-    {"blob", no_conversion},
-    {"char", no_conversion},
-    {"datetime", no_conversion},
-    {"decimal", no_conversion},
-    {"enum", no_conversion},
-    {"int", no_conversion},
-    {"longblob", longblob_conversion_mysql},
-    {"smallint", no_conversion},
-    {"text", no_conversion},
-    {"timestamp", no_conversion},
-    {"tinyblob", no_conversion},
-    {"tinyint", no_conversion},
+    {"bigint", no_conversion},   {"binary", no_conversion},
+    {"blob", no_conversion},     {"char", no_conversion},
+    {"datetime", no_conversion}, {"decimal", no_conversion},
+    {"enum", no_conversion},     {"int", no_conversion},
+    {"longblob", no_conversion}, {"smallint", no_conversion},
+    {"text", no_conversion},     {"timestamp", no_conversion},
+    {"tinyblob", no_conversion}, {"tinyint", no_conversion},
     {"varchar", no_conversion}};
 
 ColumnDescriptionMysql::ColumnDescriptionMysql(const char* column_name_in,

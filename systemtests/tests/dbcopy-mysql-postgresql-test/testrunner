@@ -59,7 +59,7 @@ stop_bareos
 cp "${conf}"/bareos-dir.d/catalog/postgresql.conf.template "${conf}"/bareos-dir.d/catalog/postgresql.conf
 
 #do the database copy
-"${sbin}"/bareos-dbcopy -c ${current_test_directory}/etc/bareos mysql postgresql
+"${BAREOS_DBCOPY_BINARY}" -c "${current_test_directory}"/etc/bareos mysql postgresql
 
 #enable only postgresql
 rm "${conf}"/bareos-dir.d/catalog/mysql.conf
@@ -84,7 +84,7 @@ check_for_zombie_jobs storage=File client=bareos-fd
 stop_bareos
 
 check_two_logs
-check_restore_diff ${BackupDirectory}
+check_restore_diff "${BackupDirectory}"
 
 sed -i '/Using Catalog.*/d' "${tmp}"/files.postgresql
 sed -i '/Using Catalog.*/d' "${tmp}"/files.mysql

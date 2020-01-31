@@ -38,7 +38,7 @@ DatabaseImportMysql::DatabaseImportMysql(
     const DatabaseConnection& db_connection,
     std::size_t maximum_amount_of_rows_in)
     : DatabaseImport(db_connection)
-    , maximum_amount_of_rows(maximum_amount_of_rows_in)
+    , maximum_amount_of_rows_(maximum_amount_of_rows_in)
 {
   return;
 }
@@ -84,7 +84,7 @@ struct ResultHandlerContext {
       column_descriptions;
   RowData& row_data;
   DatabaseExport& exporter;
-  uint64_t counter{};
+  uint64_t row_counter{};
   BareosDb* db{};
   bool is_restore_object{};
 };
@@ -117,12 +117,12 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
     query += " FROM ";
     query += t.table_name;
 
-    if (maximum_amount_of_rows) {
+    if (maximum_amount_of_rows_) {
       query += " LIMIT ";
-      query += std::to_string(maximum_amount_of_rows);
+      query += std::to_string(maximum_amount_of_rows_);
     }
 
-    RowData row_data(t.column_descriptions, t.table_name, is_restore_object);
+    RowData row_data(t.column_descriptions, t.table_name);
     ResultHandlerContext ctx(t.column_descriptions, row_data, exporter, db_,
                              is_restore_object);
 
@@ -220,7 +220,7 @@ int DatabaseImportMysql::ResultHandlerCopy(void* ctx, int fields, char** row)
 
   r->exporter.CopyRow(r->row_data);
 
-  if (!(++r->counter % 10000)) { std::cout << "." << std::flush; }
+  if (!(++r->row_counter % 10000)) { std::cout << "." << std::flush; }
   return 0;
 }
 
@@ -231,6 +231,6 @@ int DatabaseImportMysql::ResultHandlerCompare(void* ctx, int fields, char** row)
 
   r->exporter.CompareRow(r->row_data);
 
-  if (!(++r->counter % 10000)) { std::cout << "." << std::flush; }
+  if (!(++r->row_counter % 10000)) { std::cout << "." << std::flush; }
   return 0;
 }
