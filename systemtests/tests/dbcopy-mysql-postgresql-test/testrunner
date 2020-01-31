@@ -59,7 +59,7 @@ stop_bareos
 cp "${conf}"/bareos-dir.d/catalog/postgresql.conf.template "${conf}"/bareos-dir.d/catalog/postgresql.conf
 
 #do the database copy
-"${sbin}"/bareos-dbcopy -d -c ${current_test_directory}/etc/bareos mysql postgresql
+"${sbin}"/bareos-dbcopy -c ${current_test_directory}/etc/bareos mysql postgresql
 
 #enable only postgresql
 rm "${conf}"/bareos-dir.d/catalog/mysql.conf
