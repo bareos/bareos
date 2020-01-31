@@ -45,7 +45,7 @@ static QCoreApplication* app = nullptr;
 static void usage()
 {
   std::vector<char> copyright(1024);
-  kBareosVersionStrings.FormatCopyrightWithFsfAndPlanetsWithFsfAndPlanets(
+  kBareosVersionStrings.FormatCopyrightWithFsfAndPlanets(
       copyright.data(), copyright.size(), 2004);
   QString out =
       QString(_("%1"
