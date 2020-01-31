@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2013 Free Software Foundation Europe e.V.
    Copyright (C) 2010-2017 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,8 +38,10 @@ struct BareosVersionStrings {
   const char* BinaryInfo;
   const char* ServicesMessage;
   const char* JoblogMessage;
-  void (*FormatCopyright)(char* out, size_t len, int FsfYear);
-  void (*PrintCopyright)(FILE* fh, int FsfYear);
+  void (*FormatCopyrightWithFsfAndPlanets)(char* out, size_t len, int FsfYear);
+  void (*PrintCopyrightWithFsfAndPlanets)(FILE* fh, int FsfYear);
+  void (*FormatCopyright)(char* out, size_t len, int StartYear);
+  void (*PrintCopyright)(FILE* fh, int StartYear);
 };
 
 extern const struct BareosVersionStrings kBareosVersionStrings;

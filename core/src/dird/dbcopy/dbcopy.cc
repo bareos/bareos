@@ -182,7 +182,7 @@ class DbCopy {
 
     void usage() noexcept
     {
-      kBareosVersionStrings.PrintCopyright(stderr, 2000);
+      kBareosVersionStrings.PrintCopyright(stderr, 2020);
 
       fprintf(stderr,
               _("Usage: bareos-dbcopy [options] Source Destination\n"

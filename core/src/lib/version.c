@@ -62,7 +62,7 @@
   "self-compiled: Get official binaries and vendor support on bareos.com"
 #endif
 
-#define BAREOS_COPYRIGHT_MESSAGE                                 \
+#define BAREOS_COPYRIGHT_MESSAGE_WITH_FSF_AND_PLANETS            \
   "\n%s"                                                         \
   "\n"                                                           \
   "Copyright (C) 2013-%s Bareos GmbH & Co. KG\n"                 \
@@ -73,17 +73,41 @@
   "\n"
 
 
-static void FormatCopyright(char* out, size_t len, int FsfYear)
+static void FormatCopyrightWithFsfAndPlanets(char* out, size_t len, int FsfYear)
 {
-  snprintf(out, len, BAREOS_COPYRIGHT_MESSAGE,
+  snprintf(out, len, BAREOS_COPYRIGHT_MESSAGE_WITH_FSF_AND_PLANETS,
            kBareosVersionStrings.ServicesMessage, kBareosVersionStrings.Year,
            FsfYear, kBareosVersionStrings.Full, kBareosVersionStrings.Date,
            HOST_OS, DISTNAME, DISTVER);
 }
-static void PrintCopyright(FILE* fh, int FsfYear)
+static void PrintCopyrightWithFsfAndPlanets(FILE* fh, int FsfYear)
+{
+  fprintf(fh, BAREOS_COPYRIGHT_MESSAGE_WITH_FSF_AND_PLANETS,
+          kBareosVersionStrings.ServicesMessage, kBareosVersionStrings.Year,
+          FsfYear, kBareosVersionStrings.Full, kBareosVersionStrings.Date,
+          HOST_OS, DISTNAME, DISTVER);
+}
+
+
+#define BAREOS_COPYRIGHT_MESSAGE               \
+  "\n%s"                                       \
+  "\n"                                         \
+  "Copyright (C) %d-%s Bareos GmbH & Co. KG\n" \
+  "\n"                                         \
+  "Version: %s (%s) %s %s %s\n"                \
+  "\n"
+
+static void FormatCopyright(char* out, size_t len, int StartYear)
+{
+  snprintf(out, len, BAREOS_COPYRIGHT_MESSAGE,
+           kBareosVersionStrings.ServicesMessage, StartYear,
+           kBareosVersionStrings.Year, kBareosVersionStrings.Full,
+           kBareosVersionStrings.Date, HOST_OS, DISTNAME, DISTVER);
+}
+static void PrintCopyright(FILE* fh, int StartYear)
 {
   fprintf(fh, BAREOS_COPYRIGHT_MESSAGE, kBareosVersionStrings.ServicesMessage,
-          kBareosVersionStrings.Year, FsfYear, kBareosVersionStrings.Full,
+          StartYear, kBareosVersionStrings.Year, kBareosVersionStrings.Full,
           kBareosVersionStrings.Date, HOST_OS, DISTNAME, DISTVER);
 }
 
@@ -97,5 +121,7 @@ const struct BareosVersionStrings kBareosVersionStrings = {
     .BinaryInfo = BAREOS_BINARY_INFO,
     .ServicesMessage = BAREOS_SERVICES_MESSAGE,
     .JoblogMessage = BAREOS_JOBLOG_MESSAGE,
+    .FormatCopyrightWithFsfAndPlanets = FormatCopyrightWithFsfAndPlanets,
+    .PrintCopyrightWithFsfAndPlanets = PrintCopyrightWithFsfAndPlanets,
     .FormatCopyright = FormatCopyright,
     .PrintCopyright = PrintCopyright};
