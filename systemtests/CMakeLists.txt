@@ -186,6 +186,19 @@ macro(handle_python_plugin_modules test_name)
     )
   endforeach()
 
+  foreach(PYMODULE ${DIR_PYMODULES_TO_LINK_TO_SRC})
+    get_filename_component(PYMODULE_NAME ${PYMODULE} NAME)
+    if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
+      set(ORIGINAL_FILE ${python_plugin_module_src_dir}/${PYMODULE})
+    else()
+      set(ORIGINAL_FILE ${python_plugin_module_src_dir}/dird/${PYMODULE})
+    endif()
+    create_symlink(
+      ${ORIGINAL_FILE} ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
+    )
+  endforeach()
+
+
   foreach(PYMODULE ${FD_PYMODULES_TO_LINK_TO_SRC})
     get_filename_component(PYMODULE_NAME ${PYMODULE} NAME)
     if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
