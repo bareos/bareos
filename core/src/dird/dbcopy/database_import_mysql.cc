@@ -151,7 +151,9 @@ void DatabaseImportMysql::ExportTo(DatabaseExport& exporter)
   exporter.CopyEnd();
 
   stopwatch.Stop();
+#if 0
   stopwatch.PrintDurationToStdout();
+#endif
 }
 
 void DatabaseImportMysql::CompareWith(DatabaseExport& exporter)
@@ -198,7 +200,7 @@ void DatabaseImportMysql::FillRowWithDatabaseResult(ResultHandlerContext* r,
         "Number of database fields does not match description");
   }
 
-    RowData& row_data = r->row_data;
+  RowData& row_data = r->row_data;
 
   if (r->is_restore_object) {
     std::size_t field_index_longblob = fields - 1;
