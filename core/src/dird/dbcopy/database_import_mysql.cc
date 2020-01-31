@@ -133,7 +133,7 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
       std::cout << query << std::endl;
     }
 
-    exporter.EndTable();
+    exporter.EndTable(t.table_name);
     std::cout << "Finished copy data from: " << t.table_name << std::endl;
     // std::cout << query << std::endl << std::endl;
   }
