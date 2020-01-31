@@ -142,7 +142,7 @@ class DbCopy {
       bool options_error{false};
       int argument_count{};
 
-      while ((c = getopt(argc, argv, "cl:?")) != -1 && !options_error) {
+      while ((c = getopt(argc, argv, "c:l:?")) != -1 && !options_error) {
         switch (c) {
           case 'c':
             configpath_ = optarg;
