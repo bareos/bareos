@@ -107,34 +107,40 @@ void DatabaseExportPostgresql::CopyRow(RowData& source_data_row)
   }
 }
 
-void DatabaseExportPostgresql::CopyStart() { SelectSequenceSchema(); }
+void DatabaseExportPostgresql::CopyStart()
+{
+  // runs before first table
+  SelectSequenceSchema();
+}
 
 static void UpdateSequences(
     BareosDb* db,
     const DatabaseExportPostgresql::SequenceSchemaVector&
-        sequence_schema_vector)
+        sequence_schema_vector,
+    const std::string& table_name)
 {
-  std::cout << "Updating sequence for tables: " << std::endl;
   for (const auto& s : sequence_schema_vector) {
-    std::cout << "--> " << s.table_name << std::endl;
+    std::string table_name_lower_case;
+    std::transform(table_name.cbegin(), table_name.cend(),
+                   std::back_inserter(table_name_lower_case), ::tolower);
+    if (s.table_name == table_name_lower_case) {
     std::string sequence_schema_query{"select setval(' "};
     sequence_schema_query += s.sequence_name;
     sequence_schema_query += "', (select max(";
     sequence_schema_query += s.column_name;
     sequence_schema_query += ") from ";
-    sequence_schema_query += s.table_name;
+      sequence_schema_query += table_name_lower_case;
     sequence_schema_query += "))";
+      std::cout << "--> updating sequence" << std::endl;
     if (!db->SqlQuery(sequence_schema_query.c_str())) {
       throw std::runtime_error(
           "DatabaseExportPostgresql: Could not set sequence");
     }
   }
 }
-
-void DatabaseExportPostgresql::CopyEnd()
-{
-  UpdateSequences(db_, sequence_schema_vector_);
 }
+
+void DatabaseExportPostgresql::CopyEnd() {}
 
 void DatabaseExportPostgresql::CursorStartTable(const std::string& table_name)
 {
@@ -223,6 +229,8 @@ void DatabaseExportPostgresql::EndTable(const std::string& table_name)
       throw std::runtime_error(err);
     }
   }
+
+  UpdateSequences(db_, sequence_schema_vector_, table_name);
 
   if (transaction_) {
     db_->SqlQuery("COMMIT");
