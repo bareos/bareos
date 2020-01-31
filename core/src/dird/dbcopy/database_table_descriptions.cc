@@ -64,6 +64,7 @@ DatabaseTablesPostgresql::DatabaseTablesPostgresql(BareosDb* db)
   std::vector<std::string> table_names;
   SelectTableNames(query, table_names);
 
+  std::cout << "getting column descriptions..." << std::endl;
   for (auto t : table_names) {
     DatabaseColumnDescriptionsPostgresql p(db, t);
     tables.emplace_back(std::move(t), std::move(p.column_descriptions));

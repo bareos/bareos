@@ -114,7 +114,9 @@ static void UpdateSequences(
     const DatabaseExportPostgresql::SequenceSchemaVector&
         sequence_schema_vector)
 {
+  std::cout << "Updating sequence for tables: " << std::endl;
   for (const auto& s : sequence_schema_vector) {
+    std::cout << "--> " << s.table_name << std::endl;
     std::string sequence_schema_query{"select setval(' "};
     sequence_schema_query += s.sequence_name;
     sequence_schema_query += "', (select max(";
@@ -126,7 +128,6 @@ static void UpdateSequences(
       throw std::runtime_error(
           "DatabaseExportPostgresql: Could not set sequence");
     }
-    std::cout << "Updating sequence for table: " << s.table_name << std::endl;
   }
 }
 

@@ -73,8 +73,7 @@ DatabaseColumnDescriptionsPostgresql::DatabaseColumnDescriptionsPostgresql(
   query += table_name;
   query += "'";
 
-  std::cout << "Collecting column descriptions for: " << table_name
-            << std::endl;
+  std::cout << "--> " << table_name << std::endl;
 
   SelectColumnDescriptions(query, ResultHandler);
 }
