@@ -56,7 +56,7 @@ CREATE TABLE RestoreObject (
    RestoreObjectId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
    ObjectName BLOB NOT NULL,
    RestoreObject LONGBLOB NOT NULL,
-   PluginName BLOB NOT NULL,
+   PluginName TINYBLOB NOT NULL,
    ObjectLength INTEGER DEFAULT 0,
    ObjectFullLength INTEGER DEFAULT 0,
    ObjectIndex INTEGER DEFAULT 0,
