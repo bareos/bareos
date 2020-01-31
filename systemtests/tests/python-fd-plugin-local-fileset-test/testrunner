@@ -33,6 +33,9 @@ BackupDirectory="${tmp}/data"
 # Data will be placed at "${tmp}/data/".
 setup_data "$@"
 
+# this test does not work with links because of the restore objects
+rm -r "${tmp}"/data/weird-files >/dev/null 2>&1
+
 start_test
 
 cat <<END_OF_DATA >$tmp/bconcmds

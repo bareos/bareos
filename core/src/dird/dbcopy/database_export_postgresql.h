@@ -50,8 +50,8 @@ class DatabaseExportPostgresql : public DatabaseExport {
   using SequenceSchemaVector = std::vector<SequenceSchema>;
 
  private:
-  bool transaction_{false};
-  bool start_new_table{false};
+  bool transaction_open_{false};
+  bool cursor_start_new_table_{false};
   SequenceSchemaVector sequence_schema_vector_;
 
   void SelectSequenceSchema();
