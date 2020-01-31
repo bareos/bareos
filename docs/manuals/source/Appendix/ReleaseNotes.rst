@@ -25,8 +25,8 @@ The feature overview for a release are shown at the :ref:`genindex` of this docu
 Bareos-19.2
 -----------
 
-Bareos-19.2.4~rc1
-~~~~~~~~~~~~~~~~~
+Bareos-19.2.4
+~~~~~~~~~~~~~
 
 General Information
 ^^^^^^^^^^^^^^^^^^^
@@ -36,7 +36,7 @@ General Information
    :widths: auto
 
    * - **Release Date**
-     - 19 December 2019
+     - 31 January 2019
    * - **Database Version**
      -  2192
    * - **URL**
@@ -53,12 +53,18 @@ New Features
 * Display a summary before performing a restore in the |webui|
 * New configuration parameter *filetree_refresh_timeout* has been added to configuration.ini file of the |webui| to set a custom timeout while refreshing the file tree (.bvfs_cache_update) in the restore module (:ref:`section-updating-bvfs-cache-frequently`)
 * Configuration: Add :ref:`DirectorResourceUser` for pam authentication
-* Configuration: : Simplified :ref:`StorageResourceMultipliedDevice` Storage Configuration
+* Configuration: Simplified :ref:`StorageResourceMultipliedDevice` Storage Configuration
 * Client initiated connection: Run dedicated jobs when a client connects to the |dir|. Introduced a new configuration directive RunOnIncomingConnectInterval, see the documentation here: :config:option:`dir/job/RunOnIncomingConnectInterval`
 * Python-bareos: Depending on the distribution, the Python module is packaged for Python 2 and/or Python 3. Previously it has only been packaged for Python 2
 * Python-bareos: There are two variants of the Console protocol. The protocol used before Bareos-18.2 and the protocol used thereafter. The protocol since Bareos-18.2 supports TLS-PSK and PAM authentication, see :ref:`bareos-18.2.5`. Beginning with this version, Python-bareos also supports both protocols. As TLS-PSK for Python (module **sslpsk**) is not available for all platforms, Python-bareos has integrated an automatic fallback to the old protocol.
 * Percona XtraBackup Plugin: The :ref:`PerconaXtrabackupPlugin` can be used to backup MySQL Databases.
   It uses the command line tool *Percona XtraBackup* to create backups. The plugin was formerly part of the bareos-contrib source code repository.
+* :program:`bareos-dbcopy` command line tool: The new :ref:`program-bareos-dbcopy` command line
+  tool can copy the bareos database from MySQL to PostgreSQL.
+  As :ref:`bareos-dbcopy` is still in an early stage of development, we currently
+  see it as technical preview and are interested in feedback and ask for special
+  care when using it. Do not delete your old catalog database before you are
+  really sure that everything works on the new catalog!
 
 Changed Features
 ^^^^^^^^^^^^^^^^
