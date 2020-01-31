@@ -81,8 +81,9 @@ class DbCopy {
 
     std::cout << "copying tables..." << std::endl;
     imp->ExportTo(*exp);
-
-    //    if (cl.compare_all_rows) { imp->CompareWith(*exp); }
+#if 0
+    if (cl.compare_all_rows) { imp->CompareWith(*exp); }
+#endif
   }
 
  private:
@@ -141,17 +142,17 @@ class DbCopy {
       bool options_error{false};
       int argument_count{};
 
-      while ((c = getopt(argc, argv, "c:dl:?")) != -1 && !options_error) {
+      while ((c = getopt(argc, argv, "cl:?")) != -1 && !options_error) {
         switch (c) {
           case 'c':
             configpath_ = optarg;
             argument_count += 2;
             break;
+#if 0
           case 'd':
             empty_destination_tables = true;
             ++argument_count;
             break;
-#if 0
           case 'e':
             compare_all_rows = true;
             ++argument_count;
