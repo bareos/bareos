@@ -41,7 +41,7 @@ class DatabaseExport {
       bool clear_tables = false);
 
   virtual bool StartTable(const std::string& table_name) = 0;
-  virtual void EndTable() = 0;
+  virtual void EndTable(const std::string& table_name) = 0;
 
   virtual void CopyStart() = 0;
   virtual void CopyRow(RowData& origin_data) = 0;

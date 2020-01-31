@@ -215,8 +215,18 @@ bool DatabaseExportPostgresql::StartTable(const std::string& table_name)
   return true;
 }
 
-void DatabaseExportPostgresql::EndTable()
+void DatabaseExportPostgresql::EndTable(const std::string& table_name)
 {
+  if (table_name == "RestoreObject") {
+    std::string query{
+        "UPDATE restoreobject SET objectlength=length(restoreobject)"};
+    if (!db_->SqlQuery(query.c_str())) {
+      std::string err{"Could not update RestoreObjects: "};
+      err += db_->get_errmsg();
+      throw std::runtime_error(err);
+    }
+  }
+
   if (transaction_) {
     db_->SqlQuery("COMMIT");
     transaction_ = false;
