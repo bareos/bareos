@@ -177,15 +177,12 @@ macro(handle_python_plugin_modules test_name)
     file(MAKE_DIRECTORY ${python_plugin_module_src_test_dir})
   endif()
 
-  foreach(PYMODULE ${DIR_PYMODULES_TO_LINK_TO_SRC})
-    get_filename_component(PYMODULE_NAME ${PYMODULE} NAME)
-    if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
-      set(ORIGINAL_FILE ${python_plugin_module_src_dir}/${PYMODULE})
-    else()
-      set(ORIGINAL_FILE ${python_plugin_module_src_dir}/dird/${PYMODULE})
-    endif()
-    create_symlink(
-      ${ORIGINAL_FILE} ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
+  foreach(PYMODULE_SOURCEPATH ${PYMODULES_TO_LINK_TO_SRC})
+    get_filename_component(PYMODULE_NAME ${PYMODULE_SOURCEPATH} NAME)
+    execute_process(
+      COMMAND ${CMAKE_COMMAND} -E create_symlink
+              ${PROJECT_SOURCE_DIR}/../core/src/plugins/${PYMODULE_SOURCEPATH}
+              ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
     )
   endforeach()
 
@@ -470,6 +467,8 @@ set(logdir "log")
 set(mon_dir_password "mon_dir_password")
 set(mon_fd_password "mon_fd_password")
 set(mon_sd_password "mon_sd_password")
+set(python_plugin_module_src_dir ${CMAKE_SOURCE_DIR}/core/src/plugins)
+set(python_plugin_module_src_test_dir_relative "python-modules")
 set(plugindirtmp ${PROJECT_BINARY_DIR}/plugindirtmp)
 set(rscripts ${PROJECT_BINARY_DIR}/scripts)
 

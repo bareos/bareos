@@ -7,7 +7,6 @@ FileSet {
     }
    #File = "@sbindir@"
     File=<@tmpdir@/file-list
-    #Plugin = "python:module_path=@python_plugin_module_src_test_dir@:module_name=bareos-fd-local-fileset-with-restoreobjects:filename=@tmpdir@/file-list:deny=.*link.*"
-    Plugin = "python:module_path=@python_plugin_module_src_test_dir@:module_name=bareos-fd-local-fileset-with-restoreobjects:filename=@tmpdir@/file-list-python-plugin"
+    Plugin = "python:module_path=@python_plugin_module_src_test_dir_relative@:module_name=bareos-fd-local-fileset-with-restoreobjects:filename=@tmpdir@/file-list-python-plugin"
   }
 }
