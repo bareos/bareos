@@ -461,9 +461,7 @@ else() # run systemtests on source and compiled files
 
   get_target_property(FD_PLUGINS_DIR_TO_TEST bpipe-fd BINARY_DIR)
   get_target_property(SD_PLUGINS_DIR_TO_TEST autoxflate-sd BINARY_DIR)
-  if(HAVE_PYTHON)
-    get_target_property(DIR_PLUGINS_DIR_TO_TEST python-dir BINARY_DIR)
-  endif()
+  get_target_property(DIR_PLUGINS_DIR_TO_TEST python-dir BINARY_DIR)
   get_target_property(BACKEND_DIR_TO_TEST bareoscats BINARY_DIR)
 
   set(SCRIPTS_DIR_TO_TEST ${CMAKE_BINARY_DIR}/core/scripts)
@@ -599,27 +597,28 @@ endforeach()
 
 set(tests_dir ${PROJECT_BINARY_DIR}/tests)
 set(SYSTEM_TESTS
-    backup-bareos-test
-    backup-bareos-passive-test
+    backup-bareos-client-initiated-test
     backup-bareos-encrypt-signature-test
     backup-bareos-encrypt-signature-test-with-tls-cert
-    multiplied-device-test
-    virtualfull
-    virtualfull-bscan
+    backup-bareos-passive-test
+    backup-bareos-test
     backup-bscan
+    bconsole-status-client
     config-syntax-crash
     copy-bscan
     copy-remote-bscan
-    bconsole-status-client
-    scheduler-backup-test
+    messages-resource
+    multiplied-device-test
+    reload-works-on-adding-client-resource
     reload-works-on-adding-duplicate-job-resource
-    reload-works-on-unchanged-config
-    reload-works-on-adding-uncommented-string
     reload-works-on-adding-empty-job-resource
     reload-works-on-adding-second-director-resource
-    reload-works-on-adding-client-resource
-    backup-bareos-client-initiated-test
-    messages-resource
+    reload-works-on-adding-uncommented-string
+    reload-works-on-unchanged-config
+    scheduler-backup-test
+    upgrade-database-test
+    virtualfull
+    virtualfull-bscan
 )
 
 set(SYSTEM_TESTS_DISABLED # initially empty
