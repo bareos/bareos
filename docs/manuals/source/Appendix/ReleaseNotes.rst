@@ -18,12 +18,42 @@ The feature overview for a release are shown at the :ref:`genindex` of this docu
 
 .. _bareos-current-releasenotes:
 
-.. _bareos-1924-releasenotes:
+.. _bareos-1925-releasenotes:
 
-.. _bareos-19.2.4:
+.. _bareos-19.2.5:
 
 Bareos-19.2
 -----------
+
+Bareos-19.2.5
+~~~~~~~~~~~~~
+
+General Information
+^^^^^^^^^^^^^^^^^^^
+.. list-table:: Bareos 19.2.5 Release Information
+   :header-rows: 0
+   :widths: auto
+
+   * - **Release Date**
+     - 03 February 2019
+   * - **Database Version**
+     -  2192
+   * - **URL**
+     - https://download.bareos.com/bareos/release/19.2/
+   * -
+     - https://download.bareos.org/bareos/release/19.2/
+   * - **Release Ticket**
+     - :mantis:`1173`
+
+Bugs Fixed
+^^^^^^^^^^
+* :mantis:`1172`: update_bareos_tables script broken
+* Summary text for percona plugin referred to LDAP plugin
+
+
+.. _bareos-1924-releasenotes:
+
+.. _bareos-19.2.4:
 
 Bareos-19.2.4
 ~~~~~~~~~~~~~
