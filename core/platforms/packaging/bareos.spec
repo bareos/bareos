@@ -578,7 +578,7 @@ Requires:   python-lxml
 Requires:   python-ovirt-engine-sdk4
 
 %package    filedaemon-percona-xtrabackup-python-plugin
-Summary:    LDAP Python plugin for Bareos File daemon
+Summary:    Percona xtrabackup Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
 Requires:   bareos-filedaemon-python-plugin = %{version}
