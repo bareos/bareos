@@ -35,7 +35,7 @@ General Information
    :widths: auto
 
    * - **Release Date**
-     - 03 February 2019
+     - 03 February 2020
    * - **Database Version**
      -  2192
    * - **URL**
@@ -66,7 +66,7 @@ General Information
    :widths: auto
 
    * - **Release Date**
-     - 31 January 2019
+     - 31 January 2020
    * - **Database Version**
      -  2192
    * - **URL**
