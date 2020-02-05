@@ -313,14 +313,14 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
           token = LexGetToken(lc, BCT_SKIP_EOL);
 
           ScanTypes(lc, message_resource,
-                    static_cast<MessageDestinationCode>(item->code), dest, NULL,
-                    NULL);
+                    static_cast<MessageDestinationCode>(item->code), dest,
+                    std::string(), std::string());
           FreePoolMemory(dest);
           Dmsg0(900, "done with dest codes\n");
         } else {
           ScanTypes(lc, message_resource,
-                    static_cast<MessageDestinationCode>(item->code), NULL, NULL,
-                    NULL);
+                    static_cast<MessageDestinationCode>(item->code),
+                    std::string(), std::string(), std::string());
         }
         break;
       }
