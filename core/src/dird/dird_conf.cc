@@ -3026,7 +3026,7 @@ static void StoreAcl(LEX* lc, ResourceItem* item, int index, int pass)
   for (;;) {
     LexGetToken(lc, BCT_STRING);
     if (pass == 1) {
-      if (!IsAclEntryValid(lc->str, msg.data())) {
+      if (!IsAclEntryValid(lc->str, msg)) {
         Emsg1(M_ERROR, 0, _("Cannot store Acl: %s\n"), msg.data());
         return;
       }
