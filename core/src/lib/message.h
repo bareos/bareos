@@ -36,7 +36,9 @@
 #include "lib/rwlock.h"
 #include "lib/message_destination_info.h"
 
+#include <functional>
 #include <string>
+#include <vector>
 
 class JobControlRecord;
 
