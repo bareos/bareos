@@ -15,11 +15,15 @@ export TestName
 console_messages_file="${working}"/.conmsg
 syslog_file="${working}"/syslog.txt
 dblog_file="${working}"/dblog.txt
+stdout_file="${working}"/stdout.txt
+stderr_file="${working}"/stderr.txt
 extra_append_file="${logdir}"/bareos.log
 
 rm -f "$console_messages_file"
 rm -f "$syslog_file"
 rm -f "$dblog_file"
+rm -f "$stdout_file"
+rm -f "$stderr_file"
 rm -f "$extra_append_file"
 
 function exit_error() {
@@ -39,11 +43,13 @@ function check_output_file {
 
 start_test
 
-${BAREOS_UNITTESTS_BINARY_DIR}/messages || exit_failure
+${BAREOS_UNITTESTS_BINARY_DIR}/messages > "$stdout_file" 2> "$stderr_file" || exit_error
 
 check_output_file "$console_messages_file"
 check_output_file "$syslog_file"
 check_output_file "$dblog_file"
+check_output_file "$stdout_file"
+check_output_file "$stderr_file"
 check_output_file "$extra_append_file"
 
 end_test

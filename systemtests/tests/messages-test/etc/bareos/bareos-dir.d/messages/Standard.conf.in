@@ -5,4 +5,6 @@ Messages {
   append = "@logdir@/bareos.log" = all, !skipped, !saved, !audit
   catalog = all, !skipped, !saved, !audit
   syslog = all
+  stdout = all
+  stderr = all
 }
