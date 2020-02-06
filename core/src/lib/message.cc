@@ -31,6 +31,8 @@
  * Kern Sibbald, April 2000
  */
 
+#include <vector>
+
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "lib/berrno.h"
@@ -1562,6 +1564,35 @@ int Mmsg(PoolMem*& pool_buf, const char* fmt, ...)
   }
 
   return len;
+}
+
+int Mmsg(std::vector<char>& msgbuf, const char* fmt, ...)
+{
+  va_list ap;
+
+  size_t maxlen = msgbuf.size();
+  size_t len = strlen(fmt);
+
+  /* resize msgbuf so at least fmt fits in there.
+   * this makes sure the rest of the code works with a zero-sized vector
+   */
+  if (maxlen < len) {
+    msgbuf.resize(len);
+    maxlen = len;
+  }
+
+  while (1) {
+    va_start(ap, fmt);
+    len = Bvsnprintf(msgbuf.data(), maxlen, fmt, ap);
+    va_end(ap);
+
+    if (len < 0 || len >= (maxlen - 5)) {
+      maxlen += maxlen / 2;
+      msgbuf.resize(maxlen);
+      continue;
+    }
+    return len;
+  }
 }
 
 /*
