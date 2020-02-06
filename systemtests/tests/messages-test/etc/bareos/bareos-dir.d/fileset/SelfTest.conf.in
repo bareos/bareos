@@ -5,7 +5,7 @@ FileSet {
     Options {
       Signature = MD5 # calculate md5 checksum per file
     }
-   #File = "/tmp/sbin"
-    File=</tmp/tests/backup-bareos-test/tmp/file-list
+   #File = "@sbindir@"
+    File=<@tmpdir@/file-list
   }
 }
