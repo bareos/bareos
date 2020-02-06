@@ -29,37 +29,110 @@
 
 #include "dird/dird_conf.h"
 #include "dird/dird_globals.h"
+#include "dird/get_database_connection.h"
+#include "dird/job.h"
+#include "dird/jcr_private.h"
 #include "lib/messages_resource.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
 
+#include <memory>
+#include <vector>
+
 using directordaemon::InitDirConfig;
 using directordaemon::my_config;
+
+namespace directordaemon {
+bool DoReloadConfig() { return false; }
+}  // namespace directordaemon
+
+class LogFiles {
+ public:
+  static FILE* Open(const std::string& dir, std::string filename)
+  {
+    std::string fullpath = dir + "/" + filename;
+    FILE* fp = fopen(fullpath.c_str(), "w");
+    if (!fp) {
+      std::cout << "Could not open syslog file " << fullpath << std::endl;
+      return nullptr;
+    }
+    fps.push_back(fp);
+    return fp;
+  }
+
+  LogFiles() = default;
+
+  ~LogFiles()
+  {
+    for (auto fp : fps) {
+      fflush(fp);
+      fclose(fp);
+    }
+  }
+
+ private:
+  static std::vector<FILE*> fps;
+};
+
+std::vector<FILE*> LogFiles::fps;
+static FILE* syslog_file{};
+static FILE* db_log_file{};
+
+static void SyslogCallback_(int mode, const char* msg)
+{
+  // fake-write a syslog entry
+  if (syslog_file) { fputs(msg, syslog_file); }
+}
+
+static bool DbLogInsertCallback_(JobControlRecord* jcr,
+                                 utime_t mtime,
+                                 const char* msg)
+{
+  // fake-write a db log entry
+  if (db_log_file) { fputs(msg, db_log_file); }
+  return true;
+}
 
 TEST(messages, send_message_to_all_configured_destinations)
 {
   std::string config_dir = getenv_std_string("BAREOS_CONFIG_DIR");
   std::string working_dir = getenv_std_string("BAREOS_WORKING_DIR");
+  std::string backend_dir = getenv_std_string("backenddir");
 
   ASSERT_FALSE(working_dir.empty());
   ASSERT_FALSE(config_dir.empty());
+  ASSERT_FALSE(backend_dir.empty());
 
   SetWorkingDirectory(working_dir.c_str());
   InitConsoleMsg(working_dir.c_str());
+  RegisterSyslogCallback(SyslogCallback_);
+  SetDbLogInsertCallback(DbLogInsertCallback_);
 
+  // parse config
   std::unique_ptr<ConfigurationParser> p{
       InitDirConfig(config_dir.c_str(), M_ERROR_TERM)};
-
   directordaemon::my_config = p.get();
   ASSERT_TRUE(directordaemon::my_config->ParseConfig());
 
+  // get message resource
   MessagesResource* messages =
       dynamic_cast<MessagesResource*>(directordaemon::my_config->GetResWithName(
           directordaemon::R_MSGS, "Standard"));
-
   ASSERT_NE(messages, nullptr);
 
-  InitMsg(NULL, messages); /* initialize message handler */
+  // initialize message handler
+  InitMsg(NULL, messages);
 
-  DispatchMessage(nullptr, M_ERROR, 0, "This is an error message");
+  LogFiles cleanup_files;
+
+  syslog_file = LogFiles::Open(working_dir, "syslog.txt");
+  db_log_file = LogFiles::Open(working_dir, "dblog.txt");
+
+  ASSERT_NE(syslog_file, nullptr);
+  ASSERT_NE(db_log_file, nullptr);
+
+  JobControlRecord jcr;
+  jcr.db = reinterpret_cast<BareosDb*>(1);
+
+  DispatchMessage(&jcr, M_ERROR, 0, "This is an error message");
 }
