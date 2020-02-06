@@ -392,3 +392,13 @@ if(NOT client-only)
                                      ${GTEST_MAIN_LIBRARIES}
   )
 endif() # NOT client-only
+
+bareos_add_test(
+  messages LINK_LIBRARIES dird_objects
+                          bareos
+                          bareosfind
+                          bareoscats
+                          bareossql
+                          ${GTEST_LIBRARIES}
+                          ${GTEST_MAIN_LIBRARIES}
+)
