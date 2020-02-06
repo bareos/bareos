@@ -31,12 +31,14 @@
 #include "dird/dird_globals.h"
 #include "lib/messages_resource.h"
 #include "lib/parse_conf.h"
+#include "lib/util.h"
 
 using directordaemon::InitDirConfig;
 using directordaemon::my_config;
 
 TEST(messages, send_message_to_all_configured_destinations)
 {
+  getenv_std_string();
   std::string path_to_config_file =
       std::string(RELATIVE_PROJECT_SOURCE_DIR "/configs/messages");
 
