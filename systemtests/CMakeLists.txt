@@ -605,6 +605,7 @@ set(SYSTEM_TESTS
     virtualfull
     virtualfull-bscan
     backup-bscan
+    config-syntax-crash
     copy-bscan
     copy-remote-bscan
     bconsole-status-client
