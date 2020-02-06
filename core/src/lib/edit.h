@@ -21,6 +21,8 @@
 #ifndef BAREOS_LIB_EDIT_H_
 #define BAREOS_LIB_EDIT_H_
 
+#include <vector>
+
 uint64_t str_to_uint64(const char* str);
 #define str_to_uint16(str) ((uint16_t)str_to_uint64(str))
 #define str_to_uint32(str) ((uint32_t)str_to_uint64(str))
@@ -43,7 +45,7 @@ bool Is_a_number_list(const char* n);
 bool IsAnInteger(const char* n);
 bool IsNameValid(const char* name, POOLMEM*& msg);
 bool IsNameValid(const char* name);
-bool IsAclEntryValid(const char* acl, char* msg);
+bool IsAclEntryValid(const char* acl, std::vector<char>& msg);
 bool IsAclEntryValid(const char* acl);
 
 #endif  // BAREOS_LIB_EDIT_H_
