@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2020 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -100,6 +100,39 @@ class ClientModel
     * @return array
     */
    public function getClientBackups(&$bsock=null, $client=null, $fileset=null, $order=null, $limit=null)
+   {
+      if(isset($bsock, $client)) {
+         $cmd = 'llist backups client="'.$client.'"';
+         if ($fileset != null) {
+            $cmd .= ' fileset="'.$fileset.'"';
+         }
+         if ($order != null) {
+            $cmd .= ' order='.$order;
+         }
+         if ($limit != null) {
+            $cmd .= ' limit='.$limit;
+         }
+         $result = $bsock->send_command($cmd, 2);
+         $backups = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $backups['result']['backups'];
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
+   }
+
+   /**
+    * Get Client Jobs by llist jobs command
+    *
+    * @param $bsock
+    * @param $client
+    * @param $fileset
+    * @param $order
+    * @param $limit
+    *
+    * @return array
+    */
+   public function getClientJobs(&$bsock=null, $client=null, $fileset=null, $order=null, $limit=null)
    {
       if(isset($bsock, $client)) {
          $cmd = 'llist jobs client="'.$client.'"';
