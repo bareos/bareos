@@ -70,7 +70,7 @@ job_code_callback_t message_job_code_callback = NULL;  // Only used by director
 static MessagesResource* daemon_msgs; /* Global messages */
 static char* catalog_db = NULL;       /* Database type */
 static const char* log_timestamp_format = "%d-%b %H:%M";
-static void (*message_callback)(int type, char* msg) = NULL;
+static void (*message_callback)(int type, const char* msg) = NULL;
 static FILE* trace_fd = NULL;
 #if defined(HAVE_WIN32)
 static bool trace = true;
@@ -135,7 +135,7 @@ static void DeliveryError(const char* fmt, ...)
   FreeMemory(pool_buf);
 }
 
-void RegisterMessageCallback(void msg_callback(int type, char* msg))
+void RegisterMessageCallback(void msg_callback(int type, const char* msg))
 {
   message_callback = msg_callback;
 }
@@ -619,7 +619,10 @@ static inline void SendToSyslog(int mode, const char* msg)
 /*
  * Handle sending the message to the appropriate place
  */
-void DispatchMessage(JobControlRecord* jcr, int type, utime_t mtime, char* msg)
+void DispatchMessage(JobControlRecord* jcr,
+                     int type,
+                     utime_t mtime,
+                     const char* msg)
 {
   char dt[MAX_TIME_LENGTH];
   POOLMEM* mcmd;
