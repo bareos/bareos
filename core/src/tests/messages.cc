@@ -38,12 +38,17 @@ using directordaemon::my_config;
 
 TEST(messages, send_message_to_all_configured_destinations)
 {
-  getenv_std_string();
-  std::string path_to_config_file =
-      std::string(RELATIVE_PROJECT_SOURCE_DIR "/configs/messages");
+  std::string config_dir = getenv_std_string("BAREOS_CONFIG_DIR");
+  std::string working_dir = getenv_std_string("BAREOS_WORKING_DIR");
+
+  ASSERT_FALSE(working_dir.empty());
+  ASSERT_FALSE(config_dir.empty());
+
+  SetWorkingDirectory(working_dir.c_str());
+  InitConsoleMsg(working_dir.c_str());
 
   std::unique_ptr<ConfigurationParser> p{
-      InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM)};
+      InitDirConfig(config_dir.c_str(), M_ERROR_TERM)};
 
   directordaemon::my_config = p.get();
   ASSERT_TRUE(directordaemon::my_config->ParseConfig());
