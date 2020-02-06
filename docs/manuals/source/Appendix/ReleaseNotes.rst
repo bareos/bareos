@@ -18,12 +18,53 @@ The feature overview for a release are shown at the :ref:`genindex` of this docu
 
 .. _bareos-current-releasenotes:
 
+Bareos-19.2
+-----------
+
+.. _bareos-1926-releasenotes:
+
+.. _bareos-19.2.6:
+
+Bareos-19.2.6
+~~~~~~~~~~~~~
+
+General Information
+^^^^^^^^^^^^^^^^^^^
+.. list-table:: Bareos 19.2.6 Release Information
+   :header-rows: 0
+   :widths: auto
+
+   * - **Release Date**
+     - UNRELEASED
+   * - **Database Version**
+     -  2192
+   * - **URL**
+     - https://download.bareos.com/bareos/release/19.2/
+   * -
+     - https://download.bareos.org/bareos/release/19.2/
+   * - **Release Ticket**
+     - :mantis:`1177`
+
+MySQL/MariaDB
+^^^^^^^^^^^^^
+
+If an index on the JobTDate column of the Job table was manually added before
+upgrading the database to schema version 2192, please make sure you do not have
+multiple indexes on the JobTDate column of the Job table in place and clean up
+manually if necessary.
+
+   - ``SHOW INDEXES FROM Job;``
+   - E.g. ``DROP INDEX JobTDate_1 ON Job;``
+
+
+Bugs Fixed
+^^^^^^^^^^
+* :mantis:`1176`: Upgrade 18.2.5 to 19.2.5 failed while upgrading MySQL database
+
+
 .. _bareos-1925-releasenotes:
 
 .. _bareos-19.2.5:
-
-Bareos-19.2
------------
 
 Bareos-19.2.5
 ~~~~~~~~~~~~~
