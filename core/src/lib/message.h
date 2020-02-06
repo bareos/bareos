@@ -37,6 +37,7 @@
 #include "lib/message_destination_info.h"
 
 #include <string>
+#include <functional>
 
 class JobControlRecord;
 
@@ -50,10 +51,9 @@ bool GetTrace(void);
 const char* get_basename(const char* pathname);
 void SetLogTimestampFormat(const char* format);
 
-typedef bool (*db_log_insert_func)(JobControlRecord* jcr,
-                                   utime_t mtime,
-                                   const char* msg);
-void SetDbLogInsertCallback(db_log_insert_func f);
+using DbLogInsertCallback =
+    std::function<bool(JobControlRecord* jcr, utime_t mtime, const char* msg)>;
+void SetDbLogInsertCallback(DbLogInsertCallback f);
 
 class MessagesResource;
 
@@ -91,5 +91,8 @@ void SetTimestamp(int timestamp_flag);
 bool GetTimestamp(void);
 void SetDbType(const char* name);
 void RegisterMessageCallback(void msg_callback(int type, const char* msg));
+
+using SyslogCallback = std::function<void(int mode, const char* msg)>;
+void RegisterSyslogCallback(SyslogCallback c);
 
 #endif /* BAREOS_LIB_MESSAGE_H_ */

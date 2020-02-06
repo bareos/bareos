@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -42,8 +42,6 @@
 #include "lib/message_destination_info.h"
 #include "lib/message_queue_item.h"
 #include "lib/thread_specific_data.h"
-
-static db_log_insert_func p_db_log_insert = NULL;
 
 // globals
 const char* working_directory = NULL; /* working directory path stored here */
@@ -597,7 +595,7 @@ static inline bool SetSyslogFacility(JobControlRecord* jcr,
  * Split the output for syslog (it converts \n to ' ' and is
  * limited to 1024 characters per syslog message
  */
-static inline void SendToSyslog(int mode, const char* msg)
+static void SendToSyslog_(int mode, const char* msg)
 {
   int len;
   char buf[1024];
@@ -615,6 +613,12 @@ static inline void SendToSyslog(int mode, const char* msg)
     syslog(mode, "%s", p);
   }
 }
+
+static SyslogCallback SendToSyslog{SendToSyslog_};
+void RegisterSyslogCallback(SyslogCallback c) { SendToSyslog = c; }
+
+static DbLogInsertCallback SendToDbLog = NULL;
+void SetDbLogInsertCallback(DbLogInsertCallback f) { SendToDbLog = f; }
 
 /*
  * Handle sending the message to the appropriate place
@@ -737,8 +741,8 @@ void DispatchMessage(JobControlRecord* jcr,
         case MessageDestinationCode::kCatalog:
           if (!jcr || !jcr->db) { break; }
 
-          if (p_db_log_insert) {
-            if (!p_db_log_insert(jcr, mtime, msg)) {
+          if (SendToDbLog) {
+            if (!SendToDbLog(jcr, mtime, msg)) {
               DeliveryError(
                   _("Msg delivery error: Unable to store data in database.\n"));
             }
@@ -1678,5 +1682,3 @@ void SetLogTimestampFormat(const char* format)
 {
   log_timestamp_format = format;
 }
-
-void SetDbLogInsertCallback(db_log_insert_func f) { p_db_log_insert = f; }
