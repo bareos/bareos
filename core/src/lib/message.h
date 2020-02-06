@@ -54,7 +54,7 @@ void SetLogTimestampFormat(const char* format);
 
 typedef bool (*db_log_insert_func)(JobControlRecord* jcr,
                                    utime_t mtime,
-                                   char* msg);
+                                   const char* msg);
 void SetDbLogInsertCallback(db_log_insert_func f);
 
 class MessagesResource;
@@ -79,7 +79,10 @@ void InitMsg(JobControlRecord* jcr,
 void TermMsg(void);
 void CloseMsg(JobControlRecord* jcr);
 void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...);
-void DispatchMessage(JobControlRecord* jcr, int type, utime_t mtime, char* buf);
+void DispatchMessage(JobControlRecord* jcr,
+                     int type,
+                     utime_t mtime,
+                     const char* buf);
 void InitConsoleMsg(const char* wd);
 void DequeueMessages(JobControlRecord* jcr);
 void SetTrace(int trace_flag);
@@ -89,6 +92,6 @@ bool GetHangup(void);
 void SetTimestamp(int timestamp_flag);
 bool GetTimestamp(void);
 void SetDbType(const char* name);
-void RegisterMessageCallback(void msg_callback(int type, char* msg));
+void RegisterMessageCallback(void msg_callback(int type, const char* msg));
 
 #endif /* BAREOS_LIB_MESSAGE_H_ */
