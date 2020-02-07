@@ -393,17 +393,19 @@ if(NOT client-only)
   )
 endif() # NOT client-only
 
-bareos_add_test(messages
-      LINK_LIBRARIES
-        bareos
-        dird_objects
-        bareosfind
-        bareoscats
-        bareossql
-        $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}>
-        ${LMDB_LIBS}
-        ${GTEST_LIBRARIES}
-        ${GTEST_MAIN_LIBRARIES}
-      SKIP_GTEST
-
-)
+if(NOT client-only)
+  bareos_add_test(
+    messages
+    LINK_LIBRARIES
+      bareos
+      dird_objects
+      bareosfind
+      bareoscats
+      bareossql
+      $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}>
+      ${LMDB_LIBS}
+      ${GTEST_LIBRARIES}
+      ${GTEST_MAIN_LIBRARIES}
+    SKIP_GTEST
+  )
+endif() # NOT client-only
