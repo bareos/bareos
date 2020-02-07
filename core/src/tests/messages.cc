@@ -142,5 +142,5 @@ TEST(messages, send_message_to_all_configured_destinations)
   JobControlRecord jcr;
   jcr.db = reinterpret_cast<BareosDb*>(1);
 
-  DispatchMessage(&jcr, M_ERROR, 0, "This is an error message");
+  DispatchMessage(&jcr, M_ERROR, 0, "\n!!!This is a test error message!!!\n");
 }

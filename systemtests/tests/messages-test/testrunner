@@ -1,8 +1,9 @@
 #!/bin/sh
 #
-# Run a simple backup
-#   then restore it.
+# This test runs the messages unittest
+#  to examine all message directions
 #
+
 TestName="$(basename "$(pwd)")"
 export TestName
 
@@ -17,7 +18,9 @@ syslog_file="${BAREOS_LOG_DIR}"/syslog
 dblog_file="${BAREOS_LOG_DIR}"/dblog
 stdout_file="${BAREOS_LOG_DIR}"/stdout
 stderr_file="${BAREOS_LOG_DIR}"/stderr
-extra_append_file="${BAREOS_LOG_DIR}"/bareos.log
+extra_append_file="${BAREOS_LOG_DIR}"/append
+mail_file="${BAREOS_LOG_DIR}"/mail
+operator_file="${BAREOS_LOG_DIR}"/operator
 
 rm -f "$console_messages_file"
 rm -f "$syslog_file"
@@ -25,6 +28,8 @@ rm -f "$dblog_file"
 rm -f "$stdout_file"
 rm -f "$stderr_file"
 rm -f "$extra_append_file"
+rm -f "$mail_file"
+rm -f "$operator_file"
 
 function exit_error() {
   [ "$1" == "" ] || echo "$1"
@@ -36,7 +41,7 @@ function exit_error() {
 function check_output_file {
   [ -f "$1" ] || exit_error "$1 does not exist"
 
-  if ! grep --quiet "This is an error message" "$1"; then
+  if ! grep --quiet "!!!This is a test error message!!!" "$1"; then
     exit_error "\"$1\" does not contain the expected text"
   fi
 }
@@ -49,7 +54,8 @@ check_output_file "$console_messages_file"
 check_output_file "$syslog_file"
 check_output_file "$dblog_file"
 check_output_file "$stdout_file"
-check_output_file "$stderr_file"
 check_output_file "$extra_append_file"
+check_output_file "$mail_file"
+check_output_file "$operator_file"
 
 end_test
