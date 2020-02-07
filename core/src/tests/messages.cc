@@ -95,15 +95,18 @@ static bool DbLogInsertCallback_(JobControlRecord* jcr,
 
 TEST(messages, send_message_to_all_configured_destinations)
 {
-  debug_level = 200;
-
   std::string config_dir = getenv_std_string("BAREOS_CONFIG_DIR");
   std::string working_dir = getenv_std_string("BAREOS_WORKING_DIR");
   std::string backend_dir = getenv_std_string("backenddir");
+  std::string regress_debug = getenv_std_string("REGRESS_DEBUG");
 
   ASSERT_FALSE(working_dir.empty());
   ASSERT_FALSE(config_dir.empty());
   ASSERT_FALSE(backend_dir.empty());
+
+  if (!regress_debug.empty()) {
+    if (regress_debug == "1") { debug_level = 200; }
+  }
 
   SetWorkingDirectory(working_dir.c_str());
   InitConsoleMsg(working_dir.c_str());
