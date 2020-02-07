@@ -56,7 +56,7 @@ class LogFiles {
       std::cout << "Could not open syslog file " << fullpath << std::endl;
       return nullptr;
     }
-    fps.push_back(fp);
+    list_of_filepointers.insert(std::pair<std::string, FILE*>(filename, fp));
     return fp;
   }
 
@@ -64,32 +64,41 @@ class LogFiles {
 
   ~LogFiles()
   {
-    for (auto fp : fps) {
-      fflush(fp);
-      fclose(fp);
+    for (auto fp : list_of_filepointers) {
+      fflush(fp.second);
+      fclose(fp.second);
     }
+    list_of_filepointers.clear();
   }
 
- private:
-  static std::vector<FILE*> fps;
+  static std::map<std::string, FILE*> list_of_filepointers;
 };
 
-std::vector<FILE*> LogFiles::fps;
-static FILE* syslog_file{};
-static FILE* db_log_file{};
+std::map<std::string, FILE*> LogFiles::list_of_filepointers;
 
 static void SyslogCallback_(int mode, const char* msg)
 {
-  // fake-write a syslog entry
-  if (syslog_file) { fputs(msg, syslog_file); }
+  try {
+    FILE* fp = LogFiles::list_of_filepointers.at("syslog");
+    // fake-write a syslog entry
+    if (fp) { fputs(msg, fp); }
+  } catch (const std::out_of_range& e) {
+    std::cout << "Could not find <syslog> filepointer";
+  }
 }
 
 static bool DbLogInsertCallback_(JobControlRecord* jcr,
                                  utime_t mtime,
                                  const char* msg)
 {
-  // fake-write a db log entry
-  if (db_log_file) { fputs(msg, db_log_file); }
+  try {
+    FILE* fp = LogFiles::list_of_filepointers.at("dblog");
+    // fake-write a db log entry
+    if (fp) { fputs(msg, fp); }
+  } catch (const std::out_of_range& e) {
+    std::cout << "Could not find <dblog> filepointer";
+  }
+
   return true;
 }
 
@@ -113,8 +122,6 @@ TEST(messages, send_message_to_all_configured_destinations)
 
   SetWorkingDirectory(working_dir.c_str());
   InitConsoleMsg(log_dir.c_str());
-  RegisterSyslogCallback(SyslogCallback_);
-  SetDbLogInsertCallback(DbLogInsertCallback_);
 
   // parse config
   std::unique_ptr<ConfigurationParser> p{
@@ -131,16 +138,18 @@ TEST(messages, send_message_to_all_configured_destinations)
   // initialize message handler
   InitMsg(NULL, messages);
 
-  LogFiles cleanup_files;
+  // this object cleans up all files at exit
+  LogFiles cleanup;
 
-  syslog_file = LogFiles::Open(log_dir, "syslog");
-  db_log_file = LogFiles::Open(log_dir, "dblog");
+  // init syslog mock-up
+  ASSERT_NE(LogFiles::Open(log_dir, "syslog"), nullptr);
+  RegisterSyslogCallback(SyslogCallback_);
 
-  ASSERT_NE(syslog_file, nullptr);
-  ASSERT_NE(db_log_file, nullptr);
-
+  // init catalog mock-up
   JobControlRecord jcr;
-  jcr.db = reinterpret_cast<BareosDb*>(1);
+  jcr.db = reinterpret_cast<BareosDb*>(0xdeadbeef);
+  ASSERT_NE(LogFiles::Open(log_dir, "dblog"), nullptr);
+  SetDbLogInsertCallback(DbLogInsertCallback_);
 
   DispatchMessage(&jcr, M_ERROR, 0, "\n!!!This is a test error message!!!\n");
 }
