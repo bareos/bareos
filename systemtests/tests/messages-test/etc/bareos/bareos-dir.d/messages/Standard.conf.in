@@ -1,10 +1,14 @@
 Messages {
   Name = Standard
   Description = "Reasonable message delivery -- send most everything to email address and to the console."
-  console = all
-  append = "@logdir@/bareos.log" = all, !skipped, !saved, !audit
-  catalog = all, !skipped, !saved, !audit
-  syslog = all
-  stdout = all
-  stderr = all
+  Console = all
+  Append = "@logdir@/append" = all
+  Catalog = all
+  Syslog = all
+  Stdout = all
+  Stderr = all
+  Mail Command = "/bin/bash -c \"cat - > @logdir@/mail\""
+  Mail = no-mail = all
+  Operator Command = "/bin/bash -c \"cat - > @logdir@/operator\""
+  Operator = no-operator = all
 }
