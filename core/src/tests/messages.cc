@@ -97,19 +97,22 @@ TEST(messages, send_message_to_all_configured_destinations)
 {
   std::string config_dir = getenv_std_string("BAREOS_CONFIG_DIR");
   std::string working_dir = getenv_std_string("BAREOS_WORKING_DIR");
+  std::string log_dir = getenv_std_string("BAREOS_LOG_DIR");
   std::string backend_dir = getenv_std_string("backenddir");
-  std::string regress_debug = getenv_std_string("REGRESS_DEBUG");
 
-  ASSERT_FALSE(working_dir.empty());
   ASSERT_FALSE(config_dir.empty());
+  ASSERT_FALSE(working_dir.empty());
+  ASSERT_FALSE(log_dir.empty());
   ASSERT_FALSE(backend_dir.empty());
+
+  std::string regress_debug = getenv_std_string("REGRESS_DEBUG");
 
   if (!regress_debug.empty()) {
     if (regress_debug == "1") { debug_level = 200; }
   }
 
   SetWorkingDirectory(working_dir.c_str());
-  InitConsoleMsg(working_dir.c_str());
+  InitConsoleMsg(log_dir.c_str());
   RegisterSyslogCallback(SyslogCallback_);
   SetDbLogInsertCallback(DbLogInsertCallback_);
 
@@ -130,8 +133,8 @@ TEST(messages, send_message_to_all_configured_destinations)
 
   LogFiles cleanup_files;
 
-  syslog_file = LogFiles::Open(working_dir, "syslog.txt");
-  db_log_file = LogFiles::Open(working_dir, "dblog.txt");
+  syslog_file = LogFiles::Open(log_dir, "syslog");
+  db_log_file = LogFiles::Open(log_dir, "dblog");
 
   ASSERT_NE(syslog_file, nullptr);
   ASSERT_NE(db_log_file, nullptr);

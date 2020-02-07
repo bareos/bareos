@@ -12,12 +12,12 @@ export TestName
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 
-console_messages_file="${working}"/.conmsg
-syslog_file="${working}"/syslog.txt
-dblog_file="${working}"/dblog.txt
-stdout_file="${working}"/stdout.txt
-stderr_file="${working}"/stderr.txt
-extra_append_file="${logdir}"/bareos.log
+console_messages_file="${BAREOS_LOG_DIR}"/.conmsg
+syslog_file="${BAREOS_LOG_DIR}"/syslog
+dblog_file="${BAREOS_LOG_DIR}"/dblog
+stdout_file="${BAREOS_LOG_DIR}"/stdout
+stderr_file="${BAREOS_LOG_DIR}"/stderr
+extra_append_file="${BAREOS_LOG_DIR}"/bareos.log
 
 rm -f "$console_messages_file"
 rm -f "$syslog_file"
