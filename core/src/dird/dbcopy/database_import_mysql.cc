@@ -87,7 +87,6 @@ struct ResultHandlerContext {
       column_descriptions;
   RowData& row_data;
   DatabaseExport& exporter;
-  uint64_t row_counter{};
   BareosDb* db{};
   bool is_restore_object{};
   Progress& progress;
@@ -226,12 +225,11 @@ int DatabaseImportMysql::ResultHandlerCopy(void* ctx, int fields, char** row)
 
   r->exporter.CopyRow(r->row_data);
 
-  //  if (!(++r->row_counter % 1)) {
   r->progress.Advance(1);
-  //  if (r->progress.IntegralChange()) {
-  std::cout << r->progress.Rate() << "%" << std::endl;
-  //  }
-  //}
+
+  if (r->progress.IntegralChange()) {
+    std::cout << r->progress.Rate() << "%" << std::endl;
+  }
   return 0;
 }
 
@@ -241,7 +239,5 @@ int DatabaseImportMysql::ResultHandlerCompare(void* ctx, int fields, char** row)
   FillRowWithDatabaseResult(r, fields, row);
 
   r->exporter.CompareRow(r->row_data);
-
-  if (!(++r->row_counter % 10000)) { std::cout << "." << std::flush; }
   return 0;
 }

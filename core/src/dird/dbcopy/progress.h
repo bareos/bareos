@@ -53,6 +53,7 @@ class Progress {
  private:
   ProgressState state_new;
   ProgressState state_old;
+  std::size_t full_amount_{};
   bool changed_{};
 
   bool is_valid{};

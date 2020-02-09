@@ -52,6 +52,7 @@ Progress::Progress(BareosDb* db, const std::string& table_name)
   }
 
   if (a.is_valid) {
+    full_amount_ = a.amount;
     state_old.start = steady_clock::now();
     state_old.amount = a.amount;
     is_valid = true;
@@ -66,11 +67,11 @@ void Progress::Advance(std::size_t increment)
   state_new.start = steady_clock::now();
 
   state_new.ratio =
-      (state_new.amount * Ratio::num) / (Ratio::den * state_old.amount);
+      (state_new.amount * Ratio::num) / (full_amount_ * Ratio::den);
 
   auto duration = state_new.start - state_old.start;
 
-  if (state_new.ratio != state_old.ratio) { changed_ = true; }
+  changed_ = state_new.ratio != state_old.ratio;
 
   state_old = state_new;
 }
