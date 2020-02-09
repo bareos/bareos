@@ -24,6 +24,7 @@
 #include "dird/dbcopy/row_data.h"
 #include "dird/dbcopy/database_export.h"
 #include "dird/dbcopy/database_import_mysql.h"
+#include "dird/dbcopy/progress.h"
 #include "include/make_unique.h"
 
 #include <cassert>
@@ -72,12 +73,14 @@ struct ResultHandlerContext {
       RowData& d,
       DatabaseExport& e,
       BareosDb* db_in,
-      bool is_restore_object_in)
+      bool is_restore_object_in,
+      Progress& p)
       : column_descriptions(c)
       , row_data(d)
       , exporter(e)
       , db(db_in)
       , is_restore_object(is_restore_object_in)
+      , progress(p)
   {
   }
   const DatabaseColumnDescriptions::VectorOfColumnDescriptions&
@@ -87,6 +90,7 @@ struct ResultHandlerContext {
   uint64_t row_counter{};
   BareosDb* db{};
   bool is_restore_object{};
+  Progress& progress;
 };
 
 void DatabaseImportMysql::RunQuerySelectAllRows(
@@ -98,6 +102,8 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
       std::cout << "--> *** skipping ***" << std::endl;
       continue;
     }
+
+    Progress progress(db_, t.table_name);
 
     std::cout << "--> copying..." << std::endl;
 
@@ -124,7 +130,7 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
 
     RowData row_data(t.column_descriptions, t.table_name);
     ResultHandlerContext ctx(t.column_descriptions, row_data, exporter, db_,
-                             is_restore_object);
+                             is_restore_object, progress);
 
     if (!db_->SqlQuery(query.c_str(), ResultHandler, &ctx)) {
       std::cout << "Could not import table: " << t.table_name << std::endl;
@@ -220,7 +226,12 @@ int DatabaseImportMysql::ResultHandlerCopy(void* ctx, int fields, char** row)
 
   r->exporter.CopyRow(r->row_data);
 
-  if (!(++r->row_counter % 10000)) { std::cout << "." << std::flush; }
+  //  if (!(++r->row_counter % 1)) {
+  r->progress.Advance(1);
+  //  if (r->progress.IntegralChange()) {
+  std::cout << r->progress.Rate() << "%" << std::endl;
+  //  }
+  //}
   return 0;
 }
 

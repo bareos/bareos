@@ -30,6 +30,7 @@ class DatabaseConnection;
 class DatabaseExport;
 class DatabaseTableDescriptions;
 class ResultHandlerContext;
+class Progress;
 
 class DatabaseImportMysql : public DatabaseImport {
  public:
