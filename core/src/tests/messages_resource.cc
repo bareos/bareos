@@ -102,7 +102,7 @@ static bool DbLogInsertCallback_(JobControlRecord* jcr,
   return true;
 }
 
-TEST(messages, send_message_to_all_configured_destinations)
+TEST(messages_resource, send_message_to_all_configured_destinations)
 {
   std::string config_dir = getenv_std_string("BAREOS_CONFIG_DIR");
   std::string working_dir = getenv_std_string("BAREOS_WORKING_DIR");

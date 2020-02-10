@@ -51,7 +51,7 @@ function check_output_file {
 
 start_test
 
-${BAREOS_UNITTESTS_BINARY_DIR}/messages > "$stdout_file" 2> "$stderr_file" || exit_error
+${BAREOS_UNITTESTS_BINARY_DIR}/messages_resource > "$stdout_file" 2> "$stderr_file" || exit_error
 
 check_output_file "$console_messages_file"
 check_output_file "$syslog_file"

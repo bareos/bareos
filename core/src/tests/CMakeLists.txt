@@ -395,7 +395,7 @@ endif() # NOT client-only
 
 if(NOT client-only)
   bareos_add_test(
-    messages
+    messages_resource
     LINK_LIBRARIES
       bareos
       dird_objects
