@@ -43,6 +43,23 @@
   #endif
 #endif
 
+#if not defined __BYTE_ORDER
+#  include <sys/endian.h>
+#  if defined _BYTE_ORDER && not defined __BYTE_ORDER
+#    define __BYTE_ORDER _BYTE_ORDER
+#  endif
+#  if defined _LITTLE_ENDIAN && not defined __LITTLE_ENDIAN
+#    define __LITTLE_ENDIAN _LITTLE_ENDIAN
+#  endif
+#  if defined _BIG_ENDIAN && not defined __BIG_ENDIAN
+#    define __BIG_ENDIAN _BIG_ENDIAN
+#  endif
+#endif
+
+#if not defined __BYTE_ORDER
+#error __BYTE_ORDER not set
+#endif
+
 
 /// zlib's CRC32 polynomial
 const uint32_t Polynomial = 0xEDB88320;
