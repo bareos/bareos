@@ -3,7 +3,7 @@
 BEGIN;
 
 -- adapt index
-CREATE INDEX IF NOT EXISTS jobtdate_idx ON Job (JobTDate);
+ALTER TABLE Job ADD INDEX (JobTDate);
 
 -- change BaseFiles.BaseId data type
 ALTER TABLE BaseFiles MODIFY BaseId BIGINT;
@@ -16,3 +16,4 @@ UPDATE Version SET VersionId = 2192;
 COMMIT;
 
 ANALYZE TABLE Job;
+ANALYZE TABLE PathVisibility;
