@@ -623,6 +623,7 @@ set(SYSTEM_TESTS
     upgrade-database-test
     virtualfull
     virtualfull-bscan
+    volume-pruning-test
 )
 
 set(SYSTEM_TESTS_DISABLED # initially empty
