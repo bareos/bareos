@@ -3,6 +3,9 @@
 # This test runs the messages unittest
 #  to examine all message directions
 #
+# The director direction is not tested
+#  here because all other tests use it
+#
 
 TestName="$(basename "$(pwd)")"
 export TestName
