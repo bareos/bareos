@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -278,7 +278,7 @@ bool SetMigrationWstorage(JobControlRecord* jcr,
 
 /**
  * SetMigrationNextPool() called by DoMigrationInit()
- * at differents stages.
+ * at different stages.
  *
  * The idea here is to make a common subroutine for the
  * NextPool's search code and to permit DoMigrationInit()
