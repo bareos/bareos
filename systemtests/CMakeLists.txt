@@ -616,7 +616,7 @@ set(SYSTEM_TESTS
     reload-works-on-adding-second-director-resource
     reload-works-on-adding-client-resource
     backup-bareos-client-initiated-test
-    messages-test
+    messages-resource
 )
 
 set(SYSTEM_TESTS_DISABLED # initially empty
