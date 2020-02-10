@@ -39,7 +39,7 @@ DatabaseImportMysql::DatabaseImportMysql(
     const DatabaseConnection& db_connection,
     std::size_t maximum_amount_of_rows_in)
     : DatabaseImport(db_connection)
-    , maximum_amount_of_rows_(maximum_amount_of_rows_in)
+    , limit_amount_of_rows_(maximum_amount_of_rows_in)
 {
   return;
 }
@@ -102,7 +102,7 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
       continue;
     }
 
-    Progress progress(db_, t.table_name);
+    Progress progress(db_, t.table_name, limit_amount_of_rows_);
 
     std::cout << "--> copying..." << std::endl;
 
@@ -122,9 +122,9 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
     query += " FROM ";
     query += t.table_name;
 
-    if (maximum_amount_of_rows_) {
+    if (limit_amount_of_rows_) {
       query += " LIMIT ";
-      query += std::to_string(maximum_amount_of_rows_);
+      query += std::to_string(limit_amount_of_rows_);
     }
 
     RowData row_data(t.column_descriptions, t.table_name);
@@ -225,10 +225,9 @@ int DatabaseImportMysql::ResultHandlerCopy(void* ctx, int fields, char** row)
 
   r->exporter.CopyRow(r->row_data);
 
-  r->progress.Advance(1);
-
-  if (r->progress.IntegralChange()) {
-    std::cout << r->progress.Rate() << "%" << std::endl;
+  if (r->progress.Increment()) {
+    std::cout << std::setw(3) << r->progress.Rate() << "%"
+              << " ETA:" << r->progress.Eta() << std::endl;
   }
   return 0;
 }

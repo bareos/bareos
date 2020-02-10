@@ -189,7 +189,9 @@ class DbCopy {
     std::string configpath_{"/etc/bareos"};
     std::string source_db_resource_name, destination_db_resource_name;
     bool empty_destination_tables{false};
+#if 0
     bool compare_all_rows{false};
+#endif
     std::size_t maximum_number_of_rows;
 
     void usage() noexcept

@@ -28,35 +28,37 @@
 
 class BareosDb;
 
-using std::chrono::duration;
-using std::chrono::minutes;
-using std::chrono::steady_clock;
+using std::chrono::milliseconds;
+using std::chrono::system_clock;
 using std::chrono::time_point;
 
 struct ProgressState {
-  time_point<steady_clock> start{};
+  time_point<system_clock> eta{};
+  time_point<system_clock> start{};
   std::size_t amount{};
   std::size_t ratio{};
+  milliseconds duration;
 };
 
 class Progress {
  public:
-  Progress(BareosDb* db, const std::string& table_data);
+  Progress(BareosDb* db,
+           const std::string& table_data,
+           std::size_t limit_amount_of_rows_);
 
-  void Advance(std::size_t increment);
+  bool Increment();
 
-  std::size_t Rate() const { return state_new.ratio; }
-  duration<minutes> RemainingTime() const;
+  using Ratio = std::ratio<100, 1>;
 
-  bool IntegralChange() const { return changed_; }
+  std::size_t Rate() const { return state_.ratio; }
+  std::string Eta() const;
 
  private:
-  ProgressState state_new;
-  ProgressState state_old;
+  ProgressState state_;
+  ProgressState state_old_;
   std::size_t full_amount_{};
-  bool changed_{};
-
-  bool is_valid{};
+  bool suppress_first_output_{true};
+  bool is_valid_{false};
 };
 
 #endif  // BAREOS_SRC_DIRD_DBCOPY_PROGRESS_H_
