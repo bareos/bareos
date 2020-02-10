@@ -892,7 +892,7 @@ class BareosOvirtWrapper(object):
     def get_vm(self, context):
         search = None
         if "uuid" in self.options:
-            search = "uuid=%s" % str(self.options["uuid"])
+            search = "id=%s" % str(self.options["uuid"])
         elif "vm_name" in self.options:
             search = "name=%s" % str(self.options["vm_name"])
 
