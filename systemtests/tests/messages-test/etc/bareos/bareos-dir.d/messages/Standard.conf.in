@@ -1,6 +1,6 @@
 Messages {
   Name = Standard
-  Description = "Reasonable message delivery -- send most everything to email address and to the console."
+  Description = "Message delivery for all reasonable directions"
   Console = all
   Append = "@logdir@/append" = all
   Catalog = all
