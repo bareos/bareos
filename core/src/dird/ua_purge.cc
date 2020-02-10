@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -374,6 +374,8 @@ void PurgeJobListFromCatalog(UaContext* ua, del_ctx& del)
       del.num_del++;
     }
     Dmsg1(150, "num_ids=%d\n", del.num_ids);
+    Jmsg(ua->jcr, M_INFO, 0, _("Purging the following JobIds: %s\n"),
+         jobids.c_str());
     PurgeJobsFromCatalog(ua, jobids.c_str());
   }
 }

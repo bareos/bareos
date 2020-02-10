@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -67,7 +67,7 @@ int DelCountHandler(void* ctx, int num_fields, char** row)
 /**
  * Called here to make in memory list of JobIds to be
  *  deleted and the associated PurgedFiles flag.
- *  The in memory list will then be transversed
+ *  The in memory list will then be traversed
  *  to issue the SQL DELETE commands.  Note, the list
  *  is allowed to get to MAX_DEL_LIST_LEN to limit the
  *  maximum malloc'ed memory.
@@ -839,8 +839,8 @@ bool PruneVolume(UaContext* ua, MediaDbRecord* mr)
 {
   PoolMem query(PM_MESSAGE);
   del_ctx del;
-  bool ok = false;
-  int count;
+  bool VolumeIsNowEmtpy = false;
+  int NumJobsToBePruned;
 
   if (mr->Enabled == VOL_ARCHIVED) {
     return false; /* Cannot prune archived volumes */
@@ -855,15 +855,28 @@ bool PruneVolume(UaContext* ua, MediaDbRecord* mr)
   if (bstrcmp(mr->VolStatus, "Full") || bstrcmp(mr->VolStatus, "Used")) {
     Dmsg2(050, "get prune list MediaId=%d Volume %s\n", (int)mr->MediaId,
           mr->VolumeName);
-    count = GetPruneListForVolume(ua, mr, &del);
-    Dmsg1(050, "Num pruned = %d\n", count);
-    if (count != 0) { PurgeJobListFromCatalog(ua, del); }
-    ok = IsVolumePurged(ua, mr);
+
+
+    NumJobsToBePruned = GetPruneListForVolume(ua, mr, &del);
+    Jmsg(ua->jcr, M_INFO, 0,
+         _("Pruning volume %s: %d Jobs have expired and can be pruned.\n"),
+         mr->VolumeName, NumJobsToBePruned);
+    Dmsg1(050, "Num pruned = %d\n", NumJobsToBePruned);
+    if (NumJobsToBePruned != 0) { PurgeJobListFromCatalog(ua, del); }
+    VolumeIsNowEmtpy = IsVolumePurged(ua, mr);
+
+    if (!VolumeIsNowEmtpy) {
+      Jmsg(ua->jcr, M_INFO, 0,
+           _("Volume \"%s\" still contains jobs after pruning.\n"));
+    } else {
+      Jmsg(ua->jcr, M_INFO, 0,
+           _("Volume \"%s\" contains no jobs after pruning.\n"));
+    }
   }
 
   DbUnlock(ua->db);
   if (del.JobId) { free(del.JobId); }
-  return ok;
+  return VolumeIsNowEmtpy;
 }
 
 /**
@@ -872,8 +885,8 @@ bool PruneVolume(UaContext* ua, MediaDbRecord* mr)
 int GetPruneListForVolume(UaContext* ua, MediaDbRecord* mr, del_ctx* del)
 {
   PoolMem query(PM_MESSAGE);
-  int count = 0;
-  utime_t now, period;
+  int NumJobsToBePruned = 0;
+  utime_t now, VolRetention;
   char ed1[50], ed2[50];
 
   if (mr->Enabled == VOL_ARCHIVED) {
@@ -883,24 +896,32 @@ int GetPruneListForVolume(UaContext* ua, MediaDbRecord* mr, del_ctx* del)
   /*
    * Now add to the  list of JobIds for Jobs written to this Volume
    */
-  period = mr->VolRetention;
+  VolRetention = mr->VolRetention;
   now = (utime_t)time(NULL);
   ua->db->FillQuery(query, BareosDb::SQL_QUERY::sel_JobMedia,
                     edit_int64(mr->MediaId, ed1),
-                    edit_int64(now - period, ed2));
+                    edit_int64(now - VolRetention, ed2));
 
-  Dmsg3(250, "Now=%d period=%d now-period=%s\n", (int)now, (int)period, ed2);
+  Dmsg3(250, "Now=%d VolRetention=%d now-VolRetention=%s\n", (int)now,
+        (int)VolRetention, ed2);
   Dmsg1(050, "Query=%s\n", query.c_str());
+
 
   if (!ua->db->SqlQuery(query.c_str(), FileDeleteHandler, (void*)del)) {
     if (ua->verbose) { ua->ErrorMsg("%s", ua->db->strerror()); }
     Dmsg0(050, "Count failed\n");
     goto bail_out;
   }
-  count = ExcludeRunningJobsFromList(del);
+  NumJobsToBePruned = ExcludeRunningJobsFromList(del);
+
+  Jmsg(ua->jcr, M_INFO, 0,
+       _("Volume \"%s\" has Volume Retention of %d sec. and has %d jobs that "
+         "will "
+         "be pruned\n"),
+       mr->VolumeName, VolRetention, NumJobsToBePruned);
 
 bail_out:
-  return count;
+  return NumJobsToBePruned;
 }
 
 /**
@@ -908,7 +929,7 @@ bail_out:
  *   currently running, we set its JobId to zero which effectively
  *   excludes it.
  *
- * Returns the number of jobs that can be prunned or purged.
+ * Returns the number of jobs that can be pruned or purged.
  */
 int ExcludeRunningJobsFromList(del_ctx* prune_list)
 {

@@ -569,25 +569,27 @@ endforeach()
 
 set(tests_dir ${PROJECT_BINARY_DIR}/tests)
 set(SYSTEM_TESTS
-    backup-bareos-test
+    backup-bareos-client-initiated-test
     backup-bareos-notls
     backup-bareos-passive-test
-    multiplied-device-test
-    virtualfull
-    virtualfull-bscan
+    backup-bareos-test
     backup-bscan
+    bconsole-status-client
     copy-bscan
     copy-remote-bscan
-    bconsole-status-client
-    scheduler-backup-test
+    messages-resource
+    multiplied-device-test
+    reload-works-on-adding-client-resource
     reload-works-on-adding-duplicate-job-resource
-    reload-works-on-unchanged-config
-    reload-works-on-adding-uncommented-string
     reload-works-on-adding-empty-job-resource
     reload-works-on-adding-second-director-resource
-    reload-works-on-adding-client-resource
-    backup-bareos-client-initiated-test
-    messages-resource
+    reload-works-on-adding-uncommented-string
+    reload-works-on-unchanged-config
+    scheduler-backup-test
+    upgrade-database-test
+    virtualfull
+    virtualfull-bscan
+    volume-pruning-test
 )
 
 set(SYSTEM_TESTS_DISABLED # initially empty
