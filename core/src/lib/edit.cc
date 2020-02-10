@@ -598,8 +598,7 @@ bool IsAclEntryValid(const char* acl, std::vector<char>& msg)
 {
   int len;
   const char* p;
-  const char* accept = "!*.:_-'/"; /* Special characters to accept */
-
+  const char* accept = "!()[]|+?*.:_-'/"; /* Special characters to accept */
 
   if (!acl) {
     Mmsg(msg, _("Empty acl not allowed.\n"));
