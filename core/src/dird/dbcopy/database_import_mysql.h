@@ -29,7 +29,7 @@ class BareosDb;
 class DatabaseConnection;
 class DatabaseExport;
 class DatabaseTableDescriptions;
-class ResultHandlerContext;
+struct ResultHandlerContext;
 class Progress;
 
 class DatabaseImportMysql : public DatabaseImport {
@@ -49,7 +49,7 @@ class DatabaseImportMysql : public DatabaseImport {
 
   void RunQuerySelectAllRows(DB_RESULT_HANDLER* result_handler,
                              DatabaseExport& exporter);
-  std::size_t maximum_amount_of_rows_{};
+  std::size_t limit_amount_of_rows_{};
 };
 
 

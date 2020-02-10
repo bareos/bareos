@@ -26,7 +26,7 @@
 #include <map>
 #include <string>
 
-class ColumnData;
+struct ColumnData;
 class BareosDb;
 
 class ColumnDescription {

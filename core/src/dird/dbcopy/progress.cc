@@ -23,8 +23,10 @@
 #include "cats/cats.h"
 #include "dird/dbcopy/progress.h"
 
+#include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <thread>
 
 struct Amount {
   bool is_valid{};
@@ -40,7 +42,9 @@ static int AmountHandler(void* ctx, int fields, char** row)
   return 1;
 }
 
-Progress::Progress(BareosDb* db, const std::string& table_name)
+Progress::Progress(BareosDb* db,
+                   const std::string& table_name,
+                   std::size_t limit_amount_of_rows_)
 {
   Amount a;
   std::string query{"SELECT count(*) from " + table_name};
@@ -52,26 +56,55 @@ Progress::Progress(BareosDb* db, const std::string& table_name)
   }
 
   if (a.is_valid) {
+    if (a.amount > limit_amount_of_rows_) {
+      // commandline parameter
+      a.amount = limit_amount_of_rows_;
+    }
     full_amount_ = a.amount;
-    state_old.start = steady_clock::now();
-    state_old.amount = a.amount;
-    is_valid = true;
+    state_.amount = a.amount;
+    state_.start = system_clock::now();
+    state_old_ = state_;
+    is_valid_ = true;
   }
 }
 
-void Progress::Advance(std::size_t increment)
+bool Progress::Increment()
 {
-  using Ratio = std::ratio<100, 1>;
+  if (!is_valid_) {
+    // if anything failed before do not abort, just omit the progress counter
+    return false;
+  }
 
-  state_new.amount = state_old.amount - increment;
-  state_new.start = steady_clock::now();
+  state_.amount = state_.amount != 0 ? state_.amount - 1 : 0;
+  if ((state_.amount % 10000) != 0) { return false; }
 
-  state_new.ratio =
-      (state_new.amount * Ratio::num) / (full_amount_ * Ratio::den);
+  state_.ratio =
+      Ratio::num - (state_.amount * Ratio::num) / (full_amount_ * Ratio::den);
 
-  auto duration = state_new.start - state_old.start;
+  state_.start = system_clock::now();
 
-  changed_ = state_new.ratio != state_old.ratio;
+  milliseconds duration =
+      std::chrono::duration_cast<milliseconds>(state_.start - state_old_.start);
 
-  state_old = state_new;
+  state_.duration = (state_old_.duration + duration) / 2;
+
+  auto remaining_time =
+      (state_.duration) * (state_.amount / (state_old_.amount - state_.amount));
+
+  state_.eta = system_clock::now() + remaining_time;
+
+  bool changed =
+      (state_.ratio != state_old_.ratio) || (state_.eta != state_old_.eta);
+
+  state_old_ = state_;
+
+  return changed;
+}
+
+std::string Progress::Eta() const
+{
+  std::ostringstream oss;
+  std::time_t time = system_clock::to_time_t(state_.eta);
+  oss << std::put_time(std::localtime(&time), "%F %T");
+  return oss.str();
 }
