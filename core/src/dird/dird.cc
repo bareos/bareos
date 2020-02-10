@@ -157,7 +157,9 @@ static void ReloadJobEndCb(JobControlRecord* jcr, void* ctx)
  * access to the database. If the pointer is not defined (other daemons), then
  * writing the database is disabled.
  */
-static bool DirDbLogInsert(JobControlRecord* jcr, utime_t mtime, char* msg)
+static bool DirDbLogInsert(JobControlRecord* jcr,
+                           utime_t mtime,
+                           const char* msg)
 {
   int length;
   char ed1[50];

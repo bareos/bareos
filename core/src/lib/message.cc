@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -43,8 +43,6 @@
 #include "lib/message_queue_item.h"
 #include "lib/thread_specific_data.h"
 
-static db_log_insert_func p_db_log_insert = NULL;
-
 // globals
 const char* working_directory = NULL; /* working directory path stored here */
 const char* assert_msg = (char*)NULL; /* ASSERT2 error message */
@@ -70,7 +68,7 @@ job_code_callback_t message_job_code_callback = NULL;  // Only used by director
 static MessagesResource* daemon_msgs; /* Global messages */
 static char* catalog_db = NULL;       /* Database type */
 static const char* log_timestamp_format = "%d-%b %H:%M";
-static void (*message_callback)(int type, char* msg) = NULL;
+static void (*message_callback)(int type, const char* msg) = NULL;
 static FILE* trace_fd = NULL;
 #if defined(HAVE_WIN32)
 static bool trace = true;
@@ -135,7 +133,7 @@ static void DeliveryError(const char* fmt, ...)
   FreeMemory(pool_buf);
 }
 
-void RegisterMessageCallback(void msg_callback(int type, char* msg))
+void RegisterMessageCallback(void msg_callback(int type, const char* msg))
 {
   message_callback = msg_callback;
 }
@@ -597,7 +595,7 @@ static inline bool SetSyslogFacility(JobControlRecord* jcr,
  * Split the output for syslog (it converts \n to ' ' and is
  * limited to 1024 characters per syslog message
  */
-static inline void SendToSyslog(int mode, const char* msg)
+static void SendToSyslog_(int mode, const char* msg)
 {
   int len;
   char buf[1024];
@@ -616,10 +614,19 @@ static inline void SendToSyslog(int mode, const char* msg)
   }
 }
 
+static SyslogCallback SendToSyslog{SendToSyslog_};
+void RegisterSyslogCallback(SyslogCallback c) { SendToSyslog = c; }
+
+static DbLogInsertCallback SendToDbLog = NULL;
+void SetDbLogInsertCallback(DbLogInsertCallback f) { SendToDbLog = f; }
+
 /*
  * Handle sending the message to the appropriate place
  */
-void DispatchMessage(JobControlRecord* jcr, int type, utime_t mtime, char* msg)
+void DispatchMessage(JobControlRecord* jcr,
+                     int type,
+                     utime_t mtime,
+                     const char* msg)
 {
   char dt[MAX_TIME_LENGTH];
   POOLMEM* mcmd;
@@ -734,8 +741,8 @@ void DispatchMessage(JobControlRecord* jcr, int type, utime_t mtime, char* msg)
         case MessageDestinationCode::kCatalog:
           if (!jcr || !jcr->db) { break; }
 
-          if (p_db_log_insert) {
-            if (!p_db_log_insert(jcr, mtime, msg)) {
+          if (SendToDbLog) {
+            if (!SendToDbLog(jcr, mtime, msg)) {
               DeliveryError(
                   _("Msg delivery error: Unable to store data in database.\n"));
             }
@@ -1675,5 +1682,3 @@ void SetLogTimestampFormat(const char* format)
 {
   log_timestamp_format = format;
 }
-
-void SetDbLogInsertCallback(db_log_insert_func f) { p_db_log_insert = f; }
