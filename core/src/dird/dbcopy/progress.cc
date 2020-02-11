@@ -78,13 +78,14 @@ bool Progress::Increment()
   state_.amount = state_.amount != 0 ? state_.amount - 1 : 0;
   if ((state_.amount % 10000) != 0) { return false; }
 
-
   state_.start = system_clock::now();
 
   milliseconds duration =
       std::chrono::duration_cast<milliseconds>(state_.start - state_old_.start);
 
   state_.duration = (state_old_.duration + duration) / 2;
+  std::cout << duration.count() << "mean: " << state_.duration.count()
+            << std::endl;
 
   auto remaining_time =
       (state_.duration) * (state_.amount / (state_old_.amount - state_.amount));

@@ -92,6 +92,17 @@ struct ResultHandlerContext {
   Progress& progress;
 };
 
+static void PrintCopyStartToStdout(const Progress& progress)
+{
+  if (progress.FullAmount() != 0) {
+    std::cout << "--> copying " << progress.FullAmount() << " rows..."
+              << std::endl;
+    std::cout << "--> Start: " << progress.TimeOfDay() << std::endl;
+  } else {
+    std::cout << "--> nothing to copy..." << std::endl;
+  }
+}
+
 void DatabaseImportMysql::RunQuerySelectAllRows(
     DB_RESULT_HANDLER* ResultHandler,
     DatabaseExport& exporter)
@@ -104,9 +115,7 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
 
     Progress progress(db_, t.table_name, limit_amount_of_rows_);
 
-    std::cout << progress.TimeOfDay() << std::endl;
-    std::cout << "--> copying " << progress.FullAmount() << " rows..."
-              << std::endl;
+    PrintCopyStartToStdout(progress);
 
     std::string query{"SELECT `"};
     for (const auto& col : t.column_descriptions) {
@@ -228,7 +237,7 @@ int DatabaseImportMysql::ResultHandlerCopy(void* ctx, int fields, char** row)
   r->exporter.CopyRow(r->row_data);
 
   if (r->progress.Increment()) {
-    std::cout << std::setw(3) << r->progress.Rate() << "%"
+    std::cout << std::setw(7) << r->progress.Rate() << "%"
               << " ETA:" << r->progress.Eta() << std::endl;
   }
   return 0;
