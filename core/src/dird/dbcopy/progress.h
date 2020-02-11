@@ -50,14 +50,16 @@ class Progress {
 
   using Ratio = std::ratio<100, 1>;
 
+  std::size_t FullAmount() const { return state_.amount; }
   std::size_t Rate() const { return state_.ratio; }
+
+  std::string TimeOfDay() const;
   std::string Eta() const;
 
  private:
   ProgressState state_;
   ProgressState state_old_;
   std::size_t full_amount_{};
-  bool suppress_first_output_{true};
   bool is_valid_{false};
 };
 
