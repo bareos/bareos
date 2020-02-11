@@ -1104,3 +1104,9 @@ void SortCaseInsensitive(std::vector<std::string>& v)
     return x < y;
   });
 }
+
+std::string getenv_std_string(std::string env_var)
+{
+  const char* v = (std::getenv(env_var.c_str()));
+  return v ? std::string(v) : std::string();
+}

@@ -67,12 +67,6 @@ class CatalogTest : public ::testing::Test {
   void TearDown() override;
 };
 
-static std::string getenv_std_string(std::string env_var)
-{
-  const char* v = (std::getenv(env_var.c_str()));
-  return v ? std::string(v) : std::string();
-}
-
 void CatalogTest::SetUp()
 {
   InitMsg(nullptr, nullptr);
