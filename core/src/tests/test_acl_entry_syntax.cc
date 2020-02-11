@@ -28,14 +28,15 @@
 
 #include "lib/edit.h"
 
-POOLMEM* msg = GetPoolMemory(PM_FNAME);
 
 TEST(acl_entry_syntax_test, acl_entry_syntax_test)
 {
+  std::vector<char> msg;
+
   EXPECT_EQ(true, IsAclEntryValid("list", msg));
 
   EXPECT_EQ(false, IsAclEntryValid("list,add", msg));
-  EXPECT_STREQ("Illegal character \",\" in acl.\n", msg);
+  EXPECT_STREQ("Illegal character \",\" in acl.\n", msg.data());
 
   EXPECT_EQ(true, IsAclEntryValid("STRING.CONTAINING.ALLOWED.CHARS!*.", msg));
 
@@ -43,16 +44,16 @@ TEST(acl_entry_syntax_test, acl_entry_syntax_test)
   EXPECT_EQ(true, IsAclEntryValid(string_maximum_length.c_str(), msg));
 
   EXPECT_EQ(false, IsAclEntryValid("illegalch@racter", msg));
-  EXPECT_STREQ("Illegal character \"@\" in acl.\n", msg);
+  EXPECT_STREQ("Illegal character \"@\" in acl.\n", msg.data());
 
   EXPECT_EQ(false, IsAclEntryValid("", msg));
-  EXPECT_STREQ("Acl must be at least one character long.\n", msg);
+  EXPECT_STREQ("Acl must be at least one character long.\n", msg.data());
 
   EXPECT_EQ(false, IsAclEntryValid(nullptr, msg));
-  EXPECT_STREQ("Empty acl not allowed.\n", msg);
+  EXPECT_STREQ("Empty acl not allowed.\n", msg.data());
 
   std::string string_too_long(MAX_NAME_LENGTH, '.');
   EXPECT_EQ(false, IsAclEntryValid(string_too_long.c_str(), msg));
 
-  EXPECT_STREQ("Acl too long.\n", msg);
+  EXPECT_STREQ("Acl too long.\n", msg.data());
 }

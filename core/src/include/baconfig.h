@@ -448,6 +448,7 @@ class PoolMem;
 int Mmsg(POOLMEM*& msgbuf, const char* fmt, ...);
 int Mmsg(PoolMem& msgbuf, const char* fmt, ...);
 int Mmsg(PoolMem*& msgbuf, const char* fmt, ...);
+int Mmsg(std::vector<char>& msgbuf, const char* fmt, ...);
 
 class JobControlRecord;
 void d_msg(const char* file, int line, int level, const char* fmt, ...);
