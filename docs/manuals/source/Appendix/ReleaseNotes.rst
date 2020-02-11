@@ -35,7 +35,7 @@ General Information
    :widths: auto
 
    * - **Release Date**
-     - UNRELEASED
+     - 11 February 2020
    * - **Database Version**
      -  2192
    * - **URL**
@@ -54,12 +54,26 @@ multiple indexes on the JobTDate column of the Job table in place and clean up
 manually if necessary.
 
    - ``SHOW INDEXES FROM Job;``
-   - E.g. ``DROP INDEX JobTDate_1 ON Job;``
+   - e.g. ``DROP INDEX JobTDate_1 ON Job;``
 
+FreeBSD
+^^^^^^^
+
+Due to a bug in the new included CRC32 library, the endianness was always detected as big endian on FreeBSD.
+This lead to a wrong calculation on FreeBSD systems that use little endian (e.g. amd64).
+
+As a result all volumes written by a |SD| on FreeBSD using version 19.2.4 or 19.2.5 now have wrong block checksums and will become unreadable with this release.
+If you need a workaround to read such volumes, please contact us on the mailing list or open a support case.
 
 Bugs Fixed
 ^^^^^^^^^^
+* :mantis:`1174`: reversed sort order on the restore client selection
+* :mantis:`1175`: bareos crashes with invalid character in ACL
 * :mantis:`1176`: Upgrade 18.2.5 to 19.2.5 failed while upgrading MySQL database
+* :mantis:`1178`: job selection in restore module is populated not properly
+* :mantis:`1180`: CRC checksum algorithm changed between 18.2.7 and 19.2.5, all volumes fail
+* :mantis:`1183`: Error: Connection refused, director seems to be down or blocking our request.
+* :mantis:`1184`: Using syslog or an invalid message type crashes a daemon
 
 
 .. _bareos-1925-releasenotes:
