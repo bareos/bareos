@@ -56,7 +56,7 @@ Progress::Progress(BareosDb* db,
   }
 
   if (a.is_valid) {
-    if (a.amount > limit_amount_of_rows_) {
+    if (limit_amount_of_rows_ && a.amount > limit_amount_of_rows_) {
       // commandline parameter
       a.amount = limit_amount_of_rows_;
     }
@@ -78,8 +78,6 @@ bool Progress::Increment()
   state_.amount = state_.amount != 0 ? state_.amount - 1 : 0;
   if ((state_.amount % 10000) != 0) { return false; }
 
-  state_.ratio =
-      Ratio::num - (state_.amount * Ratio::num) / (full_amount_ * Ratio::den);
 
   state_.start = system_clock::now();
 
@@ -93,6 +91,9 @@ bool Progress::Increment()
 
   state_.eta = system_clock::now() + remaining_time;
 
+  state_.ratio =
+      Ratio::num - (state_.amount * Ratio::num) / (full_amount_ * Ratio::den);
+
   bool changed =
       (state_.ratio != state_old_.ratio) || (state_.eta != state_old_.eta);
 
@@ -101,10 +102,17 @@ bool Progress::Increment()
   return changed;
 }
 
-std::string Progress::Eta() const
+static std::string FormatTime(time_point<system_clock> tp)
 {
   std::ostringstream oss;
-  std::time_t time = system_clock::to_time_t(state_.eta);
+  std::time_t time = system_clock::to_time_t(tp);
   oss << std::put_time(std::localtime(&time), "%F %T");
   return oss.str();
+}
+
+std::string Progress::Eta() const { return FormatTime(state_.eta); }
+
+std::string Progress::TimeOfDay() const
+{
+  return FormatTime(system_clock::now());
 }

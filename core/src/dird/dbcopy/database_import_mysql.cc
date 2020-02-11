@@ -104,7 +104,9 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
 
     Progress progress(db_, t.table_name, limit_amount_of_rows_);
 
-    std::cout << "--> copying..." << std::endl;
+    std::cout << progress.TimeOfDay() << std::endl;
+    std::cout << "--> copying " << progress.FullAmount() << " rows..."
+              << std::endl;
 
     std::string query{"SELECT `"};
     for (const auto& col : t.column_descriptions) {
