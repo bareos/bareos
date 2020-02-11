@@ -3,7 +3,7 @@ Section: admin
 Priority: extra
 Maintainer: packager@bareos.com
 Build-Depends:
-  cmake (>= 3.0.0),
+  cmake (>= 3.0.0) | cmake-mozilla,
   debhelper (>= 8.0.0),
   libjansson-dev,
   bareos-vmware-vix-disklib-dev
