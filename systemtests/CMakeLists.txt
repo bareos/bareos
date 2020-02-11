@@ -461,7 +461,9 @@ else() # run systemtests on source and compiled files
 
   get_target_property(FD_PLUGINS_DIR_TO_TEST bpipe-fd BINARY_DIR)
   get_target_property(SD_PLUGINS_DIR_TO_TEST autoxflate-sd BINARY_DIR)
-  get_target_property(DIR_PLUGINS_DIR_TO_TEST python-dir BINARY_DIR)
+  if(HAVE_PYTHON)
+    get_target_property(DIR_PLUGINS_DIR_TO_TEST python-dir BINARY_DIR)
+  endif()
   get_target_property(BACKEND_DIR_TO_TEST bareoscats BINARY_DIR)
 
   set(SCRIPTS_DIR_TO_TEST ${CMAKE_BINARY_DIR}/core/scripts)
