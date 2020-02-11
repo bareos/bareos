@@ -21,6 +21,34 @@ The feature overview for a release are shown at the :ref:`genindex` of this docu
 Bareos-19.2
 -----------
 
+.. _bareos-1927-releasenotes:
+
+.. _bareos-19.2.7:
+
+Bareos-19.2.7
+~~~~~~~~~~~~~
+
+General Information
+^^^^^^^^^^^^^^^^^^^
+.. list-table:: Bareos 19.2.7 Release Information
+   :header-rows: 0
+   :widths: auto
+
+   * - **Release Date**
+     - UNRELEASED
+   * - **Database Version**
+     -  2192
+   * - **URL**
+     - https://download.bareos.com/bareos/release/19.2/
+   * -
+     - https://download.bareos.org/bareos/release/19.2/
+   * - **Release Ticket**
+     - :mantis:`1187`
+
+Bugs Fixed
+^^^^^^^^^^
+
+
 .. _bareos-1926-releasenotes:
 
 .. _bareos-19.2.6:
