@@ -29,6 +29,7 @@
 class BareosDb;
 
 using std::chrono::milliseconds;
+using std::chrono::seconds;
 using std::chrono::system_clock;
 using std::chrono::time_point;
 
@@ -37,7 +38,7 @@ struct ProgressState {
   time_point<system_clock> start{};
   std::size_t amount{};
   std::size_t ratio{};
-  milliseconds duration;
+  milliseconds duration{};
 };
 
 class Progress {
@@ -54,12 +55,16 @@ class Progress {
   std::size_t FullAmount() const { return state_.amount; }
   std::size_t Rate() const { return state_.ratio; }
 
-  std::string TimeOfDay() const;
   std::string Eta() const;
+  std::string RemainingHours() const;
+  std::string StartTime() const;
+  std::string TimeOfDay() const;
 
  private:
   ProgressState state_;
   ProgressState state_old_;
+  time_point<system_clock> start_time_{};
+  seconds remaining_seconds_{};
   std::size_t full_amount_{};
   bool is_valid_{false};
   bool is_initial_run_{true};

@@ -64,6 +64,7 @@ Progress::Progress(BareosDb* db,
     }
     full_amount_ = a.amount;
     state_.amount = a.amount;
+    start_time_ = system_clock::now();
     state_.start = system_clock::now();
     state_old_ = state_;
     is_valid_ = true;
@@ -94,6 +95,7 @@ bool Progress::Increment()
 
   auto remaining_time =
       (state_.duration) * (state_.amount / (state_old_.amount - state_.amount));
+  remaining_seconds_ = std::chrono::duration_cast<seconds>(remaining_time);
 
   state_.eta = system_clock::now() + remaining_time;
 
@@ -108,17 +110,33 @@ bool Progress::Increment()
   return changed;
 }
 
-static std::string FormatTime(time_point<system_clock> tp)
+static std::string FormatTime(time_point<system_clock> tp,
+                              const char* fmt,
+                              bool is_duration = false)
 {
   std::ostringstream oss;
   std::time_t time = system_clock::to_time_t(tp);
-  oss << std::put_time(std::localtime(&time), "%F %T");
+  if (is_duration) {
+    oss << std::put_time(std::gmtime(&time), fmt);
+  } else
+    oss << std::put_time(std::localtime(&time), fmt);
   return oss.str();
 }
 
-std::string Progress::Eta() const { return FormatTime(state_.eta); }
+std::string Progress::Eta() const { return FormatTime(state_.eta, "%F %T"); }
 
 std::string Progress::TimeOfDay() const
 {
-  return FormatTime(system_clock::now());
+  return FormatTime(system_clock::now(), "%F %T");
+}
+
+std::string Progress::StartTime() const
+{
+  return FormatTime(start_time_, "%F %T");
+}
+
+std::string Progress::RemainingHours() const
+{
+  return FormatTime(time_point<system_clock>() + remaining_seconds_, "%F %T",
+                    true);
 }
