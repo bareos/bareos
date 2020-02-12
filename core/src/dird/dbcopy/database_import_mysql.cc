@@ -203,7 +203,9 @@ int DatabaseImportMysql::ResultHandlerCopy(void* ctx, int fields, char** row)
 
   if (r->progress.Increment()) {
     std::cout << std::setw(7) << r->progress.Rate() << "%"
-              << " ETA:" << r->progress.Eta() << std::endl;
+              << " ETA:" << r->progress.Eta()  // estimated time of arrival
+              << " (" << r->progress.RemainingHours() << " remaining)"
+              << " Started:" << r->progress.StartTime() << std::endl;
   }
   return 0;
 }
