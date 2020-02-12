@@ -41,7 +41,6 @@ DatabaseImportMysql::DatabaseImportMysql(
     : DatabaseImport(db_connection)
     , limit_amount_of_rows_(maximum_amount_of_rows_in)
 {
-  return;
 }
 
 struct ResultHandlerContext {
@@ -128,7 +127,6 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
 
     exporter.EndTable(t.table_name);
     std::cout << "--> success" << std::endl;
-    // std::cout << query << std::endl << std::endl;
   }
 }
 
@@ -175,7 +173,7 @@ void DatabaseImportMysql::FillRowWithDatabaseResult(ResultHandlerContext* r,
   std::size_t number_of_fields = r->column_descriptions.size();
 
   if (r->is_restore_object) {
-    ++number_of_fields;  // one more for length_of_restore_object
+    ++number_of_fields;  // one more for the length_of_restore_object
   }
 
   if (fields != static_cast<int>(number_of_fields)) {
