@@ -44,29 +44,6 @@ DatabaseImportMysql::DatabaseImportMysql(
   return;
 }
 
-class Stopwatch {
- public:
-  void Start() { start_ = std::chrono::steady_clock::now(); }
-  void Stop() { end_ = std::chrono::steady_clock::now(); }
-  void PrintDurationToStdout()
-  {
-    auto duration = end_ - start_;
-    auto c(std::chrono::duration_cast<std::chrono::milliseconds>(duration)
-               .count());
-    std::ostringstream oss;
-    oss << std::setfill('0')            // set field fill character to '0'
-        << (c % 1000000) / 1000 << "s"  // format seconds
-        << "::" << std::setw(3)         // set width of milliseconds field
-        << (c % 1000) << "ms";          // format milliseconds
-
-    std::cout << "Duration: " << oss.str() << std::endl;
-  }
-
- private:
-  std::chrono::time_point<std::chrono::steady_clock> start_;
-  std::chrono::time_point<std::chrono::steady_clock> end_;
-};
-
 struct ResultHandlerContext {
   ResultHandlerContext(
       const DatabaseColumnDescriptions::VectorOfColumnDescriptions& c,
@@ -157,19 +134,9 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
 
 void DatabaseImportMysql::ExportTo(DatabaseExport& exporter)
 {
-  Stopwatch stopwatch;
-  stopwatch.Start();
-
   exporter.CopyStart();
-
   RunQuerySelectAllRows(ResultHandlerCopy, exporter);
-
   exporter.CopyEnd();
-
-  stopwatch.Stop();
-#if 0
-  stopwatch.PrintDurationToStdout();
-#endif
 }
 
 void DatabaseImportMysql::CompareWith(DatabaseExport& exporter)
