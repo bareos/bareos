@@ -49,6 +49,7 @@ class Progress {
   bool Increment();
 
   using Ratio = std::ratio<100, 1>;
+  static constexpr std::size_t number_of_rows_per_increment_ = 250000;
 
   std::size_t FullAmount() const { return state_.amount; }
   std::size_t Rate() const { return state_.ratio; }
