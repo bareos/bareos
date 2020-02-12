@@ -46,7 +46,7 @@ Progress::Progress(BareosDb* db,
                    const std::string& table_name,
                    std::size_t limit_amount_of_rows_)
 {
-  std::cout << "--> request number of rows to be copied" << std::endl;
+  std::cout << "--> requesting number of rows to be copied..." << std::endl;
 
   Amount a;
   std::string query{"SELECT count(*) from " + table_name};
@@ -85,7 +85,12 @@ bool Progress::Increment()
   milliseconds duration =
       std::chrono::duration_cast<milliseconds>(state_.start - state_old_.start);
 
-  state_.duration = (state_old_.duration + duration) / 2;
+  if (is_initial_run_) {
+    state_.duration = duration;
+    is_initial_run_ = false;
+  } else {
+    state_.duration = (state_old_.duration + duration) / 2;
+  }
 
   auto remaining_time =
       (state_.duration) * (state_.amount / (state_old_.amount - state_.amount));

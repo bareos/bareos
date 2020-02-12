@@ -62,6 +62,7 @@ class Progress {
   ProgressState state_old_;
   std::size_t full_amount_{};
   bool is_valid_{false};
+  bool is_initial_run_{true};
 };
 
 #endif  // BAREOS_SRC_DIRD_DBCOPY_PROGRESS_H_
