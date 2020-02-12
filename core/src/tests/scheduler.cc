@@ -236,14 +236,12 @@ TEST_F(SchedulerTest, hourly)
   EXPECT_FALSE(average_time_between_adjacent_jobs_is_too_high);
 }
 
-TEST_F(SchedulerTest, on_time)
+
+static void TestWithConfig(std::string path_to_config_file)
 {
   InitMsg(NULL, NULL);
 
   if (debug) { std::cout << "Start test" << std::endl; }
-
-  std::string path_to_config_file{
-      std::string(RELATIVE_PROJECT_SOURCE_DIR "/configs/scheduler-on-time")};
 
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   ASSERT_TRUE(my_config);
@@ -273,6 +271,17 @@ TEST_F(SchedulerTest, on_time)
 
   if (debug) { std::cout << "End" << std::endl; }
   delete my_config;
+}
+
+TEST_F(SchedulerTest, on_time)
+{
+  TestWithConfig(RELATIVE_PROJECT_SOURCE_DIR "/configs/scheduler-on-time");
+}
+
+TEST_F(SchedulerTest, on_time_noday)
+{
+  TestWithConfig(RELATIVE_PROJECT_SOURCE_DIR
+                 "/configs/scheduler-on-time-noday");
 }
 
 TEST_F(SchedulerTest, add_job_with_no_run_resource_to_queue)
