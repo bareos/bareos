@@ -70,7 +70,7 @@ struct ResultHandlerContext {
 
 static void PrintCopyStartToStdout(const Progress& progress)
 {
-  if (progress.FullAmount() != 0) {
+  if (progress.FullNumberOfRows() != 0) {
     std::cout << "--> copying " << progress.FullAmount() << " rows..."
               << std::endl;
     std::cout << "--> Start: " << progress.TimeOfDay() << std::endl;
@@ -204,8 +204,9 @@ int DatabaseImportMysql::ResultHandlerCopy(void* ctx, int fields, char** row)
   if (r->progress.Increment()) {
     std::cout << std::setw(7) << r->progress.Rate() << "%"
               << " ETA:" << r->progress.Eta()  // estimated time of arrival
-              << " (" << r->progress.RemainingHours() << " remaining)"
-              << " Started:" << r->progress.StartTime() << std::endl;
+              << " (running:" << r->progress.RunningHours() << ","
+              << " remaining:" << r->progress.RemainingHours() << ")"
+              << std::endl;
   }
   return 0;
 }

@@ -22,9 +22,11 @@
 #include "include/bareos.h"
 #include "cats/cats.h"
 #include "dird/dbcopy/progress.h"
+#include "include/make_unique.h"
 
 #include <iomanip>
 #include <iostream>
+#include <locale>
 #include <sstream>
 #include <thread>
 
@@ -97,7 +99,7 @@ bool Progress::Increment()
       (state_.duration) * (state_.amount / (state_old_.amount - state_.amount));
   remaining_seconds_ = std::chrono::duration_cast<seconds>(remaining_time);
 
-  state_.eta = system_clock::now() + remaining_time;
+  state_.eta = system_clock::now() + remaining_seconds_;
 
   state_.ratio =
       Ratio::num - (state_.amount * Ratio::num) / (full_amount_ * Ratio::den);
@@ -110,33 +112,64 @@ bool Progress::Increment()
   return changed;
 }
 
-static std::string FormatTime(time_point<system_clock> tp,
-                              const char* fmt,
-                              bool is_duration = false)
+struct separate_thousands : std::numpunct<char> {
+  char_type do_thousands_sep() const override { return '\''; }
+  string_type do_grouping() const override { return "\3"; }
+};
+
+std::string Progress::FullAmount() const
+{
+  auto thousands = std::make_unique<separate_thousands>();
+  std::stringstream ss;
+  ss.imbue(std::locale(std::cout.getloc(), thousands.release()));
+  ss << full_amount_;
+  return ss.str();
+}
+
+static std::string FormatTime(time_point<system_clock> tp)
 {
   std::ostringstream oss;
   std::time_t time = system_clock::to_time_t(tp);
-  if (is_duration) {
-    oss << std::put_time(std::gmtime(&time), fmt);
-  } else
-    oss << std::put_time(std::localtime(&time), fmt);
+  oss << std::put_time(std::localtime(&time), "%F %T");
   return oss.str();
 }
 
-std::string Progress::Eta() const { return FormatTime(state_.eta, "%F %T"); }
+std::string Progress::Eta() const { return FormatTime(state_.eta); }
 
 std::string Progress::TimeOfDay() const
 {
-  return FormatTime(system_clock::now(), "%F %T");
+  return FormatTime(system_clock::now());
 }
 
-std::string Progress::StartTime() const
-{
-  return FormatTime(start_time_, "%F %T");
-}
+std::string Progress::StartTime() const { return FormatTime(start_time_); }
+
+struct Time {
+  Time(seconds duration)
+  {
+    hours = duration.count() / 3600;
+    min = (duration.count() % 3600) / 60;
+    sec = duration.count() % 60;
+  }
+  int hours, min, sec;
+};
 
 std::string Progress::RemainingHours() const
 {
-  return FormatTime(time_point<system_clock>() + remaining_seconds_, "%F %T",
-                    true);
+  Time duration(remaining_seconds_);
+
+  std::array<char, 100> buffer;
+  sprintf(buffer.data(), "%0dh%02dm%02ds", duration.hours, duration.min,
+          duration.sec);
+  return std::string(buffer.data());
+}
+
+std::string Progress::RunningHours() const
+{
+  Time duration(
+      std::chrono::duration_cast<seconds>(system_clock::now() - start_time_));
+
+  std::array<char, 100> buffer;
+  sprintf(buffer.data(), "%0dh%02dm%02ds", duration.hours, duration.min,
+          duration.sec);
+  return std::string(buffer.data());
 }
