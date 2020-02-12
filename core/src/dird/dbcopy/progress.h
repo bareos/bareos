@@ -52,10 +52,12 @@ class Progress {
   using Ratio = std::ratio<100, 1>;
   static constexpr std::size_t number_of_rows_per_increment_ = 250000;
 
-  std::size_t FullAmount() const { return state_.amount; }
+  std::size_t FullNumberOfRows() const { return full_amount_; }
   std::size_t Rate() const { return state_.ratio; }
 
   std::string Eta() const;
+  std::string FullAmount() const;
+  std::string RunningHours() const;
   std::string RemainingHours() const;
   std::string StartTime() const;
   std::string TimeOfDay() const;
