@@ -162,7 +162,7 @@ class DbCopy {
 #endif
           case 'l':
             try {
-              maximum_number_of_rows = std::atoi(optarg);
+              maximum_number_of_rows = std::stoul(optarg);
             } catch (...) {
               throw std::runtime_error("Wrong argument for 'l'");
             }
