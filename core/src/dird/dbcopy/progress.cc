@@ -84,8 +84,6 @@ bool Progress::Increment()
       std::chrono::duration_cast<milliseconds>(state_.start - state_old_.start);
 
   state_.duration = (state_old_.duration + duration) / 2;
-  std::cout << duration.count() << "mean: " << state_.duration.count()
-            << std::endl;
 
   auto remaining_time =
       (state_.duration) * (state_.amount / (state_old_.amount - state_.amount));
