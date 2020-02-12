@@ -56,7 +56,7 @@ Progress::Progress(BareosDb* db,
   }
 
   if (a.is_valid) {
-    if (limit_amount_of_rows_ && a.amount > limit_amount_of_rows_) {
+    if (limit_amount_of_rows_ != 0 && a.amount > limit_amount_of_rows_) {
       // commandline parameter
       a.amount = limit_amount_of_rows_;
     }
