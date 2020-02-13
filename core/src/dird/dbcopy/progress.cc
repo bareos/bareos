@@ -24,6 +24,7 @@
 #include "dird/dbcopy/progress.h"
 #include "include/make_unique.h"
 
+#include <array>
 #include <iomanip>
 #include <iostream>
 #include <locale>
@@ -128,10 +129,12 @@ std::string Progress::FullAmount() const
 
 static std::string FormatTime(time_point<system_clock> tp)
 {
-  std::ostringstream oss;
   std::time_t time = system_clock::to_time_t(tp);
-  oss << std::put_time(std::localtime(&time), "%F %T");
-  return oss.str();
+  std::array<char, 100> buffer;
+
+  std::strftime(buffer.data(), buffer.size(), "%F %T", std::localtime(&time));
+
+  return std::string(buffer.data());
 }
 
 std::string Progress::Eta() const { return FormatTime(state_.eta); }
