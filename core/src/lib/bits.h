@@ -67,7 +67,7 @@
 /*
  * Clear range of bits
  */
-#define ClearBits(f, l, var)                                 \
+#define ClearBitRange(f, l, var)                             \
   {                                                          \
     int bit;                                                 \
     for (bit = (f); bit <= (l); bit++) ClearBit(bit, (var)); \
