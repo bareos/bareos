@@ -691,7 +691,7 @@ bool BareosDbMysql::SqlFieldIsNumeric(int field_type)
  * Returns true if OK
  *         false if failed
  */
-bool BareosDbMysql::SqlBatchStart(JobControlRecord* jcr)
+bool BareosDbMysql::SqlBatchStartFileTable(JobControlRecord* jcr)
 {
   bool retval;
 
@@ -722,7 +722,7 @@ bool BareosDbMysql::SqlBatchStart(JobControlRecord* jcr)
  * Returns true if OK
  *         false if failed
  */
-bool BareosDbMysql::SqlBatchEnd(JobControlRecord* jcr, const char* error)
+bool BareosDbMysql::SqlBatchEndFileTable(JobControlRecord* jcr, const char* error)
 {
   status_ = 0;
 
@@ -738,7 +738,7 @@ bool BareosDbMysql::SqlBatchEnd(JobControlRecord* jcr, const char* error)
  * Returns true if OK
  *         false if failed
  */
-bool BareosDbMysql::SqlBatchInsert(JobControlRecord* jcr,
+bool BareosDbMysql::SqlBatchInsertFileTable(JobControlRecord* jcr,
                                    AttributesDbRecord* ar)
 {
   const char* digest;

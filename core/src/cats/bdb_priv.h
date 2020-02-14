@@ -64,10 +64,10 @@ class BareosDbPrivateInterface : public BareosDb {
   virtual SQL_FIELD* SqlFetchField(void) override = 0;
   virtual bool SqlFieldIsNotNull(int field_type) override = 0;
   virtual bool SqlFieldIsNumeric(int field_type) override = 0;
-  virtual bool SqlBatchStart(JobControlRecord* jcr) override = 0;
-  virtual bool SqlBatchEnd(JobControlRecord* jcr,
+  virtual bool SqlBatchStartFileTable(JobControlRecord* jcr) override = 0;
+  virtual bool SqlBatchEndFileTable(JobControlRecord* jcr,
                            const char* error) override = 0;
-  virtual bool SqlBatchInsert(JobControlRecord* jcr,
+  virtual bool SqlBatchInsertFileTable(JobControlRecord* jcr,
                               AttributesDbRecord* ar) override = 0;
 
  public:

@@ -1019,11 +1019,11 @@ static char* pgsql_copy_escape(char* dest, char* src, size_t len)
   return dest;
 }
 
-bool BareosDbPostgresql::SqlBatchStart(JobControlRecord* jcr)
+bool BareosDbPostgresql::SqlBatchStartFileTable(JobControlRecord* jcr)
 {
   const char* query = "COPY batch FROM STDIN";
 
-  Dmsg0(500, "SqlBatchStart started\n");
+  Dmsg0(500, "SqlBatchStartFileTable started\n");
 
   if (!SqlQueryWithoutHandler("CREATE TEMPORARY TABLE batch ("
                               "FileIndex int,"
@@ -1035,7 +1035,7 @@ bool BareosDbPostgresql::SqlBatchStart(JobControlRecord* jcr)
                               "DeltaSeq smallint,"
                               "Fhinfo NUMERIC(20),"
                               "Fhnode NUMERIC(20))")) {
-    Dmsg0(500, "SqlBatchStart failed\n");
+    Dmsg0(500, "SqlBatchStartFileTable failed\n");
     return false;
   }
 
@@ -1071,7 +1071,7 @@ bool BareosDbPostgresql::SqlBatchStart(JobControlRecord* jcr)
     goto bail_out;
   }
 
-  Dmsg0(500, "SqlBatchStart finishing\n");
+  Dmsg0(500, "SqlBatchStartFileTable finishing\n");
 
   return true;
 
@@ -1086,13 +1086,14 @@ bail_out:
 /**
  * Set error to something to abort operation
  */
-bool BareosDbPostgresql::SqlBatchEnd(JobControlRecord* jcr, const char* error)
+bool BareosDbPostgresql::SqlBatchEndFileTable(JobControlRecord* jcr,
+                                              const char* error)
 {
   int res;
   int count = 30;
   PGresult* pg_result;
 
-  Dmsg0(500, "SqlBatchEnd started\n");
+  Dmsg0(500, "SqlBatchEndFileTable started\n");
 
   do {
     res = PQputCopyEnd(db_handle_, error);
@@ -1121,13 +1122,13 @@ bool BareosDbPostgresql::SqlBatchEnd(JobControlRecord* jcr, const char* error)
 
   PQclear(pg_result);
 
-  Dmsg0(500, "SqlBatchEnd finishing\n");
+  Dmsg0(500, "SqlBatchEndFileTable finishing\n");
 
   return true;
 }
 
-bool BareosDbPostgresql::SqlBatchInsert(JobControlRecord* jcr,
-                                        AttributesDbRecord* ar)
+bool BareosDbPostgresql::SqlBatchInsertFileTable(JobControlRecord* jcr,
+                                                 AttributesDbRecord* ar)
 {
   int res;
   int count = 30;
@@ -1170,7 +1171,7 @@ bool BareosDbPostgresql::SqlBatchInsert(JobControlRecord* jcr,
     Dmsg1(500, "failure %s\n", errmsg);
   }
 
-  Dmsg0(500, "SqlBatchInsert finishing\n");
+  Dmsg0(500, "SqlBatchInsertFileTable finishing\n");
 
   return true;
 }

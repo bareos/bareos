@@ -576,7 +576,7 @@ bool BareosDbSqlite::SqlFieldIsNumeric(int field_type)
  * Returns true if OK
  *         false if failed
  */
-bool BareosDbSqlite::SqlBatchStart(JobControlRecord* jcr)
+bool BareosDbSqlite::SqlBatchStartFileTable(JobControlRecord* jcr)
 {
   bool retval;
 
@@ -603,7 +603,7 @@ bool BareosDbSqlite::SqlBatchStart(JobControlRecord* jcr)
  * Returns true if OK
  *         false if failed
  */
-bool BareosDbSqlite::SqlBatchEnd(JobControlRecord* jcr, const char* error)
+bool BareosDbSqlite::SqlBatchEndFileTable(JobControlRecord* jcr, const char* error)
 {
   status_ = 0;
 
@@ -614,7 +614,7 @@ bool BareosDbSqlite::SqlBatchEnd(JobControlRecord* jcr, const char* error)
  * Returns true if OK
  *         false if failed
  */
-bool BareosDbSqlite::SqlBatchInsert(JobControlRecord* jcr,
+bool BareosDbSqlite::SqlBatchInsertFileTable(JobControlRecord* jcr,
                                     AttributesDbRecord* ar)
 {
   const char* digest;

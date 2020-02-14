@@ -1081,9 +1081,9 @@ class BareosDb : public BareosDbQueryEnum {
   virtual SQL_FIELD* SqlFetchField(void) = 0;
   virtual bool SqlFieldIsNotNull(int field_type) = 0;
   virtual bool SqlFieldIsNumeric(int field_type) = 0;
-  virtual bool SqlBatchStart(JobControlRecord* jcr) = 0;
-  virtual bool SqlBatchEnd(JobControlRecord* jcr, const char* error) = 0;
-  virtual bool SqlBatchInsert(JobControlRecord* jcr,
+  virtual bool SqlBatchStartFileTable(JobControlRecord* jcr) = 0;
+  virtual bool SqlBatchEndFileTable(JobControlRecord* jcr, const char* error) = 0;
+  virtual bool SqlBatchInsertFileTable(JobControlRecord* jcr,
                               AttributesDbRecord* ar) = 0;
 #endif
 };

@@ -62,9 +62,9 @@ class BareosDbSqlite : public BareosDbPrivateInterface {
   SQL_FIELD* SqlFetchField(void) override;
   bool SqlFieldIsNotNull(int field_type) override;
   bool SqlFieldIsNumeric(int field_type) override;
-  bool SqlBatchStart(JobControlRecord* jcr) override;
-  bool SqlBatchEnd(JobControlRecord* jcr, const char* error) override;
-  bool SqlBatchInsert(JobControlRecord* jcr, AttributesDbRecord* ar) override;
+  bool SqlBatchStartFileTable(JobControlRecord* jcr) override;
+  bool SqlBatchEndFileTable(JobControlRecord* jcr, const char* error) override;
+  bool SqlBatchInsertFileTable(JobControlRecord* jcr, AttributesDbRecord* ar) override;
 
  public:
   /*
