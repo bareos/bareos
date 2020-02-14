@@ -201,6 +201,25 @@ For the Always Incremental Backup Scheme at least two storages are needed. See :
 
 :config:option:`dir/pool = AI-Longterm`\  is optional and will be explained in :ref:`section-AlwaysIncrementalLongTermStorage`.
 
+
+.. warning::
+
+   Please note that the :config:option:`dir/pool/Volume Retention` should be
+   set to a **very high** value. This means that the value needs to be higher
+   than the maximum time that a job might be kept on a volume during the always
+   incremental backup scheme.  The value needs to be more than
+   :config:option:`dir/job/AlwaysIncrementalMaxFullAge`.
+
+   We suggest to set :config:option:`dir/pool/Volume Retention` to one year or
+   2-3 times the :config:option:`dir/job/AlwaysIncrementalMaxFullAge`.
+   This makes sure that the jobs being stored on the volumes are not pruned
+   prematurely.
+
+   When performing the always incremental scheme, the jobs are **never** pruned
+   by the volume pruning mechanism. The jobs are pruned from the volumes after
+   they have been successfully consolidated, so that the volume pruning
+   mechanism should **not trigger at all**.
+
 How it works
 ------------
 
