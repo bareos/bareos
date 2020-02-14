@@ -68,5 +68,9 @@ void SetWorkingDirectory(const char* wd);
 const char* last_path_separator(const char* str);
 void SortCaseInsensitive(std::vector<std::string>& v);
 std::string getenv_std_string(std::string env_var);
+void ToLowerCase(const std::string& i1,
+                 const std::string& i2,
+                 std::string& o1,
+                 std::string& o2);
 
 #endif  // BAREOS_LIB_UTIL_H_

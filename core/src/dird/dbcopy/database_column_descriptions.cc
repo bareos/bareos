@@ -23,6 +23,7 @@
 #include "include/make_unique.h"
 #include "cats/cats.h"
 #include "dird/dbcopy/database_column_descriptions.h"
+#include "lib/util.h"
 
 #include <algorithm>
 #include <iostream>
@@ -43,7 +44,9 @@ void DatabaseColumnDescriptions::SelectColumnDescriptions(
   std::sort(column_descriptions.begin(), column_descriptions.end(),
             [](const std::unique_ptr<ColumnDescription>& v1,
                const std::unique_ptr<ColumnDescription>& v2) {
-              return v1->column_name < v2->column_name;
+              std::string l1, l2;
+              ToLowerCase(v1->column_name, v2->column_name, l1, l2);
+              return l1 < l2;
             });
 }
 
