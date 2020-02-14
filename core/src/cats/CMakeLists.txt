@@ -38,9 +38,9 @@ set(LIBBAREOSCATS_SRCS cats_backends.cc)
 
 set(SQLITE_SRCS sqlite.cc ${LIBBAREOSCATS_SRCS})
 
-set(MYSQL_SRCS mysql.cc ${LIBBAREOSCATS_SRCS})
+set(MYSQL_SRCS mysql.cc mysql_batch.cc ${LIBBAREOSCATS_SRCS})
 
-set(POSTGRESQL_SRCS postgresql.cc ${LIBBAREOSCATS_SRCS})
+set(POSTGRESQL_SRCS postgresql.cc postgresql_batch.cc ${LIBBAREOSCATS_SRCS})
 
 add_library(bareossql SHARED ${LIBBAREOSSQL_SRCS})
 

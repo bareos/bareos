@@ -76,7 +76,8 @@ class BareosDbPostgresql : public BareosDbPrivateInterface {
   bool SqlFieldIsNumeric(int field_type) override;
   bool SqlBatchStartFileTable(JobControlRecord* jcr) override;
   bool SqlBatchEndFileTable(JobControlRecord* jcr, const char* error) override;
-  bool SqlBatchInsertFileTable(JobControlRecord* jcr, AttributesDbRecord* ar) override;
+  bool SqlBatchInsertFileTable(JobControlRecord* jcr,
+                               AttributesDbRecord* ar) override;
 
   bool CheckDatabaseEncoding(JobControlRecord* jcr);
 
