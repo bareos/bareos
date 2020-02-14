@@ -120,7 +120,7 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
 
     bool is_restore_object = false;
     if (t.table_name == "RestoreObject") {
-      query += ", length(`RestoreObject`) as `length_of_restore_object`";
+      query += ", length(`RestoreObject`) as `size_of_restore_object`";
       is_restore_object = true;
     }
 
@@ -180,7 +180,7 @@ static void ReadoutSizeOfRestoreObject(ResultHandlerContext* r,
   }
 
   std::istringstream(row[field_index_longblob]) >>
-      row_data.columns[index_of_restore_object].size;
+      row_data.columns[index_of_restore_object].size_of_restore_object;
 }
 
 
@@ -191,7 +191,7 @@ void DatabaseImportMysql::FillRowWithDatabaseResult(ResultHandlerContext* r,
   std::size_t number_of_fields = r->column_descriptions.size();
 
   if (r->is_restore_object) {
-    ++number_of_fields;  // one more for the length_of_restore_object
+    ++number_of_fields;  // one more for the size_of_restore_object
   }
 
   if (fields != static_cast<int>(number_of_fields)) {

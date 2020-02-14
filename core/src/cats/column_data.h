@@ -27,7 +27,7 @@
 #include <vector>
 
 struct ColumnData {
-  std::size_t length_of_restore_object{};
+  std::size_t size_of_restore_object{};
   const char* data_pointer{};
   std::vector<char> converted_data;
 };

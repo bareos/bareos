@@ -62,7 +62,7 @@ static void string_conversion_postgresql(BareosDb* db, ColumnData& fd)
 static void bytea_conversion_postgresql(BareosDb* db, ColumnData& fd)
 {
   std::size_t new_len{};
-  std::size_t old_len = fd.length_of_restore_object;
+  std::size_t old_len = fd.size_of_restore_object;
 
   auto old = reinterpret_cast<const unsigned char*>(fd.data_pointer);
 
