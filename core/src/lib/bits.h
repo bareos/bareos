@@ -58,7 +58,7 @@
 /*
  * Set range of bits
  */
-#define SetBits(f, l, var)                                 \
+#define SetBitRange(f, l, var)                             \
   {                                                        \
     int bit;                                               \
     for (bit = (f); bit <= (l); bit++) SetBit(bit, (var)); \
