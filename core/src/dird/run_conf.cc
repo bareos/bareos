@@ -419,35 +419,35 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
         continue;
       case s_mday: /* Day of month */
         if (!have_mday) {
-          ClearBits(0, 30, res_run->date_time_bitfield.mday);
+          ClearBitRange(0, 30, res_run->date_time_bitfield.mday);
           have_mday = true;
         }
         SetBit(code, res_run->date_time_bitfield.mday);
         break;
       case s_month: /* Month of year */
         if (!have_month) {
-          ClearBits(0, 11, res_run->date_time_bitfield.month);
+          ClearBitRange(0, 11, res_run->date_time_bitfield.month);
           have_month = true;
         }
         SetBit(code, res_run->date_time_bitfield.month);
         break;
       case s_wday: /* Week day */
         if (!have_wday) {
-          ClearBits(0, 6, res_run->date_time_bitfield.wday);
+          ClearBitRange(0, 6, res_run->date_time_bitfield.wday);
           have_wday = true;
         }
         SetBit(code, res_run->date_time_bitfield.wday);
         break;
       case s_wom: /* Week of month 1st, ... */
         if (!have_wom) {
-          ClearBits(0, 4, res_run->date_time_bitfield.wom);
+          ClearBitRange(0, 4, res_run->date_time_bitfield.wom);
           have_wom = true;
         }
         SetBit(code, res_run->date_time_bitfield.wom);
         break;
       case s_woy:
         if (!have_woy) {
-          ClearBits(0, 53, res_run->date_time_bitfield.woy);
+          ClearBitRange(0, 53, res_run->date_time_bitfield.woy);
           have_woy = true;
         }
         SetBit(code, res_run->date_time_bitfield.woy);
@@ -457,7 +457,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
           scan_err0(lc, _("Time must be preceded by keyword AT."));
           /* NOT REACHED */
         }
-        if (!have_hour) { ClearBits(0, 23, res_run->date_time_bitfield.hour); }
+        if (!have_hour) { ClearBitRange(0, 23, res_run->date_time_bitfield.hour); }
         //       Dmsg1(000, "s_time=%s\n", lc->str);
         p = strchr(lc->str, ':');
         if (!p) {
@@ -508,7 +508,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
       case s_last:
         res_run->date_time_bitfield.last_week_of_month = true;
         if (!have_wom) {
-          ClearBits(0, 4, res_run->date_time_bitfield.wom);
+          ClearBitRange(0, 4, res_run->date_time_bitfield.wom);
           have_wom = true;
         }
         break;
@@ -531,7 +531,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
                             "than modulo."));
           }
           if (!have_mday) {
-            ClearBits(0, 30, res_run->date_time_bitfield.mday);
+            ClearBitRange(0, 30, res_run->date_time_bitfield.mday);
             have_mday = true;
           }
           /*
@@ -559,7 +559,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
                             "must always be <= than modulo."));
           }
           if (!have_woy) {
-            ClearBits(0, 53, res_run->date_time_bitfield.woy);
+            ClearBitRange(0, 53, res_run->date_time_bitfield.woy);
             have_woy = true;
           }
           /*
@@ -590,7 +590,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             scan_err0(lc, _("Bad day range specification."));
           }
           if (!have_mday) {
-            ClearBits(0, 30, res_run->date_time_bitfield.mday);
+            ClearBitRange(0, 30, res_run->date_time_bitfield.mday);
             have_mday = true;
           }
           if (code < code2) {
@@ -612,7 +612,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             scan_err0(lc, _("Week number out of range (0-53)"));
           }
           if (!have_woy) {
-            ClearBits(0, 53, res_run->date_time_bitfield.woy);
+            ClearBitRange(0, 53, res_run->date_time_bitfield.woy);
             have_woy = true;
           }
           if (code < code2) {
@@ -658,7 +658,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
           }
           if (state == s_wday) {
             if (!have_wday) {
-              ClearBits(0, 6, res_run->date_time_bitfield.wday);
+              ClearBitRange(0, 6, res_run->date_time_bitfield.wday);
               have_wday = true;
             }
             if (code < code2) {
@@ -669,7 +669,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             }
           } else if (state == s_month) {
             if (!have_month) {
-              ClearBits(0, 11, res_run->date_time_bitfield.month);
+              ClearBitRange(0, 11, res_run->date_time_bitfield.month);
               have_month = true;
             }
             if (code < code2) {
@@ -686,7 +686,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
              * Must be position
              */
             if (!have_wom) {
-              ClearBits(0, 4, res_run->date_time_bitfield.wom);
+              ClearBitRange(0, 4, res_run->date_time_bitfield.wom);
               have_wom = true;
             }
             if (code < code2) {
