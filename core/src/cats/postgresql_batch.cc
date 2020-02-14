@@ -238,4 +238,65 @@ bool BareosDbPostgresql::SqlBatchInsertFileTable(JobControlRecord* jcr,
   return true;
 }
 
+
+bool BareosDbPostgresql::SqlCopyStart(
+    const std::string& table_name,
+    const std::vector<std::string>& column_names)
+{
+  Dmsg0(500, "SqlCopyStart started\n");
+
+  /*
+   * We are starting a new query.  reset everything.
+   */
+  num_rows_ = -1;
+  row_number_ = -1;
+  field_number_ = -1;
+
+  SqlFreeResult();
+
+  std::string query_copy{"COPY " + table_name + " FROM STDIN"};
+
+  for (int i = 0; i < 10; i++) {
+    result_ = PQexec(db_handle_, query_copy.c_str());
+    if (result_) { break; }
+    Bmicrosleep(5, 0);
+  }
+  if (!result_) {
+    Dmsg1(50, "Query failed: %s\n", query);
+    goto bail_out;
+  }
+
+  status_ = PQresultStatus(result_);
+  if (status_ == PGRES_COPY_IN) {
+    /*
+     * How many fields in the set?
+     */
+    num_fields_ = (int)PQnfields(result_);
+    num_rows_ = 0;
+    status_ = 1;
+  } else {
+    Dmsg1(50, "Result status failed: %s\n", query);
+    goto bail_out;
+  }
+
+  Dmsg0(500, "SqlBatchStartFileTable finishing\n");
+
+  return true;
+
+bail_out:
+  Mmsg1(errmsg, _("error starting batch mode: %s"), PQerrorMessage(db_handle_));
+  status_ = 0;
+  PQclear(result_);
+  result_ = NULL;
+  return false;
+}
+
+bool BareosDbPostgresql::SqlCopyInsert(const std::vector<ColumnData>& columns)
+{
+  return false;
+}
+
+bool BareosDbPostgresql::SqlCopyEnd() { return false; }
+
+
 #endif  // HAVE_POSTGRESQL
