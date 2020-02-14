@@ -280,16 +280,27 @@ static void TestWithConfig(std::string path_to_config_file,
   delete my_config;
 }
 
+enum
+{
+  kMonday = 1,
+  kTuesday = 2,
+  kWednesday = 3,
+  kThursday = 4,
+  kFriday = 5,
+  kSaturday = 6,
+  kSunday = 7
+};
+
 TEST_F(SchedulerTest, on_time)
 {
-  std::vector<uint8_t> wdays{1, 1, 1};
+  std::vector<uint8_t> wdays{kMonday, kMonday, kMonday};
   TestWithConfig(RELATIVE_PROJECT_SOURCE_DIR "/configs/scheduler-on-time",
                  wdays);
 }
 
 TEST_F(SchedulerTest, on_time_noday)
 {
-  std::vector<uint8_t> wdays{4, 5, 6};
+  std::vector<uint8_t> wdays{kThursday, kFriday, kSaturday};
   TestWithConfig(RELATIVE_PROJECT_SOURCE_DIR "/configs/scheduler-on-time-noday",
                  wdays);
 }
