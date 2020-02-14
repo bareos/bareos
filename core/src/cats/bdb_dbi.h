@@ -70,9 +70,9 @@ class BareosDbDBI : public BareosDbPrivateInterface {
   SQL_FIELD* SqlFetchField(void);
   bool SqlFieldIsNotNull(int field_type);
   bool SqlFieldIsNumeric(int field_type);
-  bool SqlBatchStart(JobControlRecord* jcr);
-  bool SqlBatchEnd(JobControlRecord* jcr, const char* error);
-  bool SqlBatchInsert(JobControlRecord* jcr, AttributesDbRecord* ar);
+  bool SqlBatchStartFileTable(JobControlRecord* jcr);
+  bool SqlBatchEndFileTable(JobControlRecord* jcr, const char* error);
+  bool SqlBatchInsertFileTable(JobControlRecord* jcr, AttributesDbRecord* ar);
 
  public:
   /*
