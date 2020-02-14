@@ -36,6 +36,7 @@
 #define BAREOS_CATS_CATS_H_ 1
 
 #include "include/bareos.h"
+#include "cats/column_data.h"
 #include "lib/output_formatter.h"
 
 class dlist;
@@ -1059,6 +1060,11 @@ class BareosDb : public BareosDbQueryEnum {
   {
     return SqlQuery(query, ResultHandler, ctx);
   }
+
+  virtual bool SqlCopyStart(const std::string& table_name,
+                             const std::vector<std::string>& field_names) = 0;
+  virtual bool SqlCopyInsert(const std::vector<ColumnData>& columns) = 0;
+  virtual bool SqlCopyEnd() = 0;
 
 #ifdef _BDB_PRIV_INTERFACE_
   /*

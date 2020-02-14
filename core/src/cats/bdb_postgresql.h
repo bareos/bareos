@@ -78,6 +78,10 @@ class BareosDbPostgresql : public BareosDbPrivateInterface {
   bool SqlBatchEndFileTable(JobControlRecord* jcr, const char* error) override;
   bool SqlBatchInsertFileTable(JobControlRecord* jcr,
                                AttributesDbRecord* ar) override;
+  bool SqlCopyStart(const std::string& table_name,
+                     const std::vector<std::string>& field_names) override;
+  bool SqlCopyInsert(const std::vector<ColumnData>& columns) override;
+  bool SqlCopyEnd() override;
 
   bool CheckDatabaseEncoding(JobControlRecord* jcr);
 

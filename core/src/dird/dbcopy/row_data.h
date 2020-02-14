@@ -22,17 +22,12 @@
 #define BAREOS_SRC_DIRD_DBCOPY_ROW_DATA_H_
 
 #include "include/bareos.h"
+#include "cats/column_data.h"
 #include "dird/dbcopy/database_column_descriptions.h"
 
 #include <vector>
 
 class BareosDb;
-
-struct ColumnData {
-  std::size_t size{};  // length_of_restore_object
-  const char* data_pointer{};
-  std::vector<char> converted_data;
-};
 
 struct RowData {
   RowData(const DatabaseColumnDescriptions::VectorOfColumnDescriptions&

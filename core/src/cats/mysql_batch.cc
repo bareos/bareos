@@ -139,4 +139,18 @@ bool BareosDbMysql::SqlBatchInsertFileTable(JobControlRecord* jcr,
   return true;
 }
 
+bool BareosDbMysql::SqlCopyStart(const std::string& table_name,
+                                  const std::vector<std::string>& field_names)
+{
+  return false;
+}
+
+bool BareosDbMysql::SqlCopyInsert(const std::vector<ColumnData>& columns)
+{
+  return false;
+}
+
+bool BareosDbMysql::SqlCopyEnd() { return false; }
+
+
 #endif  // HAVE_MYSQL
