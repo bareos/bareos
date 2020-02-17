@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2020 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -49,50 +49,50 @@ class LoginForm extends Form
 
       if(count($this->directors) == 1) {
          $this->add(array(
-                  'name' => 'director',
-                  'type' => 'select',
-                  'options' => array(
-                     'label' => 'Director',
-                     'empty_option' => 'Please choose a director',
-                     'value_options' => $this->directors,
-                  ),
-                  'attributes' => array(
-                     'id' => 'director',
-                     'value' => key($this->directors)
-                  )
-               )
+            'name' => 'director',
+            'type' => 'select',
+            'options' => array(
+               'label' => 'Director',
+               'empty_option' => 'Please choose a director',
+               'value_options' => $this->directors,
+            ),
+            'attributes' => array(
+               'id' => 'director',
+               'value' => key($this->directors)
+            )
+         )
          );
       }
       else {
          if(isset($this->dird)) {
             $this->add(array(
-                     'name' => 'director',
-                     'type' => 'select',
-                     'options' => array(
-                        'label' => 'Director',
-                        'empty_option' => 'Please choose a director',
-                        'value_options' => $this->directors,
-                     ),
-                     'attributes' => array(
-                        'id' => 'director',
-                        'value' => $this->dird
-                     )
-                  )
+               'name' => 'director',
+               'type' => 'select',
+               'options' => array(
+                  'label' => 'Director',
+                  'empty_option' => 'Please choose a director',
+                  'value_options' => $this->directors,
+               ),
+               'attributes' => array(
+                  'id' => 'director',
+                  'value' => $this->dird
+               )
+            )
             );
          }
          else {
             $this->add(array(
-                     'name' => 'director',
-                     'type' => 'select',
-                     'options' => array(
-                        'label' => 'Director',
-                        'empty_option' => 'Please choose a director',
-                        'value_options' => $this->directors,
-                     ),
-                     'attributes' => array(
-                        'id' => 'director',
-                     )
-                  )
+               'name' => 'director',
+               'type' => 'select',
+               'options' => array(
+                  'label' => 'Director',
+                  'empty_option' => 'Please choose a director',
+                  'value_options' => $this->directors,
+               ),
+               'attributes' => array(
+                  'id' => 'director',
+               )
+            )
             );
          }
       }
@@ -128,37 +128,37 @@ class LoginForm extends Form
       }
 
       $this->add(array(
-               'name' => 'consolename',
-               'type' => 'text',
-               'options' => array(
-                  'label' => 'Username',
-               ),
-               'attributes' => array(
-                  'placeholder' => 'Username',
-               ),
-            )
+         'name' => 'consolename',
+         'type' => 'text',
+         'options' => array(
+            'label' => 'Username',
+         ),
+         'attributes' => array(
+            'placeholder' => 'Username',
+         ),
+      )
       );
 
       $this->add(array(
-               'name' => 'password',
-               'type' => 'password',
-               'options' => array(
-                  'label' => 'Password',
-               ),
-               'attributes' => array(
-                  'placeholder' => 'Password',
-               ),
-            )
+         'name' => 'password',
+         'type' => 'password',
+         'options' => array(
+            'label' => 'Password',
+         ),
+         'attributes' => array(
+            'placeholder' => 'Password',
+         ),
+      )
       );
 
       $this->add(array(
          'name' => 'bareos_updates',
          'type' => 'Zend\Form\Element\Hidden',
          'attributes' => array(
-               'value' => '',
-               'id' => 'bareos_updates'
-            ),
-         )
+            'value' => '',
+            'id' => 'bareos_updates'
+         ),
+      )
       );
 
       $this->add(array(
@@ -189,24 +189,24 @@ class LoginForm extends Form
       if(is_array($accepted) && (count($accepted) > 0)) {
          foreach($accepted as $key => $value) {
             if(!preg_match("{^([a-z]{1,8}(?:-[a-z]{1,8})*)(?:;\s*q=(0(?:\.[0-9]{1,3})?|1(?:\.0{1,3})?))?$}i", $value, $matches)) {
-                continue;
+               continue;
             }
 
             $code = explode("-", $matches[1]);
 
             if(isset($matches[2])) {
-                $priority = floatval($matches[2]);
+               $priority = floatval($matches[2]);
             } else {
-                $priority = 1.0;
+               $priority = 1.0;
             }
 
             while(count($code) > 0) {
-                if($priority > $quality) {
-                    $language = implode("_", $code);
-                    $quality = $priority;
-                    break;
-                }
-                break;
+               if($priority > $quality) {
+                  $language = implode("_", $code);
+                  $quality = $priority;
+                  break;
+               }
+               break;
             }
          }
       }
@@ -284,7 +284,7 @@ class LoginForm extends Form
          case 'es_ES':
             $l['es_ES'] = 'Spanish';
             break;
-		   case 'nl_BE':
+         case 'nl_BE':
             $l['nl_BE'] = 'Dutch';
             break;
          case 'tr':
@@ -293,11 +293,17 @@ class LoginForm extends Form
          case 'tr_TR':
             $l['tr_TR'] = 'Turkish';
             break;
-		   case 'sk':
+         case 'sk':
             $l['sk'] = 'Slovak';
             break;
          case 'sk_SK':
             $l['sk_SK'] = 'Slovak';
+            break;
+         case 'uk':
+            $l['uk'] = 'Ukrainian';
+            break;
+         case 'uk_UA':
+            $l['uk_UA'] = 'Ukrainian';
             break;
          default:
             $l['en_EN'] = 'English';
@@ -324,6 +330,7 @@ class LoginForm extends Form
       $locales['sk_SK'] = "Slovak";
       $locales['es_ES'] = "Spanish";
       $locales['tr_TR'] = "Turkish";
+      $locales['uk_UA'] = "Ukrainian";
 
       return $locales;
    }
