@@ -495,6 +495,7 @@ else() # run systemtests on source and compiled files
   if(TARGET bareossd-gfapi)
     get_target_property(SD_BACKEND_DIR_TO_TEST bareossd-gfapi BINARY_DIR)
   endif()
+
   if(TARGET python-dir)
     get_target_property(DIR_PLUGINS_DIR_TO_TEST python-dir BINARY_DIR)
   else()
