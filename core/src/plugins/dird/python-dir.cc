@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2014 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -108,7 +108,6 @@ struct plugin_ctx {
   char* module_name;    /* Plugin Module Name */
   PyThreadState*
       interpreter;     /* Python interpreter for this instance of the plugin */
-  PyObject* pInstance; /* Python Module instance */
   PyObject* pModule;   /* Python Module entry point */
   PyObject* pDict;     /* Python Dictionary */
   PyObject* bpContext; /* Python representation of plugin context */
@@ -146,6 +145,11 @@ bRC loadPlugin(bDirInfo* lbinfo,
   /*
    * Setup Python
    */
+#if PY_MAJOR_VERSION >= 3
+  PyImport_AppendInittab("bareosdir", &PyInit_bareosdir);
+#else
+  PyImport_AppendInittab("bareosdir", Init_bareosdir);
+#endif
   Py_InitializeEx(0);
   PyEval_InitThreads();
   mainThreadState = PyEval_SaveThread();
@@ -183,7 +187,7 @@ static bRC newPlugin(bpContext* ctx)
   /*
    * For each plugin instance we instantiate a new Python interpreter.
    */
-  PyEval_AcquireLock();
+  PyEval_AcquireThread(mainThreadState);
   p_ctx->interpreter = Py_NewInterpreter();
   PyEval_ReleaseThread(p_ctx->interpreter);
 
@@ -273,7 +277,7 @@ static bRC handlePluginEvent(bpContext* ctx, bDirEvent* event, void* value)
    * See if we have been triggered in the previous switch if not we have to
    * always dispatch the event. If we already processed the event internally
    * we only do a dispatch to the python entry point when that internal
-   * processing was successfull (e.g. retval == bRC_OK).
+   * processing was successful (e.g. retval == bRC_OK).
    */
   if (!event_dispatched || retval == bRC_OK) {
     PyEval_AcquireThread(p_ctx->interpreter);
@@ -651,16 +655,6 @@ static bRC PyLoadModule(bpContext* ctx, void* value)
       Py_DECREF(mPath);
       p_ctx->python_path_set = true;
     }
-  }
-
-  /*
-   * See if we already setup the module structure.
-   */
-  if (!p_ctx->pInstance) {
-    /*
-     * Make our callback methods available for Python.
-     */
-    p_ctx->pInstance = Py_InitModule("bareosdir", BareosDIRMethods);
   }
 
   /*

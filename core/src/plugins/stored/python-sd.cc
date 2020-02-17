@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2014 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -103,7 +103,6 @@ struct plugin_ctx {
   char* module_name;    /* Plugin Module Name */
   PyThreadState*
       interpreter;     /* Python interpreter for this instance of the plugin */
-  PyObject* pInstance; /* Python Module instance */
   PyObject* pModule;   /* Python Module entry point */
   PyObject* pDict;     /* Python Dictionary */
   PyObject* bpContext; /* Python representation of plugin context */
@@ -141,9 +140,12 @@ bRC loadPlugin(bsdInfo* lbinfo,
   *pinfo = &pluginInfo;   /* Return pointer to our info */
   *pfuncs = &pluginFuncs; /* Return pointer to our functions */
 
-  /*
-   * Setup Python
-   */
+  /* Setup Python */
+#if PY_MAJOR_VERSION >= 3
+  PyImport_AppendInittab("bareossd", &PyInit_bareossd);
+#else
+  PyImport_AppendInittab("bareossd", Init_bareossd);
+#endif
   Py_InitializeEx(0);
   PyEval_InitThreads();
   mainThreadState = PyEval_SaveThread();
@@ -189,7 +191,7 @@ static bRC newPlugin(bpContext* ctx)
   /*
    * For each plugin instance we instantiate a new Python interpreter.
    */
-  PyEval_AcquireLock();
+  PyEval_AcquireThread(mainThreadState);
   p_ctx->interpreter = Py_NewInterpreter();
   PyEval_ReleaseThread(p_ctx->interpreter);
 
@@ -669,16 +671,6 @@ static bRC PyLoadModule(bpContext* ctx, void* value)
       Py_DECREF(mPath);
       p_ctx->python_path_set = true;
     }
-  }
-
-  /*
-   * See if we already setup the module structure.
-   */
-  if (!p_ctx->pInstance) {
-    /*
-     * Make our callback methods available for Python.
-     */
-    p_ctx->pInstance = Py_InitModule("bareossd", BareosSDMethods);
   }
 
   /*
