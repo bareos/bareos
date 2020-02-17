@@ -1,0 +1,1 @@
+../../../../../module/Application/language/uk_UA.mo
