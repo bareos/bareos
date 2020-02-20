@@ -762,7 +762,12 @@ get_databases_installed()
 
 get_database_driver_default()
 {
-    DBDRIVER=`get_database_driver`
+    if [ -n "$DBTYPE" ]; then
+      DBDRIVER=$DBTYPE;
+    else
+      DBDRIVER=`get_database_driver`
+    fi
+
 
     if [ -z "$DBDRIVER" ]; then
         DBDRIVER=`get_databases_installed | head -n 1`
