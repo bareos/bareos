@@ -149,7 +149,7 @@ bool BareosDbPostgresql::SqlBatchEndFileTable(JobControlRecord* jcr,
  *         string must be long enough (max 2*old+1) to hold
  *         the escaped output.
  */
-static char* pgsql_copy_escape(char* dest, char* src, size_t len)
+static char* pgsql_copy_escape(char* dest, const char* src, size_t len)
 {
   /* we have to escape \t, \n, \r, \ */
   char c = '\0';
@@ -277,7 +277,11 @@ bool BareosDbPostgresql::SqlCopyStart(
     query += ", ";
   }
   query.resize(query.size() - 2);
-  query += ") FROM STDIN (DELIMITER '\t')";
+  query +=
+      ") FROM STDIN WITH ("
+      "  FORMAT csv"
+      ", DELIMITER '\t'"
+      ")";
 
   result_ = PQexec(db_handle_, query.c_str());
   if (!result_) {
@@ -311,8 +315,15 @@ bool BareosDbPostgresql::SqlCopyInsert(const std::vector<ColumnData>& columns)
 
   std::string query;
 
+  std::vector<char> buffer;
   for (const auto& column : columns) {
-    query += column.data_pointer;
+    if (strlen(column.data_pointer) == 0) {
+      query += "\"\"NULL\"\"";
+    } else {
+      buffer.resize(strlen(column.data_pointer) * 2 + 1);
+      pgsql_copy_escape(buffer.data(), column.data_pointer, buffer.size());
+      query += buffer.data();
+    }
     query += "\t";
   }
   query.resize(query.size() - 1);
