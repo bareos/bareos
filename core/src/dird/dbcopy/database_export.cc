@@ -26,8 +26,7 @@
 
 #include <memory>
 
-DatabaseExport::DatabaseExport(const DatabaseConnection& db_connection,
-                               bool clear_tables)
+DatabaseExport::DatabaseExport(const DatabaseConnection& db_connection)
     : db_(db_connection.db)
     , table_descriptions_(DatabaseTableDescriptions::Create(db_connection))
 {
@@ -38,11 +37,12 @@ DatabaseExport::~DatabaseExport() = default;
 
 std::unique_ptr<DatabaseExport> DatabaseExport::Create(
     const DatabaseConnection& db_connection,
+    DatabaseExport::InsertMode mode,
     bool clear_tables)
 {
   switch (db_connection.db_type) {
     case DatabaseType::Enum::kPostgresql:
-      return std::make_unique<DatabaseExportPostgresql>(db_connection,
+      return std::make_unique<DatabaseExportPostgresql>(db_connection, mode,
                                                         clear_tables);
     default:
     case DatabaseType::Enum::kMysql:

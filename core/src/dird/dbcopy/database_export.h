@@ -32,12 +32,18 @@ class DatabaseTableDescriptions;
 
 class DatabaseExport {
  public:
-  DatabaseExport(const DatabaseConnection& db_connection,
-                 bool clear_tables = false);
+  DatabaseExport(const DatabaseConnection& db_connection);
   virtual ~DatabaseExport();
+
+  enum class InsertMode
+  {
+    kSqlInsert,
+    kSqlCopy
+  };
 
   static std::unique_ptr<DatabaseExport> Create(
       const DatabaseConnection& db_connection,
+      InsertMode mode = InsertMode::kSqlCopy,
       bool clear_tables = false);
 
   virtual bool StartTable(const std::string& table_name) = 0;

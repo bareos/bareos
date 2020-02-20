@@ -35,12 +35,30 @@
 #include <sstream>
 #include <vector>
 
+
+static void no_conversion(BareosDb* db, ColumnData& fd)
+{
+  fd.data_pointer = fd.data_pointer ? fd.data_pointer : "";
+}
+
+static const ColumnDescription::DataTypeConverterMap
+    db_import_converter_map_mysql{
+        {"bigint", no_conversion},   {"binary", no_conversion},
+        {"blob", no_conversion},     {"char", no_conversion},
+        {"datetime", no_conversion}, {"decimal", no_conversion},
+        {"enum", no_conversion},     {"int", no_conversion},
+        {"longblob", no_conversion}, {"smallint", no_conversion},
+        {"text", no_conversion},     {"timestamp", no_conversion},
+        {"tinyblob", no_conversion}, {"tinyint", no_conversion},
+        {"varchar", no_conversion}};
+
 DatabaseImportMysql::DatabaseImportMysql(
     const DatabaseConnection& db_connection,
     std::size_t maximum_amount_of_rows_in)
     : DatabaseImport(db_connection)
     , limit_amount_of_rows_(maximum_amount_of_rows_in)
 {
+  table_descriptions_->SetAllConverterCallbacks(db_import_converter_map_mysql);
 }
 
 struct ResultHandlerContext {
@@ -147,7 +165,7 @@ static void ReadoutSizeOfRestoreObject(ResultHandlerContext* r,
                                        int field_index_longblob,
                                        char** row)
 {
-  auto invalid = std::numeric_limits<std::size_t>::max();
+  auto constexpr invalid = std::numeric_limits<std::size_t>::max();
   std::size_t index_of_restore_object = invalid;
 
   for (std::size_t i = 0; i < r->column_descriptions.size(); i++) {
@@ -190,7 +208,7 @@ void DatabaseImportMysql::FillRowWithDatabaseResult(ResultHandlerContext* r,
 
   for (std::size_t i = 0; i < r->column_descriptions.size(); i++) {
     row_data.columns[i].data_pointer = row[i];
-    r->column_descriptions[i]->db_import_converter(r->db, row_data.columns[i]);
+    r->column_descriptions[i]->converter(r->db, row_data.columns[i]);
   }
 }
 

@@ -22,12 +22,16 @@
 #ifndef BAREOS_SRC_DIRD_DBCOPY_DATABASE_EXPORT_POSTGRESQL_H_
 #define BAREOS_SRC_DIRD_DBCOPY_DATABASE_EXPORT_POSTGRESQL_H_
 
+#include "include/bareos.h"
+#include "dird/dbcopy/database_export.h"
+
 class DatabaseConnection;
 class DatabaseTableDescriptions;
 
 class DatabaseExportPostgresql : public DatabaseExport {
  public:
   DatabaseExportPostgresql(const DatabaseConnection& db_connection,
+                           InsertMode mode = InsertMode::kSqlCopy,
                            bool clear_tables = false);
   ~DatabaseExportPostgresql();
 
@@ -52,11 +56,14 @@ class DatabaseExportPostgresql : public DatabaseExport {
  private:
   bool transaction_open_{false};
   bool cursor_start_new_table_{false};
+  InsertMode insert_mode_{};
   SequenceSchemaVector sequence_schema_vector_;
 
   void SelectSequenceSchema();
   void CursorStartTable(const std::string& table_name);
-  bool TableExists(const std::string& table_name);
+  bool TableExists(const std::string& table_name,
+                   std::vector<std::string>& column_names);
+  bool UseCopyInsertion();
   static int ResultHandlerSequenceSchema(void* ctx, int fields, char** row);
   static int ResultHandlerCompare(void* ctx, int fields, char** row);
 };

@@ -238,6 +238,11 @@ bool BareosDbPostgresql::SqlBatchInsertFileTable(JobControlRecord* jcr,
   return true;
 }
 
+
+/* ************************************* *
+ * ** Generic SQL Copy used by dbcopy ** *
+ * ************************************* */
+
 class CleanupResult {
  public:
   CleanupResult(PGresult** r, int* s) : result(r), status(s) {}
@@ -279,7 +284,7 @@ bool BareosDbPostgresql::SqlCopyStart(
   query.resize(query.size() - 2);
   query +=
       ") FROM STDIN WITH ("
-      "  FORMAT csv"
+      "  FORMAT text"
       ", DELIMITER '\t'"
       ")";
 
@@ -318,7 +323,7 @@ bool BareosDbPostgresql::SqlCopyInsert(const std::vector<ColumnData>& columns)
   std::vector<char> buffer;
   for (const auto& column : columns) {
     if (strlen(column.data_pointer) == 0) {
-      query += "\"\"NULL\"\"";
+      query += "";
     } else {
       buffer.resize(strlen(column.data_pointer) * 2 + 1);
       pgsql_copy_escape(buffer.data(), column.data_pointer, buffer.size());
