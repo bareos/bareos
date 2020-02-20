@@ -72,7 +72,11 @@ class DbCopy {
     std::cout << "gathering information about destination catalog \""
               << cl.destination_db_resource_name << "\"..." << std::endl;
     std::unique_ptr<DatabaseExport> exp(
-        DatabaseExport::Create(*destination_db_, cl.empty_destination_tables));
+        DatabaseExport::Create(*destination_db_,
+                               cl.use_sql_insert_statements_instead_of_copy
+                                   ? DatabaseExport::InsertMode::kSqlInsert
+                                   : DatabaseExport::InsertMode::kSqlCopy,
+                               cl.empty_destination_tables));
 
     std::cout << "copying tables..." << std::endl;
     imp->ExportTo(*exp);
@@ -144,11 +148,15 @@ class DbCopy {
       bool options_error{false};
       int argument_count{};
 
-      while ((c = getopt(argc, argv, "c:l:?")) != -1 && !options_error) {
+      while ((c = getopt(argc, argv, "ic:l:?")) != -1 && !options_error) {
         switch (c) {
           case 'c':
             configpath_ = optarg;
             argument_count += 2;
+            break;
+          case 'i':
+            use_sql_insert_statements_instead_of_copy = true;
+            argument_count += 1;
             break;
 #if 0
           case 'd':
@@ -189,6 +197,7 @@ class DbCopy {
     std::string configpath_{"/etc/bareos"};
     std::string source_db_resource_name, destination_db_resource_name;
     bool empty_destination_tables{false};
+    bool use_sql_insert_statements_instead_of_copy{false};
 #if 0
     bool compare_all_rows{false};
 #endif
@@ -198,12 +207,14 @@ class DbCopy {
     {
       kBareosVersionStrings.PrintCopyright(stderr, 2020);
 
-      fprintf(stderr,
-              _("Usage: bareos-dbcopy [options] Source Destination\n"
-                "        -c <path>   use <path> as configuration file or "
-                "directory\n"
-                "        -?          print this message.\n"
-                "\n"));
+      fprintf(
+          stderr,
+          _("Usage: bareos-dbcopy [options] Source Destination\n"
+            "        -c <path>   use <path> as configuration file or "
+            "directory\n"
+            "        -i          use SQL INSERT statements instead of COPY\n"
+            "        -?          print this message.\n"
+            "\n"));
     }
   };  // class CommandLineParser
 

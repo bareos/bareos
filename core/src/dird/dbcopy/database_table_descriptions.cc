@@ -124,6 +124,16 @@ const ColumnDescription* DatabaseTableDescriptions::GetColumnDescription(
   return (c == table->column_descriptions.cend()) ? nullptr : c->get();
 }
 
+void DatabaseTableDescriptions::SetAllConverterCallbacks(
+    const ColumnDescription::DataTypeConverterMap& map)
+{
+  for (auto& table : tables) {
+    for (auto& column : table.column_descriptions) {
+      column->RegisterConverterCallbackFromMap(map);
+    }
+  }
+}
+
 std::unique_ptr<DatabaseTableDescriptions> DatabaseTableDescriptions::Create(
     const DatabaseConnection& connection)
 {

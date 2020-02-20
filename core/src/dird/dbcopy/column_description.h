@@ -35,38 +35,18 @@ class ColumnDescription {
                     const char* data_type_in,
                     const char* max_length_in);
   virtual ~ColumnDescription() = default;
+  ColumnDescription() = delete;
+
+  using ConverterCallback = std::function<void(BareosDb*, ColumnData&)>;
+  using DataTypeConverterMap = std::map<std::string, ConverterCallback>;
+
+  void RegisterConverterCallbackFromMap(const DataTypeConverterMap&);
 
   std::string column_name;
   std::string data_type;
   std::size_t character_maximum_length{};
 
-  using ConverterCallback = std::function<void(BareosDb*, ColumnData&)>;
-  ConverterCallback db_export_converter{};
-  ConverterCallback db_import_converter{};
+  ConverterCallback converter{};
 };
-
-using DataTypeConverterMap =
-    std::map<std::string, ColumnDescription::ConverterCallback>;
-
-class ColumnDescriptionMysql : public ColumnDescription {
- public:
-  ColumnDescriptionMysql(const char* column_name_in,
-                         const char* data_type_in,
-                         const char* max_length_in);
-
- private:
-  static const DataTypeConverterMap db_import_converter_map;
-};
-
-class ColumnDescriptionPostgresql : public ColumnDescription {
- public:
-  ColumnDescriptionPostgresql(const char* column_name_in,
-                              const char* data_type_in,
-                              const char* max_length_in);
-
- private:
-  static const DataTypeConverterMap db_export_converter_map;
-};
-
 
 #endif  // BAREOS_SRC_DIRD_DBCOPY_COLUMN_DESCRIPTION_H_

@@ -58,6 +58,8 @@ class DatabaseTableDescriptions {
       const std::string& table_name,
       const std::string& column_name) const;
 
+  void SetAllConverterCallbacks(const ColumnDescription::DataTypeConverterMap&);
+
   virtual ~DatabaseTableDescriptions() = default;
 
  protected:

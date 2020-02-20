@@ -56,10 +56,9 @@ int DatabaseColumnDescriptionsPostgresql::ResultHandler(void* ctx,
 {
   auto t = static_cast<DatabaseColumnDescriptions*>(ctx);
 
-  t->column_descriptions.emplace_back(
-      std::make_unique<ColumnDescriptionPostgresql>(
-          row[RowIndex::kColumnName], row[RowIndex::kDataType],
-          row[RowIndex::kCharMaxLenght]));
+  t->column_descriptions.emplace_back(std::make_unique<ColumnDescription>(
+      row[RowIndex::kColumnName], row[RowIndex::kDataType],
+      row[RowIndex::kCharMaxLenght]));
 
   return 0;
 }
@@ -87,7 +86,7 @@ int DatabaseColumnDescriptionsMysql::ResultHandler(void* ctx,
 {
   auto t = static_cast<DatabaseColumnDescriptions*>(ctx);
 
-  t->column_descriptions.emplace_back(std::make_unique<ColumnDescriptionMysql>(
+  t->column_descriptions.emplace_back(std::make_unique<ColumnDescription>(
       row[RowIndex::kColumnName], row[RowIndex::kDataType],
       row[RowIndex::kCharMaxLenght]));
 
