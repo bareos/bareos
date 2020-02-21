@@ -41,12 +41,12 @@
 
 #include <atomic>
 #include <chrono>
-#include <thread>
-#include <numeric>
+#include <iostream>
 #include <iterator>
+#include <numeric>
 #include <sstream>
 #include <string>
-#include <iostream>
+#include <thread>
 
 using namespace directordaemon;
 
@@ -236,14 +236,13 @@ TEST_F(SchedulerTest, hourly)
   EXPECT_FALSE(average_time_between_adjacent_jobs_is_too_high);
 }
 
-TEST_F(SchedulerTest, on_time)
+
+static void TestWithConfig(std::string path_to_config_file,
+                           std::vector<uint8_t> wdays)
 {
   InitMsg(NULL, NULL);
 
   if (debug) { std::cout << "Start test" << std::endl; }
-
-  std::string path_to_config_file{
-      std::string(RELATIVE_PROJECT_SOURCE_DIR "/configs/scheduler-on-time")};
 
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   ASSERT_TRUE(my_config);
@@ -260,19 +259,50 @@ TEST_F(SchedulerTest, on_time)
   if (debug) { std::cout << "Run scheduler" << std::endl; }
   scheduler->Run();
 
+  int wday_index = 0;
   for (const auto& t : list_of_job_execution_time_stamps) {
     auto tm = *std::localtime(&t);
     bool is_two_o_clock = tm.tm_hour == 2;
-    bool is_monday = tm.tm_wday == 1;
+
+    ASSERT_LT(wday_index, wdays.size())
+        << "List of weekdays should match the number of execution time stamps.";
+    bool is_right_day = wdays.at(wday_index) == tm.tm_wday;
+
     EXPECT_TRUE(is_two_o_clock);
-    EXPECT_TRUE(is_monday);
-    if (debug || !is_two_o_clock || !is_monday) {
+    EXPECT_TRUE(is_right_day);
+    if (debug || !is_two_o_clock || !is_right_day) {
       std::cout << put_time(&tm, "%A, %d-%m-%Y %H:%M:%S ") << std::endl;
     }
+    wday_index++;
   }
 
   if (debug) { std::cout << "End" << std::endl; }
   delete my_config;
+}
+
+enum
+{
+  kMonday = 1,
+  kTuesday = 2,
+  kWednesday = 3,
+  kThursday = 4,
+  kFriday = 5,
+  kSaturday = 6,
+  kSunday = 7
+};
+
+TEST_F(SchedulerTest, on_time)
+{
+  std::vector<uint8_t> wdays{kMonday, kMonday, kMonday};
+  TestWithConfig(RELATIVE_PROJECT_SOURCE_DIR "/configs/scheduler-on-time",
+                 wdays);
+}
+
+TEST_F(SchedulerTest, on_time_noday)
+{
+  std::vector<uint8_t> wdays{kThursday, kFriday, kSaturday};
+  TestWithConfig(RELATIVE_PROJECT_SOURCE_DIR "/configs/scheduler-on-time-noday",
+                 wdays);
 }
 
 TEST_F(SchedulerTest, add_job_with_no_run_resource_to_queue)
