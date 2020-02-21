@@ -570,6 +570,7 @@ endforeach()
 set(tests_dir ${PROJECT_BINARY_DIR}/tests)
 set(SYSTEM_TESTS
     backup-bareos-test
+    backup-bareos-notls
     backup-bareos-passive-test
     multiplied-device-test
     virtualfull

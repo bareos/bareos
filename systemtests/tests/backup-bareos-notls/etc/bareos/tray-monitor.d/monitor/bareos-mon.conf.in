@@ -1,0 +1,7 @@
+Monitor {
+  # Name to establish connections to Director Console, Storage Daemon and File Daemon.
+  Name = bareos-mon
+  # Password to access the Director
+  Password = "@mon_dir_password@"         # password for the Directors
+  RefreshInterval = 30 seconds
+}
