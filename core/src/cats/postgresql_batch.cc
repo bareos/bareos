@@ -151,11 +151,16 @@ bool BareosDbPostgresql::SqlBatchEndFileTable(JobControlRecord* jcr,
  */
 static char* pgsql_copy_escape(char* dest, const char* src, size_t len)
 {
-  /* we have to escape \t, \n, \r, \ */
   char c = '\0';
 
   while (len > 0 && *src) {
     switch (*src) {
+      case '\b':
+        c = 'b';
+        break;
+      case '\f':
+        c = 'f';
+        break;
       case '\n':
         c = 'n';
         break;
@@ -168,8 +173,15 @@ static char* pgsql_copy_escape(char* dest, const char* src, size_t len)
       case '\r':
         c = 'r';
         break;
+      case '\v':
+        c = 'v';
+        break;
+      case '\'':
+        c = '\'';
+        break;
       default:
         c = '\0';
+        break;
     }
 
     if (c) {
