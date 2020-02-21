@@ -81,7 +81,7 @@ bool Progress::Increment()
     return false;
   }
 
-  state_.amount = state_.amount != 0 ? state_.amount - 1 : 0;
+  if (state_.amount != 0) { --state_.amount; }
   if ((state_.amount % number_of_rows_per_increment_) != 0) { return false; }
 
   state_.start = system_clock::now();
@@ -90,9 +90,11 @@ bool Progress::Increment()
       std::chrono::duration_cast<milliseconds>(state_.start - state_old_.start);
 
   if (is_initial_run_) {
+    // no average
     state_.duration = duration;
     is_initial_run_ = false;
   } else {
+    // averaging
     state_.duration = (state_old_.duration + duration) / 2;
   }
 
@@ -100,7 +102,7 @@ bool Progress::Increment()
       (state_.duration) * (state_.amount / (state_old_.amount - state_.amount));
   remaining_seconds_ = std::chrono::duration_cast<seconds>(remaining_time);
 
-  state_.eta = system_clock::now() + remaining_seconds_;
+  state_.eta = system_clock::now() + remaining_time;
 
   state_.ratio =
       Ratio::num - (state_.amount * Ratio::num) / (full_amount_ * Ratio::den);
