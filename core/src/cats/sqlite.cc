@@ -603,7 +603,8 @@ bool BareosDbSqlite::SqlBatchStartFileTable(JobControlRecord* jcr)
  * Returns true if OK
  *         false if failed
  */
-bool BareosDbSqlite::SqlBatchEndFileTable(JobControlRecord* jcr, const char* error)
+bool BareosDbSqlite::SqlBatchEndFileTable(JobControlRecord* jcr,
+                                          const char* error)
 {
   status_ = 0;
 
@@ -615,7 +616,7 @@ bool BareosDbSqlite::SqlBatchEndFileTable(JobControlRecord* jcr, const char* err
  *         false if failed
  */
 bool BareosDbSqlite::SqlBatchInsertFileTable(JobControlRecord* jcr,
-                                    AttributesDbRecord* ar)
+                                             AttributesDbRecord* ar)
 {
   const char* digest;
   char ed1[50], ed2[50], ed3[50];
@@ -641,6 +642,20 @@ bool BareosDbSqlite::SqlBatchInsertFileTable(JobControlRecord* jcr,
 
   return SqlQueryWithoutHandler(cmd);
 }
+
+bool BareosDbSqlite::SqlCopyStart(
+    const std::string& /*table_name*/,
+    const std::vector<std::string>& /*column_names*/)
+{
+  return false;
+}
+
+bool BareosDbSqlite::SqlCopyInsert(const std::vector<ColumnData>& /*columns */)
+{
+  return false;
+}
+
+bool BareosDbSqlite::SqlCopyEnd() { return false; }
 
 /**
  * Initialize database data structure. In principal this should
