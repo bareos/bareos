@@ -35,12 +35,12 @@ struct RowData {
           const std::string& table_name_in)
       : table_name(table_name_in), column_descriptions(column_descriptions_in)
   {
-    columns.resize(column_descriptions.size());
+    data_fields.resize(column_descriptions.size());
   }
 
   std::string table_name;
 
-  std::vector<ColumnData> columns;  // same index as column_descriptions
+  std::vector<DatabaseField> data_fields;  // same index as column_descriptions
   const DatabaseColumnDescriptions::VectorOfColumnDescriptions&
       column_descriptions;
 

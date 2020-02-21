@@ -29,12 +29,12 @@
 #include <iostream>
 #include <memory>
 
-static void no_conversion(BareosDb* db, ColumnData& fd)
+static void no_conversion(BareosDb* db, DatabaseField& fd)
 {
   fd.data_pointer = fd.data_pointer ? fd.data_pointer : "";
 }
 
-static void timestamp_conversion_postgresql(BareosDb* db, ColumnData& fd)
+static void timestamp_conversion_postgresql(BareosDb* db, DatabaseField& fd)
 {
   static const char* dummy_timepoint = "1970-01-01 00:00:00";
   if (!fd.data_pointer) {
@@ -46,7 +46,7 @@ static void timestamp_conversion_postgresql(BareosDb* db, ColumnData& fd)
   }
 }
 
-static void string_conversion_postgresql(BareosDb* db, ColumnData& fd)
+static void string_conversion_postgresql(BareosDb* db, DatabaseField& fd)
 {
   if (fd.data_pointer) {
     std::size_t len{strlen(fd.data_pointer)};
@@ -58,7 +58,7 @@ static void string_conversion_postgresql(BareosDb* db, ColumnData& fd)
   }
 }
 
-static void bytea_conversion_postgresql(BareosDb* db, ColumnData& fd)
+static void bytea_conversion_postgresql(BareosDb* db, DatabaseField& fd)
 {
   std::size_t new_len{};
   std::size_t old_len = fd.size_of_restore_object;
@@ -173,13 +173,13 @@ void DatabaseExportPostgresql::DoCopyInsertion(RowData& source_data_row)
       throw std::runtime_error(err);
     }
 
-    if (i < source_data_row.columns.size()) {
-      column_description->converter(db_, source_data_row.columns[i]);
+    if (i < source_data_row.data_fields.size()) {
+      column_description->converter(db_, source_data_row.data_fields[i]);
     } else {
       throw std::runtime_error("Row number does not match column description");
     }
   }
-  if (!db_->SqlCopyInsert(source_data_row.columns)) {
+  if (!db_->SqlCopyInsert(source_data_row.data_fields)) {
     std::string err{"DatabaseExportPostgresql: Could not execute query: "};
     err += db_->get_errmsg();
     throw std::runtime_error(err);
@@ -209,10 +209,10 @@ void DatabaseExportPostgresql::DoInsertInsertion(RowData& source_data_row)
     query_into += column_description->column_name;
     query_into += ", ";
 
-    if (i < source_data_row.columns.size()) {
+    if (i < source_data_row.data_fields.size()) {
       query_values += "'";
-      column_description->converter(db_, source_data_row.columns[i]);
-      query_values += source_data_row.columns[i].data_pointer;
+      column_description->converter(db_, source_data_row.data_fields[i]);
+      query_values += source_data_row.data_fields[i].data_pointer;
       query_values += "',";
     } else {
       throw std::runtime_error("Row number does not match column description");

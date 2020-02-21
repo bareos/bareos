@@ -1062,8 +1062,8 @@ class BareosDb : public BareosDbQueryEnum {
   }
 
   virtual bool SqlCopyStart(const std::string& table_name,
-                             const std::vector<std::string>& field_names) = 0;
-  virtual bool SqlCopyInsert(const std::vector<ColumnData>& columns) = 0;
+                            const std::vector<std::string>& field_names) = 0;
+  virtual bool SqlCopyInsert(const std::vector<DatabaseField>& data_fields) = 0;
   virtual bool SqlCopyEnd() = 0;
 
 #ifdef _BDB_PRIV_INTERFACE_

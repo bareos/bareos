@@ -80,8 +80,8 @@ class BareosDbMysql : public BareosDbPrivateInterface {
   bool SqlBatchInsertFileTable(JobControlRecord* jcr,
                                AttributesDbRecord* ar) override;
   bool SqlCopyStart(const std::string& table_name,
-                     const std::vector<std::string>& column_names) override;
-  bool SqlCopyInsert(const std::vector<ColumnData>& columns) override;
+                    const std::vector<std::string>& column_names) override;
+  bool SqlCopyInsert(const std::vector<DatabaseField>& data_fields) override;
   bool SqlCopyEnd() override;
 
  public:

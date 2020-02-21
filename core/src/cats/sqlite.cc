@@ -650,7 +650,8 @@ bool BareosDbSqlite::SqlCopyStart(
   return false;
 }
 
-bool BareosDbSqlite::SqlCopyInsert(const std::vector<ColumnData>& /*columns */)
+bool BareosDbSqlite::SqlCopyInsert(
+    const std::vector<DatabaseField>& /* data_fields */)
 {
   return false;
 }

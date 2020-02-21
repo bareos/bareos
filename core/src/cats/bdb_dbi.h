@@ -74,8 +74,8 @@ class BareosDbDBI : public BareosDbPrivateInterface {
   bool SqlBatchEndFileTable(JobControlRecord* jcr, const char* error);
   bool SqlBatchInsertFileTable(JobControlRecord* jcr, AttributesDbRecord* ar);
   bool SqlCopyStart(const std::string& table_name,
-                     const std::vector<std::string>& column_names);
-  bool SqlCopyInsert(const std::vector<ColumnData>& columns);
+                    const std::vector<std::string>& column_names);
+  bool SqlCopyInsert(const std::vector<DatabaseField>& data_fields);
   bool SqlCopyEnd();
 
  public:
