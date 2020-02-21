@@ -53,8 +53,6 @@ class DatabaseExport {
   virtual void CopyRow(RowData& origin_data, std::string&) = 0;
   virtual void CopyEnd() = 0;
 
-  virtual void CompareRow(const RowData& data) = 0;
-
  protected:
   BareosDb* db_{};
   std::unique_ptr<DatabaseTableDescriptions> table_descriptions_;

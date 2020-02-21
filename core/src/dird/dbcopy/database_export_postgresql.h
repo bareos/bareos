@@ -42,8 +42,6 @@ class DatabaseExportPostgresql : public DatabaseExport {
   void CopyRow(RowData& origin_data, std::string& info_out) override;
   void CopyEnd() override;
 
-  virtual void CompareRow(const RowData& data) override;
-
  public:
   struct SequenceSchema {
     std::string table_name;
@@ -55,16 +53,16 @@ class DatabaseExportPostgresql : public DatabaseExport {
 
  private:
   bool transaction_open_{false};
-  bool cursor_start_new_table_{false};
   InsertMode insert_mode_{};
   std::string insert_mode_message_;
   SequenceSchemaVector sequence_schema_vector_;
 
   void SelectSequenceSchema();
-  void CursorStartTable(const std::string& table_name);
   bool TableExists(const std::string& table_name,
                    std::vector<std::string>& column_names);
   bool UseCopyInsertion();
+  void DoCopyInsertion(RowData& source_data_row);
+  void DoInsertInsertion(RowData& source_data_row);
   static int ResultHandlerSequenceSchema(void* ctx, int fields, char** row);
   static int ResultHandlerCompare(void* ctx, int fields, char** row);
 };

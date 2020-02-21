@@ -80,9 +80,6 @@ class DbCopy {
 
     std::cout << "copying tables..." << std::endl;
     imp->ExportTo(*exp);
-#if 0
-    if (cl.compare_all_rows) { imp->CompareWith(*exp); }
-#endif
   }
 
  private:
@@ -163,10 +160,6 @@ class DbCopy {
             empty_destination_tables = true;
             ++argument_count;
             break;
-          case 'e':
-            compare_all_rows = true;
-            ++argument_count;
-            break;
 #endif
           case 'l':
             try {
@@ -198,9 +191,6 @@ class DbCopy {
     std::string source_db_resource_name, destination_db_resource_name;
     bool empty_destination_tables{false};
     bool use_sql_insert_statements_instead_of_copy{false};
-#if 0
-    bool compare_all_rows{false};
-#endif
     std::size_t maximum_number_of_rows;
 
     void usage() noexcept

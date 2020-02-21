@@ -38,11 +38,9 @@ class DatabaseImportMysql : public DatabaseImport {
                       std::size_t maximum_amount_of_rows);
 
   void ExportTo(DatabaseExport& exporter) override;
-  void CompareWith(DatabaseExport& exporter) override;
 
  private:
   static int ResultHandlerCopy(void* ctx, int fields, char** row);
-  static int ResultHandlerCompare(void* ctx, int fields, char** row);
   static void FillRowWithDatabaseResult(ResultHandlerContext* r,
                                         int fields,
                                         char** row);
