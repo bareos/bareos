@@ -64,7 +64,12 @@ class BareosDbSqlite : public BareosDbPrivateInterface {
   bool SqlFieldIsNumeric(int field_type) override;
   bool SqlBatchStartFileTable(JobControlRecord* jcr) override;
   bool SqlBatchEndFileTable(JobControlRecord* jcr, const char* error) override;
-  bool SqlBatchInsertFileTable(JobControlRecord* jcr, AttributesDbRecord* ar) override;
+  bool SqlBatchInsertFileTable(JobControlRecord* jcr,
+                               AttributesDbRecord* ar) override;
+  bool SqlCopyStart(const std::string& table_name,
+                    const std::vector<std::string>& column_names) override;
+  bool SqlCopyInsert(const std::vector<ColumnData>& columns) override;
+  bool SqlCopyEnd() override;
 
  public:
   /*
