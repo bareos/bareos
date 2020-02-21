@@ -118,12 +118,12 @@ DatabaseExportPostgresql::DatabaseExportPostgresql(
 {
   switch (insert_mode_) {
     case DatabaseExport::InsertMode::kSqlCopy:
-      std::cout << "--> insert mode: Sql Copy" << std::endl;
+      insert_mode_message_ = "";
       table_descriptions_->SetAllConverterCallbacks(
           db_export_converter_map_postgres_sql_copy);
       break;
     case DatabaseExport::InsertMode::kSqlInsert:
-      std::cout << "--> insert mode: Sql Insert" << std::endl;
+      insert_mode_message_ = ", using slow insert mode";
       table_descriptions_->SetAllConverterCallbacks(
           db_export_converter_map_postgres_sql_insert);
       break;
@@ -156,8 +156,11 @@ DatabaseExportPostgresql::~DatabaseExportPostgresql()
   if (transaction_open_) { db_->SqlQuery("ROLLBACK"); }
 }
 
-void DatabaseExportPostgresql::CopyRow(RowData& source_data_row)
+void DatabaseExportPostgresql::CopyRow(RowData& source_data_row,
+                                       std::string& insert_mode_message)
 {
+  insert_mode_message = insert_mode_message_;
+
   if (UseCopyInsertion()) {
     for (std::size_t i = 0; i < source_data_row.column_descriptions.size();
          i++) {
@@ -359,6 +362,7 @@ bool DatabaseExportPostgresql::StartTable(const std::string& table_name)
       throw std::runtime_error(err);
     }
   }
+
   return true;
 }
 

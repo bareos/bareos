@@ -39,7 +39,7 @@ class DatabaseExportPostgresql : public DatabaseExport {
   void EndTable(const std::string& table_name) override;
 
   void CopyStart() override;
-  void CopyRow(RowData& origin_data) override;
+  void CopyRow(RowData& origin_data, std::string& info_out) override;
   void CopyEnd() override;
 
   virtual void CompareRow(const RowData& data) override;
@@ -57,6 +57,7 @@ class DatabaseExportPostgresql : public DatabaseExport {
   bool transaction_open_{false};
   bool cursor_start_new_table_{false};
   InsertMode insert_mode_{};
+  std::string insert_mode_message_;
   SequenceSchemaVector sequence_schema_vector_;
 
   void SelectSequenceSchema();
