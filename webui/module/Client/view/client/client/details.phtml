@@ -77,7 +77,8 @@ $this->headTitle($title);
 <thead class="bg-primary">
    <th><?php echo $this->translate("Job ID"); ?></th>
    <th><?php echo $this->translate("Job name"); ?></th>
-   <th><?php echo $this->translate("Timestamp"); ?></th>
+   <th><?php echo $this->translate("Start"); ?></th>
+   <th><?php echo $this->translate("End"); ?></th>
    <th><?php echo $this->translate("Fileset"); ?></th>
    <th><?php echo $this->translate("Level"); ?></th>
    <th><?php echo $this->translate("Files"); ?></th>
@@ -183,6 +184,10 @@ $this->headTitle($title);
             },
             {
                field: 'starttime',
+               sortable: true,
+            },
+            {
+               field: 'endtime',
                sortable: true,
             },
             {
