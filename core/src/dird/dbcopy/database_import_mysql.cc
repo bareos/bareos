@@ -217,14 +217,15 @@ int DatabaseImportMysql::ResultHandlerCopy(void* ctx, int fields, char** row)
   ResultHandlerContext* r = static_cast<ResultHandlerContext*>(ctx);
   FillRowWithDatabaseResult(r, fields, row);
 
-  r->exporter.CopyRow(r->row_data);
+  std::string insert_mode_message;
+  r->exporter.CopyRow(r->row_data, insert_mode_message);
 
   if (r->progress.Increment()) {
     std::cout << std::setw(7) << r->progress.Rate() << "%"
               << " ETA:" << r->progress.Eta()  // estimated time of arrival
               << " (running:" << r->progress.RunningHours() << ","
-              << " remaining:" << r->progress.RemainingHours() << ")"
-              << std::endl;
+              << " remaining:" << r->progress.RemainingHours()
+              << insert_mode_message << ")" << std::endl;
   }
   return 0;
 }
