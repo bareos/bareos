@@ -89,8 +89,7 @@ DatabaseTablesMysql::DatabaseTablesMysql(BareosDb* db)
   }
 }
 
-const DatabaseTableDescriptions::TableDescription*
-DatabaseTableDescriptions::GetTableDescription(
+const TableDescription* DatabaseTableDescriptions::GetTableDescription(
     const std::string& table_name) const
 {
   auto tr = std::find_if(tables.begin(), tables.end(),
@@ -106,8 +105,7 @@ const ColumnDescription* DatabaseTableDescriptions::GetColumnDescription(
     const std::string& table_name,
     const std::string& column_name) const
 {
-  const DatabaseTableDescriptions::TableDescription* table =
-      GetTableDescription(table_name);
+  const TableDescription* table = GetTableDescription(table_name);
   if (table == nullptr) {
     std::cout << "Could not get table description for table: " << table_name
               << std::endl;

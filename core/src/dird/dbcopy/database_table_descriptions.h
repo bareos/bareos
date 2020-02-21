@@ -33,18 +33,17 @@
 
 class BareosDb;
 
+struct TableDescription {
+  TableDescription() = delete;
+  TableDescription(std::string&& t,
+                   std::vector<std::unique_ptr<ColumnDescription>>&& r)
+      : table_name(t), column_descriptions(std::move(r)){};
+
+  std::string table_name;
+  DatabaseColumnDescriptions::VectorOfColumnDescriptions column_descriptions;
+};
+
 class DatabaseTableDescriptions {
- public:
-  class TableDescription {
-   public:
-    TableDescription(std::string&& t,
-                     std::vector<std::unique_ptr<ColumnDescription>>&& r)
-        : table_name(t), column_descriptions(std::move(r)){};
-
-    std::string table_name;
-    DatabaseColumnDescriptions::VectorOfColumnDescriptions column_descriptions;
-  };
-
  public:
   std::vector<TableDescription> tables;
 
