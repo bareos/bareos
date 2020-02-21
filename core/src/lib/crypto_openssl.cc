@@ -1568,7 +1568,6 @@ void OpensslPostErrors(JobControlRecord *jcr, int type, const char *errstring)
  *  Returns: thread ID
  *
  */
-#if OPENSSL_VERSION_NUMBER < 0x10000000L
 static unsigned long GetOpensslThreadId(void)
 {
 #ifdef HAVE_WIN32
@@ -1581,14 +1580,12 @@ static unsigned long GetOpensslThreadId(void)
     *   emulation code, which defines pthread_t as a structure.
     */
    return ((unsigned long)pthread_self());
-#endif /* not HAVE_WIN32 */
+#endif
 }
-#endif /* #if OPENSSL_VERSION_NUMBER < 0x10000000L */
 
 /*
  * Allocate a dynamic OpenSSL mutex
  */
-#if OPENSSL_VERSION_NUMBER < 0x10000000L
 static struct CRYPTO_dynlock_value *openssl_create_dynamic_mutex (const char *file, int line)
 {
    struct CRYPTO_dynlock_value *dynlock;
@@ -1624,12 +1621,10 @@ static void OpensslDestroyDynamicMutex(struct CRYPTO_dynlock_value *dynlock, con
 
    free(dynlock);
 }
-#endif /* OPENSSL_VERSION_NUMBER < 0x10000000L */
 
 /*
  * (Un)Lock a static OpenSSL mutex
  */
-#if OPENSSL_VERSION_NUMBER < 0x10000000L
 static void openssl_update_static_mutex (int mode, int i, const char *file, int line)
 {
    if (mode & CRYPTO_LOCK) {
@@ -1638,7 +1633,6 @@ static void openssl_update_static_mutex (int mode, int i, const char *file, int 
       V(mutexes[i]);
    }
 }
-#endif /* OPENSSL_VERSION_NUMBER < 0x10000000L */
 
 /*
  * Initialize OpenSSL thread support
@@ -1652,9 +1646,7 @@ int OpensslInitThreads (void)
 
 
    /* Set thread ID callback */
-#if OPENSSL_VERSION_NUMBER < 0x10000000L
    CRYPTO_set_id_callback(GetOpensslThreadId);
-#endif
 
    /* Initialize static locking */
    numlocks = CRYPTO_num_locks();
@@ -1667,7 +1659,6 @@ int OpensslInitThreads (void)
       }
    }
 
-#if OPENSSL_VERSION_NUMBER < 0x10000000L
    /* Set static locking callback */
    CRYPTO_set_locking_callback(openssl_update_static_mutex);
 
@@ -1675,7 +1666,6 @@ int OpensslInitThreads (void)
    CRYPTO_set_dynlock_create_callback(openssl_create_dynamic_mutex);
    CRYPTO_set_dynlock_lock_callback(OpensslUpdateDynamicMutex);
    CRYPTO_set_dynlock_destroy_callback(OpensslDestroyDynamicMutex);
-#endif
 
    return 0;
 }
