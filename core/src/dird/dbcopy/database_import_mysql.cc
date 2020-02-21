@@ -155,11 +155,6 @@ void DatabaseImportMysql::ExportTo(DatabaseExport& exporter)
   exporter.CopyEnd();
 }
 
-void DatabaseImportMysql::CompareWith(DatabaseExport& exporter)
-{
-  RunQuerySelectAllRows(ResultHandlerCompare, exporter);
-}
-
 static void ReadoutSizeOfRestoreObject(ResultHandlerContext* r,
                                        RowData& row_data,
                                        int field_index_longblob,
@@ -227,14 +222,5 @@ int DatabaseImportMysql::ResultHandlerCopy(void* ctx, int fields, char** row)
               << " remaining:" << r->progress.RemainingHours()
               << insert_mode_message << ")" << std::endl;
   }
-  return 0;
-}
-
-int DatabaseImportMysql::ResultHandlerCompare(void* ctx, int fields, char** row)
-{
-  ResultHandlerContext* r = static_cast<ResultHandlerContext*>(ctx);
-  FillRowWithDatabaseResult(r, fields, row);
-
-  r->exporter.CompareRow(r->row_data);
   return 0;
 }

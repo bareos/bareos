@@ -28,7 +28,6 @@
 
 #include <iostream>
 #include <memory>
-#include <set>
 
 static void no_conversion(BareosDb* db, ColumnData& fd)
 {
@@ -272,37 +271,6 @@ static void UpdateSequences(
 
 void DatabaseExportPostgresql::CopyEnd() {}
 
-void DatabaseExportPostgresql::CursorStartTable(const std::string& table_name)
-{
-  const DatabaseTableDescriptions::TableDescription* table{
-      table_descriptions_->GetTableDescription(table_name)};
-
-  if (table == nullptr) {
-    std::string err{
-        "DatabaseExportPostgresql: Could not get table description for: "};
-    err += table_name;
-    throw std::runtime_error(err);
-  }
-
-  std::string query{"DECLARE curs1 NO SCROLL CURSOR FOR SELECT "};
-
-  for (const auto& c : table->column_descriptions) {
-    query += c->column_name;
-    query += ", ";
-  }
-
-  query.resize(query.size() - 2);
-  query += " FROM ";
-  query += table_name;
-
-  if (!db_->SqlQuery(query.c_str())) {
-    std::string err{
-        "DatabaseExportPostgresql (cursor): Could not execute query: "};
-    err += db_->get_errmsg();
-    throw std::runtime_error(err);
-  }
-}
-
 static bool TableIsEmtpy(BareosDb* db, const std::string& table_name)
 {
   std::string query{"SELECT * FROM "};
@@ -350,10 +318,7 @@ bool DatabaseExportPostgresql::StartTable(const std::string& table_name)
     return false;
   }
 
-  if (db_->SqlQuery("BEGIN")) {
-    transaction_open_ = true;
-    cursor_start_new_table_ = true;
-  }
+  if (db_->SqlQuery("BEGIN")) { transaction_open_ = true; }
 
   if (UseCopyInsertion()) {
     if (!db_->SqlCopyStart(table_name, column_names)) {
@@ -390,39 +355,6 @@ void DatabaseExportPostgresql::EndTable(const std::string& table_name)
     db_->SqlQuery("COMMIT");
     transaction_open_ = false;
   }
-}
-
-void DatabaseExportPostgresql::CompareRow(const RowData& data)
-{
-  if (cursor_start_new_table_) {
-    CursorStartTable(data.table_name);
-    cursor_start_new_table_ = false;
-  }
-
-  std::string query{"FETCH NEXT FROM curs1"};
-
-  RowData& rd(const_cast<RowData&>(data));
-
-  if (!db_->SqlQuery(query.c_str(), ResultHandlerCompare, &rd)) {
-    std::string err{
-        "DatabaseExportPostgresql (compare): Could not execute query: "};
-    err += db_->get_errmsg();
-    throw std::runtime_error(err);
-  }
-}
-
-int DatabaseExportPostgresql::ResultHandlerCompare(void* ctx,
-                                                   int fields,
-                                                   char** row)
-{
-  const RowData* rd{static_cast<RowData*>(ctx)};
-
-  for (int i = 0; i < fields; i++) {
-    std::string r1{row[i]};
-    std::string r2{rd->columns[i].data_pointer};
-    if (r1 != r2) { throw std::runtime_error("Data is not same"); }
-  }
-  return 0;
 }
 
 void DatabaseExportPostgresql::SelectSequenceSchema()
