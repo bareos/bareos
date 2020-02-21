@@ -14,7 +14,7 @@ JobName=backup-bareos-fd
 "${rscripts}"/cleanup
 
 # use our creates sql statements for the old database
-export SQL_DDL_DIR="${current_test_directory}/ddl"
+export SQL_DDL_DIR="${current_test_directory}/bareos_15_db_2004_ddl"
 "${rscripts}"/setup
 
 # use the default ddl directory with the current sql definitions
