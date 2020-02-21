@@ -94,9 +94,9 @@ class BareosAccurateFilelist {
     ClearBit(payload->filenr, seen_bitmap_);
   }
 
-  void MarkAllFilesAsSeen() { SetBits(0, filenr_ - 1, seen_bitmap_); }
+  void MarkAllFilesAsSeen() { SetBitRange(0, filenr_ - 1, seen_bitmap_); }
 
-  void UnmarkAllFilesAsSeen() { ClearBits(0, filenr_ - 1, seen_bitmap_); }
+  void UnmarkAllFilesAsSeen() { ClearBitRange(0, filenr_ - 1, seen_bitmap_); }
 };
 
 /*

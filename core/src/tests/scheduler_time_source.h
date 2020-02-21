@@ -30,12 +30,14 @@
 #include <thread>
 #include <iomanip>
 #include <iostream>
+#include <vector>
 
 static bool debug{false};
 
 /* libstdc++ on rhel7 does not have put_time, so we add it here */
-std::string put_time(const std::tm* tmb, const char* fmt) {
-  size_t maxlen = strlen(fmt)+100;
+std::string put_time(const std::tm* tmb, const char* fmt)
+{
+  size_t maxlen = strlen(fmt) + 100;
   std::vector<char> s(maxlen);
   strftime(s.data(), s.size(), fmt, tmb);
   return std::string{s.data()};
@@ -52,7 +54,7 @@ class SimulatedTimeSource : public directordaemon::TimeSource {
       time_t t{clock_value_};
       std::cout << put_time(
                        gmtime(&t),
-                       "Start simulated Clock at time: %d-%m-%Y %H:%M:%S")
+                       "Start simulated Clock at time: %A %d-%m-%Y %H:%M:%S")
                 << std::endl;
     }
   }
