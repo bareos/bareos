@@ -18,8 +18,8 @@ DAEMON_USER="$DIRECTOR_DAEMON_USER"
 DAEMON_GROUP="$DIRECTOR_DAEMON_GROUP"
 
 DB_NAME="${db_name:-@db_name@}"
-DB_VERSION="@BDB_VERSION@"
-SQL_DDL_DIR="${BAREOS_SCRIPTS_DIR}/ddl"
+DB_VERSION="${BDB_VERSION:-@BDB_VERSION@}"
+SQL_DDL_DIR="${SQL_DDL_DIR:-@scriptdir@/ddl}"
 SQLITE_BINDIR="@SQLITE_BINDIR@"
 MYSQL_BINDIR="@MYSQL_BINDIR@"
 POSTGRESQL_BINDIR="@POSTGRESQL_BINDIR@"
@@ -762,7 +762,12 @@ get_databases_installed()
 
 get_database_driver_default()
 {
-    DBDRIVER=`get_database_driver`
+    if [ -n "$DBTYPE" ]; then
+      DBDRIVER=$DBTYPE;
+    else
+      DBDRIVER=`get_database_driver`
+    fi
+
 
     if [ -z "$DBDRIVER" ]; then
         DBDRIVER=`get_databases_installed | head -n 1`
