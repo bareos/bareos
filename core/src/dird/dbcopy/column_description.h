@@ -26,7 +26,7 @@
 #include <map>
 #include <string>
 
-struct ColumnData;
+struct DatabaseField;
 class BareosDb;
 
 class ColumnDescription {
@@ -37,7 +37,7 @@ class ColumnDescription {
   virtual ~ColumnDescription() = default;
   ColumnDescription() = delete;
 
-  using ConverterCallback = std::function<void(BareosDb*, ColumnData&)>;
+  using ConverterCallback = std::function<void(BareosDb*, DatabaseField&)>;
   using DataTypeConverterMap = std::map<std::string, ConverterCallback>;
 
   void RegisterConverterCallbackFromMap(const DataTypeConverterMap&);

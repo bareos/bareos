@@ -36,7 +36,7 @@
 #include <vector>
 
 
-static void no_conversion(BareosDb* db, ColumnData& fd)
+static void no_conversion(BareosDb* db, DatabaseField& fd)
 {
   fd.data_pointer = fd.data_pointer ? fd.data_pointer : "";
 }
@@ -175,7 +175,7 @@ static void ReadoutSizeOfRestoreObject(ResultHandlerContext* r,
   }
 
   std::istringstream(row[field_index_longblob]) >>
-      row_data.columns[index_of_restore_object].size_of_restore_object;
+      row_data.data_fields[index_of_restore_object].size_of_restore_object;
 }
 
 
@@ -202,8 +202,8 @@ void DatabaseImportMysql::FillRowWithDatabaseResult(ResultHandlerContext* r,
   }
 
   for (std::size_t i = 0; i < r->column_descriptions.size(); i++) {
-    row_data.columns[i].data_pointer = row[i];
-    r->column_descriptions[i]->converter(r->db, row_data.columns[i]);
+    row_data.data_fields[i].data_pointer = row[i];
+    r->column_descriptions[i]->converter(r->db, row_data.data_fields[i]);
   }
 }
 

@@ -326,19 +326,20 @@ bool BareosDbPostgresql::SqlCopyStart(
   return true;
 }
 
-bool BareosDbPostgresql::SqlCopyInsert(const std::vector<ColumnData>& columns)
+bool BareosDbPostgresql::SqlCopyInsert(
+    const std::vector<DatabaseField>& data_fields)
 {
   CleanupResult result_cleanup(&result_, &status_);
 
   std::string query;
 
   std::vector<char> buffer;
-  for (const auto& column : columns) {
-    if (strlen(column.data_pointer) == 0) {
+  for (const auto& field : data_fields) {
+    if (strlen(field.data_pointer) == 0) {
       query += "";
     } else {
-      buffer.resize(strlen(column.data_pointer) * 2 + 1);
-      pgsql_copy_escape(buffer.data(), column.data_pointer, buffer.size());
+      buffer.resize(strlen(field.data_pointer) * 2 + 1);
+      pgsql_copy_escape(buffer.data(), field.data_pointer, buffer.size());
       query += buffer.data();
     }
     query += "\t";

@@ -210,7 +210,7 @@ class MockDatabase : public BareosDb {
   {
     return false;
   }
-  bool SqlCopyInsert(const std::vector<ColumnData>& columns) override
+  bool SqlCopyInsert(const std::vector<DatabaseField>& data_fields) override
   {
     return false;
   }

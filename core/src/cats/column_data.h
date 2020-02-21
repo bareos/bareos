@@ -26,7 +26,7 @@
 
 #include <vector>
 
-struct ColumnData {
+struct DatabaseField {
   std::size_t size_of_restore_object{};
   const char* data_pointer{};
   std::vector<char> converted_data;
