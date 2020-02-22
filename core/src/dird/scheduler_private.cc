@@ -127,7 +127,6 @@ static void SetJcrFromRunResource(JobControlRecord* jcr, RunResource* run)
 JobControlRecord* SchedulerPrivate::TryCreateJobControlRecord(
     const SchedulerJobItem& next_job)
 {
-  if (next_job.job->client == nullptr) { return nullptr; }
   JobControlRecord* jcr = NewDirectorJcr();
   SetJcrDefaults(jcr, next_job.job);
   if (next_job.run != nullptr) {
