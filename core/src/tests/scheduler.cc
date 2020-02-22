@@ -305,6 +305,14 @@ TEST_F(SchedulerTest, on_time_noday)
                  wdays);
 }
 
+TEST_F(SchedulerTest, on_time_noday_noclient)
+{
+  std::vector<uint8_t> wdays{kThursday, kFriday, kSaturday};
+  TestWithConfig(RELATIVE_PROJECT_SOURCE_DIR
+                 "/configs/scheduler-on-time-noday-noclient",
+                 wdays);
+}
+
 TEST_F(SchedulerTest, add_job_with_no_run_resource_to_queue)
 {
   InitMsg(NULL, NULL);
