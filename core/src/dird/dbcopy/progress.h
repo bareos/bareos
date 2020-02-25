@@ -44,7 +44,7 @@ struct ProgressState {
 class Progress {
  public:
   Progress(BareosDb* db,
-           const std::string& table_data,
+           const std::string& table_name,
            std::size_t limit_amount_of_rows_);
 
   bool Increment();
@@ -60,7 +60,8 @@ class Progress {
   std::string RunningHours() const;
   std::string RemainingHours() const;
   std::string StartTime() const;
-  std::string TimeOfDay() const;
+  static std::string TimeOfDay();
+  static constexpr std::size_t default_timestring_size = 100;
 
  private:
   ProgressState state_;

@@ -36,9 +36,9 @@ struct Amount {
   std::size_t amount{};
 };
 
-static int AmountHandler(void* ctx, int fields, char** row)
+static int AmountHandler(void* ctx, int /*fields*/, char** row)
 {
-  Amount* a = static_cast<Amount*>(ctx);
+  auto* a = static_cast<Amount*>(ctx);
   std::istringstream iss(row[0]);
   iss >> a->amount;
   a->is_valid = !iss.fail();
@@ -132,7 +132,7 @@ std::string Progress::FullAmount() const
 static std::string FormatTime(time_point<system_clock> tp)
 {
   std::time_t time = system_clock::to_time_t(tp);
-  std::array<char, 100> buffer;
+  std::array<char, Progress::default_timestring_size> buffer{};
 
   std::strftime(buffer.data(), buffer.size(), "%F %T", std::localtime(&time));
 
@@ -141,19 +141,16 @@ static std::string FormatTime(time_point<system_clock> tp)
 
 std::string Progress::Eta() const { return FormatTime(state_.eta); }
 
-std::string Progress::TimeOfDay() const
-{
-  return FormatTime(system_clock::now());
-}
+std::string Progress::TimeOfDay() { return FormatTime(system_clock::now()); }
 
 std::string Progress::StartTime() const { return FormatTime(start_time_); }
 
 struct Time {
-  Time(seconds duration)
+  explicit Time(seconds duration)
   {
-    hours = duration.count() / 3600;
-    min = (duration.count() % 3600) / 60;
-    sec = duration.count() % 60;
+    hours = static_cast<int>(duration.count() / 3600);
+    min = static_cast<int>((duration.count() % 3600) / 60);
+    sec = static_cast<int>(duration.count() % 60);
   }
   int hours, min, sec;
 };
@@ -162,7 +159,7 @@ std::string Progress::RemainingHours() const
 {
   Time duration(remaining_seconds_);
 
-  std::array<char, 100> buffer;
+  std::array<char, default_timestring_size> buffer{};
   sprintf(buffer.data(), "%0dh%02dm%02ds", duration.hours, duration.min,
           duration.sec);
   return std::string(buffer.data());
@@ -173,7 +170,7 @@ std::string Progress::RunningHours() const
   Time duration(
       std::chrono::duration_cast<seconds>(system_clock::now() - start_time_));
 
-  std::array<char, 100> buffer;
+  std::array<char, default_timestring_size> buffer{};
   sprintf(buffer.data(), "%0dh%02dm%02ds", duration.hours, duration.min,
           duration.sec);
   return std::string(buffer.data());

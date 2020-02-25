@@ -20,11 +20,11 @@
 */
 
 #include "include/bareos.h"
-#include "dird/dbcopy/database_table_descriptions.h"
-#include "dird/dbcopy/row_data.h"
 #include "dird/dbcopy/database_export.h"
 #include "dird/dbcopy/database_import_mysql.h"
+#include "dird/dbcopy/database_table_descriptions.h"
 #include "dird/dbcopy/progress.h"
+#include "dird/dbcopy/row_data.h"
 #include "include/make_unique.h"
 
 #include <cassert>
@@ -36,9 +36,9 @@
 #include <vector>
 
 
-static void no_conversion(BareosDb* db, DatabaseField& fd)
+static void no_conversion(BareosDb* /*db*/, DatabaseField& f)
 {
-  fd.data_pointer = fd.data_pointer ? fd.data_pointer : "";
+  f.data_pointer = f.data_pointer != nullptr ? f.data_pointer : "";
 }
 
 static const ColumnDescription::DataTypeConverterMap
@@ -91,7 +91,7 @@ static void PrintCopyStartToStdout(const Progress& progress)
   if (progress.FullNumberOfRows() != 0) {
     std::cout << "--> copying " << progress.FullAmount() << " rows..."
               << std::endl;
-    std::cout << "--> Start: " << progress.TimeOfDay() << std::endl;
+    std::cout << "--> Start: " << Progress::TimeOfDay() << std::endl;
   } else {
     std::cout << "--> nothing to copy..." << std::endl;
   }
@@ -127,7 +127,7 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
     query += " FROM ";
     query += t.table_name;
 
-    if (limit_amount_of_rows_) {
+    if (limit_amount_of_rows_ != 0U) {
       query += " LIMIT ";
       query += std::to_string(limit_amount_of_rows_);
     }
@@ -209,14 +209,16 @@ void DatabaseImportMysql::FillRowWithDatabaseResult(ResultHandlerContext* r,
 
 int DatabaseImportMysql::ResultHandlerCopy(void* ctx, int fields, char** row)
 {
-  ResultHandlerContext* r = static_cast<ResultHandlerContext*>(ctx);
+  auto* r = static_cast<ResultHandlerContext*>(ctx);
   FillRowWithDatabaseResult(r, fields, row);
 
   std::string insert_mode_message;
   r->exporter.CopyRow(r->row_data, insert_mode_message);
 
+  constexpr int width_of_rate_column = 7;
+
   if (r->progress.Increment()) {
-    std::cout << std::setw(7) << r->progress.Rate() << "%"
+    std::cout << std::setw(width_of_rate_column) << r->progress.Rate() << "%"
               << " ETA:" << r->progress.Eta()  // estimated time of arrival
               << " (running:" << r->progress.RunningHours() << ","
               << " remaining:" << r->progress.RemainingHours()
