@@ -19,7 +19,9 @@ Description
 for both ``<sourcecatalog>`` and ``<destinationcatalog>`` must exist.
 
 The main use of :program:`bareos-dbcopy` is to migrate an existing Bareos
-installation from mysql to postgresql.
+installation from MySQL to postgreSQL. Therefore the allowed
+:config:option:`dir/catalog/DbDriver` in the ``<sourcecatalog>`` is MySQL,
+for ``<destinationcatalog>`` only PostgreSQL is possible.
 
 :program:`bareos-dbcopy` only copies the data over to the new catalog.
 The ``<destinationcatalog>`` needs to be created and initialized with the
@@ -37,9 +39,10 @@ Internal workflow
 * For each table, each row is transferred from the source to the destination
   database. Depending on the column type, data filters are applied.
 
-* Tables exiting on the source side but not on the destination side are skipped.
+* Tables existing in the source database but not in the destination database are
+  skipped.
 
-* If the destination table already contains data, the table is skipped.
+* If a destination table already contains data, then this table is skipped.
 
 Options
 -------
