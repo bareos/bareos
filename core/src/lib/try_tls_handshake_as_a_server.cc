@@ -58,6 +58,7 @@ static ConnectionHandshakeMode GetHandshakeMode(
       Dmsg0(200, "Could not read out cleartext configuration\n");
       return ConnectionHandshakeMode::CloseConnection;
     }
+    Dmsg0(200, "TlsPolicy for %s is %u\n", client_name.c_str(), tls_policy);
     if (r_code_str == std::string("R_CLIENT")) {
       if (tls_policy == kBnetTlsRequired) {
         return ConnectionHandshakeMode::CloseConnection;

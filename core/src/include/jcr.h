@@ -179,7 +179,7 @@ class JobControlRecord {
   POOLMEM* RestoreBootstrap{};  /**< Bootstrap file to restore */
   POOLMEM* stime{};             /**< start time for incremental/differential */
   char* sd_auth_key{};          /**< SD auth key */
-  TlsPolicy sd_tls_policy;      /**< SD Tls Policy */
+  TlsPolicy sd_tls_policy{kBnetTlsNone};      /**< SD Tls Policy */
   MessagesResource* jcr_msgs{}; /**< Copy of message resource -- actually used */
   uint32_t ClientId{};          /**< Client associated with Job */
   char* where{};                /**< Prefix to restore files to */
