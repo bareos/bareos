@@ -100,9 +100,9 @@ static const ColumnDescription::DataTypeConverterMap
 bool DatabaseExportPostgresql::UseCopyInsertion()
 {
   switch (insert_mode_) {
+    default:
     case DatabaseExport::InsertMode::kSqlCopy:
       return true;
-    default:
     case DatabaseExport::InsertMode::kSqlInsert:
       return false;
   }
