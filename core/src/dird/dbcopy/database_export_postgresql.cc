@@ -67,8 +67,8 @@ static void bytea_conversion_postgresql(BareosDb* db, DatabaseField& fd)
 
   auto obj = db->EscapeObject(old, old_len, new_len);
 
-  fd.converted_data.resize(new_len + 1);
-  memcpy(fd.converted_data.data(), obj, new_len + 1);
+  fd.converted_data.resize(new_len);
+  memcpy(fd.converted_data.data(), obj, new_len);
 
   db->FreeEscapedObjectMemory(obj);
 
