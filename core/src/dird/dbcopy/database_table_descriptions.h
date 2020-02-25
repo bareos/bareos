@@ -65,7 +65,7 @@ class DatabaseTableDescriptions {
   DatabaseTableDescriptions(BareosDb* db) : db_{db} {}
 
   void SelectTableNames(const std::string& sql_query,
-                        std::vector<std::string>& tables_names);
+                        std::vector<std::string>& table_names);
 
  private:
   BareosDb* db_{};

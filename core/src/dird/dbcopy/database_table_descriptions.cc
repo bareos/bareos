@@ -20,9 +20,9 @@
 */
 
 #include "include/bareos.h"
+#include "cats/cats.h"
 #include "database_table_descriptions.h"
 #include "dird/dbcopy/database_column_descriptions.h"
-#include "cats/cats.h"
 #include "lib/util.h"
 
 #include <algorithm>
@@ -48,7 +48,9 @@ void DatabaseTableDescriptions::SelectTableNames(const std::string& sql_query,
   }
 }
 
-int DatabaseTableDescriptions::ResultHandler(void* ctx, int fields, char** row)
+int DatabaseTableDescriptions::ResultHandler(void* ctx,
+                                             int /*fields*/,
+                                             char** row)
 {
   auto table_names = static_cast<TableNames*>(ctx);
   if (row[0] != nullptr) { table_names->emplace_back(row[0]); }
@@ -94,7 +96,8 @@ const TableDescription* DatabaseTableDescriptions::GetTableDescription(
 {
   auto tr = std::find_if(tables.begin(), tables.end(),
                          [&table_name](const TableDescription& t) {
-                           std::string l1, l2;
+                           std::string l1;
+                           std::string l2;
                            ToLowerCase(table_name, t.table_name, l1, l2);
                            return l1 == l2;
                          });
@@ -116,8 +119,7 @@ const ColumnDescription* DatabaseTableDescriptions::GetColumnDescription(
       [&column_name](const std::unique_ptr<ColumnDescription>& c) {
         std::string l1, l2;
         ToLowerCase(column_name, c->column_name, l1, l2);
-        if (l1 == l2) { return true; }
-        return false;
+        return l1 == l2;
       });
   return (c == table->column_descriptions.cend()) ? nullptr : c->get();
 }

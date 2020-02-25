@@ -45,7 +45,7 @@ class DatabaseImportMysql : public DatabaseImport {
                                         int fields,
                                         char** row);
 
-  void RunQuerySelectAllRows(DB_RESULT_HANDLER* result_handler,
+  void RunQuerySelectAllRows(DB_RESULT_HANDLER* ResultHandler,
                              DatabaseExport& exporter);
   std::size_t limit_amount_of_rows_{};
 };

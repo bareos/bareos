@@ -23,21 +23,21 @@
 #include "cats/cats.h"
 #include "cats/cats_backends.h"
 #include "cats/sql_pooling.h"
-#include "dird/get_database_connection.h"
-#include "dird/dird_conf.h"
-#include "dird/dird_globals.h"
-#include "dird/jcr_private.h"
-#include "dird/job.h"
 #include "dird/dbcopy/database_connection.h"
 #include "dird/dbcopy/database_export.h"
 #include "dird/dbcopy/database_export_postgresql.h"
 #include "dird/dbcopy/database_import.h"
+#include "dird/dird_conf.h"
+#include "dird/dird_globals.h"
+#include "dird/get_database_connection.h"
+#include "dird/jcr_private.h"
+#include "dird/job.h"
 #include "include/make_unique.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
 
-#include <iostream>
 #include <array>
+#include <iostream>
 
 #if !defined HAVE_DYNAMIC_CATS_BACKENDS
 #error "NOT DEFINED: HAVE_DYNAMIC_CATS_BACKENDS"
@@ -104,10 +104,10 @@ class DbCopy {
       throw std::runtime_error("Error when loading config.");
     }
 
-    directordaemon::me = static_cast<directordaemon::DirectorResource*>(
+    directordaemon::me = dynamic_cast<directordaemon::DirectorResource*>(
         my_config->GetNextRes(directordaemon::R_DIRECTOR, nullptr));
 
-    if (!directordaemon::me) {
+    if (directordaemon::me == nullptr) {
       throw std::runtime_error("Could not find director resource.");
     }
 
@@ -123,12 +123,14 @@ class DbCopy {
       destination_db_ = std::make_unique<DatabaseConnection>(
           cl.destination_db_resource_name, directordaemon::my_config);
 
-      if (source_db_->db_type != DatabaseType::Enum::kMysql)
+      if (source_db_->db_type != DatabaseType::Enum::kMysql) {
         throw std::runtime_error("Error: Source database is not mysql");
+      }
 
-      if (destination_db_->db_type != DatabaseType::Enum::kPostgresql)
+      if (destination_db_->db_type != DatabaseType::Enum::kPostgresql) {
         throw std::runtime_error(
             "Error: Destination database is not postgresql");
+      }
 
     } catch (const std::runtime_error& e) {
       throw e;
@@ -141,7 +143,7 @@ class DbCopy {
    public:
     void ParseCommandLine(int argc, char** argv)
     {
-      char c{};
+      int c{};
       bool options_error{false};
       int argument_count{};
 
@@ -176,7 +178,9 @@ class DbCopy {
         }
       }
 
-      argument_count += 3;
+      ++argument_count;  // program name
+      ++argument_count;  // source catalog name
+      ++argument_count;  // destination catalog name
 
       if (options_error || argc != argument_count) {
         usage();
@@ -191,11 +195,12 @@ class DbCopy {
     std::string source_db_resource_name, destination_db_resource_name;
     bool empty_destination_tables{false};
     bool use_sql_insert_statements_instead_of_copy{false};
-    std::size_t maximum_number_of_rows;
+    std::size_t maximum_number_of_rows{};
+    static constexpr std::size_t year_of_release = 2020;
 
-    void usage() noexcept
+    static void usage() noexcept
     {
-      kBareosVersionStrings.PrintCopyright(stderr, 2020);
+      kBareosVersionStrings.PrintCopyright(stderr, year_of_release);
 
       fprintf(
           stderr,
@@ -220,11 +225,13 @@ class DbCopy {
   std::unique_ptr<DatabaseConnection> source_db_;
   std::unique_ptr<DatabaseConnection> destination_db_;
   std::unique_ptr<ConfigurationParser> my_config_;
-  std::array<char, 2048> current_working_directory_;
+  static constexpr std::size_t sizeof_workingdir = 10 * 1024;
+  std::array<char, sizeof_workingdir> current_working_directory_{};
 };
 
 class Cleanup {
  public:
+  Cleanup() = default;
   ~Cleanup()
   {
     DbSqlPoolDestroy();

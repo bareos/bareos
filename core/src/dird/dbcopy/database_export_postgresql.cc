@@ -29,50 +29,49 @@
 #include <iostream>
 #include <memory>
 
-static void no_conversion(BareosDb* db, DatabaseField& fd)
+static void no_conversion(BareosDb* /*db*/, DatabaseField& f)
 {
-  fd.data_pointer = fd.data_pointer ? fd.data_pointer : "";
+  f.data_pointer = f.data_pointer != nullptr ? f.data_pointer : "";
 }
 
-static void timestamp_conversion_postgresql(BareosDb* db, DatabaseField& fd)
+static void timestamp_conversion_postgresql(BareosDb* /*db*/, DatabaseField& f)
 {
   static const char* dummy_timepoint = "1970-01-01 00:00:00";
-  if (!fd.data_pointer) {
-    fd.data_pointer = dummy_timepoint;
-  } else if (fd.data_pointer[0] == '0') {
-    fd.data_pointer = dummy_timepoint;
-  } else if (strlen(fd.data_pointer) == 0) {
-    fd.data_pointer = dummy_timepoint;
+
+  if (f.data_pointer == nullptr || *f.data_pointer == '0' ||
+      strlen(f.data_pointer) == 0) {
+    f.data_pointer = dummy_timepoint;
   }
 }
 
-static void string_conversion_postgresql(BareosDb* db, DatabaseField& fd)
+static void string_conversion_postgresql(BareosDb* db, DatabaseField& f)
 {
-  if (fd.data_pointer) {
-    std::size_t len{strlen(fd.data_pointer)};
-    fd.converted_data.resize(len * 2 + 1);
-    db->EscapeString(nullptr, fd.converted_data.data(), fd.data_pointer, len);
-    fd.data_pointer = fd.converted_data.data();
+  if (f.data_pointer != nullptr) {
+    std::size_t len{strlen(f.data_pointer)};
+    f.converted_data.resize(len * 2 + 1);
+    db->EscapeString(nullptr, f.converted_data.data(), f.data_pointer, len);
+    f.data_pointer = f.converted_data.data();
   } else {
-    fd.data_pointer = "";
+    f.data_pointer = "";
   }
 }
 
-static void bytea_conversion_postgresql(BareosDb* db, DatabaseField& fd)
+static void bytea_conversion_postgresql(BareosDb* db, DatabaseField& f)
 {
   std::size_t new_len{};
-  std::size_t old_len = fd.size_of_restore_object;
+  std::size_t original_length = f.size_of_restore_object;
 
-  auto old = reinterpret_cast<const unsigned char*>(fd.data_pointer);
+  // use the same pointer for strings as for binary objects
+  auto original = reinterpret_cast<const unsigned char*>(f.data_pointer);
 
-  auto obj = db->EscapeObject(old, old_len, new_len);
+  auto converted_obj = db->EscapeObject(original, original_length, new_len);
 
-  fd.converted_data.resize(new_len);
-  memcpy(fd.converted_data.data(), obj, new_len);
+  f.converted_data.resize(new_len);
+  memcpy(f.converted_data.data(), converted_obj, new_len);
 
-  db->FreeEscapedObjectMemory(obj);
+  db->FreeEscapedObjectMemory(converted_obj);
 
-  fd.data_pointer = fd.converted_data.data();
+  f.data_pointer = f.converted_data.data();
 }
 
 static const ColumnDescription::DataTypeConverterMap
@@ -167,7 +166,7 @@ void DatabaseExportPostgresql::DoCopyInsertion(RowData& source_data_row)
             source_data_row.table_name,
             source_data_row.column_descriptions[i]->column_name);
 
-    if (!column_description) {
+    if (column_description == nullptr) {
       std::string err{"Could not get column description for: "};
       err += source_data_row.column_descriptions[i]->column_name;
       throw std::runtime_error(err);
@@ -200,7 +199,7 @@ void DatabaseExportPostgresql::DoInsertInsertion(RowData& source_data_row)
             source_data_row.table_name,
             source_data_row.column_descriptions[i]->column_name);
 
-    if (!column_description) {
+    if (column_description == nullptr) {
       std::string err{"Could not get column description for: "};
       err += source_data_row.column_descriptions[i]->column_name;
       throw std::runtime_error(err);
@@ -293,8 +292,7 @@ static bool TableIsEmtpy(BareosDb* db, const std::string& table_name)
     throw std::runtime_error(err);
   }
 
-  if (db->SqlNumRows() > 0) { return false; }
-  return true;
+  return db->SqlNumRows() <= 0;
 }
 
 bool DatabaseExportPostgresql::TableExists(
@@ -401,7 +399,7 @@ int DatabaseExportPostgresql::ResultHandlerSequenceSchema(void* ctx,
   }
   s.sequence_name = l[1];
 
-  SequenceSchemaVector* v = static_cast<SequenceSchemaVector*>(ctx);
+  auto* v = static_cast<SequenceSchemaVector*>(ctx);
   v->push_back(s);
   return 0;
 }

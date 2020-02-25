@@ -33,7 +33,7 @@ ColumnDescription::ColumnDescription(const char* column_name_in,
 {
   std::string field;
   try {
-    field = max_length_in ? max_length_in : "";
+    field = max_length_in != nullptr ? max_length_in : "";
     if (!field.empty()) { character_maximum_length = std::stoul(field); }
   } catch (const std::exception& e) {
     std::string err{__FILE__};

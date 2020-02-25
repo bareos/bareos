@@ -39,7 +39,8 @@ class DatabaseExportPostgresql : public DatabaseExport {
   void EndTable(const std::string& table_name) override;
 
   void CopyStart() override;
-  void CopyRow(RowData& origin_data, std::string& info_out) override;
+  void CopyRow(RowData& source_data_row,
+               std::string& insert_mode_message) override;
   void CopyEnd() override;
 
  public:
