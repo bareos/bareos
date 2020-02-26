@@ -940,6 +940,144 @@ A very simple corresponding shell script (:command:`bpipe-restore.sh`) to the me
    cat - > /tmp/dump.sql
    exit 0
 
+
+.. _section-MigrationMysqlToPostgresql:
+
+Migrate MySQL to postgreSQL
+---------------------------
+
+:index:`\ <single: Migration; MySQL; postgreSQL; bareos-dbcopy; dbcopy>`
+
+Since Bareos :sinceVersion:`19.0.0:` the use of |mysql| databases with
+Bareos is deprecated. Therefore Bareos provides a tool to conveniently copy the
+whole contents to a new postgreSQL database: :ref:`program-bareos-dbcopy`. This
+chapter describes how to do a migration using bareos-dbcopy.
+
+Make a backup of your old database
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. warning::
+
+   Make a backup of your old database before you start the migration process!
+
+
+Prepare the new database
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Firstly, create a new |postgresql| database as described in :ref:`section-CreateDatabase`.
+Add the new |postgresql| database to the current |dir| configuration, but do not remove
+the |mysql| database from the config, yet.
+
+.. note::
+
+   Stop the |dir| before continuing.
+
+
+These are the catalog resources used in this example:
+
+.. code-block:: bareosconfig
+   :caption: Example catalog Resource for |postgresql|
+
+   Catalog
+   {
+     Name = postgresql-db
+     DB Driver = postgresql
+     DB Name = bareos;
+     DB User = bareos;
+     DB Password = ""
+   }
+
+.. code-block:: bareosconfig
+   :caption: Example catalog Resource for |mysql|
+
+   Catalog
+   {
+     Name = mysql-db
+     DB Driver = mysql
+     DB Name = bareos;
+     DB User = bareos;
+     DB Password = ""
+   }
+
+Run bareos-dbcopy
+~~~~~~~~~~~~~~~~~
+
+Once the databases are running you can start to copy the contents from |mysql|
+to |postgresql|. Depending on the size of your database the copy process can run
+up to several hours.
+
+.. code-block:: shell-session
+   :caption: Run the bareos-dbcopy command
+
+   #!/bin/bash
+   su -s /bin/bash - bareos
+   bareos-dbcopy -c <path-to-bareos-config> mysql-db postgresql-db
+
+
+*bareos-dbcopy* will then start to examine the databases and copies the tables
+one by one. This is an example output:
+
+.. code-block:: shell-session
+   :caption: Example output of bareos-dbcopy
+
+   Copying tables from "mysql" to "postgresql"
+   gathering information about source catalog "mysql"...
+   gathering information about destination catalog "postgresql"...
+   getting column descriptions...
+   --> basefiles
+   --> client
+   --> counters
+
+   ...
+
+   --> version
+   copying tables...
+   ====== table BaseFiles ======
+   --> checking destination table...
+   --> requesting number of rows to be copied...
+   --> nothing to copy...
+   --> updating sequence
+   --> success
+
+   ...
+
+   ====== table File ======
+   --> checking destination table...
+   --> requesting number of rows to be copied...
+   --> copying 100'000 rows...
+   --> Start: 2020-02-26 16:52:01
+         4% ETA:2020-02-26 16:52:08 (running:0h00m00s, remaining:0h00m07s)
+        12% ETA:2020-02-26 16:52:07 (running:0h00m00s, remaining:0h00m05s)
+        20% ETA:2020-02-26 16:52:08 (running:0h00m01s, remaining:0h00m05s)
+        28% ETA:2020-02-26 16:52:07 (running:0h00m02s, remaining:0h00m04s)
+        36% ETA:2020-02-26 16:52:07 (running:0h00m02s, remaining:0h00m04s)
+        44% ETA:2020-02-26 16:52:07 (running:0h00m03s, remaining:0h00m03s)
+        52% ETA:2020-02-26 16:52:08 (running:0h00m03s, remaining:0h00m03s)
+        60% ETA:2020-02-26 16:52:07 (running:0h00m04s, remaining:0h00m02s)
+        68% ETA:2020-02-26 16:52:08 (running:0h00m04s, remaining:0h00m02s)
+        76% ETA:2020-02-26 16:52:08 (running:0h00m05s, remaining:0h00m01s)
+        84% ETA:2020-02-26 16:52:08 (running:0h00m05s, remaining:0h00m01s)
+        92% ETA:2020-02-26 16:52:08 (running:0h00m06s, remaining:0h00m00s)
+       100% ETA:2020-02-26 16:52:08 (running:0h00m06s, remaining:0h00m00s)
+   --> updating sequence
+   --> success
+
+   ...
+
+   ====== table webacula_where_acl ======
+   --> checking destination table...
+   --> destination table does not exist
+   --> *** skipping ***
+   database copy completed successfully
+
+Migration ready
+~~~~~~~~~~~~~~~
+
+Once bareos-dbcopy finished with sucess you should be able to stop the |mysql|
+database server and you can remove the *mysql-db* catalog resource from your config
+and restart the |dir|. The Migration from |mysql| to |postgresql| is now finished.
+
+
 .. _section-StatisticCollection:
 
 Statistics Collection
