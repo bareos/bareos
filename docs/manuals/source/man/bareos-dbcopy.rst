@@ -19,8 +19,8 @@ Description
 for both ``<sourcecatalog>`` and ``<destinationcatalog>`` must exist.
 
 The main use of :program:`bareos-dbcopy` is to migrate an existing Bareos
-installation from MySQL to postgreSQL. Therefore the allowed
-:config:option:`dir/catalog/DbDriver` in the ``<sourcecatalog>`` is MySQL,
+installation from |mysql| to postgreSQL. Therefore the allowed
+:config:option:`dir/catalog/DbDriver` in the ``<sourcecatalog>`` is |mysql|,
 for ``<destinationcatalog>`` only PostgreSQL is possible.
 
 :program:`bareos-dbcopy` only copies the data over to the new catalog.
@@ -53,6 +53,13 @@ Options
 
    bareos-dbcopy reads the director configuration from the given
    <configuration directory> instead of :file:`/etc/bareos`
+
+.. option:: -i
+
+   By default all rows are inserted into the postgres database by
+   COPY FROM STDIN. This flag overrides the default and inserts all rows
+   by INSERT INTO statements. Because this runs much slower it should only
+   be used in case of errors.
 
 .. option:: -?
 
