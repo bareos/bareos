@@ -24,6 +24,9 @@
 #ifndef BAREOS_LIB_VERSION_H_
 #define BAREOS_LIB_VERSION_H_
 
+#include <stddef.h>
+#include <stdio.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -47,7 +50,7 @@ struct BareosVersionStrings {
 extern const struct BareosVersionStrings kBareosVersionStrings;
 
 #ifdef __cplusplus
-}
+};
 #endif
 
 /* If this is set stdout will not be closed on startup */
