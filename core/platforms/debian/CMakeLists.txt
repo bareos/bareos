@@ -88,7 +88,7 @@ macro(bareos_install_sql_files_to_dbconfig_common)
   foreach(SQLFILE ${SQLFILES})
     get_filename_component(BASENAME ${SQLFILE} NAME)
     string(
-      REGEX MATCH "([0-9]*)_([0-9]*)" DUMMMY ${SQLFILE}
+      REGEX MATCH "([0-9]+)_([0-9]+)\\.sql" DUMMMY ${SQLFILE}
     ) # match the regex, we only are interested in submatch in parentheses
     set(FROM_VERSION ${CMAKE_MATCH_1})
     set(TO_VERSION ${CMAKE_MATCH_2})
