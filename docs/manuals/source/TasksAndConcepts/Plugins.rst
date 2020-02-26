@@ -21,17 +21,18 @@ File Daemon Plugins
 File Daemon plugins are configured by the :strong:`Plugin`\  directive of a :ref:`File Set <directive-fileset-plugin>`.
 
 
+.. warning::
 
-   .. warning::
+   Currently the plugin command is being stored as part of the backup. The restore command in your directive should be flexible enough if things might change in future, otherwise you could run into trouble.
 
-      Currently the plugin command is being stored as part of the backup. The restore command in your directive should be flexible enough if things might change in future, otherwise you could run into trouble.
 
 .. _bpipe:
 
 bpipe Plugin
 ~~~~~~~~~~~~
 
-:index:`\ <single: Plugin; bpipe>`\
+.. index::
+   single: Plugin; bpipe
 
 The bpipe plugin is a generic pipe program, that simply transmits the data from a specified program to Bareos for backup, and from Bareos to a specified program for restore. The purpose of the plugin is to provide an interface to any system program for backup and restore. That allows you, for example, to do database backups without a local dump. By using different command lines to bpipe, you can backup any kind of data (ASCII or binary) depending on the program called.
 
@@ -39,7 +40,7 @@ On Linux, the Bareos bpipe plugin is part of the **bareos-filedaemon** package a
 
 The bpipe plugin is so simple and flexible, you may call it the "Swiss Army Knife" of the current existing plugins for Bareos.
 
-The bpipe plugin is specified in the Include section of your Job’s FileSet resource in your :file:`bareos-dir.conf`.
+The bpipe plugin is specified in the Include section of your Job’s FileSet resource.
 
 .. code-block:: bareosconfig
    :caption: bpipe fileset
@@ -74,6 +75,12 @@ readprogram
 
 writeprogram
    for the bpipe plugin specifies the "writer" program that is called by the plugin during restore to write the data back to the filesystem.
+   To simply create a file, containing the data of the backup, following command can by used on a Unix system:
+
+   .. code-block:: shell
+
+      writer=sh -c 'cat >/var/tmp/bpipe.data'
+
 
 Please note that the two items above describing the "reader" and "writer", these programs are "executed" by Bareos, which means there is no shell interpretation of any command line arguments you might use. If you want to use shell characters (redirection of input or output, ...), then we recommend that you put your command or commands in a shell script and execute the script. In addition if you backup a file with reader program, when running the writer program during the restore, Bareos will not
 automatically create the path to the file. Either the path must exist, or you must explicitly do so with your command or in a shell script.

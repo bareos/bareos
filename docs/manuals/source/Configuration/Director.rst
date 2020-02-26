@@ -277,9 +277,9 @@ Please take note of the following items in the FileSet syntax:
 
 #. When using wild-cards or regular expressions, directory names are always terminated with a slash (/) and filenames have no trailing slash.
 
-File = filename | dirname | | command | \<includefile-client | <includefile-server
-   | 
-   | The file list consists of one file or directory name per line. Directory names should be specified without a trailing slash with Unix path notation.
+File = filename | dirname | |command | \\<includefile-client | <includefile-server
+
+   The file list consists of one file or directory name per line. Directory names should be specified without a trailing slash with Unix path notation.
 
    Windows users, please take note to specify directories (even c:/...) in Unix path notation. If you use Windows conventions, you will most likely not be able to restore your files due to the fact that the Windows path separator was defined as an escape character long before Windows existed, and Bareos adheres to that convention (i.e. means the next character appears as itself).
 
@@ -373,7 +373,7 @@ File = filename | dirname | | command | \<includefile-client | <includefile-
                signature=SHA1
                onefs=yes
              }
-             File = "\\|bash -c \"df -klF ufs | tail +2 | awk '{print \$6}'\""
+             File = "\|bash -c \"df -klF ufs | tail +2 | awk '{print \$6}'\""
            }
          }
 
@@ -413,7 +413,7 @@ File = filename | dirname | | command | \<includefile-client | <includefile-
            Options {
              signature = SHA1
            }
-           File = "\\</home/xxx/filelist-on-client"
+           File = "\</home/xxx/filelist-on-client"
          }
 
    -  :index:`\ <single: Backup; Partitions>`\  :index:`\ <single: Backup; Raw Partitions>`\  If you explicitly specify a block device such as /dev/hda1, then Bareos will assume that this is a raw partition to be backed up. In this case, you are strongly urged to specify a sparse=yes include option, otherwise, you will save the whole partition rather than just the actual data that the partition contains. For example:
@@ -469,12 +469,12 @@ Exclude Dir Containing = filename
 
    NOTE: subdirectories will not be backed up. That is, the directive applies to the two directories in question and any children (be they files, directories, etc).
 
-Plugin = plugin-name:plugin-parameter1:plugin-parameter2:...
-   
 
 .. _directive-fileset-plugin:
 
- Instead of only specifying files, a file set can also use plugins. Plugins are additional libraries that handle specific requirements. The purpose of plugins is to provide an interface to any system program for backup and restore. That allows you, for example, to do database backups without a local dump.
+Plugin = plugin-name:plugin-parameter1:plugin-parameter2:...
+
+   Instead of only specifying files, a file set can also use plugins. Plugins are additional libraries that handle specific requirements. The purpose of plugins is to provide an interface to any system program for backup and restore. That allows you, for example, to do database backups without a local dump.
 
    The syntax and semantics of the Plugin directive require the first part of the string up to the colon to be the name of the plugin. Everything after the first colon is ignored by the File daemon but is passed to the plugin. Thus the plugin writer may define the meaning of the rest of the string as he wishes.
 
@@ -498,7 +498,7 @@ FileSet Exclude Ressource
 
 FileSet Exclude-Ressources very similar to Include-Ressources, except that they only allow following directives:
 
-File = filename | dirname | | command | \<includefile-client | <includefile-server
+File = filename | dirname | |command | \\<includefile-client | <includefile-server
 
 Files to exclude are descripted in the same way as at the :ref:`fileset-include`.
 
@@ -1905,7 +1905,7 @@ As an example, suppose you add the following test FileSet:
      Include {
        File = /home/xxx/test
        Options {
-          regex = ".*\\.c$"
+          regex = ".*\.c$"
        }
      }
    }
