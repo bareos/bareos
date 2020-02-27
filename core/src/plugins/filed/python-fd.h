@@ -761,12 +761,13 @@ static PyMethodDef BareosFDMethods[] = {
 
 MOD_INIT(bareosfd)
 {
-  /* ctx holds the bpContext instead of passing to Python and extracting it
-   * back like it was before.
-   * ctx needs to be set after loading the bareosfd binary python module and
-   * will be used for all calls.
+  /* bareos_plugin_context holds the bpContext instead of passing to Python and
+   * extracting it back like it was before. bareos_plugin_context needs to be
+   * set after loading the bareosfd binary python module and will be used for
+   * all calls.
    */
-  static void* ctx = NULL;
+  static void* bareos_plugin_context = NULL;
+
   PyObject* BareosFdModule = NULL;
 
   /* Pointer Capsules to avoid context transfer back and forth */

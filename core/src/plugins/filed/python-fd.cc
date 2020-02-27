@@ -1233,6 +1233,8 @@ static bRC PyLoadModule(bpContext* bareos_plugin_ctx, void* value)
      */
     plugin_priv_ctx->py_bpContext = PyCreatebpContext(bareos_plugin_ctx);
 
+    void* ctx_from_bareosfd_module = PyCapsule_Import("bareosfd.bpContext", 0);
+
     /*
      * Lookup the load_bareos_plugin() function in the python module.
      */
