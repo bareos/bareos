@@ -605,7 +605,8 @@ After the restore process has finished, the restored VMDK files can be found und
 oVirt Plugin
 ~~~~~~~~~~~~
 
-:index:`\ <single: Plugin; oVirt>`\  :index:`\ <single: oVirt Plugin>`\
+.. index::
+   pair: Plugin; oVirt
 
 The oVirt Plugin can be used for agentless backups of virtual machines running on oVirt or Red Hat Virtualization (RHV).
 It was tested with oVirt/RHV 4.3. There are currently no known technical differences between
@@ -673,7 +674,10 @@ Installation
 
 The installation is done by installing the package **bareos-filedaemon-ovirt-python-plugin**:
 
-:command:`yum install bareos-filedaemon-ovirt-python-plugin`
+.. code-block:: shell
+
+   yum install bareos-filedaemon-ovirt-python-plugin
+
 
 .. _oVirtPlugin-configuration:
 
@@ -694,7 +698,9 @@ To verify SSL certificates, the plugin must know the CA certificate of the oVirt
 it can be downloaded from the oVirt/RHV engine start page manually, or by using the following
 command:
 
-:command:`curl -k -o /etc/bareos/ovirt-ca.cert https://engine.example.com/ovirt-engine/services/pki-resource?resource=ca-certificate&format=X509-PEM-CA`
+.. code-block:: shell
+
+   curl -k -o /etc/bareos/ovirt-ca.cert https://engine.example.com/ovirt-engine/services/pki-resource?resource=ca-certificate&format=X509-PEM-CA
 
 For each VM to be backed up, a **job** and a **fileset** must be configured. For
 example to backup the VM **testvm1**, configure the fileset as follows:
@@ -842,7 +848,7 @@ ovirt_sdk_debug_log
    example by adding **ovirt_sdk_debug_log=/var/log/bareos/ovirt-sdk-debug.log**.
 
 
-.. _oVirtPlugin-backup
+.. _oVirtPlugin-backup:
 
 Backup
 ^^^^^^
@@ -864,7 +870,7 @@ To manually run a backup, use the following command in |bconsole|:
    Storage:  File (From Job resource)
    When:     2019-12-16 17:41:13
    Priority: 10
-   OK to run? (yes/mod/no): *<input>yes</input>
+   OK to run? (yes/mod/no): <input>yes</input>
    Job queued. JobId=1
 
 
@@ -876,7 +882,7 @@ To manually run a backup, use the following command in |bconsole|:
    full level backups for jobs using this plugin.
 
 
-.. _oVirtPlugin-restore
+.. _oVirtPlugin-restore:
 
 Restore
 ^^^^^^^
@@ -1009,7 +1015,7 @@ When restoring disks of an existing VM, the option **overwrite=yes** must be exp
 passed to force overwriting. To prevent from accidentally overwriting an existing VM,
 the plugin will return an error message if this option is not passed.
 
-.. _oVirtPlugin-restore-to-local-image
+.. _oVirtPlugin-restore-to-local-image:
 
 Restore to local disk image
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1061,7 +1067,7 @@ Incremental backups only work for INNODB tables, when using MYISAM, only full ba
 
 
 Prerequisites
-'''''''''''''
+^^^^^^^^^^^^^
 
 Install the XtraBackup tool from Percona. Documentation and packages are available here: https://www.percona.com/software/mysql-database/percona-XtraBackup. The plugin was successfully tested with XtraBackup versions 2.3.5 and 2.4.4.
 
@@ -1071,12 +1077,12 @@ For authentication the :file:`.mycnf` file of the user running the |fd| is used.
 
 
 Installation
-''''''''''''
+^^^^^^^^^^^^
 
 Make sure you have met the prerequisites, after that install the package **bareos-filedaemon-percona_XtraBackup-python-plugin**.
 
 Configuration
-'''''''''''''
+^^^^^^^^^^^^^
 
 Activate your plugin directory in the |fd| configuration. See :ref:`fdPlugins` for more about plugins in general.
 
@@ -1122,7 +1128,7 @@ You can append options to the plugin call as key=value pairs, separated by ’:�
 -  :strong:`strictIncremental`: By default (false), an incremental backup will create data, even if the Log Sequence Number (LSN) wasn’t increased since last backup. This is to ensure, that eventual changes to MYISAM tables get into the backup. MYISAM does not support incremental backups, you will always get a full bakcup of these tables. If set to true, no data will be written into backup, if the LSN wasn’t changed.
 
 Restore
-'''''''
+^^^^^^^
 
 With the usual Bareos restore mechanism a file-hierarchy will be created on the restore client under the default restore location:
 
