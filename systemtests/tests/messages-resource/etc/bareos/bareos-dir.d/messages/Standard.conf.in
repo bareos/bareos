@@ -2,7 +2,7 @@ Messages {
   Name = Standard
   Description = "Message delivery for all reasonable directions"
   Console = all
-  Append = "@logdir@/append" = all
+  Append = "@logdir@/append-to-a-very-long-file-12345678901234567890123456789012345678901234567890abcdefghijklmnopqrstuvwxyz12345678901234567890abcdefg" = all
   Catalog = all
   Syslog = all
   Stdout = all

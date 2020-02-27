@@ -368,27 +368,26 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
         Dmsg0(900, "done with dest codes\n");
         break;
       case MessageDestinationCode::kFile:
-      case MessageDestinationCode::kAppend:
-        dest = GetPoolMemory(PM_MESSAGE);
-
+      case MessageDestinationCode::kAppend: {
         /*
          * Pick up a single destination.
          */
-        token = LexGetToken(lc, BCT_NAME); /* Scan destination */
-        PmStrcpy(dest, lc->str);
+        token = LexGetToken(lc, BCT_STRING); /* Scan destination */
+        std::string dest_file_path(lc->str);
         dest_len = lc->str_len;
         token = LexGetToken(lc, BCT_SKIP_EOL);
-        Dmsg1(900, "StoreMsgs dest=%s:\n", NPRT(dest));
+        Dmsg1(900, "StoreMsgs dest=%s:\n", dest_file_path.c_str());
         if (token != BCT_EQUALS) {
           scan_err1(lc, _("expected an =, got: %s"), lc->str);
           return;
         }
         ScanTypes(lc, message_resource,
-                  static_cast<MessageDestinationCode>(item->code), dest,
-                  std::string(), message_resource->timestamp_format_);
-        FreePoolMemory(dest);
+                  static_cast<MessageDestinationCode>(item->code),
+                  dest_file_path, std::string(),
+                  message_resource->timestamp_format_);
         Dmsg0(900, "done with dest codes\n");
         break;
+      }
       default:
         scan_err1(lc, _("Unknown item code: %d\n"), item->code);
         return;

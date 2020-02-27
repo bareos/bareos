@@ -67,7 +67,7 @@ struct ResourceTable {
  * Common Resource definitions
  */
 #define MAX_RES_NAME_LENGTH \
-  MAX_NAME_LENGTH - 1 /* maximum resource name length */
+  (MAX_NAME_LENGTH - 1) /* maximum resource name length */
 
 /*
  * Config item flags.
