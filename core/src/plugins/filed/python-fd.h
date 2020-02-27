@@ -761,9 +761,32 @@ static PyMethodDef BareosFDMethods[] = {
 
 MOD_INIT(bareosfd)
 {
-  PyObject* BareosFdModule;
+  /* ctx holds the bpContext instead of passing to Python and extracting it
+   * back like it was before.
+   * ctx needs to be set after loading the bareosfd binary python module and
+   * will be used for all calls.
+   */
+  static void* ctx = NULL;
+  PyObject* BareosFdModule = NULL;
+
+  /* Pointer Capsules to avoid context transfer back and forth */
+  PyObject* PyFdModulePluginContext =
+      PyCapsule_New((void*)&bareos_plugin_context, "bareosfd.bpContext", NULL);
+
+  if (!PyFdModulePluginContext) {
+    printf("python-fd.h: PyCapsule_New failed\n");
+    return MOD_ERROR_VAL;
+  }
 
   MOD_DEF(BareosFdModule, "bareosfd", NULL, BareosFDMethods)
+
+  if (PyFdModulePluginContext) {
+    PyModule_AddObject(BareosFdModule, "bpContext", PyFdModulePluginContext);
+  } else {
+    printf("python-fd.h:PyModule_AddObject failed\n");
+    return MOD_ERROR_VAL;
+  }
+
 
   PyRestoreObjectType.tp_new = PyType_GenericNew;
   if (PyType_Ready(&PyRestoreObjectType) < 0) { return MOD_ERROR_VAL; }
