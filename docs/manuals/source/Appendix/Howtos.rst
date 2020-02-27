@@ -634,14 +634,17 @@ Followed is a example for a restore of full, differential and incremental backup
 Backup of a PostgreSQL Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: PostgreSQL; Backup>`\  :index:`\ <single: Database; PostgreSQL; Backup>`\  
+.. index::
+   single: PostgreSQL; Backup
+   single: Database; PostgreSQL; Backup
 
 In this section, we describe different methods how to do backups of the PostgreSQL databases.
 
 Backup of a PostgreSQL Database by using the RunScript directive
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`\ <single: RunScript; Example>`\ 
+.. index::
+   single: RunScript; Example
 
 One method to backup a PostgreSQL database is to use the :command:`pg_dumpall` tool to dump the database into a file and then backup it as a normal file. After the backup, the file can be removed. It may also be an option not to remove it, so that the latest version is always available immediately. On the next job run it will be overwritten anyway.
 
@@ -650,50 +653,52 @@ This can be done by using :config:option:`dir/job/RunScript`\  directives inside
 .. code-block:: bareosconfig
    :caption: RunScript job resource for a PostgreSQL backup
 
-   Job {
-     Name = "BackupDatabase"
-     JobDefs = "DefaultJob"
-     Client = dbserver-fd
-     Level = Full
-     FileSet="Database"
+    Job {
+        Name = "backup-postgres"
+        JobDefs = "DefaultJob"
+        Client = dbserver-fd
+        Level = Full
+        FileSet="postgres"
 
-     # This creates a dump of our database in the local filesystem on the client
-     RunScript {
-       FailJobOnError = Yes
-       RunsOnClient = Yes
-       RunsWhen = Before
-       Command = "sh -c 'pg_dumpall -U postgres > /var/lib/bareos/postgresql_dump.sql'"
-     }
+        # This creates a dump of our database in the local filesystem on the client
+        RunScript {
+            FailJobOnError = Yes
+            RunsOnClient = Yes
+            RunsWhen = Before
+            Command = "su postgres -c 'pg_dumpall > /var/tmp/postgresql_dump.sql'"
+        }
 
-     # This deletes the dump in our local filesystem on the client
-     RunScript {
-       RunsOnSuccess = Yes
-       RunsOnClient = Yes
-       RunsWhen = After
-       Command = "rm /var/lib/bareos/postgresql_dump.sql"
-     }
-   }
+        # This deletes the dump in our local filesystem on the client
+        RunScript {
+            RunsOnSuccess = Yes
+            RunsOnClient = Yes
+            RunsWhen = After
+            Command = "rm /var/tmp/postgresql_dump.sql"
+        }
+    }
 
-   FileSet {
-     Name = "Database"
-     Include {
-       Options {
-         signature = MD5
-         compression = gzip
-       }
-       # database dump file
-       File = "/var/lib/bareos/postgresql_dump.sql"
-     }
-   }
+    FileSet {
+        Name = "postgres"
+        Include {
+            Options {
+                signature = MD5
+                compression = gzip
+            }
+            # database dump file
+            File = "/var/tmp/postgresql_dump.sql"
+        }
+    }
 
-Note that redirecting the :command:`pg_dumpall` output to a file requires to run the whole command line through a shell, otherwise the :command:`pg_dumpall` would not know what do with the :command:`>` character and the job would fail. As no shell features like redirection or piping are used for the :command:`rm`, the :command:`sh -c` is not needed there. See :config:option:`dir/job/RunScript`\  for more details.
+
+Note that redirecting the :command:`pg_dumpall` output to a file requires to run the whole command line through a shell, otherwise the :command:`pg_dumpall` would not know what do with the :command:`>` character and the job would fail. As no shell features like redirection or piping are used for the :command:`rm`, the :command:`sh -c` is not needed there. See :config:option:`dir/job/RunScript` for more details.
 
 Backup of a PostgreSQL Databases by using the bpipe plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`\ <single: bpipe; PostgreSQL backup>`\ 
+.. index::
+   single: bpipe; PostgreSQL backup
 
-Instead of creating a temporary database dump file, the bpipe plugin can be used. For general information about bpipe, see the :ref:`bpipe` section. The bpipe plugin is configured inside the :config:option:`dir/fileset/Include`\  section of a File Set, e.g.:
+Instead of creating a temporary database dump file, the bpipe plugin can be used. For general information about bpipe, see the :ref:`bpipe` section. The bpipe plugin is configured inside the :config:option:`dir/fileset/Include` section of a File Set, e.g.:
 
 .. code-block:: bareosconfig
    :caption: bpipe directive for PostgreSQL backup
@@ -701,11 +706,11 @@ Instead of creating a temporary database dump file, the bpipe plugin can be used
    FileSet {
      Name = "postgresql-all"
      Include {
-       Plugin = "bpipe:file=/POSTGRESQL/dump.sql:reader=pg_dumpall -U postgres:writer=psql -U postgres"
        Options {
          signature = MD5
          compression = gzip
        }
+       Plugin = "bpipe:file=/POSTGRESQL/dump.sql:reader=su postgres -c pg_dumpall:writer=su postgres -c psql"
      }
    }
 
