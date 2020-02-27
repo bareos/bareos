@@ -21,7 +21,7 @@ syslog_file="${BAREOS_LOG_DIR}"/syslog
 dblog_file="${BAREOS_LOG_DIR}"/dblog
 stdout_file="${BAREOS_LOG_DIR}"/stdout
 stderr_file="${BAREOS_LOG_DIR}"/stderr
-extra_append_file="${BAREOS_LOG_DIR}"/append
+extra_append_file="${BAREOS_LOG_DIR}"/append-to-a-very-long-file-12345678901234567890123456789012345678901234567890abcdefghijklmnopqrstuvwxyz12345678901234567890abcdefg
 mail_file="${BAREOS_LOG_DIR}"/mail
 operator_file="${BAREOS_LOG_DIR}"/operator
 
