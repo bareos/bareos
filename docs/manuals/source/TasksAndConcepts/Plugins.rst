@@ -3,7 +3,7 @@
 Plugins
 =======
 
-:index:`\ <single: Plugin>`\
+.. index:: Plugin
 
 The functionality of Bareos can be extended by plugins. They do exists plugins for the different daemons (Director, Storage- and File-Daemon).
 
@@ -12,6 +12,8 @@ To use plugins, they must be enabled in the configuration (:strong:`Plugin Direc
 If a :strong:`Plugin Directory`\  is specified :strong:`Plugin Names`\  defines, which plugins get loaded.
 
 If :strong:`Plugin Names`\  is not defined, all plugins get loaded.
+
+The program :ref:`bpluginfo` can be used, to retrieve information about a specific plugin.
 
 .. _fdPlugins:
 

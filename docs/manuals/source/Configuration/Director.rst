@@ -263,7 +263,7 @@ FileSet Include Ressource
 
 The Include resource must contain a list of directories and/or files to be processed in the backup job.
 
-Normally, all files found in all subdirectories of any directory in the Include File list will be backed up. Note, see below for the definition of <file-list>. The Include resource may also contain one or more Options resources that specify options such as compression to be applied to all or any subset of the files found when processing the file-list for backup. Please see below for more details concerning Options resources.
+Normally, all files found in all subdirectories of any directory in the Include File list will be backed up. The Include resource may also contain one or more Options resources that specify options such as compression to be applied to all or any subset of the files found when processing the file-list for backup. Please see below for more details concerning Options resources.
 
 There can be any number of Include resources within the FileSet, each having its own list of directories or files to be backed up and the backup options defined by one or more Options resources.
 
@@ -277,15 +277,13 @@ Please take note of the following items in the FileSet syntax:
 
 #. When using wild-cards or regular expressions, directory names are always terminated with a slash (/) and filenames have no trailing slash.
 
-File = filename 
-or 
-File = dirname  
-or
-File = |command 
-or
-File = \\<includefile-client 
-or
-File = <includefile-server
+.. config:option:: dir/fileset/include/file
+
+   :type: path
+   :type: <includefile-server
+   :type: \\<includefile-client
+   :type: \|command-server
+   :type: \\\|command-client
 
    The file list consists of one file or directory name per line. Directory names should be specified without a trailing slash with Unix path notation.
 
@@ -301,19 +299,20 @@ File = <includefile-server
    .. code-block:: bareosconfig
       :caption: File Set
 
-        Include {
-          Options {
-            compression=GZIP
-          }
-          File = /
-          File = /usr
+      Include {
+        Options {
+          compression=GZIP
         }
+        File = /
+        File = /usr
+      }
 
    on a Unix system where /usr is a subdirectory (rather than a mounted filesystem) will cause /usr to be backed up twice.
 
-   <file-list> is a list of directory and/or filename names specified with a File = directive. To include names containing spaces, enclose the name between double-quotes. Wild-cards are not interpreted in file-lists. They can only be specified in Options resources.
+   To include names containing spaces, enclose the name between double-quotes.
 
-   There are a number of special cases when specifying directories and files in a file-list. They are:
+   There are a number of special cases when specifying directories and files.
+   They are:
 
    -  Any name preceded by an at-sign (@) is assumed to be the name of a file, which contains a list of files each preceded by a "File =". The named file is read once when the configuration file is parsed during the Director startup. Note, that the file is read on the Director’s machine and not on the Client’s. In fact, the @filename can appear anywhere within a configuration file where a token would be read, and the contents of the named file will be logically inserted in the place of the
       @filename. What must be in the file depends on the location the @filename is specified in the conf file. For example:
@@ -330,9 +329,10 @@ File = <includefile-server
 
    -  Any name beginning with a vertical bar (|) is assumed to be the name of a program. This program will be executed on the Director’s machine at the time the Job starts (not when the Director reads the configuration file), and any output from that program will be assumed to be a list of files or directories, one per line, to be included. Before submitting the specified command Bareos will performe :ref:`character substitution <character substitution>`.
 
-      | This allows you to have a job that, for example, includes all the local partitions even if you change the partitioning by adding a disk. The examples below show you how to do this. However, please note two things:
-      | 1. if you want the local filesystems, you probably should be using the fstype directive and set onefs=no.
-      | 2. the exact syntax of the command needed in the examples below is very system dependent. For example, on recent Linux systems, you may need to add the -P option, on FreeBSD systems, the options will be different as well.
+      This allows you to have a job that, for example, includes all the local partitions even if you change the partitioning by adding a disk. The examples below show you how to do this. However, please note two things:
+    
+      1. if you want the local filesystems, you probably should be using the fstype directive and set onefs=no.
+      2. the exact syntax of the command needed in the examples below is very system dependent. For example, on recent Linux systems, you may need to add the -P option, on FreeBSD systems, the options will be different as well.
 
       In general, you will need to prefix your command or commands with a sh -c so that they are invoked by a shell. This will not be the case if you are invoking a script as in the second example below. Also, you must take care to escape (precede with a \\) wild-cards, shell character, and to ensure that any spaces in your command are escaped as well. If you use a single quotes (’) within a double quote ("), Bareos will treat everything between the single quotes as one field so it will not be
       necessary to escape the spaces. In general, getting all the quotes and escapes correct is a real pain as you can see by the next example. As a consequence, it is often easier to put everything in a file and simply use the file name within Bareos. In that case the sh -c will not be necessary providing the first line of the file is #!/bin/sh.
@@ -363,13 +363,13 @@ File = <includefile-server
 
       where :command:`my_partitions` has:
 
-      .. code-block:: shell-session
+      .. code-block:: shell
 
          #!/bin/sh
          df -l | grep "^/dev/hd[ab]" | grep -v ".*/tmp" \
                | awk "{print \$6}"
 
-      If the vertical bar (``|``) in front of :command:`my_partitions` is preceded by a backslash as in \\\ ``|``, the program will be executed on the Client’s machine instead of on the Director’s machine. Please note that if the filename is given within quotes, you will need to use two slashes. An example, provided by John Donagher, that backs up all the local UFS partitions on a remote system is:
+   - If the vertical bar (``|``) in front of :command:`my_partitions` is preceded by a backslash as in ``\|``, the program will be executed on the Client’s machine instead of on the Director’s machine. Please note that if the filename is given within quotes, you will need to use two slashes. An example, provided by John Donagher, that backs up all the local UFS partitions on a remote system is:
 
       .. code-block:: bareosconfig
          :caption: File Set with inline script in quotes
@@ -381,7 +381,7 @@ File = <includefile-server
                signature=SHA1
                onefs=yes
              }
-             File = "\|bash -c \"df -klF ufs | tail +2 | awk '{print \$6}'\""
+             File = "\\|bash -c \"df -klF ufs | tail +2 | awk '{print \$6}'\""
            }
          }
 
@@ -401,8 +401,7 @@ File = <includefile-server
             File = /
          }
 
-   -  Any file-list item preceded by a less-than sign (<) will be taken to be a file. This file will be read on the Director’s machine (see below for doing it on the Client machine) at the time the Job starts, and the data will be assumed to be a list of directories or files, one per line, to be included. The names should start in column 1 and should not be quoted even if they contain spaces. This feature allows you to modify the external file and change what will be saved without stopping and
-      restarting Bareos as would be necessary if using the @ modifier noted above. For example:
+   -  Any file item preceded by a less-than sign (``<``) will be taken to be a file. This file will be read on the Director’s machine (see below for doing it on the Client machine) at the time the Job starts, and the data will be assumed to be a list of directories or files, one per line, to be included. The names should start in column 1 and should not be quoted even if they contain spaces. This feature allows you to modify the external file and change what will be saved without stopping and restarting Bareos as would be necessary if using the @ modifier noted above. For example:
 
       .. code-block:: bareosconfig
 
@@ -413,7 +412,7 @@ File = <includefile-server
            File = "</home/files/local-filelist"
          }
 
-      If you precede the less-than sign (<) with a backslash as in \\<, the file-list will be read on the Client machine instead of on the Director’s machine. Please note that if the filename is given within quotes, you will need to use two slashes.
+   - If you precede the less-than sign (``<``) with a backslash as in ``\<``, the file-list will be read on the Client machine instead of on the Director’s machine. Please note that if the filename is given within quotes, you will need to use two slashes.
 
       .. code-block:: bareosconfig
 
@@ -424,7 +423,9 @@ File = <includefile-server
            File = "\</home/xxx/filelist-on-client"
          }
 
-   -  :index:`\ <single: Backup; Partitions>`\  :index:`\ <single: Backup; Raw Partitions>`\  If you explicitly specify a block device such as /dev/hda1, then Bareos will assume that this is a raw partition to be backed up. In this case, you are strongly urged to specify a sparse=yes include option, otherwise, you will save the whole partition rather than just the actual data that the partition contains. For example:
+   -  :index:`\ <single: Backup; Partitions>`
+      :index:`\ <single: Backup; Raw Partitions>`
+      If you explicitly specify a block device such as /dev/hda1, then Bareos will assume that this is a raw partition to be backed up. In this case, you are strongly urged to specify a sparse=yes include option, otherwise, you will save the whole partition rather than just the actual data that the partition contains. For example:
 
       .. code-block:: bareosconfig
          :caption: Backup Raw Partitions
@@ -439,9 +440,15 @@ File = <includefile-server
 
       will backup the data in device /dev/hd6. Note, the bf /dev/hd6 must be the raw partition itself. Bareos will not back it up as a raw device if you specify a symbolic link to a raw device such as my be created by the LVM Snapshot utilities.
 
-   -  A file-list may not contain wild-cards. Use directives in the Options resource if you wish to specify wild-cards or regular expression matching.
+   -  A file item may not contain wild-cards.
+      Use directives in the :ref:`fileset-options`
+      if you wish to specify wild-cards or regular expression matching.
 
-Exclude Dir Containing = filename
+
+.. config:option:: dir/fileset/include/ExcludeDirContaining
+
+   :type: filename
+   
    This directive can be added to the Include section of the FileSet resource. If the specified filename (filename-string) is found on the Client in any directory to be backed up, the whole directory will be ignored (not backed up). We recommend to use the filename :file:`.nobackup`, as it is a hidden file on unix systems, and explains what is the purpose of the file.
 
    For example:
@@ -474,25 +481,27 @@ Exclude Dir Containing = filename
 
           /home/user/www/cache
           /home/user/temp
-
-   NOTE: subdirectories will not be backed up. That is, the directive applies to the two directories in question and any children (be they files, directories, etc).
+   
+   Subdirectories will not be backed up. That is, the directive applies to the two directories in question and any children (be they files, directories, etc).
 
 
 .. _directive-fileset-plugin:
 
-Plugin = plugin-name:plugin-parameter1:plugin-parameter2:...
+.. config:option:: dir/fileset/include/Plugin
+
+   :type: plugin-name:plugin-parameter1:plugin-parameter2:...
 
    Instead of only specifying files, a file set can also use plugins. Plugins are additional libraries that handle specific requirements. The purpose of plugins is to provide an interface to any system program for backup and restore. That allows you, for example, to do database backups without a local dump.
 
    The syntax and semantics of the Plugin directive require the first part of the string up to the colon to be the name of the plugin. Everything after the first colon is ignored by the File daemon but is passed to the plugin. Thus the plugin writer may define the meaning of the rest of the string as he wishes.
 
    For more information, see :ref:`fdPlugins`.
+   
+   It is also possible to define more than one plugin directive in a FileSet to do several database dumps at once.
 
-   The program :ref:`bpluginfo` can be used, to retrieve information about a specific plugin.
 
-   Note: It is also possible to define more than one plugin directive in a FileSet to do several database dumps at once.
+.. config:option:: dir/fileset/include/Options
 
-Options = ...
    See the :ref:`fileset-options` section.
 
 
@@ -502,40 +511,47 @@ Options = ...
 FileSet Exclude Ressource
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Excluding Files and Directories>`
+.. index::
+   single: Excluding Files and Directories
 
 FileSet Exclude-Ressources very similar to Include-Ressources, except that they only allow following directives:
 
-File = filename | dirname | |command | \\<includefile-client | <includefile-server
+.. config:option:: dir/fileset/exclude/file
 
-Files to exclude are descripted in the same way as at the :ref:`fileset-include`.
+   :type: path
+   :type: <includefile-server
+   :type: \\<includefile-client
+   :type: \|command-server
+   :type: \\\|command-client
 
-For example:
+   Files to exclude are descripted in the same way as at the :ref:`fileset-include`.
 
-.. code-block:: bareosconfig
-   :caption: FileSet using Exclude
+   For example:
 
-   FileSet {
-     Name = Exclusion_example
-     Include {
-       Options {
-         Signature = SHA1
-       }
-       File = /
-       File = /boot
-       File = /home
-       File = /rescue
-       File = /usr
-     }
-     Exclude {
-       File = /proc
-       File = /tmp                          # Don't add trailing /
-       File = .journal
-       File = .autofsck
-     }
-   }
+   .. code-block:: bareosconfig
+      :caption: FileSet using Exclude
 
-Another way to exclude files and directories is to use the :strong:`Exclude`\  option from the Include section.
+      FileSet {
+        Name = Exclusion_example
+        Include {
+          Options {
+            Signature = SHA1
+          }
+          File = /
+          File = /boot
+          File = /home
+          File = /rescue
+          File = /usr
+        }
+        Exclude {
+          File = /proc
+          File = /tmp                          # Don't add trailing /
+          File = .journal
+          File = .autofsck
+        }
+      }
+
+   Another way to exclude files and directories is to use the :strong:`Exclude`\  option from the Include section.
 
 
 
