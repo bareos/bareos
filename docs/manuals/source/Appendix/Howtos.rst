@@ -943,14 +943,15 @@ A very simple corresponding shell script (:command:`bpipe-restore.sh`) to the me
 
 .. _section-MigrationMysqlToPostgresql:
 
-Migrate MySQL to postgreSQL
----------------------------
+Migrate |mysql| to |postgresql|
+-------------------------------
 
-:index:`\ <single: Migration; MySQL; postgreSQL; bareos-dbcopy; dbcopy>`
+:index:`\ <single: Migration; bareos-dbcopy>`
+:index:`\ <single: MySQL; bareos-dbcopy>`
 
 Since Bareos :sinceVersion:`19.0.0:` the use of |mysql| databases with
 Bareos is deprecated. Therefore Bareos provides a tool to conveniently copy the
-whole contents to a new postgreSQL database: :ref:`program-bareos-dbcopy`. This
+whole contents to a new |postgresql| database: :ref:`program-bareos-dbcopy`. This
 chapter describes how to do a migration using bareos-dbcopy.
 
 Make a backup of your old database
@@ -966,7 +967,11 @@ Prepare the new database
 
 Firstly, create a new |postgresql| database as described in :ref:`section-CreateDatabase`.
 Add the new |postgresql| database to the current |dir| configuration, but do not remove
-the |mysql| database from the config, yet.
+the |mysql| database from the config, yet. Both catalog resources must be present
+during the migration process.
+
+Both |mysql| and |postgresql| need to have the same Bareos database scheme version,
+i.e. have the schema from the identical Bareos version.
 
 .. note::
 
@@ -976,7 +981,7 @@ the |mysql| database from the config, yet.
 These are the catalog resources used in this example:
 
 .. code-block:: bareosconfig
-   :caption: Example catalog Resource for |postgresql|
+   :caption: Example catalog resource for |postgresql|
 
    Catalog
    {
@@ -988,7 +993,7 @@ These are the catalog resources used in this example:
    }
 
 .. code-block:: bareosconfig
-   :caption: Example catalog Resource for |mysql|
+   :caption: Example catalog resource for |mysql|
 
    Catalog
    {
