@@ -604,6 +604,7 @@ set(SYSTEM_TESTS
     backup-bareos-client-initiated-test
     backup-bareos-encrypt-signature-test
     backup-bareos-encrypt-signature-test-with-tls-cert
+    backup-bareos-notls
     backup-bareos-passive-test
     backup-bareos-test
     backup-bscan
