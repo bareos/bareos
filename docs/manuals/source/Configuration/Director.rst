@@ -277,7 +277,15 @@ Please take note of the following items in the FileSet syntax:
 
 #. When using wild-cards or regular expressions, directory names are always terminated with a slash (/) and filenames have no trailing slash.
 
-File = filename | dirname | |command | \\<includefile-client | <includefile-server
+File = filename 
+or 
+File = dirname  
+or
+File = |command 
+or
+File = \\<includefile-client 
+or
+File = <includefile-server
 
    The file list consists of one file or directory name per line. Directory names should be specified without a trailing slash with Unix path notation.
 
