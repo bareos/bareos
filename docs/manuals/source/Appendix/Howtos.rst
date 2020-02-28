@@ -946,8 +946,14 @@ A very simple corresponding shell script (:command:`bpipe-restore.sh`) to the me
 Migrate |mysql| to |postgresql|
 -------------------------------
 
-:index:`\ <single: Migration; bareos-dbcopy>`
-:index:`\ <single: MySQL; bareos-dbcopy>`
+.. index::
+   single: Migration from MySQL to PostgreSQL
+   single: Database; Migration; MySQL
+   single: Database; Migration; PostgreSQL
+   pair: Migration; MySQL
+   pair: Migration; PostgreSQL
+   single: bareos-dbcopy
+   see: dbcopy; bareos-dbcopy
 
 Since Bareos :sinceVersion:`19.0.0:` the use of |mysql| databases with
 Bareos is deprecated. Therefore Bareos provides a tool to conveniently copy the
