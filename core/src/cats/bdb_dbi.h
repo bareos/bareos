@@ -23,6 +23,15 @@
 #ifndef BAREOS_CATS_BDB_DBI_H_
 #define BAREOS_CATS_BDB_DBI_H_ 1
 
+#include "include/bareos.h"
+#include "cats/column_data.h"
+
+#include <string>
+#include <vector>
+
+struct AttributesDbRecord;
+class JobControlRecord;
+
 struct DbiFieldGet {
   dlink link;
   char* value;

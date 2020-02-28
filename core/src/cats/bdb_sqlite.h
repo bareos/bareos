@@ -23,6 +23,15 @@
 #ifndef BAREOS_CATS_BDB_SQLITE_H_
 #define BAREOS_CATS_BDB_SQLITE_H_ 1
 
+#include "include/bareos.h"
+#include "cats/column_data.h"
+
+#include <string>
+#include <vector>
+
+struct AttributesDbRecord;
+class JobControlRecord;
+
 class BareosDbSqlite : public BareosDbPrivateInterface {
  private:
   /*

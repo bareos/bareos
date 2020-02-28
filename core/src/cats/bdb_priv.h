@@ -3,7 +3,7 @@
 
    Copyright (C) 2011-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,6 +26,9 @@
 #ifndef _BDB_PRIV_INTERFACE_
 #error "Illegal inclusion of catalog private interface"
 #endif
+
+struct AttributesDbRecord;
+class JobControlRecord;
 
 class BareosDbPrivateInterface : public BareosDb {
  protected:
@@ -66,9 +69,9 @@ class BareosDbPrivateInterface : public BareosDb {
   virtual bool SqlFieldIsNumeric(int field_type) override = 0;
   virtual bool SqlBatchStartFileTable(JobControlRecord* jcr) override = 0;
   virtual bool SqlBatchEndFileTable(JobControlRecord* jcr,
-                           const char* error) override = 0;
+                                    const char* error) override = 0;
   virtual bool SqlBatchInsertFileTable(JobControlRecord* jcr,
-                              AttributesDbRecord* ar) override = 0;
+                                       AttributesDbRecord* ar) override = 0;
 
  public:
   BareosDbPrivateInterface() = default;

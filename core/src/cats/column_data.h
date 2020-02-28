@@ -24,6 +24,7 @@
 
 #include "include/bareos.h"
 
+#include <cstddef>
 #include <vector>
 
 struct DatabaseField {

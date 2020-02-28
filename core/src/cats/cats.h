@@ -39,6 +39,9 @@
 #include "cats/column_data.h"
 #include "lib/output_formatter.h"
 
+#include <string>
+#include <vector>
+
 class dlist;
 
 /* import automatically generated SQL_QUERY */
