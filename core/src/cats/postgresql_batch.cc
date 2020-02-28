@@ -335,9 +335,7 @@ bool BareosDbPostgresql::SqlCopyInsert(
 
   std::vector<char> buffer;
   for (const auto& field : data_fields) {
-    if (strlen(field.data_pointer) == 0) {
-      query += "";
-    } else {
+    if (strlen(field.data_pointer) != 0U) {
       buffer.resize(strlen(field.data_pointer) * 2 + 1);
       pgsql_copy_escape(buffer.data(), field.data_pointer, buffer.size());
       query += buffer.data();

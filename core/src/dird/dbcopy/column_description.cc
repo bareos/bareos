@@ -24,6 +24,7 @@
 
 #include <cstring>
 #include <iostream>
+#include <string>
 #include <vector>
 
 ColumnDescription::ColumnDescription(const char* column_name_in,

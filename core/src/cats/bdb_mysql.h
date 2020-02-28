@@ -23,6 +23,15 @@
 #ifndef BAREOS_CATS_BDB_MYSQL_H_
 #define BAREOS_CATS_BDB_MYSQL_H_ 1
 
+#include "include/bareos.h"
+#include "cats/column_data.h"
+
+#include <string>
+#include <vector>
+
+struct AttributesDbRecord;
+class JobControlRecord;
+
 /*
  * Number of insert statements to batch-up in batch insert
  * mode. We use multi-row inserts only in the batch mode
