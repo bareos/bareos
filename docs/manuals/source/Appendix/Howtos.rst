@@ -977,7 +977,7 @@ Prepare the new database
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 Firstly, create a new |postgresql| database as described in :ref:`section-CreateDatabase`.
-Add the new |postgresql| database to the current |dir| configuration, but do not remove
+Add the new |postgresql| database to the current |dir| configuration, but **do not remove**
 the |mysql| database from the config, yet. Both catalog resources must be present
 during the migration process.
 
@@ -992,24 +992,24 @@ i.e. have the schema from the identical Bareos version.
 These are the catalog resources used in this example:
 
 .. code-block:: bareosconfig
-   :caption: Example catalog resource for |postgresql|
+   :caption: Existing catalog resource for |mysql|
 
    Catalog
    {
-     Name = postgresql-db
-     DB Driver = postgresql
+     Name = MyCatalog
+     DB Driver = mysql
      DB Name = bareos;
      DB User = bareos;
      DB Password = ""
    }
 
 .. code-block:: bareosconfig
-   :caption: Example catalog resource for |mysql|
+   :caption: New catalog resource for |postgresql|
 
    Catalog
    {
-     Name = mysql-db
-     DB Driver = mysql
+     Name = MyCatalog-psql
+     DB Driver = postgresql
      DB Name = bareos;
      DB User = bareos;
      DB Password = ""
@@ -1020,25 +1020,35 @@ Run bareos-dbcopy
 
 Once the databases are running you can start to copy the contents from |mysql|
 to |postgresql|. Depending on the size of your database the copy process can run
-up to several hours.
+up to several hours. In our tests with a database containing 160 Million rows
+in the file table took about 5 hours to copy (the testsystem was equipped with SSDs).
+
+.. note::
+
+   Please run bareos-dbcopy as user **bareos** to avoid problems with access rights.
+   To start the shell as user **bareos** you can use this command:
+      ``su -s /bin/bash - bareos``
+
 
 .. code-block:: shell-session
    :caption: Run the bareos-dbcopy command
 
-   #!/bin/bash
-   su -s /bin/bash - bareos
-   bareos-dbcopy -c <path-to-bareos-config> mysql-db postgresql-db
+   # run this command as user bareos:
+   bareos-dbcopy -c <path-to-bareos-config> MyCatalog MyCatalog-psql
 
 
-*bareos-dbcopy* will then start to examine the databases and copies the tables
-one by one. This is an example output:
+*bareos-dbcopy* will then examine the databases and copy the tables one by one.
+The *file table* is by far the largest table and usually takes the longest time
+to copy.
+
+
 
 .. code-block:: shell-session
    :caption: Example output of bareos-dbcopy
 
-   Copying tables from "mysql" to "postgresql"
-   gathering information about source catalog "mysql"...
-   gathering information about destination catalog "postgresql"...
+   Copying tables from "MyCatalog" to "MyCatalog-psql"
+   gathering information about source catalog "MyCatalog"...
+   gathering information about destination catalog "MyCatalog-psql"...
    getting column descriptions...
    --> basefiles
    --> client
@@ -1086,12 +1096,24 @@ one by one. This is an example output:
    --> *** skipping ***
    database copy completed successfully
 
-Migration ready
-~~~~~~~~~~~~~~~
+.. note::
 
-Once bareos-dbcopy finished with sucess you should be able to stop the |mysql|
-database server and you can remove the *mysql-db* catalog resource from your config
-and restart the |dir|. The Migration from |mysql| to |postgresql| is now finished.
+   In the example above the table *webacula_where_acl* was skipped, because it
+   does not exist in the target database scheme. This is the desired behaviour.
+
+
+Complete the migration process
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+After bareos-dbcopy copied all data to the |postgresql| catalog the following
+tasks need to be done:
+
+* rename the |postgresql| catalog resource to the name of the |mysql| resource
+  (in our example: MyCatalog-psql -> MyCatalog)
+* comment out the |mysql| catalog resource from the director configuration
+* start the |dir|
+
+The migration is now completed.
 
 
 .. _section-StatisticCollection:
