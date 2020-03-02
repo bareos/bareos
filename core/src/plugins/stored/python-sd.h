@@ -27,6 +27,8 @@
 #ifndef BAREOS_PLUGINS_STORED_PYTHON_SD_H_
 #define BAREOS_PLUGINS_STORED_PYTHON_SD_H_ 1
 
+namespace storagedaemon {
+
 /**
  * This defines the arguments that the plugin parser understands.
  */
@@ -90,12 +92,32 @@ static PyMethodDef BareosSDMethods[] = {
 #define MOD_DEF(ob, name, doc, methods) ob = Py_InitModule3(name, methods, doc);
 #endif
 
+static void* bareos_plugin_context = NULL;
 
 MOD_INIT(bareossd)
 {
-  PyObject* BareosSdModule;
+  PyObject* BareosSdModule = NULL;
+
+  /* Pointer Capsules to avoid context transfer back and forth */
+  PyObject* PySdModulePluginContext =
+      PyCapsule_New((void*)&bareos_plugin_context, "bareossd.bpContext", NULL);
+
+  if (!PySdModulePluginContext) {
+    printf("python-dir.h: PyCapsule_New failed\n");
+    return MOD_ERROR_VAL;
+  }
+
   MOD_DEF(BareosSdModule, "bareossd", NULL, BareosSDMethods)
+
+  if (PySdModulePluginContext) {
+    PyModule_AddObject(BareosSdModule, "bpContext", PySdModulePluginContext);
+  } else {
+    printf("python-sd.h:PyModule_AddObject failed\n");
+    return MOD_ERROR_VAL;
+  }
+
   return MOD_SUCCESS_VAL(BareosSdModule);
 }
 
+} /* namespace storagedaemon*/
 #endif /* BAREOS_PLUGINS_STORED_PYTHON_SD_H_ */

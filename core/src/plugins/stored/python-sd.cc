@@ -35,12 +35,14 @@
 #endif
 #include "stored/stored.h"
 
-using namespace storagedaemon;
 
 #if (PY_VERSION_HEX < 0x02060000)
 #error "Need at least Python version 2.6 or newer"
 #endif
 
+#include "python-sd.h"
+#include "lib/edit.h"
+namespace storagedaemon {
 static const int debuglevel = 150;
 
 #define PLUGIN_LICENSE "Bareos AGPLv3"
@@ -58,21 +60,33 @@ static const int debuglevel = 150;
   bfuncs->JobMessage(context, __FILE__, __LINE__, type, 0, __VA_ARGS__)
 
 /* Forward referenced functions */
-static bRC newPlugin(bpContext* ctx);
-static bRC freePlugin(bpContext* ctx);
-static bRC getPluginValue(bpContext* ctx, psdVariable var, void* value);
-static bRC setPluginValue(bpContext* ctx, psdVariable var, void* value);
-static bRC handlePluginEvent(bpContext* ctx, bsdEvent* event, void* value);
-static bRC parse_plugin_definition(bpContext* ctx,
+static bRC newPlugin(bpContext* bareos_plugin_ctx);
+static bRC freePlugin(bpContext* bareos_plugin_ctx);
+static bRC getPluginValue(bpContext* bareos_plugin_ctx,
+                          psdVariable var,
+                          void* value);
+static bRC setPluginValue(bpContext* bareos_plugin_ctx,
+                          psdVariable var,
+                          void* value);
+static bRC handlePluginEvent(bpContext* bareos_plugin_ctx,
+                             bsdEvent* event,
+                             void* value);
+static bRC parse_plugin_definition(bpContext* bareos_plugin_ctx,
                                    void* value,
                                    PoolMem& plugin_options);
 
-static void PyErrorHandler(bpContext* ctx, int msgtype);
-static bRC PyLoadModule(bpContext* ctx, void* value);
-static bRC PyParsePluginDefinition(bpContext* ctx, void* value);
-static bRC PyGetPluginValue(bpContext* ctx, psdVariable var, void* value);
-static bRC PySetPluginValue(bpContext* ctx, psdVariable var, void* value);
-static bRC PyHandlePluginEvent(bpContext* ctx, bsdEvent* event, void* value);
+static void PyErrorHandler(bpContext* bareos_plugin_ctx, int msgtype);
+static bRC PyLoadModule(bpContext* bareos_plugin_ctx, void* value);
+static bRC PyParsePluginDefinition(bpContext* bareos_plugin_ctx, void* value);
+static bRC PyGetPluginValue(bpContext* bareos_plugin_ctx,
+                            psdVariable var,
+                            void* value);
+static bRC PySetPluginValue(bpContext* bareos_plugin_ctx,
+                            psdVariable var,
+                            void* value);
+static bRC PyHandlePluginEvent(bpContext* bareos_plugin_ctx,
+                               bsdEvent* event,
+                               void* value);
 
 /* Pointers to Bareos functions */
 static bsdFuncs* bfuncs = NULL;
@@ -102,14 +116,11 @@ struct plugin_ctx {
   char* module_path;    /* Plugin Module Path */
   char* module_name;    /* Plugin Module Name */
   PyThreadState*
-      interpreter;     /* Python interpreter for this instance of the plugin */
-  PyObject* pModule;   /* Python Module entry point */
-  PyObject* pDict;     /* Python Dictionary */
-  PyObject* bpContext; /* Python representation of plugin context */
+      interpreter;   /* Python interpreter for this instance of the plugin */
+  PyObject* pModule; /* Python Module entry point */
+  PyObject* pyModuleFunctionsDict; /* Python Dictionary */
 };
 
-#include "python-sd.h"
-#include "lib/edit.h"
 
 /**
  * We don't actually use this but we need it to tear down the
@@ -179,27 +190,28 @@ bRC unloadPlugin()
 /**
  * Create a new instance of the plugin i.e. allocate our private storage
  */
-static bRC newPlugin(bpContext* ctx)
+static bRC newPlugin(bpContext* bareos_plugin_ctx)
 {
-  struct plugin_ctx* p_ctx;
+  struct plugin_ctx* plugin_priv_ctx;
 
-  p_ctx = (struct plugin_ctx*)malloc(sizeof(struct plugin_ctx));
-  if (!p_ctx) { return bRC_Error; }
-  memset(p_ctx, 0, sizeof(struct plugin_ctx));
-  ctx->pContext = (void*)p_ctx; /* set our context pointer */
+  plugin_priv_ctx = (struct plugin_ctx*)malloc(sizeof(struct plugin_ctx));
+  if (!plugin_priv_ctx) { return bRC_Error; }
+  memset(plugin_priv_ctx, 0, sizeof(struct plugin_ctx));
+  bareos_plugin_ctx->pContext =
+      (void*)plugin_priv_ctx; /* set our context pointer */
 
   /*
    * For each plugin instance we instantiate a new Python interpreter.
    */
   PyEval_AcquireThread(mainThreadState);
-  p_ctx->interpreter = Py_NewInterpreter();
-  PyEval_ReleaseThread(p_ctx->interpreter);
+  plugin_priv_ctx->interpreter = Py_NewInterpreter();
+  PyEval_ReleaseThread(plugin_priv_ctx->interpreter);
 
   /*
    * Always register some events the python plugin itself can register
    * any other events it is interested in.
    */
-  bfuncs->registerBareosEvents(ctx, 1, bsdEventNewPluginOptions);
+  bfuncs->registerBareosEvents(bareos_plugin_ctx, 1, bsdEventNewPluginOptions);
 
   return bRC_OK;
 }
@@ -207,29 +219,26 @@ static bRC newPlugin(bpContext* ctx)
 /**
  * Free a plugin instance, i.e. release our private storage
  */
-static bRC freePlugin(bpContext* ctx)
+static bRC freePlugin(bpContext* bareos_plugin_ctx)
 {
-  struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->pContext;
+  struct plugin_ctx* plugin_priv_ctx =
+      (struct plugin_ctx*)bareos_plugin_ctx->pContext;
 
-  if (!p_ctx) { return bRC_Error; }
+  if (!plugin_priv_ctx) { return bRC_Error; }
 
   /*
    * Stop any sub interpreter started per plugin instance.
    */
-  PyEval_AcquireThread(p_ctx->interpreter);
+  PyEval_AcquireThread(plugin_priv_ctx->interpreter);
 
-  /*
-   * Do python cleanup calls.
-   */
-  if (p_ctx->bpContext) { Py_DECREF(p_ctx->bpContext); }
 
-  if (p_ctx->pModule) { Py_DECREF(p_ctx->pModule); }
+  if (plugin_priv_ctx->pModule) { Py_DECREF(plugin_priv_ctx->pModule); }
 
-  Py_EndInterpreter(p_ctx->interpreter);
+  Py_EndInterpreter(plugin_priv_ctx->interpreter);
   PyEval_ReleaseLock();
 
-  free(p_ctx);
-  ctx->pContext = NULL;
+  free(plugin_priv_ctx);
+  bareos_plugin_ctx->pContext = NULL;
 
   return bRC_OK;
 }
@@ -237,14 +246,17 @@ static bRC freePlugin(bpContext* ctx)
 /**
  * Return some plugin value (none defined)
  */
-static bRC getPluginValue(bpContext* ctx, psdVariable var, void* value)
+static bRC getPluginValue(bpContext* bareos_plugin_ctx,
+                          psdVariable var,
+                          void* value)
 {
-  struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->pContext;
+  struct plugin_ctx* plugin_priv_ctx =
+      (struct plugin_ctx*)bareos_plugin_ctx->pContext;
   bRC retval = bRC_Error;
 
-  PyEval_AcquireThread(p_ctx->interpreter);
-  retval = PyGetPluginValue(ctx, var, value);
-  PyEval_ReleaseThread(p_ctx->interpreter);
+  PyEval_AcquireThread(plugin_priv_ctx->interpreter);
+  retval = PyGetPluginValue(bareos_plugin_ctx, var, value);
+  PyEval_ReleaseThread(plugin_priv_ctx->interpreter);
 
   return retval;
 }
@@ -252,14 +264,17 @@ static bRC getPluginValue(bpContext* ctx, psdVariable var, void* value)
 /**
  * Set a plugin value (none defined)
  */
-static bRC setPluginValue(bpContext* ctx, psdVariable var, void* value)
+static bRC setPluginValue(bpContext* bareos_plugin_ctx,
+                          psdVariable var,
+                          void* value)
 {
-  struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->pContext;
+  struct plugin_ctx* plugin_priv_ctx =
+      (struct plugin_ctx*)bareos_plugin_ctx->pContext;
   bRC retval = bRC_Error;
 
-  PyEval_AcquireThread(p_ctx->interpreter);
-  retval = PySetPluginValue(ctx, var, value);
-  PyEval_ReleaseThread(p_ctx->interpreter);
+  PyEval_AcquireThread(plugin_priv_ctx->interpreter);
+  retval = PySetPluginValue(bareos_plugin_ctx, var, value);
+  PyEval_ReleaseThread(plugin_priv_ctx->interpreter);
 
   return retval;
 }
@@ -267,14 +282,16 @@ static bRC setPluginValue(bpContext* ctx, psdVariable var, void* value)
 /**
  * Handle an event that was generated in Bareos
  */
-static bRC handlePluginEvent(bpContext* ctx, bsdEvent* event, void* value)
+static bRC handlePluginEvent(bpContext* bareos_plugin_ctx,
+                             bsdEvent* event,
+                             void* value)
 {
   bRC retval = bRC_Error;
   bool event_dispatched = false;
   PoolMem plugin_options(PM_FNAME);
-  plugin_ctx* p_ctx = (plugin_ctx*)ctx->pContext;
+  plugin_ctx* plugin_priv_ctx = (plugin_ctx*)bareos_plugin_ctx->pContext;
 
-  if (!p_ctx) { goto bail_out; }
+  if (!plugin_priv_ctx) { goto bail_out; }
 
   /*
    * First handle some events internally before calling python if it
@@ -283,7 +300,8 @@ static bRC handlePluginEvent(bpContext* ctx, bsdEvent* event, void* value)
   switch (event->eventType) {
     case bsdEventNewPluginOptions:
       event_dispatched = true;
-      retval = parse_plugin_definition(ctx, value, plugin_options);
+      retval =
+          parse_plugin_definition(bareos_plugin_ctx, value, plugin_options);
       break;
     default:
       break;
@@ -296,7 +314,7 @@ static bRC handlePluginEvent(bpContext* ctx, bsdEvent* event, void* value)
    * processing was successfull (e.g. retval == bRC_OK).
    */
   if (!event_dispatched || retval == bRC_OK) {
-    PyEval_AcquireThread(p_ctx->interpreter);
+    PyEval_AcquireThread(plugin_priv_ctx->interpreter);
 
     /*
      * Now dispatch the event to Python.
@@ -307,15 +325,16 @@ static bRC handlePluginEvent(bpContext* ctx, bsdEvent* event, void* value)
         /*
          * See if we already loaded the Python modules.
          */
-        if (!p_ctx->python_loaded) {
-          retval = PyLoadModule(ctx, plugin_options.c_str());
+        if (!plugin_priv_ctx->python_loaded) {
+          retval = PyLoadModule(bareos_plugin_ctx, plugin_options.c_str());
         }
 
         /*
          * Only try to call when the loading succeeded.
          */
         if (retval == bRC_OK) {
-          retval = PyParsePluginDefinition(ctx, plugin_options.c_str());
+          retval = PyParsePluginDefinition(bareos_plugin_ctx,
+                                           plugin_options.c_str());
         }
         break;
       default:
@@ -324,15 +343,15 @@ static bRC handlePluginEvent(bpContext* ctx, bsdEvent* event, void* value)
          * We only try to call Python when we loaded the right module until
          * that time we pretend the call succeeded.
          */
-        if (p_ctx->python_loaded) {
-          retval = PyHandlePluginEvent(ctx, event, value);
+        if (plugin_priv_ctx->python_loaded) {
+          retval = PyHandlePluginEvent(bareos_plugin_ctx, event, value);
         } else {
           retval = bRC_OK;
         }
         break;
     }
 
-    PyEval_ReleaseThread(p_ctx->interpreter);
+    PyEval_ReleaseThread(plugin_priv_ctx->interpreter);
   }
 
 bail_out:
@@ -400,7 +419,7 @@ static inline void SetString(char** destination, char* value)
  *
  * python:module_path=<path>:module_name=<python_module_name>:...
  */
-static bRC parse_plugin_definition(bpContext* ctx,
+static bRC parse_plugin_definition(bpContext* bareos_plugin_ctx,
                                    void* value,
                                    PoolMem& plugin_options)
 {
@@ -408,7 +427,7 @@ static bRC parse_plugin_definition(bpContext* ctx,
   int i, cnt;
   PoolMem plugin_definition(PM_FNAME);
   char *bp, *argument, *argument_value;
-  plugin_ctx* p_ctx = (plugin_ctx*)ctx->pContext;
+  plugin_ctx* plugin_priv_ctx = (plugin_ctx*)bareos_plugin_ctx->pContext;
 
   if (!value) { return bRC_Error; }
 
@@ -420,9 +439,11 @@ static bRC parse_plugin_definition(bpContext* ctx,
 
   bp = strchr(plugin_definition.c_str(), ':');
   if (!bp) {
-    Jmsg(ctx, M_FATAL, "python-sd: Illegal plugin definition %s\n",
+    Jmsg(bareos_plugin_ctx, M_FATAL,
+         "python-sd: Illegal plugin definition %s\n",
          plugin_definition.c_str());
-    Dmsg(ctx, debuglevel, "python-sd: Illegal plugin definition %s\n",
+    Dmsg(bareos_plugin_ctx, debuglevel,
+         "python-sd: Illegal plugin definition %s\n",
          plugin_definition.c_str());
     goto bail_out;
   }
@@ -446,10 +467,10 @@ static bRC parse_plugin_definition(bpContext* ctx,
     argument = bp;
     argument_value = strchr(bp, '=');
     if (!argument_value) {
-      Jmsg(ctx, M_FATAL, "python-sd: Illegal argument %s without value\n",
-           argument);
-      Dmsg(ctx, debuglevel, "python-sd: Illegal argument %s without value\n",
-           argument);
+      Jmsg(bareos_plugin_ctx, M_FATAL,
+           "python-sd: Illegal argument %s without value\n", argument);
+      Dmsg(bareos_plugin_ctx, debuglevel,
+           "python-sd: Illegal argument %s without value\n", argument);
       goto bail_out;
     }
     *argument_value++ = '\0';
@@ -479,13 +500,13 @@ static bRC parse_plugin_definition(bpContext* ctx,
 
         switch (plugin_arguments[i].type) {
           case argument_instance:
-            int_destination = &p_ctx->instance;
+            int_destination = &plugin_priv_ctx->instance;
             break;
           case argument_module_path:
-            str_destination = &p_ctx->module_path;
+            str_destination = &plugin_priv_ctx->module_path;
             break;
           case argument_module_name:
-            str_destination = &p_ctx->module_name;
+            str_destination = &plugin_priv_ctx->module_name;
             break;
           default:
             break;
@@ -534,49 +555,22 @@ bail_out:
   return bRC_Error;
 }
 
-/**
- * Work around API changes in Python versions.
- * These function abstract the storage and retrieval of the bpContext
- * which is passed to the Python methods and which the method can pass
- * back and which allow the callback function to understand what bpContext
- * its talking about.
- */
-#if ((PY_VERSION_HEX < 0x02070000) || \
-     ((PY_VERSION_HEX >= 0x03000000) && (PY_VERSION_HEX < 0x03010000)))
-/**
- * Python version before 2.7 and 3.0.
- */
-static PyObject* PyCreatebpContext(bpContext* ctx)
+static void StorePluginContextInPythonModule(bpContext* bareos_plugin_ctx)
 {
-  /*
-   * Setup a new CObject which holds the bpContext structure used here
-   * internally.
-   */
-  return PyCObject_FromVoidPtr((void*)ctx, NULL);
+  /* get the pointer to the module variable that is exported via the capsule */
+  bpContext** bareosfd_bpContext =
+      (bpContext**)PyCapsule_Import("bareossd.bpContext", 0);
+
+  /* store bareos_plugin_ctx in module */
+  *bareosfd_bpContext = bareos_plugin_ctx;
 }
 
-static bpContext* PyGetbpContext(PyObject* pyCtx)
-{
-  return (bpContext*)PyCObject_AsVoidPtr(pyCtx);
-}
-#else
-/**
- * Python version after 2.6 and 3.1.
- */
-static PyObject* PyCreatebpContext(bpContext* ctx)
-{
-  /*
-   * Setup a new Capsule which holds the bpContext structure used here
-   * internally.
-   */
-  return PyCapsule_New((void*)ctx, "bareos.bpContext", NULL);
-}
 
-static bpContext* PyGetbpContext(PyObject* pyCtx)
+static bpContext* PyGetbpContext()
 {
-  return (bpContext*)PyCapsule_GetPointer(pyCtx, "bareos.bpContext");
+  bpContext** retval = (bpContext**)PyCapsule_Import("bareossd.bpContext", 0);
+  return *retval;
 }
-#endif
 
 /**
  * Convert a return value into a bRC enum value.
@@ -603,7 +597,7 @@ static inline PyObject* conv_retval_python(bRC retval)
  * return "".join(traceback.format_exception(sys.exc_type,
  *    sys.exc_value, sys.exc_traceback))
  */
-static void PyErrorHandler(bpContext* ctx, int msgtype)
+static void PyErrorHandler(bpContext* bareos_plugin_ctx, int msgtype)
 {
   PyObject *type, *value, *traceback;
   PyObject* tracebackModule;
@@ -638,8 +632,10 @@ static void PyErrorHandler(bpContext* ctx, int msgtype)
   Py_XDECREF(value);
   Py_XDECREF(traceback);
 
-  Dmsg(ctx, debuglevel, "python-sd: %s\n", error_string);
-  if (msgtype) { Jmsg(ctx, msgtype, "python-sd: %s\n", error_string); }
+  Dmsg(bareos_plugin_ctx, debuglevel, "python-sd: %s\n", error_string);
+  if (msgtype) {
+    Jmsg(bareos_plugin_ctx, msgtype, "python-sd: %s\n", error_string);
+  }
 
   free(error_string);
 }
@@ -647,66 +643,67 @@ static void PyErrorHandler(bpContext* ctx, int msgtype)
 /**
  * Initial load of the Python module.
  *
- * Based on the parsed plugin options we set some prerequisits like the
+ * Based on the parsed plugin options we set some prerequisites like the
  * module path and the module to load. We also load the dictionary used
  * for looking up the Python methods.
  */
-static bRC PyLoadModule(bpContext* ctx, void* value)
+static bRC PyLoadModule(bpContext* bareos_plugin_ctx, void* value)
 {
   bRC retval = bRC_Error;
-  struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->pContext;
+  struct plugin_ctx* plugin_priv_ctx =
+      (struct plugin_ctx*)bareos_plugin_ctx->pContext;
   PyObject *sysPath, *mPath, *pName, *pFunc;
 
   /*
    * See if we already setup the python search path.
    */
-  if (!p_ctx->python_path_set) {
+  if (!plugin_priv_ctx->python_path_set) {
     /*
      * Extend the Python search path with the given module_path.
      */
-    if (p_ctx->module_path) {
+    if (plugin_priv_ctx->module_path) {
       sysPath = PySys_GetObject((char*)"path");
-      mPath = PyString_FromString(p_ctx->module_path);
+      mPath = PyString_FromString(plugin_priv_ctx->module_path);
       PyList_Append(sysPath, mPath);
       Py_DECREF(mPath);
-      p_ctx->python_path_set = true;
+      plugin_priv_ctx->python_path_set = true;
     }
   }
 
   /*
    * Try to load the Python module by name.
    */
-  if (p_ctx->module_name) {
-    Dmsg(ctx, debuglevel, "python-sd: Trying to load module with name %s\n",
-         p_ctx->module_name);
-    pName = PyString_FromString(p_ctx->module_name);
-    p_ctx->pModule = PyImport_Import(pName);
+  if (plugin_priv_ctx->module_name) {
+    Dmsg(bareos_plugin_ctx, debuglevel,
+         "python-sd: Trying to load module with name %s\n",
+         plugin_priv_ctx->module_name);
+    pName = PyString_FromString(plugin_priv_ctx->module_name);
+    plugin_priv_ctx->pModule = PyImport_Import(pName);
     Py_DECREF(pName);
 
-    if (!p_ctx->pModule) {
-      Dmsg(ctx, debuglevel, "python-sd: Failed to load module with name %s\n",
-           p_ctx->module_name);
+    if (!plugin_priv_ctx->pModule) {
+      Dmsg(bareos_plugin_ctx, debuglevel,
+           "python-sd: Failed to load module with name %s\n",
+           plugin_priv_ctx->module_name);
       goto bail_out;
     }
 
-    Dmsg(ctx, debuglevel,
+    Dmsg(bareos_plugin_ctx, debuglevel,
          "python-sd: Successfully loaded module with name %s\n",
-         p_ctx->module_name);
+         plugin_priv_ctx->module_name);
 
     /*
      * Get the Python dictionary for lookups in the Python namespace.
      */
-    p_ctx->pDict = PyModule_GetDict(p_ctx->pModule); /* Borrowed reference */
+    plugin_priv_ctx->pyModuleFunctionsDict =
+        PyModule_GetDict(plugin_priv_ctx->pModule); /* Borrowed reference */
 
-    /*
-     * Encode the bpContext so a Python method can pass it in on calling back.
-     */
-    p_ctx->bpContext = PyCreatebpContext(ctx);
+    StorePluginContextInPythonModule(bareos_plugin_ctx);
 
     /*
      * Lookup the load_bareos_plugin() function in the python module.
      */
-    pFunc = PyDict_GetItemString(p_ctx->pDict,
+    pFunc = PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,
                                  "load_bareos_plugin"); /* Borrowed reference */
     if (pFunc && PyCallable_Check(pFunc)) {
       PyObject *pPluginDefinition, *pRetVal;
@@ -714,8 +711,7 @@ static bRC PyLoadModule(bpContext* ctx, void* value)
       pPluginDefinition = PyString_FromString((char*)value);
       if (!pPluginDefinition) { goto bail_out; }
 
-      pRetVal = PyObject_CallFunctionObjArgs(pFunc, p_ctx->bpContext,
-                                             pPluginDefinition, NULL);
+      pRetVal = PyObject_CallFunctionObjArgs(pFunc, pPluginDefinition, NULL);
       Py_DECREF(pPluginDefinition);
 
       if (!pRetVal) {
@@ -725,7 +721,7 @@ static bRC PyLoadModule(bpContext* ctx, void* value)
         Py_DECREF(pRetVal);
       }
     } else {
-      Dmsg(ctx, debuglevel,
+      Dmsg(bareos_plugin_ctx, debuglevel,
            "python-sd: Failed to find function named load_bareos_plugins()\n");
       goto bail_out;
     }
@@ -733,13 +729,13 @@ static bRC PyLoadModule(bpContext* ctx, void* value)
     /*
      * Keep track we successfully loaded.
      */
-    p_ctx->python_loaded = true;
+    plugin_priv_ctx->python_loaded = true;
   }
 
   return retval;
 
 bail_out:
-  if (PyErr_Occurred()) { PyErrorHandler(ctx, M_FATAL); }
+  if (PyErr_Occurred()) { PyErrorHandler(bareos_plugin_ctx, M_FATAL); }
 
   return retval;
 }
@@ -750,25 +746,26 @@ bail_out:
  * PyLoadModule() has loaded the Python module and made sure things are
  * operational.
  */
-static bRC PyParsePluginDefinition(bpContext* ctx, void* value)
+static bRC PyParsePluginDefinition(bpContext* bareos_plugin_ctx, void* value)
 {
   bRC retval = bRC_Error;
-  struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->pContext;
+  struct plugin_ctx* plugin_priv_ctx =
+      (struct plugin_ctx*)bareos_plugin_ctx->pContext;
   PyObject* pFunc;
 
   /*
    * Lookup the parse_plugin_definition() function in the python module.
    */
-  pFunc = PyDict_GetItemString(
-      p_ctx->pDict, "parse_plugin_definition"); /* Borrowed reference */
+  pFunc =
+      PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,
+                           "parse_plugin_definition"); /* Borrowed reference */
   if (pFunc && PyCallable_Check(pFunc)) {
     PyObject *pPluginDefinition, *pRetVal;
 
     pPluginDefinition = PyString_FromString((char*)value);
     if (!pPluginDefinition) { goto bail_out; }
 
-    pRetVal = PyObject_CallFunctionObjArgs(pFunc, p_ctx->bpContext,
-                                           pPluginDefinition, NULL);
+    pRetVal = PyObject_CallFunctionObjArgs(pFunc, pPluginDefinition, NULL);
     Py_DECREF(pPluginDefinition);
 
     if (!pRetVal) {
@@ -781,45 +778,50 @@ static bRC PyParsePluginDefinition(bpContext* ctx, void* value)
     return retval;
   } else {
     Dmsg(
-        ctx, debuglevel,
+        bareos_plugin_ctx, debuglevel,
         "python-sd: Failed to find function named parse_plugin_definition()\n");
     return bRC_Error;
   }
 
 bail_out:
-  if (PyErr_Occurred()) { PyErrorHandler(ctx, M_FATAL); }
+  if (PyErr_Occurred()) { PyErrorHandler(bareos_plugin_ctx, M_FATAL); }
 
   return retval;
 }
 
-static bRC PyGetPluginValue(bpContext* ctx, psdVariable var, void* value)
+static bRC PyGetPluginValue(bpContext* bareos_plugin_ctx,
+                            psdVariable var,
+                            void* value)
 {
   return bRC_OK;
 }
 
-static bRC PySetPluginValue(bpContext* ctx, psdVariable var, void* value)
+static bRC PySetPluginValue(bpContext* bareos_plugin_ctx,
+                            psdVariable var,
+                            void* value)
 {
   return bRC_OK;
 }
 
-static bRC PyHandlePluginEvent(bpContext* ctx, bsdEvent* event, void* value)
+static bRC PyHandlePluginEvent(bpContext* bareos_plugin_ctx,
+                               bsdEvent* event,
+                               void* value)
 {
   bRC retval = bRC_Error;
-  plugin_ctx* p_ctx = (plugin_ctx*)ctx->pContext;
+  plugin_ctx* plugin_priv_ctx = (plugin_ctx*)bareos_plugin_ctx->pContext;
   PyObject* pFunc;
 
   /*
    * Lookup the handle_plugin_event() function in the python module.
    */
-  pFunc = PyDict_GetItemString(p_ctx->pDict,
+  pFunc = PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,
                                "handle_plugin_event"); /* Borrowed reference */
   if (pFunc && PyCallable_Check(pFunc)) {
     PyObject *pEventType, *pRetVal;
 
     pEventType = PyInt_FromLong(event->eventType);
 
-    pRetVal =
-        PyObject_CallFunctionObjArgs(pFunc, p_ctx->bpContext, pEventType, NULL);
+    pRetVal = PyObject_CallFunctionObjArgs(pFunc, pEventType, NULL);
     Py_DECREF(pEventType);
 
     if (!pRetVal) {
@@ -829,14 +831,14 @@ static bRC PyHandlePluginEvent(bpContext* ctx, bsdEvent* event, void* value)
       Py_DECREF(pRetVal);
     }
   } else {
-    Dmsg(ctx, debuglevel,
+    Dmsg(bareos_plugin_ctx, debuglevel,
          "python-sd: Failed to find function named handle_plugin_event()\n");
   }
 
   return retval;
 
 bail_out:
-  if (PyErr_Occurred()) { PyErrorHandler(ctx, M_FATAL); }
+  if (PyErr_Occurred()) { PyErrorHandler(bareos_plugin_ctx, M_FATAL); }
 
   return retval;
 }
@@ -848,13 +850,10 @@ bail_out:
 static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
 {
   int var;
-  bpContext* ctx = NULL;
-  PyObject* pyCtx;
+  bpContext* bareos_plugin_ctx = NULL;
   PyObject* pRetVal = NULL;
 
-  if (!PyArg_ParseTuple(args, "Oi:BareosGetValue", &pyCtx, &var)) {
-    return NULL;
-  }
+  if (!PyArg_ParseTuple(args, "i:BareosGetValue", &var)) { return NULL; }
 
   switch (var) {
     case bsdVarJobId:
@@ -863,8 +862,9 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
     case bsdVarJobStatus: {
       int value;
 
-      ctx = PyGetbpContext(pyCtx);
-      if (bfuncs->getBareosValue(ctx, (bsdrVariable)var, &value) == bRC_OK) {
+      bareos_plugin_ctx = PyGetbpContext();
+      if (bfuncs->getBareosValue(bareos_plugin_ctx, (bsdrVariable)var,
+                                 &value) == bRC_OK) {
         pRetVal = PyInt_FromLong(value);
       }
       break;
@@ -874,8 +874,9 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
     case bsdVarJobBytes: {
       uint64_t value = 0;
 
-      ctx = PyGetbpContext(pyCtx);
-      if (bfuncs->getBareosValue(ctx, (bsdrVariable)var, &value) == bRC_OK) {
+      bareos_plugin_ctx = PyGetbpContext();
+      if (bfuncs->getBareosValue(bareos_plugin_ctx, (bsdrVariable)var,
+                                 &value) == bRC_OK) {
         pRetVal = PyLong_FromUnsignedLong(value);
       }
       break;
@@ -890,8 +891,9 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
     case bsdVarVolumeName: {
       char* value = NULL;
 
-      ctx = PyGetbpContext(pyCtx);
-      if (bfuncs->getBareosValue(ctx, (bsdrVariable)var, &value) == bRC_OK) {
+      bareos_plugin_ctx = PyGetbpContext();
+      if (bfuncs->getBareosValue(bareos_plugin_ctx, (bsdrVariable)var,
+                                 &value) == bRC_OK) {
         if (value) { pRetVal = PyString_FromString(value); }
       }
       break;
@@ -916,8 +918,8 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
       break;
     }
     default:
-      ctx = PyGetbpContext(pyCtx);
-      Dmsg(ctx, debuglevel,
+      bareos_plugin_ctx = PyGetbpContext();
+      Dmsg(bareos_plugin_ctx, debuglevel,
            "python-sd: PyBareosGetValue unknown variable requested %d\n", var);
       break;
   }
@@ -937,11 +939,11 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
 static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
 {
   int var;
-  bpContext* ctx = NULL;
+  bpContext* bareos_plugin_ctx = NULL;
   bRC retval = bRC_Error;
-  PyObject *pyCtx, *pyValue;
+  PyObject* pyValue;
 
-  if (!PyArg_ParseTuple(args, "OiO:BareosSetValue", &pyCtx, &var, &pyValue)) {
+  if (!PyArg_ParseTuple(args, "iO:BareosSetValue", &var, &pyValue)) {
     goto bail_out;
   }
 
@@ -949,9 +951,11 @@ static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
     case bsdwVarVolumeName: {
       char* value;
 
-      ctx = PyGetbpContext(pyCtx);
+      bareos_plugin_ctx = PyGetbpContext();
       value = PyString_AsString(pyValue);
-      if (value) { bfuncs->setBareosValue(ctx, (bsdwVariable)var, value); }
+      if (value) {
+        bfuncs->setBareosValue(bareos_plugin_ctx, (bsdwVariable)var, value);
+      }
 
       break;
     }
@@ -959,16 +963,17 @@ static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
     case bsdwVarJobLevel: {
       int value;
 
-      ctx = PyGetbpContext(pyCtx);
+      bareos_plugin_ctx = PyGetbpContext();
       value = PyInt_AsLong(pyValue);
       if (value >= 0) {
-        retval = bfuncs->setBareosValue(ctx, (bsdwVariable)var, &value);
+        retval = bfuncs->setBareosValue(bareos_plugin_ctx, (bsdwVariable)var,
+                                        &value);
       }
       break;
     }
     default:
-      ctx = PyGetbpContext(pyCtx);
-      Dmsg(ctx, debuglevel,
+      bareos_plugin_ctx = PyGetbpContext();
+      Dmsg(bareos_plugin_ctx, debuglevel,
            "python-sd: PyBareosSetValue unknown variable requested %d\n", var);
       break;
   }
@@ -986,17 +991,15 @@ static PyObject* PyBareosDebugMessage(PyObject* self, PyObject* args)
 {
   int level;
   char* dbgmsg = NULL;
-  bpContext* ctx;
-  PyObject* pyCtx;
+  bpContext* bareos_plugin_ctx;
 
-  if (!PyArg_ParseTuple(args, "Oi|z:BareosDebugMessage", &pyCtx, &level,
-                        &dbgmsg)) {
+  if (!PyArg_ParseTuple(args, "i|z:BareosDebugMessage", &level, &dbgmsg)) {
     return NULL;
   }
 
   if (dbgmsg) {
-    ctx = PyGetbpContext(pyCtx);
-    Dmsg(ctx, level, "python-sd: %s", dbgmsg);
+    bareos_plugin_ctx = PyGetbpContext();
+    Dmsg(bareos_plugin_ctx, level, "python-sd: %s", dbgmsg);
   }
 
   Py_INCREF(Py_None);
@@ -1012,17 +1015,15 @@ static PyObject* PyBareosJobMessage(PyObject* self, PyObject* args)
 {
   int type;
   char* jobmsg = NULL;
-  bpContext* ctx;
-  PyObject* pyCtx;
+  bpContext* bareos_plugin_ctx;
 
-  if (!PyArg_ParseTuple(args, "Oi|z:BareosJobMessage", &pyCtx, &type,
-                        &jobmsg)) {
+  if (!PyArg_ParseTuple(args, "i|z:BareosJobMessage", &type, &jobmsg)) {
     return NULL;
   }
 
   if (jobmsg) {
-    ctx = PyGetbpContext(pyCtx);
-    Jmsg(ctx, type, "python-sd: %s", jobmsg);
+    bareos_plugin_ctx = PyGetbpContext();
+    Jmsg(bareos_plugin_ctx, type, "python-sd: %s", jobmsg);
   }
 
   Py_INCREF(Py_None);
@@ -1037,11 +1038,11 @@ static PyObject* PyBareosJobMessage(PyObject* self, PyObject* args)
 static PyObject* PyBareosRegisterEvents(PyObject* self, PyObject* args)
 {
   int len, event;
-  bpContext* ctx;
+  bpContext* bareos_plugin_ctx;
   bRC retval = bRC_Error;
-  PyObject *pyCtx, *pyEvents, *pySeq, *pyEvent;
+  PyObject *pyEvents, *pySeq, *pyEvent;
 
-  if (!PyArg_ParseTuple(args, "OO:BareosRegisterEvents", &pyCtx, &pyEvents)) {
+  if (!PyArg_ParseTuple(args, "O:BareosRegisterEvents", &pyEvents)) {
     goto bail_out;
   }
 
@@ -1050,15 +1051,15 @@ static PyObject* PyBareosRegisterEvents(PyObject* self, PyObject* args)
 
   len = PySequence_Fast_GET_SIZE(pySeq);
 
-  ctx = PyGetbpContext(pyCtx);
+  bareos_plugin_ctx = PyGetbpContext();
   for (int i = 0; i < len; i++) {
     pyEvent = PySequence_Fast_GET_ITEM(pySeq, i);
     event = PyInt_AsLong(pyEvent);
 
     if (event >= bsdEventJobStart && event <= bsdEventWriteRecordTranslation) {
-      Dmsg(ctx, debuglevel,
+      Dmsg(bareos_plugin_ctx, debuglevel,
            "python-sd: PyBareosRegisterEvents registering event %d\n", event);
-      retval = bfuncs->registerBareosEvents(ctx, 1, event);
+      retval = bfuncs->registerBareosEvents(bareos_plugin_ctx, 1, event);
 
       if (retval != bRC_OK) { break; }
     }
@@ -1078,11 +1079,11 @@ bail_out:
 static PyObject* PyBareosUnRegisterEvents(PyObject* self, PyObject* args)
 {
   int len, event;
-  bpContext* ctx;
+  bpContext* bareos_plugin_ctx;
   bRC retval = bRC_Error;
-  PyObject *pyCtx, *pyEvents, *pySeq, *pyEvent;
+  PyObject *pyEvents, *pySeq, *pyEvent;
 
-  if (!PyArg_ParseTuple(args, "OO:BareosUnRegisterEvents", &pyCtx, &pyEvents)) {
+  if (!PyArg_ParseTuple(args, "O:BareosUnRegisterEvents", &pyEvents)) {
     goto bail_out;
   }
 
@@ -1091,15 +1092,15 @@ static PyObject* PyBareosUnRegisterEvents(PyObject* self, PyObject* args)
 
   len = PySequence_Fast_GET_SIZE(pySeq);
 
-  ctx = PyGetbpContext(pyCtx);
+  bareos_plugin_ctx = PyGetbpContext();
   for (int i = 0; i < len; i++) {
     pyEvent = PySequence_Fast_GET_ITEM(pySeq, i);
     event = PyInt_AsLong(pyEvent);
 
     if (event >= bsdEventJobStart && event <= bsdEventWriteRecordTranslation) {
-      Dmsg(ctx, debuglevel, "PyBareosUnRegisterEvents: registering event %d\n",
-           event);
-      retval = bfuncs->unregisterBareosEvents(ctx, 1, event);
+      Dmsg(bareos_plugin_ctx, debuglevel,
+           "PyBareosUnRegisterEvents: registering event %d\n", event);
+      retval = bfuncs->unregisterBareosEvents(bareos_plugin_ctx, 1, event);
 
       if (retval != bRC_OK) { break; }
     }
@@ -1119,16 +1120,13 @@ bail_out:
 static PyObject* PyBareosGetInstanceCount(PyObject* self, PyObject* args)
 {
   int value;
-  bpContext* ctx = NULL;
-  PyObject* pyCtx;
+  bpContext* bareos_plugin_ctx = NULL;
   PyObject* pRetVal = NULL;
 
-  if (!PyArg_ParseTuple(args, "O:BareosGetInstanceCount", &pyCtx)) {
-    return NULL;
-  }
+  if (!PyArg_ParseTuple(args, ":BareosGetInstanceCount")) { return NULL; }
 
-  ctx = PyGetbpContext(pyCtx);
-  if (bfuncs->getInstanceCount(ctx, &value) == bRC_OK) {
+  bareos_plugin_ctx = PyGetbpContext();
+  if (bfuncs->getInstanceCount(bareos_plugin_ctx, &value) == bRC_OK) {
     pRetVal = PyInt_FromLong(value);
   }
 
@@ -1139,3 +1137,4 @@ static PyObject* PyBareosGetInstanceCount(PyObject* self, PyObject* args)
 
   return pRetVal;
 }
+} /* namespace storagedaemon*/

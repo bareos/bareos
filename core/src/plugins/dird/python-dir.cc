@@ -546,12 +546,6 @@ bail_out:
   return bRC_Error;
 }
 
-/* static PyObject* PyCreatebpContext(bpContext* bareos_plugin_ctx) */
-/* { */
-/*   return PyCapsule_New((void*)bareos_plugin_ctx, "bareos.bpContext", NULL);
- */
-/* } */
-
 static void StorePluginContextInPythonModule(bpContext* bareos_plugin_ctx)
 {
   /* get the pointer to the module variable that is exported via the capsule */
@@ -694,11 +688,6 @@ static bRC PyLoadModule(bpContext* bareos_plugin_ctx, void* value)
      */
     plugin_priv_ctx->pyModuleFunctionsDict =
         PyModule_GetDict(plugin_priv_ctx->pModule); /* Borrowed reference */
-
-    /*
-     * Encode the bpContext so a Python method can pass it in on calling back.
-     */
-    /* plugin_priv_ctx->py_bpContext = PyCreatebpContext(bareos_plugin_ctx); */
 
     StorePluginContextInPythonModule(bareos_plugin_ctx);
 
