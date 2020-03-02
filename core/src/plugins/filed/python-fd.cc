@@ -188,7 +188,7 @@ bRC loadPlugin(bInfo* lbinfo,
 #if PY_MAJOR_VERSION >= 3
   PyImport_AppendInittab("bareosfd", &PyInit_bareosfd);
 #else
-  PyImport_AppendInittab("bareosfd", Init_bareosfd);
+  PyImport_AppendInittab("bareosfd", initbareosfd);
 #endif
 
   Py_InitializeEx(0);

@@ -155,7 +155,7 @@ bRC loadPlugin(bsdInfo* lbinfo,
 #if PY_MAJOR_VERSION >= 3
   PyImport_AppendInittab("bareossd", &PyInit_bareossd);
 #else
-  PyImport_AppendInittab("bareossd", Init_bareossd);
+  PyImport_AppendInittab("bareossd", initbareossd);
 #endif
   Py_InitializeEx(0);
   PyEval_InitThreads();

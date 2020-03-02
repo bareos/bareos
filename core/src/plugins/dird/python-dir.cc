@@ -156,7 +156,7 @@ bRC loadPlugin(bDirInfo* lbinfo,
 #if PY_MAJOR_VERSION >= 3
   PyImport_AppendInittab("bareosdir", &PyInit_bareosdir);
 #else
-  PyImport_AppendInittab("bareosdir", Init_bareosdir);
+  PyImport_AppendInittab("bareosdir", initbareosdir);
 #endif
   Py_InitializeEx(0);
   PyEval_InitThreads();
