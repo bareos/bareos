@@ -40,24 +40,6 @@ $this->headTitle($title);
 
 <div class="row">
 
-<div class="col-md-2">
-   <?php echo $this->formRow($form->get('jobname')); ?>
-</div>
-
-<div class="col-md-2">
-   <?php echo $this->formRow($form->get('period')); ?>
-</div>
-
-<div class="col-md-2">
-   <?php echo $this->formRow($form->get('status')); ?>
-</div>
-
-</div>
-
-<br />
-
-<div class="row">
-
 <div class="col-md-12">
 
 <div class="panel panel-default">
@@ -69,20 +51,78 @@ $this->headTitle($title);
 <div class="panel-body">
 
 <table class="table table-no-bordered table-hover" id="jobtable">
+<table
+   class="table table-no-bordered table-hover"
+   id="jobtable"
+   data-filter-control="true">
 
 <thead class="bg-primary">
-   <th><?php echo $this->translate("Job ID"); ?></th>
-   <th><?php echo $this->translate("Job name"); ?></th>
-   <th><?php echo $this->translate("Client"); ?></th>
-   <th><?php echo $this->translate("Type"); ?></th>
-   <th><?php echo $this->translate("Level"); ?></th>
-   <th><?php echo $this->translate("Start"); ?></th>
-   <th><?php echo $this->translate("End"); ?></th>
-   <th><?php echo $this->translate("Files"); ?></th>
-   <th><?php echo $this->translate("Bytes"); ?></th>
-   <th><?php echo $this->translate("Errors"); ?></th>
-   <th><?php echo $this->translate("Status"); ?></th>
-   <th><?php echo $this->translate("Actions"); ?></th>
+   <th
+      data-field="jobid"
+      data-width="200"
+      data-filter-control="input"
+      data-filter-control-placeholder="Job ID"><?php echo $this->translate("Job ID"); ?>
+   </th>
+   <th
+      data-field="name"
+      data-filter-control="input"
+      data-filter-control-placeholder="Job name"><?php echo $this->translate("Job name"); ?>
+   </th>
+   <th
+      data-field="client"
+      data-filter-control="input"
+      data-filter-control-placeholder="Client"><?php echo $this->translate("Client"); ?>
+   </th>
+   <th
+      data-field="type"
+      data-width="50"
+      data-filter-control="input"
+      data-filter-control-placeholder="Type"><?php echo $this->translate("Type"); ?>
+   </th>
+   <th
+      data-field="level"
+      data-width="50"
+      data-filter-control="input"
+      data-filter-control-placeholder="Level"><?php echo $this->translate("Level"); ?>
+   </th>
+   <th
+      data-field="starttime"
+      data-width="200"
+      data-filter-control="input"
+      data-filter-control-placeholder="Start"><?php echo $this->translate("Start"); ?>
+   </th>
+   <th
+      data-field="endtime" data-width="200"
+      data-filter-control="input"
+      data-filter-control-placeholder="End"><?php echo $this->translate("End"); ?>
+   </th>
+   <th
+      data-field="jobfiles"
+      data-width="50"
+      data-filter-control="input"
+      data-filter-control-placeholder="Files"><?php echo $this->translate("Files"); ?>
+   </th>
+   <th
+      data-field="jobbytes"
+      data-width="50"
+      data-filter-control="input"
+      data-filter-control-placeholder="Bytes"><?php echo $this->translate("Bytes"); ?>
+   </th>
+   <th
+      data-field="joberrors"
+      data-width="50"
+      data-filter-control="input"
+      data-filter-control-placeholder="Errors"><?php echo $this->translate("Errors"); ?>
+   </th>
+   <th
+      data-field="jobstatus"
+      data-width="200"
+      data-filter-control="input"
+      data-filter-control-placeholder="Status"><?php echo $this->translate("Status"); ?>
+   </th>
+   <th
+      data-width="100" ><?php echo $this->translate("Actions"); ?>
+   </th>
 </thead>
 
 </table>
@@ -91,14 +131,6 @@ $this->headTitle($title);
 </div>
 </div>
 </div>
-
-<?php
-   echo $this->headScript()->prependFile($this->basePath() . '/js/custom-functions.js');
-   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table.min.css');
-   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-locale-all.min.js');
-   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-cookie.min.js');
-   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table.min.js');
-?>
 
 <!-- modal-001 start -->
 <div id="modal-001" class="modal fade modal-001" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel">
@@ -142,9 +174,66 @@ $this->headTitle($title);
 </div>
 <!-- modal-002 end -->
 
+<?php
+   echo $this->headScript()->prependFile($this->basePath() . '/js/custom-functions.js');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table-filter-control.min.css');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table.min.css');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-filter-control.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-locale-all.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-cookie.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table.min.js');
+?>
+
 <script>
 
    var jobtable = null;
+   var displayRange = <?php echo $this->period; ?>;
+
+   // Table columns filter
+   var jobid = null;
+   var jobname = iJS._('<?php if($this->jobname !== "all") echo $this->jobname; ?>');
+   var client = null;
+   var jobtype = null;
+   var joblevel = null;
+   var jobstarttime = null;
+   var jobendtime = null;
+   var jobfiles = null;
+   var jobbytes = null;
+   var joberrors = null;
+   var jobstatus = iJS._('<?php if($this->status !== "all") echo $this->status; ?>');
+
+   function resetSearchFilters() {
+      $('#jobtable').bootstrapTable('clearFilterControl');
+      jobid = null;
+      jobname = null;
+      client = null;
+      jobtype = null;
+      joblevel = null;
+      jobstarttime = null;
+      jobendtime = null;
+      jobfiles = null;
+      jobbytes = null;
+      joberrors = null;
+      jobstatus = null;
+   }
+
+   function refreshTableData() {
+      $('#jobtable').bootstrapTable('refreshOptions', {
+         url: '<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=jobs&period='; ?>' + displayRange,
+      });
+
+      $('.bootstrap-table-filter-control-jobid').val(jobid);
+      $('.bootstrap-table-filter-control-name').val(jobname);
+      $('.bootstrap-table-filter-control-client').val(client);
+      $('.bootstrap-table-filter-control-type').val(jobtype);
+      $('.bootstrap-table-filter-control-level').val(joblevel);
+      $('.bootstrap-table-filter-control-starttime').val(jobstarttime);
+      $('.bootstrap-table-filter-control-endtime').val(jobendtime);
+      $('.bootstrap-table-filter-control-jobfiles').val(jobfiles);
+      $('.bootstrap-table-filter-control-jobbytes').val(jobbytes);
+      $('.bootstrap-table-filter-control-joberrors').val(joberrors);
+      $('.bootstrap-table-filter-control-jobstatus').val(jobstatus);
+   }
 
    function detailFormatter(index, row) {
       var html = [];
@@ -230,14 +319,14 @@ $this->headTitle($title);
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
          cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
          cookieIdTable: 'dashboard_table_jobs_last_status',
-         url: '<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=jobs&jobname='.$this->jobname.'&status='.$this->status.'&period='.$this->period; ?>',
+         url: '<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=jobs&period='; ?>' + displayRange,
          method: 'get',
          dataType: 'json',
          pagination : true,
          sidePagination: 'client',
          pageList: [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
          pageSize: <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
-         search: true,
+         search: false,
          showPaginationSwitch: true,
          showColumns: true,
          showRefresh: true,
@@ -357,22 +446,61 @@ $this->headTitle($title);
 
       getJobs();
 
-      $('#jobname').change(function(event) {
-         window.location.href = window.location.pathname + '?' + updateQueryParams('jobname', this.value);
-      });
-
-      $('#period').change(function(event) {
-         window.location.href = window.location.pathname + '?' + updateQueryParams('period', this.value);
-      });
-
-      $('#status').change(function(event) {
-         window.location.href = window.location.pathname + '?' + updateQueryParams('status', this.value);
-      });
+      // Set table filter input field values
+      $('.bootstrap-table-filter-control-name').val(jobname);
+      $('.bootstrap-table-filter-control-jobstatus').val(iJS._(jobstatus));
 
       $('#jobtable').on('load-error.bs.table', function(status, res) {
          $("#modal-001").modal();
       });
 
+      $('#btn-clear-search-filters').on('click', resetSearchFilters);
+   });
+
+   // Remember table filter input field values
+   $(document).on('input', '.bootstrap-table-filter-control-jobid', function() {
+      jobid = $(this).val();
+   });
+
+   $(document).on('input', '.bootstrap-table-filter-control-name', function() {
+      jobname = $(this).val();
+   });
+
+   $(document).on('input', '.bootstrap-table-filter-control-client', function() {
+      client = $(this).val();
+   });
+
+   $(document).on('input', '.bootstrap-table-filter-control-type', function() {
+      jobtype = $(this).val();
+   });
+
+   $(document).on('input', '.bootstrap-table-filter-control-level', function() {
+      joblevel = $(this).val();
+   });
+
+   $(document).on('input', '.bootstrap-table-filter-control-starttime', function() {
+      jobstarttime = $(this).val();
+   });
+
+   $(document).on('input', '.bootstrap-table-filter-control-endtime', function() {
+      jobendtime = $(this).val();
+   });
+
+   $(document).on('input', '.bootstrap-table-filter-control-jobfiles', function() {
+      jobfiles = $(this).val();
+   });
+
+   $(document).on('input', '.bootstrap-table-filter-control-jobbytes', function() {
+      jobbytes = $(this).val();
+   });
+
+   $(document).on('input', '.bootstrap-table-filter-control-joberrors', function() {
+      joberrors = $(this).val();
+   });
+
+   $(document).on('input', '.bootstrap-table-filter-control-jobstatus', function() {
+      jobstatus = $(this).val();
+   });
    });
 
 </script>
