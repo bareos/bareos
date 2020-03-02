@@ -122,7 +122,6 @@ struct plugin_ctx {
       interpreter;   /* Python interpreter for this instance of the plugin */
   PyObject* pModule; /* Python Module entry point */
   PyObject* pyModuleFunctionsDict; /* Python Dictionary */
-  PyObject* py_bpContext;          /* Python representation of plugin context */
 };
 
 /**
@@ -225,12 +224,6 @@ static bRC freePlugin(bpContext* bareos_plugin_ctx)
    */
   PyEval_AcquireThread(plugin_priv_ctx->interpreter);
 
-  /*
-   * Do python cleanup calls.
-   */
-  if (plugin_priv_ctx->py_bpContext) {
-    Py_DECREF(plugin_priv_ctx->py_bpContext);
-  }
 
   if (plugin_priv_ctx->pModule) { Py_DECREF(plugin_priv_ctx->pModule); }
 
