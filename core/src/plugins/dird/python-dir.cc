@@ -546,14 +546,26 @@ bail_out:
   return bRC_Error;
 }
 
-static PyObject* PyCreatebpContext(bpContext* bareos_plugin_ctx)
+/* static PyObject* PyCreatebpContext(bpContext* bareos_plugin_ctx) */
+/* { */
+/*   return PyCapsule_New((void*)bareos_plugin_ctx, "bareos.bpContext", NULL);
+ */
+/* } */
+
+static void StorePluginContextInPythonModule(bpContext* bareos_plugin_ctx)
 {
-  return PyCapsule_New((void*)bareos_plugin_ctx, "bareos.bpContext", NULL);
+  /* get the pointer to the module variable that is exported via the capsule */
+  bpContext** bareosfd_bpContext =
+      (bpContext**)PyCapsule_Import("bareosdir.bpContext", 0);
+
+  /* store bareos_plugin_ctx in module */
+  *bareosfd_bpContext = bareos_plugin_ctx;
 }
+
 
 static bpContext* PyGetbpContext()
 {
-  bpContext** retval = (bpContext**)PyCapsule_Import("bareosfd.bpContext", 0);
+  bpContext** retval = (bpContext**)PyCapsule_Import("bareosdir.bpContext", 0);
   return *retval;
 }
 
@@ -628,7 +640,7 @@ static void PyErrorHandler(bpContext* bareos_plugin_ctx, int msgtype)
 /**
  * Initial load of the Python module.
  *
- * Based on the parsed plugin options we set some prerequisits like the
+ * Based on the parsed plugin options we set some prerequisites like the
  * module path and the module to load. We also load the dictionary used
  * for looking up the Python methods.
  */
@@ -688,6 +700,8 @@ static bRC PyLoadModule(bpContext* bareos_plugin_ctx, void* value)
      */
     /* plugin_priv_ctx->py_bpContext = PyCreatebpContext(bareos_plugin_ctx); */
 
+    StorePluginContextInPythonModule(bareos_plugin_ctx);
+
     /*
      * Lookup the load_bareos_plugin() function in the python module.
      */
@@ -699,8 +713,7 @@ static bRC PyLoadModule(bpContext* bareos_plugin_ctx, void* value)
       pPluginDefinition = PyString_FromString((char*)value);
       if (!pPluginDefinition) { goto bail_out; }
 
-      pRetVal = PyObject_CallFunctionObjArgs(
-          pFunc, plugin_priv_ctx->py_bpContext, pPluginDefinition, NULL);
+      pRetVal = PyObject_CallFunctionObjArgs(pFunc, pPluginDefinition, NULL);
       Py_DECREF(pPluginDefinition);
 
       if (!pRetVal) {
@@ -754,8 +767,7 @@ static bRC PyParsePluginDefinition(bpContext* bareos_plugin_ctx, void* value)
     pPluginDefinition = PyString_FromString((char*)value);
     if (!pPluginDefinition) { goto bail_out; }
 
-    pRetVal = PyObject_CallFunctionObjArgs(pFunc, plugin_priv_ctx->py_bpContext,
-                                           pPluginDefinition, NULL);
+    pRetVal = PyObject_CallFunctionObjArgs(pFunc, pPluginDefinition, NULL);
     Py_DECREF(pPluginDefinition);
 
     if (!pRetVal) {
@@ -811,8 +823,7 @@ static bRC PyHandlePluginEvent(bpContext* bareos_plugin_ctx,
 
     pEventType = PyInt_FromLong(event->eventType);
 
-    pRetVal = PyObject_CallFunctionObjArgs(pFunc, plugin_priv_ctx->py_bpContext,
-                                           pEventType, NULL);
+    pRetVal = PyObject_CallFunctionObjArgs(pFunc, pEventType, NULL);
     Py_DECREF(pEventType);
 
     if (!pRetVal) {
