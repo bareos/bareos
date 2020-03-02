@@ -144,9 +144,6 @@ execute_process(
 )
 
 include(BareosExtractVersionInfo)
-include(BareosLocalBuildDefinitions OPTIONAL
-        RESULT_VARIABLE BareosLocalBuildDefinitionsFile
-)
 
 include(BareosGetDistInfo)
 
