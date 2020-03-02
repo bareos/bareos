@@ -27,6 +27,10 @@
 #ifndef BAREOS_PLUGINS_DIRD_PYTHON_DIR_H_
 #define BAREOS_PLUGINS_DIRD_PYTHON_DIR_H_ 1
 
+/* common code for all python plugins */
+#include "../python_plugins_common.h"
+#include "../python_plugins_common.inc"
+
 namespace directordaemon {
 
 /**
@@ -76,26 +80,16 @@ static PyMethodDef BareosDIRMethods[] = {
     {NULL, NULL, 0, NULL}};
 
 
-#if PY_MAJOR_VERSION >= 3
-#define MOD_ERROR_VAL NULL
-#define MOD_SUCCESS_VAL(val) val
-#define MOD_INIT(name) PyMODINIT_FUNC PyInit_##name(void)
-#define MOD_DEF(ob, name, doc, methods)              \
-  static struct PyModuleDef moduledef = {            \
-      PyModuleDef_HEAD_INIT, name, doc, -1, methods, \
-  };                                                 \
-  ob = PyModule_Create(&moduledef);
-#else
-#define MOD_ERROR_VAL
-#define MOD_SUCCESS_VAL(val)
-#define MOD_INIT(name) void Init_##name(void)
-#define MOD_DEF(ob, name, doc, methods) ob = Py_InitModule3(name, methods, doc);
-#endif
-
 static void* bareos_plugin_context = NULL;
 
 MOD_INIT(bareosdir)
 {
+  /* bareos_plugin_context holds the bpContext instead of passing to Python and
+   * extracting it back like it was before. bareos_plugin_context needs to be
+   * set after loading the bareosdir binary python module and will be used for
+   * all calls.
+   */
+
   PyObject* BareosDirModule = NULL;
 
   /* Pointer Capsules to avoid context transfer back and forth */

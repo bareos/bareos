@@ -27,6 +27,10 @@
 #ifndef BAREOS_PLUGINS_FILED_PYTHON_FD_H_
 #define BAREOS_PLUGINS_FILED_PYTHON_FD_H_ 1
 
+/* common code for all python plugins */
+#include "../python_plugins_common.h"
+#include "../python_plugins_common.inc"
+
 #include "structmember.h"
 
 namespace filedaemon {
@@ -741,22 +745,6 @@ static PyMethodDef BareosFDMethods[] = {
      "Clear bit in the Accurate Seen bitmap"},
     {NULL, NULL, 0, NULL}};
 
-
-#if PY_MAJOR_VERSION >= 3
-#define MOD_ERROR_VAL NULL
-#define MOD_SUCCESS_VAL(val) val
-#define MOD_INIT(name) PyMODINIT_FUNC PyInit_##name(void)
-#define MOD_DEF(ob, name, doc, methods)              \
-  static struct PyModuleDef moduledef = {            \
-      PyModuleDef_HEAD_INIT, name, doc, -1, methods, \
-  };                                                 \
-  ob = PyModule_Create(&moduledef);
-#else
-#define MOD_ERROR_VAL
-#define MOD_SUCCESS_VAL(val)
-#define MOD_INIT(name) void Init_##name(void)
-#define MOD_DEF(ob, name, doc, methods) ob = Py_InitModule3(name, methods, doc);
-#endif
 
 static void* bareos_plugin_context = NULL;
 
