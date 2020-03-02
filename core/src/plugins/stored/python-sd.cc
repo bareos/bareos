@@ -63,10 +63,10 @@ static const int debuglevel = 150;
 static bRC newPlugin(bpContext* bareos_plugin_ctx);
 static bRC freePlugin(bpContext* bareos_plugin_ctx);
 static bRC getPluginValue(bpContext* bareos_plugin_ctx,
-                          psdVariable var,
+                          pVariable var,
                           void* value);
 static bRC setPluginValue(bpContext* bareos_plugin_ctx,
-                          psdVariable var,
+                          pVariable var,
                           void* value);
 static bRC handlePluginEvent(bpContext* bareos_plugin_ctx,
                              bsdEvent* event,
@@ -79,10 +79,10 @@ static void PyErrorHandler(bpContext* bareos_plugin_ctx, int msgtype);
 static bRC PyLoadModule(bpContext* bareos_plugin_ctx, void* value);
 static bRC PyParsePluginDefinition(bpContext* bareos_plugin_ctx, void* value);
 static bRC PyGetPluginValue(bpContext* bareos_plugin_ctx,
-                            psdVariable var,
+                            pVariable var,
                             void* value);
 static bRC PySetPluginValue(bpContext* bareos_plugin_ctx,
-                            psdVariable var,
+                            pVariable var,
                             void* value);
 static bRC PyHandlePluginEvent(bpContext* bareos_plugin_ctx,
                                bsdEvent* event,
@@ -120,7 +120,6 @@ struct plugin_private_context {
   PyObject* pModule; /* Python Module entry point */
   PyObject* pyModuleFunctionsDict; /* Python Dictionary */
 };
-
 
 /**
  * We don't actually use this but we need it to tear down the
@@ -182,14 +181,7 @@ bRC unloadPlugin()
 }
 #endif
 
-/**
- * The following entry points are accessed through the function
- * pointers we supplied to Bareos. Each plugin type (dir, fd, sd)
- * has its own set of entry points that the plugin must define.
- */
-/**
- * Create a new instance of the plugin i.e. allocate our private storage
- */
+/* Create a new instance of the plugin i.e. allocate our private storage */
 static bRC newPlugin(bpContext* bareos_plugin_ctx)
 {
   struct plugin_private_context* plugin_priv_ctx;
@@ -217,9 +209,7 @@ static bRC newPlugin(bpContext* bareos_plugin_ctx)
   return bRC_OK;
 }
 
-/**
- * Free a plugin instance, i.e. release our private storage
- */
+/* Free a plugin instance, i.e. release our private storage */
 static bRC freePlugin(bpContext* bareos_plugin_ctx)
 {
   struct plugin_private_context* plugin_priv_ctx =
@@ -244,11 +234,8 @@ static bRC freePlugin(bpContext* bareos_plugin_ctx)
   return bRC_OK;
 }
 
-/**
- * Return some plugin value (none defined)
- */
 static bRC getPluginValue(bpContext* bareos_plugin_ctx,
-                          psdVariable var,
+                          pVariable var,
                           void* value)
 {
   struct plugin_private_context* plugin_priv_ctx =
@@ -262,11 +249,8 @@ static bRC getPluginValue(bpContext* bareos_plugin_ctx,
   return retval;
 }
 
-/**
- * Set a plugin value (none defined)
- */
 static bRC setPluginValue(bpContext* bareos_plugin_ctx,
-                          psdVariable var,
+                          pVariable var,
                           void* value)
 {
   struct plugin_private_context* plugin_priv_ctx =
@@ -280,9 +264,6 @@ static bRC setPluginValue(bpContext* bareos_plugin_ctx,
   return retval;
 }
 
-/**
- * Handle an event that was generated in Bareos
- */
 static bRC handlePluginEvent(bpContext* bareos_plugin_ctx,
                              bsdEvent* event,
                              void* value)
@@ -313,7 +294,7 @@ static bRC handlePluginEvent(bpContext* bareos_plugin_ctx,
    * See if we have been triggered in the previous switch if not we have to
    * always dispatch the event. If we already processed the event internally
    * we only do a dispatch to the python entry point when that internal
-   * processing was successfull (e.g. retval == bRC_OK).
+   * processing was successful (e.g. retval == bRC_OK).
    */
   if (!event_dispatched || retval == bRC_OK) {
     PyEval_AcquireThread(plugin_priv_ctx->interpreter);
@@ -793,14 +774,14 @@ bail_out:
 }
 
 static bRC PyGetPluginValue(bpContext* bareos_plugin_ctx,
-                            psdVariable var,
+                            pVariable var,
                             void* value)
 {
   return bRC_OK;
 }
 
 static bRC PySetPluginValue(bpContext* bareos_plugin_ctx,
-                            psdVariable var,
+                            pVariable var,
                             void* value)
 {
   return bRC_OK;

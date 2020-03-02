@@ -37,7 +37,6 @@
 #endif
 
 #include "filed/fd_plugins.h"
-#include "plugins/filed/fd_common.h"
 #include "python-fd.h"
 
 namespace filedaemon {
@@ -57,9 +56,7 @@ static const int debuglevel = 150;
   "python:module_path=<path-to-python-modules>:module_name=<python-module-to-" \
   "load>:..."
 
-/**
- * Forward referenced functions
- */
+/* Forward referenced functions */
 static bRC newPlugin(bpContext* bareos_plugin_ctx);
 static bRC freePlugin(bpContext* bareos_plugin_ctx);
 static bRC getPluginValue(bpContext* bareos_plugin_ctx,
@@ -118,9 +115,7 @@ static bRC PyRestoreObjectData(bpContext* bareos_plugin_ctx,
 static bRC PyHandleBackupFile(bpContext* bareos_plugin_ctx,
                               struct save_pkt* sp);
 
-/**
- * Pointers to Bareos functions
- */
+/* Pointers to Bareos functions */
 static bFuncs* bfuncs = NULL;
 static bInfo* binfo = NULL;
 
@@ -228,11 +223,8 @@ static bRC newPlugin(bpContext* bareos_plugin_ctx)
   struct plugin_private_context* plugin_priv_ctx =
       (struct plugin_private_context*)malloc(
           sizeof(struct plugin_private_context));
-
   if (!plugin_priv_ctx) { return bRC_Error; }
-
   memset(plugin_priv_ctx, 0, sizeof(struct plugin_private_context));
-
   bareos_plugin_ctx->pContext =
       (void*)plugin_priv_ctx; /* set our context pointer */
 
@@ -295,10 +287,6 @@ static bRC freePlugin(bpContext* bareos_plugin_ctx)
   return bRC_OK;
 }
 
-/**
- * Called by core code to get a variable from the plugin.
- * Not currently used.
- */
 static bRC getPluginValue(bpContext* bareos_plugin_ctx,
                           pVariable var,
                           void* value)
@@ -317,10 +305,6 @@ bail_out:
   return retval;
 }
 
-/**
- * Called by core code to set a plugin variable.
- * Not currently used.
- */
 static bRC setPluginValue(bpContext* bareos_plugin_ctx,
                           pVariable var,
                           void* value)
@@ -338,10 +322,6 @@ static bRC setPluginValue(bpContext* bareos_plugin_ctx,
   return retval;
 }
 
-/**
- * Called by Bareos when there are certain events that the
- * plugin might want to know.  The value depends on the event.
- */
 static bRC handlePluginEvent(bpContext* bareos_plugin_ctx,
                              bEvent* event,
                              void* value)
@@ -370,22 +350,16 @@ static bRC handlePluginEvent(bpContext* bareos_plugin_ctx,
        * Fall-through wanted
        */
     case bEventRestoreCommand:
-      /*
-       * Fall-through wanted
-       */
+      /* Fall-through wanted */
     case bEventEstimateCommand:
-      /*
-       * Fall-through wanted
-       */
+      /* Fall-through wanted */
     case bEventPluginCommand:
       event_dispatched = true;
       retval =
           parse_plugin_definition(bareos_plugin_ctx, value, plugin_options);
       break;
     case bEventNewPluginOptions:
-      /*
-       * Free any previous value.
-       */
+      /* Free any previous value.  */
       if (plugin_priv_ctx->plugin_options) {
         free(plugin_priv_ctx->plugin_options);
         plugin_priv_ctx->plugin_options = NULL;
@@ -395,9 +369,7 @@ static bRC handlePluginEvent(bpContext* bareos_plugin_ctx,
       retval =
           parse_plugin_definition(bareos_plugin_ctx, value, plugin_options);
 
-      /*
-       * Save that we got a plugin override.
-       */
+      /* Save that we got a plugin override.  */
       plugin_priv_ctx->plugin_options = strdup((char*)value);
       break;
     case bEventRestoreObject: {
@@ -405,10 +377,8 @@ static bRC handlePluginEvent(bpContext* bareos_plugin_ctx,
 
       rop = (struct restore_object_pkt*)value;
 
-      /*
-       * Only use the plugin definition of a restore object if we
-       * didn't get any other plugin definition from some other source before.
-       */
+      /* Only use the plugin definition of a restore object if we
+       * didn't get any other plugin definition from some other source before.*/
       if (!plugin_priv_ctx->python_loaded) {
         if (rop && *rop->plugin_name) {
           event_dispatched = true;
@@ -426,7 +396,7 @@ static bRC handlePluginEvent(bpContext* bareos_plugin_ctx,
    * See if we have been triggered in the previous switch if not we have to
    * always dispatch the event. If we already processed the event internally
    * we only do a dispatch to the python entry point when that internal
-   * processing was successfull (e.g. retval == bRC_OK).
+   * processing was successful (e.g. retval == bRC_OK).
    */
   if (!event_dispatched || retval == bRC_OK) {
     PyEval_AcquireThread(plugin_priv_ctx->interpreter);
@@ -437,32 +407,20 @@ static bRC handlePluginEvent(bpContext* bareos_plugin_ctx,
      */
     switch (event->eventType) {
       case bEventBackupCommand:
-        /*
-         * Fall-through wanted
-         */
+        /* Fall-through wanted */
       case bEventRestoreCommand:
-        /*
-         * Fall-through wanted
-         */
+        /* Fall-through wanted */
       case bEventEstimateCommand:
-        /*
-         * Fall-through wanted
-         */
+        /* Fall-through wanted */
       case bEventPluginCommand:
-        /*
-         * Fall-through wanted
-         */
+        /* Fall-through wanted */
       case bEventNewPluginOptions:
-        /*
-         * See if we already loaded the Python modules.
-         */
+        /* See if we already loaded the Python modules. */
         if (!plugin_priv_ctx->python_loaded) {
           retval = PyLoadModule(bareos_plugin_ctx, plugin_options.c_str());
         }
 
-        /*
-         * Only try to call when the loading succeeded.
-         */
+        /* Only try to call when the loading succeeded. */
         if (retval == bRC_OK) {
           retval = PyParsePluginDefinition(bareos_plugin_ctx,
                                            plugin_options.c_str());
@@ -479,15 +437,11 @@ static bRC handlePluginEvent(bpContext* bareos_plugin_ctx,
            */
           retval = bRC_OK;
         } else {
-          /*
-           * See if we already loaded the Python modules.
-           */
+          /* See if we already loaded the Python modules. */
           if (!plugin_priv_ctx->python_loaded && *rop->plugin_name) {
             retval = PyLoadModule(bareos_plugin_ctx, plugin_options.c_str());
 
-            /*
-             * Only try to call when the loading succeeded.
-             */
+            /* Only try to call when the loading succeeded. */
             if (retval == bRC_OK) {
               retval = PyParsePluginDefinition(bareos_plugin_ctx,
                                                plugin_options.c_str());

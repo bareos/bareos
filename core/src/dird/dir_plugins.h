@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -182,9 +182,9 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
  */
 typedef enum
 {
-  pDirVarName = 1,
-  pDirVarDescription = 2
-} pDirVariable;
+  pVarName = 1,
+  pVarDescription = 2
+} pVariable;
 
 #define DIR_PLUGIN_MAGIC "*DirPluginData*"
 #define DIR_PLUGIN_INTERFACE_VERSION 4
@@ -194,8 +194,8 @@ typedef struct s_dirpluginFuncs {
   uint32_t version;
   bRC (*newPlugin)(bpContext* ctx);
   bRC (*freePlugin)(bpContext* ctx);
-  bRC (*getPluginValue)(bpContext* ctx, pDirVariable var, void* value);
-  bRC (*setPluginValue)(bpContext* ctx, pDirVariable var, void* value);
+  bRC (*getPluginValue)(bpContext* ctx, pVariable var, void* value);
+  bRC (*setPluginValue)(bpContext* ctx, pVariable var, void* value);
   bRC (*handlePluginEvent)(bpContext* ctx, bDirEvent* event, void* value);
 } pDirFuncs;
 

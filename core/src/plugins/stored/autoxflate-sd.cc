@@ -66,8 +66,8 @@ using namespace storagedaemon;
  */
 static bRC newPlugin(bpContext* ctx);
 static bRC freePlugin(bpContext* ctx);
-static bRC getPluginValue(bpContext* ctx, psdVariable var, void* value);
-static bRC setPluginValue(bpContext* ctx, psdVariable var, void* value);
+static bRC getPluginValue(bpContext* ctx, pVariable var, void* value);
+static bRC setPluginValue(bpContext* ctx, pVariable var, void* value);
 static bRC handlePluginEvent(bpContext* ctx, bsdEvent* event, void* value);
 static bRC handleJobEnd(bpContext* ctx);
 static bRC setup_record_translation(bpContext* ctx, void* value);
@@ -221,7 +221,7 @@ static bRC freePlugin(bpContext* ctx)
 /**
  * Return some plugin value (none defined)
  */
-static bRC getPluginValue(bpContext* ctx, psdVariable var, void* value)
+static bRC getPluginValue(bpContext* ctx, pVariable var, void* value)
 {
   Dmsg(ctx, debuglevel, "autoxflate-sd: getPluginValue var=%d\n", var);
 
@@ -231,7 +231,7 @@ static bRC getPluginValue(bpContext* ctx, psdVariable var, void* value)
 /**
  * Set a plugin value (none defined)
  */
-static bRC setPluginValue(bpContext* ctx, psdVariable var, void* value)
+static bRC setPluginValue(bpContext* ctx, pVariable var, void* value)
 {
   Dmsg(ctx, debuglevel, "autoxflate-sd: setPluginValue var=%d\n", var);
 

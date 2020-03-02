@@ -20,5 +20,7 @@
 #define MOD_DEF(ob, name, doc, methods) ob = Py_InitModule3(name, methods, doc);
 #endif
 
+#include "plugins/filed/fd_common.h"
+
 
 #endif  // BAREOS_PYTHON_PLUGINS_COMMON_H_
