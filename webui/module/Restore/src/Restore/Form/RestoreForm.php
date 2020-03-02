@@ -244,7 +244,7 @@ class RestoreForm extends Form
          ));
       }
       else {
-         if(!empty($this->restore_params['client']) && count($this->getRestoreJobList()) == 1) {
+         if(!empty($this->restore_params['client']) && count($this->getRestoreJobList()) > 0) {
             $this->add(array(
                'name' => 'restorejob',
                'type' => 'select',
