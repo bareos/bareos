@@ -27,9 +27,10 @@
 #ifndef BAREOS_PLUGINS_DIRD_PYTHON_DIR_H_
 #define BAREOS_PLUGINS_DIRD_PYTHON_DIR_H_ 1
 
+#define PYTHON_MODULE_NAME bareosdir
+
 /* common code for all python plugins */
 #include "../python_plugins_common.h"
-#include "../python_plugins_common.inc"
 
 namespace directordaemon {
 
@@ -65,7 +66,7 @@ static PyObject* PyBareosRegisterEvents(PyObject* self, PyObject* args);
 static PyObject* PyBareosUnRegisterEvents(PyObject* self, PyObject* args);
 static PyObject* PyBareosGetInstanceCount(PyObject* self, PyObject* args);
 
-static PyMethodDef BareosDIRMethods[] = {
+static PyMethodDef Methods[] = {
     {"GetValue", PyBareosGetValue, METH_VARARGS, "Get a Plugin value"},
     {"SetValue", PyBareosSetValue, METH_VARARGS, "Set a Plugin value"},
     {"DebugMessage", PyBareosDebugMessage, METH_VARARGS,
@@ -82,35 +83,37 @@ static PyMethodDef BareosDIRMethods[] = {
 
 static void* bareos_plugin_context = NULL;
 
+// MOD_INIT(PYTHON_MODULE_NAME)
 MOD_INIT(bareosdir)
 {
   /* bareos_plugin_context holds the bpContext instead of passing to Python and
    * extracting it back like it was before. bareos_plugin_context needs to be
-   * set after loading the bareosdir binary python module and will be used for
-   * all calls.
+   * set after loading the PYTHON_MODULE_NAME binary python module and will be
+   * used for all calls.
    */
 
-  PyObject* BareosDirModule = NULL;
+  PyObject* m = NULL;
 
   /* Pointer Capsules to avoid context transfer back and forth */
-  PyObject* PyDirModulePluginContext =
-      PyCapsule_New((void*)&bareos_plugin_context, "bareosdir.bpContext", NULL);
+  PyObject* PyModulePluginContext =
+      PyCapsule_New((void*)&bareos_plugin_context,
+                    Quote(PYTHON_MODULE_NAME) ".bpContext", NULL);
 
-  if (!PyDirModulePluginContext) {
-    printf("python-dir.h: PyCapsule_New failed\n");
+  if (!PyModulePluginContext) {
+    printf(Quote(PYTHON_MODULE_NAME) ": PyCapsule_New failed\n");
     return MOD_ERROR_VAL;
   }
 
-  MOD_DEF(BareosDirModule, "bareosdir", NULL, BareosDIRMethods)
+  MOD_DEF(m, Quote(PYTHON_MODULE_NAME), NULL, Methods)
 
-  if (PyDirModulePluginContext) {
-    PyModule_AddObject(BareosDirModule, "bpContext", PyDirModulePluginContext);
+  if (PyModulePluginContext) {
+    PyModule_AddObject(m, "bpContext", PyModulePluginContext);
   } else {
-    printf("python-dir.h:PyModule_AddObject failed\n");
+    printf(Quote(PYTHON_MODULE_NAME) ":PyModule_AddObject failed\n");
     return MOD_ERROR_VAL;
   }
 
-  return MOD_SUCCESS_VAL(BareosDirModule);
+  return MOD_SUCCESS_VAL(m);
 }
 
 } /* namespace directordaemon */

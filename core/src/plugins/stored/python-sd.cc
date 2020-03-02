@@ -26,6 +26,7 @@
  * @file
  * Python Storage daemon Plugin program
  */
+
 #if defined(HAVE_WIN32)
 #include "include/bareos.h"
 #include <Python.h>
@@ -35,14 +36,15 @@
 #endif
 #include "stored/stored.h"
 
-
 #if (PY_VERSION_HEX < 0x02060000)
 #error "Need at least Python version 2.6 or newer"
 #endif
 
 #include "python-sd.h"
 #include "lib/edit.h"
+
 namespace storagedaemon {
+
 static const int debuglevel = 150;
 
 #define PLUGIN_LICENSE "Bareos AGPLv3"
@@ -54,10 +56,6 @@ static const int debuglevel = 150;
   "python:instance=<instance_id>:module_path=<path-to-python-modules>:module_" \
   "name=<python-module-to-load>"
 
-#define Dmsg(context, level, ...) \
-  bfuncs->DebugMessage(context, __FILE__, __LINE__, level, __VA_ARGS__)
-#define Jmsg(context, type, ...) \
-  bfuncs->JobMessage(context, __FILE__, __LINE__, type, 0, __VA_ARGS__)
 
 /* Forward referenced functions */
 static bRC newPlugin(bpContext* bareos_plugin_ctx);
@@ -128,6 +126,9 @@ struct plugin_private_context {
  */
 static PyThreadState* mainThreadState;
 
+/* functions common to all plugins */
+#include "../python_plugins_common.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -184,18 +185,15 @@ bRC unloadPlugin()
 /* Create a new instance of the plugin i.e. allocate our private storage */
 static bRC newPlugin(bpContext* bareos_plugin_ctx)
 {
-  struct plugin_private_context* plugin_priv_ctx;
-
-  plugin_priv_ctx = (struct plugin_private_context*)malloc(
-      sizeof(struct plugin_private_context));
+  struct plugin_private_context* plugin_priv_ctx =
+      (struct plugin_private_context*)malloc(
+          sizeof(struct plugin_private_context));
   if (!plugin_priv_ctx) { return bRC_Error; }
   memset(plugin_priv_ctx, 0, sizeof(struct plugin_private_context));
   bareos_plugin_ctx->pContext =
       (void*)plugin_priv_ctx; /* set our context pointer */
 
-  /*
-   * For each plugin instance we instantiate a new Python interpreter.
-   */
+  /* For each plugin instance we instantiate a new Python interpreter. */
   PyEval_AcquireThread(mainThreadState);
   plugin_priv_ctx->interpreter = Py_NewInterpreter();
   PyEval_ReleaseThread(plugin_priv_ctx->interpreter);
@@ -234,35 +232,6 @@ static bRC freePlugin(bpContext* bareos_plugin_ctx)
   return bRC_OK;
 }
 
-static bRC getPluginValue(bpContext* bareos_plugin_ctx,
-                          pVariable var,
-                          void* value)
-{
-  struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)bareos_plugin_ctx->pContext;
-  bRC retval = bRC_Error;
-
-  PyEval_AcquireThread(plugin_priv_ctx->interpreter);
-  retval = PyGetPluginValue(bareos_plugin_ctx, var, value);
-  PyEval_ReleaseThread(plugin_priv_ctx->interpreter);
-
-  return retval;
-}
-
-static bRC setPluginValue(bpContext* bareos_plugin_ctx,
-                          pVariable var,
-                          void* value)
-{
-  struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)bareos_plugin_ctx->pContext;
-  bRC retval = bRC_Error;
-
-  PyEval_AcquireThread(plugin_priv_ctx->interpreter);
-  retval = PySetPluginValue(bareos_plugin_ctx, var, value);
-  PyEval_ReleaseThread(plugin_priv_ctx->interpreter);
-
-  return retval;
-}
 
 static bRC handlePluginEvent(bpContext* bareos_plugin_ctx,
                              bsdEvent* event,
@@ -312,9 +281,7 @@ static bRC handlePluginEvent(bpContext* bareos_plugin_ctx,
           retval = PyLoadModule(bareos_plugin_ctx, plugin_options.c_str());
         }
 
-        /*
-         * Only try to call when the loading succeeded.
-         */
+        /* Only try to call when the loading succeeded. */
         if (retval == bRC_OK) {
           retval = PyParsePluginDefinition(bareos_plugin_ctx,
                                            plugin_options.c_str());
@@ -339,60 +306,6 @@ static bRC handlePluginEvent(bpContext* bareos_plugin_ctx,
 
 bail_out:
   return retval;
-}
-
-/**
- * Strip any backslashes in the string.
- */
-static inline void StripBackSlashes(char* value)
-{
-  char* bp;
-
-  bp = value;
-  while (*bp) {
-    switch (*bp) {
-      case '\\':
-        bstrinlinecpy(bp, bp + 1);
-        break;
-      default:
-        break;
-    }
-
-    bp++;
-  }
-}
-
-/**
- * Parse a integer value.
- */
-static inline int64_t parse_integer(const char* argument_value)
-{
-  return str_to_int64(argument_value);
-}
-
-/**
- * Parse a boolean value e.g. check if its yes or true anything else translates
- * to false.
- */
-static inline bool ParseBoolean(const char* argument_value)
-{
-  if (Bstrcasecmp(argument_value, "yes") ||
-      Bstrcasecmp(argument_value, "true")) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-/**
- * Always set destination to value and clean any previous one.
- */
-static inline void SetString(char** destination, char* value)
-{
-  if (*destination) { free(*destination); }
-
-  *destination = strdup(value);
-  StripBackSlashes(*destination);
 }
 
 /**
@@ -572,57 +485,6 @@ static inline PyObject* conv_retval_python(bRC retval)
   return (PyObject*)PyInt_FromLong((int)retval);
 }
 
-/**
- * Handle a Python error.
- *
- * Python equivalent:
- *
- * import traceback, sys
- * return "".join(traceback.format_exception(sys.exc_type,
- *    sys.exc_value, sys.exc_traceback))
- */
-static void PyErrorHandler(bpContext* bareos_plugin_ctx, int msgtype)
-{
-  PyObject *type, *value, *traceback;
-  PyObject* tracebackModule;
-  char* error_string;
-
-  PyErr_Fetch(&type, &value, &traceback);
-
-  tracebackModule = PyImport_ImportModule("traceback");
-  if (tracebackModule != NULL) {
-    PyObject *tbList, *emptyString, *strRetval;
-
-    tbList =
-        PyObject_CallMethod(tracebackModule, (char*)"format_exception",
-                            (char*)"OOO", type, value == NULL ? Py_None : value,
-                            traceback == NULL ? Py_None : traceback);
-
-    emptyString = PyString_FromString("");
-    strRetval =
-        PyObject_CallMethod(emptyString, (char*)"join", (char*)"O", tbList);
-
-    error_string = strdup(PyString_AsString(strRetval));
-
-    Py_DECREF(tbList);
-    Py_DECREF(emptyString);
-    Py_DECREF(strRetval);
-    Py_DECREF(tracebackModule);
-  } else {
-    error_string = strdup("Unable to import traceback module.");
-  }
-
-  Py_DECREF(type);
-  Py_XDECREF(value);
-  Py_XDECREF(traceback);
-
-  Dmsg(bareos_plugin_ctx, debuglevel, "python-sd: %s\n", error_string);
-  if (msgtype) {
-    Jmsg(bareos_plugin_ctx, msgtype, "python-sd: %s\n", error_string);
-  }
-
-  free(error_string);
-}
 
 /**
  * Initial load of the Python module.

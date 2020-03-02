@@ -27,9 +27,10 @@
 #ifndef BAREOS_PLUGINS_FILED_PYTHON_FD_H_
 #define BAREOS_PLUGINS_FILED_PYTHON_FD_H_ 1
 
+#define PYTHON_MODULE_NAME bareosfd
+
 /* common code for all python plugins */
 #include "../python_plugins_common.h"
-#include "../python_plugins_common.inc"
 
 #include "structmember.h"
 
@@ -714,7 +715,7 @@ static PyObject* PyBareosAcceptFile(PyObject* self, PyObject* args);
 static PyObject* PyBareosSetSeenBitmap(PyObject* self, PyObject* args);
 static PyObject* PyBareosClearSeenBitmap(PyObject* self, PyObject* args);
 
-static PyMethodDef BareosFDMethods[] = {
+static PyMethodDef Methods[] = {
     {"GetValue", PyBareosGetValue, METH_VARARGS, "Get a Plugin value"},
     {"SetValue", PyBareosSetValue, METH_VARARGS, "Set a Plugin value"},
     {"DebugMessage", PyBareosDebugMessage, METH_VARARGS,
@@ -748,31 +749,33 @@ static PyMethodDef BareosFDMethods[] = {
 
 static void* bareos_plugin_context = NULL;
 
+// MOD_INIT(PYTHON_MODULE_NAME)
 MOD_INIT(bareosfd)
 {
   /* bareos_plugin_context holds the bpContext instead of passing to Python and
    * extracting it back like it was before. bareos_plugin_context needs to be
-   * set after loading the bareosfd binary python module and will be used for
-   * all calls.
+   * set after loading the PYTHON_MODULE_NAME binary python module and will be
+   * used for all calls.
    */
 
-  PyObject* BareosFdModule = NULL;
+  PyObject* m = NULL;
 
   /* Pointer Capsules to avoid context transfer back and forth */
-  PyObject* PyFdModulePluginContext =
-      PyCapsule_New((void*)&bareos_plugin_"bareosfd.bpContext", NULL);
+  PyObject* PyModulePluginContext =
+      PyCapsule_New((void*)&bareos_plugin_context,
+                    Quote(PYTHON_MODULE_NAME) ".bpContext", NULL);
 
-  if (!PyFdModulePluginContext) {
-    printf("python-fd.h: PyCapsule_New failed\n");
+  if (!PyModulePluginContext) {
+    printf(Quote(PYTHON_MODULE_NAME) ": PyCapsule_New failed\n");
     return MOD_ERROR_VAL;
   }
 
-  MOD_DEF(BareosFdModule, "bareosfd", NULL, BareosFDMethods)
+  MOD_DEF(m, Quote(PYTHON_MODULE_NAME), NULL, Methods)
 
-  if (PyFdModulePluginContext) {
-    PyModule_AddObject(BareosFdModule, "bpContext", PyFdModulePluginContext);
+  if (PyModulePluginContext) {
+    PyModule_AddObject(m, "bpContext", PyModulePluginContext);
   } else {
-    printf("python-fd.h:PyModule_AddObject failed\n");
+    printf(Quote(PYTHON_MODULE_NAME) ":PyModule_AddObject failed\n");
     return MOD_ERROR_VAL;
   }
 
@@ -799,32 +802,27 @@ MOD_INIT(bareosfd)
   if (PyType_Ready(&PyXattrPacketType) < 0) { return MOD_ERROR_VAL; }
 
   Py_INCREF(&PyRestoreObjectType);
-  PyModule_AddObject(BareosFdModule, "RestoreObject",
-                     (PyObject*)&PyRestoreObjectType);
+  PyModule_AddObject(m, "RestoreObject", (PyObject*)&PyRestoreObjectType);
 
   Py_INCREF(&PyStatPacketType);
-  PyModule_AddObject(BareosFdModule, "StatPacket",
-                     (PyObject*)&PyStatPacketType);
+  PyModule_AddObject(m, "StatPacket", (PyObject*)&PyStatPacketType);
 
   Py_INCREF(&PySavePacketType);
-  PyModule_AddObject(BareosFdModule, "SavePacket",
-                     (PyObject*)&PySavePacketType);
+  PyModule_AddObject(m, "SavePacket", (PyObject*)&PySavePacketType);
 
   Py_INCREF(&PyRestorePacketType);
-  PyModule_AddObject(BareosFdModule, "RestorePacket",
-                     (PyObject*)&PyRestorePacketType);
+  PyModule_AddObject(m, "RestorePacket", (PyObject*)&PyRestorePacketType);
 
   Py_INCREF(&PyIoPacketType);
-  PyModule_AddObject(BareosFdModule, "IoPacket", (PyObject*)&PyIoPacketType);
+  PyModule_AddObject(m, "IoPacket", (PyObject*)&PyIoPacketType);
 
   Py_INCREF(&PyAclPacketType);
-  PyModule_AddObject(BareosFdModule, "AclPacket", (PyObject*)&PyAclPacketType);
+  PyModule_AddObject(m, "AclPacket", (PyObject*)&PyAclPacketType);
 
   Py_INCREF(&PyXattrPacketType);
-  PyModule_AddObject(BareosFdModule, "XattrPacket",
-                     (PyObject*)&PyXattrPacketType);
+  PyModule_AddObject(m, "XattrPacket", (PyObject*)&PyXattrPacketType);
 
-  return MOD_SUCCESS_VAL(BareosFdModule);
+  return MOD_SUCCESS_VAL(m);
 }
 } /* namespace filedaemon */
 #endif /* BAREOS_PLUGINS_FILED_PYTHON_FD_H_ */

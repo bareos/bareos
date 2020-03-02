@@ -20,6 +20,8 @@
 #define MOD_DEF(ob, name, doc, methods) ob = Py_InitModule3(name, methods, doc);
 #endif
 
+#define Quote(macro) #macro
+
 #include "plugins/filed/fd_common.h"
 
 

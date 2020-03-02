@@ -27,9 +27,10 @@
 #ifndef BAREOS_PLUGINS_STORED_PYTHON_SD_H_
 #define BAREOS_PLUGINS_STORED_PYTHON_SD_H_ 1
 
+#define PYTHON_MODULE_NAME bareossd
+
 /* common code for all python plugins */
 #include "../python_plugins_common.h"
-#include "../python_plugins_common.inc"
 
 namespace storagedaemon {
 
@@ -65,7 +66,7 @@ static PyObject* PyBareosRegisterEvents(PyObject* self, PyObject* args);
 static PyObject* PyBareosUnRegisterEvents(PyObject* self, PyObject* args);
 static PyObject* PyBareosGetInstanceCount(PyObject* self, PyObject* args);
 
-static PyMethodDef BareosSDMethods[] = {
+static PyMethodDef Methods[] = {
     {"GetValue", PyBareosGetValue, METH_VARARGS, "Get a Plugin value"},
     {"SetValue", PyBareosSetValue, METH_VARARGS, "Set a Plugin value"},
     {"DebugMessage", PyBareosDebugMessage, METH_VARARGS,
@@ -82,35 +83,37 @@ static PyMethodDef BareosSDMethods[] = {
 
 static void* bareos_plugin_context = NULL;
 
+// MOD_INIT(PYTHON_MODULE_NAME)
 MOD_INIT(bareossd)
 {
   /* bareos_plugin_context holds the bpContext instead of passing to Python and
    * extracting it back like it was before. bareos_plugin_context needs to be
-   * set after loading the bareossd binary python module and will be used for
-   * all calls.
+   * set after loading the PYTHON_MODULE_NAME binary python module and will be
+   * used for all calls.
    */
 
-  PyObject* BareosSdModule = NULL;
+  PyObject* m = NULL;
 
   /* Pointer Capsules to avoid context transfer back and forth */
-  PyObject* PySdModulePluginContext =
-      PyCapsule_New((void*)&bareos_plugin_context, "bareossd.bpContext", NULL);
+  PyObject* PyModulePluginContext =
+      PyCapsule_New((void*)&bareos_plugin_context,
+                    Quote(PYTHON_MODULE_NAME) ".bpContext", NULL);
 
-  if (!PySdModulePluginContext) {
-    printf("python-sd.h: PyCapsule_New failed\n");
+  if (!PyModulePluginContext) {
+    printf(Quote(PYTHON_MODULE_NAME) ": PyCapsule_New failed\n");
     return MOD_ERROR_VAL;
   }
 
-  MOD_DEF(BareosSdModule, "bareossd", NULL, BareosSDMethods)
+  MOD_DEF(m, Quote(PYTHON_MODULE_NAME), NULL, Methods)
 
-  if (PySdModulePluginContext) {
-    PyModule_AddObject(BareosSdModule, "bpContext", PySdModulePluginContext);
+  if (PyModulePluginContext) {
+    PyModule_AddObject(m, "bpContext", PyModulePluginContext);
   } else {
-    printf("python-sd.h:PyModule_AddObject failed\n");
+    printf(Quote(PYTHON_MODULE_NAME) ":PyModule_AddObject failed\n");
     return MOD_ERROR_VAL;
   }
 
-  return MOD_SUCCESS_VAL(BareosSdModule);
+  return MOD_SUCCESS_VAL(m);
 }
 
 } /* namespace storagedaemon*/
