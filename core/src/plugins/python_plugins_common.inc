@@ -1,4 +1,25 @@
+/*
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
+   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+
+   This program is Free Software; you can redistribute it and/or
+   modify it under the terms of version three of the GNU Affero General Public
+   License as published by the Free Software Foundation, which is
+   listed in the file LICENSE.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+   Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+*/
+
+/* Common functions used in all python plugins.  */
 static bRC getPluginValue(bpContext* bareos_plugin_ctx,
                           pVariable var,
                           void* value)
@@ -134,10 +155,45 @@ static void PyErrorHandler(bpContext* bareos_plugin_ctx, int msgtype)
   Py_XDECREF(value);
   Py_XDECREF(traceback);
 
-  Dmsg(bareos_plugin_ctx, debuglevel, Quote(PYTHON_MODULE_NAME) ": %s\n",  error_string);
+  Dmsg(bareos_plugin_ctx, debuglevel, Quote(PYTHON_MODULE_NAME) ": %s\n",
+       error_string);
   if (msgtype) {
-    Jmsg(bareos_plugin_ctx, msgtype, Quote(PYTHON_MODULE_NAME) ": %s\n", error_string);
+    Jmsg(bareos_plugin_ctx, msgtype, Quote(PYTHON_MODULE_NAME) ": %s\n",
+         error_string);
   }
 
   free(error_string);
+}
+
+static void StorePluginContextInPythonModule(bpContext* bareos_plugin_ctx)
+{
+  /* get the pointer to the module variable that is exported via the capsule */
+  bpContext** bareosfd_bpContext =
+      (bpContext**)PyCapsule_Import(Quote(PYTHON_MODULE_NAME) ".bpContext", 0);
+
+  /* store bareos_plugin_ctx in module */
+  *bareosfd_bpContext = bareos_plugin_ctx;
+}
+
+static bpContext* GetPluginContextFromPythonModule()
+{
+  bpContext** retval =
+      (bpContext**)PyCapsule_Import(Quote(PYTHON_MODULE_NAME) ".bpContext", 0);
+  return *retval;
+}
+
+/**
+ * Convert a return value into a bRC enum value.
+ */
+static inline bRC ConvertPythonRetvalTobRCRetval(PyObject* pRetVal)
+{
+  return (bRC)PyInt_AsLong(pRetVal);
+}
+
+/**
+ * Convert a return value from bRC enum value into Python Object.
+ */
+static inline PyObject* ConvertbRCRetvalToPythonRetval(bRC retval)
+{
+  return (PyObject*)PyInt_FromLong((int)retval);
 }

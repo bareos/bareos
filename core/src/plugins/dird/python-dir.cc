@@ -454,40 +454,6 @@ bail_out:
   return bRC_Error;
 }
 
-static void StorePluginContextInPythonModule(bpContext* bareos_plugin_ctx)
-{
-  /* get the pointer to the module variable that is exported via the capsule */
-  bpContext** bareosfd_bpContext =
-      (bpContext**)PyCapsule_Import("bareosdir.bpContext", 0);
-
-  /* store bareos_plugin_ctx in module */
-  *bareosfd_bpContext = bareos_plugin_ctx;
-}
-
-
-static bpContext* PyGetbpContext()
-{
-  bpContext** retval = (bpContext**)PyCapsule_Import("bareosdir.bpContext", 0);
-  return *retval;
-}
-
-/**
- * Convert a return value into a bRC enum value.
- */
-static inline bRC conv_python_retval(PyObject* pRetVal)
-{
-  return (bRC)PyInt_AsLong(pRetVal);
-}
-
-/**
- * Convert a return value from bRC enum value into Python Object.
- */
-static inline PyObject* conv_retval_python(bRC retval)
-{
-  return (PyObject*)PyInt_FromLong((int)retval);
-}
-
-
 /**
  * Initial load of the Python module.
  *
@@ -565,7 +531,7 @@ static bRC PyLoadModule(bpContext* bareos_plugin_ctx, void* value)
       if (!pRetVal) {
         goto bail_out;
       } else {
-        retval = conv_python_retval(pRetVal);
+        retval = ConvertPythonRetvalTobRCRetval(pRetVal);
         Py_DECREF(pRetVal);
       }
     } else {
@@ -619,7 +585,7 @@ static bRC PyParsePluginDefinition(bpContext* bareos_plugin_ctx, void* value)
     if (!pRetVal) {
       goto bail_out;
     } else {
-      retval = conv_python_retval(pRetVal);
+      retval = ConvertPythonRetvalTobRCRetval(pRetVal);
       Py_DECREF(pRetVal);
     }
 
@@ -676,7 +642,7 @@ static bRC PyHandlePluginEvent(bpContext* bareos_plugin_ctx,
     if (!pRetVal) {
       goto bail_out;
     } else {
-      retval = conv_python_retval(pRetVal);
+      retval = ConvertPythonRetvalTobRCRetval(pRetVal);
       Py_DECREF(pRetVal);
     }
   } else {
@@ -715,7 +681,7 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
     case bDirVarSDJobStatus: {
       int value = 0;
 
-      bareos_plugin_ctx = PyGetbpContext();
+      bareos_plugin_ctx = GetPluginContextFromPythonModule();
       if (bfuncs->getBareosValue(bareos_plugin_ctx, (brDirVariable)var,
                                  &value) == bRC_OK) {
         pRetVal = PyInt_FromLong(value);
@@ -731,7 +697,7 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
     case bDirVarReadBytes: {
       uint64_t value = 0;
 
-      bareos_plugin_ctx = PyGetbpContext();
+      bareos_plugin_ctx = GetPluginContextFromPythonModule();
       if (bfuncs->getBareosValue(bareos_plugin_ctx, (brDirVariable)var,
                                  &value) == bRC_OK) {
         pRetVal = PyLong_FromUnsignedLong(value);
@@ -750,7 +716,7 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
     case bDirVarVolumeName: {
       char* value = NULL;
 
-      bareos_plugin_ctx = PyGetbpContext();
+      bareos_plugin_ctx = GetPluginContextFromPythonModule();
       if (bfuncs->getBareosValue(bareos_plugin_ctx, (brDirVariable)var,
                                  &value) == bRC_OK) {
         if (value) { pRetVal = PyString_FromString(value); }
@@ -766,7 +732,7 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
       break;
     }
     default:
-      bareos_plugin_ctx = PyGetbpContext();
+      bareos_plugin_ctx = GetPluginContextFromPythonModule();
       Dmsg(bareos_plugin_ctx, debuglevel,
            "python-dir: PyBareosGetValue unknown variable requested %d\n", var);
       break;
@@ -799,7 +765,7 @@ static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
     case bwDirVarVolumeName: {
       char* value;
 
-      bareos_plugin_ctx = PyGetbpContext();
+      bareos_plugin_ctx = GetPluginContextFromPythonModule();
       value = PyString_AsString(pyValue);
       if (value) {
         retval = bfuncs->setBareosValue(bareos_plugin_ctx, (bwDirVariable)var,
@@ -812,7 +778,7 @@ static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
     case bwDirVarJobLevel: {
       int value;
 
-      bareos_plugin_ctx = PyGetbpContext();
+      bareos_plugin_ctx = GetPluginContextFromPythonModule();
       value = PyInt_AsLong(pyValue);
       if (value >= 0) {
         retval = bfuncs->setBareosValue(bareos_plugin_ctx, (bwDirVariable)var,
@@ -821,14 +787,14 @@ static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
       break;
     }
     default:
-      bareos_plugin_ctx = PyGetbpContext();
+      bareos_plugin_ctx = GetPluginContextFromPythonModule();
       Dmsg(bareos_plugin_ctx, debuglevel,
            "python-dir: PyBareosSetValue unknown variable requested %d\n", var);
       break;
   }
 
 bail_out:
-  return conv_retval_python(retval);
+  return ConvertbRCRetvalToPythonRetval(retval);
 }
 
 /**
@@ -847,7 +813,7 @@ static PyObject* PyBareosDebugMessage(PyObject* self, PyObject* args)
   }
 
   if (dbgmsg) {
-    bareos_plugin_ctx = PyGetbpContext();
+    bareos_plugin_ctx = GetPluginContextFromPythonModule();
     Dmsg(bareos_plugin_ctx, level, "python-dir: %s", dbgmsg);
   }
 
@@ -871,7 +837,7 @@ static PyObject* PyBareosJobMessage(PyObject* self, PyObject* args)
   }
 
   if (jobmsg) {
-    bareos_plugin_ctx = PyGetbpContext();
+    bareos_plugin_ctx = GetPluginContextFromPythonModule();
     Jmsg(bareos_plugin_ctx, type, "python-dir: %s", jobmsg);
   }
 
@@ -900,7 +866,7 @@ static PyObject* PyBareosRegisterEvents(PyObject* self, PyObject* args)
 
   len = PySequence_Fast_GET_SIZE(pySeq);
 
-  bareos_plugin_ctx = PyGetbpContext();
+  bareos_plugin_ctx = GetPluginContextFromPythonModule();
   for (int i = 0; i < len; i++) {
     pyEvent = PySequence_Fast_GET_ITEM(pySeq, i);
     event = PyInt_AsLong(pyEvent);
@@ -917,7 +883,7 @@ static PyObject* PyBareosRegisterEvents(PyObject* self, PyObject* args)
   Py_DECREF(pySeq);
 
 bail_out:
-  return conv_retval_python(retval);
+  return ConvertbRCRetvalToPythonRetval(retval);
 }
 
 /**
@@ -941,7 +907,7 @@ static PyObject* PyBareosUnRegisterEvents(PyObject* self, PyObject* args)
 
   len = PySequence_Fast_GET_SIZE(pySeq);
 
-  bareos_plugin_ctx = PyGetbpContext();
+  bareos_plugin_ctx = GetPluginContextFromPythonModule();
   for (int i = 0; i < len; i++) {
     pyEvent = PySequence_Fast_GET_ITEM(pySeq, i);
     event = PyInt_AsLong(pyEvent);
@@ -958,7 +924,7 @@ static PyObject* PyBareosUnRegisterEvents(PyObject* self, PyObject* args)
   Py_DECREF(pySeq);
 
 bail_out:
-  return conv_retval_python(retval);
+  return ConvertbRCRetvalToPythonRetval(retval);
 }
 
 /**
@@ -974,7 +940,7 @@ static PyObject* PyBareosGetInstanceCount(PyObject* self, PyObject* args)
 
   if (!PyArg_ParseTuple(args, ":BareosGetInstanceCount")) { return NULL; }
 
-  bareos_plugin_ctx = PyGetbpContext();
+  bareos_plugin_ctx = GetPluginContextFromPythonModule();
   if (bfuncs->getInstanceCount(bareos_plugin_ctx, &value) == bRC_OK) {
     pRetVal = PyInt_FromLong(value);
   }

@@ -929,44 +929,6 @@ bail_out:
   return bRC_Error;
 }
 
-/* static PyObject* PyCreatebpContext(bpContext* bareos_plugin_ctx) */
-/* { */
-/*   return PyCapsule_New((void*)bareos_plugin_ctx, "bareos.bpContext", NULL);
- */
-/* } */
-
-static void StorePluginContextInPythonModule(bpContext* bareos_plugin_ctx)
-{
-  /* get the pointer to the module variable that is exported via the capsule */
-  bpContext** bareosfd_bpContext =
-      (bpContext**)PyCapsule_Import("bareosfd.bpContext", 0);
-
-  /* store bareos_plugin_ctx in module */
-  *bareosfd_bpContext = bareos_plugin_ctx;
-}
-
-static bpContext* GetPluginContextFromPythonModule()
-{
-  bpContext** retval = (bpContext**)PyCapsule_Import("bareosfd.bpContext", 0);
-  return *retval;
-}
-
-/**
- * Convert a return value into a bRC enum value.
- */
-static inline bRC conv_python_retval(PyObject* pRetVal)
-{
-  return (bRC)PyInt_AsLong(pRetVal);
-}
-
-/**
- * Convert a return value from bRC enum value into Python Object.
- */
-static inline PyObject* conv_retval_python(bRC retval)
-{
-  return (PyObject*)PyInt_FromLong((int)retval);
-}
-
 
 /**
  * Initial load of the Python module.
@@ -1039,7 +1001,7 @@ static bRC PyLoadModule(bpContext* bareos_plugin_ctx, void* value)
       if (!pRetVal) {
         goto bail_out;
       } else {
-        retval = conv_python_retval(pRetVal);
+        retval = ConvertPythonRetvalTobRCRetval(pRetVal);
         Py_DECREF(pRetVal);
       }
     } else {
@@ -1095,7 +1057,7 @@ static bRC PyParsePluginDefinition(bpContext* bareos_plugin_ctx, void* value)
     if (!pRetVal) {
       goto bail_out;
     } else {
-      retval = conv_python_retval(pRetVal);
+      retval = ConvertPythonRetvalTobRCRetval(pRetVal);
       Py_DECREF(pRetVal);
     }
 
@@ -1152,7 +1114,7 @@ static bRC PyHandlePluginEvent(bpContext* bareos_plugin_ctx,
     if (!pRetVal) {
       goto bail_out;
     } else {
-      retval = conv_python_retval(pRetVal);
+      retval = ConvertPythonRetvalTobRCRetval(pRetVal);
       Py_DECREF(pRetVal);
     }
   } else {
@@ -1425,7 +1387,7 @@ static bRC PyStartBackupFile(bpContext* bareos_plugin_ctx, struct save_pkt* sp)
       Py_DECREF((PyObject*)pSavePkt);
       goto bail_out;
     } else {
-      retval = conv_python_retval(pRetVal);
+      retval = ConvertPythonRetvalTobRCRetval(pRetVal);
       Py_DECREF(pRetVal);
 
       if (!PySavePacketToNative(pSavePkt, sp, plugin_priv_ctx, false)) {
@@ -1472,7 +1434,7 @@ static bRC PyEndBackupFile(bpContext* bareos_plugin_ctx)
     if (!pRetVal) {
       goto bail_out;
     } else {
-      retval = conv_python_retval(pRetVal);
+      retval = ConvertPythonRetvalTobRCRetval(pRetVal);
     }
   } else {
     Dmsg(bareos_plugin_ctx, debuglevel,
@@ -1586,7 +1548,7 @@ static bRC PyPluginIO(bpContext* bareos_plugin_ctx, struct io_pkt* io)
       Py_DECREF((PyObject*)pIoPkt);
       goto bail_out;
     } else {
-      retval = conv_python_retval(pRetVal);
+      retval = ConvertPythonRetvalTobRCRetval(pRetVal);
       Py_DECREF(pRetVal);
 
       if (!PyIoPacketToNative(pIoPkt, io)) {
@@ -1638,7 +1600,7 @@ static bRC PyStartRestoreFile(bpContext* bareos_plugin_ctx, const char* cmd)
     if (!pRetVal) {
       goto bail_out;
     } else {
-      retval = conv_python_retval(pRetVal);
+      retval = ConvertPythonRetvalTobRCRetval(pRetVal);
       Py_DECREF(pRetVal);
     }
   } else {
@@ -1676,7 +1638,7 @@ static bRC PyEndRestoreFile(bpContext* bareos_plugin_ctx)
     if (!pRetVal) {
       goto bail_out;
     } else {
-      retval = conv_python_retval(pRetVal);
+      retval = ConvertPythonRetvalTobRCRetval(pRetVal);
     }
   } else {
     Dmsg(bareos_plugin_ctx, debuglevel,
@@ -1764,7 +1726,7 @@ static bRC PyCreateFile(bpContext* bareos_plugin_ctx, struct restore_pkt* rp)
       Py_DECREF(pRestorePacket);
       goto bail_out;
     } else {
-      retval = conv_python_retval(pRetVal);
+      retval = ConvertPythonRetvalTobRCRetval(pRetVal);
       Py_DECREF(pRetVal);
 
       PyRestorePacketToNative(pRestorePacket, rp);
@@ -1810,7 +1772,7 @@ static bRC PySetFileAttributes(bpContext* bareos_plugin_ctx,
       Py_DECREF(pRestorePacket);
       goto bail_out;
     } else {
-      retval = conv_python_retval(pRetVal);
+      retval = ConvertPythonRetvalTobRCRetval(pRetVal);
       Py_DECREF(pRetVal);
       Py_DECREF(pRestorePacket);
     }
@@ -1851,7 +1813,7 @@ static bRC PyCheckFile(bpContext* bareos_plugin_ctx, char* fname)
     if (!pRetVal) {
       goto bail_out;
     } else {
-      retval = conv_python_retval(pRetVal);
+      retval = ConvertPythonRetvalTobRCRetval(pRetVal);
       Py_DECREF(pRetVal);
     }
   } else {
@@ -1933,7 +1895,7 @@ static bRC PyGetAcl(bpContext* bareos_plugin_ctx, acl_pkt* ap)
       Py_DECREF((PyObject*)pAclPkt);
       goto bail_out;
     } else {
-      retval = conv_python_retval(pRetVal);
+      retval = ConvertPythonRetvalTobRCRetval(pRetVal);
       Py_DECREF(pRetVal);
 
       if (!PyAclPacketToNative(pAclPkt, ap)) {
@@ -1982,7 +1944,7 @@ static bRC PySetAcl(bpContext* bareos_plugin_ctx, acl_pkt* ap)
     if (!pRetVal) {
       goto bail_out;
     } else {
-      retval = conv_python_retval(pRetVal);
+      retval = ConvertPythonRetvalTobRCRetval(pRetVal);
       Py_DECREF(pRetVal);
     }
   } else {
@@ -2087,7 +2049,7 @@ static bRC PyGetXattr(bpContext* bareos_plugin_ctx, xattr_pkt* xp)
       Py_DECREF((PyObject*)pXattrPkt);
       goto bail_out;
     } else {
-      retval = conv_python_retval(pRetVal);
+      retval = ConvertPythonRetvalTobRCRetval(pRetVal);
       Py_DECREF(pRetVal);
 
       if (!PyXattrPacketToNative(pXattrPkt, xp)) {
@@ -2136,7 +2098,7 @@ static bRC PySetXattr(bpContext* bareos_plugin_ctx, xattr_pkt* xp)
     if (!pRetVal) {
       goto bail_out;
     } else {
-      retval = conv_python_retval(pRetVal);
+      retval = ConvertPythonRetvalTobRCRetval(pRetVal);
       Py_DECREF(pRetVal);
     }
   } else {
@@ -2202,7 +2164,7 @@ static bRC PyRestoreObjectData(bpContext* bareos_plugin_ctx,
     if (!pRetVal) {
       goto bail_out;
     } else {
-      retval = conv_python_retval(pRetVal);
+      retval = ConvertPythonRetvalTobRCRetval(pRetVal);
       Py_DECREF(pRetVal);
     }
   } else {
@@ -2244,7 +2206,7 @@ static bRC PyHandleBackupFile(bpContext* bareos_plugin_ctx, struct save_pkt* sp)
       Py_DECREF((PyObject*)pSavePkt);
       goto bail_out;
     } else {
-      retval = conv_python_retval(pRetVal);
+      retval = ConvertPythonRetvalTobRCRetval(pRetVal);
       Py_DECREF(pRetVal);
 
       if (!PySavePacketToNative(pSavePkt, sp, plugin_priv_ctx, true)) {
@@ -2386,7 +2348,7 @@ static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
   }
 
 bail_out:
-  return conv_retval_python(retval);
+  return ConvertbRCRetvalToPythonRetval(retval);
 }
 
 /**
@@ -2476,7 +2438,7 @@ static PyObject* PyBareosRegisterEvents(PyObject* self, PyObject* args)
   Py_DECREF(pySeq);
 
 bail_out:
-  return conv_retval_python(retval);
+  return ConvertbRCRetvalToPythonRetval(retval);
 }
 
 /**
@@ -2515,7 +2477,7 @@ static PyObject* PyBareosUnRegisterEvents(PyObject* self, PyObject* args)
   Py_DECREF(pySeq);
 
 bail_out:
-  return conv_retval_python(retval);
+  return ConvertbRCRetvalToPythonRetval(retval);
 }
 
 /**
@@ -2564,7 +2526,7 @@ static PyObject* PyBareosAddExclude(PyObject* self, PyObject* args)
   }
 
 bail_out:
-  return conv_retval_python(retval);
+  return ConvertbRCRetvalToPythonRetval(retval);
 }
 
 /**
@@ -2586,7 +2548,7 @@ static PyObject* PyBareosAddInclude(PyObject* self, PyObject* args)
   }
 
 bail_out:
-  return conv_retval_python(retval);
+  return ConvertbRCRetvalToPythonRetval(retval);
 }
 
 /**
@@ -2608,7 +2570,7 @@ static PyObject* PyBareosAddOptions(PyObject* self, PyObject* args)
   }
 
 bail_out:
-  return conv_retval_python(retval);
+  return ConvertbRCRetvalToPythonRetval(retval);
 }
 
 /**
@@ -2633,7 +2595,7 @@ static PyObject* PyBareosAddRegex(PyObject* self, PyObject* args)
   }
 
 bail_out:
-  return conv_retval_python(retval);
+  return ConvertbRCRetvalToPythonRetval(retval);
 }
 
 /**
@@ -2658,7 +2620,7 @@ static PyObject* PyBareosAddWild(PyObject* self, PyObject* args)
   }
 
 bail_out:
-  return conv_retval_python(retval);
+  return ConvertbRCRetvalToPythonRetval(retval);
 }
 
 /**
@@ -2677,7 +2639,7 @@ static PyObject* PyBareosNewOptions(PyObject* self, PyObject* args)
   retval = bfuncs->NewOptions(bareos_plugin_ctx);
 
 bail_out:
-  return conv_retval_python(retval);
+  return ConvertbRCRetvalToPythonRetval(retval);
 }
 
 /**
@@ -2696,7 +2658,7 @@ static PyObject* PyBareosNewInclude(PyObject* self, PyObject* args)
   retval = bfuncs->NewInclude(bareos_plugin_ctx);
 
 bail_out:
-  return conv_retval_python(retval);
+  return ConvertbRCRetvalToPythonRetval(retval);
 }
 
 /**
@@ -2715,7 +2677,7 @@ static PyObject* PyBareosNewPreInclude(PyObject* self, PyObject* args)
   retval = bfuncs->NewPreInclude(bareos_plugin_ctx);
 
 bail_out:
-  return conv_retval_python(retval);
+  return ConvertbRCRetvalToPythonRetval(retval);
 }
 
 /**
@@ -2769,7 +2731,7 @@ static PyObject* PyBareosCheckChanges(PyObject* self, PyObject* args)
   pSavePkt->accurate_found = sp.accurate_found;
 
 bail_out:
-  return conv_retval_python(retval);
+  return ConvertbRCRetvalToPythonRetval(retval);
 }
 
 /**
@@ -2813,7 +2775,7 @@ static PyObject* PyBareosAcceptFile(PyObject* self, PyObject* args)
   retval = bfuncs->AcceptFile(bareos_plugin_ctx, &sp);
 
 bail_out:
-  return conv_retval_python(retval);
+  return ConvertbRCRetvalToPythonRetval(retval);
 }
 
 /**
@@ -2837,7 +2799,7 @@ static PyObject* PyBareosSetSeenBitmap(PyObject* self, PyObject* args)
   retval = bfuncs->SetSeenBitmap(bareos_plugin_ctx, all, fname);
 
 bail_out:
-  return conv_retval_python(retval);
+  return ConvertbRCRetvalToPythonRetval(retval);
 }
 
 /**
@@ -2861,7 +2823,7 @@ static PyObject* PyBareosClearSeenBitmap(PyObject* self, PyObject* args)
   retval = bfuncs->ClearSeenBitmap(bareos_plugin_ctx, all, fname);
 
 bail_out:
-  return conv_retval_python(retval);
+  return ConvertbRCRetvalToPythonRetval(retval);
 }
 
 /**
