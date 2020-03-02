@@ -155,10 +155,10 @@ static void PyErrorHandler(bpContext* bareos_plugin_ctx, int msgtype)
   Py_XDECREF(value);
   Py_XDECREF(traceback);
 
-  Dmsg(bareos_plugin_ctx, debuglevel, Quote(PYTHON_MODULE_NAME) ": %s\n",
+  Dmsg(bareos_plugin_ctx, debuglevel, PYTHON_MODULE_NAME_QUOTED ": %s\n",
        error_string);
   if (msgtype) {
-    Jmsg(bareos_plugin_ctx, msgtype, Quote(PYTHON_MODULE_NAME) ": %s\n",
+    Jmsg(bareos_plugin_ctx, msgtype, PYTHON_MODULE_NAME_QUOTED ": %s\n",
          error_string);
   }
 
@@ -169,16 +169,21 @@ static void StorePluginContextInPythonModule(bpContext* bareos_plugin_ctx)
 {
   /* get the pointer to the module variable that is exported via the capsule */
   bpContext** bareosfd_bpContext =
-      (bpContext**)PyCapsule_Import(Quote(PYTHON_MODULE_NAME) ".bpContext", 0);
+      (bpContext**)PyCapsule_Import(PYTHON_MODULE_NAME_QUOTED ".bpContext", 0);
 
   /* store bareos_plugin_ctx in module */
-  *bareosfd_bpContext = bareos_plugin_ctx;
+  if (bareosfd_bpContext) {
+    *bareosfd_bpContext = bareos_plugin_ctx;
+  } else {
+    printf(PYTHON_MODULE_NAME_QUOTED ": could not get bareosfd_bpContext from module\n");
+  }
 }
 
 static bpContext* GetPluginContextFromPythonModule()
 {
+  const char* capsule_name =  PYTHON_MODULE_NAME_QUOTED ".bpContext";
   bpContext** retval =
-      (bpContext**)PyCapsule_Import(Quote(PYTHON_MODULE_NAME) ".bpContext", 0);
+      (bpContext**)PyCapsule_Import(capsule_name, 0);
   return *retval;
 }
 

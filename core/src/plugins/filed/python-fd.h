@@ -28,6 +28,7 @@
 #define BAREOS_PLUGINS_FILED_PYTHON_FD_H_ 1
 
 #define PYTHON_MODULE_NAME bareosfd
+#define PYTHON_MODULE_NAME_QUOTED "bareosfd"
 
 /* common code for all python plugins */
 #include "../python_plugins_common.h"
@@ -763,19 +764,19 @@ MOD_INIT(bareosfd)
   /* Pointer Capsules to avoid context transfer back and forth */
   PyObject* PyModulePluginContext =
       PyCapsule_New((void*)&bareos_plugin_context,
-                    Quote(PYTHON_MODULE_NAME) ".bpContext", NULL);
+                    PYTHON_MODULE_NAME_QUOTED ".bpContext", NULL);
 
   if (!PyModulePluginContext) {
-    printf(Quote(PYTHON_MODULE_NAME) ": PyCapsule_New failed\n");
+    printf(PYTHON_MODULE_NAME_QUOTED ": PyCapsule_New failed\n");
     return MOD_ERROR_VAL;
   }
 
-  MOD_DEF(m, Quote(PYTHON_MODULE_NAME), NULL, Methods)
+  MOD_DEF(m, PYTHON_MODULE_NAME_QUOTED, NULL, Methods)
 
   if (PyModulePluginContext) {
     PyModule_AddObject(m, "bpContext", PyModulePluginContext);
   } else {
-    printf(Quote(PYTHON_MODULE_NAME) ":PyModule_AddObject failed\n");
+    printf(PYTHON_MODULE_NAME_QUOTED ":PyModule_AddObject failed\n");
     return MOD_ERROR_VAL;
   }
 
