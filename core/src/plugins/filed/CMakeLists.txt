@@ -107,6 +107,29 @@ if(HAVE_PYTHON)
   target_link_libraries(python-fd ${PYTHON_LIBRARIES} bareos)
 endif()
 
+if(HAVE_PYTHON)
+  add_executable( bareosfd_module_main bareosfd_module_main.cc)
+  target_link_libraries(bareosfd_module_main ${PYTHON_LIBRARIES} bareos)
+endif()
+
+if(HAVE_PYTHON)
+  configure_file(setup.py.in setup.py)
+  add_custom_command(OUTPUT pythonmodules/bareosfd.so
+    COMMAND ${PYTHON_EXECUTABLE} setup.py build
+    COMMAND ${PYTHON_EXECUTABLE} setup.py install --install-lib ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
+    DEPENDS python-fd.cc)
+  add_custom_target(bareosfd ALL DEPENDS bareos pythonmodules/bareosfd.so)
+
+  add_test(NAME bareosfd-python-module
+    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/bareosfd_test.py
+    )
+  set_property(TEST bareosfd-python-module PROPERTY ENVIRONMENT PYTHONPATH=pythonmodules/ LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../lib)
+endif()
+
+
+
+
+
 if(${HAVE_GLUSTERFS})
   add_library(gfapi-fd MODULE gfapi-fd.cc)
   set_target_properties(gfapi-fd PROPERTIES PREFIX "")
