@@ -61,3 +61,19 @@ if(HAVE_PYTHON)
 
   install(FILES ${PYFILES} DESTINATION ${plugindir})
 endif()
+
+
+if(HAVE_PYTHON)
+  configure_file(setup.py.in setup.py)
+  add_custom_target(bareossd-pymodule ALL
+    COMMENT "building python module pythonmodules/bareossd.so"
+    COMMAND ${PYTHON_EXECUTABLE} setup.py build
+    COMMAND ${PYTHON_EXECUTABLE} setup.py install --install-lib ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
+    DEPENDS python-sd
+    )
+
+  add_test(NAME bareossd-python-module
+    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/bareossd_test.py
+    )
+  set_property(TEST bareossd-python-module PROPERTY ENVIRONMENT "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/pythonmodules:${CMAKE_CURRENT_SOURCE_DIR}/test" LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../lib)
+endif()
