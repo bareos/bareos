@@ -114,11 +114,13 @@ endif()
 
 if(HAVE_PYTHON)
   configure_file(setup.py.in setup.py)
-  add_custom_command(OUTPUT pythonmodules/bareosfd.so
+
+  add_custom_target(bareosfd ALL
+    #OUTPUT pythonmodules/bareosfd.so
+    COMMENT "building python module pythonmodules/bareosfd.so"
     COMMAND ${PYTHON_EXECUTABLE} setup.py build
     COMMAND ${PYTHON_EXECUTABLE} setup.py install --install-lib ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
-    DEPENDS python-fd.cc)
-  add_custom_target(bareosfd ALL DEPENDS bareos pythonmodules/bareosfd.so)
+    DEPENDS python-fd.cc python-fd.h bareos)
 
   add_test(NAME bareosfd-python-module
     COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/bareosfd_test.py
