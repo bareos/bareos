@@ -227,12 +227,7 @@ static char OKsecureerase[]   = "2000 OK FDSecureEraseCmd %s\n";
 static char OKsession[]       = "2000 OK session\n";
 static char OKstore[]         = "2000 OK storage\n";
 static char OKstoreend[]      = "2000 OK storage end\n";
-static char OKjob[] =
-#if !defined(IS_BUILD_ON_OBS)
-   "2000 OK Job %s (%s) %s,%s,%s";
-#else
-   "2000 OK Job %s (%s) %s,%s,%s,%s,%s";
-#endif
+static char OKjob[]           = "2000 OK Job %s (%s) %s,%s,%s";
 static char OKsetdebugv0[] = "2000 OK setdebug=%d trace=%d hangup=%d tracefile=%s\n";
 static char OKsetdebugv1[] = "2000 OK setdebug=%d trace=%d hangup=%d timestamp=%d tracefile=%s\n";
 static char BADjob[]       = "2901 Bad Job\n";
@@ -948,11 +943,7 @@ static bool job_cmd(JobControlRecord *jcr)
    os_version = HOST_OS;
 #endif
 
-#if !defined(IS_BUILD_ON_OBS)
    return dir->fsend(OKjob, VERSION, LSMDATE, os_version, DISTNAME, DISTVER);
-#else
-   return dir->fsend(OKjob, VERSION, LSMDATE, os_version, DISTNAME, DISTVER, OBS_DISTRIBUTION, OBS_ARCH);
-#endif
 }
 
 static bool RunbeforeCmd(JobControlRecord *jcr)

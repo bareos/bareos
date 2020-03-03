@@ -2792,10 +2792,6 @@ static bool VersionCmd(UaContext *ua, const char *cmd)
    ua->send->ObjectKeyValue("operatingsystem", HOST_OS, "%s ");
    ua->send->ObjectKeyValue("distname", DISTNAME, "%s ");
    ua->send->ObjectKeyValue("distversion", DISTVER, "%s ");
-#if defined(IS_BUILD_ON_OBS)
-   ua->send->ObjectKeyValue("obsdistribution", OBS_DISTRIBUTION, "%s ");
-   ua->send->ObjectKeyValue("obsarch", OBS_ARCH, "%s ");
-#endif
    ua->send->ObjectKeyValue("CustomVersionId", NPRTB(me->verid), "%s\n");
    ua->send->ObjectEnd("version");
 

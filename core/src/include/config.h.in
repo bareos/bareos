@@ -1061,9 +1061,6 @@
 /* Define if integer division by zero raises signal SIGFPE. */
 #cmakedefine INTDIV0_RAISES_SIGFPE @INTDIV0_RAISES_SIGFPE@
 
-/* Define to 1 if things are build using the Open Build Service (OBS) */
-#cmakedefine IS_BUILD_ON_OBS @IS_BUILD_ON_OBS@
-
 /* Where are shared libs stored */
 #cmakedefine LIBDIR @LIBDIR@
 
