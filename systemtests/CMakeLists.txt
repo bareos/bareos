@@ -792,6 +792,9 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   prepare_test()
 
   configurefilestosystemtest("systemtests" "tests/${TEST_NAME}" "*" @ONLY "")
+  set(pythonpath
+  "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/pyfiles:${CMAKE_SOURCE_DIR}/core/src/plugins/stored/python/pyfiles:${CMAKE_SOURCE_DIR}/core/src/plugins/dird/python/pyfiles:${CMAKE_CURRENT_SOURCE_DIR}/tests/${TEST_NAME}/python-modules")
+
 
   configure_file("environment.in" "tests/${TEST_NAME}/environment" @ONLY)
 
