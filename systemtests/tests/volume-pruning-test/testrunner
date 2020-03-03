@@ -1,7 +1,8 @@
 #!/bin/sh
 #
-# Run a simple backup
-#   then restore it.
+# run multiple jobs and verify that the pruning mechanism
+# logs the jobs being pruned
+#
 #
 TestName="$(basename "$(pwd)")"
 export TestName
@@ -51,7 +52,6 @@ run job=$JobName Level=Full yes
 @#
 @# now do a restore
 @#
-@$out $tmp/log2.out
 wait
 restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done
 yes
@@ -65,7 +65,7 @@ check_for_zombie_jobs storage=File
 stop_bareos
 
 check_two_logs
-check_restore_diff "${BackupDirectory}"
 
-grep "Purging the following JobIds: 1,2,3,4,5,6" "$tmp"/log1.out
+grep "Purging the following JobIds: 1,2,3,4,5,6" "$tmp"/log1.out || estat=1
+
 end_test

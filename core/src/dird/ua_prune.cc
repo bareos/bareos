@@ -840,7 +840,6 @@ bool PruneVolume(UaContext* ua, MediaDbRecord* mr)
   PoolMem query(PM_MESSAGE);
   del_ctx del;
   bool VolumeIsNowEmtpy = false;
-  int NumJobsToBePruned;
 
   if (mr->Enabled == VOL_ARCHIVED) {
     return false; /* Cannot prune archived volumes */
@@ -857,7 +856,7 @@ bool PruneVolume(UaContext* ua, MediaDbRecord* mr)
           mr->VolumeName);
 
 
-    NumJobsToBePruned = GetPruneListForVolume(ua, mr, &del);
+    int NumJobsToBePruned = GetPruneListForVolume(ua, mr, &del);
     Jmsg(ua->jcr, M_INFO, 0,
          _("Pruning volume %s: %d Jobs have expired and can be pruned.\n"),
          mr->VolumeName, NumJobsToBePruned);
@@ -885,8 +884,7 @@ bool PruneVolume(UaContext* ua, MediaDbRecord* mr)
 int GetPruneListForVolume(UaContext* ua, MediaDbRecord* mr, del_ctx* del)
 {
   PoolMem query(PM_MESSAGE);
-  int NumJobsToBePruned = 0;
-  utime_t now, VolRetention;
+  utime_t now;
   char ed1[50], ed2[50];
 
   if (mr->Enabled == VOL_ARCHIVED) {
@@ -896,7 +894,7 @@ int GetPruneListForVolume(UaContext* ua, MediaDbRecord* mr, del_ctx* del)
   /*
    * Now add to the  list of JobIds for Jobs written to this Volume
    */
-  VolRetention = mr->VolRetention;
+  utime_t VolRetention = mr->VolRetention;
   now = (utime_t)time(NULL);
   ua->db->FillQuery(query, BareosDb::SQL_QUERY::sel_JobMedia,
                     edit_int64(mr->MediaId, ed1),
@@ -910,9 +908,9 @@ int GetPruneListForVolume(UaContext* ua, MediaDbRecord* mr, del_ctx* del)
   if (!ua->db->SqlQuery(query.c_str(), FileDeleteHandler, (void*)del)) {
     if (ua->verbose) { ua->ErrorMsg("%s", ua->db->strerror()); }
     Dmsg0(050, "Count failed\n");
-    goto bail_out;
+    return 0;
   }
-  NumJobsToBePruned = ExcludeRunningJobsFromList(del);
+  int NumJobsToBePruned = ExcludeRunningJobsFromList(del);
 
   Jmsg(ua->jcr, M_INFO, 0,
        _("Volume \"%s\" has Volume Retention of %d sec. and has %d jobs that "
@@ -920,7 +918,6 @@ int GetPruneListForVolume(UaContext* ua, MediaDbRecord* mr, del_ctx* del)
          "be pruned\n"),
        mr->VolumeName, VolRetention, NumJobsToBePruned);
 
-bail_out:
   return NumJobsToBePruned;
 }
 
