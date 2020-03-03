@@ -172,16 +172,4 @@ else
    fi
 fi
 
-if test "x$OBS_DISTRIBUTION" != "x"
-then
-   echo "obsdistname set to $OBS_DISTRIBUTION"
-else
-   if test -f /.build.log; then
-      OBS_PROJECT=`grep 'Building bareos for project' /.build.log | cut -d' ' -f10 | sed "s#'##g"`
-      OBS_DISTRIBUTION=`grep 'Building bareos for project' /.build.log | cut -d' ' -f12 | sed "s#'##g"`
-      OBS_ARCH=`grep 'Building bareos for project' /.build.log | cut -d' ' -f14 | sed "s#'##g"`
-      OBS_SRCMD5=`grep 'Building bareos for project' /.build.log | cut -d' ' -f16 | sed "s#'##g"`
-   fi
-fi
-
-echo "$DISTNAME;$DISTVER;$OBS_PROJECT;$OBS_DISTRIBUTION;$OBS_ARCH;$OBS_SRCMD5"
+echo "$DISTNAME;$DISTVER"
