@@ -318,6 +318,10 @@ $this->headTitle($title);
    function formatJobId(value) {
       return '<a href="<?php echo $this->basePath() . '/job/details/'; ?>'+value+'" title="<?php echo $this->translate("View Job Details"); ?>">'+value+'</a>';
    }
+
+   function formatJobName(value) {
+      return '<a href="<?php echo $this->basePath() . '/job/index?jobname='; ?>'+value+'&period='+displayRange+'">'+value+'</a>';
+   }
    function attachJobTable() {
       jobtable = $('#jobtable').bootstrapTable({
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
@@ -350,7 +354,7 @@ $this->headTitle($title);
                field: 'name',
                sortable: true,
                formatter: function(value) {
-                  return '<a href="<?php echo $this->basePath() . '/job/index?jobname='; ?>'+value+'">'+value+'</a>';
+                  return formatJobName(value);
                }
             },
             {
