@@ -52,10 +52,6 @@ int main(int argc, char* argv[])
   static filedaemon::bFuncs bfuncs;
   Py_SetProgramName(argv[0]);
   Py_Initialize();
-  PyRun_SimpleString(
-      "from time import time,ctime\n"
-      "print 'Today is',ctime(time())\n");
-
 
   PyObject* bareosfdModule = PyImport_ImportModule("bareosfd");
   if (bareosfdModule) {
@@ -78,7 +74,7 @@ int main(int argc, char* argv[])
     printf("ctx_from_bareosfd_module contains %p\n", ctx_from_bareosfd_module);
   }
 
-  PyObject* pModule = PyImport_ImportModule("bareosfd_module_main_test");
+  PyObject* pModule = PyImport_ImportModule("bareosfd-module-test");
 
   if (PyErr_Occurred()) { PyErrorHandler(); }
 

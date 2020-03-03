@@ -108,8 +108,15 @@ if(HAVE_PYTHON)
 endif()
 
 if(HAVE_PYTHON)
-  add_executable(bareosfd_module_main python/bareosfd_module_main.cc)
-  target_link_libraries(bareosfd_module_main ${PYTHON_LIBRARIES} bareos)
+  add_executable(bareos-fd-module-tester python/test/python-fd-module-tester.cc)
+  target_link_libraries(bareos-fd-module-tester ${PYTHON_LIBRARIES} bareos)
+
+  add_test(NAME bareosfd-python-module-tester
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/bareos-fd-module-tester
+    )
+  set_property(TEST bareosfd-python-module-tester
+    PROPERTY ENVIRONMENT PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/python/test/:${CMAKE_CURRENT_BINARY_DIR}/pythonmodules)
+
 endif()
 
 if(HAVE_PYTHON)

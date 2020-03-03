@@ -669,6 +669,7 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
   PyObject* pRetVal = NULL;
 
   if (!PyArg_ParseTuple(args, "i:BareosGetValue", &var)) { return NULL; }
+  RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
   switch (var) {
     case bDirVarJobId:
@@ -760,6 +761,7 @@ static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
   if (!PyArg_ParseTuple(args, "iO:BareosSetValue", &var, &pyValue)) {
     goto bail_out;
   }
+  RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
   switch (var) {
     case bwDirVarVolumeName: {
@@ -806,11 +808,12 @@ static PyObject* PyBareosDebugMessage(PyObject* self, PyObject* args)
 {
   int level;
   char* dbgmsg = NULL;
-  bpContext* bareos_plugin_ctx;
+  bpContext* bareos_plugin_ctx = NULL;
 
   if (!PyArg_ParseTuple(args, "i|z:BareosDebugMessage", &level, &dbgmsg)) {
     return NULL;
   }
+  RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
   if (dbgmsg) {
     bareos_plugin_ctx = GetPluginContextFromPythonModule();
@@ -830,11 +833,12 @@ static PyObject* PyBareosJobMessage(PyObject* self, PyObject* args)
 {
   int type;
   char* jobmsg = NULL;
-  bpContext* bareos_plugin_ctx;
+  bpContext* bareos_plugin_ctx = NULL;
 
   if (!PyArg_ParseTuple(args, "i|z:BareosJobMessage", &type, &jobmsg)) {
     return NULL;
   }
+  RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
   if (jobmsg) {
     bareos_plugin_ctx = GetPluginContextFromPythonModule();
@@ -853,13 +857,14 @@ static PyObject* PyBareosJobMessage(PyObject* self, PyObject* args)
 static PyObject* PyBareosRegisterEvents(PyObject* self, PyObject* args)
 {
   int len, event;
-  bpContext* bareos_plugin_ctx;
+  bpContext* bareos_plugin_ctx = NULL;
   bRC retval = bRC_Error;
   PyObject *pyEvents, *pySeq, *pyEvent;
 
   if (!PyArg_ParseTuple(args, "O:BareosRegisterEvents", &pyEvents)) {
     goto bail_out;
   }
+  RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
   pySeq = PySequence_Fast(pyEvents, "Expected a sequence of events");
   if (!pySeq) { goto bail_out; }
@@ -894,13 +899,14 @@ bail_out:
 static PyObject* PyBareosUnRegisterEvents(PyObject* self, PyObject* args)
 {
   int len, event;
-  bpContext* bareos_plugin_ctx;
+  bpContext* bareos_plugin_ctx = NULL;
   bRC retval = bRC_Error;
   PyObject *pyEvents, *pySeq, *pyEvent;
 
   if (!PyArg_ParseTuple(args, "O:BareosUnRegisterEvents", &pyEvents)) {
     goto bail_out;
   }
+  RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
   pySeq = PySequence_Fast(pyEvents, "Expected a sequence of events");
   if (!pySeq) { goto bail_out; }
@@ -939,6 +945,7 @@ static PyObject* PyBareosGetInstanceCount(PyObject* self, PyObject* args)
   PyObject* pRetVal = NULL;
 
   if (!PyArg_ParseTuple(args, ":BareosGetInstanceCount")) { return NULL; }
+  RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
   bareos_plugin_ctx = GetPluginContextFromPythonModule();
   if (bfuncs->getInstanceCount(bareos_plugin_ctx, &value) == bRC_OK) {

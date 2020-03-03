@@ -6,10 +6,10 @@ import time
 class TestBareosFd(unittest.TestCase):
 
     def test_SetValue(self):
-        bareosfd.SetValue(1, 123)
+        self.assertRaises(RuntimeError, bareosfd.SetValue, 2)
 
     def test_DebugMessage(self):
-        bareosfd.DebugMessage(100,"testdebugmessage\n")
+        self.assertRaises(RuntimeError, bareosfd.DebugMessage, "This is a debug message")
 
     def test_RestoreObject(self):
         test_RestoreObject = bareosfd.RestoreObject()
