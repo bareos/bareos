@@ -29,27 +29,126 @@
 #include <iostream>
 #include <memory>
 
+static void no_conversion(BareosDb* /*db*/, DatabaseField& f)
+{
+  f.data_pointer = f.data_pointer != nullptr ? f.data_pointer : "";
+}
+
+static void timestamp_conversion_postgresql(BareosDb* /*db*/, DatabaseField& f)
+{
+  static const char* dummy_timepoint = "1970-01-01 00:00:00";
+
+  if (f.data_pointer == nullptr || *f.data_pointer == '0' ||
+      strlen(f.data_pointer) == 0) {
+    f.data_pointer = dummy_timepoint;
+  }
+}
+
+static void string_conversion_postgresql(BareosDb* db, DatabaseField& f)
+{
+  if (f.data_pointer != nullptr) {
+    std::size_t len{strlen(f.data_pointer)};
+    f.converted_data.resize(len * 2 + 1);
+    db->EscapeString(nullptr, f.converted_data.data(), f.data_pointer, len);
+    f.data_pointer = f.converted_data.data();
+  } else {
+    f.data_pointer = "";
+  }
+}
+
+static void bytea_conversion_postgresql(BareosDb* db, DatabaseField& f)
+{
+  std::size_t new_len{};
+  std::size_t original_length = f.size_of_restore_object;
+
+  // use the same pointer for strings as for binary objects
+  auto original = reinterpret_cast<const unsigned char*>(f.data_pointer);
+
+  auto converted_obj = db->EscapeObject(original, original_length, new_len);
+
+  f.converted_data.resize(new_len);
+  memcpy(f.converted_data.data(), converted_obj, new_len);
+
+  db->FreeEscapedObjectMemory(converted_obj);
+
+  f.data_pointer = f.converted_data.data();
+}
+
+static const ColumnDescription::DataTypeConverterMap
+    db_export_converter_map_postgres_sql_insert{
+        {"bigint", no_conversion},
+        {"bytea", bytea_conversion_postgresql},
+        {"character", string_conversion_postgresql},
+        {"integer", no_conversion},
+        {"numeric", no_conversion},
+        {"smallint", no_conversion},
+        {"text", string_conversion_postgresql},
+        {"timestamp without time zone", timestamp_conversion_postgresql}};
+
+
+static const ColumnDescription::DataTypeConverterMap
+    db_export_converter_map_postgres_sql_copy{
+        {"bigint", no_conversion},
+        {"bytea", bytea_conversion_postgresql},
+        {"character", no_conversion},
+        {"integer", no_conversion},
+        {"numeric", no_conversion},
+        {"smallint", no_conversion},
+        {"text", no_conversion},
+        {"timestamp without time zone", timestamp_conversion_postgresql}};
+
+bool DatabaseExportPostgresql::UseCopyInsertion()
+{
+  switch (insert_mode_) {
+    default:
+    case DatabaseExport::InsertMode::kSqlCopy:
+      return true;
+    case DatabaseExport::InsertMode::kSqlInsert:
+      return false;
+  }
+}
+
+static void ClearTable(BareosDb* db, const std::string& table_name)
+{
+  if (table_name != "version") {
+    std::cout << "Deleting contents of table: " << table_name << std::endl;
+    std::string query("DELETE ");
+    query += " FROM ";
+    query += table_name;
+    if (!db->SqlQuery(query.c_str())) {
+      std::string err{"Could not delete table: "};
+      err += table_name;
+      err += " ";
+      err += db->get_errmsg();
+      throw std::runtime_error(err);
+    }
+  }
+}
+
 DatabaseExportPostgresql::DatabaseExportPostgresql(
     const DatabaseConnection& db_connection,
+    DatabaseExport::InsertMode mode,
     bool clear_tables)
-    : DatabaseExport(db_connection, clear_tables)
+    : DatabaseExport(db_connection), insert_mode_(mode)
 {
+  switch (insert_mode_) {
+    case DatabaseExport::InsertMode::kSqlCopy:
+      insert_mode_message_ = "";
+      table_descriptions_->SetAllConverterCallbacks(
+          db_export_converter_map_postgres_sql_copy);
+      break;
+    case DatabaseExport::InsertMode::kSqlInsert:
+      insert_mode_message_ = ", using slow insert mode";
+      table_descriptions_->SetAllConverterCallbacks(
+          db_export_converter_map_postgres_sql_insert);
+      break;
+    default:
+      throw std::runtime_error("Unknown type for export");
+  }
+
   if (clear_tables) {
     for (const auto& t : table_descriptions_->tables) {
-      if (t.table_name != "version") {
-        std::cout << "Deleting contents of table: " << t.table_name
-                  << std::endl;
-        std::string query("DELETE ");
-        query += " FROM ";
-        query += t.table_name;
-        if (!db_->SqlQuery(query.c_str())) {
-          std::string err{"Could not delete table: "};
-          err += t.table_name;
-          err += " ";
-          err += db_->get_errmsg();
-          throw std::runtime_error(err);
-        }
-      }
+      ClearTable(db_, t.table_name);
     }
   }
 }
@@ -59,7 +158,34 @@ DatabaseExportPostgresql::~DatabaseExportPostgresql()
   if (transaction_open_) { db_->SqlQuery("ROLLBACK"); }
 }
 
-void DatabaseExportPostgresql::CopyRow(RowData& source_data_row)
+void DatabaseExportPostgresql::DoCopyInsertion(RowData& source_data_row)
+{
+  for (std::size_t i = 0; i < source_data_row.column_descriptions.size(); i++) {
+    const ColumnDescription* column_description =
+        table_descriptions_->GetColumnDescription(
+            source_data_row.table_name,
+            source_data_row.column_descriptions[i]->column_name);
+
+    if (column_description == nullptr) {
+      std::string err{"Could not get column description for: "};
+      err += source_data_row.column_descriptions[i]->column_name;
+      throw std::runtime_error(err);
+    }
+
+    if (i < source_data_row.data_fields.size()) {
+      column_description->converter(db_, source_data_row.data_fields[i]);
+    } else {
+      throw std::runtime_error("Row number does not match column description");
+    }
+  }
+  if (!db_->SqlCopyInsert(source_data_row.data_fields)) {
+    std::string err{"DatabaseExportPostgresql: Could not execute query: "};
+    err += db_->get_errmsg();
+    throw std::runtime_error(err);
+  }
+}
+
+void DatabaseExportPostgresql::DoInsertInsertion(RowData& source_data_row)
 {
   std::string query_into{"INSERT INTO "};
   query_into += source_data_row.table_name;
@@ -73,7 +199,7 @@ void DatabaseExportPostgresql::CopyRow(RowData& source_data_row)
             source_data_row.table_name,
             source_data_row.column_descriptions[i]->column_name);
 
-    if (!column_description) {
+    if (column_description == nullptr) {
       std::string err{"Could not get column description for: "};
       err += source_data_row.column_descriptions[i]->column_name;
       throw std::runtime_error(err);
@@ -82,10 +208,10 @@ void DatabaseExportPostgresql::CopyRow(RowData& source_data_row)
     query_into += column_description->column_name;
     query_into += ", ";
 
-    if (i < source_data_row.columns.size()) {
+    if (i < source_data_row.data_fields.size()) {
       query_values += "'";
-      column_description->db_export_converter(db_, source_data_row.columns[i]);
-      query_values += source_data_row.columns[i].data_pointer;
+      column_description->converter(db_, source_data_row.data_fields[i]);
+      query_values += source_data_row.data_fields[i].data_pointer;
       query_values += "',";
     } else {
       throw std::runtime_error("Row number does not match column description");
@@ -104,6 +230,18 @@ void DatabaseExportPostgresql::CopyRow(RowData& source_data_row)
     std::string err{"DatabaseExportPostgresql: Could not execute query: "};
     err += db_->get_errmsg();
     throw std::runtime_error(err);
+  }
+}
+
+void DatabaseExportPostgresql::CopyRow(RowData& source_data_row,
+                                       std::string& insert_mode_message)
+{
+  insert_mode_message = insert_mode_message_;
+
+  if (UseCopyInsertion()) {
+    DoCopyInsertion(source_data_row);
+  } else {
+    DoInsertInsertion(source_data_row);
   }
 }
 
@@ -142,37 +280,6 @@ static void UpdateSequences(
 
 void DatabaseExportPostgresql::CopyEnd() {}
 
-void DatabaseExportPostgresql::CursorStartTable(const std::string& table_name)
-{
-  const DatabaseTableDescriptions::TableDescription* table{
-      table_descriptions_->GetTableDescription(table_name)};
-
-  if (table == nullptr) {
-    std::string err{
-        "DatabaseExportPostgresql: Could not get table description for: "};
-    err += table_name;
-    throw std::runtime_error(err);
-  }
-
-  std::string query{"DECLARE curs1 NO SCROLL CURSOR FOR SELECT "};
-
-  for (const auto& c : table->column_descriptions) {
-    query += c->column_name;
-    query += ", ";
-  }
-
-  query.resize(query.size() - 2);
-  query += " FROM ";
-  query += table_name;
-
-  if (!db_->SqlQuery(query.c_str())) {
-    std::string err{
-        "DatabaseExportPostgresql (cursor): Could not execute query: "};
-    err += db_->get_errmsg();
-    throw std::runtime_error(err);
-  }
-}
-
 static bool TableIsEmtpy(BareosDb* db, const std::string& table_name)
 {
   std::string query{"SELECT * FROM "};
@@ -185,14 +292,20 @@ static bool TableIsEmtpy(BareosDb* db, const std::string& table_name)
     throw std::runtime_error(err);
   }
 
-  if (db->SqlNumRows() > 0) { return false; }
-  return true;
+  return db->SqlNumRows() <= 0;
 }
 
-bool DatabaseExportPostgresql::TableExists(const std::string& table_name)
+bool DatabaseExportPostgresql::TableExists(
+    const std::string& table_name,
+    std::vector<std::string>& column_names)
 {
   auto found = table_descriptions_->GetTableDescription(table_name);
   if (found == nullptr) { return false; }
+
+  for (const auto& col : found->column_descriptions) {
+    column_names.push_back(col->column_name);
+  }
+
   return true;
 }
 
@@ -200,7 +313,10 @@ bool DatabaseExportPostgresql::StartTable(const std::string& table_name)
 {
   std::cout << "====== table " << table_name << " ======" << std::endl;
   std::cout << "--> checking destination table..." << std::endl;
-  if (!TableExists(table_name)) {
+
+  std::vector<std::string> column_names;
+
+  if (!TableExists(table_name, column_names)) {
     std::cout << "--> destination table does not exist" << std::endl;
     return false;
   }
@@ -210,9 +326,14 @@ bool DatabaseExportPostgresql::StartTable(const std::string& table_name)
     return false;
   }
 
-  if (db_->SqlQuery("BEGIN")) {
-    transaction_open_ = true;
-    cursor_start_new_table_ = true;
+  if (db_->SqlQuery("BEGIN")) { transaction_open_ = true; }
+
+  if (UseCopyInsertion()) {
+    if (!db_->SqlCopyStart(table_name, column_names)) {
+      std::string err{"Could not start Sql Copy: "};
+      err += db_->get_errmsg();
+      throw std::runtime_error(err);
+    }
   }
 
   return true;
@@ -220,7 +341,13 @@ bool DatabaseExportPostgresql::StartTable(const std::string& table_name)
 
 void DatabaseExportPostgresql::EndTable(const std::string& table_name)
 {
-  if (table_name == "RestoreObject") {
+  if (UseCopyInsertion()) {
+    if (!db_->SqlCopyEnd()) {
+      std::string err{"Could not end Sql Copy: "};
+      err += db_->get_errmsg();
+      throw std::runtime_error(err);
+    }
+  } else if (table_name == "RestoreObject") {
     std::string query{
         "UPDATE restoreobject SET objectlength=length(restoreobject)"};
     if (!db_->SqlQuery(query.c_str())) {
@@ -236,39 +363,6 @@ void DatabaseExportPostgresql::EndTable(const std::string& table_name)
     db_->SqlQuery("COMMIT");
     transaction_open_ = false;
   }
-}
-
-void DatabaseExportPostgresql::CompareRow(const RowData& data)
-{
-  if (cursor_start_new_table_) {
-    CursorStartTable(data.table_name);
-    cursor_start_new_table_ = false;
-  }
-
-  std::string query{"FETCH NEXT FROM curs1"};
-
-  RowData& rd(const_cast<RowData&>(data));
-
-  if (!db_->SqlQuery(query.c_str(), ResultHandlerCompare, &rd)) {
-    std::string err{
-        "DatabaseExportPostgresql (compare): Could not execute query: "};
-    err += db_->get_errmsg();
-    throw std::runtime_error(err);
-  }
-}
-
-int DatabaseExportPostgresql::ResultHandlerCompare(void* ctx,
-                                                   int fields,
-                                                   char** row)
-{
-  const RowData* rd{static_cast<RowData*>(ctx)};
-
-  for (int i = 0; i < fields; i++) {
-    std::string r1{row[i]};
-    std::string r2{rd->columns[i].data_pointer};
-    if (r1 != r2) { throw std::runtime_error("Data is not same"); }
-  }
-  return 0;
 }
 
 void DatabaseExportPostgresql::SelectSequenceSchema()
@@ -305,7 +399,7 @@ int DatabaseExportPostgresql::ResultHandlerSequenceSchema(void* ctx,
   }
   s.sequence_name = l[1];
 
-  SequenceSchemaVector* v = static_cast<SequenceSchemaVector*>(ctx);
+  auto* v = static_cast<SequenceSchemaVector*>(ctx);
   v->push_back(s);
   return 0;
 }

@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_SRC_DIRD_DBCOPY_DATABASE_TABLES_H_
-#define BAREOS_SRC_DIRD_DBCOPY_DATABASE_TABLES_H_
+#ifndef BAREOS_SRC_DIRD_DBCOPY_DATABASE_TABLE_DESCRIPTIONS_H_
+#define BAREOS_SRC_DIRD_DBCOPY_DATABASE_TABLE_DESCRIPTIONS_H_
 
 #include "dird/dbcopy/database_column_descriptions.h"
 #include "dird/dbcopy/database_connection.h"
@@ -33,18 +33,17 @@
 
 class BareosDb;
 
+struct TableDescription {
+  TableDescription() = delete;
+  TableDescription(std::string&& t,
+                   std::vector<std::unique_ptr<ColumnDescription>>&& r)
+      : table_name(t), column_descriptions(std::move(r)){};
+
+  std::string table_name;
+  DatabaseColumnDescriptions::VectorOfColumnDescriptions column_descriptions;
+};
+
 class DatabaseTableDescriptions {
- public:
-  class TableDescription {
-   public:
-    TableDescription(std::string&& t,
-                     std::vector<std::unique_ptr<ColumnDescription>>&& r)
-        : table_name(t), column_descriptions(std::move(r)){};
-
-    std::string table_name;
-    DatabaseColumnDescriptions::VectorOfColumnDescriptions column_descriptions;
-  };
-
  public:
   std::vector<TableDescription> tables;
 
@@ -58,13 +57,15 @@ class DatabaseTableDescriptions {
       const std::string& table_name,
       const std::string& column_name) const;
 
+  void SetAllConverterCallbacks(const ColumnDescription::DataTypeConverterMap&);
+
   virtual ~DatabaseTableDescriptions() = default;
 
  protected:
   DatabaseTableDescriptions(BareosDb* db) : db_{db} {}
 
   void SelectTableNames(const std::string& sql_query,
-                        std::vector<std::string>& tables_names);
+                        std::vector<std::string>& table_names);
 
  private:
   BareosDb* db_{};
@@ -81,4 +82,4 @@ class DatabaseTablesMysql : public DatabaseTableDescriptions {
   DatabaseTablesMysql(BareosDb* db);
 };
 
-#endif  // BAREOS_SRC_DIRD_DBCOPY_DATABASE_TABLES_H_
+#endif  // BAREOS_SRC_DIRD_DBCOPY_DATABASE_TABLE_DESCRIPTIONS_H_

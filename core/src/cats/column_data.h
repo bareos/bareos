@@ -19,30 +19,18 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_SRC_DIRD_DBCOPY_DATABASE_IMPORT_H_
-#define BAREOS_SRC_DIRD_DBCOPY_DATABASE_IMPORT_H_
+#ifndef BAREOS_CATS_COLUMN_DATA_H_
+#define BAREOS_CATS_COLUMN_DATA_H_
 
-class BareosDb;
-class DatabaseConnection;
-class DatabaseExport;
-class DatabaseTableDescriptions;
+#include "include/bareos.h"
 
-class DatabaseImport {
- public:
-  DatabaseImport(const DatabaseConnection& db_connection);
-  virtual ~DatabaseImport();
+#include <cstddef>
+#include <vector>
 
-  virtual void ExportTo(DatabaseExport& exporter) = 0;
-
-  static std::unique_ptr<DatabaseImport> Create(
-      const DatabaseConnection& db_connection,
-      std::size_t maximum_amount_of_rows);
-
- protected:
-  BareosDb* db_{};
-
-  std::unique_ptr<DatabaseTableDescriptions> table_descriptions_;
+struct DatabaseField {
+  std::size_t size_of_restore_object{};
+  const char* data_pointer{};
+  std::vector<char> converted_data;
 };
 
-
-#endif  // BAREOS_SRC_DIRD_DBCOPY_DATABASE_IMPORT_H_
+#endif  // BAREOS_CATS_COLUMN_DATA_H_

@@ -1110,3 +1110,14 @@ std::string getenv_std_string(std::string env_var)
   const char* v = (std::getenv(env_var.c_str()));
   return v ? std::string(v) : std::string();
 }
+
+void ToLowerCase(const std::string& i1,
+                 const std::string& i2,
+                 std::string& o1,
+                 std::string& o2)
+{
+  o1.clear();
+  o2.clear();
+  std::transform(i1.cbegin(), i1.cend(), std::back_inserter(o1), ::tolower);
+  std::transform(i2.cbegin(), i2.cend(), std::back_inserter(o2), ::tolower);
+}

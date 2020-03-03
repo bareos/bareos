@@ -3,7 +3,7 @@
 
    Copyright (C) 2009-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,6 +22,15 @@
 */
 #ifndef BAREOS_CATS_BDB_SQLITE_H_
 #define BAREOS_CATS_BDB_SQLITE_H_ 1
+
+#include "include/bareos.h"
+#include "cats/column_data.h"
+
+#include <string>
+#include <vector>
+
+struct AttributesDbRecord;
+class JobControlRecord;
 
 class BareosDbSqlite : public BareosDbPrivateInterface {
  private:
@@ -62,9 +71,14 @@ class BareosDbSqlite : public BareosDbPrivateInterface {
   SQL_FIELD* SqlFetchField(void) override;
   bool SqlFieldIsNotNull(int field_type) override;
   bool SqlFieldIsNumeric(int field_type) override;
-  bool SqlBatchStart(JobControlRecord* jcr) override;
-  bool SqlBatchEnd(JobControlRecord* jcr, const char* error) override;
-  bool SqlBatchInsert(JobControlRecord* jcr, AttributesDbRecord* ar) override;
+  bool SqlBatchStartFileTable(JobControlRecord* jcr) override;
+  bool SqlBatchEndFileTable(JobControlRecord* jcr, const char* error) override;
+  bool SqlBatchInsertFileTable(JobControlRecord* jcr,
+                               AttributesDbRecord* ar) override;
+  bool SqlCopyStart(const std::string& table_name,
+                    const std::vector<std::string>& column_names) override;
+  bool SqlCopyInsert(const std::vector<DatabaseField>& data_fields) override;
+  bool SqlCopyEnd() override;
 
  public:
   /*

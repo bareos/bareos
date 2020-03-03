@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1144,12 +1144,12 @@ static char* postgresql_copy_escape(char* dest, char* src, size_t len)
  * Returns true if OK
  *         false if failed
  */
-bool BareosDbDBI::SqlBatchStart(JobControlRecord* jcr)
+bool BareosDbDBI::SqlBatchStartFileTable(JobControlRecord* jcr)
 {
   bool retval = true;
   const char* query = "COPY batch FROM STDIN";
 
-  Dmsg0(500, "SqlBatchStart started\n");
+  Dmsg0(500, "SqlBatchStartFileTable started\n");
 
   DbLock(this);
   switch (db_type_) {
@@ -1162,10 +1162,10 @@ bool BareosDbDBI::SqlBatchStart(JobControlRecord* jcr)
                                   "LStat tinyblob,"
                                   "MD5 tinyblob,"
                                   "DeltaSeq smallint)")) {
-        Dmsg0(500, "SqlBatchStart failed\n");
+        Dmsg0(500, "SqlBatchStartFileTable failed\n");
         goto bail_out;
       }
-      Dmsg0(500, "SqlBatchStart finishing\n");
+      Dmsg0(500, "SqlBatchStartFileTable finishing\n");
       goto ok_out;
     case SQL_TYPE_POSTGRESQL:
       if (!SqlQueryWithoutHandler("CREATE TEMPORARY TABLE batch ("
@@ -1176,7 +1176,7 @@ bool BareosDbDBI::SqlBatchStart(JobControlRecord* jcr)
                                   "LStat varchar,"
                                   "MD5 varchar,"
                                   "DeltaSeq int)")) {
-        Dmsg0(500, "SqlBatchStart failed\n");
+        Dmsg0(500, "SqlBatchStartFileTable failed\n");
         goto bail_out;
       }
 
@@ -1214,7 +1214,7 @@ bool BareosDbDBI::SqlBatchStart(JobControlRecord* jcr)
         goto bail_out;
       }
 
-      Dmsg0(500, "SqlBatchStart finishing\n");
+      Dmsg0(500, "SqlBatchStartFileTable finishing\n");
       goto ok_out;
     case SQL_TYPE_SQLITE3:
       if (!SqlQueryWithoutHandler("CREATE TEMPORARY TABLE batch ("
@@ -1225,10 +1225,10 @@ bool BareosDbDBI::SqlBatchStart(JobControlRecord* jcr)
                                   "LStat tinyblob,"
                                   "MD5 tinyblob,"
                                   "DeltaSeq smallint)")) {
-        Dmsg0(500, "SqlBatchStart failed\n");
+        Dmsg0(500, "SqlBatchStartFileTable failed\n");
         goto bail_out;
       }
-      Dmsg0(500, "SqlBatchStart finishing\n");
+      Dmsg0(500, "SqlBatchStartFileTable finishing\n");
       goto ok_out;
   }
 
@@ -1247,14 +1247,14 @@ ok_out:
 /**
  * Set error to something to abort operation
  */
-bool BareosDbDBI::SqlBatchEnd(JobControlRecord* jcr, const char* error)
+bool BareosDbDBI::SqlBatchEndFileTable(JobControlRecord* jcr, const char* error)
 {
   int res = 0;
   int count = 30;
   int (*custom_function)(void*, const char*) = NULL;
   dbi_conn_t* myconn = (dbi_conn_t*)(db_handle_);
 
-  Dmsg0(500, "SqlBatchStart started\n");
+  Dmsg0(500, "SqlBatchStartFileTable started\n");
 
   switch (db_type_) {
     case SQL_TYPE_MYSQL:
@@ -1285,7 +1285,7 @@ bool BareosDbDBI::SqlBatchEnd(JobControlRecord* jcr, const char* error)
       break;
   }
 
-  Dmsg0(500, "SqlBatchStart finishing\n");
+  Dmsg0(500, "SqlBatchStartFileTable finishing\n");
 
   return true;
 }
@@ -1295,7 +1295,8 @@ bool BareosDbDBI::SqlBatchEnd(JobControlRecord* jcr, const char* error)
  * In near future is better split in small functions
  * and refactory.
  */
-bool BareosDbDBI::SqlBatchInsert(JobControlRecord* jcr, AttributesDbRecord* ar)
+bool BareosDbDBI::SqlBatchInsertFileTable(JobControlRecord* jcr,
+                                          AttributesDbRecord* ar)
 {
   int res;
   int count = 30;
@@ -1306,7 +1307,7 @@ bool BareosDbDBI::SqlBatchInsert(JobControlRecord* jcr, AttributesDbRecord* ar)
   char* digest;
   char ed1[50];
 
-  Dmsg0(500, "SqlBatchStart started \n");
+  Dmsg0(500, "SqlBatchStartFileTable started \n");
 
   esc_name = CheckPoolMemorySize(esc_name, fnl * 2 + 1);
   esc_path = CheckPoolMemorySize(esc_path, pnl * 2 + 1);
@@ -1328,11 +1329,11 @@ bool BareosDbDBI::SqlBatchInsert(JobControlRecord* jcr, AttributesDbRecord* ar)
                  ar->attr, digest, ar->DeltaSeq);
 
       if (!SqlQueryWithoutHandler(cmd)) {
-        Dmsg0(500, "SqlBatchStart failed\n");
+        Dmsg0(500, "SqlBatchStartFileTable failed\n");
         goto bail_out;
       }
 
-      Dmsg0(500, "SqlBatchStart finishing\n");
+      Dmsg0(500, "SqlBatchStartFileTable finishing\n");
 
       return true;
       break;
@@ -1347,7 +1348,7 @@ bool BareosDbDBI::SqlBatchInsert(JobControlRecord* jcr, AttributesDbRecord* ar)
        * libdbi don't support CopyData and we need call a postgresql
        * specific function to do this work
        */
-      Dmsg2(500, "SqlBatchInsert :\n %s \ncmd_size: %d", cmd, len);
+      Dmsg2(500, "SqlBatchInsertFileTable :\n %s \ncmd_size: %d", cmd, len);
       custom_function = (custom_function_insert_t)dbi_driver_specific_function(
           dbi_conn_get_driver(myconn), "PQputCopyData");
       if (custom_function != NULL) {
@@ -1362,11 +1363,11 @@ bool BareosDbDBI::SqlBatchInsert(JobControlRecord* jcr, AttributesDbRecord* ar)
         }
 
         if (res <= 0) {
-          Dmsg0(500, "SqlBatchInsert failed\n");
+          Dmsg0(500, "SqlBatchInsertFileTable failed\n");
           goto bail_out;
         }
 
-        Dmsg0(500, "SqlBatchInsert finishing\n");
+        Dmsg0(500, "SqlBatchInsertFileTable finishing\n");
         return true;
       } else {
         /*
@@ -1375,7 +1376,7 @@ bool BareosDbDBI::SqlBatchInsert(JobControlRecord* jcr, AttributesDbRecord* ar)
         custom_function_error =
             (custom_function_error_t)dbi_driver_specific_function(
                 dbi_conn_get_driver(myconn), "PQerrorMessage");
-        Dmsg1(500, "SqlBatchInsert failed\n PQerrorMessage: %s",
+        Dmsg1(500, "SqlBatchInsertFileTable failed\n PQerrorMessage: %s",
               (*custom_function_error)(myconn->connection));
         goto bail_out;
       }
@@ -1390,11 +1391,11 @@ bool BareosDbDBI::SqlBatchInsert(JobControlRecord* jcr, AttributesDbRecord* ar)
                  ar->attr, digest, ar->DeltaSeq);
 
       if (!SqlQueryWithoutHandler(cmd)) {
-        Dmsg0(500, "SqlBatchInsert failed\n");
+        Dmsg0(500, "SqlBatchInsertFileTable failed\n");
         goto bail_out;
       }
 
-      Dmsg0(500, "SqlBatchInsert finishing\n");
+      Dmsg0(500, "SqlBatchInsertFileTable finishing\n");
 
       return true;
       break;

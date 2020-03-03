@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -685,113 +685,6 @@ bool BareosDbMysql::SqlFieldIsNotNull(int field_type)
 bool BareosDbMysql::SqlFieldIsNumeric(int field_type)
 {
   return IS_NUM(field_type);
-}
-
-/**
- * Returns true if OK
- *         false if failed
- */
-bool BareosDbMysql::SqlBatchStart(JobControlRecord* jcr)
-{
-  bool retval;
-
-  DbLock(this);
-  retval = SqlQuery(
-      "CREATE TEMPORARY TABLE batch ("
-      "FileIndex integer,"
-      "JobId integer,"
-      "Path blob,"
-      "Name blob,"
-      "LStat tinyblob,"
-      "MD5 tinyblob,"
-      "DeltaSeq integer,"
-      "Fhinfo NUMERIC(20),"
-      "Fhnode NUMERIC(20) )");
-  DbUnlock(this);
-
-  /*
-   * Keep track of the number of changes in batch mode.
-   */
-  changes = 0;
-
-  return retval;
-}
-
-/* set error to something to abort operation */
-/**
- * Returns true if OK
- *         false if failed
- */
-bool BareosDbMysql::SqlBatchEnd(JobControlRecord* jcr, const char* error)
-{
-  status_ = 0;
-
-  /*
-   * Flush any pending inserts.
-   */
-  if (changes) { return SqlQuery(cmd); }
-
-  return true;
-}
-
-/**
- * Returns true if OK
- *         false if failed
- */
-bool BareosDbMysql::SqlBatchInsert(JobControlRecord* jcr,
-                                   AttributesDbRecord* ar)
-{
-  const char* digest;
-  char ed1[50], ed2[50], ed3[50];
-
-  esc_name = CheckPoolMemorySize(esc_name, fnl * 2 + 1);
-  EscapeString(jcr, esc_name, fname, fnl);
-
-  esc_path = CheckPoolMemorySize(esc_path, pnl * 2 + 1);
-  EscapeString(jcr, esc_path, path, pnl);
-
-  if (ar->Digest == NULL || ar->Digest[0] == 0) {
-    digest = "0";
-  } else {
-    digest = ar->Digest;
-  }
-
-  /*
-   * Try to batch up multiple inserts using multi-row inserts.
-   */
-  if (changes == 0) {
-    Mmsg(cmd,
-         "INSERT INTO batch VALUES "
-         "(%u,%s,'%s','%s','%s','%s',%u,'%s','%s')",
-         ar->FileIndex, edit_int64(ar->JobId, ed1), esc_path, esc_name,
-         ar->attr, digest, ar->DeltaSeq, edit_uint64(ar->Fhinfo, ed2),
-         edit_uint64(ar->Fhnode, ed3));
-    changes++;
-  } else {
-    /*
-     * We use the esc_obj for temporary storage otherwise
-     * we keep on copying data.
-     */
-    Mmsg(esc_obj, ",(%u,%s,'%s','%s','%s','%s',%u,%u,%u)", ar->FileIndex,
-         edit_int64(ar->JobId, ed1), esc_path, esc_name, ar->attr, digest,
-         ar->DeltaSeq, ar->Fhinfo, ar->Fhnode);
-    PmStrcat(cmd, esc_obj);
-    changes++;
-  }
-
-  /*
-   * See if we need to flush the query buffer filled
-   * with multi-row inserts.
-   */
-  if ((changes % MYSQL_CHANGES_PER_BATCH_INSERT) == 0) {
-    if (!SqlQuery(cmd)) {
-      changes = 0;
-      return false;
-    } else {
-      changes = 0;
-    }
-  }
-  return true;
 }
 
 /**
