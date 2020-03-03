@@ -26,6 +26,7 @@
  * @file
  * Python plugin for the Bareos File Daemon
  */
+#define PY_SSIZE_T_CLEAN
 #define BUILD_PLUGIN
 
 #if defined(HAVE_WIN32)
@@ -169,6 +170,7 @@ static PyThreadState* mainThreadState;
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 
 /**
  * Plugin called here when it is first loaded
@@ -3345,4 +3347,6 @@ static void PyXattrPacket_dealloc(PyXattrPacket* self)
   if (self->name) { Py_XDECREF(self->name); }
   PyObject_Del(self);
 }
+
+
 } /* namespace filedaemon */

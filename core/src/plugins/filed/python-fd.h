@@ -32,6 +32,7 @@
 
 /* common code for all python plugins */
 #include "../python_plugins_common.h"
+#include "plugins/filed/fd_common.h"
 
 #include "structmember.h"
 
@@ -748,9 +749,11 @@ static PyMethodDef Methods[] = {
     {NULL, NULL, 0, NULL}};
 
 
+} /* namespace filedaemon */
+using namespace filedaemon;
+
 static void* bareos_plugin_context = NULL;
 
-// MOD_INIT(PYTHON_MODULE_NAME)
 MOD_INIT(bareosfd)
 {
   /* bareos_plugin_context holds the bpContext instead of passing to Python and
@@ -825,5 +828,6 @@ MOD_INIT(bareosfd)
 
   return MOD_SUCCESS_VAL(m);
 }
-} /* namespace filedaemon */
+
+
 #endif /* BAREOS_PLUGINS_FILED_PYTHON_FD_H_ */
