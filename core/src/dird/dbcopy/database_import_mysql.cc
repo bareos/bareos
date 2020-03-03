@@ -20,10 +20,11 @@
 */
 
 #include "include/bareos.h"
-#include "dird/dbcopy/database_table_descriptions.h"
-#include "dird/dbcopy/row_data.h"
 #include "dird/dbcopy/database_export.h"
 #include "dird/dbcopy/database_import_mysql.h"
+#include "dird/dbcopy/database_table_descriptions.h"
+#include "dird/dbcopy/progress.h"
+#include "dird/dbcopy/row_data.h"
 #include "include/make_unique.h"
 
 #include <cassert>
@@ -34,37 +35,31 @@
 #include <sstream>
 #include <vector>
 
+
+static void no_conversion(BareosDb* /*db*/, DatabaseField& f)
+{
+  f.data_pointer = f.data_pointer != nullptr ? f.data_pointer : "";
+}
+
+static const ColumnDescription::DataTypeConverterMap
+    db_import_converter_map_mysql{
+        {"bigint", no_conversion},   {"binary", no_conversion},
+        {"blob", no_conversion},     {"char", no_conversion},
+        {"datetime", no_conversion}, {"decimal", no_conversion},
+        {"enum", no_conversion},     {"int", no_conversion},
+        {"longblob", no_conversion}, {"smallint", no_conversion},
+        {"text", no_conversion},     {"timestamp", no_conversion},
+        {"tinyblob", no_conversion}, {"tinyint", no_conversion},
+        {"varchar", no_conversion}};
+
 DatabaseImportMysql::DatabaseImportMysql(
     const DatabaseConnection& db_connection,
     std::size_t maximum_amount_of_rows_in)
     : DatabaseImport(db_connection)
-    , maximum_amount_of_rows_(maximum_amount_of_rows_in)
+    , limit_amount_of_rows_(maximum_amount_of_rows_in)
 {
-  return;
+  table_descriptions_->SetAllConverterCallbacks(db_import_converter_map_mysql);
 }
-
-class Stopwatch {
- public:
-  void Start() { start_ = std::chrono::steady_clock::now(); }
-  void Stop() { end_ = std::chrono::steady_clock::now(); }
-  void PrintDurationToStdout()
-  {
-    auto duration = end_ - start_;
-    auto c(std::chrono::duration_cast<std::chrono::milliseconds>(duration)
-               .count());
-    std::ostringstream oss;
-    oss << std::setfill('0')            // set field fill character to '0'
-        << (c % 1000000) / 1000 << "s"  // format seconds
-        << "::" << std::setw(3)         // set width of milliseconds field
-        << (c % 1000) << "ms";          // format milliseconds
-
-    std::cout << "Duration: " << oss.str() << std::endl;
-  }
-
- private:
-  std::chrono::time_point<std::chrono::steady_clock> start_;
-  std::chrono::time_point<std::chrono::steady_clock> end_;
-};
 
 struct ResultHandlerContext {
   ResultHandlerContext(
@@ -72,22 +67,35 @@ struct ResultHandlerContext {
       RowData& d,
       DatabaseExport& e,
       BareosDb* db_in,
-      bool is_restore_object_in)
+      bool is_restore_object_in,
+      Progress& p)
       : column_descriptions(c)
       , row_data(d)
       , exporter(e)
       , db(db_in)
       , is_restore_object(is_restore_object_in)
+      , progress(p)
   {
   }
   const DatabaseColumnDescriptions::VectorOfColumnDescriptions&
       column_descriptions;
   RowData& row_data;
   DatabaseExport& exporter;
-  uint64_t row_counter{};
   BareosDb* db{};
   bool is_restore_object{};
+  Progress& progress;
 };
+
+static void PrintCopyStartToStdout(const Progress& progress)
+{
+  if (progress.FullNumberOfRows() != 0) {
+    std::cout << "--> copying " << progress.FullAmount() << " rows..."
+              << std::endl;
+    std::cout << "--> Start: " << Progress::TimeOfDay() << std::endl;
+  } else {
+    std::cout << "--> nothing to copy..." << std::endl;
+  }
+}
 
 void DatabaseImportMysql::RunQuerySelectAllRows(
     DB_RESULT_HANDLER* ResultHandler,
@@ -99,7 +107,9 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
       continue;
     }
 
-    std::cout << "--> copying..." << std::endl;
+    Progress progress(db_, t.table_name, limit_amount_of_rows_);
+
+    PrintCopyStartToStdout(progress);
 
     std::string query{"SELECT `"};
     for (const auto& col : t.column_descriptions) {
@@ -110,21 +120,21 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
 
     bool is_restore_object = false;
     if (t.table_name == "RestoreObject") {
-      query += ", length(`RestoreObject`) as `length_of_restore_object`";
+      query += ", length(`RestoreObject`) as `size_of_restore_object`";
       is_restore_object = true;
     }
 
     query += " FROM ";
     query += t.table_name;
 
-    if (maximum_amount_of_rows_) {
+    if (limit_amount_of_rows_ != 0U) {
       query += " LIMIT ";
-      query += std::to_string(maximum_amount_of_rows_);
+      query += std::to_string(limit_amount_of_rows_);
     }
 
     RowData row_data(t.column_descriptions, t.table_name);
     ResultHandlerContext ctx(t.column_descriptions, row_data, exporter, db_,
-                             is_restore_object);
+                             is_restore_object, progress);
 
     if (!db_->SqlQuery(query.c_str(), ResultHandler, &ctx)) {
       std::cout << "Could not import table: " << t.table_name << std::endl;
@@ -135,30 +145,14 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
 
     exporter.EndTable(t.table_name);
     std::cout << "--> success" << std::endl;
-    // std::cout << query << std::endl << std::endl;
   }
 }
 
 void DatabaseImportMysql::ExportTo(DatabaseExport& exporter)
 {
-  Stopwatch stopwatch;
-  stopwatch.Start();
-
   exporter.CopyStart();
-
   RunQuerySelectAllRows(ResultHandlerCopy, exporter);
-
   exporter.CopyEnd();
-
-  stopwatch.Stop();
-#if 0
-  stopwatch.PrintDurationToStdout();
-#endif
-}
-
-void DatabaseImportMysql::CompareWith(DatabaseExport& exporter)
-{
-  RunQuerySelectAllRows(ResultHandlerCompare, exporter);
 }
 
 static void ReadoutSizeOfRestoreObject(ResultHandlerContext* r,
@@ -166,7 +160,7 @@ static void ReadoutSizeOfRestoreObject(ResultHandlerContext* r,
                                        int field_index_longblob,
                                        char** row)
 {
-  auto invalid = std::numeric_limits<std::size_t>::max();
+  auto constexpr invalid = std::numeric_limits<std::size_t>::max();
   std::size_t index_of_restore_object = invalid;
 
   for (std::size_t i = 0; i < r->column_descriptions.size(); i++) {
@@ -181,7 +175,7 @@ static void ReadoutSizeOfRestoreObject(ResultHandlerContext* r,
   }
 
   std::istringstream(row[field_index_longblob]) >>
-      row_data.columns[index_of_restore_object].size;
+      row_data.data_fields[index_of_restore_object].size_of_restore_object;
 }
 
 
@@ -192,7 +186,7 @@ void DatabaseImportMysql::FillRowWithDatabaseResult(ResultHandlerContext* r,
   std::size_t number_of_fields = r->column_descriptions.size();
 
   if (r->is_restore_object) {
-    ++number_of_fields;  // one more for length_of_restore_object
+    ++number_of_fields;  // one more for the size_of_restore_object
   }
 
   if (fields != static_cast<int>(number_of_fields)) {
@@ -208,29 +202,27 @@ void DatabaseImportMysql::FillRowWithDatabaseResult(ResultHandlerContext* r,
   }
 
   for (std::size_t i = 0; i < r->column_descriptions.size(); i++) {
-    row_data.columns[i].data_pointer = row[i];
-    r->column_descriptions[i]->db_import_converter(r->db, row_data.columns[i]);
+    row_data.data_fields[i].data_pointer = row[i];
+    r->column_descriptions[i]->converter(r->db, row_data.data_fields[i]);
   }
 }
 
 int DatabaseImportMysql::ResultHandlerCopy(void* ctx, int fields, char** row)
 {
-  ResultHandlerContext* r = static_cast<ResultHandlerContext*>(ctx);
+  auto* r = static_cast<ResultHandlerContext*>(ctx);
   FillRowWithDatabaseResult(r, fields, row);
 
-  r->exporter.CopyRow(r->row_data);
+  std::string insert_mode_message;
+  r->exporter.CopyRow(r->row_data, insert_mode_message);
 
-  if (!(++r->row_counter % 10000)) { std::cout << "." << std::flush; }
-  return 0;
-}
+  constexpr int width_of_rate_column = 7;
 
-int DatabaseImportMysql::ResultHandlerCompare(void* ctx, int fields, char** row)
-{
-  ResultHandlerContext* r = static_cast<ResultHandlerContext*>(ctx);
-  FillRowWithDatabaseResult(r, fields, row);
-
-  r->exporter.CompareRow(r->row_data);
-
-  if (!(++r->row_counter % 10000)) { std::cout << "." << std::flush; }
+  if (r->progress.Increment()) {
+    std::cout << std::setw(width_of_rate_column) << r->progress.Rate() << "%"
+              << " ETA:" << r->progress.Eta()  // estimated time of arrival
+              << " (running:" << r->progress.RunningHours() << ","
+              << " remaining:" << r->progress.RemainingHours()
+              << insert_mode_message << ")" << std::endl;
+  }
   return 0;
 }

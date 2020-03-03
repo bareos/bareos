@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -576,7 +576,7 @@ bool BareosDbSqlite::SqlFieldIsNumeric(int field_type)
  * Returns true if OK
  *         false if failed
  */
-bool BareosDbSqlite::SqlBatchStart(JobControlRecord* jcr)
+bool BareosDbSqlite::SqlBatchStartFileTable(JobControlRecord* jcr)
 {
   bool retval;
 
@@ -603,7 +603,8 @@ bool BareosDbSqlite::SqlBatchStart(JobControlRecord* jcr)
  * Returns true if OK
  *         false if failed
  */
-bool BareosDbSqlite::SqlBatchEnd(JobControlRecord* jcr, const char* error)
+bool BareosDbSqlite::SqlBatchEndFileTable(JobControlRecord* jcr,
+                                          const char* error)
 {
   status_ = 0;
 
@@ -614,8 +615,8 @@ bool BareosDbSqlite::SqlBatchEnd(JobControlRecord* jcr, const char* error)
  * Returns true if OK
  *         false if failed
  */
-bool BareosDbSqlite::SqlBatchInsert(JobControlRecord* jcr,
-                                    AttributesDbRecord* ar)
+bool BareosDbSqlite::SqlBatchInsertFileTable(JobControlRecord* jcr,
+                                             AttributesDbRecord* ar)
 {
   const char* digest;
   char ed1[50], ed2[50], ed3[50];
@@ -641,6 +642,21 @@ bool BareosDbSqlite::SqlBatchInsert(JobControlRecord* jcr,
 
   return SqlQueryWithoutHandler(cmd);
 }
+
+bool BareosDbSqlite::SqlCopyStart(
+    const std::string& /*table_name*/,
+    const std::vector<std::string>& /*column_names*/)
+{
+  return false;
+}
+
+bool BareosDbSqlite::SqlCopyInsert(
+    const std::vector<DatabaseField>& /* data_fields */)
+{
+  return false;
+}
+
+bool BareosDbSqlite::SqlCopyEnd() { return false; }
 
 /**
  * Initialize database data structure. In principal this should

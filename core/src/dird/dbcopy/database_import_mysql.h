@@ -29,7 +29,8 @@ class BareosDb;
 class DatabaseConnection;
 class DatabaseExport;
 class DatabaseTableDescriptions;
-class ResultHandlerContext;
+struct ResultHandlerContext;
+class Progress;
 
 class DatabaseImportMysql : public DatabaseImport {
  public:
@@ -37,18 +38,16 @@ class DatabaseImportMysql : public DatabaseImport {
                       std::size_t maximum_amount_of_rows);
 
   void ExportTo(DatabaseExport& exporter) override;
-  void CompareWith(DatabaseExport& exporter) override;
 
  private:
   static int ResultHandlerCopy(void* ctx, int fields, char** row);
-  static int ResultHandlerCompare(void* ctx, int fields, char** row);
   static void FillRowWithDatabaseResult(ResultHandlerContext* r,
                                         int fields,
                                         char** row);
 
-  void RunQuerySelectAllRows(DB_RESULT_HANDLER* result_handler,
+  void RunQuerySelectAllRows(DB_RESULT_HANDLER* ResultHandler,
                              DatabaseExport& exporter);
-  std::size_t maximum_amount_of_rows_{};
+  std::size_t limit_amount_of_rows_{};
 };
 
 

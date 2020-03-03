@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -36,7 +36,11 @@
 #define BAREOS_CATS_CATS_H_ 1
 
 #include "include/bareos.h"
+#include "cats/column_data.h"
 #include "lib/output_formatter.h"
+
+#include <string>
+#include <vector>
 
 class dlist;
 
@@ -1060,6 +1064,11 @@ class BareosDb : public BareosDbQueryEnum {
     return SqlQuery(query, ResultHandler, ctx);
   }
 
+  virtual bool SqlCopyStart(const std::string& table_name,
+                            const std::vector<std::string>& field_names) = 0;
+  virtual bool SqlCopyInsert(const std::vector<DatabaseField>& data_fields) = 0;
+  virtual bool SqlCopyEnd() = 0;
+
 #ifdef _BDB_PRIV_INTERFACE_
   /*
    * Backend methods
@@ -1081,10 +1090,11 @@ class BareosDb : public BareosDbQueryEnum {
   virtual SQL_FIELD* SqlFetchField(void) = 0;
   virtual bool SqlFieldIsNotNull(int field_type) = 0;
   virtual bool SqlFieldIsNumeric(int field_type) = 0;
-  virtual bool SqlBatchStart(JobControlRecord* jcr) = 0;
-  virtual bool SqlBatchEnd(JobControlRecord* jcr, const char* error) = 0;
-  virtual bool SqlBatchInsert(JobControlRecord* jcr,
-                              AttributesDbRecord* ar) = 0;
+  virtual bool SqlBatchStartFileTable(JobControlRecord* jcr) = 0;
+  virtual bool SqlBatchEndFileTable(JobControlRecord* jcr,
+                                    const char* error) = 0;
+  virtual bool SqlBatchInsertFileTable(JobControlRecord* jcr,
+                                       AttributesDbRecord* ar) = 0;
 #endif
 };
 

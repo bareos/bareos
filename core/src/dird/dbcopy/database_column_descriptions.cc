@@ -20,9 +20,10 @@
 */
 
 #include "include/bareos.h"
-#include "include/make_unique.h"
 #include "cats/cats.h"
 #include "dird/dbcopy/database_column_descriptions.h"
+#include "include/make_unique.h"
+#include "lib/util.h"
 
 #include <algorithm>
 #include <iostream>
@@ -43,20 +44,21 @@ void DatabaseColumnDescriptions::SelectColumnDescriptions(
   std::sort(column_descriptions.begin(), column_descriptions.end(),
             [](const std::unique_ptr<ColumnDescription>& v1,
                const std::unique_ptr<ColumnDescription>& v2) {
-              return v1->column_name < v2->column_name;
+              std::string l1, l2;
+              ToLowerCase(v1->column_name, v2->column_name, l1, l2);
+              return l1 < l2;
             });
 }
 
 int DatabaseColumnDescriptionsPostgresql::ResultHandler(void* ctx,
-                                                        int fields,
+                                                        int /*fields*/,
                                                         char** row)
 {
   auto t = static_cast<DatabaseColumnDescriptions*>(ctx);
 
-  t->column_descriptions.emplace_back(
-      std::make_unique<ColumnDescriptionPostgresql>(
-          row[RowIndex::kColumnName], row[RowIndex::kDataType],
-          row[RowIndex::kCharMaxLenght]));
+  t->column_descriptions.emplace_back(std::make_unique<ColumnDescription>(
+      row[RowIndex::kColumnName], row[RowIndex::kDataType],
+      row[RowIndex::kCharMaxLenght]));
 
   return 0;
 }
@@ -79,12 +81,12 @@ DatabaseColumnDescriptionsPostgresql::DatabaseColumnDescriptionsPostgresql(
 }
 
 int DatabaseColumnDescriptionsMysql::ResultHandler(void* ctx,
-                                                   int fields,
+                                                   int /*fields*/,
                                                    char** row)
 {
   auto t = static_cast<DatabaseColumnDescriptions*>(ctx);
 
-  t->column_descriptions.emplace_back(std::make_unique<ColumnDescriptionMysql>(
+  t->column_descriptions.emplace_back(std::make_unique<ColumnDescription>(
       row[RowIndex::kColumnName], row[RowIndex::kDataType],
       row[RowIndex::kCharMaxLenght]));
 

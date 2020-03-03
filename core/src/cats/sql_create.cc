@@ -830,7 +830,7 @@ bool BareosDb::WriteBatchFileRecords(JobControlRecord* jcr)
        "Insert of attributes batch table with %u entries start\n",
        jcr->db_batch->changes);
 
-  if (!jcr->db_batch->SqlBatchEnd(jcr, NULL)) {
+  if (!jcr->db_batch->SqlBatchEndFileTable(jcr, NULL)) {
     Jmsg1(jcr, M_FATAL, 0, "Batch end %s\n", errmsg);
     goto bail_out;
   }
@@ -911,7 +911,7 @@ bool BareosDb::CreateBatchFileAttributesRecord(JobControlRecord* jcr,
    */
   if (!jcr->batch_started) {
     if (!OpenBatchConnection(jcr)) { return false; /* error already printed */ }
-    if (!jcr->db_batch->SqlBatchStart(jcr)) {
+    if (!jcr->db_batch->SqlBatchStartFileTable(jcr)) {
       Mmsg1(errmsg, "Can't start batch mode: ERR=%s",
             jcr->db_batch->strerror());
       Jmsg(jcr, M_FATAL, 0, "%s", errmsg);
@@ -922,7 +922,7 @@ bool BareosDb::CreateBatchFileAttributesRecord(JobControlRecord* jcr,
 
   jcr->db_batch->SplitPathAndFile(jcr, ar->fname);
 
-  return jcr->db_batch->SqlBatchInsert(jcr, ar);
+  return jcr->db_batch->SqlBatchInsertFileTable(jcr, ar);
 }
 
 /**

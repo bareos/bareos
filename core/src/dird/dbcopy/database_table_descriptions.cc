@@ -20,9 +20,10 @@
 */
 
 #include "include/bareos.h"
+#include "cats/cats.h"
 #include "database_table_descriptions.h"
 #include "dird/dbcopy/database_column_descriptions.h"
-#include "cats/cats.h"
+#include "lib/util.h"
 
 #include <algorithm>
 #include <iostream>
@@ -47,7 +48,9 @@ void DatabaseTableDescriptions::SelectTableNames(const std::string& sql_query,
   }
 }
 
-int DatabaseTableDescriptions::ResultHandler(void* ctx, int fields, char** row)
+int DatabaseTableDescriptions::ResultHandler(void* ctx,
+                                             int /*fields*/,
+                                             char** row)
 {
   auto table_names = static_cast<TableNames*>(ctx);
   if (row[0] != nullptr) { table_names->emplace_back(row[0]); }
@@ -88,24 +91,13 @@ DatabaseTablesMysql::DatabaseTablesMysql(BareosDb* db)
   }
 }
 
-static void ToLowerCase(const std::string& i1,
-                        const std::string& i2,
-                        std::string& o1,
-                        std::string& o2)
-{
-  o1.clear();
-  o2.clear();
-  std::transform(i1.cbegin(), i1.cend(), std::back_inserter(o1), ::tolower);
-  std::transform(i2.cbegin(), i2.cend(), std::back_inserter(o2), ::tolower);
-}
-
-const DatabaseTableDescriptions::TableDescription*
-DatabaseTableDescriptions::GetTableDescription(
+const TableDescription* DatabaseTableDescriptions::GetTableDescription(
     const std::string& table_name) const
 {
   auto tr = std::find_if(tables.begin(), tables.end(),
                          [&table_name](const TableDescription& t) {
-                           std::string l1, l2;
+                           std::string l1;
+                           std::string l2;
                            ToLowerCase(table_name, t.table_name, l1, l2);
                            return l1 == l2;
                          });
@@ -116,8 +108,7 @@ const ColumnDescription* DatabaseTableDescriptions::GetColumnDescription(
     const std::string& table_name,
     const std::string& column_name) const
 {
-  const DatabaseTableDescriptions::TableDescription* table =
-      GetTableDescription(table_name);
+  const TableDescription* table = GetTableDescription(table_name);
   if (table == nullptr) {
     std::cout << "Could not get table description for table: " << table_name
               << std::endl;
@@ -128,10 +119,19 @@ const ColumnDescription* DatabaseTableDescriptions::GetColumnDescription(
       [&column_name](const std::unique_ptr<ColumnDescription>& c) {
         std::string l1, l2;
         ToLowerCase(column_name, c->column_name, l1, l2);
-        if (l1 == l2) { return true; }
-        return false;
+        return l1 == l2;
       });
   return (c == table->column_descriptions.cend()) ? nullptr : c->get();
+}
+
+void DatabaseTableDescriptions::SetAllConverterCallbacks(
+    const ColumnDescription::DataTypeConverterMap& map)
+{
+  for (auto& table : tables) {
+    for (auto& column : table.column_descriptions) {
+      column->RegisterConverterCallbackFromMap(map);
+    }
+  }
 }
 
 std::unique_ptr<DatabaseTableDescriptions> DatabaseTableDescriptions::Create(

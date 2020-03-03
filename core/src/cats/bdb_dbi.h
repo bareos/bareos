@@ -3,7 +3,7 @@
 
    Copyright (C) 2009-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,6 +22,15 @@
 */
 #ifndef BAREOS_CATS_BDB_DBI_H_
 #define BAREOS_CATS_BDB_DBI_H_ 1
+
+#include "include/bareos.h"
+#include "cats/column_data.h"
+
+#include <string>
+#include <vector>
+
+struct AttributesDbRecord;
+class JobControlRecord;
 
 struct DbiFieldGet {
   dlink link;
@@ -70,9 +79,13 @@ class BareosDbDBI : public BareosDbPrivateInterface {
   SQL_FIELD* SqlFetchField(void);
   bool SqlFieldIsNotNull(int field_type);
   bool SqlFieldIsNumeric(int field_type);
-  bool SqlBatchStart(JobControlRecord* jcr);
-  bool SqlBatchEnd(JobControlRecord* jcr, const char* error);
-  bool SqlBatchInsert(JobControlRecord* jcr, AttributesDbRecord* ar);
+  bool SqlBatchStartFileTable(JobControlRecord* jcr);
+  bool SqlBatchEndFileTable(JobControlRecord* jcr, const char* error);
+  bool SqlBatchInsertFileTable(JobControlRecord* jcr, AttributesDbRecord* ar);
+  bool SqlCopyStart(const std::string& table_name,
+                    const std::vector<std::string>& column_names);
+  bool SqlCopyInsert(const std::vector<DatabaseField>& data_fields);
+  bool SqlCopyEnd();
 
  public:
   /*

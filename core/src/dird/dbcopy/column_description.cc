@@ -24,6 +24,7 @@
 
 #include <cstring>
 #include <iostream>
+#include <string>
 #include <vector>
 
 ColumnDescription::ColumnDescription(const char* column_name_in,
@@ -33,7 +34,7 @@ ColumnDescription::ColumnDescription(const char* column_name_in,
 {
   std::string field;
   try {
-    field = max_length_in ? max_length_in : "";
+    field = max_length_in != nullptr ? max_length_in : "";
     if (!field.empty()) { character_maximum_length = std::stoul(field); }
   } catch (const std::exception& e) {
     std::string err{__FILE__};
@@ -47,97 +48,14 @@ ColumnDescription::ColumnDescription(const char* column_name_in,
   }
 }
 
-static void no_conversion(BareosDb* db, ColumnData& fd)
-{
-  fd.data_pointer = fd.data_pointer ? fd.data_pointer : "";
-}
-
-static void timestamp_conversion_postgresql(BareosDb* db, ColumnData& fd)
-{
-  static const char* dummy_timepoint = "1970-01-01 00:00:00";
-  if (!fd.data_pointer) {
-    fd.data_pointer = dummy_timepoint;
-  } else if (fd.data_pointer[0] == '0') {
-    fd.data_pointer = dummy_timepoint;
-  } else if (strlen(fd.data_pointer) == 0) {
-    fd.data_pointer = dummy_timepoint;
-  }
-}
-
-static void string_conversion_postgresql(BareosDb* db, ColumnData& fd)
-{
-  if (fd.data_pointer) {
-    std::size_t len{strlen(fd.data_pointer)};
-    fd.converted_data.resize(len * 2 + 1);
-    db->EscapeString(nullptr, fd.converted_data.data(), fd.data_pointer, len);
-    fd.data_pointer = fd.converted_data.data();
-  } else {
-    fd.data_pointer = "";
-  }
-}
-
-static void bytea_conversion_postgresql(BareosDb* db, ColumnData& fd)
-{
-  std::size_t new_len{};
-  std::size_t old_len = fd.size;
-
-  auto old = reinterpret_cast<const unsigned char*>(fd.data_pointer);
-
-  auto obj = db->EscapeObject(old, old_len, new_len);
-
-  fd.converted_data.resize(new_len + 1);
-  memcpy(fd.converted_data.data(), obj, new_len + 1);
-
-  db->FreeEscapedObjectMemory(obj);
-
-  fd.data_pointer = fd.converted_data.data();
-}
-
-const DataTypeConverterMap ColumnDescriptionMysql::db_import_converter_map{
-    {"bigint", no_conversion},   {"binary", no_conversion},
-    {"blob", no_conversion},     {"char", no_conversion},
-    {"datetime", no_conversion}, {"decimal", no_conversion},
-    {"enum", no_conversion},     {"int", no_conversion},
-    {"longblob", no_conversion}, {"smallint", no_conversion},
-    {"text", no_conversion},     {"timestamp", no_conversion},
-    {"tinyblob", no_conversion}, {"tinyint", no_conversion},
-    {"varchar", no_conversion}};
-
-ColumnDescriptionMysql::ColumnDescriptionMysql(const char* column_name_in,
-                                               const char* data_type_in,
-                                               const char* max_length_in)
-    : ColumnDescription(column_name_in, data_type_in, max_length_in)
+void ColumnDescription::RegisterConverterCallbackFromMap(
+    const DataTypeConverterMap& converter_map)
 {
   try {
-    db_import_converter = db_import_converter_map.at(data_type_in);
-  } catch (const std::out_of_range& e) {
-    std::string err{"Mysql: Data type not found in conversion map: "};
-    err += data_type_in;
-    throw std::runtime_error(err);
-  }
-}
-
-const DataTypeConverterMap ColumnDescriptionPostgresql::db_export_converter_map{
-    {"bigint", no_conversion},
-    {"bytea", bytea_conversion_postgresql},
-    {"character", string_conversion_postgresql},
-    {"integer", no_conversion},
-    {"numeric", no_conversion},
-    {"smallint", no_conversion},
-    {"text", string_conversion_postgresql},
-    {"timestamp without time zone", timestamp_conversion_postgresql}};
-
-ColumnDescriptionPostgresql::ColumnDescriptionPostgresql(
-    const char* column_name_in,
-    const char* data_type_in,
-    const char* max_length_in)
-    : ColumnDescription(column_name_in, data_type_in, max_length_in)
-{
-  try {
-    db_export_converter = db_export_converter_map.at(data_type_in);
+    converter = converter_map.at(data_type);
   } catch (const std::out_of_range& e) {
     std::string err{"Postgresql: Data type not found in conversion map: "};
-    err += data_type_in;
+    err += data_type;
     throw std::runtime_error(err);
   }
 }
