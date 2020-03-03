@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2010-2011 Bacula Systems(R) SA
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the
@@ -35,9 +35,21 @@
 #define L_INCREMENTAL 'I'  /* since last backup */
 #define L_DIFFERENTIAL 'D' /* since last full backup */
 
-#define Dmsg(context, level, ...) \
-  bfuncs->DebugMessage(context, __FILE__, __LINE__, level, __VA_ARGS__)
-#define Jmsg(context, type, ...) \
-  bfuncs->JobMessage(context, __FILE__, __LINE__, type, 0, __VA_ARGS__)
+#define Dmsg(context, level, ...)                                             \
+  if (bfuncs && context) {                                                    \
+    bfuncs->DebugMessage(context, __FILE__, __LINE__, level, __VA_ARGS__);    \
+  } else {                                                                    \
+    printf(                                                                   \
+        "Dmsg: bfuncs(%p) and context(%p) need to be set before Dmsg call\n", \
+        bfuncs, context);                                                     \
+  }
 
+#define Jmsg(context, type, ...)                                              \
+  if (bfuncs && context) {                                                    \
+    bfuncs->JobMessage(context, __FILE__, __LINE__, type, 0, __VA_ARGS__);    \
+  } else {                                                                    \
+    printf(                                                                   \
+        "Jmsg: bfuncs(%p) and context(%p) need to be set before Jmsg call\n", \
+        bfuncs, context);                                                     \
+  }
 #endif
