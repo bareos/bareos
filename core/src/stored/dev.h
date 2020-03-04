@@ -72,6 +72,7 @@ class dlist;
 
 namespace storagedaemon {
 
+struct DeviceStatusInformation;
 
 /**
  * Return values from WaitForSysop()
@@ -235,16 +236,6 @@ class DeviceResource;        /* Forward reference Device resource defined in
                                 stored_conf.h */
 class DeviceControlRecord;   /* Forward reference */
 class VolumeReservationItem; /* Forward reference */
-
-/**
- * Device specific status information either returned via Device::DeviceStatus()
- * method of via bsdEventDriveStatus and bsdEventVolumeStatus plugin events.
- */
-typedef struct DeviceStatusTrigger {
-  DeviceResource* device = nullptr;
-  POOLMEM* status = nullptr;
-  int status_length = 0;
-} bsdDevStatTrig;
 
 /*
  * Device structure definition.
@@ -523,7 +514,7 @@ class Device {
   {
     return true;
   }
-  virtual bool DeviceStatus(bsdDevStatTrig* dst) { return false; }
+  virtual bool DeviceStatus(DeviceStatusInformation* dst) { return false; }
   boffset_t lseek(DeviceControlRecord* dcr, boffset_t offset, int whence)
   {
     return d_lseek(dcr, offset, whence);

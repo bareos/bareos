@@ -60,8 +60,9 @@
  * libbareos shared library.
  */
 #include "include/bareos.h"
-#include "stored/stored.h"
+#include "stored/device_status_information.h"
 #include "stored/jcr_private.h"
+#include "stored/stored.h"
 #include "lib/berrno.h"
 #include "lib/crypto_wrap.h"
 #include "lib/scsi_crypto.h"
@@ -530,12 +531,12 @@ static bRC handle_read_error(void* value)
 
 static bRC send_device_encryption_status(void* value)
 {
-  bsdDevStatTrig* dst;
+  DeviceStatusInformation* dst;
 
   /*
    * Unpack the arguments passed in.
    */
-  dst = (bsdDevStatTrig*)value;
+  dst = (DeviceStatusInformation*)value;
   if (!dst) { return bRC_Error; }
 
   /*
@@ -552,12 +553,12 @@ static bRC send_device_encryption_status(void* value)
 
 static bRC send_volume_encryption_status(void* value)
 {
-  bsdDevStatTrig* dst;
+  DeviceStatusInformation* dst;
 
   /*
    * Unpack the arguments passed in.
    */
-  dst = (bsdDevStatTrig*)value;
+  dst = (DeviceStatusInformation*)value;
   if (!dst) { return bRC_Error; }
 
   /*

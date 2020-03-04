@@ -29,6 +29,7 @@
  */
 
 #include "include/bareos.h"
+#include "stored/device_status_information.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "stored/jcr_private.h"
@@ -192,7 +193,7 @@ static void trigger_device_status_hook(JobControlRecord* jcr,
                                        StatusPacket* sp,
                                        bsdEventType eventType)
 {
-  bsdDevStatTrig dst;
+  DeviceStatusInformation dst;
 
   dst.device = device;
   dst.status = GetPoolMemory(PM_MESSAGE);
@@ -209,7 +210,7 @@ static void trigger_device_status_hook(JobControlRecord* jcr,
  */
 static void get_device_specific_status(DeviceResource* device, StatusPacket* sp)
 {
-  bsdDevStatTrig dst;
+  DeviceStatusInformation dst;
 
   dst.device = device;
   dst.status = GetPoolMemory(PM_MESSAGE);
