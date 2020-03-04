@@ -65,6 +65,7 @@
 #include "stored/record.h"
 #include "stored/lock.h"
 #include "stored/block.h"
+#include "stored/volume_catalog_info.h"
 #include "lib/bsys.h"
 
 class dlist;
@@ -224,47 +225,6 @@ enum
  * Make sure you have enough bits to store all above bit fields.
  */
 #define ST_BYTES NbytesForBits(ST_MAX + 1)
-
-/**
- * Volume Catalog Information structure definition
- */
-struct VolumeCatalogInfo {
-  /*
-   * Media info for the current Volume
-   */
-  uint32_t VolCatJobs{0};          /**< number of jobs on this Volume */
-  uint32_t VolCatFiles{0};         /**< Number of files */
-  uint32_t VolCatBlocks{0};        /**< Number of blocks */
-  uint64_t VolCatBytes{0};         /**< Number of bytes written */
-  uint32_t VolCatMounts{0};        /**< Number of mounts this volume */
-  uint32_t VolCatErrors{0};        /**< Number of errors this volume */
-  uint32_t VolCatWrites{0};        /**< Number of writes this volume */
-  uint32_t VolCatReads{0};         /**< Number of reads this volume */
-  uint64_t VolCatRBytes{0};        /**< Number of bytes read */
-  uint32_t VolCatRecycles{0};      /**< Number of recycles this volume */
-  uint32_t EndFile{0};             /**< Last file number */
-  uint32_t EndBlock{0};            /**< Last block number */
-  int32_t LabelType{0};            /**< Bareos/ANSI/IBM */
-  int32_t Slot{0};                 /**< >0=Slot loaded, 0=nothing, -1=unknown */
-  uint32_t VolCatMaxJobs{0};       /**< Maximum Jobs to write to volume */
-  uint32_t VolCatMaxFiles{0};      /**< Maximum files to write to volume */
-  uint64_t VolCatMaxBytes{0};      /**< Max bytes to write to volume */
-  uint64_t VolCatCapacityBytes{0}; /**< capacity estimate */
-  btime_t VolReadTime{0};          /**< time spent reading */
-  btime_t VolWriteTime{0};         /**< time spent writing this Volume */
-  int64_t VolMediaId{0};           /**< MediaId */
-  utime_t VolFirstWritten{0};      /**< Time of first write */
-  utime_t VolLastWritten{0};       /**< Time of last write */
-  bool InChanger{false};           /**< Set if vol in current magazine */
-  bool is_valid{false};            /**< set if this data is valid */
-  char VolCatStatus[20]{0};        /**< Volume status */
-  char VolCatName[MAX_NAME_LENGTH]{0}; /**< Desired volume to mount */
-  char VolEncrKey[MAX_NAME_LENGTH]{
-      0};                      /**< Encryption Key needed to read the media
-                                */
-  uint32_t VolMinBlocksize{0}; /**< Volume Minimum Blocksize */
-  uint32_t VolMaxBlocksize{0}; /**< Volume Maximum Blocksize */
-};
 
 struct BlockSizes {
   uint32_t max_block_size{0};
