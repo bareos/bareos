@@ -51,9 +51,18 @@ $this->headTitle($title);
 <div class="panel-body">
 
 <table class="table table-no-bordered table-hover" id="jobtable">
+
+<div class="job-table-toolbar" id="job-table-toolbar">
+   <button class="btn btn-default" id="btn-clear-search-filters" title="<?php echo $this->translate("Clear search filters"); ?>">
+      <span class="glyphicon glyphicon-trash"></span>
+   </button>
+</div>
+
 <table
    class="table table-no-bordered table-hover"
    id="jobtable"
+   data-toolbar=".job-table-toolbar"
+   data-toolbar-align="right"
    data-filter-control="true">
 
 <thead class="bg-primary">
