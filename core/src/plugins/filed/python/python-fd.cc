@@ -186,17 +186,17 @@ bRC loadPlugin(bInfo* lbinfo,
   *pinfo = &pluginInfo;   /* Return pointer to our info */
   *pfuncs = &pluginFuncs; /* Return pointer to our functions */
 
-  /* Setup Python */
+  if (!Py_IsInitialized()) {
+    /* Setup Python */
 #if PY_MAJOR_VERSION >= 3
-  PyImport_AppendInittab("bareosfd", &PyInit_bareosfd);
+    PyImport_AppendInittab("bareosfd", &PyInit_bareosfd);
 #else
-  PyImport_AppendInittab("bareosfd", initbareosfd);
+    PyImport_AppendInittab("bareosfd", initbareosfd);
 #endif
-
-  Py_InitializeEx(0);
-  PyEval_InitThreads();
-  mainThreadState = PyEval_SaveThread();
-
+    Py_InitializeEx(0);
+    PyEval_InitThreads();
+    mainThreadState = PyEval_SaveThread();
+  }
   return bRC_OK;
 }
 

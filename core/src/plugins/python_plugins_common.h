@@ -45,12 +45,14 @@
 
 /* check if bareos_plugin_ctx and bfunc are set.
  * Otherwise return NULL and throw RuntimeError */
-#define RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()         \
-  if (!bareos_plugin_ctx) {                                                \
-    PyErr_SetString(PyExc_RuntimeError, "bareos_plugin_ctx is unset");     \
-    return NULL;                                                           \
-  }                                                                        \
-  if (!bfuncs) { PyErr_SetString(PyExc_RuntimeError, "bfuncs is unset"); } \
-  return NULL;
+#define RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()     \
+  if (!bareos_plugin_ctx) {                                            \
+    PyErr_SetString(PyExc_RuntimeError, "bareos_plugin_ctx is unset"); \
+    return NULL;                                                       \
+  }                                                                    \
+  if (!bfuncs) {                                                       \
+    PyErr_SetString(PyExc_RuntimeError, "bfuncs is unset");            \
+    return NULL;                                                       \
+  }
 
 #endif  // BAREOS_PYTHON_PLUGINS_COMMON_H_
