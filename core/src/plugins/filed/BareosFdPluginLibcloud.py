@@ -245,7 +245,7 @@ class Writer(object):
         log("__end_job: prefetchers queue is empty")
 
         log("__end_job: I will shutdown all prefetchers now")
-        for i in range(0, self.options["nb_prefetcher"]):
+        for _ in range(0, self.options["nb_prefetcher"]):
             self.pref_todo_queue.put(None)
 
         # This is the last item ever put on that queue
@@ -342,7 +342,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         self.pf_pids = list()
         self.prefetchers = list()
-        for i in range(0, self.options["nb_prefetcher"]):
+        for _ in range(0, self.options["nb_prefetcher"]):
             target = Prefetcher(
                 self.options, self.plugin_todo_queue, self.pref_todo_queue
             )
