@@ -248,8 +248,10 @@ class Writer(object):
         for _ in range(0, self.options["nb_prefetcher"]):
             self.pref_todo_queue.put(None)
 
-        # This is the last item ever put on that queue
-        # The plugin on the other end will know the backup is completed
+        while not self.pref_todo_queue.empty():
+            pass
+
+        # notify the plugin that the workers are ready
         self.plugin_todo_queue.put(None)
 
 
