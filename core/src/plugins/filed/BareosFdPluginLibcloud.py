@@ -122,14 +122,14 @@ class Prefetcher(object):
             self.driver = connect(self.options)
             self.__work()
         except:
-            log("FATAL ERROR: I am a prefetcher, and I am dying !")
+            log("FATAL ERROR: prefetcher could not connect to driver")
             log_exc()
 
     def __work(self):
         while True:
             job = self.pref_todo_queue.get()
             if job is None:
-                log("prefetcher[%s] : job completed, I will now die" % (os.getpid(),))
+                log("prefetcher[%s] : job completed, will quit now" % (os.getpid(),))
                 return
 
             obj = get_object(self.driver, job["bucket"], job["name"])
@@ -167,12 +167,12 @@ class Writer(object):
 
     def __call__(self):
         try:
-            self.__map()
+            self.__iterate_over_buckets()
         except:
             log_exc()
         self.__end_job()
 
-    def __map(self):
+    def __iterate_over_buckets(self):
         for bucket in self.driver.iterate_containers():
             if self.options["buckets_include"] is not None:
                 if bucket.name not in self.options["buckets_include"]:
@@ -182,9 +182,9 @@ class Writer(object):
                 if bucket.name in self.options["buckets_exclude"]:
                     continue
 
-            log("Backuping bucket %s" % (bucket.name,))
+            log("Backing up bucket \"%s\"" % (bucket.name,))
 
-            self.__generate(self.driver.iterate_container_objects(bucket))
+            self.__generate_jobs_for_bucket_objects(self.driver.iterate_container_objects(bucket))
 
     def __get_mtime(self, obj):
         mtime = dateutil.parser.parse(obj.extra["last_modified"])
@@ -194,8 +194,8 @@ class Writer(object):
         ts = time.mktime(mtime.timetuple())
         return mtime, ts
 
-    def __generate(self, iterator):
-        for obj in iterator:
+    def __generate_jobs_for_bucket_objects(self, bucket_iterator):
+        for obj in bucket_iterator:
             mtime, mtime_ts = self.__get_mtime(obj)
 
             job = {
@@ -206,12 +206,12 @@ class Writer(object):
                 "mtime": mtime_ts,
             }
 
-            pseudo = "%s/%s" % (obj.container.name, obj.name)
+            object_name = "%s/%s" % (obj.container.name, obj.name)
 
             if self.last_run > mtime:
                 log(
                     "File %s not changed, skipped (%s > %s)"
-                    % (pseudo, self.last_run, mtime)
+                    % (object_name, self.last_run, mtime)
                 )
 
                 # This object was present on our last backup
@@ -224,8 +224,8 @@ class Writer(object):
                 continue
 
             log(
-                "File %s changed (or new), backuping (%s < %s)"
-                % (pseudo, self.last_run, mtime)
+                "File %s was changed or is new, backing up (%s < %s)"
+                % (object_name, self.last_run, mtime)
             )
 
             # Do not prefetch large objects
@@ -235,16 +235,16 @@ class Writer(object):
                 self.pref_todo_queue.put(job)
 
     def __end_job(self):
-        log("__end_job: waiting for prefetchers queue to drain")
+        log("__end_job: waiting for prefetchers queue to become empty")
         while True:
             size = self.pref_todo_queue.qsize()
             if size == 0:
                 break
             log("__end_job: %s items left in prefetchers queue, waiting" % (size,))
             time.sleep(2)
-        log("__end_job: prefetchers queue is drained")
+        log("__end_job: prefetchers queue is empty")
 
-        log("__end_job: I will ask prefetchers to die")
+        log("__end_job: I will shutdown all prefetchers now")
         for i in range(0, self.options["nb_prefetcher"]):
             self.pref_todo_queue.put(None)
 
@@ -376,7 +376,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     break
                 except:
                     size = self.plugin_todo_queue.qsize()
-                    log("start_backup_file: queue is near empty : %s" % (size,))
+                    log("start_backup_file: queue size: %s" % (size,))
                     time.sleep(0.1)
         except TypeError:
             self.job = None
@@ -386,25 +386,25 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             for i in self.prefetchers:
                 log("join() for a prefetcher (pid %s)" % (i.pid,))
                 i.join()
-            log("Ok, all prefetchers are dead")
+            log("Ok, all prefetchers are shut down")
 
             try:
                 self.manager.shutdown()
             except OSError:
-                # manager already dead, somehow ?!
+                # should not happen!
                 pass
             log("self.manager.shutdown()")
 
             log("Join() for the writer (pid %s)" % (self.writer.pid,))
             self.writer.join()
-            log("writer is dead")
+            log("writer is shut down")
 
             # savepkt is always checked, so we fill it with a dummy value
             savepkt.fname = "empty"
             return bRCs["bRC_Skip"]
 
         filename = "%s/%s" % (self.job["bucket"], self.job["name"])
-        log("Backuping %s" % (filename,))
+        log("Backing up %s" % (filename,))
 
         statp = bareosfd.StatPacket()
         statp.size = self.job["size"]
