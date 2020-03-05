@@ -83,7 +83,7 @@ def connect(options):
     for opt in (
         "buckets_exclude",
         "accurate",
-        "nb_prefetcher",
+        "nb_worker",
         "prefetch_size",
         "queue_size",
         "provider",
@@ -111,25 +111,25 @@ def get_object(driver, bucket, key):
         return None
 
 
-class Prefetcher(object):
-    def __init__(self, options, plugin_todo_queue, prefetcher_todo_queue):
+class Worker(object):
+    def __init__(self, options, plugin_todo_queue, worker_todo_queue):
         self.options = options
         self.plugin_todo_queue = plugin_todo_queue
-        self.prefetcher_todo_queue = prefetcher_todo_queue
+        self.worker_todo_queue = worker_todo_queue
 
     def __call__(self):
         try:
             self.driver = connect(self.options)
-            self.__work()
+            self.__load_object()
         except:
-            log("FATAL ERROR: prefetcher could not connect to driver")
+            log("FATAL ERROR: worker could not connect to driver")
             log_exc()
 
-    def __work(self):
+    def __load_object(self):
         while True:
-            job = self.prefetcher_todo_queue.get()
+            job = self.worker_todo_queue.get()
             if job is None:
-                log("prefetcher[%s] : job completed, will quit now" % (os.getpid(),))
+                log("worker[%s] : job completed, will quit now" % (os.getpid(),))
                 return
 
             obj = get_object(self.driver, job["bucket"], job["name"])
@@ -140,11 +140,11 @@ class Prefetcher(object):
             stream = obj.as_stream()
             content = b"".join(list(stream))
 
-            prefetched = len(content)
-            if prefetched != job["size"]:
+            size_of_fetched_object = len(content)
+            if size_of_fetched_object != job["size"]:
                 error(
                     "FATAL ERROR: prefetched file %s: got %s bytes, not the real size (%s bytes)"
-                    % (job["name"], prefetched, job["size"])
+                    % (job["name"], size_of_fetched_object, job["size"])
                 )
                 return
 
@@ -155,9 +155,9 @@ class Prefetcher(object):
 
 
 class Writer(object):
-    def __init__(self, plugin_todo_queue, prefetcher_todo_queue, last_run, opts, pids):
+    def __init__(self, plugin_todo_queue, worker_todo_queue, last_run, opts, pids):
         self.plugin_todo_queue = plugin_todo_queue
-        self.prefetcher_todo_queue = prefetcher_todo_queue
+        self.worker_todo_queue = worker_todo_queue
         self.last_run = last_run
         self.options = opts
         self.pids = pids
@@ -232,23 +232,23 @@ class Writer(object):
             if obj.size >= self.options["prefetch_size"]:
                 self.plugin_todo_queue.put(job)
             else:
-                self.prefetcher_todo_queue.put(job)
+                self.worker_todo_queue.put(job)
 
     def __end_job(self):
-        log("__end_job: waiting for prefetchers queue to become empty")
+        log("__end_job: waiting for workers queue to become empty")
         while True:
-            size = self.prefetcher_todo_queue.qsize()
+            size = self.worker_todo_queue.qsize()
             if size == 0:
                 break
-            log("__end_job: %s items left in prefetchers queue, waiting" % (size,))
+            log("__end_job: %s items left in workers queue, waiting" % (size,))
             time.sleep(2)
-        log("__end_job: prefetchers queue is empty")
+        log("__end_job: workers queue is empty")
 
-        log("__end_job: I will shutdown all prefetchers now")
-        for _ in range(0, self.options["nb_prefetcher"]):
-            self.prefetcher_todo_queue.put(None)
+        log("__end_job: I will shutdown all workers now")
+        for _ in range(0, self.options["nb_worker"]):
+            self.worker_todo_queue.put(None)
 
-        while not self.prefetcher_todo_queue.empty():
+        while not self.worker_todo_queue.empty():
             pass
 
         # notify the plugin that the workers are ready
@@ -298,8 +298,8 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
     def __parse_options(self, context):
         # Set our default values
-        if "nb_prefetcher" not in self.options:
-            self.options["nb_prefetcher"] = 24
+        if "nb_worker" not in self.options:
+            self.options["nb_worker"] = 24
         if "queue_size" not in self.options:
             self.options["queue_size"] = 1000
         if "prefetch_size" not in self.options:
@@ -313,7 +313,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             self.options["secure"] = str2bool(old)
 
         self.__parse_opt_int("port")
-        self.__parse_opt_int("nb_prefetcher")
+        self.__parse_opt_int("nb_worker")
         self.__parse_opt_int("prefetch_size")
         self.__parse_opt_int("queue_size")
         self.__parse_opt_int("prefetch_size")
@@ -340,26 +340,26 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     def start_backup_job(self, context):
         self.manager = multiprocessing.Manager()
         self.plugin_todo_queue = self.manager.Queue(maxsize=self.options["queue_size"])
-        self.prefetcher_todo_queue = self.manager.Queue(maxsize=self.options["nb_prefetcher"])
+        self.worker_todo_queue = self.manager.Queue(maxsize=self.options["nb_worker"])
 
-        self.prefetcher_pids = list()
-        self.prefetchers = list()
-        for _ in range(0, self.options["nb_prefetcher"]):
-            target = Prefetcher(
-                self.options, self.plugin_todo_queue, self.prefetcher_todo_queue
+        self.worker_pids = list()
+        self.workers = list()
+        for _ in range(0, self.options["nb_worker"]):
+            target = Worker(
+                self.options, self.plugin_todo_queue, self.worker_todo_queue
             )
             proc = multiprocessing.Process(target=target)
             proc.start()
-            self.prefetcher_pids.append(proc.pid)
-            self.prefetchers.append(proc)
-        log("%s prefetcher started" % (len(self.prefetcher_pids),))
+            self.worker_pids.append(proc.pid)
+            self.workers.append(proc)
+        log("%s worker started" % (len(self.worker_pids),))
 
         writer = Writer(
             self.plugin_todo_queue,
-            self.prefetcher_todo_queue,
+            self.worker_todo_queue,
             self.last_run,
             self.options,
-            self.prefetcher_pids,
+            self.worker_pids,
         )
         self.writer = multiprocessing.Process(target=writer)
         self.writer.start()
@@ -385,10 +385,10 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         if self.job is None:
             log("End of queue found, backup is completed")
-            for i in self.prefetchers:
-                log("join() for a prefetcher (pid %s)" % (i.pid,))
+            for i in self.workers:
+                log("join() for a worker (pid %s)" % (i.pid,))
                 i.join()
-            log("Ok, all prefetchers are shut down")
+            log("Ok, all workers are shut down")
 
             try:
                 self.manager.shutdown()
