@@ -198,7 +198,7 @@ class Writer(object):
         for obj in iterator:
             mtime, mtime_ts = self.__get_mtime(obj)
 
-            result = {
+            job = {
                 "name": obj.name,
                 "bucket": obj.container.name,
                 "data": None,
@@ -219,7 +219,7 @@ class Writer(object):
                 # but remembered as "still here" (for accurate mode)
                 # If accurate mode is off, we can simply skip that object
                 if self.options["accurate"] is True:
-                    self.plugin_todo_queue.put(result)
+                    self.plugin_todo_queue.put(job)
 
                 continue
 
@@ -230,9 +230,9 @@ class Writer(object):
 
             # Do not prefetch large objects
             if obj.size >= self.options["prefetch_size"]:
-                self.plugin_todo_queue.put(result)
+                self.plugin_todo_queue.put(job)
             else:
-                self.pref_todo_queue.put(result)
+                self.pref_todo_queue.put(job)
 
     def __end_job(self):
         log("__end_job: waiting for prefetchers queue to drain")
