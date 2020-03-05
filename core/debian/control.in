@@ -9,12 +9,19 @@
 # the statical debian/control will be used.
 #
 
+# we use conditional build-depends based on build profiles
+# to get the right build-depends just fill DEB_BUILD_PROFILES
+# with your distribution and codename (i.e. "debian buster"
+# or "ubuntu xenial") and you'll get the full build-depends.
+# Otherwise you will just get the common build-depends and
+# might miss a feature or two.
+
 Source: bareos
 Section: admin
 Priority: optional
 Maintainer: Joerg Steffens <joerg.steffens@bareos.com>
 Build-Depends: acl-dev,
- cmake,
+ cmake (>= 3.0.0) | cmake-mozilla,
  bc,
  chrpath,
  debhelper (>= 7.0.50~),
@@ -37,22 +44,17 @@ Build-Depends: acl-dev,
  po-debconf (>= 0.8.2),
  python-dev,
  zlib1g-dev,
- libgtest-dev
-# dh-systemd:
-#   Debian >= 8, Ubuntu >= 15.04
-# libfastlz-dev:
-#   installed in OBS via dsc file,
-#   not part of Debian/Ubuntu.
-# librados-dev:
-#   Debian >= 8, Ubuntu >= 14.04
-# libradosstriper-dev:
-#   Ubuntu >= 16.04
-# libcephfs-dev:
-#   Debian >= 8, Ubuntu >= 14.04
-# glusterfs-common:
-#   Debian >= 8, Ubuntu >= 15.04
-# univention:
-#   ucslint, univention-config-dev
+ libgtest-dev <buster>,
+ libgmock-dev <buster>,
+ systemd,
+ dh-systemd,
+ librados-dev <buster> <stretch> <xenial> <bionic>,
+ libradosstriper-dev <buster> <stretch> <xenial> <bionic>,
+ libcephfs-dev <buster> <stretch> <xenial> <bionic>,
+ glusterfs-common <buster> <stretch> <xenial> <bionic>,
+ ucslint <univention>,
+ univention-config-dev <univention>,
+ wget <univention>
 Build-Conflicts: python2.2-dev, python2.3, python2.4, qt3-dev-tools, libqt4-dev
 Standards-Version: 3.9.6
 Vcs-Git: git://github.com/bareos/bareos.git -b master

@@ -144,9 +144,6 @@ execute_process(
 )
 
 include(BareosExtractVersionInfo)
-include(BareosLocalBuildDefinitions OPTIONAL
-        RESULT_VARIABLE BareosLocalBuildDefinitionsFile
-)
 
 include(BareosGetDistInfo)
 
@@ -765,7 +762,7 @@ message(
   "   Bareos version:               ${BAREOS} ${BAREOS_FULL_VERSION} (${DATE}) "
 )
 message(
-  "   Distribution:                 ${DISTNAME} OBS PROJECT:${OBS_PROJECT} OBS DIST:${OBS_DISTRIBUTION} OBS ARCH:${OBS_ARCH}"
+  "   Distribution:                 ${DISTNAME}"
 )
 message("   Source code location:         ${srcdir} ")
 message("   Modify Debian Control file:   ${GENERATE_DEBIAN_CONTROL} ")

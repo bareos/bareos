@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -18,7 +18,7 @@
 #   02110-1301, USA.
 
 # get DIST info in format
-# "$DISTNAME;$DISTVER;$OBS_PROJECT;$OBS_DISTRIBUTION;$OBS_ARCH;$OBS_SRCMD5"
+# "$DISTNAME;$DISTVER"
 
 execute_process(
   COMMAND ${PROJECT_SOURCE_DIR}/cmake/distname.sh
@@ -35,22 +35,6 @@ set(ENV{DISTNAME} ${DISTNAME})
 
 list(GET DISTINFO 1 DISTVER)
 set(ENV{DISTVER} "${DISTVER}")
-
-if(${DISTINFO_LENGTH} GREATER 2)
-  set(IS_BUILD_ON_OBS 1)
-
-  list(GET DISTINFO 2 OBS_PROJECT)
-  set(ENV{OBS_PROJECT} "${OBS_PROJECT}")
-
-  list(GET DISTINFO 3 OBS_DISTRIBUTION)
-  set(ENV{OBS_DISTRIBUTION} "${OBS_DISTRIBUTION}")
-
-  list(GET DISTINFO 4 OBS_ARCH)
-  set(ENV{OBS_ARCH} "${OBS_ARCH}")
-
-  list(GET DISTINFO 5 OBS_SRCMD5)
-  set(ENV{OBS_SRCMD5} "${OBS_SRCMD5}")
-endif()
 
 set(Host "${CMAKE_SYSTEM} ${LSB_RELEASE_DESCRIPTION}")
 set(Distribution ${LSB_RELEASE_ID_SHORT})
