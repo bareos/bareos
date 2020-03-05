@@ -273,10 +273,10 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         for _ in driver.iterate_containers():
             break
 
-        # The job in process
-        # Setto None when the whole backup is completed
+        # The backup job in process
+        # Set to None when the whole backup is completed
         # Restore's path will not touch this
-        self.job = {}
+        self.current_backup_job = {}
 
         log("Last backup: %s (ts: %s)" % (self.last_run, self.since))
 
@@ -370,47 +370,48 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         # If bareos have not seen one, it does not exists anymore
         return bRCs["bRC_Error"]
 
+    def __shutdown_and_join_worker(self):
+        log("End of queue found, backup is completed")
+        for i in self.workers:
+            log("join() for a worker (pid %s)" % (i.pid,))
+            i.join()
+        log("Ok, all workers are shut down")
+
+        try:
+            self.manager.shutdown()
+        except OSError:
+            # should not happen!
+            pass
+        log("self.manager.shutdown()")
+
+        log("Join() for the writer (pid %s)" % (self.writer.pid,))
+        self.writer.join()
+        log("writer is shut down")
+
     def start_backup_file(self, context, savepkt):
         try:
             while True:
                 try:
-                    self.job = self.plugin_todo_queue.get_nowait()
+                    self.current_backup_job = self.plugin_todo_queue.get_nowait()
                     break
                 except:
                     size = self.plugin_todo_queue.qsize()
                     log("start_backup_file: queue size: %s" % (size,))
                     time.sleep(0.1)
         except TypeError:
-            self.job = None
+            self.current_backup_job = None
 
-        if self.job is None:
-            log("End of queue found, backup is completed")
-            for i in self.workers:
-                log("join() for a worker (pid %s)" % (i.pid,))
-                i.join()
-            log("Ok, all workers are shut down")
-
-            try:
-                self.manager.shutdown()
-            except OSError:
-                # should not happen!
-                pass
-            log("self.manager.shutdown()")
-
-            log("Join() for the writer (pid %s)" % (self.writer.pid,))
-            self.writer.join()
-            log("writer is shut down")
-
-            # savepkt is always checked, so we fill it with a dummy value
-            savepkt.fname = "empty"
+        if self.current_backup_job is None:
+            self.__shutdown_and_join_worker()
+            savepkt.fname = "empty" # dummy value, savepkt is always checked
             return bRCs["bRC_Skip"]
 
-        filename = "%s/%s" % (self.job["bucket"], self.job["name"])
+        filename = "%s/%s" % (self.current_backup_job["bucket"], self.current_backup_job["name"])
         log("Backing up %s" % (filename,))
 
         statp = bareosfd.StatPacket()
-        statp.size = self.job["size"]
-        statp.mtime = self.job["mtime"]
+        statp.size = self.current_backup_job["size"]
+        statp.mtime = self.current_backup_job["mtime"]
         statp.atime = 0
         statp.ctime = 0
 
@@ -421,7 +422,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         return bRCs["bRC_OK"]
 
     def plugin_io(self, context, IOP):
-        if self.job is None:
+        if self.current_backup_job is None:
             return bRCs["bRC_Error"]
         if IOP.func == bIOPS["IO_OPEN"]:
             # Only used by the 'restore' path
@@ -430,14 +431,14 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 return bRCs["bRC_OK"]
 
             # 'Backup' path
-            if self.job["data"] is None:
-                obj = get_object(self.driver, self.job["bucket"], self.job["name"])
+            if self.current_backup_job["data"] is None:
+                obj = get_object(self.driver, self.current_backup_job["bucket"], self.current_backup_job["name"])
                 if obj is None:
                     self.FILE = None
                     return bRCs["bRC_Error"]
                 self.FILE = IterStringIO(obj.as_stream())
             else:
-                self.FILE = self.job["data"]
+                self.FILE = self.current_backup_job["data"]
 
         elif IOP.func == bIOPS["IO_READ"]:
             IOP.buf = bytearray(IOP.count)
@@ -472,7 +473,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         return bRCs["bRC_OK"]
 
     def end_backup_file(self, context):
-        if self.job is not None:
+        if self.current_backup_job is not None:
             return bRCs["bRC_More"]
         else:
             return bRCs["bRC_OK"]
