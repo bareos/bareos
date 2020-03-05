@@ -51,6 +51,7 @@ $this->headTitle($title);
 <div class="panel-body">
 
 <table class="table table-no-bordered table-hover" id="jobtable">
+<div class="col-md-8"><input id="rangeslider" style="width: 100%;"></div>
 
 <div class="job-table-toolbar" id="job-table-toolbar">
    <button class="btn btn-default" id="btn-clear-search-filters" title="<?php echo $this->translate("Clear search filters"); ?>">
@@ -185,8 +186,10 @@ $this->headTitle($title);
 
 <?php
    echo $this->headScript()->prependFile($this->basePath() . '/js/custom-functions.js');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-slider.min.css');
    echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table-filter-control.min.css');
    echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table.min.css');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-slider.min.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-filter-control.min.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-locale-all.min.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-cookie.min.js');
@@ -194,6 +197,29 @@ $this->headTitle($title);
 ?>
 
 <script>
+
+   var rsLabel1 = "1 " + iJS._("day");
+   var rsLabel2 = "3 " + iJS._("days");
+   var rsLabel3 = "7 " + iJS._("days");
+   var rsLabel4 = "2 " + iJS._("weeks");
+   var rsLabel5 = "4 " + iJS._("weeks");
+   var rsLabel6 = "3 " + iJS._("months");
+   var rsLabel7 = "6 " + iJS._("months");
+   var rsLabel8 = "1 " + iJS._("year");
+   var rsLabel9 = "2 " + iJS._("years");
+   var rsLabel10 = "5 " + iJS._("years");
+   var rsLabel11 = "10 " + iJS._("years");
+
+   var rangeslider = $("#rangeslider").bootstrapSlider({
+      ticks: [1,3,7,14,31,90,180,365,730,1825,3650],
+      ticks_labels: [rsLabel1, rsLabel2, rsLabel3, rsLabel4, rsLabel5, rsLabel6, rsLabel7, rsLabel8, rsLabel9, rsLabel10, rsLabel11],
+      ticks_positions: [0,5,10,18,26,36,46,57,68,82,100],
+      step: 1,
+      lock_to_ticks: true,
+      tooltip: "hide",
+      handle: "round",
+      value: <?php echo $this->period; ?>
+   });
 
    var jobtable = null;
    var displayRange = <?php echo $this->period; ?>;
@@ -224,6 +250,13 @@ $this->headTitle($title);
       jobbytes = null;
       joberrors = null;
       jobstatus = null;
+   }
+
+   function getSliderValue() {
+      let range = document.getElementById("rangeslider");
+      displayRange = range.value;
+      $("#rangeValue").html(displayRange);
+      refreshTableData();
    }
 
    function refreshTableData() {
@@ -476,6 +509,8 @@ $this->headTitle($title);
          $("#modal-001").modal();
       });
 
+      $('#rangeslider').on('slideStop', getSliderValue);
+
       $('#btn-clear-search-filters').on('click', resetSearchFilters);
    });
 
@@ -523,6 +558,10 @@ $this->headTitle($title);
    $(document).on('input', '.bootstrap-table-filter-control-jobstatus', function() {
       jobstatus = $(this).val();
    });
+
+   // Remember rangeslider value
+   $(document).on('input', '#rangeslider', function() {
+      displayRange = $(this).val();
    });
 
 </script>
