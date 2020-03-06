@@ -464,31 +464,8 @@ $this->headTitle($title);
       });
    }
 
-   function updateQueryParams(k, v) {
-      var p = [];
-      var params = [];
-
-      p['jobname'] = '<?php echo $this->jobname; ?>';
-      p['status'] = '<?php echo $this->status; ?>';
-      p['period'] = '<?php echo $this->period; ?>';
-
-      if(k == 'status' && v == 'running') {
-         p['period'] = 'all';
-      }
-      else if(k == 'status' && v == 'waiting') {
-         p['period'] = 'all';
-      }
-
-      p[k] = v;
-
-      for(key in p) {
-          params.push(key + "=" + p[key]);
-      }
-
-      return params.join('&');
-   }
-
    $(document).ready(function() {
+
       setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
       setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
 
