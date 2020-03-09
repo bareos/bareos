@@ -459,7 +459,7 @@ function formatJobStatus(data) {
       // Queued waiting for device
       case 'q':
          jobstatus_q = iJS._("Queued waiting for device");
-         output = '<span class="label label-default" title="' + jobsttaus_q + '">' + iJS._("Queued waiting for device") + '</span>';
+         output = '<span class="label label-default" title="' + jobstatus_q + '">' + iJS._("Queued waiting for device") + '</span>';
          break;
       default:
          output = '<span class="label label-primary">' + data + '</span>';
