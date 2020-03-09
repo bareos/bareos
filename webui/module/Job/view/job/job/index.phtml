@@ -312,7 +312,10 @@ $this->headTitle($title);
                   return jobDetailsButton + '&nbsp;' + jobRerunButton + '&nbsp;' + jobRestoreButton;
                case 'C':
                   return jobDetailsButton + '&nbsp;' + jobRestoreButton;
+               case 'R':
+                  return jobDetailsButton;
             }
+            break;
          case 'E':
          case 'e':
          case 'f':
@@ -321,6 +324,7 @@ $this->headTitle($title);
                case 'B':
                   return jobDetailsButton + '&nbsp;' + jobRerunButton;
             }
+            break;
          case 'F':
          case 'S':
          case 'm':
@@ -344,12 +348,14 @@ $this->headTitle($title);
                      default:
                         return jobDetailsButton;
                   }
+                  break;
                case 'B':
                case 'C':
                   return jobDetailsButton + '&nbsp;' + jobCancelButton;
                default:
                   return jobDetailsButton;
             }
+            break;
          default:
             return '';
       }
