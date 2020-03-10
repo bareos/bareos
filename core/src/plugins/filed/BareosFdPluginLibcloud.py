@@ -154,7 +154,7 @@ class Worker(object):
             self.plugin_todo_queue.put(job)
 
 
-class Writer(object):
+class JobCreator(object):
     def __init__(self, plugin_todo_queue, worker_todo_queue, last_run, opts, pids):
         self.plugin_todo_queue = plugin_todo_queue
         self.worker_todo_queue = worker_todo_queue
@@ -354,15 +354,15 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             self.workers.append(proc)
         log("%s worker started" % (len(self.worker_pids),))
 
-        writer = Writer(
+        job_generator = JobCreator(
             self.plugin_todo_queue,
             self.worker_todo_queue,
             self.last_run,
             self.options,
             self.worker_pids,
         )
-        self.writer = multiprocessing.Process(target=writer)
-        self.writer.start()
+        self.job_generator = multiprocessing.Process(target=job_generator)
+        self.job_generator.start()
         self.driver = connect(self.options)
 
     def check_file(self, context, fname):
@@ -384,9 +384,9 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             pass
         log("self.manager.shutdown()")
 
-        log("Join() for the writer (pid %s)" % (self.writer.pid,))
-        self.writer.join()
-        log("writer is shut down")
+        log("Join() for the job_generator (pid %s)" % (self.job_generator.pid,))
+        self.job_generator.join()
+        log("job_generator is shut down")
 
     def start_backup_file(self, context, savepkt):
         try:
