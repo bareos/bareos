@@ -49,7 +49,7 @@ $this->headTitle($title);
 
 <div class="panel-body">
 
-<table class="table table-no-bordered table-hover" id="vol">
+<table class="table table-no-bordered table-hover" id="volume">
 
 <thead class="bg-primary">
    <th><?php echo $this->translate("Name"); ?></th>
@@ -182,11 +182,11 @@ $this->headTitle($title);
 
 <script>
 
-   var vol = null;
+   var volume = null;
    var volumejobs = null;
 
-   function getVol() {
-      vol = $('#vol').bootstrapTable({
+   function attachVolumeTable() {
+      volume = $('#volume').bootstrapTable({
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
          url: '<?php echo $this->url('media', array('action' => 'getData'), null) . '?data=details&volume=' . $this->volume; ?>',
          method: 'get',
@@ -449,7 +449,7 @@ $this->headTitle($title);
       setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
       setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
 
-      getVol();
+      attachVolumeTable();
       attachVolumeJobsTable();
 
       $('#volumejobs').on('load-error.bs.table', function(status, res) {
