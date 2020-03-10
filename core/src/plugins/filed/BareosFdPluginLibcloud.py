@@ -266,19 +266,10 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.last_run = datetime.datetime.fromtimestamp(self.since)
         self.last_run = self.last_run.replace(tzinfo=None)
 
-        # We force an action to the backend, to test our params
-        # If we can get anything, then it is ok
-        # Else, an exception will be raised, and the job will fail
-        driver = connect(self.options)
-        for _ in driver.iterate_containers():
-            break
-
         # The backup job in process
         # Set to None when the whole backup is completed
         # Restore's path will not touch this
         self.current_backup_job = {}
-
-        log("Last backup: %s (ts: %s)" % (self.last_run, self.since))
 
     def __parse_options_bucket(self, name):
         if name not in self.options:
@@ -338,6 +329,15 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         return bRCs["bRC_OK"]
 
     def start_backup_job(self, context):
+        # We force an action to the backend, to test our params
+        # If we can get anything, then it is ok
+        # Else, an exception will be raised, and the job will fail
+        driver = connect(self.options)
+        for _ in driver.iterate_containers():
+            break
+
+        log("Last backup: %s (ts: %s)" % (self.last_run, self.since))
+
         self.manager = multiprocessing.Manager()
         self.plugin_todo_queue = self.manager.Queue(maxsize=self.options["queue_size"])
         self.worker_todo_queue = self.manager.Queue(maxsize=self.options["nb_worker"])
