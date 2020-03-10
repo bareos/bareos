@@ -115,7 +115,7 @@ if(HAVE_PYTHON)
     COMMAND ${CMAKE_CURRENT_BINARY_DIR}/bareos-fd-module-tester
     )
   set_property(TEST bareosfd-python-module-tester
-    PROPERTY ENVIRONMENT PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/python/test/:${CMAKE_CURRENT_BINARY_DIR}/pythonmodules)
+    PROPERTY ENVIRONMENT PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/python/test/:${CMAKE_CURRENT_BINARY_DIR}/pythonmodules:${CMAKE_CURRENT_SOURCE_DIR}/python/pyfiles)
 
 endif()
 

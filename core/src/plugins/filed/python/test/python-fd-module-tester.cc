@@ -184,8 +184,8 @@ int main(int argc, char* argv[])
   }
   if (PyErr_Occurred()) { PyErrorHandler(); }
 
-  printf("bfuncs is at          %p\n", &bfuncs);
-  printf("bareos_plugin_context %p\n", &bareos_plugin_context);
+  /* printf("bfuncs is at          %p\n", &bfuncs); */
+  /* printf("bareos_plugin_context %p\n", &bareos_plugin_context); */
 
   // Extract capsules pointer from bareosfd module
   void* ctx_from_bareosfd_module = PyCapsule_Import("bareosfd.bpContext", 0);
@@ -211,16 +211,17 @@ int main(int argc, char* argv[])
     printf("importing bareosfd.loadPlugin failed \n");
   }
 
-  printf("ctx_from_bareosfd_module is at       %p\n", ctx_from_bareosfd_module);
-  printf("bfuncs_from_bareosfd_module is at    %p\n",
-         bfuncs_from_bareosfd_module);
-  printf("loadplugin_from_bareosfd_module is @ %p\n",
-         loadplugin_from_bareosfd_module);
+  /* printf("ctx_from_bareosfd_module is at       %p\n",
+   * ctx_from_bareosfd_module); */
+  /* printf("bfuncs_from_bareosfd_module is at    %p\n", */
+  /*        bfuncs_from_bareosfd_module); */
+  /* printf("loadplugin_from_bareosfd_module is @ %p\n", */
+  /*        loadplugin_from_bareosfd_module); */
 
-  printf("ctx_from_bareosfd_module contains    %p\n",
-         *(void**)ctx_from_bareosfd_module);
-  printf("bfuncs_from_bareosfd_module contains %p\n",
-         *(void**)bfuncs_from_bareosfd_module);
+  /* printf("ctx_from_bareosfd_module contains    %p\n", */
+  /*        *(void**)ctx_from_bareosfd_module); */
+  /* printf("bfuncs_from_bareosfd_module contains %p\n", */
+  /*        *(void**)bfuncs_from_bareosfd_module); */
 
   *(void**)ctx_from_bareosfd_module = &bareos_plugin_context;
   *(void**)bfuncs_from_bareosfd_module = &bfuncs;
