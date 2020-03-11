@@ -146,6 +146,8 @@ set(PYFILES
     bareos-fd-postgres.py
     BareosFdPluginVMware.py
     bareos-fd-vmware.py
+    bareos-fd-libcloud.py
+    BareosFdPluginLibcloud.py
 )
 if(${HAVE_VIXDISKLIB})
   list(APPEND PYFILES BareosFdPluginVMware.py bareos-fd-vmware.py)

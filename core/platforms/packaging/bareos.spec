@@ -571,7 +571,6 @@ Requires:   bareos-filedaemon-python-plugin = %{version}
 Summary:    PostgreSQL Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
-
 %package    filedaemon-percona-xtrabackup-python-plugin
 Summary:    Percona xtrabackup Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
@@ -1568,7 +1567,15 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/fileset/plugin-ovirt.conf.example
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/job/backup-ovirt.conf.example
 
+%files filedaemon-libcloud-python-plugin
+%defattr(-, root, root)
+%{plugin_dir}/bareos-fd-libcloud.py*
+%{plugin_dir}/BareosFdPluginLibcloud.py*
+#attr(0640, #{director_daemon_user}, #{daemon_group}) #{_sysconfdir}/#{name}/bareos-dir.d/fileset/plugin-libcloud.conf.example
+#attr(0640, #{director_daemon_user}, #{daemon_group}) #{_sysconfdir}/#{name}/bareos-dir.d/job/backup-libcloud.conf.example
+
 %files filedaemon-postgresql-python-plugin
+
 %defattr(-, root, root)
 %{plugin_dir}/BareosFdPluginPostgres.py*
 %{plugin_dir}/bareos-fd-postgres.py*
