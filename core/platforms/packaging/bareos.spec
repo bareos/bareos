@@ -1417,8 +1417,8 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %defattr(-, root, root)
 %{plugin_dir}/bareos-fd-libcloud.py*
 %{plugin_dir}/BareosFdPluginLibcloud.py*
-%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/fileset/plugin-libcloud.conf.example
-%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/job/backup-libcloud.conf.example
+#attr(0640, #{director_daemon_user}, #{daemon_group}) #{_sysconfdir}/#{name}/bareos-dir.d/fileset/plugin-libcloud.conf.example
+#attr(0640, #{director_daemon_user}, #{daemon_group}) #{_sysconfdir}/#{name}/bareos-dir.d/job/backup-libcloud.conf.example
 
 %files filedaemon-percona-xtrabackup-python-plugin
 %defattr(-, root, root)

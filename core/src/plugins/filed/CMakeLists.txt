@@ -114,6 +114,8 @@ set(PYFILES
     BareosFdPluginOvirt.py
     bareos-fd-percona-xtrabackup.py
     BareosFdPluginPerconaXtraBackup.py
+    bareos-fd-libcloud.py
+    BareosFdPluginLibcloud.py
 )
 
 install(
