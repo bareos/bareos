@@ -51,7 +51,7 @@ $this->headTitle($title);
 
 <table
    class="table table-no-bordered table-hover"
-   id="storage"
+   id="storagedevices"
    data-filter-control="true">
 
 <thead class="bg-primary">
@@ -91,10 +91,10 @@ $this->headTitle($title);
 
 <script>
 
-   var storage = null;
+   var storagedevices = null;
 
-   function getStorage() {
-      storage = $('#storage').bootstrapTable({
+   function attachStorageDeviceTable() {
+      storagedevices = $('#storagedevices').bootstrapTable({
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
          cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
          cookieIdTable: 'storage_index',
@@ -147,7 +147,7 @@ $this->headTitle($title);
       setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
       setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
 
-      getStorage();
+      attachStorageDeviceTable();
 
    });
 
