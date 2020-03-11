@@ -50,6 +50,7 @@ Vendor: 	The Bareos Team
 # cmake build directory
 %define CMAKE_BUILDDIR       cmake-build
 
+
 # rhel/centos 6 must not be built with libtirpc installed
 %if 0%{?rhel} == 6
 BuildConflicts: libtirpc-devel
@@ -248,6 +249,7 @@ BuildRequires: lsb-release
 
 BuildRequires: passwd
 
+
 # Some magic to be able to determine what platform we are running on.
 %if 0%{?rhel_version} || 0%{?centos_version} || 0%{?fedora_version}
 
@@ -287,9 +289,6 @@ BuildRequires: lsb-release
 %define _use_internal_dependency_generator 0
 %define our_find_requires %{_builddir}/%{name}-%{version}/find_requires
 %endif
-
-
-
 
 Summary:    Backup Archiving REcovery Open Sourced - metapackage
 Requires:   %{name}-director = %{version}
@@ -547,6 +546,12 @@ Requires:   python-pycurl
 Requires:   python-lxml
 Requires:   python-ovirt-engine-sdk4
 
+%package    filedaemon-libcloud-python-plugin
+Summary:    Libcloud Python plugin for Bareos File daemon
+Group:      Productivity/Archiving/Backup
+Requires:   bareos-filedaemon = %{version}
+Requires:   bareos-filedaemon-python-plugin = %{version}
+
 %package    filedaemon-postgresql-python-plugin
 Summary:    PostgreSQL Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
@@ -563,7 +568,6 @@ Requires:   bareos-filedaemon-python-plugin = %{version}
 Summary:    Python plugin for Bareos Storage daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-storage = %{version}
-
 
 # vmware switch is set via --define="vmware 1" in build script when
 # vix disklib is detected
@@ -606,8 +610,6 @@ Keeps bareos/plugins/vmware_plugin subdirectory, which have been used in Bareos 
 
 # VMware Plugin END
 %endif
-
-
 %description director-python-plugin
 %{dscr}
 
@@ -628,11 +630,15 @@ This package contains the LDAP python plugin for the file daemon
 
 This package contains the Ovirt python plugin for the file daemon
 
+%description filedaemon-libcloud-python-plugin
+%{dscr}
+
+This package contains the Libcloud python plugin for the file daemon
+
 %description filedaemon-postgresql-python-plugin
 %{dscr}
 
 This package contains the PostgreSQL python plugin for the file daemon
-
 %description filedaemon-percona-xtrabackup-python-plugin
 %{dscr}
 
@@ -665,14 +671,12 @@ Summary:    CEPH plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
 
-
 %description filedaemon-ceph-plugin
 %{dscr}
 
 This package contains the CEPH plugins for the file daemon
 
 %endif
-
 
 %package webui
 Summary:       Bareos Web User Interface
@@ -747,8 +751,6 @@ features that make it easy to find and recover lost or damaged files. \
 Bareos source code has been released under the AGPL version 3 license.
 
 This package contains the webui (Bareos Web User Interface).
-
-
 %description client
 %{dscr}
 
@@ -874,7 +876,6 @@ This package contains required files for Bareos regression testing.
 %setup -c -n bareos
 mv bareos-*/* .
 
-
 %build
 # Cleanup defined in Fedora Packaging:Guidelines
 # and required repetitive local build of at least CentOS 5.
@@ -889,7 +890,6 @@ export MTX=/usr/sbin/mtx
 
 mkdir %{CMAKE_BUILDDIR}
 pushd %{CMAKE_BUILDDIR}
-
 
 # use Developer Toolset 7 compiler as standard is too old
 %if 0%{?centos_version} == 600 || 0%{?rhel_version} == 600
@@ -988,8 +988,8 @@ make clean
 REGRESS_DEBUG=1 ctest -j 10 -V -D Continuous || result=$?
 result=$?
 if [ $result -eq 1 ]; then
-echo "ctest result $result is expected and OK"
-exit 0
+  echo "ctest result $result is expected and OK"
+  exit 0
 else
   echo "ctest result $result is not 1, ERROR"
 fi
@@ -1066,7 +1066,6 @@ for F in  \
     %{script_dir}/btraceback.mdb \
     %{_docdir}/%{name}/INSTALL \
     %{_sbindir}/%{name}
-
 do
 rm -f "%{buildroot}/$F"
 done
@@ -1075,7 +1074,6 @@ done
 # for i in #{buildroot}/#{_libdir}/libbareos*; do printf "$i: "; readelf -a $i | grep SONAME; done
 find %{buildroot}/%{library_dir} -type l -name "libbareos*.so" -maxdepth 1 -exec rm {} \;
 ls -la %{buildroot}/%{library_dir}
-
 
 %if ! 0%{?python_plugins}
 rm -f %{buildroot}/%{plugin_dir}/python-*.so
@@ -1107,8 +1105,6 @@ rm %{buildroot}%{_mandir}/man1/bareos-tray-monitor.*
 rm -f %{buildroot}%{plugin_dir}/BareosFdPluginVMware.py*
 rm -f %{buildroot}%{plugin_dir}/bareos-fd-vmware.py*
 %endif
-
-
 # install systemd service files
 %if 0%{?systemd_support}
 install -d -m 755 %{buildroot}%{_unitdir}
@@ -1127,12 +1123,8 @@ ln -sf service %{buildroot}%{_sbindir}/rcbareos-sd
 echo "This meta package emulates the former bareos-client package" > %{buildroot}%{_docdir}/%{name}/README.bareos-client
 echo "This is a meta package to install a full bareos system" > %{buildroot}%{_docdir}/%{name}/README.bareos
 
-
 # create dir for bareos-vmware-plugin-compat
 mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
-
-
-
 %files
 %defattr(-, root, root)
 %{_docdir}/%{name}/README.bareos
@@ -1152,8 +1144,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %config %attr(644,root,root) /etc/bareos/bareos-dir.d/profile/webui-limited.conf.example
 %config(noreplace) %attr(644,root,root) /etc/bareos/bareos-dir.d/profile/webui-readonly.conf
 %config(noreplace) %{_apache_conf_dir}/bareos-webui.conf
-
-
 %files client
 %defattr(-, root, root)
 %dir %{_docdir}/%{name}
@@ -1182,7 +1172,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 
 #VMware Plugin END
 %endif
-
 %files bconsole
 # console package
 %defattr(-, root, root)
@@ -1570,7 +1559,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %defattr(-, root, root)
 %{plugin_dir}/BareosFdPluginPostgres.py*
 %{plugin_dir}/bareos-fd-postgres.py*
-
 %files filedaemon-percona-xtrabackup-python-plugin
 %defattr(-, root, root)
 %{plugin_dir}/bareos-fd-percona-xtrabackup.py*
@@ -1752,8 +1740,6 @@ if [ -e %1.rpmupdate.%{version}.keep ]; then \
    rm %1.rpmupdate.%{version}.keep; \
 fi; \
 %nil
-
-
 %post webui
 
 %if 0%{?suse_version} >= 1110
@@ -1773,8 +1759,6 @@ fi
 %else
 a2enmod php5 &> /dev/null || true
 %endif
-
-
 
 
 %post director
