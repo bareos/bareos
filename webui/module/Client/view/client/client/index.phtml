@@ -175,6 +175,34 @@ $this->headTitle($title);
          return '<span class="label label-success" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Up to date">'+row.installed_fd+'</span>';
       }
    }
+
+   function clientsActionButtonsFormatter(value, row, index) {
+
+      let restoreButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/restore/index?client='; ?>'+row.name+'" title="<?php echo $this->translate("Restore"); ?>" id="btn-1"><span class="glyphicon glyphicon-import"></span></a>';
+      let statusClientButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/client/status?client='+row.name+'" title="<?php echo $this->translate("Status"); ?>" id="btn-1"><span class="glyphicon glyphicon-search"></span></a>';
+      let disableButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/client/index?action=disable&client='+row.name+'" title="<?php echo $this->translate("Disable"); ?>" id="btn-1"><span class="glyphicon glyphicon-remove"></span></a>';
+      let enableButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/client/index?action=enable&client='+row.name+'" title="<?php echo $this->translate("Enable"); ?>" id="btn-1"><span class="glyphicon glyphicon-ok"></span></a>';
+      let downloadButton = '<a href="'+row.url_package+'" target="_blank"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="Download update"><span class="glyphicon glyphicon-download-alt"></span></button></a>';
+
+      if(row.enabled) {
+         if(row.update_fd === true) {
+            return restoreButton + '&nbsp;' + statusClientButton + '&nbsp;' + disableButton + '&nbsp;' + downloadButton;
+         }
+         else {
+            return restoreButton + '&nbsp;' + statusClientButton + '&nbsp;' + disableButton;
+         }
+      }
+      else {
+         if(row.update_fd === true) {
+            return restoreButton + '&nbsp;' + statusClientButton + '&nbsp;' + enableButton + '&nbsp;' + downloadButton;
+         }
+         else {
+            return restoreButton + '&nbsp;' + statusClientButton + '&nbsp;' + enableButton;
+         }
+      }
+
+   }
+
    function attachClientsTable() {
       clients = $('#clients').bootstrapTable({
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
@@ -223,21 +251,7 @@ $this->headTitle($title);
             {
                field: 'actions',
                formatter: function(value, row, index) {
-                  var actions = null;
-                  var rlink = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/restore/index?client='; ?>'+row.name+'" title="<?php echo $this->translate("Restore"); ?>" id="btn-1"><span class="glyphicon glyphicon-import"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/client/status?client='+row.name+'" title="<?php echo $this->translate("Status"); ?>" id="btn-1"><span class="glyphicon glyphicon-zoom-in"></span></a>';
-                  var ulink = '<a href="'+row.url_package+'" target="_blank"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="Download update"><span class="glyphicon glyphicon-download-alt"></span></button></a>';
-                  if(row.enabled) {
-                     actions = rlink + '&nbsp;' + '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/client/index?action=disable&client='+row.name+'" title="<?php echo $this->translate("Disable"); ?>" id="btn-1"><span class="glyphicon glyphicon-remove"></span></a>';
-                  }
-                  else {
-                     actions = rlink + '&nbsp;' + '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/client/index?action=enable&client='+row.name+'" title="<?php echo $this->translate("Enable"); ?>" id="btn-1"><span class="glyphicon glyphicon-ok"></span></a>';
-                  }
-                  if(row.update_fd === true) {
-                     return actions + '&nbsp;' + ulink;
-                  }
-                  else {
-                     return actions;
-                  }
+                  return clientsActionButtonsFormatter(value, row, index);
                }
             },
             {
