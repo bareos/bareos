@@ -158,6 +158,23 @@ $this->headTitle($title);
          return '';
       }
    }
+
+   function formatUpdateStatus(value, row, index) {
+      if(row.available_fd === "" || row.available_fd === null || row.available_fd === undefined) {
+         return '<span class="label label-default" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Unknown update status">'+row.installed_fd+'</span>';
+      }
+      if(row.update_fd === true) {
+         if(row.update_dird === true) {
+            return '<span class="label label-danger" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Version '+row.available_fd+' is available">'+row.installed_fd+'</span> <span class="text-danger" data-toggle="tooltip" data-placement="top">(Director upgrade '+row.available_dird+' required first)</span>';
+         }
+         else {
+            return '<span class="label label-danger" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Version '+row.available_fd+' is available">'+row.installed_fd+'</span>';
+         }
+      }
+      else {
+         return '<span class="label label-success" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Up to date">'+row.installed_fd+'</span>';
+      }
+   }
    function attachClientsTable() {
       clients = $('#clients').bootstrapTable({
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
@@ -193,20 +210,7 @@ $this->headTitle($title);
             {
                field: 'hf-1',
                formatter: function(value, row, index) {
-                  if(row.available_fd === "" || row.available_fd === null || row.available_fd === undefined) {
-                     return '<span class="label label-default" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Unknown update status">'+row.installed_fd+'</span>';
-                  }
-                  if(row.update_fd === true) {
-                     if(row.update_dird === true) {
-                        return '<span class="label label-danger" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Version '+row.available_fd+' is available">'+row.installed_fd+'</span> <span class="text-danger" data-toggle="tooltip" data-placement="top">(Director upgrade '+row.available_dird+' required first)</span>';
-                     }
-                     else {
-                        return '<span class="label label-danger" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Version '+row.available_fd+' is available">'+row.installed_fd+'</span>';
-                     }
-                  }
-                  else {
-                     return '<span class="label label-success" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Up to date">'+row.installed_fd+'</span>';
-                  }
+                  return formatUpdateStatus(value, row, index);
                }
             },
             {
