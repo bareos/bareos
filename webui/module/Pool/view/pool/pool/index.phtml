@@ -120,7 +120,7 @@ $this->headTitle($title);
 
    var pools = null;
 
-   function getPools() {
+   function attachPoolsTable() {
       pools = $('#pools').bootstrapTable({
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
          cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
@@ -184,7 +184,7 @@ $this->headTitle($title);
    $(document).ready(function() {
       setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
       setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
-      getPools();
+      attachPoolsTable();
    });
 
 </script>
