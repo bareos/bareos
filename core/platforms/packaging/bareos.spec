@@ -577,6 +577,12 @@ Requires:   python-pycurl
 Requires:   python-lxml
 Requires:   python-ovirt-engine-sdk4
 
+%package    filedaemon-libcloud-python-plugin
+Summary:    Libcloud Python plugin for Bareos File daemon
+Group:      Productivity/Archiving/Backup
+Requires:   bareos-filedaemon = %{version}
+Requires:   bareos-filedaemon-python-plugin = %{version}
+
 %package    filedaemon-percona-xtrabackup-python-plugin
 Summary:    Percona xtrabackup Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
@@ -608,6 +614,11 @@ This package contains the LDAP python plugin for the file daemon
 %{dscr}
 
 This package contains the Ovirt python plugin for the file daemon
+
+%description filedaemon-libcloud-python-plugin
+%{dscr}
+
+This package contains the Libcloud python plugin for the file daemon
 
 %description filedaemon-percona-xtrabackup-python-plugin
 %{dscr}
@@ -1401,6 +1412,13 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{plugin_dir}/BareosFdPluginOvirt.py*
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/fileset/plugin-ovirt.conf.example
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/job/backup-ovirt.conf.example
+
+%files filedaemon-libcloud-python-plugin
+%defattr(-, root, root)
+%{plugin_dir}/bareos-fd-libcloud.py*
+%{plugin_dir}/BareosFdPluginLibcloud.py*
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/fileset/plugin-libcloud.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/job/backup-libcloud.conf.example
 
 %files filedaemon-percona-xtrabackup-python-plugin
 %defattr(-, root, root)
