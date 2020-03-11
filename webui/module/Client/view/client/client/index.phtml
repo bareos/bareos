@@ -124,10 +124,6 @@ $this->headTitle($title);
 
    var clients = null;
 
-   function dlc(url) {
-      window.open(url, '_blank');
-   }
-
    function formatEnabledDisabledStatus(value) {
       if(value) {
          return '<span class="label label-success"><?php echo $this->translate("Enabled"); ?></span>';
