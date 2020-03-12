@@ -158,12 +158,7 @@ $this->headTitle($title);
                field: 'enabled',
                sortable: true,
                formatter: function(value) {
-                  if(value) {
-                     return '<span class="label label-success"><?php echo $this->translate("Enabled"); ?></span>';
-                  }
-                  else {
-                     return '<span class="label label-danger"><?php echo $this->translate("Disabled"); ?></span>';
-                  }
+                  return formatEnabledDisabledStatus(value);
                }
             },
             {

@@ -124,14 +124,6 @@ $this->headTitle($title);
 
    var clients = null;
 
-   function formatEnabledDisabledStatus(value) {
-      if(value) {
-         return '<span class="label label-success"><?php echo $this->translate("Enabled"); ?></span>';
-      } else {
-         return '<span class="label label-danger"><?php echo $this->translate("Disabled"); ?></span>';
-      }
-   }
-
    function formatUname(value) {
       if(value.toLowerCase().search("suse") > -1) {
          return '<img src="<?php echo $this->basePath('img/icons/os/suse.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';

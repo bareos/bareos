@@ -468,3 +468,11 @@ function formatJobStatus(data) {
    return output;
 }
 
+function formatEnabledDisabledStatus(value) {
+   if(value) {
+      return '<span class="label label-success">' + iJS._("Enabled") + '</span>';
+   } else {
+      return '<span class="label label-danger">' + iJS._("Disabled") + '</span>';
+   }
+}
+
