@@ -207,10 +207,6 @@ target_compile_definitions(
 )
 set_target_properties(version-obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-if(HAVE_LIBDL)
-  target_link_libraries(bareos dl)
-endif()
-
 target_link_libraries(
   bareos
   bareosfastlz

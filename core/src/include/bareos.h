@@ -81,7 +81,7 @@
 #define _LANGUAGE_C_PLUS_PLUS 1
 #endif
 
-#include "hostconfig.h"
+#include "config.h"
 
 #if HAVE_AIX_OS
 #define _LINUX_SOURCE_COMPAT 1
@@ -224,9 +224,6 @@ extern "C" {
 
 #if defined(HAVE_WIN32)
 #include "winapi.h"
-#include "winhost.h"
-#else
-#include "host.h"
 #endif
 
 #ifndef HAVE_ZLIB_H

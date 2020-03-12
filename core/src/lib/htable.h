@@ -44,7 +44,7 @@
 #endif
 
 
-#include "include/hostconfig.h"
+#include "include/config.h"
 
 #ifdef HAVE_HPUX_OS
 #pragma pack(push, 4)

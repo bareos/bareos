@@ -624,11 +624,6 @@ endif()
 
 set(largefile_support "")
 
-set(got_readline "${READLINE_FOUND}")
-if("${READLINE_FOUND}")
-  set(HAVE_READLINE 1)
-endif()
-
 if("${PAM_FOUND}")
   set(HAVE_PAM 1)
 endif()
@@ -834,7 +829,7 @@ message("   File Daemon Group:            ${fd_group} ")
 message(" ")
 message("   Large file support:           ${largefile_support}")
 message(
-  "   readline support:             ${got_readline} ROOT_DIR:${Readline_ROOT_DIR} INCLUDE_DIR:${Readline_INCLUDE_DIR} LIBRARY:${Readline_LIBRARY}
+  "   readline support:             ROOT_DIR:${Readline_ROOT_DIR} INCLUDE_DIR:${Readline_INCLUDE_DIR} LIBRARY:${Readline_LIBRARY}
  "
 )
 message(

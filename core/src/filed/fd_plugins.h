@@ -44,7 +44,7 @@
 
 #include <sys/types.h>
 
-#include "include/hostconfig.h"
+#include "include/config.h"
 
 #include "lib/version.h"
 #include "include/bc_types.h"

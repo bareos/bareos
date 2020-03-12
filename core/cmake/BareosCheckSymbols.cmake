@@ -30,11 +30,6 @@ endif()
 check_symbol_exists(poll poll.h HAVE_POLL)
 check_symbol_exists(alloca alloca.h HAVE_ALLOCA)
 
-cmake_push_check_state()
-set(CMAKE_REQUIRED_LIBRARIES ${DL_LIBRARIES})
-check_symbol_exists(dlerror dlfcn.h HAVE_DLERROR)
-cmake_pop_check_state()
-
 check_symbol_exists(va_copy stdarg.h HAVE_VA_COPY)
 
 cmake_push_check_state()

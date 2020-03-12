@@ -42,16 +42,8 @@
 /* Define if you have lzo lib */
 #define HAVE_LZO 1
 
-/* Define to 1 if you have the <lzo/lzoconf.h> header file. */
-#define HAVE_LZO_LZOCONF_H 1
-
 /* File daemon specif libraries */
 #define FDLIBS 1
-
-/* What kind of signals we have */
-/*#define HAVE_POSIX_SIGNALS 1 */
-/* #undef HAVE_BSD_SIGNALS */
-/* #undef HAVE_USG_SIGHOLD */
 
 /* Set to correct scanf value for long long int */
 #define lld "lld"
@@ -74,30 +66,17 @@
 /* Define to 1 if you have the <fcntl.h> header file. */
 #define HAVE_FCNTL_H 1
 
-/* Define to 1 if you have the `getcwd' function. */
-#define HAVE_GETCWD 1
-
 /* Define to 1 if you have the `gethostid' function. */
 #define HAVE_GETHOSTID 1
-
-/* Define to 1 if you have the `gethostname' function. */
-#define HAVE_GETHOSTNAME 1
 
 /* Define to 1 if you have the `getmntent' function. */
 /*#define HAVE_GETMNTENT 1 */
 
 /* Define to 1 if you have the `getpid' function. */
-#define HAVE_GETPID 1
 #define getpid _getpid
-
-/* Define to 1 if you have the `gettimeofday' function. */
-#define HAVE_GETTIMEOFDAY 1
 
 /* Define to 1 if you have the <grp.h> header file. */
 /*#define HAVE_GRP_H 1*/
-
-/* Define to 1 if you have the `inet_pton' function. */
-/* #undef HAVE_INET_PTON */
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #define HAVE_INTTYPES_H 1
@@ -114,9 +93,6 @@
 /* Define to 1 if you have the `lstat' function. */
 #define HAVE_LSTAT 1
 
-/* Define to 1 if you have the <memory.h> header file. */
-#define HAVE_MEMORY_H 1
-
 /* Define to 1 if you have the <mtio.h> header file. */
 /* #undef HAVE_MTIO_H */
 
@@ -131,9 +107,6 @@
 
 /* Define to 1 if you have the <resolv.h> header file. */
 /* #undef HAVE_RESOLV_H */
-
-/* Define to 1 if you have the `select' function. */
-#define HAVE_SELECT 1
 
 /* Define to 1 if you have the `setenv' function. */
 /* #undef HAVE_SETENV */
@@ -158,15 +131,6 @@
 
 #undef HAVE_NL_LANGINFO
 
-/* Define to 1 if you have the `setpgid' function. */
-#define HAVE_SETPGID 1
-
-/* Define to 1 if you have the `setpgrp' function. */
-#define HAVE_SETPGRP 1
-
-/* Define to 1 if you have the `setsid' function. */
-#define HAVE_SETSID 1
-
 /* Define to 1 if you have the `signal' function. */
 /*#define HAVE_SIGNAL 1 */
 
@@ -181,9 +145,6 @@
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #define HAVE_STDLIB_H 1
-
-/* Define to 1 if you have the `strcasecmp' function. */
-#define HAVE_STRCASECMP 1
 
 /* Define to 1 if you have the `strerror' function. */
 #define HAVE_STRERROR 1
@@ -403,9 +364,6 @@
 
 /* Define to 1 if you have the `__builtin_va_copy' function. */
 #define HAVE___BUILTIN_VA_COPY 1
-
-/* Define to 1 if readline support should be enabled */
-#define HAVE_READLINE 1
 
 /* Directory for PID files */
 #define _PATH_BAREOS_PIDDIR "%TEMP%"

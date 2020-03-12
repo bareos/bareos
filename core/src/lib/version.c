@@ -19,7 +19,7 @@
    02110-1301, USA.
 */
 #include <stdio.h>
-#include "include/host.h"
+#include "include/config.h"
 #include "version.h"
 
 #if !defined BAREOS_VERSION

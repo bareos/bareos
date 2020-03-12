@@ -33,7 +33,7 @@
 #ifndef BAREOS_LIB_TREE_H_
 #define BAREOS_LIB_TREE_H_
 
-#include "include/hostconfig.h"
+#include "include/config.h"
 
 #ifdef HAVE_HPUX_OS
 #pragma pack(push, 4)
