@@ -134,6 +134,15 @@ $this->headTitle($title);
       return '<a href="<?php echo $this->basePath() . '/job/index?jobname='; ?>'+value+'">'+value+'</a>';
    }
 
+   function formatStatusClient(value) {
+      if(value) {
+         return '<span class="label label-success"><?php echo $this->translate("Enabled"); ?></span>';
+      }
+      else {
+         return '<span class="label label-danger"><?php echo $this->translate("Disabled"); ?></span>';
+      }
+   }
+
    function attachJobActionsTable() {
       jobactions = $('#jobactions').bootstrapTable({
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
@@ -163,12 +172,7 @@ $this->headTitle($title);
                field: 'enabled',
                sortable: true,
                formatter: function(value) {
-                  if(value) {
-                     return '<span class="label label-success"><?php echo $this->translate("Enabled"); ?></span>';
-                  }
-                  else {
-                     return '<span class="label label-danger"><?php echo $this->translate("Disabled"); ?></span>';
-                  }
+                  return formatStatusClient(value);
                }
             },
             {
