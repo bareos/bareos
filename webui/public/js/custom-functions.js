@@ -540,3 +540,28 @@ function formatUpdateStatus(value, row, index) {
       return '<span class="label label-success" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Up to date">'+row.installed_fd+'</span>';
    }
 }
+
+function clientsActionButtonsFormatter(value, row, index, basePath) {
+   let restoreButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/restore/index?client=' + row.name + '" title="' + iJS._("Restore") + '" id="btn-1"><span class="glyphicon glyphicon-import"></span></a>';
+   let statusClientButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/client/status?client=' + row.name + '" title="' + iJS._("Status") + '" id="btn-1"><span class="glyphicon glyphicon-search"></span></a>';
+   let disableButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/client/index?action=disable&client=' + row.name + '" title="' + iJS._("Disable") + '" id="btn-1"><span class="glyphicon glyphicon-remove"></span></a>';
+   let enableButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/client/index?action=enable&client=' + row.name + '" title="' + iJS._("Enable") + '" id="btn-1"><span class="glyphicon glyphicon-ok"></span></a>';
+   let downloadButton = '<a href="' + row.url_package + '" target="_blank"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="'+ iJS._("Download update") + '"><span class="glyphicon glyphicon-download-alt"></span></button></a>';
+
+   if(row.enabled) {
+      if(row.update_fd === true) {
+         return restoreButton + '&nbsp;' + statusClientButton + '&nbsp;' + disableButton + '&nbsp;' + downloadButton;
+      }
+      else {
+         return restoreButton + '&nbsp;' + statusClientButton + '&nbsp;' + disableButton;
+      }
+   }
+   else {
+      if(row.update_fd === true) {
+         return restoreButton + '&nbsp;' + statusClientButton + '&nbsp;' + enableButton + '&nbsp;' + downloadButton;
+      }
+      else {
+         return restoreButton + '&nbsp;' + statusClientButton + '&nbsp;' + enableButton;
+      }
+   }
+}
