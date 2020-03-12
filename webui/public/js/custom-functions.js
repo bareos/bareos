@@ -566,6 +566,17 @@ function clientsActionButtonsFormatter(value, row, index, basePath) {
    }
 }
 
+function scheduleActionButtonsFormatter(value, row, index, basePath) {
+   let disableButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/schedule/index?action=disable&schedule=' + row.name + '" title="' + iJS._("Disable") + '" id="btn-1"><span class="glyphicon glyphicon-remove"></span></a>';
+   let enableButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/schedule/index?action=enable&schedule=' + row.name + '" title="' + iJS._("Enable") + '" id="btn-1"><span class="glyphicon glyphicon-ok"></span></a>';
+
+   if(row.enabled) {
+      return disableButton;
+   } else {
+      return enableButton;
+   }
+}
+
 function formatScheduleName(value, basePath) {
    return '<a href="' + basePath + '/schedule/details?schedule=' + value + '">' + value + '</a>';
 }
