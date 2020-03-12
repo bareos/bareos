@@ -122,55 +122,8 @@ $this->headTitle($title);
 
 <script>
 
+   var basePath = "<?php echo $this->basePath(); ?>";
    var clients = null;
-
-   function formatUname(value) {
-      if(value.toLowerCase().search("suse") > -1) {
-         return '<img src="<?php echo $this->basePath('img/icons/os/suse.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
-      }
-      else if(value.toLowerCase().search("sle") > -1) {
-         return '<img src="<?php echo $this->basePath('img/icons/os/suse.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
-      }
-      else if(value.toLowerCase().search("debian") > -1) {
-         return '<img src="<?php echo $this->basePath('img/icons/os/debian.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
-      }
-      else if(value.toLowerCase().search("fedora") > -1) {
-         return '<img src="<?php echo $this->basePath('img/icons/os/fedora.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
-      }
-      else if(value.toLowerCase().search("centos") > -1) {
-         return '<img src="<?php echo $this->basePath('img/icons/os/centos.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
-      }
-      else if(value.toLowerCase().search("redhat") > -1) {
-         return '<img src="<?php echo $this->basePath('img/icons/os/redhat.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
-      }
-      else if(value.toLowerCase().search("ubuntu") > -1) {
-         return '<img src="<?php echo $this->basePath('img/icons/os/ubuntu.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
-      }
-      else if(value.toLowerCase().search("univention") > -1) {
-         return '<img src="<?php echo $this->basePath('img/icons/os/univention.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
-      }
-      else if(value.toLowerCase().search("windows") > -1) {
-         return '<img src="<?php echo $this->basePath('img/icons/os/windows.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
-      }
-      else if(value.toLowerCase().search("win32") > -1) {
-         return '<img src="<?php echo $this->basePath('img/icons/os/windows.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
-      }
-      else if(value.toLowerCase().search("win64") > -1) {
-         return '<img src="<?php echo $this->basePath('img/icons/os/windows.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
-      }
-      else if(value.toLowerCase().search("macos") > -1) {
-         return '<img src="<?php echo $this->basePath('img/icons/os/macos.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
-      }
-      else if(value.toLowerCase().search("solaris") > -1) {
-         return '<img src="<?php echo $this->basePath('img/icons/os/sunsolaris.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
-      }
-      else if(value.toLowerCase().search("freebsd") > -1) {
-         return '<img src="<?php echo $this->basePath('img/icons/os/freebsd.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
-      }
-      else {
-         return '';
-      }
-   }
 
    function formatUpdateStatus(value, row, index) {
       if(row.available_fd === "" || row.available_fd === null || row.available_fd === undefined) {
@@ -245,7 +198,7 @@ $this->headTitle($title);
                field: 'uname',
                sortable: true,
                formatter: function(value) {
-                  return formatUname(value);
+                  return formatUname(value, basePath);
                }
             },
             {
