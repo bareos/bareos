@@ -22,6 +22,7 @@
 import BareosFdPluginBaseclass
 import bareosfd
 import bareos_fd_consts
+import ConfigParser as configparser
 import datetime
 import dateutil.parser
 import io
@@ -288,32 +289,13 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.options[name] = int(value)
 
     def __parse_options(self, context):
-        # Set our default values
-        if "nb_worker" not in self.options:
-            self.options["nb_worker"] = 24
-        if "queue_size" not in self.options:
-            self.options["queue_size"] = 1000
-        if "prefetch_size" not in self.options:
-            self.options["prefetch_size"] = 10 * 1024 * 1024
         self.__parse_options_bucket("buckets_include")
         self.__parse_options_bucket("buckets_exclude")
-
-        # Do a couple of sanitization
-        if "secure" in self.options:
-            old = self.options["secure"]
-            self.options["secure"] = str2bool(old)
-
-        self.__parse_opt_int("port")
-        self.__parse_opt_int("nb_worker")
-        self.__parse_opt_int("prefetch_size")
-        self.__parse_opt_int("queue_size")
-        self.__parse_opt_int("prefetch_size")
 
         if "debug" in self.options:
             old = self.options["debug"]
             self.options["debug"] = str2bool(old)
 
-            # Setup debugging
             if self.options["debug"] is True:
                 global debug
                 debug = True
@@ -326,7 +308,84 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             self.options["accurate"] = True
 
     def parse_plugin_definition(self, context, plugindef):
+        log("Parse Plugin Definition")
+        config_file = self.options.get("config_file")
+        if config_file:
+            if not self.__parse_config_file(context, config_file):
+                return bRCs["bRC_Error"]
         return bRCs["bRC_OK"]
+
+    def __parse_config_file(self, context, config_file):
+        """
+        Parse the config file given in the config_file plugin option
+        """
+        bareosfd.DebugMessage(
+            context,
+            100,
+            "BareosFdPluginLibcloud: parse_config_file(): parse %s\n"
+            % (config_file),
+        )
+
+        self.config = configparser.ConfigParser()
+
+        try:
+            self.config.readfp(open(config_file))
+        except IOError as err:
+            bareosfd.JobMessage(
+                context,
+                bJobMessageType["M_FATAL"],
+                "BareosFdPluginLibcloud: Error reading config file %s: %s\n"
+                % (self.options["config_file"], err.strerror),
+            )
+            return False
+
+        return self.__check_config(context, config_file)
+
+    def __check_config(self, context, config_file):
+        """
+        Check the configuration and set or override options if necessary,
+        considering mandatory: username and password in the [credentials] section
+        """
+        mandatory_sections = ["credentials", "host", "misc"]
+        mandatory_options = {}
+        mandatory_options["credentials"] = ["username", "password"]
+        mandatory_options["host"] = ["hostname", "port", "provider", "tls"]
+        mandatory_options["misc"] = ["nb_worker", "queue_size", "prefetch_size"]
+
+        #this maps config file options to libcloud options
+        option_map = {"hostname":"host", "port":"port", "provider":"provider",
+        "username":"key", "password":"secret"}
+
+        for section in mandatory_sections:
+            if not self.config.has_section(section):
+                log("BareosFdPluginLibcloud: Section [%s] missing in config file %s\n"
+                % (section, config_file))
+                return False
+
+            for option in mandatory_options[section]:
+                if not self.config.has_option(section, option):
+                    log("BareosFdPluginLibcloud: Option [%s] missing in Section %s\n"
+                    % (option, section))
+                    return False
+
+                value = self.config.get(section, option)
+
+                try:
+                    if option == "tls":
+                        self.options["secure"] = str2bool(value)
+                    elif option == "nb_worker":
+                        self.options["nb_worker"] = int(value)
+                    elif option == "queue_size":
+                        self.options["queue_size"] = int(value)
+                    elif option == "prefetch_size":
+                        self.options["prefetch_size"] = eval(value)
+                    else:
+                        self.options[option_map[option]] = value
+                except:
+                    log("Could not evaluate: %s in config file %s" % (value, config_file))
+                    return False
+
+        return True
 
     def start_backup_job(self, context):
         # We force an action to the backend, to test our params
