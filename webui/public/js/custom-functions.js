@@ -566,6 +566,10 @@ function clientsActionButtonsFormatter(value, row, index, basePath) {
    }
 }
 
+function formatScheduleName(value, basePath) {
+   return '<a href="' + basePath + '/schedule/details?schedule=' + value + '">' + value + '</a>';
+}
+
 function formatClientName(value, basePath) {
    return '<a href="' + basePath + '/client/details/' + value + '">' + value + '</a>';
 }
