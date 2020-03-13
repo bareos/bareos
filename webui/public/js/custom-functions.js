@@ -565,6 +565,10 @@ function formatClientName(value, basePath) {
    return '<a href="' + basePath + '/client/details/' + value + '">' + value + '</a>';
 }
 
+function formatFilesetName(value, row, index, basePath) {
+   return '<a href="' + basePath + '/fileset/details/' + row.filesetid + '">' + row.fileset + '</a>';
+}
+
 function formatLogMessage(value) {
    var msg = (value).replace(/\n/g, "<br />");
 
