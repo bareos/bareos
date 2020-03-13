@@ -209,6 +209,8 @@ $this->headTitle($title);
 
 <script>
 
+   var basePath = "<?php echo $this->basePath(); ?>";
+
    var rsLabel1 = "1 " + iJS._("day");
    var rsLabel2 = "3 " + iJS._("days");
    var rsLabel3 = "7 " + iJS._("days");
@@ -374,10 +376,6 @@ $this->headTitle($title);
 
    }
 
-   function formatJobId(value) {
-      return '<a href="<?php echo $this->basePath() . '/job/details/'; ?>'+value+'" title="<?php echo $this->translate("View Job Details"); ?>">'+value+'</a>';
-   }
-
    function formatJobName(value) {
       return '<a href="<?php echo $this->basePath() . '/job/index?jobname='; ?>'+value+'&period='+displayRange+'">'+value+'</a>';
    }
@@ -411,7 +409,7 @@ $this->headTitle($title);
                field: 'jobid',
                sortable: true,
                formatter: function(value) {
-                  return formatJobId(value);
+                  return formatJobId(value, basePath);
                }
             },
             {

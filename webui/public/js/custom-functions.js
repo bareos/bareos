@@ -102,6 +102,10 @@ function initDTLocale() {
    iJS.i18n.try_load_lang();
 }
 
+function formatJobId(value, basePath) {
+      return '<a href="' + basePath + '/job/details/' + value + '" title="' + iJS._("View Job Details") + '">' + value + '</a>';
+}
+
 function formatJobType(data) {
    var output;
    switch(data) {
