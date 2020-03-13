@@ -257,19 +257,7 @@ $this->headTitle($title);
             {
                field: 'logtext',
                formatter: function(value) {
-                  var msg = (value).replace(/\n/g, "<br />");
-                  if(msg.search("Error") > 0) {
-                     return msg.replace(/Error/g, '<span class="bg-danger text-danger">Error</span>');
-                  }
-                  else if(msg.search("error") > 0) {
-                     return msg.replace(/error/g, '<span class="bg-danger text-danger">error</span>');
-                  }
-                  else if(msg.search("Warning") > 0) {
-                     return msg.replace(/Warning/g, '<span class="bg-warning text-warning">Warning</span>');
-                  }
-                  else {
-                     return msg;
-                  }
+                  return formatLogMessage(value);
                }
             }
          ]

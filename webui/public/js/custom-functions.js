@@ -565,6 +565,23 @@ function formatClientName(value, basePath) {
    return '<a href="' + basePath + '/client/details/' + value + '">' + value + '</a>';
 }
 
+function formatLogMessage(value) {
+   var msg = (value).replace(/\n/g, "<br />");
+
+   if(msg.search("Error") > 0) {
+      return msg.replace(/Error/g, '<span class="bg-danger text-danger">Error</span>');
+   }
+   else if(msg.search("error") > 0) {
+      return msg.replace(/error/g, '<span class="bg-danger text-danger">error</span>');
+   }
+   else if(msg.search("Warning") > 0) {
+      return msg.replace(/Warning/g, '<span class="bg-warning text-warning">Warning</span>');
+   }
+   else {
+      return msg;
+   }
+}
+
 function clientsActionButtonsFormatter(value, row, index, basePath) {
    let restoreButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/restore/index?client=' + row.name + '" title="' + iJS._("Restore") + '" id="btn-1"><span class="glyphicon glyphicon-import"></span></a>';
    let statusClientButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/client/status?client=' + row.name + '" title="' + iJS._("Status") + '" id="btn-1"><span class="glyphicon glyphicon-search"></span></a>';
