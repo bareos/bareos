@@ -609,8 +609,64 @@ function scheduleActionButtonsFormatter(value, row, index, basePath) {
 }
 
 function jobActionButtonsFormatter(value, row, index, basePath) {
-   let jobDetailsButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/job/details/' + row.jobid + '" title="'+ iJS._("View Job Details") + '" id="btn-0"><span class="glyphicon glyphicon-search"></span></a>';
-   let showFilesButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/restore/?mergefilesets=1&mergejobs=1&client=' + row.client + '&jobid=' + row.jobid + '" title="' + iJS._("Show Files") + '" id="btn-1"><span class="glyphicon glyphicon-folder-open"></span></a>';
+   let jobDetailsButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/job/details/' + row.jobid + '" title="' + iJS._("View Job Details") + '" id="btn-0"><span class="glyphicon glyphicon-search"></span></a>';
+   let jobRerunButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/job/index?action=rerun&jobid=' + row.jobid + '" title="' + iJS._('Rerun') + '" id="btn-1"><span class="glyphicon glyphicon-repeat"></span></a>';
+   let jobRestoreButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/restore/?mergefilesets=1&mergejobs=1&client=' + row.client + '&jobid=' + row.jobid + '" title="' + iJS._("Restore") + '" id="btn-1"><span class="glyphicon glyphicon-import"></span></a>';
+   let jobCancelButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/job/cancel/' + row.jobid + '" title="' + iJS._("Cancel") + '" id="btn-1"><span class="glyphicon glyphicon-trash"></span></a>';
 
-      return jobDetailsButton + '&nbsp;' + showFilesButton;
+   switch(row.jobstatus) {
+      case 'T':
+      case 'W':
+         switch(row.type) {
+            case 'B':
+               return jobDetailsButton + '&nbsp;' + jobRerunButton + '&nbsp;' + jobRestoreButton;
+            case 'C':
+               return jobDetailsButton + '&nbsp;' + jobRestoreButton;
+            case 'R':
+               return jobDetailsButton;
+         }
+         break;
+      case 'E':
+      case 'e':
+      case 'f':
+      case 'A':
+         switch(row.type) {
+            case 'B':
+               return jobDetailsButton + '&nbsp;' + jobRerunButton;
+         }
+         break;
+      case 'F':
+      case 'S':
+      case 'm':
+      case 'M':
+      case 's':
+      case 'j':
+      case 'c':
+      case 'd':
+      case 't':
+      case 'p':
+      case 'q':
+      case 'C':
+      case 'R':
+      case 'l':
+         switch(row.type) {
+            case 'R':
+               switch(row.jobstatus) {
+                  case 'R':
+                  case 'l':
+                     return jobDetailsButton + '&nbsp;' + jobCancelButton;
+                  default:
+                     return jobDetailsButton;
+               }
+               break;
+            case 'B':
+            case 'C':
+               return jobDetailsButton + '&nbsp;' + jobCancelButton;
+            default:
+               return jobDetailsButton;
+         }
+         break;
+      default:
+         return '';
+   }
 }

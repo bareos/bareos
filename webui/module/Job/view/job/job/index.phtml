@@ -210,6 +210,8 @@ $this->headTitle($title);
 <script>
 
    var basePath = "<?php echo $this->basePath(); ?>";
+   var result = '<?php echo str_replace(array("\n","\r"), "", $this->result); ?>';
+   var displayRange = <?php echo $this->period; ?>;
 
    var rsLabel1 = "1 " + iJS._("day");
    var rsLabel2 = "3 " + iJS._("days");
@@ -223,20 +225,6 @@ $this->headTitle($title);
    var rsLabel10 = "5 " + iJS._("years");
    var rsLabel11 = "10 " + iJS._("years");
 
-   var rangeslider = $("#rangeslider").bootstrapSlider({
-      ticks: [1,3,7,14,31,90,180,365,730,1825,3650],
-      ticks_labels: [rsLabel1, rsLabel2, rsLabel3, rsLabel4, rsLabel5, rsLabel6, rsLabel7, rsLabel8, rsLabel9, rsLabel10, rsLabel11],
-      ticks_positions: [0,5,10,18,26,36,46,57,68,82,100],
-      step: 1,
-      lock_to_ticks: true,
-      tooltip: "hide",
-      handle: "round",
-      value: <?php echo $this->period; ?>
-   });
-
-   var jobtable = null;
-   var displayRange = <?php echo $this->period; ?>;
-
    // Table columns filter
    var jobid = null;
    var jobname = iJS._('<?php if($this->jobname !== "all") echo $this->jobname; ?>');
@@ -249,6 +237,17 @@ $this->headTitle($title);
    var jobbytes = null;
    var joberrors = null;
    var jobstatus = iJS._('<?php if($this->status !== "all") echo $this->status; ?>');
+
+   var rangeslider = $("#rangeslider").bootstrapSlider({
+      ticks: [1,3,7,14,31,90,180,365,730,1825,3650],
+      ticks_labels: [rsLabel1, rsLabel2, rsLabel3, rsLabel4, rsLabel5, rsLabel6, rsLabel7, rsLabel8, rsLabel9, rsLabel10, rsLabel11],
+      ticks_positions: [0,5,10,18,26,36,46,57,68,82,100],
+      step: 1,
+      lock_to_ticks: true,
+      tooltip: "hide",
+      handle: "round",
+      value: <?php echo $this->period; ?>
+   });
 
    function resetSearchFilters() {
       $('#jobtable').bootstrapTable('clearFilterControl');
@@ -311,73 +310,8 @@ $this->headTitle($title);
       return html.join('');
    }
 
-   function jobActionButtonsFormatter(value, row, index) {
-
-      let jobDetailsButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/job/details/'+row.jobid+'" title="<?php echo $this->translate("View Job Details"); ?>" id="btn-0"><span class="glyphicon glyphicon-search"></span></a>';
-      let jobRerunButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/index?action=rerun&jobid='; ?>'+row.jobid+'" title="<?php echo $this->translate('Rerun'); ?>" id="btn-1"><span class="glyphicon glyphicon-repeat"></span></a>';
-      let jobRestoreButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/restore/?mergefilesets=1&mergejobs=1&client='+row.client+'&jobid='+row.jobid+'" title="<?php echo $this->translate("Restore"); ?>" id="btn-1"><span class="glyphicon glyphicon-import"></span></a>';
-      let jobCancelButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/cancel/'; ?>'+row.jobid+'" title="<?php echo $this->translate("Cancel"); ?>" id="btn-1"><span class="glyphicon glyphicon-trash"></span></a>';
-
-      switch(row.jobstatus) {
-         case 'T':
-         case 'W':
-            switch(row.type) {
-               case 'B':
-                  return jobDetailsButton + '&nbsp;' + jobRerunButton + '&nbsp;' + jobRestoreButton;
-               case 'C':
-                  return jobDetailsButton + '&nbsp;' + jobRestoreButton;
-               case 'R':
-                  return jobDetailsButton;
-            }
-            break;
-         case 'E':
-         case 'e':
-         case 'f':
-         case 'A':
-            switch(row.type) {
-               case 'B':
-                  return jobDetailsButton + '&nbsp;' + jobRerunButton;
-            }
-            break;
-         case 'F':
-         case 'S':
-         case 'm':
-         case 'M':
-         case 's':
-         case 'j':
-         case 'c':
-         case 'd':
-         case 't':
-         case 'p':
-         case 'q':
-         case 'C':
-         case 'R':
-         case 'l':
-            switch(row.type) {
-               case 'R':
-                  switch(row.jobstatus) {
-                     case 'R':
-                     case 'l':
-                        return jobDetailsButton + '&nbsp;' + jobCancelButton;
-                     default:
-                        return jobDetailsButton;
-                  }
-                  break;
-               case 'B':
-               case 'C':
-                  return jobDetailsButton + '&nbsp;' + jobCancelButton;
-               default:
-                  return jobDetailsButton;
-            }
-            break;
-         default:
-            return '';
-      }
-
-   }
-
    function attachJobTable() {
-      jobtable = $('#jobtable').bootstrapTable({
+      $('#jobtable').bootstrapTable({
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
          cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
          cookieIdTable: 'dashboard_table_jobs_last_status',
@@ -465,7 +399,7 @@ $this->headTitle($title);
             {
                field: 'action',
                formatter: function(value, row, index) {
-                  return jobActionButtonsFormatter(value, row, index);
+                  return jobActionButtonsFormatter(value, row, index, basePath);
                }
             }
          ]
@@ -476,8 +410,6 @@ $this->headTitle($title);
 
       setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
       setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
-
-      var result = '<?php echo str_replace(array("\n","\r"), "", $this->result); ?>';
 
       if(result.length > 0) {
          $("#modal-002").modal();
