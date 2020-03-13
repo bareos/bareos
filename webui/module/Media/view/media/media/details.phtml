@@ -271,7 +271,7 @@ $this->headTitle($title);
                field:  'client',
                sortable: true,
                formatter: function(value) {
-                  return '<a href="<?php echo $this->basePath() . '/client/details/'; ?>'+value+'">'+value+'</a>';
+                  return formatClientName(value, basePath);
                }
             },
             {

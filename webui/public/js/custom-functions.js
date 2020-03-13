@@ -114,6 +114,10 @@ function formatJobName(value, basePath, displayRange) {
    }
 }
 
+function formatClientName(value, basePath) {
+   return '<a href="' + basePath + '/client/details/' + value + '">' + value + '</a>';
+}
+
 function formatJobType(data) {
    var output;
    switch(data) {
