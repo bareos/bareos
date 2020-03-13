@@ -468,3 +468,119 @@ function formatJobStatus(data) {
    return output;
 }
 
+function formatEnabledDisabledStatus(value) {
+   if(value) {
+      return '<span class="label label-success">' + iJS._("Enabled") + '</span>';
+   } else {
+      return '<span class="label label-danger">' + iJS._("Disabled") + '</span>';
+   }
+}
+
+function formatUname(value, basePath) {
+   if(value.toLowerCase().search("suse") > -1) {
+      return '<img src="' + basePath + '/img/icons/os/suse.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+   }
+   else if(value.toLowerCase().search("sle") > -1) {
+      return '<img src="' + basePath + '/img/icons/os/suse.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+   }
+   else if(value.toLowerCase().search("debian") > -1) {
+      return '<img src="' + basePath + '/img/icons/os/debian.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+   }
+   else if(value.toLowerCase().search("fedora") > -1) {
+      return '<img src="' + basePath + '/img/icons/os/fedora.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+   }
+   else if(value.toLowerCase().search("centos") > -1) {
+      return '<img src="' + basePath + '/img/icons/os/centos.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+   }
+   else if(value.toLowerCase().search("redhat") > -1) {
+      return '<img src="' + basePath + '/img/icons/os/redhat.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+   }
+   else if(value.toLowerCase().search("ubuntu") > -1) {
+      return '<img src="' + basePath + '/img/icons/os/ubuntu.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+   }
+   else if(value.toLowerCase().search("univention") > -1) {
+      return '<img src="' + basePath + '/img/icons/os/univention.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+   }
+   else if(value.toLowerCase().search("windows") > -1) {
+      return '<img src="' + basePath + '/img/icons/os/windows.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+   }
+   else if(value.toLowerCase().search("win32") > -1) {
+      return '<img src="' + basePath + '/img/icons/os/windows.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+   }
+   else if(value.toLowerCase().search("win64") > -1) {
+      return '<img src="' + basePath + '/img/icons/os/windows.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+   }
+   else if(value.toLowerCase().search("macos") > -1) {
+      return '<img src="' + basePath + '/img/icons/os/macos.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+   }
+   else if(value.toLowerCase().search("solaris") > -1) {
+      return '<img src="' + basePath + '/img/icons/os/sunsolaris.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+   }
+   else if(value.toLowerCase().search("freebsd") > -1) {
+      return '<img src="' + basePath + '/img/icons/os/freebsd.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+   }
+   else {
+      return '';
+   }
+}
+
+function formatUpdateStatus(value, row, index) {
+   if(row.available_fd === "" || row.available_fd === null || row.available_fd === undefined) {
+      return '<span class="label label-default" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Unknown update status">'+row.installed_fd+'</span>';
+   }
+   if(row.update_fd === true) {
+      if(row.update_dird === true) {
+         return '<span class="label label-danger" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Version '+row.available_fd+' is available">'+row.installed_fd+'</span> <span class="text-danger" data-toggle="tooltip" data-placement="top">(Director upgrade '+row.available_dird+' required first)</span>';
+      }
+      else {
+         return '<span class="label label-danger" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Version '+row.available_fd+' is available">'+row.installed_fd+'</span>';
+      }
+   }
+   else {
+      return '<span class="label label-success" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Up to date">'+row.installed_fd+'</span>';
+   }
+}
+
+function clientsActionButtonsFormatter(value, row, index, basePath) {
+   let restoreButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/restore/index?client=' + row.name + '" title="' + iJS._("Restore") + '" id="btn-1"><span class="glyphicon glyphicon-import"></span></a>';
+   let statusClientButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/client/status?client=' + row.name + '" title="' + iJS._("Status") + '" id="btn-1"><span class="glyphicon glyphicon-search"></span></a>';
+   let disableButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/client/index?action=disable&client=' + row.name + '" title="' + iJS._("Disable") + '" id="btn-1"><span class="glyphicon glyphicon-remove"></span></a>';
+   let enableButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/client/index?action=enable&client=' + row.name + '" title="' + iJS._("Enable") + '" id="btn-1"><span class="glyphicon glyphicon-ok"></span></a>';
+   let downloadButton = '<a href="' + row.url_package + '" target="_blank"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="'+ iJS._("Download update") + '"><span class="glyphicon glyphicon-download-alt"></span></button></a>';
+
+   if(row.enabled) {
+      if(row.update_fd === true) {
+         return restoreButton + '&nbsp;' + statusClientButton + '&nbsp;' + disableButton + '&nbsp;' + downloadButton;
+      }
+      else {
+         return restoreButton + '&nbsp;' + statusClientButton + '&nbsp;' + disableButton;
+      }
+   }
+   else {
+      if(row.update_fd === true) {
+         return restoreButton + '&nbsp;' + statusClientButton + '&nbsp;' + enableButton + '&nbsp;' + downloadButton;
+      }
+      else {
+         return restoreButton + '&nbsp;' + statusClientButton + '&nbsp;' + enableButton;
+      }
+   }
+}
+
+function scheduleActionButtonsFormatter(value, row, index, basePath) {
+   let disableButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/schedule/index?action=disable&schedule=' + row.name + '" title="' + iJS._("Disable") + '" id="btn-1"><span class="glyphicon glyphicon-remove"></span></a>';
+   let enableButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/schedule/index?action=enable&schedule=' + row.name + '" title="' + iJS._("Enable") + '" id="btn-1"><span class="glyphicon glyphicon-ok"></span></a>';
+
+   if(row.enabled) {
+      return disableButton;
+   } else {
+      return enableButton;
+   }
+}
+
+function formatScheduleName(value, basePath) {
+   return '<a href="' + basePath + '/schedule/details?schedule=' + value + '">' + value + '</a>';
+}
+
+function formatClientName(value, basePath) {
+   return '<a href="' + basePath + '/client/details/' + value + '">' + value + '</a>';
+}

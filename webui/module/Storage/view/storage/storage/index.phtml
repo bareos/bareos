@@ -49,12 +49,27 @@ $this->headTitle($title);
 
 <div class="panel-body">
 
-<table class="table table-no-bordered table-hover" id="storage">
+<table
+   class="table table-no-bordered table-hover"
+   id="storagedevices"
+   data-filter-control="true">
 
 <thead class="bg-primary">
-   <th><?php echo $this->translate("Name"); ?></th>
-   <th><?php echo $this->translate("Autochanger"); ?></th>
-   <th><?php echo $this->translate("Actions"); ?></th>
+   <th
+      data-field="name"
+      data-filter-control="input"
+      data-filter-control-placeholder="<?php echo $this->translate("Name"); ?>">
+      <?php echo $this->translate("Name"); ?>
+   </th>
+   <th
+      data-field="autochanger"
+      data-filter-control="input"
+      data-filter-control-placeholder="<?php echo $this->translate("Autochanger"); ?>">
+      <?php echo $this->translate("Autochanger"); ?>
+   </th>
+   <th>
+      <?php echo $this->translate("Actions"); ?>
+   </th>
 </thead>
 
 </table>
@@ -66,7 +81,9 @@ $this->headTitle($title);
 
 <?php
    echo $this->headScript()->prependFile($this->basePath() . '/js/custom-functions.js');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table-filter-control.min.css');
    echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table.min.css');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-filter-control.min.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-locale-all.min.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-cookie.min.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table.min.js');
@@ -74,10 +91,23 @@ $this->headTitle($title);
 
 <script>
 
-   var storage = null;
+   var storagedevices = null;
 
-   function getStorage() {
-      storage = $('#storage').bootstrapTable({
+   function storagedeviceActionButtonsFormatter(value, row, index) {
+
+      let deviceStatusButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/storage/status?storage='+row.name+'" title="<?php echo $this->translate("Status"); ?>" id="btn-1"><span class="glyphicon glyphicon-search"></span></a>';
+      let manageAutochangerButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/storage/details/'; ?>'+row.name+'" title="<?php echo $this->translate("Manage autochanger"); ?>" id="btn-1"><span class="glyphicon glyphicon-list-alt"></span></a>';
+
+      if(row.autochanger == "1") {
+         return devicesStatusButton + '&nbsp;' + manageAutochangerButton;
+      } else {
+         return deviceStatusButton;
+      }
+
+   }
+
+   function attachStorageDeviceTable() {
+      storagedevices = $('#storagedevices').bootstrapTable({
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
          cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
          cookieIdTable: 'storage_index',
@@ -88,8 +118,9 @@ $this->headTitle($title);
          sidePagination: 'client',
          pageList: [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
          pageSize: <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
-         search: true,
+         search: false,
          showPaginationSwitch: true,
+         showColumns: true,
          showRefresh: true,
          sortName: 'name',
          sortOrder: 'asc',
@@ -112,12 +143,7 @@ $this->headTitle($title);
             {
                field: 'action',
                formatter: function(value, row, index) {
-                  if(row.autochanger == "1") {
-                     return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/storage/status?storage='+row.name+'" title="<?php echo $this->translate("Status"); ?>" id="btn-1"><span class="glyphicon glyphicon-zoom-in"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/storage/details/'; ?>'+row.name+'" title="<?php echo $this->translate("Manage autochanger"); ?>" id="btn-1"><span class="glyphicon glyphicon-list-alt"></span></a>';
-                  }
-                  else {
-                     return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/storage/status?storage='+row.name+'" title="<?php echo $this->translate("Status"); ?>" id="btn-1"><span class="glyphicon glyphicon-zoom-in"></span></a>';
-                  }
+                  return storagedeviceActionButtonsFormatter(value, row, index);
                }
             }
          ]
@@ -129,7 +155,7 @@ $this->headTitle($title);
       setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
       setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
 
-      getStorage();
+      attachStorageDeviceTable();
 
    });
 

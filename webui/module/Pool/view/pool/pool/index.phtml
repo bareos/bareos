@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2020 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -49,16 +49,54 @@ $this->headTitle($title);
 
 <div class="panel-body">
 
-<table class="table table-no-bordered table-hover" id="pools">
+<table
+   class="table table-no-bordered table-hover"
+   id="pools"
+   data-filter-control="true">
 
 <thead class="bg-primary">
-   <th><?php echo $this->translate("Name"); ?></th>
-   <th><?php echo $this->translate("Type"); ?></th>
-   <th><?php echo $this->translate("Volumes"); ?></th>
-   <th><?php echo $this->translate("Maximum volumes"); ?></th>
-   <th><?php echo $this->translate("Volume retention"); ?></th>
-   <th><?php echo $this->translate("Maximum volume jobs"); ?></th>
-   <th><?php echo $this->translate("Maximum volume bytes"); ?></th>
+   <th
+      data-field="name"
+      data-filter-control="input"
+      data-filter-control-placeholder="<?php echo $this->translate("Name"); ?>">
+      <?php echo $this->translate("Name"); ?>
+   </th>
+   <th
+      data-field="pooltype"
+      data-filter-control="input"
+      data-filter-control-placeholder="<?php echo $this->translate("Type"); ?>">
+      <?php echo $this->translate("Type"); ?>
+   </th>
+   <th
+      data-field="numvols"
+      data-filter-control="input"
+      data-filter-control-placeholder="<?php echo $this->translate("Volumes"); ?>">
+      <?php echo $this->translate("Volumes"); ?>
+   </th>
+   <th
+      data-field="maxvols"
+      data-filter-control="input"
+      data-filter-control-placeholder="<?php echo $this->translate("Maximum volumes"); ?>">
+      <?php echo $this->translate("Maximum volumes"); ?>
+   </th>
+   <th
+      data-field="volretention"
+      data-filter-control="input"
+      data-filter-control-placeholder="<?php echo $this->translate("Volume retention"); ?>">
+      <?php echo $this->translate("Volume retention"); ?>
+   </th>
+   <th
+      data-field="maxvoljobs"
+      data-filter-control="input"
+      data-filter-control-placeholder="<?php echo $this->translate("Maximum volume jobs"); ?>">
+      <?php echo $this->translate("Maximum volume jobs"); ?>
+   </th>
+   <th
+      data-field="maxvolbytes"
+      data-filter-control="input"
+      data-filter-control-placeholder="<?php echo $this->translate("Maximum volume bytes"); ?>">
+      <?php echo $this->translate("Maximum volume bytes"); ?>
+   </th>
 </thead>
 
 </table>
@@ -70,7 +108,9 @@ $this->headTitle($title);
 
 <?php
    echo $this->headScript()->prependFile($this->basePath() . '/js/custom-functions.js');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table-filter-control.min.css');
    echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table.min.css');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-filter-control.min.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-locale-all.min.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-cookie.min.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table.min.js');
@@ -80,7 +120,7 @@ $this->headTitle($title);
 
    var pools = null;
 
-   function getPools() {
+   function attachPoolsTable() {
       pools = $('#pools').bootstrapTable({
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
          cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
@@ -92,7 +132,8 @@ $this->headTitle($title);
          sidePagination: 'client',
          pageList: [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
          pageSize: <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
-         search: true,
+         search: false,
+         showToggle: true,
          showPaginationSwitch: true,
          showColumns: true,
          showRefresh: true,
@@ -143,7 +184,7 @@ $this->headTitle($title);
    $(document).ready(function() {
       setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
       setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
-      getPools();
+      attachPoolsTable();
    });
 
 </script>
