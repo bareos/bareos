@@ -181,12 +181,11 @@ $this->headTitle($title);
 
 <script>
 
-   var ie_slots = null;
-   var drive_slots = null;
-   var normale_slots = null;
+   var basePath = "<?php echo $this->basePath(); ?>";
+   var result = '<?php echo str_replace(array("\n","\r"), "", $this->result); ?>';
 
-   function getIESlots() {
-      ir_slots = $('#ie_slots').bootstrapTable({
+   function attachImportExportSlotsTable() {
+      $('#ie_slots').bootstrapTable({
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
          cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
          cookieIdTable: 'ie_slots',
@@ -207,7 +206,7 @@ $this->headTitle($title);
                   if(row.content == 'full') {
                      if(row.mr_volstatus != null) {
                         if(row.mr_volstatus != '?') {
-                           return '<a href="<?php echo $this->basePath() . '/media/details/'; ?>'+ row.mr_volname +'">'+ row.mr_volname +'</a>';
+                           return formatVolumeName(row.mr_volname, basePath);
                         }
                         else {
                            return row.mr_volname;
@@ -232,8 +231,8 @@ $this->headTitle($title);
       });
    }
 
-   function getDriveSlots() {
-      drive_slots = $('#drive_slots').bootstrapTable({
+   function attachDriveSlotsTable() {
+      $('#drive_slots').bootstrapTable({
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
          cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
          cookieIdTable: 'drive_slots',
@@ -255,7 +254,7 @@ $this->headTitle($title);
                field: 'volname',
                formatter: function(value) {
                   if(value != null) {
-                     return '<a href="<?php echo $this->basePath() . '/media/details/'; ?>'+value+'">'+value+'</a>';
+                     return formatVolumeName(value, basePath);
                   }
                }
             },
@@ -278,8 +277,8 @@ $this->headTitle($title);
       });
    }
 
-   function getNormalSlots() {
-      normal_slots = $('#normal_slots').bootstrapTable({
+   function attachNormalSlotsTable() {
+      $('#normal_slots').bootstrapTable({
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
          cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
          cookieIdTable: 'normal_slots',
@@ -308,7 +307,7 @@ $this->headTitle($title);
                   if(row != null) {
                      if(row.mr_volstatus != null) {
                         if(row.mr_volstatus != '?') {
-                           return '<a href="<?php echo $this->basePath() . '/media/details/'; ?>'+ row.mr_volname +'">'+ row.mr_volname +'</a>';
+                           return formatVolumeName(row.mr_volname, basePath);
                         }
                         else {
                            return row.mr_volname;
@@ -412,19 +411,17 @@ $this->headTitle($title);
       setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
       setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
 
-      var result = '<?php echo str_replace(array("\n","\r"), "", $this->result); ?>';
-
       if(result.length > 0) {
          $("#modal-001").modal();
       }
 
-      getDriveSlots();
+      attachDriveSlotsTable();
       $('#drive_slots').bootstrapTable('filterBy', {type: 'drive'});
 
-      getIESlots();
+      attachImportExportSlotsTable();
       $('#ie_slots').bootstrapTable('filterBy', {type: 'import_slot'});
 
-      getNormalSlots();
+      attachNormalSlotsTable();
       $('#normal_slots').bootstrapTable('filterBy', {type: 'slot'});
 
       $('#ie-toolbar').on('click', '#btn-import-all', function() {
