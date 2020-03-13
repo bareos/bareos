@@ -591,3 +591,10 @@ function scheduleActionButtonsFormatter(value, row, index, basePath) {
       return enableButton;
    }
 }
+
+function jobActionButtonsFormatter(value, row, index, basePath) {
+   let jobDetailsButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/job/details/' + row.jobid + '" title="'+ iJS._("View Job Details") + '" id="btn-0"><span class="glyphicon glyphicon-search"></span></a>';
+   let showFilesButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/restore/?mergefilesets=1&mergejobs=1&client=' + row.client + '&jobid=' + row.jobid + '" title="' + iJS._("Show Files") + '" id="btn-1"><span class="glyphicon glyphicon-folder-open"></span></a>';
+
+      return jobDetailsButton + '&nbsp;' + showFilesButton;
+}

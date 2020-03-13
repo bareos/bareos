@@ -166,13 +166,6 @@ $this->headTitle($title);
 
    var basePath = "<?php echo $this->basePath(); ?>";
 
-   function jobActionButtonsFormatter(value, row, index) {
-      let jobDetailsButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath();?>/job/details/'+row.jobid+'" title="<?php echo $this->translate("View Job Details"); ?>" id="btn-0"><span class="glyphicon glyphicon-search"></span></a>';
-      let showFilesButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/restore/?mergefilesets=1&mergejobs=1&client='+row.client+'&jobid='+row.jobid+'" title="<?php echo $this->translate("Show Files"); ?>" id="btn-1"><span class="glyphicon glyphicon-folder-open"></span></a>';
-
-      return jobDetailsButton + '&nbsp;' + showFilesButton;
-   }
-
    function attachClientDetails() {
       $('#clientdetails').bootstrapTable({
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
@@ -292,7 +285,7 @@ $this->headTitle($title);
             {
                field: 'action',
                formatter: function(value, row, index) {
-                  return jobActionButtonsFormatter(value, row, index);
+                  return jobActionButtonsFormatter(value, row, index, basePath);
                }
             }
          ]
