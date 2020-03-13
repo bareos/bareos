@@ -55,4 +55,17 @@
     return NULL;                                                       \
   }
 
+#define DictSet_StrLong(dict, string, value)            \
+  if (PyDict_SetItem(dict, PyBytes_FromString(#string), \
+                     PyLong_FromLong(value))) {         \
+    return MOD_ERROR_VAL;                               \
+  }
+
+#define DictSet_StrStr(dict, string, value)             \
+  if (PyDict_SetItem(dict, PyBytes_FromString(#string), \
+                     PyBytes_FromString(value))) {      \
+    return MOD_ERROR_VAL;                               \
+  }
+
+
 #endif  // BAREOS_PYTHON_PLUGINS_COMMON_H_

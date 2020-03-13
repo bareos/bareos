@@ -1,15 +1,30 @@
 import unittest
 import bareosfd
 import time
-
+# print dir(bareosfd)
+# print "bareosfd.bJobMessageType:", str( bareosfd.bJobMessageType)
+# print "bareosfd.bVariable:", str( bareosfd.bVariable)
+# print "bareosfd.bEventType:", str( bareosfd.bEventType)
+# print "bareosfd.bFileType:", str( bareosfd.bFileType)
+# print "bareosfd.bFuncs:", str( bareosfd.bFuncs)
+# print "bareosfd.bIOPS:", str( bareosfd.bIOPS)
+# print "bareosfd.bLevels:", str( bareosfd.bLevels)
+# print "bareosfd.bRCs:", str( bareosfd.bRCs)
+# print "bareosfd.bVariable:", str( bareosfd.bVariable)
+# print "bareosfd.bcfs:", str( bareosfd.bcfs)
 
 class TestBareosFd(unittest.TestCase):
 
-    def test_SetValue(self):
-        self.assertRaises(RuntimeError, bareosfd.SetValue, 2)
+    def test_bJobMessageType(self):
+        bareosfd.DebugMessage( bareosfd.bJobMessageType['M_INFO'], "This is a Job message")
+        self.assertEqual(str(bareosfd.bJobMessageType), """{'M_MOUNT': 10L, 'M_SECURITY': 14L, 'M_DEBUG': 2L, 'M_WARNING': 5L, 'M_SAVED': 7L, 'M_TERM': 12L, 'M_ABORT': 1L, 'M_INFO': 6L, 'M_ERROR': 4L, 'M_FATAL': 3L, 'M_NOTSAVED': 8L, 'M_RESTORED': 13L, 'M_ERROR_TERM': 11L, 'M_ALERT': 15L, 'M_VOLMGMT': 16L, 'M_SKIPPED': 9L}"""
+)
+
+    # def test_SetValue(self):
+    #     self.assertRaises(RuntimeError, bareosfd.SetValue, 2)
 
     def test_DebugMessage(self):
-        self.assertRaises(RuntimeError, bareosfd.DebugMessage, "This is a debug message")
+        self.assertRaises(RuntimeError, bareosfd.DebugMessage, 100, "This is a debug message")
 
     def test_RestoreObject(self):
         test_RestoreObject = bareosfd.RestoreObject()

@@ -768,6 +768,7 @@ bRC loadPlugin(bInfo* lbinfo,
 }
 #endif
 
+
 MOD_INIT(bareosfd)
 {
   PyObject* m = NULL;
@@ -863,6 +864,196 @@ MOD_INIT(bareosfd)
 
   Py_INCREF(&PyXattrPacketType);
   PyModule_AddObject(m, "XattrPacket", (PyObject*)&PyXattrPacketType);
+
+
+  /* constants */
+  const char* bJobMessageType = "bJobMessageType";
+  PyObject* pDictJobMessageType = NULL;
+  pDictJobMessageType = PyDict_New();
+  if (!pDictJobMessageType) { return MOD_ERROR_VAL; }
+  DictSet_StrLong(pDictJobMessageType, M_ABORT, 1);
+  DictSet_StrLong(pDictJobMessageType, M_DEBUG, 2);
+  DictSet_StrLong(pDictJobMessageType, M_FATAL, 3);
+  DictSet_StrLong(pDictJobMessageType, M_ERROR, 4);
+  DictSet_StrLong(pDictJobMessageType, M_WARNING, 5);
+  DictSet_StrLong(pDictJobMessageType, M_INFO, 6);
+  DictSet_StrLong(pDictJobMessageType, M_SAVED, 7);
+  DictSet_StrLong(pDictJobMessageType, M_NOTSAVED, 8);
+  DictSet_StrLong(pDictJobMessageType, M_SKIPPED, 9);
+  DictSet_StrLong(pDictJobMessageType, M_MOUNT, 10);
+  DictSet_StrLong(pDictJobMessageType, M_ERROR_TERM, 11);
+  DictSet_StrLong(pDictJobMessageType, M_TERM, 12);
+  DictSet_StrLong(pDictJobMessageType, M_RESTORED, 13);
+  DictSet_StrLong(pDictJobMessageType, M_SECURITY, 14);
+  DictSet_StrLong(pDictJobMessageType, M_ALERT, 15);
+  DictSet_StrLong(pDictJobMessageType, M_VOLMGMT, 16);
+  if (PyModule_AddObject(m, bJobMessageType, pDictJobMessageType)) {
+    return MOD_ERROR_VAL;
+  }
+
+
+  const char* bVariable = "bVariable";
+  PyObject* pDictbVariable = NULL;
+  pDictbVariable = PyDict_New();
+  if (!pDictbVariable) { return MOD_ERROR_VAL; }
+  DictSet_StrLong(pDictbVariable, bVarJobId, 1);
+  DictSet_StrLong(pDictbVariable, bVarFDName, 2);
+  DictSet_StrLong(pDictbVariable, bVarLevel, 3);
+  DictSet_StrLong(pDictbVariable, bVarType, 4);
+  DictSet_StrLong(pDictbVariable, bVarClient, 5);
+  DictSet_StrLong(pDictbVariable, bVarJobName, 6);
+  DictSet_StrLong(pDictbVariable, bVarJobStatus, 7);
+  DictSet_StrLong(pDictbVariable, bVarSinceTime, 8);
+  DictSet_StrLong(pDictbVariable, bVarAccurate, 9);
+  DictSet_StrLong(pDictbVariable, bVarFileSeen, 10);
+  DictSet_StrLong(pDictbVariable, bVarVssClient, 11);
+  DictSet_StrLong(pDictbVariable, bVarWorkingDir, 12);
+  DictSet_StrLong(pDictbVariable, bVarWhere, 13);
+  DictSet_StrLong(pDictbVariable, bVarRegexWhere, 14);
+  DictSet_StrLong(pDictbVariable, bVarExePath, 15);
+  DictSet_StrLong(pDictbVariable, bVarVersion, 16);
+  DictSet_StrLong(pDictbVariable, bVarDistName, 17);
+  DictSet_StrLong(pDictbVariable, bVarPrevJobName, 18);
+  DictSet_StrLong(pDictbVariable, bVarPrefixLinks, 19);
+  if (PyModule_AddObject(m, bVariable, pDictbVariable)) {
+    return MOD_ERROR_VAL;
+  }
+
+
+  const char* bFileType = "bFileType";
+  PyObject* pDictbFileType = NULL;
+  pDictbFileType = PyDict_New();
+  DictSet_StrLong(pDictbFileType, FT_LNKSAVED, 1);
+  DictSet_StrLong(pDictbFileType, FT_REGE, 2);
+  DictSet_StrLong(pDictbFileType, FT_REG, 3);
+  DictSet_StrLong(pDictbFileType, FT_LNK, 4);
+  DictSet_StrLong(pDictbFileType, FT_DIREND, 5);
+  DictSet_StrLong(pDictbFileType, FT_SPEC, 6);
+  DictSet_StrLong(pDictbFileType, FT_NOACCESS, 7);
+  DictSet_StrLong(pDictbFileType, FT_NOFOLLOW, 8);
+  DictSet_StrLong(pDictbFileType, FT_NOSTAT, 9);
+  DictSet_StrLong(pDictbFileType, FT_NOCHG, 10);
+  DictSet_StrLong(pDictbFileType, FT_DIRNOCHG, 11);
+  DictSet_StrLong(pDictbFileType, FT_ISARCH, 12);
+  DictSet_StrLong(pDictbFileType, FT_NORECURSE, 13);
+  DictSet_StrLong(pDictbFileType, FT_NOFSCHG, 14);
+  DictSet_StrLong(pDictbFileType, FT_NOOPEN, 15);
+  DictSet_StrLong(pDictbFileType, FT_RAW, 16);
+  DictSet_StrLong(pDictbFileType, FT_FIFO, 17);
+  DictSet_StrLong(pDictbFileType, FT_DIRBEGIN, 18);
+  DictSet_StrLong(pDictbFileType, FT_INVALIDFS, 19);
+  DictSet_StrLong(pDictbFileType, FT_INVALIDDT, 20);
+  DictSet_StrLong(pDictbFileType, FT_REPARSE, 21);
+  DictSet_StrLong(pDictbFileType, FT_PLUGIN, 22);
+  DictSet_StrLong(pDictbFileType, FT_DELETED, 23);
+  DictSet_StrLong(pDictbFileType, FT_BASE, 24);
+  DictSet_StrLong(pDictbFileType, FT_RESTORE_FIRST, 25);
+  DictSet_StrLong(pDictbFileType, FT_JUNCTION, 26);
+  DictSet_StrLong(pDictbFileType, FT_PLUGIN_CONFIG, 27);
+  DictSet_StrLong(pDictbFileType, FT_PLUGIN_CONFIG_FILLED, 28);
+  if (!pDictbFileType) { return MOD_ERROR_VAL; }
+  if (PyModule_AddObject(m, bFileType, pDictbFileType)) {
+    return MOD_ERROR_VAL;
+  }
+
+
+  const char* bRCs = "bRCs";
+  PyObject* pDictbRCs = NULL;
+  pDictbRCs = PyDict_New();
+  DictSet_StrLong(pDictbRCs, bRC_OK, 0);
+  DictSet_StrLong(pDictbRCs, bRC_Stop, 1);
+  DictSet_StrLong(pDictbRCs, bRC_Error, 2);
+  DictSet_StrLong(pDictbRCs, bRC_More, 3);
+  DictSet_StrLong(pDictbRCs, bRC_Term, 4);
+  DictSet_StrLong(pDictbRCs, bRC_Seen, 5);
+  DictSet_StrLong(pDictbRCs, bRC_Core, 6);
+  DictSet_StrLong(pDictbRCs, bRC_Skip, 7);
+  DictSet_StrLong(pDictbRCs, bRC_Cancel, 8);
+  if (!pDictbRCs) { return MOD_ERROR_VAL; }
+  if (PyModule_AddObject(m, bRCs, pDictbRCs)) { return MOD_ERROR_VAL; }
+
+
+  const char* bcfs = "bcfs";
+  PyObject* pDictbcfs = NULL;
+  pDictbcfs = PyDict_New();
+  DictSet_StrLong(pDictbcfs, cf_skip, 1);
+  DictSet_StrLong(pDictbcfs, cf_error, 2);
+  DictSet_StrLong(pDictbcfs, cf_extract, 3);
+  DictSet_StrLong(pDictbcfs, cf_created, 4);
+  DictSet_StrLong(pDictbcfs, cf_core, 5);
+  if (!pDictbcfs) { return MOD_ERROR_VAL; }
+  if (PyModule_AddObject(m, bcfs, pDictbcfs)) { return MOD_ERROR_VAL; }
+
+  const char* bEventType = "bEventType";
+  PyObject* pDictbEventType = NULL;
+  pDictbEventType = PyDict_New();
+  DictSet_StrLong(pDictbEventType, bEventJobStart, 1);
+  DictSet_StrLong(pDictbEventType, bEventJobEnd, 2);
+  DictSet_StrLong(pDictbEventType, bEventStartBackupJob, 3);
+  DictSet_StrLong(pDictbEventType, bEventEndBackupJob, 4);
+  DictSet_StrLong(pDictbEventType, bEventStartRestoreJob, 5);
+  DictSet_StrLong(pDictbEventType, bEventEndRestoreJob, 6);
+  DictSet_StrLong(pDictbEventType, bEventStartVerifyJob, 7);
+  DictSet_StrLong(pDictbEventType, bEventEndVerifyJob, 8);
+  DictSet_StrLong(pDictbEventType, bEventBackupCommand, 9);
+  DictSet_StrLong(pDictbEventType, bEventRestoreCommand, 10);
+  DictSet_StrLong(pDictbEventType, bEventEstimateCommand, 11);
+  DictSet_StrLong(pDictbEventType, bEventLevel, 12);
+  DictSet_StrLong(pDictbEventType, bEventSince, 13);
+  DictSet_StrLong(pDictbEventType, bEventCancelCommand, 14);
+  DictSet_StrLong(pDictbEventType, bEventRestoreObject, 15);
+  DictSet_StrLong(pDictbEventType, bEventEndFileSet, 16);
+  DictSet_StrLong(pDictbEventType, bEventPluginCommand, 17);
+  DictSet_StrLong(pDictbEventType, bEventOptionPlugin, 18);
+  DictSet_StrLong(pDictbEventType, bEventHandleBackupFile, 19);
+  DictSet_StrLong(pDictbEventType, bEventNewPluginOptions, 20);
+  DictSet_StrLong(pDictbEventType, bEventVssInitializeForBackup, 21);
+  DictSet_StrLong(pDictbEventType, bEventVssInitializeForRestore, 22);
+  DictSet_StrLong(pDictbEventType, bEventVssSetBackupState, 23);
+  DictSet_StrLong(pDictbEventType, bEventVssPrepareForBackup, 24);
+  DictSet_StrLong(pDictbEventType, bEventVssBackupAddComponents, 25);
+  DictSet_StrLong(pDictbEventType, bEventVssPrepareSnapshot, 26);
+  DictSet_StrLong(pDictbEventType, bEventVssCreateSnapshots, 27);
+  DictSet_StrLong(pDictbEventType, bEventVssRestoreLoadComponentMetadata, 28);
+  DictSet_StrLong(pDictbEventType, bEventVssRestoreSetComponentsSelected, 29);
+  DictSet_StrLong(pDictbEventType, bEventVssCloseRestore, 30);
+  DictSet_StrLong(pDictbEventType, bEventVssBackupComplete, 31);
+  if (!pDictbEventType) { return MOD_ERROR_VAL; }
+  if (PyModule_AddObject(m, bEventType, pDictbEventType)) {
+    return MOD_ERROR_VAL;
+  }
+
+
+  const char* bIOPS = "bIOPS";
+  PyObject* pDictbIOPS = NULL;
+  pDictbIOPS = PyDict_New();
+  DictSet_StrLong(pDictbIOPS, IO_OPEN, 1);
+  DictSet_StrLong(pDictbIOPS, IO_READ, 2);
+  DictSet_StrLong(pDictbIOPS, IO_WRITE, 3);
+  DictSet_StrLong(pDictbIOPS, IO_CLOSE, 4);
+  DictSet_StrLong(pDictbIOPS, IO_SEEK, 5);
+  if (!pDictbIOPS) { return MOD_ERROR_VAL; }
+  if (PyModule_AddObject(m, bIOPS, pDictbIOPS)) { return MOD_ERROR_VAL; }
+
+
+  const char* bLevels = "bLevels";
+  PyObject* pDictbLevels = NULL;
+  pDictbLevels = PyDict_New();
+  DictSet_StrStr(pDictbLevels, L_FULL, "F");
+  DictSet_StrStr(pDictbLevels, L_INCREMENTAL, "I");
+  DictSet_StrStr(pDictbLevels, L_DIFFERENTIAL, "D");
+  DictSet_StrStr(pDictbLevels, L_SINCE, "S");
+  DictSet_StrStr(pDictbLevels, L_VERIFY_CATALOG, "C");
+  DictSet_StrStr(pDictbLevels, L_VERIFY_INIT, "V");
+  DictSet_StrStr(pDictbLevels, L_VERIFY_VOLUME_TO_CATALOG, "O");
+  DictSet_StrStr(pDictbLevels, L_VERIFY_DISK_TO_CATALOG, "d");
+  DictSet_StrStr(pDictbLevels, L_VERIFY_DATA, "A");
+  DictSet_StrStr(pDictbLevels, L_BASE, "B");
+  DictSet_StrStr(pDictbLevels, L_NONE, " ");
+  DictSet_StrStr(pDictbLevels, L_VIRTUAL_FULL, "f");
+  if (!pDictbLevels) { return MOD_ERROR_VAL; }
+  if (PyModule_AddObject(m, bLevels, pDictbLevels)) { return MOD_ERROR_VAL; }
+
 
   return MOD_SUCCESS_VAL(m);
 }
