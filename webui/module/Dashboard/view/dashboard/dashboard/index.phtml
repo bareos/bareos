@@ -168,14 +168,14 @@ $this->headTitle($title);
                field: 'name',
                sortable: true,
                formatter: function(value){
-                  return '<a href="<?php echo $this->basePath() . '/job/index?jobname='; ?>'+value+'">'+value+'</a>';
+                  return formatJobName(value, basePath);
                }
             },
             {
                field: 'jobstatus',
                align: 'center',
                sortable: true,
-               formatter: function(value, row, index) {
+               formatter: function(value) {
                   return formatJobStatus(value);
                }
             },

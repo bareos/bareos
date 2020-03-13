@@ -139,9 +139,7 @@ $this->headTitle($title);
 
 <script>
 
-   var jobdetails = null;
-   var joblog = null;
-   var jobmedia = null;
+   var basePath = "<?php echo $this->basePath(); ?>";
 
    function detailFormatterJobDetails(index, row) {
       var html = [];
@@ -173,7 +171,7 @@ $this->headTitle($title);
    }
 
    function getJobDetails() {
-      jobdetails = $('#jobdetails').bootstrapTable({
+      $('#jobdetails').bootstrapTable({
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
          url: '<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=details&jobid='.$this->jobid; ?>',
          method: 'get',
@@ -187,7 +185,7 @@ $this->headTitle($title);
             {
                field: 'name',
                formatter: function(value) {
-                  return '<a href="<?php echo $this->basePath() . '/job/index?jobname='; ?>'+value+'">'+value+'</a>';
+                  return formatJobName(value, basePath);
                }
             },
             {
@@ -264,7 +262,7 @@ $this->headTitle($title);
    }
 
    function getJobLog() {
-      joblog = $('#joblog').bootstrapTable({
+      $('#joblog').bootstrapTable({
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
          cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
          cookieIdTable: 'job_table_job_log',
@@ -306,7 +304,7 @@ $this->headTitle($title);
    }
 
    function getJobMedia() {
-      jobmedia = $('#jobmedia').bootstrapTable({
+      $('#jobmedia').bootstrapTable({
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
          cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
          cookieIdTable: 'job_table_job_media',

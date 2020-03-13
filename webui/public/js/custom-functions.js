@@ -103,7 +103,15 @@ function initDTLocale() {
 }
 
 function formatJobId(value, basePath) {
-      return '<a href="' + basePath + '/job/details/' + value + '" title="' + iJS._("View Job Details") + '">' + value + '</a>';
+   return '<a href="' + basePath + '/job/details/' + value + '" title="' + iJS._("View Job Details") + '">' + value + '</a>';
+}
+
+function formatJobName(value, basePath, displayRange) {
+   if(displayRange === undefined) {
+      return '<a href="' + basePath + '/job/index?jobname=' + value + '">' + value + '</a>';
+   } else {
+      return '<a href="' + basePath + '/job/index?jobname=' + value + '&period=' + displayRange + '">' + value + '</a>';
+   }
 }
 
 function formatJobType(data) {
