@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2020 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -91,20 +91,7 @@ $this->headTitle($title);
 
 <script>
 
-   var storagedevices = null;
-
-   function storagedeviceActionButtonsFormatter(value, row, index) {
-
-      let deviceStatusButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/storage/status?storage='+row.name+'" title="<?php echo $this->translate("Status"); ?>" id="btn-1"><span class="glyphicon glyphicon-search"></span></a>';
-      let manageAutochangerButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/storage/details/'; ?>'+row.name+'" title="<?php echo $this->translate("Manage autochanger"); ?>" id="btn-1"><span class="glyphicon glyphicon-list-alt"></span></a>';
-
-      if(row.autochanger == "1") {
-         return devicesStatusButton + '&nbsp;' + manageAutochangerButton;
-      } else {
-         return deviceStatusButton;
-      }
-
-   }
+   var basePath = "<?php echo $this->basePath(); ?>";
 
    function attachStorageDeviceTable() {
       storagedevices = $('#storagedevices').bootstrapTable({
@@ -143,7 +130,7 @@ $this->headTitle($title);
             {
                field: 'action',
                formatter: function(value, row, index) {
-                  return storagedeviceActionButtonsFormatter(value, row, index);
+                  return storageResourceActionButtonsFormatter(value, row, index, basePath);
                }
             }
          ]
@@ -151,12 +138,9 @@ $this->headTitle($title);
    }
 
    $(document).ready(function() {
-
       setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
       setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
-
       attachStorageDeviceTable();
-
    });
 
 </script>

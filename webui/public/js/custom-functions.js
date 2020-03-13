@@ -703,3 +703,14 @@ function jobResourceActionButtonsFormatter(value, row, index, basePath) {
       return runJobButton + '&nbsp;' + enableJobButton;
    }
 }
+
+function storageResourceActionButtonsFormatter(value, row, index, basePath) {
+   let storageStatusButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/storage/status?storage=' + row.name + '" title="' + iJS._("Status") + '" id="btn-1"><span class="glyphicon glyphicon-search"></span></a>';
+   let manageAutochangerButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/storage/details/' + row.name + '" title="' + iJS._("Manage autochanger") + '" id="btn-1"><span class="glyphicon glyphicon-list-alt"></span></a>';
+
+   if(row.autochanger == "1") {
+      return storageStatusButton + '&nbsp;' + manageAutochangerButton;
+   } else {
+      return storageStatusButton;
+   }
+}
