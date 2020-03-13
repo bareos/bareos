@@ -36,12 +36,22 @@ import traceback
 
 from libcloud.storage.types import Provider
 from libcloud.storage.providers import get_driver
-from bareos_fd_consts import bRCs, bIOPS
+from bareos_fd_consts import bRCs, bIOPS, bJobMessageType
 
 syslog.openlog(__name__, facility=syslog.LOG_LOCAL7)
 
 debug = False
+fd_context = None
 
+def joblog(message):
+    global fd_context
+    if fd_context != None:
+        message = "[%s] %s" % (os.getpid(), message)
+        bareosfd.JobMessage(
+            fd_context,
+            bJobMessageType["M_INFO"],
+            message
+        )
 
 def log(message):
     if debug is True:
@@ -258,6 +268,8 @@ class JobCreator(object):
 
 class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     def __init__(self, context, plugindef):
+        global fd_context
+        fd_context = context
         log("BareosFdPluginLibcloud called with plugindef: %s" % (plugindef,))
 
         super(BareosFdPluginLibcloud, self).__init__(context, plugindef)
@@ -395,7 +407,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         for _ in driver.iterate_containers():
             break
 
-        log("Last backup: %s (ts: %s)" % (self.last_run, self.since))
+        joblog("Last backup: %s (ts: %s)" % (self.last_run, self.since))
 
         self.manager = multiprocessing.Manager()
         self.plugin_todo_queue = self.manager.Queue(maxsize=self.options["queue_size"])
@@ -455,7 +467,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     break
                 except:
                     size = self.plugin_todo_queue.qsize()
-                    log("start_backup_file: queue size: %s" % (size,))
+                    joblog("start_backup_file: queue size: %s" % (size,))
                     time.sleep(0.1)
         except TypeError:
             self.current_backup_job = None
@@ -466,7 +478,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             return bRCs["bRC_Skip"]
 
         filename = "%s/%s" % (self.current_backup_job["bucket"], self.current_backup_job["name"])
-        log("Backing up %s" % (filename,))
+        joblog("Backing up %s" % (filename,))
 
         statp = bareosfd.StatPacket()
         statp.size = self.current_backup_job["size"]
