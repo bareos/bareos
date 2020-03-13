@@ -541,6 +541,14 @@ function formatUpdateStatus(value, row, index) {
    }
 }
 
+function formatScheduleName(value, basePath) {
+   return '<a href="' + basePath + '/schedule/details?schedule=' + value + '">' + value + '</a>';
+}
+
+function formatClientName(value, basePath) {
+   return '<a href="' + basePath + '/client/details/' + value + '">' + value + '</a>';
+}
+
 function clientsActionButtonsFormatter(value, row, index, basePath) {
    let restoreButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/restore/index?client=' + row.name + '" title="' + iJS._("Restore") + '" id="btn-1"><span class="glyphicon glyphicon-import"></span></a>';
    let statusClientButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/client/status?client=' + row.name + '" title="' + iJS._("Status") + '" id="btn-1"><span class="glyphicon glyphicon-search"></span></a>';
@@ -566,6 +574,13 @@ function clientsActionButtonsFormatter(value, row, index, basePath) {
    }
 }
 
+function clientActionButtonsFormatter(value, row, index, basePath) {
+   let clientRestoreButton = '<a href="' + basePath + '/restore/index?client=' + row.name + '"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="' + iJS._("Restore") + '"><span class="glyphicon glyphicon-import"></span></button></a>';
+   let clientStatusButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/client/status?client=' + row.name + '" title="' + iJS._("Status") + '" id="btn-1"><span class="glyphicon glyphicon-search"></span></a>';
+
+   return clientRestoreButton + '&nbsp;' + clientStatusButton;
+}
+
 function scheduleActionButtonsFormatter(value, row, index, basePath) {
    let disableButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/schedule/index?action=disable&schedule=' + row.name + '" title="' + iJS._("Disable") + '" id="btn-1"><span class="glyphicon glyphicon-remove"></span></a>';
    let enableButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/schedule/index?action=enable&schedule=' + row.name + '" title="' + iJS._("Enable") + '" id="btn-1"><span class="glyphicon glyphicon-ok"></span></a>';
@@ -575,12 +590,4 @@ function scheduleActionButtonsFormatter(value, row, index, basePath) {
    } else {
       return enableButton;
    }
-}
-
-function formatScheduleName(value, basePath) {
-   return '<a href="' + basePath + '/schedule/details?schedule=' + value + '">' + value + '</a>';
-}
-
-function formatClientName(value, basePath) {
-   return '<a href="' + basePath + '/client/details/' + value + '">' + value + '</a>';
 }

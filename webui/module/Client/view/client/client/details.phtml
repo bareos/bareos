@@ -164,16 +164,7 @@ $this->headTitle($title);
 
 <script>
 
-   var clientdetails = null;
-   var clientbackups = null;
-
-   function clientActionButtonsFormatter(value, row, index) {
-
-      let clientRestoreButton = '<a href="<?php echo $this->basePath() . '/restore/index?client='; ?>'+row.name+'"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="<?php echo $this->translate("Restore"); ?>"><span class="glyphicon glyphicon-import"></span></button></a>';
-      let clientStatusButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/client/status?client='+row.name+'" title="<?php echo $this->translate("Status"); ?>" id="btn-1"><span class="glyphicon glyphicon-zoom-in"></span></a>';
-
-      return clientRestoreButton + '&nbsp;' + clientStatusButton;
-   }
+   var basePath = "<?php echo $this->basePath(); ?>";
 
    function jobActionButtonsFormatter(value, row, index) {
       let jobDetailsButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath();?>/job/details/'+row.jobid+'" title="<?php echo $this->translate("View Job Details"); ?>" id="btn-0"><span class="glyphicon glyphicon-search"></span></a>';
@@ -183,7 +174,7 @@ $this->headTitle($title);
    }
 
    function attachClientDetails() {
-      clientdetails = $('#clientdetails').bootstrapTable({
+      $('#clientdetails').bootstrapTable({
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
          cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
          cookieIdTable: 'dashboard_table_jobs_last_status',
@@ -218,7 +209,7 @@ $this->headTitle($title);
             {
                field: 'action',
                formatter: function(value, row, index) {
-                  return clientActionButtonsFormatter(value, row, index);
+                  return clientActionButtonsFormatter(value, row, index, basePath);
                }
             }
          ]
@@ -226,7 +217,7 @@ $this->headTitle($title);
    }
 
    function attachClientBackups() {
-      clientbackups = $('#clientbackups').bootstrapTable({
+      $('#clientbackups').bootstrapTable({
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
          cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
          cookieIdTable: 'client_clientbackups',
