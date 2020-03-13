@@ -94,7 +94,7 @@ $this->headTitle($title);
    var basePath = "<?php echo $this->basePath(); ?>";
 
    function attachStorageDeviceTable() {
-      storagedevices = $('#storagedevices').bootstrapTable({
+      $('#storagedevices').bootstrapTable({
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
          cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
          cookieIdTable: 'storage_index',
@@ -120,11 +120,7 @@ $this->headTitle($title);
                field: 'autochanger',
                sortable: true,
                formatter: function(value) {
-                  var a = '<span class="label label-default"><?php echo $this->translate('No'); ?></span>';
-                  if(value == "1") {
-                     a = '<span class="label label-success"><?php echo $this->translate('Yes'); ?></span>';
-                  }
-                  return a;
+                  return formatAutochangerStatus(value);
                }
             },
             {

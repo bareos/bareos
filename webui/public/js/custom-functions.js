@@ -586,6 +586,14 @@ function formatLogMessage(value) {
    }
 }
 
+function formatAutochangerStatus(value) {
+   let a = '<span class="label label-default">' + iJS._('No') + '</span>';
+   if(value == "1") {
+      a = '<span class="label label-success">' + iJS._('Yes') + '</span>';
+   }
+   return a;
+}
+
 function clientsActionButtonsFormatter(value, row, index, basePath) {
    let restoreButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/restore/index?client=' + row.name + '" title="' + iJS._("Restore") + '" id="btn-1"><span class="glyphicon glyphicon-import"></span></a>';
    let statusClientButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/client/status?client=' + row.name + '" title="' + iJS._("Status") + '" id="btn-1"><span class="glyphicon glyphicon-search"></span></a>';
