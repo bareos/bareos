@@ -2385,17 +2385,14 @@ static PyObject* PyBareosJobMessage(PyObject* self, PyObject* args)
 {
   int type;
   char* jobmsg = NULL;
-  bpContext* bareos_plugin_ctx = NULL;
+  bpContext* bareos_plugin_ctx = GetPluginContextFromPythonModule();
 
   if (!PyArg_ParseTuple(args, "i|z:BareosJobMessage", &type, &jobmsg)) {
     return NULL;
   }
   RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
-  if (jobmsg) {
-    bareos_plugin_ctx = GetPluginContextFromPythonModule();
-    Jmsg(bareos_plugin_ctx, type, "python-fd: %s", jobmsg);
-  }
+  if (jobmsg) { Jmsg(bareos_plugin_ctx, type, "python-fd: %s", jobmsg); }
 
   Py_INCREF(Py_None);
   return Py_None;

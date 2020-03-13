@@ -91,6 +91,8 @@ bRC bareosJobMsg(bpContext* ctx,
                  const char* fmt,
                  ...)
 {
+  printf("bareosJobMsg file:%s line:%d type:%d time: %ld, fmt:%s\n", file, line,
+         type, (int64_t)mtime, fmt);
   return bRC_OK;
 };
 bRC bareosDebugMsg(bpContext* ctx,
@@ -100,7 +102,7 @@ bRC bareosDebugMsg(bpContext* ctx,
                    const char* fmt,
                    ...)
 {
-  printf("bareosDebugMsg file:%s line:%d level: %d fmt:%s\n", file, line, level,
+  printf("bareosDebugMsg file:%s line:%d level:%d fmt:%s\n", file, line, level,
          fmt);
   return bRC_OK;
 };
