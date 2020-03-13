@@ -116,21 +116,6 @@ $this->headTitle($title);
    var basePath = "<?php echo $this->basePath(); ?>";
    var result = '<?php echo str_replace(array("\n","\r"), "", $this->result); ?>';
 
-   function jobactionsActionButtonsFormatter(value, row, index) {
-
-      let runJobButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/actions?action=queue&job='; ?>'+row.name+'" title="<?php echo $this->translate("Run"); ?>" id="btn-1"><span class="glyphicon glyphicon-play"></span></a>';
-      let enableJobButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/job/actions?action=enable&job='+row.name+'" title="<?php echo $this->translate("Enable"); ?>" id="btn-1"><span class="glyphicon glyphicon-ok"></span></a>';
-      let disableJobButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/job/actions?action=disable&job='+row.name+'" title="<?php echo $this->translate("Disable"); ?>" id="btn-1"><span class="glyphicon glyphicon-remove"></span></a>';
-
-      if(row.enabled) {
-         return runJobButton + '&nbsp;' + disableJobButton;
-      }
-      else {
-         return runJobButton + '&nbsp;' + enableJobButton;
-      }
-
-   }
-
    function attachJobActionsTable() {
       $('#jobactions').bootstrapTable({
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
@@ -166,7 +151,7 @@ $this->headTitle($title);
             {
                field: 'actions',
                formatter: function(value, row, index) {
-                  return jobactionsActionButtonsFormatter(value, row, index);
+                  return jobResourceActionButtonsFormatter(value, row, index, basePath);
                }
             }
          ]

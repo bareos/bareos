@@ -687,3 +687,15 @@ function jobActionButtonsFormatter(value, row, index, basePath) {
          return '';
    }
 }
+
+function jobResourceActionButtonsFormatter(value, row, index, basePath) {
+   let runJobButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/job/actions?action=queue&job=' + row.name + '" title="' + iJS._("Run") + '" id="btn-1"><span class="glyphicon glyphicon-play"></span></a>';
+   let enableJobButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/job/actions?action=enable&job=' + row.name + '" title="' + iJS._("Enable") + '" id="btn-1"><span class="glyphicon glyphicon-ok"></span></a>';
+   let disableJobButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/job/actions?action=disable&job=' + row.name + '" title="' + iJS._("Disable") + '" id="btn-1"><span class="glyphicon glyphicon-remove"></span></a>';
+
+   if(row.enabled) {
+      return runJobButton + '&nbsp;' + disableJobButton;
+   } else {
+      return runJobButton + '&nbsp;' + enableJobButton;
+   }
+}
