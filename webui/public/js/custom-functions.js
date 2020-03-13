@@ -493,49 +493,48 @@ function formatEnabledDisabledStatus(value) {
 }
 
 function formatUname(value, basePath) {
+   let osImage = null;
+
    if(value.toLowerCase().search("suse") > -1) {
-      return '<img src="' + basePath + '/img/icons/os/suse.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+      osImage = "suse.png";
    }
    else if(value.toLowerCase().search("sle") > -1) {
-      return '<img src="' + basePath + '/img/icons/os/suse.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+      osImage = "suse.png";
    }
    else if(value.toLowerCase().search("debian") > -1) {
-      return '<img src="' + basePath + '/img/icons/os/debian.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+      osImage = "debian.png";
    }
    else if(value.toLowerCase().search("fedora") > -1) {
-      return '<img src="' + basePath + '/img/icons/os/fedora.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+      osImage = "fedora.png";
    }
    else if(value.toLowerCase().search("centos") > -1) {
-      return '<img src="' + basePath + '/img/icons/os/centos.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+      osImage = "centos.png";
    }
    else if(value.toLowerCase().search("redhat") > -1) {
-      return '<img src="' + basePath + '/img/icons/os/redhat.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+      osImage = "redhat.png";
    }
    else if(value.toLowerCase().search("ubuntu") > -1) {
-      return '<img src="' + basePath + '/img/icons/os/ubuntu.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+      osImage = "ubuntu.png";
    }
    else if(value.toLowerCase().search("univention") > -1) {
-      return '<img src="' + basePath + '/img/icons/os/univention.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+      osImage = "univention.png";
    }
-   else if(value.toLowerCase().search("windows") > -1) {
-      return '<img src="' + basePath + '/img/icons/os/windows.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
-   }
-   else if(value.toLowerCase().search("win32") > -1) {
-      return '<img src="' + basePath + '/img/icons/os/windows.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
-   }
-   else if(value.toLowerCase().search("win64") > -1) {
-      return '<img src="' + basePath + '/img/icons/os/windows.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+   else if(value.toLowerCase().search("win") > -1) {
+      osImage = "windows.png";
    }
    else if(value.toLowerCase().search("macos") > -1) {
-      return '<img src="' + basePath + '/img/icons/os/macos.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+      osImage = "macos.png";
    }
    else if(value.toLowerCase().search("solaris") > -1) {
-      return '<img src="' + basePath + '/img/icons/os/sunsolaris.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+      osImage = "sunsolaris.png";
    }
    else if(value.toLowerCase().search("freebsd") > -1) {
-      return '<img src="' + basePath + '/img/icons/os/freebsd.png" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+      osImage = "freebsd.png";
    }
-   else {
+
+   if(osImage !== null) {
+      return '<img src="' + basePath + '/img/icons/os/' + osImage + '" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+   } else {
       return '';
    }
 }
