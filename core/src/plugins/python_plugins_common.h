@@ -55,32 +55,53 @@
     return NULL;                                                       \
   }
 
-#define DictSet_StrLong(dict, string, value)            \
+
+/* define the given string constant as member of an dict and additionally
+ add it directly as constant to the module.
+
+ This is both done for string to long and for string to string mappings.
+
+ The result is that the module both contains a dict:
+ bIOPS = {'IO_CLOSE': 4L, 'IO_OPEN': 1L, 'IO_READ': 2L, 'IO_SEEK': 5L,
+          'IO_WRITE': 3L}
+ and the single values directly:
+     IO_CLOSE = 4
+     IO_OPEN = 1
+     IO_READ = 2
+     IO_SEEK = 5
+     IO_WRITE = 3
+ */
+
+#define ConstSet_StrLong(dict, string, value)           \
   if (PyDict_SetItem(dict, PyBytes_FromString(#string), \
                      PyLong_FromLong(value))) {         \
     return MOD_ERROR_VAL;                               \
-  }
+  }                                                     \
+  if (PyModule_AddIntConstant(m, #string, value)) { return MOD_ERROR_VAL; }
 
-#define DictSet_StrStr(dict, string, value)             \
+#define ConstSet_StrStr(dict, string, value)            \
   if (PyDict_SetItem(dict, PyBytes_FromString(#string), \
                      PyBytes_FromString(value))) {      \
     return MOD_ERROR_VAL;                               \
-  }
+  }                                                     \
+  if (PyModule_AddStringConstant(m, #string, value)) { return MOD_ERROR_VAL; }
 
-#define DEFINE_bRCs_DICT()                   \
-  const char* bRCs = "bRCs";                 \
-  PyObject* pDictbRCs = NULL;                \
-  pDictbRCs = PyDict_New();                  \
-  DictSet_StrLong(pDictbRCs, bRC_OK, 0);     \
-  DictSet_StrLong(pDictbRCs, bRC_Stop, 1);   \
-  DictSet_StrLong(pDictbRCs, bRC_Error, 2);  \
-  DictSet_StrLong(pDictbRCs, bRC_More, 3);   \
-  DictSet_StrLong(pDictbRCs, bRC_Term, 4);   \
-  DictSet_StrLong(pDictbRCs, bRC_Seen, 5);   \
-  DictSet_StrLong(pDictbRCs, bRC_Core, 6);   \
-  DictSet_StrLong(pDictbRCs, bRC_Skip, 7);   \
-  DictSet_StrLong(pDictbRCs, bRC_Cancel, 8); \
-  if (!pDictbRCs) { return MOD_ERROR_VAL; }  \
+
+/* commonly used definitions in multiple python modules */
+#define DEFINE_bRCs_DICT()                    \
+  const char* bRCs = "bRCs";                  \
+  PyObject* pDictbRCs = NULL;                 \
+  pDictbRCs = PyDict_New();                   \
+  ConstSet_StrLong(pDictbRCs, bRC_OK, 0);     \
+  ConstSet_StrLong(pDictbRCs, bRC_Stop, 1);   \
+  ConstSet_StrLong(pDictbRCs, bRC_Error, 2);  \
+  ConstSet_StrLong(pDictbRCs, bRC_More, 3);   \
+  ConstSet_StrLong(pDictbRCs, bRC_Term, 4);   \
+  ConstSet_StrLong(pDictbRCs, bRC_Seen, 5);   \
+  ConstSet_StrLong(pDictbRCs, bRC_Core, 6);   \
+  ConstSet_StrLong(pDictbRCs, bRC_Skip, 7);   \
+  ConstSet_StrLong(pDictbRCs, bRC_Cancel, 8); \
+  if (!pDictbRCs) { return MOD_ERROR_VAL; }   \
   if (PyModule_AddObject(m, bRCs, pDictbRCs)) { return MOD_ERROR_VAL; }
 
 #define DEFINE_bJobMessageTypes_DICT()                               \
@@ -88,22 +109,22 @@
   PyObject* pDictJobMessageType = NULL;                              \
   pDictJobMessageType = PyDict_New();                                \
   if (!pDictJobMessageType) { return MOD_ERROR_VAL; }                \
-  DictSet_StrLong(pDictJobMessageType, M_ABORT, 1);                  \
-  DictSet_StrLong(pDictJobMessageType, M_DEBUG, 2);                  \
-  DictSet_StrLong(pDictJobMessageType, M_FATAL, 3);                  \
-  DictSet_StrLong(pDictJobMessageType, M_ERROR, 4);                  \
-  DictSet_StrLong(pDictJobMessageType, M_WARNING, 5);                \
-  DictSet_StrLong(pDictJobMessageType, M_INFO, 6);                   \
-  DictSet_StrLong(pDictJobMessageType, M_SAVED, 7);                  \
-  DictSet_StrLong(pDictJobMessageType, M_NOTSAVED, 8);               \
-  DictSet_StrLong(pDictJobMessageType, M_SKIPPED, 9);                \
-  DictSet_StrLong(pDictJobMessageType, M_MOUNT, 10);                 \
-  DictSet_StrLong(pDictJobMessageType, M_ERROR_TERM, 11);            \
-  DictSet_StrLong(pDictJobMessageType, M_TERM, 12);                  \
-  DictSet_StrLong(pDictJobMessageType, M_RESTORED, 13);              \
-  DictSet_StrLong(pDictJobMessageType, M_SECURITY, 14);              \
-  DictSet_StrLong(pDictJobMessageType, M_ALERT, 15);                 \
-  DictSet_StrLong(pDictJobMessageType, M_VOLMGMT, 16);               \
+  ConstSet_StrLong(pDictJobMessageType, M_ABORT, 1);                 \
+  ConstSet_StrLong(pDictJobMessageType, M_DEBUG, 2);                 \
+  ConstSet_StrLong(pDictJobMessageType, M_FATAL, 3);                 \
+  ConstSet_StrLong(pDictJobMessageType, M_ERROR, 4);                 \
+  ConstSet_StrLong(pDictJobMessageType, M_WARNING, 5);               \
+  ConstSet_StrLong(pDictJobMessageType, M_INFO, 6);                  \
+  ConstSet_StrLong(pDictJobMessageType, M_SAVED, 7);                 \
+  ConstSet_StrLong(pDictJobMessageType, M_NOTSAVED, 8);              \
+  ConstSet_StrLong(pDictJobMessageType, M_SKIPPED, 9);               \
+  ConstSet_StrLong(pDictJobMessageType, M_MOUNT, 10);                \
+  ConstSet_StrLong(pDictJobMessageType, M_ERROR_TERM, 11);           \
+  ConstSet_StrLong(pDictJobMessageType, M_TERM, 12);                 \
+  ConstSet_StrLong(pDictJobMessageType, M_RESTORED, 13);             \
+  ConstSet_StrLong(pDictJobMessageType, M_SECURITY, 14);             \
+  ConstSet_StrLong(pDictJobMessageType, M_ALERT, 15);                \
+  ConstSet_StrLong(pDictJobMessageType, M_VOLMGMT, 16);              \
   if (PyModule_AddObject(m, bJobMessageType, pDictJobMessageType)) { \
     return MOD_ERROR_VAL;                                            \
   }

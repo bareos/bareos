@@ -123,23 +123,23 @@ MOD_INIT(bareossd)
   PyObject* pDictsdVariable = NULL;
   pDictsdVariable = PyDict_New();
   if (!pDictsdVariable) { return MOD_ERROR_VAL; }
-  DictSet_StrLong(pDictsdVariable, bsdVarJob, 1);
-  DictSet_StrLong(pDictsdVariable, bsdVarLevel, 2);
-  DictSet_StrLong(pDictsdVariable, bsdVarType, 3);
-  DictSet_StrLong(pDictsdVariable, bsdVarJobId, 4);
-  DictSet_StrLong(pDictsdVariable, bsdVarClient, 5);
-  DictSet_StrLong(pDictsdVariable, bsdVarPool, 6);
-  DictSet_StrLong(pDictsdVariable, bsdVarPoolType, 7);
-  DictSet_StrLong(pDictsdVariable, bsdVarStorage, 8);
-  DictSet_StrLong(pDictsdVariable, bsdVarMediaType, 9);
-  DictSet_StrLong(pDictsdVariable, bsdVarJobName, 10);
-  DictSet_StrLong(pDictsdVariable, bsdVarJobStatus, 11);
-  DictSet_StrLong(pDictsdVariable, bsdVarVolumeName, 12);
-  DictSet_StrLong(pDictsdVariable, bsdVarJobErrors, 13);
-  DictSet_StrLong(pDictsdVariable, bsdVarJobFiles, 14);
-  DictSet_StrLong(pDictsdVariable, bsdVarJobBytes, 15);
-  DictSet_StrLong(pDictsdVariable, bsdVarCompatible, 16);
-  DictSet_StrLong(pDictsdVariable, bsdVarPluginDir, 17);
+  ConstSet_StrLong(pDictsdVariable, bsdVarJob, 1);
+  ConstSet_StrLong(pDictsdVariable, bsdVarLevel, 2);
+  ConstSet_StrLong(pDictsdVariable, bsdVarType, 3);
+  ConstSet_StrLong(pDictsdVariable, bsdVarJobId, 4);
+  ConstSet_StrLong(pDictsdVariable, bsdVarClient, 5);
+  ConstSet_StrLong(pDictsdVariable, bsdVarPool, 6);
+  ConstSet_StrLong(pDictsdVariable, bsdVarPoolType, 7);
+  ConstSet_StrLong(pDictsdVariable, bsdVarStorage, 8);
+  ConstSet_StrLong(pDictsdVariable, bsdVarMediaType, 9);
+  ConstSet_StrLong(pDictsdVariable, bsdVarJobName, 10);
+  ConstSet_StrLong(pDictsdVariable, bsdVarJobStatus, 11);
+  ConstSet_StrLong(pDictsdVariable, bsdVarVolumeName, 12);
+  ConstSet_StrLong(pDictsdVariable, bsdVarJobErrors, 13);
+  ConstSet_StrLong(pDictsdVariable, bsdVarJobFiles, 14);
+  ConstSet_StrLong(pDictsdVariable, bsdVarJobBytes, 15);
+  ConstSet_StrLong(pDictsdVariable, bsdVarCompatible, 16);
+  ConstSet_StrLong(pDictsdVariable, bsdVarPluginDir, 17);
   if (PyModule_AddObject(m, bsdVariable, pDictsdVariable)) {
     return MOD_ERROR_VAL;
   }
@@ -148,10 +148,10 @@ MOD_INIT(bareossd)
   PyObject* pDictsdwVariable = NULL;
   pDictsdwVariable = PyDict_New();
   if (!pDictsdwVariable) { return MOD_ERROR_VAL; }
-  DictSet_StrLong(pDictsdwVariable, bsdwVarJobReport, 1);
-  DictSet_StrLong(pDictsdwVariable, bsdwVarVolumeName, 2);
-  DictSet_StrLong(pDictsdwVariable, bsdwVarPriority, 3);
-  DictSet_StrLong(pDictsdwVariable, bsdwVarJobLevel, 4);
+  ConstSet_StrLong(pDictsdwVariable, bsdwVarJobReport, 1);
+  ConstSet_StrLong(pDictsdwVariable, bsdwVarVolumeName, 2);
+  ConstSet_StrLong(pDictsdwVariable, bsdwVarPriority, 3);
+  ConstSet_StrLong(pDictsdwVariable, bsdwVarJobLevel, 4);
   if (PyModule_AddObject(m, bsdwVariable, pDictsdwVariable)) {
     return MOD_ERROR_VAL;
   }
@@ -160,30 +160,30 @@ MOD_INIT(bareossd)
   const char* bsdEventType = "bsdEventType";
   PyObject* pDictbsdEventType = NULL;
   pDictbsdEventType = PyDict_New();
-  DictSet_StrLong(pDictbsdEventType, bsdEventJobStart, 1);
-  DictSet_StrLong(pDictbsdEventType, bsdEventJobEnd, 2);
-  DictSet_StrLong(pDictbsdEventType, bsdEventDeviceInit, 3);
-  DictSet_StrLong(pDictbsdEventType, bsdEventDeviceMount, 4);
-  DictSet_StrLong(pDictbsdEventType, bsdEventVolumeLoad, 5);
-  DictSet_StrLong(pDictbsdEventType, bsdEventDeviceReserve, 6);
-  DictSet_StrLong(pDictbsdEventType, bsdEventDeviceOpen, 7);
-  DictSet_StrLong(pDictbsdEventType, bsdEventLabelRead, 8);
-  DictSet_StrLong(pDictbsdEventType, bsdEventLabelVerified, 9);
-  DictSet_StrLong(pDictbsdEventType, bsdEventLabelWrite, 10);
-  DictSet_StrLong(pDictbsdEventType, bsdEventDeviceClose, 11);
-  DictSet_StrLong(pDictbsdEventType, bsdEventVolumeUnload, 12);
-  DictSet_StrLong(pDictbsdEventType, bsdEventDeviceUnmount, 13);
-  DictSet_StrLong(pDictbsdEventType, bsdEventReadError, 14);
-  DictSet_StrLong(pDictbsdEventType, bsdEventWriteError, 15);
-  DictSet_StrLong(pDictbsdEventType, bsdEventDriveStatus, 16);
-  DictSet_StrLong(pDictbsdEventType, bsdEventVolumeStatus, 17);
-  DictSet_StrLong(pDictbsdEventType, bsdEventSetupRecordTranslation, 18);
-  DictSet_StrLong(pDictbsdEventType, bsdEventReadRecordTranslation, 19);
-  DictSet_StrLong(pDictbsdEventType, bsdEventWriteRecordTranslation, 20);
-  DictSet_StrLong(pDictbsdEventType, bsdEventDeviceRelease, 21);
-  DictSet_StrLong(pDictbsdEventType, bsdEventNewPluginOptions, 22);
-  DictSet_StrLong(pDictbsdEventType, bsdEventChangerLock, 23);
-  DictSet_StrLong(pDictbsdEventType, bsdEventChangerUnlock, 24);
+  ConstSet_StrLong(pDictbsdEventType, bsdEventJobStart, 1);
+  ConstSet_StrLong(pDictbsdEventType, bsdEventJobEnd, 2);
+  ConstSet_StrLong(pDictbsdEventType, bsdEventDeviceInit, 3);
+  ConstSet_StrLong(pDictbsdEventType, bsdEventDeviceMount, 4);
+  ConstSet_StrLong(pDictbsdEventType, bsdEventVolumeLoad, 5);
+  ConstSet_StrLong(pDictbsdEventType, bsdEventDeviceReserve, 6);
+  ConstSet_StrLong(pDictbsdEventType, bsdEventDeviceOpen, 7);
+  ConstSet_StrLong(pDictbsdEventType, bsdEventLabelRead, 8);
+  ConstSet_StrLong(pDictbsdEventType, bsdEventLabelVerified, 9);
+  ConstSet_StrLong(pDictbsdEventType, bsdEventLabelWrite, 10);
+  ConstSet_StrLong(pDictbsdEventType, bsdEventDeviceClose, 11);
+  ConstSet_StrLong(pDictbsdEventType, bsdEventVolumeUnload, 12);
+  ConstSet_StrLong(pDictbsdEventType, bsdEventDeviceUnmount, 13);
+  ConstSet_StrLong(pDictbsdEventType, bsdEventReadError, 14);
+  ConstSet_StrLong(pDictbsdEventType, bsdEventWriteError, 15);
+  ConstSet_StrLong(pDictbsdEventType, bsdEventDriveStatus, 16);
+  ConstSet_StrLong(pDictbsdEventType, bsdEventVolumeStatus, 17);
+  ConstSet_StrLong(pDictbsdEventType, bsdEventSetupRecordTranslation, 18);
+  ConstSet_StrLong(pDictbsdEventType, bsdEventReadRecordTranslation, 19);
+  ConstSet_StrLong(pDictbsdEventType, bsdEventWriteRecordTranslation, 20);
+  ConstSet_StrLong(pDictbsdEventType, bsdEventDeviceRelease, 21);
+  ConstSet_StrLong(pDictbsdEventType, bsdEventNewPluginOptions, 22);
+  ConstSet_StrLong(pDictbsdEventType, bsdEventChangerLock, 23);
+  ConstSet_StrLong(pDictbsdEventType, bsdEventChangerUnlock, 24);
 
   if (!pDictbsdEventType) { return MOD_ERROR_VAL; }
   if (PyModule_AddObject(m, bsdEventType, pDictbsdEventType)) {

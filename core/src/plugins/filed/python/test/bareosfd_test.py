@@ -1,7 +1,8 @@
 import unittest
 import bareosfd
 import time
-# print dir(bareosfd)
+import types
+#print dir(bareosfd)
 # print "bareosfd.bJobMessageType:", str( bareosfd.bJobMessageType)
 # print "bareosfd.bVariable:", str( bareosfd.bVariable)
 # print "bareosfd.bEventType:", str( bareosfd.bEventType)
@@ -15,8 +16,23 @@ import time
 
 class TestBareosFd(unittest.TestCase):
 
+    def test_ModuleDicts(self):
+        help (bareosfd)
+        print bareosfd.bCFs
+        print bareosfd.CF_ERROR
+
+    #     print bCFs
+    #     bEventType
+    #     bFileType
+    #     bFuncs
+    #     bIOPS
+    #     bJobMessageType
+    #     bLevels
+    #     bRCs
+    #     bVariable
+
     def test_bJobMessageType(self):
-        bareosfd.DebugMessage( bareosfd.bJobMessageType['M_INFO'], "This is a Job message")
+        # bareosfd.DebugMessage( bareosfd.bJobMessageType['M_INFO'], "This is a Job message")
         self.assertEqual(str(bareosfd.bJobMessageType), """{'M_MOUNT': 10L, 'M_SECURITY': 14L, 'M_DEBUG': 2L, 'M_WARNING': 5L, 'M_SAVED': 7L, 'M_TERM': 12L, 'M_ABORT': 1L, 'M_INFO': 6L, 'M_ERROR': 4L, 'M_FATAL': 3L, 'M_NOTSAVED': 8L, 'M_RESTORED': 13L, 'M_ERROR_TERM': 11L, 'M_ALERT': 15L, 'M_VOLMGMT': 16L, 'M_SKIPPED': 9L}"""
 )
 
