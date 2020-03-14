@@ -866,7 +866,7 @@ MOD_INIT(bareosfd)
   PyModule_AddObject(m, "XattrPacket", (PyObject*)&PyXattrPacketType);
 
 
-  /* constants */
+  /* module dictionaries */
   const char* bJobMessageType = "bJobMessageType";
   PyObject* pDictJobMessageType = NULL;
   pDictJobMessageType = PyDict_New();
@@ -973,16 +973,16 @@ MOD_INIT(bareosfd)
   if (PyModule_AddObject(m, bRCs, pDictbRCs)) { return MOD_ERROR_VAL; }
 
 
-  const char* bcfs = "bcfs";
-  PyObject* pDictbcfs = NULL;
-  pDictbcfs = PyDict_New();
-  DictSet_StrLong(pDictbcfs, cf_skip, 1);
-  DictSet_StrLong(pDictbcfs, cf_error, 2);
-  DictSet_StrLong(pDictbcfs, cf_extract, 3);
-  DictSet_StrLong(pDictbcfs, cf_created, 4);
-  DictSet_StrLong(pDictbcfs, cf_core, 5);
-  if (!pDictbcfs) { return MOD_ERROR_VAL; }
-  if (PyModule_AddObject(m, bcfs, pDictbcfs)) { return MOD_ERROR_VAL; }
+  const char* bCFs = "bCFs";
+  PyObject* pDictbCFs = NULL;
+  pDictbCFs = PyDict_New();
+  DictSet_StrLong(pDictbCFs, CF_SKIP, 1);
+  DictSet_StrLong(pDictbCFs, CF_ERROR, 2);
+  DictSet_StrLong(pDictbCFs, CF_EXTRACT, 3);
+  DictSet_StrLong(pDictbCFs, CF_CREATED, 4);
+  DictSet_StrLong(pDictbCFs, CF_CORE, 5);
+  if (!pDictbCFs) { return MOD_ERROR_VAL; }
+  if (PyModule_AddObject(m, bCFs, pDictbCFs)) { return MOD_ERROR_VAL; }
 
   const char* bEventType = "bEventType";
   PyObject* pDictbEventType = NULL;

@@ -115,6 +115,117 @@ MOD_INIT(bareossd)
     return MOD_ERROR_VAL;
   }
 
+  /* module dictionaries */
+  const char* bJobMessageType = "bJobMessageType";
+  PyObject* pDictJobMessageType = NULL;
+  pDictJobMessageType = PyDict_New();
+  if (!pDictJobMessageType) { return MOD_ERROR_VAL; }
+  DictSet_StrLong(pDictJobMessageType, M_ABORT, 1);
+  DictSet_StrLong(pDictJobMessageType, M_DEBUG, 2);
+  DictSet_StrLong(pDictJobMessageType, M_FATAL, 3);
+  DictSet_StrLong(pDictJobMessageType, M_ERROR, 4);
+  DictSet_StrLong(pDictJobMessageType, M_WARNING, 5);
+  DictSet_StrLong(pDictJobMessageType, M_INFO, 6);
+  DictSet_StrLong(pDictJobMessageType, M_SAVED, 7);
+  DictSet_StrLong(pDictJobMessageType, M_NOTSAVED, 8);
+  DictSet_StrLong(pDictJobMessageType, M_SKIPPED, 9);
+  DictSet_StrLong(pDictJobMessageType, M_MOUNT, 10);
+  DictSet_StrLong(pDictJobMessageType, M_ERROR_TERM, 11);
+  DictSet_StrLong(pDictJobMessageType, M_TERM, 12);
+  DictSet_StrLong(pDictJobMessageType, M_RESTORED, 13);
+  DictSet_StrLong(pDictJobMessageType, M_SECURITY, 14);
+  DictSet_StrLong(pDictJobMessageType, M_ALERT, 15);
+  DictSet_StrLong(pDictJobMessageType, M_VOLMGMT, 16);
+  if (PyModule_AddObject(m, bJobMessageType, pDictJobMessageType)) {
+    return MOD_ERROR_VAL;
+  }
+
+  const char* bsdVariable = "bsdVariable";
+  PyObject* pDictsdVariable = NULL;
+  pDictsdVariable = PyDict_New();
+  if (!pDictsdVariable) { return MOD_ERROR_VAL; }
+  DictSet_StrLong(pDictsdVariable, bsdVarJob, 1);
+  DictSet_StrLong(pDictsdVariable, bsdVarLevel, 2);
+  DictSet_StrLong(pDictsdVariable, bsdVarType, 3);
+  DictSet_StrLong(pDictsdVariable, bsdVarJobId, 4);
+  DictSet_StrLong(pDictsdVariable, bsdVarClient, 5);
+  DictSet_StrLong(pDictsdVariable, bsdVarPool, 6);
+  DictSet_StrLong(pDictsdVariable, bsdVarPoolType, 7);
+  DictSet_StrLong(pDictsdVariable, bsdVarStorage, 8);
+  DictSet_StrLong(pDictsdVariable, bsdVarMediaType, 9);
+  DictSet_StrLong(pDictsdVariable, bsdVarJobName, 10);
+  DictSet_StrLong(pDictsdVariable, bsdVarJobStatus, 11);
+  DictSet_StrLong(pDictsdVariable, bsdVarVolumeName, 12);
+  DictSet_StrLong(pDictsdVariable, bsdVarJobErrors, 13);
+  DictSet_StrLong(pDictsdVariable, bsdVarJobFiles, 14);
+  DictSet_StrLong(pDictsdVariable, bsdVarJobBytes, 15);
+  DictSet_StrLong(pDictsdVariable, bsdVarCompatible, 16);
+  DictSet_StrLong(pDictsdVariable, bsdVarPluginDir, 17);
+  if (PyModule_AddObject(m, bsdVariable, pDictsdVariable)) {
+    return MOD_ERROR_VAL;
+  }
+
+  const char* bsdwVariable = "bsdwVariable";
+  PyObject* pDictsdwVariable = NULL;
+  pDictsdwVariable = PyDict_New();
+  if (!pDictsdwVariable) { return MOD_ERROR_VAL; }
+  DictSet_StrLong(pDictsdwVariable, bsdwVarJobReport, 1);
+  DictSet_StrLong(pDictsdwVariable, bsdwVarVolumeName, 2);
+  DictSet_StrLong(pDictsdwVariable, bsdwVarPriority, 3);
+  DictSet_StrLong(pDictsdwVariable, bsdwVarJobLevel, 4);
+  if (PyModule_AddObject(m, bsdwVariable, pDictsdwVariable)) {
+    return MOD_ERROR_VAL;
+  }
+
+  const char* bRCs = "bRCs";
+  PyObject* pDictbRCs = NULL;
+  pDictbRCs = PyDict_New();
+  DictSet_StrLong(pDictbRCs, bRC_OK, 0);
+  DictSet_StrLong(pDictbRCs, bRC_Stop, 1);
+  DictSet_StrLong(pDictbRCs, bRC_Error, 2);
+  DictSet_StrLong(pDictbRCs, bRC_More, 3);
+  DictSet_StrLong(pDictbRCs, bRC_Term, 4);
+  DictSet_StrLong(pDictbRCs, bRC_Seen, 5);
+  DictSet_StrLong(pDictbRCs, bRC_Core, 6);
+  DictSet_StrLong(pDictbRCs, bRC_Skip, 7);
+  DictSet_StrLong(pDictbRCs, bRC_Cancel, 8);
+  if (!pDictbRCs) { return MOD_ERROR_VAL; }
+  if (PyModule_AddObject(m, bRCs, pDictbRCs)) { return MOD_ERROR_VAL; }
+
+
+  const char* bsdEventType = "bsdEventType";
+  PyObject* pDictbsdEventType = NULL;
+  pDictbsdEventType = PyDict_New();
+  DictSet_StrLong(pDictbsdEventType, bsdEventJobStart, 1);
+  DictSet_StrLong(pDictbsdEventType, bsdEventJobEnd, 2);
+  DictSet_StrLong(pDictbsdEventType, bsdEventDeviceInit, 3);
+  DictSet_StrLong(pDictbsdEventType, bsdEventDeviceMount, 4);
+  DictSet_StrLong(pDictbsdEventType, bsdEventVolumeLoad, 5);
+  DictSet_StrLong(pDictbsdEventType, bsdEventDeviceReserve, 6);
+  DictSet_StrLong(pDictbsdEventType, bsdEventDeviceOpen, 7);
+  DictSet_StrLong(pDictbsdEventType, bsdEventLabelRead, 8);
+  DictSet_StrLong(pDictbsdEventType, bsdEventLabelVerified, 9);
+  DictSet_StrLong(pDictbsdEventType, bsdEventLabelWrite, 10);
+  DictSet_StrLong(pDictbsdEventType, bsdEventDeviceClose, 11);
+  DictSet_StrLong(pDictbsdEventType, bsdEventVolumeUnload, 12);
+  DictSet_StrLong(pDictbsdEventType, bsdEventDeviceUnmount, 13);
+  DictSet_StrLong(pDictbsdEventType, bsdEventReadError, 14);
+  DictSet_StrLong(pDictbsdEventType, bsdEventWriteError, 15);
+  DictSet_StrLong(pDictbsdEventType, bsdEventDriveStatus, 16);
+  DictSet_StrLong(pDictbsdEventType, bsdEventVolumeStatus, 17);
+  DictSet_StrLong(pDictbsdEventType, bsdEventSetupRecordTranslation, 18);
+  DictSet_StrLong(pDictbsdEventType, bsdEventReadRecordTranslation, 19);
+  DictSet_StrLong(pDictbsdEventType, bsdEventWriteRecordTranslation, 20);
+  DictSet_StrLong(pDictbsdEventType, bsdEventDeviceRelease, 21);
+  DictSet_StrLong(pDictbsdEventType, bsdEventNewPluginOptions, 22);
+  DictSet_StrLong(pDictbsdEventType, bsdEventChangerLock, 23);
+  DictSet_StrLong(pDictbsdEventType, bsdEventChangerUnlock, 24);
+
+  if (!pDictbsdEventType) { return MOD_ERROR_VAL; }
+  if (PyModule_AddObject(m, bsdEventType, pDictbsdEventType)) {
+    return MOD_ERROR_VAL;
+  }
+
   return MOD_SUCCESS_VAL(m);
 }
 
