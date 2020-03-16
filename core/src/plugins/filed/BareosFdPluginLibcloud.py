@@ -477,7 +477,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             savepkt.fname = "empty" # dummy value, savepkt is always checked
             return bRCs["bRC_Skip"]
 
-        filename = "%s/%s" % (self.current_backup_job["bucket"], self.current_backup_job["name"])
+        filename = "PYLIBCLOUD:/%s/%s" % (self.current_backup_job["bucket"], self.current_backup_job["name"])
         joblog("Backing up %s" % (filename,))
 
         statp = bareosfd.StatPacket()
