@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2006 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -68,7 +68,7 @@ class BareosRegex {
   /* private */
   POOLMEM* expr = nullptr;     /**< search epression */
   POOLMEM* subst = nullptr;    /**< substitution */
-  regex_t preg;                /**< regex_t result of regcomp() */
+  regex_t preg = {};           /**< regex_t result of regcomp() */
   regmatch_t regs[BREG_NREGS]; /**< contains match */
   char* eor = nullptr;         /**< end of regexp in expr */
 
