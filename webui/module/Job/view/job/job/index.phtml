@@ -272,10 +272,10 @@ $this->headTitle($title);
    }
 
    function refreshTableData() {
+      $('#spinner').fadeIn('slow');
       $('#jobtable').bootstrapTable('refreshOptions', {
          url: '<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=jobs&period='; ?>' + displayRange,
       });
-
       $('.bootstrap-table-filter-control-jobid').val(jobid);
       $('.bootstrap-table-filter-control-name').val(jobname);
       $('.bootstrap-table-filter-control-client').val(client);
@@ -287,6 +287,7 @@ $this->headTitle($title);
       $('.bootstrap-table-filter-control-jobbytes').val(jobbytes);
       $('.bootstrap-table-filter-control-joberrors').val(joberrors);
       $('.bootstrap-table-filter-control-jobstatus').val(jobstatus);
+      $('#spinner').fadeOut('slow');
    }
 
    function detailFormatter(index, row) {
