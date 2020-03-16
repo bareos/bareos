@@ -32,7 +32,6 @@ import multiprocessing
 import os
 import syslog
 import time
-import traceback
 
 from libcloud.storage.types import Provider
 from libcloud.storage.providers import get_driver
@@ -40,35 +39,27 @@ from bareos_fd_consts import bRCs, bIOPS, bJobMessageType
 
 syslog.openlog(__name__, facility=syslog.LOG_LOCAL7)
 
-debug = False
-fd_context = None
+plugin_context = None
 
-def joblog(message):
-    global fd_context
-    if fd_context != None:
-        message = "[%s] %s" % (os.getpid(), message)
+def jobmessage(message_type, message):
+    global plugin_context
+    if plugin_context != None:
+        message = "BareosFdPluginLibcloud [%s]: %s\n" % (os.getpid(), message)
         bareosfd.JobMessage(
-            fd_context,
-            bJobMessageType["M_INFO"],
+            plugin_context,
+            bJobMessageType[message_type],
             message
         )
 
-def log(message):
-    if debug is True:
-        message = "[%s] %s" % (os.getpid(), message)
-        syslog.syslog(message)
-
-
-def error(message):
-    message = "[%s] %s" % (os.getpid(), message)
-    syslog.syslog(message)
-
-
-# Print the traceback to syslog
-def log_exc():
-    for line in traceback.format_exc().split("\n"):
-        error(line)
-
+def debugmessage(level, message):
+    global plugin_context
+    if plugin_context != None:
+        message = "BareosFdPluginLibcloud [%s]: %s\n" % (os.getpid(), message)
+        bareosfd.DebugMessage(
+            plugin_context,
+            level,
+            message
+        )
 
 class IterStringIO(io.BufferedIOBase):
     def __init__(self, iterable):
@@ -114,8 +105,8 @@ def get_object(driver, bucket, key):
         return driver.get_object(bucket, key)
     except libcloud.common.types.InvalidCredsError:
         # Something is buggy here, this bug is triggered by tilde-ending objects
-        # Our tokens are good, we used then before
-        error(
+        # Our tokens are good, we used them before
+        debugmessage(100,
             "BUGGY filename found, see the libcloud bug somewhere : %s/%s"
             % (bucket, key)
         )
@@ -133,14 +124,13 @@ class Worker(object):
             self.driver = connect(self.options)
             self.__load_object()
         except:
-            log("FATAL ERROR: worker could not connect to driver")
-            log_exc()
+            debugmessage(100, "Worker could not connect to driver")
 
     def __load_object(self):
         while True:
             job = self.worker_todo_queue.get()
             if job is None:
-                log("worker[%s] : job completed, will quit now" % (os.getpid(),))
+                debugmessage(100, "worker[%s] : job completed, will quit now" % (os.getpid(),))
                 return
 
             obj = get_object(self.driver, job["bucket"], job["name"])
@@ -153,8 +143,8 @@ class Worker(object):
 
             size_of_fetched_object = len(content)
             if size_of_fetched_object != job["size"]:
-                error(
-                    "FATAL ERROR: prefetched file %s: got %s bytes, not the real size (%s bytes)"
+                debugmessage(100,
+                    "prefetched file %s: got %s bytes, not the real size (%s bytes)"
                     % (job["name"], size_of_fetched_object, job["size"])
                 )
                 return
@@ -180,7 +170,7 @@ class JobCreator(object):
         try:
             self.__iterate_over_buckets()
         except:
-            log_exc()
+            debugmessage(100, "Error while iterating over buckets")
         self.__end_job()
 
     def __iterate_over_buckets(self):
@@ -193,7 +183,7 @@ class JobCreator(object):
                 if bucket.name in self.options["buckets_exclude"]:
                     continue
 
-            log("Backing up bucket \"%s\"" % (bucket.name,))
+            debugmessage(100, "Backing up bucket \"%s\"" % (bucket.name,))
 
             self.__generate_jobs_for_bucket_objects(self.driver.iterate_container_objects(bucket))
 
@@ -220,7 +210,7 @@ class JobCreator(object):
             object_name = "%s/%s" % (obj.container.name, obj.name)
 
             if self.last_run > mtime:
-                log(
+                debugmessage(100,
                     "File %s not changed, skipped (%s > %s)"
                     % (object_name, self.last_run, mtime)
                 )
@@ -234,7 +224,7 @@ class JobCreator(object):
 
                 continue
 
-            log(
+            debugmessage(100,
                 "File %s was changed or is new, backing up (%s < %s)"
                 % (object_name, self.last_run, mtime)
             )
@@ -246,16 +236,16 @@ class JobCreator(object):
                 self.worker_todo_queue.put(job)
 
     def __end_job(self):
-        log("__end_job: waiting for workers queue to become empty")
+        debugmessage(100, "__end_job: waiting for workers queue to become empty")
         while True:
             size = self.worker_todo_queue.qsize()
             if size == 0:
                 break
             log("__end_job: %s items left in workers queue, waiting" % (size,))
             time.sleep(2)
-        log("__end_job: workers queue is empty")
+        debugmessage(100, "__end_job: workers queue is empty")
 
-        log("__end_job: I will shutdown all workers now")
+        debugmessage(100, "__end_job: I will shutdown all workers now")
         for _ in range(0, self.options["nb_worker"]):
             self.worker_todo_queue.put(None)
 
@@ -268,9 +258,9 @@ class JobCreator(object):
 
 class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     def __init__(self, context, plugindef):
-        global fd_context
-        fd_context = context
-        log("BareosFdPluginLibcloud called with plugindef: %s" % (plugindef,))
+        global plugin_context
+        plugin_context = context
+        debugmessage(100, "BareosFdPluginLibcloud called with plugindef: %s" % (plugindef,))
 
         super(BareosFdPluginLibcloud, self).__init__(context, plugindef)
         super(BareosFdPluginLibcloud, self).parse_plugin_definition(context, plugindef)
@@ -320,32 +310,26 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             self.options["accurate"] = True
 
     def parse_plugin_definition(self, context, plugindef):
-        log("Parse Plugin Definition")
+        debugmessage(100, "Parse Plugin Definition")
         config_file = self.options.get("config_file")
         if config_file:
-            if not self.__parse_config_file(context, config_file):
-                return bRCs["bRC_Error"]
-        return bRCs["bRC_OK"]
+            if self.__parse_config_file(context, config_file):
+                return bRCs["bRC_OK"]
+        jobmessage("M_FATAL", "Could not load configfile %s" % (config_file))
+        return bRCs["bRC_Error"]
 
     def __parse_config_file(self, context, config_file):
         """
         Parse the config file given in the config_file plugin option
         """
-        bareosfd.DebugMessage(
-            context,
-            100,
-            "BareosFdPluginLibcloud: parse_config_file(): parse %s\n"
-            % (config_file),
-        )
+        debugmessage(100, "parse_config_file(): parse %s\n" % (config_file))
 
         self.config = configparser.ConfigParser()
 
         try:
             self.config.readfp(open(config_file))
         except IOError as err:
-            bareosfd.JobMessage(
-                context,
-                bJobMessageType["M_FATAL"],
+            debugmessage(100,
                 "BareosFdPluginLibcloud: Error reading config file %s: %s\n"
                 % (self.options["config_file"], err.strerror),
             )
@@ -370,13 +354,13 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         for section in mandatory_sections:
             if not self.config.has_section(section):
-                log("BareosFdPluginLibcloud: Section [%s] missing in config file %s\n"
+                debugmessage(100, "BareosFdPluginLibcloud: Section [%s] missing in config file %s\n"
                 % (section, config_file))
                 return False
 
             for option in mandatory_options[section]:
                 if not self.config.has_option(section, option):
-                    log("BareosFdPluginLibcloud: Option [%s] missing in Section %s\n"
+                    debugmessage(100, "BareosFdPluginLibcloud: Option [%s] missing in Section %s\n"
                     % (option, section))
                     return False
 
@@ -394,20 +378,22 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     else:
                         self.options[option_map[option]] = value
                 except:
-                    log("Could not evaluate: %s in config file %s" % (value, config_file))
+                    debugmessage(100, "Could not evaluate: %s in config file %s" % (value, config_file))
                     return False
 
         return True
 
     def start_backup_job(self, context):
-        # We force an action to the backend, to test our params
-        # If we can get anything, then it is ok
-        # Else, an exception will be raised, and the job will fail
-        driver = connect(self.options)
-        for _ in driver.iterate_containers():
-            break
+        try:
+            jobmessage("M_INFO", "Try to connect to:" + self.options["port"])
+            driver = connect(self.options)
+            for _ in driver.iterate_containers():
+                break
+        except:
+            jobmessage("M_FATAL", "Could not connect to libcloud driver")
+            return bRCs["bRC_Error"]
 
-        joblog("Last backup: %s (ts: %s)" % (self.last_run, self.since))
+        jobmessage("M_INFO", "Last backup: %s (ts: %s)" % (self.last_run, self.since))
 
         self.manager = multiprocessing.Manager()
         self.plugin_todo_queue = self.manager.Queue(maxsize=self.options["queue_size"])
@@ -423,7 +409,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             proc.start()
             self.worker_pids.append(proc.pid)
             self.workers.append(proc)
-        log("%s worker started" % (len(self.worker_pids),))
+        debugmessage(100, "%s worker started" % (len(self.worker_pids),))
 
         job_generator = JobCreator(
             self.plugin_todo_queue,
@@ -435,6 +421,8 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.job_generator = multiprocessing.Process(target=job_generator)
         self.job_generator.start()
         self.driver = connect(self.options)
+        debugmessage(100, "%s job creator started" % (len(self.worker_pids),))
+        return bRCs["bRC_OK"]
 
     def check_file(self, context, fname):
         # All existing files are passed to bareos
@@ -442,32 +430,31 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         return bRCs["bRC_Error"]
 
     def __shutdown_and_join_worker(self):
-        log("End of queue found, backup is completed")
+        jobmessage("M_INFO", "Backup is completed")
         for i in self.workers:
-            log("join() for a worker (pid %s)" % (i.pid,))
+            debugmessage(100, "join() for a worker (pid %s)" % (i.pid,))
             i.join()
-        log("Ok, all workers are shut down")
+        debugmessage(100, "Ok, all workers are shut down")
 
         try:
             self.manager.shutdown()
         except OSError:
             # should not happen!
             pass
-        log("self.manager.shutdown()")
+        debugmessage(100, "self.manager.shutdown()")
 
-        log("Join() for the job_generator (pid %s)" % (self.job_generator.pid,))
+        debugmessage(100, "Join() for the job_generator (pid %s)" % (self.job_generator.pid,))
         self.job_generator.join()
-        log("job_generator is shut down")
+        debugmessage(100, "job_generator is shut down")
 
     def start_backup_file(self, context, savepkt):
+        debugmessage(100, "start_backup_file() called, waiting for worker")
         try:
             while True:
                 try:
                     self.current_backup_job = self.plugin_todo_queue.get_nowait()
                     break
                 except:
-                    size = self.plugin_todo_queue.qsize()
-                    joblog("start_backup_file: queue size: %s" % (size,))
                     time.sleep(0.1)
         except TypeError:
             self.current_backup_job = None
@@ -478,7 +465,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             return bRCs["bRC_Skip"]
 
         filename = "PYLIBCLOUD:/%s/%s" % (self.current_backup_job["bucket"], self.current_backup_job["name"])
-        joblog("Backing up %s" % (filename,))
+        jobmessage("M_INFO", "Backing up %s" % (filename,))
 
         statp = bareosfd.StatPacket()
         statp.size = self.current_backup_job["size"]
@@ -522,7 +509,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 IOP.status = len(buf)
                 return bRCs["bRC_OK"]
             except IOError as e:
-                log("Cannot read from %s : %s" % (IOP.fname, e))
+                jobmessage("M_ERROR", "Cannot read from %s : %s" % (IOP.fname, e))
                 IOP.status = 0
                 IOP.io_errno = e.errno
                 return bRCs["bRC_Error"]
@@ -534,7 +521,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 IOP.io_errno = 0
             except IOError as msg:
                 IOP.io_errno = -1
-                error("Failed to write data: %s" % (msg,))
+                jobmessage("M_ERROR", "Failed to write data: %s" % (msg,))
             return bRCs["bRC_OK"]
         elif IOP.func == bIOPS["IO_CLOSE"]:
             if self.FILE:
