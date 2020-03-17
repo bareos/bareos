@@ -26,12 +26,6 @@ JobName=backup-bareos-fd
 # shortcut for s3cmd
 S3="${S3CMD} --config ${S3CFG}"
 
-# create s3 content for test
-${S3} rb --recursive --force s3://test || echo "s3://test does not exist"
-${S3} mb s3://test
-
-
-
 
 # Directory to backup.
 # This directory will be created by setup_data "$@"().
@@ -40,6 +34,12 @@ BackupDirectory="${tmp}/data"
 # Use a tgz to setup data to be backed up.
 # Data will be placed at "${tmp}/data/".
 setup_data "$@"
+
+# create s3 content for test
+${S3} rb --recursive --force s3://test || echo "s3://test does not exist"
+${S3} mb s3://test
+${S3} sync "$BackupDirectory" s3://test
+
 
 # this test does not work with links because of the restore objects
 rm -r "${tmp}"/data/weird-files >/dev/null 2>&1
