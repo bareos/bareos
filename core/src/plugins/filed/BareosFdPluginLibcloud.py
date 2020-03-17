@@ -33,9 +33,10 @@ import os
 import syslog
 import time
 
+from bareos_fd_consts import bRCs, bIOPS, bJobMessageType
 from libcloud.storage.types import Provider
 from libcloud.storage.providers import get_driver
-from bareos_fd_consts import bRCs, bIOPS, bJobMessageType
+from sys import version_info
 
 syslog.openlog(__name__, facility=syslog.LOG_LOCAL7)
 
@@ -273,6 +274,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         # Set to None when the whole backup is completed
         # Restore's path will not touch this
         self.current_backup_job = {}
+        self.number_of_objects_to_backup = 0
 
     def __parse_options_bucket(self, name):
         if name not in self.options:
@@ -311,33 +313,36 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
     def parse_plugin_definition(self, context, plugindef):
         debugmessage(100, "Parse Plugin Definition")
-        config_file = self.options.get("config_file")
-        if config_file:
-            if self.__parse_config_file(context, config_file):
+        config_filename = self.options.get("config_file")
+        if config_filename:
+            if self.__parse_config_file(context, config_filename):
                 return bRCs["bRC_OK"]
-        jobmessage("M_FATAL", "Could not load configfile %s" % (config_file))
+        jobmessage("M_FATAL", "Could not load configfile %s" % (config_filename))
         return bRCs["bRC_Error"]
 
-    def __parse_config_file(self, context, config_file):
+    def __parse_config_file(self, context, config_filename):
         """
         Parse the config file given in the config_file plugin option
         """
-        debugmessage(100, "parse_config_file(): parse %s\n" % (config_file))
+        debugmessage(100, "parse_config_file(): parse %s\n" % (config_filename))
 
         self.config = configparser.ConfigParser()
 
         try:
-            self.config.readfp(open(config_file))
-        except IOError as err:
+            if version_info[:3] < (3,2):
+                self.config.readfp(open(config_filename))
+            else:
+                self.config.read_file(open(config_filename))
+        except (IOError, OSError) as err:
             debugmessage(100,
                 "BareosFdPluginLibcloud: Error reading config file %s: %s\n"
                 % (self.options["config_file"], err.strerror),
             )
             return False
 
-        return self.__check_config(context, config_file)
+        return self.__check_config(context, config_filename)
 
-    def __check_config(self, context, config_file):
+    def __check_config(self, context, config_filename):
         """
         Check the configuration and set or override options if necessary,
         considering mandatory: username and password in the [credentials] section
@@ -355,7 +360,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         for section in mandatory_sections:
             if not self.config.has_section(section):
                 debugmessage(100, "BareosFdPluginLibcloud: Section [%s] missing in config file %s\n"
-                % (section, config_file))
+                % (section, config_filename))
                 return False
 
             for option in mandatory_options[section]:
@@ -378,14 +383,14 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     else:
                         self.options[option_map[option]] = value
                 except:
-                    debugmessage(100, "Could not evaluate: %s in config file %s" % (value, config_file))
+                    debugmessage(100, "Could not evaluate: %s in config file %s" % (value, config_filename))
                     return False
 
         return True
 
     def start_backup_job(self, context):
         try:
-            jobmessage("M_INFO", "Try to connect to:" + self.options["port"])
+            jobmessage("M_INFO", "Try to connect to %s:%s" % (self.options["host"], self.options["port"]))
             driver = connect(self.options)
             for _ in driver.iterate_containers():
                 break
@@ -425,12 +430,15 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         return bRCs["bRC_OK"]
 
     def check_file(self, context, fname):
-        # All existing files are passed to bareos
+        # All existing files/objects are passed to bareos
         # If bareos have not seen one, it does not exists anymore
         return bRCs["bRC_Error"]
 
     def __shutdown_and_join_worker(self):
-        jobmessage("M_INFO", "Backup is completed")
+        if self.number_of_objects_to_backup:
+            jobmessage("M_INFO", "Backup completed with %d objects" % self.number_of_objects_to_backup)
+        else:
+            jobmessage("M_INFO", "No objects to backup")
         for i in self.workers:
             debugmessage(100, "join() for a worker (pid %s)" % (i.pid,))
             i.join()
@@ -476,6 +484,8 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         savepkt.statp = statp
         savepkt.fname = filename
         savepkt.type = bareos_fd_consts.bFileType["FT_REG"]
+
+        self.number_of_objects_to_backup += 1
 
         return bRCs["bRC_OK"]
 
