@@ -681,7 +681,7 @@ static bool regex_find_jobids(JobControlRecord* jcr,
   dlist* item_chain;
   uitem* item = NULL;
   uitem* last_item = NULL;
-  regex_t preg;
+  regex_t preg{};
   char prbuf[500];
   int rc;
   bool ok = false;

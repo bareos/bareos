@@ -53,7 +53,7 @@ static const char* secure_erase_cmdline = NULL;
 int SaferUnlink(const char* pathname, const char* regx)
 {
   int rc;
-  regex_t preg1;
+  regex_t preg1{};
   char prbuf[500];
   int rtn;
 

@@ -55,7 +55,7 @@ static void usage()
 
 int main(int argc, char* const* argv)
 {
-  regex_t preg;
+  regex_t preg{};
   char prbuf[500];
   char* fname = NULL;
   int rc, ch;

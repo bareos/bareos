@@ -560,8 +560,9 @@ static storagedaemon::BootStrapRecord* store_fileregex(
   if (bsr->fileregex) free(bsr->fileregex);
   bsr->fileregex = strdup(lc->str);
 
-  if (bsr->fileregex_re == NULL)
+  if (bsr->fileregex_re == NULL) {
     bsr->fileregex_re = (regex_t*)malloc(sizeof(regex_t));
+  }
 
   rc = regcomp(bsr->fileregex_re, bsr->fileregex, REG_EXTENDED | REG_NOSUB);
   if (rc != 0) {
