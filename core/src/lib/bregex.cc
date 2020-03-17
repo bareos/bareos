@@ -1354,7 +1354,7 @@ too_complex:
 
 int regcomp(regex_t* bufp, const char* regex, int cflags)
 {
-  new (bufp) regex_t();
+  memset(bufp, 0, sizeof(regex_t));
   bufp->cflags = cflags;
   if (bufp->cflags & REG_ICASE) {
     char *p, *lcase = strdup(regex);
@@ -1396,7 +1396,7 @@ int regexec(regex_t* preg,
 {
   int status;
   int len = strlen(string);
-  struct re_registers regs;
+  re_registers regs{};
 
   status = ReSearch(preg, (unsigned char*)string, len, 0, len, &regs);
   if (status >= 0) { re_registers_to_regmatch(&regs, pmatch, nmatch); }

@@ -66,11 +66,11 @@ class BareosRegex {
   void debug();
 
   /* private */
-  POOLMEM* expr = nullptr;     /**< search epression */
-  POOLMEM* subst = nullptr;    /**< substitution */
-  regex_t preg = {};           /**< regex_t result of regcomp() */
-  regmatch_t regs[BREG_NREGS]; /**< contains match */
-  char* eor = nullptr;         /**< end of regexp in expr */
+  POOLMEM* expr = nullptr;       /**< search epression */
+  POOLMEM* subst = nullptr;      /**< substitution */
+  regex_t preg{};                /**< regex_t result of regcomp() */
+  regmatch_t regs[BREG_NREGS]{}; /**< contains match */
+  char* eor = nullptr;           /**< end of regexp in expr */
 
   char* ReturnFname(const char* fname, int len); /**< return fname as result */
   char* EditSubst(const char* fname, regmatch_t pmatch[]);

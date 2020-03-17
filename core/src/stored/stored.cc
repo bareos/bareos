@@ -445,7 +445,7 @@ static void CleanUpOldFiles()
   int len = strlen(me->working_directory);
   POOLMEM* cleanup = GetPoolMemory(PM_MESSAGE);
   POOLMEM* basename = GetPoolMemory(PM_MESSAGE);
-  regex_t preg1;
+  regex_t preg1{};
   char prbuf[500];
   BErrNo be;
 

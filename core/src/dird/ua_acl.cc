@@ -89,10 +89,10 @@ static inline bool FindInAclList(alist* list,
                                  int len)
 {
   int rc;
-  regex_t preg;
+  regex_t preg{};
   int nmatch = 1;
   bool retval = false;
-  regmatch_t pmatch[1];
+  regmatch_t pmatch[1]{};
   const char* list_value;
 
   /*

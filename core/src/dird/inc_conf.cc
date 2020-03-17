@@ -458,7 +458,7 @@ static void ScanIncludeOptions(LEX* lc, int keyword, char* opts, int optlen)
 static void StoreRegex(LEX* lc, ResourceItem* item, int index, int pass)
 {
   int token, rc;
-  regex_t preg;
+  regex_t preg{};
   char prbuf[500];
   const char* type;
   int newsize;
