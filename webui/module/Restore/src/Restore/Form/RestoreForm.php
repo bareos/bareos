@@ -5,7 +5,7 @@
 * bareos-webui - Bareos Web-Frontend
 *
 * @link      https://github.com/bareos/bareos for the canonical source repository
-* @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
+* @copyright Copyright (c) 2013-2020 Bareos GmbH & Co. KG (http://www.bareos.org/)
 * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
 *
 * This program is free software: you can redistribute it and/or modify
@@ -34,11 +34,11 @@ class RestoreForm extends Form
    protected $restore_params;
    protected $clients;
    protected $filesets;
-   protected $restorejobs;
+   protected $restorejobresources;
    protected $jobids;
    protected $backups;
 
-   public function __construct($restore_params=null, $clients=null, $filesets=null, $restorejobs=null, $jobids=null, $backups=null)
+   public function __construct($restore_params=null, $clients=null, $filesets=null, $restorejobresources=null, $jobids=null, $backups=null)
    {
 
       parent::__construct('restore');
@@ -46,7 +46,7 @@ class RestoreForm extends Form
       $this->restore_params = $restore_params;
       $this->clients = $clients;
       $this->filesets = $filesets;
-      $this->restorejobs = $restorejobs;
+      $this->restorejobresources = $restorejobresources;
       $this->jobids = $jobids;
       $this->backups = $backups;
 
@@ -608,9 +608,13 @@ class RestoreForm extends Form
    private function getRestoreJobList()
    {
       $selectData = array();
-      if(!empty($this->restorejobs)) {
-         foreach($this->restorejobs as $restorejob) {
-            $selectData[$restorejob['name']] = $restorejob['name'];
+      if(!empty($this->restorejobresources)) {
+         foreach($this->restorejobresources as $restorejob) {
+            $selectData[$restorejob['job']] = $restorejob['job'];
+         }
+      }
+      return $selectData;
+   }
          }
       }
       return $selectData;

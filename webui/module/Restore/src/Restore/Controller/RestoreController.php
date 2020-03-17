@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2020 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -136,6 +136,7 @@ class RestoreController extends AbstractActionController
       $clients = $this->getClientModel()->getClients($this->bsock);
       $filesets = $this->getFilesetModel()->getDotFilesets($this->bsock);
       $restorejobs = $this->getJobModel()->getRestoreJobs($this->bsock);
+      $restorejobresources = $this->getRestoreModel()->getRestoreJobResources($this->bsock, $restorejobs);
     }
     catch(Exception $e) {
       echo $e->getMessage();
@@ -150,7 +151,7 @@ class RestoreController extends AbstractActionController
       $this->restore_params,
       $clients,
       $filesets,
-      $restorejobs,
+      $restorejobresources,
       $jobids,
       $backups
     );
