@@ -33,7 +33,7 @@ import os
 import syslog
 import time
 
-from bareos_fd_consts import bRCs, bIOPS, bJobMessageType
+from bareos_fd_consts import bRCs, bCFs, bIOPS, bJobMessageType, bFileType
 from libcloud.storage.types import Provider
 from libcloud.storage.providers import get_driver
 from sys import version_info
@@ -41,7 +41,6 @@ from sys import version_info
 syslog.openlog(__name__, facility=syslog.LOG_LOCAL7)
 
 plugin_context = None
-
 
 def jobmessage(message_type, message):
     global plugin_context
@@ -63,6 +62,17 @@ class IterStringIO(io.BufferedIOBase):
 
     def read(self, n=None):
         return bytearray(itertools.islice(self.iter, None, n))
+
+class FilenameConverter:
+    __pathprefix = 'PYLIBCLOUD:/'
+
+    @staticmethod
+    def BucketToBackup(filename):
+        return FilenameConverter.__pathprefix + filename
+
+    @staticmethod
+    def BackupToBucket(filename):
+        return filename.replace(FilenameConverter.__pathprefix, '')
 
 
 def str2bool(data):
@@ -502,9 +512,11 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             savepkt.fname = "empty"  # dummy value, savepkt is always checked
             return bRCs["bRC_Skip"]
 
-        filename = "PYLIBCLOUD:/%s/%s" % (
+        filename = FilenameConverter.BucketToBackup(
+            "%s/%s" % (
             self.current_backup_job["bucket"],
             self.current_backup_job["name"],
+            )
         )
         jobmessage("M_INFO", "Backing up %s" % (filename,))
 
@@ -522,13 +534,24 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         return bRCs["bRC_OK"]
 
+    def create_file(self, context, restorepkt):
+        debugmessage(100, "create_file() entry point in Python called with %s\n" % (restorepkt))
+        FNAME = FilenameConverter.BackupToBucket(restorepkt.ofname)
+        dirname = os.path.dirname(FNAME)
+        if not os.path.exists(dirname):
+            jobmessage("M_INFO", "Directory %s does not exist, creating it now\n" % dirname)
+            os.makedirs(dirname)
+        if restorepkt.type == bFileType["FT_REG"]:
+            restorepkt.create_status = bCFs["CF_EXTRACT"]
+        return bRCs["bRC_OK"]
+
     def plugin_io(self, context, IOP):
         if self.current_backup_job is None:
             return bRCs["bRC_Error"]
         if IOP.func == bIOPS["IO_OPEN"]:
             # Only used by the 'restore' path
             if IOP.flags & (os.O_CREAT | os.O_WRONLY):
-                self.FILE = open(IOP.fname, "wb")
+                self.FILE = open(FilenameConverter.BackupToBucket(IOP.fname), "wb")
                 return bRCs["bRC_OK"]
 
             # 'Backup' path
@@ -556,7 +579,8 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 IOP.status = len(buf)
                 return bRCs["bRC_OK"]
             except IOError as e:
-                jobmessage("M_ERROR", "Cannot read from %s : %s" % (IOP.fname, e))
+                jobmessage("M_ERROR", "Cannot read from %s : %s"
+                    % (FilenameConverter.BackupToBucket(IOP.fname), e))
                 IOP.status = 0
                 IOP.io_errno = e.errno
                 return bRCs["bRC_Error"]
