@@ -28,9 +28,7 @@ scripts=@scripts@
 cats=${PROJECT_BINARY_DIR}/cats
 src=${PROJECT_BINARY_DIR}/src
 tmpsrc=${PROJECT_BINARY_DIR}/tmpsrc
-
 DBTYPE=${DBTYPE:-@db_backend_to_test@}
-
 archivedir=@archivedir@
 logdir=@logdir@
 
@@ -105,11 +103,5 @@ export PYTHON_EXECUTABLE=@PYTHON_EXECUTABLE@
 
 export OVIRT_SERVER=@ovirt_server@
 
-# real postgres binaries are hidden on debian, instead there are wrappers
-# which we do not want for our tests
-if [ -d /usr/lib/postgresql  ]; then
-  POSTGRES_BINARY_DIR=$(dirname $(find /usr/lib/postgresql | grep psql))
-  export PATH=$POSTGRES_BINARY_DIR:$PATH
-else
-  export PATH=/sbin:/usr/sbin:$PATH
-fi
+S3CMD="@S3CMD@"
+S3CFG="${PROJECT_SOURCE_DIR}/s3cfg"

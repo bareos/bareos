@@ -23,6 +23,14 @@ JobName=backup-bareos-fd
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
+# shortcut for s3cmd
+S3="${S3CMD} --config ${S3CFG}"
+
+# create s3 content for test
+${S3} rb --recursive --force s3://test || echo "s3://test does not exist"
+${S3} mb s3://test
+
+
 
 
 # Directory to backup.
@@ -69,6 +77,6 @@ stop_bareos
 check_two_logs
 list=( $(find "${BackupDirectory}" -type f) )
 # Using check_restore_only_files_diff instead of check_restore_diff
-# to don't diff the file attributes, because they are not saved
+# to don'"t diff the file attributes, because they are not saved
 check_restore_only_files_diff "${list[@]}"
 end_test
