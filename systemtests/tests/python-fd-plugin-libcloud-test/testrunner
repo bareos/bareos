@@ -38,11 +38,11 @@ setup_data "$@"
 # create s3 content for test
 ${S3} rb --recursive --force s3://test || echo "s3://test does not exist"
 ${S3} mb s3://test
-${S3} sync "$BackupDirectory" s3://test
 
 
 # this test does not work with links because of the restore objects
 rm -r "${tmp}"/data/weird-files >/dev/null 2>&1
+${S3} sync "$BackupDirectory" s3://test
 
 start_test
 
@@ -78,5 +78,8 @@ check_two_logs
 list=( $(find "${BackupDirectory}" -type f) )
 # Using check_restore_only_files_diff instead of check_restore_diff
 # to don'"t diff the file attributes, because they are not saved
-check_restore_only_files_diff "${list[@]}"
+#check_restore_only_files_diff "${list[@]}"
+
+diff -r tmp/data tmp/bareos-restores/PYLIBCLOUD\:/test/data
+
 end_test
