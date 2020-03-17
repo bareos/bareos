@@ -949,8 +949,8 @@ static int op_search_and_replace(var_t* var,
     /* regular expression pattern based operation */
     tokenbuf_t mydata;
     tokenbuf_t myreplace;
-    regex_t preg;
-    regmatch_t pmatch[10];
+    regex_t preg{};
+    regmatch_t pmatch[10]{};
     int regexec_flag;
 
     /* copy pattern and data to own buffer to make sure they are EOS-terminated

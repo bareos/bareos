@@ -416,7 +416,7 @@ static void match_kw(regex_t* preg, const char* what, int len, POOLMEM*& buf)
 {
   int rc, size;
   int nmatch = 20;
-  regmatch_t pmatch[20];
+  regmatch_t pmatch[20]{};
 
   if (len <= 0) { return; }
   rc = regexec(preg, what, nmatch, pmatch, 0);
@@ -436,7 +436,7 @@ static void match_kw(regex_t* preg, const char* what, int len, POOLMEM*& buf)
 /* fill the items list with the output of the help command */
 void GetArguments(const char* what)
 {
-  regex_t preg;
+  regex_t preg{};
   POOLMEM* buf;
   int rc;
   init_items();

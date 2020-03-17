@@ -1058,7 +1058,7 @@ static bool AskForFileregex(UaContext* ua, RestoreContext* rx)
       if (ua->cmd[0] == '\0') {
         break;
       } else {
-        regex_t* fileregex_re = NULL;
+        regex_t* fileregex_re{};
         int rc;
         char errmsg[500] = "";
 
