@@ -1,0 +1,2 @@
+@plugindir@/bareos-fd-libcloud.py*
+@plugindir@/BareosFdPluginLibcloud.py*
