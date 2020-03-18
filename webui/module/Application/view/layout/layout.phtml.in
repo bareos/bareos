@@ -178,7 +178,9 @@ include 'version.php';
 <?php echo $this->inlineScript() ?>
 
 <script>
-   $('#spinner').fadeOut('normal');
+   $(window).on("load", function () {
+      $('#spinner').fadeOut('slow');
+   });
    $(function () {
       $('[data-toggle="tooltip"]').tooltip();
    });

@@ -156,6 +156,7 @@ $this->headTitle($title);
    echo $this->headScript()->prependFile($this->basePath() . '/js/custom-functions.js');
    echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table-filter-control.min.css');
    echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table.min.css');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-formatter.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-filter-control.min.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-locale-all.min.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-cookie.min.js');
@@ -164,26 +165,10 @@ $this->headTitle($title);
 
 <script>
 
-   var clientdetails = null;
-   var clientbackups = null;
-
-   function clientActionButtonsFormatter(value, row, index) {
-
-      let clientRestoreButton = '<a href="<?php echo $this->basePath() . '/restore/index?client='; ?>'+row.name+'"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="<?php echo $this->translate("Restore"); ?>"><span class="glyphicon glyphicon-import"></span></button></a>';
-      let clientStatusButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/client/status?client='+row.name+'" title="<?php echo $this->translate("Status"); ?>" id="btn-1"><span class="glyphicon glyphicon-zoom-in"></span></a>';
-
-      return clientRestoreButton + '&nbsp;' + clientStatusButton;
-   }
-
-   function jobActionButtonsFormatter(value, row, index) {
-      let jobDetailsButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath();?>/job/details/'+row.jobid+'" title="<?php echo $this->translate("View Job Details"); ?>" id="btn-0"><span class="glyphicon glyphicon-search"></span></a>';
-      let showFilesButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/restore/?mergefilesets=1&mergejobs=1&client='+row.client+'&jobid='+row.jobid+'" title="<?php echo $this->translate("Show Files"); ?>" id="btn-1"><span class="glyphicon glyphicon-folder-open"></span></a>';
-
-      return jobDetailsButton + '&nbsp;' + showFilesButton;
-   }
+   var basePath = "<?php echo $this->basePath(); ?>";
 
    function attachClientDetails() {
-      clientdetails = $('#clientdetails').bootstrapTable({
+      $('#clientdetails').bootstrapTable({
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
          cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
          cookieIdTable: 'dashboard_table_jobs_last_status',
@@ -218,7 +203,7 @@ $this->headTitle($title);
             {
                field: 'action',
                formatter: function(value, row, index) {
-                  return clientActionButtonsFormatter(value, row, index);
+                  return clientActionButtonsFormatter(value, row, index, basePath);
                }
             }
          ]
@@ -226,7 +211,7 @@ $this->headTitle($title);
    }
 
    function attachClientBackups() {
-      clientbackups = $('#clientbackups').bootstrapTable({
+      $('#clientbackups').bootstrapTable({
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
          cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
          cookieIdTable: 'client_clientbackups',
@@ -248,14 +233,14 @@ $this->headTitle($title);
                field: 'jobid',
                sortable: true,
                formatter: function(value) {
-                  return '<a href="<?php echo $this->basePath() . '/job/details/'; ?>'+value+'" title="<?php echo $this->translate("View Job Details"); ?>">'+value+'</a>';
+                  return formatJobId(value, basePath);
                }
             },
             {
                field: 'name',
                sortable: true,
                formatter: function(value) {
-                  return '<a href="<?php echo $this->basePath() . '/job/index?jobname='; ?>'+value+'">'+value+'</a>';
+                  return formatJobName(value, basePath);
                }
             },
             {
@@ -270,7 +255,7 @@ $this->headTitle($title);
                field: 'fileset',
                sortable: true,
                formatter: function(value, row, index) {
-                  return '<a href="<?php echo $this->basePath(). '/fileset/details/'; ?>'+row.filesetid+'">'+row.fileset+'</a>';
+                  return formatFilesetName(value, row, index, basePath);
                }
             },
             {
@@ -301,7 +286,7 @@ $this->headTitle($title);
             {
                field: 'action',
                formatter: function(value, row, index) {
-                  return jobActionButtonsFormatter(value, row, index);
+                  return jobActionButtonsFormatter(value, row, index, basePath);
                }
             }
          ]
