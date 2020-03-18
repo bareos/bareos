@@ -166,12 +166,11 @@ class Worker(object):
 
 
 class JobCreator(object):
-    def __init__(self, plugin_todo_queue, worker_todo_queue, last_run, opts, pids):
+    def __init__(self, plugin_todo_queue, worker_todo_queue, last_run, opts):
         self.plugin_todo_queue = plugin_todo_queue
         self.worker_todo_queue = worker_todo_queue
         self.last_run = last_run
         self.options = opts
-        self.pids = pids
 
         self.driver = connect(self.options)
         self.delta = datetime.timedelta(seconds=time.timezone)
@@ -456,7 +455,6 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             self.worker_todo_queue,
             self.last_run,
             self.options,
-            self.worker_pids,
         )
         self.job_generator = multiprocessing.Process(target=job_generator)
         self.job_generator.start()
