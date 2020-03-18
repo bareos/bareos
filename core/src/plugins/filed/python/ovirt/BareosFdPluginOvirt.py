@@ -1075,7 +1075,7 @@ class BareosOvirtWrapper(object):
         # your CA certificate of the engine in the system, you need to pass it to HTTPSConnection.
         context.load_verify_locations(cafile=self.ca)
 
-        return HTTPSConnection(proxy_url.hostname, proxy_url.port=context)
+        return HTTPSConnection(proxy_url.hostname, proxy_url.port)
 
     def start_download(self, snapshot, disk):
 

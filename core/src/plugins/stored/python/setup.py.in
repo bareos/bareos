@@ -4,7 +4,8 @@ module1 = Extension('bareossd',
                     sources = ['@CMAKE_CURRENT_SOURCE_DIR@/python/python-sd.cc'],
                     include_dirs =  ['@CMAKE_CURRENT_SOURCE_DIR@/../..'],
                     libraries = ['bareos'],
-                    library_dirs = ['@PROJECT_BINARY_DIR@/src/lib/']
+                    library_dirs = ['@PROJECT_BINARY_DIR@/src/lib/'],
+                    extra_compile_args=['-std=c++11'],
                     )
 
 setup (name = 'bareossd',
