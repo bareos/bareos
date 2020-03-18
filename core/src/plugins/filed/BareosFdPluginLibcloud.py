@@ -119,56 +119,9 @@ def get_object(driver, bucket, key):
         )
         return None
 
-
-class Worker(object):
-    def __init__(self, options, plugin_todo_queue, worker_todo_queue):
-        self.options = options
-        self.plugin_todo_queue = plugin_todo_queue
-        self.worker_todo_queue = worker_todo_queue
-
-    def __call__(self):
-        try:
-            self.driver = connect(self.options)
-            self.__load_object()
-        except:
-            debugmessage(100, "Worker could not connect to driver")
-
-    def __load_object(self):
-        while True:
-            job = self.worker_todo_queue.get()
-            if job is None:
-                debugmessage(
-                    100, "worker[%s] : job completed, will quit now" % (os.getpid(),)
-                )
-                return
-
-            obj = get_object(self.driver, job["bucket"], job["name"])
-            if obj is None:
-                # Object cannot be fetched, an error is already logged
-                continue
-
-            stream = obj.as_stream()
-            content = b"".join(list(stream))
-
-            size_of_fetched_object = len(content)
-            if size_of_fetched_object != job["size"]:
-                debugmessage(
-                    100,
-                    "prefetched file %s: got %s bytes, not the real size (%s bytes)"
-                    % (job["name"], size_of_fetched_object, job["size"]),
-                )
-                return
-
-            data = io.BytesIO(content)
-
-            job["data"] = data
-            self.plugin_todo_queue.put(job)
-
-
 class JobCreator(object):
-    def __init__(self, plugin_todo_queue, worker_todo_queue, last_run, opts):
+    def __init__(self, plugin_todo_queue, last_run, opts):
         self.plugin_todo_queue = plugin_todo_queue
-        self.worker_todo_queue = worker_todo_queue
         self.last_run = last_run
         self.options = opts
 
@@ -180,7 +133,8 @@ class JobCreator(object):
             self.__iterate_over_buckets()
         except:
             debugmessage(100, "Error while iterating over buckets")
-        self.__end_job()
+
+        self.plugin_todo_queue.put(None) #end
 
     def __iterate_over_buckets(self):
         for bucket in self.driver.iterate_containers():
@@ -242,32 +196,7 @@ class JobCreator(object):
                 % (object_name, self.last_run, mtime),
             )
 
-            # Do not prefetch large objects
-            if obj.size >= self.options["prefetch_size"]:
-                self.plugin_todo_queue.put(job)
-            else:
-                self.worker_todo_queue.put(job)
-
-    def __end_job(self):
-        debugmessage(100, "__end_job: waiting for workers queue to become empty")
-        while True:
-            size = self.worker_todo_queue.qsize()
-            if size == 0:
-                break
-            log("__end_job: %s items left in workers queue, waiting" % (size,))
-            time.sleep(2)
-        debugmessage(100, "__end_job: workers queue is empty")
-
-        debugmessage(100, "__end_job: I will shutdown all workers now")
-        for _ in range(0, self.options["nb_worker"]):
-            self.worker_todo_queue.put(None)
-
-        while not self.worker_todo_queue.empty():
-            pass
-
-        # notify the plugin that the workers are ready
-        self.plugin_todo_queue.put(None)
-
+            self.plugin_todo_queue.put(job)
 
 class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     def __init__(self, context, plugindef):
@@ -289,6 +218,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         # Restore's path will not touch this
         self.current_backup_job = {}
         self.number_of_objects_to_backup = 0
+        self.driver = None
 
     def __parse_options_bucket(self, name):
         if name not in self.options:
@@ -425,9 +355,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 "Try to connect to %s:%s"
                 % (self.options["host"], self.options["port"]),
             )
-            driver = connect(self.options)
-            for _ in driver.iterate_containers():
-                break
+            self.driver = connect(self.options)
         except:
             jobmessage("M_FATAL", "Could not connect to libcloud driver")
             return bRCs["bRC_Error"]
@@ -436,30 +364,15 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         self.manager = multiprocessing.Manager()
         self.plugin_todo_queue = self.manager.Queue(maxsize=self.options["queue_size"])
-        self.worker_todo_queue = self.manager.Queue(maxsize=self.options["nb_worker"])
-
-        self.worker_pids = list()
-        self.workers = list()
-        for _ in range(0, self.options["nb_worker"]):
-            target = Worker(
-                self.options, self.plugin_todo_queue, self.worker_todo_queue
-            )
-            proc = multiprocessing.Process(target=target)
-            proc.start()
-            self.worker_pids.append(proc.pid)
-            self.workers.append(proc)
-        debugmessage(100, "%s worker started" % (len(self.worker_pids),))
 
         job_generator = JobCreator(
             self.plugin_todo_queue,
-            self.worker_todo_queue,
             self.last_run,
             self.options,
         )
         self.job_generator = multiprocessing.Process(target=job_generator)
         self.job_generator.start()
-        self.driver = connect(self.options)
-        debugmessage(100, "%s job creator started" % (len(self.worker_pids),))
+
         return bRCs["bRC_OK"]
 
     def check_file(self, context, fname):
@@ -467,7 +380,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         # If bareos have not seen one, it does not exists anymore
         return bRCs["bRC_Error"]
 
-    def __shutdown_and_join_worker(self):
+    def __shutdown_and_join_processes(self):
         if self.number_of_objects_to_backup:
             jobmessage(
                 "M_INFO",
@@ -475,10 +388,6 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             )
         else:
             jobmessage("M_INFO", "No objects to backup")
-        for i in self.workers:
-            debugmessage(100, "join() for a worker (pid %s)" % (i.pid,))
-            i.join()
-        debugmessage(100, "Ok, all workers are shut down")
 
         try:
             self.manager.shutdown()
@@ -503,10 +412,12 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 except:
                     time.sleep(0.1)
         except TypeError:
+            debugmessage(100, "self.current_backup_job = None")
             self.current_backup_job = None
 
         if self.current_backup_job is None:
-            self.__shutdown_and_join_worker()
+            debugmessage(100, "Shutdown and join processes")
+            self.__shutdown_and_join_processes()
             savepkt.fname = "empty"  # dummy value, savepkt is always checked
             return bRCs["bRC_Skip"]
 
@@ -516,6 +427,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             self.current_backup_job["name"],
             )
         )
+        debugmessage(100, "backup %s" % (filename,))
         jobmessage("M_INFO", "Backing up %s" % (filename,))
 
         statp = bareosfd.StatPacket()
