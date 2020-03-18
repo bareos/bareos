@@ -1085,7 +1085,7 @@ Apache Libcloud Plugin
 .. index::
    pair: Plugin; libcloud
 
-The Libcloud plugin can be used to backup objects from backends that support the Simple Storage Service (S3) protcol.
+The Libcloud plugin can be used to backup objects from backends that support the Simple Storage Service (S3) protcol. The plugin code is based on the work of Alexandre Bruyelles.
 
 .. _LibcloudPlugin-status:
 
@@ -1096,14 +1096,12 @@ The status of the Libcloud plugin is experimental. It can automatically recurse 
 on a S3 storage. However, restore of Objects cannot be done directly back to the storage. A restore will write these objects
 as files on a filesystem.
 
-Transport encryption between plugin and the S3 backend is not implemented, yet.
-
 .. _LibcloudPlugin-requirements:
 
 Requirements
 ^^^^^^^^^^^^
 
-To use the Apache Libcloud backend you need to have the Libcloud module available for either Python 3 or 2.
+To use the Apache Libcloud backend you need to have the Libcloud module available for Python 2.
 
 .. _LibcloudPlugin-installation:
 
@@ -1186,7 +1184,7 @@ port
    The portnumber for the backend server
 
 tls
-   Use Transport encryption, currently only 'False'
+   Use Transport encryption, if supported by the backend
 
 provider
    The provider string, currently only 'S3'
