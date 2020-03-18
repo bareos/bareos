@@ -80,6 +80,8 @@ list=( $(find "${BackupDirectory}" -type f) )
 # to don'"t diff the file attributes, because they are not saved
 #check_restore_only_files_diff "${list[@]}"
 
-diff -r tmp/data tmp/bareos-restores/PYLIBCLOUD\:/test/data
+if ! diff -r tmp/data tmp/bareos-restores/test/data; then
+  export estat=1
+fi
 
 end_test
