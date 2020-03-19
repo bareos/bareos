@@ -40,6 +40,8 @@ class gfapi_device : public Device {
  private:
   char* gfapi_configstring_;
   char* gfapi_uri_;
+  char* gfapi_logfile_;
+  int gfapi_loglevel_{0};
   char* transport_;
   char* servername_;
   char* volumename_;
