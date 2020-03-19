@@ -624,7 +624,6 @@ SectionIn 1 2 3 4
 
   File "Plugins\BareosFd*.py"
   File "Plugins\bareos-fd*.py"
-  File "Plugins\bareos_fd*.py"
 SectionEnd
 
 
@@ -687,7 +686,6 @@ SectionIn 2 3
   File "*-sd.dll"
   File "Plugins\BareosSd*.py"
   File "Plugins\bareos-sd*.py"
-  File "Plugins\bareos_sd*.py"
 SectionEnd
 
 
@@ -903,7 +901,6 @@ SectionIn 2 3
   File "*-dir.dll"
   File "Plugins\BareosDir*.py"
   File "Plugins\bareos-dir*.py"
-  File "Plugins\bareos_dir*.py"
 SectionEnd
 
 
