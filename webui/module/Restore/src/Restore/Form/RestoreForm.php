@@ -615,6 +615,16 @@ class RestoreForm extends Form
       }
       return $selectData;
    }
+
+   /**
+    *
+    */
+   private function getRestoreJobWhereDirectives()
+   {
+      $selectData = array();
+      if(!empty($this->restorejobresources)) {
+         foreach($this->restorejobresources as $restorejob) {
+            $selectData[$restorejob['where']] = $restorejob['where'];
          }
       }
       return $selectData;
