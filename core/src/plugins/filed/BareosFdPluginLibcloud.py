@@ -30,14 +30,11 @@ import itertools
 import libcloud
 import multiprocessing
 import os
-import syslog
 import time
 
 from bareos_fd_consts import bRCs, bCFs, bIOPS, bJobMessageType, bFileType
 from libcloud.storage.types import Provider
 from sys import version_info
-
-syslog.openlog(__name__, facility=syslog.LOG_LOCAL7)
 
 plugin_context = None
 
@@ -83,17 +80,9 @@ def str2bool(data):
 
 
 def get_driver(options):
-
-    jobmessage(
-        "M_INFO",
-        "Try to connect to %s:%s"
-        % (options["host"], options["port"]),
-    )
-
     driver_opt = dict(options)
 
-    # Some drivers does not support unknown options
-    # Here, we remove those used by libcloud and let the rest pass through
+    # remove unknown options
     for opt in (
         "buckets_exclude",
         "accurate",
@@ -117,7 +106,12 @@ def get_driver(options):
 
     #success
     except libcloud.storage.types.ContainerDoesNotExistError:
+        debugmessage(100, "Wrong credentials for %s" % (driver_opt["host"]))
         return driver
+
+    #error
+    except libcloud.common.types.InvalidCredsError:
+        pass
 
     #error
     except:
@@ -133,21 +127,17 @@ def get_object(driver, bucket, key):
         # Our tokens are good, we used them before
         debugmessage(
             100,
-            "BUGGY filename found, see the libcloud bug somewhere : %s/%s"
+            "Error triggered by tilde-ending objects: %s/%s"
             % (bucket, key),
         )
         return None
 
 class JobCreator(object):
-    def __init__(self, plugin_todo_queue, last_run, opts):
+    def __init__(self, plugin_todo_queue, last_run, opts, driver):
         self.plugin_todo_queue = plugin_todo_queue
         self.last_run = last_run
+        self.driver = driver
         self.options = opts
-
-        self.driver = get_driver(self.options)
-        if self.driver == None:
-            jobmessage("M_FATAL", "Could not connect to libcloud driver: %s:%s"
-                % (driver_opt["host"], driver_opt["port"]))
 
         self.delta = datetime.timedelta(seconds=time.timezone)
 
@@ -372,7 +362,14 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         return True
 
     def start_backup_job(self, context):
+        jobmessage(
+            "M_INFO",
+            "Try to connect to %s:%s"
+            % (self.options["host"], self.options["port"]),
+        )
+
         self.driver = get_driver(self.options)
+
         if self.driver == None:
             jobmessage("M_FATAL", "Could not connect to libcloud driver: %s:%s"
                 % (self.options["host"], self.options["port"]))
@@ -387,6 +384,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             self.plugin_todo_queue,
             self.last_run,
             self.options,
+            self.driver,
         )
         self.job_generator = multiprocessing.Process(target=job_generator)
         self.job_generator.start()
@@ -445,8 +443,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             self.current_backup_job["name"],
             )
         )
-        debugmessage(100, "backup %s" % (filename,))
-        jobmessage("M_INFO", "Backing up %s" % (filename,))
+        jobmessage("M_INFO", "Backup file: %s" % (filename,))
 
         statp = bareosfd.StatPacket()
         statp.size = self.current_backup_job["size"]
