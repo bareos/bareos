@@ -451,6 +451,7 @@ if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
   set(SD_PLUGINS_DIR_TO_TEST ${PLUGINS_DIR_TO_TEST})
   set(DIR_PLUGINS_DIR_TO_TEST ${PLUGINS_DIR_TO_TEST})
   set(BACKEND_DIR_TO_TEST ${BACKEND_DIR_TO_TEST})
+  set(SD_GFAPI_DIR_TO_TEST ${BACKEND_DIR_TO_TEST})
   set(WEBUI_PUBLIC_DIR_TO_TEST /usr/share/bareos-webui/public)
 
 else() # run systemtests on source and compiled files
@@ -461,6 +462,9 @@ else() # run systemtests on source and compiled files
 
   get_target_property(FD_PLUGINS_DIR_TO_TEST bpipe-fd BINARY_DIR)
   get_target_property(SD_PLUGINS_DIR_TO_TEST autoxflate-sd BINARY_DIR)
+  if(TARGET bareossd-gfapi)
+    get_target_property(SD_GFAPI_DIR_TO_TEST bareossd-gfapi BINARY_DIR)
+  endif()
   if(TARGET python-dir)
     get_target_property(DIR_PLUGINS_DIR_TO_TEST python-dir BINARY_DIR)
   else()
@@ -629,6 +633,15 @@ set(SYSTEM_TESTS
 
 set(SYSTEM_TESTS_DISABLED # initially empty
 )
+
+set(glusterfs_uri "" CACHE STRING "URI for GlusterFS backend test")
+mark_as_advanced(glusterfs_uri)
+
+if(SD_GFAPI_DIR_TO_TEST AND glusterfs_uri) 
+  list(APPEND SYSTEM_TESTS glusterfs-backend)
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED glusterfs-backend)
+endif()
 
 if(mysql AND postgresql AND dynamic-cats-backends)
   list(APPEND SYSTEM_TESTS "dbcopy-mysql-postgresql-test")
