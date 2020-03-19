@@ -35,7 +35,6 @@ import time
 
 from bareos_fd_consts import bRCs, bCFs, bIOPS, bJobMessageType, bFileType
 from libcloud.storage.types import Provider
-from libcloud.storage.providers import get_driver
 from sys import version_info
 
 syslog.openlog(__name__, facility=syslog.LOG_LOCAL7)
@@ -83,7 +82,14 @@ def str2bool(data):
     raise Exception("%s: not a boolean" % (data,))
 
 
-def connect(options):
+def get_driver(options):
+
+    jobmessage(
+        "M_INFO",
+        "Try to connect to %s:%s"
+        % (options["host"], options["port"]),
+    )
+
     driver_opt = dict(options)
 
     # Some drivers does not support unknown options
@@ -101,10 +107,23 @@ def connect(options):
         if opt in options:
             del driver_opt[opt]
 
-    provider = getattr(Provider, options["provider"])
-    driver = get_driver(provider)(**driver_opt)
-    return driver
+    driver = None
 
+    provider = getattr(libcloud.storage.types.Provider, options["provider"])
+    driver = libcloud.storage.providers.get_driver(provider)(**driver_opt)
+
+    try:
+        driver.get_container("probe123XXXbareosXXX123probe")
+
+    #success
+    except libcloud.storage.types.ContainerDoesNotExistError:
+        return driver
+
+    #error
+    except:
+        pass
+
+    return None
 
 def get_object(driver, bucket, key):
     try:
@@ -125,7 +144,11 @@ class JobCreator(object):
         self.last_run = last_run
         self.options = opts
 
-        self.driver = connect(self.options)
+        self.driver = get_driver(self.options)
+        if self.driver == None:
+            jobmessage("M_FATAL", "Could not connect to libcloud driver: %s:%s"
+                % (driver_opt["host"], driver_opt["port"]))
+
         self.delta = datetime.timedelta(seconds=time.timezone)
 
     def __call__(self):
@@ -349,15 +372,10 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         return True
 
     def start_backup_job(self, context):
-        try:
-            jobmessage(
-                "M_INFO",
-                "Try to connect to %s:%s"
-                % (self.options["host"], self.options["port"]),
-            )
-            self.driver = connect(self.options)
-        except:
-            jobmessage("M_FATAL", "Could not connect to libcloud driver")
+        self.driver = get_driver(self.options)
+        if self.driver == None:
+            jobmessage("M_FATAL", "Could not connect to libcloud driver: %s:%s"
+                % (self.options["host"], self.options["port"]))
             return bRCs["bRC_Error"]
 
         jobmessage("M_INFO", "Last backup: %s (ts: %s)" % (self.last_run, self.since))
