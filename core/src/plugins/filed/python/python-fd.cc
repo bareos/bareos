@@ -155,6 +155,7 @@ struct plugin_private_context {
       interpreter;   /* Python interpreter for this instance of the plugin */
   PyObject* pModule; /* Python Module entry point */
   PyObject* pyModuleFunctionsDict; /* Python Dictionary */
+  bFuncs* bfuncs;                  /* pointer to bfuncs */
 };
 
 /**
@@ -235,6 +236,8 @@ static bRC newPlugin(bpContext* bareos_plugin_ctx)
   memset(plugin_priv_ctx, 0, sizeof(struct plugin_private_context));
   bareos_plugin_ctx->pContext =
       (void*)plugin_priv_ctx; /* set our context pointer */
+
+  plugin_priv_ctx->bfuncs = bfuncs;
 
   /* For each plugin instance we instantiate a new Python interpreter. */
   PyEval_AcquireThread(mainThreadState);
@@ -2360,6 +2363,9 @@ static PyObject* PyBareosDebugMessage(PyObject* self, PyObject* args)
   int level;
   char* dbgmsg = NULL;
   bpContext* bareos_plugin_ctx = GetPluginContextFromPythonModule();
+  plugin_private_context* ppc =
+      (plugin_private_context*)bareos_plugin_ctx->pContext;
+  bfuncs = ppc->bfuncs;
 
   if (!PyArg_ParseTuple(args, "i|z:BareosDebugMessage", &level, &dbgmsg)) {
     return NULL;
