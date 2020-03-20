@@ -172,6 +172,45 @@ static PyThreadState* mainThreadState;
 extern "C" {
 #endif
 
+static void PyErrorHandler()
+{
+  PyObject *type, *value, *traceback;
+  PyObject* tracebackModule;
+  char* error_string;
+
+  PyErr_Fetch(&type, &value, &traceback);
+
+  tracebackModule = PyImport_ImportModule("traceback");
+  if (tracebackModule != NULL) {
+    PyObject *tbList, *emptyString, *strRetval;
+
+    tbList =
+        PyObject_CallMethod(tracebackModule, (char*)"format_exception",
+                            (char*)"OOO", type, value == NULL ? Py_None : value,
+                            traceback == NULL ? Py_None : traceback);
+
+    emptyString = PyString_FromString("");
+    strRetval =
+        PyObject_CallMethod(emptyString, (char*)"join", (char*)"O", tbList);
+
+    error_string = strdup(PyString_AsString(strRetval));
+
+    Py_DECREF(tbList);
+    Py_DECREF(emptyString);
+    Py_DECREF(strRetval);
+    Py_DECREF(tracebackModule);
+  } else {
+    error_string = strdup("Unable to import traceback module.");
+  }
+  Py_DECREF(type);
+  Py_XDECREF(value);
+  Py_XDECREF(traceback);
+  printf("%s", error_string);
+
+  free(error_string);
+  exit(1);
+}
+
 
 /**
  * Plugin called here when it is first loaded
@@ -190,11 +229,22 @@ bRC loadPlugin(bInfo* lbinfo,
   if (!Py_IsInitialized()) {
     /* Setup Python */
 #if PY_MAJOR_VERSION >= 3
-    PyImport_AppendInittab("bareosfd", &PyInit_bareosfd);
+    /* PyImport_AppendInittab("bareosfd", &PyInit_bareosfd); */
 #else
-    PyImport_AppendInittab("bareosfd", initbareosfd);
+    /* PyImport_AppendInittab("bareosfd", initbareosfd); */
 #endif
     Py_InitializeEx(0);
+
+    /* import the bareosfd module */
+    PyObject* bareosfdModule = PyImport_ImportModule("bareosfd");
+    if (bareosfdModule) {
+      printf("loaded bareosfd successfully\n");
+    } else {
+      printf("loading of bareosfd failed\n");
+    }
+
+    if (PyErr_Occurred()) { PyErrorHandler(); }
+
     PyEval_InitThreads();
     mainThreadState = PyEval_SaveThread();
   }
