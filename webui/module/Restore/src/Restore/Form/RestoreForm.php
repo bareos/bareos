@@ -408,7 +408,7 @@ class RestoreForm extends Form
       }
 
       // Where
-      if(isset($this->restore_params['client'])) {
+      if(isset($this->restore_params['restorejob'])) {
         $this->add(array(
            'name' => 'where',
            'type' => 'text',
@@ -417,31 +417,51 @@ class RestoreForm extends Form
               ),
            'attributes' => array(
               'class' => 'form-control selectpicker show-tick',
-              'value' => '/tmp/bareos-restores/',
+              'value' => $this->determineWhereDirective($this->restore_params['restorejob']),
               'id' => 'where',
               'size' => '30',
-              'placeholder' => _('e.g. / or /tmp/bareos-restores/')
+              'placeholder' => _('e.g. / or /tmp/bareos-restores/'),
+              'required' => 'required'
               )
            )
         );
       }
       else {
-        $this->add(array(
-           'name' => 'where',
-           'type' => 'text',
-           'options' => array(
-              'label' => _('Restore location on client')
-              ),
-           'attributes' => array(
-              'class' => 'form-control selectpicker show-tick',
-              'value' => '/tmp/bareos-restores/',
-              'id' => 'where',
-              'size' => '30',
-              'placeholder' => _('e.g. / or /tmp/bareos-restores/'),
-              'disabled' => true
-              )
-           )
-        );
+         if(!empty($this->restore_params['client']) && count($this->getRestoreJobList()) > 0) {
+            $this->add(array(
+               'name' => 'where',
+               'type' => 'text',
+               'options' => array(
+                  'label' => _('Restore location on client')
+               ),
+               'attributes' => array(
+                  'class' => 'form-control selectpicker show-tick',
+                  'value' => @array_pop($this->getRestoreJobWhereDirectives()),
+                  'id' => 'where',
+                  'size' => '30',
+                  'placeholder' => _('e.g. / or /tmp/bareos-restores/'),
+                  'required' => 'required'
+                  )
+               )
+            );
+         } else {
+            $this->add(array(
+               'name' => 'where',
+               'type' => 'text',
+               'options' => array(
+                  'label' => _('Restore location on client')
+               ),
+               'attributes' => array(
+                  'class' => 'form-control selectpicker show-tick',
+                  'id' => 'where',
+                  'size' => '30',
+                  'placeholder' => _('e.g. / or /tmp/bareos-restores/'),
+                  'required' => 'required',
+                  'disabled' => true
+                  )
+               )
+            );
+         }
       }
 
       // JobIds hidden
