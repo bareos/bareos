@@ -2364,7 +2364,7 @@ static PyObject* PyBareosDebugMessage(PyObject* self, PyObject* args)
   if (!PyArg_ParseTuple(args, "i|z:BareosDebugMessage", &level, &dbgmsg)) {
     return NULL;
   }
-  RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
+  RETURN_RUNTIME_ERROR_IF_BAREOS_PLUGIN_CTX_UNSET()
 
   if (dbgmsg) { Dmsg(bareos_plugin_ctx, level, "python-fd: %s", dbgmsg); }
   Py_INCREF(Py_None);

@@ -43,18 +43,28 @@
 #define MOD_DEF(ob, name, doc, methods) ob = Py_InitModule3(name, methods, doc);
 #endif
 
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+#define AT __FILE__ ":" TOSTRING(__LINE__)
+
 /* check if bareos_plugin_ctx and bfunc are set.
  * Otherwise return NULL and throw RuntimeError */
-#define RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()     \
-  if (!bareos_plugin_ctx) {                                            \
-    PyErr_SetString(PyExc_RuntimeError, "bareos_plugin_ctx is unset"); \
-    return NULL;                                                       \
-  }                                                                    \
-  if (!bfuncs) {                                                       \
-    PyErr_SetString(PyExc_RuntimeError, "bfuncs is unset");            \
-    return NULL;                                                       \
+
+#define RETURN_RUNTIME_ERROR_IF_BAREOS_PLUGIN_CTX_UNSET()                   \
+  if (!bareos_plugin_ctx) {                                                 \
+    PyErr_SetString(PyExc_RuntimeError, AT " :bareos_plugin_ctx is unset"); \
+    return NULL;                                                            \
   }
 
+#define RETURN_RUNTIME_ERROR_IF_BFUNC_UNSET()                    \
+  if (!bfuncs) {                                                 \
+    PyErr_SetString(PyExc_RuntimeError, AT ": bfuncs is unset"); \
+    return NULL;                                                 \
+  }
+
+#define RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET() \
+  RETURN_RUNTIME_ERROR_IF_BAREOS_PLUGIN_CTX_UNSET()                \
+  RETURN_RUNTIME_ERROR_IF_BFUNC_UNSET()
 
 /* define the given string constant as member of an dict and additionally
  add it directly as constant to the module.
