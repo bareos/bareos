@@ -1199,11 +1199,7 @@ To use the Apache Libcloud backend you need to have the Libcloud module availabl
 Installation
 ^^^^^^^^^^^^
 
-The installation is done by installing the package **bareos-filedaemon-libcloud-python-plugin**:
-
-.. code-block:: shell
-
-   yum install bareos-filedaemon-libcloud-python-plugin
+The installation is done by installing the package **bareos-filedaemon-libcloud-python-plugin**.
 
 
 .. _LibcloudPlugin-configuration:
@@ -1224,6 +1220,10 @@ Configuration
        Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-libcloud:config_file=/etc/bareos/libcloud_config.ini:buckets_include=user_data:buckets_exclude=tmp"
      }
    }
+
+.. note::
+
+   Replace 'lib64' by 'lib' where necessary
 
 .. note::
 
