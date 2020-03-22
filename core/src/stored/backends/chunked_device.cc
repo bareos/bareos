@@ -1260,12 +1260,10 @@ bool chunked_device::is_written()
  */
 bool chunked_device::WaitUntilChunksWritten()
 {
-   bool retval = true;
-
    if (current_chunk_->need_flushing) {
       if (!FlushChunk(false /* release */, false /* move_to_next_chunk */)) {
          dev_errno = EIO;
-         retval = false;
+         return false;
       }
    }
 
@@ -1273,7 +1271,7 @@ bool chunked_device::WaitUntilChunksWritten()
       Bmicrosleep(DEFAULT_RECHECK_INTERVAL_WRITE_BUFFER, 0);
    }
 
-   return retval;
+   return true;
 }
 
 
