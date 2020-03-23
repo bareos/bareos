@@ -88,40 +88,21 @@ class RestoreForm extends Form
 
       // Client
       if(isset($restore_params['client'])) {
-         if($restore_params['type'] == "client") {
-            $this->add(array(
-               'name' => 'client',
-               'type' => 'select',
-               'options' => array(
-                  'label' => _('Client'),
-                  'empty_option' => _('Please choose a client'),
-                  'value_options' => $this->getClientList()
-               ),
-               'attributes' => array(
-                  'class' => 'form-control selectpicker show-tick',
-                  'data-live-search' => 'true',
-                  'id' => 'client',
-                  'value' => $restore_params['client']
-               )
-            ));
-         }
-         else {
-            $this->add(array(
-               'name' => 'client',
-               'type' => 'select',
-               'options' => array(
-                  'label' => _('Client'),
-                  'empty_option' => _('Please choose a client'),
-                  'value_options' => $this->getClientList()
-               ),
-               'attributes' => array(
-                  'class' => 'form-control selectpicker show-tick',
-                  'data-live-search' => 'true',
-                  'id' => 'client',
-                  'value' => $restore_params['client']
-               )
-            ));
-         }
+         $this->add(array(
+            'name' => 'client',
+            'type' => 'select',
+            'options' => array(
+               'label' => _('Client'),
+               'empty_option' => _('Please choose a client'),
+               'value_options' => $this->getClientList()
+            ),
+            'attributes' => array(
+               'class' => 'form-control selectpicker show-tick',
+               'data-live-search' => 'true',
+               'id' => 'client',
+               'value' => $restore_params['client']
+            )
+         ));
       }
       else {
          $this->add(array(
