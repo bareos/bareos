@@ -17,9 +17,6 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-# "gtest_discover_tests" was added in cmake 3.10
-cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
-
 include_directories(${OPENSSL_INCLUDE_DIR})
 
 macro(bareos_gtest_add_tests testname)

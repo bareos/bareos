@@ -43,6 +43,7 @@
   #endif
 #endif
 
+#ifndef __sun
 #if not defined __BYTE_ORDER
 #  include <sys/endian.h>
 #  if defined _BYTE_ORDER && not defined __BYTE_ORDER
@@ -55,6 +56,18 @@
 #    define __BIG_ENDIAN _BIG_ENDIAN
 #  endif
 #endif
+
+#else /* __sun */
+#include <sys/isa_defs.h>
+#define __LITTLE_ENDIAN 1234
+#define __BIG_ENDIAN    4321
+#  if defined _BIG_ENDIAN
+#    define __BYTE_ORDER    __BIG_ENDIAN
+#  endif
+#  if defined _LITTLE_ENDIAN
+#    define __BYTE_ORDER    __LITTLE_ENDIAN
+#  endif
+#endif /* __sun */
 
 #if not defined __BYTE_ORDER
 #error __BYTE_ORDER not set
