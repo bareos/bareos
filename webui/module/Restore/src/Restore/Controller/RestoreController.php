@@ -327,6 +327,7 @@ class RestoreController extends AbstractActionController
       $clients = $this->getClientModel()->getClients($this->bsock);
       $filesets = $this->getFilesetModel()->getDotFilesets($this->bsock);
       $restorejobs = $this->getJobModel()->getRestoreJobs($this->bsock);
+      $restorejobresources = $this->getRestoreModel()->getRestoreJobResources($this->bsock, $restorejobs);
     } catch (Exception $e) {
       echo $e->getMessage();
     }
@@ -340,7 +341,7 @@ class RestoreController extends AbstractActionController
       $this->restore_params,
       $clients,
       $filesets,
-      $restorejobs,
+      $restorejobresources,
       $jobids,
       $backups
     );
