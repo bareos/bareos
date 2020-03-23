@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -58,7 +58,11 @@ static bool PamConvSendMessage(BareosSocket* UA_sock,
 }
 
 static int PamConversationCallback(int num_msg,
+#ifdef __sun
+                                   struct pam_message** msgm,
+#else
                                    const struct pam_message** msgm,
+#endif
                                    struct pam_response** response,
                                    void* appdata_ptr)
 {
@@ -139,7 +143,11 @@ static int PamConversationCallback(int num_msg,
 }
 
 static int PamLocalCallback(int num_msg,
+#ifdef __sun
+                            struct pam_message** msgm,
+#else
                             const struct pam_message** msgm,
+#endif
                             struct pam_response** response,
                             void* appdata_ptr)
 {
@@ -194,7 +202,11 @@ bool PamAuthenticateUser(BareosSocket* UA_sock,
     return false;
   }
 
+#ifdef __sun
+  void* data;
+#else
   const void* data;
+#endif
   err = pam_get_item(pamh, PAM_USER, &data);
   if (err != PAM_SUCCESS) {
     Dmsg1(debuglevel, "PAM get_item failed: %s\n", pam_strerror(pamh, err));

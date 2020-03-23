@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # This test runs the messages unittest
 #  to examine all message directions
