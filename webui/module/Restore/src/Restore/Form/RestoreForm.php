@@ -123,7 +123,7 @@ class RestoreForm extends Form
       }
 
       // Restore client
-      if(isset($restore_params['restoreclient'])) {
+      if(isset($this->restore_params['restoreclient'])) {
          $this->add(array(
             'name' => 'restoreclient',
             'type' => 'select',
@@ -136,11 +136,11 @@ class RestoreForm extends Form
                'class' => 'form-control selectpicker show-tick',
                'data-live-search' => 'true',
                'id' => 'restoreclient',
-               'value' => $restore_params['restoreclient']
+               'value' => $this->restore_params['restoreclient']
             )
          ));
       }
-      elseif(!isset($restore_params['restoreclient']) && isset($restore_params['client']) ) {
+      elseif(!isset($this->restore_params['restoreclient']) && isset($this->restore_params['client']) ) {
          $this->add(array(
             'name' => 'restoreclient',
             'type' => 'select',
@@ -153,7 +153,7 @@ class RestoreForm extends Form
                'class' => 'form-control selectpicker show-tick',
                'data-live-search' => 'true',
                'id' => 'restoreclient',
-               'value' => $restore_params['client']
+               'value' => $this->restore_params['client']
             )
          ));
       }
