@@ -143,8 +143,8 @@ $this->headTitle($title);
          echo '<p>'.$this->formRow($form->get('backups')).'</p>';
          echo '<p>'.$this->formRow($form->get('mergefilesets')).'</p>';
          echo '<p>'.$this->formRow($form->get('mergejobs')).'</p>';
-         echo '<p>'.$this->formRow($form->get('restoreclient')).'</p>';
          echo '<p>'.$this->formRow($form->get('restorejob')).'</p>';
+         echo '<p>'.$this->formRow($form->get('restoreclient')).'</p>';
          echo '<p>'.$this->formRow($form->get('replace')).'</p>';
          echo '<p>'.$this->formRow($form->get('where')).'</p>';
 
@@ -431,6 +431,10 @@ $this->headTitle($title);
 
    $('#client').change(function(event) {
       window.location.href = window.location.pathname + '?' + updateRestoreParams('client', this.value);
+   });
+
+   $('#restorejob').change(function(event) {
+      window.location.href = window.location.pathname + '?' + updateRestoreParams('restorejob', this.value);
    });
 
    $('#mergefilesets').change(function(event) {

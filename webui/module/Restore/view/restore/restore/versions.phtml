@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2020 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -141,8 +141,8 @@ $this->headTitle($title);
                   echo '<p>' . $this->formRow($form->get('backups')) . '</p>';
                   echo '<p>' . $this->formRow($form->get('mergefilesets')) . '</p>';
                   echo '<p>' . $this->formRow($form->get('mergejobs')) . '</p>';
-                  echo '<p>' . $this->formRow($form->get('restoreclient')) . '</p>';
                   echo '<p>' . $this->formRow($form->get('restorejob')) . '</p>';
+                  echo '<p>' . $this->formRow($form->get('restoreclient')) . '</p>';
                   echo '<p>' . $this->formRow($form->get('replace')) . '</p>';
                   echo '<p>' . $this->formRow($form->get('where')) . '</p>';
 
@@ -555,6 +555,10 @@ $('#jobid').change(function (event) {
 
 $('#client').change(function (event) {
    window.location.href = window.location.pathname + '?' + updateRestoreParams('client', this.value);
+});
+
+$('#restorejob').change(function (event) {
+   window.location.href = window.location.pathname + '?' + updateRestoreParams('restorejob', this.value);
 });
 
 $('#mergefilesets').change(function (event) {

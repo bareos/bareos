@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2020 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -161,6 +161,30 @@ class RestoreModel
          return $versions['result']['versions'];
       }
       else {
+         throw new \Exception('Missing argument.');
+      }
+   }
+
+   /**
+    * Get all configured restore job resources
+    *
+    * @param $bsock
+    * @param $restorejobs
+    *
+    * @return array
+    */
+   public function getRestoreJobResources(&$bsock=null, $restorejobs=null)
+   {
+      if(isset($bsock) && isset($restorejobs)) {
+         $restorejobresources = array();
+         foreach($restorejobs as $restorejob) {
+            $cmd = '.defaults job="'.$restorejob['name'].'"';
+            $result = $bsock->send_command($cmd, 2);
+            $defaults = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            array_push($restorejobresources, $defaults['result']['defaults']);
+         }
+         return $restorejobresources;
+      } else {
          throw new \Exception('Missing argument.');
       }
    }

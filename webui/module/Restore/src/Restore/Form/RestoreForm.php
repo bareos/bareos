@@ -5,7 +5,7 @@
 * bareos-webui - Bareos Web-Frontend
 *
 * @link      https://github.com/bareos/bareos for the canonical source repository
-* @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
+* @copyright Copyright (c) 2013-2020 Bareos GmbH & Co. KG (http://www.bareos.org/)
 * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
 *
 * This program is free software: you can redistribute it and/or modify
@@ -34,11 +34,11 @@ class RestoreForm extends Form
    protected $restore_params;
    protected $clients;
    protected $filesets;
-   protected $restorejobs;
+   protected $restorejobresources;
    protected $jobids;
    protected $backups;
 
-   public function __construct($restore_params=null, $clients=null, $filesets=null, $restorejobs=null, $jobids=null, $backups=null)
+   public function __construct($restore_params=null, $clients=null, $filesets=null, $restorejobresources=null, $jobids=null, $backups=null)
    {
 
       parent::__construct('restore');
@@ -46,7 +46,7 @@ class RestoreForm extends Form
       $this->restore_params = $restore_params;
       $this->clients = $clients;
       $this->filesets = $filesets;
-      $this->restorejobs = $restorejobs;
+      $this->restorejobresources = $restorejobresources;
       $this->jobids = $jobids;
       $this->backups = $backups;
 
@@ -88,40 +88,21 @@ class RestoreForm extends Form
 
       // Client
       if(isset($restore_params['client'])) {
-         if($restore_params['type'] == "client") {
-            $this->add(array(
-               'name' => 'client',
-               'type' => 'select',
-               'options' => array(
-                  'label' => _('Client'),
-                  'empty_option' => _('Please choose a client'),
-                  'value_options' => $this->getClientList()
-               ),
-               'attributes' => array(
-                  'class' => 'form-control selectpicker show-tick',
-                  'data-live-search' => 'true',
-                  'id' => 'client',
-                  'value' => $restore_params['client']
-               )
-            ));
-         }
-         else {
-            $this->add(array(
-               'name' => 'client',
-               'type' => 'select',
-               'options' => array(
-                  'label' => _('Client'),
-                  'empty_option' => _('Please choose a client'),
-                  'value_options' => $this->getClientList()
-               ),
-               'attributes' => array(
-                  'class' => 'form-control selectpicker show-tick',
-                  'data-live-search' => 'true',
-                  'id' => 'client',
-                  'value' => $restore_params['client']
-               )
-            ));
-         }
+         $this->add(array(
+            'name' => 'client',
+            'type' => 'select',
+            'options' => array(
+               'label' => _('Client'),
+               'empty_option' => _('Please choose a client'),
+               'value_options' => $this->getClientList()
+            ),
+            'attributes' => array(
+               'class' => 'form-control selectpicker show-tick',
+               'data-live-search' => 'true',
+               'id' => 'client',
+               'value' => $restore_params['client']
+            )
+         ));
       }
       else {
          $this->add(array(
@@ -142,7 +123,7 @@ class RestoreForm extends Form
       }
 
       // Restore client
-      if(isset($restore_params['restoreclient'])) {
+      if(isset($this->restore_params['restoreclient'])) {
          $this->add(array(
             'name' => 'restoreclient',
             'type' => 'select',
@@ -155,11 +136,11 @@ class RestoreForm extends Form
                'class' => 'form-control selectpicker show-tick',
                'data-live-search' => 'true',
                'id' => 'restoreclient',
-               'value' => $restore_params['restoreclient']
+               'value' => $this->restore_params['restoreclient']
             )
          ));
       }
-      elseif(!isset($restore_params['restoreclient']) && isset($restore_params['client']) ) {
+      elseif(!isset($this->restore_params['restoreclient']) && isset($this->restore_params['client']) ) {
          $this->add(array(
             'name' => 'restoreclient',
             'type' => 'select',
@@ -172,7 +153,7 @@ class RestoreForm extends Form
                'class' => 'form-control selectpicker show-tick',
                'data-live-search' => 'true',
                'id' => 'restoreclient',
-               'value' => $restore_params['client']
+               'value' => $this->restore_params['client']
             )
          ));
       }
@@ -408,7 +389,7 @@ class RestoreForm extends Form
       }
 
       // Where
-      if(isset($this->restore_params['client'])) {
+      if(isset($this->restore_params['restorejob'])) {
         $this->add(array(
            'name' => 'where',
            'type' => 'text',
@@ -417,31 +398,51 @@ class RestoreForm extends Form
               ),
            'attributes' => array(
               'class' => 'form-control selectpicker show-tick',
-              'value' => '/tmp/bareos-restores/',
+              'value' => $this->determineWhereDirective($this->restore_params['restorejob']),
               'id' => 'where',
               'size' => '30',
-              'placeholder' => _('e.g. / or /tmp/bareos-restores/')
+              'placeholder' => _('e.g. / or /tmp/bareos-restores/'),
+              'required' => 'required'
               )
            )
         );
       }
       else {
-        $this->add(array(
-           'name' => 'where',
-           'type' => 'text',
-           'options' => array(
-              'label' => _('Restore location on client')
-              ),
-           'attributes' => array(
-              'class' => 'form-control selectpicker show-tick',
-              'value' => '/tmp/bareos-restores/',
-              'id' => 'where',
-              'size' => '30',
-              'placeholder' => _('e.g. / or /tmp/bareos-restores/'),
-              'disabled' => true
-              )
-           )
-        );
+         if(!empty($this->restore_params['client']) && count($this->getRestoreJobList()) > 0) {
+            $this->add(array(
+               'name' => 'where',
+               'type' => 'text',
+               'options' => array(
+                  'label' => _('Restore location on client')
+               ),
+               'attributes' => array(
+                  'class' => 'form-control selectpicker show-tick',
+                  'value' => @array_pop($this->getRestoreJobWhereDirectives()),
+                  'id' => 'where',
+                  'size' => '30',
+                  'placeholder' => _('e.g. / or /tmp/bareos-restores/'),
+                  'required' => 'required'
+                  )
+               )
+            );
+         } else {
+            $this->add(array(
+               'name' => 'where',
+               'type' => 'text',
+               'options' => array(
+                  'label' => _('Restore location on client')
+               ),
+               'attributes' => array(
+                  'class' => 'form-control selectpicker show-tick',
+                  'id' => 'where',
+                  'size' => '30',
+                  'placeholder' => _('e.g. / or /tmp/bareos-restores/'),
+                  'required' => 'required',
+                  'disabled' => true
+                  )
+               )
+            );
+         }
       }
 
       // JobIds hidden
@@ -608,12 +609,42 @@ class RestoreForm extends Form
    private function getRestoreJobList()
    {
       $selectData = array();
-      if(!empty($this->restorejobs)) {
-         foreach($this->restorejobs as $restorejob) {
-            $selectData[$restorejob['name']] = $restorejob['name'];
+      if(!empty($this->restorejobresources)) {
+         foreach($this->restorejobresources as $restorejob) {
+            $selectData[$restorejob['job']] = $restorejob['job'];
          }
       }
       return $selectData;
+   }
+
+   /**
+    *
+    */
+   private function getRestoreJobWhereDirectives()
+   {
+      $selectData = array();
+      if(!empty($this->restorejobresources)) {
+         foreach($this->restorejobresources as $restorejob) {
+            $selectData[$restorejob['where']] = $restorejob['where'];
+         }
+      }
+      return $selectData;
+   }
+
+   /**
+    *
+    */
+   private function determineWhereDirective($restorejob=null)
+   {
+      $where = null;
+      if(isset($restorejob)) {
+         foreach($this->restorejobresources as $restorejobresource) {
+            if($restorejobresource['job'] == $restorejob) {
+               $where = $restorejobresource['where'];
+            }
+         }
+      }
+      return $where;
    }
 
 }
