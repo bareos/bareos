@@ -53,6 +53,7 @@ int RunProgram(char* prog, int wait, POOLMEM*& results);
 int RunProgramFullOutput(char* prog, int wait, POOLMEM*& results);
 char* action_on_purge_to_string(int aop, PoolMem& ret);
 const char* job_type_to_str(int type);
+const char* job_replace_to_str(int relace);
 const char* job_status_to_str(int stat);
 const char* job_level_to_str(int level);
 const char* volume_status_to_str(const char* status);
