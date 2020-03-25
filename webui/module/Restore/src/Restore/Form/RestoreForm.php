@@ -661,4 +661,20 @@ class RestoreForm extends Form
       return $where;
    }
 
+   /**
+    *
+    */
+   private function determineReplaceDirective($restorejob=null)
+   {
+      $replace = null;
+      if(isset($restorejob)) {
+         foreach($this->restorejobresources as $restorejobresource) {
+            if($restorejobresource['job'] == $restorejob) {
+               $replace = $restorejobresource['replace'];
+            }
+         }
+      }
+      return $replace;
+   }
+
 }
