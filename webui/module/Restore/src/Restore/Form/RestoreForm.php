@@ -344,29 +344,8 @@ class RestoreForm extends Form
       }
 
       // Replace
-      if(isset($restore_params['client'])) {
-        $this->add(array(
-           'name' => 'replace',
-           'type' => 'select',
-           'options' => array(
-              'label' => _('Replace files on client'),
-              'value_options' => array(
-                    'always' => _('always'),
-                    'never' => _('never'),
-                    'ifolder' => _('if file being restored is older than existing file'),
-                    'ifnewer' => _('if file being restored is newer than existing file')
-                 )
-              ),
-           'attributes' => array(
-                 'class' => 'form-control selectpicker show-tick',
-                 'id' => 'replace',
-                 'value' => 'never'
-              )
-           )
-        );
-      }
-      else {
-        $this->add(array(
+      if(isset($this->restore_params['restorejob'])) {
+         $this->add(array(
             'name' => 'replace',
             'type' => 'select',
             'options' => array(
@@ -381,11 +360,55 @@ class RestoreForm extends Form
             'attributes' => array(
                   'class' => 'form-control selectpicker show-tick',
                   'id' => 'replace',
-                  'value' => 'never',
-                  'disabled' => true
+                  'value' => $this->determineReplaceDirective($this->restore_params['restorejob'])
                )
             )
          );
+      }
+      else {
+         if(isset($restore_params['client']) && count($this->getRestoreJobList()) > 0) {
+           $this->add(array(
+              'name' => 'replace',
+              'type' => 'select',
+              'options' => array(
+                 'label' => _('Replace files on client'),
+                 'value_options' => array(
+                       'always' => _('always'),
+                       'never' => _('never'),
+                       'ifolder' => _('if file being restored is older than existing file'),
+                       'ifnewer' => _('if file being restored is newer than existing file')
+                    )
+                 ),
+              'attributes' => array(
+                    'class' => 'form-control selectpicker show-tick',
+                    'id' => 'replace',
+                    'value' => @array_pop($this->getRestoreJobReplaceDirectives()),
+                 )
+              )
+           );
+         }
+         else {
+           $this->add(array(
+               'name' => 'replace',
+               'type' => 'select',
+               'options' => array(
+                  'label' => _('Replace files on client'),
+                  'value_options' => array(
+                        'always' => _('always'),
+                        'never' => _('never'),
+                        'ifolder' => _('if file being restored is older than existing file'),
+                        'ifnewer' => _('if file being restored is newer than existing file')
+                     )
+                  ),
+               'attributes' => array(
+                     'class' => 'form-control selectpicker show-tick',
+                     'id' => 'replace',
+                     'value' => 'always',
+                     'disabled' => true
+                  )
+               )
+            );
+         }
       }
 
       // Where
