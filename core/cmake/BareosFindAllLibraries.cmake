@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -82,9 +82,11 @@ bareosfindlibrary("util")
 bareosfindlibrary("dl")
 bareosfindlibrary("acl")
 # BareosFindLibrary("wrap")
-bareosfindlibrary("gtest")
-bareosfindlibrary("gtest_main")
-bareosfindlibrary("gmock")
+if (NOT ${CMAKE_CXX_COMPILER_ID} MATCHES SunPro)
+  bareosfindlibrary("gtest")
+  bareosfindlibrary("gtest_main")
+  bareosfindlibrary("gmock")
+endif()
 
 bareosfindlibrary("pam_wrapper")
 

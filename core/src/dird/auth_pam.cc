@@ -58,7 +58,7 @@ static bool PamConvSendMessage(BareosSocket* UA_sock,
 }
 
 static int PamConversationCallback(int num_msg,
-#ifdef __sun
+#if defined(__sun)
                                    struct pam_message** msgm,
 #else
                                    const struct pam_message** msgm,
@@ -143,7 +143,7 @@ static int PamConversationCallback(int num_msg,
 }
 
 static int PamLocalCallback(int num_msg,
-#ifdef __sun
+#if defined(__sun)
                             struct pam_message** msgm,
 #else
                             const struct pam_message** msgm,
@@ -202,7 +202,7 @@ bool PamAuthenticateUser(BareosSocket* UA_sock,
     return false;
   }
 
-#ifdef __sun
+#if defined(__sun)
   void* data;
 #else
   const void* data;
