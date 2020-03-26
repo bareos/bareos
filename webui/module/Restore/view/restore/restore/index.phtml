@@ -348,6 +348,11 @@ $this->headTitle($title);
 
    $("#filebrowser").bind("loading.jstree", function() {
       displayBvfsCacheUpdateInfo();
+      $('#spinner').fadeIn('slow');
+   });
+
+   $("#filebrowser").bind("ready.jstree", function() {
+      $('#spinner').fadeOut('slow');
    });
 
    $('#filebrowser').jstree({
