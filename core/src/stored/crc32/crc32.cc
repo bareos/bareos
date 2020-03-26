@@ -43,7 +43,7 @@
   #endif
 #endif
 
-#ifndef __sun
+#if not defined (__sun)
 #if not defined __BYTE_ORDER
 #  include <sys/endian.h>
 #  if defined _BYTE_ORDER && not defined __BYTE_ORDER

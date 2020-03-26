@@ -45,10 +45,8 @@ endif(CCACHE_FOUND)
 
 # switch on CXX 11 Support
 #
-if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-  set(CMAKE_CXX_STANDARD 11)
-  set(CMAKE_CXX_STANDARD_REQUIRED ON)
-endif()
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
@@ -244,6 +242,18 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   set(HAVE_SUN_OS 1)
   set(PSCMD "ps -e -o pid,comm")
   link_libraries(nsl socket curses sec)
+
+
+  if (${CMAKE_C_COMPILER_ID} MATCHES SunPro)
+    include_directories(/usr/local/include)
+    link_directories(/usr/local/lib)
+
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64")
+  endif()
+
+  if (${CMAKE_CXX_COMPILER_ID} MATCHES SunPro)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
+  endif()
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
