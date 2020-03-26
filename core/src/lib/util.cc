@@ -584,6 +584,29 @@ const char* job_type_to_str(int type)
   return str;
 }
 
+const char* job_replace_to_str(int replace)
+{
+  const char* str = NULL;
+  switch(replace) {
+    case REPLACE_ALWAYS:
+      str = _("always");
+      break;
+    case REPLACE_IFNEWER:
+      str = _("ifnewer");
+      break;
+    case REPLACE_IFOLDER:
+      str = _("ifolder");
+      break;
+    case REPLACE_NEVER:
+      str = _("never");
+      break;
+    default:
+      str = _("Unknown Replace");
+      break;
+  }
+  return str;
+}
+
 /*
  * Convert ActionOnPurge to string (Truncate, Erase, Destroy)
  */
