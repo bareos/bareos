@@ -246,6 +246,7 @@ static inline Device *init_dev(JobControlRecord *jcr, DeviceResource *device, bo
             device->device_name, device->dev_type);
       return NULL;
    }
+
    dev->ClearSlot();         /* unknown */
 
    /*
