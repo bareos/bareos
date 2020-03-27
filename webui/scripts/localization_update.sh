@@ -9,7 +9,7 @@ LOCDIR='../module/Application/language/'
 echo 'Message lookup ...'
 
 find ../ -regextype posix-egrep -regex '.*(php|phtml)$$' | grep -v vendor | grep -v tests | xargs xgettext --keyword=translate -L PHP --from-code=UTF-8 -o $POTFILE;
-find ../ -regextype posix-egrep -regex '.*(functions.js)$$' | xargs xgettext --keyword=gettext --from-code=UTF-8 -j -o $POTFILE;
+find ../ -regextype posix-egrep -regex '.*(formatter.js|functions.js)$$' | xargs xgettext --keyword=gettext --from-code=UTF-8 -j -o $POTFILE;
 
 echo 'Message merge ...'
 cd $LOCDIR
