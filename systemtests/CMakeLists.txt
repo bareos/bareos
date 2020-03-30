@@ -178,7 +178,16 @@ macro(handle_python_plugin_modules test_name)
 
   if(${test_name} STREQUAL python-fd-plugin-libcloud-test)
     list(APPEND FD_PYMODULES_TO_LINK_TO_SRC bareos-fd-libcloud.py
-                BareosFdPluginLibcloud.py
+      BareosFdPluginLibcloud.py
+      BareosLibcloudApi.py
+      bareos_libcloud_api/bucket_explorer.py
+      bareos_libcloud_api/debug.py
+      bareos_libcloud_api/get_libcloud_driver.py
+      bareos_libcloud_api/__init__.py
+      bareos_libcloud_api/mtime.py
+      bareos_libcloud_api/process_base.py
+      bareos_libcloud_api/queue_message.py
+      bareos_libcloud_api/worker.py
     )
   endif()
 
@@ -236,8 +245,13 @@ macro(handle_python_plugin_modules test_name)
     else()
       set(ORIGINAL_FILE ${python_plugin_module_src_dir}/filed/${PYMODULE})
     endif()
+    get_filename_component(subdir ${PYMODULE} DIRECTORY)
+    if(NOT EXISTS ${python_plugin_module_src_test_dir}/${subdir})
+      #create a local subdirectory
+      file(MAKE_DIRECTORY ${python_plugin_module_src_test_dir}/${subdir})
+    endif()
     create_symlink(
-      ${ORIGINAL_FILE} ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
+      ${ORIGINAL_FILE} ${python_plugin_module_src_test_dir}/${PYMODULE}
     )
   endforeach()
 

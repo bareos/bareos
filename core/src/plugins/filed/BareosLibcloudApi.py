@@ -1,5 +1,5 @@
 from bareos_libcloud_api.bucket_explorer import BucketExplorer
-from bareos_libcloud_api.debug import debugmessage
+from bareos_libcloud_api.debug import debugmessage, jobmessage
 from bareos_libcloud_api.get_libcloud_driver import get_driver
 from bareos_libcloud_api.get_libcloud_driver import options
 from bareos_libcloud_api.mtime import ModificationTime
@@ -7,6 +7,7 @@ from bareos_libcloud_api.queue_message import MESSAGE_TYPE
 from bareos_libcloud_api.worker import Worker
 from libcloud.common.types import LibcloudError
 from multiprocessing import Queue, Event
+from time import sleep
 
 import glob
 import io
@@ -15,7 +16,7 @@ import os
 import sys
 import uuid
 
-NUMBER_OF_WORKERS = 20
+NUMBER_OF_WORKERS = 5
 
 SUCCESS = 0
 ERROR = 1
@@ -23,7 +24,7 @@ ERROR = 1
 MESSAGE_TYPE = MESSAGE_TYPE()
 
 
-class Api(object):
+class BareosLibcloudApi(object):
     @staticmethod
     def probe_driver(options):
         driver = get_driver(options)
@@ -75,7 +76,7 @@ class Api(object):
             if job != None:
                 self.run_job(job)
 
-        debugmessage(10, "*** Ready %d ***" % self.objects_count)
+        jobmessage("M_INFO", "*** Ready %d ***" % self.objects_count)
 
     def __worker_ready(self):
         return self.count_worker_ready == NUMBER_OF_WORKERS
@@ -110,6 +111,7 @@ class Api(object):
         return None
 
     def shutdown(self):
+        jobmessage("M_INFO", "Shutdown")
         while not self.discovered_objects_queue.empty():
             self.discovered_objects_queue.get()
 
@@ -120,6 +122,7 @@ class Api(object):
             self.message_queue.get()
 
         self.bucket_explorer.shutdown()
+        jobmessage("M_INFO", "Shutdown Worker")
 
         for w in self.worker:
             w.shutdown()
@@ -135,25 +138,38 @@ class Api(object):
 
         if self.bucket_explorer.is_alive():
             self.bucket_explorer.terminate()
+        jobmessage("M_INFO", "Shutdown Ready")
 
     def __create_tmp_dir(self):
+        try:
+            self.__remove_tmp_dir()
+        except:
+            pass
         os.mkdir(self.tmp_dir_path)
 
     def __remove_tmp_dir(self):
-        files = glob.glob(self.tmp_dir_path + "/*")
-        for f in files:
-            os.remove(f)
-        os.rmdir(self.tmp_dir_path)
+        try:
+            files = glob.glob(self.tmp_dir_path + "/*")
+            for f in files:
+                os.remove(f)
+            os.rmdir(self.tmp_dir_path)
+        except:
+            pass
 
     def __del__(self):
-        self.__remove_tmp_dir()
+        try:
+            self.__remove_tmp_dir()
+        except:
+            pass
 
 
 if __name__ == "__main__":
-    if Api.probe_driver(options) == "success":
+    if BareosLibcloudApi.probe_driver(options) == "success":
         modification_time = ModificationTime()
 
-        api = Api(options, modification_time.get_last_run(), "/dev/shm/bareos_libcloud")
+        api = BareosLibcloudApi(
+            options, modification_time.get_last_run(), "/dev/shm/bareos_libcloud"
+        )
         api.run()
         api.shutdown()
 
