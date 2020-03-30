@@ -36,6 +36,9 @@ policy at
 
   * https://www.bareos.org/en/howto-contribute.html
 
+### Security policy
+If you want to report a security-related problem, please take a look at our [security policy](https://github.com/bareos/bareos/security/policy).
+
 ### Mailing lists
 
 The Bareos project offers two mailing lists: bareos-users and bareos-devel.
