@@ -3,6 +3,15 @@
 FAQ
 ===
 
+General Questions
+-----------------
+
+How do I report a security issue?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The process for handling security-related problems is described in our GitHub `security policy`_.
+
+.. _security policy: https://github.com/bareos/bareos/security/policy
+
 .. _bareos-1825-updatefaq:
 
 Bareos 18.2.5 FAQ
