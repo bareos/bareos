@@ -25,6 +25,9 @@ import bareos_fd_consts
 import ConfigParser as configparser
 import datetime
 import dateutil.parser
+from bareos_libcloud_api.debug import debugmessage
+from bareos_libcloud_api.debug import jobmessage
+from bareos_libcloud_api.debug import set_plugin_context
 import io
 import itertools
 import libcloud
@@ -32,32 +35,11 @@ import multiprocessing
 import os
 import time
 
+from BareosLibcloudApi import BareosLibcloudApi
 from bareos_fd_consts import bRCs, bCFs, bIOPS, bJobMessageType, bFileType
 from libcloud.storage.types import Provider
 from sys import version_info
 
-plugin_context = None
-
-def jobmessage(message_type, message):
-    global plugin_context
-    if plugin_context != None:
-        message = "BareosFdPluginLibcloud [%s]: %s\n" % (os.getpid(), message)
-        bareosfd.JobMessage(plugin_context, bJobMessageType[message_type], message)
-
-
-def debugmessage(level, message):
-    global plugin_context
-    if plugin_context != None:
-        message = "BareosFdPluginLibcloud [%s]: %s\n" % (os.getpid(), message)
-        bareosfd.DebugMessage(plugin_context, level, message)
-
-
-class IterStringIO(io.BufferedIOBase):
-    def __init__(self, iterable):
-        self.iter = itertools.chain.from_iterable(iterable)
-
-    def read(self, n=None):
-        return bytearray(itertools.islice(self.iter, None, n))
 
 class FilenameConverter:
     __pathprefix = 'PYLIBCLOUD:/'
@@ -79,142 +61,9 @@ def str2bool(data):
     raise Exception("%s: not a boolean" % (data,))
 
 
-def get_driver(options):
-    driver_opt = dict(options)
-
-    # remove unknown options
-    for opt in (
-        "buckets_exclude",
-        "accurate",
-        "nb_worker",
-        "prefetch_size",
-        "queue_size",
-        "provider",
-        "buckets_include",
-        "debug",
-    ):
-        if opt in options:
-            del driver_opt[opt]
-
-    driver = None
-
-    provider = getattr(libcloud.storage.types.Provider, options["provider"])
-    driver = libcloud.storage.providers.get_driver(provider)(**driver_opt)
-
-    try:
-        driver.get_container("probe123XXXbareosXXX123probe")
-
-    #success
-    except libcloud.storage.types.ContainerDoesNotExistError:
-        debugmessage(100, "Wrong credentials for %s" % (driver_opt["host"]))
-        return driver
-
-    #error
-    except libcloud.common.types.InvalidCredsError:
-        pass
-
-    #error
-    except:
-        pass
-
-    return None
-
-def get_object(driver, bucket, key):
-    try:
-        return driver.get_object(bucket, key)
-    except libcloud.common.types.InvalidCredsError:
-        # Something is buggy here, this bug is triggered by tilde-ending objects
-        # Our tokens are good, we used them before
-        debugmessage(
-            100,
-            "Error triggered by tilde-ending objects: %s/%s"
-            % (bucket, key),
-        )
-        return None
-
-class JobCreator(object):
-    def __init__(self, plugin_todo_queue, last_run, opts, driver):
-        self.plugin_todo_queue = plugin_todo_queue
-        self.last_run = last_run
-        self.driver = driver
-        self.options = opts
-
-        self.delta = datetime.timedelta(seconds=time.timezone)
-
-    def __call__(self):
-        try:
-            self.__iterate_over_buckets()
-        except:
-            debugmessage(100, "Error while iterating over buckets")
-
-        self.plugin_todo_queue.put(None) #end
-
-    def __iterate_over_buckets(self):
-        for bucket in self.driver.iterate_containers():
-            if self.options["buckets_include"] is not None:
-                if bucket.name not in self.options["buckets_include"]:
-                    continue
-
-            if self.options["buckets_exclude"] is not None:
-                if bucket.name in self.options["buckets_exclude"]:
-                    continue
-
-            debugmessage(100, 'Backing up bucket "%s"' % (bucket.name,))
-
-            self.__generate_jobs_for_bucket_objects(
-                self.driver.iterate_container_objects(bucket)
-            )
-
-    def __get_mtime(self, obj):
-        mtime = dateutil.parser.parse(obj.extra["last_modified"])
-        mtime = mtime - self.delta
-        mtime = mtime.replace(tzinfo=None)
-
-        ts = time.mktime(mtime.timetuple())
-        return mtime, ts
-
-    def __generate_jobs_for_bucket_objects(self, bucket_iterator):
-        for obj in bucket_iterator:
-            mtime, mtime_ts = self.__get_mtime(obj)
-
-            job = {
-                "name": obj.name,
-                "bucket": obj.container.name,
-                "data": None,
-                "size": obj.size,
-                "mtime": mtime_ts,
-            }
-
-            object_name = "%s/%s" % (obj.container.name, obj.name)
-
-            if self.last_run > mtime:
-                debugmessage(
-                    100,
-                    "File %s not changed, skipped (%s > %s)"
-                    % (object_name, self.last_run, mtime),
-                )
-
-                # This object was present on our last backup
-                # Here, we push it directly to bareos, it will not be backed again
-                # but remembered as "still here" (for accurate mode)
-                # If accurate mode is off, we can simply skip that object
-                if self.options["accurate"] is True:
-                    self.plugin_todo_queue.put(job)
-
-                continue
-
-            debugmessage(
-                100,
-                "File %s was changed or is new, backing up (%s < %s)"
-                % (object_name, self.last_run, mtime),
-            )
-
-            self.plugin_todo_queue.put(job)
-
 class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     def __init__(self, context, plugindef):
-        global plugin_context
-        plugin_context = context
+        set_plugin_context(context)
         debugmessage(
             100, "BareosFdPluginLibcloud called with plugindef: %s" % (plugindef,)
         )
@@ -231,7 +80,6 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         # Restore's path will not touch this
         self.current_backup_job = {}
         self.number_of_objects_to_backup = 0
-        self.driver = None
 
     def __parse_options_bucket(self, name):
         if name not in self.options:
@@ -242,25 +90,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 buckets.append(bucket)
             self.options[name] = buckets
 
-    def __parse_opt_int(self, name):
-        if name not in self.options:
-            return
-
-        value = self.options[name]
-        self.options[name] = int(value)
-
     def __parse_options(self, context):
-        self.__parse_options_bucket("buckets_include")
-        self.__parse_options_bucket("buckets_exclude")
-
-        if "debug" in self.options:
-            old = self.options["debug"]
-            self.options["debug"] = str2bool(old)
-
-            if self.options["debug"] is True:
-                global debug
-                debug = True
-
         accurate = bareos_fd_consts.bVariable["bVarAccurate"]
         accurate = bareosfd.GetValue(context, accurate)
         if accurate is None or accurate == 0:
@@ -368,26 +198,26 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             % (self.options["host"], self.options["port"]),
         )
 
-        self.driver = get_driver(self.options)
-
-        if self.driver == None:
+        if BareosLibcloudApi.probe_driver(self.options) == "failed":
             jobmessage("M_FATAL", "Could not connect to libcloud driver: %s:%s"
                 % (self.options["host"], self.options["port"]))
             return bRCs["bRC_Error"]
 
         jobmessage("M_INFO", "Last backup: %s (ts: %s)" % (self.last_run, self.since))
 
-        self.manager = multiprocessing.Manager()
-        self.plugin_todo_queue = self.manager.Queue(maxsize=self.options["queue_size"])
+        self.api = None
+        try:
+            self.api = BareosLibcloudApi(self.options, self.last_run, "/dev/shm/bareos_libcloud")
+            jobmessage("M_INFO", "*** Start Api ***")
+            self.api.run()
+        except Exception as e:
+            jobmessage("M_INFO", "Something went wrong: %s" % e)
 
-        job_generator = JobCreator(
-            self.plugin_todo_queue,
-            self.last_run,
-            self.options,
-            self.driver,
-        )
-        self.job_generator = multiprocessing.Process(target=job_generator)
-        self.job_generator.start()
+        if self.api != None:
+            self.api.shutdown()
+
+        jobmessage("M_FATAL", "Job Finished")
+        return bRCs["bRC_Cancel"]
 
         return bRCs["bRC_OK"]
 

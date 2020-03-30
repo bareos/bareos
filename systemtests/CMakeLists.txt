@@ -792,6 +792,7 @@ else()
   set(TEST_INFO_TEXT "running system tests on the sourcetree")
 endif()
 
+
 foreach(TEST_NAME ${SYSTEM_TESTS})
   message(STATUS "Configuring test: ${SYSTEMTEST_PREFIX}${TEST_NAME}")
   prepare_test()
@@ -808,6 +809,7 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
     COMMAND ${tests_dir}/${TEST_NAME}/testrunner
     WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
   )
+
   set_tests_properties(${SYSTEMTEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 90)
   math(EXPR BASEPORT "${BASEPORT} + 10")
 
@@ -881,6 +883,7 @@ foreach(TEST_NAME_DISABLED ${SYSTEM_TESTS_DISABLED})
   )
   message(STATUS "Disabled test: ${SYSTEMTEST_PREFIX}${TEST_NAME_DISABLED}")
 endforeach()
+
 
 configure_file(
   "CTestCustom.cmake.in" "${CMAKE_BINARY_DIR}/CTestCustom.cmake" @ONLY
