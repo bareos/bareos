@@ -85,6 +85,12 @@ The same applies to a support request (we answer only bugs), you might give the 
 .. _bareos-users:       https://groups.google.com/forum/#!forum/bareos-users
 .. _commercial support: https://www.bareos.com/en/Support.html
 
+Reporting security issues
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you want to report a security-related problem, please take a look at our `security policy`_.
+
+.. _security policy: https://github.com/bareos/bareos/security/policy
 
 Memory Leaks
 ------------
