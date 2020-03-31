@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -525,6 +525,31 @@ static void ParseConfigCb(LEX *lc, ResourceItem *item, int index, int pass)
   }
 }
 
+static void CheckDropletDevices(ConfigurationParser &my_config)
+{
+   CommonResourceHeader *p = nullptr;
+
+   while((p = my_config.GetNextRes(R_DEVICE, p)) != nullptr) {
+      DeviceResource* device = reinterpret_cast<DeviceResource*>(p);
+      if (device->dev_type == B_DROPLET_DEV) {
+         if (device->max_concurrent_jobs == 0) {
+            /*
+             * 0 is the general default. However, for this dev_type, only 1 works.
+             * So we set it to this value.
+             */
+            Jmsg1(nullptr, M_WARNING, 0,
+                  _("device %s is set to the default 'Maximum Concurrent Jobs' = 1.\n"),
+                  device->device_name);
+            device->max_concurrent_jobs = 1;
+         } else if (device->max_concurrent_jobs > 1) {
+            Jmsg2(nullptr, M_ERROR_TERM, 0,
+                  _("device %s is configured with 'Maximum Concurrent Jobs' = %d, however only 1 is supported.\n"),
+                  device->device_name, device->max_concurrent_jobs);
+         }
+      }
+   }
+}
+
 static void ConfigReadyCallback(ConfigurationParser &my_config)
 {
   std::map<int, std::string> map{{R_DIRECTOR, "R_DIRECTOR"},
@@ -535,6 +560,7 @@ static void ConfigReadyCallback(ConfigurationParser &my_config)
                                  {R_DEVICE, "R_DEVICE"},
                                  {R_AUTOCHANGER, "R_AUTOCHANGER"}};
   my_config.InitializeQualifiedResourceNameTypeConverter(map);
+  CheckDropletDevices(my_config);
 }
 
 ConfigurationParser *InitSdConfig(const char *configfile, int exit_code)
