@@ -35,6 +35,8 @@ import multiprocessing
 import os
 import time
 
+from BareosLibcloudApi import SUCCESS
+from BareosLibcloudApi import ERROR
 from BareosLibcloudApi import BareosLibcloudApi
 from bareos_fd_consts import bRCs, bCFs, bIOPS, bJobMessageType, bFileType
 from libcloud.storage.types import Provider
@@ -209,15 +211,9 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         try:
             self.api = BareosLibcloudApi(self.options, self.last_run, "/dev/shm/bareos_libcloud")
             jobmessage("M_INFO", "*** Start Api ***")
-            self.api.run()
         except Exception as e:
-            jobmessage("M_INFO", "Something went wrong: %s" % e)
-
-        if self.api != None:
-            self.api.shutdown()
-
-        jobmessage("M_FATAL", "Job Finished")
-        return bRCs["bRC_Cancel"]
+            jobmessage("M_FATAL", "Something went wrong: %s" % e)
+            return bRCs["bRC_Cancel"]
 
         return bRCs["bRC_OK"]
 
@@ -235,31 +231,20 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         else:
             jobmessage("M_INFO", "No objects to backup")
 
-        try:
-            self.manager.shutdown()
-        except OSError:
-            # should not happen!
-            pass
-        debugmessage(100, "self.manager.shutdown()")
-
-        debugmessage(
-            100, "Join() for the job_generator (pid %s)" % (self.job_generator.pid,)
-        )
-        self.job_generator.join()
-        debugmessage(100, "job_generator is shut down")
+        self.api.shutdown()
+        debugmessage(100, "self.api.shutdown()")
 
     def start_backup_file(self, context, savepkt):
         debugmessage(100, "start_backup_file() called, waiting for worker")
-        try:
-            while True:
-                try:
-                    self.current_backup_job = self.plugin_todo_queue.get_nowait()
-                    break
-                except:
-                    time.sleep(0.1)
-        except TypeError:
-            debugmessage(100, "self.current_backup_job = None")
-            self.current_backup_job = None
+        while True:
+            if self.api.check_worker_messages() != SUCCESS:
+                self.current_backup_job = None
+                break
+            self.current_backup_job = self.api.get_next_job()
+            if self.current_backup_job != None:
+                break
+            if self.api.worker_ready():
+                break
 
         if self.current_backup_job is None:
             debugmessage(100, "Shutdown and join processes")
@@ -310,18 +295,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 return bRCs["bRC_OK"]
 
             # 'Backup' path
-            if self.current_backup_job["data"] is None:
-                obj = get_object(
-                    self.driver,
-                    self.current_backup_job["bucket"],
-                    self.current_backup_job["name"],
-                )
-                if obj is None:
-                    self.FILE = None
-                    return bRCs["bRC_Error"]
-                self.FILE = IterStringIO(obj.as_stream())
-            else:
-                self.FILE = self.current_backup_job["data"]
+            self.FILE = self.current_backup_job["data"]
 
         elif IOP.func == bIOPS["IO_READ"]:
             IOP.buf = bytearray(IOP.count)

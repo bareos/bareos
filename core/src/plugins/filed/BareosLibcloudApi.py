@@ -69,7 +69,7 @@ class BareosLibcloudApi(object):
             w.start()
 
     def run(self):
-        while not self.__worker_ready():
+        while not self.worker_ready():
             if self.check_worker_messages() != SUCCESS:
                 break
             job = self.get_next_job()
@@ -78,7 +78,7 @@ class BareosLibcloudApi(object):
 
         jobmessage("M_INFO", "*** Ready %d ***" % self.objects_count)
 
-    def __worker_ready(self):
+    def worker_ready(self):
         return self.count_worker_ready == NUMBER_OF_WORKERS
 
     def run_job(self, job):
