@@ -1140,7 +1140,9 @@ static void DoEnDisableCmd(UaContext* ua, bool setting)
   }
 
   ua->WarningMsg(
-      _("%sabling is a temporary operation until the director reloads\n"),
+      _("%sabling is a temporary operation until the director reloads.\n"
+        "For a permanent setting, please set the value of the \"Enabled\"\n"
+        "directive in the relevant configuration resource file.\n"),
       setting ? "En" : "Dis");
 }
 
