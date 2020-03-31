@@ -82,6 +82,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         # Restore's path will not touch this
         self.current_backup_job = {}
         self.number_of_objects_to_backup = 0
+        self.FILE = None
 
     def __parse_options_bucket(self, name):
         if name not in self.options:
@@ -222,7 +223,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         # If bareos have not seen one, it does not exists anymore
         return bRCs["bRC_Error"]
 
-    def __shutdown_and_join_processes(self):
+    def __shutdown(self):
         if self.number_of_objects_to_backup:
             jobmessage(
                 "M_INFO",
@@ -248,7 +249,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         if self.current_backup_job is None:
             debugmessage(100, "Shutdown and join processes")
-            self.__shutdown_and_join_processes()
+            self.__shutdown()
             savepkt.fname = "empty"  # dummy value, savepkt is always checked
             return bRCs["bRC_Skip"]
 
@@ -295,7 +296,17 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 return bRCs["bRC_OK"]
 
             # 'Backup' path
-            self.FILE = self.current_backup_job["data"]
+            if self.current_backup_job["data"] != None:
+                debugmessage(100, "********** Current Backup Data")
+                self.FILE = self.current_backup_job["data"]
+            else:
+                try:
+                    debugmessage(100, "********** Try Open File: %s" % self.current_backup_job["index"])
+                    self.FILE = io.open(self.current_backup_job["index"], 'rb')
+                except Exception as e:
+                    jobmessage("M_FATAL", "%s" % e)
+                    self.__shutdown()
+                    return bRCs["bRC_Error"]
 
         elif IOP.func == bIOPS["IO_READ"]:
             IOP.buf = bytearray(IOP.count)
