@@ -138,6 +138,12 @@ class BareosLibcloudApi(object):
 
         if self.bucket_explorer.is_alive():
             self.bucket_explorer.terminate()
+
+        try:
+            self.__remove_tmp_dir()
+        except:
+            pass
+
         jobmessage("M_INFO", "Shutdown Ready")
 
     def __create_tmp_dir(self):
