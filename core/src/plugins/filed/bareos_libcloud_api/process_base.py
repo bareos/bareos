@@ -5,7 +5,7 @@ from bareos_libcloud_api.queue_message import ReadyMessage
 from bareos_libcloud_api.queue_message import ErrorMessage
 from bareos_libcloud_api.queue_message import WorkerException
 from bareos_libcloud_api.queue_message import MESSAGE_TYPE
-
+import Queue as Q
 
 class ProcessBase(Process):
     def __init__(
@@ -20,9 +20,7 @@ class ProcessBase(Process):
         self.shutdown_event.set()
 
     def wait_for_shutdown(self):
-        # print("Waiting for shutdown %d" % self.worker_id)
         self.shutdown_event.wait()
-        # print("Waiting for shutdown %d ready" % self.worker_id)
 
     def info_message(self, level, message):
         self.message_queue.put(InfoMessage(self.worker_id, level, message))
@@ -35,3 +33,12 @@ class ProcessBase(Process):
 
     def worker_exception(self, message, exception):
         self.message_queue.put(WorkerException(self.worker_id, message, exception))
+
+    def queue_try_put(self, queue, obj):
+        while not self.shutdown_event.is_set():
+            try:
+                queue.put(obj, block=True, timeout=0.5)
+                return
+            except Q.Full:
+                self.info_message(400, "Queue %s is full" % queue)
+                continue

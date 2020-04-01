@@ -3,6 +3,7 @@ from bareos_libcloud_api.get_libcloud_driver import get_driver
 import io
 from libcloud.common.types import LibcloudError
 import uuid
+from time import sleep
 
 
 class Worker(ProcessBase):
@@ -31,12 +32,11 @@ class Worker(ProcessBase):
             while not self.shutdown_event.is_set():
                 if self.__iterate_input_queue() == False:
                     break
-                # sleep(0.05)
             self.ready_message()
         self.wait_for_shutdown()
 
     def __iterate_input_queue(self):
-        while not self.input_queue.empty():
+        while not self.input_queue.empty() and not self.shutdown_event.is_set():
             job = self.input_queue.get()
             if job == None:
                 return False

@@ -297,6 +297,8 @@ class BareosFdPluginBaseclass(object):
             )
             return self.end_backup_job(context)
 
+            return self.end_backup_job(context)
+
         elif event == bEventType["bEventEndFileSet"]:
             bareosfd.DebugMessage(
                 context, 100, "handle_plugin_event called with bEventEndFileSet\n"
@@ -321,6 +323,13 @@ class BareosFdPluginBaseclass(object):
             bareosfd.DebugMessage(
                 context, 100, "handle_plugin_event called with event %s\n" % (event)
             )
+        return bRCs["bRC_OK"]
+
+    def end_backup_job(self, context):
+        """
+        End of Backup Job.
+        Overload this to arrange whatever you have to do at this time.
+        """
         return bRCs["bRC_OK"]
 
     def start_backup_job(self, context):

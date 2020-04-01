@@ -33,7 +33,7 @@ import itertools
 import libcloud
 import multiprocessing
 import os
-import time
+from time import sleep
 
 from BareosLibcloudApi import SUCCESS
 from BareosLibcloudApi import ERROR
@@ -83,15 +83,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.current_backup_job = {}
         self.number_of_objects_to_backup = 0
         self.FILE = None
-
-    def __parse_options_bucket(self, name):
-        if name not in self.options:
-            self.options[name] = None
-        else:
-            buckets = list()
-            for bucket in self.options[name].split(","):
-                buckets.append(bucket)
-            self.options[name] = buckets
+        self.active = True
 
     def __parse_options(self, context):
         accurate = bareos_fd_consts.bVariable["bVarAccurate"]
@@ -218,6 +210,13 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         return bRCs["bRC_OK"]
 
+    def end_backup_job(self, context):
+        debugmessage(100, "********** STOP *************")
+        self.active = False
+        self.api.shutdown()
+        debugmessage(100, "********** Shutdown finished *************")
+        return bRCs["bRC_OK"]
+
     def check_file(self, context, fname):
         # All existing files/objects are passed to bareos
         # If bareos have not seen one, it does not exists anymore
@@ -237,19 +236,22 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
     def start_backup_file(self, context, savepkt):
         debugmessage(100, "start_backup_file() called, waiting for worker")
-        while True:
+        while self.active:
             if self.api.check_worker_messages() != SUCCESS:
-                self.current_backup_job = None
-                break
-            self.current_backup_job = self.api.get_next_job()
-            if self.current_backup_job != None:
-                break
-            if self.api.worker_ready():
-                break
+                self.active = False
+            else:
+                self.current_backup_job = self.api.get_next_job()
+                if self.current_backup_job != None:
+                    break
+                elif self.api.worker_ready():
+                    self.active = False
+                else:
+                    sleep(0.01)
 
-        if self.current_backup_job is None:
+        if not self.active:
             debugmessage(100, "Shutdown and join processes")
             self.__shutdown()
+            debugmessage(100, "Is Shutdown")
             savepkt.fname = "empty"  # dummy value, savepkt is always checked
             return bRCs["bRC_Skip"]
 
@@ -297,14 +299,12 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
             # 'Backup' path
             if self.current_backup_job["data"] != None:
-                debugmessage(100, "********** Current Backup Data")
                 self.FILE = self.current_backup_job["data"]
             else:
                 try:
-                    debugmessage(100, "********** Try Open File: %s" % self.current_backup_job["index"])
                     self.FILE = io.open(self.current_backup_job["index"], 'rb')
                 except Exception as e:
-                    jobmessage("M_FATAL", "%s" % e)
+                    jobmessage("M_FATAL", "Could not open temporary file." % e)
                     self.__shutdown()
                     return bRCs["bRC_Error"]
 

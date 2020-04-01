@@ -99,8 +99,7 @@ class BucketExplorer(ProcessBase):
                     # but remembered as "still here" (for accurate mode)
                     # If accurate mode is off, we can simply skip that object
                     if self.options["accurate"] is True:
-                        self.discovered_objects_queue.put(job)
-                        self.object_count += 1
+                        self.queue_try_put(self.discovered_objects_queue, job)
 
                     continue
 
@@ -110,7 +109,7 @@ class BucketExplorer(ProcessBase):
                     % (object_name, self.last_run, mtime),
                 )
 
-                self.discovered_objects_queue.put(job)
-                self.object_count += 1
+                self.queue_try_put(self.discovered_objects_queue, job)
+
         except Exception as exception:
             self.worker_exception("Error while iterating objects", exception)
