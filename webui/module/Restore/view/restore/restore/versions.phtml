@@ -308,6 +308,9 @@ function getFileVersions(pathid, filename) {
             });
             row.append(col1, col2, col3, col4);
             $('#file-versions-list').append(row)
+            if(data.length == 1) {
+               document.getElementById(rowId).checked = true;
+            }
          });
       },
       error: function() {
