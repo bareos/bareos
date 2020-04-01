@@ -203,18 +203,17 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.api = None
         try:
             self.api = BareosLibcloudApi(self.options, self.last_run, "/dev/shm/bareos_libcloud")
-            jobmessage("M_INFO", "*** Start Api ***")
+            debugmessage(100, "BareosLibcloudApi started")
         except Exception as e:
+            debugmessage(100, "Error: %s" % e)
             jobmessage("M_FATAL", "Something went wrong: %s" % e)
             return bRCs["bRC_Cancel"]
 
         return bRCs["bRC_OK"]
 
     def end_backup_job(self, context):
-        debugmessage(100, "********** STOP *************")
-        self.active = False
-        self.api.shutdown()
-        debugmessage(100, "********** Shutdown finished *************")
+        if self.active:
+            self.__shutdown()
         return bRCs["bRC_OK"]
 
     def check_file(self, context, fname):
@@ -223,6 +222,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         return bRCs["bRC_Error"]
 
     def __shutdown(self):
+        self.active = False
         if self.number_of_objects_to_backup:
             jobmessage(
                 "M_INFO",
@@ -231,11 +231,11 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         else:
             jobmessage("M_INFO", "No objects to backup")
 
+        debugmessage(100, "Shut down BareosLibcloudApi")
         self.api.shutdown()
-        debugmessage(100, "self.api.shutdown()")
+        debugmessage(100, "BareosLibcloudApi is shut down")
 
     def start_backup_file(self, context, savepkt):
-        debugmessage(100, "start_backup_file() called, waiting for worker")
         while self.active:
             if self.api.check_worker_messages() != SUCCESS:
                 self.active = False
@@ -249,9 +249,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     sleep(0.01)
 
         if not self.active:
-            debugmessage(100, "Shutdown and join processes")
             self.__shutdown()
-            debugmessage(100, "Is Shutdown")
             savepkt.fname = "empty"  # dummy value, savepkt is always checked
             return bRCs["bRC_Skip"]
 

@@ -24,7 +24,7 @@ class Worker(ProcessBase):
         self.input_queue = discovered_objects_queue
         self.output_queue = downloaded_objects_queue
 
-    def run(self):
+    def run_process(self):
         self.driver = get_driver(self.options)
         if self.driver == None:
             self.error_message("Could not load driver")
@@ -32,8 +32,6 @@ class Worker(ProcessBase):
             while not self.shutdown_event.is_set():
                 if self.__iterate_input_queue() == False:
                     break
-            self.ready_message()
-        self.wait_for_shutdown()
 
     def __iterate_input_queue(self):
         while not self.input_queue.empty() and not self.shutdown_event.is_set():
@@ -77,5 +75,5 @@ class Worker(ProcessBase):
                 except Exception as e:
                     self.worker_exception("Error using temporary file", e)
 
-            self.output_queue.put(job)
+            self.queue_try_put(self.output_queue, job)
         return True

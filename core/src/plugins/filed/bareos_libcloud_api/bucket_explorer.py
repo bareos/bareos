@@ -31,7 +31,7 @@ class BucketExplorer(ProcessBase):
         self.number_of_workers = number_of_workers
         self.object_count = 0
 
-    def run(self):
+    def run_process(self):
         self.driver = get_driver(self.options)
 
         if self.driver == None:
@@ -43,8 +43,6 @@ class BucketExplorer(ProcessBase):
 
         for _ in range(self.number_of_workers):
             self.discovered_objects_queue.put(None)
-
-        self.wait_for_shutdown()
 
     def __iterate_over_buckets(self):
         try:
@@ -89,7 +87,7 @@ class BucketExplorer(ProcessBase):
 
                 if self.last_run > mtime:
                     self.info_message(
-                        100,
+                        400,
                         "File %s not changed, skipped (%s > %s)"
                         % (object_name, self.last_run, mtime),
                     )
@@ -104,8 +102,8 @@ class BucketExplorer(ProcessBase):
                     continue
 
                 self.info_message(
-                    100,
-                    "File %s was changed or is new, backing up (%s < %s)"
+                    400,
+                    "File %s was changed or is new, put to queue (%s < %s)"
                     % (object_name, self.last_run, mtime),
                 )
 

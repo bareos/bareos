@@ -33,14 +33,14 @@ class BareosLibcloudApi(object):
     def __init__(self, options, last_run, tmp_dir_path):
         self.tmp_dir_path = tmp_dir_path
         self.count_worker_ready = 0
-        self.objects_count = 0
-        queue_size = options["queue_size"] if options["queue_size"] > 0 else 1000
-
-        self.message_queue = Queue()
-        self.discovered_objects_queue = Queue(queue_size)
-        self.downloaded_objects_queue = Queue()
+        self.count_bucket_explorer_ready = 0
 
         self.number_of_worker = options["nb_worker"] if options["nb_worker"] > 0 else 1
+
+        queue_size = options["queue_size"] if options["queue_size"] > 0 else 1000
+        self.discovered_objects_queue = Queue(queue_size)
+        self.downloaded_objects_queue = Queue(queue_size)
+        self.message_queue = Queue()
 
         self.__create_tmp_dir()
 
@@ -69,22 +69,11 @@ class BareosLibcloudApi(object):
         for w in self.worker:
             w.start()
 
-    def run(self):
-        while not self.worker_ready():
-            if self.check_worker_messages() != SUCCESS:
-                break
-            job = self.get_next_job()
-            if job != None:
-                self.run_job(job)
-
-        jobmessage("M_INFO", "*** Ready %d ***" % self.objects_count)
-
     def worker_ready(self):
         return self.count_worker_ready == self.number_of_worker
 
-    def run_job(self, job):
-        debugmessage(10, "Running: %s" % job["name"])
-        self.objects_count += 1
+    def bucket_explorer_ready(self):
+        return self.count_bucket_explorer_ready == 1
 
     def check_worker_messages(self):
         while not self.message_queue.empty():
@@ -92,7 +81,9 @@ class BareosLibcloudApi(object):
             if message.type == MESSAGE_TYPE.InfoMessage:
                 debugmessage(message.level, message.message_string)
             elif message.type == MESSAGE_TYPE.ReadyMessage:
-                if message.worker_id > 0:
+                if message.worker_id == 0:
+                    self.count_bucket_explorer_ready += 1
+                else:
                     self.count_worker_ready += 1
             elif message.type == MESSAGE_TYPE.ErrorMessage:
                 debugmessage(10, message.message_string)
@@ -112,16 +103,18 @@ class BareosLibcloudApi(object):
         return None
 
     def shutdown(self):
-        debugmessage(100, "Api Shutdown worker")
+        debugmessage(100, "Shut down worker")
         self.bucket_explorer.shutdown()
         for w in self.worker:
             w.shutdown()
 
-        debugmessage(100, "Api Wait For worker")
+        debugmessage(100, "Wait for worker")
+        while not self.bucket_explorer_ready():
+            self.check_worker_messages()
         while not self.worker_ready():
             self.check_worker_messages()
+        debugmessage(100, "Worker finished")
 
-        debugmessage(100, "Api Worker Ready")
         while not self.discovered_objects_queue.empty():
             self.discovered_objects_queue.get()
 
@@ -131,7 +124,7 @@ class BareosLibcloudApi(object):
         while not self.message_queue.empty():
             self.message_queue.get()
 
-        debugmessage(100, "Api Join Worker")
+        debugmessage(100, "Join worker processes")
 
         for w in self.worker:
             w.join(timeout=0.3)
@@ -150,7 +143,7 @@ class BareosLibcloudApi(object):
         except:
             pass
 
-        jobmessage("M_INFO", "Shutdown Ready")
+        jobmessage("M_INFO", "Shutdown of worker processes is ready")
 
     def __create_tmp_dir(self):
         try:
@@ -174,15 +167,3 @@ class BareosLibcloudApi(object):
         except:
             pass
 
-
-if __name__ == "__main__":
-    if BareosLibcloudApi.probe_driver(options) == "success":
-        modification_time = ModificationTime()
-
-        api = BareosLibcloudApi(
-            options, modification_time.get_last_run(), "/dev/shm/bareos_libcloud"
-        )
-        api.run()
-        api.shutdown()
-
-    debugmessage(10, "*** Exit ***")
