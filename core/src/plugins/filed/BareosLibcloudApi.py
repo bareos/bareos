@@ -16,8 +16,6 @@ import os
 import sys
 import uuid
 
-NUMBER_OF_WORKERS = 5
-
 SUCCESS = 0
 ERROR = 1
 
@@ -36,10 +34,13 @@ class BareosLibcloudApi(object):
         self.tmp_dir_path = tmp_dir_path
         self.count_worker_ready = 0
         self.objects_count = 0
+        queue_size = options["queue_size"] if options["queue_size"] > 0 else 1000
 
         self.message_queue = Queue()
-        self.discovered_objects_queue = Queue()
+        self.discovered_objects_queue = Queue(queue_size)
         self.downloaded_objects_queue = Queue()
+
+        self.number_of_worker = options["nb_worker"] if options["nb_worker"] > 0 else 1
 
         self.__create_tmp_dir()
 
@@ -48,7 +49,7 @@ class BareosLibcloudApi(object):
             last_run,
             self.message_queue,
             self.discovered_objects_queue,
-            NUMBER_OF_WORKERS,
+            self.number_of_worker,
         )
 
         self.worker = [
@@ -60,7 +61,7 @@ class BareosLibcloudApi(object):
                 self.discovered_objects_queue,
                 self.downloaded_objects_queue,
             )
-            for i in range(NUMBER_OF_WORKERS)
+            for i in range(self.number_of_worker)
         ]
 
         self.bucket_explorer.start()
@@ -79,7 +80,7 @@ class BareosLibcloudApi(object):
         jobmessage("M_INFO", "*** Ready %d ***" % self.objects_count)
 
     def worker_ready(self):
-        return self.count_worker_ready == NUMBER_OF_WORKERS
+        return self.count_worker_ready == self.number_of_worker
 
     def run_job(self, job):
         debugmessage(10, "Running: %s" % job["name"])
@@ -111,7 +112,16 @@ class BareosLibcloudApi(object):
         return None
 
     def shutdown(self):
-        jobmessage("M_INFO", "Shutdown")
+        debugmessage(100, "Api Shutdown worker")
+        self.bucket_explorer.shutdown()
+        for w in self.worker:
+            w.shutdown()
+
+        debugmessage(100, "Api Wait For worker")
+        while not self.worker_ready():
+            self.check_worker_messages()
+
+        debugmessage(100, "Api Worker Ready")
         while not self.discovered_objects_queue.empty():
             self.discovered_objects_queue.get()
 
@@ -121,11 +131,7 @@ class BareosLibcloudApi(object):
         while not self.message_queue.empty():
             self.message_queue.get()
 
-        self.bucket_explorer.shutdown()
-        jobmessage("M_INFO", "Shutdown Worker")
-
-        for w in self.worker:
-            w.shutdown()
+        debugmessage(100, "Api Join Worker")
 
         for w in self.worker:
             w.join(timeout=0.3)
