@@ -16,6 +16,14 @@ class ProcessBase(Process):
         self.message_queue = message_queue
         self.worker_id = worker_id
 
+    def run_process(self):
+        pass
+
+    def run(self):
+        self.run_process()
+        self.ready_message()
+        self.wait_for_shutdown()
+
     def shutdown(self):
         self.shutdown_event.set()
 
@@ -40,5 +48,5 @@ class ProcessBase(Process):
                 queue.put(obj, block=True, timeout=0.5)
                 return
             except Q.Full:
-                self.info_message(400, "Queue %s is full" % queue)
+                self.info_message(400, "Queue %s is full, trying again.." % queue)
                 continue
