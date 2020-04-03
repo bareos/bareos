@@ -7,6 +7,7 @@ from bareos_libcloud_api.queue_message import WorkerException
 from bareos_libcloud_api.queue_message import MESSAGE_TYPE
 import Queue as Q
 
+
 class ProcessBase(Process):
     def __init__(
         self, worker_id, message_queue,

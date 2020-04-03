@@ -13,7 +13,9 @@ class TestObject:
 class ModificationTime(object):
     def __init__(self):
         is_dst = time.daylight and time.localtime().tm_isdst
-        self.timezone_delta = datetime.timedelta(seconds=time.altzone if is_dst else time.timezone)
+        self.timezone_delta = datetime.timedelta(
+            seconds=time.altzone if is_dst else time.timezone
+        )
 
     def get_mtime(self, obj):
         mtime = dateutil.parser.parse(obj.extra["last_modified"])
