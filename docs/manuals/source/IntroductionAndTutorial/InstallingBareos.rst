@@ -280,15 +280,78 @@ Install on FreeBSD based Distributions
    service bareos-fd start
 
 
+Install on Oracle Solaris
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:index:`\ <single: Platform; Solaris>`
+
+Bareos offers **IPS** (*Image Packaging System*) filedaemon Packages for **Oracle Solaris 11.4**.
+
+First, download the Solaris package to the local disk and add the package as publisher
+**bareos**:
+
+.. code-block:: shell-session
+   :caption: Add bareos publisher
+
+   root@solaris114:~# pkg set-publisher -p bareos-fd-<version>.p5p  bareos
+   pkg set-publisher:
+     Added publisher(s): bareos
+
+
+Then, install the filedaemon with **pkg install**:
+
+
+.. code-block:: shell-session
+   :caption: Install solaris package
+
+   root@solaris114:~# pkg install bareos-fd
+             Packages to install:  1
+              Services to change:  1
+         Create boot environment: No
+   Create backup boot environment: No
+
+   DOWNLOAD                                PKGS         FILES    XFER (MB)   SPEED
+   Completed                                1/1         44/44      1.0/1.0  4.8M/s
+
+   PHASE                                          ITEMS
+   Installing new actions                         94/94
+   Updating package state database                 Done
+   Updating package cache                           0/0
+   Updating image state                            Done
+   Creating fast lookup database                working |
+
+
+After installation, check the bareos-fd service status with **svcs bareos-fd**:
+
+.. code-block:: shell-session
+   :caption: Check solaris service
+
+   root@solaris114:~# svcs bareos-fd
+   STATE          STIME      FMRI
+   online         16:16:14   svc:/bareos-fd:default
+
+
+Finish the installation by adapting the configuration in :file:`/usr/local/etc/bareos` and restart the
+service with **svcadm restart bareos-fd**:
+
+.. code-block:: shell-session
+   :caption: Restart solaris service
+   
+   root@solaris114:~# svcadm restart bareos-fd
+
+The bareos filedaemon service on solaris is now ready for use.
 
 Install on Univention Corporate Server
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :os:`Univention`
 
-Bareos offers additional functionality and integration into an Univention Corporate Server environment. Please follow the intructions in :ref:`section-UniventionCorporateServer`.
+Bareos offers additional functionality and integration into an Univention Corporate Server environment. Please follow the instructions in :ref:`section-UniventionCorporateServer`.
 
 If you are not interested in this additional functionality, the commands described in :ref:`section-InstallBareosPackagesDebian` will also work for Univention Corporate Servers.
+
+
+
 
 .. _section-CreateDatabase:
 
@@ -381,6 +444,5 @@ Please remark, the Bareos Daemons need to have access to the ports 9101-9103.
 Now you should be able to log in to the director using the bconsole.
 
 When you want to use the bareos-webui, please refer to the chapter :ref:`section-install-webui`.  
-
 
 
