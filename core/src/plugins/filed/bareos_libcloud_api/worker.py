@@ -28,52 +28,62 @@ class Worker(ProcessBase):
         self.driver = get_driver(self.options)
         if self.driver == None:
             self.error_message("Could not load driver")
-        else:
-            while not self.shutdown_event.is_set():
-                if self.__iterate_input_queue() == False:
-                    break
+            return
+
+        finish = False
+        while not finish:
+            finish = self.__iterate_input_queue()
 
     def __iterate_input_queue(self):
-        while not self.input_queue.empty() and not self.shutdown_event.is_set():
+        while not self.input_queue.empty():
+            if self.shutdown_event.is_set():
+                return True
             job = self.input_queue.get()
-            if job == None:
-                return False
+            if job == None: #poison pill
+                return True
+            if not self.__run_job(job):
+                return True
+        # try again
+        return False
 
+    def __run_job(self, job):
+        try:
+            obj = self.driver.get_object(job["bucket"], job["name"])
+            if obj is None:
+                # Object cannot be fetched, an error is already logged
+                return True
+        except Exception as exception:
+            self.worker_exception("Could not download file", exception)
+            return False
+
+        stream = obj.as_stream()
+        content = b"".join(list(stream))
+
+        size_of_fetched_object = len(content)
+        if size_of_fetched_object != job["size"]:
+            self.error_message(
+                "prefetched file %s: got %s bytes, not the real size (%s bytes)"
+                % (job["name"], size_of_fetched_object, job["size"]),
+            )
+            return False
+
+        buf = io.BytesIO(content)
+        if size_of_fetched_object < 1024 * 10:
+            job["data"] = buf
+        else:
             try:
-                obj = self.driver.get_object(job["bucket"], job["name"])
-                if obj is None:
-                    # Object cannot be fetched, an error is already logged
-                    continue
-            except Exception as exception:
-                self.worker_exception("Could not download file", exception)
-                return False
+                tmpfilename = self.tmp_dir_path + "/" + str(uuid.uuid4())
+                obj.download(tmpfilename)
+                job["data"] = None
+                job["index"] = tmpfilename
+            except OSError as e:
+                self.worker_exception("Could not open temporary file", e)
+            except LibcloudError as e:
+                self.worker_exception("Error downloading object", e)
+            except Exception as e:
+                self.worker_exception("Error using temporary file", e)
 
-            stream = obj.as_stream()
-            content = b"".join(list(stream))
+        self.queue_try_put(self.output_queue, job)
 
-            size_of_fetched_object = len(content)
-            if size_of_fetched_object != job["size"]:
-                self.error_message(
-                    "prefetched file %s: got %s bytes, not the real size (%s bytes)"
-                    % (job["name"], size_of_fetched_object, job["size"]),
-                )
-                return False
-
-            buf = io.BytesIO(content)
-            if size_of_fetched_object < 1024 * 10:
-                job["data"] = buf
-            else:
-                try:
-                    tmpfilename = self.tmp_dir_path + "/" + str(uuid.uuid4())
-                    obj.download(tmpfilename)
-                    job["data"] = None
-                    job["index"] = tmpfilename
-                except OSError as e:
-                    self.worker_exception("Could not open temporary file", e)
-                except LibcloudError as e:
-                    self.worker_exception("Error downloading object", e)
-                except Exception as e:
-                    self.worker_exception("Error using temporary file", e)
-
-            self.queue_try_put(self.output_queue, job)
+        #success
         return True
