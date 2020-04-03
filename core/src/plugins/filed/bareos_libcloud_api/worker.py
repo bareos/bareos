@@ -39,7 +39,7 @@ class Worker(ProcessBase):
             if self.shutdown_event.is_set():
                 return True
             job = self.input_queue.get()
-            if job == None: #poison pill
+            if job == None:  # poison pill
                 return True
             if not self.__run_job(job):
                 return True
@@ -85,5 +85,5 @@ class Worker(ProcessBase):
 
         self.queue_try_put(self.output_queue, job)
 
-        #success
+        # success
         return True

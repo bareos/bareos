@@ -166,4 +166,3 @@ class BareosLibcloudApi(object):
             self.__remove_tmp_dir()
         except:
             pass
-
