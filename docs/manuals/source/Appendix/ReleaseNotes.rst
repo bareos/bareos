@@ -21,12 +21,45 @@ The feature overview for a release are shown at the :ref:`genindex` of this docu
 .. _bareos-1826-releasenotes:
 
 
+Bareos-18.2
+-----------
+
+.. _bareos-1828-releasenotes:
+
+.. _bareos-18.2.8:
+
+Bareos-18.2.8
+~~~~~~~~~~~~~
+
+General Information
+^^^^^^^^^^^^^^^^^^^
+
+.. list-table:: Bareos 18.2.8 Release Information
+   :header-rows: 0
+   :widths: auto
+
+   * - **Release Date**
+     - 09 April 2020
+   * - **Database Version**
+     -  2171
+   * - **URL**
+     - https://download.bareos.com/bareos/release/18.2/
+
+   * - **Release Ticket**
+     - :mantis:`1157`
+
+Bugfixes and Changes
+^^^^^^^^^^^^^^^^^^^^
+* :mantis:`1162`: When restoring files without directories, the permissions of the immediate parent directory are wrong
+* avoid a race-condition when creating job names
+* fix crash in bconsole when TLS connection cannot be established
+* fix random crash in OpenSSL due to broken thread-safety precautions
+* limit :strong:`Maximum Concurrent Jobs` in :ref:`SdBackendDroplet` to work around a problem with block interleaving
+* fix a problem with GlusterFS Backend on CentOS 7/RHEL 7
+
 .. _bareos-1827-releasenotes:
 
 .. _bareos-18.2.7:
-
-Bareos-18.2
------------
 
 Bareos-18.2.7
 ~~~~~~~~~~~~~
