@@ -675,6 +675,22 @@ Internal Project Changes
 Bareos-17.2
 -----------
 
+.. _bareos-17.2.9:
+
+bareos-17.2.9
+~~~~~~~~~~~~~
+:index:`\ <single: bareos-17.2.9; Release Notes>`\
+
+================ ===============================================
+Code Release     2020-04-09
+Database Version 2171 (unchanged)
+Release Ticket   :mantis:`1158`
+Url              http://download.bareos.com/bareos/release/17.2/
+================ ===============================================
+
+- :mantis:`1162`: When restoring files without directories, the permissions of the immediate parent directory are wrong
+- fix a problem with GlusterFS Backend on CentOS 7/RHEL 7
+
 .. _bareos-17.2.8:
 
 bareos-17.2.8
