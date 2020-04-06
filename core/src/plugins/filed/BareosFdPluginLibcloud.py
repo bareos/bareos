@@ -99,6 +99,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         if config_filename:
             if self.__parse_config_file(context, config_filename):
                 return bRCs["bRC_OK"]
+        debugmessage(100, "Could not load configfile %s" % (config_filename))
         jobmessage("M_FATAL", "Could not load configfile %s" % (config_filename))
         return bRCs["bRC_Error"]
 
@@ -189,7 +190,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     def start_backup_job(self, context):
         jobmessage(
             "M_INFO",
-            "Try to connect to %s:%s"
+            "Start backup, try to connect to %s:%s"
             % (self.options["host"], self.options["port"]),
         )
 
@@ -198,7 +199,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 % (self.options["host"], self.options["port"]))
             return bRCs["bRC_Error"]
 
-        jobmessage("M_INFO", "Last backup: %s (ts: %s)" % (self.last_run, self.since))
+        jobmessage("M_INFO", "Connected, last backup: %s (ts: %s)" % (self.last_run, self.since))
 
         self.api = None
         try:
@@ -206,7 +207,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             debugmessage(100, "BareosLibcloudApi started")
         except Exception as e:
             debugmessage(100, "Error: %s" % e)
-            jobmessage("M_FATAL", "Something went wrong: %s" % e)
+            jobmessage("M_FATAL", "Something went wrong with BareosLibcloudApi: %s" % e)
             return bRCs["bRC_Cancel"]
 
         return bRCs["bRC_OK"]
@@ -300,9 +301,9 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 self.FILE = self.current_backup_job["data"]
             else:
                 try:
-                    self.FILE = io.open(self.current_backup_job["index"], 'rb')
+                    self.FILE = io.open(self.current_backup_job["tmpfile"], 'rb')
                 except Exception as e:
-                    jobmessage("M_FATAL", "Could not open temporary file." % e)
+                    jobmessage("M_FATAL", "Could not open temporary file for reading." % e)
                     self.__shutdown()
                     return bRCs["bRC_Error"]
 
