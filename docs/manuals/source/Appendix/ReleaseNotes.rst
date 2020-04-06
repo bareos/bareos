@@ -35,7 +35,7 @@ General Information
    :widths: auto
 
    * - **Release Date**
-     - UNRELEASED
+     - 2020-04-16
    * - **Database Version**
      -  2192
    * - **URL**
@@ -45,9 +45,46 @@ General Information
    * - **Release Ticket**
      - :mantis:`1187`
 
+GlusterFS Backend on CentOS 7/RHEL 7
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The glusterfs backend for the storage daemon was broken on CentOS 7 and RHEL 7 due to a problem with our new build-process.
+When glusterfs-api tried to connect to gluster for downloading the volume file a system call to the rpc library failed.
+We found out that the problem will occur when Bareos is built with libtirpc-devel while the glusterfs-api is built with the rpc library in glibc.
+The build-process was fixed and the problem will be solved in all binary packages released after 24 March 2020.
+
+:program:`bareos-dbcopy`
+^^^^^^^^^^^^^^^^^^^^^^^^
+The :program:`bareos-dbcopy` tool has been improved.
+A new howto :ref:`section-MigrationMysqlToPostgresql` has been added to the documentation.
+This howto describes how you can use :program:`bareos-dbcopy` to migrate your MySQL or MariaDB catalog to PostgreSQL.
+
 Bugs Fixed
 ^^^^^^^^^^
+* :mantis:`1171`: Backup the VM using UUID in oVirt-Plugin for Bareos
+* :mantis:`1190`: Schedules without a client will not be run
+* :mantis:`1192`: Authorization key rejected by Storage daemon since upgrading director and storage daemons
+* :mantis:`1200`: fails to restore files
+* :mantis:`1206`: form field restore job is not populated after client selection
+* :mantis:`1211`: bareos director and bareos fd crash when regexwhere is specified
+* :mantis:`1220`: default drive index not set to 0
 
+Other Improvements
+^^^^^^^^^^^^^^^^^^
+The message resource now allows to write to a file with a filename of arbitrary length.
+Previously this was limited to 128 characters.
+
+The volume pruning code will now log which jobids are pruned with the volume.
+
+A patch in 2018 accidentially broke thread-safety with OpenSSL 1.0 which lead to random crashes during execution of code in the OpenSSL library.
+That patch has been reverted.
+
+There is a known bug when using :ref:`SdBackendDroplet` with multiple simultaneous jobs (interleaving).
+As a precaution the |sd| now only allows a setting of 1 for :strong:`Maximum Concurrent Jobs` on Droplet devices.
+
+Internal Project Changes
+^^^^^^^^^^^^^^^^^^^^^^^^
+Packages for Debian, Ubuntu and Univention are now built without Open Build Service.
+As a result we could remove all references to the Open Build Service from our source-code.
 
 .. _bareos-1926-releasenotes:
 
