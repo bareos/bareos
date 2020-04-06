@@ -1188,7 +1188,7 @@ static int send_data(JobControlRecord* jcr,
     /*
      * To read FreeBSD partitions, the read size must be a multiple of 512.
      */
-    bctx.rsize = (bctx.rsize / 512) * 512;
+    bctx.rsize = ((bctx.rsize + 512) / 512) * 512;
 #endif
   }
 
@@ -1196,7 +1196,7 @@ static int send_data(JobControlRecord* jcr,
    * A RAW device read on win32 only works if the buffer is a multiple of 512
    */
 #ifdef HAVE_WIN32
-  if (S_ISBLK(ff_pkt->statp.st_mode)) { bctx.rsize = (bctx.rsize / 512) * 512; }
+  if (S_ISBLK(ff_pkt->statp.st_mode)) { bctx.rsize = ((bctx.rsize + 512) / 512) * 512; }
 
   if (ff_pkt->statp.st_rdev & FILE_ATTRIBUTE_ENCRYPTED) {
     if (!SendEncryptedData(bctx)) { goto bail_out; }
