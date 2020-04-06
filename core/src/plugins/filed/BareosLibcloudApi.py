@@ -1,4 +1,5 @@
 from bareos_libcloud_api.bucket_explorer import BucketExplorer
+from bareos_libcloud_api.bucket_explorer import JOB_TYPE
 from bareos_libcloud_api.debug import debugmessage, jobmessage
 from bareos_libcloud_api.get_libcloud_driver import get_driver
 from bareos_libcloud_api.get_libcloud_driver import options
@@ -18,8 +19,6 @@ import uuid
 
 SUCCESS = 0
 ERROR = 1
-
-MESSAGE_TYPE = MESSAGE_TYPE()
 
 
 class BareosLibcloudApi(object):

@@ -2,6 +2,15 @@ from bareos_libcloud_api.process_base import ProcessBase
 from bareos_libcloud_api.get_libcloud_driver import get_driver
 from bareos_libcloud_api.mtime import ModificationTime
 
+class JOB_TYPE(object):
+    UNDEFINED = 0
+    DOWNLOADED = 1
+    TEMP_FILE = 2
+    STREAM = 3
+
+    def __setattr__(self, *_):
+        raise Exception("class JOB_TYPE is read only")
+
 
 def parse_options_bucket(name, options):
     if name not in options:
@@ -81,6 +90,7 @@ class BucketExplorer(ProcessBase):
                     "index": None,
                     "size": obj.size,
                     "mtime": mtime_ts,
+                    "type": JOB_TYPE.UNDEFINED,
                 }
 
                 object_name = "%s/%s" % (obj.container.name, obj.name)
