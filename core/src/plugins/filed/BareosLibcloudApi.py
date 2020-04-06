@@ -79,7 +79,7 @@ class BareosLibcloudApi(object):
         while not self.message_queue.empty():
             message = self.message_queue.get_nowait()
             if message.type == MESSAGE_TYPE.InfoMessage:
-                debugmessage(message.level, message.message_string)
+                jobmessage("M_INFO", message.message_string)
             elif message.type == MESSAGE_TYPE.ReadyMessage:
                 if message.worker_id == 0:
                     self.count_bucket_explorer_ready += 1

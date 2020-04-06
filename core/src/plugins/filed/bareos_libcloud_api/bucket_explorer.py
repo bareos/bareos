@@ -58,7 +58,7 @@ class BucketExplorer(ProcessBase):
                     if bucket.name in self.buckets_exclude:
                         continue
 
-                self.info_message(100, 'Backing up bucket "%s"' % (bucket.name,))
+                self.info_message('Exploring bucket "%s"' % (bucket.name,))
 
                 self.__generate_jobs_for_bucket_objects(
                     self.driver.iterate_container_objects(bucket)
@@ -87,7 +87,6 @@ class BucketExplorer(ProcessBase):
 
                 if self.last_run > mtime:
                     self.info_message(
-                        400,
                         "File %s not changed, skipped (%s > %s)"
                         % (object_name, self.last_run, mtime),
                     )
@@ -102,7 +101,6 @@ class BucketExplorer(ProcessBase):
                     continue
 
                 self.info_message(
-                    400,
                     "File %s was changed or is new, put to queue (%s < %s)"
                     % (object_name, self.last_run, mtime),
                 )

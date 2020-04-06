@@ -22,6 +22,12 @@ class ErrorMessage(QueueMessageBase):
 
 
 class InfoMessage(QueueMessageBase):
+    def __init__(self, worker_id, message):
+        QueueMessageBase.__init__(self, worker_id, message)
+        self.type = MESSAGE_TYPE.InfoMessage
+
+
+class DebugMessage(QueueMessageBase):
     def __init__(self, worker_id, level, message):
         QueueMessageBase.__init__(self, worker_id, message)
         self.type = MESSAGE_TYPE.InfoMessage

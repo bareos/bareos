@@ -75,7 +75,7 @@ class Worker(ProcessBase):
                 tmpfilename = self.tmp_dir_path + "/" + str(uuid.uuid4())
                 obj.download(tmpfilename)
                 job["data"] = None
-                job["index"] = tmpfilename
+                job["tmpfile"] = tmpfilename
             except OSError as e:
                 self.worker_exception("Could not open temporary file", e)
             except LibcloudError as e:

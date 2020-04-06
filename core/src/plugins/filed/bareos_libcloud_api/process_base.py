@@ -31,8 +31,11 @@ class ProcessBase(Process):
     def wait_for_shutdown(self):
         self.shutdown_event.wait()
 
-    def info_message(self, level, message):
-        self.message_queue.put(InfoMessage(self.worker_id, level, message))
+    def info_message(self, message):
+        self.message_queue.put(InfoMessage(self.worker_id, message))
+
+    def debug_message(self, level, message):
+        self.message_queue.put(InfoMessage(self.worker_id, message))
 
     def ready_message(self):
         self.message_queue.put(ReadyMessage(self.worker_id, ""))
@@ -49,5 +52,5 @@ class ProcessBase(Process):
                 queue.put(obj, block=True, timeout=0.5)
                 return
             except Q.Full:
-                self.info_message(400, "Queue %s is full, trying again.." % queue)
+                self.debug_message(400, "Queue %s is full, trying again.." % queue)
                 continue
