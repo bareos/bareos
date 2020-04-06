@@ -1,3 +1,4 @@
+from bareos_libcloud_api.bucket_explorer import JOB_TYPE
 from bareos_libcloud_api.process_base import ProcessBase
 from bareos_libcloud_api.get_libcloud_driver import get_driver
 import io
@@ -53,35 +54,56 @@ class Worker(ProcessBase):
                 # Object cannot be fetched, an error is already logged
                 return True
         except Exception as exception:
-            self.worker_exception("Could not download file", exception)
+            self.worker_exception("Could not get file object", exception)
             return False
 
-        stream = obj.as_stream()
-        content = b"".join(list(stream))
+        if job["size"] < 1024 * 10:
+            try:
+                stream = obj.as_stream()
+                content = b"".join(list(stream))
 
-        size_of_fetched_object = len(content)
-        if size_of_fetched_object != job["size"]:
-            self.error_message(
-                "prefetched file %s: got %s bytes, not the real size (%s bytes)"
-                % (job["name"], size_of_fetched_object, job["size"]),
-            )
-            return False
+                size_of_fetched_object = len(content)
+                if size_of_fetched_object != job["size"]:
+                    self.error_message(
+                        "prefetched file %s: got %s bytes, not the real size (%s bytes)"
+                        % (job["name"], size_of_fetched_object, job["size"]),
+                    )
+                    return False
 
-        buf = io.BytesIO(content)
-        if size_of_fetched_object < 1024 * 10:
-            job["data"] = buf
-        else:
+                job["data"] = io.BytesIO(content)
+                job["type"] = JOB_TYPE.DOWNLOADED
+            except LibcloudError as e:
+                self.worker_exception("Libcloud error, could not download file", e)
+                return False
+            except Exception as e:
+                self.worker_exception("Could not download file", e)
+                return False
+        elif job["size"] < self.options["prefetch_size"]:
             try:
                 tmpfilename = self.tmp_dir_path + "/" + str(uuid.uuid4())
                 obj.download(tmpfilename)
                 job["data"] = None
                 job["tmpfile"] = tmpfilename
+                job["type"] = JOB_TYPE.TEMP_FILE
             except OSError as e:
                 self.worker_exception("Could not open temporary file", e)
+                return False
             except LibcloudError as e:
                 self.worker_exception("Error downloading object", e)
+                return False
             except Exception as e:
                 self.worker_exception("Error using temporary file", e)
+                return False
+        else:
+            try:
+                job["data"] = obj
+                job["type"] = JOB_TYPE.STREAM
+            except LibcloudError as e:
+                self.worker_exception("Libcloud error preparing stream object", e)
+                return False
+            except Exception as e:
+                self.worker_exception("Error preparing stream object", e)
+                return False
 
         self.queue_try_put(self.output_queue, job)
 

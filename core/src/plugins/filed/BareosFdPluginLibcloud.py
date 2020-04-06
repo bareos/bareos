@@ -25,6 +25,7 @@ import bareos_fd_consts
 import ConfigParser as configparser
 import datetime
 import dateutil.parser
+from bareos_libcloud_api.bucket_explorer import JOB_TYPE
 from bareos_libcloud_api.debug import debugmessage
 from bareos_libcloud_api.debug import jobmessage
 from bareos_libcloud_api.debug import set_plugin_context
@@ -61,6 +62,14 @@ def str2bool(data):
     if data == "true" or data == "True":
         return True
     raise Exception("%s: not a boolean" % (data,))
+
+
+class IterStringIO(io.BufferedIOBase):
+    def __init__(self, iterable):
+            self.iter = itertools.chain.from_iterable(iterable)
+
+    def read(self, n=None):
+            return bytearray(itertools.islice(self.iter, None, n))
 
 
 class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
@@ -297,15 +306,19 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 return bRCs["bRC_OK"]
 
             # 'Backup' path
-            if self.current_backup_job["data"] != None:
+            if self.current_backup_job["type"] == JOB_TYPE.DOWNLOADED:
                 self.FILE = self.current_backup_job["data"]
-            else:
+            elif self.current_backup_job["type"] == JOB_TYPE.TEMP_FILE:
                 try:
                     self.FILE = io.open(self.current_backup_job["tmpfile"], 'rb')
                 except Exception as e:
                     jobmessage("M_FATAL", "Could not open temporary file for reading." % e)
                     self.__shutdown()
                     return bRCs["bRC_Error"]
+            elif self.current_backup_job["type"] == JOB_TYPE.STREAM:
+                self.FILE = IterStringIO(self.current_backup_job["data"].as_stream())
+            else:
+                raise Exception(value="Wrong argument")
 
         elif IOP.func == bIOPS["IO_READ"]:
             IOP.buf = bytearray(IOP.count)
