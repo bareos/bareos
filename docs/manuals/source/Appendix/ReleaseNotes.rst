@@ -909,6 +909,25 @@ This release contains several enhancements. Excerpt:
 Bareos-16.2
 -----------
 
+.. _bareos-16.2.10:
+bareos-16.2.10
+~~~~~~~~~~~~~
+
+:index:`\ <single: bareos-16.2.9; Release Notes>`\
+
+================ ===============================================
+Code Release     2020-04-08
+Database Version 2004 (unchanged)
+Release Ticket   :mantis:`1159`
+Url              http://download.bareos.com/bareos/release/16.2/
+================ ===============================================
+
+- :mantis:`1162`: When restoring files without directories, the permissions of the immediate parent directory are wrong
+
+End of life for Bareos 16.2
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Bareos 16.2.10 will be the last release in the 16.2 series.
+
 .. _bareos-16.2.9:
 
 bareos-16.2.9
