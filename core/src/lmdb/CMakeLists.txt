@@ -22,6 +22,7 @@ if(HAVE_FREEBSD_OS)
 endif()
 
 add_library(bareoslmdb SHARED mdb.c midl.c)
+target_compile_options(bareoslmdb PRIVATE -Wno-missing-braces)
 
 # empty the include_directories
 set_property(TARGET bareoslmdb PROPERTY INCLUDE_DIRECTORIES "")
