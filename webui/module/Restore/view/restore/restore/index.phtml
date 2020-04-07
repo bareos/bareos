@@ -182,6 +182,7 @@ $this->headTitle($title);
 </div>
 
 <?php
+   echo $this->headScript()->prependFile($this->basePath() . '/js/jstreegrid-helper.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/jstreegrid.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/jstree.min.js');
    echo $this->headLink()->prependStylesheet($this->basePath() . '/css/jstree.min.css');
@@ -197,16 +198,6 @@ $this->headTitle($title);
 </style>
 
 <script type="text/javascript">
-
-   function format_bibytes(v) {
-     if (v === 0) {
-         return "0.00 B";
-     } else {
-         const units = ["B", "kiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB"];
-         const i = Math.floor(Math.log2(v) / 10);
-         return parseFloat((v / (1 << (i * 10))).toFixed(2)) + " " + units[i];
-     }
-   }
 
    var modalConfirm = function(callback) {
 
@@ -397,16 +388,35 @@ $this->headTitle($title);
                title: "_DATA_"
             },
             {
-               width: 150,
+               width: 100,
+               header: '<?php echo $this->translate("Mode"); ?>',
+               headerClass: 'jsTreeGridHeader',
+               value: function(node) {
+                  return formatJSTreeGridModeItem(node.data.stat.mode);
+               }
+            },
+            {
+               width: 120,
+               header: '<?php echo $this->translate("User"); ?>',
+               headerClass: 'jsTreeGridHeader',
+               value: function(node) {
+                  return formatJSTreeGridUserItem(node.data.stat.user);
+               }
+            },
+            {
+               width: 120,
+               header: '<?php echo $this->translate("Group"); ?>',
+               headerClass: 'jsTreeGridHeader',
+               value: function(node) {
+                  return formatJSTreeGridGroupItem(node.data.stat.group);
+               }
+            },
+            {
+               width: 120,
                header: '<?php echo $this->translate("Size"); ?>',
                headerClass: 'jsTreeGridHeader',
                value: function(node) {
-                  if(node.data.stat.size === 0) {
-                     return null;
-                  }
-                  else {
-                     return(format_bibytes(node.data.stat.size));
-                  }
+                  return formatJSTreeGridSizeItem(node);
                }
             },
             {
@@ -414,12 +424,7 @@ $this->headTitle($title);
                header: '<?php echo $this->translate("Last modification"); ?>',
                headerClass: 'jsTreeGridHeader',
                value: function(node) {
-                  if(node.data.stat.mtime === 0) {
-                     return null;
-                  }
-                  else {
-                     return(moment.unix(node.data.stat.mtime).format("YYYY-MM-DD HH:mm:ss"));
-                  }
+                  return formatJSTreeGridLastModItem(node.data.stat.mtime);
                }
             }
          ],
