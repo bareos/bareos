@@ -351,8 +351,8 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             except IOError as e:
                 jobmessage(
                     "M_ERROR",
-                    "Cannot read from %s : %s"
-                    % (FilenameConverter.BackupToBucket(IOP.fname), e),
+                    "Cannot read from %s/%s: %s"
+                    % (self.current_backup_job["bucket"], self.current_backup_job["name"], e),
                 )
                 IOP.status = 0
                 IOP.io_errno = e.errno
