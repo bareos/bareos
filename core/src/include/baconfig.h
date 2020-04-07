@@ -315,6 +315,23 @@ inline bool IsSlotNumberValid(slot_number_t slot)
             "Write lock unlock failure. ERR=%s\n", strerror(errstat)); \
   } while (0)
 
+
+/**
+ * In modern versions of C/C++ we can use attributes to express intentions
+ * as not all compilers are modern enough for the attribute we want to use
+ * we add macros for the attributes that will be automatically disabled on
+ * older compilers that don't understand the attribute yet
+ */
+#if !defined(FALLTHROUGH_INTENDED)
+#  if defined(__clang__)
+#    define FALLTHROUGH_INTENDED [[clang::fallthrough]]
+#  elif defined(__GNUC__) && __GNUC__ >= 7
+#    define FALLTHROUGH_INTENDED [[gnu::fallthrough]]
+#  else
+#    define FALLTHROUGH_INTENDED do {} while (0)
+#  endif
+#endif
+
 /**
  * As of C++11 varargs macros are part of the standard.
  * We keep the kludgy versions for backwards compatability for now
