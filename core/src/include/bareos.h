@@ -69,13 +69,6 @@
 #ifndef BAREOS_INCLUDE_BAREOS_H_
 #define BAREOS_INCLUDE_BAREOS_H_ 1
 
-/* Disable FORTIFY_SOURCE, because bareos uses is own memory
- * manager
- */
-#ifdef _FORTIFY_SOURCE
-#undef _FORTIFY_SOURCE
-#endif
-
 #ifdef __cplusplus
 /* Workaround for SGI IRIX 6.5 */
 #define _LANGUAGE_C_PLUS_PLUS 1
