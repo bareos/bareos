@@ -41,11 +41,12 @@ from BareosLibcloudApi import ERROR
 from BareosLibcloudApi import BareosLibcloudApi
 from bareos_fd_consts import bRCs, bCFs, bIOPS, bJobMessageType, bFileType
 from libcloud.storage.types import Provider
+from libcloud.storage.types import ObjectDoesNotExistError
 from sys import version_info
 
 
 class FilenameConverter:
-    __pathprefix = 'PYLIBCLOUD:/'
+    __pathprefix = "PYLIBCLOUD:/"
 
     @staticmethod
     def BucketToBackup(filename):
@@ -53,7 +54,7 @@ class FilenameConverter:
 
     @staticmethod
     def BackupToBucket(filename):
-        return filename.replace(FilenameConverter.__pathprefix, '')
+        return filename.replace(FilenameConverter.__pathprefix, "")
 
 
 def str2bool(data):
@@ -66,10 +67,10 @@ def str2bool(data):
 
 class IterStringIO(io.BufferedIOBase):
     def __init__(self, iterable):
-            self.iter = itertools.chain.from_iterable(iterable)
+        self.iter = itertools.chain.from_iterable(iterable)
 
     def read(self, n=None):
-            return bytearray(itertools.islice(self.iter, None, n))
+        return bytearray(itertools.islice(self.iter, None, n))
 
 
 class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
@@ -204,15 +205,23 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         )
 
         if BareosLibcloudApi.probe_driver(self.options) == "failed":
-            jobmessage("M_FATAL", "Could not connect to libcloud driver: %s:%s"
-                % (self.options["host"], self.options["port"]))
+            jobmessage(
+                "M_FATAL",
+                "Could not connect to libcloud driver: %s:%s"
+                % (self.options["host"], self.options["port"]),
+            )
             return bRCs["bRC_Error"]
 
-        jobmessage("M_INFO", "Connected, last backup: %s (ts: %s)" % (self.last_run, self.since))
+        jobmessage(
+            "M_INFO",
+            "Connected, last backup: %s (ts: %s)" % (self.last_run, self.since),
+        )
 
         self.api = None
         try:
-            self.api = BareosLibcloudApi(self.options, self.last_run, "/dev/shm/bareos_libcloud")
+            self.api = BareosLibcloudApi(
+                self.options, self.last_run, "/dev/shm/bareos_libcloud"
+            )
             debugmessage(100, "BareosLibcloudApi started")
         except Exception as e:
             debugmessage(100, "Error: %s" % e)
@@ -264,10 +273,8 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             return bRCs["bRC_Skip"]
 
         filename = FilenameConverter.BucketToBackup(
-            "%s/%s" % (
-            self.current_backup_job["bucket"],
-            self.current_backup_job["name"],
-            )
+            "%s/%s"
+            % (self.current_backup_job["bucket"], self.current_backup_job["name"],)
         )
         jobmessage("M_INFO", "Backup file: %s" % (filename,))
 
@@ -283,14 +290,40 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         self.number_of_objects_to_backup += 1
 
+        if self.current_backup_job["type"] == JOB_TYPE.DOWNLOADED:
+            self.FILE = self.current_backup_job["data"]
+        elif self.current_backup_job["type"] == JOB_TYPE.TEMP_FILE:
+            try:
+                self.FILE = io.open(self.current_backup_job["tmpfile"], "rb")
+            except Exception as e:
+                jobmessage("M_FATAL", "Could not open temporary file for reading." % e)
+                self.__shutdown()
+                return bRCs["bRC_Error"]
+        elif self.current_backup_job["type"] == JOB_TYPE.STREAM:
+            try:
+                self.FILE = IterStringIO(self.current_backup_job["data"].as_stream())
+            except ObjectDoesNotExistError as e:
+                jobmessage(
+                    "M_WARNING",
+                    "Skipped file %s because it does not exist"
+                    % (self.current_backup_job["name"]),
+                )
+                return bRCs["bRC_Skip"]
+        else:
+            raise Exception(value='Wrong argument for current_backup_job["type"]')
+
         return bRCs["bRC_OK"]
 
     def create_file(self, context, restorepkt):
-        debugmessage(100, "create_file() entry point in Python called with %s\n" % (restorepkt))
+        debugmessage(
+            100, "create_file() entry point in Python called with %s\n" % (restorepkt)
+        )
         FNAME = FilenameConverter.BackupToBucket(restorepkt.ofname)
         dirname = os.path.dirname(FNAME)
         if not os.path.exists(dirname):
-            jobmessage("M_INFO", "Directory %s does not exist, creating it now\n" % dirname)
+            jobmessage(
+                "M_INFO", "Directory %s does not exist, creating it now\n" % dirname
+            )
             os.makedirs(dirname)
         if restorepkt.type == bFileType["FT_REG"]:
             restorepkt.create_status = bCFs["CF_EXTRACT"]
@@ -303,22 +336,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             # Only used by the 'restore' path
             if IOP.flags & (os.O_CREAT | os.O_WRONLY):
                 self.FILE = open(FilenameConverter.BackupToBucket(IOP.fname), "wb")
-                return bRCs["bRC_OK"]
-
-            # 'Backup' path
-            if self.current_backup_job["type"] == JOB_TYPE.DOWNLOADED:
-                self.FILE = self.current_backup_job["data"]
-            elif self.current_backup_job["type"] == JOB_TYPE.TEMP_FILE:
-                try:
-                    self.FILE = io.open(self.current_backup_job["tmpfile"], 'rb')
-                except Exception as e:
-                    jobmessage("M_FATAL", "Could not open temporary file for reading." % e)
-                    self.__shutdown()
-                    return bRCs["bRC_Error"]
-            elif self.current_backup_job["type"] == JOB_TYPE.STREAM:
-                self.FILE = IterStringIO(self.current_backup_job["data"].as_stream())
-            else:
-                raise Exception(value="Wrong argument")
+            return bRCs["bRC_OK"]
 
         elif IOP.func == bIOPS["IO_READ"]:
             IOP.buf = bytearray(IOP.count)
@@ -331,8 +349,11 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 IOP.status = len(buf)
                 return bRCs["bRC_OK"]
             except IOError as e:
-                jobmessage("M_ERROR", "Cannot read from %s : %s"
-                    % (FilenameConverter.BackupToBucket(IOP.fname), e))
+                jobmessage(
+                    "M_ERROR",
+                    "Cannot read from %s : %s"
+                    % (FilenameConverter.BackupToBucket(IOP.fname), e),
+                )
                 IOP.status = 0
                 IOP.io_errno = e.errno
                 return bRCs["bRC_Error"]
