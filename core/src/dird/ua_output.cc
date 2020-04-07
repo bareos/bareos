@@ -1480,7 +1480,7 @@ void DoMessages(UaContext* ua, const char* cmd)
     ua->UA_sock->send();
     DoTruncate = true;
   }
-  if (DoTruncate) { (void)ftruncate(fileno(con_fd), 0L); }
+  if (DoTruncate) { (void)!ftruncate(fileno(con_fd), 0L); }
   console_msg_pending = FALSE;
   ua->user_notified_msg_pending = FALSE;
   pthread_cleanup_pop(0);

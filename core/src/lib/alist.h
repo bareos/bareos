@@ -59,13 +59,13 @@
        (inx)--)
 
 #else
-#define foreach_alist(var, list)                                         \
-  for (list ? (*((void**)&(var)) = (void*)((list)->first())) : 0; (var); \
-       (*((void**)&(var)) = (void*)((list)->next())))
+#define foreach_alist(var, list)                                          \
+  for ((void)(list ? (*((void**)&(var)) = (void*)((list)->first())) : 0); \
+       (var); (*((void**)&(var)) = (void*)((list)->next())))
 
-#define foreach_alist_null(var, list)                                       \
-  for (list ? (*((void**)&(var)) = (void*)((list)->first())) : NULL; (var); \
-       (*((void**)&(var)) = (void*)((list)->next())))
+#define foreach_alist_null(var, list)                                        \
+  for ((void)(list ? (*((void**)&(var)) = (void*)((list)->first())) : NULL); \
+       (var); (*((void**)&(var)) = (void*)((list)->next())))
 
 #define foreach_alist_index(inx, var, list)                                 \
   for ((inx) = 0;                                                           \

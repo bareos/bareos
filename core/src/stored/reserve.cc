@@ -428,7 +428,7 @@ static bool IsVolInAutochanger(ReserveContext& rctx, VolumeReservationItem* vol)
 bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
 {
   bool ok = false;
-  DirectorStorage* store;
+  DirectorStorage* store = nullptr;
   char* device_name = nullptr;
   alist* dirstore;
   DeviceControlRecord* dcr = jcr->impl->dcr;
