@@ -145,7 +145,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         mandatory_options = {}
         mandatory_options["credentials"] = ["username", "password"]
         mandatory_options["host"] = ["hostname", "port", "provider", "tls"]
-        mandatory_options["misc"] = ["nb_worker", "queue_size", "prefetch_size"]
+        mandatory_options["misc"] = ["nb_worker", "queue_size", "prefetch_size", "temporary_download_directory"]
 
         # this maps config file options to libcloud options
         option_map = {
@@ -185,6 +185,8 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                         self.options["queue_size"] = int(value)
                     elif option == "prefetch_size":
                         self.options["prefetch_size"] = eval(value)
+                    elif option == "temporary_download_directory":
+                        self.options["temporary_download_directory"] = value
                     else:
                         self.options[option_map[option]] = value
                 except:
@@ -220,7 +222,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.api = None
         try:
             self.api = BareosLibcloudApi(
-                self.options, self.last_run, "/dev/shm/bareos_libcloud"
+                self.options, self.last_run, self.options["temporary_download_directory"]
             )
             debugmessage(100, "BareosLibcloudApi started")
         except Exception as e:
