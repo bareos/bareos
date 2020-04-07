@@ -91,6 +91,8 @@ class BareosLibcloudApi(object):
                 debugmessage(10, message.message_string)
                 debugmessage(10, message.exception)
                 return ERROR
+            elif message.type == MESSAGE_TYPE.DebugMessage:
+                debugmessage(message.level, message.message_string)
             else:
                 debugmessage(10, message)
                 return ERROR

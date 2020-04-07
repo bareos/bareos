@@ -3,6 +3,7 @@ class MESSAGE_TYPE(object):
     ErrorMessage = 2
     WorkerException = 3
     ReadyMessage = 4
+    DebugMessage = 5
 
     def __setattr__(self, *_):
         raise Exception("class MESSAGE_TYPE is read only")
@@ -30,7 +31,7 @@ class InfoMessage(QueueMessageBase):
 class DebugMessage(QueueMessageBase):
     def __init__(self, worker_id, level, message):
         QueueMessageBase.__init__(self, worker_id, message)
-        self.type = MESSAGE_TYPE.InfoMessage
+        self.type = MESSAGE_TYPE.DebugMessage
         self.level = level
 
 
