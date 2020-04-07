@@ -139,13 +139,6 @@ set(host ${CMAKE_SYSTEM})
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# run git-info to collect sourcecode info
-file(MAKE_DIRECTORY build)
-execute_process(
-  COMMAND ${PROJECT_SOURCE_DIR}/scripts/git-info.sh
-  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/build
-)
-
 include(BareosExtractVersionInfo)
 
 include(BareosGetDistInfo)
