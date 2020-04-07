@@ -3,9 +3,12 @@ from bareos_libcloud_api.process_base import ProcessBase
 from bareos_libcloud_api.get_libcloud_driver import get_driver
 import io
 from libcloud.common.types import LibcloudError
+from libcloud.storage.types import ObjectDoesNotExistError
 import uuid
 from time import sleep
 
+FINISH = 0
+CONTINUE = 1
 
 class Worker(ProcessBase):
     def __init__(
@@ -31,31 +34,31 @@ class Worker(ProcessBase):
             self.error_message("Could not load driver")
             return
 
-        finish = False
-        while not finish:
-            finish = self.__iterate_input_queue()
+        status = CONTINUE
+        while status != FINISH:
+            status = self.__iterate_input_queue()
 
     def __iterate_input_queue(self):
         while not self.input_queue.empty():
             if self.shutdown_event.is_set():
-                return True
+                return FINISH
             job = self.input_queue.get()
             if job == None:  # poison pill
-                return True
-            if not self.__run_job(job):
-                return True
+                return FINISH
+            if self.__run_job(job) == FINISH:
+                return FINISH
         # try again
-        return False
+        return CONTINUE
 
     def __run_job(self, job):
         try:
             obj = self.driver.get_object(job["bucket"], job["name"])
             if obj is None:
                 # Object cannot be fetched, an error is already logged
-                return True
+                return CONTINUE
         except Exception as exception:
             self.worker_exception("Could not get file object", exception)
-            return False
+            return FINISH
 
         if job["size"] < 1024 * 10:
             try:
@@ -68,16 +71,16 @@ class Worker(ProcessBase):
                         "prefetched file %s: got %s bytes, not the real size (%s bytes)"
                         % (job["name"], size_of_fetched_object, job["size"]),
                     )
-                    return False
+                    return FINISH
 
                 job["data"] = io.BytesIO(content)
                 job["type"] = JOB_TYPE.DOWNLOADED
             except LibcloudError as e:
                 self.worker_exception("Libcloud error, could not download file", e)
-                return False
+                return FINISH
             except Exception as e:
                 self.worker_exception("Could not download file", e)
-                return False
+                return FINISH
         elif job["size"] < self.options["prefetch_size"]:
             try:
                 tmpfilename = self.tmp_dir_path + "/" + str(uuid.uuid4())
@@ -87,25 +90,28 @@ class Worker(ProcessBase):
                 job["type"] = JOB_TYPE.TEMP_FILE
             except OSError as e:
                 self.worker_exception("Could not open temporary file", e)
-                return False
+                return FINISH
+            except ObjectDoesNotExistError as e:
+                self.worker_exception("Could not open object", e)
+                return CONTINUE
             except LibcloudError as e:
                 self.worker_exception("Error downloading object", e)
-                return False
+                return FINISH
             except Exception as e:
                 self.worker_exception("Error using temporary file", e)
-                return False
+                return FINISH
         else:
             try:
                 job["data"] = obj
                 job["type"] = JOB_TYPE.STREAM
             except LibcloudError as e:
                 self.worker_exception("Libcloud error preparing stream object", e)
-                return False
+                return FINISH
             except Exception as e:
                 self.worker_exception("Error preparing stream object", e)
-                return False
+                return FINISH
 
         self.queue_try_put(self.output_queue, job)
 
         # success
-        return True
+        return CONTINUE
