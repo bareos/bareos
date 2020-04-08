@@ -76,26 +76,25 @@ class BareosLibcloudApi(object):
 
     def check_worker_messages(self):
         while not self.message_queue.empty():
-            message = self.message_queue.get_nowait()
-            if message.type == MESSAGE_TYPE.InfoMessage:
-                jobmessage("M_INFO", message.message_string)
-            elif message.type == MESSAGE_TYPE.ReadyMessage:
-                if message.worker_id == 0:
-                    self.count_bucket_explorer_ready += 1
+            try:
+                message = self.message_queue.get_nowait()
+                if message.type == MESSAGE_TYPE.InfoMessage:
+                    jobmessage("M_INFO", message.message_string)
+                elif message.type == MESSAGE_TYPE.ErrorMessage:
+                    jobmessage("M_ERROR", message.message_string)
+                elif message.type == MESSAGE_TYPE.ReadyMessage:
+                    if message.worker_id == 0:
+                        self.count_bucket_explorer_ready += 1
+                    else:
+                        self.count_worker_ready += 1
+                elif message.type == MESSAGE_TYPE.AbortMessage:
+                    return ERROR
+                elif message.type == MESSAGE_TYPE.DebugMessage:
+                    debugmessage(message.level, message.message_string)
                 else:
-                    self.count_worker_ready += 1
-            elif message.type == MESSAGE_TYPE.ErrorMessage:
-                debugmessage(10, message.message_string)
-                return ERROR
-            elif message.type == MESSAGE_TYPE.WorkerException:
-                debugmessage(10, message.message_string)
-                debugmessage(10, message.exception)
-                return ERROR
-            elif message.type == MESSAGE_TYPE.DebugMessage:
-                debugmessage(message.level, message.message_string)
-            else:
-                debugmessage(10, message)
-                return ERROR
+                    raise Exception(value="Unknown message type")
+            except Exception as e:
+                jobmessage("M_INFO", "check_worker_messages exception: %s" % e)
         return SUCCESS
 
     def get_next_job(self):

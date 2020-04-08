@@ -244,22 +244,22 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
     def __shutdown(self):
         self.active = False
-        if self.number_of_objects_to_backup:
-            jobmessage(
-                "M_INFO",
-                "Backup completed with %d objects" % self.number_of_objects_to_backup,
-            )
-        else:
-            jobmessage("M_INFO", "No objects to backup")
+        jobmessage(
+            "M_INFO",
+            "BareosFdPluginLibcloud finished with %d files"
+            % (self.number_of_objects_to_backup)
+        )
 
         debugmessage(100, "Shut down BareosLibcloudApi")
         self.api.shutdown()
         debugmessage(100, "BareosLibcloudApi is shut down")
 
     def start_backup_file(self, context, savepkt):
+        error = False
         while self.active:
             if self.api.check_worker_messages() != SUCCESS:
                 self.active = False
+                error = True
             else:
                 self.current_backup_job = self.api.get_next_job()
                 if self.current_backup_job != None:
@@ -271,8 +271,12 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         if not self.active:
             self.__shutdown()
-            savepkt.fname = "empty"  # dummy value, savepkt is always checked
-            return bRCs["bRC_Skip"]
+            savepkt.fname = "empty"  # dummy value
+            if error:
+                jobmessage("M_FATAL", "Shutdown after worker error")
+                return bRCs["bRC_Cancel"]
+            else:
+                return bRCs["bRC_Skip"]
 
         filename = FilenameConverter.BucketToBackup(
             "%s/%s"
@@ -290,8 +294,6 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         savepkt.fname = filename
         savepkt.type = bareos_fd_consts.bFileType["FT_REG"]
 
-        self.number_of_objects_to_backup += 1
-
         if self.current_backup_job["type"] == JOB_TYPE.DOWNLOADED:
             self.FILE = self.current_backup_job["data"]
         elif self.current_backup_job["type"] == JOB_TYPE.TEMP_FILE:
@@ -304,7 +306,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         elif self.current_backup_job["type"] == JOB_TYPE.STREAM:
             try:
                 self.FILE = IterStringIO(self.current_backup_job["data"].as_stream())
-            except ObjectDoesNotExistError as e:
+            except ObjectDoesNotExistError:
                 jobmessage(
                     "M_WARNING",
                     "Skipped file %s because it does not exist"
@@ -378,6 +380,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
     def end_backup_file(self, context):
         if self.current_backup_job is not None:
+            self.number_of_objects_to_backup += 1
             return bRCs["bRC_More"]
         else:
             return bRCs["bRC_OK"]

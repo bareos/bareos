@@ -1,7 +1,7 @@
 class MESSAGE_TYPE(object):
     InfoMessage = 1
     ErrorMessage = 2
-    WorkerException = 3
+    AbortMessage = 3
     ReadyMessage = 4
     DebugMessage = 5
 
@@ -35,14 +35,13 @@ class DebugMessage(QueueMessageBase):
         self.level = level
 
 
-class WorkerException(QueueMessageBase):
-    def __init__(self, worker_id, message, exception):
-        QueueMessageBase.__init__(self, worker_id, message)
-        self.type = MESSAGE_TYPE.WorkerException
-        self.exception = exception
-
-
 class ReadyMessage(QueueMessageBase):
-    def __init__(self, worker_id, message):
-        QueueMessageBase.__init__(self, worker_id, "")
+    def __init__(self, worker_id, message=None):
+        QueueMessageBase.__init__(self, worker_id, message)
         self.type = MESSAGE_TYPE.ReadyMessage
+
+
+class AbortMessage(QueueMessageBase):
+    def __init__(self, worker_id):
+        QueueMessageBase.__init__(self, worker_id, None)
+        self.type = MESSAGE_TYPE.AbortMessage
