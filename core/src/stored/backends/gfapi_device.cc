@@ -43,7 +43,9 @@ namespace storagedaemon {
 enum device_option_type
 {
   argument_none = 0,
-  argument_uri
+  argument_uri,
+  argument_logfile,
+  argument_loglevel
 };
 
 struct device_option {
@@ -53,6 +55,8 @@ struct device_option {
 };
 
 static device_option device_options[] = {{"uri=", argument_uri, 4},
+                                         {"logfile=", argument_logfile, 8},
+                                         {"loglevel=", argument_loglevel, 9},
                                          {NULL, argument_none}};
 
 /**
@@ -338,20 +342,23 @@ int gfapi_device::d_open(const char* pathname, int flags, int mode)
           switch (device_options[i].type) {
             case argument_uri:
               gfapi_uri_ = bp + device_options[i].compare_size;
-              done = true;
+              break;
+            case argument_logfile:
+              gfapi_logfile_ = bp + device_options[i].compare_size;
+              break;
+            case argument_loglevel:
+              gfapi_loglevel_ =
+                  strtol(bp + device_options[i].compare_size, NULL, 10);
               break;
             default:
+              Mmsg1(errmsg, _("Unable to parse device option: %s\n"), bp);
+              Emsg0(M_FATAL, 0, errmsg);
+              goto bail_out;
               break;
           }
+          done = true;
         }
       }
-
-      if (!done) {
-        Mmsg1(errmsg, _("Unable to parse device option: %s\n"), bp);
-        Emsg0(M_FATAL, 0, errmsg);
-        goto bail_out;
-      }
-
       bp = next_option;
     }
 
@@ -380,6 +387,16 @@ int gfapi_device::d_open(const char* pathname, int flags, int mode)
             volumename_);
       Emsg0(M_FATAL, 0, errmsg);
       goto bail_out;
+    }
+
+    if (gfapi_logfile_ != nullptr) {
+      if (glfs_set_logging(glfs_, gfapi_logfile_, gfapi_loglevel_) < 0) {
+        Mmsg3(errmsg,
+              _("Unable to initialize Gluster logging file=%s level=%d\n"),
+              gfapi_logfile_, gfapi_loglevel_);
+        Emsg0(M_FATAL, 0, errmsg);
+        goto bail_out;
+      }
     }
 
     status = glfs_set_volfile_server(glfs_, (transport_) ? transport_ : "tcp",
