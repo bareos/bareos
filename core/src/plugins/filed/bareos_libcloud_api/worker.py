@@ -10,6 +10,7 @@ from time import sleep
 FINISH = 0
 CONTINUE = 1
 
+
 class Worker(ProcessBase):
     def __init__(
         self,
@@ -32,6 +33,7 @@ class Worker(ProcessBase):
         self.driver = get_driver(self.options)
         if self.driver == None:
             self.error_message("Could not load driver")
+            self.abort_message()
             return
 
         status = CONTINUE
@@ -53,12 +55,12 @@ class Worker(ProcessBase):
     def __run_job(self, job):
         try:
             obj = self.driver.get_object(job["bucket"], job["name"])
-            if obj is None:
-                # Object cannot be fetched, an error is already logged
-                return CONTINUE
-        except Exception as exception:
-            self.worker_exception("Could not get file object", exception)
-            return FINISH
+        except ObjectDoesNotExistError:
+            self.error_message(
+                "Could not get file object, skipping: %s/%s"
+                % (job["bucket"], job["name"])
+            )
+            return CONTINUE
 
         if job["size"] < 1024 * 10:
             try:
@@ -71,16 +73,16 @@ class Worker(ProcessBase):
                         "prefetched file %s: got %s bytes, not the real size (%s bytes)"
                         % (job["name"], size_of_fetched_object, job["size"]),
                     )
-                    return FINISH
+                    return CONTINUE
 
                 job["data"] = io.BytesIO(content)
                 job["type"] = JOB_TYPE.DOWNLOADED
-            except LibcloudError as e:
-                self.worker_exception("Libcloud error, could not download file", e)
-                return FINISH
-            except Exception as e:
-                self.worker_exception("Could not download file", e)
-                return FINISH
+            except LibcloudError:
+                self.error_message("Libcloud error, could not download file")
+                return CONTINUE
+            except Exception:
+                self.error_message("Could not download file")
+                return CONTINUE
         elif job["size"] < self.options["prefetch_size"]:
             try:
                 tmpfilename = self.tmp_dir_path + "/" + str(uuid.uuid4())
@@ -89,27 +91,41 @@ class Worker(ProcessBase):
                 job["tmpfile"] = tmpfilename
                 job["type"] = JOB_TYPE.TEMP_FILE
             except OSError as e:
-                self.worker_exception("Could not open temporary file", e)
+                self.error_message("Could not open temporary file %s" % e.filename)
                 return FINISH
             except ObjectDoesNotExistError as e:
-                self.worker_exception("Could not open object", e)
+                self.error_message(
+                    "Could not open object, skipping: %s" % e.object_name
+                )
                 return CONTINUE
-            except LibcloudError as e:
-                self.worker_exception("Error downloading object", e)
-                return FINISH
-            except Exception as e:
-                self.worker_exception("Error using temporary file", e)
-                return FINISH
+            except LibcloudError:
+                self.error_message(
+                    "Error downloading object, skipping: %s/%s"
+                    % (job["bucket"], job["name"])
+                )
+                return CONTINUE
+            except Exception:
+                self.error_message(
+                    "Error using temporary file for, skipping: %s/%s"
+                    % (job["bucket"], job["name"])
+                )
+                return CONTINUE
         else:
             try:
                 job["data"] = obj
                 job["type"] = JOB_TYPE.STREAM
-            except LibcloudError as e:
-                self.worker_exception("Libcloud error preparing stream object", e)
-                return FINISH
-            except Exception as e:
-                self.worker_exception("Error preparing stream object", e)
-                return FINISH
+            except LibcloudError:
+                self.error_message(
+                    "Libcloud error preparing stream object, skipping: %s/%s"
+                    % (job["bucket"], job["name"])
+                )
+                return CONTINUE
+            except Exception:
+                self.error_message(
+                    "Error preparing stream object, skipping: %s/%s"
+                    % (job["bucket"], job["name"])
+                )
+                return CONTINUE
 
         self.queue_try_put(self.output_queue, job)
 

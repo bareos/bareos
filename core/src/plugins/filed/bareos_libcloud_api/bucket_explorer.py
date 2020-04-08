@@ -2,6 +2,7 @@ from bareos_libcloud_api.process_base import ProcessBase
 from bareos_libcloud_api.get_libcloud_driver import get_driver
 from bareos_libcloud_api.mtime import ModificationTime
 
+
 class JOB_TYPE(object):
     UNDEFINED = 0
     DOWNLOADED = 1
@@ -38,84 +39,81 @@ class BucketExplorer(ProcessBase):
         self.buckets_include = parse_options_bucket("buckets_include", options)
         self.buckets_exclude = parse_options_bucket("buckets_exclude", options)
         self.number_of_workers = number_of_workers
-        self.object_count = 0
 
     def run_process(self):
         self.driver = get_driver(self.options)
 
         if self.driver == None:
             self.error_message("Could not load driver")
+            self.abort_message()
             return
 
-        if not self.shutdown_event.is_set():
-            self.__iterate_over_buckets()
+        try:
+            if not self.shutdown_event.is_set():
+                self.__iterate_over_buckets()
+        except Exception:
+            self.error_message("Error while iterating containers")
+            self.abort_message()
 
         for _ in range(self.number_of_workers):
             self.discovered_objects_queue.put(None)
 
     def __iterate_over_buckets(self):
-        try:
-            for bucket in self.driver.iterate_containers():
-                if self.shutdown_event.is_set():
-                    break
+        for bucket in self.driver.iterate_containers():
+            if self.shutdown_event.is_set():
+                break
 
-                if self.buckets_include is not None:
-                    if bucket.name not in self.buckets_include:
-                        continue
-
-                if self.buckets_exclude is not None:
-                    if bucket.name in self.buckets_exclude:
-                        continue
-
-                self.info_message('Exploring bucket "%s"' % (bucket.name,))
-
-                self.__generate_jobs_for_bucket_objects(
-                    self.driver.iterate_container_objects(bucket)
-                )
-        except Exception as exception:
-            self.worker_exception("Error while iterating containers", exception)
-
-    def __generate_jobs_for_bucket_objects(self, object_iterator):
-        try:
-            for obj in object_iterator:
-                if self.shutdown_event.is_set():
-                    break
-
-                mtime, mtime_ts = ModificationTime().get_mtime(obj)
-
-                job = {
-                    "name": obj.name,
-                    "bucket": obj.container.name,
-                    "data": None,
-                    "index": None,
-                    "size": obj.size,
-                    "mtime": mtime_ts,
-                    "type": JOB_TYPE.UNDEFINED,
-                }
-
-                object_name = "%s/%s" % (obj.container.name, obj.name)
-
-                if self.last_run > mtime:
-                    self.info_message(
-                        "File %s not changed, skipped (%s > %s)"
-                        % (object_name, self.last_run, mtime),
-                    )
-
-                    # This object was present on our last backup
-                    # Here, we push it directly to bareos, it will not be backed again
-                    # but remembered as "still here" (for accurate mode)
-                    # If accurate mode is off, we can simply skip that object
-                    if self.options["accurate"] is True:
-                        self.queue_try_put(self.discovered_objects_queue, job)
-
+            if self.buckets_include is not None:
+                if bucket.name not in self.buckets_include:
                     continue
 
+            if self.buckets_exclude is not None:
+                if bucket.name in self.buckets_exclude:
+                    continue
+
+            self.info_message('Exploring bucket "%s"' % (bucket.name,))
+
+            self.__generate_jobs_for_bucket_objects(
+                self.driver.iterate_container_objects(bucket)
+            )
+
+    def __generate_jobs_for_bucket_objects(self, object_iterator):
+        for obj in object_iterator:
+            if self.shutdown_event.is_set():
+                break
+
+            mtime, mtime_ts = ModificationTime().get_mtime(obj)
+
+            job = {
+                "name": obj.name,
+                "bucket": obj.container.name,
+                "data": None,
+                "index": None,
+                "size": obj.size,
+                "mtime": mtime_ts,
+                "type": JOB_TYPE.UNDEFINED,
+            }
+
+            object_name = "%s/%s" % (obj.container.name, obj.name)
+
+            if self.last_run > mtime:
                 self.info_message(
-                    "File %s was changed or is new, put to queue (%s < %s)"
+                    "File %s not changed, skipped (%s > %s)"
                     % (object_name, self.last_run, mtime),
                 )
 
-                self.queue_try_put(self.discovered_objects_queue, job)
+                # This object was present on our last backup
+                # Here, we push it directly to bareos, it will not be backed again
+                # but remembered as "still here" (for accurate mode)
+                # If accurate mode is off, we can simply skip that object
+                if self.options["accurate"] is True:
+                    self.queue_try_put(self.discovered_objects_queue, job)
 
-        except Exception as exception:
-            self.worker_exception("Error while iterating objects", exception)
+                continue
+
+            self.info_message(
+                "File %s was changed or is new, put to queue (%s < %s)"
+                % (object_name, self.last_run, mtime),
+            )
+
+            self.queue_try_put(self.discovered_objects_queue, job)

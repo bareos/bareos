@@ -3,7 +3,8 @@ from time import sleep
 from bareos_libcloud_api.queue_message import InfoMessage
 from bareos_libcloud_api.queue_message import ReadyMessage
 from bareos_libcloud_api.queue_message import ErrorMessage
-from bareos_libcloud_api.queue_message import WorkerException
+from bareos_libcloud_api.queue_message import AbortMessage
+from bareos_libcloud_api.queue_message import DebugMessage
 from bareos_libcloud_api.queue_message import MESSAGE_TYPE
 import Queue as Q
 
@@ -34,17 +35,17 @@ class ProcessBase(Process):
     def info_message(self, message):
         self.message_queue.put(InfoMessage(self.worker_id, message))
 
-    def debug_message(self, level, message):
-        self.message_queue.put(InfoMessage(self.worker_id, message))
-
-    def ready_message(self):
-        self.message_queue.put(ReadyMessage(self.worker_id, ""))
-
     def error_message(self, message):
         self.message_queue.put(ErrorMessage(self.worker_id, message))
 
-    def worker_exception(self, message, exception):
-        self.message_queue.put(WorkerException(self.worker_id, message, exception))
+    def debug_message(self, level, message):
+        self.message_queue.put(DebugMessage(self.worker_id, level, message))
+
+    def ready_message(self):
+        self.message_queue.put(ReadyMessage(self.worker_id))
+
+    def abort_message(self):
+        self.message_queue.put(AbortMessage(self.worker_id))
 
     def queue_try_put(self, queue, obj):
         while not self.shutdown_event.is_set():
