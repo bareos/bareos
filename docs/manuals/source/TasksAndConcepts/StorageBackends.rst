@@ -93,6 +93,12 @@ The name and media type must correspond to those settings in the |dir| :ref:`Dir
 
 -  :config:option:`sd/device/MediaType`\  = :config:option:`dir/storage/MediaType`\ 
 
+.. limitation:: Droplet Backend does not support block interleaving
+
+  The current implementation has a known Bug that may lead to bogus data on your S3 volumes when you set :config:option:`sd/device/MaximumConccurentJobs` to a value other than 1.
+  Because of this the default for a backend of type Droplet is set to 1 and the |sd| will refuse to start if you set it to a value greater than 1.
+
+
 A device for the usage of AWS S3 object storage with a bucket named :file:`backup-bareos` located in EU Central 1 (Frankfurt, Germany), would look like this:
 
 .. code-block:: bareosconfig
