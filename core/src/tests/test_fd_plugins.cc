@@ -103,10 +103,7 @@ TEST(fd, fd_plugins)
 
   OSDependentInit();
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
-  char* cwd = getcwd(plugin_dir, sizeof(plugin_dir) - 1);
-#pragma GCC diagnostic pop
+  (void)!getcwd(plugin_dir, sizeof(plugin_dir) - 1);
 
   LoadFdPlugins(plugin_dir, NULL);
 
