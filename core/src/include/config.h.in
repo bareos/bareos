@@ -412,9 +412,6 @@ extern char WIN_VERSION[];
 // Define to 1 if you have the `lsetxattr' function
 #cmakedefine HAVE_LSETXATTR @HAVE_LSETXATTR@
 
-// Define to 1 if you have the `lstat' function
-#cmakedefine HAVE_LSTAT @HAVE_LSTAT@
-
 // Define to 1 if you have the `lutimes' function
 #cmakedefine HAVE_LUTIMES @HAVE_LUTIMES@
 

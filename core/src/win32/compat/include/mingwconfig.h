@@ -85,9 +85,6 @@
 /* Define to 1 if you have the `localtime_r' function. */
 #define HAVE_LOCALTIME_R 1
 
-/* Define to 1 if you have the `lstat' function. */
-#define HAVE_LSTAT 1
-
 /* Define to 1 if you have the <mtio.h> header file. */
 /* #undef HAVE_MTIO_H */
 
