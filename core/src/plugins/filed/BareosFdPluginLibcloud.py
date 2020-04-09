@@ -265,7 +265,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         if not self.active:
             self.__shutdown()
-            savepkt.fname = "empty"  # dummy value
+            savepkt.fname = ""  # dummy value
             if error:
                 jobmessage("M_FATAL", "Shutdown after worker error")
                 return bRCs["bRC_Cancel"]
