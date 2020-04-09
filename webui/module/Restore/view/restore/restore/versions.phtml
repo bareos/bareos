@@ -213,6 +213,7 @@ $this->headTitle($title);
 </div>
 
 <?php
+echo $this->headScript()->prependFile($this->basePath() . '/js/jstreegrid-helper.js');
 echo $this->headScript()->prependFile($this->basePath() . '/js/jstreegrid.js');
 echo $this->headScript()->prependFile($this->basePath() . '/js/jstree.min.js');
 echo $this->headLink()->prependStylesheet($this->basePath() . '/css/jstree.min.css');
@@ -284,6 +285,11 @@ function getFileVersions(pathid, filename) {
                "<td class='text-left'>Volume </td>" +
                "<td></td>" +
                `<td class='text-left'>${data[id].volumename}</td>` +
+               "</tr>" +
+               "<tr>" +
+               "<td class='text-left'>Mode </td>" +
+               "<td></td>" +
+               "<td class='text-left'>" + formatJSTreeGridModeItem(data[id].stat.mode) + "</td>" +
                "</tr>" +
                "<tr>" +
                "<td class='text-left'>User:Group </td>" +
@@ -521,15 +527,11 @@ $('#filebrowser').jstree({
             title: "_DATA_"
          },
          {
-            width: 150,
+            width: 120,
             header: '<?php echo $this->translate("Size"); ?>',
             headerClass: 'jsTreeGridHeader',
             value: function (node) {
-               if (node.data.stat.size === 0) {
-                  return null;
-               } else {
-                  return (format_bibytes(node.data.stat.size));
-               }
+               return formatJSTreeGridSizeItem(node);
             }
          },
          {
@@ -537,11 +539,7 @@ $('#filebrowser').jstree({
             header: '<?php echo $this->translate("Last modification"); ?>',
             headerClass: 'jsTreeGridHeader',
             value: function (node) {
-               if (node.data.stat.mtime === 0) {
-                  return null;
-               } else {
-                  return (moment.unix(node.data.stat.mtime).format("YYYY-MM-DD HH:mm:ss"));
-               }
+               return formatJSTreeGridLastModItem(node.data.stat.mtime);
             }
          }
       ],
