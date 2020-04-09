@@ -1103,6 +1103,8 @@ Requirements
 
 To use the Apache Libcloud backend you need to have the Libcloud module available for Python 2.
 
+The plugin needs several options to run properly, the plugin options in the fileset resource and an additional configuration file. Both is described below.
+
 .. _LibcloudPlugin-installation:
 
 Installation
@@ -1138,6 +1140,24 @@ Configuration
 
    The Plugin options string can currently not be split over multiple lines in the configuration file.
 
+The plugin options, separated by a colon:
+
+module_path
+   Path to the bareos modules
+
+module_name=bareos-fd-libcloud
+   This is the name of the plugin module
+
+config_file
+   The plugin needs additional parameters, this is the path to the config file (see below)
+
+buckets_include
+   Comma-separated list of buckets to include in backup
+
+buckets_exclude
+   Comma-separated list of buckets to exclude from backup
+
+
 And the job as follows:
 
 .. code-block:: bareosconfig
@@ -1149,7 +1169,7 @@ And the job as follows:
       FileSet = "PluginTest"
    }
 
-And the config file as follows:
+And the plugin config file as follows:
 
 .. code-block:: bareosconfig
    :caption: /etc/bareos/libcloud_config.ini
@@ -1167,7 +1187,8 @@ And the config file as follows:
    [misc]
    nb_worker=20
    queue_size=1000
-   prefetch_size=10*1024*1024
+   prefetch_size=250*1024*1024
+   temporary_download_directory=/dev/shm/bareos_libcloud
 
 .. note::
 
@@ -1204,8 +1225,12 @@ queue_size
    between the processes
 
 prefetch_size
-   The maximum size in kB for objects to be preloaded from the workers; objects above
-   this size are loaded by the plugin process itself
+   The maximum object size in bytes that should be preloaded from the workers; objects
+   larger than this size are loaded by the plugin process itself
+
+temporary_download_directory
+   The local path where the worker processes put their temporarily downloaded files to;
+   the filedaemon process needs read and write access to this path
 
 
 .. _PerconaXtrabackupPlugin:
