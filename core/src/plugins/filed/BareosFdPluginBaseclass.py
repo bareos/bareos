@@ -328,14 +328,14 @@ class BareosFdPluginBaseclass(object):
     def end_backup_job(self, context):
         """
         End of Backup Job.
-        Overload this to arrange whatever you have to do at this time.
+        Overload this to arrange whatever you have to do when the backup ends.
         """
         return bRCs["bRC_OK"]
 
     def start_backup_job(self, context):
         """
         Start of Backup Job. Called just before backup job really start.
-        Overload this to arrange whatever you have to do at this time.
+        Overload this to arrange whatever you have to when the backup starts.
         """
         return bRCs["bRC_OK"]
 

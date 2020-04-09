@@ -71,7 +71,7 @@ class BucketExplorer(ProcessBase):
             if not self.shutdown_event.is_set():
                 self.__iterate_over_buckets()
         except Exception:
-            self.error_message("Error while iterating containers")
+            self.error_message("Error while iterating buckets")
             self.abort_message()
 
         for _ in range(self.number_of_workers):
@@ -122,8 +122,8 @@ class BucketExplorer(ProcessBase):
                 )
 
                 # This object was present on our last backup
-                # Here, we push it directly to bareos, it will not be backed again
-                # but remembered as "still here" (for accurate mode)
+                # Here, we push it directly to bareos, it will not be backed up
+                # again but remembered as "still here" (for accurate mode)
                 # If accurate mode is off, we can simply skip that object
                 if self.options["accurate"] is True:
                     self.queue_try_put(self.discovered_objects_queue, job)

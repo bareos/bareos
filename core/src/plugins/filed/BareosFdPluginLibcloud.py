@@ -105,7 +105,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             self.options["accurate"] = True
 
     def parse_plugin_definition(self, context, plugindef):
-        debugmessage(100, "Parse Plugin Definition")
+        debugmessage(100, "parse_plugin_definition()")
         config_filename = self.options.get("config_file")
         if config_filename:
             if self.__parse_config_file(context, config_filename):
@@ -130,7 +130,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         except (IOError, OSError) as err:
             debugmessage(
                 100,
-                "BareosFdPluginLibcloud: Error reading config file %s: %s\n"
+                "Error reading config file %s: %s\n"
                 % (self.options["config_file"], err.strerror),
             )
             return False
@@ -228,7 +228,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             debugmessage(100, "BareosLibcloudApi started")
         except Exception as e:
             debugmessage(100, "Error: %s" % e)
-            jobmessage("M_FATAL", "Something went wrong with BareosLibcloudApi: %s" % e)
+            jobmessage("M_FATAL", "Starting BareosLibcloudApi failed: %s" % e)
             return bRCs["bRC_Cancel"]
 
         return bRCs["bRC_OK"]
@@ -240,7 +240,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
     def check_file(self, context, fname):
         # All existing files/objects are passed to bareos
-        # If bareos have not seen one, it does not exists anymore
+        # If bareos has not seen one, it does not exists anymore
         return bRCs["bRC_Error"]
 
     def __shutdown(self):
@@ -310,7 +310,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             except ObjectDoesNotExistError:
                 jobmessage(
                     "M_WARNING",
-                    "Skipped file %s because it does not exist"
+                    "Skipped file %s because it does not exist anymore"
                     % (self.current_backup_job["name"]),
                 )
                 return bRCs["bRC_Skip"]
@@ -327,7 +327,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         dirname = os.path.dirname(FNAME)
         if not os.path.exists(dirname):
             jobmessage(
-                "M_INFO", "Directory %s does not exist, creating it now\n" % dirname
+                "M_INFO", "Directory %s does not exist, creating it\n" % dirname
             )
             os.makedirs(dirname)
         if restorepkt.type == bFileType["FT_REG"]:
