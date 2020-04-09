@@ -64,9 +64,6 @@
 /* Define to 1 if you have the <fcntl.h> header file. */
 #define HAVE_FCNTL_H 1
 
-/* Define to 1 if you have the `gethostid' function. */
-#define HAVE_GETHOSTID 1
-
 /* Define to 1 if you have the `getmntent' function. */
 /*#define HAVE_GETMNTENT 1 */
 

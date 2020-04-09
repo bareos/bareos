@@ -838,9 +838,6 @@ void MakeSessionKey(char* key, char* seed, int mode)
 #if defined(Solaris)
   sysinfo(SI_HW_SERIAL, s + strlen(s), 12);
 #endif
-#if defined(HAVE_GETHOSTID)
-  Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)gethostid());
-#endif
   gethostname(s + strlen(s), 256);
   Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)getuid());
   Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)getgid());
