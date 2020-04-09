@@ -610,9 +610,6 @@ extern char WIN_VERSION[];
 // Define to 1 if you have the `strncpy' function
 #cmakedefine HAVE_STRNCPY @HAVE_STRNCPY@
 
-// Define to 1 if you have the `strtoll' function
-#cmakedefine HAVE_STRTOLL @HAVE_STRTOLL@
-
 // Define to 1 if you have the `strtoul' function
 #cmakedefine HAVE_STRTOUL @HAVE_STRTOUL@
 

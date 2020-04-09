@@ -41,9 +41,6 @@ int Bmicrosleep(int32_t sec, int32_t usec);
 char* bfgets(char* s, int size, FILE* fd);
 char* bfgets(POOLMEM*& s, FILE* fd);
 void MakeUniqueFilename(POOLMEM*& name, int Id, char* what);
-#ifndef HAVE_STRTOLL
-long long int strtoll(const char* ptr, char** endptr, int base);
-#endif
 void ReadStateFile(char* dir, const char* progname, int port);
 int b_strerror(int errnum, char* buf, size_t bufsiz);
 char* escape_filename(const char* file_path);

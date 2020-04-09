@@ -49,8 +49,6 @@
 #define lld "lld"
 #define llu "llu"
 
-#define HAVE_STRTOLL 1
-
 /* Define to 1 if you have `alloca', as a function or macro. */
 #define HAVE_ALLOCA 1
 #ifndef HAVE_MINGW
@@ -166,9 +164,6 @@
 
 /* Define to 1 if you have the `strncpy' function. */
 #define HAVE_STRNCPY 1
-
-/* Define to 1 if you have the `strtoll' function. */
-#define HAVE_STRTOLL 1
 
 /* Define to 1 if `st_blksize' is member of `struct stat'. */
 #define HAVE_STRUCT_STAT_ST_BLKSIZE 1

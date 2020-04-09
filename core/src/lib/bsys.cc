@@ -664,14 +664,6 @@ void WriteStateFile(char* dir, const char* progname, int port)
   erase_on_scope_exit.Release();
 }
 
-/* BSDI does not have this.  This is a *poor* simulation */
-#ifndef HAVE_STRTOLL
-long long int strtoll(const char* ptr, char** endptr, int base)
-{
-  return (long long int)strtod(ptr, endptr);
-}
-#endif
-
 /*
  * BAREOS's implementation of fgets(). The difference is that it handles
  *   being interrupted by a signal (e.g. a SIGCHLD).

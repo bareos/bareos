@@ -19,7 +19,6 @@
 
 include(CheckFunctionExists)
 
-check_function_exists(strtoll HAVE_STRTOLL)
 check_function_exists(backtrace HAVE_BACKTRACE)
 check_function_exists(backtrace_symbols HAVE_BACKTRACE_SYMBOLS)
 check_function_exists(bcopy HAVE_BCOPY)
