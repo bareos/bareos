@@ -1085,16 +1085,16 @@ Apache Libcloud Plugin
 .. index::
    pair: Plugin; libcloud
 
-The Libcloud plugin can be used to backup objects from backends that support the Simple Storage Service (S3) protocol. The plugin code is based on the work of Alexandre Bruyelles.
+The Libcloud plugin can be used to backup objects from cloud storages via the *Simple Storage Service* (**S3**) protocol. The plugin code is based on the work of Alexandre Bruyelles.
 
 .. _LibcloudPlugin-status:
 
 Status
 ^^^^^^
 
-The status of the Libcloud plugin is experimental. It can automatically recurse nested Buckets and backup all included Objects
-on a S3 storage. However, restore of Objects cannot be done directly back to the storage. A restore will write these objects
-as files on a filesystem.
+The status of the Libcloud plugin is **experimental**. It can automatically recurse nested Buckets and backup all included Objects
+on a S3 storage. However, **restore of objects cannot be done directly back to the storage**. A restore will write these objects
+*as files on a filesystem*.
 
 .. _LibcloudPlugin-requirements:
 
