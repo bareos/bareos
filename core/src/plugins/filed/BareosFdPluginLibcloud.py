@@ -26,7 +26,7 @@ import bareos_fd_consts
 import ConfigParser as configparser
 import datetime
 import dateutil.parser
-from bareos_libcloud_api.bucket_explorer import JOB_TYPE
+from bareos_libcloud_api.bucket_explorer import TASK_TYPE
 from bareos_libcloud_api.debug import debugmessage
 from bareos_libcloud_api.debug import jobmessage
 from bareos_libcloud_api.debug import set_plugin_context
@@ -81,10 +81,10 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.last_run = datetime.datetime.fromtimestamp(self.since)
         self.last_run = self.last_run.replace(tzinfo=None)
 
-        # The backup job in process
+        # The backup task in process
         # Set to None when the whole backup is completed
         # Restore's path will not touch this
-        self.current_backup_job = {}
+        self.current_backup_task = {}
         self.number_of_objects_to_backup = 0
         self.FILE = None
         self.active = True
@@ -255,8 +255,8 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 self.active = False
                 error = True
             else:
-                self.current_backup_job = self.api.get_next_job()
-                if self.current_backup_job != None:
+                self.current_backup_task = self.api.get_next_task()
+                if self.current_backup_task != None:
                     break
                 elif self.api.worker_ready():
                     self.active = False
@@ -274,13 +274,13 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         filename = FilenameConverter.BucketToBackup(
             "%s/%s"
-            % (self.current_backup_job["bucket"], self.current_backup_job["name"],)
+            % (self.current_backup_task["bucket"], self.current_backup_task["name"],)
         )
         jobmessage("M_INFO", "Backup file: %s" % (filename,))
 
         statp = bareosfd.StatPacket()
-        statp.size = self.current_backup_job["size"]
-        statp.mtime = self.current_backup_job["mtime"]
+        statp.size = self.current_backup_task["size"]
+        statp.mtime = self.current_backup_task["mtime"]
         statp.atime = 0
         statp.ctime = 0
 
@@ -288,27 +288,27 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         savepkt.fname = filename
         savepkt.type = bareos_fd_consts.bFileType["FT_REG"]
 
-        if self.current_backup_job["type"] == JOB_TYPE.DOWNLOADED:
-            self.FILE = self.current_backup_job["data"]
-        elif self.current_backup_job["type"] == JOB_TYPE.TEMP_FILE:
+        if self.current_backup_task["type"] == TASK_TYPE.DOWNLOADED:
+            self.FILE = self.current_backup_task["data"]
+        elif self.current_backup_task["type"] == TASK_TYPE.TEMP_FILE:
             try:
-                self.FILE = io.open(self.current_backup_job["tmpfile"], "rb")
+                self.FILE = io.open(self.current_backup_task["tmpfile"], "rb")
             except Exception as e:
                 jobmessage("M_FATAL", "Could not open temporary file for reading." % e)
                 self.__shutdown()
                 return bRCs["bRC_Error"]
-        elif self.current_backup_job["type"] == JOB_TYPE.STREAM:
+        elif self.current_backup_task["type"] == TASK_TYPE.STREAM:
             try:
-                self.FILE = IterStringIO(self.current_backup_job["data"].as_stream())
+                self.FILE = IterStringIO(self.current_backup_task["data"].as_stream())
             except ObjectDoesNotExistError:
                 jobmessage(
                     "M_WARNING",
                     "Skipped file %s because it does not exist anymore"
-                    % (self.current_backup_job["name"]),
+                    % (self.current_backup_task["name"]),
                 )
                 return bRCs["bRC_Skip"]
         else:
-            raise Exception(value='Wrong argument for current_backup_job["type"]')
+            raise Exception(value='Wrong argument for current_backup_task["type"]')
 
         return bRCs["bRC_OK"]
 
@@ -328,7 +328,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         return bRCs["bRC_OK"]
 
     def plugin_io(self, context, IOP):
-        if self.current_backup_job is None:
+        if self.current_backup_task is None:
             return bRCs["bRC_Error"]
         if IOP.func == bIOPS["IO_OPEN"]:
             # Only used by the 'restore' path
@@ -350,7 +350,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 jobmessage(
                     "M_ERROR",
                     "Cannot read from %s/%s: %s"
-                    % (self.current_backup_job["bucket"], self.current_backup_job["name"], e),
+                    % (self.current_backup_task["bucket"], self.current_backup_task["name"], e),
                 )
                 IOP.status = 0
                 IOP.io_errno = e.errno
@@ -373,7 +373,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         return bRCs["bRC_OK"]
 
     def end_backup_file(self, context):
-        if self.current_backup_job is not None:
+        if self.current_backup_task is not None:
             self.number_of_objects_to_backup += 1
             return bRCs["bRC_More"]
         else:
