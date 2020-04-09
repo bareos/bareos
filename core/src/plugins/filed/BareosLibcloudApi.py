@@ -1,5 +1,5 @@
 from bareos_libcloud_api.bucket_explorer import BucketExplorer
-from bareos_libcloud_api.bucket_explorer import JOB_TYPE
+from bareos_libcloud_api.bucket_explorer import TASK_TYPE
 from bareos_libcloud_api.debug import debugmessage, jobmessage
 from bareos_libcloud_api.get_libcloud_driver import get_driver
 from bareos_libcloud_api.get_libcloud_driver import options
@@ -78,18 +78,18 @@ class BareosLibcloudApi(object):
         while not self.message_queue.empty():
             try:
                 message = self.message_queue.get_nowait()
-                if message.type == MESSAGE_TYPE.InfoMessage:
+                if message.type == MESSAGE_TYPE.INFO_MESSAGE:
                     jobmessage("M_INFO", message.message_string)
-                elif message.type == MESSAGE_TYPE.ErrorMessage:
+                elif message.type == MESSAGE_TYPE.ERROR_MESSAGE:
                     jobmessage("M_ERROR", message.message_string)
-                elif message.type == MESSAGE_TYPE.ReadyMessage:
+                elif message.type == MESSAGE_TYPE.READY_MESSAGE:
                     if message.worker_id == 0:
                         self.count_bucket_explorer_ready += 1
                     else:
                         self.count_worker_ready += 1
-                elif message.type == MESSAGE_TYPE.AbortMessage:
+                elif message.type == MESSAGE_TYPE.ABORT_MESSAGE:
                     return ERROR
-                elif message.type == MESSAGE_TYPE.DebugMessage:
+                elif message.type == MESSAGE_TYPE.DEBUG_MESSAGE:
                     debugmessage(message.level, message.message_string)
                 else:
                     raise Exception(value="Unknown message type")
@@ -97,7 +97,7 @@ class BareosLibcloudApi(object):
                 jobmessage("M_INFO", "check_worker_messages exception: %s" % e)
         return SUCCESS
 
-    def get_next_job(self):
+    def get_next_task(self):
         if not self.downloaded_objects_queue.empty():
             return self.downloaded_objects_queue.get_nowait()
         return None

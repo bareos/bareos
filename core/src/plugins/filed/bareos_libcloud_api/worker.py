@@ -17,7 +17,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
-from bareos_libcloud_api.bucket_explorer import JOB_TYPE
+from bareos_libcloud_api.bucket_explorer import TASK_TYPE
 from bareos_libcloud_api.process_base import ProcessBase
 from bareos_libcloud_api.get_libcloud_driver import get_driver
 import io
@@ -95,7 +95,7 @@ class Worker(ProcessBase):
                     return CONTINUE
 
                 job["data"] = io.BytesIO(content)
-                job["type"] = JOB_TYPE.DOWNLOADED
+                job["type"] = TASK_TYPE.DOWNLOADED
             except LibcloudError:
                 self.error_message("Libcloud error, could not download file")
                 return CONTINUE
@@ -108,7 +108,7 @@ class Worker(ProcessBase):
                 obj.download(tmpfilename)
                 job["data"] = None
                 job["tmpfile"] = tmpfilename
-                job["type"] = JOB_TYPE.TEMP_FILE
+                job["type"] = TASK_TYPE.TEMP_FILE
             except OSError as e:
                 self.error_message("Could not open temporary file %s" % e.filename)
                 return FINISH
@@ -132,7 +132,7 @@ class Worker(ProcessBase):
         else:
             try:
                 job["data"] = obj
-                job["type"] = JOB_TYPE.STREAM
+                job["type"] = TASK_TYPE.STREAM
             except LibcloudError:
                 self.error_message(
                     "Libcloud error preparing stream object, skipping: %s/%s"

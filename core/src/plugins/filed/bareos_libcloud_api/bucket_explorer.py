@@ -22,7 +22,7 @@ from bareos_libcloud_api.get_libcloud_driver import get_driver
 from bareos_libcloud_api.mtime import ModificationTime
 
 
-class JOB_TYPE(object):
+class TASK_TYPE(object):
     UNDEFINED = 0
     DOWNLOADED = 1
     TEMP_FILE = 2
@@ -103,14 +103,14 @@ class BucketExplorer(ProcessBase):
 
             mtime, mtime_ts = ModificationTime().get_mtime(obj)
 
-            job = {
+            task = {
                 "name": obj.name,
                 "bucket": obj.container.name,
                 "data": None,
                 "index": None,
                 "size": obj.size,
                 "mtime": mtime_ts,
-                "type": JOB_TYPE.UNDEFINED,
+                "type": TASK_TYPE.UNDEFINED,
             }
 
             object_name = "%s/%s" % (obj.container.name, obj.name)
@@ -126,7 +126,7 @@ class BucketExplorer(ProcessBase):
                 # again but remembered as "still here" (for accurate mode)
                 # If accurate mode is off, we can simply skip that object
                 if self.options["accurate"] is True:
-                    self.queue_try_put(self.discovered_objects_queue, job)
+                    self.queue_try_put(self.discovered_objects_queue, task)
 
                 continue
 
@@ -135,4 +135,4 @@ class BucketExplorer(ProcessBase):
                 % (object_name, self.last_run, mtime),
             )
 
-            self.queue_try_put(self.discovered_objects_queue, job)
+            self.queue_try_put(self.discovered_objects_queue, task)

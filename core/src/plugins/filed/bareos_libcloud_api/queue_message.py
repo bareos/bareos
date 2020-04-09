@@ -18,11 +18,11 @@
 # 02110-1301, USA.
 
 class MESSAGE_TYPE(object):
-    InfoMessage = 1
-    ErrorMessage = 2
-    AbortMessage = 3
-    ReadyMessage = 4
-    DebugMessage = 5
+    INFO_MESSAGE = 1
+    ERROR_MESSAGE = 2
+    ABORT_MESSAGE = 3
+    READY_MESSAGE = 4
+    DEBUG_MESSAGE = 5
 
     def __setattr__(self, *_):
         raise Exception("class MESSAGE_TYPE is read only")
@@ -38,29 +38,29 @@ class QueueMessageBase(object):
 class ErrorMessage(QueueMessageBase):
     def __init__(self, worker_id, message):
         QueueMessageBase.__init__(self, worker_id, message)
-        self.type = MESSAGE_TYPE.ErrorMessage
+        self.type = MESSAGE_TYPE.ERROR_MESSAGE
 
 
 class InfoMessage(QueueMessageBase):
     def __init__(self, worker_id, message):
         QueueMessageBase.__init__(self, worker_id, message)
-        self.type = MESSAGE_TYPE.InfoMessage
+        self.type = MESSAGE_TYPE.INFO_MESSAGE
 
 
 class DebugMessage(QueueMessageBase):
     def __init__(self, worker_id, level, message):
         QueueMessageBase.__init__(self, worker_id, message)
-        self.type = MESSAGE_TYPE.DebugMessage
+        self.type = MESSAGE_TYPE.DEBUG_MESSAGE
         self.level = level
 
 
 class ReadyMessage(QueueMessageBase):
     def __init__(self, worker_id, message=None):
         QueueMessageBase.__init__(self, worker_id, message)
-        self.type = MESSAGE_TYPE.ReadyMessage
+        self.type = MESSAGE_TYPE.READY_MESSAGE
 
 
 class AbortMessage(QueueMessageBase):
     def __init__(self, worker_id):
         QueueMessageBase.__init__(self, worker_id, None)
-        self.type = MESSAGE_TYPE.AbortMessage
+        self.type = MESSAGE_TYPE.ABORT_MESSAGE
