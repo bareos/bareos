@@ -418,9 +418,6 @@ extern char WIN_VERSION[];
 // Define to 1 if you have lzo lib
 #cmakedefine HAVE_LZO @HAVE_LZO@
 
-// Define to 1 if you have the `malloc_trim' function
-#cmakedefine HAVE_MALLOC_TRIM @HAVE_MALLOC_TRIM@
-
 // Define to 1 if you have a working `mmap' system call
 #cmakedefine HAVE_MMAP @HAVE_MMAP@
 

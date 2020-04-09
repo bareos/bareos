@@ -40,10 +40,6 @@
 
 #define HEAD_SIZE BALIGN(sizeof(struct abufhead))
 
-#ifdef HAVE_MALLOC_TRIM
-extern "C" int malloc_trim(size_t pad);
-#endif
-
 struct s_pool_ctl {
   int32_t size;              /* default size */
   int32_t max_allocated;     /* max allocated */
@@ -316,11 +312,6 @@ void CloseMemoryPool()
 void GarbageCollectMemory()
 {
   CloseMemoryPool(); /* release free chain */
-#ifdef HAVE_MALLOC_TRIM
-  P(mutex);
-  malloc_trim(8192);
-  V(mutex);
-#endif
 }
 
 static const char* pool_name(int pool)
