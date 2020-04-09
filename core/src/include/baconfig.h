@@ -658,21 +658,6 @@ int Getdomainname(char* name, int len);
 #endif /* __cplusplus */
 #endif /* HAVE_OSF1_OS */
 
-
-/** Disabled because it breaks internationalisation...
-#undef HAVE_SETLOCALE
-#ifdef HAVE_SETLOCALE
-#include <locale.h>
-#else
-#define setlocale(x, y) ("ANSI_X3.4-1968")
-#endif
-#ifdef HAVE_NL_LANGINFO
-#include <langinfo.h>
-#else
-#define nl_langinfo(x) ("ANSI_X3.4-1968")
-#endif
-*/
-
 /** Determine endianes */
 static inline bool bigendian() { return htonl(1) == 1L; }
 

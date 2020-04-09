@@ -439,9 +439,6 @@ extern char WIN_VERSION[];
 // Define to 1 if you are running NetBSD
 #cmakedefine HAVE_NETBSD_OS @HAVE_NETBSD_OS@
 
-// Define to 1 if you have the `nl_langinfo' function
-#cmakedefine HAVE_NL_LANGINFO @HAVE_NL_LANGINFO@
-
 // Define to 1 to when walkcontext does not work
 #cmakedefine HAVE_NON_WORKING_WALKCONTEXT @HAVE_NON_WORKING_WALKCONTEXT@
 

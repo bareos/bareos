@@ -121,8 +121,6 @@
 #undef LOCALEDIR
 #define LOCALEDIR "."
 
-#undef HAVE_NL_LANGINFO
-
 /* Define to 1 if you have the `signal' function. */
 /*#define HAVE_SIGNAL 1 */
 
