@@ -44,6 +44,7 @@ from bareos_fd_consts import bRCs, bCFs, bIOPS, bJobMessageType, bFileType
 from libcloud.storage.types import Provider
 from libcloud.storage.types import ObjectDoesNotExistError
 from sys import version_info
+from distutils.util import strtobool
 
 
 class FilenameConverter:
@@ -56,14 +57,6 @@ class FilenameConverter:
     @staticmethod
     def BackupToBucket(filename):
         return filename.replace(FilenameConverter.__pathprefix, "")
-
-
-def str2bool(data):
-    if data == "false" or data == "False":
-        return False
-    if data == "true" or data == "True":
-        return True
-    raise Exception("%s: not a boolean" % (data,))
 
 
 class IterStringIO(io.BufferedIOBase):
@@ -179,7 +172,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
                 try:
                     if option == "tls":
-                        self.options["secure"] = str2bool(value)
+                        self.options["secure"] = strtobool(value)
                     elif option == "nb_worker":
                         self.options["nb_worker"] = int(value)
                     elif option == "queue_size":
