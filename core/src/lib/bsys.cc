@@ -217,15 +217,6 @@ char* bstrinlinecpy(char* dest, const char* src)
   if (src <= dest) { return NULL; }
 
   len = strlen(src);
-#if HAVE_BCOPY
-  /*
-   * Cannot use strcpy or memcpy as those functions are not
-   * allowed on overlapping data and this is inline replacement
-   * for sure is. So we use bcopy which is allowed on overlapping
-   * data.
-   */
-  bcopy(src, dest, len + 1);
-#else
   /*
    * Cannot use strcpy or memcpy as those functions are not
    * allowed on overlapping data and this is inline replacement
@@ -233,7 +224,7 @@ char* bstrinlinecpy(char* dest, const char* src)
    * overlapping data.
    */
   memmove(dest, src, len + 1);
-#endif
+
   return dest;
 }
 

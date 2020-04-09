@@ -124,9 +124,6 @@ extern char WIN_VERSION[];
 // Define to 1 if you have the `backtrace_symbols' function
 #cmakedefine HAVE_BACKTRACE_SYMBOLS @HAVE_BACKTRACE_SYMBOLS@
 
-// Define to 1 if you have the `bcopy' function
-#cmakedefine HAVE_BCOPY @HAVE_BCOPY@
-
 // Big Endian
 #cmakedefine HAVE_BIG_ENDIAN @HAVE_BIG_ENDIAN@
 
