@@ -81,6 +81,28 @@ if(NOT client-only)
   install(FILES ${INCLUDE_FILES} DESTINATION ${includedir})
 endif()
 
+set(DEFAULT_CRYPTO "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH")
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+	set(NO_SYSTEM_PROFILE "Bareos")
+	set(SYSTEM_PROFILE "system")
+	set(RH_OS "/etc/redhat-release")
+	if(EXISTS "${RH_OS}")
+		FILE(READ "${RH_OS}" OS_LINE)
+		string(REGEX MATCH "[0-9]+" OS_NUMBER "${OS_LINE}")
+		if((OS_NUMBER VERSION_GREATER "30") OR ((OS_NUMBER VERSION_GREATER "7") AND (OS_NUMBER VERSION_LESS "20")))
+			set(PROFILE "${SYSTEM_PROFILE}")
+			set(DEFAULT_CRYPTO "PROFILE=SYSTEM")
+
+		else()
+			set(PROFILE "${NO_SYSTEM_PROFILE}")
+		endif()
+	else()
+		set(PROFILE "${NO_SYSTEM_PROFILE}")
+	endif()
+	message( "Using ${PROFILE} default crypto settings.")
+endif()
+add_compile_definitions(CRYPTO_POLICY="${DEFAULT_CRYPTO}")
+
 include_directories(
   ${OPENSSL_INCLUDE_DIR} ${PTHREAD_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS}
   ${ACL_INCLUDE_DIRS} ${LZO2_INCLUDE_DIRS} ${CAP_INCLUDE_DIRS}

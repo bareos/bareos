@@ -49,7 +49,7 @@ std::mutex TlsOpenSslPrivate::file_access_mutex_;
 /* No anonymous ciphers, no <128 bit ciphers, no export ciphers, no MD5 ciphers
  */
 const std::string TlsOpenSslPrivate::tls_default_ciphers_{
-    "PROFILE=SYSTEM"};
+    CRYPTO_POLICY};
 
 
 TlsOpenSslPrivate::TlsOpenSslPrivate()
