@@ -126,32 +126,8 @@
 /* Define to 1 if you have the <stdarg.h> header file. */
 #define HAVE_STDARG_H 1
 
-/* Define to 1 if you have the <stdint.h> header file. */
-#define HAVE_STDINT_H 1
-
 /* Define to 1 if you have the <stdlib.h> header file. */
 #define HAVE_STDLIB_H 1
-
-/* Define to 1 if you have the `strerror' function. */
-#define HAVE_STRERROR 1
-
-/* Define to 1 if you have the `strerror_r' function. */
-#define HAVE_STRERROR_R 1
-
-/* Define to 1 if you have the `strftime' function. */
-#define HAVE_STRFTIME 1
-
-/* Define to 1 if you have the <strings.h> header file. */
-#define HAVE_STRINGS_H 1
-
-/* Define to 1 if you have the <string.h> header file. */
-#define HAVE_STRING_H 1
-
-/* Define to 1 if you have the `strncmp' function. */
-#define HAVE_STRNCMP 1
-
-/* Define to 1 if you have the `strncpy' function. */
-#define HAVE_STRNCPY 1
 
 /* Define to 1 if you have the <sys/mtio.h> header file. */
 #define HAVE_SYS_MTIO_H 1

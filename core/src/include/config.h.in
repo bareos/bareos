@@ -556,41 +556,11 @@ extern char WIN_VERSION[];
 // Define to 1 if you have the `sqlite3_threadsafe' function
 #cmakedefine HAVE_SQLITE3_THREADSAFE @HAVE_SQLITE3_THREADSAFE@
 
-// Define to 1 if sql pooling is enabled
-#cmakedefine HAVE_SQL_POOLING @HAVE_SQL_POOLING@
-
 // Define to 1 if you have the <stdarg.h> header file
 #cmakedefine HAVE_STDARG_H @HAVE_STDARG_H@
 
-// Define to 1 if you have the <stdint.h> header file
-#cmakedefine HAVE_STDINT_H @HAVE_STDINT_H@
-
 // Define to 1 if you have the <stdlib.h> header file
 #cmakedefine HAVE_STDLIB_H @HAVE_STDLIB_H@
-
-// Define to 1 if you have the `strdup' function
-#cmakedefine HAVE_STRDUP @HAVE_STRDUP@
-
-// Define to 1 if you have the `strerror' function
-#cmakedefine HAVE_STRERROR @HAVE_STRERROR@
-
-// Define to 1 if you have the `strerror_r' function
-#cmakedefine HAVE_STRERROR_R @HAVE_STRERROR_R@
-
-// Define to 1 if you have the `strftime' function
-#cmakedefine HAVE_STRFTIME @HAVE_STRFTIME@
-
-// Define to 1 if you have the <strings.h> header file
-#cmakedefine HAVE_STRINGS_H @HAVE_STRINGS_H@
-
-// Define to 1 if you have the <string.h> header file
-#cmakedefine HAVE_STRING_H @HAVE_STRING_H@
-
-// Define to 1 if you have the `strncmp' function
-#cmakedefine HAVE_STRNCMP @HAVE_STRNCMP@
-
-// Define to 1 if you have the `strncpy' function
-#cmakedefine HAVE_STRNCPY @HAVE_STRNCPY@
 
 // Define to 1 if you are running Solaris
 #cmakedefine HAVE_SUN_OS @HAVE_SUN_OS@

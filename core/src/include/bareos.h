@@ -91,10 +91,8 @@
 #define _POSIX_PTHREAD_SEMANTICS 1
 
 /* System includes */
-#if HAVE_STDINT_H
 #ifndef __sgi
 #include <stdint.h>
-#endif
 #endif
 #if HAVE_STDARG_H
 #include <stdarg.h>
