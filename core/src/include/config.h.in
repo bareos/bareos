@@ -565,9 +565,6 @@ extern char WIN_VERSION[];
 // Define to 1 if you have the `utimes' function
 #cmakedefine HAVE_UTIMES @HAVE_UTIMES@
 
-// Define to 1 if you have the <utime.h> header file
-#cmakedefine HAVE_UTIME_H @HAVE_UTIME_H@
-
 // Define to 1 if you have u_int
 #cmakedefine HAVE_U_INT @HAVE_U_INT@
 

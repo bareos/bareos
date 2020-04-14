@@ -47,8 +47,6 @@ check_include_files(sys/nvpair.h HAVE_SYS_NVPAIR_H)
 check_include_files("sys/types.h;sys/tape.h" HAVE_SYS_TAPE_H)
 
 check_include_files(sys/time.h HAVE_SYS_TIME_H)
-check_include_files(utime.h HAVE_UTIME_H)
-check_include_files(NSI HAVE_NSI)
 
 check_include_file_cxx(cxxabi.h HAVE_CXXABI_H)
 check_include_files(curses.h HAVE_CURSES_H)
@@ -74,7 +72,6 @@ check_include_files(rados/librados.h HAVE_RADOS_LIBRADOS_H)
 check_include_files(radosstriper/libradosstriper.h
                     HAVE_RADOSSTRIPER_LIBRADOSSTRIPER_H)
 
-# CHECK_INCLUDE_FILES(glusterfs/glusterfs.h HAVE_GLUSTERFS_GLUSTERFS_H)
 check_include_files(glusterfs/api/glfs.h HAVE_GLUSTERFS_API_GLFS_H)
 
 check_include_files(sys/prctl.h HAVE_SYS_PRCTL_H)

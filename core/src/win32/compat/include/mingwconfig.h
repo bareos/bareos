@@ -11,9 +11,6 @@
 /* Define if you have GCC */
 #define HAVE_GCC 1
 
-/* Define to 1 if utime.h exists and declares struct utimbuf.  */
-#define HAVE_UTIME_H 1
-
 /* Data types */
 #define HAVE_U_INT 1
 #define HAVE_INTXX_T 1
