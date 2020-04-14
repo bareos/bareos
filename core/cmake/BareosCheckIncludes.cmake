@@ -19,16 +19,13 @@
 
 include(CheckIncludeFiles)
 
-check_include_files(rpc/rpc.h HAVE_RPC_RPC_H)
 check_include_files(alloca.h HAVE_ALLOCA_H)
-check_include_files(tcpd.h HAVE_TCPD_H)
 check_include_files(afs/afsint.h HAVE_AFS_AFSINT_H)
 check_include_files(afs/venus.h HAVE_AFS_VENUS_H)
 check_include_files(arpa/nameser.h HAVE_ARPA_NAMESER_H)
 check_include_files(attr.h HAVE_ATTR_H)
 check_include_files(demangle.h HAVE_DEMANGLE_H)
 check_include_files(execinfo.h HAVE_EXECINFO_H)
-check_include_files(jansson.h HAVE_JANSSON_H)
 check_include_files(grp.h HAVE_GRP_H)
 check_include_files(libutil.h HAVE_LIBUTIL_H)
 check_include_files(mtio.h HAVE_MTIO_H)
@@ -38,7 +35,6 @@ check_include_files("sys/types.h;sys/acl.h" HAVE_SYS_ACL_H)
 check_include_files(sys/attr.h HAVE_SYS_ATTR_H)
 check_include_files(sys/bitypes.h HAVE_SYS_BITYPES_H)
 check_include_files(sys/capability.h HAVE_SYS_CAPABILITY_H)
-check_include_files(sys/dir.h HAVE_SYS_DIR_H)
 check_include_files(sys/ea.h HAVE_SYS_EA_H)
 check_include_files("sys/types.h;sys/extattr.h" HAVE_SYS_EXTATTR_H)
 check_include_files(sys/mtio.h HAVE_SYS_MTIO_H)
@@ -58,15 +54,12 @@ check_include_files(cxxabi.h HAVE_CXXABI_H)
 check_include_files(ucontext.h HAVE_UCONTEXT_H)
 check_include_files(demangle.h HAVE_DEMANGLE_H)
 
-check_include_files(acl.h HAVE_ACL_H)
 check_include_files(sys/extattr.h HAVE_SYS_EXTATTR_H)
 check_include_files(libutil.h HAVE_LIBUTIL_H)
 check_include_files(sys/ea.h HAVE_SYS_EA_H)
 check_include_files(sys/proplist.h HAVE_SYS_PROPLIST_H)
 check_include_files(sys/xattr.h HAVE_SYS_XATTR_H)
-check_include_files(api/glfs.h HAVE_API_GLFS_H)
 
-check_include_files(cephfs/libcephfs.h HAVE_CEPHFS_LIBCEPHFS_H)
 check_include_files("sys/stat.h;cephfs/ceph_statx.h" HAVE_CEPHFS_CEPH_STATX_H)
 check_include_files(rados/librados.h HAVE_RADOS_LIBRADOS_H)
 check_include_files(radosstriper/libradosstriper.h
@@ -75,12 +68,9 @@ check_include_files(radosstriper/libradosstriper.h
 check_include_files(glusterfs/api/glfs.h HAVE_GLUSTERFS_API_GLFS_H)
 
 check_include_files(sys/prctl.h HAVE_SYS_PRCTL_H)
-check_include_files(time.h HAVE_TIME_H)
 
 check_include_files(sys/capability.h HAVE_SYS_CAPABILITY_H)
 check_include_files(zlib.h HAVE_ZLIB_H)
-
-check_include_files(curses.h HAVE_CURSES_H)
 
 check_include_files(scsi/scsi.h HAVE_SCSI_SCSI_H)
 
@@ -93,4 +83,3 @@ check_include_files(cam/scsi/scsi_message.h HAVE_CAM_SCSI_SCSI_MESSAGE_H)
 check_include_files(dev/scsipi/scsipi_all.h HAVE_DEV_SCSIPI_SCSIPI_ALL_H)
 
 check_include_files(scsi/uscsi_all.h HAVE_USCSI_ALL_H)
-check_include_files(scsi/uscsi_all.h HAVE_SCSI_USCSI_ALL_H)
