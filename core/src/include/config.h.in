@@ -331,9 +331,6 @@ extern char WIN_VERSION[];
 // Define to 1 if you have zlib
 #cmakedefine HAVE_LIBZ @HAVE_LIBZ@
 
-// Define to 1 if you have the <limits.h> header file
-#cmakedefine HAVE_LIMITS_H @HAVE_LIMITS_H@
-
 // Define to 1 if you are running Linux
 #cmakedefine HAVE_LINUX_OS @HAVE_LINUX_OS@
 
@@ -493,12 +490,6 @@ extern char WIN_VERSION[];
 // Define to 1 if you have the `sqlite3_threadsafe' function
 #cmakedefine HAVE_SQLITE3_THREADSAFE @HAVE_SQLITE3_THREADSAFE@
 
-// Define to 1 if you have the <stdarg.h> header file
-#cmakedefine HAVE_STDARG_H @HAVE_STDARG_H@
-
-// Define to 1 if you have the <stdlib.h> header file
-#cmakedefine HAVE_STDLIB_H @HAVE_STDLIB_H@
-
 // Define to 1 if you are running Solaris
 #cmakedefine HAVE_SUN_OS @HAVE_SUN_OS@
 
@@ -541,9 +532,6 @@ extern char WIN_VERSION[];
 // Define to 1 if you have the <sys/proplist.h> header file
 #cmakedefine HAVE_SYS_PROPLIST_H @HAVE_SYS_PROPLIST_H@
 
-// Define to 1 if you have the <sys/socket.h> header file
-#cmakedefine HAVE_SYS_SOCKET_H @HAVE_SYS_SOCKET_H@
-
 // Define to 1 if you have the <sys/statvfs.h> header file
 #cmakedefine HAVE_SYS_STATVFS_H @HAVE_SYS_STATVFS_H@
 
@@ -552,9 +540,6 @@ extern char WIN_VERSION[];
 
 // Define to 1 if you have the <sys/time.h> header file
 #cmakedefine HAVE_SYS_TIME_H @HAVE_SYS_TIME_H@
-
-// Define to 1 if you have <sys/wait.h> that is POSIX.1 compatible
-#cmakedefine HAVE_SYS_WAIT_H @HAVE_SYS_WAIT_H@
 
 // Define to 1 if you have the <sys/xattr.h> header file
 #cmakedefine HAVE_SYS_XATTR_H @HAVE_SYS_XATTR_H@
@@ -573,9 +558,6 @@ extern char WIN_VERSION[];
 
 // Define to 1 if you have the <umem.h> header file
 #cmakedefine HAVE_UMEM_H @HAVE_UMEM_H@
-
-// Define to 1 if you have the <unistd.h> header file
-#cmakedefine HAVE_UNISTD_H @HAVE_UNISTD_H@
 
 // Define to 1 if you have the `unlinkat' function
 #cmakedefine HAVE_UNLINKAT @HAVE_UNLINKAT@

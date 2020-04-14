@@ -94,16 +94,10 @@
 #ifndef __sgi
 #include <stdint.h>
 #endif
-#if HAVE_STDARG_H
 #include <stdarg.h>
-#endif
 #include <stdio.h>
-#if HAVE_STDLIB_H
 #include <stdlib.h>
-#endif
-#if HAVE_UNISTD_H
 #include <unistd.h>
-#endif
 #if HAVE_UMEM_H
 #include <umem.h>
 #endif
@@ -136,9 +130,7 @@ extern "C" {
 #ifndef _SPLINT_
 #include <syslog.h>
 #endif
-#if HAVE_LIMITS_H
 #include <limits.h>
-#endif
 #include <pwd.h>
 #include <grp.h>
 #include <time.h>
@@ -148,9 +140,7 @@ extern "C" {
 #include <sys/bitypes.h>
 #endif
 #include <sys/ioctl.h>
-#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
-#endif
 #if defined(HAVE_WIN32) & !defined(HAVE_MINGW)
 #include <winsock2.h>
 #endif
@@ -158,9 +148,7 @@ extern "C" {
 #include <sys/stat.h>
 #endif
 #include <sys/time.h>
-#if HAVE_SYS_WAIT_H
 #include <sys/wait.h>
-#endif
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <pthread.h>
