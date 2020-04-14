@@ -51,7 +51,6 @@ static std::map<DeviceType, const char*> device_type_to_name_mapping = {
     {DeviceType::B_DROPLET_DEV, "droplet"},
     {DeviceType::B_RADOS_DEV, "rados"},
     {DeviceType::B_CEPHFS_DEV, "cephfs"},
-    {DeviceType::B_ELASTO_DEV, "elasto"},
     {DeviceType::B_UNKNOWN_DEV, nullptr}};
 
 

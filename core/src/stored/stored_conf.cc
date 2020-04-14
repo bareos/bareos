@@ -275,7 +275,6 @@ static s_dvt_kw device_types[] = {
     {"droplet", DeviceType::B_DROPLET_DEV},
     {"rados", DeviceType::B_RADOS_DEV},
     {"cephfs", DeviceType::B_CEPHFS_DEV},
-    {"elasto", DeviceType::B_ELASTO_DEV},
     {nullptr, DeviceType::B_UNKNOWN_DEV}};
 
 struct s_io_kw {

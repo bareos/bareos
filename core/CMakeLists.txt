@@ -721,7 +721,6 @@ else()
   endif()
 endif()
 
-set(have_elasto "")
 set(support_systemd "")
 set(batch_insert_db_backends "")
 set(have_cmocka "")
@@ -872,7 +871,6 @@ message(
 message(
   "   CEPHFS support:               ${CEPHFS_FOUND} ${CEPHFS_LIBRARIES} ${CEPHFS_INCLUDE_DIRS} "
 )
-message("   ELASTO support:               ${have_elasto} ")
 message(
   "   Python support:               ${PYTHONLIBS_FOUND} ${PYTHONLIBS_VERSION_STRING} ${PYTHON_INCLUDE_PATH}"
 )

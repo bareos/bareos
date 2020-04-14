@@ -55,10 +55,6 @@ if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
     list(APPEND AVAILABLE_DEVICE_API_SRCS backends/gfapi_device.cc)
   endif()
 
-  if(${HAVE_ELASTO})
-    list(APPEND AVAILABLE_DEVICE_API_SRCS backends/elasto_device.cc)
-  endif()
-
   if(${HAVE_RADOS})
     list(APPEND AVAILABLE_DEVICE_API_SRCS backends/rados_device.cc)
   endif()

@@ -91,8 +91,6 @@ check_include_files(radosstriper/libradosstriper.h
 # CHECK_INCLUDE_FILES(glusterfs/glusterfs.h HAVE_GLUSTERFS_GLUSTERFS_H)
 check_include_files(glusterfs/api/glfs.h HAVE_GLUSTERFS_API_GLFS_H)
 
-check_include_files(elasto/data.h HAVE_ELASTO_DATA_H)
-check_include_files(elasto/file.h HAVE_ELASTO_FILE_H)
 check_include_files(sys/prctl.h HAVE_SYS_PRCTL_H)
 check_include_files(time.h HAVE_TIME_H)
 

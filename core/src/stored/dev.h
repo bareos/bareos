@@ -97,8 +97,7 @@ enum class DeviceType : int
   B_GFAPI_DEV,
   B_DROPLET_DEV,
   B_RADOS_DEV,
-  B_CEPHFS_DEV,
-  B_ELASTO_DEV
+  B_CEPHFS_DEV
 };
 
 /**
@@ -317,7 +316,7 @@ class Device {
   {
     return (dev_type == DeviceType::B_FILE_DEV || dev_type == DeviceType::B_GFAPI_DEV ||
             dev_type == DeviceType::B_DROPLET_DEV || dev_type == DeviceType::B_RADOS_DEV ||
-            dev_type == DeviceType::B_CEPHFS_DEV || dev_type == DeviceType::B_ELASTO_DEV);
+            dev_type == DeviceType::B_CEPHFS_DEV);
   }
   bool IsFifo() const { return dev_type == DeviceType::B_FIFO_DEV; }
   bool IsVtl() const { return dev_type == DeviceType::B_VTL_DEV; }
