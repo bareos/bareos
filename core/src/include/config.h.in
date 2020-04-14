@@ -84,9 +84,6 @@ extern char WIN_VERSION[];
 // Defines if your system have the ACL_TYPE_NFS4 acl type
 #cmakedefine HAVE_ACL_TYPE_NFS4 @HAVE_ACL_TYPE_NFS4@
 
-// Set if addrtosymstr exists
-#cmakedefine HAVE_ADDRTOSYMSTR @HAVE_ADDRTOSYMSTR@
-
 // Define to 1 if you have the `add_proplist_entry' function
 #cmakedefine HAVE_ADD_PROPLIST_ENTRY @HAVE_ADD_PROPLIST_ENTRY@
 
@@ -127,15 +124,6 @@ extern char WIN_VERSION[];
 // Big Endian
 #cmakedefine HAVE_BIG_ENDIAN @HAVE_BIG_ENDIAN@
 
-// Define to 1 if you are running BSDI
-#cmakedefine HAVE_BSDI_OS @HAVE_BSDI_OS@
-
-// Define to 1 if you have the <camlib.h> header file
-#cmakedefine HAVE_CAMLIB_H @HAVE_CAMLIB_H@
-
-// Define to 1 if you have the <cam/scsi/scsi_message.h> header file
-#cmakedefine HAVE_CAM_SCSI_SCSI_MESSAGE_H @HAVE_CAM_SCSI_SCSI_MESSAGE_H@
-
 // Define to 1 if you have cephfs lib
 #cmakedefine HAVE_CEPHFS @HAVE_CEPHFS@
 
@@ -165,9 +153,6 @@ extern char WIN_VERSION[];
 
 // Define to 1 if you have the <demangle.h> header file
 #cmakedefine HAVE_DEMANGLE_H @HAVE_DEMANGLE_H@
-
-// Define to 1 if you have the <dev/scsipi/scsipi_all.h> header file
-#cmakedefine HAVE_DEV_SCSIPI_SCSIPI_ALL_H @HAVE_DEV_SCSIPI_SCSIPI_ALL_H@
 
 // Define to 1 if you have the <dirent.h> header file, and it defines `DIR'
 #cmakedefine HAVE_DIRENT_H @HAVE_DIRENT_H@

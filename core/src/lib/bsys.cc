@@ -1028,41 +1028,6 @@ bool PathCreate(PoolMem& path, mode_t mode)
 #if defined(HAVE_SUN_OS)
 
 /*
- * If libc doesn't have Addrtosymstr emulate it.
- * Solaris 11 has Addrtosymstr in libc older
- * Solaris versions don't have this.
- */
-#ifndef HAVE_ADDRTOSYMSTR
-
-#include <dlfcn.h>
-
-#ifdef _LP64
-#define _ELF64
-#endif
-#include <sys/machelf.h>
-
-static int Addrtosymstr(void* pc, char* buffer, int size)
-{
-  Dl_info info;
-  Sym* sym;
-
-  if (dladdr1(pc, &info, (void**)&sym, RTLD_DL_SYMENT) == 0) {
-    return (Bsnprintf(buffer, size, "[0x%p]", pc));
-  }
-
-  if ((info.dli_fname != NULL && info.dli_sname != NULL) &&
-      ((uintptr_t)pc - (uintptr_t)info.dli_saddr < sym->st_size)) {
-    return (Bsnprintf(buffer, size, "%s'%s+0x%x [0x%p]", info.dli_fname,
-                      info.dli_sname,
-                      (unsigned long)pc - (unsigned long)info.dli_saddr, pc));
-  } else {
-    return (Bsnprintf(buffer, size, "%s'0x%p [0x%p]", info.dli_fname,
-                      (unsigned long)pc - (unsigned long)info.dli_fbase, pc));
-  }
-}
-#endif /* HAVE_ADDRTOSYMSTR */
-
-/*
  * If libc doesn't have backtrace_symbols emulate it.
  * Solaris 11 has backtrace_symbols in libc older
  * Solaris versions don't have this.
