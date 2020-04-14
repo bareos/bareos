@@ -592,30 +592,6 @@ extern char WIN_VERSION[];
 // Define to 1 if you have the `strncpy' function
 #cmakedefine HAVE_STRNCPY @HAVE_STRNCPY@
 
-// Define to 1 if `st_blksize' is a member of `struct stat'
-#cmakedefine HAVE_STRUCT_STAT_ST_BLKSIZE @HAVE_STRUCT_STAT_ST_BLKSIZE@
-
-// Define to 1 if `st_blocks' is a member of `struct stat'
-#cmakedefine HAVE_STRUCT_STAT_ST_BLOCKS @HAVE_STRUCT_STAT_ST_BLOCKS@
-
-// Define to 1 if `st_rdev' is a member of `struct stat'
-#cmakedefine HAVE_STRUCT_STAT_ST_RDEV @HAVE_STRUCT_STAT_ST_RDEV@
-
-// Define to 1 if `tm_zone' is a member of `struct tm'
-#cmakedefine HAVE_STRUCT_TM_TM_ZONE @HAVE_STRUCT_TM_TM_ZONE@
-
-/* Define to 1 if your `struct stat' has `st_blksize'. Deprecated, use
-   `HAVE_STRUCT_STAT_ST_BLKSIZE' instead */
-#cmakedefine HAVE_ST_BLKSIZE @HAVE_ST_BLKSIZE@
-
-/* Define to 1 if your `struct stat' has `st_blocks'. Deprecated, use
-   `HAVE_STRUCT_STAT_ST_BLOCKS' instead */
-#cmakedefine HAVE_ST_BLOCKS @HAVE_ST_BLOCKS@
-
-/* Define to 1 if your `struct stat' has `st_rdev'. Deprecated, use
-   `HAVE_STRUCT_STAT_ST_RDEV' instead */
-#cmakedefine HAVE_ST_RDEV @HAVE_ST_RDEV@
-
 // Define to 1 if you are running Solaris
 #cmakedefine HAVE_SUN_OS @HAVE_SUN_OS@
 
@@ -631,14 +607,8 @@ extern char WIN_VERSION[];
 // Define to 1 if you have the <sys/bitypes.h> header file
 #cmakedefine HAVE_SYS_BITYPES_H @HAVE_SYS_BITYPES_H@
 
-// Define to 1 if you have the <sys/byteorder.h> header file
-#cmakedefine HAVE_SYS_BYTEORDER_H @HAVE_SYS_BYTEORDER_H@
-
 // Define to 1 if you have the <sys/capability.h> header file
 #cmakedefine HAVE_SYS_CAPABILITY_H @HAVE_SYS_CAPABILITY_H@
-
-// Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'
-#cmakedefine HAVE_SYS_DIR_H @HAVE_SYS_DIR_H@
 
 // Define to 1 if you have the <sys/dl.h> header file
 #cmakedefine HAVE_SYS_DL_H @HAVE_SYS_DL_H@
@@ -648,9 +618,6 @@ extern char WIN_VERSION[];
 
 // Define to 1 if you have the <sys/extattr.h> header file
 #cmakedefine HAVE_SYS_EXTATTR_H @HAVE_SYS_EXTATTR_H@
-
-// Define to 1 if you have the <sys/ioctl.h> header file
-#cmakedefine HAVE_SYS_IOCTL_H @HAVE_SYS_IOCTL_H@
 
 // Define to 1 if you have the <sys/mman.h> header file
 #undef HAVE_SYS_MMAN_H
@@ -670,23 +637,11 @@ extern char WIN_VERSION[];
 // Define to 1 if you have the <sys/proplist.h> header file
 #cmakedefine HAVE_SYS_PROPLIST_H @HAVE_SYS_PROPLIST_H@
 
-// Define to 1 if you have the <sys/scsi/impl/uscsi.h> header file
-#cmakedefine HAVE_SYS_SCSI_IMPL_USCSI_H @HAVE_SYS_SCSI_IMPL_USCSI_H@
-
-// Define to 1 if you have the <sys/select.h> header file
-#cmakedefine HAVE_SYS_SELECT_H @HAVE_SYS_SELECT_H@
-
 // Define to 1 if you have the <sys/socket.h> header file
 #cmakedefine HAVE_SYS_SOCKET_H @HAVE_SYS_SOCKET_H@
 
-// Define to 1 if you have the <sys/sockio.h> header file
-#cmakedefine HAVE_SYS_SOCKIO_H @HAVE_SYS_SOCKIO_H@
-
 // Define to 1 if you have the <sys/statvfs.h> header file
 #cmakedefine HAVE_SYS_STATVFS_H @HAVE_SYS_STATVFS_H@
-
-// Define to 1 if you have the <sys/stat.h> header file
-#cmakedefine HAVE_SYS_STAT_H @HAVE_SYS_STAT_H@
 
 // Define to 1 if you have the <sys/tape.h> header file
 #cmakedefine HAVE_SYS_TAPE_H @HAVE_SYS_TAPE_H@
@@ -694,43 +649,17 @@ extern char WIN_VERSION[];
 // Define to 1 if you have the <sys/time.h> header file
 #cmakedefine HAVE_SYS_TIME_H @HAVE_SYS_TIME_H@
 
-// Define to 1 if you have the <sys/types.h> header file
-#cmakedefine HAVE_SYS_TYPES_H @HAVE_SYS_TYPES_H@
-
 // Define to 1 if you have <sys/wait.h> that is POSIX.1 compatible
 #cmakedefine HAVE_SYS_WAIT_H @HAVE_SYS_WAIT_H@
 
 // Define to 1 if you have the <sys/xattr.h> header file
 #cmakedefine HAVE_SYS_XATTR_H @HAVE_SYS_XATTR_H@
 
-// Define to 1 if you have the `tcgetattr' function
-#cmakedefine HAVE_TCGETATTR @HAVE_TCGETATTR@
-
-// Define to 1 if you have the <termcap.h> header file
-#cmakedefine HAVE_TERMCAP_H @HAVE_TERMCAP_H@
-
-// Define to 1 if you have the <termios.h> header file
-#cmakedefine HAVE_TERMIOS_H @HAVE_TERMIOS_H@
-
-// Define to 1 if you have the <term.h> header file
-#cmakedefine HAVE_TERM_H @HAVE_TERM_H@
-
 // Define to 1 if TLS support should be enabled
 #cmakedefine HAVE_TLS @HAVE_TLS@
 
-/* Define to 1 if your `struct tm' has `tm_zone'. Deprecated, use
-   `HAVE_STRUCT_TM_TM_ZONE' instead */
-#cmakedefine HAVE_TM_ZONE @HAVE_TM_ZONE@
-
-// Define to 1 if tray-monitor Qt4 GUI support should be enabled
-#cmakedefine HAVE_TRAYMONITOR @HAVE_TRAYMONITOR@
-
 // Define to 1 if compiler has typeof
 #cmakedefine HAVE_TYPEOF @HAVE_TYPEOF@
-
-/* Define to 1 if you don't have `tm_zone' but do have the external array
-   `tzname' */
-#cmakedefine HAVE_TZNAME @HAVE_TZNAME@
 
 // Define to 1 if you have the <ucontext.h> header file
 #cmakedefine HAVE_UCONTEXT_H @HAVE_UCONTEXT_H@
@@ -746,12 +675,6 @@ extern char WIN_VERSION[];
 
 // Define to 1 if you have the `unlinkat' function
 #cmakedefine HAVE_UNLINKAT @HAVE_UNLINKAT@
-
-// Define to 1 if you have the <scsi/uscsi_all.h> header file
-#cmakedefine HAVE_USCSI_ALL_H @HAVE_USCSI_ALL_H@
-
-// Define to 1 if you have SVR3 signals
-#cmakedefine HAVE_USG_SIGHOLD @HAVE_USG_SIGHOLD@
 
 // Define to 1 if you have the `utimes' function
 #cmakedefine HAVE_UTIMES @HAVE_UTIMES@
@@ -771,17 +694,8 @@ extern char WIN_VERSION[];
 // Define to 1 if you have u_intxx_t
 #cmakedefine HAVE_U_INTXX_T @HAVE_U_INTXX_T@
 
-// Define to 1 if you have the <varargs.h> header file
-#cmakedefine HAVE_VARARGS_H @HAVE_VARARGS_H@
-
 // Set if va_copy exists
 #cmakedefine HAVE_VA_COPY @HAVE_VA_COPY@
-
-// Define to 1 if you have the `vfprintf' function
-#cmakedefine HAVE_VFPRINTF @HAVE_VFPRINTF@
-
-// Define to 1 if you have the `vprintf' function
-#cmakedefine HAVE_VPRINTF @HAVE_VPRINTF@
 
 // Define to 1 if you have the `vsnprintf' function
 #cmakedefine HAVE_VSNPRINTF @HAVE_VSNPRINTF@
@@ -798,26 +712,8 @@ extern char WIN_VERSION[];
 // Where are locale files stored
 #cmakedefine LOCALEDIR @LOCALEDIR@
 
-// Define to the address where bug reports for this package should be sent
-#cmakedefine PACKAGE_BUGREPORT @PACKAGE_BUGREPORT@
-
 // Define to the full name of this package
 #cmakedefine PACKAGE_NAME @PACKAGE_NAME@
-
-// Define to the one symbol short name of this package
-#cmakedefine PACKAGE_TARNAME @PACKAGE_TARNAME@
-
-// Define to the home page for this package
-#cmakedefine PACKAGE_URL @PACKAGE_URL@
-
-// Define if you need function prototypes
-#cmakedefine PROTOTYPES @PROTOTYPES@
-
-// Define as the return type of signal handlers (`int' or `void')
-#cmakedefine RETSIGTYPE @RETSIGTYPE@
-
-// Define to 1 if the `setpgrp' function takes no argument
-#cmakedefine SETPGRP_VOID @SETPGRP_VOID@
 
 // The size of `char', as computed by sizeof
 #cmakedefine SIZEOF_CHAR @SIZEOF_CHAR@
@@ -837,21 +733,11 @@ extern char WIN_VERSION[];
 // The size of `short int', as computed by sizeof
 #cmakedefine SIZEOF_SHORT_INT @SIZEOF_SHORT_INT@
 
-/* Define as the maximum value of type 'size_t', if the system doesn't define
-   it */
-#cmakedefine SIZE_MAX @SIZE_MAX@
-
-// Define to 1 if you have the ANSI C header files
-#cmakedefine STDC_HEADERS @STDC_HEADERS@
-
 // Where are system config files stored
 #cmakedefine SYSCONFDIR @SYSCONFDIR@
 
 // Define to 1 if you can safely include both <sys/time.h> and <time.h>
 #cmakedefine TIME_WITH_SYS_TIME @TIME_WITH_SYS_TIME@
-
-// Define to 1 if your <sys/time.h> declares `struct tm'
-#cmakedefine TM_IN_SYS_TIME @TM_IN_SYS_TIME@
 
 // Define to 1 if DB batch insert code enabled
 #cmakedefine USE_BATCH_FILE_INSERT @USE_BATCH_FILE_INSERT@

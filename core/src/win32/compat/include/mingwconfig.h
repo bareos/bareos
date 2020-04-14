@@ -8,9 +8,6 @@
 /* Define if you want to use Batch Mode */
 /* #define HAVE_BATCH_FILE_INSERT 1 */
 
-/* Define if you need function prototypes */
-#define PROTOTYPES 1
-
 /* Define if you have GCC */
 #define HAVE_GCC 1
 
@@ -156,89 +153,20 @@
 /* Define to 1 if you have the `strncpy' function. */
 #define HAVE_STRNCPY 1
 
-/* Define to 1 if `st_blksize' is member of `struct stat'. */
-#define HAVE_STRUCT_STAT_ST_BLKSIZE 1
-
-/* Define to 1 if `st_blocks' is member of `struct stat'. */
-#define HAVE_STRUCT_STAT_ST_BLOCKS 1
-
-/* Define to 1 if `st_rdev' is member of `struct stat'. */
-#define HAVE_STRUCT_STAT_ST_RDEV 1
-
-/* Define to 1 if `tm_zone' is member of `struct tm'. */
-/* #undef HAVE_STRUCT_TM_TM_ZONE */
-
-/* Define to 1 if your `struct stat' has `st_blksize'. Deprecated, use
-   `HAVE_STRUCT_STAT_ST_BLKSIZE' instead. */
-#define HAVE_ST_BLKSIZE 1
-
-/* Define to 1 if your `struct stat' has `st_blocks'. Deprecated, use
-   `HAVE_STRUCT_STAT_ST_BLOCKS' instead. */
-#define HAVE_ST_BLOCKS 1
-
-/* Define to 1 if your `struct stat' has `st_rdev'. Deprecated, use
-   `HAVE_STRUCT_STAT_ST_RDEV' instead. */
-#define HAVE_ST_RDEV 1
-
-/* Define to 1 if you have the <sys/byteorder.h> header file. */
-/* #undef HAVE_SYS_BYTEORDER_H */
-
-/* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
- */
-/* #undef HAVE_SYS_DIR_H */
-
-/* Define to 1 if you have the <sys/ioctl.h> header file. */
-#define HAVE_SYS_IOCTL_H 1
-
 /* Define to 1 if you have the <sys/mtio.h> header file. */
 #define HAVE_SYS_MTIO_H 1
-
-/* Define to 1 if you have the <sys/select.h> header file. */
-#define HAVE_SYS_SELECT_H 1
 
 /* Define to 1 if you have the <sys/socket.h> header file. */
 #define HAVE_SYS_SOCKET_H 1
 
-/* Define to 1 if you have the <sys/sockio.h> header file. */
-/* #undef HAVE_SYS_SOCKIO_H */
-
-/* Define to 1 if you have the <sys/stat.h> header file. */
-#define HAVE_SYS_STAT_H 1
-
 /* Define to 1 if you have the <sys/time.h> header file. */
 #define HAVE_SYS_TIME_H 1
-
-/* Define to 1 if you have the <sys/types.h> header file. */
-#define HAVE_SYS_TYPES_H 1
 
 /* Define to 1 if you have <sys/wait.h> that is POSIX.1 compatible. */
 #define HAVE_SYS_WAIT_H 1
 
-/* Define to 1 if you have the `tcgetattr' function. */
-#define HAVE_TCGETATTR 1
-
-/* Define to 1 if you have the <termios.h> header file. */
-#define HAVE_TERMIOS_H 1
-
-/* Define to 1 if your `struct tm' has `tm_zone'. Deprecated, use
-   `HAVE_STRUCT_TM_TM_ZONE' instead. */
-/* #undef HAVE_TM_ZONE */
-
-/* Define to 1 if you don't have `tm_zone' but do have the external array
-   `tzname'. */
-#define HAVE_TZNAME 1
-
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1
-
-/* Define to 1 if you have the <varargs.h> header file. */
-/* #undef HAVE_VARARGS_H */
-
-/* Define to 1 if you have the `vfprintf' function. */
-#define HAVE_VFPRINTF 1
-
-/* Define to 1 if you have the `vprintf' function. */
-#define HAVE_VPRINTF 1
 
 /* Define to 1 if you have the `vsnprintf' function. */
 #define HAVE_VSNPRINTF 1
@@ -246,26 +174,14 @@
 /* Define to 1 if you have the <zlib.h> header file. */
 #define HAVE_ZLIB_H 1
 
-/* Define to the address where bug reports for this package should be sent. */
-#define PACKAGE_BUGREPORT ""
-
 /* Define to the full name of this package. */
 #define PACKAGE_NAME ""
 
 /* Define to the full name and version of this package. */
 #define PACKAGE_STRING ""
 
-/* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME ""
-
 /* Define to the version of this package. */
 #define PACKAGE_VERSION ""
-
-/* Define as the return type of signal handlers (`int' or `void'). */
-#define RETSIGTYPE void
-
-/* Define to 1 if the `setpgrp' function takes no argument. */
-#define SETPGRP_VOID 1
 
 /* The size of a `char', as computed by sizeof. */
 #define SIZEOF_CHAR 1
@@ -285,14 +201,8 @@
 /* The size of a `short int', as computed by sizeof. */
 #define SIZEOF_SHORT_INT 2
 
-/* Define to 1 if you have the ANSI C header files. */
-#define STDC_HEADERS 1
-
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #define TIME_WITH_SYS_TIME 1
-
-/* Define to 1 if your <sys/time.h> declares `struct tm'. */
-/* #undef TM_IN_SYS_TIME */
 
 /* Use long unsigned int for ioctl request */
 #define HAVE_IOCTL_ULINT_REQUEST

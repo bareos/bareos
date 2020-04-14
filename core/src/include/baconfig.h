@@ -56,13 +56,6 @@
 #define ioctl_req_t int
 #endif
 
-
-#ifdef PROTOTYPES
-#define __PROTO(p) p
-#else
-#define __PROTO(p) ()
-#endif
-
 /**
  * In DEBUG mode an assert that is triggered generates a segmentation
  * fault so we can capture the debug info using btraceback.
@@ -232,12 +225,6 @@ void InitWinAPIWrapper();
 
 typedef void(HANDLER)();
 typedef int(INTHANDLER)();
-
-#ifdef SETPGRP_VOID
-#define SETPGRP_ARGS(x, y) /* No arguments */
-#else
-#define SETPGRP_ARGS(x, y) (x, y)
-#endif
 
 #ifndef S_ISLNK
 #define S_ISLNK(m) (((m)&S_IFM) == S_IFLNK)
