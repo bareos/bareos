@@ -41,9 +41,6 @@ check_type_size(intptr_t INTPTR_T)
 check_type_size(uintptr_t UINTPTR_T)
 check_type_size(u_int HAVE_U_INT)
 
-check_type_size(major_t MAJOR_T)
-check_type_size(minor_t MINOR_T)
-
 if(NOT ${MAJOR_T})
   set(major_t int)
 endif()

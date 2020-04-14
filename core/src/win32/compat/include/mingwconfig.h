@@ -21,7 +21,6 @@
 #define HAVE_U_INT 1
 #define HAVE_INTXX_T 1
 #define HAVE_U_INTXX_T 1
-/* #undef HAVE_UINTXX_T */
 #define HAVE_INT64_T 1
 #define HAVE_U_INT64_T 1
 #define HAVE_UINT64_T 1
@@ -194,10 +193,6 @@
 /* Define to 1 if you have the <sys/mtio.h> header file. */
 #define HAVE_SYS_MTIO_H 1
 
-/* Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'.
- */
-/* #undef HAVE_SYS_NDIR_H */
-
 /* Define to 1 if you have the <sys/select.h> header file. */
 #define HAVE_SYS_SELECT_H 1
 
@@ -251,17 +246,6 @@
 /* Define to 1 if you have the <zlib.h> header file. */
 #define HAVE_ZLIB_H 1
 
-/* Define to 1 if `major', `minor', and `makedev' are declared in <mkdev.h>.
- */
-/* #undef MAJOR_IN_MKDEV */
-
-/* Define to 1 if `major', `minor', and `makedev' are declared in
-   <sysmacros.h>. */
-/* #undef MAJOR_IN_SYSMACROS */
-
-/* Define to 1 if your C compiler doesn't accept -c and -o together. */
-/* #undef NO_MINUS_C_MINUS_O */
-
 /* Define to the address where bug reports for this package should be sent. */
 #define PACKAGE_BUGREPORT ""
 
@@ -300,15 +284,6 @@
 
 /* The size of a `short int', as computed by sizeof. */
 #define SIZEOF_SHORT_INT 2
-
-/* If using the C implementation of alloca, define if you know the
-   direction of stack growth for your system; otherwise it will be
-   automatically deduced at run-time.
-        STACK_DIRECTION > 0 => grows toward higher addresses
-        STACK_DIRECTION < 0 => grows toward lower addresses
-        STACK_DIRECTION = 0 => direction of growth unknown */
-/* #undef STACK_DIRECTION */
-
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1

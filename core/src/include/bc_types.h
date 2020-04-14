@@ -54,33 +54,33 @@ typedef signed short int16_t;
 typedef signed char int8_t;
 typedef int __daddr_t;
 
-#if !defined(HAVE_MINGW)
+#  if !defined(HAVE_MINGW)
 typedef long int32_t;
 typedef float float32_t;
 typedef double float64_t;
-#endif
+#  endif
 
-#if !defined(_MSC_VER) || (_MSC_VER < 1400)  // VC8+
-#ifndef _TIME_T_DEFINED
-#define _TIME_T_DEFINED
+#  if !defined(_MSC_VER) || (_MSC_VER < 1400)  // VC8+
+#    ifndef _TIME_T_DEFINED
+#      define _TIME_T_DEFINED
 typedef long time_t;
-#endif
-#endif
+#    endif
+#  endif
 
-#if __STDC__ && !defined(HAVE_MINGW)
+#  if __STDC__ && !defined(HAVE_MINGW)
 typedef _dev_t dev_t;
-#if !defined(HAVE_WXCONSOLE)
+#    if !defined(HAVE_WXCONSOLE)
 typedef __int64 ino_t;
-#endif
-#endif
+#    endif
+#  endif
 
 typedef UINT32 u_int32_t;
 typedef unsigned char u_int8_t;
 typedef unsigned short u_int16_t;
 
-#if !defined(HAVE_MINGW)
-#undef uint32_t
-#endif
+#  if !defined(HAVE_MINGW)
+#    undef uint32_t
+#  endif
 #endif /* HAVE_WIN32 */
 
 /**
@@ -110,116 +110,109 @@ typedef unsigned int u_int;
 #endif
 
 #ifndef HAVE_INTXX_T
-#if (SIZEOF_CHAR == 1)
+#  if (SIZEOF_CHAR == 1)
 typedef signed char int8_t;
-#else
-#error "8 bit int type not found."
-#endif
-#if (SIZEOF_SHORT_INT == 2)
+#  else
+#    error "8 bit int type not found."
+#  endif
+#  if (SIZEOF_SHORT_INT == 2)
 typedef short int int16_t;
-#else
-#error "16 bit int type not found."
-#endif
-#if (SIZEOF_INT == 4)
+#  else
+#    error "16 bit int type not found."
+#  endif
+#  if (SIZEOF_INT == 4)
 typedef int int32_t;
-#else
-#error "32 bit int type not found."
-#endif
+#  else
+#    error "32 bit int type not found."
+#  endif
 #endif
 
 /* If sys/types.h does not supply u_intXX_t, supply them ourselves */
-#ifndef HAVE_U_INTXX_T
-#ifdef HAVE_UINTXX_T
-typedef uint8_t u_int8_t;
-typedef uint16_t u_int16_t;
-typedef uint32_t u_int32_t;
-#define HAVE_U_INTXX_T 1
-#else
-#if (SIZEOF_CHAR == 1)
+#ifdef HAVE_U_INTXX_T
+#  if (SIZEOF_CHAR == 1)
 typedef unsigned char u_int8_t;
-#else
-#error "8 bit int type not found. Required!"
-#endif
-#if (SIZEOF_SHORT_INT == 2)
+#  else
+#    error "8 bit int type not found. Required!"
+#  endif
+#  if (SIZEOF_SHORT_INT == 2)
 typedef unsigned short int u_int16_t;
-#else
-#error "16 bit int type not found. Required!"
-#endif
-#if (SIZEOF_INT == 4)
+#  else
+#    error "16 bit int type not found. Required!"
+#  endif
+#  if (SIZEOF_INT == 4)
 typedef unsigned int u_int32_t;
-#else
-#error "32 bit int type not found. Required!"
-#endif
-#endif
+#  else
+#    error "32 bit int type not found. Required!"
+#  endif
 #endif
 
 /* 64-bit types */
 #ifndef HAVE_INT64_T
-#if (SIZEOF_LONG_LONG_INT == 8)
+#  if (SIZEOF_LONG_LONG_INT == 8)
 typedef long long int int64_t;
-#define HAVE_INT64_T 1
-#else
-#if (SIZEOF_LONG_INT == 8)
+#    define HAVE_INT64_T 1
+#  else
+#    if (SIZEOF_LONG_INT == 8)
 typedef long int int64_t;
-#define HAVE_INT64_T 1
-#endif
-#endif
+#      define HAVE_INT64_T 1
+#    endif
+#  endif
 #endif
 
 #ifndef HAVE_INTMAX_T
-#ifdef HAVE_INT64_T
+#  ifdef HAVE_INT64_T
 typedef int64_t intmax_t;
-#else
-#error "64 bit type not found. Required!"
-#endif
+#  else
+#    error "64 bit type not found. Required!"
+#  endif
 #endif
 
 #ifndef HAVE_U_INT64_T
-#if (SIZEOF_LONG_LONG_INT == 8)
+#  if (SIZEOF_LONG_LONG_INT == 8)
 typedef unsigned long long int u_int64_t;
-#define HAVE_U_INT64_T 1
-#else
-#if (SIZEOF_LONG_INT == 8)
+#    define HAVE_U_INT64_T 1
+#  else
+#    if (SIZEOF_LONG_INT == 8)
 typedef unsigned long int u_int64_t;
-#define HAVE_U_INT64_T 1
-#else
-#error "64 bit type not found. Required!"
-#endif
-#endif
+#      define HAVE_U_INT64_T 1
+#    else
+#      error "64 bit type not found. Required!"
+#    endif
+#  endif
 #endif
 
 #ifndef HAVE_U_INTMAX_T
-#ifdef HAVE_U_INT64_T
+#  ifdef HAVE_U_INT64_T
 typedef u_int64_t u_intmax_t;
-#else
-#error "64 bit type not found. Required!"
-#endif
+#  else
+#    error "64 bit type not found. Required!"
+#  endif
 #endif
 
 #ifndef HAVE_INTPTR_T
-#define HAVE_INTPTR_T 1
-#if (SIZEOF_INT_P == 4)
+#  define HAVE_INTPTR_T 1
+#  if (SIZEOF_INT_P == 4)
 typedef int32_t intptr_t;
-#else
-#if (SIZEOF_INT_P == 8)
+#  else
+#    if (SIZEOF_INT_P == 8)
 typedef int64_t intptr_t;
-#else
-#error "Can't find sizeof pointer. Required!"
-#endif
-#endif
+#    else
+#      error "Can't find sizeof pointer. Required!"
+#    endif
+#  endif
 #endif
 
 #ifndef HAVE_UINTPTR_T
-#define HAVE_UINTPTR_T 1
-#if (SIZEOF_INT_P == 4)
+#  define HAVE_UINTPTR_T 1
+#  if (SIZEOF_INT_P == 4)
 typedef uint32_t uintptr_t;
-#else
-#if (SIZEOF_INT_P == 8)
+#  else
+#    if (SIZEOF_INT_P == 8)
 typedef uint64_t uintptr_t;
-#else
-#error "Can't find sizeof pointer. Required!"
-#endif
-#endif
+#    else
+#      error "Can't find sizeof pointer. Required!"
+#    endif
+#  endif
 #endif
 
 /* Limits for the above types. */
@@ -249,11 +242,11 @@ typedef float float32_t;
 
 /* Define the uint versions actually used in Bareos */
 #ifndef uint8_t
-#define uint8_t u_int8_t
-#define uint16_t u_int16_t
-#define uint32_t u_int32_t
-#define uint64_t u_int64_t
-#define uintmax_t u_intmax_t
+#  define uint8_t u_int8_t
+#  define uint16_t u_int16_t
+#  define uint32_t u_int32_t
+#  define uint64_t u_int64_t
+#  define uintmax_t u_intmax_t
 #endif
 
 /* Bareos time -- Unix time with microseconds */
@@ -262,17 +255,17 @@ typedef float float32_t;
 #define utime_t int64_t
 
 #ifndef HAVE_SOCKLEN_T
-#define socklen_t int
+#  define socklen_t int
 #endif
 
 #ifdef HAVE_WIN32
-#define sockopt_val_t const char*
+#  define sockopt_val_t const char*
 #else
-#ifdef HAVE_OLD_SOCKOPT
-#define sockopt_val_t char*
-#else
-#define sockopt_val_t void*
-#endif
+#  ifdef HAVE_OLD_SOCKOPT
+#    define sockopt_val_t char*
+#  else
+#    define sockopt_val_t void*
+#  endif
 #endif /* HAVE_WIN32 */
 
 /**
@@ -289,10 +282,10 @@ enum
 };
 
 #ifndef MAX
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#  define MAX(a, b) ((a) > (b) ? (a) : (b))
 #endif
 #ifndef MIN
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#  define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
 #endif /* BAREOS_INCLUDE_BC_TYPES_H_ */

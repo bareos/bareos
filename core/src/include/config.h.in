@@ -325,9 +325,6 @@ extern char WIN_VERSION[];
 // Define to 1 if you have the <inttypes.h> header file
 #cmakedefine HAVE_INTTYPES_H @HAVE_INTTYPES_H@
 
-// Define if <inttypes.h> exists, doesn't clash with <sys/types.h>, and declares uintmax_t
-#cmakedefine HAVE_INTTYPES_H_WITH_UINTMAX @HAVE_INTTYPES_H_WITH_UINTMAX@
-
 // Define to 1 if you have intxx_t
 #cmakedefine HAVE_INTXX_T @HAVE_INTXX_T@
 
@@ -595,9 +592,6 @@ extern char WIN_VERSION[];
 // Define to 1 if you have the `strncpy' function
 #cmakedefine HAVE_STRNCPY @HAVE_STRNCPY@
 
-// Define to 1 if you have the `strtoul' function
-#cmakedefine HAVE_STRTOUL @HAVE_STRTOUL@
-
 // Define to 1 if `st_blksize' is a member of `struct stat'
 #cmakedefine HAVE_STRUCT_STAT_ST_BLKSIZE @HAVE_STRUCT_STAT_ST_BLKSIZE@
 
@@ -664,14 +658,8 @@ extern char WIN_VERSION[];
 // Define to 1 if you have the <sys/mtio.h> header file
 #cmakedefine HAVE_SYS_MTIO_H @HAVE_SYS_MTIO_H@
 
-// Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'
-#cmakedefine HAVE_SYS_NDIR_H @HAVE_SYS_NDIR_H@
-
 // Define to 1 if you have the <sys/nvpair.h> header file
 #cmakedefine HAVE_SYS_NVPAIR_H @HAVE_SYS_NVPAIR_H@
-
-// Define to 1 if you have the <sys/param.h> header file
-#cmakedefine HAVE_SYS_PARAM_H @HAVE_SYS_PARAM_H@
 
 // Define to 1 if you have the <sys/poll.h> header file
 #cmakedefine HAVE_SYS_POLL_H @HAVE_SYS_POLL_H@
@@ -737,9 +725,6 @@ extern char WIN_VERSION[];
 // Define to 1 if tray-monitor Qt4 GUI support should be enabled
 #cmakedefine HAVE_TRAYMONITOR @HAVE_TRAYMONITOR@
 
-// Define to 1 if you have the `tsearch' function
-#cmakedefine HAVE_TSEARCH @HAVE_TSEARCH@
-
 // Define to 1 if compiler has typeof
 #cmakedefine HAVE_TYPEOF @HAVE_TYPEOF@
 
@@ -750,14 +735,8 @@ extern char WIN_VERSION[];
 // Define to 1 if you have the <ucontext.h> header file
 #cmakedefine HAVE_UCONTEXT_H @HAVE_UCONTEXT_H@
 
-// Define if you have the 'uintmax_t' type in <stdint.h> or <inttypes.h>
-#cmakedefine HAVE_UINTMAX_T @HAVE_UINTMAX_T@
-
 // Define to 1 if the system has the type `uintptr_t'
 #cmakedefine HAVE_UINTPTR_T @HAVE_UINTPTR_T@
-
-// Define to 1 if you have uintxx_t
-#cmakedefine HAVE_UINTXX_T @HAVE_UINTXX_T@
 
 // Define to 1 if you have the <umem.h> header file
 #cmakedefine HAVE_UMEM_H @HAVE_UMEM_H@
@@ -767,9 +746,6 @@ extern char WIN_VERSION[];
 
 // Define to 1 if you have the `unlinkat' function
 #cmakedefine HAVE_UNLINKAT @HAVE_UNLINKAT@
-
-// Define if you have the 'unsigned long long' type
-#cmakedefine HAVE_UNSIGNED_LONG_LONG @HAVE_UNSIGNED_LONG_LONG@
 
 // Define to 1 if you have the <scsi/uscsi_all.h> header file
 #cmakedefine HAVE_USCSI_ALL_H @HAVE_USCSI_ALL_H@
@@ -810,56 +786,17 @@ extern char WIN_VERSION[];
 // Define to 1 if you have the `vsnprintf' function
 #cmakedefine HAVE_VSNPRINTF @HAVE_VSNPRINTF@
 
-// Define if you have the 'wchar_t' type
-#cmakedefine HAVE_WCHAR_T @HAVE_WCHAR_T@
-
-// Define to 1 if you have the `wcslen' function
-#cmakedefine HAVE_WCSLEN @HAVE_WCSLEN@
-
-// Define if you have the 'wint_t' type
-#cmakedefine HAVE_WINT_T @HAVE_WINT_T@
-
 // Extended Attributes support
 #cmakedefine HAVE_XATTR @HAVE_XATTR@
 
 // Define to 1 if you have the <zlib.h> header file
 #cmakedefine HAVE_ZLIB_H @HAVE_ZLIB_H@
 
-// Define to 1 if you have the `__argz_count' function
-#cmakedefine HAVE___ARGZ_COUNT @HAVE___ARGZ_COUNT@
-
-// Define to 1 if you have the `__argz_next' function
-#cmakedefine HAVE___ARGZ_NEXT @HAVE___ARGZ_NEXT@
-
-// Define to 1 if you have the `__argz_stringify' function
-#cmakedefine HAVE___ARGZ_STRINGIFY @HAVE___ARGZ_STRINGIFY@
-
-// Define to 1 if you have the `__fsetlocking' function
-#cmakedefine HAVE___FSETLOCKING @HAVE___FSETLOCKING@
-
-// Define as const if the declaration of iconv() needs const
-#cmakedefine ICONV_CONST @ICONV_CONST@
-
-// Define if integer division by zero raises signal SIGFPE
-#cmakedefine INTDIV0_RAISES_SIGFPE @INTDIV0_RAISES_SIGFPE@
-
 // Where are shared libs stored
 #cmakedefine LIBDIR @LIBDIR@
 
 // Where are locale files stored
 #cmakedefine LOCALEDIR @LOCALEDIR@
-
-// Define to the sub-directory where libtool stores uninstalled libraries
-#cmakedefine LT_OBJDIR @LT_OBJDIR@
-
-// Define to 1 if `major', `minor', and `makedev' are declared in <mkdev.h>
-#cmakedefine MAJOR_IN_MKDEV @MAJOR_IN_MKDEV@
-
-// Define to 1 if `major', `minor', and `makedev' are declared in <sysmacros.h>
-#cmakedefine MAJOR_IN_SYSMACROS @MAJOR_IN_SYSMACROS@
-
-// Define to 1 if your C compiler doesn't accept -c and -o together
-#cmakedefine NO_MINUS_C_MINUS_O @NO_MINUS_C_MINUS_O@
 
 // Define to the address where bug reports for this package should be sent
 #cmakedefine PACKAGE_BUGREPORT @PACKAGE_BUGREPORT@
@@ -872,9 +809,6 @@ extern char WIN_VERSION[];
 
 // Define to the home page for this package
 #cmakedefine PACKAGE_URL @PACKAGE_URL@
-
-// Define if <inttypes.h> exists and defines unusable PRI* macros
-#cmakedefine PRI_MACROS_BROKEN @PRI_MACROS_BROKEN@
 
 // Define if you need function prototypes
 #cmakedefine PROTOTYPES @PROTOTYPES@
@@ -907,20 +841,6 @@ extern char WIN_VERSION[];
    it */
 #cmakedefine SIZE_MAX @SIZE_MAX@
 
-// Define to 1 if you want Smartalloc enabled
-#cmakedefine SMARTALLOC @SMARTALLOC@
-
-/* If using the C implementation of alloca, define if you know the
-   direction of stack growth for your system; otherwise it will be
-   automatically deduced at runtime
-	STACK_DIRECTION > 0 => grows toward higher addresses
-	STACK_DIRECTION < 0 => grows toward lower addresses
-	STACK_DIRECTION = 0 => direction of growth unknown */
-#cmakedefine STACK_DIRECTION @STACK_DIRECTION@
-
-// Define to 1 if the `S_IS*' macros in <sys/stat.h> do not work properly
-#cmakedefine STAT_MACROS_BROKEN @STAT_MACROS_BROKEN@
-
 // Define to 1 if you have the ANSI C header files
 #cmakedefine STDC_HEADERS @STDC_HEADERS@
 
@@ -939,26 +859,8 @@ extern char WIN_VERSION[];
 // Define to 1 to use the thr_setconcurrency function
 #cmakedefine USE_THR_SETCONCURRENCY @USE_THR_SETCONCURRENCY@
 
-/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
-   significant byte first (like Motorola and SPARC, unlike Intel) */
-#if defined AC_APPLE_UNIVERSAL_BUILD
-# if defined __BIG_ENDIAN__
-#  define WORDS_BIGENDIAN 1
-# endif
-#else
-# ifndef WORDS_BIGENDIAN
-#  undef WORDS_BIGENDIAN
-# endif
-#endif
-
-// Define to 1 if the X Window System is missing or not being used
-#cmakedefine X_DISPLAY_MISSING @X_DISPLAY_MISSING@
-
 // Number of bits in a file offset, on hosts where this is settable
 #cmakedefine _FILE_OFFSET_BITS @_FILE_OFFSET_BITS@
-
-// Needed on HP-UX/g++ systems to support long long ints (int64)
-#cmakedefine _INCLUDE_LONGLONG @_INCLUDE_LONGLONG@
 
 // Define to make fseeko etc. visible, on some hosts
 #cmakedefine _LARGEFILE_SOURCE @_LARGEFILE_SOURCE@
@@ -975,75 +877,11 @@ extern char WIN_VERSION[];
 // Directory for daemon files
 #cmakedefine _PATH_BAREOS_WORKINGDIR @_PATH_BAREOS_WORKINGDIR@
 
-// Define to empty if `const' does not conform to ANSI C
-#cmakedefine const @const@
-
-// Define to `long' if <sys/types.h> does not define
-#cmakedefine daddr_t @daddr_t@
-
-// Define to `unsigned long' if <sys/types.h> does not define
-#cmakedefine dev_t @dev_t@
-
-// Define to `int' if <sys/types.h> doesn't define
-#cmakedefine gid_t @gid_t@
-
-/* Define to `__inline__' or `__inline' if that's what the C compiler
-   calls it, or to nothing if 'inline' is not supported under any name.  */
-#ifndef __cplusplus
-# undef inline
-#endif
-
-// Define to `unsigned long' if <sys/types.h> does not define
-#cmakedefine ino_t @ino_t@
-
-/* Define to the type of a signed integer type wide enough to hold a pointer,
-   if such a type exists, and if the system does not define it */
-#cmakedefine intptr_t @intptr_t@
-
 // Set to correct scanf value for long long int
 #cmakedefine lld @lld@
 
 // Set to correct scanf value for long long unsigned int
 #cmakedefine llu @llu@
-
-// Define to `int' if <sys/types.h> does not define
-#cmakedefine major_t @major_t@
-
-// Define to `int' if <sys/types.h> does not define
-#cmakedefine minor_t @minor_t@
-
-// Define to `int' if <sys/types.h> does not define
-#cmakedefine mode_t @mode_t@
-
-// Define to `long int' if <sys/types.h> does not define
-#cmakedefine off_t @off_t@
-
-// Define to `int' if <sys/types.h> does not define
-#cmakedefine pid_t @pid_t@
-
-/* Define as the type of the result of subtracting two pointers, if the system
-   doesn't define it */
-#cmakedefine ptrdiff_t @ptrdiff_t@
-
-// Define to empty if the C compiler doesn't support this keyword
-#cmakedefine signed @signed@
-
-// Define to `unsigned int' if <sys/types.h> does not define
-#cmakedefine size_t @size_t@
-
-// Define to `int' if <sys/types.h> does not define
-#cmakedefine ssize_t @ssize_t@
-
-// Define to `int' if <sys/types.h> doesn't define
-#cmakedefine uid_t @uid_t@
-
-/* Define to unsigned long or unsigned long long if <stdint.h> and
-   <inttypes.h> don't define */
-#cmakedefine uintmax_t @uintmax_t@
-
-/* Define to the type of an unsigned integer type wide enough to hold a
-   pointer, if such a type exists, and if the system does not define it */
-#cmakedefine uintptr_t @uintptr_t@
 
 #define HOST_OS "@host@@post_host@"
 #define DISTNAME "@DISTNAME@"
