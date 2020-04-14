@@ -235,9 +235,6 @@ extern char WIN_VERSION[];
 // Define to 1 if you have the fcntl F_CLOSEM flag
 #cmakedefine HAVE_FCNTL_F_CLOSEM @HAVE_FCNTL_F_CLOSEM@
 
-// Define to 1 if you have the <fcntl.h> header file
-#cmakedefine HAVE_FCNTL_H @HAVE_FCNTL_H@
-
 // Define to 1 if you have the `fdatasync' function
 #cmakedefine HAVE_FDATASYNC @HAVE_FDATASYNC@
 
@@ -322,9 +319,6 @@ extern char WIN_VERSION[];
 // Define to 1 if the system has the type `intptr_t'
 #cmakedefine HAVE_INTPTR_T @HAVE_INTPTR_T@
 
-// Define to 1 if you have the <inttypes.h> header file
-#cmakedefine HAVE_INTTYPES_H @HAVE_INTTYPES_H@
-
 // Define to 1 if you have intxx_t
 #cmakedefine HAVE_INTXX_T @HAVE_INTXX_T@
 
@@ -381,9 +375,6 @@ extern char WIN_VERSION[];
 
 // Define to 1 if you have the `listxattr' function
 #cmakedefine HAVE_LISTXATTR @HAVE_LISTXATTR@
-
-// Little Endian
-#cmakedefine HAVE_LITTLE_ENDIAN @HAVE_LITTLE_ENDIAN@
 
 // Define to 1 if you have the `llistea' function
 #cmakedefine HAVE_LLISTEA @HAVE_LLISTEA@

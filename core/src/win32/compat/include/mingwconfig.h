@@ -57,9 +57,6 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #define HAVE_DLFCN_H 1
 
-/* Define to 1 if you have the <fcntl.h> header file. */
-#define HAVE_FCNTL_H 1
-
 /* Define to 1 if you have the `getmntent' function. */
 /*#define HAVE_GETMNTENT 1 */
 
@@ -68,9 +65,6 @@
 
 /* Define to 1 if you have the <grp.h> header file. */
 /*#define HAVE_GRP_H 1*/
-
-/* Define to 1 if you have the <inttypes.h> header file. */
-#define HAVE_INTTYPES_H 1
 
 /* Define to 1 if you have the `lchown' function. */
 #define HAVE_LCHOWN 1
@@ -176,9 +170,6 @@
 
 /* Use long unsigned int for ioctl request */
 #define HAVE_IOCTL_ULINT_REQUEST
-
-/* For now, we only support Little endian on Win32 */
-#define HAVE_LITTLE_ENDIAN 1
 
 /* Number of bits in a file offset, on hosts where this is settable. */
 #define _FILE_OFFSET_BITS 64
