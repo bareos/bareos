@@ -556,7 +556,6 @@ int PoolMem::bsprintf(const char* fmt, ...)
   return len;
 }
 
-#ifdef HAVE_VA_COPY
 int PoolMem::Bvsprintf(const char* fmt, va_list arg_ptr)
 {
   int maxlen, len;
@@ -573,19 +572,3 @@ again:
   }
   return len;
 }
-
-#else /* no va_copy() -- brain damaged version of variable arguments */
-
-int PoolMem::Bvsprintf(const char* fmt, va_list arg_ptr)
-{
-  int maxlen, len;
-
-  ReallocPm(5000);
-  maxlen = MaxSize() - 1;
-  len = ::Bvsnprintf(mem, maxlen, fmt, arg_ptr);
-  if (len < 0 || len >= maxlen) {
-    if (len >= maxlen) { len = -len; }
-  }
-  return len;
-}
-#endif

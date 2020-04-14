@@ -1649,7 +1649,6 @@ bool printit(void* ctx, const char* msg)
  * agent, so we are being called from BAREOS core. In
  * that case direct the messages to the Job.
  */
-#ifdef HAVE_VA_COPY
 void bmsg(UaContext* ua, const char* fmt, va_list arg_ptr)
 {
   BareosSocket* bs = ua->UA_sock;
@@ -1679,39 +1678,6 @@ again:
     FreePoolMemory(msg);
   }
 }
-
-#else /* no va_copy() -- brain damaged version of variable arguments */
-
-void bmsg(UaContext* ua, const char* fmt, va_list arg_ptr)
-{
-  BareosSocket* bs = ua->UA_sock;
-  int maxlen, len;
-  POOLMEM* msg = NULL;
-
-  if (bs) { msg = bs->msg; }
-  if (!msg) { msg = GetMemory(5000); }
-
-  maxlen = SizeofPoolMemory(msg) - 1;
-  if (maxlen < 4999) {
-    msg = ReallocPoolMemory(msg, 5000);
-    maxlen = 4999;
-  }
-  len = Bvsnprintf(msg, maxlen, fmt, arg_ptr);
-  if (len < 0 || len >= maxlen) {
-    PmStrcpy(msg, _("Message too long to display.\n"));
-    len = strlen(msg);
-  }
-
-  if (bs) {
-    bs->msg = msg;
-    bs->message_length = len;
-    bs->send();
-  } else { /* No UA, send to Job */
-    Jmsg(ua->jcr, M_INFO, 0, "%s", msg);
-    FreePoolMemory(msg);
-  }
-}
-#endif
 
 void bsendmsg(void* ctx, const char* fmt, ...)
 {

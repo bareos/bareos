@@ -103,9 +103,6 @@ extern char WIN_VERSION[];
 // Define to 1 if you are running AIX
 #cmakedefine HAVE_AIX_OS @HAVE_AIX_OS@
 
-// Define to 1 if you have `alloca', as a function or macro
-#cmakedefine HAVE_ALLOCA @HAVE_ALLOCA@
-
 // Define to 1 if you have <alloca.h> and it should be used (not on Ultrix)
 #cmakedefine HAVE_ALLOCA_H @HAVE_ALLOCA_H@
 
@@ -576,9 +573,6 @@ extern char WIN_VERSION[];
 
 // Define to 1 if you have u_intxx_t
 #cmakedefine HAVE_U_INTXX_T @HAVE_U_INTXX_T@
-
-// Set if va_copy exists
-#cmakedefine HAVE_VA_COPY @HAVE_VA_COPY@
 
 // Define to 1 if you have the `vsnprintf' function
 #cmakedefine HAVE_VSNPRINTF @HAVE_VSNPRINTF@

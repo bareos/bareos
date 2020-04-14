@@ -28,9 +28,6 @@ if("${LCHMOD_IS_A_STUB1}" OR "${LCHMOD_IS_A_STUB2}")
 endif()
 
 check_symbol_exists(poll poll.h HAVE_POLL)
-check_symbol_exists(alloca alloca.h HAVE_ALLOCA)
-
-check_symbol_exists(va_copy stdarg.h HAVE_VA_COPY)
 
 cmake_push_check_state()
 set(CMAKE_REQUIRED_LIBRARIES ${RADOS_LIBRARIES})
