@@ -231,7 +231,4 @@
 /* Define to 1 if you have the `glob' function. */
 #define HAVE_GLOB 1
 
-/* Define to 1 if you have the <glob.h> header file. */
-#define HAVE_GLOB_H 1
-
 #endif /* __MINGWNCONFIG_H */

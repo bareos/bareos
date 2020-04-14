@@ -265,9 +265,6 @@ extern char WIN_VERSION[];
 // Define to 1 if you have the `glob' function
 #cmakedefine HAVE_GLOB @HAVE_GLOB@
 
-// Define to 1 if you have the <glob.h> header file
-#cmakedefine HAVE_GLOB_H @HAVE_GLOB_H@
-
 // Define to 1 if you have the <grp.h> header file
 #cmakedefine HAVE_GRP_H @HAVE_GRP_H@
 

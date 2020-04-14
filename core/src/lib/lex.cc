@@ -31,10 +31,7 @@
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "lib/berrno.h"
-
-#ifdef HAVE_GLOB_H
 #include <glob.h>
-#endif
 
 extern int debug_level;
 
