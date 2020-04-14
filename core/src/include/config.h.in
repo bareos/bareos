@@ -187,9 +187,6 @@ extern char WIN_VERSION[];
 // Define to 1 if you have elasto lib
 #cmakedefine HAVE_ELASTO @HAVE_ELASTO@
 
-// Set if you have an Embedded MySQL Database
-#cmakedefine HAVE_EMBEDDED_MYSQL @HAVE_EMBEDDED_MYSQL@
-
 // Define to 1 if OpenSSL library has ENGINE_load_pk11 available
 #cmakedefine HAVE_ENGINE_LOAD_PK11 @HAVE_ENGINE_LOAD_PK11@
 

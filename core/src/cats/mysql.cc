@@ -170,9 +170,6 @@ bool BareosDbMysql::OpenDatabase(JobControlRecord* jcr)
   /*
    * Connect to the database
    */
-#ifdef xHAVE_EMBEDDED_MYSQL
-// mysql_server_init(0, NULL, NULL);
-#endif
   mysql_init(&instance_);
 
   Dmsg0(50, "mysql_init done\n");
@@ -251,10 +248,6 @@ void BareosDbMysql::CloseDatabase(JobControlRecord* jcr)
     if (connected_) {
       Dmsg1(100, "close db=%p\n", db_handle_);
       mysql_close(&instance_);
-
-#ifdef xHAVE_EMBEDDED_MYSQL
-//       mysql_server_end();
-#endif
     }
     if (RwlIsInit(&lock_)) { RwlDestroy(&lock_); }
     FreePoolMemory(errmsg);
