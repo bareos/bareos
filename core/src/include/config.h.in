@@ -454,9 +454,6 @@ extern char WIN_VERSION[];
 // Define to 1 if OpenSSL library is available
 #cmakedefine HAVE_OPENSSL @HAVE_OPENSSL@
 
-// Define to 1 if the OpenSSL library is export-contrained to 128bit ciphers
-#cmakedefine HAVE_OPENSSL_EXPORT_LIBRARY @HAVE_OPENSSL_EXPORT_LIBRARY@
-
 // Define to 1 if you are running Tru64
 #cmakedefine HAVE_OSF1_OS @HAVE_OSF1_OS@
 
@@ -508,23 +505,11 @@ extern char WIN_VERSION[];
 // Define to 1 if you have the <regex.h> header file
 #cmakedefine HAVE_REGEX_H @HAVE_REGEX_H@
 
-// Define to 1 if sa_len field exists in struct sockaddr
-/#cmakedefine HAVE_SA_LEN @HAVE_SA_LEN@
-
-// Define to 1 if you have the <scsi/scsi.h> header file
-#cmakedefine HAVE_SCSI_SCSI_H @HAVE_SCSI_SCSI_H@
-
-// Define to 1 if you have the <scsi/sg.h> header file
-#cmakedefine HAVE_SCSI_SG_H @HAVE_SCSI_SG_H@
-
 // Define to 1 if you have the `setea' function
 #cmakedefine HAVE_SETEA @HAVE_SETEA@
 
 // Define to 1 if you have the `setenv' function
 #cmakedefine HAVE_SETENV @HAVE_SETENV@
-
-// Define to 1 if you have the `setlocale' function
-#cmakedefine HAVE_SETLOCALE @HAVE_SETLOCALE@
 
 // Define to 1 if you have the `setproplist' function
 #cmakedefine HAVE_SETPROPLIST @HAVE_SETPROPLIST@
@@ -537,9 +522,6 @@ extern char WIN_VERSION[];
 
 // Define to 1 if the SHA-2 family of digest algorithms is available
 #cmakedefine HAVE_SHA2 @HAVE_SHA2@
-
-// Define to 1 if you have the `signal' function
-#cmakedefine HAVE_SIGNAL @HAVE_SIGNAL@
 
 // Define to 1 if you have the `sizeof_proplist_entry' function
 #cmakedefine HAVE_SIZEOF_PROPLIST_ENTRY @HAVE_SIZEOF_PROPLIST_ENTRY@

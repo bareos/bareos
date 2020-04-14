@@ -102,9 +102,6 @@
 /* Define to 1 if you have the `putenv' function. */
 #define HAVE_PUTENV 1
 
-/* Define to 1 if you have the `setlocale' function. */
-#undef HAVE_SETLOCALE
-
 /* Define to 1 if translation of program messages to the user's native
    language is requested. */
 #if (defined _MSC_VER) && (_MSC_VER >= 1400)  // VC8+
@@ -116,9 +113,6 @@
 
 #undef LOCALEDIR
 #define LOCALEDIR "."
-
-/* Define to 1 if you have the `signal' function. */
-/*#define HAVE_SIGNAL 1 */
 
 /* Define to 1 if you have the `snprintf' function. */
 #define HAVE_SNPRINTF 1

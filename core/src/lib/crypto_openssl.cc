@@ -1073,7 +1073,6 @@ CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher, alist* pubkeys)
       ec = EVP_aes_256_cbc();
       break;
 #endif
-#endif /* HAVE_OPENSSL_EXPORT_LIBRARY */
 #endif /* OPENSSL_NO_AES */
 #ifndef OPENSSL_NO_CAMELLIA
 #ifdef NID_camellia_128_cbc
@@ -1084,7 +1083,6 @@ CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher, alist* pubkeys)
       ec = EVP_camellia_128_cbc();
       break;
 #endif
-#ifndef HAVE_OPENSSL_EXPORT_LIBRARY
 #ifdef NID_camellia_192_cbc
     case CRYPTO_CIPHER_CAMELLIA_192_CBC:
       /* Camellia 192 bit CBC */
