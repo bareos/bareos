@@ -856,9 +856,6 @@ extern char WIN_VERSION[];
 // Define to 1 if DB batch insert code enabled
 #cmakedefine USE_BATCH_FILE_INSERT @USE_BATCH_FILE_INSERT@
 
-// Define to 1 to use the thr_setconcurrency function
-#cmakedefine USE_THR_SETCONCURRENCY @USE_THR_SETCONCURRENCY@
-
 // Number of bits in a file offset, on hosts where this is settable
 #cmakedefine _FILE_OFFSET_BITS @_FILE_OFFSET_BITS@
 

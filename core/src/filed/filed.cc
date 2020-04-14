@@ -270,8 +270,6 @@ int main(int argc, char* argv[])
     TerminateFiled(0);
   }
 
-  SetThreadConcurrency(me->MaxConcurrentJobs * 2 + 10);
-
   /* Maximum 1 daemon at a time */
   CreatePidFile(me->pid_directory, "bareos-fd",
                 GetFirstPortHostOrder(me->FDaddrs));

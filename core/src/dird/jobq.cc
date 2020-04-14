@@ -238,7 +238,6 @@ int JobqAdd(jobq_t* jq, JobControlRecord* jcr)
   Dmsg3(2300, "JobqAdd jobid=%d jcr=0x%x UseCount=%d\n", jcr->JobId, jcr,
         jcr->UseCount());
   if (!JobCanceled(jcr) && wtime > 0) {
-    SetThreadConcurrency(jq->max_workers + 2);
     sched_pkt = (wait_pkt*)malloc(sizeof(wait_pkt));
     sched_pkt->jcr = jcr;
     sched_pkt->jq = jq;
@@ -359,7 +358,6 @@ static int StartServer(jobq_t* jq)
 
   if (jq->num_workers < jq->max_workers) {
     Dmsg0(2300, "Create worker thread\n");
-    SetThreadConcurrency(jq->max_workers + 1);
     if ((status = pthread_create(&id, &jq->attr, jobq_server, (void*)jq)) !=
         0) {
       BErrNo be;

@@ -548,28 +548,6 @@ int msg_(const char* file, int line, POOLMEM*& pool_buf, const char* fmt, ...);
 #endif /* __digital__ && __unix__ */
 #endif /* HAVE_WIN32 */
 
-#ifdef HAVE_SUN_OS
-/**
- * On Solaris 2.5/2.6/7 and 8, threads are not timesliced by default,
- * so we need to explictly increase the concurrency level.
- */
-#ifdef USE_THR_SETCONCURRENCY
-#include <thread.h>
-#define SetThreadConcurrency(x) ThrSetconcurrency(x)
-extern int ThrSetconcurrency(int);
-#define SunOS 1
-#else
-#define SetThreadConcurrency(x)
-#endif
-
-#else
-/**
- * Not needed on most systems
- */
-#define SetThreadConcurrency(x)
-
-#endif
-
 #ifdef HAVE_DARWIN_OS
 /* Apparently someone forgot to wrap Getdomainname as a C function */
 #ifdef __cplusplus

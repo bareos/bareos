@@ -298,11 +298,6 @@ int main(int argc, char* argv[])
 
   SetJcrInThreadSpecificData(nullptr);
 
-  /*
-   * Make sure on Solaris we can run concurrent, watch dog + servers + misc
-   */
-  SetThreadConcurrency(me->MaxConcurrentJobs * 2 + 4);
-
   LoadSdPlugins(me->plugin_directory, me->plugin_names);
 
   CleanUpOldFiles();

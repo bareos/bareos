@@ -371,8 +371,6 @@ int main(int argc, char* argv[])
   }
 
   SetJcrInThreadSpecificData(nullptr);
-  SetThreadConcurrency(me->MaxConcurrentJobs * 2 + 4 /* UA */ +
-                       5 /* sched+watchdog+jobsvr+misc */);
 
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
   for (const auto& backend_dir : me->backend_directories) {
