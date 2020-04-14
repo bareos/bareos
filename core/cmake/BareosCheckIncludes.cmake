@@ -58,7 +58,6 @@ check_include_files(NSI HAVE_NSI)
 
 check_include_files(fcntl.h HAVE_DLFCN_H)
 check_include_files(dlfcn.h HAVE_DLFCN_H)
-check_include_files(dirent.h HAVE_DIRENT_H)
 check_include_file_cxx(cxxabi.h HAVE_CXXABI_H)
 check_include_files(sys/wait.h HAVE_SYS_WAIT_H)
 check_include_files(curses.h HAVE_CURSES_H)

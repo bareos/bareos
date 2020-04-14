@@ -69,10 +69,8 @@ const int sd_debuglevel = 300;
 #else
 #include "lib/fnmatch.h"
 #endif
-#ifdef HAVE_DIRENT_H
 #include <dirent.h>
 #define NAMELEN(dirent) (strlen((dirent)->d_name))
-#endif
 #ifndef HAVE_READDIR_R
 int Readdir_r(DIR* dirp, struct dirent* entry, struct dirent** result);
 #endif

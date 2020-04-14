@@ -37,10 +37,8 @@
 #include "lib/dlist.h"
 #include "lib/alist.h"
 
-#ifdef HAVE_DIRENT_H
 #include <dirent.h>
 #define NAMELEN(dirent) (strlen((dirent)->d_name))
-#endif
 
 #include <sys/file.h>
 #if !defined(HAVE_WIN32) || defined(HAVE_MINGW)
