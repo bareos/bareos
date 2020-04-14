@@ -30,16 +30,7 @@
 #include "lib/alist.h"
 #include "lib/berrno.h"
 
-#if defined(HAVE_DLFCN_H)
 #include <dlfcn.h>
-#elif defined(HAVE_SYS_DL_H)
-#include <sys/dl.h>
-#elif defined(HAVE_DL_H)
-#include <dl.h>
-#else
-#error "Cannot load dynamic objects into program"
-#endif
-
 #include <dirent.h>
 #define NAMELEN(dirent) (strlen((dirent)->d_name))
 #ifndef HAVE_READDIR_R

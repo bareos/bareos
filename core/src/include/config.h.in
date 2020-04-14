@@ -154,12 +154,6 @@ extern char WIN_VERSION[];
 // Define to 1 if you have the <demangle.h> header file
 #cmakedefine HAVE_DEMANGLE_H @HAVE_DEMANGLE_H@
 
-// Define to 1 if you have the <dlfcn.h> header file
-#cmakedefine HAVE_DLFCN_H @HAVE_DLFCN_H@
-
-// Define to 1 if you have the <dl.h> header file
-#cmakedefine HAVE_DL_H @HAVE_DL_H@
-
 // Define to 1 if dynamic loading of catalog backends is enabled
 #cmakedefine HAVE_DYNAMIC_CATS_BACKENDS @HAVE_DYNAMIC_CATS_BACKENDS@
 
@@ -525,9 +519,6 @@ extern char WIN_VERSION[];
 
 // Define to 1 if you have the <sys/capability.h> header file
 #cmakedefine HAVE_SYS_CAPABILITY_H @HAVE_SYS_CAPABILITY_H@
-
-// Define to 1 if you have the <sys/dl.h> header file
-#cmakedefine HAVE_SYS_DL_H @HAVE_SYS_DL_H@
 
 // Define to 1 if you have the <sys/ea.h> header file
 #cmakedefine HAVE_SYS_EA_H @HAVE_SYS_EA_H@
