@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,6 +32,7 @@
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "stored/autochanger.h"
+#include "stored/device_control_record.h"
 #include "stored/wait.h"
 #include "lib/berrno.h"
 #include "lib/bnet.h"
@@ -240,7 +241,8 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
       /*
        * Load the desired volume.
        */
-      Dmsg2(100, "Doing changer load slot %hd %s\n", wanted_slot, dev->print_name());
+      Dmsg2(100, "Doing changer load slot %hd %s\n", wanted_slot,
+            dev->print_name());
       Jmsg(
           jcr, M_INFO, 0,
           _("3304 Issuing autochanger \"load slot %hd, drive %hd\" command.\n"),
@@ -256,7 +258,8 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
             jcr, M_INFO, 0,
             _("3305 Autochanger \"load slot %hd, drive %hd\", status is OK.\n"),
             wanted_slot, drive);
-        Dmsg2(100, "load slot %hd, drive %hd, status is OK.\n", wanted_slot, drive);
+        Dmsg2(100, "load slot %hd, drive %hd, status is OK.\n", wanted_slot,
+              drive);
         dev->SetSlotNumber(wanted_slot); /* set currently loaded slot */
         if (dev->vol) {
           /*
@@ -268,14 +271,14 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
         BErrNo be;
         be.SetErrno(status);
         std::string tmp(results.c_str());
-        if (tmp.find("Source Element Address") != std::string::npos
-                && tmp.find("is Empty") != std::string::npos) {
-          rtn_stat = -3;            /* medium not found in slot */
+        if (tmp.find("Source Element Address") != std::string::npos &&
+            tmp.find("is Empty") != std::string::npos) {
+          rtn_stat = -3; /* medium not found in slot */
         } else {
-          rtn_stat = -1;            /* hard error */
+          rtn_stat = -1; /* hard error */
         }
-        Dmsg3(100, "load slot %hd, drive %hd, bad stats=%s.\n", wanted_slot, drive,
-              be.bstrerror());
+        Dmsg3(100, "load slot %hd, drive %hd, bad stats=%s.\n", wanted_slot,
+              drive, be.bstrerror());
         Jmsg(jcr, rtn_stat == -3 ? M_ERROR : M_FATAL, 0,
              _("3992 Bad autochanger \"load slot %hd, drive %hd\": "
                "ERR=%s.\nResults=%s\n"),
@@ -285,7 +288,7 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
       Dmsg2(100, "load slot %hd status=%d\n", wanted_slot, status);
       UnlockChanger(dcr);
     } else {
-      status = 0;               /* we got what we want */
+      status = 0;                      /* we got what we want */
       dev->SetSlotNumber(wanted_slot); /* set currently loaded slot */
     }
 

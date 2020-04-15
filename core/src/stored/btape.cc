@@ -41,6 +41,7 @@
 #include "stored/acquire.h"
 #include "stored/autochanger.h"
 #include "stored/bsr.h"
+#include "stored/btape_device_control_record.h"
 #include "stored/butil.h"
 #include "stored/device.h"
 #include "stored/jcr_private.h"
@@ -3016,14 +3017,7 @@ bool BTAPE_DCR::DirAskSysopToCreateAppendableVolume()
   return true;
 }
 
-DeviceControlRecord* BTAPE_DCR::get_new_spooling_dcr()
-{
-  DeviceControlRecord* dcr;
-
-  dcr = new BTAPE_DCR;
-
-  return dcr;
-}
+DeviceControlRecord* BTAPE_DCR::get_new_spooling_dcr() { return new BTAPE_DCR; }
 
 static bool MyMountNextReadVolume(DeviceControlRecord* dcr)
 {

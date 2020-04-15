@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,6 +29,7 @@
 
 #include "include/bareos.h" /* pull in global headers */
 #include "stored/stored.h"  /* pull in Storage Daemon headers */
+#include "stored/device_control_record.h"
 #include "lib/edit.h"
 #include "lib/util.h"
 #include "lib/berrno.h"

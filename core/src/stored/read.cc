@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,6 +32,7 @@
 #include "stored/stored.h"
 #include "stored/acquire.h"
 #include "stored/bsr.h"
+#include "stored/device_control_record.h"
 #include "stored/jcr_private.h"
 #include "stored/mount.h"
 #include "stored/read_record.h"

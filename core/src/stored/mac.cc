@@ -3,7 +3,7 @@
 
    Copyright (C) 2006-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -36,6 +36,7 @@
 #include "stored/bsr.h"
 #include "stored/append.h"
 #include "stored/device.h"
+#include "stored/device_control_record.h"
 #include "stored/jcr_private.h"
 #include "stored/label.h"
 #include "stored/mount.h"
@@ -551,8 +552,7 @@ bool DoMacRun(JobControlRecord* jcr)
     }
 
     Dmsg2(200, "===== After acquire pos %u:%u\n",
-          jcr->impl->read_dcr->dev->file,
-          jcr->impl->read_dcr->dev->block_num);
+          jcr->impl->read_dcr->dev->file, jcr->impl->read_dcr->dev->block_num);
 
     jcr->sendJobStatus(JS_Running);
 

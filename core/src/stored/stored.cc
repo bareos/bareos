@@ -45,6 +45,7 @@
 #include "stored/label.h"
 #include "stored/ndmp_tape.h"
 #include "stored/sd_backends.h"
+#include "stored/sd_device_control_record.h"
 #include "stored/sd_stats.h"
 #include "stored/socket_server.h"
 #include "stored/stored_globals.h"

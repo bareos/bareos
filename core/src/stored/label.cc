@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,6 +33,7 @@
 #include "stored/stored_globals.h"
 #include "stored/dev.h"
 #include "stored/device.h"
+#include "stored/device_control_record.h"
 #include "stored/jcr_private.h"
 #include "stored/label.h"
 #include "lib/edit.h"
@@ -587,7 +588,8 @@ void CreateVolumeLabel(Device* dev, const char* VolName, const char* PoolName)
   }
   bstrncpy(dev->VolHdr.LabelProg, my_name, sizeof(dev->VolHdr.LabelProg));
   snprintf(dev->VolHdr.ProgVersion, sizeof(dev->VolHdr.ProgVersion),
-           "Ver. %.26s %.17s", kBareosVersionStrings.Full, kBareosVersionStrings.Date);
+           "Ver. %.26s %.17s", kBareosVersionStrings.Full,
+           kBareosVersionStrings.Date);
   snprintf(dev->VolHdr.ProgDate, sizeof(dev->VolHdr.ProgDate), "Build %s",
            kBareosVersionStrings.ProgDateTime);
   dev->SetLabeled(); /* set has Bareos label */

@@ -41,6 +41,7 @@
 #include "cats/sql.h"
 #include "stored/acquire.h"
 #include "stored/butil.h"
+#include "stored/device_control_record.h"
 #include "stored/label.h"
 #include "stored/mount.h"
 #include "stored/read_record.h"

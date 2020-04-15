@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -34,6 +34,7 @@
 #include "stored/crc32/crc32.h"
 #include "stored/dev.h"
 #include "stored/device.h"
+#include "stored/device_control_record.h"
 #include "stored/label.h"
 #include "stored/socket_server.h"
 #include "stored/spool.h"
@@ -90,8 +91,8 @@ void DumpBlock(DeviceBlock* b, const char* msg)
     return;
   }
 
-  BlockCheckSum =
-      crc32_fast((uint8_t*)b->buf + BLKHDR_CS_LENGTH, block_len - BLKHDR_CS_LENGTH);
+  BlockCheckSum = crc32_fast((uint8_t*)b->buf + BLKHDR_CS_LENGTH,
+                             block_len - BLKHDR_CS_LENGTH);
   Pmsg6(000,
         _("Dump block %s %x: size=%d BlkNum=%d\n"
           "               Hdrcksum=%x cksum=%x\n"),
@@ -223,7 +224,7 @@ static uint32_t SerBlockHeader(DeviceBlock* block, bool DoChecksum)
    */
   if (DoChecksum) {
     CheckSum = crc32_fast((uint8_t*)block->buf + BLKHDR_CS_LENGTH,
-                      block_len - BLKHDR_CS_LENGTH);
+                          block_len - BLKHDR_CS_LENGTH);
   }
   Dmsg1(1390, "ser_bloc_header: checksum=%x\n", CheckSum);
   SerBegin(block->buf, BLKHDR2_LENGTH);
@@ -340,7 +341,7 @@ static inline bool unSerBlockHeader(JobControlRecord* jcr,
         block_len);
   if (block_len <= block->read_len && dev->DoChecksum()) {
     BlockCheckSum = crc32_fast((uint8_t*)block->buf + BLKHDR_CS_LENGTH,
-                           block_len - BLKHDR_CS_LENGTH);
+                               block_len - BLKHDR_CS_LENGTH);
     if (BlockCheckSum != CheckSum) {
       dev->dev_errno = EIO;
       Mmsg6(dev->errmsg,

@@ -36,6 +36,7 @@
 #include "findlib/find.h"
 #include "stored/acquire.h"
 #include "stored/butil.h"
+#include "stored/device_control_record.h"
 #include "stored/jcr_private.h"
 #include "stored/label.h"
 #include "stored/match_bsr.h"
