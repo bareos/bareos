@@ -32,6 +32,7 @@
 #include "stored/stored.h"  /* pull in Storage Daemon headers */
 #include "stored/acquire.h"
 #include "stored/autochanger.h"
+#include "stored/blocksize_boundaries.h"
 #include "stored/bsr.h"
 #include "stored/device_control_record.h"
 #include "stored/job.h"
@@ -754,7 +755,7 @@ bool CleanDevice(DeviceControlRecord* dcr)
 void SetupNewDcrDevice(JobControlRecord* jcr,
                        DeviceControlRecord* dcr,
                        Device* dev,
-                       BlockSizes* blocksizes)
+                       BlockSizeBoundaries* blocksizes)
 {
   dcr->jcr = jcr; /* point back to jcr */
 

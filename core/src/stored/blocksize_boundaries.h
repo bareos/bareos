@@ -1,7 +1,9 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,23 +20,18 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef BAREOS_STORED_ACQUIRE_H_
-#define BAREOS_STORED_ACQUIRE_H_
+
+#ifndef BAREOS_SRC_STORED_BLOCKSIZES_H_
+#define BAREOS_SRC_STORED_BLOCKSIZES_H_
 
 namespace storagedaemon {
 
-struct BlockSizeBoundaries;
+struct BlockSizeBoundaries {
+  uint32_t max_block_size{};
+  uint32_t min_block_size{};
+};
 
-DeviceControlRecord* AcquireDeviceForAppend(DeviceControlRecord* dcr);
-bool AcquireDeviceForRead(DeviceControlRecord* dcr);
-bool ReleaseDevice(DeviceControlRecord* dcr);
-bool CleanDevice(DeviceControlRecord* dcr);
-void SetupNewDcrDevice(JobControlRecord* jcr,
-                       DeviceControlRecord* dcr,
-                       Device* dev,
-                       BlockSizeBoundaries* blocksizes);
-void FreeDeviceControlRecord(DeviceControlRecord* dcr);
 
-} /* namespace storagedaemon */
+}  // namespace storagedaemon
 
-#endif  // BAREOS_STORED_ACQUIRE_H_
+#endif  // BAREOS_SRC_STORED_BLOCKSIZES_H_

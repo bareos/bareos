@@ -46,6 +46,7 @@
 #include "stored/acquire.h"
 #include "stored/authenticate.h"
 #include "stored/autochanger.h"
+#include "stored/blocksize_boundaries.h"
 #include "stored/bsr.h"
 #include "stored/device_control_record.h"
 #include "stored/sd_device_control_record.h"
@@ -146,7 +147,7 @@ static bool UnmountCmd(JobControlRecord* jcr);
 static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
                                        PoolMem& dev_name,
                                        drive_number_t drive,
-                                       BlockSizes* blocksizes);
+                                       BlockSizeBoundaries* blocksizes);
 static void ReadVolumeLabel(JobControlRecord* jcr,
                             DeviceControlRecord* dcr,
                             Device* dev,
@@ -607,7 +608,7 @@ static bool DoLabel(JobControlRecord* jcr, bool relabel)
   BareosSocket* dir = jcr->dir_bsock;
   DeviceControlRecord* dcr;
   Device* dev;
-  BlockSizes blocksizes;
+  BlockSizeBoundaries blocksizes;
   bool ok = false;
   slot_number_t slot;
 
@@ -871,7 +872,7 @@ static bool ReadLabel(DeviceControlRecord* dcr)
 static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
                                        PoolMem& devname,
                                        drive_number_t drive,
-                                       BlockSizes* blocksizes)
+                                       BlockSizeBoundaries* blocksizes)
 {
   DeviceResource* device;
   AutochangerResource* changer;

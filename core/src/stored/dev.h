@@ -216,11 +216,6 @@ enum
  */
 #define ST_BYTES NbytesForBits(ST_MAX + 1)
 
-struct BlockSizes {
-  uint32_t max_block_size{};
-  uint32_t min_block_size{};
-};
-
 /*
  * Device structure definition.
  *
