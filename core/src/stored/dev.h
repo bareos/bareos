@@ -76,18 +76,6 @@ class DeviceControlRecord;
 class VolumeReservationItem;
 
 /**
- * Return values from WaitForSysop()
- */
-enum
-{
-  W_ERROR = 1,
-  W_TIMEOUT,
-  W_POLL,
-  W_MOUNT,
-  W_WAKE
-};
-
-/**
  * Arguments to open_dev()
  */
 enum

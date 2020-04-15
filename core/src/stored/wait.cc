@@ -34,6 +34,7 @@
 #include "stored/stored.h"  /* pull in Storage Daemon headers */
 #include "stored/stored_globals.h"
 #include "stored/device_control_record.h"
+#include "stored/wait.h"
 #include "lib/berrno.h"
 #include "lib/bsock.h"
 #include "lib/edit.h"
