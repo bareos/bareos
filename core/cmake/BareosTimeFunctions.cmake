@@ -27,11 +27,16 @@ function(
     string(TIMESTAMP out "${format}" UTC)
     set(ENV{SOURCE_DATE_EPOCH} "${old_epoch}")
   else()
+    if(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+      set(DATECMD gdate)
+    else()
+      set(DATECMD date)
+    endif()
     set(old_lang "$ENV{LC_ALL}")
     set(ENV{LC_ALL} "C")
     execute_process(
       COMMAND
-        date
+        ${DATECMD}
         --utc
         "--date=@${at}"
         "+${format}"

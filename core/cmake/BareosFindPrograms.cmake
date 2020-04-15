@@ -20,7 +20,7 @@
 # find programs
 find_program(AWK awk)
 find_program(GAWK gawk)
-if(HAVE_SUN_OS)
+if(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   set(AWK ${GAWK})
 endif()
 

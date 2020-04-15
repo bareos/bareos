@@ -14,7 +14,13 @@ stop_director() {
 
 start_director() {
   "${rscripts}/bareos-ctl-dir" start "$director_debug_level"
-  director_pid=$(pidof ${BAREOS_DIRECTOR_BINARY})
+  case $(uname -s) in
+    SunOS)
+      director_pid=$(pgrep -f ${BAREOS_DIRECTOR_BINARY})
+      ;;
+    *)
+      director_pid=$(pidof ${BAREOS_DIRECTOR_BINARY});;
+  esac
 
   if [ -z "$director_pid" ]; then
     exit_with_error "Bareos director could not be started"

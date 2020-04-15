@@ -20,6 +20,14 @@
 cmake_minimum_required(VERSION 3.0)
 project(bareos C CXX)
 
+if (POLICY CMP0054)
+  cmake_policy(SET CMP0054 NEW)
+endif (POLICY CMP0054)
+
+if (POLICY CMP0057)
+  cmake_policy(SET CMP0057 NEW)
+endif (POLICY CMP0057)
+
 # disable in-source builds
 if("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
   message(FATAL_ERROR "In-source builds are not allowed.")
@@ -37,16 +45,8 @@ endif(CCACHE_FOUND)
 
 # switch on CXX 11 Support
 #
-if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-  set(CMAKE_CXX_STANDARD 11)
-  set(CMAKE_CXX_STANDARD_REQUIRED ON)
-endif()
-
-# cmake does not understand how to enforce CMAKE_CXX_STANDARD 11 on Solaris  so
-# we do it manually.
-if(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-endif()
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
@@ -56,15 +56,18 @@ if(${compiler_will_suggest_override})
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wsuggest-override")
 endif()
 
-# make format-security issues a compiler-error
-check_cxx_compiler_flag(-Wformat compiler_format_security)
-if(${compiler_format_security})
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wformat")
+if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+  # make format-security issues a compiler-error
+  check_cxx_compiler_flag(-Wformat compiler_format_security)
+  if(${compiler_format_security})
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wformat")
+  endif()
+  check_cxx_compiler_flag(-Werror=format-security compiler_error_format_security)
+  if(${compiler_error_format_security})
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=format-security")
+  endif()
 endif()
-check_cxx_compiler_flag(-Werror=format-security compiler_error_format_security)
-if(${compiler_error_format_security})
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=format-security")
-endif()
+
 
 option(DEBUG_PREFIX_MAP
        "remap absolute debug paths to relative if compiler supports it" ON
@@ -238,7 +241,19 @@ endif()
 if(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   set(HAVE_SUN_OS 1)
   set(PSCMD "ps -e -o pid,comm")
-  link_libraries(nsl socket curses)
+  link_libraries(nsl socket curses sec)
+
+
+  if (${CMAKE_C_COMPILER_ID} MATCHES SunPro)
+    include_directories(/usr/local/include)
+    link_directories(/usr/local/lib)
+
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64")
+  endif()
+
+  if (${CMAKE_CXX_COMPILER_ID} MATCHES SunPro)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
+  endif()
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
