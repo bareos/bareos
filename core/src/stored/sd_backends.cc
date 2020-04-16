@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2014 Planets Communications B.V.
-   Copyright (C) 2014-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -46,13 +46,16 @@ namespace storagedaemon {
  * Known backend to interface mappings.
  */
 static struct backend_interface_mapping_t {
-  int interface_type_id;
+  DeviceType interface_type_id;
   const char* interface_name;
-} backend_interface_mappings[] = {
-    {B_FIFO_DEV, "fifo"},     {B_TAPE_DEV, "tape"},
-    {B_GFAPI_DEV, "gfapi"},   {B_DROPLET_DEV, "droplet"},
-    {B_RADOS_DEV, "rados"},   {B_CEPHFS_DEV, "cephfs"},
-    {B_ELASTO_DEV, "elasto"}, {0, NULL}};
+} backend_interface_mappings[] = {{DeviceType::B_FIFO_DEV, "fifo"},
+                                  {DeviceType::B_TAPE_DEV, "tape"},
+                                  {DeviceType::B_GFAPI_DEV, "gfapi"},
+                                  {DeviceType::B_DROPLET_DEV, "droplet"},
+                                  {DeviceType::B_RADOS_DEV, "rados"},
+                                  {DeviceType::B_CEPHFS_DEV, "cephfs"},
+                                  {DeviceType::B_ELASTO_DEV, "elasto"},
+                                  {DeviceType::B_UNKNOWN_DEV, nullptr}};
 
 
 /**
@@ -67,12 +70,12 @@ void SdSetBackendDirs(std::vector<std::string>&& new_backend_dirs)
 }
 
 static inline backend_interface_mapping_t* lookup_backend_interface_mapping(
-    int device_type)
+    DeviceType device_type)
 {
   backend_interface_mapping_t* backend_interface_mapping;
 
   for (backend_interface_mapping = backend_interface_mappings;
-       backend_interface_mapping->interface_name != NULL;
+       backend_interface_mapping->interface_name != nullptr;
        backend_interface_mapping++) {
     /*
      * See if this is a match.
@@ -82,10 +85,10 @@ static inline backend_interface_mapping_t* lookup_backend_interface_mapping(
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
-Device* init_backend_dev(JobControlRecord* jcr, int device_type)
+Device* init_backend_dev(JobControlRecord* jcr, DeviceType device_type)
 {
   struct stat st;
   void* dl_handle = NULL;
@@ -105,7 +108,7 @@ Device* init_backend_dev(JobControlRecord* jcr, int device_type)
   }
 
   backend_interface_mapping = lookup_backend_interface_mapping(device_type);
-  if (backend_interface_mapping == NULL) { return (Device*)NULL; }
+  if (backend_interface_mapping == nullptr) { return nullptr; }
 
   /*
    * See if the backend is already loaded.

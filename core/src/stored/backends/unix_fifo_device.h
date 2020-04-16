@@ -28,6 +28,8 @@
 #ifndef BAREOS_STORED_BACKENDS_UNIX_FIFO_DEVICE_H_
 #define BAREOS_STORED_BACKENDS_UNIX_FIFO_DEVICE_H_
 
+#include "stored/dev.h"
+
 namespace storagedaemon {
 
 class unix_fifo_device : public Device {

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2014 Planets Communications B.V.
-   Copyright (C) 2014-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -36,7 +36,7 @@ namespace storagedaemon {
 
 extern "C" {
 typedef Device* (*t_backend_instantiate)(JobControlRecord* jcr,
-                                         int device_type);
+                                         DeviceType device_type);
 typedef void (*t_flush_backend)(void);
 }
 
@@ -44,7 +44,7 @@ typedef void (*t_flush_backend)(void);
  * Loaded shared library with a certain backend interface type.
  */
 struct backend_shared_library_t {
-  int interface_type_id;
+  DeviceType interface_type_id;
   void* handle;
   /*
    * Entry points into loaded shared library.
@@ -66,7 +66,7 @@ struct backend_shared_library_t {
 
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
 void SdSetBackendDirs(std::vector<std::string>&& new_backend_dirs);
-Device* init_backend_dev(JobControlRecord* jcr, int device_type);
+Device* init_backend_dev(JobControlRecord* jcr, DeviceType device_type);
 void DevFlushBackends();
 #endif
 

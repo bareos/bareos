@@ -259,19 +259,24 @@ static struct s_kw authentication_methods[] = {{"None", AT_NONE},
                                                {"MD5", AT_MD5},
                                                {NULL, 0}};
 
-static s_kw device_types[] = {
-    {"file", B_FILE_DEV},
-    {"tape", B_TAPE_DEV},
-    {"fifo", B_FIFO_DEV},
-    {"vtl", B_VTL_DEV},
-    {"gfapi", B_GFAPI_DEV},
+struct s_dvt_kw {
+  const char* name;
+  DeviceType token;
+};
+
+static s_dvt_kw device_types[] = {
+    {"file", DeviceType::B_FILE_DEV},
+    {"tape", DeviceType::B_TAPE_DEV},
+    {"fifo", DeviceType::B_FIFO_DEV},
+    {"vtl", DeviceType::B_VTL_DEV},
+    {"gfapi", DeviceType::B_GFAPI_DEV},
     /* compatibility: object have been renamed to droplet */
-    {"object", B_DROPLET_DEV},
-    {"droplet", B_DROPLET_DEV},
-    {"rados", B_RADOS_DEV},
-    {"cephfs", B_CEPHFS_DEV},
-    {"elasto", B_ELASTO_DEV},
-    {NULL, 0}};
+    {"object", DeviceType::B_DROPLET_DEV},
+    {"droplet", DeviceType::B_DROPLET_DEV},
+    {"rados", DeviceType::B_RADOS_DEV},
+    {"cephfs", DeviceType::B_CEPHFS_DEV},
+    {"elasto", DeviceType::B_ELASTO_DEV},
+    {nullptr, DeviceType::B_UNKNOWN_DEV}};
 
 static s_kw io_directions[] = {{"in", IO_DIRECTION_IN},
                                {"out", IO_DIRECTION_OUT},
@@ -351,7 +356,7 @@ static void StoreDeviceType(LEX* lc, ResourceItem* item, int index, int pass)
    */
   for (i = 0; device_types[i].name; i++) {
     if (Bstrcasecmp(lc->str, device_types[i].name)) {
-      SetItemVariable<uint32_t>(*item, device_types[i].token);
+      SetItemVariable<DeviceType>(*item, device_types[i].token);
       i = 0;
       break;
     }
@@ -544,7 +549,7 @@ static void CheckDropletDevices(ConfigurationParser& my_config)
 
   while ((p = my_config.GetNextRes(R_DEVICE, p)) != nullptr) {
     DeviceResource* device = dynamic_cast<DeviceResource*>(p);
-    if (device && device->dev_type == B_DROPLET_DEV) {
+    if (device && device->dev_type == DeviceType::B_DROPLET_DEV) {
       if (device->max_concurrent_jobs == 0) {
         /*
          * 0 is the general default. However, for this dev_type, only 1 works.

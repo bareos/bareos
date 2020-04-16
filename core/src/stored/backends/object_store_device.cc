@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2014 Planets Communications B.V.
-   Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -555,7 +555,8 @@ object_store_device::object_store_device()
 }
 
 #ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" Device* backend_instantiate(JobControlRecord* jcr, int device_type)
+extern "C" Device* backend_instantiate(JobControlRecord* jcr,
+                                       DeviceType device_type)
 {
   Device* dev = NULL;
 

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -61,12 +61,13 @@ unix_tape_device::unix_tape_device()
 }
 
 #ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" Device* backend_instantiate(JobControlRecord* jcr, int device_type)
+extern "C" Device* backend_instantiate(JobControlRecord* jcr,
+                                       DeviceType device_type)
 {
   Device* dev = NULL;
 
   switch (device_type) {
-    case B_TAPE_DEV:
+    case DeviceType::B_TAPE_DEV:
       dev = new unix_tape_device;
       break;
     default:

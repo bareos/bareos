@@ -154,7 +154,7 @@ static inline Device* init_dev(JobControlRecord* jcr,
   /*
    * If no device type specified, try to guess
    */
-  if (!device->dev_type) {
+  if (device->dev_type == DeviceType::B_UNKNOWN_DEV) {
     /*
      * Check that device is available
      */
@@ -165,11 +165,11 @@ static inline Device* init_dev(JobControlRecord* jcr,
       return NULL;
     }
     if (S_ISDIR(statp.st_mode)) {
-      device->dev_type = B_FILE_DEV;
+      device->dev_type = DeviceType::B_FILE_DEV;
     } else if (S_ISCHR(statp.st_mode)) {
-      device->dev_type = B_TAPE_DEV;
+      device->dev_type = DeviceType::B_TAPE_DEV;
     } else if (S_ISFIFO(statp.st_mode)) {
-      device->dev_type = B_FIFO_DEV;
+      device->dev_type = DeviceType::B_FIFO_DEV;
     } else if (!BitIsSet(CAP_REQMOUNT, device->cap_bits)) {
       Jmsg2(jcr, M_ERROR, 0,
             _("%s is an unknown device type. Must be tape or directory, "
@@ -189,52 +189,52 @@ static inline Device* init_dev(JobControlRecord* jcr,
      */
 #ifndef HAVE_DYNAMIC_SD_BACKENDS
 #ifdef HAVE_GFAPI
-    case B_GFAPI_DEV:
+    case DeviceType::B_GFAPI_DEV:
       dev = new gfapi_device;
       break;
 #endif
 #ifdef HAVE_DROPLET
-    case B_DROPLET_DEV:
+    case DeviceType::B_DROPLET_DEV:
       dev = new droplet_device;
       break;
 #endif
 #ifdef HAVE_RADOS
-    case B_RADOS_DEV:
+    case DeviceType::B_RADOS_DEV:
       dev = new rados_device;
       break;
 #endif
 #ifdef HAVE_CEPHFS
-    case B_CEPHFS_DEV:
+    case DeviceType::B_CEPHFS_DEV:
       dev = new cephfs_device;
       break;
 #endif
 #ifdef HAVE_ELASTO
-    case B_ELASTO_DEV:
+    case DeviceType::B_ELASTO_DEV:
       dev = new elasto_device;
       break;
 #endif
 #ifdef HAVE_WIN32
-    case B_TAPE_DEV:
+    case DeviceType::B_TAPE_DEV:
       dev = new win32_tape_device;
       break;
-    case B_FIFO_DEV:
+    case DeviceType::B_FIFO_DEV:
       dev = new win32_fifo_device;
       break;
 #else
-    case B_TAPE_DEV:
+    case DeviceType::B_TAPE_DEV:
       dev = new unix_tape_device;
       break;
-    case B_FIFO_DEV:
+    case DeviceType::B_FIFO_DEV:
       dev = new unix_fifo_device;
       break;
 #endif
 #endif /* HAVE_DYNAMIC_SD_BACKENDS */
 #ifdef HAVE_WIN32
-    case B_FILE_DEV:
+    case DeviceType::B_FILE_DEV:
       dev = new win32_file_device;
       break;
 #else
-    case B_FILE_DEV:
+    case DeviceType::B_FILE_DEV:
       dev = new unix_file_device;
       break;
 #endif
@@ -1030,8 +1030,8 @@ bool Device::close(DeviceControlRecord* dcr)
   if (!norewindonclose) { OfflineOrRewind(); }
 
   switch (dev_type) {
-    case B_VTL_DEV:
-    case B_TAPE_DEV:
+    case DeviceType::B_VTL_DEV:
+    case DeviceType::B_TAPE_DEV:
       UnlockDoor();
       /*
        * Fall through wanted

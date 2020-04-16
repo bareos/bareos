@@ -62,6 +62,7 @@
 #ifndef BAREOS_STORED_DEV_H_
 #define BAREOS_STORED_DEV_H_ 1
 
+#include "include/bareos.h"
 #include "stored/record.h"
 #include "stored/volume_catalog_info.h"
 
@@ -86,10 +87,7 @@ enum class DeviceMode : int
   OPEN_WRITE_ONLY
 };
 
-/**
- * Device types
- */
-enum
+enum class DeviceType : int
 {
   B_UNKNOWN_DEV = 0,
   B_FILE_DEV = 1,
@@ -256,8 +254,8 @@ class Device {
   char state[ST_BYTES]{};     /**< State mask */
   int dev_errno{};            /**< Our own errno */
   int oflags{};               /**< Read/write flags */
-  DeviceMode open_mode{DeviceMode::kUndefined}; /**< Parameter passed to open_dev (useful to reopen the device) */
-  int dev_type{};             /**< Device type */
+  DeviceMode open_mode{DeviceMode::kUndefined};
+  DeviceType dev_type{DeviceType::B_UNKNOWN_DEV};
   bool autoselect{};          /**< Autoselect in autochanger */
   bool norewindonclose{};     /**< Don't rewind tape drive on close */
   bool initiated{};           /**< Set when InitDev() called */
@@ -325,15 +323,15 @@ class Device {
   bool IsAutochanger() const { return BitIsSet(CAP_AUTOCHANGER, capabilities); }
   bool RequiresMount() const { return BitIsSet(CAP_REQMOUNT, capabilities); }
   bool IsRemovable() const { return BitIsSet(CAP_REM, capabilities); }
-  bool IsTape() const { return (dev_type == B_TAPE_DEV); }
+  bool IsTape() const { return (dev_type == DeviceType::B_TAPE_DEV); }
   bool IsFile() const
   {
-    return (dev_type == B_FILE_DEV || dev_type == B_GFAPI_DEV ||
-            dev_type == B_DROPLET_DEV || dev_type == B_RADOS_DEV ||
-            dev_type == B_CEPHFS_DEV || dev_type == B_ELASTO_DEV);
+    return (dev_type == DeviceType::B_FILE_DEV || dev_type == DeviceType::B_GFAPI_DEV ||
+            dev_type == DeviceType::B_DROPLET_DEV || dev_type == DeviceType::B_RADOS_DEV ||
+            dev_type == DeviceType::B_CEPHFS_DEV || dev_type == DeviceType::B_ELASTO_DEV);
   }
-  bool IsFifo() const { return dev_type == B_FIFO_DEV; }
-  bool IsVtl() const { return dev_type == B_VTL_DEV; }
+  bool IsFifo() const { return dev_type == DeviceType::B_FIFO_DEV; }
+  bool IsVtl() const { return dev_type == DeviceType::B_VTL_DEV; }
   bool IsOpen() const { return fd_ >= 0; }
   bool IsOffline() const { return BitIsSet(ST_OFFLINE, state); }
   bool IsLabeled() const { return BitIsSet(ST_LABEL, state); }

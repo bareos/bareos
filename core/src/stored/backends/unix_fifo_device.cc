@@ -340,12 +340,13 @@ unix_fifo_device::~unix_fifo_device() {}
 unix_fifo_device::unix_fifo_device() {}
 
 #ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" Device* backend_instantiate(JobControlRecord* jcr, int device_type)
+extern "C" Device* backend_instantiate(JobControlRecord* jcr,
+                                       DeviceType device_type)
 {
   Device* dev = NULL;
 
   switch (device_type) {
-    case B_FIFO_DEV:
+    case DeviceType::B_FIFO_DEV:
       dev = new unix_fifo_device;
       break;
     default:

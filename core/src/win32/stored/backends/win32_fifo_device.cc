@@ -31,10 +31,10 @@
  */
 
 #include "include/bareos.h"
+#include "win32_fifo_device.h"
 #include "lib/berrno.h"
 #include "stored/device_control_record.h"
 #include "stored/stored.h"
-#include "win32_fifo_device.h"
 #include "stored/autochanger.h"
 
 namespace storagedaemon {
@@ -42,7 +42,7 @@ namespace storagedaemon {
 /**
  * Open a fifo device
  */
-void win32_fifo_device::OpenDevice(DeviceControlRecord* dcr, int omode)
+void win32_fifo_device::OpenDevice(DeviceControlRecord* dcr, DeviceType omode)
 {
   file_size = 0;
   int timeout = max_open_wait;
