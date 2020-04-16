@@ -35,7 +35,7 @@ General Information
    :widths: auto
 
    * - **Release Date**
-     - UNRELEASED
+     - 2020-04-16
    * - **Database Version**
      -  2192
    * - **URL**
@@ -45,9 +45,46 @@ General Information
    * - **Release Ticket**
      - :mantis:`1187`
 
+GlusterFS Backend on CentOS 7/RHEL 7
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The glusterfs backend for the storage daemon was broken on CentOS 7 and RHEL 7 due to a problem with our new build-process.
+When glusterfs-api tried to connect to gluster for downloading the volume file a system call to the rpc library failed.
+We found out that the problem will occur when Bareos is built with libtirpc-devel while the glusterfs-api is built with the rpc library in glibc.
+The build-process was fixed and the problem will be solved in all binary packages released after 24 March 2020.
+
+:program:`bareos-dbcopy`
+^^^^^^^^^^^^^^^^^^^^^^^^
+The :program:`bareos-dbcopy` tool has been improved.
+A new howto :ref:`section-MigrationMysqlToPostgresql` has been added to the documentation.
+This howto describes how you can use :program:`bareos-dbcopy` to migrate your MySQL or MariaDB catalog to PostgreSQL.
+
 Bugs Fixed
 ^^^^^^^^^^
+* :mantis:`1171`: Backup the VM using UUID in oVirt-Plugin for Bareos
+* :mantis:`1190`: Schedules without a client will not be run
+* :mantis:`1192`: Authorization key rejected by Storage daemon since upgrading director and storage daemons
+* :mantis:`1200`: fails to restore files
+* :mantis:`1206`: form field restore job is not populated after client selection
+* :mantis:`1211`: bareos director and bareos fd crash when regexwhere is specified
+* :mantis:`1220`: default drive index not set to 0
 
+Other Improvements
+^^^^^^^^^^^^^^^^^^
+The message resource now allows to write to a file with a filename of arbitrary length.
+Previously this was limited to 128 characters.
+
+The volume pruning code will now log which jobids are pruned with the volume.
+
+A patch in 2018 accidentially broke thread-safety with OpenSSL 1.0 which lead to random crashes during execution of code in the OpenSSL library.
+That patch has been reverted.
+
+There is a known bug when using :ref:`SdBackendDroplet` with multiple simultaneous jobs (interleaving).
+As a precaution the |sd| now only allows a setting of 1 for :strong:`Maximum Concurrent Jobs` on Droplet devices.
+
+Internal Project Changes
+^^^^^^^^^^^^^^^^^^^^^^^^
+Packages for Debian, Ubuntu and Univention are now built without Open Build Service.
+As a result we could remove all references to the Open Build Service from our source-code.
 
 .. _bareos-1926-releasenotes:
 
@@ -250,12 +287,45 @@ Internal Project Changes
 * Removed PHP Warnings and Notices, JS and CSS errors
 
 
+Bareos-18.2
+-----------
+
+.. _bareos-1828-releasenotes:
+
+.. _bareos-18.2.8:
+
+Bareos-18.2.8
+~~~~~~~~~~~~~
+
+General Information
+^^^^^^^^^^^^^^^^^^^
+
+.. list-table:: Bareos 18.2.8 Release Information
+   :header-rows: 0
+   :widths: auto
+
+   * - **Release Date**
+     - 09 April 2020
+   * - **Database Version**
+     -  2171
+   * - **URL**
+     - https://download.bareos.com/bareos/release/18.2/
+
+   * - **Release Ticket**
+     - :mantis:`1157`
+
+Bugfixes and Changes
+^^^^^^^^^^^^^^^^^^^^
+* :mantis:`1162`: When restoring files without directories, the permissions of the immediate parent directory are wrong
+* avoid a race-condition when creating job names
+* fix crash in bconsole when TLS connection cannot be established
+* fix random crash in OpenSSL due to broken thread-safety precautions
+* limit :strong:`Maximum Concurrent Jobs` in :ref:`SdBackendDroplet` to work around a problem with block interleaving
+* fix a problem with GlusterFS Backend on CentOS 7/RHEL 7
+
 .. _bareos-1827-releasenotes:
 
 .. _bareos-18.2.7:
-
-Bareos-18.2
------------
 
 Bareos-18.2.7
 ~~~~~~~~~~~~~
@@ -605,6 +675,22 @@ Internal Project Changes
 Bareos-17.2
 -----------
 
+.. _bareos-17.2.9:
+
+bareos-17.2.9
+~~~~~~~~~~~~~
+:index:`\ <single: bareos-17.2.9; Release Notes>`\
+
+================ ===============================================
+Code Release     2020-04-09
+Database Version 2171 (unchanged)
+Release Ticket   :mantis:`1158`
+Url              http://download.bareos.com/bareos/release/17.2/
+================ ===============================================
+
+- :mantis:`1162`: When restoring files without directories, the permissions of the immediate parent directory are wrong
+- fix a problem with GlusterFS Backend on CentOS 7/RHEL 7
+
 .. _bareos-17.2.8:
 
 bareos-17.2.8
@@ -822,6 +908,25 @@ This release contains several enhancements. Excerpt:
 
 Bareos-16.2
 -----------
+
+.. _bareos-16.2.10:
+bareos-16.2.10
+~~~~~~~~~~~~~
+
+:index:`\ <single: bareos-16.2.9; Release Notes>`\
+
+================ ===============================================
+Code Release     2020-04-08
+Database Version 2004 (unchanged)
+Release Ticket   :mantis:`1159`
+Url              http://download.bareos.com/bareos/release/16.2/
+================ ===============================================
+
+- :mantis:`1162`: When restoring files without directories, the permissions of the immediate parent directory are wrong
+
+End of life for Bareos 16.2
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Bareos 16.2.10 will be the last release in the 16.2 series.
 
 .. _bareos-16.2.9:
 
