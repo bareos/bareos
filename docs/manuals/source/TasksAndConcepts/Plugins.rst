@@ -1164,7 +1164,126 @@ If things don't work as expected, make sure that
 - Make sure *XtraBackup* works as user root, MySQL access needs to be
   configured properly
 
+Postgresql Plugin
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
+:index:`\ <single: Plugin; PostgreSQL Backup>`
+
+
+This plugin uses the standard API Postgres backup  routines based on pg_start_backup() and pg_stop_backup(). 
+
+The key features are:
+
+- Incremental backups
+- Backups that complete quickly and reliably
+- Uninterrupted transaction processing during backups
+- Savings on disk space and network bandwidth
+- Higher uptime due to faster restore time
+
+Requires Postgres Version 9.x or newer.
+
+
+Prerequisites
+^^^^^^^^^^^^^
+
+
+As it is a Python plugin, it will also require to have the package **bareos-filedaemon-python-plugin** installed on the |fd|, where you run it.
+
+The plugin requires the Python module psycopg2 to be installed in your python2 environment. 
+
+Please make sure to read the Postgres documentation about the backup and restore process: https://www.postgresql.org/docs/current/continuous-archiving.html 
+
+**You have to enable WAL-Archiving** - the process and the plugin depend on it.
+
+
+Installation
+^^^^^^^^^^^^
+
+Make sure you have met the prerequisites, after that install the package **bareos-filedaemon-postgres-python-plugin**.
+
+Configuration
+^^^^^^^^^^^^^
+
+Activate your plugin directory in the |fd| configuration. See :ref:`fdPlugins` for more about plugins in general.
+
+.. code-block:: bareosconfig
+   :caption: bareos-fd.d/client/myself.conf
+
+   Client {
+     ...
+     Plugin Directory = /usr/lib64/bareos/plugins
+     Plugin Names = "python"
+   }
+
+Now include the plugin as command-plugin in the Fileset resource:
+
+.. code-block:: bareosconfig
+   :caption: bareos-dir.d/fileset/postgres.conf
+
+   FileSet {
+       Name = "postgres"
+       Include  {
+           Options {
+               compression=GZIP
+               signature = MD5
+           }
+           Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-postgres:postgresDataDir=/var/lib/pgsql/data:walArchive=/var/lib/pgsql/wal_archive/"
+       }
+   }
+
+
+   
+You can append options to the plugin call as key=value pairs, separated by ’:’. The following options are available:
+
+-  With :strong:`postgresDataDir` the Postgres data directory. Default: /var/lib/pgsql/data
+
+-  :strong:`walArchive` your directory where Postgres archives the WAL files.
+
+-  :strong:`dbuser` with this user the plugin will try to connect to the database. Default: root
+
+-  :strong:`dbname` there needs to be a named database for the connection. Default: postgres
+
+-  :strong:`ignoreSubdirs` a list of coma separated directories below the Postgres DataDir, that will not be backed up. Default: pg_wal,pg_log,pg_xlog
+
+-  :strong:`switchWal` If set to true (default), the plugin will let Postgres write a new wal file, if the current LSN is greate than the LSN from the previous job to make sure changes will go into the backup. 
+
+Restore
+^^^^^^^
+
+With the usual Bareos restore mechanism a file-hierarchy will be created on the restore client under the default restore location:
+
+:file:`/tmp/bareos-restores/your_postgres_data_dir/`
+:file:`/tmp/bareos-restores/your_postgres_wal_archive/`
+
+You need to place a minimal recovery.conf in your Postgres datadir, Example:
+.. code-block:: recovery.conf
+    restore_command = 'cp /var/lib/pgsql/wal_archive/%f %p'
+
+Where :file: `/var/lib/pgsql/wal_archive/` is your WAL archive directory. Starting the Postgres Server shall now initiate the recovery process. Make sure that the postgres is allowed to rename the recovery.conf file. You might have to disable or adapt your SELINUX configuration on some installations.
+
+Troubleshooting
+'''''''''''''''
+If things don't work as expected, make sure that
+
+- the |fd| (FD) works in general, so that you can make simple file backups and restores
+- the Bareos FD Python plugins work in general, try one of
+  the shipped simple sample plugins
+- check your Postgres data directory for a file named backup_label. If it exists, another backup-process is running, you may want to stop it using the SELECT pg_stop_backup() statement.
+- make sure your dbuser can connect to the database and is allowed to issue the following statements:
+
+.. code-block:: sql_statements
+    SELECT current_setting('server_version_num')
+    # >= 9
+    SELECT pg_start_backup()
+    SELECT pg_backup_start_time()"
+    SELECT pg_stop_backup()
+    #PG >=10: 
+    SELECT pg_current_wal_lsn()
+    SELECT pg_switch_wal()
+    #PG  9 only: 
+    SELECT pg_current_xlog_location()
+    SELECT pg_switch_xlog()
+  
 Support is available here: https://www.bareos.com
 
 
