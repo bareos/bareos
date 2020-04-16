@@ -167,7 +167,14 @@ class BareosFdPluginLocalFileset(
         bareosfd.DebugMessage(context, 100, "file: " + file_to_backup + "\n")
 
         mystatp = bareosfd.StatPacket()
-        statp = os.stat(file_to_backup)
+        try:
+            statp = os.stat(file_to_backup)
+        except Exception as e:
+            bareosfd.JobMessage(
+                context,
+                bJobMessageType["M_ERROR"],
+                "Could net get stat-info for file %s: \"%s\"" % (file_to_backup, e.message),
+            )
         # As of Bareos 19.2.7 attribute names in bareosfd.StatPacket differ from os.stat
         # In this case we have to translate names
         # For future releases consistent names are planned, allowing to assign the
@@ -224,11 +231,19 @@ class BareosFdPluginLocalFileset(
         bareosfd.DebugMessage(
             context,
             150,
-            "Restore file " + file_name + " with stat " + str(file_attr) + "\n",
+            "Set file attributes " + file_name + " with stat " + str(file_attr) + "\n",
         )
-        os.chown(file_name, file_attr.uid, file_attr.gid)
-        os.chmod(file_name, file_attr.mode)
-        os.utime(file_name, (file_attr.atime, file_attr.mtime))
+        try:
+            os.chown(file_name, file_attr.uid, file_attr.gid)
+            os.chmod(file_name, file_attr.mode)
+            os.utime(file_name, (file_attr.atime, file_attr.mtime))
+        except Exception as e:
+            bareosfd.JobMessage(
+                context,
+                bJobMessageType["M_WARNING"],
+                "Could net set attributes for file %s: \"%s\"" % (file_to_backup, e.message),
+            )
+
         return bRCs["bRC_OK"]
 
     def end_backup_file(self, context):
