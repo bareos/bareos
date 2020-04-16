@@ -144,7 +144,6 @@ static inline Device* init_dev(JobControlRecord* jcr,
 {
   struct stat statp;
   int errstat;
-  DeviceControlRecord* dcr = NULL;
   Device* dev = NULL;
   uint32_t max_bs;
 
@@ -404,7 +403,7 @@ static inline Device* init_dev(JobControlRecord* jcr,
   }
 
   dev->ClearOpened();
-  dev->attached_dcrs = new dlist(dcr, &dcr->dev_link);
+  dev->attached_dcrs.clear();
   Dmsg2(100, "InitDev: tape=%d dev_name=%s\n", dev->IsTape(), dev->dev_name);
   dev->initiated = true;
   Dmsg3(100, "dev=%s dev_max_bs=%u max_bs=%u\n", dev->dev_name,
@@ -1307,10 +1306,7 @@ void Device::term()
   pthread_cond_destroy(&wait_next_vol);
   pthread_mutex_destroy(&spool_mutex);
   // RwlDestroy(&lock);
-  if (attached_dcrs) {
-    delete attached_dcrs;
-    attached_dcrs = NULL;
-  }
+  attached_dcrs.clear();
   if (device) { device->dev = NULL; }
   delete this;
 }

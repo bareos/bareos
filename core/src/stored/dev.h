@@ -65,6 +65,8 @@
 #include "stored/record.h"
 #include "stored/volume_catalog_info.h"
 
+#include <vector>
+
 class dlist;
 
 namespace storagedaemon {
@@ -241,7 +243,7 @@ class Device {
   Device() = default;
   virtual ~Device() = default;
   Device* volatile swap_dev{}; /**< Swap vol from this device */
-  dlist* attached_dcrs{};      /**< Attached DeviceControlRecord list */
+  std::vector<DeviceControlRecord*> attached_dcrs;           /**< Attached DeviceControlRecords */
   pthread_mutex_t mutex_ = PTHREAD_MUTEX_INITIALIZER;        /**< Access control */
   pthread_mutex_t spool_mutex = PTHREAD_MUTEX_INITIALIZER;   /**< Mutex for updating spool_size */
   pthread_mutex_t acquire_mutex = PTHREAD_MUTEX_INITIALIZER; /**< Mutex for acquire code */
@@ -549,6 +551,20 @@ class Device {
 
  protected:
   void set_mode(int mode);
+};
+
+class SpoolDevice :public Device
+{
+ public:
+  int d_ioctl(int fd, ioctl_req_t request, char* mt_com = NULL) override {return -1;}
+  int d_open(const char* pathname, int flags, int mode) override {return -1;}
+  int d_close(int fd) override {return -1;}
+  ssize_t d_read(int fd, void* buffer, size_t count) override { return 0;}
+  ssize_t d_write(int fd, const void* buffer, size_t count) override { return 0;}
+  boffset_t d_lseek(DeviceControlRecord* dcr,
+                            boffset_t offset,
+                            int whence) override { return 0;}
+  bool d_truncate(DeviceControlRecord* dcr) override {return false;}
 };
 /* clang-format on */
 

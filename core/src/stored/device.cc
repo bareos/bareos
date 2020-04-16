@@ -163,8 +163,7 @@ bool FixupDeviceBlockWriteError(DeviceControlRecord* dcr, int retries)
    * Walk through all attached jcrs indicating the volume has changed
    */
   Dmsg1(100, "Notify vol change. Volume=%s\n", dev->getVolCatName());
-  DeviceControlRecord* mdcr;
-  foreach_dlist (mdcr, dev->attached_dcrs) {
+  for (auto mdcr : dev->attached_dcrs) {
     JobControlRecord* mjcr = mdcr->jcr;
     if (mjcr->JobId == 0) { continue; /* ignore console */ }
     mdcr->NewVol = true;

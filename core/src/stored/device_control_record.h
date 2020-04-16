@@ -68,7 +68,6 @@ class DeviceControlRecord {
   bool will_write_{};              /**< Set if DeviceControlRecord will be used for writing */
 
  public:
-  dlink dev_link;                  /**< Link to attach to dev */
   JobControlRecord* jcr{};         /**< Pointer to JobControlRecord */
   pthread_mutex_t mutex_ = PTHREAD_MUTEX_INITIALIZER;  /**< Access control */
   pthread_mutex_t r_mutex = PTHREAD_MUTEX_INITIALIZER; /**< rLock pre-mutex */

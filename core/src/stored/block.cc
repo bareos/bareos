@@ -498,8 +498,7 @@ static bool TerminateWritingVolume(DeviceControlRecord* dcr)
    * Walk through all attached dcrs setting flag to call
    * SetNewFileParameters() when that dcr is next used.
    */
-  DeviceControlRecord* mdcr;
-  foreach_dlist (mdcr, dev->attached_dcrs) {
+  for (auto mdcr : dev->attached_dcrs) {
     if (mdcr->jcr->JobId == 0) { continue; }
     mdcr->NewFile = true; /* set reminder to do set_new_file_params */
   }
@@ -558,8 +557,7 @@ static bool DoNewFileBookkeeping(DeviceControlRecord* dcr)
    * Walk through all attached dcrs setting flag to call
    * SetNewFileParameters() when that dcr is next used.
    */
-  DeviceControlRecord* mdcr;
-  foreach_dlist (mdcr, dev->attached_dcrs) {
+  for (auto mdcr : dev->attached_dcrs) {
     if (mdcr->jcr->JobId == 0) { continue; }
     mdcr->NewFile = true; /* set reminder to do set_new_file_params */
   }

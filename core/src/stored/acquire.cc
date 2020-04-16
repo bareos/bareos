@@ -47,6 +47,8 @@
 #include "stored/block.h"
 #include "stored/jcr_private.h"
 
+#include <algorithm>
+
 namespace storagedaemon {
 
 DeviceControlRecord::DeviceControlRecord()
@@ -821,8 +823,8 @@ static void AttachDcrToDev(DeviceControlRecord* dcr)
       jcr->getJobType() != JT_SYSTEM) {
     dev->Lock();
     Dmsg4(200, "Attach Jid=%d dcr=%p size=%d dev=%s\n", (uint32_t)jcr->JobId,
-          dcr, dev->attached_dcrs->size(), dev->print_name());
-    dev->attached_dcrs->append(dcr); /* attach dcr to device */
+          dcr, dev->attached_dcrs.size(), dev->print_name());
+    dev->attached_dcrs.push_back(dcr); /* attach dcr to device */
     dev->Unlock();
     dcr->attached_to_dev = true;
   }
@@ -842,11 +844,14 @@ static void LockedDetachDcrFromDev(DeviceControlRecord* dcr)
     dcr->UnreserveDevice();
     dev->Lock();
     Dmsg4(200, "Detach Jid=%d dcr=%p size=%d to dev=%s\n",
-          (uint32_t)dcr->jcr->JobId, dcr, dev->attached_dcrs->size(),
+          (uint32_t)dcr->jcr->JobId, dcr, dev->attached_dcrs.size(),
           dev->print_name());
     dcr->attached_to_dev = false;
-    if (dev->attached_dcrs->size()) {
-      dev->attached_dcrs->remove(dcr); /* detach dcr from device */
+    if (!dev->attached_dcrs.empty()) {
+      // detach dcr from device
+      auto it = std::remove(dev->attached_dcrs.begin(),
+                            dev->attached_dcrs.end(), dcr);
+      dev->attached_dcrs.erase(it, dev->attached_dcrs.end());
     }
     //    RemoveDcrFromDcrs(dcr);      /* remove dcr from jcr list */
     dev->Unlock();
