@@ -80,8 +80,6 @@ static bool trace = false;
 static bool hangup = false;
 
 /* Constants */
-const char* host_os = HOST_OS;
-const char* distname = DISTNAME;
 const char* distver = DISTVER;
 
 /*

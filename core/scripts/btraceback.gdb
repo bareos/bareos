@@ -4,11 +4,8 @@ print exepath
 print catalog_db
 print kBareosVersionStrings.FullWithDate
 print kBareosVersionStrings.BinaryInfo
-print host_os
-print distname
 print distver
 print host_name
-print dist_name
 show env TestName
 bt
 thread apply all bt
