@@ -50,7 +50,6 @@ extern char WIN_VERSION[];
 #  define DISTNAME "MVS"
 #  define DISTVER WIN_VERSION
 #  endif
-#  define HELPDIR "c://Program Files//Bareos//help"
 #else
 
 // Where are Bareos config files stored
@@ -646,7 +645,6 @@ extern char WIN_VERSION[];
 #define HOST_OS "@host@@post_host@"
 #define DISTNAME "@DISTNAME@"
 #define DISTVER "@DISTVER@"
-#define HELPDIR "@htmldir@"
 
 #endif /* defined(WIN32) */
 // clang-format on

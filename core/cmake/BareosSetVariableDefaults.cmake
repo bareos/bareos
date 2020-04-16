@@ -82,11 +82,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(docdir default_for_docdir)
   endif()
 
-  # htmldir
-  if(NOT DEFINED htmldir)
-    set(htmldir default_for_htmldir)
-  endif()
-
   # archivedir
   if(NOT DEFINED archivedir)
     set(
@@ -189,11 +184,6 @@ else() # IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # docdir
   if(NOT DEFINED docdir)
     set(docdir default_for_docdir)
-  endif()
-
-  # htmldir
-  if(NOT DEFINED htmldir)
-    set(htmldir default_for_htmldir)
   endif()
 
   # archivedir
