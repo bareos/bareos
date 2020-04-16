@@ -1736,7 +1736,7 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
 
     Jmsg(jcr, msg_type, 0,
          _("%s %s %s (%s):\n"
-           "  Build OS:               %s %s %s\n"
+           "  Build OS:               %s\n"
            "  Prev Backup JobId:      %s\n"
            "  Prev Backup Job:        %s\n"
            "  New Backup JobId:       %s\n"
@@ -1767,7 +1767,7 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
            "  Bareos binary info:     %s\n"
            "  Termination:            %s\n\n"),
          BAREOS, my_name, kBareosVersionStrings.Full,
-         kBareosVersionStrings.ShortDate, HOST_OS, DISTNAME, DISTVER,
+         kBareosVersionStrings.ShortDate, DISTVER,
          edit_uint64(jcr->impl->previous_jr.JobId, ec6),
          jcr->impl->previous_jr.Job,
          mig_jcr ? edit_uint64(mig_jcr->impl->jr.JobId, ec7) : _("*None*"),
@@ -1805,7 +1805,7 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
      */
     Jmsg(jcr, msg_type, 0,
          _("%s %s %s (%s):\n"
-           "  Build OS:               %s %s %s\n"
+           "  Build OS:               %s\n"
            "  Current JobId:          %s\n"
            "  Current Job:            %s\n"
            "  Catalog:                \"%s\" (From %s)\n"
@@ -1816,7 +1816,7 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
            "  Bareos binary info:     %s\n"
            "  Termination:            %s\n\n"),
          BAREOS, my_name, kBareosVersionStrings.Full,
-         kBareosVersionStrings.ShortDate, HOST_OS, DISTNAME, DISTVER,
+         kBareosVersionStrings.ShortDate, DISTVER,
          edit_uint64(jcr->impl->jr.JobId, ec8), jcr->impl->jr.Job,
          jcr->impl->res.catalog->resource_name_, jcr->impl->res.catalog_source,
          sdt, edt, edit_utime(RunTime, elapsed, sizeof(elapsed)),

@@ -452,9 +452,8 @@ static void ListStatusHeader(StatusPacket* sp)
   char buf[300];
 #endif
 
-  len = Mmsg(msg, _("%s Version: %s (%s) %s %s %s\n"), my_name,
-             kBareosVersionStrings.Full, kBareosVersionStrings.Date, HOST_OS,
-             DISTNAME, DISTVER);
+  len = Mmsg(msg, _("%s Version: %s (%s) %s \n"), my_name,
+             kBareosVersionStrings.Full, kBareosVersionStrings.Date, DISTVER);
   sp->send(msg, len);
 
   bstrftime_nc(dt, sizeof(dt), daemon_start_time);

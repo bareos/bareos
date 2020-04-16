@@ -358,9 +358,8 @@ void ListDirStatusHeader(UaContext* ua)
     dbdrivers.strcat(catalog->db_driver);
     cnt++;
   }
-  ua->SendMsg(_("%s Version: %s (%s) %s %s %s\n"), my_name,
-              kBareosVersionStrings.Full, kBareosVersionStrings.Date, HOST_OS,
-              DISTNAME, DISTVER);
+  ua->SendMsg(_("%s Version: %s (%s) %s\n"), my_name,
+              kBareosVersionStrings.Full, kBareosVersionStrings.Date, DISTVER);
   bstrftime_nc(dt, sizeof(dt), daemon_start_time);
   ua->SendMsg(
       _("Daemon started %s. Jobs: run=%d, running=%d db:%s, %s binary\n"), dt,

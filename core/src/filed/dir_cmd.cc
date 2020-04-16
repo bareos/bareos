@@ -1000,7 +1000,10 @@ static bool job_cmd(JobControlRecord* jcr)
 #else
   os_version = HOST_OS;
 #endif
-
+  /*
+   * the director will treat any text after the "2000 OK Job" as the client's
+   * uname and will update the client's catalog record with that value.
+   */
   return dir->fsend(OKjob, kBareosVersionStrings.Full,
                     kBareosVersionStrings.ShortDate, os_version, DISTNAME,
                     DISTVER);

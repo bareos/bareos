@@ -550,7 +550,7 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
     case PT_NDMP_NATIVE:
       Jmsg(jcr, msg_type, 0,
            _("%s %s %s (%s):\n"
-             "  Build OS:               %s %s %s\n"
+             "  Build OS:               %s\n"
              "  JobId:                  %d\n"
              "  Job:                    %s\n"
              "  Restore Client:         %s\n"
@@ -565,7 +565,7 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
              "  Bareos binary info:     %s\n"
              "  Termination:            %s\n\n"),
            BAREOS, my_name, kBareosVersionStrings.Full,
-           kBareosVersionStrings.ShortDate, HOST_OS, DISTNAME, DISTVER,
+           kBareosVersionStrings.ShortDate, DISTVER,
            jcr->impl->jr.JobId, jcr->impl->jr.Job,
            jcr->impl->res.client->resource_name_, sdt, edt,
            edit_utime(RunTime, elapsed, sizeof(elapsed)),
@@ -592,7 +592,7 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
 
       Jmsg(jcr, msg_type, 0,
            _("%s %s %s (%s):\n"
-             "  Build OS:               %s %s %s\n"
+             "  Build OS:               %s\n"
              "  JobId:                  %d\n"
              "  Job:                    %s\n"
              "  Restore Client:         %s\n"
@@ -610,7 +610,7 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
              "  Bareos binary info:     %s\n"
              "  Termination:            %s\n\n"),
            BAREOS, my_name, kBareosVersionStrings.Full,
-           kBareosVersionStrings.ShortDate, HOST_OS, DISTNAME, DISTVER,
+           kBareosVersionStrings.ShortDate, DISTVER,
            jcr->impl->jr.JobId, jcr->impl->jr.Job,
            jcr->impl->res.client->resource_name_, sdt, edt,
            edit_utime(RunTime, elapsed, sizeof(elapsed)),

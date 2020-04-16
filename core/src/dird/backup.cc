@@ -79,11 +79,10 @@ static inline bool ValidateClient(JobControlRecord* jcr)
     case APT_NATIVE:
       return true;
     default:
-      Jmsg(
-          jcr, M_FATAL, 0,
-          _("Client %s has illegal backup protocol %s for Native backup\n"),
-          jcr->impl->res.client->resource_name_,
-          AuthenticationProtocolTypeToString(jcr->impl->res.client->Protocol));
+      Jmsg(jcr, M_FATAL, 0,
+           _("Client %s has illegal backup protocol %s for Native backup\n"),
+           jcr->impl->res.client->resource_name_,
+           AuthenticationProtocolTypeToString(jcr->impl->res.client->Protocol));
       return false;
   }
 }
@@ -378,9 +377,9 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
       return false; /* Fail */
     }
 
-    jcr->db_batch->GetFileList(
-        jcr, jobids.list, jcr->impl->use_accurate_chksum, false /* no delta */,
-        AccurateListHandler, (void*)jcr);
+    jcr->db_batch->GetFileList(jcr, jobids.list, jcr->impl->use_accurate_chksum,
+                               false /* no delta */, AccurateListHandler,
+                               (void*)jcr);
   }
 
   jcr->file_bsock->signal(BNET_EOD);
@@ -739,8 +738,7 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
    * the SD despool.
    */
   Dmsg5(100, "cancel=%d fd_ok=%d FDJS=%d JS=%d SDJS=%d\n", jcr->IsCanceled(),
-        fd_ok, jcr->impl->FDJobStatus, jcr->JobStatus,
-        jcr->impl->SDJobStatus);
+        fd_ok, jcr->impl->FDJobStatus, jcr->JobStatus, jcr->impl->SDJobStatus);
   if (jcr->IsCanceled() ||
       (!jcr->impl->res.job->RescheduleIncompleteJobs && !fd_ok)) {
     Dmsg4(100, "fd_ok=%d FDJS=%d JS=%d SDJS=%d\n", fd_ok,
@@ -1170,7 +1168,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
 // Bmicrosleep(15, 0);                /* for debugging SIGHUP */
 
    Jmsg(jcr, msg_type, 0, _("%s %s %s (%s):\n"
-        "  Build OS:               %s %s %s\n"
+        "  Build OS:               %s\n"
         "  JobId:                  %d\n"
         "  Job:                    %s\n"
         "%s"
@@ -1196,8 +1194,8 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
         "%s"                                        /* SecureErase status */
         "  Bareos binary info:     %s\n"
         "  Termination:            %s\n\n"),
-        BAREOS, my_name, kBareosVersionStrings.Full, kBareosVersionStrings.ShortDate,
-        HOST_OS, DISTNAME, DISTVER,
+        BAREOS, my_name, kBareosVersionStrings.Full,
+        kBareosVersionStrings.ShortDate, DISTVER,
         jcr->impl->jr.JobId,
         jcr->impl->jr.Job,
         level_info.c_str(),

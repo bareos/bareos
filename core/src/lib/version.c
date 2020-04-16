@@ -69,7 +69,7 @@
   "Copyright (C) %d-2012 Free Software Foundation Europe e.V.\n" \
   "Copyright (C) 2010-2017 Planets Communications B.V.\n"        \
   "\n"                                                           \
-  "Version: %s (%s) %s %s %s\n"                                  \
+  "Version: %s (%s) %s\n"                                        \
   "\n"
 
 
@@ -78,14 +78,14 @@ static void FormatCopyrightWithFsfAndPlanets(char* out, size_t len, int FsfYear)
   snprintf(out, len, BAREOS_COPYRIGHT_MESSAGE_WITH_FSF_AND_PLANETS,
            kBareosVersionStrings.ServicesMessage, kBareosVersionStrings.Year,
            FsfYear, kBareosVersionStrings.Full, kBareosVersionStrings.Date,
-           HOST_OS, DISTNAME, DISTVER);
+           DISTVER);
 }
 static void PrintCopyrightWithFsfAndPlanets(FILE* fh, int FsfYear)
 {
   fprintf(fh, BAREOS_COPYRIGHT_MESSAGE_WITH_FSF_AND_PLANETS,
           kBareosVersionStrings.ServicesMessage, kBareosVersionStrings.Year,
           FsfYear, kBareosVersionStrings.Full, kBareosVersionStrings.Date,
-          HOST_OS, DISTNAME, DISTVER);
+          DISTVER);
 }
 
 
@@ -94,7 +94,7 @@ static void PrintCopyrightWithFsfAndPlanets(FILE* fh, int FsfYear)
   "\n"                                         \
   "Copyright (C) %d-%s Bareos GmbH & Co. KG\n" \
   "\n"                                         \
-  "Version: %s (%s) %s %s %s\n"                \
+  "Version: %s (%s) %s\n"                      \
   "\n"
 
 static void FormatCopyright(char* out, size_t len, int StartYear)
@@ -102,13 +102,13 @@ static void FormatCopyright(char* out, size_t len, int StartYear)
   snprintf(out, len, BAREOS_COPYRIGHT_MESSAGE,
            kBareosVersionStrings.ServicesMessage, StartYear,
            kBareosVersionStrings.Year, kBareosVersionStrings.Full,
-           kBareosVersionStrings.Date, HOST_OS, DISTNAME, DISTVER);
+           kBareosVersionStrings.Date, DISTVER);
 }
 static void PrintCopyright(FILE* fh, int StartYear)
 {
   fprintf(fh, BAREOS_COPYRIGHT_MESSAGE, kBareosVersionStrings.ServicesMessage,
           StartYear, kBareosVersionStrings.Year, kBareosVersionStrings.Full,
-          kBareosVersionStrings.Date, HOST_OS, DISTNAME, DISTVER);
+          kBareosVersionStrings.Date, DISTVER);
 }
 
 const struct BareosVersionStrings kBareosVersionStrings = {
