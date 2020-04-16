@@ -232,7 +232,7 @@ int main(int argc, char* argv[])
    * For we must now acquire the device for writing
    */
   out_dev->rLock(false);
-  if (!out_dev->open(out_jcr->impl->dcr, OPEN_READ_WRITE)) {
+  if (!out_dev->open(out_jcr->impl->dcr, DeviceMode::OPEN_READ_WRITE)) {
     Emsg1(M_FATAL, 0, _("dev open failed: %s\n"), out_dev->errmsg);
     out_dev->Unlock();
     exit(1);

@@ -77,11 +77,9 @@ class DeviceResource;
 class DeviceControlRecord;
 class VolumeReservationItem;
 
-/**
- * Arguments to open_dev()
- */
-enum
+enum class DeviceMode : int
 {
+  kUndefined = 0,
   CREATE_READ_WRITE = 1,
   OPEN_READ_WRITE,
   OPEN_READ_ONLY,
@@ -258,7 +256,7 @@ class Device {
   char state[ST_BYTES]{};     /**< State mask */
   int dev_errno{};            /**< Our own errno */
   int oflags{};               /**< Read/write flags */
-  int open_mode{};            /**< Parameter passed to open_dev (useful to reopen the device) */
+  DeviceMode open_mode{DeviceMode::kUndefined}; /**< Parameter passed to open_dev (useful to reopen the device) */
   int dev_type{};             /**< Device type */
   bool autoselect{};          /**< Autoselect in autochanger */
   bool norewindonclose{};     /**< Don't rewind tape drive on close */
@@ -430,11 +428,11 @@ class Device {
   }
   char* getVolCatName() { return VolCatInfo.VolCatName; }
 
-  const char* mode_to_str(int mode);
+  const char* mode_to_str(DeviceMode mode);
   void SetUnload();
   void ClearVolhdr();
   bool close(DeviceControlRecord* dcr);
-  bool open(DeviceControlRecord* dcr, int mode);
+  bool open(DeviceControlRecord* dcr, DeviceMode omode);
   void term();
   ssize_t read(void* buf, size_t len);
   ssize_t write(const void* buf, size_t len);
@@ -472,7 +470,7 @@ class Device {
   /*
    * Generic operations.
    */
-  virtual void OpenDevice(DeviceControlRecord* dcr, int omode);
+  virtual void OpenDevice(DeviceControlRecord* dcr, DeviceMode omode);
   virtual char* StatusDev();
   virtual bool eod(DeviceControlRecord* dcr);
   virtual void SetAteof();
@@ -550,7 +548,7 @@ class Device {
   const char* print_blocked() const;
 
  protected:
-  void set_mode(int mode);
+  void set_mode(DeviceMode mode);
 };
 
 class SpoolDevice :public Device

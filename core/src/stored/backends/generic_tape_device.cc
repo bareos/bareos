@@ -44,7 +44,7 @@ namespace storagedaemon {
 /**
  * Open a tape device
  */
-void generic_tape_device::OpenDevice(DeviceControlRecord* dcr, int omode)
+void generic_tape_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
 {
   file_size = 0;
   int timeout = max_open_wait;
@@ -1145,7 +1145,7 @@ bool generic_tape_device::rewind(DeviceControlRecord* dcr)
        * So, we close the drive and re-open it.
        */
       if (first && dcr) {
-        int oo_mode = open_mode;
+        DeviceMode oo_mode = open_mode;
         d_close(fd_);
         ClearOpened();
         open(dcr, oo_mode);

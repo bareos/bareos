@@ -43,7 +43,7 @@ namespace storagedaemon {
 /**
  * Open a fifo device
  */
-void unix_fifo_device::OpenDevice(DeviceControlRecord* dcr, int omode)
+void unix_fifo_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
 {
   file_size = 0;
   int timeout = max_open_wait;

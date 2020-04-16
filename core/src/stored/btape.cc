@@ -478,7 +478,7 @@ static bool open_the_device()
   block = new_block(dev);
   dev->rLock();
   Dmsg1(200, "Opening device %s\n", dcr->VolumeName);
-  if (!dev->open(dcr, OPEN_READ_WRITE)) {
+  if (!dev->open(dcr, DeviceMode::OPEN_READ_WRITE)) {
     Emsg1(M_FATAL, 0, _("dev open failed: %s\n"), dev->errmsg);
     ok = false;
     goto bail_out;
@@ -1815,7 +1815,7 @@ static void fsrcmd()
  */
 static void rbcmd()
 {
-  dev->open(dcr, OPEN_READ_ONLY);
+  dev->open(dcr, DeviceMode::OPEN_READ_ONLY);
   dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK);
 }
 

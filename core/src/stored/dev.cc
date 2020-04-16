@@ -123,19 +123,21 @@
 
 namespace storagedaemon {
 
-const char* Device::mode_to_str(int mode)
+const char* Device::mode_to_str(DeviceMode mode)
 {
   static const char* modes[] = {"CREATE_READ_WRITE", "OPEN_READ_WRITE",
                                 "OPEN_READ_ONLY", "OPEN_WRITE_ONLY"};
 
-  static char buf[100];
 
-  if (mode < 1 || mode > 4) {
-    Bsnprintf(buf, sizeof(buf), "BAD mode=%d", mode);
+  int idx = static_cast<int>(mode);
+
+  if (idx < 1 || idx > 4) {
+    static char buf[100];
+    Bsnprintf(buf, sizeof(buf), "BAD mode=%d", idx);
     return buf;
   }
 
-  return modes[mode - 1];
+  return modes[idx - 1];
 }
 
 static inline Device* init_dev(JobControlRecord* jcr,
@@ -618,7 +620,7 @@ void Device::SetLabelBlocksize(DeviceControlRecord* dcr)
  * In the case of a file, the full name is the device name
  * (archive_name) with the VolName concatenated.
  */
-bool Device::open(DeviceControlRecord* dcr, int omode)
+bool Device::open(DeviceControlRecord* dcr, DeviceMode omode)
 {
   char preserve[ST_BYTES];
 
@@ -675,19 +677,19 @@ bool Device::open(DeviceControlRecord* dcr, int omode)
   return fd_ >= 0;
 }
 
-void Device::set_mode(int mode)
+void Device::set_mode(DeviceMode mode)
 {
   switch (mode) {
-    case CREATE_READ_WRITE:
+    case DeviceMode::CREATE_READ_WRITE:
       oflags = O_CREAT | O_RDWR | O_BINARY;
       break;
-    case OPEN_READ_WRITE:
+    case DeviceMode::OPEN_READ_WRITE:
       oflags = O_RDWR | O_BINARY;
       break;
-    case OPEN_READ_ONLY:
+    case DeviceMode::OPEN_READ_ONLY:
       oflags = O_RDONLY | O_BINARY;
       break;
-    case OPEN_WRITE_ONLY:
+    case DeviceMode::OPEN_WRITE_ONLY:
       oflags = O_WRONLY | O_BINARY;
       break;
     default:
@@ -698,7 +700,7 @@ void Device::set_mode(int mode)
 /**
  * Open a device.
  */
-void Device::OpenDevice(DeviceControlRecord* dcr, int omode)
+void Device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
 {
   PoolMem archive_name(PM_FNAME);
 
@@ -1069,7 +1071,7 @@ bool Device::close(DeviceControlRecord* dcr)
   file_size = 0;
   file_addr = 0;
   EndFile = EndBlock = 0;
-  open_mode = 0;
+  open_mode = DeviceMode::kUndefined;
   ClearVolhdr();
   VolCatInfo = VolumeCatalogInfo{};
   if (tid) {

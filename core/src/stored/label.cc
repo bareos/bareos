@@ -93,7 +93,7 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
         dev->max_block_size);
 
   if (!dev->IsOpen()) {
-    if (!dev->open(dcr, OPEN_READ_ONLY)) { return VOL_IO_ERROR; }
+    if (!dev->open(dcr, DeviceMode::OPEN_READ_ONLY)) { return VOL_IO_ERROR; }
   }
 
   dev->ClearLabeled();
@@ -383,9 +383,9 @@ bool WriteNewVolumeLabelToDev(DeviceControlRecord* dcr,
   Dmsg1(150, "New VolName=%s\n", VolName);
 
 
-  if (!dev->open(dcr, OPEN_READ_WRITE)) {
+  if (!dev->open(dcr, DeviceMode::OPEN_READ_WRITE)) {
     /* If device is not tape, attempt to create it */
-    if (dev->IsTape() || !dev->open(dcr, CREATE_READ_WRITE)) {
+    if (dev->IsTape() || !dev->open(dcr, DeviceMode::CREATE_READ_WRITE)) {
       Jmsg3(jcr, M_WARNING, 0,
             _("Open device %s Volume \"%s\" failed: ERR=%s\n"),
             dev->print_name(), dcr->VolumeName, dev->bstrerror());
@@ -1097,7 +1097,7 @@ bool DeviceControlRecord::RewriteVolumeLabel(bool recycle)
    */
   dev->SetLabelBlocksize(dcr);
 
-  if (!dev->open(dcr, OPEN_READ_WRITE)) {
+  if (!dev->open(dcr, DeviceMode::OPEN_READ_WRITE)) {
     Jmsg3(jcr, M_WARNING, 0, _("Open device %s Volume \"%s\" failed: ERR=%s\n"),
           dev->print_name(), dcr->VolumeName, dev->bstrerror());
     return false;
@@ -1146,7 +1146,7 @@ bool DeviceControlRecord::RewriteVolumeLabel(bool recycle)
               dev->print_name(), dev->print_errmsg());
         return false;
       }
-      if (!dev->open(dcr, OPEN_READ_WRITE)) {
+      if (!dev->open(dcr, DeviceMode::OPEN_READ_WRITE)) {
         Jmsg2(jcr, M_FATAL, 0,
               _("Failed to re-open after truncate on device %s: ERR=%s\n"),
               dev->print_name(), dev->print_errmsg());

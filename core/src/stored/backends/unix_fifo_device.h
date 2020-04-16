@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,7 +38,7 @@ class unix_fifo_device : public Device {
   /*
    * Interface from Device
    */
-  void OpenDevice(DeviceControlRecord* dcr, int omode) override;
+  void OpenDevice(DeviceControlRecord* dcr, DeviceMode omode) override;
   bool eod(DeviceControlRecord* dcr) override;
   bool MountBackend(DeviceControlRecord* dcr, int timeout) override;
   bool UnmountBackend(DeviceControlRecord* dcr, int timeout) override;

@@ -720,7 +720,7 @@ static void LabelVolumeIfOk(DeviceControlRecord* dcr,
   bsteal_lock_t hold;
   Device* dev = dcr->dev;
   int label_status;
-  int mode;
+  DeviceMode mode;
   const char* volname = relabel ? oldname : newname;
   char ed1[50];
 
@@ -742,9 +742,9 @@ static void LabelVolumeIfOk(DeviceControlRecord* dcr,
    * Ensure that the device is open -- AutoloadDevice() closes it
    */
   if (dev->IsTape()) {
-    mode = OPEN_READ_WRITE;
+    mode = DeviceMode::OPEN_READ_WRITE;
   } else {
-    mode = CREATE_READ_WRITE;
+    mode = DeviceMode::CREATE_READ_WRITE;
   }
 
   /*
@@ -1000,7 +1000,7 @@ static bool MountCmd(JobControlRecord* jcr)
             TryAutoloadDevice(jcr, dcr, slot, "");
           }
           /* We freed the device, so reopen it and wake any waiting threads */
-          if (!dev->open(dcr, OPEN_READ_ONLY)) {
+          if (!dev->open(dcr, DeviceMode::OPEN_READ_ONLY)) {
             dir->fsend(_("3901 Unable to open device %s: ERR=%s\n"),
                        dev->print_name(), dev->bstrerror());
             if (dev->blocked() == BST_UNMOUNTED) {
@@ -1065,7 +1065,7 @@ static bool MountCmd(JobControlRecord* jcr)
                   dev->print_name());
             }
           } else if (dev->IsTape()) {
-            if (!dev->open(dcr, OPEN_READ_ONLY)) {
+            if (!dev->open(dcr, DeviceMode::OPEN_READ_ONLY)) {
               dir->fsend(_("3901 Unable to open device %s: ERR=%s\n"),
                          dev->print_name(), dev->bstrerror());
               break;

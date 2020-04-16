@@ -78,7 +78,7 @@ bool DeviceControlRecord::MountNextWriteVolume()
 {
   int retry = 0;
   bool ask = false, recycle, autochanger;
-  int mode;
+  DeviceMode mode;
   DeviceControlRecord* dcr = this;
 
   Dmsg2(150, "Enter mount_next_volume(release=%d) dev=%s\n", dev->MustUnload(),
@@ -248,9 +248,9 @@ mount_next_vol:
    * Ensure the device is open
    */
   if (dev->HasCap(CAP_STREAM)) {
-    mode = OPEN_WRITE_ONLY;
+    mode = DeviceMode::OPEN_WRITE_ONLY;
   } else {
-    mode = OPEN_READ_WRITE;
+    mode = DeviceMode::OPEN_READ_WRITE;
   }
 
   /*

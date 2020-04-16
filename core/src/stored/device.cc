@@ -281,11 +281,11 @@ bool FirstOpenDevice(DeviceControlRecord* dcr)
     goto bail_out;
   }
 
-  int mode;
+  DeviceMode mode;
   if (dev->HasCap(CAP_STREAM)) {
-    mode = OPEN_WRITE_ONLY;
+    mode = DeviceMode::OPEN_WRITE_ONLY;
   } else {
-    mode = OPEN_READ_ONLY;
+    mode = DeviceMode::OPEN_READ_ONLY;
   }
   Dmsg0(129, "Opening device.\n");
   if (!dev->open(dcr, mode)) {

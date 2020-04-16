@@ -287,7 +287,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
      * it opens it. If it is a tape, it checks the volume name
      */
     Dmsg1(rdebuglevel, "stored: open vol=%s\n", dcr->VolumeName);
-    if (!dev->open(dcr, OPEN_READ_ONLY)) {
+    if (!dev->open(dcr, DeviceMode::OPEN_READ_ONLY)) {
       if (!dev->poll) {
         Jmsg3(jcr, M_WARNING, 0,
               _("Read open device %s Volume \"%s\" failed: ERR=%s\n"),
