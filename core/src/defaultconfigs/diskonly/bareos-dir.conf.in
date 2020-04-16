@@ -41,7 +41,6 @@
 #   What you also have to do is to change the default fileset     (#13)
 #   to either one of the demo filesets given or create our own fileset.
 #
-#  For Bareos release @VERSION@ (@DATE@) -- @DISTNAME@ @DISTVER@
 #
 Director {                            # define myself
   Name = @basename@-dir

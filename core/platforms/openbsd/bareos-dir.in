@@ -6,7 +6,6 @@
 # chkconfig: 2345 90 9
 # description: Backup Archiving REcovery Open Sourced.
 #
-#  For Bareos release @VERSION@ (@DATE@) -- @DISTNAME@
 #
 
 RETVAL=0

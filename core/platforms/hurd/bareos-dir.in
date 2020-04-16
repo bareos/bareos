@@ -5,7 +5,6 @@
 #
 #   Kern E. Sibbald - 21 March 2008
 #
-#  For Bareos release @VERSION@ (@DATE@) -- @DISTNAME@
 #
 ### BEGIN INIT INFO
 # Provides:	     bareos-dir

@@ -1,7 +1,6 @@
 #
 # Default Bareos Storage Daemon Configuration file
 #
-#  For Bareos release @VERSION@ (@DATE@) -- @DISTNAME@ @DISTVER@
 #
 # You may need to change the name of your tape drive
 #   on the "Archive Device" directive in the Device
