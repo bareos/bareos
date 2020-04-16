@@ -39,6 +39,7 @@
 #ifndef BAREOS_SRC_STORED_DEVICE_CONTROL_RECORD_H_
 #define BAREOS_SRC_STORED_DEVICE_CONTROL_RECORD_H_
 
+#include "stored/autoxflate.h"
 #include "stored/volume_catalog_info.h"
 
 namespace storagedaemon {
@@ -90,8 +91,8 @@ class DeviceControlRecord {
   bool any_volume{};         /**< Any OK for dir_find_next... */
   bool attached_to_dev{};    /**< Set when attached to dev */
   bool keep_dcr{};           /**< Do not free dcr in release_dcr */
-  uint32_t autodeflate{};          /**< Try to autodeflate streams */
-  uint32_t autoinflate{};          /**< Try to autoinflate streams */
+  AutoXflateMode autodeflate{AutoXflateMode::IO_DIRECTION_NONE};
+  AutoXflateMode autoinflate{AutoXflateMode::IO_DIRECTION_NONE};
   uint32_t VolFirstIndex{};        /**< First file index this Volume */
   uint32_t VolLastIndex{};         /**< Last file index this Volume */
   uint32_t FileIndex{};            /**< Current File Index */

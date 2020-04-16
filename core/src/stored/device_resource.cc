@@ -21,6 +21,7 @@
    02110-1301, USA.
 */
 
+#include "stored/autoxflate.h"
 #include "stored/device_resource.h"
 #include "stored/stored_globals.h"
 
@@ -59,8 +60,8 @@ DeviceResource::DeviceResource()
     , max_concurrent_jobs(0)
     , autodeflate_algorithm(0)
     , autodeflate_level(6)
-    , autodeflate(0)
-    , autoinflate(0)
+    , autodeflate(AutoXflateMode::IO_DIRECTION_NONE)
+    , autoinflate(AutoXflateMode::IO_DIRECTION_NONE)
     , vol_poll_interval(300)
     , max_volume_size(0)
     , max_file_size(1000000000)

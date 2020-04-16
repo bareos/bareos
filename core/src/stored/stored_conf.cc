@@ -278,10 +278,15 @@ static s_dvt_kw device_types[] = {
     {"elasto", DeviceType::B_ELASTO_DEV},
     {nullptr, DeviceType::B_UNKNOWN_DEV}};
 
-static s_kw io_directions[] = {{"in", IO_DIRECTION_IN},
-                               {"out", IO_DIRECTION_OUT},
-                               {"both", IO_DIRECTION_INOUT},
-                               {NULL, 0}};
+struct s_io_kw {
+  const char* name;
+  AutoXflateMode token;
+};
+
+static s_io_kw io_directions[] = {{"in", AutoXflateMode::IO_DIRECTION_IN},
+                                  {"out", AutoXflateMode::IO_DIRECTION_OUT},
+                                  {"both", AutoXflateMode::IO_DIRECTION_INOUT},
+                                  {nullptr, AutoXflateMode::IO_DIRECTION_NONE}};
 
 static s_kw compression_algorithms[] = {
     {"gzip", COMPRESS_GZIP},   {"lzo", COMPRESS_LZO1X},
@@ -393,7 +398,7 @@ static void StoreIoDirection(LEX* lc, ResourceItem* item, int index, int pass)
   LexGetToken(lc, BCT_NAME);
   for (i = 0; io_directions[i].name; i++) {
     if (Bstrcasecmp(lc->str, io_directions[i].name)) {
-      SetItemVariable<uint16_t>(*item, io_directions[i].token & 0xffff);
+      SetItemVariable<AutoXflateMode>(*item, io_directions[i].token);
       i = 0;
       break;
     }

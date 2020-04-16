@@ -102,17 +102,6 @@ enum class DeviceType : int
 };
 
 /**
- * IO directions
- */
-enum
-{
-  IO_DIRECTION_NONE = 0,
-  IO_DIRECTION_IN,
-  IO_DIRECTION_OUT,
-  IO_DIRECTION_INOUT
-};
-
-/**
  * Generic status bits returned from StatusDev()
  */
 enum

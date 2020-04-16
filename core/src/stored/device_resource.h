@@ -25,6 +25,7 @@
 #define BAREOS_STORED_DEVICE_RESOURCE_H_
 
 #include "stored/dev.h"
+#include "stored/autoxflate.h"
 #include "lib/bareos_resource.h"
 
 namespace storagedaemon {
@@ -67,8 +68,8 @@ class DeviceResource : public BareosResource {
                                        compression */
   uint16_t autodeflate_level; /**< Compression level to use for compression
                                  algorithm which uses levels */
-  uint16_t autodeflate; /**< Perform auto deflation in this IO direction */
-  uint16_t autoinflate; /**< Perform auto inflation in this IO direction */
+  AutoXflateMode autodeflate; /**< auto deflation in this IO direction */
+  AutoXflateMode autoinflate; /**< auto inflation in this IO direction */
   utime_t
       vol_poll_interval;   /**< Interval between polling volume during mount */
   int64_t max_volume_size; /**< Max bytes to put on one volume */

@@ -310,19 +310,19 @@ static bRC setup_record_translation(bpContext* ctx, void* value)
    * Give jobmessage info what is configured
    */
   switch (dcr->autodeflate) {
-    case IO_DIRECTION_NONE:
+    case AutoXflateMode::IO_DIRECTION_NONE:
       deflate_in = SETTING_NO;
       deflate_out = SETTING_NO;
       break;
-    case IO_DIRECTION_IN:
+    case AutoXflateMode::IO_DIRECTION_IN:
       deflate_in = SETTING_YES;
       deflate_out = SETTING_NO;
       break;
-    case IO_DIRECTION_OUT:
+    case AutoXflateMode::IO_DIRECTION_OUT:
       deflate_in = SETTING_NO;
       deflate_out = SETTING_YES;
       break;
-    case IO_DIRECTION_INOUT:
+    case AutoXflateMode::IO_DIRECTION_INOUT:
       deflate_in = SETTING_YES;
       deflate_out = SETTING_YES;
       break;
@@ -334,19 +334,19 @@ static bRC setup_record_translation(bpContext* ctx, void* value)
   }
 
   switch (dcr->autoinflate) {
-    case IO_DIRECTION_NONE:
+    case AutoXflateMode::IO_DIRECTION_NONE:
       inflate_in = SETTING_NO;
       inflate_out = SETTING_NO;
       break;
-    case IO_DIRECTION_IN:
+    case AutoXflateMode::IO_DIRECTION_IN:
       inflate_in = SETTING_YES;
       inflate_out = SETTING_NO;
       break;
-    case IO_DIRECTION_OUT:
+    case AutoXflateMode::IO_DIRECTION_OUT:
       inflate_in = SETTING_NO;
       inflate_out = SETTING_YES;
       break;
-    case IO_DIRECTION_INOUT:
+    case AutoXflateMode::IO_DIRECTION_INOUT:
       inflate_in = SETTING_YES;
       inflate_out = SETTING_YES;
       break;
@@ -361,10 +361,10 @@ static bRC setup_record_translation(bpContext* ctx, void* value)
    * Setup auto deflation/inflation of streams when enabled for this device.
    */
   switch (dcr->autodeflate) {
-    case IO_DIRECTION_NONE:
+    case AutoXflateMode::IO_DIRECTION_NONE:
       break;
-    case IO_DIRECTION_OUT:
-    case IO_DIRECTION_INOUT:
+    case AutoXflateMode::IO_DIRECTION_OUT:
+    case AutoXflateMode::IO_DIRECTION_INOUT:
       if (!SetupAutoDeflation(ctx, dcr)) { return bRC_Error; }
       did_setup = true;
       break;
@@ -373,10 +373,10 @@ static bRC setup_record_translation(bpContext* ctx, void* value)
   }
 
   switch (dcr->autoinflate) {
-    case IO_DIRECTION_NONE:
+    case AutoXflateMode::IO_DIRECTION_NONE:
       break;
-    case IO_DIRECTION_OUT:
-    case IO_DIRECTION_INOUT:
+    case AutoXflateMode::IO_DIRECTION_OUT:
+    case AutoXflateMode::IO_DIRECTION_INOUT:
       if (!SetupAutoInflation(ctx, dcr)) { return bRC_Error; }
       did_setup = true;
       break;
@@ -409,8 +409,8 @@ static bRC handle_read_translation(bpContext* ctx, void* value)
    * See if we need to perform auto deflation/inflation of streams.
    */
   switch (dcr->autoinflate) {
-    case IO_DIRECTION_IN:
-    case IO_DIRECTION_INOUT:
+    case AutoXflateMode::IO_DIRECTION_IN:
+    case AutoXflateMode::IO_DIRECTION_INOUT:
       swap_record = AutoInflateRecord(ctx, dcr);
       break;
     default:
@@ -419,8 +419,8 @@ static bRC handle_read_translation(bpContext* ctx, void* value)
 
   if (!swap_record) {
     switch (dcr->autodeflate) {
-      case IO_DIRECTION_IN:
-      case IO_DIRECTION_INOUT:
+      case AutoXflateMode::IO_DIRECTION_IN:
+      case AutoXflateMode::IO_DIRECTION_INOUT:
         swap_record = AutoDeflateRecord(ctx, dcr);
         break;
       default:
@@ -446,8 +446,8 @@ static bRC handle_write_translation(bpContext* ctx, void* value)
    * See if we need to perform auto deflation/inflation of streams.
    */
   switch (dcr->autoinflate) {
-    case IO_DIRECTION_OUT:
-    case IO_DIRECTION_INOUT:
+    case AutoXflateMode::IO_DIRECTION_OUT:
+    case AutoXflateMode::IO_DIRECTION_INOUT:
       swap_record = AutoInflateRecord(ctx, dcr);
       break;
     default:
@@ -456,8 +456,8 @@ static bRC handle_write_translation(bpContext* ctx, void* value)
 
   if (!swap_record) {
     switch (dcr->autodeflate) {
-      case IO_DIRECTION_OUT:
-      case IO_DIRECTION_INOUT:
+      case AutoXflateMode::IO_DIRECTION_OUT:
+      case AutoXflateMode::IO_DIRECTION_INOUT:
         swap_record = AutoDeflateRecord(ctx, dcr);
         break;
       default:
