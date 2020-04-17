@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -796,10 +796,17 @@ static inline void ls_output(guid_list* guid,
 
   if (dot_cmd) {
     encode_time(statp->st_mtime, time_str);
-    Mmsg(buf, "%s,%d,%s,%s,%s,%s,%c,%s", mode_str, (uint32_t)statp->st_nlink,
-         guid->uid_to_name(statp->st_uid, en1, sizeof(en1)),
-         guid->gid_to_name(statp->st_gid, en2, sizeof(en2)),
-         edit_int64(statp->st_size, ec1), time_str, *tag, fname);
+    Mmsg(buf, "%s,%d,%d(%s),%d(%s),%s,%s,%c,%s",
+      mode_str,
+      (uint32_t)statp->st_nlink,
+      (uint32_t)statp->st_uid,
+      guid->uid_to_name(statp->st_uid, en1, sizeof(en1)),
+      (uint32_t)statp->st_gid,
+      guid->gid_to_name(statp->st_gid, en2, sizeof(en2)),
+      edit_int64(statp->st_size, ec1),
+      time_str,
+      *tag,
+      fname);
   } else {
     time_t time;
 
@@ -814,11 +821,17 @@ static inline void ls_output(guid_list* guid,
      */
     encode_time(time, time_str);
 
-    Mmsg(buf, "%s  %2d %-8.8s %-8.8s  %12.12s  %s %c%s", mode_str,
-         (uint32_t)statp->st_nlink,
-         guid->uid_to_name(statp->st_uid, en1, sizeof(en1)),
-         guid->gid_to_name(statp->st_gid, en2, sizeof(en2)),
-         edit_int64(statp->st_size, ec1), time_str, *tag, fname);
+    Mmsg(buf, "%s  %2d %d (%-.8s) %d (%-.8s)  %12.12s  %s %c %s",
+      mode_str,
+      (uint32_t)statp->st_nlink,
+      (uint32_t)statp->st_uid,
+      guid->uid_to_name(statp->st_uid, en1, sizeof(en1)),
+      (uint32_t)statp->st_gid,
+      guid->gid_to_name(statp->st_gid, en2, sizeof(en2)),
+      edit_int64(statp->st_size, ec1),
+      time_str,
+      *tag,
+      fname);
   }
 }
 
