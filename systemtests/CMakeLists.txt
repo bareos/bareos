@@ -606,7 +606,6 @@ endif()
 
 # python-bareos-test does not work on installed files
 if(PYTHON AND NOT RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
-
   list(APPEND SYSTEM_TESTS "python-bareos-test")
 else()
   list(APPEND SYSTEM_TESTS_DISABLED "python-bareos-test")
