@@ -131,12 +131,12 @@ function setSymbolicModeNotationSpecialPermissions(value) {
    }
 }
 
-function formatJSTreeGridUserItem(user) {
-   return user;
+function formatJSTreeGridUserItem(node) {
+   return node.data.stat.uid + ' (' + node.data.stat.user + ')';
 }
 
-function formatJSTreeGridGroupItem(group) {
-   return group;
+function formatJSTreeGridGroupItem(node) {
+   return node.data.stat.gid + ' (' + node.data.stat.group + ')';
 }
 
 function formatJSTreeGridModeItem(mode) {
