@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -160,6 +160,8 @@ static int BvfsStat(UaContext* ua, char* lstat, int32_t* LinkFI)
   ua->send->ObjectKeyValue("ino", statp.st_ino);
   ua->send->ObjectKeyValue("mode", statp.st_mode);
   ua->send->ObjectKeyValue("nlink", statp.st_nlink);
+  ua->send->ObjectKeyValue("uid", statp.st_uid);
+  ua->send->ObjectKeyValue("gid", statp.st_gid);
   ua->send->ObjectKeyValue(
       "user", ua->guid->uid_to_name(statp.st_uid, en1, sizeof(en1)));
   ua->send->ObjectKeyValue(
