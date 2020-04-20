@@ -171,6 +171,12 @@ macro(handle_python_plugin_modules test_name)
     )
   endif()
 
+  if(${test_name} STREQUAL python-fd-plugin-postgres-test)
+    #    list(APPEND FD_PYMODULES_TO_LINK_TO_SRC bareos-fd-local-fileset.py maik
+    #            BareosFdPluginLocalFileset.py maik
+    #)
+  endif()
+
   # still missing: filed/BareosFdPluginLDAP.py filed/bareos-fd-ldap.py
 
   if(NOT EXISTS ${python_plugin_module_src_test_dir})
@@ -670,6 +676,12 @@ if(TARGET python-fd)
   list(APPEND SYSTEM_TESTS "python-fd-plugin-local-fileset-test")
 else()
   list(APPEND SYSTEM_TESTS_DISABLED "python-fd-plugin-local-fileset-test")
+endif()
+
+if(TARGET python-fd)
+  list(APPEND SYSTEM_TESTS "python-fd-plugin-postgres-test")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "python-fd-plugin-postgres-test")
 endif()
 
 if(TARGET python-fd AND ovirt_server)
