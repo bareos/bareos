@@ -56,7 +56,7 @@ class BareosFdPluginPostgres(
         )
         # Last argument of super constructor is a list of mandatory arguments
         super(BareosFdPluginPostgres, self).__init__(
-            context, plugindef, ["walArchive"]
+            context, plugindef, ["postgresDataDir", "walArchive"]
         )
         self.ignoreSubdirs = ["pg_wal", "pg_log", "pg_xlog"]
 
@@ -117,6 +117,21 @@ class BareosFdPluginPostgres(
             self.switchWal = self.options["switchWal"].lower() == "true"
         return bRCs["bRC_OK"]
 
+    def execute_SQL(self, context, sqlStatement):
+        """
+        Executes the SQL statement using the classes dbCursor
+        """
+        try:
+            self.dbCursor.execute(sqlStatement)
+        except Exception as e:
+            bareosfd.JobMessage(
+                context,
+                bJobMessageType["M_ERROR"],
+                "Query \"%s\" failed: \"%s\"" % (sqlStatement, e.message),
+            )
+            return False
+        return True
+
     def start_backup_job(self, context):
         """
         Make filelist in super class and tell Postgres
@@ -150,18 +165,20 @@ class BareosFdPluginPostgres(
                 % (self.dbname, self.dbuser),
             )
             return bRCs["bRC_Error"]
-        # If level is not Full, we only backup newer WAL files
         if chr(self.level) == "F":
+            # For Full we backup the Postgres data directory
+            # Restore object ROP comes later, after file backup
+            # is done.
             startDir = self.options["postgresDataDir"]
             self.files_to_backup.append(startDir)
             bareosfd.DebugMessage(
                 context, 100, "dataDir: %s\n" % self.options["postgresDataDir"],
             )
         else:
-            # For Full the Restore object comes after DB connection close
-            self.files_to_backup.append("ROP")
-            # With incremental / diff jobs we just backup new WAL files
+            # If level is not Full, we only backup WAL files
+            # and create a restore object ROP with timestamp information.
             startDir = self.options["walArchive"]
+            self.files_to_backup.append("ROP")
             # get current Log Sequence Number (LSN)
             # PG8: not supported
             # PG9: pg_get_current_xlog_location
@@ -180,22 +197,39 @@ class BareosFdPluginPostgres(
                     "WAL switching not supported on Postgres Version < 9\n",
                 )
             else:
-                self.dbCursor.execute(getLsnStmt)
-                currentLSN = self.dbCursor.fetchone()[0].zfill(17)
-                bareosfd.DebugMessage(
-                    context,
-                    100,
-                    "Current LSN %s, last LSN: %s\n" % (currentLSN, self.lastLSN),
-                )
+                if self.execute_SQL(context, getLsnStmt):
+                    currentLSN = self.dbCursor.fetchone()[0].zfill(17)
+                    bareosfd.DebugMessage(
+                        context,
+                        100,
+                        "Current LSN %s, last LSN: %s\n" % (currentLSN, self.lastLSN),
+                    )
+                else:
+                    currrentLSN = 0
+                    bareosfd.JobMessage(
+                        context,
+                        bJobMessageType["M_WARNING"],
+                        "Could not get current LSN, last LSN was: %s\n" % self.lastLSN,
+                    )
                 if currentLSN > self.lastLSN and self.switchWal:
                     # Let Postgres write latest transaction into a new WAL file now
-                    self.dbCursor.execute(switchLsnStmt)
-                    # reread LSN as it changes after WAL switching
-                    self.dbCursor.execute(getLsnStmt)
-                    currentLSN = self.dbCursor.fetchone()[0].zfill(17)
-                    self.lastLSN = currentLSN
-                    # wait some seconds to make sure WAL file gets written
-                    time.sleep(10)
+                    if not self.execute_SQL(context, switchLsnStmt):
+                        bareosfd.JobMessage(
+                            context,
+                            bJobMessageType["M_WARNING"],
+                            "Could not switch to next WAL segment\n",
+                        )
+                    if self.execute_SQL(context, getLsnStmt):
+                        currentLSN = self.dbCursor.fetchone()[0].zfill(17)
+                        self.lastLSN = currentLSN
+                        # wait some seconds to make sure WAL file gets written
+                        time.sleep(10)
+                    else:
+                        bareosfd.JobMessage(
+                            context,
+                            bJobMessageType["M_WARNING"],
+                            "Could not read LSN after switching to new WAL segment\n",
+                        )
                 else:
                     # Nothing has changed since last backup - only send ROP this time
                     bareosfd.JobMessage(
@@ -216,7 +250,14 @@ class BareosFdPluginPostgres(
                 )
             # Usually Bareos takes care about timestamps when doing incremental backups
             # but here we have to compare against last BackupPostgres timestamp
-            mTime = os.stat(fullName).st_mtime
+            try:
+                mTime = os.stat(fullName).st_mtime
+            except Exception as e:
+                bareosfd.JobMessage(
+                    context,
+                    bJobMessageType["M_ERROR"],
+                    "Could net get stat-info for file %s: \"%s\"" % (file_to_backup, e.message),
+                )
             bareosfd.DebugMessage(
                 context,
                 150,
@@ -266,7 +307,13 @@ class BareosFdPluginPostgres(
         self.backupStartTime = datetime.datetime.now(
             tz=dateutil.tz.tzoffset(None, self.tzOffset)
         )
-        self.dbCursor.execute("SELECT pg_start_backup('%s');" % self.backupLabelString)
+        if not self.execute_SQL(context, "SELECT pg_start_backup('%s');" % self.backupLabelString):
+            bareosfd.JobMessage(
+                context,
+                bJobMessageType["M_FATAL"],
+                'pg_start_backup statement failed.',
+            )
+            return bRCs["bRC_Error"]
         results = self.dbCursor.fetchall()
         bareosfd.DebugMessage(context, 150, "Start response: %s\n" % str(results))
         bareosfd.DebugMessage(
@@ -285,7 +332,7 @@ class BareosFdPluginPostgres(
         except:
             bareosfd.JobMessage(
                 context,
-                bJobMessageType["M_WARNING"],
+                bJobMessageType["M_ERROR"],
                 "Could not open Label File %s" % (self.labelFileName),
             )
 
@@ -341,7 +388,15 @@ class BareosFdPluginPostgres(
         """
         # Improve: sanity / consistence check of restore object
         self.row_rop_raw = ROP.object
-        self.rop_data[ROP.jobid] = json.loads(str(self.row_rop_raw))
+        try:
+            self.rop_data[ROP.jobid] = json.loads(str(self.row_rop_raw))
+        except Exception as e:
+            bareosfd.JobMessage(
+                context,
+                bJobMessageType["M_ERROR"],
+                "Could net parse restore object json-data \"%s\ / \"%s\"" % (self.row_rop_raw, e.message),
+            )
+
         if "lastBackupStopTime" in self.rop_data[ROP.jobid]:
             self.lastBackupStopTime = int(
                 self.rop_data[ROP.jobid]["lastBackupStopTime"]
@@ -366,21 +421,28 @@ class BareosFdPluginPostgres(
         # TODO Error Handling
         # Get Backup Start Date
         self.parseBackupLabelFile(context)
-        # self.dbCursor.execute("SELECT pg_backup_start_time()")
+        # self.execute_SQL("SELECT pg_backup_start_time()")
         # self.backupStartTime = self.dbCursor.fetchone()[0]
         # Tell Postgres we are done
-        self.dbCursor.execute("SELECT pg_stop_backup();")
-        self.lastLSN = self.dbCursor.fetchone()[0].zfill(17)
-        self.lastBackupStopTime = int(time.time())
-        results = self.dbCursor.fetchall()
-        bareosfd.JobMessage(
-            context,
-            bJobMessageType["M_INFO"],
-            "Database connection closed. "
-            + "CHECKPOINT LOCATION: %s, " % self.labelItems["CHECKPOINT LOCATION"]
-            + "START WAL LOCATION: %s\n" % self.labelItems["START WAL LOCATION"],
-        )
-        self.PostgressFullBackupRunning = False
+        if self.execute_SQL(context, "SELECT pg_stop_backup();"):
+            self.lastLSN = self.dbCursor.fetchone()[0].zfill(17)
+            self.lastBackupStopTime = int(time.time())
+            results = self.dbCursor.fetchall()
+            bareosfd.JobMessage(
+                context,
+                bJobMessageType["M_INFO"],
+                "Database connection closed. "
+                + "CHECKPOINT LOCATION: %s, " % self.labelItems["CHECKPOINT LOCATION"]
+                + "START WAL LOCATION: %s\n" % self.labelItems["START WAL LOCATION"],
+            )
+            self.PostgressFullBackupRunning = False
+        else:   
+            bareosfd.JobMessage(
+                context,
+                bJobMessageType["M_ERROR"],
+                'pg_stop_backup statement failed.',
+            )
+
 
     def checkForWalFiles(self, context):
         """
@@ -394,7 +456,15 @@ class BareosFdPluginPostgres(
         self.files_to_backup.append(walArchive)
         for fileName in os.listdir(walArchive):
             fullPath = os.path.join(walArchive, fileName)
-            st = os.stat(fullPath)
+            try:
+                st = os.stat(fullPath)
+            except Exception as e:
+                bareosfd.JobMessage(
+                    context,
+                    bJobMessageType["M_ERROR"],
+                    "Could net get stat-info for file %s: \"%s\"" % (fullPath, e.message),
+                )
+                continue
             fileMtime = datetime.datetime.fromtimestamp(st.st_mtime)
             if (
                 fileMtime.replace(tzinfo=dateutil.tz.tzoffset(None, self.tzOffset))
