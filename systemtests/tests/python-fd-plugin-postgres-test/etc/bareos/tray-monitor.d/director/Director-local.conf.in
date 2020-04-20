@@ -1,0 +1,4 @@
+Director {
+  Name = bareos-dir
+  Address = localhost
+}

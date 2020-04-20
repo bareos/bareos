@@ -62,6 +62,8 @@ class BareosFdPluginPostgres(
 
         self.dbCon = None
         self.dbCursor = None
+        # Additional db options for psycopg2 connectino
+        self.dbOpts = ""
         # This will be set to True between SELCET pg_start_backup
         # and SELECT pg_stop_backup. We backup database file during
         # this time
@@ -115,6 +117,8 @@ class BareosFdPluginPostgres(
             self.switchWal = True
         else:
             self.switchWal = self.options["switchWal"].lower() == "true"
+        if 'dbHost' in self.options:
+            self.dbOpts += " host='%s'" %self.options["dbHost"]
         return bRCs["bRC_OK"]
 
     def execute_SQL(self, context, sqlStatement):
@@ -142,7 +146,7 @@ class BareosFdPluginPostgres(
         )
         try:
             self.dbCon = psycopg2.connect(
-                "dbname=%s user=%s" % (self.dbname, self.dbuser)
+                "dbname=%s user=%s %s" % (self.dbname, self.dbuser, self.dbOpts)
             )
             self.dbCursor = self.dbCon.cursor()
             self.dbCursor.execute("SELECT current_setting('server_version_num')")
