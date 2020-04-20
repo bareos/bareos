@@ -202,8 +202,17 @@ class BareosFdPluginBaseclass(object):
                 context, 200, "Reading %d from file %s\n" % (IOP.count, self.FNAME)
             )
             IOP.buf = bytearray(IOP.count)
-            IOP.status = self.file.readinto(IOP.buf)
-            IOP.io_errno = 0
+            try:
+                IOP.status = self.file.readinto(IOP.buf)
+                IOP.io_errno = 0
+            except Exception as e:
+                bareosfd.JobMessage(
+                    context,
+                    bJobMessageType["M_ERROR"],
+                    "Could net read %d bytes from file %s. \"%s\"" % (IOP.count, file_to_backup, e.message),
+                )
+                IOP.io_errno = e.errno
+                return bRCs["bRC_Error"]
         else:
             bareosfd.DebugMessage(
                 context,
@@ -219,7 +228,17 @@ class BareosFdPluginBaseclass(object):
         bareosfd.DebugMessage(
             context, 200, "Writing buffer to file %s\n" % (self.FNAME)
         )
-        self.file.write(IOP.buf)
+        try:
+            self.file.write(IOP.buf)
+        except Exception as e:
+            bareosfd.JobMessage(
+                context,
+                bJobMessageType["M_ERROR"],
+                "Could net write to file %s. \"%s\"" % (file_to_backup, e.message),
+            )
+            IOP.io_errno = e.errno
+            IOP.status = 0
+            return bRCs["bRC_Error"] 
         IOP.status = IOP.count
         IOP.io_errno = 0
         return bRCs["bRC_OK"]
@@ -365,24 +384,8 @@ class BareosFdPluginBaseclass(object):
             100,
             "create_file() entry point in Python called with %s\n" % (restorepkt),
         )
-        FNAME = restorepkt.ofname
-        dirname = os.path.dirname(FNAME.rstrip("/"))
-        if not os.path.exists(dirname):
-            bareosfd.DebugMessage(
-                context, 200, "Directory %s does not exist, creating it now\n" % dirname
-            )
-            os.makedirs(dirname)
-        # open creates the file, if not yet existing, we close it again right
-        # aways it will be opened again in plugin_io.
-        if restorepkt.type == bFileType["FT_REG"]:
-            open(FNAME, "wb").close()
-        elif restorepkt.type == bFileType["FT_LNK"]:
-            if not os.path.exists(FNAME.rstrip("/")):
-                os.symlink(restorepkt.olname, FNAME.rstrip("/"))
-        elif restorepkt.type == bFileType["FT_DIREND"]:
-            if not os.path.exists(FNAME):
-                os.makedirs(FNAME)
-        restorepkt.create_status = bCFs["CF_EXTRACT"]
+        # We leave file creation up to the core for the default case
+        restorepkt.create_status = bCFs["CF_CORE"]
         return bRCs["bRC_OK"]
 
     def set_file_attributes(self, context, restorepkt):
