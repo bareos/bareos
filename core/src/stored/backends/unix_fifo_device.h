@@ -32,6 +32,8 @@
 
 namespace storagedaemon {
 
+class DeviceControlRecord;
+
 class unix_fifo_device : public Device {
  public:
   unix_fifo_device();
