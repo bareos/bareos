@@ -46,7 +46,7 @@ install(
               WORLD_READ WORLD_EXECUTE
 )
 
-message(STATUS "installing firewall files to ${DESTSTARTDIR}")
+message(STATUS "installing firewall files to ${FIREWALL_DIR}")
 
 # Install firewall fd
 install(

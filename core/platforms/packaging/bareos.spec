@@ -63,7 +63,7 @@ BuildConflicts: libtirpc-devel
 %endif
 
 # fedora 28: rpc was removed from libc
-%if 0%{?fedora} >= 28 || 0%{?rhel} > 7
+%if 0%{?fedora} >= 28 || 0%{?rhel} > 7 || 0%{?suse_version} > 1500
 BuildRequires: rpcgen
 BuildRequires: libtirpc-devel
 %endif
@@ -78,9 +78,10 @@ BuildRequires: libtirpc-devel
 %define python_plugins 0
 %endif
 
-%if 0%{?suse_version} > 1010
+%if 0%{?suse_version} > 1010 && 0%{?suse_version} <= 1500
 %define install_suse_fw 1
 %define _fwdefdir   %{_sysconfdir}/sysconfig/SuSEfirewall2.d/services
+BuildRequires:  openSUSE-release
 %endif
 
 
@@ -941,7 +942,7 @@ for F in  \
     %{script_dir}/mtx-changer \
     %{_sysconfdir}/%{name}/mtx-changer.conf \
 %endif
-%if 0%{?install_suse_fw} == 0
+%if ! 0%{?install_suse_fw}
     %{_sysconfdir}/sysconfig/SuSEfirewall2.d/services/bareos-dir \
     %{_sysconfdir}/sysconfig/SuSEfirewall2.d/services/bareos-sd \
     %{_sysconfdir}/sysconfig/SuSEfirewall2.d/services/bareos-fd \
