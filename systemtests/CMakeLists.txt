@@ -340,6 +340,7 @@ macro(prepare_test)
   string(REPLACE "-" "_" db_name "regress-${TEST_NAME}")
   # set(db_name "regress-${TEST_NAME}")
   set(db_user "regress")
+  set(db_address "$current_test_directory"/database/tmp)
 
   set(job_email root@localhost)
 
