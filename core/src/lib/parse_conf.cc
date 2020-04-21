@@ -711,3 +711,19 @@ bool ConfigurationParser::GetPathOfNewResource(PoolMem& path,
 
   return true;
 }
+
+void ConfigurationParser::AddWarning(const std::string& warning) {
+  warnings_ << warning;
+}
+
+void ConfigurationParser::ClearWarnings() {
+  warnings_.clear();
+}
+
+bool ConfigurationParser::HasWarnings() const {
+  return !warnings_.empty();
+}
+
+const BStringList& ConfigurationParser::GetWarnings() const {
+  return warnings_;
+}

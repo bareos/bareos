@@ -470,8 +470,8 @@ static struct ua_cmdstruct commands[] = {
     {NT_("status"), StatusCmd, _("Report status"),
      NT_("all | dir=<dir-name> | director | scheduler | "
          "schedule=<schedule-name> | client=<client-name> |\n"
-         "\tstorage=<storage-name> slots | days=<nr_days> | job=<job-name> |\n"
-         "\tsubscriptions"),
+         "storage=<storage-name> slots | days=<nr_days> | job=<job-name> |\n"
+         "subscriptions | configuration"),
      true, true},
     {NT_("setbandwidth"), SetbwlimitCmd, _("Sets bandwidth"),
      NT_("client=<client-name> | storage=<storage-name> | jobid=<jobid> |\n"

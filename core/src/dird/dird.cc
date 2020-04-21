@@ -395,7 +395,16 @@ int main(int argc, char* argv[])
     goto bail_out;
   }
 
-  if (test_config) { TerminateDird(0); }
+  if (test_config) {
+    if (my_config->HasWarnings()) {
+      /* messaging not initialized, so Jmsg with  M_WARNING doesn't work */
+      fprintf(stderr, _("There are configuration warnings:\n"));
+      for (auto& warning : my_config->GetWarnings()) {
+        fprintf(stderr, " * %s\n", warning.c_str());
+      }
+    }
+    TerminateDird(0);
+  }
 
   if (!InitializeSqlPooling()) {
     Jmsg((JobControlRecord*)NULL, M_ERROR_TERM, 0,
@@ -578,6 +587,7 @@ bool DoReloadConfig()
   Dmsg0(100, "Reloading config file\n");
 
   my_config->err_type_ = M_ERROR;
+  my_config->ClearWarnings();
   bool ok = my_config->ParseConfig();
 
   if (!ok || !CheckResources() || !CheckCatalog(UPDATE_CATALOG) ||

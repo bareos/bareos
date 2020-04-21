@@ -1172,7 +1172,7 @@ status
       :caption: status
 
       status [all | dir=<dir-name> | director | scheduler | schedule=<schedule-name> |
-              client=<client-name> | storage=<storage-name> slots | subscriptions]
+              client=<client-name> | storage=<storage-name> slots | subscriptions | configuration]
 
    If you do a status dir, the console will list any currently running jobs, a summary of all jobs scheduled to be run in the next 24 hours, and a listing of the last ten terminated jobs with their statuses. The scheduled jobs summary will include the Volume name to be used. You should be aware of two things: 1. to obtain the volume name, the code goes through the same code that will be used when the job runs, but it does not do pruning nor recycling of Volumes; 2. The Volume listed is at best a
    guess. The Volume actually used may be different because of the time difference (more durations may expire when the job runs) and another job could completely fill the Volume requiring a new one.
@@ -1354,6 +1354,9 @@ status
       }
 
    Not configuring the directive at all also disables it, as the default value for the Subscriptions directive is zero.
+
+
+   Using the console command :bcommand:`status configuration` will show a list of deprecated configuration settings that were detected when loading the director's configuration.
 
 time
    :index:`\ <single: Console; Command; time>`\  The time command shows the current date, time and weekday.
