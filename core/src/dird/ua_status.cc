@@ -63,6 +63,7 @@ static void ListConnectedClients(UaContext* ua);
 static void DoDirectorStatus(UaContext* ua);
 static void DoSchedulerStatus(UaContext* ua);
 static bool DoSubscriptionStatus(UaContext* ua);
+static void DoConfigurationStatus(UaContext* ua);
 static void DoAllStatus(UaContext* ua);
 static void StatusSlots(UaContext* ua, StorageResource* store);
 static void StatusContentApi(UaContext* ua, StorageResource* store);
@@ -191,6 +192,9 @@ bool StatusCmd(UaContext* ua, const char* cmd)
       } else {
         return false;
       }
+    } else if (bstrncasecmp(ua->argk[i], NT_("conf"), 4)) {
+      DoConfigurationStatus(ua);
+      return true;
     } else {
       /*
        * limit storages to autochangers if slots is given
@@ -369,6 +373,14 @@ void ListDirStatusHeader(UaContext* ua)
 
   len = ListDirPlugins(msg);
   if (len > 0) { ua->SendMsg("%s\n", msg.c_str()); }
+
+  if (my_config->HasWarnings()) {
+    ua->SendMsg(
+        _("\n"
+          "There are WARNINGS for the director configuration!\n"
+          "See 'status configuration' for details.\n"
+          "\n"));
+  }
 }
 
 static bool show_scheduled_preview(UaContext* ua,
@@ -523,6 +535,18 @@ static bool DoSubscriptionStatus(UaContext* ua)
 
 bail_out:
   return retval;
+}
+
+static void DoConfigurationStatus(UaContext* ua)
+{
+  if(my_config->HasWarnings()) {
+    ua->SendMsg(_("Deprecated configuration settings detected:\n"));
+    for(auto& warning : my_config->GetWarnings()) {
+      ua->SendMsg(" * %s\n", warning.c_str());
+    }
+  } else {
+    ua->SendMsg(_("No deprecated configuration settings detected.\n"));
+  }
 }
 
 static void DoSchedulerStatus(UaContext* ua)

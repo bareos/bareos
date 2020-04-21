@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2008-2008 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,8 +30,13 @@
  * the output can be sent directly to a BareosSocket.
  */
 
-#ifndef BAREOS_LIB_STATUS_H_
-#define BAREOS_LIB_STATUS_H_
+#ifndef BAREOS_LIB_STATUS_PACKET_H_
+#define BAREOS_LIB_STATUS_PACKET_H_
+
+#include <include/bareos.h>
+#include <string>
+
+class BareosSocket;
 
 /**
  * Packet to send to OutputStatus()
@@ -47,5 +52,8 @@ class StatusPacket {
                    int len,
                    void* context) = nullptr; /* Win32 */
   bool api = false;                          /* set if we want API output */
+  void send(const char* msg, int len);
+  void send(PoolMem& msg, int len) { send(msg.c_str(), len); }
+  void send(const std::string& msg) { send(msg.c_str(), msg.length()); }
 };
 #endif

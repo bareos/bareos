@@ -29,6 +29,7 @@
 
 #include "include/bareos.h"
 #include "include/bc_types.h"
+#include "lib/bstringlist.h"
 #include "lib/parse_conf_callbacks.h"
 #include "lib/s_password.h"
 #include "lib/tls_conf.h"
@@ -317,6 +318,11 @@ class ConfigurationParser {
       TlsPolicy& tls_policy_out) const;
   std::string CreateOwnQualifiedNameForNetworkDump() const;
 
+  void AddWarning(const std::string& warning);
+  void ClearWarnings();
+  bool HasWarnings() const;
+  const BStringList& GetWarnings() const;
+
  private:
   ConfigurationParser(const ConfigurationParser&) = delete;
   ConfigurationParser operator=(const ConfigurationParser&) = delete;
@@ -343,6 +349,7 @@ class ConfigurationParser {
   ParseConfigBeforeCb_t ParseConfigBeforeCb_;
   ParseConfigReadyCb_t ParseConfigReadyCb_;
   bool parser_first_run_;
+  BStringList warnings_;
 
 
   const char* GetDefaultConfigDir();
