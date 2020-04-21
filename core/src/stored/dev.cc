@@ -184,7 +184,7 @@ static inline Device* init_dev(JobControlRecord* jcr,
    */
   switch (device->dev_type) {
     /*
-     * When using dynamic loading use the init_backend_dev() function
+     * When using dynamic loading use the InitBackendDevice() function
      * for any type of device not being of the type file.
      */
 #ifndef HAVE_DYNAMIC_SD_BACKENDS
@@ -240,7 +240,7 @@ static inline Device* init_dev(JobControlRecord* jcr,
 #endif
     default:
 #ifdef HAVE_DYNAMIC_SD_BACKENDS
-      dev = init_backend_dev(jcr, device->dev_type);
+      dev = InitBackendDevice(jcr, device->dev_type);
 #endif
       break;
   }

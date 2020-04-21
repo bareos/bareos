@@ -101,7 +101,7 @@ void ReservationTest::TearDown()
     }
   }
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
-  DevFlushBackends();
+  FlushAndCloseBackendDevices();
 #endif
 
   if (configfile) { free(configfile); }

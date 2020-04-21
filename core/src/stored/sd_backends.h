@@ -43,14 +43,14 @@ typedef void (*t_flush_backend)(void);
 /**
  * Loaded shared library with a certain backend interface type.
  */
-struct backend_shared_library_t {
-  DeviceType interface_type_id;
-  void* handle;
+struct BackendDeviceLibraryDescriptor {
+  DeviceType device_type{DeviceType::B_UNKNOWN_DEV};
+  void* handle{};
   /*
    * Entry points into loaded shared library.
    */
-  t_backend_instantiate backend_instantiate;
-  t_flush_backend flush_backend;
+  t_backend_instantiate backend_instantiate{};
+  t_flush_backend flush_backend{};
 };
 
 #if defined(HAVE_WIN32)
@@ -65,9 +65,9 @@ struct backend_shared_library_t {
 
 
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
-void SdSetBackendDirs(std::vector<std::string>&& new_backend_dirs);
-Device* init_backend_dev(JobControlRecord* jcr, DeviceType device_type);
-void DevFlushBackends();
+void SetBackendDeviceDirectories(std::vector<std::string>&& new_backend_dirs);
+Device* InitBackendDevice(JobControlRecord* jcr, DeviceType device_type);
+void FlushAndCloseBackendDevices();
 #endif
 
 } /* namespace storagedaemon */
