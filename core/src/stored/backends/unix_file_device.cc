@@ -323,8 +323,4 @@ bail_out:
   return true;
 }
 
-unix_file_device::~unix_file_device() {}
-
-unix_file_device::unix_file_device() {}
-
 } /* namespace storagedaemon  */
