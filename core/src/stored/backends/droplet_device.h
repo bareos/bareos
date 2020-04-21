@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2017 Planets Communications B.V.
-   Copyright (C) 2014-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -50,23 +50,17 @@ typedef dpl_status_t (*t_dpl_walk_chunks_call_back)(dpl_sysmd_t* sysmd,
 
 class droplet_device : public chunked_device {
  private:
-  /*
-   * Private Members
-   */
   /* maximun number of chunks in a volume (0000 to 9999) */
   const int max_chunks_ = 10000;
-  char* configstring_;
-  const char* profile_;
-  const char* location_;
-  const char* canned_acl_;
-  const char* storage_class_;
-  const char* bucketname_;
-  dpl_ctx_t* ctx_;
-  dpl_sysmd_t sysmd_;
+  char* configstring_{};
+  const char* profile_{};
+  const char* location_{};
+  const char* canned_acl_{};
+  const char* storage_class_{};
+  const char* bucketname_{};
+  dpl_ctx_t* ctx_{};
+  dpl_sysmd_t sysmd_{};
 
-  /*
-   * Private Methods
-   */
   bool initialize();
   dpl_status_t check_path(const char* path);
 
@@ -89,10 +83,7 @@ class droplet_device : public chunked_device {
                    bool ignore_gaps = false);
 
  public:
-  /*
-   * Public Methods
-   */
-  droplet_device();
+  droplet_device() = default;
   ~droplet_device();
 
   /*

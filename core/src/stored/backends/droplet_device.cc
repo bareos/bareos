@@ -1020,16 +1020,6 @@ droplet_device::~droplet_device()
   V(mutex);
 }
 
-droplet_device::droplet_device()
-{
-  configstring_ = NULL;
-  bucketname_ = NULL;
-  location_ = NULL;
-  canned_acl_ = NULL;
-  storage_class_ = NULL;
-  ctx_ = NULL;
-}
-
 #ifdef HAVE_DYNAMIC_SD_BACKENDS
 extern "C" Device* backend_instantiate(JobControlRecord* jcr,
                                        DeviceType device_type)
