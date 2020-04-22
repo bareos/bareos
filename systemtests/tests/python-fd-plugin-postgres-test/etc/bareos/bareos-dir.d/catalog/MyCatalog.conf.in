@@ -5,5 +5,7 @@ Catalog {
   dbname = "@db_name@"
   dbuser = "@db_user@"
   dbpassword = "@db_password@"
-  dbaddress = "@dbaddress@"
+  # this would rund the catalog in the local database
+  # for now we use it for backup and restore tests, only
+  #dbaddress = "@dbaddress@"
 }
