@@ -705,8 +705,8 @@ static
     Dmsg1(10, "Term device %s\n", device->device_name);
     if (device->dev) {
       device->dev->ClearVolhdr();
-      device->dev->term();
-      device->dev = NULL;
+      delete device->dev;
+      device->dev = nullptr;
     } else {
       Dmsg1(10, "No dev structure %s\n", device->device_name);
     }

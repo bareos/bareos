@@ -455,7 +455,7 @@ static void DoExtract(char* devname)
   CleanupCompression(jcr);
 
   CleanDevice(jcr->impl->dcr);
-  dev->term();
+  delete dev;
   FreeDeviceControlRecord(dcr);
   FreeJcr(jcr);
 

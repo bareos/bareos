@@ -386,7 +386,7 @@ int main(int argc, char* argv[])
   DbFlushBackends();
 
   CleanDevice(bjcr->impl->dcr);
-  dev->term();
+  delete dev;
   FreeDeviceControlRecord(bjcr->impl->dcr);
   FreeJcr(bjcr);
 

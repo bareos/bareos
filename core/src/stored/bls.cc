@@ -291,7 +291,7 @@ static void do_close(JobControlRecord* jcr)
   FreeAttr(attr);
   FreeRecord(rec);
   CleanDevice(jcr->impl->dcr);
-  dev->term();
+  delete dev;
   FreeDeviceControlRecord(jcr->impl->dcr);
   FreeJcr(jcr);
 }

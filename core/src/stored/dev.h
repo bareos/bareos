@@ -226,7 +226,7 @@ class Device {
 
  public:
   Device() = default;
-  virtual ~Device() = default;
+  virtual ~Device();
   Device* volatile swap_dev{}; /**< Swap vol from this device */
   std::vector<DeviceControlRecord*> attached_dcrs;           /**< Attached DeviceControlRecords */
   pthread_mutex_t mutex_ = PTHREAD_MUTEX_INITIALIZER;        /**< Access control */
@@ -420,7 +420,6 @@ class Device {
   void ClearVolhdr();
   bool close(DeviceControlRecord* dcr);
   bool open(DeviceControlRecord* dcr, DeviceMode omode);
-  void term();
   ssize_t read(void* buf, size_t len);
   ssize_t write(const void* buf, size_t len);
   bool mount(DeviceControlRecord* dcr, int timeout);

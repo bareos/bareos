@@ -1270,38 +1270,35 @@ ssize_t Device::write(const void* buf, size_t len)
  */
 const char* Device::name() const { return device->resource_name_; }
 
-/**
- * Free memory allocated for the device
- */
-void Device::term()
+Device::~Device()
 {
   Dmsg1(900, "term dev: %s\n", print_name());
 
   /*
    * On termination we don't have any DCRs left
-   * so we call close with a NULL argument as
+   * so we call close with a nullptr argument as
    * the dcr argument is only used in the unmount
    * method to generate a plugin_event we just check
-   * there if the dcr is not NULL and otherwise skip
+   * there if the dcr is not nullptr and otherwise skip
    * the plugin event generation.
    */
-  close(NULL);
+  close(nullptr);
 
   if (dev_name) {
     FreeMemory(dev_name);
-    dev_name = NULL;
+    dev_name = nullptr;
   }
   if (dev_options) {
     FreeMemory(dev_options);
-    dev_options = NULL;
+    dev_options = nullptr;
   }
   if (prt_name) {
     FreeMemory(prt_name);
-    prt_name = NULL;
+    prt_name = nullptr;
   }
   if (errmsg) {
     FreePoolMemory(errmsg);
-    errmsg = NULL;
+    errmsg = nullptr;
   }
   pthread_mutex_destroy(&mutex_);
   pthread_cond_destroy(&wait);
@@ -1309,8 +1306,7 @@ void Device::term()
   pthread_mutex_destroy(&spool_mutex);
   // RwlDestroy(&lock);
   attached_dcrs.clear();
-  if (device) { device->dev = NULL; }
-  delete this;
+  if (device) { device->dev = nullptr; }
 }
 
 bool Device::CanStealLock() const

@@ -349,7 +349,7 @@ static void TerminateBtape(int status)
 
   FreeVolumeLists();
 
-  if (dev) { dev->term(); }
+  if (dev) { delete dev; }
 
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
   FlushAndCloseBackendDevices();
