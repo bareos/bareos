@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2014-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -142,4 +142,26 @@ void UaContext::LogAuditEventCmdline()
   Emsg3(M_AUDIT, 0, _("Console [%s] from [%s] cmdline %s\n"), user_name, host,
         cmd);
 }
+
+void UaContext::LogAuditEventInfoMsg(const char* fmt, ...)
+{
+  va_list arg_ptr;
+  const char* user_name;
+  const char* host;
+  PoolMem message(PM_MESSAGE);
+
+  if (!me->auditing) { return; }
+
+  va_start(arg_ptr, fmt);
+  message.Bvsprintf(fmt, arg_ptr);
+  va_end(arg_ptr);
+
+  user_name =
+      user_acl ? user_acl->corresponding_resource->resource_name_ : "default";
+  host = UA_sock ? UA_sock->host() : "unknown";
+
+  Emsg3(M_AUDIT, 0, _("Console [%s] from [%s] info message %s\n"),
+      user_name, host, message.c_str());
+}
+
 } /* namespace directordaemon */

@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -152,6 +152,7 @@ class UaContext {
    */
   bool AuditEventWanted(bool audit_event_enabled);
   void LogAuditEventCmdline();
+  void LogAuditEventInfoMsg(const char* fmt, ...);
 
   /*
    * The below are in ua_output.c
