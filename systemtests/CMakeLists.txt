@@ -172,9 +172,11 @@ macro(handle_python_plugin_modules test_name)
   endif()
 
   if(${test_name} STREQUAL python-fd-plugin-postgres-test)
-    #    list(APPEND FD_PYMODULES_TO_LINK_TO_SRC bareos-fd-local-fileset.py maik
-    #            BareosFdPluginLocalFileset.py maik
-    #)
+        list(APPEND FD_PYMODULES_TO_LINK_TO_SRC bareos-fd-postgres.py 
+                BareosFdPluginLocalFileset.py 
+		BareosFdPluginPostgres.py
+		BareosFdPluginBaseclass.py
+    )
   endif()
 
   # still missing: filed/BareosFdPluginLDAP.py filed/bareos-fd-ldap.py
