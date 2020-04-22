@@ -202,7 +202,7 @@ static bRC handle_tapealert_readout(void* value)
   if (!dcr) { return bRC_Error; }
   dev = dcr->dev;
   if (!dev) { return bRC_Error; }
-  device = dev->device;
+  device = dev->device_resource;
   if (!device) { return bRC_Error; }
 
   /*

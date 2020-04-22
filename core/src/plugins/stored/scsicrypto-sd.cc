@@ -318,7 +318,7 @@ static bRC do_set_scsi_encryption_key(void* value)
     Dmsg0(debuglevel, "scsicrypto-sd: Error: dev is not set!\n");
     return bRC_Error;
   }
-  device = dev->device;
+  device = dev->device_resource;
   if (!device) {
     Dmsg0(debuglevel, "scsicrypto-sd: Error: device is not set!\n");
     return bRC_Error;
@@ -421,7 +421,7 @@ static bRC do_clear_scsi_encryption_key(void* value)
     Dmsg0(debuglevel, "scsicrypto-sd: Error: dev is not set!\n");
     return bRC_Error;
   }
-  device = dev->device;
+  device = dev->device_resource;
   if (!device) {
     Dmsg0(debuglevel, "scsicrypto-sd: Error: device is not set!\n");
     return bRC_Error;
@@ -475,7 +475,7 @@ static bRC handle_read_error(void* value)
   if (!dcr) { return bRC_Error; }
   dev = dcr->dev;
   if (!dev) { return bRC_Error; }
-  device = dev->device;
+  device = dev->device_resource;
   if (!device) { return bRC_Error; }
 
   /*

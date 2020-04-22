@@ -171,8 +171,8 @@ static void MakeUniqueDataSpoolFilename(DeviceControlRecord* dcr,
 {
   const char* dir;
 
-  if (dcr->dev->device->spool_directory) {
-    dir = dcr->dev->device->spool_directory;
+  if (dcr->dev->device_resource->spool_directory) {
+    dir = dcr->dev->device_resource->spool_directory;
   } else {
     dir = working_directory;
   }
@@ -299,7 +299,7 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
   rdev->errmsg[0] = 0;
   rdev->max_block_size = dcr->dev->max_block_size;
   rdev->min_block_size = dcr->dev->min_block_size;
-  rdev->device = dcr->dev->device;
+  rdev->device_resource = dcr->dev->device_resource;
   rdcr = dcr->get_new_spooling_dcr();
   SetupNewDcrDevice(jcr, rdcr, rdev.get(), NULL);
   rdcr->spool_fd = dcr->spool_fd;

@@ -106,7 +106,7 @@ Device* InitBackendDevice(JobControlRecord* jcr, DeviceType device_type)
     shared_library_name += interface_name;
     shared_library_name += DYN_LIB_EXTENSION;
 
-    Dmsg3(100, "InitBackendDevice: testing backend %s/libbareossd-%s%s\n",
+    Dmsg3(100, "InitBackendDevice: checking backend %s/libbareossd-%s%s\n",
           backend_dir.c_str(), interface_name, DYN_LIB_EXTENSION);
 
     struct stat st;

@@ -885,7 +885,7 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
      * Find resource, and make sure we were able to open it
      */
     if (bstrcmp(device->resource_name_, devname.c_str())) {
-      if (!device->dev) { device->dev = InitDev(jcr, device); }
+      if (!device->dev) { device->dev = FactoryCreateDevice(jcr, device); }
       if (!device->dev) {
         Jmsg(jcr, M_WARNING, 0,
              _("\n"
@@ -911,7 +911,7 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
          */
         foreach_alist (device, changer->device) {
           Dmsg1(100, "Try changer device %s\n", device->resource_name_);
-          if (!device->dev) { device->dev = InitDev(jcr, device); }
+          if (!device->dev) { device->dev = FactoryCreateDevice(jcr, device); }
           if (!device->dev) {
             Dmsg1(100, "Device %s could not be opened. Skipped\n",
                   devname.c_str());
@@ -1391,7 +1391,7 @@ static bool ChangerCmd(JobControlRecord* jcr)
     if (dcr) {
       dev = dcr->dev;
       dev->Lock(); /* Use P to avoid indefinite block */
-      if (!dev->device->changer_res) {
+      if (!dev->device_resource->changer_res) {
         dir->fsend(_("3998 Device \"%s\" is not an autochanger.\n"),
                    dev->print_name());
         /* Under certain "safe" conditions, we can steal the lock */

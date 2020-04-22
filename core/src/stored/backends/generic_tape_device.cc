@@ -1180,7 +1180,7 @@ bool generic_tape_device::rewind(DeviceControlRecord* dcr)
  */
 static bool do_mount(DeviceControlRecord* dcr, int mount, int dotimeout)
 {
-  DeviceResource* device = dcr->dev->device;
+  DeviceResource* device = dcr->dev->device_resource;
   PoolMem ocmd(PM_FNAME);
   POOLMEM* results;
   char* icmd;
@@ -1417,7 +1417,7 @@ bool generic_tape_device::MountBackend(DeviceControlRecord* dcr, int timeout)
 {
   bool retval = true;
 
-  if (RequiresMount() && device->mount_command) {
+  if (RequiresMount() && device_resource->mount_command) {
     retval = do_mount(dcr, true, timeout);
   }
 
@@ -1434,7 +1434,7 @@ bool generic_tape_device::UnmountBackend(DeviceControlRecord* dcr, int timeout)
 {
   bool retval = true;
 
-  if (RequiresMount() && device->unmount_command) {
+  if (RequiresMount() && device_resource->unmount_command) {
     retval = do_mount(dcr, false, timeout);
   }
 

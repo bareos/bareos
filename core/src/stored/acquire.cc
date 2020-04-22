@@ -106,7 +106,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
   dev->Lock_read_acquire();
   Dmsg2(rdebuglevel, "dcr=%p dev=%p\n", dcr, dcr->dev);
   Dmsg2(rdebuglevel, "MediaType dcr=%s dev=%s\n", dcr->media_type,
-        dev->device->media_type);
+        dev->device_resource->media_type);
   dev->dblock(BST_DOING_ACQUIRE);
 
   if (dev->num_writers > 0) {
@@ -150,9 +150,9 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
    * not release the dcr.
    */
   Dmsg2(rdebuglevel, "MediaType dcr=%s dev=%s\n", dcr->media_type,
-        dev->device->media_type);
+        dev->device_resource->media_type);
   if (dcr->media_type[0] &&
-      !bstrcmp(dcr->media_type, dev->device->media_type)) {
+      !bstrcmp(dcr->media_type, dev->device_resource->media_type)) {
     ReserveContext rctx;
     DirectorStorage* store;
     int status;
@@ -160,11 +160,11 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
     Jmsg3(jcr, M_INFO, 0,
           _("Changing read device. Want Media Type=\"%s\" have=\"%s\"\n"
             "  device=%s\n"),
-          dcr->media_type, dev->device->media_type, dev->print_name());
+          dcr->media_type, dev->device_resource->media_type, dev->print_name());
     Dmsg3(rdebuglevel,
           "Changing read device. Want Media Type=\"%s\" have=\"%s\"\n"
           "  device=%s\n",
-          dcr->media_type, dev->device->media_type, dev->print_name());
+          dcr->media_type, dev->device_resource->media_type, dev->print_name());
 
     dev->dunblock(DEV_UNLOCKED);
 
@@ -227,7 +227,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
     }
   }
   Dmsg2(rdebuglevel, "MediaType dcr=%s dev=%s\n", dcr->media_type,
-        dev->device->media_type);
+        dev->device_resource->media_type);
 
   dev->ClearUnload();
 
@@ -264,7 +264,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
      * See if we are changing the volume in the device.
      * If so we need to force a reread of the tape label.
      */
-    if (dev->device->drive_crypto_enabled ||
+    if (dev->device_resource->drive_crypto_enabled ||
         (dev->HasCap(CAP_ALWAYSOPEN) &&
          !bstrcmp(dev->VolHdr.VolumeName, dcr->VolumeName))) {
       dev->ClearLabeled();
@@ -301,7 +301,8 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
      * See if we are changing the volume in the device.
      * If so we need to force a reread of the tape label.
      */
-    if (!dev->device->drive_crypto_enabled && dev->HasCap(CAP_ALWAYSOPEN) &&
+    if (!dev->device_resource->drive_crypto_enabled &&
+        dev->HasCap(CAP_ALWAYSOPEN) &&
         bstrcmp(dev->VolHdr.VolumeName, dcr->VolumeName)) {
       vol_label_status = VOL_OK;
     } else {
@@ -426,7 +427,7 @@ get_out:
 
   Dmsg2(rdebuglevel, "dcr=%p dev=%p\n", dcr, dcr->dev);
   Dmsg2(rdebuglevel, "MediaType dcr=%s dev=%s\n", dcr->media_type,
-        dev->device->media_type);
+        dev->device_resource->media_type);
 
   dev->Unlock_read_acquire();
 
@@ -790,10 +791,10 @@ void SetupNewDcrDevice(JobControlRecord* jcr,
     if (jcr && jcr->impl->spool_size) {
       dcr->max_job_spool_size = jcr->impl->spool_size;
     } else {
-      dcr->max_job_spool_size = dev->device->max_job_spool_size;
+      dcr->max_job_spool_size = dev->device_resource->max_job_spool_size;
     }
 
-    dcr->device = dev->device;
+    dcr->device = dev->device_resource;
     dcr->SetDev(dev);
     AttachDcrToDev(dcr);
 

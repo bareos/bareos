@@ -62,10 +62,10 @@ bool Device::ScanDirForVolume(DeviceControlRecord* dcr)
   name_max = pathconf(".", _PC_NAME_MAX);
   if (name_max < 1024) { name_max = 1024; }
 
-  if (device->mount_point) {
-    mount_point = device->mount_point;
+  if (device_resource->mount_point) {
+    mount_point = device_resource->mount_point;
   } else {
-    mount_point = device->device_name;
+    mount_point = device_resource->device_name;
   }
 
   if (!(dp = opendir(mount_point))) {

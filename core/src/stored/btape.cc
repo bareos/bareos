@@ -690,7 +690,7 @@ static void capcmd()
   printf("%sOPENED ", dev->IsOpen() ? "" : "!");
   printf("%sTAPE ", dev->IsTape() ? "" : "!");
   printf("%sLABEL ", dev->IsLabeled() ? "" : "!");
-  printf("%sMALLOC ", BitIsSet(ST_MALLOC, dev->state) ? "" : "!");
+  printf("%sMALLOC ", BitIsSet(ST_ALLOCATED, dev->state) ? "" : "!");
   printf("%sAPPEND ", dev->CanAppend() ? "" : "!");
   printf("%sREAD ", dev->CanRead() ? "" : "!");
   printf("%sEOT ", dev->AtEot() ? "" : "!");

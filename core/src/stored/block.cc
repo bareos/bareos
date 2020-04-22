@@ -126,7 +126,7 @@ DeviceBlock* new_block(Device* dev)
   memset(block, 0, sizeof(DeviceBlock));
 
   if (dev->max_block_size == 0) {
-    block->buf_len = dev->device->label_block_size;
+    block->buf_len = dev->device_resource->label_block_size;
     Dmsg1(100,
           "created new block of blocksize %d (dev->device->label_block_size) "
           "as dev->max_block_size is zero\n",

@@ -550,7 +550,7 @@ static bool UnloadOtherDrive(DeviceControlRecord* dcr,
   Device* dev = NULL;
   Device* dev_save;
   bool found = false;
-  AutochangerResource* changer = dcr->dev->device->changer_res;
+  AutochangerResource* changer = dcr->dev->device_resource->changer_res;
   DeviceResource* device = nullptr;
   int retries = 0; /* wait for device retries */
 
@@ -632,7 +632,7 @@ bool UnloadDev(DeviceControlRecord* dcr, Device* dev, bool lock_set)
   JobControlRecord* jcr = dcr->jcr;
   slot_number_t save_slot;
   uint32_t timeout = dcr->device->max_changer_wait;
-  AutochangerResource* changer = dcr->dev->device->changer_res;
+  AutochangerResource* changer = dcr->dev->device_resource->changer_res;
 
   if (!changer) { return false; }
 

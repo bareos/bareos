@@ -178,7 +178,7 @@ constexpr int CAP_BYTES = NbytesForBits(CAP_MAX + 1);
 enum
 {
   ST_LABEL = 0,         /**< Label found */
-  ST_MALLOC = 1,        /**< Dev packet malloc'ed in InitDev() */
+  ST_ALLOCATED = 1,     /**< Dev memory allocated in FactoryCreateDevice() */
   ST_APPENDREADY = 2,   /**< Ready for Bareos append */
   ST_READREADY = 3,     /**< Ready for Bareos read */
   ST_EOT = 4,           /**< At end of tape */
@@ -247,7 +247,7 @@ class Device {
   DeviceType dev_type{DeviceType::B_UNKNOWN_DEV};
   bool autoselect{};          /**< Autoselect in autochanger */
   bool norewindonclose{};     /**< Don't rewind tape drive on close */
-  bool initiated{};           /**< Set when InitDev() called */
+  bool initiated{};           /**< Set when FactoryCreateDevice() called */
   int label_type{};           /**< Bareos/ANSI/IBM label types */
   drive_number_t drive{};     /**< Autochanger logical drive number (base 0) */
   drive_number_t drive_index{}; /**< Autochanger physical drive index (base 0) */
@@ -275,8 +275,8 @@ class Device {
   uint32_t max_open_vols{};   /**< Max simultaneous open volumes */
 
   utime_t vol_poll_interval{};/**< Interval between polling Vol mount */
-  DeviceResource* device{};   /**< Pointer to Device Resource */
-  VolumeReservationItem* vol{}; /**< Pointer to Volume reservation item */
+  DeviceResource* device_resource{};   /**< Pointer to Device Resource */
+  VolumeReservationItem* vol{};        /**< Pointer to Volume reservation item */
   btimer_t* tid{};            /**< Timer id */
 
   VolumeCatalogInfo VolCatInfo;       /**< Volume Catalog Information */
@@ -556,7 +556,7 @@ inline const char* Device::strerror() const { return errmsg; }
 inline const char* Device::archive_name() const { return dev_name; }
 inline const char* Device::print_name() const { return prt_name; }
 
-Device* InitDev(JobControlRecord* jcr, DeviceResource* device);
+Device* FactoryCreateDevice(JobControlRecord* jcr, DeviceResource* device);
 bool CanOpenMountedDev(Device* dev);
 bool LoadDev(Device* dev);
 int WriteBlock(Device* dev);

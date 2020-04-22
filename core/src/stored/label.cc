@@ -556,7 +556,7 @@ static void CreateVolumeLabelRecord(DeviceControlRecord* dcr,
  */
 void CreateVolumeLabel(Device* dev, const char* VolName, const char* PoolName)
 {
-  DeviceResource* device = (DeviceResource*)dev->device;
+  DeviceResource* device = (DeviceResource*)dev->device_resource;
 
   Dmsg0(130, "Start CreateVolumeLabel()\n");
 

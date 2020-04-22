@@ -162,7 +162,7 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
     return false;
   }
 
-  dev = InitDev(jcr, device);
+  dev = FactoryCreateDevice(jcr, device);
   if (!dev) {
     Jmsg1(jcr, M_FATAL, 0, _("Cannot init device %s\n"), dev_name);
     return false;

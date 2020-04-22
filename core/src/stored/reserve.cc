@@ -401,7 +401,7 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
  */
 static bool IsVolInAutochanger(ReserveContext& rctx, VolumeReservationItem* vol)
 {
-  AutochangerResource* changer = vol->dev->device->changer_res;
+  AutochangerResource* changer = vol->dev->device_resource->changer_res;
 
   if (!changer) { return false; }
 
@@ -410,7 +410,7 @@ static bool IsVolInAutochanger(ReserveContext& rctx, VolumeReservationItem* vol)
    */
   if (bstrcmp(rctx.device_name, changer->resource_name_)) {
     Dmsg1(debuglevel, "Found changer device %s\n",
-          vol->dev->device->resource_name_);
+          vol->dev->device_resource->resource_name_);
     return true;
   }
   Dmsg1(debuglevel, "Incorrect changer device %s\n", changer->resource_name_);
@@ -480,16 +480,16 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
            * Found a device, try to use it
            */
           rctx.device_name = device_name;
-          rctx.device = vol->dev->device;
+          rctx.device = vol->dev->device_resource;
 
           if (vol->dev->IsAutochanger()) {
             Dmsg1(debuglevel, "vol=%s is in changer\n", vol->vol_name);
             if (!IsVolInAutochanger(rctx, vol) || !vol->dev->autoselect) {
               continue;
             }
-          } else if (!bstrcmp(device_name, vol->dev->device->resource_name_)) {
+          } else if (!bstrcmp(device_name, vol->dev->device_resource->resource_name_)) {
             Dmsg2(debuglevel, "device=%s not suitable want %s\n",
-                  vol->dev->device->resource_name_, device_name);
+                  vol->dev->device_resource->resource_name_, device_name);
             continue;
           }
 
@@ -709,7 +709,7 @@ static int ReserveDevice(ReserveContext& rctx)
   /*
    * Make sure device exists -- i.e. we can stat() it
    */
-  if (!rctx.device->dev) { rctx.device->dev = InitDev(rctx.jcr, rctx.device); }
+  if (!rctx.device->dev) { rctx.device->dev = FactoryCreateDevice(rctx.jcr, rctx.device); }
   if (!rctx.device->dev) {
     if (rctx.device->changer_res) {
       Jmsg(rctx.jcr, M_WARNING, 0,

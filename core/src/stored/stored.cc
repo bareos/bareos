@@ -569,8 +569,8 @@ extern "C" void* device_initialization(void* arg)
   }
 
   foreach_res (device, R_DEVICE) {
-    Dmsg1(90, "calling InitDev %s\n", device->device_name);
-    dev = InitDev(NULL, device);
+    Dmsg1(90, "calling FactoryCreateDevice %s\n", device->device_name);
+    dev = FactoryCreateDevice(NULL, device);
     Dmsg1(10, "SD init done %s\n", device->device_name);
     if (!dev) {
       Jmsg1(NULL, M_ERROR, 0, _("Could not initialize %s\n"),
