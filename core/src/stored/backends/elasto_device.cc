@@ -31,6 +31,7 @@
 
 #ifdef HAVE_ELASTO
 #include "stored/stored.h"
+#include "stored/sd_backends.h"
 #include "elasto_device.h"
 #include "lib/berrno.h"
 
@@ -374,26 +375,26 @@ elasto_device::elasto_device()
   SetCap(CAP_ADJWRITESIZE); /* Adjust write size to min/max */
 }
 
-#ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" Device* backend_instantiate(JobControlRecord* jcr,
-                                       DeviceType device_type)
-{
-  Device* dev = NULL;
-
-  switch (device_type) {
-    case DeviceType::B_ELASTO_DEV:
-      dev = new elasto_device;
-      break;
-    default:
-      Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"),
-           device_type);
-      break;
+class Backend : public BackendInterface {
+ public:
+  Device* backend_instantiate(JobControlRecord* jcr,
+                              DeviceType device_type) override
+  {
+    switch (device_type) {
+      case DeviceType::B_ELASTO_DEV:
+        return new elasto_device;
+      default:
+        Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"),
+             device_type);
+        return nullptr;
+    }
   }
+  void flush_backend(void) override {}
+};
 
-  return dev;
-}
-
-extern "C" void flush_backend(void) {}
+#ifdef HAVE_DYNAMIC_SD_BACKENDS
+extern "C" BackendInterface* GetBackend(void) { return new Backend; }
 #endif
+
 } /* namespace storagedaemon */
 #endif /* HAVE_ELASTO */

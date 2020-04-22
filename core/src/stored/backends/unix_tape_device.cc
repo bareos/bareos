@@ -43,6 +43,7 @@
 
 #include "include/bareos.h"
 #include "stored/stored.h"
+#include "stored/sd_backends.h"
 #include "generic_tape_device.h"
 #include "unix_tape_device.h"
 
@@ -53,33 +54,30 @@ int unix_tape_device::d_ioctl(int fd, ioctl_req_t request, char* op)
   return ::ioctl(fd, request, op);
 }
 
-unix_tape_device::~unix_tape_device() {}
-
 unix_tape_device::unix_tape_device()
 {
   SetCap(CAP_ADJWRITESIZE); /* Adjust write size to min/max */
 }
 
-#ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" Device* backend_instantiate(JobControlRecord* jcr,
-                                       DeviceType device_type)
-{
-  Device* dev = NULL;
-
-  switch (device_type) {
-    case DeviceType::B_TAPE_DEV:
-      dev = new unix_tape_device;
-      break;
-    default:
-      Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"),
-           device_type);
-      break;
+class Backend : public BackendInterface {
+ public:
+  Device* backend_instantiate(JobControlRecord* jcr,
+                              DeviceType device_type) override
+  {
+    switch (device_type) {
+      case DeviceType::B_TAPE_DEV:
+        return new unix_tape_device;
+      default:
+        Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"),
+             device_type);
+        return nullptr;
+    }
   }
+  void flush_backend(void) override {}
+};
 
-  return dev;
-}
-
-extern "C" void flush_backend(void) {}
+#ifdef HAVE_DYNAMIC_SD_BACKENDS
+extern "C" BackendInterface* GetBackend(void) { return new Backend; }
 #endif
 
 } /* namespace storagedaemon  */

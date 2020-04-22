@@ -36,8 +36,8 @@ class DeviceControlRecord;
 
 class unix_fifo_device : public Device {
  public:
-  unix_fifo_device();
-  ~unix_fifo_device();
+  unix_fifo_device() = default;
+  ~unix_fifo_device() = default;
 
   /*
    * Interface from Device

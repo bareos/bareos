@@ -30,14 +30,19 @@
 #ifndef BAREOS_STORED_SD_BACKENDS_H_
 #define BAREOS_STORED_SD_BACKENDS_H_ 1
 
-class alist;
-
 namespace storagedaemon {
 
+class BackendInterface {
+ public:
+  virtual Device* backend_instantiate(JobControlRecord* jcr,
+                                      DeviceType device_type) = 0;
+  virtual void flush_backend(void) = 0;
+};
+
+
 extern "C" {
-typedef Device* (*t_backend_instantiate)(JobControlRecord* jcr,
-                                         DeviceType device_type);
-typedef void (*t_flush_backend)(void);
+typedef BackendInterface* (*t_backend_base)(void);
+BackendInterface* GetBackend(void);
 }
 
 /**
@@ -49,8 +54,7 @@ struct BackendDeviceLibraryDescriptor {
   /*
    * Entry points into loaded shared library.
    */
-  t_backend_instantiate backend_instantiate{};
-  t_flush_backend flush_backend{};
+  BackendInterface* backend;
 };
 
 #if defined(HAVE_WIN32)

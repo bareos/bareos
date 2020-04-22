@@ -88,14 +88,13 @@ Device* InitBackendDevice(JobControlRecord* jcr, DeviceType device_type)
 
   for (const auto& b : loaded_backends) {
     if (b->device_type == device_type) {
-      return b->backend_instantiate(jcr, device_type);
+      return b->backend->backend_instantiate(jcr, device_type);
     }
   }
 
   // backend not loaded yet
 
-  t_backend_instantiate backend_instantiate;
-  t_flush_backend flush_backend;
+  t_backend_base GetBackend;
 
   void* dl_handle = nullptr;
 
@@ -127,34 +126,18 @@ Device* InitBackendDevice(JobControlRecord* jcr, DeviceType device_type)
       continue;
     }
 
-    backend_instantiate = reinterpret_cast<t_backend_instantiate>(
-        dlsym(dl_handle, "backend_instantiate"));
+    GetBackend =
+        reinterpret_cast<t_backend_base>(dlsym(dl_handle, "GetBackend"));
 
-    if (backend_instantiate == nullptr) {
+    if (GetBackend == nullptr) {
       const char* error = get_dlerror();
       Jmsg(jcr, M_ERROR, 0,
-           _("Lookup of backend_instantiate in shared library %s failed: "
+           _("Lookup of GetBackend in shared library %s failed: "
              "ERR=%s\n"),
            shared_library_name.c_str(), error);
       Dmsg2(100,
-            _("Lookup of backend_instantiate in shared library %s failed: "
+            _("Lookup of GetBackend in shared library %s failed: "
               "ERR=%s\n"),
-            shared_library_name.c_str(), error);
-      dlclose(dl_handle);
-      dl_handle = nullptr;
-      continue;
-    }
-
-    flush_backend =
-        reinterpret_cast<t_flush_backend>(dlsym(dl_handle, "flush_backend"));
-
-    if (flush_backend == nullptr) {
-      const char* error = get_dlerror();
-      Jmsg(jcr, M_ERROR, 0,
-           _("Lookup of flush_backend in shared library %s failed: ERR=%s\n"),
-           shared_library_name.c_str(), error);
-      Dmsg2(100,
-            _("Lookup of flush_backend in shared library %s failed: ERR=%s\n"),
             shared_library_name.c_str(), error);
       dlclose(dl_handle);
       dl_handle = nullptr;
@@ -172,10 +155,9 @@ Device* InitBackendDevice(JobControlRecord* jcr, DeviceType device_type)
   auto b = std::make_unique<BackendDeviceLibraryDescriptor>();
   b->device_type = device_type;
   b->handle = dl_handle;
-  b->backend_instantiate = backend_instantiate;
-  b->flush_backend = flush_backend;
+  b->backend = GetBackend();
 
-  Device* d = b->backend_instantiate(jcr, device_type);
+  Device* d = b->backend->backend_instantiate(jcr, device_type);
   loaded_backends.push_back(std::move(b));
   return d;
 }
@@ -183,7 +165,7 @@ Device* InitBackendDevice(JobControlRecord* jcr, DeviceType device_type)
 void FlushAndCloseBackendDevices()
 {
   for (const auto& b : loaded_backends) {
-    b->flush_backend();
+    b->backend->flush_backend();
     dlclose(b->handle);
   }
   loaded_backends.clear();

@@ -31,6 +31,7 @@
 
 #ifdef HAVE_DROPLET
 #include "stored/stored.h"
+#include "stored/sd_backends.h"
 #include "object_store_device.h"
 
 namespace storagedaemon {
@@ -554,26 +555,27 @@ object_store_device::object_store_device()
   ctx_ = NULL;
 }
 
-#ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" Device* backend_instantiate(JobControlRecord* jcr,
-                                       DeviceType device_type)
-{
-  Device* dev = NULL;
-
-  switch (device_type) {
-    case B_OBJECT_STORE_DEV:
-      dev = new object_store_device;
-      break;
-    default:
-      Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"),
-           device_type);
-      break;
+class Backend : public BackendInterface {
+ public:
+  Device* backend_instantiate(JobControlRecord* jcr,
+                              DeviceType device_type) override
+  {
+    switch (device_type) {
+      case DeviceType::B_OBJECT_STORE_DEV:
+        return new object_store_device;
+      default:
+        Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"),
+             device_type);
+        return nullptr;
+    }
   }
+  void flush_backend(void) override {}
+};
 
-  return dev;
-}
-
-extern "C" void flush_backend(void) {}
+#ifdef HAVE_DYNAMIC_SD_BACKENDS
+extern "C" BackendInterface* GetBackend(void) { return new Backend; }
 #endif
+
+
 } /* namespace storagedaemon */
 #endif /* HAVE_DROPLET */

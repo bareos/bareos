@@ -31,6 +31,7 @@
 
 #include "include/bareos.h"
 #include "stored/stored.h"
+#include "stored/sd_backends.h"
 #include "stored/autochanger.h"
 #include "stored/backends/unix_fifo_device.h"
 #include "stored/device_control_record.h"
@@ -336,30 +337,26 @@ boffset_t unix_fifo_device::d_lseek(DeviceControlRecord* dcr,
 
 bool unix_fifo_device::d_truncate(DeviceControlRecord* dcr) { return true; }
 
-unix_fifo_device::~unix_fifo_device() {}
-
-unix_fifo_device::unix_fifo_device() {}
+class Backend : public BackendInterface {
+ public:
+  Device* backend_instantiate(JobControlRecord* jcr,
+                              DeviceType device_type) override
+  {
+    switch (device_type) {
+      case DeviceType::B_FIFO_DEV:
+        return new unix_fifo_device;
+      default:
+        Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"),
+             device_type);
+        return nullptr;
+    }
+  }
+  void flush_backend(void) override {}
+};
 
 #ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" Device* backend_instantiate(JobControlRecord* jcr,
-                                       DeviceType device_type)
-{
-  Device* dev = NULL;
-
-  switch (device_type) {
-    case DeviceType::B_FIFO_DEV:
-      dev = new unix_fifo_device;
-      break;
-    default:
-      Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"),
-           device_type);
-      break;
-  }
-
-  return dev;
-}
-
-extern "C" void flush_backend(void) {}
+extern "C" BackendInterface* GetBackend(void) { return new Backend; }
 #endif
+
 
 } /* namespace storagedaemon  */
