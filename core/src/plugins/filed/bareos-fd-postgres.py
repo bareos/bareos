@@ -29,7 +29,7 @@
 
 # Provided by the Bareos FD Python plugin interface
 import bareos_fd_consts
-
+import bareosfd
 # This module contains the wrapper functions called by the Bareos-FD, the
 # functions call the corresponding methods from your plugin class
 import BareosFdWrapper
@@ -46,6 +46,15 @@ def load_bareos_plugin(context, plugindef):
     This function is called by the Bareos-FD to load the plugin
     We use it to instantiate the plugin class
     """
+    # Check for needed python modules
+    try:
+        import psycopg2
+    except Exception as e:
+        bareosfd.JobMessage( context, 
+                bareos_fd_consts.bJobMessageType["M_FATAL"],
+                "could not import Python module. %s" % e.message,
+        )
+        return bareos_fd_consts.bRCs["bRC_Error"]
     # BareosFdWrapper.bareos_fd_plugin_object is the module attribute that
     # holds the plugin class object
     BareosFdWrapper.bareos_fd_plugin_object = BareosFdPluginPostgres.BareosFdPluginPostgres(
