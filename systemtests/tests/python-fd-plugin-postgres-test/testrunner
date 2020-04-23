@@ -24,7 +24,9 @@ pushd "$current_test_directory"/database || exit 1
 sh -x setup_local_db.sh
 popd
 
-#export PGHOST="$current_test_directory"/database/tmp
+TESTPGHOST="$current_test_directory"/database/tmp
+PSQL="psql -h $TESTPGHOST"
+DBNAME="backuptest"
 
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
@@ -42,7 +44,15 @@ BackupDirectory="${tmp}/data"
 setup_data "$@"
 
 # this test does not work with links because of the restore objects
-rm -r "${tmp}"/data/weird-files >/dev/null 2>&1
+#rm -r "${tmp}"/data/weird-files >/dev/null 2>&1
+
+# Create Test DB with table and 1 statement
+echo "CREATE DATABASE $DBNAME" | ${PSQL} postgres
+cat <<EOF | ${PSQL} ${DBNAME}
+CREATE TABLE t(id serial PRIMARY KEY, text VARCHAR(20), created_on TIMESTAMP);
+INSERT INTO t (text, created_on) values ('test for FULL backup', current_timestamp);
+SELECT * FROM t;
+EOF
 
 start_test
 
@@ -58,29 +68,63 @@ status client
 status storage=File
 wait
 messages
-@#
-@# now do a restore
-@#
-@$out $tmp/log2.out
-wait
-restore client=bareos-fd fileset=PluginTest where=$tmp/bareos-restores select all done
-yes
-wait
-messages
 quit
 END_OF_DATA
 
 run_bareos "$@"
+
+# Now add data to the database and run an incremental job
+
+echo "INSERT INTO t (text, created_on) values ('test for INCR backup', current_timestamp)" | ${PSQL} ${DBNAME}
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+run job=$JobName Level=Incremental yes
+wait
+END_OF_DATA
+
+run_bconsole
+# run another Incr without db changes - should result in empty backup job (only restore object)
+run_bconsole
+
+
+# Now stop database and try a restore
+# ...
+# shut down database and delete directories
+pg_ctl -D database/data stop
+rm -Rf database/data
+rm -Rf database/wal_archive
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+messages
+@$out $tmp/log1.out
+restore client=bareos-fd fileset=pgtest where=/ select all done yes
+wait
+END_OF_DATA
+run_bconsole
+
 check_for_zombie_jobs storage=File
 stop_bareos
 
-# shut down database
-pg_ctl -D database/data stop
+# Create a recovery.conf
+# This may become a plugin feature later on
+echo "restore_command = 'cp $current_test_directory/database/wal_archive/%f %p'" > $current_test_directory/database/data/recovery.conf
 
+# start DB again - shall recover to latest possible state
+pg_ctl -D database/data -l database/log/logfile start
+sleep 10
+echo "SELECT * FROM t" | ${PSQL} ${DBNAME} > $tmp/sql.log
 
 check_two_logs
-list=( $(find "${BackupDirectory}" -type f) )
-# Using check_restore_only_files_diff instead of check_restore_diff
-# to don't diff the file attributes, because they are not saved
-#check_restore_only_files_diff "${list[@]}"
+if (grep -q "for INCR" $tmp/sql.log)
+then 
+   estat=0
+else
+   estat=1
+fi
+
 end_test
