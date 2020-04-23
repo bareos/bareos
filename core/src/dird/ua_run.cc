@@ -2,7 +2,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -524,6 +524,15 @@ try_again:
           jcr->JobPriority);
 
     FreeJcr(jcr); /* release jcr */
+
+    /*
+     * For interactive runs we send a message to the audit log
+     */
+    if (jcr->impl->IgnoreLevelPoolOverides) {
+      char buf[50];
+      ua->LogAuditEventInfoMsg(
+          _("Job queued. JobId=%s"), edit_int64(jcr->JobId, buf));
+    }
 
     if (JobId == 0) {
       ua->ErrorMsg(_("Job failed.\n"));
