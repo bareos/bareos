@@ -1267,6 +1267,8 @@ You can append options to the plugin call as key=value pairs, separated by â€™:â
 
 -  :strong:`dbname` there needs to be a named database for the connection. Default: *postgres*
 
+- :strong:`dbHost` useful, if socket is not in default location. Specify socket-directory with a leading / here
+
 -  :strong:`ignoreSubdirs` a list of comma separated directories below the *postgresDataDir*, that will not be backed up. Default: *pg_wal,pg_log,pg_xlog*
 
 -  :strong:`switchWal` If set to *true* (default), the plugin will let Postgres write a new wal file, if the current Log Sequence Number (LSN) is greater than the LSN from the previous job to make sure changes will go into the backup. 
