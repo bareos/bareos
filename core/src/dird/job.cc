@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1258,7 +1258,7 @@ void ApplyPoolOverrides(JobControlRecord* jcr, bool force)
    * If a cmdline pool override is given ignore any level pool overrides.
    * Unless a force is given then we always apply any overrides.
    */
-  if (!force && jcr->impl->IgnoreLevelPoolOverides) { return; }
+  if (!force && jcr->impl->IgnoreLevelPoolOverrides) { return; }
 
   /*
    * If only a pool override and no level overrides are given in run entry
