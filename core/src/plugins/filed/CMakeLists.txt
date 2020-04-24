@@ -114,6 +114,8 @@ set(PYFILES
     BareosFdPluginOvirt.py
     bareos-fd-percona-xtrabackup.py
     BareosFdPluginPerconaXtraBackup.py
+    BareosFdPluginPostgres.py
+    bareos-fd-postgres.py
 )
 
 install(
