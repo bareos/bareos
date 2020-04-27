@@ -81,7 +81,7 @@ bool CryptoDigestUpdate(DIGEST* digest, const uint8_t* data, uint32_t length)
       return true;
     case CRYPTO_DIGEST_SHA1:
       /* Doesn't return anything ... */
-      SHA1Update(&digest->sha1, (const u_int8_t*)data, (unsigned int)length);
+      SHA1Update(&digest->sha1, (const uint8_t*)data, (unsigned int)length);
       return true;
     default:
       return false;
@@ -104,7 +104,7 @@ bool CryptoDigestFinalize(DIGEST* digest, uint8_t* dest, uint32_t* length)
        * an out-of-sync CRYPTO_DIGEST_MAX_SIZE */
       assert(*length >= CRYPTO_DIGEST_SHA1_SIZE);
       *length = CRYPTO_DIGEST_SHA1_SIZE;
-      SHA1Final((u_int8_t*)dest, &digest->sha1);
+      SHA1Final((uint8_t*)dest, &digest->sha1);
       return true;
     default:
       return false;

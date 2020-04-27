@@ -338,7 +338,7 @@ static inline bool do_scsi_cmd_page(int fd,
                 NULL,                /* cbfcnp */
                 direction,           /* flags */
                 MSG_SIMPLE_Q_TAG,    /* tagaction */
-                (u_int8_t*)cmd_page, /* dataptr */
+                (uint8_t*)cmd_page, /* dataptr */
                 cmd_page_len,        /* datalen */
                 sizeof(sense),       /* senselength */
                 cdb_len,             /* cdblength  */

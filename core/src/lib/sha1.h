@@ -15,13 +15,13 @@
 #define SHA1_DIGEST_LENGTH 20
 
 typedef struct {
-  u_int32_t state[5];
-  u_int32_t count[2];
+  uint32_t state[5];
+  uint32_t count[2];
   unsigned char buffer[SHA1_BLOCK_LENGTH];
 } SHA1_CTX;
 
 void SHA1Init(SHA1_CTX* context);
-void SHA1Transform(u_int32_t state[5],
+void SHA1Transform(uint32_t state[5],
                    const unsigned char buffer[SHA1_BLOCK_LENGTH]);
 void SHA1Update(SHA1_CTX* context, const unsigned char* data, unsigned int len);
 void SHA1Final(unsigned char digest[SHA1_DIGEST_LENGTH], SHA1_CTX* context);

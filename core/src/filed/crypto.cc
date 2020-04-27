@@ -604,8 +604,8 @@ bool DecryptData(JobControlRecord* jcr,
   /*
    * Decrypt the input block
    */
-  if (!CryptoCipherUpdate(cipher_ctx->cipher, (const u_int8_t*)*data, *length,
-                          (u_int8_t*)&cipher_ctx->buf[cipher_ctx->buf_len],
+  if (!CryptoCipherUpdate(cipher_ctx->cipher, (const uint8_t*)*data, *length,
+                          (uint8_t*)&cipher_ctx->buf[cipher_ctx->buf_len],
                           &decrypted_len)) {
     /*
      * Decryption failed. Shouldn't happen.
