@@ -87,10 +87,6 @@ typedef float float32_t;
 /* Unix time (time_t) widened to 64 bits */
 #define utime_t int64_t
 
-#ifndef HAVE_SOCKLEN_T
-#  define socklen_t int
-#endif
-
 #ifdef HAVE_WIN32
 #  define sockopt_val_t const char*
 #else

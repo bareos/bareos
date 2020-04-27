@@ -412,13 +412,6 @@ include_directories(SYSTEM ${PYTHON_INCLUDE_PATH})
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
 
-# trick for socklen_t
-set(CMAKE_EXTRA_INCLUDE_FILES "sys/socket.h")
-check_type_size("socklen_t" HAVE_SOCKLEN_T)
-set(CMAKE_EXTRA_INCLUDE_FILES)
-
-set(CMAKE_EXTRA_INCLUDE_FILES sys/socket.h)
-
 # ------------------------- Begin Generic CMake Variable Logging
 # ------------------
 

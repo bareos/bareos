@@ -465,9 +465,6 @@ extern char WIN_VERSION[];
 // Define to 1 if you have the `snprintf' function
 #cmakedefine HAVE_SNPRINTF @HAVE_SNPRINTF@
 
-// Define to 1 if socklen_t exists
-#cmakedefine HAVE_SOCKLEN_T @HAVE_SOCKLEN_T@
-
 // Set if you have an SQLite3 Database
 #cmakedefine HAVE_SQLITE3 @HAVE_SQLITE3@
 
