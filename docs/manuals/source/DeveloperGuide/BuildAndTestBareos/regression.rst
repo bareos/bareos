@@ -8,8 +8,8 @@ Regressiontests
    While Bareos Regression Testing is still in use,
    new tests should be written as :ref:`BareosSystemtestsChapter`.
 
-Setting up Regession Testing
-----------------------------
+Set up Regession Testing
+------------------------
 
 This document is intended mostly for developers who wish to ensure that
 their changes to Bareos don’t introduce bugs in the base code. However,
@@ -49,8 +49,8 @@ There are two different aspects of regression testing that this document
 will discuss: 1. Running the Regression Script, 2. Writing a Regression
 test.
 
-Running the Regression Script
------------------------------
+Run the Regression Script
+-------------------------
 
 There are a number of different tests that may be run, such as: the
 standard set that uses disk Volumes and runs under any userid; a small
@@ -61,8 +61,8 @@ full tests including disk based testing, tape based testing, autochanger
 based testing, and multiple drive autochanger based testing can take 3
 or 4 hours.
 
-Setting the Configuration Parameters
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Set the Configuration Parameters
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 There is nothing you need to change in the source directory.
 
@@ -194,8 +194,8 @@ This will setup the regression testing and you should not need to do
 this again unless you want to change the database or other regression
 configuration parameters.
 
-Setting up your SQL engine
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Set up your SQL engine
+~~~~~~~~~~~~~~~~~~~~~~
 
 If you are using SQLite or SQLite3, there is nothing more to do; you can
 simply run the tests as described in the next section.
@@ -237,8 +237,8 @@ contain a line with the database connection properties.
 
     hostname:port:database:username:password
 
-Running the Disk Only Regression
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Run the Disk Only Regression
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The simplest way to copy the source code, configure it, compile it, link
 it, and run the tests is to use a helper script:
@@ -396,8 +396,8 @@ you have “regress” as the current directory), enter:
 where test-name should be the name of a test script – for example:
 **tests/backup-bareos-test**.
 
-Testing a Binary Installation
------------------------------
+Test a Binary Installation
+--------------------------
 
 If you have installed your Bareos from a binary release such as (rpms or
 debs), you can still run regression tests on it. First, make sure that
@@ -433,8 +433,8 @@ If you want to switch back to running the regression scripts from
 source, first remove the **bin** and **scripts** variables from your
 **config** file and rerun the ``make setup`` step.
 
-Running a Single Test
----------------------
+Run a Single Test
+-----------------
 
 If you wish to run a single test, you can simply:
 
@@ -453,8 +453,8 @@ or, if the source code has been updated, you would do:
     make setup
     tests/backup-to-null
 
-Writing a Regression Test
--------------------------
+Add a Regression Test
+---------------------
 
 Any developer, who implements a major new feature, should write a
 regression test that exercises and validates the new feature. Each
@@ -462,8 +462,8 @@ regression test is a complete test by itself. It terminates any running
 Bareos, initializes the database, starts Bareos, then runs the test by
 using the console program.
 
-Running the Tests by Hand
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Run the Tests by Hand
+~~~~~~~~~~~~~~~~~~~~~
 
 You can run any individual test by hand by cd’ing to the **regress**
 directory and entering:
@@ -496,8 +496,8 @@ The directory structure of the regression tests is:
         |------ working      - Bareos working directory
         |------ weird-files  - Weird files used in two of the tests.
 
-Adding a New Test
-~~~~~~~~~~~~~~~~~
+Add a New Test
+~~~~~~~~~~~~~~
 
 If you want to write a new regression test, it is best to start with one
 of the existing test scripts, and modify it to do the new test.
@@ -510,8 +510,8 @@ automatically selects a Pool, will now be presented with a new prompt,
 so the test will fail. If you need to enhance the configuration files,
 consider making your own versions.
 
-Running a Test Under The Debugger
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Run a Test Under The Debugger
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can run a test under the debugger (actually run a Bareos daemon
 under the debugger) by first setting the environment variable

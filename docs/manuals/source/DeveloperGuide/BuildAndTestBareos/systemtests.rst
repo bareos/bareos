@@ -215,3 +215,6 @@ and a :command:`bconsole` session can be used to retrieve information:
    | 2     | RestoreFiles     | bareos-fd | 2019-08-15 15:04:41 | R    | F     | 21       | 138399   | T         |
    +-------+------------------+-----------+---------------------+------+-------+----------+----------+-----------+
    *
+
+Add a systemtest
+^^^^^^^^^^^^^^^^
