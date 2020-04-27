@@ -218,3 +218,107 @@ and a :command:`bconsole` session can be used to retrieve information:
 
 Add a systemtest
 ^^^^^^^^^^^^^^^^
+
+To add a systemtest it is advisable to copy one of the existing systemtests
+that matches the desired type of the new systemtest most.
+
+The new test has to be listed in the CMakeLists.txt file in the systemtests
+folder.
+
+Taking into concern system dependencies it could be neccessary to disable
+a test if the appropriate prerequisites for a test are not met. In this case
+the test should be displayed as disabled when running the tests.
+
+Therefore CMakeLists.txt contains two lists of tests. One for enabled tests
+which will run properly and another for disabled tests.
+
+Each test has a script named *testrunner* which contains all code to run a
+systemtest.
+
+Directory Structures
+^^^^^^^^^^^^^^^^^^^^
+
+Running cmake in the systemtest subdirectory will create the tests in the
+build tree that is party symmetrical to the source tree as you can see on the
+next diagrams.
+
+Directory Structure (Source)
+''''''''''''''''''''''''''''
+
+::
+
+      systemtests/tests/backup-bareos-test/
+      |-- etc
+      |   `-- bareos            -- bareos config for this test
+      |       |-- bareos-dir.d
+      |       |   |-- catalog
+      |       |   |-- client
+      |       |   |-- console
+      |       |   |-- director
+      |       |   |-- fileset
+      |       |   |-- job
+      |       |   |-- jobdefs
+      |       |   |-- messages
+      |       |   |-- pool
+      |       |   |-- profile
+      |       |   `-- storage
+      |       |-- bareos-fd.d
+      |       |   |-- client
+      |       |   |-- director
+      |       |   `-- messages
+      |       |-- bareos-sd.d
+      |       |   |-- device
+      |       |   |-- director
+      |       |   |-- messages
+      |       |   `-- storage
+      |       |-- bconsole.conf.in
+      |       `-- tray-monitor.d
+      |           |-- client
+      |           |-- director
+      |           |-- monitor
+      |           `-- storage
+      `-- testrunner            -- the main script for this test
+
+Directory Structure (Build)
+''''''''''''''''''''''''''''
+
+::
+
+      systemtests/tests/backup-bareos-test/
+      |-- bin
+      |-- etc
+      |   `-- bareos
+      |       |-- bareos-dir.d
+      |       |   |-- additional_test_config
+      |       |   |-- catalog
+      |       |   |-- client
+      |       |   |-- console
+      |       |   |-- director
+      |       |   |-- fileset
+      |       |   |-- job
+      |       |   |-- jobdefs
+      |       |   |-- messages
+      |       |   |-- pool
+      |       |   |-- profile
+      |       |   `-- storage
+      |       |-- bareos-fd.d
+      |       |   |-- client
+      |       |   |-- director
+      |       |   `-- messages
+      |       |-- bareos-sd.d
+      |       |   |-- device
+      |       |   |-- director
+      |       |   |-- messages
+      |       |   `-- storage
+      |       `-- tray-monitor.d
+      |           |-- client
+      |           |-- director
+      |           |-- monitor
+      |           `-- storage
+      |-- log
+      |-- piddir
+      |-- python-modules
+      |-- sbin
+      |-- storage
+      |-- tmp
+      `-- working
