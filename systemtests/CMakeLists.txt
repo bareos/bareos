@@ -793,8 +793,8 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
 
   configurefilestosystemtest("systemtests" "tests/${TEST_NAME}" "*" @ONLY "")
   set(pythonpath
-  "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/pyfiles:${CMAKE_SOURCE_DIR}/core/src/plugins/stored/python/pyfiles:${CMAKE_SOURCE_DIR}/core/src/plugins/dird/python/pyfiles:${CMAKE_CURRENT_SOURCE_DIR}/tests/${TEST_NAME}/python-modules")
-
+      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/pyfiles:${CMAKE_SOURCE_DIR}/core/src/plugins/stored/python/pyfiles:${CMAKE_SOURCE_DIR}/core/src/plugins/dird/python/pyfiles:${CMAKE_CURRENT_SOURCE_DIR}/tests/${TEST_NAME}/python-modules"
+  )
 
   configure_file("environment.in" "tests/${TEST_NAME}/environment" @ONLY)
 
@@ -805,7 +805,7 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
     COMMAND ${tests_dir}/${TEST_NAME}/testrunner
     WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
   )
-  set_tests_properties(${SYSTEMTEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 90)
+  set_tests_properties(${SYSTEMTEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 180)
   math(EXPR BASEPORT "${BASEPORT} + 10")
 
 endforeach()
@@ -865,7 +865,9 @@ if(ENABLE_WEBUI_SELENIUM_TEST)
       COMMAND ${tests_dir}/${TEST_NAME}/testrunner
       WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
     )
-    set_tests_properties(${WEBUI_TEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 90)
+    set_tests_properties(
+      ${WEBUI_TEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 180
+    )
     math(EXPR BASEPORT "${BASEPORT} + 10")
   endforeach()
 endif()
