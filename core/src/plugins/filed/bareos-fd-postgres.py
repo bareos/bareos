@@ -21,8 +21,6 @@
 #
 # Bareos-fd-postgres is a plugin to backup Postgres SQL databases using 
 # BareosFdPluginPostgres. 
-# TODO: The plugin argument 'filename' is used to read
-# all files listed in that file and add it to the fileset
 #
 # Author: Maik Aussendorf
 #
