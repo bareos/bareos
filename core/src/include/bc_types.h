@@ -42,23 +42,10 @@
 #ifndef BAREOS_INCLUDE_BC_TYPES_H_
 #define BAREOS_INCLUDE_BC_TYPES_H_
 
-#ifdef HAVE_WIN32
-typedef UINT64 u_int64_t;
-typedef UINT64 uint64_t;
-typedef INT64 int64_t;
-typedef UINT32 uint32_t;
-typedef INT64 intmax_t;
-typedef unsigned char uint8_t;
-typedef unsigned short uint16_t;
-typedef signed short int16_t;
-typedef signed char int8_t;
-typedef int __daddr_t;
+#include <stdint.h>
 
-#  if !defined(HAVE_MINGW)
-typedef long int32_t;
-typedef float float32_t;
-typedef double float64_t;
-#  endif
+#ifdef HAVE_WIN32
+typedef int __daddr_t;
 
 #  if !defined(_MSC_VER) || (_MSC_VER < 1400)  // VC8+
 #    ifndef _TIME_T_DEFINED
@@ -74,13 +61,6 @@ typedef __int64 ino_t;
 #    endif
 #  endif
 
-typedef UINT32 u_int32_t;
-typedef unsigned char u_int8_t;
-typedef unsigned short u_int16_t;
-
-#  if !defined(HAVE_MINGW)
-#    undef uint32_t
-#  endif
 #endif /* HAVE_WIN32 */
 
 /**
@@ -99,155 +79,8 @@ typedef uint32_t JobId_t;
 
 typedef char POOLMEM;
 
-
-/* Types */
-
-/* If sys/types.h does not supply intXX_t, supply them ourselves */
-/* (or die trying) */
-
-#ifndef HAVE_U_INT
-typedef unsigned int u_int;
-#endif
-
-#ifndef HAVE_INTXX_T
-#  if (SIZEOF_CHAR == 1)
-typedef signed char int8_t;
-#  else
-#    error "8 bit int type not found."
-#  endif
-#  if (SIZEOF_SHORT_INT == 2)
-typedef short int int16_t;
-#  else
-#    error "16 bit int type not found."
-#  endif
-#  if (SIZEOF_INT == 4)
-typedef int int32_t;
-#  else
-#    error "32 bit int type not found."
-#  endif
-#endif
-
-/* If sys/types.h does not supply u_intXX_t, supply them ourselves */
-#ifdef HAVE_U_INTXX_T
-#  if (SIZEOF_CHAR == 1)
-typedef unsigned char u_int8_t;
-#  else
-#    error "8 bit int type not found. Required!"
-#  endif
-#  if (SIZEOF_SHORT_INT == 2)
-typedef unsigned short int u_int16_t;
-#  else
-#    error "16 bit int type not found. Required!"
-#  endif
-#  if (SIZEOF_INT == 4)
-typedef unsigned int u_int32_t;
-#  else
-#    error "32 bit int type not found. Required!"
-#  endif
-#endif
-
-/* 64-bit types */
-#ifndef HAVE_INT64_T
-#  if (SIZEOF_LONG_LONG_INT == 8)
-typedef long long int int64_t;
-#    define HAVE_INT64_T 1
-#  else
-#    if (SIZEOF_LONG_INT == 8)
-typedef long int int64_t;
-#      define HAVE_INT64_T 1
-#    endif
-#  endif
-#endif
-
-#ifndef HAVE_INTMAX_T
-#  ifdef HAVE_INT64_T
-typedef int64_t intmax_t;
-#  else
-#    error "64 bit type not found. Required!"
-#  endif
-#endif
-
-#ifndef HAVE_U_INT64_T
-#  if (SIZEOF_LONG_LONG_INT == 8)
-typedef unsigned long long int u_int64_t;
-#    define HAVE_U_INT64_T 1
-#  else
-#    if (SIZEOF_LONG_INT == 8)
-typedef unsigned long int u_int64_t;
-#      define HAVE_U_INT64_T 1
-#    else
-#      error "64 bit type not found. Required!"
-#    endif
-#  endif
-#endif
-
-#ifndef HAVE_U_INTMAX_T
-#  ifdef HAVE_U_INT64_T
-typedef u_int64_t u_intmax_t;
-#  else
-#    error "64 bit type not found. Required!"
-#  endif
-#endif
-
-#ifndef HAVE_INTPTR_T
-#  define HAVE_INTPTR_T 1
-#  if (SIZEOF_INT_P == 4)
-typedef int32_t intptr_t;
-#  else
-#    if (SIZEOF_INT_P == 8)
-typedef int64_t intptr_t;
-#    else
-#      error "Can't find sizeof pointer. Required!"
-#    endif
-#  endif
-#endif
-
-#ifndef HAVE_UINTPTR_T
-#  define HAVE_UINTPTR_T 1
-#  if (SIZEOF_INT_P == 4)
-typedef uint32_t uintptr_t;
-#  else
-#    if (SIZEOF_INT_P == 8)
-typedef uint64_t uintptr_t;
-#    else
-#      error "Can't find sizeof pointer. Required!"
-#    endif
-#  endif
-#endif
-
-/* Limits for the above types. */
-#undef INT8_MIN
-#undef INT8_MAX
-#undef UINT8_MAX
-#undef INT16_MIN
-#undef INT16_MAX
-#undef UINT16_MAX
-#undef INT32_MIN
-#undef INT32_MAX
-#undef UINT32_MAX
-
-#define INT8_MIN (-127 - 1)
-#define INT8_MAX (127)
-#define UINT8_MAX (255u)
-#define INT16_MIN (-32767 - 1)
-#define INT16_MAX (32767)
-#define UINT16_MAX (65535u)
-#define INT32_MIN (-2147483647 - 1)
-#define INT32_MAX (2147483647)
-#define UINT32_MAX (4294967295u)
-
 typedef double float64_t;
 typedef float float32_t;
-
-
-/* Define the uint versions actually used in Bareos */
-#ifndef uint8_t
-#  define uint8_t u_int8_t
-#  define uint16_t u_int16_t
-#  define uint32_t u_int32_t
-#  define uint64_t u_int64_t
-#  define uintmax_t u_intmax_t
-#endif
 
 /* Bareos time -- Unix time with microseconds */
 #define btime_t int64_t

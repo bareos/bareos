@@ -11,18 +11,6 @@
 /* Define if you have GCC */
 #define HAVE_GCC 1
 
-/* Data types */
-#define HAVE_U_INT 1
-#define HAVE_INTXX_T 1
-#define HAVE_U_INTXX_T 1
-#define HAVE_INT64_T 1
-#define HAVE_U_INT64_T 1
-#define HAVE_UINT64_T 1
-#define HAVE_INTMAX_T 1
-/* #undef HAVE_U_INTMAX_T */
-#define HAVE_UINTPTR_T 1
-#define HAVE_INTPTR_T 1
-
 /* Define if you want TCP Wrappers support */
 /* #undef HAVE_LIBWRAP */
 
@@ -118,24 +106,6 @@
 
 /* Define to the version of this package. */
 #define PACKAGE_VERSION ""
-
-/* The size of a `char', as computed by sizeof. */
-#define SIZEOF_CHAR 1
-
-/* The size of a `int', as computed by sizeof. */
-#define SIZEOF_INT 4
-
-/* The size of a `int *', as computed by sizeof. */
-#define SIZEOF_INT_P 4
-
-/* The size of a `long int', as computed by sizeof. */
-#define SIZEOF_LONG_INT 4
-
-/* The size of a `long long int', as computed by sizeof. */
-#define SIZEOF_LONG_LONG_INT 8
-
-/* The size of a `short int', as computed by sizeof. */
-#define SIZEOF_SHORT_INT 2
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #define TIME_WITH_SYS_TIME 1

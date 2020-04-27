@@ -385,8 +385,6 @@ set(LOCALEDIR \"${CMAKE_INSTALL_LOCALEDIR}\")
 
 set(HAVE_CRYPTO 1)
 
-include(BareosTypeSizes)
-
 include(TestBigEndian)
 test_big_endian(IS_BIGENDIAN)
 if(IS_BIGENDIAN)

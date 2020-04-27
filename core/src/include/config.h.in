@@ -273,18 +273,6 @@ extern char WIN_VERSION[];
 // Define to 1 if you have the `inet_ntop' function
 #cmakedefine HAVE_INET_NTOP @HAVE_INET_NTOP@
 
-// Define to 1 if you have int64_t
-#cmakedefine HAVE_INT64_T @HAVE_INT64_T@
-
-// Define to 1 if you have intmax_t
-#cmakedefine HAVE_INTMAX_T @HAVE_INTMAX_T@
-
-// Define to 1 if the system has the type `intptr_t'
-#cmakedefine HAVE_INTPTR_T @HAVE_INTPTR_T@
-
-// Define to 1 if you have intxx_t
-#cmakedefine HAVE_INTXX_T @HAVE_INTXX_T@
-
 // Define to 1 if ioctl request is unsigned long int
 #cmakedefine HAVE_IOCTL_ULINT_REQUEST @HAVE_IOCTL_ULINT_REQUEST@
 
@@ -549,9 +537,6 @@ extern char WIN_VERSION[];
 // Define to 1 if you have the <ucontext.h> header file
 #cmakedefine HAVE_UCONTEXT_H @HAVE_UCONTEXT_H@
 
-// Define to 1 if the system has the type `uintptr_t'
-#cmakedefine HAVE_UINTPTR_T @HAVE_UINTPTR_T@
-
 // Define to 1 if you have the <umem.h> header file
 #cmakedefine HAVE_UMEM_H @HAVE_UMEM_H@
 
@@ -560,18 +545,6 @@ extern char WIN_VERSION[];
 
 // Define to 1 if you have the `utimes' function
 #cmakedefine HAVE_UTIMES @HAVE_UTIMES@
-
-// Define to 1 if you have u_int
-#cmakedefine HAVE_U_INT @HAVE_U_INT@
-
-// Define to 1 if you have u_int64_t
-#cmakedefine HAVE_U_INT64_T @HAVE_U_INT64_T@
-
-// Define to 1 if you have u_intmax_t
-#cmakedefine HAVE_U_INTMAX_T @HAVE_U_INTMAX_T@
-
-// Define to 1 if you have u_intxx_t
-#cmakedefine HAVE_U_INTXX_T @HAVE_U_INTXX_T@
 
 // Define to 1 if you have the `vsnprintf' function
 #cmakedefine HAVE_VSNPRINTF @HAVE_VSNPRINTF@
@@ -590,24 +563,6 @@ extern char WIN_VERSION[];
 
 // Define to the full name of this package
 #cmakedefine PACKAGE_NAME @PACKAGE_NAME@
-
-// The size of `char', as computed by sizeof
-#cmakedefine SIZEOF_CHAR @SIZEOF_CHAR@
-
-// The size of `int', as computed by sizeof
-#cmakedefine SIZEOF_INT @SIZEOF_INT@
-
-// The size of `int *', as computed by sizeof
-#cmakedefine SIZEOF_INT_P @SIZEOF_INT_P@
-
-// The size of `long int', as computed by sizeof
-#cmakedefine SIZEOF_LONG_INT @SIZEOF_LONG_INT@
-
-// The size of `long long int', as computed by sizeof
-#cmakedefine SIZEOF_LONG_LONG_INT @SIZEOF_LONG_LONG_INT@
-
-// The size of `short int', as computed by sizeof
-#cmakedefine SIZEOF_SHORT_INT @SIZEOF_SHORT_INT@
 
 // Where are system config files stored
 #cmakedefine SYSCONFDIR @SYSCONFDIR@
