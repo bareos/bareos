@@ -1166,7 +1166,7 @@ If things don't work as expected, make sure that
   configured properly
 
 PostgreSQL Plugin
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
 
 :index:`\ <single: Plugin; PostgreSQL Backup>`
 
@@ -1688,5 +1688,4 @@ Write your own Python Plugin
 
 Some plugin examples are available on https://github.com/bareos/bareos-contrib. The class-based approach lets you easily reuse stuff already defined in the baseclass BareosDirPluginBaseclass, which ships with the **bareos-director-python-plugin** package. The examples contain the plugin bareos-dir-nsca-sender, that submits the results and performance data of a backup job directly to Icinga:index:`\ <single: Icinga>`\  or
 Nagios:index:`\ <single: Nagios|see{Icinga}>`\  using the NSCA protocol.
-
 
