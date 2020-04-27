@@ -911,13 +911,12 @@ int GetPruneListForVolume(UaContext* ua, MediaDbRecord* mr, del_ctx* del)
     return 0;
   }
   int NumJobsToBePruned = ExcludeRunningJobsFromList(del);
-
-  Jmsg(ua->jcr, M_INFO, 0,
-       _("Volume \"%s\" has Volume Retention of %d sec. and has %d jobs that "
-         "will "
-         "be pruned\n"),
-       mr->VolumeName, VolRetention, NumJobsToBePruned);
-
+  if (NumJobsToBePruned > 0) {
+    Jmsg(ua->jcr, M_INFO, 0,
+         _("Volume \"%s\" has Volume Retention of %d sec. and has %d jobs that "
+           "will be pruned\n"),
+         mr->VolumeName, VolRetention, NumJobsToBePruned);
+  }
   return NumJobsToBePruned;
 }
 
