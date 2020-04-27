@@ -1,6 +1,6 @@
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+# Copyright (C) 2019-2020 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -20,27 +20,27 @@
 # Author: Tobias Plum
 #
 from bareossd import *
-from bareos_sd_consts import *
+#from bareos_sd_consts import *
 
 
 def load_bareos_plugin(plugindef):
     events = []
-    events.append(bsdEventType["bsdEventJobStart"])
-    events.append(bsdEventType["bsdEventDeviceReserve"])
-    events.append(bsdEventType["bsdEventVolumeUnload"])
-    events.append(bsdEventType["bsdEventVolumeLoad"])
-    events.append(bsdEventType["bsdEventDeviceOpen"])
-    events.append(bsdEventType["bsdEventDeviceMount"])
-    events.append(bsdEventType["bsdEventLabelRead"])
-    events.append(bsdEventType["bsdEventLabelVerified"])
-    events.append(bsdEventType["bsdEventLabelWrite"])
-    events.append(bsdEventType["bsdEventSetupRecordTranslation"])
-    events.append(bsdEventType["bsdEventWriteRecordTranslation"])
-    events.append(bsdEventType["bsdEventDeviceUnmount"])
-    events.append(bsdEventType["bsdEventDeviceClose"])
-    events.append(bsdEventType["bsdEventJobEnd"])
+    events.append(bsdEventJobStart)
+    events.append(bsdEventDeviceReserve)
+    events.append(bsdEventVolumeUnload)
+    events.append(bsdEventVolumeLoad)
+    events.append(bsdEventDeviceOpen)
+    events.append(bsdEventDeviceMount)
+    events.append(bsdEventLabelRead)
+    events.append(bsdEventLabelVerified)
+    events.append(bsdEventLabelWrite)
+    events.append(bsdEventSetupRecordTranslation)
+    events.append(bsdEventWriteRecordTranslation)
+    events.append(bsdEventDeviceUnmount)
+    events.append(bsdEventDeviceClose)
+    events.append(bsdEventJobEnd)
     RegisterEvents(events)
-    return bRCs["bRC_OK"]
+    return bRC_OK
 
 
 def parse_plugin_definition(plugindef):

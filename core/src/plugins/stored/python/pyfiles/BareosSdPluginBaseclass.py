@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2020 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -25,7 +25,7 @@
 # Functions taken and adapted from bareos-sd.py
 
 import bareossd
-from bareos_sd_consts import bsdEventType, bsdrVariable, bRCs
+from bareossd import bsdEventType, bsdrVariable, bRCs
 import time
 
 
