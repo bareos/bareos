@@ -167,11 +167,11 @@ MOD_INIT(bareosdir)
     return MOD_ERROR_VAL;
   }
 
-  const char* bDirEvent = "bDirEvent";
+  const char* bDirEvent = "bDirEventType";
   PyObject* pDictbDirEvent = NULL;
   pDictbDirEvent = PyDict_New();
-  ConstSet_StrLong(pDictbDirEvent, bEventJobStart, 1);
-  ConstSet_StrLong(pDictbDirEvent, bEventJobEnd, 2);
+  ConstSet_StrLong(pDictbDirEvent, bDirEventJobStart, 1);
+  ConstSet_StrLong(pDictbDirEvent, bDirEventJobEnd, 2);
   ConstSet_StrLong(pDictbDirEvent, bDirEventJobInit, 3);
   ConstSet_StrLong(pDictbDirEvent, bDirEventJobRun, 4);
   ConstSet_StrLong(pDictbDirEvent, bDirEventVolumePurged, 5);

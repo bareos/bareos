@@ -20,8 +20,6 @@
 # Author: Tobias Plum
 #
 from bareossd import *
-#from bareos_sd_consts import *
-
 
 def load_bareos_plugin(plugindef):
     events = []

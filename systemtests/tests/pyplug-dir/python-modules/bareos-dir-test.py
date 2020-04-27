@@ -1,6 +1,6 @@
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+# Copyright (C) 2019-2020 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -20,17 +20,16 @@
 # Author: Tobias Plum
 #
 from bareosdir import *
-from bareos_dir_consts import *
 
 
 def load_bareos_plugin(plugindef):
     events = []
-    events.append(bDirEventType["bDirEventJobStart"])
-    events.append(bDirEventType["bDirEventJobEnd"])
-    events.append(bDirEventType["bDirEventJobInit"])
-    events.append(bDirEventType["bDirEventJobRun"])
+    events.append(bDirEventJobStart)
+    events.append(bDirEventJobEnd)
+    events.append(bDirEventJobInit)
+    events.append(bDirEventJobRun)
     RegisterEvents(events)
-    return bRCs["bRC_OK"]
+    return bRC_OK
 
 
 def parse_plugin_definition(plugindef):
@@ -57,16 +56,16 @@ def parse_plugin_definition(plugindef):
 
 
 def handle_plugin_event(event):
-    if event == bDirEventType["bDirEventJobStart"]:
+    if event == bDirEventJobStart:
         toFile("bDirEventJobStart\n")
 
-    elif event == bDirEventType["bDirEventJobEnd"]:
+    elif event == bDirEventJobEnd:
         toFile("bDirEventJobEnd\n")
 
-    elif event == bDirEventType["bDirEventJobInit"]:
+    elif event == bDirEventJobInit:
         toFile("bDirEventJobInit\n")
 
-    elif event == bDirEventType["bDirEventJobRun"]:
+    elif event == bDirEventJobRun:
         toFile("bDirEventJobRun\n")
 
     return bRCs["bRC_OK"]
