@@ -1133,9 +1133,10 @@ int bopen(BareosWinFilePacket* bfd,
   bfd->win32DecompContext.liNextHeader = 0;
 
 #if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_WILLNEED)
-  if (bfd->fid != -1 && flags & O_RDONLY) {
+  /* If not RDWR or WRONLY must be Read Only */
+  if (bfd->fid != -1 && !(flags & (O_RDWR|O_WRONLY))) {
     int status = posix_fadvise(bfd->fid, 0, 0, POSIX_FADV_WILLNEED);
-    Dmsg2(400, "Did posix_fadvise on %s status=%d\n", fname, status);
+    Dmsg3(400, "Did posix_fadvise WILLNEED on %s fid=%d status=%d\n", fname, bfd->fid, status);
   }
 #endif
 
@@ -1185,10 +1186,12 @@ int bclose(BareosWinFilePacket* bfd)
     bfd->cmd_plugin = false;
   } else {
 #if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_DONTNEED)
-    if (bfd->flags_ & O_RDONLY) {
+    /* If not RDWR or WRONLY must be Read Only */
+    if (!(bfd->m_flags & (O_RDWR|O_WRONLY))) {
       fdatasync(bfd->fid); /* sync the file */
       /* Tell OS we don't need it any more */
       posix_fadvise(bfd->fid, 0, 0, POSIX_FADV_DONTNEED);
+      Dmsg1(400, "Did posix_fadvise DONTNEED on fid=%d\n", bfd->fid);
     }
 #endif
 
