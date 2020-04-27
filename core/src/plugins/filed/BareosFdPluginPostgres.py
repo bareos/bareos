@@ -64,7 +64,7 @@ class BareosFdPluginPostgres(
         self.dbCursor = None
         # Additional db options for psycopg2 connectino
         self.dbOpts = ""
-        # This will be set to True between SELCET pg_start_backup
+        # This will be set to True between SELECT pg_start_backup
         # and SELECT pg_stop_backup. We backup database file during
         # this time
         self.PostgressFullBackupRunning = False
