@@ -1186,7 +1186,7 @@ Requires |postgresql| Version 9.x or newer.
 
 
 Concept
-^^^^^^^^^^^^^
+^^^^^^^
 
 Please make sure to read the |postgresql| documentation about the backup and restore process: https://www.postgresql.org/docs/current/continuous-archiving.html
 
@@ -1688,4 +1688,3 @@ Write your own Python Plugin
 
 Some plugin examples are available on https://github.com/bareos/bareos-contrib. The class-based approach lets you easily reuse stuff already defined in the baseclass BareosDirPluginBaseclass, which ships with the **bareos-director-python-plugin** package. The examples contain the plugin bareos-dir-nsca-sender, that submits the results and performance data of a backup job directly to Icinga:index:`\ <single: Icinga>`\  or
 Nagios:index:`\ <single: Nagios|see{Icinga}>`\  using the NSCA protocol.
-
