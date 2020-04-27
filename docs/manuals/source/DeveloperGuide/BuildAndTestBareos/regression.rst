@@ -1,10 +1,12 @@
-Bareos Regression Testing
-=========================
+.. _BareosRegressionTestingChapter:
+
+Regressiontests
+===============
 
 .. note::
 
    While Bareos Regression Testing is still in use,
-   new tests should be written as :ref:`DeveloperGuide/BuildAndTestBareos:Systemtests`.
+   new tests should be written as :ref:`BareosSystemtestsChapter`.
 
 Setting up Regession Testing
 ----------------------------
@@ -179,8 +181,8 @@ Then you can edit the **config** file directly.
 -  **scripts** is the bareos scripts location (where we could find
    database creation script, autochanger handler, etc.)
 
-Building the Test Bareos
-~~~~~~~~~~~~~~~~~~~~~~~~
+Build Bareos for regression testing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Once the above variables are set, you can build the setup by entering:
 
