@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2020 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -64,7 +64,7 @@ class BareosFdPluginPostgres(
         self.dbCursor = None
         # Additional db options for psycopg2 connectino
         self.dbOpts = ""
-        # This will be set to True between SELCET pg_start_backup
+        # This will be set to True between SELECT pg_start_backup
         # and SELECT pg_stop_backup. We backup database file during
         # this time
         self.PostgressFullBackupRunning = False
