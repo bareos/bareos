@@ -18,6 +18,7 @@
 #   02110-1301, USA.
 
 include(CheckIncludeFiles)
+include(CheckIncludeFileCXX)
 
 check_include_files(alloca.h HAVE_ALLOCA_H)
 check_include_files(afs/afsint.h HAVE_AFS_AFSINT_H)
@@ -50,7 +51,6 @@ check_include_files(poll.h HAVE_POLL_H)
 check_include_files(sys/poll.h HAVE_SYS_POLL_H)
 check_include_files(sys/statvfs.h HAVE_SYS_STATVFS_H)
 check_include_files(umem.h HAVE_UMEM_H)
-check_include_files(cxxabi.h HAVE_CXXABI_H)
 check_include_files(ucontext.h HAVE_UCONTEXT_H)
 check_include_files(demangle.h HAVE_DEMANGLE_H)
 
