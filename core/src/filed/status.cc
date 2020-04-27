@@ -33,9 +33,10 @@
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
 #include "filed/jcr_private.h"
-#include "lib/status.h"
+#include "lib/status_packet.h"
 #include "lib/bsock.h"
 #include "lib/edit.h"
+#include "lib/parse_conf.h"
 #include "lib/recent_job_results_list.h"
 #include "findlib/enable_priv.h"
 #include "lib/util.h"
@@ -48,7 +49,6 @@ namespace filedaemon {
 static void ListTerminatedJobs(StatusPacket* sp);
 static void ListRunningJobs(StatusPacket* sp);
 static void ListStatusHeader(StatusPacket* sp);
-static void sendit(PoolMem& msg, int len, StatusPacket* sp);
 static const char* JobLevelToString(int level);
 
 /* Static variables */
@@ -93,28 +93,28 @@ static void ListStatusHeader(StatusPacket* sp)
   len = Mmsg(msg, _("%s Version: %s (%s) %s %s %s %s\n"), my_name,
              kBareosVersionStrings.Full, kBareosVersionStrings.Date, VSS,
              HOST_OS, DISTNAME, DISTVER);
-  sendit(msg, len, sp);
+  sp->send(msg, len);
   bstrftime_nc(dt, sizeof(dt), daemon_start_time);
   len = Mmsg(msg, _("Daemon started %s. Jobs: run=%d running=%d, %s binary\n"),
              dt, num_jobs_run, JobCount(), kBareosVersionStrings.BinaryInfo);
-  sendit(msg, len, sp);
+  sp->send(msg, len);
 
 #if defined(HAVE_WIN32)
   if (GetWindowsVersionString(buf, sizeof(buf))) {
     len = Mmsg(msg, "%s\n", buf);
-    sendit(msg, len, sp);
+    sp->send(msg, len);
   }
 
   if (debug_level > 0) {
     if (!privs) { privs = EnableBackupPrivileges(NULL, 1); }
     len = Mmsg(msg, "Priv 0x%x\n", privs);
-    sendit(msg, len, sp);
+    sp->send(msg, len);
     len =
         Mmsg(msg, "APIs=%sOPT,%sATP,%sLPV,%sCFA,%sCFW,\n",
              p_OpenProcessToken ? "" : "!", p_AdjustTokenPrivileges ? "" : "!",
              p_LookupPrivilegeValue ? "" : "!", p_CreateFileA ? "" : "!",
              p_CreateFileW ? "" : "!");
-    sendit(msg, len, sp);
+    sp->send(msg, len);
     len = Mmsg(msg,
                " %sWUL,%sWMKD,%sGFAA,%sGFAW,%sGFAEA,%sGFAEW,%sSFAA,%sSFAW,%sBR,"
                "%sBW,%sSPSP,\n",
@@ -125,20 +125,20 @@ static void ListStatusHeader(StatusPacket* sp)
                p_SetFileAttributesA ? "" : "!", p_SetFileAttributesW ? "" : "!",
                p_BackupRead ? "" : "!", p_BackupWrite ? "" : "!",
                p_SetProcessShutdownParameters ? "" : "!");
-    sendit(msg, len, sp);
+    sp->send(msg, len);
     len = Mmsg(
         msg, " %sWC2MB,%sMB2WC,%sFFFA,%sFFFW,%sFNFA,%sFNFW,%sSCDA,%sSCDW,\n",
         p_WideCharToMultiByte ? "" : "!", p_MultiByteToWideChar ? "" : "!",
         p_FindFirstFileA ? "" : "!", p_FindFirstFileW ? "" : "!",
         p_FindNextFileA ? "" : "!", p_FindNextFileW ? "" : "!",
         p_SetCurrentDirectoryA ? "" : "!", p_SetCurrentDirectoryW ? "" : "!");
-    sendit(msg, len, sp);
+    sp->send(msg, len);
     len =
         Mmsg(msg, " %sGCDA,%sGCDW,%sGVPNW,%sGVNFVMPW\n",
              p_GetCurrentDirectoryA ? "" : "!",
              p_GetCurrentDirectoryW ? "" : "!", p_GetVolumePathNameW ? "" : "!",
              p_GetVolumeNameForVolumeMountPointW ? "" : "!");
-    sendit(msg, len, sp);
+    sp->send(msg, len);
   }
 #endif
 
@@ -147,16 +147,23 @@ static void ListStatusHeader(StatusPacket* sp)
                "bwlimit=%skB/s\n"),
              sizeof(boffset_t), sizeof(size_t), debug_level, GetTrace(),
              edit_uint64_with_commas(me->max_bandwidth_per_job / 1024, b1));
-  sendit(msg, len, sp);
+  sp->send(msg, len);
 
   if (me->secure_erase_cmdline) {
     len =
         Mmsg(msg, _(" secure erase command='%s'\n"), me->secure_erase_cmdline);
-    sendit(msg, len, sp);
+    sp->send(msg, len);
   }
 
   len = ListFdPlugins(msg);
-  if (len > 0) { sendit(msg, len, sp); }
+  if (len > 0) { sp->send(msg, len); }
+
+  if (my_config->HasWarnings()) {
+    sp->send(
+        "\n"
+        "There are WARNINGS for this filedaemon's configuration!\n"
+        "See output of 'bareos-fd -t' for details.\n");
+  }
 }
 
 static void ListRunningJobsPlain(StatusPacket* sp)
@@ -172,14 +179,14 @@ static void ListRunningJobsPlain(StatusPacket* sp)
    */
   Dmsg0(1000, "Begin status jcr loop.\n");
   len = Mmsg(msg, _("\nRunning Jobs:\n"));
-  sendit(msg, len, sp);
+  sp->send(msg, len);
 
   foreach_jcr (njcr) {
     bstrftime_nc(dt, sizeof(dt), njcr->start_time);
     if (njcr->JobId > 0) {
       len =
           Mmsg(msg, _("JobId %d Job %s is running.\n"), njcr->JobId, njcr->Job);
-      sendit(msg, len, sp);
+      sp->send(msg, len);
 #ifdef WIN32_VSS
       len = Mmsg(
           msg, _("    %s%s %s Job started: %s\n"),
@@ -203,7 +210,7 @@ static void ListRunningJobsPlain(StatusPacket* sp)
        */
       len = Mmsg(msg, _("Unknown connection, started at: %s\n"), dt);
     }
-    sendit(msg, len, sp);
+    sp->send(msg, len);
     if (njcr->JobId == 0) { continue; }
     sec = time(NULL) - njcr->start_time;
     if (sec <= 0) { sec = 1; }
@@ -215,36 +222,36 @@ static void ListRunningJobsPlain(StatusPacket* sp)
                edit_uint64_with_commas(njcr->JobBytes, b2),
                edit_uint64_with_commas(bps, b3), njcr->JobErrors,
                edit_uint64_with_commas(njcr->max_bandwidth, b4));
-    sendit(msg, len, sp);
+    sp->send(msg, len);
     len = Mmsg(msg, _("    Files Examined=%s\n"),
                edit_uint64_with_commas(njcr->impl->num_files_examined, b1));
-    sendit(msg, len, sp);
+    sp->send(msg, len);
     if (njcr->JobFiles > 0) {
       njcr->lock();
       len = Mmsg(msg, _("    Processing file: %s\n"), njcr->impl->last_fname);
       njcr->unlock();
-      sendit(msg, len, sp);
+      sp->send(msg, len);
     }
 
     found = true;
     if (njcr->store_bsock) {
       len = Mmsg(msg, "    SDReadSeqNo=%" lld " fd=%d\n",
                  njcr->store_bsock->read_seqno, njcr->store_bsock->fd_);
-      sendit(msg, len, sp);
+      sp->send(msg, len);
     } else {
       len = Mmsg(msg, _("    SDSocket closed.\n"));
-      sendit(msg, len, sp);
+      sp->send(msg, len);
     }
   }
   endeach_jcr(njcr);
 
   if (!found) {
     len = Mmsg(msg, _("No Jobs running.\n"));
-    sendit(msg, len, sp);
+    sp->send(msg, len);
   }
 
   len = PmStrcpy(msg, _("====\n"));
-  sendit(msg, len, sp);
+  sp->send(msg, len);
 }
 
 static void ListRunningJobsApi(StatusPacket* sp)
@@ -263,7 +270,7 @@ static void ListRunningJobsApi(StatusPacket* sp)
       len = Mmsg(msg, "DirectorConnected=%s\n", dt);
     } else {
       len = Mmsg(msg, "JobId=%d\n Job=%s\n", njcr->JobId, njcr->Job);
-      sendit(msg, len, sp);
+      sp->send(msg, len);
 #ifdef WIN32_VSS
       len = Mmsg(
           msg, " VSS=%d\n Level=%c\n JobType=%c\n JobStarted=%s\n",
@@ -276,7 +283,7 @@ static void ListRunningJobsApi(StatusPacket* sp)
                  njcr->getJobLevel(), njcr->getJobType(), dt);
 #endif
     }
-    sendit(msg, len, sp);
+    sp->send(msg, len);
     if (njcr->JobId == 0) { continue; }
     sec = time(NULL) - njcr->start_time;
     if (sec <= 0) { sec = 1; }
@@ -287,24 +294,24 @@ static void ListRunningJobsApi(StatusPacket* sp)
                edit_uint64(njcr->JobFiles, b1), edit_uint64(njcr->JobBytes, b2),
                edit_uint64(bps, b3), njcr->JobErrors,
                edit_int64(njcr->max_bandwidth, b4));
-    sendit(msg, len, sp);
+    sp->send(msg, len);
     len = Mmsg(msg, " Files Examined=%s\n",
                edit_uint64(njcr->impl->num_files_examined, b1));
-    sendit(msg, len, sp);
+    sp->send(msg, len);
     if (njcr->JobFiles > 0) {
       njcr->lock();
       len = Mmsg(msg, " Processing file=%s\n", njcr->impl->last_fname);
       njcr->unlock();
-      sendit(msg, len, sp);
+      sp->send(msg, len);
     }
 
     if (njcr->store_bsock) {
       len = Mmsg(msg, " SDReadSeqNo=%" lld "\n fd=%d\n",
                  njcr->store_bsock->read_seqno, njcr->store_bsock->fd_);
-      sendit(msg, len, sp);
+      sp->send(msg, len);
     } else {
       len = Mmsg(msg, _(" SDSocket=closed\n"));
-      sendit(msg, len, sp);
+      sp->send(msg, len);
     }
   }
   endeach_jcr(njcr);
@@ -327,13 +334,13 @@ static void ListTerminatedJobs(StatusPacket* sp)
 
   if (!sp->api) {
     len = PmStrcpy(msg, _("\nTerminated Jobs:\n"));
-    sendit(msg, len, sp);
+    sp->send(msg, len);
   }
 
   if (RecentJobResultsList::Count() == 0) {
     if (!sp->api) {
       len = PmStrcpy(msg, _("====\n"));
-      sendit(msg, len, sp);
+      sp->send(msg, len);
     }
     return;
   }
@@ -341,10 +348,10 @@ static void ListTerminatedJobs(StatusPacket* sp)
   if (!sp->api) {
     len = PmStrcpy(msg, _(" JobId  Level    Files      Bytes   Status   "
                           "Finished        Name \n"));
-    sendit(msg, len, sp);
+    sp->send(msg, len);
     len = PmStrcpy(msg, _("===================================================="
                           "==================\n"));
-    sendit(msg, len, sp);
+    sp->send(msg, len);
   }
 
   for (const RecentJobResultsList::JobResult& je :
@@ -407,28 +414,12 @@ static void ListTerminatedJobs(StatusPacket* sp)
                edit_uint64_with_commas(je.JobFiles, b1),
                edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt, JobName);
     }
-    sendit(msg, len, sp);
+    sp->send(msg, len);
   }
 
   if (!sp->api) {
     len = PmStrcpy(msg, _("====\n"));
-    sendit(msg, len, sp);
-  }
-}
-
-/**
- * Send to bsock (Director or Console)
- */
-static void sendit(PoolMem& msg, int len, StatusPacket* sp)
-{
-  BareosSocket* bs = sp->bs;
-
-  if (bs) {
-    memcpy(bs->msg, msg.c_str(), len + 1);
-    bs->message_length = len + 1;
-    bs->send();
-  } else {
-    sp->callback(msg.c_str(), len, sp->context);
+    sp->send(msg, len);
   }
 }
 

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,23 +18,17 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef BAREOS_STORED_SPOOL_H_
-#define BAREOS_STORED_SPOOL_H_
 
-class StatusPacket;
+#include <lib/status_packet.h>
+#include <lib/bsock.h>
 
-namespace storagedaemon {
-
-bool BeginDataSpool(DeviceControlRecord* dcr);
-bool DiscardDataSpool(DeviceControlRecord* dcr);
-bool CommitDataSpool(DeviceControlRecord* dcr);
-bool AreAttributesSpooled(JobControlRecord* jcr);
-bool BeginAttributeSpool(JobControlRecord* jcr);
-bool DiscardAttributeSpool(JobControlRecord* jcr);
-bool CommitAttributeSpool(JobControlRecord* jcr);
-bool WriteBlockToSpoolFile(DeviceControlRecord* dcr);
-void ListSpoolStats(StatusPacket* sp);
-
-} /* namespace storagedaemon */
-
-#endif  // BAREOS_STORED_SPOOL_H_
+void StatusPacket::send(const char* msg, int len)
+{
+  if (bs) {
+    memcpy(bs->msg, msg, len + 1);
+    bs->message_length = len + 1;
+    bs->send();
+  } else {
+    callback(msg, len, context);
+  }
+}

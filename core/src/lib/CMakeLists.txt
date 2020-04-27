@@ -68,7 +68,7 @@ if(NOT client-only)
       scsi_tapealert.h
       serial.h
       sha1.h
-      status.h
+      status_packet.h
       thread_list.h
       tls.h
       tls_conf.h
@@ -152,6 +152,7 @@ set(BAREOS_SRCS
     serial.cc
     sha1.cc
     signal.cc
+    status_packet.cc
     thread_list.cc
     thread_specific_data.cc
     timer_thread.cc

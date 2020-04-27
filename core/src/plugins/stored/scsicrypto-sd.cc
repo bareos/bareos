@@ -63,7 +63,6 @@
 #include "stored/stored.h"
 #include "stored/jcr_private.h"
 #include "lib/berrno.h"
-#include "lib/status.h"
 #include "lib/crypto_wrap.h"
 #include "lib/scsi_crypto.h"
 

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -36,6 +36,7 @@
 #include "lib/berrno.h"
 #include "lib/bsock.h"
 #include "lib/edit.h"
+#include "lib/status_packet.h"
 #include "lib/util.h"
 #include "include/jcr.h"
 
@@ -82,8 +83,7 @@ enum
   RB_OK
 };
 
-void ListSpoolStats(void sendit(const char* msg, int len, void* sarg),
-                    void* arg)
+void ListSpoolStats(StatusPacket* sp)
 {
   char ed1[30], ed2[30];
   PoolMem msg(PM_MESSAGE);
@@ -100,7 +100,7 @@ void ListSpoolStats(void sendit(const char* msg, int len, void* sarg),
                spool_stats.total_data_jobs,
                edit_uint64_with_commas(spool_stats.max_data_size, ed2));
 
-    sendit(msg.c_str(), len, arg);
+    sp->send(msg, len);
   }
   if (spool_stats.attr_jobs || spool_stats.max_attr_size) {
     len = Mmsg(msg,
@@ -111,7 +111,7 @@ void ListSpoolStats(void sendit(const char* msg, int len, void* sarg),
                spool_stats.total_attr_jobs,
                edit_uint64_with_commas(spool_stats.max_attr_size, ed2));
 
-    sendit(msg.c_str(), len, arg);
+    sp->send(msg, len);
   }
 }
 

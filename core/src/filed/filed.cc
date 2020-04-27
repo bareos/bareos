@@ -259,7 +259,16 @@ int main(int argc, char* argv[])
   }
 #endif
 
-  if (test_config) { TerminateFiled(0); }
+  if (test_config) {
+    if (my_config->HasWarnings()) {
+      /* messaging not initialized, so Jmsg with  M_WARNING doesn't work */
+      fprintf(stderr, _("There are configuration warnings:\n"));
+      for (auto& warning : my_config->GetWarnings()) {
+        fprintf(stderr, " * %s\n", warning.c_str());
+      }
+    }
+    TerminateFiled(0);
+  }
 
   SetThreadConcurrency(me->MaxConcurrentJobs * 2 + 10);
 

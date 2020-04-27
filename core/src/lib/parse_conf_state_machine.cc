@@ -130,11 +130,12 @@ ConfigParserStateMachine::ScanResource(int token)
           }
         }
 
-        if (item->flags & CFG_ITEM_DEPRECATED) {
-          scan_warn2(lexical_parser_,
-                     _("using deprecated keyword %s on line %d"), item->name,
-                     lexical_parser_->line_no);
-          // only warning
+        if (parser_pass_number_ == 1 &&
+            item->flags & CFG_ITEM_DEPRECATED) {
+          my_config_.AddWarning(
+              std::string("using deprecated keyword ") + item->name +
+              " on line " + std::to_string(lexical_parser_->line_no) +
+              " of file " + lexical_parser_->fname);
         }
 
         Dmsg1(800, "calling handler for %s\n", item->name);
