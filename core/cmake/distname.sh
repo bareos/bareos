@@ -54,7 +54,7 @@ else
       #
       if test "x$DISTNAME" != "x"
       then
-         DISTVER=`lsb_release -r -s | sed -e 's/"//g'`
+         DISTVER=`lsb_release -d -s | sed -e 's/"//g'`
       fi
    fi
 
