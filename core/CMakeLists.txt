@@ -745,12 +745,12 @@ message(" ")
 message("Configuration on ${NOW} : ")
 message(" ")
 
-message("   Host:                         ${host} -- ${DISTNAME} ${DISTVER} ")
+message("   Host:                         ${host} -- ${PLATFORM} ${DISTVER} ")
 message(
   "   Bareos version:               ${BAREOS} ${BAREOS_FULL_VERSION} (${DATE}) "
 )
 message(
-  "   Distribution:                 ${DISTNAME}"
+  "   Build platform:               ${PLATFORM}"
 )
 message("   Source code location:         ${srcdir} ")
 message("   Modify Debian Control file:   ${GENERATE_DEBIAN_CONTROL} ")

@@ -1,10 +1,10 @@
 #!/bin/sh
-# determine distname
+# determine platform
 # extracted from os.m4
 
-if test "x$DISTNAME" != "x"
+if test "x$PLATFORM" != "x"
 then
-   echo "distname set to $DISTNAME"
+   echo "platform set to $PLATFORM"
 else
    which lsb_release > /dev/null 2>&1
    if test $? = 0
@@ -12,47 +12,47 @@ else
       LSB_DISTRIBUTOR=`lsb_release -i -s`
       case ${LSB_DISTRIBUTOR} in
          *SUSE*)
-            DISTNAME=suse
+            PLATFORM=suse
             ;;
          CentOS)
-            DISTNAME=redhat
+            PLATFORM=redhat
             ;;
          Fedora)
-            DISTNAME=redhat
+            PLATFORM=redhat
             ;;
          RedHatEnterprise*)
-            DISTNAME=redhat
+            PLATFORM=redhat
             ;;
          Oracle*)
-            DISTNAME=redhat
+            PLATFORM=redhat
             ;;
          MandrivaLinux)
-            DISTNAME=mandrake
+            PLATFORM=mandrake
             ;;
          Arch|archlinux|ManjaroLinux)
-            DISTNAME=archlinux
+            PLATFORM=archlinux
             ;;
          LinuxMint)
-            DISTNAME=debian
+            PLATFORM=debian
             ;;
          Debian)
-            DISTNAME=debian
+            PLATFORM=debian
             ;;
          Ubuntu)
-            DISTNAME=ubuntu
+            PLATFORM=ubuntu
             ;;
          Univention)
-            DISTNAME=univention
+            PLATFORM=univention
             ;;
          *)
-            DISTNAME=""
+            PLATFORM=""
             ;;
       esac
 
       #
-      # If we got a valid DISTNAME get the DISTVER from lsb_release too.
+      # If we got a valid PLATFORM get the DISTVER from lsb_release too.
       #
-      if test "x$DISTNAME" != "x"
+      if test "x$PLATFORM" != "x"
       then
          DISTVER=`lsb_release -d -s | sed -e 's/"//g'`
       fi
@@ -61,115 +61,115 @@ else
    #
    # If lsb_release gave us the wanted info we skip this fallback block.
    #
-   if test "x$DISTNAME" = "x" -o "x$DISTVER" = "x"
+   if test "x$PLATFORM" = "x" -o "x$DISTVER" = "x"
    then
       if test $HAVE_UNAME=yes -a x`uname -s` = xOSF1
       then
-         DISTNAME=alpha
+         PLATFORM=alpha
          DISTVER=`uname -r`
       elif test $HAVE_UNAME=yes -a x`uname -s` = xAIX
       then
-         DISTNAME=aix
+         PLATFORM=aix
          DISTVER=`uname -r`
       elif test $HAVE_UNAME=yes -a x`uname -s` = xHP-UX
       then
-         DISTNAME=hpux
+         PLATFORM=hpux
          DISTVER=`uname -r`
       elif test $HAVE_UNAME=yes -a x`uname -s` = xSunOS
       then
-         DISTNAME=solaris
+         PLATFORM=solaris
          DISTVER=`uname -r`
       elif test $HAVE_UNAME=yes -a x`uname -s` = xGNU
       then
-         DISTNAME=hurd
+         PLATFORM=hurd
          DISTVER=`uname -r`
       elif test $HAVE_UNAME=yes -a x`uname -s` = xFreeBSD
       then
-         DISTNAME=freebsd
+         PLATFORM=freebsd
          DISTVER=`uname -r`
       elif test $HAVE_UNAME=yes -a x`uname -s` = xNetBSD
       then
-         DISTNAME=netbsd
+         PLATFORM=netbsd
          DISTVER=`uname -r`
       elif test $HAVE_UNAME=yes -a x`uname -s` = xOpenBSD
       then
-         DISTNAME=openbsd
+         PLATFORM=openbsd
          DISTVER=`uname -r`
       elif test $HAVE_UNAME=yes -a x`uname -s` = xIRIX
       then
-         DISTNAME=irix
+         PLATFORM=irix
          DISTVER=`uname -r`
       elif test $HAVE_UNAME=yes -a x`uname -s` = xBSD/OS
       then
-         DISTNAME=bsdi
+         PLATFORM=bsdi
          DISTVER=`uname -a | awk '{print $3}'`
       elif test -f /etc/SuSE-release
       then
-         DISTNAME=suse
+         PLATFORM=suse
          DISTVER=`cat /etc/SuSE-release | \
                   grep VERSION | \
                   cut -f3 -d' '`
       elif test -d /etc/SuSEconfig
       then
-         DISTNAME=suse
+         PLATFORM=suse
          DISTVER=5.x
       elif test -f /etc/mandrake-release
       then
-         DISTNAME=mandrake
+         PLATFORM=mandrake
          DISTVER=`cat /etc/mandrake-release | \
                   grep release | \
                   cut -f5 -d' '`
       elif test -f /etc/fedora-release
       then
-         DISTNAME=redhat
+         PLATFORM=redhat
          DISTVER="`cat /etc/fedora-release | cut -d' ' -f1,3`"
       elif test -f /etc/whitebox-release
       then
-         DISTNAME=redhat
+         PLATFORM=redhat
          DISTVER=`cat /etc/whitebox-release | grep release`
       elif test -f /etc/redhat-release
       then
-         DISTNAME=redhat
+         PLATFORM=redhat
          DISTVER=`cat /etc/redhat-release | grep release`
       elif test -f /etc/gentoo-release
       then
-         DISTNAME=gentoo
+         PLATFORM=gentoo
          DISTVER=`awk '/version / { print $5 }' < /etc/gentoo-release`
       elif test -f /etc/debian_version
       then
          if `test -f /etc/apt/sources.list && grep -q ubuntu /etc/apt/sources.list`; then
-            DISTNAME=ubuntu
+            PLATFORM=ubuntu
          else
-            DISTNAME=debian
+            PLATFORM=debian
          fi
          DISTVER=`cat /etc/debian_version`
       elif test -f /etc/slackware-version
       then
-         DISTNAME=slackware
+         PLATFORM=slackware
          DISTVER=`cat /etc/slackware-version`
       elif test x$host_vendor = xapple
       then
-         DISTNAME=osx
+         PLATFORM=osx
          DISTVER=`uname -r`
       elif test $HAVE_UNAME=yes -a x`uname -s` = xDarwin
       then
-         DISTNAME=darwin
+         PLATFORM=darwin
          DISTVER=`uname -r`
       elif test -f /etc/engarde-version
       then
-         DISTNAME=engarde
+         PLATFORM=engarde
          DISTVER=`uname -r`
       elif test -f /etc/arch-release
       then
-         DISTNAME=archlinux
+         PLATFORM=archlinux
       elif test "$CYGWIN" = yes
       then
-         DISTNAME=cygwin
+         PLATFORM=cygwin
       else
-         DISTNAME=unknown
+         PLATFORM=unknown
          DISTVER=unknown
       fi
    fi
 fi
 
-echo "$DISTNAME;$DISTVER"
+echo "$PLATFORM;$DISTVER"

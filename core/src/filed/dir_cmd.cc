@@ -1005,7 +1005,7 @@ static bool job_cmd(JobControlRecord* jcr)
    * uname and will update the client's catalog record with that value.
    */
   return dir->fsend(OKjob, kBareosVersionStrings.Full,
-                    kBareosVersionStrings.ShortDate, os_version, DISTNAME,
+                    kBareosVersionStrings.ShortDate, os_version, PLATFORM,
                     DISTVER);
 }
 
