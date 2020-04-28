@@ -69,8 +69,12 @@ sloppiness = file_macro
 Systemtests
 ~~~~~~~~~~~
 
-Systemtests use the locally compiled version of the Bareos daemons
-and run tests on them.
+Systemtests use the locally compiled version of the bareos binaries
+and run tests on them. Preparations also have been made to run the
+tests on installed binaries (originating from packages).
+
+The tests were designed to be completely independent, so that they
+can be run in parallel without interfering with each other.
 
 The Bareos Systemtest approach is intended to substitute the older :ref:`BareosRegressionTestingChapter` approach.
 
@@ -104,6 +108,12 @@ Run all system tests
          Start  2: system:backup-bareos-passive-test
    ...
 
+Instead of using :commmand:`make test`, :command:`ctest` can directly invoked.
+This offers some advantages, like being able to run multiple tests in parallel with
+:command:`ctest -j <number of parallel tests>`.
+Only jobs with names matching a certain regular expression can be run with
+:command:`ctest -R`, and verbose test output can be enabled with :command:`ctest -V`.
+Please refer to the ctest documentation.
 
 Run a single system test
 ^^^^^^^^^^^^^^^^^^^^^^^^
