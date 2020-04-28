@@ -70,7 +70,6 @@ extern boffset_t (*plugin_blseek)(BareosWinFilePacket* bfd,
 
 extern char* exepath;
 extern char* version;
-extern char* dist_name;
 
 namespace filedaemon {
 
