@@ -22,7 +22,6 @@ Developer Guide
    DeveloperGuide/tls-techdoc.rst
    DeveloperGuide/pam-techdoc.rst
    DeveloperGuide/tests.rst
-   DeveloperGuide/regression.rst
    DeveloperGuide/mempool.rst
    DeveloperGuide/netprotocol.rst
    DeveloperGuide/directorConsole.rst
