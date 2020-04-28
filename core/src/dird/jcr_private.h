@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -136,7 +136,7 @@ struct JobControlRecordPrivate {
   int64_t spool_size{};                 /**< Spool size for this job */
   volatile bool sd_msg_thread_done{};   /**< Set when Storage message thread done */
   bool IgnoreDuplicateJobChecking{};    /**< Set in migration jobs */
-  bool IgnoreLevelPoolOverides{};       /**< Set if a cmdline pool was specified */
+  bool IgnoreLevelPoolOverrides{};       /**< Set if a cmdline pool was specified */
   bool IgnoreClientConcurrency{};       /**< Set in migration jobs */
   bool IgnoreStorageConcurrency{};      /**< Set in migration jobs */
   bool spool_data{};                    /**< Spool data in SD */

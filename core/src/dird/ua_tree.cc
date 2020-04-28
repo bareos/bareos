@@ -75,42 +75,62 @@ struct cmdstruct {
   const char* key;
   int (*func)(UaContext* ua, TreeContext* tree);
   const char* help;
+  const bool audit_event;
 };
+
 static struct cmdstruct commands[] = {
-    {NT_("abort"), QuitCmd, _("abort and do not do restore")},
+    {NT_("abort"), QuitCmd,
+      _("abort and do not do restore"), true},
     {NT_("add"), markcmd,
-     _("add dir/file to be restored recursively, wildcards allowed")},
-    {NT_("cd"), cdcmd, _("change current directory")},
-    {NT_("count"), countcmd, _("count marked files in and below the cd")},
+      _("add dir/file to be restored recursively, wildcards allowed"), true},
+    {NT_("cd"), cdcmd,
+      _("change current directory"), true},
+    {NT_("count"), countcmd,
+      _("count marked files in and below the cd"), false},
     {NT_("delete"), Unmarkcmd,
-     _("delete dir/file to be restored recursively in dir")},
-    {NT_("dir"), dircmd, _("long list current directory, wildcards allowed")},
+      _("delete dir/file to be restored recursively in dir"), true},
+    {NT_("dir"), dircmd,
+      _("long list current directory, wildcards allowed"), false},
     {NT_(".dir"), DotDircmd,
-     _("long list current directory, wildcards allowed")},
-    {NT_("done"), donecmd, _("leave file selection mode")},
-    {NT_("estimate"), Estimatecmd, _("estimate restore size")},
-    {NT_("exit"), donecmd, _("same as done command")},
-    {NT_("find"), findcmd, _("find files, wildcards allowed")},
-    {NT_("help"), HelpCmd, _("print help")},
-    {NT_("ls"), lscmd, _("list current directory, wildcards allowed")},
-    {NT_(".ls"), DotLscmd, _("list current directory, wildcards allowed")},
+      _("long list current directory, wildcards allowed"), false},
+    {NT_("done"), donecmd,
+      _("leave file selection mode"), true},
+    {NT_("estimate"), Estimatecmd,
+      _("estimate restore size"), false},
+    {NT_("exit"), donecmd,
+      _("same as done command"), true},
+    {NT_("find"), findcmd,
+      _("find files, wildcards allowed"), false},
+    {NT_("help"), HelpCmd,
+      _("print help"), false},
+    {NT_("ls"), lscmd,
+      _("list current directory, wildcards allowed"), false},
+    {NT_(".ls"), DotLscmd,
+      _("list current directory, wildcards allowed"), false},
     {NT_(".lsdir"), DotLsdircmd,
-     _("list subdir in current directory, wildcards allowed")},
-    {NT_("lsmark"), Lsmarkcmd, _("list the marked files in and below the cd")},
-    {NT_(".lsmark"), DotLsmarkcmd, _("list the marked files in")},
+      _("list subdir in current directory, wildcards allowed"), false},
+    {NT_("lsmark"), Lsmarkcmd,
+      _("list the marked files in and below the cd"), false},
+    {NT_(".lsmark"), DotLsmarkcmd,
+      _("list the marked files in"), false},
     {NT_("mark"), markcmd,
-     _("mark dir/file to be restored recursively, wildcards allowed")},
+      _("mark dir/file to be restored recursively, wildcards allowed"), true},
     {NT_("markdir"), Markdircmd,
-     _("mark directory name to be restored (no files)")},
-    {NT_("pwd"), pwdcmd, _("print current working directory")},
-    {NT_(".pwd"), DotPwdcmd, _("print current working directory")},
+      _("mark directory name to be restored (no files)"), true},
+    {NT_("pwd"), pwdcmd,
+      _("print current working directory"), false},
+    {NT_(".pwd"), DotPwdcmd,
+      _("print current working directory"), false},
     {NT_("unmark"), Unmarkcmd,
-     _("unmark dir/file to be restored recursively in dir")},
+      _("unmark dir/file to be restored recursively in dir"), true},
     {NT_("unmarkdir"), UnMarkdircmd,
-     _("unmark directory name only no recursion")},
-    {NT_("quit"), QuitCmd, _("quit and do not do restore")},
-    {NT_(".help"), DotHelpcmd, _("print help")},
-    {NT_("?"), HelpCmd, _("print help")},
+      _("unmark directory name only no recursion"), true},
+    {NT_("quit"), QuitCmd,
+      _("quit and do not do restore"), true},
+    {NT_(".help"), DotHelpcmd,
+      _("print help"), false},
+    {NT_("?"), HelpCmd,
+      _("print help"), false},
 };
 #define comsize ((int)(sizeof(commands) / sizeof(struct cmdstruct)))
 
@@ -172,6 +192,10 @@ bool UserSelectFilesFromTree(TreeContext* tree)
     len = strlen(ua->argk[0]);
     for (i = 0; i < comsize; i++) { /* search for command */
       if (bstrncasecmp(ua->argk[0], commands[i].key, len)) {
+        // If we need to audit this event do it now.
+        if (ua->AuditEventWanted(commands[i].audit_event)) {
+          ua->LogAuditEventCmdline();
+        }
         status = (*commands[i].func)(ua, tree); /* go execute command */
         found = 1;
         break;

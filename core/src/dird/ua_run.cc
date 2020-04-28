@@ -2,7 +2,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -505,7 +505,7 @@ try_again:
    * For interactive runs we set IgnoreLevelPoolOverrides as we already
    * performed the actual overrrides.
    */
-  jcr->impl->IgnoreLevelPoolOverides = true;
+  jcr->impl->IgnoreLevelPoolOverrides = true;
 
   if (ua->cmd[0] == 0 || bstrncasecmp(ua->cmd, NT_("yes"), strlen(ua->cmd)) ||
       bstrncasecmp(ua->cmd, _("yes"), strlen(ua->cmd))) {
@@ -524,6 +524,15 @@ try_again:
           jcr->JobPriority);
 
     FreeJcr(jcr); /* release jcr */
+
+    /*
+     * For interactive runs we send a message to the audit log
+     */
+    if (jcr->impl->IgnoreLevelPoolOverrides) {
+      char buf[50];
+      ua->LogAuditEventInfoMsg(
+          _("Job queued. JobId=%s"), edit_int64(jcr->JobId, buf));
+    }
 
     if (JobId == 0) {
       ua->ErrorMsg(_("Job failed.\n"));
@@ -850,12 +859,12 @@ static bool ResetRestoreContext(UaContext* ua,
   /*
    * See if an explicit pool override was performed.
    * If so set the pool_source to command line and
-   * set the IgnoreLevelPoolOverides so any level Pool
+   * set the IgnoreLevelPoolOverrides so any level Pool
    * overrides are ignored.
    */
   if (rc.pool_name) {
     PmStrcpy(jcr->impl->res.pool_source, _("command line"));
-    jcr->impl->IgnoreLevelPoolOverides = true;
+    jcr->impl->IgnoreLevelPoolOverrides = true;
   } else if (!rc.level_override &&
              jcr->impl->res.pool != jcr->impl->res.job->pool) {
     PmStrcpy(jcr->impl->res.pool_source, _("user input"));
