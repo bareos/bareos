@@ -39,8 +39,8 @@ class TestBareosFd(unittest.TestCase):
     # def test_SetValue(self):
     #     self.assertRaises(RuntimeError, bareosfd.SetValue, 2)
 
-    def test_DebugMessage(self):
-        self.assertRaises(RuntimeError, bareosfd.DebugMessage, 100, "This is a debug message")
+    # def test_DebugMessage(self):
+    #     self.assertRaises(RuntimeError, bareosfd.DebugMessage, 100, "This is a debug message")
 
     def test_RestoreObject(self):
         test_RestoreObject = bareosfd.RestoreObject()
@@ -73,14 +73,14 @@ class TestBareosFd(unittest.TestCase):
         test_StatPacket = bareosfd.StatPacket()
 
         # check that the initialization of timestamps from current time stamp works
-        self.assertAlmostEqual(test_StatPacket.atime, timestamp, delta=1)
-        self.assertAlmostEqual(test_StatPacket.mtime, timestamp, delta=1)
-        self.assertAlmostEqual(test_StatPacket.ctime, timestamp, delta=1)
+        self.assertAlmostEqual(test_StatPacket.st_atime, timestamp, delta=1)
+        self.assertAlmostEqual(test_StatPacket.st_mtime, timestamp, delta=1)
+        self.assertAlmostEqual(test_StatPacket.st_ctime, timestamp, delta=1)
 
         # set fixed values for comparison
-        test_StatPacket.atime=999
-        test_StatPacket.mtime=1000
-        test_StatPacket.ctime=1001
+        test_StatPacket.st_atime=999
+        test_StatPacket.st_mtime=1000
+        test_StatPacket.st_ctime=1001
         self.assertEqual(
             "StatPacket(dev=0, ino=0, mode=0700, nlink=0, uid=0, gid=0, rdev=0, size=-1, atime=999, mtime=1000, ctime=1001, blksize=4096, blocks=1)",
             str(test_StatPacket),

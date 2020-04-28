@@ -2365,7 +2365,6 @@ static PyObject* PyBareosDebugMessage(PyObject* self, PyObject* args)
   bpContext* bareos_plugin_ctx = GetPluginContextFromPythonModule();
   plugin_private_context* ppc =
       (plugin_private_context*)bareos_plugin_ctx->pContext;
-  bfuncs = ppc->bfuncs;
 
   if (!PyArg_ParseTuple(args, "i|z:BareosDebugMessage", &level, &dbgmsg)) {
     return NULL;
