@@ -126,14 +126,19 @@ endif()
 if(HAVE_PYTHON AND NOT HAVE_WIN32)
   configure_file(python/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/python/setup.py)
   add_custom_command(
-    TARGET python-fd
-    POST_BUILD
-    COMMENT "building python module pythonmodules/bareosfd.so"
+    OUTPUT pythonmodules/bareosfd.so
+    MAIN_DEPENDENCY ./python/bareosfd.cc
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/python/setup.py
+    #TARGET python-fd
+    #POST_BUILD
     COMMAND ${PYTHON_EXECUTABLE} python/setup.py build
     COMMAND ${PYTHON_EXECUTABLE} python/setup.py install --install-lib
             ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
-    COMMAND rm -R ${CMAKE_CURRENT_BINARY_DIR}/build DEPENDS python-fd
+            # COMMAND rm -R ${CMAKE_CURRENT_BINARY_DIR}/build DEPENDS python-fd
+    COMMENT "building python module pythonmodules/bareosfd.so"
   )
+
+  add_custom_target(bareosfd DEPENDS pythonmodules/bareosfd.so)
 
   add_test(NAME bareosfd-python-module
            COMMAND ${PYTHON_EXECUTABLE}

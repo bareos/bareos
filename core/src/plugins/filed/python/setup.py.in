@@ -1,7 +1,7 @@
 from distutils.core import setup, Extension
 
 module1 = Extension('bareosfd',
-                    sources = ['@CMAKE_CURRENT_SOURCE_DIR@/python/python-fd.cc'],
+                    sources = ['@CMAKE_CURRENT_SOURCE_DIR@/python/bareosfd.cc'],
                     include_dirs =  ['@CMAKE_CURRENT_SOURCE_DIR@/../..', '/usr/local/opt/gettext/include', '/usr/local/opt/openssl/include'],
                     libraries = ['bareos'],
                     library_dirs = ['@PROJECT_BINARY_DIR@/src/lib/'],
