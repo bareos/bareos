@@ -96,6 +96,15 @@ class BareosFdPluginPostgres(
         result = super(BareosFdPluginPostgres, self).check_options(
             context, mandatory_options
         )
+        # Accurate may cause problems with plugins
+        accurate_enabled = GetValue(context, bVariable["bVarAccurate"])
+        if accurate_enabled is not None and accurate_enabled != 0:
+            JobMessage(
+                context,
+                bJobMessageType["M_FATAL"],
+                "start_backup_job: Accurate backup not allowed please disable in Job\n",
+            )
+            return bRCs["bRC_Error"]
         if not result == bRCs["bRC_OK"]:
             return result
         if not self.options["postgresDataDir"].endswith("/"):
