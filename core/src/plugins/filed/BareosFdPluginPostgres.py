@@ -96,6 +96,8 @@ class BareosFdPluginPostgres(
         result = super(BareosFdPluginPostgres, self).check_options(
             context, mandatory_options
         )
+        if not result == bRCs["bRC_OK"]:
+            return result
         # Accurate may cause problems with plugins
         accurate_enabled = GetValue(context, bVariable["bVarAccurate"])
         if accurate_enabled is not None and accurate_enabled != 0:
@@ -105,8 +107,6 @@ class BareosFdPluginPostgres(
                 "start_backup_job: Accurate backup not allowed please disable in Job\n",
             )
             return bRCs["bRC_Error"]
-        if not result == bRCs["bRC_OK"]:
-            return result
         if not self.options["postgresDataDir"].endswith("/"):
             self.options["postgresDataDir"] += "/"
         self.labelFileName = self.options["postgresDataDir"] + "/backup_label"
@@ -144,6 +144,16 @@ class BareosFdPluginPostgres(
             )
             return False
         return True
+
+    def formatLSN(self, rawLSN):
+        """
+        Postgres returns LSN in a non-comparable format with varying length, e.g.
+        0/3A6A710
+        0/F00000
+        We fill the part before the / and after it with leading 0 to get strings with equal length
+        """
+        lsnPre, lsnPost = rawLSN.split("/")
+        return lsnPre.zfill(8) + "/" + lsnPost.zfill(8)
 
     def start_backup_job(self, context):
         """
@@ -208,10 +218,10 @@ class BareosFdPluginPostgres(
                 )
             else:
                 if self.execute_SQL(context, getLsnStmt):
-                    currentLSN = self.dbCursor.fetchone()[0].zfill(17)
-                    bareosfd.DebugMessage(
+                    currentLSN = self.formatLSN(self.dbCursor.fetchone()[0])
+                    bareosfd.JobMessage(
                         context,
-                        100,
+                        bJobMessageType["M_INFO"],
                         "Current LSN %s, last LSN: %s\n" % (currentLSN, self.lastLSN),
                     )
                 else:
@@ -230,7 +240,7 @@ class BareosFdPluginPostgres(
                             "Could not switch to next WAL segment\n",
                         )
                     if self.execute_SQL(context, getLsnStmt):
-                        currentLSN = self.dbCursor.fetchone()[0].zfill(17)
+                        currentLSN = self.formatLSN(self.dbCursor.fetchone()[0])
                         self.lastLSN = currentLSN
                         # wait some seconds to make sure WAL file gets written
                         time.sleep(10)
@@ -344,7 +354,6 @@ class BareosFdPluginPostgres(
             )
 
         for labelItem in labelFile.read().splitlines():
-            print(labelItem)
             k, v = labelItem.split(":", 1)
             self.labelItems.update({k.strip(): v.strip()})
         labelFile.close()
@@ -433,7 +442,7 @@ class BareosFdPluginPostgres(
         # self.backupStartTime = self.dbCursor.fetchone()[0]
         # Tell Postgres we are done
         if self.execute_SQL(context, "SELECT pg_stop_backup();"):
-            self.lastLSN = self.dbCursor.fetchone()[0].zfill(17)
+            self.lastLSN = self.formatLSN(self.dbCursor.fetchone()[0])
             self.lastBackupStopTime = int(time.time())
             results = self.dbCursor.fetchall()
             bareosfd.JobMessage(
