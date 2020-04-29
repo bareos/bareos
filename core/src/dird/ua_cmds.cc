@@ -2813,7 +2813,7 @@ static bool VersionCmd(UaContext* ua, const char* cmd)
   ua->send->ObjectKeyValue("Version", "%s: ", kBareosVersionStrings.Full,
                            "%s ");
   ua->send->ObjectKeyValue("bdate", kBareosVersionStrings.Date, "(%s) ");
-  ua->send->ObjectKeyValue("operatingsystem", HOST_OS, "%s ");
+  ua->send->ObjectKeyValue("operatingsystem", DISTVER, "%s ");
   ua->send->ObjectKeyValue("distname", PLATFORM, "%s ");
   ua->send->ObjectKeyValue("distversion", DISTVER, "%s ");
   ua->send->ObjectKeyValue("CustomVersionId", NPRTB(me->verid), "%s\n");

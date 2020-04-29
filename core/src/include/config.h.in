@@ -35,7 +35,6 @@
 #  if defined(HAVE_MINGW)
 #  include "mingwconfig.h"
 extern char win_os[];
-#  define HOST_OS "Linux"
 #  define PLATFORM "Cross-compile"
 #    if defined(_WIN64)
 #      define DISTVER "Win64"
@@ -46,7 +45,6 @@ extern char win_os[];
 #  include "winconfig.h"
 extern char WIN_VERSION_LONG[];
 extern char WIN_VERSION[];
-#  define HOST_OS WIN_VERSION_LONG
 #  define PLATFORM "MVS"
 #  define DISTVER WIN_VERSION
 #  endif
@@ -582,7 +580,6 @@ extern char WIN_VERSION[];
 // Directory for daemon files
 #cmakedefine PATH_BAREOS_WORKINGDIR @PATH_BAREOS_WORKINGDIR@
 
-#define HOST_OS "@host@@post_host@"
 #define PLATFORM "@PLATFORM@"
 #define DISTVER "@DISTVER@"
 
