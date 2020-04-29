@@ -92,7 +92,7 @@ static void ListStatusHeader(StatusPacket* sp)
 
   len = Mmsg(msg, _("%s Version: %s (%s) %s %s\n"), my_name,
              kBareosVersionStrings.Full, kBareosVersionStrings.Date, VSS,
-             DISTVER);
+             kBareosVersionStrings.GetOsInfo());
   sp->send(msg, len);
   bstrftime_nc(dt, sizeof(dt), daemon_start_time);
   len = Mmsg(msg, _("Daemon started %s. Jobs: run=%d running=%d, %s binary\n"),

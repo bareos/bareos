@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include "include/config.h"
 #include "version.h"
+#include "osinfo.h"
 
 #if !defined BAREOS_VERSION
 #warning should define BAREOS_VERSION when building version.c
@@ -72,20 +73,23 @@
   "Version: %s (%s) %s\n"                                        \
   "\n"
 
+#if defined(HAVE_WIN32)
+char win_os[300];
+#endif
 
 static void FormatCopyrightWithFsfAndPlanets(char* out, size_t len, int FsfYear)
 {
   snprintf(out, len, BAREOS_COPYRIGHT_MESSAGE_WITH_FSF_AND_PLANETS,
            kBareosVersionStrings.ServicesMessage, kBareosVersionStrings.Year,
            FsfYear, kBareosVersionStrings.Full, kBareosVersionStrings.Date,
-           DISTVER);
+           kBareosVersionStrings.GetOsInfo());
 }
 static void PrintCopyrightWithFsfAndPlanets(FILE* fh, int FsfYear)
 {
   fprintf(fh, BAREOS_COPYRIGHT_MESSAGE_WITH_FSF_AND_PLANETS,
           kBareosVersionStrings.ServicesMessage, kBareosVersionStrings.Year,
           FsfYear, kBareosVersionStrings.Full, kBareosVersionStrings.Date,
-          DISTVER);
+          kBareosVersionStrings.GetOsInfo());
 }
 
 
@@ -102,13 +106,13 @@ static void FormatCopyright(char* out, size_t len, int StartYear)
   snprintf(out, len, BAREOS_COPYRIGHT_MESSAGE,
            kBareosVersionStrings.ServicesMessage, StartYear,
            kBareosVersionStrings.Year, kBareosVersionStrings.Full,
-           kBareosVersionStrings.Date, DISTVER);
+           kBareosVersionStrings.Date, kBareosVersionStrings.GetOsInfo());
 }
 static void PrintCopyright(FILE* fh, int StartYear)
 {
   fprintf(fh, BAREOS_COPYRIGHT_MESSAGE, kBareosVersionStrings.ServicesMessage,
           StartYear, kBareosVersionStrings.Year, kBareosVersionStrings.Full,
-          kBareosVersionStrings.Date, DISTVER);
+          kBareosVersionStrings.Date, kBareosVersionStrings.GetOsInfo());
 }
 
 const struct BareosVersionStrings kBareosVersionStrings = {
@@ -124,4 +128,5 @@ const struct BareosVersionStrings kBareosVersionStrings = {
     .FormatCopyrightWithFsfAndPlanets = FormatCopyrightWithFsfAndPlanets,
     .PrintCopyrightWithFsfAndPlanets = PrintCopyrightWithFsfAndPlanets,
     .FormatCopyright = FormatCopyright,
-    .PrintCopyright = PrintCopyright};
+    .PrintCopyright = PrintCopyright,
+    .GetOsInfo = GetOsInfoString};

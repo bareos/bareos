@@ -359,7 +359,8 @@ void ListDirStatusHeader(UaContext* ua)
     cnt++;
   }
   ua->SendMsg(_("%s Version: %s (%s) %s\n"), my_name,
-              kBareosVersionStrings.Full, kBareosVersionStrings.Date, DISTVER);
+              kBareosVersionStrings.Full, kBareosVersionStrings.Date,
+              kBareosVersionStrings.GetOsInfo());
   bstrftime_nc(dt, sizeof(dt), daemon_start_time);
   ua->SendMsg(
       _("Daemon started %s. Jobs: run=%d, running=%d db:%s, %s binary\n"), dt,
@@ -538,9 +539,9 @@ bail_out:
 
 static void DoConfigurationStatus(UaContext* ua)
 {
-  if(my_config->HasWarnings()) {
+  if (my_config->HasWarnings()) {
     ua->SendMsg(_("Deprecated configuration settings detected:\n"));
-    for(auto& warning : my_config->GetWarnings()) {
+    for (auto& warning : my_config->GetWarnings()) {
       ua->SendMsg(" * %s\n", warning.c_str());
     }
   } else {

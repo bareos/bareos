@@ -193,9 +193,15 @@ set(BAREOSCFG_SRCS
 )
 list(APPEND BAREOS_SRCS ${BAREOSCFG_SRCS})
 
+if(HAVE_WIN32)
+  list(APPEND BAREOS_SRCS osinfo_win32.cc)
+else()
+  list(APPEND BAREOS_SRCS osinfo.cc)
+endif()
+
 add_library(bareos SHARED ${BAREOS_SRCS} $<TARGET_OBJECTS:version-obj>)
 
-add_library(version-obj OBJECT version.c)
+add_library(version-obj OBJECT version.cc)
 target_compile_definitions(
   version-obj
   PRIVATE

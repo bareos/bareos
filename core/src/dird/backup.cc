@@ -1195,7 +1195,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
         "  Bareos binary info:     %s\n"
         "  Termination:            %s\n\n"),
         BAREOS, my_name, kBareosVersionStrings.Full,
-        kBareosVersionStrings.ShortDate, DISTVER,
+        kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
         jcr->impl->jr.JobId,
         jcr->impl->jr.Job,
         level_info.c_str(),

@@ -1226,7 +1226,8 @@ static int CheckResources()
 static int Versioncmd(FILE* input, BareosSocket* UA_sock)
 {
   ConsoleOutputFormat("Version: %s (%s) %s\n", kBareosVersionStrings.Full,
-                      kBareosVersionStrings.Date, DISTVER);
+                      kBareosVersionStrings.Date,
+                      kBareosVersionStrings.GetOsInfo());
   return 1;
 }
 

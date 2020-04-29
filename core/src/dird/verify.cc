@@ -570,7 +570,7 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
              "  Bareos binary info:     %s\n"
              "  Termination:            %s\n\n"),
            BAREOS, my_name, kBareosVersionStrings.Full,
-           kBareosVersionStrings.ShortDate, DISTVER,
+           kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
            jcr->impl->jr.JobId, jcr->impl->jr.Job,
            jcr->impl->res.fileset->resource_name_, JobLevelToString(JobLevel),
            jcr->impl->res.client->resource_name_, jcr->impl->previous_jr.JobId,
@@ -599,7 +599,7 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
              "  Bareos binary info:     %s\n"
              "  Termination:            %s\n\n"),
            BAREOS, my_name, kBareosVersionStrings.Full,
-           kBareosVersionStrings.ShortDate, DISTVER,
+           kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
            jcr->impl->jr.JobId, jcr->impl->jr.Job,
            jcr->impl->res.fileset->resource_name_, JobLevelToString(JobLevel),
            jcr->impl->res.client->resource_name_, jcr->impl->previous_jr.JobId,
