@@ -79,17 +79,11 @@
 #undef LOCALEDIR
 #define LOCALEDIR "."
 
-/* Define to 1 if you have the `snprintf' function. */
-#define HAVE_SNPRINTF 1
-
 /* Define to 1 if you have the <sys/mtio.h> header file. */
 #define HAVE_SYS_MTIO_H 1
 
 /* Define to 1 if you have the <sys/time.h> header file. */
 #define HAVE_SYS_TIME_H 1
-
-/* Define to 1 if you have the `vsnprintf' function. */
-#define HAVE_VSNPRINTF 1
 
 /* Define to 1 if you have the <zlib.h> header file. */
 #define HAVE_ZLIB_H 1

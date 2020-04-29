@@ -462,9 +462,6 @@ extern char WIN_VERSION[];
 // Define to 1 if you have the `sizeof_proplist_entry' function
 #cmakedefine HAVE_SIZEOF_PROPLIST_ENTRY @HAVE_SIZEOF_PROPLIST_ENTRY@
 
-// Define to 1 if you have the `snprintf' function
-#cmakedefine HAVE_SNPRINTF @HAVE_SNPRINTF@
-
 // Set if you have an SQLite3 Database
 #cmakedefine HAVE_SQLITE3 @HAVE_SQLITE3@
 
@@ -542,9 +539,6 @@ extern char WIN_VERSION[];
 
 // Define to 1 if you have the `utimes' function
 #cmakedefine HAVE_UTIMES @HAVE_UTIMES@
-
-// Define to 1 if you have the `vsnprintf' function
-#cmakedefine HAVE_VSNPRINTF @HAVE_VSNPRINTF@
 
 // Extended Attributes support
 #cmakedefine HAVE_XATTR @HAVE_XATTR@

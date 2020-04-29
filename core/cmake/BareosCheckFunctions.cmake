@@ -83,7 +83,5 @@ check_function_exists(sizeof_proplist_entry HAVE_SIZEOF_PROPLIST_ENTRY)
 check_function_exists(sqlite3_threadsafe HAVE_SQLITE3_THREADSAFE)
 check_function_exists(unlinkat HAVE_UNLINKAT)
 check_function_exists(utimes HAVE_UTIMES)
-check_function_exists(snprintf HAVE_SNPRINTF)
-check_function_exists(vsnprintf HAVE_VSNPRINTF)
 
 check_function_exists(glfs_readdirplus HAVE_GLFS_READDIRPLUS)
