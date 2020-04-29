@@ -588,12 +588,6 @@ extern char WIN_VERSION[];
 // Directory for daemon files
 #cmakedefine _PATH_BAREOS_WORKINGDIR @_PATH_BAREOS_WORKINGDIR@
 
-// Set to correct scanf value for long long int
-#cmakedefine lld @lld@
-
-// Set to correct scanf value for long long unsigned int
-#cmakedefine llu @llu@
-
 #define HOST_OS "@host@@post_host@"
 #define DISTNAME "@DISTNAME@"
 #define DISTVER "@DISTVER@"

@@ -606,9 +606,6 @@ if(${CMAKE_COMPILER_IS_GNUCC})
   set(HAVE_GCC 1)
 endif()
 
-set(lld "\"lld\"")
-set(llu "\"llu\"")
-
 set(HAVE_MYSQL_THREAD_SAFE 1)
 set(HAVE_SHA2 1)
 set(HAVE_PQISTHREADSAFE 1)

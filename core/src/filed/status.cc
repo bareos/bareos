@@ -235,7 +235,7 @@ static void ListRunningJobsPlain(StatusPacket* sp)
 
     found = true;
     if (njcr->store_bsock) {
-      len = Mmsg(msg, "    SDReadSeqNo=%" lld " fd=%d\n",
+      len = Mmsg(msg, "    SDReadSeqNo=%lld fd=%d\n",
                  njcr->store_bsock->read_seqno, njcr->store_bsock->fd_);
       sp->send(msg, len);
     } else {
@@ -306,7 +306,7 @@ static void ListRunningJobsApi(StatusPacket* sp)
     }
 
     if (njcr->store_bsock) {
-      len = Mmsg(msg, " SDReadSeqNo=%" lld "\n fd=%d\n",
+      len = Mmsg(msg, " SDReadSeqNo=%lld\n fd=%d\n",
                  njcr->store_bsock->read_seqno, njcr->store_bsock->fd_);
       sp->send(msg, len);
     } else {

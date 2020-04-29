@@ -26,10 +26,6 @@
 /* File daemon specif libraries */
 #define FDLIBS 1
 
-/* Set to correct scanf value for long long int */
-#define lld "lld"
-#define llu "llu"
-
 /* Define to 1 if you have `alloca', as a function or macro. */
 #ifndef HAVE_MINGW
 #define alloca _alloca
