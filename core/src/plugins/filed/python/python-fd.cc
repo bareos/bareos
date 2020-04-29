@@ -245,6 +245,49 @@ bRC loadPlugin(bInfo* lbinfo,
 
     if (PyErr_Occurred()) { PyErrorHandler(); }
 
+    // Extract capsules pointer from bareosfd module
+    void (*loadplugin_from_bareosfd_module)(
+        filedaemon::bInfo * lbinfo, filedaemon::bFuncs * lbfuncs,
+        genpInfo * *pinfo, filedaemon::pFuncs * *pfuncs) =
+        (void (*)(filedaemon::bInfo*, filedaemon::bFuncs*, genpInfo**,
+                  filedaemon::pFuncs**))PyCapsule_Import("bareosfd.loadPlugin",
+                                                         0);
+
+    // Extract capsule bareosfd.bpContext
+    void* ctx_from_bareosfd_module = PyCapsule_Import("bareosfd.bpContext", 0);
+    if (!ctx_from_bareosfd_module) {
+      printf("importing bareosfd.bpContext failed \n");
+    }
+
+    // Extract capsules bareosfd.bFuncs
+    void* bfuncs_from_bareosfd_module = PyCapsule_Import("bareosfd.bFuncs", 0);
+    if (!bfuncs_from_bareosfd_module) {
+      printf("importing bareosfd.bFuncs failed \n");
+    }
+
+    if (!loadplugin_from_bareosfd_module) {
+      printf("importing bareosfd.loadPlugin failed \n");
+    }
+
+
+    *(void**)ctx_from_bareosfd_module = &bareos_plugin_context;
+    *(void**)bfuncs_from_bareosfd_module = &bfuncs;
+
+    /* call loadPlugin in plugin */
+    filedaemon::bInfo myInfo;
+    genpInfo pinfo;
+    filedaemon::pFuncs pfuncs;
+
+    loadplugin_from_bareosfd_module(&myInfo, bfuncs, (genpInfo**)&pinfo,
+                                    (filedaemon::pFuncs**)&pfuncs);
+
+
+    printf("ctx_from_bareosfd_module contains    %p\n",
+           *(void**)ctx_from_bareosfd_module);
+    printf("bfuncs_from_bareosfd_module contains %p\n",
+           *(void**)bfuncs_from_bareosfd_module);
+
+
     PyEval_InitThreads();
     mainThreadState = PyEval_SaveThread();
   }
@@ -2413,8 +2456,8 @@ static PyObject* PyBareosDebugMessage(PyObject* self, PyObject* args)
   int level;
   char* dbgmsg = NULL;
   bpContext* bareos_plugin_ctx = GetPluginContextFromPythonModule();
-  plugin_private_context* ppc =
-      (plugin_private_context*)bareos_plugin_ctx->pContext;
+  /* plugin_private_context* ppc = */
+  /*     (plugin_private_context*)bareos_plugin_ctx->pContext; */
 
   if (!PyArg_ParseTuple(args, "i|z:BareosDebugMessage", &level, &dbgmsg)) {
     return NULL;
