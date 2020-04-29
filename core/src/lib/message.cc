@@ -78,9 +78,6 @@ static bool trace = false;
 #endif
 static bool hangup = false;
 
-/* Constants */
-const char* distver = DISTVER;
-
 /*
  * Walk back in a string from end looking for a
  * path separator.

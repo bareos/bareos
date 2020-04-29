@@ -4,7 +4,6 @@ print exepath
 print catalog_db
 print kBareosVersionStrings.FullWithDate
 print kBareosVersionStrings.BinaryInfo
-print distver
 print host_name
 show env TestName
 bt
