@@ -1115,7 +1115,7 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
     int stream, len;
     char *p, *fn;
     PoolMem Digest(PM_MESSAGE); /* Either Verify opts or MD5/SHA1 digest */
-
+    Digest.check_size(fd->message_length);
     if ((len = sscanf(fd->msg, "%ld %d %s", &file_index, &stream,
                       Digest.c_str())) != 3) {
       Jmsg(jcr, M_FATAL, 0,
