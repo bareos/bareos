@@ -953,6 +953,7 @@ int get_attributes_and_put_in_catalog(JCR *jcr)
       char *p, *fn;
       POOL_MEM Digest(PM_MESSAGE);    /* Either Verify opts or MD5/SHA1 digest */
 
+      Digest.check_size(fd->msglen);
       if ((len = sscanf(fd->msg, "%ld %d %s", &file_index, &stream, Digest.c_str())) != 3) {
          Jmsg(jcr, M_FATAL, 0, _("<filed: bad attributes, expected 3 fields got %d\n"
                                  "msglen=%d msg=%s\n"), len, fd->msglen, fd->msg);
