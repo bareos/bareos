@@ -69,7 +69,7 @@ static char buf[20000];
 static bool quit = false;
 static const char* idx_tmp_name;
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-static const char* backend_directory = _PATH_BAREOS_BACKENDDIR;
+static const char* backend_directory = PATH_BAREOS_BACKENDDIR;
 #endif
 
 #define MAX_ID_LIST_LEN 10000000

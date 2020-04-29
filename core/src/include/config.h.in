@@ -580,13 +580,13 @@ extern char WIN_VERSION[];
 #cmakedefine _LARGE_FILES @_LARGE_FILES@
 
 // Directory for backend files
-#cmakedefine _PATH_BAREOS_BACKENDDIR @_PATH_BAREOS_BACKENDDIR@
+#cmakedefine PATH_BAREOS_BACKENDDIR @PATH_BAREOS_BACKENDDIR@
 
 // Directory for PID files
-#cmakedefine _PATH_BAREOS_PIDDIR @_PATH_BAREOS_PIDDIR@
+#cmakedefine PATH_BAREOS_PIDDIR @PATH_BAREOS_PIDDIR@
 
 // Directory for daemon files
-#cmakedefine _PATH_BAREOS_WORKINGDIR @_PATH_BAREOS_WORKINGDIR@
+#cmakedefine PATH_BAREOS_WORKINGDIR @PATH_BAREOS_WORKINGDIR@
 
 #define HOST_OS "@host@@post_host@"
 #define DISTNAME "@DISTNAME@"

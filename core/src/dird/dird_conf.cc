@@ -126,15 +126,15 @@ static ResourceItem dir_items[] = {
   { "DirAddresses", CFG_TYPE_ADDRESSES, ITEM(res_dir,  DIRaddrs), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL },
   { "DirSourceAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_dir,  DIRsrc_addr), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
   { "QueryFile", CFG_TYPE_DIR, ITEM(res_dir, query_file), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-  { "WorkingDirectory", CFG_TYPE_DIR, ITEM(res_dir, working_directory), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, _PATH_BAREOS_WORKINGDIR, NULL, NULL },
-  { "PidDirectory", CFG_TYPE_DIR, ITEM(res_dir, pid_directory), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, _PATH_BAREOS_PIDDIR, NULL, NULL },
+  { "WorkingDirectory", CFG_TYPE_DIR, ITEM(res_dir, working_directory), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_WORKINGDIR, NULL, NULL },
+  { "PidDirectory", CFG_TYPE_DIR, ITEM(res_dir, pid_directory), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_PIDDIR, NULL, NULL },
   { "PluginDirectory", CFG_TYPE_DIR, ITEM(res_dir, plugin_directory), 0, 0, NULL,
      "14.2.0-", "Plugins are loaded from this directory. To load only specific plugins, use 'Plugin Names'." },
   { "PluginNames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_dir, plugin_names), 0, 0, NULL,
       "14.2.0-", "List of plugins, that should get loaded from 'Plugin Directory' (only basenames, '-dir.so' is added automatically). If empty, all plugins will get loaded." },
   { "ScriptsDirectory", CFG_TYPE_DIR, ITEM(res_dir, scripts_directory), 0, 0, NULL, NULL, "This directive is currently unused." },
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-  { "BackendDirectory", CFG_TYPE_STR_VECTOR_OF_DIRS, ITEM(res_dir, backend_directories), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, _PATH_BAREOS_BACKENDDIR, NULL, NULL },
+  { "BackendDirectory", CFG_TYPE_STR_VECTOR_OF_DIRS, ITEM(res_dir, backend_directories), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_BACKENDDIR, NULL, NULL },
 #endif
   { "Subscriptions", CFG_TYPE_PINT32, ITEM(res_dir, subscriptions), 0, CFG_ITEM_DEFAULT, "0", "12.4.4-", NULL },
   { "SubSysDirectory", CFG_TYPE_DIR, ITEM(res_dir, subsys_directory), 0, CFG_ITEM_DEPRECATED, NULL, "-12.4.0", NULL },

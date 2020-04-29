@@ -82,13 +82,13 @@ static ResourceItem store_items[] = {
   {"SdAddresses", CFG_TYPE_ADDRESSES, ITEM(res_store, SDaddrs), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT, NULL, NULL},
   {"SdSourceAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_store, SDsrc_addr), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL},
   {"WorkingDirectory", CFG_TYPE_DIR, ITEM(res_store, working_directory), 0,
-      CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, _PATH_BAREOS_WORKINGDIR, NULL, NULL},
+      CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_WORKINGDIR, NULL, NULL},
   {"PidDirectory", CFG_TYPE_DIR, ITEM(res_store, pid_directory), 0,
-      CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, _PATH_BAREOS_PIDDIR, NULL, NULL},
+      CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_PIDDIR, NULL, NULL},
   {"SubSysDirectory", CFG_TYPE_DIR, ITEM(res_store, subsys_directory), CFG_ITEM_DEPRECATED, 0, NULL, NULL, NULL},
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
   {"BackendDirectory", CFG_TYPE_STR_VECTOR_OF_DIRS, ITEM(res_store, backend_directories), 0,
-      CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, _PATH_BAREOS_BACKENDDIR, NULL, NULL},
+      CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_BACKENDDIR, NULL, NULL},
 #endif
   {"PluginDirectory", CFG_TYPE_DIR, ITEM(res_store, plugin_directory), 0, 0, NULL, NULL, NULL},
   {"PluginNames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_store, plugin_names), 0, 0, NULL, NULL, NULL},

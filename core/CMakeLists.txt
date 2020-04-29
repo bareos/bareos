@@ -716,9 +716,9 @@ set(support_systemd "")
 set(batch_insert_db_backends "")
 set(have_cmocka "")
 
-set(_PATH_BAREOS_BACKENDDIR \"${backenddir}\")
-set(_PATH_BAREOS_PIDDIR \"${piddir}\")
-set(_PATH_BAREOS_WORKINGDIR \"${workingdir}\")
+set(PATH_BAREOS_BACKENDDIR \"${backenddir}\")
+set(PATH_BAREOS_PIDDIR \"${piddir}\")
+set(PATH_BAREOS_WORKINGDIR \"${workingdir}\")
 
 if(HAVE_WIN32)
   install(DIRECTORY DESTINATION var/log)
