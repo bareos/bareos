@@ -3,7 +3,7 @@
 
    Copyright (C) 2010 Zilvinas Krapavickas <zkrapavickas@gmail.com>
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -113,7 +113,7 @@ static bool adoReportError(bpContext* ctx);
  * Pointers to Bareos functions
  */
 static bFuncs* bfuncs = NULL;
-static bInfo* binfo = NULL;
+static Core_PluginApiDefinition* binfo = NULL;
 
 /**
  * Plugin Information block
@@ -227,7 +227,7 @@ extern "C" {
  *
  * External entry point called by Bareos to "load" the plugin
  */
-bRC loadPlugin(bInfo* lbinfo,
+bRC loadPlugin(Core_PluginApiDefinition* lbinfo,
                bFuncs* lbfuncs,
                genpInfo** pinfo,
                pFuncs** pfuncs)

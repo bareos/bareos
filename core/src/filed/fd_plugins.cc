@@ -135,7 +135,8 @@ static boffset_t MyPluginBlseek(BareosWinFilePacket* bfd,
                                 int whence);
 
 /* Bareos info */
-static bInfo binfo = {sizeof(bInfo), FD_PLUGIN_INTERFACE_VERSION};
+static Core_PluginApiDefinition binfo = {sizeof(Core_PluginApiDefinition),
+                                         FD_PLUGIN_INTERFACE_VERSION};
 
 /* Bareos entry points */
 static bFuncs bfuncs = {sizeof(bFuncs),

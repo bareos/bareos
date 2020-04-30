@@ -121,7 +121,7 @@ static bRC PyHandleBackupFile(bpContext* bareos_plugin_ctx,
 
 /* Pointers to Bareos functions */
 static bFuncs* bfuncs = NULL;
-static bInfo* binfo = NULL;
+static Core_PluginApiDefinition* binfo = NULL;
 
 static genpInfo pluginInfo = {sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
                               FD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
@@ -215,7 +215,7 @@ static void PyErrorHandler()
 /**
  * Plugin called here when it is first loaded
  */
-bRC loadPlugin(bInfo* lbinfo,
+bRC loadPlugin(Core_PluginApiDefinition* lbinfo,
                bFuncs* lbfuncs,
                genpInfo** pinfo,
                pFuncs** pfuncs)
@@ -247,9 +247,11 @@ bRC loadPlugin(bInfo* lbinfo,
 
     // Extract capsules pointer from bareosfd module
     void (*loadplugin_from_bareosfd_module)(
-        filedaemon::bInfo * lbinfo, filedaemon::bFuncs * lbfuncs,
-        genpInfo * *pinfo, filedaemon::pFuncs * *pfuncs) =
-        (void (*)(filedaemon::bInfo*, filedaemon::bFuncs*, genpInfo**,
+        filedaemon::Core_PluginApiDefinition * lbinfo,
+        filedaemon::bFuncs * lbfuncs, genpInfo * *pinfo,
+        filedaemon::pFuncs * *pfuncs) =
+        (void (*)(filedaemon::Core_PluginApiDefinition*, filedaemon::bFuncs*,
+                  genpInfo**,
                   filedaemon::pFuncs**))PyCapsule_Import("bareosfd.loadPlugin",
                                                          0);
 
@@ -274,7 +276,7 @@ bRC loadPlugin(bInfo* lbinfo,
     *(void**)bfuncs_from_bareosfd_module = &bfuncs;
 
     /* call loadPlugin in plugin */
-    filedaemon::bInfo myInfo;
+    filedaemon::Core_PluginApiDefinition myInfo;
     genpInfo pinfo;
     filedaemon::pFuncs pfuncs;
 

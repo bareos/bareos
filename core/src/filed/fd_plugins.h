@@ -257,7 +257,7 @@ typedef struct s_bEvent {
 typedef struct s_bareosInfo {
   uint32_t size;
   uint32_t version;
-} bInfo;
+} Core_PluginApiDefinition;
 
 /*
  * Bareos Core Routines -- not used within a plugin

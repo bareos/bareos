@@ -70,7 +70,7 @@ static bRC plugin_has_all_arguments(bpContext* ctx);
 
 /* Pointers to Bareos functions */
 static bFuncs* bfuncs = NULL;
-static bInfo* binfo = NULL;
+static Core_PluginApiDefinition* binfo = NULL;
 
 /* Plugin Information block */
 static genpInfo pluginInfo = {sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
@@ -139,7 +139,7 @@ extern "C" {
 /**
  * External entry point called by Bareos to "load" the plugin
  */
-bRC loadPlugin(bInfo* lbinfo,
+bRC loadPlugin(Core_PluginApiDefinition* lbinfo,
                bFuncs* lbfuncs,
                genpInfo** pinfo,
                pFuncs** pfuncs)
