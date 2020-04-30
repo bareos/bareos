@@ -1187,8 +1187,7 @@ int bclose(BareosWinFilePacket* bfd)
   } else {
 #if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_DONTNEED)
     /* If not RDWR or WRONLY must be Read Only */
-    if (!(bfd->m_flags & (O_RDWR|O_WRONLY))) {
-      fdatasync(bfd->fid); /* sync the file */
+    if (!(bfd->flags_ & (O_RDWR|O_WRONLY))) {
       /* Tell OS we don't need it any more */
       posix_fadvise(bfd->fid, 0, 0, POSIX_FADV_DONTNEED);
       Dmsg1(400, "Did posix_fadvise DONTNEED on fid=%d\n", bfd->fid);
