@@ -45,10 +45,12 @@ using namespace storagedaemon;
 #define PLUGIN_DESCRIPTION "Auto Xflation Storage Daemon Plugin"
 #define PLUGIN_USAGE "(No usage yet)"
 
-#define Dmsg(context, level, ...) \
-  bfuncs->DebugMessage(context, __FILE__, __LINE__, level, __VA_ARGS__)
-#define Jmsg(context, type, ...) \
-  bfuncs->JobMessage(context, __FILE__, __LINE__, type, 0, __VA_ARGS__)
+#define Dmsg(context, level, ...)                                         \
+  bareos_core_functions->DebugMessage(context, __FILE__, __LINE__, level, \
+                                      __VA_ARGS__)
+#define Jmsg(context, type, ...)                                          \
+  bareos_core_functions->JobMessage(context, __FILE__, __LINE__, type, 0, \
+                                    __VA_ARGS__)
 
 #define SETTING_YES (char*)"yes"
 #define SETTING_NO (char*)"no"
@@ -87,7 +89,7 @@ static bool sd_enabled_compatible = false;
 /**
  * Pointers to Bareos functions
  */
-static bsdFuncs* bfuncs = NULL;
+static bsdFuncs* bareos_core_functions = NULL;
 static bsdInfo* binfo = NULL;
 
 static genpInfo pluginInfo = {sizeof(pluginInfo), SD_PLUGIN_INTERFACE_VERSION,
@@ -133,11 +135,12 @@ extern "C" {
  * External entry point called by Bareos to "load the plugin
  */
 bRC loadPlugin(bsdInfo* lbinfo,
-               bsdFuncs* lbfuncs,
+               bsdFuncs* lbareos_core_functions,
                genpInfo** pinfo,
                psdFuncs** pfuncs)
 {
-  bfuncs = lbfuncs; /* set Bareos funct pointers */
+  bareos_core_functions =
+      lbareos_core_functions; /* set Bareos funct pointers */
   binfo = lbinfo;
   *pinfo = &pluginInfo;   /* return pointer to our info */
   *pfuncs = &pluginFuncs; /* return pointer to our functions */
@@ -145,7 +148,8 @@ bRC loadPlugin(bsdInfo* lbinfo,
   /*
    * Get the current setting of the compatible flag.
    */
-  bfuncs->getBareosValue(NULL, bsdVarCompatible, (void*)&sd_enabled_compatible);
+  bareos_core_functions->getBareosValue(NULL, bsdVarCompatible,
+                                        (void*)&sd_enabled_compatible);
 
   return bRC_OK;
 }
@@ -171,7 +175,7 @@ static bRC newPlugin(bpContext* ctx)
   int JobId = 0;
   struct plugin_ctx* p_ctx;
 
-  bfuncs->getBareosValue(ctx, bsdVarJobId, (void*)&JobId);
+  bareos_core_functions->getBareosValue(ctx, bsdVarJobId, (void*)&JobId);
   Dmsg(ctx, debuglevel, "autoxflate-sd: newPlugin JobId=%d\n", JobId);
 
   p_ctx = (struct plugin_ctx*)malloc(sizeof(struct plugin_ctx));
@@ -189,7 +193,7 @@ static bRC newPlugin(bpContext* ctx)
    * translation. bsdEventWriteRecordTranslation - Perform write-side record
    * translantion.
    */
-  bfuncs->registerBareosEvents(
+  bareos_core_functions->registerBareosEvents(
       ctx, 4, bsdEventJobEnd, bsdEventSetupRecordTranslation,
       bsdEventReadRecordTranslation, bsdEventWriteRecordTranslation);
 
@@ -204,7 +208,7 @@ static bRC freePlugin(bpContext* ctx)
   int JobId = 0;
   struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->pContext;
 
-  bfuncs->getBareosValue(ctx, bsdVarJobId, (void*)&JobId);
+  bareos_core_functions->getBareosValue(ctx, bsdVarJobId, (void*)&JobId);
   Dmsg(ctx, debuglevel, "autoxflate-sd: freePlugin JobId=%d\n", JobId);
 
   if (!p_ctx) {
@@ -651,8 +655,8 @@ static bool AutoDeflateRecord(bpContext* ctx, DeviceControlRecord* dcr)
    * DeviceRecord without a new memory buffer so we call new_record here
    * with the with_data boolean set explicitly to false.
    */
-  nrec = bfuncs->new_record(false);
-  bfuncs->CopyRecordState(nrec, rec);
+  nrec = bareos_core_functions->new_record(false);
+  bareos_core_functions->CopyRecordState(nrec, rec);
 
   /*
    * Setup the converted DeviceRecord to point with its data buffer to the
@@ -680,7 +684,7 @@ static bool AutoDeflateRecord(bpContext* ctx, DeviceControlRecord* dcr)
   if (!CompressData(dcr->jcr, dcr->device_resource->autodeflate_algorithm,
                     rec->data, rec->data_len, data, max_compression_length,
                     &nrec->data_len)) {
-    bfuncs->FreeRecord(nrec);
+    bareos_core_functions->FreeRecord(nrec);
     goto bail_out;
   }
 
@@ -749,7 +753,7 @@ static bool AutoDeflateRecord(bpContext* ctx, DeviceControlRecord* dcr)
   /*
    * If the input is just an intermediate value free it now.
    */
-  if (intermediate_value) { bfuncs->FreeRecord(dcr->after_rec); }
+  if (intermediate_value) { bareos_core_functions->FreeRecord(dcr->after_rec); }
   dcr->after_rec = nrec;
   retval = true;
 
@@ -807,8 +811,8 @@ static bool AutoInflateRecord(bpContext* ctx, DeviceControlRecord* dcr)
    * DeviceRecord without a new memory buffer so we call new_record here
    * with the with_data boolean set explicitly to false.
    */
-  nrec = bfuncs->new_record(false);
-  bfuncs->CopyRecordState(nrec, rec);
+  nrec = bareos_core_functions->new_record(false);
+  bareos_core_functions->CopyRecordState(nrec, rec);
 
   /*
    * Setup the converted record to point to the original data.
@@ -821,7 +825,7 @@ static bool AutoInflateRecord(bpContext* ctx, DeviceControlRecord* dcr)
 
   if (!DecompressData(dcr->jcr, "Unknown", rec->maskedStream, &nrec->data,
                       &nrec->data_len, true)) {
-    bfuncs->FreeRecord(nrec);
+    bareos_core_functions->FreeRecord(nrec);
     goto bail_out;
   }
 
@@ -856,7 +860,7 @@ static bool AutoInflateRecord(bpContext* ctx, DeviceControlRecord* dcr)
   /*
    * If the input is just an intermediate value free it now.
    */
-  if (intermediate_value) { bfuncs->FreeRecord(dcr->after_rec); }
+  if (intermediate_value) { bareos_core_functions->FreeRecord(dcr->after_rec); }
   dcr->after_rec = nrec;
   retval = true;
 

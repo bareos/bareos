@@ -53,7 +53,7 @@ static bRC handle_tapealert_readout(void* value);
 /**
  * Pointers to Bareos functions
  */
-static bsdFuncs* bfuncs = NULL;
+static bsdFuncs* bareos_core_functions = NULL;
 static bsdInfo* binfo = NULL;
 
 static genpInfo pluginInfo = {sizeof(pluginInfo), SD_PLUGIN_INTERFACE_VERSION,
@@ -86,14 +86,15 @@ extern "C" {
  * External entry point called by Bareos to "load the plugin
  */
 bRC loadPlugin(bsdInfo* lbinfo,
-               bsdFuncs* lbfuncs,
+               bsdFuncs* lbareos_core_functions,
                genpInfo** pinfo,
                psdFuncs** pfuncs)
 {
-  bfuncs = lbfuncs; /* set Bareos funct pointers */
+  bareos_core_functions =
+      lbareos_core_functions; /* set Bareos funct pointers */
   binfo = lbinfo;
   Dmsg2(debuglevel, "scsitapealert-sd: Loaded: size=%d version=%d\n",
-        bfuncs->size, bfuncs->version);
+        bareos_core_functions->size, bareos_core_functions->version);
   *pinfo = &pluginInfo;   /* return pointer to our info */
   *pfuncs = &pluginFuncs; /* return pointer to our functions */
 
@@ -120,13 +121,13 @@ static bRC newPlugin(bpContext* ctx)
 {
   int JobId = 0;
 
-  bfuncs->getBareosValue(ctx, bsdVarJobId, (void*)&JobId);
+  bareos_core_functions->getBareosValue(ctx, bsdVarJobId, (void*)&JobId);
   Dmsg1(debuglevel, "scsitapealert-sd: newPlugin JobId=%d\n", JobId);
 
   /*
    * Only register plugin events we are interested in.
    */
-  bfuncs->registerBareosEvents(
+  bareos_core_functions->registerBareosEvents(
       ctx, 6, bsdEventVolumeLoad, bsdEventLabelVerified, bsdEventReadError,
       bsdEventWriteError, bsdEventVolumeUnload, bsdEventDeviceRelease);
 
@@ -140,7 +141,7 @@ static bRC freePlugin(bpContext* ctx)
 {
   int JobId = 0;
 
-  bfuncs->getBareosValue(ctx, bsdVarJobId, (void*)&JobId);
+  bareos_core_functions->getBareosValue(ctx, bsdVarJobId, (void*)&JobId);
   Dmsg1(debuglevel, "scsitapealert-sd: freePlugin JobId=%d\n", JobId);
 
   return bRC_OK;
@@ -231,7 +232,7 @@ static bRC handle_tapealert_readout(void* value)
         debuglevel,
         "scsitapealert-sd: tapealerts on device %s, calling UpdateTapeAlerts\n",
         dev->dev_name);
-    bfuncs->UpdateTapeAlert(dcr, flags);
+    bareos_core_functions->UpdateTapeAlert(dcr, flags);
   }
 
   return bRC_OK;

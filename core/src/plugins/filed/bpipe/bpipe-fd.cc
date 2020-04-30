@@ -69,7 +69,7 @@ static bRC parse_plugin_definition(bpContext* ctx, void* value);
 static bRC plugin_has_all_arguments(bpContext* ctx);
 
 /* Pointers to Bareos functions */
-static BareosCoreFunctions* bfuncs = NULL;
+static BareosCoreFunctions* bareos_core_functions = NULL;
 static Core_PluginApiDefinition* binfo = NULL;
 
 /* Plugin Information block */
@@ -140,11 +140,12 @@ extern "C" {
  * External entry point called by Bareos to "load" the plugin
  */
 bRC loadPlugin(Core_PluginApiDefinition* lbinfo,
-               BareosCoreFunctions* lbfuncs,
+               BareosCoreFunctions* lbareos_core_functions,
                genpInfo** pinfo,
                pFuncs** pfuncs)
 {
-  bfuncs = lbfuncs; /* set Bareos funct pointers */
+  bareos_core_functions =
+      lbareos_core_functions; /* set Bareos funct pointers */
   binfo = lbinfo;
   *pinfo = &pluginInfo;   /* return pointer to our info */
   *pfuncs = &pluginFuncs; /* return pointer to our functions */
@@ -177,7 +178,7 @@ static bRC newPlugin(bpContext* ctx)
   memset(p_ctx, 0, sizeof(struct plugin_ctx));
   ctx->pContext = (void*)p_ctx; /* set our context pointer */
 
-  bfuncs->registerBareosEvents(
+  bareos_core_functions->registerBareosEvents(
       ctx, 6, bEventNewPluginOptions, bEventPluginCommand, bEventJobStart,
       bEventRestoreCommand, bEventEstimateCommand, bEventBackupCommand);
 

@@ -139,29 +139,29 @@ static Core_PluginApiDefinition binfo = {sizeof(Core_PluginApiDefinition),
                                          FD_PLUGIN_INTERFACE_VERSION};
 
 /* Bareos entry points */
-static BareosCoreFunctions bfuncs = {sizeof(BareosCoreFunctions),
-                                     FD_PLUGIN_INTERFACE_VERSION,
-                                     bareosRegisterEvents,
-                                     bareosUnRegisterEvents,
-                                     bareosGetInstanceCount,
-                                     bareosGetValue,
-                                     bareosSetValue,
-                                     bareosJobMsg,
-                                     bareosDebugMsg,
-                                     bareosMalloc,
-                                     bareosFree,
-                                     bareosAddExclude,
-                                     bareosAddInclude,
-                                     bareosAddOptions,
-                                     bareosAddRegex,
-                                     bareosAddWild,
-                                     bareosNewOptions,
-                                     bareosNewInclude,
-                                     bareosNewPreInclude,
-                                     bareosCheckChanges,
-                                     bareosAcceptFile,
-                                     bareosSetSeenBitmap,
-                                     bareosClearSeenBitmap};
+static BareosCoreFunctions bareos_core_functions = {sizeof(BareosCoreFunctions),
+                                                    FD_PLUGIN_INTERFACE_VERSION,
+                                                    bareosRegisterEvents,
+                                                    bareosUnRegisterEvents,
+                                                    bareosGetInstanceCount,
+                                                    bareosGetValue,
+                                                    bareosSetValue,
+                                                    bareosJobMsg,
+                                                    bareosDebugMsg,
+                                                    bareosMalloc,
+                                                    bareosFree,
+                                                    bareosAddExclude,
+                                                    bareosAddInclude,
+                                                    bareosAddOptions,
+                                                    bareosAddRegex,
+                                                    bareosAddWild,
+                                                    bareosNewOptions,
+                                                    bareosNewInclude,
+                                                    bareosNewPreInclude,
+                                                    bareosCheckChanges,
+                                                    bareosAcceptFile,
+                                                    bareosSetSeenBitmap,
+                                                    bareosClearSeenBitmap};
 
 /**
  * Bareos private context
@@ -1714,8 +1714,8 @@ void LoadFdPlugins(const char* plugin_dir, alist* plugin_names)
   }
 
   fd_plugin_list = new alist(10, not_owned_by_alist);
-  if (!LoadPlugins((void*)&binfo, (void*)&bfuncs, fd_plugin_list, plugin_dir,
-                   plugin_names, plugin_type, IsPluginCompatible)) {
+  if (!LoadPlugins((void*)&binfo, (void*)&bareos_core_functions, fd_plugin_list,
+                   plugin_dir, plugin_names, plugin_type, IsPluginCompatible)) {
     /*
      * Either none found, or some error
      */

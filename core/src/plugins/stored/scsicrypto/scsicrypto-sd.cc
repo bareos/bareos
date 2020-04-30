@@ -94,7 +94,7 @@ static bRC send_volume_encryption_status(void* value);
 /**
  * Pointers to Bareos functions
  */
-static bsdFuncs* bfuncs = NULL;
+static bsdFuncs* bareos_core_functions = NULL;
 static bsdInfo* binfo = NULL;
 
 static genpInfo pluginInfo = {sizeof(pluginInfo), SD_PLUGIN_INTERFACE_VERSION,
@@ -127,14 +127,15 @@ extern "C" {
  * External entry point called by Bareos to "load the plugin
  */
 bRC loadPlugin(bsdInfo* lbinfo,
-               bsdFuncs* lbfuncs,
+               bsdFuncs* lbareos_core_functions,
                genpInfo** pinfo,
                psdFuncs** pfuncs)
 {
-  bfuncs = lbfuncs; /* set Bareos funct pointers */
+  bareos_core_functions =
+      lbareos_core_functions; /* set Bareos funct pointers */
   binfo = lbinfo;
-  Dmsg2(debuglevel, "scsicrypto-sd: Loaded: size=%d version=%d\n", bfuncs->size,
-        bfuncs->version);
+  Dmsg2(debuglevel, "scsicrypto-sd: Loaded: size=%d version=%d\n",
+        bareos_core_functions->size, bareos_core_functions->version);
   *pinfo = &pluginInfo;   /* return pointer to our info */
   *pfuncs = &pluginFuncs; /* return pointer to our functions */
 
@@ -161,7 +162,7 @@ static bRC newPlugin(bpContext* ctx)
 {
   int JobId = 0;
 
-  bfuncs->getBareosValue(ctx, bsdVarJobId, (void*)&JobId);
+  bareos_core_functions->getBareosValue(ctx, bsdVarJobId, (void*)&JobId);
   Dmsg1(debuglevel, "scsicrypto-sd: newPlugin JobId=%d\n", JobId);
 
   /*
@@ -191,10 +192,10 @@ static bRC newPlugin(bpContext* ctx)
    * bsdEventVolumeStatus - plugin callback for encryption status
    *                        of the volume loaded in the drive.
    */
-  bfuncs->registerBareosEvents(ctx, 7, bsdEventLabelRead, bsdEventLabelVerified,
-                               bsdEventLabelWrite, bsdEventVolumeUnload,
-                               bsdEventReadError, bsdEventDriveStatus,
-                               bsdEventVolumeStatus);
+  bareos_core_functions->registerBareosEvents(
+      ctx, 7, bsdEventLabelRead, bsdEventLabelVerified, bsdEventLabelWrite,
+      bsdEventVolumeUnload, bsdEventReadError, bsdEventDriveStatus,
+      bsdEventVolumeStatus);
 
   return bRC_OK;
 }
@@ -206,7 +207,7 @@ static bRC freePlugin(bpContext* ctx)
 {
   int JobId = 0;
 
-  bfuncs->getBareosValue(ctx, bsdVarJobId, (void*)&JobId);
+  bareos_core_functions->getBareosValue(ctx, bsdVarJobId, (void*)&JobId);
   Dmsg1(debuglevel, "scsicrypto-sd: freePlugin JobId=%d\n", JobId);
 
   return bRC_OK;
@@ -274,7 +275,7 @@ static inline bool GetVolumeEncryptionKey(DeviceControlRecord* dcr,
      * No valid VolCatInfo but we can get the info as we have
      * a connection to the director.
      */
-    if (bfuncs->UpdateVolumeInfo(dcr)) {
+    if (bareos_core_functions->UpdateVolumeInfo(dcr)) {
       bstrncpy(VolEncrKey, dcr->VolCatInfo.VolEncrKey, MAX_NAME_LENGTH);
       return true;
     }
@@ -287,7 +288,8 @@ static inline bool GetVolumeEncryptionKey(DeviceControlRecord* dcr,
      */
     char* cached_key;
 
-    if ((cached_key = bfuncs->LookupCryptoKey(dcr->VolumeName))) {
+    if ((cached_key =
+             bareos_core_functions->LookupCryptoKey(dcr->VolumeName))) {
       bstrncpy(VolEncrKey, cached_key, MAX_NAME_LENGTH);
       free(cached_key);
       return true;

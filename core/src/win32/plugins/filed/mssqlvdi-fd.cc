@@ -112,7 +112,7 @@ static bool adoReportError(bpContext* ctx);
 /**
  * Pointers to Bareos functions
  */
-static BareosCoreFunctions* bfuncs = NULL;
+static BareosCoreFunctions* bareos_core_functions = NULL;
 static Core_PluginApiDefinition* binfo = NULL;
 
 /**
@@ -228,11 +228,12 @@ extern "C" {
  * External entry point called by Bareos to "load" the plugin
  */
 bRC loadPlugin(Core_PluginApiDefinition* lbinfo,
-               BareosCoreFunctions* lbfuncs,
+               BareosCoreFunctions* lbareos_core_functions,
                genpInfo** pinfo,
                pFuncs** pfuncs)
 {
-  bfuncs = lbfuncs; /* set Bareos funct pointers */
+  bareos_core_functions =
+      lbareos_core_functions; /* set Bareos funct pointers */
   binfo = lbinfo;
   *pinfo = &pluginInfo;   /* return pointer to our info */
   *pfuncs = &pluginFuncs; /* return pointer to our functions */
@@ -277,9 +278,9 @@ static bRC newPlugin(bpContext* ctx)
   /*
    * Only register the events we are really interested in.
    */
-  bfuncs->registerBareosEvents(ctx, 6, bEventLevel, bEventRestoreCommand,
-                               bEventBackupCommand, bEventPluginCommand,
-                               bEventEndRestoreJob, bEventNewPluginOptions);
+  bareos_core_functions->registerBareosEvents(
+      ctx, 6, bEventLevel, bEventRestoreCommand, bEventBackupCommand,
+      bEventPluginCommand, bEventEndRestoreJob, bEventNewPluginOptions);
 
   return bRC_OK;
 }

@@ -46,7 +46,7 @@ static bRC setXattr(bpContext* ctx, xattr_pkt* xp);
 
 
 /* Pointers to Bareos functions */
-static BareosCoreFunctions* bfuncs = NULL;
+static BareosCoreFunctions* bareos_core_functions = NULL;
 static Core_PluginApiDefinition* binfo = NULL;
 
 static genpInfo pluginInfo = {sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
@@ -72,13 +72,15 @@ extern "C" {
  * Plugin called here when it is first loaded
  */
 bRC loadPlugin(Core_PluginApiDefinition* lbinfo,
-               BareosCoreFunctions* lbfuncs,
+               BareosCoreFunctions* lbareos_core_functions,
                genpInfo** pinfo,
                pFuncs** pfuncs)
 {
-  bfuncs = lbfuncs; /* set Bareos funct pointers */
+  bareos_core_functions =
+      lbareos_core_functions; /* set Bareos funct pointers */
   binfo = lbinfo;
-  printf("plugin: Loaded: size=%d version=%d\n", bfuncs->size, bfuncs->version);
+  printf("plugin: Loaded: size=%d version=%d\n", bareos_core_functions->size,
+         bareos_core_functions->version);
 
   *pinfo = &pluginInfo;   /* return pointer to our info */
   *pfuncs = &pluginFuncs; /* return pointer to our functions */
@@ -110,9 +112,9 @@ bRC unloadPlugin()
 static bRC newPlugin(bpContext* ctx)
 {
   int JobId = 0;
-  bfuncs->getBareosValue(ctx, bVarJobId, (void*)&JobId);
+  bareos_core_functions->getBareosValue(ctx, bVarJobId, (void*)&JobId);
   // printf("plugin: newPlugin JobId=%d\n", JobId);
-  bfuncs->registerBareosEvents(
+  bareos_core_functions->registerBareosEvents(
       ctx, 10, bEventJobStart, bEventJobEnd, bEventStartBackupJob,
       bEventEndBackupJob, bEventLevel, bEventSince, bEventStartRestoreJob,
       bEventEndRestoreJob, bEventRestoreCommand, bEventBackupCommand);
@@ -126,7 +128,7 @@ static bRC newPlugin(bpContext* ctx)
 static bRC freePlugin(bpContext* ctx)
 {
   int JobId = 0;
-  bfuncs->getBareosValue(ctx, bVarJobId, (void*)&JobId);
+  bareos_core_functions->getBareosValue(ctx, bVarJobId, (void*)&JobId);
   // printf("plugin: freePlugin JobId=%d\n", JobId);
   return bRC_OK;
 }
@@ -201,7 +203,7 @@ static bRC handlePluginEvent(bpContext* ctx, bEvent* event, void* value)
     default:
       printf("plugin: unknown event=%d\n", event->eventType);
   }
-  bfuncs->getBareosValue(ctx, bVarFDName, (void*)&name);
+  bareos_core_functions->getBareosValue(ctx, bVarFDName, (void*)&name);
 
   return bRC_OK;
 }

@@ -84,7 +84,7 @@ static bRC end_restore_job(bpContext* ctx, void* value);
 /**
  * Pointers to Bareos functions
  */
-static BareosCoreFunctions* bfuncs = NULL;
+static BareosCoreFunctions* bareos_core_functions = NULL;
 static Core_PluginApiDefinition* binfo = NULL;
 
 /**
@@ -179,11 +179,12 @@ extern "C" {
  * External entry point called by Bareos to "load" the plugin
  */
 bRC loadPlugin(Core_PluginApiDefinition* lbinfo,
-               BareosCoreFunctions* lbfuncs,
+               BareosCoreFunctions* lbareos_core_functions,
                genpInfo** pinfo,
                pFuncs** pfuncs)
 {
-  bfuncs = lbfuncs; /* set Bareos funct pointers */
+  bareos_core_functions =
+      lbareos_core_functions; /* set Bareos funct pointers */
   binfo = lbinfo;
   *pinfo = &pluginInfo;   /* return pointer to our info */
   *pfuncs = &pluginFuncs; /* return pointer to our functions */
@@ -217,15 +218,15 @@ static bRC newPlugin(bpContext* ctx)
   ctx->pContext = (void*)p_ctx; /* set our context pointer */
 
   p_ctx->next_filename = GetPoolMemory(PM_FNAME);
-  bfuncs->getBareosValue(ctx, bVarJobId, (void*)&p_ctx->JobId);
+  bareos_core_functions->getBareosValue(ctx, bVarJobId, (void*)&p_ctx->JobId);
 
   /*
    * Only register the events we are really interested in.
    */
-  bfuncs->registerBareosEvents(ctx, 7, bEventLevel, bEventSince,
-                               bEventRestoreCommand, bEventBackupCommand,
-                               bEventPluginCommand, bEventEndRestoreJob,
-                               bEventNewPluginOptions);
+  bareos_core_functions->registerBareosEvents(
+      ctx, 7, bEventLevel, bEventSince, bEventRestoreCommand,
+      bEventBackupCommand, bEventPluginCommand, bEventEndRestoreJob,
+      bEventNewPluginOptions);
 
   return bRC_OK;
 }
@@ -407,7 +408,7 @@ static bRC get_next_object_to_backup(bpContext* ctx)
     sp.fname = p_ctx->next_filename;
     sp.statp.st_mode = 0700 | S_IFREG;
 
-    if (bfuncs->AcceptFile(ctx, &sp) == bRC_Skip) { continue; }
+    if (bareos_core_functions->AcceptFile(ctx, &sp) == bRC_Skip) { continue; }
 
     status = rados_stat(p_ctx->ioctx, p_ctx->object_name, &p_ctx->object_size,
                         &p_ctx->object_mtime);
@@ -454,7 +455,7 @@ static bRC startBackupFile(bpContext* ctx, struct save_pkt* sp)
   switch (p_ctx->backup_level) {
     case L_INCREMENTAL:
     case L_DIFFERENTIAL:
-      switch (bfuncs->checkChanges(ctx, sp)) {
+      switch (bareos_core_functions->checkChanges(ctx, sp)) {
         case bRC_Seen:
           sp->type = FT_NOCHG;
           break;

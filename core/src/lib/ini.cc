@@ -1,7 +1,7 @@
 /*
    Copyright (C) 2011-2011 Bacula Systems(R) SA
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the
@@ -244,7 +244,8 @@ static void s_err(const char* file, int line, LEX* lc, const char* msg, ...)
          buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
 
     //   } else if (ini->ctx) {       /* called from plugin */
-    //      ini->bfuncs->JobMessage(ini->ctx, __FILE__, __LINE__, M_FATAL, 0,
+    //      ini->bareos_core_functions->JobMessage(ini->ctx, __FILE__, __LINE__,
+    //      M_FATAL, 0,
     //                    _("Config file error: %s\n"
     //                      "            : Line %d, col %d of file %s\n%s\n"),
     //                            buf.c_str(), lc->line_no, lc->col_no,
@@ -290,7 +291,8 @@ static void s_warn(const char* file, int line, LEX* lc, const char* msg, ...)
          buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
 
     //   } else if (ini->ctx) {       /* called from plugin */
-    //      ini->bfuncs->JobMessage(ini->ctx, __FILE__, __LINE__, M_WARNING, 0,
+    //      ini->bareos_core_functions->JobMessage(ini->ctx, __FILE__, __LINE__,
+    //      M_WARNING, 0,
     //                    _("Config file warning: %s\n"
     //                      "            : Line %d, col %d of file %s\n%s\n"),
     //                            buf.c_str(), lc->line_no, lc->col_no,

@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -60,7 +60,7 @@ typedef enum
 
 extern "C" {
 typedef bRC (*t_loadPlugin)(void* binfo,
-                            void* bfuncs,
+                            void* bareos_core_functions,
                             void** pinfo,
                             void** pfuncs);
 typedef bRC (*t_unloadPlugin)(void);
@@ -102,7 +102,7 @@ class alist;
 
 /* Functions */
 bool LoadPlugins(void* binfo,
-                 void* bfuncs,
+                 void* bareos_core_functions,
                  alist* plugin_list,
                  const char* plugin_dir,
                  alist* plugin_names,

@@ -56,10 +56,11 @@
     return NULL;                                                            \
   }
 
-#define RETURN_RUNTIME_ERROR_IF_BFUNC_UNSET()                    \
-  if (!bfuncs) {                                                 \
-    PyErr_SetString(PyExc_RuntimeError, AT ": bfuncs is unset"); \
-    return NULL;                                                 \
+#define RETURN_RUNTIME_ERROR_IF_BFUNC_UNSET()               \
+  if (!bareos_core_functions) {                             \
+    PyErr_SetString(PyExc_RuntimeError,                     \
+                    AT ": bareos_core_functions is unset"); \
+    return NULL;                                            \
   }
 
 #define RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET() \

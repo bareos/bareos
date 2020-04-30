@@ -36,22 +36,24 @@
 #define L_DIFFERENTIAL 'D' /* since last full backup */
 
 #define Dmsg(context, level, ...)                                             \
-  if (bfuncs && context) {                                                    \
-    bfuncs->DebugMessage(context, __FILE__, __LINE__, level, __VA_ARGS__);    \
+  if (bareos_core_functions && context) {                                     \
+    bareos_core_functions->DebugMessage(context, __FILE__, __LINE__, level,   \
+                                        __VA_ARGS__);                         \
   } else {                                                                    \
-    fprintf(                                                                  \
-        stderr,                                                               \
-        "Dmsg: bfuncs(%p) and context(%p) need to be set before Dmsg call\n", \
-        bfuncs, context);                                                     \
+    fprintf(stderr,                                                           \
+            "Dmsg: bareos_core_functions(%p) and context(%p) need to be set " \
+            "before Dmsg call\n",                                             \
+            bareos_core_functions, context);                                  \
   }
 
 #define Jmsg(context, type, ...)                                              \
-  if (bfuncs && context) {                                                    \
-    bfuncs->JobMessage(context, __FILE__, __LINE__, type, 0, __VA_ARGS__);    \
+  if (bareos_core_functions && context) {                                     \
+    bareos_core_functions->JobMessage(context, __FILE__, __LINE__, type, 0,   \
+                                      __VA_ARGS__);                           \
   } else {                                                                    \
-    fprintf(                                                                  \
-        stderr,                                                               \
-        "Jmsg: bfuncs(%p) and context(%p) need to be set before Jmsg call\n", \
-        bfuncs, context);                                                     \
+    fprintf(stderr,                                                           \
+            "Jmsg: bareos_core_functions(%p) and context(%p) need to be set " \
+            "before Jmsg call\n",                                             \
+            bareos_core_functions, context);                                  \
   }
 #endif

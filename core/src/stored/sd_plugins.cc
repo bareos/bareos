@@ -86,14 +86,15 @@ static bool IsPluginCompatible(Plugin* plugin);
 static bsdInfo binfo = {sizeof(bsdFuncs), SD_PLUGIN_INTERFACE_VERSION};
 
 /* Bareos entry points */
-static bsdFuncs bfuncs = {sizeof(bsdFuncs),       SD_PLUGIN_INTERFACE_VERSION,
-                          bareosRegisterEvents,   bareosUnRegisterEvents,
-                          bareosGetInstanceCount, bareosGetValue,
-                          bareosSetValue,         bareosJobMsg,
-                          bareosDebugMsg,         bareosEditDeviceCodes,
-                          bareosLookupCryptoKey,  bareosUpdateVolumeInfo,
-                          bareosUpdateTapeAlert,  bareosNewRecord,
-                          bareosCopyRecordState,  bareosFreeRecord};
+static bsdFuncs bareos_core_functions = {
+    sizeof(bsdFuncs),       SD_PLUGIN_INTERFACE_VERSION,
+    bareosRegisterEvents,   bareosUnRegisterEvents,
+    bareosGetInstanceCount, bareosGetValue,
+    bareosSetValue,         bareosJobMsg,
+    bareosDebugMsg,         bareosEditDeviceCodes,
+    bareosLookupCryptoKey,  bareosUpdateVolumeInfo,
+    bareosUpdateTapeAlert,  bareosNewRecord,
+    bareosCopyRecordState,  bareosFreeRecord};
 
 /**
  * Bareos private context
@@ -407,8 +408,8 @@ void LoadSdPlugins(const char* plugin_dir, alist* plugin_names)
     return;
   }
   sd_plugin_list = new alist(10, not_owned_by_alist);
-  if (!LoadPlugins((void*)&binfo, (void*)&bfuncs, sd_plugin_list, plugin_dir,
-                   plugin_names, plugin_type, IsPluginCompatible)) {
+  if (!LoadPlugins((void*)&binfo, (void*)&bareos_core_functions, sd_plugin_list,
+                   plugin_dir, plugin_names, plugin_type, IsPluginCompatible)) {
     /*
      * Either none found, or some error
      */

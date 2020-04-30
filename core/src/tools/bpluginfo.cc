@@ -48,7 +48,7 @@
 
 extern "C" {
 typedef int (*loadPlugin)(void* binfo,
-                          void* bfuncs,
+                          void* bareos_core_functions,
                           void** pinfo,
                           void** pfuncs);
 typedef int (*unloadPlugin)(void);
@@ -470,9 +470,15 @@ int main(int argc, char* argv[])
   progdata* pdata;
   loadPlugin loadplugfunc;
   unloadPlugin unloadplugfunc;
-  bareosfuncs bfuncs = {
-      sizeof(bfuncs), 1,          registerBareosEvents, getBareosValue,
-      setBareosValue, JobMessage, DebugMessage,         bareosMalloc,
+  bareosfuncs bareos_core_functions = {
+      sizeof(bareos_core_functions),
+      1,
+      registerBareosEvents,
+      getBareosValue,
+      setBareosValue,
+      JobMessage,
+      DebugMessage,
+      bareosMalloc,
       bareosFree,
   };
   bareosinfos binfos;
@@ -508,7 +514,8 @@ int main(int argc, char* argv[])
 
   if (pdata->bapiversion > 0) { binfos.bdirinfo.version = pdata->bapiversion; }
 
-  loadplugfunc(&binfos, &bfuncs, (void**)&pdata->pinfo, (void**)&pdata->pfuncs);
+  loadplugfunc(&binfos, &bareos_core_functions, (void**)&pdata->pinfo,
+               (void**)&pdata->pfuncs);
 
   pdata->bplugtype = Getplugintype(pdata);
 

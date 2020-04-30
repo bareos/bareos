@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -107,7 +107,7 @@ static void ClosePlugin(Plugin* plugin)
  * entry points, the license is compatible and the initialize the plugin.
  */
 static bool load_a_plugin(void* binfo,
-                          void* bfuncs,
+                          void* bareos_core_functions,
                           const char* plugin_pathname,
                           const char* plugin_name,
                           const char* type,
@@ -168,7 +168,8 @@ static bool load_a_plugin(void* binfo,
   /*
    * Initialize the plugin
    */
-  if (loadPlugin(binfo, bfuncs, &plugin->pinfo, &plugin->pfuncs) != bRC_OK) {
+  if (loadPlugin(binfo, bareos_core_functions, &plugin->pinfo,
+                 &plugin->pfuncs) != bRC_OK) {
     ClosePlugin(plugin);
 
     return false;
@@ -193,7 +194,7 @@ static bool load_a_plugin(void* binfo,
  * to load from the specified directory.
  */
 bool LoadPlugins(void* binfo,
-                 void* bfuncs,
+                 void* bareos_core_functions,
                  alist* plugin_list,
                  const char* plugin_dir,
                  alist* plugin_names,
@@ -241,8 +242,9 @@ bool LoadPlugins(void* binfo,
       /*
        * Try to load the plugin and resolve the wanted symbols.
        */
-      if (load_a_plugin(binfo, bfuncs, fname.c_str(), plugin_name.c_str(), type,
-                        plugin_list, IsPluginCompatible)) {
+      if (load_a_plugin(binfo, bareos_core_functions, fname.c_str(),
+                        plugin_name.c_str(), type, plugin_list,
+                        IsPluginCompatible)) {
         found = true;
       }
     }
@@ -311,8 +313,9 @@ bool LoadPlugins(void* binfo,
       /*
        * Try to load the plugin and resolve the wanted symbols.
        */
-      if (load_a_plugin(binfo, bfuncs, fname.c_str(), result->d_name, type,
-                        plugin_list, IsPluginCompatible)) {
+      if (load_a_plugin(binfo, bareos_core_functions, fname.c_str(),
+                        result->d_name, type, plugin_list,
+                        IsPluginCompatible)) {
         found = true;
       }
     }

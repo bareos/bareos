@@ -63,7 +63,7 @@ static bRC getXattr(bpContext* ctx, xattr_pkt* xp);
 static bRC setXattr(bpContext* ctx, xattr_pkt* xp);
 
 /* Pointers to Bareos functions */
-static BareosCoreFunctions* bfuncs = NULL;
+static BareosCoreFunctions* bareos_core_functions = NULL;
 static Core_PluginApiDefinition* binfo = NULL;
 
 /* Plugin Information block */
@@ -123,11 +123,12 @@ extern "C" {
  * External entry point called by Bareos to "load" the plugin
  */
 bRC loadPlugin(Core_PluginApiDefinition* lbinfo,
-               BareosCoreFunctions* lbfuncs,
+               BareosCoreFunctions* lbareos_core_functions,
                genpInfo** pinfo,
                pFuncs** pfuncs)
 {
-  bfuncs = lbfuncs; /* set Bareos funct pointers */
+  bareos_core_functions =
+      lbareos_core_functions; /* set Bareos funct pointers */
   binfo = lbinfo;
   *pinfo = &pluginInfo;   /* return pointer to our info */
   *pfuncs = &pluginFuncs; /* return pointer to our functions */
@@ -160,9 +161,9 @@ static bRC newPlugin(bpContext* ctx)
   p_ctx = (plugin_ctx*)memset(p_ctx, 0, sizeof(struct plugin_ctx));
   ctx->pContext = (void*)p_ctx; /* set our context pointer */
 
-  bfuncs->registerBareosEvents(ctx, 5, bEventJobStart, bEventEndFileSet,
-                               bEventRestoreObject, bEventEstimateCommand,
-                               bEventBackupCommand);
+  bareos_core_functions->registerBareosEvents(
+      ctx, 5, bEventJobStart, bEventEndFileSet, bEventRestoreObject,
+      bEventEstimateCommand, bEventBackupCommand);
 
   return bRC_OK;
 }
@@ -216,11 +217,12 @@ static bRC handlePluginEvent(bpContext* ctx, bEvent* event, void* value)
       /*
        * End of Dir FileSet commands, now we can add excludes
        */
-      bfuncs->NewOptions(ctx);
-      bfuncs->AddWild(ctx, "*.c", ' ');
-      bfuncs->AddWild(ctx, "*.cpp", ' ');
-      bfuncs->AddOptions(ctx, "ei"); /* exclude, ignore case */
-      bfuncs->AddExclude(ctx, "/home/user/bareos/regress/README");
+      bareos_core_functions->NewOptions(ctx);
+      bareos_core_functions->AddWild(ctx, "*.c", ' ');
+      bareos_core_functions->AddWild(ctx, "*.cpp", ' ');
+      bareos_core_functions->AddOptions(ctx, "ei"); /* exclude, ignore case */
+      bareos_core_functions->AddExclude(ctx,
+                                        "/home/user/bareos/regress/README");
       break;
     case bEventRestoreObject: {
       FILE* fp;
@@ -240,7 +242,7 @@ static bRC handlePluginEvent(bpContext* ctx, bEvent* event, void* value)
            rop->object);
       q = GetPoolMemory(PM_FNAME);
 
-      bfuncs->getBareosValue(ctx, bVarWorkingDir, &working);
+      bareos_core_functions->getBareosValue(ctx, bVarWorkingDir, &working);
       Mmsg(q, "%s/restore.%d", working, _nb++);
       if ((fp = fopen(q, "w")) != NULL) {
         fwrite(rop->object, rop->object_len, 1, fp);
@@ -325,15 +327,15 @@ static bRC startBackupFile(bpContext* ctx, struct save_pkt* sp)
   if (p_ctx->nb_obj == 0) {
     sp->fname = (char*)"takeme.h";
     Dmsg(ctx, debuglevel, "AcceptFile=%s = %d\n", sp->fname,
-         bfuncs->AcceptFile(ctx, sp));
+         bareos_core_functions->AcceptFile(ctx, sp));
 
     sp->fname = (char*)"/path/to/excludeme.o";
     Dmsg(ctx, debuglevel, "AcceptFile=%s = %d\n", sp->fname,
-         bfuncs->AcceptFile(ctx, sp));
+         bareos_core_functions->AcceptFile(ctx, sp));
 
     sp->fname = (char*)"/path/to/excludeme.c";
     Dmsg(ctx, debuglevel, "AcceptFile=%s = %d\n", sp->fname,
-         bfuncs->AcceptFile(ctx, sp));
+         bareos_core_functions->AcceptFile(ctx, sp));
   }
 
   if (p_ctx->nb_obj == 0) {
@@ -540,7 +542,7 @@ static bRC startBackupFile(bpContext* ctx, struct save_pkt* sp)
     char* working;
     FILE* fp;
 
-    bfuncs->getBareosValue(ctx, bVarWorkingDir, &working);
+    bareos_core_functions->getBareosValue(ctx, bVarWorkingDir, &working);
     Mmsg(q, "%s/torestore.%d", working, _nb++);
     if ((fp = fopen(q, "w")) != NULL) {
       fwrite(sp->object, sp->object_len, 1, fp);

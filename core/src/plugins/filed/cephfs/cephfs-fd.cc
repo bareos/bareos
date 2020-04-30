@@ -76,7 +76,7 @@ static bRC end_restore_job(bpContext* ctx, void* value);
 /**
  * Pointers to Bareos functions
  */
-static BareosCoreFunctions* bfuncs = NULL;
+static BareosCoreFunctions* bareos_core_functions = NULL;
 static Core_PluginApiDefinition* binfo = NULL;
 
 /**
@@ -180,11 +180,12 @@ extern "C" {
  * External entry point called by Bareos to "load" the plugin
  */
 bRC loadPlugin(Core_PluginApiDefinition* lbinfo,
-               BareosCoreFunctions* lbfuncs,
+               BareosCoreFunctions* lbareos_core_functions,
                genpInfo** pinfo,
                pFuncs** pfuncs)
 {
-  bfuncs = lbfuncs; /* set Bareos funct pointers */
+  bareos_core_functions =
+      lbareos_core_functions; /* set Bareos funct pointers */
   binfo = lbinfo;
   *pinfo = &pluginInfo;   /* return pointer to our info */
   *pfuncs = &pluginFuncs; /* return pointer to our functions */
@@ -248,10 +249,10 @@ static bRC newPlugin(bpContext* ctx)
   /*
    * Only register the events we are really interested in.
    */
-  bfuncs->registerBareosEvents(ctx, 7, bEventLevel, bEventSince,
-                               bEventRestoreCommand, bEventBackupCommand,
-                               bEventPluginCommand, bEventEndRestoreJob,
-                               bEventNewPluginOptions);
+  bareos_core_functions->registerBareosEvents(
+      ctx, 7, bEventLevel, bEventSince, bEventRestoreCommand,
+      bEventBackupCommand, bEventPluginCommand, bEventEndRestoreJob,
+      bEventNewPluginOptions);
 
   return bRC_OK;
 }
@@ -573,7 +574,7 @@ static bRC get_next_file_to_backup(bpContext* ctx)
 #else
     memcpy(&sp.statp, &p_ctx->statp, sizeof(sp.statp));
 #endif
-    if (bfuncs->AcceptFile(ctx, &sp) == bRC_Skip) {
+    if (bareos_core_functions->AcceptFile(ctx, &sp) == bRC_Skip) {
       Dmsg(ctx, debuglevel,
            "cephfs-fd: file %s skipped due to current fileset settings\n",
            p_ctx->next_filename);
@@ -748,7 +749,7 @@ static bRC startBackupFile(bpContext* ctx, struct save_pkt* sp)
   switch (p_ctx->backup_level) {
     case L_INCREMENTAL:
     case L_DIFFERENTIAL:
-      switch (bfuncs->checkChanges(ctx, sp)) {
+      switch (bareos_core_functions->checkChanges(ctx, sp)) {
         case bRC_Seen:
           Dmsg(ctx, debuglevel,
                "cephfs-fd: skipping %s checkChanges returns bRC_Seen\n",

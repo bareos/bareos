@@ -87,7 +87,7 @@ static bRC PyHandlePluginEvent(bpContext* bareos_plugin_ctx,
                                void* value);
 
 /* Pointers to Bareos functions */
-static bsdFuncs* bfuncs = NULL;
+static bsdFuncs* bareos_core_functions = NULL;
 static bsdInfo* binfo = NULL;
 
 static genpInfo pluginInfo = {sizeof(pluginInfo), SD_PLUGIN_INTERFACE_VERSION,
@@ -141,11 +141,12 @@ extern "C" {
  * External entry point called by Bareos to "load" the plugin
  */
 bRC loadPlugin(bsdInfo* lbinfo,
-               bsdFuncs* lbfuncs,
+               bsdFuncs* lbareos_core_functions,
                genpInfo** pinfo,
                psdFuncs** pfuncs)
 {
-  bfuncs = lbfuncs; /* Set Bareos funct pointers */
+  bareos_core_functions =
+      lbareos_core_functions; /* Set Bareos funct pointers */
   binfo = lbinfo;
 
   *pinfo = &pluginInfo;   /* Return pointer to our info */
@@ -202,7 +203,8 @@ static bRC newPlugin(bpContext* bareos_plugin_ctx)
    * Always register some events the python plugin itself can register
    * any other events it is interested in.
    */
-  bfuncs->registerBareosEvents(bareos_plugin_ctx, 1, bsdEventNewPluginOptions);
+  bareos_core_functions->registerBareosEvents(bareos_plugin_ctx, 1,
+                                              bsdEventNewPluginOptions);
 
   return bRC_OK;
 }
@@ -677,8 +679,8 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
     case bsdVarJobStatus: {
       int value;
 
-      if (bfuncs->getBareosValue(bareos_plugin_ctx, (bsdrVariable)var,
-                                 &value) == bRC_OK) {
+      if (bareos_core_functions->getBareosValue(
+              bareos_plugin_ctx, (bsdrVariable)var, &value) == bRC_OK) {
         pRetVal = PyInt_FromLong(value);
       }
       break;
@@ -688,8 +690,8 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
     case bsdVarJobBytes: {
       uint64_t value = 0;
 
-      if (bfuncs->getBareosValue(bareos_plugin_ctx, (bsdrVariable)var,
-                                 &value) == bRC_OK) {
+      if (bareos_core_functions->getBareosValue(
+              bareos_plugin_ctx, (bsdrVariable)var, &value) == bRC_OK) {
         pRetVal = PyLong_FromUnsignedLong(value);
       }
       break;
@@ -704,8 +706,8 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
     case bsdVarVolumeName: {
       char* value = NULL;
 
-      if (bfuncs->getBareosValue(bareos_plugin_ctx, (bsdrVariable)var,
-                                 &value) == bRC_OK) {
+      if (bareos_core_functions->getBareosValue(
+              bareos_plugin_ctx, (bsdrVariable)var, &value) == bRC_OK) {
         if (value) { pRetVal = PyString_FromString(value); }
       }
       break;
@@ -713,7 +715,8 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
     case bsdVarCompatible: {
       bool value;
 
-      if (bfuncs->getBareosValue(NULL, (bsdrVariable)var, &value) == bRC_OK) {
+      if (bareos_core_functions->getBareosValue(NULL, (bsdrVariable)var,
+                                                &value) == bRC_OK) {
         long bool_value;
 
         bool_value = (value) ? 1 : 0;
@@ -724,7 +727,8 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
     case bsdVarPluginDir: {
       char* value = NULL;
 
-      if (bfuncs->getBareosValue(NULL, (bsdrVariable)var, &value) == bRC_OK) {
+      if (bareos_core_functions->getBareosValue(NULL, (bsdrVariable)var,
+                                                &value) == bRC_OK) {
         if (value) { pRetVal = PyString_FromString(value); }
       }
       break;
@@ -765,7 +769,8 @@ static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
 
       value = PyString_AsString(pyValue);
       if (value) {
-        bfuncs->setBareosValue(bareos_plugin_ctx, (bsdwVariable)var, value);
+        bareos_core_functions->setBareosValue(bareos_plugin_ctx,
+                                              (bsdwVariable)var, value);
       }
 
       break;
@@ -776,8 +781,8 @@ static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
 
       value = PyInt_AsLong(pyValue);
       if (value >= 0) {
-        retval = bfuncs->setBareosValue(bareos_plugin_ctx, (bsdwVariable)var,
-                                        &value);
+        retval = bareos_core_functions->setBareosValue(
+            bareos_plugin_ctx, (bsdwVariable)var, &value);
       }
       break;
     }
@@ -864,7 +869,8 @@ static PyObject* PyBareosRegisterEvents(PyObject* self, PyObject* args)
     if (event >= bsdEventJobStart && event <= bsdEventWriteRecordTranslation) {
       Dmsg(bareos_plugin_ctx, debuglevel,
            "python-sd: PyBareosRegisterEvents registering event %d\n", event);
-      retval = bfuncs->registerBareosEvents(bareos_plugin_ctx, 1, event);
+      retval = bareos_core_functions->registerBareosEvents(bareos_plugin_ctx, 1,
+                                                           event);
 
       if (retval != bRC_OK) { break; }
     }
@@ -905,7 +911,8 @@ static PyObject* PyBareosUnRegisterEvents(PyObject* self, PyObject* args)
     if (event >= bsdEventJobStart && event <= bsdEventWriteRecordTranslation) {
       Dmsg(bareos_plugin_ctx, debuglevel,
            "PyBareosUnRegisterEvents: registering event %d\n", event);
-      retval = bfuncs->unregisterBareosEvents(bareos_plugin_ctx, 1, event);
+      retval = bareos_core_functions->unregisterBareosEvents(bareos_plugin_ctx,
+                                                             1, event);
 
       if (retval != bRC_OK) { break; }
     }
@@ -935,11 +942,12 @@ static PyObject* PyBareosGetInstanceCount(PyObject* self, PyObject* args)
     PyErr_SetString(PyExc_ValueError, "bareos_plugin_ctx is unset");
     return NULL;
   }
-  if (!bfuncs) {
-    PyErr_SetString(PyExc_ValueError, "bfuncs is unset");
+  if (!bareos_core_functions) {
+    PyErr_SetString(PyExc_ValueError, "bareos_core_functions is unset");
     return NULL;
   }
-  if (bfuncs->getInstanceCount(bareos_plugin_ctx, &value) == bRC_OK) {
+  if (bareos_core_functions->getInstanceCount(bareos_plugin_ctx, &value) ==
+      bRC_OK) {
     pRetVal = PyInt_FromLong(value);
   }
 

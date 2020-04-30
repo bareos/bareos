@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,7 +44,7 @@ static bRC handlePluginEvent(bpContext* ctx, bsdEvent* event, void* value);
 
 
 /* Pointers to Bareos functions */
-static bsdFuncs* bfuncs = NULL;
+static bsdFuncs* bareos_core_functions = NULL;
 static bsdInfo* binfo = NULL;
 
 static genpInfo pluginInfo = {sizeof(pluginInfo), SD_PLUGIN_INTERFACE_VERSION,
@@ -72,14 +72,15 @@ extern "C" {
  * External entry point called by Bareos to "load" the plugin
  */
 bRC loadPlugin(bsdInfo* lbinfo,
-               bsdFuncs* lbfuncs,
+               bsdFuncs* lbareos_core_functions,
                genpInfo** pinfo,
                psdFuncs** pfuncs)
 {
-  bfuncs = lbfuncs; /* set Bareos funct pointers */
+  bareos_core_functions =
+      lbareos_core_functions; /* set Bareos funct pointers */
   binfo = lbinfo;
-  printf("example-plugin-sd: Loaded: size=%d version=%d\n", bfuncs->size,
-         bfuncs->version);
+  printf("example-plugin-sd: Loaded: size=%d version=%d\n",
+         bareos_core_functions->size, bareos_core_functions->version);
   *pinfo = &pluginInfo;   /* return pointer to our info */
   *pfuncs = &pluginFuncs; /* return pointer to our functions */
   printf("example-plugin-sd: Loaded\n");
@@ -110,9 +111,10 @@ bRC unloadPlugin()
 static bRC newPlugin(bpContext* ctx)
 {
   int JobId = 0;
-  bfuncs->getBareosValue(ctx, bsdVarJobId, (void*)&JobId);
+  bareos_core_functions->getBareosValue(ctx, bsdVarJobId, (void*)&JobId);
   printf("example-plugin-sd: newPlugin JobId=%d\n", JobId);
-  bfuncs->registerBareosEvents(ctx, 2, bsdEventJobStart, bsdEventJobEnd);
+  bareos_core_functions->registerBareosEvents(ctx, 2, bsdEventJobStart,
+                                              bsdEventJobEnd);
   return bRC_OK;
 }
 
@@ -122,7 +124,7 @@ static bRC newPlugin(bpContext* ctx)
 static bRC freePlugin(bpContext* ctx)
 {
   int JobId = 0;
-  bfuncs->getBareosValue(ctx, bsdVarJobId, (void*)&JobId);
+  bareos_core_functions->getBareosValue(ctx, bsdVarJobId, (void*)&JobId);
   printf("example-plugin-sd: freePlugin JobId=%d\n", JobId);
   return bRC_OK;
 }
@@ -159,9 +161,11 @@ static bRC handlePluginEvent(bpContext* ctx, bsdEvent* event, void* value)
       printf("example-plugin-sd: HandleEvent JobEnd\n");
       break;
   }
-  bfuncs->getBareosValue(ctx, bsdVarJobName, (void*)&name);
+  bareos_core_functions->getBareosValue(ctx, bsdVarJobName, (void*)&name);
   printf("Job Name=%s\n", name);
-  bfuncs->JobMessage(ctx, __FILE__, __LINE__, 1, 0, "JobMesssage message");
-  bfuncs->DebugMessage(ctx, __FILE__, __LINE__, 1, "DebugMesssage message");
+  bareos_core_functions->JobMessage(ctx, __FILE__, __LINE__, 1, 0,
+                                    "JobMesssage message");
+  bareos_core_functions->DebugMessage(ctx, __FILE__, __LINE__, 1,
+                                      "DebugMesssage message");
   return bRC_OK;
 }

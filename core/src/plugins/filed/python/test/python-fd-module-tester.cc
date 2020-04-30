@@ -147,7 +147,7 @@ bRC bareosClearSeenBitmap(bpContext* ctx, bool all, char* fname)
 
 
 /* Bareos entry points */
-static filedaemon::BareosCoreFunctions bfuncs = {
+static filedaemon::BareosCoreFunctions bareos_core_functions = {
     sizeof(filedaemon::BareosCoreFunctions),
     FD_PLUGIN_INTERFACE_VERSION,
     bareosRegisterEvents,
@@ -187,7 +187,8 @@ int main(int argc, char* argv[])
   }
   if (PyErr_Occurred()) { PyErrorHandler(); }
 
-  /* printf("bfuncs is at          %p\n", &bfuncs); */
+  /* printf("bareos_core_functions is at          %p\n",
+   * &bareos_core_functions); */
   /* printf("bareos_plugin_context %p\n", &bareos_plugin_context); */
 
   // Extract capsules pointer from bareosfd module
@@ -197,17 +198,17 @@ int main(int argc, char* argv[])
   }
 
   // Extract capsules pointer from bareosfd module
-  void* bfuncs_from_bareosfd_module =
+  void* bareos_core_functions_from_bareosfd_module =
       PyCapsule_Import("bareosfd.BareosCoreFunctions", 0);
-  if (!bfuncs_from_bareosfd_module) {
+  if (!bareos_core_functions_from_bareosfd_module) {
     printf("importing bareosfd.BareosCoreFunctions failed \n");
   }
 
   // Extract capsules pointer from bareosfd module
   void (*loadplugin_from_bareosfd_module)(
       filedaemon::Core_PluginApiDefinition * lbinfo,
-      filedaemon::BareosCoreFunctions * lbfuncs, genpInfo * *pinfo,
-      filedaemon::pFuncs * *pfuncs) =
+      filedaemon::BareosCoreFunctions * lbareos_core_functions,
+      genpInfo * *pinfo, filedaemon::pFuncs * *pfuncs) =
       (void (*)(filedaemon::Core_PluginApiDefinition*,
                 filedaemon::BareosCoreFunctions*, genpInfo**,
                 filedaemon::pFuncs**))PyCapsule_Import("bareosfd.loadPlugin",
@@ -219,32 +220,33 @@ int main(int argc, char* argv[])
 
   /* printf("ctx_from_bareosfd_module is at       %p\n",
    * ctx_from_bareosfd_module); */
-  /* printf("bfuncs_from_bareosfd_module is at    %p\n", */
-  /*        bfuncs_from_bareosfd_module); */
+  /* printf("bareos_core_functions_from_bareosfd_module is at    %p\n", */
+  /*        bareos_core_functions_from_bareosfd_module); */
   /* printf("loadplugin_from_bareosfd_module is @ %p\n", */
   /*        loadplugin_from_bareosfd_module); */
 
   /* printf("ctx_from_bareosfd_module contains    %p\n", */
   /*        *(void**)ctx_from_bareosfd_module); */
-  /* printf("bfuncs_from_bareosfd_module contains %p\n", */
-  /*        *(void**)bfuncs_from_bareosfd_module); */
+  /* printf("bareos_core_functions_from_bareosfd_module contains %p\n", */
+  /*        *(void**)bareos_core_functions_from_bareosfd_module); */
 
   *(void**)ctx_from_bareosfd_module = &bareos_plugin_context;
-  *(void**)bfuncs_from_bareosfd_module = &bfuncs;
+  *(void**)bareos_core_functions_from_bareosfd_module = &bareos_core_functions;
 
   /* call loadPlugin in plugin */
   filedaemon::Core_PluginApiDefinition myInfo;
   genpInfo pinfo;
   filedaemon::pFuncs pfuncs;
 
-  loadplugin_from_bareosfd_module(&myInfo, &bfuncs, (genpInfo**)&pinfo,
+  loadplugin_from_bareosfd_module(&myInfo, &bareos_core_functions,
+                                  (genpInfo**)&pinfo,
                                   (filedaemon::pFuncs**)&pfuncs);
 
 
   printf("ctx_from_bareosfd_module contains    %p\n",
          *(void**)ctx_from_bareosfd_module);
-  printf("bfuncs_from_bareosfd_module contains %p\n",
-         *(void**)bfuncs_from_bareosfd_module);
+  printf("bareos_core_functions_from_bareosfd_module contains %p\n",
+         *(void**)bareos_core_functions_from_bareosfd_module);
 
 
   PyObject* pModule = PyImport_ImportModule("bareosfd-module-test");

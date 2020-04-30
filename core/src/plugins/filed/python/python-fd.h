@@ -756,14 +756,14 @@ using namespace filedaemon;
 
 /* variables storing bareos pointers */
 static void* bareos_plugin_context = NULL;
-static void* bfuncs = NULL;
+static void* bareos_core_functions = NULL;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 /* Forward declaration of loadPlugin()  as it is stored in Capsule */
 bRC loadPlugin(::Core_PluginApiDefinition* lbinfo,
-               BareosCoreFunctions* lbfuncs,
+               BareosCoreFunctions* lbareos_core_functions,
                genpInfo** pinfo,
                pFuncs** pfuncs);
 #ifdef __cplusplus
@@ -795,8 +795,9 @@ MOD_INIT(bareosfd)
   }
 
   /* add bpFuncs Capsule */
-  PyObject* PyModulePluginFuncs = PyCapsule_New(
-      (void*)&bfuncs, PYTHON_MODULE_NAME_QUOTED ".BareosCoreFunctions", NULL);
+  PyObject* PyModulePluginFuncs =
+      PyCapsule_New((void*)&bareos_core_functions,
+                    PYTHON_MODULE_NAME_QUOTED ".BareosCoreFunctions", NULL);
   if (!PyModulePluginFuncs) {
     printf(PYTHON_MODULE_NAME_QUOTED
            ":BareosCoreFunctions PyCapsule_New failed\n");
@@ -805,7 +806,7 @@ MOD_INIT(bareosfd)
   if (PyModulePluginFuncs) {
     PyModule_AddObject(m, "BareosCoreFunctions", PyModulePluginFuncs);
     printf(PYTHON_MODULE_NAME_QUOTED ": added    BareosCoreFunctions@%p\n",
-           &bfuncs);
+           &bareos_core_functions);
   } else {
     printf(PYTHON_MODULE_NAME_QUOTED
            ":BareosCoreFunctions PyModule_AddObject failed\n");

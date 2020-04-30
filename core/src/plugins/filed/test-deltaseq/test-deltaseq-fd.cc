@@ -54,7 +54,7 @@ static bRC createFile(bpContext* ctx, struct restore_pkt* rp);
 static bRC setFileAttributes(bpContext* ctx, struct restore_pkt* rp);
 
 /* Pointers to Bareos functions */
-static BareosCoreFunctions* bfuncs = NULL;
+static BareosCoreFunctions* bareos_core_functions = NULL;
 static Core_PluginApiDefinition* binfo = NULL;
 
 /* Plugin Information block */
@@ -117,11 +117,12 @@ extern "C" {
  * External entry point called by Bareos to "load" the plugin
  */
 bRC loadPlugin(Core_PluginApiDefinition* lbinfo,
-               BareosCoreFunctions* lbfuncs,
+               BareosCoreFunctions* lbareos_core_functions,
                genpInfo** pinfo,
                pFuncs** pfuncs)
 {
-  bfuncs = lbfuncs; /* set Bareos funct pointers */
+  bareos_core_functions =
+      lbareos_core_functions; /* set Bareos funct pointers */
   binfo = lbinfo;
   *pinfo = &pluginInfo;   /* return pointer to our info */
   *pfuncs = &pluginFuncs; /* return pointer to our functions */
@@ -161,8 +162,8 @@ static bRC newPlugin(bpContext* ctx)
   if (!self) { return bRC_Error; }
   ctx->pContext = (void*)self; /* set our context pointer */
 
-  bfuncs->registerBareosEvents(ctx, 3, bEventLevel, bEventRestoreCommand,
-                               bEventBackupCommand);
+  bareos_core_functions->registerBareosEvents(
+      ctx, 3, bEventLevel, bEventRestoreCommand, bEventBackupCommand);
   return bRC_OK;
 }
 
@@ -224,7 +225,8 @@ static bRC handlePluginEvent(bpContext* ctx, bEvent* event, void* value)
       Dmsg(ctx, debuglevel, "delta-test-fd: pluginEvent cmd=%s\n",
            (char*)value);
       if (self->level == 'I' || self->level == 'D') {
-        bfuncs->getBareosValue(ctx, bVarAccurate, (void*)&accurate);
+        bareos_core_functions->getBareosValue(ctx, bVarAccurate,
+                                              (void*)&accurate);
         if (!accurate) { /* can be changed to FATAL */
           Jmsg(ctx, M_FATAL,
                "Accurate mode should be turned on when using the "
@@ -263,7 +265,7 @@ static bRC startBackupFile(bpContext* ctx, struct save_pkt* sp)
   sp->statp.st_blksize = 4096;
   sp->statp.st_blocks = 1;
   if (self->level == 'I' || self->level == 'D') {
-    bRC state = bfuncs->checkChanges(ctx, sp);
+    bRC state = bareos_core_functions->checkChanges(ctx, sp);
     /* Should always be bRC_OK */
     sp->type = (state == bRC_Seen) ? FT_NOCHG : FT_REG;
     SetBit(FO_DELTA, sp->flags);

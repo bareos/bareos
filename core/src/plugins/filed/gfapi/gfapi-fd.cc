@@ -91,7 +91,7 @@ static bRC setup_restore(bpContext* ctx, void* value);
 /**
  * Pointers to Bareos functions
  */
-static BareosCoreFunctions* bfuncs = NULL;
+static BareosCoreFunctions* bareos_core_functions = NULL;
 static Core_PluginApiDefinition* binfo = NULL;
 
 /**
@@ -314,11 +314,12 @@ extern "C" {
  * External entry point called by Bareos to "load" the plugin
  */
 bRC loadPlugin(Core_PluginApiDefinition* lbinfo,
-               BareosCoreFunctions* lbfuncs,
+               BareosCoreFunctions* lbareos_core_functions,
                genpInfo** pinfo,
                pFuncs** pfuncs)
 {
-  bfuncs = lbfuncs; /* set Bareos funct pointers */
+  bareos_core_functions =
+      lbareos_core_functions; /* set Bareos funct pointers */
   binfo = lbinfo;
   *pinfo = &pluginInfo;   /* return pointer to our info */
   *pfuncs = &pluginFuncs; /* return pointer to our functions */
@@ -371,10 +372,10 @@ static bRC newPlugin(bpContext* ctx)
   /*
    * Only register the events we are really interested in.
    */
-  bfuncs->registerBareosEvents(ctx, 7, bEventLevel, bEventSince,
-                               bEventRestoreCommand, bEventBackupCommand,
-                               bEventPluginCommand, bEventEndRestoreJob,
-                               bEventNewPluginOptions);
+  bareos_core_functions->registerBareosEvents(
+      ctx, 7, bEventLevel, bEventSince, bEventRestoreCommand,
+      bEventBackupCommand, bEventPluginCommand, bEventEndRestoreJob,
+      bEventNewPluginOptions);
 
   return bRC_OK;
 }
@@ -639,7 +640,8 @@ static bRC get_next_file_to_backup(bpContext* ctx)
           *bp++ = '\0';
           if (p_ctx->is_accurate) {
             UrllibUnquotePlus(p_ctx->next_filename);
-            bfuncs->ClearSeenBitmap(ctx, false, p_ctx->next_filename);
+            bareos_core_functions->ClearSeenBitmap(ctx, false,
+                                                   p_ctx->next_filename);
           }
           bstrinlinecpy(p_ctx->next_filename, bp);
           UrllibUnquotePlus(p_ctx->next_filename);
@@ -652,7 +654,8 @@ static bRC get_next_file_to_backup(bpContext* ctx)
             bstrinlinecpy(p_ctx->next_filename,
                           p_ctx->next_filename + gf_mapping->compare_size);
             UrllibUnquotePlus(p_ctx->next_filename);
-            bfuncs->ClearSeenBitmap(ctx, false, p_ctx->next_filename);
+            bareos_core_functions->ClearSeenBitmap(ctx, false,
+                                                   p_ctx->next_filename);
           }
           continue;
         default:
@@ -810,7 +813,7 @@ static bRC get_next_file_to_backup(bpContext* ctx)
     sp.type = p_ctx->type;
     memcpy(&sp.statp, &p_ctx->statp, sizeof(sp.statp));
 
-    if (bfuncs->AcceptFile(ctx, &sp) == bRC_Skip) {
+    if (bareos_core_functions->AcceptFile(ctx, &sp) == bRC_Skip) {
       Dmsg(ctx, debuglevel,
            "gfapi-fd: file %s skipped due to current fileset settings\n",
            p_ctx->next_filename);
@@ -994,7 +997,7 @@ static bRC startBackupFile(bpContext* ctx, struct save_pkt* sp)
           break;
         }
 
-        switch (bfuncs->checkChanges(ctx, sp)) {
+        switch (bareos_core_functions->checkChanges(ctx, sp)) {
           case bRC_Seen:
             Dmsg(ctx, debuglevel,
                  "gfapi-fd: skipping %s checkChanges returns bRC_Seen\n",
@@ -1587,7 +1590,7 @@ static bRC setup_backup(bpContext* ctx, void* value)
     /*
      * Get the setting for accurate for this Job.
      */
-    bfuncs->getBareosValue(ctx, bVarAccurate, (void*)&accurate);
+    bareos_core_functions->getBareosValue(ctx, bVarAccurate, (void*)&accurate);
     if (accurate) { p_ctx->is_accurate = true; }
 
     p_ctx->crawl_fs = false;
@@ -1609,7 +1612,7 @@ static bRC setup_backup(bpContext* ctx, void* value)
       switch (p_ctx->backup_level) {
         case L_INCREMENTAL:
         case L_DIFFERENTIAL:
-          if (bfuncs->SetSeenBitmap(ctx, true, NULL) != bRC_OK) {
+          if (bareos_core_functions->SetSeenBitmap(ctx, true, NULL) != bRC_OK) {
             Jmsg(ctx, M_FATAL,
                  "Failed to enable all entries in Seen bitmap, not an accurate "
                  "backup ?\n");
