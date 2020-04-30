@@ -200,7 +200,7 @@ typedef struct s_dirpluginFuncs {
 } pDirFuncs;
 
 #define DirplugFunc(plugin) ((pDirFuncs*)(plugin->pfuncs))
-#define dirplug_info(plugin) ((genpInfo*)(plugin->pinfo))
+#define dirplug_info(plugin) ((PluginInformation*)(plugin->pinfo))
 
 #ifdef __cplusplus
 }

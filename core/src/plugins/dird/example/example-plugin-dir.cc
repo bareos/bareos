@@ -49,10 +49,11 @@ static bRC handlePluginEvent(bpContext* ctx, bDirEvent* event, void* value);
 static bDirFuncs* bareos_core_functions = NULL;
 static bDirInfo* bareos_plugin_interface_version = NULL;
 
-static genpInfo pluginInfo = {sizeof(pluginInfo), DIR_PLUGIN_INTERFACE_VERSION,
-                              DIR_PLUGIN_MAGIC,   PLUGIN_LICENSE,
-                              PLUGIN_AUTHOR,      PLUGIN_DATE,
-                              PLUGIN_VERSION,     PLUGIN_DESCRIPTION};
+static PluginInformation pluginInfo = {
+    sizeof(pluginInfo), DIR_PLUGIN_INTERFACE_VERSION,
+    DIR_PLUGIN_MAGIC,   PLUGIN_LICENSE,
+    PLUGIN_AUTHOR,      PLUGIN_DATE,
+    PLUGIN_VERSION,     PLUGIN_DESCRIPTION};
 
 static pDirFuncs pluginFuncs = {
     sizeof(pluginFuncs), DIR_PLUGIN_INTERFACE_VERSION,
@@ -75,7 +76,7 @@ extern "C" {
  */
 bRC loadPlugin(bDirInfo* lbareos_plugin_interface_version,
                bDirFuncs* lbareos_core_functions,
-               genpInfo** pinfo,
+               PluginInformation** pinfo,
                pDirFuncs** pfuncs)
 {
   bareos_core_functions =

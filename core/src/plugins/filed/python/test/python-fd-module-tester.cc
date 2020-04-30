@@ -208,9 +208,9 @@ int main(int argc, char* argv[])
   void (*loadplugin_from_bareosfd_module)(
       filedaemon::Core_PluginApiDefinition * lbareos_plugin_interface_version,
       filedaemon::BareosCoreFunctions * lbareos_core_functions,
-      genpInfo * *pinfo, filedaemon::pFuncs * *pfuncs) =
+      PluginInformation * *pinfo, filedaemon::pFuncs * *pfuncs) =
       (void (*)(filedaemon::Core_PluginApiDefinition*,
-                filedaemon::BareosCoreFunctions*, genpInfo**,
+                filedaemon::BareosCoreFunctions*, PluginInformation**,
                 filedaemon::pFuncs**))PyCapsule_Import("bareosfd.loadPlugin",
                                                        0);
 
@@ -235,11 +235,11 @@ int main(int argc, char* argv[])
 
   /* call loadPlugin in plugin */
   filedaemon::Core_PluginApiDefinition myInfo;
-  genpInfo pinfo;
+  PluginInformation pinfo;
   filedaemon::pFuncs pfuncs;
 
   loadplugin_from_bareosfd_module(&myInfo, &bareos_core_functions,
-                                  (genpInfo**)&pinfo,
+                                  (PluginInformation**)&pinfo,
                                   (filedaemon::pFuncs**)&pfuncs);
 
 

@@ -263,11 +263,11 @@ bail_out:
  */
 void DumpDirPlugin(Plugin* plugin, FILE* fp)
 {
-  genpInfo* info;
+  PluginInformation* info;
 
   if (!plugin) { return; }
 
-  info = (genpInfo*)plugin->pinfo;
+  info = (PluginInformation*)plugin->pinfo;
   fprintf(fp, "\tversion=%d\n", info->version);
   fprintf(fp, "\tdate=%s\n", NPRTB(info->plugin_date));
   fprintf(fp, "\tmagic=%s\n", NPRTB(info->plugin_magic));
@@ -334,7 +334,7 @@ int ListDirPlugins(PoolMem& msg) { return ListPlugins(dird_plugin_list, msg); }
  */
 static bool IsPluginCompatible(Plugin* plugin)
 {
-  genpInfo* info = (genpInfo*)plugin->pinfo;
+  PluginInformation* info = (PluginInformation*)plugin->pinfo;
 
   Dmsg0(50, "IsPluginCompatible called\n");
   if (debug_level >= 50) { DumpDirPlugin(plugin, stdin); }
@@ -364,10 +364,10 @@ static bool IsPluginCompatible(Plugin* plugin)
           plugin->file, info->plugin_license);
     return false;
   }
-  if (info->size != sizeof(genpInfo)) {
+  if (info->size != sizeof(PluginInformation)) {
     Jmsg(NULL, M_ERROR, 0,
          _("Plugin size incorrect. Plugin=%s wanted=%d got=%d\n"), plugin->file,
-         sizeof(genpInfo), info->size);
+         sizeof(PluginInformation), info->size);
     return false;
   }
 

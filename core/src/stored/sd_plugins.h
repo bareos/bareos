@@ -219,7 +219,7 @@ typedef struct s_sdpluginFuncs {
 } psdFuncs;
 
 #define SdplugFunc(plugin) ((psdFuncs*)(plugin->pfuncs))
-#define sdplug_info(plugin) ((genpInfo*)(plugin->pinfo))
+#define sdplug_info(plugin) ((PluginInformation*)(plugin->pinfo))
 
 #ifdef __cplusplus
 }

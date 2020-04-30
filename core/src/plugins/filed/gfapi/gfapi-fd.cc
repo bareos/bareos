@@ -97,11 +97,12 @@ static Core_PluginApiDefinition* bareos_plugin_interface_version = NULL;
 /**
  * Plugin Information block
  */
-static genpInfo pluginInfo = {sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
-                              FD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
-                              PLUGIN_AUTHOR,      PLUGIN_DATE,
-                              PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
-                              PLUGIN_USAGE};
+static PluginInformation pluginInfo = {
+    sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
+    FD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
+    PLUGIN_AUTHOR,      PLUGIN_DATE,
+    PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
+    PLUGIN_USAGE};
 
 /**
  * Plugin entry points for Bareos
@@ -315,7 +316,7 @@ extern "C" {
  */
 bRC loadPlugin(Core_PluginApiDefinition* lbareos_plugin_interface_version,
                BareosCoreFunctions* lbareos_core_functions,
-               genpInfo** pinfo,
+               PluginInformation** pinfo,
                pFuncs** pfuncs)
 {
   bareos_core_functions =

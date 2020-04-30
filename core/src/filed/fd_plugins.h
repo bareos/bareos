@@ -398,7 +398,7 @@ typedef struct s_pluginFuncs {
 } pFuncs;
 
 #define PlugFunc(plugin) ((pFuncs*)(plugin->pfuncs))
-#define plug_info(plugin) ((genpInfo*)(plugin->pinfo))
+#define plug_info(plugin) ((PluginInformation*)(plugin->pinfo))
 
 #ifdef __cplusplus
 }

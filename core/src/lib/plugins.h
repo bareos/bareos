@@ -96,7 +96,7 @@ typedef struct gen_pluginInfo {
   const char* plugin_version;
   const char* plugin_description;
   const char* plugin_usage;
-} genpInfo;
+} PluginInformation;
 
 class alist;
 

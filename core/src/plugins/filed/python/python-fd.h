@@ -764,7 +764,7 @@ extern "C" {
 /* Forward declaration of loadPlugin()  as it is stored in Capsule */
 bRC loadPlugin(::Core_PluginApiDefinition* lbareos_plugin_interface_version,
                BareosCoreFunctions* lbareos_core_functions,
-               genpInfo** pinfo,
+               PluginInformation** pinfo,
                pFuncs** pfuncs);
 #ifdef __cplusplus
 }

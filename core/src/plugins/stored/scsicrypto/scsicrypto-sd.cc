@@ -97,11 +97,12 @@ static bRC send_volume_encryption_status(void* value);
 static bsdFuncs* bareos_core_functions = NULL;
 static bsdInfo* bareos_plugin_interface_version = NULL;
 
-static genpInfo pluginInfo = {sizeof(pluginInfo), SD_PLUGIN_INTERFACE_VERSION,
-                              SD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
-                              PLUGIN_AUTHOR,      PLUGIN_DATE,
-                              PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
-                              PLUGIN_USAGE};
+static PluginInformation pluginInfo = {
+    sizeof(pluginInfo), SD_PLUGIN_INTERFACE_VERSION,
+    SD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
+    PLUGIN_AUTHOR,      PLUGIN_DATE,
+    PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
+    PLUGIN_USAGE};
 
 static psdFuncs pluginFuncs = {sizeof(pluginFuncs), SD_PLUGIN_INTERFACE_VERSION,
 
@@ -128,7 +129,7 @@ extern "C" {
  */
 bRC loadPlugin(bsdInfo* lbareos_plugin_interface_version,
                bsdFuncs* lbareos_core_functions,
-               genpInfo** pinfo,
+               PluginInformation** pinfo,
                psdFuncs** pfuncs)
 {
   bareos_core_functions =

@@ -124,7 +124,7 @@ static bRC PyHandleBackupFile(bpContext* bareos_plugin_ctx,
 static BareosCoreFunctions* bareos_core_functions = NULL;
 static Core_PluginApiDefinition* bareos_plugin_interface_version = NULL;
 
-/* static genpInfo pluginInfo = {sizeof(pluginInfo),
+/* static PluginInformation pluginInfo = {sizeof(pluginInfo),
  * FD_PLUGIN_INTERFACE_VERSION, */
 /*                               FD_PLUGIN_MAGIC,    PLUGIN_LICENSE, */
 /*                               PLUGIN_AUTHOR,      PLUGIN_DATE, */
@@ -220,7 +220,7 @@ static void PyErrorHandler()
  */
 /* bRC loadPlugin(Core_PluginApiDefinition* lbareos_plugin_interface_version, */
 /*                BareosCoreFunctions* lbareos_core_functions, */
-/*                genpInfo** pinfo, */
+/*                PluginInformation** pinfo, */
 /*                pFuncs** pfuncs) */
 /* { */
 /*   bareos_core_functions = lbareos_core_functions; /1* Set Bareos funct
@@ -254,9 +254,9 @@ static void PyErrorHandler()
 /*         filedaemon::Core_PluginApiDefinition *
  * lbareos_plugin_interface_version, filedaemon::BareosCoreFunctions *
  * lbareos_core_functions, */
-/*         genpInfo * *pinfo, filedaemon::pFuncs * *pfuncs) = */
+/*         PluginInformation * *pinfo, filedaemon::pFuncs * *pfuncs) = */
 /*         (void (*)(filedaemon::Core_PluginApiDefinition*,
- * filedaemon::BareosCoreFunctions*, genpInfo**, */
+ * filedaemon::BareosCoreFunctions*, PluginInformation**, */
 /*                   filedaemon::pFuncs**))PyCapsule_Import("bareosfd.loadPlugin",
  */
 /*                                                          0); */
@@ -286,11 +286,11 @@ static void PyErrorHandler()
 
 /*     /1* call loadPlugin in plugin *1/ */
 /*     filedaemon::Core_PluginApiDefinition myInfo; */
-/*     genpInfo pinfo; */
+/*     PluginInformation pinfo; */
 /*     filedaemon::pFuncs pfuncs; */
 
 /*     loadplugin_from_bareosfd_module(&myInfo, bareos_core_functions,
- * (genpInfo**)&pinfo, */
+ * (PluginInformation**)&pinfo, */
 /*                                     (filedaemon::pFuncs**)&pfuncs); */
 
 

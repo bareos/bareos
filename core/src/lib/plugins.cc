@@ -374,7 +374,7 @@ int ListPlugins(alist* plugin_list, PoolMem& msg)
       PmStrcat(msg, " Plugin     : ");
       len = PmStrcat(msg, plugin->file);
       if (plugin->pinfo) {
-        genpInfo* info = (genpInfo*)plugin->pinfo;
+        PluginInformation* info = (PluginInformation*)plugin->pinfo;
         PmStrcat(msg, "\n");
         PmStrcat(msg, " Description: ");
         PmStrcat(msg, NPRT(info->plugin_description));
