@@ -382,7 +382,7 @@ void DumpSdPlugin(Plugin* plugin, FILE* fp)
 
   if (!plugin) { return; }
 
-  info = (PluginInformation*)plugin->pinfo;
+  info = (PluginInformation*)plugin->plugin_information;
   fprintf(fp, "\tversion=%d\n", info->version);
   fprintf(fp, "\tdate=%s\n", NPRTB(info->plugin_date));
   fprintf(fp, "\tmagic=%s\n", NPRTB(info->plugin_magic));
@@ -449,7 +449,7 @@ int ListSdPlugins(PoolMem& msg) { return ListPlugins(sd_plugin_list, msg); }
  */
 static bool IsPluginCompatible(Plugin* plugin)
 {
-  PluginInformation* info = (PluginInformation*)plugin->pinfo;
+  PluginInformation* info = (PluginInformation*)plugin->plugin_information;
   Dmsg0(50, "IsPluginCompatible called\n");
   if (debug_level >= 50) { DumpSdPlugin(plugin, stdin); }
   if (!bstrcmp(info->plugin_magic, SD_PLUGIN_MAGIC)) {

@@ -97,7 +97,7 @@ static void ClosePlugin(Plugin* plugin)
     Dmsg1(50, "Got plugin=%s but not accepted.\n", plugin->file);
   }
   if (plugin->unloadPlugin) { plugin->unloadPlugin(); }
-  if (plugin->pHandle) { dlclose(plugin->pHandle); }
+  if (plugin->plugin_handle) { dlclose(plugin->plugin_handle); }
   if (plugin->file) { free(plugin->file); }
   free(plugin);
 }
@@ -121,9 +121,9 @@ static bool load_a_plugin(void* bareos_plugin_interface_version,
   plugin->file = strdup(plugin_name);
   plugin->file_len = strstr(plugin->file, type) - plugin->file;
 
-  plugin->pHandle = dlopen(plugin_pathname, LT_LAZY_OR_NOW | LT_GLOBAL);
+  plugin->plugin_handle = dlopen(plugin_pathname, LT_LAZY_OR_NOW | LT_GLOBAL);
 
-  if (!plugin->pHandle) {
+  if (!plugin->plugin_handle) {
     const char* error = dlerror();
 
     Jmsg(NULL, M_ERROR, 0, _("dlopen plugin %s failed: ERR=%s\n"),
@@ -139,7 +139,7 @@ static bool load_a_plugin(void* bareos_plugin_interface_version,
   /*
    * Get two global entry points
    */
-  loadPlugin = (t_loadPlugin)dlsym(plugin->pHandle, "loadPlugin");
+  loadPlugin = (t_loadPlugin)dlsym(plugin->plugin_handle, "loadPlugin");
   if (!loadPlugin) {
     Jmsg(NULL, M_ERROR, 0,
          _("Lookup of loadPlugin in plugin %s failed: ERR=%s\n"),
@@ -152,7 +152,8 @@ static bool load_a_plugin(void* bareos_plugin_interface_version,
     return false;
   }
 
-  plugin->unloadPlugin = (t_unloadPlugin)dlsym(plugin->pHandle, "unloadPlugin");
+  plugin->unloadPlugin =
+      (t_unloadPlugin)dlsym(plugin->plugin_handle, "unloadPlugin");
   if (!plugin->unloadPlugin) {
     Jmsg(NULL, M_ERROR, 0,
          _("Lookup of unloadPlugin in plugin %s failed: ERR=%s\n"),
@@ -169,7 +170,8 @@ static bool load_a_plugin(void* bareos_plugin_interface_version,
    * Initialize the plugin
    */
   if (loadPlugin(bareos_plugin_interface_version, bareos_core_functions,
-                 &plugin->pinfo, &plugin->pfuncs) != bRC_OK) {
+                 &plugin->plugin_information,
+                 &plugin->plugin_functions) != bRC_OK) {
     ClosePlugin(plugin);
 
     return false;
@@ -344,7 +346,7 @@ void UnloadPlugins(alist* plugin_list)
      * Shut it down and unload it
      */
     plugin->unloadPlugin();
-    dlclose(plugin->pHandle);
+    dlclose(plugin->plugin_handle);
     if (plugin->file) { free(plugin->file); }
     free(plugin);
   }
@@ -356,7 +358,7 @@ void UnloadPlugin(alist* plugin_list, Plugin* plugin, int index)
    * Shut it down and unload it
    */
   plugin->unloadPlugin();
-  dlclose(plugin->pHandle);
+  dlclose(plugin->plugin_handle);
   if (plugin->file) { free(plugin->file); }
   plugin_list->remove(index);
   free(plugin);
@@ -373,8 +375,9 @@ int ListPlugins(alist* plugin_list, PoolMem& msg)
     foreach_alist_index (i, plugin, plugin_list) {
       PmStrcat(msg, " Plugin     : ");
       len = PmStrcat(msg, plugin->file);
-      if (plugin->pinfo) {
-        PluginInformation* info = (PluginInformation*)plugin->pinfo;
+      if (plugin->plugin_information) {
+        PluginInformation* info =
+            (PluginInformation*)plugin->plugin_information;
         PmStrcat(msg, "\n");
         PmStrcat(msg, " Description: ");
         PmStrcat(msg, NPRT(info->plugin_description));

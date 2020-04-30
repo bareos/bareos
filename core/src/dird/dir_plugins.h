@@ -199,8 +199,8 @@ typedef struct s_dirpluginFuncs {
   bRC (*handlePluginEvent)(bpContext* ctx, bDirEvent* event, void* value);
 } pDirFuncs;
 
-#define DirplugFunc(plugin) ((pDirFuncs*)(plugin->pfuncs))
-#define dirplug_info(plugin) ((PluginInformation*)(plugin->pinfo))
+#define DirplugFunc(plugin) ((pDirFuncs*)(plugin->plugin_functions))
+#define dirplug_info(plugin) ((PluginInformation*)(plugin->plugin_information))
 
 #ifdef __cplusplus
 }

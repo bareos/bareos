@@ -143,15 +143,15 @@ extern "C" {
  */
 bRC loadPlugin(bsdInfo* lbareos_plugin_interface_version,
                bsdFuncs* lbareos_core_functions,
-               PluginInformation** pinfo,
-               psdFuncs** pfuncs)
+               PluginInformation** plugin_information,
+               psdFuncs** plugin_functions)
 {
   bareos_core_functions =
       lbareos_core_functions; /* Set Bareos funct pointers */
   bareos_plugin_interface_version = lbareos_plugin_interface_version;
 
-  *pinfo = &pluginInfo;   /* Return pointer to our info */
-  *pfuncs = &pluginFuncs; /* Return pointer to our functions */
+  *plugin_information = &pluginInfo; /* Return pointer to our info */
+  *plugin_functions = &pluginFuncs;  /* Return pointer to our functions */
 
   /* Setup Python */
 #if PY_MAJOR_VERSION >= 3

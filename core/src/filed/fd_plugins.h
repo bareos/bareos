@@ -397,8 +397,8 @@ typedef struct s_pluginFuncs {
   bRC (*setXattr)(bpContext* ctx, struct xattr_pkt* xp);
 } pFuncs;
 
-#define PlugFunc(plugin) ((pFuncs*)(plugin->pfuncs))
-#define plug_info(plugin) ((PluginInformation*)(plugin->pinfo))
+#define PlugFunc(plugin) ((pFuncs*)(plugin->plugin_functions))
+#define plug_info(plugin) ((PluginInformation*)(plugin->plugin_information))
 
 #ifdef __cplusplus
 }

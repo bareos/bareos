@@ -137,14 +137,14 @@ extern "C" {
  */
 bRC loadPlugin(bsdInfo* lbareos_plugin_interface_version,
                bsdFuncs* lbareos_core_functions,
-               PluginInformation** pinfo,
-               psdFuncs** pfuncs)
+               PluginInformation** plugin_information,
+               psdFuncs** plugin_functions)
 {
   bareos_core_functions =
       lbareos_core_functions; /* set Bareos funct pointers */
   bareos_plugin_interface_version = lbareos_plugin_interface_version;
-  *pinfo = &pluginInfo;   /* return pointer to our info */
-  *pfuncs = &pluginFuncs; /* return pointer to our functions */
+  *plugin_information = &pluginInfo; /* return pointer to our info */
+  *plugin_functions = &pluginFuncs;  /* return pointer to our functions */
 
   /*
    * Get the current setting of the compatible flag.

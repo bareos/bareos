@@ -49,8 +49,8 @@
 extern "C" {
 typedef int (*loadPlugin)(void* bareos_plugin_interface_version,
                           void* bareos_core_functions,
-                          void** pinfo,
-                          void** pfuncs);
+                          void** plugin_information,
+                          void** plugin_functions);
 typedef int (*unloadPlugin)(void);
 }
 #define DEFAULT_API_VERSION 1
@@ -125,8 +125,8 @@ struct _progdata {
   void* pluginhandle;
   int bapiversion;
   int bplugtype;
-  gen_pluginInfo* pinfo;
-  plugfuncs* pfuncs;
+  gen_pluginInfo* plugin_information;
+  plugfuncs* plugin_functions;
 };
 
 /* memory allocation/deallocation */
@@ -316,18 +316,20 @@ int Getplugintype(progdata* pdata)
 {
   ASSERT_NVAL_RET_V(pdata, ERRORPLUGIN);
 
-  gen_pluginInfo* pinfo = pdata->pinfo;
+  gen_pluginInfo* plugin_information = pdata->plugin_information;
 
-  ASSERT_NVAL_RET_V(pinfo, ERRORPLUGIN);
+  ASSERT_NVAL_RET_V(plugin_information, ERRORPLUGIN);
 
-  if (pinfo->plugin_magic && bstrcmp(pinfo->plugin_magic, DIR_PLUGIN_MAGIC)) {
+  if (plugin_information->plugin_magic &&
+      bstrcmp(plugin_information->plugin_magic, DIR_PLUGIN_MAGIC)) {
     return DIRPLUGIN;
   } else {
-    if (pinfo->plugin_magic && bstrcmp(pinfo->plugin_magic, FD_PLUGIN_MAGIC)) {
+    if (plugin_information->plugin_magic &&
+        bstrcmp(plugin_information->plugin_magic, FD_PLUGIN_MAGIC)) {
       return FDPLUGIN;
     } else {
-      if (pinfo->plugin_magic &&
-          bstrcmp(pinfo->plugin_magic, SD_PLUGIN_MAGIC)) {
+      if (plugin_information->plugin_magic &&
+          bstrcmp(plugin_information->plugin_magic, SD_PLUGIN_MAGIC)) {
         return SDPLUGIN;
       } else {
         return ERRORPLUGIN;
@@ -348,13 +350,13 @@ void DumpPluginfo(progdata* pdata)
 {
   ASSERT_NVAL_RET(pdata);
 
-  gen_pluginInfo* pinfo = pdata->pinfo;
+  gen_pluginInfo* plugin_information = pdata->plugin_information;
 
-  ASSERT_NVAL_RET(pinfo);
+  ASSERT_NVAL_RET(plugin_information);
 
-  plugfuncs* pfuncs = pdata->pfuncs;
+  plugfuncs* plugin_functions = pdata->plugin_functions;
 
-  ASSERT_NVAL_RET(pfuncs);
+  ASSERT_NVAL_RET(plugin_functions);
 
   switch (pdata->bplugtype) {
     case DIRPLUGIN:
@@ -372,16 +374,17 @@ void DumpPluginfo(progdata* pdata)
   }
 
   if (pdata->verbose) {
-    printf("Plugin magic:\t\t%s\n", NPRT(pinfo->plugin_magic));
+    printf("Plugin magic:\t\t%s\n", NPRT(plugin_information->plugin_magic));
   }
-  printf("Plugin version:\t\t%s\n", pinfo->plugin_version);
-  printf("Plugin release date:\t%s\n", NPRT(pinfo->plugin_date));
-  printf("Plugin author:\t\t%s\n", NPRT(pinfo->plugin_author));
-  printf("Plugin licence:\t\t%s\n", NPRT(pinfo->plugin_license));
-  printf("Plugin description:\t%s\n", NPRT(pinfo->plugin_description));
-  printf("Plugin API version:\t%d\n", pinfo->version);
-  if (pinfo->plugin_usage) {
-    printf("Plugin usage:\n%s\n", pinfo->plugin_usage);
+  printf("Plugin version:\t\t%s\n", plugin_information->plugin_version);
+  printf("Plugin release date:\t%s\n", NPRT(plugin_information->plugin_date));
+  printf("Plugin author:\t\t%s\n", NPRT(plugin_information->plugin_author));
+  printf("Plugin licence:\t\t%s\n", NPRT(plugin_information->plugin_license));
+  printf("Plugin description:\t%s\n",
+         NPRT(plugin_information->plugin_description));
+  printf("Plugin API version:\t%d\n", plugin_information->version);
+  if (plugin_information->plugin_usage) {
+    printf("Plugin usage:\n%s\n", plugin_information->plugin_usage);
   }
 }
 
@@ -397,55 +400,79 @@ void DumpPlugfuncs(progdata* pdata)
 {
   ASSERT_NVAL_RET(pdata);
 
-  plugfuncs* pfuncs = pdata->pfuncs;
+  plugfuncs* plugin_functions = pdata->plugin_functions;
 
-  ASSERT_NVAL_RET(pfuncs);
+  ASSERT_NVAL_RET(plugin_functions);
 
   printf("\nPlugin functions:\n");
 
   switch (pdata->bplugtype) {
     case DIRPLUGIN:
       if (pdata->verbose) {
-        if (pfuncs->pdirfuncs.newPlugin) { printf(" newPlugin()\n"); }
-        if (pfuncs->pdirfuncs.freePlugin) { printf(" freePlugin()\n"); }
+        if (plugin_functions->pdirfuncs.newPlugin) { printf(" newPlugin()\n"); }
+        if (plugin_functions->pdirfuncs.freePlugin) {
+          printf(" freePlugin()\n");
+        }
       }
-      if (pfuncs->pdirfuncs.getPluginValue) { printf(" getPluginValue()\n"); }
-      if (pfuncs->pdirfuncs.setPluginValue) { printf(" setPluginValue()\n"); }
-      if (pfuncs->pdirfuncs.handlePluginEvent) {
+      if (plugin_functions->pdirfuncs.getPluginValue) {
+        printf(" getPluginValue()\n");
+      }
+      if (plugin_functions->pdirfuncs.setPluginValue) {
+        printf(" setPluginValue()\n");
+      }
+      if (plugin_functions->pdirfuncs.handlePluginEvent) {
         printf(" handlePluginEvent()\n");
       }
       break;
     case FDPLUGIN:
       if (pdata->verbose) {
-        if (pfuncs->pfdfuncs.newPlugin) { printf(" newPlugin()\n"); }
-        if (pfuncs->pfdfuncs.freePlugin) { printf(" freePlugin()\n"); }
+        if (plugin_functions->pfdfuncs.newPlugin) { printf(" newPlugin()\n"); }
+        if (plugin_functions->pfdfuncs.freePlugin) {
+          printf(" freePlugin()\n");
+        }
       }
-      if (pfuncs->pfdfuncs.getPluginValue) { printf(" getPluginValue()\n"); }
-      if (pfuncs->pfdfuncs.setPluginValue) { printf(" setPluginValue()\n"); }
-      if (pfuncs->pfdfuncs.handlePluginEvent) {
+      if (plugin_functions->pfdfuncs.getPluginValue) {
+        printf(" getPluginValue()\n");
+      }
+      if (plugin_functions->pfdfuncs.setPluginValue) {
+        printf(" setPluginValue()\n");
+      }
+      if (plugin_functions->pfdfuncs.handlePluginEvent) {
         printf(" handlePluginEvent()\n");
       }
-      if (pfuncs->pfdfuncs.startBackupFile) { printf(" startBackupFile()\n"); }
-      if (pfuncs->pfdfuncs.endBackupFile) { printf(" endBackupFile()\n"); }
-      if (pfuncs->pfdfuncs.startRestoreFile) {
+      if (plugin_functions->pfdfuncs.startBackupFile) {
+        printf(" startBackupFile()\n");
+      }
+      if (plugin_functions->pfdfuncs.endBackupFile) {
+        printf(" endBackupFile()\n");
+      }
+      if (plugin_functions->pfdfuncs.startRestoreFile) {
         printf(" startRestoreFile()\n");
       }
-      if (pfuncs->pfdfuncs.endRestoreFile) { printf(" endRestoreFile()\n"); }
-      if (pfuncs->pfdfuncs.pluginIO) { printf(" pluginIO()\n"); }
-      if (pfuncs->pfdfuncs.createFile) { printf(" createFile()\n"); }
-      if (pfuncs->pfdfuncs.setFileAttributes) {
+      if (plugin_functions->pfdfuncs.endRestoreFile) {
+        printf(" endRestoreFile()\n");
+      }
+      if (plugin_functions->pfdfuncs.pluginIO) { printf(" pluginIO()\n"); }
+      if (plugin_functions->pfdfuncs.createFile) { printf(" createFile()\n"); }
+      if (plugin_functions->pfdfuncs.setFileAttributes) {
         printf(" setFileAttributes()\n");
       }
-      if (pfuncs->pfdfuncs.checkFile) { printf(" checkFile()\n"); }
+      if (plugin_functions->pfdfuncs.checkFile) { printf(" checkFile()\n"); }
       break;
     case SDPLUGIN:
       if (pdata->verbose) {
-        if (pfuncs->psdfuncs.newPlugin) { printf(" newPlugin()\n"); }
-        if (pfuncs->psdfuncs.freePlugin) { printf(" freePlugin()\n"); }
+        if (plugin_functions->psdfuncs.newPlugin) { printf(" newPlugin()\n"); }
+        if (plugin_functions->psdfuncs.freePlugin) {
+          printf(" freePlugin()\n");
+        }
       }
-      if (pfuncs->psdfuncs.getPluginValue) { printf(" getPluginValue()\n"); }
-      if (pfuncs->psdfuncs.setPluginValue) { printf(" setPluginValue()\n"); }
-      if (pfuncs->psdfuncs.handlePluginEvent) {
+      if (plugin_functions->psdfuncs.getPluginValue) {
+        printf(" getPluginValue()\n");
+      }
+      if (plugin_functions->psdfuncs.setPluginValue) {
+        printf(" setPluginValue()\n");
+      }
+      if (plugin_functions->psdfuncs.handlePluginEvent) {
         printf(" handlePluginEvent()\n");
       }
       break;
@@ -518,7 +545,8 @@ int main(int argc, char* argv[])
   }
 
   loadplugfunc(&bareos_plugin_interface_version, &bareos_core_functions,
-               (void**)&pdata->pinfo, (void**)&pdata->pfuncs);
+               (void**)&pdata->plugin_information,
+               (void**)&pdata->plugin_functions);
 
   pdata->bplugtype = Getplugintype(pdata);
 

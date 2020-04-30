@@ -61,8 +61,8 @@ typedef enum
 extern "C" {
 typedef bRC (*t_loadPlugin)(void* bareos_plugin_interface_version,
                             void* bareos_core_functions,
-                            void** pinfo,
-                            void** pfuncs);
+                            void** plugin_information,
+                            void** plugin_functions);
 typedef bRC (*t_unloadPlugin)(void);
 }
 
@@ -71,9 +71,9 @@ class Plugin {
   char* file;
   int32_t file_len;
   t_unloadPlugin unloadPlugin;
-  void* pinfo;
-  void* pfuncs;
-  void* pHandle;
+  void* plugin_information;
+  void* plugin_functions;
+  void* plugin_handle;
 };
 
 /**

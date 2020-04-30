@@ -316,14 +316,14 @@ extern "C" {
  */
 bRC loadPlugin(Core_PluginApiDefinition* lbareos_plugin_interface_version,
                BareosCoreFunctions* lbareos_core_functions,
-               PluginInformation** pinfo,
-               pFuncs** pfuncs)
+               PluginInformation** plugin_information,
+               pFuncs** plugin_functions)
 {
   bareos_core_functions =
       lbareos_core_functions; /* set Bareos funct pointers */
   bareos_plugin_interface_version = lbareos_plugin_interface_version;
-  *pinfo = &pluginInfo;   /* return pointer to our info */
-  *pfuncs = &pluginFuncs; /* return pointer to our functions */
+  *plugin_information = &pluginInfo; /* return pointer to our info */
+  *plugin_functions = &pluginFuncs;  /* return pointer to our functions */
 
   return bRC_OK;
 }

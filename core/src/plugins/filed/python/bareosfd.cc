@@ -220,15 +220,16 @@ static void PyErrorHandler()
  */
 /* bRC loadPlugin(Core_PluginApiDefinition* lbareos_plugin_interface_version, */
 /*                BareosCoreFunctions* lbareos_core_functions, */
-/*                PluginInformation** pinfo, */
-/*                pFuncs** pfuncs) */
+/*                PluginInformation** plugin_information, */
+/*                pFuncs** plugin_functions) */
 /* { */
 /*   bareos_core_functions = lbareos_core_functions; /1* Set Bareos funct
  * pointers *1/ */
 /*   bareos_plugin_interface_version = lbareos_plugin_interface_version; */
 
-/*   *pinfo = &pluginInfo;   /1* Return pointer to our info *1/ */
-/*   *pfuncs = &pluginFuncs; /1* Return pointer to our functions *1/ */
+/*   *plugin_information = &pluginInfo;   /1* Return pointer to our info *1/ */
+/*   *plugin_functions = &pluginFuncs; /1* Return pointer to our functions *1/
+ */
 
 /*   if (!Py_IsInitialized()) { */
 /*     /1* Setup Python *1/ */
@@ -254,7 +255,8 @@ static void PyErrorHandler()
 /*         filedaemon::Core_PluginApiDefinition *
  * lbareos_plugin_interface_version, filedaemon::BareosCoreFunctions *
  * lbareos_core_functions, */
-/*         PluginInformation * *pinfo, filedaemon::pFuncs * *pfuncs) = */
+/*         PluginInformation * *plugin_information, filedaemon::pFuncs *
+ * *plugin_functions) = */
 /*         (void (*)(filedaemon::Core_PluginApiDefinition*,
  * filedaemon::BareosCoreFunctions*, PluginInformation**, */
 /*                   filedaemon::pFuncs**))PyCapsule_Import("bareosfd.loadPlugin",
@@ -286,12 +288,13 @@ static void PyErrorHandler()
 
 /*     /1* call loadPlugin in plugin *1/ */
 /*     filedaemon::Core_PluginApiDefinition myInfo; */
-/*     PluginInformation pinfo; */
-/*     filedaemon::pFuncs pfuncs; */
+/*     PluginInformation plugin_information; */
+/*     filedaemon::pFuncs plugin_functions; */
 
 /*     loadplugin_from_bareosfd_module(&myInfo, bareos_core_functions,
- * (PluginInformation**)&pinfo, */
-/*                                     (filedaemon::pFuncs**)&pfuncs); */
+ * (PluginInformation**)&plugin_information, */
+/*                                     (filedaemon::pFuncs**)&plugin_functions);
+ */
 
 
 /*     printf("ctx_from_bareosfd_module contains    %p\n", */

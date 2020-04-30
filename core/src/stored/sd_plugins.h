@@ -218,8 +218,8 @@ typedef struct s_sdpluginFuncs {
   bRC (*handlePluginEvent)(bpContext* ctx, bsdEvent* event, void* value);
 } psdFuncs;
 
-#define SdplugFunc(plugin) ((psdFuncs*)(plugin->pfuncs))
-#define sdplug_info(plugin) ((PluginInformation*)(plugin->pinfo))
+#define SdplugFunc(plugin) ((psdFuncs*)(plugin->plugin_functions))
+#define sdplug_info(plugin) ((PluginInformation*)(plugin->plugin_information))
 
 #ifdef __cplusplus
 }

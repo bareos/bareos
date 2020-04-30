@@ -76,8 +76,8 @@ extern "C" {
  */
 bRC loadPlugin(bDirInfo* lbareos_plugin_interface_version,
                bDirFuncs* lbareos_core_functions,
-               PluginInformation** pinfo,
-               pDirFuncs** pfuncs)
+               PluginInformation** plugin_information,
+               pDirFuncs** plugin_functions)
 {
   bareos_core_functions =
       lbareos_core_functions; /* set Bareos funct pointers */
@@ -85,8 +85,8 @@ bRC loadPlugin(bDirInfo* lbareos_plugin_interface_version,
   printf("plugin: Loaded: size=%d version=%d\n", bareos_core_functions->size,
          bareos_core_functions->version);
 
-  *pinfo = &pluginInfo;   /* return pointer to our info */
-  *pfuncs = &pluginFuncs; /* return pointer to our functions */
+  *plugin_information = &pluginInfo; /* return pointer to our info */
+  *plugin_functions = &pluginFuncs;  /* return pointer to our functions */
 
   return bRC_OK;
 }
