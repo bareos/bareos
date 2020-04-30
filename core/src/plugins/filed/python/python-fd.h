@@ -777,20 +777,22 @@ MOD_INIT(bareosfd)
   MOD_DEF(m, PYTHON_MODULE_NAME_QUOTED, NULL, Methods)
 
 
-  /* add bpContext Capsule */
+  /* add bplugin_private_context Capsule */
   PyObject* PyModulePluginContext =
       PyCapsule_New((void*)&bareos_plugin_context,
-                    PYTHON_MODULE_NAME_QUOTED ".bpContext", NULL);
+                    PYTHON_MODULE_NAME_QUOTED ".bplugin_private_context", NULL);
   if (!PyModulePluginContext) {
-    printf(PYTHON_MODULE_NAME_QUOTED ":bpContext PyCapsule_New failed\n");
+    printf(PYTHON_MODULE_NAME_QUOTED
+           ":bplugin_private_context PyCapsule_New failed\n");
     return MOD_ERROR_VAL;
   }
   if (PyModulePluginContext) {
-    PyModule_AddObject(m, "bpContext", PyModulePluginContext);
-    printf(PYTHON_MODULE_NAME_QUOTED ": added bpContext@%p\n",
+    PyModule_AddObject(m, "bplugin_private_context", PyModulePluginContext);
+    printf(PYTHON_MODULE_NAME_QUOTED ": added bplugin_private_context@%p\n",
            &bareos_plugin_context);
   } else {
-    printf(PYTHON_MODULE_NAME_QUOTED ":bpContext PyModule_AddObject failed\n");
+    printf(PYTHON_MODULE_NAME_QUOTED
+           ":bplugin_private_context PyModule_AddObject failed\n");
     return MOD_ERROR_VAL;
   }
 

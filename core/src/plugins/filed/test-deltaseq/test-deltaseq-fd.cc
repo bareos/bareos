@@ -40,18 +40,25 @@ static const int debuglevel = 0;
 #define PLUGIN_DESCRIPTION "Bareos Delta Test Plugin"
 
 /* Forward referenced functions */
-static bRC newPlugin(bpContext* ctx);
-static bRC freePlugin(bpContext* ctx);
-static bRC getPluginValue(bpContext* ctx, pVariable var, void* value);
-static bRC setPluginValue(bpContext* ctx, pVariable var, void* value);
-static bRC handlePluginEvent(bpContext* ctx, bEvent* event, void* value);
-static bRC startBackupFile(bpContext* ctx, struct save_pkt* sp);
-static bRC endBackupFile(bpContext* ctx);
-static bRC pluginIO(bpContext* ctx, struct io_pkt* io);
-static bRC startRestoreFile(bpContext* ctx, const char* cmd);
-static bRC endRestoreFile(bpContext* ctx);
-static bRC createFile(bpContext* ctx, struct restore_pkt* rp);
-static bRC setFileAttributes(bpContext* ctx, struct restore_pkt* rp);
+static bRC newPlugin(bplugin_private_context* ctx);
+static bRC freePlugin(bplugin_private_context* ctx);
+static bRC getPluginValue(bplugin_private_context* ctx,
+                          pVariable var,
+                          void* value);
+static bRC setPluginValue(bplugin_private_context* ctx,
+                          pVariable var,
+                          void* value);
+static bRC handlePluginEvent(bplugin_private_context* ctx,
+                             bEvent* event,
+                             void* value);
+static bRC startBackupFile(bplugin_private_context* ctx, struct save_pkt* sp);
+static bRC endBackupFile(bplugin_private_context* ctx);
+static bRC pluginIO(bplugin_private_context* ctx, struct io_pkt* io);
+static bRC startRestoreFile(bplugin_private_context* ctx, const char* cmd);
+static bRC endRestoreFile(bplugin_private_context* ctx);
+static bRC createFile(bplugin_private_context* ctx, struct restore_pkt* rp);
+static bRC setFileAttributes(bplugin_private_context* ctx,
+                             struct restore_pkt* rp);
 
 /* Pointers to Bareos functions */
 static BareosCoreFunctions* bareos_core_functions = NULL;
@@ -80,11 +87,11 @@ static pFuncs pluginFuncs = {
     NULL                     /* no setXattr */
 };
 
-#define get_self(x) ((delta_test*)((x)->pContext))
+#define get_self(x) ((delta_test*)((x)->plugin_private_context))
 
 class delta_test {
  private:
-  bpContext* ctx;
+  bplugin_private_context* ctx;
 
  public:
   POOLMEM* fname; /* Filename to save */
@@ -93,7 +100,7 @@ class delta_test {
   bool done;
   int level;
 
-  delta_test(bpContext* bpc)
+  delta_test(bplugin_private_context* bpc)
   {
     fd = NULL;
     ctx = bpc;
@@ -157,11 +164,11 @@ bRC unloadPlugin()
 /**
  * Create a new instance of the plugin i.e. allocate our private storage
  */
-static bRC newPlugin(bpContext* ctx)
+static bRC newPlugin(bplugin_private_context* ctx)
 {
   delta_test* self = new delta_test(ctx);
   if (!self) { return bRC_Error; }
-  ctx->pContext = (void*)self; /* set our context pointer */
+  ctx->plugin_private_context = (void*)self; /* set our context pointer */
 
   bareos_core_functions->registerBareosEvents(
       ctx, 3, bEventLevel, bEventRestoreCommand, bEventBackupCommand);
@@ -171,9 +178,9 @@ static bRC newPlugin(bpContext* ctx)
 /**
  * Free a plugin instance, i.e. release our private storage
  */
-static bRC freePlugin(bpContext* ctx)
+static bRC freePlugin(bplugin_private_context* ctx)
 {
-  struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->pContext;
+  struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->plugin_private_context;
 
   if (!p_ctx) { return bRC_Error; }
 
@@ -185,7 +192,9 @@ static bRC freePlugin(bpContext* ctx)
 /**
  * Return some plugin value (none defined)
  */
-static bRC getPluginValue(bpContext* ctx, pVariable var, void* value)
+static bRC getPluginValue(bplugin_private_context* ctx,
+                          pVariable var,
+                          void* value)
 {
   return bRC_OK;
 }
@@ -193,7 +202,9 @@ static bRC getPluginValue(bpContext* ctx, pVariable var, void* value)
 /**
  * Set a plugin value (none defined)
  */
-static bRC setPluginValue(bpContext* ctx, pVariable var, void* value)
+static bRC setPluginValue(bplugin_private_context* ctx,
+                          pVariable var,
+                          void* value)
 {
   return bRC_OK;
 }
@@ -201,7 +212,9 @@ static bRC setPluginValue(bpContext* ctx, pVariable var, void* value)
 /**
  * Handle an event that was generated in Bareos
  */
-static bRC handlePluginEvent(bpContext* ctx, bEvent* event, void* value)
+static bRC handlePluginEvent(bplugin_private_context* ctx,
+                             bEvent* event,
+                             void* value)
 {
   delta_test* self = get_self(ctx);
   int accurate = 0;
@@ -251,7 +264,7 @@ static int nb_files = 4;
 /**
  * Start the backup of a specific file
  */
-static bRC startBackupFile(bpContext* ctx, struct save_pkt* sp)
+static bRC startBackupFile(bplugin_private_context* ctx, struct save_pkt* sp)
 {
   delta_test* self = get_self(ctx);
   if (!self) { return bRC_Error; }
@@ -283,7 +296,7 @@ static bRC startBackupFile(bpContext* ctx, struct save_pkt* sp)
 /**
  * Done with backup of this file
  */
-static bRC endBackupFile(bpContext* ctx)
+static bRC endBackupFile(bplugin_private_context* ctx)
 {
   /*
    * We would return bRC_More if we wanted startBackupFile to be
@@ -295,7 +308,7 @@ static bRC endBackupFile(bpContext* ctx)
 /**
  * Bareos is calling us to do the actual I/O
  */
-static bRC pluginIO(bpContext* ctx, struct io_pkt* io)
+static bRC pluginIO(bplugin_private_context* ctx, struct io_pkt* io)
 {
   delta_test* self = get_self(ctx);
   struct stat statp;
@@ -397,7 +410,7 @@ static bRC pluginIO(bpContext* ctx, struct io_pkt* io)
  * Bareos is notifying us that a plugin name string was found, and
  *   passing us the plugin command, so we can prepare for a restore.
  */
-static bRC startRestoreFile(bpContext* ctx, const char* cmd)
+static bRC startRestoreFile(bplugin_private_context* ctx, const char* cmd)
 {
   // Dmsg(ctx, debuglevel, "delta-test-fd: startRestoreFile cmd=%s\n", cmd);
   return bRC_OK;
@@ -407,7 +420,7 @@ static bRC startRestoreFile(bpContext* ctx, const char* cmd)
  * Bareos is notifying us that the plugin data has terminated, so
  *  the restore for this particular file is done.
  */
-static bRC endRestoreFile(bpContext* ctx)
+static bRC endRestoreFile(bplugin_private_context* ctx)
 {
   // Dmsg(ctx, debuglevel, "delta-test-fd: endRestoreFile\n");
   return bRC_OK;
@@ -423,7 +436,7 @@ static bRC endRestoreFile(bpContext* ctx)
  *  CF_CREATED  -- created, but no content to extract (typically directories)
  *
  */
-static bRC createFile(bpContext* ctx, struct restore_pkt* rp)
+static bRC createFile(bplugin_private_context* ctx, struct restore_pkt* rp)
 {
   delta_test* self = get_self(ctx);
   PmStrcpy(self->fname, rp->ofname);
@@ -431,7 +444,8 @@ static bRC createFile(bpContext* ctx, struct restore_pkt* rp)
   return bRC_OK;
 }
 
-static bRC setFileAttributes(bpContext* ctx, struct restore_pkt* rp)
+static bRC setFileAttributes(bplugin_private_context* ctx,
+                             struct restore_pkt* rp)
 {
   // Dmsg(ctx, debuglevel, "delta-test-fd: setFileAttributes\n");
   return bRC_OK;

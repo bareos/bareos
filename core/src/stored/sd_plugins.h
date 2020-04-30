@@ -146,19 +146,25 @@ struct DeviceRecord;
 typedef struct s_sdbareosFuncs {
   uint32_t size;
   uint32_t version;
-  bRC (*registerBareosEvents)(bpContext* ctx, int nr_events, ...);
-  bRC (*unregisterBareosEvents)(bpContext* ctx, int nr_events, ...);
-  bRC (*getInstanceCount)(bpContext* ctx, int* ret);
-  bRC (*getBareosValue)(bpContext* ctx, bsdrVariable var, void* value);
-  bRC (*setBareosValue)(bpContext* ctx, bsdwVariable var, void* value);
-  bRC (*JobMessage)(bpContext* ctx,
+  bRC (*registerBareosEvents)(bplugin_private_context* ctx, int nr_events, ...);
+  bRC (*unregisterBareosEvents)(bplugin_private_context* ctx,
+                                int nr_events,
+                                ...);
+  bRC (*getInstanceCount)(bplugin_private_context* ctx, int* ret);
+  bRC (*getBareosValue)(bplugin_private_context* ctx,
+                        bsdrVariable var,
+                        void* value);
+  bRC (*setBareosValue)(bplugin_private_context* ctx,
+                        bsdwVariable var,
+                        void* value);
+  bRC (*JobMessage)(bplugin_private_context* ctx,
                     const char* file,
                     int line,
                     int type,
                     utime_t mtime,
                     const char* fmt,
                     ...);
-  bRC (*DebugMessage)(bpContext* ctx,
+  bRC (*DebugMessage)(bplugin_private_context* ctx,
                       const char* file,
                       int line,
                       int level,
@@ -211,11 +217,17 @@ typedef enum
 typedef struct s_sdpluginFuncs {
   uint32_t size;
   uint32_t version;
-  bRC (*newPlugin)(bpContext* ctx);
-  bRC (*freePlugin)(bpContext* ctx);
-  bRC (*getPluginValue)(bpContext* ctx, pVariable var, void* value);
-  bRC (*setPluginValue)(bpContext* ctx, pVariable var, void* value);
-  bRC (*handlePluginEvent)(bpContext* ctx, bsdEvent* event, void* value);
+  bRC (*newPlugin)(bplugin_private_context* ctx);
+  bRC (*freePlugin)(bplugin_private_context* ctx);
+  bRC (*getPluginValue)(bplugin_private_context* ctx,
+                        pVariable var,
+                        void* value);
+  bRC (*setPluginValue)(bplugin_private_context* ctx,
+                        pVariable var,
+                        void* value);
+  bRC (*handlePluginEvent)(bplugin_private_context* ctx,
+                           bsdEvent* event,
+                           void* value);
 } psdFuncs;
 
 #define SdplugFunc(plugin) ((psdFuncs*)(plugin->plugin_functions))

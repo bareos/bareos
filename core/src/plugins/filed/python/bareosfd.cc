@@ -58,66 +58,84 @@ static const int debuglevel = 150;
 /*   "load>:..." */
 
 /* Forward referenced functions */
-/* static bRC newPlugin(bpContext* bareos_plugin_ctx); */
-/* static bRC freePlugin(bpContext* bareos_plugin_ctx); */
-/* static bRC getPluginValue(bpContext* bareos_plugin_ctx, */
+/* static bRC newPlugin(bplugin_private_context* bareos_plugin_ctx); */
+/* static bRC freePlugin(bplugin_private_context* bareos_plugin_ctx); */
+/* static bRC getPluginValue(bplugin_private_context* bareos_plugin_ctx, */
 /*                           pVariable var, */
 /*                           void* value); */
-/* static bRC setPluginValue(bpContext* bareos_plugin_ctx, */
+/* static bRC setPluginValue(bplugin_private_context* bareos_plugin_ctx, */
 /*                           pVariable var, */
 /*                           void* value); */
-/* static bRC handlePluginEvent(bpContext* bareos_plugin_ctx, */
+/* static bRC handlePluginEvent(bplugin_private_context* bareos_plugin_ctx, */
 /*                              bEvent* event, */
 /*                              void* value); */
-/* static bRC startBackupFile(bpContext* bareos_plugin_ctx, struct save_pkt*
- * sp); */
-/* static bRC endBackupFile(bpContext* bareos_plugin_ctx); */
-/* static bRC pluginIO(bpContext* bareos_plugin_ctx, struct io_pkt* io); */
-/* static bRC startRestoreFile(bpContext* bareos_plugin_ctx, const char* cmd);
+/* static bRC startBackupFile(bplugin_private_context* bareos_plugin_ctx, struct
+ * save_pkt* sp); */
+/* static bRC endBackupFile(bplugin_private_context* bareos_plugin_ctx); */
+/* static bRC pluginIO(bplugin_private_context* bareos_plugin_ctx, struct
+ * io_pkt* io); */
+/* static bRC startRestoreFile(bplugin_private_context* bareos_plugin_ctx, const
+ * char* cmd);
  */
-/* static bRC endRestoreFile(bpContext* bareos_plugin_ctx); */
-/* static bRC createFile(bpContext* bareos_plugin_ctx, struct restore_pkt* rp);
+/* static bRC endRestoreFile(bplugin_private_context* bareos_plugin_ctx); */
+/* static bRC createFile(bplugin_private_context* bareos_plugin_ctx, struct
+ * restore_pkt* rp);
  */
-/* static bRC setFileAttributes(bpContext* bareos_plugin_ctx, */
+/* static bRC setFileAttributes(bplugin_private_context* bareos_plugin_ctx, */
 /*                              struct restore_pkt* rp); */
-/* static bRC checkFile(bpContext* bareos_plugin_ctx, char* fname); */
-/* static bRC getAcl(bpContext* bareos_plugin_ctx, acl_pkt* ap); */
-/* static bRC setAcl(bpContext* bareos_plugin_ctx, acl_pkt* ap); */
-/* static bRC getXattr(bpContext* bareos_plugin_ctx, xattr_pkt* xp); */
-/* static bRC setXattr(bpContext* bareos_plugin_ctx, xattr_pkt* xp); */
-/* static bRC parse_plugin_definition(bpContext* bareos_plugin_ctx, */
+/* static bRC checkFile(bplugin_private_context* bareos_plugin_ctx, char*
+ * fname); */
+/* static bRC getAcl(bplugin_private_context* bareos_plugin_ctx, acl_pkt* ap);
+ */
+/* static bRC setAcl(bplugin_private_context* bareos_plugin_ctx, acl_pkt* ap);
+ */
+/* static bRC getXattr(bplugin_private_context* bareos_plugin_ctx, xattr_pkt*
+ * xp); */
+/* static bRC setXattr(bplugin_private_context* bareos_plugin_ctx, xattr_pkt*
+ * xp); */
+/* static bRC parse_plugin_definition(bplugin_private_context*
+ * bareos_plugin_ctx, */
 /*                                    void* value, */
 /*                                    PoolMem& plugin_options); */
 
 
-static void PyErrorHandler(bpContext* bareos_plugin_ctx, int msgtype);
-static bRC PyLoadModule(bpContext* bareos_plugin_ctx, void* value);
-static bRC PyParsePluginDefinition(bpContext* bareos_plugin_ctx, void* value);
-static bRC PyGetPluginValue(bpContext* bareos_plugin_ctx,
+static void PyErrorHandler(bplugin_private_context* bareos_plugin_ctx,
+                           int msgtype);
+static bRC PyLoadModule(bplugin_private_context* bareos_plugin_ctx,
+                        void* value);
+static bRC PyParsePluginDefinition(bplugin_private_context* bareos_plugin_ctx,
+                                   void* value);
+static bRC PyGetPluginValue(bplugin_private_context* bareos_plugin_ctx,
                             pVariable var,
                             void* value);
-static bRC PySetPluginValue(bpContext* bareos_plugin_ctx,
+static bRC PySetPluginValue(bplugin_private_context* bareos_plugin_ctx,
                             pVariable var,
                             void* value);
-static bRC PyHandlePluginEvent(bpContext* bareos_plugin_ctx,
+static bRC PyHandlePluginEvent(bplugin_private_context* bareos_plugin_ctx,
                                bEvent* event,
                                void* value);
-static bRC PyStartBackupFile(bpContext* bareos_plugin_ctx, struct save_pkt* sp);
-static bRC PyEndBackupFile(bpContext* bareos_plugin_ctx);
-static bRC PyPluginIO(bpContext* bareos_plugin_ctx, struct io_pkt* io);
-static bRC PyStartRestoreFile(bpContext* bareos_plugin_ctx, const char* cmd);
-static bRC PyEndRestoreFile(bpContext* bareos_plugin_ctx);
-static bRC PyCreateFile(bpContext* bareos_plugin_ctx, struct restore_pkt* rp);
-static bRC PySetFileAttributes(bpContext* bareos_plugin_ctx,
+static bRC PyStartBackupFile(bplugin_private_context* bareos_plugin_ctx,
+                             struct save_pkt* sp);
+static bRC PyEndBackupFile(bplugin_private_context* bareos_plugin_ctx);
+static bRC PyPluginIO(bplugin_private_context* bareos_plugin_ctx,
+                      struct io_pkt* io);
+static bRC PyStartRestoreFile(bplugin_private_context* bareos_plugin_ctx,
+                              const char* cmd);
+static bRC PyEndRestoreFile(bplugin_private_context* bareos_plugin_ctx);
+static bRC PyCreateFile(bplugin_private_context* bareos_plugin_ctx,
+                        struct restore_pkt* rp);
+static bRC PySetFileAttributes(bplugin_private_context* bareos_plugin_ctx,
                                struct restore_pkt* rp);
-static bRC PyCheckFile(bpContext* bareos_plugin_ctx, char* fname);
-static bRC PyGetAcl(bpContext* bareos_plugin_ctx, acl_pkt* ap);
-static bRC PySetAcl(bpContext* bareos_plugin_ctx, acl_pkt* ap);
-static bRC PyGetXattr(bpContext* bareos_plugin_ctx, xattr_pkt* xp);
-static bRC PySetXattr(bpContext* bareos_plugin_ctx, xattr_pkt* xp);
-static bRC PyRestoreObjectData(bpContext* bareos_plugin_ctx,
+static bRC PyCheckFile(bplugin_private_context* bareos_plugin_ctx, char* fname);
+static bRC PyGetAcl(bplugin_private_context* bareos_plugin_ctx, acl_pkt* ap);
+static bRC PySetAcl(bplugin_private_context* bareos_plugin_ctx, acl_pkt* ap);
+static bRC PyGetXattr(bplugin_private_context* bareos_plugin_ctx,
+                      xattr_pkt* xp);
+static bRC PySetXattr(bplugin_private_context* bareos_plugin_ctx,
+                      xattr_pkt* xp);
+static bRC PyRestoreObjectData(bplugin_private_context* bareos_plugin_ctx,
                                struct restore_object_pkt* rop);
-static bRC PyHandleBackupFile(bpContext* bareos_plugin_ctx,
+static bRC PyHandleBackupFile(bplugin_private_context* bareos_plugin_ctx,
                               struct save_pkt* sp);
 
 /* Pointers to Bareos functions */
@@ -263,11 +281,11 @@ static void PyErrorHandler()
  */
 /*                                                          0); */
 
-/*     // Extract capsule bareosfd.bpContext */
-/*     void* ctx_from_bareosfd_module = PyCapsule_Import("bareosfd.bpContext",
- * 0); */
+/*     // Extract capsule bareosfd.bplugin_private_context */
+/*     void* ctx_from_bareosfd_module =
+ * PyCapsule_Import("bareosfd.bplugin_private_context", 0); */
 /*     if (!ctx_from_bareosfd_module) { */
-/*       printf("importing bareosfd.bpContext failed \n"); */
+/*       printf("importing bareosfd.bplugin_private_context failed \n"); */
 /*     } */
 
 /*     // Extract capsules bareosfd.BareosCoreFunctions */
@@ -336,11 +354,11 @@ static void PyErrorHandler()
  * module path and the module to load. We also load the dictionary used
  * for looking up the Python methods.
  */
-static bRC PyLoadModule(bpContext* bareos_plugin_ctx, void* value)
+static bRC PyLoadModule(bplugin_private_context* bareos_plugin_ctx, void* value)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)bareos_plugin_ctx->pContext;
+      (struct plugin_private_context*)bareos_plugin_ctx->plugin_private_context;
   PyObject *sysPath, *mPath, *pName, *pFunc;
 
   /* See if we already setup the python search path.  */
@@ -379,8 +397,10 @@ static bRC PyLoadModule(bpContext* bareos_plugin_ctx, void* value)
     plugin_priv_ctx->pyModuleFunctionsDict =
         PyModule_GetDict(plugin_priv_ctx->pModule); /* Borrowed reference */
 
-    /* Encode the bpContext so a Python method can pass it in on calling back.*/
-    /* plugin_priv_ctx->py_bpContext = PyCreatebpContext(bareos_plugin_ctx); */
+    /* Encode the bplugin_private_context so a Python method can pass it in on
+     * calling back.*/
+    /* plugin_priv_ctx->py_bplugin_private_context =
+     * PyCreatebplugin_private_context(bareos_plugin_ctx); */
 
     StorePluginContextInPythonModule(bareos_plugin_ctx);
 
@@ -394,7 +414,8 @@ static bRC PyLoadModule(bpContext* bareos_plugin_ctx, void* value)
       if (!pPluginDefinition) { goto bail_out; }
 
       pRetVal = PyObject_CallFunctionObjArgs(pFunc, pPluginDefinition, NULL);
-      /* pFunc, plugin_priv_ctx->py_bpContext, pPluginDefinition, NULL); */
+      /* pFunc, plugin_priv_ctx->py_bplugin_private_context, pPluginDefinition,
+       * NULL); */
       Py_DECREF(pPluginDefinition);
 
       if (!pRetVal) {
@@ -431,11 +452,12 @@ bail_out:
  * restore overrides can be passed in before the actual plugin options are
  * restored as part of the restore stream handling.
  */
-static bRC PyParsePluginDefinition(bpContext* bareos_plugin_ctx, void* value)
+static bRC PyParsePluginDefinition(bplugin_private_context* bareos_plugin_ctx,
+                                   void* value)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)bareos_plugin_ctx->pContext;
+      (struct plugin_private_context*)bareos_plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   /*
@@ -474,27 +496,27 @@ bail_out:
   return retval;
 }
 
-static bRC PyGetPluginValue(bpContext* bareos_plugin_ctx,
+static bRC PyGetPluginValue(bplugin_private_context* bareos_plugin_ctx,
                             pVariable var,
                             void* value)
 {
   return bRC_OK;
 }
 
-static bRC PySetPluginValue(bpContext* bareos_plugin_ctx,
+static bRC PySetPluginValue(bplugin_private_context* bareos_plugin_ctx,
                             pVariable var,
                             void* value)
 {
   return bRC_OK;
 }
 
-static bRC PyHandlePluginEvent(bpContext* bareos_plugin_ctx,
+static bRC PyHandlePluginEvent(bplugin_private_context* bareos_plugin_ctx,
                                bEvent* event,
                                void* value)
 {
   bRC retval = bRC_Error;
   plugin_private_context* plugin_priv_ctx =
-      (plugin_private_context*)bareos_plugin_ctx->pContext;
+      (plugin_private_context*)bareos_plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   /*
@@ -762,11 +784,12 @@ bail_out:
  * The plugin can create "Virtual" files by giving them a
  * name that is not normally found on the file system.
  */
-static bRC PyStartBackupFile(bpContext* bareos_plugin_ctx, struct save_pkt* sp)
+static bRC PyStartBackupFile(bplugin_private_context* bareos_plugin_ctx,
+                             struct save_pkt* sp)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)bareos_plugin_ctx->pContext;
+      (struct plugin_private_context*)bareos_plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   /*
@@ -814,11 +837,11 @@ bail_out:
  * If the plugin wishes to create another file and back it up,
  * then it must return bRC_More (not yet implemented).
  */
-static bRC PyEndBackupFile(bpContext* bareos_plugin_ctx)
+static bRC PyEndBackupFile(bplugin_private_context* bareos_plugin_ctx)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)bareos_plugin_ctx->pContext;
+      (struct plugin_private_context*)bareos_plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   /*
@@ -923,11 +946,12 @@ static inline bool PyIoPacketToNative(PyIoPacket* pIoPkt, struct io_pkt* io)
  * or after startRestoreFile to do the actual file
  * input or output.
  */
-static bRC PyPluginIO(bpContext* bareos_plugin_ctx, struct io_pkt* io)
+static bRC PyPluginIO(bplugin_private_context* bareos_plugin_ctx,
+                      struct io_pkt* io)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)bareos_plugin_ctx->pContext;
+      (struct plugin_private_context*)bareos_plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   /*
@@ -975,11 +999,12 @@ bail_out:
  * Called when the first record is read from the Volume that was previously
  * written by the command plugin.
  */
-static bRC PyStartRestoreFile(bpContext* bareos_plugin_ctx, const char* cmd)
+static bRC PyStartRestoreFile(bplugin_private_context* bareos_plugin_ctx,
+                              const char* cmd)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)bareos_plugin_ctx->pContext;
+      (struct plugin_private_context*)bareos_plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   /*
@@ -1018,11 +1043,11 @@ bail_out:
 /**
  * Called when a command plugin is done restoring a file.
  */
-static bRC PyEndRestoreFile(bpContext* bareos_plugin_ctx)
+static bRC PyEndRestoreFile(bplugin_private_context* bareos_plugin_ctx)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)bareos_plugin_ctx->pContext;
+      (struct plugin_private_context*)bareos_plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   /*
@@ -1099,11 +1124,12 @@ static inline void PyRestorePacketToNative(PyRestorePacket* pRestorePacket,
  * CF_EXTRACT  -- extract the file (i.e.call i/o routines)
  * CF_CREATED  -- created, but no content to extract (typically directories)
  */
-static bRC PyCreateFile(bpContext* bareos_plugin_ctx, struct restore_pkt* rp)
+static bRC PyCreateFile(bplugin_private_context* bareos_plugin_ctx,
+                        struct restore_pkt* rp)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)bareos_plugin_ctx->pContext;
+      (struct plugin_private_context*)bareos_plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   if (!rp) { return bRC_Error; }
@@ -1144,12 +1170,12 @@ bail_out:
   return retval;
 }
 
-static bRC PySetFileAttributes(bpContext* bareos_plugin_ctx,
+static bRC PySetFileAttributes(bplugin_private_context* bareos_plugin_ctx,
                                struct restore_pkt* rp)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)bareos_plugin_ctx->pContext;
+      (struct plugin_private_context*)bareos_plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   if (!rp) { return bRC_Error; }
@@ -1188,11 +1214,11 @@ bail_out:
   return retval;
 }
 
-static bRC PyCheckFile(bpContext* bareos_plugin_ctx, char* fname)
+static bRC PyCheckFile(bplugin_private_context* bareos_plugin_ctx, char* fname)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)bareos_plugin_ctx->pContext;
+      (struct plugin_private_context*)bareos_plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   if (!fname) { return bRC_Error; }
@@ -1268,11 +1294,11 @@ static inline bool PyAclPacketToNative(PyAclPacket* pAclPacket,
   return true;
 }
 
-static bRC PyGetAcl(bpContext* bareos_plugin_ctx, acl_pkt* ap)
+static bRC PyGetAcl(bplugin_private_context* bareos_plugin_ctx, acl_pkt* ap)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)bareos_plugin_ctx->pContext;
+      (struct plugin_private_context*)bareos_plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   if (!ap) { return bRC_Error; }
@@ -1316,11 +1342,11 @@ bail_out:
   return retval;
 }
 
-static bRC PySetAcl(bpContext* bareos_plugin_ctx, acl_pkt* ap)
+static bRC PySetAcl(bplugin_private_context* bareos_plugin_ctx, acl_pkt* ap)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)bareos_plugin_ctx->pContext;
+      (struct plugin_private_context*)bareos_plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   if (!ap) { return bRC_Error; }
@@ -1422,11 +1448,11 @@ static inline bool PyXattrPacketToNative(PyXattrPacket* pXattrPacket,
   return true;
 }
 
-static bRC PyGetXattr(bpContext* bareos_plugin_ctx, xattr_pkt* xp)
+static bRC PyGetXattr(bplugin_private_context* bareos_plugin_ctx, xattr_pkt* xp)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)bareos_plugin_ctx->pContext;
+      (struct plugin_private_context*)bareos_plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   if (!xp) { return bRC_Error; }
@@ -1470,11 +1496,11 @@ bail_out:
   return retval;
 }
 
-static bRC PySetXattr(bpContext* bareos_plugin_ctx, xattr_pkt* xp)
+static bRC PySetXattr(bplugin_private_context* bareos_plugin_ctx, xattr_pkt* xp)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)bareos_plugin_ctx->pContext;
+      (struct plugin_private_context*)bareos_plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   if (!xp) { return bRC_Error; }
@@ -1535,12 +1561,12 @@ static inline PyRestoreObject* NativeToPyRestoreObject(
   return pRestoreObject;
 }
 
-static bRC PyRestoreObjectData(bpContext* bareos_plugin_ctx,
+static bRC PyRestoreObjectData(bplugin_private_context* bareos_plugin_ctx,
                                struct restore_object_pkt* rop)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)bareos_plugin_ctx->pContext;
+      (struct plugin_private_context*)bareos_plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   if (!rop) { return bRC_OK; }
@@ -1579,11 +1605,12 @@ bail_out:
   return retval;
 }
 
-static bRC PyHandleBackupFile(bpContext* bareos_plugin_ctx, struct save_pkt* sp)
+static bRC PyHandleBackupFile(bplugin_private_context* bareos_plugin_ctx,
+                              struct save_pkt* sp)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)bareos_plugin_ctx->pContext;
+      (struct plugin_private_context*)bareos_plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   if (!sp) { return bRC_Error; }
@@ -1634,7 +1661,8 @@ bail_out:
 static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
 {
   int var;
-  bpContext* bareos_plugin_ctx = GetPluginContextFromPythonModule();
+  bplugin_private_context* bareos_plugin_ctx =
+      GetPluginContextFromPythonModule();
   PyObject* pRetVal = NULL;
 
   if (!PyArg_ParseTuple(args, "i:BareosGetValue", &var)) { return NULL; }
@@ -1705,7 +1733,8 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
 static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
 {
   int var;
-  bpContext* bareos_plugin_ctx = GetPluginContextFromPythonModule();
+  bplugin_private_context* bareos_plugin_ctx =
+      GetPluginContextFromPythonModule();
   bRC retval = bRC_Error;
   PyObject* pyValue;
 
@@ -1754,9 +1783,10 @@ static PyObject* PyBareosDebugMessage(PyObject* self, PyObject* args)
 {
   int level;
   char* dbgmsg = NULL;
-  bpContext* bareos_plugin_ctx = GetPluginContextFromPythonModule();
+  bplugin_private_context* bareos_plugin_ctx =
+      GetPluginContextFromPythonModule();
   /* plugin_private_context* ppc = */
-  /*     (plugin_private_context*)bareos_plugin_ctx->pContext; */
+  /*     (plugin_private_context*)bareos_plugin_ctx->plugin_private_context; */
 
   if (!PyArg_ParseTuple(args, "i|z:BareosDebugMessage", &level, &dbgmsg)) {
     return NULL;
@@ -1777,7 +1807,8 @@ static PyObject* PyBareosJobMessage(PyObject* self, PyObject* args)
 {
   int type;
   char* jobmsg = NULL;
-  bpContext* bareos_plugin_ctx = GetPluginContextFromPythonModule();
+  bplugin_private_context* bareos_plugin_ctx =
+      GetPluginContextFromPythonModule();
 
   if (!PyArg_ParseTuple(args, "i|z:BareosJobMessage", &type, &jobmsg)) {
     return NULL;
@@ -1798,7 +1829,8 @@ static PyObject* PyBareosJobMessage(PyObject* self, PyObject* args)
 static PyObject* PyBareosRegisterEvents(PyObject* self, PyObject* args)
 {
   int len, event;
-  bpContext* bareos_plugin_ctx = GetPluginContextFromPythonModule();
+  bplugin_private_context* bareos_plugin_ctx =
+      GetPluginContextFromPythonModule();
   bRC retval = bRC_Error;
   PyObject *pyEvents, *pySeq, *pyEvent;
 
@@ -1839,7 +1871,8 @@ bail_out:
 static PyObject* PyBareosUnRegisterEvents(PyObject* self, PyObject* args)
 {
   int len, event;
-  bpContext* bareos_plugin_ctx = GetPluginContextFromPythonModule();
+  bplugin_private_context* bareos_plugin_ctx =
+      GetPluginContextFromPythonModule();
   bRC retval = bRC_Error;
   PyObject *pyEvents, *pySeq, *pyEvent;
 
@@ -1878,7 +1911,8 @@ bail_out:
 static PyObject* PyBareosGetInstanceCount(PyObject* self, PyObject* args)
 {
   int value;
-  bpContext* bareos_plugin_ctx = GetPluginContextFromPythonModule();
+  bplugin_private_context* bareos_plugin_ctx =
+      GetPluginContextFromPythonModule();
   PyObject* pRetVal = NULL;
 
   if (!PyArg_ParseTuple(args, ":BareosGetInstanceCount")) { return NULL; }
@@ -1905,7 +1939,8 @@ static PyObject* PyBareosAddExclude(PyObject* self, PyObject* args)
 {
   char* file = NULL;
   bRC retval = bRC_Error;
-  bpContext* bareos_plugin_ctx = GetPluginContextFromPythonModule();
+  bplugin_private_context* bareos_plugin_ctx =
+      GetPluginContextFromPythonModule();
 
   if (!PyArg_ParseTuple(args, "|z:BareosAddExclude", &file)) { goto bail_out; }
   RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
@@ -1926,7 +1961,8 @@ static PyObject* PyBareosAddInclude(PyObject* self, PyObject* args)
 {
   char* file = NULL;
   bRC retval = bRC_Error;
-  bpContext* bareos_plugin_ctx = GetPluginContextFromPythonModule();
+  bplugin_private_context* bareos_plugin_ctx =
+      GetPluginContextFromPythonModule();
 
   if (!PyArg_ParseTuple(args, "|z:BareosAddInclude", &file)) { goto bail_out; }
   RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
@@ -1947,7 +1983,8 @@ static PyObject* PyBareosAddOptions(PyObject* self, PyObject* args)
 {
   char* opts = NULL;
   bRC retval = bRC_Error;
-  bpContext* bareos_plugin_ctx = GetPluginContextFromPythonModule();
+  bplugin_private_context* bareos_plugin_ctx =
+      GetPluginContextFromPythonModule();
 
   if (!PyArg_ParseTuple(args, "|z:BareosAddOptions", &opts)) { goto bail_out; }
   RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
@@ -1969,7 +2006,8 @@ static PyObject* PyBareosAddRegex(PyObject* self, PyObject* args)
   int type;
   char* item = NULL;
   bRC retval = bRC_Error;
-  bpContext* bareos_plugin_ctx = GetPluginContextFromPythonModule();
+  bplugin_private_context* bareos_plugin_ctx =
+      GetPluginContextFromPythonModule();
   if (!PyArg_ParseTuple(args, "|zi:BareosAddRegex", &item, &type)) {
     goto bail_out;
   }
@@ -1992,7 +2030,8 @@ static PyObject* PyBareosAddWild(PyObject* self, PyObject* args)
   int type;
   char* item = NULL;
   bRC retval = bRC_Error;
-  bpContext* bareos_plugin_ctx = GetPluginContextFromPythonModule();
+  bplugin_private_context* bareos_plugin_ctx =
+      GetPluginContextFromPythonModule();
 
   if (!PyArg_ParseTuple(args, "|zi:BareosAddWild", &item, &type)) {
     goto bail_out;
@@ -2013,7 +2052,8 @@ bail_out:
  */
 static PyObject* PyBareosNewOptions(PyObject* self, PyObject* args)
 {
-  bpContext* bareos_plugin_ctx = GetPluginContextFromPythonModule();
+  bplugin_private_context* bareos_plugin_ctx =
+      GetPluginContextFromPythonModule();
   bRC retval = bRC_Error;
 
   if (!PyArg_ParseTuple(args, ":BareosNewOptions")) { goto bail_out; }
@@ -2031,7 +2071,8 @@ bail_out:
  */
 static PyObject* PyBareosNewInclude(PyObject* self, PyObject* args)
 {
-  bpContext* bareos_plugin_ctx = GetPluginContextFromPythonModule();
+  bplugin_private_context* bareos_plugin_ctx =
+      GetPluginContextFromPythonModule();
   bRC retval = bRC_Error;
 
   if (!PyArg_ParseTuple(args, ":BareosNewInclude")) { goto bail_out; }
@@ -2049,7 +2090,8 @@ bail_out:
  */
 static PyObject* PyBareosNewPreInclude(PyObject* self, PyObject* args)
 {
-  bpContext* bareos_plugin_ctx = GetPluginContextFromPythonModule();
+  bplugin_private_context* bareos_plugin_ctx =
+      GetPluginContextFromPythonModule();
   bRC retval = bRC_Error;
 
   if (!PyArg_ParseTuple(args, ":BareosNewPreInclude")) { goto bail_out; }
@@ -2068,7 +2110,8 @@ bail_out:
  */
 static PyObject* PyBareosCheckChanges(PyObject* self, PyObject* args)
 {
-  bpContext* bareos_plugin_ctx = GetPluginContextFromPythonModule();
+  bplugin_private_context* bareos_plugin_ctx =
+      GetPluginContextFromPythonModule();
 
   struct save_pkt sp;
   bRC retval = bRC_Error;
@@ -2122,7 +2165,8 @@ bail_out:
  */
 static PyObject* PyBareosAcceptFile(PyObject* self, PyObject* args)
 {
-  bpContext* bareos_plugin_ctx = GetPluginContextFromPythonModule();
+  bplugin_private_context* bareos_plugin_ctx =
+      GetPluginContextFromPythonModule();
   struct save_pkt sp;
   bRC retval = bRC_Error;
   PySavePacket* pSavePkt;
@@ -2165,7 +2209,8 @@ bail_out:
 static PyObject* PyBareosSetSeenBitmap(PyObject* self, PyObject* args)
 {
   bool all;
-  bpContext* bareos_plugin_ctx = GetPluginContextFromPythonModule();
+  bplugin_private_context* bareos_plugin_ctx =
+      GetPluginContextFromPythonModule();
   char* fname = NULL;
   bRC retval = bRC_Error;
   PyObject* pyBool;
@@ -2190,7 +2235,8 @@ bail_out:
 static PyObject* PyBareosClearSeenBitmap(PyObject* self, PyObject* args)
 {
   bool all;
-  bpContext* bareos_plugin_ctx = GetPluginContextFromPythonModule();
+  bplugin_private_context* bareos_plugin_ctx =
+      GetPluginContextFromPythonModule();
   char* fname = NULL;
   bRC retval = bRC_Error;
   PyObject* pyBool;

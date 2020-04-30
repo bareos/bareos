@@ -44,23 +44,30 @@ static const int debuglevel = 000;
 #define PLUGIN_DESCRIPTION "Bareos Test File Daemon Plugin"
 
 /* Forward referenced functions */
-static bRC newPlugin(bpContext* ctx);
-static bRC freePlugin(bpContext* ctx);
-static bRC getPluginValue(bpContext* ctx, pVariable var, void* value);
-static bRC setPluginValue(bpContext* ctx, pVariable var, void* value);
-static bRC handlePluginEvent(bpContext* ctx, bEvent* event, void* value);
-static bRC startBackupFile(bpContext* ctx, struct save_pkt* sp);
-static bRC endBackupFile(bpContext* ctx);
-static bRC pluginIO(bpContext* ctx, struct io_pkt* io);
-static bRC startRestoreFile(bpContext* ctx, const char* cmd);
-static bRC endRestoreFile(bpContext* ctx);
-static bRC createFile(bpContext* ctx, struct restore_pkt* rp);
-static bRC setFileAttributes(bpContext* ctx, struct restore_pkt* rp);
-static bRC checkFile(bpContext* ctx, char* fname);
-static bRC getAcl(bpContext* ctx, acl_pkt* ap);
-static bRC setAcl(bpContext* ctx, acl_pkt* ap);
-static bRC getXattr(bpContext* ctx, xattr_pkt* xp);
-static bRC setXattr(bpContext* ctx, xattr_pkt* xp);
+static bRC newPlugin(bplugin_private_context* ctx);
+static bRC freePlugin(bplugin_private_context* ctx);
+static bRC getPluginValue(bplugin_private_context* ctx,
+                          pVariable var,
+                          void* value);
+static bRC setPluginValue(bplugin_private_context* ctx,
+                          pVariable var,
+                          void* value);
+static bRC handlePluginEvent(bplugin_private_context* ctx,
+                             bEvent* event,
+                             void* value);
+static bRC startBackupFile(bplugin_private_context* ctx, struct save_pkt* sp);
+static bRC endBackupFile(bplugin_private_context* ctx);
+static bRC pluginIO(bplugin_private_context* ctx, struct io_pkt* io);
+static bRC startRestoreFile(bplugin_private_context* ctx, const char* cmd);
+static bRC endRestoreFile(bplugin_private_context* ctx);
+static bRC createFile(bplugin_private_context* ctx, struct restore_pkt* rp);
+static bRC setFileAttributes(bplugin_private_context* ctx,
+                             struct restore_pkt* rp);
+static bRC checkFile(bplugin_private_context* ctx, char* fname);
+static bRC getAcl(bplugin_private_context* ctx, acl_pkt* ap);
+static bRC setAcl(bplugin_private_context* ctx, acl_pkt* ap);
+static bRC getXattr(bplugin_private_context* ctx, xattr_pkt* xp);
+static bRC setXattr(bplugin_private_context* ctx, xattr_pkt* xp);
 
 /* Pointers to Bareos functions */
 static BareosCoreFunctions* bareos_core_functions = NULL;
@@ -154,13 +161,13 @@ bRC unloadPlugin() { return bRC_OK; }
 /**
  * Create a new instance of the plugin i.e. allocate our private storage
  */
-static bRC newPlugin(bpContext* ctx)
+static bRC newPlugin(bplugin_private_context* ctx)
 {
   struct plugin_ctx* p_ctx =
       (struct plugin_ctx*)malloc(sizeof(struct plugin_ctx));
   if (!p_ctx) { return bRC_Error; }
   p_ctx = (plugin_ctx*)memset(p_ctx, 0, sizeof(struct plugin_ctx));
-  ctx->pContext = (void*)p_ctx; /* set our context pointer */
+  ctx->plugin_private_context = (void*)p_ctx; /* set our context pointer */
 
   bareos_core_functions->registerBareosEvents(
       ctx, 5, bEventJobStart, bEventEndFileSet, bEventRestoreObject,
@@ -172,21 +179,23 @@ static bRC newPlugin(bpContext* ctx)
 /**
  * Free a plugin instance, i.e. release our private storage
  */
-static bRC freePlugin(bpContext* ctx)
+static bRC freePlugin(bplugin_private_context* ctx)
 {
-  struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->pContext;
+  struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->plugin_private_context;
   if (!p_ctx) { return bRC_Error; }
   if (p_ctx->buf) { FreePoolMemory(p_ctx->buf); }
   if (p_ctx->cmd) { free(p_ctx->cmd); /* free any allocated command string */ }
   free(p_ctx); /* free our private context */
-  ctx->pContext = NULL;
+  ctx->plugin_private_context = NULL;
   return bRC_OK;
 }
 
 /**
  * Return some plugin value (none defined)
  */
-static bRC getPluginValue(bpContext* ctx, pVariable var, void* value)
+static bRC getPluginValue(bplugin_private_context* ctx,
+                          pVariable var,
+                          void* value)
 {
   return bRC_OK;
 }
@@ -194,7 +203,9 @@ static bRC getPluginValue(bpContext* ctx, pVariable var, void* value)
 /**
  * Set a plugin value (none defined)
  */
-static bRC setPluginValue(bpContext* ctx, pVariable var, void* value)
+static bRC setPluginValue(bplugin_private_context* ctx,
+                          pVariable var,
+                          void* value)
 {
   return bRC_OK;
 }
@@ -202,9 +213,11 @@ static bRC setPluginValue(bpContext* ctx, pVariable var, void* value)
 /**
  * Handle an event that was generated in Bareos
  */
-static bRC handlePluginEvent(bpContext* ctx, bEvent* event, void* value)
+static bRC handlePluginEvent(bplugin_private_context* ctx,
+                             bEvent* event,
+                             void* value)
 {
-  struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->pContext;
+  struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->plugin_private_context;
   restore_object_pkt* rop;
   if (!p_ctx) { return bRC_Error; }
 
@@ -320,9 +333,9 @@ static bRC handlePluginEvent(bpContext* ctx, bEvent* event, void* value)
 /**
  * Start the backup of a specific file
  */
-static bRC startBackupFile(bpContext* ctx, struct save_pkt* sp)
+static bRC startBackupFile(bplugin_private_context* ctx, struct save_pkt* sp)
 {
-  struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->pContext;
+  struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->plugin_private_context;
   if (!p_ctx) { return bRC_Error; }
 
   if (p_ctx->nb_obj == 0) {
@@ -581,18 +594,24 @@ static bRC startBackupFile(bpContext* ctx, struct save_pkt* sp)
   return bRC_OK;
 }
 
-static bRC getAcl(bpContext* ctx, acl_pkt* ap) { return bRC_OK; }
+static bRC getAcl(bplugin_private_context* ctx, acl_pkt* ap) { return bRC_OK; }
 
-static bRC setAcl(bpContext* ctx, acl_pkt* ap) { return bRC_OK; }
+static bRC setAcl(bplugin_private_context* ctx, acl_pkt* ap) { return bRC_OK; }
 
-static bRC getXattr(bpContext* ctx, xattr_pkt* xp) { return bRC_OK; }
+static bRC getXattr(bplugin_private_context* ctx, xattr_pkt* xp)
+{
+  return bRC_OK;
+}
 
-static bRC setXattr(bpContext* ctx, xattr_pkt* xp) { return bRC_OK; }
+static bRC setXattr(bplugin_private_context* ctx, xattr_pkt* xp)
+{
+  return bRC_OK;
+}
 
 /**
  * Done with backup of this file
  */
-static bRC endBackupFile(bpContext* ctx)
+static bRC endBackupFile(bplugin_private_context* ctx)
 {
   /*
    * We would return bRC_More if we wanted startBackupFile to be
@@ -605,9 +624,9 @@ static bRC endBackupFile(bpContext* ctx)
 /**
  * Bareos is calling us to do the actual I/O
  */
-static bRC pluginIO(bpContext* ctx, struct io_pkt* io)
+static bRC pluginIO(bplugin_private_context* ctx, struct io_pkt* io)
 {
-  struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->pContext;
+  struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->plugin_private_context;
   if (!p_ctx) { return bRC_Error; }
 
   io->status = 0;
@@ -619,7 +638,7 @@ static bRC pluginIO(bpContext* ctx, struct io_pkt* io)
  * Bareos is notifying us that a plugin name string was found, and
  *   passing us the plugin command, so we can prepare for a restore.
  */
-static bRC startRestoreFile(bpContext* ctx, const char* cmd)
+static bRC startRestoreFile(bplugin_private_context* ctx, const char* cmd)
 {
   printf("test-plugin-fd: startRestoreFile cmd=%s\n", cmd);
   return bRC_OK;
@@ -629,7 +648,7 @@ static bRC startRestoreFile(bpContext* ctx, const char* cmd)
  * Bareos is notifying us that the plugin data has terminated, so
  *  the restore for this particular file is done.
  */
-static bRC endRestoreFile(bpContext* ctx)
+static bRC endRestoreFile(bplugin_private_context* ctx)
 {
   printf("test-plugin-fd: endRestoreFile\n");
   return bRC_OK;
@@ -645,24 +664,29 @@ static bRC endRestoreFile(bpContext* ctx)
  *  CF_CREATED  -- created, but no content to extract (typically directories)
  *
  */
-static bRC createFile(bpContext* ctx, struct restore_pkt* rp)
+static bRC createFile(bplugin_private_context* ctx, struct restore_pkt* rp)
 {
   printf("test-plugin-fd: createFile\n");
   if (strlen(rp->where) > 512) {
     printf("Restore target dir too long. Restricting to first 512 bytes.\n");
   }
-  bstrncpy(((struct plugin_ctx*)ctx->pContext)->where, rp->where, 513);
-  ((struct plugin_ctx*)ctx->pContext)->replace = rp->replace;
+  bstrncpy(((struct plugin_ctx*)ctx->plugin_private_context)->where, rp->where,
+           513);
+  ((struct plugin_ctx*)ctx->plugin_private_context)->replace = rp->replace;
   rp->create_status = CF_EXTRACT;
   return bRC_OK;
 }
 
-static bRC setFileAttributes(bpContext* ctx, struct restore_pkt* rp)
+static bRC setFileAttributes(bplugin_private_context* ctx,
+                             struct restore_pkt* rp)
 {
   printf("test-plugin-fd: setFileAttributes\n");
   return bRC_OK;
 }
 
 /* When using Incremental dump, all previous dumps are necessary */
-static bRC checkFile(bpContext* ctx, char* fname) { return bRC_OK; }
+static bRC checkFile(bplugin_private_context* ctx, char* fname)
+{
+  return bRC_OK;
+}
 } /* namespace filedaemon */

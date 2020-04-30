@@ -79,11 +79,11 @@ class Plugin {
 /**
  * Context packet as first argument of all functions
  */
-struct bpContext {
+struct bplugin_private_context {
   uint32_t instance;
   Plugin* plugin;
-  void* bContext; /* BAREOS private context */
-  void* pContext; /* Plugin private context */
+  void* core_private_context;   /* BAREOS private context */
+  void* plugin_private_context; /* Plugin private context */
 };
 
 typedef struct gen_pluginInfo {

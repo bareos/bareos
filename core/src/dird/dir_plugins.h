@@ -141,19 +141,25 @@ extern "C" {
 typedef struct s_dirbareosFuncs {
   uint32_t size;
   uint32_t version;
-  bRC (*registerBareosEvents)(bpContext* ctx, int nr_events, ...);
-  bRC (*unregisterBareosEvents)(bpContext* ctx, int nr_events, ...);
-  bRC (*getInstanceCount)(bpContext* ctx, int* ret);
-  bRC (*getBareosValue)(bpContext* ctx, brDirVariable var, void* value);
-  bRC (*setBareosValue)(bpContext* ctx, bwDirVariable var, void* value);
-  bRC (*JobMessage)(bpContext* ctx,
+  bRC (*registerBareosEvents)(bplugin_private_context* ctx, int nr_events, ...);
+  bRC (*unregisterBareosEvents)(bplugin_private_context* ctx,
+                                int nr_events,
+                                ...);
+  bRC (*getInstanceCount)(bplugin_private_context* ctx, int* ret);
+  bRC (*getBareosValue)(bplugin_private_context* ctx,
+                        brDirVariable var,
+                        void* value);
+  bRC (*setBareosValue)(bplugin_private_context* ctx,
+                        bwDirVariable var,
+                        void* value);
+  bRC (*JobMessage)(bplugin_private_context* ctx,
                     const char* file,
                     int line,
                     int type,
                     utime_t mtime,
                     const char* fmt,
                     ...);
-  bRC (*DebugMessage)(bpContext* ctx,
+  bRC (*DebugMessage)(bplugin_private_context* ctx,
                       const char* file,
                       int line,
                       int level,
@@ -192,11 +198,17 @@ typedef enum
 typedef struct s_dirpluginFuncs {
   uint32_t size;
   uint32_t version;
-  bRC (*newPlugin)(bpContext* ctx);
-  bRC (*freePlugin)(bpContext* ctx);
-  bRC (*getPluginValue)(bpContext* ctx, pVariable var, void* value);
-  bRC (*setPluginValue)(bpContext* ctx, pVariable var, void* value);
-  bRC (*handlePluginEvent)(bpContext* ctx, bDirEvent* event, void* value);
+  bRC (*newPlugin)(bplugin_private_context* ctx);
+  bRC (*freePlugin)(bplugin_private_context* ctx);
+  bRC (*getPluginValue)(bplugin_private_context* ctx,
+                        pVariable var,
+                        void* value);
+  bRC (*setPluginValue)(bplugin_private_context* ctx,
+                        pVariable var,
+                        void* value);
+  bRC (*handlePluginEvent)(bplugin_private_context* ctx,
+                           bDirEvent* event,
+                           void* value);
 } pDirFuncs;
 
 #define DirplugFunc(plugin) ((pDirFuncs*)(plugin->plugin_functions))

@@ -69,21 +69,31 @@ static void PyErrorHandler()
 }
 
 // using namespace filedaemon;
-bRC bareosRegisterEvents(bpContext* ctx, int nr_events, ...) { return bRC_OK; };
-bRC bareosUnRegisterEvents(bpContext* ctx, int nr_events, ...)
+bRC bareosRegisterEvents(bplugin_private_context* ctx, int nr_events, ...)
 {
   return bRC_OK;
 };
-bRC bareosGetInstanceCount(bpContext* ctx, int* ret) { return bRC_OK; };
-bRC bareosGetValue(bpContext* ctx, filedaemon::bVariable var, void* value)
+bRC bareosUnRegisterEvents(bplugin_private_context* ctx, int nr_events, ...)
 {
   return bRC_OK;
 };
-bRC bareosSetValue(bpContext* ctx, filedaemon::bVariable var, void* value)
+bRC bareosGetInstanceCount(bplugin_private_context* ctx, int* ret)
 {
   return bRC_OK;
 };
-bRC bareosJobMsg(bpContext* ctx,
+bRC bareosGetValue(bplugin_private_context* ctx,
+                   filedaemon::bVariable var,
+                   void* value)
+{
+  return bRC_OK;
+};
+bRC bareosSetValue(bplugin_private_context* ctx,
+                   filedaemon::bVariable var,
+                   void* value)
+{
+  return bRC_OK;
+};
+bRC bareosJobMsg(bplugin_private_context* ctx,
                  const char* file,
                  int line,
                  int type,
@@ -95,7 +105,7 @@ bRC bareosJobMsg(bpContext* ctx,
          type, (int64_t)mtime, fmt);
   return bRC_OK;
 };
-bRC bareosDebugMsg(bpContext* ctx,
+bRC bareosDebugMsg(bplugin_private_context* ctx,
                    const char* file,
                    int line,
                    int level,
@@ -106,41 +116,58 @@ bRC bareosDebugMsg(bpContext* ctx,
          fmt);
   return bRC_OK;
 };
-void* bareosMalloc(bpContext* ctx, const char* file, int line, size_t size)
+void* bareosMalloc(bplugin_private_context* ctx,
+                   const char* file,
+                   int line,
+                   size_t size)
 {
   return NULL;
 };
-void bareosFree(bpContext* ctx, const char* file, int line, void* mem)
+void bareosFree(bplugin_private_context* ctx,
+                const char* file,
+                int line,
+                void* mem)
 {
   return;
 };
-bRC bareosAddExclude(bpContext* ctx, const char* file) { return bRC_OK; };
-bRC bareosAddInclude(bpContext* ctx, const char* file) { return bRC_OK; };
-bRC bareosAddOptions(bpContext* ctx, const char* opts) { return bRC_OK; };
-bRC bareosAddRegex(bpContext* ctx, const char* item, int type)
+bRC bareosAddExclude(bplugin_private_context* ctx, const char* file)
 {
   return bRC_OK;
 };
-bRC bareosAddWild(bpContext* ctx, const char* item, int type)
+bRC bareosAddInclude(bplugin_private_context* ctx, const char* file)
 {
   return bRC_OK;
 };
-bRC bareosNewOptions(bpContext* ctx) { return bRC_OK; };
-bRC bareosNewInclude(bpContext* ctx) { return bRC_OK; };
-bRC bareosNewPreInclude(bpContext* ctx) { return bRC_OK; };
-bRC bareosCheckChanges(bpContext* ctx, struct filedaemon::save_pkt* sp)
+bRC bareosAddOptions(bplugin_private_context* ctx, const char* opts)
 {
   return bRC_OK;
 };
-bRC bareosAcceptFile(bpContext* ctx, struct filedaemon::save_pkt* sp)
+bRC bareosAddRegex(bplugin_private_context* ctx, const char* item, int type)
+{
+  return bRC_OK;
+};
+bRC bareosAddWild(bplugin_private_context* ctx, const char* item, int type)
+{
+  return bRC_OK;
+};
+bRC bareosNewOptions(bplugin_private_context* ctx) { return bRC_OK; };
+bRC bareosNewInclude(bplugin_private_context* ctx) { return bRC_OK; };
+bRC bareosNewPreInclude(bplugin_private_context* ctx) { return bRC_OK; };
+bRC bareosCheckChanges(bplugin_private_context* ctx,
+                       struct filedaemon::save_pkt* sp)
+{
+  return bRC_OK;
+};
+bRC bareosAcceptFile(bplugin_private_context* ctx,
+                     struct filedaemon::save_pkt* sp)
 {
   return bRC_OK;
 }; /* Need fname and statp */
-bRC bareosSetSeenBitmap(bpContext* ctx, bool all, char* fname)
+bRC bareosSetSeenBitmap(bplugin_private_context* ctx, bool all, char* fname)
 {
   return bRC_OK;
 };
-bRC bareosClearSeenBitmap(bpContext* ctx, bool all, char* fname)
+bRC bareosClearSeenBitmap(bplugin_private_context* ctx, bool all, char* fname)
 {
   return bRC_OK;
 };
@@ -192,9 +219,10 @@ int main(int argc, char* argv[])
   /* printf("bareos_plugin_context %p\n", &bareos_plugin_context); */
 
   // Extract capsules pointer from bareosfd module
-  void* ctx_from_bareosfd_module = PyCapsule_Import("bareosfd.bpContext", 0);
+  void* ctx_from_bareosfd_module =
+      PyCapsule_Import("bareosfd.bplugin_private_context", 0);
   if (!ctx_from_bareosfd_module) {
-    printf("importing bareosfd.bpContext failed \n");
+    printf("importing bareosfd.bplugin_private_context failed \n");
   }
 
   // Extract capsules pointer from bareosfd module

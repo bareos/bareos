@@ -80,11 +80,17 @@ using namespace storagedaemon;
 /**
  * Forward referenced functions
  */
-static bRC newPlugin(bpContext* ctx);
-static bRC freePlugin(bpContext* ctx);
-static bRC getPluginValue(bpContext* ctx, pVariable var, void* value);
-static bRC setPluginValue(bpContext* ctx, pVariable var, void* value);
-static bRC handlePluginEvent(bpContext* ctx, bsdEvent* event, void* value);
+static bRC newPlugin(bplugin_private_context* ctx);
+static bRC freePlugin(bplugin_private_context* ctx);
+static bRC getPluginValue(bplugin_private_context* ctx,
+                          pVariable var,
+                          void* value);
+static bRC setPluginValue(bplugin_private_context* ctx,
+                          pVariable var,
+                          void* value);
+static bRC handlePluginEvent(bplugin_private_context* ctx,
+                             bsdEvent* event,
+                             void* value);
 static bRC do_set_scsi_encryption_key(void* value);
 static bRC do_clear_scsi_encryption_key(void* value);
 static bRC handle_read_error(void* value);
@@ -159,7 +165,7 @@ bRC unloadPlugin() { return bRC_OK; }
  *
  * Create a new instance of the plugin i.e. allocate our private storage
  */
-static bRC newPlugin(bpContext* ctx)
+static bRC newPlugin(bplugin_private_context* ctx)
 {
   int JobId = 0;
 
@@ -204,7 +210,7 @@ static bRC newPlugin(bpContext* ctx)
 /**
  * Free a plugin instance, i.e. release our private storage
  */
-static bRC freePlugin(bpContext* ctx)
+static bRC freePlugin(bplugin_private_context* ctx)
 {
   int JobId = 0;
 
@@ -217,7 +223,9 @@ static bRC freePlugin(bpContext* ctx)
 /**
  * Return some plugin value (none defined)
  */
-static bRC getPluginValue(bpContext* ctx, pVariable var, void* value)
+static bRC getPluginValue(bplugin_private_context* ctx,
+                          pVariable var,
+                          void* value)
 {
   Dmsg1(debuglevel, "scsicrypto-sd: getPluginValue var=%d\n", var);
 
@@ -227,7 +235,9 @@ static bRC getPluginValue(bpContext* ctx, pVariable var, void* value)
 /**
  * Set a plugin value (none defined)
  */
-static bRC setPluginValue(bpContext* ctx, pVariable var, void* value)
+static bRC setPluginValue(bplugin_private_context* ctx,
+                          pVariable var,
+                          void* value)
 {
   Dmsg1(debuglevel, "scsicrypto-sd: setPluginValue var=%d\n", var);
 
@@ -237,7 +247,9 @@ static bRC setPluginValue(bpContext* ctx, pVariable var, void* value)
 /**
  * Handle an event that was generated in Bareos
  */
-static bRC handlePluginEvent(bpContext* ctx, bsdEvent* event, void* value)
+static bRC handlePluginEvent(bplugin_private_context* ctx,
+                             bsdEvent* event,
+                             void* value)
 {
   switch (event->eventType) {
     case bsdEventLabelRead:

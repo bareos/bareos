@@ -319,42 +319,51 @@ extern "C" {
 typedef struct s_bareosFuncs {
   uint32_t size;
   uint32_t version;
-  bRC (*registerBareosEvents)(bpContext* ctx, int nr_events, ...);
-  bRC (*unregisterBareosEvents)(bpContext* ctx, int nr_events, ...);
-  bRC (*getInstanceCount)(bpContext* ctx, int* ret);
-  bRC (*getBareosValue)(bpContext* ctx, bVariable var, void* value);
-  bRC (*setBareosValue)(bpContext* ctx, bVariable var, void* value);
-  bRC (*JobMessage)(bpContext* ctx,
+  bRC (*registerBareosEvents)(bplugin_private_context* ctx, int nr_events, ...);
+  bRC (*unregisterBareosEvents)(bplugin_private_context* ctx,
+                                int nr_events,
+                                ...);
+  bRC (*getInstanceCount)(bplugin_private_context* ctx, int* ret);
+  bRC (*getBareosValue)(bplugin_private_context* ctx,
+                        bVariable var,
+                        void* value);
+  bRC (*setBareosValue)(bplugin_private_context* ctx,
+                        bVariable var,
+                        void* value);
+  bRC (*JobMessage)(bplugin_private_context* ctx,
                     const char* file,
                     int line,
                     int type,
                     utime_t mtime,
                     const char* fmt,
                     ...);
-  bRC (*DebugMessage)(bpContext* ctx,
+  bRC (*DebugMessage)(bplugin_private_context* ctx,
                       const char* file,
                       int line,
                       int level,
                       const char* fmt,
                       ...);
-  void* (*bareosMalloc)(bpContext* ctx,
+  void* (*bareosMalloc)(bplugin_private_context* ctx,
                         const char* file,
                         int line,
                         size_t size);
-  void (*bareosFree)(bpContext* ctx, const char* file, int line, void* mem);
-  bRC (*AddExclude)(bpContext* ctx, const char* file);
-  bRC (*AddInclude)(bpContext* ctx, const char* file);
-  bRC (*AddOptions)(bpContext* ctx, const char* opts);
-  bRC (*AddRegex)(bpContext* ctx, const char* item, int type);
-  bRC (*AddWild)(bpContext* ctx, const char* item, int type);
-  bRC (*NewOptions)(bpContext* ctx);
-  bRC (*NewInclude)(bpContext* ctx);
-  bRC (*NewPreInclude)(bpContext* ctx);
-  bRC (*checkChanges)(bpContext* ctx, struct save_pkt* sp);
-  bRC (*AcceptFile)(bpContext* ctx,
+  void (*bareosFree)(bplugin_private_context* ctx,
+                     const char* file,
+                     int line,
+                     void* mem);
+  bRC (*AddExclude)(bplugin_private_context* ctx, const char* file);
+  bRC (*AddInclude)(bplugin_private_context* ctx, const char* file);
+  bRC (*AddOptions)(bplugin_private_context* ctx, const char* opts);
+  bRC (*AddRegex)(bplugin_private_context* ctx, const char* item, int type);
+  bRC (*AddWild)(bplugin_private_context* ctx, const char* item, int type);
+  bRC (*NewOptions)(bplugin_private_context* ctx);
+  bRC (*NewInclude)(bplugin_private_context* ctx);
+  bRC (*NewPreInclude)(bplugin_private_context* ctx);
+  bRC (*checkChanges)(bplugin_private_context* ctx, struct save_pkt* sp);
+  bRC (*AcceptFile)(bplugin_private_context* ctx,
                     struct save_pkt* sp); /* Need fname and statp */
-  bRC (*SetSeenBitmap)(bpContext* ctx, bool all, char* fname);
-  bRC (*ClearSeenBitmap)(bpContext* ctx, bool all, char* fname);
+  bRC (*SetSeenBitmap)(bplugin_private_context* ctx, bool all, char* fname);
+  bRC (*ClearSeenBitmap)(bplugin_private_context* ctx, bool all, char* fname);
 } BareosCoreFunctions;
 
 /****************************************************************************
@@ -378,23 +387,30 @@ typedef enum
 typedef struct s_pluginFuncs {
   uint32_t size;
   uint32_t version;
-  bRC (*newPlugin)(bpContext* ctx);
-  bRC (*freePlugin)(bpContext* ctx);
-  bRC (*getPluginValue)(bpContext* ctx, pVariable var, void* value);
-  bRC (*setPluginValue)(bpContext* ctx, pVariable var, void* value);
-  bRC (*handlePluginEvent)(bpContext* ctx, bEvent* event, void* value);
-  bRC (*startBackupFile)(bpContext* ctx, struct save_pkt* sp);
-  bRC (*endBackupFile)(bpContext* ctx);
-  bRC (*startRestoreFile)(bpContext* ctx, const char* cmd);
-  bRC (*endRestoreFile)(bpContext* ctx);
-  bRC (*pluginIO)(bpContext* ctx, struct io_pkt* io);
-  bRC (*createFile)(bpContext* ctx, struct restore_pkt* rp);
-  bRC (*setFileAttributes)(bpContext* ctx, struct restore_pkt* rp);
-  bRC (*checkFile)(bpContext* ctx, char* fname);
-  bRC (*getAcl)(bpContext* ctx, struct acl_pkt* ap);
-  bRC (*setAcl)(bpContext* ctx, struct acl_pkt* ap);
-  bRC (*getXattr)(bpContext* ctx, struct xattr_pkt* xp);
-  bRC (*setXattr)(bpContext* ctx, struct xattr_pkt* xp);
+  bRC (*newPlugin)(bplugin_private_context* ctx);
+  bRC (*freePlugin)(bplugin_private_context* ctx);
+  bRC (*getPluginValue)(bplugin_private_context* ctx,
+                        pVariable var,
+                        void* value);
+  bRC (*setPluginValue)(bplugin_private_context* ctx,
+                        pVariable var,
+                        void* value);
+  bRC (*handlePluginEvent)(bplugin_private_context* ctx,
+                           bEvent* event,
+                           void* value);
+  bRC (*startBackupFile)(bplugin_private_context* ctx, struct save_pkt* sp);
+  bRC (*endBackupFile)(bplugin_private_context* ctx);
+  bRC (*startRestoreFile)(bplugin_private_context* ctx, const char* cmd);
+  bRC (*endRestoreFile)(bplugin_private_context* ctx);
+  bRC (*pluginIO)(bplugin_private_context* ctx, struct io_pkt* io);
+  bRC (*createFile)(bplugin_private_context* ctx, struct restore_pkt* rp);
+  bRC (*setFileAttributes)(bplugin_private_context* ctx,
+                           struct restore_pkt* rp);
+  bRC (*checkFile)(bplugin_private_context* ctx, char* fname);
+  bRC (*getAcl)(bplugin_private_context* ctx, struct acl_pkt* ap);
+  bRC (*setAcl)(bplugin_private_context* ctx, struct acl_pkt* ap);
+  bRC (*getXattr)(bplugin_private_context* ctx, struct xattr_pkt* xp);
+  bRC (*setXattr)(bplugin_private_context* ctx, struct xattr_pkt* xp);
 } pFuncs;
 
 #define PlugFunc(plugin) ((pFuncs*)(plugin->plugin_functions))
