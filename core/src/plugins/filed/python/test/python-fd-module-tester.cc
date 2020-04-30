@@ -147,29 +147,30 @@ bRC bareosClearSeenBitmap(bpContext* ctx, bool all, char* fname)
 
 
 /* Bareos entry points */
-static filedaemon::bFuncs bfuncs = {sizeof(filedaemon::bFuncs),
-                                    FD_PLUGIN_INTERFACE_VERSION,
-                                    bareosRegisterEvents,
-                                    bareosUnRegisterEvents,
-                                    bareosGetInstanceCount,
-                                    bareosGetValue,
-                                    bareosSetValue,
-                                    bareosJobMsg,
-                                    bareosDebugMsg,
-                                    bareosMalloc,
-                                    bareosFree,
-                                    bareosAddExclude,
-                                    bareosAddInclude,
-                                    bareosAddOptions,
-                                    bareosAddRegex,
-                                    bareosAddWild,
-                                    bareosNewOptions,
-                                    bareosNewInclude,
-                                    bareosNewPreInclude,
-                                    bareosCheckChanges,
-                                    bareosAcceptFile,
-                                    bareosSetSeenBitmap,
-                                    bareosClearSeenBitmap};
+static filedaemon::BareosCoreFunctions bfuncs = {
+    sizeof(filedaemon::BareosCoreFunctions),
+    FD_PLUGIN_INTERFACE_VERSION,
+    bareosRegisterEvents,
+    bareosUnRegisterEvents,
+    bareosGetInstanceCount,
+    bareosGetValue,
+    bareosSetValue,
+    bareosJobMsg,
+    bareosDebugMsg,
+    bareosMalloc,
+    bareosFree,
+    bareosAddExclude,
+    bareosAddInclude,
+    bareosAddOptions,
+    bareosAddRegex,
+    bareosAddWild,
+    bareosNewOptions,
+    bareosNewInclude,
+    bareosNewPreInclude,
+    bareosCheckChanges,
+    bareosAcceptFile,
+    bareosSetSeenBitmap,
+    bareosClearSeenBitmap};
 
 static void* bareos_plugin_context = NULL;
 
@@ -196,18 +197,19 @@ int main(int argc, char* argv[])
   }
 
   // Extract capsules pointer from bareosfd module
-  void* bfuncs_from_bareosfd_module = PyCapsule_Import("bareosfd.bFuncs", 0);
+  void* bfuncs_from_bareosfd_module =
+      PyCapsule_Import("bareosfd.BareosCoreFunctions", 0);
   if (!bfuncs_from_bareosfd_module) {
-    printf("importing bareosfd.bFuncs failed \n");
+    printf("importing bareosfd.BareosCoreFunctions failed \n");
   }
 
   // Extract capsules pointer from bareosfd module
   void (*loadplugin_from_bareosfd_module)(
       filedaemon::Core_PluginApiDefinition * lbinfo,
-      filedaemon::bFuncs * lbfuncs, genpInfo * *pinfo,
+      filedaemon::BareosCoreFunctions * lbfuncs, genpInfo * *pinfo,
       filedaemon::pFuncs * *pfuncs) =
-      (void (*)(filedaemon::Core_PluginApiDefinition*, filedaemon::bFuncs*,
-                genpInfo**,
+      (void (*)(filedaemon::Core_PluginApiDefinition*,
+                filedaemon::BareosCoreFunctions*, genpInfo**,
                 filedaemon::pFuncs**))PyCapsule_Import("bareosfd.loadPlugin",
                                                        0);
 

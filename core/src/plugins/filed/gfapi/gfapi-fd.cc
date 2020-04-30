@@ -91,7 +91,7 @@ static bRC setup_restore(bpContext* ctx, void* value);
 /**
  * Pointers to Bareos functions
  */
-static bFuncs* bfuncs = NULL;
+static BareosCoreFunctions* bfuncs = NULL;
 static Core_PluginApiDefinition* binfo = NULL;
 
 /**
@@ -314,7 +314,7 @@ extern "C" {
  * External entry point called by Bareos to "load" the plugin
  */
 bRC loadPlugin(Core_PluginApiDefinition* lbinfo,
-               bFuncs* lbfuncs,
+               BareosCoreFunctions* lbfuncs,
                genpInfo** pinfo,
                pFuncs** pfuncs)
 {

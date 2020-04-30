@@ -46,7 +46,7 @@ static bRC setXattr(bpContext* ctx, xattr_pkt* xp);
 
 
 /* Pointers to Bareos functions */
-static bFuncs* bfuncs = NULL;
+static BareosCoreFunctions* bfuncs = NULL;
 static Core_PluginApiDefinition* binfo = NULL;
 
 static genpInfo pluginInfo = {sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
@@ -72,7 +72,7 @@ extern "C" {
  * Plugin called here when it is first loaded
  */
 bRC loadPlugin(Core_PluginApiDefinition* lbinfo,
-               bFuncs* lbfuncs,
+               BareosCoreFunctions* lbfuncs,
                genpInfo** pinfo,
                pFuncs** pfuncs)
 {

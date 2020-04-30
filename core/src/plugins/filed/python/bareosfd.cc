@@ -121,7 +121,7 @@ static bRC PyHandleBackupFile(bpContext* bareos_plugin_ctx,
                               struct save_pkt* sp);
 
 /* Pointers to Bareos functions */
-static bFuncs* bfuncs = NULL;
+static BareosCoreFunctions* bfuncs = NULL;
 static Core_PluginApiDefinition* binfo = NULL;
 
 /* static genpInfo pluginInfo = {sizeof(pluginInfo),
@@ -157,7 +157,7 @@ struct plugin_private_context {
       interpreter;   /* Python interpreter for this instance of the plugin */
   PyObject* pModule; /* Python Module entry point */
   PyObject* pyModuleFunctionsDict; /* Python Dictionary */
-  bFuncs* bfuncs;                  /* pointer to bfuncs */
+  BareosCoreFunctions* bfuncs;     /* pointer to bfuncs */
 };
 
 /**
@@ -218,7 +218,7 @@ static void PyErrorHandler()
  * Plugin called here when it is first loaded
  */
 /* bRC loadPlugin(Core_PluginApiDefinition* lbinfo, */
-/*                bFuncs* lbfuncs, */
+/*                BareosCoreFunctions* lbfuncs, */
 /*                genpInfo** pinfo, */
 /*                pFuncs** pfuncs) */
 /* { */
@@ -249,11 +249,11 @@ static void PyErrorHandler()
 
 /*     // Extract capsules pointer from bareosfd module */
 /*     void (*loadplugin_from_bareosfd_module)( */
-/*         filedaemon::Core_PluginApiDefinition * lbinfo, filedaemon::bFuncs *
- * lbfuncs, */
+/*         filedaemon::Core_PluginApiDefinition * lbinfo,
+ * filedaemon::BareosCoreFunctions * lbfuncs, */
 /*         genpInfo * *pinfo, filedaemon::pFuncs * *pfuncs) = */
-/*         (void (*)(filedaemon::Core_PluginApiDefinition*, filedaemon::bFuncs*,
- * genpInfo**, */
+/*         (void (*)(filedaemon::Core_PluginApiDefinition*,
+ * filedaemon::BareosCoreFunctions*, genpInfo**, */
 /*                   filedaemon::pFuncs**))PyCapsule_Import("bareosfd.loadPlugin",
  */
 /*                                                          0); */
@@ -265,11 +265,11 @@ static void PyErrorHandler()
 /*       printf("importing bareosfd.bpContext failed \n"); */
 /*     } */
 
-/*     // Extract capsules bareosfd.bFuncs */
-/*     void* bfuncs_from_bareosfd_module = PyCapsule_Import("bareosfd.bFuncs",
- * 0); */
+/*     // Extract capsules bareosfd.BareosCoreFunctions */
+/*     void* bfuncs_from_bareosfd_module =
+ * PyCapsule_Import("bareosfd.BareosCoreFunctions", 0); */
 /*     if (!bfuncs_from_bareosfd_module) { */
-/*       printf("importing bareosfd.bFuncs failed \n"); */
+/*       printf("importing bareosfd.BareosCoreFunctions failed \n"); */
 /*     } */
 
 /*     if (!loadplugin_from_bareosfd_module) { */

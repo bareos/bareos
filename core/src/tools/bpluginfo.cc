@@ -77,7 +77,7 @@ union _plugfuncs {
 
 /*
  * bDirFuncs
- * bFuncs
+ * BareosCoreFunctions
  * bsdFuncs
  */
 typedef struct _bareosfuncs bareosfuncs;

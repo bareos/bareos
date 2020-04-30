@@ -355,7 +355,7 @@ typedef struct s_bareosFuncs {
                     struct save_pkt* sp); /* Need fname and statp */
   bRC (*SetSeenBitmap)(bpContext* ctx, bool all, char* fname);
   bRC (*ClearSeenBitmap)(bpContext* ctx, bool all, char* fname);
-} bFuncs;
+} BareosCoreFunctions;
 
 /****************************************************************************
  *                                                                          *

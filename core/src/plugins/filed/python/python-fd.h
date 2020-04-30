@@ -763,7 +763,7 @@ extern "C" {
 #endif
 /* Forward declaration of loadPlugin()  as it is stored in Capsule */
 bRC loadPlugin(::Core_PluginApiDefinition* lbinfo,
-               bFuncs* lbfuncs,
+               BareosCoreFunctions* lbfuncs,
                genpInfo** pinfo,
                pFuncs** pfuncs);
 #ifdef __cplusplus
@@ -795,17 +795,20 @@ MOD_INIT(bareosfd)
   }
 
   /* add bpFuncs Capsule */
-  PyObject* PyModulePluginFuncs =
-      PyCapsule_New((void*)&bfuncs, PYTHON_MODULE_NAME_QUOTED ".bFuncs", NULL);
+  PyObject* PyModulePluginFuncs = PyCapsule_New(
+      (void*)&bfuncs, PYTHON_MODULE_NAME_QUOTED ".BareosCoreFunctions", NULL);
   if (!PyModulePluginFuncs) {
-    printf(PYTHON_MODULE_NAME_QUOTED ":bFuncs PyCapsule_New failed\n");
+    printf(PYTHON_MODULE_NAME_QUOTED
+           ":BareosCoreFunctions PyCapsule_New failed\n");
     return MOD_ERROR_VAL;
   }
   if (PyModulePluginFuncs) {
-    PyModule_AddObject(m, "bFuncs", PyModulePluginFuncs);
-    printf(PYTHON_MODULE_NAME_QUOTED ": added    bFuncs@%p\n", &bfuncs);
+    PyModule_AddObject(m, "BareosCoreFunctions", PyModulePluginFuncs);
+    printf(PYTHON_MODULE_NAME_QUOTED ": added    BareosCoreFunctions@%p\n",
+           &bfuncs);
   } else {
-    printf(PYTHON_MODULE_NAME_QUOTED ":bFuncs PyModule_AddObject failed\n");
+    printf(PYTHON_MODULE_NAME_QUOTED
+           ":BareosCoreFunctions PyModule_AddObject failed\n");
     return MOD_ERROR_VAL;
   }
 

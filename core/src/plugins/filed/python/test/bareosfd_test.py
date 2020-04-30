@@ -7,7 +7,7 @@ import types
 # print "bareosfd.bVariable:", str( bareosfd.bVariable)
 # print "bareosfd.bEventType:", str( bareosfd.bEventType)
 # print "bareosfd.bFileType:", str( bareosfd.bFileType)
-# print "bareosfd.bFuncs:", str( bareosfd.bFuncs)
+# print "bareosfd.BareosCoreFunctions:", str( bareosfd.BareosCoreFunctions)
 # print "bareosfd.bIOPS:", str( bareosfd.bIOPS)
 # print "bareosfd.bLevels:", str( bareosfd.bLevels)
 # print "bareosfd.bRCs:", str( bareosfd.bRCs)
@@ -24,7 +24,7 @@ class TestBareosFd(unittest.TestCase):
     #     print bCFs
     #     bEventType
     #     bFileType
-    #     bFuncs
+    #     BareosCoreFunctions
     #     bIOPS
     #     bJobMessageType
     #     bLevels
