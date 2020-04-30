@@ -206,7 +206,7 @@ int main(int argc, char* argv[])
 
   // Extract capsules pointer from bareosfd module
   void (*loadplugin_from_bareosfd_module)(
-      filedaemon::Core_PluginApiDefinition * lbinfo,
+      filedaemon::Core_PluginApiDefinition * lbareos_plugin_interface_version,
       filedaemon::BareosCoreFunctions * lbareos_core_functions,
       genpInfo * *pinfo, filedaemon::pFuncs * *pfuncs) =
       (void (*)(filedaemon::Core_PluginApiDefinition*,

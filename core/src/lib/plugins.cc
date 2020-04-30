@@ -106,7 +106,7 @@ static void ClosePlugin(Plugin* plugin)
  * Load a specific plugin and check if the plugin had the correct
  * entry points, the license is compatible and the initialize the plugin.
  */
-static bool load_a_plugin(void* binfo,
+static bool load_a_plugin(void* bareos_plugin_interface_version,
                           void* bareos_core_functions,
                           const char* plugin_pathname,
                           const char* plugin_name,
@@ -168,8 +168,8 @@ static bool load_a_plugin(void* binfo,
   /*
    * Initialize the plugin
    */
-  if (loadPlugin(binfo, bareos_core_functions, &plugin->pinfo,
-                 &plugin->pfuncs) != bRC_OK) {
+  if (loadPlugin(bareos_plugin_interface_version, bareos_core_functions,
+                 &plugin->pinfo, &plugin->pfuncs) != bRC_OK) {
     ClosePlugin(plugin);
 
     return false;
@@ -193,7 +193,7 @@ static bool load_a_plugin(void* binfo,
  * Or when plugin_names is give it has a list of plugins
  * to load from the specified directory.
  */
-bool LoadPlugins(void* binfo,
+bool LoadPlugins(void* bareos_plugin_interface_version,
                  void* bareos_core_functions,
                  alist* plugin_list,
                  const char* plugin_dir,
@@ -242,8 +242,8 @@ bool LoadPlugins(void* binfo,
       /*
        * Try to load the plugin and resolve the wanted symbols.
        */
-      if (load_a_plugin(binfo, bareos_core_functions, fname.c_str(),
-                        plugin_name.c_str(), type, plugin_list,
+      if (load_a_plugin(bareos_plugin_interface_version, bareos_core_functions,
+                        fname.c_str(), plugin_name.c_str(), type, plugin_list,
                         IsPluginCompatible)) {
         found = true;
       }
@@ -313,8 +313,8 @@ bool LoadPlugins(void* binfo,
       /*
        * Try to load the plugin and resolve the wanted symbols.
        */
-      if (load_a_plugin(binfo, bareos_core_functions, fname.c_str(),
-                        result->d_name, type, plugin_list,
+      if (load_a_plugin(bareos_plugin_interface_version, bareos_core_functions,
+                        fname.c_str(), result->d_name, type, plugin_list,
                         IsPluginCompatible)) {
         found = true;
       }

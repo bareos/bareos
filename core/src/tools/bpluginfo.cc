@@ -47,7 +47,7 @@
 #endif
 
 extern "C" {
-typedef int (*loadPlugin)(void* binfo,
+typedef int (*loadPlugin)(void* bareos_plugin_interface_version,
                           void* bareos_core_functions,
                           void** pinfo,
                           void** pfuncs);
@@ -481,13 +481,14 @@ int main(int argc, char* argv[])
       bareosMalloc,
       bareosFree,
   };
-  bareosinfos binfos;
+  bareosinfos bareos_plugin_interface_version;
 
   pdata = allocpdata();
   ParseArgs(pdata, argc, argv);
 
-  binfos.bfdinfo.size = sizeof(binfos);
-  binfos.bfdinfo.version = DEFAULT_API_VERSION;
+  bareos_plugin_interface_version.bfdinfo.size =
+      sizeof(bareos_plugin_interface_version);
+  bareos_plugin_interface_version.bfdinfo.version = DEFAULT_API_VERSION;
 
   pdata->pluginhandle = dlopen(pdata->pluginfile, RTLD_LAZY);
   if (pdata->pluginhandle == NULL) {
@@ -512,10 +513,12 @@ int main(int argc, char* argv[])
     exit(3);
   }
 
-  if (pdata->bapiversion > 0) { binfos.bdirinfo.version = pdata->bapiversion; }
+  if (pdata->bapiversion > 0) {
+    bareos_plugin_interface_version.bdirinfo.version = pdata->bapiversion;
+  }
 
-  loadplugfunc(&binfos, &bareos_core_functions, (void**)&pdata->pinfo,
-               (void**)&pdata->pfuncs);
+  loadplugfunc(&bareos_plugin_interface_version, &bareos_core_functions,
+               (void**)&pdata->pinfo, (void**)&pdata->pfuncs);
 
   pdata->bplugtype = Getplugintype(pdata);
 

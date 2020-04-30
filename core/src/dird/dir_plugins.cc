@@ -67,7 +67,8 @@ static bRC bareosDebugMsg(bpContext* ctx,
 static bool IsPluginCompatible(Plugin* plugin);
 
 /* BAREOS info */
-static bDirInfo binfo = {sizeof(bDirFuncs), DIR_PLUGIN_INTERFACE_VERSION};
+static bDirInfo bareos_plugin_interface_version = {
+    sizeof(bDirFuncs), DIR_PLUGIN_INTERFACE_VERSION};
 
 /* BAREOS entry points */
 static bDirFuncs bareos_core_functions = {
@@ -294,9 +295,9 @@ void LoadDirPlugins(const char* plugin_dir, alist* plugin_names)
   }
 
   dird_plugin_list = new alist(10, not_owned_by_alist);
-  if (!LoadPlugins((void*)&binfo, (void*)&bareos_core_functions,
-                   dird_plugin_list, plugin_dir, plugin_names, plugin_type,
-                   IsPluginCompatible)) {
+  if (!LoadPlugins((void*)&bareos_plugin_interface_version,
+                   (void*)&bareos_core_functions, dird_plugin_list, plugin_dir,
+                   plugin_names, plugin_type, IsPluginCompatible)) {
     /* Either none found, or some error */
     if (dird_plugin_list->size() == 0) {
       delete dird_plugin_list;

@@ -47,7 +47,7 @@ static bRC handlePluginEvent(bpContext* ctx, bDirEvent* event, void* value);
 
 /* Pointers to Bareos functions */
 static bDirFuncs* bareos_core_functions = NULL;
-static bDirInfo* binfo = NULL;
+static bDirInfo* bareos_plugin_interface_version = NULL;
 
 static genpInfo pluginInfo = {sizeof(pluginInfo), DIR_PLUGIN_INTERFACE_VERSION,
                               DIR_PLUGIN_MAGIC,   PLUGIN_LICENSE,
@@ -73,14 +73,14 @@ extern "C" {
  *
  * External entry point called by Bareos to "load" the plugin
  */
-bRC loadPlugin(bDirInfo* lbinfo,
+bRC loadPlugin(bDirInfo* lbareos_plugin_interface_version,
                bDirFuncs* lbareos_core_functions,
                genpInfo** pinfo,
                pDirFuncs** pfuncs)
 {
   bareos_core_functions =
       lbareos_core_functions; /* set Bareos funct pointers */
-  binfo = lbinfo;
+  bareos_plugin_interface_version = lbareos_plugin_interface_version;
   printf("plugin: Loaded: size=%d version=%d\n", bareos_core_functions->size,
          bareos_core_functions->version);
 

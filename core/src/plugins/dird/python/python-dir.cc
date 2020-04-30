@@ -88,7 +88,7 @@ static bRC PyHandlePluginEvent(bpContext* bareos_plugin_ctx,
 
 /* Pointers to Bareos functions */
 static bDirFuncs* bareos_core_functions = NULL;
-static bDirInfo* binfo = NULL;
+static bDirInfo* bareos_plugin_interface_version = NULL;
 
 static genpInfo pluginInfo = {sizeof(pluginInfo), DIR_PLUGIN_INTERFACE_VERSION,
                               DIR_PLUGIN_MAGIC,   PLUGIN_LICENSE,
@@ -141,14 +141,14 @@ extern "C" {
  *
  * External entry point called by Bareos to "load" the plugin
  */
-bRC loadPlugin(bDirInfo* lbinfo,
+bRC loadPlugin(bDirInfo* lbareos_plugin_interface_version,
                bDirFuncs* lbareos_core_functions,
                genpInfo** pinfo,
                pDirFuncs** pfuncs)
 {
   bareos_core_functions =
       lbareos_core_functions; /* Set Bareos funct pointers */
-  binfo = lbinfo;
+  bareos_plugin_interface_version = lbareos_plugin_interface_version;
 
   *pinfo = &pluginInfo;   /* Return pointer to our info */
   *pfuncs = &pluginFuncs; /* Return pointer to our functions */
