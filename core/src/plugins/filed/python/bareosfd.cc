@@ -47,56 +47,45 @@ namespace filedaemon {
 
 static const int debuglevel = 150;
 
-/* #define PLUGIN_LICENSE "Bareos AGPLv3" */
-/* #define PLUGIN_AUTHOR "Marco van Wieringen" */
-/* #define PLUGIN_DATE "May 2014" */
-/* #define PLUGIN_VERSION "3" */
-/* #define PLUGIN_DESCRIPTION "Python File Daemon Plugin" */
-/* #define PLUGIN_USAGE \ */
-/*   "python:module_path=<path-to-python-modules>:module_name=<python-module-to-"
+#define PLUGIN_LICENSE "Bareos AGPLv3"
+#define PLUGIN_AUTHOR "Marco van Wieringen"
+#define PLUGIN_DATE "May 2014"
+#define PLUGIN_VERSION "3"
+#define PLUGIN_DESCRIPTION "Python File Daemon Plugin"
+#define PLUGIN_USAGE                                                              \
+/*   "python:module_path=<path-to-python-modules>:module_name=<python-module-to-" \
  * \ */
 /*   "load>:..." */
 
 /* Forward referenced functions */
-/* static bRC newPlugin(PluginContext* bareos_plugin_ctx); */
-/* static bRC freePlugin(PluginContext* bareos_plugin_ctx); */
-/* static bRC getPluginValue(PluginContext* bareos_plugin_ctx, */
-/*                           pVariable var, */
-/*                           void* value); */
-/* static bRC setPluginValue(PluginContext* bareos_plugin_ctx, */
-/*                           pVariable var, */
-/*                           void* value); */
-/* static bRC handlePluginEvent(PluginContext* bareos_plugin_ctx, */
-/*                              bEvent* event, */
-/*                              void* value); */
-/* static bRC startBackupFile(PluginContext* bareos_plugin_ctx, struct
- * save_pkt* sp); */
-/* static bRC endBackupFile(PluginContext* bareos_plugin_ctx); */
-/* static bRC pluginIO(PluginContext* bareos_plugin_ctx, struct
- * io_pkt* io); */
-/* static bRC startRestoreFile(PluginContext* bareos_plugin_ctx, const
- * char* cmd);
- */
-/* static bRC endRestoreFile(PluginContext* bareos_plugin_ctx); */
-/* static bRC createFile(PluginContext* bareos_plugin_ctx, struct
- * restore_pkt* rp);
- */
-/* static bRC setFileAttributes(PluginContext* bareos_plugin_ctx, */
-/*                              struct restore_pkt* rp); */
-/* static bRC checkFile(PluginContext* bareos_plugin_ctx, char*
- * fname); */
-/* static bRC getAcl(PluginContext* bareos_plugin_ctx, acl_pkt* ap);
- */
-/* static bRC setAcl(PluginContext* bareos_plugin_ctx, acl_pkt* ap);
- */
-/* static bRC getXattr(PluginContext* bareos_plugin_ctx, xattr_pkt*
- * xp); */
-/* static bRC setXattr(PluginContext* bareos_plugin_ctx, xattr_pkt*
- * xp); */
-/* static bRC parse_plugin_definition(PluginContext*
- * bareos_plugin_ctx, */
-/*                                    void* value, */
-/*                                    PoolMem& plugin_options); */
+static bRC newPlugin(PluginContext* bareos_plugin_ctx);
+static bRC freePlugin(PluginContext* bareos_plugin_ctx);
+static bRC getPluginValue(PluginContext* bareos_plugin_ctx,
+                          pVariable var,
+                          void* value);
+static bRC setPluginValue(PluginContext* bareos_plugin_ctx,
+                          pVariable var,
+                          void* value);
+static bRC handlePluginEvent(PluginContext* bareos_plugin_ctx,
+                             bEvent* event,
+                             void* value);
+static bRC startBackupFile(PluginContext* bareos_plugin_ctx,
+                           struct save_pkt* sp);
+static bRC endBackupFile(PluginContext* bareos_plugin_ctx);
+static bRC pluginIO(PluginContext* bareos_plugin_ctx, struct io_pkt* io);
+static bRC startRestoreFile(PluginContext* bareos_plugin_ctx, const char* cmd);
+static bRC endRestoreFile(PluginContext* bareos_plugin_ctx);
+static bRC createFile(PluginContext* bareos_plugin_ctx, struct restore_pkt* rp);
+static bRC setFileAttributes(PluginContext* bareos_plugin_ctx,
+                             struct restore_pkt* rp);
+static bRC checkFile(PluginContext* bareos_plugin_ctx, char* fname);
+static bRC getAcl(PluginContext* bareos_plugin_ctx, acl_pkt* ap);
+static bRC setAcl(PluginContext* bareos_plugin_ctx, acl_pkt* ap);
+static bRC getXattr(PluginContext* bareos_plugin_ctx, xattr_pkt* xp);
+static bRC setXattr(PluginContext* bareos_plugin_ctx, xattr_pkt* xp);
+static bRC parse_plugin_definition(PluginContext* bareos_plugin_ctx,
+                                   void* value,
+                                   PoolMem& plugin_options);
 
 
 static void PyErrorHandler(PluginContext* bareos_plugin_ctx, int msgtype);
@@ -137,22 +126,22 @@ static bRC PyHandleBackupFile(PluginContext* bareos_plugin_ctx,
 static BareosCoreFunctions* bareos_core_functions = NULL;
 static Core_PluginApiDefinition* bareos_plugin_interface_version = NULL;
 
-/* static PluginInformation pluginInfo = {sizeof(pluginInfo),
- * FD_PLUGIN_INTERFACE_VERSION, */
-/*                               FD_PLUGIN_MAGIC,    PLUGIN_LICENSE, */
-/*                               PLUGIN_AUTHOR,      PLUGIN_DATE, */
-/*                               PLUGIN_VERSION,     PLUGIN_DESCRIPTION, */
-/*                               PLUGIN_USAGE}; */
+static PluginInformation pluginInfo = {
+    sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
+    FD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
+    PLUGIN_AUTHOR,      PLUGIN_DATE,
+    PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
+    PLUGIN_USAGE};
 
-/* static pFuncs pluginFuncs = { */
-/*     sizeof(pluginFuncs), FD_PLUGIN_INTERFACE_VERSION, */
+static pFuncs pluginFuncs = {
+    sizeof(pluginFuncs), FD_PLUGIN_INTERFACE_VERSION,
 
-/*     /1* Entry points into plugin *1/ */
-/*     newPlugin,  /1* new plugin instance *1/ */
-/*     freePlugin, /1* free plugin instance *1/ */
-/*     getPluginValue, setPluginValue, handlePluginEvent, startBackupFile, */
-/*     endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile, */
-/*     setFileAttributes, checkFile, getAcl, setAcl, getXattr, setXattr}; */
+    /* Entry points into plugin */
+    newPlugin,  /* new plugin instance */
+    freePlugin, /* free plugin instance */
+    getPluginValue, setPluginValue, handlePluginEvent, startBackupFile,
+    endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
+    setFileAttributes, checkFile, getAcl, setAcl, getXattr, setXattr};
 
 struct plugin_private_context {
   int32_t backup_level; /* Backup level e.g. Full/Differential/Incremental */
@@ -172,7 +161,7 @@ struct plugin_private_context {
   PyObject* pyModuleFunctionsDict; /* Python Dictionary */
   BareosCoreFunctions*
       bareos_core_functions; /* pointer to bareos_core_functions */
-};
+};                           // namespace filedaemon
 
 /**
  * We don't actually use this but we need it to tear down the
@@ -266,7 +255,7 @@ bRC loadPlugin(Core_PluginApiDefinition* lbareos_plugin_interface_version,
         filedaemon::Core_PluginApiDefinition * lbareos_plugin_interface_version,
         filedaemon::BareosCoreFunctions * lbareos_core_functions,
         PluginInformation * *plugin_information,
-        filedaemon::pFuncs * **plugin_functions) =
+        filedaemon::pFuncs * *plugin_functions) =
         (void (*)(filedaemon::Core_PluginApiDefinition*,
                   filedaemon::BareosCoreFunctions*, PluginInformation**,
                   filedaemon::pFuncs**))PyCapsule_Import("bareosfd.loadPlugin",
