@@ -203,9 +203,11 @@ int main(int argc, char* argv[])
 
   // Extract capsules pointer from bareosfd module
   void (*loadplugin_from_bareosfd_module)(
-      filedaemon::bInfo * lbinfo, filedaemon::bFuncs * lbfuncs,
-      genpInfo * *pinfo, filedaemon::pFuncs * *pfuncs) =
-      (void (*)(filedaemon::bInfo*, filedaemon::bFuncs*, genpInfo**,
+      filedaemon::Core_PluginApiDefinition * lbinfo,
+      filedaemon::bFuncs * lbfuncs, genpInfo * *pinfo,
+      filedaemon::pFuncs * *pfuncs) =
+      (void (*)(filedaemon::Core_PluginApiDefinition*, filedaemon::bFuncs*,
+                genpInfo**,
                 filedaemon::pFuncs**))PyCapsule_Import("bareosfd.loadPlugin",
                                                        0);
 
@@ -229,7 +231,7 @@ int main(int argc, char* argv[])
   *(void**)bfuncs_from_bareosfd_module = &bfuncs;
 
   /* call loadPlugin in plugin */
-  filedaemon::bInfo myInfo;
+  filedaemon::Core_PluginApiDefinition myInfo;
   genpInfo pinfo;
   filedaemon::pFuncs pfuncs;
 

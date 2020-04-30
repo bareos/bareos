@@ -762,7 +762,7 @@ static void* bfuncs = NULL;
 extern "C" {
 #endif
 /* Forward declaration of loadPlugin()  as it is stored in Capsule */
-bRC loadPlugin(bInfo* lbinfo,
+bRC loadPlugin(::Core_PluginApiDefinition* lbinfo,
                bFuncs* lbfuncs,
                genpInfo** pinfo,
                pFuncs** pfuncs);
