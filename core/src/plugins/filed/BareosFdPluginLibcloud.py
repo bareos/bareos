@@ -244,9 +244,12 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             % (self.number_of_objects_to_backup)
         )
 
-        debugmessage(100, "Shut down BareosLibcloudApi")
-        self.api.shutdown()
-        debugmessage(100, "BareosLibcloudApi is shut down")
+        if self.api == None:
+            debugmessage(100, "BareosLibcloudApi did not initialize properly")
+        else:
+            debugmessage(100, "Shut down BareosLibcloudApi")
+            self.api.shutdown()
+            debugmessage(100, "BareosLibcloudApi is shut down")
 
     def start_backup_file(self, context, savepkt):
         error = False

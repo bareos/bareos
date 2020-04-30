@@ -43,6 +43,8 @@ class BareosLibcloudApi(object):
 
         self.__create_tmp_dir()
 
+        jobmessage("M_INFO", "Initialize BucketExplorer")
+
         self.bucket_explorer = BucketExplorer(
             options,
             last_run,
@@ -50,6 +52,8 @@ class BareosLibcloudApi(object):
             self.discovered_objects_queue,
             self.number_of_worker,
         )
+
+        jobmessage("M_INFO", "Initialize %d Workers" % self.number_of_worker)
 
         self.worker = [
             Worker(
@@ -63,8 +67,10 @@ class BareosLibcloudApi(object):
             for i in range(self.number_of_worker)
         ]
 
+        jobmessage("M_INFO", "Start BucketExplorer")
         self.bucket_explorer.start()
 
+        jobmessage("M_INFO", "Start Workers")
         for w in self.worker:
             w.start()
 
@@ -150,9 +156,11 @@ class BareosLibcloudApi(object):
             self.__remove_tmp_dir()
         except:
             pass
+        jobmessage("M_INFO", "Try to create temporary directory: %s" % (self.tmp_dir_path))
         os.mkdir(self.tmp_dir_path)
 
     def __remove_tmp_dir(self):
+        jobmessage("M_INFO", "Try to remove old files from: %s" % (self.tmp_dir_path))
         try:
             files = glob.glob(self.tmp_dir_path + "/*")
             for f in files:
