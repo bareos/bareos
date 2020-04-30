@@ -36,6 +36,7 @@ if(HAVE_PYTHON)
   set_target_properties(python-dir PROPERTIES PREFIX "")
   install(TARGETS python-dir DESTINATION ${plugindir})
   target_link_libraries(python-dir ${PYTHON_LIBRARIES} bareos)
+  add_dependencies(python-dir bareosdir)
 
   set(PYFILES
       python/pyfiles/bareos-dir.py.template python/pyfiles/bareos-dir-class-plugin.py
@@ -49,14 +50,17 @@ endif()
 if(HAVE_PYTHON AND NOT HAVE_WIN32)
   configure_file(python/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/python/setup.py)
   add_custom_command(
-    TARGET python-dir
-    POST_BUILD
-    COMMENT "building python module pythonmodules/bareosdir.so"
+    OUTPUT pythonmodules/bareosdir.so
+    MAIN_DEPENDENCY ./python/bareosdir.cc
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/python/setup.py
     COMMAND ${PYTHON_EXECUTABLE} python/setup.py build
     COMMAND ${PYTHON_EXECUTABLE} python/setup.py install --install-lib
             ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
-    COMMAND rm -R ${CMAKE_CURRENT_BINARY_DIR}/build DEPENDS python-dir
+            # COMMAND rm -R ${CMAKE_CURRENT_BINARY_DIR}/build DEPENDS python-dir
+    COMMENT "building python module pythonmodules/bareosdir.so"
   )
+
+  add_custom_target(bareosdir DEPENDS pythonmodules/bareosdir.so)
 
   add_test(NAME bareosdir-python-module
            COMMAND ${PYTHON_EXECUTABLE}

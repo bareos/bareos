@@ -105,6 +105,7 @@ if(HAVE_PYTHON)
     COMPONENT filedaemon
   )
   target_link_libraries(python-fd ${PYTHON_LIBRARIES} bareos)
+  add_dependencies(python-fd bareosfd)
 endif()
 
 if(HAVE_PYTHON AND NOT HAVE_WIN32)
@@ -129,8 +130,6 @@ if(HAVE_PYTHON AND NOT HAVE_WIN32)
     OUTPUT pythonmodules/bareosfd.so
     MAIN_DEPENDENCY ./python/bareosfd.cc
     DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/python/setup.py
-    #TARGET python-fd
-    #POST_BUILD
     COMMAND ${PYTHON_EXECUTABLE} python/setup.py build
     COMMAND ${PYTHON_EXECUTABLE} python/setup.py install --install-lib
             ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules

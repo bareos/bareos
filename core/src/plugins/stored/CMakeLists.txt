@@ -53,6 +53,7 @@ if(HAVE_PYTHON)
   set_target_properties(python-sd PROPERTIES PREFIX "")
   install(TARGETS python-sd DESTINATION ${plugindir})
   target_link_libraries(python-sd ${PYTHON_LIBRARIES} bareos)
+  add_dependencies(python-sd bareossd)
 
   set(PYFILES
       python/pyfiles/bareos-sd-class-plugin.py

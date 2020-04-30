@@ -231,111 +231,103 @@ static void PyErrorHandler()
 /**
  * Plugin called here when it is first loaded
  */
-/* bRC loadPlugin(Core_PluginApiDefinition* lbareos_plugin_interface_version, */
-/*                BareosCoreFunctions* lbareos_core_functions, */
-/*                PluginInformation** plugin_information, */
-/*                pFuncs** plugin_functions) */
-/* { */
-/*   bareos_core_functions = lbareos_core_functions; /1* Set Bareos funct
- * pointers *1/ */
-/*   bareos_plugin_interface_version = lbareos_plugin_interface_version; */
+bRC loadPlugin(Core_PluginApiDefinition* lbareos_plugin_interface_version,
+               BareosCoreFunctions* lbareos_core_functions,
+               PluginInformation** plugin_information,
+               pFuncs** plugin_functions)
+{
+  bareos_core_functions =
+      lbareos_core_functions; /* Set Bareos funct * pointers */
+  bareos_plugin_interface_version = lbareos_plugin_interface_version;
 
-/*   *plugin_information = &pluginInfo;   /1* Return pointer to our info *1/ */
-/*   *plugin_functions = &pluginFuncs; /1* Return pointer to our functions *1/
- */
+  *plugin_information = &pluginInfo; /* Return pointer to our info */
+  *plugin_functions = &pluginFuncs;  /* Return pointer to our functions */
 
-/*   if (!Py_IsInitialized()) { */
-/*     /1* Setup Python *1/ */
-/* #if PY_MAJOR_VERSION >= 3 */
-/*     /1* PyImport_AppendInittab("bareosfd", &PyInit_bareosfd); *1/ */
-/* #else */
-/*     /1* PyImport_AppendInittab("bareosfd", initbareosfd); *1/ */
-/* #endif */
-/*     Py_InitializeEx(0); */
+  if (!Py_IsInitialized()) {
+    /* Setup Python */
+#if PY_MAJOR_VERSION >= 3
+    /* PyImport_AppendInittab("bareosfd", &PyInit_bareosfd); */
+#else
+    /* PyImport_AppendInittab("bareosfd", initbareosfd); */
+#endif
+    Py_InitializeEx(0);
 
-/*     /1* import the bareosfd module *1/ */
-/*     PyObject* bareosfdModule = PyImport_ImportModule("bareosfd"); */
-/*     if (bareosfdModule) { */
-/*       printf("loaded bareosfd successfully\n"); */
-/*     } else { */
-/*       printf("loading of bareosfd failed\n"); */
-/*     } */
+    /* import the bareosfd module */
+    PyObject* bareosfdModule = PyImport_ImportModule("bareosfd");
+    if (bareosfdModule) {
+      printf("loaded bareosfd successfully\n");
+    } else {
+      printf("loading of bareosfd failed\n");
+    }
 
-/*     if (PyErr_Occurred()) { PyErrorHandler(); } */
+    if (PyErr_Occurred()) { PyErrorHandler(); }
+    // Extract capsules pointer from bareosfd module
+    void (*loadplugin_from_bareosfd_module)(
+        filedaemon::Core_PluginApiDefinition * lbareos_plugin_interface_version,
+        filedaemon::BareosCoreFunctions * lbareos_core_functions,
+        PluginInformation * *plugin_information,
+        filedaemon::pFuncs * **plugin_functions) =
+        (void (*)(filedaemon::Core_PluginApiDefinition*,
+                  filedaemon::BareosCoreFunctions*, PluginInformation**,
+                  filedaemon::pFuncs**))PyCapsule_Import("bareosfd.loadPlugin",
+                                                         0);
 
-/*     // Extract capsules pointer from bareosfd module */
-/*     void (*loadplugin_from_bareosfd_module)( */
-/*         filedaemon::Core_PluginApiDefinition *
- * lbareos_plugin_interface_version, filedaemon::BareosCoreFunctions *
- * lbareos_core_functions, */
-/*         PluginInformation * *plugin_information, filedaemon::pFuncs *
- * *plugin_functions) = */
-/*         (void (*)(filedaemon::Core_PluginApiDefinition*,
- * filedaemon::BareosCoreFunctions*, PluginInformation**, */
-/*                   filedaemon::pFuncs**))PyCapsule_Import("bareosfd.loadPlugin",
- */
-/*                                                          0); */
+    /*     // Extract capsule bareosfd.PluginContext */
+    void* ctx_from_bareosfd_module =
+        PyCapsule_Import("bareosfd.PluginContext", 0);
+    if (!ctx_from_bareosfd_module) {
+      printf("importing bareosfd.PluginContext failed \n");
+    }
 
-/*     // Extract capsule bareosfd.PluginContext */
-/*     void* ctx_from_bareosfd_module =
- * PyCapsule_Import("bareosfd.PluginContext", 0); */
-/*     if (!ctx_from_bareosfd_module) { */
-/*       printf("importing bareosfd.PluginContext failed \n"); */
-/*     } */
+    // Extract capsules bareosfd.BareosCoreFunctions
+    void* bareos_core_functions_from_bareosfd_module =
+        PyCapsule_Import("bareosfd.BareosCoreFunctions", 0);
+    if (!bareos_core_functions_from_bareosfd_module) {
+      printf("importing bareosfd.BareosCoreFunctions failed \n");
+    }
 
-/*     // Extract capsules bareosfd.BareosCoreFunctions */
-/*     void* bareos_core_functions_from_bareosfd_module =
- * PyCapsule_Import("bareosfd.BareosCoreFunctions", 0); */
-/*     if (!bareos_core_functions_from_bareosfd_module) { */
-/*       printf("importing bareosfd.BareosCoreFunctions failed \n"); */
-/*     } */
-
-/*     if (!loadplugin_from_bareosfd_module) { */
-/*       printf("importing bareosfd.loadPlugin failed \n"); */
-/*     } */
+    if (!loadplugin_from_bareosfd_module) {
+      printf("importing bareosfd.loadPlugin failed \n");
+    }
 
 
-/*     *(void**)ctx_from_bareosfd_module = &bareos_PluginContext; */
-/*     *(void**)bareos_core_functions_from_bareosfd_module =
- * &bareos_core_functions; */
+    *(void**)ctx_from_bareosfd_module = &bareos_PluginContext;
+    *(void**)bareos_core_functions_from_bareosfd_module =
+        &bareos_core_functions;
 
-/*     /1* call loadPlugin in plugin *1/ */
-/*     filedaemon::Core_PluginApiDefinition myInfo; */
-/*     PluginInformation plugin_information; */
-/*     filedaemon::pFuncs plugin_functions; */
+    /* call loadPlugin in plugin */
+    filedaemon::Core_PluginApiDefinition myInfo;
+    PluginInformation plugin_information;
+    filedaemon::pFuncs plugin_functions;
 
-/*     loadplugin_from_bareosfd_module(&myInfo, bareos_core_functions,
- * (PluginInformation**)&plugin_information, */
-/*                                     (filedaemon::pFuncs**)&plugin_functions);
- */
-
-
-/*     printf("ctx_from_bareosfd_module contains    %p\n", */
-/*            *(void**)ctx_from_bareosfd_module); */
-/*     printf("bareos_core_functions_from_bareosfd_module contains %p\n", */
-/*            *(void**)bareos_core_functions_from_bareosfd_module); */
+    loadplugin_from_bareosfd_module(&myInfo, bareos_core_functions,
+                                    (PluginInformation**)&plugin_information,
+                                    (filedaemon::pFuncs**)&plugin_functions);
 
 
-/*     PyEval_InitThreads(); */
-/*     mainThreadState = PyEval_SaveThread(); */
-/*   } */
-/*   return bRC_OK; */
-/* } */
+    printf("ctx_from_bareosfd_module contains    %p\n",
+           *(void**)ctx_from_bareosfd_module);
+    printf("bareos_core_functions_from_bareosfd_module contains %p\n",
+           *(void**)bareos_core_functions_from_bareosfd_module);
+
+
+    PyEval_InitThreads();
+    mainThreadState = PyEval_SaveThread();
+  }
+  return bRC_OK;
+}
 
 /**
  * Plugin called here when it is unloaded, normally when Bareos is going to
  * exit.
  */
-/*bRC unloadPlugin()*/
-/*{*/
-/*  */
-/*   * Terminate Python*/
-/*    */
-/*  PyEval_RestoreThread(mainThreadState);*/
-/*  Py_Finalize();*/
-
-/*  return bRC_OK;*/
-/*}*/
+bRC unloadPlugin()
+{
+  /* Terminate Python */
+  PyEval_RestoreThread(mainThreadState);
+  Py_Finalize();
+  return bRC_OK;
+}
 
 #ifdef __cplusplus
 }
@@ -440,11 +432,11 @@ bail_out:
 }
 
 /**
- * Any plugin options which are passed in are dispatched here to a Python method
- * and it can parse the plugin options. This function is also called after
- * PyLoadModule() has loaded the Python module and made sure things are
- * operational. Normally you would only get one set of plugin options but for a
- * restore overrides can be passed in before the actual plugin options are
+ * Any plugin options which are passed in are dispatched here to a Python
+ * method and it can parse the plugin options. This function is also called
+ * after PyLoadModule() has loaded the Python module and made sure things are
+ * operational. Normally you would only get one set of plugin options but for
+ * a restore overrides can be passed in before the actual plugin options are
  * restored as part of the restore stream handling.
  */
 static bRC PyParsePluginDefinition(PluginContext* bareos_plugin_ctx,
@@ -479,9 +471,9 @@ static bRC PyParsePluginDefinition(PluginContext* bareos_plugin_ctx,
 
     return retval;
   } else {
-    Dmsg(
-        bareos_plugin_ctx, debuglevel,
-        "python-fd: Failed to find function named parse_plugin_definition()\n");
+    Dmsg(bareos_plugin_ctx, debuglevel,
+         "python-fd: Failed to find function named "
+         "parse_plugin_definition()\n");
     return bRC_Error;
   }
 
@@ -709,8 +701,8 @@ static inline bool PySavePacketToNative(
        */
       if (pSavePkt->object_len > 0) {
         /*
-         * As this has to linger as long as the backup is running we save it in
-         * our plugin context.
+         * As this has to linger as long as the backup is running we save it
+         * in our plugin context.
          */
         if (pSavePkt->object_name && pSavePkt->object &&
             PyString_Check(pSavePkt->object_name) &&
@@ -883,8 +875,8 @@ static inline PyIoPacket* NativeToPyIoPacket(struct io_pkt* io)
     pIoPkt->offset = io->offset;
     if (io->func == IO_WRITE && io->count > 0) {
       /*
-       * Only initialize the buffer with read data when we are writing and there
-       * is data.
+       * Only initialize the buffer with read data when we are writing and
+       * there is data.
        */
       pIoPkt->buf = PyByteArray_FromStringAndSize(io->buf, io->count);
       if (!pIoPkt->buf) {
@@ -1106,8 +1098,8 @@ static inline void PyRestorePacketToNative(PyRestorePacket* pRestorePacket,
 
 /**
  * Called for a command plugin to create a file during a Restore job before
- * restoring the data. This entry point is called before any I/O is done on the
- * file. After this call, Bareos will call pluginIO() to open the file for
+ * restoring the data. This entry point is called before any I/O is done on
+ * the file. After this call, Bareos will call pluginIO() to open the file for
  * write.
  *
  * We must return in rp->create_status:
@@ -1648,8 +1640,9 @@ bail_out:
 }
 
 /**
- * Callback function which is exposed as a part of the additional methods which
- * allow a Python plugin to get certain internal values of the current Job.
+ * Callback function which is exposed as a part of the additional methods
+ * which allow a Python plugin to get certain internal values of the current
+ * Job.
  */
 static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
 {
@@ -1719,8 +1712,9 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
 }
 
 /**
- * Callback function which is exposed as a part of the additional methods which
- * allow a Python plugin to get certain internal values of the current Job.
+ * Callback function which is exposed as a part of the additional methods
+ * which allow a Python plugin to get certain internal values of the current
+ * Job.
  */
 static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
 {
@@ -1766,9 +1760,9 @@ bail_out:
 }
 
 /**
- * Callback function which is exposed as a part of the additional methods which
- * allow a Python plugin to issue debug messages using the Bareos debug message
- * facility.
+ * Callback function which is exposed as a part of the additional methods
+ * which allow a Python plugin to issue debug messages using the Bareos debug
+ * message facility.
  */
 static PyObject* PyBareosDebugMessage(PyObject* self, PyObject* args)
 {
@@ -1776,7 +1770,8 @@ static PyObject* PyBareosDebugMessage(PyObject* self, PyObject* args)
   char* dbgmsg = NULL;
   PluginContext* bareos_plugin_ctx = GetPluginContextFromPythonModule();
   /* plugin_private_context* ppc = */
-  /*     (plugin_private_context*)bareos_plugin_ctx->plugin_private_context; */
+  /*     (plugin_private_context*)bareos_plugin_ctx->plugin_private_context;
+   */
 
   if (!PyArg_ParseTuple(args, "i|z:BareosDebugMessage", &level, &dbgmsg)) {
     return NULL;
