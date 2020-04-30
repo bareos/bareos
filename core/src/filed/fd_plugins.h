@@ -319,51 +319,42 @@ extern "C" {
 typedef struct s_bareosFuncs {
   uint32_t size;
   uint32_t version;
-  bRC (*registerBareosEvents)(bplugin_private_context* ctx, int nr_events, ...);
-  bRC (*unregisterBareosEvents)(bplugin_private_context* ctx,
-                                int nr_events,
-                                ...);
-  bRC (*getInstanceCount)(bplugin_private_context* ctx, int* ret);
-  bRC (*getBareosValue)(bplugin_private_context* ctx,
-                        bVariable var,
-                        void* value);
-  bRC (*setBareosValue)(bplugin_private_context* ctx,
-                        bVariable var,
-                        void* value);
-  bRC (*JobMessage)(bplugin_private_context* ctx,
+  bRC (*registerBareosEvents)(PluginContext* ctx, int nr_events, ...);
+  bRC (*unregisterBareosEvents)(PluginContext* ctx, int nr_events, ...);
+  bRC (*getInstanceCount)(PluginContext* ctx, int* ret);
+  bRC (*getBareosValue)(PluginContext* ctx, bVariable var, void* value);
+  bRC (*setBareosValue)(PluginContext* ctx, bVariable var, void* value);
+  bRC (*JobMessage)(PluginContext* ctx,
                     const char* file,
                     int line,
                     int type,
                     utime_t mtime,
                     const char* fmt,
                     ...);
-  bRC (*DebugMessage)(bplugin_private_context* ctx,
+  bRC (*DebugMessage)(PluginContext* ctx,
                       const char* file,
                       int line,
                       int level,
                       const char* fmt,
                       ...);
-  void* (*bareosMalloc)(bplugin_private_context* ctx,
+  void* (*bareosMalloc)(PluginContext* ctx,
                         const char* file,
                         int line,
                         size_t size);
-  void (*bareosFree)(bplugin_private_context* ctx,
-                     const char* file,
-                     int line,
-                     void* mem);
-  bRC (*AddExclude)(bplugin_private_context* ctx, const char* file);
-  bRC (*AddInclude)(bplugin_private_context* ctx, const char* file);
-  bRC (*AddOptions)(bplugin_private_context* ctx, const char* opts);
-  bRC (*AddRegex)(bplugin_private_context* ctx, const char* item, int type);
-  bRC (*AddWild)(bplugin_private_context* ctx, const char* item, int type);
-  bRC (*NewOptions)(bplugin_private_context* ctx);
-  bRC (*NewInclude)(bplugin_private_context* ctx);
-  bRC (*NewPreInclude)(bplugin_private_context* ctx);
-  bRC (*checkChanges)(bplugin_private_context* ctx, struct save_pkt* sp);
-  bRC (*AcceptFile)(bplugin_private_context* ctx,
+  void (*bareosFree)(PluginContext* ctx, const char* file, int line, void* mem);
+  bRC (*AddExclude)(PluginContext* ctx, const char* file);
+  bRC (*AddInclude)(PluginContext* ctx, const char* file);
+  bRC (*AddOptions)(PluginContext* ctx, const char* opts);
+  bRC (*AddRegex)(PluginContext* ctx, const char* item, int type);
+  bRC (*AddWild)(PluginContext* ctx, const char* item, int type);
+  bRC (*NewOptions)(PluginContext* ctx);
+  bRC (*NewInclude)(PluginContext* ctx);
+  bRC (*NewPreInclude)(PluginContext* ctx);
+  bRC (*checkChanges)(PluginContext* ctx, struct save_pkt* sp);
+  bRC (*AcceptFile)(PluginContext* ctx,
                     struct save_pkt* sp); /* Need fname and statp */
-  bRC (*SetSeenBitmap)(bplugin_private_context* ctx, bool all, char* fname);
-  bRC (*ClearSeenBitmap)(bplugin_private_context* ctx, bool all, char* fname);
+  bRC (*SetSeenBitmap)(PluginContext* ctx, bool all, char* fname);
+  bRC (*ClearSeenBitmap)(PluginContext* ctx, bool all, char* fname);
 } BareosCoreFunctions;
 
 /****************************************************************************
@@ -387,30 +378,23 @@ typedef enum
 typedef struct s_pluginFuncs {
   uint32_t size;
   uint32_t version;
-  bRC (*newPlugin)(bplugin_private_context* ctx);
-  bRC (*freePlugin)(bplugin_private_context* ctx);
-  bRC (*getPluginValue)(bplugin_private_context* ctx,
-                        pVariable var,
-                        void* value);
-  bRC (*setPluginValue)(bplugin_private_context* ctx,
-                        pVariable var,
-                        void* value);
-  bRC (*handlePluginEvent)(bplugin_private_context* ctx,
-                           bEvent* event,
-                           void* value);
-  bRC (*startBackupFile)(bplugin_private_context* ctx, struct save_pkt* sp);
-  bRC (*endBackupFile)(bplugin_private_context* ctx);
-  bRC (*startRestoreFile)(bplugin_private_context* ctx, const char* cmd);
-  bRC (*endRestoreFile)(bplugin_private_context* ctx);
-  bRC (*pluginIO)(bplugin_private_context* ctx, struct io_pkt* io);
-  bRC (*createFile)(bplugin_private_context* ctx, struct restore_pkt* rp);
-  bRC (*setFileAttributes)(bplugin_private_context* ctx,
-                           struct restore_pkt* rp);
-  bRC (*checkFile)(bplugin_private_context* ctx, char* fname);
-  bRC (*getAcl)(bplugin_private_context* ctx, struct acl_pkt* ap);
-  bRC (*setAcl)(bplugin_private_context* ctx, struct acl_pkt* ap);
-  bRC (*getXattr)(bplugin_private_context* ctx, struct xattr_pkt* xp);
-  bRC (*setXattr)(bplugin_private_context* ctx, struct xattr_pkt* xp);
+  bRC (*newPlugin)(PluginContext* ctx);
+  bRC (*freePlugin)(PluginContext* ctx);
+  bRC (*getPluginValue)(PluginContext* ctx, pVariable var, void* value);
+  bRC (*setPluginValue)(PluginContext* ctx, pVariable var, void* value);
+  bRC (*handlePluginEvent)(PluginContext* ctx, bEvent* event, void* value);
+  bRC (*startBackupFile)(PluginContext* ctx, struct save_pkt* sp);
+  bRC (*endBackupFile)(PluginContext* ctx);
+  bRC (*startRestoreFile)(PluginContext* ctx, const char* cmd);
+  bRC (*endRestoreFile)(PluginContext* ctx);
+  bRC (*pluginIO)(PluginContext* ctx, struct io_pkt* io);
+  bRC (*createFile)(PluginContext* ctx, struct restore_pkt* rp);
+  bRC (*setFileAttributes)(PluginContext* ctx, struct restore_pkt* rp);
+  bRC (*checkFile)(PluginContext* ctx, char* fname);
+  bRC (*getAcl)(PluginContext* ctx, struct acl_pkt* ap);
+  bRC (*setAcl)(PluginContext* ctx, struct acl_pkt* ap);
+  bRC (*getXattr)(PluginContext* ctx, struct xattr_pkt* xp);
+  bRC (*setXattr)(PluginContext* ctx, struct xattr_pkt* xp);
 } pFuncs;
 
 #define PlugFunc(plugin) ((pFuncs*)(plugin->plugin_functions))

@@ -36,17 +36,11 @@
 #define PLUGIN_DESCRIPTION "Test Storage Daemon Plugin"
 
 /* Forward referenced functions */
-static bRC newPlugin(bplugin_private_context* ctx);
-static bRC freePlugin(bplugin_private_context* ctx);
-static bRC getPluginValue(bplugin_private_context* ctx,
-                          psdVariable var,
-                          void* value);
-static bRC setPluginValue(bplugin_private_context* ctx,
-                          psdVariable var,
-                          void* value);
-static bRC handlePluginEvent(bplugin_private_context* ctx,
-                             bsdEvent* event,
-                             void* value);
+static bRC newPlugin(PluginContext* ctx);
+static bRC freePlugin(PluginContext* ctx);
+static bRC getPluginValue(PluginContext* ctx, psdVariable var, void* value);
+static bRC setPluginValue(PluginContext* ctx, psdVariable var, void* value);
+static bRC handlePluginEvent(PluginContext* ctx, bsdEvent* event, void* value);
 
 
 /* Pointers to Bareos functions */
@@ -115,7 +109,7 @@ bRC unloadPlugin()
 /**
  * Create a new instance of the plugin i.e. allocate our private storage
  */
-static bRC newPlugin(bplugin_private_context* ctx)
+static bRC newPlugin(PluginContext* ctx)
 {
   int JobId = 0;
   bareos_core_functions->getBareosValue(ctx, bsdVarJobId, (void*)&JobId);
@@ -128,7 +122,7 @@ static bRC newPlugin(bplugin_private_context* ctx)
 /**
  * Free a plugin instance, i.e. release our private storage
  */
-static bRC freePlugin(bplugin_private_context* ctx)
+static bRC freePlugin(PluginContext* ctx)
 {
   int JobId = 0;
   bareos_core_functions->getBareosValue(ctx, bsdVarJobId, (void*)&JobId);
@@ -139,9 +133,7 @@ static bRC freePlugin(bplugin_private_context* ctx)
 /**
  * Return some plugin value (none defined)
  */
-static bRC getPluginValue(bplugin_private_context* ctx,
-                          psdVariable var,
-                          void* value)
+static bRC getPluginValue(PluginContext* ctx, psdVariable var, void* value)
 {
   printf("example-plugin-sd: getPluginValue var=%d\n", var);
   return bRC_OK;
@@ -150,9 +142,7 @@ static bRC getPluginValue(bplugin_private_context* ctx,
 /**
  * Set a plugin value (none defined)
  */
-static bRC setPluginValue(bplugin_private_context* ctx,
-                          psdVariable var,
-                          void* value)
+static bRC setPluginValue(PluginContext* ctx, psdVariable var, void* value)
 {
   printf("example-plugin-sd: setPluginValue var=%d\n", var);
   return bRC_OK;
@@ -161,9 +151,7 @@ static bRC setPluginValue(bplugin_private_context* ctx,
 /**
  * Handle an event that was generated in Bareos
  */
-static bRC handlePluginEvent(bplugin_private_context* ctx,
-                             bsdEvent* event,
-                             void* value)
+static bRC handlePluginEvent(PluginContext* ctx, bsdEvent* event, void* value)
 {
   char* name;
   switch (event->eventType) {

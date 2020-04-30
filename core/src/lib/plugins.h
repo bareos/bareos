@@ -79,7 +79,7 @@ class Plugin {
 /**
  * Context packet as first argument of all functions
  */
-struct bplugin_private_context {
+struct PluginContext {
   uint32_t instance;
   Plugin* plugin;
   void* core_private_context;   /* BAREOS private context */

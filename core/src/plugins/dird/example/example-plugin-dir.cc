@@ -38,17 +38,11 @@
 namespace directordaemon {
 
 /* Forward referenced functions */
-static bRC newPlugin(bplugin_private_context* ctx);
-static bRC freePlugin(bplugin_private_context* ctx);
-static bRC getPluginValue(bplugin_private_context* ctx,
-                          pDirVariable var,
-                          void* value);
-static bRC setPluginValue(bplugin_private_context* ctx,
-                          pDirVariable var,
-                          void* value);
-static bRC handlePluginEvent(bplugin_private_context* ctx,
-                             bDirEvent* event,
-                             void* value);
+static bRC newPlugin(PluginContext* ctx);
+static bRC freePlugin(PluginContext* ctx);
+static bRC getPluginValue(PluginContext* ctx, pDirVariable var, void* value);
+static bRC setPluginValue(PluginContext* ctx, pDirVariable var, void* value);
+static bRC handlePluginEvent(PluginContext* ctx, bDirEvent* event, void* value);
 
 
 /* Pointers to Bareos functions */
@@ -110,7 +104,7 @@ bRC unloadPlugin()
 }
 #endif
 
-static bRC newPlugin(bplugin_private_context* ctx)
+static bRC newPlugin(PluginContext* ctx)
 {
   int JobId = 0;
   bareos_core_functions->getBareosValue(ctx, bDirVarJobId, (void*)&JobId);
@@ -120,7 +114,7 @@ static bRC newPlugin(bplugin_private_context* ctx)
   return bRC_OK;
 }
 
-static bRC freePlugin(bplugin_private_context* ctx)
+static bRC freePlugin(PluginContext* ctx)
 {
   int JobId = 0;
   bareos_core_functions->getBareosValue(ctx, bDirVarJobId, (void*)&JobId);
@@ -128,25 +122,19 @@ static bRC freePlugin(bplugin_private_context* ctx)
   return bRC_OK;
 }
 
-static bRC getPluginValue(bplugin_private_context* ctx,
-                          pDirVariable var,
-                          void* value)
+static bRC getPluginValue(PluginContext* ctx, pDirVariable var, void* value)
 {
   printf("plugin: getPluginValue var=%d\n", var);
   return bRC_OK;
 }
 
-static bRC setPluginValue(bplugin_private_context* ctx,
-                          pDirVariable var,
-                          void* value)
+static bRC setPluginValue(PluginContext* ctx, pDirVariable var, void* value)
 {
   printf("plugin: setPluginValue var=%d\n", var);
   return bRC_OK;
 }
 
-static bRC handlePluginEvent(bplugin_private_context* ctx,
-                             bDirEvent* event,
-                             void* value)
+static bRC handlePluginEvent(PluginContext* ctx, bDirEvent* event, void* value)
 {
   char* name;
   int val;

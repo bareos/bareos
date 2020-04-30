@@ -755,7 +755,7 @@ static PyMethodDef Methods[] = {
 using namespace filedaemon;
 
 /* variables storing bareos pointers */
-static void* bareos_plugin_context = NULL;
+static void* bareos_PluginContext = NULL;
 static void* bareos_core_functions = NULL;
 
 #ifdef __cplusplus
@@ -777,22 +777,21 @@ MOD_INIT(bareosfd)
   MOD_DEF(m, PYTHON_MODULE_NAME_QUOTED, NULL, Methods)
 
 
-  /* add bplugin_private_context Capsule */
+  /* add PluginContext Capsule */
   PyObject* PyModulePluginContext =
-      PyCapsule_New((void*)&bareos_plugin_context,
-                    PYTHON_MODULE_NAME_QUOTED ".bplugin_private_context", NULL);
+      PyCapsule_New((void*)&bareos_PluginContext,
+                    PYTHON_MODULE_NAME_QUOTED ".PluginContext", NULL);
   if (!PyModulePluginContext) {
-    printf(PYTHON_MODULE_NAME_QUOTED
-           ":bplugin_private_context PyCapsule_New failed\n");
+    printf(PYTHON_MODULE_NAME_QUOTED ":PluginContext PyCapsule_New failed\n");
     return MOD_ERROR_VAL;
   }
   if (PyModulePluginContext) {
-    PyModule_AddObject(m, "bplugin_private_context", PyModulePluginContext);
-    printf(PYTHON_MODULE_NAME_QUOTED ": added bplugin_private_context@%p\n",
-           &bareos_plugin_context);
+    PyModule_AddObject(m, "PluginContext", PyModulePluginContext);
+    printf(PYTHON_MODULE_NAME_QUOTED ": added PluginContext@%p\n",
+           &bareos_PluginContext);
   } else {
     printf(PYTHON_MODULE_NAME_QUOTED
-           ":bplugin_private_context PyModule_AddObject failed\n");
+           ":PluginContext PyModule_AddObject failed\n");
     return MOD_ERROR_VAL;
   }
 

@@ -83,13 +83,13 @@ static PyMethodDef Methods[] = {
     {NULL, NULL, 0, NULL}};
 
 
-static void* bareos_plugin_context = NULL;
+static void* bareos_PluginContext = NULL;
 
 // MOD_INIT(PYTHON_MODULE_NAME)
 MOD_INIT(bareosdir)
 {
-  /* bareos_plugin_context holds the bplugin_private_context instead of passing
-   * to Python and extracting it back like it was before. bareos_plugin_context
+  /* bareos_PluginContext holds the PluginContext instead of passing
+   * to Python and extracting it back like it was before. bareos_PluginContext
    * needs to be set after loading the PYTHON_MODULE_NAME binary python module
    * and will be used for all calls.
    */
@@ -98,8 +98,8 @@ MOD_INIT(bareosdir)
 
   /* Pointer Capsules to avoid context transfer back and forth */
   PyObject* PyModulePluginContext =
-      PyCapsule_New((void*)&bareos_plugin_context,
-                    PYTHON_MODULE_NAME_QUOTED ".bplugin_private_context", NULL);
+      PyCapsule_New((void*)&bareos_PluginContext,
+                    PYTHON_MODULE_NAME_QUOTED ".PluginContext", NULL);
 
   if (!PyModulePluginContext) {
     printf(PYTHON_MODULE_NAME_QUOTED ": PyCapsule_New failed\n");
@@ -109,7 +109,7 @@ MOD_INIT(bareosdir)
   MOD_DEF(m, PYTHON_MODULE_NAME_QUOTED, NULL, Methods)
 
   if (PyModulePluginContext) {
-    PyModule_AddObject(m, "bplugin_private_context", PyModulePluginContext);
+    PyModule_AddObject(m, "PluginContext", PyModulePluginContext);
   } else {
     printf(PYTHON_MODULE_NAME_QUOTED ":PyModule_AddObject failed\n");
     return MOD_ERROR_VAL;

@@ -49,7 +49,7 @@ class htable;
 class JobControlRecord;
 
 struct AttributesDbRecord;
-struct bplugin_private_context;
+struct PluginContext;
 struct JobControlRecordPrivate;
 struct VolumeSessionInfo;
 
@@ -221,7 +221,7 @@ class JobControlRecord {
   guid_list* id_list{};     /**< User/group id to name list */
 
   alist* plugin_ctx_list{}; /**< List of contexts for plugins */
-  bplugin_private_context* plugin_ctx{};  /**< Current plugin context */
+  PluginContext* plugin_ctx{};  /**< Current plugin context */
   POOLMEM* comment{};       /**< Comment for this Job */
   int64_t max_bandwidth{};  /**< Bandwidth limit for this Job */
   htable* path_list{};      /**< Directory list (used by findlib) */

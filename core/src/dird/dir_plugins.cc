@@ -46,27 +46,19 @@ static alist* dird_plugin_list;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Forward referenced functions */
-static bRC bareosGetValue(bplugin_private_context* ctx,
-                          brDirVariable var,
-                          void* value);
-static bRC bareosSetValue(bplugin_private_context* ctx,
-                          bwDirVariable var,
-                          void* value);
-static bRC bareosRegisterEvents(bplugin_private_context* ctx,
-                                int nr_events,
-                                ...);
-static bRC bareosUnRegisterEvents(bplugin_private_context* ctx,
-                                  int nr_events,
-                                  ...);
-static bRC bareosGetInstanceCount(bplugin_private_context* ctx, int* ret);
-static bRC bareosJobMsg(bplugin_private_context* ctx,
+static bRC bareosGetValue(PluginContext* ctx, brDirVariable var, void* value);
+static bRC bareosSetValue(PluginContext* ctx, bwDirVariable var, void* value);
+static bRC bareosRegisterEvents(PluginContext* ctx, int nr_events, ...);
+static bRC bareosUnRegisterEvents(PluginContext* ctx, int nr_events, ...);
+static bRC bareosGetInstanceCount(PluginContext* ctx, int* ret);
+static bRC bareosJobMsg(PluginContext* ctx,
                         const char* file,
                         int line,
                         int type,
                         utime_t mtime,
                         const char* fmt,
                         ...);
-static bRC bareosDebugMsg(bplugin_private_context* ctx,
+static bRC bareosDebugMsg(PluginContext* ctx,
                           const char* file,
                           int line,
                           int level,
@@ -97,8 +89,7 @@ struct b_plugin_ctx {
   Plugin* plugin; /* pointer to plugin of which this is an instance off */
 };
 
-static inline bool IsEventEnabled(bplugin_private_context* ctx,
-                                  bDirEventType eventType)
+static inline bool IsEventEnabled(PluginContext* ctx, bDirEventType eventType)
 {
   b_plugin_ctx* b_ctx;
   if (!ctx) { return false; }
@@ -107,7 +98,7 @@ static inline bool IsEventEnabled(bplugin_private_context* ctx,
   return BitIsSet(eventType, b_ctx->events);
 }
 
-static inline bool IsPluginDisabled(bplugin_private_context* ctx)
+static inline bool IsPluginDisabled(PluginContext* ctx)
 {
   b_plugin_ctx* b_ctx;
   if (!ctx) { return true; }
@@ -116,7 +107,7 @@ static inline bool IsPluginDisabled(bplugin_private_context* ctx)
   return b_ctx->disabled;
 }
 
-static bool IsCtxGood(bplugin_private_context* ctx,
+static bool IsCtxGood(PluginContext* ctx,
                       JobControlRecord*& jcr,
                       b_plugin_ctx*& bctx)
 {
@@ -134,7 +125,7 @@ static bool IsCtxGood(bplugin_private_context* ctx,
 static inline bool trigger_plugin_event(JobControlRecord* jcr,
                                         bDirEventType eventType,
                                         bDirEvent* event,
-                                        bplugin_private_context* ctx,
+                                        PluginContext* ctx,
                                         void* value,
                                         alist* plugin_ctx_list,
                                         int* index,
@@ -239,7 +230,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
    * See if we need to trigger the loaded plugins in reverse order.
    */
   if (reverse) {
-    bplugin_private_context* ctx;
+    PluginContext* ctx;
 
     foreach_alist_rindex (i, ctx, plugin_ctx_list) {
       if (trigger_plugin_event(jcr, eventType, &event, ctx, value,
@@ -248,7 +239,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
       }
     }
   } else {
-    bplugin_private_context* ctx;
+    PluginContext* ctx;
 
     foreach_alist_index (i, ctx, plugin_ctx_list) {
       if (trigger_plugin_event(jcr, eventType, &event, ctx, value,
@@ -386,11 +377,11 @@ static bool IsPluginCompatible(Plugin* plugin)
 /**
  * Instantiate a new plugin instance.
  */
-static inline bplugin_private_context* instantiate_plugin(JobControlRecord* jcr,
-                                                          Plugin* plugin,
-                                                          uint32_t instance)
+static inline PluginContext* instantiate_plugin(JobControlRecord* jcr,
+                                                Plugin* plugin,
+                                                uint32_t instance)
 {
-  bplugin_private_context* ctx;
+  PluginContext* ctx;
   b_plugin_ctx* b_ctx;
 
   b_ctx = (b_plugin_ctx*)malloc(sizeof(b_plugin_ctx));
@@ -401,7 +392,7 @@ static inline bplugin_private_context* instantiate_plugin(JobControlRecord* jcr,
   Dmsg2(debuglevel, "Instantiate dir-plugin_ctx_list=%p JobId=%d\n",
         jcr->plugin_ctx_list, jcr->JobId);
 
-  ctx = (bplugin_private_context*)malloc(sizeof(bplugin_private_context));
+  ctx = (PluginContext*)malloc(sizeof(PluginContext));
   ctx->instance = instance;
   ctx->plugin = plugin;
   ctx->core_private_context = (void*)b_ctx;
@@ -422,7 +413,7 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
 {
   int i, j, len;
   Plugin* plugin;
-  bplugin_private_context* ctx = nullptr;
+  PluginContext* ctx = nullptr;
   uint32_t instance;
   bDirEvent event;
   bDirEventType eventType;
@@ -548,7 +539,7 @@ void NewPlugins(JobControlRecord* jcr)
  */
 void FreePlugins(JobControlRecord* jcr)
 {
-  bplugin_private_context* ctx = nullptr;
+  PluginContext* ctx = nullptr;
 
   if (!dird_plugin_list || !jcr->plugin_ctx_list) { return; }
 
@@ -571,9 +562,7 @@ void FreePlugins(JobControlRecord* jcr)
  * Callbacks from the plugin
  *
  */
-static bRC bareosGetValue(bplugin_private_context* ctx,
-                          brDirVariable var,
-                          void* value)
+static bRC bareosGetValue(PluginContext* ctx, brDirVariable var, void* value)
 {
   JobControlRecord* jcr = NULL;
   bRC retval = bRC_OK;
@@ -758,9 +747,7 @@ static bRC bareosGetValue(bplugin_private_context* ctx,
   return retval;
 }
 
-static bRC bareosSetValue(bplugin_private_context* ctx,
-                          bwDirVariable var,
-                          void* value)
+static bRC bareosSetValue(PluginContext* ctx, bwDirVariable var, void* value)
 {
   JobControlRecord* jcr;
 
@@ -787,9 +774,7 @@ static bRC bareosSetValue(bplugin_private_context* ctx,
   return bRC_OK;
 }
 
-static bRC bareosRegisterEvents(bplugin_private_context* ctx,
-                                int nr_events,
-                                ...)
+static bRC bareosRegisterEvents(PluginContext* ctx, int nr_events, ...)
 {
   int i;
   va_list args;
@@ -809,9 +794,7 @@ static bRC bareosRegisterEvents(bplugin_private_context* ctx,
   return bRC_OK;
 }
 
-static bRC bareosUnRegisterEvents(bplugin_private_context* ctx,
-                                  int nr_events,
-                                  ...)
+static bRC bareosUnRegisterEvents(PluginContext* ctx, int nr_events, ...)
 {
   int i;
   va_list args;
@@ -831,11 +814,11 @@ static bRC bareosUnRegisterEvents(bplugin_private_context* ctx,
   return bRC_OK;
 }
 
-static bRC bareosGetInstanceCount(bplugin_private_context* ctx, int* ret)
+static bRC bareosGetInstanceCount(PluginContext* ctx, int* ret)
 {
   int cnt;
   JobControlRecord *jcr, *njcr;
-  bplugin_private_context* nctx;
+  PluginContext* nctx;
   b_plugin_ctx* bctx;
   bRC retval = bRC_Error;
 
@@ -862,7 +845,7 @@ bail_out:
   return retval;
 }
 
-static bRC bareosJobMsg(bplugin_private_context* ctx,
+static bRC bareosJobMsg(PluginContext* ctx,
                         const char* file,
                         int line,
                         int type,
@@ -888,7 +871,7 @@ static bRC bareosJobMsg(bplugin_private_context* ctx,
   return bRC_OK;
 }
 
-static bRC bareosDebugMsg(bplugin_private_context* ctx,
+static bRC bareosDebugMsg(PluginContext* ctx,
                           const char* file,
                           int line,
                           int level,

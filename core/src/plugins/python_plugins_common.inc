@@ -20,7 +20,7 @@
 */
 
 /* Common functions used in all python plugins.  */
-static bRC getPluginValue(bplugin_private_context* bareos_plugin_ctx,
+static bRC getPluginValue(PluginContext* bareos_plugin_ctx,
                           pVariable var,
                           void* value)
 {
@@ -38,7 +38,7 @@ bail_out:
   return retval;
 }
 
-static bRC setPluginValue(bplugin_private_context* bareos_plugin_ctx,
+static bRC setPluginValue(PluginContext* bareos_plugin_ctx,
                           pVariable var,
                           void* value)
 {
@@ -120,7 +120,7 @@ static inline void SetString(char** destination, char* value)
  * return "".join(traceback.format_exception(sys.exc_type,
  *    sys.exc_value, sys.exc_traceback))
  */
-static void PyErrorHandler(bplugin_private_context* bareos_plugin_ctx, int msgtype)
+static void PyErrorHandler(PluginContext* bareos_plugin_ctx, int msgtype)
 {
   PyObject *type, *value, *traceback;
   PyObject* tracebackModule;
@@ -165,25 +165,25 @@ static void PyErrorHandler(bplugin_private_context* bareos_plugin_ctx, int msgty
   free(error_string);
 }
 
-static void StorePluginContextInPythonModule(bplugin_private_context* bareos_plugin_ctx)
+static void StorePluginContextInPythonModule(PluginContext* bareos_plugin_ctx)
 {
   /* get the pointer to the module variable that is exported via the capsule */
-  bplugin_private_context** bareosfd_bplugin_private_context =
-      (bplugin_private_context**)PyCapsule_Import(PYTHON_MODULE_NAME_QUOTED ".bplugin_private_context", 0);
+  PluginContext** bareosfd_PluginContext =
+      (PluginContext**)PyCapsule_Import(PYTHON_MODULE_NAME_QUOTED ".PluginContext", 0);
 
   /* store bareos_plugin_ctx in module */
-  if (bareosfd_bplugin_private_context) {
-    *bareosfd_bplugin_private_context = bareos_plugin_ctx;
+  if (bareosfd_PluginContext) {
+    *bareosfd_PluginContext = bareos_plugin_ctx;
   } else {
-    printf(PYTHON_MODULE_NAME_QUOTED ": could not get bareosfd_bplugin_private_context from module\n");
+    printf(PYTHON_MODULE_NAME_QUOTED ": could not get bareosfd_PluginContext from module\n");
   }
 }
 
-static bplugin_private_context* GetPluginContextFromPythonModule()
+static PluginContext* GetPluginContextFromPythonModule()
 {
-  const char* capsule_name =  PYTHON_MODULE_NAME_QUOTED ".bplugin_private_context";
-  bplugin_private_context** retval =
-      (bplugin_private_context**)PyCapsule_Import(capsule_name, 0);
+  const char* capsule_name =  PYTHON_MODULE_NAME_QUOTED ".PluginContext";
+  PluginContext** retval =
+      (PluginContext**)PyCapsule_Import(capsule_name, 0);
   return *retval;
 }
 
