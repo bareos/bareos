@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -2561,7 +2561,7 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
 
 /**
  * Callback function which is exposed as a part of the additional methods which
- * allow a Python plugin to get certain internal values of the current Job.
+ * allow a Python plugin to set certain internal values of the current Job.
  */
 static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
 {
@@ -2574,7 +2574,9 @@ static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
     goto bail_out;
   }
 
+  ctx = PyGetbpContext(pyCtx);
   switch (var) {
+    case bVarSinceTime:
     case bVarLevel: {
       int value = 0;
 
@@ -2594,7 +2596,6 @@ static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
       break;
     }
     default:
-      ctx = PyGetbpContext(pyCtx);
       Dmsg(ctx, debuglevel,
            "python-fd: PyBareosSetValue unknown variable requested %d\n", var);
       break;

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2008 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -47,7 +47,7 @@ int MakeEstimate(JobControlRecord* jcr)
   jcr->setJobStatus(JS_Running);
 
   SetFindOptions((FindFilesPacket*)jcr->impl->ff, jcr->impl->incremental,
-                 jcr->impl->mtime);
+                 jcr->impl->since_time);
   /* in accurate mode, we overwrite the find_one check function */
   if (jcr->accurate) {
     SetFindChangedFunction((FindFilesPacket*)jcr->impl->ff, AccurateCheckFile);

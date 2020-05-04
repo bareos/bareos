@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2019 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2020 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -25,7 +25,7 @@
 # the backup fileset
 
 import bareosfd
-from bareos_fd_consts import bJobMessageType, bFileType, bRCs
+from bareos_fd_consts import bJobMessageType, bFileType, bRCs, bVariable
 import os
 import re
 import hashlib
@@ -63,6 +63,8 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
         self.deny = None
         self.object_index_seq = int((time.time() - 1546297200) * 10)
         self.sha256sums_by_filename = {}
+        bareosfd.SetValue(context,bVariable["bVarSinceTime"],999)
+
 
     def filename_is_allowed(self, context, filename, allowregex, denyregex):
         """

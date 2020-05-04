@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -245,8 +245,7 @@ static char OKsecureerase[] = "2000 OK FDSecureEraseCmd %s\n";
 static char OKsession[] = "2000 OK session\n";
 static char OKstore[] = "2000 OK storage\n";
 static char OKstoreend[] = "2000 OK storage end\n";
-static char OKjob[] =
-    "2000 OK Job %s (%s) %s,%s,%s";
+static char OKjob[] = "2000 OK Job %s (%s) %s,%s,%s";
 static char OKsetdebugv0[] =
     "2000 OK setdebug=%d trace=%d hangup=%d tracefile=%s\n";
 static char OKsetdebugv1[] =
@@ -1542,8 +1541,8 @@ static bool LevelCmd(JobControlRecord* jcr)
 
     Dmsg2(100, "adj=%lld since_time=%lld\n", adj, since_time);
     jcr->impl->incremental = true; /* set incremental or decremental backup */
-    jcr->impl->mtime = since_time; /* set since time */
-    GeneratePluginEvent(jcr, bEventSince, (void*)(time_t)jcr->impl->mtime);
+    jcr->impl->since_time = since_time; /* set since time */
+    GeneratePluginEvent(jcr, bEventSince, (void*)(time_t)jcr->impl->since_time);
   } else {
     Jmsg1(jcr, M_FATAL, 0, _("Unknown backup level: %s\n"), level);
     FreeMemory(level);

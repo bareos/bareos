@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -65,7 +65,7 @@ extern "C" char* job_code_callback_filed(JobControlRecord* jcr,
       if (jcr->impl->director) { return jcr->impl->director->resource_name_; }
       break;
     case 'm':
-      return edit_uint64(jcr->impl->mtime, str);
+      return edit_uint64(jcr->impl->since_time, str);
   }
 
   return NULL;

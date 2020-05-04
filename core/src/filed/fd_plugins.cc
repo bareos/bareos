@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -2126,9 +2126,9 @@ static bRC bareosGetValue(bpContext* ctx, bVariable var, void* value)
               jcr->JobStatus);
         break;
       case bVarSinceTime:
-        *((int*)value) = (int)jcr->impl->mtime;
+        *((int*)value) = (int)jcr->impl->since_time;
         Dmsg1(debuglevel, "fd-plugin: return bVarSinceTime=%d\n",
-              (int)jcr->impl->mtime);
+              (int)jcr->impl->since_time);
         break;
       case bVarAccurate:
         *((int*)value) = (int)jcr->accurate;
@@ -2180,6 +2180,9 @@ static bRC bareosSetValue(bpContext* ctx, bVariable var, void* value)
   if (!jcr) { return bRC_Error; }
 
   switch (var) {
+    case bVarSinceTime:
+      jcr->impl->since_time = (*(int*)value);
+      break;
     case bVarLevel:
       jcr->setJobLevel(*(int*)value);
       break;
@@ -2187,6 +2190,8 @@ static bRC bareosSetValue(bpContext* ctx, bVariable var, void* value)
       if (!AccurateMarkFileAsSeen(jcr, (char*)value)) { return bRC_Error; }
       break;
     default:
+      Jmsg1(jcr, M_ERROR, 0,
+            "Warning: bareosSetValue not implemented for var %d.\n", var);
       break;
   }
 
