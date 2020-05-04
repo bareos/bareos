@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -177,7 +177,8 @@ class JobControlRecord {
   POOLMEM* client_name{};       /**< Client name */
   POOLMEM* JobIds{};            /**< User entered string of JobIds */
   POOLMEM* RestoreBootstrap{};  /**< Bootstrap file to restore */
-  POOLMEM* stime{};             /**< start time for incremental/differential */
+  POOLMEM* starttime_string{};  /**< start time for incremental/differential
+                                  as string "yyyy-mm-dd hh:mm:ss" */
   char* sd_auth_key{};          /**< SD auth key */
   TlsPolicy sd_tls_policy{kBnetTlsNone};      /**< SD Tls Policy */
   MessagesResource* jcr_msgs{}; /**< Copy of message resource -- actually used */
