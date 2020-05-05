@@ -64,6 +64,13 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
         self.object_index_seq = int((time.time() - 1546297200) * 10)
         self.sha256sums_by_filename = {}
         bareosfd.SetValue(context,bVariable["bVarSinceTime"],999)
+        triple_nine = bareosfd.GetValue(context,bVariable["bVarSinceTime"])
+        if triple_nine != 999:
+            bareosfd.JobMessage(
+                context,
+                bJobMessageType["M_ERROR"],
+                "Wrong value for since time (should be 999 but is %d)\n" % triple_nine
+            )
 
 
     def filename_is_allowed(self, context, filename, allowregex, denyregex):
