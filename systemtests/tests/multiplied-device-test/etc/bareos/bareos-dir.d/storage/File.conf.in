@@ -1,6 +1,6 @@
 Storage {
   Name = File
-  Address = @hostname@                # N.B. Use a fully qualified name here (do not use "localhost" here).
+  Address = @hostname@
   Password = "@sd_password@"
   Device = virtual-autochanger
   Autochanger = yes

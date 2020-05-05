@@ -521,7 +521,9 @@ set(dumps ${PROJECT_BINARY_DIR}/dumps)
 set(fd_password "fd_password")
 set(fd_port 8102)
 
-cmake_host_system_information(RESULT hostname QUERY HOSTNAME)
+if(NOT hostname)
+  cmake_host_system_information(RESULT hostname QUERY HOSTNAME)
+endif()
 
 set(job_email "job_email")
 set(logdir "log")
