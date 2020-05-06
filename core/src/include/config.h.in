@@ -32,21 +32,13 @@
 #define NDMP_DEFAULT_PORT "10000"
 
 #if defined(HAVE_WIN32)
-#  if defined(HAVE_MINGW)
 #  include "mingwconfig.h"
 extern char win_os[];
 #  define PLATFORM "Cross-compile"
-#    if defined(_WIN64)
-#      define DISTVER "Win64"
-#    else
-#      define DISTVER "Win32"
-#    endif
+#  if defined(_WIN64)
+#    define DISTVER "Win64"
 #  else
-#  include "winconfig.h"
-extern char WIN_VERSION_LONG[];
-extern char WIN_VERSION[];
-#  define PLATFORM "MVS"
-#  define DISTVER WIN_VERSION
+#    define DISTVER "Win32"
 #  endif
 #else
 
