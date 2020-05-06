@@ -65,11 +65,8 @@ extern bool ParseSdConfig(const char* configfile, int exit_code);
 
 using namespace storagedaemon;
 
-/* Exported variables */
-int quit = 0;
-char buf[100000];
-int bsize = TAPE_BSIZE;
-char VolName[MAX_NAME_LENGTH];
+static int quit = 0;
+static char buf[100000];
 
 /**
  * If you change the format of the state file,
@@ -77,10 +74,9 @@ char VolName[MAX_NAME_LENGTH];
  */
 static uint32_t btape_state_level = 2;
 
-Device* dev = NULL;
-DeviceControlRecord* dcr;
-DeviceResource* device = NULL;
-int exit_code = 0;
+static Device* dev = nullptr;
+static DeviceControlRecord* dcr;
+static int exit_code = 0;
 
 #define REC_SIZE 32768
 
