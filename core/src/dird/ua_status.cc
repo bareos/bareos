@@ -554,7 +554,7 @@ static void DoSchedulerStatus(UaContext* ua)
   int i;
   int max_date_len = 0;
   int days = DEFAULT_STATUS_SCHED_DAYS; /* Default days for preview */
-  bool schedulegiven = false;
+  bool schedule_given_by_cmdline_args = false;
   time_t time_to_check, now, start, stop;
   char schedulename[MAX_NAME_LENGTH];
   const int seconds_per_day = 86400; /* Number of seconds in one day */
@@ -583,7 +583,7 @@ static void DoSchedulerStatus(UaContext* ua)
   i = FindArgWithValue(ua, NT_("schedule"));
   if (i >= 0) {
     bstrncpy(schedulename, ua->argv[i], sizeof(schedulename));
-    schedulegiven = true;
+    schedule_given_by_cmdline_args = true;
   }
 
   /*
@@ -613,11 +613,11 @@ static void DoSchedulerStatus(UaContext* ua)
   foreach_res (sched, R_SCHEDULE) {
     int cnt = 0;
 
-    if (!schedulegiven && !sched->enabled) { continue; }
+    if (!sched->enabled) { continue; }
 
     if (!ua->AclAccessOk(Schedule_ACL, sched->resource_name_)) { continue; }
 
-    if (schedulegiven) {
+    if (schedule_given_by_cmdline_args) {
       if (!bstrcmp(sched->resource_name_, schedulename)) { continue; }
     }
 
@@ -625,7 +625,12 @@ static void DoSchedulerStatus(UaContext* ua)
       if (job->schedule &&
           bstrcmp(sched->resource_name_, job->schedule->resource_name_)) {
         if (cnt++ == 0) { ua->SendMsg("%s\n", sched->resource_name_); }
-        ua->SendMsg("                       %s\n", job->resource_name_);
+        if (!job->enabled || (job->client && !job->client->enabled)) {
+          ua->SendMsg("                       %s (disabled)\n",
+            job->resource_name_);
+        } else {
+          ua->SendMsg("                       %s\n", job->resource_name_);
+        }
       }
     } else {
       foreach_res (job, R_JOB) {
@@ -636,11 +641,11 @@ static void DoSchedulerStatus(UaContext* ua)
         if (job->schedule &&
             bstrcmp(sched->resource_name_, job->schedule->resource_name_)) {
           if (cnt++ == 0) { ua->SendMsg("%s\n", sched->resource_name_); }
-          if (job->enabled && (!job->client || job->client->enabled)) {
-            ua->SendMsg("                       %s\n", job->resource_name_);
-          } else {
+          if (!job->enabled || (job->client && !job->client->enabled)) {
             ua->SendMsg("                       %s (disabled)\n",
-                        job->resource_name_);
+              job->resource_name_);
+          } else {
+            ua->SendMsg("                       %s\n", job->resource_name_);
           }
         }
       }
@@ -669,7 +674,8 @@ start_again:
        * List specific schedule.
        */
       if (job) {
-        if (job->schedule) {
+        if (job->schedule && job->schedule->enabled && job->enabled &&
+            job->client->enabled) {
           if (!show_scheduled_preview(ua, job->schedule, overview,
                                       &max_date_len, time_to_check)) {
             goto start_again;
@@ -680,7 +686,8 @@ start_again:
         foreach_res (job, R_JOB) {
           if (!ua->AclAccessOk(Job_ACL, job->resource_name_)) { continue; }
 
-          if (job->schedule && job->client == client) {
+          if (job->schedule && job->schedule->enabled && job->enabled &&
+              job->client == client && job->client->enabled) {
             if (!show_scheduled_preview(ua, job->schedule, overview,
                                         &max_date_len, time_to_check)) {
               job = NULL;
@@ -698,11 +705,11 @@ start_again:
        */
       LockRes(my_config);
       foreach_res (sched, R_SCHEDULE) {
-        if (!schedulegiven && !sched->enabled) { continue; }
+        if (!sched->enabled) { continue; }
 
         if (!ua->AclAccessOk(Schedule_ACL, sched->resource_name_)) { continue; }
 
-        if (schedulegiven) {
+        if (schedule_given_by_cmdline_args) {
           if (!bstrcmp(sched->resource_name_, schedulename)) { continue; }
         }
 
