@@ -50,15 +50,14 @@ class LoginForm extends Form
       if(count($this->directors) == 1) {
          $this->add(array(
             'name' => 'director',
-            'type' => 'select',
+            'type' => 'text',
             'options' => array(
                'label' => 'Director',
-               'empty_option' => 'Please choose a director',
-               'value_options' => $this->directors,
             ),
             'attributes' => array(
                'id' => 'director',
-               'value' => key($this->directors)
+               'value' => key($this->directors),
+               'readonly' => true
             )
          )
          );
