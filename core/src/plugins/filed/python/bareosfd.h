@@ -751,6 +751,7 @@ static PyMethodDef Methods[] = {
     {NULL, NULL, 0, NULL}};
 
 
+static bRC PyLoadModule(PluginContext* bareos_plugin_ctx, void* value);
 } /* namespace filedaemon */
 using namespace filedaemon;
 
@@ -766,6 +767,7 @@ bRC loadPlugin(::Core_PluginApiDefinition* lbareos_plugin_interface_version,
                BareosCoreFunctions* lbareos_core_functions,
                PluginInformation** plugin_information,
                pFuncs** plugin_functions);
+
 #ifdef __cplusplus
 }
 #endif
@@ -812,7 +814,7 @@ MOD_INIT(bareosfd)
   PyObject* c_api_object;
 
   /* Initialize the C API pointer array */
-  Bareosfd_API[Bareosfd_PyLoadModule_NUM] = (void*)Bareosfd_PyLoadModule;
+  Bareosfd_API[Bareosfd_PyLoadModule_NUM] = (void*)PyLoadModule;
 
   /* Create a Capsule containing the API pointer array's address */
   c_api_object = PyCapsule_New((void*)Bareosfd_API,
