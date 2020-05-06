@@ -1180,7 +1180,7 @@ bool generic_tape_device::rewind(DeviceControlRecord* dcr)
  */
 static bool do_mount(DeviceControlRecord* dcr, int mount, int dotimeout)
 {
-  DeviceResource* device = dcr->dev->device_resource;
+  DeviceResource* device_resource = dcr->dev->device_resource;
   PoolMem ocmd(PM_FNAME);
   POOLMEM* results;
   char* icmd;
@@ -1188,9 +1188,9 @@ static bool do_mount(DeviceControlRecord* dcr, int mount, int dotimeout)
   BErrNo be;
 
   if (mount) {
-    icmd = device->mount_command;
+    icmd = device_resource->mount_command;
   } else {
-    icmd = device->unmount_command;
+    icmd = device_resource->unmount_command;
   }
 
   dcr->dev->EditMountCodes(ocmd, icmd);

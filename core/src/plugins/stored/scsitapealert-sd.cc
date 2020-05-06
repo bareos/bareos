@@ -192,7 +192,7 @@ static bRC handle_tapealert_readout(void* value)
 {
   DeviceControlRecord* dcr;
   Device* dev;
-  DeviceResource* device;
+  DeviceResource* device_resource;
   uint64_t flags;
 
   /*
@@ -202,13 +202,13 @@ static bRC handle_tapealert_readout(void* value)
   if (!dcr) { return bRC_Error; }
   dev = dcr->dev;
   if (!dev) { return bRC_Error; }
-  device = dev->device_resource;
-  if (!device) { return bRC_Error; }
+  device_resource = dev->device_resource;
+  if (!device_resource) { return bRC_Error; }
 
   /*
    * See if drive tapealert is enabled.
    */
-  if (!device->drive_tapealert_enabled) {
+  if (!device_resource->drive_tapealert_enabled) {
     Dmsg1(debuglevel,
           "scsitapealert-sd: tapealert is not enabled on device %s\n",
           dev->dev_name);

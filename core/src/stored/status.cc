@@ -191,13 +191,13 @@ static bool NeedToListDevice(const char* devicenames, DeviceResource* device)
  * registered the event to return specific device information.
  */
 static void trigger_device_status_hook(JobControlRecord* jcr,
-                                       DeviceResource* device,
+                                       DeviceResource* device_resource,
                                        StatusPacket* sp,
                                        bsdEventType eventType)
 {
   DeviceStatusInformation dst;
 
-  dst.device = device;
+  dst.device_resource = device_resource;
   dst.status = GetPoolMemory(PM_MESSAGE);
   dst.status_length = 0;
 
@@ -208,17 +208,20 @@ static void trigger_device_status_hook(JobControlRecord* jcr,
 }
 
 /*
- * Ask the device if it want to log something specific in the status overview.
+ * Ask the device_resource if it want to log something specific in the status
+ * overview.
  */
-static void get_device_specific_status(DeviceResource* device, StatusPacket* sp)
+static void get_device_specific_status(DeviceResource* device_resource,
+                                       StatusPacket* sp)
 {
   DeviceStatusInformation dst;
 
-  dst.device = device;
+  dst.device_resource = device_resource;
   dst.status = GetPoolMemory(PM_MESSAGE);
   dst.status_length = 0;
 
-  if (device && device->dev && device->dev->DeviceStatus(&dst)) {
+  if (device_resource && device_resource->dev &&
+      device_resource->dev->DeviceStatus(&dst)) {
     if (dst.status_length > 0) { sp->send(dst.status, dst.status_length); }
   }
   FreePoolMemory(dst.status);

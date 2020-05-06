@@ -34,7 +34,7 @@ class DeviceResource;
  * method via bsdEventDriveStatus and bsdEventVolumeStatus plugin events.
  */
 struct DeviceStatusInformation {
-  DeviceResource* device = nullptr;
+  DeviceResource* device_resource = nullptr;
   POOLMEM* status = nullptr;
   int status_length = 0;
 };

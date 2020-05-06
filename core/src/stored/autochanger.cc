@@ -70,40 +70,40 @@ bool InitAutochangers()
    * Ensure that the media_type for each device is the same
    */
   foreach_res (changer, R_AUTOCHANGER) {
-    DeviceResource* device = nullptr;
+    DeviceResource* device_resource = nullptr;
 
     logical_drive_number = 0;
-    foreach_alist (device, changer->device) {
+    foreach_alist (device_resource, changer->device) {
       /*
        * If the device does not have a changer name or changer command
        * defined, used the one from the Autochanger resource
        */
-      if (!device->changer_name && changer->changer_name) {
-        device->changer_name = strdup(changer->changer_name);
+      if (!device_resource->changer_name && changer->changer_name) {
+        device_resource->changer_name = strdup(changer->changer_name);
       }
 
-      if (!device->changer_command && changer->changer_command) {
-        device->changer_command = strdup(changer->changer_command);
+      if (!device_resource->changer_command && changer->changer_command) {
+        device_resource->changer_command = strdup(changer->changer_command);
       }
 
-      if (!device->changer_name) {
+      if (!device_resource->changer_name) {
         Jmsg(NULL, M_ERROR, 0,
              _("No Changer Name given for device %s. Cannot continue.\n"),
-             device->resource_name_);
+             device_resource->resource_name_);
         OK = false;
       }
 
-      if (!device->changer_command) {
+      if (!device_resource->changer_command) {
         Jmsg(NULL, M_ERROR, 0,
              _("No Changer Command given for device %s. Cannot continue.\n"),
-             device->resource_name_);
+             device_resource->resource_name_);
         OK = false;
       }
 
       /*
        * Give the drive in the autochanger a logical drive number.
        */
-      device->drive = logical_drive_number++;
+      device_resource->drive = logical_drive_number++;
     }
   }
 
@@ -551,7 +551,7 @@ static bool UnloadOtherDrive(DeviceControlRecord* dcr,
   Device* dev_save;
   bool found = false;
   AutochangerResource* changer = dcr->dev->device_resource->changer_res;
-  DeviceResource* device = nullptr;
+  DeviceResource* device_resource = nullptr;
   int retries = 0; /* wait for device retries */
 
   if (!changer) { return false; }
@@ -562,8 +562,8 @@ static bool UnloadOtherDrive(DeviceControlRecord* dcr,
    * we want in other drives, and if possible, unload it.
    */
   Dmsg0(100, "Wiffle through devices looking for slot\n");
-  foreach_alist (device, changer->device) {
-    dev = device->dev;
+  foreach_alist (device_resource, changer->device) {
+    dev = device_resource->dev;
     if (!dev) { continue; }
     dev_save = dcr->dev;
     dcr->SetDev(dev);
