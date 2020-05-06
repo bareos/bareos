@@ -39,7 +39,7 @@
 
 #include "filed/fd_plugins.h"
 
-
+#define BAREOSFD_MODULE
 #include "bareosfd.h"
 #include "lib/edit.h"
 
@@ -248,7 +248,6 @@ bRC loadPlugin(Core_PluginApiDefinition* lbareos_plugin_interface_version,
     } else {
       printf("loading of bareosfd failed\n");
     }
-
     if (PyErr_Occurred()) { PyErrorHandler(); }
     // Extract capsules pointer from bareosfd module
     void (*loadplugin_from_bareosfd_module)(
