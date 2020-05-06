@@ -259,7 +259,7 @@ static void ListDevices(JobControlRecord* jcr,
                changer->resource_name_);
     sp->send(msg, len);
 
-    foreach_alist (device_resource, changer->device) {
+    foreach_alist (device_resource, changer->device_resources) {
       if (device_resource->dev) {
         len = Mmsg(msg, "   %s\n", device_resource->dev->print_name());
         sp->send(msg, len);

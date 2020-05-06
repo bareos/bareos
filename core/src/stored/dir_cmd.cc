@@ -911,7 +911,7 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
         /*
          * Try each device in this AutoChanger
          */
-        foreach_alist (device_resource, changer->device) {
+        foreach_alist (device_resource, changer->device_resources) {
           Dmsg1(100, "Try changer device %s\n",
                 device_resource->resource_name_);
           if (!device_resource->dev) {

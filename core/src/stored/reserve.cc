@@ -586,7 +586,7 @@ int SearchResForDevice(ReserveContext& rctx)
       /*
        * Try each device_resource in this AutoChanger
        */
-      foreach_alist (rctx.device_resource, changer->device) {
+      foreach_alist (rctx.device_resource, changer->device_resources) {
         Dmsg1(debuglevel, "Try changer device %s\n",
               rctx.device_resource->resource_name_);
         if (!rctx.device_resource->autoselect) {

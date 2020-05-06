@@ -73,7 +73,7 @@ bool InitAutochangers()
     DeviceResource* device_resource = nullptr;
 
     logical_drive_number = 0;
-    foreach_alist (device_resource, changer->device) {
+    foreach_alist (device_resource, changer->device_resources) {
       /*
        * If the device does not have a changer name or changer command
        * defined, used the one from the Autochanger resource
@@ -556,14 +556,14 @@ static bool UnloadOtherDrive(DeviceControlRecord* dcr,
   int retries = 0; /* wait for device retries */
 
   if (!changer) { return false; }
-  if (changer->device->size() == 1) { return true; }
+  if (changer->device_resources->size() == 1) { return true; }
 
   /*
    * We look for the slot number corresponding to the tape
    * we want in other drives, and if possible, unload it.
    */
   Dmsg0(100, "Wiffle through devices looking for slot\n");
-  foreach_alist (device_resource, changer->device) {
+  foreach_alist (device_resource, changer->device_resources) {
     dev = device_resource->dev;
     if (!dev) { continue; }
     dev_save = dcr->dev;
@@ -748,7 +748,7 @@ bool AutochangerCmd(DeviceControlRecord* dcr,
   if (bstrcmp(cmd, "drives")) {
     AutochangerResource* changer_res = dcr->device_resource->changer_res;
     int drives = 1;
-    if (changer_res) { drives = changer_res->device->size(); }
+    if (changer_res) { drives = changer_res->device_resources->size(); }
     dir->fsend("drives=%hd\n", drives);
     Dmsg1(100, "drives=%hd\n", drives);
     return true;

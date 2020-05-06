@@ -231,7 +231,7 @@ static ResourceItem dev_items[] = {
 static ResourceItem autochanger_items[] = {
   {"Name", CFG_TYPE_NAME, ITEM(res_changer, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"Description", CFG_TYPE_STR, ITEM(res_changer, description_), 0, 0, NULL, NULL, NULL},
-  {"Device", CFG_TYPE_ALIST_RES, ITEM(res_changer, device), R_DEVICE, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"Device", CFG_TYPE_ALIST_RES, ITEM(res_changer, device_resources), R_DEVICE, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"ChangerDevice", CFG_TYPE_STRNAME, ITEM(res_changer, changer_name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"ChangerCommand", CFG_TYPE_STRNAME, ITEM(res_changer, changer_command), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
@@ -517,8 +517,8 @@ static void MultiplyDevice(DeviceResource& multiplied_device_resource)
                                       copied_device_resource->rcode_);
 
     if (copied_device_resource->changer_res) {
-      if (copied_device_resource->changer_res->device) {
-        copied_device_resource->changer_res->device->append(
+      if (copied_device_resource->changer_res->device_resources) {
+        copied_device_resource->changer_res->device_resources->append(
             copied_device_resource);
       }
     }
@@ -797,10 +797,10 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
           Emsg1(M_ERROR_TERM, 0, _("Cannot find AutoChanger resource %s\n"),
                 res_changer->resource_name_);
         } else {
-          p->device = res_changer->device;
+          p->device_resources = res_changer->device_resources;
 
           DeviceResource* q = nullptr;
-          foreach_alist (q, p->device) {
+          foreach_alist (q, p->device_resources) {
             q->changer_res = p;
           }
 
@@ -914,7 +914,7 @@ static void FreeResource(BareosResource* res, int type)
       assert(p);
       if (p->changer_name) { free(p->changer_name); }
       if (p->changer_command) { free(p->changer_command); }
-      if (p->device) { delete p->device; }
+      if (p->device_resources) { delete p->device_resources; }
       RwlDestroy(&p->changer_lock);
       delete p;
       break;

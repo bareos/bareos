@@ -30,7 +30,7 @@ namespace storagedaemon {
 
 AutochangerResource::AutochangerResource()
     : BareosResource()
-    , device(nullptr)
+    , device_resources(nullptr)
     , changer_name(nullptr)
     , changer_command(nullptr)
 {
@@ -41,7 +41,7 @@ AutochangerResource& AutochangerResource::operator=(
     const AutochangerResource& rhs)
 {
   BareosResource::operator=(rhs);
-  device = rhs.device;
+  device_resources = rhs.device_resources;
   changer_name = rhs.changer_name;
   changer_command = rhs.changer_command;
   changer_lock = rhs.changer_lock;
@@ -50,7 +50,7 @@ AutochangerResource& AutochangerResource::operator=(
 
 bool AutochangerResource::PrintConfigToBuffer(PoolMem& buf)
 {
-  alist* original_alist = device;
+  alist* original_alist = device_resources;
   alist* temp_alist = new alist(original_alist->size(), not_owned_by_alist);
   DeviceResource* device_resource = nullptr;
   foreach_alist (device_resource, original_alist) {
@@ -65,9 +65,9 @@ bool AutochangerResource::PrintConfigToBuffer(PoolMem& buf)
       temp_alist->append(d);
     }
   }
-  device = temp_alist;
+  device_resources = temp_alist;
   PrintConfig(buf, *my_config);
-  device = original_alist;
+  device_resources = original_alist;
   foreach_alist (device_resource, temp_alist) {
     delete device_resource;
   }
