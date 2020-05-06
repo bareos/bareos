@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -132,7 +132,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr,
   if (!CryptoSessionStart(jcr, cipher)) { return false; }
 
   SetFindOptions((FindFilesPacket*)jcr->impl->ff, jcr->impl->incremental,
-                 jcr->impl->mtime);
+                 jcr->impl->since_time);
 
   /**
    * In accurate mode, we overload the find_one check function
@@ -565,7 +565,7 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
       break;
     case FT_DIRBEGIN:
       jcr->impl->num_files_examined--; /* correct file count */
-      return 1;                         /* not used */
+      return 1;                        /* not used */
     case FT_NORECURSE:
       Jmsg(jcr, M_INFO, 1,
            _("     Recursion turned off. Will not descend from %s into %s\n"),
@@ -1234,7 +1234,7 @@ static int send_data(JobControlRecord* jcr,
      */
     if (bctx.encrypted_len > 0) {
       sd->message_length = bctx.encrypted_len; /* set encrypted length */
-      sd->msg = jcr->impl->crypto.crypto_buf; /* set correct write buffer */
+      sd->msg = jcr->impl->crypto.crypto_buf;  /* set correct write buffer */
       if (!sd->send()) {
         if (!jcr->IsJobCanceled()) {
           Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
