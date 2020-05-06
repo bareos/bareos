@@ -172,7 +172,7 @@ set(BAREOS_SRCS
 
 if(HAVE_WIN32)
   list(APPEND BAREOS_SRCS ../win32/compat/compat.cc ../win32/compat/glob.cc
-              ../win32/compat/print.cc ../win32/compat/winapi.cc
+              ../win32/compat/winapi.cc
   )
 else()
   list(APPEND BAREOS_SRCS scsi_tapealert.cc)
