@@ -129,11 +129,13 @@ if(HAVE_PYTHON AND NOT HAVE_WIN32)
   add_custom_command(
     OUTPUT pythonmodules/bareosfd.so
     MAIN_DEPENDENCY ./python/bareosfd.cc
+    DEPENDS ./python/bareosfd.h
     DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/python/setup.py
     COMMAND ${PYTHON_EXECUTABLE} python/setup.py build
-    COMMAND ${PYTHON_EXECUTABLE} python/setup.py install --install-lib
-            ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
-            # COMMAND rm -R ${CMAKE_CURRENT_BINARY_DIR}/build DEPENDS python-fd
+    COMMAND
+      ${PYTHON_EXECUTABLE} python/setup.py install --install-lib
+      ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
+      # COMMAND rm -R ${CMAKE_CURRENT_BINARY_DIR}/build DEPENDS python-fd
     COMMENT "building python module pythonmodules/bareosfd.so"
   )
 
