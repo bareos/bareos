@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -478,7 +478,7 @@ static void SendSinceTime(JobControlRecord* jcr)
   utime_t stime;
   BareosSocket* fd = jcr->file_bsock;
 
-  stime = StrToUtime(jcr->stime);
+  stime = StrToUtime(jcr->starttime_string);
   fd->fsend(levelcmd, "", NT_("since_utime "), edit_uint64(stime, ed1), 0,
             NT_("prev_job="), jcr->impl->PrevJob);
 
