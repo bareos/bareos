@@ -79,7 +79,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
 
   Dmsg1(100, "Start append data. res=%d\n", dev->NumReserved());
 
-  if (!bs->SetBufferSize(dcr->device->max_network_buffer_size,
+  if (!bs->SetBufferSize(dcr->device_resource->max_network_buffer_size,
                          BNET_SETBUF_WRITE)) {
     Jmsg0(jcr, M_FATAL, 0, _("Unable to set network buffer size.\n"));
     goto bail_out;

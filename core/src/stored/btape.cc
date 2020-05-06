@@ -1421,13 +1421,13 @@ static int autochanger_test()
   POOLMEM *results, *changer;
   slot_number_t slot, loaded;
   int status;
-  int timeout = dcr->device->max_changer_wait;
+  int timeout = dcr->device_resource->max_changer_wait;
   int sleep_time = 0;
 
   Dmsg1(100, "Max changer wait = %d sec\n", timeout);
   if (!dev->HasCap(CAP_AUTOCHANGER)) { return 1; }
-  if (!(dcr->device && dcr->device->changer_name &&
-        dcr->device->changer_command)) {
+  if (!(dcr->device_resource && dcr->device_resource->changer_name &&
+        dcr->device_resource->changer_command)) {
     Pmsg0(-1, _("\nAutochanger enabled, but no name or no command device "
                 "specified.\n"));
     return 1;
@@ -1452,8 +1452,8 @@ try_again:
   dcr->VolCatInfo.Slot = slot;
   /* Find out what is loaded, zero means device is unloaded */
   Pmsg0(-1, _("3301 Issuing autochanger \"loaded\" command.\n"));
-  changer =
-      edit_device_codes(dcr, changer, dcr->device->changer_command, "loaded");
+  changer = edit_device_codes(dcr, changer,
+                              dcr->device_resource->changer_command, "loaded");
   status = RunProgram(changer, timeout, results);
   Dmsg3(100, "run_prog: %s stat=%d result=\"%s\"\n", changer, status, results);
   if (status == 0) {
@@ -1476,8 +1476,8 @@ try_again:
     dev->close(dcr);
     Pmsg2(-1, _("3302 Issuing autochanger \"unload %d %d\" command.\n"), loaded,
           dev->drive);
-    changer =
-        edit_device_codes(dcr, changer, dcr->device->changer_command, "unload");
+    changer = edit_device_codes(
+        dcr, changer, dcr->device_resource->changer_command, "unload");
     status = RunProgram(changer, timeout, results);
     Pmsg2(-1, _("unload status=%s %d\n"), status == 0 ? _("OK") : _("Bad"),
           status);
@@ -1497,8 +1497,8 @@ try_again:
   dcr->VolCatInfo.Slot = slot;
   Pmsg2(-1, _("3303 Issuing autochanger \"load %d %d\" command.\n"), slot,
         dev->drive);
-  changer =
-      edit_device_codes(dcr, changer, dcr->device->changer_command, "load");
+  changer = edit_device_codes(dcr, changer,
+                              dcr->device_resource->changer_command, "load");
   Dmsg1(100, "Changer=%s\n", changer);
   dev->close(dcr);
   status = RunProgram(changer, timeout, results);

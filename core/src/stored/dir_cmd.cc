@@ -944,7 +944,7 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
     dcr = new StorageDaemonDeviceControlRecord;
     SetupNewDcrDevice(jcr, dcr, device->dev, blocksizes);
     dcr->SetWillWrite();
-    dcr->device = device;
+    dcr->device_resource = device;
   }
   return dcr;
 }

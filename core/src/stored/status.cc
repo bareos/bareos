@@ -699,33 +699,33 @@ static void ListRunningJobs(StatusPacket* sp)
     }
     dcr = jcr->impl->dcr;
     rdcr = jcr->impl->read_dcr;
-    if ((dcr && dcr->device) || (rdcr && rdcr->device)) {
+    if ((dcr && dcr->device_resource) || (rdcr && rdcr->device_resource)) {
       bstrncpy(JobName, jcr->Job, sizeof(JobName));
       /* There are three periods after the Job name */
       char* p;
       for (int i = 0; i < 3; i++) {
         if ((p = strrchr(JobName, '.')) != NULL) { *p = 0; }
       }
-      if (rdcr && rdcr->device) {
-        len = Mmsg(
-            msg,
-            _("Reading: %s %s job %s JobId=%d Volume=\"%s\"\n"
-              "    pool=\"%s\" device=%s\n"),
-            job_level_to_str(jcr->getJobLevel()),
-            job_type_to_str(jcr->getJobType()), JobName, jcr->JobId,
-            rdcr->VolumeName, rdcr->pool_name,
-            rdcr->dev ? rdcr->dev->print_name() : rdcr->device->device_name);
+      if (rdcr && rdcr->device_resource) {
+        len = Mmsg(msg,
+                   _("Reading: %s %s job %s JobId=%d Volume=\"%s\"\n"
+                     "    pool=\"%s\" device=%s\n"),
+                   job_level_to_str(jcr->getJobLevel()),
+                   job_type_to_str(jcr->getJobType()), JobName, jcr->JobId,
+                   rdcr->VolumeName, rdcr->pool_name,
+                   rdcr->dev ? rdcr->dev->print_name()
+                             : rdcr->device_resource->device_name);
         sp->send(msg, len);
       }
-      if (dcr && dcr->device) {
-        len =
-            Mmsg(msg,
-                 _("Writing: %s %s job %s JobId=%d Volume=\"%s\"\n"
-                   "    pool=\"%s\" device=%s\n"),
-                 job_level_to_str(jcr->getJobLevel()),
-                 job_type_to_str(jcr->getJobType()), JobName, jcr->JobId,
-                 dcr->VolumeName, dcr->pool_name,
-                 dcr->dev ? dcr->dev->print_name() : dcr->device->device_name);
+      if (dcr && dcr->device_resource) {
+        len = Mmsg(msg,
+                   _("Writing: %s %s job %s JobId=%d Volume=\"%s\"\n"
+                     "    pool=\"%s\" device=%s\n"),
+                   job_level_to_str(jcr->getJobLevel()),
+                   job_type_to_str(jcr->getJobType()), JobName, jcr->JobId,
+                   dcr->VolumeName, dcr->pool_name,
+                   dcr->dev ? dcr->dev->print_name()
+                            : dcr->device_resource->device_name);
         sp->send(msg, len);
         len = Mmsg(msg, _("    spooling=%d despooling=%d despool_wait=%d\n"),
                    dcr->spooling, dcr->despooling, dcr->despool_wait);

@@ -73,7 +73,7 @@ class DeviceControlRecord {
   pthread_mutex_t mutex_ = PTHREAD_MUTEX_INITIALIZER;  /**< Access control */
   pthread_mutex_t r_mutex = PTHREAD_MUTEX_INITIALIZER; /**< rLock pre-mutex */
   Device* volatile dev{};          /**< Pointer to device */
-  DeviceResource* device{};        /**< Pointer to device resource */
+  DeviceResource* device_resource{};    /**< Pointer to device resource */
   DeviceBlock* block{};            /**< Pointer to current block */
   DeviceRecord* rec{};             /**< Pointer to record being processed */
   DeviceRecord* before_rec{};      /**< Pointer to record before translation */

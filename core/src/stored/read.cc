@@ -64,7 +64,7 @@ bool DoReadData(JobControlRecord* jcr)
 
   Dmsg0(20, "Start read data.\n");
 
-  if (!BnetSetBufferSize(fd, dcr->device->max_network_buffer_size,
+  if (!BnetSetBufferSize(fd, dcr->device_resource->max_network_buffer_size,
                          BNET_SETBUF_WRITE)) {
     return false;
   }

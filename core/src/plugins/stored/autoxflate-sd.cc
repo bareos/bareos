@@ -481,7 +481,7 @@ static bool SetupAutoDeflation(bpContext* ctx, DeviceControlRecord* dcr)
   if (jcr->buf_size == 0) { jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE; }
 
   if (!SetupCompressionBuffers(jcr, sd_enabled_compatible,
-                               dcr->device->autodeflate_algorithm,
+                               dcr->device_resource->autodeflate_algorithm,
                                &compress_buf_size)) {
     goto bail_out;
   }
@@ -501,7 +501,7 @@ static bool SetupAutoDeflation(bpContext* ctx, DeviceControlRecord* dcr)
     }
   }
 
-  switch (dcr->device->autodeflate_algorithm) {
+  switch (dcr->device_resource->autodeflate_algorithm) {
 #if defined(HAVE_LIBZ)
     case COMPRESS_GZIP: {
       compressorname = COMPRESSOR_NAME_GZIP;
@@ -509,7 +509,8 @@ static bool SetupAutoDeflation(bpContext* ctx, DeviceControlRecord* dcr)
       z_stream* pZlibStream;
 
       pZlibStream = (z_stream*)jcr->compress.workset.pZLIB;
-      if ((zstat = deflateParams(pZlibStream, dcr->device->autodeflate_level,
+      if ((zstat = deflateParams(pZlibStream,
+                                 dcr->device_resource->autodeflate_level,
                                  Z_DEFAULT_STRATEGY)) != Z_OK) {
         Jmsg(ctx, M_FATAL,
              _("autoxflate-sd: Compression deflateParams error: %d\n"), zstat);
@@ -534,7 +535,7 @@ static bool SetupAutoDeflation(bpContext* ctx, DeviceControlRecord* dcr)
       zfast_stream* pZfastStream;
       zfast_stream_compressor compressor = COMPRESSOR_FASTLZ;
 
-      switch (dcr->device->autodeflate_algorithm) {
+      switch (dcr->device_resource->autodeflate_algorithm) {
         case COMPRESS_FZ4L:
         case COMPRESS_FZ4H:
           compressor = COMPRESSOR_LZ4;
@@ -676,8 +677,8 @@ static bool AutoDeflateRecord(bpContext* ctx, DeviceControlRecord* dcr)
   /*
    * Compress the data using the configured compression algorithm.
    */
-  if (!CompressData(dcr->jcr, dcr->device->autodeflate_algorithm, rec->data,
-                    rec->data_len, data, max_compression_length,
+  if (!CompressData(dcr->jcr, dcr->device_resource->autodeflate_algorithm,
+                    rec->data, rec->data_len, data, max_compression_length,
                     &nrec->data_len)) {
     bfuncs->FreeRecord(nrec);
     goto bail_out;
@@ -706,8 +707,8 @@ static bool AutoDeflateRecord(bpContext* ctx, DeviceControlRecord* dcr)
   /*
    * Generate a compression header.
    */
-  ch.magic = dcr->device->autodeflate_algorithm;
-  ch.level = dcr->device->autodeflate_level;
+  ch.magic = dcr->device_resource->autodeflate_algorithm;
+  ch.level = dcr->device_resource->autodeflate_level;
   ch.version = COMP_HEAD_VERSION;
   ch.size = nrec->data_len;
 

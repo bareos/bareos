@@ -665,7 +665,8 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
    * Fire off Alert command and include any output
    */
   if (!JobCanceled(jcr)) {
-    if (!dcr->device->drive_tapealert_enabled && dcr->device->alert_command) {
+    if (!dcr->device_resource->drive_tapealert_enabled &&
+        dcr->device_resource->alert_command) {
       int status = 1;
       POOLMEM *alert, *line;
       Bpipe* bpipe;
@@ -673,7 +674,8 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
       alert = GetPoolMemory(PM_FNAME);
       line = GetPoolMemory(PM_FNAME);
 
-      alert = edit_device_codes(dcr, alert, dcr->device->alert_command, "");
+      alert = edit_device_codes(dcr, alert, dcr->device_resource->alert_command,
+                                "");
 
       /*
        * Wait maximum 5 minutes
@@ -794,7 +796,7 @@ void SetupNewDcrDevice(JobControlRecord* jcr,
       dcr->max_job_spool_size = dev->device_resource->max_job_spool_size;
     }
 
-    dcr->device = dev->device_resource;
+    dcr->device_resource = dev->device_resource;
     dcr->SetDev(dev);
     AttachDcrToDev(dcr);
 
@@ -805,8 +807,8 @@ void SetupNewDcrDevice(JobControlRecord* jcr,
      * don't want to first inflate the data to then again
      * do deflation for sending it to the other storage daemon.
      */
-    dcr->autodeflate = dcr->device->autodeflate;
-    dcr->autoinflate = dcr->device->autoinflate;
+    dcr->autodeflate = dcr->device_resource->autodeflate;
+    dcr->autoinflate = dcr->device_resource->autoinflate;
   }
 }
 

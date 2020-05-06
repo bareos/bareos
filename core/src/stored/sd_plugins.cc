@@ -180,10 +180,10 @@ char* edit_device_codes(DeviceControlRecord* dcr,
           str = dcr->dev->archive_name();
           break;
         case 'c':
-          str = NPRT(dcr->device->changer_name);
+          str = NPRT(dcr->device_resource->changer_name);
           break;
         case 'D':
-          str = NPRT(dcr->device->diag_device_name);
+          str = NPRT(dcr->device_resource->diag_device_name);
           break;
         case 'd':
           str = edit_int64(dcr->dev->drive_index, ed1);
@@ -747,8 +747,8 @@ static bRC bareosGetValue(bpContext* ctx, bsdrVariable var, void* value)
         }
         break;
       case bsdVarStorage:
-        if (jcr->impl->dcr && jcr->impl->dcr->device) {
-          *((char**)value) = jcr->impl->dcr->device->resource_name_;
+        if (jcr->impl->dcr && jcr->impl->dcr->device_resource) {
+          *((char**)value) = jcr->impl->dcr->device_resource->resource_name_;
           Dmsg1(debuglevel, "sd-plugin: return bsdVarStorage=%s\n",
                 NPRT(*((char**)value)));
         } else {
@@ -970,7 +970,7 @@ static void bareosUpdateTapeAlert(DeviceControlRecord* dcr, uint64_t flags)
   utime_t now;
   now = (utime_t)time(NULL);
 
-  UpdateDeviceTapealert(dcr->device->resource_name_, flags, now);
+  UpdateDeviceTapealert(dcr->device_resource->resource_name_, flags, now);
 }
 
 static DeviceRecord* bareosNewRecord(bool with_data)

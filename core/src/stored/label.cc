@@ -122,7 +122,7 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
    * Read ANSI/IBM label if so requested
    */
   want_ansi_label = dcr->VolCatInfo.LabelType != B_BAREOS_LABEL ||
-                    dcr->device->label_type != B_BAREOS_LABEL;
+                    dcr->device_resource->label_type != B_BAREOS_LABEL;
   if (want_ansi_label || dev->HasCap(CAP_CHECKLABELS)) {
     status = ReadAnsiIbmLabel(dcr);
     /*

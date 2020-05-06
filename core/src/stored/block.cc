@@ -1058,7 +1058,7 @@ reread:
     GeneratePluginEvent(jcr, bsdEventReadError, dcr);
 
     Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
-    if (device->eof_on_error_is_eot && dev->AtEof()) {
+    if (device_resource->eof_on_error_is_eot && dev->AtEof()) {
       dev->SetEot();
       return ReadStatus::EndOfTape;
     }
@@ -1086,8 +1086,9 @@ reread:
    */
 
   block->read_len = status; /* save length read */
-  if (block->read_len == 80 && (dcr->VolCatInfo.LabelType != B_BAREOS_LABEL ||
-                                dcr->device->label_type != B_BAREOS_LABEL)) {
+  if (block->read_len == 80 &&
+      (dcr->VolCatInfo.LabelType != B_BAREOS_LABEL ||
+       dcr->device_resource->label_type != B_BAREOS_LABEL)) {
     /* ***FIXME*** should check label */
     Dmsg2(100, "Ignore 80 byte ANSI label at %u:%u\n", dev->file,
           dev->block_num);

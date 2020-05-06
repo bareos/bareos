@@ -316,8 +316,8 @@ bool WriteAnsiIbmLabels(DeviceControlRecord* dcr, int type, const char* VolName)
    * If the Device requires a specific label type use it,
    * otherwise, use the type requested by the Director
    */
-  if (dcr->device->label_type != B_BAREOS_LABEL) {
-    label_type = dcr->device->label_type; /* force label type */
+  if (dcr->device_resource->label_type != B_BAREOS_LABEL) {
+    label_type = dcr->device_resource->label_type; /* force label type */
   } else {
     label_type = dcr->VolCatInfo.LabelType; /* accept Dir type */
   }
