@@ -28,7 +28,7 @@ typedef off_t boffset_t;
 
 #include "lib/plugins.h"
 #include "filed/fd_plugins.h"
-//#include "plugins/filed/python/bareosfd.h"
+#include "plugins/filed/python/bareosfd.h"
 static void PyErrorHandler()
 {
   PyObject *type, *value, *traceback;
@@ -191,12 +191,17 @@ int main(int argc, char* argv[])
   if (PyErr_Occurred()) { PyErrorHandler(); }
 
 
-  static void** Bareosfd_API = (void**)PyCapsule_Import("bareosfd._C_API", 0);
-  if (!Bareosfd_API) {
-    printf("importing bareosfd._C_API failed \n");
-  } else {
-    printf("importing bareosfd._C_API successful \n");
-  }
+  /* static void** Bareosfd_API = (void**)PyCapsule_Import("bareosfd._C_API",
+   * 0); */
+  /* if (!Bareosfd_API) { */
+  /*   printf("importing bareosfd._C_API failed \n"); */
+  /* } else { */
+  /*   printf("importing bareosfd._C_API successful \n"); */
+  /* } */
+
+
+  import_bareosfd();
+  bRC retval = Bareosfd_PyLoadModule((PluginContext*)nullptr, nullptr);
 
   /* printf("bareos_core_functions is at          %p\n",
    * &bareos_core_functions); */

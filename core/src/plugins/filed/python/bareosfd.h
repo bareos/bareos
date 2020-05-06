@@ -36,6 +36,23 @@
 
 #include "structmember.h"
 
+/* C API functions */
+#define Bareosfd_PyLoadModule_NUM 0
+#define Bareosfd_PyLoadModule_RETURN bRC
+#define Bareosfd_PyLoadModule_PROTO \
+  (PluginContext * bareos_plugin_ctx, void* value)
+
+
+/* Total number of C API pointers */
+#define Bareosfd_API_pointers 1
+
+#ifdef BAREOSFD_MODULE
+/* This section is used when compiling bareosfd.cc */
+
+static Bareosfd_PyLoadModule_RETURN Bareosfd_PyLoadModule
+    Bareosfd_PyLoadModule_PROTO;
+
+
 namespace filedaemon {
 
 /**
@@ -773,39 +790,6 @@ bRC loadPlugin(::Core_PluginApiDefinition* lbareos_plugin_interface_version,
 #endif
 
 
-/* C API functions */
-#define Bareosfd_PyLoadModule_NUM 0
-#define Bareosfd_PyLoadModule_RETURN bRC
-#define Bareosfd_PyLoadModule_PROTO \
-  (PluginContext * bareos_plugin_ctx, void* value);
-
-
-/* Total number of C API pointers */
-#define Bareosfd_API_pointers 1
-
-#ifdef BAREOSFD_MODULE
-/* This section is used when compiling bareosfd.cc */
-
-static Bareosfd_PyLoadModule_RETURN Bareosfd_PyLoadModule
-    Bareosfd_PyLoadModule_PROTO;
-
-#else
-/* This section is used in modules that use bareosfd's API */
-
-static void** Bareosfd_API;
-
-#define Bareosfd_PyLoadModule        \
-  (*(Bareosfd_PyLoadModule_RETURN(*) \
-         Bareosfd_PyLoadModule_PROTO)Bareosfd_API[Bareosfd_PyLoadModule_NUM])
-
-static int import_bareosfd()
-{
-  Bareosfd_API = (void**)PyCapsule_Import("bareosfd._C_API", 0);
-  return (Bareosfd_API != NULL) ? 0 : -1;
-}
-
-#endif  // BAREOSFD_MODULE
-
 MOD_INIT(bareosfd)
 {
   PyObject* m = NULL;
@@ -1073,5 +1057,26 @@ MOD_INIT(bareosfd)
   return MOD_SUCCESS_VAL(m);
 }
 
+
+#else  // NOT BAREOSFD_MODULE
+
+
+/* This section is used in modules that use bareosfd's API */
+
+static void** Bareosfd_API;
+
+
+#define Bareosfd_PyLoadModule        \
+  (*(Bareosfd_PyLoadModule_RETURN(*) \
+         Bareosfd_PyLoadModule_PROTO)Bareosfd_API[Bareosfd_PyLoadModule_NUM])
+
+static int import_bareosfd()
+{
+  Bareosfd_API = (void**)PyCapsule_Import("bareosfd._C_API", 0);
+  return (Bareosfd_API != NULL) ? 0 : -1;
+}
+
+
+#endif  // BAREOSFD_MODULE
 
 #endif /* BAREOS_PLUGINS_FILED_BAREOS_FD_H_ */
