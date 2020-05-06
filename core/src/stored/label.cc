@@ -556,7 +556,7 @@ static void CreateVolumeLabelRecord(DeviceControlRecord* dcr,
  */
 void CreateVolumeLabel(Device* dev, const char* VolName, const char* PoolName)
 {
-  DeviceResource* device = (DeviceResource*)dev->device_resource;
+  DeviceResource* device_resource = dev->device_resource;
 
   Dmsg0(130, "Start CreateVolumeLabel()\n");
 
@@ -574,7 +574,7 @@ void CreateVolumeLabel(Device* dev, const char* VolName, const char* PoolName)
   dev->VolHdr.LabelType = PRE_LABEL; /* Mark tape as unused */
   bstrncpy(dev->VolHdr.VolumeName, VolName, sizeof(dev->VolHdr.VolumeName));
   bstrncpy(dev->VolHdr.PoolName, PoolName, sizeof(dev->VolHdr.PoolName));
-  bstrncpy(dev->VolHdr.MediaType, device->media_type,
+  bstrncpy(dev->VolHdr.MediaType, device_resource->media_type,
            sizeof(dev->VolHdr.MediaType));
 
   bstrncpy(dev->VolHdr.PoolType, "Backup", sizeof(dev->VolHdr.PoolType));

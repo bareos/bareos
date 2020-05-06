@@ -412,13 +412,14 @@ static int CheckResources()
     }
   }
 
-  DeviceResource* device;
-  foreach_res (device, R_DEVICE) {
-    if (device->drive_crypto_enabled && BitIsSet(CAP_LABEL, device->cap_bits)) {
+  DeviceResource* device_resource = nullptr;
+  foreach_res (device_resource, R_DEVICE) {
+    if (device_resource->drive_crypto_enabled &&
+        BitIsSet(CAP_LABEL, device_resource->cap_bits)) {
       Jmsg(NULL, M_FATAL, 0,
            _("LabelMedia enabled is incompatible with tape crypto on Device "
              "\"%s\" in %s.\n"),
-           device->resource_name_, configfile.c_str());
+           device_resource->resource_name_, configfile.c_str());
       OK = false;
     }
   }
@@ -533,7 +534,7 @@ get_out2:
  */
 extern "C" void* device_initialization(void* arg)
 {
-  DeviceResource* device;
+  DeviceResource* device_resource = nullptr;
   DeviceControlRecord* dcr;
   JobControlRecord* jcr;
   Device* dev;
@@ -568,13 +569,13 @@ extern "C" void* device_initialization(void* arg)
           be.bstrerror(errstat));
   }
 
-  foreach_res (device, R_DEVICE) {
-    Dmsg1(90, "calling FactoryCreateDevice %s\n", device->device_name);
-    dev = FactoryCreateDevice(NULL, device);
-    Dmsg1(10, "SD init done %s\n", device->device_name);
+  foreach_res (device_resource, R_DEVICE) {
+    Dmsg1(90, "calling FactoryCreateDevice %s\n", device_resource->device_name);
+    dev = FactoryCreateDevice(NULL, device_resource);
+    Dmsg1(10, "SD init done %s\n", device_resource->device_name);
     if (!dev) {
       Jmsg1(NULL, M_ERROR, 0, _("Could not initialize %s\n"),
-            device->device_name);
+            device_resource->device_name);
       continue;
     }
 
@@ -590,7 +591,7 @@ extern "C" void* device_initialization(void* arg)
       GetAutochangerLoadedSlot(dcr);
     }
 
-    if (BitIsSet(CAP_ALWAYSOPEN, device->cap_bits)) {
+    if (BitIsSet(CAP_ALWAYSOPEN, device_resource->cap_bits)) {
       Dmsg1(20, "calling FirstOpenDevice %s\n", dev->print_name());
       if (!FirstOpenDevice(dcr)) {
         Jmsg1(NULL, M_ERROR, 0, _("Could not open device %s\n"),
@@ -602,7 +603,7 @@ extern "C" void* device_initialization(void* arg)
       }
     }
 
-    if (BitIsSet(CAP_AUTOMOUNT, device->cap_bits) && dev->IsOpen()) {
+    if (BitIsSet(CAP_AUTOMOUNT, device_resource->cap_bits) && dev->IsOpen()) {
       switch (ReadDevVolumeLabel(dcr)) {
         case VOL_OK:
           memcpy(&dev->VolCatInfo, &dcr->VolCatInfo, sizeof(dev->VolCatInfo));
@@ -635,7 +636,7 @@ static
     TerminateStored(int sig)
 {
   static bool in_here = false;
-  DeviceResource* device;
+  DeviceResource* device_resource = nullptr;
   JobControlRecord* jcr;
 
   if (in_here) {       /* prevent loops */
@@ -701,14 +702,14 @@ static
   FlushCryptoCache();
   FreeVolumeLists();
 
-  foreach_res (device, R_DEVICE) {
-    Dmsg1(10, "Term device %s\n", device->device_name);
-    if (device->dev) {
-      device->dev->ClearVolhdr();
-      delete device->dev;
-      device->dev = nullptr;
+  foreach_res (device_resource, R_DEVICE) {
+    Dmsg1(10, "Term device %s\n", device_resource->device_name);
+    if (device_resource->dev) {
+      device_resource->dev->ClearVolhdr();
+      delete device_resource->dev;
+      device_resource->dev = nullptr;
     } else {
-      Dmsg1(10, "No dev structure %s\n", device->device_name);
+      Dmsg1(10, "No dev structure %s\n", device_resource->device_name);
     }
   }
 

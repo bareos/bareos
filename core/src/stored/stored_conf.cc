@@ -553,9 +553,9 @@ static void CheckDropletDevices(ConfigurationParser& my_config)
   BareosResource* p = nullptr;
 
   while ((p = my_config.GetNextRes(R_DEVICE, p)) != nullptr) {
-    DeviceResource* device = dynamic_cast<DeviceResource*>(p);
-    if (device && device->dev_type == DeviceType::B_DROPLET_DEV) {
-      if (device->max_concurrent_jobs == 0) {
+    DeviceResource* d = dynamic_cast<DeviceResource*>(p);
+    if (d && d->dev_type == DeviceType::B_DROPLET_DEV) {
+      if (d->max_concurrent_jobs == 0) {
         /*
          * 0 is the general default. However, for this dev_type, only 1 works.
          * So we set it to this value.
@@ -563,13 +563,13 @@ static void CheckDropletDevices(ConfigurationParser& my_config)
         Jmsg1(nullptr, M_WARNING, 0,
               _("device %s is set to the default 'Maximum Concurrent Jobs' = "
                 "1.\n"),
-              device->device_name);
-        device->max_concurrent_jobs = 1;
-      } else if (device->max_concurrent_jobs > 1) {
+              d->device_name);
+        d->max_concurrent_jobs = 1;
+      } else if (d->max_concurrent_jobs > 1) {
         Jmsg2(nullptr, M_ERROR_TERM, 0,
               _("device %s is configured with 'Maximum Concurrent Jobs' = %d, "
                 "however only 1 is supported.\n"),
-              device->device_name, device->max_concurrent_jobs);
+              d->device_name, d->max_concurrent_jobs);
       }
     }
   }
@@ -690,9 +690,9 @@ static bool DumpResource_(int type,
       break;
     }
     case R_DEVICE: {
-      DeviceResource* dev = dynamic_cast<DeviceResource*>(res);
-      assert(dev);
-      buffer_is_valid = dev->PrintConfig(buf, *my_config);
+      DeviceResource* d = dynamic_cast<DeviceResource*>(res);
+      assert(d);
+      buffer_is_valid = d->PrintConfig(buf, *my_config);
       break;
     }
     case R_AUTOCHANGER: {

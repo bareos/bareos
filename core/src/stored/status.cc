@@ -159,23 +159,25 @@ static bool NeedToListDevice(const char* devicenames, const char* devicename)
   return false;
 }
 
-static bool NeedToListDevice(const char* devicenames, DeviceResource* device)
+static bool NeedToListDevice(const char* devicenames,
+                             DeviceResource* device_resource)
 {
   /*
    * See if we are requested to list an explicit device name.
    * e.g. this happens when people address one particular device in
    * a autochanger via its own storage definition or an non autochanger device.
    */
-  if (!NeedToListDevice(devicenames, device->resource_name_)) {
+  if (!NeedToListDevice(devicenames, device_resource->resource_name_)) {
     /*
      * See if this device is part of an autochanger.
      */
-    if (device->changer_res) {
+    if (device_resource->changer_res) {
       /*
        * See if we need to list this particular device part of the given
        * autochanger.
        */
-      if (!NeedToListDevice(devicenames, device->changer_res->resource_name_)) {
+      if (!NeedToListDevice(devicenames,
+                            device_resource->changer_res->resource_name_)) {
         return false;
       }
     } else {
@@ -234,7 +236,7 @@ static void ListDevices(JobControlRecord* jcr,
   int len;
   int bpb;
   Device* dev;
-  DeviceResource* device;
+  DeviceResource* device_resource = nullptr;
   AutochangerResource* changer;
   PoolMem msg(PM_MESSAGE);
   char b1[35], b2[35], b3[35];
@@ -257,21 +259,23 @@ static void ListDevices(JobControlRecord* jcr,
                changer->resource_name_);
     sp->send(msg, len);
 
-    foreach_alist (device, changer->device) {
-      if (device->dev) {
-        len = Mmsg(msg, "   %s\n", device->dev->print_name());
+    foreach_alist (device_resource, changer->device) {
+      if (device_resource->dev) {
+        len = Mmsg(msg, "   %s\n", device_resource->dev->print_name());
         sp->send(msg, len);
       } else {
-        len = Mmsg(msg, "   %s\n", device->resource_name_);
+        len = Mmsg(msg, "   %s\n", device_resource->resource_name_);
         sp->send(msg, len);
       }
     }
   }
 
-  foreach_res (device, R_DEVICE) {
-    if (devicenames && !NeedToListDevice(devicenames, device)) { continue; }
+  foreach_res (device_resource, R_DEVICE) {
+    if (devicenames && !NeedToListDevice(devicenames, device_resource)) {
+      continue;
+    }
 
-    dev = device->dev;
+    dev = device_resource->dev;
     if (dev && dev->IsOpen()) {
       if (dev->IsLabeled()) {
         const char* state;
@@ -318,8 +322,8 @@ static void ListDevices(JobControlRecord* jcr,
         sp->send(msg, len);
       }
 
-      get_device_specific_status(device, sp);
-      trigger_device_status_hook(jcr, device, sp, bsdEventDriveStatus);
+      get_device_specific_status(device_resource, sp);
+      trigger_device_status_hook(jcr, device_resource, sp, bsdEventDriveStatus);
 
       SendBlockedStatus(dev, sp);
 
@@ -353,7 +357,8 @@ static void ListDevices(JobControlRecord* jcr,
                  edit_uint64_with_commas(dev->block_num, b2));
       sp->send(msg, len);
 
-      trigger_device_status_hook(jcr, device, sp, bsdEventVolumeStatus);
+      trigger_device_status_hook(jcr, device_resource, sp,
+                                 bsdEventVolumeStatus);
     } else {
       if (dev) {
         len = Mmsg(msg, _("\nDevice %s is not open.\n"), dev->print_name());
@@ -361,11 +366,11 @@ static void ListDevices(JobControlRecord* jcr,
         SendBlockedStatus(dev, sp);
       } else {
         len = Mmsg(msg, _("\nDevice \"%s\" is not open or does not exist.\n"),
-                   device->resource_name_);
+                   device_resource->resource_name_);
         sp->send(msg, len);
       }
 
-      get_device_specific_status(device, sp);
+      get_device_specific_status(device_resource, sp);
     }
 
     if (!sp->api) {

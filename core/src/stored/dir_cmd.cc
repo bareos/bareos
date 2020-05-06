@@ -874,19 +874,21 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
                                        drive_number_t drive,
                                        BlockSizeBoundaries* blocksizes)
 {
-  DeviceResource* device;
+  DeviceResource* device_resource = nullptr;
   AutochangerResource* changer;
   bool found = false;
   DeviceControlRecord* dcr = NULL;
 
   UnbashSpaces(devname);
-  foreach_res (device, R_DEVICE) {
+  foreach_res (device_resource, R_DEVICE) {
     /*
      * Find resource, and make sure we were able to open it
      */
-    if (bstrcmp(device->resource_name_, devname.c_str())) {
-      if (!device->dev) { device->dev = FactoryCreateDevice(jcr, device); }
-      if (!device->dev) {
+    if (bstrcmp(device_resource->resource_name_, devname.c_str())) {
+      if (!device_resource->dev) {
+        device_resource->dev = FactoryCreateDevice(jcr, device_resource);
+      }
+      if (!device_resource->dev) {
         Jmsg(jcr, M_WARNING, 0,
              _("\n"
                "     Device \"%s\" requested by DIR could not be opened or "
@@ -894,7 +896,7 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
              devname.c_str());
         continue;
       }
-      Dmsg1(20, "Found device %s\n", device->resource_name_);
+      Dmsg1(20, "Found device %s\n", device_resource->resource_name_);
       found = true;
       break;
     }
@@ -909,30 +911,35 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
         /*
          * Try each device in this AutoChanger
          */
-        foreach_alist (device, changer->device) {
-          Dmsg1(100, "Try changer device %s\n", device->resource_name_);
-          if (!device->dev) { device->dev = FactoryCreateDevice(jcr, device); }
-          if (!device->dev) {
+        foreach_alist (device_resource, changer->device) {
+          Dmsg1(100, "Try changer device %s\n",
+                device_resource->resource_name_);
+          if (!device_resource->dev) {
+            device_resource->dev = FactoryCreateDevice(jcr, device_resource);
+          }
+          if (!device_resource->dev) {
             Dmsg1(100, "Device %s could not be opened. Skipped\n",
                   devname.c_str());
             Jmsg(jcr, M_WARNING, 0,
                  _("\n"
                    "     Device \"%s\" in changer \"%s\" requested by DIR "
                    "could not be opened or does not exist.\n"),
-                 device->resource_name_, devname.c_str());
+                 device_resource->resource_name_, devname.c_str());
             continue;
           }
-          if (!device->dev->autoselect) {
+          if (!device_resource->dev->autoselect) {
             Dmsg1(100, "Device %s not autoselect skipped.\n", devname.c_str());
             continue; /* device is not available */
           }
-          if (drive == kInvalidDriveNumber || drive == device->dev->drive) {
-            Dmsg1(20, "Found changer device %s\n", device->resource_name_);
+          if (drive == kInvalidDriveNumber ||
+              drive == device_resource->dev->drive) {
+            Dmsg1(20, "Found changer device %s\n",
+                  device_resource->resource_name_);
             found = true;
             break;
           }
           Dmsg3(100, "Device %s drive wrong: want=%hd got=%hd skipping\n",
-                devname.c_str(), drive, device->dev->drive);
+                devname.c_str(), drive, device_resource->dev->drive);
         }
         break; /* we found it but could not open a device */
       }
@@ -940,11 +947,11 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
   }
 
   if (found) {
-    Dmsg1(100, "Found device %s\n", device->resource_name_);
+    Dmsg1(100, "Found device %s\n", device_resource->resource_name_);
     dcr = new StorageDaemonDeviceControlRecord;
-    SetupNewDcrDevice(jcr, dcr, device->dev, blocksizes);
+    SetupNewDcrDevice(jcr, dcr, device_resource->dev, blocksizes);
     dcr->SetWillWrite();
-    dcr->device_resource = device;
+    dcr->device_resource = device_resource;
   }
   return dcr;
 }

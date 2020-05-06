@@ -90,13 +90,13 @@ void ReservationTest::TearDown()
   FreeVolumeLists();
 
   {
-    DeviceResource* device;
-    foreach_res (device, R_DEVICE) {
-      Dmsg1(10, "Term device %s\n", device->device_name);
-      if (device->dev) {
-        device->dev->ClearVolhdr();
-        delete device->dev;
-        device->dev = nullptr;
+    DeviceResource* d = nullptr;
+    foreach_res (d, R_DEVICE) {
+      Dmsg1(10, "Term device %s\n", d->device_name);
+      if (d->dev) {
+        d->dev->ClearVolhdr();
+        delete d->dev;
+        d->dev = nullptr;
       }
     }
   }

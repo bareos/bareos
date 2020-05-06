@@ -366,7 +366,7 @@ extern "C" void* statistics_thread_runner(void* arg)
   struct timeval tv;
   struct timezone tz;
   struct timespec timeout;
-  DeviceResource* device;
+  DeviceResource* device_resource = nullptr;
   JobControlRecord* jcr;
 
   setup_statistics();
@@ -381,13 +381,13 @@ extern "C" void* statistics_thread_runner(void* arg)
       /*
        * Loop over all defined devices.
        */
-      foreach_res (device, R_DEVICE) {
-        if (device->collectstats) {
+      foreach_res (device_resource, R_DEVICE) {
+        if (device_resource->collectstats) {
           Device* dev;
 
-          dev = device->dev;
+          dev = device_resource->dev;
           if (dev && dev->initiated) {
-            UpdateDeviceStatistics(device->resource_name_, dev, now);
+            UpdateDeviceStatistics(device_resource->resource_name_, dev, now);
           }
         }
       }
@@ -442,11 +442,11 @@ int StartStatisticsThread(void)
    * one device of which stats are collected.
    */
   if (me->collect_dev_stats && !me->collect_job_stats) {
-    DeviceResource* device;
+    DeviceResource* device_resource = nullptr;
     int cnt = 0;
 
-    foreach_res (device, R_DEVICE) {
-      if (device->collectstats) { cnt++; }
+    foreach_res (device_resource, R_DEVICE) {
+      if (device_resource->collectstats) { cnt++; }
     }
 
     if (cnt == 0) { return 0; }
