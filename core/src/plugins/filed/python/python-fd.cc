@@ -39,11 +39,6 @@
 
 #include "filed/fd_plugins.h"
 
-
-#if (PY_VERSION_HEX < 0x02060000)
-#error "Need at least Python version 2.6 or newer"
-#endif
-
 #include "python-fd.h"
 #include "bareosfd.h"
 #include "lib/edit.h"

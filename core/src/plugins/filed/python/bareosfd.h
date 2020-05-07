@@ -760,38 +760,7 @@ static PyMethodDef Methods[] = {
 
 static bRC set_bareos_core_functions(
     BareosCoreFunctions* new_bareos_core_functions);
-static bRC newPlugin(PluginContext* bareos_plugin_ctx);
-static bRC freePlugin(PluginContext* bareos_plugin_ctx);
-static bRC getPluginValue(PluginContext* bareos_plugin_ctx,
-                          pVariable var,
-                          void* value);
-static bRC setPluginValue(PluginContext* bareos_plugin_ctx,
-                          pVariable var,
-                          void* value);
-static bRC handlePluginEvent(PluginContext* bareos_plugin_ctx,
-                             bEvent* event,
-                             void* value);
-static bRC startBackupFile(PluginContext* bareos_plugin_ctx,
-                           struct save_pkt* sp);
-static bRC endBackupFile(PluginContext* bareos_plugin_ctx);
-static bRC pluginIO(PluginContext* bareos_plugin_ctx, struct io_pkt* io);
-static bRC startRestoreFile(PluginContext* bareos_plugin_ctx, const char* cmd);
-static bRC endRestoreFile(PluginContext* bareos_plugin_ctx);
-static bRC createFile(PluginContext* bareos_plugin_ctx, struct restore_pkt* rp);
-static bRC setFileAttributes(PluginContext* bareos_plugin_ctx,
-                             struct restore_pkt* rp);
-static bRC checkFile(PluginContext* bareos_plugin_ctx, char* fname);
-static bRC getAcl(PluginContext* bareos_plugin_ctx, acl_pkt* ap);
-static bRC setAcl(PluginContext* bareos_plugin_ctx, acl_pkt* ap);
-static bRC getXattr(PluginContext* bareos_plugin_ctx, xattr_pkt* xp);
-static bRC setXattr(PluginContext* bareos_plugin_ctx, xattr_pkt* xp);
-static bRC parse_plugin_definition(PluginContext* bareos_plugin_ctx,
-                                   void* value,
-                                   PoolMem& plugin_options);
-
-
 static void PyErrorHandler(PluginContext* bareos_plugin_ctx, int msgtype);
-static bRC PyLoadModule(PluginContext* bareos_plugin_ctx, void* value);
 static bRC PyParsePluginDefinition(PluginContext* bareos_plugin_ctx,
                                    void* value);
 static bRC PyGetPluginValue(PluginContext* bareos_plugin_ctx,
@@ -834,11 +803,6 @@ static void* bareos_core_functions = NULL;
 #ifdef __cplusplus
 extern "C" {
 #endif
-/* Forward declaration of loadPlugin()  as it is stored in Capsule */
-bRC loadPlugin(::Core_PluginApiDefinition* lbareos_plugin_interface_version,
-               BareosCoreFunctions* lbareos_core_functions,
-               PluginInformation** plugin_information,
-               pFuncs** plugin_functions);
 
 #ifdef __cplusplus
 }
@@ -899,6 +863,7 @@ MOD_INIT(bareosfd)
     return MOD_ERROR_VAL;
   }
 
+#if 0
   /* add loadPlugin Capsule */
   PyObject* PyModuleLoadPlugin = PyCapsule_New(
       (void*)&loadPlugin, PYTHON_MODULE_NAME_QUOTED ".loadPlugin", NULL);
@@ -913,7 +878,7 @@ MOD_INIT(bareosfd)
     printf(PYTHON_MODULE_NAME_QUOTED "loadPlugin PyModule_AddObject failed\n");
     return MOD_ERROR_VAL;
   }
-
+#endif
 
   PyRestoreObjectType.tp_new = PyType_GenericNew;
   if (PyType_Ready(&PyRestoreObjectType) < 0) { return MOD_ERROR_VAL; }

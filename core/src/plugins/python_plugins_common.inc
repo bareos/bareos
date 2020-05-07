@@ -19,6 +19,7 @@
    02110-1301, USA.
 */
 
+#ifndef NOPLUGINSETGETVALUE
 /* Common functions used in all python plugins.  */
 static bRC getPluginValue(PluginContext* bareos_plugin_ctx,
                           pVariable var,
@@ -54,6 +55,7 @@ static bRC setPluginValue(PluginContext* bareos_plugin_ctx,
 
   return retval;
 }
+#endif
 
 
 /**
