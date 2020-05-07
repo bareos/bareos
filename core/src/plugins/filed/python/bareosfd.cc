@@ -88,28 +88,7 @@ static bRC PyHandleBackupFile(PluginContext* bareos_plugin_ctx,
 static BareosCoreFunctions* bareos_core_functions = NULL;
 static Core_PluginApiDefinition* bareos_plugin_interface_version = NULL;
 
-
-// TODO: put this in its own header file
-struct plugin_private_context {
-  int32_t backup_level; /* Backup level e.g. Full/Differential/Incremental */
-  utime_t since;        /* Since time for Differential/Incremental */
-  bool python_loaded;   /* Plugin has python module loaded ? */
-  bool python_path_set; /* Python plugin search path is set ? */
-  char* plugin_options; /* Plugin Option string */
-  char* module_path;    /* Plugin Module Path */
-  char* module_name;    /* Plugin Module Name */
-  char* fname;          /* Next filename to save */
-  char* link;           /* Target symlink points to */
-  char* object_name;    /* Restore Object Name */
-  char* object;         /* Restore Object Content */
-  PyThreadState*
-      interpreter;   /* Python interpreter for this instance of the plugin */
-  PyObject* pModule; /* Python Module entry point */
-  PyObject* pyModuleFunctionsDict; /* Python Dictionary */
-  BareosCoreFunctions*
-      bareos_core_functions; /* pointer to bareos_core_functions */
-};                           // namespace filedaemon
-
+#include "plugin_private_context.h"
 
 #define NOPLUGINSETGETVALUE 1
 /* functions common to all plugins */

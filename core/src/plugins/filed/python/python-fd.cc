@@ -117,25 +117,7 @@ static pFuncs pluginFuncs = {
     endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
     setFileAttributes, checkFile, getAcl, setAcl, getXattr, setXattr};
 
-struct plugin_private_context {
-  int32_t backup_level; /* Backup level e.g. Full/Differential/Incremental */
-  utime_t since;        /* Since time for Differential/Incremental */
-  bool python_loaded;   /* Plugin has python module loaded ? */
-  bool python_path_set; /* Python plugin search path is set ? */
-  char* plugin_options; /* Plugin Option string */
-  char* module_path;    /* Plugin Module Path */
-  char* module_name;    /* Plugin Module Name */
-  char* fname;          /* Next filename to save */
-  char* link;           /* Target symlink points to */
-  char* object_name;    /* Restore Object Name */
-  char* object;         /* Restore Object Content */
-  PyThreadState*
-      interpreter;   /* Python interpreter for this instance of the plugin */
-  PyObject* pModule; /* Python Module entry point */
-  PyObject* pyModuleFunctionsDict; /* Python Dictionary */
-  BareosCoreFunctions*
-      bareos_core_functions; /* pointer to bareos_core_functions */
-};
+#include "plugin_private_context.h"
 
 /**
  * We don't actually use this but we need it to tear down the

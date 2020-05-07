@@ -190,25 +190,9 @@ int main(int argc, char* argv[])
   }
   if (PyErr_Occurred()) { PyErrorHandler(); }
 
-
-  /* static void** Bareosfd_API = (void**)PyCapsule_Import("bareosfd._C_API",
-   * 0); */
-  /* if (!Bareosfd_API) { */
-  /*   printf("importing bareosfd._C_API failed \n"); */
-  /* } else { */
-  /*   printf("importing bareosfd._C_API successful \n"); */
-  /* } */
-
-
   import_bareosfd();
   Bareosfd_set_bareos_core_functions(&bareos_core_functions);
 
-
-  // bRC retval = Bareosfd_PyLoadModule((PluginContext*)nullptr, nullptr);
-
-  /* printf("bareos_core_functions is at          %p\n",
-   * &bareos_core_functions); */
-  /* printf("bareos_PluginContext %p\n", &bareos_PluginContext); */
 
   // Extract capsules pointer from bareosfd module
   void* ctx_from_bareosfd_module =
@@ -223,33 +207,6 @@ int main(int argc, char* argv[])
   if (!bareos_core_functions_from_bareosfd_module) {
     printf("importing bareosfd.BareosCoreFunctions failed \n");
   }
-#if 0
-  // Extract capsules pointer from bareosfd module
-  void (*loadplugin_from_bareosfd_module)(
-      filedaemon::Core_PluginApiDefinition * lbareos_plugin_interface_version,
-      filedaemon::BareosCoreFunctions * lbareos_core_functions,
-      PluginInformation * *plugin_information,
-      filedaemon::pFuncs * *plugin_functions) =
-      (void (*)(filedaemon::Core_PluginApiDefinition*,
-                filedaemon::BareosCoreFunctions*, PluginInformation**,
-                filedaemon::pFuncs**))PyCapsule_Import("bareosfd.loadPlugin",
-                                                       0);
-
-  if (!loadplugin_from_bareosfd_module) {
-    printf("importing bareosfd.loadPlugin failed \n");
-  }
-#endif
-  /* printf("ctx_from_bareosfd_module is at       %p\n",
-   * ctx_from_bareosfd_module); */
-  /* printf("bareos_core_functions_from_bareosfd_module is at    %p\n", */
-  /*        bareos_core_functions_from_bareosfd_module); */
-  /* printf("loadplugin_from_bareosfd_module is @ %p\n", */
-  /*        loadplugin_from_bareosfd_module); */
-
-  /* printf("ctx_from_bareosfd_module contains    %p\n", */
-  /*        *(void**)ctx_from_bareosfd_module); */
-  /* printf("bareos_core_functions_from_bareosfd_module contains %p\n", */
-  /*        *(void**)bareos_core_functions_from_bareosfd_module); */
 
   *(void**)ctx_from_bareosfd_module = &bareos_PluginContext;
   *(void**)bareos_core_functions_from_bareosfd_module = &bareos_core_functions;
@@ -258,12 +215,6 @@ int main(int argc, char* argv[])
   filedaemon::Core_PluginApiDefinition myInfo;
   PluginInformation plugin_information;
   filedaemon::pFuncs plugin_functions;
-
-  /*   loadplugin_from_bareosfd_module(&myInfo, &bareos_core_functions, */
-  /*                                   (PluginInformation**)&plugin_information,
-   */
-  /*                                   (filedaemon::pFuncs**)&plugin_functions);
-   */
 
 
   printf("ctx_from_bareosfd_module contains    %p\n",
