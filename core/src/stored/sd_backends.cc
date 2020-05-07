@@ -55,6 +55,14 @@ static std::map<DeviceType, const char*> device_type_to_name_mapping = {
     {DeviceType::B_UNKNOWN_DEV, nullptr}};
 
 
+struct BackendDeviceLibraryDescriptor {
+  DeviceType device_type{DeviceType::B_UNKNOWN_DEV};
+
+  void* dynamic_library_handle{};
+  BackendInterface* backend_interface;
+};
+
+
 static std::vector<std::unique_ptr<BackendDeviceLibraryDescriptor>>
     loaded_backends;
 static std::vector<std::string> backend_directories;
@@ -88,7 +96,7 @@ Device* InitBackendDevice(JobControlRecord* jcr, DeviceType device_type)
 
   for (const auto& b : loaded_backends) {
     if (b->device_type == device_type) {
-      return b->backend->GetDevice(jcr, device_type);
+      return b->backend_interface->GetDevice(jcr, device_type);
     }
   }
 
@@ -96,10 +104,10 @@ Device* InitBackendDevice(JobControlRecord* jcr, DeviceType device_type)
 
   t_backend_base GetBackend;
 
-  void* dl_handle = nullptr;
+  void* dynamic_library_handle = nullptr;
 
   for (const auto& backend_dir : backend_directories) {
-    if (dl_handle != nullptr) { break; }
+    if (dynamic_library_handle != nullptr) { break; }
 
     std::string shared_library_name = backend_dir + "/libbareossd-";
     shared_library_name += interface_name;
@@ -116,8 +124,9 @@ Device* InitBackendDevice(JobControlRecord* jcr, DeviceType device_type)
       return nullptr;
     }
 
-    dl_handle = dlopen(shared_library_name.c_str(), RTLD_NOW);
-    if (dl_handle == nullptr) {
+    dynamic_library_handle = dlopen(shared_library_name.c_str(), RTLD_NOW);
+
+    if (dynamic_library_handle == nullptr) {
       const char* error = get_dlerror();
       Jmsg(jcr, M_ERROR, 0, _("Unable to load shared library: %s ERR=%s\n"),
            shared_library_name.c_str(), error);
@@ -126,8 +135,8 @@ Device* InitBackendDevice(JobControlRecord* jcr, DeviceType device_type)
       continue;
     }
 
-    GetBackend =
-        reinterpret_cast<t_backend_base>(dlsym(dl_handle, "GetBackend"));
+    GetBackend = reinterpret_cast<t_backend_base>(
+        dlsym(dynamic_library_handle, "GetBackend"));
 
     if (GetBackend == nullptr) {
       const char* error = get_dlerror();
@@ -139,13 +148,13 @@ Device* InitBackendDevice(JobControlRecord* jcr, DeviceType device_type)
             _("Lookup of GetBackend in shared library %s failed: "
               "ERR=%s\n"),
             shared_library_name.c_str(), error);
-      dlclose(dl_handle);
-      dl_handle = nullptr;
+      dlclose(dynamic_library_handle);
+      dynamic_library_handle = nullptr;
       continue;
     }
   }
 
-  if (dl_handle == nullptr) {  // none of the backends was loaded
+  if (dynamic_library_handle == nullptr) {  // none of the backends was loaded
     Jmsg(jcr, M_ERROR_TERM, 0,
          _("Unable to load any shared library for libbareossd-%s%s\n"),
          interface_name, DYN_LIB_EXTENSION);
@@ -154,10 +163,10 @@ Device* InitBackendDevice(JobControlRecord* jcr, DeviceType device_type)
 
   auto b = std::make_unique<BackendDeviceLibraryDescriptor>();
   b->device_type = device_type;
-  b->handle = dl_handle;
-  b->backend = GetBackend();
+  b->dynamic_library_handle = dynamic_library_handle;
+  b->backend_interface = GetBackend();
 
-  Device* d = b->backend->GetDevice(jcr, device_type);
+  Device* d = b->backend_interface->GetDevice(jcr, device_type);
   loaded_backends.push_back(std::move(b));
   return d;
 }
@@ -165,8 +174,8 @@ Device* InitBackendDevice(JobControlRecord* jcr, DeviceType device_type)
 void FlushAndCloseBackendDevices()
 {
   for (const auto& b : loaded_backends) {
-    b->backend->FlushDevice();
-    dlclose(b->handle);
+    b->backend_interface->FlushDevice();
+    dlclose(b->dynamic_library_handle);
   }
   loaded_backends.clear();
 }

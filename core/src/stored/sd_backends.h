@@ -44,18 +44,6 @@ typedef BackendInterface* (*t_backend_base)(void);
 BackendInterface* GetBackend(void);
 }
 
-/**
- * Loaded shared library with a certain backend interface type.
- */
-struct BackendDeviceLibraryDescriptor {
-  DeviceType device_type{DeviceType::B_UNKNOWN_DEV};
-  void* handle{};
-  /*
-   * Entry points into loaded shared library.
-   */
-  BackendInterface* backend;
-};
-
 #if defined(HAVE_WIN32)
 #define DYN_LIB_EXTENSION ".dll"
 #elif defined(HAVE_DARWIN_OS)
