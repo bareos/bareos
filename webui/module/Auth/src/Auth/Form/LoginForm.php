@@ -57,7 +57,8 @@ class LoginForm extends Form
             'attributes' => array(
                'id' => 'director',
                'value' => key($this->directors),
-               'readonly' => true
+               'readonly' => true,
+               'required' => 'required'
             )
          )
          );
@@ -74,7 +75,8 @@ class LoginForm extends Form
                ),
                'attributes' => array(
                   'id' => 'director',
-                  'value' => $this->dird
+                  'value' => $this->dird,
+                  'required' => 'required'
                )
             )
             );
@@ -90,6 +92,7 @@ class LoginForm extends Form
                ),
                'attributes' => array(
                   'id' => 'director',
+                  'required' => 'required'
                )
             )
             );
@@ -107,7 +110,8 @@ class LoginForm extends Form
             ),
             'attributes' => array(
                'id' => 'locale',
-               'value' => key($this->locale)
+               'value' => key($this->locale),
+               'required' => 'required'
             )
          ));
       }
@@ -122,6 +126,7 @@ class LoginForm extends Form
             ),
             'attributes' => array(
                'id' => 'locale',
+               'required' => 'required'
             )
          ));
       }
@@ -134,6 +139,7 @@ class LoginForm extends Form
          ),
          'attributes' => array(
             'placeholder' => 'Username',
+            'required' => 'required'
          ),
       )
       );
@@ -146,6 +152,7 @@ class LoginForm extends Form
          ),
          'attributes' => array(
             'placeholder' => 'Password',
+            'required' => 'required'
          ),
       )
       );
