@@ -104,24 +104,25 @@ static bRC PySetPluginValue(PluginContext* bareos_plugin_ctx,
 static bRC PyHandlePluginEvent(PluginContext* bareos_plugin_ctx,
                                bEvent* event,
                                void* value);
-static bRC PyStartBackupFile(PluginContext* bareos_plugin_ctx,
-                             struct save_pkt* sp);
+/* static bRC PyStartBackupFile(PluginContext* bareos_plugin_ctx, */
+/*                              struct save_pkt* sp); */
 static bRC PyEndBackupFile(PluginContext* bareos_plugin_ctx);
-static bRC PyPluginIO(PluginContext* bareos_plugin_ctx, struct io_pkt* io);
+/* static bRC PyPluginIO(PluginContext* bareos_plugin_ctx, struct io_pkt* io);
+ */
 static bRC PyStartRestoreFile(PluginContext* bareos_plugin_ctx,
                               const char* cmd);
 static bRC PyEndRestoreFile(PluginContext* bareos_plugin_ctx);
-static bRC PyCreateFile(PluginContext* bareos_plugin_ctx,
-                        struct restore_pkt* rp);
-static bRC PySetFileAttributes(PluginContext* bareos_plugin_ctx,
-                               struct restore_pkt* rp);
+/* static bRC PyCreateFile(PluginContext* bareos_plugin_ctx, */
+/*                         struct restore_pkt* rp); */
+/* static bRC PySetFileAttributes(PluginContext* bareos_plugin_ctx, */
+/*                                struct restore_pkt* rp); */
 static bRC PyCheckFile(PluginContext* bareos_plugin_ctx, char* fname);
 static bRC PyGetAcl(PluginContext* bareos_plugin_ctx, acl_pkt* ap);
 static bRC PySetAcl(PluginContext* bareos_plugin_ctx, acl_pkt* ap);
 static bRC PyGetXattr(PluginContext* bareos_plugin_ctx, xattr_pkt* xp);
 static bRC PySetXattr(PluginContext* bareos_plugin_ctx, xattr_pkt* xp);
-static bRC PyRestoreObjectData(PluginContext* bareos_plugin_ctx,
-                               struct restore_object_pkt* rop);
+/* static bRC PyRestoreObjectData(PluginContext* bareos_plugin_ctx, */
+/*                                struct restore_object_pkt* rop); */
 static bRC PyHandleBackupFile(PluginContext* bareos_plugin_ctx,
                               struct save_pkt* sp);
 
@@ -248,7 +249,7 @@ bRC loadPlugin(Core_PluginApiDefinition* lbareos_plugin_interface_version,
     /* import the CAPI from the bareosfd python module */
     import_bareosfd();
 
-    Bareosfd_PyHandleBackupFile(nullptr, nullptr);
+    // Bareosfd_PyHandleBackupFile(nullptr, nullptr);
 
     Bareosfd_set_bareos_core_functions(lbareos_core_functions);
 
@@ -548,11 +549,11 @@ static bRC handlePluginEvent(PluginContext* bareos_plugin_ctx,
               retval = PyParsePluginDefinition(bareos_plugin_ctx,
                                                plugin_options.c_str());
               if (retval == bRC_OK) {
-                retval = PyRestoreObjectData(bareos_plugin_ctx, rop);
+                retval = Bareosfd_PyRestoreObjectData(bareos_plugin_ctx, rop);
               }
             }
           } else {
-            retval = PyRestoreObjectData(bareos_plugin_ctx, rop);
+            retval = Bareosfd_PyRestoreObjectData(bareos_plugin_ctx, rop);
           }
         }
         break;
@@ -598,7 +599,7 @@ static bRC startBackupFile(PluginContext* bareos_plugin_ctx,
   if (!plugin_priv_ctx) { goto bail_out; }
 
   PyEval_AcquireThread(plugin_priv_ctx->interpreter);
-  retval = PyStartBackupFile(bareos_plugin_ctx, sp);
+  retval = Bareosfd_PyStartBackupFile(bareos_plugin_ctx, sp);
   PyEval_ReleaseThread(plugin_priv_ctx->interpreter);
 
   /*
@@ -672,7 +673,7 @@ static bRC pluginIO(PluginContext* bareos_plugin_ctx, struct io_pkt* io)
   if (!plugin_priv_ctx->python_loaded) { goto bail_out; }
 
   PyEval_AcquireThread(plugin_priv_ctx->interpreter);
-  retval = PyPluginIO(bareos_plugin_ctx, io);
+  retval = Bareosfd_PyPluginIO(bareos_plugin_ctx, io);
   PyEval_ReleaseThread(plugin_priv_ctx->interpreter);
 
 bail_out:
@@ -733,7 +734,7 @@ static bRC createFile(PluginContext* bareos_plugin_ctx, struct restore_pkt* rp)
   if (!plugin_priv_ctx) { goto bail_out; }
 
   PyEval_AcquireThread(plugin_priv_ctx->interpreter);
-  retval = PyCreateFile(bareos_plugin_ctx, rp);
+  retval = Bareosfd_PyCreateFile(bareos_plugin_ctx, rp);
   PyEval_ReleaseThread(plugin_priv_ctx->interpreter);
 
 bail_out:
@@ -754,7 +755,7 @@ static bRC setFileAttributes(PluginContext* bareos_plugin_ctx,
   if (!plugin_priv_ctx) { goto bail_out; }
 
   PyEval_AcquireThread(plugin_priv_ctx->interpreter);
-  retval = PySetFileAttributes(bareos_plugin_ctx, rp);
+  retval = Bareosfd_PySetFileAttributes(bareos_plugin_ctx, rp);
   PyEval_ReleaseThread(plugin_priv_ctx->interpreter);
 
 bail_out:
@@ -1490,7 +1491,7 @@ static inline bool PySavePacketToNative(
 bail_out:
   return false;
 }
-
+#if 0
 /**
  * Called when starting to backup a file. Here the plugin must
  * return the "stat" packet for the directory/file and provide
@@ -1544,7 +1545,7 @@ bail_out:
 
   return retval;
 }
-
+#endif
 /**
  * Called at the end of backing up a file for a command plugin.
  * If the plugin's work is done, it should return bRC_OK.
@@ -1655,6 +1656,7 @@ static inline bool PyIoPacketToNative(PyIoPacket* pIoPkt, struct io_pkt* io)
   return true;
 }
 
+#if 0
 /**
  * Do actual I/O. Bareos calls this after startBackupFile
  * or after startRestoreFile to do the actual file
@@ -1707,7 +1709,7 @@ bail_out:
 
   return retval;
 }
-
+#endif
 /**
  * Called when the first record is read from the Volume that was previously
  * written by the command plugin.
@@ -1823,6 +1825,7 @@ static inline void PyRestorePacketToNative(PyRestorePacket* pRestorePacket,
   rp->create_status = pRestorePacket->create_status;
 }
 
+#if 0
 /**
  * Called for a command plugin to create a file during a Restore job before
  * restoring the data. This entry point is called before any I/O is done on the
@@ -1881,7 +1884,6 @@ bail_out:
 
   return retval;
 }
-
 static bRC PySetFileAttributes(PluginContext* bareos_plugin_ctx,
                                struct restore_pkt* rp)
 {
@@ -1925,6 +1927,7 @@ bail_out:
 
   return retval;
 }
+#endif
 
 static bRC PyCheckFile(PluginContext* bareos_plugin_ctx, char* fname)
 {
@@ -2273,6 +2276,7 @@ static inline PyRestoreObject* NativeToPyRestoreObject(
   return pRestoreObject;
 }
 
+#if 0
 static bRC PyRestoreObjectData(PluginContext* bareos_plugin_ctx,
                                struct restore_object_pkt* rop)
 {
@@ -2316,6 +2320,7 @@ bail_out:
 
   return retval;
 }
+#endif
 
 static bRC PyHandleBackupFile(PluginContext* bareos_plugin_ctx,
                               struct save_pkt* sp)
