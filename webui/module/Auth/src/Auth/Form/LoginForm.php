@@ -161,7 +161,7 @@ class LoginForm extends Form
          'name' => 'bareos_updates',
          'type' => 'Zend\Form\Element\Hidden',
          'attributes' => array(
-            'value' => '',
+            'value' => 'false',
             'id' => 'bareos_updates'
          ),
       )
