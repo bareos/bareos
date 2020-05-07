@@ -201,7 +201,7 @@ int main(int argc, char* argv[])
 
 
   import_bareosfd();
-  bRC retval = Bareosfd_PyLoadModule((PluginContext*)nullptr, nullptr);
+  // bRC retval = Bareosfd_PyLoadModule((PluginContext*)nullptr, nullptr);
 
   /* printf("bareos_core_functions is at          %p\n",
    * &bareos_core_functions); */
