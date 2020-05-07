@@ -33,3 +33,14 @@ for i in $(cat bareosfd_api_funcs.txt); do
 "
 ((NUM=NUM+1))
 done
+
+exec >capi_3.inc
+
+NUM=0
+for i in $(cat bareosfd_api_funcs.txt); do
+  retval=$(echo $i | sed 's/ .*//g')
+  funcname=$(echo $i | cut -b 5- | sed s/\(.*//g)
+  prot=$(echo $i | sed s/.*\(//g | sed 's/);//g')
+  echo " Bareosfd_API[Bareosfd_${funcname}_NUM] = (void*)${funcname};"
+((NUM=NUM+1))
+done

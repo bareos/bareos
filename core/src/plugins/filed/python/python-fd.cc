@@ -248,6 +248,9 @@ bRC loadPlugin(Core_PluginApiDefinition* lbareos_plugin_interface_version,
     /* import the CAPI from the bareosfd python module */
     import_bareosfd();
 
+    Bareosfd_PyHandleBackupFile(nullptr, nullptr);
+
+    Bareosfd_set_bareos_core_functions(lbareos_core_functions);
 
     bareos_core_functions =
         lbareos_core_functions; /* Set Bareos funct pointers */

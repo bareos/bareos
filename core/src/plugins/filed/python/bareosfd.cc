@@ -58,6 +58,8 @@ static const int debuglevel = 150;
 /*   "load>:..." */
 
 /* Forward referenced functions */
+static bRC set_bareos_core_functions(
+    BareosCoreFunctions* new_bareos_core_functions);
 static bRC newPlugin(PluginContext* bareos_plugin_ctx);
 static bRC freePlugin(PluginContext* bareos_plugin_ctx);
 static bRC getPluginValue(PluginContext* bareos_plugin_ctx,
@@ -326,6 +328,7 @@ static bRC set_bareos_core_functions(
     BareosCoreFunctions* new_bareos_core_functions)
 {
   bareos_core_functions = new_bareos_core_functions;
+  return bRC_OK;
 }
 
 
