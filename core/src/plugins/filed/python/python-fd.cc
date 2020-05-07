@@ -45,6 +45,7 @@
 #endif
 
 #include "python-fd.h"
+#include "bareosfd.h"
 #include "lib/edit.h"
 
 namespace filedaemon {
@@ -227,13 +228,6 @@ bRC loadPlugin(Core_PluginApiDefinition* lbareos_plugin_interface_version,
                PluginInformation** plugin_information,
                pFuncs** plugin_functions)
 {
-  bareos_core_functions =
-      lbareos_core_functions; /* Set Bareos funct pointers */
-  bareos_plugin_interface_version = lbareos_plugin_interface_version;
-
-  *plugin_information = &pluginInfo; /* Return pointer to our info */
-  *plugin_functions = &pluginFuncs;  /* Return pointer to our functions */
-
   if (!Py_IsInitialized()) {
     /* Setup Python */
 #if PY_MAJOR_VERSION >= 3
@@ -249,58 +243,78 @@ bRC loadPlugin(Core_PluginApiDefinition* lbareos_plugin_interface_version,
       printf("loaded bareosfd successfully\n");
     } else {
       printf("loading of bareosfd failed\n");
+      if (PyErr_Occurred()) { PyErrorHandler(); }
     }
+    /* import the CAPI from the bareosfd python module */
+    import_bareosfd();
 
-    if (PyErr_Occurred()) { PyErrorHandler(); }
+
+    bareos_core_functions =
+        lbareos_core_functions; /* Set Bareos funct pointers */
+    bareos_plugin_interface_version = lbareos_plugin_interface_version;
+
+    *plugin_information = &pluginInfo; /* Return pointer to our info */
+    *plugin_functions = &pluginFuncs;  /* Return pointer to our functions */
+
+    /* filedaemon::Core_PluginApiDefinition myInfo; */
+    /* PluginInformation plugin_information; */
+    /* filedaemon::pFuncs plugin_functions; */
+    /* Bareosfd_loadPlugin(&myInfo, bareos_core_functions, */
+    /*                     (PluginInformation**)&plugin_information, */
+    /*                     (filedaemon::pFuncs**)&plugin_functions); */
 
     // Extract capsules pointer from bareosfd module
-    void (*loadplugin_from_bareosfd_module)(
-        filedaemon::Core_PluginApiDefinition * lbareos_plugin_interface_version,
-        filedaemon::BareosCoreFunctions * lbareos_core_functions,
-        PluginInformation * *plugin_information,
-        filedaemon::pFuncs * *plugin_functions) =
-        (void (*)(filedaemon::Core_PluginApiDefinition*,
-                  filedaemon::BareosCoreFunctions*, PluginInformation**,
-                  filedaemon::pFuncs**))PyCapsule_Import("bareosfd.loadPlugin",
-                                                         0);
+    /* void (*loadplugin_from_bareosfd_module)( */
+    /*     filedaemon::Core_PluginApiDefinition *
+     * lbareos_plugin_interface_version, */
+    /*     filedaemon::BareosCoreFunctions * lbareos_core_functions, */
+    /*     PluginInformation * *plugin_information, */
+    /*     filedaemon::pFuncs * *plugin_functions) = */
+    /*     (void (*)(filedaemon::Core_PluginApiDefinition*, */
+    /*               filedaemon::BareosCoreFunctions*, PluginInformation**,
+     */
+    /*               filedaemon::pFuncs**))PyCapsule_Import("bareosfd.loadPlugin",
+     */
+    /*                                                      0); */
 
     // Extract capsule bareosfd.PluginContext
-    void* ctx_from_bareosfd_module =
-        PyCapsule_Import("bareosfd.PluginContext", 0);
-    if (!ctx_from_bareosfd_module) {
-      printf("importing bareosfd.PluginContext failed \n");
-    }
+    /* void* ctx_from_bareosfd_module = */
+    /*     PyCapsule_Import("bareosfd.PluginContext", 0); */
+    /* if (!ctx_from_bareosfd_module) { */
+    /*   printf("importing bareosfd.PluginContext failed \n"); */
+    /* } */
 
     // Extract capsules bareosfd.BareosCoreFunctions
-    void* bareos_core_functions_from_bareosfd_module =
-        PyCapsule_Import("bareosfd.BareosCoreFunctions", 0);
-    if (!bareos_core_functions_from_bareosfd_module) {
-      printf("importing bareosfd.BareosCoreFunctions failed \n");
-    }
+    /* void* bareos_core_functions_from_bareosfd_module = */
+    /*     PyCapsule_Import("bareosfd.BareosCoreFunctions", 0); */
+    /* if (!bareos_core_functions_from_bareosfd_module) { */
+    /*   printf("importing bareosfd.BareosCoreFunctions failed \n"); */
+    /* } */
 
-    if (!loadplugin_from_bareosfd_module) {
-      printf("importing bareosfd.loadPlugin failed \n");
-    }
+    /* if (!loadplugin_from_bareosfd_module) { */
+    /*   printf("importing bareosfd.loadPlugin failed \n"); */
+    /* } */
 
 
-    *(void**)ctx_from_bareosfd_module = &bareos_PluginContext;
-    *(void**)bareos_core_functions_from_bareosfd_module =
-        &bareos_core_functions;
+    /* *(void**)ctx_from_bareosfd_module = &bareos_PluginContext; */
+    /* *(void**)bareos_core_functions_from_bareosfd_module = */
+    /*     &bareos_core_functions; */
 
     /* call loadPlugin in plugin */
-    filedaemon::Core_PluginApiDefinition myInfo;
-    PluginInformation plugin_information;
-    filedaemon::pFuncs plugin_functions;
+    /* filedaemon::Core_PluginApiDefinition myInfo; */
+    /* PluginInformation plugin_information; */
+    /* filedaemon::pFuncs plugin_functions; */
 
-    loadplugin_from_bareosfd_module(&myInfo, bareos_core_functions,
-                                    (PluginInformation**)&plugin_information,
-                                    (filedaemon::pFuncs**)&plugin_functions);
+    /* loadplugin_from_bareosfd_module(&myInfo, bareos_core_functions, */
+    /*                                 (PluginInformation**)&plugin_information,
+     */
+    /*                                 (filedaemon::pFuncs**)&plugin_functions);
+     */
 
-
-    printf("ctx_from_bareosfd_module contains    %p\n",
-           *(void**)ctx_from_bareosfd_module);
-    printf("bareos_core_functions_from_bareosfd_module contains %p\n",
-           *(void**)bareos_core_functions_from_bareosfd_module);
+    /*     printf("ctx_from_bareosfd_module contains    %p\n", */
+    /*            *(void**)ctx_from_bareosfd_module); */
+    /*     printf("bareos_core_functions_from_bareosfd_module contains %p\n", */
+    /*            *(void**)bareos_core_functions_from_bareosfd_module); */
 
 
     PyEval_InitThreads();

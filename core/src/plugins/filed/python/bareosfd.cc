@@ -321,6 +321,14 @@ bRC unloadPlugin()
 }
 #endif
 
+/* set the bareos_core_functions pointer to the given value */
+static bRC set_bareos_core_functions(
+    BareosCoreFunctions* new_bareos_core_functions)
+{
+  bareos_core_functions = new_bareos_core_functions;
+}
+
+
 /**
  * Called here to make a new instance of the plugin -- i.e. when
  * a new Job is started. There can be multiple instances of
