@@ -557,7 +557,7 @@ object_store_device::object_store_device()
 
 class Backend : public BackendInterface {
  public:
-  Device* backend_instantiate(JobControlRecord* jcr,
+  Device* GetDevice(JobControlRecord* jcr,
                               DeviceType device_type) override
   {
     switch (device_type) {
@@ -569,7 +569,7 @@ class Backend : public BackendInterface {
         return nullptr;
     }
   }
-  void flush_backend(void) override {}
+  void FlushDevice(void) override {}
 };
 
 #ifdef HAVE_DYNAMIC_SD_BACKENDS

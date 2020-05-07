@@ -88,7 +88,7 @@ Device* InitBackendDevice(JobControlRecord* jcr, DeviceType device_type)
 
   for (const auto& b : loaded_backends) {
     if (b->device_type == device_type) {
-      return b->backend->backend_instantiate(jcr, device_type);
+      return b->backend->GetDevice(jcr, device_type);
     }
   }
 
@@ -157,7 +157,7 @@ Device* InitBackendDevice(JobControlRecord* jcr, DeviceType device_type)
   b->handle = dl_handle;
   b->backend = GetBackend();
 
-  Device* d = b->backend->backend_instantiate(jcr, device_type);
+  Device* d = b->backend->GetDevice(jcr, device_type);
   loaded_backends.push_back(std::move(b));
   return d;
 }
@@ -165,7 +165,7 @@ Device* InitBackendDevice(JobControlRecord* jcr, DeviceType device_type)
 void FlushAndCloseBackendDevices()
 {
   for (const auto& b : loaded_backends) {
-    b->backend->flush_backend();
+    b->backend->FlushDevice();
     dlclose(b->handle);
   }
   loaded_backends.clear();
