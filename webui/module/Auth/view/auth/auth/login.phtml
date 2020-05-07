@@ -217,10 +217,9 @@ function getVersions() {
    });
 
    return v;
-
 }
 
-$(document).ready(function() {
+$(window).on('load', function() {
 
    var versions = getVersions();
 
