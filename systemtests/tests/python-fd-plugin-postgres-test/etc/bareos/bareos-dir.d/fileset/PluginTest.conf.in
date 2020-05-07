@@ -1,0 +1,10 @@
+FileSet {
+  Name = "PluginTest"
+  Description = "Test the Plugin functionality with a Python Plugin."
+  Include {
+    Options {
+      signature = MD5
+    }
+    Plugin = "python:module_path=/home/maik/git/bareos/build/systemtests/tests/python-fd-plugin-postgres-test/python-modules:module_name=bareos-fd-postgres:dbHost=@current_test_directory@/database/tmp:postgresDataDir=@current_test_directory@/database/data:walArchive=@current_test_directory@/database/wal_archive/"
+  }
+}
