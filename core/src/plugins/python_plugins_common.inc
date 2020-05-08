@@ -180,7 +180,6 @@ static void StorePluginContextInPythonModule(PluginContext* bareos_plugin_ctx)
     printf(PYTHON_MODULE_NAME_QUOTED ": could not get bareosfd_PluginContext from module\n");
   }
 }
-
 static PluginContext* GetPluginContextFromPythonModule()
 {
   const char* capsule_name =  PYTHON_MODULE_NAME_QUOTED ".PluginContext";

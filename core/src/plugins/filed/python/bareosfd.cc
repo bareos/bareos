@@ -1,8 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,12 +18,9 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, August 2012
- */
 /**
  * @file
- * Python plugin for the Bareos File Daemon
+ * Python module for the bareos filedaemon plugin
  */
 #define PY_SSIZE_T_CLEAN
 #define BUILD_PLUGIN
@@ -94,10 +90,6 @@ static Core_PluginApiDefinition* bareos_plugin_interface_version = NULL;
 /* functions common to all plugins */
 #include "plugins/python_plugins_common.inc"
 
-#ifdef __cplusplus
-// extern "C" {
-#endif
-
 static void PyErrorHandler()
 {
   PyObject *type, *value, *traceback;
@@ -136,11 +128,6 @@ static void PyErrorHandler()
   free(error_string);
   exit(1);
 }
-
-
-#ifdef __cplusplus
-//}
-#endif
 
 /* set the bareos_core_functions pointer to the given value */
 static bRC set_bareos_core_functions(
