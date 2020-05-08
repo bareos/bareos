@@ -83,6 +83,7 @@ $this->headTitle($title);
          <div class="panel-body">
             <table class="table table-no-bordered table-hover" id="joblog">
                <thead class="bg-primary">
+                  <th><?php echo $this->translate("Id"); ?></th>
                   <th><?php echo $this->translate("Timestamp"); ?></th>
                   <th><?php echo $this->translate("Message"); ?></th>
                </thead>
@@ -248,12 +249,15 @@ $this->headTitle($title);
          pageList: [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
          pageSize: <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
          search: true,
-         sortName: 'time',
+         sortName: 'id',
          sortOrder: 'desc',
          columns: [
-            {
-               field: 'time',
+            { 
+               field: 'id',
                sortable: true,
+            },
+            {
+               field: 'time'
             },
             {
                field: 'logtext',
