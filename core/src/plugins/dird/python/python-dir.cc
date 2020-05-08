@@ -19,13 +19,12 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, August 2012
- */
 /**
  * @file
- * Python Director Plugin program
+ * Python plugin for the Bareos Director Daemon
  */
+#define PY_SSIZE_T_CLEAN
+#define BUILD_PLUGIN
 
 #if defined(HAVE_WIN32)
 #include "include/bareos.h"
@@ -36,11 +35,8 @@
 #endif
 #include "dird/dird.h"
 
-#if (PY_VERSION_HEX < 0x02060000)
-#error "Need at least Python version 2.6 or newer"
-#endif
-
 #include "python-dir.h"
+#include "bareosdir.h"
 #include "lib/edit.h"
 
 namespace directordaemon {
@@ -75,7 +71,6 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
 
 static void PyErrorHandler(PluginContext* plugin_ctx, int msgtype);
 static bRC PyLoadModule(PluginContext* plugin_ctx, void* value);
-static bRC PyParsePluginDefinition(PluginContext* plugin_ctx, void* value);
 static bRC PyGetPluginValue(PluginContext* plugin_ctx,
                             pVariable var,
                             void* value);
@@ -87,8 +82,8 @@ static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
                                void* value);
 
 /* Pointers to Bareos functions */
-static bDirFuncs* bareos_core_functions = NULL;
-static bDirInfo* bareos_plugin_interface_version = NULL;
+static DirCoreFunctions* bareos_core_functions = NULL;
+static Dir_PluginApiDefiniton* bareos_plugin_interface_version = NULL;
 
 static PluginInformation pluginInfo = {
     sizeof(pluginInfo), DIR_PLUGIN_INTERFACE_VERSION,
@@ -134,6 +129,45 @@ static PyThreadState* mainThreadState;
 extern "C" {
 #endif
 
+static void PyErrorHandler()
+{
+  PyObject *type, *value, *traceback;
+  PyObject* tracebackModule;
+  char* error_string;
+
+  PyErr_Fetch(&type, &value, &traceback);
+
+  tracebackModule = PyImport_ImportModule("traceback");
+  if (tracebackModule != NULL) {
+    PyObject *tbList, *emptyString, *strRetval;
+
+    tbList =
+        PyObject_CallMethod(tracebackModule, (char*)"format_exception",
+                            (char*)"OOO", type, value == NULL ? Py_None : value,
+                            traceback == NULL ? Py_None : traceback);
+
+    emptyString = PyString_FromString("");
+    strRetval =
+        PyObject_CallMethod(emptyString, (char*)"join", (char*)"O", tbList);
+
+    error_string = strdup(PyString_AsString(strRetval));
+
+    Py_DECREF(tbList);
+    Py_DECREF(emptyString);
+    Py_DECREF(strRetval);
+    Py_DECREF(tracebackModule);
+  } else {
+    error_string = strdup("Unable to import traceback module.");
+  }
+  Py_DECREF(type);
+  Py_XDECREF(value);
+  Py_XDECREF(traceback);
+  printf("%s", error_string);
+
+  free(error_string);
+  exit(1);
+}
+
 
 /**
  * loadPlugin() and unloadPlugin() are entry points that are
@@ -142,11 +176,31 @@ extern "C" {
  *
  * External entry point called by Bareos to "load" the plugin
  */
-bRC loadPlugin(bDirInfo* lbareos_plugin_interface_version,
-               bDirFuncs* lbareos_core_functions,
+bRC loadPlugin(Dir_PluginApiDefiniton* lbareos_plugin_interface_version,
+               DirCoreFunctions* lbareos_core_functions,
                PluginInformation** plugin_information,
                pDirFuncs** plugin_functions)
 {
+  /* Setup Python */
+  Py_InitializeEx(0);
+  /* import the bareosdir module */
+  PyObject* bareosdirModule = PyImport_ImportModule("bareosdir");
+  if (bareosdirModule) {
+    printf("loaded bareosdir successfully\n");
+  } else {
+    printf("loading of bareosdir failed\n");
+    if (PyErr_Occurred()) { PyErrorHandler(); }
+  }
+
+  /* import the CAPI from the bareosdir python module
+   * afterwards, Bareosdir_* macros are initialized to
+   * point to the corresponding functions in the bareosdir python
+   * module */
+  import_bareosdir();
+
+  /* set bareos_core_functions inside of barosdir module */
+  Bareosdir_set_bareos_core_functions(lbareos_core_functions);
+
   bareos_core_functions =
       lbareos_core_functions; /* Set Bareos funct pointers */
   bareos_plugin_interface_version = lbareos_plugin_interface_version;
@@ -154,13 +208,6 @@ bRC loadPlugin(bDirInfo* lbareos_plugin_interface_version,
   *plugin_information = &pluginInfo; /* Return pointer to our info */
   *plugin_functions = &pluginFuncs;  /* Return pointer to our functions */
 
-  /* Setup Python */
-#if PY_MAJOR_VERSION >= 3
-  PyImport_AppendInittab("bareosdir", &PyInit_bareosdir);
-#else
-  PyImport_AppendInittab("bareosdir", initbareosdir);
-#endif
-  Py_InitializeEx(0);
   PyEval_InitThreads();
   mainThreadState = PyEval_SaveThread();
 
@@ -286,7 +333,8 @@ static bRC handlePluginEvent(PluginContext* plugin_ctx,
 
         /* Only try to call when the loading succeeded. */
         if (retval == bRC_OK) {
-          retval = PyParsePluginDefinition(plugin_ctx, plugin_options.c_str());
+          retval = Bareosfdir_PyParsePluginDefinition(plugin_ctx,
+                                                      plugin_options.c_str());
         }
         break;
       default:
@@ -466,14 +514,9 @@ static bRC PyLoadModule(PluginContext* plugin_ctx, void* value)
   struct plugin_private_context* plugin_priv_ctx =
       (struct plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject *sysPath, *mPath, *pName, *pFunc;
-
-  /*
-   * See if we already setup the python search path.
-   */
+  /* See if we already setup the python search path.  */
   if (!plugin_priv_ctx->python_path_set) {
-    /*
-     * Extend the Python search path with the given module_path.
-     */
+    /* Extend the Python search path with the given module_path.  */
     if (plugin_priv_ctx->module_path) {
       sysPath = PySys_GetObject((char*)"path");
       mPath = PyString_FromString(plugin_priv_ctx->module_path);
@@ -483,9 +526,7 @@ static bRC PyLoadModule(PluginContext* plugin_ctx, void* value)
     }
   }
 
-  /*
-   * Try to load the Python module by name.
-   */
+  /* Try to load the Python module by name.  */
   if (plugin_priv_ctx->module_name) {
     Dmsg(plugin_ctx, debuglevel,
          "python-dir: Trying to load module with name %s\n",
@@ -511,7 +552,7 @@ static bRC PyLoadModule(PluginContext* plugin_ctx, void* value)
     plugin_priv_ctx->pyModuleFunctionsDict =
         PyModule_GetDict(plugin_priv_ctx->pModule); /* Borrowed reference */
 
-    StorePluginContextInPythonModule(plugin_ctx);
+    // StorePluginContextInPythonModule(plugin_ctx);
 
     /*
      * Lookup the load_bareos_plugin() function in the python module.
@@ -553,6 +594,7 @@ bail_out:
   return retval;
 }
 
+#if 0
 /**
  * Any plugin options which are passed in are dispatched here to a Python method
  * and it can parse the plugin options. This function is also called after
@@ -945,4 +987,5 @@ static PyObject* PyBareosGetInstanceCount(PyObject* self, PyObject* args)
 
   return pRetVal;
 }
+#endif
 } /* namespace directordaemon */

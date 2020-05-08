@@ -105,13 +105,13 @@ struct _bareosfuncs {
 };
 
 /*
- * bDirInfo
+ * Dir_PluginApiDefiniton
  * Core_PluginApiDefinition
  * bsdInfo
  */
 typedef union _bareosinfos bareosinfos;
 union _bareosinfos {
-  directordaemon::bDirInfo bdirinfo;
+  directordaemon::Dir_PluginApiDefiniton bdirinfo;
   filedaemon::Core_PluginApiDefinition bfdinfo;
   storagedaemon::bsdInfo bsdinfo;
 };

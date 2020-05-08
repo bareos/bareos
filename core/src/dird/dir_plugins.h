@@ -129,7 +129,7 @@ typedef struct s_bDirEvent {
 typedef struct s_dirbareosInfo {
   uint32_t size;
   uint32_t version;
-} bDirInfo;
+} Dir_PluginApiDefiniton;
 
 #ifdef __cplusplus
 extern "C" {
@@ -159,7 +159,7 @@ typedef struct s_dirbareosFuncs {
                       int level,
                       const char* fmt,
                       ...);
-} bDirFuncs;
+} DirCoreFunctions;
 
 /**
  * Bareos Core Routines -- not used within a plugin

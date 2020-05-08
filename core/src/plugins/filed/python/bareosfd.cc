@@ -20,7 +20,7 @@
 */
 /**
  * @file
- * Python module for the bareos filedaemon plugin
+ * Python module for the Bareos filedaemon plugin
  */
 #define PY_SSIZE_T_CLEAN
 #define BUILD_PLUGIN
@@ -75,7 +75,6 @@ static bRC PyHandleBackupFile(PluginContext* plugin_ctx, struct save_pkt* sp);
 
 /* Pointers to Bareos functions */
 static BareosCoreFunctions* bareos_core_functions = NULL;
-// static Core_PluginApiDefinition* bareos_plugin_interface_version = NULL;
 
 #include "plugin_private_context.h"
 

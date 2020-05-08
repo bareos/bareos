@@ -972,11 +972,6 @@ static bRC PyLoadModule(PluginContext* plugin_ctx, void* value)
     plugin_priv_ctx->pyModuleFunctionsDict =
         PyModule_GetDict(plugin_priv_ctx->pModule); /* Borrowed reference */
 
-    /* Encode the PluginContext so a Python method can pass it in on
-     * calling back.*/
-    /* plugin_priv_ctx->py_PluginContext =
-     * PyCreatePluginContext(plugin_ctx); */
-
     StorePluginContextInPythonModule(plugin_ctx);
 
     /* Lookup the load_bareos_plugin() function in the python module.  */
