@@ -71,15 +71,6 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
 
 static void PyErrorHandler(PluginContext* plugin_ctx, int msgtype);
 static bRC PyLoadModule(PluginContext* plugin_ctx, void* value);
-static bRC PyGetPluginValue(PluginContext* plugin_ctx,
-                            pVariable var,
-                            void* value);
-static bRC PySetPluginValue(PluginContext* plugin_ctx,
-                            pVariable var,
-                            void* value);
-static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
-                               bDirEvent* event,
-                               void* value);
 
 /* Pointers to Bareos functions */
 static DirCoreFunctions* bareos_core_functions = NULL;
@@ -122,6 +113,8 @@ struct plugin_private_context {
  */
 static PyThreadState* mainThreadState;
 
+
+#define NOPLUGINSETGETVALUE
 /* functions common to all plugins */
 #include "plugins/python_plugins_common.inc"
 
@@ -333,8 +326,8 @@ static bRC handlePluginEvent(PluginContext* plugin_ctx,
 
         /* Only try to call when the loading succeeded. */
         if (retval == bRC_OK) {
-          retval = Bareosfdir_PyParsePluginDefinition(plugin_ctx,
-                                                      plugin_options.c_str());
+          retval = Bareosdir_PyParsePluginDefinition(plugin_ctx,
+                                                     plugin_options.c_str());
         }
         break;
       default:
@@ -344,7 +337,7 @@ static bRC handlePluginEvent(PluginContext* plugin_ctx,
          * that time we pretend the call succeeded.
          */
         if (plugin_priv_ctx->python_loaded) {
-          retval = PyHandlePluginEvent(plugin_ctx, event, value);
+          retval = Bareosdir_PyHandlePluginEvent(plugin_ctx, event, value);
         } else {
           retval = bRC_OK;
         }
