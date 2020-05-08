@@ -90,44 +90,6 @@ static Core_PluginApiDefinition* bareos_plugin_interface_version = NULL;
 /* functions common to all plugins */
 #include "plugins/python_plugins_common.inc"
 
-static void PyErrorHandler()
-{
-  PyObject *type, *value, *traceback;
-  PyObject* tracebackModule;
-  char* error_string;
-
-  PyErr_Fetch(&type, &value, &traceback);
-
-  tracebackModule = PyImport_ImportModule("traceback");
-  if (tracebackModule != NULL) {
-    PyObject *tbList, *emptyString, *strRetval;
-
-    tbList =
-        PyObject_CallMethod(tracebackModule, (char*)"format_exception",
-                            (char*)"OOO", type, value == NULL ? Py_None : value,
-                            traceback == NULL ? Py_None : traceback);
-
-    emptyString = PyString_FromString("");
-    strRetval =
-        PyObject_CallMethod(emptyString, (char*)"join", (char*)"O", tbList);
-
-    error_string = strdup(PyString_AsString(strRetval));
-
-    Py_DECREF(tbList);
-    Py_DECREF(emptyString);
-    Py_DECREF(strRetval);
-    Py_DECREF(tracebackModule);
-  } else {
-    error_string = strdup("Unable to import traceback module.");
-  }
-  Py_DECREF(type);
-  Py_XDECREF(value);
-  Py_XDECREF(traceback);
-  printf("%s", error_string);
-
-  free(error_string);
-  exit(1);
-}
 
 /* set the bareos_core_functions pointer to the given value */
 static bRC set_bareos_core_functions(

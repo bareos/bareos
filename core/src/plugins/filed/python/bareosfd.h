@@ -46,26 +46,6 @@
 namespace filedaemon {
 
 /**
- * This defines the arguments that the plugin parser understands.
- */
-enum plugin_argument_type
-{
-  argument_none,
-  argument_module_path,
-  argument_module_name
-};
-
-struct plugin_argument {
-  const char* name;
-  enum plugin_argument_type type;
-};
-
-static plugin_argument plugin_arguments[] = {
-    {"module_path", argument_module_path},
-    {"module_name", argument_module_name},
-    {NULL, argument_none}};
-
-/**
  * Python structures mapping C++ ones.
  */
 
