@@ -211,11 +211,6 @@ int main(int argc, char* argv[])
   *(void**)ctx_from_bareosfd_module = &bareos_PluginContext;
   *(void**)bareos_core_functions_from_bareosfd_module = &bareos_core_functions;
 
-  /* call loadPlugin in plugin */
-  filedaemon::Core_PluginApiDefinition myInfo;
-  PluginInformation plugin_information;
-  filedaemon::pFuncs plugin_functions;
-
 
   printf("ctx_from_bareosfd_module contains    %p\n",
          *(void**)ctx_from_bareosfd_module);
