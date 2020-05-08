@@ -741,44 +741,39 @@ static PyMethodDef Methods[] = {
 static bRC set_bareos_core_functions(
     BareosCoreFunctions* new_bareos_core_functions);
 static bRC set_plugin_context(PluginContext* new_plugin_context);
-static void PyErrorHandler(PluginContext* bareos_plugin_ctx, int msgtype);
-static bRC PyParsePluginDefinition(PluginContext* bareos_plugin_ctx,
-                                   void* value);
-static bRC PyGetPluginValue(PluginContext* bareos_plugin_ctx,
+static void PyErrorHandler(PluginContext* plugin_ctx, int msgtype);
+static bRC PyParsePluginDefinition(PluginContext* plugin_ctx, void* value);
+static bRC PyGetPluginValue(PluginContext* plugin_ctx,
                             pVariable var,
                             void* value);
-static bRC PySetPluginValue(PluginContext* bareos_plugin_ctx,
+static bRC PySetPluginValue(PluginContext* plugin_ctx,
                             pVariable var,
                             void* value);
-static bRC PyHandlePluginEvent(PluginContext* bareos_plugin_ctx,
+static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
                                bEvent* event,
                                void* value);
-static bRC PyStartBackupFile(PluginContext* bareos_plugin_ctx,
-                             struct save_pkt* sp);
-static bRC PyEndBackupFile(PluginContext* bareos_plugin_ctx);
-static bRC PyPluginIO(PluginContext* bareos_plugin_ctx, struct io_pkt* io);
-static bRC PyStartRestoreFile(PluginContext* bareos_plugin_ctx,
-                              const char* cmd);
-static bRC PyEndRestoreFile(PluginContext* bareos_plugin_ctx);
-static bRC PyCreateFile(PluginContext* bareos_plugin_ctx,
-                        struct restore_pkt* rp);
-static bRC PySetFileAttributes(PluginContext* bareos_plugin_ctx,
+static bRC PyStartBackupFile(PluginContext* plugin_ctx, struct save_pkt* sp);
+static bRC PyEndBackupFile(PluginContext* plugin_ctx);
+static bRC PyPluginIO(PluginContext* plugin_ctx, struct io_pkt* io);
+static bRC PyStartRestoreFile(PluginContext* plugin_ctx, const char* cmd);
+static bRC PyEndRestoreFile(PluginContext* plugin_ctx);
+static bRC PyCreateFile(PluginContext* plugin_ctx, struct restore_pkt* rp);
+static bRC PySetFileAttributes(PluginContext* plugin_ctx,
                                struct restore_pkt* rp);
-static bRC PyCheckFile(PluginContext* bareos_plugin_ctx, char* fname);
-static bRC PyGetAcl(PluginContext* bareos_plugin_ctx, acl_pkt* ap);
-static bRC PySetAcl(PluginContext* bareos_plugin_ctx, acl_pkt* ap);
-static bRC PyGetXattr(PluginContext* bareos_plugin_ctx, xattr_pkt* xp);
-static bRC PySetXattr(PluginContext* bareos_plugin_ctx, xattr_pkt* xp);
-static bRC PyRestoreObjectData(PluginContext* bareos_plugin_ctx,
+static bRC PyCheckFile(PluginContext* plugin_ctx, char* fname);
+static bRC PyGetAcl(PluginContext* plugin_ctx, acl_pkt* ap);
+static bRC PySetAcl(PluginContext* plugin_ctx, acl_pkt* ap);
+static bRC PyGetXattr(PluginContext* plugin_ctx, xattr_pkt* xp);
+static bRC PySetXattr(PluginContext* plugin_ctx, xattr_pkt* xp);
+static bRC PyRestoreObjectData(PluginContext* plugin_ctx,
                                struct restore_object_pkt* rop);
-static bRC PyHandleBackupFile(PluginContext* bareos_plugin_ctx,
-                              struct save_pkt* sp);
+static bRC PyHandleBackupFile(PluginContext* plugin_ctx, struct save_pkt* sp);
 
 } /* namespace filedaemon */
 using namespace filedaemon;
 
 /* variables storing bareos pointers */
-static void* plugin_context = NULL;
+PluginContext* plugin_context = NULL;
 static void* bareos_core_functions = NULL;
 
 #ifdef __cplusplus
@@ -806,24 +801,6 @@ MOD_INIT(bareosfd)
 
   if (c_api_object != NULL) PyModule_AddObject(m, "_C_API", c_api_object);
 
-#if 0
-  /* add PluginContext Capsule */
-  PyObject* PyModulePluginContext = PyCapsule_New(
-      (void*)&plugin_context, PYTHON_MODULE_NAME_QUOTED ".PluginContext", NULL);
-  if (!PyModulePluginContext) {
-    printf(PYTHON_MODULE_NAME_QUOTED ":PluginContext PyCapsule_New failed\n");
-    return MOD_ERROR_VAL;
-  }
-  if (PyModulePluginContext) {
-    PyModule_AddObject(m, "PluginContext", PyModulePluginContext);
-    printf(PYTHON_MODULE_NAME_QUOTED ": added PluginContext@%p\n",
-           &plugin_context);
-  } else {
-    printf(PYTHON_MODULE_NAME_QUOTED
-           ":PluginContext PyModule_AddObject failed\n");
-    return MOD_ERROR_VAL;
-  }
-#endif
   /* add bpFuncs Capsule */
   PyObject* PyModulePluginFuncs =
       PyCapsule_New((void*)&bareos_core_functions,

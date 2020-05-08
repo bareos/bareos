@@ -45,9 +45,7 @@ static const int debuglevel = 150;
 
 static bRC set_bareos_core_functions(
     BareosCoreFunctions* new_bareos_core_functions);
-
-
-static void PyErrorHandler(PluginContext* plugin_ctx, int msgtype);
+static bRC set_plugin_context(PluginContext* new_plugin_context);
 static bRC PyParsePluginDefinition(PluginContext* plugin_ctx, void* value);
 static bRC PyGetPluginValue(PluginContext* plugin_ctx,
                             pVariable var,
@@ -77,7 +75,7 @@ static bRC PyHandleBackupFile(PluginContext* plugin_ctx, struct save_pkt* sp);
 
 /* Pointers to Bareos functions */
 static BareosCoreFunctions* bareos_core_functions = NULL;
-static Core_PluginApiDefinition* bareos_plugin_interface_version = NULL;
+// static Core_PluginApiDefinition* bareos_plugin_interface_version = NULL;
 
 #include "plugin_private_context.h"
 
@@ -1313,7 +1311,7 @@ bail_out:
 static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
 {
   int var;
-  PluginContext* plugin_ctx = GetPluginContextFromPythonModule();
+  PluginContext* plugin_ctx = plugin_context;
   PyObject* pRetVal = NULL;
 
   if (!PyArg_ParseTuple(args, "i:BareosGetValue", &var)) { return NULL; }
@@ -1385,7 +1383,7 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
 static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
 {
   int var;
-  PluginContext* plugin_ctx = GetPluginContextFromPythonModule();
+  PluginContext* plugin_ctx = plugin_context;
   bRC retval = bRC_Error;
   PyObject* pyValue;
 
@@ -1434,7 +1432,7 @@ static PyObject* PyBareosDebugMessage(PyObject* self, PyObject* args)
 {
   int level;
   char* dbgmsg = NULL;
-  PluginContext* plugin_ctx = GetPluginContextFromPythonModule();
+  PluginContext* plugin_ctx = plugin_context;
   /* plugin_private_context* ppc = */
   /*     (plugin_private_context*)plugin_ctx->plugin_private_context;
    */
@@ -1458,7 +1456,7 @@ static PyObject* PyBareosJobMessage(PyObject* self, PyObject* args)
 {
   int type;
   char* jobmsg = NULL;
-  PluginContext* plugin_ctx = GetPluginContextFromPythonModule();
+  PluginContext* plugin_ctx = plugin_context;
 
   if (!PyArg_ParseTuple(args, "i|z:BareosJobMessage", &type, &jobmsg)) {
     return NULL;
@@ -1479,7 +1477,7 @@ static PyObject* PyBareosJobMessage(PyObject* self, PyObject* args)
 static PyObject* PyBareosRegisterEvents(PyObject* self, PyObject* args)
 {
   int len, event;
-  PluginContext* plugin_ctx = GetPluginContextFromPythonModule();
+  PluginContext* plugin_ctx = plugin_context;
   bRC retval = bRC_Error;
   PyObject *pyEvents, *pySeq, *pyEvent;
 
@@ -1520,7 +1518,7 @@ bail_out:
 static PyObject* PyBareosUnRegisterEvents(PyObject* self, PyObject* args)
 {
   int len, event;
-  PluginContext* plugin_ctx = GetPluginContextFromPythonModule();
+  PluginContext* plugin_ctx = plugin_context;
   bRC retval = bRC_Error;
   PyObject *pyEvents, *pySeq, *pyEvent;
 
@@ -1559,7 +1557,7 @@ bail_out:
 static PyObject* PyBareosGetInstanceCount(PyObject* self, PyObject* args)
 {
   int value;
-  PluginContext* plugin_ctx = GetPluginContextFromPythonModule();
+  PluginContext* plugin_ctx = plugin_context;
   PyObject* pRetVal = NULL;
 
   if (!PyArg_ParseTuple(args, ":BareosGetInstanceCount")) { return NULL; }
@@ -1585,7 +1583,7 @@ static PyObject* PyBareosAddExclude(PyObject* self, PyObject* args)
 {
   char* file = NULL;
   bRC retval = bRC_Error;
-  PluginContext* plugin_ctx = GetPluginContextFromPythonModule();
+  PluginContext* plugin_ctx = plugin_context;
 
   if (!PyArg_ParseTuple(args, "|z:BareosAddExclude", &file)) { goto bail_out; }
   RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
@@ -1604,7 +1602,7 @@ static PyObject* PyBareosAddInclude(PyObject* self, PyObject* args)
 {
   char* file = NULL;
   bRC retval = bRC_Error;
-  PluginContext* plugin_ctx = GetPluginContextFromPythonModule();
+  PluginContext* plugin_ctx = plugin_context;
 
   if (!PyArg_ParseTuple(args, "|z:BareosAddInclude", &file)) { goto bail_out; }
   RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
@@ -1623,7 +1621,7 @@ static PyObject* PyBareosAddOptions(PyObject* self, PyObject* args)
 {
   char* opts = NULL;
   bRC retval = bRC_Error;
-  PluginContext* plugin_ctx = GetPluginContextFromPythonModule();
+  PluginContext* plugin_ctx = plugin_context;
 
   if (!PyArg_ParseTuple(args, "|z:BareosAddOptions", &opts)) { goto bail_out; }
   RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
@@ -1643,7 +1641,7 @@ static PyObject* PyBareosAddRegex(PyObject* self, PyObject* args)
   int type;
   char* item = NULL;
   bRC retval = bRC_Error;
-  PluginContext* plugin_ctx = GetPluginContextFromPythonModule();
+  PluginContext* plugin_ctx = plugin_context;
   if (!PyArg_ParseTuple(args, "|zi:BareosAddRegex", &item, &type)) {
     goto bail_out;
   }
@@ -1666,7 +1664,7 @@ static PyObject* PyBareosAddWild(PyObject* self, PyObject* args)
   int type;
   char* item = NULL;
   bRC retval = bRC_Error;
-  PluginContext* plugin_ctx = GetPluginContextFromPythonModule();
+  PluginContext* plugin_ctx = plugin_context;
 
   if (!PyArg_ParseTuple(args, "|zi:BareosAddWild", &item, &type)) {
     goto bail_out;
@@ -1685,7 +1683,7 @@ bail_out:
  */
 static PyObject* PyBareosNewOptions(PyObject* self, PyObject* args)
 {
-  PluginContext* plugin_ctx = GetPluginContextFromPythonModule();
+  PluginContext* plugin_ctx = plugin_context;
   bRC retval = bRC_Error;
 
   if (!PyArg_ParseTuple(args, ":BareosNewOptions")) { goto bail_out; }
@@ -1703,7 +1701,7 @@ bail_out:
  */
 static PyObject* PyBareosNewInclude(PyObject* self, PyObject* args)
 {
-  PluginContext* plugin_ctx = GetPluginContextFromPythonModule();
+  PluginContext* plugin_ctx = plugin_context;
   bRC retval = bRC_Error;
 
   if (!PyArg_ParseTuple(args, ":BareosNewInclude")) { goto bail_out; }
@@ -1721,7 +1719,7 @@ bail_out:
  */
 static PyObject* PyBareosNewPreInclude(PyObject* self, PyObject* args)
 {
-  PluginContext* plugin_ctx = GetPluginContextFromPythonModule();
+  PluginContext* plugin_ctx = plugin_context;
   bRC retval = bRC_Error;
 
   if (!PyArg_ParseTuple(args, ":BareosNewPreInclude")) { goto bail_out; }
@@ -1740,7 +1738,7 @@ bail_out:
  */
 static PyObject* PyBareosCheckChanges(PyObject* self, PyObject* args)
 {
-  PluginContext* plugin_ctx = GetPluginContextFromPythonModule();
+  PluginContext* plugin_ctx = plugin_context;
 
   struct save_pkt sp;
   bRC retval = bRC_Error;
@@ -1794,7 +1792,7 @@ bail_out:
  */
 static PyObject* PyBareosAcceptFile(PyObject* self, PyObject* args)
 {
-  PluginContext* plugin_ctx = GetPluginContextFromPythonModule();
+  PluginContext* plugin_ctx = plugin_context;
   struct save_pkt sp;
   bRC retval = bRC_Error;
   PySavePacket* pSavePkt;
@@ -1837,7 +1835,7 @@ bail_out:
 static PyObject* PyBareosSetSeenBitmap(PyObject* self, PyObject* args)
 {
   bool all;
-  PluginContext* plugin_ctx = GetPluginContextFromPythonModule();
+  PluginContext* plugin_ctx = plugin_context;
   char* fname = NULL;
   bRC retval = bRC_Error;
   PyObject* pyBool;
@@ -1862,7 +1860,7 @@ bail_out:
 static PyObject* PyBareosClearSeenBitmap(PyObject* self, PyObject* args)
 {
   bool all;
-  PluginContext* plugin_ctx = GetPluginContextFromPythonModule();
+  PluginContext* plugin_ctx = plugin_context;
   char* fname = NULL;
   bRC retval = bRC_Error;
   PyObject* pyBool;

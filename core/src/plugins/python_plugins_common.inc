@@ -166,7 +166,7 @@ static void PyErrorHandler(PluginContext* bareos_plugin_ctx, int msgtype)
 
   free(error_string);
 }
-
+#if 0
 static void StorePluginContextInPythonModule(PluginContext* bareos_plugin_ctx)
 {
   /* get the pointer to the module variable that is exported via the capsule */
@@ -187,7 +187,7 @@ static PluginContext* GetPluginContextFromPythonModule()
       (PluginContext**)PyCapsule_Import(capsule_name, 0);
   return *retval;
 }
-
+#endif
 /**
  * Convert a return value into a bRC enum value.
  */
