@@ -740,6 +740,7 @@ static PyMethodDef Methods[] = {
 
 static bRC set_bareos_core_functions(
     BareosCoreFunctions* new_bareos_core_functions);
+static bRC set_plugin_context(PluginContext* new_plugin_context);
 static void PyErrorHandler(PluginContext* bareos_plugin_ctx, int msgtype);
 static bRC PyParsePluginDefinition(PluginContext* bareos_plugin_ctx,
                                    void* value);
@@ -777,7 +778,7 @@ static bRC PyHandleBackupFile(PluginContext* bareos_plugin_ctx,
 using namespace filedaemon;
 
 /* variables storing bareos pointers */
-static void* bareos_PluginContext = NULL;
+static void* plugin_context = NULL;
 static void* bareos_core_functions = NULL;
 
 #ifdef __cplusplus
@@ -807,9 +808,8 @@ MOD_INIT(bareosfd)
 
 
   /* add PluginContext Capsule */
-  PyObject* PyModulePluginContext =
-      PyCapsule_New((void*)&bareos_PluginContext,
-                    PYTHON_MODULE_NAME_QUOTED ".PluginContext", NULL);
+  PyObject* PyModulePluginContext = PyCapsule_New(
+      (void*)&plugin_context, PYTHON_MODULE_NAME_QUOTED ".PluginContext", NULL);
   if (!PyModulePluginContext) {
     printf(PYTHON_MODULE_NAME_QUOTED ":PluginContext PyCapsule_New failed\n");
     return MOD_ERROR_VAL;
@@ -817,7 +817,7 @@ MOD_INIT(bareosfd)
   if (PyModulePluginContext) {
     PyModule_AddObject(m, "PluginContext", PyModulePluginContext);
     printf(PYTHON_MODULE_NAME_QUOTED ": added PluginContext@%p\n",
-           &bareos_PluginContext);
+           &plugin_context);
   } else {
     printf(PYTHON_MODULE_NAME_QUOTED
            ":PluginContext PyModule_AddObject failed\n");

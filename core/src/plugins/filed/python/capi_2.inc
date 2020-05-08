@@ -36,3 +36,5 @@
 
 #define Bareosfd_set_bareos_core_functions (*(Bareosfd_set_bareos_core_functions_RETURN(*)Bareosfd_set_bareos_core_functions_PROTO) Bareosfd_API[Bareosfd_set_bareos_core_functions_NUM])
 
+#define Bareosfd_set_plugin_context (*(Bareosfd_set_plugin_context_RETURN(*)Bareosfd_set_plugin_context_PROTO) Bareosfd_API[Bareosfd_set_plugin_context_NUM])
+

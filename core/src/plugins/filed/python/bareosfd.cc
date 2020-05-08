@@ -99,6 +99,13 @@ static bRC set_bareos_core_functions(
   return bRC_OK;
 }
 
+/* set the plugin context pointer to the given value */
+static bRC set_plugin_context(PluginContext* new_plugin_context)
+{
+  plugin_context = new_plugin_context;
+  return bRC_OK;
+}
+
 /**
  * Any plugin options which are passed in are dispatched here to a Python
  * method and it can parse the plugin options. This function is also called

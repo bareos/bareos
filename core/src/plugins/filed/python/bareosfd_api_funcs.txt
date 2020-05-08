@@ -16,4 +16,6 @@ bRC PyGetXattr(PluginContext* bareos_plugin_ctx, xattr_pkt* xp);
 bRC PySetXattr(PluginContext* bareos_plugin_ctx, xattr_pkt* xp);
 bRC PyRestoreObjectData(PluginContext* bareos_plugin_ctx, struct restore_object_pkt* rop);
 bRC PyHandleBackupFile(PluginContext* bareos_plugin_ctx, struct save_pkt* sp);
-bRC set_bareos_core_functions(BareosCoreFunctions* new_bareos_core_functions); 
+bRC set_bareos_core_functions(BareosCoreFunctions* new_bareos_core_functions);
+bRC set_plugin_context(PluginContext* new_plugin_context);
+

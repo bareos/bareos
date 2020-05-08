@@ -17,3 +17,4 @@
  Bareosfd_API[Bareosfd_PyRestoreObjectData_NUM] = (void*)PyRestoreObjectData;
  Bareosfd_API[Bareosfd_PyHandleBackupFile_NUM] = (void*)PyHandleBackupFile;
  Bareosfd_API[Bareosfd_set_bareos_core_functions_NUM] = (void*)set_bareos_core_functions;
+ Bareosfd_API[Bareosfd_set_plugin_context_NUM] = (void*)set_plugin_context;
