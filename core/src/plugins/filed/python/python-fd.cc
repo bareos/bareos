@@ -182,12 +182,6 @@ bRC loadPlugin(Core_PluginApiDefinition* lbareos_plugin_interface_version,
                pFuncs** plugin_functions)
 {
   if (!Py_IsInitialized()) {
-    /* Setup Python */
-#if PY_MAJOR_VERSION >= 3
-    /* PyImport_AppendInittab("bareosfd", &PyInit_bareosfd); */
-#else
-    /* PyImport_AppendInittab("bareosfd", initbareosfd); */
-#endif
     Py_InitializeEx(0);
 
     /* import the bareosfd module */
@@ -205,6 +199,7 @@ bRC loadPlugin(Core_PluginApiDefinition* lbareos_plugin_interface_version,
      * module */
     import_bareosfd();
 
+    /* set bareos_core_functions inside of barosfd module */
     Bareosfd_set_bareos_core_functions(lbareos_core_functions);
 
     bareos_core_functions =
@@ -342,9 +337,7 @@ static bRC handlePluginEvent(PluginContext* bareos_plugin_ctx,
       plugin_priv_ctx->since = (int64_t)value;
       break;
     case bEventBackupCommand:
-      /*
-       * Fall-through wanted
-       */
+      /* Fall-through wanted */
     case bEventRestoreCommand:
       /* Fall-through wanted */
     case bEventEstimateCommand:
