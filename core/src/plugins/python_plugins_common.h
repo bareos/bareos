@@ -47,13 +47,13 @@
 #define TOSTRING(x) STRINGIFY(x)
 #define AT __FILE__ ":" TOSTRING(__LINE__)
 
-/* check if bareos_plugin_ctx and bfunc are set.
+/* check if plugin_ctx and bfunc are set.
  * Otherwise return NULL and throw RuntimeError */
 
-#define RETURN_RUNTIME_ERROR_IF_BAREOS_PLUGIN_CTX_UNSET()                   \
-  if (!bareos_plugin_ctx) {                                                 \
-    PyErr_SetString(PyExc_RuntimeError, AT " :bareos_plugin_ctx is unset"); \
-    return NULL;                                                            \
+#define RETURN_RUNTIME_ERROR_IF_BAREOS_PLUGIN_CTX_UNSET()            \
+  if (!plugin_ctx) {                                                 \
+    PyErr_SetString(PyExc_RuntimeError, AT " :plugin_ctx is unset"); \
+    return NULL;                                                     \
   }
 
 #define RETURN_RUNTIME_ERROR_IF_BFUNC_UNSET()               \

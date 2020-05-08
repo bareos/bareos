@@ -806,7 +806,7 @@ MOD_INIT(bareosfd)
 
   if (c_api_object != NULL) PyModule_AddObject(m, "_C_API", c_api_object);
 
-
+#if 0
   /* add PluginContext Capsule */
   PyObject* PyModulePluginContext = PyCapsule_New(
       (void*)&plugin_context, PYTHON_MODULE_NAME_QUOTED ".PluginContext", NULL);
@@ -823,7 +823,7 @@ MOD_INIT(bareosfd)
            ":PluginContext PyModule_AddObject failed\n");
     return MOD_ERROR_VAL;
   }
-
+#endif
   /* add bpFuncs Capsule */
   PyObject* PyModulePluginFuncs =
       PyCapsule_New((void*)&bareos_core_functions,
