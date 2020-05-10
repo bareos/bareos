@@ -296,6 +296,9 @@ $this->headTitle($title);
                   else if(msg.search("Warning") > 0) {
                      return msg.replace(/Warning/g, '<span class="bg-warning text-warning">Warning</span>');
                   }
+                  else if(msg.search("JobId=") > 0) {
+                     return msg.replace(/JobId=([0-9]*)/g, '<a href="<?php echo $this->url('job', array('action' => 'details'), null); ?>$1">JobId=$1</a>');
+                  }
                   else {
                      return msg;
                   }
