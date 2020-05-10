@@ -597,6 +597,24 @@ class JobController extends AbstractActionController
     elseif($data == "logs" && isset($jobid)) {
       try {
         $result = $this->getJobModel()->getJobLog($this->bsock, $jobid);
+        if($result[0]["jobstatus"] == "R") {
+          $jobmedia = $this->getJobModel()->getJobMedia($this->bsock, $jobid);
+  
+          $job_bytes = 0;
+          foreach($jobmedia as $volume) {
+            $volume_details = $this->getMediaModel()->getVolume($this->bsock, $volume["volumename"]);
+            $job_bytes += $volume_details["volbytes"];
+  
+            $volume_jobs = $this->getMediaModel()->getVolumeJobs($this->bsock, $volume["volumename"]);
+            foreach($volume_jobs as $volume_job) {
+              if($result[0]["job"] != $volume_job["job"]) {
+                $job_bytes-=$volume_job["jobbytes"];
+              }
+            }
+          }
+  
+          $result[0]["jobbytes"] = $job_bytes;
+        }
       }
       catch(Exception $e) {
         echo $e->getMessage();
@@ -671,6 +689,15 @@ class JobController extends AbstractActionController
       $this->filesetModel = $sm->get('Fileset\Model\FilesetModel');
     }
     return $this->filesetModel;
+  }
+  
+  public function getMediaModel()
+  {
+    if(!$this->mediaModel) {
+      $sm = $this->getServiceLocator();
+      $this->mediaModel = $sm->get('Media\Model\MediaModel');
+    }
+    return $this->mediaModel;
   }
 
 }
