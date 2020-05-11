@@ -106,10 +106,10 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
  * the normal error reporting which uses dynamic memory e.g. recursivly calls
  * these routines again leading to deadlocks.
  */
-static void MemPoolErrorMessage(const char* file,
-                                int line,
-                                const char* fmt,
-                                ...)
+[[noreturn]] static void MemPoolErrorMessage(const char* file,
+                                             int line,
+                                             const char* fmt,
+                                             ...)
 {
   char buf[256];
   va_list arg_ptr;
@@ -123,9 +123,7 @@ static void MemPoolErrorMessage(const char* file,
   va_end(arg_ptr);
 
   DispatchMessage(NULL, M_ABORT, 0, buf);
-
-  char* p = 0;
-  p[0] = 0; /* Generate segmentation violation */
+  abort();
 }
 
 POOLMEM* GetPoolMemory(int pool)
@@ -309,10 +307,7 @@ void CloseMemoryPool()
  * Garbage collect and trim memory if possible
  * This should be called after all big memory usages if possible.
  */
-void GarbageCollectMemory()
-{
-  CloseMemoryPool(); /* release free chain */
-}
+void GarbageCollectMemory() { CloseMemoryPool(); /* release free chain */ }
 
 static const char* pool_name(int pool)
 {

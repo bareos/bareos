@@ -62,10 +62,9 @@
  */
 #define ASSERT(x)                                    \
   if (!(x)) {                                        \
-    char* fatal = NULL;                              \
     Emsg1(M_ERROR, 0, _("Failed ASSERT: %s\n"), #x); \
     Pmsg1(000, _("Failed ASSERT: %s\n"), #x);        \
-    fatal[0] = 0;                                    \
+    abort();                                         \
   }
 
 /**
@@ -302,13 +301,15 @@ inline bool IsSlotNumberValid(slot_number_t slot)
  * older compilers that don't understand the attribute yet
  */
 #if !defined(FALLTHROUGH_INTENDED)
-#  if defined(__clang__)
-#    define FALLTHROUGH_INTENDED [[clang::fallthrough]]
-#  elif defined(__GNUC__) && __GNUC__ >= 7
-#    define FALLTHROUGH_INTENDED [[gnu::fallthrough]]
-#  else
-#    define FALLTHROUGH_INTENDED do {} while (0)
-#  endif
+#if defined(__clang__)
+#define FALLTHROUGH_INTENDED [[clang::fallthrough]]
+#elif defined(__GNUC__) && __GNUC__ >= 7
+#define FALLTHROUGH_INTENDED [[gnu::fallthrough]]
+#else
+#define FALLTHROUGH_INTENDED \
+  do {                       \
+  } while (0)
+#endif
 #endif
 
 /**
