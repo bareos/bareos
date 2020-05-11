@@ -84,7 +84,7 @@ static bRC newPlugin(PluginContext* ctx);
 static bRC freePlugin(PluginContext* ctx);
 static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value);
 static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value);
-static bRC handlePluginEvent(PluginContext* ctx, bsdEvent* event, void* value);
+static bRC handlePluginEvent(PluginContext* ctx, bSdEvent* event, void* value);
 static bRC do_set_scsi_encryption_key(void* value);
 static bRC do_clear_scsi_encryption_key(void* value);
 static bRC handle_read_error(void* value);
@@ -94,8 +94,8 @@ static bRC send_volume_encryption_status(void* value);
 /**
  * Pointers to Bareos functions
  */
-static bsdFuncs* bareos_core_functions = NULL;
-static bsdInfo* bareos_plugin_interface_version = NULL;
+static StorageDaemonCoreFunctions* bareos_core_functions = NULL;
+static Sd_PluginApiDefinition* bareos_plugin_interface_version = NULL;
 
 static PluginInformation pluginInfo = {
     sizeof(pluginInfo), SD_PLUGIN_INTERFACE_VERSION,
@@ -104,7 +104,7 @@ static PluginInformation pluginInfo = {
     PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
     PLUGIN_USAGE};
 
-static psdFuncs pluginFuncs = {sizeof(pluginFuncs), SD_PLUGIN_INTERFACE_VERSION,
+static pSdFuncs pluginFuncs = {sizeof(pluginFuncs), SD_PLUGIN_INTERFACE_VERSION,
 
                                /*
                                 * Entry points into plugin
@@ -127,10 +127,10 @@ extern "C" {
  *
  * External entry point called by Bareos to "load the plugin
  */
-bRC loadPlugin(bsdInfo* lbareos_plugin_interface_version,
-               bsdFuncs* lbareos_core_functions,
+bRC loadPlugin(Sd_PluginApiDefinition* lbareos_plugin_interface_version,
+               StorageDaemonCoreFunctions* lbareos_core_functions,
                PluginInformation** plugin_information,
-               psdFuncs** plugin_functions)
+               pSdFuncs** plugin_functions)
 {
   bareos_core_functions =
       lbareos_core_functions; /* set Bareos funct pointers */
@@ -169,34 +169,34 @@ static bRC newPlugin(PluginContext* ctx)
   /*
    * Only register plugin events we are interested in.
    *
-   * bsdEventLabelRead - Read of volume label clear key as volume
+   * bSdEventLabelRead - Read of volume label clear key as volume
    *                     labels are unencrypted (as we are in mixed
    *                     decryption mode we could leave the current
    *                     encryption key but most likely its the key
    *                     from an previous volume and most of the times
    *                     it will be cleared already by the
-   *                     bsdEventVolumeUnload event already.)
-   * bsdEventLabelVerified - Label of volume is verified and found
+   *                     bSdEventVolumeUnload event already.)
+   * bSdEventLabelVerified - Label of volume is verified and found
    *                         to be OK, any next data read from the
    *                         volume will be backup data and most
    *                         likely encrypted so load the volume
    *                         specific encryption key.
-   * bsdEventLabelWrite - Write of volume label clear key as volume
+   * bSdEventLabelWrite - Write of volume label clear key as volume
    *                      labels are unencrypted.
-   * bsdEventVolumeUnload - Unload of volume clear key
-   * bsdEventReadError - Read error on volume see if its due to
+   * bSdEventVolumeUnload - Unload of volume clear key
+   * bSdEventReadError - Read error on volume see if its due to
    *                     the fact encryption is enabled and we
    *                     have either the wrong key loaded or no key
    *                     at all.
-   * bsdEventDriveStatus - plugin callback for encryption status
+   * bSdEventDriveStatus - plugin callback for encryption status
    *                       of the drive.
-   * bsdEventVolumeStatus - plugin callback for encryption status
+   * bSdEventVolumeStatus - plugin callback for encryption status
    *                        of the volume loaded in the drive.
    */
   bareos_core_functions->registerBareosEvents(
-      ctx, 7, bsdEventLabelRead, bsdEventLabelVerified, bsdEventLabelWrite,
-      bsdEventVolumeUnload, bsdEventReadError, bsdEventDriveStatus,
-      bsdEventVolumeStatus);
+      ctx, 7, bSdEventLabelRead, bSdEventLabelVerified, bSdEventLabelWrite,
+      bSdEventVolumeUnload, bSdEventReadError, bSdEventDriveStatus,
+      bSdEventVolumeStatus);
 
   return bRC_OK;
 }
@@ -237,20 +237,20 @@ static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value)
 /**
  * Handle an event that was generated in Bareos
  */
-static bRC handlePluginEvent(PluginContext* ctx, bsdEvent* event, void* value)
+static bRC handlePluginEvent(PluginContext* ctx, bSdEvent* event, void* value)
 {
   switch (event->eventType) {
-    case bsdEventLabelRead:
-    case bsdEventLabelWrite:
-    case bsdEventVolumeUnload:
+    case bSdEventLabelRead:
+    case bSdEventLabelWrite:
+    case bSdEventVolumeUnload:
       return do_clear_scsi_encryption_key(value);
-    case bsdEventLabelVerified:
+    case bSdEventLabelVerified:
       return do_set_scsi_encryption_key(value);
-    case bsdEventReadError:
+    case bSdEventReadError:
       return handle_read_error(value);
-    case bsdEventDriveStatus:
+    case bSdEventDriveStatus:
       return send_device_encryption_status(value);
-    case bsdEventVolumeStatus:
+    case bSdEventVolumeStatus:
       return send_volume_encryption_status(value);
     default:
       Dmsg1(debuglevel, "scsicrypto-sd: Unknown event %d\n", event->eventType);

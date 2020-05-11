@@ -54,7 +54,7 @@ static bRC handle_tapealert_readout(void* value);
  * Pointers to Bareos functions
  */
 static StorageDaemonCoreFunctions* bareos_core_functions = NULL;
-static bsdInfo* bareos_plugin_interface_version = NULL;
+static Sd_PluginApiDefinition* bareos_plugin_interface_version = NULL;
 
 static PluginInformation pluginInfo = {
     sizeof(pluginInfo), SD_PLUGIN_INTERFACE_VERSION,
@@ -86,7 +86,7 @@ extern "C" {
  *
  * External entry point called by Bareos to "load the plugin
  */
-bRC loadPlugin(bsdInfo* lbareos_plugin_interface_version,
+bRC loadPlugin(Sd_PluginApiDefinition* lbareos_plugin_interface_version,
                StorageDaemonCoreFunctions* lbareos_core_functions,
                PluginInformation** plugin_information,
                pSdFuncs** plugin_functions)
@@ -129,8 +129,8 @@ static bRC newPlugin(PluginContext* ctx)
    * Only register plugin events we are interested in.
    */
   bareos_core_functions->registerBareosEvents(
-      ctx, 6, bsdEventVolumeLoad, bsdEventLabelVerified, bsdEventReadError,
-      bsdEventWriteError, bsdEventVolumeUnload, bsdEventDeviceRelease);
+      ctx, 6, bSdEventVolumeLoad, bSdEventLabelVerified, bSdEventReadError,
+      bSdEventWriteError, bSdEventVolumeUnload, bSdEventDeviceRelease);
 
   return bRC_OK;
 }
@@ -171,13 +171,13 @@ static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value)
 /**
  * Handle an event that was generated in Bareos
  */
-static bRC handlePluginEvent(PluginContext* ctx, bsdEvent* event, void* value)
+static bRC handlePluginEvent(PluginContext* ctx, bSdEvent* event, void* value)
 {
   switch (event->eventType) {
-    case bsdEventLabelVerified:
-    case bsdEventReadError:
-    case bsdEventWriteError:
-    case bsdEventVolumeUnload:
+    case bSdEventLabelVerified:
+    case bSdEventReadError:
+    case bSdEventWriteError:
+    case bSdEventVolumeUnload:
       return handle_tapealert_readout(value);
     default:
       Dmsg1(debuglevel, "scsitapealert-sd: Unknown event %d\n",

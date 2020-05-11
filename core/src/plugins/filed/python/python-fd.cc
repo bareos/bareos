@@ -64,7 +64,7 @@ static bRC setPluginValue(PluginContext* plugin_ctx,
                           pVariable var,
                           void* value);
 static bRC handlePluginEvent(PluginContext* plugin_ctx,
-                             bSdEvent* event,
+                             bEvent* event,
                              void* value);
 static bRC startBackupFile(PluginContext* plugin_ctx, struct save_pkt* sp);
 static bRC endBackupFile(PluginContext* plugin_ctx);

@@ -70,7 +70,7 @@ static bRC newPlugin(PluginContext* ctx);
 static bRC freePlugin(PluginContext* ctx);
 static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value);
 static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value);
-static bRC handlePluginEvent(PluginContext* ctx, bsdEvent* event, void* value);
+static bRC handlePluginEvent(PluginContext* ctx, bSdEvent* event, void* value);
 static bRC handleJobEnd(PluginContext* ctx);
 static bRC setup_record_translation(PluginContext* ctx, void* value);
 static bRC handle_read_translation(PluginContext* ctx, void* value);
@@ -89,8 +89,8 @@ static bool sd_enabled_compatible = false;
 /**
  * Pointers to Bareos functions
  */
-static bsdFuncs* bareos_core_functions = NULL;
-static bsdInfo* bareos_plugin_interface_version = NULL;
+static StorageDaemonCoreFunctions* bareos_core_functions = NULL;
+static Sd_PluginApiDefinition* bareos_plugin_interface_version = NULL;
 
 static PluginInformation pluginInfo = {
     sizeof(pluginInfo), SD_PLUGIN_INTERFACE_VERSION,
@@ -99,7 +99,7 @@ static PluginInformation pluginInfo = {
     PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
     PLUGIN_USAGE};
 
-static psdFuncs pluginFuncs = {sizeof(pluginFuncs), SD_PLUGIN_INTERFACE_VERSION,
+static pSdFuncs pluginFuncs = {sizeof(pluginFuncs), SD_PLUGIN_INTERFACE_VERSION,
 
                                /*
                                 * Entry points into plugin
@@ -135,10 +135,10 @@ extern "C" {
  *
  * External entry point called by Bareos to "load the plugin
  */
-bRC loadPlugin(bsdInfo* lbareos_plugin_interface_version,
-               bsdFuncs* lbareos_core_functions,
+bRC loadPlugin(Sd_PluginApiDefinition* lbareos_plugin_interface_version,
+               StorageDaemonCoreFunctions* lbareos_core_functions,
                PluginInformation** plugin_information,
-               psdFuncs** plugin_functions)
+               pSdFuncs** plugin_functions)
 {
   bareos_core_functions =
       lbareos_core_functions; /* set Bareos funct pointers */
@@ -188,15 +188,15 @@ static bRC newPlugin(PluginContext* ctx)
   /*
    * Only register plugin events we are interested in.
    *
-   * bsdEventJobEnd - SD Job finished.
-   * bsdEventSetupRecordTranslation - Setup the buffers for doing record
-   * translation. bsdEventReadRecordTranslation - Perform read-side record
-   * translation. bsdEventWriteRecordTranslation - Perform write-side record
+   * bSdEventJobEnd - SD Job finished.
+   * bSdEventSetupRecordTranslation - Setup the buffers for doing record
+   * translation. bSdEventReadRecordTranslation - Perform read-side record
+   * translation. bSdEventWriteRecordTranslation - Perform write-side record
    * translantion.
    */
   bareos_core_functions->registerBareosEvents(
-      ctx, 4, bsdEventJobEnd, bsdEventSetupRecordTranslation,
-      bsdEventReadRecordTranslation, bsdEventWriteRecordTranslation);
+      ctx, 4, bSdEventJobEnd, bSdEventSetupRecordTranslation,
+      bSdEventReadRecordTranslation, bSdEventWriteRecordTranslation);
 
   return bRC_OK;
 }
@@ -246,16 +246,16 @@ static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value)
 /**
  * Handle an event that was generated in Bareos
  */
-static bRC handlePluginEvent(PluginContext* ctx, bsdEvent* event, void* value)
+static bRC handlePluginEvent(PluginContext* ctx, bSdEvent* event, void* value)
 {
   switch (event->eventType) {
-    case bsdEventSetupRecordTranslation:
+    case bSdEventSetupRecordTranslation:
       return setup_record_translation(ctx, value);
-    case bsdEventReadRecordTranslation:
+    case bSdEventReadRecordTranslation:
       return handle_read_translation(ctx, value);
-    case bsdEventWriteRecordTranslation:
+    case bSdEventWriteRecordTranslation:
       return handle_write_translation(ctx, value);
-    case bsdEventJobEnd:
+    case bSdEventJobEnd:
       return handleJobEnd(ctx);
     default:
       Dmsg(ctx, debuglevel, "autoxflate-sd: Unknown event %d\n",
