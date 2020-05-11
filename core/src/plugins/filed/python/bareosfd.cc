@@ -47,6 +47,7 @@ static bRC set_bareos_core_functions(
     BareosCoreFunctions* new_bareos_core_functions);
 static bRC set_plugin_context(PluginContext* new_plugin_context);
 static bRC PyParsePluginDefinition(PluginContext* plugin_ctx, void* value);
+
 static bRC PyGetPluginValue(PluginContext* plugin_ctx,
                             pVariable var,
                             void* value);
@@ -2395,6 +2396,5 @@ static void PyXattrPacket_dealloc(PyXattrPacket* self)
   if (self->name) { Py_XDECREF(self->name); }
   PyObject_Del(self);
 }
-
 
 } /* namespace filedaemon */

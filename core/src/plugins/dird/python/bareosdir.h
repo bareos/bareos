@@ -41,7 +41,7 @@
 #ifdef BAREOSDIR_MODULE
 /* This section is used when compiling bareosdir.cc */
 
-namespace filedaemon {
+namespace directordaemon {
 
 /**
  * Python structures mapping C++ ones.
@@ -75,7 +75,7 @@ static PyMethodDef Methods[] = {
 
 static void* bareos_PluginContext = NULL;
 
-}  // namespace filedaemon
+}  // namespace directordaemon
 using namespace directordaemon;
 
 /* variables storing bareos pointers */

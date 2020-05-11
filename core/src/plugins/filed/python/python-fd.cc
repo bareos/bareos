@@ -56,12 +56,14 @@ static const int debuglevel = 150;
 /* Forward referenced functions */
 static bRC newPlugin(PluginContext* plugin_ctx);
 static bRC freePlugin(PluginContext* plugin_ctx);
+
 static bRC getPluginValue(PluginContext* plugin_ctx,
                           pVariable var,
                           void* value);
 static bRC setPluginValue(PluginContext* plugin_ctx,
                           pVariable var,
                           void* value);
+
 static bRC handlePluginEvent(PluginContext* plugin_ctx,
                              bEvent* event,
                              void* value);
@@ -83,12 +85,6 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
 
 static void PyErrorHandler(PluginContext* plugin_ctx, int msgtype);
 static bRC PyLoadModule(PluginContext* plugin_ctx, void* value);
-static bRC PyGetPluginValue(PluginContext* plugin_ctx,
-                            pVariable var,
-                            void* value);
-static bRC PySetPluginValue(PluginContext* plugin_ctx,
-                            pVariable var,
-                            void* value);
 
 /* Pointers to Bareos functions */
 static BareosCoreFunctions* bareos_core_functions = NULL;
@@ -1031,18 +1027,39 @@ bail_out:
   return retval;
 }
 
-static bRC PyGetPluginValue(PluginContext* plugin_ctx,
-                            pVariable var,
-                            void* value)
+static bRC getPluginValue(PluginContext* bareos_plugin_ctx,
+                          pVariable var,
+                          void* value)
 {
-  return bRC_OK;
+  struct plugin_private_context* plugin_priv_ctx =
+      (struct plugin_private_context*)bareos_plugin_ctx->plugin_private_context;
+  bRC retval = bRC_Error;
+
+  if (!plugin_priv_ctx) { goto bail_out; }
+
+  PyEval_AcquireThread(plugin_priv_ctx->interpreter);
+  retval = Bareosfd_PyGetPluginValue(bareos_plugin_ctx, var, value);
+  PyEval_ReleaseThread(plugin_priv_ctx->interpreter);
+
+bail_out:
+  return retval;
 }
 
-static bRC PySetPluginValue(PluginContext* plugin_ctx,
-                            pVariable var,
-                            void* value)
+static bRC setPluginValue(PluginContext* bareos_plugin_ctx,
+                          pVariable var,
+                          void* value)
 {
-  return bRC_OK;
+  struct plugin_private_context* plugin_priv_ctx =
+      (struct plugin_private_context*)bareos_plugin_ctx->plugin_private_context;
+  bRC retval = bRC_Error;
+
+  if (!plugin_priv_ctx) { return bRC_Error; }
+
+  PyEval_AcquireThread(plugin_priv_ctx->interpreter);
+  retval = Bareosfd_PySetPluginValue(bareos_plugin_ctx, var, value);
+  PyEval_ReleaseThread(plugin_priv_ctx->interpreter);
+
+  return retval;
 }
 
 } /* namespace filedaemon */

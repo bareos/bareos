@@ -19,44 +19,6 @@
    02110-1301, USA.
 */
 
-#ifndef NOPLUGINSETGETVALUE
-/* Common functions used in all python plugins.  */
-static bRC getPluginValue(PluginContext* bareos_plugin_ctx,
-                          pVariable var,
-                          void* value)
-{
-  struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)bareos_plugin_ctx->plugin_private_context;
-  bRC retval = bRC_Error;
-
-  if (!plugin_priv_ctx) { goto bail_out; }
-
-  PyEval_AcquireThread(plugin_priv_ctx->interpreter);
-  retval = PyGetPluginValue(bareos_plugin_ctx, var, value);
-  PyEval_ReleaseThread(plugin_priv_ctx->interpreter);
-
-bail_out:
-  return retval;
-}
-
-static bRC setPluginValue(PluginContext* bareos_plugin_ctx,
-                          pVariable var,
-                          void* value)
-{
-  struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)bareos_plugin_ctx->plugin_private_context;
-  bRC retval = bRC_Error;
-
-  if (!plugin_priv_ctx) { return bRC_Error; }
-
-  PyEval_AcquireThread(plugin_priv_ctx->interpreter);
-  retval = PySetPluginValue(bareos_plugin_ctx, var, value);
-  PyEval_ReleaseThread(plugin_priv_ctx->interpreter);
-
-  return retval;
-}
-#endif
-
 
 /**
  * Strip any backslashes in the string.

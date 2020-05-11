@@ -175,7 +175,7 @@ static filedaemon::BareosCoreFunctions bareos_core_functions = {
     bareosSetSeenBitmap,
     bareosClearSeenBitmap};
 
-static void* bareos_PluginContext = NULL;
+static PluginContext* bareos_PluginContext = NULL;
 
 int main(int argc, char* argv[])
 {
@@ -192,33 +192,34 @@ int main(int argc, char* argv[])
 
   import_bareosfd();
   Bareosfd_set_bareos_core_functions(&bareos_core_functions);
-
-
-  // Extract capsules pointer from bareosfd module
-  void* ctx_from_bareosfd_module =
-      PyCapsule_Import("bareosfd.PluginContext", 0);
-  if (!ctx_from_bareosfd_module) {
-    printf("importing bareosfd.PluginContext failed \n");
-  }
-
-  // Extract capsules pointer from bareosfd module
-  void* bareos_core_functions_from_bareosfd_module =
-      PyCapsule_Import("bareosfd.BareosCoreFunctions", 0);
-  if (!bareos_core_functions_from_bareosfd_module) {
-    printf("importing bareosfd.BareosCoreFunctions failed \n");
-  }
-
-  *(void**)ctx_from_bareosfd_module = &bareos_PluginContext;
-  *(void**)bareos_core_functions_from_bareosfd_module = &bareos_core_functions;
-
-
-  printf("ctx_from_bareosfd_module contains    %p\n",
-         *(void**)ctx_from_bareosfd_module);
-  printf("bareos_core_functions_from_bareosfd_module contains %p\n",
-         *(void**)bareos_core_functions_from_bareosfd_module);
-
+  Bareosfd_set_plugin_context(bareos_PluginContext);
 
   PyObject* pModule = PyImport_ImportModule("bareosfd-module-test");
+
+  // Extract capsules pointer from bareosfd module
+  /* void* ctx_from_bareosfd_module = */
+  /*     PyCapsule_Import("bareosfd.PluginContext", 0); */
+  /* if (!ctx_from_bareosfd_module) { */
+  /*   printf("importing bareosfd.PluginContext failed \n"); */
+  /* } */
+
+  // Extract capsules pointer from bareosfd module
+  /* void* bareos_core_functions_from_bareosfd_module = */
+  /*     PyCapsule_Import("bareosfd.BareosCoreFunctions", 0); */
+  /* if (!bareos_core_functions_from_bareosfd_module) { */
+  /*   printf("importing bareosfd.BareosCoreFunctions failed \n"); */
+  /* } */
+
+  /* *(void**)ctx_from_bareosfd_module = &bareos_PluginContext; */
+  /* *(void**)bareos_core_functions_from_bareosfd_module =
+   * &bareos_core_functions; */
+
+
+  /* printf("ctx_from_bareosfd_module contains    %p\n", */
+  /*        *(void**)ctx_from_bareosfd_module); */
+  /* printf("bareos_core_functions_from_bareosfd_module contains %p\n", */
+  /*        *(void**)bareos_core_functions_from_bareosfd_module); */
+
 
   if (PyErr_Occurred()) { PyErrorHandler(); }
 
