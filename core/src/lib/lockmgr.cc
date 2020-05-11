@@ -20,23 +20,7 @@
 */
 
 #include "include/bareos.h"
-#include "lib/edit.h"
 #include "lib/berrno.h"
-
-#undef ASSERT
-#define ASSERT(x)                                                           \
-  if (!(x)) {                                                               \
-    char* jcr = NULL;                                                       \
-    FPmsg3(000, _("ASSERT failed at %s:%i: %s\n"), __FILE__, __LINE__, #x); \
-    jcr[0] = 0;                                                             \
-  }
-
-#define ASSERT_p(x, f, l)                                      \
-  if (!(x)) {                                                  \
-    char* jcr = NULL;                                          \
-    FPmsg3(000, _("ASSERT failed at %s:%i: %s \n"), f, l, #x); \
-    jcr[0] = 0;                                                \
-  }
 
 void Lmgr_p(pthread_mutex_t* m)
 {
