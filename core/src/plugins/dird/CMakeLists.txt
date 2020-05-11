@@ -54,12 +54,13 @@ if(HAVE_PYTHON AND NOT HAVE_WIN32)
     OUTPUT pythonmodules/bareosdir.so
     MAIN_DEPENDENCY ./python/bareosdir.cc
     DEPENDS ./python/bareosdir.h
+    DEPENDS bareos
     DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/python/setup.py
+    COMMAND rm -Rfv ${CMAKE_CURRENT_BINARY_DIR}/build
     COMMAND ${PYTHON_EXECUTABLE} python/setup.py build
     COMMAND ${PYTHON_EXECUTABLE} python/setup.py install --install-lib
             ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
     COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
-    # COMMAND rm -R ${CMAKE_CURRENT_BINARY_DIR}/build DEPENDS python-dir
     COMMENT "building python module pythonmodules/bareosdir.so"
   )
 

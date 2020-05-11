@@ -136,7 +136,7 @@ if(HAVE_PYTHON AND NOT HAVE_WIN32)
     COMMAND ${PYTHON_EXECUTABLE} python/setup.py build
     COMMAND ${PYTHON_EXECUTABLE} python/setup.py install --install-lib
             ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
-    COMMAND rm -Rfv ${CMAKE_CURRENT_BINARY_DIR}/build
+    COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
     COMMENT "building python module pythonmodules/bareosfd.so"
   )
 

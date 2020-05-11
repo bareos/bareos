@@ -58,8 +58,7 @@ if(HAVE_PYTHON)
   set(PYFILES
       python/pyfiles/bareos-sd-class-plugin.py
       python/pyfiles/BareosSdPluginBaseclass.py
-      python/pyfiles/bareos-sd.py.template
-      python/pyfiles/BareosSdWrapper.py
+      python/pyfiles/bareos-sd.py.template python/pyfiles/BareosSdWrapper.py
   )
 
   install(FILES ${PYFILES} DESTINATION ${plugindir})
@@ -68,14 +67,20 @@ endif()
 if(HAVE_PYTHON AND NOT HAVE_WIN32)
   configure_file(python/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/python/setup.py)
   add_custom_command(
-    TARGET python-sd
-    POST_BUILD
-    COMMENT "building python module pythonmodules/bareossd.so"
+    OUTPUT pythonmodules/bareossd.so
+    MAIN_DEPENDENCY ./python/bareossd.cc
+    DEPENDS ./python/bareossd.h
+    DEPENDS bareos
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/python/setup.py
+    COMMAND rm -Rfv ${CMAKE_CURRENT_BINARY_DIR}/build
     COMMAND ${PYTHON_EXECUTABLE} python/setup.py build
     COMMAND ${PYTHON_EXECUTABLE} python/setup.py install --install-lib
             ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
-    COMMAND rm -R ${CMAKE_CURRENT_BINARY_DIR}/build DEPENDS python-sd
+    COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
+    COMMENT "building python module pythonmodules/bareossd.so"
   )
+
+  add_custom_target(bareossd-pymod DEPENDS pythonmodules/bareossd.so)
 
   add_test(NAME bareossd-python-module
            COMMAND ${PYTHON_EXECUTABLE}
