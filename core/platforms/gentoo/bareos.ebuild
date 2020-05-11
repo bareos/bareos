@@ -49,7 +49,6 @@ inherit eutils
 # may need sys-libs/libtermcap-compat but try without first
 DEPEND=">=sys-libs/zlib-1.1.4
 	readline? ( >=sys-libs/readline-4.1 )
-	tcpd? ( >=sys-apps/tcp-wrappers-7.6 )
 	gnome? ( gnome-base/libgnome )
 	gnome? ( app-admin/gnomesu )
 	!bareos-clientonly? (
@@ -80,7 +79,6 @@ src_compile() {
 	myconf="
 		`use_enable readline`
 		`use_enable gnome`
-		`use_enable tcpd tcp-wrappers`
 		`use_enable X x`"
 
 	# define this to skip building the other daemons ...

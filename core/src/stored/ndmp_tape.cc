@@ -70,10 +70,6 @@
 #include <arpa/nameser.h>
 #endif
 
-#ifdef HAVE_LIBWRAP
-#include "tcpd.h"
-#endif
-
 #ifdef HAVE_POLL_H
 #include <poll.h>
 #elif HAVE_SYS_POLL_H
@@ -1263,9 +1259,6 @@ extern "C" void* ndmp_thread_server(void* arg)
   struct sockaddr cli_addr; /* client's address */
   int tlog, tmax;
   int turnon = 1;
-#ifdef HAVE_LIBWRAP
-  struct request_info request;
-#endif
   IPADDR *ipaddr, *next;
   struct s_sockfd {
     dlink link; /* this MUST be the first item */
@@ -1427,21 +1420,6 @@ extern "C" void* ndmp_thread_server(void* arg)
           new_sockfd = accept(fd_ptr->fd, &cli_addr, &clilen);
         } while (new_sockfd < 0 && errno == EINTR);
         if (new_sockfd < 0) { continue; }
-#ifdef HAVE_LIBWRAP
-        P(mutex); /* HostsAccess is not thread safe */
-        request_init(&request, RQ_DAEMON, my_name, RQ_FILE, new_sockfd, 0);
-        fromhost(&request);
-        if (!HostsAccess(&request)) {
-          V(mutex);
-          Jmsg2(NULL, M_SECURITY, 0,
-                _("Connection from %s:%d refused by hosts.access\n"),
-                SockaddrToAscii(&cli_addr, buf, sizeof(buf)),
-                SockaddrGetPort(&cli_addr));
-          close(new_sockfd);
-          continue;
-        }
-        V(mutex);
-#endif
 
         /*
          * Receive notification when connection dies.

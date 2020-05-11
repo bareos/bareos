@@ -523,11 +523,6 @@ if(NOT client-only)
   set(DEFAULT_DB_TYPE ${default_db_backend})
 endif()
 
-# tcp-wrappers
-if(NOT DEFINED tcp-wrappers)
-  set(tcp-wrappers OFF)
-endif()
-
 # systemd
 if(NOT DEFINED systemd)
   set(systemd OFF)

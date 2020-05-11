@@ -11,9 +11,6 @@
 /* Define if you have GCC */
 #define HAVE_GCC 1
 
-/* Define if you want TCP Wrappers support */
-/* #undef HAVE_LIBWRAP */
-
 /* Define if you have sys/bitypes.h */
 /* #undef HAVE_SYS_BITYPES_H */
 
