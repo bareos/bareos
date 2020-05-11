@@ -242,7 +242,7 @@ static bRC newPlugin(PluginContext* plugin_ctx)
       (void*)plugin_priv_ctx; /* set our context pointer */
 
 
-  /* set bareos_core_functions inside of barosfd module */
+  /* set bareos_plugin_context inside of barosfd module */
   Bareosfd_set_plugin_context(plugin_ctx);
 
   /* For each plugin instance we instantiate a new Python interpreter. */
