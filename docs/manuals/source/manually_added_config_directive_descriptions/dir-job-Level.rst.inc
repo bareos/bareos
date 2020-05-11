@@ -110,9 +110,9 @@ Verify
       This level causes Bareos to read the file attribute data written to the Volume from the last backup Job for the job specified on the VerifyJob directive. The file attribute data are compared to the values saved in the Catalog database and any differences are reported. This is similar to the DiskToCatalog level except that instead of comparing the disk file attributes to the catalog database, the attribute data written to the Volume is read and
       compared to the catalog database. Although the attribute data including the signatures (MD5 or SHA1) are compared, the actual file data is not compared (it is not in the catalog).
 
-      VolumeToCatalog jobs need a client to extract the metadata, but this client does not have to be the original client. We suggest to use the client on the backup server itself for maximum performance.
+      VolumeToCatalog jobs require a client to extract the metadata, but this client does not have to be the original client. We suggest to use the client on the backup server itself for maximum performance.
 
-      
+
 
       .. warning::
 
@@ -121,6 +121,13 @@ Verify
          is because the Verify VolumeToCatalog modifies the Catalog 
          database
          while running.
+
+
+      .. limitation:: Verify VolumeToCatalog does not check file checksums
+
+         When running a Verify VolumeToCatalog job the file data will not be checksummed and compared with the recorded checksum.
+         As a result, file data errors that are introduced between the checksumming in the |fd| and the checksumming of the block by the |sd| will not be detected.
+
 
    DiskToCatalog
       :index:`\ <single: DiskToCatalog>`
