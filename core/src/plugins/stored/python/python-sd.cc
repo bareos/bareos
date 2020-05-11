@@ -19,13 +19,12 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, August 2012
- */
 /**
  * @file
- * Python Storage daemon Plugin program
+ * Python plugin for the Bareos Storage Daemon
  */
+#define PY_SSIZE_T_CLEAN
+#define BUILD_PLUGIN
 
 #if defined(HAVE_WIN32)
 #include "include/bareos.h"
@@ -36,11 +35,8 @@
 #endif
 #include "stored/stored.h"
 
-#if (PY_VERSION_HEX < 0x02060000)
-#error "Need at least Python version 2.6 or newer"
-#endif
-
 #include "python-sd.h"
+//#include "bareossd.h"
 #include "lib/edit.h"
 
 namespace storagedaemon {
@@ -510,7 +506,7 @@ static bRC PyLoadModule(PluginContext* plugin_ctx, void* value)
     plugin_priv_ctx->pyModuleFunctionsDict =
         PyModule_GetDict(plugin_priv_ctx->pModule); /* Borrowed reference */
 
-    StorePluginContextInPythonModule(plugin_ctx);
+    //    StorePluginContextInPythonModule(plugin_ctx);
 
     /*
      * Lookup the load_bareos_plugin() function in the python module.
@@ -656,302 +652,4 @@ bail_out:
   return retval;
 }
 
-/**
- * Callback function which is exposed as a part of the additional methods which
- * allow a Python plugin to get certain internal values of the current Job.
- */
-static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
-{
-  int var;
-  PluginContext* plugin_ctx = GetPluginContextFromPythonModule();
-  PyObject* pRetVal = NULL;
-
-  if (!PyArg_ParseTuple(args, "i:BareosGetValue", &var)) { return NULL; }
-  RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
-
-  switch (var) {
-    case bsdVarJobId:
-    case bsdVarLevel:
-    case bsdVarType:
-    case bsdVarJobStatus: {
-      int value;
-
-      if (bareos_core_functions->getBareosValue(plugin_ctx, (bsdrVariable)var,
-                                                &value) == bRC_OK) {
-        pRetVal = PyInt_FromLong(value);
-      }
-      break;
-    }
-    case bsdVarJobErrors:
-    case bsdVarJobFiles:
-    case bsdVarJobBytes: {
-      uint64_t value = 0;
-
-      if (bareos_core_functions->getBareosValue(plugin_ctx, (bsdrVariable)var,
-                                                &value) == bRC_OK) {
-        pRetVal = PyLong_FromUnsignedLong(value);
-      }
-      break;
-    }
-    case bsdVarJobName:
-    case bsdVarJob:
-    case bsdVarClient:
-    case bsdVarPool:
-    case bsdVarPoolType:
-    case bsdVarStorage:
-    case bsdVarMediaType:
-    case bsdVarVolumeName: {
-      char* value = NULL;
-
-      if (bareos_core_functions->getBareosValue(plugin_ctx, (bsdrVariable)var,
-                                                &value) == bRC_OK) {
-        if (value) { pRetVal = PyString_FromString(value); }
-      }
-      break;
-    }
-    case bsdVarCompatible: {
-      bool value;
-
-      if (bareos_core_functions->getBareosValue(NULL, (bsdrVariable)var,
-                                                &value) == bRC_OK) {
-        long bool_value;
-
-        bool_value = (value) ? 1 : 0;
-        pRetVal = PyBool_FromLong(bool_value);
-      }
-      break;
-    }
-    case bsdVarPluginDir: {
-      char* value = NULL;
-
-      if (bareos_core_functions->getBareosValue(NULL, (bsdrVariable)var,
-                                                &value) == bRC_OK) {
-        if (value) { pRetVal = PyString_FromString(value); }
-      }
-      break;
-    }
-    default:
-      Dmsg(plugin_ctx, debuglevel,
-           "python-sd: PyBareosGetValue unknown variable requested %d\n", var);
-      break;
-  }
-
-  if (!pRetVal) {
-    Py_INCREF(Py_None);
-    pRetVal = Py_None;
-  }
-
-  return pRetVal;
-}
-
-/**
- * Callback function which is exposed as a part of the additional methods which
- * allow a Python plugin to get certain internal values of the current Job.
- */
-static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
-{
-  int var;
-  PluginContext* plugin_ctx = GetPluginContextFromPythonModule();
-  bRC retval = bRC_Error;
-  PyObject* pyValue;
-
-  if (!PyArg_ParseTuple(args, "iO:BareosSetValue", &var, &pyValue)) {
-    goto bail_out;
-  }
-  RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
-
-  switch (var) {
-    case bsdwVarVolumeName: {
-      char* value;
-
-      value = PyString_AsString(pyValue);
-      if (value) {
-        bareos_core_functions->setBareosValue(plugin_ctx, (bsdwVariable)var,
-                                              value);
-      }
-
-      break;
-    }
-    case bsdwVarPriority:
-    case bsdwVarJobLevel: {
-      int value;
-
-      value = PyInt_AsLong(pyValue);
-      if (value >= 0) {
-        retval = bareos_core_functions->setBareosValue(
-            plugin_ctx, (bsdwVariable)var, &value);
-      }
-      break;
-    }
-    default:
-      Dmsg(plugin_ctx, debuglevel,
-           "python-sd: PyBareosSetValue unknown variable requested %d\n", var);
-      break;
-  }
-
-bail_out:
-  return ConvertbRCRetvalToPythonRetval(retval);
-}
-
-/**
- * Callback function which is exposed as a part of the additional methods which
- * allow a Python plugin to issue debug messages using the Bareos debug message
- * facility.
- */
-static PyObject* PyBareosDebugMessage(PyObject* self, PyObject* args)
-{
-  int level;
-  char* dbgmsg = NULL;
-  PluginContext* plugin_ctx = GetPluginContextFromPythonModule();
-
-  if (!PyArg_ParseTuple(args, "i|z:BareosDebugMessage", &level, &dbgmsg)) {
-    return NULL;
-  }
-  RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
-
-  if (dbgmsg) { Dmsg(plugin_ctx, level, "python-sd: %s", dbgmsg); }
-
-  Py_INCREF(Py_None);
-  return Py_None;
-}
-
-/**
- * Callback function which is exposed as a part of the additional methods which
- * allow a Python plugin to issue Job messages using the Bareos Job message
- * facility.
- */
-static PyObject* PyBareosJobMessage(PyObject* self, PyObject* args)
-{
-  int type;
-  char* jobmsg = NULL;
-  PluginContext* plugin_ctx = GetPluginContextFromPythonModule();
-
-  if (!PyArg_ParseTuple(args, "i|z:BareosJobMessage", &type, &jobmsg)) {
-    return NULL;
-  }
-  RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
-
-  if (jobmsg) { Jmsg(plugin_ctx, type, "python-sd: %s", jobmsg); }
-
-  Py_INCREF(Py_None);
-  return Py_None;
-}
-
-/**
- * Callback function which is exposed as a part of the additional methods which
- * allow a Python plugin to issue a Register Event to register additional events
- * it wants to receive.
- */
-static PyObject* PyBareosRegisterEvents(PyObject* self, PyObject* args)
-{
-  int len, event;
-  PluginContext* plugin_ctx = GetPluginContextFromPythonModule();
-  bRC retval = bRC_Error;
-  PyObject *pyEvents, *pySeq, *pyEvent;
-
-  if (!PyArg_ParseTuple(args, "O:BareosRegisterEvents", &pyEvents)) {
-    goto bail_out;
-  }
-  RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
-
-  pySeq = PySequence_Fast(pyEvents, "Expected a sequence of events");
-  if (!pySeq) { goto bail_out; }
-
-  len = PySequence_Fast_GET_SIZE(pySeq);
-
-  for (int i = 0; i < len; i++) {
-    pyEvent = PySequence_Fast_GET_ITEM(pySeq, i);
-    event = PyInt_AsLong(pyEvent);
-
-    if (event >= bsdEventJobStart && event <= bsdEventWriteRecordTranslation) {
-      Dmsg(plugin_ctx, debuglevel,
-           "python-sd: PyBareosRegisterEvents registering event %d\n", event);
-      retval =
-          bareos_core_functions->registerBareosEvents(plugin_ctx, 1, event);
-
-      if (retval != bRC_OK) { break; }
-    }
-  }
-
-  Py_DECREF(pySeq);
-
-bail_out:
-  return ConvertbRCRetvalToPythonRetval(retval);
-}
-
-/**
- * Callback function which is exposed as a part of the additional methods which
- * allow a Python plugin to issue an Unregister Event to unregister events it
- * doesn't want to receive anymore.
- */
-static PyObject* PyBareosUnRegisterEvents(PyObject* self, PyObject* args)
-{
-  int len, event;
-  PluginContext* plugin_ctx = GetPluginContextFromPythonModule();
-  bRC retval = bRC_Error;
-  PyObject *pyEvents, *pySeq, *pyEvent;
-
-  if (!PyArg_ParseTuple(args, "O:BareosUnRegisterEvents", &pyEvents)) {
-    goto bail_out;
-  }
-  RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
-
-  pySeq = PySequence_Fast(pyEvents, "Expected a sequence of events");
-  if (!pySeq) { goto bail_out; }
-
-  len = PySequence_Fast_GET_SIZE(pySeq);
-
-  for (int i = 0; i < len; i++) {
-    pyEvent = PySequence_Fast_GET_ITEM(pySeq, i);
-    event = PyInt_AsLong(pyEvent);
-
-    if (event >= bsdEventJobStart && event <= bsdEventWriteRecordTranslation) {
-      Dmsg(plugin_ctx, debuglevel,
-           "PyBareosUnRegisterEvents: registering event %d\n", event);
-      retval =
-          bareos_core_functions->unregisterBareosEvents(plugin_ctx, 1, event);
-
-      if (retval != bRC_OK) { break; }
-    }
-  }
-
-  Py_DECREF(pySeq);
-
-bail_out:
-  return ConvertbRCRetvalToPythonRetval(retval);
-}
-
-/**
- * Callback function which is exposed as a part of the additional methods which
- * allow a Python plugin to issue a GetInstanceCount to retrieve the number of
- * instances of the current plugin being loaded into the daemon.
- */
-static PyObject* PyBareosGetInstanceCount(PyObject* self, PyObject* args)
-{
-  int value;
-  PluginContext* plugin_ctx = GetPluginContextFromPythonModule();
-  PyObject* pRetVal = NULL;
-
-  if (!PyArg_ParseTuple(args, ":BareosGetInstanceCount")) { return NULL; }
-  RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
-
-  if (!plugin_ctx) {
-    PyErr_SetString(PyExc_ValueError, "plugin_ctx is unset");
-    return NULL;
-  }
-  if (!bareos_core_functions) {
-    PyErr_SetString(PyExc_ValueError, "bareos_core_functions is unset");
-    return NULL;
-  }
-  if (bareos_core_functions->getInstanceCount(plugin_ctx, &value) == bRC_OK) {
-    pRetVal = PyInt_FromLong(value);
-  }
-
-  if (!pRetVal) {
-    Py_INCREF(Py_None);
-    pRetVal = Py_None;
-  }
-
-  return pRetVal;
-}
 } /* namespace storagedaemon*/

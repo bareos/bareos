@@ -37,6 +37,7 @@
 
 #include "python-dir.h"
 #include "bareosdir.h"
+#include "lib/plugins.h"
 #include "lib/edit.h"
 
 namespace directordaemon {
@@ -74,7 +75,7 @@ static bRC PyLoadModule(PluginContext* plugin_ctx, void* value);
 
 /* Pointers to Bareos functions */
 static DirCoreFunctions* bareos_core_functions = NULL;
-static Dir_PluginApiDefiniton* bareos_plugin_interface_version = NULL;
+static Dir_PluginApiDefinition* bareos_plugin_interface_version = NULL;
 
 static PluginInformation pluginInfo = {
     sizeof(pluginInfo), DIR_PLUGIN_INTERFACE_VERSION,
@@ -169,7 +170,7 @@ static void PyErrorHandler()
  *
  * External entry point called by Bareos to "load" the plugin
  */
-bRC loadPlugin(Dir_PluginApiDefiniton* lbareos_plugin_interface_version,
+bRC loadPlugin(Dir_PluginApiDefinition* lbareos_plugin_interface_version,
                DirCoreFunctions* lbareos_core_functions,
                PluginInformation** plugin_information,
                pDirFuncs** plugin_functions)
@@ -519,7 +520,7 @@ static bRC PyLoadModule(PluginContext* plugin_ctx, void* value)
     }
   }
 
-  /* Try to load the Python module by name.  */
+  /* Try to load the Python module by name. */
   if (plugin_priv_ctx->module_name) {
     Dmsg(plugin_ctx, debuglevel,
          "python-dir: Trying to load module with name %s\n",

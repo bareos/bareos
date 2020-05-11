@@ -776,15 +776,6 @@ using namespace filedaemon;
 PluginContext* plugin_context = NULL;
 static void* bareos_core_functions = NULL;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifdef __cplusplus
-}
-#endif
-
-
 MOD_INIT(bareosfd)
 {
   PyObject* m = NULL;
@@ -820,22 +811,6 @@ MOD_INIT(bareosfd)
     return MOD_ERROR_VAL;
   }
 
-#if 0
-  /* add loadPlugin Capsule */
-  PyObject* PyModuleLoadPlugin = PyCapsule_New(
-      (void*)&loadPlugin, PYTHON_MODULE_NAME_QUOTED ".loadPlugin", NULL);
-  if (!PyModuleLoadPlugin) {
-    printf(PYTHON_MODULE_NAME_QUOTED "loadPlugin PyCapsule_New failed\n");
-    return MOD_ERROR_VAL;
-  }
-  if (PyModuleLoadPlugin) {
-    PyModule_AddObject(m, "loadPlugin", PyModuleLoadPlugin);
-    printf(PYTHON_MODULE_NAME_QUOTED ": added   loadPlugin@%p\n", &loadPlugin);
-  } else {
-    printf(PYTHON_MODULE_NAME_QUOTED "loadPlugin PyModule_AddObject failed\n");
-    return MOD_ERROR_VAL;
-  }
-#endif
 
   PyRestoreObjectType.tp_new = PyType_GenericNew;
   if (PyType_Ready(&PyRestoreObjectType) < 0) { return MOD_ERROR_VAL; }

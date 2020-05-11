@@ -111,7 +111,7 @@ struct _bareosfuncs {
  */
 typedef union _bareosinfos bareosinfos;
 union _bareosinfos {
-  directordaemon::Dir_PluginApiDefiniton bdirinfo;
+  directordaemon::Dir_PluginApiDefinition bdirinfo;
   filedaemon::Core_PluginApiDefinition bfdinfo;
   storagedaemon::bsdInfo bsdinfo;
 };

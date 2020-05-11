@@ -67,7 +67,7 @@ static bRC bareosDebugMsg(PluginContext* ctx,
 static bool IsPluginCompatible(Plugin* plugin);
 
 /* BAREOS info */
-static Dir_PluginApiDefiniton bareos_plugin_interface_version = {
+static Dir_PluginApiDefinition bareos_plugin_interface_version = {
     sizeof(DirCoreFunctions), DIR_PLUGIN_INTERFACE_VERSION};
 
 /* BAREOS entry points */
