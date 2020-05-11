@@ -1,0 +1,7 @@
+Storage {
+  Name = File
+  Address = @hostname@
+  Password = "@sd_password@"
+  Device = S3_ObjectStorage
+  Media Type = S3_Object1
+}
