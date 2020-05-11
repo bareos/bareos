@@ -50,15 +50,15 @@ class LoginForm extends Form
       if(count($this->directors) == 1) {
          $this->add(array(
             'name' => 'director',
-            'type' => 'select',
+            'type' => 'text',
             'options' => array(
                'label' => 'Director',
-               'empty_option' => 'Please choose a director',
-               'value_options' => $this->directors,
             ),
             'attributes' => array(
                'id' => 'director',
-               'value' => key($this->directors)
+               'value' => key($this->directors),
+               'readonly' => true,
+               'required' => 'required'
             )
          )
          );
@@ -75,7 +75,8 @@ class LoginForm extends Form
                ),
                'attributes' => array(
                   'id' => 'director',
-                  'value' => $this->dird
+                  'value' => $this->dird,
+                  'required' => 'required'
                )
             )
             );
@@ -91,6 +92,7 @@ class LoginForm extends Form
                ),
                'attributes' => array(
                   'id' => 'director',
+                  'required' => 'required'
                )
             )
             );
@@ -108,7 +110,8 @@ class LoginForm extends Form
             ),
             'attributes' => array(
                'id' => 'locale',
-               'value' => key($this->locale)
+               'value' => key($this->locale),
+               'required' => 'required'
             )
          ));
       }
@@ -123,6 +126,7 @@ class LoginForm extends Form
             ),
             'attributes' => array(
                'id' => 'locale',
+               'required' => 'required'
             )
          ));
       }
@@ -135,6 +139,7 @@ class LoginForm extends Form
          ),
          'attributes' => array(
             'placeholder' => 'Username',
+            'required' => 'required'
          ),
       )
       );
@@ -147,6 +152,7 @@ class LoginForm extends Form
          ),
          'attributes' => array(
             'placeholder' => 'Password',
+            'required' => 'required'
          ),
       )
       );
@@ -155,7 +161,7 @@ class LoginForm extends Form
          'name' => 'bareos_updates',
          'type' => 'Zend\Form\Element\Hidden',
          'attributes' => array(
-            'value' => '',
+            'value' => 'false',
             'id' => 'bareos_updates'
          ),
       )

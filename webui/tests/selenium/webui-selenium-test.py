@@ -493,9 +493,10 @@ class SeleniumTest(unittest.TestCase):
     def login(self):
         driver = self.driver
         driver.get(self.base_url + "/auth/login")
-        Select(driver.find_element_by_name("director")).select_by_visible_text(
-            "localhost-dir"
-        )
+        # Currently not required in the test environment because it is preselected
+        #Select(driver.find_element_by_name("director")).select_by_visible_text(
+        #    "localhost-dir"
+        #)
         self.enter_input("consolename", self.username)
         self.enter_input("password", self.password)
         driver.find_element_by_xpath('(//button[@type="button"])[2]').click()

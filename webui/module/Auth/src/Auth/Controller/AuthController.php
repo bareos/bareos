@@ -57,6 +57,7 @@ class AuthController extends AbstractActionController
     */
    public function loginAction()
    {
+      $multi_dird_env = false;
 
       if($this->SessionTimeoutPlugin()->isValid()) {
          return $this->redirect()->toRoute('dashboard', array('action' => 'index'));
@@ -67,12 +68,17 @@ class AuthController extends AbstractActionController
       $config = $this->getServiceLocator()->get('Config');
       $dird = $this->params()->fromQuery('dird') ? $this->params()->fromQuery('dird') : null;
 
+      // Check for Multi Director Environment
+      if(count($config['directors']) > 1) {
+         $multi_dird_env = true;
+      }
+
       $form = new LoginForm($config['directors'], $dird);
 
       $request = $this->getRequest();
 
       if(!$request->isPost()) {
-         return $this->createNewLoginForm($form);
+         return $this->createNewLoginForm($form, $multi_dird_env);
       }
 
       $auth = new Auth();
@@ -81,7 +87,7 @@ class AuthController extends AbstractActionController
       if(!$form->isValid()) {
          // given credentials in login form could not be validated in this case
          $err_msg = "Please provide a director, username and password.";
-         return $this->createNewLoginForm($form,$err_msg);
+         return $this->createNewLoginForm($form, $multi_dird_env, $err_msg);
       }
 
       $director = $form->getInputFilter()->getValue('director');
@@ -98,7 +104,7 @@ class AuthController extends AbstractActionController
 
       if(!$this->bsock->connect_and_authenticate()) {
          $err_msg = "Sorry, can not authenticate. Wrong username and/or password.";
-         return $this->createNewLoginForm($form,$err_msg,$this->bsock);
+         return $this->createNewLoginForm($form, $multi_dird_env, $err_msg, $this->bsock);
       }
 
       $_SESSION['bareos']['director'] = $director;
@@ -114,11 +120,11 @@ class AuthController extends AbstractActionController
       $debug = $this->getDirectorModel()->sendDirectorCommand($this->bsock, ".api 2 compact=yes");
       if(preg_match("/.api:/",$debug)) {
          $err_msg = 'Sorry, the user you are trying to login with has no permissions for the .api command. For further information, please read the <a href="https://docs.bareos.org/IntroductionAndTutorial/InstallingBareosWebui.html#configuration-of-profile-resources" target="_blank">Bareos documentation</a>.';
-         return $this->createNewLoginForm($form,$err_msg,$this->bsock);
+         return $this->createNewLoginForm($form, $multi_dird_env, $err_msg, $this->bsock);
       }
       elseif(!preg_match('/result/', $debug)) {
          $err_msg = 'Error: API 2 not available on 15.2.2 or greater and/or compile with jansson support.';
-         return $this->createNewLoginForm($form,$err_msg,$this->bsock);
+         return $this->createNewLoginForm($form, $multi_dird_env, $err_msg, $this->bsock);
       }
 
       if(isset($bareos_updates) && $bareos_updates == false) {
@@ -193,7 +199,7 @@ class AuthController extends AbstractActionController
       // Check if Command ACL has the minimal requirements
       if($_SESSION['bareos']['commands']['.help']['permission'] == 0) {
          $err_msg = 'Sorry, your Command ACL does not fit the minimal requirements. For further information, please read the <a href="https://docs.bareos.org/IntroductionAndTutorial/InstallingBareosWebui.html#configuration-of-profile-resources" target="_blank">Bareos documentation</a>.';
-         return $this->createNewLoginForm($form,$err_msg,$this->bsock);
+         return $this->createNewLoginForm($form, $multi_dird_env, $err_msg, $this->bsock);
       }
       // Get the config.
       $configuration = $this->getServiceLocator()->get('configuration');
@@ -253,7 +259,7 @@ class AuthController extends AbstractActionController
     *
     * @return object
     */
-   private function createNewLoginForm($form, $err_msg = null, $bsock = null)
+   private function createNewLoginForm($form, $multi_dird_env = null, $err_msg = null, $bsock = null)
    {
       if ($bsock != null) {
          $bsock->disconnect();
@@ -262,7 +268,8 @@ class AuthController extends AbstractActionController
       return new ViewModel(
          array(
             'form' => $form,
-            'err_msg' => $err_msg,
+            'multi_dird_env' => $multi_dird_env,
+            'err_msg' => $err_msg
          )
       );
    }
