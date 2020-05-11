@@ -57,6 +57,7 @@ static plugin_argument plugin_arguments[] = {
     {"module_path", argument_module_path},
     {"module_name", argument_module_name},
     {NULL, argument_none}};
+
 /**
  * Callback methods from Python.
  */

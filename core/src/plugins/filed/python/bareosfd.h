@@ -1025,8 +1025,6 @@ static int import_bareosfd()
   Bareosfd_API = (void**)PyCapsule_Import("bareosfd._C_API", 0);
   return (Bareosfd_API != NULL) ? 0 : -1;
 }
-
-
 #endif  // BAREOSFD_MODULE
 
 #endif /* BAREOS_PLUGINS_FILED_BAREOS_FD_H_ */

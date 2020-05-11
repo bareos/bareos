@@ -159,7 +159,7 @@ typedef struct s_dirbareosFuncs {
                       int level,
                       const char* fmt,
                       ...);
-} DirCoreFunctions;
+} DirectorCoreFunctions;
 
 /**
  * Bareos Core Routines -- not used within a plugin

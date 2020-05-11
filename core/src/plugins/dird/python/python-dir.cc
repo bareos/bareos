@@ -73,16 +73,8 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
 static void PyErrorHandler(PluginContext* plugin_ctx, int msgtype);
 static bRC PyLoadModule(PluginContext* plugin_ctx, void* value);
 
-#if 0
-static bRC PyGetPluginValue(PluginContext* plugin_ctx,
-                            pVariable var,
-                            void* value);
-static bRC PySetPluginValue(PluginContext* plugin_ctx,
-                            pVariable var,
-                            void* value);
-#endif
 /* Pointers to Bareos functions */
-static DirCoreFunctions* bareos_core_functions = NULL;
+static DirectorCoreFunctions* bareos_core_functions = NULL;
 static Dir_PluginApiDefinition* bareos_plugin_interface_version = NULL;
 
 static PluginInformation pluginInfo = {
@@ -100,20 +92,7 @@ static pDirFuncs pluginFuncs = {
     freePlugin, /* free plugin instance */
     getPluginValue, setPluginValue, handlePluginEvent};
 
-/**
- * Plugin private context
- */
-struct plugin_private_context {
-  int64_t instance;     /* Instance number of plugin */
-  bool python_loaded;   /* Plugin has python module loaded ? */
-  bool python_path_set; /* Python plugin search path is set ? */
-  char* module_path;    /* Plugin Module Path */
-  char* module_name;    /* Plugin Module Name */
-  PyThreadState*
-      interpreter;   /* Python interpreter for this instance of the plugin */
-  PyObject* pModule; /* Python Module entry point */
-  PyObject* pyModuleFunctionsDict; /* Python Dictionary */
-};
+#include "plugin_private_context.h"
 
 /**
  * We don't actually use this but we need it to tear down the
@@ -214,7 +193,7 @@ static void PyErrorHandler()
  * External entry point called by Bareos to "load" the plugin
  */
 bRC loadPlugin(Dir_PluginApiDefinition* lbareos_plugin_interface_version,
-               DirCoreFunctions* lbareos_core_functions,
+               DirectorCoreFunctions* lbareos_core_functions,
                PluginInformation** plugin_information,
                pDirFuncs** plugin_functions)
 {

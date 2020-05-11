@@ -73,7 +73,22 @@ static PyMethodDef Methods[] = {
     {NULL, NULL, 0, NULL}};
 
 
-static void* bareos_PluginContext = NULL;
+static bRC set_bareos_core_functions(
+    DirectorCoreFunctions* new_bareos_core_functions);
+static bRC set_plugin_context(PluginContext* new_plugin_context);
+static void PyErrorHandler(PluginContext* plugin_ctx, int msgtype);
+static bRC PyParsePluginDefinition(PluginContext* plugin_ctx, void* value);
+static bRC PyGetPluginValue(PluginContext* plugin_ctx,
+                            pVariable var,
+                            void* value);
+static bRC PySetPluginValue(PluginContext* plugin_ctx,
+                            pVariable var,
+                            void* value);
+static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
+                               bDirEvent* event,
+                               void* value);
+
+// static void* bareos_PluginContext = NULL;
 
 }  // namespace directordaemon
 using namespace directordaemon;

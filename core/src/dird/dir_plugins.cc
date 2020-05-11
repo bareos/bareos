@@ -68,18 +68,19 @@ static bool IsPluginCompatible(Plugin* plugin);
 
 /* BAREOS info */
 static Dir_PluginApiDefinition bareos_plugin_interface_version = {
-    sizeof(DirCoreFunctions), DIR_PLUGIN_INTERFACE_VERSION};
+    sizeof(DirectorCoreFunctions), DIR_PLUGIN_INTERFACE_VERSION};
 
 /* BAREOS entry points */
-static DirCoreFunctions bareos_core_functions = {sizeof(DirCoreFunctions),
-                                                 DIR_PLUGIN_INTERFACE_VERSION,
-                                                 bareosRegisterEvents,
-                                                 bareosUnRegisterEvents,
-                                                 bareosGetInstanceCount,
-                                                 bareosGetValue,
-                                                 bareosSetValue,
-                                                 bareosJobMsg,
-                                                 bareosDebugMsg};
+static DirectorCoreFunctions bareos_core_functions = {
+    sizeof(DirectorCoreFunctions),
+    DIR_PLUGIN_INTERFACE_VERSION,
+    bareosRegisterEvents,
+    bareosUnRegisterEvents,
+    bareosGetInstanceCount,
+    bareosGetValue,
+    bareosSetValue,
+    bareosJobMsg,
+    bareosDebugMsg};
 
 /*
  * BAREOS private context
