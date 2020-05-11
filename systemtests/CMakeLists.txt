@@ -133,24 +133,24 @@ macro(handle_python_plugin_modules test_name)
   string(REGEX MATCH ^pyplug-fd.* starts_with_pyplug-fd ${test_name})
   if(starts_with_pyplug-fd OR starts_with_dbcopy)
     list(APPEND PYMODULES_TO_LINK_TO_SRC filed/BareosFdWrapper.py
-         filed/BareosFdPluginBaseclass.py filed/bareos_fd_consts.py
-         filed/bareos-fd-mock-test.py
+                filed/BareosFdPluginBaseclass.py filed/bareos_fd_consts.py
+                filed/bareos-fd-mock-test.py
     )
   endif()
 
   string(REGEX MATCH ^pyplug-sd.* starts_with_pyplug-sd ${test_name})
   if(starts_with_pyplug-sd)
     list(APPEND SD_PYMODULES_TO_LINK_TO_SRC bareos_sd_consts.py
-         bareos-sd-class-plugin.py BareosSdPluginBaseclass.py
-         BareosSdWrapper.py
+                bareos-sd-class-plugin.py BareosSdPluginBaseclass.py
+                BareosSdWrapper.py
     )
   endif()
 
   string(REGEX MATCH ^pyplug-dir.* starts_with_pyplug-dir ${test_name})
   if(starts_with_pyplug-dir)
     list(APPEND DIR_PYMODULES_TO_LINK_TO_SRC bareos_dir_consts.py
-         BareosDirPluginBaseclass.py bareos-dir-class-plugin.py
-         BareosDirWrapper.py
+                BareosDirPluginBaseclass.py bareos-dir-class-plugin.py
+                BareosDirWrapper.py
     )
   endif()
 
@@ -160,19 +160,19 @@ macro(handle_python_plugin_modules test_name)
 
   if(${test_name} STREQUAL pyplug-fd-percona-xtrabackup)
     list(APPEND FD_PYMODULES_TO_LINK_TO_SRC BareosFdPluginPerconaXtraBackup.py
-         bareos-fd-percona-xtrabackup.py
+                bareos-fd-percona-xtrabackup.py
     )
   endif()
 
   if(${test_name} STREQUAL pyplug-fd-ovirt)
     list(APPEND FD_PYMODULES_TO_LINK_TO_SRC BareosFdPluginOvirt.py
-         bareos-fd-ovirt.py
+                bareos-fd-ovirt.py
     )
   endif()
 
   if(${test_name} STREQUAL pyplug-fd-local-fileset)
     list(APPEND FD_PYMODULES_TO_LINK_TO_SRC bareos-fd-local-fileset.py
-         BareosFdPluginLocalFileset.py
+                BareosFdPluginLocalFileset.py
     )
   endif()
 
@@ -183,9 +183,9 @@ macro(handle_python_plugin_modules test_name)
   endif()
 
   if(${test_name} STREQUAL pyplug-fd-postgres)
-    list(APPEND FD_PYMODULES_TO_LINK_TO_SRC bareos-fd-postgres.py
+        list(APPEND FD_PYMODULES_TO_LINK_TO_SRC bareos-fd-postgres.py 
          BareosFdPluginLocalFileset.py BareosFdPluginPostgres.py
-         BareosFdPluginBaseclass.py
+		BareosFdPluginBaseclass.py
     )
 
   endif()
@@ -206,8 +206,8 @@ macro(handle_python_plugin_modules test_name)
     execute_process(
       COMMAND
         ${CMAKE_COMMAND} -E create_symlink
-        ${PROJECT_SOURCE_DIR}/../core/src/plugins/${PYMODULE_SOURCEPATH}
-        ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
+              ${PROJECT_SOURCE_DIR}/../core/src/plugins/${PYMODULE_SOURCEPATH}
+              ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
     )
   endforeach()
 
@@ -282,7 +282,7 @@ macro(link_binaries_to_test_to_current_sbin_dir_with_individual_filename)
     string(REPLACE "-" "_" binary_name ${binary_name})
     string(TOUPPER ${binary_name} binary_name_upcase)
     string(CONCAT bareos_XXX_binary ${binary_name_upcase} "_BINARY")
-    # message (STATUS "${bareos_XXX_binary}")
+    #message (STATUS "${bareos_XXX_binary}")
     set(${bareos_XXX_binary} ${CURRENT_SBIN_DIR}/${binary_name}-${TEST_NAME})
     # message( "creating symlink ${${bareos_XXX_binary}}  ->
     # ${${binary_name_to_test_upcase}}" )
@@ -670,7 +670,13 @@ set(glusterfs_uri
 )
 mark_as_advanced(glusterfs_uri)
 
-if(SD_GFAPI_DIR_TO_TEST AND glusterfs_uri)
+if(TARGET bareossd-droplet)
+  list(APPEND SYSTEM_TESTS backup-bareos-droplet-s3-test)
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED backup-bareos-droplet-s3-test)
+endif()
+
+if(SD_GFAPI_DIR_TO_TEST AND glusterfs_uri) 
   list(APPEND SYSTEM_TESTS glusterfs-backend)
 else()
   list(APPEND SYSTEM_TESTS_DISABLED glusterfs-backend)
@@ -860,7 +866,7 @@ else()
   set(WEBUI_SELENIUM_TESTS)
   foreach(TEST_NAME_DISABLED ${AVAILABLE_WEBUI_SELENIUM_TESTS})
     add_test(NAME ${WEBUI_TEST_PREFIX}${TEST_NAME_DISABLED}
-             COMMAND empty_command
+      COMMAND empty_command
     )
     set_tests_properties(
       ${WEBUI_TEST_PREFIX}${TEST_NAME_DISABLED} PROPERTIES DISABLED true
