@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
    Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
@@ -21,15 +21,26 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_LIB_KEYWORD_TABLE_S_H_
-#define BAREOS_LIB_KEYWORD_TABLE_S_H_
+#ifndef BAREOS_SRC_STORED_SD_DEVICE_CONTROL_RECORD_H_
+#define BAREOS_SRC_STORED_SD_DEVICE_CONTROL_RECORD_H_
 
-/*
- * Used for certain KeyWord tables
- */
-struct s_kw {
-  const char* name;
-  uint32_t token;
+#include "stored/device_control_record.h"
+
+namespace storagedaemon {
+
+class StorageDaemonDeviceControlRecord : public DeviceControlRecord {
+ public:
+  bool DirFindNextAppendableVolume() override;
+  bool DirUpdateVolumeInfo(bool label, bool update_LastWritten) override;
+  bool DirCreateJobmediaRecord(bool zero) override;
+  bool DirUpdateFileAttributes(DeviceRecord* record) override;
+  bool DirAskSysopToMountVolume(int mode) override;
+  bool DirAskSysopToCreateAppendableVolume() override;
+  bool DirGetVolumeInfo(enum get_vol_info_rw writing) override;
+  DeviceControlRecord* get_new_spooling_dcr() override;
 };
 
-#endif /* BAREOS_LIB_KEYWORD_TABLE_S_H_ */
+
+}  // namespace storagedaemon
+
+#endif  // BAREOS_SRC_STORED_SD_DEVICE_CONTROL_RECORD_H_

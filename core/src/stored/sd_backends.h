@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2014 Planets Communications B.V.
-   Copyright (C) 2014-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,28 +30,19 @@
 #ifndef BAREOS_STORED_SD_BACKENDS_H_
 #define BAREOS_STORED_SD_BACKENDS_H_ 1
 
-class alist;
-
 namespace storagedaemon {
 
-extern "C" {
-typedef Device* (*t_backend_instantiate)(JobControlRecord* jcr,
-                                         int device_type);
-typedef void (*t_flush_backend)(void);
-}
-
-/**
- * Loaded shared library with a certain backend interface type.
- */
-struct backend_shared_library_t {
-  int interface_type_id;
-  void* handle;
-  /*
-   * Entry points into loaded shared library.
-   */
-  t_backend_instantiate backend_instantiate;
-  t_flush_backend flush_backend;
+class BackendInterface {
+ public:
+  virtual Device* GetDevice(JobControlRecord* jcr, DeviceType device_type) = 0;
+  virtual void FlushDevice(void) = 0;
 };
+
+
+extern "C" {
+typedef BackendInterface* (*t_backend_base)(void);
+BackendInterface* GetBackend(void);
+}
 
 #if defined(HAVE_WIN32)
 #define DYN_LIB_EXTENSION ".dll"
@@ -65,9 +56,9 @@ struct backend_shared_library_t {
 
 
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
-void SdSetBackendDirs(std::vector<std::string>&& new_backend_dirs);
-Device* init_backend_dev(JobControlRecord* jcr, int device_type);
-void DevFlushBackends();
+void SetBackendDeviceDirectories(std::vector<std::string>&& new_backend_dirs);
+Device* InitBackendDevice(JobControlRecord* jcr, DeviceType device_type);
+void FlushAndCloseBackendDevices();
 #endif
 
 } /* namespace storagedaemon */

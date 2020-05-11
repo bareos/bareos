@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2013 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,7 +32,9 @@
 #include "stored/stored.h"  /* pull in Storage Daemon headers */
 #include "stored/acquire.h"
 #include "stored/autochanger.h"
+#include "stored/blocksize_boundaries.h"
 #include "stored/bsr.h"
+#include "stored/device_control_record.h"
 #include "stored/job.h"
 #include "stored/label.h"
 #include "stored/sd_plugins.h"
@@ -44,6 +46,8 @@
 #include "include/jcr.h"
 #include "stored/block.h"
 #include "stored/jcr_private.h"
+
+#include <algorithm>
 
 namespace storagedaemon {
 
@@ -102,7 +106,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
   dev->Lock_read_acquire();
   Dmsg2(rdebuglevel, "dcr=%p dev=%p\n", dcr, dcr->dev);
   Dmsg2(rdebuglevel, "MediaType dcr=%s dev=%s\n", dcr->media_type,
-        dev->device->media_type);
+        dev->device_resource->media_type);
   dev->dblock(BST_DOING_ACQUIRE);
 
   if (dev->num_writers > 0) {
@@ -146,9 +150,9 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
    * not release the dcr.
    */
   Dmsg2(rdebuglevel, "MediaType dcr=%s dev=%s\n", dcr->media_type,
-        dev->device->media_type);
+        dev->device_resource->media_type);
   if (dcr->media_type[0] &&
-      !bstrcmp(dcr->media_type, dev->device->media_type)) {
+      !bstrcmp(dcr->media_type, dev->device_resource->media_type)) {
     ReserveContext rctx;
     DirectorStorage* store;
     int status;
@@ -156,11 +160,11 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
     Jmsg3(jcr, M_INFO, 0,
           _("Changing read device. Want Media Type=\"%s\" have=\"%s\"\n"
             "  device=%s\n"),
-          dcr->media_type, dev->device->media_type, dev->print_name());
+          dcr->media_type, dev->device_resource->media_type, dev->print_name());
     Dmsg3(rdebuglevel,
           "Changing read device. Want Media Type=\"%s\" have=\"%s\"\n"
           "  device=%s\n",
-          dcr->media_type, dev->device->media_type, dev->print_name());
+          dcr->media_type, dev->device_resource->media_type, dev->print_name());
 
     dev->dunblock(DEV_UNLOCKED);
 
@@ -223,7 +227,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
     }
   }
   Dmsg2(rdebuglevel, "MediaType dcr=%s dev=%s\n", dcr->media_type,
-        dev->device->media_type);
+        dev->device_resource->media_type);
 
   dev->ClearUnload();
 
@@ -260,7 +264,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
      * See if we are changing the volume in the device.
      * If so we need to force a reread of the tape label.
      */
-    if (dev->device->drive_crypto_enabled ||
+    if (dev->device_resource->drive_crypto_enabled ||
         (dev->HasCap(CAP_ALWAYSOPEN) &&
          !bstrcmp(dev->VolHdr.VolumeName, dcr->VolumeName))) {
       dev->ClearLabeled();
@@ -283,7 +287,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
      * it opens it. If it is a tape, it checks the volume name
      */
     Dmsg1(rdebuglevel, "stored: open vol=%s\n", dcr->VolumeName);
-    if (!dev->open(dcr, OPEN_READ_ONLY)) {
+    if (!dev->open(dcr, DeviceMode::OPEN_READ_ONLY)) {
       if (!dev->poll) {
         Jmsg3(jcr, M_WARNING, 0,
               _("Read open device %s Volume \"%s\" failed: ERR=%s\n"),
@@ -297,7 +301,8 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
      * See if we are changing the volume in the device.
      * If so we need to force a reread of the tape label.
      */
-    if (!dev->device->drive_crypto_enabled && dev->HasCap(CAP_ALWAYSOPEN) &&
+    if (!dev->device_resource->drive_crypto_enabled &&
+        dev->HasCap(CAP_ALWAYSOPEN) &&
         bstrcmp(dev->VolHdr.VolumeName, dcr->VolumeName)) {
       vol_label_status = VOL_OK;
     } else {
@@ -422,7 +427,7 @@ get_out:
 
   Dmsg2(rdebuglevel, "dcr=%p dev=%p\n", dcr, dcr->dev);
   Dmsg2(rdebuglevel, "MediaType dcr=%s dev=%s\n", dcr->media_type,
-        dev->device->media_type);
+        dev->device_resource->media_type);
 
   dev->Unlock_read_acquire();
 
@@ -660,7 +665,8 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
    * Fire off Alert command and include any output
    */
   if (!JobCanceled(jcr)) {
-    if (!dcr->device->drive_tapealert_enabled && dcr->device->alert_command) {
+    if (!dcr->device_resource->drive_tapealert_enabled &&
+        dcr->device_resource->alert_command) {
       int status = 1;
       POOLMEM *alert, *line;
       Bpipe* bpipe;
@@ -668,7 +674,8 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
       alert = GetPoolMemory(PM_FNAME);
       line = GetPoolMemory(PM_FNAME);
 
-      alert = edit_device_codes(dcr, alert, dcr->device->alert_command, "");
+      alert = edit_device_codes(dcr, alert, dcr->device_resource->alert_command,
+                                "");
 
       /*
        * Wait maximum 5 minutes
@@ -753,7 +760,7 @@ bool CleanDevice(DeviceControlRecord* dcr)
 void SetupNewDcrDevice(JobControlRecord* jcr,
                        DeviceControlRecord* dcr,
                        Device* dev,
-                       BlockSizes* blocksizes)
+                       BlockSizeBoundaries* blocksizes)
 {
   dcr->jcr = jcr; /* point back to jcr */
 
@@ -786,10 +793,10 @@ void SetupNewDcrDevice(JobControlRecord* jcr,
     if (jcr && jcr->impl->spool_size) {
       dcr->max_job_spool_size = jcr->impl->spool_size;
     } else {
-      dcr->max_job_spool_size = dev->device->max_job_spool_size;
+      dcr->max_job_spool_size = dev->device_resource->max_job_spool_size;
     }
 
-    dcr->device = dev->device;
+    dcr->device_resource = dev->device_resource;
     dcr->SetDev(dev);
     AttachDcrToDev(dcr);
 
@@ -800,8 +807,8 @@ void SetupNewDcrDevice(JobControlRecord* jcr,
      * don't want to first inflate the data to then again
      * do deflation for sending it to the other storage daemon.
      */
-    dcr->autodeflate = dcr->device->autodeflate;
-    dcr->autoinflate = dcr->device->autoinflate;
+    dcr->autodeflate = dcr->device_resource->autodeflate;
+    dcr->autoinflate = dcr->device_resource->autoinflate;
   }
 }
 
@@ -819,8 +826,8 @@ static void AttachDcrToDev(DeviceControlRecord* dcr)
       jcr->getJobType() != JT_SYSTEM) {
     dev->Lock();
     Dmsg4(200, "Attach Jid=%d dcr=%p size=%d dev=%s\n", (uint32_t)jcr->JobId,
-          dcr, dev->attached_dcrs->size(), dev->print_name());
-    dev->attached_dcrs->append(dcr); /* attach dcr to device */
+          dcr, dev->attached_dcrs.size(), dev->print_name());
+    dev->attached_dcrs.push_back(dcr); /* attach dcr to device */
     dev->Unlock();
     dcr->attached_to_dev = true;
   }
@@ -840,11 +847,14 @@ static void LockedDetachDcrFromDev(DeviceControlRecord* dcr)
     dcr->UnreserveDevice();
     dev->Lock();
     Dmsg4(200, "Detach Jid=%d dcr=%p size=%d to dev=%s\n",
-          (uint32_t)dcr->jcr->JobId, dcr, dev->attached_dcrs->size(),
+          (uint32_t)dcr->jcr->JobId, dcr, dev->attached_dcrs.size(),
           dev->print_name());
     dcr->attached_to_dev = false;
-    if (dev->attached_dcrs->size()) {
-      dev->attached_dcrs->remove(dcr); /* detach dcr from device */
+    if (!dev->attached_dcrs.empty()) {
+      // detach dcr from device
+      auto it = std::remove(dev->attached_dcrs.begin(),
+                            dev->attached_dcrs.end(), dcr);
+      dev->attached_dcrs.erase(it, dev->attached_dcrs.end());
     }
     //    RemoveDcrFromDcrs(dcr);      /* remove dcr from jcr list */
     dev->Unlock();

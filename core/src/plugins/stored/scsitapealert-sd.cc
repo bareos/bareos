@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,6 +27,7 @@
  * SCSI Tape Alert Storage daemon Plugin
  */
 #include "include/bareos.h"
+#include "stored/device_control_record.h"
 #include "stored/stored.h"
 #include "lib/scsi_tapealert.h"
 
@@ -191,7 +192,7 @@ static bRC handle_tapealert_readout(void* value)
 {
   DeviceControlRecord* dcr;
   Device* dev;
-  DeviceResource* device;
+  DeviceResource* device_resource;
   uint64_t flags;
 
   /*
@@ -201,13 +202,13 @@ static bRC handle_tapealert_readout(void* value)
   if (!dcr) { return bRC_Error; }
   dev = dcr->dev;
   if (!dev) { return bRC_Error; }
-  device = dev->device;
-  if (!device) { return bRC_Error; }
+  device_resource = dev->device_resource;
+  if (!device_resource) { return bRC_Error; }
 
   /*
    * See if drive tapealert is enabled.
    */
-  if (!device->drive_tapealert_enabled) {
+  if (!device_resource->drive_tapealert_enabled) {
     Dmsg1(debuglevel,
           "scsitapealert-sd: tapealert is not enabled on device %s\n",
           dev->dev_name);

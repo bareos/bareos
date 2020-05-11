@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -737,18 +737,18 @@ void DoNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
 
   } else {
     int cnt = 0;
-    DeviceResource* device = nullptr;
+    DeviceResource* device_resource = nullptr;
     PoolMem devicenames;
 
     /*
      * Build a list of devicenames that belong to this storage defintion.
      */
-    foreach_alist (device, store->device) {
+    foreach_alist (device_resource, store->device) {
       if (cnt == 0) {
-        PmStrcpy(devicenames, device->resource_name_);
+        PmStrcpy(devicenames, device_resource->resource_name_);
       } else {
         PmStrcat(devicenames, ",");
-        PmStrcat(devicenames, device->resource_name_);
+        PmStrcat(devicenames, device_resource->resource_name_);
       }
       cnt++;
     }

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -39,6 +39,7 @@
 #include "stored/acquire.h"
 #include "stored/autochanger.h"
 #include "stored/device.h"
+#include "stored/device_control_record.h"
 #include "stored/bsr.h"
 #include "stored/jcr_private.h"
 #include "lib/parse_bsr.h"
@@ -124,7 +125,7 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
 {
   Device* dev;
   char* p;
-  DeviceResource* device;
+  DeviceResource* device_resource;
   char VolName[MAX_NAME_LENGTH];
 
   InitReservationsLock();
@@ -155,18 +156,18 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
     }
   }
 
-  if ((device = find_device_res(dev_name, readonly)) == NULL) {
+  if ((device_resource = find_device_res(dev_name, readonly)) == NULL) {
     Jmsg2(jcr, M_FATAL, 0, _("Cannot find device \"%s\" in config file %s.\n"),
           dev_name, configfile);
     return false;
   }
 
-  dev = InitDev(jcr, device);
+  dev = FactoryCreateDevice(jcr, device_resource);
   if (!dev) {
     Jmsg1(jcr, M_FATAL, 0, _("Cannot init device %s\n"), dev_name);
     return false;
   }
-  device->dev = dev;
+  device_resource->dev = dev;
   jcr->impl->dcr = dcr;
   SetupNewDcrDevice(jcr, dcr, dev, NULL);
   if (!readonly) { dcr->SetWillWrite(); }
@@ -174,7 +175,7 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
   if (VolName[0]) {
     bstrncpy(dcr->VolumeName, VolName, sizeof(dcr->VolumeName));
   }
-  bstrncpy(dcr->dev_name, device->device_name, sizeof(dcr->dev_name));
+  bstrncpy(dcr->dev_name, device_resource->device_name, sizeof(dcr->dev_name));
 
   CreateRestoreVolumeList(jcr);
 
@@ -248,13 +249,14 @@ static void MyFreeJcr(JobControlRecord* jcr)
 static DeviceResource* find_device_res(char* device_name, bool readonly)
 {
   bool found = false;
-  DeviceResource* device;
+  DeviceResource* device_resource;
 
   Dmsg0(900, "Enter find_device_res\n");
   LockRes(my_config);
-  foreach_res (device, R_DEVICE) {
-    Dmsg2(900, "Compare %s and %s\n", device->device_name, device_name);
-    if (bstrcmp(device->device_name, device_name)) {
+  foreach_res (device_resource, R_DEVICE) {
+    Dmsg2(900, "Compare %s and %s\n", device_resource->device_name,
+          device_name);
+    if (bstrcmp(device_resource->device_name, device_name)) {
       found = true;
       break;
     }
@@ -268,9 +270,10 @@ static DeviceResource* find_device_res(char* device_name, bool readonly)
       len--;
       if (len > 0) { device_name[len - 1] = 0; /* zap trailing " */ }
     }
-    foreach_res (device, R_DEVICE) {
-      Dmsg2(900, "Compare %s and %s\n", device->resource_name_, device_name);
-      if (bstrcmp(device->resource_name_, device_name)) {
+    foreach_res (device_resource, R_DEVICE) {
+      Dmsg2(900, "Compare %s and %s\n", device_resource->resource_name_,
+            device_name);
+      if (bstrcmp(device_resource->resource_name_, device_name)) {
         found = true;
         break;
       }
@@ -290,7 +293,7 @@ static DeviceResource* find_device_res(char* device_name, bool readonly)
     Pmsg1(0, _("Using device: \"%s\" for writing.\n"), device_name);
   }
 
-  return device;
+  return device_resource;
 }
 
 /**

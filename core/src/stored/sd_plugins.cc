@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,6 +31,7 @@
 #include "include/bareos.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
+#include "stored/device_control_record.h"
 #include "stored/jcr_private.h"
 #include "sd_plugins.h"
 #include "lib/crypto_cache.h"
@@ -179,10 +180,10 @@ char* edit_device_codes(DeviceControlRecord* dcr,
           str = dcr->dev->archive_name();
           break;
         case 'c':
-          str = NPRT(dcr->device->changer_name);
+          str = NPRT(dcr->device_resource->changer_name);
           break;
         case 'D':
-          str = NPRT(dcr->device->diag_device_name);
+          str = NPRT(dcr->device_resource->diag_device_name);
           break;
         case 'd':
           str = edit_int64(dcr->dev->drive_index, ed1);
@@ -746,8 +747,8 @@ static bRC bareosGetValue(bpContext* ctx, bsdrVariable var, void* value)
         }
         break;
       case bsdVarStorage:
-        if (jcr->impl->dcr && jcr->impl->dcr->device) {
-          *((char**)value) = jcr->impl->dcr->device->resource_name_;
+        if (jcr->impl->dcr && jcr->impl->dcr->device_resource) {
+          *((char**)value) = jcr->impl->dcr->device_resource->resource_name_;
           Dmsg1(debuglevel, "sd-plugin: return bsdVarStorage=%s\n",
                 NPRT(*((char**)value)));
         } else {
@@ -969,7 +970,7 @@ static void bareosUpdateTapeAlert(DeviceControlRecord* dcr, uint64_t flags)
   utime_t now;
   now = (utime_t)time(NULL);
 
-  UpdateDeviceTapealert(dcr->device->resource_name_, flags, now);
+  UpdateDeviceTapealert(dcr->device_resource->resource_name_, flags, now);
 }
 
 static DeviceRecord* bareosNewRecord(bool with_data)

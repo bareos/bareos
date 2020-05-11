@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,6 +21,7 @@
    02110-1301, USA.
 */
 
+#include "stored/autoxflate.h"
 #include "stored/device_resource.h"
 #include "stored/stored_globals.h"
 
@@ -36,7 +37,7 @@ DeviceResource::DeviceResource()
     , changer_command(nullptr)
     , alert_command(nullptr)
     , spool_directory(nullptr)
-    , dev_type(B_UNKNOWN_DEV)
+    , dev_type(DeviceType::B_UNKNOWN_DEV)
     , label_type(B_BAREOS_LABEL)
     , autoselect(true)
     , norewindonclose(true)
@@ -59,8 +60,8 @@ DeviceResource::DeviceResource()
     , max_concurrent_jobs(0)
     , autodeflate_algorithm(0)
     , autodeflate_level(6)
-    , autodeflate(0)
-    , autoinflate(0)
+    , autodeflate(AutoXflateMode::IO_DIRECTION_NONE)
+    , autoinflate(AutoXflateMode::IO_DIRECTION_NONE)
     , vol_poll_interval(300)
     , max_volume_size(0)
     , max_file_size(1000000000)

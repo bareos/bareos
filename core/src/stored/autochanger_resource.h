@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -37,10 +37,10 @@ class AutochangerResource : public BareosResource {
   AutochangerResource& operator=(const AutochangerResource& rhs);
   bool PrintConfigToBuffer(PoolMem& buf);
 
-  alist* device;          /**< List of DeviceResource device pointers */
-  char* changer_name;     /**< Changer device name */
-  char* changer_command;  /**< Changer command  -- external program */
-  brwlock_t changer_lock; /**< One changer operation at a time */
+  alist* device_resources; /**< List of DeviceResource device pointers */
+  char* changer_name;      /**< Changer device name */
+  char* changer_command;   /**< Changer command  -- external program */
+  brwlock_t changer_lock;  /**< One changer operation at a time */
 };
 } /* namespace storagedaemon */
 

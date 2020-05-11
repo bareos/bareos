@@ -171,7 +171,7 @@ class chunked_device : public Device {
   virtual ~chunked_device();
 
   bool DequeueChunk();
-  bool DeviceStatus(bsdDevStatTrig* dst);
+  bool DeviceStatus(DeviceStatusInformation* dst);
 
   /*
    * Interface from Device

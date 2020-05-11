@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -34,6 +34,7 @@
 #include "stored/crc32/crc32.h"
 #include "stored/dev.h"
 #include "stored/device.h"
+#include "stored/device_control_record.h"
 #include "stored/label.h"
 #include "stored/socket_server.h"
 #include "stored/spool.h"
@@ -90,8 +91,8 @@ void DumpBlock(DeviceBlock* b, const char* msg)
     return;
   }
 
-  BlockCheckSum =
-      crc32_fast((uint8_t*)b->buf + BLKHDR_CS_LENGTH, block_len - BLKHDR_CS_LENGTH);
+  BlockCheckSum = crc32_fast((uint8_t*)b->buf + BLKHDR_CS_LENGTH,
+                             block_len - BLKHDR_CS_LENGTH);
   Pmsg6(000,
         _("Dump block %s %x: size=%d BlkNum=%d\n"
           "               Hdrcksum=%x cksum=%x\n"),
@@ -125,7 +126,7 @@ DeviceBlock* new_block(Device* dev)
   memset(block, 0, sizeof(DeviceBlock));
 
   if (dev->max_block_size == 0) {
-    block->buf_len = dev->device->label_block_size;
+    block->buf_len = dev->device_resource->label_block_size;
     Dmsg1(100,
           "created new block of blocksize %d (dev->device->label_block_size) "
           "as dev->max_block_size is zero\n",
@@ -223,7 +224,7 @@ static uint32_t SerBlockHeader(DeviceBlock* block, bool DoChecksum)
    */
   if (DoChecksum) {
     CheckSum = crc32_fast((uint8_t*)block->buf + BLKHDR_CS_LENGTH,
-                      block_len - BLKHDR_CS_LENGTH);
+                          block_len - BLKHDR_CS_LENGTH);
   }
   Dmsg1(1390, "ser_bloc_header: checksum=%x\n", CheckSum);
   SerBegin(block->buf, BLKHDR2_LENGTH);
@@ -340,7 +341,7 @@ static inline bool unSerBlockHeader(JobControlRecord* jcr,
         block_len);
   if (block_len <= block->read_len && dev->DoChecksum()) {
     BlockCheckSum = crc32_fast((uint8_t*)block->buf + BLKHDR_CS_LENGTH,
-                           block_len - BLKHDR_CS_LENGTH);
+                               block_len - BLKHDR_CS_LENGTH);
     if (BlockCheckSum != CheckSum) {
       dev->dev_errno = EIO;
       Mmsg6(dev->errmsg,
@@ -497,8 +498,7 @@ static bool TerminateWritingVolume(DeviceControlRecord* dcr)
    * Walk through all attached dcrs setting flag to call
    * SetNewFileParameters() when that dcr is next used.
    */
-  DeviceControlRecord* mdcr;
-  foreach_dlist (mdcr, dev->attached_dcrs) {
+  for (auto mdcr : dev->attached_dcrs) {
     if (mdcr->jcr->JobId == 0) { continue; }
     mdcr->NewFile = true; /* set reminder to do set_new_file_params */
   }
@@ -557,8 +557,7 @@ static bool DoNewFileBookkeeping(DeviceControlRecord* dcr)
    * Walk through all attached dcrs setting flag to call
    * SetNewFileParameters() when that dcr is next used.
    */
-  DeviceControlRecord* mdcr;
-  foreach_dlist (mdcr, dev->attached_dcrs) {
+  for (auto mdcr : dev->attached_dcrs) {
     if (mdcr->jcr->JobId == 0) { continue; }
     mdcr->NewFile = true; /* set reminder to do set_new_file_params */
   }
@@ -1059,7 +1058,7 @@ reread:
     GeneratePluginEvent(jcr, bsdEventReadError, dcr);
 
     Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
-    if (device->eof_on_error_is_eot && dev->AtEof()) {
+    if (device_resource->eof_on_error_is_eot && dev->AtEof()) {
       dev->SetEot();
       return ReadStatus::EndOfTape;
     }
@@ -1087,8 +1086,9 @@ reread:
    */
 
   block->read_len = status; /* save length read */
-  if (block->read_len == 80 && (dcr->VolCatInfo.LabelType != B_BAREOS_LABEL ||
-                                dcr->device->label_type != B_BAREOS_LABEL)) {
+  if (block->read_len == 80 &&
+      (dcr->VolCatInfo.LabelType != B_BAREOS_LABEL ||
+       dcr->device_resource->label_type != B_BAREOS_LABEL)) {
     /* ***FIXME*** should check label */
     Dmsg2(100, "Ignore 80 byte ANSI label at %u:%u\n", dev->file,
           dev->block_num);

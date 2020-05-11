@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2014-2014 Planets Communications B.V.
-   Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,6 +31,7 @@
  */
 
 #include "include/bareos.h"
+#include "stored/device_control_record.h"
 #include "stored/stored.h"
 #include "generic_tape_device.h"
 #include "stored/autochanger.h"
@@ -43,7 +44,7 @@ namespace storagedaemon {
 /**
  * Open a tape device
  */
-void generic_tape_device::OpenDevice(DeviceControlRecord* dcr, int omode)
+void generic_tape_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
 {
   file_size = 0;
   int timeout = max_open_wait;
@@ -1144,7 +1145,7 @@ bool generic_tape_device::rewind(DeviceControlRecord* dcr)
        * So, we close the drive and re-open it.
        */
       if (first && dcr) {
-        int oo_mode = open_mode;
+        DeviceMode oo_mode = open_mode;
         d_close(fd_);
         ClearOpened();
         open(dcr, oo_mode);
@@ -1179,7 +1180,7 @@ bool generic_tape_device::rewind(DeviceControlRecord* dcr)
  */
 static bool do_mount(DeviceControlRecord* dcr, int mount, int dotimeout)
 {
-  DeviceResource* device = dcr->dev->device;
+  DeviceResource* device_resource = dcr->dev->device_resource;
   PoolMem ocmd(PM_FNAME);
   POOLMEM* results;
   char* icmd;
@@ -1187,9 +1188,9 @@ static bool do_mount(DeviceControlRecord* dcr, int mount, int dotimeout)
   BErrNo be;
 
   if (mount) {
-    icmd = device->mount_command;
+    icmd = device_resource->mount_command;
   } else {
-    icmd = device->unmount_command;
+    icmd = device_resource->unmount_command;
   }
 
   dcr->dev->EditMountCodes(ocmd, icmd);
@@ -1416,7 +1417,7 @@ bool generic_tape_device::MountBackend(DeviceControlRecord* dcr, int timeout)
 {
   bool retval = true;
 
-  if (RequiresMount() && device->mount_command) {
+  if (RequiresMount() && device_resource->mount_command) {
     retval = do_mount(dcr, true, timeout);
   }
 
@@ -1433,7 +1434,7 @@ bool generic_tape_device::UnmountBackend(DeviceControlRecord* dcr, int timeout)
 {
   bool retval = true;
 
-  if (RequiresMount() && device->unmount_command) {
+  if (RequiresMount() && device_resource->unmount_command) {
     retval = do_mount(dcr, false, timeout);
   }
 
