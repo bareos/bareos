@@ -240,8 +240,7 @@ void DeviceControlRecord::mUnlock()
   P(r_mutex);
   if (!IsDevLocked()) {
     V(r_mutex);
-    ASSERT2(0, "Call on dcr mUnlock when not locked");
-    return;
+    Emsg1(M_ABORT, 0, "Call on dcr mUnlock when not locked\n");
   }
   DecDevLock();
   /*

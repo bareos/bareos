@@ -67,14 +67,6 @@
     Pmsg1(000, _("Failed ASSERT: %s\n"), #x);        \
     fatal[0] = 0;                                    \
   }
-#define ASSERT2(x, y)                                \
-  if (!(x)) {                                        \
-    assert_msg = y;                                  \
-    Emsg1(M_ERROR, 0, _("Failed ASSERT: %s\n"), #x); \
-    Pmsg1(000, _("Failed ASSERT: %s\n"), #x);        \
-    char* fatal = NULL;                              \
-    fatal[0] = 0;                                    \
-  }
 
 /**
  * Allow printing of NULL pointers
