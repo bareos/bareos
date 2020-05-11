@@ -175,7 +175,12 @@ static filedaemon::BareosCoreFunctions bareos_core_functions = {
     bareosSetSeenBitmap,
     bareosClearSeenBitmap};
 
-static PluginContext* bareos_PluginContext = NULL;
+
+// create plugin context
+
+Plugin plugin = {(char*)"python-fd-module-teste", 123, NULL, NULL, NULL};
+
+static PluginContext bareos_PluginContext = {0, &plugin, NULL, NULL};
 
 int main(int argc, char* argv[])
 {
@@ -192,7 +197,7 @@ int main(int argc, char* argv[])
 
   import_bareosfd();
   Bareosfd_set_bareos_core_functions(&bareos_core_functions);
-  Bareosfd_set_plugin_context(bareos_PluginContext);
+  Bareosfd_set_plugin_context(&bareos_PluginContext);
 
   PyObject* pModule = PyImport_ImportModule("bareosfd-module-test");
 
