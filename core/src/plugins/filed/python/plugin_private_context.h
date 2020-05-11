@@ -18,9 +18,7 @@ struct plugin_private_context {
       interpreter;   /* Python interpreter for this instance of the plugin */
   PyObject* pModule; /* Python Module entry point */
   PyObject* pyModuleFunctionsDict; /* Python Dictionary */
-  BareosCoreFunctions*
-      bareos_core_functions; /* pointer to bareos_core_functions */
-};                           // namespace filedaemon
+};
 
 
 #endif  // BAREOS_CORE_SRC_PLUGINS_FILED_PYTHON_PLUGIN_PRIVATE_CONTEXT_H_

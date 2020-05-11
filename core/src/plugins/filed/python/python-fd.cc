@@ -245,7 +245,6 @@ static bRC newPlugin(PluginContext* plugin_ctx)
   plugin_ctx->plugin_private_context =
       (void*)plugin_priv_ctx; /* set our context pointer */
 
-  plugin_priv_ctx->bareos_core_functions = bareos_core_functions;
 
   /* set bareos_core_functions inside of barosfd module */
   Bareosfd_set_plugin_context(plugin_ctx);
