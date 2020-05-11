@@ -332,7 +332,7 @@ void* HandleDirectorConnection(BareosSocket* dir)
   }
 
 bail_out:
-  GeneratePluginEvent(jcr, bsdEventJobEnd);
+  GeneratePluginEvent(jcr, bSdEventJobEnd);
   DequeueMessages(jcr); /* send any queued messages */
   dir->signal(BNET_TERMINATE);
   FreePlugins(jcr); /* release instantiated plugins */

@@ -664,7 +664,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
        * Let any SD plugin know now its time to setup the record translation
        * infra.
        */
-      if (GeneratePluginEvent(jcr, bsdEventSetupRecordTranslation, dcr) !=
+      if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation, dcr) !=
           bRC_OK) {
         goto bail_out;
       }
@@ -750,7 +750,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
        * Let any SD plugin know now its time to setup the record translation
        * infra.
        */
-      if (GeneratePluginEvent(jcr, bsdEventSetupRecordTranslation, dcr) !=
+      if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation, dcr) !=
           bRC_OK) {
         goto bail_out;
       }

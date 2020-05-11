@@ -418,8 +418,8 @@ static bool LockChanger(DeviceControlRecord* dcr)
      * We just locked the changer for exclusive use so let any plugin know we
      * have.
      */
-    if (GeneratePluginEvent(dcr->jcr, bsdEventChangerLock, dcr) != bRC_OK) {
-      Dmsg0(100, "Locking changer: bsdEventChangerLock failed\n");
+    if (GeneratePluginEvent(dcr->jcr, bSdEventChangerLock, dcr) != bRC_OK) {
+      Dmsg0(100, "Locking changer: bSdEventChangerLock failed\n");
       RwlWriteunlock(&changer_res->changer_lock);
       return false;
     }
@@ -435,7 +435,7 @@ static bool UnlockChanger(DeviceControlRecord* dcr)
   if (changer_res) {
     int errstat;
 
-    GeneratePluginEvent(dcr->jcr, bsdEventChangerUnlock, dcr);
+    GeneratePluginEvent(dcr->jcr, bSdEventChangerUnlock, dcr);
 
     Dmsg1(200, "Unlocking changer %s\n", changer_res->resource_name_);
     if ((errstat = RwlWriteunlock(&changer_res->changer_lock)) != 0) {

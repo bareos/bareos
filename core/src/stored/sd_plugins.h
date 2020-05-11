@@ -96,42 +96,42 @@ typedef enum
  */
 typedef enum
 {
-  bsdEventJobStart = 1,
-  bsdEventJobEnd = 2,
-  bsdEventDeviceInit = 3,
-  bsdEventDeviceMount = 4,
-  bsdEventVolumeLoad = 5,
-  bsdEventDeviceReserve = 6,
-  bsdEventDeviceOpen = 7,
-  bsdEventLabelRead = 8,
-  bsdEventLabelVerified = 9,
-  bsdEventLabelWrite = 10,
-  bsdEventDeviceClose = 11,
-  bsdEventVolumeUnload = 12,
-  bsdEventDeviceUnmount = 13,
-  bsdEventReadError = 14,
-  bsdEventWriteError = 15,
-  bsdEventDriveStatus = 16,
-  bsdEventVolumeStatus = 17,
-  bsdEventSetupRecordTranslation = 18,
-  bsdEventReadRecordTranslation = 19,
-  bsdEventWriteRecordTranslation = 20,
-  bsdEventDeviceRelease = 21,
-  bsdEventNewPluginOptions = 22,
-  bsdEventChangerLock = 23,
-  bsdEventChangerUnlock = 24
-} bsdEventType;
+  bSdEventJobStart = 1,
+  bSdEventJobEnd = 2,
+  bSdEventDeviceInit = 3,
+  bSdEventDeviceMount = 4,
+  bSdEventVolumeLoad = 5,
+  bSdEventDeviceReserve = 6,
+  bSdEventDeviceOpen = 7,
+  bSdEventLabelRead = 8,
+  bSdEventLabelVerified = 9,
+  bSdEventLabelWrite = 10,
+  bSdEventDeviceClose = 11,
+  bSdEventVolumeUnload = 12,
+  bSdEventDeviceUnmount = 13,
+  bSdEventReadError = 14,
+  bSdEventWriteError = 15,
+  bSdEventDriveStatus = 16,
+  bSdEventVolumeStatus = 17,
+  bSdEventSetupRecordTranslation = 18,
+  bSdEventReadRecordTranslation = 19,
+  bSdEventWriteRecordTranslation = 20,
+  bSdEventDeviceRelease = 21,
+  bSdEventNewPluginOptions = 22,
+  bSdEventChangerLock = 23,
+  bSdEventChangerUnlock = 24
+} bSdEventType;
 
-#define SD_NR_EVENTS bsdEventChangerUnlock /**< keep this updated ! */
+#define SD_NR_EVENTS bSdEventChangerUnlock /**< keep this updated ! */
 
-typedef struct s_bsdEvent {
+typedef struct s_bSdEvent {
   uint32_t eventType;
-} bsdEvent;
+} bSdEvent;
 
 typedef struct s_sdbareosInfo {
   uint32_t size;
   uint32_t version;
-} bsdInfo;
+} Sd_PluginApiDefinition;
 
 #ifdef __cplusplus
 extern "C" {
@@ -174,7 +174,7 @@ typedef struct s_sdbareosFuncs {
   DeviceRecord* (*new_record)(bool with_data);
   void (*CopyRecordState)(DeviceRecord* dst, DeviceRecord* src);
   void (*FreeRecord)(DeviceRecord* rec);
-} bsdFuncs;
+} StorageDaemonCoreFunctions;
 
 /*
  * Bareos Core Routines -- not used within a plugin
@@ -187,7 +187,7 @@ void DispatchNewPluginOptions(JobControlRecord* jcr);
 void NewPlugins(JobControlRecord* jcr);
 void FreePlugins(JobControlRecord* jcr);
 bRC GeneratePluginEvent(JobControlRecord* jcr,
-                        bsdEventType event,
+                        bSdEventType event,
                         void* value = NULL,
                         bool reverse = false);
 #endif
@@ -215,10 +215,10 @@ typedef struct s_sdpluginFuncs {
   bRC (*freePlugin)(PluginContext* ctx);
   bRC (*getPluginValue)(PluginContext* ctx, pVariable var, void* value);
   bRC (*setPluginValue)(PluginContext* ctx, pVariable var, void* value);
-  bRC (*handlePluginEvent)(PluginContext* ctx, bsdEvent* event, void* value);
-} psdFuncs;
+  bRC (*handlePluginEvent)(PluginContext* ctx, bSdEvent* event, void* value);
+} pSdFuncs;
 
-#define SdplugFunc(plugin) ((psdFuncs*)(plugin->plugin_functions))
+#define SdplugFunc(plugin) ((pSdFuncs*)(plugin->plugin_functions))
 #define sdplug_info(plugin) ((PluginInformation*)(plugin->plugin_information))
 
 #ifdef __cplusplus

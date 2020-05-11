@@ -890,7 +890,7 @@ static bool ReserveDeviceForRead(DeviceControlRecord* dcr)
   /*
    * Note: on failure this returns jcr->errmsg properly edited
    */
-  if (GeneratePluginEvent(jcr, bsdEventDeviceReserve, dcr) != bRC_OK) {
+  if (GeneratePluginEvent(jcr, bSdEventDeviceReserve, dcr) != bRC_OK) {
     QueueReserveMessage(jcr);
     goto bail_out;
   }
@@ -967,7 +967,7 @@ static bool ReserveDeviceForAppend(DeviceControlRecord* dcr,
   /*
    * Note: on failure this returns jcr->errmsg properly edited
    */
-  if (GeneratePluginEvent(jcr, bsdEventDeviceReserve, dcr) != bRC_OK) {
+  if (GeneratePluginEvent(jcr, bSdEventDeviceReserve, dcr) != bRC_OK) {
     QueueReserveMessage(jcr);
     goto bail_out;
   }

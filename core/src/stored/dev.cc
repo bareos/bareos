@@ -630,8 +630,8 @@ bool Device::open(DeviceControlRecord* dcr, DeviceMode omode)
   /*
    * We are about to open the device so let any plugin know we are.
    */
-  if (dcr && GeneratePluginEvent(dcr->jcr, bsdEventDeviceOpen, dcr) != bRC_OK) {
-    Dmsg0(100, "open_dev: bsdEventDeviceOpen failed\n");
+  if (dcr && GeneratePluginEvent(dcr->jcr, bSdEventDeviceOpen, dcr) != bRC_OK) {
+    Dmsg0(100, "open_dev: bSdEventDeviceOpen failed\n");
     return false;
   }
 
@@ -1054,7 +1054,7 @@ bool Device::close(DeviceControlRecord* dcr)
   /*
    * We closed the device so let any plugin know we did.
    */
-  if (dcr) { GeneratePluginEvent(dcr->jcr, bsdEventDeviceClose, dcr); }
+  if (dcr) { GeneratePluginEvent(dcr->jcr, bSdEventDeviceClose, dcr); }
 
 bail_out:
   return retval;
@@ -1076,11 +1076,11 @@ bool Device::mount(DeviceControlRecord* dcr, int timeout)
 
   /*
    * When the mount command succeeded sent a
-   * bsdEventDeviceMount plugin event so any plugin
+   * bSdEventDeviceMount plugin event so any plugin
    * that want to do something can do things now.
    */
   if (retval &&
-      GeneratePluginEvent(dcr->jcr, bsdEventDeviceMount, dcr) != bRC_OK) {
+      GeneratePluginEvent(dcr->jcr, bSdEventDeviceMount, dcr) != bRC_OK) {
     retval = false;
   }
 
@@ -1109,11 +1109,11 @@ bool Device::unmount(DeviceControlRecord* dcr, int timeout)
 
   /*
    * Before running the unmount program sent a
-   * bsdEventDeviceUnmount plugin event so any plugin
+   * bSdEventDeviceUnmount plugin event so any plugin
    * that want to do something can do things now.
    */
   if (dcr &&
-      GeneratePluginEvent(dcr->jcr, bsdEventDeviceUnmount, dcr) != bRC_OK) {
+      GeneratePluginEvent(dcr->jcr, bSdEventDeviceUnmount, dcr) != bRC_OK) {
     retval = false;
     goto bail_out;
   }

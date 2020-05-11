@@ -791,7 +791,7 @@ MOD_INIT(bareosfd)
                                PYTHON_MODULE_NAME_QUOTED "._C_API", NULL);
 
   if (c_api_object != NULL) PyModule_AddObject(m, "_C_API", c_api_object);
-
+#if 0
   /* add bpFuncs Capsule */
   PyObject* PyModulePluginFuncs =
       PyCapsule_New((void*)&bareos_core_functions,
@@ -810,6 +810,7 @@ MOD_INIT(bareosfd)
            ":BareosCoreFunctions PyModule_AddObject failed\n");
     return MOD_ERROR_VAL;
   }
+#endif
 
 
   PyRestoreObjectType.tp_new = PyType_GenericNew;

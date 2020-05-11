@@ -72,7 +72,7 @@ typedef union _plugfuncs plugfuncs;
 union _plugfuncs {
   directordaemon::pDirFuncs pdirfuncs;
   filedaemon::pFuncs pfdfuncs;
-  storagedaemon::psdFuncs psdfuncs;
+  storagedaemon::pSdFuncs psdfuncs;
 };
 
 /*
@@ -107,13 +107,13 @@ struct _bareosfuncs {
 /*
  * Dir_PluginApiDefiniton
  * Core_PluginApiDefinition
- * bsdInfo
+ * Sd_PluginApiDefinition
  */
 typedef union _bareosinfos bareosinfos;
 union _bareosinfos {
   directordaemon::Dir_PluginApiDefinition bdirinfo;
   filedaemon::Core_PluginApiDefinition bfdinfo;
-  storagedaemon::bsdInfo bsdinfo;
+  storagedaemon::Sd_PluginApiDefinition bsdinfo;
 };
 
 typedef struct _progdata progdata;

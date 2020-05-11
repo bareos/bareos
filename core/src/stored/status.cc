@@ -192,7 +192,7 @@ static bool NeedToListDevice(const char* devicenames,
 static void trigger_device_status_hook(JobControlRecord* jcr,
                                        DeviceResource* device_resource,
                                        StatusPacket* sp,
-                                       bsdEventType eventType)
+                                       bSdEventType eventType)
 {
   DeviceStatusInformation dst;
 

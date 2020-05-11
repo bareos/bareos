@@ -47,13 +47,13 @@ static bRC newPlugin(PluginContext* ctx);
 static bRC freePlugin(PluginContext* ctx);
 static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value);
 static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value);
-static bRC handlePluginEvent(PluginContext* ctx, bsdEvent* event, void* value);
+static bRC handlePluginEvent(PluginContext* ctx, bSdEvent* event, void* value);
 static bRC handle_tapealert_readout(void* value);
 
 /**
  * Pointers to Bareos functions
  */
-static bsdFuncs* bareos_core_functions = NULL;
+static StorageDaemonCoreFunctions* bareos_core_functions = NULL;
 static bsdInfo* bareos_plugin_interface_version = NULL;
 
 static PluginInformation pluginInfo = {
@@ -63,7 +63,7 @@ static PluginInformation pluginInfo = {
     PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
     PLUGIN_USAGE};
 
-static psdFuncs pluginFuncs = {sizeof(pluginFuncs), SD_PLUGIN_INTERFACE_VERSION,
+static pSdFuncs pluginFuncs = {sizeof(pluginFuncs), SD_PLUGIN_INTERFACE_VERSION,
 
                                /*
                                 * Entry points into plugin
@@ -87,9 +87,9 @@ extern "C" {
  * External entry point called by Bareos to "load the plugin
  */
 bRC loadPlugin(bsdInfo* lbareos_plugin_interface_version,
-               bsdFuncs* lbareos_core_functions,
+               StorageDaemonCoreFunctions* lbareos_core_functions,
                PluginInformation** plugin_information,
-               psdFuncs** plugin_functions)
+               pSdFuncs** plugin_functions)
 {
   bareos_core_functions =
       lbareos_core_functions; /* set Bareos funct pointers */

@@ -89,7 +89,7 @@ bool DoReadData(JobControlRecord* jcr)
   /*
    * Let any SD plugin know now its time to setup the record translation infra.
    */
-  if (GeneratePluginEvent(jcr, bsdEventSetupRecordTranslation, dcr) != bRC_OK) {
+  if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation, dcr) != bRC_OK) {
     jcr->setJobStatus(JS_ErrorTerminated);
     return false;
   }

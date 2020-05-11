@@ -110,11 +110,11 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
   bstrncpy(dev->VolHdr.Id, "**error**", sizeof(dev->VolHdr.Id));
 
   /*
-   * The stored plugin handling the bsdEventLabelRead event can abort
+   * The stored plugin handling the bSdEventLabelRead event can abort
    * the reading of the label by returning a non bRC_OK.
    */
-  if (GeneratePluginEvent(jcr, bsdEventLabelRead, dcr) != bRC_OK) {
-    Dmsg0(200, "Error from bsdEventLabelRead plugin event.\n");
+  if (GeneratePluginEvent(jcr, bSdEventLabelRead, dcr) != bRC_OK) {
+    Dmsg0(200, "Error from bSdEventLabelRead plugin event.\n");
     return VOL_NO_MEDIA;
   }
 
@@ -275,15 +275,15 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
 
 ok_out:
   /*
-   * The stored plugin handling the bsdEventLabelVerified event can override
+   * The stored plugin handling the bSdEventLabelVerified event can override
    * the return value e.g. although we think the volume label is ok the plugin
    * has reasons to override that. So when the plugin returns something else
    * then bRC_OK it want to tell us the volume is not OK to use and as
    * such we return VOL_NAME_ERROR as error although it might not be the
    * best error it should be sufficient.
    */
-  if (GeneratePluginEvent(jcr, bsdEventLabelVerified, dcr) != bRC_OK) {
-    Dmsg0(200, "Error from bsdEventLabelVerified plugin event.\n");
+  if (GeneratePluginEvent(jcr, bSdEventLabelVerified, dcr) != bRC_OK) {
+    Dmsg0(200, "Error from bSdEventLabelVerified plugin event.\n");
     status = VOL_NAME_ERROR;
     goto bail_out;
   }
@@ -398,8 +398,8 @@ bool WriteNewVolumeLabelToDev(DeviceControlRecord* dcr,
    * Let any stored plugin know that we are about to write a new label to the
    * volume.
    */
-  if (GeneratePluginEvent(jcr, bsdEventLabelWrite, dcr) != bRC_OK) {
-    Dmsg0(200, "Error from bsdEventLabelWrite plugin event.\n");
+  if (GeneratePluginEvent(jcr, bSdEventLabelWrite, dcr) != bRC_OK) {
+    Dmsg0(200, "Error from bSdEventLabelWrite plugin event.\n");
     goto bail_out;
   }
 
@@ -1109,8 +1109,8 @@ bool DeviceControlRecord::RewriteVolumeLabel(bool recycle)
   /*
    * Let any stored plugin know that we are (re)writing the label.
    */
-  if (GeneratePluginEvent(jcr, bsdEventLabelWrite, dcr) != bRC_OK) {
-    Dmsg0(200, "Error from bsdEventLabelWrite plugin event.\n");
+  if (GeneratePluginEvent(jcr, bSdEventLabelWrite, dcr) != bRC_OK) {
+    Dmsg0(200, "Error from bSdEventLabelWrite plugin event.\n");
     return false;
   }
 
@@ -1228,8 +1228,8 @@ bool DeviceControlRecord::RewriteVolumeLabel(bool recycle)
    * Let any stored plugin know the label was rewritten and as such is verified
    * .
    */
-  if (GeneratePluginEvent(jcr, bsdEventLabelVerified, dcr) != bRC_OK) {
-    Dmsg0(200, "Error from bsdEventLabelVerified plugin event.\n");
+  if (GeneratePluginEvent(jcr, bSdEventLabelVerified, dcr) != bRC_OK) {
+    Dmsg0(200, "Error from bSdEventLabelVerified plugin event.\n");
     return false;
   }
 

@@ -610,6 +610,4 @@ bail_out:
   return retval;
 }
 
-#if 0
-#endif
 } /* namespace directordaemon */

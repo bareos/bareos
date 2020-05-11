@@ -88,8 +88,6 @@ static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
                                bDirEvent* event,
                                void* value);
 
-// static void* bareos_PluginContext = NULL;
-
 }  // namespace directordaemon
 using namespace directordaemon;
 

@@ -83,19 +83,27 @@ static void bareosFreeRecord(DeviceRecord* rec);
 static bool IsPluginCompatible(Plugin* plugin);
 
 /* Bareos info */
-static bsdInfo bareos_plugin_interface_version = {sizeof(bsdFuncs),
-                                                  SD_PLUGIN_INTERFACE_VERSION};
+static Sd_PluginApiDefinition bareos_plugin_interface_version = {
+    sizeof(pSdFuncs), SD_PLUGIN_INTERFACE_VERSION};
 
 /* Bareos entry points */
-static bsdFuncs bareos_core_functions = {
-    sizeof(bsdFuncs),       SD_PLUGIN_INTERFACE_VERSION,
-    bareosRegisterEvents,   bareosUnRegisterEvents,
-    bareosGetInstanceCount, bareosGetValue,
-    bareosSetValue,         bareosJobMsg,
-    bareosDebugMsg,         bareosEditDeviceCodes,
-    bareosLookupCryptoKey,  bareosUpdateVolumeInfo,
-    bareosUpdateTapeAlert,  bareosNewRecord,
-    bareosCopyRecordState,  bareosFreeRecord};
+static StorageDaemonCoreFunctions bareos_core_functions = {
+    sizeof(StorageDaemonCoreFunctions),
+    SD_PLUGIN_INTERFACE_VERSION,
+    bareosRegisterEvents,
+    bareosUnRegisterEvents,
+    bareosGetInstanceCount,
+    bareosGetValue,
+    bareosSetValue,
+    bareosJobMsg,
+    bareosDebugMsg,
+    bareosEditDeviceCodes,
+    bareosLookupCryptoKey,
+    bareosUpdateVolumeInfo,
+    bareosUpdateTapeAlert,
+    bareosNewRecord,
+    bareosCopyRecordState,
+    bareosFreeRecord};
 
 /**
  * Bareos private context
@@ -108,7 +116,7 @@ struct b_plugin_ctx {
   Plugin* plugin; /* pointer to plugin of which this is an instance off */
 };
 
-static inline bool IsEventEnabled(PluginContext* ctx, bsdEventType eventType)
+static inline bool IsEventEnabled(PluginContext* ctx, bSdEventType eventType)
 {
   b_plugin_ctx* b_ctx;
   if (!ctx) { return false; }
@@ -238,8 +246,8 @@ char* edit_device_codes(DeviceControlRecord* dcr,
 }
 
 static inline bool trigger_plugin_event(JobControlRecord* jcr,
-                                        bsdEventType eventType,
-                                        bsdEvent* event,
+                                        bSdEventType eventType,
+                                        bSdEvent* event,
                                         PluginContext* ctx,
                                         void* value,
                                         alist* plugin_ctx_list,
@@ -308,12 +316,12 @@ bail_out:
  * Create a plugin event
  */
 bRC GeneratePluginEvent(JobControlRecord* jcr,
-                        bsdEventType eventType,
+                        bSdEventType eventType,
                         void* value,
                         bool reverse)
 {
   int i;
-  bsdEvent event;
+  bSdEvent event;
   alist* plugin_ctx_list;
   bRC rc = bRC_OK;
 
@@ -520,7 +528,7 @@ static inline PluginContext* instantiate_plugin(JobControlRecord* jcr,
 }
 
 /**
- * Send a bsdEventNewPluginOptions event to all plugins configured in
+ * Send a bSdEventNewPluginOptions event to all plugins configured in
  * jcr->impl_->plugin_options.
  */
 void DispatchNewPluginOptions(JobControlRecord* jcr)
@@ -529,8 +537,8 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
   Plugin* plugin;
   PluginContext* ctx = nullptr;
   uint32_t instance;
-  bsdEvent event;
-  bsdEventType eventType;
+  bSdEvent event;
+  bSdEventType eventType;
   char *bp, *plugin_name, *option;
   const char* plugin_options;
   PoolMem priv_plugin_options(PM_MESSAGE);
@@ -538,7 +546,7 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
   if (!sd_plugin_list || sd_plugin_list->empty()) { return; }
 
   if (jcr->impl->plugin_options && jcr->impl->plugin_options->size()) {
-    eventType = bsdEventNewPluginOptions;
+    eventType = bSdEventNewPluginOptions;
     event.eventType = eventType;
 
     foreach_alist_index (i, plugin_options, jcr->impl->plugin_options) {
