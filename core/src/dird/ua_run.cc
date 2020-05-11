@@ -523,8 +523,6 @@ try_again:
           (int)jcr->JobId, JobId, jcr->impl->res.pool->resource_name_,
           jcr->JobPriority);
 
-    FreeJcr(jcr); /* release jcr */
-
     /*
      * For interactive runs we send a message to the audit log
      */
@@ -533,6 +531,8 @@ try_again:
       ua->LogAuditEventInfoMsg(_("Job queued. JobId=%s"),
                                edit_int64(jcr->JobId, buf));
     }
+
+    FreeJcr(jcr); /* release jcr */
 
     if (JobId == 0) {
       ua->ErrorMsg(_("Job failed.\n"));
