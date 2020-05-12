@@ -55,8 +55,8 @@ enum get_vol_info_rw
 
 class Device;
 class DeviceResource;
-class DeviceBlock;
-class DeviceRecord;
+struct DeviceBlock;
+struct DeviceRecord;
 
 /* clang-format off */
 
