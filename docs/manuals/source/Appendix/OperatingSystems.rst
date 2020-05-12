@@ -449,7 +449,7 @@ The client configuration file contains, as you can see below, the client connect
     JobDefs = "DefaultJob" # job definition for the job
     FileSet = "Windows All Drives" # FileSet (data which is backed up)
     Schedule = "WeeklyCycle" # schedule for the backup tasks
-    Enabled = "Yes" #this is the ressource which is toggled on/off by enabling or disabling a backup from the univention gui
+    Enabled = "Yes" # this is the resource which is toggled on/off by enabling or disabling a backup from the univention gui
    }
 
 Bareos < 16.2.0

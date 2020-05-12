@@ -575,7 +575,7 @@ This approach has the following advantages:
 -  If you want to switch an existing installation that uses the default block size and move to a new (usually bigger) block size, you can do that easily by creating a new pool, where :config:option:`dir/pool/MaximumBlockSize`\  is set to the new value that you wish to use in the future:
 
 .. code-block:: bareosconfig
-   :caption: Pool Ressource: setting Maximum Block Size
+   :caption: Pool Resource: setting Maximum Block Size
 
    Pool {
       Name = LTO-4-1M

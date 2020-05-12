@@ -160,7 +160,7 @@ An example for AWS S3 could look like this:
 .. code-block:: cfg
    :caption: aws.profile
 
-   host = s3.amazonaws.com         # This parameter is only used as baseurl and will be prepended with bucket and location set in device ressource to form correct url
+   host = s3.amazonaws.com         # This parameter is only used as baseurl and will be prepended with bucket and location set in device resource to form correct url
    use_https = true
    access_key = myaccesskey
    secret_key = mysecretkey
