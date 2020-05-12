@@ -773,7 +773,6 @@ using namespace filedaemon;
 
 /* variables storing bareos pointers */
 PluginContext* plugin_context = NULL;
-static void* bareos_core_functions = NULL;
 
 MOD_INIT(bareosfd)
 {
@@ -789,28 +788,10 @@ MOD_INIT(bareosfd)
   c_api_object = PyCapsule_New((void*)Bareosfd_API,
                                PYTHON_MODULE_NAME_QUOTED "._C_API", NULL);
 
-  if (c_api_object != NULL) PyModule_AddObject(m, "_C_API", c_api_object);
-#if 0
-  /* add bPluginFunctions Capsule */
-  PyObject* PyModulePluginFuncs =
-      PyCapsule_New((void*)&bareos_core_functions,
-                    PYTHON_MODULE_NAME_QUOTED ".CoreFunctions", NULL);
-  if (!PyModulePluginFuncs) {
-    printf(PYTHON_MODULE_NAME_QUOTED
-           ":CoreFunctions PyCapsule_New failed\n");
+  if (c_api_object != NULL)
+    PyModule_AddObject(m, "_C_API", c_api_object);
+  else
     return MOD_ERROR_VAL;
-  }
-  if (PyModulePluginFuncs) {
-    PyModule_AddObject(m, "CoreFunctions", PyModulePluginFuncs);
-    printf(PYTHON_MODULE_NAME_QUOTED ": added    CoreFunctions@%p\n",
-           &bareos_core_functions);
-  } else {
-    printf(PYTHON_MODULE_NAME_QUOTED
-           ":CoreFunctions PyModule_AddObject failed\n");
-    return MOD_ERROR_VAL;
-  }
-#endif
-
 
   PyRestoreObjectType.tp_new = PyType_GenericNew;
   if (PyType_Ready(&PyRestoreObjectType) < 0) { return MOD_ERROR_VAL; }

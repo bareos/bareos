@@ -35,6 +35,7 @@
 #endif
 
 #include "filed/fd_plugins.h"
+#include "plugins/python3compat.h"
 
 #include "python-fd.h"
 #include "bareosfd.h"

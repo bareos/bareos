@@ -39,13 +39,13 @@
 #include "plugins/filed/fd_common.h"  // for Dmsg Macro
 #include "plugin_private_context.h"
 
+#include "plugins/python3compat.h"
 
 #define BAREOSDIR_MODULE
 #include "bareosdir.h"
 #include "lib/edit.h"
 
 namespace directordaemon {
-
 static const int debuglevel = 150;
 
 static bRC set_bareos_core_functions(CoreFunctions* new_bareos_core_functions);
@@ -87,9 +87,9 @@ static bRC set_plugin_context(PluginContext* new_plugin_context)
 
 
 /**
- * Any plugin options which are passed in are dispatched here to a Python method
- * and it can parse the plugin options. This function is also called after
- * PyLoadModule() has loaded the Python module and made sure things are
+ * Any plugin options which are passed in are dispatched here to a Python
+ * method and it can parse the plugin options. This function is also called
+ * after PyLoadModule() has loaded the Python module and made sure things are
  * operational.
  */
 static bRC PyParsePluginDefinition(PluginContext* plugin_ctx, void* value)
@@ -191,8 +191,9 @@ bail_out:
 }
 
 /**
- * Callback function which is exposed as a part of the additional methods which
- * allow a Python plugin to get certain internal values of the current Job.
+ * Callback function which is exposed as a part of the additional methods
+ * which allow a Python plugin to get certain internal values of the current
+ * Job.
  */
 static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
 {
@@ -277,8 +278,9 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
 }
 
 /**
- * Callback function which is exposed as a part of the additional methods which
- * allow a Python plugin to set certain internal values of the current Job.
+ * Callback function which is exposed as a part of the additional methods
+ * which allow a Python plugin to set certain internal values of the current
+ * Job.
  */
 static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
 {
@@ -326,9 +328,9 @@ bail_out:
 }
 
 /**
- * Callback function which is exposed as a part of the additional methods which
- * allow a Python plugin to issue debug messages using the Bareos debug message
- * facility.
+ * Callback function which is exposed as a part of the additional methods
+ * which allow a Python plugin to issue debug messages using the Bareos debug
+ * message facility.
  */
 static PyObject* PyBareosDebugMessage(PyObject* self, PyObject* args)
 {
@@ -348,9 +350,9 @@ static PyObject* PyBareosDebugMessage(PyObject* self, PyObject* args)
 }
 
 /**
- * Callback function which is exposed as a part of the additional methods which
- * allow a Python plugin to issue Job messages using the Bareos Job message
- * facility.
+ * Callback function which is exposed as a part of the additional methods
+ * which allow a Python plugin to issue Job messages using the Bareos Job
+ * message facility.
  */
 static PyObject* PyBareosJobMessage(PyObject* self, PyObject* args)
 {
@@ -370,9 +372,9 @@ static PyObject* PyBareosJobMessage(PyObject* self, PyObject* args)
 }
 
 /**
- * Callback function which is exposed as a part of the additional methods which
- * allow a Python plugin to issue a Register Event to register additional events
- * it wants to receive.
+ * Callback function which is exposed as a part of the additional methods
+ * which allow a Python plugin to issue a Register Event to register
+ * additional events it wants to receive.
  */
 static PyObject* PyBareosRegisterEvents(PyObject* self, PyObject* args)
 {
@@ -412,9 +414,9 @@ bail_out:
 }
 
 /**
- * Callback function which is exposed as a part of the additional methods which
- * allow a Python plugin to issue an Unregister Event to unregister events it
- * doesn't want to receive anymore.
+ * Callback function which is exposed as a part of the additional methods
+ * which allow a Python plugin to issue an Unregister Event to unregister
+ * events it doesn't want to receive anymore.
  */
 static PyObject* PyBareosUnRegisterEvents(PyObject* self, PyObject* args)
 {
@@ -454,9 +456,9 @@ bail_out:
 }
 
 /**
- * Callback function which is exposed as a part of the additional methods which
- * allow a Python plugin to issue a GetInstanceCount to retrieve the number of
- * instances of the current plugin being loaded into the daemon.
+ * Callback function which is exposed as a part of the additional methods
+ * which allow a Python plugin to issue a GetInstanceCount to retrieve the
+ * number of instances of the current plugin being loaded into the daemon.
  */
 static PyObject* PyBareosGetInstanceCount(PyObject* self, PyObject* args)
 {

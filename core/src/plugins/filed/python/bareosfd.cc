@@ -35,8 +35,11 @@
 
 #include "filed/fd_plugins.h"
 
+#include "plugins/python3compat.h"
+
 #define BAREOSFD_MODULE
 #include "bareosfd.h"
+#include "plugins/python3compat.h"
 #include "lib/edit.h"
 
 namespace filedaemon {

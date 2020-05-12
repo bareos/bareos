@@ -88,7 +88,6 @@ using namespace storagedaemon;
 
 /* variables storing bareos pointers */
 PluginContext* plugin_context = NULL;
-static void* bareos_core_functions = NULL;
 
 MOD_INIT(bareossd)
 {

@@ -35,6 +35,8 @@
 #endif
 #include "dird/dird.h"
 
+#include "plugins/python3compat.h"
+
 #include "python-dir.h"
 #include "bareosdir.h"
 #include "lib/plugins.h"

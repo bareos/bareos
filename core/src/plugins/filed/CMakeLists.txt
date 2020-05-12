@@ -37,8 +37,6 @@ if(HAVE_WIN32)
     ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/lib/${WINDOWS_BITS}
   )
   add_definitions(-DMS_WIN${WINDOWS_BITS})
-else()
-  include_directories(/usr/include/python2.7)
 endif()
 
 include_directories(${OPENSSL_INCLUDE_DIR})
@@ -110,7 +108,7 @@ endif()
 
 if(HAVE_PYTHON AND NOT HAVE_WIN32)
   add_executable(bareos-fd-module-tester python/test/python-fd-module-tester.cc)
-  target_link_libraries(bareos-fd-module-tester ${PYTHON_LIBRARIES} bareos)
+  target_link_libraries(bareos-fd-module-tester ${Python_LIBRARIES} bareos)
 
   add_test(NAME bareosfd-python-module-tester
            COMMAND ${CMAKE_CURRENT_BINARY_DIR}/bareos-fd-module-tester
@@ -133,8 +131,8 @@ if(HAVE_PYTHON AND NOT HAVE_WIN32)
     DEPENDS bareos
     DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/python/setup.py
     COMMAND rm -Rfv ${CMAKE_CURRENT_BINARY_DIR}/build
-    COMMAND ${PYTHON_EXECUTABLE} python/setup.py build
-    COMMAND ${PYTHON_EXECUTABLE} python/setup.py install --install-lib
+    COMMAND ${Python_EXECUTABLE} python/setup.py build
+    COMMAND ${Python_EXECUTABLE} python/setup.py install --install-lib
             ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
     COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
     COMMENT "building python module pythonmodules/bareosfd.so"
@@ -143,7 +141,7 @@ if(HAVE_PYTHON AND NOT HAVE_WIN32)
   add_custom_target(bareosfd-pymod DEPENDS pythonmodules/bareosfd.so)
 
   add_test(NAME bareosfd-python-module
-           COMMAND ${PYTHON_EXECUTABLE}
+           COMMAND ${Python_EXECUTABLE}
                    ${CMAKE_CURRENT_SOURCE_DIR}/python/test/bareosfd_test.py
   )
   set_property(

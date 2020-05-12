@@ -35,6 +35,8 @@
 #endif
 #include "stored/stored.h"
 
+#include "plugins/python3compat.h"
+
 #include "python-sd.h"
 #include "bareossd.h"
 #include "lib/edit.h"

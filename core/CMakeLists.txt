@@ -300,10 +300,10 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
   set(WINDOWS_LIBRARIES ws2_32)
 
-  set(PYTHON_LIBRARIES
+  set(Python_LIBRARIES
       ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/lib/${WINDOWS_BITS}/python27.dll
   )
-  set(PYTHON_INCLUDE_DIRS
+  set(Python_INCLUDE_DIRS
       ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/include
   )
   set(HAVE_PYTHON 1)
@@ -408,9 +408,9 @@ include(BareosDetermineHaveLowLevelScsiInterface)
 
 include(acltypes)
 
-include_directories(SYSTEM ${PYTHON_INCLUDE_DIRS})
+include_directories(SYSTEM ${Python_INCLUDE_DIRS})
 
-include_directories(SYSTEM ${PYTHON_INCLUDE_PATH})
+include_directories(SYSTEM ${Python_INCLUDE_PATH})
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
 
@@ -868,7 +868,7 @@ message(
   "   CEPHFS support:               ${CEPHFS_FOUND} ${CEPHFS_LIBRARIES} ${CEPHFS_INCLUDE_DIRS} "
 )
 message(
-  "   Python support:               ${PYTHONLIBS_FOUND} ${PYTHONLIBS_VERSION_STRING} ${PYTHON_INCLUDE_PATH}"
+  "   Python support:               ${Python_FOUND} ${Python_VERSION} ${Python_INCLUDE_DIRS}"
 )
 message("   systemd support:              ${WITH_SYSTEMD} ${SYSTEMD_UNITDIR}")
 message("   Batch insert enabled:         ${USE_BATCH_FILE_INSERT}")

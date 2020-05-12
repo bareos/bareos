@@ -57,8 +57,8 @@ if(HAVE_PYTHON AND NOT HAVE_WIN32)
     DEPENDS bareos
     DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/python/setup.py
     COMMAND rm -Rfv ${CMAKE_CURRENT_BINARY_DIR}/build
-    COMMAND ${PYTHON_EXECUTABLE} python/setup.py build
-    COMMAND ${PYTHON_EXECUTABLE} python/setup.py install --install-lib
+    COMMAND ${Python_EXECUTABLE} python/setup.py build
+    COMMAND ${Python_EXECUTABLE} python/setup.py install --install-lib
             ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
     COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
     COMMENT "building python module pythonmodules/bareosdir.so"
@@ -67,7 +67,7 @@ if(HAVE_PYTHON AND NOT HAVE_WIN32)
   add_custom_target(bareosdir-pymod DEPENDS pythonmodules/bareosdir.so)
 
   add_test(NAME bareosdir-python-module
-           COMMAND ${PYTHON_EXECUTABLE}
+           COMMAND ${Python_EXECUTABLE}
                    ${CMAKE_CURRENT_SOURCE_DIR}/python/test/bareosdir_test.py
   )
   set_property(

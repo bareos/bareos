@@ -22,6 +22,7 @@
 /* Load the python-fd plugin and test it */
 
 #include "Python.h"
+#include "plugins/python3compat.h"
 class PoolMem;
 #define NbytesForBits(n) ((((n)-1) >> 3) + 1)
 typedef off_t boffset_t;
@@ -184,7 +185,7 @@ static PluginContext bareos_PluginContext = {0, &plugin, NULL, NULL};
 
 int main(int argc, char* argv[])
 {
-  Py_SetProgramName(argv[0]);
+  /* Py_SetProgramName(argv[0]); */
   Py_Initialize();
 
   PyObject* bareosfdModule = PyImport_ImportModule("bareosfd");

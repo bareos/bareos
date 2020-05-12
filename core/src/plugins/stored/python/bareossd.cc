@@ -37,6 +37,7 @@
 
 #define BAREOSSD_MODULE
 #include "bareossd.h"
+#include "plugins/python3compat.h"
 #include "lib/edit.h"
 
 namespace storagedaemon {
