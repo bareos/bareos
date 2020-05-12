@@ -35,7 +35,7 @@ if(HAVE_PYTHON)
   # do not prefix with "lib"
   set_target_properties(python-dir PROPERTIES PREFIX "")
   install(TARGETS python-dir DESTINATION ${plugindir})
-  target_link_libraries(python-dir ${PYTHON_LIBRARIES} bareos)
+  target_link_libraries(python-dir ${Python_LIBRARIES} bareos)
   add_dependencies(python-dir bareosdir-pymod)
 
   set(PYFILES

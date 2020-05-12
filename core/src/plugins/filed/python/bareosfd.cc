@@ -1405,12 +1405,11 @@ static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
       break;
     }
     case bVarFileSeen: {
-      char* value;
-
-      value = PyString_AsString(pyValue);
+      const char* value = PyString_AsString(pyValue);
       if (value) {
-        retval = bareos_core_functions->setBareosValue(plugin_ctx,
-                                                       (bVariable)var, value);
+        retval = bareos_core_functions->setBareosValue(
+            plugin_ctx, (bVariable)var,
+            static_cast<void*>(const_cast<char*>(value)));
       }
       break;
     }
@@ -1758,7 +1757,7 @@ static PyObject* PyBareosCheckChanges(PyObject* self, PyObject* args)
   sp.type = pSavePkt->type;
   if (pSavePkt->fname) {
     if (PyString_Check(pSavePkt->fname)) {
-      sp.fname = PyString_AsString(pSavePkt->fname);
+      sp.fname = const_cast<char*>(PyString_AsString(pSavePkt->fname));
     } else {
       goto bail_out;
     }
@@ -1767,7 +1766,7 @@ static PyObject* PyBareosCheckChanges(PyObject* self, PyObject* args)
   }
   if (pSavePkt->link) {
     if (PyString_Check(pSavePkt->link)) {
-      sp.link = PyString_AsString(pSavePkt->link);
+      sp.link = const_cast<char*>(PyString_AsString(pSavePkt->link));
     } else {
       goto bail_out;
     }
@@ -1809,7 +1808,7 @@ static PyObject* PyBareosAcceptFile(PyObject* self, PyObject* args)
    */
   if (pSavePkt->fname) {
     if (PyString_Check(pSavePkt->fname)) {
-      sp.fname = PyString_AsString(pSavePkt->fname);
+      sp.fname = const_cast<char*>(PyString_AsString(pSavePkt->fname));
     } else {
       goto bail_out;
     }
@@ -1885,7 +1884,7 @@ static inline char* PyGetStringValue(PyObject* object)
 {
   if (!object || !PyString_Check(object)) { return (char*)""; }
 
-  return PyString_AsString(object);
+  return const_cast<char*>(PyString_AsString(object));
 }
 
 static inline char* PyGetByteArrayValue(PyObject* object)

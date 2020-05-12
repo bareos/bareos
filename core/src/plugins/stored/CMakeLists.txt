@@ -52,7 +52,7 @@ if(HAVE_PYTHON)
   add_library(python-sd MODULE python/python-sd.cc)
   set_target_properties(python-sd PROPERTIES PREFIX "")
   install(TARGETS python-sd DESTINATION ${plugindir})
-  target_link_libraries(python-sd ${PYTHON_LIBRARIES} bareos)
+  target_link_libraries(python-sd ${Python_LIBRARIES} bareos)
   add_dependencies(python-sd bareossd-pymod)
 
   set(PYFILES

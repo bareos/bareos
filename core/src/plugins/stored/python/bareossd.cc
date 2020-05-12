@@ -292,12 +292,11 @@ static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
 
   switch (var) {
     case bsdwVarVolumeName: {
-      char* value;
-
-      value = PyString_AsString(pyValue);
+      const char* value = PyString_AsString(pyValue);
       if (value) {
-        bareos_core_functions->setBareosValue(plugin_ctx, (bsdwVariable)var,
-                                              value);
+        bareos_core_functions->setBareosValue(
+            plugin_ctx, (bsdwVariable)var,
+            static_cast<void*>(const_cast<char*>(value)));
       }
 
       break;

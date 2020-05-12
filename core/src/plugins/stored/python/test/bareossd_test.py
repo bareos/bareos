@@ -2,7 +2,7 @@ import unittest
 import bareossd
 import time
 
-print help (bareossd)
+print (help (bareossd))
 
 class TestBareosFd(unittest.TestCase):
 

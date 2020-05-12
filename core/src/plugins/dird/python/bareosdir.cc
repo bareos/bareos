@@ -296,12 +296,13 @@ static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
 
   switch (var) {
     case bwDirVarVolumeName: {
-      char* value;
+      const char* value;
 
       value = PyString_AsString(pyValue);
       if (value) {
         retval = bareos_core_functions->setBareosValue(
-            plugin_ctx, (bwDirVariable)var, value);
+            plugin_ctx, (bwDirVariable)var,
+            static_cast<void*>(const_cast<char*>(value)));
       }
 
       break;

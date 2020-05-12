@@ -18,8 +18,8 @@ class TestBareosFd(unittest.TestCase):
 
     def test_ModuleDicts(self):
         help (bareosfd)
-        print bareosfd.bCFs
-        print bareosfd.CF_ERROR
+        print (bareosfd.bCFs)
+        print (bareosfd.CF_ERROR)
 
     #     print bCFs
     #     bEventType
@@ -85,7 +85,7 @@ class TestBareosFd(unittest.TestCase):
             "StatPacket(dev=0, ino=0, mode=0700, nlink=0, uid=0, gid=0, rdev=0, size=-1, atime=999, mtime=1000, ctime=1001, blksize=4096, blocks=1)",
             str(test_StatPacket),
         )
-        sp2 = bareosfd.StatPacket(dev=0, ino=0, mode=0700, nlink=0, uid=0, gid=0, rdev=0, size=-1, atime=1, mtime=1, ctime=1, blksize=4096, blocks=1)
+        sp2 = bareosfd.StatPacket(dev=0, ino=0, mode=0o0700, nlink=0, uid=0, gid=0, rdev=0, size=-1, atime=1, mtime=1, ctime=1, blksize=4096, blocks=1)
         self.assertEqual('StatPacket(dev=0, ino=0, mode=0700, nlink=0, uid=0, gid=0, rdev=0, size=-1, atime=1, mtime=1, ctime=1, blksize=4096, blocks=1)', str(sp2))
 
     def test_SavePacket(self):

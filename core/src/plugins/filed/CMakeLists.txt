@@ -102,7 +102,7 @@ if(HAVE_PYTHON)
     DESTINATION ${plugindir}
     COMPONENT filedaemon
   )
-  target_link_libraries(python-fd ${PYTHON_LIBRARIES} bareos)
+  target_link_libraries(python-fd ${Python_LIBRARIES} bareos)
   add_dependencies(python-fd bareosfd-pymod)
 endif()
 
