@@ -16,6 +16,14 @@ JobName=backup-bareos-fd
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
+if ! ./start_minio.sh; then
+  export estat=1
+  exit 1
+fi
+
+s3cmd --config=etc/s3cfg-local-minio mb S3://backup
+
+exit 0
 
 # Directory to backup.
 # This directory will be created by setup_data "$@"().
