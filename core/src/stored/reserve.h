@@ -89,58 +89,12 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx);
 int SearchResForDevice(ReserveContext& rctx);
 void ReleaseReserveMessages(JobControlRecord* jcr);
 
-#ifdef SD_DEBUG_LOCK
-extern int reservations_lock_count;
-extern int vol_list_lock_count;
-extern int read_vol_list_lock_count;
-
-#define LockReservations()                                                  \
-  do {                                                                      \
-    Dmsg3(sd_debuglevel, "LockReservations at %s:%d precnt=%d\n", __FILE__, \
-          __LINE__, reservations_lock_count);                               \
-    _lockReservations(__FILE__, __LINE__);                                  \
-    Dmsg0(sd_debuglevel, "LockReservations: got lock\n");                   \
-  } while (0)
-#define UnlockReservations()                                                  \
-  do {                                                                        \
-    Dmsg3(sd_debuglevel, "UnlockReservations at %s:%d precnt=%d\n", __FILE__, \
-          __LINE__, reservations_lock_count);                                 \
-    _unLockReservations();                                                    \
-  } while (0)
-#define LockVolumes()                                                  \
-  do {                                                                 \
-    Dmsg3(sd_debuglevel, "LockVolumes at %s:%d precnt=%d\n", __FILE__, \
-          __LINE__, vol_list_lock_count);                              \
-    _lockVolumes(__FILE__, __LINE__);                                  \
-    Dmsg0(sd_debuglevel, "LockVolumes: got lock\n");                   \
-  } while (0)
-#define UnlockVolumes()                                                  \
-  do {                                                                   \
-    Dmsg3(sd_debuglevel, "UnlockVolumes at %s:%d precnt=%d\n", __FILE__, \
-          __LINE__, vol_list_lock_count);                                \
-    _unLockVolumes();                                                    \
-  } while (0)
-#define LockReadVolumes()                                                  \
-  do {                                                                     \
-    Dmsg3(sd_debuglevel, "LockReadVolumes at %s:%d precnt=%d\n", __FILE__, \
-          __LINE__, read_vol_list_lock_count);                             \
-    _lockReadVolumes(__FILE__, __LINE__);                                  \
-    Dmsg0(sd_debuglevel, "LockReadVolumes: got lock\n");                   \
-  } while (0)
-#define UnlockReadVolumes()                                                  \
-  do {                                                                       \
-    Dmsg3(sd_debuglevel, "UnlockReadVolumes at %s:%d precnt=%d\n", __FILE__, \
-          __LINE__, read_vol_list_lock_count);                               \
-    _unLockReadVolumes();                                                    \
-  } while (0)
-#else
 #define LockReservations() _lockReservations(__FILE__, __LINE__)
 #define UnlockReservations() _unLockReservations()
 #define LockVolumes() _lockVolumes(__FILE__, __LINE__)
 #define UnlockVolumes() _unLockVolumes()
 #define LockReadVolumes() _lockReadVolumes(__FILE__, __LINE__)
 #define UnlockReadVolumes() _unLockReadVolumes()
-#endif
 
 bool use_cmd(JobControlRecord* jcr);
 

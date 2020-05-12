@@ -139,80 +139,6 @@ void Device::dunblock(bool locked)
   Unlock();
 }
 
-#ifdef SD_DEBUG_LOCK
-/**
- * Debug DeviceControlRecord locks  N.B.
- *
- */
-void DeviceControlRecord::dbg_mLock(const char* file, int line, bool locked)
-{
-  real_P(r_mutex);
-  if (IsDevLocked()) {
-    real_V(r_mutex);
-    return;
-  }
-  Dmsg3(sd_debuglevel, "mLock %d from %s:%d\n", locked, file, line);
-  dev->dbg_rLock(file, line, locked);
-  IncDevLock();
-  real_V(r_mutex);
-  return;
-}
-
-void DeviceControlRecord::dbg_mUnlock(const char* file, int line)
-{
-  Dmsg2(sd_debuglevel, "mUnlock from %s:%d\n", file, line);
-  real_P(r_mutex);
-  if (!IsDevLocked()) {
-    real_P(r_mutex);
-    ASSERT2(0, "Call on dcr mUnlock when not locked");
-    return;
-  }
-  DecDevLock();
-  /* When the count goes to zero, unlock it */
-  if (!IsDevLocked()) { dev->dbg_rUnlock(file, line); }
-  real_V(r_mutex);
-  return;
-}
-
-void Device::dbg_Unlock(const char* file, int line)
-{
-  count_--;
-  Dmsg3(sd_debuglevel, "Unlock from %s:%d postcnt=%d\n", file, line, count_);
-  pthread_mutex_unlock(&mutex_);
-}
-
-void Device::dbg_rUnlock(const char* file, int line)
-{
-  Dmsg2(sd_debuglevel, "rUnlock from %s:%d\n", file, line);
-  dbg_Unlock(file, line);
-}
-
-void Device::dbg_Lock_acquire(const char* file, int line)
-{
-  Dmsg2(sd_debuglevel, "Lock_acquire from %s:%d\n", file, line);
-  pthread_mutex_lock(&acquire_mutex);
-}
-
-void Device::dbg_Unlock_acquire(const char* file, int line)
-{
-  Dmsg2(sd_debuglevel, "Unlock_acquire from %s:%d\n", file, line);
-  pthread_mutex_unlock(&acquire_mutex);
-}
-
-void Device::dbg_Lock_read_acquire(const char* file, int line)
-{
-  Dmsg2(sd_debuglevel, "Lock_read_acquire from %s:%d\n", file, line);
-  pthread_mutex_lock(&read_acquire_mutex);
-}
-
-void Device::dbg_Unlock_read_acquire(const char* file, int line)
-{
-  Dmsg2(sd_debuglevel, "Unlock_read_acquire from %s:%d\n", file, line);
-  pthread_mutex_unlock(&read_acquire_mutex);
-}
-
-#else
-
 /**
  * DeviceControlRecord locks N.B.
  */
@@ -268,8 +194,6 @@ void Device::Lock_read_acquire() { P(read_acquire_mutex); }
 
 void Device::Unlock_read_acquire() { V(read_acquire_mutex); }
 
-#endif
-
 /**
  * Main device access control
  */
@@ -303,23 +227,12 @@ int Device::NextVolTimedwait(const struct timespec* timeout)
  * must wait. The no_wait_id thread is out obtaining a new volume
  * and preparing the label.
  */
-#ifdef SD_DEBUG_LOCK
-void Device::dbg_rLock(const char* file, int line, bool locked)
-{
-  Dmsg3(sd_debuglevel, "rLock blked=%s from %s:%d\n", print_blocked(), file,
-        line);
-  if (!locked) {
-    pthread_mutex_lock(&mutex);
-    count_++;
-  }
-#else
 void Device::rLock(bool locked)
 {
   if (!locked) {
     Lock();
     count_++;
   }
-#endif
 
   if (blocked() && !pthread_equal(no_wait_id, pthread_self())) {
     num_waiting++; /* indicate that I am waiting */

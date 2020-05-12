@@ -46,13 +46,8 @@ static dlist* read_vol_list = NULL;
 static pthread_mutex_t read_vol_lock = PTHREAD_MUTEX_INITIALIZER;
 
 /* Global static variables */
-#ifdef SD_DEBUG_LOCK
-int vol_list_lock_count = 0;
-int read_vol_list_lock_count = 0;
-#else
 static int vol_list_lock_count = 0;
 static int read_vol_list_lock_count = 0;
-#endif
 
 /* Forward referenced functions */
 static void FreeVolItem(VolumeReservationItem* vol);

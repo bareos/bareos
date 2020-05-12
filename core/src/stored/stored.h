@@ -28,13 +28,7 @@
 
 #define STORAGE_DAEMON 1
 
-/* Set to debug mutexes */
-//#define SD_DEBUG_LOCK
-#ifdef SD_DEBUG_LOCK
-const int sd_debuglevel = 3;
-#else
 const int sd_debuglevel = 300;
-#endif
 
 #ifdef HAVE_MTIO_H
 #include <mtio.h>

@@ -498,16 +498,6 @@ class Device {
     /*
      * Locking and blocking calls
      */
-#ifdef SD_DEBUG_LOCK
-  void dbg_rLock(const char*, int, bool locked = false);
-  void dbg_rUnlock(const char*, int);
-  void dbg_Lock(const char*, int);
-  void dbg_Unlock(const char*, int);
-  void dbg_Lock_acquire(const char*, int);
-  void dbg_Unlock_acquire(const char*, int);
-  void dbg_Lock_read_acquire(const char*, int);
-  void dbg_Unlock_read_acquire(const char*, int);
-#else
   void rLock(bool locked = false);
   void rUnlock();
   void Lock();
@@ -518,7 +508,6 @@ class Device {
   void Unlock_read_acquire();
   void Lock_VolCatInfo();
   void Unlock_VolCatInfo();
-#endif
   int InitMutex();
   int InitAcquireMutex();
   int InitReadAcquireMutex();
