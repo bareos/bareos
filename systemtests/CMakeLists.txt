@@ -800,6 +800,7 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
            "${CMAKE_BINARY_DIR}/core/src/plugins/filed/pythonmodules:"
            "${CMAKE_BINARY_DIR}/core/src/plugins/stored/pythonmodules:"
            "${CMAKE_SOURCE_DIR}/core/src/plugins/dird/pythonmodules:"
+           "${CMAKE_BINARY_DIR}/core/src/plugins/dird/pythonmodules:"
            "${CMAKE_CURRENT_SOURCE_DIR}/tests/${TEST_NAME}/python-modules"
   )
 
