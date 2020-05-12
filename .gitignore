@@ -24,6 +24,7 @@ debian/*.log
 # etags and cscope db
 tags
 cscope.out
+compile_commands.json
 
 # generated version files
 */cmake/BareosVersion.cmake
