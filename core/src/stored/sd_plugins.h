@@ -131,7 +131,7 @@ typedef struct s_bSdEvent {
 typedef struct s_sdbareosInfo {
   uint32_t size;
   uint32_t version;
-} Sd_PluginApiDefinition;
+} PluginApiDefinition;
 
 #ifdef __cplusplus
 extern "C" {
@@ -174,7 +174,7 @@ typedef struct s_sdbareosFuncs {
   DeviceRecord* (*new_record)(bool with_data);
   void (*CopyRecordState)(DeviceRecord* dst, DeviceRecord* src);
   void (*FreeRecord)(DeviceRecord* rec);
-} StorageDaemonCoreFunctions;
+} CoreFunctions;
 
 /*
  * Bareos Core Routines -- not used within a plugin
@@ -216,9 +216,9 @@ typedef struct s_sdpluginFuncs {
   bRC (*getPluginValue)(PluginContext* ctx, pVariable var, void* value);
   bRC (*setPluginValue)(PluginContext* ctx, pVariable var, void* value);
   bRC (*handlePluginEvent)(PluginContext* ctx, bSdEvent* event, void* value);
-} pSdFuncs;
+} PluginFunctions;
 
-#define SdplugFunc(plugin) ((pSdFuncs*)(plugin->plugin_functions))
+#define SdplugFunc(plugin) ((PluginFunctions*)(plugin->plugin_functions))
 #define sdplug_info(plugin) ((PluginInformation*)(plugin->plugin_information))
 
 #ifdef __cplusplus

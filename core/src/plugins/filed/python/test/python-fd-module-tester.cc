@@ -150,8 +150,8 @@ bRC bareosClearSeenBitmap(PluginContext* ctx, bool all, char* fname)
 
 
 /* Bareos entry points */
-static filedaemon::BareosCoreFunctions bareos_core_functions = {
-    sizeof(filedaemon::BareosCoreFunctions),
+static filedaemon::CoreFunctions bareos_core_functions = {
+    sizeof(filedaemon::CoreFunctions),
     FD_PLUGIN_INTERFACE_VERSION,
     bareosRegisterEvents,
     bareosUnRegisterEvents,
@@ -210,9 +210,9 @@ int main(int argc, char* argv[])
 
   // Extract capsules pointer from bareosfd module
   /* void* bareos_core_functions_from_bareosfd_module = */
-  /*     PyCapsule_Import("bareosfd.BareosCoreFunctions", 0); */
+  /*     PyCapsule_Import("bareosfd.CoreFunctions", 0); */
   /* if (!bareos_core_functions_from_bareosfd_module) { */
-  /*   printf("importing bareosfd.BareosCoreFunctions failed \n"); */
+  /*   printf("importing bareosfd.CoreFunctions failed \n"); */
   /* } */
 
   /* *(void**)ctx_from_bareosfd_module = &bareos_PluginContext; */

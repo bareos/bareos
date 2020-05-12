@@ -73,8 +73,7 @@ static PyMethodDef Methods[] = {
     {NULL, NULL, 0, NULL}};
 
 
-static bRC set_bareos_core_functions(
-    DirectorCoreFunctions* new_bareos_core_functions);
+static bRC set_bareos_core_functions(CoreFunctions* new_bareos_core_functions);
 static bRC set_plugin_context(PluginContext* new_plugin_context);
 static void PyErrorHandler(PluginContext* plugin_ctx, int msgtype);
 static bRC PyParsePluginDefinition(PluginContext* plugin_ctx, void* value);
@@ -111,22 +110,21 @@ MOD_INIT(bareosdir)
 
   if (c_api_object != NULL) PyModule_AddObject(m, "_C_API", c_api_object);
 
-  /* add bpFuncs Capsule */
+  /* add bPluginFunctions Capsule */
   PyObject* PyModulePluginFuncs =
       PyCapsule_New((void*)&bareos_core_functions,
-                    PYTHON_MODULE_NAME_QUOTED ".BareosCoreFunctions", NULL);
+                    PYTHON_MODULE_NAME_QUOTED ".CoreFunctions", NULL);
   if (!PyModulePluginFuncs) {
-    printf(PYTHON_MODULE_NAME_QUOTED
-           ":BareosCoreFunctions PyCapsule_New failed\n");
+    printf(PYTHON_MODULE_NAME_QUOTED ":CoreFunctions PyCapsule_New failed\n");
     return MOD_ERROR_VAL;
   }
   if (PyModulePluginFuncs) {
-    PyModule_AddObject(m, "BareosCoreFunctions", PyModulePluginFuncs);
-    printf(PYTHON_MODULE_NAME_QUOTED ": added    BareosCoreFunctions@%p\n",
+    PyModule_AddObject(m, "CoreFunctions", PyModulePluginFuncs);
+    printf(PYTHON_MODULE_NAME_QUOTED ": added    CoreFunctions@%p\n",
            &bareos_core_functions);
   } else {
     printf(PYTHON_MODULE_NAME_QUOTED
-           ":BareosCoreFunctions PyModule_AddObject failed\n");
+           ":CoreFunctions PyModule_AddObject failed\n");
     return MOD_ERROR_VAL;
   }
 

@@ -257,7 +257,7 @@ typedef struct s_bEvent {
 typedef struct s_bareosInfo {
   uint32_t size;
   uint32_t version;
-} Core_PluginApiDefinition;
+} PluginApiDefinition;
 
 /*
  * Bareos Core Routines -- not used within a plugin
@@ -355,7 +355,7 @@ typedef struct s_bareosFuncs {
                     struct save_pkt* sp); /* Need fname and statp */
   bRC (*SetSeenBitmap)(PluginContext* ctx, bool all, char* fname);
   bRC (*ClearSeenBitmap)(PluginContext* ctx, bool all, char* fname);
-} BareosCoreFunctions;
+} CoreFunctions;
 
 /****************************************************************************
  *                                                                          *
@@ -395,9 +395,9 @@ typedef struct s_pluginFuncs {
   bRC (*setAcl)(PluginContext* ctx, struct acl_pkt* ap);
   bRC (*getXattr)(PluginContext* ctx, struct xattr_pkt* xp);
   bRC (*setXattr)(PluginContext* ctx, struct xattr_pkt* xp);
-} pFuncs;
+} PluginFunctions;
 
-#define PlugFunc(plugin) ((pFuncs*)(plugin->plugin_functions))
+#define PlugFunc(plugin) ((PluginFunctions*)(plugin->plugin_functions))
 #define plug_info(plugin) ((PluginInformation*)(plugin->plugin_information))
 
 #ifdef __cplusplus

@@ -46,8 +46,8 @@ static bRC setXattr(PluginContext* ctx, xattr_pkt* xp);
 
 
 /* Pointers to Bareos functions */
-static BareosCoreFunctions* bareos_core_functions = NULL;
-static Core_PluginApiDefinition* bareos_plugin_interface_version = NULL;
+static CoreFunctions* bareos_core_functions = NULL;
+static PluginApiDefinition* bareos_plugin_interface_version = NULL;
 
 static PluginInformation pluginInfo = {
     sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
@@ -55,7 +55,7 @@ static PluginInformation pluginInfo = {
     PLUGIN_AUTHOR,      PLUGIN_DATE,
     PLUGIN_VERSION,     PLUGIN_DESCRIPTION};
 
-static pFuncs pluginFuncs = {
+static PluginFunctions pluginFuncs = {
     sizeof(pluginFuncs), FD_PLUGIN_INTERFACE_VERSION,
 
     /* Entry points into plugin */
@@ -72,10 +72,10 @@ extern "C" {
 /*
  * Plugin called here when it is first loaded
  */
-bRC loadPlugin(Core_PluginApiDefinition* lbareos_plugin_interface_version,
-               BareosCoreFunctions* lbareos_core_functions,
+bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
+               CoreFunctions* lbareos_core_functions,
                PluginInformation** plugin_information,
-               pFuncs** plugin_functions)
+               PluginFunctions** plugin_functions)
 {
   bareos_core_functions =
       lbareos_core_functions; /* set Bareos funct pointers */

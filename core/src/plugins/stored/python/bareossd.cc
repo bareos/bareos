@@ -43,8 +43,7 @@ namespace storagedaemon {
 
 static const int debuglevel = 150;
 
-static bRC set_bareos_core_functions(
-    StorageDaemonCoreFunctions* new_bareos_core_functions);
+static bRC set_bareos_core_functions(CoreFunctions* new_bareos_core_functions);
 static bRC set_plugin_context(PluginContext* new_plugin_context);
 static bRC PyParsePluginDefinition(PluginContext* plugin_ctx, void* value);
 
@@ -59,7 +58,7 @@ static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
                                void* value);
 
 /* Pointers to Bareos functions */
-static StorageDaemonCoreFunctions* bareos_core_functions = NULL;
+static CoreFunctions* bareos_core_functions = NULL;
 
 #include "plugin_private_context.h"
 
@@ -69,8 +68,7 @@ static StorageDaemonCoreFunctions* bareos_core_functions = NULL;
 
 
 /* set the bareos_core_functions pointer to the given value */
-static bRC set_bareos_core_functions(
-    StorageDaemonCoreFunctions* new_bareos_core_functions)
+static bRC set_bareos_core_functions(CoreFunctions* new_bareos_core_functions)
 {
   bareos_core_functions = new_bareos_core_functions;
   return bRC_OK;

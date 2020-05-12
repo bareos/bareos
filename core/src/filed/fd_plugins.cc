@@ -138,33 +138,33 @@ static boffset_t MyPluginBlseek(BareosWinFilePacket* bfd,
                                 int whence);
 
 /* Bareos info */
-static Core_PluginApiDefinition bareos_plugin_interface_version = {
-    sizeof(Core_PluginApiDefinition), FD_PLUGIN_INTERFACE_VERSION};
+static PluginApiDefinition bareos_plugin_interface_version = {
+    sizeof(PluginApiDefinition), FD_PLUGIN_INTERFACE_VERSION};
 
 /* Bareos entry points */
-static BareosCoreFunctions bareos_core_functions = {sizeof(BareosCoreFunctions),
-                                                    FD_PLUGIN_INTERFACE_VERSION,
-                                                    bareosRegisterEvents,
-                                                    bareosUnRegisterEvents,
-                                                    bareosGetInstanceCount,
-                                                    bareosGetValue,
-                                                    bareosSetValue,
-                                                    bareosJobMsg,
-                                                    bareosDebugMsg,
-                                                    bareosMalloc,
-                                                    bareosFree,
-                                                    bareosAddExclude,
-                                                    bareosAddInclude,
-                                                    bareosAddOptions,
-                                                    bareosAddRegex,
-                                                    bareosAddWild,
-                                                    bareosNewOptions,
-                                                    bareosNewInclude,
-                                                    bareosNewPreInclude,
-                                                    bareosCheckChanges,
-                                                    bareosAcceptFile,
-                                                    bareosSetSeenBitmap,
-                                                    bareosClearSeenBitmap};
+static CoreFunctions bareos_core_functions = {sizeof(CoreFunctions),
+                                              FD_PLUGIN_INTERFACE_VERSION,
+                                              bareosRegisterEvents,
+                                              bareosUnRegisterEvents,
+                                              bareosGetInstanceCount,
+                                              bareosGetValue,
+                                              bareosSetValue,
+                                              bareosJobMsg,
+                                              bareosDebugMsg,
+                                              bareosMalloc,
+                                              bareosFree,
+                                              bareosAddExclude,
+                                              bareosAddInclude,
+                                              bareosAddOptions,
+                                              bareosAddRegex,
+                                              bareosAddWild,
+                                              bareosNewOptions,
+                                              bareosNewInclude,
+                                              bareosNewPreInclude,
+                                              bareosCheckChanges,
+                                              bareosAcceptFile,
+                                              bareosSetSeenBitmap,
+                                              bareosClearSeenBitmap};
 
 /**
  * Bareos private context

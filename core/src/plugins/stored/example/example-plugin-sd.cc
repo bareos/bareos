@@ -53,13 +53,13 @@ static PluginInformation pluginInfo = {
     PLUGIN_AUTHOR,      PLUGIN_DATE,
     PLUGIN_VERSION,     PLUGIN_DESCRIPTION};
 
-static psdFuncs pluginFuncs = {sizeof(pluginFuncs), SD_PLUGIN_INTERFACE_VERSION,
+static PluginFunctions pluginFuncs = {
+    sizeof(pluginFuncs), SD_PLUGIN_INTERFACE_VERSION,
 
-                               /* Entry points into plugin */
-                               newPlugin,  /* new plugin instance */
-                               freePlugin, /* free plugin instance */
-                               getPluginValue, setPluginValue,
-                               handlePluginEvent};
+    /* Entry points into plugin */
+    newPlugin,  /* new plugin instance */
+    freePlugin, /* free plugin instance */
+    getPluginValue, setPluginValue, handlePluginEvent};
 
 #ifdef __cplusplus
 extern "C" {
@@ -75,7 +75,7 @@ extern "C" {
 bRC loadPlugin(bsdInfo* lbareos_plugin_interface_version,
                bsdFuncs* lbareos_core_functions,
                PluginInformation** plugin_information,
-               psdFuncs** plugin_functions)
+               PluginFunctions** plugin_functions)
 {
   bareos_core_functions =
       lbareos_core_functions; /* set Bareos funct pointers */

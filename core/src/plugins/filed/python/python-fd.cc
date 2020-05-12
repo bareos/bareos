@@ -86,8 +86,8 @@ static void PyErrorHandler(PluginContext* plugin_ctx, int msgtype);
 static bRC PyLoadModule(PluginContext* plugin_ctx, void* value);
 
 /* Pointers to Bareos functions */
-static BareosCoreFunctions* bareos_core_functions = NULL;
-static Core_PluginApiDefinition* bareos_plugin_interface_version = NULL;
+static CoreFunctions* bareos_core_functions = NULL;
+static PluginApiDefinition* bareos_plugin_interface_version = NULL;
 
 static PluginInformation pluginInfo = {
     sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
@@ -96,7 +96,7 @@ static PluginInformation pluginInfo = {
     PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
     PLUGIN_USAGE};
 
-static pFuncs pluginFuncs = {
+static PluginFunctions pluginFuncs = {
     sizeof(pluginFuncs), FD_PLUGIN_INTERFACE_VERSION,
 
     /* Entry points into plugin */
@@ -165,10 +165,10 @@ static void PyErrorHandler()
 /**
  * Plugin called here when it is first loaded
  */
-bRC loadPlugin(Core_PluginApiDefinition* lbareos_plugin_interface_version,
-               BareosCoreFunctions* lbareos_core_functions,
+bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
+               CoreFunctions* lbareos_core_functions,
                PluginInformation** plugin_information,
-               pFuncs** plugin_functions)
+               PluginFunctions** plugin_functions)
 {
   if (!Py_IsInitialized()) {
     Py_InitializeEx(0);

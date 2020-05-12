@@ -90,10 +90,10 @@
 #define Bareosfd_PyHandleBackupFile_RETURN bRC
 #define Bareosfd_PyHandleBackupFile_PROTO (PluginContext* bareos_plugin_ctx, struct save_pkt* sp)
 
-/* static bRC set_bareos_core_functions(BareosCoreFunctions* new_bareos_core_functions); */
+/* static bRC set_bareos_core_functions(CoreFunctions* new_bareos_core_functions); */
 #define Bareosfd_set_bareos_core_functions_NUM 18
 #define Bareosfd_set_bareos_core_functions_RETURN bRC
-#define Bareosfd_set_bareos_core_functions_PROTO (BareosCoreFunctions* new_bareos_core_functions)
+#define Bareosfd_set_bareos_core_functions_PROTO (CoreFunctions* new_bareos_core_functions)
 
 /* static bRC set_plugin_context(PluginContext* new_plugin_context); */
 #define Bareosfd_set_plugin_context_NUM 19

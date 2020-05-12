@@ -89,8 +89,8 @@ static bool sd_enabled_compatible = false;
 /**
  * Pointers to Bareos functions
  */
-static StorageDaemonCoreFunctions* bareos_core_functions = NULL;
-static Sd_PluginApiDefinition* bareos_plugin_interface_version = NULL;
+static CoreFunctions* bareos_core_functions = NULL;
+static PluginApiDefinition* bareos_plugin_interface_version = NULL;
 
 static PluginInformation pluginInfo = {
     sizeof(pluginInfo), SD_PLUGIN_INTERFACE_VERSION,
@@ -99,15 +99,15 @@ static PluginInformation pluginInfo = {
     PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
     PLUGIN_USAGE};
 
-static pSdFuncs pluginFuncs = {sizeof(pluginFuncs), SD_PLUGIN_INTERFACE_VERSION,
+static PluginFunctions pluginFuncs = {
+    sizeof(pluginFuncs), SD_PLUGIN_INTERFACE_VERSION,
 
-                               /*
-                                * Entry points into plugin
-                                */
-                               newPlugin,  /* new plugin instance */
-                               freePlugin, /* free plugin instance */
-                               getPluginValue, setPluginValue,
-                               handlePluginEvent};
+    /*
+     * Entry points into plugin
+     */
+    newPlugin,  /* new plugin instance */
+    freePlugin, /* free plugin instance */
+    getPluginValue, setPluginValue, handlePluginEvent};
 
 /**
  * Plugin private context
@@ -135,10 +135,10 @@ extern "C" {
  *
  * External entry point called by Bareos to "load the plugin
  */
-bRC loadPlugin(Sd_PluginApiDefinition* lbareos_plugin_interface_version,
-               StorageDaemonCoreFunctions* lbareos_core_functions,
+bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
+               CoreFunctions* lbareos_core_functions,
                PluginInformation** plugin_information,
-               pSdFuncs** plugin_functions)
+               PluginFunctions** plugin_functions)
 {
   bareos_core_functions =
       lbareos_core_functions; /* set Bareos funct pointers */

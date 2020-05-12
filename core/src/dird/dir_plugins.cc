@@ -67,19 +67,15 @@ static bRC bareosDebugMsg(PluginContext* ctx,
 static bool IsPluginCompatible(Plugin* plugin);
 
 /* BAREOS info */
-static Dir_PluginApiDefinition bareos_plugin_interface_version = {
-    sizeof(DirectorCoreFunctions), DIR_PLUGIN_INTERFACE_VERSION};
+static PluginApiDefinition bareos_plugin_interface_version = {
+    sizeof(CoreFunctions), DIR_PLUGIN_INTERFACE_VERSION};
 
 /* BAREOS entry points */
-static DirectorCoreFunctions bareos_core_functions = {
-    sizeof(DirectorCoreFunctions),
-    DIR_PLUGIN_INTERFACE_VERSION,
-    bareosRegisterEvents,
-    bareosUnRegisterEvents,
-    bareosGetInstanceCount,
-    bareosGetValue,
-    bareosSetValue,
-    bareosJobMsg,
+static CoreFunctions bareos_core_functions = {
+    sizeof(CoreFunctions),  DIR_PLUGIN_INTERFACE_VERSION,
+    bareosRegisterEvents,   bareosUnRegisterEvents,
+    bareosGetInstanceCount, bareosGetValue,
+    bareosSetValue,         bareosJobMsg,
     bareosDebugMsg};
 
 /*

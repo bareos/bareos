@@ -20,10 +20,10 @@
 #define Bareossd_PyHandlePluginEvent_RETURN bRC
 #define Bareossd_PyHandlePluginEvent_PROTO (PluginContext* plugin_ctx, bSdEvent* event, void* value)
 
-/* static bRC set_bareos_core_functions( StorageDaemonCoreFunctions* new_bareos_core_functions); */
+/* static bRC set_bareos_core_functions( CoreFunctions* new_bareos_core_functions); */
 #define Bareossd_set_bareos_core_functions_NUM 4
 #define Bareossd_set_bareos_core_functions_RETURN bRC
-#define Bareossd_set_bareos_core_functions_PROTO ( StorageDaemonCoreFunctions* new_bareos_core_functions)
+#define Bareossd_set_bareos_core_functions_PROTO ( CoreFunctions* new_bareos_core_functions)
 
 /* static bRC set_plugin_context(PluginContext* new_plugin_context); */
 #define Bareossd_set_plugin_context_NUM 5

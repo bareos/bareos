@@ -83,27 +83,19 @@ static void bareosFreeRecord(DeviceRecord* rec);
 static bool IsPluginCompatible(Plugin* plugin);
 
 /* Bareos info */
-static Sd_PluginApiDefinition bareos_plugin_interface_version = {
-    sizeof(pSdFuncs), SD_PLUGIN_INTERFACE_VERSION};
+static PluginApiDefinition bareos_plugin_interface_version = {
+    sizeof(PluginFunctions), SD_PLUGIN_INTERFACE_VERSION};
 
 /* Bareos entry points */
-static StorageDaemonCoreFunctions bareos_core_functions = {
-    sizeof(StorageDaemonCoreFunctions),
-    SD_PLUGIN_INTERFACE_VERSION,
-    bareosRegisterEvents,
-    bareosUnRegisterEvents,
-    bareosGetInstanceCount,
-    bareosGetValue,
-    bareosSetValue,
-    bareosJobMsg,
-    bareosDebugMsg,
-    bareosEditDeviceCodes,
-    bareosLookupCryptoKey,
-    bareosUpdateVolumeInfo,
-    bareosUpdateTapeAlert,
-    bareosNewRecord,
-    bareosCopyRecordState,
-    bareosFreeRecord};
+static CoreFunctions bareos_core_functions = {
+    sizeof(CoreFunctions),  SD_PLUGIN_INTERFACE_VERSION,
+    bareosRegisterEvents,   bareosUnRegisterEvents,
+    bareosGetInstanceCount, bareosGetValue,
+    bareosSetValue,         bareosJobMsg,
+    bareosDebugMsg,         bareosEditDeviceCodes,
+    bareosLookupCryptoKey,  bareosUpdateVolumeInfo,
+    bareosUpdateTapeAlert,  bareosNewRecord,
+    bareosCopyRecordState,  bareosFreeRecord};
 
 /**
  * Bareos private context

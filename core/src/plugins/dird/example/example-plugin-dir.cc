@@ -55,7 +55,7 @@ static PluginInformation pluginInfo = {
     PLUGIN_AUTHOR,      PLUGIN_DATE,
     PLUGIN_VERSION,     PLUGIN_DESCRIPTION};
 
-static pDirFuncs pluginFuncs = {
+static PluginFunctions pluginFuncs = {
     sizeof(pluginFuncs), DIR_PLUGIN_INTERFACE_VERSION,
 
     /* Entry points into plugin */
@@ -77,7 +77,7 @@ extern "C" {
 bRC loadPlugin(bDirInfo* lbareos_plugin_interface_version,
                bDirFuncs* lbareos_core_functions,
                PluginInformation** plugin_information,
-               pDirFuncs** plugin_functions)
+               PluginFunctions** plugin_functions)
 {
   bareos_core_functions =
       lbareos_core_functions; /* set Bareos funct pointers */

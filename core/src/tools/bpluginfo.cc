@@ -64,21 +64,17 @@ enum plugintype
 };
 
 /*
- * pDirFuncs
- * pFuncs
- * psdFuncs
+ * PluginFunctions
  */
 typedef union _plugfuncs plugfuncs;
 union _plugfuncs {
-  directordaemon::pDirFuncs pdirfuncs;
-  filedaemon::pFuncs pfdfuncs;
-  storagedaemon::pSdFuncs psdfuncs;
+  directordaemon::PluginFunctions pdirfuncs;
+  filedaemon::PluginFunctions pfdfuncs;
+  storagedaemon::PluginFunctions psdfuncs;
 };
 
 /*
- * bDirFuncs
- * BareosCoreFunctions
- * bsdFuncs
+ * CoreFunctions
  */
 typedef struct _bareosfuncs bareosfuncs;
 struct _bareosfuncs {
@@ -105,15 +101,13 @@ struct _bareosfuncs {
 };
 
 /*
- * Dir_PluginApiDefiniton
- * Core_PluginApiDefinition
- * Sd_PluginApiDefinition
+ * PluginApiDefinition
  */
 typedef union _bareosinfos bareosinfos;
 union _bareosinfos {
-  directordaemon::Dir_PluginApiDefinition bdirinfo;
-  filedaemon::Core_PluginApiDefinition bfdinfo;
-  storagedaemon::Sd_PluginApiDefinition bsdinfo;
+  directordaemon::PluginApiDefinition bdirinfo;
+  filedaemon::PluginApiDefinition bfdinfo;
+  storagedaemon::PluginApiDefinition bsdinfo;
 };
 
 typedef struct _progdata progdata;

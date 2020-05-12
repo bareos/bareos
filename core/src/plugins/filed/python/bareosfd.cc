@@ -43,8 +43,7 @@ namespace filedaemon {
 
 static const int debuglevel = 150;
 
-static bRC set_bareos_core_functions(
-    BareosCoreFunctions* new_bareos_core_functions);
+static bRC set_bareos_core_functions(CoreFunctions* new_bareos_core_functions);
 static bRC set_plugin_context(PluginContext* new_plugin_context);
 static bRC PyParsePluginDefinition(PluginContext* plugin_ctx, void* value);
 
@@ -75,7 +74,7 @@ static bRC PyRestoreObjectData(PluginContext* plugin_ctx,
 static bRC PyHandleBackupFile(PluginContext* plugin_ctx, struct save_pkt* sp);
 
 /* Pointers to Bareos functions */
-static BareosCoreFunctions* bareos_core_functions = NULL;
+static CoreFunctions* bareos_core_functions = NULL;
 
 #include "plugin_private_context.h"
 
@@ -85,8 +84,7 @@ static BareosCoreFunctions* bareos_core_functions = NULL;
 
 
 /* set the bareos_core_functions pointer to the given value */
-static bRC set_bareos_core_functions(
-    BareosCoreFunctions* new_bareos_core_functions)
+static bRC set_bareos_core_functions(CoreFunctions* new_bareos_core_functions)
 {
   bareos_core_functions = new_bareos_core_functions;
   return bRC_OK;
