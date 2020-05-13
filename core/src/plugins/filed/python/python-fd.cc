@@ -130,6 +130,7 @@ static void PyErrorHandler()
   char* error_string;
 
   PyErr_Fetch(&type, &value, &traceback);
+  PyErr_NormalizeException(&type, &value, &traceback);
 
   tracebackModule = PyImport_ImportModule("traceback");
   if (tracebackModule != NULL) {

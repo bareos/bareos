@@ -19,7 +19,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 #
-# bareos-fd-local-fileset-with-restoreobjects.py is a python Bareos FD Plugin using
+# bareos_fd_local_fileset_with_restoreobjects.py is a python Bareos FD Plugin using
 # BareosFdPluginLocalFilesetWithRestoreObjects which was made for automated testing
 # purposes.
 #

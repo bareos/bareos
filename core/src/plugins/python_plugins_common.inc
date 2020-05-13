@@ -91,6 +91,7 @@ static void PyErrorHandler(PluginContext* bareos_plugin_ctx, int msgtype)
   char* error_string;
 
   PyErr_Fetch(&type, &value, &traceback);
+  PyErr_NormalizeException(&type, &value, &traceback);
 
   tracebackModule = PyImport_ImportModule("traceback");
   if (tracebackModule != NULL) {

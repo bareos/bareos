@@ -37,6 +37,7 @@ static void PyErrorHandler()
   char* error_string;
 
   PyErr_Fetch(&type, &value, &traceback);
+  PyErr_NormalizeException(&type, &value, &traceback);
 
   tracebackModule = PyImport_ImportModule("traceback");
   if (tracebackModule != NULL) {
@@ -47,7 +48,8 @@ static void PyErrorHandler()
                             (char*)"OOO", type, value == NULL ? Py_None : value,
                             traceback == NULL ? Py_None : traceback);
 
-    emptyString = PyString_FromString("");
+    // emptyString = PyString_FromString("");
+    emptyString = PyUnicode_FromString("");
     strRetval =
         PyObject_CallMethod(emptyString, (char*)"join", (char*)"O", tbList);
 
