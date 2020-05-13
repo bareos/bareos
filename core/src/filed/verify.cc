@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -71,7 +71,7 @@ void DoVerify(JobControlRecord* jcr)
           DEFAULT_NETWORK_BUFFER_SIZE);
   }
   SetFindOptions((FindFilesPacket*)jcr->impl->ff, jcr->impl->incremental,
-                 jcr->impl->mtime);
+                 jcr->impl->since_time);
   Dmsg0(10, "Start find files\n");
   /* Subroutine VerifyFile() is called for each file */
   FindFiles(jcr, (FindFilesPacket*)jcr->impl->ff, VerifyFile, NULL);
@@ -117,7 +117,7 @@ static int VerifyFile(JobControlRecord* jcr,
       break;
     case FT_DIRBEGIN:
       jcr->impl->num_files_examined--; /* correct file count */
-      return 1;                         /* ignored */
+      return 1;                        /* ignored */
     case FT_REPARSE:
     case FT_JUNCTION:
     case FT_DIREND:

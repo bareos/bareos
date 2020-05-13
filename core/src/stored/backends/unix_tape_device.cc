@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -43,6 +43,7 @@
 
 #include "include/bareos.h"
 #include "stored/stored.h"
+#include "stored/sd_backends.h"
 #include "generic_tape_device.h"
 #include "unix_tape_device.h"
 
@@ -53,32 +54,30 @@ int unix_tape_device::d_ioctl(int fd, ioctl_req_t request, char* op)
   return ::ioctl(fd, request, op);
 }
 
-unix_tape_device::~unix_tape_device() {}
-
 unix_tape_device::unix_tape_device()
 {
   SetCap(CAP_ADJWRITESIZE); /* Adjust write size to min/max */
 }
 
-#ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" Device* backend_instantiate(JobControlRecord* jcr, int device_type)
-{
-  Device* dev = NULL;
-
-  switch (device_type) {
-    case B_TAPE_DEV:
-      dev = new unix_tape_device;
-      break;
-    default:
-      Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"),
-           device_type);
-      break;
+class Backend : public BackendInterface {
+ public:
+  Device* GetDevice(JobControlRecord* jcr,
+                              DeviceType device_type) override
+  {
+    switch (device_type) {
+      case DeviceType::B_TAPE_DEV:
+        return new unix_tape_device;
+      default:
+        Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"),
+             device_type);
+        return nullptr;
+    }
   }
+  void FlushDevice(void) override {}
+};
 
-  return dev;
-}
-
-extern "C" void flush_backend(void) {}
+#ifdef HAVE_DYNAMIC_SD_BACKENDS
+extern "C" BackendInterface* GetBackend(void) { return new Backend; }
 #endif
 
 } /* namespace storagedaemon  */

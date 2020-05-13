@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -587,7 +587,7 @@ const char* job_type_to_str(int type)
 const char* job_replace_to_str(int replace)
 {
   const char* str = NULL;
-  switch(replace) {
+  switch (replace) {
     case REPLACE_ALWAYS:
       str = _("always");
       break;
@@ -1032,8 +1032,8 @@ POOLMEM* edit_job_codes(JobControlRecord* jcr,
           str = to;
           break;
         case 's': /* Since time */
-          if (jcr && jcr->stime) {
-            str = jcr->stime;
+          if (jcr && jcr->starttime_string) {
+            str = jcr->starttime_string;
           } else {
             str = _("*None*");
           }

@@ -415,6 +415,7 @@ class RunJobForm extends Form
       $selectData['Full'] = 'Full';
       $selectData['Differential'] = 'Differential';
       $selectData['Incremental'] = 'Incremental';
+      $selectData['VirtualFull'] = 'VirtualFull';
       return $selectData;
    }
 }

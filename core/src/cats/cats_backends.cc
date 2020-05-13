@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -173,7 +173,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
 #ifndef HAVE_WIN32
     Mmsg(shared_library_name, "%s/libbareoscats-%s%s", backend_dir.c_str(),
          backend_interface_mapping->interface_name, DYN_LIB_EXTENSION);
-    Dmsg3(100, "db_init_database: testing backend %s/libbareoscats-%s%s\n",
+    Dmsg3(100, "db_init_database: checking backend %s/libbareoscats-%s%s\n",
           backend_dir.c_str(), backend_interface_mapping->interface_name,
           DYN_LIB_EXTENSION);
 

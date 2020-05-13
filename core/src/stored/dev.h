@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -62,43 +62,32 @@
 #ifndef BAREOS_STORED_DEV_H_
 #define BAREOS_STORED_DEV_H_ 1
 
+#include "include/bareos.h"
 #include "stored/record.h"
-#include "stored/lock.h"
-#include "stored/block.h"
-#include "lib/bsys.h"
+#include "stored/volume_catalog_info.h"
+
+#include <vector>
 
 class dlist;
 
 namespace storagedaemon {
 
+struct DeviceStatusInformation;
 
-/**
- * Return values from WaitForSysop()
- */
-enum
-{
-  W_ERROR = 1,
-  W_TIMEOUT,
-  W_POLL,
-  W_MOUNT,
-  W_WAKE
-};
+class DeviceResource;
+class DeviceControlRecord;
+class VolumeReservationItem;
 
-/**
- * Arguments to open_dev()
- */
-enum
+enum class DeviceMode : int
 {
+  kUndefined = 0,
   CREATE_READ_WRITE = 1,
   OPEN_READ_WRITE,
   OPEN_READ_ONLY,
   OPEN_WRITE_ONLY
 };
 
-/**
- * Device types
- */
-enum
+enum class DeviceType : int
 {
   B_UNKNOWN_DEV = 0,
   B_FILE_DEV = 1,
@@ -110,17 +99,6 @@ enum
   B_RADOS_DEV,
   B_CEPHFS_DEV,
   B_ELASTO_DEV
-};
-
-/**
- * IO directions
- */
-enum
-{
-  IO_DIRECTION_NONE = 0,
-  IO_DIRECTION_IN,
-  IO_DIRECTION_OUT,
-  IO_DIRECTION_INOUT
 };
 
 /**
@@ -200,7 +178,7 @@ constexpr int CAP_BYTES = NbytesForBits(CAP_MAX + 1);
 enum
 {
   ST_LABEL = 0,         /**< Label found */
-  ST_MALLOC = 1,        /**< Dev packet malloc'ed in InitDev() */
+  ST_ALLOCATED = 1,     /**< Dev memory allocated in FactoryCreateDevice() */
   ST_APPENDREADY = 2,   /**< Ready for Bareos append */
   ST_READREADY = 3,     /**< Ready for Bareos read */
   ST_EOT = 4,           /**< At end of tape */
@@ -225,170 +203,104 @@ enum
  */
 #define ST_BYTES NbytesForBits(ST_MAX + 1)
 
-/**
- * Volume Catalog Information structure definition
- */
-struct VolumeCatalogInfo {
-  /*
-   * Media info for the current Volume
-   */
-  uint32_t VolCatJobs{0};          /**< number of jobs on this Volume */
-  uint32_t VolCatFiles{0};         /**< Number of files */
-  uint32_t VolCatBlocks{0};        /**< Number of blocks */
-  uint64_t VolCatBytes{0};         /**< Number of bytes written */
-  uint32_t VolCatMounts{0};        /**< Number of mounts this volume */
-  uint32_t VolCatErrors{0};        /**< Number of errors this volume */
-  uint32_t VolCatWrites{0};        /**< Number of writes this volume */
-  uint32_t VolCatReads{0};         /**< Number of reads this volume */
-  uint64_t VolCatRBytes{0};        /**< Number of bytes read */
-  uint32_t VolCatRecycles{0};      /**< Number of recycles this volume */
-  uint32_t EndFile{0};             /**< Last file number */
-  uint32_t EndBlock{0};            /**< Last block number */
-  int32_t LabelType{0};            /**< Bareos/ANSI/IBM */
-  int32_t Slot{0};                 /**< >0=Slot loaded, 0=nothing, -1=unknown */
-  uint32_t VolCatMaxJobs{0};       /**< Maximum Jobs to write to volume */
-  uint32_t VolCatMaxFiles{0};      /**< Maximum files to write to volume */
-  uint64_t VolCatMaxBytes{0};      /**< Max bytes to write to volume */
-  uint64_t VolCatCapacityBytes{0}; /**< capacity estimate */
-  btime_t VolReadTime{0};          /**< time spent reading */
-  btime_t VolWriteTime{0};         /**< time spent writing this Volume */
-  int64_t VolMediaId{0};           /**< MediaId */
-  utime_t VolFirstWritten{0};      /**< Time of first write */
-  utime_t VolLastWritten{0};       /**< Time of last write */
-  bool InChanger{false};           /**< Set if vol in current magazine */
-  bool is_valid{false};            /**< set if this data is valid */
-  char VolCatStatus[20]{0};        /**< Volume status */
-  char VolCatName[MAX_NAME_LENGTH]{0}; /**< Desired volume to mount */
-  char VolEncrKey[MAX_NAME_LENGTH]{
-      0};                      /**< Encryption Key needed to read the media
-                                */
-  uint32_t VolMinBlocksize{0}; /**< Volume Minimum Blocksize */
-  uint32_t VolMaxBlocksize{0}; /**< Volume Maximum Blocksize */
-};
-
-struct BlockSizes {
-  uint32_t max_block_size{0};
-  uint32_t min_block_size{0};
-};
-
-class DeviceResource;        /* Forward reference Device resource defined in
-                                stored_conf.h */
-class DeviceControlRecord;   /* Forward reference */
-class VolumeReservationItem; /* Forward reference */
-
-/**
- * Device specific status information either returned via Device::DeviceStatus()
- * method of via bsdEventDriveStatus and bsdEventVolumeStatus plugin events.
- */
-typedef struct DeviceStatusTrigger {
-  DeviceResource* device = nullptr;
-  POOLMEM* status = nullptr;
-  int status_length = 0;
-} bsdDevStatTrig;
-
 /*
  * Device structure definition.
  *
  * There is one of these for each physical device. Everything here is "global"
  * to that device and effects all jobs using the device.
  */
+
+/* clang-format off */
+
 class Device {
  protected:
-  int fd_ = -1; /**< File descriptor */
+  int fd_{-1};           /**< File descriptor */
  private:
-  int blocked_{0};        /**< Set if we must wait (i.e. change tape) */
-  int count_{0};          /**< Mutex use count -- DEBUG only */
-  int num_reserved_{0};   /**< Counter of device reservations */
-  slot_number_t slot_{0}; /**< Slot loaded in drive or -1 if none */
-  pthread_t pid_{0};      /**< Thread that locked -- DEBUG only */
-  bool unload_{false};    /**< Set when Volume must be unloaded */
-  bool load_{false};      /**< Set when Volume must be loaded */
+  int blocked_{};        /**< Set if we must wait (i.e. change tape) */
+  int count_{};          /**< Mutex use count -- DEBUG only */
+  int num_reserved_{};   /**< Counter of device reservations */
+  slot_number_t slot_{}; /**< Slot loaded in drive or -1 if none */
+  pthread_t pid_{};      /**< Thread that locked -- DEBUG only */
+  bool unload_{false};   /**< Set when Volume must be unloaded */
+  bool load_{false};     /**< Set when Volume must be loaded */
 
  public:
   Device() = default;
-  virtual ~Device() = default;
-  Device* volatile swap_dev = nullptr; /**< Swap vol from this device */
-  dlist* attached_dcrs = nullptr;      /**< Attached DeviceControlRecord list */
-  pthread_mutex_t mutex_ = PTHREAD_MUTEX_INITIALIZER; /**< Access control */
-  pthread_mutex_t spool_mutex =
-      PTHREAD_MUTEX_INITIALIZER; /**< Mutex for updating spool_size */
-  pthread_mutex_t acquire_mutex =
-      PTHREAD_MUTEX_INITIALIZER; /**< Mutex for acquire code */
-  pthread_mutex_t read_acquire_mutex =
-      PTHREAD_MUTEX_INITIALIZER; /**< Mutex for acquire read code */
+  virtual ~Device();
+  Device* volatile swap_dev{}; /**< Swap vol from this device */
+  std::vector<DeviceControlRecord*> attached_dcrs;           /**< Attached DeviceControlRecords */
+  pthread_mutex_t mutex_ = PTHREAD_MUTEX_INITIALIZER;        /**< Access control */
+  pthread_mutex_t spool_mutex = PTHREAD_MUTEX_INITIALIZER;   /**< Mutex for updating spool_size */
+  pthread_mutex_t acquire_mutex = PTHREAD_MUTEX_INITIALIZER; /**< Mutex for acquire code */
+  pthread_mutex_t read_acquire_mutex = PTHREAD_MUTEX_INITIALIZER; /**< Mutex for acquire read code */
   pthread_cond_t wait = PTHREAD_COND_INITIALIZER; /**< Thread wait variable */
-  pthread_cond_t wait_next_vol =
-      PTHREAD_COND_INITIALIZER;    /**< Wait for tape to be mounted */
-  pthread_t no_wait_id = 0;        /**< This thread must not wait */
-  int dev_prev_blocked = 0;        /**< Previous blocked state */
-  int num_waiting = 0;             /**< Number of threads waiting */
-  int num_writers = 0;             /**< Number of writing threads */
-  char capabilities[CAP_BYTES]{0}; /**< Capabilities mask */
-  char state[ST_BYTES]{0};         /**< State mask */
-  int dev_errno = 0;               /**< Our own errno */
-  int oflags = 0;                  /**< Read/write flags */
-  int open_mode =
-      0; /**< Parameter passed to open_dev (useful to reopen the device)
-          */
-  int dev_type = 0;             /**< Device type */
-  bool autoselect = false;      /**< Autoselect in autochanger */
-  bool norewindonclose = false; /**< Don't rewind tape drive on close */
-  bool initiated = false;       /**< Set when InitDev() called */
-  int label_type = 0;           /**< Bareos/ANSI/IBM label types */
-  drive_number_t drive = 0; /**< Autochanger logical drive number (base 0) */
-  drive_number_t drive_index =
-      0;                       /**< Autochanger physical drive index (base 0) */
-  POOLMEM* dev_name = nullptr; /**< Physical device name */
-  POOLMEM* dev_options = nullptr; /**< Device specific options */
-  POOLMEM* prt_name = nullptr;    /**< Name used for display purposes */
-  char* errmsg = nullptr;         /**< Nicely edited error message */
-  uint32_t block_num = 0;         /**< Current block number base 0 */
-  uint32_t LastBlock = 0;      /**< Last DeviceBlock number written to Volume */
-  uint32_t file = 0;           /**< Current file number base 0 */
-  uint64_t file_addr = 0;      /**< Current file read/write address */
-  uint64_t file_size = 0;      /**< Current file size */
-  uint32_t EndBlock = 0;       /**< Last block written */
-  uint32_t EndFile = 0;        /**< Last file written */
-  uint32_t min_block_size = 0; /**< Min block size currently set */
-  uint32_t max_block_size = 0; /**< Max block size currently set */
-  uint32_t max_concurrent_jobs = 0; /**< Maximum simultaneous jobs this drive */
-  uint64_t max_volume_size = 0;     /**< Max bytes to put on one volume */
-  uint64_t max_file_size = 0; /**< Max file size to put in one file on volume */
-  uint64_t volume_capacity = 0; /**< Advisory capacity */
-  uint64_t max_spool_size = 0;  /**< Maximum spool file size */
-  uint64_t spool_size = 0;      /**< Current spool size for this device */
-  uint32_t max_rewind_wait = 0; /**< Max secs to allow for rewind */
-  uint32_t max_open_wait = 0;   /**< Max secs to allow for open */
-  uint32_t max_open_vols = 0;   /**< Max simultaneous open volumes */
+  pthread_cond_t wait_next_vol = PTHREAD_COND_INITIALIZER;    /**< Wait for tape to be mounted */
+  pthread_t no_wait_id{};     /**< This thread must not wait */
+  int dev_prev_blocked{};     /**< Previous blocked state */
+  int num_waiting{};          /**< Number of threads waiting */
+  int num_writers{};          /**< Number of writing threads */
+  char capabilities[CAP_BYTES]{}; /**< Capabilities mask */
+  char state[ST_BYTES]{};     /**< State mask */
+  int dev_errno{};            /**< Our own errno */
+  int oflags{};               /**< Read/write flags */
+  DeviceMode open_mode{DeviceMode::kUndefined};
+  DeviceType dev_type{DeviceType::B_UNKNOWN_DEV};
+  bool autoselect{};          /**< Autoselect in autochanger */
+  bool norewindonclose{};     /**< Don't rewind tape drive on close */
+  bool initiated{};           /**< Set when FactoryCreateDevice() called */
+  int label_type{};           /**< Bareos/ANSI/IBM label types */
+  drive_number_t drive{};     /**< Autochanger logical drive number (base 0) */
+  drive_number_t drive_index{}; /**< Autochanger physical drive index (base 0) */
+  POOLMEM* dev_name{};        /**< Physical device name */
+  POOLMEM* dev_options{};     /**< Device specific options */
+  POOLMEM* prt_name{};        /**< Name used for display purposes */
+  char* errmsg{};             /**< Nicely edited error message */
+  uint32_t block_num{};       /**< Current block number base 0 */
+  uint32_t LastBlock{};       /**< Last DeviceBlock number written to Volume */
+  uint32_t file{};            /**< Current file number base 0 */
+  uint64_t file_addr{};       /**< Current file read/write address */
+  uint64_t file_size{};       /**< Current file size */
+  uint32_t EndBlock{};        /**< Last block written */
+  uint32_t EndFile{};         /**< Last file written */
+  uint32_t min_block_size{};  /**< Min block size currently set */
+  uint32_t max_block_size{};  /**< Max block size currently set */
+  uint32_t max_concurrent_jobs{}; /**< Maximum simultaneous jobs this drive */
+  uint64_t max_volume_size{};     /**< Max bytes to put on one volume */
+  uint64_t max_file_size{};   /**< Max file size to put in one file on volume */
+  uint64_t volume_capacity{}; /**< Advisory capacity */
+  uint64_t max_spool_size{};  /**< Maximum spool file size */
+  uint64_t spool_size{};      /**< Current spool size for this device */
+  uint32_t max_rewind_wait{}; /**< Max secs to allow for rewind */
+  uint32_t max_open_wait{};   /**< Max secs to allow for open */
+  uint32_t max_open_vols{};   /**< Max simultaneous open volumes */
 
-  utime_t vol_poll_interval = 0;    /**< Interval between polling Vol mount */
-  DeviceResource* device = nullptr; /**< Pointer to Device Resource */
-  VolumeReservationItem* vol =
-      nullptr;             /**< Pointer to Volume reservation item */
-  btimer_t* tid = nullptr; /**< Timer id */
+  utime_t vol_poll_interval{};/**< Interval between polling Vol mount */
+  DeviceResource* device_resource{};   /**< Pointer to Device Resource */
+  VolumeReservationItem* vol{};        /**< Pointer to Volume reservation item */
+  btimer_t* tid{};            /**< Timer id */
 
   VolumeCatalogInfo VolCatInfo;       /**< Volume Catalog Information */
   Volume_Label VolHdr;                /**< Actual volume label */
-  char pool_name[MAX_NAME_LENGTH]{0}; /**< Pool name */
-  char pool_type[MAX_NAME_LENGTH]{0}; /**< Pool type */
+  char pool_name[MAX_NAME_LENGTH]{};  /**< Pool name */
+  char pool_type[MAX_NAME_LENGTH]{};  /**< Pool type */
 
-  char UnloadVolName[MAX_NAME_LENGTH]{0}; /**< Last wrong Volume mounted */
-  bool poll = false;                      /**< Set to poll Volume */
+  char UnloadVolName[MAX_NAME_LENGTH]{}; /**< Last wrong Volume mounted */
+  bool poll{};                           /**< Set to poll Volume */
   /* Device wait times ***FIXME*** look at durations */
-  int min_wait = 0;
-  int max_wait = 0;
-  int max_num_wait = 0;
-  int wait_sec = 0;
-  int rem_wait_sec = 0;
-  int num_wait = 0;
+  int min_wait{};
+  int max_wait{};
+  int max_num_wait{};
+  int wait_sec{};
+  int rem_wait_sec{};
+  int num_wait{};
 
-  btime_t last_timer = 0; /**< Used by read/write/seek to get stats (usec) */
-  btime_t last_tick = 0;  /**< Contains last read/write time (usec) */
+  btime_t last_timer{}; /**< Used by read/write/seek to get stats (usec) */
+  btime_t last_tick{};  /**< Contains last read/write time (usec) */
 
-  btime_t DevReadTime = 0;
-  btime_t DevWriteTime = 0;
-  uint64_t DevWriteBytes = 0;
-  uint64_t DevReadBytes = 0;
+  btime_t DevReadTime{};
+  btime_t DevWriteTime{};
+  uint64_t DevWriteBytes{};
+  uint64_t DevReadBytes{};
 
   /* Methods */
   btime_t GetTimerCount(); /**< Return the last timer interval (ms) */
@@ -400,15 +312,15 @@ class Device {
   bool IsAutochanger() const { return BitIsSet(CAP_AUTOCHANGER, capabilities); }
   bool RequiresMount() const { return BitIsSet(CAP_REQMOUNT, capabilities); }
   bool IsRemovable() const { return BitIsSet(CAP_REM, capabilities); }
-  bool IsTape() const { return (dev_type == B_TAPE_DEV); }
+  bool IsTape() const { return (dev_type == DeviceType::B_TAPE_DEV); }
   bool IsFile() const
   {
-    return (dev_type == B_FILE_DEV || dev_type == B_GFAPI_DEV ||
-            dev_type == B_DROPLET_DEV || dev_type == B_RADOS_DEV ||
-            dev_type == B_CEPHFS_DEV || dev_type == B_ELASTO_DEV);
+    return (dev_type == DeviceType::B_FILE_DEV || dev_type == DeviceType::B_GFAPI_DEV ||
+            dev_type == DeviceType::B_DROPLET_DEV || dev_type == DeviceType::B_RADOS_DEV ||
+            dev_type == DeviceType::B_CEPHFS_DEV || dev_type == DeviceType::B_ELASTO_DEV);
   }
-  bool IsFifo() const { return dev_type == B_FIFO_DEV; }
-  bool IsVtl() const { return dev_type == B_VTL_DEV; }
+  bool IsFifo() const { return dev_type == DeviceType::B_FIFO_DEV; }
+  bool IsVtl() const { return dev_type == DeviceType::B_VTL_DEV; }
   bool IsOpen() const { return fd_ >= 0; }
   bool IsOffline() const { return BitIsSet(ST_OFFLINE, state); }
   bool IsLabeled() const { return BitIsSet(ST_LABEL, state); }
@@ -503,12 +415,11 @@ class Device {
   }
   char* getVolCatName() { return VolCatInfo.VolCatName; }
 
-  const char* mode_to_str(int mode);
+  const char* mode_to_str(DeviceMode mode);
   void SetUnload();
   void ClearVolhdr();
   bool close(DeviceControlRecord* dcr);
-  bool open(DeviceControlRecord* dcr, int mode);
-  void term();
+  bool open(DeviceControlRecord* dcr, DeviceMode omode);
   ssize_t read(void* buf, size_t len);
   ssize_t write(const void* buf, size_t len);
   bool mount(DeviceControlRecord* dcr, int timeout);
@@ -545,7 +456,7 @@ class Device {
   /*
    * Generic operations.
    */
-  virtual void OpenDevice(DeviceControlRecord* dcr, int omode);
+  virtual void OpenDevice(DeviceControlRecord* dcr, DeviceMode omode);
   virtual char* StatusDev();
   virtual bool eod(DeviceControlRecord* dcr);
   virtual void SetAteof();
@@ -563,7 +474,7 @@ class Device {
   {
     return true;
   }
-  virtual bool DeviceStatus(bsdDevStatTrig* dst) { return false; }
+  virtual bool DeviceStatus(DeviceStatusInformation* dst) { return false; }
   boffset_t lseek(DeviceControlRecord* dcr, boffset_t offset, int whence)
   {
     return d_lseek(dcr, offset, whence);
@@ -623,250 +534,29 @@ class Device {
   const char* print_blocked() const;
 
  protected:
-  void set_mode(int mode);
+  void set_mode(DeviceMode mode);
 };
+
+class SpoolDevice :public Device
+{
+ public:
+  int d_ioctl(int fd, ioctl_req_t request, char* mt_com = NULL) override {return -1;}
+  int d_open(const char* pathname, int flags, int mode) override {return -1;}
+  int d_close(int fd) override {return -1;}
+  ssize_t d_read(int fd, void* buffer, size_t count) override { return 0;}
+  ssize_t d_write(int fd, const void* buffer, size_t count) override { return 0;}
+  boffset_t d_lseek(DeviceControlRecord* dcr,
+                            boffset_t offset,
+                            int whence) override { return 0;}
+  bool d_truncate(DeviceControlRecord* dcr) override {return false;}
+};
+/* clang-format on */
 
 inline const char* Device::strerror() const { return errmsg; }
 inline const char* Device::archive_name() const { return dev_name; }
 inline const char* Device::print_name() const { return prt_name; }
 
-#define CHECK_BLOCK_NUMBERS true
-#define NO_BLOCK_NUMBER_CHECK false
-
-enum get_vol_info_rw
-{
-  GET_VOL_INFO_FOR_WRITE,
-  GET_VOL_INFO_FOR_READ
-};
-
-/**
- * Device Context (or Control) Record.
- *
- * There is one of these records for each Job that is using
- * the device. Items in this record are "local" to the Job and
- * do not affect other Jobs. Note, a job can have multiple
- * DCRs open, each pointing to a different device.
- *
- * Normally, there is only one JobControlRecord thread per DeviceControlRecord.
- * However, the big and important exception to this is when a Job is being
- * canceled. At that time, there may be two threads using the
- * same DeviceControlRecord. Consequently, when creating/attaching/detaching
- * and freeing the DeviceControlRecord we must lock it (mutex_).
- */
-class DeviceControlRecord {
- private:
-  bool dev_locked_ = false;   /**< Set if dev already locked */
-  int dev_lock_ = 0;          /**< Non-zero if rLock already called */
-  bool reserved_ = false;     /**< Set if reserved device */
-  bool found_in_use_ = false; /**< Set if a volume found in use */
-  bool will_write_ =
-      false; /**< Set if DeviceControlRecord will be used for writing */
-
- public:
-  dlink dev_link;                  /**< Link to attach to dev */
-  JobControlRecord* jcr = nullptr; /**< Pointer to JobControlRecord */
-  pthread_mutex_t mutex_ = PTHREAD_MUTEX_INITIALIZER;  /**< Access control */
-  pthread_mutex_t r_mutex = PTHREAD_MUTEX_INITIALIZER; /**< rLock pre-mutex */
-  Device* volatile dev = nullptr;                      /**< Pointer to device */
-  DeviceResource* device = nullptr; /**< Pointer to device resource */
-  DeviceBlock* block = nullptr;     /**< Pointer to current block */
-  DeviceRecord* rec = nullptr;      /**< Pointer to record being processed */
-  DeviceRecord* before_rec =
-      nullptr; /**< Pointer to record before translation */
-  DeviceRecord* after_rec = nullptr; /**< Pointer to record after translation */
-  pthread_t tid = 0;                 /**< Thread running this dcr */
-  int spool_fd = 0;                  /**< Fd if spooling */
-  bool spool_data = false;           /**< Set to spool data */
-  bool spooling = false;             /**< Set when actually spooling */
-  bool despooling = false;           /**< Set when despooling */
-  bool despool_wait = false;         /**< Waiting for despooling */
-  bool NewVol = false;               /**< Set if new Volume mounted */
-  bool WroteVol = false;             /**< Set if Volume written */
-  bool NewFile = false;              /**< Set when EOF written */
-  bool reserved_volume = false;      /**< Set if we reserved a volume */
-  bool any_volume = false;           /**< Any OK for dir_find_next... */
-  bool attached_to_dev = false;      /**< Set when attached to dev */
-  bool keep_dcr = false;             /**< Do not free dcr in release_dcr */
-  uint32_t autodeflate = 0;          /**< Try to autodeflate streams */
-  uint32_t autoinflate = 0;          /**< Try to autoinflate streams */
-  uint32_t VolFirstIndex = 0;        /**< First file index this Volume */
-  uint32_t VolLastIndex = 0;         /**< Last file index this Volume */
-  uint32_t FileIndex = 0;            /**< Current File Index */
-  uint32_t EndFile = 0;              /**< End file written */
-  uint32_t StartFile = 0;            /**< Start write file */
-  uint32_t StartBlock = 0;           /**< Start write block */
-  uint32_t EndBlock = 0;             /**< Ending block written */
-  int64_t VolMediaId = 0;            /**< MediaId */
-  int64_t job_spool_size = 0;        /**< Current job spool size */
-  int64_t max_job_spool_size = 0;    /**< Max job spool size */
-  uint32_t VolMinBlocksize = 0;      /**< Minimum Blocksize */
-  uint32_t VolMaxBlocksize = 0;      /**< Maximum Blocksize */
-  char VolumeName[MAX_NAME_LENGTH]{0}; /**< Volume name */
-  char pool_name[MAX_NAME_LENGTH]{0};  /**< Pool name */
-  char pool_type[MAX_NAME_LENGTH]{0};  /**< Pool type */
-  char media_type[MAX_NAME_LENGTH]{0}; /**< Media type */
-  char dev_name[MAX_NAME_LENGTH]{0};   /**< Dev name */
-  int Copy = 0;                        /**< Identical copy number */
-  int Stripe = 0;                      /**< RAIT stripe */
-  VolumeCatalogInfo VolCatInfo;        /**< Catalog info for desired volume */
-
-  /*
-   * Constructor/Destructor.
-   */
-  DeviceControlRecord();
-  virtual ~DeviceControlRecord(){};
-
-  /*
-   * Methods
-   */
-  void SetDev(Device* ndev) { dev = ndev; }
-  void SetFoundInUse() { found_in_use_ = true; }
-  void SetWillWrite() { will_write_ = true; }
-  void setVolCatInfo(bool valid) { VolCatInfo.is_valid = valid; }
-
-  void ClearFoundInUse() { found_in_use_ = false; }
-  void clear_will_write() { will_write_ = false; }
-
-  bool IsReserved() const { return reserved_; }
-  bool IsDevLocked() { return dev_locked_; }
-  bool IsWriting() const { return will_write_; }
-
-  void IncDevLock() { dev_lock_++; }
-  void DecDevLock() { dev_lock_--; }
-  bool FoundInUse() const { return found_in_use_; }
-
-  bool haveVolCatInfo() const { return VolCatInfo.is_valid; }
-  void setVolCatName(const char* name)
-  {
-    bstrncpy(VolCatInfo.VolCatName, name, sizeof(VolCatInfo.VolCatName));
-    setVolCatInfo(false);
-  }
-  char* getVolCatName() { return VolCatInfo.VolCatName; }
-
-  /*
-   * Methods in askdir.c
-   */
-  virtual DeviceControlRecord* get_new_spooling_dcr();
-  virtual bool DirFindNextAppendableVolume() { return true; }
-  virtual bool DirUpdateVolumeInfo(bool label, bool update_LastWritten)
-  {
-    return true;
-  }
-  virtual bool DirCreateJobmediaRecord(bool zero) { return true; }
-  virtual bool DirUpdateFileAttributes(DeviceRecord* record) { return true; }
-  virtual bool DirAskSysopToMountVolume(int mode);
-  virtual bool DirAskSysopToCreateAppendableVolume() { return true; }
-  virtual bool DirGetVolumeInfo(enum get_vol_info_rw writing);
-
-  /*
-   * Methods in lock.c
-   */
-  void dblock(int why) { dev->dblock(why); }
-#ifdef SD_DEBUG_LOCK
-  void dbg_mLock(const char*, int, bool locked);
-  void dbg_mUnlock(const char*, int);
-#else
-  void mLock(bool locked);
-  void mUnlock();
-#endif
-
-  /*
-   * Methods in record.c
-   */
-  bool WriteRecord();
-
-  /*
-   * Methods in reserve.c
-   */
-  void ClearReserved();
-  void SetReserved();
-  void UnreserveDevice();
-
-  /*
-   * Methods in vol_mgr.c
-   */
-  bool Can_i_use_volume();
-  bool Can_i_write_volume();
-
-  /*
-   * Methods in mount.c
-   */
-  bool MountNextWriteVolume();
-  bool MountNextReadVolume();
-  void MarkVolumeInError();
-  void mark_volume_not_inchanger();
-  int TryAutolabel(bool opened);
-  bool find_a_volume();
-  bool IsSuitableVolumeMounted();
-  bool is_eod_valid();
-  int CheckVolumeLabel(bool& ask, bool& autochanger);
-  void ReleaseVolume();
-  void DoSwapping(bool IsWriting);
-  bool DoUnload();
-  bool DoLoad(bool IsWriting);
-  bool IsTapePositionOk();
-
-  /*
-   * Methods in block.c
-   */
-  bool WriteBlockToDevice();
-  bool WriteBlockToDev();
-
-  enum ReadStatus
-  {
-    Error = 0,
-    Ok,
-    EndOfFile,
-    EndOfTape
-  };
-
-  ReadStatus ReadBlockFromDevice(bool check_block_numbers);
-  ReadStatus ReadBlockFromDev(bool check_block_numbers);
-
-  /*
-   * Methods in label.c
-   */
-  bool RewriteVolumeLabel(bool recycle);
-};
-
-class StorageDaemonDeviceControlRecord : public DeviceControlRecord {
- public:
-  /*
-   * Virtual Destructor.
-   */
-  ~StorageDaemonDeviceControlRecord(){};
-
-  /*
-   * Methods overriding default implementations.
-   */
-  bool DirFindNextAppendableVolume() override;
-  bool DirUpdateVolumeInfo(bool label, bool update_LastWritten) override;
-  bool DirCreateJobmediaRecord(bool zero) override;
-  bool DirUpdateFileAttributes(DeviceRecord* record) override;
-  bool DirAskSysopToMountVolume(int mode) override;
-  bool DirAskSysopToCreateAppendableVolume() override;
-  bool DirGetVolumeInfo(enum get_vol_info_rw writing) override;
-  DeviceControlRecord* get_new_spooling_dcr() override;
-};
-
-class BTAPE_DCR : public DeviceControlRecord {
- public:
-  /*
-   * Virtual Destructor.
-   */
-  ~BTAPE_DCR(){};
-
-  /*
-   * Methods overriding default implementations.
-   */
-  bool DirFindNextAppendableVolume() override;
-  bool DirCreateJobmediaRecord(bool zero) override;
-  bool DirAskSysopToMountVolume(int mode) override;
-  bool DirAskSysopToCreateAppendableVolume() override;
-  DeviceControlRecord* get_new_spooling_dcr() override;
-};
-
-Device* InitDev(JobControlRecord* jcr, DeviceResource* device);
+Device* FactoryCreateDevice(JobControlRecord* jcr, DeviceResource* device);
 bool CanOpenMountedDev(Device* dev);
 bool LoadDev(Device* dev);
 int WriteBlock(Device* dev);
@@ -893,4 +583,4 @@ bool DoubleDevWaitTime(Device* dev);
 
 } /* namespace storagedaemon */
 
-#endif
+#endif  // BAREOS_STORED_DEV_H_

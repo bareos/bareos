@@ -31,6 +31,7 @@
 #include "include/bareos.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
+#include "stored/device_control_record.h"
 #include "lib/crypto_cache.h"
 #include "stored/acquire.h"
 #include "stored/butil.h"
@@ -231,7 +232,7 @@ int main(int argc, char* argv[])
    * For we must now acquire the device for writing
    */
   out_dev->rLock(false);
-  if (!out_dev->open(out_jcr->impl->dcr, OPEN_READ_WRITE)) {
+  if (!out_dev->open(out_jcr->impl->dcr, DeviceMode::OPEN_READ_WRITE)) {
     Emsg1(M_FATAL, 0, _("dev open failed: %s\n"), out_dev->errmsg);
     out_dev->Unlock();
     exit(1);
@@ -253,8 +254,8 @@ int main(int argc, char* argv[])
 
   Pmsg2(000, _("%u Jobs copied. %u records copied.\n"), jobs, records);
 
-  in_dev->term();
-  out_dev->term();
+  delete in_dev;
+  delete out_dev;
 
   FreeJcr(in_jcr);
   FreeJcr(out_jcr);

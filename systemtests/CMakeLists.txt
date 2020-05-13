@@ -171,6 +171,14 @@ macro(handle_python_plugin_modules test_name)
     )
   endif()
 
+  if(${test_name} STREQUAL python-fd-plugin-postgres-test)
+        list(APPEND FD_PYMODULES_TO_LINK_TO_SRC bareos-fd-postgres.py 
+                BareosFdPluginLocalFileset.py 
+		BareosFdPluginPostgres.py
+		BareosFdPluginBaseclass.py
+    )
+  endif()
+
   # still missing: filed/BareosFdPluginLDAP.py filed/bareos-fd-ldap.py
 
   if(NOT EXISTS ${python_plugin_module_src_test_dir})
@@ -334,6 +342,7 @@ macro(prepare_test)
   string(REPLACE "-" "_" db_name "regress-${TEST_NAME}")
   # set(db_name "regress-${TEST_NAME}")
   set(db_user "regress")
+  set(db_address "$current_test_directory"/database/tmp)
 
   set(job_email root@localhost)
 
@@ -670,6 +679,12 @@ if(TARGET python-fd)
   list(APPEND SYSTEM_TESTS "python-fd-plugin-local-fileset-test")
 else()
   list(APPEND SYSTEM_TESTS_DISABLED "python-fd-plugin-local-fileset-test")
+endif()
+
+if(TARGET python-fd)
+  list(APPEND SYSTEM_TESTS "python-fd-plugin-postgres-test")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "python-fd-plugin-postgres-test")
 endif()
 
 if(TARGET python-fd AND ovirt_server)

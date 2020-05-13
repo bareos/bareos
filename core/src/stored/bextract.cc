@@ -34,6 +34,7 @@
 #include "lib/crypto_cache.h"
 #include "stored/acquire.h"
 #include "stored/butil.h"
+#include "stored/device_control_record.h"
 #include "stored/jcr_private.h"
 #include "stored/mount.h"
 #include "stored/read_record.h"
@@ -454,7 +455,7 @@ static void DoExtract(char* devname)
   CleanupCompression(jcr);
 
   CleanDevice(jcr->impl->dcr);
-  dev->term();
+  delete dev;
   FreeDeviceControlRecord(dcr);
   FreeJcr(jcr);
 

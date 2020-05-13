@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,6 +31,7 @@
 #include "stored/stored.h"
 #include "stored/acquire.h"
 #include "stored/append.h"
+#include "stored/device_control_record.h"
 #include "stored/fd_cmds.h"
 #include "stored/jcr_private.h"
 #include "stored/label.h"
@@ -78,7 +79,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
 
   Dmsg1(100, "Start append data. res=%d\n", dev->NumReserved());
 
-  if (!bs->SetBufferSize(dcr->device->max_network_buffer_size,
+  if (!bs->SetBufferSize(dcr->device_resource->max_network_buffer_size,
                          BNET_SETBUF_WRITE)) {
     Jmsg0(jcr, M_FATAL, 0, _("Unable to set network buffer size.\n"));
     goto bail_out;

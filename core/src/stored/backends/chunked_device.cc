@@ -27,6 +27,7 @@
 
 #include "include/bareos.h"
 #include "lib/edit.h"
+#include "stored/device_status_information.h"
 
 #if defined(HAVE_DROPLET)
 #include "stored/stored.h"
@@ -1432,7 +1433,7 @@ bail_out:
 static int ListIoRequest(void* request, void* data)
 {
   chunk_io_request* io_request = (chunk_io_request*)request;
-  bsdDevStatTrig* dst = (bsdDevStatTrig*)data;
+  DeviceStatusInformation* dst = (DeviceStatusInformation*)data;
   PoolMem status(PM_MESSAGE);
 
   status.bsprintf("   /%s/%04d - %ld (try=%d)\n", io_request->volname,
@@ -1445,7 +1446,7 @@ static int ListIoRequest(void* request, void* data)
 /**
  * Return specific device status information.
  */
-bool chunked_device::DeviceStatus(bsdDevStatTrig* dst)
+bool chunked_device::DeviceStatus(DeviceStatusInformation* dst)
 {
   bool pending = false;
   int inflight_chunks = 0;

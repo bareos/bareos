@@ -231,7 +231,7 @@ static ResourceItem dev_items[] = {
 static ResourceItem autochanger_items[] = {
   {"Name", CFG_TYPE_NAME, ITEM(res_changer, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"Description", CFG_TYPE_STR, ITEM(res_changer, description_), 0, 0, NULL, NULL, NULL},
-  {"Device", CFG_TYPE_ALIST_RES, ITEM(res_changer, device), R_DEVICE, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"Device", CFG_TYPE_ALIST_RES, ITEM(res_changer, device_resources), R_DEVICE, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"ChangerDevice", CFG_TYPE_STRNAME, ITEM(res_changer, changer_name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"ChangerCommand", CFG_TYPE_STRNAME, ITEM(res_changer, changer_command), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
@@ -259,24 +259,34 @@ static struct s_kw authentication_methods[] = {{"None", AT_NONE},
                                                {"MD5", AT_MD5},
                                                {NULL, 0}};
 
-static s_kw device_types[] = {
-    {"file", B_FILE_DEV},
-    {"tape", B_TAPE_DEV},
-    {"fifo", B_FIFO_DEV},
-    {"vtl", B_VTL_DEV},
-    {"gfapi", B_GFAPI_DEV},
-    /* compatibility: object have been renamed to droplet */
-    {"object", B_DROPLET_DEV},
-    {"droplet", B_DROPLET_DEV},
-    {"rados", B_RADOS_DEV},
-    {"cephfs", B_CEPHFS_DEV},
-    {"elasto", B_ELASTO_DEV},
-    {NULL, 0}};
+struct s_dvt_kw {
+  const char* name;
+  DeviceType token;
+};
 
-static s_kw io_directions[] = {{"in", IO_DIRECTION_IN},
-                               {"out", IO_DIRECTION_OUT},
-                               {"both", IO_DIRECTION_INOUT},
-                               {NULL, 0}};
+static s_dvt_kw device_types[] = {
+    {"file", DeviceType::B_FILE_DEV},
+    {"tape", DeviceType::B_TAPE_DEV},
+    {"fifo", DeviceType::B_FIFO_DEV},
+    {"vtl", DeviceType::B_VTL_DEV},
+    {"gfapi", DeviceType::B_GFAPI_DEV},
+    /* compatibility: object have been renamed to droplet */
+    {"object", DeviceType::B_DROPLET_DEV},
+    {"droplet", DeviceType::B_DROPLET_DEV},
+    {"rados", DeviceType::B_RADOS_DEV},
+    {"cephfs", DeviceType::B_CEPHFS_DEV},
+    {"elasto", DeviceType::B_ELASTO_DEV},
+    {nullptr, DeviceType::B_UNKNOWN_DEV}};
+
+struct s_io_kw {
+  const char* name;
+  AutoXflateMode token;
+};
+
+static s_io_kw io_directions[] = {{"in", AutoXflateMode::IO_DIRECTION_IN},
+                                  {"out", AutoXflateMode::IO_DIRECTION_OUT},
+                                  {"both", AutoXflateMode::IO_DIRECTION_INOUT},
+                                  {nullptr, AutoXflateMode::IO_DIRECTION_NONE}};
 
 static s_kw compression_algorithms[] = {
     {"gzip", COMPRESS_GZIP},   {"lzo", COMPRESS_LZO1X},
@@ -351,7 +361,7 @@ static void StoreDeviceType(LEX* lc, ResourceItem* item, int index, int pass)
    */
   for (i = 0; device_types[i].name; i++) {
     if (Bstrcasecmp(lc->str, device_types[i].name)) {
-      SetItemVariable<uint32_t>(*item, device_types[i].token);
+      SetItemVariable<DeviceType>(*item, device_types[i].token);
       i = 0;
       break;
     }
@@ -388,7 +398,7 @@ static void StoreIoDirection(LEX* lc, ResourceItem* item, int index, int pass)
   LexGetToken(lc, BCT_NAME);
   for (i = 0; io_directions[i].name; i++) {
     if (Bstrcasecmp(lc->str, io_directions[i].name)) {
-      SetItemVariable<uint16_t>(*item, io_directions[i].token & 0xffff);
+      SetItemVariable<AutoXflateMode>(*item, io_directions[i].token);
       i = 0;
       break;
     }
@@ -507,8 +517,8 @@ static void MultiplyDevice(DeviceResource& multiplied_device_resource)
                                       copied_device_resource->rcode_);
 
     if (copied_device_resource->changer_res) {
-      if (copied_device_resource->changer_res->device) {
-        copied_device_resource->changer_res->device->append(
+      if (copied_device_resource->changer_res->device_resources) {
+        copied_device_resource->changer_res->device_resources->append(
             copied_device_resource);
       }
     }
@@ -543,9 +553,9 @@ static void CheckDropletDevices(ConfigurationParser& my_config)
   BareosResource* p = nullptr;
 
   while ((p = my_config.GetNextRes(R_DEVICE, p)) != nullptr) {
-    DeviceResource* device = dynamic_cast<DeviceResource*>(p);
-    if (device && device->dev_type == B_DROPLET_DEV) {
-      if (device->max_concurrent_jobs == 0) {
+    DeviceResource* d = dynamic_cast<DeviceResource*>(p);
+    if (d && d->dev_type == DeviceType::B_DROPLET_DEV) {
+      if (d->max_concurrent_jobs == 0) {
         /*
          * 0 is the general default. However, for this dev_type, only 1 works.
          * So we set it to this value.
@@ -553,13 +563,13 @@ static void CheckDropletDevices(ConfigurationParser& my_config)
         Jmsg1(nullptr, M_WARNING, 0,
               _("device %s is set to the default 'Maximum Concurrent Jobs' = "
                 "1.\n"),
-              device->device_name);
-        device->max_concurrent_jobs = 1;
-      } else if (device->max_concurrent_jobs > 1) {
+              d->device_name);
+        d->max_concurrent_jobs = 1;
+      } else if (d->max_concurrent_jobs > 1) {
         Jmsg2(nullptr, M_ERROR_TERM, 0,
               _("device %s is configured with 'Maximum Concurrent Jobs' = %d, "
                 "however only 1 is supported.\n"),
-              device->device_name, device->max_concurrent_jobs);
+              d->device_name, d->max_concurrent_jobs);
       }
     }
   }
@@ -599,7 +609,7 @@ bool ParseSdConfig(const char* configfile, int exit_code)
     }
 
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
-    SdSetBackendDirs(std::move(me->backend_directories));
+    SetBackendDeviceDirectories(std::move(me->backend_directories));
 #endif
   }
 
@@ -680,9 +690,9 @@ static bool DumpResource_(int type,
       break;
     }
     case R_DEVICE: {
-      DeviceResource* dev = dynamic_cast<DeviceResource*>(res);
-      assert(dev);
-      buffer_is_valid = dev->PrintConfig(buf, *my_config);
+      DeviceResource* d = dynamic_cast<DeviceResource*>(res);
+      assert(d);
+      buffer_is_valid = d->PrintConfig(buf, *my_config);
       break;
     }
     case R_AUTOCHANGER: {
@@ -787,10 +797,10 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
           Emsg1(M_ERROR_TERM, 0, _("Cannot find AutoChanger resource %s\n"),
                 res_changer->resource_name_);
         } else {
-          p->device = res_changer->device;
+          p->device_resources = res_changer->device_resources;
 
           DeviceResource* q = nullptr;
-          foreach_alist (q, p->device) {
+          foreach_alist (q, p->device_resources) {
             q->changer_res = p;
           }
 
@@ -904,7 +914,7 @@ static void FreeResource(BareosResource* res, int type)
       assert(p);
       if (p->changer_name) { free(p->changer_name); }
       if (p->changer_command) { free(p->changer_command); }
-      if (p->device) { delete p->device; }
+      if (p->device_resources) { delete p->device_resources; }
       RwlDestroy(&p->changer_lock);
       delete p;
       break;

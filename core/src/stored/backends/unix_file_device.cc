@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,6 +32,7 @@
 #include "include/bareos.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
+#include "stored/device_control_record.h"
 #include "unix_file_device.h"
 #include "lib/berrno.h"
 #include "lib/util.h"
@@ -43,7 +44,7 @@ namespace storagedaemon {
  */
 static bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
 {
-  DeviceResource* device = dcr->dev->device;
+  DeviceResource* device_resource = dcr->dev->device_resource;
   PoolMem ocmd(PM_FNAME);
   POOLMEM* results;
   DIR* dp;
@@ -57,9 +58,9 @@ static bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
   BErrNo be;
 
   if (mount) {
-    icmd = device->mount_command;
+    icmd = device_resource->mount_command;
   } else {
-    icmd = device->unmount_command;
+    icmd = device_resource->unmount_command;
   }
 
   dcr->dev->EditMountCodes(ocmd, icmd);
@@ -106,11 +107,12 @@ static bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
     name_max = pathconf(".", _PC_NAME_MAX);
     if (name_max < 1024) { name_max = 1024; }
 
-    if (!(dp = opendir(device->mount_point))) {
+    if (!(dp = opendir(device_resource->mount_point))) {
       BErrNo be;
       dcr->dev->dev_errno = errno;
       Dmsg3(100, "do_mount: failed to open dir %s (dev=%s), ERR=%s\n",
-            device->mount_point, dcr->dev->print_name(), be.bstrerror());
+            device_resource->mount_point, dcr->dev->print_name(),
+            be.bstrerror());
       goto get_out;
     }
 
@@ -126,7 +128,7 @@ static bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
         dcr->dev->dev_errno = EIO;
         Dmsg2(129,
               "do_mount: failed to find suitable file in dir %s (dev=%s)\n",
-              device->mount_point, dcr->dev->print_name());
+              device_resource->mount_point, dcr->dev->print_name());
         break;
       }
       if (!bstrcmp(result->d_name, ".") && !bstrcmp(result->d_name, "..") &&
@@ -135,7 +137,7 @@ static bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
         break;
       } else {
         Dmsg2(129, "do_mount: ignoring %s in %s\n", result->d_name,
-              device->mount_point);
+              device_resource->mount_point);
       }
     }
 #ifdef USE_READDIR_R
@@ -182,7 +184,7 @@ bool unix_file_device::MountBackend(DeviceControlRecord* dcr, int timeout)
 {
   bool retval = true;
 
-  if (RequiresMount() && device->mount_command) {
+  if (RequiresMount() && device_resource->mount_command) {
     retval = do_mount(dcr, true, timeout);
   }
 
@@ -199,7 +201,7 @@ bool unix_file_device::UnmountBackend(DeviceControlRecord* dcr, int timeout)
 {
   bool retval = true;
 
-  if (RequiresMount() && device->unmount_command) {
+  if (RequiresMount() && device_resource->unmount_command) {
     retval = do_mount(dcr, false, timeout);
   }
 
@@ -321,9 +323,5 @@ bool unix_file_device::d_truncate(DeviceControlRecord* dcr)
 bail_out:
   return true;
 }
-
-unix_file_device::~unix_file_device() {}
-
-unix_file_device::unix_file_device() {}
 
 } /* namespace storagedaemon  */

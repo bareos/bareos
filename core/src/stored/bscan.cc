@@ -41,6 +41,7 @@
 #include "cats/sql.h"
 #include "stored/acquire.h"
 #include "stored/butil.h"
+#include "stored/device_control_record.h"
 #include "stored/label.h"
 #include "stored/mount.h"
 #include "stored/read_record.h"
@@ -385,7 +386,7 @@ int main(int argc, char* argv[])
   DbFlushBackends();
 
   CleanDevice(bjcr->impl->dcr);
-  dev->term();
+  delete dev;
   FreeDeviceControlRecord(bjcr->impl->dcr);
   FreeJcr(bjcr);
 
@@ -401,10 +402,9 @@ static bool BscanMountNextReadVolume(DeviceControlRecord* dcr)
 {
   bool status;
   Device* dev = dcr->dev;
-  DeviceControlRecord* mdcr;
 
   Dmsg1(100, "Walk attached jcrs. Volume=%s\n", dev->getVolCatName());
-  foreach_dlist (mdcr, dev->attached_dcrs) {
+  for (auto mdcr : dev->attached_dcrs) {
     JobControlRecord* mjcr = mdcr->jcr;
     Dmsg1(000, "========== JobId=%u ========\n", mjcr->JobId);
     if (mjcr->JobId == 0) { continue; }
@@ -620,7 +620,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
         /*
          * Reset some DeviceControlRecord variables
          */
-        foreach_dlist (dcr, dev->attached_dcrs) {
+        for (auto dcr : dev->attached_dcrs) {
           dcr->VolFirstIndex = dcr->FileIndex = 0;
           dcr->StartBlock = dcr->EndBlock = 0;
           dcr->StartFile = dcr->EndFile = 0;
@@ -786,8 +786,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
          * Wiffle through all jobs still open and close them.
          */
         if (update_db) {
-          DeviceControlRecord* mdcr;
-          foreach_dlist (mdcr, dev->attached_dcrs) {
+          for (auto mdcr : dev->attached_dcrs) {
             JobControlRecord* mjcr = mdcr->jcr;
             if (!mjcr || mjcr->JobId == 0) { continue; }
             jr.JobId = mjcr->JobId;

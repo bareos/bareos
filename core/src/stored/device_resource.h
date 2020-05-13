@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,6 +25,7 @@
 #define BAREOS_STORED_DEVICE_RESOURCE_H_
 
 #include "stored/dev.h"
+#include "stored/autoxflate.h"
 #include "lib/bareos_resource.h"
 
 namespace storagedaemon {
@@ -42,7 +43,7 @@ class DeviceResource : public BareosResource {
   char* changer_command;        /**< Changer command  -- external program */
   char* alert_command;          /**< Alert command -- external program */
   char* spool_directory;        /**< Spool file directory */
-  uint32_t dev_type;            /**< device type */
+  DeviceType dev_type;          /**< device type */
   uint32_t label_type;          /**< label type */
   bool autoselect;              /**< Automatically select from AutoChanger */
   bool norewindonclose;         /**< Don't rewind tape drive on close */
@@ -67,8 +68,8 @@ class DeviceResource : public BareosResource {
                                        compression */
   uint16_t autodeflate_level; /**< Compression level to use for compression
                                  algorithm which uses levels */
-  uint16_t autodeflate; /**< Perform auto deflation in this IO direction */
-  uint16_t autoinflate; /**< Perform auto inflation in this IO direction */
+  AutoXflateMode autodeflate; /**< auto deflation in this IO direction */
+  AutoXflateMode autoinflate; /**< auto inflation in this IO direction */
   utime_t
       vol_poll_interval;   /**< Interval between polling volume during mount */
   int64_t max_volume_size; /**< Max bytes to put on one volume */

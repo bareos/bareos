@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -55,7 +55,7 @@ struct JobControlRecordPrivate {
   xattr_data_t* xattr_data{};     /**< Extended Attributes for backup/restore */
   int32_t last_type{};            /**< Type of last file saved/verified */
   bool incremental{};             /**< Set if incremental for SINCE */
-  utime_t mtime{};                /**< Begin time for SINCE */
+  utime_t since_time{};           /**< Begin time for SINCE */
   int listing{};                  /**< Job listing in estimate */
   int32_t Ticket{};               /**< Ticket */
   char* big_buf{};                /**< I/O buffer */

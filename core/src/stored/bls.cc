@@ -36,6 +36,7 @@
 #include "findlib/find.h"
 #include "stored/acquire.h"
 #include "stored/butil.h"
+#include "stored/device_control_record.h"
 #include "stored/jcr_private.h"
 #include "stored/label.h"
 #include "stored/match_bsr.h"
@@ -290,7 +291,7 @@ static void do_close(JobControlRecord* jcr)
   FreeAttr(attr);
   FreeRecord(rec);
   CleanDevice(jcr->impl->dcr);
-  dev->term();
+  delete dev;
   FreeDeviceControlRecord(jcr->impl->dcr);
   FreeJcr(jcr);
 }

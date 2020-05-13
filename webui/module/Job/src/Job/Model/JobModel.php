@@ -175,6 +175,7 @@ class JobModel
          $cmd = 'list joblog jobid='.$id.'';
          $limit = 1000;
          $offset = 0;
+         $id = 1;
          $retval = array();
          while (true) {
             $result = $bsock->send_command($cmd . ' limit=' . $limit . ' offset=' . $offset, 2);
@@ -190,6 +191,9 @@ class JobModel
                if ( empty($log['result']['joblog']) && $log['result']['meta']['range']['filtered'] === 0 ) {
                   return $retval;
                } else {
+                  foreach($log['result']['joblog'] as &$joblog) {
+                     $joblog["id"] = $id++;
+                  }
                   $retval = array_merge($retval, $log['result']['joblog']);
                }
             }

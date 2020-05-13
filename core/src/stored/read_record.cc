@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -39,6 +39,7 @@
 #include "stored/stored.h"
 #include "stored/butil.h"
 #include "stored/device.h"
+#include "stored/device_control_record.h"
 #include "stored/jcr_private.h"
 #include "stored/label.h"
 #include "stored/match_bsr.h"
@@ -346,8 +347,8 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
      * Apply BootStrapRecord filter
      */
     if (jcr->impl->read_session.bsr) {
-      rec->match_stat = MatchBsr(jcr->impl->read_session.bsr, rec,
-                                 &dev->VolHdr, &rctx->sessrec, jcr);
+      rec->match_stat = MatchBsr(jcr->impl->read_session.bsr, rec, &dev->VolHdr,
+                                 &rctx->sessrec, jcr);
       if (rec->match_stat == -1) { /* no more possible matches */
         *done = true;              /* all items found, stop */
         Dmsg2(debuglevel, "All done=(file:block) %u:%u\n", dev->file,

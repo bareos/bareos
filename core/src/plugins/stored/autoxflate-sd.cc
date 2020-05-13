@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,6 +28,7 @@
  */
 #include "include/bareos.h"
 #include "stored/stored.h"
+#include "stored/device_control_record.h"
 
 #if defined(HAVE_LIBZ)
 #include <zlib.h>
@@ -309,19 +310,19 @@ static bRC setup_record_translation(bpContext* ctx, void* value)
    * Give jobmessage info what is configured
    */
   switch (dcr->autodeflate) {
-    case IO_DIRECTION_NONE:
+    case AutoXflateMode::IO_DIRECTION_NONE:
       deflate_in = SETTING_NO;
       deflate_out = SETTING_NO;
       break;
-    case IO_DIRECTION_IN:
+    case AutoXflateMode::IO_DIRECTION_IN:
       deflate_in = SETTING_YES;
       deflate_out = SETTING_NO;
       break;
-    case IO_DIRECTION_OUT:
+    case AutoXflateMode::IO_DIRECTION_OUT:
       deflate_in = SETTING_NO;
       deflate_out = SETTING_YES;
       break;
-    case IO_DIRECTION_INOUT:
+    case AutoXflateMode::IO_DIRECTION_INOUT:
       deflate_in = SETTING_YES;
       deflate_out = SETTING_YES;
       break;
@@ -333,19 +334,19 @@ static bRC setup_record_translation(bpContext* ctx, void* value)
   }
 
   switch (dcr->autoinflate) {
-    case IO_DIRECTION_NONE:
+    case AutoXflateMode::IO_DIRECTION_NONE:
       inflate_in = SETTING_NO;
       inflate_out = SETTING_NO;
       break;
-    case IO_DIRECTION_IN:
+    case AutoXflateMode::IO_DIRECTION_IN:
       inflate_in = SETTING_YES;
       inflate_out = SETTING_NO;
       break;
-    case IO_DIRECTION_OUT:
+    case AutoXflateMode::IO_DIRECTION_OUT:
       inflate_in = SETTING_NO;
       inflate_out = SETTING_YES;
       break;
-    case IO_DIRECTION_INOUT:
+    case AutoXflateMode::IO_DIRECTION_INOUT:
       inflate_in = SETTING_YES;
       inflate_out = SETTING_YES;
       break;
@@ -360,10 +361,10 @@ static bRC setup_record_translation(bpContext* ctx, void* value)
    * Setup auto deflation/inflation of streams when enabled for this device.
    */
   switch (dcr->autodeflate) {
-    case IO_DIRECTION_NONE:
+    case AutoXflateMode::IO_DIRECTION_NONE:
       break;
-    case IO_DIRECTION_OUT:
-    case IO_DIRECTION_INOUT:
+    case AutoXflateMode::IO_DIRECTION_OUT:
+    case AutoXflateMode::IO_DIRECTION_INOUT:
       if (!SetupAutoDeflation(ctx, dcr)) { return bRC_Error; }
       did_setup = true;
       break;
@@ -372,10 +373,10 @@ static bRC setup_record_translation(bpContext* ctx, void* value)
   }
 
   switch (dcr->autoinflate) {
-    case IO_DIRECTION_NONE:
+    case AutoXflateMode::IO_DIRECTION_NONE:
       break;
-    case IO_DIRECTION_OUT:
-    case IO_DIRECTION_INOUT:
+    case AutoXflateMode::IO_DIRECTION_OUT:
+    case AutoXflateMode::IO_DIRECTION_INOUT:
       if (!SetupAutoInflation(ctx, dcr)) { return bRC_Error; }
       did_setup = true;
       break;
@@ -408,8 +409,8 @@ static bRC handle_read_translation(bpContext* ctx, void* value)
    * See if we need to perform auto deflation/inflation of streams.
    */
   switch (dcr->autoinflate) {
-    case IO_DIRECTION_IN:
-    case IO_DIRECTION_INOUT:
+    case AutoXflateMode::IO_DIRECTION_IN:
+    case AutoXflateMode::IO_DIRECTION_INOUT:
       swap_record = AutoInflateRecord(ctx, dcr);
       break;
     default:
@@ -418,8 +419,8 @@ static bRC handle_read_translation(bpContext* ctx, void* value)
 
   if (!swap_record) {
     switch (dcr->autodeflate) {
-      case IO_DIRECTION_IN:
-      case IO_DIRECTION_INOUT:
+      case AutoXflateMode::IO_DIRECTION_IN:
+      case AutoXflateMode::IO_DIRECTION_INOUT:
         swap_record = AutoDeflateRecord(ctx, dcr);
         break;
       default:
@@ -445,8 +446,8 @@ static bRC handle_write_translation(bpContext* ctx, void* value)
    * See if we need to perform auto deflation/inflation of streams.
    */
   switch (dcr->autoinflate) {
-    case IO_DIRECTION_OUT:
-    case IO_DIRECTION_INOUT:
+    case AutoXflateMode::IO_DIRECTION_OUT:
+    case AutoXflateMode::IO_DIRECTION_INOUT:
       swap_record = AutoInflateRecord(ctx, dcr);
       break;
     default:
@@ -455,8 +456,8 @@ static bRC handle_write_translation(bpContext* ctx, void* value)
 
   if (!swap_record) {
     switch (dcr->autodeflate) {
-      case IO_DIRECTION_OUT:
-      case IO_DIRECTION_INOUT:
+      case AutoXflateMode::IO_DIRECTION_OUT:
+      case AutoXflateMode::IO_DIRECTION_INOUT:
         swap_record = AutoDeflateRecord(ctx, dcr);
         break;
       default:
@@ -480,7 +481,7 @@ static bool SetupAutoDeflation(bpContext* ctx, DeviceControlRecord* dcr)
   if (jcr->buf_size == 0) { jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE; }
 
   if (!SetupCompressionBuffers(jcr, sd_enabled_compatible,
-                               dcr->device->autodeflate_algorithm,
+                               dcr->device_resource->autodeflate_algorithm,
                                &compress_buf_size)) {
     goto bail_out;
   }
@@ -500,7 +501,7 @@ static bool SetupAutoDeflation(bpContext* ctx, DeviceControlRecord* dcr)
     }
   }
 
-  switch (dcr->device->autodeflate_algorithm) {
+  switch (dcr->device_resource->autodeflate_algorithm) {
 #if defined(HAVE_LIBZ)
     case COMPRESS_GZIP: {
       compressorname = COMPRESSOR_NAME_GZIP;
@@ -508,7 +509,8 @@ static bool SetupAutoDeflation(bpContext* ctx, DeviceControlRecord* dcr)
       z_stream* pZlibStream;
 
       pZlibStream = (z_stream*)jcr->compress.workset.pZLIB;
-      if ((zstat = deflateParams(pZlibStream, dcr->device->autodeflate_level,
+      if ((zstat = deflateParams(pZlibStream,
+                                 dcr->device_resource->autodeflate_level,
                                  Z_DEFAULT_STRATEGY)) != Z_OK) {
         Jmsg(ctx, M_FATAL,
              _("autoxflate-sd: Compression deflateParams error: %d\n"), zstat);
@@ -533,7 +535,7 @@ static bool SetupAutoDeflation(bpContext* ctx, DeviceControlRecord* dcr)
       zfast_stream* pZfastStream;
       zfast_stream_compressor compressor = COMPRESSOR_FASTLZ;
 
-      switch (dcr->device->autodeflate_algorithm) {
+      switch (dcr->device_resource->autodeflate_algorithm) {
         case COMPRESS_FZ4L:
         case COMPRESS_FZ4H:
           compressor = COMPRESSOR_LZ4;
@@ -675,8 +677,8 @@ static bool AutoDeflateRecord(bpContext* ctx, DeviceControlRecord* dcr)
   /*
    * Compress the data using the configured compression algorithm.
    */
-  if (!CompressData(dcr->jcr, dcr->device->autodeflate_algorithm, rec->data,
-                    rec->data_len, data, max_compression_length,
+  if (!CompressData(dcr->jcr, dcr->device_resource->autodeflate_algorithm,
+                    rec->data, rec->data_len, data, max_compression_length,
                     &nrec->data_len)) {
     bfuncs->FreeRecord(nrec);
     goto bail_out;
@@ -705,8 +707,8 @@ static bool AutoDeflateRecord(bpContext* ctx, DeviceControlRecord* dcr)
   /*
    * Generate a compression header.
    */
-  ch.magic = dcr->device->autodeflate_algorithm;
-  ch.level = dcr->device->autodeflate_level;
+  ch.magic = dcr->device_resource->autodeflate_algorithm;
+  ch.level = dcr->device_resource->autodeflate_level;
   ch.version = COMP_HEAD_VERSION;
   ch.size = nrec->data_len;
 

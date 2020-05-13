@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -2729,12 +2729,13 @@ static void StoreDevice(LEX* lc, ResourceItem* item, int index, int pass)
   if (pass == 1) {
     LexGetToken(lc, BCT_NAME);
     if (!res_head[rindex]) {
-      DeviceResource* dev = new DeviceResource;
-      dev->rcode_ = R_DEVICE;
-      dev->resource_name_ = strdup(lc->str);
-      res_head[rindex] = dev; /* store first entry */
+      DeviceResource* device_resource = new DeviceResource;
+      device_resource->rcode_ = R_DEVICE;
+      device_resource->resource_name_ = strdup(lc->str);
+      res_head[rindex] = device_resource; /* store first entry */
       Dmsg3(900, "Inserting first %s res: %s index=%d\n",
-            my_config->ResToStr(R_DEVICE), dev->resource_name_, rindex);
+            my_config->ResToStr(R_DEVICE), device_resource->resource_name_,
+            rindex);
     } else {
       bool found = false;
       BareosResource* next;
@@ -2745,12 +2746,13 @@ static void StoreDevice(LEX* lc, ResourceItem* item, int index, int pass)
         }
       }
       if (!found) {
-        DeviceResource* dev = new DeviceResource;
-        dev->rcode_ = R_DEVICE;
-        dev->resource_name_ = strdup(lc->str);
-        next->next_ = dev;
+        DeviceResource* device_resource = new DeviceResource;
+        device_resource->rcode_ = R_DEVICE;
+        device_resource->resource_name_ = strdup(lc->str);
+        next->next_ = device_resource;
         Dmsg4(900, "Inserting %s res: %s index=%d pass=%d\n",
-              my_config->ResToStr(R_DEVICE), dev->resource_name_, rindex, pass);
+              my_config->ResToStr(R_DEVICE), device_resource->resource_name_,
+              rindex, pass);
       }
     }
 

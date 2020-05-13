@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2016 Planets Communications B.V.
-   Copyright (C) 2014-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,6 +31,7 @@
 
 #ifdef HAVE_RADOS
 #include "stored/stored.h"
+#include "stored/sd_backends.h"
 #include "rados_device.h"
 #include "lib/berrno.h"
 #include "lib/edit.h"
@@ -687,25 +688,26 @@ rados_device::rados_device()
   virtual_filename_ = GetPoolMemory(PM_FNAME);
 }
 
-#ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" Device* backend_instantiate(JobControlRecord* jcr, int device_type)
-{
-  Device* dev = NULL;
-
-  switch (device_type) {
-    case B_RADOS_DEV:
-      dev = new rados_device;
-      break;
-    default:
-      Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"),
-           device_type);
-      break;
+class Backend : public BackendInterface {
+ public:
+  Device* GetDevice(JobControlRecord* jcr,
+                              DeviceType device_type) override
+  {
+    switch (device_type) {
+      case DeviceType::B_RADOS_DEV:
+        return new rados_device;
+      default:
+        Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"),
+             device_type);
+        return nullptr;
+    }
   }
+  void FlushDevice(void) override {}
+};
 
-  return dev;
-}
-
-extern "C" void flush_backend(void) {}
+#ifdef HAVE_DYNAMIC_SD_BACKENDS
+extern "C" BackendInterface* GetBackend(void) { return new Backend; }
 #endif
+
 } /* namespace storagedaemon */
 #endif /* HAVE_RADOS */

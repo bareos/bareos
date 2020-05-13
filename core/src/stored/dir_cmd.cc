@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -46,7 +46,10 @@
 #include "stored/acquire.h"
 #include "stored/authenticate.h"
 #include "stored/autochanger.h"
+#include "stored/blocksize_boundaries.h"
 #include "stored/bsr.h"
+#include "stored/device_control_record.h"
+#include "stored/sd_device_control_record.h"
 #include "stored/fd_cmds.h"
 #include "stored/jcr_private.h"
 #include "stored/job.h"
@@ -144,7 +147,7 @@ static bool UnmountCmd(JobControlRecord* jcr);
 static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
                                        PoolMem& dev_name,
                                        drive_number_t drive,
-                                       BlockSizes* blocksizes);
+                                       BlockSizeBoundaries* blocksizes);
 static void ReadVolumeLabel(JobControlRecord* jcr,
                             DeviceControlRecord* dcr,
                             Device* dev,
@@ -605,7 +608,7 @@ static bool DoLabel(JobControlRecord* jcr, bool relabel)
   BareosSocket* dir = jcr->dir_bsock;
   DeviceControlRecord* dcr;
   Device* dev;
-  BlockSizes blocksizes;
+  BlockSizeBoundaries blocksizes;
   bool ok = false;
   slot_number_t slot;
 
@@ -717,7 +720,7 @@ static void LabelVolumeIfOk(DeviceControlRecord* dcr,
   bsteal_lock_t hold;
   Device* dev = dcr->dev;
   int label_status;
-  int mode;
+  DeviceMode mode;
   const char* volname = relabel ? oldname : newname;
   char ed1[50];
 
@@ -739,9 +742,9 @@ static void LabelVolumeIfOk(DeviceControlRecord* dcr,
    * Ensure that the device is open -- AutoloadDevice() closes it
    */
   if (dev->IsTape()) {
-    mode = OPEN_READ_WRITE;
+    mode = DeviceMode::OPEN_READ_WRITE;
   } else {
-    mode = CREATE_READ_WRITE;
+    mode = DeviceMode::CREATE_READ_WRITE;
   }
 
   /*
@@ -869,21 +872,23 @@ static bool ReadLabel(DeviceControlRecord* dcr)
 static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
                                        PoolMem& devname,
                                        drive_number_t drive,
-                                       BlockSizes* blocksizes)
+                                       BlockSizeBoundaries* blocksizes)
 {
-  DeviceResource* device;
+  DeviceResource* device_resource = nullptr;
   AutochangerResource* changer;
   bool found = false;
   DeviceControlRecord* dcr = NULL;
 
   UnbashSpaces(devname);
-  foreach_res (device, R_DEVICE) {
+  foreach_res (device_resource, R_DEVICE) {
     /*
      * Find resource, and make sure we were able to open it
      */
-    if (bstrcmp(device->resource_name_, devname.c_str())) {
-      if (!device->dev) { device->dev = InitDev(jcr, device); }
-      if (!device->dev) {
+    if (bstrcmp(device_resource->resource_name_, devname.c_str())) {
+      if (!device_resource->dev) {
+        device_resource->dev = FactoryCreateDevice(jcr, device_resource);
+      }
+      if (!device_resource->dev) {
         Jmsg(jcr, M_WARNING, 0,
              _("\n"
                "     Device \"%s\" requested by DIR could not be opened or "
@@ -891,7 +896,7 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
              devname.c_str());
         continue;
       }
-      Dmsg1(20, "Found device %s\n", device->resource_name_);
+      Dmsg1(20, "Found device %s\n", device_resource->resource_name_);
       found = true;
       break;
     }
@@ -906,30 +911,35 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
         /*
          * Try each device in this AutoChanger
          */
-        foreach_alist (device, changer->device) {
-          Dmsg1(100, "Try changer device %s\n", device->resource_name_);
-          if (!device->dev) { device->dev = InitDev(jcr, device); }
-          if (!device->dev) {
+        foreach_alist (device_resource, changer->device_resources) {
+          Dmsg1(100, "Try changer device %s\n",
+                device_resource->resource_name_);
+          if (!device_resource->dev) {
+            device_resource->dev = FactoryCreateDevice(jcr, device_resource);
+          }
+          if (!device_resource->dev) {
             Dmsg1(100, "Device %s could not be opened. Skipped\n",
                   devname.c_str());
             Jmsg(jcr, M_WARNING, 0,
                  _("\n"
                    "     Device \"%s\" in changer \"%s\" requested by DIR "
                    "could not be opened or does not exist.\n"),
-                 device->resource_name_, devname.c_str());
+                 device_resource->resource_name_, devname.c_str());
             continue;
           }
-          if (!device->dev->autoselect) {
+          if (!device_resource->dev->autoselect) {
             Dmsg1(100, "Device %s not autoselect skipped.\n", devname.c_str());
             continue; /* device is not available */
           }
-          if (drive == kInvalidDriveNumber || drive == device->dev->drive) {
-            Dmsg1(20, "Found changer device %s\n", device->resource_name_);
+          if (drive == kInvalidDriveNumber ||
+              drive == device_resource->dev->drive) {
+            Dmsg1(20, "Found changer device %s\n",
+                  device_resource->resource_name_);
             found = true;
             break;
           }
           Dmsg3(100, "Device %s drive wrong: want=%hd got=%hd skipping\n",
-                devname.c_str(), drive, device->dev->drive);
+                devname.c_str(), drive, device_resource->dev->drive);
         }
         break; /* we found it but could not open a device */
       }
@@ -937,11 +947,11 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
   }
 
   if (found) {
-    Dmsg1(100, "Found device %s\n", device->resource_name_);
+    Dmsg1(100, "Found device %s\n", device_resource->resource_name_);
     dcr = new StorageDaemonDeviceControlRecord;
-    SetupNewDcrDevice(jcr, dcr, device->dev, blocksizes);
+    SetupNewDcrDevice(jcr, dcr, device_resource->dev, blocksizes);
     dcr->SetWillWrite();
-    dcr->device = device;
+    dcr->device_resource = device_resource;
   }
   return dcr;
 }
@@ -997,7 +1007,7 @@ static bool MountCmd(JobControlRecord* jcr)
             TryAutoloadDevice(jcr, dcr, slot, "");
           }
           /* We freed the device, so reopen it and wake any waiting threads */
-          if (!dev->open(dcr, OPEN_READ_ONLY)) {
+          if (!dev->open(dcr, DeviceMode::OPEN_READ_ONLY)) {
             dir->fsend(_("3901 Unable to open device %s: ERR=%s\n"),
                        dev->print_name(), dev->bstrerror());
             if (dev->blocked() == BST_UNMOUNTED) {
@@ -1062,7 +1072,7 @@ static bool MountCmd(JobControlRecord* jcr)
                   dev->print_name());
             }
           } else if (dev->IsTape()) {
-            if (!dev->open(dcr, OPEN_READ_ONLY)) {
+            if (!dev->open(dcr, DeviceMode::OPEN_READ_ONLY)) {
               dir->fsend(_("3901 Unable to open device %s: ERR=%s\n"),
                          dev->print_name(), dev->bstrerror());
               break;
@@ -1388,7 +1398,7 @@ static bool ChangerCmd(JobControlRecord* jcr)
     if (dcr) {
       dev = dcr->dev;
       dev->Lock(); /* Use P to avoid indefinite block */
-      if (!dev->device->changer_res) {
+      if (!dev->device_resource->changer_res) {
         dir->fsend(_("3998 Device \"%s\" is not an autochanger.\n"),
                    dev->print_name());
         /* Under certain "safe" conditions, we can steal the lock */

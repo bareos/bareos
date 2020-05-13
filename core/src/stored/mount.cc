@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,6 +32,7 @@
 #include "stored/stored.h"  /* pull in Storage Daemon headers */
 #include "stored/acquire.h"
 #include "stored/autochanger.h"
+#include "stored/device_control_record.h"
 #include "stored/jcr_private.h"
 #include "stored/label.h"
 #include "lib/edit.h"
@@ -77,7 +78,7 @@ bool DeviceControlRecord::MountNextWriteVolume()
 {
   int retry = 0;
   bool ask = false, recycle, autochanger;
-  int mode;
+  DeviceMode mode;
   DeviceControlRecord* dcr = this;
 
   Dmsg2(150, "Enter mount_next_volume(release=%d) dev=%s\n", dev->MustUnload(),
@@ -247,9 +248,9 @@ mount_next_vol:
    * Ensure the device is open
    */
   if (dev->HasCap(CAP_STREAM)) {
-    mode = OPEN_WRITE_ONLY;
+    mode = DeviceMode::OPEN_WRITE_ONLY;
   } else {
-    mode = OPEN_READ_WRITE;
+    mode = DeviceMode::OPEN_READ_WRITE;
   }
 
   /*

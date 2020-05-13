@@ -41,6 +41,7 @@
 #include "stored/acquire.h"
 #include "stored/autochanger.h"
 #include "stored/bsr.h"
+#include "stored/btape_device_control_record.h"
 #include "stored/butil.h"
 #include "stored/device.h"
 #include "stored/jcr_private.h"
@@ -64,11 +65,8 @@ extern bool ParseSdConfig(const char* configfile, int exit_code);
 
 using namespace storagedaemon;
 
-/* Exported variables */
-int quit = 0;
-char buf[100000];
-int bsize = TAPE_BSIZE;
-char VolName[MAX_NAME_LENGTH];
+static int quit = 0;
+static char buf[100000];
 
 /**
  * If you change the format of the state file,
@@ -76,10 +74,9 @@ char VolName[MAX_NAME_LENGTH];
  */
 static uint32_t btape_state_level = 2;
 
-Device* dev = NULL;
-DeviceControlRecord* dcr;
-DeviceResource* device = NULL;
-int exit_code = 0;
+static Device* dev = nullptr;
+static DeviceControlRecord* dcr;
+static int exit_code = 0;
 
 #define REC_SIZE 32768
 
@@ -348,10 +345,10 @@ static void TerminateBtape(int status)
 
   FreeVolumeLists();
 
-  if (dev) { dev->term(); }
+  if (dev) { delete dev; }
 
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
-  DevFlushBackends();
+  FlushAndCloseBackendDevices();
 #endif
 
   if (configfile) { free(configfile); }
@@ -477,7 +474,7 @@ static bool open_the_device()
   block = new_block(dev);
   dev->rLock();
   Dmsg1(200, "Opening device %s\n", dcr->VolumeName);
-  if (!dev->open(dcr, OPEN_READ_WRITE)) {
+  if (!dev->open(dcr, DeviceMode::OPEN_READ_WRITE)) {
     Emsg1(M_FATAL, 0, _("dev open failed: %s\n"), dev->errmsg);
     ok = false;
     goto bail_out;
@@ -689,7 +686,7 @@ static void capcmd()
   printf("%sOPENED ", dev->IsOpen() ? "" : "!");
   printf("%sTAPE ", dev->IsTape() ? "" : "!");
   printf("%sLABEL ", dev->IsLabeled() ? "" : "!");
-  printf("%sMALLOC ", BitIsSet(ST_MALLOC, dev->state) ? "" : "!");
+  printf("%sMALLOC ", BitIsSet(ST_ALLOCATED, dev->state) ? "" : "!");
   printf("%sAPPEND ", dev->CanAppend() ? "" : "!");
   printf("%sREAD ", dev->CanRead() ? "" : "!");
   printf("%sEOT ", dev->AtEot() ? "" : "!");
@@ -1424,13 +1421,13 @@ static int autochanger_test()
   POOLMEM *results, *changer;
   slot_number_t slot, loaded;
   int status;
-  int timeout = dcr->device->max_changer_wait;
+  int timeout = dcr->device_resource->max_changer_wait;
   int sleep_time = 0;
 
   Dmsg1(100, "Max changer wait = %d sec\n", timeout);
   if (!dev->HasCap(CAP_AUTOCHANGER)) { return 1; }
-  if (!(dcr->device && dcr->device->changer_name &&
-        dcr->device->changer_command)) {
+  if (!(dcr->device_resource && dcr->device_resource->changer_name &&
+        dcr->device_resource->changer_command)) {
     Pmsg0(-1, _("\nAutochanger enabled, but no name or no command device "
                 "specified.\n"));
     return 1;
@@ -1455,8 +1452,8 @@ try_again:
   dcr->VolCatInfo.Slot = slot;
   /* Find out what is loaded, zero means device is unloaded */
   Pmsg0(-1, _("3301 Issuing autochanger \"loaded\" command.\n"));
-  changer =
-      edit_device_codes(dcr, changer, dcr->device->changer_command, "loaded");
+  changer = edit_device_codes(dcr, changer,
+                              dcr->device_resource->changer_command, "loaded");
   status = RunProgram(changer, timeout, results);
   Dmsg3(100, "run_prog: %s stat=%d result=\"%s\"\n", changer, status, results);
   if (status == 0) {
@@ -1479,8 +1476,8 @@ try_again:
     dev->close(dcr);
     Pmsg2(-1, _("3302 Issuing autochanger \"unload %d %d\" command.\n"), loaded,
           dev->drive);
-    changer =
-        edit_device_codes(dcr, changer, dcr->device->changer_command, "unload");
+    changer = edit_device_codes(
+        dcr, changer, dcr->device_resource->changer_command, "unload");
     status = RunProgram(changer, timeout, results);
     Pmsg2(-1, _("unload status=%s %d\n"), status == 0 ? _("OK") : _("Bad"),
           status);
@@ -1500,8 +1497,8 @@ try_again:
   dcr->VolCatInfo.Slot = slot;
   Pmsg2(-1, _("3303 Issuing autochanger \"load %d %d\" command.\n"), slot,
         dev->drive);
-  changer =
-      edit_device_codes(dcr, changer, dcr->device->changer_command, "load");
+  changer = edit_device_codes(dcr, changer,
+                              dcr->device_resource->changer_command, "load");
   Dmsg1(100, "Changer=%s\n", changer);
   dev->close(dcr);
   status = RunProgram(changer, timeout, results);
@@ -1814,7 +1811,7 @@ static void fsrcmd()
  */
 static void rbcmd()
 {
-  dev->open(dcr, OPEN_READ_ONLY);
+  dev->open(dcr, DeviceMode::OPEN_READ_ONLY);
   dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK);
 }
 
@@ -3016,14 +3013,7 @@ bool BTAPE_DCR::DirAskSysopToCreateAppendableVolume()
   return true;
 }
 
-DeviceControlRecord* BTAPE_DCR::get_new_spooling_dcr()
-{
-  DeviceControlRecord* dcr;
-
-  dcr = new BTAPE_DCR;
-
-  return dcr;
-}
+DeviceControlRecord* BTAPE_DCR::get_new_spooling_dcr() { return new BTAPE_DCR; }
 
 static bool MyMountNextReadVolume(DeviceControlRecord* dcr)
 {

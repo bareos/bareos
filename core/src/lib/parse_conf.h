@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -171,7 +171,7 @@ enum
    */
   CFG_TYPE_DEVTYPE = 201,      /* Device Type */
   CFG_TYPE_MAXBLOCKSIZE = 202, /* Maximum Blocksize */
-  CFG_TYPE_IODIRECTION = 203,  /* IO Direction */
+  CFG_TYPE_IODIRECTION = 203,  /* AutoXflateMode IO Direction */
   CFG_TYPE_CMPRSALGO = 204,    /* Compression Algorithm */
 
   /*

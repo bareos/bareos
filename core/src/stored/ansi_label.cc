@@ -3,7 +3,7 @@
 
    Copyright (C) 2005-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,7 +29,8 @@
  */
 
 #include "include/bareos.h" /* pull in global headers */
-#include "stored/stored.h"  /* pull in Storage Daemon headers */
+#include "stored/device_control_record.h"
+#include "stored/stored.h" /* pull in Storage Daemon headers */
 #include "stored/stored_globals.h"
 #include "stored/label.h"
 #include "stored/ebcdic.h"
@@ -315,8 +316,8 @@ bool WriteAnsiIbmLabels(DeviceControlRecord* dcr, int type, const char* VolName)
    * If the Device requires a specific label type use it,
    * otherwise, use the type requested by the Director
    */
-  if (dcr->device->label_type != B_BAREOS_LABEL) {
-    label_type = dcr->device->label_type; /* force label type */
+  if (dcr->device_resource->label_type != B_BAREOS_LABEL) {
+    label_type = dcr->device_resource->label_type; /* force label type */
   } else {
     label_type = dcr->VolCatInfo.LabelType; /* accept Dir type */
   }

@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -82,6 +82,7 @@ set(LIBBAREOSSD_SRCS
     crc32/crc32.cc
     dev.cc
     device.cc
+    device_control_record.cc
     device_resource.cc
     ebcdic.cc
     label.cc
@@ -92,6 +93,7 @@ set(LIBBAREOSSD_SRCS
     reserve.cc
     scan.cc
     sd_backends.cc
+    sd_device_control_record.cc
     sd_plugins.cc
     sd_stats.cc
     spool.cc

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,7 +30,7 @@ namespace storagedaemon {
 
 AutochangerResource::AutochangerResource()
     : BareosResource()
-    , device(nullptr)
+    , device_resources(nullptr)
     , changer_name(nullptr)
     , changer_command(nullptr)
 {
@@ -41,7 +41,7 @@ AutochangerResource& AutochangerResource::operator=(
     const AutochangerResource& rhs)
 {
   BareosResource::operator=(rhs);
-  device = rhs.device;
+  device_resources = rhs.device_resources;
   changer_name = rhs.changer_name;
   changer_command = rhs.changer_command;
   changer_lock = rhs.changer_lock;
@@ -50,26 +50,26 @@ AutochangerResource& AutochangerResource::operator=(
 
 bool AutochangerResource::PrintConfigToBuffer(PoolMem& buf)
 {
-  alist* original_alist = device;
+  alist* original_alist = device_resources;
   alist* temp_alist = new alist(original_alist->size(), not_owned_by_alist);
-  DeviceResource* dev = nullptr;
-  foreach_alist (dev, original_alist) {
-    if (dev->multiplied_device_resource) {
-      if (dev->multiplied_device_resource == dev) {
-        DeviceResource* tmp_dev = new DeviceResource(*dev);
-        tmp_dev->MultipliedDeviceRestoreBaseName();
-        temp_alist->append(tmp_dev);
+  DeviceResource* device_resource = nullptr;
+  foreach_alist (device_resource, original_alist) {
+    if (device_resource->multiplied_device_resource) {
+      if (device_resource->multiplied_device_resource == device_resource) {
+        DeviceResource* d = new DeviceResource(*device_resource);
+        d->MultipliedDeviceRestoreBaseName();
+        temp_alist->append(d);
       }
     } else {
-      DeviceResource* tmp_dev = new DeviceResource(*dev);
-      temp_alist->append(tmp_dev);
+      DeviceResource* d = new DeviceResource(*device_resource);
+      temp_alist->append(d);
     }
   }
-  device = temp_alist;
+  device_resources = temp_alist;
   PrintConfig(buf, *my_config);
-  device = original_alist;
-  foreach_alist (dev, temp_alist) {
-    delete dev;
+  device_resources = original_alist;
+  foreach_alist (device_resource, temp_alist) {
+    delete device_resource;
   }
   delete temp_alist;
   return true;

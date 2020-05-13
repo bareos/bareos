@@ -29,7 +29,7 @@ else
          MandrivaLinux)
             DISTNAME=mandrake
             ;;
-         Arch|archlinux)
+         Arch|archlinux|ManjaroLinux)
             DISTNAME=archlinux
             ;;
          LinuxMint)

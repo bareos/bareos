@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,11 +29,14 @@
  */
 
 #include "include/bareos.h"
+#include "stored/device_status_information.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
+#include "stored/device_control_record.h"
 #include "stored/jcr_private.h"
-#include "lib/status_packet.h"
 #include "stored/spool.h"
+#include "stored/status.h"
+#include "lib/status_packet.h"
 #include "lib/edit.h"
 #include "include/jcr.h"
 #include "lib/parse_conf.h"
@@ -156,23 +159,25 @@ static bool NeedToListDevice(const char* devicenames, const char* devicename)
   return false;
 }
 
-static bool NeedToListDevice(const char* devicenames, DeviceResource* device)
+static bool NeedToListDevice(const char* devicenames,
+                             DeviceResource* device_resource)
 {
   /*
    * See if we are requested to list an explicit device name.
    * e.g. this happens when people address one particular device in
    * a autochanger via its own storage definition or an non autochanger device.
    */
-  if (!NeedToListDevice(devicenames, device->resource_name_)) {
+  if (!NeedToListDevice(devicenames, device_resource->resource_name_)) {
     /*
      * See if this device is part of an autochanger.
      */
-    if (device->changer_res) {
+    if (device_resource->changer_res) {
       /*
        * See if we need to list this particular device part of the given
        * autochanger.
        */
-      if (!NeedToListDevice(devicenames, device->changer_res->resource_name_)) {
+      if (!NeedToListDevice(devicenames,
+                            device_resource->changer_res->resource_name_)) {
         return false;
       }
     } else {
@@ -188,13 +193,13 @@ static bool NeedToListDevice(const char* devicenames, DeviceResource* device)
  * registered the event to return specific device information.
  */
 static void trigger_device_status_hook(JobControlRecord* jcr,
-                                       DeviceResource* device,
+                                       DeviceResource* device_resource,
                                        StatusPacket* sp,
                                        bsdEventType eventType)
 {
-  bsdDevStatTrig dst;
+  DeviceStatusInformation dst;
 
-  dst.device = device;
+  dst.device_resource = device_resource;
   dst.status = GetPoolMemory(PM_MESSAGE);
   dst.status_length = 0;
 
@@ -205,17 +210,20 @@ static void trigger_device_status_hook(JobControlRecord* jcr,
 }
 
 /*
- * Ask the device if it want to log something specific in the status overview.
+ * Ask the device_resource if it want to log something specific in the status
+ * overview.
  */
-static void get_device_specific_status(DeviceResource* device, StatusPacket* sp)
+static void get_device_specific_status(DeviceResource* device_resource,
+                                       StatusPacket* sp)
 {
-  bsdDevStatTrig dst;
+  DeviceStatusInformation dst;
 
-  dst.device = device;
+  dst.device_resource = device_resource;
   dst.status = GetPoolMemory(PM_MESSAGE);
   dst.status_length = 0;
 
-  if (device && device->dev && device->dev->DeviceStatus(&dst)) {
+  if (device_resource && device_resource->dev &&
+      device_resource->dev->DeviceStatus(&dst)) {
     if (dst.status_length > 0) { sp->send(dst.status, dst.status_length); }
   }
   FreePoolMemory(dst.status);
@@ -228,7 +236,7 @@ static void ListDevices(JobControlRecord* jcr,
   int len;
   int bpb;
   Device* dev;
-  DeviceResource* device;
+  DeviceResource* device_resource = nullptr;
   AutochangerResource* changer;
   PoolMem msg(PM_MESSAGE);
   char b1[35], b2[35], b3[35];
@@ -251,21 +259,23 @@ static void ListDevices(JobControlRecord* jcr,
                changer->resource_name_);
     sp->send(msg, len);
 
-    foreach_alist (device, changer->device) {
-      if (device->dev) {
-        len = Mmsg(msg, "   %s\n", device->dev->print_name());
+    foreach_alist (device_resource, changer->device_resources) {
+      if (device_resource->dev) {
+        len = Mmsg(msg, "   %s\n", device_resource->dev->print_name());
         sp->send(msg, len);
       } else {
-        len = Mmsg(msg, "   %s\n", device->resource_name_);
+        len = Mmsg(msg, "   %s\n", device_resource->resource_name_);
         sp->send(msg, len);
       }
     }
   }
 
-  foreach_res (device, R_DEVICE) {
-    if (devicenames && !NeedToListDevice(devicenames, device)) { continue; }
+  foreach_res (device_resource, R_DEVICE) {
+    if (devicenames && !NeedToListDevice(devicenames, device_resource)) {
+      continue;
+    }
 
-    dev = device->dev;
+    dev = device_resource->dev;
     if (dev && dev->IsOpen()) {
       if (dev->IsLabeled()) {
         const char* state;
@@ -302,7 +312,7 @@ static void ListDevices(JobControlRecord* jcr,
                      "    Media type:  %s\n"),
                    dev->print_name(), state, dev->VolHdr.VolumeName,
                    dev->pool_name[0] ? dev->pool_name : "*unknown*",
-                   dev->device->media_type);
+                   dev->device_resource->media_type);
         sp->send(msg, len);
       } else {
         len = Mmsg(
@@ -312,8 +322,8 @@ static void ListDevices(JobControlRecord* jcr,
         sp->send(msg, len);
       }
 
-      get_device_specific_status(device, sp);
-      trigger_device_status_hook(jcr, device, sp, bsdEventDriveStatus);
+      get_device_specific_status(device_resource, sp);
+      trigger_device_status_hook(jcr, device_resource, sp, bsdEventDriveStatus);
 
       SendBlockedStatus(dev, sp);
 
@@ -347,7 +357,8 @@ static void ListDevices(JobControlRecord* jcr,
                  edit_uint64_with_commas(dev->block_num, b2));
       sp->send(msg, len);
 
-      trigger_device_status_hook(jcr, device, sp, bsdEventVolumeStatus);
+      trigger_device_status_hook(jcr, device_resource, sp,
+                                 bsdEventVolumeStatus);
     } else {
       if (dev) {
         len = Mmsg(msg, _("\nDevice %s is not open.\n"), dev->print_name());
@@ -355,11 +366,11 @@ static void ListDevices(JobControlRecord* jcr,
         SendBlockedStatus(dev, sp);
       } else {
         len = Mmsg(msg, _("\nDevice \"%s\" is not open or does not exist.\n"),
-                   device->resource_name_);
+                   device_resource->resource_name_);
         sp->send(msg, len);
       }
 
-      get_device_specific_status(device, sp);
+      get_device_specific_status(device_resource, sp);
     }
 
     if (!sp->api) {
@@ -387,7 +398,7 @@ static void ListVolumes(StatusPacket* sp, const char* devicenames)
     Device* dev = vol->dev;
 
     if (dev) {
-      if (devicenames && !NeedToListDevice(devicenames, dev->device)) {
+      if (devicenames && !NeedToListDevice(devicenames, dev->device_resource)) {
         continue;
       }
 
@@ -410,7 +421,7 @@ static void ListVolumes(StatusPacket* sp, const char* devicenames)
     Device* dev = vol->dev;
 
     if (dev) {
-      if (devicenames && !NeedToListDevice(devicenames, dev->device)) {
+      if (devicenames && !NeedToListDevice(devicenames, dev->device_resource)) {
         continue;
       }
 
@@ -539,10 +550,9 @@ static void SendBlockedStatus(Device* dev, StatusPacket* sp)
       sp->send(msg, len);
       break;
     case BST_WAITING_FOR_SYSOP: {
-      DeviceControlRecord* dcr;
       bool found_jcr = false;
       dev->Lock();
-      foreach_dlist (dcr, dev->attached_dcrs) {
+      for (auto dcr : dev->attached_dcrs) {
         if (dcr->jcr->JobStatus == JS_WaitMount) {
           len = Mmsg(
               msg,
@@ -599,7 +609,6 @@ static void SendBlockedStatus(Device* dev, StatusPacket* sp)
 static void SendDeviceStatus(Device* dev, StatusPacket* sp)
 {
   int len;
-  DeviceControlRecord* dcr = NULL;
   bool found = false;
   PoolMem msg(PM_MESSAGE);
 
@@ -629,7 +638,8 @@ static void SendDeviceStatus(Device* dev, StatusPacket* sp)
       "  %sOPENED %sTAPE %sLABEL %sMALLOC %sAPPEND %sREAD %sEOT %sWEOT %sEOF "
       "%sNEXTVOL %sSHORT %sMOUNTED\n",
       dev->IsOpen() ? "" : "!", dev->IsTape() ? "" : "!",
-      dev->IsLabeled() ? "" : "!", BitIsSet(ST_MALLOC, dev->state) ? "" : "!",
+      dev->IsLabeled() ? "" : "!",
+      BitIsSet(ST_ALLOCATED, dev->state) ? "" : "!",
       dev->CanAppend() ? "" : "!", dev->CanRead() ? "" : "!",
       dev->AtEot() ? "" : "!", BitIsSet(ST_WEOT, dev->state) ? "" : "!",
       dev->AtEof() ? "" : "!", BitIsSet(ST_NEXTVOL, dev->state) ? "" : "!",
@@ -644,7 +654,7 @@ static void SendDeviceStatus(Device* dev, StatusPacket* sp)
   len = Mmsg(msg, _("Attached Jobs: "));
   sp->send(msg, len);
   dev->Lock();
-  foreach_dlist (dcr, dev->attached_dcrs) {
+  for (auto dcr : dev->attached_dcrs) {
     if (dcr->jcr) {
       if (found) {
         len = Mmsg(msg, ",%d", (int)dcr->jcr->JobId);
@@ -694,33 +704,33 @@ static void ListRunningJobs(StatusPacket* sp)
     }
     dcr = jcr->impl->dcr;
     rdcr = jcr->impl->read_dcr;
-    if ((dcr && dcr->device) || (rdcr && rdcr->device)) {
+    if ((dcr && dcr->device_resource) || (rdcr && rdcr->device_resource)) {
       bstrncpy(JobName, jcr->Job, sizeof(JobName));
       /* There are three periods after the Job name */
       char* p;
       for (int i = 0; i < 3; i++) {
         if ((p = strrchr(JobName, '.')) != NULL) { *p = 0; }
       }
-      if (rdcr && rdcr->device) {
-        len = Mmsg(
-            msg,
-            _("Reading: %s %s job %s JobId=%d Volume=\"%s\"\n"
-              "    pool=\"%s\" device=%s\n"),
-            job_level_to_str(jcr->getJobLevel()),
-            job_type_to_str(jcr->getJobType()), JobName, jcr->JobId,
-            rdcr->VolumeName, rdcr->pool_name,
-            rdcr->dev ? rdcr->dev->print_name() : rdcr->device->device_name);
+      if (rdcr && rdcr->device_resource) {
+        len = Mmsg(msg,
+                   _("Reading: %s %s job %s JobId=%d Volume=\"%s\"\n"
+                     "    pool=\"%s\" device=%s\n"),
+                   job_level_to_str(jcr->getJobLevel()),
+                   job_type_to_str(jcr->getJobType()), JobName, jcr->JobId,
+                   rdcr->VolumeName, rdcr->pool_name,
+                   rdcr->dev ? rdcr->dev->print_name()
+                             : rdcr->device_resource->device_name);
         sp->send(msg, len);
       }
-      if (dcr && dcr->device) {
-        len =
-            Mmsg(msg,
-                 _("Writing: %s %s job %s JobId=%d Volume=\"%s\"\n"
-                   "    pool=\"%s\" device=%s\n"),
-                 job_level_to_str(jcr->getJobLevel()),
-                 job_type_to_str(jcr->getJobType()), JobName, jcr->JobId,
-                 dcr->VolumeName, dcr->pool_name,
-                 dcr->dev ? dcr->dev->print_name() : dcr->device->device_name);
+      if (dcr && dcr->device_resource) {
+        len = Mmsg(msg,
+                   _("Writing: %s %s job %s JobId=%d Volume=\"%s\"\n"
+                     "    pool=\"%s\" device=%s\n"),
+                   job_level_to_str(jcr->getJobLevel()),
+                   job_type_to_str(jcr->getJobType()), JobName, jcr->JobId,
+                   dcr->VolumeName, dcr->pool_name,
+                   dcr->dev ? dcr->dev->print_name()
+                            : dcr->device_resource->device_name);
         sp->send(msg, len);
         len = Mmsg(msg, _("    spooling=%d despooling=%d despool_wait=%d\n"),
                    dcr->spooling, dcr->despooling, dcr->despool_wait);

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,6 +28,7 @@
 #include "include/bareos.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
+#include "stored/device_control_record.h"
 #include "stored/jcr_private.h"
 #include "lib/util.h"
 #include "include/jcr.h"
@@ -306,8 +307,8 @@ void UpdateJobStatistics(JobControlRecord* jcr, utime_t now)
   job_stat->timestamp = now;
   job_stat->JobFiles = jcr->JobFiles;
   job_stat->JobBytes = jcr->JobBytes;
-  if (jcr->impl->dcr && jcr->impl->dcr->device) {
-    job_stat->DevName = strdup(jcr->impl->dcr->device->resource_name_);
+  if (jcr->impl->dcr && jcr->impl->dcr->device_resource) {
+    job_stat->DevName = strdup(jcr->impl->dcr->device_resource->resource_name_);
   } else {
     job_stat->DevName = strdup("unknown");
   }
@@ -365,7 +366,7 @@ extern "C" void* statistics_thread_runner(void* arg)
   struct timeval tv;
   struct timezone tz;
   struct timespec timeout;
-  DeviceResource* device;
+  DeviceResource* device_resource = nullptr;
   JobControlRecord* jcr;
 
   setup_statistics();
@@ -380,13 +381,13 @@ extern "C" void* statistics_thread_runner(void* arg)
       /*
        * Loop over all defined devices.
        */
-      foreach_res (device, R_DEVICE) {
-        if (device->collectstats) {
+      foreach_res (device_resource, R_DEVICE) {
+        if (device_resource->collectstats) {
           Device* dev;
 
-          dev = device->dev;
+          dev = device_resource->dev;
           if (dev && dev->initiated) {
-            UpdateDeviceStatistics(device->resource_name_, dev, now);
+            UpdateDeviceStatistics(device_resource->resource_name_, dev, now);
           }
         }
       }
@@ -441,11 +442,11 @@ int StartStatisticsThread(void)
    * one device of which stats are collected.
    */
   if (me->collect_dev_stats && !me->collect_job_stats) {
-    DeviceResource* device;
+    DeviceResource* device_resource = nullptr;
     int cnt = 0;
 
-    foreach_res (device, R_DEVICE) {
-      if (device->collectstats) { cnt++; }
+    foreach_res (device_resource, R_DEVICE) {
+      if (device_resource->collectstats) { cnt++; }
     }
 
     if (cnt == 0) { return 0; }

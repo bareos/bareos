@@ -32,6 +32,7 @@
 #include "stored/stored_globals.h"
 #include "stored/acquire.h"
 #include "stored/device.h"
+#include "stored/device_control_record.h"
 #include "stored/jcr_private.h"
 #include "lib/berrno.h"
 #include "lib/bsock.h"
@@ -39,6 +40,8 @@
 #include "lib/status_packet.h"
 #include "lib/util.h"
 #include "include/jcr.h"
+
+#include "include/make_unique.h"
 
 namespace storagedaemon {
 
@@ -168,14 +171,14 @@ static void MakeUniqueDataSpoolFilename(DeviceControlRecord* dcr,
 {
   const char* dir;
 
-  if (dcr->dev->device->spool_directory) {
-    dir = dcr->dev->device->spool_directory;
+  if (dcr->dev->device_resource->spool_directory) {
+    dir = dcr->dev->device_resource->spool_directory;
   } else {
     dir = working_directory;
   }
 
   Mmsg(name, "%s/%s.data.%u.%s.%s.spool", dir, my_name, dcr->jcr->JobId,
-       dcr->jcr->Job, dcr->device->resource_name_);
+       dcr->jcr->Job, dcr->device_resource->resource_name_);
 }
 
 static bool OpenDataSpoolFile(DeviceControlRecord* dcr)
@@ -241,7 +244,6 @@ static const char* spool_name = "*spool*";
  */
 static bool DespoolData(DeviceControlRecord* dcr, bool commit)
 {
-  Device* rdev;
   DeviceControlRecord* rdcr;
   bool ok = true;
   DeviceBlock* block;
@@ -290,17 +292,16 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
    * We create a dev structure to read from the spool file
    * in rdev and rdcr.
    */
-  rdev = (Device*)malloc(sizeof(Device));
-  memset((void*)rdev, 0, sizeof(Device));
+  auto rdev(std::make_unique<SpoolDevice>());
   rdev->dev_name = GetMemory(strlen(spool_name) + 1);
   bstrncpy(rdev->dev_name, spool_name, SizeofPoolMemory(rdev->dev_name));
   rdev->errmsg = GetPoolMemory(PM_EMSG);
-  *rdev->errmsg = 0;
+  rdev->errmsg[0] = 0;
   rdev->max_block_size = dcr->dev->max_block_size;
   rdev->min_block_size = dcr->dev->min_block_size;
-  rdev->device = dcr->dev->device;
+  rdev->device_resource = dcr->dev->device_resource;
   rdcr = dcr->get_new_spooling_dcr();
-  SetupNewDcrDevice(jcr, rdcr, rdev, NULL);
+  SetupNewDcrDevice(jcr, rdcr, rdev.get(), NULL);
   rdcr->spool_fd = dcr->spool_fd;
   block = dcr->block;       /* save block */
   dcr->block = rdcr->block; /* make read and write block the same */
@@ -375,8 +376,8 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
          "Bytes/second\n"),
        despool_elapsed / 3600, despool_elapsed % 3600 / 60,
        despool_elapsed % 60,
-       edit_uint64_with_suffix(
-           jcr->impl->dcr->job_spool_size / despool_elapsed, ec1));
+       edit_uint64_with_suffix(jcr->impl->dcr->job_spool_size / despool_elapsed,
+                               ec1));
 
   dcr->block = block; /* reset block */
 
@@ -415,12 +416,12 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
   FreePoolMemory(rdev->errmsg);
 
   /*
-   * Be careful to NULL the jcr and free rdev after FreeDcr()
+   * null the jcr
+   * rdev will be freed by its smart pointer
    */
   rdcr->jcr = NULL;
   rdcr->SetDev(NULL);
   FreeDeviceControlRecord(rdcr);
-  free(rdev);
   dcr->spooling = true; /* turn on spooling again */
   dcr->despooling = false;
 

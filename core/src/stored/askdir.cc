@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,6 +35,8 @@
 
 #include "include/jcr.h"
 #include "lib/crypto_cache.h"
+#include "stored/device_control_record.h"
+#include "stored/sd_device_control_record.h"
 #include "stored/wait.h"
 #include "stored/dev.h"
 #include "lib/edit.h"
@@ -640,15 +642,6 @@ get_out:
   return true;
 }
 
-DeviceControlRecord* StorageDaemonDeviceControlRecord::get_new_spooling_dcr()
-{
-  DeviceControlRecord* dcr;
-
-  dcr = new StorageDaemonDeviceControlRecord;
-
-  return dcr;
-}
-
 /**
  * Dummy methods for everything but SD and BTAPE.
  */
@@ -672,11 +665,7 @@ bool DeviceControlRecord::DirGetVolumeInfo(enum get_vol_info_rw writing)
 
 DeviceControlRecord* DeviceControlRecord::get_new_spooling_dcr()
 {
-  DeviceControlRecord* dcr;
-
-  dcr = new StorageDaemonDeviceControlRecord;
-
-  return dcr;
+  return new StorageDaemonDeviceControlRecord;
 }
 
 } /* namespace storagedaemon */

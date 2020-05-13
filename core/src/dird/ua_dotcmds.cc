@@ -1482,7 +1482,7 @@ bool DotDefaultsCmd(UaContext* ua, const char* cmd)
       ua->send->SendBuffer();
       ua->send->ObjectKeyValue(
           "where", "%s=", (job->RestoreWhere ? job->RestoreWhere : ""), "%s\n");
-      if(job->JobType == JT_RESTORE) {
+      if (job->JobType == JT_RESTORE) {
         ua->send->SendBuffer();
         ua->send->ObjectKeyValue(
             "replace", "%s=", job_replace_to_str(job->replace), "%s\n");
@@ -1537,7 +1537,7 @@ bool DotDefaultsCmd(UaContext* ua, const char* cmd)
      */
     storage = ua->GetStoreResWithName(ua->argv[pos]);
     if (storage) {
-      DeviceResource* device;
+      DeviceResource* device_resource;
       PoolMem devices;
 
       ua->send->ObjectKeyValue("storage", "%s=", storage->resource_name_,
@@ -1548,13 +1548,13 @@ bool DotDefaultsCmd(UaContext* ua, const char* cmd)
       ua->send->ObjectKeyValue("media_type", "%s=", storage->media_type,
                                "%s\n");
 
-      device = (DeviceResource*)storage->device->first();
-      if (device) {
-        devices.strcpy(device->resource_name_);
+      device_resource = (DeviceResource*)storage->device->first();
+      if (device_resource) {
+        devices.strcpy(device_resource->resource_name_);
         if (storage->device->size() > 1) {
-          while ((device = (DeviceResource*)storage->device->next())) {
+          while ((device_resource = (DeviceResource*)storage->device->next())) {
             devices.strcat(",");
-            devices.strcat(device->resource_name_);
+            devices.strcat(device_resource->resource_name_);
           }
         }
         ua->send->ObjectKeyValue("device", "%s=", devices.c_str(), "%s\n");
