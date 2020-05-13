@@ -451,6 +451,11 @@ class JobController extends AbstractActionController
     $storages = $this->getStorageModel()->getStorages($this->bsock);
     $pools = $this->getPoolModel()->getDotPools($this->bsock, null);
 
+    foreach($pools as &$pool) {
+      $nextpool = $this->getPoolModel()->getPoolNextPool($this->bsock, $pool["name"]);
+      $pool["nextpool"] = $nextpool;
+    }
+
     // build form
     $form = new RunJobForm($clients, $jobs, $filesets, $storages, $pools, $jobdefaults);
 
@@ -477,6 +482,7 @@ class JobController extends AbstractActionController
         $storage = $form->getInputFilter()->getValue('storage');
         $pool = $form->getInputFilter()->getValue('pool');
         $level = $form->getInputFilter()->getValue('level');
+        $nextpool = $form->getInputFilter()->getValue('nextpool');
         $priority = $form->getInputFilter()->getValue('priority');
         $backupformat = null; // $form->getInputFilter()->getValue('backupformat');
         $when = $form->getInputFilter()->getValue('when');
@@ -495,7 +501,7 @@ class JobController extends AbstractActionController
               )
             );
           } else {
-            $result = $this->getJobModel()->runCustomJob($this->bsock, $jobname, $client, $fileset, $storage, $pool, $level, $priority, $backupformat, $when);
+            $result = $this->getJobModel()->runCustomJob($this->bsock, $jobname, $client, $fileset, $storage, $pool, $level, $nextpool, $priority, $backupformat, $when);
             $this->bsock->disconnect();
             $s = strrpos($result, "=") + 1;
             $jobid = rtrim( substr( $result, $s ) );

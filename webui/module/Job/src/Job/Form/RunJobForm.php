@@ -306,6 +306,41 @@ class RunJobForm extends Form
          ));
       }
 
+      // NextPool
+      if(isset($jobdefaults['pool'])) {
+        $this->add(array(
+           'name' => 'nextpool',
+           'type' => 'select',
+           'options' => array(
+              'label' => _('Next Pool'),
+              'empty_option' => '',
+              'value_options' => $this->getPoolList()
+           ),
+           'attributes' => array(
+              'class' => 'form-control selectpicker show-tick',
+              'data-live-search' => 'true',
+              'id' => 'nextpool',
+              'value' => $this->getNextPool($jobdefaults['pool'])
+           )
+        ));
+      } else {
+          $this->add(array(
+            'name' => 'nextpool',
+            'type' => 'select',
+            'options' => array(
+                'label' => _('Next Pool'),
+                'empty_option' => '',
+                'value_options' => $this->getPoolList()
+            ),
+            'attributes' => array(
+                'class' => 'form-control selectpicker show-tick',
+                'data-live-search' => 'true',
+                'id' => 'nextpool',
+                'value' => null
+            )
+          ));
+      }
+
 /*
       // Backup Format
       $this->add(array(
@@ -417,5 +452,25 @@ class RunJobForm extends Form
       $selectData['Incremental'] = 'Incremental';
       $selectData['VirtualFull'] = 'VirtualFull';
       return $selectData;
+   }
+
+   private function getNextPool($pool_name)
+   {
+      foreach($this->pools as $pool) {
+        if($pool["name"] === $pool_name) {
+          return $pool["nextpool"];
+        }
+      }
+   }
+
+   public function getPoolNextPoolMapping()
+   {
+      $mapping = [];
+
+      foreach($this->pools as $pool) {
+        $mapping[$pool["name"]] =  $pool["nextpool"];
+      }
+
+      return json_encode($mapping);
    }
 }

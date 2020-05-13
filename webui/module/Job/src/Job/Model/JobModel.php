@@ -466,13 +466,14 @@ class JobModel
     * @param $storage
     * @param $pool
     * @param $level
+    * @param $nextpool
     * @param $priority
     * @param $backupformat
     * @param $when
     *
     * @return string
     */
-   public function runCustomJob(&$bsock=null, $jobname=null, $client=null, $fileset=null, $storage=null, $pool=null, $level=null, $priority=null, $backupformat=null, $when=null)
+   public function runCustomJob(&$bsock=null, $jobname=null, $client=null, $fileset=null, $storage=null, $pool=null, $level=null, $nextpool=null, $priority=null, $backupformat=null, $when=null)
    {
       if(isset($bsock, $jobname)) {
          $cmd = 'run job="' . $jobname . '"';
@@ -490,6 +491,9 @@ class JobModel
          }
          if(!empty($level)) {
             $cmd .= ' level="' . $level . '"';
+         }
+         if(!empty($nextpool)) {
+            $cmd .= ' nextpool="' . $nextpool . '"';
          }
          if(!empty($priority)) {
             $cmd .= ' priority="' . $priority . '"';
