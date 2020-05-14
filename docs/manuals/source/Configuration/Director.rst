@@ -268,8 +268,8 @@ Use :config:option:`dir/FileSet/IgnoreFileSetChanges` to disable this behavior.
 
 .. _fileset-include:
 
-FileSet Include Ressource
-~~~~~~~~~~~~~~~~~~~~~~~~~
+FileSet Include Resource
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 The Include resource must contain a list of directories and/or files to be processed in the backup job.
 
@@ -405,7 +405,7 @@ Please take note of the following items in the FileSet syntax:
          Include {
             Options {
               signature = SHA1
-              onfs=no
+              onefs=no
               fstype=ext2
             }
             File = /
@@ -518,13 +518,13 @@ Please take note of the following items in the FileSet syntax:
 
 .. _fileset-exclude:
 
-FileSet Exclude Ressource
-~~~~~~~~~~~~~~~~~~~~~~~~~
+FileSet Exclude Resource
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. index::
    single: Excluding Files and Directories
 
-FileSet Exclude-Ressources very similar to Include-Ressources, except that they only allow following directives:
+FileSet Exclude-Resources very similar to Include-Resources, except that they only allow following directives:
 
 .. config:option:: dir/fileset/exclude/file
 
@@ -567,8 +567,8 @@ FileSet Exclude-Ressources very similar to Include-Ressources, except that they 
 
 .. _fileset-options:
 
-FileSet Options Ressource
-~~~~~~~~~~~~~~~~~~~~~~~~~
+FileSet Options Resource
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 The Options resource is optional, but when specified, it will contain a list of keyword=value options to be applied to the file-list. See below for the definition of file-list. Multiple Options resources may be specified one after another. As the files are found in the specified directories, the Options will applied to the filenames to determine if and how the file should be backed up. The wildcard and regular expression pattern matching parts of the Options resources are checked in the order
 they are specified in the FileSet until the first one that matches. Once one matches, the compression and other flags within the Options specification will apply to the pattern matched.
