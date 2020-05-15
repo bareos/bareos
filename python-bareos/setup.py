@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import os
+import re
 from setuptools import find_packages, setup
 
 
@@ -12,8 +13,10 @@ def get_version():
             os.path.join(base_dir, "bareos", "VERSION.txt")
         ) as version_file:
             # read version
-            # and adapt it according to https://www.python.org/dev/peps/pep-0440/.
-            __version__ = version_file.read().strip().replace('~pre','.dev')
+            # and adapt it according to
+            # https://www.python.org/dev/peps/pep-0440/.
+            fullversion = version_file.read().strip()
+            __version__ = re.compile(r'~pre([0-9]+).*').sub(r'.dev\1', fullversion)
     except IOError:
         # Fallback version.
         # First protocol implemented
