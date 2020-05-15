@@ -7,7 +7,7 @@ Client {
   # otherwise all filedaemon plugins (*-fd.so) from the "Plugin Directory".
   #
   Plugin Directory = "@fd_plugin_binary_path@"
-  Plugin Names = "@plugin_name@"
+  Plugin Names = "@python_version@"
 
   # if compatible is set to yes, we are compatible with bacula
   # if set to no, new bareos features are enabled which is the default

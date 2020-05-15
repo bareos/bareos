@@ -88,7 +88,7 @@ if(Python3_FOUND)
   set_target_properties(python3-dir PROPERTIES PREFIX "")
   install(TARGETS python3-dir DESTINATION ${plugindir})
   target_link_libraries(python3-dir ${Python_LIBRARIES} bareos)
-  add_dependencies(python3-dir bareosdir-python2-module)
+  add_dependencies(python3-dir bareosdir-python3-module)
 
   set(PYFILES
       python/pyfiles/bareos-dir.py.template
@@ -103,7 +103,7 @@ endif()
 if(Python3_FOUND AND NOT HAVE_WIN32)
   configure_file(python/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/python/setup.py)
   add_custom_command(
-    OUTPUT pythonmodules/bareosdir.so
+    OUTPUT python3modules/bareosdir.so
     MAIN_DEPENDENCY ./python/bareosdir.cc
     DEPENDS ./python/bareosdir.h
     DEPENDS bareos
@@ -111,11 +111,13 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
     COMMAND rm -Rfv ${CMAKE_CURRENT_BINARY_DIR}/build
     COMMAND ${Python3_EXECUTABLE} python/setup.py build
     COMMAND ${Python3_EXECUTABLE} python/setup.py install --install-lib
-            ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
+            ${CMAKE_CURRENT_BINARY_DIR}/python3modules
     COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
-    COMMENT "building python3 module pythonmodules/bareosdir.so"
+    COMMENT "building python3 module python3modules/bareosdir.so"
   )
-  add_custom_target(bareosdir-python3-module DEPENDS pythonmodules/bareosdir.so)
+  add_custom_target(
+    bareosdir-python3-module DEPENDS python3modules/bareosdir.so
+  )
 
   add_test(NAME bareosdir-python3-module
            COMMAND ${Python3_EXECUTABLE}
@@ -125,7 +127,7 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
     TEST bareosdir-python3-module
     PROPERTY
       ENVIRONMENT
-      "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/pythonmodules:${CMAKE_CURRENT_SOURCE_DIR}/python/test"
+      "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/python3modules:${CMAKE_CURRENT_SOURCE_DIR}/python/test"
       LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../lib
   )
 endif()

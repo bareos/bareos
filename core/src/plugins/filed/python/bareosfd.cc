@@ -124,7 +124,6 @@ static bRC PyParsePluginDefinition(PluginContext* plugin_ctx, void* value)
   if (pFunc && PyCallable_Check(pFunc)) {
     PyObject *pPluginDefinition, *pRetVal;
 
-    // pPluginDefinition = PyString_FromString((char*)value);
     pPluginDefinition = PyUnicode_FromString((char*)value);
     if (!pPluginDefinition) { goto bail_out; }
 
@@ -1184,7 +1183,6 @@ static inline PyRestoreObject* NativeToPyRestoreObject(
       PyObject_New(PyRestoreObject, &PyRestoreObjectType);
 
   if (pRestoreObject) {
-    // pRestoreObject->object_name = PyString_FromString(rop->object_name);
     pRestoreObject->object_name = PyUnicode_FromString(rop->object_name);
     pRestoreObject->object =
         PyByteArray_FromStringAndSize(rop->object, rop->object_len);
@@ -2110,20 +2108,19 @@ static int PySavePacket_init(PySavePacket* self, PyObject* args, PyObject* kwds)
   self->object_len = 0;
   self->object_index = 0;
 
-
   if (!PyArg_ParseTupleAndKeywords(
-          args, kwds, "|OOiOpppsiiOOii", kwlist, &self->fname, &self->link,
-          &self->type, &self->flags, &self->no_read, &self->portable,
-          &self->accurate_found, &self->cmd, &self->save_time, &self->delta_seq,
-          &self->object_name, &self->object, &self->object_len,
-          &self->object_index)) {
-    //  if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist,
-    //  &self->fname)) {
+          args, kwds,
+#if PY_VERSION_HEX < 0x03000000
+          "|OOiOpppsiiOOii",
+#else
+          "|ooiocccsiiooii",
+#endif
+          kwlist, &self->fname, &self->link, &self->type, &self->flags,
+          &self->no_read, &self->portable, &self->accurate_found, &self->cmd,
+          &self->save_time, &self->delta_seq, &self->object_name, &self->object,
+          &self->object_len, &self->object_index)) {
     return -1;
   }
-  int a;
-  a = a + a;
-  printf("hello\n");
   return 0;
 }
 

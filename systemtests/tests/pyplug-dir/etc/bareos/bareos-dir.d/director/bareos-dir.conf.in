@@ -20,7 +20,7 @@ Director {                            # define myself
   # otherwise all director plugins (*-dir.so) from the "Plugin Directory".
   #
   Plugin Directory = "@dir_plugin_binary_path@"
-  Plugin Names = "python"
+  Plugin Names = "@python-version@"
   Working Directory =  "@working_dir@"
   Pid Directory =  "@piddir@"
   DirPort = @dir_port@

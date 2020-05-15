@@ -202,7 +202,7 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
     python/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/python/setup_py3.py
   )
   add_custom_command(
-    OUTPUT pythonmodules/bareosfd.so
+    OUTPUT python3modules/bareosfd.so
     MAIN_DEPENDENCY ./python/bareosfd.cc
     DEPENDS ./python/bareosfd.h
     DEPENDS bareos
@@ -210,11 +210,11 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
     COMMAND rm -Rfv ${CMAKE_CURRENT_BINARY_DIR}/build
     COMMAND ${Python3_EXECUTABLE} python/setup_py3.py build
     COMMAND ${Python3_EXECUTABLE} python/setup_py3.py install --install-lib
-            ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
+            ${CMAKE_CURRENT_BINARY_DIR}/python3modules
     COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
-    COMMENT "building python3 module pythonmodules/bareosfd.so"
+    COMMENT "building python3 module python3modules/bareosfd.so"
   )
-  add_custom_target(bareosfd-pymod3 DEPENDS pythonmodules/bareosfd.so)
+  add_custom_target(bareosfd-pymod3 DEPENDS python3modules/bareosfd.so)
   add_test(NAME bareosfd-python3-module
            COMMAND ${Python3_EXECUTABLE}
                    ${CMAKE_CURRENT_SOURCE_DIR}/python/test/bareosfd_test.py
@@ -223,7 +223,7 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
     TEST bareosfd-python3-module
     PROPERTY
       ENVIRONMENT
-      "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/pythonmodules:${CMAKE_CURRENT_SOURCE_DIR}/python/test"
+      "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/python3modules:${CMAKE_CURRENT_SOURCE_DIR}/python/test"
       LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../lib
   )
 endif()
