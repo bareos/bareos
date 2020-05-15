@@ -175,6 +175,18 @@ macro(handle_python_plugin_modules test_name)
     list(APPEND FD_PYMODULES_TO_LINK_TO_SRC bareos-fd-postgres.py
          BareosFdPluginLocalFileset.py BareosFdPluginPostgres.py
          BareosFdPluginBaseclass.py
+  if(${test_name} STREQUAL python-fd-plugin-local-fileset-rop-test)
+    list(APPEND FD_PYMODULES_TO_LINK_TO_SRC bareos-fd-local-fileset.py
+                BareosFdPluginLocalFileset.py
+    )
+  endif()
+
+
+  if(${test_name} STREQUAL python-fd-plugin-postgres-test)
+        list(APPEND FD_PYMODULES_TO_LINK_TO_SRC bareos-fd-postgres.py 
+                BareosFdPluginLocalFileset.py 
+		BareosFdPluginPostgres.py
+		BareosFdPluginBaseclass.py
     )
   endif()
 
@@ -689,6 +701,13 @@ if(TARGET python-fd)
 else()
   list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-local-fileset")
 endif()
+
+if(TARGET python-fd)
+  list(APPEND SYSTEM_TESTS "pyplug-fd-local-fileset-restoreobject")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-local-fileset-restoreobject")
+endif()
+
 
 if(TARGET python-fd)
   list(APPEND SYSTEM_TESTS "pyplug-fd-postgres")

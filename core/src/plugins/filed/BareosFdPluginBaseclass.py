@@ -28,6 +28,8 @@ import bareosfd
 from bareos_fd_consts import bVariable, bFileType, bRCs, bCFs
 from bareos_fd_consts import bEventType, bIOPS, bJobMessageType
 import os
+import stat
+import time
 
 
 class BareosFdPluginBaseclass(object):
@@ -56,7 +58,11 @@ class BareosFdPluginBaseclass(object):
         self.since = bareosfd.GetValue(context, bVariable["bVarSinceTime"])
         self.level = bareosfd.GetValue(context, bVariable["bVarLevel"])
         self.jobName = bareosfd.GetValue(context, bVariable["bVarJobName"])
+        # jobName is of format myName.2020-05-12_11.35.27_05
+        # short Name is everything left of the third point seen from the right
+        self.shortName = self.jobName.rsplit(".", 3)[0]
         self.workingdir = bareosfd.GetValue(context, bVariable["bVarWorkingDir"])
+        self.startTime = int(time.time())
         self.FNAME = "undef"
         self.filetype = "undef"
         self.file = None
@@ -133,7 +139,7 @@ class BareosFdPluginBaseclass(object):
         return bRCs["bRC_OK"]
 
     def plugin_io_open(self, context, IOP):
-        self.FNAME = IOP.fname
+        self.FNAME = IOP.fname.decode("string_escape")
         if os.path.isdir(self.FNAME):
             bareosfd.DebugMessage(context, 100, "%s is a directory\n" % (IOP.fname))
             self.fileType = "FT_DIR"
@@ -145,6 +151,14 @@ class BareosFdPluginBaseclass(object):
             return bRCs["bRC_OK"]
         elif os.path.islink(self.FNAME):
             self.fileType = "FT_LNK"
+            bareosfd.DebugMessage(
+                context,
+                100,
+                "Did not open file %s of type %s\n" % (self.FNAME, self.fileType),
+            )
+            return bRCs["bRC_OK"]
+        elif stat.S_ISFIFO(os.stat(self.FNAME).st_mode):
+            self.fileType = "FT_FIFO"
             bareosfd.DebugMessage(
                 context,
                 100,
@@ -209,7 +223,8 @@ class BareosFdPluginBaseclass(object):
                 bareosfd.JobMessage(
                     context,
                     bJobMessageType["M_ERROR"],
-                    "Could net read %d bytes from file %s. \"%s\"" % (IOP.count, file_to_backup, e.message),
+                    'Could net read %d bytes from file %s. "%s"'
+                    % (IOP.count, file_to_backup, e.message),
                 )
                 IOP.io_errno = e.errno
                 return bRCs["bRC_Error"]
@@ -234,11 +249,11 @@ class BareosFdPluginBaseclass(object):
             bareosfd.JobMessage(
                 context,
                 bJobMessageType["M_ERROR"],
-                "Could net write to file %s. \"%s\"" % (file_to_backup, e.message),
+                'Could net write to file %s. "%s"' % (file_to_backup, e.message),
             )
             IOP.io_errno = e.errno
             IOP.status = 0
-            return bRCs["bRC_Error"] 
+            return bRCs["bRC_Error"]
         IOP.status = IOP.count
         IOP.io_errno = 0
         return bRCs["bRC_OK"]
